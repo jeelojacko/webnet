@@ -6,6 +6,7 @@
 import { MapPin } from 'lucide-react';
 import type { ExamCurriculumUnit } from '../../examCurriculum/examCurriculumTypes';
 import { EXAM_PREP_LEARNING_DEPTHS } from '../examPrepFormat';
+import { openProvisionNewTab } from '../../studyWindow';
 
 export const EXAM_PREP_DEPTH_BADGES = ({ unit }: { unit: ExamCurriculumUnit }) => (
   <span className="flex flex-wrap gap-1">
@@ -47,15 +48,24 @@ export const EXAM_PREP_OPEN_SOURCE_BUTTON = ({
   sourceKey,
   label,
   onOpenProvision,
+  newTab = false,
 }: {
   documentId: string;
   sourceKey: string;
   label: string;
   onOpenProvision: (_documentId: string, _sourceKey: string) => void;
+  /** Open the provision in a NEW tab instead of in-SPA navigation. */
+  newTab?: boolean;
 }) => (
   <button
     type="button"
-    onClick={() => onOpenProvision(documentId, sourceKey)}
+    onClick={() => {
+      if (newTab) {
+        openProvisionNewTab(documentId, sourceKey);
+        return;
+      }
+      onOpenProvision(documentId, sourceKey);
+    }}
     className="inline-flex items-center gap-1 rounded border border-slate-700 bg-slate-800 px-2 py-1 text-xs text-slate-200 hover:bg-slate-700"
     title={`Open ${sourceKey} in the statute reader`}
   >

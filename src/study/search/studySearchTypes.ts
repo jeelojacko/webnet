@@ -40,6 +40,8 @@ export type StudySearchIndexKind = 'official' | 'study';
 
 export type StudySearchIndexMetadata = {
   schemaVersion: number;
+  /** IndexedDB open version used when this metadata was written. */
+  dbVersion: number;
   indexVersion: number;
   engine: 'minisearch';
   engineVersion: string;

@@ -8,6 +8,22 @@
 export const EXAM_PREP_RECALL_PROMPT =
   'State the key rule you should remember for this curriculum unit.';
 
+/**
+ * Canonical Recognition ask line shared by the Recognition sprint and the
+ * provisional Mock exam (pre-submission prompt and post-submission grading
+ * echo). Frozen cues and expected topics are untouched; only the question the
+ * learner answers is single-sourced here so normal / NAV / Mock copy cannot
+ * drift.
+ */
+export const EXAM_PREP_RECOGNITION_ASK = 'Which law or legal topic applies?';
+
+/**
+ * One-line description of Recognition practice used by the Home Suggested
+ * study flow and the Recognition sprint start card.
+ */
+export const EXAM_PREP_RECOGNITION_PRACTICE_COPY =
+  'Practice identifying which law or legal topic applies.';
+
 /** Curriculum tiers rendered by Learn (exactly 133 A-D/NAV units). */
 export const EXAM_PREP_LEARN_TIERS = ['A', 'B', 'C', 'D', 'NAV'] as const;
 

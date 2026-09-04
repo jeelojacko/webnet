@@ -6,7 +6,7 @@
 // pins / answer keys are NEVER returned here, so the answering UI cannot leak
 // them (even in hidden DOM).
 
-import { EXAM_PREP_RECALL_PROMPT } from '../examPrepConstants';
+import { EXAM_PREP_RECALL_PROMPT, EXAM_PREP_RECOGNITION_ASK } from '../examPrepConstants';
 import { resolveExamPrepMockQuestionContent } from './examPrepMockQuestionContent';
 import type { ExamPrepMockQuestionRef } from './examPrepMockTypes';
 
@@ -20,7 +20,7 @@ export const examPrepMockQuestionPromptText = (
     case 'recall':
       return content.prompt;
     case 'recognition':
-      return `${content.cue}\n\nWhich law or legal topic applies?`;
+      return `${content.cue}\n\n${EXAM_PREP_RECOGNITION_ASK}`;
     case 'locate':
       return content.prompt;
     case 'drill':

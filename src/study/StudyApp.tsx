@@ -142,6 +142,7 @@ const StudyApp = () => {
           onDeleteUnit={study.deleteUnit}
           onDuplicateUnit={study.duplicateUnit}
           onLoadLegalDocumentComponentSummary={study.getLegalDocumentComponentSummary}
+          onNavigate={study.navigate}
         />
       );
     }

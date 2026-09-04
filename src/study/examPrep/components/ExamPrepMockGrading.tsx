@@ -9,6 +9,7 @@ import { useMemo, useState, type ReactNode } from 'react';
 import { EXAM_PREP_DOCUMENT_TITLES } from '../examPrepDocTitles';
 import { examPrepProvisionLabel, examPrepTierLabel } from '../examPrepFormat';
 import { EXAM_PREP_OPEN_SOURCE_BUTTON } from './examPrepBits';
+import { EXAM_PREP_RECOGNITION_ASK } from '../examPrepConstants';
 import { EXAM_PREP_MOCK_KIND_LABELS } from '../examPrepFormat';
 import { resolveExamPrepMockQuestionContent } from '../mock/examPrepMockQuestionContent';
 import { gradeMockQuestion, finalizeMock } from '../mock/examPrepMockSession';
@@ -186,7 +187,7 @@ const examPrepQuestionText = (
     case 'recall':
       return content.prompt;
     case 'recognition':
-      return `${content.cue}\n\nWhich law or legal topic applies?`;
+      return `${content.cue}\n\n${EXAM_PREP_RECOGNITION_ASK}`;
     case 'locate':
       return content.prompt;
     case 'drill':
@@ -280,6 +281,7 @@ const ExamPrepMockExpectedBlock = ({
               sourceKey={content.expectedSourceKey}
               label={`Open exact provision · ${examPrepProvisionLabel(content.expectedSourceKey)}`}
               onOpenProvision={onOpenProvision}
+              newTab
             />
           </div>
         ) : (
@@ -318,6 +320,7 @@ const ExamPrepMockExpectedBlock = ({
                 sourceKey={lookup.sourceKey}
                 label="Open"
                 onOpenProvision={onOpenProvision}
+                newTab
               />
             ) : null}
           </li>

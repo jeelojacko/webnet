@@ -283,6 +283,7 @@ const ExpectedSummary = ({
               sourceKey={content.expectedSourceKey}
               label="Open"
               onOpenProvision={onOpenProvision}
+              newTab
             />
           </>
         ) : (

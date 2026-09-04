@@ -336,6 +336,20 @@ export const ExamPrepRecallView = ({
           </div>
         ) : (
           <div className="mt-3 space-y-3">
+            <div className="rounded border border-emerald-900/60 bg-emerald-950/30 p-2">
+              <span className="text-xs font-semibold uppercase tracking-wide text-emerald-400">
+                Prompt
+              </span>
+              <p className="mt-1 text-sm text-emerald-100">{item?.task.prompt}</p>
+            </div>
+            {answer.trim() ? (
+              <div className="rounded border border-slate-700 bg-slate-800/50 p-2">
+                <span className="text-xs font-semibold uppercase tracking-wide text-slate-400">
+                  Your answer
+                </span>
+                <p className="mt-1 whitespace-pre-wrap text-xs text-slate-200">{answer}</p>
+              </div>
+            ) : null}
             <div className="rounded border border-amber-900/60 bg-amber-950/30 p-3">
               <span className="text-xs font-semibold uppercase tracking-wide text-amber-300">
                 Expected answer

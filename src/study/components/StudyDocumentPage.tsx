@@ -1,5 +1,9 @@
 import { useEffect, useMemo, useState } from 'react';
 import { buildCompleteDocumentText, compareImportedLegalComponents, shouldShowLegalComponentInReader } from '../studyOfficialContent';
+import {
+  parseExamPrepLocatePickerSearch,
+  postExamPrepLocatePick,
+} from '../examPrep/examPrepLocatePicker';
 import type { ImportedLegalComponent, StudyDataSnapshot, StudyDocument, StudyUnit } from '../studyTypes';
 
 type StudyDocumentPageProps = {
@@ -78,6 +82,22 @@ const StudyDocumentPage = ({
     sourceKey: string;
     parentSourceKey: string;
   } | null>(null);
+  // Ephemeral Locate picker context from the URL query (present only when this
+  // tab was opened from an active Locate sprint).
+  const pickerContext = useMemo(
+    () => parseExamPrepLocatePickerSearch(window.location.search),
+    [],
+  );
+  const [pickerSent, setPickerSent] = useState<{
+    label: string;
+    posted: boolean;
+  } | null>(null);
+
+  const sendPickerPick = (sourceKey: string, label: string): void => {
+    if (!pickerContext) return;
+    const posted = postExamPrepLocatePick(pickerContext.token, documentId, sourceKey);
+    setPickerSent({ label, posted });
+  };
 
   useEffect(() => {
     setDocumentDraft(document);
@@ -206,6 +226,38 @@ const StudyDocumentPage = ({
               ))}
             </div>
           ) : null}
+        </section>
+      ) : null}
+
+      {pickerContext ? (
+        <section className="rounded border border-sky-700 bg-sky-950/60 p-3">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <div className="min-w-0">
+              <p className="text-xs font-semibold uppercase tracking-wide text-sky-300">
+                Locate picker
+              </p>
+              <p className="mt-1 text-sm text-sky-100">{pickerContext.prompt}</p>
+              <p className="mt-1 text-[11px] text-slate-400">
+                Choose{' '}
+                <span className="font-semibold text-sky-200">Select this provision</span> next to
+                the exact provision (including inside subsections). The expected location stays
+                hidden — your Locate sprint checks the selection automatically.
+              </p>
+            </div>
+            {pickerSent ? (
+              <span
+                className={`rounded border px-2 py-1 text-xs font-semibold ${
+                  pickerSent.posted
+                    ? 'border-emerald-700 bg-emerald-900/60 text-emerald-200'
+                    : 'border-amber-700 bg-amber-900/60 text-amber-200'
+                }`}
+              >
+                {pickerSent.posted
+                  ? `Sent: ${pickerSent.label} — you can close this tab.`
+                  : 'Your Locate sprint tab could not be reached (it may have been closed).'}
+              </span>
+            ) : null}
+          </div>
         </section>
       ) : null}
 
@@ -345,6 +397,20 @@ const StudyDocumentPage = ({
                         />
                         Select
                       </label>
+                      {pickerContext ? (
+                        <button
+                          type="button"
+                          onClick={() =>
+                            sendPickerPick(
+                              component.sourceKey,
+                              `${component.label}${component.heading ? ` ${component.heading}` : ''}`,
+                            )
+                          }
+                          className="rounded border border-sky-600 bg-sky-900 px-2 py-1 text-xs font-semibold text-sky-100 hover:bg-sky-800"
+                        >
+                          Select this provision
+                        </button>
+                      ) : null}
                     </div>
                     {referenceOnly ? (
                       <div className="mt-3 rounded border border-amber-800 bg-amber-950/30 p-3 text-xs text-amber-200">
@@ -366,6 +432,15 @@ const StudyDocumentPage = ({
                               {highlight(subsection.label, normalizedQuery)}
                             </div>
                             <div className="mt-1 whitespace-pre-wrap">{highlight(subsection.text, normalizedQuery)}</div>
+                            {pickerContext ? (
+                              <button
+                                type="button"
+                                onClick={() => sendPickerPick(subsection.sourceKey, subsection.label)}
+                                className="mt-2 rounded border border-sky-600 bg-sky-900 px-2 py-1 text-xs font-semibold text-sky-100 hover:bg-sky-800"
+                              >
+                                Select this provision
+                              </button>
+                            ) : null}
                           </div>
                         ))}
                       </div>

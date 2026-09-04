@@ -1,6 +1,10 @@
 import { useEffect, useMemo, useState } from 'react';
 import { highlightLibraryMatch } from '../studyLibrarySearch';
 import { createStudySearchService } from '../search/studySearchService';
+import {
+  parseExamPrepLocatePickerSearch,
+  postExamPrepLocatePick,
+} from '../examPrep/examPrepLocatePicker';
 import type {
   StudySearchDiagnostics,
   StudySearchResultSummary,
@@ -23,6 +27,8 @@ type StudyLibraryProps = {
   onOpenProvision: (_documentId: string, _sourceKey: string) => void;
   onDeleteUnit: (_unitId: string) => void;
   onDuplicateUnit: (_unitId: string) => void;
+  /** SPA navigation; required to keep an active picker context in the URL. */
+  onNavigate?: (_path: string) => void;
   onLoadLegalDocumentComponentSummary: (_documentId: string) => Promise<{
     documentId: string;
     componentCount: number;
@@ -123,6 +129,7 @@ const StudyLibrary = ({
   onOpenProvision,
   onDeleteUnit,
   onDuplicateUnit,
+  onNavigate,
   onLoadLegalDocumentComponentSummary,
 }: StudyLibraryProps) => {
   const [tab, setTab] = useState<LibraryTab>(() =>
@@ -148,6 +155,36 @@ const StudyLibrary = ({
     Record<string, Awaited<ReturnType<StudyLibraryProps['onLoadLegalDocumentComponentSummary']>>>
   >({});
   const searchService = useMemo(() => createStudySearchService(), []);
+
+  // Ephemeral Locate picker context (present only when this tab was opened
+  // from an active Locate sprint). Pure URL state — never persisted.
+  const pickerContext = useMemo(
+    () => parseExamPrepLocatePickerSearch(window.location.search),
+    [],
+  );
+  const [pickerNotice, setPickerNotice] = useState<{
+    kind: 'sent' | 'unreachable' | null;
+    label?: string;
+  }>({ kind: null });
+
+  const pickerSearch = window.location.search;
+
+  /**
+   * Inserts the picker query BEFORE any hash so provision deep links keep
+   * `window.location.search` populated in the document reader (a query placed
+   * after `#` would land in the hash and silently drop the picker context).
+   */
+  const withPickerSearch = (path: string): string => {
+    const hashIndex = path.indexOf('#');
+    if (hashIndex === -1) return `${path}${pickerSearch}`;
+    return `${path.slice(0, hashIndex)}${pickerSearch}${path.slice(hashIndex)}`;
+  };
+
+  /** Opens a Study page inside the picker tab, preserving the picker query. */
+  const openInPickerTab = (path: string): void => {
+    if (!onNavigate) return;
+    onNavigate(withPickerSearch(path));
+  };
 
   const legalById = useMemo(
     () => new Map(data.legalDocuments.map((document) => [document.id, document])),
@@ -257,12 +294,42 @@ const StudyLibrary = ({
   useEffect(() => setActiveSearchIndex(0), [debouncedSearchQuery]);
 
   const openSearchResult = (result: StudySearchResultSummary) => {
-    if (result.entityType === 'document' && result.documentId) onSelectDocument(result.documentId);
+    if (result.entityType === 'document' && result.documentId) {
+      if (pickerContext) openInPickerTab(`/study/document/${encodeURIComponent(result.documentId)}`);
+      else onSelectDocument(result.documentId);
+    }
     if (result.entityType === 'official-provision' && result.documentId && result.sourceKey) {
-      onOpenProvision(result.documentId, result.sourceKey);
+      if (pickerContext) {
+        openInPickerTab(
+          `/study/document/${encodeURIComponent(result.documentId)}#${encodeURIComponent(result.sourceKey)}`,
+        );
+      } else {
+        onOpenProvision(result.documentId, result.sourceKey);
+      }
     }
     if ((result.entityType === 'study-unit' || result.entityType === 'custom-unit') && result.unitId)
       onEditUnit(result.unitId);
+  };
+
+  /**
+   * Picker-mode action: instantly send the objective pick from a search result.
+   * Documents post a document-level pick (`sourceKey: null`); official
+   * provisions post their exact sourceKey. Never rendered in normal mode.
+   */
+  const sendSearchPickerPick = (result: StudySearchResultSummary, label: string): void => {
+    if (!pickerContext) return;
+    if (result.entityType === 'document' && result.documentId) {
+      const posted = postExamPrepLocatePick(pickerContext.token, result.documentId, null);
+      setPickerNotice({ kind: posted ? 'sent' : 'unreachable', label });
+    }
+    if (result.entityType === 'official-provision' && result.documentId && result.sourceKey) {
+      const posted = postExamPrepLocatePick(
+        pickerContext.token,
+        result.documentId,
+        result.sourceKey,
+      );
+      setPickerNotice({ kind: posted ? 'sent' : 'unreachable', label });
+    }
   };
 
   const renderHighlighted = (text: string) =>
@@ -333,13 +400,45 @@ const StudyLibrary = ({
             Source documents and study units are managed separately.
           </p>
         </div>
-        <button
-          onClick={onCreateCustomUnit}
-          className="rounded bg-emerald-600 px-3 py-2 text-sm font-medium text-white"
-        >
-          New Custom Study Unit
-        </button>
+        {!pickerContext ? (
+          <button
+            onClick={onCreateCustomUnit}
+            className="rounded bg-emerald-600 px-3 py-2 text-sm font-medium text-white"
+          >
+            New Custom Study Unit
+          </button>
+        ) : null}
       </div>
+      {pickerContext ? (
+        <section className="rounded border border-sky-700 bg-sky-950/60 p-3">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <div className="min-w-0">
+              <p className="text-xs font-semibold uppercase tracking-wide text-sky-300">
+                Locate picker — find the controlling provision
+              </p>
+              <p className="mt-1 text-sm text-sky-100">{pickerContext.prompt}</p>
+              <p className="mt-1 text-[11px] text-slate-400">
+                Choose{' '}
+                <span className="font-semibold text-sky-200">Use this provision</span> on a search
+                result, or open a document and pick{' '}
+                <span className="font-semibold text-sky-200">Select this provision</span> next to
+                the exact provision. Your Locate sprint checks the selection automatically — the
+                expected location stays hidden here.
+              </p>
+            </div>
+            {pickerNotice.kind === 'sent' ? (
+              <span className="rounded border border-emerald-700 bg-emerald-900/60 px-2 py-1 text-xs font-semibold text-emerald-200">
+                Sent: {pickerNotice.label}
+              </span>
+            ) : null}
+            {pickerNotice.kind === 'unreachable' ? (
+              <span className="rounded border border-amber-700 bg-amber-900/60 px-2 py-1 text-xs font-semibold text-amber-200">
+                Your Locate sprint tab could not be reached (it may have been closed).
+              </span>
+            ) : null}
+          </div>
+        </section>
+      ) : null}
       <div className="flex flex-wrap gap-2">
         {(['documents', 'units'] as const).map((value) => (
           <button
@@ -395,6 +494,14 @@ const StudyLibrary = ({
           {searchStatus.phase === 'building' || searchStatus.phase === 'loading' ? (
             <span className="px-2 py-1 text-xs text-slate-500">{searchStatus.message}</span>
           ) : null}
+          {searchStatus.phase === 'error' ? (
+            <span
+              role="alert"
+              className="rounded border border-amber-700 bg-amber-950/40 px-2 py-1 text-xs text-amber-200"
+            >
+              Search unavailable: {searchStatus.message}. Try again later.
+            </span>
+          ) : null}
         </div>
         {import.meta.env.DEV && searchDiagnostics ? (
           <div className="mt-2 text-xs text-slate-600">
@@ -418,26 +525,50 @@ const StudyLibrary = ({
                   <div className="space-y-2">
                     {results.map((result) => {
                       const flatIndex = searchResults.findIndex((entry) => entry.id === result.id);
+                      const pickerSelectable =
+                        pickerContext &&
+                        (result.entityType === 'document' ||
+                          result.entityType === 'official-provision');
+                      const actionLabel =
+                        result.entityType === 'document' ? 'Use this document' : 'Use this provision';
                       return (
-                        <button
+                        <div
                           key={result.id}
-                          onClick={() => openSearchResult(result)}
-                          className={`w-full rounded border p-3 text-left ${
+                          className={`rounded border ${
                             activeSearchIndex === flatIndex
                               ? 'border-emerald-500 bg-emerald-950/20'
                               : 'border-slate-800 bg-slate-900'
                           }`}
                         >
-                          <div className="text-sm font-medium text-slate-100">
-                            {renderHighlighted(result.title)}
-                          </div>
-                          <div className="mt-1 text-xs text-slate-500">{result.subtitle}</div>
-                          {result.snippet ? (
-                            <div className="mt-2 text-xs text-slate-300">
-                              {renderHighlighted(result.snippet)}
+                          <button
+                            onClick={() => openSearchResult(result)}
+                            className="w-full p-3 text-left"
+                          >
+                            <div className="text-sm font-medium text-slate-100">
+                              {renderHighlighted(result.title)}
+                            </div>
+                            <div className="mt-1 text-xs text-slate-500">{result.subtitle}</div>
+                            {result.snippet ? (
+                              <div className="mt-2 text-xs text-slate-300">
+                                {renderHighlighted(result.snippet)}
+                              </div>
+                            ) : null}
+                          </button>
+                          {pickerSelectable ? (
+                            <div className="flex flex-wrap items-center justify-between gap-2 border-t border-slate-800 px-3 py-2">
+                              <span className="text-[11px] text-slate-500">
+                                In picker mode — send this choice straight to your Locate sprint.
+                              </span>
+                              <button
+                                type="button"
+                                onClick={() => sendSearchPickerPick(result, actionLabel)}
+                                className="rounded border border-sky-600 bg-sky-900 px-2 py-1 text-xs font-semibold text-sky-100 hover:bg-sky-800"
+                              >
+                                {actionLabel}
+                              </button>
                             </div>
                           ) : null}
-                        </button>
+                        </div>
                       );
                     })}
                   </div>
@@ -482,7 +613,13 @@ const StudyLibrary = ({
               return (
                 <button
                   key={document.id}
-                  onClick={() => onSelectDocument(document.id)}
+                  onClick={() => {
+                    if (pickerContext) {
+                      openInPickerTab(`/study/document/${encodeURIComponent(document.id)}`);
+                    } else {
+                      onSelectDocument(document.id);
+                    }
+                  }}
                   className="rounded border border-slate-800 bg-slate-900 p-4 text-left hover:border-emerald-700"
                 >
                   <div className="flex items-start justify-between gap-3">

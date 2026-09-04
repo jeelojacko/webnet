@@ -15,6 +15,10 @@ import type { ExamCurriculumUnit } from '../../examCurriculum/examCurriculumType
 import { EXAM_PREP_DOCUMENT_TITLES } from '../examPrepDocTitles';
 import { examPrepTierLabel } from '../examPrepFormat';
 import {
+  examPrepRelatedUnitTitle,
+  examPrepUnitCardId,
+} from '../examPrepRelatedUnits';
+import {
   EXAM_PREP_DEPTH_BADGES,
   EXAM_PREP_OPEN_SOURCE_BUTTON,
   EXAM_PREP_UNIT_TYPE_BADGE,
@@ -28,6 +32,8 @@ export type ExamUnitCardProps = {
   onOpenProvision: (_documentId: string, _sourceKey: string) => void;
   studied?: boolean;
   onToggleStudied?: () => void;
+  /** In-Learn navigation to a related unit card (title chips). */
+  onOpenRelatedUnit?: (_unitId: string) => void;
 };
 
 type SourceAnchor = ExamCurriculumUnit['sourceAnchors'][number];
@@ -74,6 +80,7 @@ export const ExamUnitCard = ({
   onOpenProvision,
   studied = false,
   onToggleStudied,
+  onOpenRelatedUnit,
 }: ExamUnitCardProps) => {
   const multiDocument = unit.sourceDocumentIds.length > 1;
   const anchorCount = unit.sourceAnchors.length;
@@ -98,7 +105,11 @@ export const ExamUnitCard = ({
       });
   }
   return (
-    <section className="rounded border border-slate-800 bg-slate-900 p-3">
+    <section
+      id={examPrepUnitCardId(unit.id)}
+      tabIndex={-1}
+      className="rounded border border-slate-800 bg-slate-900 p-3 outline-none"
+    >
       <div className="flex flex-wrap items-center gap-2">
         <span className="font-mono text-xs text-emerald-400">{unit.id}</span>
         <EXAM_PREP_UNIT_TYPE_BADGE unitType={unit.unitType} />
@@ -239,6 +250,27 @@ export const ExamUnitCard = ({
           </div>
         )}
       </div>
+      {unit.relatedUnitIds.length > 0 ? (
+        <div className="mt-2">
+          <span className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">
+            Related units
+          </span>
+          <div className="mt-1 flex flex-wrap gap-1">
+            {unit.relatedUnitIds.map((relatedId) => (
+              <button
+                key={relatedId}
+                type="button"
+                onClick={() => onOpenRelatedUnit?.(relatedId)}
+                className="inline-flex max-w-full items-center gap-1 rounded-full border border-slate-700 bg-slate-800 px-2 py-0.5 text-[11px] text-sky-200 hover:border-sky-600 hover:bg-sky-950"
+                title={`Open related unit ${relatedId}`}
+              >
+                <span className="font-mono text-[10px] text-sky-400">{relatedId}</span>
+                <span className="truncate">{examPrepRelatedUnitTitle(relatedId)}</span>
+              </button>
+            ))}
+          </div>
+        </div>
+      ) : null}
     </section>
   );
 };

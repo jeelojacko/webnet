@@ -11,17 +11,22 @@
 // Start copy is honest about scope: targets may be provision-pinned (390) or
 // document-level (62), and the sprint samples the full exam curriculum.
 
-import { useEffect, useState } from 'react';
-import { Eye, GraduationCap, Timer } from 'lucide-react';
+import { useEffect, useRef, useState } from 'react';
+import { Eye, GraduationCap, Target, Timer } from 'lucide-react';
 import { EXAM_PREP_DOCUMENT_TITLES } from '../examPrepDocTitles';
 import { EXAM_PREP_OPEN_SOURCE_BUTTON } from './examPrepBits';
 import { EXAM_PREP_LOCATE_TASKS } from '../examPrepLocateTasks';
 import { buildExamPrepLocateQueue } from '../examPrepLocateQueue';
 import { buildLocateAttempt } from '../examPrepAttemptBuilders';
 import { examPrepProvisionLabel, formatExamDrillTime } from '../examPrepFormat';
+import {
+  buildExamPrepLocatePickerPath,
+  createExamPrepLocatePickerToken,
+  isExamPrepLocatePickMessage,
+  locatePickMatchesExpected,
+} from '../examPrepLocatePicker';
+import { openStudyUrlNewTab, STUDY_LIBRARY_PATH } from '../../studyWindow';
 import type { ExamPrepAttempt, ExamPrepLocateTask } from '../examPrepTypes';
-
-export const EXAM_PREP_STATUTE_LIBRARY_PATH = '/study/library';
 
 export type ExamPrepLocateViewProps = {
   attempts: ExamPrepAttempt[];
@@ -49,6 +54,17 @@ export const ExamPrepLocateView = ({
   const [savePending, setSavePending] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
   const [sessionFound, setSessionFound] = useState(0);
+  // Ephemeral Locate picker handoff: nonce token of the picker tab opened for
+  // the CURRENT un-checked item. Objective picks are matched against it; a
+  // stale picker tab from a previous item can never affect the sprint.
+  const [pickerToken, setPickerToken] = useState<string | null>(null);
+  const savePendingRef = useRef(savePending);
+  savePendingRef.current = savePending;
+  const checkedRef = useRef(checked);
+  checkedRef.current = checked;
+  // Guards the objective-pick path against duplicate postMessage deliveries
+  // racing ahead of the state update that nulls the token.
+  const objectiveInFlightRef = useRef(false);
 
   const previewQueue = buildExamPrepLocateQueue(attempts);
   const item = phase === 'active' && session ? session[index] ?? null : null;
@@ -78,6 +94,8 @@ export const ExamPrepLocateView = ({
     setElapsed(0);
     setChecked(false);
     setSaveError(null);
+    setPickerToken(null);
+    objectiveInFlightRef.current = false;
     setPhase('active');
   };
 
@@ -97,6 +115,56 @@ export const ExamPrepLocateView = ({
     setSaveError(null);
   };
 
+  /** Opens the ephemeral Locate picker for the current un-checked item. */
+  const handleOpenPicker = () => {
+    if (!item || savePending) return;
+    const token = createExamPrepLocatePickerToken();
+    const pickerWindow = openStudyUrlNewTab(buildExamPrepLocatePickerPath(item.prompt, token));
+    if (!pickerWindow) {
+      setSaveError('Could not open the Locate picker.');
+      return;
+    }
+    setSaveError(null);
+    setPickerToken(token);
+  };
+
+  /**
+   * Objective pick arrived from the ephemeral picker tab. Freeze the timer,
+   * compare against the frozen expected location, and persist the result
+   * through the same immutable attempt path the manual buttons use.
+   */
+  const handleObjectivePick = async (message: {
+    documentId: string;
+    sourceKey: string | null;
+  }) => {
+    if (!item || savePendingRef.current || checkedRef.current || objectiveInFlightRef.current)
+      return;
+    objectiveInFlightRef.current = true;
+    try {
+      setPickerToken(null);
+      setChecked(true);
+      const result = locatePickMatchesExpected(item, message) ? 'found' : 'missed';
+      await handleResult(result);
+    } finally {
+      objectiveInFlightRef.current = false;
+    }
+  };
+
+  // Listen for same-origin pick messages only while an item is active with an
+  // open picker tab. The token guards against stale tabs from earlier items.
+  useEffect(() => {
+    if (phase !== 'active' || !item || !pickerToken) return;
+    const handleMessage = (event: MessageEvent) => {
+      if (event.origin !== window.location.origin) return;
+      if (!isExamPrepLocatePickMessage(event.data)) return;
+      if (event.data.token !== pickerToken) return;
+      void handleObjectivePick(event.data);
+    };
+    window.addEventListener('message', handleMessage);
+    return () => window.removeEventListener('message', handleMessage);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [item?.id, phase, pickerToken]);
+
   const handleResult = async (result: 'found' | 'missed') => {
     if (!item || savePending) return;
     setSavePending(true);
@@ -110,6 +178,7 @@ export const ExamPrepLocateView = ({
     });
     try {
       await onSaveExamPrepAttempt(attempt);
+      setPickerToken(null);
       // advance through the FROZEN session only
       if (result === 'found') setSessionFound((count) => count + 1);
       const nextIndex = index + 1;
@@ -229,12 +298,16 @@ export const ExamPrepLocateView = ({
               <div className="flex flex-wrap gap-2">
                 <button
                   type="button"
+                  onClick={handleOpenPicker}
+                  className="inline-flex items-center gap-1.5 rounded border border-emerald-600 bg-emerald-900 px-3 py-1.5 text-xs font-semibold text-emerald-100 hover:bg-emerald-800"
+                >
+                  <Target size={13} />
+                  Open Locate Picker
+                </button>
+                <button
+                  type="button"
                   onClick={() => {
-                    const libraryWindow = window.open(
-                      EXAM_PREP_STATUTE_LIBRARY_PATH,
-                      '_blank',
-                      'noopener,noreferrer',
-                    );
+                    const libraryWindow = openStudyUrlNewTab(STUDY_LIBRARY_PATH);
                     if (!libraryWindow) setSaveError('Could not open the Statute Library.');
                   }}
                   className="rounded border border-sky-700 bg-sky-900 px-3 py-1.5 text-xs font-semibold text-sky-100 hover:bg-sky-800"
@@ -244,11 +317,17 @@ export const ExamPrepLocateView = ({
                 <button
                   type="button"
                   onClick={handleCheckAnswer}
-                  className="rounded border border-emerald-600 bg-emerald-900 px-3 py-1.5 text-xs font-semibold text-emerald-100 hover:bg-emerald-800"
+                  className="rounded border border-slate-600 bg-slate-800 px-3 py-1.5 text-xs font-semibold text-slate-200 hover:bg-slate-700"
                 >
                   Check Answer
                 </button>
               </div>
+              {pickerToken ? (
+                <p className="text-[11px] italic text-slate-500">
+                  Locate picker open — your selection is checked automatically when you choose a
+                  document or provision in the picker tab.
+                </p>
+              ) : null}
             </>
           ) : (
             <div className="space-y-3">
@@ -276,6 +355,7 @@ export const ExamPrepLocateView = ({
                       sourceKey={item.expectedSourceKey}
                       label={`Open exact provision · ${examPrepProvisionLabel(item.expectedSourceKey)}`}
                       onOpenProvision={onOpenProvision}
+                      newTab
                     />
                   </div>
                 ) : (

@@ -1,3 +1,5 @@
+import { STUDY_DB_NAME, STUDY_DB_VERSION, STUDY_SCHEMA_VERSION } from './studyDbConfig';
+import { StudyDocumentComponentCache } from './studyDocumentCache';
 import { createSeedStudyData, createDefaultStudySettings } from './studySeed';
 import { createStudyFsrsConfigRecord, migrateStudyFsrsSchedule } from './fsrs/studyFsrsMigration';
 import {
@@ -46,9 +48,10 @@ import {
   type ExamPrepStoreName,
 } from './examPrep/examPrepStorageConfig';
 
-export const STUDY_DB_NAME = 'webnet.study.v1';
-export const STUDY_DB_VERSION = 10;
-export const STUDY_SCHEMA_VERSION = 10;
+// Public re-exports preserved so existing consumers (and tests) importing
+// these constants from `studyStorage` keep working; the canonical values live
+// in `studyDbConfig.ts`.
+export { STUDY_DB_NAME, STUDY_DB_VERSION, STUDY_SCHEMA_VERSION } from './studyDbConfig';
 
 const STORES = [
   'documents',
@@ -538,7 +541,11 @@ const saveAttemptProgressTransaction = async ({
   }
 };
 
-export const createStudyStorage = (): StudyStorage => ({
+export const createStudyStorage = (): StudyStorage => {
+  // Per-instance perf cache for full-document component reads; invalidated by
+  // every mutation that rewrites the `legalComponents` store.
+  const documentComponentCache = new StudyDocumentComponentCache();
+  return {
   async loadAll() {
     if (!hasIndexedDb()) return createSeedStudyData(new Date().toISOString());
     const db = await openStudyDatabase();
@@ -616,13 +623,15 @@ export const createStudyStorage = (): StudyStorage => ({
   },
   async getLegalComponentsByDocument(documentId) {
     if (!hasIndexedDb()) return [];
-    const db = await openStudyDatabase();
-    try {
-      const records = await readByIndex(db, 'legalComponents', 'byDocumentId', documentId);
-      return records.map(legalComponentFromRecord);
-    } finally {
-      db.close();
-    }
+    return documentComponentCache.get(documentId, async (id) => {
+      const db = await openStudyDatabase();
+      try {
+        const records = await readByIndex(db, 'legalComponents', 'byDocumentId', id);
+        return records.map(legalComponentFromRecord);
+      } finally {
+        db.close();
+      }
+    });
   },
   async getLegalComponentsBySourceKeys(documentId, sourceKeys) {
     if (!hasIndexedDb() || sourceKeys.length === 0) return [];
@@ -1066,6 +1075,9 @@ export const createStudyStorage = (): StudyStorage => ({
       putMany(transaction, 'examPrepSettings', next.examPrepSettings);
       putMany(transaction, 'examPrepMockSessions', next.examPrepMockSessions);
       await transactionDone(transaction);
+      // Invalidate BEFORE any reader can serve stale components from the just
+      // cleared/rewritten store (also covers delete-all + import-snapshot).
+      documentComponentCache.invalidateAll();
     } finally {
       db.close();
     }
@@ -1091,10 +1103,12 @@ export const createStudyStorage = (): StudyStorage => ({
       putMany(transaction, 'legalComponents', snapshot.legalComponents.map(legalComponentRecord));
       putMany(transaction, 'importHistory', snapshot.importHistory);
       await transactionDone(transaction);
+      documentComponentCache.invalidateAll();
       await clearDerivedSearchStores(db);
       return snapshot;
     } finally {
       db.close();
     }
   },
-});
+  };
+};

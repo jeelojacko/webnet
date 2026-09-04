@@ -12,6 +12,7 @@
 import { useState } from 'react';
 import { Eye, GraduationCap } from 'lucide-react';
 import { EXAM_PREP_DOCUMENT_TITLES } from '../examPrepDocTitles';
+import { EXAM_PREP_RECOGNITION_ASK, EXAM_PREP_RECOGNITION_PRACTICE_COPY } from '../examPrepConstants';
 import { EXAM_PREP_RECOGNITION_TASKS } from '../examPrepRecognitionTasks';
 import { buildExamPrepRecognitionQueue } from '../examPrepRecognitionQueue';
 import { buildRecognitionAttempt } from '../examPrepAttemptBuilders';
@@ -155,7 +156,7 @@ export const ExamPrepRecognitionView = ({
           <p className="font-semibold text-white">Recognition Sprint</p>
           <div className="mt-1 space-y-1 text-xs text-slate-400">
             <p>{`${previewQueue.length} questions.`}</p>
-            <p>Practice identifying which law or legal topic a fact or cue points to.</p>
+            <p>{EXAM_PREP_RECOGNITION_PRACTICE_COPY}</p>
             <p>The expected topic and likely source documents remain hidden until Reveal.</p>
             <p>This sprint samples the full exam curriculum.</p>
           </div>
@@ -200,9 +201,7 @@ export const ExamPrepRecognitionView = ({
               <p className="cue rounded border border-slate-700 bg-slate-900 p-3 text-sm text-emerald-100">
                 {item?.cue}
               </p>
-              <p className="text-xs italic text-slate-500">
-                Which law or legal topic should this make you think of?
-              </p>
+              <p className="text-xs italic text-slate-500">{EXAM_PREP_RECOGNITION_ASK}</p>
               <textarea
                 value={answer}
                 onChange={(event) => setAnswer(event.target.value)}

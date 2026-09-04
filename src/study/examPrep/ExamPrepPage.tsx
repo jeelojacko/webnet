@@ -220,6 +220,7 @@ export const ExamPrepPage = ({
           attempts={data.examPrepAttempts}
           onOpenProvision={onOpenProvision}
           onSaveDrillAttempt={onSaveExamPrepAttempt}
+          onNavigate={onNavigate}
         />
       )}
       {view === 'mock' && (

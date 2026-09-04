@@ -27,6 +27,7 @@ import {
   writeSearchMetadata,
 } from './studySearchPersistence';
 import { buildMatchedSnippet, exactSearchBoost } from './studySearchRanking';
+import { STUDY_DB_VERSION, STUDY_SCHEMA_VERSION } from '../studyDbConfig';
 import type { StudySearchWorkerRequest, StudySearchWorkerResponse } from './studySearchMessages';
 import type { StudySearchRecord, StudySearchResultSummary, StudySearchScope } from './studySearchTypes';
 
@@ -45,7 +46,12 @@ type StoreName =
   | 'importHistory'
   | 'aiAuthoringRuns'
   | 'aiStudyMapProposals'
-  | 'aiUnitProposals';
+  | 'aiUnitProposals'
+  | 'examPrepUnitProgress'
+  | 'examPrepRecallProgress'
+  | 'examPrepAttempts'
+  | 'examPrepSettings'
+  | 'examPrepMockSessions';
 
 type WorkerState = {
   officialIndex: MiniSearch<StudySearchRecord> | null;
@@ -86,22 +92,45 @@ const readStore = async <T>(db: IDBDatabase, storeName: StoreName): Promise<T[]>
 };
 
 const readSnapshotWithoutLegalText = async (db: IDBDatabase): Promise<StudyDataSnapshot> => {
-  const [documents, units, prompts, concepts, rubrics, progress, attempts, drafts, settings, legalDocuments, importHistory] =
-    await Promise.all([
-      readStore(db, 'documents'),
-      readStore(db, 'units'),
-      readStore(db, 'prompts'),
-      readStore(db, 'concepts'),
-      readStore(db, 'rubrics'),
-      readStore(db, 'progress'),
-      readStore(db, 'attempts'),
-      readStore(db, 'drafts'),
-      readStore(db, 'settings'),
-      readStore(db, 'legalDocuments'),
-      readStore(db, 'importHistory'),
-    ]);
+  const [
+    documents,
+    units,
+    prompts,
+    concepts,
+    rubrics,
+    progress,
+    attempts,
+    drafts,
+    settings,
+    legalDocuments,
+    importHistory,
+    examPrepUnitProgress,
+    examPrepRecallProgress,
+    examPrepAttempts,
+    examPrepSettings,
+    examPrepMockSessions,
+  ] = await Promise.all([
+    readStore(db, 'documents'),
+    readStore(db, 'units'),
+    readStore(db, 'prompts'),
+    readStore(db, 'concepts'),
+    readStore(db, 'rubrics'),
+    readStore(db, 'progress'),
+    readStore(db, 'attempts'),
+    readStore(db, 'drafts'),
+    readStore(db, 'settings'),
+    readStore(db, 'legalDocuments'),
+    readStore(db, 'importHistory'),
+    readStore(db, 'examPrepUnitProgress'),
+    readStore(db, 'examPrepRecallProgress'),
+    readStore(db, 'examPrepAttempts'),
+    readStore(db, 'examPrepSettings'),
+    readStore(db, 'examPrepMockSessions'),
+  ]);
   return {
-    schemaVersion: 8,
+    // v10-shaped snapshot (schema + the five Exam Prep stores) so the worker's
+    // study content revision never reflects an outdated shape.
+    schemaVersion: STUDY_SCHEMA_VERSION,
     exportedAt: new Date().toISOString(),
     documents,
     units,
@@ -118,11 +147,11 @@ const readSnapshotWithoutLegalText = async (db: IDBDatabase): Promise<StudyDataS
     aiAuthoringRuns: [],
     aiStudyMapProposals: [],
     aiUnitProposals: [],
-    examPrepUnitProgress: [],
-    examPrepRecallProgress: [],
-    examPrepAttempts: [],
-    examPrepSettings: [],
-    examPrepMockSessions: [],
+    examPrepUnitProgress,
+    examPrepRecallProgress,
+    examPrepAttempts,
+    examPrepSettings,
+    examPrepMockSessions,
   } as StudyDataSnapshot;
 };
 
@@ -187,6 +216,9 @@ const metadataIsCurrent = (
   Boolean(
     metadata &&
       metadata.schemaVersion === SEARCH_INDEX_SCHEMA_VERSION &&
+      // DB-version drift guard: the index is current only when it was built
+      // against the SAME IndexedDB open version the Study storage layer uses.
+      metadata.dbVersion === STUDY_DB_VERSION &&
       metadata.indexVersion === SEARCH_INDEX_VERSION &&
       metadata.engine === 'minisearch' &&
       metadata.engineVersion === MINISEARCH_VERSION &&
@@ -239,6 +271,7 @@ const loadOrBuildIndexes = async (requestId: string, forceRebuild = false): Prom
     await writeSearchArtifact(db, 'study', serializeMiniSearch(study.index));
     await writeSearchMetadata(db, {
       schemaVersion: SEARCH_INDEX_SCHEMA_VERSION,
+      dbVersion: STUDY_DB_VERSION,
       indexVersion: SEARCH_INDEX_VERSION,
       engine: 'minisearch',
       engineVersion: MINISEARCH_VERSION,
@@ -279,6 +312,7 @@ const rebuildStudyIndexOnly = async (requestId: string): Promise<void> => {
     await writeSearchMetadata(db, {
       ...metadata,
       schemaVersion: SEARCH_INDEX_SCHEMA_VERSION,
+      dbVersion: STUDY_DB_VERSION,
       indexVersion: SEARCH_INDEX_VERSION,
       engineVersion: MINISEARCH_VERSION,
       studyIndex: {

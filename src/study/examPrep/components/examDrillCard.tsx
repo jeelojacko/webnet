@@ -18,6 +18,7 @@ import { DRILL_DIFFICULTY_LABELS, formatExamDrillTime } from '../examPrepFormat'
 import { buildExamPrepDrillStats } from '../examPrepDrillStats';
 import { formatExamPrepLocalDate } from '../examPrepLocalDate';
 import { buildDrillAttempt } from '../examPrepAttemptBuilders';
+import { examPrepRelatedUnitTitle, examPrepUnitCardId } from '../examPrepRelatedUnits';
 import {
   EXAM_PREP_DRILL_STATUS_LABELS,
   examPrepDrillReadinessReason,
@@ -31,6 +32,8 @@ export type ExamDrillCardProps = {
   /** Current attempt history for this drill's readiness summary. */
   attempts?: ExamPrepAttempt[];
   onSaveAttempt?: (_attempt: ExamPrepDrillAttempt) => Promise<void>;
+  /** SPA navigation to the Learn page (related-unit chips). */
+  onNavigate?: (_path: string) => void;
 };
 
 const createAttemptId = (taskId: string): string =>
@@ -41,6 +44,7 @@ export const ExamDrillCard = ({
   onOpenProvision,
   attempts,
   onSaveAttempt,
+  onNavigate,
 }: ExamDrillCardProps) => {
   const [phase, setPhase] = useState<'start' | 'active' | 'reveal'>('start');
   const [elapsed, setElapsed] = useState(0);
@@ -251,6 +255,7 @@ export const ExamDrillCard = ({
                       sourceKey={lookup.sourceKey}
                       label={lookup.sourceKey.split(':').pop() ?? lookup.sourceKey}
                       onOpenProvision={onOpenProvision}
+                      newTab
                     />
                   ) : null}
                 </li>
@@ -277,10 +282,23 @@ export const ExamDrillCard = ({
           )}
           {unit.relatedUnitIds.length > 0 && (
             <div className="rounded border border-slate-700 bg-slate-800/50 p-2">
-              <span className="font-semibold uppercase tracking-wide text-slate-400">Related</span>
-              <p className="mt-1 font-mono text-[11px] text-slate-300">
-                {unit.relatedUnitIds.join(', ')}
-              </p>
+              <span className="font-semibold uppercase tracking-wide text-slate-400">
+                Related units
+              </span>
+              <div className="mt-1 flex flex-wrap gap-1">
+                {unit.relatedUnitIds.map((relatedId) => (
+                  <button
+                    key={relatedId}
+                    type="button"
+                    onClick={() => onNavigate?.(`/study/learn#${examPrepUnitCardId(relatedId)}`)}
+                    className="inline-flex max-w-full items-center gap-1 rounded-full border border-slate-700 bg-slate-900 px-2 py-0.5 text-[11px] text-sky-200 hover:border-sky-600 hover:bg-sky-950"
+                    title={`Open related unit ${relatedId} in Learn`}
+                  >
+                    <span className="font-mono text-[10px] text-sky-400">{relatedId}</span>
+                    <span className="truncate">{examPrepRelatedUnitTitle(relatedId)}</span>
+                  </button>
+                ))}
+              </div>
             </div>
           )}
           {onSaveAttempt ? (

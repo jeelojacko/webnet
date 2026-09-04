@@ -186,7 +186,7 @@ describe('Exam Prep Phase 2.5 views', () => {
       expect(text).toContain('Suggested study flow');
       expect(text).toContain('Understand the topic and where its law lives.');
       expect(text).toContain('Memorize only the 57 curated REMEMBER rules.');
-      expect(text).toContain('Practice identifying which law/topic applies.');
+      expect(text).toContain('Practice identifying which law or legal topic applies.');
       expect(text).toContain('Practice finding the correct statute or provision.');
       expect(text).toContain('Combine recognition, retrieval, and application.');
       expect(text).toContain('What these measure');
@@ -406,7 +406,7 @@ describe('Exam Prep Phase 2.5 views', () => {
       );
       const text = bodyText();
       expect(text).toContain('10 questions.');
-      expect(text).toContain('Practice identifying which law or legal topic a fact or cue points to.');
+      expect(text).toContain('Practice identifying which law or legal topic applies.');
       expect(text).toContain('The expected topic and likely source documents remain hidden until Reveal.');
       expect(text).toContain('This sprint samples the full exam curriculum.');
       expect(text).toContain('Start Recognition Sprint');

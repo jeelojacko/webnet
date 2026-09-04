@@ -5,11 +5,12 @@
 // grouping, REMEMBER/LOOK HERE layout, Navigation display, anchor collapse,
 // and source deep links are preserved from the Exam Curriculum browser.
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { MapPin } from 'lucide-react';
 import type { ExamCurriculumUnit } from '../../examCurriculum/examCurriculumTypes';
 import { EXAM_PREP_LEARN_UNITS } from '../examPrepRecallTasks';
 import { EXAM_PREP_DOCUMENT_TITLES } from '../examPrepDocTitles';
+import { examPrepUnitCardId } from '../examPrepRelatedUnits';
 import type { ExamPrepUnitProgress } from '../examPrepTypes';
 import { selectStudiedForUnit } from '../examPrepSelectors';
 import { ExamUnitCard } from './examUnitCard';
@@ -53,6 +54,32 @@ export const ExamPrepLearnView = ({
   onToggleUnitStudied,
 }: ExamPrepLearnViewProps) => {
   const [filter, setFilter] = useState<LearnFilter>('all');
+
+  /**
+   * Scrolls a unit card into view, clearing any tier filter that would hide
+   * it first. Used by related-unit title chips (in-Learn) and by the stable
+   * `#exam-unit-<id>` hash anchors when Learn is entered from another route
+   * (e.g. a Lookup Drill's related chip or a recalled bookmark).
+   */
+  const scrollToUnitCard = (unitId: string) => {
+    setFilter('all');
+    window.setTimeout(() => {
+      const element = document.getElementById(examPrepUnitCardId(unitId));
+      element?.scrollIntoView?.({ behavior: 'smooth', block: 'start' });
+      element?.focus?.({ preventScroll: true });
+    }, 0);
+  };
+
+  useEffect(() => {
+    const scrollToHashTarget = () => {
+      const hash = decodeURIComponent(window.location.hash.replace(/^#/, ''));
+      if (!hash.startsWith('exam-unit-')) return;
+      scrollToUnitCard(hash.slice('exam-unit-'.length));
+    };
+    scrollToHashTarget();
+    window.addEventListener('hashchange', scrollToHashTarget);
+    return () => window.removeEventListener('hashchange', scrollToHashTarget);
+  }, []);
   const tierCount = (tier: (typeof FILTER_TIERS)[number]) =>
     EXAM_PREP_LEARN_UNITS.filter((unit) => unit.tier === tier).length;
   const visibleUnits = EXAM_PREP_LEARN_UNITS.filter((unit) => {
@@ -134,6 +161,7 @@ export const ExamPrepLearnView = ({
                   onOpenProvision={onOpenProvision}
                   studied={studiedState.studied}
                   onToggleStudied={() => onToggleUnitStudied(unit.id)}
+                  onOpenRelatedUnit={scrollToUnitCard}
                 />
               );
             })}

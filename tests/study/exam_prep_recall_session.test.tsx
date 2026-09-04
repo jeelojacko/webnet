@@ -269,4 +269,66 @@ describe('Exam Prep frozen recall sessions (parent snapshot updates)', () => {
     expect(bodyText()).toContain('Reviewed this session: 15');
     expect(bodyText()).toContain('Start Another Session');
   });
+  it('keeps the reveal (prompt, typed answer, expected answer, ratings) visible across unrelated parent rerenders until the learner rates', async () => {
+    const seen: string[] = [];
+    const dataRef: { current: StudyDataSnapshot } = { current: emptyData() };
+    const onRate = async (options: RateOptions) => {
+      seen.push(options.item.task.id);
+    };
+    const renderPage = () => render(page(dataRef.current, onRate));
+
+    await renderPage();
+    await clickButton('Start Recall Session');
+    expect(bodyText()).toContain('Card 1 of 8');
+    const first = EXAM_PREP_RECALL_TASKS[0];
+    expect(currentCardTaskId()).toBe(first.id);
+
+    const typeAnswer = async (text: string) => {
+      const textarea = document.querySelector('textarea');
+      expect(textarea).toBeTruthy();
+      const setter = Object.getOwnPropertyDescriptor(
+        window.HTMLTextAreaElement.prototype,
+        'value',
+      )?.set;
+      await act(async () => {
+        setter?.call(textarea, text);
+        textarea?.dispatchEvent(new Event('input', { bubbles: true }));
+      });
+    };
+    await typeAnswer('a registered conveyance transfers the land');
+    await clickButton('Reveal');
+
+    // After Reveal the reveal state persists: prompt, typed answer, expected
+    // answer and the FSRS rating row are all visible together.
+    expect(bodyText()).toContain('Prompt');
+    expect(bodyText()).toContain(first.prompt);
+    expect(bodyText()).toContain('Your answer');
+    expect(bodyText()).toContain('a registered conveyance transfers the land');
+    expect(bodyText()).toContain('Expected answer');
+    expect(bodyText()).toContain(first.expectedAnswer);
+    expect(bodyText()).toContain('Good ·');
+
+    // Unrelated parent snapshot updates (settings change) must not collapse
+    // the revealed card or clear the typed answer: reveal persists until the
+    // learner rates.
+    dataRef.current = {
+      ...dataRef.current,
+      examPrepSettings: upsertById(
+        dataRef.current.examPrepSettings,
+        makeSettings({ updatedAt: '2026-09-05T00:00:00.000Z' }),
+      ),
+    };
+    await renderPage();
+    expect(bodyText()).toContain('Card 1 of 8');
+    expect(bodyText()).toContain('Prompt');
+    expect(bodyText()).toContain(first.prompt);
+    expect(bodyText()).toContain('Your answer');
+    expect(bodyText()).toContain('a registered conveyance transfers the land');
+    expect(bodyText()).toContain('Expected answer');
+    expect(bodyText()).toContain('Good ·');
+
+    await clickButton('Good ·');
+    expect(bodyText()).toContain('Card 2 of 8');
+    expect(seen).toEqual([first.id]);
+  });
 });

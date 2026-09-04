@@ -34,6 +34,7 @@ export type ExamPrepDrillsViewProps = {
   attempts: ExamPrepAttempt[];
   onOpenProvision: (_documentId: string, _sourceKey: string) => void;
   onSaveDrillAttempt: (_attempt: ExamPrepDrillAttempt) => Promise<void>;
+  onNavigate?: (_path: string) => void;
 };
 
 const difficultyCounts = (
@@ -56,6 +57,7 @@ export const ExamPrepDrillsView = ({
   attempts,
   onOpenProvision,
   onSaveDrillAttempt,
+  onNavigate,
 }: ExamPrepDrillsViewProps) => {
   const [statusFilter, setStatusFilter] = useState<ExamPrepDrillStatusFilter>('all');
   const [difficultyFilter, setDifficultyFilter] =
@@ -225,6 +227,7 @@ export const ExamPrepDrillsView = ({
             onOpenProvision={onOpenProvision}
             attempts={attempts}
             onSaveAttempt={onSaveDrillAttempt}
+            onNavigate={onNavigate}
           />
         ))}
         {visibleRows.length === 0 ? (

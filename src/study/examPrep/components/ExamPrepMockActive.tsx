@@ -9,7 +9,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { Flag, Timer } from 'lucide-react';
 import { formatExamMockClock, EXAM_PREP_MOCK_KIND_LABELS } from '../examPrepFormat';
-import { EXAM_PREP_STATUTE_LIBRARY_PATH } from './ExamPrepLocate';
+import { openStudyUrlNewTab, STUDY_LIBRARY_PATH } from '../../studyWindow';
 import {
   markMockVisited,
   setMockAnswer,
@@ -335,11 +335,7 @@ export const ExamPrepMockActive = ({
               <button
                 type="button"
                 onClick={() => {
-                  const libraryWindow = window.open(
-                    EXAM_PREP_STATUTE_LIBRARY_PATH,
-                    '_blank',
-                    'noopener,noreferrer',
-                  );
+                  const libraryWindow = openStudyUrlNewTab(STUDY_LIBRARY_PATH);
                   if (!libraryWindow) setSaveError('Could not open the Statute Library.');
                 }}
                 className="rounded border border-sky-700 bg-sky-900 px-3 py-1.5 text-xs font-semibold text-sky-100 hover:bg-sky-800"

@@ -3,9 +3,7 @@ import type {
   StudySearchIndexKind,
   StudySearchIndexMetadata,
 } from './studySearchTypes';
-
-const DB_NAME = 'webnet.study.v1';
-const DB_VERSION = 7;
+import { STUDY_DB_NAME, STUDY_DB_VERSION } from '../studyDbConfig';
 
 type SearchArtifactRecord = {
   id: string;
@@ -35,7 +33,10 @@ export const openStudySearchDatabase = (): Promise<IDBDatabase> =>
       reject(new Error('IndexedDB is not available.'));
       return;
     }
-    const request = globalThis.indexedDB.open(DB_NAME, DB_VERSION);
+    // Same name AND version as the authoritative Study storage layer, so the
+    // readonly search opener never triggers an upgrade and never drifts from
+    // the store set the storage layer manages.
+    const request = globalThis.indexedDB.open(STUDY_DB_NAME, STUDY_DB_VERSION);
     request.onsuccess = () => resolve(request.result);
     request.onerror = () => reject(request.error ?? new Error('Failed to open Study database.'));
   });

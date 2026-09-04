@@ -18,7 +18,11 @@
 import type { ExamPrepHomeMetrics } from '../examPrepSelectors';
 import { EXAM_PREP_MANIFEST, EXAM_PREP_SOURCE_CORPUS_CONTENT_HASH } from '../examPrepManifest';
 import { EXAM_PREP_DRILL_STATUS_LABELS } from '../examPrepDrillFilters';
-import { EXAM_PREP_TOTAL_LOCATE_TASKS, EXAM_PREP_TOTAL_RECOGNITION_TASKS } from '../examPrepConstants';
+import {
+  EXAM_PREP_TOTAL_LOCATE_TASKS,
+  EXAM_PREP_TOTAL_RECOGNITION_TASKS,
+  EXAM_PREP_RECOGNITION_PRACTICE_COPY,
+} from '../examPrepConstants';
 import { EXAM_PREP_PROVISIONAL_MOCK_V1 } from '../mock/examPrepMockProfiles';
 import {
   selectExamPrepRecommendedAction,
@@ -45,7 +49,7 @@ export type ExamPrepHomeViewProps = {
 const STUDY_FLOW_STEPS = [
   { step: '1', title: 'Learn', note: 'Understand the topic and where its law lives.' },
   { step: '2', title: 'Recall', note: 'Memorize only the 57 curated REMEMBER rules.' },
-  { step: '3', title: 'Recognition', note: 'Practice identifying which law/topic applies.' },
+  { step: '3', title: 'Recognition', note: EXAM_PREP_RECOGNITION_PRACTICE_COPY },
   { step: '4', title: 'Locate', note: 'Practice finding the correct statute or provision.' },
   { step: '5', title: 'Lookup Drills', note: 'Combine recognition, retrieval, and application.' },
   {
