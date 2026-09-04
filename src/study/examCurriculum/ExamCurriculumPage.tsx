@@ -34,8 +34,8 @@ const DOCUMENT_TITLES: Record<string, string> = {
   ...EXAM_CURRICULUM_TIER_D_DOCUMENT_TITLES,
 };
 
-type TierFilter = 'all' | 'A' | 'B' | 'C' | 'D';
-const FILTER_TIERS = ['A', 'B', 'C', 'D'] as const;
+type TierFilter = 'all' | 'A' | 'B' | 'C' | 'D' | 'NAV';
+const FILTER_TIERS = ['A', 'B', 'C', 'D', 'NAV'] as const;
 
 const DEPTH_ORDER = ['recognize', 'understand', 'recall', 'retrieve'] as const;
 
@@ -71,17 +71,31 @@ const OpenSourceButton = ({
   </button>
 );
 
+const typeBadgeClass = (unitType: string) =>
+  unitType === 'document_orientation' ? 'bg-sky-900 text-sky-200'
+    : unitType === 'cross_document_navigation' ? 'bg-fuchsia-900 text-fuchsia-200'
+      : 'bg-indigo-900 text-indigo-200';
+
 const UnitCard = ({ unit, onOpenProvision }: { unit: ExamCurriculumUnit; onOpenProvision: ExamCurriculumPageProps['onOpenProvision'] }) => {
+  const multiDocument = unit.sourceDocumentIds.length > 1;
+  const groupedAnchors = new Map<string, { label: string; anchors: ExamCurriculumUnit['sourceAnchors'] }>();
+  for (const anchor of unit.sourceAnchors) {
+    const key = anchor.documentId;
+    const group = groupedAnchors.get(key);
+    if (group) group.anchors.push(anchor);
+    else groupedAnchors.set(key, { label: DOCUMENT_TITLES[key] ?? key, anchors: [anchor] });
+  }
   return (
     <section className="rounded border border-slate-800 bg-slate-900 p-3">
       <div className="flex flex-wrap items-center gap-2">
         <span className="font-mono text-xs text-emerald-400">{unit.id}</span>
         <span
-          className={`rounded px-1.5 py-0.5 text-[11px] uppercase tracking-wide ${
-            unit.unitType === 'document_orientation' ? 'bg-sky-900 text-sky-200' : 'bg-indigo-900 text-indigo-200'
-          }`}
+          className={`rounded px-1.5 py-0.5 text-[11px] uppercase tracking-wide ${typeBadgeClass(unit.unitType)}`}
         >
           {unit.unitType}
+        </span>
+        <span className="rounded bg-slate-800 px-1.5 py-0.5 text-[11px] text-slate-400">
+          {unit.tier === 'NAV' ? 'Navigation' : `Tier ${unit.tier}`}
         </span>
         <span className="rounded bg-slate-800 px-1.5 py-0.5 text-[11px] text-slate-400">
           review: {unit.reviewWeight}
@@ -106,6 +120,21 @@ const UnitCard = ({ unit, onOpenProvision }: { unit: ExamCurriculumUnit; onOpenP
           <ul className="mt-1 list-disc space-y-0.5 pl-4">
             {unit.coreUnderstanding.map((point) => (
               <li key={point}>{point}</li>
+            ))}
+          </ul>
+        </div>
+      )}
+      {multiDocument && (
+        <div className="mt-2 text-xs text-slate-300">
+          <span className="font-semibold uppercase tracking-wide text-slate-500">Documents</span>
+          <ul className="mt-1 list-disc space-y-0.5 pl-4">
+            {unit.sourceDocumentIds.map((documentId) => (
+              <li key={documentId}>
+                {DOCUMENT_TITLES[documentId] ?? documentId}
+                <span className="ml-1 font-mono text-[10px] text-slate-500">
+                  {documentId} · {unit.sourceAnchors.filter((a) => a.documentId === documentId).length} anchors
+                </span>
+              </li>
             ))}
           </ul>
         </div>
@@ -138,8 +167,13 @@ const UnitCard = ({ unit, onOpenProvision }: { unit: ExamCurriculumUnit; onOpenP
           ) : (
             <ul className="mt-1 space-y-1 text-xs text-sky-100/90">
               {unit.mustLocate.map((lookup) => (
-                <li key={`${lookup.prompt}-${lookup.sourceKey ?? ''}`} className="flex items-start justify-between gap-2">
-                  <span className="min-w-0 flex-1">{lookup.prompt}</span>
+                <li key={`${lookup.documentId}-${lookup.prompt}-${lookup.sourceKey ?? ''}`} className="flex items-start justify-between gap-2">
+                  <span className="min-w-0 flex-1">
+                    {multiDocument ? (
+                      <span className="mr-1 font-mono text-[10px] text-sky-200/60">{DOCUMENT_TITLES[lookup.documentId] ?? lookup.documentId}</span>
+                    ) : null}
+                    {lookup.prompt}
+                  </span>
                   {lookup.sourceKey ? (
                     <OpenSourceButton
                       documentId={lookup.documentId}
@@ -162,7 +196,7 @@ const UnitCard = ({ unit, onOpenProvision }: { unit: ExamCurriculumUnit; onOpenP
           {unit.sourceAnchors.length <= 12
             ? unit.sourceAnchors.map((anchor) => (
                 <OpenSourceButton
-                  key={anchor.sourceKey}
+                  key={`${anchor.documentId}-${anchor.sourceKey}`}
                   documentId={anchor.documentId}
                   sourceKey={anchor.sourceKey}
                   label={anchor.label}
@@ -170,9 +204,14 @@ const UnitCard = ({ unit, onOpenProvision }: { unit: ExamCurriculumUnit; onOpenP
                 />
               ))
             : (
-              <span className="px-1 text-[11px] text-slate-500">Sources: {unit.sourceAnchors.length} provisions resolved (full list in canonical manifest)</span>
+              <span className="px-1 text-[11px] text-slate-500">Sources: {unit.sourceAnchors.length} provisions resolved across {unit.sourceDocumentIds.length} document{unit.sourceDocumentIds.length > 1 ? 's' : ''} (full list in canonical manifest)</span>
             )}
         </div>
+        {multiDocument && unit.sourceAnchors.length <= 12 && (
+          <div className="mt-1 text-[10px] text-slate-600">
+            {[...groupedAnchors.keys()].join(' · ')}
+          </div>
+        )}
       </div>
     </section>
   );
@@ -184,22 +223,27 @@ const ExamCurriculumPage = ({ onOpenProvision }: ExamCurriculumPageProps) => {
   const visibleUnits = manifest.units.filter((unit) => tierFilter === 'all' || unit.tier === tierFilter);
   const groups: Array<{ documentId: string; units: ExamCurriculumUnit[] }> = [];
   for (const unit of visibleUnits) {
-    const documentId = unit.sourceDocumentIds[0];
+    const documentId = unit.tier === 'NAV' ? 'NAV' : unit.sourceDocumentIds[0];
     const group = groups.find((g) => g.documentId === documentId);
     if (group) group.units.push(unit);
     else groups.push({ documentId, units: [unit] });
   }
   const orientationCount = visibleUnits.filter((u) => u.unitType === 'document_orientation').length;
+  const coreConceptCount = visibleUnits.filter((u) => u.unitType === 'core_concept').length;
+  const navigationCount = visibleUnits.filter((u) => u.unitType === 'cross_document_navigation').length;
   const tierButtons: Array<{ key: TierFilter; label: string }> = [
     { key: 'all', label: `All (${manifest.units.length})` },
-    ...FILTER_TIERS.map((tier) => ({ key: tier, label: `Tier ${tier} (${tierCount(tier)})` })),
+    ...FILTER_TIERS.map((tier) => ({
+      key: tier,
+      label: tier === 'NAV' ? `Navigation (${tierCount(tier)})` : `Tier ${tier} (${tierCount(tier)})`,
+    })),
   ];
   return (
     <div className="space-y-5">
       <div>
         <div className="flex items-center gap-2">
           <GraduationCap className="text-emerald-400" size={20} />
-          <h2 className="text-xl font-semibold text-white">Exam Curriculum — Tier A–D</h2>
+          <h2 className="text-xl font-semibold text-white">Exam Curriculum — Tier A–D + Navigation</h2>
         </div>
         <p className="mt-1 max-w-3xl text-sm text-slate-400">
           Open-book statute law exam curriculum. Units define what to recognize, understand, recall and locate;
@@ -224,19 +268,25 @@ const ExamCurriculumPage = ({ onOpenProvision }: ExamCurriculumPageProps) => {
             </button>
           ))}
           <span className="rounded bg-slate-800 px-2 py-1">{orientationCount} document_orientation</span>
-          <span className="rounded bg-slate-800 px-2 py-1">
-            {visibleUnits.length - orientationCount} core_concept
-          </span>
+          <span className="rounded bg-slate-800 px-2 py-1">{coreConceptCount} core_concept</span>
+          <span className="rounded bg-slate-800 px-2 py-1">{navigationCount} cross_document_navigation</span>
         </div>
       </div>
       {groups.map((group) => (
         <section key={group.documentId} className="space-y-2">
-          <h3 className="text-sm font-semibold uppercase tracking-wide text-slate-400">
-            {DOCUMENT_TITLES[group.documentId] ?? group.documentId}
-            <span className="ml-2 font-normal normal-case text-slate-600">
-              {group.documentId} · {group.units.length} units
-            </span>
-          </h3>
+          {group.documentId === 'NAV' ? (
+            <h3 className="text-sm font-semibold uppercase tracking-wide text-fuchsia-300">
+              Navigation — cross-document routing units
+              <span className="ml-2 font-normal normal-case text-slate-500">{group.units.length} units</span>
+            </h3>
+          ) : (
+            <h3 className="text-sm font-semibold uppercase tracking-wide text-slate-400">
+              {DOCUMENT_TITLES[group.documentId] ?? group.documentId}
+              <span className="ml-2 font-normal normal-case text-slate-600">
+                {group.documentId} · {group.units.length} units
+              </span>
+            </h3>
+          )}
           <div className="space-y-2">
             {group.units.map((unit) => (
               <UnitCard key={unit.id} unit={unit} onOpenProvision={onOpenProvision} />

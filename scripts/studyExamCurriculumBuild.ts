@@ -1,8 +1,9 @@
 // Exam Curriculum V1 — deterministic build script.
 //
 // Loads the authoritative nb-sit-statute corpus package, resolves the curated
-// Tier-A (51) + Tier-B (43) + Tier-C (21) + Tier-D (6) catalogs — 121 units
-// total — against it, validates the result, and writes:
+// Tier-A (51) + Tier-B (43) + Tier-C (21) + Tier-D (6) catalogs and the
+// cross-document Navigation catalog (12) — 133 units total — against it,
+// validates the result, and writes:
 //   - study-content/exam-curriculum/nb-sit-exam-curriculum-v1.json (canonical manifest)
 //   - reports/exam-curriculum/build-<dateTag>.md  (human-readable report)
 //   - reports/exam-curriculum/build-<dateTag>.json (self-contained JSON report)
@@ -28,11 +29,18 @@ import {
   examCurriculumTierASpecs,
 } from '../src/study/examCurriculum/examCurriculumCatalog';
 import {
+  EXAM_CURRICULUM_NAV_DOCUMENTS,
+  EXAM_CURRICULUM_NAV_TOTAL,
+  examCurriculumNavigationSpecs,
+} from '../src/study/examCurriculum/examCurriculumCatalogNavigation';
+import {
+  EXAM_CURRICULUM_TOTAL,
+  examCurriculumAllSpecs,
+} from '../src/study/examCurriculum/examCurriculumCatalogAll';
+import {
   EXAM_CURRICULUM_TIER_B_DOCUMENTS,
   EXAM_CURRICULUM_TIER_B_EXPECTED_COUNTS,
   EXAM_CURRICULUM_TIER_B_TOTAL,
-  EXAM_CURRICULUM_TOTAL,
-  examCurriculumAllSpecs,
   examCurriculumTierBFamilies,
 } from '../src/study/examCurriculum/examCurriculumCatalogTierB';
 import {
@@ -94,7 +102,7 @@ const main = (): void => {
     }
   }
   if (examCurriculumAllSpecs.length !== EXAM_CURRICULUM_TOTAL ||
-    examCurriculumAllSpecs.length !== 51 + EXAM_CURRICULUM_TIER_B_TOTAL + EXAM_CURRICULUM_TIER_C_TOTAL + EXAM_CURRICULUM_TIER_D_TOTAL) {
+    examCurriculumAllSpecs.length !== 51 + EXAM_CURRICULUM_TIER_B_TOTAL + EXAM_CURRICULUM_TIER_C_TOTAL + EXAM_CURRICULUM_TIER_D_TOTAL + EXAM_CURRICULUM_NAV_TOTAL) {
     throw new Error(`exam-curriculum: expected ${EXAM_CURRICULUM_TOTAL} cumulative specs, found ${examCurriculumAllSpecs.length}`);
   }
   // Tier-C catalog shape assertions — exactly 21 units across 21 documents.
@@ -138,6 +146,23 @@ const main = (): void => {
       throw new Error(`exam-curriculum: corpus is missing Tier-C/D document "${documentId}"`);
     }
   }
+  // Navigation catalog shape assertions — exactly 12 cross-document units (NAV-01..NAV-12).
+  if (EXAM_CURRICULUM_NAV_TOTAL !== 12 || examCurriculumNavigationSpecs.length !== 12) {
+    throw new Error(`exam-curriculum: expected exactly 12 Navigation specs, found ${examCurriculumNavigationSpecs.length}`);
+  }
+  for (const spec of examCurriculumNavigationSpecs) {
+    if (spec.unitType !== 'cross_document_navigation' || spec.tier !== 'NAV') {
+      throw new Error(`exam-curriculum: Navigation spec ${spec.id} has wrong unitType/tier`);
+    }
+    if (!/^NAV-(0[1-9]|1[0-2])$/.test(spec.id)) {
+      throw new Error(`exam-curriculum: unexpected Navigation spec id "${spec.id}"`);
+    }
+  }
+  for (const documentId of EXAM_CURRICULUM_NAV_DOCUMENTS) {
+    if (!corpus.documents.some((d) => d.id === documentId)) {
+      throw new Error(`exam-curriculum: corpus is missing Navigation document "${documentId}"`);
+    }
+  }
 
   const createdAt = new Date().toISOString();
   const manifest: ExamCurriculumManifest = buildExamCurriculumManifest(examCurriculumAllSpecs, corpus, createdAt);
@@ -158,12 +183,13 @@ const main = (): void => {
     `${JSON.stringify(buildExamCurriculumJsonReport(manifest, validation, { dateTag }), null, 2)}\n`,
   );
 
-  console.log(`exam-curriculum: ${manifest.units.length} units resolved from ${corpus.packageId} (Tier A ${manifest.units.filter((u) => u.tier === 'A').length} + Tier B ${manifest.units.filter((u) => u.tier === 'B').length} + Tier C ${manifest.units.filter((u) => u.tier === 'C').length} + Tier D ${manifest.units.filter((u) => u.tier === 'D').length})`);
+  console.log(`exam-curriculum: ${manifest.units.length} units resolved from ${corpus.packageId} (Tier A ${manifest.units.filter((u) => u.tier === 'A').length} + Tier B ${manifest.units.filter((u) => u.tier === 'B').length} + Tier C ${manifest.units.filter((u) => u.tier === 'C').length} + Tier D ${manifest.units.filter((u) => u.tier === 'D').length} + Navigation ${manifest.units.filter((u) => u.tier === 'NAV').length})`);
   console.log(`exam-curriculum: contentHash=${manifest.contentHash}`);
   console.log(`exam-curriculum: tierAProjectionHash=${examCurriculumTierProjectionHash(manifest.units, 'A')}`);
   console.log(`exam-curriculum: tierBProjectionHash=${examCurriculumTierProjectionHash(manifest.units, 'B')}`);
   console.log(`exam-curriculum: tierCProjectionHash=${examCurriculumTierProjectionHash(manifest.units, 'C')}`);
   console.log(`exam-curriculum: tierDProjectionHash=${examCurriculumTierProjectionHash(manifest.units, 'D')}`);
+  console.log(`exam-curriculum: navigationProjectionHash=${examCurriculumTierProjectionHash(manifest.units, 'NAV')}`);
   console.log(`exam-curriculum: validation errors=${validation.errors.length} warnings=${validation.warnings.length}`);
   const byTierDoc = new Map<string, number>();
   for (const unit of manifest.units) {

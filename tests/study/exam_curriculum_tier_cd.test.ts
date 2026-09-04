@@ -5,7 +5,7 @@ import {
   examCurriculumTierMetrics,
   examCurriculumTierProjectionHash,
 } from '../../src/study/examCurriculum/examCurriculumBuild';
-import { EXAM_CURRICULUM_TOTAL, examCurriculumAllSpecs } from '../../src/study/examCurriculum/examCurriculumCatalogTierB';
+import { EXAM_CURRICULUM_TOTAL, examCurriculumAllSpecs } from '../../src/study/examCurriculum/examCurriculumCatalogAll';
 import {
   EXAM_CURRICULUM_TIER_C_DOCUMENTS,
   EXAM_CURRICULUM_TIER_C_DOCUMENT_TITLES,
@@ -93,21 +93,22 @@ describe('exam curriculum Tier-C/D catalog shape', () => {
     expect(new Set(specDocuments).size).toBe(27);
   });
 
-  it('combines into exactly 121 cumulative specs in A→B→C→D order with unique ids', () => {
-    expect(EXAM_CURRICULUM_TOTAL).toBe(121);
-    expect(examCurriculumAllSpecs).toHaveLength(121);
-    expect(examCurriculumAllSpecs.slice(0, 51).every((s) => s.tier !== 'B' && s.tier !== 'C' && s.tier !== 'D')).toBe(true);
+  it('combines into exactly 133 cumulative specs in A→B→C→D→NAV order with unique ids', () => {
+    expect(EXAM_CURRICULUM_TOTAL).toBe(133);
+    expect(examCurriculumAllSpecs).toHaveLength(133);
+    expect(examCurriculumAllSpecs.slice(0, 51).every((s) => s.tier !== 'B' && s.tier !== 'C' && s.tier !== 'D' && s.tier !== 'NAV')).toBe(true);
     expect(examCurriculumAllSpecs.slice(51, 94).every((s) => s.tier === 'B')).toBe(true);
     expect(examCurriculumAllSpecs.slice(94, 115).every((s) => s.tier === 'C')).toBe(true);
-    expect(examCurriculumAllSpecs.slice(115).every((s) => s.tier === 'D')).toBe(true);
+    expect(examCurriculumAllSpecs.slice(115, 121).every((s) => s.tier === 'D')).toBe(true);
+    expect(examCurriculumAllSpecs.slice(121).every((s) => s.tier === 'NAV')).toBe(true);
     const ids = examCurriculumAllSpecs.map((s) => s.id);
-    expect(new Set(ids).size).toBe(121);
+    expect(new Set(ids).size).toBe(133);
   });
 });
 
 describe('exam curriculum cumulative A+B+C+D build against the authoritative corpus', () => {
-  it('resolves 121 units: 51 A / 43 B / 21 C / 6 D; 27 new document_orientation and 0 core_concept', () => {
-    expect(manifest.units).toHaveLength(121);
+  it('resolves 133 units: 51 A / 43 B / 21 C / 6 D / 12 Navigation; 27 document_orientation and 0 core_concept added', () => {
+    expect(manifest.units).toHaveLength(133);
     expect(manifest.units.filter((u) => u.tier === 'A')).toHaveLength(51);
     expect(manifest.units.filter((u) => u.tier === 'B')).toHaveLength(43);
     const tierC = manifest.units.filter((u) => u.tier === 'C');
@@ -118,6 +119,7 @@ describe('exam curriculum cumulative A+B+C+D build against the authoritative cor
     expect(tierD.every((u) => u.unitType === 'document_orientation')).toBe(true);
     expect(manifest.units.filter((u) => u.tier === 'C' && u.unitType === 'core_concept')).toHaveLength(0);
     expect(manifest.units.filter((u) => u.tier === 'D' && u.unitType === 'core_concept')).toHaveLength(0);
+    expect(manifest.units.filter((u) => u.tier === 'NAV' && u.unitType === 'cross_document_navigation')).toHaveLength(12);
   });
 
   it('keeps the frozen Tier-A and Tier-B projection hashes byte-for-byte unchanged', () => {
@@ -125,7 +127,7 @@ describe('exam curriculum cumulative A+B+C+D build against the authoritative cor
     expect(examCurriculumTierProjectionHash(manifest.units, 'B')).toBe(FROZEN_TIER_B_PROJECTION_HASH);
   });
 
-  it('validates the full 121-unit build with zero errors', () => {
+  it('validates the full 133-unit build with zero errors', () => {
     const report = validateExamCurriculumUnits(manifest.units, corpus);
     expect(report.errors).toEqual([]);
   });

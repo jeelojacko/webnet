@@ -4,8 +4,8 @@
   "architectureVersion": "exam-curriculum-v1",
   "sourcePackageId": "nb-sit-statute-corpus-2026-08-29",
   "sourceCorpusContentHash": "6f0442fc121eb0d2bcc9d3c1023c7a624e2cd4adf36922079bc3f6858fdcc32b",
-  "createdAt": "2026-09-03T23:53:59.698Z",
-  "contentHash": "3ccef81091b90b2ef816f0e4bc8ff74d07af6436b8504dab6af589ba9822b693",
+  "createdAt": "2026-09-04T00:37:14.652Z",
+  "contentHash": "149cdff4ad0f401c610212b68e112632d5250e39a34e5f623b4c258b722853d2",
   "units": [
     {
       "id": "A-NBLS-01",
@@ -15967,6 +15967,5621 @@
         "B-ASMT-01"
       ],
       "reviewWeight": "low",
+      "status": "planned"
+    },
+    {
+      "id": "NAV-01",
+      "unitType": "cross_document_navigation",
+      "tier": "NAV",
+      "title": "Registry or Land Titles: which registration system am I in?",
+      "sourceDocumentIds": [
+        "doc-registry-act",
+        "doc-land-titles-act"
+      ],
+      "sourceAnchors": [
+        {
+          "documentId": "doc-registry-act",
+          "sourceKey": "section:19",
+          "label": "19",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-registry-act",
+          "sourceKey": "section:19.01",
+          "label": "19.01",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-registry-act",
+          "sourceKey": "section:19.02",
+          "label": "19.02",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-registry-act",
+          "sourceKey": "section:19.03",
+          "label": "19.03",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-registry-act",
+          "sourceKey": "section:19.04",
+          "label": "19.04",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-registry-act",
+          "sourceKey": "section:19.05",
+          "label": "19.05",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-registry-act",
+          "sourceKey": "section:19.1",
+          "label": "19.1",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-registry-act",
+          "sourceKey": "section:34",
+          "label": "34",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-registry-act",
+          "sourceKey": "section:46",
+          "label": "46",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-registry-act",
+          "sourceKey": "section:50",
+          "label": "50",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-land-titles-act",
+          "sourceKey": "section:15",
+          "label": "15",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-land-titles-act",
+          "sourceKey": "section:16",
+          "label": "16",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-land-titles-act",
+          "sourceKey": "section:17",
+          "label": "17",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-land-titles-act",
+          "sourceKey": "section:17.1",
+          "label": "17.1",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-land-titles-act",
+          "sourceKey": "section:17.11",
+          "label": "17.11",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-land-titles-act",
+          "sourceKey": "section:17.2",
+          "label": "17.2",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-land-titles-act",
+          "sourceKey": "section:17.3",
+          "label": "17.3",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-land-titles-act",
+          "sourceKey": "section:17.4",
+          "label": "17.4",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-land-titles-act",
+          "sourceKey": "section:17.5",
+          "label": "17.5",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-land-titles-act",
+          "sourceKey": "section:17.6",
+          "label": "17.6",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-land-titles-act",
+          "sourceKey": "section:17.7",
+          "label": "17.7",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-land-titles-act",
+          "sourceKey": "section:17.8",
+          "label": "17.8",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-land-titles-act",
+          "sourceKey": "section:18",
+          "label": "18",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-land-titles-act",
+          "sourceKey": "section:19",
+          "label": "19",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-land-titles-act",
+          "sourceKey": "section:39",
+          "label": "39",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-land-titles-act",
+          "sourceKey": "section:68",
+          "label": "68",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-land-titles-act",
+          "sourceKey": "section:69",
+          "label": "69",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-land-titles-act",
+          "sourceKey": "section:70",
+          "label": "70",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-land-titles-act",
+          "sourceKey": "section:71",
+          "label": "71",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-land-titles-act",
+          "sourceKey": "section:72",
+          "label": "72",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-land-titles-act",
+          "sourceKey": "section:73",
+          "label": "73",
+          "role": "navigation"
+        }
+      ],
+      "learningDepths": [
+        "recognize",
+        "understand",
+        "recall",
+        "retrieve"
+      ],
+      "examGoal": "Given a land-registration fact pattern, first identify whether the parcel is governed by Registry or Land Titles and route the issue into the correct registration system.",
+      "recognitionCues": [
+        "deed",
+        "registered instrument",
+        "registry office",
+        "title register",
+        "certificate of registered ownership",
+        "PID",
+        "priority",
+        "registered owner",
+        "rectification",
+        "registration error"
+      ],
+      "coreUnderstanding": [
+        "Registry and Land Titles are different land-registration systems and registration has different legal consequences under each.",
+        "The first routing question in many title/registration problems is therefore which system governs the parcel.",
+        "Registry problems generally direct the candidate toward instruments, registration, execution, plans and priority.",
+        "Land Titles problems generally direct the candidate toward registered ownership, registered interests, parcel changes, rectification and indemnification."
+      ],
+      "mustRecall": [
+        "Before applying registration rules, determine whether the parcel is governed by Registry or Land Titles; the two systems give registration different legal effects."
+      ],
+      "mustLocate": [
+        {
+          "prompt": "Registry — registration of instruments",
+          "documentId": "doc-registry-act",
+          "sourceKey": "section:19"
+        },
+        {
+          "prompt": "Registry — legal effect of a registered conveyance",
+          "documentId": "doc-registry-act",
+          "sourceKey": "section:34"
+        },
+        {
+          "prompt": "Registry — subdivision-plan certification requirements",
+          "documentId": "doc-registry-act",
+          "sourceKey": "section:46"
+        },
+        {
+          "prompt": "Registry — registration of plans",
+          "documentId": "doc-registry-act",
+          "sourceKey": "section:50"
+        },
+        {
+          "prompt": "Land Titles — registration required to pass an estate or interest",
+          "documentId": "doc-land-titles-act",
+          "sourceKey": "section:15"
+        },
+        {
+          "prompt": "Land Titles — status/effect of registered ownership",
+          "documentId": "doc-land-titles-act",
+          "sourceKey": "section:16"
+        },
+        {
+          "prompt": "Land Titles — rectification of the title register",
+          "documentId": "doc-land-titles-act",
+          "sourceKey": "section:68"
+        },
+        {
+          "prompt": "Land Titles — indemnification for qualifying registration/rectification loss",
+          "documentId": "doc-land-titles-act",
+          "sourceKey": "section:73"
+        }
+      ],
+      "relatedUnitIds": [
+        "A-REG-01",
+        "A-REG-02",
+        "A-REG-04",
+        "A-LTA-01",
+        "A-LTA-02",
+        "A-LTA-05",
+        "A-LTA-06"
+      ],
+      "reviewWeight": "high",
+      "status": "planned"
+    },
+    {
+      "id": "NAV-02",
+      "unitType": "cross_document_navigation",
+      "tier": "NAV",
+      "title": "Solving a boundary problem: where do I look first, and when do I escalate?",
+      "sourceDocumentIds": [
+        "doc-registry-act",
+        "doc-land-titles-act",
+        "doc-surveys-act",
+        "doc-boundaries-confirmation-act",
+        "reg-boundaries-95-166",
+        "doc-evidence-act",
+        "doc-crown-lands-and-forests-act",
+        "doc-highway-act",
+        "doc-easements-act"
+      ],
+      "sourceAnchors": [
+        {
+          "documentId": "doc-registry-act",
+          "sourceKey": "section:14",
+          "label": "14",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-registry-act",
+          "sourceKey": "section:50",
+          "label": "50",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-land-titles-act",
+          "sourceKey": "section:9",
+          "label": "9",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-land-titles-act",
+          "sourceKey": "section:10",
+          "label": "10",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-land-titles-act",
+          "sourceKey": "section:10.1",
+          "label": "10.1",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-land-titles-act",
+          "sourceKey": "section:10.2",
+          "label": "10.2",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-land-titles-act",
+          "sourceKey": "section:10.3",
+          "label": "10.3",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-land-titles-act",
+          "sourceKey": "section:10.4",
+          "label": "10.4",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-land-titles-act",
+          "sourceKey": "section:82",
+          "label": "82",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-surveys-act",
+          "sourceKey": "section:4",
+          "label": "4",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-surveys-act",
+          "sourceKey": "section:8",
+          "label": "8",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-surveys-act",
+          "sourceKey": "section:12",
+          "label": "12",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-surveys-act",
+          "sourceKey": "section:13",
+          "label": "13",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-boundaries-confirmation-act",
+          "sourceKey": "section:7",
+          "label": "7",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-boundaries-confirmation-act",
+          "sourceKey": "section:8",
+          "label": "8",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-boundaries-confirmation-act",
+          "sourceKey": "section:9",
+          "label": "9",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-boundaries-confirmation-act",
+          "sourceKey": "section:10",
+          "label": "10",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-boundaries-confirmation-act",
+          "sourceKey": "section:11",
+          "label": "11",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-boundaries-confirmation-act",
+          "sourceKey": "section:12",
+          "label": "12",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-boundaries-confirmation-act",
+          "sourceKey": "section:13",
+          "label": "13",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-boundaries-confirmation-act",
+          "sourceKey": "section:14",
+          "label": "14",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-boundaries-confirmation-act",
+          "sourceKey": "section:15",
+          "label": "15",
+          "role": "navigation"
+        },
+        {
+          "documentId": "reg-boundaries-95-166",
+          "sourceKey": "section:2",
+          "label": "2",
+          "role": "navigation"
+        },
+        {
+          "documentId": "reg-boundaries-95-166",
+          "sourceKey": "section:3",
+          "label": "3",
+          "role": "navigation"
+        },
+        {
+          "documentId": "reg-boundaries-95-166",
+          "sourceKey": "section:4",
+          "label": "4",
+          "role": "navigation"
+        },
+        {
+          "documentId": "reg-boundaries-95-166",
+          "sourceKey": "section:5",
+          "label": "5",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-evidence-act",
+          "sourceKey": "section:36",
+          "label": "36",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-evidence-act",
+          "sourceKey": "section:37",
+          "label": "37",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-evidence-act",
+          "sourceKey": "section:38",
+          "label": "38",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-evidence-act",
+          "sourceKey": "section:39",
+          "label": "39",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-evidence-act",
+          "sourceKey": "section:40",
+          "label": "40",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-evidence-act",
+          "sourceKey": "section:87",
+          "label": "87",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-crown-lands-and-forests-act",
+          "sourceKey": "section:11",
+          "label": "11",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-highway-act",
+          "sourceKey": "section:30",
+          "label": "30",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-easements-act",
+          "sourceKey": "section:2",
+          "label": "2",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-easements-act",
+          "sourceKey": "section:3",
+          "label": "3",
+          "role": "navigation"
+        }
+      ],
+      "learningDepths": [
+        "recognize",
+        "understand",
+        "recall",
+        "retrieve"
+      ],
+      "examGoal": "Route a boundary uncertainty or dispute through title records, survey evidence, special statutory boundary rules and, when necessary, the formal Boundaries Confirmation process.",
+      "recognitionCues": [
+        "conflicting deed descriptions",
+        "conflicting plans",
+        "lost monument",
+        "occupation inconsistent with title",
+        "uncertain boundary",
+        "disputed boundary",
+        "highway boundary",
+        "Crown boundary",
+        "old survey evidence"
+      ],
+      "coreUnderstanding": [
+        "Boundary work begins with title/record research and field/survey evidence, not automatically with a statutory confirmation proceeding.",
+        "Special statutes can modify the analysis for particular boundaries, including Crown land and highways.",
+        "The Boundaries Confirmation Act supplies a formal statutory process for resolving/confirming a disputed or uncertain boundary; it is not the same thing as the surveyor performing the underlying boundary investigation."
+      ],
+      "mustRecall": [
+        "A surveyor's boundary investigation/determination and a statutory confirmation of a boundary under the Boundaries Confirmation Act are different processes."
+      ],
+      "mustLocate": [
+        {
+          "prompt": "lost legal monuments procedure",
+          "documentId": "doc-surveys-act",
+          "sourceKey": "section:12"
+        },
+        {
+          "prompt": "private-property entry for surveys",
+          "documentId": "doc-surveys-act",
+          "sourceKey": "section:13"
+        },
+        {
+          "prompt": "boundary-confirmation application",
+          "documentId": "doc-boundaries-confirmation-act",
+          "sourceKey": "section:7"
+        },
+        {
+          "prompt": "boundary-confirmation objections",
+          "documentId": "doc-boundaries-confirmation-act",
+          "sourceKey": "section:10"
+        },
+        {
+          "prompt": "boundary-confirmation hearing/order",
+          "documentId": "doc-boundaries-confirmation-act",
+          "sourceKey": "section:11"
+        },
+        {
+          "prompt": "Crown-bordering survey-plan submission",
+          "documentId": "doc-crown-lands-and-forests-act",
+          "sourceKey": "section:11"
+        },
+        {
+          "prompt": "highway boundary/centre-line rule",
+          "documentId": "doc-highway-act",
+          "sourceKey": "section:30"
+        },
+        {
+          "prompt": "public records/maps/plans as evidence",
+          "documentId": "doc-evidence-act",
+          "sourceKey": "section:36"
+        }
+      ],
+      "relatedUnitIds": [
+        "A-SURV-04",
+        "A-SURV-05",
+        "A-BCA-01",
+        "A-BCA-02",
+        "A-BCA-03",
+        "A-BCA-04",
+        "A-BCAR-01",
+        "B-EVID-02",
+        "B-CLF-02",
+        "B-HWY-02",
+        "B-EASE-01"
+      ],
+      "reviewWeight": "high",
+      "status": "planned"
+    },
+    {
+      "id": "NAV-03",
+      "unitType": "cross_document_navigation",
+      "tier": "NAV",
+      "title": "Subdividing land: from idea to filed parcels",
+      "sourceDocumentIds": [
+        "doc-community-planning-act",
+        "reg-community-planning-80-159",
+        "doc-surveys-act",
+        "reg-surveys-84-76",
+        "doc-registry-act",
+        "doc-land-titles-act",
+        "doc-new-brunswick-land-surveyors-bylaws"
+      ],
+      "sourceAnchors": [
+        {
+          "documentId": "doc-community-planning-act",
+          "sourceKey": "section:77",
+          "label": "77",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-community-planning-act",
+          "sourceKey": "section:79",
+          "label": "79",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-community-planning-act",
+          "sourceKey": "section:80",
+          "label": "80",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-community-planning-act",
+          "sourceKey": "section:81",
+          "label": "81",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-community-planning-act",
+          "sourceKey": "section:82",
+          "label": "82",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-community-planning-act",
+          "sourceKey": "section:83",
+          "label": "83",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-community-planning-act",
+          "sourceKey": "section:84",
+          "label": "84",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-community-planning-act",
+          "sourceKey": "section:85",
+          "label": "85",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-community-planning-act",
+          "sourceKey": "section:86",
+          "label": "86",
+          "role": "navigation"
+        },
+        {
+          "documentId": "reg-community-planning-80-159",
+          "sourceKey": "section:2",
+          "label": "2",
+          "role": "navigation"
+        },
+        {
+          "documentId": "reg-community-planning-80-159",
+          "sourceKey": "section:3",
+          "label": "3",
+          "role": "navigation"
+        },
+        {
+          "documentId": "reg-community-planning-80-159",
+          "sourceKey": "section:4",
+          "label": "4",
+          "role": "navigation"
+        },
+        {
+          "documentId": "reg-community-planning-80-159",
+          "sourceKey": "section:5",
+          "label": "5",
+          "role": "navigation"
+        },
+        {
+          "documentId": "reg-community-planning-80-159",
+          "sourceKey": "section:6",
+          "label": "6",
+          "role": "navigation"
+        },
+        {
+          "documentId": "reg-community-planning-80-159",
+          "sourceKey": "section:7",
+          "label": "7",
+          "role": "navigation"
+        },
+        {
+          "documentId": "reg-community-planning-80-159",
+          "sourceKey": "section:7.1",
+          "label": "7.1",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-surveys-act",
+          "sourceKey": "section:7",
+          "label": "7",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-surveys-act",
+          "sourceKey": "section:8",
+          "label": "8",
+          "role": "navigation"
+        },
+        {
+          "documentId": "reg-surveys-84-76",
+          "sourceKey": "section:4",
+          "label": "4",
+          "role": "navigation"
+        },
+        {
+          "documentId": "reg-surveys-84-76",
+          "sourceKey": "section:5",
+          "label": "5",
+          "role": "navigation"
+        },
+        {
+          "documentId": "reg-surveys-84-76",
+          "sourceKey": "section:6",
+          "label": "6",
+          "role": "navigation"
+        },
+        {
+          "documentId": "reg-surveys-84-76",
+          "sourceKey": "section:7",
+          "label": "7",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-registry-act",
+          "sourceKey": "section:46",
+          "label": "46",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-registry-act",
+          "sourceKey": "section:50",
+          "label": "50",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-land-titles-act",
+          "sourceKey": "section:18",
+          "label": "18",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-land-titles-act",
+          "sourceKey": "section:39",
+          "label": "39",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-new-brunswick-land-surveyors-bylaws",
+          "sourceKey": "section:19.0",
+          "label": "19.0",
+          "role": "navigation"
+        }
+      ],
+      "learningDepths": [
+        "recognize",
+        "understand",
+        "retrieve"
+      ],
+      "examGoal": "Route a subdivision from the initial question of whether subdivision law applies through tentative planning, technical survey requirements, approval and land-registration filing.",
+      "recognitionCues": [
+        "creating new lots",
+        "splitting a parcel",
+        "tentative subdivision plan",
+        "subdivision exemption",
+        "development officer",
+        "new street",
+        "new PID",
+        "subdivision-plan filing"
+      ],
+      "coreUnderstanding": [
+        "A subdivision issue should first be classified under the Community Planning framework, including exemptions and tentative-plan requirements.",
+        "The surveyor must then satisfy the applicable technical survey/monument/plan rules.",
+        "Approval and filing/registration are separate stages.",
+        "The applicable land-registration system still matters after the subdivision plan is approved."
+      ],
+      "mustRecall": [],
+      "mustLocate": [
+        {
+          "prompt": "subdivision framework",
+          "documentId": "doc-community-planning-act",
+          "sourceKey": "section:77"
+        },
+        {
+          "prompt": "subdivision exemptions",
+          "documentId": "doc-community-planning-act",
+          "sourceKey": "section:80"
+        },
+        {
+          "prompt": "tentative subdivision plan",
+          "documentId": "doc-community-planning-act",
+          "sourceKey": "section:81"
+        },
+        {
+          "prompt": "subdivision-plan application",
+          "documentId": "doc-community-planning-act",
+          "sourceKey": "section:84"
+        },
+        {
+          "prompt": "subdivision-plan approval",
+          "documentId": "doc-community-planning-act",
+          "sourceKey": "section:85"
+        },
+        {
+          "prompt": "filing of subdivision plan",
+          "documentId": "doc-community-planning-act",
+          "sourceKey": "section:86"
+        },
+        {
+          "prompt": "development-officer approval",
+          "documentId": "reg-community-planning-80-159",
+          "sourceKey": "section:7"
+        },
+        {
+          "prompt": "integrated-survey-area subdivision duties",
+          "documentId": "doc-surveys-act",
+          "sourceKey": "section:7"
+        }
+      ],
+      "relatedUnitIds": [
+        "A-CPA-03",
+        "A-CPA-04",
+        "A-CPA-05",
+        "A-CPAR-01",
+        "A-CPAR-02",
+        "A-SURV-03",
+        "A-SURV-04",
+        "A-SURVR-01",
+        "A-SURVR-02",
+        "A-REG-04",
+        "A-LTA-04",
+        "A-BYL-06"
+      ],
+      "reviewWeight": "high",
+      "status": "planned"
+    },
+    {
+      "id": "NAV-04",
+      "unitType": "cross_document_navigation",
+      "tier": "NAV",
+      "title": "Survey monuments, certification, validation and plan filing",
+      "sourceDocumentIds": [
+        "doc-new-brunswick-land-surveyors-act",
+        "doc-new-brunswick-land-surveyors-bylaws",
+        "doc-surveys-act",
+        "reg-surveys-84-76",
+        "doc-registry-act",
+        "reg-land-titles-83-130"
+      ],
+      "sourceAnchors": [
+        {
+          "documentId": "doc-new-brunswick-land-surveyors-act",
+          "sourceKey": "section:30(1)",
+          "label": "30(1)",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-new-brunswick-land-surveyors-act",
+          "sourceKey": "section:30(2)",
+          "label": "30(2)",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-new-brunswick-land-surveyors-act",
+          "sourceKey": "section:30",
+          "label": "30",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-new-brunswick-land-surveyors-act",
+          "sourceKey": "section:31(1)",
+          "label": "31(1)",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-new-brunswick-land-surveyors-act",
+          "sourceKey": "section:31(2)",
+          "label": "31(2)",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-new-brunswick-land-surveyors-act",
+          "sourceKey": "section:32",
+          "label": "32",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-new-brunswick-land-surveyors-act",
+          "sourceKey": "section:33",
+          "label": "33",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-new-brunswick-land-surveyors-act",
+          "sourceKey": "section:34",
+          "label": "34",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-new-brunswick-land-surveyors-act",
+          "sourceKey": "section:35",
+          "label": "35",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-new-brunswick-land-surveyors-bylaws",
+          "sourceKey": "section:10.1.1",
+          "label": "10.1.1",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-new-brunswick-land-surveyors-bylaws",
+          "sourceKey": "section:10.1.2",
+          "label": "10.1.2",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-new-brunswick-land-surveyors-bylaws",
+          "sourceKey": "section:10.1.3",
+          "label": "10.1.3",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-new-brunswick-land-surveyors-bylaws",
+          "sourceKey": "section:11.1.1",
+          "label": "11.1.1",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-new-brunswick-land-surveyors-bylaws",
+          "sourceKey": "section:11.1.2",
+          "label": "11.1.2",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-new-brunswick-land-surveyors-bylaws",
+          "sourceKey": "section:11.1.3",
+          "label": "11.1.3",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-new-brunswick-land-surveyors-bylaws",
+          "sourceKey": "section:11.1.4",
+          "label": "11.1.4",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-new-brunswick-land-surveyors-bylaws",
+          "sourceKey": "section:11.1.5",
+          "label": "11.1.5",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-new-brunswick-land-surveyors-bylaws",
+          "sourceKey": "section:11.1.6",
+          "label": "11.1.6",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-new-brunswick-land-surveyors-bylaws",
+          "sourceKey": "section:11.1.7",
+          "label": "11.1.7",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-new-brunswick-land-surveyors-bylaws",
+          "sourceKey": "section:11.2",
+          "label": "11.2",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-new-brunswick-land-surveyors-bylaws",
+          "sourceKey": "section:11.2.1",
+          "label": "11.2.1",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-new-brunswick-land-surveyors-bylaws",
+          "sourceKey": "section:11.2.2",
+          "label": "11.2.2",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-new-brunswick-land-surveyors-bylaws",
+          "sourceKey": "section:11.2.3",
+          "label": "11.2.3",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-new-brunswick-land-surveyors-bylaws",
+          "sourceKey": "section:11.2.4",
+          "label": "11.2.4",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-new-brunswick-land-surveyors-bylaws",
+          "sourceKey": "section:11.2.5",
+          "label": "11.2.5",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-new-brunswick-land-surveyors-bylaws",
+          "sourceKey": "section:11.2.6",
+          "label": "11.2.6",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-new-brunswick-land-surveyors-bylaws",
+          "sourceKey": "section:11.2.7",
+          "label": "11.2.7",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-new-brunswick-land-surveyors-bylaws",
+          "sourceKey": "section:11.2.8",
+          "label": "11.2.8",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-new-brunswick-land-surveyors-bylaws",
+          "sourceKey": "section:11.2.9",
+          "label": "11.2.9",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-new-brunswick-land-surveyors-bylaws",
+          "sourceKey": "section:11.3",
+          "label": "11.3",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-new-brunswick-land-surveyors-bylaws",
+          "sourceKey": "section:11.3.1",
+          "label": "11.3.1",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-new-brunswick-land-surveyors-bylaws",
+          "sourceKey": "section:11.3.2",
+          "label": "11.3.2",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-new-brunswick-land-surveyors-bylaws",
+          "sourceKey": "section:11.3.3",
+          "label": "11.3.3",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-new-brunswick-land-surveyors-bylaws",
+          "sourceKey": "section:11.3.4",
+          "label": "11.3.4",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-new-brunswick-land-surveyors-bylaws",
+          "sourceKey": "section:11.4",
+          "label": "11.4",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-new-brunswick-land-surveyors-bylaws",
+          "sourceKey": "section:11.4.1",
+          "label": "11.4.1",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-new-brunswick-land-surveyors-bylaws",
+          "sourceKey": "section:11.4.2",
+          "label": "11.4.2",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-new-brunswick-land-surveyors-bylaws",
+          "sourceKey": "section:11.4.3",
+          "label": "11.4.3",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-new-brunswick-land-surveyors-bylaws",
+          "sourceKey": "section:19.0",
+          "label": "19.0",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-surveys-act",
+          "sourceKey": "section:4",
+          "label": "4",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-surveys-act",
+          "sourceKey": "section:5",
+          "label": "5",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-surveys-act",
+          "sourceKey": "section:6",
+          "label": "6",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-surveys-act",
+          "sourceKey": "section:7",
+          "label": "7",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-surveys-act",
+          "sourceKey": "section:8",
+          "label": "8",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-surveys-act",
+          "sourceKey": "section:12",
+          "label": "12",
+          "role": "navigation"
+        },
+        {
+          "documentId": "reg-surveys-84-76",
+          "sourceKey": "section:4",
+          "label": "4",
+          "role": "navigation"
+        },
+        {
+          "documentId": "reg-surveys-84-76",
+          "sourceKey": "section:5",
+          "label": "5",
+          "role": "navigation"
+        },
+        {
+          "documentId": "reg-surveys-84-76",
+          "sourceKey": "section:6",
+          "label": "6",
+          "role": "navigation"
+        },
+        {
+          "documentId": "reg-surveys-84-76",
+          "sourceKey": "section:7",
+          "label": "7",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-registry-act",
+          "sourceKey": "section:50",
+          "label": "50",
+          "role": "navigation"
+        },
+        {
+          "documentId": "reg-land-titles-83-130",
+          "sourceKey": "section:2",
+          "label": "2",
+          "role": "navigation"
+        },
+        {
+          "documentId": "reg-land-titles-83-130",
+          "sourceKey": "section:3",
+          "label": "3",
+          "role": "navigation"
+        },
+        {
+          "documentId": "reg-land-titles-83-130",
+          "sourceKey": "section:4",
+          "label": "4",
+          "role": "navigation"
+        },
+        {
+          "documentId": "reg-land-titles-83-130",
+          "sourceKey": "section:5",
+          "label": "5",
+          "role": "navigation"
+        },
+        {
+          "documentId": "reg-land-titles-83-130",
+          "sourceKey": "section:6",
+          "label": "6",
+          "role": "navigation"
+        },
+        {
+          "documentId": "reg-land-titles-83-130",
+          "sourceKey": "section:7",
+          "label": "7",
+          "role": "navigation"
+        },
+        {
+          "documentId": "reg-land-titles-83-130",
+          "sourceKey": "section:8",
+          "label": "8",
+          "role": "navigation"
+        },
+        {
+          "documentId": "reg-land-titles-83-130",
+          "sourceKey": "section:9",
+          "label": "9",
+          "role": "navigation"
+        },
+        {
+          "documentId": "reg-land-titles-83-130",
+          "sourceKey": "section:10",
+          "label": "10",
+          "role": "navigation"
+        },
+        {
+          "documentId": "reg-land-titles-83-130",
+          "sourceKey": "section:11",
+          "label": "11",
+          "role": "navigation"
+        },
+        {
+          "documentId": "reg-land-titles-83-130",
+          "sourceKey": "section:12",
+          "label": "12",
+          "role": "navigation"
+        },
+        {
+          "documentId": "reg-land-titles-83-130",
+          "sourceKey": "section:13",
+          "label": "13",
+          "role": "navigation"
+        },
+        {
+          "documentId": "reg-land-titles-83-130",
+          "sourceKey": "section:14",
+          "label": "14",
+          "role": "navigation"
+        },
+        {
+          "documentId": "reg-land-titles-83-130",
+          "sourceKey": "section:14.1",
+          "label": "14.1",
+          "role": "navigation"
+        },
+        {
+          "documentId": "reg-land-titles-83-130",
+          "sourceKey": "section:15",
+          "label": "15",
+          "role": "navigation"
+        },
+        {
+          "documentId": "reg-land-titles-83-130",
+          "sourceKey": "section:16",
+          "label": "16",
+          "role": "navigation"
+        }
+      ],
+      "learningDepths": [
+        "recognize",
+        "understand",
+        "retrieve"
+      ],
+      "examGoal": "Route monument placement and survey-plan work through statutory survey requirements, professional certification, plan validation and land-registration filing.",
+      "recognitionCues": [
+        "setting survey monuments",
+        "integrated survey area",
+        "coordinate monument",
+        "lost monument",
+        "Survey Plan",
+        "surveyor seal",
+        "plan validation",
+        "plan filing"
+      ],
+      "coreUnderstanding": [
+        "Monumentation, preparation of a Survey Plan, professional certification/sealing, plan validation and statutory filing are related but distinct requirements.",
+        "Integrated-survey-area rules and coordinate-monument rules may alter technical field requirements.",
+        "The existing frozen Bylaw rule governing monuments placed and Survey Plan preparation remains authoritative and must not be reversed."
+      ],
+      "mustRecall": [],
+      "mustLocate": [
+        {
+          "prompt": "integrated-survey-area duties",
+          "documentId": "doc-surveys-act",
+          "sourceKey": "section:7"
+        },
+        {
+          "prompt": "integrated-survey-area plan/certification",
+          "documentId": "doc-surveys-act",
+          "sourceKey": "section:8"
+        },
+        {
+          "prompt": "lost legal monument procedure",
+          "documentId": "doc-surveys-act",
+          "sourceKey": "section:12"
+        },
+        {
+          "prompt": "lot-monument exception/rules",
+          "documentId": "reg-surveys-84-76",
+          "sourceKey": "section:5"
+        },
+        {
+          "prompt": "plan/field-notes/computation submission",
+          "documentId": "reg-surveys-84-76",
+          "sourceKey": "section:6"
+        },
+        {
+          "prompt": "Director's plan standard/approval framework",
+          "documentId": "reg-surveys-84-76",
+          "sourceKey": "section:7"
+        },
+        {
+          "prompt": "plan-validation framework",
+          "documentId": "doc-new-brunswick-land-surveyors-bylaws",
+          "sourceKey": "section:11.1.1"
+        },
+        {
+          "prompt": "plan-after-monumentation framework",
+          "documentId": "doc-new-brunswick-land-surveyors-bylaws",
+          "sourceKey": "section:19.0"
+        },
+        {
+          "prompt": "Registry registration of plans",
+          "documentId": "doc-registry-act",
+          "sourceKey": "section:50"
+        }
+      ],
+      "relatedUnitIds": [
+        "A-NBLS-04",
+        "A-BYL-06",
+        "A-BYL-07",
+        "A-SURV-02",
+        "A-SURV-03",
+        "A-SURV-04",
+        "A-SURVR-01",
+        "A-SURVR-02",
+        "A-REG-04",
+        "A-LTR-01"
+      ],
+      "reviewWeight": "high",
+      "status": "planned"
+    },
+    {
+      "id": "NAV-05",
+      "unitType": "cross_document_navigation",
+      "tier": "NAV",
+      "title": "Easements, rights-of-way and other interests: what kind of right is this?",
+      "sourceDocumentIds": [
+        "doc-easements-act",
+        "doc-land-titles-act",
+        "doc-property-act",
+        "doc-conservation-easements-act",
+        "doc-crown-lands-and-forests-act",
+        "doc-registry-act"
+      ],
+      "sourceAnchors": [
+        {
+          "documentId": "doc-easements-act",
+          "sourceKey": "section:1",
+          "label": "1",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-easements-act",
+          "sourceKey": "section:2",
+          "label": "2",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-easements-act",
+          "sourceKey": "section:3",
+          "label": "3",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-easements-act",
+          "sourceKey": "section:6",
+          "label": "6",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-easements-act",
+          "sourceKey": "section:9",
+          "label": "9",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-easements-act",
+          "sourceKey": "section:10",
+          "label": "10",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-land-titles-act",
+          "sourceKey": "section:17",
+          "label": "17",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-land-titles-act",
+          "sourceKey": "section:17.1",
+          "label": "17.1",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-land-titles-act",
+          "sourceKey": "section:17.11",
+          "label": "17.11",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-land-titles-act",
+          "sourceKey": "section:17.2",
+          "label": "17.2",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-land-titles-act",
+          "sourceKey": "section:17.3",
+          "label": "17.3",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-land-titles-act",
+          "sourceKey": "section:17.4",
+          "label": "17.4",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-land-titles-act",
+          "sourceKey": "section:17.5",
+          "label": "17.5",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-land-titles-act",
+          "sourceKey": "section:17.6",
+          "label": "17.6",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-land-titles-act",
+          "sourceKey": "section:17.7",
+          "label": "17.7",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-land-titles-act",
+          "sourceKey": "section:17.8",
+          "label": "17.8",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-land-titles-act",
+          "sourceKey": "section:24",
+          "label": "24",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-property-act",
+          "sourceKey": "section:25",
+          "label": "25",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-conservation-easements-act",
+          "sourceKey": "section:2",
+          "label": "2",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-conservation-easements-act",
+          "sourceKey": "section:6",
+          "label": "6",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-conservation-easements-act",
+          "sourceKey": "section:7",
+          "label": "7",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-conservation-easements-act",
+          "sourceKey": "section:8",
+          "label": "8",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-conservation-easements-act",
+          "sourceKey": "section:9",
+          "label": "9",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-conservation-easements-act",
+          "sourceKey": "section:10",
+          "label": "10",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-conservation-easements-act",
+          "sourceKey": "section:11",
+          "label": "11",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-crown-lands-and-forests-act",
+          "sourceKey": "section:25",
+          "label": "25",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-registry-act",
+          "sourceKey": "section:19",
+          "label": "19",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-registry-act",
+          "sourceKey": "section:19.01",
+          "label": "19.01",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-registry-act",
+          "sourceKey": "section:19.02",
+          "label": "19.02",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-registry-act",
+          "sourceKey": "section:19.03",
+          "label": "19.03",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-registry-act",
+          "sourceKey": "section:19.04",
+          "label": "19.04",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-registry-act",
+          "sourceKey": "section:19.05",
+          "label": "19.05",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-registry-act",
+          "sourceKey": "section:19.1",
+          "label": "19.1",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-registry-act",
+          "sourceKey": "section:34",
+          "label": "34",
+          "role": "navigation"
+        }
+      ],
+      "learningDepths": [
+        "recognize",
+        "understand",
+        "recall",
+        "retrieve"
+      ],
+      "examGoal": "Classify an easement/right-of-way fact pattern by how the interest arose and route it through prescription, express grants, Land Titles, conservation or Crown-land legislation as applicable.",
+      "recognitionCues": [
+        "right-of-way",
+        "access",
+        "long use",
+        "prescription",
+        "utility corridor",
+        "conservation easement",
+        "Crown easement",
+        "unregistered access"
+      ],
+      "coreUnderstanding": [
+        "First identify how the claimed right arose.",
+        "Prescription, an express written grant, a conservation easement, a Crown-land easement and a registered Land Titles interest are not interchangeable legal routes.",
+        "Land Titles status can materially change the prescription analysis."
+      ],
+      "mustRecall": [
+        "Do not apply the Easements Act prescriptive periods mechanically to registered Land Titles land; check the Land Titles Act rules governing prescription and pre-registration rights."
+      ],
+      "mustLocate": [
+        {
+          "prompt": "general prescriptive easement framework",
+          "documentId": "doc-easements-act",
+          "sourceKey": "section:2"
+        },
+        {
+          "prompt": "interruption of prescription",
+          "documentId": "doc-easements-act",
+          "sourceKey": "section:3"
+        },
+        {
+          "prompt": "Land Titles effect on unregistered/prescriptive interests",
+          "documentId": "doc-land-titles-act",
+          "sourceKey": "section:17"
+        },
+        {
+          "prompt": "registered easements under Land Titles",
+          "documentId": "doc-land-titles-act",
+          "sourceKey": "section:24"
+        },
+        {
+          "prompt": "express easement/conveyancing rule",
+          "documentId": "doc-property-act",
+          "sourceKey": "section:25"
+        },
+        {
+          "prompt": "conservation easement registration",
+          "documentId": "doc-conservation-easements-act",
+          "sourceKey": "section:6"
+        }
+      ],
+      "relatedUnitIds": [
+        "B-EASE-01",
+        "B-EASE-02",
+        "A-LTA-02",
+        "A-LTA-03",
+        "B-PROP-01",
+        "B-CE-01",
+        "B-CLF-03"
+      ],
+      "reviewWeight": "high",
+      "status": "planned"
+    },
+    {
+      "id": "NAV-06",
+      "unitType": "cross_document_navigation",
+      "tier": "NAV",
+      "title": "Crown land and resource rights: which resource regime applies?",
+      "sourceDocumentIds": [
+        "doc-crown-lands-and-forests-act",
+        "doc-ownership-of-minerals-act",
+        "doc-mining-act",
+        "doc-oil-and-natural-gas-act",
+        "doc-quarriable-substances-act",
+        "doc-bituminous-shale-act",
+        "doc-underground-storage-act",
+        "doc-protected-natural-areas-act",
+        "doc-crown-grant-restrictions-act"
+      ],
+      "sourceAnchors": [
+        {
+          "documentId": "doc-crown-lands-and-forests-act",
+          "sourceKey": "section:11",
+          "label": "11",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-crown-lands-and-forests-act",
+          "sourceKey": "section:13",
+          "label": "13",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-crown-lands-and-forests-act",
+          "sourceKey": "section:13.1",
+          "label": "13.1",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-crown-lands-and-forests-act",
+          "sourceKey": "section:15",
+          "label": "15",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-crown-lands-and-forests-act",
+          "sourceKey": "section:23",
+          "label": "23",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-crown-lands-and-forests-act",
+          "sourceKey": "section:25",
+          "label": "25",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-crown-lands-and-forests-act",
+          "sourceKey": "section:26",
+          "label": "26",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-crown-lands-and-forests-act",
+          "sourceKey": "section:26.01",
+          "label": "26.01",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-crown-lands-and-forests-act",
+          "sourceKey": "section:26.1",
+          "label": "26.1",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-ownership-of-minerals-act",
+          "sourceKey": "section:1",
+          "label": "1",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-ownership-of-minerals-act",
+          "sourceKey": "section:2",
+          "label": "2",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-ownership-of-minerals-act",
+          "sourceKey": "section:3",
+          "label": "3",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-ownership-of-minerals-act",
+          "sourceKey": "section:4",
+          "label": "4",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-ownership-of-minerals-act",
+          "sourceKey": "section:5",
+          "label": "5",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-ownership-of-minerals-act",
+          "sourceKey": "section:6",
+          "label": "6",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-ownership-of-minerals-act",
+          "sourceKey": "section:7",
+          "label": "7",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-mining-act",
+          "sourceKey": "section:24",
+          "label": "24",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-mining-act",
+          "sourceKey": "section:44",
+          "label": "44",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-mining-act",
+          "sourceKey": "section:90",
+          "label": "90",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-mining-act",
+          "sourceKey": "section:91",
+          "label": "91",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-mining-act",
+          "sourceKey": "section:92",
+          "label": "92",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-mining-act",
+          "sourceKey": "section:93",
+          "label": "93",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-mining-act",
+          "sourceKey": "section:94",
+          "label": "94",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-mining-act",
+          "sourceKey": "section:109",
+          "label": "109",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-oil-and-natural-gas-act",
+          "sourceKey": "section:8",
+          "label": "8",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-oil-and-natural-gas-act",
+          "sourceKey": "section:9",
+          "label": "9",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-oil-and-natural-gas-act",
+          "sourceKey": "section:10",
+          "label": "10",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-oil-and-natural-gas-act",
+          "sourceKey": "section:35",
+          "label": "35",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-quarriable-substances-act",
+          "sourceKey": "section:7",
+          "label": "7",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-quarriable-substances-act",
+          "sourceKey": "section:9",
+          "label": "9",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-quarriable-substances-act",
+          "sourceKey": "section:19",
+          "label": "19",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-quarriable-substances-act",
+          "sourceKey": "section:26",
+          "label": "26",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-bituminous-shale-act",
+          "sourceKey": "section:9",
+          "label": "9",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-bituminous-shale-act",
+          "sourceKey": "section:10",
+          "label": "10",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-bituminous-shale-act",
+          "sourceKey": "section:13",
+          "label": "13",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-bituminous-shale-act",
+          "sourceKey": "section:17",
+          "label": "17",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-bituminous-shale-act",
+          "sourceKey": "section:17.1",
+          "label": "17.1",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-bituminous-shale-act",
+          "sourceKey": "section:25",
+          "label": "25",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-underground-storage-act",
+          "sourceKey": "section:2.1",
+          "label": "2.1",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-underground-storage-act",
+          "sourceKey": "section:4",
+          "label": "4",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-protected-natural-areas-act",
+          "sourceKey": "section:5",
+          "label": "5",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-protected-natural-areas-act",
+          "sourceKey": "section:6",
+          "label": "6",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-protected-natural-areas-act",
+          "sourceKey": "section:7",
+          "label": "7",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-protected-natural-areas-act",
+          "sourceKey": "section:8",
+          "label": "8",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-protected-natural-areas-act",
+          "sourceKey": "section:19",
+          "label": "19",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-protected-natural-areas-act",
+          "sourceKey": "section:22",
+          "label": "22",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-crown-grant-restrictions-act",
+          "sourceKey": "section:4",
+          "label": "4",
+          "role": "navigation"
+        }
+      ],
+      "learningDepths": [
+        "recognize",
+        "understand",
+        "retrieve"
+      ],
+      "examGoal": "Distinguish ordinary Crown land from mineral, oil and gas, quarry, bituminous shale and underground-storage interests and route the problem into the correct statutory regime.",
+      "recognitionCues": [
+        "Crown land",
+        "Crown grant",
+        "mineral claim",
+        "mining lease",
+        "oil and gas",
+        "quarry lease",
+        "peat",
+        "bituminous shale",
+        "underground storage",
+        "resource survey",
+        "mineral ownership"
+      ],
+      "coreUnderstanding": [
+        "Always distinguish the surface-land question from the resource-interest question.",
+        "Ordinary Crown grants/leases/easements and Crown boundaries belong primarily in the Crown Lands and Forests framework.",
+        "Minerals, mining claims, oil and gas, quarry rights, shale and underground storage each have distinct statutory regimes.",
+        "Protected-area or historical Crown-grant restrictions can overlay those interests."
+      ],
+      "mustRecall": [],
+      "mustLocate": [
+        {
+          "prompt": "Crown-bordering survey plan",
+          "documentId": "doc-crown-lands-and-forests-act",
+          "sourceKey": "section:11"
+        },
+        {
+          "prompt": "Crown right-of-way/easement",
+          "documentId": "doc-crown-lands-and-forests-act",
+          "sourceKey": "section:25"
+        },
+        {
+          "prompt": "mineral-claim access/location framework",
+          "documentId": "doc-mining-act",
+          "sourceKey": "section:24"
+        },
+        {
+          "prompt": "Mining Act survey qualification/framework",
+          "documentId": "doc-mining-act",
+          "sourceKey": "section:90"
+        },
+        {
+          "prompt": "oil/gas private-land special-order route",
+          "documentId": "doc-oil-and-natural-gas-act",
+          "sourceKey": "section:10"
+        },
+        {
+          "prompt": "quarry-lease survey requirement",
+          "documentId": "doc-quarriable-substances-act",
+          "sourceKey": "section:7"
+        },
+        {
+          "prompt": "historic Crown-grant restriction release",
+          "documentId": "doc-crown-grant-restrictions-act",
+          "sourceKey": "section:4"
+        }
+      ],
+      "relatedUnitIds": [
+        "B-CLF-01",
+        "B-CLF-02",
+        "B-CLF-03",
+        "B-MIN-01",
+        "B-MIN-02",
+        "B-MIN-03",
+        "B-ONG-01",
+        "B-ONG-02",
+        "B-QS-01",
+        "B-QS-02",
+        "C-OMIN-01",
+        "C-BSHALE-01",
+        "C-UGS-01",
+        "C-CGR-01",
+        "B-PNA-01"
+      ],
+      "reviewWeight": "medium",
+      "status": "planned"
+    },
+    {
+      "id": "NAV-07",
+      "unitType": "cross_document_navigation",
+      "tier": "NAV",
+      "title": "Government entry, use and acquisition of private land",
+      "sourceDocumentIds": [
+        "doc-surveys-act",
+        "doc-new-brunswick-land-surveyors-act",
+        "doc-expropriation-act",
+        "doc-public-works-act",
+        "doc-highway-act",
+        "doc-oil-and-natural-gas-act",
+        "doc-mining-act",
+        "doc-land-titles-act"
+      ],
+      "sourceAnchors": [
+        {
+          "documentId": "doc-surveys-act",
+          "sourceKey": "section:13",
+          "label": "13",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-new-brunswick-land-surveyors-act",
+          "sourceKey": "section:38(1)",
+          "label": "38(1)",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-new-brunswick-land-surveyors-act",
+          "sourceKey": "section:38(2)",
+          "label": "38(2)",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-new-brunswick-land-surveyors-act",
+          "sourceKey": "section:38(3)",
+          "label": "38(3)",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-expropriation-act",
+          "sourceKey": "section:5",
+          "label": "5",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-expropriation-act",
+          "sourceKey": "section:19",
+          "label": "19",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-expropriation-act",
+          "sourceKey": "section:20",
+          "label": "20",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-expropriation-act",
+          "sourceKey": "section:21",
+          "label": "21",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-expropriation-act",
+          "sourceKey": "section:22",
+          "label": "22",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-expropriation-act",
+          "sourceKey": "section:23",
+          "label": "23",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-expropriation-act",
+          "sourceKey": "section:24",
+          "label": "24",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-expropriation-act",
+          "sourceKey": "section:25",
+          "label": "25",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-public-works-act",
+          "sourceKey": "section:9",
+          "label": "9",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-public-works-act",
+          "sourceKey": "section:12",
+          "label": "12",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-public-works-act",
+          "sourceKey": "section:16",
+          "label": "16",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-public-works-act",
+          "sourceKey": "section:25",
+          "label": "25",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-public-works-act",
+          "sourceKey": "section:33",
+          "label": "33",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-highway-act",
+          "sourceKey": "section:11",
+          "label": "11",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-highway-act",
+          "sourceKey": "section:12",
+          "label": "12",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-highway-act",
+          "sourceKey": "section:12.1",
+          "label": "12.1",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-highway-act",
+          "sourceKey": "section:12.2",
+          "label": "12.2",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-highway-act",
+          "sourceKey": "section:13",
+          "label": "13",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-highway-act",
+          "sourceKey": "section:13.1",
+          "label": "13.1",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-highway-act",
+          "sourceKey": "section:14",
+          "label": "14",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-highway-act",
+          "sourceKey": "section:14.1",
+          "label": "14.1",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-highway-act",
+          "sourceKey": "section:15",
+          "label": "15",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-highway-act",
+          "sourceKey": "section:16",
+          "label": "16",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-highway-act",
+          "sourceKey": "section:17",
+          "label": "17",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-highway-act",
+          "sourceKey": "section:18",
+          "label": "18",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-highway-act",
+          "sourceKey": "section:19",
+          "label": "19",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-highway-act",
+          "sourceKey": "section:20",
+          "label": "20",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-highway-act",
+          "sourceKey": "section:21",
+          "label": "21",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-highway-act",
+          "sourceKey": "section:22",
+          "label": "22",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-highway-act",
+          "sourceKey": "section:23",
+          "label": "23",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-oil-and-natural-gas-act",
+          "sourceKey": "section:9",
+          "label": "9",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-oil-and-natural-gas-act",
+          "sourceKey": "section:10",
+          "label": "10",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-mining-act",
+          "sourceKey": "section:93",
+          "label": "93",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-land-titles-act",
+          "sourceKey": "section:49",
+          "label": "49",
+          "role": "navigation"
+        }
+      ],
+      "learningDepths": [
+        "recognize",
+        "understand",
+        "recall",
+        "retrieve"
+      ],
+      "examGoal": "Distinguish statutory authority to enter land for surveying or investigation from statutory acquisition/expropriation of an interest in the land.",
+      "recognitionCues": [
+        "surveyor entering private property",
+        "government survey crew",
+        "borings",
+        "test pits",
+        "public work",
+        "expropriation",
+        "highway acquisition",
+        "possession",
+        "compensation",
+        "resource-company entry"
+      ],
+      "coreUnderstanding": [
+        "A right to enter land for surveying, inspection, testing or investigation does not itself necessarily transfer ownership.",
+        "Different statutes supply different entry powers for different purposes.",
+        "Where title or possession is actually being taken, follow the relevant acquisition/expropriation and compensation framework."
+      ],
+      "mustRecall": [
+        "A statutory right to enter land to survey, inspect or investigate is not the same thing as expropriating the land or acquiring title to it."
+      ],
+      "mustLocate": [
+        {
+          "prompt": "ordinary survey entry",
+          "documentId": "doc-surveys-act",
+          "sourceKey": "section:13"
+        },
+        {
+          "prompt": "NBLS statutory field/property authority",
+          "documentId": "doc-new-brunswick-land-surveyors-act",
+          "sourceKey": "section:38(1)"
+        },
+        {
+          "prompt": "pre-expropriation survey/test entry",
+          "documentId": "doc-expropriation-act",
+          "sourceKey": "section:5"
+        },
+        {
+          "prompt": "notice of expropriation",
+          "documentId": "doc-expropriation-act",
+          "sourceKey": "section:19"
+        },
+        {
+          "prompt": "title following expropriation",
+          "documentId": "doc-expropriation-act",
+          "sourceKey": "section:20"
+        },
+        {
+          "prompt": "possession",
+          "documentId": "doc-expropriation-act",
+          "sourceKey": "section:22"
+        },
+        {
+          "prompt": "public-work survey/entry authority",
+          "documentId": "doc-public-works-act",
+          "sourceKey": "section:9"
+        },
+        {
+          "prompt": "oil/gas special-order private-land entry",
+          "documentId": "doc-oil-and-natural-gas-act",
+          "sourceKey": "section:10"
+        }
+      ],
+      "relatedUnitIds": [
+        "A-SURV-05",
+        "A-NBLS-06",
+        "B-EXPR-01",
+        "B-EXPR-02",
+        "B-EXPR-03",
+        "B-PW-01",
+        "B-PW-02",
+        "B-HWY-01",
+        "B-ONG-02",
+        "B-MIN-03",
+        "A-LTA-04"
+      ],
+      "reviewWeight": "high",
+      "status": "planned"
+    },
+    {
+      "id": "NAV-08",
+      "unitType": "cross_document_navigation",
+      "tier": "NAV",
+      "title": "Conveying or changing ownership of land",
+      "sourceDocumentIds": [
+        "doc-registry-act",
+        "doc-land-titles-act",
+        "doc-property-act",
+        "doc-standard-forms-of-conveyances-act",
+        "doc-real-property-transfer-tax-act",
+        "doc-devolution-of-estates-act",
+        "doc-wills-act",
+        "doc-probate-court-act",
+        "doc-executors-and-trustees-act",
+        "doc-marital-property-act",
+        "doc-expropriation-act",
+        "doc-community-planning-act"
+      ],
+      "sourceAnchors": [
+        {
+          "documentId": "doc-registry-act",
+          "sourceKey": "section:19",
+          "label": "19",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-registry-act",
+          "sourceKey": "section:19.01",
+          "label": "19.01",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-registry-act",
+          "sourceKey": "section:19.02",
+          "label": "19.02",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-registry-act",
+          "sourceKey": "section:19.03",
+          "label": "19.03",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-registry-act",
+          "sourceKey": "section:19.04",
+          "label": "19.04",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-registry-act",
+          "sourceKey": "section:19.05",
+          "label": "19.05",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-registry-act",
+          "sourceKey": "section:19.1",
+          "label": "19.1",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-registry-act",
+          "sourceKey": "section:34",
+          "label": "34",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-registry-act",
+          "sourceKey": "section:36",
+          "label": "36",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-registry-act",
+          "sourceKey": "section:37",
+          "label": "37",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-registry-act",
+          "sourceKey": "section:38",
+          "label": "38",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-registry-act",
+          "sourceKey": "section:39",
+          "label": "39",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-registry-act",
+          "sourceKey": "section:40",
+          "label": "40",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-registry-act",
+          "sourceKey": "section:41",
+          "label": "41",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-registry-act",
+          "sourceKey": "section:42",
+          "label": "42",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-registry-act",
+          "sourceKey": "section:43",
+          "label": "43",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-registry-act",
+          "sourceKey": "section:44",
+          "label": "44",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-registry-act",
+          "sourceKey": "section:45",
+          "label": "45",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-registry-act",
+          "sourceKey": "section:46",
+          "label": "46",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-registry-act",
+          "sourceKey": "section:47",
+          "label": "47",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-registry-act",
+          "sourceKey": "section:50",
+          "label": "50",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-land-titles-act",
+          "sourceKey": "section:15",
+          "label": "15",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-land-titles-act",
+          "sourceKey": "section:21",
+          "label": "21",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-land-titles-act",
+          "sourceKey": "section:22",
+          "label": "22",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-land-titles-act",
+          "sourceKey": "section:23",
+          "label": "23",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-land-titles-act",
+          "sourceKey": "section:24",
+          "label": "24",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-land-titles-act",
+          "sourceKey": "section:39",
+          "label": "39",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-land-titles-act",
+          "sourceKey": "section:49",
+          "label": "49",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-land-titles-act",
+          "sourceKey": "section:53",
+          "label": "53",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-property-act",
+          "sourceKey": "section:22",
+          "label": "22",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-property-act",
+          "sourceKey": "section:23",
+          "label": "23",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-property-act",
+          "sourceKey": "section:24",
+          "label": "24",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-property-act",
+          "sourceKey": "section:25",
+          "label": "25",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-property-act",
+          "sourceKey": "section:62",
+          "label": "62",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-standard-forms-of-conveyances-act",
+          "sourceKey": "section:0.1",
+          "label": "0.1",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-standard-forms-of-conveyances-act",
+          "sourceKey": "section:1",
+          "label": "1",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-standard-forms-of-conveyances-act",
+          "sourceKey": "section:2",
+          "label": "2",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-standard-forms-of-conveyances-act",
+          "sourceKey": "section:2.1",
+          "label": "2.1",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-standard-forms-of-conveyances-act",
+          "sourceKey": "section:2.2",
+          "label": "2.2",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-standard-forms-of-conveyances-act",
+          "sourceKey": "section:2.21",
+          "label": "2.21",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-standard-forms-of-conveyances-act",
+          "sourceKey": "section:2.22",
+          "label": "2.22",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-standard-forms-of-conveyances-act",
+          "sourceKey": "section:2.3",
+          "label": "2.3",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-standard-forms-of-conveyances-act",
+          "sourceKey": "section:3",
+          "label": "3",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-real-property-transfer-tax-act",
+          "sourceKey": "section:1",
+          "label": "1",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-real-property-transfer-tax-act",
+          "sourceKey": "section:2",
+          "label": "2",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-real-property-transfer-tax-act",
+          "sourceKey": "section:3",
+          "label": "3",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-real-property-transfer-tax-act",
+          "sourceKey": "section:4",
+          "label": "4",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-real-property-transfer-tax-act",
+          "sourceKey": "section:5",
+          "label": "5",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-real-property-transfer-tax-act",
+          "sourceKey": "section:6",
+          "label": "6",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-devolution-of-estates-act",
+          "sourceKey": "section:3",
+          "label": "3",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-devolution-of-estates-act",
+          "sourceKey": "section:5",
+          "label": "5",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-devolution-of-estates-act",
+          "sourceKey": "section:8",
+          "label": "8",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-devolution-of-estates-act",
+          "sourceKey": "section:18",
+          "label": "18",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-devolution-of-estates-act",
+          "sourceKey": "section:19",
+          "label": "19",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-wills-act",
+          "sourceKey": "section:20",
+          "label": "20",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-wills-act",
+          "sourceKey": "section:23",
+          "label": "23",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-wills-act",
+          "sourceKey": "section:24",
+          "label": "24",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-wills-act",
+          "sourceKey": "section:25",
+          "label": "25",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-probate-court-act",
+          "sourceKey": "section:29",
+          "label": "29",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-probate-court-act",
+          "sourceKey": "section:30",
+          "label": "30",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-probate-court-act",
+          "sourceKey": "section:31",
+          "label": "31",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-probate-court-act",
+          "sourceKey": "section:32",
+          "label": "32",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-executors-and-trustees-act",
+          "sourceKey": "section:6",
+          "label": "6",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-executors-and-trustees-act",
+          "sourceKey": "section:7",
+          "label": "7",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-executors-and-trustees-act",
+          "sourceKey": "section:8",
+          "label": "8",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-executors-and-trustees-act",
+          "sourceKey": "section:9",
+          "label": "9",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-executors-and-trustees-act",
+          "sourceKey": "section:10",
+          "label": "10",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-marital-property-act",
+          "sourceKey": "section:18",
+          "label": "18",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-marital-property-act",
+          "sourceKey": "section:19",
+          "label": "19",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-marital-property-act",
+          "sourceKey": "section:20",
+          "label": "20",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-marital-property-act",
+          "sourceKey": "section:21",
+          "label": "21",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-marital-property-act",
+          "sourceKey": "section:22",
+          "label": "22",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-expropriation-act",
+          "sourceKey": "section:19",
+          "label": "19",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-expropriation-act",
+          "sourceKey": "section:20",
+          "label": "20",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-community-planning-act",
+          "sourceKey": "section:80",
+          "label": "80",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-community-planning-act",
+          "sourceKey": "section:84",
+          "label": "84",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-community-planning-act",
+          "sourceKey": "section:85",
+          "label": "85",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-community-planning-act",
+          "sourceKey": "section:86",
+          "label": "86",
+          "role": "navigation"
+        }
+      ],
+      "learningDepths": [
+        "recognize",
+        "understand",
+        "retrieve"
+      ],
+      "examGoal": "Classify why ownership is changing and route the transaction through the applicable registration, conveyancing, estate, marital, expropriation or subdivision rules.",
+      "recognitionCues": [
+        "deed",
+        "transfer",
+        "sale",
+        "estate",
+        "death of owner",
+        "executor",
+        "will",
+        "Crown grant",
+        "marital property",
+        "expropriation",
+        "parcel severance",
+        "transfer tax"
+      ],
+      "coreUnderstanding": [
+        "First identify why ownership is changing.",
+        "An ordinary voluntary conveyance, transfer on death, executor/trustee sale, marital-property issue, expropriation and subdivision-induced parcel change follow different statutory routes.",
+        "The applicable Registry or Land Titles system remains a foundational classification step."
+      ],
+      "mustRecall": [],
+      "mustLocate": [
+        {
+          "prompt": "Registry registration",
+          "documentId": "doc-registry-act",
+          "sourceKey": "section:19"
+        },
+        {
+          "prompt": "Registry effect of conveyance",
+          "documentId": "doc-registry-act",
+          "sourceKey": "section:34"
+        },
+        {
+          "prompt": "Land Titles transfer of registered land",
+          "documentId": "doc-land-titles-act",
+          "sourceKey": "section:21"
+        },
+        {
+          "prompt": "Land Titles parcel severance/consolidation",
+          "documentId": "doc-land-titles-act",
+          "sourceKey": "section:39"
+        },
+        {
+          "prompt": "Land Titles transmission on death",
+          "documentId": "doc-land-titles-act",
+          "sourceKey": "section:53"
+        },
+        {
+          "prompt": "standardized conveyance form/content",
+          "documentId": "doc-standard-forms-of-conveyances-act",
+          "sourceKey": "section:2"
+        },
+        {
+          "prompt": "transfer tax calculation framework",
+          "documentId": "doc-real-property-transfer-tax-act",
+          "sourceKey": "section:2"
+        },
+        {
+          "prompt": "personal representative's powers over estate land",
+          "documentId": "doc-devolution-of-estates-act",
+          "sourceKey": "section:5"
+        }
+      ],
+      "relatedUnitIds": [
+        "A-REG-02",
+        "A-REG-03",
+        "A-LTA-03",
+        "A-LTA-04",
+        "B-PROP-01",
+        "B-SFC-01",
+        "B-RPTT-01",
+        "C-DOE-01",
+        "C-ETRUST-01",
+        "C-WILLS-01",
+        "C-PROB-01",
+        "C-MAR-01",
+        "B-EXPR-01",
+        "A-CPA-04"
+      ],
+      "reviewWeight": "high",
+      "status": "planned"
+    },
+    {
+      "id": "NAV-09",
+      "unitType": "cross_document_navigation",
+      "tier": "NAV",
+      "title": "Condominiums and three-dimensional parcels",
+      "sourceDocumentIds": [
+        "doc-air-space-act",
+        "doc-condominium-property-act",
+        "doc-land-titles-act",
+        "reg-land-titles-83-130"
+      ],
+      "sourceAnchors": [
+        {
+          "documentId": "doc-air-space-act",
+          "sourceKey": "section:2",
+          "label": "2",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-air-space-act",
+          "sourceKey": "section:3",
+          "label": "3",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-air-space-act",
+          "sourceKey": "section:4",
+          "label": "4",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-air-space-act",
+          "sourceKey": "section:5",
+          "label": "5",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-air-space-act",
+          "sourceKey": "section:6",
+          "label": "6",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-condominium-property-act",
+          "sourceKey": "section:5",
+          "label": "5",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-condominium-property-act",
+          "sourceKey": "section:6",
+          "label": "6",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-condominium-property-act",
+          "sourceKey": "section:7",
+          "label": "7",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-condominium-property-act",
+          "sourceKey": "section:8",
+          "label": "8",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-condominium-property-act",
+          "sourceKey": "section:9",
+          "label": "9",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-condominium-property-act",
+          "sourceKey": "section:10",
+          "label": "10",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-condominium-property-act",
+          "sourceKey": "section:15",
+          "label": "15",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-condominium-property-act",
+          "sourceKey": "section:43",
+          "label": "43",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-condominium-property-act",
+          "sourceKey": "section:44",
+          "label": "44",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-condominium-property-act",
+          "sourceKey": "section:44.1",
+          "label": "44.1",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-condominium-property-act",
+          "sourceKey": "section:44.2",
+          "label": "44.2",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-condominium-property-act",
+          "sourceKey": "section:45",
+          "label": "45",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-condominium-property-act",
+          "sourceKey": "section:54",
+          "label": "54",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-condominium-property-act",
+          "sourceKey": "section:64",
+          "label": "64",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-land-titles-act",
+          "sourceKey": "section:14.1",
+          "label": "14.1",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-land-titles-act",
+          "sourceKey": "section:18",
+          "label": "18",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-land-titles-act",
+          "sourceKey": "section:39",
+          "label": "39",
+          "role": "navigation"
+        },
+        {
+          "documentId": "reg-land-titles-83-130",
+          "sourceKey": "section:2",
+          "label": "2",
+          "role": "navigation"
+        },
+        {
+          "documentId": "reg-land-titles-83-130",
+          "sourceKey": "section:3",
+          "label": "3",
+          "role": "navigation"
+        },
+        {
+          "documentId": "reg-land-titles-83-130",
+          "sourceKey": "section:4",
+          "label": "4",
+          "role": "navigation"
+        },
+        {
+          "documentId": "reg-land-titles-83-130",
+          "sourceKey": "section:5",
+          "label": "5",
+          "role": "navigation"
+        },
+        {
+          "documentId": "reg-land-titles-83-130",
+          "sourceKey": "section:6",
+          "label": "6",
+          "role": "navigation"
+        },
+        {
+          "documentId": "reg-land-titles-83-130",
+          "sourceKey": "section:7",
+          "label": "7",
+          "role": "navigation"
+        },
+        {
+          "documentId": "reg-land-titles-83-130",
+          "sourceKey": "section:8",
+          "label": "8",
+          "role": "navigation"
+        },
+        {
+          "documentId": "reg-land-titles-83-130",
+          "sourceKey": "section:9",
+          "label": "9",
+          "role": "navigation"
+        },
+        {
+          "documentId": "reg-land-titles-83-130",
+          "sourceKey": "section:10",
+          "label": "10",
+          "role": "navigation"
+        },
+        {
+          "documentId": "reg-land-titles-83-130",
+          "sourceKey": "section:11",
+          "label": "11",
+          "role": "navigation"
+        },
+        {
+          "documentId": "reg-land-titles-83-130",
+          "sourceKey": "section:12",
+          "label": "12",
+          "role": "navigation"
+        },
+        {
+          "documentId": "reg-land-titles-83-130",
+          "sourceKey": "section:13",
+          "label": "13",
+          "role": "navigation"
+        },
+        {
+          "documentId": "reg-land-titles-83-130",
+          "sourceKey": "section:14",
+          "label": "14",
+          "role": "navigation"
+        },
+        {
+          "documentId": "reg-land-titles-83-130",
+          "sourceKey": "section:14.1",
+          "label": "14.1",
+          "role": "navigation"
+        },
+        {
+          "documentId": "reg-land-titles-83-130",
+          "sourceKey": "section:15",
+          "label": "15",
+          "role": "navigation"
+        },
+        {
+          "documentId": "reg-land-titles-83-130",
+          "sourceKey": "section:16",
+          "label": "16",
+          "role": "navigation"
+        }
+      ],
+      "learningDepths": [
+        "recognize",
+        "understand",
+        "recall",
+        "retrieve"
+      ],
+      "examGoal": "Distinguish air-space parcels from condominium property and route three-dimensional parcel and condominium survey questions into the correct statutory regime.",
+      "recognitionCues": [
+        "air-space parcel",
+        "three-dimensional boundary",
+        "elevation",
+        "condominium description",
+        "common elements",
+        "bare-land condominium",
+        "coordinate monument",
+        "unit boundary"
+      ],
+      "coreUnderstanding": [
+        "Air-space parcels and condominium units are different statutory concepts.",
+        "An Air Space Act plan creates and defines an air-space parcel using the Act's three-dimensional plan requirements.",
+        "The Condominium Property Act governs declarations/descriptions, units, common elements and bare-land condominium survey requirements.",
+        "Registration requirements remain relevant after the specialized plan requirements are satisfied."
+      ],
+      "mustRecall": [
+        "An air-space parcel and a condominium unit are not interchangeable concepts; they are created and governed through different statutory schemes."
+      ],
+      "mustLocate": [
+        {
+          "prompt": "air space treated as land",
+          "documentId": "doc-air-space-act",
+          "sourceKey": "section:2"
+        },
+        {
+          "prompt": "creation of air-space parcel",
+          "documentId": "doc-air-space-act",
+          "sourceKey": "section:3"
+        },
+        {
+          "prompt": "air-space plan dimensions/boundaries",
+          "documentId": "doc-air-space-act",
+          "sourceKey": "section:4"
+        },
+        {
+          "prompt": "air-space filing/approval",
+          "documentId": "doc-air-space-act",
+          "sourceKey": "section:5"
+        },
+        {
+          "prompt": "condominium description contents",
+          "documentId": "doc-condominium-property-act",
+          "sourceKey": "section:7"
+        },
+        {
+          "prompt": "condominium registration approval",
+          "documentId": "doc-condominium-property-act",
+          "sourceKey": "section:9"
+        },
+        {
+          "prompt": "effect of condominium registration",
+          "documentId": "doc-condominium-property-act",
+          "sourceKey": "section:10"
+        },
+        {
+          "prompt": "amendment of condominium declaration/description",
+          "documentId": "doc-condominium-property-act",
+          "sourceKey": "section:43"
+        }
+      ],
+      "relatedUnitIds": [
+        "B-AIR-01",
+        "B-AIR-02",
+        "B-CONDO-01",
+        "B-CONDO-02",
+        "B-CONDO-03",
+        "A-LTA-03",
+        "A-LTA-04",
+        "A-LTR-01"
+      ],
+      "reviewWeight": "medium",
+      "status": "planned"
+    },
+    {
+      "id": "NAV-10",
+      "unitType": "cross_document_navigation",
+      "tier": "NAV",
+      "title": "Environmental and land-use constraints: what overlays the parcel?",
+      "sourceDocumentIds": [
+        "doc-community-planning-act",
+        "reg-community-planning-80-159",
+        "doc-clean-water-act",
+        "doc-clean-environment-act",
+        "doc-protected-natural-areas-act",
+        "doc-conservation-easements-act",
+        "doc-public-health-act",
+        "doc-parks-act",
+        "doc-agricultural-land-protection-and-development-act"
+      ],
+      "sourceAnchors": [
+        {
+          "documentId": "doc-community-planning-act",
+          "sourceKey": "section:53",
+          "label": "53",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-community-planning-act",
+          "sourceKey": "section:54",
+          "label": "54",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-community-planning-act",
+          "sourceKey": "section:55",
+          "label": "55",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-community-planning-act",
+          "sourceKey": "section:56",
+          "label": "56",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-community-planning-act",
+          "sourceKey": "section:57",
+          "label": "57",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-community-planning-act",
+          "sourceKey": "section:58",
+          "label": "58",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-community-planning-act",
+          "sourceKey": "section:59",
+          "label": "59",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-community-planning-act",
+          "sourceKey": "section:60",
+          "label": "60",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-community-planning-act",
+          "sourceKey": "section:61",
+          "label": "61",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-community-planning-act",
+          "sourceKey": "section:61.1",
+          "label": "61.1",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-community-planning-act",
+          "sourceKey": "section:62",
+          "label": "62",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-community-planning-act",
+          "sourceKey": "section:63",
+          "label": "63",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-community-planning-act",
+          "sourceKey": "section:64",
+          "label": "64",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-community-planning-act",
+          "sourceKey": "section:65",
+          "label": "65",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-community-planning-act",
+          "sourceKey": "section:66",
+          "label": "66",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-community-planning-act",
+          "sourceKey": "section:67",
+          "label": "67",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-community-planning-act",
+          "sourceKey": "section:68",
+          "label": "68",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-community-planning-act",
+          "sourceKey": "section:69",
+          "label": "69",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-community-planning-act",
+          "sourceKey": "section:70",
+          "label": "70",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-community-planning-act",
+          "sourceKey": "section:71",
+          "label": "71",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-community-planning-act",
+          "sourceKey": "section:72",
+          "label": "72",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-community-planning-act",
+          "sourceKey": "section:73",
+          "label": "73",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-community-planning-act",
+          "sourceKey": "section:74",
+          "label": "74",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-community-planning-act",
+          "sourceKey": "section:75",
+          "label": "75",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-community-planning-act",
+          "sourceKey": "section:76",
+          "label": "76",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-community-planning-act",
+          "sourceKey": "section:77",
+          "label": "77",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-community-planning-act",
+          "sourceKey": "section:78",
+          "label": "78",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-community-planning-act",
+          "sourceKey": "section:79",
+          "label": "79",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-community-planning-act",
+          "sourceKey": "section:80",
+          "label": "80",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-community-planning-act",
+          "sourceKey": "section:81",
+          "label": "81",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-community-planning-act",
+          "sourceKey": "section:82",
+          "label": "82",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-community-planning-act",
+          "sourceKey": "section:83",
+          "label": "83",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-community-planning-act",
+          "sourceKey": "section:84",
+          "label": "84",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-community-planning-act",
+          "sourceKey": "section:85",
+          "label": "85",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-community-planning-act",
+          "sourceKey": "section:86",
+          "label": "86",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-community-planning-act",
+          "sourceKey": "section:87",
+          "label": "87",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-community-planning-act",
+          "sourceKey": "section:88",
+          "label": "88",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-community-planning-act",
+          "sourceKey": "section:89",
+          "label": "89",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-community-planning-act",
+          "sourceKey": "section:90",
+          "label": "90",
+          "role": "navigation"
+        },
+        {
+          "documentId": "reg-community-planning-80-159",
+          "sourceKey": "section:2",
+          "label": "2",
+          "role": "navigation"
+        },
+        {
+          "documentId": "reg-community-planning-80-159",
+          "sourceKey": "section:3",
+          "label": "3",
+          "role": "navigation"
+        },
+        {
+          "documentId": "reg-community-planning-80-159",
+          "sourceKey": "section:4",
+          "label": "4",
+          "role": "navigation"
+        },
+        {
+          "documentId": "reg-community-planning-80-159",
+          "sourceKey": "section:5",
+          "label": "5",
+          "role": "navigation"
+        },
+        {
+          "documentId": "reg-community-planning-80-159",
+          "sourceKey": "section:6",
+          "label": "6",
+          "role": "navigation"
+        },
+        {
+          "documentId": "reg-community-planning-80-159",
+          "sourceKey": "section:7",
+          "label": "7",
+          "role": "navigation"
+        },
+        {
+          "documentId": "reg-community-planning-80-159",
+          "sourceKey": "section:7.1",
+          "label": "7.1",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-clean-water-act",
+          "sourceKey": "section:14",
+          "label": "14",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-clean-water-act",
+          "sourceKey": "section:14.1",
+          "label": "14.1",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-clean-water-act",
+          "sourceKey": "section:14.11",
+          "label": "14.11",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-clean-water-act",
+          "sourceKey": "section:14.2",
+          "label": "14.2",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-clean-water-act",
+          "sourceKey": "section:14.3",
+          "label": "14.3",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-clean-water-act",
+          "sourceKey": "section:14.4",
+          "label": "14.4",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-clean-water-act",
+          "sourceKey": "section:15",
+          "label": "15",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-clean-water-act",
+          "sourceKey": "section:16",
+          "label": "16",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-clean-environment-act",
+          "sourceKey": "section:4.31",
+          "label": "4.31",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-clean-environment-act",
+          "sourceKey": "section:5.01",
+          "label": "5.01",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-clean-environment-act",
+          "sourceKey": "section:5.1",
+          "label": "5.1",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-clean-environment-act",
+          "sourceKey": "section:5.11",
+          "label": "5.11",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-clean-environment-act",
+          "sourceKey": "section:5.2",
+          "label": "5.2",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-clean-environment-act",
+          "sourceKey": "section:5.201",
+          "label": "5.201",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-clean-environment-act",
+          "sourceKey": "section:5.21",
+          "label": "5.21",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-clean-environment-act",
+          "sourceKey": "section:6.1",
+          "label": "6.1",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-clean-environment-act",
+          "sourceKey": "section:6.2",
+          "label": "6.2",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-clean-environment-act",
+          "sourceKey": "section:6.3",
+          "label": "6.3",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-clean-environment-act",
+          "sourceKey": "section:6.4",
+          "label": "6.4",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-clean-environment-act",
+          "sourceKey": "section:6.5",
+          "label": "6.5",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-protected-natural-areas-act",
+          "sourceKey": "section:5",
+          "label": "5",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-protected-natural-areas-act",
+          "sourceKey": "section:6",
+          "label": "6",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-protected-natural-areas-act",
+          "sourceKey": "section:7",
+          "label": "7",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-protected-natural-areas-act",
+          "sourceKey": "section:8",
+          "label": "8",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-protected-natural-areas-act",
+          "sourceKey": "section:11",
+          "label": "11",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-protected-natural-areas-act",
+          "sourceKey": "section:20",
+          "label": "20",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-protected-natural-areas-act",
+          "sourceKey": "section:22",
+          "label": "22",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-conservation-easements-act",
+          "sourceKey": "section:6",
+          "label": "6",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-conservation-easements-act",
+          "sourceKey": "section:7",
+          "label": "7",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-conservation-easements-act",
+          "sourceKey": "section:8",
+          "label": "8",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-conservation-easements-act",
+          "sourceKey": "section:9",
+          "label": "9",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-conservation-easements-act",
+          "sourceKey": "section:10",
+          "label": "10",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-conservation-easements-act",
+          "sourceKey": "section:11",
+          "label": "11",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-public-health-act",
+          "sourceKey": "section:23",
+          "label": "23",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-public-health-act",
+          "sourceKey": "section:24",
+          "label": "24",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-public-health-act",
+          "sourceKey": "section:24.01",
+          "label": "24.01",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-public-health-act",
+          "sourceKey": "section:24.02",
+          "label": "24.02",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-public-health-act",
+          "sourceKey": "section:24.1",
+          "label": "24.1",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-parks-act",
+          "sourceKey": "section:1",
+          "label": "1",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-parks-act",
+          "sourceKey": "section:2",
+          "label": "2",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-parks-act",
+          "sourceKey": "section:3",
+          "label": "3",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-parks-act",
+          "sourceKey": "section:4",
+          "label": "4",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-parks-act",
+          "sourceKey": "section:5",
+          "label": "5",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-parks-act",
+          "sourceKey": "section:5.1",
+          "label": "5.1",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-parks-act",
+          "sourceKey": "section:8",
+          "label": "8",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-parks-act",
+          "sourceKey": "section:9",
+          "label": "9",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-parks-act",
+          "sourceKey": "section:11",
+          "label": "11",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-parks-act",
+          "sourceKey": "section:13",
+          "label": "13",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-parks-act",
+          "sourceKey": "section:17",
+          "label": "17",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-parks-act",
+          "sourceKey": "section:20",
+          "label": "20",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-parks-act",
+          "sourceKey": "section:22",
+          "label": "22",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-parks-act",
+          "sourceKey": "section:23",
+          "label": "23",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-agricultural-land-protection-and-development-act",
+          "sourceKey": "section:8",
+          "label": "8",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-agricultural-land-protection-and-development-act",
+          "sourceKey": "section:11",
+          "label": "11",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-agricultural-land-protection-and-development-act",
+          "sourceKey": "section:12",
+          "label": "12",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-agricultural-land-protection-and-development-act",
+          "sourceKey": "section:13",
+          "label": "13",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-agricultural-land-protection-and-development-act",
+          "sourceKey": "section:14",
+          "label": "14",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-agricultural-land-protection-and-development-act",
+          "sourceKey": "section:15",
+          "label": "15",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-agricultural-land-protection-and-development-act",
+          "sourceKey": "section:16",
+          "label": "16",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-agricultural-land-protection-and-development-act",
+          "sourceKey": "section:17",
+          "label": "17",
+          "role": "navigation"
+        }
+      ],
+      "learningDepths": [
+        "recognize",
+        "understand",
+        "retrieve"
+      ],
+      "examGoal": "Recognize that several independent planning, environmental, protected-area and public-health regimes can apply to the same parcel and route each issue into the correct statute.",
+      "recognitionCues": [
+        "zoning",
+        "subdivision restriction",
+        "wetland",
+        "watercourse",
+        "contaminated site",
+        "coastal area",
+        "protected natural area",
+        "conservation easement",
+        "septic system",
+        "park land",
+        "agricultural land"
+      ],
+      "coreUnderstanding": [
+        "A single parcel can be subject to several independent statutory overlays.",
+        "Finding one approval or restriction does not mean the legal search is complete.",
+        "Planning/zoning, watercourse/wetland rules, contaminated/designated land, protected areas, conservation easements, sewage-system approvals, park rules and agricultural-land provisions serve different functions."
+      ],
+      "mustRecall": [],
+      "mustLocate": [
+        {
+          "prompt": "zoning/development controls",
+          "documentId": "doc-community-planning-act",
+          "sourceKey": "section:53"
+        },
+        {
+          "prompt": "subdivision framework",
+          "documentId": "doc-community-planning-act",
+          "sourceKey": "section:77"
+        },
+        {
+          "prompt": "watercourse/wetland alteration",
+          "documentId": "doc-clean-water-act",
+          "sourceKey": "section:15"
+        },
+        {
+          "prompt": "contaminated-site designation",
+          "documentId": "doc-clean-environment-act",
+          "sourceKey": "section:4.31"
+        },
+        {
+          "prompt": "protected-area establishment/boundary",
+          "documentId": "doc-protected-natural-areas-act",
+          "sourceKey": "section:5"
+        },
+        {
+          "prompt": "conservation easement registration",
+          "documentId": "doc-conservation-easements-act",
+          "sourceKey": "section:6"
+        },
+        {
+          "prompt": "on-site sewage design/location approval",
+          "documentId": "doc-public-health-act",
+          "sourceKey": "section:24"
+        }
+      ],
+      "relatedUnitIds": [
+        "A-CPA-01",
+        "A-CPA-02",
+        "A-CPA-03",
+        "A-CPAR-01",
+        "B-CWA-01",
+        "B-CWA-02",
+        "C-CEA-01",
+        "B-PNA-01",
+        "B-CE-01",
+        "C-PH-01",
+        "C-PARK-01",
+        "B-AGRI-01",
+        "B-AGRI-02"
+      ],
+      "reviewWeight": "medium",
+      "status": "planned"
+    },
+    {
+      "id": "NAV-11",
+      "unitType": "cross_document_navigation",
+      "tier": "NAV",
+      "title": "Evidence, records and historical title research",
+      "sourceDocumentIds": [
+        "doc-registry-act",
+        "doc-land-titles-act",
+        "doc-evidence-act",
+        "doc-archives-act",
+        "doc-public-records-act",
+        "doc-crown-grant-restrictions-act",
+        "reg-boundaries-95-166"
+      ],
+      "sourceAnchors": [
+        {
+          "documentId": "doc-registry-act",
+          "sourceKey": "section:12",
+          "label": "12",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-registry-act",
+          "sourceKey": "section:13",
+          "label": "13",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-registry-act",
+          "sourceKey": "section:13.1",
+          "label": "13.1",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-registry-act",
+          "sourceKey": "section:13.2",
+          "label": "13.2",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-registry-act",
+          "sourceKey": "section:14",
+          "label": "14",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-registry-act",
+          "sourceKey": "section:50",
+          "label": "50",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-land-titles-act",
+          "sourceKey": "section:9",
+          "label": "9",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-land-titles-act",
+          "sourceKey": "section:82",
+          "label": "82",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-evidence-act",
+          "sourceKey": "section:36",
+          "label": "36",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-evidence-act",
+          "sourceKey": "section:37",
+          "label": "37",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-evidence-act",
+          "sourceKey": "section:38",
+          "label": "38",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-evidence-act",
+          "sourceKey": "section:39",
+          "label": "39",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-evidence-act",
+          "sourceKey": "section:40",
+          "label": "40",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-evidence-act",
+          "sourceKey": "section:80",
+          "label": "80",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-evidence-act",
+          "sourceKey": "section:81",
+          "label": "81",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-evidence-act",
+          "sourceKey": "section:82",
+          "label": "82",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-evidence-act",
+          "sourceKey": "section:83",
+          "label": "83",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-evidence-act",
+          "sourceKey": "section:84",
+          "label": "84",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-evidence-act",
+          "sourceKey": "section:85",
+          "label": "85",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-evidence-act",
+          "sourceKey": "section:86",
+          "label": "86",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-evidence-act",
+          "sourceKey": "section:87",
+          "label": "87",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-archives-act",
+          "sourceKey": "section:10",
+          "label": "10",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-archives-act",
+          "sourceKey": "section:10.1",
+          "label": "10.1",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-archives-act",
+          "sourceKey": "section:10.2",
+          "label": "10.2",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-archives-act",
+          "sourceKey": "section:10.3",
+          "label": "10.3",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-archives-act",
+          "sourceKey": "section:10.4",
+          "label": "10.4",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-archives-act",
+          "sourceKey": "section:10.5",
+          "label": "10.5",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-archives-act",
+          "sourceKey": "section:10.6",
+          "label": "10.6",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-archives-act",
+          "sourceKey": "section:10.7",
+          "label": "10.7",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-archives-act",
+          "sourceKey": "section:10.8",
+          "label": "10.8",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-archives-act",
+          "sourceKey": "section:10.9",
+          "label": "10.9",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-archives-act",
+          "sourceKey": "section:11",
+          "label": "11",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-public-records-act",
+          "sourceKey": "section:1",
+          "label": "1",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-public-records-act",
+          "sourceKey": "section:2",
+          "label": "2",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-public-records-act",
+          "sourceKey": "section:3",
+          "label": "3",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-public-records-act",
+          "sourceKey": "section:6",
+          "label": "6",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-crown-grant-restrictions-act",
+          "sourceKey": "section:4",
+          "label": "4",
+          "role": "navigation"
+        },
+        {
+          "documentId": "reg-boundaries-95-166",
+          "sourceKey": "section:2",
+          "label": "2",
+          "role": "navigation"
+        },
+        {
+          "documentId": "reg-boundaries-95-166",
+          "sourceKey": "section:3",
+          "label": "3",
+          "role": "navigation"
+        },
+        {
+          "documentId": "reg-boundaries-95-166",
+          "sourceKey": "section:4",
+          "label": "4",
+          "role": "navigation"
+        },
+        {
+          "documentId": "reg-boundaries-95-166",
+          "sourceKey": "section:5",
+          "label": "5",
+          "role": "navigation"
+        }
+      ],
+      "learningDepths": [
+        "recognize",
+        "understand",
+        "recall",
+        "retrieve"
+      ],
+      "examGoal": "Route a historical title or boundary-research problem through current land-registration records, archival/public records and the separate evidentiary rules governing how records may be proved or used.",
+      "recognitionCues": [
+        "old deed",
+        "old survey plan",
+        "Crown grant",
+        "registered will",
+        "certified copy",
+        "archival record",
+        "public record",
+        "historic boundary evidence",
+        "old Registry document"
+      ],
+      "coreUnderstanding": [
+        "Finding/accessing a record and proving/using that record as evidence are different legal questions.",
+        "Registry, Land Titles, Archives and Public Records provisions help locate, preserve or access records.",
+        "The Evidence Act supplies routes by which qualifying records, certified copies, maps, plans and survey records can be received as evidence.",
+        "Formal boundary-confirmation work has its own evidence/application requirements."
+      ],
+      "mustRecall": [
+        "Finding or obtaining a record and proving or using that record as evidence are separate questions: land-registration and archival statutes govern records/access, while the Evidence Act supplies evidentiary routes for qualifying records and copies."
+      ],
+      "mustLocate": [
+        {
+          "prompt": "Registry office records",
+          "documentId": "doc-registry-act",
+          "sourceKey": "section:14"
+        },
+        {
+          "prompt": "registration of plans",
+          "documentId": "doc-registry-act",
+          "sourceKey": "section:50"
+        },
+        {
+          "prompt": "Land Titles registered information",
+          "documentId": "doc-land-titles-act",
+          "sourceKey": "section:82"
+        },
+        {
+          "prompt": "public records/maps/plans as evidence",
+          "documentId": "doc-evidence-act",
+          "sourceKey": "section:36"
+        },
+        {
+          "prompt": "registered instruments/wills as evidence",
+          "documentId": "doc-evidence-act",
+          "sourceKey": "section:80"
+        },
+        {
+          "prompt": "Registry Office documents as evidence",
+          "documentId": "doc-evidence-act",
+          "sourceKey": "section:87"
+        },
+        {
+          "prompt": "archival public inspection",
+          "documentId": "doc-archives-act",
+          "sourceKey": "section:10"
+        },
+        {
+          "prompt": "certified archival copies",
+          "documentId": "doc-archives-act",
+          "sourceKey": "section:11"
+        }
+      ],
+      "relatedUnitIds": [
+        "A-REG-04",
+        "A-REG-06",
+        "A-LTA-07",
+        "B-EVID-01",
+        "B-EVID-02",
+        "C-ARCH-01",
+        "D-PRA-01",
+        "C-CGR-01",
+        "A-BCAR-01"
+      ],
+      "reviewWeight": "high",
+      "status": "planned"
+    },
+    {
+      "id": "NAV-12",
+      "unitType": "cross_document_navigation",
+      "tier": "NAV",
+      "title": "Who is the decision-maker?",
+      "sourceDocumentIds": [
+        "doc-new-brunswick-land-surveyors-act",
+        "doc-new-brunswick-land-surveyors-bylaws",
+        "doc-surveys-act",
+        "doc-community-planning-act",
+        "doc-registry-act",
+        "doc-land-titles-act",
+        "doc-boundaries-confirmation-act",
+        "doc-assessment-act",
+        "doc-mining-act",
+        "doc-energy-and-utilities-board-act"
+      ],
+      "sourceAnchors": [
+        {
+          "documentId": "doc-new-brunswick-land-surveyors-act",
+          "sourceKey": "section:12(1)",
+          "label": "12(1)",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-new-brunswick-land-surveyors-act",
+          "sourceKey": "section:12(2)",
+          "label": "12(2)",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-new-brunswick-land-surveyors-act",
+          "sourceKey": "section:12(3)",
+          "label": "12(3)",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-new-brunswick-land-surveyors-act",
+          "sourceKey": "section:20(1)",
+          "label": "20(1)",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-new-brunswick-land-surveyors-act",
+          "sourceKey": "section:20(2)",
+          "label": "20(2)",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-new-brunswick-land-surveyors-act",
+          "sourceKey": "section:20(3)",
+          "label": "20(3)",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-new-brunswick-land-surveyors-act",
+          "sourceKey": "section:20(4)",
+          "label": "20(4)",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-new-brunswick-land-surveyors-act",
+          "sourceKey": "section:23(1)",
+          "label": "23(1)",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-new-brunswick-land-surveyors-act",
+          "sourceKey": "section:23(2)",
+          "label": "23(2)",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-new-brunswick-land-surveyors-act",
+          "sourceKey": "section:23(3)",
+          "label": "23(3)",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-new-brunswick-land-surveyors-act",
+          "sourceKey": "section:23(4)",
+          "label": "23(4)",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-new-brunswick-land-surveyors-act",
+          "sourceKey": "section:23(5)",
+          "label": "23(5)",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-new-brunswick-land-surveyors-act",
+          "sourceKey": "section:23(6)",
+          "label": "23(6)",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-new-brunswick-land-surveyors-act",
+          "sourceKey": "section:23(7)",
+          "label": "23(7)",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-new-brunswick-land-surveyors-act",
+          "sourceKey": "section:23(8)",
+          "label": "23(8)",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-new-brunswick-land-surveyors-act",
+          "sourceKey": "section:23(9)",
+          "label": "23(9)",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-new-brunswick-land-surveyors-act",
+          "sourceKey": "section:23(10)",
+          "label": "23(10)",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-new-brunswick-land-surveyors-act",
+          "sourceKey": "section:23(11)",
+          "label": "23(11)",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-new-brunswick-land-surveyors-act",
+          "sourceKey": "section:25(1)",
+          "label": "25(1)",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-new-brunswick-land-surveyors-act",
+          "sourceKey": "section:25(2)",
+          "label": "25(2)",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-new-brunswick-land-surveyors-act",
+          "sourceKey": "section:25(3)",
+          "label": "25(3)",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-new-brunswick-land-surveyors-bylaws",
+          "sourceKey": "section:5.1",
+          "label": "5.1",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-new-brunswick-land-surveyors-bylaws",
+          "sourceKey": "section:5.1.1",
+          "label": "5.1.1",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-new-brunswick-land-surveyors-bylaws",
+          "sourceKey": "section:5.1.2",
+          "label": "5.1.2",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-new-brunswick-land-surveyors-bylaws",
+          "sourceKey": "section:5.1.3",
+          "label": "5.1.3",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-new-brunswick-land-surveyors-bylaws",
+          "sourceKey": "section:5.1.4",
+          "label": "5.1.4",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-new-brunswick-land-surveyors-bylaws",
+          "sourceKey": "section:5.1.5",
+          "label": "5.1.5",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-new-brunswick-land-surveyors-bylaws",
+          "sourceKey": "section:5.1.6",
+          "label": "5.1.6",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-new-brunswick-land-surveyors-bylaws",
+          "sourceKey": "section:5.1.7",
+          "label": "5.1.7",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-new-brunswick-land-surveyors-bylaws",
+          "sourceKey": "section:5.1.8",
+          "label": "5.1.8",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-new-brunswick-land-surveyors-bylaws",
+          "sourceKey": "section:5.2",
+          "label": "5.2",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-new-brunswick-land-surveyors-bylaws",
+          "sourceKey": "section:5.2.1",
+          "label": "5.2.1",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-new-brunswick-land-surveyors-bylaws",
+          "sourceKey": "section:5.2.2",
+          "label": "5.2.2",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-new-brunswick-land-surveyors-bylaws",
+          "sourceKey": "section:5.3",
+          "label": "5.3",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-new-brunswick-land-surveyors-bylaws",
+          "sourceKey": "section:5.3.1",
+          "label": "5.3.1",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-new-brunswick-land-surveyors-bylaws",
+          "sourceKey": "section:5.3.2",
+          "label": "5.3.2",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-new-brunswick-land-surveyors-bylaws",
+          "sourceKey": "section:5.3.3",
+          "label": "5.3.3",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-new-brunswick-land-surveyors-bylaws",
+          "sourceKey": "section:5.3.4",
+          "label": "5.3.4",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-new-brunswick-land-surveyors-bylaws",
+          "sourceKey": "section:5.3.5",
+          "label": "5.3.5",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-new-brunswick-land-surveyors-bylaws",
+          "sourceKey": "section:6.1",
+          "label": "6.1",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-new-brunswick-land-surveyors-bylaws",
+          "sourceKey": "section:6.1.1",
+          "label": "6.1.1",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-new-brunswick-land-surveyors-bylaws",
+          "sourceKey": "section:6.1.2",
+          "label": "6.1.2",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-new-brunswick-land-surveyors-bylaws",
+          "sourceKey": "section:6.1.3",
+          "label": "6.1.3",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-new-brunswick-land-surveyors-bylaws",
+          "sourceKey": "section:6.2",
+          "label": "6.2",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-new-brunswick-land-surveyors-bylaws",
+          "sourceKey": "section:6.2.1",
+          "label": "6.2.1",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-new-brunswick-land-surveyors-bylaws",
+          "sourceKey": "section:6.2.2",
+          "label": "6.2.2",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-new-brunswick-land-surveyors-bylaws",
+          "sourceKey": "section:6.2.3",
+          "label": "6.2.3",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-new-brunswick-land-surveyors-bylaws",
+          "sourceKey": "section:1.6.3",
+          "label": "1.6.3",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-new-brunswick-land-surveyors-bylaws",
+          "sourceKey": "section:6.3.1",
+          "label": "6.3.1",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-new-brunswick-land-surveyors-bylaws",
+          "sourceKey": "section:6.3.2",
+          "label": "6.3.2",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-new-brunswick-land-surveyors-bylaws",
+          "sourceKey": "section:1.6.4",
+          "label": "1.6.4",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-new-brunswick-land-surveyors-bylaws",
+          "sourceKey": "section:6.5",
+          "label": "6.5",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-new-brunswick-land-surveyors-bylaws",
+          "sourceKey": "section:6.5.1",
+          "label": "6.5.1",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-new-brunswick-land-surveyors-bylaws",
+          "sourceKey": "section:6.5.2",
+          "label": "6.5.2",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-new-brunswick-land-surveyors-bylaws",
+          "sourceKey": "section:6.6",
+          "label": "6.6",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-new-brunswick-land-surveyors-bylaws",
+          "sourceKey": "section:6.7",
+          "label": "6.7",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-new-brunswick-land-surveyors-bylaws",
+          "sourceKey": "section:6.8",
+          "label": "6.8",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-new-brunswick-land-surveyors-bylaws",
+          "sourceKey": "section:6.9",
+          "label": "6.9",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-new-brunswick-land-surveyors-bylaws",
+          "sourceKey": "section:6.9.1",
+          "label": "6.9.1",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-new-brunswick-land-surveyors-bylaws",
+          "sourceKey": "section:6.9.2",
+          "label": "6.9.2",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-new-brunswick-land-surveyors-bylaws",
+          "sourceKey": "section:6.9.3",
+          "label": "6.9.3",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-new-brunswick-land-surveyors-bylaws",
+          "sourceKey": "section:1.6.10",
+          "label": "1.6.10",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-new-brunswick-land-surveyors-bylaws",
+          "sourceKey": "section:6.11",
+          "label": "6.11",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-new-brunswick-land-surveyors-bylaws",
+          "sourceKey": "section:6.12",
+          "label": "6.12",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-new-brunswick-land-surveyors-bylaws",
+          "sourceKey": "section:6.12.1",
+          "label": "6.12.1",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-new-brunswick-land-surveyors-bylaws",
+          "sourceKey": "section:6.12.2",
+          "label": "6.12.2",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-new-brunswick-land-surveyors-bylaws",
+          "sourceKey": "section:6.12.3",
+          "label": "6.12.3",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-new-brunswick-land-surveyors-bylaws",
+          "sourceKey": "section:6.12.4",
+          "label": "6.12.4",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-new-brunswick-land-surveyors-bylaws",
+          "sourceKey": "section:6.12.5",
+          "label": "6.12.5",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-new-brunswick-land-surveyors-bylaws",
+          "sourceKey": "section:6.12.6",
+          "label": "6.12.6",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-surveys-act",
+          "sourceKey": "section:3",
+          "label": "3",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-surveys-act",
+          "sourceKey": "section:7",
+          "label": "7",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-surveys-act",
+          "sourceKey": "section:8",
+          "label": "8",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-community-planning-act",
+          "sourceKey": "section:84",
+          "label": "84",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-community-planning-act",
+          "sourceKey": "section:85",
+          "label": "85",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-community-planning-act",
+          "sourceKey": "section:86",
+          "label": "86",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-community-planning-act",
+          "sourceKey": "section:108",
+          "label": "108",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-community-planning-act",
+          "sourceKey": "section:109",
+          "label": "109",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-community-planning-act",
+          "sourceKey": "section:110",
+          "label": "110",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-community-planning-act",
+          "sourceKey": "section:111",
+          "label": "111",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-community-planning-act",
+          "sourceKey": "section:112",
+          "label": "112",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-community-planning-act",
+          "sourceKey": "section:113",
+          "label": "113",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-community-planning-act",
+          "sourceKey": "section:114",
+          "label": "114",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-community-planning-act",
+          "sourceKey": "section:115",
+          "label": "115",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-community-planning-act",
+          "sourceKey": "section:116",
+          "label": "116",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-community-planning-act",
+          "sourceKey": "section:117",
+          "label": "117",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-community-planning-act",
+          "sourceKey": "section:118",
+          "label": "118",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-community-planning-act",
+          "sourceKey": "section:119",
+          "label": "119",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-community-planning-act",
+          "sourceKey": "section:120",
+          "label": "120",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-community-planning-act",
+          "sourceKey": "section:121",
+          "label": "121",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-community-planning-act",
+          "sourceKey": "section:122",
+          "label": "122",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-community-planning-act",
+          "sourceKey": "section:123",
+          "label": "123",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-community-planning-act",
+          "sourceKey": "section:124",
+          "label": "124",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-community-planning-act",
+          "sourceKey": "section:125",
+          "label": "125",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-community-planning-act",
+          "sourceKey": "section:126",
+          "label": "126",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-community-planning-act",
+          "sourceKey": "section:126.1",
+          "label": "126.1",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-community-planning-act",
+          "sourceKey": "section:127",
+          "label": "127",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-community-planning-act",
+          "sourceKey": "section:128",
+          "label": "128",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-community-planning-act",
+          "sourceKey": "section:129",
+          "label": "129",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-community-planning-act",
+          "sourceKey": "section:130",
+          "label": "130",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-community-planning-act",
+          "sourceKey": "section:131",
+          "label": "131",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-community-planning-act",
+          "sourceKey": "section:132",
+          "label": "132",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-community-planning-act",
+          "sourceKey": "section:133",
+          "label": "133",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-community-planning-act",
+          "sourceKey": "section:134",
+          "label": "134",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-community-planning-act",
+          "sourceKey": "section:135",
+          "label": "135",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-community-planning-act",
+          "sourceKey": "section:136",
+          "label": "136",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-community-planning-act",
+          "sourceKey": "section:137",
+          "label": "137",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-community-planning-act",
+          "sourceKey": "section:138",
+          "label": "138",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-community-planning-act",
+          "sourceKey": "section:139",
+          "label": "139",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-community-planning-act",
+          "sourceKey": "section:140",
+          "label": "140",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-registry-act",
+          "sourceKey": "section:12",
+          "label": "12",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-registry-act",
+          "sourceKey": "section:17",
+          "label": "17",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-registry-act",
+          "sourceKey": "section:46",
+          "label": "46",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-land-titles-act",
+          "sourceKey": "section:5",
+          "label": "5",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-land-titles-act",
+          "sourceKey": "section:12",
+          "label": "12",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-land-titles-act",
+          "sourceKey": "section:68",
+          "label": "68",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-land-titles-act",
+          "sourceKey": "section:69",
+          "label": "69",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-land-titles-act",
+          "sourceKey": "section:70",
+          "label": "70",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-land-titles-act",
+          "sourceKey": "section:79",
+          "label": "79",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-boundaries-confirmation-act",
+          "sourceKey": "section:3",
+          "label": "3",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-boundaries-confirmation-act",
+          "sourceKey": "section:4",
+          "label": "4",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-boundaries-confirmation-act",
+          "sourceKey": "section:8",
+          "label": "8",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-boundaries-confirmation-act",
+          "sourceKey": "section:9",
+          "label": "9",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-boundaries-confirmation-act",
+          "sourceKey": "section:10",
+          "label": "10",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-boundaries-confirmation-act",
+          "sourceKey": "section:11",
+          "label": "11",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-boundaries-confirmation-act",
+          "sourceKey": "section:12",
+          "label": "12",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-boundaries-confirmation-act",
+          "sourceKey": "section:13",
+          "label": "13",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-boundaries-confirmation-act",
+          "sourceKey": "section:14",
+          "label": "14",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-assessment-act",
+          "sourceKey": "section:25",
+          "label": "25",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-assessment-act",
+          "sourceKey": "section:25.1",
+          "label": "25.1",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-assessment-act",
+          "sourceKey": "section:26",
+          "label": "26",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-assessment-act",
+          "sourceKey": "section:27",
+          "label": "27",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-assessment-act",
+          "sourceKey": "section:28",
+          "label": "28",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-assessment-act",
+          "sourceKey": "section:29",
+          "label": "29",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-assessment-act",
+          "sourceKey": "section:29.1",
+          "label": "29.1",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-assessment-act",
+          "sourceKey": "section:29.2",
+          "label": "29.2",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-assessment-act",
+          "sourceKey": "section:37",
+          "label": "37",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-mining-act",
+          "sourceKey": "section:1",
+          "label": "1",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-mining-act",
+          "sourceKey": "section:1.1",
+          "label": "1.1",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-mining-act",
+          "sourceKey": "section:1.2",
+          "label": "1.2",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-mining-act",
+          "sourceKey": "section:2",
+          "label": "2",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-mining-act",
+          "sourceKey": "section:3",
+          "label": "3",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-mining-act",
+          "sourceKey": "section:4",
+          "label": "4",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-mining-act",
+          "sourceKey": "section:5",
+          "label": "5",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-mining-act",
+          "sourceKey": "section:6",
+          "label": "6",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-mining-act",
+          "sourceKey": "section:24",
+          "label": "24",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-mining-act",
+          "sourceKey": "section:25",
+          "label": "25",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-mining-act",
+          "sourceKey": "section:26",
+          "label": "26",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-mining-act",
+          "sourceKey": "section:27",
+          "label": "27",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-mining-act",
+          "sourceKey": "section:28",
+          "label": "28",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-mining-act",
+          "sourceKey": "section:29",
+          "label": "29",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-mining-act",
+          "sourceKey": "section:30",
+          "label": "30",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-mining-act",
+          "sourceKey": "section:44",
+          "label": "44",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-mining-act",
+          "sourceKey": "section:45",
+          "label": "45",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-mining-act",
+          "sourceKey": "section:46",
+          "label": "46",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-mining-act",
+          "sourceKey": "section:47",
+          "label": "47",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-mining-act",
+          "sourceKey": "section:48",
+          "label": "48",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-mining-act",
+          "sourceKey": "section:48.1",
+          "label": "48.1",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-mining-act",
+          "sourceKey": "section:48.2",
+          "label": "48.2",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-mining-act",
+          "sourceKey": "section:67",
+          "label": "67",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-mining-act",
+          "sourceKey": "section:68",
+          "label": "68",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-mining-act",
+          "sourceKey": "section:69",
+          "label": "69",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-mining-act",
+          "sourceKey": "section:75",
+          "label": "75",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-mining-act",
+          "sourceKey": "section:76",
+          "label": "76",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-mining-act",
+          "sourceKey": "section:77",
+          "label": "77",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-mining-act",
+          "sourceKey": "section:78",
+          "label": "78",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-mining-act",
+          "sourceKey": "section:90",
+          "label": "90",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-mining-act",
+          "sourceKey": "section:91",
+          "label": "91",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-mining-act",
+          "sourceKey": "section:92",
+          "label": "92",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-mining-act",
+          "sourceKey": "section:93",
+          "label": "93",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-mining-act",
+          "sourceKey": "section:94",
+          "label": "94",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-mining-act",
+          "sourceKey": "section:98",
+          "label": "98",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-mining-act",
+          "sourceKey": "section:99",
+          "label": "99",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-mining-act",
+          "sourceKey": "section:100",
+          "label": "100",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-mining-act",
+          "sourceKey": "section:101",
+          "label": "101",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-mining-act",
+          "sourceKey": "section:101.1",
+          "label": "101.1",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-mining-act",
+          "sourceKey": "section:102",
+          "label": "102",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-mining-act",
+          "sourceKey": "section:103",
+          "label": "103",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-mining-act",
+          "sourceKey": "section:104",
+          "label": "104",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-mining-act",
+          "sourceKey": "section:105",
+          "label": "105",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-energy-and-utilities-board-act",
+          "sourceKey": "section:1",
+          "label": "1",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-energy-and-utilities-board-act",
+          "sourceKey": "section:1.1",
+          "label": "1.1",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-energy-and-utilities-board-act",
+          "sourceKey": "section:23",
+          "label": "23",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-energy-and-utilities-board-act",
+          "sourceKey": "section:28",
+          "label": "28",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-energy-and-utilities-board-act",
+          "sourceKey": "section:29",
+          "label": "29",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-energy-and-utilities-board-act",
+          "sourceKey": "section:33",
+          "label": "33",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-energy-and-utilities-board-act",
+          "sourceKey": "section:39",
+          "label": "39",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-energy-and-utilities-board-act",
+          "sourceKey": "section:43",
+          "label": "43",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-energy-and-utilities-board-act",
+          "sourceKey": "section:52",
+          "label": "52",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-energy-and-utilities-board-act",
+          "sourceKey": "section:53",
+          "label": "53",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-energy-and-utilities-board-act",
+          "sourceKey": "section:54",
+          "label": "54",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-energy-and-utilities-board-act",
+          "sourceKey": "section:69",
+          "label": "69",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-energy-and-utilities-board-act",
+          "sourceKey": "section:70",
+          "label": "70",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-energy-and-utilities-board-act",
+          "sourceKey": "section:71",
+          "label": "71",
+          "role": "navigation"
+        },
+        {
+          "documentId": "doc-energy-and-utilities-board-act",
+          "sourceKey": "section:77",
+          "label": "77",
+          "role": "navigation"
+        }
+      ],
+      "learningDepths": [
+        "recognize",
+        "understand",
+        "retrieve"
+      ],
+      "examGoal": "Given an approval, registration, appeal, discipline, survey-system or statutory-decision question, identify the correct official/body before searching for the detailed procedure.",
+      "recognitionCues": [
+        "who approves",
+        "who decides",
+        "who may order",
+        "who hears an objection",
+        "who hears an appeal",
+        "who may rectify",
+        "who certifies",
+        "Registrar",
+        "Chief Registrar",
+        "Registrar General",
+        "Director of Surveys",
+        "development officer",
+        "Minister",
+        "Board",
+        "ANBLS Council"
+      ],
+      "coreUnderstanding": [
+        "Many exam questions can be answered faster once the candidate identifies the correct statutory actor.",
+        "Different functions belong to different decision-makers: professional registration/discipline, survey-system administration, subdivision approval, Registry administration, Land Titles registration/rectification, boundary confirmation, assessment appeals and resource regulation.",
+        "Do not infer authority from a job title; locate the statutory provision giving the power."
+      ],
+      "mustRecall": [],
+      "mustLocate": [
+        {
+          "prompt": "Board of Examiners / registration qualification",
+          "documentId": "doc-new-brunswick-land-surveyors-act",
+          "sourceKey": "section:12(1)"
+        },
+        {
+          "prompt": "professional complaints structure",
+          "documentId": "doc-new-brunswick-land-surveyors-act",
+          "sourceKey": "section:20(1)"
+        },
+        {
+          "prompt": "Director of Surveys / survey-system administration",
+          "documentId": "doc-surveys-act",
+          "sourceKey": "section:3"
+        },
+        {
+          "prompt": "subdivision-plan application/approval actor",
+          "documentId": "doc-community-planning-act",
+          "sourceKey": "section:84"
+        },
+        {
+          "prompt": "Registry registrar duties",
+          "documentId": "doc-registry-act",
+          "sourceKey": "section:12"
+        },
+        {
+          "prompt": "Chief Registrar powers",
+          "documentId": "doc-registry-act",
+          "sourceKey": "section:17"
+        },
+        {
+          "prompt": "Land Titles rectification authority",
+          "documentId": "doc-land-titles-act",
+          "sourceKey": "section:68"
+        },
+        {
+          "prompt": "boundary-confirmation hearing/order route",
+          "documentId": "doc-boundaries-confirmation-act",
+          "sourceKey": "section:11"
+        },
+        {
+          "prompt": "assessment appeal framework",
+          "documentId": "doc-assessment-act",
+          "sourceKey": "section:27"
+        }
+      ],
+      "relatedUnitIds": [
+        "A-BYL-04",
+        "A-NBLS-02",
+        "A-NBLS-05",
+        "A-SURV-01",
+        "A-SURV-04",
+        "A-CPA-06",
+        "A-CPAR-02",
+        "A-REG-06",
+        "A-LTA-05",
+        "A-LTA-07",
+        "A-BCA-03",
+        "B-ASMT-02",
+        "B-MIN-01",
+        "B-MIN-03",
+        "C-EUB-01"
+      ],
+      "reviewWeight": "high",
       "status": "planned"
     }
   ]

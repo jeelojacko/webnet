@@ -19,7 +19,7 @@ import type {
   ExamUnitType,
 } from './examCurriculumTypes';
 
-export const EXAM_CURRICULUM_TIERS: readonly ExamCurriculumTier[] = ['A', 'B', 'C', 'D'];
+export const EXAM_CURRICULUM_TIERS: readonly ExamCurriculumTier[] = ['A', 'B', 'C', 'D', 'NAV'];
 export const EXAM_CURRICULUM_UNIT_TYPES: readonly ExamUnitType[] = [
   'document_orientation',
   'core_concept',
@@ -36,6 +36,10 @@ export const EXAM_CURRICULUM_LEARNING_DEPTHS: readonly ExamLearningDepth[] = [
 const WARNING_RECALL_ENTRY_LIMIT = 6;
 const WARNING_RECALL_TEXT_LIMIT = 240;
 const WARNING_ANCHOR_BREADTH_LIMIT = 40;
+// Cross-document navigation is intentionally broader than a single-statute
+// unit because it traverses many narrow statutory sources; keep a separate
+// NAV-aware breadth threshold and leave the A-D threshold untouched.
+const NAV_ANCHOR_BREADTH_LIMIT = 80;
 
 const known = (values: readonly string[], value: string): boolean => values.includes(value);
 
@@ -143,6 +147,131 @@ const validateCoreConceptUnit = (unit: ExamCurriculumUnit, errors: ExamCurriculu
   }
 };
 
+const validateCrossDocumentNavigationUnit = (
+  unit: ExamCurriculumUnit,
+  errors: ExamCurriculumValidationIssue[],
+): void => {
+  const unitDepths = depths(unit);
+  if (unit.tier !== 'NAV') {
+    errors.push({
+      level: 'error',
+      unitId: unit.id,
+      code: 'navigation-tier-mismatch',
+      message: 'cross_document_navigation unit must have tier NAV',
+    });
+  }
+  const distinctSourceDocuments = new Set(unit.sourceDocumentIds);
+  if (distinctSourceDocuments.size !== unit.sourceDocumentIds.length) {
+    errors.push({
+      level: 'error',
+      unitId: unit.id,
+      code: 'navigation-duplicate-source-document',
+      message: 'sourceDocumentIds must not repeat a document',
+    });
+  }
+  if (distinctSourceDocuments.size < 2) {
+    errors.push({
+      level: 'error',
+      unitId: unit.id,
+      code: 'navigation-too-few-documents',
+      message: 'cross_document_navigation unit must span at least 2 source documents',
+    });
+  }
+  for (const required of ['recognize', 'understand', 'retrieve'] as const) {
+    if (!unitDepths.has(required)) {
+      errors.push({
+        level: 'error',
+        unitId: unit.id,
+        code: 'navigation-missing-depth',
+        message: `cross_document_navigation unit must target learning depth "${required}"`,
+      });
+    }
+  }
+  if (unit.examGoal.trim() === '') {
+    errors.push({
+      level: 'error',
+      unitId: unit.id,
+      code: 'navigation-missing-exam-goal',
+      message: 'cross_document_navigation unit must have a non-empty examGoal',
+    });
+  }
+  if (unit.recognitionCues.length === 0) {
+    errors.push({
+      level: 'error',
+      unitId: unit.id,
+      code: 'navigation-missing-cues',
+      message: 'cross_document_navigation unit must have at least one recognition cue',
+    });
+  }
+  if (unit.coreUnderstanding.length === 0) {
+    errors.push({
+      level: 'error',
+      unitId: unit.id,
+      code: 'navigation-missing-core',
+      message: 'cross_document_navigation unit must have at least one core-understanding point',
+    });
+  }
+  if (unit.relatedUnitIds.length < 2) {
+    errors.push({
+      level: 'error',
+      unitId: unit.id,
+      code: 'navigation-too-few-related',
+      message: 'cross_document_navigation unit must reference at least 2 related units',
+    });
+  }
+  if (!['high', 'medium', 'low'].includes(unit.reviewWeight)) {
+    errors.push({
+      level: 'error',
+      unitId: unit.id,
+      code: 'navigation-invalid-review-weight',
+      message: `unknown review weight "${unit.reviewWeight}"`,
+    });
+  }
+  if (unit.mustLocate.length < 3) {
+    errors.push({
+      level: 'error',
+      unitId: unit.id,
+      code: 'navigation-too-few-lookups',
+      message: 'cross_document_navigation unit must define at least 3 mustLocate targets',
+    });
+  }
+  const lookupDocuments = new Set(unit.mustLocate.map((lookup) => lookup.documentId));
+  if (lookupDocuments.size < 2) {
+    errors.push({
+      level: 'error',
+      unitId: unit.id,
+      code: 'navigation-lookup-breadth',
+      message: 'mustLocate targets must span at least 2 distinct documents',
+    });
+  }
+  for (const lookup of unit.mustLocate) {
+    if (lookup.sourceKey === undefined) {
+      errors.push({
+        level: 'error',
+        unitId: unit.id,
+        code: 'navigation-lookup-unpinned',
+        message: `mustLocate "${lookup.prompt}" must resolve to an explicit sourceKey`,
+      });
+    }
+  }
+  if (unit.mustRecall.length > 0 && !unitDepths.has('recall')) {
+    errors.push({
+      level: 'error',
+      unitId: unit.id,
+      code: 'navigation-recall-depth-missing',
+      message: 'a mustRecall entry requires learning depth "recall"',
+    });
+  }
+  if (unit.mustRecall.length > 1) {
+    errors.push({
+      level: 'error',
+      unitId: unit.id,
+      code: 'navigation-recall-list',
+      message: 'cross_document_navigation units carry at most one compact mustRecall rule',
+    });
+  }
+};
+
 const validateRecallRetrieveWarnings = (
   unit: ExamCurriculumUnit,
   warnings: ExamCurriculumValidationIssue[],
@@ -176,7 +305,7 @@ const validateRecallRetrieveWarnings = (
       message: 'unit targets "recall" depth but has no mustRecall entries (rule may be misplaced in mustLocate)',
     });
   }
-  if (unit.sourceAnchors.length > WARNING_ANCHOR_BREADTH_LIMIT) {
+  if (unit.sourceAnchors.length > (unit.unitType === 'cross_document_navigation' ? NAV_ANCHOR_BREADTH_LIMIT : WARNING_ANCHOR_BREADTH_LIMIT)) {
     warnings.push({
       level: 'warning',
       unitId: unit.id,
@@ -335,6 +464,7 @@ export const validateExamCurriculumUnits = (
 
     if (unit.unitType === 'document_orientation') validateOrientationUnit(unit, errors);
     if (unit.unitType === 'core_concept') validateCoreConceptUnit(unit, errors);
+    if (unit.unitType === 'cross_document_navigation') validateCrossDocumentNavigationUnit(unit, errors);
 
     validateRecallRetrieveWarnings(unit, warnings);
   }

@@ -8,6 +8,7 @@ import { createHash } from 'node:crypto';
 
 import { canonicalJson } from '../ai/studyAiResultContract';
 import type {
+  ExamCurriculumCatalogSpec,
   ExamCurriculumManifest,
   ExamCurriculumTier,
   ExamCurriculumUnit,
@@ -19,7 +20,7 @@ import {
   EXAM_CURRICULUM_ARCHITECTURE_VERSION,
   EXAM_CURRICULUM_SCHEMA_VERSION,
 } from './examCurriculumTypes';
-import { buildExamCurriculumUnitFromSpec } from './examCurriculumResolve';
+import { buildExamCurriculumUnitFromCatalogSpec } from './examCurriculumResolve';
 
 /** sha256 over canonicalJson of the manifest with createdAt + contentHash removed. */
 export const examCurriculumContentHash = (units: ExamCurriculumUnit[], identity: Omit<ExamCurriculumManifest, 'units' | 'createdAt' | 'contentHash'>): string => {
@@ -60,11 +61,11 @@ export const examCurriculumTierMetrics = (units: ExamCurriculumUnit[], tier: Exa
 };
 
 export const buildExamCurriculumManifest = (
-  specs: ExamCurriculumUnitSpec[],
+  specs: ExamCurriculumCatalogSpec[],
   corpus: ExamCurriculumCorpusView,
   createdAt: string,
 ): ExamCurriculumManifest => {
-  const units = specs.map((spec) => buildExamCurriculumUnitFromSpec(spec, corpus));
+  const units = specs.map((spec) => buildExamCurriculumUnitFromCatalogSpec(spec, corpus));
   const identity = {
     schemaVersion: EXAM_CURRICULUM_SCHEMA_VERSION,
     curriculumId: 'nb-sit-statute-exam-curriculum-v1',
@@ -85,23 +86,32 @@ const countBy = (values: string[]): Record<string, number> =>
     {} as Record<string, number>,
   );
 
-export const examCurriculumManifestMetrics = (manifest: ExamCurriculumManifest) => ({
-  totalUnits: manifest.units.length,
-  unitsByTier: countBy(manifest.units.map((u) => u.tier)),
-  tiers: {
-    A: examCurriculumTierMetrics(manifest.units, 'A'),
-    B: examCurriculumTierMetrics(manifest.units, 'B'),
-    C: examCurriculumTierMetrics(manifest.units, 'C'),
-    D: examCurriculumTierMetrics(manifest.units, 'D'),
-  },
-  unitsByType: countBy(manifest.units.map((u) => u.unitType)),
-  unitsByDocument: countBy(manifest.units.map((u) => u.sourceDocumentIds[0] ?? '(none)')),
-  unitsByReviewWeight: countBy(manifest.units.map((u) => u.reviewWeight)),
-  totalSourceAnchors: manifest.units.reduce((sum, u) => sum + u.sourceAnchors.length, 0),
-  totalMustRecall: manifest.units.reduce((sum, u) => sum + u.mustRecall.length, 0),
-  totalMustLocate: manifest.units.reduce((sum, u) => sum + u.mustLocate.length, 0),
-  unitsWithRecognizeDepth: manifest.units.filter((u) => u.learningDepths.includes('recognize')).length,
-});
+export const examCurriculumManifestMetrics = (manifest: ExamCurriculumManifest) => {
+  const everyDocumentId = manifest.units.flatMap((u) => u.sourceDocumentIds);
+  return {
+    totalUnits: manifest.units.length,
+    unitsByTier: countBy(manifest.units.map((u) => u.tier)),
+    tiers: {
+      A: examCurriculumTierMetrics(manifest.units, 'A'),
+      B: examCurriculumTierMetrics(manifest.units, 'B'),
+      C: examCurriculumTierMetrics(manifest.units, 'C'),
+      D: examCurriculumTierMetrics(manifest.units, 'D'),
+      NAV: examCurriculumTierMetrics(manifest.units, 'NAV'),
+    },
+    unitsByType: countBy(manifest.units.map((u) => u.unitType)),
+    // Legacy single-document metric: counts each unit under its first source
+    // document only. Do NOT use this to characterize cross-document (NAV)
+    // coverage — use sourceCoverageByDocument instead.
+    unitsByDocument: countBy(manifest.units.map((u) => u.sourceDocumentIds[0] ?? '(none)')),
+    // Every sourceDocumentId on every unit counts (multi-source aware).
+    sourceCoverageByDocument: countBy(everyDocumentId),
+    unitsByReviewWeight: countBy(manifest.units.map((u) => u.reviewWeight)),
+    totalSourceAnchors: manifest.units.reduce((sum, u) => sum + u.sourceAnchors.length, 0),
+    totalMustRecall: manifest.units.reduce((sum, u) => sum + u.mustRecall.length, 0),
+    totalMustLocate: manifest.units.reduce((sum, u) => sum + u.mustLocate.length, 0),
+    unitsWithRecognizeDepth: manifest.units.filter((u) => u.learningDepths.includes('recognize')).length,
+  };
+};
 
 /**
  * Deterministic Markdown report: one section per unit (metadata, educational
@@ -114,7 +124,7 @@ export const renderExamCurriculumMarkdown = (
 ): string => {
   const lines: string[] = [];
   const metrics = examCurriculumManifestMetrics(manifest);
-  lines.push(`# Exam Curriculum V1 — Tier A-D Build Report (${options.dateTag})`);
+  lines.push(`# Exam Curriculum V1 — Tier A-D + Navigation Build Report (${options.dateTag})`);
   lines.push('');
   lines.push(`- Curriculum ID: ${manifest.curriculumId}`);
   lines.push(`- Architecture version: ${manifest.architectureVersion}`);
@@ -126,6 +136,7 @@ export const renderExamCurriculumMarkdown = (
   lines.push(`- Tier-B projection hash: \`${examCurriculumTierProjectionHash(manifest.units, 'B')}\``);
   lines.push(`- Tier-C projection hash: \`${examCurriculumTierProjectionHash(manifest.units, 'C')}\``);
   lines.push(`- Tier-D projection hash: \`${examCurriculumTierProjectionHash(manifest.units, 'D')}\``);
+  lines.push(`- Navigation projection hash: \`${examCurriculumTierProjectionHash(manifest.units, 'NAV')}\``);
   lines.push('');
   lines.push('## Summary');
   lines.push('');
@@ -146,12 +157,16 @@ export const renderExamCurriculumMarkdown = (
   lines.push('');
   lines.push('### Tier breakdown');
   lines.push('');
-  for (const tier of ['A', 'B', 'C', 'D'] as const) {
+  for (const tier of ['A', 'B', 'C', 'D', 'NAV'] as const) {
     const tierMetrics = metrics.tiers[tier];
+    const label = tier === 'NAV' ? 'Navigation' : `Tier ${tier}`;
+    const kinds = tier === 'NAV'
+      ? `${tierMetrics.unitsByType.cross_document_navigation ?? 0} cross-document navigation`
+      : `${tierMetrics.unitsByType.document_orientation ?? 0} orientation / ` +
+        `${tierMetrics.unitsByType.core_concept ?? 0} core`;
     lines.push(
-      `- Tier ${tier}: ${tierMetrics.totalUnits} units ` +
-      `(${tierMetrics.unitsByType.document_orientation ?? 0} orientation / ` +
-      `${tierMetrics.unitsByType.core_concept ?? 0} core) — anchors=${tierMetrics.totalSourceAnchors} ` +
+      `- ${label}: ${tierMetrics.totalUnits} units ` +
+      `(${kinds}) — anchors=${tierMetrics.totalSourceAnchors} ` +
       `mustRecall=${tierMetrics.totalMustRecall} mustLocate=${tierMetrics.totalMustLocate}`,
     );
   }
@@ -159,6 +174,14 @@ export const renderExamCurriculumMarkdown = (
   lines.push('### Units by document');
   lines.push('');
   for (const [documentId, count] of Object.entries(metrics.unitsByDocument)) {
+    lines.push(`- ${documentId}: ${count}`);
+  }
+  lines.push('');
+  lines.push('### Source coverage by document (multi-source aware)');
+  lines.push('');
+  lines.push('Counts every `sourceDocumentId` on every unit (Navigation units contribute all of their documents).');
+  lines.push('');
+  for (const [documentId, count] of Object.entries(metrics.sourceCoverageByDocument)) {
     lines.push(`- ${documentId}: ${count}`);
   }
   lines.push('');
@@ -183,8 +206,15 @@ export const renderExamCurriculumMarkdown = (
   for (const unit of manifest.units) {
     lines.push(`### ${unit.id} — ${unit.title}`);
     lines.push('');
-    lines.push(`- Type: ${unit.unitType} (tier ${unit.tier}, status ${unit.status})`);
-    lines.push(`- Document: ${unit.sourceDocumentIds.join(', ')}`);
+    lines.push(`- Type: ${unit.unitType} (${unit.tier === 'NAV' ? 'group Navigation' : `tier ${unit.tier}`}, status ${unit.status})`);
+    if (unit.sourceDocumentIds.length > 1) {
+      lines.push('- Documents:');
+      for (const documentId of unit.sourceDocumentIds) {
+        lines.push(`  - ${documentId}`);
+      }
+    } else {
+      lines.push(`- Document: ${unit.sourceDocumentIds.join(', ')}`);
+    }
     lines.push(`- Learning depths: ${unit.learningDepths.join(', ')}`);
     lines.push(`- Review weight: ${unit.reviewWeight}`);
     if (unit.examGoal) {
@@ -202,7 +232,8 @@ export const renderExamCurriculumMarkdown = (
     for (const rule of unit.mustRecall) lines.push(`  - ${rule}`);
     lines.push(`- **LOOK HERE** (mustLocate):${unit.mustLocate.length === 0 ? ' (none)' : ''}`);
     for (const lookup of unit.mustLocate) {
-      lines.push(`  - ${lookup.prompt} → ${lookup.documentId}${lookup.sourceKey ? ` :: ${lookup.sourceKey}` : ''}`);
+      const destination = unit.sourceDocumentIds.length > 1 ? `${lookup.documentId} :: ` : '';
+      lines.push(`  - ${lookup.prompt} → ${destination}${lookup.sourceKey ? `${lookup.sourceKey}` : '(pin)'}`);
     }
     lines.push(`- Source anchors (${unit.sourceAnchors.length}):`);
     for (const anchor of unit.sourceAnchors) {
@@ -229,6 +260,7 @@ export const buildExamCurriculumJsonReport = (
     B: examCurriculumTierProjectionHash(manifest.units, 'B'),
     C: examCurriculumTierProjectionHash(manifest.units, 'C'),
     D: examCurriculumTierProjectionHash(manifest.units, 'D'),
+    NAV: examCurriculumTierProjectionHash(manifest.units, 'NAV'),
   },
   metrics: examCurriculumManifestMetrics(manifest),
   validation: {

@@ -1,13 +1,11 @@
-// Exam Curriculum V1 — Tier-B catalog glue + full A→B→C→D composition.
+// Exam Curriculum V1 — Tier-B catalog glue.
 //
 // Combines the four Tier-B catalog modules (Land, Property, Resources,
 // Public) into the flat, deterministic Tier-B spec list and exposes the
 // Tier-B document family counts / canonical document IDs / display titles.
-// It also composes the full Tier-A + Tier-B + Tier-C + Tier-D spec list
-// (121 units) that the builder, reports and tests consume.
+// The full canonical A → B → C → D → NAV composition lives in
+// examCurriculumCatalogAll.ts.
 
-import { examCurriculumTierASpecs } from './examCurriculumCatalog';
-import { examCurriculumTierCSpecs, examCurriculumTierDSpecs } from './examCurriculumCatalogTierCD';
 import type { ExamCurriculumUnitSpec } from './examCurriculumTypes';
 import {
   examCurriculumTierBAgriSpecs,
@@ -110,13 +108,3 @@ export const EXAM_CURRICULUM_TIER_B_DOCUMENTS: readonly string[] = examCurriculu
 export const EXAM_CURRICULUM_TIER_B_DOCUMENT_TITLES: Record<string, string> = Object.fromEntries(
   examCurriculumTierBFamilies.map((family) => [family.documentId, family.title]),
 );
-
-/** Combined Tier-A (51) + Tier-B (43) + Tier-C (21) + Tier-D (6) spec list. */
-export const EXAM_CURRICULUM_TOTAL = 121;
-
-export const examCurriculumAllSpecs: ExamCurriculumUnitSpec[] = [
-  ...examCurriculumTierASpecs,
-  ...examCurriculumTierBSpecs,
-  ...examCurriculumTierCSpecs,
-  ...examCurriculumTierDSpecs,
-];

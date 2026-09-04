@@ -10,7 +10,7 @@
 export const EXAM_CURRICULUM_ARCHITECTURE_VERSION = 'exam-curriculum-v1';
 export const EXAM_CURRICULUM_SCHEMA_VERSION = 1;
 
-export type ExamCurriculumTier = 'A' | 'B' | 'C' | 'D';
+export type ExamCurriculumTier = 'A' | 'B' | 'C' | 'D' | 'NAV';
 
 export type ExamUnitType =
   | 'document_orientation'
@@ -80,7 +80,12 @@ export interface ExamCurriculumManifest {
   units: ExamCurriculumUnit[];
 }
 
-/** Catalog-level input: a section range expressed with label endpoints. */
+/**
+ * Catalog-level input: a section range expressed with label endpoints.
+ * Dotted descendants and parenthesized subparts of an endpoint resolve
+ * together (document-order semantics); a two-endpoint range spans every
+ * section between the groups in document order.
+ */
 export interface ExamCurriculumSectionRange {
   /** Inclusive from-endpoint, e.g. "12", "2.1", "19.01", "21.4". */
   from: string;
@@ -119,6 +124,62 @@ export interface ExamCurriculumLookupSpec {
   scheduleLabel?: string;
   formLabel?: string;
 }
+
+/**
+ * Cross-document Navigation source: one corpus document plus the section
+ * ranges (and optional schedule/form labels) that carry the navigation point.
+ * Resolution is identical to A-D range resolution but scoped to this document.
+ */
+export interface ExamCrossDocumentSourceSpec {
+  documentId: string;
+  ranges: ExamCurriculumSectionRange[];
+  /** Schedule letters (e.g. "A" -> SCHEDULE A) resolved as supplemental anchors. */
+  schedules?: string[];
+  /** Form labels (e.g. "Form 1") resolved as supplemental anchors. */
+  forms?: string[];
+}
+
+/**
+ * A cross-document lookup target: the prompt plus the EXPLICIT document the
+ * pin must be resolved against (never silently resolved against another
+ * document that happens to share a section number).
+ */
+export interface ExamCrossDocumentLookupSpec {
+  prompt: string;
+  documentId: string;
+  /** Optional pins; when given they are resolved to a sourceKey in `documentId`. */
+  sectionLabel?: string;
+  scheduleLabel?: string;
+  formLabel?: string;
+}
+
+/**
+ * Planned cross-document Navigation unit before corpus resolution. These are
+ * routing/issue-classification units that teach WHICH law to open first and
+ * WHICH branch to follow for a fact pattern; they intentionally traverse
+ * several statutes instead of summarizing one.
+ */
+export interface ExamCrossDocumentNavigationSpec {
+  id: string;
+  title: string;
+  unitType: 'cross_document_navigation';
+  tier: 'NAV';
+  /** Sources in canonical source order; anchors follow this order, then corpus order. */
+  sources: ExamCrossDocumentSourceSpec[];
+  learningDepths: ExamLearningDepth[];
+  examGoal: string;
+  recognitionCues: string[];
+  coreUnderstanding: string[];
+  mustRecall: string[];
+  mustLocate: ExamCrossDocumentLookupSpec[];
+  relatedUnitIds: string[];
+  reviewWeight: ExamCurriculumReviewWeight;
+}
+
+/** Union of every planned catalog entry (A-D single-document + NAV cross-document). */
+export type ExamCurriculumCatalogSpec =
+  | ExamCurriculumUnitSpec
+  | ExamCrossDocumentNavigationSpec;
 
 export interface ExamCurriculumCorpusView {
   packageId: string;

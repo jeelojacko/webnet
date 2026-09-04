@@ -9,6 +9,10 @@
 // group member to the last in document order.
 
 import type {
+  ExamCrossDocumentLookupSpec,
+  ExamCrossDocumentNavigationSpec,
+  ExamCrossDocumentSourceSpec,
+  ExamCurriculumCatalogSpec,
   ExamCurriculumCorpusComponent,
   ExamCurriculumCorpusDocument,
   ExamCurriculumCorpusView,
@@ -101,28 +105,40 @@ const findSupplemental = (
   return match ?? null;
 };
 
-export const resolveExamCurriculumAnchorComponents = (
+interface AnchorSourceSelection {
+  ranges: ExamCurriculumSectionRange[];
+  schedules?: string[];
+  forms?: string[];
+}
+
+export const resolveExamCurriculumAnchorComponentsForSelection = (
   doc: ExamCurriculumCorpusDocument,
-  spec: ExamCurriculumUnitSpec,
+  selection: AnchorSourceSelection,
 ): ExamCurriculumCorpusComponent[] => {
   const byKey = new Map<string, ExamCurriculumCorpusComponent>();
-  for (const range of spec.ranges) {
+  for (const range of selection.ranges) {
     for (const component of resolveExamCurriculumSectionRange(doc, range)) {
       byKey.set(component.sourceKey, component);
     }
   }
-  for (const letter of spec.schedules ?? []) {
+  for (const letter of selection.schedules ?? []) {
     const match = findSupplemental(doc, 'schedule', `SCHEDULE ${letter}`);
     if (!match) throw new Error(`exam-curriculum: SCHEDULE ${letter} not found in document ${doc.id}`);
     byKey.set(match.sourceKey, match);
   }
-  for (const formLabel of spec.forms ?? []) {
+  for (const formLabel of selection.forms ?? []) {
     const match = findSupplemental(doc, 'form', formLabel);
     if (!match) throw new Error(`exam-curriculum: form "${formLabel}" not found in document ${doc.id}`);
     byKey.set(match.sourceKey, match);
   }
   return [...byKey.values()].sort((a, b) => a.order - b.order);
 };
+
+export const resolveExamCurriculumAnchorComponents = (
+  doc: ExamCurriculumCorpusDocument,
+  spec: ExamCurriculumUnitSpec,
+): ExamCurriculumCorpusComponent[] =>
+  resolveExamCurriculumAnchorComponentsForSelection(doc, spec);
 
 const anchorRoleFor = (unitType: ExamCurriculumUnitSpec['unitType']): ExamCurriculumSourceAnchor['role'] =>
   unitType === 'document_orientation' ? 'orientation' : 'core_rule';
@@ -160,6 +176,91 @@ export const resolveExamCurriculumLookupTarget = (
   };
   return { prompt: lookup.prompt, documentId: doc.id, sourceKey: resolveKey() };
 };
+
+export const buildExamCrossDocumentLookupTarget = (
+  corpus: ExamCurriculumCorpusView,
+  lookup: ExamCrossDocumentLookupSpec,
+): { prompt: string; documentId: string; sourceKey?: string } => {
+  const doc = corpus.documents.find((d) => d.id === lookup.documentId);
+  if (!doc) {
+    throw new Error(`exam-curriculum: unknown lookup document "${lookup.documentId}"`);
+  }
+  return resolveExamCurriculumLookupTarget(doc, {
+    prompt: lookup.prompt,
+    sectionLabel: lookup.sectionLabel,
+    scheduleLabel: lookup.scheduleLabel,
+    formLabel: lookup.formLabel,
+  });
+};
+
+/**
+ * Dedicated cross-document resolver for NAV specs.
+ *
+ * Each source resolves against its own corpus document; anchors are combined
+ * and deduplicated by documentId::sourceKey preserving spec source order then
+ * corpus order within a source; sourceDocumentIds mirrors the explicit source
+ * order; every anchor gets role 'navigation'; each mustLocate is resolved only
+ * against its own explicit documentId.
+ */
+export const buildExamCrossDocumentNavigationUnitFromSpec = (
+  spec: ExamCrossDocumentNavigationSpec,
+  corpus: ExamCurriculumCorpusView,
+): ExamCurriculumUnit => {
+  const docIds: string[] = [];
+  const seenDocs = new Set<string>();
+  const sourceSelections: Array<{ doc: ExamCurriculumCorpusDocument; source: ExamCrossDocumentSourceSpec }> = [];
+  for (const source of spec.sources) {
+    const doc = corpus.documents.find((d) => d.id === source.documentId);
+    if (!doc) throw new Error(`exam-curriculum: unknown document "${source.documentId}" for unit ${spec.id}`);
+    if (!seenDocs.has(doc.id)) {
+      seenDocs.add(doc.id);
+      docIds.push(doc.id);
+    }
+    sourceSelections.push({ doc, source });
+  }
+  const anchorKeys = new Set<string>();
+  const sourceAnchors: ExamCurriculumSourceAnchor[] = [];
+  for (const { doc, source } of sourceSelections) {
+    const components = resolveExamCurriculumAnchorComponentsForSelection(doc, source);
+    for (const component of components) {
+      const key = `${doc.id}::${component.sourceKey}`;
+      if (anchorKeys.has(key)) continue; // deduplicate documentId::sourceKey
+      anchorKeys.add(key);
+      sourceAnchors.push({
+        documentId: doc.id,
+        sourceKey: component.sourceKey,
+        label: component.label,
+        role: 'navigation',
+      });
+    }
+  }
+  return {
+    id: spec.id,
+    unitType: 'cross_document_navigation',
+    tier: 'NAV',
+    title: spec.title,
+    sourceDocumentIds: docIds,
+    sourceAnchors,
+    learningDepths: [...spec.learningDepths],
+    examGoal: spec.examGoal,
+    recognitionCues: [...spec.recognitionCues],
+    coreUnderstanding: [...spec.coreUnderstanding],
+    mustRecall: [...spec.mustRecall],
+    mustLocate: spec.mustLocate.map((lookup) => buildExamCrossDocumentLookupTarget(corpus, lookup)),
+    relatedUnitIds: [...spec.relatedUnitIds],
+    reviewWeight: spec.reviewWeight,
+    status: 'planned',
+  };
+};
+
+/** Dispatcher: NAV specs go through the cross-document resolver, A-D unchanged. */
+export const buildExamCurriculumUnitFromCatalogSpec = (
+  spec: ExamCurriculumCatalogSpec,
+  corpus: ExamCurriculumCorpusView,
+): ExamCurriculumUnit =>
+  spec.unitType === 'cross_document_navigation'
+    ? buildExamCrossDocumentNavigationUnitFromSpec(spec as ExamCrossDocumentNavigationSpec, corpus)
+    : buildExamCurriculumUnitFromSpec(spec as ExamCurriculumUnitSpec, corpus);
 
 export const buildExamCurriculumUnitFromSpec = (
   spec: ExamCurriculumUnitSpec,
