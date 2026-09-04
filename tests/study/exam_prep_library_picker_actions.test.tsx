@@ -6,8 +6,9 @@
 // (`?studyPicker=locate&prompt=…&token=…`), official search results must
 // visibly offer `[ Use this document ]` (document rows) and `[ Use this
 // provision ]` (official-provision rows) that post the objective pick
-// (`sourceKey: null` / exact sourceKey) to the sprint tab. Normal mode is
-// preserved: no action row and result cards stay a single click target.
+// (`sourceKey: null` / exact sourceKey) to the sprint tab over the
+// token-scoped BroadcastChannel. Normal mode is preserved: no action row and
+// result cards stay a single click target.
 
 import React, { act } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
@@ -19,6 +20,14 @@ import type {
   StudySearchStatus,
 } from '../../src/study/search/studySearchTypes';
 import { createSeedStudyData } from '../../src/study/studySeed';
+import {
+  examPrepLocatePickerChannelName,
+  type ExamPrepLocatePickMessage,
+} from '../../src/study/examPrep/examPrepLocatePicker';
+import {
+  installFakeBroadcastChannel,
+  restoreGlobalBroadcastChannel,
+} from './exam_prep_broadcast_channel_support';
 
 type StatusListener = (_status: StudySearchStatus) => void;
 type ResultsListener = (_results: StudySearchResultSummary[]) => void;
@@ -101,6 +110,7 @@ const resetLocation = () => {
 describe('Study Library picker-mode search actions', () => {
   let root: Root | null = null;
   let container: HTMLDivElement | null = null;
+  let previousBroadcastChannel: unknown;
 
   beforeEach(() => {
     fakeService = null;
@@ -110,6 +120,7 @@ describe('Study Library picker-mode search actions', () => {
     container = document.createElement('div');
     document.body.appendChild(container);
     root = createRoot(container);
+    previousBroadcastChannel = installFakeBroadcastChannel();
   });
 
   afterEach(() => {
@@ -118,6 +129,7 @@ describe('Study Library picker-mode search actions', () => {
     root = null;
     container = null;
     fakeService = null;
+    restoreGlobalBroadcastChannel(previousBroadcastChannel);
     vi.restoreAllMocks();
     resetLocation();
   });
@@ -183,6 +195,21 @@ describe('Study Library picker-mode search actions', () => {
     });
   };
 
+  const pickChannelName = (token: string): string => examPrepLocatePickerChannelName(token);
+
+  /**
+   * Opens a fake listener on the picker token channel (the role the sprint tab
+   * plays in the real flow) so the test can assert the pick the Library posts.
+   */
+  const listenForPick = (token: string): { picks: ExamPrepLocatePickMessage[] } => {
+    const picks: ExamPrepLocatePickMessage[] = [];
+    const channel = new BroadcastChannel(pickChannelName(token));
+    channel.onmessage = (event: MessageEvent) => {
+      picks.push(event.data as ExamPrepLocatePickMessage);
+    };
+    return { picks };
+  };
+
   it('normal mode has no picker banner and no Use-this action rows', async () => {
     await renderLibrary();
     expect(bodyText()).not.toContain('Locate picker');
@@ -193,11 +220,9 @@ describe('Study Library picker-mode search actions', () => {
   it('document search results offer [ Use this document ] and post a document-level pick', async () => {
     const token = 'lib-doc-token';
     setPickerLocation(token);
-    const openerPostMessage = vi.fn();
-    Object.defineProperty(window, 'opener', {
-      configurable: true,
-      value: { postMessage: openerPostMessage },
-    });
+    // The picker must communicate with NO window.opener (noopener,noreferrer).
+    expect(window.opener).toBeFalsy(); // jsdom reports undefined; browsers null — never a real opener
+    const { picks } = listenForPick(token);
     await renderLibrary();
     expect(bodyText()).toContain('Locate picker — find the controlling provision');
 
@@ -206,15 +231,13 @@ describe('Study Library picker-mode search actions', () => {
     expect(bodyText()).toContain('Use this document');
     await clickButton('Use this document');
 
-    expect(openerPostMessage).toHaveBeenCalledTimes(1);
-    const [message, origin] = openerPostMessage.mock.calls[0] ?? [];
-    expect(message).toMatchObject({
+    expect(picks).toHaveLength(1);
+    expect(picks[0]).toMatchObject({
       type: 'study-locate-pick',
       token,
       documentId: 'doc-registry-act',
       sourceKey: null,
     });
-    expect(origin).toBe(window.location.origin);
     // Notice confirms the send (also no provision action on a document row).
     expect(bodyText()).toContain('Sent: Use this document');
     // A document row never offers the provision action.
@@ -227,11 +250,8 @@ describe('Study Library picker-mode search actions', () => {
   it('official-provision search results offer [ Use this provision ] with the exact sourceKey', async () => {
     const token = 'lib-provision-token';
     setPickerLocation(token);
-    const openerPostMessage = vi.fn();
-    Object.defineProperty(window, 'opener', {
-      configurable: true,
-      value: { postMessage: openerPostMessage },
-    });
+    expect(window.opener).toBeFalsy(); // jsdom reports undefined; browsers null — never a real opener
+    const { picks } = listenForPick(token);
     await renderLibrary();
 
     await typeQuery('integrated');
@@ -239,32 +259,34 @@ describe('Study Library picker-mode search actions', () => {
     expect(bodyText()).toContain('Use this provision');
     await clickButton('Use this provision');
 
-    expect(openerPostMessage).toHaveBeenCalledTimes(1);
-    const [message, origin] = openerPostMessage.mock.calls[0] ?? [];
-    expect(message).toMatchObject({
+    expect(picks).toHaveLength(1);
+    expect(picks[0]).toMatchObject({
       type: 'study-locate-pick',
       token,
       documentId: 'doc-surveys-act',
       sourceKey: 'section:83',
     });
-    expect(origin).toBe(window.location.origin);
     expect(bodyText()).toContain('Sent: Use this provision');
   });
 
-  it('reports an unreachable sprint tab when window.opener is absent', async () => {
+  it('explains the manual fallback when BroadcastChannel is unavailable', async () => {
     setPickerLocation('lib-lost-token');
-    Object.defineProperty(window, 'opener', { configurable: true, value: null });
+    // Simulate a browser without BroadcastChannel.
+    restoreGlobalBroadcastChannel(previousBroadcastChannel);
+    (globalThis as Record<string, unknown>).BroadcastChannel = undefined;
     await renderLibrary();
     await typeQuery('Registry');
     await pushResults([summaryForDocument('doc-registry-act')]);
     await clickButton('Use this document');
-    expect(bodyText()).toContain('Your Locate sprint tab could not be reached');
+    expect(bodyText()).toContain('Automatic answer return is unavailable in this browser');
+    // No bogus "could not be reached" claim: browsing stays usable.
+    expect(bodyText()).not.toContain('could not be reached');
   });
 
   it('provision deep links keep the picker query BEFORE the hash so reader context survives', async () => {
     const token = 'lib-hash-token';
     setPickerLocation(token);
-    Object.defineProperty(window, 'opener', { configurable: true, value: null });
+    expect(window.opener).toBeFalsy(); // jsdom reports undefined; browsers null — never a real opener
     const navigate = vi.fn();
     await renderLibrary(navigate);
     await typeQuery('integrated');

@@ -5,17 +5,41 @@
 // agree. Prompt text and card totals are part of the deterministic Exam Prep
 // contract; do not change them without a spec change.
 
+import type { ExamPrepCurriculumTier } from './examPrepTypes';
+
 export const EXAM_PREP_RECALL_PROMPT =
   'State the key rule you should remember for this curriculum unit.';
 
 /**
- * Canonical Recognition ask line shared by the Recognition sprint and the
- * provisional Mock exam (pre-submission prompt and post-submission grading
- * echo). Frozen cues and expected topics are untouched; only the question the
- * learner answers is single-sourced here so normal / NAV / Mock copy cannot
- * drift.
+ * Recognition ask for ordinary document-focused A/B/C/D units. Acknowledges
+ * that several laws can matter while still asking for the primary routing
+ * target.
  */
-export const EXAM_PREP_RECOGNITION_ASK = 'Which law or legal topic applies?';
+export const EXAM_PREP_RECOGNITION_ASK_NORMAL =
+  'Which statute, regulation, bylaw, or legal topic should you check first?';
+
+/**
+ * Recognition ask for tier-NAV cross-document navigation units, whose cues
+ * (e.g. `deed`) are routing problems rather than one-Act facts.
+ */
+export const EXAM_PREP_RECOGNITION_ASK_NAV =
+  'What routing issue should this cue make you resolve first?';
+
+/**
+ * Task-aware Recognition question shared by the Recognition sprint, the
+ * provisional Mock exam (pre-submission prompt) and Mock grading/review
+ * (post-submission echo) so normal / NAV copy cannot drift. Frozen cues are
+ * untouched; only the question wording is selected per task tier.
+ */
+export const examPrepRecognitionAskForTier = (tier: ExamPrepCurriculumTier | string): string =>
+  tier === 'NAV' ? EXAM_PREP_RECOGNITION_ASK_NAV : EXAM_PREP_RECOGNITION_ASK_NORMAL;
+
+/**
+ * Reveal/expected-block label: NAV recognition tasks expose a routing issue,
+ * ordinary tasks expose the expected topic. Presentation only.
+ */
+export const examPrepRecognitionExpectedLabelForTier = (tier: ExamPrepCurriculumTier | string): string =>
+  tier === 'NAV' ? 'Expected routing issue' : 'Expected topic';
 
 /**
  * One-line description of Recognition practice used by the Home Suggested

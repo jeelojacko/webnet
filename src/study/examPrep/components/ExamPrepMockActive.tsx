@@ -335,8 +335,13 @@ export const ExamPrepMockActive = ({
               <button
                 type="button"
                 onClick={() => {
-                  const libraryWindow = openStudyUrlNewTab(STUDY_LIBRARY_PATH);
-                  if (!libraryWindow) setSaveError('Could not open the Statute Library.');
+                  // noopener/noreferrer gives back no window handle, so a null
+                  // WindowProxy is not a popup failure — only a synchronous
+                  // exception is surfaced.
+                  const opened = openStudyUrlNewTab(STUDY_LIBRARY_PATH);
+                  if (!opened.attempted) {
+                    setSaveError('The Statute Library could not be opened.');
+                  }
                 }}
                 className="rounded border border-sky-700 bg-sky-900 px-3 py-1.5 text-xs font-semibold text-sky-100 hover:bg-sky-800"
               >

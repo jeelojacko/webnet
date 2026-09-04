@@ -9,7 +9,10 @@ import { useMemo, useState, type ReactNode } from 'react';
 import { EXAM_PREP_DOCUMENT_TITLES } from '../examPrepDocTitles';
 import { examPrepProvisionLabel, examPrepTierLabel } from '../examPrepFormat';
 import { EXAM_PREP_OPEN_SOURCE_BUTTON } from './examPrepBits';
-import { EXAM_PREP_RECOGNITION_ASK } from '../examPrepConstants';
+import {
+  examPrepRecognitionAskForTier,
+  examPrepRecognitionExpectedLabelForTier,
+} from '../examPrepConstants';
 import { EXAM_PREP_MOCK_KIND_LABELS } from '../examPrepFormat';
 import { resolveExamPrepMockQuestionContent } from '../mock/examPrepMockQuestionContent';
 import { gradeMockQuestion, finalizeMock } from '../mock/examPrepMockSession';
@@ -187,7 +190,7 @@ const examPrepQuestionText = (
     case 'recall':
       return content.prompt;
     case 'recognition':
-      return `${content.cue}\n\n${EXAM_PREP_RECOGNITION_ASK}`;
+      return `${content.cue}\n\n${examPrepRecognitionAskForTier(content.tier)}`;
     case 'locate':
       return content.prompt;
     case 'drill':
@@ -232,7 +235,7 @@ const ExamPrepMockExpectedBlock = ({
   if (content.kind === 'recognition') {
     return (
       <MockExpectedShell
-        title="Expected topic"
+        title={examPrepRecognitionExpectedLabelForTier(content.tier)}
         alreadyGraded={grading?.kind === 'recognition' ? grading : null}
         kind="recognition"
         gradingText={grading?.kind === 'recognition' ? (grading.correct ? 'Correct' : 'Incorrect') : null}

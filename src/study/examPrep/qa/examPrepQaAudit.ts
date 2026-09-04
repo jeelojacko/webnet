@@ -94,40 +94,100 @@ export type RecognitionQaRow = {
   wordCount: number;
   expectedDocumentCount: number;
   duplicateOf: string[];
+  /** True when a duplicated cue also appears on a DIFFERENT expected unit. */
+  duplicateAcrossUnits: boolean;
   veryShortCue: boolean;
   longCue: boolean;
+  /** Tier-NAV cue of <=3 words (e.g. `deed`) — a routing cue. */
+  shortNavCue: boolean;
+  /** Normalized cue exactly equals one of the generic legal nouns. */
+  genericNounCue: boolean;
 };
 
 export const RECOGNITION_SHORT_CUE_MAX = 5;
 export const RECOGNITION_LONG_CUE_MIN = 80;
+export const RECOGNITION_NAV_SHORT_WORD_MAX = 3;
+
+/**
+ * Deterministic set of generic legal nouns. A cue is flagged ONLY when its
+ * normalized text exactly equals one of these — longer cues that merely
+ * contain the word (e.g. `survey bordering Crown land`) are not flagged.
+ */
+export const EXAM_PREP_RECOGNITION_GENERIC_NOUN_CUES = [
+  'deed',
+  'transfer',
+  'plan',
+  'survey',
+  'registration',
+  'instrument',
+  'owner',
+  'parcel',
+  'boundary',
+  'land',
+  'record',
+  'document',
+  'title',
+  'easement',
+  'lease',
+  'licence',
+  'permit',
+  'application',
+  'notice',
+  'order',
+];
+
+const normalizeCueForGenericCheck = (cue: string): string =>
+  cue.trim().toLowerCase().replace(/[.,;:!?]+$/, '');
+
+export const isGenericLegalNounCue = (cue: string): boolean =>
+  EXAM_PREP_RECOGNITION_GENERIC_NOUN_CUES.includes(normalizeCueForGenericCheck(cue));
 
 export const buildRecognitionQaRows = (tasks: ExamPrepRecognitionTask[]): RecognitionQaRow[] => {
   const byCue = new Map<string, string[]>();
+  const unitByTaskId = new Map<string, string>();
   for (const task of tasks) {
     byCue.set(task.cue, [...(byCue.get(task.cue) ?? []), task.id]);
+    unitByTaskId.set(task.id, task.unitId);
   }
-  return tasks.map((task) => ({
-    id: task.id,
-    unitId: task.unitId,
-    unitTitle: task.unitTitle,
-    tierLabel: examPrepTierLabel(task.tier),
-    reviewWeight: task.reviewWeight,
-    cueIndex: task.cueIndex,
-    cue: task.cue,
-    charCount: task.cue.length,
-    wordCount: wordCount(task.cue),
-    expectedDocumentCount: task.expectedDocumentIds.length,
-    duplicateOf: (byCue.get(task.cue) ?? []).filter((id) => id !== task.id),
-    veryShortCue: task.cue.length <= RECOGNITION_SHORT_CUE_MAX,
-    longCue: task.cue.length >= RECOGNITION_LONG_CUE_MIN,
-  }));
+  return tasks.map((task) => {
+    const duplicates = (byCue.get(task.cue) ?? []).filter((id) => id !== task.id);
+    return {
+      id: task.id,
+      unitId: task.unitId,
+      unitTitle: task.unitTitle,
+      tierLabel: examPrepTierLabel(task.tier),
+      reviewWeight: task.reviewWeight,
+      cueIndex: task.cueIndex,
+      cue: task.cue,
+      charCount: task.cue.length,
+      wordCount: wordCount(task.cue),
+      expectedDocumentCount: task.expectedDocumentIds.length,
+      duplicateOf: duplicates,
+      duplicateAcrossUnits: duplicates.some(
+        (id) => (unitByTaskId.get(id) ?? task.unitId) !== task.unitId,
+      ),
+      veryShortCue: task.cue.length <= RECOGNITION_SHORT_CUE_MAX,
+      longCue: task.cue.length >= RECOGNITION_LONG_CUE_MIN,
+      shortNavCue: task.tier === 'NAV' && wordCount(task.cue) <= RECOGNITION_NAV_SHORT_WORD_MAX,
+      genericNounCue: isGenericLegalNounCue(task.cue),
+    };
+  });
 };
 
 export const RECOGNITION_QA_FLAGS_TEXT = (row: RecognitionQaRow): string => {
   const flags: string[] = [];
-  if (row.duplicateOf.length > 0) flags.push(`duplicate cue of ${row.duplicateOf.join(', ')}`);
+  if (row.duplicateOf.length > 0) {
+    flags.push(
+      row.duplicateAcrossUnits
+        ? `cross-unit duplicate cue of ${row.duplicateOf.join(', ')}`
+        : `duplicate cue of ${row.duplicateOf.join(', ')}`,
+    );
+  }
   if (row.veryShortCue) flags.push(`<=${RECOGNITION_SHORT_CUE_MAX} chars`);
   if (row.longCue) flags.push(`>=${RECOGNITION_LONG_CUE_MIN} chars`);
+  if (row.shortNavCue)
+    flags.push(`<=${RECOGNITION_NAV_SHORT_WORD_MAX}-word NAV cue`);
+  if (row.genericNounCue) flags.push('generic legal noun cue');
   if (row.expectedDocumentCount > 1)
     flags.push(`expected across ${row.expectedDocumentCount} documents`);
   return flags.length > 0 ? flags.join(', ') : 'ok';
@@ -203,7 +263,10 @@ export const buildRecallQaMarkdown = (tasks: ExamPrepRecallTask[]): string => {
 export const buildRecognitionQaMarkdown = (tasks: ExamPrepRecognitionTask[]): string => {
   const rows = buildRecognitionQaRows(tasks);
   const duplicateRows = rows.filter((row) => row.duplicateOf.length > 0);
+  const crossUnitDuplicateRows = rows.filter((row) => row.duplicateAcrossUnits);
   const shortRows = rows.filter((row) => row.veryShortCue);
+  const shortNavRows = rows.filter((row) => row.shortNavCue);
+  const genericNounRows = rows.filter((row) => row.genericNounCue);
   const longRows = rows.filter((row) => row.longCue);
   const multiDocRows = rows.filter((row) => row.expectedDocumentCount > 1);
   const lines: string[] = [];
@@ -221,8 +284,18 @@ export const buildRecognitionQaMarkdown = (tasks: ExamPrepRecognitionTask[]): st
   lines.push('');
   lines.push('| Flag | Cues |');
   lines.push('| --- | --- |');
-  lines.push(summaryLine('duplicate cue text (shared with another task)', duplicateRows.length));
+  lines.push(summaryLine('duplicate cue instances (shared with another task)', duplicateRows.length));
+  lines.push(
+    summaryLine('duplicate cues across different expected units', crossUnitDuplicateRows.length),
+  );
   lines.push(summaryLine(`very short (<=${RECOGNITION_SHORT_CUE_MAX} chars)`, shortRows.length));
+  lines.push(
+    summaryLine(
+      `short NAV cues (<=${RECOGNITION_NAV_SHORT_WORD_MAX} words)`,
+      shortNavRows.length,
+    ),
+  );
+  lines.push(summaryLine('generic legal noun cue (exact normalized match)', genericNounRows.length));
   lines.push(summaryLine(`long (>=${RECOGNITION_LONG_CUE_MIN} chars)`, longRows.length));
   lines.push(summaryLine('expected across multiple documents', multiDocRows.length));
   lines.push('');
@@ -254,6 +327,10 @@ export const recognitionAuditCounts = (rows: RecognitionQaRow[]) => ({
   total: rows.length,
   // Distinct cue strings shared by more than one task (duplicate groups).
   duplicates: new Set(rows.filter((row) => row.duplicateOf.length > 0).map((row) => row.cue)).size,
+  // Tasks whose cue also appears on a DIFFERENT expected unit.
+  crossUnitDuplicates: countsOf(rows, (row: RecognitionQaRow) => row.duplicateAcrossUnits),
   veryShort: countsOf(rows, (row: RecognitionQaRow) => row.veryShortCue),
   long: countsOf(rows, (row: RecognitionQaRow) => row.longCue),
+  shortNav: countsOf(rows, (row: RecognitionQaRow) => row.shortNavCue),
+  genericNoun: countsOf(rows, (row: RecognitionQaRow) => row.genericNounCue),
 });

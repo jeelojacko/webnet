@@ -11,6 +11,7 @@ import {
   buildRecognitionQaMarkdown,
   recallAuditCounts,
   recognitionAuditCounts,
+  RECOGNITION_QA_FLAGS_TEXT,
 } from '../../src/study/examPrep/qa/examPrepQaAudit';
 
 describe('Exam Prep QA audit (deterministic reports)', () => {
@@ -45,6 +46,32 @@ describe('Exam Prep QA audit (deterministic reports)', () => {
     expect(flagged[0]?.cue.trim().length).toBeLessThanOrEqual(5);
   });
 
+  it('extended recognition flags: short NAV cues, generic legal nouns, cross-unit duplicates', () => {
+    const rows = buildRecognitionQaRows(EXAM_PREP_RECOGNITION_TASKS);
+    const counts = recognitionAuditCounts(rows);
+    // Every duplicated cue in the frozen pool spans different expected units.
+    expect(counts.crossUnitDuplicates).toBe(rows.filter((row) => row.duplicateOf.length > 0).length);
+    expect(counts.crossUnitDuplicates).toBe(32);
+    // Short NAV routing cues (<= 3 words) across the 12 NAV units.
+    expect(counts.shortNav).toBe(114);
+    const shortNavRows = rows.filter((row) => row.shortNavCue);
+    for (const row of shortNavRows) {
+      expect(row.tierLabel).toBe('Navigation');
+      expect(row.wordCount).toBeLessThanOrEqual(3);
+    }
+    // Generic legal nouns: exact normalized match only (deed x2, transfer x1).
+    expect(counts.genericNoun).toBe(3);
+    const genericRows = rows.filter((row) => row.genericNounCue);
+    expect(genericRows.map((row) => row.cue).sort()).toEqual(['deed', 'deed', 'transfer']);
+    // A longer useful cue containing a generic word is NOT flagged.
+    const surveyBordering = rows.find((row) => row.cue === 'survey bordering Crown land');
+    expect(surveyBordering?.genericNounCue ?? false).toBe(false);
+    // Flag text carries the machine-readable qualifiers.
+    const deedRow = rows.find((row) => row.id === 'recognition:NAV-01:1');
+    expect(deedRow?.genericNounCue).toBe(true);
+    expect(deedRow ? RECOGNITION_QA_FLAGS_TEXT(deedRow) : '').toContain('generic legal noun cue');
+  });
+
   it('flags duplicate cues across units deterministically', () => {
     const rows = buildRecognitionQaRows(EXAM_PREP_RECOGNITION_TASKS);
     const byId = new Map(rows.map((row) => [row.id, row]));
@@ -75,6 +102,10 @@ describe('Exam Prep QA audit (deterministic reports)', () => {
 
     const recognitionMarkdown = buildRecognitionQaMarkdown(EXAM_PREP_RECOGNITION_TASKS);
     expect(recognitionMarkdown).toContain(`cues audited: 317`);
+    // Extended summary lines.
+    expect(recognitionMarkdown).toContain('duplicate cues across different expected units');
+    expect(recognitionMarkdown).toContain('short NAV cues (<=3 words)');
+    expect(recognitionMarkdown).toContain('generic legal noun cue (exact normalized match)');
     for (const row of buildRecognitionQaRows(EXAM_PREP_RECOGNITION_TASKS)) {
       expect(recognitionMarkdown).toContain(row.id);
     }

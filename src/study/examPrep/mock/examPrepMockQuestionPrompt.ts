@@ -1,12 +1,14 @@
 // Exam Prep Mock — pre-submission question prompt text.
 //
 // Before submission the exam UI may render only the frozen question stimulus:
-// the Recall prompt, the Recognition cue + ask line, the Locate prompt, or
-// the Drill fact pattern + task. Expected answers / unit identity / document
-// pins / answer keys are NEVER returned here, so the answering UI cannot leak
-// them (even in hidden DOM).
+// the Recall prompt, the Recognition cue + task-aware ask line, the Locate
+// prompt, or the Drill fact pattern + task. Expected answers / unit identity /
+// document pins / answer keys are NEVER returned here, so the answering UI
+// cannot leak them (even in hidden DOM). The Recognition ask line is shared
+// with the Recognition sprint via `examPrepRecognitionAskForTier` so normal /
+// NAV / Mock copy cannot drift.
 
-import { EXAM_PREP_RECALL_PROMPT, EXAM_PREP_RECOGNITION_ASK } from '../examPrepConstants';
+import { EXAM_PREP_RECALL_PROMPT, examPrepRecognitionAskForTier } from '../examPrepConstants';
 import { resolveExamPrepMockQuestionContent } from './examPrepMockQuestionContent';
 import type { ExamPrepMockQuestionRef } from './examPrepMockTypes';
 
@@ -20,7 +22,7 @@ export const examPrepMockQuestionPromptText = (
     case 'recall':
       return content.prompt;
     case 'recognition':
-      return `${content.cue}\n\n${EXAM_PREP_RECOGNITION_ASK}`;
+      return `${content.cue}\n\n${examPrepRecognitionAskForTier(content.tier)}`;
     case 'locate':
       return content.prompt;
     case 'drill':

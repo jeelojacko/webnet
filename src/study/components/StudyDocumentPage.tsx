@@ -90,13 +90,13 @@ const StudyDocumentPage = ({
   );
   const [pickerSent, setPickerSent] = useState<{
     label: string;
-    posted: boolean;
+    kind: 'sent' | 'unsupported' | 'error';
   } | null>(null);
 
   const sendPickerPick = (sourceKey: string, label: string): void => {
     if (!pickerContext) return;
     const posted = postExamPrepLocatePick(pickerContext.token, documentId, sourceKey);
-    setPickerSent({ label, posted });
+    setPickerSent({ label, kind: posted });
   };
 
   useEffect(() => {
@@ -247,14 +247,16 @@ const StudyDocumentPage = ({
             {pickerSent ? (
               <span
                 className={`rounded border px-2 py-1 text-xs font-semibold ${
-                  pickerSent.posted
+                  pickerSent.kind === 'sent'
                     ? 'border-emerald-700 bg-emerald-900/60 text-emerald-200'
                     : 'border-amber-700 bg-amber-900/60 text-amber-200'
                 }`}
               >
-                {pickerSent.posted
-                  ? `Sent: ${pickerSent.label} — you can close this tab.`
-                  : 'Your Locate sprint tab could not be reached (it may have been closed).'}
+                {pickerSent.kind === 'sent'
+                  ? `Sent: ${pickerSent.label} — return to the Locate tab.`
+                  : pickerSent.kind === 'unsupported'
+                    ? 'Automatic answer return is unavailable in this browser — use Check Answer in your Locate tab.'
+                    : 'Your selection could not be sent — use Check Answer in your Locate tab.'}
               </span>
             ) : null}
           </div>

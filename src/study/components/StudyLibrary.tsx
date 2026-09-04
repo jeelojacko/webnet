@@ -163,7 +163,7 @@ const StudyLibrary = ({
     [],
   );
   const [pickerNotice, setPickerNotice] = useState<{
-    kind: 'sent' | 'unreachable' | null;
+    kind: 'sent' | 'unsupported' | 'error' | null;
     label?: string;
   }>({ kind: null });
 
@@ -320,7 +320,7 @@ const StudyLibrary = ({
     if (!pickerContext) return;
     if (result.entityType === 'document' && result.documentId) {
       const posted = postExamPrepLocatePick(pickerContext.token, result.documentId, null);
-      setPickerNotice({ kind: posted ? 'sent' : 'unreachable', label });
+      setPickerNotice({ kind: posted, label });
     }
     if (result.entityType === 'official-provision' && result.documentId && result.sourceKey) {
       const posted = postExamPrepLocatePick(
@@ -328,7 +328,7 @@ const StudyLibrary = ({
         result.documentId,
         result.sourceKey,
       );
-      setPickerNotice({ kind: posted ? 'sent' : 'unreachable', label });
+      setPickerNotice({ kind: posted, label });
     }
   };
 
@@ -428,12 +428,18 @@ const StudyLibrary = ({
             </div>
             {pickerNotice.kind === 'sent' ? (
               <span className="rounded border border-emerald-700 bg-emerald-900/60 px-2 py-1 text-xs font-semibold text-emerald-200">
-                Sent: {pickerNotice.label}
+                Sent: {pickerNotice.label} — return to the Locate tab.
               </span>
             ) : null}
-            {pickerNotice.kind === 'unreachable' ? (
+            {pickerNotice.kind === 'unsupported' ? (
               <span className="rounded border border-amber-700 bg-amber-900/60 px-2 py-1 text-xs font-semibold text-amber-200">
-                Your Locate sprint tab could not be reached (it may have been closed).
+                Automatic answer return is unavailable in this browser — use Check Answer in your
+                Locate tab.
+              </span>
+            ) : null}
+            {pickerNotice.kind === 'error' ? (
+              <span className="rounded border border-amber-700 bg-amber-900/60 px-2 py-1 text-xs font-semibold text-amber-200">
+                Your selection could not be sent — use Check Answer in your Locate tab.
               </span>
             ) : null}
           </div>

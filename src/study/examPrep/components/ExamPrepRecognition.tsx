@@ -12,7 +12,11 @@
 import { useState } from 'react';
 import { Eye, GraduationCap } from 'lucide-react';
 import { EXAM_PREP_DOCUMENT_TITLES } from '../examPrepDocTitles';
-import { EXAM_PREP_RECOGNITION_ASK, EXAM_PREP_RECOGNITION_PRACTICE_COPY } from '../examPrepConstants';
+import {
+  examPrepRecognitionAskForTier,
+  examPrepRecognitionExpectedLabelForTier,
+  EXAM_PREP_RECOGNITION_PRACTICE_COPY,
+} from '../examPrepConstants';
 import { EXAM_PREP_RECOGNITION_TASKS } from '../examPrepRecognitionTasks';
 import { buildExamPrepRecognitionQueue } from '../examPrepRecognitionQueue';
 import { buildRecognitionAttempt } from '../examPrepAttemptBuilders';
@@ -201,7 +205,9 @@ export const ExamPrepRecognitionView = ({
               <p className="cue rounded border border-slate-700 bg-slate-900 p-3 text-sm text-emerald-100">
                 {item?.cue}
               </p>
-              <p className="text-xs italic text-slate-500">{EXAM_PREP_RECOGNITION_ASK}</p>
+              <p className="text-xs italic text-slate-500">
+                {item ? examPrepRecognitionAskForTier(item.tier) : ''}
+              </p>
               <textarea
                 value={answer}
                 onChange={(event) => setAnswer(event.target.value)}
@@ -221,7 +227,7 @@ export const ExamPrepRecognitionView = ({
             <div className="space-y-3">
               <div className="rounded border border-sky-900/60 bg-sky-950/40 p-3">
                 <p className="text-xs font-semibold uppercase tracking-wide text-sky-300">
-                  Expected topic
+                  {item ? examPrepRecognitionExpectedLabelForTier(item.tier) : 'Expected topic'}
                 </p>
                 <p className="mt-1 text-sm text-white">
                   <span className="font-mono text-xs text-sky-300">{item?.unitId}</span>

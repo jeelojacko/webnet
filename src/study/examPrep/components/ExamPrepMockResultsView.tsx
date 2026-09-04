@@ -10,6 +10,7 @@ import { useMemo } from 'react';
 import { EXAM_PREP_DOCUMENT_TITLES } from '../examPrepDocTitles';
 import { examPrepProvisionLabel, EXAM_PREP_MOCK_KIND_LABELS, formatExamMockClock } from '../examPrepFormat';
 import { EXAM_PREP_OPEN_SOURCE_BUTTON } from './examPrepBits';
+import { examPrepRecognitionExpectedLabelForTier } from '../examPrepConstants';
 import { resolveExamPrepMockQuestionContent } from '../mock/examPrepMockQuestionContent';
 import {
   buildMockScore,
@@ -258,7 +259,9 @@ const ExpectedSummary = ({
   if (content.kind === 'recognition') {
     return (
       <p className="whitespace-pre-wrap text-emerald-100">
-        <span className="font-semibold text-emerald-400">Expected topic:</span>{' '}
+        <span className="font-semibold text-emerald-400">
+          {examPrepRecognitionExpectedLabelForTier(content.tier)}:
+        </span>{' '}
         <span className="font-mono text-sky-300">{content.unitId}</span> {content.unitTitle}
         {content.expectedDocumentIds.length > 0
           ? ` · ${content.expectedDocumentIds

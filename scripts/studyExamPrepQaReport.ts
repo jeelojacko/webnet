@@ -43,7 +43,7 @@ const run = (): void => {
   );
   console.log(`Wrote ${RECOGNITION_REPORT}`);
   console.log(
-    `  ${recognition.total} recognition cues audited (${recognition.duplicates} duplicate-cue groups (distinct cues), ${recognition.veryShort} very short, ${recognition.long} long)`,
+    `  ${recognition.total} recognition cues audited (${recognition.duplicates} duplicate-cue groups, ${recognition.crossUnitDuplicates} cross-unit duplicates, ${recognition.shortNav} short NAV, ${recognition.genericNoun} generic nouns, ${recognition.veryShort} very short, ${recognition.long} long)`,
   );
 };
 

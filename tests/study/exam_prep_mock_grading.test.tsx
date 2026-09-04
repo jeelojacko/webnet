@@ -8,6 +8,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { ExamPrepMockGrading } from '../../src/study/examPrep/components/ExamPrepMockGrading';
 import { ExamPrepMockResultsView } from '../../src/study/examPrep/components/ExamPrepMockResultsView';
 import { ExamPrepMockExamView } from '../../src/study/examPrep/components/ExamPrepMockExam';
+import { examPrepRecognitionExpectedLabelForTier } from '../../src/study/examPrep/examPrepConstants';
 import { makeGradedMockSession, makeMockSession, makeSubmittedMockSession } from './exam_prep_mock_support';
 import { submitMock, gradeMockQuestion } from '../../src/study/examPrep/mock/examPrepMockSession';
 import type { ExamPrepMockQuestionGrading, ExamPrepMockSession } from '../../src/study/examPrep/mock/examPrepMockTypes';
@@ -104,7 +105,9 @@ describe('Exam Prep mock self-grading', () => {
       firstKind === 'recall'
         ? 'Expected rule'
         : firstKind === 'recognition'
-          ? 'Expected topic'
+          ? examPrepRecognitionExpectedLabelForTier(
+              partial.questions[0]?.unitId?.startsWith('NAV-') ? 'NAV' : 'A',
+            )
           : firstKind === 'locate'
             ? 'Expected location'
             : 'Expected answer';

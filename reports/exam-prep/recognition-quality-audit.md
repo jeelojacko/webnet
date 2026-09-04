@@ -10,8 +10,11 @@ Deterministic mechanical audit of the frozen Recognition cue pool. Generated fro
 
 | Flag | Cues |
 | --- | --- |
-| duplicate cue text (shared with another task) | 32 |
+| duplicate cue instances (shared with another task) | 32 |
+| duplicate cues across different expected units | 32 |
 | very short (<=5 chars) | 10 |
+| short NAV cues (<=3 words) | 114 |
+| generic legal noun cue (exact normalized match) | 3 |
 | long (>=80 chars) | 2 |
 | expected across multiple documents | 119 |
 
@@ -59,16 +62,16 @@ Deterministic mechanical audit of the frozen Recognition cue pool. Generated fro
 | recognition:B-AGRI-01:2 | B-AGRI-01 | medium | 2 | 36 | 4 | 1 | ok | agricultural land owners association |
 | recognition:B-AGRI-01:3 | B-AGRI-01 | medium | 3 | 26 | 2 | 1 | ok | agricultural-land drainage |
 | recognition:B-AGRI-01:4 | B-AGRI-01 | medium | 4 | 35 | 3 | 1 | ok | Ministerial land-use recommendation |
-| recognition:B-CWA-01:1 | B-CWA-01 | medium | 1 | 11 | 1 | 1 | duplicate cue of recognition:NAV-10:4 | watercourse |
-| recognition:B-CWA-01:2 | B-CWA-01 | medium | 2 | 7 | 1 | 1 | duplicate cue of recognition:NAV-10:3 | wetland |
+| recognition:B-CWA-01:1 | B-CWA-01 | medium | 1 | 11 | 1 | 1 | cross-unit duplicate cue of recognition:NAV-10:4 | watercourse |
+| recognition:B-CWA-01:2 | B-CWA-01 | medium | 2 | 7 | 1 | 1 | cross-unit duplicate cue of recognition:NAV-10:3 | wetland |
 | recognition:B-CWA-01:3 | B-CWA-01 | medium | 3 | 9 | 1 | 1 | ok | watershed |
 | recognition:B-CWA-01:4 | B-CWA-01 | medium | 4 | 7 | 1 | 1 | ok | aquifer |
 | recognition:B-CWA-01:5 | B-CWA-01 | medium | 5 | 12 | 2 | 1 | ok | water supply |
 | recognition:B-CWA-01:6 | B-CWA-01 | medium | 6 | 4 | 1 | 1 | <=5 chars | well |
 | recognition:B-CWA-01:7 | B-CWA-01 | medium | 7 | 18 | 2 | 1 | ok | drainage diversion |
 | recognition:B-CWA-01:8 | B-CWA-01 | medium | 8 | 29 | 3 | 1 | ok | watercourse alteration permit |
-| recognition:B-CLF-01:1 | B-CLF-01 | high | 1 | 10 | 2 | 1 | duplicate cue of recognition:NAV-06:1 | Crown land |
-| recognition:B-CLF-01:2 | B-CLF-01 | high | 2 | 11 | 2 | 1 | duplicate cue of recognition:NAV-06:2, recognition:NAV-08:8, recognition:NAV-11:3 | Crown grant |
+| recognition:B-CLF-01:1 | B-CLF-01 | high | 1 | 10 | 2 | 1 | cross-unit duplicate cue of recognition:NAV-06:1 | Crown land |
+| recognition:B-CLF-01:2 | B-CLF-01 | high | 2 | 11 | 2 | 1 | cross-unit duplicate cue of recognition:NAV-06:2, recognition:NAV-08:8, recognition:NAV-11:3 | Crown grant |
 | recognition:B-CLF-01:3 | B-CLF-01 | high | 3 | 13 | 1 | 1 | ok | lease/licence |
 | recognition:B-CLF-01:4 | B-CLF-01 | high | 4 | 37 | 4 | 1 | ok | right-of-way/easement over Crown land |
 | recognition:B-CLF-01:5 | B-CLF-01 | high | 5 | 27 | 4 | 1 | ok | survey bordering Crown land |
@@ -78,18 +81,18 @@ Deterministic mechanical audit of the frozen Recognition cue pool. Generated fro
 | recognition:B-EVID-01:4 | B-EVID-01 | medium | 4 | 23 | 3 | 1 | ok | certified public record |
 | recognition:B-EVID-01:5 | B-EVID-01 | medium | 5 | 26 | 2 | 1 | ok | electronic/business record |
 | recognition:B-EVID-01:6 | B-EVID-01 | medium | 6 | 29 | 4 | 1 | ok | registered instrument or will |
-| recognition:B-HWY-01:1 | B-HWY-01 | high | 1 | 16 | 2 | 1 | duplicate cue of recognition:NAV-02:7 | highway boundary |
+| recognition:B-HWY-01:1 | B-HWY-01 | high | 1 | 16 | 2 | 1 | cross-unit duplicate cue of recognition:NAV-02:7 | highway boundary |
 | recognition:B-HWY-01:2 | B-HWY-01 | high | 2 | 20 | 2 | 1 | ok | highway right-of-way |
 | recognition:B-HWY-01:3 | B-HWY-01 | high | 3 | 19 | 2 | 1 | ok | highway designation |
 | recognition:B-HWY-01:4 | B-HWY-01 | high | 4 | 25 | 2 | 1 | ok | controlled-access highway |
 | recognition:B-HWY-01:5 | B-HWY-01 | high | 5 | 27 | 2 | 1 | ok | road closure/discontinuance |
 | recognition:B-HWY-01:6 | B-HWY-01 | high | 6 | 16 | 2 | 1 | ok | development area |
 | recognition:B-HWY-01:7 | B-HWY-01 | high | 7 | 17 | 3 | 1 | ok | access to highway |
-| recognition:B-PW-01:1 | B-PW-01 | medium | 1 | 11 | 2 | 1 | duplicate cue of recognition:NAV-07:5 | public work |
+| recognition:B-PW-01:1 | B-PW-01 | medium | 1 | 11 | 2 | 1 | cross-unit duplicate cue of recognition:NAV-07:5 | public work |
 | recognition:B-PW-01:2 | B-PW-01 | medium | 2 | 23 | 2 | 1 | ok | government survey/entry |
 | recognition:B-PW-01:3 | B-PW-01 | medium | 3 | 19 | 3 | 1 | ok | designation of land |
 | recognition:B-PW-01:4 | B-PW-01 | medium | 4 | 28 | 3 | 1 | ok | public-work development area |
-| recognition:B-PW-01:5 | B-PW-01 | medium | 5 | 12 | 1 | 1 | duplicate cue of recognition:NAV-07:9 | compensation |
+| recognition:B-PW-01:5 | B-PW-01 | medium | 5 | 12 | 1 | 1 | cross-unit duplicate cue of recognition:NAV-07:9 | compensation |
 | recognition:C-AQUA-01:1 | C-AQUA-01 | low | 1 | 16 | 2 | 1 | ok | aquaculture site |
 | recognition:C-AQUA-01:2 | C-AQUA-01 | low | 2 | 16 | 2 | 1 | ok | aquaculture land |
 | recognition:C-AQUA-01:3 | C-AQUA-01 | low | 3 | 17 | 2 | 1 | ok | aquaculture lease |
@@ -100,7 +103,7 @@ Deterministic mechanical audit of the frozen Recognition cue pool. Generated fro
 | recognition:C-ARCH-01:3 | C-ARCH-01 | medium | 3 | 37 | 5 | 1 | ok | public inspection of archival records |
 | recognition:C-ARCH-01:4 | C-ARCH-01 | medium | 4 | 34 | 5 | 1 | ok | certified copies of public records |
 | recognition:C-ARCH-01:5 | C-ARCH-01 | medium | 5 | 16 | 2 | 1 | ok | records schedule |
-| recognition:C-BSHALE-01:1 | C-BSHALE-01 | low | 1 | 16 | 2 | 1 | duplicate cue of recognition:NAV-06:8 | bituminous shale |
+| recognition:C-BSHALE-01:1 | C-BSHALE-01 | low | 1 | 16 | 2 | 1 | cross-unit duplicate cue of recognition:NAV-06:8 | bituminous shale |
 | recognition:C-BSHALE-01:2 | C-BSHALE-01 | low | 2 | 17 | 3 | 1 | ok | licence to search |
 | recognition:C-BSHALE-01:3 | C-BSHALE-01 | low | 3 | 18 | 2 | 1 | ok | development permit |
 | recognition:C-BSHALE-01:4 | C-BSHALE-01 | low | 4 | 22 | 3 | 1 | ok | bituminous shale lease |
@@ -188,7 +191,7 @@ Deterministic mechanical audit of the frozen Recognition cue pool. Generated fro
 | recognition:C-UGS-01:3 | C-UGS-01 | medium | 3 | 13 | 2 | 1 | ok | storage lease |
 | recognition:C-UGS-01:4 | C-UGS-01 | medium | 4 | 27 | 3 | 1 | ok | storage exploration licence |
 | recognition:C-UGS-01:5 | C-UGS-01 | medium | 5 | 33 | 5 | 1 | ok | land description by survey system |
-| recognition:C-WILLS-01:1 | C-WILLS-01 | low | 1 | 4 | 1 | 1 | duplicate cue of recognition:NAV-08:7, <=5 chars | will |
+| recognition:C-WILLS-01:1 | C-WILLS-01 | low | 1 | 4 | 1 | 1 | cross-unit duplicate cue of recognition:NAV-08:7, <=5 chars | will |
 | recognition:C-WILLS-01:2 | C-WILLS-01 | low | 2 | 41 | 5 | 1 | ok | testamentary disposition of real property |
 | recognition:C-WILLS-01:3 | C-WILLS-01 | low | 3 | 6 | 1 | 1 | ok | devise |
 | recognition:C-WILLS-01:4 | C-WILLS-01 | low | 4 | 9 | 1 | 1 | ok | ademption |
@@ -217,124 +220,124 @@ Deterministic mechanical audit of the frozen Recognition cue pool. Generated fro
 | recognition:D-RPTR-01:2 | D-RPTR-01 | low | 2 | 19 | 2 | 1 | ok | principal residence |
 | recognition:D-RPTR-01:3 | D-RPTR-01 | low | 3 | 19 | 4 | 1 | ok | one credit per year |
 | recognition:D-RPTR-01:4 | D-RPTR-01 | low | 4 | 38 | 7 | 1 | ok | review and appeal of a credit decision |
-| recognition:NAV-01:1 | NAV-01 | high | 1 | 4 | 1 | 2 | duplicate cue of recognition:NAV-08:1, <=5 chars, expected across 2 documents | deed |
-| recognition:NAV-01:2 | NAV-01 | high | 2 | 21 | 2 | 2 | expected across 2 documents | registered instrument |
-| recognition:NAV-01:3 | NAV-01 | high | 3 | 15 | 2 | 2 | expected across 2 documents | registry office |
-| recognition:NAV-01:4 | NAV-01 | high | 4 | 14 | 2 | 2 | expected across 2 documents | title register |
+| recognition:NAV-01:1 | NAV-01 | high | 1 | 4 | 1 | 2 | cross-unit duplicate cue of recognition:NAV-08:1, <=5 chars, <=3-word NAV cue, generic legal noun cue, expected across 2 documents | deed |
+| recognition:NAV-01:2 | NAV-01 | high | 2 | 21 | 2 | 2 | <=3-word NAV cue, expected across 2 documents | registered instrument |
+| recognition:NAV-01:3 | NAV-01 | high | 3 | 15 | 2 | 2 | <=3-word NAV cue, expected across 2 documents | registry office |
+| recognition:NAV-01:4 | NAV-01 | high | 4 | 14 | 2 | 2 | <=3-word NAV cue, expected across 2 documents | title register |
 | recognition:NAV-01:5 | NAV-01 | high | 5 | 35 | 4 | 2 | expected across 2 documents | certificate of registered ownership |
-| recognition:NAV-01:6 | NAV-01 | high | 6 | 3 | 1 | 2 | <=5 chars, expected across 2 documents | PID |
-| recognition:NAV-01:7 | NAV-01 | high | 7 | 8 | 1 | 2 | expected across 2 documents | priority |
-| recognition:NAV-01:8 | NAV-01 | high | 8 | 16 | 2 | 2 | expected across 2 documents | registered owner |
-| recognition:NAV-01:9 | NAV-01 | high | 9 | 13 | 1 | 2 | expected across 2 documents | rectification |
-| recognition:NAV-01:10 | NAV-01 | high | 10 | 18 | 2 | 2 | expected across 2 documents | registration error |
-| recognition:NAV-02:1 | NAV-02 | high | 1 | 29 | 3 | 9 | expected across 9 documents | conflicting deed descriptions |
-| recognition:NAV-02:2 | NAV-02 | high | 2 | 17 | 2 | 9 | expected across 9 documents | conflicting plans |
-| recognition:NAV-02:3 | NAV-02 | high | 3 | 13 | 2 | 9 | duplicate cue of recognition:NAV-04:4, expected across 9 documents | lost monument |
+| recognition:NAV-01:6 | NAV-01 | high | 6 | 3 | 1 | 2 | <=5 chars, <=3-word NAV cue, expected across 2 documents | PID |
+| recognition:NAV-01:7 | NAV-01 | high | 7 | 8 | 1 | 2 | <=3-word NAV cue, expected across 2 documents | priority |
+| recognition:NAV-01:8 | NAV-01 | high | 8 | 16 | 2 | 2 | <=3-word NAV cue, expected across 2 documents | registered owner |
+| recognition:NAV-01:9 | NAV-01 | high | 9 | 13 | 1 | 2 | <=3-word NAV cue, expected across 2 documents | rectification |
+| recognition:NAV-01:10 | NAV-01 | high | 10 | 18 | 2 | 2 | <=3-word NAV cue, expected across 2 documents | registration error |
+| recognition:NAV-02:1 | NAV-02 | high | 1 | 29 | 3 | 9 | <=3-word NAV cue, expected across 9 documents | conflicting deed descriptions |
+| recognition:NAV-02:2 | NAV-02 | high | 2 | 17 | 2 | 9 | <=3-word NAV cue, expected across 9 documents | conflicting plans |
+| recognition:NAV-02:3 | NAV-02 | high | 3 | 13 | 2 | 9 | cross-unit duplicate cue of recognition:NAV-04:4, <=3-word NAV cue, expected across 9 documents | lost monument |
 | recognition:NAV-02:4 | NAV-02 | high | 4 | 34 | 4 | 9 | expected across 9 documents | occupation inconsistent with title |
-| recognition:NAV-02:5 | NAV-02 | high | 5 | 18 | 2 | 9 | expected across 9 documents | uncertain boundary |
-| recognition:NAV-02:6 | NAV-02 | high | 6 | 17 | 2 | 9 | expected across 9 documents | disputed boundary |
-| recognition:NAV-02:7 | NAV-02 | high | 7 | 16 | 2 | 9 | duplicate cue of recognition:B-HWY-01:1, expected across 9 documents | highway boundary |
-| recognition:NAV-02:8 | NAV-02 | high | 8 | 14 | 2 | 9 | expected across 9 documents | Crown boundary |
-| recognition:NAV-02:9 | NAV-02 | high | 9 | 19 | 3 | 9 | expected across 9 documents | old survey evidence |
-| recognition:NAV-03:1 | NAV-03 | high | 1 | 17 | 3 | 7 | expected across 7 documents | creating new lots |
-| recognition:NAV-03:2 | NAV-03 | high | 2 | 18 | 3 | 7 | expected across 7 documents | splitting a parcel |
-| recognition:NAV-03:3 | NAV-03 | high | 3 | 26 | 3 | 7 | expected across 7 documents | tentative subdivision plan |
-| recognition:NAV-03:4 | NAV-03 | high | 4 | 21 | 2 | 7 | expected across 7 documents | subdivision exemption |
-| recognition:NAV-03:5 | NAV-03 | high | 5 | 19 | 2 | 7 | duplicate cue of recognition:NAV-12:12, expected across 7 documents | development officer |
-| recognition:NAV-03:6 | NAV-03 | high | 6 | 10 | 2 | 7 | expected across 7 documents | new street |
-| recognition:NAV-03:7 | NAV-03 | high | 7 | 7 | 2 | 7 | expected across 7 documents | new PID |
-| recognition:NAV-03:8 | NAV-03 | high | 8 | 23 | 2 | 7 | expected across 7 documents | subdivision-plan filing |
-| recognition:NAV-04:1 | NAV-04 | high | 1 | 24 | 3 | 6 | expected across 6 documents | setting survey monuments |
-| recognition:NAV-04:2 | NAV-04 | high | 2 | 22 | 3 | 6 | expected across 6 documents | integrated survey area |
-| recognition:NAV-04:3 | NAV-04 | high | 3 | 19 | 2 | 6 | duplicate cue of recognition:NAV-09:7, expected across 6 documents | coordinate monument |
-| recognition:NAV-04:4 | NAV-04 | high | 4 | 13 | 2 | 6 | duplicate cue of recognition:NAV-02:3, expected across 6 documents | lost monument |
-| recognition:NAV-04:5 | NAV-04 | high | 5 | 11 | 2 | 6 | expected across 6 documents | Survey Plan |
-| recognition:NAV-04:6 | NAV-04 | high | 6 | 13 | 2 | 6 | expected across 6 documents | surveyor seal |
-| recognition:NAV-04:7 | NAV-04 | high | 7 | 15 | 2 | 6 | expected across 6 documents | plan validation |
-| recognition:NAV-04:8 | NAV-04 | high | 8 | 11 | 2 | 6 | expected across 6 documents | plan filing |
-| recognition:NAV-05:1 | NAV-05 | high | 1 | 12 | 1 | 6 | expected across 6 documents | right-of-way |
-| recognition:NAV-05:2 | NAV-05 | high | 2 | 6 | 1 | 6 | expected across 6 documents | access |
-| recognition:NAV-05:3 | NAV-05 | high | 3 | 8 | 2 | 6 | expected across 6 documents | long use |
-| recognition:NAV-05:4 | NAV-05 | high | 4 | 12 | 1 | 6 | expected across 6 documents | prescription |
-| recognition:NAV-05:5 | NAV-05 | high | 5 | 16 | 2 | 6 | expected across 6 documents | utility corridor |
-| recognition:NAV-05:6 | NAV-05 | high | 6 | 21 | 2 | 6 | duplicate cue of recognition:NAV-10:8, expected across 6 documents | conservation easement |
-| recognition:NAV-05:7 | NAV-05 | high | 7 | 14 | 2 | 6 | expected across 6 documents | Crown easement |
-| recognition:NAV-05:8 | NAV-05 | high | 8 | 19 | 2 | 6 | expected across 6 documents | unregistered access |
-| recognition:NAV-06:1 | NAV-06 | medium | 1 | 10 | 2 | 9 | duplicate cue of recognition:B-CLF-01:1, expected across 9 documents | Crown land |
-| recognition:NAV-06:2 | NAV-06 | medium | 2 | 11 | 2 | 9 | duplicate cue of recognition:B-CLF-01:2, recognition:NAV-08:8, recognition:NAV-11:3, expected across 9 documents | Crown grant |
-| recognition:NAV-06:3 | NAV-06 | medium | 3 | 13 | 2 | 9 | expected across 9 documents | mineral claim |
-| recognition:NAV-06:4 | NAV-06 | medium | 4 | 12 | 2 | 9 | expected across 9 documents | mining lease |
-| recognition:NAV-06:5 | NAV-06 | medium | 5 | 11 | 3 | 9 | expected across 9 documents | oil and gas |
-| recognition:NAV-06:6 | NAV-06 | medium | 6 | 12 | 2 | 9 | expected across 9 documents | quarry lease |
-| recognition:NAV-06:7 | NAV-06 | medium | 7 | 4 | 1 | 9 | <=5 chars, expected across 9 documents | peat |
-| recognition:NAV-06:8 | NAV-06 | medium | 8 | 16 | 2 | 9 | duplicate cue of recognition:C-BSHALE-01:1, expected across 9 documents | bituminous shale |
-| recognition:NAV-06:9 | NAV-06 | medium | 9 | 19 | 2 | 9 | expected across 9 documents | underground storage |
-| recognition:NAV-06:10 | NAV-06 | medium | 10 | 15 | 2 | 9 | expected across 9 documents | resource survey |
-| recognition:NAV-06:11 | NAV-06 | medium | 11 | 17 | 2 | 9 | expected across 9 documents | mineral ownership |
+| recognition:NAV-02:5 | NAV-02 | high | 5 | 18 | 2 | 9 | <=3-word NAV cue, expected across 9 documents | uncertain boundary |
+| recognition:NAV-02:6 | NAV-02 | high | 6 | 17 | 2 | 9 | <=3-word NAV cue, expected across 9 documents | disputed boundary |
+| recognition:NAV-02:7 | NAV-02 | high | 7 | 16 | 2 | 9 | cross-unit duplicate cue of recognition:B-HWY-01:1, <=3-word NAV cue, expected across 9 documents | highway boundary |
+| recognition:NAV-02:8 | NAV-02 | high | 8 | 14 | 2 | 9 | <=3-word NAV cue, expected across 9 documents | Crown boundary |
+| recognition:NAV-02:9 | NAV-02 | high | 9 | 19 | 3 | 9 | <=3-word NAV cue, expected across 9 documents | old survey evidence |
+| recognition:NAV-03:1 | NAV-03 | high | 1 | 17 | 3 | 7 | <=3-word NAV cue, expected across 7 documents | creating new lots |
+| recognition:NAV-03:2 | NAV-03 | high | 2 | 18 | 3 | 7 | <=3-word NAV cue, expected across 7 documents | splitting a parcel |
+| recognition:NAV-03:3 | NAV-03 | high | 3 | 26 | 3 | 7 | <=3-word NAV cue, expected across 7 documents | tentative subdivision plan |
+| recognition:NAV-03:4 | NAV-03 | high | 4 | 21 | 2 | 7 | <=3-word NAV cue, expected across 7 documents | subdivision exemption |
+| recognition:NAV-03:5 | NAV-03 | high | 5 | 19 | 2 | 7 | cross-unit duplicate cue of recognition:NAV-12:12, <=3-word NAV cue, expected across 7 documents | development officer |
+| recognition:NAV-03:6 | NAV-03 | high | 6 | 10 | 2 | 7 | <=3-word NAV cue, expected across 7 documents | new street |
+| recognition:NAV-03:7 | NAV-03 | high | 7 | 7 | 2 | 7 | <=3-word NAV cue, expected across 7 documents | new PID |
+| recognition:NAV-03:8 | NAV-03 | high | 8 | 23 | 2 | 7 | <=3-word NAV cue, expected across 7 documents | subdivision-plan filing |
+| recognition:NAV-04:1 | NAV-04 | high | 1 | 24 | 3 | 6 | <=3-word NAV cue, expected across 6 documents | setting survey monuments |
+| recognition:NAV-04:2 | NAV-04 | high | 2 | 22 | 3 | 6 | <=3-word NAV cue, expected across 6 documents | integrated survey area |
+| recognition:NAV-04:3 | NAV-04 | high | 3 | 19 | 2 | 6 | cross-unit duplicate cue of recognition:NAV-09:7, <=3-word NAV cue, expected across 6 documents | coordinate monument |
+| recognition:NAV-04:4 | NAV-04 | high | 4 | 13 | 2 | 6 | cross-unit duplicate cue of recognition:NAV-02:3, <=3-word NAV cue, expected across 6 documents | lost monument |
+| recognition:NAV-04:5 | NAV-04 | high | 5 | 11 | 2 | 6 | <=3-word NAV cue, expected across 6 documents | Survey Plan |
+| recognition:NAV-04:6 | NAV-04 | high | 6 | 13 | 2 | 6 | <=3-word NAV cue, expected across 6 documents | surveyor seal |
+| recognition:NAV-04:7 | NAV-04 | high | 7 | 15 | 2 | 6 | <=3-word NAV cue, expected across 6 documents | plan validation |
+| recognition:NAV-04:8 | NAV-04 | high | 8 | 11 | 2 | 6 | <=3-word NAV cue, expected across 6 documents | plan filing |
+| recognition:NAV-05:1 | NAV-05 | high | 1 | 12 | 1 | 6 | <=3-word NAV cue, expected across 6 documents | right-of-way |
+| recognition:NAV-05:2 | NAV-05 | high | 2 | 6 | 1 | 6 | <=3-word NAV cue, expected across 6 documents | access |
+| recognition:NAV-05:3 | NAV-05 | high | 3 | 8 | 2 | 6 | <=3-word NAV cue, expected across 6 documents | long use |
+| recognition:NAV-05:4 | NAV-05 | high | 4 | 12 | 1 | 6 | <=3-word NAV cue, expected across 6 documents | prescription |
+| recognition:NAV-05:5 | NAV-05 | high | 5 | 16 | 2 | 6 | <=3-word NAV cue, expected across 6 documents | utility corridor |
+| recognition:NAV-05:6 | NAV-05 | high | 6 | 21 | 2 | 6 | cross-unit duplicate cue of recognition:NAV-10:8, <=3-word NAV cue, expected across 6 documents | conservation easement |
+| recognition:NAV-05:7 | NAV-05 | high | 7 | 14 | 2 | 6 | <=3-word NAV cue, expected across 6 documents | Crown easement |
+| recognition:NAV-05:8 | NAV-05 | high | 8 | 19 | 2 | 6 | <=3-word NAV cue, expected across 6 documents | unregistered access |
+| recognition:NAV-06:1 | NAV-06 | medium | 1 | 10 | 2 | 9 | cross-unit duplicate cue of recognition:B-CLF-01:1, <=3-word NAV cue, expected across 9 documents | Crown land |
+| recognition:NAV-06:2 | NAV-06 | medium | 2 | 11 | 2 | 9 | cross-unit duplicate cue of recognition:B-CLF-01:2, recognition:NAV-08:8, recognition:NAV-11:3, <=3-word NAV cue, expected across 9 documents | Crown grant |
+| recognition:NAV-06:3 | NAV-06 | medium | 3 | 13 | 2 | 9 | <=3-word NAV cue, expected across 9 documents | mineral claim |
+| recognition:NAV-06:4 | NAV-06 | medium | 4 | 12 | 2 | 9 | <=3-word NAV cue, expected across 9 documents | mining lease |
+| recognition:NAV-06:5 | NAV-06 | medium | 5 | 11 | 3 | 9 | <=3-word NAV cue, expected across 9 documents | oil and gas |
+| recognition:NAV-06:6 | NAV-06 | medium | 6 | 12 | 2 | 9 | <=3-word NAV cue, expected across 9 documents | quarry lease |
+| recognition:NAV-06:7 | NAV-06 | medium | 7 | 4 | 1 | 9 | <=5 chars, <=3-word NAV cue, expected across 9 documents | peat |
+| recognition:NAV-06:8 | NAV-06 | medium | 8 | 16 | 2 | 9 | cross-unit duplicate cue of recognition:C-BSHALE-01:1, <=3-word NAV cue, expected across 9 documents | bituminous shale |
+| recognition:NAV-06:9 | NAV-06 | medium | 9 | 19 | 2 | 9 | <=3-word NAV cue, expected across 9 documents | underground storage |
+| recognition:NAV-06:10 | NAV-06 | medium | 10 | 15 | 2 | 9 | <=3-word NAV cue, expected across 9 documents | resource survey |
+| recognition:NAV-06:11 | NAV-06 | medium | 11 | 17 | 2 | 9 | <=3-word NAV cue, expected across 9 documents | mineral ownership |
 | recognition:NAV-07:1 | NAV-07 | high | 1 | 34 | 4 | 8 | expected across 8 documents | surveyor entering private property |
-| recognition:NAV-07:2 | NAV-07 | high | 2 | 22 | 3 | 8 | expected across 8 documents | government survey crew |
-| recognition:NAV-07:3 | NAV-07 | high | 3 | 7 | 1 | 8 | expected across 8 documents | borings |
-| recognition:NAV-07:4 | NAV-07 | high | 4 | 9 | 2 | 8 | expected across 8 documents | test pits |
-| recognition:NAV-07:5 | NAV-07 | high | 5 | 11 | 2 | 8 | duplicate cue of recognition:B-PW-01:1, expected across 8 documents | public work |
-| recognition:NAV-07:6 | NAV-07 | high | 6 | 13 | 1 | 8 | duplicate cue of recognition:NAV-08:10, expected across 8 documents | expropriation |
-| recognition:NAV-07:7 | NAV-07 | high | 7 | 19 | 2 | 8 | expected across 8 documents | highway acquisition |
-| recognition:NAV-07:8 | NAV-07 | high | 8 | 10 | 1 | 8 | expected across 8 documents | possession |
-| recognition:NAV-07:9 | NAV-07 | high | 9 | 12 | 1 | 8 | duplicate cue of recognition:B-PW-01:5, expected across 8 documents | compensation |
-| recognition:NAV-07:10 | NAV-07 | high | 10 | 22 | 2 | 8 | expected across 8 documents | resource-company entry |
-| recognition:NAV-08:1 | NAV-08 | high | 1 | 4 | 1 | 12 | duplicate cue of recognition:NAV-01:1, <=5 chars, expected across 12 documents | deed |
-| recognition:NAV-08:2 | NAV-08 | high | 2 | 8 | 1 | 12 | expected across 12 documents | transfer |
-| recognition:NAV-08:3 | NAV-08 | high | 3 | 4 | 1 | 12 | <=5 chars, expected across 12 documents | sale |
-| recognition:NAV-08:4 | NAV-08 | high | 4 | 6 | 1 | 12 | expected across 12 documents | estate |
-| recognition:NAV-08:5 | NAV-08 | high | 5 | 14 | 3 | 12 | expected across 12 documents | death of owner |
-| recognition:NAV-08:6 | NAV-08 | high | 6 | 8 | 1 | 12 | expected across 12 documents | executor |
-| recognition:NAV-08:7 | NAV-08 | high | 7 | 4 | 1 | 12 | duplicate cue of recognition:C-WILLS-01:1, <=5 chars, expected across 12 documents | will |
-| recognition:NAV-08:8 | NAV-08 | high | 8 | 11 | 2 | 12 | duplicate cue of recognition:B-CLF-01:2, recognition:NAV-06:2, recognition:NAV-11:3, expected across 12 documents | Crown grant |
-| recognition:NAV-08:9 | NAV-08 | high | 9 | 16 | 2 | 12 | expected across 12 documents | marital property |
-| recognition:NAV-08:10 | NAV-08 | high | 10 | 13 | 1 | 12 | duplicate cue of recognition:NAV-07:6, expected across 12 documents | expropriation |
-| recognition:NAV-08:11 | NAV-08 | high | 11 | 16 | 2 | 12 | expected across 12 documents | parcel severance |
-| recognition:NAV-08:12 | NAV-08 | high | 12 | 12 | 2 | 12 | expected across 12 documents | transfer tax |
-| recognition:NAV-09:1 | NAV-09 | medium | 1 | 16 | 2 | 4 | expected across 4 documents | air-space parcel |
-| recognition:NAV-09:2 | NAV-09 | medium | 2 | 26 | 2 | 4 | expected across 4 documents | three-dimensional boundary |
-| recognition:NAV-09:3 | NAV-09 | medium | 3 | 9 | 1 | 4 | expected across 4 documents | elevation |
-| recognition:NAV-09:4 | NAV-09 | medium | 4 | 23 | 2 | 4 | expected across 4 documents | condominium description |
-| recognition:NAV-09:5 | NAV-09 | medium | 5 | 15 | 2 | 4 | expected across 4 documents | common elements |
-| recognition:NAV-09:6 | NAV-09 | medium | 6 | 21 | 2 | 4 | expected across 4 documents | bare-land condominium |
-| recognition:NAV-09:7 | NAV-09 | medium | 7 | 19 | 2 | 4 | duplicate cue of recognition:NAV-04:3, expected across 4 documents | coordinate monument |
-| recognition:NAV-09:8 | NAV-09 | medium | 8 | 13 | 2 | 4 | expected across 4 documents | unit boundary |
-| recognition:NAV-10:1 | NAV-10 | medium | 1 | 6 | 1 | 9 | expected across 9 documents | zoning |
-| recognition:NAV-10:2 | NAV-10 | medium | 2 | 23 | 2 | 9 | expected across 9 documents | subdivision restriction |
-| recognition:NAV-10:3 | NAV-10 | medium | 3 | 7 | 1 | 9 | duplicate cue of recognition:B-CWA-01:2, expected across 9 documents | wetland |
-| recognition:NAV-10:4 | NAV-10 | medium | 4 | 11 | 1 | 9 | duplicate cue of recognition:B-CWA-01:1, expected across 9 documents | watercourse |
-| recognition:NAV-10:5 | NAV-10 | medium | 5 | 17 | 2 | 9 | expected across 9 documents | contaminated site |
-| recognition:NAV-10:6 | NAV-10 | medium | 6 | 12 | 2 | 9 | expected across 9 documents | coastal area |
-| recognition:NAV-10:7 | NAV-10 | medium | 7 | 22 | 3 | 9 | expected across 9 documents | protected natural area |
-| recognition:NAV-10:8 | NAV-10 | medium | 8 | 21 | 2 | 9 | duplicate cue of recognition:NAV-05:6, expected across 9 documents | conservation easement |
-| recognition:NAV-10:9 | NAV-10 | medium | 9 | 13 | 2 | 9 | expected across 9 documents | septic system |
-| recognition:NAV-10:10 | NAV-10 | medium | 10 | 9 | 2 | 9 | expected across 9 documents | park land |
-| recognition:NAV-10:11 | NAV-10 | medium | 11 | 17 | 2 | 9 | expected across 9 documents | agricultural land |
-| recognition:NAV-11:1 | NAV-11 | high | 1 | 8 | 2 | 7 | expected across 7 documents | old deed |
-| recognition:NAV-11:2 | NAV-11 | high | 2 | 15 | 3 | 7 | expected across 7 documents | old survey plan |
-| recognition:NAV-11:3 | NAV-11 | high | 3 | 11 | 2 | 7 | duplicate cue of recognition:B-CLF-01:2, recognition:NAV-06:2, recognition:NAV-08:8, expected across 7 documents | Crown grant |
-| recognition:NAV-11:4 | NAV-11 | high | 4 | 15 | 2 | 7 | expected across 7 documents | registered will |
-| recognition:NAV-11:5 | NAV-11 | high | 5 | 14 | 2 | 7 | expected across 7 documents | certified copy |
-| recognition:NAV-11:6 | NAV-11 | high | 6 | 15 | 2 | 7 | expected across 7 documents | archival record |
-| recognition:NAV-11:7 | NAV-11 | high | 7 | 13 | 2 | 7 | expected across 7 documents | public record |
-| recognition:NAV-11:8 | NAV-11 | high | 8 | 26 | 3 | 7 | expected across 7 documents | historic boundary evidence |
-| recognition:NAV-11:9 | NAV-11 | high | 9 | 21 | 3 | 7 | expected across 7 documents | old Registry document |
-| recognition:NAV-12:1 | NAV-12 | high | 1 | 12 | 2 | 10 | expected across 10 documents | who approves |
-| recognition:NAV-12:2 | NAV-12 | high | 2 | 11 | 2 | 10 | expected across 10 documents | who decides |
-| recognition:NAV-12:3 | NAV-12 | high | 3 | 13 | 3 | 10 | expected across 10 documents | who may order |
+| recognition:NAV-07:2 | NAV-07 | high | 2 | 22 | 3 | 8 | <=3-word NAV cue, expected across 8 documents | government survey crew |
+| recognition:NAV-07:3 | NAV-07 | high | 3 | 7 | 1 | 8 | <=3-word NAV cue, expected across 8 documents | borings |
+| recognition:NAV-07:4 | NAV-07 | high | 4 | 9 | 2 | 8 | <=3-word NAV cue, expected across 8 documents | test pits |
+| recognition:NAV-07:5 | NAV-07 | high | 5 | 11 | 2 | 8 | cross-unit duplicate cue of recognition:B-PW-01:1, <=3-word NAV cue, expected across 8 documents | public work |
+| recognition:NAV-07:6 | NAV-07 | high | 6 | 13 | 1 | 8 | cross-unit duplicate cue of recognition:NAV-08:10, <=3-word NAV cue, expected across 8 documents | expropriation |
+| recognition:NAV-07:7 | NAV-07 | high | 7 | 19 | 2 | 8 | <=3-word NAV cue, expected across 8 documents | highway acquisition |
+| recognition:NAV-07:8 | NAV-07 | high | 8 | 10 | 1 | 8 | <=3-word NAV cue, expected across 8 documents | possession |
+| recognition:NAV-07:9 | NAV-07 | high | 9 | 12 | 1 | 8 | cross-unit duplicate cue of recognition:B-PW-01:5, <=3-word NAV cue, expected across 8 documents | compensation |
+| recognition:NAV-07:10 | NAV-07 | high | 10 | 22 | 2 | 8 | <=3-word NAV cue, expected across 8 documents | resource-company entry |
+| recognition:NAV-08:1 | NAV-08 | high | 1 | 4 | 1 | 12 | cross-unit duplicate cue of recognition:NAV-01:1, <=5 chars, <=3-word NAV cue, generic legal noun cue, expected across 12 documents | deed |
+| recognition:NAV-08:2 | NAV-08 | high | 2 | 8 | 1 | 12 | <=3-word NAV cue, generic legal noun cue, expected across 12 documents | transfer |
+| recognition:NAV-08:3 | NAV-08 | high | 3 | 4 | 1 | 12 | <=5 chars, <=3-word NAV cue, expected across 12 documents | sale |
+| recognition:NAV-08:4 | NAV-08 | high | 4 | 6 | 1 | 12 | <=3-word NAV cue, expected across 12 documents | estate |
+| recognition:NAV-08:5 | NAV-08 | high | 5 | 14 | 3 | 12 | <=3-word NAV cue, expected across 12 documents | death of owner |
+| recognition:NAV-08:6 | NAV-08 | high | 6 | 8 | 1 | 12 | <=3-word NAV cue, expected across 12 documents | executor |
+| recognition:NAV-08:7 | NAV-08 | high | 7 | 4 | 1 | 12 | cross-unit duplicate cue of recognition:C-WILLS-01:1, <=5 chars, <=3-word NAV cue, expected across 12 documents | will |
+| recognition:NAV-08:8 | NAV-08 | high | 8 | 11 | 2 | 12 | cross-unit duplicate cue of recognition:B-CLF-01:2, recognition:NAV-06:2, recognition:NAV-11:3, <=3-word NAV cue, expected across 12 documents | Crown grant |
+| recognition:NAV-08:9 | NAV-08 | high | 9 | 16 | 2 | 12 | <=3-word NAV cue, expected across 12 documents | marital property |
+| recognition:NAV-08:10 | NAV-08 | high | 10 | 13 | 1 | 12 | cross-unit duplicate cue of recognition:NAV-07:6, <=3-word NAV cue, expected across 12 documents | expropriation |
+| recognition:NAV-08:11 | NAV-08 | high | 11 | 16 | 2 | 12 | <=3-word NAV cue, expected across 12 documents | parcel severance |
+| recognition:NAV-08:12 | NAV-08 | high | 12 | 12 | 2 | 12 | <=3-word NAV cue, expected across 12 documents | transfer tax |
+| recognition:NAV-09:1 | NAV-09 | medium | 1 | 16 | 2 | 4 | <=3-word NAV cue, expected across 4 documents | air-space parcel |
+| recognition:NAV-09:2 | NAV-09 | medium | 2 | 26 | 2 | 4 | <=3-word NAV cue, expected across 4 documents | three-dimensional boundary |
+| recognition:NAV-09:3 | NAV-09 | medium | 3 | 9 | 1 | 4 | <=3-word NAV cue, expected across 4 documents | elevation |
+| recognition:NAV-09:4 | NAV-09 | medium | 4 | 23 | 2 | 4 | <=3-word NAV cue, expected across 4 documents | condominium description |
+| recognition:NAV-09:5 | NAV-09 | medium | 5 | 15 | 2 | 4 | <=3-word NAV cue, expected across 4 documents | common elements |
+| recognition:NAV-09:6 | NAV-09 | medium | 6 | 21 | 2 | 4 | <=3-word NAV cue, expected across 4 documents | bare-land condominium |
+| recognition:NAV-09:7 | NAV-09 | medium | 7 | 19 | 2 | 4 | cross-unit duplicate cue of recognition:NAV-04:3, <=3-word NAV cue, expected across 4 documents | coordinate monument |
+| recognition:NAV-09:8 | NAV-09 | medium | 8 | 13 | 2 | 4 | <=3-word NAV cue, expected across 4 documents | unit boundary |
+| recognition:NAV-10:1 | NAV-10 | medium | 1 | 6 | 1 | 9 | <=3-word NAV cue, expected across 9 documents | zoning |
+| recognition:NAV-10:2 | NAV-10 | medium | 2 | 23 | 2 | 9 | <=3-word NAV cue, expected across 9 documents | subdivision restriction |
+| recognition:NAV-10:3 | NAV-10 | medium | 3 | 7 | 1 | 9 | cross-unit duplicate cue of recognition:B-CWA-01:2, <=3-word NAV cue, expected across 9 documents | wetland |
+| recognition:NAV-10:4 | NAV-10 | medium | 4 | 11 | 1 | 9 | cross-unit duplicate cue of recognition:B-CWA-01:1, <=3-word NAV cue, expected across 9 documents | watercourse |
+| recognition:NAV-10:5 | NAV-10 | medium | 5 | 17 | 2 | 9 | <=3-word NAV cue, expected across 9 documents | contaminated site |
+| recognition:NAV-10:6 | NAV-10 | medium | 6 | 12 | 2 | 9 | <=3-word NAV cue, expected across 9 documents | coastal area |
+| recognition:NAV-10:7 | NAV-10 | medium | 7 | 22 | 3 | 9 | <=3-word NAV cue, expected across 9 documents | protected natural area |
+| recognition:NAV-10:8 | NAV-10 | medium | 8 | 21 | 2 | 9 | cross-unit duplicate cue of recognition:NAV-05:6, <=3-word NAV cue, expected across 9 documents | conservation easement |
+| recognition:NAV-10:9 | NAV-10 | medium | 9 | 13 | 2 | 9 | <=3-word NAV cue, expected across 9 documents | septic system |
+| recognition:NAV-10:10 | NAV-10 | medium | 10 | 9 | 2 | 9 | <=3-word NAV cue, expected across 9 documents | park land |
+| recognition:NAV-10:11 | NAV-10 | medium | 11 | 17 | 2 | 9 | <=3-word NAV cue, expected across 9 documents | agricultural land |
+| recognition:NAV-11:1 | NAV-11 | high | 1 | 8 | 2 | 7 | <=3-word NAV cue, expected across 7 documents | old deed |
+| recognition:NAV-11:2 | NAV-11 | high | 2 | 15 | 3 | 7 | <=3-word NAV cue, expected across 7 documents | old survey plan |
+| recognition:NAV-11:3 | NAV-11 | high | 3 | 11 | 2 | 7 | cross-unit duplicate cue of recognition:B-CLF-01:2, recognition:NAV-06:2, recognition:NAV-08:8, <=3-word NAV cue, expected across 7 documents | Crown grant |
+| recognition:NAV-11:4 | NAV-11 | high | 4 | 15 | 2 | 7 | <=3-word NAV cue, expected across 7 documents | registered will |
+| recognition:NAV-11:5 | NAV-11 | high | 5 | 14 | 2 | 7 | <=3-word NAV cue, expected across 7 documents | certified copy |
+| recognition:NAV-11:6 | NAV-11 | high | 6 | 15 | 2 | 7 | <=3-word NAV cue, expected across 7 documents | archival record |
+| recognition:NAV-11:7 | NAV-11 | high | 7 | 13 | 2 | 7 | <=3-word NAV cue, expected across 7 documents | public record |
+| recognition:NAV-11:8 | NAV-11 | high | 8 | 26 | 3 | 7 | <=3-word NAV cue, expected across 7 documents | historic boundary evidence |
+| recognition:NAV-11:9 | NAV-11 | high | 9 | 21 | 3 | 7 | <=3-word NAV cue, expected across 7 documents | old Registry document |
+| recognition:NAV-12:1 | NAV-12 | high | 1 | 12 | 2 | 10 | <=3-word NAV cue, expected across 10 documents | who approves |
+| recognition:NAV-12:2 | NAV-12 | high | 2 | 11 | 2 | 10 | <=3-word NAV cue, expected across 10 documents | who decides |
+| recognition:NAV-12:3 | NAV-12 | high | 3 | 13 | 3 | 10 | <=3-word NAV cue, expected across 10 documents | who may order |
 | recognition:NAV-12:4 | NAV-12 | high | 4 | 22 | 4 | 10 | expected across 10 documents | who hears an objection |
 | recognition:NAV-12:5 | NAV-12 | high | 5 | 19 | 4 | 10 | expected across 10 documents | who hears an appeal |
-| recognition:NAV-12:6 | NAV-12 | high | 6 | 15 | 3 | 10 | expected across 10 documents | who may rectify |
-| recognition:NAV-12:7 | NAV-12 | high | 7 | 13 | 2 | 10 | expected across 10 documents | who certifies |
-| recognition:NAV-12:8 | NAV-12 | high | 8 | 9 | 1 | 10 | expected across 10 documents | Registrar |
-| recognition:NAV-12:9 | NAV-12 | high | 9 | 15 | 2 | 10 | expected across 10 documents | Chief Registrar |
-| recognition:NAV-12:10 | NAV-12 | high | 10 | 17 | 2 | 10 | expected across 10 documents | Registrar General |
-| recognition:NAV-12:11 | NAV-12 | high | 11 | 19 | 3 | 10 | expected across 10 documents | Director of Surveys |
-| recognition:NAV-12:12 | NAV-12 | high | 12 | 19 | 2 | 10 | duplicate cue of recognition:NAV-03:5, expected across 10 documents | development officer |
-| recognition:NAV-12:13 | NAV-12 | high | 13 | 8 | 1 | 10 | expected across 10 documents | Minister |
-| recognition:NAV-12:14 | NAV-12 | high | 14 | 5 | 1 | 10 | <=5 chars, expected across 10 documents | Board |
-| recognition:NAV-12:15 | NAV-12 | high | 15 | 13 | 2 | 10 | expected across 10 documents | ANBLS Council |
+| recognition:NAV-12:6 | NAV-12 | high | 6 | 15 | 3 | 10 | <=3-word NAV cue, expected across 10 documents | who may rectify |
+| recognition:NAV-12:7 | NAV-12 | high | 7 | 13 | 2 | 10 | <=3-word NAV cue, expected across 10 documents | who certifies |
+| recognition:NAV-12:8 | NAV-12 | high | 8 | 9 | 1 | 10 | <=3-word NAV cue, expected across 10 documents | Registrar |
+| recognition:NAV-12:9 | NAV-12 | high | 9 | 15 | 2 | 10 | <=3-word NAV cue, expected across 10 documents | Chief Registrar |
+| recognition:NAV-12:10 | NAV-12 | high | 10 | 17 | 2 | 10 | <=3-word NAV cue, expected across 10 documents | Registrar General |
+| recognition:NAV-12:11 | NAV-12 | high | 11 | 19 | 3 | 10 | <=3-word NAV cue, expected across 10 documents | Director of Surveys |
+| recognition:NAV-12:12 | NAV-12 | high | 12 | 19 | 2 | 10 | cross-unit duplicate cue of recognition:NAV-03:5, <=3-word NAV cue, expected across 10 documents | development officer |
+| recognition:NAV-12:13 | NAV-12 | high | 13 | 8 | 1 | 10 | <=3-word NAV cue, expected across 10 documents | Minister |
+| recognition:NAV-12:14 | NAV-12 | high | 14 | 5 | 1 | 10 | <=5 chars, <=3-word NAV cue, expected across 10 documents | Board |
+| recognition:NAV-12:15 | NAV-12 | high | 15 | 13 | 2 | 10 | <=3-word NAV cue, expected across 10 documents | ANBLS Council |
 
 A-SURV-03 carries no recognition cue, so it is absent from this pool (by design, noted in the Recall audit).
