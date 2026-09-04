@@ -216,7 +216,7 @@ export const createDefaultStudySettings = (updatedAt = SEED_CREATED_AT): StudySe
 });
 
 export const createSeedStudyData = (nowIso = SEED_CREATED_AT): StudyDataSnapshot => ({
-  schemaVersion: 5,
+  schemaVersion: 9,
   exportedAt: nowIso,
   documents: documents.map((entry) => ({ ...entry })),
   units: units.map((entry) => ({ ...entry })),
@@ -233,10 +233,14 @@ export const createSeedStudyData = (nowIso = SEED_CREATED_AT): StudyDataSnapshot
   aiAuthoringRuns: [],
   aiStudyMapProposals: [],
   aiUnitProposals: [],
+  examPrepUnitProgress: [],
+  examPrepRecallProgress: [],
+  examPrepAttempts: [],
+  examPrepSettings: [],
 });
 
 export const createEmptyStudyData = (nowIso = new Date().toISOString()): StudyDataSnapshot => ({
-  schemaVersion: 8,
+  schemaVersion: 9,
   exportedAt: nowIso,
   documents: [],
   units: [],
@@ -253,4 +257,8 @@ export const createEmptyStudyData = (nowIso = new Date().toISOString()): StudyDa
   aiAuthoringRuns: [],
   aiStudyMapProposals: [],
   aiUnitProposals: [],
+  examPrepUnitProgress: [],
+  examPrepRecallProgress: [],
+  examPrepAttempts: [],
+  examPrepSettings: [],
 });

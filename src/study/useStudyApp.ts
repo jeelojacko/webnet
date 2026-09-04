@@ -24,6 +24,7 @@ import { buildStudyQueue } from './studyQueue';
 import { buildStudySessionCompletionSummary } from './studySessionSummary';
 import { persistStudyPracticeAttempt } from './studyPracticePersistence';
 import { useStudyAiAuthoring } from './useStudyAiAuthoring';
+import { useStudyExamPrep } from './useStudyExamPrep';
 import { useStudyOfficialPackageImport } from './useStudyOfficialPackageImport';
 import { createStudyStorage, STUDY_SCHEMA_VERSION } from './studyStorage';
 import {
@@ -640,6 +641,13 @@ export const useStudyApp = () => {
     navigate,
   });
 
+  const examPrep = useStudyExamPrep({
+    data,
+    storage,
+    setData,
+    setStatusMessage,
+  });
+
   const importData = useCallback(async () => {
     const snapshot = parseStudyImport(importText);
     await storage.replaceAll(snapshot);
@@ -916,6 +924,7 @@ export const useStudyApp = () => {
     deleteAllData,
     ...officialPackageImport,
     ...aiAuthoring,
+    ...examPrep,
     createUnitFromSourceSelection,
     createCustomUnit,
     deleteUnit,

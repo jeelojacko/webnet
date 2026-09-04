@@ -5,10 +5,11 @@ import StudyLayout, { StudyEmptyState } from './components/StudyLayout';
 import StudyLibrary from './components/StudyLibrary';
 import StudyManagePage from './components/StudyManagePage';
 import StudyPreviewPage from './components/StudyPreviewPage';
-import ExamCurriculumPage from './examCurriculum/ExamCurriculumPage';
 import StudyPracticePage from './components/StudyPracticePage';
 import StudySessionPage from './components/StudySessionPage';
 import StudyUnitEditorPage from './components/StudyUnitEditorPage';
+import { ExamPrepPage } from './examPrep/ExamPrepPage';
+import { decodeExamPrepView } from './examPrep/examPrepRoutes';
 import { selectSurprisePracticeUnitId } from './studySessionItems';
 import { useStudyApp } from './useStudyApp';
 
@@ -41,6 +42,23 @@ const StudyApp = () => {
 
   const renderPage = () => {
     if (!study.data) return <StudyEmptyState text="Loading study data..." />;
+    const examPrepView = decodeExamPrepView(study.routePath);
+    if (examPrepView) {
+      return (
+        <ExamPrepPage
+          view={examPrepView}
+          data={study.data}
+          onNavigate={study.navigate}
+          onOpenProvision={(documentId, sourceKey) =>
+            study.navigate(
+              `/study/document/${encodeURIComponent(documentId)}#${encodeURIComponent(sourceKey)}`,
+            )
+          }
+          onToggleUnitStudied={study.toggleUnitStudied}
+          onRateRecallTask={study.rateRecallTask}
+        />
+      );
+    }
     if (unitEditId) {
       return (
         <StudyUnitEditorPage
@@ -199,17 +217,6 @@ const StudyApp = () => {
           onValidateUnitProposal={study.validateAiUnitProposalById}
           onApproveUnitProposal={study.approveAiUnitProposal}
           statusMessage={study.statusMessage}
-        />
-      );
-    }
-    if (study.routePath === '/study/exam-curriculum') {
-      return (
-        <ExamCurriculumPage
-          onOpenProvision={(documentId, sourceKey) =>
-            study.navigate(
-              `/study/document/${encodeURIComponent(documentId)}#${encodeURIComponent(sourceKey)}`,
-            )
-          }
         />
       );
     }

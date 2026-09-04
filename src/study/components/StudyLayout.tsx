@@ -9,14 +9,32 @@ type StudyLayoutProps = {
   children: React.ReactNode;
 };
 
-const NAV_ITEMS = [
+type StudyNavItem = {
+  path: string;
+  label: string;
+  icon: typeof Home;
+  /** Extra routes that count as this item active (Exam Prep tabs). */
+  alsoActive?: string[];
+};
+
+const NAV_ITEMS: StudyNavItem[] = [
   { path: '/study', label: 'Dashboard', icon: Home },
   { path: '/study/library', label: 'Library', icon: Library },
-  { path: '/study/exam-curriculum', label: 'Exam Curriculum', icon: GraduationCap },
+  {
+    path: '/study/exam-prep',
+    label: 'Exam Prep',
+    icon: GraduationCap,
+    alsoActive: ['/study/exam-curriculum', '/study/learn', '/study/review', '/study/drills'],
+  },
   { path: '/study/session', label: 'Session', icon: BookOpen },
   { path: '/study/authoring', label: 'Authoring', icon: PencilLine },
   { path: '/study/manage', label: 'Manage', icon: Settings },
 ];
+
+const isNavItemActive = (item: StudyNavItem, activePath: string): boolean =>
+  activePath === item.path ||
+  (item.alsoActive ?? []).includes(activePath) ||
+  (item.path !== '/study' && activePath.startsWith(item.path));
 
 const StudyLayout = ({ activePath, sidebarCollapsed, onSidebarCollapsedChange, onNavigate, children }: StudyLayoutProps) => (
   <div className="fixed inset-0 flex flex-col bg-slate-950 text-slate-100">
@@ -54,8 +72,9 @@ const StudyLayout = ({ activePath, sidebarCollapsed, onSidebarCollapsedChange, o
           {sidebarCollapsed ? <ChevronRight size={16} /> : <ChevronLeft size={16} />}
         </button>
         <div className="space-y-1">
-          {NAV_ITEMS.map(({ path, label, icon: Icon }) => {
-            const active = activePath === path || (path !== '/study' && activePath.startsWith(path));
+          {NAV_ITEMS.map((item) => {
+            const active = isNavItemActive(item, activePath);
+            const { path, label, icon: Icon } = item;
             return (
               <button
                 key={path}
@@ -83,18 +102,21 @@ const StudyLayout = ({ activePath, sidebarCollapsed, onSidebarCollapsedChange, o
       </main>
     </div>
     <div className="grid grid-cols-5 border-t border-slate-800 bg-slate-900 md:hidden">
-      {NAV_ITEMS.map(({ path, label, icon: Icon }) => (
-        <button
-          key={path}
-          onClick={() => onNavigate(path)}
-          className={`flex flex-col items-center gap-1 px-2 py-2 text-[11px] ${
-            activePath === path ? 'text-emerald-200' : 'text-slate-500'
-          }`}
-        >
-          <Icon size={16} />
-          <span>{label}</span>
-        </button>
-      ))}
+      {NAV_ITEMS.map((item) => {
+        const { path, label, icon: Icon } = item;
+        return (
+          <button
+            key={path}
+            onClick={() => onNavigate(path)}
+            className={`flex flex-col items-center gap-1 px-2 py-2 text-[11px] ${
+              isNavItemActive(item, activePath) ? 'text-emerald-200' : 'text-slate-500'
+            }`}
+          >
+            <Icon size={16} />
+            <span>{label}</span>
+          </button>
+        );
+      })}
     </div>
   </div>
 );

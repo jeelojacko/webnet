@@ -6,6 +6,12 @@ import type {
   AiStudyMapProposal,
 } from './ai/studyAiTypes';
 import type {
+  ExamPrepRecallAttempt,
+  ExamPrepRecallProgress,
+  ExamPrepSettings,
+  ExamPrepUnitProgress,
+} from './examPrep/examPrepTypes';
+import type {
   StudyAttempt,
   StudyConcept,
   StudyDataSnapshot,
@@ -73,6 +79,14 @@ export interface StudyStorage {
   saveAiAuthoringRun: (_run: AiAuthoringRun) => Promise<void>;
   saveAiStudyMapProposal: (_proposal: AiStudyMapProposal) => Promise<void>;
   saveAiUnitProposal: (_proposal: AiStoredUnitProposal) => Promise<void>;
+  saveExamPrepUnitProgress: (_record: ExamPrepUnitProgress) => Promise<void>;
+  deleteExamPrepUnitProgress: (_recordId: string) => Promise<void>;
+  saveExamPrepRecallRating: (_options: {
+    attempt: ExamPrepRecallAttempt;
+    progress: ExamPrepRecallProgress;
+    expectedProgressUpdatedAt?: string;
+  }) => Promise<void>;
+  saveExamPrepSettings: (_record: ExamPrepSettings) => Promise<void>;
   replaceAiAuthoringArtifacts: (_artifacts: {
     runs?: AiAuthoringRun[];
     mapProposals?: AiStudyMapProposal[];

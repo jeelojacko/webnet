@@ -26,6 +26,8 @@ It does not use adjustment, parser, solver, network, or Survey CAD domain state.
 - `src/study/studyExportImport.ts` - JSON export/import round trip helpers
 - `src/study/studyReviewTransaction.ts` - FSRS rating preview, counted/non-counted attempt assembly, StudyPhase preservation, and latest-rating undo state restoration
 - `src/study/useStudyApp.ts` - route-local state, autosave, reveal/rating flow, latest-rating undo, and persistence orchestration
+- `src/study/useStudyExamPrep.ts` - Exam Prep persistence actions (studied toggles, atomic stale-safe recall ratings, session settings) wired into `useStudyApp`
+- `src/study/examPrep/*` - Exam Prep namespace: pure recall-task derivation from the frozen curriculum manifest, current-binding selectors, deterministic recall queue, FSRS rating preview/attempt builders, session-settings helpers, and the tabbed Home / Learn / Recall / Lookup Drills page
 - `src/study/StudyApp.tsx` and `src/study/components/*` - dashboard, library, document, session, and manage pages
 - `tests/study/*` - focused storage, scheduler, FSRS, queue, OPFS, separation, autosave, UI, and attempt-persistence coverage
 
@@ -33,7 +35,7 @@ It does not use adjustment, parser, solver, network, or Survey CAD domain state.
 
 Database: `webnet.study.v1`
 
-Version: `8`
+Version: `9`
 
 Stores:
 
@@ -54,8 +56,12 @@ Stores:
 - `aiAuthoringRuns`, key `runId`: external/provider-neutral AI authoring run metadata
 - `aiStudyMapProposals`, key `id`: validated Study Map disposition proposals and conflict/review state
 - `aiUnitProposals`, key `proposalId`: AI-authored StudyUnit proposals with objectives, grounding, validation status, review status, and approval provenance
+- `examPrepUnitProgress`, key `id`: Exam Prep studied markers (`${curriculumContentHash}::${unitId}`) binding `curriculumId` + `curriculumContentHash` with `studiedAt`/`updatedAt`
+- `examPrepRecallProgress`, key `id`: FSRS scheduling state per derived recall card (`${curriculumContentHash}::${taskId}`) with serialized schedule, review count, and last-reviewed timestamp
+- `examPrepAttempts`, key `id`: immutable rated recall attempts (exact answer, rating, card before/after, review log, due values, config version, timestamps, kind `recall`)
+- `examPrepSettings`, key `id` (`curriculumContentHash`): per-curriculum-hash session limits (`newRecallCardsPerSession`, `maxRecallCardsPerSession`)
 
-Native indexes added in version `6`:
+Native indexes added in version `6` (plus per-store indexes below):
 
 - `legalComponents.byDocumentId` for document-reader on-demand loading
 - `legalComponents.bySourceKey` on `[documentId, sourceKey]` for source-linked unit hydration and source-review acknowledgement
@@ -64,9 +70,9 @@ Native indexes added in version `6`:
 - `prompts.byUnitId`, `rubrics.byUnitId`, and `concepts.byUnitId` for unit-editor and index-building joins
 - `attempts.byUnitId` and `attempts.byUnitReviewedAt` for per-unit attempt lookup
 
-Schema migration currently normalizes imported or partially missing snapshots to schema version `7`, fills default settings, defaults official-content stores to empty arrays, adds unit source mode, adds concept origin/order fields, adds the rubric store, adds Study FSRS settings/configuration, adds optional progress/attempt scheduling wrappers, creates native lookup indexes, repairs malformed legacy `legalComponents` key paths, and keeps existing Study data intact. Existing concepts without origin default to manual unless the linked unit already records generated concepts. Legacy snapshots without rubrics receive conservative supplemental `custom` rubric rows from existing concepts with empty reference answers, so migration does not invent legal answers or delete concept content. Old-schema IndexedDB fixture coverage locks browser upgrade behavior for pre-FSRS and v5/v6 data: missing stores are created, historical attempts are preserved, malformed official legal component stores are recreated for reimport, legal lookup indexes exist, and ambiguous legacy due dates become uninitialized FSRS schedules instead of replayed memory history.
+Schema migration currently normalizes imported or partially missing snapshots to schema version `9`, fills default settings, defaults official-content stores to empty arrays, adds unit source mode, adds concept origin/order fields, adds the rubric store, adds Study FSRS settings/configuration, adds optional progress/attempt scheduling wrappers, creates native lookup indexes, repairs malformed legacy `legalComponents` key paths, and keeps existing Study data intact. Existing concepts without origin default to manual unless the linked unit already records generated concepts. Legacy snapshots without rubrics receive conservative supplemental `custom` rubric rows from existing concepts with empty reference answers, so migration does not invent legal answers or delete concept content. Old-schema IndexedDB fixture coverage locks browser upgrade behavior for pre-FSRS and v5/v6 data: missing stores are created, historical attempts are preserved, malformed official legal component stores are recreated for reimport, legal lookup indexes exist, and ambiguous legacy due dates become uninitialized FSRS schedules instead of replayed memory history.
 
-Version `7` specifically repairs browsers that created `legalComponents` with an old plain `id` key path. Full-corpus packages reuse component ids such as `section:1` across documents, so that malformed store can collapse thousands of components to the number of unique local ids. The repair drops only that authoritative imported legal-text store and recreates it with `recordKey`; reimporting the official package restores the complete component set without touching Study units, progress, attempts, drafts, or settings. Version `8` adds AI authoring proposal stores without converting proposals into StudyUnits.
+Version `7` specifically repairs browsers that created `legalComponents` with an old plain `id` key path. Full-corpus packages reuse component ids such as `section:1` across documents, so that malformed store can collapse thousands of components to the number of unique local ids. The repair drops only that authoritative imported legal-text store and recreates it with `recordKey`; reimporting the official package restores the complete component set without touching Study units, progress, attempts, drafts, or settings. Version `8` adds AI authoring proposal stores without converting proposals into StudyUnits. Version `9` adds the four Exam Prep stores (`examPrepUnitProgress`, `examPrepRecallProgress`, `examPrepAttempts`, `examPrepSettings`) with curriculum/task indexes (`byCurriculumId`, `byCurriculumContentHash`, `byTaskId`, `byCurriculumAndTask` on recall/attempt stores, `byUnitId` on unit progress, `byKind` on attempts, `byCurriculumId` on settings) without touching existing Study, legal, AI, settings, or FSRS data; v8 snapshots and databases migrate with empty Exam Prep arrays/stores.
 
 ## AI Authoring
 
@@ -372,6 +378,18 @@ Default transitions:
 Due reviews sort before new units. New units are then selected by priority and deterministic title/id ordering.
 
 Default response modes are phase-driven unless a unit override is set. Guided-recall uses guided mode with one answer textbox per required rubric item and hides the monolithic free-recall textbox; optional rubric prompts are available from a collapsed optional panel. Free-recall, application, and maintenance use the large free-recall answer by default. Hybrid mode keeps the free-recall answer and guided rubric prompts available together. After reveal, guided and hybrid modes show each rubric prompt with the matching user response, reference answer, and covered / partially covered / missed controls. Attempts and drafts persist response mode, guided responses by rubric item ID, and rubric coverage. Preview mode uses the same rendering without creating attempts, changing progress, or saving draft responses.
+
+## Exam Prep
+
+Exam Prep is the learner-facing layer over the frozen Exam Curriculum V1 manifest. It is separate from the Study Map / Study Units / AI authoring pipelines and does not convert curriculum units into Study records.
+
+- The sidebar item is named **Exam Prep** and routes to `/study/exam-prep`; tabs are Home, Learn (`/study/learn`), Recall (`/study/review`), and Lookup Drills (`/study/drills`). The legacy `/study/exam-curriculum` path renders Learn, preserving old bookmarks.
+- Learn renders exactly the 133 A-D/NAV curriculum units with an independent studied/not-studied toggle. Home shows studied X/133, recall due now, introduced X/57, and the 57-card total plus current session limits.
+- Exactly 57 recall cards are derived purely and deterministically from `unit.mustRecall` in canonical manifest order (A 18 / B 27 / C 6 / D 0 / NAV 6 / DRILL 0), with ids `recall:{unitId}:{index}`, the fixed prompt "State the key rule you should remember for this curriculum unit.", and verbatim frozen expected answers. mustLocate, sourceAnchors, recognitionCues, and drill answers never create cards, so all 452 mustLocate entries stay unscheduled.
+- Recall review reuses the Study FSRS scheduler/config. The queue orders due cards earliest-first then prioritized (canonical) new cards, respects new/max session limits (defaults 8/20, bounds 0-57/1-57, new <= max), excludes future-due and archived same-curriculum/different-hash records, and treats uninitialized progress as new. Rating writes an immutable attempt plus recall progress atomically with stale `updatedAt` protection. Expected text and ratings stay hidden until Reveal.
+- Every persistent record binds `curriculumId` + `curriculumContentHash` from the bundled manifest. Selectors filter by both fields; archived same-curriculum/different-hash state is preserved and exportable but ignored by current metrics and queues. Old-hash imports stay unscheduled.
+- Lookup Drills render the 24 frozen drills through the shared drill card (timer formatted M:SS, e.g. 150s -> 2:30) with no persistence, drafts store, or autosave; drill state is session-only UI state.
+- No drill persistence, undo, drafts, Study phase transitions, or Study-unit conversion are implemented.
 
 ## Manual Test Procedure
 

@@ -27,10 +27,23 @@ import type {
   StudySettings,
   StudyUnit,
 } from './studyTypes';
+import type {
+  ExamPrepRecallAttempt,
+  ExamPrepRecallProgress,
+  ExamPrepSettings,
+  ExamPrepUnitProgress,
+} from './examPrep/examPrepTypes';
+import {
+  EXAM_PREP_STORE_INDEXES,
+  EXAM_PREP_STORE_KEYS,
+  EXAM_PREP_STORE_NAMES,
+  type ExamPrepIndexSpec,
+  type ExamPrepStoreName,
+} from './examPrep/examPrepStorageConfig';
 
 export const STUDY_DB_NAME = 'webnet.study.v1';
-export const STUDY_DB_VERSION = 8;
-export const STUDY_SCHEMA_VERSION = 8;
+export const STUDY_DB_VERSION = 9;
+export const STUDY_SCHEMA_VERSION = 9;
 
 const STORES = [
   'documents',
@@ -50,6 +63,7 @@ const STORES = [
   'aiAuthoringRuns',
   'aiStudyMapProposals',
   'aiUnitProposals',
+  ...EXAM_PREP_STORE_NAMES,
 ] as const;
 
 type StudyStoreName = (typeof STORES)[number];
@@ -72,6 +86,7 @@ const STORE_KEYS: Record<StudyStoreName, string> = {
   aiAuthoringRuns: 'runId',
   aiStudyMapProposals: 'id',
   aiUnitProposals: 'proposalId',
+  ...EXAM_PREP_STORE_KEYS,
 };
 
 type StudyStorePayloads = {
@@ -92,6 +107,10 @@ type StudyStorePayloads = {
   aiAuthoringRuns: AiAuthoringRun;
   aiStudyMapProposals: AiStudyMapProposal;
   aiUnitProposals: AiStoredUnitProposal;
+  examPrepUnitProgress: ExamPrepUnitProgress;
+  examPrepRecallProgress: ExamPrepRecallProgress;
+  examPrepAttempts: ExamPrepRecallAttempt;
+  examPrepSettings: ExamPrepSettings;
 };
 
 const hasIndexedDb = (): boolean =>
@@ -158,6 +177,16 @@ const createMissingIndex = (
   if ('createIndex' in store && !hasIndex(store, indexName)) store.createIndex(indexName, keyPath);
 };
 
+/**
+ * Data-driven index creation for the Exam Prep stores. Both the fresh-create
+ * path (createIndexesForStore) and the migration/missing path
+ * (createMissingIndexes) consume the same spec table so they cannot drift.
+ */
+const examPrepIndexSpecsFor = (storeName: StudyStoreName): ExamPrepIndexSpec[] | null => {
+  if (!(storeName in EXAM_PREP_STORE_KEYS)) return null;
+  return EXAM_PREP_STORE_INDEXES[storeName as ExamPrepStoreName];
+};
+
 const createIndexesForStore = (storeName: StudyStoreName, store: IDBObjectStore): void => {
   if (!('createIndex' in store)) return;
   if (storeName === 'legalComponents') {
@@ -179,6 +208,12 @@ const createIndexesForStore = (storeName: StudyStoreName, store: IDBObjectStore)
     store.createIndex('byRunId', 'runId');
     store.createIndex('byReviewStatus', 'reviewStatus');
     store.createIndex('byValidationStatus', 'validationStatus');
+  }
+  const examPrepSpecs = examPrepIndexSpecsFor(storeName);
+  if (examPrepSpecs) {
+    examPrepSpecs.forEach((spec) =>
+      store.createIndex(spec.name, spec.keyPath, spec.unique ? { unique: true } : undefined),
+    );
   }
 };
 
@@ -202,6 +237,10 @@ const createMissingIndexes = (storeName: StudyStoreName, store: IDBObjectStore):
     createMissingIndex(store, 'byRunId', 'runId');
     createMissingIndex(store, 'byReviewStatus', 'reviewStatus');
     createMissingIndex(store, 'byValidationStatus', 'validationStatus');
+  }
+  const examPrepSpecs = examPrepIndexSpecsFor(storeName);
+  if (examPrepSpecs) {
+    examPrepSpecs.forEach((spec) => createMissingIndex(store, spec.name, spec.keyPath));
   }
 };
 
@@ -370,6 +409,10 @@ export const migrateStudySnapshot = (input: Partial<StudyDataSnapshot>): StudyDa
     aiAuthoringRuns: input.aiAuthoringRuns ?? [],
     aiStudyMapProposals: input.aiStudyMapProposals ?? [],
     aiUnitProposals: input.aiUnitProposals ?? [],
+    examPrepUnitProgress: input.examPrepUnitProgress ?? [],
+    examPrepRecallProgress: input.examPrepRecallProgress ?? [],
+    examPrepAttempts: input.examPrepAttempts ?? [],
+    examPrepSettings: input.examPrepSettings ?? [],
   };
 };
 
@@ -407,6 +450,10 @@ const loadAuthoritativeSnapshot = async (db: IDBDatabase): Promise<StudyDataSnap
     aiAuthoringRuns,
     aiStudyMapProposals,
     aiUnitProposals,
+    examPrepUnitProgress,
+    examPrepRecallProgress,
+    examPrepAttempts,
+    examPrepSettings,
   ] = await Promise.all([
     readStore(db, 'documents'),
     readStore(db, 'units'),
@@ -423,6 +470,10 @@ const loadAuthoritativeSnapshot = async (db: IDBDatabase): Promise<StudyDataSnap
     readStore(db, 'aiAuthoringRuns'),
     readStore(db, 'aiStudyMapProposals'),
     readStore(db, 'aiUnitProposals'),
+    readStore(db, 'examPrepUnitProgress'),
+    readStore(db, 'examPrepRecallProgress'),
+    readStore(db, 'examPrepAttempts'),
+    readStore(db, 'examPrepSettings'),
   ]);
   return migrateStudySnapshot({
     documents,
@@ -440,6 +491,10 @@ const loadAuthoritativeSnapshot = async (db: IDBDatabase): Promise<StudyDataSnap
     aiAuthoringRuns,
     aiStudyMapProposals,
     aiUnitProposals,
+    examPrepUnitProgress,
+    examPrepRecallProgress,
+    examPrepAttempts,
+    examPrepSettings,
   });
 };
 
@@ -501,6 +556,13 @@ export const createStudyStorage = (): StudyStorage => ({
         readStore(db, 'aiStudyMapProposals'),
         readStore(db, 'aiUnitProposals'),
       ]);
+      const [examPrepUnitProgress, examPrepRecallProgress, examPrepAttempts, examPrepSettings] =
+        await Promise.all([
+          readStore(db, 'examPrepUnitProgress'),
+          readStore(db, 'examPrepRecallProgress'),
+          readStore(db, 'examPrepAttempts'),
+          readStore(db, 'examPrepSettings'),
+        ]);
       return migrateStudySnapshot({
         documents,
         units,
@@ -517,6 +579,10 @@ export const createStudyStorage = (): StudyStorage => ({
         aiAuthoringRuns,
         aiStudyMapProposals,
         aiUnitProposals,
+        examPrepUnitProgress,
+        examPrepRecallProgress,
+        examPrepAttempts,
+        examPrepSettings,
       });
     } finally {
       db.close();
@@ -766,6 +832,58 @@ export const createStudyStorage = (): StudyStorage => ({
       db.close();
     }
   },
+  async saveExamPrepUnitProgress(record) {
+    const db = await openStudyDatabase();
+    try {
+      await putRecord(db, 'examPrepUnitProgress', record);
+    } finally {
+      db.close();
+    }
+  },
+  async deleteExamPrepUnitProgress(recordId) {
+    const db = await openStudyDatabase();
+    try {
+      const transaction = db.transaction('examPrepUnitProgress', 'readwrite');
+      transaction.objectStore('examPrepUnitProgress').delete(recordId);
+      await transactionDone(transaction);
+    } finally {
+      db.close();
+    }
+  },
+  async saveExamPrepRecallRating({ attempt, progress, expectedProgressUpdatedAt }) {
+    const db = await openStudyDatabase();
+    try {
+      const transaction = db.transaction(
+        ['examPrepRecallProgress', 'examPrepAttempts'],
+        'readwrite',
+      );
+      const progressStore = transaction.objectStore('examPrepRecallProgress');
+      const existing = await requestToPromise(
+        progressStore.get(progress.id) as IDBRequest<ExamPrepRecallProgress | undefined>,
+      );
+      if (
+        expectedProgressUpdatedAt &&
+        existing &&
+        existing.updatedAt !== expectedProgressUpdatedAt
+      ) {
+        transaction.abort();
+        throw new Error('Exam Prep recall progress changed before the rating could be saved.');
+      }
+      progressStore.put(progress);
+      transaction.objectStore('examPrepAttempts').put(attempt);
+      await transactionDone(transaction);
+    } finally {
+      db.close();
+    }
+  },
+  async saveExamPrepSettings(record) {
+    const db = await openStudyDatabase();
+    try {
+      await putRecord(db, 'examPrepSettings', record);
+    } finally {
+      db.close();
+    }
+  },
   async saveAiAuthoringRun(run) {
     const db = await openStudyDatabase();
     try {
@@ -873,6 +991,10 @@ export const createStudyStorage = (): StudyStorage => ({
       putMany(transaction, 'aiAuthoringRuns', next.aiAuthoringRuns);
       putMany(transaction, 'aiStudyMapProposals', next.aiStudyMapProposals);
       putMany(transaction, 'aiUnitProposals', next.aiUnitProposals);
+      putMany(transaction, 'examPrepUnitProgress', next.examPrepUnitProgress);
+      putMany(transaction, 'examPrepRecallProgress', next.examPrepRecallProgress);
+      putMany(transaction, 'examPrepAttempts', next.examPrepAttempts);
+      putMany(transaction, 'examPrepSettings', next.examPrepSettings);
       await transactionDone(transaction);
     } finally {
       db.close();

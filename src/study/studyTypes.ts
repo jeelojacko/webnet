@@ -4,6 +4,12 @@ import type {
   AiStoredUnitProposal,
   AiStudyMapProposal,
 } from './ai/studyAiTypes';
+import type {
+  ExamPrepRecallAttempt,
+  ExamPrepRecallProgress,
+  ExamPrepSettings,
+  ExamPrepUnitProgress,
+} from './examPrep/examPrepTypes';
 
 export type StudyDocumentKind =
   | 'act'
@@ -428,6 +434,10 @@ export type StudyDataSnapshot = {
   aiAuthoringRuns: AiAuthoringRun[];
   aiStudyMapProposals: AiStudyMapProposal[];
   aiUnitProposals: AiStoredUnitProposal[];
+  examPrepUnitProgress: ExamPrepUnitProgress[];
+  examPrepRecallProgress: ExamPrepRecallProgress[];
+  examPrepAttempts: ExamPrepRecallAttempt[];
+  examPrepSettings: ExamPrepSettings[];
 };
 
 export type StudySessionItem = {

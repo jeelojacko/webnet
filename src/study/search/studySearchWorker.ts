@@ -118,6 +118,10 @@ const readSnapshotWithoutLegalText = async (db: IDBDatabase): Promise<StudyDataS
     aiAuthoringRuns: [],
     aiStudyMapProposals: [],
     aiUnitProposals: [],
+    examPrepUnitProgress: [],
+    examPrepRecallProgress: [],
+    examPrepAttempts: [],
+    examPrepSettings: [],
   } as StudyDataSnapshot;
 };
 
