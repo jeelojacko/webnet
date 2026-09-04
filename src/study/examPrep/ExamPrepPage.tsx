@@ -10,6 +10,7 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import {
+  ClipboardCheck,
   Compass,
   GraduationCap,
   Home,
@@ -28,6 +29,12 @@ import { EXAM_PREP_MANIFEST } from './examPrepManifest';
 import { buildExamPrepHomeMetrics } from './examPrepSelectors';
 import { resolveExamPrepSettings } from './examPrepSettings';
 import { ExamPrepHomeView } from './components/ExamPrepHome';
+import { ExamPrepMockExamView } from './components/ExamPrepMockExam';
+import { selectActiveMockSession } from './mock/examPrepMockSelectors';
+import type {
+  ExamPrepMockSession,
+  ExamPrepMockSessionExpectation,
+} from './mock/examPrepMockTypes';
 import { ExamPrepLearnView } from './components/ExamPrepLearn';
 import { ExamPrepRecallView } from './components/ExamPrepRecall';
 import { ExamPrepRecognitionView } from './components/ExamPrepRecognition';
@@ -40,7 +47,8 @@ export type ExamPrepViewKind =
   | 'recall'
   | 'recognition'
   | 'locate'
-  | 'drills';
+  | 'drills'
+  | 'mock';
 
 export type ExamPrepPageProps = {
   view: ExamPrepViewKind;
@@ -55,6 +63,10 @@ export type ExamPrepPageProps = {
     answer?: string;
   }) => Promise<void>;
   onSaveExamPrepAttempt: (_attempt: ExamPrepAttempt) => Promise<void>;
+  onSaveExamPrepMockSession?: (
+    _session: ExamPrepMockSession,
+    _expectation: ExamPrepMockSessionExpectation,
+  ) => Promise<void>;
 };
 
 const TABS: Array<{
@@ -69,6 +81,7 @@ const TABS: Array<{
   { view: 'recognition', path: '/study/recognition', label: 'Recognition', icon: Compass },
   { view: 'locate', path: '/study/locate', label: 'Locate', icon: LocateFixed },
   { view: 'drills', path: '/study/drills', label: 'Lookup Drills', icon: Timer },
+  { view: 'mock', path: '/study/mock-exam', label: 'Mock Exam', icon: ClipboardCheck },
 ];
 
 export const ExamPrepPage = ({
@@ -79,6 +92,7 @@ export const ExamPrepPage = ({
   onToggleUnitStudied,
   onRateRecallTask,
   onSaveExamPrepAttempt,
+  onSaveExamPrepMockSession,
 }: ExamPrepPageProps) => {
   const [nowIso, setNowIso] = useState(() => new Date().toISOString());
   useEffect(() => {
@@ -86,6 +100,11 @@ export const ExamPrepPage = ({
     return () => window.clearTimeout(handle);
   }, [nowIso]);
   const now = useMemo(() => new Date(nowIso), [nowIso]);
+  const activeMock = useMemo(
+    () => selectActiveMockSession(data.examPrepMockSessions),
+    [data.examPrepMockSessions],
+  );
+  const focusedMock = view === 'mock' && activeMock !== null;
   const metrics = useMemo(
     () =>
       buildExamPrepHomeMetrics(
@@ -117,40 +136,44 @@ export const ExamPrepPage = ({
   );
   return (
     <div className="space-y-5">
-      <div>
-        <div className="flex items-center gap-2">
-          <GraduationCap className="text-emerald-400" size={20} />
-          <h2 className="text-xl font-semibold text-white">Exam Prep</h2>
-        </div>
-        <p className="mt-1 max-w-3xl text-sm text-slate-400">
-          Study the open-book Statute Law curriculum: browse and mark the 133 A-D + Navigation
-          units as studied, review 57 FSRS-scheduled recall cards, recognise which law applies
-          from frozen cues, locate the correct statute or controlling provision, and practise 24
-          lookup drills.
-        </p>
-      </div>
-      <div className="flex flex-wrap gap-2 border-b border-slate-800 pb-2">
-        {TABS.map((tab) => {
-          const Icon = tab.icon;
-          const active = view === tab.view;
-          return (
-            <button
-              key={tab.view}
-              type="button"
-              onClick={() => onNavigate(tab.path)}
-              aria-current={active ? 'page' : undefined}
-              className={`flex items-center gap-1.5 rounded px-3 py-1.5 text-sm ${
-                active
-                  ? 'bg-emerald-900/60 text-emerald-100'
-                  : 'text-slate-400 hover:bg-slate-800 hover:text-slate-100'
-              }`}
-            >
-              <Icon size={14} />
-              {tab.label}
-            </button>
-          );
-        })}
-      </div>
+      {!focusedMock ? (
+        <>
+          <div>
+            <div className="flex items-center gap-2">
+              <GraduationCap className="text-emerald-400" size={20} />
+              <h2 className="text-xl font-semibold text-white">Exam Prep</h2>
+            </div>
+            <p className="mt-1 max-w-3xl text-sm text-slate-400">
+              Study the open-book Statute Law curriculum: browse and mark the 133 A-D + Navigation
+              units as studied, review 57 FSRS-scheduled recall cards, recognise which law applies
+              from frozen cues, locate the correct statute or controlling provision, practise 24
+              lookup drills, and run provisional timed mock exams.
+            </p>
+          </div>
+          <div className="flex flex-wrap gap-2 border-b border-slate-800 pb-2">
+            {TABS.map((tab) => {
+              const Icon = tab.icon;
+              const active = view === tab.view;
+              return (
+                <button
+                  key={tab.view}
+                  type="button"
+                  onClick={() => onNavigate(tab.path)}
+                  aria-current={active ? 'page' : undefined}
+                  className={`flex items-center gap-1.5 rounded px-3 py-1.5 text-sm ${
+                    active
+                      ? 'bg-emerald-900/60 text-emerald-100'
+                      : 'text-slate-400 hover:bg-slate-800 hover:text-slate-100'
+                  }`}
+                >
+                  <Icon size={14} />
+                  {tab.label}
+                </button>
+              );
+            })}
+          </div>
+        </>
+      ) : null}
       {view === 'home' && (
         <ExamPrepHomeView
           metrics={metrics}
@@ -199,7 +222,20 @@ export const ExamPrepPage = ({
           onSaveDrillAttempt={onSaveExamPrepAttempt}
         />
       )}
-      {view !== 'home' ? (
+      {view === 'mock' && (
+        <ExamPrepMockExamView
+          sessions={data.examPrepMockSessions}
+          onSaveSession={
+            onSaveExamPrepMockSession ??
+            (async () => {
+              throw new Error('Mock session persistence is not available.');
+            })
+          }
+          onOpenProvision={onOpenProvision}
+          onNavigate={onNavigate}
+        />
+      )}
+      {view !== 'home' && !focusedMock ? (
         <p className="font-mono text-[10px] text-slate-600">
           {binding.curriculumId} · contentHash {binding.curriculumContentHash.slice(0, 16)}…
         </p>

@@ -296,7 +296,7 @@ describe('Exam Prep export/import of the widened attempts union', () => {
     ];
     const snapshot: StudyDataSnapshot = { ...seed, examPrepAttempts: attempts };
     const restored = parseStudyImport(exportStudyData(snapshot, '2026-09-05T00:00:00.000Z'));
-    expect(restored.schemaVersion).toBe(9);
+    expect(restored.schemaVersion).toBe(10);
     expect(restored.examPrepAttempts).toEqual(attempts);
     expect(restored.examPrepAttempts.map((attempt) => attempt.kind)).toEqual([
       'recall',

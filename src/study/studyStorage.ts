@@ -34,6 +34,10 @@ import type {
   ExamPrepSettings,
   ExamPrepUnitProgress,
 } from './examPrep/examPrepTypes';
+import type {
+  ExamPrepMockSession,
+  ExamPrepMockSessionExpectation,
+} from './examPrep/mock/examPrepMockTypes';
 import {
   EXAM_PREP_STORE_INDEXES,
   EXAM_PREP_STORE_KEYS,
@@ -43,8 +47,8 @@ import {
 } from './examPrep/examPrepStorageConfig';
 
 export const STUDY_DB_NAME = 'webnet.study.v1';
-export const STUDY_DB_VERSION = 9;
-export const STUDY_SCHEMA_VERSION = 9;
+export const STUDY_DB_VERSION = 10;
+export const STUDY_SCHEMA_VERSION = 10;
 
 const STORES = [
   'documents',
@@ -112,6 +116,7 @@ type StudyStorePayloads = {
   examPrepRecallProgress: ExamPrepRecallProgress;
   examPrepAttempts: ExamPrepAttempt;
   examPrepSettings: ExamPrepSettings;
+  examPrepMockSessions: ExamPrepMockSession;
 };
 
 const hasIndexedDb = (): boolean =>
@@ -414,6 +419,7 @@ export const migrateStudySnapshot = (input: Partial<StudyDataSnapshot>): StudyDa
     examPrepRecallProgress: input.examPrepRecallProgress ?? [],
     examPrepAttempts: input.examPrepAttempts ?? [],
     examPrepSettings: input.examPrepSettings ?? [],
+    examPrepMockSessions: input.examPrepMockSessions ?? [],
   };
 };
 
@@ -455,6 +461,7 @@ const loadAuthoritativeSnapshot = async (db: IDBDatabase): Promise<StudyDataSnap
     examPrepRecallProgress,
     examPrepAttempts,
     examPrepSettings,
+    examPrepMockSessions,
   ] = await Promise.all([
     readStore(db, 'documents'),
     readStore(db, 'units'),
@@ -475,6 +482,7 @@ const loadAuthoritativeSnapshot = async (db: IDBDatabase): Promise<StudyDataSnap
     readStore(db, 'examPrepRecallProgress'),
     readStore(db, 'examPrepAttempts'),
     readStore(db, 'examPrepSettings'),
+    readStore(db, 'examPrepMockSessions'),
   ]);
   return migrateStudySnapshot({
     documents,
@@ -496,6 +504,7 @@ const loadAuthoritativeSnapshot = async (db: IDBDatabase): Promise<StudyDataSnap
     examPrepRecallProgress,
     examPrepAttempts,
     examPrepSettings,
+    examPrepMockSessions,
   });
 };
 
@@ -557,12 +566,13 @@ export const createStudyStorage = (): StudyStorage => ({
         readStore(db, 'aiStudyMapProposals'),
         readStore(db, 'aiUnitProposals'),
       ]);
-      const [examPrepUnitProgress, examPrepRecallProgress, examPrepAttempts, examPrepSettings] =
+      const [examPrepUnitProgress, examPrepRecallProgress, examPrepAttempts, examPrepSettings, examPrepMockSessions] =
         await Promise.all([
           readStore(db, 'examPrepUnitProgress'),
           readStore(db, 'examPrepRecallProgress'),
           readStore(db, 'examPrepAttempts'),
           readStore(db, 'examPrepSettings'),
+          readStore(db, 'examPrepMockSessions'),
         ]);
       return migrateStudySnapshot({
         documents,
@@ -584,6 +594,7 @@ export const createStudyStorage = (): StudyStorage => ({
         examPrepRecallProgress,
         examPrepAttempts,
         examPrepSettings,
+        examPrepMockSessions,
       });
     } finally {
       db.close();
@@ -896,6 +907,29 @@ export const createStudyStorage = (): StudyStorage => ({
       db.close();
     }
   },
+  /** CAS-guarded mock-session write (writes ONLY the mock store). */
+  async saveExamPrepMockSession({ session, expectation }) {
+    const db = await openStudyDatabase();
+    try {
+      const transaction = db.transaction('examPrepMockSessions', 'readwrite');
+      const store = transaction.objectStore('examPrepMockSessions');
+      const existing = await requestToPromise(
+        store.get(session.id) as IDBRequest<ExamPrepMockSession | undefined>,
+      );
+      const stale =
+        expectation.kind === 'absent'
+          ? existing !== undefined
+          : !existing || existing.updatedAt !== expectation.updatedAt;
+      if (stale) {
+        transaction.abort();
+        throw new Error('This mock session changed in another tab. Reload to resume the latest saved version.');
+      }
+      store.put(session);
+      await transactionDone(transaction);
+    } finally {
+      db.close();
+    }
+  },
   async saveAiAuthoringRun(run) {
     const db = await openStudyDatabase();
     try {
@@ -1007,6 +1041,7 @@ export const createStudyStorage = (): StudyStorage => ({
       putMany(transaction, 'examPrepRecallProgress', next.examPrepRecallProgress);
       putMany(transaction, 'examPrepAttempts', next.examPrepAttempts);
       putMany(transaction, 'examPrepSettings', next.examPrepSettings);
+      putMany(transaction, 'examPrepMockSessions', next.examPrepMockSessions);
       await transactionDone(transaction);
     } finally {
       db.close();

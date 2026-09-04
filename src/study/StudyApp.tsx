@@ -57,6 +57,7 @@ const StudyApp = () => {
           onToggleUnitStudied={study.toggleUnitStudied}
           onRateRecallTask={study.rateRecallTask}
           onSaveExamPrepAttempt={study.saveExamPrepAttempt}
+          onSaveExamPrepMockSession={study.saveExamPrepMockSession}
         />
       );
     }

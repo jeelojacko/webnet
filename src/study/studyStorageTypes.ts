@@ -14,6 +14,10 @@ import type {
   ExamPrepUnitProgress,
 } from './examPrep/examPrepTypes';
 import type {
+  ExamPrepMockSession,
+  ExamPrepMockSessionExpectation,
+} from './examPrep/mock/examPrepMockTypes';
+import type {
   StudyAttempt,
   StudyConcept,
   StudyDataSnapshot,
@@ -90,6 +94,10 @@ export interface StudyStorage {
   }) => Promise<void>;
   saveExamPrepAttempt: (_attempt: ExamPrepAttempt) => Promise<void>;
   saveExamPrepSettings: (_record: ExamPrepSettings) => Promise<void>;
+  saveExamPrepMockSession: (_options: {
+    session: ExamPrepMockSession;
+    expectation: ExamPrepMockSessionExpectation;
+  }) => Promise<void>;
   replaceAiAuthoringArtifacts: (_artifacts: {
     runs?: AiAuthoringRun[];
     mapProposals?: AiStudyMapProposal[];

@@ -10,6 +10,7 @@ import type {
   ExamPrepSettings,
   ExamPrepUnitProgress,
 } from './examPrep/examPrepTypes';
+import type { ExamPrepMockSession } from './examPrep/mock/examPrepMockTypes';
 
 export type StudyDocumentKind =
   | 'act'
@@ -438,6 +439,7 @@ export type StudyDataSnapshot = {
   examPrepRecallProgress: ExamPrepRecallProgress[];
   examPrepAttempts: ExamPrepAttempt[];
   examPrepSettings: ExamPrepSettings[];
+  examPrepMockSessions: ExamPrepMockSession[];
 };
 
 export type StudySessionItem = {

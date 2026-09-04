@@ -12,6 +12,7 @@ export const EXAM_PREP_ROUTES: Array<{ view: ExamPrepViewKind; path: string }> =
   { view: 'recognition', path: '/study/recognition' },
   { view: 'locate', path: '/study/locate' },
   { view: 'drills', path: '/study/drills' },
+  { view: 'mock', path: '/study/mock-exam' },
 ];
 
 export const decodeExamPrepView = (path: string): ExamPrepViewKind | null => {
@@ -21,5 +22,6 @@ export const decodeExamPrepView = (path: string): ExamPrepViewKind | null => {
   if (path === '/study/recognition') return 'recognition';
   if (path === '/study/locate') return 'locate';
   if (path === '/study/drills') return 'drills';
+  if (path === '/study/mock-exam') return 'mock';
   return null;
 };

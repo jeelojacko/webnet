@@ -1,7 +1,7 @@
 // Exam Prep — IndexedDB store configuration.
 //
-// Single source of truth for the four Exam Prep stores registered in the
-// Study database (schema v9): store names, id key paths, and native index
+// Single source of truth for the five Exam Prep stores registered in the
+// Study database (schema v10): store names, id key paths, and native index
 // definitions. studyStorage.ts consumes these so store registration and
 // index creation/migration never drift between the fresh-create and
 // missing-index paths.
@@ -11,6 +11,7 @@ export const EXAM_PREP_STORE_NAMES = [
   'examPrepRecallProgress',
   'examPrepAttempts',
   'examPrepSettings',
+  'examPrepMockSessions',
 ] as const;
 
 export type ExamPrepStoreName = (typeof EXAM_PREP_STORE_NAMES)[number];
@@ -20,6 +21,7 @@ export const EXAM_PREP_STORE_KEYS: Record<ExamPrepStoreName, string> = {
   examPrepRecallProgress: 'id',
   examPrepAttempts: 'id',
   examPrepSettings: 'id',
+  examPrepMockSessions: 'id',
 };
 
 export type ExamPrepIndexSpec = {
@@ -48,4 +50,11 @@ export const EXAM_PREP_STORE_INDEXES: Record<ExamPrepStoreName, ExamPrepIndexSpe
     { name: 'byKind', keyPath: 'kind' },
   ],
   examPrepSettings: [{ name: 'byCurriculumId', keyPath: 'curriculumId' }],
+  examPrepMockSessions: [
+    { name: 'byCurriculumId', keyPath: 'curriculumId' },
+    { name: 'byCurriculumContentHash', keyPath: 'curriculumContentHash' },
+    { name: 'byStatus', keyPath: 'status' },
+    { name: 'byStartedAt', keyPath: 'startedAt' },
+    { name: 'byProfileId', keyPath: 'profileId' },
+  ],
 };

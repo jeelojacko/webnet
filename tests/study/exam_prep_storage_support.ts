@@ -33,6 +33,7 @@ export const EXAM_PREP_STORE_KEYS: Record<string, string> = {
   examPrepRecallProgress: 'id',
   examPrepAttempts: 'id',
   examPrepSettings: 'id',
+  examPrepMockSessions: 'id',
 };
 
 const schedule = (callback: () => void): void => {

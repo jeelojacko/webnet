@@ -19,6 +19,7 @@ import type { ExamPrepHomeMetrics } from '../examPrepSelectors';
 import { EXAM_PREP_MANIFEST, EXAM_PREP_SOURCE_CORPUS_CONTENT_HASH } from '../examPrepManifest';
 import { EXAM_PREP_DRILL_STATUS_LABELS } from '../examPrepDrillFilters';
 import { EXAM_PREP_TOTAL_LOCATE_TASKS, EXAM_PREP_TOTAL_RECOGNITION_TASKS } from '../examPrepConstants';
+import { EXAM_PREP_PROVISIONAL_MOCK_V1 } from '../mock/examPrepMockProfiles';
 import {
   selectExamPrepRecommendedAction,
   type ExamPrepRecommendedAction,
@@ -47,6 +48,11 @@ const STUDY_FLOW_STEPS = [
   { step: '3', title: 'Recognition', note: 'Practice identifying which law/topic applies.' },
   { step: '4', title: 'Locate', note: 'Practice finding the correct statute or provision.' },
   { step: '5', title: 'Lookup Drills', note: 'Combine recognition, retrieval, and application.' },
+  {
+    step: '6',
+    title: 'Mock Exam',
+    note: 'Combine the full workflow under one timed exam simulation.',
+  },
 ] as const;
 
 const MEASURE_DEFINITIONS = [
@@ -145,7 +151,7 @@ export const ExamPrepHomeView = ({
         <div className="text-xs uppercase tracking-wide text-slate-400">
           Suggested study flow
         </div>
-        <ol className="mt-2 grid gap-2 text-xs sm:grid-cols-2 lg:grid-cols-5">
+        <ol className="mt-2 grid gap-2 text-xs sm:grid-cols-2 lg:grid-cols-6">
           {STUDY_FLOW_STEPS.map((item) => (
             <li key={item.step} className="rounded border border-slate-800 bg-slate-900 p-2">
               <div className="text-emerald-300">
@@ -157,7 +163,7 @@ export const ExamPrepHomeView = ({
           ))}
         </ol>
         <p className="mt-2 text-[11px] text-slate-600">
-          The five steps explain how the learning architecture fits together; no progress is
+          The six steps explain how the learning architecture fits together; no progress is
           attached to the steps themselves.
         </p>
       </section>
@@ -288,6 +294,34 @@ export const ExamPrepHomeView = ({
           </button>
         </section>
       </div>
+
+      <section className="rounded border border-amber-800/60 bg-amber-950/25 p-3">
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <div>
+            <div className="text-xs uppercase tracking-wide text-amber-300">
+              Provisional Mock Exam
+            </div>
+            <p className="mt-1 text-sm text-slate-300">
+              {EXAM_PREP_PROVISIONAL_MOCK_V1.durationMinutes} min ·{' '}
+              {EXAM_PREP_PROVISIONAL_MOCK_V1.questionCounts.recall +
+                EXAM_PREP_PROVISIONAL_MOCK_V1.questionCounts.recognition +
+                EXAM_PREP_PROVISIONAL_MOCK_V1.questionCounts.locate +
+                EXAM_PREP_PROVISIONAL_MOCK_V1.questionCounts.drill}{' '}
+              questions
+            </p>
+            <p className="mt-0.5 text-[11px] text-slate-500">
+              Format awaiting registrar confirmation — not the official ANBLS exam format.
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={() => onNavigate('/study/mock-exam')}
+            className="rounded border border-amber-700 bg-amber-900 px-3 py-1.5 text-xs font-semibold text-amber-100 hover:bg-amber-800"
+          >
+            Open Mock Exam
+          </button>
+        </div>
+      </section>
 
       <section className={cardClass}>
         <div className="text-xs uppercase tracking-wide text-slate-400">Today's activity</div>

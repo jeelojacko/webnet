@@ -55,45 +55,49 @@ const seedMaps = (nowIso: string): FakeStores => {
   };
 };
 
-describe('Exam Prep schema v9 migration and storage', () => {
-  it('bumps DB and Study schema versions to 9', () => {
-    expect(STUDY_DB_VERSION).toBe(9);
-    expect(STUDY_SCHEMA_VERSION).toBe(9);
+describe('Exam Prep schema v10 migration and storage', () => {
+  it('bumps DB and Study schema versions to 10', () => {
+    expect(STUDY_DB_VERSION).toBe(10);
+    expect(STUDY_SCHEMA_VERSION).toBe(10);
   });
 
-  it('migrates v8 snapshots with empty Exam Prep defaults, preserving all Study data', () => {
+  it('migrates legacy snapshots with empty Exam Prep defaults, preserving all Study data', () => {
     const seed = createSeedStudyData('2026-08-01T00:00:00.000Z');
     const input = { ...seed } as unknown as Parameters<typeof migrateStudySnapshot>[0];
     delete (input as { examPrepUnitProgress?: unknown }).examPrepUnitProgress;
     delete (input as { examPrepRecallProgress?: unknown }).examPrepRecallProgress;
     delete (input as { examPrepAttempts?: unknown }).examPrepAttempts;
     delete (input as { examPrepSettings?: unknown }).examPrepSettings;
+    delete (input as { examPrepMockSessions?: unknown }).examPrepMockSessions;
     const migrated = migrateStudySnapshot(input);
-    expect(migrated.schemaVersion).toBe(9);
-    expect(migrated.settings.schemaVersion).toBe(9);
+    expect(migrated.schemaVersion).toBe(10);
+    expect(migrated.settings.schemaVersion).toBe(10);
     expect(migrated.examPrepUnitProgress).toEqual([]);
     expect(migrated.examPrepRecallProgress).toEqual([]);
     expect(migrated.examPrepAttempts).toEqual([]);
     expect(migrated.examPrepSettings).toEqual([]);
+    expect(migrated.examPrepMockSessions).toEqual([]);
     expect(migrated.documents).toHaveLength(seed.documents.length);
     expect(migrated.units).toHaveLength(seed.units.length);
     expect(migrated.progress).toHaveLength(seed.progress.length);
   });
 
-  it('upgrades v8 IndexedDB to v9 by adding four Exam Prep stores while preserving existing data', async () => {
+  it('upgrades v8 IndexedDB to v10 by adding five Exam Prep stores while preserving existing data', async () => {
     const stores = seedMaps('2026-08-01T00:00:00.000Z');
     expect(stores.examPrepUnitProgress).toBeUndefined();
     installExamPrepIndexedDbFixture({ stores, oldVersion: 8 });
     const loaded = await createStudyStorage().loadAll();
-    expect(loaded.schemaVersion).toBe(9);
+    expect(loaded.schemaVersion).toBe(10);
     expect(stores.examPrepUnitProgress).toBeInstanceOf(Map);
     expect(stores.examPrepRecallProgress).toBeInstanceOf(Map);
     expect(stores.examPrepAttempts).toBeInstanceOf(Map);
     expect(stores.examPrepSettings).toBeInstanceOf(Map);
+    expect(stores.examPrepMockSessions).toBeInstanceOf(Map);
     expect(loaded.units).toHaveLength(5);
     expect(loaded.attempts).toEqual([]);
     expect(loaded.examPrepUnitProgress).toEqual([]);
     expect(loaded.examPrepRecallProgress).toEqual([]);
+    expect(loaded.examPrepMockSessions).toEqual([]);
   });
 
   it('persists and deletes unit studied progress', async () => {
@@ -273,7 +277,7 @@ describe('Exam Prep export/import round-trips', () => {
         makeSettings({ newRecallCardsPerSession: 1, maxRecallCardsPerSession: 3 }, archivedBinding),
       ),
     ]);
-    expect(restored.schemaVersion).toBe(9);
+    expect(restored.schemaVersion).toBe(10);
     // other Study data intact
     expect(restored.units).toHaveLength(snapshot.units.length);
     expect(restored.progress).toEqual(snapshot.progress);

@@ -10,6 +10,10 @@ import {
   buildExamPrepRatedRecallAttempt,
 } from './examPrep/examPrepReview';
 import type { ExamPrepAttempt } from './examPrep/examPrepTypes';
+import type {
+  ExamPrepMockSession,
+  ExamPrepMockSessionExpectation,
+} from './examPrep/mock/examPrepMockTypes';
 import {
   normalizeExamPrepSettings,
   resolveExamPrepSettings,
@@ -148,10 +152,24 @@ export const useStudyExamPrep = ({
     [data, storage, setData, setStatusMessage],
   );
 
+  /** Persist one mock-exam session under an explicit CAS expectation. */
+  const saveExamPrepMockSession = useCallback(
+    async (session: ExamPrepMockSession, expectation: ExamPrepMockSessionExpectation) => {
+      if (!data) throw new Error('Exam Prep data is not loaded.');
+      await storage.saveExamPrepMockSession({ session, expectation });
+      setData({
+        ...data,
+        examPrepMockSessions: upsertById(data.examPrepMockSessions, session),
+      });
+    },
+    [data, storage, setData],
+  );
+
   return {
     toggleUnitStudied,
     rateRecallTask,
     saveExamPrepAttempt,
     saveExamPrepSettings,
+    saveExamPrepMockSession,
   };
 };
