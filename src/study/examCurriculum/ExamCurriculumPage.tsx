@@ -7,8 +7,8 @@
 // "Open source" reuses the existing statute reader deep-link.
 
 import type React from 'react';
-import { useState } from 'react';
-import { BookMarked, GraduationCap, MapPin } from 'lucide-react';
+import { useState, useRef, useEffect } from 'react';
+import { BookOpen, GraduationCap, MapPin, Timer } from 'lucide-react';
 import examCurriculumManifestJson from '../../../study-content/exam-curriculum/nb-sit-exam-curriculum-v1.json';
 import type {
   ExamCurriculumManifest,
@@ -34,8 +34,9 @@ const DOCUMENT_TITLES: Record<string, string> = {
   ...EXAM_CURRICULUM_TIER_D_DOCUMENT_TITLES,
 };
 
-type TierFilter = 'all' | 'A' | 'B' | 'C' | 'D' | 'NAV';
+type TierFilter = 'all' | 'A' | 'B' | 'C' | 'D' | 'NAV' | 'DRILL';
 const FILTER_TIERS = ['A', 'B', 'C', 'D', 'NAV'] as const;
+const DRILL_DIFFICULTY_LABELS = { direct: 'direct', routing: 'routing', cross_document: 'cross-document' } as const;
 
 const DEPTH_ORDER = ['recognize', 'understand', 'recall', 'retrieve'] as const;
 
@@ -74,7 +75,8 @@ const OpenSourceButton = ({
 const typeBadgeClass = (unitType: string) =>
   unitType === 'document_orientation' ? 'bg-sky-900 text-sky-200'
     : unitType === 'cross_document_navigation' ? 'bg-fuchsia-900 text-fuchsia-200'
-      : 'bg-indigo-900 text-indigo-200';
+      : unitType === 'lookup_drill' ? 'bg-emerald-900 text-emerald-200'
+        : 'bg-indigo-900 text-indigo-200';
 
 const UnitCard = ({ unit, onOpenProvision }: { unit: ExamCurriculumUnit; onOpenProvision: ExamCurriculumPageProps['onOpenProvision'] }) => {
   const multiDocument = unit.sourceDocumentIds.length > 1;
@@ -95,7 +97,7 @@ const UnitCard = ({ unit, onOpenProvision }: { unit: ExamCurriculumUnit; onOpenP
           {unit.unitType}
         </span>
         <span className="rounded bg-slate-800 px-1.5 py-0.5 text-[11px] text-slate-400">
-          {unit.tier === 'NAV' ? 'Navigation' : `Tier ${unit.tier}`}
+          {unit.tier === 'NAV' ? 'Navigation' : unit.tier === 'DRILL' ? 'DRILL' : `Tier ${unit.tier}`}
         </span>
         <span className="rounded bg-slate-800 px-1.5 py-0.5 text-[11px] text-slate-400">
           review: {unit.reviewWeight}
@@ -142,7 +144,7 @@ const UnitCard = ({ unit, onOpenProvision }: { unit: ExamCurriculumUnit; onOpenP
       <div className="mt-3 grid gap-2 md:grid-cols-2">
         <div className="rounded border border-amber-900/60 bg-amber-950/30 p-2">
           <div className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-amber-300">
-            <BookMarked size={14} />
+            <BookOpen size={14} />
             Remember
             <span className="font-normal normal-case text-amber-200/70">(mustRecall)</span>
           </div>
@@ -217,13 +219,161 @@ const UnitCard = ({ unit, onOpenProvision }: { unit: ExamCurriculumUnit; onOpenP
   );
 };
 
+const LookupDrillCard = ({ unit, onOpenProvision }: { unit: ExamCurriculumUnit; onOpenProvision: ExamCurriculumPageProps['onOpenProvision'] }) => {
+  const [phase, setPhase] = useState<'start' | 'active' | 'reveal'>('start');
+  const [elapsed, setElapsed] = useState(0);
+  const [textareaValue, setTextareaValue] = useState('');
+  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const drill = unit.drill;
+
+  useEffect(() => {
+    if (phase === 'active') {
+      timerRef.current = setInterval(() => setElapsed((e) => e + 1), 1000);
+    }
+    return () => {
+      if (timerRef.current) clearInterval(timerRef.current);
+    };
+  }, [phase]);
+
+  const formatTime = (s: number) => `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
+
+  const handleReset = () => {
+    setPhase('start');
+    setElapsed(0);
+    setTextareaValue('');
+    if (timerRef.current) clearInterval(timerRef.current);
+  };
+
+  if (!drill) return null;
+
+  return (
+    <section className="rounded border border-emerald-800 bg-emerald-950 p-3">
+      <div className="flex flex-wrap items-center gap-2">
+        <span className="font-mono text-xs text-emerald-300">{unit.id}</span>
+        <span className="rounded bg-emerald-900 px-1.5 py-0.5 text-[11px] uppercase tracking-wide text-emerald-200">lookup_drill</span>
+        <span className="rounded bg-emerald-900 px-1.5 py-0.5 text-[11px] text-emerald-300">DRILL</span>
+        <span className="rounded bg-slate-800 px-1.5 py-0.5 text-[11px] text-slate-400">{drill.difficulty}</span>
+        <span className="rounded bg-slate-800 px-1.5 py-0.5 text-[11px] text-slate-400">{drill.timeTargetSeconds}s</span>
+        <span className="rounded bg-slate-800 px-1.5 py-0.5 text-[11px] text-slate-400">review: {unit.reviewWeight}</span>
+      </div>
+      <h4 className="mt-2 text-sm font-semibold text-white">{unit.title}</h4>
+      {phase === 'start' && (
+        <div className="mt-2 space-y-1.5">
+          <p className="text-xs text-emerald-100/70">Open-book lookup drill. Click Start to begin.</p>
+          <button
+            type="button"
+            onClick={() => { setElapsed(0); setPhase('active'); }}
+            className="rounded border border-emerald-600 bg-emerald-900 px-3 py-1.5 text-xs font-semibold text-emerald-200 hover:bg-emerald-800"
+          >
+            Start
+          </button>
+        </div>
+      )}
+      {phase === 'active' && (
+        <div className="mt-2 space-y-1.5 text-xs text-emerald-100/90">
+          <div>
+            <span className="font-semibold uppercase tracking-wide text-emerald-400">Fact pattern</span>
+            <p className="mt-0.5">{drill.factPattern}</p>
+          </div>
+          <div>
+            <span className="font-semibold uppercase tracking-wide text-emerald-400">Task</span>
+            <p className="mt-0.5">{drill.task}</p>
+          </div>
+          <div className="rounded border border-emerald-900/60 bg-emerald-900/30 p-2">
+            <span className="font-semibold uppercase tracking-wide text-emerald-300">Time: {formatTime(elapsed)}</span>
+            <textarea
+              value={textareaValue}
+              onChange={(e) => setTextareaValue(e.target.value)}
+              className="mt-1 w-full rounded border border-slate-700 bg-slate-900 p-1.5 text-xs text-slate-200"
+              rows={3}
+              placeholder="Type your answer here..."
+            />
+          </div>
+          <div className="flex gap-2">
+            <button
+              type="button"
+              onClick={() => { setPhase('reveal'); if (timerRef.current) clearInterval(timerRef.current); }}
+              className="rounded border border-emerald-600 bg-emerald-900 px-3 py-1.5 text-xs font-semibold text-emerald-200 hover:bg-emerald-800"
+            >
+              Reveal ({formatTime(elapsed)})
+            </button>
+            <button
+              type="button"
+              onClick={handleReset}
+              className="rounded border border-slate-600 bg-slate-800 px-3 py-1.5 text-xs font-semibold text-slate-300 hover:bg-slate-700"
+            >
+              Reset
+            </button>
+          </div>
+        </div>
+      )}
+      {phase === 'reveal' && (
+        <div className="mt-2 space-y-1.5 text-xs text-emerald-100/90">
+          <div className="rounded border border-emerald-900/60 bg-emerald-900/30 p-2">
+            <span className="font-semibold uppercase tracking-wide text-emerald-300">Time frozen: {formatTime(elapsed)}</span>
+          </div>
+          <div className="rounded border border-emerald-900/60 bg-emerald-900/30 p-2">
+            <span className="font-semibold uppercase tracking-wide text-emerald-300">Route</span>
+            <ul className="mt-1 list-disc space-y-0.5 pl-4">
+              {drill.answerKey.requiredLookups.map((lookup, i) => (
+                <li key={i}>
+                  {lookup.prompt}
+                  {lookup.sourceKey ? (
+                    <OpenSourceButton
+                      documentId={lookup.documentId}
+                      sourceKey={lookup.sourceKey}
+                      label={lookup.sourceKey.split(':').pop() ?? lookup.sourceKey}
+                      onOpenProvision={onOpenProvision}
+                    />
+                  ) : null}
+                </li>
+              ))}
+            </ul>
+          </div>
+          <div className="rounded border border-emerald-900/60 bg-emerald-900/30 p-2">
+            <span className="font-semibold uppercase tracking-wide text-emerald-300">Answer points</span>
+            <ul className="mt-1 list-disc space-y-0.5 pl-4">
+              {drill.answerKey.requiredAnswerPoints.map((point, i) => (
+                <li key={i}>{point}</li>
+              ))}
+            </ul>
+          </div>
+          {drill.answerKey.trapExplanation && (
+            <div className="rounded border border-amber-900/60 bg-amber-950/30 p-2">
+              <span className="font-semibold uppercase tracking-wide text-amber-300">Trap</span>
+              <p className="mt-1 text-xs italic text-amber-100/80">{drill.answerKey.trapExplanation}</p>
+            </div>
+          )}
+          {unit.relatedUnitIds.length > 0 && (
+            <div className="rounded border border-slate-700 bg-slate-800/50 p-2">
+              <span className="font-semibold uppercase tracking-wide text-slate-400">Related</span>
+              <p className="mt-1 font-mono text-[11px] text-slate-300">{unit.relatedUnitIds.join(', ')}</p>
+            </div>
+          )}
+          <button
+            type="button"
+            onClick={handleReset}
+            className="rounded border border-slate-600 bg-slate-800 px-3 py-1.5 text-xs font-semibold text-slate-300 hover:bg-slate-700"
+          >
+            Reset
+          </button>
+        </div>
+      )}
+    </section>
+  );
+};
+
 const ExamCurriculumPage = ({ onOpenProvision }: ExamCurriculumPageProps) => {
   const [tierFilter, setTierFilter] = useState<TierFilter>('all');
   const tierCount = (tier: (typeof FILTER_TIERS)[number]) => manifest.units.filter((u) => u.tier === tier).length;
-  const visibleUnits = manifest.units.filter((unit) => tierFilter === 'all' || unit.tier === tierFilter);
+  const drillCount = manifest.units.filter((u) => u.tier === 'DRILL').length;
+  const visibleUnits = manifest.units.filter((unit) => {
+    if (tierFilter === 'DRILL') return unit.tier === 'DRILL';
+    return tierFilter === 'all' || unit.tier === tierFilter;
+  });
   const groups: Array<{ documentId: string; units: ExamCurriculumUnit[] }> = [];
   for (const unit of visibleUnits) {
-    const documentId = unit.tier === 'NAV' ? 'NAV' : unit.sourceDocumentIds[0];
+    const documentId = unit.tier === 'NAV' ? 'NAV' : unit.tier === 'DRILL' ? 'DRILL' : unit.sourceDocumentIds[0];
     const group = groups.find((g) => g.documentId === documentId);
     if (group) group.units.push(unit);
     else groups.push({ documentId, units: [unit] });
@@ -231,19 +381,21 @@ const ExamCurriculumPage = ({ onOpenProvision }: ExamCurriculumPageProps) => {
   const orientationCount = visibleUnits.filter((u) => u.unitType === 'document_orientation').length;
   const coreConceptCount = visibleUnits.filter((u) => u.unitType === 'core_concept').length;
   const navigationCount = visibleUnits.filter((u) => u.unitType === 'cross_document_navigation').length;
+  const drillCountVisible = visibleUnits.filter((u) => u.unitType === 'lookup_drill').length;
   const tierButtons: Array<{ key: TierFilter; label: string }> = [
     { key: 'all', label: `All (${manifest.units.length})` },
     ...FILTER_TIERS.map((tier) => ({
       key: tier,
       label: tier === 'NAV' ? `Navigation (${tierCount(tier)})` : `Tier ${tier} (${tierCount(tier)})`,
     })),
+    { key: 'DRILL', label: `DRILL (${drillCount})` },
   ];
   return (
     <div className="space-y-5">
       <div>
         <div className="flex items-center gap-2">
           <GraduationCap className="text-emerald-400" size={20} />
-          <h2 className="text-xl font-semibold text-white">Exam Curriculum — Tier A–D + Navigation</h2>
+          <h2 className="text-xl font-semibold text-white">Exam Curriculum — Tier A–D + Navigation + DRILL</h2>
         </div>
         <p className="mt-1 max-w-3xl text-sm text-slate-400">
           Open-book statute law exam curriculum. Units define what to recognize, understand, recall and locate;
@@ -270,30 +422,48 @@ const ExamCurriculumPage = ({ onOpenProvision }: ExamCurriculumPageProps) => {
           <span className="rounded bg-slate-800 px-2 py-1">{orientationCount} document_orientation</span>
           <span className="rounded bg-slate-800 px-2 py-1">{coreConceptCount} core_concept</span>
           <span className="rounded bg-slate-800 px-2 py-1">{navigationCount} cross_document_navigation</span>
+          <span className="rounded bg-emerald-900 px-2 py-1">{drillCountVisible} lookup_drill</span>
         </div>
       </div>
-      {groups.map((group) => (
-        <section key={group.documentId} className="space-y-2">
-          {group.documentId === 'NAV' ? (
-            <h3 className="text-sm font-semibold uppercase tracking-wide text-fuchsia-300">
-              Navigation — cross-document routing units
-              <span className="ml-2 font-normal normal-case text-slate-500">{group.units.length} units</span>
-            </h3>
-          ) : (
-            <h3 className="text-sm font-semibold uppercase tracking-wide text-slate-400">
-              {DOCUMENT_TITLES[group.documentId] ?? group.documentId}
-              <span className="ml-2 font-normal normal-case text-slate-600">
-                {group.documentId} · {group.units.length} units
-              </span>
-            </h3>
-          )}
-          <div className="space-y-2">
-            {group.units.map((unit) => (
-              <UnitCard key={unit.id} unit={unit} onOpenProvision={onOpenProvision} />
-            ))}
-          </div>
-        </section>
-      ))}
+      {groups.map((group) => {
+        if (group.documentId === 'DRILL') {
+          return (
+            <section key={group.documentId} className="space-y-2">
+              <h3 className="text-sm font-semibold uppercase tracking-wide text-emerald-300">
+                Lookup Drills
+                <span className="ml-2 font-normal normal-case text-slate-500">{group.units.length} drills</span>
+              </h3>
+              <div className="space-y-2">
+                {group.units.map((unit) => (
+                  <LookupDrillCard key={unit.id} unit={unit} onOpenProvision={onOpenProvision} />
+                ))}
+              </div>
+            </section>
+          );
+        }
+        return (
+          <section key={group.documentId} className="space-y-2">
+            {group.documentId === 'NAV' ? (
+              <h3 className="text-sm font-semibold uppercase tracking-wide text-fuchsia-300">
+                Navigation — cross-document routing units
+                <span className="ml-2 font-normal normal-case text-slate-500">{group.units.length} units</span>
+              </h3>
+            ) : (
+              <h3 className="text-sm font-semibold uppercase tracking-wide text-slate-400">
+                {DOCUMENT_TITLES[group.documentId] ?? group.documentId}
+                <span className="ml-2 font-normal normal-case text-slate-600">
+                  {group.documentId} · {group.units.length} units
+                </span>
+              </h3>
+            )}
+            <div className="space-y-2">
+              {group.units.map((unit) => (
+                <UnitCard key={unit.id} unit={unit} onOpenProvision={onOpenProvision} />
+              ))}
+            </div>
+          </section>
+        );
+      })}
     </div>
   );
 };

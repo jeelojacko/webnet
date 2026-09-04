@@ -97,6 +97,7 @@ export const examCurriculumManifestMetrics = (manifest: ExamCurriculumManifest) 
       C: examCurriculumTierMetrics(manifest.units, 'C'),
       D: examCurriculumTierMetrics(manifest.units, 'D'),
       NAV: examCurriculumTierMetrics(manifest.units, 'NAV'),
+      DRILL: examCurriculumTierMetrics(manifest.units, 'DRILL'),
     },
     unitsByType: countBy(manifest.units.map((u) => u.unitType)),
     // Legacy single-document metric: counts each unit under its first source
@@ -109,6 +110,9 @@ export const examCurriculumManifestMetrics = (manifest: ExamCurriculumManifest) 
     totalSourceAnchors: manifest.units.reduce((sum, u) => sum + u.sourceAnchors.length, 0),
     totalMustRecall: manifest.units.reduce((sum, u) => sum + u.mustRecall.length, 0),
     totalMustLocate: manifest.units.reduce((sum, u) => sum + u.mustLocate.length, 0),
+    totalAnswerLookups: manifest.units
+      .filter((u) => u.unitType === 'lookup_drill')
+      .reduce((sum, u) => sum + (u.drill?.answerKey.requiredLookups.length ?? 0), 0),
     unitsWithRecognizeDepth: manifest.units.filter((u) => u.learningDepths.includes('recognize')).length,
   };
 };
@@ -137,6 +141,7 @@ export const renderExamCurriculumMarkdown = (
   lines.push(`- Tier-C projection hash: \`${examCurriculumTierProjectionHash(manifest.units, 'C')}\``);
   lines.push(`- Tier-D projection hash: \`${examCurriculumTierProjectionHash(manifest.units, 'D')}\``);
   lines.push(`- Navigation projection hash: \`${examCurriculumTierProjectionHash(manifest.units, 'NAV')}\``);
+  lines.push(`- DRILL projection hash: \`${examCurriculumTierProjectionHash(manifest.units, 'DRILL')}\``);
   lines.push('');
   lines.push('## Summary');
   lines.push('');
@@ -146,6 +151,7 @@ export const renderExamCurriculumMarkdown = (
   lines.push(`| Total source anchors | ${metrics.totalSourceAnchors} |`);
   lines.push(`| Total mustRecall entries | ${metrics.totalMustRecall} |`);
   lines.push(`| Total mustLocate entries | ${metrics.totalMustLocate} |`);
+  lines.push(`| Total answer lookups | ${metrics.totalAnswerLookups} |`);
   for (const [type, count] of Object.entries(metrics.unitsByType)) {
     lines.push(`| Units of type ${type} | ${count} |`);
   }
@@ -170,6 +176,9 @@ export const renderExamCurriculumMarkdown = (
       `mustRecall=${tierMetrics.totalMustRecall} mustLocate=${tierMetrics.totalMustLocate}`,
     );
   }
+  const drillMetrics = metrics.tiers.DRILL;
+  lines.push('');
+  lines.push(`- DRILL: ${drillMetrics.totalUnits} lookup drills — answerLookups=${metrics.totalAnswerLookups}`);
   lines.push('');
   lines.push('### Units by document');
   lines.push('');
@@ -206,7 +215,7 @@ export const renderExamCurriculumMarkdown = (
   for (const unit of manifest.units) {
     lines.push(`### ${unit.id} — ${unit.title}`);
     lines.push('');
-    lines.push(`- Type: ${unit.unitType} (${unit.tier === 'NAV' ? 'group Navigation' : `tier ${unit.tier}`}, status ${unit.status})`);
+    lines.push(`- Type: ${unit.unitType} (${unit.tier === 'NAV' ? 'group Navigation' : unit.tier === 'DRILL' ? 'group DRILL' : `tier ${unit.tier}`}, status ${unit.status})`);
     if (unit.sourceDocumentIds.length > 1) {
       lines.push('- Documents:');
       for (const documentId of unit.sourceDocumentIds) {
@@ -215,7 +224,7 @@ export const renderExamCurriculumMarkdown = (
     } else {
       lines.push(`- Document: ${unit.sourceDocumentIds.join(', ')}`);
     }
-    lines.push(`- Learning depths: ${unit.learningDepths.join(', ')}`);
+    lines.push(`- Learning depths: ${unit.learningDepths.length > 0 ? unit.learningDepths.join(', ') : '(none)'}`);
     lines.push(`- Review weight: ${unit.reviewWeight}`);
     if (unit.examGoal) {
       lines.push(`- Exam goal: ${unit.examGoal}`);
@@ -227,6 +236,20 @@ export const renderExamCurriculumMarkdown = (
     if (unit.coreUnderstanding.length > 0) {
       lines.push('- Core understanding:');
       for (const point of unit.coreUnderstanding) lines.push(`  - ${point}`);
+    }
+    if (unit.drill) {
+      lines.push(`- Drill difficulty: ${unit.drill.difficulty}`);
+      lines.push(`- Drill time target: ${unit.drill.timeTargetSeconds}s`);
+      lines.push(`- Fact pattern: ${unit.drill.factPattern}`);
+      lines.push(`- Task: ${unit.drill.task}`);
+      lines.push(`- Answer key (${unit.drill.answerKey.requiredAnswerPoints.length} points, ${unit.drill.answerKey.requiredLookups.length} lookups):`);
+      for (const point of unit.drill.answerKey.requiredAnswerPoints) lines.push(`  - ${point}`);
+      for (const lookup of unit.drill.answerKey.requiredLookups) {
+        lines.push(`  - LOOKUP: ${lookup.prompt} → ${lookup.sourceKey ?? '(pin)'}`);
+      }
+      if (unit.drill.answerKey.trapExplanation) {
+        lines.push(`- Trap explanation: ${unit.drill.answerKey.trapExplanation}`);
+      }
     }
     lines.push(`- **REMEMBER** (mustRecall):${unit.mustRecall.length === 0 ? ' (none)' : ''}`);
     for (const rule of unit.mustRecall) lines.push(`  - ${rule}`);
@@ -261,6 +284,7 @@ export const buildExamCurriculumJsonReport = (
     C: examCurriculumTierProjectionHash(manifest.units, 'C'),
     D: examCurriculumTierProjectionHash(manifest.units, 'D'),
     NAV: examCurriculumTierProjectionHash(manifest.units, 'NAV'),
+    DRILL: examCurriculumTierProjectionHash(manifest.units, 'DRILL'),
   },
   metrics: examCurriculumManifestMetrics(manifest),
   validation: {

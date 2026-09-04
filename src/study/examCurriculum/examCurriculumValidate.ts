@@ -17,9 +17,10 @@ import type {
   ExamCurriculumValidationReport,
   ExamLearningDepth,
   ExamUnitType,
+  ExamLookupDrillDifficulty,
 } from './examCurriculumTypes';
 
-export const EXAM_CURRICULUM_TIERS: readonly ExamCurriculumTier[] = ['A', 'B', 'C', 'D', 'NAV'];
+export const EXAM_CURRICULUM_TIERS: readonly ExamCurriculumTier[] = ['A', 'B', 'C', 'D', 'NAV', 'DRILL'];
 export const EXAM_CURRICULUM_UNIT_TYPES: readonly ExamUnitType[] = [
   'document_orientation',
   'core_concept',
@@ -33,6 +34,8 @@ export const EXAM_CURRICULUM_LEARNING_DEPTHS: readonly ExamLearningDepth[] = [
   'retrieve',
 ];
 
+export const EXAM_CURRICULUM_DRILL_DIFFICULTIES: readonly ExamLookupDrillDifficulty[] = ['direct', 'routing', 'cross_document'];
+
 const WARNING_RECALL_ENTRY_LIMIT = 6;
 const WARNING_RECALL_TEXT_LIMIT = 240;
 const WARNING_ANCHOR_BREADTH_LIMIT = 40;
@@ -40,6 +43,10 @@ const WARNING_ANCHOR_BREADTH_LIMIT = 40;
 // unit because it traverses many narrow statutory sources; keep a separate
 // NAV-aware breadth threshold and leave the A-D threshold untouched.
 const NAV_ANCHOR_BREADTH_LIMIT = 80;
+
+// Drill validation constants
+const DRILL_MIN_TIME_TARGET_SECONDS = 30;
+const DRILL_MIN_RELATED_UNIT_IDS = 1;
 
 const known = (values: readonly string[], value: string): boolean => values.includes(value);
 
@@ -272,6 +279,148 @@ const validateCrossDocumentNavigationUnit = (
   }
 };
 
+const validateLookupDrillUnit = (
+  unit: ExamCurriculumUnit,
+  errors: ExamCurriculumValidationIssue[],
+): void => {
+  if (unit.tier !== 'DRILL') {
+    errors.push({
+      level: 'error',
+      unitId: unit.id,
+      code: 'drill-tier-mismatch',
+      message: 'lookup_drill unit must have tier DRILL',
+    });
+  }
+  if (!['high', 'medium', 'low'].includes(unit.reviewWeight)) {
+    errors.push({
+      level: 'error',
+      unitId: unit.id,
+      code: 'drill-invalid-review-weight',
+      message: `unknown review weight "${unit.reviewWeight}"`,
+    });
+  }
+  if (unit.relatedUnitIds.length < DRILL_MIN_RELATED_UNIT_IDS) {
+    errors.push({
+      level: 'error',
+      unitId: unit.id,
+      code: 'drill-too-few-related',
+      message: 'lookup_drill unit must reference at least 1 related unit',
+    });
+  }
+  if (unit.mustRecall.length > 0) {
+    errors.push({
+      level: 'error',
+      unitId: unit.id,
+      code: 'drill-unexpected-must-recall',
+      message: 'lookup_drill unit must not define mustRecall; answers resolve through answerKey requiredLookups',
+    });
+  }
+  if (unit.mustLocate.length > 0) {
+    errors.push({
+      level: 'error',
+      unitId: unit.id,
+      code: 'drill-unexpected-must-locate',
+      message: 'lookup_drill unit must not define mustLocate; answers resolve through answerKey requiredLookups',
+    });
+  }
+  const drill = unit.drill;
+  if (!drill) {
+    errors.push({
+      level: 'error',
+      unitId: unit.id,
+      code: 'drill-missing-payload',
+      message: 'lookup_drill unit must have a drill payload with difficulty, timeTargetSeconds, factPattern, task, and answerKey',
+    });
+    return;
+  }
+  const expectedDepths =
+    drill.difficulty === 'direct'
+      ? ['recognize', 'retrieve']
+      : ['recognize', 'understand', 'retrieve'];
+  if (!unit.learningDepths.every((d) => expectedDepths.includes(d)) || unit.learningDepths.length !== expectedDepths.length) {
+    errors.push({
+      level: 'error',
+      unitId: unit.id,
+      code: 'drill-invalid-learning-depths',
+      message: `lookup_drill ${drill.difficulty} unit must target learning depths ${expectedDepths.join(', ')}`,
+    });
+  }
+  if (!EXAM_CURRICULUM_DRILL_DIFFICULTIES.includes(drill.difficulty)) {
+    errors.push({
+      level: 'error',
+      unitId: unit.id,
+      code: 'drill-invalid-difficulty',
+      message: `unknown drill difficulty "${drill.difficulty}"`,
+    });
+  }
+  if (drill.timeTargetSeconds < DRILL_MIN_TIME_TARGET_SECONDS) {
+    errors.push({
+      level: 'error',
+      unitId: unit.id,
+      code: 'drill-invalid-time-target',
+      message: `drill timeTargetSeconds must be at least ${DRILL_MIN_TIME_TARGET_SECONDS}`,
+    });
+  }
+  if (drill.factPattern.trim() === '') {
+    errors.push({
+      level: 'error',
+      unitId: unit.id,
+      code: 'drill-empty-fact-pattern',
+      message: 'drill factPattern must not be empty',
+    });
+  }
+  if (drill.task.trim() === '') {
+    errors.push({
+      level: 'error',
+      unitId: unit.id,
+      code: 'drill-empty-task',
+      message: 'drill task must not be empty',
+    });
+  }
+  if (drill.answerKey.requiredAnswerPoints.length === 0) {
+    errors.push({
+      level: 'error',
+      unitId: unit.id,
+      code: 'drill-empty-answer-points',
+      message: 'drill answerKey must have at least one requiredAnswerPoint',
+    });
+  }
+  if (drill.answerKey.requiredLookups.length === 0) {
+    errors.push({
+      level: 'error',
+      unitId: unit.id,
+      code: 'drill-empty-lookups',
+      message: 'drill answerKey must have at least one requiredLookup',
+    });
+  }
+  if (drill.answerKey.expectedDocumentIds.length === 0) {
+    errors.push({
+      level: 'error',
+      unitId: unit.id,
+      code: 'drill-empty-expected-documents',
+      message: 'drill answerKey must have at least one expectedDocumentId',
+    });
+  }
+  for (const lookup of drill.answerKey.requiredLookups) {
+    if (lookup.prompt.trim() === '') {
+      errors.push({
+        level: 'error',
+        unitId: unit.id,
+        code: 'drill-empty-lookup-prompt',
+        message: 'drill answerKey lookup has empty prompt',
+      });
+    }
+    if (lookup.sourceKey === undefined) {
+      errors.push({
+        level: 'error',
+        unitId: unit.id,
+        code: 'drill-lookup-unpinned',
+        message: `drill answerKey lookup "${lookup.prompt}" must resolve to an explicit sourceKey`,
+      });
+    }
+  }
+};
+
 const validateRecallRetrieveWarnings = (
   unit: ExamCurriculumUnit,
   warnings: ExamCurriculumValidationIssue[],
@@ -353,7 +502,7 @@ export const validateExamCurriculumUnits = (
     }
     // Tier-B/C/D cards state their exam goal as the card title; an empty
     // examGoal is only an error where the tier requires a dedicated goal.
-    if (unit.examGoal.trim() === '' && unit.tier !== 'B' && unit.tier !== 'C' && unit.tier !== 'D') {
+    if (unit.examGoal.trim() === '' && unit.tier !== 'B' && unit.tier !== 'C' && unit.tier !== 'D' && unit.tier !== 'DRILL') {
       errors.push({ level: 'error', unitId: unit.id, code: 'empty-exam-goal', message: 'examGoal must not be empty' });
     }
     for (const depth of unit.learningDepths) {
@@ -461,6 +610,8 @@ export const validateExamCurriculumUnits = (
         }
       }
     }
+
+    if (unit.unitType === 'lookup_drill') validateLookupDrillUnit(unit, errors);
 
     if (unit.unitType === 'document_orientation') validateOrientationUnit(unit, errors);
     if (unit.unitType === 'core_concept') validateCoreConceptUnit(unit, errors);

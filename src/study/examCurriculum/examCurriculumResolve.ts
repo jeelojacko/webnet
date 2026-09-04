@@ -17,10 +17,12 @@ import type {
   ExamCurriculumCorpusDocument,
   ExamCurriculumCorpusView,
   ExamCurriculumLookupSpec,
+  ExamCurriculumLookupTarget,
   ExamCurriculumSectionRange,
   ExamCurriculumSourceAnchor,
   ExamCurriculumUnit,
   ExamCurriculumUnitSpec,
+  ExamLookupDrillSpec,
 } from './examCurriculumTypes';
 import type { NbLawContentPackage } from '../content/nbLawTypes';
 
@@ -193,6 +195,72 @@ export const buildExamCrossDocumentLookupTarget = (
   });
 };
 
+export const buildExamCurriculumDrillUnitFromSpec = (
+  spec: ExamLookupDrillSpec,
+  corpus: ExamCurriculumCorpusView,
+): ExamCurriculumUnit => {
+  const docIds: string[] = [];
+  const seenDocs = new Set<string>();
+  const sourceSelections: Array<{ doc: ExamCurriculumCorpusDocument; source: ExamCrossDocumentSourceSpec }> = [];
+  for (const source of spec.sources) {
+    const doc = corpus.documents.find((d) => d.id === source.documentId);
+    if (!doc) throw new Error(`exam-curriculum: unknown document "${source.documentId}" for drill ${spec.id}`);
+    if (!seenDocs.has(doc.id)) {
+      seenDocs.add(doc.id);
+      docIds.push(doc.id);
+    }
+    sourceSelections.push({ doc, source });
+  }
+  const anchorKeys = new Set<string>();
+  const sourceAnchors: ExamCurriculumSourceAnchor[] = [];
+  for (const { doc, source } of sourceSelections) {
+    const components = resolveExamCurriculumAnchorComponentsForSelection(doc, source);
+    for (const component of components) {
+      const key = `${doc.id}::${component.sourceKey}`;
+      if (anchorKeys.has(key)) continue;
+      anchorKeys.add(key);
+      sourceAnchors.push({
+        documentId: doc.id,
+        sourceKey: component.sourceKey,
+        label: component.label,
+        role: 'drill_answer',
+      });
+    }
+  }
+  const requiredLookups: ExamCurriculumLookupTarget[] = spec.answerKey.requiredLookups.map((lookup) =>
+    buildExamCrossDocumentLookupTarget(corpus, lookup),
+  );
+  return {
+    id: spec.id,
+    unitType: 'lookup_drill',
+    tier: 'DRILL',
+    title: spec.title,
+    sourceDocumentIds: docIds,
+    sourceAnchors,
+    learningDepths: [...spec.learningDepths],
+    examGoal: '',
+    recognitionCues: [],
+    coreUnderstanding: [],
+    mustRecall: [],
+    mustLocate: [],
+    relatedUnitIds: [...spec.relatedUnitIds],
+    reviewWeight: spec.reviewWeight,
+    status: 'planned',
+    drill: {
+      difficulty: spec.difficulty,
+      timeTargetSeconds: spec.timeTargetSeconds,
+      factPattern: spec.factPattern,
+      task: spec.task,
+      answerKey: {
+        expectedDocumentIds: [...spec.answerKey.expectedDocumentIds],
+        requiredLookups,
+        requiredAnswerPoints: [...spec.answerKey.requiredAnswerPoints],
+        trapExplanation: spec.answerKey.trapExplanation,
+      },
+    },
+  };
+};
+
 /**
  * Dedicated cross-document resolver for NAV specs.
  *
@@ -253,14 +321,19 @@ export const buildExamCrossDocumentNavigationUnitFromSpec = (
   };
 };
 
-/** Dispatcher: NAV specs go through the cross-document resolver, A-D unchanged. */
+/** Dispatcher: NAV specs go through the cross-document resolver, A-D unchanged, DRILL through its own resolver. */
 export const buildExamCurriculumUnitFromCatalogSpec = (
   spec: ExamCurriculumCatalogSpec,
   corpus: ExamCurriculumCorpusView,
-): ExamCurriculumUnit =>
-  spec.unitType === 'cross_document_navigation'
-    ? buildExamCrossDocumentNavigationUnitFromSpec(spec as ExamCrossDocumentNavigationSpec, corpus)
-    : buildExamCurriculumUnitFromSpec(spec as ExamCurriculumUnitSpec, corpus);
+): ExamCurriculumUnit => {
+  if (spec.unitType === 'cross_document_navigation') {
+    return buildExamCrossDocumentNavigationUnitFromSpec(spec as ExamCrossDocumentNavigationSpec, corpus);
+  }
+  if (spec.unitType === 'lookup_drill') {
+    return buildExamCurriculumDrillUnitFromSpec(spec as ExamLookupDrillSpec, corpus);
+  }
+  return buildExamCurriculumUnitFromSpec(spec as ExamCurriculumUnitSpec, corpus);
+};
 
 export const buildExamCurriculumUnitFromSpec = (
   spec: ExamCurriculumUnitSpec,

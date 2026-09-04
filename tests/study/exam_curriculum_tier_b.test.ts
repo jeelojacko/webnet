@@ -59,28 +59,34 @@ describe('exam curriculum Tier-B catalog shape', () => {
     }
   });
 
-  it('combines with the frozen Tier-A/Tier-C/D catalogs and Navigation into exactly 133 cumulative specs (A→B→C→D→NAV)', () => {
-    expect(EXAM_CURRICULUM_TOTAL).toBe(133);
+  it('combines with the frozen Tier-A/Tier-C/D catalogs and Navigation into exactly 157 cumulative specs (A→B→C→D→NAV→DRILL)', () => {
+    expect(EXAM_CURRICULUM_TOTAL).toBe(157);
     expect(examCurriculumTierASpecs).toHaveLength(51);
     expect(EXAM_CURRICULUM_TIER_A_TOTAL).toBe(51);
-    expect(examCurriculumAllSpecs).toHaveLength(133);
-    // Tier A (51) precedes Tier B (43) precedes Tier C (21) precedes Tier D (6) precedes Navigation (12); order preserved within each tier.
-    expect(examCurriculumAllSpecs.slice(0, 51).every((s) => s.tier !== 'B' && s.tier !== 'C' && s.tier !== 'D' && s.tier !== 'NAV')).toBe(true);
+    expect(examCurriculumAllSpecs).toHaveLength(157);
+    // Tier A (51) precedes Tier B (43) precedes Tier C (21) precedes Tier D (6) precedes Navigation (12) precedes DRILL (24); order preserved within each tier.
+    expect(examCurriculumAllSpecs.slice(0, 51).every((s) => s.tier !== 'B' && s.tier !== 'C' && s.tier !== 'D' && s.tier !== 'NAV' && s.tier !== 'DRILL')).toBe(true);
     expect(examCurriculumAllSpecs.slice(51, 94).every((s) => s.tier === 'B')).toBe(true);
     expect(examCurriculumAllSpecs.slice(94, 115).every((s) => s.tier === 'C')).toBe(true);
     expect(examCurriculumAllSpecs.slice(115, 121).every((s) => s.tier === 'D')).toBe(true);
-    expect(examCurriculumAllSpecs.slice(121).every((s) => s.tier === 'NAV')).toBe(true);
+    expect(examCurriculumAllSpecs.slice(121, 133).every((s) => s.tier === 'NAV')).toBe(true);
+    expect(examCurriculumAllSpecs.slice(133).every((s) => s.tier === 'DRILL')).toBe(true);
     // Combined IDs are globally unique.
     const ids = examCurriculumAllSpecs.map((s) => s.id);
-    expect(new Set(ids).size).toBe(133);
+    expect(new Set(ids).size).toBe(157);
   });
 });
 
 describe('exam curriculum cumulative A+B build against the authoritative corpus', () => {
-  it('resolves exactly 133 planned units: 51 Tier A + 43 Tier B + 21 Tier C + 6 Tier D + 12 Navigation', () => {
-    expect(manifest.units).toHaveLength(133);
+  it('resolves exactly 157 planned units: 51 Tier A + 43 Tier B + 21 Tier C + 6 Tier D + 12 Navigation + 24 DRILL', () => {
+    expect(manifest.units).toHaveLength(157);
     expect(manifest.units.every((u) => u.status === 'planned')).toBe(true);
     expect(manifest.units.filter((u) => u.tier === 'A')).toHaveLength(51);
+    expect(manifest.units.filter((u) => u.tier === 'B')).toHaveLength(43);
+    expect(manifest.units.filter((u) => u.tier === 'C')).toHaveLength(21);
+    expect(manifest.units.filter((u) => u.tier === 'D')).toHaveLength(6);
+    expect(manifest.units.filter((u) => u.tier === 'NAV')).toHaveLength(12);
+    expect(manifest.units.filter((u) => u.tier === 'DRILL')).toHaveLength(24);
     expect(manifest.units.filter((u) => u.tier === 'B')).toHaveLength(43);
     expect(manifest.units.filter((u) => u.tier === 'C')).toHaveLength(21);
     expect(manifest.units.filter((u) => u.tier === 'D')).toHaveLength(6);
@@ -124,7 +130,7 @@ describe('exam curriculum cumulative A+B build against the authoritative corpus'
     expect(examCurriculumTierProjectionHash(manifest.units, 'A')).toBe(FROZEN_TIER_A_PROJECTION_HASH);
   });
 
-  it('validates the full 133-unit build with zero errors', () => {
+  it('validates the full 157-unit build with zero errors', () => {
     const report = validateExamCurriculumUnits(manifest.units, corpus);
     expect(report.errors).toEqual([]);
   });

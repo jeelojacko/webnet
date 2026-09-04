@@ -4,8 +4,8 @@
   "architectureVersion": "exam-curriculum-v1",
   "sourcePackageId": "nb-sit-statute-corpus-2026-08-29",
   "sourceCorpusContentHash": "6f0442fc121eb0d2bcc9d3c1023c7a624e2cd4adf36922079bc3f6858fdcc32b",
-  "createdAt": "2026-09-04T00:37:14.652Z",
-  "contentHash": "149cdff4ad0f401c610212b68e112632d5250e39a34e5f623b4c258b722853d2",
+  "createdAt": "2026-09-04T09:35:49.423Z",
+  "contentHash": "434703f0a6de470095a5d0ad9fc6d1bb9534b15d58b1ab2b47460bba8a88952a",
   "units": [
     {
       "id": "A-NBLS-01",
@@ -21583,6 +21583,2073 @@
       ],
       "reviewWeight": "high",
       "status": "planned"
+    },
+    {
+      "id": "DRILL-01",
+      "unitType": "lookup_drill",
+      "tier": "DRILL",
+      "title": "Can one party witness another party's execution?",
+      "sourceDocumentIds": [
+        "doc-registry-act"
+      ],
+      "sourceAnchors": [
+        {
+          "documentId": "doc-registry-act",
+          "sourceKey": "section:36",
+          "label": "36",
+          "role": "drill_answer"
+        }
+      ],
+      "learningDepths": [
+        "recognize",
+        "retrieve"
+      ],
+      "examGoal": "",
+      "recognitionCues": [],
+      "coreUnderstanding": [],
+      "mustRecall": [],
+      "mustLocate": [],
+      "relatedUnitIds": [
+        "A-REG-03",
+        "NAV-01"
+      ],
+      "reviewWeight": "high",
+      "status": "planned",
+      "drill": {
+        "difficulty": "direct",
+        "timeTargetSeconds": 60,
+        "factPattern": "Two people are parties to the same instrument being registered under the Registry Act. One party proposes to witness the other party's execution of the instrument. Is that permitted?",
+        "task": "Identify the controlling provision and answer whether one party may witness the other party's execution.",
+        "answerKey": {
+          "expectedDocumentIds": [
+            "doc-registry-act"
+          ],
+          "requiredLookups": [
+            {
+              "prompt": "Registry Act s.36",
+              "documentId": "doc-registry-act",
+              "sourceKey": "section:36"
+            }
+          ],
+          "requiredAnswerPoints": [
+            "No.",
+            "A party to the instrument may not witness the execution of the instrument by another party.",
+            "The provision also addresses a party taking another party's affidavit or acknowledgment of execution."
+          ],
+          "trapExplanation": "Do not assume ordinary witnessing rules apply without checking the Registry Act's specific execution restriction."
+        }
+      }
+    },
+    {
+      "id": "DRILL-02",
+      "unitType": "lookup_drill",
+      "tier": "DRILL",
+      "title": "When may subdivision lot monuments be omitted?",
+      "sourceDocumentIds": [
+        "reg-surveys-84-76"
+      ],
+      "sourceAnchors": [
+        {
+          "documentId": "reg-surveys-84-76",
+          "sourceKey": "section:5",
+          "label": "5",
+          "role": "drill_answer"
+        }
+      ],
+      "learningDepths": [
+        "recognize",
+        "retrieve"
+      ],
+      "examGoal": "",
+      "recognitionCues": [],
+      "coreUnderstanding": [],
+      "mustRecall": [],
+      "mustLocate": [],
+      "relatedUnitIds": [
+        "A-SURVR-01",
+        "NAV-04"
+      ],
+      "reviewWeight": "high",
+      "status": "planned",
+      "drill": {
+        "difficulty": "direct",
+        "timeTargetSeconds": 90,
+        "factPattern": "You are surveying subdivision lots within the statutory coordinate-survey framework. The client asks whether every lot corner must physically receive a monument.",
+        "task": "Locate the regulation governing when lot monuments need not be planted and identify the statutory conditions and distance thresholds.",
+        "answerKey": {
+          "expectedDocumentIds": [
+            "reg-surveys-84-76"
+          ],
+          "requiredLookups": [
+            {
+              "prompt": "Regulation 84-76 s.5",
+              "documentId": "reg-surveys-84-76",
+              "sourceKey": "section:5"
+            }
+          ],
+          "requiredAnswerPoints": [
+            "The regulation provides an exception in qualifying circumstances.",
+            "The learner must identify the nearby-control-point/coordinate requirement.",
+            "The learner must retrieve the applicable 150 m / 300 m distance thresholds and associate them with the correct statutory lot-size conditions.",
+            "Do not award full credit for merely stating that monuments are optional."
+          ]
+        }
+      }
+    },
+    {
+      "id": "DRILL-03",
+      "unitType": "lookup_drill",
+      "tier": "DRILL",
+      "title": "What belongs in a boundary-confirmation surveyor's report?",
+      "sourceDocumentIds": [
+        "reg-boundaries-95-166"
+      ],
+      "sourceAnchors": [
+        {
+          "documentId": "reg-boundaries-95-166",
+          "sourceKey": "section:3",
+          "label": "3",
+          "role": "drill_answer"
+        }
+      ],
+      "learningDepths": [
+        "recognize",
+        "retrieve"
+      ],
+      "examGoal": "",
+      "recognitionCues": [],
+      "coreUnderstanding": [],
+      "mustRecall": [],
+      "mustLocate": [],
+      "relatedUnitIds": [
+        "A-BCAR-01",
+        "NAV-02"
+      ],
+      "reviewWeight": "high",
+      "status": "planned",
+      "drill": {
+        "difficulty": "direct",
+        "timeTargetSeconds": 90,
+        "factPattern": "You are the surveyor preparing the supporting material for an application under the Boundaries Confirmation Act. What subjects must your surveyor's report address?",
+        "task": "Find the controlling regulation and list the required subject matter of the surveyor's report.",
+        "answerKey": {
+          "expectedDocumentIds": [
+            "reg-boundaries-95-166"
+          ],
+          "requiredLookups": [
+            {
+              "prompt": "Regulation 95-166 s.3",
+              "documentId": "reg-boundaries-95-166",
+              "sourceKey": "section:3"
+            }
+          ],
+          "requiredAnswerPoints": [
+            "Issue to be determined.",
+            "History of the boundary.",
+            "Evidence relied upon.",
+            "Reasons for accepting or rejecting competing boundary evidence, including relevant plan/documentary/physical evidence as required by the source."
+          ],
+          "trapExplanation": "Do not answer only with the general application form requirements; the question asks specifically about the surveyor's report."
+        }
+      }
+    },
+    {
+      "id": "DRILL-04",
+      "unitType": "lookup_drill",
+      "tier": "DRILL",
+      "title": "Where is the centre line when highway boundaries are in doubt?",
+      "sourceDocumentIds": [
+        "doc-highway-act"
+      ],
+      "sourceAnchors": [
+        {
+          "documentId": "doc-highway-act",
+          "sourceKey": "section:30",
+          "label": "30",
+          "role": "drill_answer"
+        }
+      ],
+      "learningDepths": [
+        "recognize",
+        "retrieve"
+      ],
+      "examGoal": "",
+      "recognitionCues": [],
+      "coreUnderstanding": [],
+      "mustRecall": [],
+      "mustLocate": [],
+      "relatedUnitIds": [
+        "B-HWY-02",
+        "NAV-02"
+      ],
+      "reviewWeight": "high",
+      "status": "planned",
+      "drill": {
+        "difficulty": "direct",
+        "timeTargetSeconds": 60,
+        "factPattern": "The legal boundaries of an existing highway are uncertain or disputed. What line does the Highway Act deem to be the centre line for the statutory boundary analysis?",
+        "task": "Locate the Highway Act rule and identify the deemed centre line.",
+        "answerKey": {
+          "expectedDocumentIds": [
+            "doc-highway-act"
+          ],
+          "requiredLookups": [
+            {
+              "prompt": "Highway Act s.30",
+              "documentId": "doc-highway-act",
+              "sourceKey": "section:30"
+            }
+          ],
+          "requiredAnswerPoints": [
+            "Where the statutory rule applies, the line along the centre line of the travelled portion is deemed to be the centre line of the highway."
+          ]
+        }
+      }
+    },
+    {
+      "id": "DRILL-05",
+      "unitType": "lookup_drill",
+      "tier": "DRILL",
+      "title": "Surveying a parcel that touches Crown Lands",
+      "sourceDocumentIds": [
+        "doc-crown-lands-and-forests-act"
+      ],
+      "sourceAnchors": [
+        {
+          "documentId": "doc-crown-lands-and-forests-act",
+          "sourceKey": "section:11",
+          "label": "11",
+          "role": "drill_answer"
+        }
+      ],
+      "learningDepths": [
+        "recognize",
+        "retrieve"
+      ],
+      "examGoal": "",
+      "recognitionCues": [],
+      "coreUnderstanding": [],
+      "mustRecall": [],
+      "mustLocate": [],
+      "relatedUnitIds": [
+        "B-CLF-02",
+        "NAV-02",
+        "NAV-06"
+      ],
+      "reviewWeight": "high",
+      "status": "planned",
+      "drill": {
+        "difficulty": "direct",
+        "timeTargetSeconds": 60,
+        "factPattern": "A private parcel survey establishes a parcel with a boundary or corner touching or bordering Crown Lands. Does the Crown Lands and Forests Act impose an additional plan-related duty on the surveyor?",
+        "task": "Find the controlling provision and state the surveyor's additional duty.",
+        "answerKey": {
+          "expectedDocumentIds": [
+            "doc-crown-lands-and-forests-act"
+          ],
+          "requiredLookups": [
+            {
+              "prompt": "Crown Lands and Forests Act s.11",
+              "documentId": "doc-crown-lands-and-forests-act",
+              "sourceKey": "section:11"
+            }
+          ],
+          "requiredAnswerPoints": [
+            "The surveyor must submit a copy of the plan of survey to the Minister where the statutory Crown-border condition is met."
+          ]
+        }
+      }
+    },
+    {
+      "id": "DRILL-06",
+      "unitType": "lookup_drill",
+      "tier": "DRILL",
+      "title": "Approval for a new on-site sewage system",
+      "sourceDocumentIds": [
+        "doc-public-health-act"
+      ],
+      "sourceAnchors": [
+        {
+          "documentId": "doc-public-health-act",
+          "sourceKey": "section:24",
+          "label": "24",
+          "role": "drill_answer"
+        },
+        {
+          "documentId": "doc-public-health-act",
+          "sourceKey": "section:24.01",
+          "label": "24.01",
+          "role": "drill_answer"
+        },
+        {
+          "documentId": "doc-public-health-act",
+          "sourceKey": "section:24.02",
+          "label": "24.02",
+          "role": "drill_answer"
+        },
+        {
+          "documentId": "doc-public-health-act",
+          "sourceKey": "section:24.1",
+          "label": "24.1",
+          "role": "drill_answer"
+        },
+        {
+          "documentId": "doc-public-health-act",
+          "sourceKey": "section:24.2",
+          "label": "24.2",
+          "role": "drill_answer"
+        },
+        {
+          "documentId": "doc-public-health-act",
+          "sourceKey": "section:24.3",
+          "label": "24.3",
+          "role": "drill_answer"
+        }
+      ],
+      "learningDepths": [
+        "recognize",
+        "retrieve"
+      ],
+      "examGoal": "",
+      "recognitionCues": [],
+      "coreUnderstanding": [],
+      "mustRecall": [],
+      "mustLocate": [],
+      "relatedUnitIds": [
+        "C-PH-01",
+        "NAV-10"
+      ],
+      "reviewWeight": "high",
+      "status": "planned",
+      "drill": {
+        "difficulty": "direct",
+        "timeTargetSeconds": 60,
+        "factPattern": "A proposed dwelling will use an on-site sewage disposal system. Before the system is installed or constructed, what does the Public Health Act require to be approved?",
+        "task": "Locate the live Public Health provision and identify what must be approved.",
+        "answerKey": {
+          "expectedDocumentIds": [
+            "doc-public-health-act"
+          ],
+          "requiredLookups": [
+            {
+              "prompt": "Public Health Act s.24",
+              "documentId": "doc-public-health-act",
+              "sourceKey": "section:24"
+            }
+          ],
+          "requiredAnswerPoints": [
+            "The design and location of the on-site sewage disposal system must receive the required Ministerial approval before installation/construction under the live statutory framework."
+          ],
+          "trapExplanation": "Former s.22 subdivision assessment is repealed and is not the answer."
+        }
+      }
+    },
+    {
+      "id": "DRILL-07",
+      "unitType": "lookup_drill",
+      "tier": "DRILL",
+      "title": "Altering a watercourse or wetland",
+      "sourceDocumentIds": [
+        "doc-clean-water-act"
+      ],
+      "sourceAnchors": [
+        {
+          "documentId": "doc-clean-water-act",
+          "sourceKey": "section:15",
+          "label": "15",
+          "role": "drill_answer"
+        }
+      ],
+      "learningDepths": [
+        "recognize",
+        "retrieve"
+      ],
+      "examGoal": "",
+      "recognitionCues": [],
+      "coreUnderstanding": [],
+      "mustRecall": [],
+      "mustLocate": [],
+      "relatedUnitIds": [
+        "B-CWA-02",
+        "NAV-10"
+      ],
+      "reviewWeight": "high",
+      "status": "planned",
+      "drill": {
+        "difficulty": "direct",
+        "timeTargetSeconds": 75,
+        "factPattern": "A proposed project will alter a watercourse or wetland. What does the Clean Water Act generally require before the work proceeds?",
+        "task": "Locate the controlling provision and identify the plans/information and permit requirement.",
+        "answerKey": {
+          "expectedDocumentIds": [
+            "doc-clean-water-act"
+          ],
+          "requiredLookups": [
+            {
+              "prompt": "Clean Water Act s.15",
+              "documentId": "doc-clean-water-act",
+              "sourceKey": "section:15"
+            }
+          ],
+          "requiredAnswerPoints": [
+            "The person must provide the required plans/documents/information and obtain the required Ministerial permit before carrying out a qualifying alteration, subject to the Act's exemptions/waivers."
+          ]
+        }
+      }
+    },
+    {
+      "id": "DRILL-08",
+      "unitType": "lookup_drill",
+      "tier": "DRILL",
+      "title": "Does registering an easement attract transfer tax?",
+      "sourceDocumentIds": [
+        "doc-real-property-transfer-tax-act"
+      ],
+      "sourceAnchors": [
+        {
+          "documentId": "doc-real-property-transfer-tax-act",
+          "sourceKey": "section:6",
+          "label": "6",
+          "role": "drill_answer"
+        }
+      ],
+      "learningDepths": [
+        "recognize",
+        "retrieve"
+      ],
+      "examGoal": "",
+      "recognitionCues": [],
+      "coreUnderstanding": [],
+      "mustRecall": [],
+      "mustLocate": [],
+      "relatedUnitIds": [
+        "B-RPTT-01",
+        "B-EASE-01",
+        "NAV-05"
+      ],
+      "reviewWeight": "medium",
+      "status": "planned",
+      "drill": {
+        "difficulty": "direct",
+        "timeTargetSeconds": 75,
+        "factPattern": "An instrument creating an easement is being registered. Is real-property transfer tax payable merely because the easement is registered?",
+        "task": "Locate the applicable exemption and answer the tax question.",
+        "answerKey": {
+          "expectedDocumentIds": [
+            "doc-real-property-transfer-tax-act"
+          ],
+          "requiredLookups": [
+            {
+              "prompt": "Real Property Transfer Tax Act s.6",
+              "documentId": "doc-real-property-transfer-tax-act",
+              "sourceKey": "section:6"
+            }
+          ],
+          "requiredAnswerPoints": [
+            "The easement falls within the applicable statutory transfer-tax exemption.",
+            "The learner should identify the correct easement/right exemption in s.6."
+          ]
+        }
+      }
+    },
+    {
+      "id": "DRILL-09",
+      "unitType": "lookup_drill",
+      "tier": "DRILL",
+      "title": "A signed transfer is not yet registered — Registry or Land Titles?",
+      "sourceDocumentIds": [
+        "doc-registry-act",
+        "doc-land-titles-act"
+      ],
+      "sourceAnchors": [
+        {
+          "documentId": "doc-registry-act",
+          "sourceKey": "section:34",
+          "label": "34",
+          "role": "drill_answer"
+        },
+        {
+          "documentId": "doc-land-titles-act",
+          "sourceKey": "section:15",
+          "label": "15",
+          "role": "drill_answer"
+        },
+        {
+          "documentId": "doc-land-titles-act",
+          "sourceKey": "section:16",
+          "label": "16",
+          "role": "drill_answer"
+        }
+      ],
+      "learningDepths": [
+        "recognize",
+        "understand",
+        "retrieve"
+      ],
+      "examGoal": "",
+      "recognitionCues": [],
+      "coreUnderstanding": [],
+      "mustRecall": [],
+      "mustLocate": [],
+      "relatedUnitIds": [
+        "NAV-01",
+        "A-REG-02",
+        "A-LTA-02"
+      ],
+      "reviewWeight": "high",
+      "status": "planned",
+      "drill": {
+        "difficulty": "routing",
+        "timeTargetSeconds": 120,
+        "factPattern": "A client has signed a transfer but it has not yet been registered. Explain why you cannot answer the legal effect of that fact until you know whether the parcel is governed by Registry or Land Titles.",
+        "task": "Compare the applicable Registry and Land Titles provisions governing registration and identify the key system distinction.",
+        "answerKey": {
+          "expectedDocumentIds": [
+            "doc-registry-act",
+            "doc-land-titles-act"
+          ],
+          "requiredLookups": [
+            {
+              "prompt": "Registry Act s.34",
+              "documentId": "doc-registry-act",
+              "sourceKey": "section:34"
+            },
+            {
+              "prompt": "Land Titles Act s.15",
+              "documentId": "doc-land-titles-act",
+              "sourceKey": "section:15"
+            },
+            {
+              "prompt": "Land Titles Act s.16",
+              "documentId": "doc-land-titles-act",
+              "sourceKey": "section:16"
+            }
+          ],
+          "requiredAnswerPoints": [
+            "First classify the parcel as Registry or Land Titles.",
+            "Registry uses the registered-conveyance/instrument framework.",
+            "Land Titles makes registration central to passing the registered estate or interest and to the statutory status of the registered owner.",
+            "The systems must not be treated as legally identical."
+          ]
+        }
+      }
+    },
+    {
+      "id": "DRILL-10",
+      "unitType": "lookup_drill",
+      "tier": "DRILL",
+      "title": "Thirty years of driveway use over registered Land Titles land",
+      "sourceDocumentIds": [
+        "doc-easements-act",
+        "doc-land-titles-act"
+      ],
+      "sourceAnchors": [
+        {
+          "documentId": "doc-easements-act",
+          "sourceKey": "section:2",
+          "label": "2",
+          "role": "drill_answer"
+        },
+        {
+          "documentId": "doc-land-titles-act",
+          "sourceKey": "section:17",
+          "label": "17",
+          "role": "drill_answer"
+        },
+        {
+          "documentId": "doc-land-titles-act",
+          "sourceKey": "section:17.1",
+          "label": "17.1",
+          "role": "drill_answer"
+        },
+        {
+          "documentId": "doc-land-titles-act",
+          "sourceKey": "section:17.11",
+          "label": "17.11",
+          "role": "drill_answer"
+        },
+        {
+          "documentId": "doc-land-titles-act",
+          "sourceKey": "section:17.2",
+          "label": "17.2",
+          "role": "drill_answer"
+        },
+        {
+          "documentId": "doc-land-titles-act",
+          "sourceKey": "section:17.3",
+          "label": "17.3",
+          "role": "drill_answer"
+        },
+        {
+          "documentId": "doc-land-titles-act",
+          "sourceKey": "section:17.4",
+          "label": "17.4",
+          "role": "drill_answer"
+        },
+        {
+          "documentId": "doc-land-titles-act",
+          "sourceKey": "section:17.5",
+          "label": "17.5",
+          "role": "drill_answer"
+        },
+        {
+          "documentId": "doc-land-titles-act",
+          "sourceKey": "section:17.6",
+          "label": "17.6",
+          "role": "drill_answer"
+        },
+        {
+          "documentId": "doc-land-titles-act",
+          "sourceKey": "section:17.7",
+          "label": "17.7",
+          "role": "drill_answer"
+        },
+        {
+          "documentId": "doc-land-titles-act",
+          "sourceKey": "section:17.8",
+          "label": "17.8",
+          "role": "drill_answer"
+        }
+      ],
+      "learningDepths": [
+        "recognize",
+        "understand",
+        "retrieve"
+      ],
+      "examGoal": "",
+      "recognitionCues": [],
+      "coreUnderstanding": [],
+      "mustRecall": [],
+      "mustLocate": [],
+      "relatedUnitIds": [
+        "NAV-05",
+        "B-EASE-02",
+        "A-LTA-02"
+      ],
+      "reviewWeight": "high",
+      "status": "planned",
+      "drill": {
+        "difficulty": "routing",
+        "timeTargetSeconds": 150,
+        "factPattern": "A neighbour says they have acquired a right-of-way because they have used a driveway continuously for 30 years. The servient parcel was already registered under the Land Titles system before that period accrued.",
+        "task": "Identify why the Easements Act cannot be applied in isolation and determine which Land Titles provision must also be checked.",
+        "answerKey": {
+          "expectedDocumentIds": [
+            "doc-easements-act",
+            "doc-land-titles-act"
+          ],
+          "requiredLookups": [
+            {
+              "prompt": "Easements Act s.2",
+              "documentId": "doc-easements-act",
+              "sourceKey": "section:2"
+            },
+            {
+              "prompt": "Land Titles Act s.17",
+              "documentId": "doc-land-titles-act",
+              "sourceKey": "section:17"
+            }
+          ],
+          "requiredAnswerPoints": [
+            "The Easements Act provides the general prescriptive framework.",
+            "The learner must then check Land Titles Act s.17.",
+            "Do not mechanically conclude that 30 years creates the claimed easement over already-registered Land Titles land.",
+            "Land Titles changes the treatment of prescription after registration and must control the analysis where applicable."
+          ],
+          "trapExplanation": "The numerical Easements Act period by itself is insufficient."
+        }
+      }
+    },
+    {
+      "id": "DRILL-11",
+      "unitType": "lookup_drill",
+      "tier": "DRILL",
+      "title": "Approved subdivision plan that was never filed",
+      "sourceDocumentIds": [
+        "doc-community-planning-act"
+      ],
+      "sourceAnchors": [
+        {
+          "documentId": "doc-community-planning-act",
+          "sourceKey": "section:85",
+          "label": "85",
+          "role": "drill_answer"
+        },
+        {
+          "documentId": "doc-community-planning-act",
+          "sourceKey": "section:86",
+          "label": "86",
+          "role": "drill_answer"
+        }
+      ],
+      "learningDepths": [
+        "recognize",
+        "understand",
+        "retrieve"
+      ],
+      "examGoal": "",
+      "recognitionCues": [],
+      "coreUnderstanding": [],
+      "mustRecall": [],
+      "mustLocate": [],
+      "relatedUnitIds": [
+        "A-CPA-04",
+        "NAV-03"
+      ],
+      "reviewWeight": "high",
+      "status": "planned",
+      "drill": {
+        "difficulty": "routing",
+        "timeTargetSeconds": 120,
+        "factPattern": "A subdivision plan received the required statutory approval eight months ago, but it has not yet been filed in the land registration office. The owner assumes approval alone completed the subdivision.",
+        "task": "Determine the distinction between approval and filing and find the statutory validity period for an approved but unfiled plan.",
+        "answerKey": {
+          "expectedDocumentIds": [
+            "doc-community-planning-act"
+          ],
+          "requiredLookups": [
+            {
+              "prompt": "Community Planning Act s.85",
+              "documentId": "doc-community-planning-act",
+              "sourceKey": "section:85"
+            },
+            {
+              "prompt": "Community Planning Act s.86",
+              "documentId": "doc-community-planning-act",
+              "sourceKey": "section:86"
+            }
+          ],
+          "requiredAnswerPoints": [
+            "Approval and filing are separate statutory stages.",
+            "The approved plan still has to be filed as required.",
+            "The learner must retrieve the one-year statutory validity/failure-to-file rule from s.86 and apply it correctly to the eight-month fact pattern."
+          ]
+        }
+      }
+    },
+    {
+      "id": "DRILL-12",
+      "unitType": "lookup_drill",
+      "tier": "DRILL",
+      "title": "Subdivision inside an integrated survey area",
+      "sourceDocumentIds": [
+        "doc-community-planning-act",
+        "doc-surveys-act"
+      ],
+      "sourceAnchors": [
+        {
+          "documentId": "doc-community-planning-act",
+          "sourceKey": "section:84",
+          "label": "84",
+          "role": "drill_answer"
+        },
+        {
+          "documentId": "doc-community-planning-act",
+          "sourceKey": "section:85",
+          "label": "85",
+          "role": "drill_answer"
+        },
+        {
+          "documentId": "doc-community-planning-act",
+          "sourceKey": "section:86",
+          "label": "86",
+          "role": "drill_answer"
+        },
+        {
+          "documentId": "doc-surveys-act",
+          "sourceKey": "section:7",
+          "label": "7",
+          "role": "drill_answer"
+        },
+        {
+          "documentId": "doc-surveys-act",
+          "sourceKey": "section:8",
+          "label": "8",
+          "role": "drill_answer"
+        }
+      ],
+      "learningDepths": [
+        "recognize",
+        "understand",
+        "retrieve"
+      ],
+      "examGoal": "",
+      "recognitionCues": [],
+      "coreUnderstanding": [],
+      "mustRecall": [],
+      "mustLocate": [],
+      "relatedUnitIds": [
+        "NAV-03",
+        "A-CPA-04",
+        "A-SURV-03",
+        "A-SURV-04"
+      ],
+      "reviewWeight": "high",
+      "status": "planned",
+      "drill": {
+        "difficulty": "routing",
+        "timeTargetSeconds": 150,
+        "factPattern": "A subdivision has progressed through the Community Planning approval process. The land lies inside an integrated survey area. Is planning approval alone enough to complete the survey-law analysis?",
+        "task": "Identify the planning provision and the additional Surveys Act regime that must be checked.",
+        "answerKey": {
+          "expectedDocumentIds": [
+            "doc-community-planning-act",
+            "doc-surveys-act"
+          ],
+          "requiredLookups": [
+            {
+              "prompt": "Community Planning Act s.84",
+              "documentId": "doc-community-planning-act",
+              "sourceKey": "section:84"
+            },
+            {
+              "prompt": "Surveys Act s.7",
+              "documentId": "doc-surveys-act",
+              "sourceKey": "section:7"
+            },
+            {
+              "prompt": "Surveys Act s.8",
+              "documentId": "doc-surveys-act",
+              "sourceKey": "section:8"
+            }
+          ],
+          "requiredAnswerPoints": [
+            "Planning/subdivision approval does not end the analysis.",
+            "Integrated-survey-area requirements under the Surveys Act still apply.",
+            "The learner should identify the additional coordinate/monument/plan duties under ss.7–8 and route into Regulation 84-76 if further technical detail is needed."
+          ],
+          "trapExplanation": "Do not stop at Community Planning approval."
+        }
+      }
+    },
+    {
+      "id": "DRILL-13",
+      "unitType": "lookup_drill",
+      "tier": "DRILL",
+      "title": "You placed monuments — what plan obligations follow?",
+      "sourceDocumentIds": [
+        "doc-new-brunswick-land-surveyors-bylaws"
+      ],
+      "sourceAnchors": [
+        {
+          "documentId": "doc-new-brunswick-land-surveyors-bylaws",
+          "sourceKey": "section:11.1.1",
+          "label": "11.1.1",
+          "role": "drill_answer"
+        },
+        {
+          "documentId": "doc-new-brunswick-land-surveyors-bylaws",
+          "sourceKey": "section:11.1.2",
+          "label": "11.1.2",
+          "role": "drill_answer"
+        },
+        {
+          "documentId": "doc-new-brunswick-land-surveyors-bylaws",
+          "sourceKey": "section:11.1.3",
+          "label": "11.1.3",
+          "role": "drill_answer"
+        },
+        {
+          "documentId": "doc-new-brunswick-land-surveyors-bylaws",
+          "sourceKey": "section:11.1.4",
+          "label": "11.1.4",
+          "role": "drill_answer"
+        },
+        {
+          "documentId": "doc-new-brunswick-land-surveyors-bylaws",
+          "sourceKey": "section:11.1.5",
+          "label": "11.1.5",
+          "role": "drill_answer"
+        },
+        {
+          "documentId": "doc-new-brunswick-land-surveyors-bylaws",
+          "sourceKey": "section:11.1.6",
+          "label": "11.1.6",
+          "role": "drill_answer"
+        },
+        {
+          "documentId": "doc-new-brunswick-land-surveyors-bylaws",
+          "sourceKey": "section:11.1.7",
+          "label": "11.1.7",
+          "role": "drill_answer"
+        },
+        {
+          "documentId": "doc-new-brunswick-land-surveyors-bylaws",
+          "sourceKey": "section:11.2",
+          "label": "11.2",
+          "role": "drill_answer"
+        },
+        {
+          "documentId": "doc-new-brunswick-land-surveyors-bylaws",
+          "sourceKey": "section:11.2.1",
+          "label": "11.2.1",
+          "role": "drill_answer"
+        },
+        {
+          "documentId": "doc-new-brunswick-land-surveyors-bylaws",
+          "sourceKey": "section:11.2.2",
+          "label": "11.2.2",
+          "role": "drill_answer"
+        },
+        {
+          "documentId": "doc-new-brunswick-land-surveyors-bylaws",
+          "sourceKey": "section:11.2.3",
+          "label": "11.2.3",
+          "role": "drill_answer"
+        },
+        {
+          "documentId": "doc-new-brunswick-land-surveyors-bylaws",
+          "sourceKey": "section:11.2.4",
+          "label": "11.2.4",
+          "role": "drill_answer"
+        },
+        {
+          "documentId": "doc-new-brunswick-land-surveyors-bylaws",
+          "sourceKey": "section:11.2.5",
+          "label": "11.2.5",
+          "role": "drill_answer"
+        },
+        {
+          "documentId": "doc-new-brunswick-land-surveyors-bylaws",
+          "sourceKey": "section:11.2.6",
+          "label": "11.2.6",
+          "role": "drill_answer"
+        },
+        {
+          "documentId": "doc-new-brunswick-land-surveyors-bylaws",
+          "sourceKey": "section:11.2.7",
+          "label": "11.2.7",
+          "role": "drill_answer"
+        },
+        {
+          "documentId": "doc-new-brunswick-land-surveyors-bylaws",
+          "sourceKey": "section:11.2.8",
+          "label": "11.2.8",
+          "role": "drill_answer"
+        },
+        {
+          "documentId": "doc-new-brunswick-land-surveyors-bylaws",
+          "sourceKey": "section:11.2.9",
+          "label": "11.2.9",
+          "role": "drill_answer"
+        },
+        {
+          "documentId": "doc-new-brunswick-land-surveyors-bylaws",
+          "sourceKey": "section:11.3",
+          "label": "11.3",
+          "role": "drill_answer"
+        },
+        {
+          "documentId": "doc-new-brunswick-land-surveyors-bylaws",
+          "sourceKey": "section:11.3.1",
+          "label": "11.3.1",
+          "role": "drill_answer"
+        },
+        {
+          "documentId": "doc-new-brunswick-land-surveyors-bylaws",
+          "sourceKey": "section:11.3.2",
+          "label": "11.3.2",
+          "role": "drill_answer"
+        },
+        {
+          "documentId": "doc-new-brunswick-land-surveyors-bylaws",
+          "sourceKey": "section:11.3.3",
+          "label": "11.3.3",
+          "role": "drill_answer"
+        },
+        {
+          "documentId": "doc-new-brunswick-land-surveyors-bylaws",
+          "sourceKey": "section:11.3.4",
+          "label": "11.3.4",
+          "role": "drill_answer"
+        },
+        {
+          "documentId": "doc-new-brunswick-land-surveyors-bylaws",
+          "sourceKey": "section:11.4",
+          "label": "11.4",
+          "role": "drill_answer"
+        },
+        {
+          "documentId": "doc-new-brunswick-land-surveyors-bylaws",
+          "sourceKey": "section:11.4.1",
+          "label": "11.4.1",
+          "role": "drill_answer"
+        },
+        {
+          "documentId": "doc-new-brunswick-land-surveyors-bylaws",
+          "sourceKey": "section:11.4.2",
+          "label": "11.4.2",
+          "role": "drill_answer"
+        },
+        {
+          "documentId": "doc-new-brunswick-land-surveyors-bylaws",
+          "sourceKey": "section:11.4.3",
+          "label": "11.4.3",
+          "role": "drill_answer"
+        },
+        {
+          "documentId": "doc-new-brunswick-land-surveyors-bylaws",
+          "sourceKey": "section:19.0",
+          "label": "19.0",
+          "role": "drill_answer"
+        }
+      ],
+      "learningDepths": [
+        "recognize",
+        "understand",
+        "retrieve"
+      ],
+      "examGoal": "",
+      "recognitionCues": [],
+      "coreUnderstanding": [],
+      "mustRecall": [],
+      "mustLocate": [],
+      "relatedUnitIds": [
+        "A-BYL-06",
+        "NAV-04"
+      ],
+      "reviewWeight": "high",
+      "status": "planned",
+      "drill": {
+        "difficulty": "routing",
+        "timeTargetSeconds": 120,
+        "factPattern": "A survey results in new survey monuments being placed in the field. Determine the general Survey Plan consequence and then locate the Association's plan-validation framework.",
+        "task": "Route the question through the applicable ANBLS Bylaw provisions.",
+        "answerKey": {
+          "expectedDocumentIds": [
+            "doc-new-brunswick-land-surveyors-bylaws"
+          ],
+          "requiredLookups": [
+            {
+              "prompt": "ANBLS Bylaws Part/section 19",
+              "documentId": "doc-new-brunswick-land-surveyors-bylaws",
+              "sourceKey": "section:19.0"
+            },
+            {
+              "prompt": "ANBLS Bylaws Part/section 11",
+              "documentId": "doc-new-brunswick-land-surveyors-bylaws",
+              "sourceKey": "section:11.1.1"
+            }
+          ],
+          "requiredAnswerPoints": [
+            "Where a survey results in monuments being placed, a Survey Plan is generally required under the frozen Bylaw rule.",
+            "The qualifying coordinated-plan exception must be respected.",
+            "The resulting plan must then be considered under the applicable plan-validation framework."
+          ],
+          "trapExplanation": "Never reverse the proposition into \"plans cause monuments to be placed.\""
+        }
+      }
+    },
+    {
+      "id": "DRILL-14",
+      "unitType": "lookup_drill",
+      "tier": "DRILL",
+      "title": "Who must approve or certify an air-space plan?",
+      "sourceDocumentIds": [
+        "doc-air-space-act"
+      ],
+      "sourceAnchors": [
+        {
+          "documentId": "doc-air-space-act",
+          "sourceKey": "section:4",
+          "label": "4",
+          "role": "drill_answer"
+        },
+        {
+          "documentId": "doc-air-space-act",
+          "sourceKey": "section:5",
+          "label": "5",
+          "role": "drill_answer"
+        }
+      ],
+      "learningDepths": [
+        "recognize",
+        "understand",
+        "retrieve"
+      ],
+      "examGoal": "",
+      "recognitionCues": [],
+      "coreUnderstanding": [],
+      "mustRecall": [],
+      "mustLocate": [],
+      "relatedUnitIds": [
+        "B-AIR-02",
+        "NAV-09",
+        "NAV-12"
+      ],
+      "reviewWeight": "high",
+      "status": "planned",
+      "drill": {
+        "difficulty": "routing",
+        "timeTargetSeconds": 120,
+        "factPattern": "A surveyor is preparing a statutory air-space parcel plan for filing. Identify the distinct certification and approval functions required by the Air Space Act.",
+        "task": "Locate the plan-content and filing/approval provisions and distinguish the responsible actors.",
+        "answerKey": {
+          "expectedDocumentIds": [
+            "doc-air-space-act"
+          ],
+          "requiredLookups": [
+            {
+              "prompt": "Air Space Act s.4",
+              "documentId": "doc-air-space-act",
+              "sourceKey": "section:4"
+            },
+            {
+              "prompt": "Air Space Act s.5",
+              "documentId": "doc-air-space-act",
+              "sourceKey": "section:5"
+            }
+          ],
+          "requiredAnswerPoints": [
+            "The surveyor provides the required certificate/seal respecting the plan.",
+            "The development officer supplies the statutory approval assigned to that office.",
+            "The Director of Surveys supplies the distinct statutory approval assigned to the Director.",
+            "These functions are not interchangeable."
+          ]
+        }
+      }
+    },
+    {
+      "id": "DRILL-15",
+      "unitType": "lookup_drill",
+      "tier": "DRILL",
+      "title": "Bare-land condominium unit boundaries",
+      "sourceDocumentIds": [
+        "doc-condominium-property-act"
+      ],
+      "sourceAnchors": [
+        {
+          "documentId": "doc-condominium-property-act",
+          "sourceKey": "section:7",
+          "label": "7",
+          "role": "drill_answer"
+        }
+      ],
+      "learningDepths": [
+        "recognize",
+        "understand",
+        "retrieve"
+      ],
+      "examGoal": "",
+      "recognitionCues": [],
+      "coreUnderstanding": [],
+      "mustRecall": [],
+      "mustLocate": [],
+      "relatedUnitIds": [
+        "B-CONDO-02",
+        "NAV-09"
+      ],
+      "reviewWeight": "high",
+      "status": "planned",
+      "drill": {
+        "difficulty": "routing",
+        "timeTargetSeconds": 150,
+        "factPattern": "You are preparing the survey component of a bare-land condominium description. How are the unit boundaries to be referenced and what must the surveyor certify?",
+        "task": "Find the controlling Condominium Property Act provision and identify the boundary/monument certification requirements.",
+        "answerKey": {
+          "expectedDocumentIds": [
+            "doc-condominium-property-act"
+          ],
+          "requiredLookups": [
+            {
+              "prompt": "Condominium Property Act s.7",
+              "documentId": "doc-condominium-property-act",
+              "sourceKey": "section:7"
+            }
+          ],
+          "requiredAnswerPoints": [
+            "Bare-land unit boundaries are specified by reference to the appropriate coordinate monument as required by the Act.",
+            "The required monuments must be established on the ground.",
+            "The surveyor's certification addresses the statutory monumentation and the substantial agreement of the diagrams with those monuments."
+          ]
+        }
+      }
+    },
+    {
+      "id": "DRILL-16",
+      "unitType": "lookup_drill",
+      "tier": "DRILL",
+      "title": "Wrong information in the Land Titles register",
+      "sourceDocumentIds": [
+        "doc-land-titles-act"
+      ],
+      "sourceAnchors": [
+        {
+          "documentId": "doc-land-titles-act",
+          "sourceKey": "section:68",
+          "label": "68",
+          "role": "drill_answer"
+        },
+        {
+          "documentId": "doc-land-titles-act",
+          "sourceKey": "section:73",
+          "label": "73",
+          "role": "drill_answer"
+        }
+      ],
+      "learningDepths": [
+        "recognize",
+        "understand",
+        "retrieve"
+      ],
+      "examGoal": "",
+      "recognitionCues": [],
+      "coreUnderstanding": [],
+      "mustRecall": [],
+      "mustLocate": [],
+      "relatedUnitIds": [
+        "A-LTA-05",
+        "A-LTA-06",
+        "NAV-01"
+      ],
+      "reviewWeight": "high",
+      "status": "planned",
+      "drill": {
+        "difficulty": "routing",
+        "timeTargetSeconds": 120,
+        "factPattern": "An error is discovered in the Land Titles register. Correcting the register may cause financial loss to a person who relied on the registration system.",
+        "task": "Identify where to look for correcting the title register and where to look for possible compensation.",
+        "answerKey": {
+          "expectedDocumentIds": [
+            "doc-land-titles-act"
+          ],
+          "requiredLookups": [
+            {
+              "prompt": "Land Titles Act s.68",
+              "documentId": "doc-land-titles-act",
+              "sourceKey": "section:68"
+            },
+            {
+              "prompt": "Land Titles Act s.73",
+              "documentId": "doc-land-titles-act",
+              "sourceKey": "section:73"
+            }
+          ],
+          "requiredAnswerPoints": [
+            "Rectification/correction of the title register is addressed beginning at s.68.",
+            "Indemnification for qualifying loss is addressed beginning at s.73.",
+            "The learner should distinguish correction of the register from the separate question of compensation and note that statutory conditions/exceptions apply."
+          ]
+        }
+      }
+    },
+    {
+      "id": "DRILL-17",
+      "unitType": "lookup_drill",
+      "tier": "DRILL",
+      "title": "Old fence, missing monument and conflicting plans",
+      "sourceDocumentIds": [
+        "doc-registry-act",
+        "doc-surveys-act",
+        "doc-evidence-act",
+        "doc-boundaries-confirmation-act",
+        "reg-boundaries-95-166"
+      ],
+      "sourceAnchors": [
+        {
+          "documentId": "doc-registry-act",
+          "sourceKey": "section:14",
+          "label": "14",
+          "role": "drill_answer"
+        },
+        {
+          "documentId": "doc-registry-act",
+          "sourceKey": "section:50",
+          "label": "50",
+          "role": "drill_answer"
+        },
+        {
+          "documentId": "doc-surveys-act",
+          "sourceKey": "section:12",
+          "label": "12",
+          "role": "drill_answer"
+        },
+        {
+          "documentId": "doc-evidence-act",
+          "sourceKey": "section:36",
+          "label": "36",
+          "role": "drill_answer"
+        },
+        {
+          "documentId": "doc-boundaries-confirmation-act",
+          "sourceKey": "section:7",
+          "label": "7",
+          "role": "drill_answer"
+        },
+        {
+          "documentId": "reg-boundaries-95-166",
+          "sourceKey": "section:3",
+          "label": "3",
+          "role": "drill_answer"
+        }
+      ],
+      "learningDepths": [
+        "recognize",
+        "understand",
+        "retrieve"
+      ],
+      "examGoal": "",
+      "recognitionCues": [],
+      "coreUnderstanding": [],
+      "mustRecall": [],
+      "mustLocate": [],
+      "relatedUnitIds": [
+        "NAV-02",
+        "NAV-11",
+        "A-SURV-04",
+        "A-BCA-01",
+        "A-BCAR-01",
+        "B-EVID-02"
+      ],
+      "reviewWeight": "high",
+      "status": "planned",
+      "drill": {
+        "difficulty": "cross_document",
+        "timeTargetSeconds": 240,
+        "factPattern": "Two Registry-system owners disagree about a boundary. A monument shown on an older survey is gone, occupation follows an old fence, and two historical plans appear inconsistent. The owners ask you to \"have the boundary legally confirmed.\"",
+        "task": "Describe the legal research and survey route before a formal boundary-confirmation decision, and identify when the Boundaries Confirmation process becomes relevant.",
+        "answerKey": {
+          "expectedDocumentIds": [
+            "doc-registry-act",
+            "doc-surveys-act",
+            "doc-evidence-act",
+            "doc-boundaries-confirmation-act",
+            "reg-boundaries-95-166"
+          ],
+          "requiredLookups": [
+            {
+              "prompt": "Registry Act s.14",
+              "documentId": "doc-registry-act",
+              "sourceKey": "section:14"
+            },
+            {
+              "prompt": "Registry Act s.50",
+              "documentId": "doc-registry-act",
+              "sourceKey": "section:50"
+            },
+            {
+              "prompt": "Surveys Act s.12",
+              "documentId": "doc-surveys-act",
+              "sourceKey": "section:12"
+            },
+            {
+              "prompt": "Evidence Act s.36",
+              "documentId": "doc-evidence-act",
+              "sourceKey": "section:36"
+            },
+            {
+              "prompt": "Boundaries Confirmation Act s.7",
+              "documentId": "doc-boundaries-confirmation-act",
+              "sourceKey": "section:7"
+            },
+            {
+              "prompt": "Regulation 95-166 s.3",
+              "documentId": "reg-boundaries-95-166",
+              "sourceKey": "section:3"
+            }
+          ],
+          "requiredAnswerPoints": [
+            "Begin with Registry/title and plan research.",
+            "Investigate the field evidence and apply the lost-monument framework where relevant.",
+            "Historical plans/records may require consideration under the Evidence Act.",
+            "The surveyor's professional boundary investigation/determination is not the same thing as statutory boundary confirmation.",
+            "If formal confirmation is required, route into the Boundaries Confirmation Act application process and the regulation's required surveyor report/evidence package."
+          ],
+          "trapExplanation": "Do not treat filing an application for boundary confirmation as a substitute for first investigating the boundary evidence."
+        }
+      }
+    },
+    {
+      "id": "DRILL-18",
+      "unitType": "lookup_drill",
+      "tier": "DRILL",
+      "title": "Three different rights to enter private land",
+      "sourceDocumentIds": [
+        "doc-surveys-act",
+        "doc-expropriation-act",
+        "doc-public-works-act"
+      ],
+      "sourceAnchors": [
+        {
+          "documentId": "doc-surveys-act",
+          "sourceKey": "section:13",
+          "label": "13",
+          "role": "drill_answer"
+        },
+        {
+          "documentId": "doc-expropriation-act",
+          "sourceKey": "section:5",
+          "label": "5",
+          "role": "drill_answer"
+        },
+        {
+          "documentId": "doc-public-works-act",
+          "sourceKey": "section:9",
+          "label": "9",
+          "role": "drill_answer"
+        }
+      ],
+      "learningDepths": [
+        "recognize",
+        "understand",
+        "retrieve"
+      ],
+      "examGoal": "",
+      "recognitionCues": [],
+      "coreUnderstanding": [],
+      "mustRecall": [],
+      "mustLocate": [],
+      "relatedUnitIds": [
+        "NAV-07",
+        "A-SURV-05",
+        "B-EXPR-02",
+        "B-PW-02"
+      ],
+      "reviewWeight": "high",
+      "status": "planned",
+      "drill": {
+        "difficulty": "cross_document",
+        "timeTargetSeconds": 180,
+        "factPattern": "Compare three situations: (1) a land surveyor entering private property for ordinary survey work, (2) an authorized person entering to make surveys/borings to assess land for possible expropriation, and (3) an authorized public-works crew entering to survey and investigate for a public work.",
+        "task": "Identify the separate statutory authorities and explain why none of these entry powers should automatically be treated as a transfer of title.",
+        "answerKey": {
+          "expectedDocumentIds": [
+            "doc-surveys-act",
+            "doc-expropriation-act",
+            "doc-public-works-act"
+          ],
+          "requiredLookups": [
+            {
+              "prompt": "Surveys Act s.13",
+              "documentId": "doc-surveys-act",
+              "sourceKey": "section:13"
+            },
+            {
+              "prompt": "Expropriation Act s.5",
+              "documentId": "doc-expropriation-act",
+              "sourceKey": "section:5"
+            },
+            {
+              "prompt": "Public Works Act s.9",
+              "documentId": "doc-public-works-act",
+              "sourceKey": "section:9"
+            }
+          ],
+          "requiredAnswerPoints": [
+            "Each scenario derives from a different statutory entry authority.",
+            "Ordinary survey entry is not automatically expropriation.",
+            "Pre-expropriation investigation is not itself the acquisition of title.",
+            "Public-work investigative entry is also distinct from subsequent designation, vesting or acquisition.",
+            "A statutory right to enter, survey or test land is not equivalent to ownership transfer."
+          ]
+        }
+      }
+    },
+    {
+      "id": "DRILL-19",
+      "unitType": "lookup_drill",
+      "tier": "DRILL",
+      "title": "Registered Land Titles owner dies",
+      "sourceDocumentIds": [
+        "doc-land-titles-act",
+        "doc-real-property-transfer-tax-act"
+      ],
+      "sourceAnchors": [
+        {
+          "documentId": "doc-land-titles-act",
+          "sourceKey": "section:53",
+          "label": "53",
+          "role": "drill_answer"
+        },
+        {
+          "documentId": "doc-real-property-transfer-tax-act",
+          "sourceKey": "section:6",
+          "label": "6",
+          "role": "drill_answer"
+        }
+      ],
+      "learningDepths": [
+        "recognize",
+        "understand",
+        "retrieve"
+      ],
+      "examGoal": "",
+      "recognitionCues": [],
+      "coreUnderstanding": [],
+      "mustRecall": [],
+      "mustLocate": [],
+      "relatedUnitIds": [
+        "A-LTA-04",
+        "B-RPTT-01",
+        "C-DOE-01",
+        "C-PROB-01",
+        "NAV-08"
+      ],
+      "reviewWeight": "high",
+      "status": "planned",
+      "drill": {
+        "difficulty": "cross_document",
+        "timeTargetSeconds": 180,
+        "factPattern": "A registered owner of Land Titles land dies. The executor wants the land dealt with through the estate and eventually transferred to the beneficiary named in the estate process.",
+        "task": "Identify the Land Titles transmission provision and determine whether the qualifying estate-to-beneficiary transfer is automatically subject to real-property transfer tax.",
+        "answerKey": {
+          "expectedDocumentIds": [
+            "doc-land-titles-act",
+            "doc-real-property-transfer-tax-act"
+          ],
+          "requiredLookups": [
+            {
+              "prompt": "Land Titles Act s.53",
+              "documentId": "doc-land-titles-act",
+              "sourceKey": "section:53"
+            },
+            {
+              "prompt": "Real Property Transfer Tax Act s.6",
+              "documentId": "doc-real-property-transfer-tax-act",
+              "sourceKey": "section:6"
+            }
+          ],
+          "requiredAnswerPoints": [
+            "The death/transmission question is first routed through Land Titles Act s.53 and the personal-representative registration framework.",
+            "The later estate transfer must then be checked against the statutory transfer-tax exemptions.",
+            "The learner should identify the qualifying executor/administrator-to-beneficiary/heir exemption in s.6 where the statutory facts are satisfied.",
+            "Do not treat every estate transfer as automatically taxable or automatically exempt without checking the exemption conditions."
+          ]
+        }
+      }
+    },
+    {
+      "id": "DRILL-20",
+      "unitType": "lookup_drill",
+      "tier": "DRILL",
+      "title": "Surface ownership, mineral ownership and a Mining Act survey",
+      "sourceDocumentIds": [
+        "doc-ownership-of-minerals-act",
+        "doc-mining-act"
+      ],
+      "sourceAnchors": [
+        {
+          "documentId": "doc-ownership-of-minerals-act",
+          "sourceKey": "section:3",
+          "label": "3",
+          "role": "drill_answer"
+        },
+        {
+          "documentId": "doc-mining-act",
+          "sourceKey": "section:90",
+          "label": "90",
+          "role": "drill_answer"
+        },
+        {
+          "documentId": "doc-mining-act",
+          "sourceKey": "section:91",
+          "label": "91",
+          "role": "drill_answer"
+        }
+      ],
+      "learningDepths": [
+        "recognize",
+        "understand",
+        "retrieve"
+      ],
+      "examGoal": "",
+      "recognitionCues": [],
+      "coreUnderstanding": [],
+      "mustRecall": [],
+      "mustLocate": [],
+      "relatedUnitIds": [
+        "C-OMIN-01",
+        "B-MIN-03",
+        "NAV-06"
+      ],
+      "reviewWeight": "high",
+      "status": "planned",
+      "drill": {
+        "difficulty": "cross_document",
+        "timeTargetSeconds": 180,
+        "factPattern": "A client owns the surface parcel. Another party asserts statutory mineral rights, and a formal Mining Act boundary survey may be ordered. The client assumes owning the surface necessarily means owning the minerals and that an ordinary cadastral survey framework alone applies.",
+        "task": "Separate the mineral-ownership question from the Mining Act survey question and identify the relevant statutory provisions.",
+        "answerKey": {
+          "expectedDocumentIds": [
+            "doc-ownership-of-minerals-act",
+            "doc-mining-act"
+          ],
+          "requiredLookups": [
+            {
+              "prompt": "Ownership of Minerals Act s.3",
+              "documentId": "doc-ownership-of-minerals-act",
+              "sourceKey": "section:3"
+            },
+            {
+              "prompt": "Mining Act s.90",
+              "documentId": "doc-mining-act",
+              "sourceKey": "section:90"
+            },
+            {
+              "prompt": "Mining Act s.91",
+              "documentId": "doc-mining-act",
+              "sourceKey": "section:91"
+            }
+          ],
+          "requiredAnswerPoints": [
+            "Minerals may constitute property separate from ownership of the soil/surface under the statutory framework.",
+            "A Mining Act boundary survey must satisfy the Act's surveyor-qualification/Surveys Act framework.",
+            "The learner must retrieve the Mining Act coordinate/height requirements from the applicable provision.",
+            "Surface title and mineral rights must not be collapsed into one ownership question."
+          ]
+        }
+      }
+    },
+    {
+      "id": "DRILL-21",
+      "unitType": "lookup_drill",
+      "tier": "DRILL",
+      "title": "Approved lot beside a wetland with a septic system",
+      "sourceDocumentIds": [
+        "doc-community-planning-act",
+        "doc-clean-water-act",
+        "doc-public-health-act"
+      ],
+      "sourceAnchors": [
+        {
+          "documentId": "doc-community-planning-act",
+          "sourceKey": "section:84",
+          "label": "84",
+          "role": "drill_answer"
+        },
+        {
+          "documentId": "doc-clean-water-act",
+          "sourceKey": "section:15",
+          "label": "15",
+          "role": "drill_answer"
+        },
+        {
+          "documentId": "doc-public-health-act",
+          "sourceKey": "section:24",
+          "label": "24",
+          "role": "drill_answer"
+        },
+        {
+          "documentId": "doc-public-health-act",
+          "sourceKey": "section:24.01",
+          "label": "24.01",
+          "role": "drill_answer"
+        },
+        {
+          "documentId": "doc-public-health-act",
+          "sourceKey": "section:24.02",
+          "label": "24.02",
+          "role": "drill_answer"
+        },
+        {
+          "documentId": "doc-public-health-act",
+          "sourceKey": "section:24.1",
+          "label": "24.1",
+          "role": "drill_answer"
+        },
+        {
+          "documentId": "doc-public-health-act",
+          "sourceKey": "section:24.2",
+          "label": "24.2",
+          "role": "drill_answer"
+        },
+        {
+          "documentId": "doc-public-health-act",
+          "sourceKey": "section:24.3",
+          "label": "24.3",
+          "role": "drill_answer"
+        }
+      ],
+      "learningDepths": [
+        "recognize",
+        "understand",
+        "retrieve"
+      ],
+      "examGoal": "",
+      "recognitionCues": [],
+      "coreUnderstanding": [],
+      "mustRecall": [],
+      "mustLocate": [],
+      "relatedUnitIds": [
+        "NAV-10",
+        "NAV-03",
+        "B-CWA-02",
+        "C-PH-01"
+      ],
+      "reviewWeight": "high",
+      "status": "planned",
+      "drill": {
+        "difficulty": "cross_document",
+        "timeTargetSeconds": 210,
+        "factPattern": "A subdivision plan creating a residential lot has been approved. The proposed building area is near a wetland and the property will use an on-site sewage system. The owner says the planning approval means every land-related approval is complete.",
+        "task": "Identify the independent statutory regimes that still need to be considered.",
+        "answerKey": {
+          "expectedDocumentIds": [
+            "doc-community-planning-act",
+            "doc-clean-water-act",
+            "doc-public-health-act"
+          ],
+          "requiredLookups": [
+            {
+              "prompt": "Community Planning Act s.84",
+              "documentId": "doc-community-planning-act",
+              "sourceKey": "section:84"
+            },
+            {
+              "prompt": "Clean Water Act s.15",
+              "documentId": "doc-clean-water-act",
+              "sourceKey": "section:15"
+            },
+            {
+              "prompt": "Public Health Act s.24",
+              "documentId": "doc-public-health-act",
+              "sourceKey": "section:24"
+            }
+          ],
+          "requiredAnswerPoints": [
+            "Subdivision/planning approval is only one statutory regime.",
+            "Qualifying wetland/watercourse alteration may independently require Clean Water Act compliance/permit.",
+            "The on-site sewage system separately requires the live Public Health design/location approval.",
+            "Multiple statutory overlays may simultaneously affect the same parcel."
+          ],
+          "trapExplanation": "Do not use repealed Public Health s.22 as a live subdivision approval."
+        }
+      }
+    },
+    {
+      "id": "DRILL-22",
+      "unitType": "lookup_drill",
+      "tier": "DRILL",
+      "title": "Can an old government survey plan be used as evidence?",
+      "sourceDocumentIds": [
+        "doc-registry-act",
+        "doc-archives-act",
+        "doc-evidence-act"
+      ],
+      "sourceAnchors": [
+        {
+          "documentId": "doc-registry-act",
+          "sourceKey": "section:14",
+          "label": "14",
+          "role": "drill_answer"
+        },
+        {
+          "documentId": "doc-archives-act",
+          "sourceKey": "section:10",
+          "label": "10",
+          "role": "drill_answer"
+        },
+        {
+          "documentId": "doc-archives-act",
+          "sourceKey": "section:10.1",
+          "label": "10.1",
+          "role": "drill_answer"
+        },
+        {
+          "documentId": "doc-archives-act",
+          "sourceKey": "section:10.2",
+          "label": "10.2",
+          "role": "drill_answer"
+        },
+        {
+          "documentId": "doc-archives-act",
+          "sourceKey": "section:10.3",
+          "label": "10.3",
+          "role": "drill_answer"
+        },
+        {
+          "documentId": "doc-archives-act",
+          "sourceKey": "section:10.4",
+          "label": "10.4",
+          "role": "drill_answer"
+        },
+        {
+          "documentId": "doc-archives-act",
+          "sourceKey": "section:10.5",
+          "label": "10.5",
+          "role": "drill_answer"
+        },
+        {
+          "documentId": "doc-archives-act",
+          "sourceKey": "section:10.6",
+          "label": "10.6",
+          "role": "drill_answer"
+        },
+        {
+          "documentId": "doc-archives-act",
+          "sourceKey": "section:10.7",
+          "label": "10.7",
+          "role": "drill_answer"
+        },
+        {
+          "documentId": "doc-archives-act",
+          "sourceKey": "section:10.8",
+          "label": "10.8",
+          "role": "drill_answer"
+        },
+        {
+          "documentId": "doc-archives-act",
+          "sourceKey": "section:10.9",
+          "label": "10.9",
+          "role": "drill_answer"
+        },
+        {
+          "documentId": "doc-archives-act",
+          "sourceKey": "section:11",
+          "label": "11",
+          "role": "drill_answer"
+        },
+        {
+          "documentId": "doc-evidence-act",
+          "sourceKey": "section:36",
+          "label": "36",
+          "role": "drill_answer"
+        }
+      ],
+      "learningDepths": [
+        "recognize",
+        "understand",
+        "retrieve"
+      ],
+      "examGoal": "",
+      "recognitionCues": [],
+      "coreUnderstanding": [],
+      "mustRecall": [],
+      "mustLocate": [],
+      "relatedUnitIds": [
+        "NAV-11",
+        "B-EVID-02",
+        "C-ARCH-01",
+        "A-REG-06"
+      ],
+      "reviewWeight": "high",
+      "status": "planned",
+      "drill": {
+        "difficulty": "cross_document",
+        "timeTargetSeconds": 210,
+        "factPattern": "During a boundary investigation, you locate an old government survey plan in archival/public records. The client asks whether merely finding the plan means it is automatically usable as proof of the boundary.",
+        "task": "Separate record access/certification from the distinct question of evidentiary treatment.",
+        "answerKey": {
+          "expectedDocumentIds": [
+            "doc-registry-act",
+            "doc-archives-act",
+            "doc-evidence-act"
+          ],
+          "requiredLookups": [
+            {
+              "prompt": "Registry Act s.14",
+              "documentId": "doc-registry-act",
+              "sourceKey": "section:14"
+            },
+            {
+              "prompt": "Archives Act s.10",
+              "documentId": "doc-archives-act",
+              "sourceKey": "section:10"
+            },
+            {
+              "prompt": "Archives Act s.11",
+              "documentId": "doc-archives-act",
+              "sourceKey": "section:11"
+            },
+            {
+              "prompt": "Evidence Act s.36",
+              "documentId": "doc-evidence-act",
+              "sourceKey": "section:36"
+            }
+          ],
+          "requiredAnswerPoints": [
+            "Record access/retrieval is one question.",
+            "Archival inspection and certified-copy mechanisms are separate from admissibility/proof.",
+            "The Evidence Act supplies the evidentiary route for qualifying public records, maps, plans and records of survey.",
+            "Finding a document does not by itself determine its evidentiary effect."
+          ]
+        }
+      }
+    },
+    {
+      "id": "DRILL-23",
+      "unitType": "lookup_drill",
+      "tier": "DRILL",
+      "title": "Unsigned legal effect of a conservation easement?",
+      "sourceDocumentIds": [
+        "doc-conservation-easements-act",
+        "doc-land-titles-act",
+        "doc-real-property-transfer-tax-act"
+      ],
+      "sourceAnchors": [
+        {
+          "documentId": "doc-conservation-easements-act",
+          "sourceKey": "section:6",
+          "label": "6",
+          "role": "drill_answer"
+        },
+        {
+          "documentId": "doc-land-titles-act",
+          "sourceKey": "section:24",
+          "label": "24",
+          "role": "drill_answer"
+        },
+        {
+          "documentId": "doc-real-property-transfer-tax-act",
+          "sourceKey": "section:6",
+          "label": "6",
+          "role": "drill_answer"
+        }
+      ],
+      "learningDepths": [
+        "recognize",
+        "understand",
+        "retrieve"
+      ],
+      "examGoal": "",
+      "recognitionCues": [],
+      "coreUnderstanding": [],
+      "mustRecall": [],
+      "mustLocate": [],
+      "relatedUnitIds": [
+        "B-CE-01",
+        "A-LTA-03",
+        "B-RPTT-01",
+        "NAV-05"
+      ],
+      "reviewWeight": "high",
+      "status": "planned",
+      "drill": {
+        "difficulty": "cross_document",
+        "timeTargetSeconds": 180,
+        "factPattern": "The owner of a parcel registered under Land Titles has executed a conservation easement in favour of a qualifying holder, but the easement has not yet been registered. The parties also ask whether registering the easement itself attracts real-property transfer tax.",
+        "task": "Determine when the conservation easement obtains legal effect, identify the relevant Land Titles registration route and find the applicable transfer-tax treatment.",
+        "answerKey": {
+          "expectedDocumentIds": [
+            "doc-conservation-easements-act",
+            "doc-land-titles-act",
+            "doc-real-property-transfer-tax-act"
+          ],
+          "requiredLookups": [
+            {
+              "prompt": "Conservation Easements Act s.6",
+              "documentId": "doc-conservation-easements-act",
+              "sourceKey": "section:6"
+            },
+            {
+              "prompt": "Land Titles Act s.24",
+              "documentId": "doc-land-titles-act",
+              "sourceKey": "section:24"
+            },
+            {
+              "prompt": "Real Property Transfer Tax Act s.6",
+              "documentId": "doc-real-property-transfer-tax-act",
+              "sourceKey": "section:6"
+            }
+          ],
+          "requiredAnswerPoints": [
+            "The conservation easement does not acquire the statutory legal effect until the required registration occurs.",
+            "For this fact pattern, route the registered interest through the Land Titles easement framework.",
+            "The learner must identify the applicable easement transfer-tax exemption.",
+            "Execution alone and registration are not interchangeable legal events."
+          ]
+        }
+      }
+    },
+    {
+      "id": "DRILL-24",
+      "unitType": "lookup_drill",
+      "tier": "DRILL",
+      "title": "Who actually decides each part of the job?",
+      "sourceDocumentIds": [
+        "doc-community-planning-act",
+        "doc-surveys-act",
+        "doc-registry-act",
+        "doc-land-titles-act"
+      ],
+      "sourceAnchors": [
+        {
+          "documentId": "doc-community-planning-act",
+          "sourceKey": "section:84",
+          "label": "84",
+          "role": "drill_answer"
+        },
+        {
+          "documentId": "doc-surveys-act",
+          "sourceKey": "section:3",
+          "label": "3",
+          "role": "drill_answer"
+        },
+        {
+          "documentId": "doc-registry-act",
+          "sourceKey": "section:12",
+          "label": "12",
+          "role": "drill_answer"
+        },
+        {
+          "documentId": "doc-land-titles-act",
+          "sourceKey": "section:68",
+          "label": "68",
+          "role": "drill_answer"
+        }
+      ],
+      "learningDepths": [
+        "recognize",
+        "understand",
+        "retrieve"
+      ],
+      "examGoal": "",
+      "recognitionCues": [],
+      "coreUnderstanding": [],
+      "mustRecall": [],
+      "mustLocate": [],
+      "relatedUnitIds": [
+        "NAV-12",
+        "A-CPA-06",
+        "A-SURV-01",
+        "A-REG-06",
+        "A-LTA-05"
+      ],
+      "reviewWeight": "high",
+      "status": "planned",
+      "drill": {
+        "difficulty": "cross_document",
+        "timeTargetSeconds": 240,
+        "factPattern": "A complex file raises four separate questions: (1) who handles the statutory subdivision-plan approval process, (2) who administers the provincial survey-system framework, (3) who handles Registry administration, and (4) who has statutory authority in the Land Titles rectification process.",
+        "task": "Route each question to the correct statutory actor and controlling provision rather than assuming that one government office handles everything.",
+        "answerKey": {
+          "expectedDocumentIds": [
+            "doc-community-planning-act",
+            "doc-surveys-act",
+            "doc-registry-act",
+            "doc-land-titles-act"
+          ],
+          "requiredLookups": [
+            {
+              "prompt": "Community Planning Act s.84",
+              "documentId": "doc-community-planning-act",
+              "sourceKey": "section:84"
+            },
+            {
+              "prompt": "Surveys Act s.3",
+              "documentId": "doc-surveys-act",
+              "sourceKey": "section:3"
+            },
+            {
+              "prompt": "Registry Act s.12",
+              "documentId": "doc-registry-act",
+              "sourceKey": "section:12"
+            },
+            {
+              "prompt": "Land Titles Act s.68",
+              "documentId": "doc-land-titles-act",
+              "sourceKey": "section:68"
+            }
+          ],
+          "requiredAnswerPoints": [
+            "Subdivision-plan processing/approval must be routed to the development-officer/planning authority identified by the Act.",
+            "Provincial survey-system administration routes to the Director of Surveys.",
+            "Registry administration routes to the registrar structure established under the Registry Act.",
+            "Land Titles rectification routes through the statutory rectification authority/process in s.68, including any approval/actor structure required by that provision.",
+            "Do not infer powers merely from similar titles such as Registrar, Chief Registrar or Registrar General."
+          ]
+        }
+      }
     }
   ]
 }

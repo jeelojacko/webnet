@@ -10,7 +10,7 @@
 export const EXAM_CURRICULUM_ARCHITECTURE_VERSION = 'exam-curriculum-v1';
 export const EXAM_CURRICULUM_SCHEMA_VERSION = 1;
 
-export type ExamCurriculumTier = 'A' | 'B' | 'C' | 'D' | 'NAV';
+export type ExamCurriculumTier = 'A' | 'B' | 'C' | 'D' | 'NAV' | 'DRILL';
 
 export type ExamUnitType =
   | 'document_orientation'
@@ -29,7 +29,8 @@ export type ExamCurriculumAnchorRole =
   | 'core_rule'
   | 'navigation'
   | 'example'
-  | 'related';
+  | 'related'
+  | 'drill_answer';
 
 /** A resolved pointer at one corpus component inside one document. */
 export interface ExamCurriculumSourceAnchor {
@@ -46,6 +47,30 @@ export interface ExamCurriculumLookupTarget {
   documentId: string;
   sourceKey?: string;
 }
+
+export interface ExamLookupDrillAnswerKeySpec {
+  expectedDocumentIds: string[];
+  requiredLookups: ExamCrossDocumentLookupSpec[];
+  requiredAnswerPoints: string[];
+  trapExplanation?: string;
+}
+
+export interface ExamLookupDrillAnswerKey {
+  expectedDocumentIds: string[];
+  requiredLookups: ExamCurriculumLookupTarget[];
+  requiredAnswerPoints: string[];
+  trapExplanation?: string;
+}
+
+export interface ExamLookupDrillPayload {
+  difficulty: ExamLookupDrillDifficulty;
+  timeTargetSeconds: number;
+  factPattern: string;
+  task: string;
+  answerKey: ExamLookupDrillAnswerKey;
+}
+
+export type ExamLookupDrillDifficulty = 'direct' | 'routing' | 'cross_document';
 
 export interface ExamCurriculumUnit {
   id: string;
@@ -66,6 +91,8 @@ export interface ExamCurriculumUnit {
   relatedUnitIds: string[];
   reviewWeight: ExamCurriculumReviewWeight;
   status: ExamCurriculumStatus;
+  /** Drill metadata populated only for lookup_drill units. */
+  drill?: ExamLookupDrillPayload;
 }
 
 export interface ExamCurriculumManifest {
@@ -176,10 +203,28 @@ export interface ExamCrossDocumentNavigationSpec {
   reviewWeight: ExamCurriculumReviewWeight;
 }
 
-/** Union of every planned catalog entry (A-D single-document + NAV cross-document). */
+/** Planned open-book lookup drill specification. */
+export interface ExamLookupDrillSpec {
+  id: string;
+  title: string;
+  unitType: 'lookup_drill';
+  tier: 'DRILL';
+  difficulty: ExamLookupDrillDifficulty;
+  timeTargetSeconds: number;
+  factPattern: string;
+  task: string;
+  sources: ExamCrossDocumentSourceSpec[];
+  answerKey: ExamLookupDrillAnswerKeySpec;
+  relatedUnitIds: string[];
+  reviewWeight: ExamCurriculumReviewWeight;
+  learningDepths: ExamLearningDepth[];
+}
+
+/** Union of every planned catalog entry (A-D single-document + NAV cross-document + DRILL). */
 export type ExamCurriculumCatalogSpec =
   | ExamCurriculumUnitSpec
-  | ExamCrossDocumentNavigationSpec;
+  | ExamCrossDocumentNavigationSpec
+  | ExamLookupDrillSpec;
 
 export interface ExamCurriculumCorpusView {
   packageId: string;

@@ -29,7 +29,8 @@ const FROZEN_TIER_C_PROJECTION_HASH = '6f9cd74e46cd66c01d6434117d0489951017f0aae
 const FROZEN_TIER_D_PROJECTION_HASH = 'f118e3624d653ba9964f126534bf5a6a360028e5ac867974e5a1094058046712';
 // Navigation projection hash, pinned after corpus-resolution review (deterministic).
 const NAV_PROJECTION_HASH = '184c04c01f767eb4f5175d56c8a6fcde8bf36458ced0702d62cdb829a3a3329b';
-const NAV_MANIFEST_CONTENT_HASH = '149cdff4ad0f401c610212b68e112632d5250e39a34e5f623b4c258b722853d2';
+const NAV_MANIFEST_CONTENT_HASH = '434703f0a6de470095a5d0ad9fc6d1bb9534b15d58b1ab2b47460bba8a88952a';
+const DRILL_PROJECTION_HASH = '30b75f6cde3fd9c1ec70a5244f23ed9b3a5a848abcfff361aa060fdb9f4ca608';
 
 const corpus = buildExamCurriculumCorpusView(contentPackageJson as never);
 const manifest = buildExamCurriculumManifest(examCurriculumAllSpecs, corpus, TEST_CREATED_AT);
@@ -150,22 +151,23 @@ describe('exam curriculum Navigation catalog shape', () => {
 });
 
 describe('exam curriculum canonical A→B→C→D→NAV composition', () => {
-  it('combines into exactly 133 specs in A→B→C→D→NAV order', () => {
-    expect(EXAM_CURRICULUM_TOTAL).toBe(133);
-    expect(examCurriculumAllSpecs).toHaveLength(133);
+  it('combines into exactly 157 specs in A→B→C→D→NAV→DRILL order', () => {
+    expect(EXAM_CURRICULUM_TOTAL).toBe(157);
+    expect(examCurriculumAllSpecs).toHaveLength(157);
     expect(examCurriculumAllSpecs.slice(0, 51).every((s) => s.tier === 'A' || s.tier === undefined)).toBe(true);
     expect(examCurriculumAllSpecs.slice(51, 94).every((s) => s.tier === 'B')).toBe(true);
     expect(examCurriculumAllSpecs.slice(94, 115).every((s) => s.tier === 'C')).toBe(true);
     expect(examCurriculumAllSpecs.slice(115, 121).every((s) => s.tier === 'D')).toBe(true);
-    expect(examCurriculumAllSpecs.slice(121).every((s) => s.tier === 'NAV')).toBe(true);
+    expect(examCurriculumAllSpecs.slice(121, 133).every((s) => s.tier === 'NAV')).toBe(true);
+    expect(examCurriculumAllSpecs.slice(133).every((s) => s.tier === 'DRILL')).toBe(true);
     const ids = examCurriculumAllSpecs.map((s) => s.id);
-    expect(new Set(ids).size).toBe(133);
+    expect(new Set(ids).size).toBe(157);
   });
 
-  it('resolves 133 planned units; NAV occupies manifest indexes 121-132', () => {
-    expect(manifest.units).toHaveLength(133);
+  it('resolves 157 planned units; NAV occupies manifest indexes 121-132, DRILL occupies 133-156', () => {
+    expect(manifest.units).toHaveLength(157);
     expect(manifest.units.every((u) => u.status === 'planned')).toBe(true);
-    expect(manifest.units.slice(121).map((u) => u.id)).toEqual(examCurriculumNavigationSpecs.map((s) => s.id));
+    expect(manifest.units.slice(121, 133).map((u) => u.id)).toEqual(examCurriculumNavigationSpecs.map((s) => s.id));
     expect(manifest.units[120].tier).toBe('D');
     expect(manifest.units[121].tier).toBe('NAV');
     expect(manifest.units[132].tier).toBe('NAV');
@@ -174,13 +176,14 @@ describe('exam curriculum canonical A→B→C→D→NAV composition', () => {
     expect(manifest.units.filter((u) => u.tier === 'C')).toHaveLength(21);
     expect(manifest.units.filter((u) => u.tier === 'D')).toHaveLength(6);
     expect(manifest.units.filter((u) => u.tier === 'NAV')).toHaveLength(12);
+    expect(manifest.units.filter((u) => u.tier === 'DRILL')).toHaveLength(24);
   });
 
-  it('final unit-type totals: 57 orientation / 64 core / 12 cross_document_navigation / 0 lookup_drill', () => {
+  it('final unit-type totals: 57 orientation / 64 core / 12 cross_document_navigation / 24 lookup_drill', () => {
     expect(manifest.units.filter((u) => u.unitType === 'document_orientation')).toHaveLength(57);
     expect(manifest.units.filter((u) => u.unitType === 'core_concept')).toHaveLength(64);
     expect(manifest.units.filter((u) => u.unitType === 'cross_document_navigation')).toHaveLength(12);
-    expect(manifest.units.filter((u) => u.unitType === 'lookup_drill')).toHaveLength(0);
+    expect(manifest.units.filter((u) => u.unitType === 'lookup_drill')).toHaveLength(24);
   });
 
   it('final recall/locate totals: 57 mustRecall / 452 mustLocate', () => {
@@ -278,10 +281,12 @@ describe('exam curriculum canonical A→B→C→D→NAV composition', () => {
 
   it('pins the Navigation projection hash and a deterministic manifest contentHash', () => {
     expect(examCurriculumTierProjectionHash(manifest.units, 'NAV')).toBe(NAV_PROJECTION_HASH);
+    expect(examCurriculumTierProjectionHash(manifest.units, 'DRILL')).toBe(DRILL_PROJECTION_HASH);
     expect(manifest.contentHash).toBe(NAV_MANIFEST_CONTENT_HASH);
     const rebuilt = buildExamCurriculumManifest(examCurriculumAllSpecs, corpus, '2031-01-01T00:00:00.000Z');
     expect(rebuilt.contentHash).toBe(manifest.contentHash);
     expect(examCurriculumTierProjectionHash(rebuilt.units, 'NAV')).toBe(NAV_PROJECTION_HASH);
+    expect(examCurriculumTierProjectionHash(rebuilt.units, 'DRILL')).toBe(DRILL_PROJECTION_HASH);
     const a = buildExamCurriculumManifest(examCurriculumAllSpecs, corpus, TEST_CREATED_AT);
     const b = buildExamCurriculumManifest(examCurriculumAllSpecs, corpus, TEST_CREATED_AT);
     expect(JSON.stringify(a, null, 2)).toBe(JSON.stringify(b, null, 2));
@@ -299,7 +304,7 @@ describe('exam curriculum canonical A→B→C→D→NAV composition', () => {
 });
 
 describe('exam curriculum Navigation validator contract', () => {
-  it('validates the full 133-unit build with zero errors and only the documented warnings', () => {
+  it('validates the full 157-unit build with zero errors and only the documented warnings', () => {
     const report = validateExamCurriculumUnits(manifest.units, corpus);
     expect(report.errors).toEqual([]);
     const nonNavWarnings = report.warnings.filter((w) => !w.unitId?.startsWith('NAV-'));
