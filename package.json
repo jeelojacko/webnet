@@ -28,6 +28,7 @@
     "study:corpus:refresh": "tsx scripts/studyCorpus.ts refresh",
     "study:exam-curriculum:build": "tsx scripts/studyExamCurriculumBuild.ts",
     "study:exam-prep:qa-report": "tsx scripts/studyExamPrepQaReport.ts",
+    "study:exam-prep:recall-authoring-review": "tsx scripts/studyExamPrepRecallAuthoringReview.ts",
     "study:audit-generation": "tsx scripts/studyAuditGeneration.ts",
     "study:ai:prepare-map": "tsx scripts/studyAiAuthoring.ts prepare-map",
     "study:ai:prepare-units": "tsx scripts/studyAiAuthoring.ts prepare-units",
