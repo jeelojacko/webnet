@@ -22,6 +22,9 @@ export type ExamPrepHomeViewProps = {
 const tierLabelFor = (tier: string): string =>
   tier === 'NAV' ? 'Navigation' : `Tier ${tier}`;
 
+const accuracyText = (accuracy: number | null): string =>
+  accuracy === null ? 'No attempts yet' : `${Math.round(accuracy * 100)}%`;
+
 export const ExamPrepHomeView = ({
   metrics,
   unitProgress,
@@ -78,6 +81,61 @@ export const ExamPrepHomeView = ({
           </div>
         </section>
       </div>
+      <div className="grid gap-3 text-sm sm:grid-cols-3">
+        <section className="rounded border border-slate-800 bg-slate-900 p-3">
+          <div className="text-xs uppercase tracking-wide text-slate-500">Recognition</div>
+          <div className="mt-1 text-2xl font-semibold text-sky-300">
+            {accuracyText(metrics.recognition.accuracy)}
+          </div>
+          <div className="mt-1 text-[11px] text-slate-500">
+            {metrics.recognition.attemptedTasks === 0
+              ? 'No questions attempted yet'
+              : `${metrics.recognition.attemptedTasks} task${metrics.recognition.attemptedTasks === 1 ? '' : 's'} attempted`}
+          </div>
+          <button
+            type="button"
+            onClick={() => onNavigate('/study/recognition')}
+            className="mt-2 rounded border border-slate-700 bg-slate-800 px-2 py-1 text-xs text-slate-200 hover:bg-slate-700"
+          >
+            Recognition Sprint
+          </button>
+        </section>
+        <section className="rounded border border-slate-800 bg-slate-900 p-3">
+          <div className="text-xs uppercase tracking-wide text-slate-500">Locate</div>
+          <div className="mt-1 text-2xl font-semibold text-sky-300">
+            {accuracyText(metrics.locate.accuracy)}
+          </div>
+          <div className="mt-1 text-[11px] text-slate-500">
+            {metrics.locate.attemptedTasks === 0
+              ? 'No targets attempted yet'
+              : `${metrics.locate.attemptedTasks} task${metrics.locate.attemptedTasks === 1 ? '' : 's'} attempted`}
+          </div>
+          <button
+            type="button"
+            onClick={() => onNavigate('/study/locate')}
+            className="mt-2 rounded border border-slate-700 bg-slate-800 px-2 py-1 text-xs text-slate-200 hover:bg-slate-700"
+          >
+            Locate Sprint
+          </button>
+        </section>
+        <section className="rounded border border-slate-800 bg-slate-900 p-3">
+          <div className="text-xs uppercase tracking-wide text-slate-500">Lookup Drills</div>
+          <div className="mt-1 text-2xl font-semibold text-amber-300">
+            {metrics.drill.examReadyDrills}
+            <span className="text-sm font-normal text-slate-500"> / {metrics.drill.totalDrills} exam-ready</span>
+          </div>
+          <div className="mt-1 text-[11px] text-slate-500">
+            {metrics.drill.attemptedDrills} drill{metrics.drill.attemptedDrills === 1 ? '' : 's'} attempted
+          </div>
+          <button
+            type="button"
+            onClick={() => onNavigate('/study/drills')}
+            className="mt-2 rounded border border-slate-700 bg-slate-800 px-2 py-1 text-xs text-slate-200 hover:bg-slate-700"
+          >
+            Lookup Drills
+          </button>
+        </section>
+      </div>
       {recommended ? (
         <section className="rounded border border-emerald-800/70 bg-emerald-950/40 p-3">
           <div className="flex flex-wrap items-center justify-between gap-2">
@@ -118,7 +176,8 @@ export const ExamPrepHomeView = ({
         <p>
           <span className="font-semibold text-slate-300">Immutable curriculum, hash-bound learner state.</span>{' '}
           Exam Prep stores progress, recall scheduling, attempts, and session settings locally,
-          bound to the current frozen manifest content hash. Drills are session-only.
+          bound to the current frozen manifest content hash. Only 57 REMEMBER cards use FSRS;
+          Recognition, Locate, and Drill practice use immutable attempt history.
         </p>
         <p className="mt-1 font-mono text-[11px] text-slate-600">
           {EXAM_PREP_MANIFEST.curriculumId} · corpus {EXAM_PREP_SOURCE_CORPUS_CONTENT_HASH.slice(0, 16)}… ·

@@ -82,6 +82,7 @@ type FakeStore = {
   getAll: () => FakeRequest;
   get: (_key: string) => FakeRequest;
   put: (_value: unknown) => FakeRequest;
+  add: (_value: unknown) => FakeRequest;
   delete: (_key: string) => FakeRequest;
   clear: () => FakeRequest;
 };
@@ -111,6 +112,29 @@ const createFakeStore = (
       const keyPath = keyPaths[_storeName];
       const key = (value as Record<string, string>)[keyPath];
       stores[_storeName] ??= new Map();
+      stores[_storeName].set(key, value);
+      return createFakeRequest(() => key, scheduleComplete);
+    },
+    add: (value: unknown) => {
+      const keyPath = keyPaths[_storeName];
+      const key = (value as Record<string, string>)[keyPath];
+      stores[_storeName] ??= new Map();
+      if (stores[_storeName].has(key)) {
+        const error = new DOMException('Key already exists.', 'ConstraintError');
+        transaction.error = error;
+        const request: FakeRequest = {
+          result: undefined,
+          error,
+          onsuccess: null,
+          onerror: null,
+        };
+        schedule(() => {
+          request.onerror?.(new Event('error'));
+          transaction.onerror?.(new Event('error'));
+          transaction.onabort?.(new Event('abort'));
+        });
+        return request;
+      }
       stores[_storeName].set(key, value);
       return createFakeRequest(() => key, scheduleComplete);
     },

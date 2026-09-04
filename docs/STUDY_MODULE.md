@@ -391,6 +391,12 @@ Exam Prep is the learner-facing layer over the frozen Exam Curriculum V1 manifes
 - Lookup Drills render the 24 frozen drills through the shared drill card (timer formatted M:SS, e.g. 150s -> 2:30) with no persistence, drafts store, or autosave; drill state is session-only UI state.
 - No drill persistence, undo, drafts, Study phase transitions, or Study-unit conversion are implemented.
 
+### Exam Prep Phase 2 retrieval practice
+
+Phase 2 adds Recognition (`/study/recognition`) and Locate (`/study/locate`) as deterministic, frozen 10-question sprints, plus persistent self-assessed Lookup Drill attempts. Recognition derives exact frozen `recognitionCues`; Locate derives all 452 frozen `mustLocate` targets (A 112 / B 140 / C 94 / D 12 / NAV 94). Recognition and Locate use immutable attempt history and current-hash selectors, not FSRS. Lookup Drills record answer, elapsed time, three self-assessment flags, score, and browser-local practice date; exam-ready requires two qualifying 3/3 within-target attempts on distinct local dates.
+
+The existing schema-v9 model remains unchanged: exactly four Exam Prep stores (`examPrepUnitProgress`, `examPrepRecallProgress`, `examPrepAttempts`, `examPrepSettings`). Only the 57 Recall cards use FSRS; Recognition, Locate, and Drills do not create schedules. All four attempt kinds round-trip through Study export/import, while archived-hash attempts remain preserved but excluded from current metrics and queues.
+
 ## Manual Test Procedure
 
 1. Run `npm run dev` and open `/study`.

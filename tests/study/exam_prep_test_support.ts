@@ -9,8 +9,11 @@ import {
   examPrepProgressId,
 } from '../../src/study/examPrep/examPrepManifest';
 import type {
+  ExamPrepDrillAttempt,
+  ExamPrepLocateAttempt,
   ExamPrepRecallAttempt,
   ExamPrepRecallProgress,
+  ExamPrepRecognitionAttempt,
   ExamPrepSettings,
   ExamPrepUnitProgress,
 } from '../../src/study/examPrep/examPrepTypes';
@@ -146,6 +149,137 @@ export const makeRecallAttempt = ({
   configVersion: 1,
   reviewedAt,
 });
+
+export const makeRecognitionAttempt = ({
+  id,
+  taskId,
+  unitId,
+  cueIndex = 1,
+  cue = 'cue',
+  expectedUnitTitle = 'unit title',
+  expectedDocumentIds = [],
+  result = 'missed',
+  answer,
+  completedAt = '2026-09-05T12:00:00.000Z',
+  binding = currentBinding,
+}: {
+  id: string;
+  taskId: string;
+  unitId: string;
+  cueIndex?: number;
+  cue?: string;
+  expectedUnitTitle?: string;
+  expectedDocumentIds?: string[];
+  result?: 'got_it' | 'missed';
+  answer?: string;
+  completedAt?: string;
+  binding?: typeof currentBinding | typeof archivedBinding | typeof otherCurriculumBinding;
+}): ExamPrepRecognitionAttempt => ({
+  id,
+  kind: 'recognition',
+  curriculumId: binding.curriculumId,
+  curriculumContentHash: binding.curriculumContentHash,
+  taskId,
+  unitId,
+  cueIndex,
+  cue,
+  expectedUnitTitle,
+  expectedDocumentIds: [...expectedDocumentIds],
+  ...(answer !== undefined ? { answer } : {}),
+  result,
+  completedAt,
+});
+
+export const makeLocateAttempt = ({
+  id,
+  taskId,
+  unitId,
+  lookupIndex = 1,
+  prompt = 'find',
+  expectedDocumentId = 'doc',
+  expectedSourceKey = null,
+  result = 'missed',
+  elapsedSeconds = 12,
+  completedAt = '2026-09-05T12:00:00.000Z',
+  binding = currentBinding,
+}: {
+  id: string;
+  taskId: string;
+  unitId: string;
+  lookupIndex?: number;
+  prompt?: string;
+  expectedDocumentId?: string;
+  expectedSourceKey?: string | null;
+  result?: 'found' | 'missed';
+  elapsedSeconds?: number;
+  completedAt?: string;
+  binding?: typeof currentBinding | typeof archivedBinding | typeof otherCurriculumBinding;
+}): ExamPrepLocateAttempt => ({
+  id,
+  kind: 'locate',
+  curriculumId: binding.curriculumId,
+  curriculumContentHash: binding.curriculumContentHash,
+  taskId,
+  unitId,
+  lookupIndex,
+  prompt,
+  expectedDocumentId,
+  expectedSourceKey: expectedSourceKey ?? null,
+  result,
+  elapsedSeconds,
+  completedAt,
+});
+
+export const makeDrillAttempt = ({
+  id,
+  taskId,
+  unitId,
+  difficulty = 'direct',
+  answer = '',
+  elapsedSeconds = 60,
+  targetSeconds = 90,
+  lawIdentified = false,
+  provisionLocated = false,
+  substantiveAnswerComplete = false,
+  practiceDate = '2026-09-05',
+  completedAt = '2026-09-05T12:00:00.000Z',
+  binding = currentBinding,
+}: {
+  id: string;
+  taskId: string;
+  unitId: string;
+  difficulty?: ExamPrepDrillAttempt['difficulty'];
+  answer?: string;
+  elapsedSeconds?: number;
+  targetSeconds?: number;
+  lawIdentified?: boolean;
+  provisionLocated?: boolean;
+  substantiveAnswerComplete?: boolean;
+  practiceDate?: string;
+  completedAt?: string;
+  binding?: typeof currentBinding | typeof archivedBinding | typeof otherCurriculumBinding;
+}): ExamPrepDrillAttempt => {
+  const score = [lawIdentified, provisionLocated, substantiveAnswerComplete].filter(Boolean)
+    .length as 0 | 1 | 2 | 3;
+  return {
+    id,
+    kind: 'drill',
+    curriculumId: binding.curriculumId,
+    curriculumContentHash: binding.curriculumContentHash,
+    taskId,
+    unitId,
+    difficulty,
+    answer,
+    elapsedSeconds,
+    targetSeconds,
+    lawIdentified,
+    provisionLocated,
+    substantiveAnswerComplete,
+    score,
+    practiceDate,
+    completedAt,
+  };
+};
 
 export const makeSettings = (
   overrides: Partial<ExamPrepSettings> = {},

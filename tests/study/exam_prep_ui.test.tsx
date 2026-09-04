@@ -87,6 +87,7 @@ describe('Exam Prep UI', () => {
         onOpenProvision={vi.fn()}
         onToggleUnitStudied={vi.fn(async () => undefined)}
         onRateRecallTask={vi.fn(async () => undefined)}
+        onSaveExamPrepAttempt={vi.fn(async () => undefined)}
       />,
     );
     const text = document.body.textContent ?? '';
@@ -113,6 +114,7 @@ describe('Exam Prep UI', () => {
         onOpenProvision={vi.fn()}
         onToggleUnitStudied={onToggle}
         onRateRecallTask={vi.fn(async () => undefined)}
+        onSaveExamPrepAttempt={vi.fn(async () => undefined)}
       />,
     );
     const text = document.body.textContent ?? '';
@@ -146,6 +148,7 @@ describe('Exam Prep UI', () => {
         onOpenProvision={vi.fn()}
         onToggleUnitStudied={vi.fn(async () => undefined)}
         onRateRecallTask={onRate}
+        onSaveExamPrepAttempt={vi.fn(async () => undefined)}
       />,
     );
     // idle: no card content, no answer leakage, explicit start gate
@@ -203,6 +206,7 @@ describe('Exam Prep UI', () => {
         onOpenProvision={vi.fn()}
         onToggleUnitStudied={vi.fn(async () => undefined)}
         onRateRecallTask={onRate}
+        onSaveExamPrepAttempt={vi.fn(async () => undefined)}
       />,
     );
     await clickButton('Start Recall Session');
@@ -231,6 +235,7 @@ describe('Exam Prep UI', () => {
         onOpenProvision={vi.fn()}
         onToggleUnitStudied={onToggle}
         onRateRecallTask={vi.fn(async () => undefined)}
+        onSaveExamPrepAttempt={vi.fn(async () => undefined)}
       />,
     );
     const text = document.body.textContent ?? '';
@@ -266,6 +271,7 @@ describe('Exam Prep UI', () => {
         onOpenProvision={vi.fn()}
         onToggleUnitStudied={vi.fn(async () => undefined)}
         onRateRecallTask={vi.fn(async () => undefined)}
+        onSaveExamPrepAttempt={vi.fn(async () => undefined)}
       />,
     );
     expect(document.body.textContent).not.toContain('Recommended next unit');
@@ -281,6 +287,7 @@ describe('Exam Prep UI', () => {
         onOpenProvision={vi.fn()}
         onToggleUnitStudied={vi.fn(async () => undefined)}
         onRateRecallTask={vi.fn(async () => undefined)}
+        onSaveExamPrepAttempt={vi.fn(async () => undefined)}
       />,
     );
     const startButtons = Array.from(document.querySelectorAll('button')).filter(

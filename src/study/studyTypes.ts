@@ -5,7 +5,7 @@ import type {
   AiStudyMapProposal,
 } from './ai/studyAiTypes';
 import type {
-  ExamPrepRecallAttempt,
+  ExamPrepAttempt,
   ExamPrepRecallProgress,
   ExamPrepSettings,
   ExamPrepUnitProgress,
@@ -436,7 +436,7 @@ export type StudyDataSnapshot = {
   aiUnitProposals: AiStoredUnitProposal[];
   examPrepUnitProgress: ExamPrepUnitProgress[];
   examPrepRecallProgress: ExamPrepRecallProgress[];
-  examPrepAttempts: ExamPrepRecallAttempt[];
+  examPrepAttempts: ExamPrepAttempt[];
   examPrepSettings: ExamPrepSettings[];
 };
 

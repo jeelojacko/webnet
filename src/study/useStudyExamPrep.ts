@@ -9,6 +9,7 @@ import type { ExamPrepQueueItem } from './examPrep/examPrepQueue';
 import {
   buildExamPrepRatedRecallAttempt,
 } from './examPrep/examPrepReview';
+import type { ExamPrepAttempt } from './examPrep/examPrepTypes';
 import {
   normalizeExamPrepSettings,
   resolveExamPrepSettings,
@@ -89,7 +90,9 @@ export const useStudyExamPrep = ({
       await storage.saveExamPrepRecallRating({
         attempt: result.attempt,
         progress: result.progress,
-        expectedProgressUpdatedAt: item.progress?.updatedAt,
+        expectation: item.progress
+          ? { kind: 'existing', updatedAt: item.progress.updatedAt }
+          : { kind: 'absent' },
       });
       setData({
         ...data,
@@ -98,6 +101,21 @@ export const useStudyExamPrep = ({
           data.examPrepRecallProgress,
           result.progress,
         ),
+      });
+    },
+    [data, storage, setData],
+  );
+
+  /** Persist one generic immutable attempt (recognition/locate/drill). */
+  const saveExamPrepAttempt = useCallback(
+    async (attempt: ExamPrepAttempt): Promise<void> => {
+      if (!data) throw new Error('Exam Prep data is not loaded.');
+      // storage uses immutable `add`: a duplicate attempt id fails closed and
+      // nothing is appended to the in-memory snapshot.
+      await storage.saveExamPrepAttempt(attempt);
+      setData({
+        ...data,
+        examPrepAttempts: appendImmutableAttempt(data.examPrepAttempts, attempt),
       });
     },
     [data, storage, setData],
@@ -133,6 +151,7 @@ export const useStudyExamPrep = ({
   return {
     toggleUnitStudied,
     rateRecallTask,
+    saveExamPrepAttempt,
     saveExamPrepSettings,
   };
 };

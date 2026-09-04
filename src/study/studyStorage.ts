@@ -28,6 +28,7 @@ import type {
   StudyUnit,
 } from './studyTypes';
 import type {
+  ExamPrepAttempt,
   ExamPrepRecallAttempt,
   ExamPrepRecallProgress,
   ExamPrepSettings,
@@ -109,7 +110,7 @@ type StudyStorePayloads = {
   aiUnitProposals: AiStoredUnitProposal;
   examPrepUnitProgress: ExamPrepUnitProgress;
   examPrepRecallProgress: ExamPrepRecallProgress;
-  examPrepAttempts: ExamPrepRecallAttempt;
+  examPrepAttempts: ExamPrepAttempt;
   examPrepSettings: ExamPrepSettings;
 };
 
@@ -850,7 +851,7 @@ export const createStudyStorage = (): StudyStorage => ({
       db.close();
     }
   },
-  async saveExamPrepRecallRating({ attempt, progress, expectedProgressUpdatedAt }) {
+  async saveExamPrepRecallRating({ attempt, progress, expectation }) {
     const db = await openStudyDatabase();
     try {
       const transaction = db.transaction(
@@ -861,16 +862,27 @@ export const createStudyStorage = (): StudyStorage => ({
       const existing = await requestToPromise(
         progressStore.get(progress.id) as IDBRequest<ExamPrepRecallProgress | undefined>,
       );
-      if (
-        expectedProgressUpdatedAt &&
-        existing &&
-        existing.updatedAt !== expectedProgressUpdatedAt
-      ) {
+      const stale =
+        expectation.kind === 'absent'
+          ? existing !== undefined
+          : !existing || existing.updatedAt !== expectation.updatedAt;
+      if (stale) {
         transaction.abort();
         throw new Error('Exam Prep recall progress changed before the rating could be saved.');
       }
       progressStore.put(progress);
       transaction.objectStore('examPrepAttempts').put(attempt);
+      await transactionDone(transaction);
+    } finally {
+      db.close();
+    }
+  },
+  /** Immutable generic attempt write (recognition/locate/drill). */
+  async saveExamPrepAttempt(attempt) {
+    const db = await openStudyDatabase();
+    try {
+      const transaction = db.transaction('examPrepAttempts', 'readwrite');
+      transaction.objectStore('examPrepAttempts').add(attempt);
       await transactionDone(transaction);
     } finally {
       db.close();

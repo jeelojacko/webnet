@@ -2,27 +2,63 @@
 //
 // Ported verbatim from the Exam Curriculum browser (ExamCurriculumPage
 // LookupDrillCard) so the Lookup Drills tab and any legacy rendering share
-// one implementation. Drills are intentionally session-only: nothing here is
-// persisted. The timer freezes on Reveal and formats elapsed seconds as
-// M:SS (150 seconds renders "2:30"). Expected answers never appear before
-// Reveal.
+// one implementation. Drills keep their frozen content and hide the answer
+// key before Reveal; the timer freezes on Reveal and elapsed seconds format
+// as M:SS (150 seconds renders "2:30").
+//
+// Phase 2 adds persistence: when `attempts` and `onSaveAttempt` are
+// supplied, the card shows a per-drill readiness summary before Start and a
+// self-assessment panel after Reveal. Saving is explicit (Save Result), once
+// per run; Practice Again resets the local card for a new attempt.
 
 import { useState, useRef, useEffect } from 'react';
 import type { ExamCurriculumUnit } from '../../examCurriculum/examCurriculumTypes';
+import type { ExamPrepAttempt, ExamPrepDrillAttempt } from '../examPrepTypes';
 import { DRILL_DIFFICULTY_LABELS, formatExamDrillTime } from '../examPrepFormat';
+import { buildExamPrepDrillStats, type ExamPrepDrillStats } from '../examPrepDrillStats';
+import { formatExamPrepLocalDate } from '../examPrepLocalDate';
+import { buildDrillAttempt } from '../examPrepAttemptBuilders';
 import { EXAM_PREP_OPEN_SOURCE_BUTTON } from './examPrepBits';
 
 export type ExamDrillCardProps = {
   unit: ExamCurriculumUnit;
   onOpenProvision: (_documentId: string, _sourceKey: string) => void;
+  /** Current attempt history for this drill's readiness summary. */
+  attempts?: ExamPrepAttempt[];
+  onSaveAttempt?: (_attempt: ExamPrepDrillAttempt) => Promise<void>;
 };
 
-export const ExamDrillCard = ({ unit, onOpenProvision }: ExamDrillCardProps) => {
+const STATUS_LABEL: Record<ExamPrepDrillStats['status'], string> = {
+  unattempted: 'Unattempted',
+  developing: 'Developing',
+  accurate: 'Accurate',
+  exam_ready: 'Exam-ready',
+};
+
+const createAttemptId = (taskId: string): string =>
+  `drill-attempt-${taskId}-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
+
+export const ExamDrillCard = ({
+  unit,
+  onOpenProvision,
+  attempts,
+  onSaveAttempt,
+}: ExamDrillCardProps) => {
   const [phase, setPhase] = useState<'start' | 'active' | 'reveal'>('start');
   const [elapsed, setElapsed] = useState(0);
   const [textareaValue, setTextareaValue] = useState('');
+  const [lawIdentified, setLawIdentified] = useState(false);
+  const [provisionLocated, setProvisionLocated] = useState(false);
+  const [substantiveComplete, setSubstantiveComplete] = useState(false);
+  const [savedRun, setSavedRun] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const drill = unit.drill;
+
+  const stats = attempts
+    ? buildExamPrepDrillStats(attempts, `drill:${unit.id}`)
+    : null;
 
   useEffect(() => {
     if (phase === 'active') {
@@ -37,10 +73,47 @@ export const ExamDrillCard = ({ unit, onOpenProvision }: ExamDrillCardProps) => 
     setPhase('start');
     setElapsed(0);
     setTextareaValue('');
+    setLawIdentified(false);
+    setProvisionLocated(false);
+    setSubstantiveComplete(false);
+    setSavedRun(false);
+    setSaveError(null);
     if (timerRef.current) clearInterval(timerRef.current);
   };
 
+  const handleSave = async () => {
+    if (!drill || !onSaveAttempt || saving || savedRun) return;
+    setSaving(true);
+    setSaveError(null);
+    const attempt = buildDrillAttempt({
+      attemptId: createAttemptId(`drill:${unit.id}`),
+      unitId: unit.id,
+      taskId: `drill:${unit.id}`,
+      difficulty: drill.difficulty,
+      answer: textareaValue,
+      elapsedSeconds: elapsed, // frozen at Reveal
+      targetSeconds: drill.timeTargetSeconds,
+      lawIdentified,
+      provisionLocated,
+      substantiveAnswerComplete: substantiveComplete,
+      practiceDate: formatExamPrepLocalDate(new Date()),
+      completedAt: new Date().toISOString(),
+    });
+    try {
+      await onSaveAttempt(attempt);
+      setSavedRun(true);
+    } catch (error) {
+      setSaveError(
+        error instanceof Error ? error.message : 'The drill result could not be saved.',
+      );
+    } finally {
+      setSaving(false);
+    }
+  };
+
   if (!drill) return null;
+
+  const score = [lawIdentified, provisionLocated, substantiveComplete].filter(Boolean).length;
 
   return (
     <section className="rounded border border-emerald-800 bg-emerald-950 p-3">
@@ -63,6 +136,31 @@ export const ExamDrillCard = ({ unit, onOpenProvision }: ExamDrillCardProps) => 
         </span>
       </div>
       <h4 className="mt-2 text-sm font-semibold text-white">{unit.title}</h4>
+      {phase === 'start' && stats ? (
+        <div className="mt-2 flex flex-wrap items-center gap-1.5 text-[11px]">
+          <span className="rounded bg-slate-800 px-1.5 py-0.5 text-slate-300">
+            Status: {STATUS_LABEL[stats.status]}
+          </span>
+          <span className="rounded bg-slate-800 px-1.5 py-0.5 text-slate-400">
+            Attempts: {stats.attemptCount}
+          </span>
+          {stats.attemptCount > 0 ? (
+            <>
+              <span className="rounded bg-slate-800 px-1.5 py-0.5 text-slate-400">
+                Best correct: {stats.bestCorrectElapsedSeconds === null ? '—' : formatExamDrillTime(stats.bestCorrectElapsedSeconds)}
+              </span>
+              <span className="rounded bg-slate-800 px-1.5 py-0.5 text-slate-400">
+                Target: {formatExamDrillTime(drill.timeTargetSeconds)}
+              </span>
+              {stats.latestAttempt ? (
+                <span className="rounded bg-slate-800 px-1.5 py-0.5 text-slate-400">
+                  Latest: {stats.latestScore} / 3 · {formatExamDrillTime(stats.latestElapsedSeconds ?? 0)}
+                </span>
+              ) : null}
+            </>
+          ) : null}
+        </div>
+      ) : null}
       {phase === 'start' && (
         <div className="mt-2 space-y-1.5">
           <p className="text-xs text-emerald-100/70">
@@ -72,6 +170,8 @@ export const ExamDrillCard = ({ unit, onOpenProvision }: ExamDrillCardProps) => 
             type="button"
             onClick={() => {
               setElapsed(0);
+              setSavedRun(false);
+              setSaveError(null);
               setPhase('active');
             }}
             className="rounded border border-emerald-600 bg-emerald-900 px-3 py-1.5 text-xs font-semibold text-emerald-200 hover:bg-emerald-800"
@@ -176,12 +276,67 @@ export const ExamDrillCard = ({ unit, onOpenProvision }: ExamDrillCardProps) => 
               </p>
             </div>
           )}
+          {onSaveAttempt ? (
+            <div className="rounded border border-slate-700 bg-slate-800/50 p-2 space-y-1.5">
+              <span className="font-semibold uppercase tracking-wide text-slate-300">
+                How did you do?
+              </span>
+              <label className="flex items-center gap-2 text-xs text-slate-200">
+                <input
+                  type="checkbox"
+                  checked={lawIdentified}
+                  disabled={savedRun}
+                  onChange={(event) => setLawIdentified(event.target.checked)}
+                />
+                Identified the correct law(s)
+              </label>
+              <label className="flex items-center gap-2 text-xs text-slate-200">
+                <input
+                  type="checkbox"
+                  checked={provisionLocated}
+                  disabled={savedRun}
+                  onChange={(event) => setProvisionLocated(event.target.checked)}
+                />
+                Located the controlling provision(s)
+              </label>
+              <label className="flex items-center gap-2 text-xs text-slate-200">
+                <input
+                  type="checkbox"
+                  checked={substantiveComplete}
+                  disabled={savedRun}
+                  onChange={(event) => setSubstantiveComplete(event.target.checked)}
+                />
+                Gave a substantively complete answer
+              </label>
+              <p className="text-[11px] text-slate-400">Score: {score} / 3</p>
+              {saveError ? (
+                <div
+                  role="alert"
+                  className="rounded border border-rose-900/60 bg-rose-950/40 p-2 text-xs text-rose-200"
+                >
+                  {saveError}
+                </div>
+              ) : null}
+              {savedRun ? (
+                <p className="text-xs font-semibold text-emerald-300">Result saved.</p>
+              ) : (
+                <button
+                  type="button"
+                  disabled={saving}
+                  onClick={() => void handleSave()}
+                  className="rounded border border-emerald-600 bg-emerald-900 px-3 py-1.5 text-xs font-semibold text-emerald-200 hover:bg-emerald-800"
+                >
+                  Save Result
+                </button>
+              )}
+            </div>
+          ) : null}
           <button
             type="button"
             onClick={handleReset}
             className="rounded border border-slate-600 bg-slate-800 px-3 py-1.5 text-xs font-semibold text-slate-300 hover:bg-slate-700"
           >
-            Reset
+            Practice Again
           </button>
         </div>
       )}

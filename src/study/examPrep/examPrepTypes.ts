@@ -14,7 +14,10 @@ import type {
   StudyFsrsSchedule,
   StudyRating,
 } from '../studyTypes';
-import type { ExamCurriculumReviewWeight } from '../examCurriculum/examCurriculumTypes';
+import type {
+  ExamCurriculumReviewWeight,
+  ExamLookupDrillDifficulty,
+} from '../examCurriculum/examCurriculumTypes';
 
 export type ExamPrepRecallRating = StudyRating;
 
@@ -74,6 +77,36 @@ export interface ExamPrepRecallProgress extends ExamPrepCurriculumBinding {
   updatedAt: string;
 }
 
+export interface ExamPrepRecognitionTask {
+  id: string;
+  unitId: string;
+  unitTitle: string;
+  tier: ExamPrepCurriculumTier;
+  reviewWeight: ExamCurriculumReviewWeight;
+  curriculumIndex: number;
+  cueIndex: number;
+  cue: string;
+  expectedDocumentIds: string[];
+}
+
+export interface ExamPrepLocateTask {
+  id: string;
+  unitId: string;
+  unitTitle: string;
+  tier: ExamPrepCurriculumTier;
+  reviewWeight: ExamCurriculumReviewWeight;
+  curriculumIndex: number;
+  lookupIndex: number;
+  prompt: string;
+  expectedDocumentId: string;
+  /**
+   * Resolved provision pin. Frozen curriculum targets that intentionally stop
+   * at document level carry `null` (document-level locate practice); every
+   * pinned target carries its exact `sourceKey`.
+   */
+  expectedSourceKey: string | null;
+}
+
 /** Immutable evidence record written atomically with recall progress. */
 export interface ExamPrepRecallAttempt extends ExamPrepCurriculumBinding {
   id: string;
@@ -94,6 +127,61 @@ export interface ExamPrepRecallAttempt extends ExamPrepCurriculumBinding {
   answer?: string;
 }
 
+export interface ExamPrepRecognitionAttempt extends ExamPrepCurriculumBinding {
+  id: string;
+  kind: 'recognition';
+  taskId: string;
+  unitId: string;
+  cueIndex: number;
+  cue: string;
+  expectedUnitTitle: string;
+  expectedDocumentIds: string[];
+  answer?: string;
+  result: 'got_it' | 'missed';
+  completedAt: string;
+}
+
+export interface ExamPrepLocateAttempt extends ExamPrepCurriculumBinding {
+  id: string;
+  kind: 'locate';
+  taskId: string;
+  unitId: string;
+  lookupIndex: number;
+  prompt: string;
+  expectedDocumentId: string;
+  expectedSourceKey: string | null;
+  result: 'found' | 'missed';
+  elapsedSeconds: number;
+  completedAt: string;
+}
+
+export interface ExamPrepDrillAttempt extends ExamPrepCurriculumBinding {
+  id: string;
+  kind: 'drill';
+  taskId: string;
+  unitId: string;
+  difficulty: ExamLookupDrillDifficulty;
+  answer: string;
+  elapsedSeconds: number;
+  targetSeconds: number;
+  lawIdentified: boolean;
+  provisionLocated: boolean;
+  substantiveAnswerComplete: boolean;
+  score: 0 | 1 | 2 | 3;
+  practiceDate: string;
+  completedAt: string;
+}
+
+export type ExamPrepAttempt =
+  | ExamPrepRecallAttempt
+  | ExamPrepRecognitionAttempt
+  | ExamPrepLocateAttempt
+  | ExamPrepDrillAttempt;
+
+export type ExamPrepRecallProgressExpectation =
+  | { kind: 'absent' }
+  | { kind: 'existing'; updatedAt: string };
+
 /** Per-curriculum-hash recall session limits. */
 export interface ExamPrepSettings extends ExamPrepCurriculumBinding {
   /** `curriculumContentHash` is the settings key (all current settings). */
@@ -106,6 +194,6 @@ export interface ExamPrepSettings extends ExamPrepCurriculumBinding {
 export type ExamPrepDataSlice = {
   examPrepUnitProgress: ExamPrepUnitProgress[];
   examPrepRecallProgress: ExamPrepRecallProgress[];
-  examPrepAttempts: ExamPrepRecallAttempt[];
+  examPrepAttempts: ExamPrepAttempt[];
   examPrepSettings: ExamPrepSettings[];
 };

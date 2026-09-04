@@ -14,6 +14,15 @@ export const EXAM_PREP_LEARN_TIERS = ['A', 'B', 'C', 'D', 'NAV'] as const;
 /** Total FSRS recall cards derived from the frozen manifest (57). */
 export const EXAM_PREP_TOTAL_RECALL_CARDS = 57;
 
+/** Total Recognition tasks derived from frozen A-D/NAV recognitionCues (317). */
+export const EXAM_PREP_TOTAL_RECOGNITION_TASKS = 317;
+
+/** Total Locate tasks derived from every frozen A-D/NAV mustLocate (452). */
+export const EXAM_PREP_TOTAL_LOCATE_TASKS = 452;
+
+/** Frozen lookup-drill count (24 DRILL units). */
+export const EXAM_PREP_TOTAL_LOOKUP_DRILLS = 24;
+
 /** Total A-D/NAV curriculum units tracked for studied progress (133). */
 export const EXAM_PREP_TOTAL_LEARN_UNITS = 133;
 

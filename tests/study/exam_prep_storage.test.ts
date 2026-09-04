@@ -146,7 +146,7 @@ describe('Exam Prep schema v9 migration and storage', () => {
     await storage.saveExamPrepRecallRating({
       attempt,
       progress,
-      expectedProgressUpdatedAt: undefined,
+      expectation: { kind: 'absent' },
     });
     const loaded = await storage.loadAll();
     expect(loaded.examPrepRecallProgress).toEqual([progress]);
@@ -170,6 +170,7 @@ describe('Exam Prep schema v9 migration and storage', () => {
     await storage.saveExamPrepRecallRating({
       attempt: makeRecallAttempt({ id: 'attempt-1', taskId: task.id, unitId: task.unitId }),
       progress: firstProgress,
+      expectation: { kind: 'absent' },
     });
     const stored = await storage.loadAll();
     expect(stored.examPrepAttempts).toHaveLength(1);
@@ -180,7 +181,7 @@ describe('Exam Prep schema v9 migration and storage', () => {
       storage.saveExamPrepRecallRating({
         attempt: makeRecallAttempt({ id: 'attempt-2', taskId: task.id, unitId: task.unitId }),
         progress: staleProgress,
-        expectedProgressUpdatedAt: '2026-09-10T00:00:00.001Z',
+        expectation: { kind: 'existing', updatedAt: '2026-09-10T00:00:00.001Z' },
       }),
     ).rejects.toThrow('Exam Prep recall progress changed before the rating could be saved.');
     const after = await storage.loadAll();

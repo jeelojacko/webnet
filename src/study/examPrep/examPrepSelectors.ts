@@ -9,9 +9,17 @@
 
 import type { ExamCurriculumUnit } from '../examCurriculum/examCurriculumTypes';
 import { isCurrentExamPrepBinding } from './examPrepManifest';
+import { EXAM_PREP_TOTAL_LOOKUP_DRILLS } from './examPrepConstants';
 import { EXAM_PREP_LEARN_UNITS, EXAM_PREP_RECALL_TASKS } from './examPrepRecallTasks';
 import { examPrepPriorityGroup } from './examPrepPriority';
-import type { ExamPrepRecallProgress, ExamPrepUnitProgress } from './examPrepTypes';
+import {
+  buildLocateMetrics,
+  buildRecognitionMetrics,
+  type ExamPrepLocateMetrics,
+  type ExamPrepRecognitionMetrics,
+} from './examPrepAttemptSelectors';
+import { buildDrillMetrics } from './examPrepDrillStats';
+import type { ExamPrepAttempt, ExamPrepRecallProgress, ExamPrepUnitProgress } from './examPrepTypes';
 
 export const selectCurrentUnitProgress = (
   records: ExamPrepUnitProgress[],
@@ -158,17 +166,35 @@ export type ExamPrepHomeMetrics = {
   introducedRecallCards: number;
   newRecallCards: number;
   totalRecallCards: number;
+  recognition: ExamPrepRecognitionMetrics;
+  locate: ExamPrepLocateMetrics;
+  drill: {
+    attemptedDrills: number;
+    examReadyDrills: number;
+    totalDrills: number;
+  };
 };
 
 export const buildExamPrepHomeMetrics = (
   unitProgress: ExamPrepUnitProgress[],
   recallProgress: ExamPrepRecallProgress[],
   now: Date,
-): ExamPrepHomeMetrics => ({
-  studiedLearnUnits: selectStudiedLearnUnitCount(unitProgress),
-  totalLearnUnits: EXAM_PREP_LEARN_UNITS.length,
-  dueRecallCards: selectDueRecallTaskCount(recallProgress, now),
-  introducedRecallCards: selectIntroducedRecallTaskCount(recallProgress),
-  newRecallCards: selectNewRecallTaskCount(recallProgress),
-  totalRecallCards: EXAM_PREP_RECALL_TASKS.length,
-});
+  attempts: ExamPrepAttempt[] = [],
+): ExamPrepHomeMetrics => {
+  const drill = buildDrillMetrics(attempts);
+  return {
+    studiedLearnUnits: selectStudiedLearnUnitCount(unitProgress),
+    totalLearnUnits: EXAM_PREP_LEARN_UNITS.length,
+    dueRecallCards: selectDueRecallTaskCount(recallProgress, now),
+    introducedRecallCards: selectIntroducedRecallTaskCount(recallProgress),
+    newRecallCards: selectNewRecallTaskCount(recallProgress),
+    totalRecallCards: EXAM_PREP_RECALL_TASKS.length,
+    recognition: buildRecognitionMetrics(attempts),
+    locate: buildLocateMetrics(attempts),
+    drill: {
+      attemptedDrills: drill.attemptedDrills,
+      examReadyDrills: drill.examReadyDrills,
+      totalDrills: EXAM_PREP_TOTAL_LOOKUP_DRILLS,
+    },
+  };
+};

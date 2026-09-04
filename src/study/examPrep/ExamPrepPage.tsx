@@ -1,25 +1,46 @@
-// Exam Prep — tabbed page (Home / Learn / Recall / Lookup Drills).
+// Exam Prep — tabbed page (Home / Learn / Recall / Recognition / Locate /
+// Lookup Drills).
 //
-// One shell renders all four Exam Prep views; StudyApp maps the routes
-// /study/exam-prep, /study/learn, /study/review and /study/drills to it and
-// treats the legacy /study/exam-curriculum route as Learn. All persistence
-// actions come from props (implemented by useStudyApp/useStudyExamPrep);
-// UI-only session/card/reveal/textarea state stays in the views.
+// One shell renders all six Exam Prep views; StudyApp maps the routes
+// /study/exam-prep, /study/learn, /study/review, /study/recognition,
+// /study/locate and /study/drills to it and treats the legacy
+// /study/exam-curriculum route as Learn. All persistence actions come from
+// props (implemented by useStudyApp/useStudyExamPrep); UI-only
+// session/card/reveal/textarea state stays in the views.
 
 import { useEffect, useMemo, useState } from 'react';
-import { GraduationCap, Home, Library, RotateCcw, Timer } from 'lucide-react';
+import {
+  Compass,
+  GraduationCap,
+  Home,
+  Library,
+  LocateFixed,
+  RotateCcw,
+  Timer,
+} from 'lucide-react';
 import type { StudyDataSnapshot } from '../studyTypes';
 import type { ExamPrepQueueItem } from './examPrepQueue';
-import type { ExamPrepRecallRating } from './examPrepTypes';
+import type {
+  ExamPrepAttempt,
+  ExamPrepRecallRating,
+} from './examPrepTypes';
 import { EXAM_PREP_MANIFEST } from './examPrepManifest';
 import { buildExamPrepHomeMetrics } from './examPrepSelectors';
 import { resolveExamPrepSettings } from './examPrepSettings';
 import { ExamPrepHomeView } from './components/ExamPrepHome';
 import { ExamPrepLearnView } from './components/ExamPrepLearn';
 import { ExamPrepRecallView } from './components/ExamPrepRecall';
+import { ExamPrepRecognitionView } from './components/ExamPrepRecognition';
+import { ExamPrepLocateView } from './components/ExamPrepLocate';
 import { ExamPrepDrillsView } from './components/ExamPrepDrills';
 
-export type ExamPrepViewKind = 'home' | 'learn' | 'recall' | 'drills';
+export type ExamPrepViewKind =
+  | 'home'
+  | 'learn'
+  | 'recall'
+  | 'recognition'
+  | 'locate'
+  | 'drills';
 
 export type ExamPrepPageProps = {
   view: ExamPrepViewKind;
@@ -33,6 +54,7 @@ export type ExamPrepPageProps = {
     now: Date;
     answer?: string;
   }) => Promise<void>;
+  onSaveExamPrepAttempt: (_attempt: ExamPrepAttempt) => Promise<void>;
 };
 
 const TABS: Array<{
@@ -44,6 +66,8 @@ const TABS: Array<{
   { view: 'home', path: '/study/exam-prep', label: 'Home', icon: Home },
   { view: 'learn', path: '/study/learn', label: 'Learn', icon: Library },
   { view: 'recall', path: '/study/review', label: 'Recall', icon: RotateCcw },
+  { view: 'recognition', path: '/study/recognition', label: 'Recognition', icon: Compass },
+  { view: 'locate', path: '/study/locate', label: 'Locate', icon: LocateFixed },
   { view: 'drills', path: '/study/drills', label: 'Lookup Drills', icon: Timer },
 ];
 
@@ -54,6 +78,7 @@ export const ExamPrepPage = ({
   onOpenProvision,
   onToggleUnitStudied,
   onRateRecallTask,
+  onSaveExamPrepAttempt,
 }: ExamPrepPageProps) => {
   const [nowIso, setNowIso] = useState(() => new Date().toISOString());
   useEffect(() => {
@@ -63,15 +88,32 @@ export const ExamPrepPage = ({
   const now = useMemo(() => new Date(nowIso), [nowIso]);
   const metrics = useMemo(
     () =>
-      buildExamPrepHomeMetrics(data.examPrepUnitProgress, data.examPrepRecallProgress, now),
-    [data.examPrepRecallProgress, data.examPrepUnitProgress, now],
+      buildExamPrepHomeMetrics(
+        data.examPrepUnitProgress,
+        data.examPrepRecallProgress,
+        now,
+        data.examPrepAttempts,
+      ),
+    [data.examPrepAttempts, data.examPrepRecallProgress, data.examPrepUnitProgress, now],
   );
   const settings = useMemo(
-    () => resolveExamPrepSettings(data.examPrepSettings, {
+    () =>
+      resolveExamPrepSettings(
+        data.examPrepSettings,
+        {
+          curriculumId: EXAM_PREP_MANIFEST.curriculumId,
+          curriculumContentHash: EXAM_PREP_MANIFEST.contentHash,
+        },
+        nowIso,
+      ),
+    [data.examPrepSettings, nowIso],
+  );
+  const binding = useMemo(
+    () => ({
       curriculumId: EXAM_PREP_MANIFEST.curriculumId,
       curriculumContentHash: EXAM_PREP_MANIFEST.contentHash,
-    }, nowIso),
-    [data.examPrepSettings, nowIso],
+    }),
+    [],
   );
   return (
     <div className="space-y-5">
@@ -82,8 +124,8 @@ export const ExamPrepPage = ({
         </div>
         <p className="mt-1 max-w-3xl text-sm text-slate-400">
           Study the open-book Statute Law curriculum: browse and mark the 133 A-D + Navigation
-          units as studied, review 57 FSRS-scheduled recall cards, and practise 24 lookup
-          drills (session-only).
+          units as studied, review 57 FSRS-scheduled recall cards, recognise which law applies
+          from frozen cues, locate exact controlling provisions, and practise 24 lookup drills.
         </p>
       </div>
       <div className="flex flex-wrap gap-2 border-b border-slate-800 pb-2">
@@ -131,7 +173,33 @@ export const ExamPrepPage = ({
           onNavigate={onNavigate}
         />
       )}
-      {view === 'drills' && <ExamPrepDrillsView onOpenProvision={onOpenProvision} />}
+      {view === 'recognition' && (
+        <ExamPrepRecognitionView
+          attempts={data.examPrepAttempts}
+          onSaveExamPrepAttempt={onSaveExamPrepAttempt}
+          onNavigate={onNavigate}
+        />
+      )}
+      {view === 'locate' && (
+        <ExamPrepLocateView
+          attempts={data.examPrepAttempts}
+          onSaveExamPrepAttempt={onSaveExamPrepAttempt}
+          onOpenProvision={onOpenProvision}
+          onNavigate={onNavigate}
+        />
+      )}
+      {view === 'drills' && (
+        <ExamPrepDrillsView
+          attempts={data.examPrepAttempts}
+          onOpenProvision={onOpenProvision}
+          onSaveDrillAttempt={onSaveExamPrepAttempt}
+        />
+      )}
+      {view !== 'home' ? (
+        <p className="font-mono text-[10px] text-slate-600">
+          {binding.curriculumId} · contentHash {binding.curriculumContentHash.slice(0, 16)}…
+        </p>
+      ) : null}
     </div>
   );
 };

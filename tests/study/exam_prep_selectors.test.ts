@@ -261,6 +261,9 @@ describe('Exam Prep due/introduced/new metrics', () => {
       introducedRecallCards: 1,
       newRecallCards: 56,
       totalRecallCards: 57,
+      recognition: { attemptedTasks: 0, correctLatestTasks: 0, accuracy: null },
+      locate: { attemptedTasks: 0, foundLatestTasks: 0, accuracy: null },
+      drill: { attemptedDrills: 0, examReadyDrills: 0, totalDrills: 24 },
     });
   });
 });

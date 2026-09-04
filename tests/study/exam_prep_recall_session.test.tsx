@@ -84,6 +84,7 @@ describe('Exam Prep frozen recall sessions (parent snapshot updates)', () => {
       onOpenProvision={vi.fn()}
       onToggleUnitStudied={vi.fn(async () => undefined)}
       onRateRecallTask={onRate}
+      onSaveExamPrepAttempt={vi.fn(async () => undefined)}
     />
   );
 
