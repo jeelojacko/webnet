@@ -13,7 +13,7 @@ const NOW = new Date('2026-09-10T00:00:00.000Z');
 const at = (order: number) => EXAM_PREP_RECALL_TASKS[order];
 
 describe('Exam Prep recall queue ordering and limits', () => {
-  it('orders due cards earliest-first then prioritized (canonical) new cards', () => {
+  it('orders due cards earliest-first then priority-ranked new cards', () => {
     // Tasks: task0 due later, task1 due earlier, task2 new, task3 new.
     const lateDue = makeRecallProgress({
       taskId: at(0).id,

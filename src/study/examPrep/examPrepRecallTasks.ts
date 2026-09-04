@@ -22,8 +22,8 @@ export const deriveExamPrepRecallTasks = (
 ): ExamPrepRecallTask[] => {
   const tasks: ExamPrepRecallTask[] = [];
   let order = 0;
-  for (const unit of units) {
-    if (unit.tier === 'DRILL') continue;
+  units.forEach((unit, curriculumIndex) => {
+    if (unit.tier === 'DRILL') return;
     unit.mustRecall.forEach((expectedAnswer, index) => {
       order += 1;
       tasks.push({
@@ -33,11 +33,13 @@ export const deriveExamPrepRecallTasks = (
         tier: unit.tier,
         index: index + 1,
         order,
+        reviewWeight: unit.reviewWeight,
+        curriculumIndex,
         prompt: EXAM_PREP_RECALL_PROMPT,
         expectedAnswer,
       });
     });
-  }
+  });
   return tasks;
 };
 

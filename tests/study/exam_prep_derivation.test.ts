@@ -64,6 +64,26 @@ describe('Exam Prep deterministic recall-task derivation', () => {
     expect(count('DRILL')).toBe(0);
   });
 
+  it('carries reviewWeight and curriculumIndex from the source units without changing ids', () => {
+    const indexByUnit = new Map(EXAM_PREP_MANIFEST.units.map((unit, index) => [unit.id, index]));
+    for (const task of EXAM_PREP_RECALL_TASKS) {
+      const unitIndex = indexByUnit.get(task.unitId);
+      const unit = unitIndex === undefined ? undefined : EXAM_PREP_MANIFEST.units[unitIndex];
+      expect(unit).toBeTruthy();
+      expect(task.reviewWeight).toBe(unit?.reviewWeight);
+      expect(task.curriculumIndex).toBe(unitIndex);
+    }
+    // a second derivation carries identical fields and ids
+    const again = deriveExamPrepRecallTasks(EXAM_PREP_MANIFEST.units);
+    expect(again.map((task) => task.id)).toEqual(EXAM_PREP_RECALL_TASKS.map((task) => task.id));
+    expect(again.map((task) => task.reviewWeight)).toEqual(
+      EXAM_PREP_RECALL_TASKS.map((task) => task.reviewWeight),
+    );
+    expect(again.map((task) => task.curriculumIndex)).toEqual(
+      EXAM_PREP_RECALL_TASKS.map((task) => task.curriculumIndex),
+    );
+  });
+
   it('never creates cards from mustLocate, sourceAnchors, recognitionCues, or drill answers', () => {
     // A mustLocate entry or anchor never corresponds to a task id
     for (const unit of EXAM_PREP_MANIFEST.units) {

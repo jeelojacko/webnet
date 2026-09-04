@@ -1,7 +1,9 @@
 // Exam Prep — deterministic recall queue/session construction.
 //
-// The recall queue orders due cards earliest-first, then prioritized new
-// cards in canonical manifest order. It respects the new-card-per-session and
+// The recall queue orders due cards earliest-first, then prioritized NEW
+// cards by the shared Exam Prep rank philosophy (high A, high B, high NAV,
+// other A, other B, other NAV, C, D; equal-rank ties by curriculum index,
+// mustRecall index, then task id). It respects the new-card-per-session and
 // maximum-session limits, excludes future-due and archived
 // (same-curriculum/different-hash) records, and treats uninitialized recall
 // progress as new. It is pure and deterministic for a fixed (records, now,
@@ -10,6 +12,7 @@
 
 import { EXAM_PREP_RECALL_TASKS } from './examPrepRecallTasks';
 import type { ExamPrepRecallTask } from './examPrepTypes';
+import { compareExamPrepRecallTaskPriority } from './examPrepPriority';
 import { isCurrentExamPrepBinding } from './examPrepManifest';
 import { EXAM_PREP_SESSION_LIMIT_DEFAULT } from './examPrepConstants';
 import {
@@ -65,7 +68,7 @@ export const buildExamPrepRecallQueue = ({
       ) || left.task.order - right.task.order ||
       left.task.id.localeCompare(right.task.id),
   );
-  fresh.sort((left, right) => left.task.order - right.task.order || left.task.id.localeCompare(right.task.id));
+  fresh.sort((left, right) => compareExamPrepRecallTaskPriority(left.task, right.task));
 
   const takenDue = due.slice(0, maxSession);
   const newBudget = Math.max(0, Math.min(newPerSession, maxSession - takenDue.length));

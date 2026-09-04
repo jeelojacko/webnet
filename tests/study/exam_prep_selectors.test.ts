@@ -15,6 +15,7 @@ import {
   selectIntroducedRecallTaskCount,
   buildExamPrepHomeMetrics,
   selectStudiedForUnit,
+  selectRecommendedLearnUnit,
 } from '../../src/study/examPrep/examPrepSelectors';
 import { isCurrentExamPrepBinding, isSameCurriculumOtherHash } from '../../src/study/examPrep/examPrepManifest';
 import type { ExamPrepRecallProgress } from '../../src/study/examPrep/examPrepTypes';
@@ -109,6 +110,109 @@ describe('Exam Prep current-binding selectors', () => {
     };
     expect(isExamPrepRecallIntroduced(uninitialized)).toBe(false);
     expect(isExamPrepRecallDue(uninitialized, new Date('2026-09-10T00:00:00.000Z'))).toBe(false);
+  });
+});
+
+describe('Exam Prep recommended next Learn unit', () => {
+  const progressFor = (units: typeof EXAM_PREP_LEARN_UNITS) =>
+    units.map((unit) => makeUnitProgress(unit.id));
+
+  it('returns the highest-priority unstudied unit for a fresh learner', () => {
+    expect(selectRecommendedLearnUnit([])).toBe(EXAM_PREP_LEARN_UNITS[0]);
+  });
+
+  it('ignores archived and other-curriculum studied records', () => {
+    const archived = makeUnitProgress(
+      EXAM_PREP_LEARN_UNITS[0].id,
+      '2026-09-01T00:00:00.000Z',
+      archivedBinding,
+    );
+    const other = makeUnitProgress(
+      EXAM_PREP_LEARN_UNITS[1].id,
+      '2026-09-01T00:00:00.000Z',
+      otherCurriculumBinding,
+    );
+    expect(selectRecommendedLearnUnit([archived, other])).toBe(EXAM_PREP_LEARN_UNITS[0]);
+  });
+
+  it('prefers an unstudied high-B unit over remaining other-A units', () => {
+    const studiedAHigh = EXAM_PREP_LEARN_UNITS.filter(
+      (unit) => unit.tier === 'A' && unit.reviewWeight === 'high',
+    );
+    const expected = EXAM_PREP_LEARN_UNITS.find(
+      (unit) => unit.tier === 'B' && unit.reviewWeight === 'high',
+    );
+    const recommended = selectRecommendedLearnUnit(progressFor(studiedAHigh));
+    expect(recommended).toBe(expected);
+  });
+
+  it('walks the full rank ladder: high B, high NAV, other A, other B, other NAV, C, D', () => {
+    const highA = EXAM_PREP_LEARN_UNITS.filter(
+      (unit) => unit.tier === 'A' && unit.reviewWeight === 'high',
+    );
+    const highB = EXAM_PREP_LEARN_UNITS.filter(
+      (unit) => unit.tier === 'B' && unit.reviewWeight === 'high',
+    );
+    const highNav = EXAM_PREP_LEARN_UNITS.filter(
+      (unit) => unit.tier === 'NAV' && unit.reviewWeight === 'high',
+    );
+    const otherA = EXAM_PREP_LEARN_UNITS.filter(
+      (unit) => unit.tier === 'A' && unit.reviewWeight !== 'high',
+    );
+    const otherB = EXAM_PREP_LEARN_UNITS.filter(
+      (unit) => unit.tier === 'B' && unit.reviewWeight !== 'high',
+    );
+    const otherNav = EXAM_PREP_LEARN_UNITS.filter(
+      (unit) => unit.tier === 'NAV' && unit.reviewWeight !== 'high',
+    );
+    const tierC = EXAM_PREP_LEARN_UNITS.filter((unit) => unit.tier === 'C');
+    const tierD = EXAM_PREP_LEARN_UNITS.filter((unit) => unit.tier === 'D');
+
+    expect(selectRecommendedLearnUnit(progressFor(highA))).toBe(highB[0]);
+    expect(selectRecommendedLearnUnit(progressFor([...highA, ...highB]))).toBe(highNav[0]);
+    expect(
+      selectRecommendedLearnUnit(progressFor([...highA, ...highB, ...highNav])),
+    ).toBe(otherA[0]);
+    expect(
+      selectRecommendedLearnUnit(progressFor([...highA, ...highB, ...highNav, ...otherA])),
+    ).toBe(otherB[0]);
+    expect(
+      selectRecommendedLearnUnit(
+        progressFor([...highA, ...highB, ...highNav, ...otherA, ...otherB]),
+      ),
+    ).toBe(otherNav[0]);
+    expect(
+      selectRecommendedLearnUnit(
+        progressFor([...highA, ...highB, ...highNav, ...otherA, ...otherB, ...otherNav]),
+      ),
+    ).toBe(tierC[0]);
+    expect(
+      selectRecommendedLearnUnit(
+        progressFor([
+          ...highA,
+          ...highB,
+          ...highNav,
+          ...otherA,
+          ...otherB,
+          ...otherNav,
+          ...tierC,
+        ]),
+      ),
+    ).toBe(tierD[0]);
+    expect(
+      selectRecommendedLearnUnit(
+        progressFor([
+          ...highA,
+          ...highB,
+          ...highNav,
+          ...otherA,
+          ...otherB,
+          ...otherNav,
+          ...tierC,
+          ...tierD,
+        ]),
+      ),
+    ).toBeNull();
   });
 });
 

@@ -5,7 +5,7 @@ import { createRoot, type Root } from 'react-dom/client';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { ExamPrepPage } from '../../src/study/examPrep/ExamPrepPage';
 import { decodeExamPrepView } from '../../src/study/examPrep/examPrepRoutes';
-import { EXAM_PREP_RECALL_TASKS } from '../../src/study/examPrep/examPrepRecallTasks';
+import { EXAM_PREP_RECALL_TASKS, EXAM_PREP_LEARN_UNITS } from '../../src/study/examPrep/examPrepRecallTasks';
 import { EXAM_PREP_MANIFEST } from '../../src/study/examPrep/examPrepManifest';
 import { formatExamDrillTime } from '../../src/study/examPrep/examPrepFormat';
 import { ExamDrillCard } from '../../src/study/examPrep/components/examDrillCard';
@@ -23,6 +23,10 @@ const seed = createSeedStudyData('2026-09-01T00:00:00.000Z');
 
 const firstTask = EXAM_PREP_RECALL_TASKS[0];
 if (!firstTask) throw new Error('expected tasks');
+
+const firstUnit = EXAM_PREP_LEARN_UNITS[0];
+if (!firstUnit) throw new Error('expected learn units');
+const firstUnitTitle = firstUnit.title;
 
 const emptyData = (): StudyDataSnapshot => ({ ...seed });
 
@@ -132,7 +136,7 @@ describe('Exam Prep UI', () => {
     expect(onToggle).toHaveBeenCalledTimes(1);
   });
 
-  it('Recall hides expected text and ratings until Reveal, then rates with the typed answer', async () => {
+  it('Recall gates cards behind Start Recall Session, hides expected text until Reveal, then rates', async () => {
     const onRate = vi.fn(async (_options: unknown) => undefined);
     await render(
       <ExamPrepPage
@@ -144,7 +148,14 @@ describe('Exam Prep UI', () => {
         onRateRecallTask={onRate}
       />,
     );
+    // idle: no card content, no answer leakage, explicit start gate
+    expect(document.body.textContent).toContain('Ready for a recall session');
+    expect(document.body.textContent).toContain('Start Recall Session');
+    expect(document.querySelector('textarea')).toBeNull();
     const prompt = 'State the key rule you should remember for this curriculum unit.';
+    expect(document.body.textContent).not.toContain(firstTask.expectedAnswer);
+    await clickButton('Start Recall Session');
+    expect(document.body.textContent).toContain('Card 1 of 8');
     expect(document.body.textContent).toContain(prompt);
     // no expected answer or rating buttons before Reveal
     expect(document.body.textContent).not.toContain('Expected answer');
@@ -194,6 +205,7 @@ describe('Exam Prep UI', () => {
         onRateRecallTask={onRate}
       />,
     );
+    await clickButton('Start Recall Session');
     await clickButton('Reveal');
     expect(document.body.textContent).toContain('Expected answer');
     await clickButton('Good ·');
@@ -202,9 +214,61 @@ describe('Exam Prep UI', () => {
       'Exam Prep recall progress changed before the rating could be saved.',
     );
     expect(document.body.textContent).toContain('Expected answer');
+    expect(document.body.textContent).toContain('Card 1 of 8');
     expect(onRate).toHaveBeenCalledTimes(1);
     expect(document.body.textContent).toContain('Reviewed this session: 0');
     expect(document.body.textContent).not.toContain('Session complete');
+  });
+
+  it('Home recommends a deterministic unstudied Learn unit without auto-marking it', async () => {
+    const onToggle = vi.fn(async (_unitId: string) => undefined);
+    const onNavigate = vi.fn();
+    await render(
+      <ExamPrepPage
+        view="home"
+        data={emptyData()}
+        onNavigate={onNavigate}
+        onOpenProvision={vi.fn()}
+        onToggleUnitStudied={onToggle}
+        onRateRecallTask={vi.fn(async () => undefined)}
+      />,
+    );
+    const text = document.body.textContent ?? '';
+    expect(text).toContain('Recommended next unit');
+    expect(text).toContain(firstUnitTitle);
+    // the recommendation's Open Learn navigates but never marks studied
+    const recommendedSection = Array.from(document.querySelectorAll('section')).find((section) =>
+      section.textContent?.includes('Recommended next unit'),
+    );
+    const openLearn = recommendedSection
+      ? Array.from(recommendedSection.querySelectorAll('button')).find(
+          (button) => button.textContent?.trim() === 'Open Learn',
+        )
+      : null;
+    expect(openLearn).toBeTruthy();
+    await act(async () => {
+      openLearn?.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+    });
+    expect(onNavigate).toHaveBeenCalledWith('/study/learn');
+    expect(onToggle).not.toHaveBeenCalled();
+  });
+
+  it('Home hides the recommendation once every Learn unit is studied', async () => {
+    const data = {
+      ...emptyData(),
+      examPrepUnitProgress: EXAM_PREP_LEARN_UNITS.map((unit) => makeUnitProgress(unit.id)),
+    };
+    await render(
+      <ExamPrepPage
+        view="home"
+        data={data}
+        onNavigate={vi.fn()}
+        onOpenProvision={vi.fn()}
+        onToggleUnitStudied={vi.fn(async () => undefined)}
+        onRateRecallTask={vi.fn(async () => undefined)}
+      />,
+    );
+    expect(document.body.textContent).not.toContain('Recommended next unit');
   });
 
   it('drills render session-only cards, freeze on Reveal, and format M:SS', async () => {

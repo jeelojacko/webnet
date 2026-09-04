@@ -10,6 +10,7 @@
 import type { ExamCurriculumUnit } from '../examCurriculum/examCurriculumTypes';
 import { isCurrentExamPrepBinding } from './examPrepManifest';
 import { EXAM_PREP_LEARN_UNITS, EXAM_PREP_RECALL_TASKS } from './examPrepRecallTasks';
+import { examPrepPriorityGroup } from './examPrepPriority';
 import type { ExamPrepRecallProgress, ExamPrepUnitProgress } from './examPrepTypes';
 
 export const selectCurrentUnitProgress = (
@@ -42,6 +43,32 @@ export const selectStudiedLearnUnitCount = (
 ): number => {
   const studiedIds = new Set(selectCurrentUnitProgress(records).map((entry) => entry.unitId));
   return units.filter((unit) => studiedIds.has(unit.id)).length;
+};
+
+/**
+ * Deterministic recommendation of the next unstudied Learn unit using the
+ * same rank philosophy as new recall cards (high A, high B, high NAV, other
+ * A, other B, other NAV, C, D; equal rank by manifest position then unit id).
+ * Purely advisory: it never marks the unit studied or writes any record.
+ */
+export const selectRecommendedLearnUnit = (
+  records: ExamPrepUnitProgress[],
+  units: ExamCurriculumUnit[] = EXAM_PREP_LEARN_UNITS,
+): ExamCurriculumUnit | null => {
+  const studiedIds = new Set(selectCurrentUnitProgress(records).map((entry) => entry.unitId));
+  let best: ExamCurriculumUnit | null = null;
+  let bestRank = Number.POSITIVE_INFINITY;
+  let bestIndex = Number.POSITIVE_INFINITY;
+  units.forEach((unit, index) => {
+    if (unit.tier === 'DRILL' || studiedIds.has(unit.id)) return;
+    const rank = examPrepPriorityGroup(unit.tier, unit.reviewWeight);
+    if (rank < bestRank || (rank === bestRank && index < bestIndex)) {
+      best = unit;
+      bestRank = rank;
+      bestIndex = index;
+    }
+  });
+  return best;
 };
 
 export const selectUnitProgressForUnit = (

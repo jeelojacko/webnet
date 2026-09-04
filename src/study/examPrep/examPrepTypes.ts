@@ -14,6 +14,7 @@ import type {
   StudyFsrsSchedule,
   StudyRating,
 } from '../studyTypes';
+import type { ExamCurriculumReviewWeight } from '../examCurriculum/examCurriculumTypes';
 
 export type ExamPrepRecallRating = StudyRating;
 
@@ -34,6 +35,10 @@ export interface ExamPrepRecallTask {
   index: number;
   /** Global 1-based position in canonical derivation order. */
   order: number;
+  /** Review weight of the source curriculum unit (`high`/`medium`/`low`). */
+  reviewWeight: ExamCurriculumReviewWeight;
+  /** 0-based position of the source unit in the manifest units array. */
+  curriculumIndex: number;
   /** Fixed learner prompt shown on the card. */
   prompt: string;
   /** Verbatim frozen manifest mustRecall text (the expected answer). */

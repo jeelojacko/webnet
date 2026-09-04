@@ -111,6 +111,7 @@ export const ExamPrepPage = ({
       {view === 'home' && (
         <ExamPrepHomeView
           metrics={metrics}
+          unitProgress={data.examPrepUnitProgress}
           newRecallCardsPerSession={settings.newRecallCardsPerSession}
           maxRecallCardsPerSession={settings.maxRecallCardsPerSession}
           onNavigate={onNavigate}
