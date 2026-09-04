@@ -252,7 +252,7 @@ const LookupDrillCard = ({ unit, onOpenProvision }: { unit: ExamCurriculumUnit; 
         <span className="font-mono text-xs text-emerald-300">{unit.id}</span>
         <span className="rounded bg-emerald-900 px-1.5 py-0.5 text-[11px] uppercase tracking-wide text-emerald-200">lookup_drill</span>
         <span className="rounded bg-emerald-900 px-1.5 py-0.5 text-[11px] text-emerald-300">DRILL</span>
-        <span className="rounded bg-slate-800 px-1.5 py-0.5 text-[11px] text-slate-400">{drill.difficulty}</span>
+        <span className="rounded bg-slate-800 px-1.5 py-0.5 text-[11px] text-slate-400">{DRILL_DIFFICULTY_LABELS[drill.difficulty]}</span>
         <span className="rounded bg-slate-800 px-1.5 py-0.5 text-[11px] text-slate-400">{drill.timeTargetSeconds}s</span>
         <span className="rounded bg-slate-800 px-1.5 py-0.5 text-[11px] text-slate-400">review: {unit.reviewWeight}</span>
       </div>

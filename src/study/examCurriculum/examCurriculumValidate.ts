@@ -401,6 +401,17 @@ const validateLookupDrillUnit = (
       message: 'drill answerKey must have at least one expectedDocumentId',
     });
   }
+  const sourceDocumentIds = new Set(unit.sourceDocumentIds);
+  for (const documentId of drill.answerKey.expectedDocumentIds) {
+    if (!sourceDocumentIds.has(documentId)) {
+      errors.push({
+        level: 'error',
+        unitId: unit.id,
+        code: 'drill-unknown-expected-document',
+        message: `drill expectedDocumentId "${documentId}" is not among the drill source documents`,
+      });
+    }
+  }
   for (const lookup of drill.answerKey.requiredLookups) {
     if (lookup.prompt.trim() === '') {
       errors.push({
