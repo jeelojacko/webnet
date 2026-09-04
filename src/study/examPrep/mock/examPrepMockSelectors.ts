@@ -36,6 +36,16 @@ export const selectActiveMockSession = (
   sessions: ExamPrepMockSession[],
 ): ExamPrepMockSession | null => selectInProgressMockSessions(sessions)[0] ?? null;
 
+/**
+ * True when the given route is the focused mock-exam page while a current
+ * in-progress session exists. Study hides the header Return in that state so
+ * an active exam cannot be exited accidentally through history-back.
+ */
+export const isActiveMockExamRoute = (
+  routePath: string,
+  sessions: ExamPrepMockSession[],
+): boolean => routePath === '/study/mock-exam' && selectActiveMockSession(sessions) !== null;
+
 /** More than one current in-progress session => corrupted/imported data warning. */
 export const selectDuplicateActiveMockSessions = (
   sessions: ExamPrepMockSession[],

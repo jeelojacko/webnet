@@ -1,11 +1,19 @@
 import type React from 'react';
-import { BookOpen, ChevronLeft, ChevronRight, FileText, GraduationCap, Home, Library, PencilLine, RotateCcw, Settings } from 'lucide-react';
+import { ArrowLeft, BookOpen, ChevronLeft, ChevronRight, FileText, GraduationCap, Home, Library, PencilLine, RotateCcw, Settings } from 'lucide-react';
 
 type StudyLayoutProps = {
   activePath: string;
   sidebarCollapsed: boolean;
   onSidebarCollapsedChange: (_collapsed: boolean) => void;
   onNavigate: (_path: string) => void;
+  /** Typed ref attached to the nested `[data-study-scroll-root]` main scroller. */
+  mainRef?: React.RefObject<HTMLElement | null>;
+  /** True when the current history entry was reached by an in-app navigation. */
+  canReturn?: boolean;
+  /** Performs the return (browser back) when rendered. */
+  onReturn?: () => void;
+  /** Hide the Return control (e.g. while a focused in-progress mock exam runs). */
+  hideReturn?: boolean;
   children: React.ReactNode;
 };
 
@@ -43,7 +51,7 @@ const isNavItemActive = (item: StudyNavItem, activePath: string): boolean =>
   (item.alsoActive ?? []).includes(activePath) ||
   (item.path !== '/study' && activePath.startsWith(item.path));
 
-const StudyLayout = ({ activePath, sidebarCollapsed, onSidebarCollapsedChange, onNavigate, children }: StudyLayoutProps) => (
+const StudyLayout = ({ activePath, sidebarCollapsed, onSidebarCollapsedChange, onNavigate, mainRef, canReturn = false, onReturn, hideReturn = false, children }: StudyLayoutProps) => (
   <div className="fixed inset-0 flex flex-col bg-slate-950 text-slate-100">
     <header className="flex shrink-0 flex-wrap items-center gap-3 border-b border-slate-800 bg-slate-900 px-4 py-3">
       <div className="flex min-w-0 flex-1 items-center gap-3">
@@ -53,6 +61,17 @@ const StudyLayout = ({ activePath, sidebarCollapsed, onSidebarCollapsedChange, o
           <p className="truncate text-xs text-slate-500">New Brunswick statute and survey law</p>
         </div>
       </div>
+      {canReturn && onReturn && !hideReturn ? (
+        <button
+          type="button"
+          className="inline-flex items-center gap-1.5 rounded border border-slate-700 bg-slate-800 px-3 py-1.5 text-xs uppercase tracking-wide text-slate-300 hover:bg-slate-700"
+          onClick={onReturn}
+          aria-label="Return to previous Study page"
+        >
+          <ArrowLeft size={14} />
+          Return
+        </button>
+      ) : null}
       <button
         className="rounded border border-slate-700 bg-slate-800 px-3 py-1.5 text-xs uppercase tracking-wide text-slate-300 hover:bg-slate-700"
         onClick={() => {
@@ -104,7 +123,11 @@ const StudyLayout = ({ activePath, sidebarCollapsed, onSidebarCollapsedChange, o
           })}
         </div>
       </nav>
-      <main className="min-w-0 flex-1 overflow-auto">
+      <main
+        ref={mainRef}
+        data-study-scroll-root
+        className="min-w-0 flex-1 overflow-auto"
+      >
         <div className="mx-auto w-full max-w-7xl p-4 md:p-6">{children}</div>
       </main>
     </div>

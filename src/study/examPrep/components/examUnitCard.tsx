@@ -5,8 +5,11 @@
 // binds Exam Prep unit progress; without a toggle handler the card is the
 // plain read-only unit card. REMEMBER vs LOOK HERE stay visually separated,
 // multi-document Navigation units list every source document, and large
-// anchor lists collapse to a compact note.
+// anchor lists preview the first anchors with a component-local
+// Show all / Show fewer toggle (every anchor stays individually openable,
+// duplicates preserved).
 
+import { useState } from 'react';
 import { BookOpen, MapPin } from 'lucide-react';
 import type { ExamCurriculumUnit } from '../../examCurriculum/examCurriculumTypes';
 import { EXAM_PREP_DOCUMENT_TITLES } from '../examPrepDocTitles';
@@ -17,12 +20,39 @@ import {
   EXAM_PREP_UNIT_TYPE_BADGE,
 } from './examPrepBits';
 
+/** Anchors shown before the component-local Show all expands the list. */
+export const SOURCE_ANCHOR_PREVIEW_LIMIT = 12;
+
 export type ExamUnitCardProps = {
   unit: ExamCurriculumUnit;
   onOpenProvision: (_documentId: string, _sourceKey: string) => void;
   studied?: boolean;
   onToggleStudied?: () => void;
 };
+
+type SourceAnchor = ExamCurriculumUnit['sourceAnchors'][number];
+
+const AnchorChips = ({
+  anchors,
+  onOpenProvision,
+}: {
+  anchors: SourceAnchor[];
+  onOpenProvision: (_documentId: string, _sourceKey: string) => void;
+}) => (
+  <div className="mt-1 flex flex-wrap gap-1">
+    {anchors.map((anchor, index) => (
+      <EXAM_PREP_OPEN_SOURCE_BUTTON
+        // Index-suffixed so duplicated (documentId, sourceKey) pairs — which
+        // are intentionally never deduplicated — still get stable keys.
+        key={`${anchor.documentId}-${anchor.sourceKey}-${index}`}
+        documentId={anchor.documentId}
+        sourceKey={anchor.sourceKey}
+        label={anchor.label}
+        onOpenProvision={onOpenProvision}
+      />
+    ))}
+  </div>
+);
 
 const StudiedToggle = ({ studied, onToggle }: { studied: boolean; onToggle: () => void }) => (
   <button
@@ -46,6 +76,13 @@ export const ExamUnitCard = ({
   onToggleStudied,
 }: ExamUnitCardProps) => {
   const multiDocument = unit.sourceDocumentIds.length > 1;
+  const anchorCount = unit.sourceAnchors.length;
+  const hasManyAnchors = anchorCount > SOURCE_ANCHOR_PREVIEW_LIMIT;
+  const [showAllAnchors, setShowAllAnchors] = useState(false);
+  const visibleAnchors =
+    hasManyAnchors && !showAllAnchors
+      ? unit.sourceAnchors.slice(0, SOURCE_ANCHOR_PREVIEW_LIMIT)
+      : unit.sourceAnchors;
   const groupedAnchors = new Map<
     string,
     { label: string; anchors: ExamCurriculumUnit['sourceAnchors'] }
@@ -143,7 +180,9 @@ export const ExamUnitCard = ({
           <div className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-sky-300">
             <MapPin size={14} />
             Look Here
-            <span className="font-normal normal-case text-sky-200/70">(mustLocate)</span>
+            <span className="font-normal normal-case text-sky-200/70">
+              Exam lookup targets · mustLocate
+            </span>
           </div>
           {unit.mustLocate.length === 0 ? (
             <p className="mt-1 text-xs italic text-slate-500">No lookup targets.</p>
@@ -178,28 +217,23 @@ export const ExamUnitCard = ({
       </div>
       <div className="mt-2">
         <span className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">
-          Source anchors ({unit.sourceAnchors.length})
+          Supporting sources ({unit.sourceAnchors.length})
+          <span className="ml-1 font-normal normal-case text-slate-600">sourceAnchors</span>
         </span>
-        <div className="mt-1 flex flex-wrap gap-1">
-          {unit.sourceAnchors.length <= 12 ? (
-            unit.sourceAnchors.map((anchor) => (
-              <EXAM_PREP_OPEN_SOURCE_BUTTON
-                key={`${anchor.documentId}-${anchor.sourceKey}`}
-                documentId={anchor.documentId}
-                sourceKey={anchor.sourceKey}
-                label={anchor.label}
-                onOpenProvision={onOpenProvision}
-              />
-            ))
-          ) : (
-            <span className="px-1 text-[11px] text-slate-500">
-              Sources: {unit.sourceAnchors.length} provisions resolved across{' '}
-              {unit.sourceDocumentIds.length} document
-              {unit.sourceDocumentIds.length > 1 ? 's' : ''} (full list in canonical manifest)
-            </span>
-          )}
-        </div>
-        {multiDocument && unit.sourceAnchors.length <= 12 && (
+        <AnchorChips anchors={visibleAnchors} onOpenProvision={onOpenProvision} />
+        {hasManyAnchors ? (
+          <button
+            type="button"
+            onClick={() => setShowAllAnchors((current) => !current)}
+            aria-expanded={showAllAnchors}
+            className="mt-1 rounded border border-slate-700 px-2 py-0.5 text-[11px] text-slate-300 hover:bg-slate-800"
+          >
+            {showAllAnchors
+              ? 'Show fewer'
+              : `Show all ${unit.sourceAnchors.length} anchors`}
+          </button>
+        ) : null}
+        {multiDocument && visibleAnchors.length === unit.sourceAnchors.length && (
           <div className="mt-1 text-[10px] text-slate-600">
             {[...groupedAnchors.keys()].join(' · ')}
           </div>

@@ -27,6 +27,7 @@ import { useStudyAiAuthoring } from './useStudyAiAuthoring';
 import { useStudyExamPrep } from './useStudyExamPrep';
 import { useStudyOfficialPackageImport } from './useStudyOfficialPackageImport';
 import { createStudyStorage, STUDY_SCHEMA_VERSION } from './studyStorage';
+import { useStudyNavigation } from './useStudyNavigation';
 import {
   getLatestEligibleSchedulingAttemptForUnit,
   getLatestEligibleSchedulingAttempt,
@@ -62,8 +63,8 @@ const createId = (prefix: string): string =>
 
 export const useStudyApp = () => {
   const storage = useMemo(() => createStudyStorage(), []);
+  const navigation = useStudyNavigation();
   const [data, setData] = useState<StudyDataSnapshot | null>(null);
-  const [routePath, setRoutePath] = useState(() => window.location.pathname);
   const [clockNowMs, setClockNowMs] = useState(() => Date.now());
   const [activeItemIndex, setActiveItemIndex] = useState(0);
   const [answer, setAnswer] = useState('');
@@ -96,17 +97,13 @@ export const useStudyApp = () => {
     };
   }, [storage]);
 
-  useEffect(() => {
-    const handlePop = () => setRoutePath(window.location.pathname);
-    window.addEventListener('popstate', handlePop);
-    return () => window.removeEventListener('popstate', handlePop);
-  }, []);
-
-  const navigate = useCallback((path: string, state: unknown = null) => {
-    window.history.pushState(state, '', path);
-    setRoutePath(window.location.pathname);
-    setClockNowMs(Date.now());
-  }, []);
+  const navigate = useCallback(
+    (path: string, state: unknown = null) => {
+      navigation.navigate(path, state);
+      setClockNowMs(Date.now());
+    },
+    [navigation],
+  );
 
   const saveSettings = useCallback(
     async (settings: StudyDataSnapshot['settings']) => {
@@ -885,8 +882,11 @@ export const useStudyApp = () => {
 
   return {
     data,
-    routePath,
+    routePath: navigation.routePath,
     navigate,
+    canReturn: navigation.canReturn,
+    returnToPrevious: navigation.returnToPrevious,
+    mainScrollRef: navigation.mainScrollRef,
     sessionItems,
     nextScheduledReview,
     activeItem,

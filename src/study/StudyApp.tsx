@@ -10,6 +10,7 @@ import StudySessionPage from './components/StudySessionPage';
 import StudyUnitEditorPage from './components/StudyUnitEditorPage';
 import { ExamPrepPage } from './examPrep/ExamPrepPage';
 import { decodeExamPrepView } from './examPrep/examPrepRoutes';
+import { isActiveMockExamRoute } from './examPrep/mock/examPrepMockSelectors';
 import { selectSurprisePracticeUnitId } from './studySessionItems';
 import { useStudyApp } from './useStudyApp';
 
@@ -33,16 +34,22 @@ const decodeUnitPracticeIdFromPath = (path: string): string | null => {
   return match ? decodeURIComponent(match[1]) : null;
 };
 
+const locationPathname = (location: string): string => location.split(/[?#]/)[0];
+
 const StudyApp = () => {
   const study = useStudyApp();
-  const documentId = decodeDocumentIdFromPath(study.routePath);
-  const unitEditId = decodeUnitEditIdFromPath(study.routePath);
-  const unitPreviewId = decodeUnitPreviewIdFromPath(study.routePath);
-  const unitPracticeId = decodeUnitPracticeIdFromPath(study.routePath);
+  const routePath = locationPathname(study.routePath);
+  const documentId = decodeDocumentIdFromPath(routePath);
+  const unitEditId = decodeUnitEditIdFromPath(routePath);
+  const unitPreviewId = decodeUnitPreviewIdFromPath(routePath);
+  const unitPracticeId = decodeUnitPracticeIdFromPath(routePath);
+  // While a current in-progress mock exam is focused, hide the header Return
+  // so the learner cannot accidentally exit the exam through history-back.
+  const hideReturn = isActiveMockExamRoute(routePath, study.data?.examPrepMockSessions ?? []);
 
   const renderPage = () => {
     if (!study.data) return <StudyEmptyState text="Loading study data..." />;
-    const examPrepView = decodeExamPrepView(study.routePath);
+    const examPrepView = decodeExamPrepView(routePath);
     if (examPrepView) {
       return (
         <ExamPrepPage
@@ -95,7 +102,7 @@ const StudyApp = () => {
         />
       );
     }
-    if (study.routePath === '/study/surprise') {
+    if (routePath === '/study/surprise') {
       return (
         <StudyPracticePage
           data={study.data}
@@ -106,7 +113,7 @@ const StudyApp = () => {
         />
       );
     }
-    if (study.routePath === '/study/library') {
+    if (routePath === '/study/library') {
       return (
         <StudyLibrary
           data={study.data}
@@ -160,7 +167,7 @@ const StudyApp = () => {
         />
       );
     }
-    if (study.routePath === '/study/session') {
+    if (routePath === '/study/session') {
       return (
         <StudySessionPage
           activeItem={study.activeItem}
@@ -189,7 +196,7 @@ const StudyApp = () => {
         />
       );
     }
-    if (study.routePath === '/study/manage') {
+    if (routePath === '/study/manage') {
       return (
         <StudyManagePage
           data={study.data}
@@ -207,7 +214,7 @@ const StudyApp = () => {
         />
       );
     }
-    if (study.routePath === '/study/authoring') {
+    if (routePath === '/study/authoring') {
       return (
         <StudyAuthoringPage
           data={study.data}
@@ -234,13 +241,17 @@ const StudyApp = () => {
 
   return (
     <StudyLayout
-      activePath={study.routePath}
+      activePath={routePath}
       sidebarCollapsed={Boolean(study.data?.settings.studySidebarCollapsed)}
       onSidebarCollapsedChange={(collapsed) => {
         if (study.data)
           void study.saveSettings({ ...study.data.settings, studySidebarCollapsed: collapsed });
       }}
       onNavigate={study.navigate}
+      mainRef={study.mainScrollRef}
+      canReturn={study.canReturn}
+      onReturn={study.returnToPrevious}
+      hideReturn={hideReturn}
     >
       {renderPage()}
     </StudyLayout>

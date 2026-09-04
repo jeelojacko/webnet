@@ -6,12 +6,34 @@
 // and source deep links are preserved from the Exam Curriculum browser.
 
 import { useState } from 'react';
+import { MapPin } from 'lucide-react';
 import type { ExamCurriculumUnit } from '../../examCurriculum/examCurriculumTypes';
 import { EXAM_PREP_LEARN_UNITS } from '../examPrepRecallTasks';
 import { EXAM_PREP_DOCUMENT_TITLES } from '../examPrepDocTitles';
 import type { ExamPrepUnitProgress } from '../examPrepTypes';
 import { selectStudiedForUnit } from '../examPrepSelectors';
 import { ExamUnitCard } from './examUnitCard';
+
+export const LearnLegend = () => (
+  <div
+    aria-label="Learn card legend"
+    className="flex flex-wrap items-center gap-x-4 gap-y-1.5 rounded border border-slate-800 bg-slate-900/50 px-3 py-2 text-[11px] text-slate-400"
+  >
+    <span className="inline-flex items-center gap-1.5">
+      <span aria-hidden className="h-2.5 w-2.5 rounded-sm bg-amber-400" />
+      Remember — recall from memory
+    </span>
+    <span className="inline-flex items-center gap-1.5">
+      <span aria-hidden className="h-2.5 w-2.5 rounded-sm bg-sky-400" />
+      Look here — provisions to practise locating
+    </span>
+    <span className="inline-flex items-center gap-1.5">
+      <MapPin aria-hidden size={12} className="text-emerald-400" />
+      Supporting sources ground the whole unit; chips open provisions
+    </span>
+    <span>Badges label tier, unit type and learning depth; the Studied toggle tracks unit progress.</span>
+  </div>
+);
 
 export type ExamPrepLearnViewProps = {
   unitProgress: ExamPrepUnitProgress[];
@@ -84,6 +106,7 @@ export const ExamPrepLearnView = ({
         Mark units studied as you complete them. Studied progress is independent per unit and
         stored locally.
       </p>
+      <LearnLegend />
       {groups.map((group) => (
         <section key={group.key} className="space-y-2">
           {group.key === 'NAV' ? (

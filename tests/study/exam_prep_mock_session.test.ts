@@ -27,6 +27,7 @@ import {
   mockUnansweredCount,
 } from '../../src/study/examPrep/mock/examPrepMockResults';
 import {
+  isActiveMockExamRoute,
   selectActiveMockSession,
   selectCurrentMockSessions,
   selectDuplicateActiveMockSessions,
@@ -275,5 +276,27 @@ describe('profile provenance survives on session records', () => {
     expect(session.profileSnapshot).toEqual(EXAM_PREP_PROVISIONAL_MOCK_V1);
     expect(session.curriculumId).toBe(EXAM_PREP_MANIFEST.curriculumId);
     expect(session.curriculumContentHash).toBe(EXAM_PREP_MANIFEST.contentHash);
+  });
+});
+
+describe('mock exam return lock (header Return safety)', () => {
+  const archivedSession = (_status: ExamPrepMockSession['status']): ExamPrepMockSession => {
+    const session = makeMockSession({ status: 'in_progress' });
+    return { ...session, curriculumContentHash: EXAM_PREP_TEST_ARCHIVED_HASH };
+  };
+
+  it('locks only the focused mock-exam route while a current session is in progress', () => {
+    const active = makeMockSession();
+    expect(isActiveMockExamRoute('/study/mock-exam', [active])).toBe(true);
+    // Any other route (source reader while checking a provision) stays unlocked.
+    expect(isActiveMockExamRoute('/study/document/doc-x', [active])).toBe(false);
+    expect(isActiveMockExamRoute('/study/mock-exam', [])).toBe(false);
+  });
+
+  it('ignores non-current and non-in-progress sessions for the lock', () => {
+    const archived = archivedSession('in_progress');
+    expect(isActiveMockExamRoute('/study/mock-exam', [archived])).toBe(false);
+    const graded = makeMockSession({ status: 'graded' });
+    expect(isActiveMockExamRoute('/study/mock-exam', [graded])).toBe(false);
   });
 });

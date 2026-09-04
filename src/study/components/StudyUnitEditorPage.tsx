@@ -108,12 +108,21 @@ const StudyUnitEditorPage = ({
   const schedulingSummary = unit ? summarizeStudyScheduling({ unit, progress, now: new Date() }) : null;
   const legalDocument = unit?.documentIds[0] ? data.legalDocuments.find((document) => document.id === unit.documentIds[0]) : undefined;
   const studyDocument = unit?.documentIds[0] ? data.documents.find((document) => document.id === unit.documentIds[0]) : undefined;
+  // Top-level `returnTo` is the caller contract (pushed alongside the
+  // namespaced `__webnetStudy` metadata). Compatibility fallback: the legacy
+  // pre-namespace location `history.state.returnTo` / `history.state.study.returnTo`.
+  const historyReturnTo =
+    typeof (window.history.state as { returnTo?: unknown } | null)?.returnTo === 'string'
+      ? (window.history.state as { returnTo: string }).returnTo
+      : typeof (window.history.state as { study?: { returnTo?: unknown } } | null)?.study
+            ?.returnTo === 'string'
+        ? (window.history.state as { study?: { returnTo: string } }).study?.returnTo
+        : undefined;
   const returnTo =
-    typeof window.history.state?.returnTo === 'string'
-      ? window.history.state.returnTo
-      : studyDocument
-        ? `/study/document/${encodeURIComponent(studyDocument.id)}`
-        : '/study/library';
+    historyReturnTo ??
+    (studyDocument
+      ? `/study/document/${encodeURIComponent(studyDocument.id)}`
+      : '/study/library');
 
   const [unitDraft, setUnitDraft] = useState(unit);
   const [promptDraft, setPromptDraft] = useState(initialPrompt);

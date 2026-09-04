@@ -438,4 +438,69 @@ describe('study phase 2E UI', () => {
     });
     expect(onDeleteAllData).toHaveBeenCalledTimes(1);
   });
+
+  it('exposes the data-study-scroll-root main and hides the header Return without a canReturn entry', async () => {
+    const onReturn = vi.fn();
+    await renderIntoRoot(
+      <StudyLayout
+        activePath="/study/session"
+        sidebarCollapsed={false}
+        onSidebarCollapsedChange={vi.fn()}
+        onNavigate={vi.fn()}
+        canReturn={false}
+        onReturn={onReturn}
+      >
+        <div>Content</div>
+      </StudyLayout>,
+      root,
+    );
+
+    const main = document.querySelector('[data-study-scroll-root]');
+    expect(main).toBeTruthy();
+    const backButtons = Array.from(document.querySelectorAll('button')).filter((button) =>
+      button.getAttribute('aria-label')?.includes('Return'),
+    );
+    expect(backButtons).toHaveLength(0);
+    expect(onReturn).not.toHaveBeenCalled();
+  });
+
+  it('shows a working header Return for pushed entries and hides it during an active mock', async () => {
+    const onReturn = vi.fn();
+    const render = async (props: {
+      canReturn: boolean;
+      hideReturn?: boolean;
+    }) => {
+      await renderIntoRoot(
+        <StudyLayout
+          activePath="/study/learn"
+          sidebarCollapsed={false}
+          onSidebarCollapsedChange={vi.fn()}
+          onNavigate={vi.fn()}
+          canReturn={props.canReturn}
+          hideReturn={props.hideReturn}
+          onReturn={onReturn}
+        >
+          <div>Content</div>
+        </StudyLayout>,
+        root,
+      );
+    };
+
+    await render({ canReturn: true });
+    const returnButton = Array.from(document.querySelectorAll('button')).find((button) =>
+      button.getAttribute('aria-label')?.includes('Return'),
+    );
+    expect(returnButton).toBeTruthy();
+    await act(async () => {
+      returnButton?.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+    });
+    expect(onReturn).toHaveBeenCalledTimes(1);
+
+    // Focused in-progress mock: the header Return is hidden even when canReturn.
+    await render({ canReturn: true, hideReturn: true });
+    const hidden = Array.from(document.querySelectorAll('button')).filter((button) =>
+      button.getAttribute('aria-label')?.includes('Return'),
+    );
+    expect(hidden).toHaveLength(0);
+  });
 });
