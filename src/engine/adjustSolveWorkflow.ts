@@ -259,6 +259,7 @@ export const runAdjustmentSolveWorkflow = (
         const iterationResult = solveAdjustmentIteration(
           {
             robustMode: ctx.robustMode,
+            sparseCorrectionSolver: ctx.sparseCorrectionSolver,
             solveNormalEquations: ctx.solveNormalEquations.bind(ctx),
             estimateCondition: ctx.estimateCondition.bind(ctx),
             recordConditionEstimate: ctx.recordConditionEstimate.bind(ctx),

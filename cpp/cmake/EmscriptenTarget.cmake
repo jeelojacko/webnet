@@ -21,7 +21,7 @@ function(webnet_add_wasm_target)
   endif()
 
   add_executable(webnet_core_wasm bindings/wasm_bindings.cpp)
-  target_link_libraries(webnet_core_wasm PRIVATE webnet_core)
+  target_link_libraries(webnet_core_wasm PRIVATE webnet_core webnet_sparse_core Eigen3::Eigen)
   webnet_apply_warnings(webnet_core_wasm)
 
   # Embind + single-threaded, portable WASM. No threads, no SIMD.
@@ -30,6 +30,7 @@ function(webnet_add_wasm_target)
   target_link_options(webnet_core_wasm PRIVATE
     "SHELL:-s WASM=1"
     "SHELL:-s ALLOW_MEMORY_GROWTH=1"
+    "SHELL:-s STACK_SIZE=16777216"
     "SHELL:-s MODULARIZE=1"
     "SHELL:-s EXPORT_ES6=1"
     "SHELL:-s EXPORT_NAME=WebnetCore"

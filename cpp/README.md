@@ -1,4 +1,4 @@
-# WebNet portable C++ core (Phase 1 dense solver)
+# WebNet portable C++ core (Phase 2 sparse solver)
 
 Portable C++20 correction-only dense normal-equation solver shared by native
 and WASM builds. TypeScript remains production-authoritative; this backend is
@@ -58,8 +58,7 @@ ctest --test-dir cpp/build-native --output-on-failure
 
 ## Build (WASM, optional)
 
-Requires Emscripten (`emcc` on `PATH`). Threads and SIMD are intentionally
-disabled for Phase 0 portability.
+Requires Emscripten (`emcc` on `PATH`) and downloads the pinned Eigen source during CMake configuration. Threads and SIMD are intentionally disabled.
 
 ```bash
 emcmake cmake -S cpp -B cpp/build-wasm \
@@ -69,9 +68,10 @@ cmake --build cpp/build-wasm
 ```
 
 The WASM target emits `webnet_core.js` plus its `.wasm`, exposing `version`,
-`add`, and the correction-only C ABI (`webnet_dense_solve`) through Embind/
-exports. The ABI uses contiguous row-major doubles and reports status,
-damping, attempts, and a bounded error string. Native builds are unaffected
+`add`, the Phase 1 dense ABI, and the Phase 2 sparse equation ABI through
+exports. The sparse ABI receives packed CSR-like design rows, upper-triangle
+nonzero P entries, and L; it returns correction and NNZ/factor metadata. Both
+ABIs use bounded deterministic error strings. Native builds are unaffected
 when Emscripten is absent: the WASM target is simply skipped.
 
 Without CMake, the portable core still compiles directly:
@@ -80,21 +80,19 @@ Without CMake, the portable core still compiles directly:
 g++ -std=c++20 -Wall -Wextra -Wpedantic -I cpp/include cpp/src/core.cpp -c -o /tmp/core.o
 ```
 
-## Dependency decision (Phase 1)
+## Eigen dependency (Phase 2)
 
-**No third-party dependencies. Eigen remains deferred.**
+Phase 2 pins Eigen **5.0.1** at immutable GitLab commit
+`bc3b39870ecb690a623a3f49149a358b95c5781d`. CMake `FetchContent` downloads
+`https://gitlab.com/libeigen/eigen/-/archive/5.0.1/eigen-5.0.1.tar.gz` and verifies
+SHA-256 `e9c326dc8c05cd1e044c71f30f1b2e34a6161a3b6ecf445d56b53ff1669e3dec`.
+The pinned source contains `COPYING.MPL2`; Eigen is primarily MPL2 licensed,
+with the bundled attribution/license files retained in the fetched source.
+The dependency is acquired only by CMake native/WASM configuration, never by
+normal `npm install`. SuiteSparse/CHOLMOD and iterative solvers are not used.
 
-- Evaluated: Eigen (dense/sparse normal-equation solver candidate), invoked
-  via CMake `FetchContent` or system package.
-- Decision: do **not** vendor or fetch Eigen in Phase 0.
-- Rationale:
-  1. The scaffold has no linear algebra yet — a single `add()` placeholder
-     and version query need only the standard library.
-  2. Adding an unused ~30 MB header dependency would slow every configure,
-     add network/hash-pinning work, and widen the review surface for zero
-     functional gain.
-  3. Eigen (MPL2-licensed) needs a license/attribution note before vendoring;
-     that belongs with the Phase 1 solver proposal, not the scaffold.
-- Revisit when the first real numerics land (design-matrix assembly /
-  normal-equation solve): pin a specific Eigen release, record the hash and
-  license note here, and add a solver unit test with a fixed reference case.
+AMD and Natural ordering were both measured on the same 1,000-parameter sparse
+network: AMD reduced factor nonzeros (6,824 vs 7,957) but was slower for this
+small path-shaped case (0.348 vs 0.132 ms). AMD is retained because the
+representative sparse benchmark's lower fill is the relevant memory/scaling
+signal; both were deterministic with zero repeated-solve difference.

@@ -71,7 +71,7 @@ Synthetic CRS validation remains separate:
 npm run harness:crs:synthetic
 ```
 
-For the TypeScript adjustment performance baseline, use `npm run bench:adjust:quick` during development or `npm run bench:adjust:write-baseline` to record a labeled local baseline. Optional native C++ and Emscripten prerequisites are documented in [cpp/README.md](cpp/README.md); they are not installed by `npm install`. Phase 1 solver checks use `npm run cpp:configure && npm run cpp:build && npm run cpp:test`, then `npm run wasm:build`, `npm run wasm:smoke`, `npm run wasm:solver:smoke`, and `npm run wasm:solver:parity`.
+For the TypeScript adjustment performance baseline, use `npm run bench:adjust:quick` during development or `npm run bench:adjust:write-baseline` to record a labeled local baseline. Optional native C++ and Emscripten prerequisites are documented in [cpp/README.md](cpp/README.md); they are not installed by `npm install`. Phase 2 sparse solver checks use `npm run cpp:configure && npm run cpp:build && npm run cpp:test`, then `npm run wasm:build`, `npm run wasm:smoke`, `npm run wasm:solver:smoke`, `npm run wasm:solver:parity`, `npm run wasm:sparse:smoke`, and `npm run wasm:sparse:adjustment:parity`. `npm run bench:sparse` and `npm run bench:adjust:sparse` provide non-gating sparse measurements.
 
 For browser-only map interaction and OSM-basemap profiling regressions, there is also a focused Chromium harness:
 

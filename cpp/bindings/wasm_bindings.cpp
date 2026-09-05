@@ -27,6 +27,7 @@
 
 #include "webnet/core.hpp"
 #include "webnet/dense_solver.hpp"
+#include "webnet/sparse_normal_solver.hpp"
 
 #include <cmath>
 #include <cstddef>
@@ -103,6 +104,50 @@ int webnet_dense_solve_opts(const double* normal, const double* rhs,
   options.min_damping = min_damping;
   return run_solve(normal, rhs, correction, n, options, damping_out,
                    attempts_out, err_buf, err_cap);
+}
+
+EMSCRIPTEN_KEEPALIVE
+int webnet_sparse_equation_solve(
+    const int* row_offsets, const int* design_columns,
+    const double* design_values, int design_nnz, const int* weight_rows,
+    const int* weight_columns, const double* weight_values, int weight_nnz,
+    const double* misclosures, int equation_count, int parameter_count,
+    double* correction_out, int* design_nnz_out, int* weight_nnz_out,
+    int* normal_nnz_out, int* factor_nnz_out, double* damping_out,
+    int* attempts_out, char* err_buf, int err_cap) {
+  webnet::SparseSolveResult result;
+  std::string error;
+  const webnet::SparseSolveStatus status = webnet::solve_sparse_correction(
+      row_offsets, design_columns, design_values, design_nnz, weight_rows,
+      weight_columns, weight_values, weight_nnz, misclosures, equation_count,
+      parameter_count, correction_out, {}, &result, &error);
+  if (status == webnet::SparseSolveStatus::kOk) {
+    if (design_nnz_out != nullptr) *design_nnz_out = result.design_nnz;
+    if (weight_nnz_out != nullptr) *weight_nnz_out = result.weight_nnz;
+    if (normal_nnz_out != nullptr) *normal_nnz_out = result.normal_nnz;
+    if (factor_nnz_out != nullptr) *factor_nnz_out = result.factor_nnz;
+    if (damping_out != nullptr) *damping_out = result.damping;
+    if (attempts_out != nullptr) *attempts_out = result.attempts;
+  }
+  write_message(status == webnet::SparseSolveStatus::kOk ? "" : error,
+                err_buf, err_cap);
+  return static_cast<int>(status);
+}
+
+EMSCRIPTEN_KEEPALIVE
+const char* webnet_sparse_status_message(int code) {
+  switch (code) {
+    case 0:
+      return webnet::sparse_status_message(webnet::SparseSolveStatus::kOk);
+    case 1:
+      return webnet::sparse_status_message(webnet::SparseSolveStatus::kInvalidInput);
+    case 2:
+      return webnet::sparse_status_message(webnet::SparseSolveStatus::kNonFiniteInput);
+    case 3:
+      return webnet::sparse_status_message(webnet::SparseSolveStatus::kFactorizationFailed);
+    default:
+      return "unknown sparse status";
+  }
 }
 
 EMSCRIPTEN_KEEPALIVE

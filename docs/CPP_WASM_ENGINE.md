@@ -1,6 +1,6 @@
 # C++/WebAssembly numerical engine migration
 
-Status: **Phase 1 — correction-only dense solver parity.** The TypeScript engine remains the authoritative production implementation; WASM is test-only and injected explicitly.
+Status: **Phase 2 — experimental sparse correction parity.** The TypeScript engine remains the authoritative production implementation; dense and sparse WASM are test-only and injected explicitly.
 
 ## Current TypeScript architecture
 
@@ -29,7 +29,7 @@ Browser UI
            -> C++/WASM backend (future)
 ```
 
-Phase 0 does not change this routing.
+Phase 2 adds only an explicit test-injected sparse correction solver at `solveAdjustmentIteration`; production and all covariance/statistics routing remain TypeScript.
 
 ## Matrix representation and dimensions
 
@@ -41,12 +41,12 @@ The engine uses hand-written TypeScript matrices (`Matrix = number[][]`) and spa
 | sparse design rows | sparse index/value entries, sorted by parameter index | observation-equation-sized rows, unknown-sized columns |
 | `P` | dense `number[][]` | observation-equation × observation-equation; supports diagonal and correlated/full blocks |
 | `L` | dense column matrix | one misclosure per observation equation |
-| `N` | dense `number[][]` | unknown-parameter × unknown-parameter normal matrix |
-| `U` | dense column matrix | unknown-parameter × one RHS |
+| `N` | dense `number[][]` on TS/reference path; sparse Eigen storage in experimental Phase 2 path | unknown-parameter × unknown-parameter normal matrix |
+| `U` | dense column matrix on TS path; Eigen vector in experimental sparse path | unknown-parameter × one RHS |
 | correction | dense column matrix | one value per unknown parameter |
 | `Qxx` | dense `number[][]` | unknown-parameter × unknown-parameter covariance/inverse normal matrix |
 
-Although equation assembly and normal accumulation use sparse row structure, normal accumulation (`matrixSparse.ts`) currently materializes dense `N` and `U`. `P` is also dense, and `Qxx` is a complete dense inverse when covariance is requested. Station identifiers and observation identifiers remain strings at the application boundary; parameter indexes are internal deterministic mappings.
+Although equation assembly uses sparse row structure, the production normal accumulation (`matrixSparse.ts`) still materializes dense `N` and `U`. Experimental Phase 2 packs those rows and only nonzero upper-triangle `P` entries, then assembles sparse `N`/`U` in C++ without a dense N. `P` remains dense in TypeScript, and `Qxx` remains a complete dense inverse when covariance is requested. Station identifiers and observation identifiers remain strings at the application boundary; parameter indexes are internal deterministic mappings.
 
 ## Numerical algorithms currently used
 
@@ -79,15 +79,21 @@ The benchmark suite establishes measured end-to-end timings and RSS for the comm
 
 The eventual optimized boundary should use coarse-grained calls and contiguous `Float64Array`, `Uint32Array`, and `Int32Array` buffers rather than per-element JS↔WASM calls. Station IDs stay strings at the app layer; any native indexes must use an explicit deterministic ID↔index table and never depend on JavaScript property iteration order. The final binary protocol is intentionally deferred.
 
-## C++/WASM Phase 1 solver
+## C++/WASM solver implementations
 
 `cpp/` contains a portable C++20 dense correction solver matching the TypeScript scaled normal-equation path: diagonal equilibration, symmetric Cholesky, `1e-12` pivot rejection, geometric diagonal damping, substitutions, and unscaling. It uses contiguous row-major `double` buffers and returns correction values plus damping metadata. Covariance, LDLT recovery, statistics, and equation assembly remain TypeScript.
 
 The C ABI is `webnet_dense_solve(normal, rhs, correction, n, damping, attempts, error, capacity)` with deterministic status codes and NUL-terminated errors. Emscripten-specific code is confined to `cpp/bindings/`; the TypeScript wrapper transfers one complete square system with exactly one RHS column, solves synchronously after lazy async module initialization, checks allocation failure, and frees all allocations. `normalEquationSolver` is an explicit test-only `LSAEngine` injection; undefined preserves TypeScript production behavior. Its `solveCorrection` contract intentionally excludes covariance and is not a general replacement for the old multi-purpose solver interface. WASM boundary errors use stable status classes rather than promising byte-identical TS diagnostic strings. Threads, `SharedArrayBuffer`, cross-origin isolation, and SIMD remain disabled/not enabled.
 
-Eigen is the first candidate for Phase 1 linear algebra, but is intentionally not acquired in Phase 0: the scaffold has no numerical algorithm to use it, so adding an unused large header dependency would add network, pinning, and licensing surface without proving anything. Phase 1 must pin a specific Eigen release/hash, record its MPL2 license, and compare its dense solver against the TypeScript reference before committing to it. SuiteSparse/CHOLMOD is deferred until Eigen or a lighter approach is shown inadequate, especially under Emscripten.
+Phase 1's dense solver remains dependency-free and is the correction reference. Phase 2 pins Eigen 5.0.1 for the experimental sparse solver; SuiteSparse/CHOLMOD and iterative solvers remain deferred.
 
 Prerequisites and commands are documented in `cpp/README.md`; normal `npm install` does not install a C++ toolchain.
+
+## Phase 2 sparse correction path
+
+The experimental boundary packs sorted sparse design rows as CSR-like `rowOffsets`, `columns`, and `values`; upper-triangle nonzero weights as `rows`, `columns`, and `values`; and one contiguous `Float64Array` of misclosures. C++ forms `N=AᵀPA` and `U=AᵀPL` directly from these entries, accounting for both symmetric terms of every off-diagonal weight. Eigen 5.0.1 `SimplicialLLT` with `AMDOrdering<int>` then solves the scaled sparse normal equations. The same TypeScript diagonal scaling thresholds and damping schedule are retained conceptually; Eigen factorization success/failure can differ from the TS pivoted dense implementation, and failures are surfaced rather than silently falling back. `analyzePattern` reuse was not introduced: each solve owns a fresh factorization, avoiding stale symbolic structure when active observations or unknowns change.
+
+The Phase 2 wrapper returns only correction plus development metadata: design NNZ, P NNZ, N NNZ, factor NNZ, damping, attempts, solver, and ordering. Packing the dense TypeScript P into upper-triangle entries scans all m² cells per solve (O(m²)), so dense P remains the memory ceiling alongside the dense Qxx/covariance path; sparsity only shrinks the transfer and the C++ normal assembly. The sparse injected path also skips the first-iteration condition estimation recorded on the TypeScript path, since it returns no Qxx. The current Emscripten artifact is approximately 194 KiB uncompressed WASM plus 35 KiB JS glue (exact bytes vary with toolchain/build metadata); `npm run wasm:browser:smoke` loads the emitted module through Vite/Chromium. It is not loaded by the production application bundle because sparse execution is test-injected only. It rejects malformed/non-finite packed inputs, owns all temporary WASM allocations, and does not transfer station or observation strings. Robust Huber iterations repack the current weighted P for every inner solve. Final covariance/statistics still use the existing dense TypeScript path, so that remains the large-network ceiling.
 
 ## Data boundary evolution
 
@@ -105,15 +111,17 @@ This batch scaffolded native C++/WASM builds, benchmarks, and the isolated backe
 
 This batch ports only correction solving. Native CTest covers SPD, scaling, damping, asymmetry, invalid inputs, and ABI behavior. `npm run wasm:solver:smoke` exercises the real wrapper and `npm run wasm:solver:parity` compares TypeScript/WASM corrections at n=1, 2, 5, 10, 25, 50, and 100. Observed generated SPD maximum difference is `3.39e-14` (below the `1e-12` gate); damping metadata also matches. No covariance or production backend migration is included.
 
-`npm run bench:normal` uses the same deterministic diagonally dominant systems for TypeScript and transfer-inclusive WASM, and the native benchmark uses the same portable solver. On the recorded Node 26.8.1 / Linux x64 run: n=25 TS/WASM 0.056/0.025 ms, n=100 0.330/0.255 ms, n=200 1.598/1.548 ms, n=400 11.616/9.780 ms, and n=800 73.920/69.862 ms median. Native per-solve results were 0.016 ms (n=50), 0.133 ms (n=100), and 0.933 ms (n=200). These are observations, not CI thresholds; WASM values include heap transfer and dense O(n³) limits remain.
+`npm run bench:normal` uses the same deterministic diagonally dominant systems for TypeScript and transfer-inclusive WASM, and the native benchmark uses the same portable solver. `npm run bench:sparse` compares TS dense accumulation/solve, Phase 1 WASM dense, Phase 2 WASM sparse, and native sparse across network-like bounded-degree systems; `npm run bench:adjust:sparse` compares actual LSAEngine runs. On the recorded Node 26.8.1 / Linux x64 run: n=25 TS/WASM 0.056/0.025 ms, n=100 0.330/0.255 ms, n=200 1.598/1.548 ms, n=400 11.616/9.780 ms, and n=800 73.920/69.862 ms median. Native per-solve results were 0.016 ms (n=50), 0.133 ms (n=100), and 0.933 ms (n=200). These are observations, not CI thresholds; WASM values include heap transfer and dense O(n³) limits remain.
 
 ### Phase 1 — dense solver parity spike (complete)
 
 Correction-only normal-equation scaling, factorization, and solve now run through the native/WASM proof seam. Full engine production routing and covariance remain TypeScript.
 
-### Phase 2 — sparse normal-equation backend
+### Phase 2 — sparse normal-equation backend (complete)
 
-Investigate Eigen sparse types/solvers first. Replace dense normal storage/solution only after measuring memory/runtime and preserving deterministic parity.
+The experimental path packs sparse A rows and nonzero upper-triangle P, assembles sparse N/U in C++, and solves with Eigen 5.0.1 SimplicialLLT + AMD. Native and WASM CTest, ABI smoke, sparse packing tests, correlated assembly tests, robust Huber parity, full adjustment parity, and industry-reference parity pass. Maximum full-adjustment coordinate difference was `2.41e-12`; no production backend switch occurred.
+
+Recorded sparse-kernel medians on Node 26.8.1/Linux x64 were WASM sparse: n=100 `0.105 ms`, 250 `0.216 ms`, 500 `0.236 ms`, 1,000 `0.423 ms`, 2,500 `0.918 ms`, 5,000 `1.839 ms`; TS dense and Phase 1 WASM dense were measured through n=250 and skipped honestly above that range. Native sparse timings were 0.068/0.117/0.229/0.466 ms for n=100/250/500/1,000. The synthetic network had 2n equation rows and bounded row degree. Dense P remains allocated in TS and final dense Qxx/covariance remains the dominant unported ceiling.
 
 ### Phase 3 — covariance/statistics strategy
 

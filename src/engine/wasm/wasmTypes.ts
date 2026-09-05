@@ -14,6 +14,28 @@ export interface WebNetWasmModule {
     _error: number,
     _errorCapacity: number,
   ): number;
+  _webnet_sparse_equation_solve(
+    _rowOffsets: number,
+    _designColumns: number,
+    _designValues: number,
+    _designNnz: number,
+    _weightRows: number,
+    _weightColumns: number,
+    _weightValues: number,
+    _weightNnz: number,
+    _misclosures: number,
+    _equationCount: number,
+    _parameterCount: number,
+    _correction: number,
+    _designNnzOut: number,
+    _weightNnzOut: number,
+    _normalNnzOut: number,
+    _factorNnzOut: number,
+    _dampingOut: number,
+    _attemptsOut: number,
+    _error: number,
+    _errorCapacity: number,
+  ): number;
 }
 
 export type WebNetWasmFactory = () => Promise<WebNetWasmModule> | WebNetWasmModule;

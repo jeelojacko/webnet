@@ -8,7 +8,7 @@ This file intentionally replaces the old pattern of keeping a giant behavior inv
 
 ## C++/WASM migration status
 
-Phase 1 correction-only dense solver parity is present on `feat/cpp-wasm-engine`: the TypeScript solver remains authoritative in production, while `cpp/` provides a portable scaled/damped Cholesky correction solver and optional WASM ABI for explicit test injection. Covariance, statistics, equation assembly, sparse solving, and production backend selection remain TypeScript-only.
+Phase 2 experimental sparse correction parity is present on `feat/cpp-wasm-engine`: the TypeScript solver remains authoritative in production, while `cpp/` provides both the Phase 1 dense reference and a pinned-Eigen sparse equation-row solver for explicit test injection. Sparse A/P packing and C++ N/U assembly are covered by native/WASM tests; covariance, statistics, parser/equation models, and production backend selection remain TypeScript-only. Dense P and final dense Qxx remain known scaling ceilings.
 
 ## Product focus
 

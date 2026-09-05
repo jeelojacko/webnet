@@ -1,4 +1,5 @@
 import type { AdjustmentResult, ParseOptions } from '../types';
+import type { SparseCorrectionSolver } from './numericalBackend';
 import type { Observation, StationId } from '../types';
 
 export interface SolveParameterIndexEntry {
@@ -55,6 +56,7 @@ export interface SolveNormalResult {
 
 export interface IterationSolveDependencies {
   robustMode: ParseOptions['robustMode'];
+  sparseCorrectionSolver?: SparseCorrectionSolver;
   solveNormalEquations: (
     _N: number[][],
     _U: number[][],
