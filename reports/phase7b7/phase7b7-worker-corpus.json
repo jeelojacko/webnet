@@ -12,7 +12,7 @@
     "contractPass": 14,
     "diverged": 0,
     "mismatched": 0,
-    "conditionArtifactNoted": 14,
+    "conditionArtifactNoted": 0,
     "falseAdmits": 0,
     "falseRejects": 0
   },
@@ -37,7 +37,7 @@
       "contractPass": true,
       "divergence": "agree",
       "contractReasons": [],
-      "conditionNote": "sparse-path artifact: dense reference records first-iteration result condition (estimate=1.727e+14, flagged=true) while the sparse-injected candidate bypasses dense condition recording by existing design",
+      "conditionNote": null,
       "maxima": {
         "maxCoordDiffM": "0.00e+0",
         "maxHeightDiffM": "0.00e+0",
@@ -73,7 +73,7 @@
       "contractPass": true,
       "divergence": "agree",
       "contractReasons": [],
-      "conditionNote": "sparse-path artifact: dense reference records first-iteration result condition (estimate=1.689e+14, flagged=true) while the sparse-injected candidate bypasses dense condition recording by existing design",
+      "conditionNote": null,
       "maxima": {
         "maxCoordDiffM": "0.00e+0",
         "maxHeightDiffM": "0.00e+0",
@@ -109,7 +109,7 @@
       "contractPass": true,
       "divergence": "agree",
       "contractReasons": [],
-      "conditionNote": "sparse-path artifact: dense reference records first-iteration result condition (estimate=1.729e+14, flagged=true) while the sparse-injected candidate bypasses dense condition recording by existing design",
+      "conditionNote": null,
       "maxima": {
         "maxCoordDiffM": "7.11e-15",
         "maxHeightDiffM": "0.00e+0",
@@ -145,7 +145,7 @@
       "contractPass": true,
       "divergence": "agree",
       "contractReasons": [],
-      "conditionNote": "sparse-path artifact: dense reference records first-iteration result condition (estimate=1.729e+14, flagged=true) while the sparse-injected candidate bypasses dense condition recording by existing design",
+      "conditionNote": null,
       "maxima": {
         "maxCoordDiffM": "1.42e-14",
         "maxHeightDiffM": "0.00e+0",
@@ -181,7 +181,7 @@
       "contractPass": true,
       "divergence": "agree",
       "contractReasons": [],
-      "conditionNote": "sparse-path artifact: dense reference records first-iteration result condition (estimate=1.731e+14, flagged=true) while the sparse-injected candidate bypasses dense condition recording by existing design",
+      "conditionNote": null,
       "maxima": {
         "maxCoordDiffM": "1.42e-14",
         "maxHeightDiffM": "0.00e+0",
@@ -217,7 +217,7 @@
       "contractPass": true,
       "divergence": "agree",
       "contractReasons": [],
-      "conditionNote": "sparse-path artifact: dense reference records first-iteration result condition (estimate=1.717e+14, flagged=true) while the sparse-injected candidate bypasses dense condition recording by existing design",
+      "conditionNote": null,
       "maxima": {
         "maxCoordDiffM": "5.68e-14",
         "maxHeightDiffM": "0.00e+0",
@@ -278,7 +278,7 @@
       "contractPass": true,
       "divergence": "agree",
       "contractReasons": [],
-      "conditionNote": "sparse-path artifact: dense reference records first-iteration result condition (estimate=1.706e+14, flagged=true) while the sparse-injected candidate bypasses dense condition recording by existing design",
+      "conditionNote": null,
       "maxima": {
         "maxCoordDiffM": "2.84e-14",
         "maxHeightDiffM": "0.00e+0",
@@ -314,7 +314,7 @@
       "contractPass": true,
       "divergence": "agree",
       "contractReasons": [],
-      "conditionNote": "sparse-path artifact: dense reference records first-iteration result condition (estimate=1.731e+14, flagged=true) while the sparse-injected candidate bypasses dense condition recording by existing design",
+      "conditionNote": null,
       "maxima": {
         "maxCoordDiffM": "3.33e-16",
         "maxHeightDiffM": "0.00e+0",
@@ -350,7 +350,7 @@
       "contractPass": true,
       "divergence": "agree",
       "contractReasons": [],
-      "conditionNote": "sparse-path artifact: dense reference records first-iteration result condition (estimate=1.730e+14, flagged=true) while the sparse-injected candidate bypasses dense condition recording by existing design",
+      "conditionNote": null,
       "maxima": {
         "maxCoordDiffM": "2.22e-16",
         "maxHeightDiffM": "0.00e+0",
@@ -386,7 +386,7 @@
       "contractPass": true,
       "divergence": "agree",
       "contractReasons": [],
-      "conditionNote": "sparse-path artifact: dense reference records first-iteration result condition (estimate=1.770e+14, flagged=true) while the sparse-injected candidate bypasses dense condition recording by existing design",
+      "conditionNote": null,
       "maxima": {
         "maxCoordDiffM": "2.13e-14",
         "maxHeightDiffM": "0.00e+0",
@@ -607,7 +607,7 @@
       "contractPass": true,
       "divergence": "agree",
       "contractReasons": [],
-      "conditionNote": "sparse-path artifact: dense reference records first-iteration result condition (estimate=6.024e+24, flagged=true) while the sparse-injected candidate bypasses dense condition recording by existing design",
+      "conditionNote": null,
       "maxima": {
         "maxCoordDiffM": "2.21e-8",
         "maxHeightDiffM": "0.00e+0",
@@ -805,7 +805,7 @@
       "contractPass": true,
       "divergence": "agree",
       "contractReasons": [],
-      "conditionNote": "sparse-path artifact: dense reference records first-iteration result condition (estimate=4.632e+23, flagged=true) while the sparse-injected candidate bypasses dense condition recording by existing design",
+      "conditionNote": null,
       "maxima": {
         "maxCoordDiffM": "0.00e+0",
         "maxHeightDiffM": "0.00e+0",
@@ -841,7 +841,7 @@
       "contractPass": true,
       "divergence": "agree",
       "contractReasons": [],
-      "conditionNote": "sparse-path artifact: dense reference records first-iteration result condition (estimate=4.632e+23, flagged=true) while the sparse-injected candidate bypasses dense condition recording by existing design",
+      "conditionNote": null,
       "maxima": {
         "maxCoordDiffM": "0.00e+0",
         "maxHeightDiffM": "0.00e+0",
@@ -877,7 +877,7 @@
       "contractPass": true,
       "divergence": "agree",
       "contractReasons": [],
-      "conditionNote": "sparse-path artifact: dense reference records first-iteration result condition (estimate=4.632e+23, flagged=true) while the sparse-injected candidate bypasses dense condition recording by existing design",
+      "conditionNote": null,
       "maxima": {
         "maxCoordDiffM": "0.00e+0",
         "maxHeightDiffM": "0.00e+0",

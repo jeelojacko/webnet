@@ -24,7 +24,7 @@ export type AdjustmentWorkerSessionFn = (
   _request: RunSessionRequest,
   _onProgress?: RunSessionProgressCallback,
   _runtime?: AdjustmentRuntime,
-) => RunSessionOutcome;
+) => RunSessionOutcome | Promise<RunSessionOutcome>;
 
 export interface AdjustmentWorkerHandlerDeps {
   loadSession: () => Promise<AdjustmentWorkerSessionFn>;
@@ -61,7 +61,7 @@ export const createAdjustmentWorkerHandler = (
         void deps
           .loadSession()
           .then((runAdjustmentSession) => {
-            const outcome = runAdjustmentSession(payload, (progress) => {
+            const progressCallback: RunSessionProgressCallback = (progress) => {
               if (cancelledRequestIds.has(runId)) return;
               deps.postMessage({
                 type: 'progress',
@@ -74,10 +74,18 @@ export const createAdjustmentWorkerHandler = (
                 iteration: progress.iteration,
                 maxIterations: progress.maxIterations,
               });
-            }, deps.getRuntime?.());
-            if (cancelledRequestIds.has(runId)) return;
-            postProgress(deps.postMessage, runId, 'finalizing');
-            deps.postMessage({ type: 'success', runId, payload: outcome });
+            };
+            // Phase 7C: the session function may synchronously return an
+            // outcome or asynchronously resolve one (sparse auto-route with
+            // a clean TypeScript rerun on any sparse failure). Awaiting here
+            // keeps the run/finalizing/success protocol unchanged.
+            return Promise.resolve()
+              .then(() => runAdjustmentSession(payload, progressCallback, deps.getRuntime?.()))
+              .then((outcome) => {
+                if (cancelledRequestIds.has(runId)) return;
+                postProgress(deps.postMessage, runId, 'finalizing');
+                deps.postMessage({ type: 'success', runId, payload: outcome });
+              });
           })
           .catch((error) => {
             if (cancelledRequestIds.has(runId)) return;

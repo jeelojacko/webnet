@@ -6,95 +6,33 @@
  * with the production `accumulateNormalEquationsFromSparseRows` +
  * `solveNormalEquations` helpers) and estimates the raw-N condition
  * from the packed inputs. Single implementation reused by the Phase 7B.6
- * capture driver and the Phase 7B.7 safety benchmark.
+ * capture driver and the Phase 7B.7 safety benchmark. The pure rebuild
+ * lives in `phase7b7DenseRebuild` (browser-safe); this module adds only
+ * wall-clock timing for benchmark reporting.
  */
 import { performance } from 'node:perf_hooks';
 
-import { solveNormalEquations } from './adjustNormalEquationHelpers';
-import { accumulateNormalEquationsFromSparseRows } from './matrixSparse';
-import type { SparseMatrixRows } from './matrixTypes';
 import { estimateSparseNormalCondition } from './sparseNormalCondition';
-import type {
-  PackedSparseDesignRows,
-  PackedUpperTriangle,
-} from './sparseEquationPacking';
+import {
+  solvePhase7b7DenseSystem,
+  type Phase7b7CapturedSystem,
+} from './phase7b7DenseRebuild';
+import type { Phase7b6ConditionSource } from './phase7b6CorrectionHandshake';
 
-export interface Phase7b7CapturedSystem {
-  design: PackedSparseDesignRows;
-  weights: PackedUpperTriangle;
-  misclosures: Float64Array;
-  observationEquationCount: number;
-  parameterCount: number;
-}
-
-/** Unpacks CSR design rows to the sparse-row shape used by dense assembly. */
-export const unpackPhase7b7DesignRows = (
-  design: PackedSparseDesignRows,
-): SparseMatrixRows => {
-  const rows: SparseMatrixRows = [];
-  const equationCount = design.rowOffsets.length - 1;
-  for (let row = 0; row < equationCount; row += 1) {
-    const start = design.rowOffsets[row] ?? 0;
-    const end = design.rowOffsets[row + 1] ?? 0;
-    const entries: SparseMatrixRows[number] = [];
-    for (let k = start; k < end; k += 1) {
-      entries.push({
-        index: design.columns[k] ?? 0,
-        value: design.values[k] ?? 0,
-      });
-    }
-    rows.push(entries);
-  }
-  return rows;
-};
-
-/** Rebuilds symmetric dense P from packed upper-triangle entries. */
-export const unpackPhase7b7DenseWeights = (
-  weights: PackedUpperTriangle,
-  size: number,
-): number[][] => {
-  const dense: number[][] = Array.from({ length: size }, () => new Array<number>(size).fill(0));
-  for (let k = 0; k < weights.values.length; k += 1) {
-    const row = weights.rows[k] ?? 0;
-    const column = weights.columns[k] ?? 0;
-    const value = weights.values[k] ?? 0;
-    (dense[row] as number[])[column] = value;
-    (dense[column] as number[])[row] = value;
-  }
-  return dense;
-};
-
-/**
- * Solves the captured first system through the production dense path
- * (same assembly + scaled/damped Cholesky as the TS reference iteration).
- * Throws fail-closed on shape mismatch, mirroring production.
- */
-export const solvePhase7b7DenseFirstSystem = (
-  captured: Phase7b7CapturedSystem,
-): number[] => {
-  const rows = unpackPhase7b7DesignRows(captured.design);
-  const dense = unpackPhase7b7DenseWeights(captured.weights, captured.observationEquationCount);
-  const residuals = Array.from(captured.misclosures, (value) => [value]);
-  const { normal, rhs } = accumulateNormalEquationsFromSparseRows(
-    rows,
-    residuals,
-    dense,
-    captured.parameterCount,
-  );
-  const solved = solveNormalEquations(normal, rhs, { log: () => undefined });
-  const correction = (solved.correction ?? []).map((row) => row[0] ?? Number.NaN);
-  if (correction.length !== captured.parameterCount) {
-    throw new Error(
-      `Dense first-system rebuild produced ${correction.length} params for ${captured.parameterCount}.`,
-    );
-  }
-  return correction;
-};
+export type {
+  Phase7b7CapturedSystem,
+  Phase7b7DenseOracleEvidence,
+} from './phase7b7DenseRebuild';
+export {
+  solvePhase7b7DenseSystem as solvePhase7b7DenseFirstSystem,
+  unpackPhase7b7DenseWeights,
+  unpackPhase7b7DesignRows,
+} from './phase7b7DenseRebuild';
 
 export interface Phase7b7OracleMeasurement {
   denseCorrection: number[] | null;
   conditionEstimate: number | undefined;
-  conditionSource: 'native-sparse' | 'ts-packed' | undefined;
+  conditionSource: Phase7b6ConditionSource | undefined;
   /** Wall time for the dense rebuild alone. */
   rebuildMs: number;
   /** Wall time for the TS-packed condition estimate alone (0 when native). */
@@ -112,7 +50,7 @@ export const measurePhase7b7FirstSystemOracle = (
   const rebuildStart = performance.now();
   let denseCorrection: number[] | null = null;
   try {
-    denseCorrection = solvePhase7b7DenseFirstSystem(captured);
+    denseCorrection = solvePhase7b7DenseSystem(captured);
   } catch {
     denseCorrection = null;
   }

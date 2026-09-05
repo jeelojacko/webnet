@@ -328,6 +328,17 @@ The solver:
 - computes residuals, precision, and covariance-derived products
 - produces statistical summaries, local-test outputs, diagnostics, and review metadata
 
+### 4b. Worker automatic sparse route (Phase 7C)
+
+`src/workers/adjustmentSparseAutoRoute.ts` owns the worker-only automatic route; no engine, UI, persistence, or protocol module carries routing state:
+
+- eligibility is derived from parsed/prepared state for ordinary single-solve 2D adjustment jobs (<=64 unknowns, no robust/TS-correlation/GPS-covariance/auto-adjust/suspect-impact/cluster-dual-pass, clean static preflight plus the production eligibility classifier)
+- eligible jobs run the real WASM sparse bundle (every-iteration correction, row products, selected covariance with legacy all-pairs) through the existing `AdjustmentRuntime` seam
+- serving: the `webnet-wasm-artifacts` build plugin copies `cpp/build-wasm/webnet_core.js`/`.wasm` (never committed) to the dist root; the worker imports the glue base-relative (`<BASE_URL>/webnet_core.js`) so Emscripten locateFile resolves the adjacent `.wasm`; absent artifacts fail closed with an explicit diagnostic (`npm run smoke:phase7c:dist` proves dist serving + instantiation + sparse entry)
+- S3 verification gates every captured correction system (dense-rebuild agreement, undamped, finite condition, captured count equal to candidate iterations, `result.condition` agreement with the first-system oracle)
+- any kill-switch-off, WASM init failure, sparse throw, engine fallback, oracle mismatch, damping, non-finite result, or missing condition cleanly reruns the original request in TypeScript
+- the kill switch is internal and enabled by default; the worker protocol, persisted state, UI, C++, and tolerances are unchanged
+
 ### 5. Result shaping
 
 Result builders then generate:

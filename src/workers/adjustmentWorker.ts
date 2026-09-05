@@ -1,12 +1,15 @@
 /**
  * Production browser worker: delegates runs to the lazily imported
- * `runAdjustmentSession` through the shared testable handler. The only
- * worker-local addition is the Phase 7B runtime provider (default
- * undefined — exact legacy behavior, no protocol or routing changes).
+ * `runAdjustmentSession` through the shared testable handler, wrapped with
+ * the Phase 7C automatic sparse route (ordinary 2D <=64 adjustment jobs run
+ * the real WASM sparse bundle with every-system oracle verification; any
+ * failure cleanly reruns TypeScript). An injected worker-local runtime takes
+ * precedence and bypasses the auto-route. The worker protocol is unchanged.
  */
 import type { AdjustmentWorkerRequestMessage } from '../engine/adjustmentWorkerProtocol';
 import type { runAdjustmentSession as RunAdjustmentSessionFn } from '../engine/runSession';
-import { createAdjustmentWorkerHandler } from './adjustmentWorkerHandler';
+import { createAdjustmentWorkerHandler, type AdjustmentWorkerSessionFn } from './adjustmentWorkerHandler';
+import { runWithSparseAutoRoute } from './adjustmentSparseAutoRoute';
 import { getAdjustmentWorkerRuntime } from './adjustmentWorkerRuntime';
 
 export { getAdjustmentWorkerRuntime, setAdjustmentWorkerRuntime } from './adjustmentWorkerRuntime';
@@ -24,7 +27,16 @@ const loadRunAdjustmentSession = (): Promise<typeof RunAdjustmentSessionFn> => {
 };
 
 const handler = createAdjustmentWorkerHandler({
-  loadSession: loadRunAdjustmentSession,
+  loadSession: async (): Promise<AdjustmentWorkerSessionFn> => {
+    const runSession = await loadRunAdjustmentSession();
+    const routed: AdjustmentWorkerSessionFn = (payload, onProgress, runtime) => {
+      if (runtime !== undefined) return runSession(payload, onProgress, runtime);
+      return runWithSparseAutoRoute(payload, onProgress, { runSession }).then(
+        ({ outcome }) => outcome,
+      );
+    };
+    return routed;
+  },
   postMessage: (message) => self.postMessage(message),
   getRuntime: getAdjustmentWorkerRuntime,
 });

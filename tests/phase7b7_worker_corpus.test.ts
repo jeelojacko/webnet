@@ -511,10 +511,15 @@ describe('phase 7B.7 actual-worker corpus closure', () => {
       );
       expect(comparison.pass, `${candidate.id} full contract: ${comparison.reasons.join('; ')}`).toBe(true);
       expect(comparison.divergence, `${candidate.id} agreement class`).toBe('agree');
-      // Known sparse-path artifact: the injected sparse route bypasses dense
-      // first-iteration condition recording by existing design, so every
-      // admitted worker run must carry the deterministic note (never a reason).
-      expect(comparison.conditionNote, `${candidate.id} condition artifact noted`).not.toBeNull();
+      // Phase 7C parity: the sparse route records result.condition on
+      // iteration 1 (native estimate preferred, packed fallback), so the
+      // former sparse-path artifact note is gone and the full contract
+      // already gated estimate/threshold/flag agreement above.
+      expect(comparison.conditionNote, `${candidate.id} no condition artifact`).toBeNull();
+      expect(
+        Number.isFinite(workerResult.condition?.estimate ?? NaN),
+        `${candidate.id} worker condition recorded`,
+      ).toBe(true);
       rows.push({
         id: candidate.id,
         family: candidate.family,
@@ -546,7 +551,7 @@ describe('phase 7B.7 actual-worker corpus closure', () => {
     expect(rows.filter((row) => row.falseAdmit || row.falseReject).map((row) => row.id)).toEqual([]);
     expect(rows.filter((row) => row.workerRun && row.divergence !== 'agree').map((row) => row.id)).toEqual([]);
     expect(
-      rows.filter((row) => row.workerRun && row.conditionNote == null).map((row) => row.id),
+      rows.filter((row) => row.workerRun && row.conditionNote != null).map((row) => row.id),
     ).toEqual([]);
   }, 1800000);
 

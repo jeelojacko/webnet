@@ -21,6 +21,7 @@
     "wasm:sparse:bundle:worker-proof": "node --import tsx scripts/wasmSparseBundleWorkerProof.ts",
     "wasm:sparse:worker-stress": "tsx scripts/wasmSparseWorkerStress.ts",
     "wasm:browser:smoke": "node scripts/wasmBrowserSmoke.mjs",
+    "smoke:phase7c:dist": "node scripts/phase7cDistWasmSmoke.mjs",
     "bench:adjust": "tsx scripts/benchmarks/benchmarkAdjustment.ts",
     "bench:adjust:quick": "tsx scripts/benchmarks/benchmarkAdjustment.ts --quick",
     "bench:adjust:write-baseline": "tsx scripts/benchmarks/benchmarkAdjustment.ts --write-baseline",

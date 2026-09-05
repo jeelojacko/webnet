@@ -53,30 +53,43 @@ export const solveAdjustmentIteration = (
   // Sparse assembly uses [] as the legacy-compatible omitted-P sentinel.
   let solvedP = P && P.length > 0 ? P : undefined;
   const shouldEstimateCondition = iterationNumber === 1;
-  // Diagnostics-only sparse raw-N condition metadata: first correction
-  // iteration only, never production output, never throws into the solve.
-  // Prefers the native sparse backend's raw-N estimate (same rowMax*colMax
-  // rule, computed before scaling/damping); falls back to the TS-side
-  // packed estimate only when native metadata is absent or non-finite.
+  // First-iteration condition evidence (production parity + diagnostics).
+  // The dense path records result.condition through
+  // dependencies.recordConditionEstimate; the sparse path must do the same
+  // (native sparse backend estimate preferred, TS-side packed fallback) so
+  // sparse candidates carry result.condition with no exception. Diagnostics
+  // recording stays metadata-only. Nothing here throws into the solve:
+  // unverifiable candidates are rejected fail-closed downstream.
   const recordFirstIterationSparseCondition = (
     nativeEstimate: number | undefined,
     packed: { rows: Int32Array; columns: Int32Array; values: Float64Array },
   ): void => {
-    const diagnostics = dependencies.experimentalSparseDiagnostics;
-    if (!diagnostics || iterationNumber !== 1) return;
-    try {
-      if (typeof nativeEstimate === 'number' && Number.isFinite(nativeEstimate)) {
-        recordSparseConditionEstimate(diagnostics, nativeEstimate, iterationNumber);
-        return;
+    if (iterationNumber !== 1) return;
+    let estimate: number | undefined;
+    if (typeof nativeEstimate === 'number' && Number.isFinite(nativeEstimate)) {
+      estimate = nativeEstimate;
+    } else {
+      try {
+        const packedDesign = packSparseDesignRows(sparseRows);
+        const fallback = estimateSparseNormalCondition(packedDesign, packed, numParams);
+        if (Number.isFinite(fallback)) estimate = fallback;
+      } catch {
+        estimate = undefined;
       }
-      const packedDesign = packSparseDesignRows(sparseRows);
-      recordSparseConditionEstimate(
-        diagnostics,
-        estimateSparseNormalCondition(packedDesign, packed, numParams),
-        iterationNumber,
-      );
+    }
+    if (estimate === undefined) return;
+    const diagnostics = dependencies.experimentalSparseDiagnostics;
+    if (diagnostics) {
+      try {
+        recordSparseConditionEstimate(diagnostics, estimate, iterationNumber);
+      } catch {
+        // Metadata only; never fails the solve.
+      }
+    }
+    try {
+      dependencies.recordConditionEstimate(estimate);
     } catch {
-      // Metadata only; a packing/estimate failure must not fail the solve.
+      // Parity metadata must not fail the solve.
     }
   };
   const requireDenseWeights = (): number[][] => {

@@ -47,14 +47,13 @@ export interface Phase7b7ContractComparison extends Phase7b7ContractMaxima {
   reasons: string[];
   divergence: Phase7b7DivergenceClass;
   /**
-   * Known sparse-path artifact note (never a rejection reason): the
-   * test-only sparse injection path returns from iteration 1 before the
-   * dense first-iteration `recordConditionEstimate` runs (existing
-   * production design — production never injects sparse solvers, so the
-   * dense path is untouched). The sparse candidate therefore carries no
-   * result-level `condition` while the dense reference does; estimate
-   * agreement itself is covered by first-system evidence (Phase 7B.6
-   * handshake), not by this field.
+   * Legacy sparse-path artifact note (never a rejection reason): older
+   * sparse-injected candidates returned from iteration 1 before the dense
+   * first-iteration `recordConditionEstimate` ran, so the candidate carried
+   * no result-level `condition` while the dense reference did. Since the
+   * Phase 7C parity fix the sparse iteration branch records
+   * result.condition itself (native estimate preferred, packed fallback),
+   * so this note is normally null and estimate agreement is gated directly.
    */
   conditionNote: string | null;
 }
