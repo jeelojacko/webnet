@@ -31,9 +31,17 @@ import { buildLocateAttempt } from '../examPrepAttemptBuilders';
 import { examPrepProvisionLabel, formatExamDrillTime } from '../examPrepFormat';
 import {
   buildExamPrepLocatePickerPath,
+  createExamPrepLocatePickerSprintId,
   createExamPrepLocatePickerToken,
+  EXAM_PREP_PICKER_CONNECTION_TIMEOUT_MS,
+  EXAM_PREP_PICKER_CONTEXT_TYPE,
+  EXAM_PREP_PICKER_HEARTBEAT_INTERVAL_MS,
+  EXAM_PREP_PICKER_READY_TYPE,
+  EXAM_PREP_PICKER_SPRINT_ENDED_TYPE,
   isExamPrepBroadcastChannelSupported,
   locatePickMatchesExpected,
+  postExamPrepLocatePickerControl,
+  subscribeExamPrepLocatePickerControl,
   subscribeExamPrepLocatePicks,
 } from '../examPrepLocatePicker';
 import { openStudyUrlNewTab, STUDY_LIBRARY_PATH } from '../../studyWindow';
@@ -78,6 +86,12 @@ export const ExamPrepLocateView = ({
   // the CURRENT un-checked item. Picks on the token-scoped channel are matched
   // against it; a stale picker tab from a previous item can never win.
   const [pickerToken, setPickerToken] = useState<string | null>(null);
+  // Ephemeral sprint id binding one persistent picker tab to this sprint.
+  const [pickerSprintId, setPickerSprintId] = useState<string | null>(null);
+  // True once the picker tab announces ready on the control channel.
+  const [pickerReady, setPickerReady] = useState(false);
+  // True once a picker tab has been opened this sprint (reopen support).
+  const [pickerEverOpened, setPickerEverOpened] = useState(false);
   // What the learner picked (objective path). Persisted ONLY on Continue.
   const [objectiveFeedback, setObjectiveFeedback] = useState<ObjectivePickFeedback>(null);
   const [pickerStatus, setPickerStatus] = useState<PickerStatus>(null);
@@ -90,12 +104,23 @@ export const ExamPrepLocateView = ({
   // even before the state update that closes the channel re-renders.
   const pickerConsumedRef = useRef(false);
   const objectiveInFlightRef = useRef(false);
+  const pickerReadyAtRef = useRef(0);
+  // Set when the reuse path mints the next item token before advancing;
+  // tells the item-reset effect to keep (not clear) that fresh token.
+  const reuseMintedRef = useRef(false);
+  const itemRef = useRef<ExamPrepLocateTask | null>(null);
+  const pickerTokenRef = useRef<string | null>(null);
+  const pickerSprintIdRef = useRef<string | null>(null);
 
   const previewQueue = buildExamPrepLocateQueue(attempts);
   const item = phase === 'active' && session ? session[index] ?? null : null;
+  itemRef.current = item;
+  pickerSprintIdRef.current = pickerSprintId;
 
   // Item-level reset: a new frozen item starts its own timer and hides the
   // previous reveal/feedback. Parent-snapshot rerenders never touch these.
+  // The persistent-picker reuse path mints the next token BEFORE advancing,
+  // so keep that fresh token/status instead of clearing them.
   useEffect(() => {
     if (phase === 'active') {
       setElapsed(0);
@@ -103,8 +128,13 @@ export const ExamPrepLocateView = ({
       setSavePending(false);
       setSaveError(null);
       setObjectiveFeedback(null);
-      setPickerToken(null);
-      setPickerStatus(null);
+      if (reuseMintedRef.current) {
+        reuseMintedRef.current = false;
+      } else {
+        setPickerToken(null);
+        pickerTokenRef.current = null;
+        setPickerStatus(null);
+      }
       pickerConsumedRef.current = false;
     }
   }, [item?.id, phase]);
@@ -118,6 +148,12 @@ export const ExamPrepLocateView = ({
   }, [item, checked]);
 
   const freezeSession = () => {
+    const sprintId = createExamPrepLocatePickerSprintId();
+    pickerSprintIdRef.current = sprintId;
+    setPickerSprintId(sprintId);
+    setPickerReady(false);
+    setPickerEverOpened(false);
+    pickerReadyAtRef.current = 0;
     setSession(previewQueue);
     setIndex(0);
     setSessionFound(0);
@@ -125,9 +161,11 @@ export const ExamPrepLocateView = ({
     setChecked(false);
     setSaveError(null);
     setPickerToken(null);
+    pickerTokenRef.current = null;
     setPickerStatus(null);
     setObjectiveFeedback(null);
     pickerConsumedRef.current = false;
+    reuseMintedRef.current = false;
     objectiveInFlightRef.current = false;
     setPhase('active');
   };
@@ -147,6 +185,7 @@ export const ExamPrepLocateView = ({
     // Manual Check Answer closes the picker channel too: an objective pick
     // that arrives after a manual reveal must never double-answer the item.
     setPickerToken(null);
+    pickerTokenRef.current = null;
     setPickerStatus(null);
     pickerConsumedRef.current = true;
     setChecked(true); // freezes the elapsed timer
@@ -158,11 +197,40 @@ export const ExamPrepLocateView = ({
    * tab is opened with `noopener,noreferrer`, so `window.open` gives back no
    * handle whether or not the tab opened — we never claim popup failure from a
    * null WindowProxy; only a real synchronous exception is surfaced.
+   *
+   * One persistent picker tab serves the whole sprint: the first open passes
+   * the sprint id + item token/prompt in the URL; later items reuse the same
+   * tab through `picker-context` control messages (no `window.open`).
    */
   const handleOpenPicker = () => {
     if (!item || savePending || objectiveFeedback) return;
+    const sprintId = pickerSprintIdRef.current ?? pickerSprintId;
+    if (!sprintId) return;
+    // Reuse: the picker tab is still connected — (re)send context for the
+    // current item over the control channel, never a second window.open.
+    // A missing token (after a pick or manual check) is minted fresh here.
+    if (pickerReady) {
+      let token = pickerTokenRef.current;
+      if (!token) {
+        token = createExamPrepLocatePickerToken();
+        pickerConsumedRef.current = false;
+        objectiveInFlightRef.current = false;
+        setPickerToken(token);
+        pickerTokenRef.current = token;
+      }
+      postExamPrepLocatePickerControl({
+        type: EXAM_PREP_PICKER_CONTEXT_TYPE,
+        sprintId,
+        token,
+        prompt: item.prompt,
+      });
+      setPickerStatus('open');
+      return;
+    }
     const token = createExamPrepLocatePickerToken();
-    const result = openStudyUrlNewTab(buildExamPrepLocatePickerPath(item.prompt, token));
+    const result = openStudyUrlNewTab(
+      buildExamPrepLocatePickerPath(item.prompt, token, sprintId),
+    );
     if (!result.attempted) {
       setSaveError('The Locate picker could not be opened. Use Check Answer instead.');
       return;
@@ -170,6 +238,7 @@ export const ExamPrepLocateView = ({
     setSaveError(null);
     pickerConsumedRef.current = false;
     objectiveInFlightRef.current = false;
+    setPickerEverOpened(true);
     if (!isExamPrepBroadcastChannelSupported()) {
       // Graceful fallback: the picker tab still opens for browsing, but its
       // selections cannot return automatically. Manual Check Answer remains.
@@ -177,6 +246,15 @@ export const ExamPrepLocateView = ({
       return;
     }
     setPickerToken(token);
+    pickerTokenRef.current = token;
+    // Immediately offer context in case the picker mounted first; the picker
+    // also announces `picker-ready`, which triggers a resend below.
+    postExamPrepLocatePickerControl({
+      type: EXAM_PREP_PICKER_CONTEXT_TYPE,
+      sprintId,
+      token,
+      prompt: item.prompt,
+    });
     setPickerStatus('open');
   };
 
@@ -198,6 +276,7 @@ export const ExamPrepLocateView = ({
     try {
       pickerConsumedRef.current = true;
       setPickerToken(null);
+      pickerTokenRef.current = null;
       setPickerStatus(null);
       setChecked(true); // freezes the elapsed timer
       setObjectiveFeedback({
@@ -223,6 +302,54 @@ export const ExamPrepLocateView = ({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [item?.id, phase, pickerToken]);
 
+  // Persistent-picker control channel: the picker tab announces `picker-ready`
+  // (mount + heartbeat). On ready, mark connected and resend the CURRENT item
+  // context so a late-mounting or reloaded picker tab adopts it.
+  useEffect(() => {
+    if (phase !== 'active' || !pickerSprintId) return;
+    return subscribeExamPrepLocatePickerControl(pickerSprintId, (message) => {
+      if (message.type === EXAM_PREP_PICKER_READY_TYPE) {
+        pickerReadyAtRef.current = Date.now();
+        setPickerReady(true);
+        const current = itemRef.current;
+        const token = pickerTokenRef.current;
+        if (current && token && !checkedRef.current && !pickerConsumedRef.current) {
+          postExamPrepLocatePickerControl({
+            type: EXAM_PREP_PICKER_CONTEXT_TYPE,
+            sprintId: message.sprintId,
+            token,
+            prompt: current.prompt,
+          });
+        }
+      }
+    });
+  }, [phase, pickerSprintId]);
+
+  // Bounded connection detection: drop `pickerReady` when heartbeats stop.
+  useEffect(() => {
+    if (phase !== 'active' || !pickerSprintId || !pickerEverOpened) return;
+    const handle = window.setInterval(() => {
+      if (Date.now() - pickerReadyAtRef.current > EXAM_PREP_PICKER_CONNECTION_TIMEOUT_MS) {
+        setPickerReady((ready) => (ready ? false : ready));
+      }
+    }, EXAM_PREP_PICKER_HEARTBEAT_INTERVAL_MS);
+    return () => window.clearInterval(handle);
+  }, [phase, pickerSprintId, pickerEverOpened]);
+
+  // Tell the persistent picker tab the sprint ended (done/idle/unmount).
+  useEffect(() => {
+    if (!pickerSprintId) return;
+    if (phase === 'active') return;
+    postExamPrepLocatePickerControl({
+      type: EXAM_PREP_PICKER_SPRINT_ENDED_TYPE,
+      sprintId: pickerSprintId,
+    });
+    setPickerReady(false);
+    setPickerToken(null);
+    pickerTokenRef.current = null;
+    setPickerStatus(null);
+  }, [phase, pickerSprintId]);
+
   /**
    * Persists the immutable locate attempt (frozen elapsed time) and only then
    * advances through the FROZEN session. Used by both the objective Continue
@@ -243,15 +370,40 @@ export const ExamPrepLocateView = ({
     });
     try {
       await onSaveExamPrepAttempt(attempt);
-      setPickerToken(null);
       setPickerStatus(null);
       setObjectiveFeedback(null);
       pickerConsumedRef.current = true;
       // advance through the FROZEN session only
       if (result === 'found') setSessionFound((count) => count + 1);
       const nextIndex = index + 1;
-      if (session && nextIndex >= session.length) setPhase('done');
-      else setIndex(nextIndex);
+      if (session && nextIndex >= session.length) {
+        setPickerToken(null);
+        pickerTokenRef.current = null;
+        setPhase('done');
+      } else {
+        // Reuse the persistent picker tab: mint the next item token and push
+        // fresh context over the control channel — no `window.open`.
+        // Works after an objective pick OR a manual answer: the token was
+        // cleared on answer, so a fresh one is always minted here.
+        const nextItem = session?.[nextIndex] ?? null;
+        const sprintId = pickerSprintIdRef.current;
+        if (nextItem && sprintId && pickerEverOpened && pickerReady) {
+          const nextToken = createExamPrepLocatePickerToken();
+          reuseMintedRef.current = true;
+          pickerConsumedRef.current = false;
+          objectiveInFlightRef.current = false;
+          setPickerToken(nextToken);
+          pickerTokenRef.current = nextToken;
+          postExamPrepLocatePickerControl({
+            type: EXAM_PREP_PICKER_CONTEXT_TYPE,
+            sprintId,
+            token: nextToken,
+            prompt: nextItem.prompt,
+          });
+          setPickerStatus('open');
+        }
+        setIndex(nextIndex);
+      }
     } catch (error) {
       setSaveError(
         error instanceof Error

@@ -33,7 +33,7 @@ describe('exam prep locate picker protocol', () => {
     expect(path).not.toContain('section:34');
     const search = path.slice(path.indexOf('?'));
     const parsed = parseExamPrepLocatePickerSearch(search);
-    expect(parsed).toEqual({ kind: 'locate', prompt, token });
+    expect(parsed).toEqual({ kind: 'locate', prompt, token, sprintId: null });
     expect(parseExamPrepLocatePickerSearch('?tab=units')).toBeNull();
     expect(parseExamPrepLocatePickerSearch('')).toBeNull();
   });

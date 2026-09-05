@@ -326,6 +326,39 @@ describe('Exam Prep UI', () => {
     expect(document.body.textContent).toContain(answerPoint ?? '');
   });
 
+  it('drill Related-unit chips open Learn in a new tab without losing local state', async () => {
+    const drillUnit = EXAM_PREP_MANIFEST.units.find((unit) => unit.id === 'DRILL-01');
+    expect(drillUnit).toBeTruthy();
+    expect(drillUnit?.relatedUnitIds.length).toBeGreaterThan(0);
+    const onNavigate = vi.fn();
+    const openSpy = vi.spyOn(window, 'open').mockReturnValue({} as Window);
+    try {
+      await render(
+        <ExamDrillCard unit={drillUnit as never} onOpenProvision={vi.fn()} onNavigate={onNavigate} />,
+      );
+      await clickButton('Start');
+      await clickButton('Reveal');
+      const relatedId = drillUnit?.relatedUnitIds[0] ?? '';
+      const chip = Array.from(document.querySelectorAll('button')).find((entry) =>
+        entry.textContent?.includes(relatedId),
+      );
+      expect(chip).toBeTruthy();
+      await act(async () => {
+        chip?.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+        await Promise.resolve();
+      });
+      expect(openSpy).toHaveBeenCalledTimes(1);
+      expect(String(openSpy.mock.calls[0]?.[0])).toContain(`/study/learn#exam-unit-${relatedId}`);
+      expect(openSpy.mock.calls[0]?.[1]).toBe('_blank');
+      expect(String(openSpy.mock.calls[0]?.[2])).toContain('noopener');
+      // In-SPA navigation is untouched, so the drill card keeps its state.
+      expect(onNavigate).not.toHaveBeenCalled();
+      expect(document.body.textContent).toContain('Answer points');
+    } finally {
+      openSpy.mockRestore();
+    }
+  });
+
   it('sidebar names the item Exam Prep and highlights the recall route', async () => {
     await render(
       <StudyLayout

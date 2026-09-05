@@ -26,7 +26,7 @@ import {
   writeSearchArtifact,
   writeSearchMetadata,
 } from './studySearchPersistence';
-import { buildMatchedSnippet, exactSearchBoost } from './studySearchRanking';
+import { buildMatchedSnippet, exactSearchBoost, meaningfulSearchTokensFor } from './studySearchRanking';
 import { STUDY_DB_VERSION, STUDY_SCHEMA_VERSION } from '../studyDbConfig';
 import type { StudySearchWorkerRequest, StudySearchWorkerResponse } from './studySearchMessages';
 import type { StudySearchRecord, StudySearchResultSummary, StudySearchScope } from './studySearchTypes';
@@ -419,8 +419,11 @@ const runSearch = (message: Extract<StudySearchWorkerRequest, { type: 'search' }
     if (!index) return [];
     const andResults = index.search(query, { ...searchOptions, combineWith: 'AND' }).map(toSummary);
     const seen = new Set(andResults.map((result) => result.id));
+    const meaningfulTokens = meaningfulSearchTokensFor(query);
+    const fallbackQuery = meaningfulTokens.length > 0 ? meaningfulTokens.join(' ') : '';
+    if (!fallbackQuery) return andResults;
     const orResults = index
-      .search(query, searchOptions)
+      .search(fallbackQuery, searchOptions)
       .map(toSummary)
       .filter((result) => !seen.has(result.id));
     return [...andResults, ...orResults];

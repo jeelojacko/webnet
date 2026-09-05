@@ -14,6 +14,29 @@ export const searchTokensFor = (query: string): string[] =>
     .split(' ')
     .filter((token) => token.length > 0);
 
+export const STUDY_SEARCH_STOPWORDS: ReadonlySet<string> = new Set([
+  'a',
+  'an',
+  'and',
+  'as',
+  'at',
+  'be',
+  'by',
+  'for',
+  'from',
+  'in',
+  'is',
+  'of',
+  'on',
+  'or',
+  'the',
+  'to',
+  'with',
+]);
+
+export const meaningfulSearchTokensFor = (query: string): string[] =>
+  searchTokensFor(query).filter((token) => !STUDY_SEARCH_STOPWORDS.has(token));
+
 export const buildMatchedSnippet = ({
   text,
   query,
@@ -28,11 +51,12 @@ export const buildMatchedSnippet = ({
   if (!normalizedQuery) return text.slice(0, maxLength);
   const normalizedText = normalizeSearchQuery(text);
   const phraseIndex = normalizedText.indexOf(normalizedQuery);
-  const queryTokens = searchTokensFor(query);
+  const meaningfulTokens = meaningfulSearchTokensFor(query);
+  const fallbackTokens = meaningfulTokens.length > 0 ? meaningfulTokens : searchTokensFor(query);
   const tokenIndex =
     phraseIndex >= 0
       ? phraseIndex
-      : queryTokens
+      : fallbackTokens
           .map((token) => normalizedText.indexOf(token))
           .filter((index) => index >= 0)
           .sort((left, right) => left - right)[0];
@@ -59,11 +83,17 @@ export const exactSearchBoost = ({
   const citation = normalizeSearchQuery(result.citation ?? '');
   const snippet = normalizeSearchQuery(snippetText);
   const tokens = searchTokensFor(query);
+  const meaningfulTokens = meaningfulSearchTokensFor(query);
   if (!normalizedQuery) return 0;
   if (title === normalizedQuery || citation === normalizedQuery) return 5000;
   if (title.includes(normalizedQuery) || citation.includes(normalizedQuery)) return 1500;
   if (snippet.includes(normalizedQuery)) return 1300;
   if (tokens.length > 1 && tokens.every((token) => snippet.includes(token))) return 500;
+  if (
+    meaningfulTokens.length > 1 &&
+    meaningfulTokens.every((token) => snippet.includes(token))
+  )
+    return 500;
   const section = normalizedQuery.match(/^(?:s\.|section\s*)?(\d+[a-z]?)$/i)?.[1];
   if (section && result.entityType === 'official-provision') {
     const sourceKey = result.sourceKey?.toLowerCase() ?? '';

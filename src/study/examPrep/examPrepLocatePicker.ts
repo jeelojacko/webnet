@@ -26,9 +26,27 @@ export const EXAM_PREP_PICKER_KIND = 'locate';
 export const EXAM_PREP_PICKER_PARAM = 'studyPicker';
 export const EXAM_PREP_PICKER_TOKEN_PARAM = 'token';
 export const EXAM_PREP_PICKER_PROMPT_PARAM = 'prompt';
+export const EXAM_PREP_PICKER_SPRINT_PARAM = 'sprint';
 
 /** BroadcastChannel namespace shared by one sprint tab + one picker tab. */
 export const EXAM_PREP_PICKER_CHANNEL_PREFIX = 'webnet-study-locate-picker';
+
+/** Control channel namespace for one persistent picker tab per sprint. */
+export const EXAM_PREP_PICKER_CONTROL_PREFIX = 'webnet-study-locate-picker-control';
+
+export const EXAM_PREP_PICKER_READY_TYPE = 'picker-ready';
+export const EXAM_PREP_PICKER_CONTEXT_TYPE = 'picker-context';
+export const EXAM_PREP_PICKER_SPRINT_ENDED_TYPE = 'picker-sprint-ended';
+
+/** Bounded heartbeat: picker announces readiness; sprint detects loss. */
+export const EXAM_PREP_PICKER_HEARTBEAT_INTERVAL_MS = 2000;
+export const EXAM_PREP_PICKER_CONNECTION_TIMEOUT_MS = 6000;
+
+/** Sprint-scoped control messages. Never carry expected answers. */
+export type ExamPrepLocatePickerControlMessage =
+  | { type: typeof EXAM_PREP_PICKER_READY_TYPE; sprintId: string }
+  | { type: typeof EXAM_PREP_PICKER_CONTEXT_TYPE; sprintId: string; token: string; prompt: string }
+  | { type: typeof EXAM_PREP_PICKER_SPRINT_ENDED_TYPE; sprintId: string };
 
 export const EXAM_PREP_PICK_MESSAGE_TYPE = 'study-locate-pick';
 
@@ -45,6 +63,7 @@ export type ExamPrepLocatePickerContext = {
   kind: 'locate';
   prompt: string;
   token: string;
+  sprintId: string | null;
 };
 
 export const parseExamPrepLocatePickerSearch = (
@@ -55,20 +74,30 @@ export const parseExamPrepLocatePickerSearch = (
   const prompt = params.get(EXAM_PREP_PICKER_PROMPT_PARAM) ?? '';
   const token = params.get(EXAM_PREP_PICKER_TOKEN_PARAM) ?? '';
   if (!prompt || !token) return null;
-  return { kind: 'locate', prompt, token };
+  const sprintRaw = params.get(EXAM_PREP_PICKER_SPRINT_PARAM);
+  return { kind: 'locate', prompt, token, sprintId: sprintRaw ? sprintRaw : null };
 };
+
+/** Ephemeral id binding one persistent picker tab to one sprint. */
+export const createExamPrepLocatePickerSprintId = (): string =>
+  `locate-sprint-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
 
 /** Nonce token guarding one Locate picker session. */
 export const createExamPrepLocatePickerToken = (): string =>
   `locate-pick-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
 
 /** Path the sprint tab opens in the new tab (Library in picker mode). */
-export const buildExamPrepLocatePickerPath = (prompt: string, token: string): string => {
+export const buildExamPrepLocatePickerPath = (
+  prompt: string,
+  token: string,
+  sprintId?: string,
+): string => {
   const params = new URLSearchParams({
     [EXAM_PREP_PICKER_PARAM]: EXAM_PREP_PICKER_KIND,
     [EXAM_PREP_PICKER_PROMPT_PARAM]: prompt,
     [EXAM_PREP_PICKER_TOKEN_PARAM]: token,
   });
+  if (sprintId) params.set(EXAM_PREP_PICKER_SPRINT_PARAM, sprintId);
   return `${STUDY_LIBRARY_PATH}?${params.toString()}`;
 };
 
@@ -162,6 +191,79 @@ export const subscribeExamPrepLocatePicks = (
       if (!isExamPrepLocatePickMessage(pick)) return;
       if (pick.token !== token) return;
       onPick(pick);
+    };
+    return () => {
+      channel.onmessage = null;
+      try {
+        channel.close();
+      } catch {
+        // closing an already-closed channel is a no-op in practice
+      }
+    };
+  } catch {
+    return () => undefined;
+  }
+};
+
+/** Sprint-scoped control channel name. Carries only the random sprint id. */
+export const examPrepLocatePickerControlChannelName = (sprintId: string): string =>
+  `${EXAM_PREP_PICKER_CONTROL_PREFIX}:${sprintId}`;
+
+export const isExamPrepLocatePickerControlMessage = (
+  value: unknown,
+): value is ExamPrepLocatePickerControlMessage => {
+  if (typeof value !== 'object' || value === null) return false;
+  const candidate = value as Record<string, unknown>;
+  if (typeof candidate.sprintId !== 'string' || !candidate.sprintId) return false;
+  if (candidate.type === EXAM_PREP_PICKER_READY_TYPE) return true;
+  if (candidate.type === EXAM_PREP_PICKER_SPRINT_ENDED_TYPE) return true;
+  if (candidate.type === EXAM_PREP_PICKER_CONTEXT_TYPE) {
+    return (
+      typeof candidate.token === 'string' &&
+      !!candidate.token &&
+      typeof candidate.prompt === 'string' &&
+      !!candidate.prompt
+    );
+  }
+  return false;
+};
+
+/** Posts a sprint-scoped control message (ready/context/ended). */
+export const postExamPrepLocatePickerControl = (
+  message: ExamPrepLocatePickerControlMessage,
+): ExamPrepLocatePickPostResult => {
+  if (!isExamPrepBroadcastChannelSupported()) return 'unsupported';
+  try {
+    const channel = new BroadcastChannel(
+      examPrepLocatePickerControlChannelName(message.sprintId),
+    );
+    try {
+      channel.postMessage(message);
+    } finally {
+      channel.close();
+    }
+    return 'sent';
+  } catch {
+    return 'error';
+  }
+};
+
+/**
+ * Subscribes to sprint-scoped control messages. Wrong-sprint and malformed
+ * messages are ignored. Returns a cleanup closing the channel.
+ */
+export const subscribeExamPrepLocatePickerControl = (
+  sprintId: string,
+  onMessage: (_message: ExamPrepLocatePickerControlMessage) => void,
+): (() => void) => {
+  if (!isExamPrepBroadcastChannelSupported()) return () => undefined;
+  try {
+    const channel = new BroadcastChannel(examPrepLocatePickerControlChannelName(sprintId));
+    channel.onmessage = (event: MessageEvent) => {
+      const message = event.data;
+      if (!isExamPrepLocatePickerControlMessage(message)) return;
+      if (message.sprintId !== sprintId) return;
+      onMessage(message);
     };
     return () => {
       channel.onmessage = null;

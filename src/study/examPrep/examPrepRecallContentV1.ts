@@ -37,7 +37,7 @@ export const EXAM_PREP_RECALL_CONTENT_V1: ExamPrepRecallLearnerContent[] = [
   { taskId: 'recall:A-NBLS-04:1', prompt: 'What signing/sealing responsibility applies to final professional survey plans, reports, opinions, or documents intended to be relied upon?', expectedAnswerOverride: "Final survey plans, reports, opinions, or other documents prepared by or under a land surveyor's direction, whose accuracy is intended to be relied upon, must be signed by the land surveyor and bear the required seal." },
   { taskId: 'recall:A-NBLS-04:2', prompt: 'Who generally owns original survey plans, records, and documents prepared by a surveyor, and what is the employee exception?', expectedAnswerOverride: "Original survey plans, records, and documents generally remain the surveyor's property. If they were prepared in the course of employment by another, they remain the employer's property and may not be removed from the employer's place of business without prior written consent." },
   { taskId: 'recall:A-BYL-06:1', prompt: 'When a survey results in monuments being placed, what Survey Plan obligation generally follows, and what is the key coordinated-plan exception?' },
-  { taskId: 'recall:A-SURV-03:1', prompt: 'In an integrated survey area, which legal monuments established by a surveyor must be tied to coordinate monuments?', expectedAnswerOverride: 'In an integrated survey area, a surveyor must tie to the coordinate monuments all legal monuments the surveyor establishes that pertain to Crown Lands, subdivisions when a subdivision plan is required under the Community Planning Act, or parcels whose owners request inclusion.' },
+  { taskId: 'recall:A-SURV-03:1', prompt: 'In an integrated survey area, which legal monuments established by a surveyor must be tied to coordinate monuments?', expectedAnswerOverride: 'In an integrated survey area, a surveyor must tie all legal monuments they establish to the coordinate monuments when those monuments pertain to Crown Lands, subdivisions when a subdivision plan is required under the Community Planning Act, or parcels whose owners request inclusion.' },
   { taskId: 'recall:A-SURV-03:2', prompt: 'When is subdivision work included in the integrated-survey-area coordinate-monument tie requirement?', expectedAnswerOverride: 'Subdivision work is included when a subdivision plan is required under the Community Planning Act.' },
   { taskId: 'recall:A-SURV-03:3', prompt: 'When may a surveyor certify the correctness of a subdivision or other plan prepared under s.7 in an integrated survey area?', expectedAnswerOverride: "For a subdivision or other plan prepared under section 7, the surveyor may certify its correctness only if it represents a survey carried out by the surveyor or under the surveyor's personal supervision or direction, and the survey standard complies with the regulations." },
   { taskId: 'recall:A-BCAR-01:1', prompt: "What four matters must a boundary-confirmation surveyor's report address?" },
@@ -96,7 +96,7 @@ export const EXAM_PREP_RECALL_CONTENT_V1: ExamPrepRecallLearnerContent[] = [
  * fails closed on any drift.
  */
 export const examPrepRecallContentV1Hash =
-  '90a9c88627b82830b460f16e553ada76592ea7f6c38805a8f7337ec4aa91b640';
+  '9c07b1b12d932259329defe098f8bb86db6363be563d3bd34ccc788743b8d3b8';
 
 /** Canonical JSON the pinned hash above is computed over (Node-side check). */
 export const examPrepRecallContentV1CanonicalJson = (): string =>

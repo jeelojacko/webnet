@@ -144,7 +144,7 @@ describe('Exam Prep Recall Content V1 identity', () => {
 
   it('pins the deterministic content hash', () => {
     expect(examPrepRecallContentV1Hash).toBe(
-      '90a9c88627b82830b460f16e553ada76592ea7f6c38805a8f7337ec4aa91b640',
+      '9c07b1b12d932259329defe098f8bb86db6363be563d3bd34ccc788743b8d3b8',
     );
   });
 
@@ -201,7 +201,15 @@ describe('Exam Prep Recall Content V1 pinned semantic examples', () => {
 
   it('keeps the A-SURV-03:1 override on the Surveys Act s.7 scope', () => {
     const override = recordByTaskId.get('recall:A-SURV-03:1')?.expectedAnswerOverride ?? '';
-    expect(override).toContain('under the Community Planning Act');
+    expect(override).toBe(
+      'In an integrated survey area, a surveyor must tie all legal monuments they establish to the coordinate monuments when those monuments pertain to Crown Lands, subdivisions when a subdivision plan is required under the Community Planning Act, or parcels whose owners request inclusion.',
+    );
+  });
+
+  it('pins the exact A-SURV-03:1 override wording', () => {
+    expect(recordByTaskId.get('recall:A-SURV-03:1')?.expectedAnswerOverride).toBe(
+      'In an integrated survey area, a surveyor must tie all legal monuments they establish to the coordinate monuments when those monuments pertain to Crown Lands, subdivisions when a subdivision plan is required under the Community Planning Act, or parcels whose owners request inclusion.',
+    );
   });
 
   it('keeps the B-AIR-02:1 override on the s.5(1) correctness/compliance certification', () => {

@@ -3,7 +3,7 @@
 Deterministic QA review of the authored Recall Content V1 learner layer over the frozen 57-card Recall pool.
 
 - contentId: `nb-sit-recall-content-v1`
-- contentHash: `90a9c88627b82830b460f16e553ada76592ea7f6c38805a8f7337ec4aa91b640`
+- contentHash: `9c07b1b12d932259329defe098f8bb86db6363be563d3bd34ccc788743b8d3b8`
 - curriculumId: `nb-sit-statute-exam-curriculum-v1`
 - manifest contentHash: `434703f0a6de470095a5d0ad9fc6d1bb9534b15d58b1ab2b47460bba8a88952a`
 - corpus contentHash: `6f0442fc121eb0d2bcc9d3c1023c7a624e2cd4adf36922079bc3f6858fdcc32b`
@@ -182,7 +182,7 @@ Authored prompt:
 In an integrated survey area, which legal monuments established by a surveyor must be tied to coordinate monuments?
 
 Learner-facing expected answer:
-In an integrated survey area, a surveyor must tie to the coordinate monuments all legal monuments the surveyor establishes that pertain to Crown Lands, subdivisions when a subdivision plan is required under the Community Planning Act, or parcels whose owners request inclusion.
+In an integrated survey area, a surveyor must tie all legal monuments they establish to the coordinate monuments when those monuments pertain to Crown Lands, subdivisions when a subdivision plan is required under the Community Planning Act, or parcels whose owners request inclusion.
 
 Validation anchors (owning unit only):
 - Surveys Act — 5 — section:5 [core_rule]

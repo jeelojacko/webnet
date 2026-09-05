@@ -154,8 +154,11 @@ describe('Exam Prep Locate picker flow', () => {
     expect(bodyText()).toContain('Expected location');
     expect(saved).toHaveLength(0);
     expect(continueButton()).toBeTruthy();
-    // The channel is closed after the single valid pick.
-    expect(openFakeBroadcastChannelNames()).toEqual([]);
+    // The item pick channel closes; the sprint control channel remains alive
+    // for the persistent picker heartbeat/context handshake.
+    expect(openFakeBroadcastChannelNames()).toEqual([
+      expect.stringMatching(/^webnet-study-locate-picker-control:/),
+    ]);
 
     await clickButton('Continue');
     expect(saved).toHaveLength(1);
