@@ -30,13 +30,17 @@ describe('phase6 large benchmark cases', () => {
       'gps-2d-cov-08',
       'chain-2d-robust-tscorr-16',
       'gps-3d-cov-08',
+      'gps-3d-16',
+      'gps-3d-32',
+      'gps-3d-64',
+      'gps-3d-128',
     ]);
   });
 
-  it('keeps quick mode to two small plain cases', () => {
+  it('keeps quick mode to three bounded cases', () => {
     const cases = listPhase6LargeBenchmarkCases(true);
-    expect(cases.map((c) => c.id)).toEqual(['chain-2d-16', 'gps-2d-16']);
-    expect(cases.every((c) => c.variant === 'plain')).toBe(true);
+    expect(cases.map((c) => c.id)).toEqual(['chain-2d-16', 'gps-2d-16', 'gps-3d-16']);
+    expect(cases.every((c) => c.variant === 'plain' || c.dimension === '3d')).toBe(true);
   });
 
   it('generates deterministically from the shared Phase 5 generator', () => {

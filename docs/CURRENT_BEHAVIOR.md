@@ -180,6 +180,12 @@ Current numerical behavior includes:
 - deterministic diagnostics for regularized and singular cases
 - explicit tiny-negative covariance cleanup in precision propagation instead of broad absolute-value reflection
 
+### Experimental sparse Phase 7A evidence
+
+Production adjustment remains TypeScript-only. The fresh Emscripten 6.0.9 artifact passed dense/sparse solver, covariance, adjustment, browser, worker, and industry checks; industry sparse shadow maximum coordinate difference was 2.41e-12 m with zero fallbacks. Test-only generated 3D cases cover gps-3d-16/32/64/128 with mixed D/B/V/G observations, EN-correlated GPS weighting, selected covariance, standardized residuals, horizontal/height truth checks, and deterministic repeats. TS-vs-sparse parity is claimed only for the manageable 16/32 cases; full ENU covariance remains open. A test-only actual adjustment-worker protocol proof now loads the existing worker, sends a real request, and validates TypeScript assembly/progress/success; the worker request has no sparse injection seam, so sparse execution inside it remains unclaimed.
+
+The first-iteration condition value is a user-visible raw normal-matrix norm-product diagnostic. Sparse routes currently omit it; any future routing must provide the same sparse-compatible diagnostic or explicitly preserve a documented fallback. Legacy all-pairs relativePrecision remains unchanged on the dense contract; selected sparse mode intentionally emits no all-pairs rows. Before production routing, arbitrary pairs should use the selected covariance query plan/store, while damped or rank-deficient sparse covariance must continue to reject and use guarded dense TypeScript recovery.
+
 ## Diagnostics and review workflows
 
 ### Residual, suspect, and review workflows

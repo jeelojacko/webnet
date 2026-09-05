@@ -30,9 +30,8 @@ import {
 import {
   buildPhase6LargeBenchmarkCases,
   estimatePhase6SparseStorage,
-  phase6ChainTruth,
-  phase6HeightTruth,
   phase6LargeSizeSkipReason,
+  phase6TruthDiffs,
   PHASE6_SPARSE_LARGE_DEFAULT_MAX_RSS_MB,
   PHASE6_SPARSE_LARGE_DEFAULT_MAX_TOTAL_MS,
   PHASE6_SPARSE_LARGE_DEFAULT_MAX_UNKNOWN_COUNT,
@@ -71,7 +70,8 @@ interface CaseMeasurement {
   selectedQueryCount?: number;
   selectedParamCount?: number;
   relativePrecisionRows?: number;
-  truthMaxDiffM?: number;
+  truthHorizontalMaxM?: number;
+  truthHeightMaxM?: number;
   repeatMaxDiffM?: number;
   rssBeforeMb?: number;
   rssAfterMb?: number;
@@ -137,26 +137,9 @@ const maxCoordDiff = (a: AdjustmentResult, b: AdjustmentResult): number => {
 
 const truthMaxDiff = (
   candidate: AdjustmentResult,
-  benchmarkCase: { unknownCount: number; dimension: string },
-): number => {
-  let max = 0;
-  for (let i = 0; i < benchmarkCase.unknownCount; i += 1) {
-    const station = candidate.stations[`U${i + 1}`] as
-      | { x: number; y: number; z?: number; h?: number }
-      | undefined;
-    const truth = phase6ChainTruth(i);
-    if (!station || !Number.isFinite(station.x) || !Number.isFinite(station.y)) {
-      return Number.POSITIVE_INFINITY;
-    }
-    max = Math.max(max, Math.abs(station.x - truth.e), Math.abs(station.y - truth.n));
-    if (benchmarkCase.dimension === '3d') {
-      const height = station.z ?? station.h;
-      if (height == null || !Number.isFinite(height)) return Number.POSITIVE_INFINITY;
-      max = Math.max(max, Math.abs(height - phase6HeightTruth(i + 1)));
-    }
-  }
-  return max;
-};
+  benchmarkCase: { unknownCount: number; dimension: '2d' | '3d' },
+): { horizontalM: number; heightM: number } =>
+  phase6TruthDiffs(candidate.stations, benchmarkCase);
 
 const mb = (bytes: number): number => bytes / 1048576;
 
@@ -254,6 +237,7 @@ for (const benchmarkCase of cases) {
     'experimentalSelectedCovarianceStore'
   ] as { queryCount?: unknown; parameterCount?: unknown } | undefined;
   const memAfter = process.memoryUsage();
+  const truth = truthMaxDiff(candidate, benchmarkCase);
   measurements.push({
     ...base,
     status: 'measured',
@@ -285,7 +269,8 @@ for (const benchmarkCase of cases) {
     selectedQueryCount: typeof store?.queryCount === 'number' ? store.queryCount : undefined,
     selectedParamCount: typeof store?.parameterCount === 'number' ? store.parameterCount : undefined,
     relativePrecisionRows: (candidate.relativePrecision ?? []).length,
-    truthMaxDiffM: truthMaxDiff(candidate, benchmarkCase),
+    truthHorizontalMaxM: truth.horizontalM,
+    truthHeightMaxM: truth.heightM,
     repeatMaxDiffM: maxCoordDiff(candidate, repeat),
     rssBeforeMb,
     rssAfterMb: mb(memAfter.rss),
@@ -314,8 +299,11 @@ for (const m of measurements) {
   if ((m.iterations ?? maxIterations + 1) > maxIterations) {
     violations.push(`${m.id}: iterations ${m.iterations} exceed ${maxIterations}`);
   }
-  if ((m.truthMaxDiffM ?? Number.POSITIVE_INFINITY) > truthToleranceM) {
-    violations.push(`${m.id}: truth diff ${m.truthMaxDiffM?.toExponential(2)} exceeds ${truthToleranceM} m`);
+  if ((m.truthHorizontalMaxM ?? Number.POSITIVE_INFINITY) > truthToleranceM) {
+    violations.push(`${m.id}: horizontal truth diff ${m.truthHorizontalMaxM?.toExponential(2)} exceeds ${truthToleranceM} m`);
+  }
+  if ((m.truthHeightMaxM ?? Number.POSITIVE_INFINITY) > truthToleranceM) {
+    violations.push(`${m.id}: height truth diff ${m.truthHeightMaxM?.toExponential(2)} exceeds ${truthToleranceM} m`);
   }
   if (
     !Number.isFinite(m.repeatMaxDiffM) ||
@@ -367,7 +355,7 @@ mkdirSync('benchmarks/baselines', { recursive: true });
 writeFileSync('benchmarks/baselines/sparse-large-latest.json', `${JSON.stringify(output, null, 2)}\n`);
 
 const fmtMb = (bytes: number): string => mb(bytes).toFixed(2);
-const header = `| Case | Unknowns | Eq rows | Params | Median ms | Iter | Truth max m | Repeat max m | Sel q/n² | relPrec | Dense P/N/Qxx MB | Sparse total KB | Factor nnz | RSS Δ MB | Diag |`;
+const header = `| Case | Unknowns | Eq rows | Params | Median ms | Iter | Horiz max m | Height max m | Repeat max m | Sel q/n² | relPrec | Dense P/N/Qxx MB | Sparse total KB | Factor nnz | RSS Δ MB | Diag |`;
 const divider = `| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | --- |`;
 const rows = measurements.map((m) => {
   if (m.status === 'skipped') {
@@ -385,7 +373,7 @@ const rows = measurements.map((m) => {
   const diag = m.diagnostics
     ? `corr ${m.diagnostics.sparseCorrectionCalls}/${m.diagnostics.sparseCorrectionFallbacks} rowp ${m.diagnostics.rowProductsCalls}/${m.diagnostics.rowProductsFallbacks} selcov ${m.diagnostics.selectedCovarianceCalls}/${m.diagnostics.selectedCovarianceFallbacks}`
     : '-';
-  return `| ${m.id} | ${m.unknowns} | ${m.equationRows} | ${m.paramCount} | ${m.medianMs?.toFixed(1)} | ${m.iterations} | ${(m.truthMaxDiffM ?? 0).toExponential(2)} | ${(m.repeatMaxDiffM ?? 0).toExponential(2)} | ${sel} | ${m.relativePrecisionRows} | ${dense} | ${sparseKb} | ${m.factorNnz} | ${((m.rssAfterMb ?? 0) - (m.rssBeforeMb ?? 0)).toFixed(1)} | ${diag} |`;
+  return `| ${m.id} | ${m.unknowns} | ${m.equationRows} | ${m.paramCount} | ${m.medianMs?.toFixed(1)} | ${m.iterations} | ${(m.truthHorizontalMaxM ?? 0).toExponential(2)} | ${(m.truthHeightMaxM ?? 0).toExponential(2)} | ${(m.repeatMaxDiffM ?? 0).toExponential(2)} | ${sel} | ${m.relativePrecisionRows} | ${dense} | ${sparseKb} | ${m.factorNnz} | ${((m.rssAfterMb ?? 0) - (m.rssBeforeMb ?? 0)).toFixed(1)} | ${diag} |`;
 });
 const markdown = [
   `# Phase 6 sparse-only large benchmark`,

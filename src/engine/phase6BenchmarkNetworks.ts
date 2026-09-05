@@ -55,6 +55,7 @@ export const listPhase6LargeBenchmarkCases = (quick: boolean): Phase6LargeNetwor
     return [
       { id: 'chain-2d-16', family: 'chain-2d', unknownCount: 16, seed: 1116, variant: 'plain', dimension: '2d' },
       { id: 'gps-2d-16', family: 'gps-2d', unknownCount: 16, seed: 2216, variant: 'plain', dimension: '2d' },
+      { id: 'gps-3d-16', family: 'gps-2d', unknownCount: 16, seed: 2316, variant: 'gps-covariance', dimension: '3d' },
     ];
   }
   return [
@@ -72,14 +73,17 @@ export const listPhase6LargeBenchmarkCases = (quick: boolean): Phase6LargeNetwor
       variant: 'robust-tscorr',
       dimension: '2d',
     },
-    {
-      id: 'gps-3d-cov-08',
+    { id: 'gps-3d-cov-08',
       family: 'gps-2d',
       unknownCount: 8,
       seed: 2308,
       variant: 'gps-covariance',
       dimension: '3d',
     },
+    { id: 'gps-3d-16', family: 'gps-2d', unknownCount: 16, seed: 2316, variant: 'gps-covariance', dimension: '3d' },
+    { id: 'gps-3d-32', family: 'gps-2d', unknownCount: 32, seed: 2332, variant: 'gps-covariance', dimension: '3d' },
+    { id: 'gps-3d-64', family: 'gps-2d', unknownCount: 64, seed: 2364, variant: 'gps-covariance', dimension: '3d' },
+    { id: 'gps-3d-128', family: 'gps-2d', unknownCount: 128, seed: 2381, variant: 'gps-covariance', dimension: '3d' },
   ];
 };
 
@@ -241,6 +245,37 @@ export const generatePhase6Large3dInput = (spec: Phase6LargeNetworkSpec): string
     );
   });
   return `${lines.join('\n')}\n`;
+};
+
+/**
+ * Split generated-truth agreement into horizontal vs height maxima.
+ * Pure helper over an adjusted stations map: horizontal covers x/y
+ * against the chain truth, height covers z/h against the height profile
+ * (3D cases only; 2D reports height 0). Non-finite/missing stations yield
+ * positive infinity so fail-closed callers reject the case.
+ */
+export const phase6TruthDiffs = (
+  stations: Record<string, { x: number; y: number; z?: number; h?: number } | undefined>,
+  spec: { unknownCount: number; dimension: Phase6LargeDimension },
+): { horizontalM: number; heightM: number } => {
+  let horizontalM = 0;
+  let heightM = 0;
+  for (let i = 0; i < spec.unknownCount; i += 1) {
+    const station = stations[`U${i + 1}`];
+    const truth = phase6ChainTruth(i);
+    if (!station || !Number.isFinite(station.x) || !Number.isFinite(station.y)) {
+      return { horizontalM: Number.POSITIVE_INFINITY, heightM: Number.POSITIVE_INFINITY };
+    }
+    horizontalM = Math.max(horizontalM, Math.abs(station.x - truth.e), Math.abs(station.y - truth.n));
+    if (spec.dimension === '3d') {
+      const height = station.z ?? station.h;
+      if (height == null || !Number.isFinite(height)) {
+        return { horizontalM, heightM: Number.POSITIVE_INFINITY };
+      }
+      heightM = Math.max(heightM, Math.abs(height - phase6HeightTruth(i + 1)));
+    }
+  }
+  return { horizontalM, heightM };
 };
 
 export interface Phase6SparseStorageInput {

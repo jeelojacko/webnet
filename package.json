@@ -45,6 +45,7 @@
     "harness:crs:synthetic": "node scripts/runVitest.mjs run tests/canadianCrsHarness",
     "parity:industry-reference": "node scripts/runVitest.mjs run tests/computational_parity_harness.test.ts",
     "parity:sparse-shadow": "tsx scripts/wasmSparseShadowParity.ts",
+    "test:phase7a:worker-proof": "node scripts/runVitest.mjs run tests/phase7a_adjustment_worker_proof.test.ts",
     "adjust:cli": "tsx src/cli.ts",
     "study:fetch-nb-laws": "tsx scripts/studyFetchNbLawPilot.ts",
     "study:normalize-nb-laws": "tsx scripts/studyNormalizeNbLawPilot.ts",
