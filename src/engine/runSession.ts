@@ -27,6 +27,7 @@ export type {
   RunSessionStageProfile,
 } from './runSessionTypes';
 import { normalizeClusterApprovedMerges } from './solveEngine';
+import type { AdjustmentRuntime } from './adjustmentRuntime';
 import type { ClusterApprovedMerge, ObservationOverride, RunMode } from '../types';
 
 const AUTO_ADJUST_MIN_REDUNDANCY = 0.05;
@@ -114,6 +115,7 @@ const createAutoAdjustConfig = (request: RunSessionRequest): AutoAdjustConfig =>
 export const runAdjustmentSession = (
   request: RunSessionRequest,
   onProgress?: RunSessionProgressCallback,
+  runtime?: AdjustmentRuntime,
 ): RunSessionOutcome => {
   const startedAt = Date.now();
   let {
@@ -150,6 +152,7 @@ export const runAdjustmentSession = (
     effectiveClusterMerges,
     onProgress,
     recordStageDuration,
+    runtime,
   });
   const autoAdjustConfig = createAutoAdjustConfig(request);
   const autoAdjustSummary = autoAdjustConfig.enabled

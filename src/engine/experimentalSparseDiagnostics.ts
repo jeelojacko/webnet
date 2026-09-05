@@ -16,6 +16,8 @@ export interface ExperimentalSparseRouteDiagnostics {
   selectedCovarianceCalls: number;
   selectedCovarianceFallbacks: number;
   selectedCovarianceFallbackReasons: string[];
+  /** Sparse raw-N condition estimates; first correction iteration only. */
+  sparseConditionEstimates: number[];
 }
 
 export const createExperimentalSparseRouteDiagnostics =
@@ -29,6 +31,7 @@ export const createExperimentalSparseRouteDiagnostics =
     selectedCovarianceCalls: 0,
     selectedCovarianceFallbacks: 0,
     selectedCovarianceFallbackReasons: [],
+    sparseConditionEstimates: [],
   });
 
 const pushReason = (reasons: string[], reason: string): void => {
@@ -78,4 +81,20 @@ export const recordSelectedCovarianceFallback = (
   if (!diagnostics) return;
   diagnostics.selectedCovarianceFallbacks += 1;
   pushReason(diagnostics.selectedCovarianceFallbackReasons, reason);
+};
+
+/**
+ * Records a sparse raw-N condition estimate for the first correction
+ * iteration only. Later iterations and non-finite estimates are ignored;
+ * metadata only, never production output.
+ */
+export const recordSparseConditionEstimate = (
+  diagnostics: ExperimentalSparseRouteDiagnostics | undefined,
+  estimate: number,
+  iterationNumber: number,
+): void => {
+  if (!diagnostics || iterationNumber !== 1) return;
+  if (diagnostics.sparseConditionEstimates.length > 0) return;
+  if (!Number.isFinite(estimate)) return;
+  diagnostics.sparseConditionEstimates.push(estimate);
 };

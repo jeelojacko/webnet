@@ -55,6 +55,7 @@ export class WasmSparseNormalEquationSolver implements SparseCorrectionSolver {
       const factorNnzPointer = alloc(Int32Array.BYTES_PER_ELEMENT);
       const dampingPointer = alloc(Float64Array.BYTES_PER_ELEMENT);
       const attemptsPointer = alloc(Int32Array.BYTES_PER_ELEMENT);
+      const conditionPointer = alloc(Float64Array.BYTES_PER_ELEMENT);
       const errorPointer = alloc(error.byteLength);
       this._module.HEAP32.set(rowOffsets, rowOffsetsPointer / Int32Array.BYTES_PER_ELEMENT);
       this._module.HEAP32.set(designColumns, designColumnsPointer / Int32Array.BYTES_PER_ELEMENT);
@@ -63,16 +64,22 @@ export class WasmSparseNormalEquationSolver implements SparseCorrectionSolver {
       this._module.HEAP32.set(weightColumns, weightColumnsPointer / Int32Array.BYTES_PER_ELEMENT);
       this._module.HEAPF64.set(weightValues, weightValuesPointer / Float64Array.BYTES_PER_ELEMENT);
       this._module.HEAPF64.set(misclosures, misclosuresPointer / Float64Array.BYTES_PER_ELEMENT);
+      // Sentinel: an older module that never writes the slot leaves NaN, so
+      // the caller can fall back to the TS-side estimate.
+      this._module.HEAPF64[conditionPointer / Float64Array.BYTES_PER_ELEMENT] = Number.NaN;
       const status = this._module._webnet_sparse_equation_solve(
         rowOffsetsPointer, designColumnsPointer, designValuesPointer, designValues.length,
         weightRowsPointer, weightColumnsPointer, weightValuesPointer, weightValues.length,
         misclosuresPointer, input.observationEquationCount, input.parameterCount,
         correctionPointer, designNnzPointer, weightNnzPointer, normalNnzPointer,
-        factorNnzPointer, dampingPointer, attemptsPointer, errorPointer, error.byteLength,
+        factorNnzPointer, dampingPointer, attemptsPointer, conditionPointer,
+        errorPointer, error.byteLength,
       );
       error.set(this._module.HEAPU8.subarray(errorPointer, errorPointer + error.byteLength));
       if (status !== 0) throw new Error(readCString(error) || `WASM sparse solve failed (${status}).`);
       correction.set(this._module.HEAPF64.subarray(correctionPointer / Float64Array.BYTES_PER_ELEMENT, correctionPointer / Float64Array.BYTES_PER_ELEMENT + correction.length));
+      const conditionEstimate =
+        this._module.HEAPF64[conditionPointer / Float64Array.BYTES_PER_ELEMENT] ?? Number.NaN;
       return {
         correction: Array.from(correction, (value) => [value]),
         damping: this._module.HEAPF64[dampingPointer / Float64Array.BYTES_PER_ELEMENT] ?? 0,
@@ -83,6 +90,7 @@ export class WasmSparseNormalEquationSolver implements SparseCorrectionSolver {
         factorNnz: int32(this._module, factorNnzPointer),
         ordering: 'AMD',
         solver: 'SimplicialLLT',
+        ...(Number.isFinite(conditionEstimate) ? { conditionEstimate } : {}),
       };
     } finally {
       pointers.reverse().forEach((pointer) => this._module._free(pointer));

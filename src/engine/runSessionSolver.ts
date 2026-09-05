@@ -19,6 +19,7 @@ import type {
 } from './runSessionTypes';
 import { normalizeClusterApprovedMerges, solveEngine } from './solveEngine';
 import type { SolveProgressEvent } from './scenarioRunModels';
+import type { AdjustmentRuntime } from './adjustmentRuntime';
 import type {
   AdjustmentResult,
   ClusterApprovedMerge,
@@ -33,6 +34,8 @@ interface SessionSolveRunnerOptions {
   effectiveClusterMerges: ClusterApprovedMerge[];
   onProgress?: (_event: RunSessionProgressUpdate) => void;
   recordStageDuration: (_stageId: SolveInvocationMeta['stageId'], _durationMs: number) => void;
+  /** Phase 7B internal runtime seam; undefined preserves exact legacy behavior. */
+  runtime?: AdjustmentRuntime;
 }
 
 export interface SessionSolveRunner {
@@ -61,6 +64,7 @@ export const createSessionSolveRunner = ({
   effectiveClusterMerges,
   onProgress,
   recordStageDuration,
+  runtime,
 }: SessionSolveRunnerOptions): SessionSolveRunner => {
   let activePreanalysisAdditionIds = [...initialActivePreanalysisAdditionIds];
   let solveInvocationCount = 0;
@@ -118,6 +122,7 @@ export const createSessionSolveRunner = ({
         ),
         preanalysisSyntheticAdditionIds: [],
       },
+      runtime,
     });
     cachedPreanalysisTemplates = buildPreanalysisSyntheticSetTemplates(
       request.input,
@@ -195,6 +200,7 @@ export const createSessionSolveRunner = ({
         profileContext.currentInstrument,
         solveInput !== request.input ? { sourceInputOverride: solveInput } : undefined,
       ),
+      runtime,
       progressCallback: (event: SolveProgressEvent) => {
         if (event.phase === 'complete') return;
         emitProgress(

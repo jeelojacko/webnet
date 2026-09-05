@@ -1,4 +1,5 @@
 import { LSAEngine } from './adjust';
+import { toEngineOptions } from './adjustmentRuntime';
 import {
   getCachedParsedModel,
   getCachedSolvePreparation,
@@ -28,6 +29,7 @@ export const runAdjustmentScenario = (request: ScenarioRunRequest): AdjustmentRe
     parsedResult,
     solvePreparation: getCachedSolvePreparation(request, parsedResult),
     progressCallback: request.progressCallback,
+    ...toEngineOptions(request.runtime),
   });
   return engine.solve();
 };

@@ -4,6 +4,7 @@ import type {
   ObservationOverride,
   ParseOptions,
 } from '../types';
+import type { AdjustmentRuntime } from './adjustmentRuntime';
 
 export interface SolveProgressEvent {
   phase: 'start' | 'iteration' | 'complete';
@@ -23,6 +24,12 @@ export interface ScenarioRunRequest {
   parseOptions?: Partial<ParseOptions>;
   geoidSourceData?: ArrayBuffer | Uint8Array;
   progressCallback?: (_event: SolveProgressEvent) => void;
+  /**
+   * Phase 7B internal runtime seam: non-serializable engine dependencies
+   * (sparse solvers, diagnostics, precision policy). Undefined preserves
+   * exact legacy behavior; never persisted or sent over the worker protocol.
+   */
+  runtime?: AdjustmentRuntime;
 }
 
 export interface ScenarioRunServiceStats {

@@ -34,6 +34,13 @@ struct SparseSolveResult {
   int weight_nnz = 0;
   int normal_nnz = 0;
   int factor_nnz = 0;
+  // Raw assembled-N condition estimate (rowMax*colMax over |N|), computed
+  // before equilibration/scaling/damping. Bit-mirrors the TypeScript
+  // rowMax*colMax rule including the shared unguarded off-diagonal
+  // mirror-write; diagnostics only, never fed back into numerics. Zero
+  // when default-constructed; populated only on success, left untouched
+  // on failure (nullptr result_out is tolerated).
+  double condition_estimate = 0.0;
   const char* ordering = "AMD";
   const char* solver = "SimplicialLLT";
   // Development-only diagnostics (steady_clock milliseconds per phase).

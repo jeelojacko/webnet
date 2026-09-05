@@ -33,6 +33,7 @@ export interface WebNetWasmModule {
     _factorNnzOut: number,
     _dampingOut: number,
     _attemptsOut: number,
+    _conditionEstimateOut: number,
     _error: number,
     _errorCapacity: number,
   ): number;

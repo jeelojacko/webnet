@@ -35,6 +35,12 @@ int main() {
             result.factor_nnz > 0 && result.damping == 0 && result.attempts == 0,
         "sparse metadata is populated");
   check(error.empty(), "successful sparse solve clears error");
+  // Raw-N condition: N=[[32,45],[45,64]] => rowMax=colMax=109 => 11881.
+  check(std::isfinite(result.condition_estimate),
+        "sparse condition estimate is finite");
+  check(std::fabs(result.condition_estimate - 11881.0) <=
+            1e-9 * 11881.0,
+        "sparse condition estimate matches rowMax*colMax parity");
 
   const double diagonal_weights[] = {2, 3};
   const int diagonal_rows[] = {0, 1};
@@ -78,6 +84,19 @@ int main() {
             diagonal_columns, diagonal_weights, 2, l3, 3, 2, correction, {},
             nullptr, &error) == webnet::SparseSolveStatus::kInvalidInput,
         "non-monotonic row offsets are rejected");
+
+  // Invalid input leaves a provided result object at its default estimate.
+  webnet::SparseSolveResult failed_result;
+  failed_result.condition_estimate = -999.0;
+  check(webnet::solve_sparse_correction(
+            truncated_offsets, columns, values, 4, diagonal_rows,
+            diagonal_columns, diagonal_weights, 2, l, 2, 2, correction, {},
+            &failed_result, &error) ==
+              webnet::SparseSolveStatus::kInvalidInput,
+        "failed solve reports invalid input with result out");
+  check(failed_result.condition_estimate == -999.0,
+        "failed solve leaves condition estimate untouched");
+  check(!error.empty(), "failed solve with result out writes an error message");
 
   // Null correction output is rejected without crashing.
   check(webnet::solve_sparse_correction(
@@ -170,5 +189,31 @@ int main() {
             diagonal_weights, 2, l, 0, 2, correction, {}, nullptr, &error) ==
               webnet::SparseSolveStatus::kInvalidInput,
         "zero equation count is rejected");
+
+  // Unguarded off-diagonal mirror-write: one-parameter rows [2],[3] with
+  // P=[[1,0.5],[0.5,1]] give N = 4 + 9 + 2*(0.5*2*3) = 19, so the raw
+  // estimate is 19*19 = 361 (a guarded single-write would give 256).
+  {
+    const int single_offsets[] = {0, 1, 2};
+    const int single_columns[] = {0, 0};
+    const double single_values[] = {2, 3};
+    const int single_weight_rows[] = {0, 0, 1};
+    const int single_weight_columns[] = {0, 1, 1};
+    const double single_weight_values[] = {1, 0.5, 1};
+    const double single_l[] = {2, 3};
+    double single_correction[] = {0};
+    webnet::SparseSolveResult single_result;
+    check(webnet::solve_sparse_correction(
+                single_offsets, single_columns, single_values, 2,
+                single_weight_rows, single_weight_columns,
+                single_weight_values, 3, single_l, 2, 1,
+                single_correction, {}, &single_result, &error) ==
+                webnet::SparseSolveStatus::kOk,
+            "single-parameter correlated solve returns ok");
+    check(std::isfinite(single_result.condition_estimate) &&
+                std::fabs(single_result.condition_estimate - 361.0) <=
+                    1e-9 * 361.0,
+            "single-parameter condition doubles the shared-column pair");
+  }
   return failures == 0 ? 0 : 1;
 }

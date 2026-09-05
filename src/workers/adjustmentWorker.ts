@@ -1,10 +1,17 @@
-import type {
-  AdjustmentWorkerRequestMessage,
-  AdjustmentWorkerResponseMessage,
-} from '../engine/adjustmentWorkerProtocol';
+/**
+ * Production browser worker: delegates runs to the lazily imported
+ * `runAdjustmentSession` through the shared testable handler. The only
+ * worker-local addition is the Phase 7B runtime provider (default
+ * undefined — exact legacy behavior, no protocol or routing changes).
+ */
+import type { AdjustmentWorkerRequestMessage } from '../engine/adjustmentWorkerProtocol';
 import type { runAdjustmentSession as RunAdjustmentSessionFn } from '../engine/runSession';
+import { createAdjustmentWorkerHandler } from './adjustmentWorkerHandler';
+import { getAdjustmentWorkerRuntime } from './adjustmentWorkerRuntime';
 
-const cancelledRequestIds = new Set<string>();
+export { getAdjustmentWorkerRuntime, setAdjustmentWorkerRuntime } from './adjustmentWorkerRuntime';
+export { setAdjustmentWorkerRuntimeProvider } from './adjustmentWorkerRuntime';
+
 let runAdjustmentSessionPromise: Promise<typeof RunAdjustmentSessionFn> | null = null;
 
 const loadRunAdjustmentSession = (): Promise<typeof RunAdjustmentSessionFn> => {
@@ -16,68 +23,12 @@ const loadRunAdjustmentSession = (): Promise<typeof RunAdjustmentSessionFn> => {
   return runAdjustmentSessionPromise;
 };
 
-const postWorkerMessage = (message: AdjustmentWorkerResponseMessage) => {
-  self.postMessage(message);
-};
+const handler = createAdjustmentWorkerHandler({
+  loadSession: loadRunAdjustmentSession,
+  postMessage: (message) => self.postMessage(message),
+  getRuntime: getAdjustmentWorkerRuntime,
+});
 
 self.onmessage = (event: MessageEvent<AdjustmentWorkerRequestMessage>) => {
-  const message = event.data;
-  if (!message) return;
-
-  if (message.type === 'cancel') {
-    cancelledRequestIds.add(message.runId);
-    postWorkerMessage({ type: 'cancelled', runId: message.runId });
-    return;
-  }
-
-  if (message.type === 'run') {
-    const { runId, payload } = message;
-    postWorkerMessage({ type: 'progress', runId, phase: 'queued' });
-
-    setTimeout(() => {
-      if (cancelledRequestIds.has(runId)) return;
-      try {
-        postWorkerMessage({ type: 'progress', runId, phase: 'solving' });
-        void loadRunAdjustmentSession()
-          .then((runAdjustmentSession) => {
-            const outcome = runAdjustmentSession(payload, (progress) => {
-              if (cancelledRequestIds.has(runId)) return;
-              postWorkerMessage({
-                type: 'progress',
-                runId,
-                phase: progress.phase,
-                elapsedMs: progress.elapsedMs,
-                stageLabel: progress.stageLabel,
-                solveIndex: progress.solveIndex,
-                solveTotalHint: progress.solveTotalHint,
-                iteration: progress.iteration,
-                maxIterations: progress.maxIterations,
-              });
-            });
-            if (cancelledRequestIds.has(runId)) return;
-            postWorkerMessage({ type: 'progress', runId, phase: 'finalizing' });
-            postWorkerMessage({ type: 'success', runId, payload: outcome });
-          })
-          .catch((error) => {
-            if (cancelledRequestIds.has(runId)) return;
-            postWorkerMessage({
-              type: 'failure',
-              runId,
-              error: error instanceof Error ? error.message : String(error),
-            });
-          })
-          .finally(() => {
-            cancelledRequestIds.delete(runId);
-          });
-      } catch (error) {
-        if (cancelledRequestIds.has(runId)) return;
-        postWorkerMessage({
-          type: 'failure',
-          runId,
-          error: error instanceof Error ? error.message : String(error),
-        });
-      }
-    }, 0);
-    return;
-  }
+  handler.handleMessage(event.data);
 };

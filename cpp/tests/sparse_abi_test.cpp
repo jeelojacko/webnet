@@ -7,7 +7,7 @@
 extern "C" int webnet_sparse_equation_solve(
     const int*, const int*, const double*, int, const int*, const int*,
     const double*, int, const double*, int, int, double*, int*, int*, int*,
-    int*, double*, int*, char*, int);
+    int*, double*, int*, double*, char*, int);
 extern "C" const char* webnet_sparse_status_message(int code);
 
 namespace {
@@ -33,11 +33,12 @@ int main() {
   int factorNnz = 0;
   double damping = -1;
   int attempts = -1;
+  double condition = -999.0;
   char error[128] = "stale";
   const int status = webnet_sparse_equation_solve(
       offsets, columns, values, 4, weightRows, weightColumns, weightValues, 3,
       l, 2, 2, correction, &designNnz, &weightNnz, &normalNnz, &factorNnz,
-      &damping, &attempts, error, sizeof(error));
+      &damping, &attempts, &condition, error, sizeof(error));
   check(status == 0, "sparse ABI smoke returns 0");
   check(std::fabs(correction[0] - 1) < 1e-12 &&
             std::fabs(correction[1] - 2) < 1e-12,
@@ -46,14 +47,18 @@ int main() {
             damping == 0 && attempts == 0,
         "sparse ABI smoke populates metadata");
   check(std::string(error).empty(), "sparse ABI clears error on success");
+  // Raw-N condition: N=[[32,45],[45,64]] => 109*109 = 11881.
+  check(std::isfinite(condition), "sparse ABI condition estimate is finite");
+  check(std::fabs(condition - 11881.0) <= 1e-9 * 11881.0,
+        "sparse ABI condition matches rowMax*colMax parity");
 
   // Null metadata/error outputs are accepted and skipped on success.
   double correction2[] = {0, 0};
   check(webnet_sparse_equation_solve(offsets, columns, values, 4, weightRows,
                                      weightColumns, weightValues, 3, l, 2, 2,
                                      correction2, nullptr, nullptr, nullptr,
-                                     nullptr, nullptr, nullptr, nullptr, 0) ==
-                  0 &&
+                                     nullptr, nullptr, nullptr, nullptr,
+                                     nullptr, 0) == 0 &&
               std::fabs(correction2[0] - 1) < 1e-12 &&
               std::fabs(correction2[1] - 2) < 1e-12,
         "sparse ABI tolerates null outs on success");
@@ -63,21 +68,25 @@ int main() {
   check(webnet_sparse_equation_solve(offsets, columns, values, 4, weightRows,
                                      weightColumns, weightValues, 3, l, 2, 2,
                                      nullptr, nullptr, nullptr, nullptr,
-                                     nullptr, nullptr, nullptr, null_err,
-                                     sizeof(null_err)) == 1 &&
+                                     nullptr, nullptr, nullptr, nullptr,
+                                     null_err, sizeof(null_err)) == 1 &&
             std::strlen(null_err) > 0,
         "sparse ABI null correction returns 1 with message");
 
-  // Truncated offsets are rejected.
+  // Truncated offsets are rejected and leave the condition slot untouched.
   const int truncated[] = {0, 2, 3};
   char trunc_err[128] = {};
+  double failed_condition = -999.0;
   check(webnet_sparse_equation_solve(truncated, columns, values, 4, weightRows,
                                      weightColumns, weightValues, 3, l, 2, 2,
                                      correction2, nullptr, nullptr, nullptr,
-                                     nullptr, nullptr, nullptr, trunc_err,
+                                     nullptr, nullptr, nullptr,
+                                     &failed_condition, trunc_err,
                                      sizeof(trunc_err)) == 1 &&
             std::strlen(trunc_err) > 0,
         "sparse ABI truncated offsets return 1 with message");
+  check(failed_condition == -999.0,
+        "sparse ABI failure leaves condition slot untouched");
 
   // Out-of-range design columns are rejected.
   const int bad_columns[] = {0, 5, 0, 1};
@@ -86,7 +95,7 @@ int main() {
                                      weightRows, weightColumns, weightValues,
                                      3, l, 2, 2, correction2, nullptr, nullptr,
                                      nullptr, nullptr, nullptr, nullptr,
-                                     col_err, sizeof(col_err)) == 1,
+                                     nullptr, col_err, sizeof(col_err)) == 1,
         "sparse ABI out-of-range column returns 1");
 
   // Non-finite weight values produce code 2.
@@ -96,7 +105,8 @@ int main() {
   check(webnet_sparse_equation_solve(
             offsets, columns, values, 4, weightRows, weightColumns,
             bad_weights, 3, l, 2, 2, correction2, nullptr, nullptr, nullptr,
-            nullptr, nullptr, nullptr, nan_err, sizeof(nan_err)) == 2 &&
+            nullptr, nullptr, nullptr, nullptr, nan_err, sizeof(nan_err)) ==
+                2 &&
             std::strlen(nan_err) > 0,
         "sparse ABI NaN weight returns 2 with message");
 
@@ -104,8 +114,8 @@ int main() {
   check(webnet_sparse_equation_solve(truncated, columns, values, 4, weightRows,
                                      weightColumns, weightValues, 3, l, 2, 2,
                                      correction2, nullptr, nullptr, nullptr,
-                                     nullptr, nullptr, nullptr, nullptr, 0) ==
-            1,
+                                     nullptr, nullptr, nullptr, nullptr,
+                                     nullptr, 0) == 1,
         "sparse ABI tolerates null error buffer on failure");
 
   // Tiny error buffers stay NUL-terminated and truncated.
@@ -114,7 +124,7 @@ int main() {
   check(webnet_sparse_equation_solve(truncated, columns, values, 4, weightRows,
                                      weightColumns, weightValues, 3, l, 2, 2,
                                      correction2, nullptr, nullptr, nullptr,
-                                     nullptr, nullptr, nullptr, tiny,
+                                     nullptr, nullptr, nullptr, nullptr, tiny,
                                      sizeof(tiny)) == 1 &&
             tiny[7] == '\0' && std::strlen(tiny) < 8,
         "sparse ABI truncates safely into tiny buffer");

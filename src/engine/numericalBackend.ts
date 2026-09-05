@@ -27,6 +27,13 @@ export interface SparseCorrectionSolveResult extends NormalEquationSolveResult {
   factorNnz: number;
   ordering: string;
   solver: string;
+  /**
+   * Native raw assembled-N condition estimate (rowMax*colMax over |N|,
+   * before scaling/damping). Present only when the native sparse backend
+   * supplied finite metadata; absent means the caller must fall back to
+   * the TS-side estimate. Diagnostics only, never numerics.
+   */
+  conditionEstimate?: number;
 }
 
 export interface SparseCorrectionSolver {

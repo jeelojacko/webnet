@@ -114,7 +114,8 @@ int webnet_sparse_equation_solve(
     const double* misclosures, int equation_count, int parameter_count,
     double* correction_out, int* design_nnz_out, int* weight_nnz_out,
     int* normal_nnz_out, int* factor_nnz_out, double* damping_out,
-    int* attempts_out, char* err_buf, int err_cap) {
+    int* attempts_out, double* condition_estimate_out, char* err_buf,
+    int err_cap) {
   webnet::SparseSolveResult result;
   std::string error;
   const webnet::SparseSolveStatus status = webnet::solve_sparse_correction(
@@ -128,6 +129,13 @@ int webnet_sparse_equation_solve(
     if (factor_nnz_out != nullptr) *factor_nnz_out = result.factor_nnz;
     if (damping_out != nullptr) *damping_out = result.damping;
     if (attempts_out != nullptr) *attempts_out = result.attempts;
+    // Raw-N condition metadata: written only on success when finite;
+    // a null out pointer is accepted and skipped, and failure paths
+    // leave the caller's buffer untouched.
+    if (condition_estimate_out != nullptr &&
+        std::isfinite(result.condition_estimate)) {
+      *condition_estimate_out = result.condition_estimate;
+    }
   }
   write_message(status == webnet::SparseSolveStatus::kOk ? "" : error,
                 err_buf, err_cap);

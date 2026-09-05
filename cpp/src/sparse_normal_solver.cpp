@@ -302,6 +302,36 @@ SparseSolveStatus factor_packed_system(
   return SparseSolveStatus::kOk;
 }
 
+// Raw assembled-N condition estimate: rowMax*colMax over |N| with
+// rowSums[i] = sum_j |N[i][j]| and columnSums[j] = sum_i |N[i][j]|.
+// Runs on the raw assembled normal before equilibration/scaling/damping.
+// Triplets from accumulate_normal already encode the shared unguarded
+// off-diagonal mirror-write (same-column pairs write twice), and
+// setFromTriplets merges same-position contributions with signs before
+// magnitudes are taken, matching the TypeScript ordered-key Map rule.
+// Diagnostics only; never influences numerics.
+double raw_normal_condition(const SparseMatrix& normal) {
+  const int n = static_cast<int>(normal.rows());
+  if (n <= 0) return 0.0;
+  std::vector<double> row_sums(static_cast<std::size_t>(n), 0.0);
+  std::vector<double> column_sums(static_cast<std::size_t>(n), 0.0);
+  for (int outer = 0; outer < normal.outerSize(); ++outer) {
+    for (SparseMatrix::InnerIterator it(normal, outer); it; ++it) {
+      const double magnitude = std::fabs(it.value());
+      if (magnitude == 0.0 || !std::isfinite(magnitude)) continue;
+      row_sums[static_cast<std::size_t>(it.row())] += magnitude;
+      column_sums[static_cast<std::size_t>(it.col())] += magnitude;
+    }
+  }
+  double row_max = 0.0;
+  double column_max = 0.0;
+  for (int i = 0; i < n; ++i) {
+    row_max = std::max(row_max, row_sums[static_cast<std::size_t>(i)]);
+    column_max = std::max(column_max, column_sums[static_cast<std::size_t>(i)]);
+  }
+  return row_max * column_max;
+}
+
 void fill_factor_info(const FactoredNormal& factored,
                       const SparsePhaseTimings& timings,
                       SparseFactorInfo* out) {
@@ -380,6 +410,10 @@ SparseSolveStatus solve_sparse_correction(
                     SparseSolveStatus::kFactorizationFailed),
                 error_out);
   }
+  // Raw-N condition metadata before any scaling/damping; a non-finite
+  // scaled entry still fails below, but the raw estimate itself is kept
+  // only when finite (failure paths leave result_out untouched).
+  const double raw_condition = raw_normal_condition(normal);
   Eigen::VectorXd scale;
   SparseMatrix scaled;
   const SparseSolveStatus scaled_ok = equilibrate(normal, scale, scaled,
@@ -427,6 +461,9 @@ SparseSolveStatus solve_sparse_correction(
     result_out->normal_nnz = normal.nonZeros();
     result_out->factor_nnz = factor.matrixL().nestedExpression().nonZeros();
     result_out->timings = timings;
+    if (std::isfinite(raw_condition)) {
+      result_out->condition_estimate = raw_condition;
+    }
   }
   if (error_out != nullptr) error_out->clear();
   return SparseSolveStatus::kOk;

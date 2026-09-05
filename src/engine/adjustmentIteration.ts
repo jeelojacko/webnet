@@ -6,9 +6,10 @@ import {
 } from './matrix';
 import type { SparseMatrixRows } from './matrix';
 import type { ExperimentalSparseRouteDiagnostics } from './experimentalSparseDiagnostics';
-import { recordSparseCorrectionCall } from './experimentalSparseDiagnostics';
+import { recordSparseConditionEstimate, recordSparseCorrectionCall } from './experimentalSparseDiagnostics';
 import type { StationMap } from '../types';
-import { buildSparseSolveInput, buildSparseSolveInputWithPackedWeights } from './sparseEquationPacking';
+import { buildSparseSolveInput, buildSparseSolveInputWithPackedWeights, packSparseDesignRows, packUpperTriangleWeights } from './sparseEquationPacking';
+import { estimateSparseNormalCondition } from './sparseNormalCondition';
 import { structuredQuadraticForm, structuredWeightsToPackedUpper } from './sparseWeightRepresentation';
 import type { StructuredSymmetricWeights } from './sparseWeightRepresentation';
 import { runHuberWeightLoop } from './adjustmentHuberLoop';
@@ -52,6 +53,32 @@ export const solveAdjustmentIteration = (
   // Sparse assembly uses [] as the legacy-compatible omitted-P sentinel.
   let solvedP = P && P.length > 0 ? P : undefined;
   const shouldEstimateCondition = iterationNumber === 1;
+  // Diagnostics-only sparse raw-N condition metadata: first correction
+  // iteration only, never production output, never throws into the solve.
+  // Prefers the native sparse backend's raw-N estimate (same rowMax*colMax
+  // rule, computed before scaling/damping); falls back to the TS-side
+  // packed estimate only when native metadata is absent or non-finite.
+  const recordFirstIterationSparseCondition = (
+    nativeEstimate: number | undefined,
+    packed: { rows: Int32Array; columns: Int32Array; values: Float64Array },
+  ): void => {
+    const diagnostics = dependencies.experimentalSparseDiagnostics;
+    if (!diagnostics || iterationNumber !== 1) return;
+    try {
+      if (typeof nativeEstimate === 'number' && Number.isFinite(nativeEstimate)) {
+        recordSparseConditionEstimate(diagnostics, nativeEstimate, iterationNumber);
+        return;
+      }
+      const packedDesign = packSparseDesignRows(sparseRows);
+      recordSparseConditionEstimate(
+        diagnostics,
+        estimateSparseNormalCondition(packedDesign, packed, numParams),
+        iterationNumber,
+      );
+    } catch {
+      // Metadata only; a packing/estimate failure must not fail the solve.
+    }
+  };
   const requireDenseWeights = (): number[][] => {
     if (!solvedP?.length) {
       throw new Error(
@@ -63,10 +90,15 @@ export const solveAdjustmentIteration = (
   const solveWithDenseWeights = (dense: number[][]): void => {
     if (dependencies.sparseCorrectionSolver) {
       recordSparseCorrectionCall(dependencies.experimentalSparseDiagnostics);
-      correction = dependencies.sparseCorrectionSolver.solveFromEquations(
+      const sparseResult = dependencies.sparseCorrectionSolver.solveFromEquations(
         buildSparseSolveInput(sparseRows, dense, L, numParams),
-      ).correction;
+      );
+      correction = sparseResult.correction;
       qxx = undefined;
+      recordFirstIterationSparseCondition(
+        sparseResult.conditionEstimate,
+        packUpperTriangleWeights(dense, dense.length),
+      );
       return;
     }
     const { normal: N, rhs: U } = accumulateNormalEquationsFromSparseRows(
@@ -88,10 +120,12 @@ export const solveAdjustmentIteration = (
     }
     if (dependencies.sparseCorrectionSolver && packedWeights) {
       recordSparseCorrectionCall(dependencies.experimentalSparseDiagnostics);
-      correction = dependencies.sparseCorrectionSolver.solveFromEquations(
+      const sparseResult = dependencies.sparseCorrectionSolver.solveFromEquations(
         buildSparseSolveInputWithPackedWeights(sparseRows, packedWeights, L, numParams),
-      ).correction;
+      );
+      correction = sparseResult.correction;
       qxx = undefined;
+      recordFirstIterationSparseCondition(sparseResult.conditionEstimate, packedWeights);
       return;
     }
     solveWithDenseWeights(requireDenseWeights());
