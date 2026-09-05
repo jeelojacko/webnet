@@ -14,6 +14,7 @@ import type { ExamPrepRecognitionTask } from '../examPrepTypes';
 import type { ExamPrepRecallTask } from '../examPrepTypes';
 import { EXAM_PREP_LOCATE_TASKS } from '../examPrepLocateTasks';
 import { EXAM_PREP_RECALL_TASKS } from '../examPrepRecallTasks';
+import { resolveExamPrepRecallLearnerContent } from '../examPrepRecallContentV1';
 import { EXAM_PREP_RECOGNITION_TASKS } from '../examPrepRecognitionTasks';
 import { EXAM_PREP_DRILL_UNITS } from '../examPrepDrillFilters';
 import type { ExamPrepMockQuestionRef } from './examPrepMockTypes';
@@ -77,10 +78,11 @@ export const resolveExamPrepMockQuestionContent = (
     case 'recall': {
       const task = recallTaskById(ref.sourceTaskId);
       if (!task) throw new Error(`Unresolved mock recall task: ${ref.sourceTaskId}`);
+      const learner = resolveExamPrepRecallLearnerContent(task);
       return {
         kind: 'recall',
-        prompt: task.prompt,
-        expectedAnswer: task.expectedAnswer,
+        prompt: learner.prompt,
+        expectedAnswer: learner.expectedAnswer,
         unitTitle: task.unitTitle,
       };
     }

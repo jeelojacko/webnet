@@ -18,6 +18,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { GraduationCap } from 'lucide-react';
 import type { StudyDataSnapshot } from '../../studyTypes';
 import { EXAM_PREP_RECALL_TASKS, EXAM_PREP_LEARN_UNITS } from '../examPrepRecallTasks';
+import { resolveExamPrepRecallLearnerContent } from '../examPrepRecallContentV1';
 import { buildExamPrepRecallQueue, type ExamPrepQueueItem } from '../examPrepQueue';
 import { buildExamPrepRecallRatingPreviews } from '../examPrepReview';
 import { buildExamPrepHomeMetrics } from '../examPrepSelectors';
@@ -60,6 +61,19 @@ const tierLabelFor = (taskId: string): string => {
 
 const plural = (count: number, noun: string): string =>
   `${count} ${noun}${count === 1 ? '' : 's'}`;
+
+/** Learner-facing Recall Content V1 resolution, cached per task id. */
+const learnerContentCache = new Map<string, { prompt: string; expectedAnswer: string }>();
+
+const learnerContentFor = (taskId: string): { prompt: string; expectedAnswer: string } => {
+  const cached = learnerContentCache.get(taskId);
+  if (cached) return cached;
+  const task = EXAM_PREP_RECALL_TASKS.find((entry) => entry.id === taskId);
+  if (!task) throw new Error(`Missing Recall Content V1 record for task: ${taskId}`);
+  const resolved = resolveExamPrepRecallLearnerContent(task);
+  learnerContentCache.set(taskId, resolved);
+  return resolved;
+};
 
 export const ExamPrepRecallView = ({
   data,
@@ -113,6 +127,10 @@ export const ExamPrepRecallView = ({
     [data.examPrepRecallProgress, data.examPrepUnitProgress, now],
   );
   const item = phase === 'active' && session ? session[index] ?? null : null;
+  const learnerContent = useMemo(
+    () => (item ? learnerContentFor(item.task.id) : null),
+    [item],
+  );
   const ratingPreviews = useMemo(() => {
     if (!item || !revealed) return [];
     return buildExamPrepRecallRatingPreviews({ data, item, now });
@@ -318,7 +336,7 @@ export const ExamPrepRecallView = ({
         </h4>
         {!revealed ? (
           <div className="mt-3 space-y-2">
-            <p className="text-sm text-emerald-100">{item?.task.prompt}</p>
+            <p className="text-sm text-emerald-100">{learnerContent?.prompt}</p>
             <textarea
               value={answer}
               onChange={(event) => setAnswer(event.target.value)}
@@ -340,7 +358,7 @@ export const ExamPrepRecallView = ({
               <span className="text-xs font-semibold uppercase tracking-wide text-emerald-400">
                 Prompt
               </span>
-              <p className="mt-1 text-sm text-emerald-100">{item?.task.prompt}</p>
+              <p className="mt-1 text-sm text-emerald-100">{learnerContent?.prompt}</p>
             </div>
             {answer.trim() ? (
               <div className="rounded border border-slate-700 bg-slate-800/50 p-2">
@@ -354,7 +372,7 @@ export const ExamPrepRecallView = ({
               <span className="text-xs font-semibold uppercase tracking-wide text-amber-300">
                 Expected answer
               </span>
-              <p className="mt-1 text-sm text-amber-100/90">{item?.task.expectedAnswer}</p>
+              <p className="mt-1 text-sm text-amber-100/90">{learnerContent?.expectedAnswer}</p>
             </div>
             {ratingError ? (
               <div
@@ -383,9 +401,6 @@ export const ExamPrepRecallView = ({
             </div>
           </div>
         )}
-        <div className="mt-3 flex flex-wrap gap-3 text-[10px] text-emerald-200/50">
-          <span>prompt: {item?.task.prompt}</span>
-        </div>
       </section>
     </div>
   );

@@ -13,6 +13,7 @@ import { useState } from 'react';
 import { BookOpen, MapPin } from 'lucide-react';
 import type { ExamCurriculumUnit } from '../../examCurriculum/examCurriculumTypes';
 import { EXAM_PREP_DOCUMENT_TITLES } from '../examPrepDocTitles';
+import { EXAM_PREP_RECALL_CONTENT_V1 } from '../examPrepRecallContentV1';
 import { examPrepTierLabel } from '../examPrepFormat';
 import {
   examPrepRelatedUnitTitle,
@@ -26,6 +27,19 @@ import {
 
 /** Anchors shown before the component-local Show all expands the list. */
 export const SOURCE_ANCHOR_PREVIEW_LIMIT = 12;
+
+/**
+ * Learner-facing Remember text: the Recall Content V1 expected-answer
+ * override when one exists, else the frozen mustRecall string. Display-only
+ * fallback to the raw text keeps Learn robust if a task id ever goes
+ * missing; the strict fail-closed resolver still guards Recall/Mock.
+ */
+const recallAnswerOverrideByTaskId = new Map<string, string | undefined>(
+  EXAM_PREP_RECALL_CONTENT_V1.map((record) => [record.taskId, record.expectedAnswerOverride]),
+);
+
+const rememberTextFor = (unitId: string, index: number, raw: string): string =>
+  recallAnswerOverrideByTaskId.get(`recall:${unitId}:${index + 1}`) ?? raw;
 
 export type ExamUnitCardProps = {
   unit: ExamCurriculumUnit;
@@ -181,8 +195,10 @@ export const ExamUnitCard = ({
             </p>
           ) : (
             <ul className="mt-1 list-disc space-y-0.5 pl-4 text-xs text-amber-100/90">
-              {unit.mustRecall.map((rule) => (
-                <li key={rule}>{rule}</li>
+              {unit.mustRecall.map((rule, index) => (
+                <li key={`${unit.id}-remember-${index}`}>
+                  {rememberTextFor(unit.id, index, rule)}
+                </li>
               ))}
             </ul>
           )}

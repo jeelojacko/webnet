@@ -18,6 +18,7 @@ import {
 } from '../../src/study/examPrep/mock/examPrepMockPaper';
 import { resolveExamPrepMockQuestionContent } from '../../src/study/examPrep/mock/examPrepMockQuestionContent';
 import { EXAM_PREP_RECALL_TASKS } from '../../src/study/examPrep/examPrepRecallTasks';
+import { resolveExamPrepRecallLearnerContent } from '../../src/study/examPrep/examPrepRecallContentV1';
 import { EXAM_PREP_RECOGNITION_TASKS } from '../../src/study/examPrep/examPrepRecognitionTasks';
 import { EXAM_PREP_LOCATE_TASKS } from '../../src/study/examPrep/examPrepLocateTasks';
 import { EXAM_PREP_DRILL_UNITS } from '../../src/study/examPrep/examPrepDrillFilters';
@@ -193,7 +194,7 @@ describe('buildExamPrepMockPaper (provisional profile)', () => {
   });
 });
 
-describe('mock question content is frozen, never authored', () => {
+describe('mock question content resolves through frozen pools + Recall Content V1', () => {
   const paper = buildExamPrepMockPaper({
     profile: EXAM_PREP_PROVISIONAL_MOCK_V1,
     seed: 'content-seed',
@@ -205,10 +206,12 @@ describe('mock question content is frozen, never authored', () => {
       .forEach((ref) => {
         const task = EXAM_PREP_RECALL_TASKS.find((entry) => entry.id === ref.sourceTaskId);
         expect(task).toBeDefined();
+        if (!task) throw new Error('expected recall task');
+        const learner = resolveExamPrepRecallLearnerContent(task);
         const content = resolveExamPrepMockQuestionContent(ref);
         if (content.kind !== 'recall') throw new Error('kind mismatch');
-        expect(content.prompt).toBe(task?.prompt);
-        expect(content.expectedAnswer).toBe(task?.expectedAnswer);
+        expect(content.prompt).toBe(learner.prompt);
+        expect(content.expectedAnswer).toBe(learner.expectedAnswer);
         expect(ref.unitId).toBe(task?.unitId);
       });
   });

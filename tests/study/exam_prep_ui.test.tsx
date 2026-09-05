@@ -6,6 +6,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { ExamPrepPage } from '../../src/study/examPrep/ExamPrepPage';
 import { decodeExamPrepView } from '../../src/study/examPrep/examPrepRoutes';
 import { EXAM_PREP_RECALL_TASKS, EXAM_PREP_LEARN_UNITS } from '../../src/study/examPrep/examPrepRecallTasks';
+import { resolveExamPrepRecallLearnerContent } from '../../src/study/examPrep/examPrepRecallContentV1';
 import { EXAM_PREP_MANIFEST } from '../../src/study/examPrep/examPrepManifest';
 import { formatExamDrillTime } from '../../src/study/examPrep/examPrepFormat';
 import { ExamDrillCard } from '../../src/study/examPrep/components/examDrillCard';
@@ -23,6 +24,7 @@ const seed = createSeedStudyData('2026-09-01T00:00:00.000Z');
 
 const firstTask = EXAM_PREP_RECALL_TASKS[0];
 if (!firstTask) throw new Error('expected tasks');
+const firstLearner = resolveExamPrepRecallLearnerContent(firstTask);
 
 const firstUnit = EXAM_PREP_LEARN_UNITS[0];
 if (!firstUnit) throw new Error('expected learn units');
@@ -155,7 +157,7 @@ describe('Exam Prep UI', () => {
     expect(document.body.textContent).toContain('Ready for a recall session');
     expect(document.body.textContent).toContain('Start Recall Session');
     expect(document.querySelector('textarea')).toBeNull();
-    const prompt = 'State the key rule you should remember for this curriculum unit.';
+    const prompt = firstLearner.prompt;
     expect(document.body.textContent).not.toContain(firstTask.expectedAnswer);
     await clickButton('Start Recall Session');
     expect(document.body.textContent).toContain('Card 1 of 8');
@@ -179,7 +181,7 @@ describe('Exam Prep UI', () => {
     });
     await clickButton('Reveal');
     expect(document.body.textContent).toContain('Expected answer');
-    expect(document.body.textContent).toContain(firstTask.expectedAnswer);
+    expect(document.body.textContent).toContain(firstLearner.expectedAnswer);
     await clickButton('Good ·');
     expect(onRate).toHaveBeenCalledTimes(1);
     const options = onRate.mock.calls[0]?.[0] as {

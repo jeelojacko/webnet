@@ -5,6 +5,7 @@ import { createRoot, type Root } from 'react-dom/client';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { ExamPrepPage } from '../../src/study/examPrep/ExamPrepPage';
 import { EXAM_PREP_RECALL_TASKS } from '../../src/study/examPrep/examPrepRecallTasks';
+import { resolveExamPrepRecallLearnerContent } from '../../src/study/examPrep/examPrepRecallContentV1';
 import { buildExamPrepRatedRecallAttempt } from '../../src/study/examPrep/examPrepReview';
 import {
   appendImmutableAttempt,
@@ -281,6 +282,8 @@ describe('Exam Prep frozen recall sessions (parent snapshot updates)', () => {
     await clickButton('Start Recall Session');
     expect(bodyText()).toContain('Card 1 of 8');
     const first = EXAM_PREP_RECALL_TASKS[0];
+    if (!first) throw new Error('expected first recall task');
+    const firstLearner = resolveExamPrepRecallLearnerContent(first);
     expect(currentCardTaskId()).toBe(first.id);
 
     const typeAnswer = async (text: string) => {
@@ -301,11 +304,11 @@ describe('Exam Prep frozen recall sessions (parent snapshot updates)', () => {
     // After Reveal the reveal state persists: prompt, typed answer, expected
     // answer and the FSRS rating row are all visible together.
     expect(bodyText()).toContain('Prompt');
-    expect(bodyText()).toContain(first.prompt);
+    expect(bodyText()).toContain(firstLearner.prompt);
     expect(bodyText()).toContain('Your answer');
     expect(bodyText()).toContain('a registered conveyance transfers the land');
     expect(bodyText()).toContain('Expected answer');
-    expect(bodyText()).toContain(first.expectedAnswer);
+    expect(bodyText()).toContain(firstLearner.expectedAnswer);
     expect(bodyText()).toContain('Good ·');
 
     // Unrelated parent snapshot updates (settings change) must not collapse
@@ -321,7 +324,7 @@ describe('Exam Prep frozen recall sessions (parent snapshot updates)', () => {
     await renderPage();
     expect(bodyText()).toContain('Card 1 of 8');
     expect(bodyText()).toContain('Prompt');
-    expect(bodyText()).toContain(first.prompt);
+    expect(bodyText()).toContain(firstLearner.prompt);
     expect(bodyText()).toContain('Your answer');
     expect(bodyText()).toContain('a registered conveyance transfers the land');
     expect(bodyText()).toContain('Expected answer');
