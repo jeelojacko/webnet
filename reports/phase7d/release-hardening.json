@@ -1,0 +1,80 @@
+{
+  "phase": "7D",
+  "scope": "release hardening: bounded Phase 7C worker route, no cohort widening, no main merge",
+  "gates": [
+    {
+      "id": "boundary-cap",
+      "claim": "evidence-based cap is exactly 64 unknowns",
+      "pass": true,
+      "detail": "SPARSE_AUTO_ROUTE_MAX_UNKNOWN_COUNT=64"
+    },
+    {
+      "id": "boundary-63",
+      "claim": "63 unknowns admitted",
+      "pass": true,
+      "detail": "no reasons"
+    },
+    {
+      "id": "boundary-64",
+      "claim": "64 unknowns admitted",
+      "pass": true,
+      "detail": "no reasons"
+    },
+    {
+      "id": "boundary-65",
+      "claim": "65 unknowns rejected",
+      "pass": true,
+      "detail": "size guard: 65 unknowns exceed SPARSE_PRODUCTION_MAX_UNKNOWN_COUNT=64"
+    },
+    {
+      "id": "kill-switch-default",
+      "claim": "auto-route enabled by default",
+      "pass": true,
+      "detail": "isSparseAutoRouteEnabled()=true"
+    },
+    {
+      "id": "exclude-preanalysis",
+      "claim": "preanalysis sessions rejected",
+      "pass": true,
+      "detail": "preanalysis mode not cleared for sparse auto-route"
+    },
+    {
+      "id": "exclude-inline-autoadjust",
+      "claim": "inline .AUTOADJUST directive rejected",
+      "pass": true,
+      "detail": "inline auto-adjust directive not cleared for sparse auto-route (single-solve sessions only)"
+    },
+    {
+      "id": "exclude-gps-covariance",
+      "claim": "GPS covariance weighting rejected",
+      "pass": true,
+      "detail": "GPS covariance weighting not cleared for sparse auto-route | preflight: weak control: 1 fixed stations (minimum 2 for sparse preflight) | preflight: no redundancy: dof=0 (equations=2, params=2) | preflight: under-observed free stations: B | GPS covariance weighting not cleared for sparse production | rank risk 'suspect': datum/weak-geometry risk not cleared"
+    },
+    {
+      "id": "verifier-empty-capture",
+      "claim": "empty capture rejected",
+      "pass": true,
+      "detail": "s3: no correction systems captured (fail-closed)"
+    },
+    {
+      "id": "verifier-capture-bound",
+      "claim": "capture bound pinned at 512 systems",
+      "pass": true,
+      "detail": "oracle bound: capture truncated at 512 systems (fail-closed; every-iteration coverage unproven) | s3: no correction systems captured (fail-closed)"
+    },
+    {
+      "id": "condition-warn-only",
+      "claim": "condition-threshold excess warns without rejecting",
+      "pass": true,
+      "detail": "iteration 1: normal matrix appears ill-conditioned (estimate=1.725e+14, threshold=1.000e+0, source=ts-packed). | iteration 2: normal matrix appears ill-conditioned (estimate=1.720e+14, threshold=1.000e+0, source=ts-packed). | iteration 3: normal matrix appears ill-conditioned (estimate=1.720e+14, threshold=1.000e+0, source=ts-packed). | iteration 4: normal matrix appears ill-conditioned (estimate=1.720e+14, threshold=1.000e+0, source=ts-packed)."
+    },
+    {
+      "id": "condition-parity",
+      "claim": "sparse result.condition agrees with TypeScript within 1e-9 relative",
+      "pass": true,
+      "detail": "expected=1.725e+14 actual=1.725e+14 iterations=4 captured=4"
+    }
+  ],
+  "passed": 12,
+  "total": 12
+}

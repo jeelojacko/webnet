@@ -338,6 +338,7 @@ The solver:
 - S3 verification gates every captured correction system (dense-rebuild agreement, undamped, finite condition, captured count equal to candidate iterations, `result.condition` agreement with the first-system oracle)
 - any kill-switch-off, WASM init failure, sparse throw, engine fallback, oracle mismatch, damping, non-finite result, or missing condition cleanly reruns the original request in TypeScript
 - the kill switch is internal and enabled by default; the worker protocol, persisted state, UI, C++, and tolerances are unchanged
+- Phase 7D release hardening pins this contract with `tests/phase7d_release_hardening.test.ts` (13 tests: 63/64/65 boundary, retry-after-failure, NaN/row-products/covariance/non-finite fallbacks with byte-identical restart, verifier empty/truncation/warn-only gates, kill-switch re-arm, condition parity, session exclusions) and a deterministic 12-gate machine-readable report under `reports/phase7d/` (`npm run phase7d:release-report`); per-attempt diagnostics/capture are fresh, the bundle cache clears on init failure and on loader override, and an injected worker-local runtime bypasses the route entirely
 
 ### 5. Result shaping
 
