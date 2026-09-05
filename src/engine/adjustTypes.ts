@@ -1,4 +1,4 @@
-import type { NormalEquationSolver, SparseCorrectionSolver } from './numericalBackend';
+import type { NormalEquationSolver, SparseCorrectionSolver, SparseRowProductsSolver } from './numericalBackend';
 import type { SolveProgressEvent } from './scenarioRunModels';
 import type { SolvePreparationResult } from './adjustmentPreprocessing';
 import type {
@@ -67,6 +67,8 @@ export interface EngineOptions {
   normalEquationSolver?: NormalEquationSolver;
   /** Test-only experimental sparse correction backend; undefined keeps TS. */
   sparseCorrectionSolver?: SparseCorrectionSolver;
+  /** Test-only experimental row-product backend for standardized residuals; undefined keeps dense. */
+  sparseRowProductsSolver?: SparseRowProductsSolver;
 }
 
 export const cloneParsedResultValue = <T>(value: T): T => {

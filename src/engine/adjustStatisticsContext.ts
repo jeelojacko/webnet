@@ -57,6 +57,7 @@ export const buildStatisticsContextForEngine = (engine: any): AdjustmentStatisti
       gpsObservedVector: (obs) => engine.gpsObservedVector(obs),
       gpsWeight: (obs) => engine.gpsWeight(obs),
       invertNormalMatrixForStats: (normal) => engine.invertNormalMatrixForStats(normal),
+      sparseRowProductsSolver: engine.sparseRowProductsSolver,
       isObservationActive: (obs) => engine.isObservationActive(obs),
       measuredAngleCorrection: (at, from, to) => engine.measuredAngleCorrection(at, from, to),
       modeledAzimuth: (rawAz, atStationId, applyConvergence) =>

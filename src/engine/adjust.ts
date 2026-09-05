@@ -39,7 +39,7 @@ import { LSAEngineObservationMethods } from './adjustEngineObservationMethods';
 import { buildSideshotResults } from './adjustmentSideshots';
 import type { CoordinateConstraintEquation } from './adjustmentSolveTypes';
 import type { ScenarioRunRequest } from './scenarioRunModels';
-import type { SparseCorrectionSolver } from './numericalBackend';
+import type { SparseCorrectionSolver, SparseRowProductsSolver } from './numericalBackend';
 import type {
   AdjustmentResult,
   Observation,
@@ -52,6 +52,7 @@ import type {
 export class LSAEngine extends LSAEngineObservationMethods {
   private normalEquationSolver?: EngineOptions['normalEquationSolver'];
   private sparseCorrectionSolver?: SparseCorrectionSolver;
+  private sparseRowProductsSolver?: SparseRowProductsSolver;
 
   private solveNormalEquations(
     N: number[][],
@@ -140,10 +141,12 @@ export class LSAEngine extends LSAEngineObservationMethods {
     progressCallback,
     normalEquationSolver,
     sparseCorrectionSolver,
+    sparseRowProductsSolver,
   }: EngineOptions) {
     super();
     this.normalEquationSolver = normalEquationSolver;
     this.sparseCorrectionSolver = sparseCorrectionSolver;
+    this.sparseRowProductsSolver = sparseRowProductsSolver;
     this.input = input;
     this.maxIterations = maxIterations;
     this.instrumentLibrary = { ...instrumentLibrary };
@@ -196,6 +199,7 @@ export class LSAEngine extends LSAEngineObservationMethods {
       progressCallback: request.progressCallback,
       normalEquationSolver: this.normalEquationSolver,
       sparseCorrectionSolver: this.sparseCorrectionSolver,
+      sparseRowProductsSolver: this.sparseRowProductsSolver,
     }).solve();
   }
 

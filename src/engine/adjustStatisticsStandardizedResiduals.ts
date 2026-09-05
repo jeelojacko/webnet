@@ -1,4 +1,5 @@
 import { transformSymmetricCovariance3 } from './adjustGpsMath';
+import { tryQueryStandardizedResidualRowProducts } from './adjustStatisticsRowProducts';
 import { accumulateNormalEquationsFromSparseRows, multiplySparseRowsByDenseMatrix, zeros } from './matrix';
 import { assembleAdjustmentEquations } from './adjustmentEquationAssembly';
 import { getObservationSetId } from './observationMetadata';
@@ -89,14 +90,25 @@ export const computeStandardizedResidualStatistics = (
 
       if (!ctx.preanalysisMode) {
         try {
-          const { normal: N } = accumulateNormalEquationsFromSparseRows(
+          const rowProducts = tryQueryStandardizedResidualRowProducts(ctx, {
             sparseRows,
-            zeros(numObsEquations, 1),
-            P,
-            numParams,
-          );
-          const QxxStats = ctx.invertNormalMatrixForStats(N);
-          const B = multiplySparseRowsByDenseMatrix(sparseRows, QxxStats);
+            weights: P,
+            rowInfo,
+            activeObservations,
+            observationEquationCount: numObsEquations,
+            parameterCount: numParams,
+          });
+          let B: number[][] = [];
+          if (!rowProducts) {
+            const { normal: N } = accumulateNormalEquationsFromSparseRows(
+              sparseRows,
+              zeros(numObsEquations, 1),
+              P,
+              numParams,
+            );
+            const QxxStats = ctx.invertNormalMatrixForStats(N);
+            B = multiplySparseRowsByDenseMatrix(sparseRows, QxxStats);
+          }
           const rowStats = new Map<
             number,
             {
@@ -124,10 +136,14 @@ export const computeStandardizedResidualStatistics = (
                     : cov.cEE;
             }
             let diag = 0;
-            const sparseRow = sparseRows[i] ?? [];
-            for (let j = 0; j < sparseRow.length; j += 1) {
-              const entry = sparseRow[j];
-              diag += B[i][entry.index] * entry.value;
+            if (rowProducts) {
+              diag = rowProducts.quadratic[i] ?? 0;
+            } else {
+              const sparseRow = sparseRows[i] ?? [];
+              for (let j = 0; j < sparseRow.length; j += 1) {
+                const entry = sparseRow[j];
+                diag += B[i][entry.index] * entry.value;
+              }
             }
             const qvv = Math.max(qll - diag, 1e-20);
             const t = L[i][0] / (s0 * Math.sqrt(qvv));
@@ -188,11 +204,22 @@ export const computeStandardizedResidualStatistics = (
               const solveQvv = solveQll.map((solveRow, rowIndex) =>
                 solveRow.map((qllValue, colIndex) => {
                   let aqxxat = 0;
-                  const sparseColRow = sparseRows[entry.rows[colIndex]] ?? [];
-                  for (let paramEntryIndex = 0; paramEntryIndex < sparseColRow.length; paramEntryIndex += 1) {
-                    const paramEntry = sparseColRow[paramEntryIndex];
-                    aqxxat +=
-                      B[entry.rows[rowIndex]][paramEntry.index] * paramEntry.value;
+                  if (rowProducts) {
+                    const cross = rowProducts.crossFor(
+                      entry.rows[rowIndex] ?? -1,
+                      entry.rows[colIndex] ?? -1,
+                    );
+                    if (cross == null) {
+                      throw new Error('Sparse row products are missing a GPS cross pair.');
+                    }
+                    aqxxat = cross;
+                  } else {
+                    const sparseColRow = sparseRows[entry.rows[colIndex]] ?? [];
+                    for (let paramEntryIndex = 0; paramEntryIndex < sparseColRow.length; paramEntryIndex += 1) {
+                      const paramEntry = sparseColRow[paramEntryIndex];
+                      aqxxat +=
+                        B[entry.rows[rowIndex]][paramEntry.index] * paramEntry.value;
+                    }
                   }
                   return Math.max(qllValue - aqxxat, 0);
                 }),

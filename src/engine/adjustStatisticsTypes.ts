@@ -1,4 +1,5 @@
 import type { SolveTimingBuckets } from './adjustSolveTiming';
+import type { SparseRowProductsSolver } from './numericalBackend';
 import type { GpsCovariance, GpsSolveVector, GpsVectorDerivatives } from './adjustTypes';
 import type {
   EquationRowInfo,
@@ -104,6 +105,8 @@ export type AdjustmentStatisticsContext = {
     wNU?: number;
   };
   invertNormalMatrixForStats: (_normal: number[][], _useFallback?: boolean) => number[][];
+  /** Optional experimental row-product backend; undefined keeps the dense computation. */
+  sparseRowProductsSolver?: SparseRowProductsSolver;
   isObservationActive: (_obs: Observation) => boolean;
   measuredAngleCorrection: (_at: StationId, _from: StationId, _to: StationId) => number;
   modeledAzimuth: (_rawAz: number, _atStationId?: StationId, _applyConvergence?: boolean) => number;

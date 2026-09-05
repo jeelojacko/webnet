@@ -135,6 +135,64 @@ int webnet_sparse_equation_solve(
 }
 
 EMSCRIPTEN_KEEPALIVE
+int webnet_sparse_selected_covariance(
+    const int* row_offsets, const int* design_columns,
+    const double* design_values, int design_nnz, const int* weight_rows,
+    const int* weight_columns, const double* weight_values, int weight_nnz,
+    int equation_count, int parameter_count, const int* query_rows,
+    const int* query_columns, int query_count, double* covariance_out,
+    int* normal_nnz_out, int* factor_nnz_out, double* damping_out,
+    int* attempts_out, char* err_buf, int err_cap) {
+  webnet::SparseFactorInfo info;
+  std::string error;
+  const webnet::SparseSolveStatus status =
+      webnet::solve_sparse_selected_covariance(
+          row_offsets, design_columns, design_values, design_nnz,
+          weight_rows, weight_columns, weight_values, weight_nnz,
+          equation_count, parameter_count, query_rows, query_columns,
+          query_count, covariance_out, {}, &info, &error);
+  if (status == webnet::SparseSolveStatus::kOk) {
+    if (normal_nnz_out != nullptr) *normal_nnz_out = info.normal_nnz;
+    if (factor_nnz_out != nullptr) *factor_nnz_out = info.factor_nnz;
+    if (damping_out != nullptr) *damping_out = info.damping;
+    if (attempts_out != nullptr) *attempts_out = info.attempts;
+  }
+  write_message(status == webnet::SparseSolveStatus::kOk ? "" : error,
+                err_buf, err_cap);
+  return static_cast<int>(status);
+}
+
+EMSCRIPTEN_KEEPALIVE
+int webnet_sparse_row_products(
+    const int* row_offsets, const int* design_columns,
+    const double* design_values, int design_nnz, const int* weight_rows,
+    const int* weight_columns, const double* weight_values, int weight_nnz,
+    int equation_count, int parameter_count, const int* query_row_offsets,
+    const int* query_columns, const double* query_values, int query_nnz,
+    int query_row_count, const int* cross_a, const int* cross_b,
+    int cross_count, double* quadratic_out, double* cross_out,
+    int* normal_nnz_out, int* factor_nnz_out, double* damping_out,
+    int* attempts_out, char* err_buf, int err_cap) {
+  webnet::SparseFactorInfo info;
+  std::string error;
+  const webnet::SparseSolveStatus status = webnet::solve_sparse_row_products(
+      row_offsets, design_columns, design_values, design_nnz, weight_rows,
+      weight_columns, weight_values, weight_nnz, equation_count,
+      parameter_count, query_row_offsets, query_columns, query_values,
+      query_nnz, query_row_count, cross_a, cross_b, cross_count,
+      quadratic_out, cross_out, {}, &info, &error);
+  if (status == webnet::SparseSolveStatus::kOk) {
+    if (normal_nnz_out != nullptr) *normal_nnz_out = info.normal_nnz;
+    if (factor_nnz_out != nullptr) *factor_nnz_out = info.factor_nnz;
+    if (damping_out != nullptr) *damping_out = info.damping;
+    if (attempts_out != nullptr) *attempts_out = info.attempts;
+  }
+  write_message(status == webnet::SparseSolveStatus::kOk ? "" : error,
+                err_buf, err_cap);
+  return static_cast<int>(status);
+}
+
+EMSCRIPTEN_KEEPALIVE
 const char* webnet_sparse_status_message(int code) {
   switch (code) {
     case 0:

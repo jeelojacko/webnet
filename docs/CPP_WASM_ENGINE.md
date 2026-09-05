@@ -123,9 +123,13 @@ The experimental path packs sparse A rows and nonzero upper-triangle P, assemble
 
 Recorded sparse-kernel medians on Node 26.8.1/Linux x64 were WASM sparse: n=100 `0.105 ms`, 250 `0.216 ms`, 500 `0.236 ms`, 1,000 `0.423 ms`, 2,500 `0.918 ms`, 5,000 `1.839 ms`; TS dense and Phase 1 WASM dense were measured through n=250 and skipped honestly above that range. Native sparse timings were 0.068/0.117/0.229/0.466 ms for n=100/250/500/1,000. The synthetic network had 2n equation rows and bounded row degree. Dense P remains allocated in TS and final dense Qxx/covariance remains the dominant unported ceiling.
 
-### Phase 3 — covariance/statistics strategy
+### Phase 3 — covariance/statistics strategy (in progress)
 
-Audit exactly which `Qxx` elements are consumed for station covariance, ellipses, standardized residuals, redundancy, relative precision, and diagnostics. Avoid materializing a full inverse when selected solves suffice.
+The Qxx consumer audit found two separate final systems. Covariance recovery (S2) consumes station blocks, connected/requested relative blocks, and the legacy all-pairs `relativePrecision` table (`C(S,2)` rows). Standardized-residual statistics (S3) rebuilds its own equation system, reapplies Huber factors, and consumes row products `a_i Qxx a_j^T`, including GPS component cross-products. S2 may also contain synthetic float-zenith covariance rows, so the systems must not share a factor blindly.
+
+Portable C++ now exposes selected inverse entries and batched row quadratic/cross products over the existing pinned-Eigen sparse factor. Both APIs preserve diagonal scaling, factor once, solve grouped RHS columns/rows, return damping and fill metadata, never materialize dense N/Qxx, and reject malformed or non-finite packed inputs. Experimental standardized-residual routing falls back to dense TypeScript statistics whenever sparse damping is nonzero, because the dense path recovers undamped covariance. `wasmSparseCovariance.ts` and `wasmSparseRowProducts.ts` provide allocation-safe, contiguous-buffer wrappers. `covarianceQueryPlan.ts` is a pure deterministic planner for station blocks and connected/requested pairs. These are experimental infrastructure only; dense TypeScript covariance/statistics and production defaults are unchanged.
+
+The legacy all-pairs relative-precision contract remains intentionally unchanged and is explicitly O(S²) in output rows. Dense P construction/scanning, final dense Qxx/statistics, and damped-covariance/LDLT parity remain limitations. The next integration gate is selected-entry and row-product parity on S2/S3 fixtures before routing any experimental statistics consumer.
 
 ### Phase 4 — equation assembly and observation models
 

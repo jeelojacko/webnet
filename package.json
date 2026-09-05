@@ -15,6 +15,7 @@
     "wasm:solver:parity": "tsx scripts/wasmDenseParity.ts",
     "wasm:adjustment:parity": "tsx scripts/wasmAdjustmentParity.ts",
     "wasm:sparse:smoke": "tsx scripts/wasmSparseSmoke.ts",
+    "wasm:sparse:covariance:smoke": "tsx scripts/wasmCovarianceSmoke.ts",
     "wasm:sparse:adjustment:parity": "tsx scripts/wasmSparseAdjustmentParity.ts",
     "wasm:sparse:behavior:parity": "tsx scripts/wasmSparseBehaviorParity.ts",
     "wasm:browser:smoke": "node scripts/wasmBrowserSmoke.mjs",

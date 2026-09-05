@@ -2,8 +2,9 @@
 
 Portable C++20 correction-only dense normal-equation solver shared by native
 and WASM builds. TypeScript remains production-authoritative; this backend is
-experimental and test-injected only. Covariance and equation assembly are not
-ported.
+experimental and test-injected only. Sparse equation assembly is provided by
+Phase 2, and Phase 3 adds selected covariance entries and row products; dense
+Qxx/statistics and production routing remain TypeScript.
 
 ## Layout
 
