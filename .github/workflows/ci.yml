@@ -19,6 +19,13 @@ jobs:
           cache: npm
       - name: Install
         run: npm ci
+      - name: Setup Emscripten
+        uses: emscripten-core/setup-emsdk@v15
+        with:
+          version: 6.0.5
+          actions-cache-folder: emsdk-cache
+      - name: Build WASM test artifact
+        run: npm run wasm:build
       - name: Lint
         run: npm run lint
       - name: Test
