@@ -1,4 +1,5 @@
 import type { NormalEquationSolver, SparseCorrectionSolver, SparseRowProductsSolver, SparseSelectedCovarianceSolver } from './numericalBackend';
+import type { ExperimentalSparseRouteDiagnostics } from './experimentalSparseDiagnostics';
 import type { SolveProgressEvent } from './scenarioRunModels';
 import type { SolvePreparationResult } from './adjustmentPreprocessing';
 import type {
@@ -71,6 +72,14 @@ export interface EngineOptions {
   sparseRowProductsSolver?: SparseRowProductsSolver;
   /** Test-only experimental selected-covariance backend for Qxx recovery; undefined keeps dense. */
   sparseSelectedCovarianceSolver?: SparseSelectedCovarianceSolver;
+  /** Test-only route diagnostics for the experimental sparse paths; undefined disables counting. */
+  experimentalSparseDiagnostics?: ExperimentalSparseRouteDiagnostics;
+  /**
+   * Test-only selected-network covariance mode: with an injected
+   * selected-covariance solver, query only plan entries and skip the dense
+   * all-entry Qxx reconstruction plus legacy all-pairs relativePrecision.
+   */
+  experimentalSelectedCovarianceMode?: boolean;
 }
 
 export const cloneParsedResultValue = <T>(value: T): T => {

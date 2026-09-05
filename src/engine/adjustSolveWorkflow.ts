@@ -5,6 +5,7 @@ import { applyAutoDroppedHeightHolds, buildSolvePreparation, cloneSolvePreparati
 import { assembleAdjustmentEquations } from './adjustmentEquationAssembly';
 import { applyAdjustmentCorrections, solveAdjustmentIteration } from './adjustmentIteration';
 import { getObservationSideshotCalcMeta } from './observationMetadata';
+import { recordSparseCorrectionFallback } from './experimentalSparseDiagnostics';
 import { resolveRunModeCompatibilityOptions } from './adjustmentRunModeCompatibility';
 import { loadAndApplySolveWorkflowGeoidModel } from './adjustSolveWorkflowGeoid';
 import { runSolveWorkflowLoopDiagnostics } from './adjustSolveWorkflowLoopDiagnostics';
@@ -265,6 +266,7 @@ export const runAdjustmentSolveWorkflow = (
         const iterationDependencies = {
           robustMode: ctx.robustMode,
           sparseCorrectionSolver: ctx.sparseCorrectionSolver,
+          experimentalSparseDiagnostics: ctx.experimentalSparseDiagnostics,
           solveNormalEquations: ctx.solveNormalEquations.bind(ctx),
           estimateCondition: ctx.estimateCondition.bind(ctx),
           recordConditionEstimate: ctx.recordConditionEstimate.bind(ctx),
@@ -295,6 +297,10 @@ export const runAdjustmentSolveWorkflow = (
         } catch (sparseError) {
           if (!useSparseCorrectionWeights) throw sparseError;
           const sparseDetail = sparseError instanceof Error ? ` ${sparseError.message}` : '';
+          recordSparseCorrectionFallback(
+            ctx.experimentalSparseDiagnostics,
+            sparseDetail.trim() || 'sparse correction failed',
+          );
           ctx.log(
             `Warning: sparse correction solve failed at iteration ${iter + 1}; retrying with dense weights.${sparseDetail}`,
           );
@@ -421,16 +427,23 @@ export const runAdjustmentSolveWorkflow = (
 
     if (!ctx.converged) ctx.log('Warning: Max iterations reached.');
     const covarianceStartedAt = Date.now();
-    ctx.Qxx = ctx.recoverFinalNormalCovariance(
+    const recoveredCovariance = ctx.recoverFinalNormalCovariance(
       activeObservations,
       constraints,
       numObsEquations,
       numParams,
       dirParamMap,
     );
+    ctx.Qxx = recoveredCovariance?.kind === 'dense' ? recoveredCovariance.qxx : null;
+    ctx.experimentalSelectedCovarianceStore =
+      recoveredCovariance?.kind === 'selected' ? recoveredCovariance.store : undefined;
     ctx.solveTiming.matrixFactorizationMs += Date.now() - covarianceStartedAt;
     const diagnosticsStartedAt = Date.now();
-    ctx.calculateStatistics(ctx.paramIndex, !!ctx.Qxx, activeObservations);
+    ctx.calculateStatistics(
+      ctx.paramIndex,
+      recoveredCovariance != null,
+      activeObservations,
+    );
     ctx.solveTiming.precisionAndDiagnosticsMs += Date.now() - diagnosticsStartedAt;
     return ctx.finishSolve(ctx.buildResult());
 };

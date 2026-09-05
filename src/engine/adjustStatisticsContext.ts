@@ -7,6 +7,7 @@ export const buildStatisticsContextForEngine = (engine: any): AdjustmentStatisti
       unknowns: engine.unknowns,
       paramIndex: engine.paramIndex,
       Qxx: engine.Qxx,
+      experimentalSelectedCovarianceStore: engine.experimentalSelectedCovarianceStore,
       is2D: engine.is2D,
       directionOrientations: engine.directionOrientations,
       dof: engine.dof,
@@ -58,6 +59,7 @@ export const buildStatisticsContextForEngine = (engine: any): AdjustmentStatisti
       gpsWeight: (obs) => engine.gpsWeight(obs),
       invertNormalMatrixForStats: (normal) => engine.invertNormalMatrixForStats(normal),
       sparseRowProductsSolver: engine.sparseRowProductsSolver,
+      experimentalSparseDiagnostics: engine.experimentalSparseDiagnostics,
       isObservationActive: (obs) => engine.isObservationActive(obs),
       measuredAngleCorrection: (at, from, to) => engine.measuredAngleCorrection(at, from, to),
       modeledAzimuth: (rawAz, atStationId, applyConvergence) =>

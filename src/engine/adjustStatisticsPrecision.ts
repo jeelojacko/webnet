@@ -7,6 +7,7 @@ import {
   sqrtPrecisionComponent,
 } from './precisionPropagation';
 import { scaleRelativeCovarianceRows, scaleStationCovarianceRows } from './resultPrecision';
+import { readSelectedCovariance } from './selectedCovarianceStore';
 import type { AdjustmentStatisticsContext } from './adjustStatisticsTypes';
 import type { AdjustmentResult, Observation, StationId } from '../types';
 
@@ -47,8 +48,10 @@ export const propagateAdjustmentPrecision = (
     }
   });
 
+  const selectedStore = ctx.experimentalSelectedCovarianceStore;
   const buildCovariance = (scaleSq: number) => (a?: number | null, b?: number | null): number => {
     if (a == null || b == null) return 0;
+    if (selectedStore) return readSelectedCovariance(selectedStore, a, b) * scaleSq;
     if (!ctx.Qxx?.[a] || ctx.Qxx?.[a][b] == null) return 0;
     return ctx.Qxx[a][b] * scaleSq;
   };
@@ -182,7 +185,10 @@ export const propagateAdjustmentPrecision = (
     };
 
     const relativePrecision: NonNullable<AdjustmentResult['relativePrecision']> = [];
-    for (let i = 0; i < ctx.unknowns.length; i += 1) {
+    // Selected mode never queried all-pairs entries, so only the legacy
+    // dense contract computes them; connected/requested pairs follow below.
+    const computeAllPairs = selectedStore == null;
+    for (let i = 0; computeAllPairs && i < ctx.unknowns.length; i += 1) {
       for (let j = i + 1; j < ctx.unknowns.length; j += 1) {
         const from = ctx.unknowns[i];
         const to = ctx.unknowns[j];

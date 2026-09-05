@@ -2,6 +2,8 @@ import type { SolveTimingBuckets } from './adjustSolveTiming';
 import type { WeightMatrixWriter } from './adjustmentWeightWriter';
 import type { StructuredSymmetricWeights } from './sparseWeightRepresentation';
 import type { SparseRowProductsSolver } from './numericalBackend';
+import type { ExperimentalSparseRouteDiagnostics } from './experimentalSparseDiagnostics';
+import type { SelectedCovarianceStore } from './selectedCovarianceStore';
 import type { GpsCovariance, GpsSolveVector, GpsVectorDerivatives } from './adjustTypes';
 import type {
   EquationRowInfo,
@@ -39,6 +41,11 @@ export type AdjustmentStatisticsContext = {
   unknowns: StationId[];
   paramIndex: SolveParameterIndex;
   Qxx: number[][] | null;
+  /**
+   * Test-only selected-network store; when present, precision reads through
+   * the fail-closed accessor and skips legacy all-pairs relativePrecision.
+   */
+  experimentalSelectedCovarianceStore?: SelectedCovarianceStore;
   is2D: boolean;
   directionOrientations: Record<string, number>;
   dof: number;
@@ -109,6 +116,8 @@ export type AdjustmentStatisticsContext = {
   invertNormalMatrixForStats: (_normal: number[][], _useFallback?: boolean) => number[][];
   /** Optional experimental row-product backend; undefined keeps the dense computation. */
   sparseRowProductsSolver?: SparseRowProductsSolver;
+  /** Test-only sparse route diagnostics; undefined disables counting. */
+  experimentalSparseDiagnostics?: ExperimentalSparseRouteDiagnostics;
   isObservationActive: (_obs: Observation) => boolean;
   measuredAngleCorrection: (_at: StationId, _from: StationId, _to: StationId) => number;
   modeledAzimuth: (_rawAz: number, _atStationId?: StationId, _applyConvergence?: boolean) => number;

@@ -60,3 +60,5 @@ cpp/**/cmake_install.cmake
 cpp/**/CTestTestfile.cmake
 benchmarks/baselines/typescript-latest.json
 benchmarks/baselines/typescript-latest.md
+benchmarks/baselines/sparse-full-latest.json
+benchmarks/baselines/sparse-full-latest.md

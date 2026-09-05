@@ -3,6 +3,8 @@ import type { SparseMatrixRows } from './matrixTypes';
 import type {
   SparseRowProductsSolver,
 } from './numericalBackend';
+import type { ExperimentalSparseRouteDiagnostics } from './experimentalSparseDiagnostics';
+import { recordRowProductsCall, recordRowProductsFallback } from './experimentalSparseDiagnostics';
 import type { Observation } from '../types';
 import { packSparseDesignRows, packUpperTriangleWeights } from './sparseEquationPacking';
 import { structuredWeightsToPackedUpper } from './sparseWeightRepresentation';
@@ -29,6 +31,8 @@ export interface StandardizedResidualRowProductRequest {
 
 export interface RowProductLogContext {
   sparseRowProductsSolver?: SparseRowProductsSolver;
+  /** Test-only sparse route diagnostics; undefined disables counting. */
+  experimentalSparseDiagnostics?: ExperimentalSparseRouteDiagnostics;
   log: (_message: string) => void;
 }
 
@@ -141,10 +145,12 @@ export const tryQueryStandardizedResidualRowProducts = (
 ): StandardizedResidualRowProducts | null => {
   const solver = ctx.sparseRowProductsSolver;
   if (!solver) return null;
+  recordRowProductsCall(ctx.experimentalSparseDiagnostics);
   try {
     return queryStandardizedResidualRowProducts(solver, request);
   } catch (error) {
     const detail = error instanceof Error ? ` ${error.message}` : '';
+    recordRowProductsFallback(ctx.experimentalSparseDiagnostics, detail.trim() || 'sparse row products failed');
     ctx.log(`Warning: sparse row-product standardized residuals unavailable; using dense fallback.${detail}`);
     return null;
   }

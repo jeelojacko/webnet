@@ -12,6 +12,16 @@ import { packSparseDesignRows } from './sparseEquationPacking';
 import { structuredWeightsToPackedUpper } from './sparseWeightRepresentation';
 import type { StructuredSymmetricWeights } from './sparseWeightRepresentation';
 import type { SparseSelectedCovarianceSolver } from './numericalBackend';
+import { buildCovarianceQueryPlan } from './covarianceQueryPlan';
+import type { CovariancePair } from './covarianceQueryPlan';
+import type { ExperimentalSparseRouteDiagnostics } from './experimentalSparseDiagnostics';
+import {
+  createSelectedCovarianceStore,
+  dedupeSelectedQueries,
+  stationParamCountOf,
+} from './selectedCovarianceStore';
+import type { SelectedCovarianceStore } from './selectedCovarianceStore';
+import { recordSelectedCovarianceCall, recordSelectedCovarianceFallback } from './experimentalSparseDiagnostics';
 import type {
   DistanceObservation,
   GpsObservation,
@@ -24,6 +34,10 @@ import type {
   GpsSolveVector,
   GpsVectorDerivatives,
 } from './adjustTypes';
+
+export type RecoveredFinalCovariance =
+  | { kind: 'dense'; qxx: number[][] }
+  | { kind: 'selected'; store: SelectedCovarianceStore };
 
 interface RecoverFinalNormalCovarianceOptions {
   activeObservations: Observation[];
@@ -88,6 +102,17 @@ interface RecoverFinalNormalCovarianceOptions {
   ) => void;
   /** Test-only experimental selected-covariance backend; undefined keeps dense. */
   sparseSelectedCovarianceSolver?: SparseSelectedCovarianceSolver;
+  /** Test-only sparse route diagnostics; undefined disables counting. */
+  experimentalSparseDiagnostics?: ExperimentalSparseRouteDiagnostics;
+  /**
+   * Test-only selected-network mode: query only plan entries and return a
+   * store instead of the dense all-entry Qxx reconstruction.
+   */
+  experimentalSelectedCovarianceMode?: boolean;
+  /** Observed station pairs feeding the selected-mode query plan. */
+  connectedPairs?: readonly CovariancePair[];
+  /** REL/PTOL-requested pairs feeding the selected-mode query plan. */
+  requestedPairs?: readonly CovariancePair[];
   log?: (_message: string) => void;
   stations: StationMap;
   wrapToPi: (_value: number) => number;
@@ -207,11 +232,43 @@ const querySparseSelectedCovariance = (
   return reconstructDenseQxx(result.covariance, numParams);
 };
 
+const querySelectedCovarianceStore = (
+  solver: SparseSelectedCovarianceSolver,
+  sparseRows: SparseMatrixRows,
+  structuredWeights: StructuredSymmetricWeights,
+  observationEquationCount: number,
+  options: RecoverFinalNormalCovarianceOptions,
+): SelectedCovarianceStore => {
+  const plan = buildCovarianceQueryPlan({
+    paramIndex: options.paramIndex,
+    unknowns: Object.keys(options.paramIndex),
+    stationParamCount: stationParamCountOf(options.paramIndex),
+    connectedPairs: options.connectedPairs,
+    requestedPairs: options.requestedPairs,
+    includeHeight: !options.is2D,
+  });
+  const queries = dedupeSelectedQueries(plan.queries);
+  const result = solver.querySelected({
+    design: packSparseDesignRows(sparseRows),
+    weights: structuredWeightsToPackedUpper(structuredWeights),
+    observationEquationCount,
+    parameterCount: options.numParams,
+    queryRows: Int32Array.from(queries.map((query) => query.row)),
+    queryColumns: Int32Array.from(queries.map((query) => query.column)),
+  });
+  if (result.damping > 0) {
+    throw new Error(
+      `Sparse selected covariance used diagonal damping (lambda=${result.damping.toExponential(3)}, attempts=${result.dampingAttempts}); falling back to dense covariance to avoid damped precision.`,
+    );
+  }
+  return createSelectedCovarianceStore(options.numParams, queries, result.covariance);
+};
+
 const trySparseSelectedCovariance = (
   options: RecoverFinalNormalCovarianceOptions,
   covarianceObservations: Observation[],
   covarianceObsEquationCount: number,
-): number[][] => {
+): RecoveredFinalCovariance => {
   const solver = options.sparseSelectedCovarianceSolver;
   if (!solver) throw new Error('Selected-covariance solver is not injected.');
   const { sparseRows, structuredWeights } = assembleAdjustmentEquations(
@@ -226,13 +283,28 @@ const trySparseSelectedCovariance = (
   if (!structuredWeights) {
     throw new Error('Sparse covariance assembly did not produce structured weights.');
   }
-  return querySparseSelectedCovariance(
-    solver,
-    sparseRows,
-    structuredWeights,
-    covarianceObsEquationCount,
-    options.numParams,
-  );
+  if (options.experimentalSelectedCovarianceMode === true) {
+    return {
+      kind: 'selected',
+      store: querySelectedCovarianceStore(
+        solver,
+        sparseRows,
+        structuredWeights,
+        covarianceObsEquationCount,
+        options,
+      ),
+    };
+  }
+  return {
+    kind: 'dense',
+    qxx: querySparseSelectedCovariance(
+      solver,
+      sparseRows,
+      structuredWeights,
+      covarianceObsEquationCount,
+      options.numParams,
+    ),
+  };
 };
 
 const recoverDenseCovariance = (
@@ -263,7 +335,7 @@ const recoverDenseCovariance = (
 
 export const recoverFinalNormalCovariance = (
   options: RecoverFinalNormalCovarianceOptions,
-): number[][] | null => {
+): RecoveredFinalCovariance | null => {
   const {
     activeObservations,
     augmentCovarianceObservations,
@@ -285,16 +357,28 @@ export const recoverFinalNormalCovariance = (
     clearGeometryCache();
     if (options.sparseSelectedCovarianceSolver) {
       try {
-        return trySparseSelectedCovariance(options, covarianceObservations, covarianceObsEquationCount);
+        recordSelectedCovarianceCall(options.experimentalSparseDiagnostics);
+        return trySparseSelectedCovariance(
+          options,
+          covarianceObservations,
+          covarianceObsEquationCount,
+        );
       } catch (error) {
         const detail = error instanceof Error ? ` ${error.message}` : '';
+        recordSelectedCovarianceFallback(
+          options.experimentalSparseDiagnostics,
+          detail.trim() || 'sparse selected covariance failed',
+        );
         options.log?.(
           `Warning: sparse selected covariance unavailable; using dense fallback.${detail}`,
         );
         clearGeometryCache();
       }
     }
-    return recoverDenseCovariance(options, covarianceObservations, covarianceObsEquationCount);
+    return {
+      kind: 'dense',
+      qxx: recoverDenseCovariance(options, covarianceObservations, covarianceObsEquationCount),
+    };
   } finally {
     Object.keys(stationSnapshot).forEach((stationId) => {
       stations[stationId] = { ...stationSnapshot[stationId] };

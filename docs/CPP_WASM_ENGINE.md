@@ -145,6 +145,12 @@ Dense-vs-structured reconstruction tests cover scalar, GPS 2D/3D, correlated con
 
 Measure and harden the complete sparse-weight path, including large networks, robust updates, covariance/statistics products, and memory behavior.
 
+Bounded test-only infrastructure (2026-09-05): `src/engine/wasm/experimentalSparseNumericalBundle.ts` loads one shared `WebNetWasmModule` and exposes all three sparse solvers plus a `buildExperimentalSparseEngineOptions` injection helper; `src/engine/experimentalSparseDiagnostics.ts` adds optional route counters/reasons (sparse correction, row products, selected covariance, and dense fallbacks) wired through the existing experimental paths, forwarded into nested solves, and inert unless injected. Production remains TypeScript-only.
+
+Selected-network covariance mode (2026-09-05, test-only): `experimentalSelectedCovarianceMode` with an injected selected-covariance solver queries only `covarianceQueryPlan` station+connected/requested entries into a `SelectedCovarianceStore` (`src/engine/selectedCovarianceStore.ts`, fail-closed reads) instead of reconstructing dense Qxx; precision propagation uses the store accessor and skips only legacy all-pairs `relativePrecision`, leaving station/connected/requested rows on the dense contract. Without the flag, recovery keeps the all-entry dense behavior.
+
+Worker-compatible bundle proof (2026-09-05, test-only): `npm run wasm:sparse:bundle:worker-proof` runs `scripts/wasmSparseBundleWorkerProof.ts` under `node --import tsx`; each of ~25 fresh workers initializes the bundle once, runs one generated case through all three solvers, and returns route diagnostics with heap/RSS observations plus a repeat-seed determinism check.
+
 ### Phase 6 — observation-model migration only where benchmarks justify it
 
 Move observation/Jacobian construction only when measured benefits justify the parity risk; do not assume a C++ model migration is required.

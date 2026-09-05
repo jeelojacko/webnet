@@ -35,11 +35,14 @@ import {
   runBlunderDetectWorkflow as runBlunderDetectWorkflowHelper,
 } from './adjustRunModeWorkflows';
 import { recoverFinalNormalCovariance as recoverFinalNormalCovarianceHelper } from './adjustCovarianceRecovery';
+import type { RecoveredFinalCovariance } from './adjustCovarianceRecovery';
+import { collectConnectedStationPairs } from './selectedCovarianceStore';
 import { LSAEngineObservationMethods } from './adjustEngineObservationMethods';
 import { buildSideshotResults } from './adjustmentSideshots';
 import type { CoordinateConstraintEquation } from './adjustmentSolveTypes';
 import type { ScenarioRunRequest } from './scenarioRunModels';
 import type { SparseCorrectionSolver, SparseRowProductsSolver, SparseSelectedCovarianceSolver } from './numericalBackend';
+import type { ExperimentalSparseRouteDiagnostics } from './experimentalSparseDiagnostics';
 import type {
   AdjustmentResult,
   Observation,
@@ -54,6 +57,8 @@ export class LSAEngine extends LSAEngineObservationMethods {
   private sparseCorrectionSolver?: SparseCorrectionSolver;
   private sparseRowProductsSolver?: SparseRowProductsSolver;
   private sparseSelectedCovarianceSolver?: SparseSelectedCovarianceSolver;
+  private experimentalSparseDiagnostics?: ExperimentalSparseRouteDiagnostics;
+  private experimentalSelectedCovarianceMode?: boolean;
 
   private solveNormalEquations(
     N: number[][],
@@ -81,7 +86,11 @@ export class LSAEngine extends LSAEngineObservationMethods {
     numObsEquations: number,
     numParams: number,
     dirParamMap: Record<string, number>,
-  ): number[][] | null {
+  ): RecoveredFinalCovariance | null {
+    const requestedPairs = [
+      ...(this.parseState?.relativeLinePairs ?? []),
+      ...(this.parseState?.positionalTolerancePairs ?? []),
+    ];
     return recoverFinalNormalCovarianceHelper({
       activeObservations,
       augmentCovarianceObservations: (observations) =>
@@ -113,6 +122,10 @@ export class LSAEngine extends LSAEngineObservationMethods {
       applyTsCorrelationToWeightMatrix: this.applyTsCorrelationToWeightMatrix.bind(this),
       applyTsCorrelationToWeightWriter: this.applyTsCorrelationToWeightWriter.bind(this),
       sparseSelectedCovarianceSolver: this.sparseSelectedCovarianceSolver,
+      experimentalSparseDiagnostics: this.experimentalSparseDiagnostics,
+      experimentalSelectedCovarianceMode: this.experimentalSelectedCovarianceMode,
+      connectedPairs: collectConnectedStationPairs(activeObservations),
+      requestedPairs,
       log: this.log.bind(this),
       stations: this.stations,
       wrapToPi: this.wrapToPi.bind(this),
@@ -147,12 +160,16 @@ export class LSAEngine extends LSAEngineObservationMethods {
     sparseCorrectionSolver,
     sparseRowProductsSolver,
     sparseSelectedCovarianceSolver,
+    experimentalSparseDiagnostics,
+    experimentalSelectedCovarianceMode,
   }: EngineOptions) {
     super();
     this.normalEquationSolver = normalEquationSolver;
     this.sparseCorrectionSolver = sparseCorrectionSolver;
     this.sparseRowProductsSolver = sparseRowProductsSolver;
     this.sparseSelectedCovarianceSolver = sparseSelectedCovarianceSolver;
+    this.experimentalSparseDiagnostics = experimentalSparseDiagnostics;
+    this.experimentalSelectedCovarianceMode = experimentalSelectedCovarianceMode;
     this.input = input;
     this.maxIterations = maxIterations;
     this.instrumentLibrary = { ...instrumentLibrary };
@@ -207,6 +224,8 @@ export class LSAEngine extends LSAEngineObservationMethods {
       sparseCorrectionSolver: this.sparseCorrectionSolver,
       sparseRowProductsSolver: this.sparseRowProductsSolver,
       sparseSelectedCovarianceSolver: this.sparseSelectedCovarianceSolver,
+      experimentalSparseDiagnostics: this.experimentalSparseDiagnostics,
+      experimentalSelectedCovarianceMode: this.experimentalSelectedCovarianceMode,
     }).solve();
   }
 

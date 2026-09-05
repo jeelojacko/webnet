@@ -95,7 +95,7 @@ export const calculateAdjustmentStatistics = (
     ctx.typeSummary = buildObservationTypeSummary(activeObservations);
     ctx.captureObservationWeightingStdDevs(activeObservations);
 
-    if (hasQxx && ctx.Qxx) {
+    if (hasQxx && (ctx.Qxx || ctx.experimentalSelectedCovarianceStore)) {
       propagateAdjustmentPrecision(ctx, paramIndex, activeObservations);
     }
 

@@ -1,5 +1,6 @@
 import type { AdjustmentResult, ParseOptions } from '../types';
 import type { SparseCorrectionSolver } from './numericalBackend';
+import type { ExperimentalSparseRouteDiagnostics } from './experimentalSparseDiagnostics';
 import type { StructuredSymmetricWeights } from './sparseWeightRepresentation';
 import type { Observation, StationId } from '../types';
 
@@ -58,6 +59,8 @@ export interface SolveNormalResult {
 export interface IterationSolveDependencies {
   robustMode: ParseOptions['robustMode'];
   sparseCorrectionSolver?: SparseCorrectionSolver;
+  /** Test-only sparse route diagnostics; undefined disables counting. */
+  experimentalSparseDiagnostics?: ExperimentalSparseRouteDiagnostics;
   solveNormalEquations: (
     _N: number[][],
     _U: number[][],

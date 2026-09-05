@@ -5,6 +5,8 @@ import {
   zeros,
 } from './matrix';
 import type { SparseMatrixRows } from './matrix';
+import type { ExperimentalSparseRouteDiagnostics } from './experimentalSparseDiagnostics';
+import { recordSparseCorrectionCall } from './experimentalSparseDiagnostics';
 import type { StationMap } from '../types';
 import { buildSparseSolveInput, buildSparseSolveInputWithPackedWeights } from './sparseEquationPacking';
 import { structuredQuadraticForm, structuredWeightsToPackedUpper } from './sparseWeightRepresentation';
@@ -60,6 +62,7 @@ export const solveAdjustmentIteration = (
   };
   const solveWithDenseWeights = (dense: number[][]): void => {
     if (dependencies.sparseCorrectionSolver) {
+      recordSparseCorrectionCall(dependencies.experimentalSparseDiagnostics);
       correction = dependencies.sparseCorrectionSolver.solveFromEquations(
         buildSparseSolveInput(sparseRows, dense, L, numParams),
       ).correction;
@@ -84,6 +87,7 @@ export const solveAdjustmentIteration = (
       return;
     }
     if (dependencies.sparseCorrectionSolver && packedWeights) {
+      recordSparseCorrectionCall(dependencies.experimentalSparseDiagnostics);
       correction = dependencies.sparseCorrectionSolver.solveFromEquations(
         buildSparseSolveInputWithPackedWeights(sparseRows, packedWeights, L, numParams),
       ).correction;
