@@ -264,4 +264,23 @@ describe('standardized residual row-product routing', () => {
     expect(spy.mock.calls[0]?.[0].crossA.length).toBe(0);
     expect(spy.mock.calls[0]?.[0].crossB.length).toBe(0);
   });
+
+  it('rejects damped row products so callers fall back to dense', () => {
+    const distObs = { id: 3, type: 'dist', from: 'A', to: 'B', obs: 10 } as unknown as Observation;
+    const damped: SparseRowProductsSolver = {
+      queryRowProducts: (input) => ({
+        quadratic: new Float64Array(input.queryRowOffsets.length - 1),
+        cross: new Float64Array(input.crossA.length),
+        normalNnz: 0, factorNnz: 0, damping: 1e-8, dampingAttempts: 1,
+      }),
+    };
+    expect(() => queryStandardizedResidualRowProducts(damped, {
+      sparseRows: [[{ index: 0, value: 2 }]],
+      weights: [[1]],
+      rowInfo: [{ obs: distObs }],
+      activeObservations: [distObs],
+      observationEquationCount: 1,
+      parameterCount: 1,
+    })).toThrow(/diagonal damping/);
+  });
 });

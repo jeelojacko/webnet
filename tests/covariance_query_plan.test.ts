@@ -9,7 +9,7 @@ describe('buildCovarianceQueryPlan', () => {
       unknowns: ['A', 'B'],
       stationParamCount: 4,
       includeHeight: false,
-    } as const;
+    };
     const first = buildCovarianceQueryPlan({ ...options });
     const second = buildCovarianceQueryPlan({ ...options });
     expect(second.queries).toEqual(first.queries);
@@ -33,11 +33,11 @@ describe('buildCovarianceQueryPlan', () => {
       paramIndex: { A: { x: 0, y: 1, h: 2 } },
       unknowns: ['A'],
       stationParamCount: 3,
-    } as const;
+    };
     const withHeight = buildCovarianceQueryPlan({ ...base, includeHeight: true });
     const withoutHeight = buildCovarianceQueryPlan({ ...base, includeHeight: false });
-    // 3x3 block with height vs 2x2 horizontal-only block.
-    expect(withHeight.queries).toHaveLength(9);
+    // Horizontal 2x2 block is always emitted; height adds the full 3x3 block.
+    expect(withHeight.queries).toHaveLength(13);
     expect(withHeight.requiredColumns).toEqual([0, 1, 2]);
     expect(withoutHeight.queries).toHaveLength(4);
     expect(withoutHeight.requiredColumns).toEqual([0, 1]);
@@ -72,13 +72,13 @@ describe('buildCovarianceQueryPlan', () => {
       paramIndex: {
         B: { x: 3, y: 2 },
         A: { x: 0, y: 9 },
-        C: { x: -1 },
+        C: {},
       },
       unknowns: ['B', 'A', 'C'],
       stationParamCount: 4,
       includeHeight: false,
     });
-    // 9 (outside stationParamCount) and -1 are excluded; rest sorted.
+    // 9 (>= stationParamCount) and missing entries are excluded; rest sorted.
     expect(plan.requiredColumns).toEqual([0, 2, 3]);
     // Queries with negative indices are skipped by addQuery.
     expect(plan.queries.every((q) => q.row >= 0 && q.column >= 0)).toBe(true);
