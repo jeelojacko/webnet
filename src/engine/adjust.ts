@@ -49,11 +49,22 @@ import type {
 } from '../types';
 
 export class LSAEngine extends LSAEngineObservationMethods {
+  private normalEquationSolver?: EngineOptions['normalEquationSolver'];
+
   private solveNormalEquations(
     N: number[][],
     U: number[][],
     options?: { recoverCovariance?: boolean },
   ): { correction: number[][]; qxx?: number[][] } {
+    if (this.normalEquationSolver && !options?.recoverCovariance) {
+      const result = this.normalEquationSolver.solveCorrection(N, U);
+      if (result.damping > 0) {
+        this.log(
+          `Warning: normal-equation factorization required diagonal damping (lambda=${result.damping.toExponential(3)}, attempts=${result.dampingAttempts}).`,
+        );
+      }
+      return { correction: result.correction };
+    }
     return solveNormalEquationsHelper(N, U, {
       log: this.log.bind(this),
       recoverCovariance: options?.recoverCovariance,
@@ -125,8 +136,10 @@ export class LSAEngine extends LSAEngineObservationMethods {
     parsedResult,
     solvePreparation,
     progressCallback,
+    normalEquationSolver,
   }: EngineOptions) {
     super();
+    this.normalEquationSolver = normalEquationSolver;
     this.input = input;
     this.maxIterations = maxIterations;
     this.instrumentLibrary = { ...instrumentLibrary };
@@ -177,6 +190,7 @@ export class LSAEngine extends LSAEngineObservationMethods {
       parsedResult,
       solvePreparation: getCachedSolvePreparation(request, parsedResult),
       progressCallback: request.progressCallback,
+      normalEquationSolver: this.normalEquationSolver,
     }).solve();
   }
 

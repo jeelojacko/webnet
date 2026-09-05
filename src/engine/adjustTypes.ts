@@ -1,3 +1,4 @@
+import type { NormalEquationSolver } from './numericalBackend';
 import type { SolveProgressEvent } from './scenarioRunModels';
 import type { SolvePreparationResult } from './adjustmentPreprocessing';
 import type {
@@ -62,6 +63,8 @@ export interface EngineOptions {
   parsedResult?: ParseResult;
   solvePreparation?: SolvePreparationResult;
   progressCallback?: (_event: SolveProgressEvent) => void;
+  /** Test-only experimental correction backend; undefined keeps the TS solver. */
+  normalEquationSolver?: NormalEquationSolver;
 }
 
 export const cloneParsedResultValue = <T>(value: T): T => {

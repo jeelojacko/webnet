@@ -1,9 +1,9 @@
-# WebNet portable C++ core (Phase 0 scaffold)
+# WebNet portable C++ core (Phase 1 dense solver)
 
-Minimal, portable C++20 scaffold for future least-squares numerics shared
-between native tooling and a WASM build. Phase 0 contains **no adjustment
-math** — just the versioned library shape, a trivial smoke function, a native
-CTest smoke test, and thin Emscripten bindings.
+Portable C++20 correction-only dense normal-equation solver shared by native
+and WASM builds. TypeScript remains production-authoritative; this backend is
+experimental and test-injected only. Covariance and equation assembly are not
+ported.
 
 ## Layout
 
@@ -19,10 +19,16 @@ cpp/
   include/webnet/
     version.hpp              Version macros (single source of truth)
     core.hpp                 Portable public API (Emscripten-free)
+    dense_solver.hpp         Correction-only dense solver API
   src/
     core.cpp                 Portable implementation
+    dense_solver.cpp         Scaling, damping, Cholesky, substitutions
   tests/
     core_smoke_test.cpp      Native smoke test (no framework dependency)
+    dense_solver_test.cpp    Numerical behavior tests
+    dense_abi_test.cpp       C ABI tests
+  bench/
+    dense_benchmark.cpp      Native timing probe
   bindings/
     wasm_bindings.cpp        Thin Emscripten glue (only place that includes <emscripten/...>)
 ```
@@ -30,7 +36,7 @@ cpp/
 Design constraint: `include/` + `src/` must never include Emscripten headers.
 Only `bindings/` touches the Emscripten API.
 
-## Public API (Phase 0)
+## Public API
 
 ```cpp
 #include "webnet/core.hpp"
@@ -62,9 +68,11 @@ emcmake cmake -S cpp -B cpp/build-wasm \
 cmake --build cpp/build-wasm
 ```
 
-The WASM target emits `webnet_core_wasm` (JS + WASM) exposing `version` and
-`add` through `Embind`. Native builds are unaffected when Emscripten is
-absent: the WASM target is simply skipped.
+The WASM target emits `webnet_core.js` plus its `.wasm`, exposing `version`,
+`add`, and the correction-only C ABI (`webnet_dense_solve`) through Embind/
+exports. The ABI uses contiguous row-major doubles and reports status,
+damping, attempts, and a bounded error string. Native builds are unaffected
+when Emscripten is absent: the WASM target is simply skipped.
 
 Without CMake, the portable core still compiles directly:
 
@@ -72,9 +80,9 @@ Without CMake, the portable core still compiles directly:
 g++ -std=c++20 -Wall -Wextra -Wpedantic -I cpp/include cpp/src/core.cpp -c -o /tmp/core.o
 ```
 
-## Dependency decision (Phase 0)
+## Dependency decision (Phase 1)
 
-**No third-party dependencies. Eigen is evaluated and deferred.**
+**No third-party dependencies. Eigen remains deferred.**
 
 - Evaluated: Eigen (dense/sparse normal-equation solver candidate), invoked
   via CMake `FetchContent` or system package.

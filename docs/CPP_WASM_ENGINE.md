@@ -1,6 +1,6 @@
 # C++/WebAssembly numerical engine migration
 
-Status: **Phase 0 — infrastructure and baseline only.** The TypeScript engine remains the authoritative production implementation. No adjustment solver has been ported.
+Status: **Phase 1 — correction-only dense solver parity.** The TypeScript engine remains the authoritative production implementation; WASM is test-only and injected explicitly.
 
 ## Current TypeScript architecture
 
@@ -79,9 +79,11 @@ The benchmark suite establishes measured end-to-end timings and RSS for the comm
 
 The eventual optimized boundary should use coarse-grained calls and contiguous `Float64Array`, `Uint32Array`, and `Int32Array` buffers rather than per-element JS↔WASM calls. Station IDs stay strings at the app layer; any native indexes must use an explicit deterministic ID↔index table and never depend on JavaScript property iteration order. The final binary protocol is intentionally deferred.
 
-## C++/WASM Phase 0 scaffold
+## C++/WASM Phase 1 solver
 
-`cpp/` contains a portable C++20 library with a trivial `webnet::add()` and version query, a framework-free native CTest smoke test, and thin Embind bindings. The portable core has no browser, Node, React, DOM, or Emscripten dependency. Emscripten-specific code is confined to `cpp/bindings/`. Threads, `SharedArrayBuffer`, cross-origin isolation, and SIMD are deliberately disabled/not enabled.
+`cpp/` contains a portable C++20 dense correction solver matching the TypeScript scaled normal-equation path: diagonal equilibration, symmetric Cholesky, `1e-12` pivot rejection, geometric diagonal damping, substitutions, and unscaling. It uses contiguous row-major `double` buffers and returns correction values plus damping metadata. Covariance, LDLT recovery, statistics, and equation assembly remain TypeScript.
+
+The C ABI is `webnet_dense_solve(normal, rhs, correction, n, damping, attempts, error, capacity)` with deterministic status codes and NUL-terminated errors. Emscripten-specific code is confined to `cpp/bindings/`; the TypeScript wrapper transfers one complete square system with exactly one RHS column, solves synchronously after lazy async module initialization, checks allocation failure, and frees all allocations. `normalEquationSolver` is an explicit test-only `LSAEngine` injection; undefined preserves TypeScript production behavior. Its `solveCorrection` contract intentionally excludes covariance and is not a general replacement for the old multi-purpose solver interface. WASM boundary errors use stable status classes rather than promising byte-identical TS diagnostic strings. Threads, `SharedArrayBuffer`, cross-origin isolation, and SIMD remain disabled/not enabled.
 
 Eigen is the first candidate for Phase 1 linear algebra, but is intentionally not acquired in Phase 0: the scaffold has no numerical algorithm to use it, so adding an unused large header dependency would add network, pinning, and licensing surface without proving anything. Phase 1 must pin a specific Eigen release/hash, record its MPL2 license, and compare its dense solver against the TypeScript reference before committing to it. SuiteSparse/CHOLMOD is deferred until Eigen or a lighter approach is shown inadequate, especially under Emscripten.
 
@@ -97,11 +99,17 @@ Prerequisites and commands are documented in `cpp/README.md`; normal `npm instal
 
 ### Phase 0 — infrastructure and baseline
 
-This batch: document current behavior, add reproducible TypeScript benchmark commands and artifacts, scaffold native C++ and optional Emscripten builds, add the backend/loader seam, and prove trivial calls where local toolchains are installed. No solver port and no production backend switch.
+This batch scaffolded native C++/WASM builds, benchmarks, and the isolated backend seam. It did not switch production away from TypeScript.
 
-### Phase 1 — dense solver parity spike
+### Phase 1 — correction-only dense parity
 
-Port only normal-equation scaling, factorization, and solve to C++/WASM using dense input/output. Compare focused TypeScript parity tests, all computational parity fixtures, and industry-reference parity. This is a proof seam, not the final architecture.
+This batch ports only correction solving. Native CTest covers SPD, scaling, damping, asymmetry, invalid inputs, and ABI behavior. `npm run wasm:solver:smoke` exercises the real wrapper and `npm run wasm:solver:parity` compares TypeScript/WASM corrections at n=1, 2, 5, 10, 25, 50, and 100. Observed generated SPD maximum difference is `3.39e-14` (below the `1e-12` gate); damping metadata also matches. No covariance or production backend migration is included.
+
+`npm run bench:normal` uses the same deterministic diagonally dominant systems for TypeScript and transfer-inclusive WASM, and the native benchmark uses the same portable solver. On the recorded Node 26.8.1 / Linux x64 run: n=25 TS/WASM 0.056/0.025 ms, n=100 0.330/0.255 ms, n=200 1.598/1.548 ms, n=400 11.616/9.780 ms, and n=800 73.920/69.862 ms median. Native per-solve results were 0.016 ms (n=50), 0.133 ms (n=100), and 0.933 ms (n=200). These are observations, not CI thresholds; WASM values include heap transfer and dense O(n³) limits remain.
+
+### Phase 1 — dense solver parity spike (complete)
+
+Correction-only normal-equation scaling, factorization, and solve now run through the native/WASM proof seam. Full engine production routing and covariance remain TypeScript.
 
 ### Phase 2 — sparse normal-equation backend
 

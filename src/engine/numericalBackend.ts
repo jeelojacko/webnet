@@ -1,7 +1,13 @@
 export type NumericalBackend = 'typescript' | 'wasm';
 
+export interface NormalEquationSolveResult {
+  correction: number[][];
+  damping: number;
+  dampingAttempts: number;
+}
+
 export interface NormalEquationSolver {
-  solve(_normal: number[][], _rhs: number[][]): { correction: number[][]; qxx?: number[][] };
+  solveCorrection(_normal: number[][], _rhs: number[][]): NormalEquationSolveResult;
 }
 
 export interface NumericalBackendOptions {
