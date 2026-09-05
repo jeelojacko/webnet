@@ -25,6 +25,8 @@
     "bench:normal": "tsx scripts/benchmarks/benchmarkNormal.ts",
     "bench:sparse": "tsx scripts/benchmarks/benchmarkSparse.ts",
     "bench:adjust:sparse": "tsx scripts/benchmarks/benchmarkSparseAdjustment.ts",
+    "bench:weights": "tsx scripts/benchmarks/benchmarkWeights.ts",
+    "bench:weights:quick": "tsx scripts/benchmarks/benchmarkWeights.ts --quick",
     "typecheck": "tsc --noEmit",
     "typecheck:watch": "tsc --noEmit --watch",
     "lint": "eslint .",

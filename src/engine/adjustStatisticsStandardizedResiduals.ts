@@ -49,7 +49,10 @@ export const computeStandardizedResidualStatistics = (
       constraints.length;
 
     if (numParams > 0 && numObsEquations > 0) {
-      const { L, P, rowInfo, sparseRows } = assembleAdjustmentEquations(
+      const sparseStatsSupported =
+        ctx.sparseRowProductsSolver != null &&
+        ctx.applyTsCorrelationToWeightWriter != null;
+      const assembleStatsEquations = (sparse: boolean) => assembleAdjustmentEquations(
         {
           stations: ctx.stations,
           paramIndex: ctx.paramIndex,
@@ -72,38 +75,97 @@ export const computeStandardizedResidualStatistics = (
           curvatureRefractionAngle: ctx.curvatureRefractionAngle.bind(this),
           applyTsCorrelationToWeightMatrix: (weightMatrix, weightRowInfo) =>
             ctx.applyTsCorrelationToWeightMatrix(weightMatrix, weightRowInfo, true),
+          applyTsCorrelationToWeightWriter: sparse
+            ? (weights, weightRowInfo) =>
+              ctx.applyTsCorrelationToWeightWriter?.(weights, weightRowInfo, true)
+            : undefined,
         },
         activeObservations,
         constraints,
         numObsEquations,
         numParams,
         undefined,
-        { includeDenseA: false },
+        sparse
+          ? { includeDenseA: false, weightRepresentation: 'sparse', omitDenseP: true }
+          : { includeDenseA: false },
       );
+      let assembled = assembleStatsEquations(sparseStatsSupported);
+      let useSparseRowProductWeights = sparseStatsSupported;
 
-      if (!ctx.preanalysisMode && ctx.robustMode === 'huber') {
-        const baseWeights = ctx.captureRobustWeightBase(P, rowInfo);
-        const residuals = L.map((row) => -row[0]);
-        const summary = ctx.computeRobustWeightSummary(residuals, rowInfo);
-        ctx.applyRobustWeightFactors(P, baseWeights, summary.factors);
-      }
+      const applyStatsHuberWeights = (): void => {
+        if (ctx.preanalysisMode || ctx.robustMode !== 'huber') return;
+        // Explicit length: omitDenseP yields undefined, never a truthy empty matrix.
+        if (assembled.P?.length) {
+          const baseWeights = ctx.captureRobustWeightBase(assembled.P, assembled.rowInfo);
+          const residuals = assembled.L.map((row) => -row[0]);
+          const summary = ctx.computeRobustWeightSummary(residuals, assembled.rowInfo);
+          ctx.applyRobustWeightFactors(assembled.P, baseWeights, summary.factors);
+        } else if (
+          assembled.structuredWeights != null &&
+          ctx.captureRobustWeightBaseFromStructured != null &&
+          ctx.applyRobustWeightFactorsToStructured != null
+        ) {
+          const baseWeights = ctx.captureRobustWeightBaseFromStructured(
+            assembled.structuredWeights,
+            assembled.rowInfo,
+          );
+          const residuals = assembled.L.map((row) => -row[0]);
+          const summary = ctx.computeRobustWeightSummary(residuals, assembled.rowInfo);
+          ctx.applyRobustWeightFactorsToStructured(
+            assembled.structuredWeights,
+            baseWeights,
+            summary.factors,
+          );
+        } else {
+          ctx.log(
+            'Warning: sparse Huber statistics lack structured robust support; using dense weights.',
+          );
+          assembled = assembleStatsEquations(false);
+          useSparseRowProductWeights = false;
+          applyStatsHuberWeights();
+        }
+      };
+      applyStatsHuberWeights();
 
       if (!ctx.preanalysisMode) {
         try {
-          const rowProducts = tryQueryStandardizedResidualRowProducts(ctx, {
-            sparseRows,
-            weights: P,
-            rowInfo,
+          let rowProducts = tryQueryStandardizedResidualRowProducts(ctx, {
+            sparseRows: assembled.sparseRows,
+            weights: assembled.P,
+            structuredWeights: useSparseRowProductWeights
+              ? assembled.structuredWeights
+              : undefined,
+            rowInfo: assembled.rowInfo,
             activeObservations,
             observationEquationCount: numObsEquations,
             parameterCount: numParams,
           });
+          if (!rowProducts && useSparseRowProductWeights) {
+            assembled = assembleStatsEquations(false);
+            useSparseRowProductWeights = false;
+            applyStatsHuberWeights();
+            rowProducts = tryQueryStandardizedResidualRowProducts(ctx, {
+              sparseRows: assembled.sparseRows,
+              weights: assembled.P,
+              rowInfo: assembled.rowInfo,
+              activeObservations,
+              observationEquationCount: numObsEquations,
+              parameterCount: numParams,
+            });
+          }
+          const { L, rowInfo, sparseRows } = assembled;
           let B: number[][] = [];
           if (!rowProducts) {
+            const denseP = assembled.P;
+            if (!denseP?.length) {
+              throw new Error(
+                'Dense fallback statistics require dense weights; disable the experimental sparse row-product path.',
+              );
+            }
             const { normal: N } = accumulateNormalEquationsFromSparseRows(
               sparseRows,
               zeros(numObsEquations, 1),
-              P,
+              denseP,
               numParams,
             );
             const QxxStats = ctx.invertNormalMatrixForStats(N);

@@ -11,6 +11,8 @@ import type {
   Observation,
 } from '../types';
 
+import type { StructuredSymmetricWeights } from './sparseWeightRepresentation';
+
 export const weightedQuadratic = (P: number[][], v: number[][]): number =>
   symmetricQuadraticForm(P, v);
 
@@ -53,6 +55,28 @@ export const robustCorrelationRowGroups = (
   return [...groups.values()].filter((rows) => rows.length > 1);
 };
 
+export const applyRobustWeightFactorsToStructured = (
+  weights: StructuredSymmetricWeights,
+  base: RobustWeightMatrixBase,
+  factors: number[],
+): void => {
+  for (let row = 0; row < weights.size; row += 1) {
+    weights.diagonal[row] = (base.diagonal[row] ?? 0) * (factors[row] ?? 1);
+  }
+  if (base.correlatedPairs.length === 0) return;
+  const positionByPair = new Map<string, number>();
+  for (let position = 0; position < weights.offRows.length; position += 1) {
+    positionByPair.set(`${weights.offRows[position]}:${weights.offColumns[position]}`, position);
+  }
+  base.correlatedPairs.forEach(({ i, j, base: pairBase }) => {
+    const canonical = i < j ? `${i}:${j}` : `${j}:${i}`;
+    const position = positionByPair.get(canonical);
+    if (position == null) return;
+    const scale = Math.sqrt((factors[i] ?? 1) * (factors[j] ?? 1));
+    weights.offValues[position] = pairBase * scale;
+  });
+};
+
 export const captureRobustWeightBase = (
   P: number[][],
   rowInfo: EquationRowInfo[],
@@ -64,10 +88,41 @@ export const captureRobustWeightBase = (
   const correlatedPairs: RobustWeightMatrixBase['correlatedPairs'] = [];
   options.robustCorrelationRowGroups(rowInfo).forEach((rows) => {
     for (let a = 0; a < rows.length; a += 1) {
-      const i = rows[a];
+      const i = rows[a] as number;
       for (let b = a + 1; b < rows.length; b += 1) {
-        const j = rows[b];
-        const base = P[i][j] ?? 0;
+        const j = rows[b] as number;
+        const base = P[i]?.[j] ?? 0;
+        if (Math.abs(base) <= 0) continue;
+        correlatedPairs.push({ i, j, base });
+      }
+    }
+  });
+  return { diagonal, correlatedPairs };
+};
+
+export const captureRobustWeightBaseFromStructured = (
+  weights: StructuredSymmetricWeights,
+  rowInfo: EquationRowInfo[],
+  options: {
+    robustCorrelationRowGroups: (_rowInfo: EquationRowInfo[]) => number[][];
+  },
+): RobustWeightMatrixBase => {
+  const diagonal = Array.from(weights.diagonal);
+  const valueByPair = new Map<string, number>();
+  for (let position = 0; position < weights.offRows.length; position += 1) {
+    valueByPair.set(
+      `${weights.offRows[position]}:${weights.offColumns[position]}`,
+      weights.offValues[position] ?? 0,
+    );
+  }
+  const correlatedPairs: RobustWeightMatrixBase['correlatedPairs'] = [];
+  options.robustCorrelationRowGroups(rowInfo).forEach((rows) => {
+    for (let a = 0; a < rows.length; a += 1) {
+      const i = rows[a] as number;
+      for (let b = a + 1; b < rows.length; b += 1) {
+        const j = rows[b] as number;
+        const canonical = i < j ? `${i}:${j}` : `${j}:${i}`;
+        const base = valueByPair.get(canonical) ?? 0;
         if (Math.abs(base) <= 0) continue;
         correlatedPairs.push({ i, j, base });
       }

@@ -7,7 +7,9 @@ import {
 } from './adjustObservationWeighting';
 import {
   applyRobustWeightFactors as applyRobustWeightFactorsHelper,
+  applyRobustWeightFactorsToStructured as applyRobustWeightFactorsToStructuredHelper,
   captureRobustWeightBase as captureRobustWeightBaseHelper,
+  captureRobustWeightBaseFromStructured as captureRobustWeightBaseFromStructuredHelper,
   computeRobustWeightSummary as computeRobustWeightSummaryHelper,
   maxRobustWeightDelta as maxRobustWeightDeltaHelper,
   observationStations as observationStationsHelper,
@@ -21,6 +23,7 @@ import {
 } from './adjustNetworkDiagnostics';
 import {
   applyTsCorrelationToWeightMatrix as applyTsCorrelationToWeightMatrixHelper,
+  applyTsCorrelationToWeightWriter as applyTsCorrelationToWeightWriterHelper,
   tsCorrelationGroup as tsCorrelationGroupHelper,
 } from './adjustTsCorrelationWeights';
 import { LSAEngineBootstrapMethods } from './adjustEngineBootstrapMethods';
@@ -33,6 +36,8 @@ import type {
   RobustWeightMatrixBase,
   RobustWeightSummary,
 } from './adjustmentSolveTypes';
+import type { StructuredSymmetricWeights } from './sparseWeightRepresentation';
+import type { WeightMatrixWriter } from './adjustmentWeightWriter';
 import type {
   DistanceObservation,
   Instrument,
@@ -220,6 +225,24 @@ export abstract class LSAEngineObservationMethods extends LSAEngineBootstrapMeth
     });
   }
 
+  protected applyTsCorrelationToWeightWriter(
+    weights: WeightMatrixWriter,
+    rowInfo: EquationRowInfo[],
+    captureDiagnostics = false,
+  ): void {
+    const diagnostics = applyTsCorrelationToWeightWriterHelper({
+      captureDiagnostics,
+      effectiveStdDev: (obs) => this.effectiveStdDev(obs),
+      enabled: this.tsCorrelationEnabled,
+      weights,
+      rho: this.tsCorrelationRho,
+      rowInfo,
+      scope: this.tsCorrelationScope,
+      tsCorrelationGroup: (obs) => this.tsCorrelationGroup(obs),
+    });
+    if (captureDiagnostics) this.tsCorrelationDiagnostics = diagnostics;
+  }
+
   protected applyTsCorrelationToWeightMatrix(
     P: number[][],
     rowInfo: EquationRowInfo[],
@@ -280,6 +303,23 @@ export abstract class LSAEngineObservationMethods extends LSAEngineBootstrapMeth
     factors: number[],
   ): void {
     applyRobustWeightFactorsHelper(P, base, factors);
+  }
+
+  protected captureRobustWeightBaseFromStructured(
+    weights: StructuredSymmetricWeights,
+    rowInfo: EquationRowInfo[],
+  ): RobustWeightMatrixBase {
+    return captureRobustWeightBaseFromStructuredHelper(weights, rowInfo, {
+      robustCorrelationRowGroups: (info) => this.robustCorrelationRowGroups(info),
+    });
+  }
+
+  protected applyRobustWeightFactorsToStructured(
+    weights: StructuredSymmetricWeights,
+    base: RobustWeightMatrixBase,
+    factors: number[],
+  ): void {
+    applyRobustWeightFactorsToStructuredHelper(weights, base, factors);
   }
 
   protected computeRobustWeightSummary(

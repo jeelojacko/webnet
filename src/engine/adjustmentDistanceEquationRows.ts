@@ -88,6 +88,6 @@ export const appendDistanceEquationRows = ({
   state.assignCoefficient(row, toIdx?.x, dD_dE);
   state.assignCoefficient(row, toIdx?.y, dD_dN);
   if (!dependencies.is2D) state.assignCoefficient(row, toIdx?.h, dD_dH);
-  state.P[row][row] = 1 / (observed2dDistance.sigmaDistance * observed2dDistance.sigmaDistance);
+  state.weights.setDiagonal(row, 1 / (observed2dDistance.sigmaDistance * observed2dDistance.sigmaDistance));
   return row + 1;
 };

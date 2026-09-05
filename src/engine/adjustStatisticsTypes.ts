@@ -1,4 +1,6 @@
 import type { SolveTimingBuckets } from './adjustSolveTiming';
+import type { WeightMatrixWriter } from './adjustmentWeightWriter';
+import type { StructuredSymmetricWeights } from './sparseWeightRepresentation';
 import type { SparseRowProductsSolver } from './numericalBackend';
 import type { GpsCovariance, GpsSolveVector, GpsVectorDerivatives } from './adjustTypes';
 import type {
@@ -117,8 +119,23 @@ export type AdjustmentStatisticsContext = {
     _rowInfo: EquationRowInfo[],
     _captureDiagnostics?: boolean,
   ) => void;
+  applyTsCorrelationToWeightWriter?: (
+    _weights: WeightMatrixWriter,
+    _rowInfo: EquationRowInfo[],
+    _captureDiagnostics?: boolean,
+  ) => void;
   captureObservationWeightingStdDevs: (_observations: Observation[]) => void;
   captureRobustWeightBase: (_matrix: number[][], _rowInfo: EquationRowInfo[]) => RobustWeightMatrixBase;
+  /** Sparse Huber support without a dense P; absent means sparse+Huber falls back to dense. */
+  captureRobustWeightBaseFromStructured?: (
+    _weights: StructuredSymmetricWeights,
+    _rowInfo: EquationRowInfo[],
+  ) => RobustWeightMatrixBase;
+  applyRobustWeightFactorsToStructured?: (
+    _weights: StructuredSymmetricWeights,
+    _base: RobustWeightMatrixBase,
+    _factors: number[],
+  ) => void;
   computeRobustWeightSummary: (_residuals: number[], _rowInfo: EquationRowInfo[]) => RobustWeightSummary;
   computeSideshotResults: () => AdjustmentResult['sideshots'];
   log: (_message: string) => void;

@@ -1,4 +1,4 @@
-# WebNet portable C++ core (Phase 2 sparse solver)
+# WebNet portable C++ core (Phase 4 sparse-weight pipeline)
 
 Portable C++20 correction-only dense normal-equation solver shared by native
 and WASM builds. TypeScript remains production-authoritative; this backend is
@@ -21,9 +21,11 @@ cpp/
     version.hpp              Version macros (single source of truth)
     core.hpp                 Portable public API (Emscripten-free)
     dense_solver.hpp         Correction-only dense solver API
+    sparse_normal_solver.hpp Eigen sparse correction/covariance APIs
   src/
     core.cpp                 Portable implementation
     dense_solver.cpp         Scaling, damping, Cholesky, substitutions
+    sparse_normal_solver.cpp Sparse N assembly and covariance products
   tests/
     core_smoke_test.cpp      Native smoke test (no framework dependency)
     dense_solver_test.cpp    Numerical behavior tests
@@ -69,9 +71,11 @@ cmake --build cpp/build-wasm
 ```
 
 The WASM target emits `webnet_core.js` plus its `.wasm`, exposing `version`,
-`add`, the Phase 1 dense ABI, and the Phase 2 sparse equation ABI through
-exports. The sparse ABI receives packed CSR-like design rows, upper-triangle
-nonzero P entries, and L; it returns correction and NNZ/factor metadata. Both
+`add`, the Phase 1 dense ABI, and sparse correction/covariance ABI exports.
+The sparse ABI receives packed CSR-like design rows, upper-triangle nonzero
+weights, and L or covariance queries; it returns correction/products and
+NNZ/factor metadata. Phase 4 now produces those upper-triangle arrays directly
+from TypeScript structured weights, without allocating/scanning dense P. Both
 ABIs use bounded deterministic error strings. Native builds are unaffected
 when Emscripten is absent: the WASM target is simply skipped.
 

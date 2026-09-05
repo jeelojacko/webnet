@@ -1,5 +1,6 @@
 import type { AdjustmentResult, ParseOptions } from '../types';
 import type { SparseCorrectionSolver } from './numericalBackend';
+import type { StructuredSymmetricWeights } from './sparseWeightRepresentation';
 import type { Observation, StationId } from '../types';
 
 export interface SolveParameterIndexEntry {
@@ -70,6 +71,16 @@ export interface IterationSolveDependencies {
   ) => RobustWeightMatrixBase;
   applyRobustWeightFactors: (
     _P: number[][],
+    _base: RobustWeightMatrixBase,
+    _factors: number[],
+  ) => void;
+  /** Sparse Huber support without a dense P; absent means sparse+Huber is unsupported. */
+  captureRobustWeightBaseFromStructured?: (
+    _weights: StructuredSymmetricWeights,
+    _rowInfo: EquationRowInfo[],
+  ) => RobustWeightMatrixBase;
+  applyRobustWeightFactorsToStructured?: (
+    _weights: StructuredSymmetricWeights,
     _base: RobustWeightMatrixBase,
     _factors: number[],
   ) => void;

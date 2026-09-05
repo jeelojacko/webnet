@@ -1,4 +1,6 @@
 import type { EquationRowInfo } from './adjustmentSolveTypes';
+import type { WeightMatrixWriter } from './adjustmentWeightWriter';
+import { DenseWeightWriter } from './sparseWeightRepresentation';
 import { getObservationSetId } from './observationMetadata';
 import type { AdjustmentResult, Observation, ParseOptions, StationId } from '../types';
 
@@ -49,11 +51,11 @@ const emptyDiagnostics = ({
   groups: [],
 });
 
-export const applyTsCorrelationToWeightMatrix = ({
+export const applyTsCorrelationToWeightWriter = ({
   captureDiagnostics,
   effectiveStdDev,
   enabled,
-  matrix,
+  weights,
   rho,
   rowInfo,
   scope,
@@ -62,7 +64,7 @@ export const applyTsCorrelationToWeightMatrix = ({
   captureDiagnostics: boolean;
   effectiveStdDev: (_obs: Observation) => number;
   enabled: boolean;
-  matrix: number[][];
+  weights: WeightMatrixWriter;
   rho: number;
   rowInfo: EquationRowInfo[];
   scope: ParseOptions['tsCorrelationScope'];
@@ -128,15 +130,14 @@ export const applyTsCorrelationToWeightMatrix = ({
     let offDiagAbsSum = 0;
 
     entry.rows.forEach((row) => {
-      matrix[row.index][row.index] = (a - b) / (row.sigma * row.sigma);
+      weights.setDiagonal(row.index, (a - b) / (row.sigma * row.sigma));
     });
     for (let i = 0; i < n; i += 1) {
       const ri = entry.rows[i];
       for (let j = i + 1; j < n; j += 1) {
         const rj = entry.rows[j];
         const w = -b / (ri.sigma * rj.sigma);
-        matrix[ri.index][rj.index] = w;
-        matrix[rj.index][ri.index] = w;
+        weights.set(ri.index, rj.index, w);
         pairCount += 1;
         offDiagAbsSum += Math.abs(w);
       }
@@ -173,3 +174,33 @@ export const applyTsCorrelationToWeightMatrix = ({
     }),
   };
 };
+
+export const applyTsCorrelationToWeightMatrix = ({
+  captureDiagnostics,
+  effectiveStdDev,
+  enabled,
+  matrix,
+  rho,
+  rowInfo,
+  scope,
+  tsCorrelationGroup,
+}: {
+  captureDiagnostics: boolean;
+  effectiveStdDev: (_obs: Observation) => number;
+  enabled: boolean;
+  matrix: number[][];
+  rho: number;
+  rowInfo: EquationRowInfo[];
+  scope: ParseOptions['tsCorrelationScope'];
+  tsCorrelationGroup: (_obs: Observation) => TsCorrelationGroup | null;
+}): AdjustmentResult['tsCorrelationDiagnostics'] | undefined =>
+  applyTsCorrelationToWeightWriter({
+    captureDiagnostics,
+    effectiveStdDev,
+    enabled,
+    weights: new DenseWeightWriter(matrix),
+    rho,
+    rowInfo,
+    scope,
+    tsCorrelationGroup,
+  });

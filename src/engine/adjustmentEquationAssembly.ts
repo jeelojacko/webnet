@@ -1,7 +1,15 @@
 import { RAD_TO_DEG } from './angles';
+import type { WeightMatrixWriter } from './adjustmentWeightWriter';
 import { zeros } from './matrix';
 import type { SparseMatrixRows } from './matrix';
-import { applyCoordinateConstraintCorrelationWeights } from './adjustmentConstraints';
+import {
+  DenseWeightWriter,
+  SparseWeightWriter,
+  structuredWeightsFromDense,
+  structuredWeightsToDense,
+} from './sparseWeightRepresentation';
+import type { StructuredSymmetricWeights } from './sparseWeightRepresentation';
+import { applyCoordinateConstraintCorrelationWeightsToWriter } from './adjustmentConstraints';
 import type {
   CoordinateConstraintRowPlacement,
   EquationRowInfo,
@@ -60,7 +68,20 @@ export const assembleAdjustmentEquations = (
   const includeDenseA = options?.includeDenseA ?? true;
   const A = includeDenseA ? zeros(numObsEquations, numParams) : undefined;
   const L = zeros(numObsEquations, 1);
-  const P = zeros(numObsEquations, numObsEquations);
+  const useSparseWeights = options?.weightRepresentation === 'sparse';
+  let weights: WeightMatrixWriter;
+  let denseP: number[][] | null = null;
+  let sparseWeightWriter: SparseWeightWriter | null = null;
+  if (useSparseWeights) {
+    const writer = new SparseWeightWriter(numObsEquations);
+    sparseWeightWriter = writer;
+    weights = writer;
+  } else {
+    const matrix = zeros(numObsEquations, numObsEquations);
+    denseP = matrix;
+    const writer = new DenseWeightWriter(matrix);
+    weights = writer;
+  }
   const rowInfo: EquationRowInfo[] = [];
   const sparseRows: SparseMatrixRows = new Array<SparseMatrixRows[number]>(numObsEquations);
   for (let rowIndex = 0; rowIndex < numObsEquations; rowIndex += 1) {
@@ -94,7 +115,7 @@ export const assembleAdjustmentEquations = (
   let row = 0;
   const rowAssemblyState: EquationRowAssemblyState = {
     L,
-    P,
+    weights,
     rowInfo,
     assignCoefficient,
   };
@@ -147,7 +168,7 @@ export const assembleAdjustmentEquations = (
       assignCoefficient(row, fromIdx?.y, -dAzFrom_dN_From);
       assignCoefficient(row, atIdx?.x, -dAzTo_dE_To + dAzFrom_dE_From);
       assignCoefficient(row, atIdx?.y, -dAzTo_dN_To + dAzFrom_dN_From);
-      P[row][row] = 1 / (sigmaUsed * sigmaUsed);
+      weights.setDiagonal(row, 1 / (sigmaUsed * sigmaUsed));
       row += 1;
       return;
     }
@@ -174,7 +195,7 @@ export const assembleAdjustmentEquations = (
       assignCoefficient(row, fromIdx?.h, -1);
       assignCoefficient(row, toIdx?.h, 1);
       const sigma = dependencies.effectiveStdDev(observation);
-      P[row][row] = 1 / (sigma * sigma);
+      weights.setDiagonal(row, 1 / (sigma * sigma));
       row += 1;
       return;
     }
@@ -218,7 +239,7 @@ export const assembleAdjustmentEquations = (
         dAz_dE_To,
         dAz_dN_To,
       );
-      P[row][row] = 1 / (sigmaUsed * sigmaUsed);
+      weights.setDiagonal(row, 1 / (sigmaUsed * sigmaUsed));
       row += 1;
       return;
     }
@@ -251,7 +272,7 @@ export const assembleAdjustmentEquations = (
       assignCoefficient(row, atIdx?.y, -dAz_dN_To);
       const dirIdx = dependencies.dirParamMap[observation.setId];
       assignCoefficient(row, dirIdx, 1);
-      P[row][row] = 1 / (sigmaUsed * sigmaUsed);
+      weights.setDiagonal(row, 1 / (sigmaUsed * sigmaUsed));
       row += 1;
       return;
     }
@@ -294,7 +315,7 @@ export const assembleAdjustmentEquations = (
       assignCoefficient(row, fromIdx?.x, -dZ_dE);
       assignCoefficient(row, fromIdx?.y, -dZ_dN);
       assignCoefficient(row, fromIdx?.h, -dZ_dH);
-      P[row][row] = 1 / (sigmaUsed * sigmaUsed);
+      weights.setDiagonal(row, 1 / (sigmaUsed * sigmaUsed));
       row += 1;
     }
   });
@@ -307,14 +328,31 @@ export const assembleAdjustmentEquations = (
       constraint.component === 'x' ? station.x : constraint.component === 'y' ? station.y : station.h;
     L[row][0] = constraint.target - current;
     assignCoefficient(row, constraint.index, 1);
-    P[row][row] = 1 / (constraint.sigma * constraint.sigma);
+    weights.setDiagonal(row, 1 / (constraint.sigma * constraint.sigma));
     rowInfo.push(null);
     constraintPlacements.push({ row, constraint });
     row += 1;
   });
 
-  applyCoordinateConstraintCorrelationWeights(P, constraintPlacements);
-  dependencies.applyTsCorrelationToWeightMatrix(P, rowInfo);
+  applyCoordinateConstraintCorrelationWeightsToWriter(weights, constraintPlacements);
+  let structuredWeights: StructuredSymmetricWeights | undefined;
+  let P: number[][] | undefined;
+  if (sparseWeightWriter) {
+    if (dependencies.applyTsCorrelationToWeightWriter) {
+      dependencies.applyTsCorrelationToWeightWriter(weights, rowInfo);
+      structuredWeights = sparseWeightWriter.finalize();
+      P = options?.omitDenseP ? undefined : structuredWeightsToDense(structuredWeights);
+    } else {
+      const materialized = structuredWeightsToDense(sparseWeightWriter.finalize());
+      dependencies.applyTsCorrelationToWeightMatrix(materialized, rowInfo);
+      structuredWeights = structuredWeightsFromDense(materialized, numObsEquations);
+      P = options?.omitDenseP ? undefined : materialized;
+    }
+  } else {
+    dependencies.applyTsCorrelationToWeightMatrix(denseP as number[][], rowInfo);
+    structuredWeights = undefined;
+    P = denseP as number[][];
+  }
   sparseRows.forEach((entries) => entries.sort((left, right) => left.index - right.index));
-  return { A, L, P, rowInfo, sparseRows };
+  return { A, L, P, rowInfo, sparseRows, structuredWeights };
 };

@@ -1,5 +1,7 @@
 import type { SparseMatrixRows } from './matrix';
 import type { SparseCorrectionSolveInput } from './numericalBackend';
+import type { StructuredSymmetricWeights } from './sparseWeightRepresentation';
+import { structuredWeightsToPackedUpper } from './sparseWeightRepresentation';
 
 export interface PackedSparseDesignRows {
   rowOffsets: Int32Array;
@@ -81,6 +83,41 @@ export const buildSparseSolveInput = (
   return {
     design: packSparseDesignRows(rows),
     weights: packUpperTriangleWeights(weights, misclosures.length),
+    misclosures: packMisclosures(misclosures, misclosures.length),
+    observationEquationCount: misclosures.length,
+    parameterCount,
+  };
+};
+
+/** Builds solver input directly from structured weights without a dense P matrix. */
+export const buildSparseSolveInputFromStructured = (
+  rows: SparseMatrixRows,
+  weights: StructuredSymmetricWeights,
+  misclosures: number[][],
+  parameterCount: number,
+): SparseCorrectionSolveInput => buildSparseSolveInputWithPackedWeights(
+  rows,
+  structuredWeightsToPackedUpper(weights),
+  misclosures,
+  parameterCount,
+);
+
+/** Builds solver input directly from packed structured weights without a dense P matrix. */
+export const buildSparseSolveInputWithPackedWeights = (
+  rows: SparseMatrixRows,
+  weights: PackedUpperTriangle,
+  misclosures: number[][],
+  parameterCount: number,
+): SparseCorrectionSolveInput => {
+  if (rows.length !== misclosures.length) {
+    throw new Error(`Sparse equation input requires one design row per misclosure (got ${rows.length} design rows for ${misclosures.length} equations).`);
+  }
+  if (weights.rows.length !== weights.columns.length || weights.rows.length !== weights.values.length) {
+    throw new Error('Packed weight input has inconsistent rows, columns, and values.');
+  }
+  return {
+    design: packSparseDesignRows(rows),
+    weights,
     misclosures: packMisclosures(misclosures, misclosures.length),
     observationEquationCount: misclosures.length,
     parameterCount,

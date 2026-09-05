@@ -216,12 +216,13 @@ export const runAdjustmentSolveWorkflow = (
     }
     finishParseAndSetupTiming();
     let prevObjectiveBefore: number | null = null;
+    const useSparseCorrectionWeights = ctx.sparseCorrectionSolver != null;
 
     for (let iter = 0; iter < ctx.maxIterations; iter++) {
       ctx.iterations += 1;
       ctx.clearGeometryCache();
       const assemblyStartedAt = Date.now();
-      const { A, L, P, rowInfo, sparseRows } = assembleAdjustmentEquations(
+      const { A, L, P, rowInfo, sparseRows, structuredWeights } = assembleAdjustmentEquations(
         {
           stations: ctx.stations,
           paramIndex: ctx.paramIndex,
@@ -243,6 +244,9 @@ export const runAdjustmentSolveWorkflow = (
           getModeledZenith: ctx.getModeledZenith.bind(ctx),
           curvatureRefractionAngle: ctx.curvatureRefractionAngle.bind(ctx),
           applyTsCorrelationToWeightMatrix: ctx.applyTsCorrelationToWeightMatrix.bind(ctx),
+          applyTsCorrelationToWeightWriter: useSparseCorrectionWeights
+            ? ctx.applyTsCorrelationToWeightWriter.bind(ctx)
+            : undefined,
           logObsDebug: ctx.logObsDebug.bind(ctx),
         },
         activeObservations,
@@ -250,33 +254,91 @@ export const runAdjustmentSolveWorkflow = (
         numObsEquations,
         numParams,
         iter + 1,
-        { includeDenseA: false },
+        useSparseCorrectionWeights
+          ? { includeDenseA: false, weightRepresentation: 'sparse', omitDenseP: true }
+          : { includeDenseA: false },
       );
       ctx.solveTiming.equationAssemblyMs += Date.now() - assemblyStartedAt;
 
       const factorizationStartedAt = Date.now();
       try {
-        const iterationResult = solveAdjustmentIteration(
-          {
-            robustMode: ctx.robustMode,
-            sparseCorrectionSolver: ctx.sparseCorrectionSolver,
-            solveNormalEquations: ctx.solveNormalEquations.bind(ctx),
-            estimateCondition: ctx.estimateCondition.bind(ctx),
-            recordConditionEstimate: ctx.recordConditionEstimate.bind(ctx),
-            captureRobustWeightBase: ctx.captureRobustWeightBase.bind(ctx),
-            applyRobustWeightFactors: ctx.applyRobustWeightFactors.bind(ctx),
-            computeRobustWeightSummary: ctx.computeRobustWeightSummary.bind(ctx),
-            maxRobustWeightDelta: ctx.maxRobustWeightDelta.bind(ctx),
-            recordRobustDiagnostics: ctx.recordRobustDiagnostics.bind(ctx),
-            weightedQuadratic: ctx.weightedQuadratic.bind(ctx),
-          },
-          A ?? [],
-          L,
-          P,
-          rowInfo,
-          iter + 1,
-          { sparseRows, numParams },
-        );
+        const iterationDependencies = {
+          robustMode: ctx.robustMode,
+          sparseCorrectionSolver: ctx.sparseCorrectionSolver,
+          solveNormalEquations: ctx.solveNormalEquations.bind(ctx),
+          estimateCondition: ctx.estimateCondition.bind(ctx),
+          recordConditionEstimate: ctx.recordConditionEstimate.bind(ctx),
+          captureRobustWeightBase: ctx.captureRobustWeightBase.bind(ctx),
+          applyRobustWeightFactors: ctx.applyRobustWeightFactors.bind(ctx),
+          captureRobustWeightBaseFromStructured: ctx.captureRobustWeightBaseFromStructured?.bind(ctx),
+          applyRobustWeightFactorsToStructured: ctx.applyRobustWeightFactorsToStructured?.bind(ctx),
+          computeRobustWeightSummary: ctx.computeRobustWeightSummary.bind(ctx),
+          maxRobustWeightDelta: ctx.maxRobustWeightDelta.bind(ctx),
+          recordRobustDiagnostics: ctx.recordRobustDiagnostics.bind(ctx),
+          weightedQuadratic: ctx.weightedQuadratic.bind(ctx),
+        };
+        let iterationResult: ReturnType<typeof solveAdjustmentIteration>;
+        try {
+          iterationResult = solveAdjustmentIteration(
+            iterationDependencies,
+            A ?? [],
+            L,
+            P,
+            rowInfo,
+            iter + 1,
+            {
+              sparseRows,
+              numParams,
+              structuredWeights: useSparseCorrectionWeights ? structuredWeights : undefined,
+            },
+          );
+        } catch (sparseError) {
+          if (!useSparseCorrectionWeights) throw sparseError;
+          const sparseDetail = sparseError instanceof Error ? ` ${sparseError.message}` : '';
+          ctx.log(
+            `Warning: sparse correction solve failed at iteration ${iter + 1}; retrying with dense weights.${sparseDetail}`,
+          );
+          const denseAssembly = assembleAdjustmentEquations(
+            {
+              stations: ctx.stations,
+              paramIndex: ctx.paramIndex,
+              is2D: ctx.is2D,
+              debug: ctx.debug,
+              directionOrientations: ctx.directionOrientations,
+              dirParamMap,
+              effectiveStdDev: ctx.effectiveStdDev.bind(ctx),
+              correctedDistanceModel: ctx.correctedDistanceModel.bind(ctx),
+              getObservedHorizontalDistanceIn2D: ctx.getObservedHorizontalDistanceIn2D.bind(ctx),
+              getAzimuth: ctx.getAzimuth.bind(ctx),
+              measuredAngleCorrection: ctx.measuredAngleCorrection.bind(ctx),
+              modeledAzimuth: ctx.modeledAzimuth.bind(ctx),
+              wrapToPi: ctx.wrapToPi.bind(ctx),
+              gpsObservedVector: ctx.gpsObservedVector.bind(ctx),
+              gpsModeledVector: ctx.gpsModeledVector.bind(ctx),
+              gpsModeledVectorDerivatives: ctx.gpsModeledVectorDerivatives.bind(ctx),
+              gpsWeight: ctx.gpsWeight.bind(ctx),
+              getModeledZenith: ctx.getModeledZenith.bind(ctx),
+              curvatureRefractionAngle: ctx.curvatureRefractionAngle.bind(ctx),
+              applyTsCorrelationToWeightMatrix: ctx.applyTsCorrelationToWeightMatrix.bind(ctx),
+              logObsDebug: ctx.logObsDebug.bind(ctx),
+            },
+            activeObservations,
+            constraints,
+            numObsEquations,
+            numParams,
+            iter + 1,
+            { includeDenseA: false },
+          );
+          iterationResult = solveAdjustmentIteration(
+            { ...iterationDependencies, sparseCorrectionSolver: undefined },
+            denseAssembly.A ?? [],
+            denseAssembly.L,
+            denseAssembly.P,
+            denseAssembly.rowInfo,
+            iter + 1,
+            { sparseRows: denseAssembly.sparseRows, numParams },
+          );
+        }
         ctx.solveTiming.matrixFactorizationMs += Date.now() - factorizationStartedAt;
         ctx.Qxx = iterationResult.qxx ?? null;
         const { correction, sumBefore, sumAfter, maxBefore, maxAfter } = iterationResult;

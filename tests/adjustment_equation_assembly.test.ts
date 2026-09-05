@@ -94,12 +94,12 @@ describe('adjustmentEquationAssembly', () => {
     expect(result.A?.[0][0]).toBe(1);
     expect(result.A?.[0][1]).toBe(0);
     expect(result.sparseRows[0]).toEqual([{ index: 0, value: 1 }]);
-    expect(result.P[0][0]).toBe(4);
+    expect(result.P?.[0]?.[0]).toBe(4);
 
     expect(result.L[1][0]).toBe(1);
     expect(result.A?.[1][0]).toBe(1);
     expect(result.sparseRows[1]).toEqual([{ index: 0, value: 1 }]);
-    expect(result.P[1][1]).toBe(16);
+    expect(result.P?.[1]?.[1]).toBe(16);
     expect(result.rowInfo).toEqual([{ obs: observation }, null]);
     expect(applyTsCorrelationToWeightMatrix).toHaveBeenCalledTimes(1);
   });

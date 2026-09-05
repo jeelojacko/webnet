@@ -1,4 +1,6 @@
 import type { StationMap } from '../types';
+import type { WeightMatrixWriter } from './adjustmentWeightWriter';
+import { DenseWeightWriter } from './sparseWeightRepresentation';
 import type {
   ControlConstraintSummary,
   CoordinateConstraintEquation,
@@ -100,8 +102,8 @@ export const summarizeCoordinateConstraints = (
   return { count: constraints.length, x, y, h, xyCorrelated };
 };
 
-export const applyCoordinateConstraintCorrelationWeights = (
-  P: number[][],
+export const applyCoordinateConstraintCorrelationWeightsToWriter = (
+  weights: WeightMatrixWriter,
   placements: CoordinateConstraintRowPlacement[],
 ): void => {
   const groups = new Map<
@@ -135,11 +137,17 @@ export const applyCoordinateConstraintCorrelationWeights = (
     const wXX = 1 / (sigmaX * sigmaX * denom);
     const wYY = 1 / (sigmaY * sigmaY * denom);
     const wXY = -corr / (sigmaX * sigmaY * denom);
-    P[rowX][rowX] = wXX;
-    P[rowY][rowY] = wYY;
-    P[rowX][rowY] = wXY;
-    P[rowY][rowX] = wXY;
+    weights.set(rowX, rowX, wXX);
+    weights.set(rowY, rowY, wYY);
+    weights.set(rowX, rowY, wXY);
   });
+};
+
+export const applyCoordinateConstraintCorrelationWeights = (
+  P: number[][],
+  placements: CoordinateConstraintRowPlacement[],
+): void => {
+  applyCoordinateConstraintCorrelationWeightsToWriter(new DenseWeightWriter(P), placements);
 };
 
 export const coordinateConstraintWeightedSum = (

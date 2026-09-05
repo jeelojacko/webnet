@@ -5,6 +5,8 @@ import type {
 } from './numericalBackend';
 import type { Observation } from '../types';
 import { packSparseDesignRows, packUpperTriangleWeights } from './sparseEquationPacking';
+import { structuredWeightsToPackedUpper } from './sparseWeightRepresentation';
+import type { StructuredSymmetricWeights } from './sparseWeightRepresentation';
 
 export interface StandardizedResidualRowProducts {
   /** Per-equation quadratic forms r_k^T Qxx r_k; length is the equation count. */
@@ -15,7 +17,10 @@ export interface StandardizedResidualRowProducts {
 
 export interface StandardizedResidualRowProductRequest {
   sparseRows: SparseMatrixRows;
-  weights: number[][];
+  /** Dense weights for the default path; either weights or structuredWeights is required. */
+  weights?: number[][];
+  /** Structured weights for the experimental sparse path; preferred when present. */
+  structuredWeights?: StructuredSymmetricWeights;
   rowInfo: EquationRowInfo[];
   activeObservations: Observation[];
   observationEquationCount: number;
@@ -28,6 +33,19 @@ export interface RowProductLogContext {
 }
 
 const crossKey = (rowA: number, rowB: number): string => `${rowA},${rowB}`;
+
+const requireDenseRowProductWeights = (
+  request: StandardizedResidualRowProductRequest,
+): number[][] => {
+  // Explicit length: an omitted dense P is undefined, and a truthy empty
+  // matrix must never pack as dense weights.
+  if (!request.weights?.length) {
+    throw new Error(
+      'Row-product statistics require dense weights or structured weights.',
+    );
+  }
+  return request.weights;
+};
 
 /**
  * Collects multi-row GPS groups in active-observation order.
@@ -66,7 +84,9 @@ export const queryStandardizedResidualRowProducts = (
   request: StandardizedResidualRowProductRequest,
 ): StandardizedResidualRowProducts => {
   const design = packSparseDesignRows(request.sparseRows);
-  const weights = packUpperTriangleWeights(request.weights, request.observationEquationCount);
+  const weights = request.structuredWeights
+    ? structuredWeightsToPackedUpper(request.structuredWeights)
+    : packUpperTriangleWeights(requireDenseRowProductWeights(request), request.observationEquationCount);
   const groups = collectGpsCrossGroups(request.rowInfo, request.activeObservations);
   const crossA: number[] = [];
   const crossB: number[] = [];

@@ -67,9 +67,15 @@ export const buildStatisticsContextForEngine = (engine: any): AdjustmentStatisti
         engine.applyRobustWeightFactors(matrix, base, factors),
       applyTsCorrelationToWeightMatrix: (matrix, rowInfo) =>
         engine.applyTsCorrelationToWeightMatrix(matrix, rowInfo, true),
+      applyTsCorrelationToWeightWriter: (weights, rowInfo) =>
+        engine.applyTsCorrelationToWeightWriter(weights, rowInfo, true),
       captureObservationWeightingStdDevs: (observations) =>
         engine.captureObservationWeightingStdDevs(observations),
       captureRobustWeightBase: (matrix, rowInfo) => engine.captureRobustWeightBase(matrix, rowInfo),
+      captureRobustWeightBaseFromStructured: (weights, rowInfo) =>
+        engine.captureRobustWeightBaseFromStructured(weights, rowInfo),
+      applyRobustWeightFactorsToStructured: (weights, base, factors) =>
+        engine.applyRobustWeightFactorsToStructured(weights, base, factors),
       computeRobustWeightSummary: (residuals, rowInfo) =>
         engine.computeRobustWeightSummary(residuals, rowInfo),
       computeSideshotResults: () => engine.computeSideshotResults(),

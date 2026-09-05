@@ -6,7 +6,10 @@ import {
 } from './matrix';
 import type { SparseMatrixRows } from './matrix';
 import type { StationMap } from '../types';
-import { buildSparseSolveInput } from './sparseEquationPacking';
+import { buildSparseSolveInput, buildSparseSolveInputWithPackedWeights } from './sparseEquationPacking';
+import { structuredQuadraticForm, structuredWeightsToPackedUpper } from './sparseWeightRepresentation';
+import type { StructuredSymmetricWeights } from './sparseWeightRepresentation';
+import { runHuberWeightLoop } from './adjustmentHuberLoop';
 import type {
   EquationRowInfo,
   IterationSolveDependencies,
@@ -16,7 +19,7 @@ import type {
 export interface AdjustmentIterationComputationResult {
   correction: number[][];
   qxx?: number[][];
-  solvedP: number[][];
+  solvedP?: number[][];
   sumBefore: number;
   sumAfter: number;
   maxBefore: number;
@@ -27,24 +30,38 @@ export const solveAdjustmentIteration = (
   dependencies: IterationSolveDependencies,
   A: number[][],
   L: number[][],
-  P: number[][],
+  P: number[][] | undefined,
   rowInfo: EquationRowInfo[],
   iterationNumber: number,
   options?: {
     sparseRows?: SparseMatrixRows;
     numParams?: number;
+    structuredWeights?: StructuredSymmetricWeights;
   },
 ): AdjustmentIterationComputationResult => {
   const sparseRows = options?.sparseRows ?? denseRowsToSparseRows(A);
   const numParams = options?.numParams ?? A[0]?.length ?? 0;
+  const { structuredWeights } = options ?? {};
+  let packedWeights = structuredWeights
+    ? structuredWeightsToPackedUpper(structuredWeights)
+    : undefined;
   let correction = zeros(numParams, 1);
   let qxx: number[][] | undefined;
-  let solvedP = P;
+  // Sparse assembly uses [] as the legacy-compatible omitted-P sentinel.
+  let solvedP = P && P.length > 0 ? P : undefined;
   const shouldEstimateCondition = iterationNumber === 1;
-  const solveCorrection = (weights: number[][]): void => {
+  const requireDenseWeights = (): number[][] => {
+    if (!solvedP?.length) {
+      throw new Error(
+        'Dense weight matrix is required for this solve path; use dense assembly or disable robust Huber.',
+      );
+    }
+    return solvedP;
+  };
+  const solveWithDenseWeights = (dense: number[][]): void => {
     if (dependencies.sparseCorrectionSolver) {
       correction = dependencies.sparseCorrectionSolver.solveFromEquations(
-        buildSparseSolveInput(sparseRows, weights, L, numParams),
+        buildSparseSolveInput(sparseRows, dense, L, numParams),
       ).correction;
       qxx = undefined;
       return;
@@ -52,7 +69,7 @@ export const solveAdjustmentIteration = (
     const { normal: N, rhs: U } = accumulateNormalEquationsFromSparseRows(
       sparseRows,
       L,
-      weights,
+      dense,
       numParams,
     );
     if (shouldEstimateCondition) dependencies.recordConditionEstimate(dependencies.estimateCondition(N));
@@ -60,32 +77,40 @@ export const solveAdjustmentIteration = (
     correction = normalSolution.correction;
     qxx = normalSolution.qxx;
   };
+  const solveCorrection = (weights?: number[][]): void => {
+    // Explicit length: omitDenseP yields undefined (never a truthy empty matrix).
+    if (weights?.length) {
+      solveWithDenseWeights(weights);
+      return;
+    }
+    if (dependencies.sparseCorrectionSolver && packedWeights) {
+      correction = dependencies.sparseCorrectionSolver.solveFromEquations(
+        buildSparseSolveInputWithPackedWeights(sparseRows, packedWeights, L, numParams),
+      ).correction;
+      qxx = undefined;
+      return;
+    }
+    solveWithDenseWeights(requireDenseWeights());
+  };
 
   if (dependencies.robustMode === 'huber') {
-    const baseWeights = dependencies.captureRobustWeightBase(P, rowInfo);
-    let factors = new Array(P.length).fill(1);
-    let finalSummary = null as ReturnType<typeof dependencies.computeRobustWeightSummary> | null;
-    let finalWeightDelta = 0;
-    const maxInnerIterations = 5;
-    const weightTolerance = 1e-3;
-    for (let inner = 0; inner < maxInnerIterations; inner += 1) {
-      dependencies.applyRobustWeightFactors(P, baseWeights, factors);
-      solvedP = P;
-      solveCorrection(solvedP);
-      const AX = multiplySparseRowsByDenseMatrix(sparseRows, correction);
-      const residuals = AX.map((rowValue, index) => rowValue[0] - L[index][0]);
-      finalSummary = dependencies.computeRobustWeightSummary(residuals, rowInfo);
-      finalWeightDelta = dependencies.maxRobustWeightDelta(factors, finalSummary.factors);
-      if (finalWeightDelta < weightTolerance) {
-        break;
-      }
-      factors = finalSummary.factors.slice();
-    }
-    if (finalSummary) {
-      dependencies.recordRobustDiagnostics(iterationNumber, finalSummary, finalWeightDelta);
-    }
+    const huber = runHuberWeightLoop({
+      dependencies,
+      sparseRows,
+      L,
+      rowInfo,
+      iterationNumber,
+      dense: solvedP,
+      structuredWeights,
+      solveCorrection,
+      readCorrection: () => correction,
+      setPackedWeights: (packed) => {
+        packedWeights = packed;
+      },
+    });
+    solvedP = huber.solvedP;
   } else {
-    solveCorrection(P);
+    solveCorrection(solvedP);
   }
 
   const AX = multiplySparseRowsByDenseMatrix(sparseRows, correction);
@@ -100,12 +125,18 @@ export const solveAdjustmentIteration = (
     maxAfter = Math.max(maxAfter, Math.abs(v1));
   }
 
+  const quadratic = (v: number[][]): number => {
+    if (solvedP?.length) return dependencies.weightedQuadratic(solvedP, v);
+    if (structuredWeights) return structuredQuadraticForm(structuredWeights, v);
+    return dependencies.weightedQuadratic(requireDenseWeights(), v);
+  };
+
   return {
     correction,
     qxx,
     solvedP,
-    sumBefore: dependencies.weightedQuadratic(solvedP, L),
-    sumAfter: dependencies.weightedQuadratic(solvedP, Vnew),
+    sumBefore: quadratic(L),
+    sumAfter: quadratic(Vnew),
     maxBefore,
     maxAfter,
   };

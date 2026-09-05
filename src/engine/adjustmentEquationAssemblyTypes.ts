@@ -1,4 +1,6 @@
 import type { SparseMatrixRows } from './matrix';
+import type { StructuredSymmetricWeights } from './sparseWeightRepresentation';
+import type { WeightMatrixWriter } from './adjustmentWeightWriter';
 import type {
   CoordinateConstraintEquation,
   EquationRowInfo,
@@ -80,24 +82,33 @@ export interface AdjustmentEquationAssemblyDependencies {
   getModeledZenith: (_observation: Observation & { type: 'zenith' }) => ZenithGeometry;
   curvatureRefractionAngle: (_horiz: number) => number;
   applyTsCorrelationToWeightMatrix: (_P: number[][], _rowInfo: EquationRowInfo[]) => void;
+  applyTsCorrelationToWeightWriter?: (
+    _weights: WeightMatrixWriter,
+    _rowInfo: EquationRowInfo[],
+  ) => void;
   logObsDebug?: (_iteration: number, _label: string, _details: string) => void;
 }
 
 export interface AdjustmentEquationAssemblyResult {
   A?: number[][];
   L: number[][];
-  P: number[][];
+  /** Dense weights for the default path; undefined when omitDenseP skips the m×m allocation. */
+  P?: number[][];
   rowInfo: EquationRowInfo[];
   sparseRows: SparseMatrixRows;
+  /** Populated for sparse weight representation only; undefined on the dense/default path. */
+  structuredWeights?: StructuredSymmetricWeights;
 }
 
 export interface AdjustmentEquationAssemblyOptions {
   includeDenseA?: boolean;
+  weightRepresentation?: 'dense' | 'sparse';
+  omitDenseP?: boolean;
 }
 
 export interface EquationRowAssemblyState {
   L: number[][];
-  P: number[][];
+  weights: WeightMatrixWriter;
   rowInfo: EquationRowInfo[];
   assignCoefficient: (_row: number, _column: number | undefined, _value: number) => void;
 }

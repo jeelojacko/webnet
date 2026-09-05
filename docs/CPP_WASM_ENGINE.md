@@ -1,6 +1,6 @@
 # C++/WebAssembly numerical engine migration
 
-Status: **Phase 2 — experimental sparse correction parity.** The TypeScript engine remains the authoritative production implementation; dense and sparse WASM are test-only and injected explicitly.
+Status: **Phase 4 — experimental sparse-weight calculation path.** The TypeScript engine remains the authoritative production implementation; dense and sparse WASM are test-only and injected explicitly.
 
 ## Current TypeScript architecture
 
@@ -39,7 +39,7 @@ The engine uses hand-written TypeScript matrices (`Matrix = number[][]`) and spa
 | --- | --- | --- |
 | `A` | Optional dense `number[][]`; sparse rows are always available to the iteration path | observation-equation rows × unknown parameters |
 | sparse design rows | sparse index/value entries, sorted by parameter index | observation-equation-sized rows, unknown-sized columns |
-| `P` | dense `number[][]` | observation-equation × observation-equation; supports diagonal and correlated/full blocks |
+| `P` | dense `number[][]` by default; structured symmetric typed arrays experimentally | observation-equation × observation-equation; supports diagonal and correlated blocks |
 | `L` | dense column matrix | one misclosure per observation equation |
 | `N` | dense `number[][]` on TS/reference path; sparse Eigen storage in experimental Phase 2 path | unknown-parameter × unknown-parameter normal matrix |
 | `U` | dense column matrix on TS path; Eigen vector in experimental sparse path | unknown-parameter × one RHS |
@@ -93,7 +93,7 @@ Prerequisites and commands are documented in `cpp/README.md`; normal `npm instal
 
 The experimental boundary packs sorted sparse design rows as CSR-like `rowOffsets`, `columns`, and `values`; upper-triangle nonzero weights as `rows`, `columns`, and `values`; and one contiguous `Float64Array` of misclosures. C++ forms `N=AᵀPA` and `U=AᵀPL` directly from these entries, accounting for both symmetric terms of every off-diagonal weight. Eigen 5.0.1 `SimplicialLLT` with `AMDOrdering<int>` then solves the scaled sparse normal equations. The same TypeScript diagonal scaling thresholds and damping schedule are retained conceptually; Eigen factorization success/failure can differ from the TS pivoted dense implementation, and failures are surfaced rather than silently falling back. `analyzePattern` reuse was not introduced: each solve owns a fresh factorization, avoiding stale symbolic structure when active observations or unknowns change.
 
-The Phase 2 wrapper returns only correction plus development metadata: design NNZ, P NNZ, N NNZ, factor NNZ, damping, attempts, solver, and ordering. Packing the dense TypeScript P into upper-triangle entries scans all m² cells per solve (O(m²)), so dense P remains the memory ceiling alongside the dense Qxx/covariance path; sparsity only shrinks the transfer and the C++ normal assembly. The sparse injected path also skips the first-iteration condition estimation recorded on the TypeScript path, since it returns no Qxx. The current Emscripten artifact is approximately 194 KiB uncompressed WASM plus 35 KiB JS glue (exact bytes vary with toolchain/build metadata); `npm run wasm:browser:smoke` loads the emitted module through Vite/Chromium. It is not loaded by the production application bundle because sparse execution is test-injected only. It rejects malformed/non-finite packed inputs, owns all temporary WASM allocations, and does not transfer station or observation strings. Robust Huber iterations repack the current weighted P for every inner solve. Final covariance/statistics still use the existing dense TypeScript path, so that remains the large-network ceiling.
+The Phase 2 wrapper returns only correction plus development metadata: design NNZ, P NNZ, N NNZ, factor NNZ, damping, attempts, solver, and ordering. Phase 4 experimental assembly finalizes diagonal plus canonical upper-triangle weights directly into typed arrays, so successful sparse correction/statistics/covariance injection avoids the prior m² P scan and allocation. The dense TypeScript default and explicit dense fallback remain available for parity and unsupported cases. The sparse injected path also skips the first-iteration condition estimation recorded on the TypeScript path, since it returns no Qxx. The current Emscripten artifact is approximately 194 KiB uncompressed WASM plus 35 KiB JS glue (exact bytes vary with toolchain/build metadata); `npm run wasm:browser:smoke` loads the emitted module through Vite/Chromium. It is not loaded by the production application bundle because sparse execution is test-injected only. It rejects malformed/non-finite packed inputs, owns all temporary WASM allocations, and does not transfer station or observation strings. Robust Huber iterations repack the current weighted P for every inner solve. Final covariance/statistics still use the existing dense TypeScript path, so that remains the large-network ceiling.
 
 ## Data boundary evolution
 
@@ -123,7 +123,7 @@ The experimental path packs sparse A rows and nonzero upper-triangle P, assemble
 
 Recorded sparse-kernel medians on Node 26.8.1/Linux x64 were WASM sparse: n=100 `0.105 ms`, 250 `0.216 ms`, 500 `0.236 ms`, 1,000 `0.423 ms`, 2,500 `0.918 ms`, 5,000 `1.839 ms`; TS dense and Phase 1 WASM dense were measured through n=250 and skipped honestly above that range. Native sparse timings were 0.068/0.117/0.229/0.466 ms for n=100/250/500/1,000. The synthetic network had 2n equation rows and bounded row degree. Dense P remains allocated in TS and final dense Qxx/covariance remains the dominant unported ceiling.
 
-### Phase 3 — covariance/statistics strategy (in progress)
+### Phase 3 — covariance/statistics strategy (complete)
 
 The Qxx consumer audit found two separate final systems. Covariance recovery (S2) consumes station blocks, connected/requested relative blocks, and the legacy all-pairs `relativePrecision` table (`C(S,2)` rows). Standardized-residual statistics (S3) rebuilds its own equation system, reapplies Huber factors, and consumes row products `a_i Qxx a_j^T`, including GPS component cross-products. S2 may also contain synthetic float-zenith covariance rows, so the systems must not share a factor blindly.
 
@@ -131,11 +131,25 @@ Portable C++ now exposes selected inverse entries and batched row quadratic/cros
 
 The legacy all-pairs relative-precision contract remains intentionally unchanged and is explicitly O(S²) in output rows. Dense P construction/scanning, final dense Qxx/statistics, and damped-covariance/LDLT parity remain limitations. The next integration gate is selected-entry and row-product parity on S2/S3 fixtures before routing any experimental statistics consumer.
 
-### Phase 4 — equation assembly and observation models
+### Phase 4 — sparse weight representation / dense-P elimination (complete)
 
-Move Jacobian/equation construction and weighting incrementally where benchmarks justify it, with observation-type parity tests.
+Keep observation equations and weighting mathematics in TypeScript, but target a structured symmetric typed-array weight representation from assembly. Experimental correction, standardized-residual, and selected-covariance paths now omit dense `P`; dense TypeScript defaults and explicit fallback remain unchanged.
 
-### Phase 5 — complete C++ calculation core
+P inventory: scalar observation, distance, angle, bearing/direction, leveling, zenith, GPS, and constraint writers now target `WeightMatrixWriter`. GPS blocks are small correlated blocks; coordinate constraints write XY correlations; TS setup/set correlation writes complete group diagonals and upper pairs; Huber mutates diagonals and TS-correlation pairs using the existing square-root factor rule. `vᵀPv` uses the structured diagonal-plus-twice-upper-pair formula. The only remaining dense-P reference operation is the default/fallback path; the former `packUpperTriangleWeights` m² scan is not used by successful experimental sparse assembly.
+
+`StructuredSymmetricWeights` stores a `Float64Array` diagonal plus canonical sorted `Int32Array` row/column and `Float64Array` off-diagonal values. Builders enforce finite/bounds/symmetry/zero/deterministic-order invariants. Direct packed transfer is O(P_NNZ). At m=32,000, the benchmark's structured groups used 142,613 entries (2,228 KiB packed) versus 7,812.50 MiB theoretical dense payload; the largest safe benchmark used no dense m×m allocation. Full benchmark output is produced by `npm run bench:weights`; values are measurements, not CI thresholds.
+
+Dense-vs-structured reconstruction tests cover scalar, GPS 2D/3D, correlated constraints, TS correlation, robust updates, weighted quadratics, and direct packed identity. Successful injected correction/statistics/covariance paths use `omitDenseP: true`; sparse failures, unsupported robust cases, and nonzero covariance damping explicitly reassemble/fall back to dense TypeScript. Production remains TypeScript-only. Large-network dense Qxx/all-pairs relativePrecision and dense P reference fallback remain limitations.
+
+### Phase 5 — end-to-end experimental sparse numerical pipeline
+
+Measure and harden the complete sparse-weight path, including large networks, robust updates, covariance/statistics products, and memory behavior.
+
+### Phase 6 — observation-model migration only where benchmarks justify it
+
+Move observation/Jacobian construction only when measured benefits justify the parity risk; do not assume a C++ model migration is required.
+
+### Phase 7 — production backend decision / optimization
 
 Move iterative numerical adjustment into C++ while retaining TypeScript for orchestration, parsing/import/export, reporting, and browser workflows.
 

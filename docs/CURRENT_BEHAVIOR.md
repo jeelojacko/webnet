@@ -8,7 +8,7 @@ This file intentionally replaces the old pattern of keeping a giant behavior inv
 
 ## C++/WASM migration status
 
-Phase 3 experimental covariance infrastructure is present on `feat/cpp-wasm-engine`: the TypeScript solver and dense covariance/statistics paths remain authoritative in production. The pinned-Eigen sparse path now exposes selected covariance entries and batched row quadratic/cross products through explicit test injection, with allocation-safe WASM wrappers and standardized-residual routing parity tests. Station/relative precision, all-pairs relativePrecision, final covariance, and production backend selection remain TypeScript-only; dense P and dense Qxx remain known scaling ceilings.
+Phase 4 experimental sparse-weight infrastructure is present on `feat/cpp-wasm-engine`: TypeScript observation equations remain authoritative, while injected sparse correction, standardized-residual, and selected-covariance paths assemble structured symmetric weights without dense P allocation. Dense TypeScript correction/covariance/statistics remains the production default, with explicit dense fallback. Station/relative precision, all-pairs relativePrecision, and production backend selection remain unchanged.
 
 ## Product focus
 

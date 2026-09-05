@@ -34,10 +34,9 @@ export const appendGpsEquationRows = ({
   state.assignCoefficient(row, toIdx?.x, jacobian.to.x?.dE ?? 1);
   state.assignCoefficient(row, toIdx?.y, jacobian.to.y?.dE ?? 0);
   if (!dependencies.is2D) state.assignCoefficient(row, toIdx?.h, jacobian.to.h?.dE ?? 0);
-  state.P[row][row] = weight.wEE;
-  state.P[row][row + 1] = weight.wEN;
-  state.P[row + 1][row] = weight.wEN;
-  state.P[row + 1][row + 1] = weight.wNN;
+  state.weights.setDiagonal(row, weight.wEE);
+  state.weights.set(row, row + 1, weight.wEN);
+  state.weights.setDiagonal(row + 1, weight.wNN);
   state.L[row + 1][0] = vN;
   state.rowInfo.push({ obs: observation, component: 'N' });
   state.assignCoefficient(row + 1, fromIdx?.x, jacobian.from.x?.dN ?? 0);
@@ -60,11 +59,9 @@ export const appendGpsEquationRows = ({
     state.assignCoefficient(row + 2, toIdx?.x, jacobian.to.x?.dU ?? 0);
     state.assignCoefficient(row + 2, toIdx?.y, jacobian.to.y?.dU ?? 0);
     state.assignCoefficient(row + 2, toIdx?.h, jacobian.to.h?.dU ?? 1);
-    state.P[row][row + 2] = weight.wEU ?? 0;
-    state.P[row + 2][row] = weight.wEU ?? 0;
-    state.P[row + 1][row + 2] = weight.wNU ?? 0;
-    state.P[row + 2][row + 1] = weight.wNU ?? 0;
-    state.P[row + 2][row + 2] = weight.wUU ?? 0;
+    state.weights.set(row, row + 2, weight.wEU ?? 0);
+    state.weights.set(row + 1, row + 2, weight.wNU ?? 0);
+    state.weights.setDiagonal(row + 2, weight.wUU ?? 0);
     return row + 3;
   }
   return row + 2;

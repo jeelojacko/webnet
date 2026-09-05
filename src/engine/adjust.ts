@@ -39,7 +39,7 @@ import { LSAEngineObservationMethods } from './adjustEngineObservationMethods';
 import { buildSideshotResults } from './adjustmentSideshots';
 import type { CoordinateConstraintEquation } from './adjustmentSolveTypes';
 import type { ScenarioRunRequest } from './scenarioRunModels';
-import type { SparseCorrectionSolver, SparseRowProductsSolver } from './numericalBackend';
+import type { SparseCorrectionSolver, SparseRowProductsSolver, SparseSelectedCovarianceSolver } from './numericalBackend';
 import type {
   AdjustmentResult,
   Observation,
@@ -53,6 +53,7 @@ export class LSAEngine extends LSAEngineObservationMethods {
   private normalEquationSolver?: EngineOptions['normalEquationSolver'];
   private sparseCorrectionSolver?: SparseCorrectionSolver;
   private sparseRowProductsSolver?: SparseRowProductsSolver;
+  private sparseSelectedCovarianceSolver?: SparseSelectedCovarianceSolver;
 
   private solveNormalEquations(
     N: number[][],
@@ -110,6 +111,9 @@ export class LSAEngine extends LSAEngineObservationMethods {
       projectWeakFloatZenithLeafStationsForDisplay: (options) =>
         this.projectWeakFloatZenithLeafStationsForDisplay(options),
       applyTsCorrelationToWeightMatrix: this.applyTsCorrelationToWeightMatrix.bind(this),
+      applyTsCorrelationToWeightWriter: this.applyTsCorrelationToWeightWriter.bind(this),
+      sparseSelectedCovarianceSolver: this.sparseSelectedCovarianceSolver,
+      log: this.log.bind(this),
       stations: this.stations,
       wrapToPi: this.wrapToPi.bind(this),
     });
@@ -142,11 +146,13 @@ export class LSAEngine extends LSAEngineObservationMethods {
     normalEquationSolver,
     sparseCorrectionSolver,
     sparseRowProductsSolver,
+    sparseSelectedCovarianceSolver,
   }: EngineOptions) {
     super();
     this.normalEquationSolver = normalEquationSolver;
     this.sparseCorrectionSolver = sparseCorrectionSolver;
     this.sparseRowProductsSolver = sparseRowProductsSolver;
+    this.sparseSelectedCovarianceSolver = sparseSelectedCovarianceSolver;
     this.input = input;
     this.maxIterations = maxIterations;
     this.instrumentLibrary = { ...instrumentLibrary };
@@ -200,6 +206,7 @@ export class LSAEngine extends LSAEngineObservationMethods {
       normalEquationSolver: this.normalEquationSolver,
       sparseCorrectionSolver: this.sparseCorrectionSolver,
       sparseRowProductsSolver: this.sparseRowProductsSolver,
+      sparseSelectedCovarianceSolver: this.sparseSelectedCovarianceSolver,
     }).solve();
   }
 
