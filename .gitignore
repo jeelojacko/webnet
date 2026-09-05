@@ -62,3 +62,5 @@ benchmarks/baselines/typescript-latest.json
 benchmarks/baselines/typescript-latest.md
 benchmarks/baselines/sparse-full-latest.json
 benchmarks/baselines/sparse-full-latest.md
+benchmarks/baselines/sparse-runtime-latest.json
+benchmarks/baselines/sparse-runtime-latest.md

@@ -4,6 +4,7 @@
 #include <Eigen/SparseCholesky>
 
 #include <algorithm>
+#include <chrono>
 #include <cmath>
 #include <cstddef>
 #include <limits>
@@ -17,6 +18,14 @@ using Triplet = Eigen::Triplet<double>;
 using CholFactor =
     Eigen::SimplicialLLT<SparseMatrix, Eigen::Lower, Eigen::AMDOrdering<int>>;
 constexpr double kScaleThreshold = 1e-30;
+
+// Development-only phase timing helpers. steady_clock deltas in
+// milliseconds; diagnostics only, never fed back into numerics.
+using SteadyClock = std::chrono::steady_clock;
+double elapsed_ms(const SteadyClock::time_point& start,
+                  const SteadyClock::time_point& end) {
+  return std::chrono::duration<double, std::milli>(end - start).count();
+}
 
 bool finite_values(const double* values, int count) {
   for (int i = 0; i < count; ++i) {
@@ -194,7 +203,8 @@ SparseSolveStatus equilibrate(const SparseMatrix& normal, Eigen::VectorXd& scale
 
 bool factorize_with_damping(const SparseMatrix& scaled,
                             const SparseSolveOptions& options, CholFactor& factor,
-                            double& damping, int& attempts) {
+                            double& damping, int& attempts,
+                            SparsePhaseTimings* timings = nullptr) {
   const double diagonal_scale =
       std::max(1.0, scaled.diagonal().cwiseAbs().maxCoeff());
   damping = 0.0;
@@ -211,7 +221,18 @@ bool factorize_with_damping(const SparseMatrix& scaled,
       }
       candidate.makeCompressed();
     }
-    factor.compute(candidate);
+    // analyzePattern + factorize per attempt is exactly what compute()
+    // does; the split only exposes separate phase timings. No symbolic
+    // reuse: every attempt re-analyzes its own damped candidate.
+    const auto analyze_start = SteadyClock::now();
+    factor.analyzePattern(candidate);
+    const auto factorize_start = SteadyClock::now();
+    factor.factorize(candidate);
+    const auto factorize_end = SteadyClock::now();
+    if (timings != nullptr) {
+      timings->analyze_ms += elapsed_ms(analyze_start, factorize_start);
+      timings->factorize_ms += elapsed_ms(factorize_start, factorize_end);
+    }
     if (factor.info() != Eigen::Success) continue;
     attempts = attempt;
     return true;
@@ -235,12 +256,13 @@ SparseSolveStatus factor_packed_system(
     const int* weight_columns, const double* weight_values, int weight_nnz,
     int equation_count, int parameter_count,
     const SparseSolveOptions& options, FactoredNormal& factored,
-    std::string* error_out) {
+    std::string* error_out, SparsePhaseTimings* timings = nullptr) {
   const SparseSolveStatus valid = validate_packed_system(
       row_offsets, design_columns, design_values, design_nnz, weight_rows,
       weight_columns, weight_values, weight_nnz, equation_count,
       parameter_count, options, error_out);
   if (valid != SparseSolveStatus::kOk) return valid;
+  const auto assembly_start = SteadyClock::now();
   std::vector<Triplet> triplets;
   triplets.reserve(static_cast<std::size_t>(design_nnz) * 4U);
   Eigen::VectorXd rhs = Eigen::VectorXd::Zero(parameter_count);
@@ -250,6 +272,7 @@ SparseSolveStatus factor_packed_system(
   SparseMatrix normal(parameter_count, parameter_count);
   normal.setFromTriplets(triplets.begin(), triplets.end());
   normal.makeCompressed();
+  const auto equilibration_start = SteadyClock::now();
   if (normal.nonZeros() == 0) {
     return fail(SparseSolveStatus::kFactorizationFailed,
                 sparse_status_message(
@@ -260,8 +283,13 @@ SparseSolveStatus factor_packed_system(
   const SparseSolveStatus scaled_ok =
       equilibrate(normal, factored.scale, scaled, error_out);
   if (scaled_ok != SparseSolveStatus::kOk) return scaled_ok;
+  if (timings != nullptr) {
+    const auto factor_start = SteadyClock::now();
+    timings->assembly_ms += elapsed_ms(assembly_start, equilibration_start);
+    timings->equilibration_ms += elapsed_ms(equilibration_start, factor_start);
+  }
   if (!factorize_with_damping(scaled, options, factored.factor,
-                              factored.damping, factored.attempts)) {
+                              factored.damping, factored.attempts, timings)) {
     if (error_out != nullptr) {
       std::ostringstream message;
       message << "sparse normal matrix could not be regularized (last lambda="
@@ -275,12 +303,14 @@ SparseSolveStatus factor_packed_system(
 }
 
 void fill_factor_info(const FactoredNormal& factored,
+                      const SparsePhaseTimings& timings,
                       SparseFactorInfo* out) {
   if (out == nullptr) return;
   out->damping = factored.damping;
   out->attempts = factored.attempts;
   out->normal_nnz = factored.normal_nnz;
   out->factor_nnz = factored.factor.matrixL().nestedExpression().nonZeros();
+  out->timings = timings;
 }
 
 // Sorted unique copy of an index list (deterministic solve order).
@@ -332,6 +362,8 @@ SparseSolveStatus solve_sparse_correction(
       weight_columns, weight_values, weight_nnz, equation_count,
       parameter_count, options, error_out);
   if (valid != SparseSolveStatus::kOk) return valid;
+  SparsePhaseTimings timings;
+  const auto assembly_start = SteadyClock::now();
   std::vector<Triplet> triplets;
   triplets.reserve(static_cast<std::size_t>(design_nnz) * 4U);
   Eigen::VectorXd rhs = Eigen::VectorXd::Zero(parameter_count);
@@ -341,6 +373,7 @@ SparseSolveStatus solve_sparse_correction(
   SparseMatrix normal(parameter_count, parameter_count);
   normal.setFromTriplets(triplets.begin(), triplets.end());
   normal.makeCompressed();
+  const auto equilibration_start = SteadyClock::now();
   if (normal.nonZeros() == 0) {
     return fail(SparseSolveStatus::kFactorizationFailed,
                 sparse_status_message(
@@ -352,10 +385,14 @@ SparseSolveStatus solve_sparse_correction(
   const SparseSolveStatus scaled_ok = equilibrate(normal, scale, scaled,
                                                   error_out);
   if (scaled_ok != SparseSolveStatus::kOk) return scaled_ok;
+  const auto factor_start = SteadyClock::now();
+  timings.assembly_ms += elapsed_ms(assembly_start, equilibration_start);
+  timings.equilibration_ms += elapsed_ms(equilibration_start, factor_start);
   CholFactor factor;
   double damping = 0.0;
   int attempts = 0;
-  if (!factorize_with_damping(scaled, options, factor, damping, attempts)) {
+  if (!factorize_with_damping(scaled, options, factor, damping, attempts,
+                              &timings)) {
     if (error_out != nullptr) {
       std::ostringstream message;
       message << "sparse normal matrix could not be regularized (last lambda="
@@ -365,7 +402,9 @@ SparseSolveStatus solve_sparse_correction(
     return SparseSolveStatus::kFactorizationFailed;
   }
   const Eigen::VectorXd scaled_rhs = rhs.cwiseProduct(scale);
+  const auto solve_start = SteadyClock::now();
   const Eigen::VectorXd scaled_solution = factor.solve(scaled_rhs);
+  timings.solve_ms += elapsed_ms(solve_start, SteadyClock::now());
   if (factor.info() != Eigen::Success || !scaled_solution.allFinite()) {
     return fail(SparseSolveStatus::kFactorizationFailed,
                 sparse_status_message(
@@ -387,6 +426,7 @@ SparseSolveStatus solve_sparse_correction(
     result_out->weight_nnz = weight_nnz;
     result_out->normal_nnz = normal.nonZeros();
     result_out->factor_nnz = factor.matrixL().nestedExpression().nonZeros();
+    result_out->timings = timings;
   }
   if (error_out != nullptr) error_out->clear();
   return SparseSolveStatus::kOk;
@@ -419,13 +459,14 @@ SparseSolveStatus solve_sparse_selected_covariance(
     }
   }
   FactoredNormal factored;
+  SparsePhaseTimings timings;
   const SparseSolveStatus factored_ok = factor_packed_system(
       row_offsets, design_columns, design_values, design_nnz, weight_rows,
       weight_columns, weight_values, weight_nnz, equation_count,
-      parameter_count, options, factored, error_out);
+      parameter_count, options, factored, error_out, &timings);
   if (factored_ok != SparseSolveStatus::kOk) return factored_ok;
   if (query_count == 0) {
-    fill_factor_info(factored, result_out);
+    fill_factor_info(factored, timings, result_out);
     if (error_out != nullptr) error_out->clear();
     return SparseSolveStatus::kOk;
   }
@@ -435,6 +476,7 @@ SparseSolveStatus solve_sparse_selected_covariance(
       sorted_unique(query_columns, query_count);
   const int n = parameter_count;
   std::vector<Eigen::VectorXd> solved(columns.size());
+  const auto solve_start = SteadyClock::now();
   for (std::size_t c = 0; c < columns.size(); ++c) {
     Eigen::VectorXd unit = Eigen::VectorXd::Zero(n);
     unit[columns[c]] = 1.0;
@@ -447,6 +489,7 @@ SparseSolveStatus solve_sparse_selected_covariance(
                   error_out);
     }
   }
+  timings.solve_ms += elapsed_ms(solve_start, SteadyClock::now());
   for (int k = 0; k < query_count; ++k) {
     const std::size_t slot = static_cast<std::size_t>(
         std::lower_bound(columns.begin(), columns.end(), query_columns[k]) -
@@ -460,7 +503,7 @@ SparseSolveStatus solve_sparse_selected_covariance(
     }
     covariance_out[k] = value;
   }
-  fill_factor_info(factored, result_out);
+  fill_factor_info(factored, timings, result_out);
   if (error_out != nullptr) error_out->clear();
   return SparseSolveStatus::kOk;
 }
@@ -551,10 +594,11 @@ SparseSolveStatus solve_sparse_row_products(
       parameter_count, error_out);
   if (queries_ok != SparseSolveStatus::kOk) return queries_ok;
   FactoredNormal factored;
+  SparsePhaseTimings timings;
   const SparseSolveStatus factored_ok = factor_packed_system(
       row_offsets, design_columns, design_values, design_nnz, weight_rows,
       weight_columns, weight_values, weight_nnz, equation_count,
-      parameter_count, options, factored, error_out);
+      parameter_count, options, factored, error_out, &timings);
   if (factored_ok != SparseSolveStatus::kOk) return factored_ok;
   // Solve y_k = Qxx * r_k per query row via the equilibrated factor:
   // t = r_k .* scale, u = S^-1 t, y = u .* scale. Quadratics and crosses
@@ -562,6 +606,7 @@ SparseSolveStatus solve_sparse_row_products(
   const int n = parameter_count;
   std::vector<Eigen::VectorXd> image(static_cast<std::size_t>(query_row_count),
                                      Eigen::VectorXd::Zero(n));
+  const auto solve_start = SteadyClock::now();
   for (int row = 0; row < query_row_count; ++row) {
     Eigen::VectorXd scaled_row = Eigen::VectorXd::Zero(n);
     for (int e = query_row_offsets[row]; e < query_row_offsets[row + 1];
@@ -584,6 +629,7 @@ SparseSolveStatus solve_sparse_row_products(
                   "non-finite sparse row-product vector", error_out);
     }
   }
+  timings.solve_ms += elapsed_ms(solve_start, SteadyClock::now());
   for (int row = 0; row < query_row_count; ++row) {
     double total = 0.0;
     for (int e = query_row_offsets[row]; e < query_row_offsets[row + 1];
@@ -612,7 +658,7 @@ SparseSolveStatus solve_sparse_row_products(
     }
     cross_out[c] = total;
   }
-  fill_factor_info(factored, result_out);
+  fill_factor_info(factored, timings, result_out);
   if (error_out != nullptr) error_out->clear();
   return SparseSolveStatus::kOk;
 }

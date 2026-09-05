@@ -115,6 +115,9 @@ export const compareSparseShadowResults = (
   if (!(maxCoordDiffM <= coordToleranceM)) {
     passReasons.push(`max coord diff ${maxCoordDiffM.toExponential(2)} exceeds ${coordToleranceM}`);
   }
+  if ([maxHeightDiffM, maxResidualDiff, maxStdResDiff, seuwDiff].some((value) => !Number.isFinite(value))) {
+    passReasons.push('non-finite shadow comparison maximum');
+  }
   return {
     maxCoordDiffM,
     maxHeightDiffM,

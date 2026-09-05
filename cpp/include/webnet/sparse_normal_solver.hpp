@@ -19,6 +19,14 @@ struct SparseSolveOptions {
   double min_damping = 1e-18;
 };
 
+struct SparsePhaseTimings {
+  double assembly_ms = 0.0;
+  double equilibration_ms = 0.0;
+  double analyze_ms = 0.0;
+  double factorize_ms = 0.0;
+  double solve_ms = 0.0;
+};
+
 struct SparseSolveResult {
   double damping = 0.0;
   int attempts = 0;
@@ -28,6 +36,10 @@ struct SparseSolveResult {
   int factor_nnz = 0;
   const char* ordering = "AMD";
   const char* solver = "SimplicialLLT";
+  // Development-only diagnostics (steady_clock milliseconds per phase).
+  // Populated on success and left untouched on failure; zero when
+  // default-constructed. Never influences numerics.
+  SparsePhaseTimings timings;
 };
 
 struct SparseFactorInfo {
@@ -35,6 +47,10 @@ struct SparseFactorInfo {
   int attempts = 0;
   int normal_nnz = 0;
   int factor_nnz = 0;
+  // Development-only diagnostics (steady_clock milliseconds per phase).
+  // Populated on success and left untouched on failure; zero when
+  // default-constructed. Never influences numerics.
+  SparsePhaseTimings timings;
 };
 
 SparseSolveStatus solve_sparse_correction(

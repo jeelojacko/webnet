@@ -151,7 +151,9 @@ Selected-network covariance mode (2026-09-05, test-only): `experimentalSelectedC
 
 Worker-compatible bundle proof (2026-09-05, test-only): `npm run wasm:sparse:bundle:worker-proof` runs `scripts/wasmSparseBundleWorkerProof.ts` under `node --import tsx`; each of ~25 fresh workers initializes the bundle once, runs one generated case through all three solvers, and returns route diagnostics with heap/RSS observations plus a repeat-seed determinism check.
 
-### Phase 6 — observation-model migration only where benchmarks justify it
+### Phase 6 — optimization and compatibility hardening (in progress)
+
+The measure-first tooling is in place: `bench:sparse-runtime` reports wall and broad solve-stage medians, while `parity:sparse-shadow -- --input <file.dat>` compares an authoritative TypeScript solve with the injected selected-network sparse route and writes local JSON/Markdown summaries. A native timing instrument now separates sparse assembly, equilibration, symbolic analysis/AMD ordering, numeric factorization, and triangular solve without changing the stable ABI or numerical results. Initial native measurements show symbolic analysis dominates factorization on small synthetic systems; no symbolic/numeric reuse or persistent WASM workspace is adopted yet. The current WASM rebuild is environment-blocked when `emcmake` is unavailable.
 
 Move observation/Jacobian construction only when measured benefits justify the parity risk; do not assume a C++ model migration is required.
 

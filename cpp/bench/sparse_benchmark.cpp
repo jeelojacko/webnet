@@ -48,6 +48,11 @@ void run(int parameters) {
             << " design_nnz=" << columns.size() << " normal_nnz=" << result.normal_nnz
             << " factor_nnz=" << result.factor_nnz << " ms="
             << std::chrono::duration<double, std::milli>(end - start).count()
+            << " assembly_ms=" << result.timings.assembly_ms
+            << " equilibration_ms=" << result.timings.equilibration_ms
+            << " analyze_ms=" << result.timings.analyze_ms
+            << " factorize_ms=" << result.timings.factorize_ms
+            << " solve_ms=" << result.timings.solve_ms
             << " status=" << static_cast<int>(status) << '\n';
 }
 }

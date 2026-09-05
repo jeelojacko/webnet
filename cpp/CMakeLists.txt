@@ -72,6 +72,11 @@ if(BUILD_TESTING)
   webnet_apply_warnings(webnet_sparse_abi_test)
   add_test(NAME webnet_sparse_abi_test COMMAND webnet_sparse_abi_test)
 
+  add_executable(webnet_sparse_timing_test tests/sparse_timing_test.cpp)
+  target_link_libraries(webnet_sparse_timing_test PRIVATE webnet_sparse_core)
+  webnet_apply_warnings(webnet_sparse_timing_test)
+  add_test(NAME webnet_sparse_timing_test COMMAND webnet_sparse_timing_test)
+
   add_executable(webnet_dense_abi_test tests/dense_abi_test.cpp)
   target_link_libraries(webnet_dense_abi_test PRIVATE webnet_abi)
   webnet_apply_warnings(webnet_dense_abi_test)
@@ -83,7 +88,7 @@ endif()
 # "type": "module" (CTest picks up the target file path automatically).
 if(DEFINED EMSCRIPTEN AND BUILD_TESTING)
   set_target_properties(
-    webnet_core_smoke webnet_dense_solver_test webnet_sparse_solver_test webnet_sparse_covariance_test webnet_dense_abi_test webnet_sparse_abi_test
+    webnet_core_smoke webnet_dense_solver_test webnet_sparse_solver_test webnet_sparse_covariance_test webnet_dense_abi_test webnet_sparse_abi_test webnet_sparse_timing_test
     PROPERTIES SUFFIX ".cjs")
 endif()
 
