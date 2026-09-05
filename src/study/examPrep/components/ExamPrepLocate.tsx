@@ -46,12 +46,25 @@ import {
 } from '../examPrepLocatePicker';
 import { openStudyUrlNewTab, STUDY_LIBRARY_PATH } from '../../studyWindow';
 import type { ExamPrepAttempt, ExamPrepLocateTask } from '../examPrepTypes';
+import type { StudyDataSnapshot } from '../../studyTypes';
+import { ExamPrepLocatePickerOverlay } from './ExamPrepLocatePickerOverlay';
 
 export type ExamPrepLocateViewProps = {
   attempts: ExamPrepAttempt[];
   onSaveExamPrepAttempt: (_attempt: ExamPrepAttempt) => Promise<void>;
   onOpenProvision: (_documentId: string, _sourceKey: string) => void;
   onNavigate: (_path: string) => void;
+  /** Library snapshot powering the same-tab picker overlay. */
+  pickerLibraryData?: StudyDataSnapshot;
+  onLoadLegalDocumentComponentSummary?: (_documentId: string) => Promise<{
+    documentId: string;
+    componentCount: number;
+    sectionCount: number;
+    subsectionCount: number;
+    scheduleCount: number;
+    formCount: number;
+    referenceOnlyFormCount: number;
+  }>;
 };
 
 type LocatePhase = 'idle' | 'active' | 'done';
@@ -73,6 +86,8 @@ export const ExamPrepLocateView = ({
   onSaveExamPrepAttempt,
   onOpenProvision,
   onNavigate,
+  pickerLibraryData,
+  onLoadLegalDocumentComponentSummary,
 }: ExamPrepLocateViewProps) => {
   const [phase, setPhase] = useState<LocatePhase>('idle');
   const [session, setSession] = useState<ExamPrepLocateTask[] | null>(null);
@@ -95,6 +110,9 @@ export const ExamPrepLocateView = ({
   // What the learner picked (objective path). Persisted ONLY on Continue.
   const [objectiveFeedback, setObjectiveFeedback] = useState<ObjectivePickFeedback>(null);
   const [pickerStatus, setPickerStatus] = useState<PickerStatus>(null);
+  // Same-tab overlay picker: open state only. The sprint (queue/index/timer)
+  // stays mounted underneath; closing without a pick preserves the item.
+  const [pickerOverlayOpen, setPickerOverlayOpen] = useState(false);
   const savePendingRef = useRef(savePending);
   savePendingRef.current = savePending;
   const checkedRef = useRef(checked);
@@ -128,6 +146,7 @@ export const ExamPrepLocateView = ({
       setSavePending(false);
       setSaveError(null);
       setObjectiveFeedback(null);
+      setPickerOverlayOpen(false);
       if (reuseMintedRef.current) {
         reuseMintedRef.current = false;
       } else {
@@ -193,6 +212,22 @@ export const ExamPrepLocateView = ({
   };
 
   /**
+   * Primary picker: same-tab overlay. The sprint stays mounted (timer keeps
+   * running); a direct pick freezes feedback and closes the overlay with
+   * nothing persisted until Continue. Closing without a pick preserves it.
+   */
+  const handleOpenPickerOverlay = () => {
+    if (!item || savePending || objectiveFeedback) return;
+    setPickerOverlayOpen(true);
+  };
+
+  const handleOverlayPick = (pick: { documentId: string; sourceKey: string | null }) => {
+    handleObjectivePick(pick);
+    setPickerOverlayOpen(false);
+  };
+
+  /**
+   * Secondary picker: persistent new-tab picker over BroadcastChannel.
    * Opens the ephemeral Locate picker for the current un-checked item. The
    * tab is opened with `noopener,noreferrer`, so `window.open` gives back no
    * handle whether or not the tab opened — we never claim popup failure from a
@@ -203,6 +238,8 @@ export const ExamPrepLocateView = ({
    * tab through `picker-context` control messages (no `window.open`).
    */
   const handleOpenPicker = () => {
+    if (!item || savePending || objectiveFeedback) return;
+    if (pickerOverlayOpen) setPickerOverlayOpen(false);
     if (!item || savePending || objectiveFeedback) return;
     const sprintId = pickerSprintIdRef.current ?? pickerSprintId;
     if (!sprintId) return;
@@ -529,11 +566,18 @@ export const ExamPrepLocateView = ({
               <div className="flex flex-wrap gap-2">
                 <button
                   type="button"
-                  onClick={handleOpenPicker}
+                  onClick={handleOpenPickerOverlay}
                   className="inline-flex items-center gap-1.5 rounded border border-emerald-600 bg-emerald-900 px-3 py-1.5 text-xs font-semibold text-emerald-100 hover:bg-emerald-800"
                 >
                   <Target size={13} />
                   Open Locate Picker
+                </button>
+                <button
+                  type="button"
+                  onClick={handleOpenPicker}
+                  className="rounded border border-emerald-700 bg-emerald-950 px-3 py-1.5 text-xs font-semibold text-emerald-200 hover:bg-emerald-900"
+                >
+                  Open Picker in New Tab
                 </button>
                 <button
                   type="button"
@@ -709,6 +753,16 @@ export const ExamPrepLocateView = ({
         <div className="flex items-center gap-1.5 text-[11px] text-slate-600">
           <Eye size={12} /> The expected document and provision stay hidden until Check Answer.
         </div>
+      ) : null}
+      {pickerOverlayOpen && item && !checked && !objectiveFeedback && pickerLibraryData && onLoadLegalDocumentComponentSummary ? (
+        <ExamPrepLocatePickerOverlay
+          key={item.id}
+          prompt={item.prompt}
+          data={pickerLibraryData}
+          onLoadLegalDocumentComponentSummary={onLoadLegalDocumentComponentSummary}
+          onPick={handleOverlayPick}
+          onClose={() => setPickerOverlayOpen(false)}
+        />
       ) : null}
     </div>
   );

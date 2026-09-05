@@ -223,7 +223,7 @@ describe('sprint reuse over one picker tab', () => {
       />,
     );
     await clickButton('Start Locate Sprint');
-    await clickButton('Open Locate Picker');
+    await clickButton('Open Picker in New Tab');
     expect(openSpy).toHaveBeenCalledTimes(1);
     const params = urlParamsOf(String(openSpy.mock.calls[0]?.[0]));
     const sprintId = params.get('sprint');
@@ -320,7 +320,7 @@ describe('sprint reuse over one picker tab', () => {
       />,
     );
     await clickButton('Start Locate Sprint');
-    await clickButton('Open Locate Picker');
+    await clickButton('Open Picker in New Tab');
     const params = urlParamsOf(String(openSpy.mock.calls[0]?.[0]));
     const sprintId = params.get('sprint') ?? '';
     expect(sprintId).toBeTruthy();

@@ -65,6 +65,7 @@ const StudyApp = () => {
           onRateRecallTask={study.rateRecallTask}
           onSaveExamPrepAttempt={study.saveExamPrepAttempt}
           onSaveExamPrepMockSession={study.saveExamPrepMockSession}
+          onLoadLegalDocumentComponentSummary={study.getLegalDocumentComponentSummary}
         />
       );
     }

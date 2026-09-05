@@ -67,6 +67,15 @@ export type ExamPrepPageProps = {
     _session: ExamPrepMockSession,
     _expectation: ExamPrepMockSessionExpectation,
   ) => Promise<void>;
+  onLoadLegalDocumentComponentSummary?: (_documentId: string) => Promise<{
+    documentId: string;
+    componentCount: number;
+    sectionCount: number;
+    subsectionCount: number;
+    scheduleCount: number;
+    formCount: number;
+    referenceOnlyFormCount: number;
+  }>;
 };
 
 const TABS: Array<{
@@ -93,6 +102,7 @@ export const ExamPrepPage = ({
   onRateRecallTask,
   onSaveExamPrepAttempt,
   onSaveExamPrepMockSession,
+  onLoadLegalDocumentComponentSummary,
 }: ExamPrepPageProps) => {
   const [nowIso, setNowIso] = useState(() => new Date().toISOString());
   useEffect(() => {
@@ -213,6 +223,8 @@ export const ExamPrepPage = ({
           onSaveExamPrepAttempt={onSaveExamPrepAttempt}
           onOpenProvision={onOpenProvision}
           onNavigate={onNavigate}
+          pickerLibraryData={data}
+          onLoadLegalDocumentComponentSummary={onLoadLegalDocumentComponentSummary}
         />
       )}
       {view === 'drills' && (

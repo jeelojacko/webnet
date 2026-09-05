@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { highlightLibraryMatch } from '../studyLibrarySearch';
 import { createStudySearchService } from '../search/studySearchService';
 import {
@@ -23,7 +23,7 @@ import {
 } from '../studySchedulingDisplay';
 import type { StudyDataSnapshot, StudyPhase, StudyUnit } from '../studyTypes';
 
-type StudyLibraryProps = {
+export type StudyLibraryProps = {
   data: StudyDataSnapshot;
   onSelectDocument: (_documentId: string) => void;
   onCreateCustomUnit: () => void;
@@ -35,6 +35,11 @@ type StudyLibraryProps = {
   onDuplicateUnit: (_unitId: string) => void;
   /** SPA navigation; required to keep an active picker context in the URL. */
   onNavigate?: (_path: string) => void;
+  /** Same-tab overlay picker mode: prompt shown + direct pick callback.
+   * When present the Library renders picker presentation/search/actions
+   * without URL or BroadcastChannel state. */
+  pickerOverlayPrompt?: string;
+  onPickerOverlayPick?: (_pick: { documentId: string; sourceKey: string | null }) => void;
   onLoadLegalDocumentComponentSummary: (_documentId: string) => Promise<{
     documentId: string;
     componentCount: number;
@@ -144,6 +149,8 @@ const StudyLibrary = ({
   onDuplicateUnit,
   onNavigate,
   onLoadLegalDocumentComponentSummary,
+  pickerOverlayPrompt,
+  onPickerOverlayPick,
 }: StudyLibraryProps) => {
   const [tab, setTab] = useState<LibraryTab>(() =>
     new URLSearchParams(window.location.search).get('tab') === 'units' ? 'units' : 'documents',
@@ -200,12 +207,23 @@ const StudyLibrary = ({
 
   const pickerSearch = window.location.search;
 
+  // Same-tab overlay picker (no URL/channel): prompt-only presentation with a
+  // direct pick callback. Combined with the new-tab `livePicker` below.
+  const overlayPicker = pickerOverlayPrompt ? { prompt: pickerOverlayPrompt } : null;
+  const pickerMode = livePicker ?? overlayPicker;
+  const livePickerRef = useRef(livePicker);
+  useEffect(() => {
+    livePickerRef.current = livePicker;
+  }, [livePicker]);
+
   // Persistent-picker control channel: announce ready (mount + heartbeat)
   // and adopt fresh item context. Adopting clears the search box, results,
-  // and any sent notice so each item starts clean.
+  // and any sent notice so each item starts clean. Subscribed once per
+  // sprint id; duplicate context for the SAME sprintId+token is ignored
+  // completely (idempotent heartbeats/replays never reset search state).
   const pickerSprintId = livePicker?.sprintId ?? null;
   useEffect(() => {
-    if (!livePicker || !pickerSprintId) return;
+    if (!pickerSprintId) return;
     postExamPrepLocatePickerControl({ type: EXAM_PREP_PICKER_READY_TYPE, sprintId: pickerSprintId });
     const heartbeat = window.setInterval(() => {
       postExamPrepLocatePickerControl({
@@ -215,6 +233,9 @@ const StudyLibrary = ({
     }, EXAM_PREP_PICKER_HEARTBEAT_INTERVAL_MS);
     const unsubscribe = subscribeExamPrepLocatePickerControl(pickerSprintId, (message) => {
       if (message.type === EXAM_PREP_PICKER_CONTEXT_TYPE) {
+        const current = livePickerRef.current;
+        if (current && message.sprintId === current.sprintId && message.token === current.token)
+          return;
         setLivePicker({ token: message.token, prompt: message.prompt, sprintId: message.sprintId });
         setPickerSprintEnded(false);
         setPickerWaiting(false);
@@ -231,7 +252,7 @@ const StudyLibrary = ({
       window.clearInterval(heartbeat);
       unsubscribe();
     };
-  }, [livePicker, pickerSprintId]);
+  }, [pickerSprintId]);
 
   /**
    * Builds the CURRENT picker query (live token/prompt/sprint) so in-tab
@@ -303,12 +324,12 @@ const StudyLibrary = ({
   }, [data.units]);
   const searchResultsByCategory = useMemo(
     () =>
-      (livePicker ? pickerSearchCategoryOrder : searchCategoryOrder).map((category) => ({
+      (pickerMode ? pickerSearchCategoryOrder : searchCategoryOrder).map((category) => ({
         category,
         label: searchCategoryLabels[category],
         results: searchResults.filter((result) => categoryForResult(result) === category),
       })),
-    [searchResults, livePicker],
+    [searchResults, pickerMode],
   );
 
   const filteredDocuments = useMemo(() => data.documents.filter((document) => {
@@ -390,6 +411,17 @@ const StudyLibrary = ({
    * provisions post their exact sourceKey. Never rendered in normal mode.
    */
   const sendSearchPickerPick = (result: StudySearchResultSummary, label: string): void => {
+    if (onPickerOverlayPick) {
+      if (result.entityType === 'document' && result.documentId) {
+        onPickerOverlayPick({ documentId: result.documentId, sourceKey: null });
+        return;
+      }
+      if (result.entityType === 'official-provision' && result.documentId && result.sourceKey) {
+        onPickerOverlayPick({ documentId: result.documentId, sourceKey: result.sourceKey });
+        return;
+      }
+      return;
+    }
     if (!livePicker) return;
     if (result.entityType === 'document' && result.documentId) {
       const posted = postExamPrepLocatePick(livePicker.token, result.documentId, null);
@@ -412,6 +444,10 @@ const StudyLibrary = ({
    * pick (`sourceKey: null`) without opening the reader. Never used in normal mode.
    */
   const sendDocumentPickerPick = (documentId: string): void => {
+    if (onPickerOverlayPick) {
+      onPickerOverlayPick({ documentId, sourceKey: null });
+      return;
+    }
     if (!livePicker) return;
     const posted = postExamPrepLocatePick(livePicker.token, documentId, null);
     setPickerNotice({ kind: posted, label: 'Use this document' });
@@ -494,7 +530,7 @@ const StudyLibrary = ({
             Source documents and study units are managed separately.
           </p>
         </div>
-        {!livePicker ? (
+        {!pickerMode ? (
           <button
             onClick={onCreateCustomUnit}
             className="rounded bg-emerald-600 px-3 py-2 text-sm font-medium text-white"
@@ -503,14 +539,14 @@ const StudyLibrary = ({
           </button>
         ) : null}
       </div>
-      {livePicker ? (
+      {pickerMode ? (
         <section className="rounded border border-sky-700 bg-sky-950/60 p-3">
           <div className="flex flex-wrap items-center justify-between gap-2">
             <div className="min-w-0">
               <p className="text-xs font-semibold uppercase tracking-wide text-sky-300">
                 Locate picker — find the controlling provision
               </p>
-              <p className="mt-1 text-sm text-sky-100">{livePicker.prompt}</p>
+              <p className="mt-1 text-sm text-sky-100">{pickerMode.prompt}</p>
               <p className="mt-1 text-[11px] text-slate-400">
                 Choose{' '}
                 <span className="font-semibold text-sky-200">Use this provision</span> on a search
@@ -636,7 +672,7 @@ const StudyLibrary = ({
                     {results.map((result) => {
                       const flatIndex = searchResults.findIndex((entry) => entry.id === result.id);
                       const pickerSelectable =
-                        livePicker &&
+                        pickerMode &&
                         (result.entityType === 'document' ||
                           result.entityType === 'official-provision');
                       const actionLabel =
@@ -720,7 +756,7 @@ const StudyLibrary = ({
               const unitCount = unitCountsByDocumentId.get(document.id) ?? 0;
               const reviewCount = reviewCountsByDocumentId.get(document.id) ?? 0;
               const relatedForms = componentSummaries[document.id]?.referenceOnlyFormCount ?? 0;
-              if (!livePicker) {
+              if (!pickerMode) {
                 return (
                   <button
                     key={document.id}

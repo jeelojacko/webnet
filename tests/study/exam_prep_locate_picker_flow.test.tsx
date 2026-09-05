@@ -88,7 +88,7 @@ describe('Exam Prep Locate picker flow', () => {
 
   const openPicker = async (): Promise<{ token: string; openedPath: string }> => {
     const openSpy = vi.spyOn(window, 'open').mockReturnValue({} as Window);
-    await clickButton('Open Locate Picker');
+    await clickButton('Open Picker in New Tab');
     expect(openSpy).toHaveBeenCalledTimes(1);
     const openedPath = openSpy.mock.calls[0]?.[0];
     expect(openedPath).toBeTruthy();
@@ -329,7 +329,7 @@ describe('Exam Prep Locate picker flow', () => {
       />,
     );
     await clickButton('Start Locate Sprint');
-    await clickButton('Open Locate Picker');
+    await clickButton('Open Picker in New Tab');
     // noopener,noreferrer legitimately yields a null WindowProxy — this is
     // NOT a failure: no error banner, sprint still on question 1.
     expect(bodyText()).not.toContain('Could not open');
