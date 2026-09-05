@@ -1,0 +1,5 @@
+[
+  { "id": "small-smoke", "fixture": "tests/fixtures/cli_smoke.dat", "profile": "default" },
+  { "id": "industry-reference", "fixture": "tests/fixtures/industry_standard_reference_case.dat", "profile": "industry-parity" },
+  { "id": "industry-phase2", "fixture": "tests/fixtures/industry_parity_phase2.dat", "profile": "industry-parity" }
+]

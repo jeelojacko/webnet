@@ -50,3 +50,13 @@ study-content/ai/runs/ai-map-4c12-full-corpus-v2/results/*.provenance.json
 study-content/ai/runs/ai-map-4c12-full-corpus-v2/reports/post-gate-a-regression-set.json
 study-content/ai/runs/ai-map-4c12-full-corpus-v2/reports/stratified-200-seed-20260828.json
 study-content/ai/runs/ai-map-4c12-full-corpus-v2/reports/stratified-200-seed-20260828.md
+
+# Portable C++ core generated build dirs
+cpp/build*/
+cpp/build-*/
+cpp/**/CMakeFiles/
+cpp/**/CMakeCache.txt
+cpp/**/cmake_install.cmake
+cpp/**/CTestTestfile.cmake
+benchmarks/baselines/typescript-latest.json
+benchmarks/baselines/typescript-latest.md

@@ -6,6 +6,10 @@ This document is the maintained feature inventory for WebNet. It summarizes the 
 
 This file intentionally replaces the old pattern of keeping a giant behavior inventory inside `AGENTS.md`.
 
+## C++/WASM migration status
+
+Phase 0 infrastructure is present on `feat/cpp-wasm-engine`: the TypeScript solver remains authoritative, `docs/CPP_WASM_ENGINE.md` records the current numerical architecture and baseline plan, and `cpp/` contains an optional native/Emscripten smoke scaffold. No production backend switch or least-squares port has occurred.
+
 ## Product focus
 
 WebNet is a browser-based least-squares adjustment application designed around mixed-observation survey networks. It aims to behave like an industry-standard-style adjustment package while staying browser-first, testable, and deterministic.

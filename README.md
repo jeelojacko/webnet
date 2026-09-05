@@ -71,6 +71,8 @@ Synthetic CRS validation remains separate:
 npm run harness:crs:synthetic
 ```
 
+For the TypeScript adjustment performance baseline, use `npm run bench:adjust:quick` during development or `npm run bench:adjust:write-baseline` to record a labeled local baseline. Optional native C++ and Emscripten prerequisites are documented in [cpp/README.md](cpp/README.md); they are not installed by `npm install`.
+
 For browser-only map interaction and OSM-basemap profiling regressions, there is also a focused Chromium harness:
 
 ```bash
@@ -85,6 +87,7 @@ npm run test:map-browser
 - [docs/CURRENT_BEHAVIOR.md](docs/CURRENT_BEHAVIOR.md) - maintained feature inventory and current workflow contract
 - [docs/IMPORT_WORKFLOW.md](docs/IMPORT_WORKFLOW.md) - staged import and reconciliation workflow
 - [docs/PARITY_WORKFLOW.md](docs/PARITY_WORKFLOW.md) - parity-sensitive validation workflow
+- [docs/CPP_WASM_ENGINE.md](docs/CPP_WASM_ENGINE.md) - incremental C++/WebAssembly engine migration, baseline, and roadmap
 - [docs/STUDY_MODULE.md](docs/STUDY_MODULE.md) - local-first statute and survey-law study module
 - [docs/STUDY_AI_AUTHORING.md](docs/STUDY_AI_AUTHORING.md) - provider-neutral AI Study authoring workflow and validation
 - [docs/STUDY_CONTENT_PIPELINE.md](docs/STUDY_CONTENT_PIPELINE.md) - official NB Study content ingestion commands, reports, and corpus scope rules

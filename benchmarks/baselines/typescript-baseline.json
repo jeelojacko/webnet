@@ -1,0 +1,90 @@
+{
+  "metadata": {
+    "generatedAt": "2026-09-05T11:45:33.964Z",
+    "node": "v26.8.1",
+    "platform": "linux-x64",
+    "os": "Linux 7.2.2-1-cachyos",
+    "cpu": "AMD Ryzen 7 5800X3D 8-Core Processor",
+    "gitCommit": "e7b658d898574b5718db612696f7110b629eb25c",
+    "warmups": 2,
+    "runs": 7,
+    "quick": false
+  },
+  "cases": [
+    {
+      "id": "small-smoke",
+      "fixture": "tests/fixtures/cli_smoke.dat",
+      "profile": "default",
+      "stations": 3,
+      "observations": 3,
+      "unknowns": 2,
+      "dof": 1,
+      "iterations": 3,
+      "success": true,
+      "timesMs": [
+        0.8957060000000183,
+        0.9719259999999963,
+        1.0136960000000386,
+        1.0579960000000028,
+        1.3435549999999807,
+        1.4059839999999895,
+        1.8602520000000027
+      ],
+      "medianMs": 1.0579960000000028,
+      "minimumMs": 0.8957060000000183,
+      "p95Ms": 1.8602520000000027,
+      "rssBeforeMb": 126.40625,
+      "rssAfterMb": 127.78125
+    },
+    {
+      "id": "industry-reference",
+      "fixture": "tests/fixtures/industry_standard_reference_case.dat",
+      "profile": "industry-parity",
+      "stations": 16,
+      "observations": 162,
+      "unknowns": 28,
+      "dof": 134,
+      "iterations": 5,
+      "success": true,
+      "timesMs": [
+        8.344136000000049,
+        8.38897499999996,
+        8.400065999999981,
+        8.599984000000006,
+        9.336202000000014,
+        9.872798999999986,
+        10.640967000000046
+      ],
+      "medianMs": 8.599984000000006,
+      "minimumMs": 8.344136000000049,
+      "p95Ms": 10.640967000000046,
+      "rssBeforeMb": 143.015625,
+      "rssAfterMb": 154.00390625
+    },
+    {
+      "id": "industry-phase2",
+      "fixture": "tests/fixtures/industry_parity_phase2.dat",
+      "profile": "industry-parity",
+      "stations": 20,
+      "observations": 196,
+      "unknowns": 31,
+      "dof": 165,
+      "iterations": 5,
+      "success": true,
+      "timesMs": [
+        10.978914999999915,
+        11.081324999999993,
+        11.788670999999908,
+        11.889480999999932,
+        12.660318000000075,
+        13.891532999999981,
+        17.88815599999998
+      ],
+      "medianMs": 11.889480999999932,
+      "minimumMs": 10.978914999999915,
+      "p95Ms": 17.88815599999998,
+      "rssBeforeMb": 154.87890625,
+      "rssAfterMb": 174.50390625
+    }
+  ]
+}
