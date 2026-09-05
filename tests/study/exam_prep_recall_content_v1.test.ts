@@ -144,7 +144,7 @@ describe('Exam Prep Recall Content V1 identity', () => {
 
   it('pins the deterministic content hash', () => {
     expect(examPrepRecallContentV1Hash).toBe(
-      '1876b36d029c3e67cb9030b7154c1de15cfb4326da5c265ba3d55ba47fb91b4d',
+      '90a9c88627b82830b460f16e553ada76592ea7f6c38805a8f7337ec4aa91b640',
     );
   });
 
@@ -197,6 +197,16 @@ describe('Exam Prep Recall Content V1 pinned semantic examples', () => {
       recordByTaskId.get('recall:B-EASE-02:1')?.expectedAnswerOverride ?? '';
     expect(override).toContain('20 years');
     expect(override).toContain('40 years');
+  });
+
+  it('keeps the A-SURV-03:1 override on the Surveys Act s.7 scope', () => {
+    const override = recordByTaskId.get('recall:A-SURV-03:1')?.expectedAnswerOverride ?? '';
+    expect(override).toContain('under the Community Planning Act');
+  });
+
+  it('keeps the B-AIR-02:1 override on the s.5(1) correctness/compliance certification', () => {
+    const override = recordByTaskId.get('recall:B-AIR-02:1')?.expectedAnswerOverride ?? '';
+    expect(override).toContain('certifying its correctness and compliance with section 4');
   });
 
   it('separates NAV-01 classification from NAV-11 access vs evidence', () => {

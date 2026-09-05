@@ -37,7 +37,7 @@ export const EXAM_PREP_RECALL_CONTENT_V1: ExamPrepRecallLearnerContent[] = [
   { taskId: 'recall:A-NBLS-04:1', prompt: 'What signing/sealing responsibility applies to final professional survey plans, reports, opinions, or documents intended to be relied upon?', expectedAnswerOverride: "Final survey plans, reports, opinions, or other documents prepared by or under a land surveyor's direction, whose accuracy is intended to be relied upon, must be signed by the land surveyor and bear the required seal." },
   { taskId: 'recall:A-NBLS-04:2', prompt: 'Who generally owns original survey plans, records, and documents prepared by a surveyor, and what is the employee exception?', expectedAnswerOverride: "Original survey plans, records, and documents generally remain the surveyor's property. If they were prepared in the course of employment by another, they remain the employer's property and may not be removed from the employer's place of business without prior written consent." },
   { taskId: 'recall:A-BYL-06:1', prompt: 'When a survey results in monuments being placed, what Survey Plan obligation generally follows, and what is the key coordinated-plan exception?' },
-  { taskId: 'recall:A-SURV-03:1', prompt: 'In an integrated survey area, which legal monuments established by a surveyor must be tied to coordinate monuments?', expectedAnswerOverride: 'In an integrated survey area, a surveyor must tie to the coordinate monuments all legal monuments the surveyor establishes that pertain to Crown Lands, subdivisions requiring a subdivision plan, or parcels whose owners request inclusion.' },
+  { taskId: 'recall:A-SURV-03:1', prompt: 'In an integrated survey area, which legal monuments established by a surveyor must be tied to coordinate monuments?', expectedAnswerOverride: 'In an integrated survey area, a surveyor must tie to the coordinate monuments all legal monuments the surveyor establishes that pertain to Crown Lands, subdivisions when a subdivision plan is required under the Community Planning Act, or parcels whose owners request inclusion.' },
   { taskId: 'recall:A-SURV-03:2', prompt: 'When is subdivision work included in the integrated-survey-area coordinate-monument tie requirement?', expectedAnswerOverride: 'Subdivision work is included when a subdivision plan is required under the Community Planning Act.' },
   { taskId: 'recall:A-SURV-03:3', prompt: 'When may a surveyor certify the correctness of a subdivision or other plan prepared under s.7 in an integrated survey area?', expectedAnswerOverride: "For a subdivision or other plan prepared under section 7, the surveyor may certify its correctness only if it represents a survey carried out by the surveyor or under the surveyor's personal supervision or direction, and the survey standard complies with the regulations." },
   { taskId: 'recall:A-BCAR-01:1', prompt: "What four matters must a boundary-confirmation surveyor's report address?" },
@@ -50,7 +50,7 @@ export const EXAM_PREP_RECALL_CONTENT_V1: ExamPrepRecallLearnerContent[] = [
   { taskId: 'recall:A-LTA-06:1', prompt: 'What general indemnity rule applies when Land Titles rectification or registration errors cause qualifying damage?' },
   { taskId: 'recall:B-AGRI-02:1', prompt: 'If agricultural land cannot be properly drained without a ditch or drain through adjacent land, what statutory route is available?' },
   { taskId: 'recall:B-AGRI-02:2', prompt: 'Who is responsible for maintaining a qualifying shared agricultural ditch or drain serving two or more adjacent owners?' },
-  { taskId: 'recall:B-AIR-02:1', prompt: 'What certifications and approvals must an air-space plan carry before filing?', expectedAnswerOverride: "Before filing, an air-space plan must carry the surveyor's certificate and seal and the required development-officer and Director of Surveys approvals." },
+  { taskId: 'recall:B-AIR-02:1', prompt: 'What certifications and approvals must an air-space plan carry before filing?', expectedAnswerOverride: "Before filing, an air-space plan must bear the surveyor's certificate and seal certifying its correctness and compliance with section 4, and must have the required development-officer and Director of Surveys approvals." },
   { taskId: 'recall:B-ASMT-01:1', prompt: 'What is the general valuation basis for real-property assessment in New Brunswick?' },
   { taskId: 'recall:B-ASMT-02:1', prompt: 'What is the basic review-and-appeal route for a real-property assessment challenge?' },
   { taskId: 'recall:B-CWA-02:1', prompt: 'Before a qualifying project alters a watercourse or wetland, or diverts water, what generally must be submitted and obtained?', expectedAnswerOverride: 'Before a qualifying alteration or diversion, the person must provide the required plans or information to the Minister and, unless exempted or waived, obtain the required permit.' },
@@ -96,7 +96,7 @@ export const EXAM_PREP_RECALL_CONTENT_V1: ExamPrepRecallLearnerContent[] = [
  * fails closed on any drift.
  */
 export const examPrepRecallContentV1Hash =
-  '1876b36d029c3e67cb9030b7154c1de15cfb4326da5c265ba3d55ba47fb91b4d';
+  '90a9c88627b82830b460f16e553ada76592ea7f6c38805a8f7337ec4aa91b640';
 
 /** Canonical JSON the pinned hash above is computed over (Node-side check). */
 export const examPrepRecallContentV1CanonicalJson = (): string =>

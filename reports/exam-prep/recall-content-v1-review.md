@@ -3,7 +3,7 @@
 Deterministic QA review of the authored Recall Content V1 learner layer over the frozen 57-card Recall pool.
 
 - contentId: `nb-sit-recall-content-v1`
-- contentHash: `1876b36d029c3e67cb9030b7154c1de15cfb4326da5c265ba3d55ba47fb91b4d`
+- contentHash: `90a9c88627b82830b460f16e553ada76592ea7f6c38805a8f7337ec4aa91b640`
 - curriculumId: `nb-sit-statute-exam-curriculum-v1`
 - manifest contentHash: `434703f0a6de470095a5d0ad9fc6d1bb9534b15d58b1ab2b47460bba8a88952a`
 - corpus contentHash: `6f0442fc121eb0d2bcc9d3c1023c7a624e2cd4adf36922079bc3f6858fdcc32b`
@@ -182,7 +182,7 @@ Authored prompt:
 In an integrated survey area, which legal monuments established by a surveyor must be tied to coordinate monuments?
 
 Learner-facing expected answer:
-In an integrated survey area, a surveyor must tie to the coordinate monuments all legal monuments the surveyor establishes that pertain to Crown Lands, subdivisions requiring a subdivision plan, or parcels whose owners request inclusion.
+In an integrated survey area, a surveyor must tie to the coordinate monuments all legal monuments the surveyor establishes that pertain to Crown Lands, subdivisions when a subdivision plan is required under the Community Planning Act, or parcels whose owners request inclusion.
 
 Validation anchors (owning unit only):
 - Surveys Act — 5 — section:5 [core_rule]
@@ -448,7 +448,7 @@ Authored prompt:
 What certifications and approvals must an air-space plan carry before filing?
 
 Learner-facing expected answer:
-Before filing, an air-space plan must carry the surveyor's certificate and seal and the required development-officer and Director of Surveys approvals.
+Before filing, an air-space plan must bear the surveyor's certificate and seal certifying its correctness and compliance with section 4, and must have the required development-officer and Director of Surveys approvals.
 
 Validation anchors (owning unit only):
 - Air Space Act — 4 — section:4 [core_rule]
