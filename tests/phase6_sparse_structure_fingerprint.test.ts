@@ -180,7 +180,7 @@ describe('phase 6 sparse structure fingerprint', () => {
     ).toThrow();
   });
 
-  it('measures pattern stability across repeated Phase 5 generated solves', () => {
+  it('keeps Phase 5 generated solves deterministic and synthetic patterns stable', () => {
     const specs = [
       { id: 'chain-2d-04', family: 'chain-2d' as const, unknownCount: 4, seed: 1101 },
       { id: 'gps-2d-08', family: 'gps-2d' as const, unknownCount: 8, seed: 2202 },
