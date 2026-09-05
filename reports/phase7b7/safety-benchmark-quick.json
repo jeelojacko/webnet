@@ -1,0 +1,244 @@
+{
+  "generatedAt": "2026-09-05T20:32:29.231Z",
+  "node": "v26.8.1",
+  "platform": "linux-x64",
+  "cpu": "AMD Ryzen 7 5800X3D 8-Core Processor",
+  "gitCommit": "a8b7ec57eb660af947c4bf7685f1299328ff9cd4",
+  "warmups": 1,
+  "quick": true,
+  "moduleInit": {
+    "medianMs": 4.508477999999997,
+    "minMs": 1.331485999999984,
+    "p95Ms": 13.832432000000011,
+    "maxMs": 13.832432000000011,
+    "runs": 3
+  },
+  "rows": [
+    {
+      "caseId": "chain-2d-08",
+      "unknowns": 8,
+      "strategy": "S0",
+      "accepted": true,
+      "handshakeReasons": [],
+      "endToEnd": {
+        "medianMs": 3.681539999999984,
+        "minMs": 3.422329999999988,
+        "p95Ms": 4.145518999999979,
+        "maxMs": 4.145518999999979,
+        "runs": 3
+      },
+      "oracle": null,
+      "oracleSystems": 0,
+      "worstOracleSystem": null,
+      "maxOracleDiff": null,
+      "maxCoordDiffM": 5.684341886080802e-14,
+      "sparseFallbacks": 0,
+      "rssMb": 163.04296875,
+      "heapUsedMb": 27.26953125
+    },
+    {
+      "caseId": "chain-2d-08",
+      "unknowns": 8,
+      "strategy": "S1",
+      "accepted": true,
+      "handshakeReasons": [],
+      "endToEnd": {
+        "medianMs": 2.9658620000000155,
+        "minMs": 2.874842000000001,
+        "p95Ms": 3.186661000000015,
+        "maxMs": 3.186661000000015,
+        "runs": 3
+      },
+      "oracle": {
+        "medianMs": 0.050770000000056825,
+        "minMs": 0.043689999999969586,
+        "p95Ms": 0.05862000000001899,
+        "maxMs": 0.05862000000001899,
+        "runs": 3
+      },
+      "oracleSystems": 1,
+      "worstOracleSystem": 0,
+      "maxOracleDiff": 3.885780586188048e-16,
+      "maxCoordDiffM": 5.684341886080802e-14,
+      "sparseFallbacks": 0,
+      "rssMb": 157.4140625,
+      "heapUsedMb": 21.471839904785156
+    },
+    {
+      "caseId": "chain-2d-08",
+      "unknowns": 8,
+      "strategy": "S2",
+      "accepted": true,
+      "handshakeReasons": [],
+      "endToEnd": {
+        "medianMs": 2.6407030000000304,
+        "minMs": 2.3402240000000347,
+        "p95Ms": 2.7777019999999766,
+        "maxMs": 2.7777019999999766,
+        "runs": 3
+      },
+      "oracle": {
+        "medianMs": 0.08795999999995274,
+        "minMs": 0.07155899999997928,
+        "p95Ms": 0.08976000000006934,
+        "maxMs": 0.08976000000006934,
+        "runs": 3
+      },
+      "oracleSystems": 2,
+      "worstOracleSystem": 0,
+      "maxOracleDiff": 3.885780586188048e-16,
+      "maxCoordDiffM": 5.684341886080802e-14,
+      "sparseFallbacks": 0,
+      "rssMb": 159.20703125,
+      "heapUsedMb": 24.351425170898438
+    },
+    {
+      "caseId": "chain-2d-08",
+      "unknowns": 8,
+      "strategy": "S3",
+      "accepted": true,
+      "handshakeReasons": [],
+      "endToEnd": {
+        "medianMs": 2.5443030000000135,
+        "minMs": 2.2233939999999848,
+        "p95Ms": 2.5828129999999874,
+        "maxMs": 2.5828129999999874,
+        "runs": 3
+      },
+      "oracle": {
+        "medianMs": 0.1623899999999594,
+        "minMs": 0.13913000000013653,
+        "p95Ms": 0.16653900000005706,
+        "maxMs": 0.16653900000005706,
+        "runs": 3
+      },
+      "oracleSystems": 4,
+      "worstOracleSystem": 0,
+      "maxOracleDiff": 3.885780586188048e-16,
+      "maxCoordDiffM": 5.684341886080802e-14,
+      "sparseFallbacks": 0,
+      "rssMb": 160.33203125,
+      "heapUsedMb": 26.57665252685547
+    },
+    {
+      "caseId": "chain-2d-16",
+      "unknowns": 16,
+      "strategy": "S0",
+      "accepted": true,
+      "handshakeReasons": [],
+      "endToEnd": {
+        "medianMs": 3.7373000000000047,
+        "minMs": 3.528891000000044,
+        "p95Ms": 3.7898799999999255,
+        "maxMs": 3.7898799999999255,
+        "runs": 3
+      },
+      "oracle": null,
+      "oracleSystems": 0,
+      "worstOracleSystem": null,
+      "maxOracleDiff": null,
+      "maxCoordDiffM": 2.220446049250313e-16,
+      "sparseFallbacks": 0,
+      "rssMb": 175.046875,
+      "heapUsedMb": 28.825790405273438
+    },
+    {
+      "caseId": "chain-2d-16",
+      "unknowns": 16,
+      "strategy": "S1",
+      "accepted": true,
+      "handshakeReasons": [],
+      "endToEnd": {
+        "medianMs": 3.573150000000055,
+        "minMs": 3.4368709999999965,
+        "p95Ms": 3.6223999999999705,
+        "maxMs": 3.6223999999999705,
+        "runs": 3
+      },
+      "oracle": {
+        "medianMs": 0.08433999999999742,
+        "minMs": 0.08395899999993617,
+        "p95Ms": 0.10767999999995936,
+        "maxMs": 0.10767999999995936,
+        "runs": 3
+      },
+      "oracleSystems": 1,
+      "worstOracleSystem": 0,
+      "maxOracleDiff": 5.551115123125783e-16,
+      "maxCoordDiffM": 2.220446049250313e-16,
+      "sparseFallbacks": 0,
+      "rssMb": 175.546875,
+      "heapUsedMb": 30.431846618652344
+    },
+    {
+      "caseId": "chain-2d-16",
+      "unknowns": 16,
+      "strategy": "S2",
+      "accepted": true,
+      "handshakeReasons": [],
+      "endToEnd": {
+        "medianMs": 3.240271000000007,
+        "minMs": 3.2201410000000124,
+        "p95Ms": 3.6835099999999557,
+        "maxMs": 3.6835099999999557,
+        "runs": 3
+      },
+      "oracle": {
+        "medianMs": 0.144408999999996,
+        "minMs": 0.13793999999995776,
+        "p95Ms": 0.15071000000000367,
+        "maxMs": 0.15071000000000367,
+        "runs": 3
+      },
+      "oracleSystems": 2,
+      "worstOracleSystem": 0,
+      "maxOracleDiff": 5.551115123125783e-16,
+      "maxCoordDiffM": 2.220446049250313e-16,
+      "sparseFallbacks": 0,
+      "rssMb": 175.796875,
+      "heapUsedMb": 32.560890197753906
+    },
+    {
+      "caseId": "chain-2d-16",
+      "unknowns": 16,
+      "strategy": "S3",
+      "accepted": true,
+      "handshakeReasons": [],
+      "endToEnd": {
+        "medianMs": 3.1619610000000193,
+        "minMs": 3.1552019999999175,
+        "p95Ms": 3.4950109999999768,
+        "maxMs": 3.4950109999999768,
+        "runs": 3
+      },
+      "oracle": {
+        "medianMs": 0.2847590000000082,
+        "minMs": 0.2766589999999951,
+        "p95Ms": 0.2910789999998542,
+        "maxMs": 0.2910789999998542,
+        "runs": 3
+      },
+      "oracleSystems": 4,
+      "worstOracleSystem": 0,
+      "maxOracleDiff": 5.551115123125783e-16,
+      "maxCoordDiffM": 2.220446049250313e-16,
+      "sparseFallbacks": 0,
+      "rssMb": 175.796875,
+      "heapUsedMb": 36.09601593017578
+    }
+  ],
+  "workerEndToEnd": [
+    {
+      "caseId": "chain-2d-08",
+      "unknowns": 8,
+      "ms": 215.65069499999998,
+      "note": "actual-worker sparse run"
+    },
+    {
+      "caseId": "chain-2d-16",
+      "unknowns": 16,
+      "ms": 218.85075599999993,
+      "note": "actual-worker sparse run"
+    }
+  ]
+}

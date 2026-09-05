@@ -32,6 +32,8 @@
     "bench:adjust:sparse-large": "tsx scripts/benchmarks/benchmarkSparseLargeAdjustment.ts",
     "bench:phase7b5:compat-demand": "tsx scripts/benchmarks/benchmarkPhase7b5CompatDemand.ts",
     "bench:phase7b5:compat-demand:quick": "tsx scripts/benchmarks/benchmarkPhase7b5CompatDemand.ts --quick",
+    "bench:phase7b7:safety": "tsx scripts/benchmarks/benchmarkPhase7b7Safety.ts",
+    "bench:phase7b7:safety:quick": "tsx scripts/benchmarks/benchmarkPhase7b7Safety.ts --quick",
     "bench:sparse-runtime": "tsx scripts/benchmarks/benchmarkSparseRuntime.ts",
     "bench:sparse-runtime:quick": "tsx scripts/benchmarks/benchmarkSparseRuntime.ts --quick",
     "bench:weights": "tsx scripts/benchmarks/benchmarkWeights.ts",

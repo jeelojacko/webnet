@@ -9,13 +9,15 @@
  * helpers). No production code changes: the decorator sits between
  * `LSAEngine` and the injected bundle solver.
  */
-import { solveNormalEquations } from '../../src/engine/adjustNormalEquationHelpers';
 import { LSAEngine } from '../../src/engine/adjust';
 import type { EngineOptions } from '../../src/engine/adjustTypes';
 import { estimateSparseNormalCondition } from '../../src/engine/sparseNormalCondition';
 import type { Phase7b6HandshakeInput } from '../../src/engine/phase7b6CorrectionHandshake';
-import { accumulateNormalEquationsFromSparseRows } from '../../src/engine/matrixSparse';
-import type { SparseMatrixRows } from '../../src/engine/matrixTypes';
+import {
+  solvePhase7b7DenseFirstSystem,
+  unpackPhase7b7DenseWeights,
+  unpackPhase7b7DesignRows,
+} from '../../src/engine/phase7b7FirstSystemOracle';
 import type {
   SparseCorrectionSolveInput,
   SparseCorrectionSolveResult,
@@ -93,65 +95,19 @@ export class RecordingSparseCorrectionSolver implements SparseCorrectionSolver {
   }
 }
 
-/** Unpacks CSR design rows to the sparse-row shape used by dense assembly. */
-export const unpackDesignRows = (design: PackedSparseDesignRows): SparseMatrixRows => {
-  const rows: SparseMatrixRows = [];
-  const equationCount = design.rowOffsets.length - 1;
-  for (let row = 0; row < equationCount; row += 1) {
-    const start = design.rowOffsets[row] ?? 0;
-    const end = design.rowOffsets[row + 1] ?? 0;
-    const entries: SparseMatrixRows[number] = [];
-    for (let k = start; k < end; k += 1) {
-      entries.push({
-        index: design.columns[k] ?? 0,
-        value: design.values[k] ?? 0,
-      });
-    }
-    rows.push(entries);
-  }
-  return rows;
-};
+/** Unpacks CSR design rows (single implementation in the Phase 7B.7 oracle). */
+export const unpackDesignRows = unpackPhase7b7DesignRows;
 
-/** Rebuilds symmetric dense P from packed upper-triangle entries. */
-export const unpackDenseWeights = (weights: PackedUpperTriangle, size: number): number[][] => {
-  const dense: number[][] = Array.from({ length: size }, () => new Array<number>(size).fill(0));
-  for (let k = 0; k < weights.values.length; k += 1) {
-    const row = weights.rows[k] ?? 0;
-    const column = weights.columns[k] ?? 0;
-    const value = weights.values[k] ?? 0;
-    (dense[row] as number[])[column] = value;
-    (dense[column] as number[])[row] = value;
-  }
-  return dense;
-};
+/** Rebuilds symmetric dense P (single implementation in the Phase 7B.7 oracle). */
+export const unpackDenseWeights = unpackPhase7b7DenseWeights;
 
 /**
  * Solves the captured first system through the production dense path
  * (same assembly + scaled/damped Cholesky as the TS reference iteration).
  * Throws fail-closed on non-finite output, mirroring production.
  */
-export const solveDenseFirstSystem = (captured: CapturedFirstSystem): number[] => {
-  const rows = unpackDesignRows(captured.input.design);
-  const dense = unpackDenseWeights(
-    captured.input.weights,
-    captured.input.observationEquationCount,
-  );
-  const residuals = Array.from(captured.input.misclosures, (value) => [value]);
-  const { normal, rhs } = accumulateNormalEquationsFromSparseRows(
-    rows,
-    residuals,
-    dense,
-    captured.input.parameterCount,
-  );
-  const solved = solveNormalEquations(normal, rhs, { log: () => undefined });
-  const correction = (solved.correction ?? []).map((row) => row[0] ?? Number.NaN);
-  if (correction.length !== captured.input.parameterCount) {
-    throw new Error(
-      `Dense first-system rebuild produced ${correction.length} params for ${captured.input.parameterCount}.`,
-    );
-  }
-  return correction;
-};
+export const solveDenseFirstSystem = (captured: CapturedFirstSystem): number[] =>
+  solvePhase7b7DenseFirstSystem(captured.input);
 
 export interface Phase7b6LiveHandshakeRun {
   reference: ReturnType<LSAEngine['solve']>;

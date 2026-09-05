@@ -1,0 +1,804 @@
+{
+  "generatedAt": "2026-09-05T20:32:34.211Z",
+  "node": "v26.8.1",
+  "platform": "linux-x64",
+  "cpu": "AMD Ryzen 7 5800X3D 8-Core Processor",
+  "gitCommit": "a8b7ec57eb660af947c4bf7685f1299328ff9cd4",
+  "warmups": 2,
+  "quick": false,
+  "moduleInit": {
+    "medianMs": 2.0160649999999976,
+    "minMs": 1.747224999999986,
+    "p95Ms": 15.868946999999991,
+    "maxMs": 15.868946999999991,
+    "runs": 3
+  },
+  "rows": [
+    {
+      "caseId": "chain-2d-08",
+      "unknowns": 8,
+      "strategy": "S0",
+      "accepted": true,
+      "handshakeReasons": [],
+      "endToEnd": {
+        "medianMs": 3.3564610000000243,
+        "minMs": 3.0104220000000055,
+        "p95Ms": 3.7153000000000134,
+        "maxMs": 3.7153000000000134,
+        "runs": 5
+      },
+      "oracle": null,
+      "oracleSystems": 0,
+      "worstOracleSystem": null,
+      "maxOracleDiff": null,
+      "maxCoordDiffM": 5.684341886080802e-14,
+      "sparseFallbacks": 0,
+      "rssMb": 146.375,
+      "heapUsedMb": 24.181861877441406
+    },
+    {
+      "caseId": "chain-2d-08",
+      "unknowns": 8,
+      "strategy": "S1",
+      "accepted": true,
+      "handshakeReasons": [],
+      "endToEnd": {
+        "medianMs": 2.62750299999999,
+        "minMs": 2.3928129999999896,
+        "p95Ms": 2.6693730000000073,
+        "maxMs": 2.6693730000000073,
+        "runs": 5
+      },
+      "oracle": {
+        "medianMs": 0.046289999999999054,
+        "minMs": 0.04258999999996149,
+        "p95Ms": 0.06290000000001328,
+        "maxMs": 0.06290000000001328,
+        "runs": 5
+      },
+      "oracleSystems": 1,
+      "worstOracleSystem": 0,
+      "maxOracleDiff": 3.885780586188048e-16,
+      "maxCoordDiffM": 5.684341886080802e-14,
+      "sparseFallbacks": 0,
+      "rssMb": 149.04296875,
+      "heapUsedMb": 24.867347717285156
+    },
+    {
+      "caseId": "chain-2d-08",
+      "unknowns": 8,
+      "strategy": "S2",
+      "accepted": true,
+      "handshakeReasons": [],
+      "endToEnd": {
+        "medianMs": 2.1115840000000503,
+        "minMs": 2.0616449999999986,
+        "p95Ms": 2.5620230000000674,
+        "maxMs": 2.5620230000000674,
+        "runs": 5
+      },
+      "oracle": {
+        "medianMs": 0.07401999999990494,
+        "minMs": 0.0705600000000004,
+        "p95Ms": 0.09075900000004822,
+        "maxMs": 0.09075900000004822,
+        "runs": 5
+      },
+      "oracleSystems": 2,
+      "worstOracleSystem": 0,
+      "maxOracleDiff": 3.885780586188048e-16,
+      "maxCoordDiffM": 5.684341886080802e-14,
+      "sparseFallbacks": 0,
+      "rssMb": 150.66796875,
+      "heapUsedMb": 26.816444396972656
+    },
+    {
+      "caseId": "chain-2d-08",
+      "unknowns": 8,
+      "strategy": "S3",
+      "accepted": true,
+      "handshakeReasons": [],
+      "endToEnd": {
+        "medianMs": 2.0324439999999413,
+        "minMs": 2.0188249999999925,
+        "p95Ms": 2.2112240000000156,
+        "maxMs": 2.2112240000000156,
+        "runs": 5
+      },
+      "oracle": {
+        "medianMs": 0.12142899999992096,
+        "minMs": 0.11703000000011343,
+        "p95Ms": 0.16513999999995121,
+        "maxMs": 0.16513999999995121,
+        "runs": 5
+      },
+      "oracleSystems": 4,
+      "worstOracleSystem": 0,
+      "maxOracleDiff": 3.885780586188048e-16,
+      "maxCoordDiffM": 5.684341886080802e-14,
+      "sparseFallbacks": 0,
+      "rssMb": 150.79296875,
+      "heapUsedMb": 27.121559143066406
+    },
+    {
+      "caseId": "chain-2d-16",
+      "unknowns": 16,
+      "strategy": "S0",
+      "accepted": true,
+      "handshakeReasons": [],
+      "endToEnd": {
+        "medianMs": 3.2814309999999978,
+        "minMs": 3.207051999999976,
+        "p95Ms": 3.577760000000012,
+        "maxMs": 3.577760000000012,
+        "runs": 5
+      },
+      "oracle": null,
+      "oracleSystems": 0,
+      "worstOracleSystem": null,
+      "maxOracleDiff": null,
+      "maxCoordDiffM": 2.220446049250313e-16,
+      "sparseFallbacks": 0,
+      "rssMb": 179.41015625,
+      "heapUsedMb": 32.583778381347656
+    },
+    {
+      "caseId": "chain-2d-16",
+      "unknowns": 16,
+      "strategy": "S1",
+      "accepted": true,
+      "handshakeReasons": [],
+      "endToEnd": {
+        "medianMs": 3.2456909999999652,
+        "minMs": 3.164991999999984,
+        "p95Ms": 3.6098500000000513,
+        "maxMs": 3.6098500000000513,
+        "runs": 5
+      },
+      "oracle": {
+        "medianMs": 0.08288000000004558,
+        "minMs": 0.07920899999999165,
+        "p95Ms": 0.12190999999995711,
+        "maxMs": 0.12190999999995711,
+        "runs": 5
+      },
+      "oracleSystems": 1,
+      "worstOracleSystem": 0,
+      "maxOracleDiff": 5.551115123125783e-16,
+      "maxCoordDiffM": 2.220446049250313e-16,
+      "sparseFallbacks": 0,
+      "rssMb": 179.66015625,
+      "heapUsedMb": 30.33587646484375
+    },
+    {
+      "caseId": "chain-2d-16",
+      "unknowns": 16,
+      "strategy": "S2",
+      "accepted": true,
+      "handshakeReasons": [],
+      "endToEnd": {
+        "medianMs": 3.099741999999992,
+        "minMs": 3.0413409999999885,
+        "p95Ms": 3.55433000000005,
+        "maxMs": 3.55433000000005,
+        "runs": 5
+      },
+      "oracle": {
+        "medianMs": 0.1402099999999109,
+        "minMs": 0.13730999999995674,
+        "p95Ms": 0.15354000000002088,
+        "maxMs": 0.15354000000002088,
+        "runs": 5
+      },
+      "oracleSystems": 2,
+      "worstOracleSystem": 0,
+      "maxOracleDiff": 5.551115123125783e-16,
+      "maxCoordDiffM": 2.220446049250313e-16,
+      "sparseFallbacks": 0,
+      "rssMb": 179.78515625,
+      "heapUsedMb": 29.058151245117188
+    },
+    {
+      "caseId": "chain-2d-16",
+      "unknowns": 16,
+      "strategy": "S3",
+      "accepted": true,
+      "handshakeReasons": [],
+      "endToEnd": {
+        "medianMs": 2.9931119999999964,
+        "minMs": 2.963202000000024,
+        "p95Ms": 3.2756610000000137,
+        "maxMs": 3.2756610000000137,
+        "runs": 5
+      },
+      "oracle": {
+        "medianMs": 0.2768099999999549,
+        "minMs": 0.2763790000000199,
+        "p95Ms": 0.5488789999999426,
+        "maxMs": 0.5488789999999426,
+        "runs": 5
+      },
+      "oracleSystems": 4,
+      "worstOracleSystem": 0,
+      "maxOracleDiff": 5.551115123125783e-16,
+      "maxCoordDiffM": 2.220446049250313e-16,
+      "sparseFallbacks": 0,
+      "rssMb": 180.03515625,
+      "heapUsedMb": 30.02997589111328
+    },
+    {
+      "caseId": "chain-2d-25",
+      "unknowns": 25,
+      "strategy": "S0",
+      "accepted": true,
+      "handshakeReasons": [],
+      "endToEnd": {
+        "medianMs": 4.698867000000064,
+        "minMs": 4.521347999999989,
+        "p95Ms": 4.9742559999999685,
+        "maxMs": 4.9742559999999685,
+        "runs": 5
+      },
+      "oracle": null,
+      "oracleSystems": 0,
+      "worstOracleSystem": null,
+      "maxOracleDiff": null,
+      "maxCoordDiffM": 1.4210854715202004e-14,
+      "sparseFallbacks": 0,
+      "rssMb": 181.8359375,
+      "heapUsedMb": 37.41375732421875
+    },
+    {
+      "caseId": "chain-2d-25",
+      "unknowns": 25,
+      "strategy": "S1",
+      "accepted": true,
+      "handshakeReasons": [],
+      "endToEnd": {
+        "medianMs": 4.526627999999846,
+        "minMs": 4.491248000000041,
+        "p95Ms": 4.814676999999847,
+        "maxMs": 4.814676999999847,
+        "runs": 5
+      },
+      "oracle": {
+        "medianMs": 0.14269899999999325,
+        "minMs": 0.14039999999999964,
+        "p95Ms": 0.150269999999864,
+        "maxMs": 0.150269999999864,
+        "runs": 5
+      },
+      "oracleSystems": 1,
+      "worstOracleSystem": 0,
+      "maxOracleDiff": 1.1102230246251565e-15,
+      "maxCoordDiffM": 1.4210854715202004e-14,
+      "sparseFallbacks": 0,
+      "rssMb": 181.9609375,
+      "heapUsedMb": 34.548011779785156
+    },
+    {
+      "caseId": "chain-2d-25",
+      "unknowns": 25,
+      "strategy": "S2",
+      "accepted": true,
+      "handshakeReasons": [],
+      "endToEnd": {
+        "medianMs": 4.51565800000003,
+        "minMs": 4.468708000000106,
+        "p95Ms": 4.937145999999984,
+        "maxMs": 4.937145999999984,
+        "runs": 5
+      },
+      "oracle": {
+        "medianMs": 0.2813890000002175,
+        "minMs": 0.27629899999988083,
+        "p95Ms": 0.2929989999997815,
+        "maxMs": 0.2929989999997815,
+        "runs": 5
+      },
+      "oracleSystems": 2,
+      "worstOracleSystem": 0,
+      "maxOracleDiff": 1.1102230246251565e-15,
+      "maxCoordDiffM": 1.4210854715202004e-14,
+      "sparseFallbacks": 0,
+      "rssMb": 181.9609375,
+      "heapUsedMb": 34.877593994140625
+    },
+    {
+      "caseId": "chain-2d-25",
+      "unknowns": 25,
+      "strategy": "S3",
+      "accepted": true,
+      "handshakeReasons": [],
+      "endToEnd": {
+        "medianMs": 4.519237999999859,
+        "minMs": 4.491827999999941,
+        "p95Ms": 4.746496999999863,
+        "maxMs": 4.746496999999863,
+        "runs": 5
+      },
+      "oracle": {
+        "medianMs": 0.5573279999998704,
+        "minMs": 0.5518989999995938,
+        "p95Ms": 0.5745280000001003,
+        "maxMs": 0.5745280000001003,
+        "runs": 5
+      },
+      "oracleSystems": 4,
+      "worstOracleSystem": 0,
+      "maxOracleDiff": 1.1102230246251565e-15,
+      "maxCoordDiffM": 1.4210854715202004e-14,
+      "sparseFallbacks": 0,
+      "rssMb": 182.0859375,
+      "heapUsedMb": 40.27149200439453
+    },
+    {
+      "caseId": "chain-2d-50",
+      "unknowns": 50,
+      "strategy": "S0",
+      "accepted": true,
+      "handshakeReasons": [],
+      "endToEnd": {
+        "medianMs": 9.004455000000007,
+        "minMs": 8.59715600000004,
+        "p95Ms": 9.055926,
+        "maxMs": 9.055926,
+        "runs": 5
+      },
+      "oracle": null,
+      "oracleSystems": 0,
+      "worstOracleSystem": null,
+      "maxOracleDiff": null,
+      "maxCoordDiffM": 3.197442310920451e-14,
+      "sparseFallbacks": 0,
+      "rssMb": 196.1484375,
+      "heapUsedMb": 32.869598388671875
+    },
+    {
+      "caseId": "chain-2d-50",
+      "unknowns": 50,
+      "strategy": "S1",
+      "accepted": true,
+      "handshakeReasons": [],
+      "endToEnd": {
+        "medianMs": 8.931355999999823,
+        "minMs": 8.578196999999818,
+        "p95Ms": 9.128834999999981,
+        "maxMs": 9.128834999999981,
+        "runs": 5
+      },
+      "oracle": {
+        "medianMs": 0.5429590000001099,
+        "minMs": 0.5402289999999539,
+        "p95Ms": 0.5577789999999823,
+        "maxMs": 0.5577789999999823,
+        "runs": 5
+      },
+      "oracleSystems": 1,
+      "worstOracleSystem": 0,
+      "maxOracleDiff": 1.6930901125533637e-15,
+      "maxCoordDiffM": 3.197442310920451e-14,
+      "sparseFallbacks": 0,
+      "rssMb": 197.3984375,
+      "heapUsedMb": 31.57457733154297
+    },
+    {
+      "caseId": "chain-2d-50",
+      "unknowns": 50,
+      "strategy": "S2",
+      "accepted": true,
+      "handshakeReasons": [],
+      "endToEnd": {
+        "medianMs": 8.560355999999956,
+        "minMs": 8.499246999999968,
+        "p95Ms": 9.041985999999952,
+        "maxMs": 9.041985999999952,
+        "runs": 5
+      },
+      "oracle": {
+        "medianMs": 1.0688669999999547,
+        "minMs": 1.0553769999999076,
+        "p95Ms": 1.496516000000156,
+        "maxMs": 1.496516000000156,
+        "runs": 5
+      },
+      "oracleSystems": 2,
+      "worstOracleSystem": 0,
+      "maxOracleDiff": 1.6930901125533637e-15,
+      "maxCoordDiffM": 3.197442310920451e-14,
+      "sparseFallbacks": 0,
+      "rssMb": 197.6484375,
+      "heapUsedMb": 39.76959228515625
+    },
+    {
+      "caseId": "chain-2d-50",
+      "unknowns": 50,
+      "strategy": "S3",
+      "accepted": true,
+      "handshakeReasons": [],
+      "endToEnd": {
+        "medianMs": 8.54697699999997,
+        "minMs": 8.498066999999992,
+        "p95Ms": 8.862945999999965,
+        "maxMs": 8.862945999999965,
+        "runs": 5
+      },
+      "oracle": {
+        "medianMs": 2.0254949999998644,
+        "minMs": 1.9741250000001855,
+        "p95Ms": 2.5309330000000045,
+        "maxMs": 2.5309330000000045,
+        "runs": 5
+      },
+      "oracleSystems": 4,
+      "worstOracleSystem": 0,
+      "maxOracleDiff": 1.6930901125533637e-15,
+      "maxCoordDiffM": 3.197442310920451e-14,
+      "sparseFallbacks": 0,
+      "rssMb": 198.1484375,
+      "heapUsedMb": 36.174827575683594
+    },
+    {
+      "caseId": "chain-2d-64",
+      "unknowns": 64,
+      "strategy": "S0",
+      "accepted": true,
+      "handshakeReasons": [],
+      "endToEnd": {
+        "medianMs": 11.275609999999688,
+        "minMs": 11.027619999999843,
+        "p95Ms": 11.797387999999955,
+        "maxMs": 11.797387999999955,
+        "runs": 5
+      },
+      "oracle": null,
+      "oracleSystems": 0,
+      "worstOracleSystem": null,
+      "maxOracleDiff": null,
+      "maxCoordDiffM": 4.547473508864641e-13,
+      "sparseFallbacks": 0,
+      "rssMb": 237.94140625,
+      "heapUsedMb": 35.369720458984375
+    },
+    {
+      "caseId": "chain-2d-64",
+      "unknowns": 64,
+      "strategy": "S1",
+      "accepted": true,
+      "handshakeReasons": [],
+      "endToEnd": {
+        "medianMs": 11.182770000000346,
+        "minMs": 11.069010000000162,
+        "p95Ms": 11.602908000000298,
+        "maxMs": 11.602908000000298,
+        "runs": 5
+      },
+      "oracle": {
+        "medianMs": 0.8670280000001185,
+        "minMs": 0.8593370000003233,
+        "p95Ms": 0.8817480000002433,
+        "maxMs": 0.8817480000002433,
+        "runs": 5
+      },
+      "oracleSystems": 1,
+      "worstOracleSystem": 0,
+      "maxOracleDiff": 1.2906342661267445e-15,
+      "maxCoordDiffM": 4.547473508864641e-13,
+      "sparseFallbacks": 0,
+      "rssMb": 239.31640625,
+      "heapUsedMb": 34.44312286376953
+    },
+    {
+      "caseId": "chain-2d-64",
+      "unknowns": 64,
+      "strategy": "S2",
+      "accepted": true,
+      "handshakeReasons": [],
+      "endToEnd": {
+        "medianMs": 11.378619000000072,
+        "minMs": 11.22195899999997,
+        "p95Ms": 11.811357999999927,
+        "maxMs": 11.811357999999927,
+        "runs": 5
+      },
+      "oracle": {
+        "medianMs": 1.7647360000000845,
+        "minMs": 1.7582750000001397,
+        "p95Ms": 2.2595439999995506,
+        "maxMs": 2.2595439999995506,
+        "runs": 5
+      },
+      "oracleSystems": 2,
+      "worstOracleSystem": 0,
+      "maxOracleDiff": 1.2906342661267445e-15,
+      "maxCoordDiffM": 4.547473508864641e-13,
+      "sparseFallbacks": 0,
+      "rssMb": 239.05859375,
+      "heapUsedMb": 49.04943084716797
+    },
+    {
+      "caseId": "chain-2d-64",
+      "unknowns": 64,
+      "strategy": "S3",
+      "accepted": true,
+      "handshakeReasons": [],
+      "endToEnd": {
+        "medianMs": 11.236859999999979,
+        "minMs": 10.971270000000004,
+        "p95Ms": 11.530408999999963,
+        "maxMs": 11.530408999999963,
+        "runs": 5
+      },
+      "oracle": {
+        "medianMs": 3.994179000000713,
+        "minMs": 3.5036010000003444,
+        "p95Ms": 5.1745859999996355,
+        "maxMs": 5.1745859999996355,
+        "runs": 5
+      },
+      "oracleSystems": 4,
+      "worstOracleSystem": 0,
+      "maxOracleDiff": 1.2906342661267445e-15,
+      "maxCoordDiffM": 4.547473508864641e-13,
+      "sparseFallbacks": 0,
+      "rssMb": 238.2890625,
+      "heapUsedMb": 61.38384246826172
+    },
+    {
+      "caseId": "chain-2d-96",
+      "unknowns": 96,
+      "strategy": "S0",
+      "accepted": true,
+      "handshakeReasons": [],
+      "endToEnd": {
+        "medianMs": 17.513593000000128,
+        "minMs": 16.943864000000303,
+        "p95Ms": 17.696841999999833,
+        "maxMs": 17.696841999999833,
+        "runs": 5
+      },
+      "oracle": null,
+      "oracleSystems": 0,
+      "worstOracleSystem": null,
+      "maxOracleDiff": null,
+      "maxCoordDiffM": 2.1316282072803006e-14,
+      "sparseFallbacks": 0,
+      "rssMb": 273.51953125,
+      "heapUsedMb": 42.581451416015625
+    },
+    {
+      "caseId": "chain-2d-96",
+      "unknowns": 96,
+      "strategy": "S1",
+      "accepted": true,
+      "handshakeReasons": [],
+      "endToEnd": {
+        "medianMs": 17.44866200000024,
+        "minMs": 16.89927499999976,
+        "p95Ms": 17.59235200000012,
+        "maxMs": 17.59235200000012,
+        "runs": 5
+      },
+      "oracle": {
+        "medianMs": 1.883784999999989,
+        "minMs": 1.8630950000001576,
+        "p95Ms": 2.4746030000001156,
+        "maxMs": 2.4746030000001156,
+        "runs": 5
+      },
+      "oracleSystems": 1,
+      "worstOracleSystem": 0,
+      "maxOracleDiff": 4.3021142204224816e-15,
+      "maxCoordDiffM": 2.1316282072803006e-14,
+      "sparseFallbacks": 0,
+      "rssMb": 275.01953125,
+      "heapUsedMb": 56.523719787597656
+    },
+    {
+      "caseId": "chain-2d-96",
+      "unknowns": 96,
+      "strategy": "S2",
+      "accepted": true,
+      "handshakeReasons": [],
+      "endToEnd": {
+        "medianMs": 17.420612999999776,
+        "minMs": 16.836053999999876,
+        "p95Ms": 18.02923099999998,
+        "maxMs": 18.02923099999998,
+        "runs": 5
+      },
+      "oracle": {
+        "medianMs": 3.7653599999994185,
+        "minMs": 3.743999999999687,
+        "p95Ms": 4.370538000000124,
+        "maxMs": 4.370538000000124,
+        "runs": 5
+      },
+      "oracleSystems": 2,
+      "worstOracleSystem": 0,
+      "maxOracleDiff": 4.3021142204224816e-15,
+      "maxCoordDiffM": 2.1316282072803006e-14,
+      "sparseFallbacks": 0,
+      "rssMb": 276.14453125,
+      "heapUsedMb": 70.1777114868164
+    },
+    {
+      "caseId": "chain-2d-96",
+      "unknowns": 96,
+      "strategy": "S3",
+      "accepted": true,
+      "handshakeReasons": [],
+      "endToEnd": {
+        "medianMs": 17.41976199999999,
+        "minMs": 16.83504499999981,
+        "p95Ms": 17.886151000000154,
+        "maxMs": 17.886151000000154,
+        "runs": 5
+      },
+      "oracle": {
+        "medianMs": 7.525149000000056,
+        "minMs": 7.435439999999744,
+        "p95Ms": 8.194888000000446,
+        "maxMs": 8.194888000000446,
+        "runs": 5
+      },
+      "oracleSystems": 4,
+      "worstOracleSystem": 0,
+      "maxOracleDiff": 4.3021142204224816e-15,
+      "maxCoordDiffM": 2.1316282072803006e-14,
+      "sparseFallbacks": 0,
+      "rssMb": 276.26953125,
+      "heapUsedMb": 53.048126220703125
+    },
+    {
+      "caseId": "chain-2d-128",
+      "unknowns": 128,
+      "strategy": "S0",
+      "accepted": true,
+      "handshakeReasons": [],
+      "endToEnd": {
+        "medianMs": 24.25368400000025,
+        "minMs": 23.999885000000177,
+        "p95Ms": 24.946222000000034,
+        "maxMs": 24.946222000000034,
+        "runs": 5
+      },
+      "oracle": null,
+      "oracleSystems": 0,
+      "worstOracleSystem": null,
+      "maxOracleDiff": null,
+      "maxCoordDiffM": 3.552713678800501e-14,
+      "sparseFallbacks": 0,
+      "rssMb": 308.8125,
+      "heapUsedMb": 84.24867248535156
+    },
+    {
+      "caseId": "chain-2d-128",
+      "unknowns": 128,
+      "strategy": "S1",
+      "accepted": true,
+      "handshakeReasons": [],
+      "endToEnd": {
+        "medianMs": 24.247333999999682,
+        "minMs": 23.81241500000033,
+        "p95Ms": 24.306173999999373,
+        "maxMs": 24.306173999999373,
+        "runs": 5
+      },
+      "oracle": {
+        "medianMs": 3.732219000000441,
+        "minMs": 3.7276099999999133,
+        "p95Ms": 4.381849000000329,
+        "maxMs": 4.381849000000329,
+        "runs": 5
+      },
+      "oracleSystems": 1,
+      "worstOracleSystem": 0,
+      "maxOracleDiff": 8.756884106730922e-15,
+      "maxCoordDiffM": 3.552713678800501e-14,
+      "sparseFallbacks": 0,
+      "rssMb": 309.5625,
+      "heapUsedMb": 65.75765991210938
+    },
+    {
+      "caseId": "chain-2d-128",
+      "unknowns": 128,
+      "strategy": "S2",
+      "accepted": true,
+      "handshakeReasons": [],
+      "endToEnd": {
+        "medianMs": 24.37104400000044,
+        "minMs": 23.954985000000306,
+        "p95Ms": 24.602303000000575,
+        "maxMs": 24.602303000000575,
+        "runs": 5
+      },
+      "oracle": {
+        "medianMs": 7.693749000000025,
+        "minMs": 7.360639999999876,
+        "p95Ms": 8.073247999998785,
+        "maxMs": 8.073247999998785,
+        "runs": 5
+      },
+      "oracleSystems": 2,
+      "worstOracleSystem": 0,
+      "maxOracleDiff": 8.756884106730922e-15,
+      "maxCoordDiffM": 3.552713678800501e-14,
+      "sparseFallbacks": 0,
+      "rssMb": 310.3125,
+      "heapUsedMb": 69.32545471191406
+    },
+    {
+      "caseId": "chain-2d-128",
+      "unknowns": 128,
+      "strategy": "S3",
+      "accepted": true,
+      "handshakeReasons": [],
+      "endToEnd": {
+        "medianMs": 24.328803999999764,
+        "minMs": 23.889076000000387,
+        "p95Ms": 24.413053000000218,
+        "maxMs": 24.413053000000218,
+        "runs": 5
+      },
+      "oracle": {
+        "medianMs": 14.971979999998439,
+        "minMs": 14.754299999999603,
+        "p95Ms": 16.101267000001826,
+        "maxMs": 16.101267000001826,
+        "runs": 5
+      },
+      "oracleSystems": 4,
+      "worstOracleSystem": 0,
+      "maxOracleDiff": 8.756884106730922e-15,
+      "maxCoordDiffM": 3.552713678800501e-14,
+      "sparseFallbacks": 0,
+      "rssMb": 310.9375,
+      "heapUsedMb": 92.85263061523438
+    }
+  ],
+  "workerEndToEnd": [
+    {
+      "caseId": "chain-2d-08",
+      "unknowns": 8,
+      "ms": 216.315243,
+      "note": "actual-worker sparse run"
+    },
+    {
+      "caseId": "chain-2d-16",
+      "unknowns": 16,
+      "ms": 223.85688300000004,
+      "note": "actual-worker sparse run"
+    },
+    {
+      "caseId": "chain-2d-25",
+      "unknowns": 25,
+      "ms": 199.47819000000004,
+      "note": "actual-worker sparse run"
+    },
+    {
+      "caseId": "chain-2d-50",
+      "unknowns": 50,
+      "ms": 271.641533,
+      "note": "actual-worker sparse run"
+    },
+    {
+      "caseId": "chain-2d-64",
+      "unknowns": 64,
+      "ms": 297.4994630000001,
+      "note": "actual-worker sparse run"
+    },
+    {
+      "caseId": "chain-2d-96",
+      "unknowns": 96,
+      "ms": 351.7958359999998,
+      "note": "actual-worker sparse run"
+    },
+    {
+      "caseId": "chain-2d-128",
+      "unknowns": 128,
+      "ms": 433.5395450000001,
+      "note": "actual-worker sparse run"
+    }
+  ]
+}
