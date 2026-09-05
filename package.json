@@ -29,6 +29,7 @@
     "bench:adjust:sparse": "tsx scripts/benchmarks/benchmarkSparseAdjustment.ts",
     "bench:adjust:sparse-full": "tsx scripts/benchmarks/benchmarkSparseFullAdjustment.ts",
     "bench:adjust:sparse-full:quick": "tsx scripts/benchmarks/benchmarkSparseFullAdjustment.ts --quick",
+    "bench:adjust:sparse-large": "tsx scripts/benchmarks/benchmarkSparseLargeAdjustment.ts",
     "bench:sparse-runtime": "tsx scripts/benchmarks/benchmarkSparseRuntime.ts",
     "bench:sparse-runtime:quick": "tsx scripts/benchmarks/benchmarkSparseRuntime.ts --quick",
     "bench:weights": "tsx scripts/benchmarks/benchmarkWeights.ts",

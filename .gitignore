@@ -64,3 +64,5 @@ benchmarks/baselines/sparse-full-latest.json
 benchmarks/baselines/sparse-full-latest.md
 benchmarks/baselines/sparse-runtime-latest.json
 benchmarks/baselines/sparse-runtime-latest.md
+benchmarks/baselines/sparse-large-latest.json
+benchmarks/baselines/sparse-large-latest.md

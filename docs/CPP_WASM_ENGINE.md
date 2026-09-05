@@ -151,7 +151,7 @@ Selected-network covariance mode (2026-09-05, test-only): `experimentalSelectedC
 
 Worker-compatible bundle proof (2026-09-05, test-only): `npm run wasm:sparse:bundle:worker-proof` runs `scripts/wasmSparseBundleWorkerProof.ts` under `node --import tsx`; each of ~25 fresh workers initializes the bundle once, runs one generated case through all three solvers, and returns route diagnostics with heap/RSS observations plus a repeat-seed determinism check.
 
-### Phase 6 — optimization and compatibility hardening (in progress)
+### Phase 6 — optimization and compatibility hardening (closure, 2026-09-05)
 
 The measure-first tooling is in place: `bench:sparse-runtime` reports wall and broad solve-stage medians, while `parity:sparse-shadow -- --input <file.dat>` compares an authoritative TypeScript solve with the injected selected-network sparse route and writes local JSON/Markdown summaries. A native timing instrument now separates sparse assembly, equilibration, symbolic analysis/AMD ordering, numeric factorization, and triangular solve without changing the stable ABI or numerical results. Initial native measurements show symbolic analysis dominates factorization on small synthetic systems; no symbolic/numeric reuse or persistent WASM workspace is adopted yet. The current WASM rebuild is environment-blocked when `emcmake` is unavailable.
 
@@ -160,6 +160,56 @@ The covariance probe classified full-rank SPD and near-singular full-rank system
 Move observation/Jacobian construction only when measured benefits justify the parity risk; do not assume a C++ model migration is required.
 
 Medium-case evidence batch (2026-09-05, bounded, no production routing or solver-math changes): the Phase 5 deterministic generator list grew from 6 to 9 full cases with `chain-2d-64`, `chain-2d-128`, and `gps-2d-64` (quick mode unchanged at `chain-2d-04` + `gps-2d-08`; existing seeds/inputs byte-identical). A shared size guard (`phase5BenchmarkSizeSkipReason`, `BENCH_MAX_UNKNOWN_COUNT`, default 256 unknowns) now skips every route — including the dense TS reference — with an explicit reason when a case exceeds the budget, protecting against unsafe dense/all-pairs O(n^2) memory work; the sparse-only `SPARSE_FULL_MAX_PARAMS` guard is unchanged. Measured full run (Ryzen 7 5800X3D, Node 26.8.1, warmups 2 / runs 5): all 9 cases converged in 4 iterations on all four routes with zero sparse fallbacks and max coordinate agreement 5.68e-14 m (tolerance 1e-6 m); TS-reference medians 25 ms (chain-64), 108 ms (chain-128), 34 ms (gps-64) versus selected-network medians 13/27/22 ms; selected plan queries stay a strict fraction of n^2 (892/65536 = 0.01 at chain-128). Explicit limitations: no gps-128 or larger case is covered; TS dense/all-pairs behavior is unmeasured beyond 128 unknowns (chain-128 emits 8,128 relativePrecision rows); stage-level runtime medians for medium cases come only from `bench:sparse-runtime` quick/small runs so far; no symbolic reuse, persistent workspace, or production routing change is adopted on this evidence.
+
+### Phase 6 closure — production-readiness matrix and Phase 7 recommendation (2026-09-05, test-only, no production routing change)
+
+Phase 6 is closed as a measurement/hardening batch. Production remains TypeScript-only; every sparse/selected-network route below is test-injected. Evidence mixes measurements re-run today (2026-09-05, Ryzen 7 5800X3D, Node 26.8.1, commit `d0feed7`) with previously recorded runs, marked accordingly. Unmeasured and blocked items are marked honestly — they are not gates that passed.
+
+Re-run today:
+
+- `bench:adjust:sparse-full --quick`: chain-2d-04 and gps-2d-08 converge in 4 iterations on all four routes with zero sparse fallbacks; max coordinate agreement `0` (chain) and `2.84e-14 m` (gps) vs TS reference; wall medians 1.6–4.8 ms across routes.
+- `bench:sparse-runtime --quick`: sparse-selected wall 2.32/3.80 ms vs TS 2.80/4.11 ms; stage buckets 0–2 ms on these small cases; agreement `2.84e-14 m`.
+- `bench:weights --quick`: structured weights build/finalize/pack in sub-millisecond to low-millisecond times (e.g. groups-2000: build 0.88 ms, finalize 4.94 ms, pack 0.110 ms); packed payload 139.28 KiB vs 30.52 MiB theoretical dense (224x saving); diag-only-2000 saves 1000x.
+- `wasm:sparse:adjustment:parity`: `industry_standard_reference_case.dat` iterations=7, dof=134, max coordinate difference `2.41e-12 m`; both GPS fixtures agree exactly (`0`).
+- `parity:sparse-shadow -- --input tests/fixtures/industry_standard_reference_case.dat`: PASS — 7 iterations both routes, diagnostics corr 7/0 rowp 1/0 selcov 1/0, coord `2.41e-12 m`, wall 45.96 ms TS vs 22.45 ms sparse-selected; relativePrecision rows 91 (TS) vs 0 (selected, by design).
+- WASM artifact sizes (repo `cpp/build-wasm/`, uncompressed): `webnet_core.wasm` 204 KiB + `webnet_core.js` 36 KiB glue.
+
+Previously recorded (not re-run today, values from the Phase 5/6 batches above):
+
+- Medium full run (9 cases incl. chain-2d-64/128, gps-2d-64): 9/9 converged on all four routes, zero fallbacks, max diff `5.68e-14 m`; TS medians 25/108/34 ms vs selected-network 13/27/22 ms; selected plan queries 892/65536 (0.01) at chain-128.
+- Sparse-kernel medians (WASM): n=100 `0.105 ms` through n=5,000 `1.839 ms`; native sparse 0.068–0.466 ms for n=100–1,000.
+- Sparse-only large route (not compared to dense TS): chain-256/512/1000 completed in about 79/176/533 ms, GPS-128/256 in about 52/106 ms, and the 3D/GPS correlated case in 5.1 ms; all converged with zero fallbacks, truth error <=4.6 mm, and repeat differences 0.00e+0. Chain-1000 used 2,000 parameters/4,002 equations, 6,996 selected queries versus 4,000,000 full queries, and about 383 KiB sparse storage versus 122/30.5/30.5 MiB theoretical dense P/N/Qxx payloads.
+- Worker bundle proof (~25 fresh workers, one bundle init each, repeat-seed determinism check) and post-init RSS stability: passed as recorded; not re-run today.
+- Covariance damping probe: full-rank SPD and near-singular full-rank classified undamped sparse success (A); rank-deficient required damping and returned unusable damped inverses (C); selected-covariance damping rejection plus dense fallback verified against real WASM.
+- Native phase-timing instrument: symbolic analysis/AMD dominates small solves; no reuse adopted.
+
+| Capability | Readiness | Evidence / notes |
+| --- | --- | --- |
+| Sparse correction solve | Ready (experimental) | Full-adjustment parity `2.41e-12 m` on industry fixture; 9/9 generated cases agree within `5.68e-14 m`; zero fallbacks on covered inputs. |
+| Structured weights (dense-P elimination) | Ready (experimental) | Direct packed transfer O(P_NNZ); 56–1000x payload savings measured; reconstruction/robust-update tests cover scalar, GPS, constraints, TS correlation. Dense P retained on default/fallback path. |
+| Huber robust iterations | Ready (experimental) | Robust Huber parity passes; each inner solve repacks weighted P (repack under 0.1 ms at m=2000, measured). |
+| GPS correlation blocks | Ready (experimental) | GPS 2D blocks covered by packing tests, gps-2d fixtures (exact/`2.84e-14 m` agreement), and gps-2d-64 medium case. 3D GPS and larger GPS blocks unmeasured. |
+| TS setup/set correlation | Ready (experimental) | Writer-level coverage (group diagonals plus upper pairs, square-root-factor Huber rule) plus reconstruction tests. End-to-end correlated-TS field case beyond fixtures unmeasured. |
+| Standardized residuals (row products) | Ready (experimental) | Batched row quadratic/cross-product API over the sparse factor; sparse-stats proof tests pass; nonzero-damping routes fall back to dense TS by design. |
+| Selected covariance | Ready (experimental) | Selected-entry inverse without dense Qxx; plan queries a strict fraction of n squared (0.01 at chain-128); store reads fail closed. Damped sparse covariance explicitly rejected, dense fallback used. |
+| 2D networks (small/medium) | Measured | Dense-reference comparison reaches chain-128/gps-64; sparse-only scaling reaches chain-1000 and gps-256 with truth/repeat checks. |
+| 3D networks | Measured (modest) | `gps-3d-cov-08`: 8 unknown stations, 67 equations, correlated GPS, converged in 4 iterations with 1.19e-3 m truth error and zero fallbacks; no large 3D scaling family yet. |
+| Large networks (1000+ unknowns) | Ready (experimental sparse-only) | `chain-2d-1000`: 1,000 unknown stations, 4,002 equations, 2,000 parameters, ~533 ms, 383 KiB sparse estimate, 6,996/4,000,000 selected/full queries; dense-reference parity is intentionally not claimed. |
+| Worker deployment plus determinism | Provisionally ready | Fresh worker proof and shared-bundle stress both passed: one bundle initialization, 25 repetitions, bit-identical repeat output, near-zero heap drift, and stable post-init RSS trend. WASM rebuild is environment-blocked when `emcmake` is unavailable. |
+| Damping fallback | Ready (experimental) | Same scaling/damping schedule as TS; Eigen success/failure may differ from pivoted dense TS and is surfaced, not silently retried; covariance path rejects damped sparse results. |
+| Legacy all-pairs `relativePrecision` | Intentionally unchanged | Still O(S squared) output rows on the dense contract (chain-128 emits 8,128 rows); selected mode omits it by design. Any production sparse route must decide this contract explicitly. |
+| Condition diagnostic | Gap on sparse path | TS records a norm-product condition estimate on iteration 1; injected sparse correction returns no Qxx and skips it. No sparse-path replacement exists. |
+| Observation-model migration to C++ | Not started (not required) | Assembly/Jacobian/weighting math stays in TypeScript per the Phase 6 measure-first decision; move only with measured benefit. |
+| SIMD / threads | Disabled | CMake/Emscripten targets build with no threads/SIMD; `SharedArrayBuffer`/cross-origin isolation not enabled. No measurements justify enabling them yet. |
+
+Open question (not a gate failure, production unaffected): `parity:sparse-shadow -- --input public/examples/industry_demo.dat` FAILS because plain `LSAEngine.solve()` does not converge on that input under either route's default scenario options (TS 10 iterations unconverged vs sparse 5 iterations with divergent SEUW). The shadow tool is therefore valid only for directly-convergent fixtures; unconverged-input comparison semantics are undefined and unmeasured.
+
+Phase 7 recommendation (explicit; Phase 7 is NOT started by this batch):
+
+1. Do not switch production routing yet. The remaining blockers are the undecided legacy all-pairs contract, sparse-path condition diagnostics, and the lack of a large 3D scaling family — not solver correctness, which agrees at `1e-12 m` level on covered reference inputs.
+2. If a first production candidate is wanted, scope it to small/medium 2D networks on the selected-network route with dense fallback armed, keeping TS assembly/statistics and the all-pairs contract untouched.
+3. Before any routing change, add a larger 3D scaling family, a sparse-path condition-diagnostic replacement (or explicit waiver), and a re-run of the worker/determinism proof on the shipping artifact; the 2D 1000-unknown sparse-only case and memory observations now exist, but do not establish dense-reference parity.
+4. Keep SIMD/threads and observation-model migration deferred until post-routing measurements show a specific bottleneck; native phase timings point at symbolic analysis first, but no reuse/workspace optimization is adopted without WASM-side boundary measurements.
 
 ### Phase 7 — production backend decision / optimization
 
