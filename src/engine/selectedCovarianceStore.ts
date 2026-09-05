@@ -21,6 +21,12 @@ export interface SelectedCovarianceStore {
   /** Solver queries issued; strictly below n^2 in selected mode. */
   readonly queryCount: number;
   readonly values: ReadonlyMap<number, number>;
+  /**
+   * Phase 7B.5: true when the plan also demanded every all-station pair,
+   * so legacy all-pairs relativePrecision may be computed without dense Qxx.
+   * Absent/false preserves the selected-network omission contract.
+   */
+  readonly legacyAllPairsCovered?: boolean;
 }
 
 const keyOf = (parameterCount: number, row: number, column: number): number =>
@@ -31,6 +37,7 @@ export const createSelectedCovarianceStore = (
   parameterCount: number,
   queries: readonly SelectedCovarianceQuery[],
   covariance: ArrayLike<number>,
+  options?: { legacyAllPairsCovered?: boolean },
 ): SelectedCovarianceStore => {
   if (!Number.isInteger(parameterCount) || parameterCount <= 0) {
     throw new Error('Selected covariance store requires a positive parameter count.');
@@ -57,7 +64,12 @@ export const createSelectedCovarianceStore = (
     const key = keyOf(parameterCount, query.row, query.column);
     if (!values.has(key)) values.set(key, value);
   });
-  return { parameterCount, queryCount: queries.length, values };
+  return {
+    parameterCount,
+    queryCount: queries.length,
+    values,
+    ...(options?.legacyAllPairsCovered === true ? { legacyAllPairsCovered: true as const } : {}),
+  };
 };
 
 /** Fail-closed read; null indices (fixed stations) read as zero. */

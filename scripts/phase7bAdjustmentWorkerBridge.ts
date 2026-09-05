@@ -41,6 +41,7 @@ worker.setAdjustmentWorkerRuntimeProvider(() => ({
   sparseSelectedCovarianceSolver: bundle.sparseSelectedCovarianceSolver,
   experimentalSparseDiagnostics: diagnostics,
   experimentalSelectedCovarianceMode: true,
+  experimentalSelectedCovarianceLegacyAllPairs: true,
 }));
 
 const snapshotDiagnostics = () => ({

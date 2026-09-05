@@ -80,6 +80,13 @@ export interface EngineOptions {
    * all-entry Qxx reconstruction plus legacy all-pairs relativePrecision.
    */
   experimentalSelectedCovarianceMode?: boolean;
+  /**
+   * Phase 7B.5 test-only legacy compat: with selected mode plus an injected
+   * solver, also query exact all-station pairs (Option B) so legacy
+   * all-pairs relativePrecision resolves without dense Qxx. Default
+   * undefined/false preserves selected-network omission/scaling.
+   */
+  experimentalSelectedCovarianceLegacyAllPairs?: boolean;
 }
 
 export const cloneParsedResultValue = <T>(value: T): T => {

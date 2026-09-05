@@ -109,6 +109,12 @@ interface RecoverFinalNormalCovarianceOptions {
    * store instead of the dense all-entry Qxx reconstruction.
    */
   experimentalSelectedCovarianceMode?: boolean;
+  /**
+   * Phase 7B.5 test-only legacy compat (Option B): with selected mode,
+   * also query exact all-station pairs without dense Qxx. Default
+   * undefined/false preserves selected-network scaling/omission.
+   */
+  experimentalSelectedCovarianceLegacyAllPairs?: boolean;
   /** Observed station pairs feeding the selected-mode query plan. */
   connectedPairs?: readonly CovariancePair[];
   /** REL/PTOL-requested pairs feeding the selected-mode query plan. */
@@ -246,6 +252,7 @@ const querySelectedCovarianceStore = (
     connectedPairs: options.connectedPairs,
     requestedPairs: options.requestedPairs,
     includeHeight: !options.is2D,
+    includeAllStationPairs: options.experimentalSelectedCovarianceLegacyAllPairs === true,
   });
   const queries = dedupeSelectedQueries(plan.queries);
   const result = solver.querySelected({
@@ -261,7 +268,9 @@ const querySelectedCovarianceStore = (
       `Sparse selected covariance used diagonal damping (lambda=${result.damping.toExponential(3)}, attempts=${result.dampingAttempts}); falling back to dense covariance to avoid damped precision.`,
     );
   }
-  return createSelectedCovarianceStore(options.numParams, queries, result.covariance);
+  return createSelectedCovarianceStore(options.numParams, queries, result.covariance, {
+    legacyAllPairsCovered: options.experimentalSelectedCovarianceLegacyAllPairs === true,
+  });
 };
 
 const trySparseSelectedCovariance = (

@@ -9,6 +9,8 @@ export type CovarianceQueryPlan = {
   queries: Array<{ row: number; column: number }>;
   connectedPairs: CovariancePair[];
   requestedPairs: CovariancePair[];
+  /** Phase 7B.5: exact all-unknown pairs when legacy compat is requested. */
+  allStationPairs: CovariancePair[];
   /** Equation rows are retained for row-product consumers, not copied into the plan. */
   equationRowCount: number;
 };
@@ -21,6 +23,12 @@ type PlanOptions = {
   connectedPairs?: readonly CovariancePair[];
   requestedPairs?: readonly CovariancePair[];
   includeHeight: boolean;
+  /**
+   * Phase 7B.5 (Option B): also demand every unordered unknown pair so
+   * legacy all-pairs relativePrecision resolves without dense Qxx.
+   * Default false preserves selected-network scaling.
+   */
+  includeAllStationPairs?: boolean;
 };
 
 const addQuery = (queries: Array<{ row: number; column: number }>, row?: number, column?: number): void => {
@@ -61,7 +69,8 @@ export const buildCovarianceQueryPlan = (options: PlanOptions): CovarianceQueryP
   });
   const connectedPairs = uniquePairs(options.connectedPairs ?? []);
   const requestedPairs = uniquePairs(options.requestedPairs ?? []);
-  [...connectedPairs, ...requestedPairs].forEach(({ from, to }) => {
+  const allStationPairs = buildAllStationPairs(options.unknowns, options.includeAllStationPairs === true);
+  [...connectedPairs, ...requestedPairs, ...allStationPairs].forEach(({ from, to }) => {
     const a = options.paramIndex[from];
     const b = options.paramIndex[to];
     const indices = [a?.x, a?.y, ...(options.includeHeight ? [a?.h] : []), b?.x, b?.y, ...(options.includeHeight ? [b?.h] : [])];
@@ -77,6 +86,25 @@ export const buildCovarianceQueryPlan = (options: PlanOptions): CovarianceQueryP
     queries,
     connectedPairs,
     requestedPairs,
+    allStationPairs,
     equationRowCount: options.sparseRows?.length ?? 0,
   };
+};
+
+/** Deterministic C(unknowns,2) enumeration in unknowns order. */
+const buildAllStationPairs = (
+  unknowns: readonly StationId[],
+  enabled: boolean,
+): CovariancePair[] => {
+  if (!enabled) return [];
+  const pairs: CovariancePair[] = [];
+  for (let i = 0; i < unknowns.length; i += 1) {
+    for (let j = i + 1; j < unknowns.length; j += 1) {
+      const from = unknowns[i] as StationId;
+      const to = unknowns[j] as StationId;
+      if (!from || !to || from === to) continue;
+      pairs.push({ from, to });
+    }
+  }
+  return pairs;
 };

@@ -42,6 +42,7 @@ export type ExperimentalSparseEngineOptions = Pick<
   | 'sparseSelectedCovarianceSolver'
   | 'experimentalSparseDiagnostics'
   | 'experimentalSelectedCovarianceMode'
+  | 'experimentalSelectedCovarianceLegacyAllPairs'
 >;
 
 /**
@@ -54,10 +55,12 @@ export const buildExperimentalSparseEngineOptions = (
   bundle: ExperimentalSparseNumericalBundle,
   diagnostics?: ExperimentalSparseRouteDiagnostics,
   selectedCovarianceMode = false,
+  legacyAllPairs = false,
 ): ExperimentalSparseEngineOptions => ({
   sparseCorrectionSolver: bundle.sparseCorrectionSolver,
   sparseRowProductsSolver: bundle.sparseRowProductsSolver,
   sparseSelectedCovarianceSolver: bundle.sparseSelectedCovarianceSolver,
   experimentalSparseDiagnostics: diagnostics,
   experimentalSelectedCovarianceMode: selectedCovarianceMode,
+  ...(legacyAllPairs ? { experimentalSelectedCovarianceLegacyAllPairs: true as const } : {}),
 });

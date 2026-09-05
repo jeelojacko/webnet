@@ -26,6 +26,12 @@ export interface AdjustmentRuntime {
    * all-entry Qxx reconstruction plus legacy all-pairs relativePrecision.
    */
   experimentalSelectedCovarianceMode?: EngineOptions['experimentalSelectedCovarianceMode'];
+  /**
+   * Phase 7B.5 test-only legacy compat (Option B): with selected mode,
+   * also query exact all-station pairs without dense Qxx. Undefined
+   * preserves selected-network omission/scaling.
+   */
+  experimentalSelectedCovarianceLegacyAllPairs?: EngineOptions['experimentalSelectedCovarianceLegacyAllPairs'];
   /** Test-only experimental correction backend; undefined keeps TS. */
   normalEquationSolver?: EngineOptions['normalEquationSolver'];
 }
@@ -38,6 +44,7 @@ export type AdjustmentRuntimeEngineOptions = Pick<
   | 'sparseSelectedCovarianceSolver'
   | 'experimentalSparseDiagnostics'
   | 'experimentalSelectedCovarianceMode'
+  | 'experimentalSelectedCovarianceLegacyAllPairs'
 >;
 
 /** Extracts only defined runtime fields so `undefined` stays exact legacy. */
@@ -63,6 +70,10 @@ export const toEngineOptions = (
   }
   if (runtime.experimentalSelectedCovarianceMode !== undefined) {
     options.experimentalSelectedCovarianceMode = runtime.experimentalSelectedCovarianceMode;
+  }
+  if (runtime.experimentalSelectedCovarianceLegacyAllPairs !== undefined) {
+    options.experimentalSelectedCovarianceLegacyAllPairs =
+      runtime.experimentalSelectedCovarianceLegacyAllPairs;
   }
   return options;
 };

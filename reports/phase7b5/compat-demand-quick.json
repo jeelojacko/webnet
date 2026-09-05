@@ -1,0 +1,32 @@
+{
+  "generatedAt": "2026-09-05T19:10:08.811Z",
+  "runs": 1,
+  "rows": [
+    {
+      "id": "chain-2d-08",
+      "unknowns": 8,
+      "equationRows": 34,
+      "paramCount": 20,
+      "optionAQueries": 256,
+      "optionBQueries": 136,
+      "fractionBofA": 0.5313,
+      "tsRefMedianMs": 29.2,
+      "compatMedianMs": 7,
+      "rssMb": 116.7,
+      "heapUsedMb": 18.8
+    },
+    {
+      "id": "chain-2d-25",
+      "unknowns": 25,
+      "equationRows": 102,
+      "paramCount": 54,
+      "optionAQueries": 2500,
+      "optionBQueries": 1275,
+      "fractionBofA": 0.51,
+      "tsRefMedianMs": 11.1,
+      "compatMedianMs": 10.2,
+      "rssMb": 119.1,
+      "heapUsedMb": 21.1
+    }
+  ]
+}

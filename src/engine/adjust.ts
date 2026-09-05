@@ -59,6 +59,7 @@ export class LSAEngine extends LSAEngineObservationMethods {
   private sparseSelectedCovarianceSolver?: SparseSelectedCovarianceSolver;
   private experimentalSparseDiagnostics?: ExperimentalSparseRouteDiagnostics;
   private experimentalSelectedCovarianceMode?: boolean;
+  private experimentalSelectedCovarianceLegacyAllPairs?: boolean;
 
   private solveNormalEquations(
     N: number[][],
@@ -124,6 +125,7 @@ export class LSAEngine extends LSAEngineObservationMethods {
       sparseSelectedCovarianceSolver: this.sparseSelectedCovarianceSolver,
       experimentalSparseDiagnostics: this.experimentalSparseDiagnostics,
       experimentalSelectedCovarianceMode: this.experimentalSelectedCovarianceMode,
+      experimentalSelectedCovarianceLegacyAllPairs: this.experimentalSelectedCovarianceLegacyAllPairs,
       connectedPairs: collectConnectedStationPairs(activeObservations),
       requestedPairs,
       log: this.log.bind(this),
@@ -162,6 +164,7 @@ export class LSAEngine extends LSAEngineObservationMethods {
     sparseSelectedCovarianceSolver,
     experimentalSparseDiagnostics,
     experimentalSelectedCovarianceMode,
+    experimentalSelectedCovarianceLegacyAllPairs,
   }: EngineOptions) {
     super();
     this.normalEquationSolver = normalEquationSolver;
@@ -170,6 +173,7 @@ export class LSAEngine extends LSAEngineObservationMethods {
     this.sparseSelectedCovarianceSolver = sparseSelectedCovarianceSolver;
     this.experimentalSparseDiagnostics = experimentalSparseDiagnostics;
     this.experimentalSelectedCovarianceMode = experimentalSelectedCovarianceMode;
+    this.experimentalSelectedCovarianceLegacyAllPairs = experimentalSelectedCovarianceLegacyAllPairs;
     this.input = input;
     this.maxIterations = maxIterations;
     this.instrumentLibrary = { ...instrumentLibrary };
@@ -226,6 +230,7 @@ export class LSAEngine extends LSAEngineObservationMethods {
       sparseSelectedCovarianceSolver: this.sparseSelectedCovarianceSolver,
       experimentalSparseDiagnostics: this.experimentalSparseDiagnostics,
       experimentalSelectedCovarianceMode: this.experimentalSelectedCovarianceMode,
+      experimentalSelectedCovarianceLegacyAllPairs: this.experimentalSelectedCovarianceLegacyAllPairs,
     }).solve();
   }
 

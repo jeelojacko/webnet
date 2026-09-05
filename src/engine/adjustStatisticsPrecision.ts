@@ -186,8 +186,9 @@ export const propagateAdjustmentPrecision = (
 
     const relativePrecision: NonNullable<AdjustmentResult['relativePrecision']> = [];
     // Selected mode never queried all-pairs entries, so only the legacy
-    // dense contract computes them; connected/requested pairs follow below.
-    const computeAllPairs = selectedStore == null;
+    // dense contract computes them; Phase 7B.5 compat stores carry every
+    // all-station pair (Option B) and reuse the identical dense formulas.
+    const computeAllPairs = selectedStore == null || selectedStore.legacyAllPairsCovered === true;
     for (let i = 0; computeAllPairs && i < ctx.unknowns.length; i += 1) {
       for (let j = i + 1; j < ctx.unknowns.length; j += 1) {
         const from = ctx.unknowns[i];

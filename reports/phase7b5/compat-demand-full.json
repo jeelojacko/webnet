@@ -1,0 +1,58 @@
+{
+  "generatedAt": "2026-09-05T19:10:13.393Z",
+  "runs": 2,
+  "rows": [
+    {
+      "id": "chain-2d-25",
+      "unknowns": 25,
+      "equationRows": 102,
+      "paramCount": 54,
+      "optionAQueries": 2500,
+      "optionBQueries": 1275,
+      "fractionBofA": 0.51,
+      "tsRefMedianMs": 40.4,
+      "compatMedianMs": 11.7,
+      "rssMb": 107.6,
+      "heapUsedMb": 32.2
+    },
+    {
+      "id": "chain-2d-50",
+      "unknowns": 50,
+      "equationRows": 202,
+      "paramCount": 104,
+      "optionAQueries": 10000,
+      "optionBQueries": 5050,
+      "fractionBofA": 0.505,
+      "tsRefMedianMs": 23.2,
+      "compatMedianMs": 19.7,
+      "rssMb": 122.9,
+      "heapUsedMb": 30.6
+    },
+    {
+      "id": "chain-2d-100",
+      "unknowns": 100,
+      "equationRows": 402,
+      "paramCount": 204,
+      "optionAQueries": 40000,
+      "optionBQueries": 20100,
+      "fractionBofA": 0.5025,
+      "tsRefMedianMs": 65.2,
+      "compatMedianMs": 65.1,
+      "rssMb": 176.7,
+      "heapUsedMb": 61.9
+    },
+    {
+      "id": "chain-2d-128",
+      "unknowns": 128,
+      "equationRows": 514,
+      "paramCount": 260,
+      "optionAQueries": 65536,
+      "optionBQueries": 32896,
+      "fractionBofA": 0.502,
+      "tsRefMedianMs": 105.5,
+      "compatMedianMs": 121.2,
+      "rssMb": 203.8,
+      "heapUsedMb": 34
+    }
+  ]
+}
