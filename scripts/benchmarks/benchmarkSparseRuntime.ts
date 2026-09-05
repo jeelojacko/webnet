@@ -23,7 +23,11 @@ import {
   createExperimentalSparseNumericalBundle,
 } from '../../src/engine/wasm/experimentalSparseNumericalBundle';
 import { createExperimentalSparseRouteDiagnostics } from '../../src/engine/experimentalSparseDiagnostics';
-import { buildPhase5BenchmarkCases } from '../../src/engine/phase5BenchmarkNetworks';
+import {
+  buildPhase5BenchmarkCases,
+  PHASE5_BENCHMARK_DEFAULT_MAX_UNKNOWN_COUNT,
+  phase5BenchmarkSizeSkipReason,
+} from '../../src/engine/phase5BenchmarkNetworks';
 import { compareSparseShadowResults } from '../../src/engine/phase6SparseShadowCompare';
 import type { WebNetWasmFactory } from '../../src/engine/wasm/wasmTypes';
 
@@ -86,6 +90,9 @@ const writeBaseline = process.argv.includes('--write-baseline');
 const warmups = Number(process.env.BENCH_WARMUPS ?? (quick ? 1 : 2));
 const runs = Number(process.env.BENCH_RUNS ?? (quick ? 3 : 5));
 const maxParams = Number(process.env.SPARSE_FULL_MAX_PARAMS ?? 2000);
+const maxUnknowns = Number(
+  process.env.BENCH_MAX_UNKNOWN_COUNT ?? PHASE5_BENCHMARK_DEFAULT_MAX_UNKNOWN_COUNT,
+);
 const coordToleranceM = 1e-6;
 
 const percentile = (values: number[], p: number): number => {
@@ -132,6 +139,21 @@ try {
 }
 
 const measurements: CaseProfile[] = cases.map((benchmarkCase) => {
+  const sizeSkipReason = phase5BenchmarkSizeSkipReason(benchmarkCase, maxUnknowns);
+  if (sizeSkipReason != null) {
+    return {
+      id: benchmarkCase.id,
+      family: benchmarkCase.family,
+      stations: benchmarkCase.stationCount,
+      unknowns: benchmarkCase.unknownCount,
+      observations: 0,
+      dof: 0,
+      routes: [
+        { route: 'ts-reference', status: 'skipped', skipReason: sizeSkipReason },
+        { route: 'sparse-selected-network', status: 'skipped', skipReason: sizeSkipReason },
+      ],
+    };
+  }
   const reference = new LSAEngine({ input: benchmarkCase.input }).solve();
   const unknowns = Object.values(reference.stations).filter((station) => !station.fixed).length;
   const paramEstimate = unknowns * 2;
@@ -231,6 +253,7 @@ const metadata = {
   runs,
   quick,
   maxParams,
+  maxUnknowns,
   coordToleranceM,
   note: 'Stage medians come from AdjustmentResult.solveTimingProfile; wall is outer LSAEngine.solve() time.',
 };

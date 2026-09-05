@@ -6,15 +6,37 @@ import {
   decimalDegreesToBearingDms,
   generatePhase5BenchmarkInput,
   listPhase5BenchmarkCases,
+  PHASE5_BENCHMARK_DEFAULT_MAX_UNKNOWN_COUNT,
+  phase5BenchmarkSizeSkipReason,
 } from '../src/engine/phase5BenchmarkNetworks';
 
 describe('phase 5 benchmark network generator', () => {
-  it('lists two quick cases and six full cases', () => {
+  it('lists two quick cases and nine full cases (existing plus medium)', () => {
     expect(listPhase5BenchmarkCases(true).map((spec) => spec.id)).toEqual([
       'chain-2d-04',
       'gps-2d-08',
     ]);
-    expect(listPhase5BenchmarkCases(false)).toHaveLength(6);
+    expect(listPhase5BenchmarkCases(false).map((spec) => spec.id)).toEqual([
+      'chain-2d-04',
+      'chain-2d-08',
+      'chain-2d-16',
+      'chain-2d-32',
+      'chain-2d-64',
+      'chain-2d-128',
+      'gps-2d-08',
+      'gps-2d-16',
+      'gps-2d-64',
+    ]);
+  });
+
+  it('guards oversized cases on every route via the size skip reason', () => {
+    const medium = { id: 'chain-2d-128', family: 'chain-2d' as const, unknownCount: 128, seed: 1128 };
+    expect(phase5BenchmarkSizeSkipReason(medium, PHASE5_BENCHMARK_DEFAULT_MAX_UNKNOWN_COUNT)).toBeNull();
+    expect(phase5BenchmarkSizeSkipReason(medium, 64)).toBe(
+      'size guard: 128 unknowns exceed BENCH_MAX_UNKNOWN_COUNT=64',
+    );
+    const small = { id: 'chain-2d-04', family: 'chain-2d' as const, unknownCount: 4, seed: 1101 };
+    expect(phase5BenchmarkSizeSkipReason(small, 64)).toBeNull();
   });
 
   it('regenerates byte-identical inputs for the same spec', () => {

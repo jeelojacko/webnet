@@ -21,6 +21,23 @@ export interface Phase5NetworkCase extends Phase5NetworkSpec {
   stationCount: number;
 }
 
+/** Default cap for the dense TS reference/all-pairs benchmark guard (unknown stations per case). */
+export const PHASE5_BENCHMARK_DEFAULT_MAX_UNKNOWN_COUNT = 256;
+
+/**
+ * Fails-closed size guard for benchmark cases: returns a skip reason when the
+ * case exceeds the unknown-station budget, otherwise null. Dense TS reference
+ * and legacy all-pairs relativePrecision scale as O(n^2) memory, so cases
+ * above the budget must be skipped on every route (not just sparse routes).
+ */
+export const phase5BenchmarkSizeSkipReason = (
+  spec: Phase5NetworkSpec,
+  maxUnknowns: number,
+): string | null =>
+  spec.unknownCount > maxUnknowns
+    ? `size guard: ${spec.unknownCount} unknowns exceed BENCH_MAX_UNKNOWN_COUNT=${maxUnknowns}`
+    : null;
+
 /** Case list for the full-adjustment benchmark; quick mode keeps two small cases. */
 export const listPhase5BenchmarkCases = (quick: boolean): Phase5NetworkSpec[] => {
   if (quick) {
@@ -34,8 +51,11 @@ export const listPhase5BenchmarkCases = (quick: boolean): Phase5NetworkSpec[] =>
     { id: 'chain-2d-08', family: 'chain-2d', unknownCount: 8, seed: 1108 },
     { id: 'chain-2d-16', family: 'chain-2d', unknownCount: 16, seed: 1116 },
     { id: 'chain-2d-32', family: 'chain-2d', unknownCount: 32, seed: 1132 },
+    { id: 'chain-2d-64', family: 'chain-2d', unknownCount: 64, seed: 1164 },
+    { id: 'chain-2d-128', family: 'chain-2d', unknownCount: 128, seed: 1128 },
     { id: 'gps-2d-08', family: 'gps-2d', unknownCount: 8, seed: 2202 },
     { id: 'gps-2d-16', family: 'gps-2d', unknownCount: 16, seed: 2216 },
+    { id: 'gps-2d-64', family: 'gps-2d', unknownCount: 64, seed: 2264 },
   ];
 };
 
