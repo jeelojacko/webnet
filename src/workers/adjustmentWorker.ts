@@ -1,15 +1,17 @@
 /**
  * Production browser worker: delegates runs to the lazily imported
- * `runAdjustmentSession` through the shared testable handler, wrapped with
- * the Phase 7C automatic sparse route (ordinary 2D <=64 adjustment jobs run
- * the real WASM sparse bundle with every-system oracle verification; any
- * failure cleanly reruns TypeScript). An injected worker-local runtime takes
- * precedence and bypasses the auto-route. The worker protocol is unchanged.
+ * `runAdjustmentSession` through the shared testable handler. Dispatch:
+ * injected worker-local runtime takes precedence and bypasses all
+ * auto-routes; preanalysis requests go through the Phase 8A.7 production
+ * preanalysis sparse route (default-disabled: disabled short-circuits to
+ * TypeScript with no WASM init); adjustment requests go through the
+ * existing Phase 7C automatic sparse route. The worker protocol is unchanged.
  */
 import type { AdjustmentWorkerRequestMessage } from '../engine/adjustmentWorkerProtocol';
 import type { runAdjustmentSession as RunAdjustmentSessionFn } from '../engine/runSession';
 import { createAdjustmentWorkerHandler, type AdjustmentWorkerSessionFn } from './adjustmentWorkerHandler';
 import { runWithSparseAutoRoute } from './adjustmentSparseAutoRoute';
+import { runWithPreanalysisSparseAutoRoute } from './preanalysisSparseAutoRoute';
 import { getAdjustmentWorkerRuntime } from './adjustmentWorkerRuntime';
 
 export { getAdjustmentWorkerRuntime, setAdjustmentWorkerRuntime } from './adjustmentWorkerRuntime';
@@ -31,6 +33,11 @@ const handler = createAdjustmentWorkerHandler({
     const runSession = await loadRunAdjustmentSession();
     const routed: AdjustmentWorkerSessionFn = (payload, onProgress, runtime) => {
       if (runtime !== undefined) return runSession(payload, onProgress, runtime);
+      if (payload.parseSettings?.runMode === 'preanalysis') {
+        return runWithPreanalysisSparseAutoRoute(payload, onProgress, { runSession }).then(
+          ({ outcome }) => outcome,
+        );
+      }
       return runWithSparseAutoRoute(payload, onProgress, { runSession }).then(
         ({ outcome }) => outcome,
       );
