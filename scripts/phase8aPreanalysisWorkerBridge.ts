@@ -88,12 +88,23 @@ interface OracleSummary {
   maxCorrectionDiff: number | null;
   damping: number | null;
   conditionEstimate: number | undefined;
+  /** Sparse-backend reported condition (result.conditionEstimate), kept beside the dense oracle. */
+  sparseConditionEstimate: number | undefined;
+  parameterCount: number;
+  observationEquationCount: number;
 }
 
 const summarizeSystems = (systems: CapturedSystem[]): OracleSummary[] =>
   systems.map((system) => {
     if (system.threw || system.result == null) {
-      return { maxCorrectionDiff: null, damping: null, conditionEstimate: undefined };
+      return {
+        maxCorrectionDiff: null,
+        damping: null,
+        conditionEstimate: undefined,
+        sparseConditionEstimate: undefined,
+        parameterCount: system.parameterCount,
+        observationEquationCount: system.observationEquationCount,
+      };
     }
     const measured = measurePhase7b7DenseOracle(
       {
@@ -124,6 +135,9 @@ const summarizeSystems = (systems: CapturedSystem[]): OracleSummary[] =>
       maxCorrectionDiff,
       damping: system.result.damping,
       conditionEstimate: measured.conditionEstimate,
+      sparseConditionEstimate: system.result.conditionEstimate,
+      parameterCount: system.parameterCount,
+      observationEquationCount: system.observationEquationCount,
     };
   });
 
