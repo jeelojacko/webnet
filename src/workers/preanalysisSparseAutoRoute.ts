@@ -40,11 +40,11 @@ import type {
 import { parseInput } from '../engine/parseInputCore';
 import {
   accumulatePackedNormal,
-  buildAllPairsQueries,
-  buildDiagonalQueries,
+  buildBoundedVerificationQueries,
   evaluateSentinelC1,
   evaluateSentinelC2,
   evaluateSentinelC3,
+  PREANALYSIS_SPARSE_VERIFICATION_COLUMN_COUNT,
   probeSelectedCovariance,
   validateSentinelPhysical,
 } from '../engine/preanalysisSparseCovarianceSentinel';
@@ -53,11 +53,6 @@ import {
   PREANALYSIS_SPARSE_PLANNING_SYSTEM_CAP,
   PREANALYSIS_SPARSE_UNKNOWN_CAP,
 } from '../engine/preanalysisSparseSessionPolicy';
-import {
-  choleskyDecomposeWithDamping,
-  invertSPDFromCholesky,
-} from '../engine/matrixCholesky';
-import { scaleNormalMatrix, unscaleNormalInverse } from '../engine/adjustNormalMatrixHelpers';
 import { SPARSE_CONDITION_THRESHOLD } from '../engine/sparseNormalCondition';
 import type { AdjustmentResult } from '../typesAdjustmentResult';
 import type {
@@ -76,7 +71,12 @@ export const PREANALYSIS_SPARSE_ROUTE_MAX_PLANNING_SYSTEMS = PREANALYSIS_SPARSE_
 /** Capture bound for selected-covariance calls (fail-closed truncation). */
 export const PREANALYSIS_SPARSE_ROUTE_MAX_CAPTURED_CALLS = 512;
 
-/** Verification bound: full all-pairs native re-query needs n^2 entries. */
+/**
+ * Backstop bound on native re-verification entries per system. The route
+ * never issues n^2 queries: verification uses at most
+ * PREANALYSIS_SPARSE_VERIFICATION_COLUMN_COUNT (16) complete columns
+ * (<=2,048 entries at n = 128). Exceeding this backstop fails closed.
+ */
 export const PREANALYSIS_SPARSE_ROUTE_MAX_VERIFICATION_QUERIES = 16384;
 
 /** Internal kill switch, DISABLED by default. No persisted or UI fields. */
@@ -402,67 +402,75 @@ const verifyCovarianceSystem = (
     return { index, parameterCount: n, reasons, warnings };
   }
   // C2 on the captured NATIVE production values (complete columns only).
+  // Production queries are station/pair blocks, so a production system
+  // routinely has no complete column: that state is reported explicitly
+  // here (never silently dropped) and the bounded verification below
+  // judges the system instead. Rejection stays fail-closed: when NEITHER
+  // production nor verification yields a complete column, the C3 branch
+  // below falls back.
   const prodValues = Array.from(call.result.covariance);
   const prodC2 = evaluateSentinelC2(normal, call.input.queryRows, call.input.queryColumns, prodValues);
-  if (prodC2.perColumnResidual.length > 0 && !prodC2.pass) {
+  if (prodC2.perColumnResidual.length === 0) {
+    warnings.push(`${tag}: production C2 has no complete column (${prodC2.reasons.join('; ').slice(0, 160)}); bounded verification decides`);
+  } else if (!prodC2.pass) {
     reasons.push(`${tag}: C2 rejects production native values: ${prodC2.reasons.join('; ').slice(0, 200)}`);
   }
-  // Bounded deterministic verification: full all-pairs through the same
-  // native delegate (never touches engine diagnostics or results).
+  // Bounded deterministic verification: at most 16 complete native
+  // columns through the same delegate (never touches engine diagnostics
+  // or results). No n^2 all-pairs re-query is ever issued.
   let verificationPass: boolean | null = null;
-  let verificationNote = 'unverified';
-  if (n * n <= PREANALYSIS_SPARSE_ROUTE_MAX_VERIFICATION_QUERIES) {
-    try {
-      const allPairs = buildAllPairsQueries(n);
+  try {
+    const bounded = buildBoundedVerificationQueries(n, PREANALYSIS_SPARSE_VERIFICATION_COLUMN_COUNT);
+    if (bounded.rows.length > PREANALYSIS_SPARSE_ROUTE_MAX_VERIFICATION_QUERIES) {
+      reasons.push(
+        `${tag}: verification needs ${bounded.rows.length} entries, exceeding backstop ${PREANALYSIS_SPARSE_ROUTE_MAX_VERIFICATION_QUERIES} (fail-closed)`,
+      );
+    } else {
       const verification = delegate.querySelected({
         design: call.input.design,
         weights: call.input.weights,
         observationEquationCount: call.input.observationEquationCount,
         parameterCount: n,
-        queryRows: allPairs.rows,
-        queryColumns: allPairs.columns,
+        queryRows: bounded.rows,
+        queryColumns: bounded.columns,
       });
       if (!Number.isFinite(verification.damping) || verification.damping !== 0) {
         reasons.push(`${tag}: verification native damping=${verification.damping} (undamped required)`);
       } else {
         const evaluated = evaluateSentinelC2(
           normal,
-          allPairs.rows,
-          allPairs.columns,
+          bounded.rows,
+          bounded.columns,
           Array.from(verification.covariance),
         );
         verificationPass = evaluated.pass;
-        verificationNote = `all-pairs n^2=${n * n} checked=${evaluated.perColumnResidual.length} residual=${evaluated.maxResidual.toExponential(2)}`;
+        warnings.push(
+          `${tag}: bounded verification cols=${bounded.verifiedColumns.length} checked=${evaluated.perColumnResidual.length} residual=${evaluated.maxResidual.toExponential(2)}`,
+        );
         if (!evaluated.pass) {
           reasons.push(`${tag}: C2 rejects verification native values: ${evaluated.reasons.join('; ').slice(0, 200)}`);
         }
       }
-    } catch (error) {
-      const detail = error instanceof Error ? error.message : String(error);
-      reasons.push(`${tag}: verification native query threw fail-closed: ${detail}`.slice(0, 200));
     }
-  } else {
-    reasons.push(`${tag}: verification skipped (n^2=${n * n} exceeds bound; fail-closed)`);
+  } catch (error) {
+    const detail = error instanceof Error ? error.message : String(error);
+    reasons.push(`${tag}: verification native query threw fail-closed: ${detail}`.slice(0, 200));
   }
-  // C1: TS diagonal probe vs dense reference (packed-decode consistency).
+  // C1: captured native values vs a TS selected-solve reference at the
+  // same queried entries. The reference factors dense N exactly once and
+  // solves only the distinct queried columns: no full inverse and no
+  // dense Qxx are ever materialized. Every queried entry is judged
+  // (complete-column residuals are C2's job); zero queries fail closed.
   let c1Pass: boolean | null = null;
   try {
-    const diagonal = buildDiagonalQueries(n);
-    const probe = probeSelectedCovariance(normal, diagonal.rows, diagonal.columns);
-    if (probe.damped) {
-      reasons.push(`${tag}: TS probe damped (fail-closed)`);
+    if (call.input.queryRows.length === 0) {
+      reasons.push(`${tag}: C1 needs at least one queried entry (fail-closed)`);
     } else {
-      const scaled = scaleNormalMatrix(normal);
-      const factorization = choleskyDecomposeWithDamping(scaled.scaled);
-      if (factorization.damping > 0) {
-        reasons.push(`${tag}: dense reference damped (fail-closed)`);
+      const probe = probeSelectedCovariance(normal, call.input.queryRows, call.input.queryColumns);
+      if (probe.damped) {
+        reasons.push(`${tag}: TS probe damped (fail-closed)`);
       } else {
-        const inverse = unscaleNormalInverse(
-          invertSPDFromCholesky(factorization.factor),
-          scaled.scale,
-        );
-        const reference = Array.from(diagonal.rows, (_, k) => inverse[diagonal.rows[k]!]?.[diagonal.columns[k]!] ?? Number.NaN);
-        const c1 = evaluateSentinelC1(probe.values, reference);
+        const c1 = evaluateSentinelC1(prodValues, probe.values);
         c1Pass = c1.pass;
         if (!c1.pass) {
           reasons.push(`${tag}: C1 rejects: ${c1.reasons.join('; ').slice(0, 200)}`);
@@ -473,7 +481,8 @@ const verifyCovarianceSystem = (
     const detail = error instanceof Error ? error.message : String(error);
     reasons.push(`${tag}: C1 threw fail-closed: ${detail}`.slice(0, 200));
   }
-  // C3 hybrid over C1 + native C2 (production C2 where complete, else verification).
+  // C3 hybrid over C1 + production native C2 where complete (the bounded
+  // verification C2 is judged separately above, never silently dropped).
   const c2ForC3 = prodC2.perColumnResidual.length > 0 ? prodC2 : null;
   if (c2ForC3 && verificationPass != null) {
     const c3 = evaluateSentinelC3({
@@ -481,7 +490,6 @@ const verifyCovarianceSystem = (
       c2: c2ForC3,
     });
     if (!c3.pass) reasons.push(`${tag}: C3 rejects: ${c3.reasons.join('; ').slice(0, 200)}`);
-    void verificationNote;
   } else if (verificationPass == null && c2ForC3 == null) {
     reasons.push(`${tag}: no complete native column (production or verification); full-column coverage required (fail-closed)`);
   }

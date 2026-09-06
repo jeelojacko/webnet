@@ -4,13 +4,17 @@
  * Production-safe pure sentinel built from the same packed sparse inputs the sparse backend consumes. It never allocates a dense weight matrix P and never reconstructs a full dense Qxx. The Phase 8A.6 evidence math is reused verbatim under neutral names; this module has no test/script imports and is safe for production routing (the route itself stays default-disabled).
  *
  * Designs:
- * - C1 dense-selected oracle: probed values vs a dense reference inverse
- *   sampled at the same selected entries (reference only, fail-closed).
- *   C1 validates the packed-decode path, not an independent solver.
+ * - C1 selected-entry oracle: captured native values vs a TS reference
+ *   solved at the same selected entries (reference only, fail-closed).
+ *   The reference factors dense N exactly once and solves only the
+ *   distinct queried columns: no full inverse and no dense Qxx are ever
+ *   materialized. At least one queried entry is required; C1 judges every
+ *   queried entry (complete columns are C2's job).
  * - C2 inverse residual: ||N q_j - e_j|| per column judged on the CAPTURED
  *   native/selected-solver values (never a re-solved TS factor, which
  *   would be tautological). Columns need full-row coverage or C2 fails
- *   closed.
+ *   closed. Native re-verification uses a bounded deterministic set of
+ *   complete columns (hard k = 16), never an n^2 all-pairs re-query.
  * - C3 hybrid: C1 (when an oracle is available) AND C2 must both pass.
  */
 
@@ -33,6 +37,18 @@ export const PREANALYSIS_SPARSE_C1_RELATIVE_TOLERANCE = 1e-6;
 
 /** Absolute floor under the C1 relative tolerance (mirrors contract gates). */
 export const PREANALYSIS_SPARSE_C1_ABSOLUTE_FLOOR = 1e-12;
+
+/**
+ * Hard verification-column bound for C2 native re-verification.
+ *
+ * Rationale: the pre-8B route re-queried all n^2 entries natively per
+ * planning system (16,384 entries at n = 128, ~15 ms/system, ~960 ms
+ * over a full 64-system session; see reports/phase8b/pre-sentinel-cost.md).
+ * k = 16 complete columns cost 2,048 entries / ~2.3 ms at n = 128.
+ * Columns are evenly spaced including 0 and n-1, each verified over all
+ * n rows (full columns only); systems with n <= k verify every column.
+ */
+export const PREANALYSIS_SPARSE_VERIFICATION_COLUMN_COUNT = 16;
 
 /** Infinity-norm tolerance for the C2 inverse residual per column. */
 export const PREANALYSIS_SPARSE_C2_RESIDUAL_TOLERANCE = 1e-6;
@@ -423,17 +439,42 @@ export const validateSentinelPhysical = (args: {
   return { valid: reasons.length === 0, reasons };
 };
 
-/** Deterministic selected-query builder: all pairs (legacy all-pairs shape), sorted. */
-export const buildAllPairsQueries = (n: number): { rows: Int32Array; columns: Int32Array } => {
+/**
+ * Deterministic bounded verification-query builder: complete columns
+ * only. Picks min(k, n) evenly spaced columns including 0 and n-1 and
+ * emits all n rows per column in column-major order, so every verified
+ * column has full-row coverage by construction. Never emits n^2 entries:
+ * at most k*n (2,048 at n = 128, k = 16). Throws fail-closed on bad input.
+ */
+export const buildBoundedVerificationQueries = (
+  n: number,
+  columnCount: number = PREANALYSIS_SPARSE_VERIFICATION_COLUMN_COUNT,
+): { rows: Int32Array; columns: Int32Array; verifiedColumns: number[] } => {
+  if (!Number.isInteger(n) || n <= 0 || n > PREANALYSIS_SPARSE_SENTINEL_MAX_UNKNOWN_COUNT) {
+    throw new Error('bounded verification requires 1..128 parameters (fail-closed).');
+  }
+  if (!Number.isInteger(columnCount) || columnCount <= 0) {
+    throw new Error('bounded verification requires a positive column count (fail-closed).');
+  }
+  const picked: number[] = [];
+  if (n <= columnCount) {
+    for (let column = 0; column < n; column += 1) picked.push(column);
+  } else {
+    for (let i = 0; i < columnCount; i += 1) {
+      const column = Math.min(n - 1, Math.floor((i * (n - 1)) / (columnCount - 1)));
+      if (!picked.includes(column)) picked.push(column);
+    }
+    picked.sort((a, b) => a - b);
+  }
   const rows: number[] = [];
   const columns: number[] = [];
-  for (let row = 0; row < n; row += 1) {
-    for (let column = 0; column < n; column += 1) {
+  for (const column of picked) {
+    for (let row = 0; row < n; row += 1) {
       rows.push(row);
       columns.push(column);
     }
   }
-  return { rows: Int32Array.from(rows), columns: Int32Array.from(columns) };
+  return { rows: Int32Array.from(rows), columns: Int32Array.from(columns), verifiedColumns: picked };
 };
 
 /** Deterministic diagonal-only query builder (minimal selected shape). */
