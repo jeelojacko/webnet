@@ -1,0 +1,561 @@
+{
+  "phase": "8A.6",
+  "scope": "TEST/EVIDENCE ONLY — pure policy boundaries plus emergent near-boundary sessions; no production enforcement",
+  "caps": {
+    "unknownCap": 128,
+    "planningSystemCap": 64
+  },
+  "exactUnknownBoundary": [
+    {
+      "unknownCount": 127,
+      "admit": true,
+      "reasons": []
+    },
+    {
+      "unknownCount": 128,
+      "admit": true,
+      "reasons": []
+    },
+    {
+      "unknownCount": 129,
+      "admit": false,
+      "reasons": [
+        "unknownCount 129 exceeds cap 128 (fail-closed)"
+      ]
+    }
+  ],
+  "exactSystemBoundary": [
+    {
+      "planningSystems": 63,
+      "admit": true,
+      "fallback": false
+    },
+    {
+      "planningSystems": 64,
+      "admit": true,
+      "fallback": false
+    },
+    {
+      "planningSystems": 65,
+      "admit": false,
+      "fallback": true
+    }
+  ],
+  "emergentNearBoundary": {
+    "note": "chain-star free counts map 1:1 to unknowns, so exactly 127/128/129 unknowns emerge direct-TS; 63/64/65 planning-system counts cannot emerge (preanalysis solves stay small), so system-count coverage is pure-policy (test-only limit)",
+    "rows": [
+      {
+        "free": 127,
+        "unknowns": 127,
+        "success": true,
+        "conditionEstimate": 9332371361146222,
+        "physicalValid": true
+      },
+      {
+        "free": 128,
+        "unknowns": 128,
+        "success": true,
+        "conditionEstimate": 9332371361146222,
+        "physicalValid": true
+      },
+      {
+        "free": 129,
+        "unknowns": 129,
+        "success": true,
+        "conditionEstimate": 9332371361146222,
+        "physicalValid": true
+      }
+    ],
+    "overCap129Rejects": true
+  },
+  "wholeSessionCandidates": [
+    {
+      "id": "p-small-2d",
+      "admit": true,
+      "fallback": false,
+      "restartIdentical": true
+    },
+    {
+      "id": "p-gps-2d",
+      "admit": true,
+      "fallback": false,
+      "restartIdentical": true
+    },
+    {
+      "id": "p-camp-bounded",
+      "admit": false,
+      "fallback": true,
+      "restartIdentical": true
+    },
+    {
+      "id": "p-size-chain-008",
+      "admit": true,
+      "fallback": false,
+      "restartIdentical": true
+    },
+    {
+      "id": "p-braced-quad",
+      "admit": true,
+      "fallback": false,
+      "restartIdentical": true
+    }
+  ],
+  "corpus": [
+    {
+      "id": "p-small-2d",
+      "family": "anchor",
+      "staticAdmit": true,
+      "unknownCount": 2,
+      "dof": 2,
+      "success": true,
+      "conditionEstimate": 1121379190406352.4,
+      "physicalValid": true,
+      "adversarial": false,
+      "workerRun": true
+    },
+    {
+      "id": "p-plan-2d",
+      "family": "anchor",
+      "staticAdmit": true,
+      "unknownCount": 2,
+      "dof": 3,
+      "success": true,
+      "conditionEstimate": 372577544841506.94,
+      "physicalValid": true,
+      "adversarial": false,
+      "workerRun": false
+    },
+    {
+      "id": "p-gps-2d",
+      "family": "anchor",
+      "staticAdmit": true,
+      "unknownCount": 2,
+      "dof": 6,
+      "success": true,
+      "conditionEstimate": 1148456790.2759562,
+      "physicalValid": true,
+      "adversarial": false,
+      "workerRun": true
+    },
+    {
+      "id": "p-camp-bounded",
+      "family": "anchor",
+      "staticAdmit": true,
+      "unknownCount": 47,
+      "dof": 365,
+      "success": true,
+      "conditionEstimate": 1.1645149414742463e+51,
+      "physicalValid": true,
+      "adversarial": false,
+      "workerRun": true
+    },
+    {
+      "id": "p-size-chain-008",
+      "family": "size-chain",
+      "staticAdmit": true,
+      "unknownCount": 8,
+      "dof": 8,
+      "success": true,
+      "conditionEstimate": 8471753892104241,
+      "physicalValid": true,
+      "adversarial": false,
+      "workerRun": true
+    },
+    {
+      "id": "p-size-chain-016",
+      "family": "size-chain",
+      "staticAdmit": true,
+      "unknownCount": 16,
+      "dof": 16,
+      "success": true,
+      "conditionEstimate": 8471753892104241,
+      "physicalValid": true,
+      "adversarial": false,
+      "workerRun": false
+    },
+    {
+      "id": "p-size-chain-032",
+      "family": "size-chain",
+      "staticAdmit": true,
+      "unknownCount": 32,
+      "dof": 32,
+      "success": true,
+      "conditionEstimate": 9332371361146222,
+      "physicalValid": true,
+      "adversarial": false,
+      "workerRun": false
+    },
+    {
+      "id": "p-size-chain-048",
+      "family": "size-chain",
+      "staticAdmit": true,
+      "unknownCount": 48,
+      "dof": 48,
+      "success": true,
+      "conditionEstimate": 9332371361146222,
+      "physicalValid": true,
+      "adversarial": false,
+      "workerRun": false
+    },
+    {
+      "id": "p-size-chain-064",
+      "family": "size-chain",
+      "staticAdmit": true,
+      "unknownCount": 64,
+      "dof": 64,
+      "success": true,
+      "conditionEstimate": 9332371361146222,
+      "physicalValid": true,
+      "adversarial": false,
+      "workerRun": false
+    },
+    {
+      "id": "p-size-chain-096",
+      "family": "size-chain",
+      "staticAdmit": true,
+      "unknownCount": 96,
+      "dof": 96,
+      "success": true,
+      "conditionEstimate": 9332371361146222,
+      "physicalValid": true,
+      "adversarial": false,
+      "workerRun": false
+    },
+    {
+      "id": "p-size-chain-128",
+      "family": "size-chain",
+      "staticAdmit": true,
+      "unknownCount": 128,
+      "dof": 128,
+      "success": true,
+      "conditionEstimate": 9332371361146222,
+      "physicalValid": true,
+      "adversarial": false,
+      "workerRun": false
+    },
+    {
+      "id": "p-size-chain-256",
+      "family": "size-chain",
+      "staticAdmit": false,
+      "unknownCount": 256,
+      "dof": 256,
+      "success": true,
+      "conditionEstimate": 10740622092156928,
+      "physicalValid": true,
+      "adversarial": false,
+      "workerRun": false
+    },
+    {
+      "id": "p-size-gps-008",
+      "family": "size-gps",
+      "staticAdmit": true,
+      "unknownCount": 4,
+      "dof": 8,
+      "success": true,
+      "conditionEstimate": 400000000.0531145,
+      "physicalValid": true,
+      "adversarial": false,
+      "workerRun": false
+    },
+    {
+      "id": "p-size-gps-016",
+      "family": "size-gps",
+      "staticAdmit": true,
+      "unknownCount": 8,
+      "dof": 16,
+      "success": true,
+      "conditionEstimate": 400000000.0531145,
+      "physicalValid": true,
+      "adversarial": false,
+      "workerRun": false
+    },
+    {
+      "id": "p-size-gps-032",
+      "family": "size-gps",
+      "staticAdmit": true,
+      "unknownCount": 16,
+      "dof": 32,
+      "success": true,
+      "conditionEstimate": 400000000.0531145,
+      "physicalValid": true,
+      "adversarial": false,
+      "workerRun": false
+    },
+    {
+      "id": "p-size-gps-064",
+      "family": "size-gps",
+      "staticAdmit": true,
+      "unknownCount": 32,
+      "dof": 64,
+      "success": true,
+      "conditionEstimate": 400000000.0531145,
+      "physicalValid": true,
+      "adversarial": false,
+      "workerRun": false
+    },
+    {
+      "id": "p-weight-tight",
+      "family": "weight-sweep",
+      "staticAdmit": true,
+      "unknownCount": 4,
+      "dof": 4,
+      "success": true,
+      "conditionEstimate": 135668405484004690,
+      "physicalValid": true,
+      "adversarial": false,
+      "workerRun": false
+    },
+    {
+      "id": "p-weight-loose-dist",
+      "family": "weight-sweep",
+      "staticAdmit": true,
+      "unknownCount": 4,
+      "dof": 4,
+      "success": true,
+      "conditionEstimate": 8465760783805861,
+      "physicalValid": true,
+      "adversarial": false,
+      "workerRun": false
+    },
+    {
+      "id": "p-weight-loose-angle",
+      "family": "weight-sweep",
+      "staticAdmit": true,
+      "unknownCount": 4,
+      "dof": 4,
+      "success": true,
+      "conditionEstimate": 13786798165710.484,
+      "physicalValid": true,
+      "adversarial": false,
+      "workerRun": false
+    },
+    {
+      "id": "p-weight-mixed",
+      "family": "weight-sweep",
+      "staticAdmit": true,
+      "unknownCount": 8,
+      "dof": 8,
+      "success": true,
+      "conditionEstimate": 529244012574019.06,
+      "physicalValid": true,
+      "adversarial": false,
+      "workerRun": false
+    },
+    {
+      "id": "p-weight-loose-both",
+      "family": "weight-sweep",
+      "staticAdmit": true,
+      "unknownCount": 4,
+      "dof": 4,
+      "success": true,
+      "conditionEstimate": 13546048600362.463,
+      "physicalValid": true,
+      "adversarial": true,
+      "workerRun": false
+    },
+    {
+      "id": "p-cond-resection-weak",
+      "family": "condition",
+      "staticAdmit": true,
+      "unknownCount": 1,
+      "dof": 1,
+      "success": true,
+      "conditionEstimate": 49581012438.22822,
+      "physicalValid": true,
+      "adversarial": true,
+      "workerRun": false
+    },
+    {
+      "id": "p-cond-collinear",
+      "family": "condition",
+      "staticAdmit": true,
+      "unknownCount": 3,
+      "dof": 0,
+      "success": true,
+      "conditionEstimate": 309748999714.19507,
+      "physicalValid": true,
+      "adversarial": true,
+      "workerRun": false
+    },
+    {
+      "id": "p-cond-angle-only",
+      "family": "condition",
+      "staticAdmit": true,
+      "unknownCount": 3,
+      "dof": -1,
+      "success": false,
+      "conditionEstimate": null,
+      "physicalValid": true,
+      "adversarial": true,
+      "workerRun": false
+    },
+    {
+      "id": "p-cond-single-tie",
+      "family": "condition",
+      "staticAdmit": true,
+      "unknownCount": 1,
+      "dof": -1,
+      "success": false,
+      "conditionEstimate": null,
+      "physicalValid": true,
+      "adversarial": false,
+      "workerRun": false
+    },
+    {
+      "id": "p-cond-narrow-brace",
+      "family": "condition",
+      "staticAdmit": true,
+      "unknownCount": 2,
+      "dof": 3,
+      "success": true,
+      "conditionEstimate": 5549994851029187,
+      "physicalValid": true,
+      "adversarial": true,
+      "workerRun": false
+    },
+    {
+      "id": "p-cond-distant-pair",
+      "family": "condition",
+      "staticAdmit": true,
+      "unknownCount": 2,
+      "dof": 1,
+      "success": true,
+      "conditionEstimate": 208229528251.40128,
+      "physicalValid": true,
+      "adversarial": true,
+      "workerRun": false
+    },
+    {
+      "id": "p-braced-quad",
+      "family": "redundant",
+      "staticAdmit": true,
+      "unknownCount": 4,
+      "dof": 2,
+      "success": true,
+      "conditionEstimate": 19742655457194564,
+      "physicalValid": true,
+      "adversarial": false,
+      "workerRun": true
+    },
+    {
+      "id": "p-chain-branch",
+      "family": "redundant",
+      "staticAdmit": true,
+      "unknownCount": 4,
+      "dof": 0,
+      "success": true,
+      "conditionEstimate": 308813181936809900,
+      "physicalValid": true,
+      "adversarial": false,
+      "workerRun": false
+    },
+    {
+      "id": "p-redundant-star",
+      "family": "redundant",
+      "staticAdmit": true,
+      "unknownCount": 2,
+      "dof": 5,
+      "success": true,
+      "conditionEstimate": 52448435611053780,
+      "physicalValid": true,
+      "adversarial": false,
+      "workerRun": false
+    },
+    {
+      "id": "p-redundant-ring",
+      "family": "redundant",
+      "staticAdmit": true,
+      "unknownCount": 4,
+      "dof": 1,
+      "success": true,
+      "conditionEstimate": 53376043819827960,
+      "physicalValid": true,
+      "adversarial": false,
+      "workerRun": false
+    },
+    {
+      "id": "p-mixed-dag",
+      "family": "redundant",
+      "staticAdmit": true,
+      "unknownCount": 6,
+      "dof": 6,
+      "success": true,
+      "conditionEstimate": 20689455718039092,
+      "physicalValid": true,
+      "adversarial": false,
+      "workerRun": false
+    },
+    {
+      "id": "p-rank-floating",
+      "family": "rank-experimental",
+      "staticAdmit": true,
+      "unknownCount": 3,
+      "dof": -3,
+      "success": false,
+      "conditionEstimate": null,
+      "physicalValid": true,
+      "adversarial": false,
+      "workerRun": false
+    },
+    {
+      "id": "p-rank-free-pair",
+      "family": "rank-experimental",
+      "staticAdmit": true,
+      "unknownCount": 2,
+      "dof": -3,
+      "success": false,
+      "conditionEstimate": null,
+      "physicalValid": true,
+      "adversarial": false,
+      "workerRun": false
+    },
+    {
+      "id": "p-excl-3d",
+      "family": "exclusion",
+      "staticAdmit": false,
+      "unknownCount": null,
+      "dof": 0,
+      "success": true,
+      "conditionEstimate": 876589983770250.9,
+      "physicalValid": true,
+      "adversarial": false,
+      "workerRun": false
+    },
+    {
+      "id": "p-excl-gps-cov",
+      "family": "exclusion",
+      "staticAdmit": false,
+      "unknownCount": 1,
+      "dof": 2,
+      "success": true,
+      "conditionEstimate": 400000000.0531145,
+      "physicalValid": true,
+      "adversarial": false,
+      "workerRun": false
+    },
+    {
+      "id": "p-excl-robust",
+      "family": "exclusion",
+      "staticAdmit": false,
+      "unknownCount": null,
+      "dof": 4,
+      "success": true,
+      "conditionEstimate": 8471753892104241,
+      "physicalValid": true,
+      "adversarial": false,
+      "workerRun": false
+    },
+    {
+      "id": "p-excl-tscorr",
+      "family": "exclusion",
+      "staticAdmit": false,
+      "unknownCount": null,
+      "dof": 4,
+      "success": true,
+      "conditionEstimate": 8471753892104241,
+      "physicalValid": true,
+      "adversarial": false,
+      "workerRun": false
+    }
+  ]
+}
