@@ -24,4 +24,6 @@ This directory contains app-shell, report, map, modal, import-review, export, an
 Run the most relevant UI or jsdom suites plus:
 - `npm run lint`
 - `npm run typecheck`
-- `npm run test:run`
+- `npm run test:agent`
+
+Significant UI work also runs `npm run test:full` (== `test:run`) before completion. Tier definitions and escalation rules live in [docs/TEST_TIERS.md](../../docs/TEST_TIERS.md).

@@ -53,8 +53,9 @@ jobs:
     # Focused real-route gate (CI-sized): the real WASM artifact must exist
     # (absence fails, never skips), the route stays default-OFF, and the
     # anchor/camp/eligible-adjustment shapes hold through the exact
-    # production worker dispatch. The 10-minute 120-session stress and the
-    # browser proof stay local-only (see reports/phase8b1/).
+    # production worker dispatch. The 10-minute 120-session release stress
+    # already runs in the main job's full-suite Test step (npm run test:run);
+    # the browser proof stays local-only (see reports/phase8b1/).
     runs-on: ubuntu-latest
     steps:
       - name: Checkout

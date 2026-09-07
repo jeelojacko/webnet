@@ -92,17 +92,27 @@ WebNet is a browser-based least-squares adjustment application for mixed survey 
 
 ## Commands
 
-Run after each completed batch:
+Run `npm install` only when dependencies or the lockfile changed.
 
-- `npm install`
+Tests are tiered (`docs/TEST_TIERS.md`); the everyday agent loop is:
+
 - `npm run lint`
 - `npm run typecheck`
-- `npm run test`
-- `npm run build`
+- `npm run test:agent` (broad regression; ~1 min) plus relevant focused tests
+- `npm run build` when the completion workflow requires it
 
-For parity-sensitive work, also run:
+Escalations:
 
-- `npm run parity:industry-reference`
+- Engine/worker/WASM-bridge/sparse-routing TypeScript changes (no C++): also `npm run test:wasm`; parity-sensitive work also runs `npm run parity:industry-reference`.
+- `cpp/**` or WASM build-glue changes: `npm run wasm:build`, `npm run cpp:test`, `npm run test:wasm`, plus the agent validation above.
+- Release/certification/numerical-migration work: `npm run test:release` and `npm run test:full` before declaring completion.
+- Before a significant branch is declared complete: `npm run test:full` (== `test:run`) and `npm run build`, plus all task-specific gates.
+
+Test-tier rules:
+
+- `test:full`/`test:run` stays the authoritative full suite; GitHub CI keeps running it.
+- A new test expected to take more than ~10 s because it performs stress, evidence, repeated real-WASM sessions, browser certification, or performance campaigns must be explicitly classified in `scripts/testTiers.ts` (WASM or release tier) instead of silently joining the agent tier.
+- Never gate on absolute runtime (machines differ); tier membership is the contract.
 
 ## Done when
 
