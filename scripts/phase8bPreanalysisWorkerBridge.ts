@@ -177,5 +177,18 @@ shim.postMessage = (message: unknown) => {
 };
 
 parentPort?.on('message', (data: unknown) => {
+  const record = data as { type?: unknown };
+  // Test-only observability: memory + route counters without touching
+  // the production dispatch (never a run path, never injected runtime).
+  if (record?.type === 'phase8b-mem') {
+    const memory = process.memoryUsage();
+    parentPort?.postMessage({
+      type: 'phase8b-mem',
+      runId: (record as { runId?: unknown }).runId ?? null,
+      memory: { rss: memory.rss, heapUsed: memory.heapUsed, heapTotal: memory.heapTotal },
+      diagnostics: { ...counters },
+    });
+    return;
+  }
   shim.onmessage?.({ data });
 });
