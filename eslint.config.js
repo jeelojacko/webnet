@@ -6,7 +6,7 @@ import tsParser from '@typescript-eslint/parser';
 import { defineConfig, globalIgnores } from 'eslint/config';
 
 export default defineConfig([
-  globalIgnores(['dist', 'dist-webnet', 'test-results', 'playwright-report', 'cpp/build*']),
+  globalIgnores(['dist', 'dist-webnet', 'test-results', 'playwright-report', 'emsdk-cache', 'cpp/build*']),
   {
     files: ['**/*.{js,jsx,ts,tsx}'],
     ignores: ['node_modules'],
