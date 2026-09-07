@@ -242,6 +242,7 @@ export const evaluateSentinelC1 = (
   let maxRelativeDiff = 0;
   probed.forEach((value, k) => {
     const expected = reference[k] ?? Number.NaN;
+    const magnitude = Math.abs(expected);
     const diff = Math.abs(value - expected);
     if (!Number.isFinite(diff)) {
       if (reasons.length < 8) reasons.push(`entry ${k}: non-finite comparison (fail-closed)`);
@@ -250,8 +251,17 @@ export const evaluateSentinelC1 = (
       return;
     }
     maxAbsoluteDiff = Math.max(maxAbsoluteDiff, diff);
-    maxRelativeDiff = Math.max(maxRelativeDiff, diff / Math.max(1, Math.abs(expected)));
-    const allowed = Math.max(PREANALYSIS_SPARSE_C1_ABSOLUTE_FLOOR, tolerance * Math.max(1, Math.abs(expected)));
+    // Scale by the entry magnitude floored at the absolute floor: tiny
+    // covariances judge against the floor instead of inheriting a unit
+    // scale that would hide large relative corruption.
+    maxRelativeDiff = Math.max(
+      maxRelativeDiff,
+      diff / Math.max(magnitude, PREANALYSIS_SPARSE_C1_ABSOLUTE_FLOOR),
+    );
+    const allowed = Math.max(
+      PREANALYSIS_SPARSE_C1_ABSOLUTE_FLOOR,
+      tolerance * magnitude,
+    );
     if (diff > allowed && reasons.length < 8) {
       reasons.push(`entry ${k}: diff ${diff.toExponential(2)} exceeds ${allowed.toExponential(2)}`);
     }
