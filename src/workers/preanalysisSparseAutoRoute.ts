@@ -1,5 +1,5 @@
 /**
- * Phase 8A.7 production preanalysis sparse route (default-disabled).
+ * Production preanalysis sparse route (enabled after Phase 8B.2).
  *
  * Whole-session atomic candidate for single-solve-shaped 2D plain-mode
  * preanalysis jobs: when enabled AND eligible, the request runs once with
@@ -11,9 +11,9 @@
  * estimates are warn-only (production semantics); the correction oracle
  * carries no authority (the planning correction is discarded by contract).
  *
- * Default-disabled: `isPreanalysisSparseAutoRouteEnabled()` is false
- * unless `setPreanalysisSparseAutoRouteEnabled(true)` is called (tests
- * only). Disabled short-circuits to TypeScript with no WASM init.
+ * The shipped default is enabled; `setPreanalysisSparseAutoRouteEnabled(false)`
+ * remains an internal emergency/test kill switch. Disabled short-circuits to
+ * TypeScript with no WASM init.
  * No protocol, UI, persistence, tolerance, or preanalysis-semantics
  * changes. Production-safe: no evidence-only, test-helper, or script imports.
  *
@@ -79,7 +79,7 @@ export const PREANALYSIS_SPARSE_ROUTE_MAX_CAPTURED_CALLS = 512;
  */
 export const PREANALYSIS_SPARSE_ROUTE_MAX_VERIFICATION_QUERIES = 16384;
 
-/** Internal kill switch, DISABLED by default. No persisted or UI fields. */
+/** Internal kill switch. No persisted or UI fields; retained for rollback. */
 let preanalysisSparseAutoRouteEnabled = true;
 
 /** Enables/disables the production preanalysis sparse route (internal/test-only). */
@@ -87,7 +87,7 @@ export const setPreanalysisSparseAutoRouteEnabled = (enabled: boolean): void => 
   preanalysisSparseAutoRouteEnabled = enabled;
 };
 
-/** Reports the kill-switch state (false by default). */
+/** Reports the current kill-switch state (true by default). */
 export const isPreanalysisSparseAutoRouteEnabled = (): boolean => preanalysisSparseAutoRouteEnabled;
 
 export interface PreanalysisSparseAutoRouteTestHooks {

@@ -10,14 +10,9 @@
 //      preanalysis camp fallback-shape, 2D adjustment. Outcomes must be
 //      bit-identical (stable key) to the Node TypeScript references.
 //
-// The shipped route stays default-OFF: the browser worker has no enable
-// path by design, so this proof covers default-off production behavior
-// (eligible-input determinism, camp fallback identity, planning-coordinate
-// invariants via the stable key, adjustment non-root regression) at / and
-// /webnet/. Enabled sparse acceptance is proven in Node through the exact
-// same worker file (tests/phase8b1_preanalysis_release.test.ts) AND
-// in-browser through the test-only phase8b1ProofWorker.js wrapper asserted
-// below (anchor native-path divergence + camp fallback bit-identity).
+// The shipped route is enabled by default after Phase 8B.2. This proof
+// exercises the emitted production adjustment worker at / and /webnet/ and
+// checks sparse acceptance plus clean TypeScript fallback behavior.
 //
 // Writes reports/phase8b1/browser-proof.json (deterministic: pass/fail,
 // counts, keys matched; no timings). Fails loudly on any mismatch.
@@ -321,7 +316,7 @@ const proveBase = async (browser, base, distDir, inputs) => {
     const enabledAnchorCore = compareCore(JSON.parse(inputs.keys.anchor), JSON.parse(stableKeyOf(enabledAnchor)));
     const anchorPathDiverged = stableKeyOf(enabledAnchor) !== inputs.keys.anchor;
     if (!anchorPathDiverged) {
-      throw new Error(`${base}: enabled wrapper anchor is bit-identical to the default-OFF run (native sparse path not taken)`);
+      throw new Error(`${base}: shipped default anchor did not take the native sparse path`);
     }
     const enabledCamp = await runWorkerSession(page, proofWorker, inputs.requests.camp, 'phase8b2-enabled-camp');
     compareCore(JSON.parse(inputs.keys.camp), JSON.parse(stableKeyOf(enabledCamp)));

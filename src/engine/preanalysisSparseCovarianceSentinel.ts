@@ -1,7 +1,7 @@
 /**
  * Phase 8A.7 production-safe packed sparse normal accumulator + covariance sentinel.
  *
- * Production-safe pure sentinel built from the same packed sparse inputs the sparse backend consumes. It never allocates a dense weight matrix P and never reconstructs a full dense Qxx. The Phase 8A.6 evidence math is reused verbatim under neutral names; this module has no test/script imports and is safe for production routing (the route itself stays default-disabled).
+ * Production-safe pure sentinel built from the same packed sparse inputs the sparse backend consumes. It never allocates a dense weight matrix P and never reconstructs a full dense Qxx. The Phase 8A.6 evidence math is reused verbatim under neutral names; this module has no test/script imports and is safe for production routing (the route is enabled by default after Phase 8B.2, with an internal rollback switch).
  *
  * Designs:
  * - C1 selected-entry oracle: captured native values vs a TS reference

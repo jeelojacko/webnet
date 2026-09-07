@@ -3,7 +3,7 @@
  * `runAdjustmentSession` through the shared testable handler. Dispatch:
  * injected worker-local runtime takes precedence and bypasses all
  * auto-routes; preanalysis requests go through the Phase 8A.7 production
- * preanalysis sparse route (default-disabled: disabled short-circuits to
+ * preanalysis sparse route (enabled by default; disabling short-circuits to
  * TypeScript with no WASM init); adjustment requests go through the
  * existing Phase 7C automatic sparse route. The worker protocol is unchanged.
  */
