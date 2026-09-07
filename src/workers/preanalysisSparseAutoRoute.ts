@@ -80,7 +80,7 @@ export const PREANALYSIS_SPARSE_ROUTE_MAX_CAPTURED_CALLS = 512;
 export const PREANALYSIS_SPARSE_ROUTE_MAX_VERIFICATION_QUERIES = 16384;
 
 /** Internal kill switch. No persisted or UI fields; retained for rollback. */
-let preanalysisSparseAutoRouteEnabled = true;
+let preanalysisSparseAutoRouteEnabled = false;
 
 /** Enables/disables the production preanalysis sparse route (internal/test-only). */
 export const setPreanalysisSparseAutoRouteEnabled = (enabled: boolean): void => {
