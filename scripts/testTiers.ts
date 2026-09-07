@@ -26,8 +26,6 @@
  * browser certification, or performance campaigns MUST be added here
  * (WASM or EVIDENCE) instead of silently joining the agent tier.
  *
- * Handoff: when the Phase 9A cap-widening branch lands on main, add
- * 'tests/evidence/phase9a_cap_widening_evidence.test.ts' to EVIDENCE_TESTS.
  */
 
 /**
@@ -38,12 +36,12 @@ export const EVIDENCE_TESTS = [
   'tests/evidence/phase8b1_preanalysis_release.test.ts',
   'tests/evidence/phase8a6_session_evidence.test.ts',
   'tests/evidence/phase8a5_preanalysis_safety_evidence.test.ts',
+  'tests/evidence/phase9a_cap_widening_evidence.test.ts',
 ] as const;
 
 /** Fast automatic release-certification gate (committed-report verdict). */
 export const RELEASE_TESTS = [
   'tests/phase8b1_release_verdict.test.ts',
-] as const;
 
 /** Focused real-WASM / worker / native integration tests. */
 export const WASM_INTEGRATION_TESTS = [
