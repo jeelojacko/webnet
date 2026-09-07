@@ -104,6 +104,12 @@ jobs:
       - name: Build WASM test artifact
         if: ${{ needs.classify.outputs.numerical_required == 'true' }}
         run: npm run wasm:build
+      - name: Configure native C++ tests
+        if: ${{ needs.classify.outputs.numerical_required == 'true' }}
+        run: npm run cpp:configure
+      - name: Build native C++ tests
+        if: ${{ needs.classify.outputs.numerical_required == 'true' }}
+        run: npm run cpp:build
       - name: CTest
         if: ${{ needs.classify.outputs.numerical_required == 'true' }}
         run: npm run cpp:test
