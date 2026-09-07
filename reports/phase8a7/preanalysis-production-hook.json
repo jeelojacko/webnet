@@ -1,0 +1,17 @@
+{
+  "phase": "8A.7",
+  "defaultEnabled": false,
+  "disabledNoWasmInit": true,
+  "disabledRoute": "typescript",
+  "disabledDeepEqual": true,
+  "enabledRoute": "sparse",
+  "enabledDeepEqual": true,
+  "enabledContractReasons": [],
+  "caps": {
+    "unknownCap": 128,
+    "planningSystemCap": 64
+  },
+  "preDispatchEnforcement": true,
+  "noForbiddenImports": [],
+  "adjustmentRegression": true
+}

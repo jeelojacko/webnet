@@ -1,0 +1,37 @@
+{
+  "scope": "TEST/EVIDENCE ONLY — direct TypeScript, no worker run",
+  "rows": [
+    {
+      "id": "e-small-3d",
+      "kind": "experimental-3d",
+      "reasons": [
+        "dimension '3D': 3D preanalysis is experimental evidence only"
+      ],
+      "detail": "iter=1 dof=0 seuw=1 solves=6 autoRouteEligible=false"
+    },
+    {
+      "id": "e-gps-covariance-2d",
+      "kind": "experimental-gps-covariance",
+      "reasons": [
+        "GPS covariance weighting: covariance-weighted preanalysis is experimental evidence only"
+      ],
+      "detail": "iter=1 dof=2 seuw=1 solves=6 autoRouteEligible=false"
+    },
+    {
+      "id": "x-robust-2d",
+      "kind": "ineligible-robust",
+      "reasons": [
+        "robustMode 'huber': robust preanalysis is ineligible for sparse evidence"
+      ],
+      "detail": "iter=1 dof=6 seuw=1 solves=15 autoRouteEligible=false"
+    },
+    {
+      "id": "x-ts-correlation-2d",
+      "kind": "ineligible-ts-correlation",
+      "reasons": [
+        "TS correlation: correlated preanalysis is ineligible for sparse evidence"
+      ],
+      "detail": "iter=1 dof=6 seuw=1 solves=15 autoRouteEligible=false"
+    }
+  ]
+}

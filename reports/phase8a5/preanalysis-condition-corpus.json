@@ -1,0 +1,2879 @@
+{
+  "phase": "8A.5",
+  "scope": "TEST/EVIDENCE ONLY — direct TypeScript for every case, actual worker for the bounded subset; no production changes",
+  "thresholds": {
+    "condition": 1000000000000,
+    "correction": 1e-9,
+    "sentinelRelative": 0.000001
+  },
+  "sessionSummary": {
+    "note": "min/median/max/worst over all corpus sessions; timings recorded only, never gated",
+    "solvesMin": 3,
+    "solvesMedian": 36.5,
+    "solvesMax": 45,
+    "dofMin": -3,
+    "dofMax": 365,
+    "conditionWorst": 1.1645149414742463e+51,
+    "directMsMax": 74694,
+    "workerWorstCorrectionDiff": 257.59290890637567,
+    "workerRunCount": 6
+  },
+  "cases": [
+    {
+      "id": "p-small-2d",
+      "family": "anchor",
+      "expectedKind": "eligible-2d",
+      "classifiedKind": "eligible-2d",
+      "staticAdmit": true,
+      "unknownCount": 2,
+      "dof": 2,
+      "success": true,
+      "iterations": 1,
+      "seuw": 1,
+      "conditionEstimate": 1121379190406352.4,
+      "solves": 15,
+      "directMs": 147,
+      "physicalValid": true,
+      "workerRun": true,
+      "systems": [
+        {
+          "index": 0,
+          "parameterCount": 4,
+          "observationEquationCount": 6,
+          "systemDof": 2,
+          "sparseConditionEstimate": 1121379190406352.4,
+          "denseConditionEstimate": 1121379190406352.4,
+          "damping": 0,
+          "maxCorrectionDiff": 0
+        },
+        {
+          "index": 1,
+          "parameterCount": 4,
+          "observationEquationCount": 6,
+          "systemDof": 2,
+          "sparseConditionEstimate": 1121379190406352.4,
+          "denseConditionEstimate": 1121379190406352.4,
+          "damping": 0,
+          "maxCorrectionDiff": 0
+        },
+        {
+          "index": 2,
+          "parameterCount": 5,
+          "observationEquationCount": 8,
+          "systemDof": 3,
+          "sparseConditionEstimate": 930105094569891600000,
+          "denseConditionEstimate": 930105094569891600000,
+          "damping": 0,
+          "maxCorrectionDiff": 0
+        },
+        {
+          "index": 3,
+          "parameterCount": 5,
+          "observationEquationCount": 8,
+          "systemDof": 3,
+          "sparseConditionEstimate": 474513982506027500000,
+          "denseConditionEstimate": 474513982506027500000,
+          "damping": 0,
+          "maxCorrectionDiff": 0
+        },
+        {
+          "index": 4,
+          "parameterCount": 4,
+          "observationEquationCount": 12,
+          "systemDof": 8,
+          "sparseConditionEstimate": 4485516761625408.5,
+          "denseConditionEstimate": 4485516761625408.5,
+          "damping": 0,
+          "maxCorrectionDiff": 0
+        },
+        {
+          "index": 5,
+          "parameterCount": 5,
+          "observationEquationCount": 8,
+          "systemDof": 3,
+          "sparseConditionEstimate": 249104820785661740000,
+          "denseConditionEstimate": 249104820785661740000,
+          "damping": 0,
+          "maxCorrectionDiff": 0
+        },
+        {
+          "index": 6,
+          "parameterCount": 5,
+          "observationEquationCount": 8,
+          "systemDof": 3,
+          "sparseConditionEstimate": 930105094569891600000,
+          "denseConditionEstimate": 930105094569891600000,
+          "damping": 0,
+          "maxCorrectionDiff": 0
+        },
+        {
+          "index": 7,
+          "parameterCount": 5,
+          "observationEquationCount": 8,
+          "systemDof": 3,
+          "sparseConditionEstimate": 474513982506027500000,
+          "denseConditionEstimate": 474513982506027500000,
+          "damping": 0,
+          "maxCorrectionDiff": 0
+        },
+        {
+          "index": 8,
+          "parameterCount": 4,
+          "observationEquationCount": 12,
+          "systemDof": 8,
+          "sparseConditionEstimate": 4485516761625408.5,
+          "denseConditionEstimate": 4485516761625408.5,
+          "damping": 0,
+          "maxCorrectionDiff": 0
+        },
+        {
+          "index": 9,
+          "parameterCount": 5,
+          "observationEquationCount": 8,
+          "systemDof": 3,
+          "sparseConditionEstimate": 249104820785661740000,
+          "denseConditionEstimate": 249104820785661740000,
+          "damping": 0,
+          "maxCorrectionDiff": 0
+        },
+        {
+          "index": 10,
+          "parameterCount": 6,
+          "observationEquationCount": 10,
+          "systemDof": 4,
+          "sparseConditionEstimate": 474513982506027500000,
+          "denseConditionEstimate": 474513982506027500000,
+          "damping": 0,
+          "maxCorrectionDiff": 0
+        },
+        {
+          "index": 11,
+          "parameterCount": 5,
+          "observationEquationCount": 14,
+          "systemDof": 9,
+          "sparseConditionEstimate": 474513982506027500000,
+          "denseConditionEstimate": 474513982506027500000,
+          "damping": 0,
+          "maxCorrectionDiff": 0
+        },
+        {
+          "index": 12,
+          "parameterCount": 6,
+          "observationEquationCount": 10,
+          "systemDof": 4,
+          "sparseConditionEstimate": 930105094569891600000,
+          "denseConditionEstimate": 930105094569891600000,
+          "damping": 0,
+          "maxCorrectionDiff": 0
+        },
+        {
+          "index": 13,
+          "parameterCount": 7,
+          "observationEquationCount": 12,
+          "systemDof": 5,
+          "sparseConditionEstimate": 930105094569891600000,
+          "denseConditionEstimate": 930105094569891600000,
+          "damping": 0,
+          "maxCorrectionDiff": 0
+        },
+        {
+          "index": 14,
+          "parameterCount": 6,
+          "observationEquationCount": 16,
+          "systemDof": 10,
+          "sparseConditionEstimate": 474513982506027500000,
+          "denseConditionEstimate": 474513982506027500000,
+          "damping": 0,
+          "maxCorrectionDiff": 0
+        },
+        {
+          "index": 15,
+          "parameterCount": 7,
+          "observationEquationCount": 18,
+          "systemDof": 11,
+          "sparseConditionEstimate": 930105094569891600000,
+          "denseConditionEstimate": 930105094569891600000,
+          "damping": 0,
+          "maxCorrectionDiff": 0
+        }
+      ],
+      "systemsNote": "actual-worker per-system capture (sparse backend + dense rebuild oracle)",
+      "systemsSummary": {
+        "count": 16,
+        "worstCorrectionDiff": 0,
+        "minDenseCondition": 1121379190406352.4,
+        "maxDenseCondition": 930105094569891600000
+      },
+      "sentinel": {
+        "available": true,
+        "pass": true,
+        "maxima": {
+          "cov": 4.336808689942018e-19,
+          "relCov": 4.336808689942018e-19,
+          "relPrec": 1.3552527156068805e-20
+        },
+        "note": "TEST-ONLY dense-vs-sparse sentinel from the existing result contract; true selected-vs-dense covariance capture not attempted (invasive to the production engine)"
+      },
+      "finalContract": {
+        "evaluated": true,
+        "pass": true,
+        "note": "actual-worker full final contract (dense TS vs sparse WASM selected)"
+      }
+    },
+    {
+      "id": "p-plan-2d",
+      "family": "anchor",
+      "expectedKind": "eligible-2d",
+      "classifiedKind": "eligible-2d",
+      "staticAdmit": true,
+      "unknownCount": 2,
+      "dof": 3,
+      "success": true,
+      "iterations": 1,
+      "seuw": 1,
+      "conditionEstimate": 372577544841506.94,
+      "solves": 15,
+      "directMs": 69,
+      "physicalValid": true,
+      "workerRun": false,
+      "systems": null,
+      "systemsNote": "direct-TS only: no per-system capture by design (actual-worker subset only)",
+      "systemsSummary": null,
+      "sentinel": {
+        "available": false,
+        "pass": false,
+        "maxima": {
+          "cov": null,
+          "relCov": null,
+          "relPrec": null
+        },
+        "note": "sentinel unavailable: direct-TS only, no sparse candidate by design"
+      },
+      "finalContract": {
+        "evaluated": false,
+        "pass": true,
+        "note": "direct-TS self-consistency (success, iterations 1, seuw 1, physical)"
+      }
+    },
+    {
+      "id": "p-gps-2d",
+      "family": "anchor",
+      "expectedKind": "eligible-2d",
+      "classifiedKind": "eligible-2d",
+      "staticAdmit": true,
+      "unknownCount": 2,
+      "dof": 6,
+      "success": true,
+      "iterations": 1,
+      "seuw": 1,
+      "conditionEstimate": 1148456790.2759562,
+      "solves": 15,
+      "directMs": 66,
+      "physicalValid": true,
+      "workerRun": true,
+      "systems": [
+        {
+          "index": 0,
+          "parameterCount": 4,
+          "observationEquationCount": 10,
+          "systemDof": 6,
+          "sparseConditionEstimate": 1148456790.2759562,
+          "denseConditionEstimate": 1148456790.2759562,
+          "damping": 0,
+          "maxCorrectionDiff": 0
+        },
+        {
+          "index": 1,
+          "parameterCount": 4,
+          "observationEquationCount": 10,
+          "systemDof": 6,
+          "sparseConditionEstimate": 1148456790.2759562,
+          "denseConditionEstimate": 1148456790.2759562,
+          "damping": 0,
+          "maxCorrectionDiff": 0
+        },
+        {
+          "index": 2,
+          "parameterCount": 5,
+          "observationEquationCount": 12,
+          "systemDof": 7,
+          "sparseConditionEstimate": 431317925843120950000,
+          "denseConditionEstimate": 431317925843120950000,
+          "damping": 0,
+          "maxCorrectionDiff": 0
+        },
+        {
+          "index": 3,
+          "parameterCount": 5,
+          "observationEquationCount": 12,
+          "systemDof": 7,
+          "sparseConditionEstimate": 54290428202261570000,
+          "denseConditionEstimate": 54290428202261570000,
+          "damping": 0,
+          "maxCorrectionDiff": 0
+        },
+        {
+          "index": 4,
+          "parameterCount": 5,
+          "observationEquationCount": 12,
+          "systemDof": 7,
+          "sparseConditionEstimate": 356857181073590850000,
+          "denseConditionEstimate": 356857181073590850000,
+          "damping": 0,
+          "maxCorrectionDiff": 0
+        },
+        {
+          "index": 5,
+          "parameterCount": 5,
+          "observationEquationCount": 12,
+          "systemDof": 7,
+          "sparseConditionEstimate": 148890007862732320000,
+          "denseConditionEstimate": 148890007862732320000,
+          "damping": 0,
+          "maxCorrectionDiff": 0
+        },
+        {
+          "index": 6,
+          "parameterCount": 5,
+          "observationEquationCount": 12,
+          "systemDof": 7,
+          "sparseConditionEstimate": 431317925843120950000,
+          "denseConditionEstimate": 431317925843120950000,
+          "damping": 0,
+          "maxCorrectionDiff": 0
+        },
+        {
+          "index": 7,
+          "parameterCount": 5,
+          "observationEquationCount": 12,
+          "systemDof": 7,
+          "sparseConditionEstimate": 54290428202261570000,
+          "denseConditionEstimate": 54290428202261570000,
+          "damping": 0,
+          "maxCorrectionDiff": 0
+        },
+        {
+          "index": 8,
+          "parameterCount": 5,
+          "observationEquationCount": 12,
+          "systemDof": 7,
+          "sparseConditionEstimate": 356857181073590850000,
+          "denseConditionEstimate": 356857181073590850000,
+          "damping": 0,
+          "maxCorrectionDiff": 0
+        },
+        {
+          "index": 9,
+          "parameterCount": 5,
+          "observationEquationCount": 12,
+          "systemDof": 7,
+          "sparseConditionEstimate": 148890007862732320000,
+          "denseConditionEstimate": 148890007862732320000,
+          "damping": 0,
+          "maxCorrectionDiff": 0
+        },
+        {
+          "index": 10,
+          "parameterCount": 6,
+          "observationEquationCount": 14,
+          "systemDof": 8,
+          "sparseConditionEstimate": 431317925843120950000,
+          "denseConditionEstimate": 431317925843120950000,
+          "damping": 0,
+          "maxCorrectionDiff": 0
+        },
+        {
+          "index": 11,
+          "parameterCount": 6,
+          "observationEquationCount": 14,
+          "systemDof": 8,
+          "sparseConditionEstimate": 356857181073590850000,
+          "denseConditionEstimate": 356857181073590850000,
+          "damping": 0,
+          "maxCorrectionDiff": 0
+        },
+        {
+          "index": 12,
+          "parameterCount": 6,
+          "observationEquationCount": 14,
+          "systemDof": 8,
+          "sparseConditionEstimate": 356857181073590850000,
+          "denseConditionEstimate": 356857181073590850000,
+          "damping": 0,
+          "maxCorrectionDiff": 0
+        },
+        {
+          "index": 13,
+          "parameterCount": 7,
+          "observationEquationCount": 16,
+          "systemDof": 9,
+          "sparseConditionEstimate": 431317925843120950000,
+          "denseConditionEstimate": 431317925843120950000,
+          "damping": 0,
+          "maxCorrectionDiff": 0
+        },
+        {
+          "index": 14,
+          "parameterCount": 7,
+          "observationEquationCount": 16,
+          "systemDof": 9,
+          "sparseConditionEstimate": 356857181073590850000,
+          "denseConditionEstimate": 356857181073590850000,
+          "damping": 0,
+          "maxCorrectionDiff": 0
+        },
+        {
+          "index": 15,
+          "parameterCount": 8,
+          "observationEquationCount": 18,
+          "systemDof": 10,
+          "sparseConditionEstimate": 431317925843120950000,
+          "denseConditionEstimate": 431317925843120950000,
+          "damping": 0,
+          "maxCorrectionDiff": 0
+        }
+      ],
+      "systemsNote": "actual-worker per-system capture (sparse backend + dense rebuild oracle)",
+      "systemsSummary": {
+        "count": 16,
+        "worstCorrectionDiff": 0,
+        "minDenseCondition": 1148456790.2759562,
+        "maxDenseCondition": 431317925843120950000
+      },
+      "sentinel": {
+        "available": true,
+        "pass": true,
+        "maxima": {
+          "cov": 0,
+          "relCov": 0,
+          "relPrec": 0
+        },
+        "note": "TEST-ONLY dense-vs-sparse sentinel from the existing result contract; true selected-vs-dense covariance capture not attempted (invasive to the production engine)"
+      },
+      "finalContract": {
+        "evaluated": true,
+        "pass": true,
+        "note": "actual-worker full final contract (dense TS vs sparse WASM selected)"
+      }
+    },
+    {
+      "id": "p-camp-bounded",
+      "family": "anchor",
+      "expectedKind": "eligible-2d",
+      "classifiedKind": "eligible-2d",
+      "staticAdmit": true,
+      "unknownCount": 47,
+      "dof": 365,
+      "success": true,
+      "iterations": 1,
+      "seuw": 1,
+      "conditionEstimate": 1.1645149414742463e+51,
+      "solves": 17,
+      "directMs": 5205,
+      "physicalValid": true,
+      "workerRun": true,
+      "systems": [
+        {
+          "index": 0,
+          "parameterCount": 170,
+          "observationEquationCount": 535,
+          "systemDof": 365,
+          "sparseConditionEstimate": 1.1645149414742463e+51,
+          "denseConditionEstimate": 1.1645149414742463e+51,
+          "damping": 0,
+          "maxCorrectionDiff": 120.96333646842822
+        },
+        {
+          "index": 1,
+          "parameterCount": 170,
+          "observationEquationCount": 535,
+          "systemDof": 365,
+          "sparseConditionEstimate": 1.1645149414742463e+51,
+          "denseConditionEstimate": 1.1645149414742463e+51,
+          "damping": 0,
+          "maxCorrectionDiff": 120.96333646842822
+        },
+        {
+          "index": 2,
+          "parameterCount": 171,
+          "observationEquationCount": 541,
+          "systemDof": 370,
+          "sparseConditionEstimate": 1.1645149414742463e+51,
+          "denseConditionEstimate": 1.1645149414742463e+51,
+          "damping": 0,
+          "maxCorrectionDiff": 60.40941998083008
+        },
+        {
+          "index": 3,
+          "parameterCount": 171,
+          "observationEquationCount": 545,
+          "systemDof": 374,
+          "sparseConditionEstimate": 1.8961561894428445e+51,
+          "denseConditionEstimate": 1.8961561894428445e+51,
+          "damping": 0,
+          "maxCorrectionDiff": 242.05166376438274
+        },
+        {
+          "index": 4,
+          "parameterCount": 171,
+          "observationEquationCount": 545,
+          "systemDof": 374,
+          "sparseConditionEstimate": 1.2768586389626711e+51,
+          "denseConditionEstimate": 1.2768586389626711e+51,
+          "damping": 0,
+          "maxCorrectionDiff": 174.05573931142726
+        },
+        {
+          "index": 5,
+          "parameterCount": 171,
+          "observationEquationCount": 541,
+          "systemDof": 370,
+          "sparseConditionEstimate": 1.1645149414742463e+51,
+          "denseConditionEstimate": 1.1645149414742463e+51,
+          "damping": 0,
+          "maxCorrectionDiff": 146.62071022033524
+        },
+        {
+          "index": 6,
+          "parameterCount": 171,
+          "observationEquationCount": 539,
+          "systemDof": 368,
+          "sparseConditionEstimate": 1.1645149414742463e+51,
+          "denseConditionEstimate": 1.1645149414742463e+51,
+          "damping": 0,
+          "maxCorrectionDiff": 252.30546504550875
+        },
+        {
+          "index": 7,
+          "parameterCount": 171,
+          "observationEquationCount": 539,
+          "systemDof": 368,
+          "sparseConditionEstimate": 1.1645149414742463e+51,
+          "denseConditionEstimate": 1.1645149414742463e+51,
+          "damping": 0,
+          "maxCorrectionDiff": 21.292104525654395
+        },
+        {
+          "index": 8,
+          "parameterCount": 171,
+          "observationEquationCount": 539,
+          "systemDof": 368,
+          "sparseConditionEstimate": 1.1645149414742463e+51,
+          "denseConditionEstimate": 1.1645149414742463e+51,
+          "damping": 0,
+          "maxCorrectionDiff": 220.45301903690324
+        },
+        {
+          "index": 9,
+          "parameterCount": 171,
+          "observationEquationCount": 543,
+          "systemDof": 372,
+          "sparseConditionEstimate": 1.1645149414742463e+51,
+          "denseConditionEstimate": 1.1645149414742463e+51,
+          "damping": 0,
+          "maxCorrectionDiff": 148.6048291641746
+        },
+        {
+          "index": 10,
+          "parameterCount": 171,
+          "observationEquationCount": 543,
+          "systemDof": 372,
+          "sparseConditionEstimate": 1.1645149414742463e+51,
+          "denseConditionEstimate": 1.1645149414742463e+51,
+          "damping": 0,
+          "maxCorrectionDiff": 148.6969420165442
+        },
+        {
+          "index": 11,
+          "parameterCount": 171,
+          "observationEquationCount": 543,
+          "systemDof": 372,
+          "sparseConditionEstimate": 1.1645149414742463e+51,
+          "denseConditionEstimate": 1.1645149414742463e+51,
+          "damping": 0,
+          "maxCorrectionDiff": 170.17970229603634
+        },
+        {
+          "index": 12,
+          "parameterCount": 176,
+          "observationEquationCount": 543,
+          "systemDof": 367,
+          "sparseConditionEstimate": 1.1645149414742463e+51,
+          "denseConditionEstimate": 1.1645149414742463e+51,
+          "damping": 0,
+          "maxCorrectionDiff": 195.44319522669457
+        },
+        {
+          "index": 13,
+          "parameterCount": 171,
+          "observationEquationCount": 541,
+          "systemDof": 370,
+          "sparseConditionEstimate": 1.3085360520802023e+51,
+          "denseConditionEstimate": 1.3085360520802023e+51,
+          "damping": 0,
+          "maxCorrectionDiff": 154.95956600432828
+        },
+        {
+          "index": 14,
+          "parameterCount": 171,
+          "observationEquationCount": 541,
+          "systemDof": 370,
+          "sparseConditionEstimate": 1.3175615906354708e+51,
+          "denseConditionEstimate": 1.3175615906354708e+51,
+          "damping": 0,
+          "maxCorrectionDiff": 26.83444998931509
+        },
+        {
+          "index": 15,
+          "parameterCount": 171,
+          "observationEquationCount": 543,
+          "systemDof": 372,
+          "sparseConditionEstimate": 1.1645149414742463e+51,
+          "denseConditionEstimate": 1.1645149414742463e+51,
+          "damping": 0,
+          "maxCorrectionDiff": 257.59290890637567
+        },
+        {
+          "index": 16,
+          "parameterCount": 171,
+          "observationEquationCount": 543,
+          "systemDof": 372,
+          "sparseConditionEstimate": 1.786186431652517e+51,
+          "denseConditionEstimate": 1.786186431652517e+51,
+          "damping": 0,
+          "maxCorrectionDiff": 10.165342285607949
+        },
+        {
+          "index": 17,
+          "parameterCount": 173,
+          "observationEquationCount": 543,
+          "systemDof": 370,
+          "sparseConditionEstimate": 1.1645149414742463e+51,
+          "denseConditionEstimate": 1.1645149414742463e+51,
+          "damping": 0,
+          "maxCorrectionDiff": 130.76369235920902
+        }
+      ],
+      "systemsNote": "actual-worker per-system capture (sparse backend + dense rebuild oracle)",
+      "systemsSummary": {
+        "count": 18,
+        "worstCorrectionDiff": 257.59290890637567,
+        "minDenseCondition": 1.1645149414742463e+51,
+        "maxDenseCondition": 1.8961561894428445e+51
+      },
+      "sentinel": {
+        "available": true,
+        "pass": true,
+        "maxima": {
+          "cov": 1.0547891203324756e-7,
+          "relCov": 2.9393922471349126e-8,
+          "relPrec": 1.1060967997314377e-7
+        },
+        "note": "TEST-ONLY dense-vs-sparse sentinel from the existing result contract; true selected-vs-dense covariance capture not attempted (invasive to the production engine)"
+      },
+      "finalContract": {
+        "evaluated": true,
+        "pass": true,
+        "note": "actual-worker full final contract (dense TS vs sparse WASM selected)"
+      }
+    },
+    {
+      "id": "p-size-chain-008",
+      "family": "size-chain",
+      "expectedKind": "eligible-2d",
+      "classifiedKind": "eligible-2d",
+      "staticAdmit": true,
+      "unknownCount": 8,
+      "dof": 8,
+      "success": true,
+      "iterations": 1,
+      "seuw": 1,
+      "conditionEstimate": 8471753892104241,
+      "solves": 45,
+      "directMs": 366,
+      "physicalValid": true,
+      "workerRun": true,
+      "systems": [
+        {
+          "index": 0,
+          "parameterCount": 16,
+          "observationEquationCount": 24,
+          "systemDof": 8,
+          "sparseConditionEstimate": 8471753892104241,
+          "denseConditionEstimate": 8471753892104241,
+          "damping": 0,
+          "maxCorrectionDiff": 0
+        },
+        {
+          "index": 1,
+          "parameterCount": 16,
+          "observationEquationCount": 24,
+          "systemDof": 8,
+          "sparseConditionEstimate": 8471753892104241,
+          "denseConditionEstimate": 8471753892104241,
+          "damping": 0,
+          "maxCorrectionDiff": 0
+        },
+        {
+          "index": 2,
+          "parameterCount": 17,
+          "observationEquationCount": 26,
+          "systemDof": 9,
+          "sparseConditionEstimate": 840219296204262200000,
+          "denseConditionEstimate": 840219296204262200000,
+          "damping": 0,
+          "maxCorrectionDiff": 0
+        },
+        {
+          "index": 3,
+          "parameterCount": 17,
+          "observationEquationCount": 26,
+          "systemDof": 9,
+          "sparseConditionEstimate": 1.661813233124773e+21,
+          "denseConditionEstimate": 1.661813233124773e+21,
+          "damping": 0,
+          "maxCorrectionDiff": 0
+        },
+        {
+          "index": 4,
+          "parameterCount": 17,
+          "observationEquationCount": 26,
+          "systemDof": 9,
+          "sparseConditionEstimate": 469572534023098300000,
+          "denseConditionEstimate": 469572534023098300000,
+          "damping": 0,
+          "maxCorrectionDiff": 0
+        },
+        {
+          "index": 5,
+          "parameterCount": 17,
+          "observationEquationCount": 26,
+          "systemDof": 9,
+          "sparseConditionEstimate": 1.1560438994476926e+21,
+          "denseConditionEstimate": 1.1560438994476926e+21,
+          "damping": 0,
+          "maxCorrectionDiff": 0
+        },
+        {
+          "index": 6,
+          "parameterCount": 17,
+          "observationEquationCount": 26,
+          "systemDof": 9,
+          "sparseConditionEstimate": 773482509823457100000,
+          "denseConditionEstimate": 773482509823457100000,
+          "damping": 0,
+          "maxCorrectionDiff": 0
+        },
+        {
+          "index": 7,
+          "parameterCount": 17,
+          "observationEquationCount": 26,
+          "systemDof": 9,
+          "sparseConditionEstimate": 10876632478892784000,
+          "denseConditionEstimate": 10876632478892784000,
+          "damping": 0,
+          "maxCorrectionDiff": 0
+        },
+        {
+          "index": 8,
+          "parameterCount": 17,
+          "observationEquationCount": 26,
+          "systemDof": 9,
+          "sparseConditionEstimate": 119182180394486760000,
+          "denseConditionEstimate": 119182180394486760000,
+          "damping": 0,
+          "maxCorrectionDiff": 0
+        },
+        {
+          "index": 9,
+          "parameterCount": 17,
+          "observationEquationCount": 26,
+          "systemDof": 9,
+          "sparseConditionEstimate": 49067915458448515000,
+          "denseConditionEstimate": 49067915458448515000,
+          "damping": 0,
+          "maxCorrectionDiff": 0
+        },
+        {
+          "index": 10,
+          "parameterCount": 16,
+          "observationEquationCount": 48,
+          "systemDof": 32,
+          "sparseConditionEstimate": 33887015568416964,
+          "denseConditionEstimate": 33887015568416964,
+          "damping": 0,
+          "maxCorrectionDiff": 0
+        },
+        {
+          "index": 11,
+          "parameterCount": 17,
+          "observationEquationCount": 26,
+          "systemDof": 9,
+          "sparseConditionEstimate": 840219296204262200000,
+          "denseConditionEstimate": 840219296204262200000,
+          "damping": 0,
+          "maxCorrectionDiff": 0
+        },
+        {
+          "index": 12,
+          "parameterCount": 17,
+          "observationEquationCount": 26,
+          "systemDof": 9,
+          "sparseConditionEstimate": 1.661813233124773e+21,
+          "denseConditionEstimate": 1.661813233124773e+21,
+          "damping": 0,
+          "maxCorrectionDiff": 0
+        },
+        {
+          "index": 13,
+          "parameterCount": 17,
+          "observationEquationCount": 26,
+          "systemDof": 9,
+          "sparseConditionEstimate": 469572534023098300000,
+          "denseConditionEstimate": 469572534023098300000,
+          "damping": 0,
+          "maxCorrectionDiff": 0
+        },
+        {
+          "index": 14,
+          "parameterCount": 17,
+          "observationEquationCount": 26,
+          "systemDof": 9,
+          "sparseConditionEstimate": 1.1560438994476926e+21,
+          "denseConditionEstimate": 1.1560438994476926e+21,
+          "damping": 0,
+          "maxCorrectionDiff": 0
+        },
+        {
+          "index": 15,
+          "parameterCount": 17,
+          "observationEquationCount": 26,
+          "systemDof": 9,
+          "sparseConditionEstimate": 773482509823457100000,
+          "denseConditionEstimate": 773482509823457100000,
+          "damping": 0,
+          "maxCorrectionDiff": 0
+        },
+        {
+          "index": 16,
+          "parameterCount": 17,
+          "observationEquationCount": 26,
+          "systemDof": 9,
+          "sparseConditionEstimate": 10876632478892784000,
+          "denseConditionEstimate": 10876632478892784000,
+          "damping": 0,
+          "maxCorrectionDiff": 0
+        },
+        {
+          "index": 17,
+          "parameterCount": 17,
+          "observationEquationCount": 26,
+          "systemDof": 9,
+          "sparseConditionEstimate": 119182180394486760000,
+          "denseConditionEstimate": 119182180394486760000,
+          "damping": 0,
+          "maxCorrectionDiff": 0
+        },
+        {
+          "index": 18,
+          "parameterCount": 17,
+          "observationEquationCount": 26,
+          "systemDof": 9,
+          "sparseConditionEstimate": 49067915458448515000,
+          "denseConditionEstimate": 49067915458448515000,
+          "damping": 0,
+          "maxCorrectionDiff": 0
+        },
+        {
+          "index": 19,
+          "parameterCount": 16,
+          "observationEquationCount": 48,
+          "systemDof": 32,
+          "sparseConditionEstimate": 33887015568416964,
+          "denseConditionEstimate": 33887015568416964,
+          "damping": 0,
+          "maxCorrectionDiff": 0
+        },
+        {
+          "index": 20,
+          "parameterCount": 18,
+          "observationEquationCount": 28,
+          "systemDof": 10,
+          "sparseConditionEstimate": 1.661813233124773e+21,
+          "denseConditionEstimate": 1.661813233124773e+21,
+          "damping": 0,
+          "maxCorrectionDiff": 0
+        },
+        {
+          "index": 21,
+          "parameterCount": 18,
+          "observationEquationCount": 28,
+          "systemDof": 10,
+          "sparseConditionEstimate": 840219296204262200000,
+          "denseConditionEstimate": 840219296204262200000,
+          "damping": 0,
+          "maxCorrectionDiff": 0
+        },
+        {
+          "index": 22,
+          "parameterCount": 18,
+          "observationEquationCount": 28,
+          "systemDof": 10,
+          "sparseConditionEstimate": 1.1560438994476926e+21,
+          "denseConditionEstimate": 1.1560438994476926e+21,
+          "damping": 0,
+          "maxCorrectionDiff": 0
+        },
+        {
+          "index": 23,
+          "parameterCount": 18,
+          "observationEquationCount": 28,
+          "systemDof": 10,
+          "sparseConditionEstimate": 840219296204262200000,
+          "denseConditionEstimate": 840219296204262200000,
+          "damping": 0,
+          "maxCorrectionDiff": 0
+        },
+        {
+          "index": 24,
+          "parameterCount": 18,
+          "observationEquationCount": 28,
+          "systemDof": 10,
+          "sparseConditionEstimate": 840219296204262200000,
+          "denseConditionEstimate": 840219296204262200000,
+          "damping": 0,
+          "maxCorrectionDiff": 0
+        },
+        {
+          "index": 25,
+          "parameterCount": 18,
+          "observationEquationCount": 28,
+          "systemDof": 10,
+          "sparseConditionEstimate": 840219296204262200000,
+          "denseConditionEstimate": 840219296204262200000,
+          "damping": 0,
+          "maxCorrectionDiff": 0
+        },
+        {
+          "index": 26,
+          "parameterCount": 17,
+          "observationEquationCount": 50,
+          "systemDof": 33,
+          "sparseConditionEstimate": 840219296204262200000,
+          "denseConditionEstimate": 840219296204262200000,
+          "damping": 0,
+          "maxCorrectionDiff": 0
+        },
+        {
+          "index": 27,
+          "parameterCount": 18,
+          "observationEquationCount": 28,
+          "systemDof": 10,
+          "sparseConditionEstimate": 840219296204262200000,
+          "denseConditionEstimate": 840219296204262200000,
+          "damping": 0,
+          "maxCorrectionDiff": 0
+        },
+        {
+          "index": 28,
+          "parameterCount": 18,
+          "observationEquationCount": 52,
+          "systemDof": 34,
+          "sparseConditionEstimate": 1.661813233124773e+21,
+          "denseConditionEstimate": 1.661813233124773e+21,
+          "damping": 0,
+          "maxCorrectionDiff": 0
+        },
+        {
+          "index": 29,
+          "parameterCount": 18,
+          "observationEquationCount": 52,
+          "systemDof": 34,
+          "sparseConditionEstimate": 840219296204262200000,
+          "denseConditionEstimate": 840219296204262200000,
+          "damping": 0,
+          "maxCorrectionDiff": 0
+        },
+        {
+          "index": 30,
+          "parameterCount": 18,
+          "observationEquationCount": 52,
+          "systemDof": 34,
+          "sparseConditionEstimate": 1.1560438994476926e+21,
+          "denseConditionEstimate": 1.1560438994476926e+21,
+          "damping": 0,
+          "maxCorrectionDiff": 0
+        },
+        {
+          "index": 31,
+          "parameterCount": 18,
+          "observationEquationCount": 52,
+          "systemDof": 34,
+          "sparseConditionEstimate": 840219296204262200000,
+          "denseConditionEstimate": 840219296204262200000,
+          "damping": 0,
+          "maxCorrectionDiff": 0
+        },
+        {
+          "index": 32,
+          "parameterCount": 18,
+          "observationEquationCount": 52,
+          "systemDof": 34,
+          "sparseConditionEstimate": 840219296204262200000,
+          "denseConditionEstimate": 840219296204262200000,
+          "damping": 0,
+          "maxCorrectionDiff": 0
+        },
+        {
+          "index": 33,
+          "parameterCount": 18,
+          "observationEquationCount": 52,
+          "systemDof": 34,
+          "sparseConditionEstimate": 840219296204262200000,
+          "denseConditionEstimate": 840219296204262200000,
+          "damping": 0,
+          "maxCorrectionDiff": 0
+        },
+        {
+          "index": 34,
+          "parameterCount": 18,
+          "observationEquationCount": 52,
+          "systemDof": 34,
+          "sparseConditionEstimate": 840219296204262200000,
+          "denseConditionEstimate": 840219296204262200000,
+          "damping": 0,
+          "maxCorrectionDiff": 0
+        },
+        {
+          "index": 35,
+          "parameterCount": 19,
+          "observationEquationCount": 54,
+          "systemDof": 35,
+          "sparseConditionEstimate": 1.661813233124773e+21,
+          "denseConditionEstimate": 1.661813233124773e+21,
+          "damping": 0,
+          "maxCorrectionDiff": 0
+        },
+        {
+          "index": 36,
+          "parameterCount": 19,
+          "observationEquationCount": 54,
+          "systemDof": 35,
+          "sparseConditionEstimate": 1.661813233124773e+21,
+          "denseConditionEstimate": 1.661813233124773e+21,
+          "damping": 0,
+          "maxCorrectionDiff": 0
+        },
+        {
+          "index": 37,
+          "parameterCount": 19,
+          "observationEquationCount": 54,
+          "systemDof": 35,
+          "sparseConditionEstimate": 1.661813233124773e+21,
+          "denseConditionEstimate": 1.661813233124773e+21,
+          "damping": 0,
+          "maxCorrectionDiff": 0
+        },
+        {
+          "index": 38,
+          "parameterCount": 19,
+          "observationEquationCount": 54,
+          "systemDof": 35,
+          "sparseConditionEstimate": 1.661813233124773e+21,
+          "denseConditionEstimate": 1.661813233124773e+21,
+          "damping": 0,
+          "maxCorrectionDiff": 0
+        },
+        {
+          "index": 39,
+          "parameterCount": 19,
+          "observationEquationCount": 54,
+          "systemDof": 35,
+          "sparseConditionEstimate": 1.661813233124773e+21,
+          "denseConditionEstimate": 1.661813233124773e+21,
+          "damping": 0,
+          "maxCorrectionDiff": 0
+        },
+        {
+          "index": 40,
+          "parameterCount": 19,
+          "observationEquationCount": 54,
+          "systemDof": 35,
+          "sparseConditionEstimate": 1.661813233124773e+21,
+          "denseConditionEstimate": 1.661813233124773e+21,
+          "damping": 0,
+          "maxCorrectionDiff": 0
+        },
+        {
+          "index": 41,
+          "parameterCount": 20,
+          "observationEquationCount": 56,
+          "systemDof": 36,
+          "sparseConditionEstimate": 1.661813233124773e+21,
+          "denseConditionEstimate": 1.661813233124773e+21,
+          "damping": 0,
+          "maxCorrectionDiff": 0
+        },
+        {
+          "index": 42,
+          "parameterCount": 20,
+          "observationEquationCount": 56,
+          "systemDof": 36,
+          "sparseConditionEstimate": 1.661813233124773e+21,
+          "denseConditionEstimate": 1.661813233124773e+21,
+          "damping": 0,
+          "maxCorrectionDiff": 0
+        },
+        {
+          "index": 43,
+          "parameterCount": 20,
+          "observationEquationCount": 56,
+          "systemDof": 36,
+          "sparseConditionEstimate": 1.661813233124773e+21,
+          "denseConditionEstimate": 1.661813233124773e+21,
+          "damping": 0,
+          "maxCorrectionDiff": 0
+        },
+        {
+          "index": 44,
+          "parameterCount": 20,
+          "observationEquationCount": 56,
+          "systemDof": 36,
+          "sparseConditionEstimate": 1.661813233124773e+21,
+          "denseConditionEstimate": 1.661813233124773e+21,
+          "damping": 0,
+          "maxCorrectionDiff": 0
+        },
+        {
+          "index": 45,
+          "parameterCount": 20,
+          "observationEquationCount": 56,
+          "systemDof": 36,
+          "sparseConditionEstimate": 1.661813233124773e+21,
+          "denseConditionEstimate": 1.661813233124773e+21,
+          "damping": 0,
+          "maxCorrectionDiff": 0
+        }
+      ],
+      "systemsNote": "actual-worker per-system capture (sparse backend + dense rebuild oracle)",
+      "systemsSummary": {
+        "count": 46,
+        "worstCorrectionDiff": 0,
+        "minDenseCondition": 8471753892104241,
+        "maxDenseCondition": 1.661813233124773e+21
+      },
+      "sentinel": {
+        "available": true,
+        "pass": true,
+        "maxima": {
+          "cov": 2.211772431870429e-17,
+          "relCov": 2.6020852139652106e-17,
+          "relPrec": 2.6454533008646308e-17
+        },
+        "note": "TEST-ONLY dense-vs-sparse sentinel from the existing result contract; true selected-vs-dense covariance capture not attempted (invasive to the production engine)"
+      },
+      "finalContract": {
+        "evaluated": true,
+        "pass": true,
+        "note": "actual-worker full final contract (dense TS vs sparse WASM selected)"
+      }
+    },
+    {
+      "id": "p-size-chain-016",
+      "family": "size-chain",
+      "expectedKind": "eligible-2d",
+      "classifiedKind": "eligible-2d",
+      "staticAdmit": true,
+      "unknownCount": 16,
+      "dof": 16,
+      "success": true,
+      "iterations": 1,
+      "seuw": 1,
+      "conditionEstimate": 8471753892104241,
+      "solves": 45,
+      "directMs": 807,
+      "physicalValid": true,
+      "workerRun": false,
+      "systems": null,
+      "systemsNote": "direct-TS only: no per-system capture by design (actual-worker subset only)",
+      "systemsSummary": null,
+      "sentinel": {
+        "available": false,
+        "pass": false,
+        "maxima": {
+          "cov": null,
+          "relCov": null,
+          "relPrec": null
+        },
+        "note": "sentinel unavailable: direct-TS only, no sparse candidate by design"
+      },
+      "finalContract": {
+        "evaluated": false,
+        "pass": true,
+        "note": "direct-TS self-consistency (success, iterations 1, seuw 1, physical)"
+      }
+    },
+    {
+      "id": "p-size-chain-032",
+      "family": "size-chain",
+      "expectedKind": "eligible-2d",
+      "classifiedKind": "eligible-2d",
+      "staticAdmit": true,
+      "unknownCount": 32,
+      "dof": 32,
+      "success": true,
+      "iterations": 1,
+      "seuw": 1,
+      "conditionEstimate": 9332371361146222,
+      "solves": 45,
+      "directMs": 2378,
+      "physicalValid": true,
+      "workerRun": false,
+      "systems": null,
+      "systemsNote": "direct-TS only: no per-system capture by design (actual-worker subset only)",
+      "systemsSummary": null,
+      "sentinel": {
+        "available": false,
+        "pass": false,
+        "maxima": {
+          "cov": null,
+          "relCov": null,
+          "relPrec": null
+        },
+        "note": "sentinel unavailable: direct-TS only, no sparse candidate by design"
+      },
+      "finalContract": {
+        "evaluated": false,
+        "pass": true,
+        "note": "direct-TS self-consistency (success, iterations 1, seuw 1, physical)"
+      }
+    },
+    {
+      "id": "p-size-chain-048",
+      "family": "size-chain",
+      "expectedKind": "eligible-2d",
+      "classifiedKind": "eligible-2d",
+      "staticAdmit": true,
+      "unknownCount": 48,
+      "dof": 48,
+      "success": true,
+      "iterations": 1,
+      "seuw": 1,
+      "conditionEstimate": 9332371361146222,
+      "solves": 45,
+      "directMs": 4471,
+      "physicalValid": true,
+      "workerRun": false,
+      "systems": null,
+      "systemsNote": "direct-TS only: no per-system capture by design (actual-worker subset only)",
+      "systemsSummary": null,
+      "sentinel": {
+        "available": false,
+        "pass": false,
+        "maxima": {
+          "cov": null,
+          "relCov": null,
+          "relPrec": null
+        },
+        "note": "sentinel unavailable: direct-TS only, no sparse candidate by design"
+      },
+      "finalContract": {
+        "evaluated": false,
+        "pass": true,
+        "note": "direct-TS self-consistency (success, iterations 1, seuw 1, physical)"
+      }
+    },
+    {
+      "id": "p-size-chain-064",
+      "family": "size-chain",
+      "expectedKind": "eligible-2d",
+      "classifiedKind": "eligible-2d",
+      "staticAdmit": true,
+      "unknownCount": 64,
+      "dof": 64,
+      "success": true,
+      "iterations": 1,
+      "seuw": 1,
+      "conditionEstimate": 9332371361146222,
+      "solves": 45,
+      "directMs": 7322,
+      "physicalValid": true,
+      "workerRun": false,
+      "systems": null,
+      "systemsNote": "direct-TS only: no per-system capture by design (actual-worker subset only)",
+      "systemsSummary": null,
+      "sentinel": {
+        "available": false,
+        "pass": false,
+        "maxima": {
+          "cov": null,
+          "relCov": null,
+          "relPrec": null
+        },
+        "note": "sentinel unavailable: direct-TS only, no sparse candidate by design"
+      },
+      "finalContract": {
+        "evaluated": false,
+        "pass": true,
+        "note": "direct-TS self-consistency (success, iterations 1, seuw 1, physical)"
+      }
+    },
+    {
+      "id": "p-size-chain-096",
+      "family": "size-chain",
+      "expectedKind": "eligible-2d",
+      "classifiedKind": "eligible-2d",
+      "staticAdmit": true,
+      "unknownCount": 96,
+      "dof": 96,
+      "success": true,
+      "iterations": 1,
+      "seuw": 1,
+      "conditionEstimate": 9332371361146222,
+      "solves": 45,
+      "directMs": 9771,
+      "physicalValid": true,
+      "workerRun": false,
+      "systems": null,
+      "systemsNote": "direct-TS only: no per-system capture by design (actual-worker subset only)",
+      "systemsSummary": null,
+      "sentinel": {
+        "available": false,
+        "pass": false,
+        "maxima": {
+          "cov": null,
+          "relCov": null,
+          "relPrec": null
+        },
+        "note": "sentinel unavailable: direct-TS only, no sparse candidate by design"
+      },
+      "finalContract": {
+        "evaluated": false,
+        "pass": true,
+        "note": "direct-TS self-consistency (success, iterations 1, seuw 1, physical)"
+      }
+    },
+    {
+      "id": "p-size-chain-128",
+      "family": "size-chain",
+      "expectedKind": "eligible-2d",
+      "classifiedKind": "eligible-2d",
+      "staticAdmit": true,
+      "unknownCount": 128,
+      "dof": 128,
+      "success": true,
+      "iterations": 1,
+      "seuw": 1,
+      "conditionEstimate": 9332371361146222,
+      "solves": 45,
+      "directMs": 15161,
+      "physicalValid": true,
+      "workerRun": false,
+      "systems": null,
+      "systemsNote": "direct-TS only: no per-system capture by design (actual-worker subset only)",
+      "systemsSummary": null,
+      "sentinel": {
+        "available": false,
+        "pass": false,
+        "maxima": {
+          "cov": null,
+          "relCov": null,
+          "relPrec": null
+        },
+        "note": "sentinel unavailable: direct-TS only, no sparse candidate by design"
+      },
+      "finalContract": {
+        "evaluated": false,
+        "pass": true,
+        "note": "direct-TS self-consistency (success, iterations 1, seuw 1, physical)"
+      }
+    },
+    {
+      "id": "p-size-chain-256",
+      "family": "size-chain",
+      "expectedKind": "eligible-2d",
+      "classifiedKind": "eligible-2d",
+      "staticAdmit": false,
+      "unknownCount": 256,
+      "dof": 256,
+      "success": true,
+      "iterations": 1,
+      "seuw": 1,
+      "conditionEstimate": 10740622092156928,
+      "solves": 45,
+      "directMs": 74694,
+      "physicalValid": true,
+      "workerRun": false,
+      "systems": null,
+      "systemsNote": "direct-TS only: no per-system capture by design (actual-worker subset only)",
+      "systemsSummary": null,
+      "sentinel": {
+        "available": false,
+        "pass": false,
+        "maxima": {
+          "cov": null,
+          "relCov": null,
+          "relPrec": null
+        },
+        "note": "sentinel unavailable: direct-TS only, no sparse candidate by design"
+      },
+      "finalContract": {
+        "evaluated": false,
+        "pass": true,
+        "note": "direct-TS self-consistency (success, iterations 1, seuw 1, physical)"
+      }
+    },
+    {
+      "id": "p-size-gps-008",
+      "family": "size-gps",
+      "expectedKind": "eligible-2d",
+      "classifiedKind": "eligible-2d",
+      "staticAdmit": true,
+      "unknownCount": 4,
+      "dof": 8,
+      "success": true,
+      "iterations": 1,
+      "seuw": 1,
+      "conditionEstimate": 400000000.0531145,
+      "solves": 39,
+      "directMs": 98,
+      "physicalValid": true,
+      "workerRun": false,
+      "systems": null,
+      "systemsNote": "direct-TS only: no per-system capture by design (actual-worker subset only)",
+      "systemsSummary": null,
+      "sentinel": {
+        "available": false,
+        "pass": false,
+        "maxima": {
+          "cov": null,
+          "relCov": null,
+          "relPrec": null
+        },
+        "note": "sentinel unavailable: direct-TS only, no sparse candidate by design"
+      },
+      "finalContract": {
+        "evaluated": false,
+        "pass": true,
+        "note": "direct-TS self-consistency (success, iterations 1, seuw 1, physical)"
+      }
+    },
+    {
+      "id": "p-size-gps-016",
+      "family": "size-gps",
+      "expectedKind": "eligible-2d",
+      "classifiedKind": "eligible-2d",
+      "staticAdmit": true,
+      "unknownCount": 8,
+      "dof": 16,
+      "success": true,
+      "iterations": 1,
+      "seuw": 1,
+      "conditionEstimate": 400000000.0531145,
+      "solves": 39,
+      "directMs": 218,
+      "physicalValid": true,
+      "workerRun": false,
+      "systems": null,
+      "systemsNote": "direct-TS only: no per-system capture by design (actual-worker subset only)",
+      "systemsSummary": null,
+      "sentinel": {
+        "available": false,
+        "pass": false,
+        "maxima": {
+          "cov": null,
+          "relCov": null,
+          "relPrec": null
+        },
+        "note": "sentinel unavailable: direct-TS only, no sparse candidate by design"
+      },
+      "finalContract": {
+        "evaluated": false,
+        "pass": true,
+        "note": "direct-TS self-consistency (success, iterations 1, seuw 1, physical)"
+      }
+    },
+    {
+      "id": "p-size-gps-032",
+      "family": "size-gps",
+      "expectedKind": "eligible-2d",
+      "classifiedKind": "eligible-2d",
+      "staticAdmit": true,
+      "unknownCount": 16,
+      "dof": 32,
+      "success": true,
+      "iterations": 1,
+      "seuw": 1,
+      "conditionEstimate": 400000000.0531145,
+      "solves": 39,
+      "directMs": 632,
+      "physicalValid": true,
+      "workerRun": false,
+      "systems": null,
+      "systemsNote": "direct-TS only: no per-system capture by design (actual-worker subset only)",
+      "systemsSummary": null,
+      "sentinel": {
+        "available": false,
+        "pass": false,
+        "maxima": {
+          "cov": null,
+          "relCov": null,
+          "relPrec": null
+        },
+        "note": "sentinel unavailable: direct-TS only, no sparse candidate by design"
+      },
+      "finalContract": {
+        "evaluated": false,
+        "pass": true,
+        "note": "direct-TS self-consistency (success, iterations 1, seuw 1, physical)"
+      }
+    },
+    {
+      "id": "p-size-gps-064",
+      "family": "size-gps",
+      "expectedKind": "eligible-2d",
+      "classifiedKind": "eligible-2d",
+      "staticAdmit": true,
+      "unknownCount": 32,
+      "dof": 64,
+      "success": true,
+      "iterations": 1,
+      "seuw": 1,
+      "conditionEstimate": 400000000.0531145,
+      "solves": 39,
+      "directMs": 2142,
+      "physicalValid": true,
+      "workerRun": false,
+      "systems": null,
+      "systemsNote": "direct-TS only: no per-system capture by design (actual-worker subset only)",
+      "systemsSummary": null,
+      "sentinel": {
+        "available": false,
+        "pass": false,
+        "maxima": {
+          "cov": null,
+          "relCov": null,
+          "relPrec": null
+        },
+        "note": "sentinel unavailable: direct-TS only, no sparse candidate by design"
+      },
+      "finalContract": {
+        "evaluated": false,
+        "pass": true,
+        "note": "direct-TS self-consistency (success, iterations 1, seuw 1, physical)"
+      }
+    },
+    {
+      "id": "p-weight-tight",
+      "family": "weight-sweep",
+      "expectedKind": "eligible-2d",
+      "classifiedKind": "eligible-2d",
+      "staticAdmit": true,
+      "unknownCount": 4,
+      "dof": 4,
+      "success": true,
+      "iterations": 1,
+      "seuw": 1,
+      "conditionEstimate": 135668405484004690,
+      "solves": 17,
+      "directMs": 34,
+      "physicalValid": true,
+      "workerRun": true,
+      "systems": [
+        {
+          "index": 0,
+          "parameterCount": 8,
+          "observationEquationCount": 12,
+          "systemDof": 4,
+          "sparseConditionEstimate": 135668405484004690,
+          "denseConditionEstimate": 135668405484004690,
+          "damping": 0,
+          "maxCorrectionDiff": 0
+        },
+        {
+          "index": 1,
+          "parameterCount": 8,
+          "observationEquationCount": 12,
+          "systemDof": 4,
+          "sparseConditionEstimate": 135668405484004690,
+          "denseConditionEstimate": 135668405484004690,
+          "damping": 0,
+          "maxCorrectionDiff": 0
+        },
+        {
+          "index": 2,
+          "parameterCount": 9,
+          "observationEquationCount": 14,
+          "systemDof": 5,
+          "sparseConditionEstimate": 840219296204262200000,
+          "denseConditionEstimate": 840219296204262200000,
+          "damping": 0,
+          "maxCorrectionDiff": 0
+        },
+        {
+          "index": 3,
+          "parameterCount": 9,
+          "observationEquationCount": 14,
+          "systemDof": 5,
+          "sparseConditionEstimate": 623174010319575600000,
+          "denseConditionEstimate": 623174010319575600000,
+          "damping": 0,
+          "maxCorrectionDiff": 0
+        },
+        {
+          "index": 4,
+          "parameterCount": 8,
+          "observationEquationCount": 24,
+          "systemDof": 16,
+          "sparseConditionEstimate": 542673621936018750,
+          "denseConditionEstimate": 542673621936018750,
+          "damping": 0,
+          "maxCorrectionDiff": 0
+        },
+        {
+          "index": 5,
+          "parameterCount": 9,
+          "observationEquationCount": 14,
+          "systemDof": 5,
+          "sparseConditionEstimate": 10876632478892784000,
+          "denseConditionEstimate": 10876632478892784000,
+          "damping": 0,
+          "maxCorrectionDiff": 0
+        },
+        {
+          "index": 6,
+          "parameterCount": 9,
+          "observationEquationCount": 14,
+          "systemDof": 5,
+          "sparseConditionEstimate": 1.661813233124773e+21,
+          "denseConditionEstimate": 1.661813233124773e+21,
+          "damping": 0,
+          "maxCorrectionDiff": 0
+        },
+        {
+          "index": 7,
+          "parameterCount": 9,
+          "observationEquationCount": 14,
+          "systemDof": 5,
+          "sparseConditionEstimate": 469572534023098300000,
+          "denseConditionEstimate": 469572534023098300000,
+          "damping": 0,
+          "maxCorrectionDiff": 0
+        },
+        {
+          "index": 8,
+          "parameterCount": 9,
+          "observationEquationCount": 14,
+          "systemDof": 5,
+          "sparseConditionEstimate": 261950254077127560000,
+          "denseConditionEstimate": 261950254077127560000,
+          "damping": 0,
+          "maxCorrectionDiff": 0
+        },
+        {
+          "index": 9,
+          "parameterCount": 9,
+          "observationEquationCount": 14,
+          "systemDof": 5,
+          "sparseConditionEstimate": 443072579278529040000,
+          "denseConditionEstimate": 443072579278529040000,
+          "damping": 0,
+          "maxCorrectionDiff": 0
+        },
+        {
+          "index": 10,
+          "parameterCount": 9,
+          "observationEquationCount": 14,
+          "systemDof": 5,
+          "sparseConditionEstimate": 840219296204262200000,
+          "denseConditionEstimate": 840219296204262200000,
+          "damping": 0,
+          "maxCorrectionDiff": 0
+        },
+        {
+          "index": 11,
+          "parameterCount": 9,
+          "observationEquationCount": 14,
+          "systemDof": 5,
+          "sparseConditionEstimate": 623174010319575600000,
+          "denseConditionEstimate": 623174010319575600000,
+          "damping": 0,
+          "maxCorrectionDiff": 0
+        },
+        {
+          "index": 12,
+          "parameterCount": 8,
+          "observationEquationCount": 24,
+          "systemDof": 16,
+          "sparseConditionEstimate": 542673621936018750,
+          "denseConditionEstimate": 542673621936018750,
+          "damping": 0,
+          "maxCorrectionDiff": 0
+        },
+        {
+          "index": 13,
+          "parameterCount": 9,
+          "observationEquationCount": 14,
+          "systemDof": 5,
+          "sparseConditionEstimate": 10876632478892784000,
+          "denseConditionEstimate": 10876632478892784000,
+          "damping": 0,
+          "maxCorrectionDiff": 0
+        },
+        {
+          "index": 14,
+          "parameterCount": 9,
+          "observationEquationCount": 14,
+          "systemDof": 5,
+          "sparseConditionEstimate": 1.661813233124773e+21,
+          "denseConditionEstimate": 1.661813233124773e+21,
+          "damping": 0,
+          "maxCorrectionDiff": 0
+        },
+        {
+          "index": 15,
+          "parameterCount": 9,
+          "observationEquationCount": 14,
+          "systemDof": 5,
+          "sparseConditionEstimate": 469572534023098300000,
+          "denseConditionEstimate": 469572534023098300000,
+          "damping": 0,
+          "maxCorrectionDiff": 0
+        },
+        {
+          "index": 16,
+          "parameterCount": 9,
+          "observationEquationCount": 14,
+          "systemDof": 5,
+          "sparseConditionEstimate": 261950254077127560000,
+          "denseConditionEstimate": 261950254077127560000,
+          "damping": 0,
+          "maxCorrectionDiff": 0
+        },
+        {
+          "index": 17,
+          "parameterCount": 9,
+          "observationEquationCount": 14,
+          "systemDof": 5,
+          "sparseConditionEstimate": 443072579278529040000,
+          "denseConditionEstimate": 443072579278529040000,
+          "damping": 0,
+          "maxCorrectionDiff": 0
+        }
+      ],
+      "systemsNote": "actual-worker per-system capture (sparse backend + dense rebuild oracle)",
+      "systemsSummary": {
+        "count": 18,
+        "worstCorrectionDiff": 0,
+        "minDenseCondition": 135668405484004690,
+        "maxDenseCondition": 1.661813233124773e+21
+      },
+      "sentinel": {
+        "available": true,
+        "pass": true,
+        "maxima": {
+          "cov": 3.469446951953614e-18,
+          "relCov": 3.686287386450715e-18,
+          "relPrec": 4.0115480381963664e-18
+        },
+        "note": "TEST-ONLY dense-vs-sparse sentinel from the existing result contract; true selected-vs-dense covariance capture not attempted (invasive to the production engine)"
+      },
+      "finalContract": {
+        "evaluated": true,
+        "pass": true,
+        "note": "actual-worker full final contract (dense TS vs sparse WASM selected)"
+      }
+    },
+    {
+      "id": "p-weight-loose-dist",
+      "family": "weight-sweep",
+      "expectedKind": "eligible-2d",
+      "classifiedKind": "eligible-2d",
+      "staticAdmit": true,
+      "unknownCount": 4,
+      "dof": 4,
+      "success": true,
+      "iterations": 1,
+      "seuw": 1,
+      "conditionEstimate": 8465760783805861,
+      "solves": 39,
+      "directMs": 73,
+      "physicalValid": true,
+      "workerRun": false,
+      "systems": null,
+      "systemsNote": "direct-TS only: no per-system capture by design (actual-worker subset only)",
+      "systemsSummary": null,
+      "sentinel": {
+        "available": false,
+        "pass": false,
+        "maxima": {
+          "cov": null,
+          "relCov": null,
+          "relPrec": null
+        },
+        "note": "sentinel unavailable: direct-TS only, no sparse candidate by design"
+      },
+      "finalContract": {
+        "evaluated": false,
+        "pass": true,
+        "note": "direct-TS self-consistency (success, iterations 1, seuw 1, physical)"
+      }
+    },
+    {
+      "id": "p-weight-loose-angle",
+      "family": "weight-sweep",
+      "expectedKind": "eligible-2d",
+      "classifiedKind": "eligible-2d",
+      "staticAdmit": true,
+      "unknownCount": 4,
+      "dof": 4,
+      "success": true,
+      "iterations": 1,
+      "seuw": 1,
+      "conditionEstimate": 13786798165710.484,
+      "solves": 39,
+      "directMs": 74,
+      "physicalValid": true,
+      "workerRun": false,
+      "systems": null,
+      "systemsNote": "direct-TS only: no per-system capture by design (actual-worker subset only)",
+      "systemsSummary": null,
+      "sentinel": {
+        "available": false,
+        "pass": false,
+        "maxima": {
+          "cov": null,
+          "relCov": null,
+          "relPrec": null
+        },
+        "note": "sentinel unavailable: direct-TS only, no sparse candidate by design"
+      },
+      "finalContract": {
+        "evaluated": false,
+        "pass": true,
+        "note": "direct-TS self-consistency (success, iterations 1, seuw 1, physical)"
+      }
+    },
+    {
+      "id": "p-weight-mixed",
+      "family": "weight-sweep",
+      "expectedKind": "eligible-2d",
+      "classifiedKind": "eligible-2d",
+      "staticAdmit": true,
+      "unknownCount": 8,
+      "dof": 8,
+      "success": true,
+      "iterations": 1,
+      "seuw": 1,
+      "conditionEstimate": 529244012574019.06,
+      "solves": 45,
+      "directMs": 155,
+      "physicalValid": true,
+      "workerRun": false,
+      "systems": null,
+      "systemsNote": "direct-TS only: no per-system capture by design (actual-worker subset only)",
+      "systemsSummary": null,
+      "sentinel": {
+        "available": false,
+        "pass": false,
+        "maxima": {
+          "cov": null,
+          "relCov": null,
+          "relPrec": null
+        },
+        "note": "sentinel unavailable: direct-TS only, no sparse candidate by design"
+      },
+      "finalContract": {
+        "evaluated": false,
+        "pass": true,
+        "note": "direct-TS self-consistency (success, iterations 1, seuw 1, physical)"
+      }
+    },
+    {
+      "id": "p-weight-loose-both",
+      "family": "weight-sweep",
+      "expectedKind": "eligible-2d",
+      "classifiedKind": "eligible-2d",
+      "staticAdmit": true,
+      "unknownCount": 4,
+      "dof": 4,
+      "success": true,
+      "iterations": 1,
+      "seuw": 1,
+      "conditionEstimate": 13546048600362.463,
+      "solves": 39,
+      "directMs": 72,
+      "physicalValid": true,
+      "workerRun": false,
+      "systems": null,
+      "systemsNote": "direct-TS only: no per-system capture by design (actual-worker subset only)",
+      "systemsSummary": null,
+      "sentinel": {
+        "available": false,
+        "pass": false,
+        "maxima": {
+          "cov": null,
+          "relCov": null,
+          "relPrec": null
+        },
+        "note": "sentinel unavailable: direct-TS only, no sparse candidate by design"
+      },
+      "finalContract": {
+        "evaluated": false,
+        "pass": true,
+        "note": "direct-TS self-consistency (success, iterations 1, seuw 1, physical)"
+      }
+    },
+    {
+      "id": "p-cond-resection-weak",
+      "family": "condition",
+      "expectedKind": "eligible-2d",
+      "classifiedKind": "eligible-2d",
+      "staticAdmit": true,
+      "unknownCount": 1,
+      "dof": 1,
+      "success": true,
+      "iterations": 1,
+      "seuw": 1,
+      "conditionEstimate": 49581012438.22822,
+      "solves": 6,
+      "directMs": 6,
+      "physicalValid": true,
+      "workerRun": false,
+      "systems": null,
+      "systemsNote": "direct-TS only: no per-system capture by design (actual-worker subset only)",
+      "systemsSummary": null,
+      "sentinel": {
+        "available": false,
+        "pass": false,
+        "maxima": {
+          "cov": null,
+          "relCov": null,
+          "relPrec": null
+        },
+        "note": "sentinel unavailable: direct-TS only, no sparse candidate by design"
+      },
+      "finalContract": {
+        "evaluated": false,
+        "pass": true,
+        "note": "direct-TS self-consistency (success, iterations 1, seuw 1, physical)"
+      }
+    },
+    {
+      "id": "p-cond-collinear",
+      "family": "condition",
+      "expectedKind": "eligible-2d",
+      "classifiedKind": "eligible-2d",
+      "staticAdmit": true,
+      "unknownCount": 3,
+      "dof": 0,
+      "success": true,
+      "iterations": 1,
+      "seuw": 1,
+      "conditionEstimate": 309748999714.19507,
+      "solves": 22,
+      "directMs": 33,
+      "physicalValid": true,
+      "workerRun": false,
+      "systems": null,
+      "systemsNote": "direct-TS only: no per-system capture by design (actual-worker subset only)",
+      "systemsSummary": null,
+      "sentinel": {
+        "available": false,
+        "pass": false,
+        "maxima": {
+          "cov": null,
+          "relCov": null,
+          "relPrec": null
+        },
+        "note": "sentinel unavailable: direct-TS only, no sparse candidate by design"
+      },
+      "finalContract": {
+        "evaluated": false,
+        "pass": true,
+        "note": "direct-TS self-consistency (success, iterations 1, seuw 1, physical)"
+      }
+    },
+    {
+      "id": "p-cond-angle-only",
+      "family": "condition",
+      "expectedKind": "eligible-2d",
+      "classifiedKind": "eligible-2d",
+      "staticAdmit": true,
+      "unknownCount": 3,
+      "dof": -1,
+      "success": false,
+      "iterations": 0,
+      "seuw": 0,
+      "conditionEstimate": null,
+      "solves": 3,
+      "directMs": 7,
+      "physicalValid": true,
+      "workerRun": false,
+      "systems": null,
+      "systemsNote": "direct-TS only: no per-system capture by design (actual-worker subset only)",
+      "systemsSummary": null,
+      "sentinel": {
+        "available": false,
+        "pass": false,
+        "maxima": {
+          "cov": null,
+          "relCov": null,
+          "relPrec": null
+        },
+        "note": "sentinel unavailable: direct-TS only, no sparse candidate by design"
+      },
+      "finalContract": {
+        "evaluated": false,
+        "pass": false,
+        "note": "direct-TS self-consistency (success, iterations 1, seuw 1, physical)"
+      }
+    },
+    {
+      "id": "p-cond-single-tie",
+      "family": "condition",
+      "expectedKind": "eligible-2d",
+      "classifiedKind": "eligible-2d",
+      "staticAdmit": true,
+      "unknownCount": 1,
+      "dof": -1,
+      "success": false,
+      "iterations": 0,
+      "seuw": 0,
+      "conditionEstimate": null,
+      "solves": 3,
+      "directMs": 2,
+      "physicalValid": true,
+      "workerRun": false,
+      "systems": null,
+      "systemsNote": "direct-TS only: no per-system capture by design (actual-worker subset only)",
+      "systemsSummary": null,
+      "sentinel": {
+        "available": false,
+        "pass": false,
+        "maxima": {
+          "cov": null,
+          "relCov": null,
+          "relPrec": null
+        },
+        "note": "sentinel unavailable: direct-TS only, no sparse candidate by design"
+      },
+      "finalContract": {
+        "evaluated": false,
+        "pass": false,
+        "note": "direct-TS self-consistency (success, iterations 1, seuw 1, physical)"
+      }
+    },
+    {
+      "id": "p-cond-narrow-brace",
+      "family": "condition",
+      "expectedKind": "eligible-2d",
+      "classifiedKind": "eligible-2d",
+      "staticAdmit": true,
+      "unknownCount": 2,
+      "dof": 3,
+      "success": true,
+      "iterations": 1,
+      "seuw": 1,
+      "conditionEstimate": 5549994851029187,
+      "solves": 12,
+      "directMs": 15,
+      "physicalValid": true,
+      "workerRun": false,
+      "systems": null,
+      "systemsNote": "direct-TS only: no per-system capture by design (actual-worker subset only)",
+      "systemsSummary": null,
+      "sentinel": {
+        "available": false,
+        "pass": false,
+        "maxima": {
+          "cov": null,
+          "relCov": null,
+          "relPrec": null
+        },
+        "note": "sentinel unavailable: direct-TS only, no sparse candidate by design"
+      },
+      "finalContract": {
+        "evaluated": false,
+        "pass": true,
+        "note": "direct-TS self-consistency (success, iterations 1, seuw 1, physical)"
+      }
+    },
+    {
+      "id": "p-cond-distant-pair",
+      "family": "condition",
+      "expectedKind": "eligible-2d",
+      "classifiedKind": "eligible-2d",
+      "staticAdmit": true,
+      "unknownCount": 2,
+      "dof": 1,
+      "success": true,
+      "iterations": 1,
+      "seuw": 1,
+      "conditionEstimate": 208229528251.40128,
+      "solves": 10,
+      "directMs": 11,
+      "physicalValid": true,
+      "workerRun": false,
+      "systems": null,
+      "systemsNote": "direct-TS only: no per-system capture by design (actual-worker subset only)",
+      "systemsSummary": null,
+      "sentinel": {
+        "available": false,
+        "pass": false,
+        "maxima": {
+          "cov": null,
+          "relCov": null,
+          "relPrec": null
+        },
+        "note": "sentinel unavailable: direct-TS only, no sparse candidate by design"
+      },
+      "finalContract": {
+        "evaluated": false,
+        "pass": true,
+        "note": "direct-TS self-consistency (success, iterations 1, seuw 1, physical)"
+      }
+    },
+    {
+      "id": "p-braced-quad",
+      "family": "redundant",
+      "expectedKind": "eligible-2d",
+      "classifiedKind": "eligible-2d",
+      "staticAdmit": true,
+      "unknownCount": 4,
+      "dof": 2,
+      "success": true,
+      "iterations": 1,
+      "seuw": 1,
+      "conditionEstimate": 19742655457194564,
+      "solves": 34,
+      "directMs": 78,
+      "physicalValid": true,
+      "workerRun": true,
+      "systems": [
+        {
+          "index": 0,
+          "parameterCount": 8,
+          "observationEquationCount": 10,
+          "systemDof": 2,
+          "sparseConditionEstimate": 19742655457194564,
+          "denseConditionEstimate": 19742655457194564,
+          "damping": 0,
+          "maxCorrectionDiff": 0
+        },
+        {
+          "index": 1,
+          "parameterCount": 8,
+          "observationEquationCount": 10,
+          "systemDof": 2,
+          "sparseConditionEstimate": 19742655457194564,
+          "denseConditionEstimate": 19742655457194564,
+          "damping": 0,
+          "maxCorrectionDiff": 0
+        },
+        {
+          "index": 2,
+          "parameterCount": 8,
+          "observationEquationCount": 20,
+          "systemDof": 12,
+          "sparseConditionEstimate": 78970621828778260,
+          "denseConditionEstimate": 78970621828778260,
+          "damping": 0,
+          "maxCorrectionDiff": 0
+        },
+        {
+          "index": 3,
+          "parameterCount": 9,
+          "observationEquationCount": 12,
+          "systemDof": 3,
+          "sparseConditionEstimate": 14140877978259622000,
+          "denseConditionEstimate": 14140877978259622000,
+          "damping": 0,
+          "maxCorrectionDiff": 0
+        },
+        {
+          "index": 4,
+          "parameterCount": 9,
+          "observationEquationCount": 12,
+          "systemDof": 3,
+          "sparseConditionEstimate": 41943666276057900000,
+          "denseConditionEstimate": 41943666276057900000,
+          "damping": 0,
+          "maxCorrectionDiff": 0
+        },
+        {
+          "index": 5,
+          "parameterCount": 9,
+          "observationEquationCount": 12,
+          "systemDof": 3,
+          "sparseConditionEstimate": 275676140062356370000,
+          "denseConditionEstimate": 275676140062356370000,
+          "damping": 0,
+          "maxCorrectionDiff": 0
+        },
+        {
+          "index": 6,
+          "parameterCount": 9,
+          "observationEquationCount": 12,
+          "systemDof": 3,
+          "sparseConditionEstimate": 50950294435911480000,
+          "denseConditionEstimate": 50950294435911480000,
+          "damping": 0,
+          "maxCorrectionDiff": 0
+        },
+        {
+          "index": 7,
+          "parameterCount": 9,
+          "observationEquationCount": 12,
+          "systemDof": 3,
+          "sparseConditionEstimate": 50950294435911480000,
+          "denseConditionEstimate": 50950294435911480000,
+          "damping": 0,
+          "maxCorrectionDiff": 0
+        },
+        {
+          "index": 8,
+          "parameterCount": 9,
+          "observationEquationCount": 12,
+          "systemDof": 3,
+          "sparseConditionEstimate": 14140877978259622000,
+          "denseConditionEstimate": 14140877978259622000,
+          "damping": 0,
+          "maxCorrectionDiff": 0
+        },
+        {
+          "index": 9,
+          "parameterCount": 9,
+          "observationEquationCount": 12,
+          "systemDof": 3,
+          "sparseConditionEstimate": 99476904170284450000,
+          "denseConditionEstimate": 99476904170284450000,
+          "damping": 0,
+          "maxCorrectionDiff": 0
+        },
+        {
+          "index": 10,
+          "parameterCount": 8,
+          "observationEquationCount": 20,
+          "systemDof": 12,
+          "sparseConditionEstimate": 78970621828778260,
+          "denseConditionEstimate": 78970621828778260,
+          "damping": 0,
+          "maxCorrectionDiff": 0
+        },
+        {
+          "index": 11,
+          "parameterCount": 9,
+          "observationEquationCount": 12,
+          "systemDof": 3,
+          "sparseConditionEstimate": 14140877978259622000,
+          "denseConditionEstimate": 14140877978259622000,
+          "damping": 0,
+          "maxCorrectionDiff": 0
+        },
+        {
+          "index": 12,
+          "parameterCount": 9,
+          "observationEquationCount": 12,
+          "systemDof": 3,
+          "sparseConditionEstimate": 41943666276057900000,
+          "denseConditionEstimate": 41943666276057900000,
+          "damping": 0,
+          "maxCorrectionDiff": 0
+        },
+        {
+          "index": 13,
+          "parameterCount": 9,
+          "observationEquationCount": 12,
+          "systemDof": 3,
+          "sparseConditionEstimate": 50950294435911480000,
+          "denseConditionEstimate": 50950294435911480000,
+          "damping": 0,
+          "maxCorrectionDiff": 0
+        },
+        {
+          "index": 14,
+          "parameterCount": 9,
+          "observationEquationCount": 12,
+          "systemDof": 3,
+          "sparseConditionEstimate": 50950294435911480000,
+          "denseConditionEstimate": 50950294435911480000,
+          "damping": 0,
+          "maxCorrectionDiff": 0
+        },
+        {
+          "index": 15,
+          "parameterCount": 9,
+          "observationEquationCount": 12,
+          "systemDof": 3,
+          "sparseConditionEstimate": 14140877978259622000,
+          "denseConditionEstimate": 14140877978259622000,
+          "damping": 0,
+          "maxCorrectionDiff": 0
+        },
+        {
+          "index": 16,
+          "parameterCount": 9,
+          "observationEquationCount": 12,
+          "systemDof": 3,
+          "sparseConditionEstimate": 99476904170284450000,
+          "denseConditionEstimate": 99476904170284450000,
+          "damping": 0,
+          "maxCorrectionDiff": 0
+        },
+        {
+          "index": 17,
+          "parameterCount": 9,
+          "observationEquationCount": 22,
+          "systemDof": 13,
+          "sparseConditionEstimate": 14140877978259622000,
+          "denseConditionEstimate": 14140877978259622000,
+          "damping": 0,
+          "maxCorrectionDiff": 0
+        },
+        {
+          "index": 18,
+          "parameterCount": 9,
+          "observationEquationCount": 22,
+          "systemDof": 13,
+          "sparseConditionEstimate": 41943666276057900000,
+          "denseConditionEstimate": 41943666276057900000,
+          "damping": 0,
+          "maxCorrectionDiff": 0
+        },
+        {
+          "index": 19,
+          "parameterCount": 9,
+          "observationEquationCount": 22,
+          "systemDof": 13,
+          "sparseConditionEstimate": 50950294435911480000,
+          "denseConditionEstimate": 50950294435911480000,
+          "damping": 0,
+          "maxCorrectionDiff": 0
+        },
+        {
+          "index": 20,
+          "parameterCount": 9,
+          "observationEquationCount": 22,
+          "systemDof": 13,
+          "sparseConditionEstimate": 50950294435911480000,
+          "denseConditionEstimate": 50950294435911480000,
+          "damping": 0,
+          "maxCorrectionDiff": 0
+        },
+        {
+          "index": 21,
+          "parameterCount": 9,
+          "observationEquationCount": 22,
+          "systemDof": 13,
+          "sparseConditionEstimate": 14140877978259622000,
+          "denseConditionEstimate": 14140877978259622000,
+          "damping": 0,
+          "maxCorrectionDiff": 0
+        },
+        {
+          "index": 22,
+          "parameterCount": 9,
+          "observationEquationCount": 22,
+          "systemDof": 13,
+          "sparseConditionEstimate": 99476904170284450000,
+          "denseConditionEstimate": 99476904170284450000,
+          "damping": 0,
+          "maxCorrectionDiff": 0
+        },
+        {
+          "index": 23,
+          "parameterCount": 10,
+          "observationEquationCount": 24,
+          "systemDof": 14,
+          "sparseConditionEstimate": 50950294435911480000,
+          "denseConditionEstimate": 50950294435911480000,
+          "damping": 0,
+          "maxCorrectionDiff": 0
+        },
+        {
+          "index": 24,
+          "parameterCount": 10,
+          "observationEquationCount": 24,
+          "systemDof": 14,
+          "sparseConditionEstimate": 99476904170284450000,
+          "denseConditionEstimate": 99476904170284450000,
+          "damping": 0,
+          "maxCorrectionDiff": 0
+        },
+        {
+          "index": 25,
+          "parameterCount": 10,
+          "observationEquationCount": 24,
+          "systemDof": 14,
+          "sparseConditionEstimate": 50950294435911480000,
+          "denseConditionEstimate": 50950294435911480000,
+          "damping": 0,
+          "maxCorrectionDiff": 0
+        },
+        {
+          "index": 26,
+          "parameterCount": 10,
+          "observationEquationCount": 24,
+          "systemDof": 14,
+          "sparseConditionEstimate": 50950294435911480000,
+          "denseConditionEstimate": 50950294435911480000,
+          "damping": 0,
+          "maxCorrectionDiff": 0
+        },
+        {
+          "index": 27,
+          "parameterCount": 10,
+          "observationEquationCount": 24,
+          "systemDof": 14,
+          "sparseConditionEstimate": 50950294435911480000,
+          "denseConditionEstimate": 50950294435911480000,
+          "damping": 0,
+          "maxCorrectionDiff": 0
+        },
+        {
+          "index": 28,
+          "parameterCount": 11,
+          "observationEquationCount": 26,
+          "systemDof": 15,
+          "sparseConditionEstimate": 50950294435911480000,
+          "denseConditionEstimate": 50950294435911480000,
+          "damping": 0,
+          "maxCorrectionDiff": 0
+        },
+        {
+          "index": 29,
+          "parameterCount": 11,
+          "observationEquationCount": 26,
+          "systemDof": 15,
+          "sparseConditionEstimate": 50950294435911480000,
+          "denseConditionEstimate": 50950294435911480000,
+          "damping": 0,
+          "maxCorrectionDiff": 0
+        },
+        {
+          "index": 30,
+          "parameterCount": 11,
+          "observationEquationCount": 26,
+          "systemDof": 15,
+          "sparseConditionEstimate": 50950294435911480000,
+          "denseConditionEstimate": 50950294435911480000,
+          "damping": 0,
+          "maxCorrectionDiff": 0
+        },
+        {
+          "index": 31,
+          "parameterCount": 11,
+          "observationEquationCount": 26,
+          "systemDof": 15,
+          "sparseConditionEstimate": 99476904170284450000,
+          "denseConditionEstimate": 99476904170284450000,
+          "damping": 0,
+          "maxCorrectionDiff": 0
+        },
+        {
+          "index": 32,
+          "parameterCount": 12,
+          "observationEquationCount": 28,
+          "systemDof": 16,
+          "sparseConditionEstimate": 99476904170284450000,
+          "denseConditionEstimate": 99476904170284450000,
+          "damping": 0,
+          "maxCorrectionDiff": 0
+        },
+        {
+          "index": 33,
+          "parameterCount": 12,
+          "observationEquationCount": 28,
+          "systemDof": 16,
+          "sparseConditionEstimate": 50950294435911480000,
+          "denseConditionEstimate": 50950294435911480000,
+          "damping": 0,
+          "maxCorrectionDiff": 0
+        },
+        {
+          "index": 34,
+          "parameterCount": 12,
+          "observationEquationCount": 28,
+          "systemDof": 16,
+          "sparseConditionEstimate": 50950294435911480000,
+          "denseConditionEstimate": 50950294435911480000,
+          "damping": 0,
+          "maxCorrectionDiff": 0
+        }
+      ],
+      "systemsNote": "actual-worker per-system capture (sparse backend + dense rebuild oracle)",
+      "systemsSummary": {
+        "count": 35,
+        "worstCorrectionDiff": 0,
+        "minDenseCondition": 19742655457194564,
+        "maxDenseCondition": 275676140062356370000
+      },
+      "sentinel": {
+        "available": true,
+        "pass": true,
+        "maxima": {
+          "cov": 1.214306433183765e-16,
+          "relCov": 7.892991815694472e-17,
+          "relPrec": 7.892991815694472e-17
+        },
+        "note": "TEST-ONLY dense-vs-sparse sentinel from the existing result contract; true selected-vs-dense covariance capture not attempted (invasive to the production engine)"
+      },
+      "finalContract": {
+        "evaluated": true,
+        "pass": true,
+        "note": "actual-worker full final contract (dense TS vs sparse WASM selected)"
+      }
+    },
+    {
+      "id": "p-chain-branch",
+      "family": "redundant",
+      "expectedKind": "eligible-2d",
+      "classifiedKind": "eligible-2d",
+      "staticAdmit": true,
+      "unknownCount": 4,
+      "dof": 0,
+      "success": true,
+      "iterations": 1,
+      "seuw": 1,
+      "conditionEstimate": 308813181936809900,
+      "solves": 28,
+      "directMs": 56,
+      "physicalValid": true,
+      "workerRun": false,
+      "systems": null,
+      "systemsNote": "direct-TS only: no per-system capture by design (actual-worker subset only)",
+      "systemsSummary": null,
+      "sentinel": {
+        "available": false,
+        "pass": false,
+        "maxima": {
+          "cov": null,
+          "relCov": null,
+          "relPrec": null
+        },
+        "note": "sentinel unavailable: direct-TS only, no sparse candidate by design"
+      },
+      "finalContract": {
+        "evaluated": false,
+        "pass": true,
+        "note": "direct-TS self-consistency (success, iterations 1, seuw 1, physical)"
+      }
+    },
+    {
+      "id": "p-redundant-star",
+      "family": "redundant",
+      "expectedKind": "eligible-2d",
+      "classifiedKind": "eligible-2d",
+      "staticAdmit": true,
+      "unknownCount": 2,
+      "dof": 5,
+      "success": true,
+      "iterations": 1,
+      "seuw": 1,
+      "conditionEstimate": 52448435611053780,
+      "solves": 14,
+      "directMs": 20,
+      "physicalValid": true,
+      "workerRun": false,
+      "systems": null,
+      "systemsNote": "direct-TS only: no per-system capture by design (actual-worker subset only)",
+      "systemsSummary": null,
+      "sentinel": {
+        "available": false,
+        "pass": false,
+        "maxima": {
+          "cov": null,
+          "relCov": null,
+          "relPrec": null
+        },
+        "note": "sentinel unavailable: direct-TS only, no sparse candidate by design"
+      },
+      "finalContract": {
+        "evaluated": false,
+        "pass": true,
+        "note": "direct-TS self-consistency (success, iterations 1, seuw 1, physical)"
+      }
+    },
+    {
+      "id": "p-redundant-ring",
+      "family": "redundant",
+      "expectedKind": "eligible-2d",
+      "classifiedKind": "eligible-2d",
+      "staticAdmit": true,
+      "unknownCount": 4,
+      "dof": 1,
+      "success": true,
+      "iterations": 1,
+      "seuw": 1,
+      "conditionEstimate": 53376043819827960,
+      "solves": 28,
+      "directMs": 58,
+      "physicalValid": true,
+      "workerRun": false,
+      "systems": null,
+      "systemsNote": "direct-TS only: no per-system capture by design (actual-worker subset only)",
+      "systemsSummary": null,
+      "sentinel": {
+        "available": false,
+        "pass": false,
+        "maxima": {
+          "cov": null,
+          "relCov": null,
+          "relPrec": null
+        },
+        "note": "sentinel unavailable: direct-TS only, no sparse candidate by design"
+      },
+      "finalContract": {
+        "evaluated": false,
+        "pass": true,
+        "note": "direct-TS self-consistency (success, iterations 1, seuw 1, physical)"
+      }
+    },
+    {
+      "id": "p-mixed-dag",
+      "family": "redundant",
+      "expectedKind": "eligible-2d",
+      "classifiedKind": "eligible-2d",
+      "staticAdmit": true,
+      "unknownCount": 6,
+      "dof": 6,
+      "success": true,
+      "iterations": 1,
+      "seuw": 1,
+      "conditionEstimate": 20689455718039092,
+      "solves": 45,
+      "directMs": 123,
+      "physicalValid": true,
+      "workerRun": false,
+      "systems": null,
+      "systemsNote": "direct-TS only: no per-system capture by design (actual-worker subset only)",
+      "systemsSummary": null,
+      "sentinel": {
+        "available": false,
+        "pass": false,
+        "maxima": {
+          "cov": null,
+          "relCov": null,
+          "relPrec": null
+        },
+        "note": "sentinel unavailable: direct-TS only, no sparse candidate by design"
+      },
+      "finalContract": {
+        "evaluated": false,
+        "pass": true,
+        "note": "direct-TS self-consistency (success, iterations 1, seuw 1, physical)"
+      }
+    },
+    {
+      "id": "p-rank-floating",
+      "family": "rank-experimental",
+      "expectedKind": "experimental-rank",
+      "classifiedKind": "eligible-2d",
+      "staticAdmit": true,
+      "unknownCount": 3,
+      "dof": -3,
+      "success": false,
+      "iterations": 0,
+      "seuw": 0,
+      "conditionEstimate": null,
+      "solves": 3,
+      "directMs": 5,
+      "physicalValid": true,
+      "workerRun": false,
+      "systems": null,
+      "systemsNote": "direct-TS only: no per-system capture by design (actual-worker subset only)",
+      "systemsSummary": null,
+      "sentinel": {
+        "available": false,
+        "pass": false,
+        "maxima": {
+          "cov": null,
+          "relCov": null,
+          "relPrec": null
+        },
+        "note": "sentinel unavailable: direct-TS only, no sparse candidate by design"
+      },
+      "finalContract": {
+        "evaluated": false,
+        "pass": false,
+        "note": "direct-TS self-consistency (success, iterations 1, seuw 1, physical)"
+      }
+    },
+    {
+      "id": "p-rank-free-pair",
+      "family": "rank-experimental",
+      "expectedKind": "experimental-rank",
+      "classifiedKind": "eligible-2d",
+      "staticAdmit": true,
+      "unknownCount": 2,
+      "dof": -3,
+      "success": false,
+      "iterations": 0,
+      "seuw": 0,
+      "conditionEstimate": null,
+      "solves": 3,
+      "directMs": 1,
+      "physicalValid": true,
+      "workerRun": false,
+      "systems": null,
+      "systemsNote": "direct-TS only: no per-system capture by design (actual-worker subset only)",
+      "systemsSummary": null,
+      "sentinel": {
+        "available": false,
+        "pass": false,
+        "maxima": {
+          "cov": null,
+          "relCov": null,
+          "relPrec": null
+        },
+        "note": "sentinel unavailable: direct-TS only, no sparse candidate by design"
+      },
+      "finalContract": {
+        "evaluated": false,
+        "pass": false,
+        "note": "direct-TS self-consistency (success, iterations 1, seuw 1, physical)"
+      }
+    },
+    {
+      "id": "p-excl-3d",
+      "family": "exclusion",
+      "expectedKind": "experimental-3d",
+      "classifiedKind": "experimental-3d",
+      "staticAdmit": false,
+      "unknownCount": null,
+      "dof": 0,
+      "success": true,
+      "iterations": 1,
+      "seuw": 1,
+      "conditionEstimate": 876589983770250.9,
+      "solves": 6,
+      "directMs": 8,
+      "physicalValid": true,
+      "workerRun": false,
+      "systems": null,
+      "systemsNote": "direct-TS only: no per-system capture by design (actual-worker subset only)",
+      "systemsSummary": null,
+      "sentinel": {
+        "available": false,
+        "pass": false,
+        "maxima": {
+          "cov": null,
+          "relCov": null,
+          "relPrec": null
+        },
+        "note": "sentinel unavailable: direct-TS only, no sparse candidate by design"
+      },
+      "finalContract": {
+        "evaluated": false,
+        "pass": true,
+        "note": "direct-TS self-consistency (success, iterations 1, seuw 1, physical)"
+      }
+    },
+    {
+      "id": "p-excl-gps-cov",
+      "family": "exclusion",
+      "expectedKind": "experimental-gps-covariance",
+      "classifiedKind": "experimental-gps-covariance",
+      "staticAdmit": false,
+      "unknownCount": 1,
+      "dof": 2,
+      "success": true,
+      "iterations": 1,
+      "seuw": 1,
+      "conditionEstimate": 400000000.0531145,
+      "solves": 6,
+      "directMs": 7,
+      "physicalValid": true,
+      "workerRun": false,
+      "systems": null,
+      "systemsNote": "direct-TS only: no per-system capture by design (actual-worker subset only)",
+      "systemsSummary": null,
+      "sentinel": {
+        "available": false,
+        "pass": false,
+        "maxima": {
+          "cov": null,
+          "relCov": null,
+          "relPrec": null
+        },
+        "note": "sentinel unavailable: direct-TS only, no sparse candidate by design"
+      },
+      "finalContract": {
+        "evaluated": false,
+        "pass": true,
+        "note": "direct-TS self-consistency (success, iterations 1, seuw 1, physical)"
+      }
+    },
+    {
+      "id": "p-excl-robust",
+      "family": "exclusion",
+      "expectedKind": "ineligible-robust",
+      "classifiedKind": "ineligible-robust",
+      "staticAdmit": false,
+      "unknownCount": null,
+      "dof": 4,
+      "success": true,
+      "iterations": 1,
+      "seuw": 1,
+      "conditionEstimate": 8471753892104241,
+      "solves": 39,
+      "directMs": 77,
+      "physicalValid": true,
+      "workerRun": false,
+      "systems": null,
+      "systemsNote": "direct-TS only: no per-system capture by design (actual-worker subset only)",
+      "systemsSummary": null,
+      "sentinel": {
+        "available": false,
+        "pass": false,
+        "maxima": {
+          "cov": null,
+          "relCov": null,
+          "relPrec": null
+        },
+        "note": "sentinel unavailable: direct-TS only, no sparse candidate by design"
+      },
+      "finalContract": {
+        "evaluated": false,
+        "pass": true,
+        "note": "direct-TS self-consistency (success, iterations 1, seuw 1, physical)"
+      }
+    },
+    {
+      "id": "p-excl-tscorr",
+      "family": "exclusion",
+      "expectedKind": "ineligible-ts-correlation",
+      "classifiedKind": "ineligible-ts-correlation",
+      "staticAdmit": false,
+      "unknownCount": null,
+      "dof": 4,
+      "success": true,
+      "iterations": 1,
+      "seuw": 1,
+      "conditionEstimate": 8471753892104241,
+      "solves": 39,
+      "directMs": 75,
+      "physicalValid": true,
+      "workerRun": false,
+      "systems": null,
+      "systemsNote": "direct-TS only: no per-system capture by design (actual-worker subset only)",
+      "systemsSummary": null,
+      "sentinel": {
+        "available": false,
+        "pass": false,
+        "maxima": {
+          "cov": null,
+          "relCov": null,
+          "relPrec": null
+        },
+        "note": "sentinel unavailable: direct-TS only, no sparse candidate by design"
+      },
+      "finalContract": {
+        "evaluated": false,
+        "pass": true,
+        "note": "direct-TS self-consistency (success, iterations 1, seuw 1, physical)"
+      }
+    }
+  ]
+}

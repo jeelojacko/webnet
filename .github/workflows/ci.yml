@@ -49,3 +49,29 @@ jobs:
           name: legacy-corpus-summary
           path: artifacts/legacy-corpus/
           if-no-files-found: warn
+  phase8b1-clean-runner-gate:
+    # Focused real-route gate (CI-sized): the real WASM artifact must exist
+    # (absence fails, never skips), the route stays default-OFF, and the
+    # anchor/camp/eligible-adjustment shapes hold through the exact
+    # production worker dispatch. The 10-minute 120-session stress and the
+    # browser proof stay local-only (see reports/phase8b1/).
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+      - name: Setup Node
+        uses: actions/setup-node@v5
+        with:
+          node-version: 24
+          cache: npm
+      - name: Install
+        run: npm ci
+      - name: Setup Emscripten
+        uses: emscripten-core/setup-emsdk@v15
+        with:
+          version: 6.0.5
+          actions-cache-folder: emsdk-cache
+      - name: Build WASM test artifact
+        run: npm run wasm:build
+      - name: Phase 8B.1 clean-runner gate
+        run: node scripts/runVitest.mjs run tests/phase8b1_clean_runner_gate.test.ts

@@ -1,0 +1,1944 @@
+{
+  "phase": "8A.5",
+  "scope": "TEST/EVIDENCE ONLY — P0-P4 ladder with explicit false admit/reject vs the user-visible final contract",
+  "sentinelLimitation": "P3 uses a TEST-ONLY dense-vs-sparse sentinel from the existing result contract (comparePreanalysisContract covariance maxima), not a true captured-covariance comparison; true capture would be invasive to the production engine.",
+  "totals": {
+    "cases": 38,
+    "workerRuns": 6,
+    "falseAdmits": {
+      "P0": 4,
+      "P1": 0,
+      "P2": 0,
+      "P3": 0,
+      "P4": 0
+    },
+    "falseRejects": {
+      "P0": 5,
+      "P1": 26,
+      "P2": 29,
+      "P3": 28,
+      "P4": 33
+    }
+  },
+  "workerTimingsMs": [
+    {
+      "id": "p-small-2d",
+      "ms": 589
+    },
+    {
+      "id": "p-gps-2d",
+      "ms": 501
+    },
+    {
+      "id": "p-camp-bounded",
+      "ms": 6053
+    },
+    {
+      "id": "p-size-chain-008",
+      "ms": 893
+    },
+    {
+      "id": "p-weight-tight",
+      "ms": 284
+    },
+    {
+      "id": "p-braced-quad",
+      "ms": 339
+    }
+  ],
+  "directSizeScalingMs": [
+    {
+      "id": "p-size-chain-008",
+      "unknowns": 8,
+      "ms": 366
+    },
+    {
+      "id": "p-size-chain-016",
+      "unknowns": 16,
+      "ms": 807
+    },
+    {
+      "id": "p-size-chain-032",
+      "unknowns": 32,
+      "ms": 2378
+    },
+    {
+      "id": "p-size-chain-048",
+      "unknowns": 48,
+      "ms": 4471
+    },
+    {
+      "id": "p-size-chain-064",
+      "unknowns": 64,
+      "ms": 7322
+    },
+    {
+      "id": "p-size-chain-096",
+      "unknowns": 96,
+      "ms": 9771
+    },
+    {
+      "id": "p-size-chain-128",
+      "unknowns": 128,
+      "ms": 15161
+    },
+    {
+      "id": "p-size-chain-256",
+      "unknowns": 256,
+      "ms": 74694
+    }
+  ],
+  "stress": {
+    "sessions": 50,
+    "allSuccess": true,
+    "bitIdentical": true,
+    "medianMs": 22,
+    "perSessionMs": [
+      252,
+      44,
+      34,
+      27,
+      26,
+      25,
+      25,
+      24,
+      24,
+      24,
+      23,
+      23,
+      22,
+      23,
+      26,
+      28,
+      21,
+      23,
+      22,
+      25,
+      22,
+      22,
+      22,
+      23,
+      22,
+      21,
+      22,
+      22,
+      22,
+      22,
+      21,
+      22,
+      22,
+      21,
+      21,
+      21,
+      20,
+      20,
+      20,
+      21,
+      20,
+      20,
+      20,
+      20,
+      20,
+      20,
+      21,
+      20,
+      20,
+      20
+    ],
+    "note": "one reused worker, bundle initialized once; timings recorded only, never gated"
+  },
+  "cancellation": {
+    "supported": true,
+    "detail": "bridge answered 'cancelled' to a cancel probe"
+  },
+  "cases": [
+    {
+      "id": "p-small-2d",
+      "groundTruth": true,
+      "groundTruthNote": "actual-worker full final contract (dense TS vs sparse WASM selected)",
+      "strategies": {
+        "P0": {
+          "admit": true,
+          "reasons": []
+        },
+        "P1": {
+          "admit": false,
+          "reasons": [
+            "condition 1.121e+15 exceeds 1.000e+12"
+          ]
+        },
+        "P2": {
+          "admit": true,
+          "reasons": []
+        },
+        "P3": {
+          "admit": true,
+          "reasons": []
+        },
+        "P4": {
+          "admit": false,
+          "reasons": [
+            "condition 1.121e+15 exceeds 1.000e+12"
+          ]
+        }
+      },
+      "falseAdmits": [],
+      "falseRejects": [
+        "P1",
+        "P4"
+      ],
+      "sentinelMaxima": {
+        "cov": 4.336808689942018e-19,
+        "relCov": 4.336808689942018e-19,
+        "relPrec": 1.3552527156068805e-20
+      }
+    },
+    {
+      "id": "p-plan-2d",
+      "groundTruth": true,
+      "groundTruthNote": "direct-TS self-consistency (success, iterations 1, seuw 1, physical)",
+      "strategies": {
+        "P0": {
+          "admit": true,
+          "reasons": []
+        },
+        "P1": {
+          "admit": false,
+          "reasons": [
+            "condition 3.726e+14 exceeds 1.000e+12"
+          ]
+        },
+        "P2": {
+          "admit": false,
+          "reasons": [
+            "no correction systems captured (fail-closed)"
+          ]
+        },
+        "P3": {
+          "admit": false,
+          "reasons": [
+            "no dense-vs-sparse sentinel evidence (fail-closed)"
+          ]
+        },
+        "P4": {
+          "admit": false,
+          "reasons": [
+            "condition 3.726e+14 exceeds 1.000e+12",
+            "no dense-vs-sparse sentinel evidence (fail-closed)"
+          ]
+        }
+      },
+      "falseAdmits": [],
+      "falseRejects": [
+        "P1",
+        "P2",
+        "P3",
+        "P4"
+      ],
+      "sentinelMaxima": {
+        "cov": null,
+        "relCov": null,
+        "relPrec": null
+      }
+    },
+    {
+      "id": "p-gps-2d",
+      "groundTruth": true,
+      "groundTruthNote": "actual-worker full final contract (dense TS vs sparse WASM selected)",
+      "strategies": {
+        "P0": {
+          "admit": true,
+          "reasons": []
+        },
+        "P1": {
+          "admit": true,
+          "reasons": []
+        },
+        "P2": {
+          "admit": true,
+          "reasons": []
+        },
+        "P3": {
+          "admit": true,
+          "reasons": []
+        },
+        "P4": {
+          "admit": true,
+          "reasons": []
+        }
+      },
+      "falseAdmits": [],
+      "falseRejects": [],
+      "sentinelMaxima": {
+        "cov": 0,
+        "relCov": 0,
+        "relPrec": 0
+      }
+    },
+    {
+      "id": "p-camp-bounded",
+      "groundTruth": true,
+      "groundTruthNote": "actual-worker full final contract (dense TS vs sparse WASM selected)",
+      "strategies": {
+        "P0": {
+          "admit": true,
+          "reasons": []
+        },
+        "P1": {
+          "admit": false,
+          "reasons": [
+            "condition 1.165e+51 exceeds 1.000e+12"
+          ]
+        },
+        "P2": {
+          "admit": false,
+          "reasons": [
+            "system 1: correction diff 1.21e+2 exceeds 1e-9",
+            "system 2: correction diff 1.21e+2 exceeds 1e-9",
+            "system 3: correction diff 6.04e+1 exceeds 1e-9",
+            "system 4: correction diff 2.42e+2 exceeds 1e-9",
+            "system 5: correction diff 1.74e+2 exceeds 1e-9",
+            "system 6: correction diff 1.47e+2 exceeds 1e-9",
+            "system 7: correction diff 2.52e+2 exceeds 1e-9",
+            "system 8: correction diff 2.13e+1 exceeds 1e-9",
+            "system 9: correction diff 2.20e+2 exceeds 1e-9",
+            "system 10: correction diff 1.49e+2 exceeds 1e-9",
+            "system 11: correction diff 1.49e+2 exceeds 1e-9",
+            "system 12: correction diff 1.70e+2 exceeds 1e-9",
+            "system 13: correction diff 1.95e+2 exceeds 1e-9",
+            "system 14: correction diff 1.55e+2 exceeds 1e-9",
+            "system 15: correction diff 2.68e+1 exceeds 1e-9",
+            "system 16: correction diff 2.58e+2 exceeds 1e-9",
+            "system 17: correction diff 1.02e+1 exceeds 1e-9",
+            "system 18: correction diff 1.31e+2 exceeds 1e-9"
+          ]
+        },
+        "P3": {
+          "admit": true,
+          "reasons": []
+        },
+        "P4": {
+          "admit": false,
+          "reasons": [
+            "condition 1.165e+51 exceeds 1.000e+12"
+          ]
+        }
+      },
+      "falseAdmits": [],
+      "falseRejects": [
+        "P1",
+        "P2",
+        "P4"
+      ],
+      "sentinelMaxima": {
+        "cov": 1.0547891203324756e-7,
+        "relCov": 2.9393922471349126e-8,
+        "relPrec": 1.1060967997314377e-7
+      }
+    },
+    {
+      "id": "p-size-chain-008",
+      "groundTruth": true,
+      "groundTruthNote": "actual-worker full final contract (dense TS vs sparse WASM selected)",
+      "strategies": {
+        "P0": {
+          "admit": true,
+          "reasons": []
+        },
+        "P1": {
+          "admit": false,
+          "reasons": [
+            "condition 8.472e+15 exceeds 1.000e+12"
+          ]
+        },
+        "P2": {
+          "admit": true,
+          "reasons": []
+        },
+        "P3": {
+          "admit": true,
+          "reasons": []
+        },
+        "P4": {
+          "admit": false,
+          "reasons": [
+            "condition 8.472e+15 exceeds 1.000e+12"
+          ]
+        }
+      },
+      "falseAdmits": [],
+      "falseRejects": [
+        "P1",
+        "P4"
+      ],
+      "sentinelMaxima": {
+        "cov": 2.211772431870429e-17,
+        "relCov": 2.6020852139652106e-17,
+        "relPrec": 2.6454533008646308e-17
+      }
+    },
+    {
+      "id": "p-size-chain-016",
+      "groundTruth": true,
+      "groundTruthNote": "direct-TS self-consistency (success, iterations 1, seuw 1, physical)",
+      "strategies": {
+        "P0": {
+          "admit": true,
+          "reasons": []
+        },
+        "P1": {
+          "admit": false,
+          "reasons": [
+            "condition 8.472e+15 exceeds 1.000e+12"
+          ]
+        },
+        "P2": {
+          "admit": false,
+          "reasons": [
+            "no correction systems captured (fail-closed)"
+          ]
+        },
+        "P3": {
+          "admit": false,
+          "reasons": [
+            "no dense-vs-sparse sentinel evidence (fail-closed)"
+          ]
+        },
+        "P4": {
+          "admit": false,
+          "reasons": [
+            "condition 8.472e+15 exceeds 1.000e+12",
+            "no dense-vs-sparse sentinel evidence (fail-closed)"
+          ]
+        }
+      },
+      "falseAdmits": [],
+      "falseRejects": [
+        "P1",
+        "P2",
+        "P3",
+        "P4"
+      ],
+      "sentinelMaxima": {
+        "cov": null,
+        "relCov": null,
+        "relPrec": null
+      }
+    },
+    {
+      "id": "p-size-chain-032",
+      "groundTruth": true,
+      "groundTruthNote": "direct-TS self-consistency (success, iterations 1, seuw 1, physical)",
+      "strategies": {
+        "P0": {
+          "admit": true,
+          "reasons": []
+        },
+        "P1": {
+          "admit": false,
+          "reasons": [
+            "condition 9.332e+15 exceeds 1.000e+12"
+          ]
+        },
+        "P2": {
+          "admit": false,
+          "reasons": [
+            "no correction systems captured (fail-closed)"
+          ]
+        },
+        "P3": {
+          "admit": false,
+          "reasons": [
+            "no dense-vs-sparse sentinel evidence (fail-closed)"
+          ]
+        },
+        "P4": {
+          "admit": false,
+          "reasons": [
+            "condition 9.332e+15 exceeds 1.000e+12",
+            "no dense-vs-sparse sentinel evidence (fail-closed)"
+          ]
+        }
+      },
+      "falseAdmits": [],
+      "falseRejects": [
+        "P1",
+        "P2",
+        "P3",
+        "P4"
+      ],
+      "sentinelMaxima": {
+        "cov": null,
+        "relCov": null,
+        "relPrec": null
+      }
+    },
+    {
+      "id": "p-size-chain-048",
+      "groundTruth": true,
+      "groundTruthNote": "direct-TS self-consistency (success, iterations 1, seuw 1, physical)",
+      "strategies": {
+        "P0": {
+          "admit": true,
+          "reasons": []
+        },
+        "P1": {
+          "admit": false,
+          "reasons": [
+            "condition 9.332e+15 exceeds 1.000e+12"
+          ]
+        },
+        "P2": {
+          "admit": false,
+          "reasons": [
+            "no correction systems captured (fail-closed)"
+          ]
+        },
+        "P3": {
+          "admit": false,
+          "reasons": [
+            "no dense-vs-sparse sentinel evidence (fail-closed)"
+          ]
+        },
+        "P4": {
+          "admit": false,
+          "reasons": [
+            "condition 9.332e+15 exceeds 1.000e+12",
+            "no dense-vs-sparse sentinel evidence (fail-closed)"
+          ]
+        }
+      },
+      "falseAdmits": [],
+      "falseRejects": [
+        "P1",
+        "P2",
+        "P3",
+        "P4"
+      ],
+      "sentinelMaxima": {
+        "cov": null,
+        "relCov": null,
+        "relPrec": null
+      }
+    },
+    {
+      "id": "p-size-chain-064",
+      "groundTruth": true,
+      "groundTruthNote": "direct-TS self-consistency (success, iterations 1, seuw 1, physical)",
+      "strategies": {
+        "P0": {
+          "admit": true,
+          "reasons": []
+        },
+        "P1": {
+          "admit": false,
+          "reasons": [
+            "condition 9.332e+15 exceeds 1.000e+12"
+          ]
+        },
+        "P2": {
+          "admit": false,
+          "reasons": [
+            "no correction systems captured (fail-closed)"
+          ]
+        },
+        "P3": {
+          "admit": false,
+          "reasons": [
+            "no dense-vs-sparse sentinel evidence (fail-closed)"
+          ]
+        },
+        "P4": {
+          "admit": false,
+          "reasons": [
+            "condition 9.332e+15 exceeds 1.000e+12",
+            "no dense-vs-sparse sentinel evidence (fail-closed)"
+          ]
+        }
+      },
+      "falseAdmits": [],
+      "falseRejects": [
+        "P1",
+        "P2",
+        "P3",
+        "P4"
+      ],
+      "sentinelMaxima": {
+        "cov": null,
+        "relCov": null,
+        "relPrec": null
+      }
+    },
+    {
+      "id": "p-size-chain-096",
+      "groundTruth": true,
+      "groundTruthNote": "direct-TS self-consistency (success, iterations 1, seuw 1, physical)",
+      "strategies": {
+        "P0": {
+          "admit": true,
+          "reasons": []
+        },
+        "P1": {
+          "admit": false,
+          "reasons": [
+            "condition 9.332e+15 exceeds 1.000e+12"
+          ]
+        },
+        "P2": {
+          "admit": false,
+          "reasons": [
+            "no correction systems captured (fail-closed)"
+          ]
+        },
+        "P3": {
+          "admit": false,
+          "reasons": [
+            "no dense-vs-sparse sentinel evidence (fail-closed)"
+          ]
+        },
+        "P4": {
+          "admit": false,
+          "reasons": [
+            "condition 9.332e+15 exceeds 1.000e+12",
+            "no dense-vs-sparse sentinel evidence (fail-closed)"
+          ]
+        }
+      },
+      "falseAdmits": [],
+      "falseRejects": [
+        "P1",
+        "P2",
+        "P3",
+        "P4"
+      ],
+      "sentinelMaxima": {
+        "cov": null,
+        "relCov": null,
+        "relPrec": null
+      }
+    },
+    {
+      "id": "p-size-chain-128",
+      "groundTruth": true,
+      "groundTruthNote": "direct-TS self-consistency (success, iterations 1, seuw 1, physical)",
+      "strategies": {
+        "P0": {
+          "admit": true,
+          "reasons": []
+        },
+        "P1": {
+          "admit": false,
+          "reasons": [
+            "condition 9.332e+15 exceeds 1.000e+12"
+          ]
+        },
+        "P2": {
+          "admit": false,
+          "reasons": [
+            "no correction systems captured (fail-closed)"
+          ]
+        },
+        "P3": {
+          "admit": false,
+          "reasons": [
+            "no dense-vs-sparse sentinel evidence (fail-closed)"
+          ]
+        },
+        "P4": {
+          "admit": false,
+          "reasons": [
+            "condition 9.332e+15 exceeds 1.000e+12",
+            "no dense-vs-sparse sentinel evidence (fail-closed)"
+          ]
+        }
+      },
+      "falseAdmits": [],
+      "falseRejects": [
+        "P1",
+        "P2",
+        "P3",
+        "P4"
+      ],
+      "sentinelMaxima": {
+        "cov": null,
+        "relCov": null,
+        "relPrec": null
+      }
+    },
+    {
+      "id": "p-size-chain-256",
+      "groundTruth": true,
+      "groundTruthNote": "direct-TS self-consistency (success, iterations 1, seuw 1, physical)",
+      "strategies": {
+        "P0": {
+          "admit": false,
+          "reasons": [
+            "unknownCount 256 exceeds evidence cap 128"
+          ]
+        },
+        "P1": {
+          "admit": false,
+          "reasons": [
+            "unknownCount 256 exceeds evidence cap 128",
+            "condition 1.074e+16 exceeds 1.000e+12"
+          ]
+        },
+        "P2": {
+          "admit": false,
+          "reasons": [
+            "unknownCount 256 exceeds evidence cap 128",
+            "no correction systems captured (fail-closed)"
+          ]
+        },
+        "P3": {
+          "admit": false,
+          "reasons": [
+            "unknownCount 256 exceeds evidence cap 128",
+            "no dense-vs-sparse sentinel evidence (fail-closed)"
+          ]
+        },
+        "P4": {
+          "admit": false,
+          "reasons": [
+            "unknownCount 256 exceeds evidence cap 128",
+            "condition 1.074e+16 exceeds 1.000e+12",
+            "no dense-vs-sparse sentinel evidence (fail-closed)"
+          ]
+        }
+      },
+      "falseAdmits": [],
+      "falseRejects": [
+        "P0",
+        "P1",
+        "P2",
+        "P3",
+        "P4"
+      ],
+      "sentinelMaxima": {
+        "cov": null,
+        "relCov": null,
+        "relPrec": null
+      }
+    },
+    {
+      "id": "p-size-gps-008",
+      "groundTruth": true,
+      "groundTruthNote": "direct-TS self-consistency (success, iterations 1, seuw 1, physical)",
+      "strategies": {
+        "P0": {
+          "admit": true,
+          "reasons": []
+        },
+        "P1": {
+          "admit": true,
+          "reasons": []
+        },
+        "P2": {
+          "admit": false,
+          "reasons": [
+            "no correction systems captured (fail-closed)"
+          ]
+        },
+        "P3": {
+          "admit": false,
+          "reasons": [
+            "no dense-vs-sparse sentinel evidence (fail-closed)"
+          ]
+        },
+        "P4": {
+          "admit": false,
+          "reasons": [
+            "no dense-vs-sparse sentinel evidence (fail-closed)"
+          ]
+        }
+      },
+      "falseAdmits": [],
+      "falseRejects": [
+        "P2",
+        "P3",
+        "P4"
+      ],
+      "sentinelMaxima": {
+        "cov": null,
+        "relCov": null,
+        "relPrec": null
+      }
+    },
+    {
+      "id": "p-size-gps-016",
+      "groundTruth": true,
+      "groundTruthNote": "direct-TS self-consistency (success, iterations 1, seuw 1, physical)",
+      "strategies": {
+        "P0": {
+          "admit": true,
+          "reasons": []
+        },
+        "P1": {
+          "admit": true,
+          "reasons": []
+        },
+        "P2": {
+          "admit": false,
+          "reasons": [
+            "no correction systems captured (fail-closed)"
+          ]
+        },
+        "P3": {
+          "admit": false,
+          "reasons": [
+            "no dense-vs-sparse sentinel evidence (fail-closed)"
+          ]
+        },
+        "P4": {
+          "admit": false,
+          "reasons": [
+            "no dense-vs-sparse sentinel evidence (fail-closed)"
+          ]
+        }
+      },
+      "falseAdmits": [],
+      "falseRejects": [
+        "P2",
+        "P3",
+        "P4"
+      ],
+      "sentinelMaxima": {
+        "cov": null,
+        "relCov": null,
+        "relPrec": null
+      }
+    },
+    {
+      "id": "p-size-gps-032",
+      "groundTruth": true,
+      "groundTruthNote": "direct-TS self-consistency (success, iterations 1, seuw 1, physical)",
+      "strategies": {
+        "P0": {
+          "admit": true,
+          "reasons": []
+        },
+        "P1": {
+          "admit": true,
+          "reasons": []
+        },
+        "P2": {
+          "admit": false,
+          "reasons": [
+            "no correction systems captured (fail-closed)"
+          ]
+        },
+        "P3": {
+          "admit": false,
+          "reasons": [
+            "no dense-vs-sparse sentinel evidence (fail-closed)"
+          ]
+        },
+        "P4": {
+          "admit": false,
+          "reasons": [
+            "no dense-vs-sparse sentinel evidence (fail-closed)"
+          ]
+        }
+      },
+      "falseAdmits": [],
+      "falseRejects": [
+        "P2",
+        "P3",
+        "P4"
+      ],
+      "sentinelMaxima": {
+        "cov": null,
+        "relCov": null,
+        "relPrec": null
+      }
+    },
+    {
+      "id": "p-size-gps-064",
+      "groundTruth": true,
+      "groundTruthNote": "direct-TS self-consistency (success, iterations 1, seuw 1, physical)",
+      "strategies": {
+        "P0": {
+          "admit": true,
+          "reasons": []
+        },
+        "P1": {
+          "admit": true,
+          "reasons": []
+        },
+        "P2": {
+          "admit": false,
+          "reasons": [
+            "no correction systems captured (fail-closed)"
+          ]
+        },
+        "P3": {
+          "admit": false,
+          "reasons": [
+            "no dense-vs-sparse sentinel evidence (fail-closed)"
+          ]
+        },
+        "P4": {
+          "admit": false,
+          "reasons": [
+            "no dense-vs-sparse sentinel evidence (fail-closed)"
+          ]
+        }
+      },
+      "falseAdmits": [],
+      "falseRejects": [
+        "P2",
+        "P3",
+        "P4"
+      ],
+      "sentinelMaxima": {
+        "cov": null,
+        "relCov": null,
+        "relPrec": null
+      }
+    },
+    {
+      "id": "p-weight-tight",
+      "groundTruth": true,
+      "groundTruthNote": "actual-worker full final contract (dense TS vs sparse WASM selected)",
+      "strategies": {
+        "P0": {
+          "admit": true,
+          "reasons": []
+        },
+        "P1": {
+          "admit": false,
+          "reasons": [
+            "condition 1.357e+17 exceeds 1.000e+12"
+          ]
+        },
+        "P2": {
+          "admit": true,
+          "reasons": []
+        },
+        "P3": {
+          "admit": true,
+          "reasons": []
+        },
+        "P4": {
+          "admit": false,
+          "reasons": [
+            "condition 1.357e+17 exceeds 1.000e+12"
+          ]
+        }
+      },
+      "falseAdmits": [],
+      "falseRejects": [
+        "P1",
+        "P4"
+      ],
+      "sentinelMaxima": {
+        "cov": 3.469446951953614e-18,
+        "relCov": 3.686287386450715e-18,
+        "relPrec": 4.0115480381963664e-18
+      }
+    },
+    {
+      "id": "p-weight-loose-dist",
+      "groundTruth": true,
+      "groundTruthNote": "direct-TS self-consistency (success, iterations 1, seuw 1, physical)",
+      "strategies": {
+        "P0": {
+          "admit": true,
+          "reasons": []
+        },
+        "P1": {
+          "admit": false,
+          "reasons": [
+            "condition 8.466e+15 exceeds 1.000e+12"
+          ]
+        },
+        "P2": {
+          "admit": false,
+          "reasons": [
+            "no correction systems captured (fail-closed)"
+          ]
+        },
+        "P3": {
+          "admit": false,
+          "reasons": [
+            "no dense-vs-sparse sentinel evidence (fail-closed)"
+          ]
+        },
+        "P4": {
+          "admit": false,
+          "reasons": [
+            "condition 8.466e+15 exceeds 1.000e+12",
+            "no dense-vs-sparse sentinel evidence (fail-closed)"
+          ]
+        }
+      },
+      "falseAdmits": [],
+      "falseRejects": [
+        "P1",
+        "P2",
+        "P3",
+        "P4"
+      ],
+      "sentinelMaxima": {
+        "cov": null,
+        "relCov": null,
+        "relPrec": null
+      }
+    },
+    {
+      "id": "p-weight-loose-angle",
+      "groundTruth": true,
+      "groundTruthNote": "direct-TS self-consistency (success, iterations 1, seuw 1, physical)",
+      "strategies": {
+        "P0": {
+          "admit": true,
+          "reasons": []
+        },
+        "P1": {
+          "admit": false,
+          "reasons": [
+            "condition 1.379e+13 exceeds 1.000e+12"
+          ]
+        },
+        "P2": {
+          "admit": false,
+          "reasons": [
+            "no correction systems captured (fail-closed)"
+          ]
+        },
+        "P3": {
+          "admit": false,
+          "reasons": [
+            "no dense-vs-sparse sentinel evidence (fail-closed)"
+          ]
+        },
+        "P4": {
+          "admit": false,
+          "reasons": [
+            "condition 1.379e+13 exceeds 1.000e+12",
+            "no dense-vs-sparse sentinel evidence (fail-closed)"
+          ]
+        }
+      },
+      "falseAdmits": [],
+      "falseRejects": [
+        "P1",
+        "P2",
+        "P3",
+        "P4"
+      ],
+      "sentinelMaxima": {
+        "cov": null,
+        "relCov": null,
+        "relPrec": null
+      }
+    },
+    {
+      "id": "p-weight-mixed",
+      "groundTruth": true,
+      "groundTruthNote": "direct-TS self-consistency (success, iterations 1, seuw 1, physical)",
+      "strategies": {
+        "P0": {
+          "admit": true,
+          "reasons": []
+        },
+        "P1": {
+          "admit": false,
+          "reasons": [
+            "condition 5.292e+14 exceeds 1.000e+12"
+          ]
+        },
+        "P2": {
+          "admit": false,
+          "reasons": [
+            "no correction systems captured (fail-closed)"
+          ]
+        },
+        "P3": {
+          "admit": false,
+          "reasons": [
+            "no dense-vs-sparse sentinel evidence (fail-closed)"
+          ]
+        },
+        "P4": {
+          "admit": false,
+          "reasons": [
+            "condition 5.292e+14 exceeds 1.000e+12",
+            "no dense-vs-sparse sentinel evidence (fail-closed)"
+          ]
+        }
+      },
+      "falseAdmits": [],
+      "falseRejects": [
+        "P1",
+        "P2",
+        "P3",
+        "P4"
+      ],
+      "sentinelMaxima": {
+        "cov": null,
+        "relCov": null,
+        "relPrec": null
+      }
+    },
+    {
+      "id": "p-weight-loose-both",
+      "groundTruth": true,
+      "groundTruthNote": "direct-TS self-consistency (success, iterations 1, seuw 1, physical)",
+      "strategies": {
+        "P0": {
+          "admit": true,
+          "reasons": []
+        },
+        "P1": {
+          "admit": false,
+          "reasons": [
+            "condition 1.355e+13 exceeds 1.000e+12"
+          ]
+        },
+        "P2": {
+          "admit": false,
+          "reasons": [
+            "no correction systems captured (fail-closed)"
+          ]
+        },
+        "P3": {
+          "admit": false,
+          "reasons": [
+            "no dense-vs-sparse sentinel evidence (fail-closed)"
+          ]
+        },
+        "P4": {
+          "admit": false,
+          "reasons": [
+            "condition 1.355e+13 exceeds 1.000e+12",
+            "no dense-vs-sparse sentinel evidence (fail-closed)"
+          ]
+        }
+      },
+      "falseAdmits": [],
+      "falseRejects": [
+        "P1",
+        "P2",
+        "P3",
+        "P4"
+      ],
+      "sentinelMaxima": {
+        "cov": null,
+        "relCov": null,
+        "relPrec": null
+      }
+    },
+    {
+      "id": "p-cond-resection-weak",
+      "groundTruth": true,
+      "groundTruthNote": "direct-TS self-consistency (success, iterations 1, seuw 1, physical)",
+      "strategies": {
+        "P0": {
+          "admit": true,
+          "reasons": []
+        },
+        "P1": {
+          "admit": true,
+          "reasons": []
+        },
+        "P2": {
+          "admit": false,
+          "reasons": [
+            "no correction systems captured (fail-closed)"
+          ]
+        },
+        "P3": {
+          "admit": false,
+          "reasons": [
+            "no dense-vs-sparse sentinel evidence (fail-closed)"
+          ]
+        },
+        "P4": {
+          "admit": false,
+          "reasons": [
+            "no dense-vs-sparse sentinel evidence (fail-closed)"
+          ]
+        }
+      },
+      "falseAdmits": [],
+      "falseRejects": [
+        "P2",
+        "P3",
+        "P4"
+      ],
+      "sentinelMaxima": {
+        "cov": null,
+        "relCov": null,
+        "relPrec": null
+      }
+    },
+    {
+      "id": "p-cond-collinear",
+      "groundTruth": true,
+      "groundTruthNote": "direct-TS self-consistency (success, iterations 1, seuw 1, physical)",
+      "strategies": {
+        "P0": {
+          "admit": true,
+          "reasons": []
+        },
+        "P1": {
+          "admit": true,
+          "reasons": []
+        },
+        "P2": {
+          "admit": false,
+          "reasons": [
+            "no correction systems captured (fail-closed)"
+          ]
+        },
+        "P3": {
+          "admit": false,
+          "reasons": [
+            "no dense-vs-sparse sentinel evidence (fail-closed)"
+          ]
+        },
+        "P4": {
+          "admit": false,
+          "reasons": [
+            "no dense-vs-sparse sentinel evidence (fail-closed)"
+          ]
+        }
+      },
+      "falseAdmits": [],
+      "falseRejects": [
+        "P2",
+        "P3",
+        "P4"
+      ],
+      "sentinelMaxima": {
+        "cov": null,
+        "relCov": null,
+        "relPrec": null
+      }
+    },
+    {
+      "id": "p-cond-angle-only",
+      "groundTruth": false,
+      "groundTruthNote": "direct-TS self-consistency (success, iterations 1, seuw 1, physical)",
+      "strategies": {
+        "P0": {
+          "admit": true,
+          "reasons": []
+        },
+        "P1": {
+          "admit": false,
+          "reasons": [
+            "no finite condition estimate (fail-closed)"
+          ]
+        },
+        "P2": {
+          "admit": false,
+          "reasons": [
+            "no correction systems captured (fail-closed)"
+          ]
+        },
+        "P3": {
+          "admit": false,
+          "reasons": [
+            "no dense-vs-sparse sentinel evidence (fail-closed)"
+          ]
+        },
+        "P4": {
+          "admit": false,
+          "reasons": [
+            "no finite condition estimate (fail-closed)",
+            "no dense-vs-sparse sentinel evidence (fail-closed)"
+          ]
+        }
+      },
+      "falseAdmits": [
+        "P0"
+      ],
+      "falseRejects": [],
+      "sentinelMaxima": {
+        "cov": null,
+        "relCov": null,
+        "relPrec": null
+      }
+    },
+    {
+      "id": "p-cond-single-tie",
+      "groundTruth": false,
+      "groundTruthNote": "direct-TS self-consistency (success, iterations 1, seuw 1, physical)",
+      "strategies": {
+        "P0": {
+          "admit": true,
+          "reasons": []
+        },
+        "P1": {
+          "admit": false,
+          "reasons": [
+            "no finite condition estimate (fail-closed)"
+          ]
+        },
+        "P2": {
+          "admit": false,
+          "reasons": [
+            "no correction systems captured (fail-closed)"
+          ]
+        },
+        "P3": {
+          "admit": false,
+          "reasons": [
+            "no dense-vs-sparse sentinel evidence (fail-closed)"
+          ]
+        },
+        "P4": {
+          "admit": false,
+          "reasons": [
+            "no finite condition estimate (fail-closed)",
+            "no dense-vs-sparse sentinel evidence (fail-closed)"
+          ]
+        }
+      },
+      "falseAdmits": [
+        "P0"
+      ],
+      "falseRejects": [],
+      "sentinelMaxima": {
+        "cov": null,
+        "relCov": null,
+        "relPrec": null
+      }
+    },
+    {
+      "id": "p-cond-narrow-brace",
+      "groundTruth": true,
+      "groundTruthNote": "direct-TS self-consistency (success, iterations 1, seuw 1, physical)",
+      "strategies": {
+        "P0": {
+          "admit": true,
+          "reasons": []
+        },
+        "P1": {
+          "admit": false,
+          "reasons": [
+            "condition 5.550e+15 exceeds 1.000e+12"
+          ]
+        },
+        "P2": {
+          "admit": false,
+          "reasons": [
+            "no correction systems captured (fail-closed)"
+          ]
+        },
+        "P3": {
+          "admit": false,
+          "reasons": [
+            "no dense-vs-sparse sentinel evidence (fail-closed)"
+          ]
+        },
+        "P4": {
+          "admit": false,
+          "reasons": [
+            "condition 5.550e+15 exceeds 1.000e+12",
+            "no dense-vs-sparse sentinel evidence (fail-closed)"
+          ]
+        }
+      },
+      "falseAdmits": [],
+      "falseRejects": [
+        "P1",
+        "P2",
+        "P3",
+        "P4"
+      ],
+      "sentinelMaxima": {
+        "cov": null,
+        "relCov": null,
+        "relPrec": null
+      }
+    },
+    {
+      "id": "p-cond-distant-pair",
+      "groundTruth": true,
+      "groundTruthNote": "direct-TS self-consistency (success, iterations 1, seuw 1, physical)",
+      "strategies": {
+        "P0": {
+          "admit": true,
+          "reasons": []
+        },
+        "P1": {
+          "admit": true,
+          "reasons": []
+        },
+        "P2": {
+          "admit": false,
+          "reasons": [
+            "no correction systems captured (fail-closed)"
+          ]
+        },
+        "P3": {
+          "admit": false,
+          "reasons": [
+            "no dense-vs-sparse sentinel evidence (fail-closed)"
+          ]
+        },
+        "P4": {
+          "admit": false,
+          "reasons": [
+            "no dense-vs-sparse sentinel evidence (fail-closed)"
+          ]
+        }
+      },
+      "falseAdmits": [],
+      "falseRejects": [
+        "P2",
+        "P3",
+        "P4"
+      ],
+      "sentinelMaxima": {
+        "cov": null,
+        "relCov": null,
+        "relPrec": null
+      }
+    },
+    {
+      "id": "p-braced-quad",
+      "groundTruth": true,
+      "groundTruthNote": "actual-worker full final contract (dense TS vs sparse WASM selected)",
+      "strategies": {
+        "P0": {
+          "admit": true,
+          "reasons": []
+        },
+        "P1": {
+          "admit": false,
+          "reasons": [
+            "condition 1.974e+16 exceeds 1.000e+12"
+          ]
+        },
+        "P2": {
+          "admit": true,
+          "reasons": []
+        },
+        "P3": {
+          "admit": true,
+          "reasons": []
+        },
+        "P4": {
+          "admit": false,
+          "reasons": [
+            "condition 1.974e+16 exceeds 1.000e+12"
+          ]
+        }
+      },
+      "falseAdmits": [],
+      "falseRejects": [
+        "P1",
+        "P4"
+      ],
+      "sentinelMaxima": {
+        "cov": 1.214306433183765e-16,
+        "relCov": 7.892991815694472e-17,
+        "relPrec": 7.892991815694472e-17
+      }
+    },
+    {
+      "id": "p-chain-branch",
+      "groundTruth": true,
+      "groundTruthNote": "direct-TS self-consistency (success, iterations 1, seuw 1, physical)",
+      "strategies": {
+        "P0": {
+          "admit": true,
+          "reasons": []
+        },
+        "P1": {
+          "admit": false,
+          "reasons": [
+            "condition 3.088e+17 exceeds 1.000e+12"
+          ]
+        },
+        "P2": {
+          "admit": false,
+          "reasons": [
+            "no correction systems captured (fail-closed)"
+          ]
+        },
+        "P3": {
+          "admit": false,
+          "reasons": [
+            "no dense-vs-sparse sentinel evidence (fail-closed)"
+          ]
+        },
+        "P4": {
+          "admit": false,
+          "reasons": [
+            "condition 3.088e+17 exceeds 1.000e+12",
+            "no dense-vs-sparse sentinel evidence (fail-closed)"
+          ]
+        }
+      },
+      "falseAdmits": [],
+      "falseRejects": [
+        "P1",
+        "P2",
+        "P3",
+        "P4"
+      ],
+      "sentinelMaxima": {
+        "cov": null,
+        "relCov": null,
+        "relPrec": null
+      }
+    },
+    {
+      "id": "p-redundant-star",
+      "groundTruth": true,
+      "groundTruthNote": "direct-TS self-consistency (success, iterations 1, seuw 1, physical)",
+      "strategies": {
+        "P0": {
+          "admit": true,
+          "reasons": []
+        },
+        "P1": {
+          "admit": false,
+          "reasons": [
+            "condition 5.245e+16 exceeds 1.000e+12"
+          ]
+        },
+        "P2": {
+          "admit": false,
+          "reasons": [
+            "no correction systems captured (fail-closed)"
+          ]
+        },
+        "P3": {
+          "admit": false,
+          "reasons": [
+            "no dense-vs-sparse sentinel evidence (fail-closed)"
+          ]
+        },
+        "P4": {
+          "admit": false,
+          "reasons": [
+            "condition 5.245e+16 exceeds 1.000e+12",
+            "no dense-vs-sparse sentinel evidence (fail-closed)"
+          ]
+        }
+      },
+      "falseAdmits": [],
+      "falseRejects": [
+        "P1",
+        "P2",
+        "P3",
+        "P4"
+      ],
+      "sentinelMaxima": {
+        "cov": null,
+        "relCov": null,
+        "relPrec": null
+      }
+    },
+    {
+      "id": "p-redundant-ring",
+      "groundTruth": true,
+      "groundTruthNote": "direct-TS self-consistency (success, iterations 1, seuw 1, physical)",
+      "strategies": {
+        "P0": {
+          "admit": true,
+          "reasons": []
+        },
+        "P1": {
+          "admit": false,
+          "reasons": [
+            "condition 5.338e+16 exceeds 1.000e+12"
+          ]
+        },
+        "P2": {
+          "admit": false,
+          "reasons": [
+            "no correction systems captured (fail-closed)"
+          ]
+        },
+        "P3": {
+          "admit": false,
+          "reasons": [
+            "no dense-vs-sparse sentinel evidence (fail-closed)"
+          ]
+        },
+        "P4": {
+          "admit": false,
+          "reasons": [
+            "condition 5.338e+16 exceeds 1.000e+12",
+            "no dense-vs-sparse sentinel evidence (fail-closed)"
+          ]
+        }
+      },
+      "falseAdmits": [],
+      "falseRejects": [
+        "P1",
+        "P2",
+        "P3",
+        "P4"
+      ],
+      "sentinelMaxima": {
+        "cov": null,
+        "relCov": null,
+        "relPrec": null
+      }
+    },
+    {
+      "id": "p-mixed-dag",
+      "groundTruth": true,
+      "groundTruthNote": "direct-TS self-consistency (success, iterations 1, seuw 1, physical)",
+      "strategies": {
+        "P0": {
+          "admit": true,
+          "reasons": []
+        },
+        "P1": {
+          "admit": false,
+          "reasons": [
+            "condition 2.069e+16 exceeds 1.000e+12"
+          ]
+        },
+        "P2": {
+          "admit": false,
+          "reasons": [
+            "no correction systems captured (fail-closed)"
+          ]
+        },
+        "P3": {
+          "admit": false,
+          "reasons": [
+            "no dense-vs-sparse sentinel evidence (fail-closed)"
+          ]
+        },
+        "P4": {
+          "admit": false,
+          "reasons": [
+            "condition 2.069e+16 exceeds 1.000e+12",
+            "no dense-vs-sparse sentinel evidence (fail-closed)"
+          ]
+        }
+      },
+      "falseAdmits": [],
+      "falseRejects": [
+        "P1",
+        "P2",
+        "P3",
+        "P4"
+      ],
+      "sentinelMaxima": {
+        "cov": null,
+        "relCov": null,
+        "relPrec": null
+      }
+    },
+    {
+      "id": "p-rank-floating",
+      "groundTruth": false,
+      "groundTruthNote": "direct-TS self-consistency (success, iterations 1, seuw 1, physical)",
+      "strategies": {
+        "P0": {
+          "admit": true,
+          "reasons": []
+        },
+        "P1": {
+          "admit": false,
+          "reasons": [
+            "no finite condition estimate (fail-closed)"
+          ]
+        },
+        "P2": {
+          "admit": false,
+          "reasons": [
+            "no correction systems captured (fail-closed)"
+          ]
+        },
+        "P3": {
+          "admit": false,
+          "reasons": [
+            "no dense-vs-sparse sentinel evidence (fail-closed)"
+          ]
+        },
+        "P4": {
+          "admit": false,
+          "reasons": [
+            "no finite condition estimate (fail-closed)",
+            "no dense-vs-sparse sentinel evidence (fail-closed)"
+          ]
+        }
+      },
+      "falseAdmits": [
+        "P0"
+      ],
+      "falseRejects": [],
+      "sentinelMaxima": {
+        "cov": null,
+        "relCov": null,
+        "relPrec": null
+      }
+    },
+    {
+      "id": "p-rank-free-pair",
+      "groundTruth": false,
+      "groundTruthNote": "direct-TS self-consistency (success, iterations 1, seuw 1, physical)",
+      "strategies": {
+        "P0": {
+          "admit": true,
+          "reasons": []
+        },
+        "P1": {
+          "admit": false,
+          "reasons": [
+            "no finite condition estimate (fail-closed)"
+          ]
+        },
+        "P2": {
+          "admit": false,
+          "reasons": [
+            "no correction systems captured (fail-closed)"
+          ]
+        },
+        "P3": {
+          "admit": false,
+          "reasons": [
+            "no dense-vs-sparse sentinel evidence (fail-closed)"
+          ]
+        },
+        "P4": {
+          "admit": false,
+          "reasons": [
+            "no finite condition estimate (fail-closed)",
+            "no dense-vs-sparse sentinel evidence (fail-closed)"
+          ]
+        }
+      },
+      "falseAdmits": [
+        "P0"
+      ],
+      "falseRejects": [],
+      "sentinelMaxima": {
+        "cov": null,
+        "relCov": null,
+        "relPrec": null
+      }
+    },
+    {
+      "id": "p-excl-3d",
+      "groundTruth": true,
+      "groundTruthNote": "direct-TS self-consistency (success, iterations 1, seuw 1, physical)",
+      "strategies": {
+        "P0": {
+          "admit": false,
+          "reasons": [
+            "dimension '3D': 3D preanalysis is experimental evidence only"
+          ]
+        },
+        "P1": {
+          "admit": false,
+          "reasons": [
+            "dimension '3D': 3D preanalysis is experimental evidence only",
+            "condition 8.766e+14 exceeds 1.000e+12"
+          ]
+        },
+        "P2": {
+          "admit": false,
+          "reasons": [
+            "dimension '3D': 3D preanalysis is experimental evidence only",
+            "no correction systems captured (fail-closed)"
+          ]
+        },
+        "P3": {
+          "admit": false,
+          "reasons": [
+            "dimension '3D': 3D preanalysis is experimental evidence only",
+            "no dense-vs-sparse sentinel evidence (fail-closed)"
+          ]
+        },
+        "P4": {
+          "admit": false,
+          "reasons": [
+            "dimension '3D': 3D preanalysis is experimental evidence only",
+            "condition 8.766e+14 exceeds 1.000e+12",
+            "no dense-vs-sparse sentinel evidence (fail-closed)"
+          ]
+        }
+      },
+      "falseAdmits": [],
+      "falseRejects": [
+        "P0",
+        "P1",
+        "P2",
+        "P3",
+        "P4"
+      ],
+      "sentinelMaxima": {
+        "cov": null,
+        "relCov": null,
+        "relPrec": null
+      }
+    },
+    {
+      "id": "p-excl-gps-cov",
+      "groundTruth": true,
+      "groundTruthNote": "direct-TS self-consistency (success, iterations 1, seuw 1, physical)",
+      "strategies": {
+        "P0": {
+          "admit": false,
+          "reasons": [
+            "GPS covariance weighting: covariance-weighted preanalysis is experimental evidence only"
+          ]
+        },
+        "P1": {
+          "admit": false,
+          "reasons": [
+            "GPS covariance weighting: covariance-weighted preanalysis is experimental evidence only"
+          ]
+        },
+        "P2": {
+          "admit": false,
+          "reasons": [
+            "GPS covariance weighting: covariance-weighted preanalysis is experimental evidence only",
+            "no correction systems captured (fail-closed)"
+          ]
+        },
+        "P3": {
+          "admit": false,
+          "reasons": [
+            "GPS covariance weighting: covariance-weighted preanalysis is experimental evidence only",
+            "no dense-vs-sparse sentinel evidence (fail-closed)"
+          ]
+        },
+        "P4": {
+          "admit": false,
+          "reasons": [
+            "GPS covariance weighting: covariance-weighted preanalysis is experimental evidence only",
+            "no dense-vs-sparse sentinel evidence (fail-closed)"
+          ]
+        }
+      },
+      "falseAdmits": [],
+      "falseRejects": [
+        "P0",
+        "P1",
+        "P2",
+        "P3",
+        "P4"
+      ],
+      "sentinelMaxima": {
+        "cov": null,
+        "relCov": null,
+        "relPrec": null
+      }
+    },
+    {
+      "id": "p-excl-robust",
+      "groundTruth": true,
+      "groundTruthNote": "direct-TS self-consistency (success, iterations 1, seuw 1, physical)",
+      "strategies": {
+        "P0": {
+          "admit": false,
+          "reasons": [
+            "robustMode 'huber': robust preanalysis is ineligible for sparse evidence"
+          ]
+        },
+        "P1": {
+          "admit": false,
+          "reasons": [
+            "robustMode 'huber': robust preanalysis is ineligible for sparse evidence",
+            "condition 8.472e+15 exceeds 1.000e+12"
+          ]
+        },
+        "P2": {
+          "admit": false,
+          "reasons": [
+            "robustMode 'huber': robust preanalysis is ineligible for sparse evidence",
+            "no correction systems captured (fail-closed)"
+          ]
+        },
+        "P3": {
+          "admit": false,
+          "reasons": [
+            "robustMode 'huber': robust preanalysis is ineligible for sparse evidence",
+            "no dense-vs-sparse sentinel evidence (fail-closed)"
+          ]
+        },
+        "P4": {
+          "admit": false,
+          "reasons": [
+            "robustMode 'huber': robust preanalysis is ineligible for sparse evidence",
+            "condition 8.472e+15 exceeds 1.000e+12",
+            "no dense-vs-sparse sentinel evidence (fail-closed)"
+          ]
+        }
+      },
+      "falseAdmits": [],
+      "falseRejects": [
+        "P0",
+        "P1",
+        "P2",
+        "P3",
+        "P4"
+      ],
+      "sentinelMaxima": {
+        "cov": null,
+        "relCov": null,
+        "relPrec": null
+      }
+    },
+    {
+      "id": "p-excl-tscorr",
+      "groundTruth": true,
+      "groundTruthNote": "direct-TS self-consistency (success, iterations 1, seuw 1, physical)",
+      "strategies": {
+        "P0": {
+          "admit": false,
+          "reasons": [
+            "TS correlation: correlated preanalysis is ineligible for sparse evidence"
+          ]
+        },
+        "P1": {
+          "admit": false,
+          "reasons": [
+            "TS correlation: correlated preanalysis is ineligible for sparse evidence",
+            "condition 8.472e+15 exceeds 1.000e+12"
+          ]
+        },
+        "P2": {
+          "admit": false,
+          "reasons": [
+            "TS correlation: correlated preanalysis is ineligible for sparse evidence",
+            "no correction systems captured (fail-closed)"
+          ]
+        },
+        "P3": {
+          "admit": false,
+          "reasons": [
+            "TS correlation: correlated preanalysis is ineligible for sparse evidence",
+            "no dense-vs-sparse sentinel evidence (fail-closed)"
+          ]
+        },
+        "P4": {
+          "admit": false,
+          "reasons": [
+            "TS correlation: correlated preanalysis is ineligible for sparse evidence",
+            "condition 8.472e+15 exceeds 1.000e+12",
+            "no dense-vs-sparse sentinel evidence (fail-closed)"
+          ]
+        }
+      },
+      "falseAdmits": [],
+      "falseRejects": [
+        "P0",
+        "P1",
+        "P2",
+        "P3",
+        "P4"
+      ],
+      "sentinelMaxima": {
+        "cov": null,
+        "relCov": null,
+        "relPrec": null
+      }
+    }
+  ]
+}

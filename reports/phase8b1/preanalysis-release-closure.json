@@ -1,0 +1,187 @@
+{
+  "phase": "8B.1",
+  "verdict": "GO",
+  "browserEnabledSparseAcceptance": true,
+  "cleanRunnerCI": true,
+  "defaultRoute": "bounded sparse preanalysis (kill switch ON; TypeScript fallback on failure)",
+  "defaultOff": {
+    "initCalls": 0,
+    "deepEqualTypeScript": true
+  },
+  "wasmArtifact": "cpp/build-wasm/webnet_core.js (+ .wasm)",
+  "verificationColumns": 16,
+  "sessions": {
+    "total": 120,
+    "perKind": {
+      "anchor": {
+        "label": "preanalysis small anchor (accept)",
+        "expected": "sparse",
+        "sessions": 15,
+        "sparseAccepts": 15,
+        "fallbacks": 0,
+        "bitIdenticalRepeats": true,
+        "contractPass": true,
+        "maxCoordDiff": 0,
+        "maxCovarianceDiff": 4.336808689942018e-19,
+        "nativeCorrectionCalls": 240,
+        "nativeCovarianceCalls": 480
+      },
+      "closure": {
+        "label": "preanalysis traverse closure (accept)",
+        "expected": "sparse",
+        "sessions": 15,
+        "sparseAccepts": 15,
+        "fallbacks": 0,
+        "bitIdenticalRepeats": true,
+        "contractPass": true,
+        "maxCoordDiff": 0,
+        "maxCovarianceDiff": 0,
+        "nativeCorrectionCalls": 45,
+        "nativeCovarianceCalls": 90
+      },
+      "smoke": {
+        "label": "preanalysis cli smoke (accept)",
+        "expected": "sparse",
+        "sessions": 15,
+        "sparseAccepts": 15,
+        "fallbacks": 0,
+        "bitIdenticalRepeats": true,
+        "contractPass": true,
+        "maxCoordDiff": 0,
+        "maxCovarianceDiff": 0,
+        "nativeCorrectionCalls": 105,
+        "nativeCovarianceCalls": 210
+      },
+      "camp": {
+        "label": "preanalysis camp traverse-only (cap fallback)",
+        "expected": "fallback",
+        "sessions": 15,
+        "sparseAccepts": 0,
+        "fallbacks": 15,
+        "bitIdenticalRepeats": true,
+        "maxCoordDiff": 0,
+        "maxCovarianceDiff": 0,
+        "nativeCorrectionCalls": 0,
+        "nativeCovarianceCalls": 0
+      },
+      "cold": {
+        "label": "preanalysis coldstream (damping fallback)",
+        "expected": "fallback",
+        "sessions": 15,
+        "sparseAccepts": 0,
+        "fallbacks": 15,
+        "bitIdenticalRepeats": true,
+        "maxCoordDiff": 0,
+        "maxCovarianceDiff": 0,
+        "nativeCorrectionCalls": 645,
+        "nativeCovarianceCalls": 645
+      },
+      "campfull": {
+        "label": "preanalysis camp full (cap fallback)",
+        "expected": "fallback",
+        "sessions": 15,
+        "sparseAccepts": 0,
+        "fallbacks": 15,
+        "bitIdenticalRepeats": true,
+        "maxCoordDiff": 0,
+        "maxCovarianceDiff": 0,
+        "nativeCorrectionCalls": 0,
+        "nativeCovarianceCalls": 0
+      },
+      "adjust": {
+        "label": "2D adjustment traverse (cross-mode)",
+        "expected": "reference",
+        "sessions": 15,
+        "sparseAccepts": 0,
+        "fallbacks": 15,
+        "bitIdenticalRepeats": true,
+        "maxCoordDiff": 0,
+        "maxCovarianceDiff": 0,
+        "nativeCorrectionCalls": 0,
+        "nativeCovarianceCalls": 0
+      },
+      "adjustSparse": {
+        "label": "2D adjustment triangulation (7C native interleave)",
+        "expected": "reference",
+        "sessions": 15,
+        "sparseAccepts": 15,
+        "fallbacks": 0,
+        "bitIdenticalRepeats": true,
+        "maxCoordDiff": 0,
+        "maxCovarianceDiff": 0,
+        "nativeCorrectionCalls": 150,
+        "nativeCovarianceCalls": 15
+      }
+    }
+  },
+  "bundle": {
+    "initCount": 1,
+    "realWasm": true
+  },
+  "memorySnapshots": {
+    "note": "informational only; excluded from determinism claims",
+    "snapshots": [
+      {
+        "afterSession": 15,
+        "rssBytes": 640622592,
+        "heapUsedBytes": 153627248,
+        "heapTotalBytes": 335777792
+      },
+      {
+        "afterSession": 30,
+        "rssBytes": 627167232,
+        "heapUsedBytes": 109739856,
+        "heapTotalBytes": 325816320
+      },
+      {
+        "afterSession": 45,
+        "rssBytes": 715227136,
+        "heapUsedBytes": 27476992,
+        "heapTotalBytes": 179802112
+      },
+      {
+        "afterSession": 60,
+        "rssBytes": 494637056,
+        "heapUsedBytes": 27661968,
+        "heapTotalBytes": 168529920
+      },
+      {
+        "afterSession": 75,
+        "rssBytes": 665055232,
+        "heapUsedBytes": 151815072,
+        "heapTotalBytes": 317952000
+      },
+      {
+        "afterSession": 90,
+        "rssBytes": 652775424,
+        "heapUsedBytes": 31544488,
+        "heapTotalBytes": 177967104
+      },
+      {
+        "afterSession": 105,
+        "rssBytes": 646934528,
+        "heapUsedBytes": 142631432,
+        "heapTotalBytes": 338137088
+      },
+      {
+        "afterSession": 120,
+        "rssBytes": 638791680,
+        "heapUsedBytes": 277478048,
+        "heapTotalBytes": 348098560
+      }
+    ]
+  },
+  "cancellation": {
+    "cancelled": true,
+    "healthyAfterCancel": true,
+    "attempts": 2,
+    "attemptsNote": "informational only; the race attempt count varies run to run and is excluded from determinism claims"
+  },
+  "restartAfterTerminate": {
+    "cleanAfterTerminate": true
+  },
+  "initFailureRetry": {
+    "restartIdentical": true
+  },
+  "blockers": []
+}

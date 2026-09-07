@@ -1,0 +1,56 @@
+{
+  "phase": "8B",
+  "defaultRoute": "typescript (kill switch OFF unless every gate passes)",
+  "wasmArtifact": "cpp/build-wasm/webnet_core.js (+ .wasm)",
+  "verificationColumns": 16,
+  "gates": {
+    "defaultOffInProcess": {
+      "route": "typescript",
+      "initCalls": 0
+    },
+    "smallAnchorRealWasm": {
+      "route": "sparse",
+      "contractPass": true,
+      "maxCoordDiff": 0,
+      "maxCovarianceDiff": 4.336808689942018e-19
+    },
+    "campCapRealWasm": {
+      "route": "typescript",
+      "reasonSample": "system 1: parameterCount 170 exceeds cap 128 (fail-closed; not delegated)",
+      "restartIdentical": true
+    },
+    "corruptRestart": {
+      "route": "typescript",
+      "restartIdentical": true
+    },
+    "boundaries": {
+      "staticUnknownHook129Eligible": false,
+      "forcedC2Fallback": true
+    },
+    "workerDefaultOff": {
+      "initCalls": 0,
+      "deepEqualTypeScript": true
+    },
+    "workerAnchor": {
+      "correctionCalls": 16,
+      "covarianceCalls": 32,
+      "contractPass": true,
+      "maxCoordDiff": 0,
+      "maxCovarianceDiff": 4.336808689942018e-19
+    },
+    "workerCamp": {
+      "restartIdentical": true
+    },
+    "workerInitFailure": {
+      "restartIdentical": true
+    },
+    "workerInterleave": {
+      "bitIdenticalRepeat": true,
+      "bundleInitCount": 1
+    },
+    "workerRestart": {
+      "cleanAfterTerminate": true
+    }
+  },
+  "wasmAbsentSkipsRealBundle": false
+}
