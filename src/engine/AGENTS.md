@@ -38,9 +38,17 @@ Run at minimum:
 - the most relevant focused test file(s)
 - `npm run lint`
 - `npm run typecheck`
-- `npm run test:run`
+- `npm run test:agent`
+
+If the change touches sparse/WASM/worker/native routing (sparse auto route, WASM bridge, covariance sentinel, preanalysis, workers): also run:
+- `npm run test:wasm`
 
 If the change affects parity-sensitive behavior, also run:
 - `npm run parity:industry-reference`
+
+Before final completion of significant engine work:
+- `npm run test:full`
+
+Tier details: `docs/TEST_TIERS.md`.
 
 If the parity baseline worsens, revert the change or update fixtures, tests, and `docs/PARITY_WORKFLOW.md` with a clear reason.

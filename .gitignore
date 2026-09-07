@@ -34,6 +34,9 @@ Working/
 .memory/
 temp/study-ai-*/
 
+# Test-run artifacts (regenerated locally, never source data)
+temp/phase8b1-browser-inputs.json
+
 # Study AI local-Qwen / production run artifacts.
 # Historical committed run fixtures remain tracked; these patterns cover the
 # newer local inference/calibration runs that are intentionally not source data.

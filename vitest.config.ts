@@ -1,11 +1,11 @@
-import { configDefaults, defineConfig } from 'vitest/config';
+import { defineConfig } from 'vitest/config';
 
+import { webnetVitestBase } from './vitest.shared';
+
+/**
+ * FULL authoritative configuration: every Vitest test file.
+ * Tier configs (agent/wasm/release) are derived from the same base.
+ */
 export default defineConfig({
-  test: {
-    environment: 'node',
-    globals: true,
-    setupFiles: ['./tests/vitest.setup.ts'],
-    exclude: [...configDefaults.exclude, 'tests-browser/**', 'emsdk-cache/**'],
-    pool: process.platform === 'win32' ? 'threads' : 'forks',
-  },
+  test: webnetVitestBase,
 });

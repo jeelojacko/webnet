@@ -47,17 +47,16 @@ Successful startup looks like:
 
 ## Validate
 
-Run the standard repo checks before finishing a batch:
+Tests run in tiers (see [docs/TEST_TIERS.md](docs/TEST_TIERS.md)): `npm run test:agent` is the broad everyday regression suite (~1 min); `npm run test:wasm` covers real-WASM/worker integration; `npm run test:release` covers the expensive certification/evidence campaigns; and `npm run test:full` (== `npm run test:run`) remains the authoritative full suite for final completion and CI.
 
 ```bash
-npm install
 npm run lint
 npm run typecheck
-npm run test
+npm run test:agent
 npm run build
 ```
 
-The Git pre-commit hook runs `npm run lint` and `npm run typecheck` by default. Set `WEBNET_PRECOMMIT_FULL=1` when you want the hook to also run `npm run test:run`; completed batches should still run the full validation list above before commit.
+The Git pre-commit hook runs `npm run lint` and `npm run typecheck` by default. Set `WEBNET_PRECOMMIT_FULL=1` when you want the hook to also run `npm run test:run`; significant work should still pass `npm run test:full` before completion.
 
 Parity-sensitive work also requires:
 
