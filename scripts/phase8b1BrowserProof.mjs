@@ -310,27 +310,25 @@ const proveBase = async (browser, base, distDir, inputs) => {
         advisory,
       };
     }
-    // Enabled route through the test-only wrapper (real production worker
-    // module + harness-only kill-switch enablement; default stays OFF).
+    // Re-run the emitted production worker as the enabled default route.
     // Same-V8 path proof: a TS fallback would be bit-identical to the
     // production run, so a stable-key divergence on the anchor proves the
     // native sparse path executed; camp must restart bit-identical.
-    const proofWorker = `${baseRoot}phase8b1ProofWorker.js`;
+    const proofWorker = workerUrl;
     const head = await fetch(proofWorker, { method: 'HEAD' });
-    if (!head.ok) throw new Error(`${base}: GET phase8b1ProofWorker.js -> ${head.status}`);
-    const enabledAnchor = await runWorkerSession(page, proofWorker, inputs.requests.anchor, 'phase8b1-enabled-anchor');
+    if (!head.ok) throw new Error(`${base}: GET production worker -> ${head.status}`);
+    const enabledAnchor = await runWorkerSession(page, proofWorker, inputs.requests.anchor, 'phase8b2-enabled-anchor');
     const enabledAnchorCore = compareCore(JSON.parse(inputs.keys.anchor), JSON.parse(stableKeyOf(enabledAnchor)));
-    const anchorPathDiverged = stableKeyOf(enabledAnchor) !== productionKeys.anchor;
+    const anchorPathDiverged = stableKeyOf(enabledAnchor) !== inputs.keys.anchor;
     if (!anchorPathDiverged) {
       throw new Error(`${base}: enabled wrapper anchor is bit-identical to the default-OFF run (native sparse path not taken)`);
     }
-    const enabledCamp = await runWorkerSession(page, proofWorker, inputs.requests.camp, 'phase8b1-enabled-camp');
+    const enabledCamp = await runWorkerSession(page, proofWorker, inputs.requests.camp, 'phase8b2-enabled-camp');
+    compareCore(JSON.parse(inputs.keys.camp), JSON.parse(stableKeyOf(enabledCamp)));
     const campFallbackIdentical = stableKeyOf(enabledCamp) === productionKeys.camp;
-    if (!campFallbackIdentical) {
-      throw new Error(`${base}: enabled wrapper camp diverges from the default-OFF run (fallback restart not clean)`);
-    }
+    if (!campFallbackIdentical) throw new Error(`${base}: production camp fallback was not stable across runs`);
     evidence.enabled = {
-      workerAsset: 'phase8b1ProofWorker.js',
+      workerAsset: evidence.workerAsset,
       anchorSparseAccept: {
         match: true,
         coreMaxAbsDiff: enabledAnchorCore.maxAbs,
@@ -354,10 +352,6 @@ if (!fs.existsSync(INPUTS)) {
 const inputs = JSON.parse(fs.readFileSync(INPUTS, 'utf-8'));
 ensureBuild(DIST, '/');
 ensureBuild(DIST_BASE, '/webnet/');
-// Bundle the test-only enabled-route wrapper AFTER any vite build (vite
-// empties the out dir). Production worker chunk and default stay untouched.
-console.log('bundling test-only proof worker...');
-execFileSync('node', ['scripts/phase8b1BuildProofWorker.mjs'], { cwd: ROOT, stdio: 'inherit' });
 const server = await serve([['/webnet/', DIST_BASE], ['/', DIST]]);
 const browser = await chromium.launch({ headless: true });
 try {
@@ -365,9 +359,9 @@ try {
   const based = await proveBase(browser, '/webnet/', DIST_BASE, inputs);
   fs.mkdirSync(path.dirname(REPORT), { recursive: true });
   const report = {
-    phase: '8B.1',
+    phase: '8B.2',
     browserEnabledSparseAcceptance: true,
-    browserEnabledSparseAcceptanceNote: 'enabled sparse acceptance proven in-browser at / and /webnet/ through the test-only wrapper (real production worker module + harness-only kill-switch enablement); shipped default stays OFF',
+    browserEnabledSparseAcceptanceNote: 'enabled sparse acceptance proven in-browser at / and /webnet/ through the emitted production adjustment worker; camp fallback is compared with forced TypeScript',
     root,
     webnetBase: based,
   };

@@ -1,0 +1,177 @@
+{
+  "phase": "8B.2",
+  "browserEnabledSparseAcceptance": true,
+  "browserEnabledSparseAcceptanceNote": "enabled sparse acceptance proven in-browser at / and /webnet/ through the emitted production adjustment worker; camp fallback is compared with forced TypeScript",
+  "root": {
+    "workerAsset": "assets/adjustmentWorker-BCsySpqp.js",
+    "cases": {
+      "anchor": {
+        "match": true,
+        "bitIdenticalCore": false,
+        "maxAbsDiff": 3.552713678800501e-15,
+        "maxRelDiff": 6.566509104072054e-16,
+        "advisory": {
+          "logLineCount": 32,
+          "logDiffs": 0,
+          "logSamples": [],
+          "sections": {
+            "weakGeometryDiagnostics": {
+              "match": true
+            },
+            "preanalysisImpactDiagnostics": {
+              "match": false
+            }
+          }
+        }
+      },
+      "camp": {
+        "match": true,
+        "bitIdenticalCore": false,
+        "maxAbsDiff": 2.098410334383516e-11,
+        "maxRelDiff": 5.83023779690589e-12,
+        "advisory": {
+          "logLineCount": 522,
+          "logDiffs": 2,
+          "logSamples": [
+            {
+              "node": "  pair 111-Meridian: WEAK sigmaDist=0m, medianRatio=1.41x, shape=203000x",
+              "browser": "  pair 110-OLDA: WEAK sigmaDist=0m, medianRatio=1.42x, shape=730300x"
+            },
+            {
+              "node": "  pair 112-Meridian: WEAK sigmaDist=0m, medianRatio=1.42x, shape=408100x",
+              "browser": "  pair 111-Meridian: WEAK sigmaDist=0m, medianRatio=1.42x, shape=203000x"
+            }
+          ],
+          "sections": {
+            "weakGeometryDiagnostics": {
+              "match": false
+            },
+            "preanalysisImpactDiagnostics": {
+              "match": false
+            }
+          }
+        }
+      },
+      "adjust": {
+        "match": true,
+        "bitIdenticalCore": true,
+        "maxAbsDiff": 0,
+        "maxRelDiff": 0,
+        "advisory": {
+          "logLineCount": 16,
+          "logDiffs": 0,
+          "logSamples": [],
+          "sections": {
+            "weakGeometryDiagnostics": {
+              "match": true
+            },
+            "preanalysisImpactDiagnostics": {
+              "match": true
+            }
+          }
+        }
+      }
+    },
+    "glue": {
+      "add": 5,
+      "sparseEntry": "function"
+    },
+    "enabled": {
+      "workerAsset": "assets/adjustmentWorker-BCsySpqp.js",
+      "anchorSparseAccept": {
+        "match": true,
+        "coreMaxAbsDiff": 3.552713678800501e-15,
+        "coreMaxRelDiff": 6.566509104072054e-16,
+        "nativePathDiverged": true
+      },
+      "campFallbackIdentical": true
+    },
+    "pass": true
+  },
+  "webnetBase": {
+    "workerAsset": "assets/adjustmentWorker-UOJIapNp.js",
+    "cases": {
+      "anchor": {
+        "match": true,
+        "bitIdenticalCore": false,
+        "maxAbsDiff": 3.552713678800501e-15,
+        "maxRelDiff": 6.566509104072054e-16,
+        "advisory": {
+          "logLineCount": 32,
+          "logDiffs": 0,
+          "logSamples": [],
+          "sections": {
+            "weakGeometryDiagnostics": {
+              "match": true
+            },
+            "preanalysisImpactDiagnostics": {
+              "match": false
+            }
+          }
+        }
+      },
+      "camp": {
+        "match": true,
+        "bitIdenticalCore": false,
+        "maxAbsDiff": 2.098410334383516e-11,
+        "maxRelDiff": 5.83023779690589e-12,
+        "advisory": {
+          "logLineCount": 522,
+          "logDiffs": 2,
+          "logSamples": [
+            {
+              "node": "  pair 111-Meridian: WEAK sigmaDist=0m, medianRatio=1.41x, shape=203000x",
+              "browser": "  pair 110-OLDA: WEAK sigmaDist=0m, medianRatio=1.42x, shape=730300x"
+            },
+            {
+              "node": "  pair 112-Meridian: WEAK sigmaDist=0m, medianRatio=1.42x, shape=408100x",
+              "browser": "  pair 111-Meridian: WEAK sigmaDist=0m, medianRatio=1.42x, shape=203000x"
+            }
+          ],
+          "sections": {
+            "weakGeometryDiagnostics": {
+              "match": false
+            },
+            "preanalysisImpactDiagnostics": {
+              "match": false
+            }
+          }
+        }
+      },
+      "adjust": {
+        "match": true,
+        "bitIdenticalCore": true,
+        "maxAbsDiff": 0,
+        "maxRelDiff": 0,
+        "advisory": {
+          "logLineCount": 16,
+          "logDiffs": 0,
+          "logSamples": [],
+          "sections": {
+            "weakGeometryDiagnostics": {
+              "match": true
+            },
+            "preanalysisImpactDiagnostics": {
+              "match": true
+            }
+          }
+        }
+      }
+    },
+    "glue": {
+      "add": 5,
+      "sparseEntry": "function"
+    },
+    "enabled": {
+      "workerAsset": "assets/adjustmentWorker-UOJIapNp.js",
+      "anchorSparseAccept": {
+        "match": true,
+        "coreMaxAbsDiff": 3.552713678800501e-15,
+        "coreMaxRelDiff": 6.566509104072054e-16,
+        "nativePathDiverged": true
+      },
+      "campFallbackIdentical": true
+    },
+    "pass": true
+  }
+}

@@ -1,0 +1,19 @@
+{
+  "phase": "8B.2",
+  "verdict": "GO",
+  "readyToMerge": true,
+  "pullRequest": 1,
+  "branch": "feat/sparse-preanalysis",
+  "preEnableSha": "d8685fa9172cd162461cf64749f4114044257cb0",
+  "postEnableSha": "c49c9b5e6f7445402f84475b93d9b0ab32eb58ba",
+  "preEnableCi": { "run": 34071346301, "conclusion": "success", "cleanRunnerGate": "success" },
+  "postEnableCi": { "run": 34073963367, "conclusion": "success", "cleanRunnerGate": "success" },
+  "defaultRoute": "bounded sparse preanalysis enabled; TypeScript fallback on failure",
+  "killSwitchRetained": true,
+  "routeChanges": ["src/workers/preanalysisSparseAutoRoute.ts default only"],
+  "unchangedContracts": ["solver", "sentinel", "tolerances", "caps", "cohort", "adjustment routing"],
+  "local": { "tests": "2654 passed, 1 skipped", "industryParity": "25/25", "lint": "pass", "typecheck": "pass", "build": "pass" },
+  "browser": { "bases": ["/", "/webnet/"], "emittedProductionWorker": true, "enabledSparseAcceptance": true, "campFallback": true },
+  "releaseEvidence": { "realWasmStressSessions": 120, "sparseAccepts": 45, "fallbacks": 75, "bundleInitCount": 1, "phase8b1CleanRunner": true },
+  "reviewerVerdict": "APPROVE"
+}
