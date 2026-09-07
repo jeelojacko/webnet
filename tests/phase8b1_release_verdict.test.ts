@@ -10,8 +10,8 @@
  *
  * Verdict is GO only when every leg actually passes; otherwise NO-GO with
  * exact blockers. The suite passing means the verdict was rendered
- * honestly, not that release is approved. The production route stays
- * default-OFF (asserted here against a fresh module import).
+ * honestly, not that release is approved. Phase 8B.2 now enables the
+ * production route by default.
  */
 import fs from 'node:fs';
 import path from 'node:path';
@@ -92,16 +92,16 @@ describe('phase 8B.1 release verdict', () => {
       blockers.push('cleanRunnerCI=false: CI has no wired clean-runner gate with wasm:build preceding the focused real-route gate');
     }
     const cleanRunnerCI = gateJob && wasmBuildFirst;
-    // Default-OFF guard on a fresh module import: enabling the default to
-    // clear a blocker is forbidden, and this test fails if it ever happens.
-    expect(isPreanalysisSparseAutoRouteEnabled(), 'production kill switch default flipped ON').toBe(false);
+    // Phase 8B.2 default-on guard: the internal setter remains available for
+    // emergency rollback, but the shipped default must be enabled.
+    expect(isPreanalysisSparseAutoRouteEnabled(), 'production route default is not enabled').toBe(true);
     const verdict = blockers.length === 0 ? 'GO' : 'NO-GO';
     const report = {
       phase: '8B.1',
       verdict,
       browserEnabledSparseAcceptance: browserEnabledAccept,
       cleanRunnerCI,
-      defaultRoute: 'typescript (kill switch OFF unless every gate passes)',
+      defaultRoute: 'bounded sparse preanalysis (kill switch ON; TypeScript fallback on failure)',
       defaultOff: stress.defaultOff,
       wasmArtifact: 'cpp/build-wasm/webnet_core.js (+ .wasm)',
       verificationColumns: 16,
@@ -119,16 +119,16 @@ describe('phase 8B.1 release verdict', () => {
     const lines = [
       '# Phase 8B.1 preanalysis release closure (exact production route, real WASM)',
       '',
-      `- Verdict: ${verdict} (default stays OFF).`,
+      `- Verdict: ${verdict} (default sparse preanalysis enabled).`,
       `- browserEnabledSparseAcceptance: ${browserEnabledAccept}.`,
       `- cleanRunnerCI: ${cleanRunnerCI}.`,
-      '- Default route: TypeScript (kill switch OFF). Enablement existed only in test harnesses.',
+      '- Default route: bounded sparse preanalysis (kill switch ON); failures restart in TypeScript.',
       `- Sessions: ${stress.sessions.total} sequential mixed sessions on ONE reused worker.`,
       ...Object.entries(perKind).map(([kind, stats]) => `- ${kind}: ${JSON.stringify(stats)}`),
       `- Bundle: single init across all sessions (initCount=${stress.bundle.initCount}, realWasm=${stress.bundle.realWasm}).`,
       ...(blockers.length > 0 ? blockers.map((blocker) => `- BLOCKER: ${blocker}`) : ['- Blockers: none.']),
       '',
-      'Release posture: default stays OFF. Enabling requires every gate above to pass with the real bundle; any failure restarts the original request clean in TypeScript exactly once.',
+      'Release posture: bounded sparse preanalysis is enabled. Any failure restarts the original request clean in TypeScript exactly once.',
       '',
     ];
     fs.writeFileSync(CLOSURE_MD, `${lines.join('\n')}\n`);

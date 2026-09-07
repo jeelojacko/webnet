@@ -3,7 +3,7 @@
   "verdict": "GO",
   "browserEnabledSparseAcceptance": true,
   "cleanRunnerCI": true,
-  "defaultRoute": "typescript (kill switch OFF unless every gate passes)",
+  "defaultRoute": "bounded sparse preanalysis (kill switch ON; TypeScript fallback on failure)",
   "defaultOff": {
     "initCalls": 0,
     "deepEqualTypeScript": true
@@ -123,58 +123,58 @@
     "snapshots": [
       {
         "afterSession": 15,
-        "rssBytes": 594771968,
-        "heapUsedBytes": 261956584,
-        "heapTotalBytes": 327389184
+        "rssBytes": 640622592,
+        "heapUsedBytes": 153627248,
+        "heapTotalBytes": 335777792
       },
       {
         "afterSession": 30,
-        "rssBytes": 579698688,
-        "heapUsedBytes": 164278064,
-        "heapTotalBytes": 310874112
+        "rssBytes": 627167232,
+        "heapUsedBytes": 109739856,
+        "heapTotalBytes": 325816320
       },
       {
         "afterSession": 45,
-        "rssBytes": 637956096,
-        "heapUsedBytes": 27418440,
-        "heapTotalBytes": 185307136
+        "rssBytes": 715227136,
+        "heapUsedBytes": 27476992,
+        "heapTotalBytes": 179802112
       },
       {
         "afterSession": 60,
-        "rssBytes": 632774656,
-        "heapUsedBytes": 250059640,
-        "heapTotalBytes": 347574272
+        "rssBytes": 494637056,
+        "heapUsedBytes": 27661968,
+        "heapTotalBytes": 168529920
       },
       {
         "afterSession": 75,
-        "rssBytes": 625115136,
-        "heapUsedBytes": 282131072,
-        "heapTotalBytes": 352555008
+        "rssBytes": 665055232,
+        "heapUsedBytes": 151815072,
+        "heapTotalBytes": 317952000
       },
       {
         "afterSession": 90,
-        "rssBytes": 585375744,
-        "heapUsedBytes": 31496112,
-        "heapTotalBytes": 171675648
+        "rssBytes": 652775424,
+        "heapUsedBytes": 31544488,
+        "heapTotalBytes": 177967104
       },
       {
         "afterSession": 105,
-        "rssBytes": 627843072,
-        "heapUsedBytes": 200620536,
-        "heapTotalBytes": 348622848
+        "rssBytes": 646934528,
+        "heapUsedBytes": 142631432,
+        "heapTotalBytes": 338137088
       },
       {
         "afterSession": 120,
-        "rssBytes": 627179520,
-        "heapUsedBytes": 122811016,
-        "heapTotalBytes": 344952832
+        "rssBytes": 638791680,
+        "heapUsedBytes": 277478048,
+        "heapTotalBytes": 348098560
       }
     ]
   },
   "cancellation": {
     "cancelled": true,
     "healthyAfterCancel": true,
-    "attempts": 1,
+    "attempts": 2,
     "attemptsNote": "informational only; the race attempt count varies run to run and is excluded from determinism claims"
   },
   "restartAfterTerminate": {
