@@ -9,7 +9,7 @@ in configs, scripts, or CI.
 
 | Tier | Command | Config | Contents |
 | --- | --- | --- | --- |
-| **full** | `npm run test:full` (== `npm run test:run`) | `vitest.config.ts` | Every Vitest test. The authoritative full suite. GitHub CI keeps running it. |
+| **full** | `npm run test:full` (== `npm run test:run`) | `vitest.config.ts` | Every Vitest test. The authoritative monolithic local suite. |
 | **agent** | `npm run test:agent` | `vitest.agent.config.ts` | Full suite **minus** the release/evidence and real-WASM integration tests. The broad everyday AI-agent regression gate (~1 min). |
 | **wasm** | `npm run test:wasm` | `vitest.wasm.config.ts` | Only the explicit real-WASM / worker / native integration tests. |
 | **release** | `npm run test:release` | `vitest.release.config.ts` | Only the intentionally expensive certification / evidence / stress campaigns. Expected to be very slow; run explicitly, never as everyday feedback. |
@@ -76,10 +76,21 @@ seconds.
 
 ## CI
 
-GitHub CI (`.github/workflows/ci.yml`) continues to run the **full** suite via
-`npm run test:run` in this phase. Tiering optimizes local/AI-agent iteration
-only; CI sharding/parallelization is a separate future phase. The dedicated
-Phase 8B.1 clean-runner CI job is unchanged.
+GitHub CI (`.github/workflows/ci.yml`) has stable `classify`, `core`, and
+`numerical` jobs. Every pull request runs the core validation through
+`npm run test:agent`, plus the harness, industry parity, build, CLI smoke, and
+legacy corpus gates. The classifier is fail-closed: docs/components/study-only
+changes are the explicitly recognized safe-only paths; unknown, mixed, engine,
+worker, C++, test-infrastructure, and workflow changes require numerical
+certification. Numerical-sensitive pull requests build WASM once, run CTest,
+`npm run test:wasm`, and `npm run test:release`. Safe-only pull requests keep
+the numerical job as a successful no-op so its check remains present.
+
+Pushes to `main` and manual workflow runs always require numerical
+certification, regardless of changed files. `test:full` remains unchanged and
+is the authoritative complete local command; CI executes the equivalent
+agent+WASM+release partition. The Phase 8B.1 clean-runner test remains covered
+by `WASM_INTEGRATION_TESTS`; its duplicate dedicated CI job was removed.
 
 ## Handoff
 
