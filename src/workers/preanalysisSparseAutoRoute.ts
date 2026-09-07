@@ -45,6 +45,7 @@ import type {
 } from '../engine/runSessionTypes';
 import { loadSparseAutoRouteBundle, type SparseAutoRouteBundle } from './adjustmentSparseAutoRoute';
 import { PreanalysisGatedCovarianceCapture } from './preanalysisSparseCovarianceGate';
+import type { PreanalysisVerifierTimingSink } from './preanalysisSparseCovarianceGate';
 import {
   createPreanalysisCandidateState,
   PREANALYSIS_SPARSE_ROUTE_MAX_PLANNING_SYSTEMS,
@@ -86,6 +87,21 @@ export interface PreanalysisSparseAutoRouteTestHooks {
   unknownCountOverride?: number;
   /** Test-only planning-system cap (default 64). Lower to force pre-dispatch abort. */
   systemCapOverride?: number;
+  /**
+   * Test-only static station-unknown cap (default 128). Widens the
+   * eligibility gate and the whole-session unknown check for evidence runs.
+   */
+  stationUnknownCapOverride?: number;
+  /**
+   * Test-only per-system parameter cap (default 128). Widens the runtime
+   * correction/covariance pre-dispatch gates for evidence runs.
+   */
+  parameterCapOverride?: number;
+  /**
+   * Evidence-only verifier timing sink (default null = disabled).
+   * Records wall-ms per verifier phase; never affects gates or routing.
+   */
+  timingSink?: PreanalysisVerifierTimingSink | null;
   forceC2Failure?: boolean;
   forcePhysicalFailure?: boolean;
 }
@@ -179,9 +195,11 @@ export const derivePreanalysisSparseAutoRouteEligibility = (
       reasons.push('GPS covariance weighting not cleared for preanalysis sparse route');
     }
     const unknownCount = testHooks.unknownCountOverride ?? parsed.unknowns.length;
-    if (unknownCount > PREANALYSIS_SPARSE_ROUTE_MAX_UNKNOWN_COUNT) {
+    const stationUnknownCap =
+      testHooks.stationUnknownCapOverride ?? PREANALYSIS_SPARSE_ROUTE_MAX_UNKNOWN_COUNT;
+    if (unknownCount > stationUnknownCap) {
       reasons.push(
-        `size guard: ${unknownCount} unknowns exceed cap ${PREANALYSIS_SPARSE_ROUTE_MAX_UNKNOWN_COUNT}`,
+        `size guard: ${unknownCount} unknowns exceed cap ${stationUnknownCap}`,
       );
     }
     return { eligible: reasons.length === 0, reasons, unknownCount };
@@ -305,7 +323,8 @@ export const runWithPreanalysisSparseAutoRoute = async (
   const maxSystems = testHooks.systemCapOverride ?? PREANALYSIS_SPARSE_ROUTE_MAX_PLANNING_SYSTEMS;
   const caps: PreanalysisGateCaps = {
     maxSystems,
-    maxParameters: PREANALYSIS_SPARSE_ROUTE_MAX_UNKNOWN_COUNT,
+    maxParameters:
+      testHooks.parameterCapOverride ?? PREANALYSIS_SPARSE_ROUTE_MAX_UNKNOWN_COUNT,
   };
   const candidate = createPreanalysisCandidateState();
   const gatedCorrection = new PreanalysisGatedCorrectionSolver(
@@ -322,6 +341,9 @@ export const runWithPreanalysisSparseAutoRoute = async (
     forceC2Failure: testHooks.forceC2Failure,
     forcePhysicalFailure: testHooks.forcePhysicalFailure,
   });
+  if (testHooks.timingSink) {
+    gatedCovariance.setTimingSink(testHooks.timingSink);
+  }
   const passthroughRowProducts: SparseRowProductsSolver = bundle.sparseRowProductsSolver;
   const runtime: AdjustmentRuntime = {
     sparseCorrectionSolver: gatedCorrection,
@@ -350,6 +372,12 @@ export const runWithPreanalysisSparseAutoRoute = async (
   const warnings: string[] = [];
   if (testHooks.systemCapOverride != null) {
     warnings.push(`test hook systemCapOverride=${testHooks.systemCapOverride} (production cap=${PREANALYSIS_SPARSE_ROUTE_MAX_PLANNING_SYSTEMS})`);
+  }
+  if (testHooks.stationUnknownCapOverride != null) {
+    warnings.push(`test hook stationUnknownCapOverride=${testHooks.stationUnknownCapOverride} (production cap=${PREANALYSIS_SPARSE_ROUTE_MAX_UNKNOWN_COUNT})`);
+  }
+  if (testHooks.parameterCapOverride != null) {
+    warnings.push(`test hook parameterCapOverride=${testHooks.parameterCapOverride} (production cap=${PREANALYSIS_SPARSE_ROUTE_MAX_UNKNOWN_COUNT})`);
   }
   // Typed pre-dispatch abort reason (the engine converts gate throws into
   // recorded dense fallbacks, so the abort surfaces here as well).
@@ -404,6 +432,11 @@ export const runWithPreanalysisSparseAutoRoute = async (
     const session = evaluatePreanalysisSparseWholeSession({
       unknownCount: eligibility.unknownCount ?? 0,
       systems: policySystems,
+      capOverrides: {
+        unknownCap:
+          testHooks.stationUnknownCapOverride ?? PREANALYSIS_SPARSE_ROUTE_MAX_UNKNOWN_COUNT,
+        planningSystemCap: maxSystems,
+      },
     });
     if (!session.admit) {
       for (const reason of session.reasons) {

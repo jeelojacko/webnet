@@ -10,6 +10,20 @@ export const PREANALYSIS_SPARSE_UNKNOWN_CAP = 128;
 /** Enforced per-session planning-system cap for the production preanalysis sparse route. */
 export const PREANALYSIS_SPARSE_PLANNING_SYSTEM_CAP = 64;
 
+/**
+ * Test-only cap overrides (evidence runs only; production always omits this).
+ *
+ * `unknownCap` widens the static station-unknown gate and the whole-session
+ * unknown check; `planningSystemCap` widens the whole-session system-count
+ * check. Runtime per-system parameterCount caps travel separately through
+ * `PreanalysisGateCaps.maxParameters` in the route. Omitted fields fall back
+ * to the production constants above, so default behavior is byte-identical.
+ */
+export interface PreanalysisSparsePolicyCapOverrides {
+  unknownCap?: number;
+  planningSystemCap?: number;
+}
+
 export interface PreanalysisSparseSystemVerdict {
   index: number;
   staticAdmit: boolean;
@@ -33,20 +47,24 @@ export const evaluatePreanalysisSparseSystemPolicy = (args: {
   unknownCount: number;
   planningSystemCount: number;
   verdict: PreanalysisSparseSystemVerdict;
+  capOverrides?: PreanalysisSparsePolicyCapOverrides;
 }): PreanalysisSparseSessionDecision => {
+  const unknownCap = args.capOverrides?.unknownCap ?? PREANALYSIS_SPARSE_UNKNOWN_CAP;
+  const planningSystemCap =
+    args.capOverrides?.planningSystemCap ?? PREANALYSIS_SPARSE_PLANNING_SYSTEM_CAP;
   const reasons: string[] = [];
   if (!Number.isInteger(args.unknownCount) || args.unknownCount <= 0) {
     reasons.push('unknown count is not a positive integer (fail-closed)');
-  } else if (args.unknownCount > PREANALYSIS_SPARSE_UNKNOWN_CAP) {
+  } else if (args.unknownCount > unknownCap) {
     reasons.push(
-      `unknownCount ${args.unknownCount} exceeds cap ${PREANALYSIS_SPARSE_UNKNOWN_CAP} (fail-closed)`,
+      `unknownCount ${args.unknownCount} exceeds cap ${unknownCap} (fail-closed)`,
     );
   }
   if (!Number.isInteger(args.planningSystemCount) || args.planningSystemCount <= 0) {
     reasons.push('planning system count is not a positive integer (fail-closed)');
-  } else if (args.planningSystemCount > PREANALYSIS_SPARSE_PLANNING_SYSTEM_CAP) {
+  } else if (args.planningSystemCount > planningSystemCap) {
     reasons.push(
-      `planning systems ${args.planningSystemCount} exceed cap ${PREANALYSIS_SPARSE_PLANNING_SYSTEM_CAP} (fail-closed)`,
+      `planning systems ${args.planningSystemCount} exceed cap ${planningSystemCap} (fail-closed)`,
     );
   }
   if (!args.verdict.staticAdmit) reasons.push(`system ${args.verdict.index}: static gate rejects`);
@@ -65,7 +83,11 @@ export const evaluatePreanalysisSparseSystemPolicy = (args: {
 export const evaluatePreanalysisSparseWholeSession = (args: {
   unknownCount: number;
   systems: PreanalysisSparseSystemVerdict[];
+  capOverrides?: PreanalysisSparsePolicyCapOverrides;
 }): PreanalysisSparseSessionDecision => {
+  const unknownCap = args.capOverrides?.unknownCap ?? PREANALYSIS_SPARSE_UNKNOWN_CAP;
+  const planningSystemCap =
+    args.capOverrides?.planningSystemCap ?? PREANALYSIS_SPARSE_PLANNING_SYSTEM_CAP;
   const reasons: string[] = [];
   if (args.systems.length === 0) {
     return {
@@ -74,12 +96,12 @@ export const evaluatePreanalysisSparseWholeSession = (args: {
       reasons: ['no planning systems captured (fail-closed)'],
     };
   }
-  if (args.unknownCount > PREANALYSIS_SPARSE_UNKNOWN_CAP) {
-    reasons.push(`unknownCount ${args.unknownCount} exceeds cap ${PREANALYSIS_SPARSE_UNKNOWN_CAP} (fail-closed)`);
+  if (args.unknownCount > unknownCap) {
+    reasons.push(`unknownCount ${args.unknownCount} exceeds cap ${unknownCap} (fail-closed)`);
   }
-  if (args.systems.length > PREANALYSIS_SPARSE_PLANNING_SYSTEM_CAP) {
+  if (args.systems.length > planningSystemCap) {
     reasons.push(
-      `planning systems ${args.systems.length} exceed cap ${PREANALYSIS_SPARSE_PLANNING_SYSTEM_CAP} (fail-closed)`,
+      `planning systems ${args.systems.length} exceed cap ${planningSystemCap} (fail-closed)`,
     );
   }
   for (const verdict of args.systems) {
@@ -87,6 +109,7 @@ export const evaluatePreanalysisSparseWholeSession = (args: {
       unknownCount: args.unknownCount,
       planningSystemCount: args.systems.length,
       verdict,
+      capOverrides: args.capOverrides,
     });
     if (!single.admit) {
       reasons.push(...single.reasons);
