@@ -1214,7 +1214,7 @@
       - [ ] Document the four-case parity workflow and batch-default rotation rule in `docs/PARITY_WORKFLOW.md`
       - [ ] Update `docs/CURRENT_BEHAVIOR.md` with the newly supported levelling hyphen-pair syntax, traverse `.INST` instrument scoping, GNSS covariance-vector dialect, and expanded industry parity coverage
       - [x] Keep `README.md` unchanged unless the user-facing startup/example workflow is intentionally documented there
-      - [ ] Run and record the required validation matrix for each completed batch: focused tests, `npm run lint`, `npm run typecheck`, `npm run test`, `npm run build`, and `npm run parity:industry-reference`
+      - [ ] Run and record the required validation matrix for each completed batch: focused tests, `npm run lint`, `npm run typecheck`, `npm run test:agent` (or `test:full` at closeout), `npm run build`, and `npm run parity:industry-reference`
   - [x] Phase 5 - review and map/report UX polish
     - [x] Batch 1 - guided run-state and action safety
       - [x] Add explicit run-state strip with `Ready`, `Dirty (needs rerun)`, `Running`, `Result stale`, and `Reviewing`

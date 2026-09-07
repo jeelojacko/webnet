@@ -280,7 +280,7 @@ For planning-only batches with light app-shell changes:
 - focused UI/jsdom tests first
 - `npm run lint`
 - `npm run typecheck`
-- `npm run test`
+- `npm run test:agent`
 - `npm run build`
 
 For future CAD math/IO phases:

@@ -36,8 +36,10 @@ For parity-sensitive work, always run the parity gate even if synthetic CRS harn
 Run:
 - `npm run lint`
 - `npm run typecheck`
-- `npm run test:run`
+- `npm run test:agent`
 - `npm run parity:industry-reference`
+
+Parity-sensitive work is significant work: run `npm run test:full` (== `test:run`) before declaring completion (see [TEST_TIERS.md](TEST_TIERS.md)).
 
 ### Additional focused validation
 Also run the narrowest relevant suites for the area changed. Examples:
