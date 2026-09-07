@@ -1,0 +1,60 @@
+{
+  "baselineMainSha": "57e44957d97675ca287c1d5b1b22706e5be69984",
+  "hotfixSha": "56ebf8cff20ff9c332f32617ee7c573c200b8ae5",
+  "branch": "hotfix/sparse-preanalysis-safety",
+  "relationshipToOriginMain": "5 commits ahead, 0 behind",
+  "initialDefault": "off",
+  "finalDefault": "on",
+  "commits": [
+    "1ad6deb Temporarily disable sparse preanalysis during safety hotfix",
+    "b8bbee0 Correct sparse preanalysis C1 covariance tolerance scaling",
+    "98f9803 Fix effective-project sparse eligibility parsing",
+    "75356c8 Bound sparse preanalysis covariance verification memory",
+    "56ebf8c Re-enable sparse preanalysis after safety fixes"
+  ],
+  "eligibility": {
+    "implementation": "resolveEffectiveProjectParse/parseEffectiveProjectInput shares run-session profile and parse options, including includeFiles and projectRunFiles",
+    "includeGpsCovariance": "rejected",
+    "includeAutoAdjust": "rejected where parser semantics enable it; include-scoped directives remain scoped like the solver",
+    "projectRunFile": "unsupported AUTOADJUST rejected",
+    "unknownInflation": "effective parsed unknown count remains gated at 128; runtime parameter cap remains enforced",
+    "mainOnlyNormal": "eligible"
+  },
+  "c1": {
+    "oldFormula": "relative diff diff/max(1,abs(expected)); allowed=max(1e-12,tolerance*max(1,abs(expected)))",
+    "newFormula": "relative diff diff/max(abs(expected),1e-12); allowed=max(1e-12,tolerance*abs(expected))",
+    "tinyExpected1e8Actual9e7": "rejected",
+    "exactTiny": "passed",
+    "absoluteFloor": "covered by focused regression"
+  },
+  "productionCorruption": "real route-level corrupt covariance test rejects candidate and restart matches forced TypeScript",
+  "retention": {
+    "old": "full packed design/weights/query input and native result retained for every planning system",
+    "new": "one system verified immediately; only compact verdicts retained",
+    "maxRetainedPackedSystems": 1,
+    "highObservationStress": "real-WASM 120-session release closure passed; structural gate instrumentation proves <=1, heap values informational"
+  },
+  "verifierDecomposition": "checkSystemHeader, accumulateGateNormal, judgeProductionC2, runBoundedVerification, judgeSelectedC1, judgeHybridC3, judgePhysical",
+  "caps": {"parameterCount": 128, "planningSystems": 64, "verificationColumns": 16, "condition": "warn-only"},
+  "realWasm": {
+    "accepted": ["small conventional", "plain GPS", "direction observation", "medium/closure", "near-128 cohort where applicable"],
+    "fallbacks": ["camp cap", "coldstream damping", "unsupported include", "C1 corruption", "generic native failure"],
+    "falseSparseAuthorities": 0,
+    "restartEquality": "passed"
+  },
+  "browser": {"root": "passed", "nonRootWebnet": "passed"},
+  "adjustmentRegression": "passed; Phase 7C/7D routing and caps unchanged",
+  "tests": {"focused": 40, "fullSuiteReportedByWorker": 2666, "industryParity": "25/25"},
+  "validation": {
+    "lint": "passed",
+    "typecheck": "passed",
+    "build": "passed",
+    "cppTest": "passed 7/7",
+    "wasmBuild": "not run successfully: emcmake unavailable (ENOENT); existing artifact proofs passed",
+    "githubCI": "not run",
+    "reviewer": "APPROVE"
+  },
+  "hotfixGo": false,
+  "readyToMerge": false,
+  "blockers": ["GitHub CI not run/green", "wasm:build unavailable because emcmake is not installed", "full npm test:run with final default-ON was not completed within command timeout; phase8b1 release closure and evidence subset passed"]
+}
