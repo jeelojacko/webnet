@@ -5,9 +5,40 @@ on:
     branches: [main]
   pull_request:
     branches: [main]
+  workflow_dispatch:
 
 jobs:
-  build:
+  classify:
+    name: classify
+    runs-on: ubuntu-latest
+    outputs:
+      numerical_required: ${{ steps.classify.outputs.numerical_required }}
+      reason: ${{ steps.classify.outputs.reason }}
+      changed_file_count: ${{ steps.classify.outputs.changed_file_count }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+      - name: Setup Node
+        uses: actions/setup-node@v5
+        with:
+          node-version: 24
+          cache: npm
+      - name: Classify changed paths
+        id: classify
+        run: node scripts/ciChangeClassifier.mjs
+      - name: Report CI classification
+        run: |
+          echo "CI classification:"
+          echo "numerical_required=${{ steps.classify.outputs.numerical_required }}"
+          echo "reason=${{ steps.classify.outputs.reason }}"
+          echo "changed_file_count=${{ steps.classify.outputs.changed_file_count }}"
+
+  core:
+    name: core
+    needs: classify
+    if: ${{ always() && needs.classify.result == 'success' }}
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -19,17 +50,12 @@ jobs:
           cache: npm
       - name: Install
         run: npm ci
-      - name: Setup Emscripten
-        uses: emscripten-core/setup-emsdk@v15
-        with:
-          version: 6.0.5
-          actions-cache-folder: emsdk-cache
-      - name: Build WASM test artifact
-        run: npm run wasm:build
       - name: Lint
         run: npm run lint
-      - name: Test
-        run: npm run test:run
+      - name: Typecheck
+        run: npm run typecheck
+      - name: Agent tests
+        run: npm run test:agent
       - name: Synthetic CRS Harness Gate
         run: npm run harness:crs:synthetic
       - name: Industry Parity Reference Gate
@@ -49,13 +75,11 @@ jobs:
           name: legacy-corpus-summary
           path: artifacts/legacy-corpus/
           if-no-files-found: warn
-  phase8b1-clean-runner-gate:
-    # Focused real-route gate (CI-sized): the real WASM artifact must exist
-    # (absence fails, never skips), the route stays default-OFF, and the
-    # anchor/camp/eligible-adjustment shapes hold through the exact
-    # production worker dispatch. The 10-minute 120-session release stress
-    # already runs in the main job's full-suite Test step (npm run test:run);
-    # the browser proof stays local-only (see reports/phase8b1/).
+
+  numerical:
+    name: numerical
+    needs: classify
+    if: ${{ always() && needs.classify.result == 'success' }}
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -65,14 +89,27 @@ jobs:
         with:
           node-version: 24
           cache: npm
+      - name: Skip numerical certification for safe-only PR
+        if: ${{ needs.classify.outputs.numerical_required != 'true' }}
+        run: echo "Numerical certification not required for this PR. All changed paths are classified safe-only."
       - name: Install
+        if: ${{ needs.classify.outputs.numerical_required == 'true' }}
         run: npm ci
       - name: Setup Emscripten
+        if: ${{ needs.classify.outputs.numerical_required == 'true' }}
         uses: emscripten-core/setup-emsdk@v15
         with:
           version: 6.0.5
           actions-cache-folder: emsdk-cache
       - name: Build WASM test artifact
+        if: ${{ needs.classify.outputs.numerical_required == 'true' }}
         run: npm run wasm:build
-      - name: Phase 8B.1 clean-runner gate
-        run: node scripts/runVitest.mjs run tests/phase8b1_clean_runner_gate.test.ts
+      - name: CTest
+        if: ${{ needs.classify.outputs.numerical_required == 'true' }}
+        run: npm run cpp:test
+      - name: Real-WASM tests
+        if: ${{ needs.classify.outputs.numerical_required == 'true' }}
+        run: npm run test:wasm
+      - name: Release certification tests
+        if: ${{ needs.classify.outputs.numerical_required == 'true' }}
+        run: npm run test:release

@@ -110,9 +110,10 @@ Escalations:
 
 Test-tier rules:
 
-- `test:full`/`test:run` stays the authoritative full suite; GitHub CI keeps running it.
+- `test:full`/`test:run` stays the authoritative full suite; CI routes its equivalent tier partition through `test:agent`, `test:wasm`, and `test:release`.
 - A new test expected to take more than ~10 s because it performs stress, evidence, repeated real-WASM sessions, browser certification, or performance campaigns must be explicitly classified in `scripts/testTiers.ts` (WASM or release tier) instead of silently joining the agent tier.
 - Never gate on absolute runtime (machines differ); tier membership is the contract.
+- CI path classification is fail-closed: unknown changes receive numerical certification.
 
 ## Done when
 

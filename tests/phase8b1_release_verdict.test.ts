@@ -81,17 +81,18 @@ describe('phase 8B.1 release verdict', () => {
       browserEnabledAccept =
         blockers.filter((blocker) => blocker.startsWith('browser:')).length === 0;
     }
-    // Clean-runner CI leg: the focused gate job exists and wasm:build
-    // precedes the gate run (static file check, deterministic).
+    // Clean-runner CI leg: the focused gate is covered by the WASM tier,
+    // which is built and run by the numerical job (static file check).
     const ci = fs.readFileSync(CI_PATH, 'utf-8');
-    const gateJob = ci.includes('phase8b1-clean-runner-gate');
-    const wasmBuildFirst =
-      ci.indexOf('npm run wasm:build') !== -1 &&
-      ci.indexOf('npm run wasm:build') < ci.indexOf('phase8b1_clean_runner_gate.test.ts');
-    if (!gateJob || !wasmBuildFirst) {
-      blockers.push('cleanRunnerCI=false: CI has no wired clean-runner gate with wasm:build preceding the focused real-route gate');
+    const wasmTierRuns = ci.includes('npm run test:wasm');
+    const cleanRunnerTestIsTiered = fs.readFileSync(
+      path.join(process.cwd(), 'scripts/testTiers.ts'),
+      'utf-8',
+    ).includes("'tests/phase8b1_clean_runner_gate.test.ts'");
+    if (!wasmTierRuns || !cleanRunnerTestIsTiered) {
+      blockers.push('cleanRunnerCI=false: CI numerical job does not run the WASM tier containing the clean-runner gate');
     }
-    const cleanRunnerCI = gateJob && wasmBuildFirst;
+    const cleanRunnerCI = wasmTierRuns && cleanRunnerTestIsTiered;
     // Phase 8B.2 default-on guard: the internal setter remains available for
     // emergency rollback, but the shipped default must be enabled.
     expect(isPreanalysisSparseAutoRouteEnabled(), 'production route default is not enabled').toBe(true);
