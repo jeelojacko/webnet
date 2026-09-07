@@ -72,7 +72,7 @@ export {
 } from './preanalysisSparseCovarianceGate';
 
 /** Internal kill switch. No persisted or UI fields; retained for rollback. */
-let preanalysisSparseAutoRouteEnabled = false;
+let preanalysisSparseAutoRouteEnabled = true;
 
 /** Enables/disables the production preanalysis sparse route (internal/test-only). */
 export const setPreanalysisSparseAutoRouteEnabled = (enabled: boolean): void => {
