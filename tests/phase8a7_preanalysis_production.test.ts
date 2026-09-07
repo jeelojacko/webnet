@@ -291,8 +291,12 @@ describe('phase 8A.7 preanalysis production hook', () => {
       expect(calls).toBe(0);
       const robust = makePreanalysisRequest(SMALL_INPUT);
       robust.parseSettings = { ...robust.parseSettings, robustMode: 'huber' };
-      const rejected = derivePreanalysisSparseAutoRouteEligibility(robust);
-      expect(rejected.eligible).toBe(false);
+      // UI-only robust is normalized to none by the effective preanalysis
+      // parse (exactly what the solver runs), so it no longer rejects;
+      // a content-level .ROBUST directive still rejects fail-closed.
+      expect(derivePreanalysisSparseAutoRouteEligibility(robust).eligible).toBe(true);
+      const robustContent = makePreanalysisRequest(`${SMALL_INPUT}\n.ROBUST HUBER\n`);
+      expect(derivePreanalysisSparseAutoRouteEligibility(robustContent).eligible).toBe(false);
     } finally {
       setPreanalysisSparseAutoRouteEnabled(false);
       clearPreanalysisSparseAutoRouteTestHooks();
@@ -342,9 +346,10 @@ describe('phase 8A.7 preanalysis production hook', () => {
     try {
       const request = makePreanalysisRequest(CAMP_INPUT);
       const eligibility = derivePreanalysisSparseAutoRouteEligibility(request);
-      // Static station unknowns (47) fit the cap; the generic per-system
+      // Static station unknowns (46 under the effective project parse the
+      // solver runs) fit the cap; the generic per-system
       // parameter count (directions + planning solves) must reject at runtime.
-      expect(eligibility.unknownCount).toBe(47);
+      expect(eligibility.unknownCount).toBe(46);
       const attempt = await runWithPreanalysisSparseAutoRoute(request, undefined, {
         runSession: runAdjustmentSession,
         loadBundle: fakeLoader(),
