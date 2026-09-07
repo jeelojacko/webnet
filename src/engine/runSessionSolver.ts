@@ -4,6 +4,7 @@ import {
   buildSyntheticPreanalysisInput,
   resolveAppliedPreanalysisActionState,
 } from './preanalysisPlanning';
+import { resolveEffectiveProjectParse } from './effectiveProjectParse';
 import { buildParseOptions, resolveProfileContext } from './runSessionProfile';
 import {
   buildSuspectImpactDiagnostics,
@@ -145,15 +146,10 @@ export const createSessionSolveRunner = ({
     },
     syntheticAdditionIds: string[] = activePreanalysisAdditionIds,
   ): AdjustmentResult => {
-    const mergedParse = { ...request.parseSettings, ...parseOverride, autoAdjustEnabled: false };
-    const profileContext = resolveProfileContext(
-      mergedParse,
-      request.projectInstruments,
-      request.selectedInstrument,
-    );
-    const normalizedMerges = profileContext.effectiveParse.clusterDetectionEnabled
-      ? normalizeClusterApprovedMerges(approvedClusterMerges)
-      : [];
+    const { profileContext, normalizedMerges } = resolveEffectiveProjectParse(request, {
+      parseOverride,
+      approvedClusterMerges,
+    });
     const preanalysisTemplates = resolvePreanalysisTemplates(
       profileContext,
       excludeSet,
@@ -177,6 +173,12 @@ export const createSessionSolveRunner = ({
     const solveIndex = solveInvocationCount + 1;
     const stageStartedAt = Date.now();
     emitProgress(meta, solveIndex, undefined, request.maxIterations);
+    const { parseOptions } = resolveEffectiveProjectParse(request, {
+      parseOverride,
+      approvedClusterMerges,
+      syntheticAdditionIds: normalizedSyntheticAdditionIds,
+      ...(solveInput !== request.input ? { sourceInputOverride: solveInput } : {}),
+    });
     const result = solveEngine({
       input: solveInput,
       maxIterations: request.maxIterations,
@@ -188,18 +190,7 @@ export const createSessionSolveRunner = ({
         profileContext.effectiveParse.geoidSourceFormat !== 'builtin'
           ? (request.geoidSourceData ?? undefined)
           : undefined,
-      parseOptions: buildParseOptions(
-        request,
-        {
-          ...profileContext.effectiveParse,
-          preanalysisSyntheticAdditionIds: normalizedSyntheticAdditionIds,
-        },
-        profileContext.directionSetMode,
-        profileContext.allowClusterFaceReliability,
-        normalizedMerges,
-        profileContext.currentInstrument,
-        solveInput !== request.input ? { sourceInputOverride: solveInput } : undefined,
-      ),
+      parseOptions,
       runtime,
       progressCallback: (event: SolveProgressEvent) => {
         if (event.phase === 'complete') return;

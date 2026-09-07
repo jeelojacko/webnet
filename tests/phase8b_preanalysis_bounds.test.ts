@@ -34,6 +34,10 @@ const ROUTE_SOURCE = fs.readFileSync(
   path.join(process.cwd(), 'src/workers/preanalysisSparseAutoRoute.ts'),
   'utf-8',
 );
+const GATE_SOURCE = fs.readFileSync(
+  path.join(process.cwd(), 'src/workers/preanalysisSparseCovarianceGate.ts'),
+  'utf-8',
+);
 
 /** Deterministic SPD fixture: diagonally-dominant chain with weak links. */
 const makeSystem = (n: number): PreanalysisSparsePackedSystem => {
@@ -81,7 +85,7 @@ const makeSystem = (n: number): PreanalysisSparsePackedSystem => {
 
 describe('phase 8B bounded-sentinel source guards', () => {
   it('keeps the n^2 all-pairs builder out of production', () => {
-    for (const [name, source] of [['sentinel', SENTINEL_SOURCE], ['route', ROUTE_SOURCE]] as const) {
+    for (const [name, source] of [['sentinel', SENTINEL_SOURCE], ['route', ROUTE_SOURCE], ['gate', GATE_SOURCE]] as const) {
       expect(source, `${name} references buildAllPairsQueries`).not.toContain('buildAllPairsQueries');
     }
   });
@@ -89,18 +93,19 @@ describe('phase 8B bounded-sentinel source guards', () => {
   it('keeps full-inverse / full-matrix helpers out of the production route', () => {
     for (const token of ['invertSPDFromCholesky', 'unscaleNormalInverse', 'scaleNormalMatrix']) {
       expect(ROUTE_SOURCE, `route references ${token}`).not.toContain(token);
+      expect(GATE_SOURCE, `gate references ${token}`).not.toContain(token);
     }
   });
 
-  it('builds no n*n-sized query in either production file', () => {
-    for (const [name, source] of [['sentinel', SENTINEL_SOURCE], ['route', ROUTE_SOURCE]] as const) {
+  it('builds no n*n-sized query in any production file', () => {
+    for (const [name, source] of [['sentinel', SENTINEL_SOURCE], ['route', ROUTE_SOURCE], ['gate', GATE_SOURCE]] as const) {
       expect(source, `${name} builds an n*n query`).not.toMatch(/\bn\s*\*\s*n\b/);
     }
   });
 
   it('documents the hard verification-column bound k = 16', () => {
     expect(PREANALYSIS_SPARSE_VERIFICATION_COLUMN_COUNT).toBe(16);
-    expect(ROUTE_SOURCE).toContain('PREANALYSIS_SPARSE_VERIFICATION_COLUMN_COUNT');
+    expect(GATE_SOURCE).toContain('PREANALYSIS_SPARSE_VERIFICATION_COLUMN_COUNT');
   });
 });
 

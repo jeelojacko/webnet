@@ -1,0 +1,93 @@
+{
+  "baselineMainSha": "57e44957d97675ca287c1d5b1b22706e5be69984",
+  "hotfixSha": "56ebf8cff20ff9c332f32617ee7c573c200b8ae5",
+  "branchTipSha": "4481072185e5e70c35fa40ca6bec1d58f28df7d8",
+  "branch": "hotfix/sparse-preanalysis-safety",
+  "relationshipToOriginMain": "6 commits ahead, 0 behind",
+  "initialDefault": "off",
+  "finalDefault": "on",
+  "commits": [
+    "1ad6deb Temporarily disable sparse preanalysis during safety hotfix",
+    "b8bbee0 Correct sparse preanalysis C1 covariance tolerance scaling",
+    "98f9803 Fix effective-project sparse eligibility parsing",
+    "75356c8 Bound sparse preanalysis covariance verification memory",
+    "56ebf8c Re-enable sparse preanalysis after safety fixes",
+    "4481072 Add sparse preanalysis hotfix safety report"
+  ],
+  "eligibility": {
+    "implementation": "resolveEffectiveProjectParse/parseEffectiveProjectInput shares run-session profile and parse options, including includeFiles and projectRunFiles",
+    "includeGpsCovariance": "rejected (phase8b2 focused regression passed)",
+    "includeAutoAdjust": "rejected where parser semantics enable it; include-scoped directives remain scoped like the solver",
+    "projectRunFile": "unsupported content (AUTOADJUST) rejected",
+    "unknownInflation": "effective parsed unknown count gated at 128 (127/128/129 boundary tests passed); runtime parameter cap remains enforced",
+    "mainOnlyNormal": "eligible (clean include test passed)"
+  },
+  "c1": {
+    "oldFormula": "relative diff diff/max(1,abs(expected)); allowed=max(1e-12,tolerance*max(1,abs(expected)))",
+    "newFormula": "relative diff diff/max(abs(expected),1e-12); allowed=max(1e-12,tolerance*abs(expected))",
+    "tinyExpected1e8Actual9e7": "rejected (C1 FAIL)",
+    "exactTiny": "passed",
+    "unitScaleRelativeTolerance": "passed",
+    "absoluteFloor": "covered by focused regression"
+  },
+  "productionCorruption": "real-WASM corrupt covariance entry: C1 rejects, entire sparse session discarded atomic, clean TypeScript restart identical to forced TypeScript (phase8b real-WASM restart + phase8a7 production hook passed)",
+  "retention": {
+    "old": "full packed design/weights/query input and native result retained for every planning system",
+    "new": "one system verified immediately; only compact verdicts retained",
+    "maxRetainedPackedSystems": 1,
+    "realWasmClosure": "real-WASM 120-session release closure passed; gate instrumentation proves <=1 (no packed calls array retained), heap values informational"
+  },
+  "verifierDecomposition": "verifyCovarianceSystem orchestrates seven named helpers: checkSystemHeader, accumulateGateNormal, judgeProductionC2, runBoundedVerification, judgeSelectedC1, judgeHybridC3, judgePhysical (preanalysisSparseCovarianceGate.ts, 414 lines, all functions repo-size compliant)",
+  "caps": {"parameterCount": 128, "planningSystems": 64, "verificationColumns": 16, "condition": "warn-only"},
+  "realWasmClosure": {
+    "sessions": 120,
+    "sparseAccepts": 60,
+    "fallbacks": 60,
+    "unexpectedFailures": 0,
+    "falseSparseAuthorities": 0,
+    "bundleInitCount": 1,
+    "restartEquality": "passed",
+    "blockers": []
+  },
+  "browser": {
+    "root": "passed (eligible sparse accept + camp fallback identical to forced TypeScript + adjustment bit-identical)",
+    "nonRootWebnet": "passed (same case set)",
+    "routeDefault": "naturally default ON; no test-only route-enable wrapper"
+  },
+  "adjustmentRegression": "passed; adjustment sparse cohort, cap, S3, kill switch, condition handling and fallback behavior unchanged (Phase 7C/7D untouched)",
+  "tests": {
+    "focusedHotfixAndProduction": "28/28 passed (phase8b2 + phase8a7)",
+    "focusedRealWasm": "11/11 passed (phase8b real-WASM, incl. corrupt restart and bundle reuse)",
+    "phase8b1ReleaseProof": "9/9 passed (120-session closure)",
+    "phase8b1CiGate": "5/5 passed",
+    "phase8b1Verdict": "1/1 passed",
+    "fullSuiteDefaultOn": {"passed": 2667, "skipped": 1, "failed": 0, "testFiles": 448, "durationSeconds": 677.38},
+    "industryParity": "25/25"
+  },
+  "validation": {
+    "wasmBuild": "fresh: rm -rf cpp/build-wasm then npm run wasm:build passed; webnet_core.js + webnet_core.wasm generated",
+    "emscripten": {
+      "emcmake": "/home/jacko/emsdk/upstream/emscripten/emcmake",
+      "emcc": "/home/jacko/emsdk/upstream/emscripten/emcc",
+      "emccVersion": "6.0.9 (4e4223852a0835923411059a3929907d7df1232e)"
+    },
+    "environmentNote": "local Emscripten SDK moved from /home/jacko/Code/webnet/emsdk to /home/jacko/emsdk so repo test/lint globs do not scan the vendor tree; pointer file left at repo root; no project code changed for this",
+    "cppTest": "passed 7/7",
+    "wasmSmokeSuites": "all 9 passed (smoke, solver smoke, solver parity, sparse smoke, sparse covariance smoke, sparse adjustment parity, sparse behavior parity, sparse bundle worker proof, sparse worker stress)",
+    "lint": "passed",
+    "typecheck": "passed",
+    "build": "passed",
+    "githubCI": {
+      "run": "34129594906",
+      "commitSha": "4481072185e5e70c35fa40ca6bec1d58f28df7d8",
+      "build": "success (17m38s)",
+      "phase8b1CleanRunnerGate": "success (1m13s)"
+    },
+    "reviewer": "APPROVE"
+  },
+  "hotfixGo": true,
+  "routeEnabled": true,
+  "readyToMerge": true,
+  "merged": false,
+  "blockers": []
+}
