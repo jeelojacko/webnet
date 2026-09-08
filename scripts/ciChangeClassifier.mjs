@@ -28,6 +28,7 @@ const ALWAYS_NUMERICAL = [
   /^vitest(?:[^/]*\.config\.ts|\.shared\.ts)$/,
   /^package(?:-lock)?\.json$/,
   /^cpp\//,
+  /^tests\/evidence\//,
   /^src\/engine\//,
   /^src\/workers\//,
   /^src\/cli\.ts$/,

@@ -46,8 +46,17 @@ If the change touches sparse/WASM/worker/native routing (sparse auto route, WASM
 If the change affects parity-sensitive behavior, also run:
 - `npm run parity:industry-reference`
 
+Long stress/evidence campaigns live in the manual-only evidence tier
+(`tests/evidence/`, `npm run test:evidence`) — never add engine
+stress/calibration coverage to the agent tier; classify it in
+`scripts/testTiers.ts` instead.
+
 Before final completion of significant engine work:
-- `npm run test:full`
+- focused tests, `npm run lint`, `npm run typecheck`, and `npm run test:agent`
+- `npm run test:wasm` for WASM/worker/native routing and `npm run test:release` for compact production certification where applicable
+- `npm run test:evidence` only when the task specifically concerns evidence, calibration, performance, or stress
+
+`npm run test:full` / `npm run test:run` is an explicit literal-everything command, not a routine completion gate.
 
 Tier details: `docs/TEST_TIERS.md`.
 

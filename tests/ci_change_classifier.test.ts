@@ -18,6 +18,7 @@ describe('CI change classifier', () => {
     ['package', ['package.json']],
     ['vitest config', ['vitest.wasm.config.ts']],
     ['tier manifest', ['scripts/testTiers.ts']],
+    ['evidence suite', ['tests/evidence/phase8a5_preanalysis_safety_evidence.test.ts']],
     ['CI workflow', ['.github/workflows/ci.yml']],
     ['unknown source', ['src/newArchitecture/foo.ts']],
   ])('%s requires numerical certification', (_name, files) => {

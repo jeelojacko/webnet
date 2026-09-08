@@ -1,0 +1,66 @@
+name: Evidence
+
+on:
+  workflow_dispatch:
+    inputs:
+      ref:
+        description: 'Branch, tag, or SHA to run evidence on'
+        required: false
+        default: 'main'
+        type: string
+      suite:
+        description: 'Evidence suite to run'
+        required: false
+        default: 'all'
+        type: choice
+        options:
+          - all
+          - phase8b1
+          - phase8a6
+          - phase8a5
+
+# Manual-only runner for the slow evidence campaigns (tests/evidence/).
+# Never runs automatically: CI (ci.yml) omits test:full and test:evidence
+# by design. Dispatch explicitly when release evidence must be regenerated.
+
+jobs:
+  evidence:
+    name: evidence
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+        with:
+          ref: ${{ inputs.ref }}
+      - name: Setup Node
+        uses: actions/setup-node@v5
+        with:
+          node-version: 24
+          cache: npm
+      - name: Install
+        run: npm ci
+      - name: Setup Emscripten
+        uses: emscripten-core/setup-emsdk@v15
+        with:
+          version: 6.0.5
+          actions-cache-folder: emsdk-cache
+      - name: Build WASM test artifact
+        run: npm run wasm:build
+      - name: Configure native C++ tests
+        run: npm run cpp:configure
+      - name: Build native C++ tests
+        run: npm run cpp:build
+      - name: CTest
+        run: npm run cpp:test
+      - name: Evidence campaigns
+        run: node scripts/runEvidence.mjs ${{ inputs.suite }}
+      - name: Upload evidence reports
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: evidence-reports
+          path: |
+            reports/phase8b1/
+            reports/phase8a6/
+            reports/phase8a5/
+          if-no-files-found: warn

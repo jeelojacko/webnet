@@ -105,15 +105,17 @@ Escalations:
 
 - Engine/worker/WASM-bridge/sparse-routing TypeScript changes (no C++): also `npm run test:wasm`; parity-sensitive work also runs `npm run parity:industry-reference`.
 - `cpp/**` or WASM build-glue changes: `npm run wasm:build`, `npm run cpp:test`, `npm run test:wasm`, plus the agent validation above.
-- Release/certification/numerical-migration work: `npm run test:release` and `npm run test:full` before declaring completion.
-- Before a significant branch is declared complete: `npm run test:full` (== `test:run`) and `npm run build`, plus all task-specific gates.
+- Numerical/release-sensitive work: run the focused tests, lint, typecheck, `npm run test:agent`, `npm run test:wasm` where applicable, parity where applicable, and compact `npm run test:release` certification.
+- `npm run test:evidence` is explicit/manual only for evidence, calibration, performance, stress, or soak work. `npm run test:full` (== `test:run`) is the literal-everything command, not a routine completion gate.
 
 Test-tier rules:
 
-- `test:full`/`test:run` stays the authoritative full suite; CI routes its equivalent tier partition through `test:agent`, `test:wasm`, and `test:release`.
-- A new test expected to take more than ~10 s because it performs stress, evidence, repeated real-WASM sessions, browser certification, or performance campaigns must be explicitly classified in `scripts/testTiers.ts` (WASM or release tier) instead of silently joining the agent tier.
+- `test:full`/`test:run` stays the authoritative full suite; CI routes its equivalent automatic partition through `test:agent`, `test:wasm`, and `test:release` (`npm run test:certify` locally). `test:full` and the manual-only `test:evidence` (long campaigns under `tests/evidence/`, via the Evidence workflow) never run in CI.
+- A new test expected to take more than ~10 s because it performs stress, evidence, repeated real-WASM sessions, browser certification, or performance campaigns must be explicitly classified in `scripts/testTiers.ts` (WASM or evidence tier, long campaigns under `tests/evidence/`) instead of silently joining the agent tier.
 - Never gate on absolute runtime (machines differ); tier membership is the contract.
 - CI path classification is fail-closed: unknown changes receive numerical certification.
+
+When adding or materially expanding a test, classify its purpose before completion. Long stress, calibration, performance, repeated-session, and evidence tests belong under `tests/evidence/` and MUST NOT be placed in agent/WASM/release merely because they are important. Read `tests/AGENTS.md` for the decision tree.
 
 ## Done when
 

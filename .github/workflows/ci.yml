@@ -116,6 +116,10 @@ jobs:
       - name: Real-WASM tests
         if: ${{ needs.classify.outputs.numerical_required == 'true' }}
         run: npm run test:wasm
+      # Release gate is the fast automatic verdict over committed reports.
+      # The slow evidence campaigns (test:evidence / tests/evidence/) are
+      # omitted by design — like test:full, they never run in CI. Run them
+      # manually via the Evidence workflow (.github/workflows/evidence.yml).
       - name: Release certification tests
         if: ${{ needs.classify.outputs.numerical_required == 'true' }}
         run: npm run test:release
