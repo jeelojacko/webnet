@@ -20,7 +20,7 @@
  * Pre-dispatch enforcement: gated wrappers around the native correction
  * (first entry per planning solve) and selected-covariance solvers count
  * candidate systems and throw a typed fail-closed error BEFORE delegating
- * when the next system exceeds the cap or a parameterCount exceeds 128, so
+ * when the next system exceeds the cap or a parameterCount exceeds 256, so
  * over-cap systems never execute natively. Post-run gates then judge the
  * captured native values (C1/C2/C3/physical/damping/fallbacks); any failure
  * restarts the original request clean in TypeScript exactly once.
@@ -48,8 +48,9 @@ import { PreanalysisGatedCovarianceCapture } from './preanalysisSparseCovariance
 import type { PreanalysisVerifierTimingSink } from './preanalysisSparseCovarianceGate';
 import {
   createPreanalysisCandidateState,
+  PREANALYSIS_SPARSE_ROUTE_MAX_PARAMETERS,
   PREANALYSIS_SPARSE_ROUTE_MAX_PLANNING_SYSTEMS,
-  PREANALYSIS_SPARSE_ROUTE_MAX_UNKNOWN_COUNT,
+  PREANALYSIS_SPARSE_ROUTE_MAX_STATION_UNKNOWNS,
   PreanalysisSparseCapError,
   type PreanalysisCandidateState,
   type PreanalysisGateCaps,
@@ -59,8 +60,9 @@ export {
   createPreanalysisCandidateState,
   isPreanalysisSparseCapError,
   PREANALYSIS_SPARSE_ROUTE_MAX_CAPTURED_CALLS,
+  PREANALYSIS_SPARSE_ROUTE_MAX_PARAMETERS,
   PREANALYSIS_SPARSE_ROUTE_MAX_PLANNING_SYSTEMS,
-  PREANALYSIS_SPARSE_ROUTE_MAX_UNKNOWN_COUNT,
+  PREANALYSIS_SPARSE_ROUTE_MAX_STATION_UNKNOWNS,
   PREANALYSIS_SPARSE_ROUTE_MAX_VERIFICATION_QUERIES,
   PreanalysisSparseCapError,
   type PreanalysisCandidateState,
@@ -93,7 +95,8 @@ export interface PreanalysisSparseAutoRouteTestHooks {
    */
   stationUnknownCapOverride?: number;
   /**
-   * Test-only per-system parameter cap (default 128). Widens the runtime
+   * Test-only per-system parameter cap (default 256 Phase 9B; station
+   * unknowns stay capped at 128 separately). Widens the runtime
    * correction/covariance pre-dispatch gates for evidence runs.
    */
   parameterCapOverride?: number;
@@ -196,10 +199,10 @@ export const derivePreanalysisSparseAutoRouteEligibility = (
     }
     const unknownCount = testHooks.unknownCountOverride ?? parsed.unknowns.length;
     const stationUnknownCap =
-      testHooks.stationUnknownCapOverride ?? PREANALYSIS_SPARSE_ROUTE_MAX_UNKNOWN_COUNT;
+      testHooks.stationUnknownCapOverride ?? PREANALYSIS_SPARSE_ROUTE_MAX_STATION_UNKNOWNS;
     if (unknownCount > stationUnknownCap) {
       reasons.push(
-        `size guard: ${unknownCount} unknowns exceed cap ${stationUnknownCap}`,
+        `size guard: station unknown count ${unknownCount} exceeds cap ${stationUnknownCap}`,
       );
     }
     return { eligible: reasons.length === 0, reasons, unknownCount };
@@ -324,7 +327,7 @@ export const runWithPreanalysisSparseAutoRoute = async (
   const caps: PreanalysisGateCaps = {
     maxSystems,
     maxParameters:
-      testHooks.parameterCapOverride ?? PREANALYSIS_SPARSE_ROUTE_MAX_UNKNOWN_COUNT,
+      testHooks.parameterCapOverride ?? PREANALYSIS_SPARSE_ROUTE_MAX_PARAMETERS,
   };
   const candidate = createPreanalysisCandidateState();
   const gatedCorrection = new PreanalysisGatedCorrectionSolver(
@@ -374,10 +377,10 @@ export const runWithPreanalysisSparseAutoRoute = async (
     warnings.push(`test hook systemCapOverride=${testHooks.systemCapOverride} (production cap=${PREANALYSIS_SPARSE_ROUTE_MAX_PLANNING_SYSTEMS})`);
   }
   if (testHooks.stationUnknownCapOverride != null) {
-    warnings.push(`test hook stationUnknownCapOverride=${testHooks.stationUnknownCapOverride} (production cap=${PREANALYSIS_SPARSE_ROUTE_MAX_UNKNOWN_COUNT})`);
+    warnings.push(`test hook stationUnknownCapOverride=${testHooks.stationUnknownCapOverride} (production cap=${PREANALYSIS_SPARSE_ROUTE_MAX_STATION_UNKNOWNS})`);
   }
   if (testHooks.parameterCapOverride != null) {
-    warnings.push(`test hook parameterCapOverride=${testHooks.parameterCapOverride} (production cap=${PREANALYSIS_SPARSE_ROUTE_MAX_UNKNOWN_COUNT})`);
+    warnings.push(`test hook parameterCapOverride=${testHooks.parameterCapOverride} (production cap=${PREANALYSIS_SPARSE_ROUTE_MAX_PARAMETERS})`);
   }
   // Typed pre-dispatch abort reason (the engine converts gate throws into
   // recorded dense fallbacks, so the abort surfaces here as well).
@@ -434,7 +437,7 @@ export const runWithPreanalysisSparseAutoRoute = async (
       systems: policySystems,
       capOverrides: {
         unknownCap:
-          testHooks.stationUnknownCapOverride ?? PREANALYSIS_SPARSE_ROUTE_MAX_UNKNOWN_COUNT,
+          testHooks.stationUnknownCapOverride ?? PREANALYSIS_SPARSE_ROUTE_MAX_STATION_UNKNOWNS,
         planningSystemCap: maxSystems,
       },
     });

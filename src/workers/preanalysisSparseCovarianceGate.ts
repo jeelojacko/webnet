@@ -35,7 +35,7 @@ import {
 import type { Matrix } from '../engine/matrixTypes';
 import {
   PREANALYSIS_SPARSE_ROUTE_MAX_CAPTURED_CALLS,
-  PREANALYSIS_SPARSE_ROUTE_MAX_UNKNOWN_COUNT,
+  PREANALYSIS_SPARSE_ROUTE_MAX_PARAMETERS,
   PREANALYSIS_SPARSE_ROUTE_MAX_VERIFICATION_QUERIES,
   PreanalysisSparseCapError,
   type PreanalysisCandidateState,
@@ -371,7 +371,7 @@ export const verifyCovarianceSystem = (
   index: number,
   delegate: SparseSelectedCovarianceSolver,
   testFlags: PreanalysisGateTestFlags = {},
-  maxParameters: number = PREANALYSIS_SPARSE_ROUTE_MAX_UNKNOWN_COUNT,
+  maxParameters: number = PREANALYSIS_SPARSE_ROUTE_MAX_PARAMETERS,
   timing: PreanalysisVerifierTimingSink | null = null,
 ): PreanalysisCovarianceVerdict => {
   const totalStarted = Date.now();

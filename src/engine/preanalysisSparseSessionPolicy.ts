@@ -4,11 +4,17 @@
  * Pure admission policy for whole-session candidacy: static eligibility, unknown-count cap with exact 127/128/129 boundary behavior, planning-system (solve) cap with exact 63/64/65 boundary behavior, physical validity, and the C3 hybrid sentinel. The whole-session candidate is atomic: every planning system must pass or the session falls back to TypeScript with a clean restart. Production-safe: no test/script imports; caps are enforced by the production route.
  */
 
-/** Enforced unknown cap for the production preanalysis sparse route. */
-export const PREANALYSIS_SPARSE_UNKNOWN_CAP = 128;
+/** Enforced static station-unknown cap for the production sparse route. */
+export const PREANALYSIS_SPARSE_STATION_UNKNOWN_CAP = 128;
 
-/** Enforced per-session planning-system cap for the production preanalysis sparse route. */
+/** Enforced runtime per-system parameter cap for the production sparse route. */
+export const PREANALYSIS_SPARSE_PARAMETER_CAP = 256;
+
+/** Enforced per-session planning-system cap for the production sparse route. */
 export const PREANALYSIS_SPARSE_PLANNING_SYSTEM_CAP = 64;
+
+/** @deprecated Station-unknown cap only; never use for runtime parameter gates. */
+export const PREANALYSIS_SPARSE_UNKNOWN_CAP = PREANALYSIS_SPARSE_STATION_UNKNOWN_CAP;
 
 /**
  * Test-only cap overrides (evidence runs only; production always omits this).
@@ -49,7 +55,7 @@ export const evaluatePreanalysisSparseSystemPolicy = (args: {
   verdict: PreanalysisSparseSystemVerdict;
   capOverrides?: PreanalysisSparsePolicyCapOverrides;
 }): PreanalysisSparseSessionDecision => {
-  const unknownCap = args.capOverrides?.unknownCap ?? PREANALYSIS_SPARSE_UNKNOWN_CAP;
+  const unknownCap = args.capOverrides?.unknownCap ?? PREANALYSIS_SPARSE_STATION_UNKNOWN_CAP;
   const planningSystemCap =
     args.capOverrides?.planningSystemCap ?? PREANALYSIS_SPARSE_PLANNING_SYSTEM_CAP;
   const reasons: string[] = [];
@@ -85,7 +91,7 @@ export const evaluatePreanalysisSparseWholeSession = (args: {
   systems: PreanalysisSparseSystemVerdict[];
   capOverrides?: PreanalysisSparsePolicyCapOverrides;
 }): PreanalysisSparseSessionDecision => {
-  const unknownCap = args.capOverrides?.unknownCap ?? PREANALYSIS_SPARSE_UNKNOWN_CAP;
+  const unknownCap = args.capOverrides?.unknownCap ?? PREANALYSIS_SPARSE_STATION_UNKNOWN_CAP;
   const planningSystemCap =
     args.capOverrides?.planningSystemCap ?? PREANALYSIS_SPARSE_PLANNING_SYSTEM_CAP;
   const reasons: string[] = [];

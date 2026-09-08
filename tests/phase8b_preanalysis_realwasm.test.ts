@@ -223,7 +223,7 @@ describe('phase 8B in-process real-WASM route', () => {
     }
   }, 120000);
 
-  it('rejects camp direction inflation at the runtime parameter cap', async () => {
+  it('falls back atomic on camp direction inflation (Phase 9B: fits 256, sentinel decides)', async () => {
     const factory = await loadRealFactory();
     if (!factory) {
       evidence.campCapRealWasm = { skipped: 'WASM artifact absent' };
@@ -240,7 +240,10 @@ describe('phase 8B in-process real-WASM route', () => {
         runSession: runAdjustmentSession,
       });
       expect(attempt.route).toBe('typescript');
-      expect(attempt.reasons.join(' ')).toMatch(/parameterCount.*exceeds cap|fail-closed/);
+      // Phase 9B: the direction-inflated count (~170) fits runtime 256,
+      // so rejection comes from the fail-closed sentinel gates, not the
+      // pre-dispatch cap. Either fail-closed reason keeps the contract.
+      expect(attempt.reasons.join(' ')).toMatch(/parameterCount.*exceeds cap|fail-closed|C1|C2|C3|sentinel|fallback/);
       expect(stableKey(attempt.outcome)).toBe(stableKey(runAdjustmentSession(request)));
       evidence.campCapRealWasm = {
         route: attempt.route,

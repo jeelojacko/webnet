@@ -1,0 +1,72 @@
+{
+  "phase": "9B",
+  "title": "Phase 9B production runtime parameter cap 256 rollout",
+  "baselineMainSha": "abee9387381d1aba43a16b6f1ef62db7326255c2",
+  "selectedRollout": 256,
+  "currentCaps": {
+    "stationUnknowns": 128,
+    "runtimeParameters": 256,
+    "planningSystems": 64,
+    "verificationK": 16,
+    "verificationBackstop": 16384,
+    "capturedCalls": 512
+  },
+  "whyNot512": "Phase 9A validated both 256 and 512. 256 resolves the immediate orientation/runtime-parameter headroom constraint while keeping the static station envelope at 128 and minimizing staged rollout change. 512 remains validated future headroom and is not enabled in Phase 9B.",
+  "phase9aEvidenceSha256": "f8d2d43373f909eb4541a646ed1fd2e9758f49e78cfd12981f2f298a17522e88",
+  "historicalPhase9a": {
+    "report": "reports/phase9a/cap-widening-evidence.json",
+    "evidenceSha256": "f8d2d43373f909eb4541a646ed1fd2e9758f49e78cfd12981f2f298a17522e88",
+    "productionStationUnknownCap": 128,
+    "productionParameterCap": 128,
+    "productionPlanningSystemCap": 64,
+    "parameterCap256": "GO",
+    "parameterCap512": "GO",
+    "recommendedStationUnknownCap": 128,
+    "recommendedRuntimeParameterCap": 256,
+    "verdict": "PARAMETER CAP 256: GO; PARAMETER CAP 512: GO"
+  },
+  "caps": {
+    "stationUnknowns": { "before": 128, "after": 128 },
+    "runtimeParameters": { "before": 128, "after": 256 },
+    "planningSystems": { "before": 64, "after": 64 },
+    "verificationK": { "before": 16, "after": 16 },
+    "verificationBackstop": { "before": 16384, "after": 16384 },
+    "capturedCalls": { "before": 512, "after": 512 }
+  },
+  "boundaries": {
+    "stationUnknowns": "127/128 pass, 129 reject",
+    "runtimeParameters": "255/256 pass, 257 reject",
+    "planningSystems": "63/64 pass, 65 reject"
+  },
+  "behavior": {
+    "productionRoutingBackendBehaviorChanged": true,
+    "mathematicalContractChanged": false,
+    "tolerancesChanged": false,
+    "cppChanged": false,
+    "supportedFeatureSetChanged": false,
+    "productionStationCapChanged": false,
+    "productionPlanningCapChanged": false
+  },
+  "validation": {
+    "focusedPhase9bAgent": "PASS",
+    "focusedPhase9bRealWasm": "PASS (exact 256 and over-cap 257)",
+    "tierManifest": "PASS",
+    "lint": "PASS",
+    "typecheck": "PASS",
+    "testAgent": "441 files, 2653 passed, 1 skipped",
+    "testWasm": "8 files, 41 passed",
+    "testRelease": "3 files, 4 passed",
+    "industryParity": "25/25",
+    "build": "PASS",
+    "testEvidenceRun": false,
+    "testFullRun": false
+  },
+  "reviewerVerdict": "APPROVE",
+  "notes": [
+    "The runtime parameter cap is authoritative at 256 for correction pre-dispatch, covariance admission, and bounded verification.",
+    "The station-unknown cap remains authoritative at 128 for static eligibility and whole-session policy.",
+    "Phase 9A committed reports are historical and byte-untouched.",
+    "No C++/UI/protocol/persistence/environment-control changes; no 512 production rollout."
+  ],
+  "verdict": "RUNTIME PARAMETER CAP 256: SHIPPED (station 128 unchanged)"
+}

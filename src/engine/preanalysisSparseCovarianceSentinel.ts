@@ -28,9 +28,21 @@ import {
   unscaleNormalSolution,
 } from './adjustNormalMatrixHelpers';
 import type { Matrix } from './matrixTypes';
+import { PREANALYSIS_SPARSE_PARAMETER_CAP } from './preanalysisSparseSessionPolicy';
 
-/** Hard cap: column probes are only defined for bounded planning systems. */
+/**
+ * Historical station-unknown bound (Phase 9A and earlier). Kept unchanged
+ * for historical report/test references; production runtime verification
+ * uses PREANALYSIS_SPARSE_SENTINEL_MAX_PARAMETERS (256) below.
+ */
 export const PREANALYSIS_SPARSE_SENTINEL_MAX_UNKNOWN_COUNT = 128;
+
+/**
+ * Phase 9B production runtime per-system parameter bound for the sentinel
+ * verifier (correction/covariance/covariance-verification). 256; station
+ * unknowns stay capped at 128 by the route/policy layer.
+ */
+export const PREANALYSIS_SPARSE_SENTINEL_MAX_PARAMETERS = PREANALYSIS_SPARSE_PARAMETER_CAP;
 
 /** Relative tolerance for C1 dense-selected agreement at selected entries. */
 export const PREANALYSIS_SPARSE_C1_RELATIVE_TOLERANCE = 1e-6;
@@ -44,7 +56,8 @@ export const PREANALYSIS_SPARSE_C1_ABSOLUTE_FLOOR = 1e-12;
  * Rationale: the pre-8B route re-queried all n^2 entries natively per
  * planning system (16,384 entries at n = 128, ~15 ms/system, ~960 ms
  * over a full 64-system session; see reports/phase8b/pre-sentinel-cost.md).
- * k = 16 complete columns cost 2,048 entries / ~2.3 ms at n = 128.
+ * k = 16 complete columns cost 2,048 entries / ~2.3 ms at n = 128
+ * (4,096 entries at n = 256, still under the 16,384 backstop).
  * Columns are evenly spaced including 0 and n-1, each verified over all
  * n rows (full columns only); systems with n <= k verify every column.
  */
@@ -115,7 +128,7 @@ const readDesignRow = (
  */
 export const accumulatePackedNormal = (
   system: PreanalysisSparsePackedSystem,
-  maxUnknowns: number = PREANALYSIS_SPARSE_SENTINEL_MAX_UNKNOWN_COUNT,
+  maxUnknowns: number = PREANALYSIS_SPARSE_SENTINEL_MAX_PARAMETERS,
 ): Matrix => {
   const n = system.parameterCount;
   const m = system.observationEquationCount;
@@ -178,7 +191,7 @@ export const probeSelectedCovariance = (
   normal: Matrix,
   queryRows: Int32Array,
   queryColumns: Int32Array,
-  maxUnknowns: number = PREANALYSIS_SPARSE_SENTINEL_MAX_UNKNOWN_COUNT,
+  maxUnknowns: number = PREANALYSIS_SPARSE_SENTINEL_MAX_PARAMETERS,
 ): PreanalysisSparseProbeResult => {
   const n = normal.length;
   if (n === 0 || n > maxUnknowns) {
@@ -297,7 +310,7 @@ export const evaluateSentinelC2 = (
   queryColumns: ArrayLike<number>,
   values: ArrayLike<number>,
   tolerance = PREANALYSIS_SPARSE_C2_RESIDUAL_TOLERANCE,
-  maxUnknowns: number = PREANALYSIS_SPARSE_SENTINEL_MAX_UNKNOWN_COUNT,
+  maxUnknowns: number = PREANALYSIS_SPARSE_SENTINEL_MAX_PARAMETERS,
 ): PreanalysisSparseC2Result => {
   const reasons: string[] = [];
   const failClosed = (reason: string): PreanalysisSparseC2Result => ({
@@ -464,7 +477,7 @@ export const validateSentinelPhysical = (args: {
 export const buildBoundedVerificationQueries = (
   n: number,
   columnCount: number = PREANALYSIS_SPARSE_VERIFICATION_COLUMN_COUNT,
-  maxUnknowns: number = PREANALYSIS_SPARSE_SENTINEL_MAX_UNKNOWN_COUNT,
+  maxUnknowns: number = PREANALYSIS_SPARSE_SENTINEL_MAX_PARAMETERS,
 ): { rows: Int32Array; columns: Int32Array; verifiedColumns: number[] } => {
   if (!Number.isInteger(n) || n <= 0 || n > maxUnknowns) {
     throw new Error(`bounded verification requires 1..${maxUnknowns} parameters (fail-closed).`);

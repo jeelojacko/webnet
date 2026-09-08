@@ -5,7 +5,7 @@
  * production route: no all-pairs query builder, no full-inverse or
  * full-matrix unscale helpers, and no n*n-sized query construction in
  * either production file. (The n x n dense normal N itself is inherent:
- * the sentinel factors dense N with n <= 128; the ban targets query
+ * the sentinel factors dense N with n <= 256 Phase 9B runtime; the ban targets query
  * counts and materialized Qxx.) Plus deterministic bounded-column math:
  * complete-column coverage, hard k = 16, C1 agreement/rejection, and C2
  * bounded verification agreement.
@@ -20,6 +20,7 @@ import {
   buildDiagonalQueries,
   evaluateSentinelC1,
   evaluateSentinelC2,
+  PREANALYSIS_SPARSE_SENTINEL_MAX_PARAMETERS,
   PREANALYSIS_SPARSE_SENTINEL_MAX_UNKNOWN_COUNT,
   PREANALYSIS_SPARSE_VERIFICATION_COLUMN_COUNT,
   probeSelectedCovariance,
@@ -133,9 +134,35 @@ describe('phase 8B bounded verification columns', () => {
     expect(built.rows.length).toBe(100);
   });
 
-  it('fails closed on bad sizes', () => {
+  it('fails closed on bad sizes (runtime default 256; historical 128 explicit)', () => {
     expect(() => buildBoundedVerificationQueries(0)).toThrow();
-    expect(() => buildBoundedVerificationQueries(PREANALYSIS_SPARSE_SENTINEL_MAX_UNKNOWN_COUNT + 1)).toThrow();
+    // Production default is the Phase 9B runtime cap: 256 builds bare.
+    const builtDefault = buildBoundedVerificationQueries(256);
+    expect(builtDefault.verifiedColumns.length).toBe(16);
+    expect(builtDefault.rows.length).toBe(16 * 256);
+    expect(() => buildBoundedVerificationQueries(257)).toThrow();
+    // Historical 128 bound still fails closed when passed explicitly.
+    expect(() =>
+      buildBoundedVerificationQueries(
+        PREANALYSIS_SPARSE_SENTINEL_MAX_UNKNOWN_COUNT + 1,
+        PREANALYSIS_SPARSE_VERIFICATION_COLUMN_COUNT,
+        PREANALYSIS_SPARSE_SENTINEL_MAX_UNKNOWN_COUNT,
+      ),
+    ).toThrow();
+    // Explicit-cap 256 agrees with the default; 257 fails closed either way.
+    const built256 = buildBoundedVerificationQueries(
+      256,
+      PREANALYSIS_SPARSE_VERIFICATION_COLUMN_COUNT,
+      PREANALYSIS_SPARSE_SENTINEL_MAX_PARAMETERS,
+    );
+    expect(built256.verifiedColumns).toEqual(builtDefault.verifiedColumns);
+    expect(() =>
+      buildBoundedVerificationQueries(
+        PREANALYSIS_SPARSE_SENTINEL_MAX_PARAMETERS + 1,
+        PREANALYSIS_SPARSE_VERIFICATION_COLUMN_COUNT,
+        PREANALYSIS_SPARSE_SENTINEL_MAX_PARAMETERS,
+      ),
+    ).toThrow();
     expect(() => buildBoundedVerificationQueries(32, 0)).toThrow();
   });
 

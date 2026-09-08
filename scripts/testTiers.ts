@@ -45,11 +45,13 @@ export const EVIDENCE_TESTS = [
 export const RELEASE_TESTS = [
   'tests/phase8b1_release_verdict.test.ts',
   'tests/phase9a_release_verdict.test.ts',
+  'tests/phase9b_release_verdict.test.ts',
 ] as const;
 
 /** Focused real-WASM / worker / native integration tests. */
 export const WASM_INTEGRATION_TESTS = [
   'tests/phase8b_preanalysis_realwasm.test.ts',
+  'tests/phase9b_preanalysis_parameter_cap_realwasm.test.ts',
   'tests/phase8b1_clean_runner_gate.test.ts',
   'tests/phase8a7_preanalysis_production.test.ts',
   'tests/phase8a_preanalysis_sparse_evidence.test.ts',
@@ -71,6 +73,7 @@ export const AGENT_EXCLUDED_TESTS = [
  */
 export const AGENT_REQUIRED_TESTS = [
   'tests/computational_parity_harness.test.ts',
+  'tests/phase9b_preanalysis_parameter_cap.test.ts',
   'tests/phase7c_sparse_auto_route.test.ts',
   'tests/phase7d_release_hardening.test.ts',
   'tests/phase8b2_sparse_preanalysis_safety_hotfix.test.ts',
