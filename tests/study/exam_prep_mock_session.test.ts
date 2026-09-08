@@ -46,10 +46,15 @@ const NOW_MS = Date.parse(NOW);
 
 describe('mock session creation + immutable update helpers', () => {
   it('creates an in-progress session with a 150-minute deadline', () => {
+    const createdAt = Date.now();
     const session = makeMockSession();
+    const startedAt = Date.parse(session.startedAt);
     expect(session.status).toBe('in_progress');
-    expect(session.startedAt).toBe(NOW);
-    expect(session.deadlineAt).toBe('2026-09-08T16:30:00.000Z');
+    expect(startedAt).toBeGreaterThanOrEqual(createdAt - 5 * 60_000);
+    expect(startedAt).toBeLessThanOrEqual(createdAt);
+    expect(session.deadlineAt).toBe(
+      new Date(startedAt + 150 * 60_000).toISOString(),
+    );
     expect(session.profileSnapshot.id).toBe('nb-statute-provisional-v1');
     expect(session.profileSnapshot.durationMinutes).toBe(150);
     expect(session.questions).toHaveLength(30);

@@ -24,13 +24,14 @@ export const MOCK_FIXED_SEED = 'mock-test-seed-0001';
 /** Fresh in-progress session bound to the current curriculum hash. */
 export const makeMockSession = ({
   seed = MOCK_FIXED_SEED,
-  startedAt = '2026-09-08T14:00:00.000Z',
+  startedAt,
   status = 'in_progress',
 }: {
   seed?: string;
   startedAt?: string;
   status?: ExamPrepMockSessionStatus;
 } = {}): ExamPrepMockSession => {
+  const activeStartedAt = startedAt ?? new Date(Date.now() - 5 * 60_000).toISOString();
   const binding = currentExamPrepBinding();
   const paper = buildExamPrepMockPaper({ profile: EXAM_PREP_PROVISIONAL_MOCK_V1, seed });
   const id = examPrepMockSessionId(binding, `mock-${seed}`);
@@ -42,11 +43,11 @@ export const makeMockSession = ({
     profileSnapshot: EXAM_PREP_PROVISIONAL_MOCK_V1,
     seed,
     status,
-    startedAt,
+    startedAt: activeStartedAt,
     deadlineAt: new Date(
-      new Date(startedAt).getTime() + EXAM_PREP_PROVISIONAL_MOCK_V1.durationMinutes * 60_000,
+      new Date(activeStartedAt).getTime() + EXAM_PREP_PROVISIONAL_MOCK_V1.durationMinutes * 60_000,
     ).toISOString(),
-    updatedAt: startedAt,
+    updatedAt: activeStartedAt,
     submittedAt: null,
     gradedAt: null,
     abandonedAt: null,
