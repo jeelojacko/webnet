@@ -18,6 +18,7 @@
  * from fragments into reports/phase9a/ is a separate step owned by
  * scripts/phase9a/phase9aReport.ts — never part of evidence execution.
  */
+import fs from 'node:fs';
 import { spawnSync } from 'node:child_process';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -49,6 +50,14 @@ if (suite !== 'all' && !Object.hasOwn(SUITES, suite)) {
 }
 
 const files = suite === 'all' ? [] : SUITES[suite];
+if (suite.startsWith('phase9a')) {
+  const fragmentNames = suite === 'phase9a'
+    ? ['scaling', 'faults', 'corpus']
+    : [suite.slice('phase9a-'.length)];
+  for (const name of fragmentNames) {
+    fs.rmSync(path.join(process.cwd(), 'artifacts/evidence/phase9a', `${name}.json`), { force: true });
+  }
+}
 const result = spawnSync(
   process.execPath,
   [path.join(here, 'runVitest.mjs'), 'run', '--config', 'vitest.evidence.config.ts', ...files],
