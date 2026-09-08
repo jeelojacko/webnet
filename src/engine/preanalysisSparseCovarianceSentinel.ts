@@ -113,13 +113,16 @@ const readDesignRow = (
  * upper-triangle weight entry fans out over its two sparse design rows.
  * N itself is n x n with n <= cap; the cap is enforced fail-closed.
  */
-export const accumulatePackedNormal = (system: PreanalysisSparsePackedSystem): Matrix => {
+export const accumulatePackedNormal = (
+  system: PreanalysisSparsePackedSystem,
+  maxUnknowns: number = PREANALYSIS_SPARSE_SENTINEL_MAX_UNKNOWN_COUNT,
+): Matrix => {
   const n = system.parameterCount;
   const m = system.observationEquationCount;
   if (!Number.isInteger(n) || n <= 0) throw new Error('sentinel requires at least one parameter.');
-  if (n > PREANALYSIS_SPARSE_SENTINEL_MAX_UNKNOWN_COUNT) {
+  if (n > maxUnknowns) {
     throw new Error(
-      `sentinel cap: ${n} unknowns exceed ${PREANALYSIS_SPARSE_SENTINEL_MAX_UNKNOWN_COUNT} (fail-closed).`,
+      `sentinel cap: ${n} unknowns exceed ${maxUnknowns} (fail-closed).`,
     );
   }
   if (!Number.isInteger(m) || m < 0) throw new Error('sentinel requires a non-negative equation count.');
@@ -175,10 +178,11 @@ export const probeSelectedCovariance = (
   normal: Matrix,
   queryRows: Int32Array,
   queryColumns: Int32Array,
+  maxUnknowns: number = PREANALYSIS_SPARSE_SENTINEL_MAX_UNKNOWN_COUNT,
 ): PreanalysisSparseProbeResult => {
   const n = normal.length;
-  if (n === 0 || n > PREANALYSIS_SPARSE_SENTINEL_MAX_UNKNOWN_COUNT) {
-    throw new Error('sentinel probe requires 1..128 parameters (fail-closed).');
+  if (n === 0 || n > maxUnknowns) {
+    throw new Error(`sentinel probe requires 1..${maxUnknowns} parameters (fail-closed).`);
   }
   if (queryRows.length !== queryColumns.length) {
     throw new Error('sentinel probe requires one row per query column (fail-closed).');
@@ -293,6 +297,7 @@ export const evaluateSentinelC2 = (
   queryColumns: ArrayLike<number>,
   values: ArrayLike<number>,
   tolerance = PREANALYSIS_SPARSE_C2_RESIDUAL_TOLERANCE,
+  maxUnknowns: number = PREANALYSIS_SPARSE_SENTINEL_MAX_UNKNOWN_COUNT,
 ): PreanalysisSparseC2Result => {
   const reasons: string[] = [];
   const failClosed = (reason: string): PreanalysisSparseC2Result => ({
@@ -302,8 +307,8 @@ export const evaluateSentinelC2 = (
     perColumnResidual: [],
   });
   const n = normal.length;
-  if (n === 0 || n > PREANALYSIS_SPARSE_SENTINEL_MAX_UNKNOWN_COUNT) {
-    return failClosed('C2 requires 1..128 parameters (fail-closed)');
+  if (n === 0 || n > maxUnknowns) {
+    return failClosed(`C2 requires 1..${maxUnknowns} parameters (fail-closed)`);
   }
   if (queryRows.length !== queryColumns.length || queryRows.length !== values.length) {
     return failClosed('C2 query/value length mismatch (fail-closed)');
@@ -459,9 +464,10 @@ export const validateSentinelPhysical = (args: {
 export const buildBoundedVerificationQueries = (
   n: number,
   columnCount: number = PREANALYSIS_SPARSE_VERIFICATION_COLUMN_COUNT,
+  maxUnknowns: number = PREANALYSIS_SPARSE_SENTINEL_MAX_UNKNOWN_COUNT,
 ): { rows: Int32Array; columns: Int32Array; verifiedColumns: number[] } => {
-  if (!Number.isInteger(n) || n <= 0 || n > PREANALYSIS_SPARSE_SENTINEL_MAX_UNKNOWN_COUNT) {
-    throw new Error('bounded verification requires 1..128 parameters (fail-closed).');
+  if (!Number.isInteger(n) || n <= 0 || n > maxUnknowns) {
+    throw new Error(`bounded verification requires 1..${maxUnknowns} parameters (fail-closed).`);
   }
   if (!Number.isInteger(columnCount) || columnCount <= 0) {
     throw new Error('bounded verification requires a positive column count (fail-closed).');

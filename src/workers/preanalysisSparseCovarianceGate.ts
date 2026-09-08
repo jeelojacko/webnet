@@ -25,6 +25,7 @@ import {
   evaluateSentinelC1,
   evaluateSentinelC2,
   evaluateSentinelC3,
+  PREANALYSIS_SPARSE_C2_RESIDUAL_TOLERANCE,
   PREANALYSIS_SPARSE_VERIFICATION_COLUMN_COUNT,
   probeSelectedCovariance,
   validateSentinelPhysical,
@@ -45,6 +46,29 @@ import {
 export interface PreanalysisGateTestFlags {
   forceC2Failure?: boolean;
   forcePhysicalFailure?: boolean;
+}
+
+/**
+ * Evidence-only timing phases around the actual verifier stages.
+ * `verificationNative` covers the bounded native re-query delegate call;
+ * the rest cover the TS-side judge stages; `total` spans the whole verify.
+ */
+export type PreanalysisVerifierTimingPhase =
+  | 'accumulate'
+  | 'productionC2'
+  | 'verificationNative'
+  | 'verificationC2'
+  | 'c1'
+  | 'c3'
+  | 'physical'
+  | 'total';
+
+/**
+ * Evidence-only timing sink (disabled by default). Records wall-ms per
+ * verifier phase; never affects gates, verdicts, or routing.
+ */
+export interface PreanalysisVerifierTimingSink {
+  record(_phase: PreanalysisVerifierTimingPhase, _wallMs: number): void;
 }
 
 /** Compact per-system verdict: reasons empty means pass. */
@@ -84,6 +108,7 @@ const copyCovarianceInput = (
 const checkSystemHeader = (
   call: CapturedCovarianceCall,
   index: number,
+  maxParameters: number,
 ): { tag: string; n: number; early: PreanalysisCovarianceVerdict | null } => {
   const tag = `system ${index + 1}`;
   const n = call.input.parameterCount;
@@ -97,12 +122,12 @@ const checkSystemHeader = (
       early: early([`${tag}: native covariance produced no values (it threw; fail-closed)`]),
     };
   }
-  if (n <= 0 || n > PREANALYSIS_SPARSE_ROUTE_MAX_UNKNOWN_COUNT) {
+  if (n <= 0 || n > maxParameters) {
     return {
       tag,
       n,
       early: early([
-        `${tag}: parameterCount ${n} outside 1..${PREANALYSIS_SPARSE_ROUTE_MAX_UNKNOWN_COUNT} (fail-closed)`,
+        `${tag}: parameterCount ${n} outside 1..${maxParameters} (fail-closed)`,
       ]),
     };
   }
@@ -117,15 +142,19 @@ const checkSystemHeader = (
 const accumulateGateNormal = (
   call: CapturedCovarianceCall,
   tag: string,
+  maxParameters: number,
 ): { normal: Matrix | null; reasons: string[] } => {
   try {
     return {
-      normal: accumulatePackedNormal({
-        design: call.input.design,
-        weights: call.input.weights,
-        observationEquationCount: call.input.observationEquationCount,
-        parameterCount: call.input.parameterCount,
-      }),
+      normal: accumulatePackedNormal(
+        {
+          design: call.input.design,
+          weights: call.input.weights,
+          observationEquationCount: call.input.observationEquationCount,
+          parameterCount: call.input.parameterCount,
+        },
+        maxParameters,
+      ),
       reasons: [],
     };
   } catch (error) {
@@ -142,6 +171,7 @@ const judgeProductionC2 = (
   normal: Matrix,
   call: CapturedCovarianceCall,
   tag: string,
+  maxParameters: number,
 ): { prodC2: PreanalysisSparseC2Result; warnings: string[] } => {
   const warnings: string[] = [];
   const prodValues = Array.from(call.result?.covariance ?? []);
@@ -150,6 +180,8 @@ const judgeProductionC2 = (
     call.input.queryRows,
     call.input.queryColumns,
     prodValues,
+    PREANALYSIS_SPARSE_C2_RESIDUAL_TOLERANCE,
+    maxParameters,
   );
   if (prodC2.perColumnResidual.length === 0) {
     warnings.push(
@@ -166,37 +198,77 @@ const runBoundedVerification = (
   delegate: SparseSelectedCovarianceSolver,
   tag: string,
   n: number,
+  maxParameters: number,
+  timing: PreanalysisVerifierTimingSink | null,
 ): { pass: boolean | null; reasons: string[]; warnings: string[] } => {
   const reasons: string[] = [];
   const warnings: string[] = [];
   try {
-    const bounded = buildBoundedVerificationQueries(n, PREANALYSIS_SPARSE_VERIFICATION_COLUMN_COUNT);
+    const bounded = buildBoundedVerificationQueries(
+      n,
+      PREANALYSIS_SPARSE_VERIFICATION_COLUMN_COUNT,
+      maxParameters,
+    );
     if (bounded.rows.length > PREANALYSIS_SPARSE_ROUTE_MAX_VERIFICATION_QUERIES) {
       reasons.push(
         `${tag}: verification needs ${bounded.rows.length} entries, exceeding backstop ${PREANALYSIS_SPARSE_ROUTE_MAX_VERIFICATION_QUERIES} (fail-closed)`,
       );
       return { pass: null, reasons, warnings };
     }
-    const verification = delegate.querySelected({
-      design: call.input.design,
-      weights: call.input.weights,
-      observationEquationCount: call.input.observationEquationCount,
-      parameterCount: n,
-      queryRows: bounded.rows,
-      queryColumns: bounded.columns,
-    });
+    const verification = timing
+      ? (() => {
+        const started = Date.now();
+        try {
+          return delegate.querySelected({
+            design: call.input.design,
+            weights: call.input.weights,
+            observationEquationCount: call.input.observationEquationCount,
+            parameterCount: n,
+            queryRows: bounded.rows,
+            queryColumns: bounded.columns,
+          });
+        } finally {
+          timing.record('verificationNative', Date.now() - started);
+        }
+      })()
+      : delegate.querySelected({
+        design: call.input.design,
+        weights: call.input.weights,
+        observationEquationCount: call.input.observationEquationCount,
+        parameterCount: n,
+        queryRows: bounded.rows,
+        queryColumns: bounded.columns,
+      });
     if (!Number.isFinite(verification.damping) || verification.damping !== 0) {
       reasons.push(
         `${tag}: verification native damping=${verification.damping} (undamped required)`,
       );
       return { pass: null, reasons, warnings };
     }
-    const evaluated = evaluateSentinelC2(
-      normal,
-      bounded.rows,
-      bounded.columns,
-      Array.from(verification.covariance),
-    );
+    const evaluated = timing
+      ? (() => {
+        const started = Date.now();
+        try {
+          return evaluateSentinelC2(
+            normal,
+            bounded.rows,
+            bounded.columns,
+            Array.from(verification.covariance),
+            PREANALYSIS_SPARSE_C2_RESIDUAL_TOLERANCE,
+            maxParameters,
+          );
+        } finally {
+          timing.record('verificationC2', Date.now() - started);
+        }
+      })()
+      : evaluateSentinelC2(
+        normal,
+        bounded.rows,
+        bounded.columns,
+        Array.from(verification.covariance),
+        PREANALYSIS_SPARSE_C2_RESIDUAL_TOLERANCE,
+        maxParameters,
+      );
     warnings.push(
       `${tag}: bounded verification cols=${bounded.verifiedColumns.length} checked=${evaluated.perColumnResidual.length} residual=${evaluated.maxResidual.toExponential(2)}`,
     );
@@ -219,12 +291,18 @@ const judgeSelectedC1 = (
   call: CapturedCovarianceCall,
   prodValues: number[],
   tag: string,
+  maxParameters: number,
 ): { c1: PreanalysisSparseC1Result | null; reasons: string[] } => {
   try {
     if (call.input.queryRows.length === 0) {
       return { c1: null, reasons: [`${tag}: C1 needs at least one queried entry (fail-closed)`] };
     }
-    const probe = probeSelectedCovariance(normal, call.input.queryRows, call.input.queryColumns);
+    const probe = probeSelectedCovariance(
+      normal,
+      call.input.queryRows,
+      call.input.queryColumns,
+      maxParameters,
+    );
     if (probe.damped) {
       return { c1: null, reasons: [`${tag}: TS probe damped (fail-closed)`] };
     }
@@ -293,26 +371,47 @@ export const verifyCovarianceSystem = (
   index: number,
   delegate: SparseSelectedCovarianceSolver,
   testFlags: PreanalysisGateTestFlags = {},
+  maxParameters: number = PREANALYSIS_SPARSE_ROUTE_MAX_UNKNOWN_COUNT,
+  timing: PreanalysisVerifierTimingSink | null = null,
 ): PreanalysisCovarianceVerdict => {
-  const { tag, n, early } = checkSystemHeader(call, index);
+  const totalStarted = Date.now();
+  const timed = <T>(phase: PreanalysisVerifierTimingPhase, run: () => T): T => {
+    if (!timing) return run();
+    const started = Date.now();
+    try {
+      return run();
+    } finally {
+      timing.record(phase, Date.now() - started);
+    }
+  };
+  const { tag, n, early } = checkSystemHeader(call, index, maxParameters);
   if (early) return early;
-  const { normal, reasons: normalReasons } = accumulateGateNormal(call, tag);
+  const { normal, reasons: normalReasons } = timed('accumulate', () =>
+    accumulateGateNormal(call, tag, maxParameters),
+  );
   if (!normal) return { index, parameterCount: n, reasons: normalReasons, warnings: [] };
   const reasons: string[] = [];
   const prodValues = Array.from(call.result?.covariance ?? []);
-  const { prodC2, warnings } = judgeProductionC2(normal, call, tag);
+  const { prodC2, warnings } = timed('productionC2', () =>
+    judgeProductionC2(normal, call, tag, maxParameters),
+  );
   if (prodC2.perColumnResidual.length > 0 && !prodC2.pass) {
     reasons.push(
       `${tag}: C2 rejects production native values: ${prodC2.reasons.join('; ').slice(0, 200)}`,
     );
   }
-  const verification = runBoundedVerification(normal, call, delegate, tag, n);
+  const verification = runBoundedVerification(normal, call, delegate, tag, n, maxParameters, timing);
   reasons.push(...verification.reasons);
   warnings.push(...verification.warnings);
-  const { c1, reasons: c1Reasons } = judgeSelectedC1(normal, call, prodValues, tag);
+  const { c1, reasons: c1Reasons } = timed('c1', () =>
+    judgeSelectedC1(normal, call, prodValues, tag, maxParameters),
+  );
   reasons.push(...c1Reasons);
-  reasons.push(...judgeHybridC3(c1, prodC2, verification.pass, tag));
-  reasons.push(...judgePhysical(call, prodValues, tag, testFlags));
+  const c3Reasons = timed('c3', () => judgeHybridC3(c1, prodC2, verification.pass, tag));
+  reasons.push(...c3Reasons);
+  const physicalReasons = timed('physical', () => judgePhysical(call, prodValues, tag, testFlags));
+  reasons.push(...physicalReasons);
+  if (timing) timing.record('total', Date.now() - totalStarted);
   return { index, parameterCount: n, reasons, warnings };
 };
 
@@ -335,6 +434,8 @@ export class PreanalysisGatedCovarianceCapture implements SparseSelectedCovarian
 
   private testFlags: PreanalysisGateTestFlags = {};
 
+  private timingSink: PreanalysisVerifierTimingSink | null = null;
+
   constructor(
     private readonly _delegate: SparseSelectedCovarianceSolver,
     private readonly _state: PreanalysisCandidateState,
@@ -344,6 +445,11 @@ export class PreanalysisGatedCovarianceCapture implements SparseSelectedCovarian
   /** Test-only forced-failure flags (no protocol or user-facing flags). */
   setTestFlags(flags: PreanalysisGateTestFlags): void {
     this.testFlags = { ...flags };
+  }
+
+  /** Evidence-only timing sink (default null = disabled; never affects gates). */
+  setTimingSink(sink: PreanalysisVerifierTimingSink | null): void {
+    this.timingSink = sink;
   }
 
   querySelected(input: SparseSelectedCovarianceInput): SparseSelectedCovarianceResult {
@@ -398,7 +504,14 @@ export class PreanalysisGatedCovarianceCapture implements SparseSelectedCovarian
     );
     try {
       this.verdicts.push(
-        verifyCovarianceSystem(call, this.verdicts.length, this._delegate, this.testFlags),
+        verifyCovarianceSystem(
+          call,
+          this.verdicts.length,
+          this._delegate,
+          this.testFlags,
+          this._caps.maxParameters,
+          this.timingSink,
+        ),
       );
     } finally {
       this.retainedPackedSystems -= 1;
