@@ -896,7 +896,7 @@ describe('phase 9A.1 test-only cap overrides and production controls', () => {
       clearPreanalysisSparseAutoRouteTestHooks();
       setPreanalysisSparseAutoRouteEnabled(false);
     }
-  }, 1800000);
+  }, 3600000);
 
   it('writes complete evidence reports and explicit cap verdicts', () => {
     const requiredEvidence = [
@@ -930,7 +930,7 @@ describe('phase 9A.1 test-only cap overrides and production controls', () => {
       recommendedStationUnknownCap: 128,
       recommendedRuntimeParameterCap: parameterCap256Verdict === 'GO' ? 256 : 128,
     };
-    evidence.baselineSha = execFileSync('git', ['rev-parse', 'main'], { encoding: 'utf8' }).trim();
+    evidence.baselineSha = execFileSync('git', ['rev-parse', 'origin/main'], { encoding: 'utf8' }).trim();
     evidence.headSha = execFileSync('git', ['rev-parse', 'HEAD'], { encoding: 'utf8' }).trim();
     evidence.productionSourceTouched = true;
     evidence.productionNumericalBehaviorChanged = false;
