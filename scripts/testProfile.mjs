@@ -11,6 +11,7 @@ const TIERS = {
   agent: ['--config', 'vitest.agent.config.ts'],
   wasm: ['--config', 'vitest.wasm.config.ts'],
   release: ['--config', 'vitest.release.config.ts'],
+  evidence: ['--config', 'vitest.evidence.config.ts'],
 };
 
 const tier = process.argv[2] ?? 'full';

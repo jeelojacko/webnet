@@ -21,9 +21,9 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { describe, expect, it } from 'vitest';
 
-import { runAdjustmentSession } from '../src/engine/runSession';
-import type { RunSessionOutcome } from '../src/engine/runSession';
-import { comparePreanalysisContract } from '../src/engine/preanalysisSparseEvidence';
+import { runAdjustmentSession } from '../../src/engine/runSession';
+import type { RunSessionOutcome } from '../../src/engine/runSession';
+import { comparePreanalysisContract } from '../../src/engine/preanalysisSparseEvidence';
 import {
   FIXTURE_INPUT,
   makeAdjustmentRequest,
@@ -31,7 +31,7 @@ import {
   Phase8b1Worker,
   stableKeyOf,
   type Phase8b1Memory,
-} from './helpers/phase8b1WorkerHarness';
+} from '../helpers/phase8b1WorkerHarness';
 
 const REPORT_DIR = path.join(process.cwd(), 'reports/phase8b1');
 const ARTIFACT_JS = path.join(process.cwd(), 'cpp/build-wasm/webnet_core.js');

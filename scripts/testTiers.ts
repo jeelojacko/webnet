@@ -1,35 +1,48 @@
 /**
  * Authoritative WebNet Vitest test-tier classification.
  *
- * Tiers (all driven by this file — do NOT duplicate these lists elsewhere):
+ * Five explicit tiers (all driven by this file — do NOT duplicate these
+ * lists elsewhere):
  *
  * - FULL: default vitest.config.ts; every test. `npm run test:run` / `test:full`.
- * - RELEASE: intentionally expensive certification / evidence / stress
- *   campaigns. `npm run test:release` (vitest.release.config.ts).
+ * - AGENT: FULL minus EVIDENCE, RELEASE, and WASM. The broad everyday agent
+ *   regression suite. `npm run test:agent` (vitest.agent.config.ts).
  * - WASM: focused real-WASM / worker / native integration tests.
  *   `npm run test:wasm` (vitest.wasm.config.ts).
- * - AGENT: FULL minus RELEASE and WASM. The broad everyday agent
- *   regression suite. `npm run test:agent` (vitest.agent.config.ts).
+ * - RELEASE: fast automatic release-certification gate (the Phase 8B.1
+ *   verdict over committed reports). `npm run test:release`
+ *   (vitest.release.config.ts). Runs in CI numerical certification.
+ * - EVIDENCE: intentionally expensive long numerical campaigns under
+ *   tests/evidence/. `npm run test:evidence` (vitest.evidence.config.ts).
+ *   Manual-only: never runs in CI (see .github/workflows/evidence.yml).
  *
  * Classification is SEMANTIC (purpose), never runtime-based:
- * release/evidence tests are excluded because they run large repeated
- * numerical campaigns; slow core behavior tests (e.g. run_session) stay
- * in the agent tier.
+ * evidence tests are excluded from agent/release/wasm/CI because they run
+ * large repeated numerical campaigns; slow core behavior tests
+ * (e.g. run_session) stay in the agent tier.
  *
  * Rule for future tests: a new test expected to take more than ~10 s
  * because it performs stress, evidence, repeated real-WASM sessions,
  * browser certification, or performance campaigns MUST be added here
- * (WASM or release) instead of silently joining the agent tier.
+ * (WASM or EVIDENCE) instead of silently joining the agent tier.
  *
  * Handoff: when the Phase 9A cap-widening branch lands on main, add
- * 'tests/phase9a_cap_widening_evidence.test.ts' to RELEASE_EVIDENCE_TESTS.
+ * 'tests/evidence/phase9a_cap_widening_evidence.test.ts' to EVIDENCE_TESTS.
  */
 
-/** Intentionally expensive certification / evidence / stress campaigns. */
-export const RELEASE_EVIDENCE_TESTS = [
-  'tests/phase8b1_preanalysis_release.test.ts',
-  'tests/phase8a6_session_evidence.test.ts',
-  'tests/phase8a5_preanalysis_safety_evidence.test.ts',
+/**
+ * Intentionally expensive long numerical campaigns (manual-only).
+ * Name policy: every entry MUST live under tests/evidence/.
+ */
+export const EVIDENCE_TESTS = [
+  'tests/evidence/phase8b1_preanalysis_release.test.ts',
+  'tests/evidence/phase8a6_session_evidence.test.ts',
+  'tests/evidence/phase8a5_preanalysis_safety_evidence.test.ts',
+] as const;
+
+/** Fast automatic release-certification gate (committed-report verdict). */
+export const RELEASE_TESTS = [
+  'tests/phase8b1_release_verdict.test.ts',
 ] as const;
 
 /** Focused real-WASM / worker / native integration tests. */
@@ -45,7 +58,8 @@ export const WASM_INTEGRATION_TESTS = [
 
 /** Tests excluded from the everyday agent tier (intentionally disjoint sets). */
 export const AGENT_EXCLUDED_TESTS = [
-  ...RELEASE_EVIDENCE_TESTS,
+  ...EVIDENCE_TESTS,
+  ...RELEASE_TESTS,
   ...WASM_INTEGRATION_TESTS,
 ] as const;
 
@@ -60,3 +74,37 @@ export const AGENT_REQUIRED_TESTS = [
   'tests/phase8b2_sparse_preanalysis_safety_hotfix.test.ts',
   'tests/phase8a6_covariance_sentinel.test.ts',
 ] as const;
+
+/**
+ * Suspicious-name exceptions: test files whose basename suggests a long
+ * campaign (stress/benchmark/soak/calibration) but that are classified
+ * OUTSIDE the evidence tier by design because they are fast, unit-scope
+ * checks — not repeated numerical campaigns. The manifest test enforces
+ * this: any new suspiciously named test must live under tests/evidence/
+ * (and be listed in EVIDENCE_TESTS) or be deliberately added here.
+ */
+export const EVIDENCE_NAME_EXCEPTIONS = [
+  'tests/benchmark_adjustment.test.ts',
+  'tests/browser_large_project_benchmark.test.tsx',
+  'tests/phase5_benchmark_networks.test.ts',
+  'tests/phase6_sparse_large_benchmark.test.ts',
+  'tests/phase7b7_safety_benchmark.test.ts',
+  'tests/study/study_ai_unit_calibration.test.ts',
+  'tests/study/study_ai_unit_calibration_audit.test.ts',
+  'tests/study/study_ai_unit_calibration_compare.test.ts',
+  'tests/study/study_ai_unit_calibration_v5.test.ts',
+  'tests/study/study_ai_unit_validation_calibration.test.ts',
+] as const;
+
+/**
+ * Symmetric tier-selection map: every non-full tier name resolves to its
+ * manifest list. Tier configs and tests/test_tier_manifest.test.ts consume
+ * this so structure stays symmetric as tiers evolve.
+ */
+export const TIER_MANIFESTS = {
+  evidence: EVIDENCE_TESTS,
+  release: RELEASE_TESTS,
+  wasm: WASM_INTEGRATION_TESTS,
+} as const;
+
+export type NonFullTierName = keyof typeof TIER_MANIFESTS;

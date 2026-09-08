@@ -22,3 +22,14 @@ Add or update focused tests for:
 ## Before finishing
 - Run the narrowest relevant tests first.
 - Then run the full suite before considering the change complete.
+
+## Test tiers
+- Tier membership is semantic (what a test proves), never runtime-based; the
+  authoritative manifest is `scripts/testTiers.ts` (full/agent/wasm/release/
+  evidence). Details: `docs/TEST_TIERS.md`.
+- Long stress/evidence campaigns belong under `tests/evidence/` in the
+  manual-only evidence tier (`npm run test:evidence`) — never silently in
+  the agent tier. The fast release verdict stays automatic via
+  `npm run test:release`.
+- `tests/test_tier_manifest.test.ts` enforces tier symmetry, disjointness,
+  and the `tests/evidence/` name policy; keep it green when reclassifying.

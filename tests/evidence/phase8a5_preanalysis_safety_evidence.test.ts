@@ -42,16 +42,16 @@ import {
   runPhase8a5ReuseStress,
   runPhase8a5WorkerOnce as runActualWorkerOnce,
   type Phase8a5WorkerDiagnostics as DiagnosticsSnapshot,
-} from './helpers/phase8a5WorkerEvidence';
-import { parseInput } from '../src/engine/parseInputCore';
+} from '../helpers/phase8a5WorkerEvidence';
+import { parseInput } from '../../src/engine/parseInputCore';
 import {
   classifyPreanalysisSparseEvidence,
   comparePreanalysisContract,
-} from '../src/engine/preanalysisSparseEvidence';
+} from '../../src/engine/preanalysisSparseEvidence';
 import {
   buildPhase8a5GeneratedCorpus,
   type Phase8a5GeneratedSpec,
-} from '../src/engine/phase8a5PreanalysisSafetyCorpus';
+} from '../../src/engine/phase8a5PreanalysisSafetyCorpus';
 import {
   buildSentinelEvidence,
   evaluatePhase8a5Strategies,
@@ -61,11 +61,11 @@ import {
   PHASE8A5_SENTINEL_RELATIVE_TOLERANCE,
   type Phase8a5CorrectionEvidence,
   type Phase8a5StrategyId,
-} from '../src/engine/phase8a5SafetyStrategies';
-import { runAdjustmentSession, type RunSessionOutcome } from '../src/engine/runSession';
-import type { RunSessionRequest } from '../src/engine/runSession';
-import { deriveSparseAutoRouteEligibility } from '../src/workers/adjustmentSparseAutoRoute';
-import { createRunSessionRequest } from './helpers/runSessionRequest';
+} from '../../src/engine/phase8a5SafetyStrategies';
+import { runAdjustmentSession, type RunSessionOutcome } from '../../src/engine/runSession';
+import type { RunSessionRequest } from '../../src/engine/runSession';
+import { deriveSparseAutoRouteEligibility } from '../../src/workers/adjustmentSparseAutoRoute';
+import { createRunSessionRequest } from '../helpers/runSessionRequest';
 
 const REPORT_DIR = path.join(process.cwd(), 'reports/phase8a5');
 

@@ -42,39 +42,39 @@ import {
   medianPhase8a6 as median,
   runPhase8a6ReuseStress,
   runPhase8a6WorkerOnce,
-} from './helpers/phase8a6WorkerEvidence';
-import { parseInput } from '../src/engine/parseInputCore';
+} from '../helpers/phase8a6WorkerEvidence';
+import { parseInput } from '../../src/engine/parseInputCore';
 import {
   classifyPreanalysisSparseEvidence,
   comparePreanalysisContract,
-} from '../src/engine/preanalysisSparseEvidence';
+} from '../../src/engine/preanalysisSparseEvidence';
 import {
   buildChainStarInput,
   buildPhase8a5GeneratedCorpus,
   type Phase8a5GeneratedSpec,
-} from '../src/engine/phase8a5PreanalysisSafetyCorpus';
+} from '../../src/engine/phase8a5PreanalysisSafetyCorpus';
 import {
   buildSentinelEvidence,
   evaluatePhase8a5Strategies,
   validateCovariancePhysical,
-} from '../src/engine/phase8a5SafetyStrategies';
+} from '../../src/engine/phase8a5SafetyStrategies';
 import {
   accumulatePackedNormal,
   buildAllPairsQueries,
   buildDiagonalQueries,
   evaluateSentinelC2,
   probeSelectedCovariance,
-} from '../src/engine/phase8a6SparseCovarianceSentinel';
+} from '../../src/engine/phase8a6SparseCovarianceSentinel';
 import {
   evaluatePhase8a6SystemPolicy,
   evaluatePhase8a6WholeSession,
   PHASE8A6_PLANNING_SYSTEM_CAP,
   PHASE8A6_UNKNOWN_CAP,
-} from '../src/engine/phase8a6SessionPolicy';
-import { runAdjustmentSession, type RunSessionOutcome } from '../src/engine/runSession';
-import type { RunSessionRequest } from '../src/engine/runSession';
-import { deriveSparseAutoRouteEligibility } from '../src/workers/adjustmentSparseAutoRoute';
-import { createRunSessionRequest } from './helpers/runSessionRequest';
+} from '../../src/engine/phase8a6SessionPolicy';
+import { runAdjustmentSession, type RunSessionOutcome } from '../../src/engine/runSession';
+import type { RunSessionRequest } from '../../src/engine/runSession';
+import { deriveSparseAutoRouteEligibility } from '../../src/workers/adjustmentSparseAutoRoute';
+import { createRunSessionRequest } from '../helpers/runSessionRequest';
 
 const REPORT_DIR = path.join(process.cwd(), 'reports/phase8a6');
 
