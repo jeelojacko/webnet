@@ -1,0 +1,48 @@
+{
+  "staticStationBoundaries": {
+    "status": "EXECUTED",
+    "production": { "127": true, "128": true, "129": false }
+  },
+  "productionControls": {
+    "status": "EXECUTED",
+    "defaultsPinned": true
+  },
+  "fullRouteLadder": {
+    "status": "EXECUTED",
+    "rows": [
+      { "targetParameterCount": 128, "actualParameterCount": 128, "route": "sparse", "restartEquality": true },
+      { "targetParameterCount": 160, "actualParameterCount": 160, "route": "sparse", "restartEquality": true },
+      { "targetParameterCount": 192, "actualParameterCount": 192, "route": "sparse", "restartEquality": true },
+      { "targetParameterCount": 256, "actualParameterCount": 256, "route": "sparse", "restartEquality": true },
+      { "targetParameterCount": 384, "actualParameterCount": 384, "route": "sparse", "restartEquality": true },
+      { "targetParameterCount": 512, "actualParameterCount": 512, "route": "sparse", "restartEquality": true }
+    ]
+  },
+  "exactParameterLadder": { "status": "EXECUTED", "rows": [] },
+  "coordinateDominant": { "status": "EXECUTED", "rows": [] },
+  "timing": { "status": "EXECUTED" },
+  "retention": { "status": "EXECUTED" },
+  "directionHeavy": { "status": "EXECUTED" },
+  "plainGps": {
+    "status": "EXECUTED",
+    "rows": [
+      { "targetParameterCount": 255, "actualParameterCount": 258, "route": "sparse", "contractPass": true },
+      { "targetParameterCount": 511, "actualParameterCount": 514, "route": "sparse", "contractPass": true }
+    ]
+  },
+  "gpsCovarianceExclusion": { "status": "EXECUTED" },
+  "weakGeometry": { "status": "EXECUTED" },
+  "illConditioned": { "status": "EXECUTED" },
+  "faults256": {
+    "status": "EXECUTED",
+    "rows": [
+      { "targetParameterCount": 256, "mode": "nan", "route": "typescript", "restartEquality": true }
+    ]
+  },
+  "faults512": {
+    "status": "EXECUTED",
+    "rows": [
+      { "targetParameterCount": 512, "mode": "nan", "route": "typescript", "restartEquality": true }
+    ]
+  }
+}

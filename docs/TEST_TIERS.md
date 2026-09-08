@@ -20,8 +20,8 @@ policy list, no browser tests in Node manifests).
 | **full** | `npm run test:full` (== `npm run test:run`) | `vitest.config.ts` | Every Vitest test. The authoritative monolithic local suite. |
 | **agent** | `npm run test:agent` | `vitest.agent.config.ts` | Full suite **minus** the evidence, release, and real-WASM integration tests. The broad everyday AI-agent regression gate (~1 min). |
 | **wasm** | `npm run test:wasm` | `vitest.wasm.config.ts` | Only the explicit real-WASM / worker / native integration tests. |
-| **release** | `npm run test:release` | `vitest.release.config.ts` | Only the fast automatic release-certification gate (the Phase 8B.1 verdict over committed reports — no workers, no WASM artifact required). |
-| **evidence** | `npm run test:evidence [-- <suite>]` | `vitest.evidence.config.ts` via `scripts/runEvidence.mjs` | Only the intentionally expensive long numerical campaigns under `tests/evidence/`. Expected to be very slow; manual-only, never runs in CI. Suites: `all` (default), `phase8b1`, `phase8a6`, `phase8a5`; unknown names fail fast. |
+| **release** | `npm run test:release` | `vitest.release.config.ts` | Only the fast automatic release-certification gates (the Phase 8B.1 and Phase 9A verdicts over committed reports — no workers, no WASM artifact required). |
+| **evidence** | `npm run test:evidence [-- <suite>]` | `vitest.evidence.config.ts` via `scripts/runEvidence.mjs` | Only the intentionally expensive long numerical campaigns under `tests/evidence/`. Expected to be very slow; manual-only, never runs in CI. Suites: `all` (default), `phase8b1`, `phase8a6`, `phase8a5`, `phase9a` (all three Phase 9A shards), `phase9a-scaling`, `phase9a-faults`, `phase9a-corpus`; unknown names fail fast. |
 
 `npm run test:certify` runs the automatic CI-equivalent partition locally
 (`test:agent` + `test:wasm` + `test:release`).
@@ -38,12 +38,22 @@ lists):
 
 - **Evidence** (`tests/evidence/phase8b1_preanalysis_release.test.ts`,
   `tests/evidence/phase8a6_session_evidence.test.ts`,
-  `tests/evidence/phase8a5_preanalysis_safety_evidence.test.ts`): large repeated
+  `tests/evidence/phase8a5_preanalysis_safety_evidence.test.ts`,
+  `tests/evidence/phase9a_evidence_scaling.test.ts`,
+  `tests/evidence/phase9a_evidence_faults.test.ts`,
+  `tests/evidence/phase9a_evidence_corpus.test.ts`): large repeated
   numerical campaigns. Manual-only via `npm run test:evidence` or the
-  Evidence workflow.
-- **Release** (`tests/phase8b1_release_verdict.test.ts`): the fast,
-  focused, worker-free verdict that assembles the release closure from the
-  committed `reports/phase8b1/` evidence legs. Stays automatic — it runs in
+  Evidence workflow. The Phase 9A shards share helpers via
+  `tests/evidence/phase9aEvidenceShared.ts`, run independently with no
+  duplicate execution, and write one atomic raw fragment each to
+  `artifacts/evidence/phase9a/` (gitignored); report assembly from
+  fragments into `reports/phase9a/` is a separate pure step
+  (`scripts/phase9a/phase9aReport.ts`, `npm run phase9a:assemble-report`),
+  never part of evidence execution.
+- **Release** (`tests/phase8b1_release_verdict.test.ts`,
+  `tests/phase9a_release_verdict.test.ts`): the fast,
+  focused, worker-free verdicts over the committed `reports/phase8b1/` and
+  `reports/phase9a/` evidence legs. Stays automatic — they run in
   CI numerical certification via `npm run test:release`.
 - **WASM integration** (`tests/phase8b_preanalysis_realwasm.test.ts`,
   `tests/phase8b1_clean_runner_gate.test.ts`,
@@ -119,6 +129,10 @@ by `WASM_INTEGRATION_TESTS`; its duplicate dedicated CI job was removed.
 
 ## Handoff
 
-When the Phase 9A cap-widening branch lands on main, add
-`tests/evidence/phase9a_cap_widening_evidence.test.ts` to `EVIDENCE_TESTS` in
-`scripts/testTiers.ts`.
+Phase 9A evidence execution is separated from release checks: the Evidence
+workflow runs the `phase9a*` shards, uploads raw fragments
+(`artifacts/evidence/phase9a/`) separately from reports, and assembles
+`reports/phase9a/` in a dedicated step. Phase 9A SHAs resolve explicit env
+(`PHASE9A_BASELINE_SHA` / `PHASE9A_HEAD_SHA`, the workflow passes
+`github.sha` plus an optional `baseline_sha` input) > reliable CI >
+`git rev-parse --verify HEAD` only > null, with no origin fetch.

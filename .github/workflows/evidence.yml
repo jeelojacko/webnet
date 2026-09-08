@@ -18,10 +18,25 @@ on:
           - phase8b1
           - phase8a6
           - phase8a5
+          - phase9a
+          - phase9a-scaling
+          - phase9a-faults
+          - phase9a-corpus
+      baseline_sha:
+        description: 'Explicit baseline SHA recorded into Phase 9A reports (optional)'
+        required: false
+        default: ''
+        type: string
 
 # Manual-only runner for the slow evidence campaigns (tests/evidence/).
 # Never runs automatically: CI (ci.yml) omits test:full and test:evidence
 # by design. Dispatch explicitly when release evidence must be regenerated.
+#
+# Phase 9A note: evidence execution (shards writing atomic raw fragments to
+# artifacts/evidence/phase9a/) is separate from report assembly. The
+# assemble step below merges fragments via scripts/phase9a/phase9aReport.ts
+# into reports/phase9a/; SHAs resolve explicit env > reliable CI
+# (GITHUB_SHA) > `git rev-parse --verify HEAD` > null, with no origin fetch.
 
 jobs:
   evidence:
@@ -54,6 +69,15 @@ jobs:
         run: npm run cpp:test
       - name: Evidence campaigns
         run: node scripts/runEvidence.mjs ${{ inputs.suite }}
+        env:
+          PHASE9A_HEAD_SHA: ${{ github.sha }}
+          PHASE9A_BASELINE_SHA: ${{ inputs.baseline_sha }}
+      - name: Assemble Phase 9A report from fragments
+        if: always()
+        run: npm run phase9a:assemble-report
+        env:
+          PHASE9A_HEAD_SHA: ${{ github.sha }}
+          PHASE9A_BASELINE_SHA: ${{ inputs.baseline_sha }}
       - name: Upload evidence reports
         if: always()
         uses: actions/upload-artifact@v7
@@ -63,4 +87,12 @@ jobs:
             reports/phase8b1/
             reports/phase8a6/
             reports/phase8a5/
+            reports/phase9a/
+          if-no-files-found: warn
+      - name: Upload Phase 9A raw fragments
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: phase9a-raw-fragments
+          path: artifacts/evidence/phase9a/
           if-no-files-found: warn
