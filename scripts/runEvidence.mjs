@@ -25,9 +25,9 @@ import { fileURLToPath } from 'node:url';
 const here = path.dirname(fileURLToPath(import.meta.url));
 
 const PHASE9A_SHARDS = [
-  'tests/evidence/phase9a_evidence_scaling.test.ts',
-  'tests/evidence/phase9a_evidence_faults.test.ts',
-  'tests/evidence/phase9a_evidence_corpus.test.ts',
+  'tests/evidence/phase9a_cap_widening_scaling.test.ts',
+  'tests/evidence/phase9a_cap_widening_faults.test.ts',
+  'tests/evidence/phase9a_cap_widening_corpus.test.ts',
 ];
 
 const SUITES = {
@@ -35,9 +35,9 @@ const SUITES = {
   phase8a6: ['tests/evidence/phase8a6_session_evidence.test.ts'],
   phase8b1: ['tests/evidence/phase8b1_preanalysis_release.test.ts'],
   phase9a: [...PHASE9A_SHARDS],
-  'phase9a-scaling': ['tests/evidence/phase9a_evidence_scaling.test.ts'],
-  'phase9a-faults': ['tests/evidence/phase9a_evidence_faults.test.ts'],
-  'phase9a-corpus': ['tests/evidence/phase9a_evidence_corpus.test.ts'],
+  'phase9a-scaling': ['tests/evidence/phase9a_cap_widening_scaling.test.ts'],
+  'phase9a-faults': ['tests/evidence/phase9a_cap_widening_faults.test.ts'],
+  'phase9a-corpus': ['tests/evidence/phase9a_cap_widening_corpus.test.ts'],
 };
 
 const suite = process.argv[2] ?? 'all';

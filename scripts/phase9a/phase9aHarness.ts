@@ -153,5 +153,3 @@ export const snapshotPhase9aMemory = (): Phase9aMemorySnapshot => {
   const memory = process.memoryUsage();
   return { rss: memory.rss, heapUsed: memory.heapUsed, heapTotal: memory.heapTotal };
 };
-
-

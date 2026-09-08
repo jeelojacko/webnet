@@ -4,7 +4,7 @@
  * Certifies the committed reports/phase9a/ evidence: GO verdicts, pinned
  * production caps/invariants, exact ladder dimensions, plain-GPS contract
  * rows, and fail-closed fault corpora. Slow real-WASM execution lives in
- * the manual-only evidence shards (tests/evidence/phase9a_evidence_*);
+ * the manual-only evidence shards (tests/evidence/phase9a_cap_widening_*);
  * report assembly logic is unit-tested in tests/phase9a_report.test.ts.
  */
 import fs from 'node:fs';

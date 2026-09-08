@@ -39,9 +39,9 @@ lists):
 - **Evidence** (`tests/evidence/phase8b1_preanalysis_release.test.ts`,
   `tests/evidence/phase8a6_session_evidence.test.ts`,
   `tests/evidence/phase8a5_preanalysis_safety_evidence.test.ts`,
-  `tests/evidence/phase9a_evidence_scaling.test.ts`,
-  `tests/evidence/phase9a_evidence_faults.test.ts`,
-  `tests/evidence/phase9a_evidence_corpus.test.ts`): large repeated
+  `tests/evidence/phase9a_cap_widening_scaling.test.ts`,
+  `tests/evidence/phase9a_cap_widening_faults.test.ts`,
+  `tests/evidence/phase9a_cap_widening_corpus.test.ts`): large repeated
   numerical campaigns. Manual-only via `npm run test:evidence` or the
   Evidence workflow. The Phase 9A shards share helpers via
   `tests/evidence/phase9aEvidenceShared.ts`, run independently with no

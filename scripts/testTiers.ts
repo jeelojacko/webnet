@@ -36,9 +36,9 @@ export const EVIDENCE_TESTS = [
   'tests/evidence/phase8b1_preanalysis_release.test.ts',
   'tests/evidence/phase8a6_session_evidence.test.ts',
   'tests/evidence/phase8a5_preanalysis_safety_evidence.test.ts',
-  'tests/evidence/phase9a_evidence_scaling.test.ts',
-  'tests/evidence/phase9a_evidence_faults.test.ts',
-  'tests/evidence/phase9a_evidence_corpus.test.ts',
+  'tests/evidence/phase9a_cap_widening_scaling.test.ts',
+  'tests/evidence/phase9a_cap_widening_faults.test.ts',
+  'tests/evidence/phase9a_cap_widening_corpus.test.ts',
 ] as const;
 
 /** Fast automatic release-certification gate (committed-report verdict). */
