@@ -12,21 +12,21 @@ import path from 'node:path';
 import { execFileSync } from 'node:child_process';
 import { describe, expect, it } from 'vitest';
 
-import type { RunSessionOutcome, RunSessionRequest } from '../src/engine/runSession';
-import { runAdjustmentSession } from '../src/engine/runSession';
-import { comparePreanalysisContract } from '../src/engine/preanalysisSparseEvidence';
+import type { RunSessionOutcome, RunSessionRequest } from '../../src/engine/runSession';
+import { runAdjustmentSession } from '../../src/engine/runSession';
+import { comparePreanalysisContract } from '../../src/engine/preanalysisSparseEvidence';
 import {
   evaluatePreanalysisSparseWholeSession,
   PREANALYSIS_SPARSE_PLANNING_SYSTEM_CAP,
   PREANALYSIS_SPARSE_UNKNOWN_CAP,
-} from '../src/engine/preanalysisSparseSessionPolicy';
-import { PREANALYSIS_SPARSE_VERIFICATION_COLUMN_COUNT } from '../src/engine/preanalysisSparseCovarianceSentinel';
+} from '../../src/engine/preanalysisSparseSessionPolicy';
+import { PREANALYSIS_SPARSE_VERIFICATION_COLUMN_COUNT } from '../../src/engine/preanalysisSparseCovarianceSentinel';
 import {
   PREANALYSIS_SPARSE_ROUTE_MAX_CAPTURED_CALLS,
   PREANALYSIS_SPARSE_ROUTE_MAX_PLANNING_SYSTEMS,
   PREANALYSIS_SPARSE_ROUTE_MAX_UNKNOWN_COUNT,
   PREANALYSIS_SPARSE_ROUTE_MAX_VERIFICATION_QUERIES,
-} from '../src/workers/preanalysisSparseAutoRouteCaps';
+} from '../../src/workers/preanalysisSparseAutoRouteCaps';
 import {
   clearPreanalysisSparseAutoRouteTestHooks,
   derivePreanalysisSparseAutoRouteEligibility,
@@ -34,12 +34,12 @@ import {
   runWithPreanalysisSparseAutoRoute,
   setPreanalysisSparseAutoRouteEnabled,
   setPreanalysisSparseAutoRouteTestHooks,
-} from '../src/workers/preanalysisSparseAutoRoute';
-import { verifyCovarianceSystem } from '../src/workers/preanalysisSparseCovarianceGate';
-import { createRunSessionRequest } from './helpers/runSessionRequest';
+} from '../../src/workers/preanalysisSparseAutoRoute';
+import { verifyCovarianceSystem } from '../../src/workers/preanalysisSparseCovarianceGate';
+import { createRunSessionRequest } from '../helpers/runSessionRequest';
 import {
   buildChainStarInput,
-} from '../src/engine/phase8a5PreanalysisSafetyCorpus';
+} from '../../src/engine/phase8a5PreanalysisSafetyCorpus';
 import {
   loadPhase9aRealBundle,
   runPhase9aScalingProbe,
@@ -47,8 +47,8 @@ import {
   summarizePhase9aTimingMap,
   summarizePhase9aTimings,
   writePhase9aReports,
-} from '../scripts/phase9a/phase9aHarness';
-import type { PreanalysisVerifierTimingPhase } from '../src/workers/preanalysisSparseCovarianceGate';
+} from '../../scripts/phase9a/phase9aHarness';
+import type { PreanalysisVerifierTimingPhase } from '../../src/workers/preanalysisSparseCovarianceGate';
 
 const readFixture = (file: string): string =>
   fs.readFileSync(path.join(process.cwd(), 'tests/fixtures', file), 'utf-8');

@@ -42,6 +42,7 @@ export const EVIDENCE_TESTS = [
 /** Fast automatic release-certification gate (committed-report verdict). */
 export const RELEASE_TESTS = [
   'tests/phase8b1_release_verdict.test.ts',
+] as const;
 
 /** Focused real-WASM / worker / native integration tests. */
 export const WASM_INTEGRATION_TESTS = [
