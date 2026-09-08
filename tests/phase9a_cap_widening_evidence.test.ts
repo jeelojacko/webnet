@@ -930,7 +930,14 @@ describe('phase 9A.1 test-only cap overrides and production controls', () => {
       recommendedStationUnknownCap: 128,
       recommendedRuntimeParameterCap: parameterCap256Verdict === 'GO' ? 256 : 128,
     };
-    evidence.baselineSha = execFileSync('git', ['rev-parse', 'origin/main'], { encoding: 'utf8' }).trim();
+    const baseBranch = process.env.GITHUB_BASE_REF || 'main';
+    const baseRef = `origin/${baseBranch}`;
+    try {
+      evidence.baselineSha = execFileSync('git', ['rev-parse', baseRef], { encoding: 'utf8' }).trim();
+    } catch {
+      execFileSync('git', ['fetch', '--no-tags', 'origin', `${baseBranch}:refs/remotes/origin/${baseBranch}`], { stdio: 'ignore' });
+      evidence.baselineSha = execFileSync('git', ['rev-parse', baseRef], { encoding: 'utf8' }).trim();
+    }
     evidence.headSha = execFileSync('git', ['rev-parse', 'HEAD'], { encoding: 'utf8' }).trim();
     evidence.productionSourceTouched = true;
     evidence.productionNumericalBehaviorChanged = false;
