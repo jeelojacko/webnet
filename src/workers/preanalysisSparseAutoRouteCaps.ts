@@ -6,12 +6,23 @@
  * type with working `instanceof` checks and no import cycle.
  */
 import {
+  PREANALYSIS_SPARSE_PARAMETER_CAP,
   PREANALYSIS_SPARSE_PLANNING_SYSTEM_CAP,
-  PREANALYSIS_SPARSE_UNKNOWN_CAP,
+  PREANALYSIS_SPARSE_STATION_UNKNOWN_CAP,
 } from '../engine/preanalysisSparseSessionPolicy';
 
-/** Enforced unknown cap (station unknowns at eligibility; params at runtime). */
-export const PREANALYSIS_SPARSE_ROUTE_MAX_UNKNOWN_COUNT = PREANALYSIS_SPARSE_UNKNOWN_CAP;
+/** Enforced station-unknown cap (static eligibility + whole-session unknown check). */
+export const PREANALYSIS_SPARSE_ROUTE_MAX_STATION_UNKNOWNS = PREANALYSIS_SPARSE_STATION_UNKNOWN_CAP;
+
+/** @deprecated Station-unknown cap only; never use for runtime parameter gates. */
+export const PREANALYSIS_SPARSE_ROUTE_MAX_UNKNOWN_COUNT = PREANALYSIS_SPARSE_ROUTE_MAX_STATION_UNKNOWNS;
+
+/**
+ * Enforced runtime per-system parameter cap (correction/covariance
+ * pre-dispatch gates + verifier). Phase 9B: 256 (split from the
+ * station-unknown cap above; station stays 128, runtime is 256).
+ */
+export const PREANALYSIS_SPARSE_ROUTE_MAX_PARAMETERS = PREANALYSIS_SPARSE_PARAMETER_CAP;
 
 /** Enforced per-session planning-system cap (captured covariance calls). */
 export const PREANALYSIS_SPARSE_ROUTE_MAX_PLANNING_SYSTEMS = PREANALYSIS_SPARSE_PLANNING_SYSTEM_CAP;

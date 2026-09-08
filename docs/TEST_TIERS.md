@@ -20,7 +20,7 @@ policy list, no browser tests in Node manifests).
 | **full** | `npm run test:full` (== `npm run test:run`) | `vitest.config.ts` | Every Vitest test. The authoritative monolithic local suite. |
 | **agent** | `npm run test:agent` | `vitest.agent.config.ts` | Full suite **minus** the evidence, release, and real-WASM integration tests. The broad everyday AI-agent regression gate (~1 min). |
 | **wasm** | `npm run test:wasm` | `vitest.wasm.config.ts` | Only the explicit real-WASM / worker / native integration tests. |
-| **release** | `npm run test:release` | `vitest.release.config.ts` | Only the fast automatic release-certification gates (the Phase 8B.1 and Phase 9A verdicts over committed reports — no workers, no WASM artifact required). |
+| **release** | `npm run test:release` | `vitest.release.config.ts` | Only the fast automatic release-certification gates (the Phase 8B.1, Phase 9A, and Phase 9B verdicts over committed reports — no workers, no WASM artifact required). |
 | **evidence** | `npm run test:evidence [-- <suite>]` | `vitest.evidence.config.ts` via `scripts/runEvidence.mjs` | Only the intentionally expensive long numerical campaigns under `tests/evidence/`. Expected to be very slow; manual-only, never runs in CI. Suites: `all` (default), `phase8b1`, `phase8a6`, `phase8a5`, `phase9a` (all three Phase 9A shards), `phase9a-scaling`, `phase9a-faults`, `phase9a-corpus`; unknown names fail fast. |
 
 `npm run test:certify` runs the automatic CI-equivalent partition locally
@@ -51,9 +51,10 @@ lists):
   (`scripts/phase9a/phase9aReport.ts`, `npm run phase9a:assemble-report`),
   never part of evidence execution.
 - **Release** (`tests/phase8b1_release_verdict.test.ts`,
-  `tests/phase9a_release_verdict.test.ts`): the fast,
-  focused, worker-free verdicts over the committed `reports/phase8b1/` and
-  `reports/phase9a/` evidence legs. Stays automatic — they run in
+  `tests/phase9a_release_verdict.test.ts`,
+  `tests/phase9b_release_verdict.test.ts`): the fast,
+  focused, worker-free verdicts over the committed `reports/phase8b1/`,
+  historical `reports/phase9a/`, and current `reports/phase9b/` rollout legs. Stays automatic — they run in
   CI numerical certification via `npm run test:release`.
 - **WASM integration** (`tests/phase8b_preanalysis_realwasm.test.ts`,
   `tests/phase8b1_clean_runner_gate.test.ts`,

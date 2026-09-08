@@ -6,7 +6,8 @@
  * generic parameter cap (camp), direction inflation, all-systems count,
  * init-failure retry, and adjustment-route regression. Uses test-only fake
  * sparse bundles (dense TS math, no WASM) plus test hooks for exact
- * 127/128/129 and 63/64/65 boundaries. No phase8a6/test/script imports in
+ * 127/128/129 station and 63/64/65 system boundaries plus the Phase 9B
+ * 255/256/257 runtime parameter boundary. No phase8a6/test/script imports in
  * production modules (asserted); phase8a6 tests stay green separately.
  */
 import fs from 'node:fs';
@@ -32,8 +33,9 @@ import {
   derivePreanalysisSparseAutoRouteEligibility,
   isPreanalysisSparseAutoRouteEnabled,
   isPreanalysisSparseCapError,
+  PREANALYSIS_SPARSE_ROUTE_MAX_PARAMETERS,
   PREANALYSIS_SPARSE_ROUTE_MAX_PLANNING_SYSTEMS,
-  PREANALYSIS_SPARSE_ROUTE_MAX_UNKNOWN_COUNT,
+  PREANALYSIS_SPARSE_ROUTE_MAX_STATION_UNKNOWNS,
   PreanalysisGatedCorrectionSolver,
   PreanalysisGatedCovarianceCapture,
   PreanalysisSparseCapError,
@@ -340,23 +342,24 @@ describe('phase 8A.7 preanalysis production hook', () => {
     }
   });
 
-  it('enforces the generic parameter cap on the camp fixture', async () => {
+  it('camp fixture falls back atomic under Phase 9B runtime cap 256', async () => {
     setPreanalysisSparseAutoRouteEnabled(true);
     clearPreanalysisSparseAutoRouteTestHooks();
     try {
       const request = makePreanalysisRequest(CAMP_INPUT);
       const eligibility = derivePreanalysisSparseAutoRouteEligibility(request);
       // Static station unknowns (46 under the effective project parse the
-      // solver runs) fit the cap; the generic per-system
-      // parameter count (directions + planning solves) must reject at runtime.
+      // solver runs) fit the station cap; the direction-inflated
+      // per-system parameter count (~170) fits the Phase 9B runtime cap
+      // 256, so pre-dispatch no longer rejects it — the session still
+      // falls back atomic via the sentinel gates with a clean restart.
       expect(eligibility.unknownCount).toBe(46);
       const attempt = await runWithPreanalysisSparseAutoRoute(request, undefined, {
         runSession: runAdjustmentSession,
         loadBundle: fakeLoader(),
       });
       expect(attempt.route).toBe('typescript');
-      expect(attempt.reasons.join(' ')).toMatch(/exceeds cap|fail-closed/);
-      expect(attempt.reasons.join(' ')).toMatch(/parameterCount.*exceeds cap|verification skipped|fail-closed/);
+      expect(attempt.reasons.join(' ')).toMatch(/fail-closed|C2|C3|sentinel|fallback/);
       const direct = runAdjustmentSession(request);
       expectRestartIdentical(attempt.outcome, direct);
     } finally {
@@ -406,7 +409,7 @@ describe('phase 8A.7 preanalysis production hook', () => {
     });
     const caps = {
       maxSystems: PREANALYSIS_SPARSE_ROUTE_MAX_PLANNING_SYSTEMS,
-      maxParameters: PREANALYSIS_SPARSE_ROUTE_MAX_UNKNOWN_COUNT,
+      maxParameters: PREANALYSIS_SPARSE_ROUTE_MAX_PARAMETERS,
     };
     for (const total of [63, 64]) {
       let delegated = 0;
@@ -477,10 +480,10 @@ describe('phase 8A.7 preanalysis production hook', () => {
     }
   });
 
-  it('rejects parameterCount 129 before delegation (127/128 delegate)', () => {
+  it('rejects parameterCount 257 before delegation (255/256 delegate)', () => {
     const caps = {
       maxSystems: PREANALYSIS_SPARSE_ROUTE_MAX_PLANNING_SYSTEMS,
-      maxParameters: PREANALYSIS_SPARSE_ROUTE_MAX_UNKNOWN_COUNT,
+      maxParameters: PREANALYSIS_SPARSE_ROUTE_MAX_PARAMETERS,
     };
     const buildSizedInput = (parameterCount: number): SparseCorrectionSolveInput => ({
       design: {
@@ -497,7 +500,7 @@ describe('phase 8A.7 preanalysis production hook', () => {
       observationEquationCount: parameterCount,
       parameterCount,
     });
-    for (const n of [127, 128]) {
+    for (const n of [255, 256]) {
       let delegated = 0;
       const state = createPreanalysisCandidateState();
       const gate = new PreanalysisGatedCorrectionSolver(
@@ -524,7 +527,7 @@ describe('phase 8A.7 preanalysis production hook', () => {
       expect(delegated).toBe(1);
       expect(state.aborted).toBe(false);
     }
-    // 129: typed abort before delegation, delegate never runs.
+    // 257: typed abort before delegation, delegate never runs.
     {
       let delegated = 0;
       const state = createPreanalysisCandidateState();
@@ -532,7 +535,7 @@ describe('phase 8A.7 preanalysis production hook', () => {
         {
           solveFromEquations: (): SparseCorrectionSolveResult => {
             delegated += 1;
-            throw new Error('must not delegate parameterCount 129');
+            throw new Error('must not delegate parameterCount 257');
           },
         },
         state,
@@ -540,14 +543,14 @@ describe('phase 8A.7 preanalysis production hook', () => {
       );
       let thrown: unknown = null;
       try {
-        gate.solveFromEquations(buildSizedInput(129));
+        gate.solveFromEquations(buildSizedInput(257));
       } catch (error) {
         thrown = error;
       }
       expect(isPreanalysisSparseCapError(thrown)).toBe(true);
       expect(delegated).toBe(0);
       expect(state.aborted).toBe(true);
-      expect(state.abortReason ?? '').toMatch(/parameterCount 129 exceeds cap 128.*not delegated/);
+      expect(state.abortReason ?? '').toMatch(/parameterCount 257 exceeds cap 256.*not delegated/);
       // Covariance side mirrors it: unpaired and over-cap queries never delegate.
       let covDelegated = 0;
       const covGate = new PreanalysisGatedCovarianceCapture(
@@ -765,8 +768,9 @@ describe('phase 8A.7 preanalysis production hook', () => {
       enabledDeepEqual: enabledComparison.pass,
       enabledContractReasons: enabledComparison.reasons.slice(0, 5),
       caps: {
-        unknownCap: PREANALYSIS_SPARSE_ROUTE_MAX_UNKNOWN_COUNT,
+        unknownCap: PREANALYSIS_SPARSE_ROUTE_MAX_STATION_UNKNOWNS,
         planningSystemCap: PREANALYSIS_SPARSE_ROUTE_MAX_PLANNING_SYSTEMS,
+        runtimeParameterCap: PREANALYSIS_SPARSE_ROUTE_MAX_PARAMETERS,
       },
       preDispatchEnforcement: true,
       noForbiddenImports: violations,
@@ -786,12 +790,12 @@ describe('phase 8A.7 preanalysis production hook', () => {
         `- disabled route: ${hook.disabledRoute} (WASM inits: ${disabledInitCalls})`,
         `- disabled deep-equal TypeScript: ${hook.disabledDeepEqual}`,
         `- enabled route (fake correct bundle): ${hook.enabledRoute} (deep-equal: ${hook.enabledDeepEqual})`,
-        `- caps: unknowns<=${hook.caps.unknownCap}, systems<=${hook.caps.planningSystemCap}`,
+        `- caps: unknowns<=${hook.caps.unknownCap}, systems<=${hook.caps.planningSystemCap}, runtime parameters<=${hook.caps.runtimeParameterCap}` + ' (Phase 9B: station 128 / runtime 256)',
         `- forbidden-import violations: ${violations.length === 0 ? 'none' : violations.join('; ')}`,
         `- adjustment regression (adjustment input still ineligible for adjustment auto-route here): ${hook.adjustmentRegression}`,
         '',
         'Whole-session atomicity: any damping/fallback/C1/C2/C3/physical/cap failure restarts the original immutable request clean in TypeScript exactly once. Condition is warn-only; correction carries no authority.',
-        'Pre-dispatch enforcement: gated correction/covariance wrappers throw typed fail-closed errors before delegating past 64 systems or 128 parameters (over-cap systems never execute natively); covariance must pair with a started correction system.',
+        'Pre-dispatch enforcement: gated correction/covariance wrappers throw typed fail-closed errors before delegating past 64 systems or 256 runtime parameters (over-cap systems never execute natively); covariance must pair with a started correction system.',
         '',
       ].join('\n'),
     );

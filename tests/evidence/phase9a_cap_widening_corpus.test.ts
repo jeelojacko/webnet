@@ -19,6 +19,7 @@ import {
   PREANALYSIS_SPARSE_PLANNING_SYSTEM_CAP,
   PREANALYSIS_SPARSE_UNKNOWN_CAP,
 } from '../../src/engine/preanalysisSparseSessionPolicy';
+import { PREANALYSIS_SPARSE_SENTINEL_MAX_UNKNOWN_COUNT } from '../../src/engine/preanalysisSparseCovarianceSentinel';
 import {
   clearPreanalysisSparseAutoRouteTestHooks,
   derivePreanalysisSparseAutoRouteEligibility,
@@ -72,7 +73,7 @@ describe('phase 9A evidence: production controls and corpus', () => {
       expect(
         evaluatePreanalysisSparseWholeSession({ unknownCount: 2, systems: manySystems }).admit,
       ).toBe(false);
-      // Runtime correction pre-dispatch still refuses parameterCount 129 by default.
+      // Runtime correction pre-dispatch refuses parameterCount 129 under the explicit historical 128 cap.
       let delegated = false;
       const correction = new PreanalysisGatedCorrectionSolver(
         {
@@ -94,7 +95,7 @@ describe('phase 9A evidence: production controls and corpus', () => {
         }),
       ).toThrow(/exceeds cap 128/);
       expect(delegated).toBe(false);
-      // Covariance header still refuses parameterCount 129 by default (no native delegation).
+      // Covariance header refuses parameterCount 129 under the explicit historical 128 cap (no native delegation).
       const verdict = verifyCovarianceSystem(
         {
           input: {
@@ -110,6 +111,8 @@ describe('phase 9A evidence: production controls and corpus', () => {
         },
         0,
         { querySelected: () => { throw new Error('must not delegate'); } },
+        {},
+        PREANALYSIS_SPARSE_SENTINEL_MAX_UNKNOWN_COUNT,
       );
       expect(verdict.reasons.join(' ')).toMatch(/outside 1\.\.128/);
       fragment.productionControls9a1 = { defaultsPinned: true, eligibility129Rejected: true, policyRejects129And65Systems: true, correction129Refused: true, covariance129Refused: true };
