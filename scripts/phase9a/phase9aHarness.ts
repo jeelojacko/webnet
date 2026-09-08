@@ -116,6 +116,33 @@ export const runPhase9aScalingProbe = (
     }
   });
 
+export interface Phase9aTimingSummary {
+  count: number;
+  min: number;
+  median: number;
+  max: number;
+  p95: number;
+}
+
+export const summarizePhase9aTimings = (samples: number[]): Phase9aTimingSummary => {
+  if (samples.length === 0) return { count: 0, min: 0, median: 0, max: 0, p95: 0 };
+  const sorted = [...samples].sort((left, right) => left - right);
+  const percentile = (fraction: number): number => sorted[Math.min(sorted.length - 1, Math.ceil(sorted.length * fraction) - 1)]!;
+  return {
+    count: sorted.length,
+    min: sorted[0]!,
+    median: percentile(0.5),
+    max: sorted[sorted.length - 1]!,
+    p95: percentile(0.95),
+  };
+};
+
+export const summarizePhase9aTimingMap = (
+  phases: Record<string, number[]>,
+): Record<string, Phase9aTimingSummary> => Object.fromEntries(
+  Object.entries(phases).map(([phase, samples]) => [phase, summarizePhase9aTimings(samples)]),
+);
+
 export interface Phase9aMemorySnapshot {
   rss: number;
   heapUsed: number;
@@ -140,14 +167,18 @@ export const writePhase9aReports = (evidence: Record<string, unknown>): { jsonPa
   const stringify = (value: unknown): string => JSON.stringify(value);
   const ladderRows = ((evidence.fullRouteLadder as { rows?: Array<Record<string, unknown>> } | undefined)?.rows ?? []);
   const tableRows = ladderRows.map((row) =>
-    `| ${row.targetParameterCount ?? '-'} | ${row.actualParameterCount ?? '-'} | ${row.stationUnknownCount ?? '-'} | ${row.orientationParameterCount ?? '-'} | ${row.equationCount ?? '-'} | ${row.designNNZ ?? '-'} | ${row.nativeCorrectionMs ? JSON.stringify(row.nativeCorrectionMs) : '-'} | ${row.nativeCovarianceMs ? JSON.stringify(row.nativeCovarianceMs) : '-'} | ${row.verifierPhaseMs ? JSON.stringify((row.verifierPhaseMs as Record<string, unknown>).c1 ?? '-') : '-'} | ${row.sessionWallMs ?? '-'} |`,
+    `| ${row.targetParameterCount ?? '-'} | ${row.actualParameterCount ?? '-'} | ${row.stationUnknownCount ?? '-'} | ${row.coordinateParameterCount ?? '-'} | ${row.orientationParameterCount ?? '-'} | ${row.planningSystemCount ?? '-'} | ${row.equationCount ?? '-'} | ${row.nativeCorrectionMs ? JSON.stringify(row.nativeCorrectionMs) : '-'} | ${row.nativeCovarianceMs ? JSON.stringify(row.nativeCovarianceMs) : '-'} | ${row.verifierPhaseMs ? JSON.stringify(row.verifierPhaseMs) : '-'} | ${row.sparseSessionTiming ? JSON.stringify(row.sparseSessionTiming) : '-'} | ${row.forcedTsWallMs ? JSON.stringify(row.forcedTsWallMs) : '-'} | ${row.sparseToTsRatio ?? '-'} |`,
   );
   const lines = [
     '# Phase 9A cap-widening evidence (evidence-only, no production change)',
     '',
     `- baselineSha: ${stringify(evidence.baselineSha)}`,
     `- headSha: ${stringify(evidence.headSha)}`,
-    `- productionChanged: ${stringify(evidence.productionChanged)}`,
+    `- productionSourceTouched: ${stringify(evidence.productionSourceTouched)}`,
+    `- productionNumericalBehaviorChanged: ${stringify(evidence.productionNumericalBehaviorChanged)}`,
+    `- productionCapsChanged: ${stringify(evidence.productionCapsChanged)}`,
+    `- productionRouteDefaultChanged: ${stringify(evidence.productionRouteDefaultChanged)}`,
+    `- testOnlyEvidenceHooksAdded: ${stringify(evidence.testOnlyEvidenceHooksAdded)}`,
     `- wasmArtifact: ${stringify(evidence.wasmArtifact)}`,
     `- wasmPresent: ${stringify(evidence.wasmPresent)}`,
     `- productionCaps: ${stringify(evidence.productionCaps)}`,
@@ -162,24 +193,52 @@ export const writePhase9aReports = (evidence: Record<string, unknown>): { jsonPa
     `- gpsCovarianceGate: ${stringify(evidence.gpsCovarianceGate)}`,
     `- exclusionGuards: ${stringify(evidence.exclusionGuards)}`,
     `- productionControls9a1: ${stringify(evidence.productionControls9a1)}`,
+    `- productionControls: ${stringify(evidence.productionControls)}`,
+    `- staticStationBoundaries: ${stringify(evidence.staticStationBoundaries)}`,
     `- capOverrides9a1: ${stringify(evidence.capOverrides9a1)}`,
+    `- exactParameterLadder: ${stringify(evidence.exactParameterLadder)}`,
+    `- coordinateDominant: ${stringify(evidence.coordinateDominant)}`,
+    `- directionHeavy: ${stringify(evidence.directionHeavy)}`,
+    `- plainGps: ${stringify(evidence.plainGps)}`,
+    `- gpsCovarianceExclusion: ${stringify(evidence.gpsCovarianceExclusion)}`,
+    `- weakGeometry: ${stringify(evidence.weakGeometry)}`,
+    `- illConditioned: ${stringify(evidence.illConditioned)}`,
+    `- faults256: ${stringify(evidence.faults256)}`,
+    `- faults512: ${stringify(evidence.faults512)}`,
+    `- retention: ${stringify(evidence.retention)}`,
+    `- timing: ${stringify(evidence.timing)}`,
     `- directBundleScalingProbe: ${stringify(evidence.directBundleScalingProbe)}`,
     `- unavailableVerifierEvidence: ${stringify(evidence.unavailableVerifierEvidence)}`,
     `- unavailableSessionEvidence: ${stringify(evidence.unavailableSessionEvidence)}`,
     `- memorySnapshots: ${stringify(evidence.memorySnapshots)}`,
     `- verdict: ${stringify(evidence.verdict)}`,
+    `- verdicts: ${stringify(evidence.verdicts)}`,
+    `- completeness: ${stringify(evidence.completeness)}`,
+    '',
+    '## Executive verdict',
+    '',
+    `- ${stringify(evidence.verdict)}`,
+    `- recommended station-unknown cap: ${stringify((evidence.verdicts as Record<string, unknown> | undefined)?.recommendedStationUnknownCap)}`,
+    `- recommended runtime parameter cap: ${stringify((evidence.verdicts as Record<string, unknown> | undefined)?.recommendedRuntimeParameterCap)}`,
+    '',
+    '## Dense-N scaling',
+    '',
+    '| n | n² entries | raw Float64 bytes |',
+    '|---:|---:|---:|',
+    ...[128, 160, 192, 256, 384, 512].map((n) => `| ${n} | ${n * n} | ${n * n * 8} |`),
     '',
     '## Full real-WASM route ladder',
     '',
-    '| requested | actual params | station unknowns | orientation params | equations | design NNZ | native correction ms | native covariance ms | C1 ms | session ms |',
-    '|---:|---:|---:|---:|---:|---:|---|---|---|---:|',
+    '| requested | actual params | station unknowns | coordinate params | orientation params | systems | equations | native correction timing | native covariance timing | verifier phase summaries | sparse session timing | forced TS timing | sparse/TS |',
+    '|---:|---:|---:|---:|---:|---:|---:|---|---|---|---|---|---:|',
     ...tableRows,
     '',
     'Scope: evidence-only. No production behavior, constants, routing, or tolerances changed.',
     'Phase 9A.1 evidence mode widens only internal test caps; production remains capped at 128.',
-    'The full route ladder is real-WASM route evidence at approximate actual dimensions.',
-    'Coverage limitations and any NOT YET EVALUATED verdicts are recorded in JSON above; the',
-    'direct-bundle scaling probe remains supplemental structural evidence only.',
+    'The full route ladder is real-WASM route evidence at exact actual dimensions.',
+    'Timing summaries exclude one warm-up run; raw samples remain in JSON where collected.',
+    'Dense-N scaling uses n² Float64 entries and 8 bytes per entry.',
+    'The direct-bundle scaling probe remains supplemental structural evidence only.',
     '',
   ];
   fs.writeFileSync(mdPath, `${lines.join('\n')}\n`);
