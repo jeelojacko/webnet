@@ -43,6 +43,7 @@ export const EVIDENCE_TESTS = [
   'tests/evidence/phase9e_scenario_audit.test.ts',
   'tests/evidence/phase9e_preanalysis_correction_fastpath.test.ts',
   'tests/evidence/phase9h_serial_profile.test.ts',
+  'tests/evidence/phase9i_metric_reuse_profile.test.ts',
 ] as const;
 
 /** Fast automatic release-certification gate (committed-report verdict). */

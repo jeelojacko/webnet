@@ -1,12 +1,15 @@
 import type { AdjustmentResult, PreanalysisThresholdPlan } from '../types';
-import { stationMajors, type PreanalysisSyntheticSetTemplate } from './preanalysisPlanningShared';
+import {
+  createPreanalysisResultMetricsCache,
+  type PreanalysisResultMetricsResolver,
+} from './preanalysisResultMetrics';
+import type { PreanalysisSyntheticSetTemplate } from './preanalysisPlanningShared';
 import {
   buildRecommendationEvaluation,
   resolveCandidateTemplates,
   sortRecommendationEvaluations,
   type RecommendationEvaluation,
 } from './preanalysisPlanningRecommendations';
-import { buildPathPrioritySummary } from './preanalysisPathPriority';
 export const buildThresholdPlan = (
   templates: PreanalysisSyntheticSetTemplate[],
   base: AdjustmentResult,
@@ -14,11 +17,10 @@ export const buildThresholdPlan = (
   targetThresholdMeters: number | undefined,
   maxAddedSets: number,
   solveScenario: (_activeTemplateIds: string[]) => AdjustmentResult,
+  metricsFor: PreanalysisResultMetricsResolver = createPreanalysisResultMetricsCache(),
 ): PreanalysisThresholdPlan => {
-  const baseWorstStationMajor = (() => {
-    const values = stationMajors(base);
-    return values.length > 0 ? Math.max(...values) : undefined;
-  })();
+  const baseMetrics = metricsFor(base);
+  const baseWorstStationMajor = baseMetrics.worstStationMajor;
   if (targetThresholdMeters == null) {
     return {
       targetThresholdMeters,
@@ -48,7 +50,8 @@ export const buildThresholdPlan = (
   let reached = false;
 
   for (let stepIndex = 0; stepIndex < Math.max(0, maxAddedSets); stepIndex += 1) {
-    const rows = resolveCandidateTemplates(templates, currentResult, currentActiveIds)
+    const currentMetrics = metricsFor(currentResult);
+    const rows = resolveCandidateTemplates(templates, currentResult, currentActiveIds, currentMetrics)
       .filter((template) => template.actionMode === 'applyable-addition')
       .map((template) => {
         try {
@@ -59,8 +62,10 @@ export const buildThresholdPlan = (
               template,
               currentResult,
               alt,
-              buildPathPrioritySummary(currentResult),
+              currentMetrics.pathSummary,
               targetThresholdMeters,
+              currentMetrics,
+              metricsFor(alt),
             ),
             alt,
           };
@@ -76,7 +81,7 @@ export const buildThresholdPlan = (
     const best = rows[0];
     if (!best) {
       unmetReason =
-        resolveCandidateTemplates(templates, currentResult, currentActiveIds).some(
+        resolveCandidateTemplates(templates, currentResult, currentActiveIds, currentMetrics).some(
           (template) => template.actionMode === 'applyable-transform',
         )
           ? 'Additive scenarios are exhausted; only one-click transform scenarios remain outside threshold planning.'
@@ -87,9 +92,7 @@ export const buildThresholdPlan = (
     }
     currentActiveIds = [...currentActiveIds, best.evaluation.row.scenarioId];
     currentResult = best.alt;
-    const currentWorstValues = stationMajors(currentResult);
-    const projectedWorstStationMajor =
-      currentWorstValues.length > 0 ? Math.max(...currentWorstValues) : undefined;
+    const projectedWorstStationMajor = metricsFor(currentResult).worstStationMajor;
     const thresholdReached =
       projectedWorstStationMajor != null && projectedWorstStationMajor <= targetThresholdMeters;
     steps.push({
@@ -109,9 +112,7 @@ export const buildThresholdPlan = (
     }
   }
 
-  const finalWorstValues = stationMajors(currentResult);
-  const finalWorstStationMajor =
-    finalWorstValues.length > 0 ? Math.max(...finalWorstValues) : baseWorstStationMajor;
+  const finalWorstStationMajor = metricsFor(currentResult).worstStationMajor ?? baseWorstStationMajor;
   if (!reached && unmetReason == null) {
     unmetReason =
       steps.length >= Math.max(0, maxAddedSets)
