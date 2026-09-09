@@ -1,0 +1,20 @@
+{
+  "phase": "9C",
+  "fixture": "tests/fixtures/camp_design_preanalysis_traverse_only.dat",
+  "historicalOldProductionMedianMs": 5276,
+  "freshForcedTypeScriptMedianMs": 2660.3,
+  "freshNewProductionMedianMs": 2659.2,
+  "freshPreflightMedianMs": 4.9,
+  "warmupRuns": 1,
+  "measuredRuns": 3,
+  "sparseAttempted": false,
+  "bundleLoaded": false,
+  "nativeCorrectionCalls": 0,
+  "nativeCovarianceCalls": 0,
+  "restartOccurred": false,
+  "contract": "PASS",
+  "note": "Old production is the historical Phase 9B.1 cap-128 measurement preserved in baseline-routing-performance.json (92-coordinate historical runtime scope). Effective Phase 9C solve-preparation scope is 86 coordinates + 84 orientations = 170 predicted. New measurements are local diagnostic measurements, not timing gates. C2 follow-up remains conditioning-aware research.",
+  "effectiveCoordinateParameters": 86,
+  "effectiveOrientationParameters": 84,
+  "effectivePredictedParameters": 170
+}

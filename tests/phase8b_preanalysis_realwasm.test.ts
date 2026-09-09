@@ -9,7 +9,7 @@
  * (documented in the release report); the route stays default-OFF.
  *
  * Covers: default-OFF proof (in-process + worker), enabled small-anchor
- * admission, camp/direction-inflation cap fallback, corrupt-restart,
+ * admission, camp/direction-inflation preflight holdback, corrupt-restart,
  * unknown/policy-hook boundaries, worker init-failure fallback, run
  * interleave + bundle cache, sequential stress determinism, and
  * terminate/restart. Writes reports/phase8b/preanalysis-release-report.json
@@ -223,7 +223,7 @@ describe('phase 8B in-process real-WASM route', () => {
     }
   }, 120000);
 
-  it('falls back atomic on camp direction inflation (Phase 9B: fits 256, sentinel decides)', async () => {
+  it('holds back camp direction inflation before the Phase 9B sparse attempt', async () => {
     const factory = await loadRealFactory();
     if (!factory) {
       evidence.campCapRealWasm = { skipped: 'WASM artifact absent' };
@@ -235,15 +235,16 @@ describe('phase 8B in-process real-WASM route', () => {
     clearPreanalysisSparseAutoRouteTestHooks();
     try {
       const request = makePreanalysisRequest(CAMP_INPUT);
-      expect(derivePreanalysisSparseAutoRouteEligibility(request).eligible).toBe(true);
+      const eligibility = derivePreanalysisSparseAutoRouteEligibility(request);
+      expect(eligibility.eligible).toBe(false);
+      expect(eligibility.preflight?.admitted).toBe(false);
       const attempt = await runWithPreanalysisSparseAutoRoute(request, undefined, {
         runSession: runAdjustmentSession,
       });
       expect(attempt.route).toBe('typescript');
-      // Phase 9B: the direction-inflated count (~170) fits runtime 256,
-      // so rejection comes from the fail-closed sentinel gates, not the
-      // pre-dispatch cap. Either fail-closed reason keeps the contract.
-      expect(attempt.reasons.join(' ')).toMatch(/parameterCount.*exceeds cap|fail-closed|C1|C2|C3|sentinel|fallback/);
+      expect(attempt.sparseAttempted).toBe(false);
+      expect(attempt.bundleLoaded).toBe(false);
+      expect(attempt.reasons.join(' ')).toMatch(/direction-heavy preflight holdback/);
       expect(stableKey(attempt.outcome)).toBe(stableKey(runAdjustmentSession(request)));
       evidence.campCapRealWasm = {
         route: attempt.route,

@@ -3,7 +3,7 @@
  *
  * Proves: default-disabled short-circuits to TypeScript with no WASM init
  * and deep-equal results; enabled accepted/rejected/fallback/restart paths;
- * generic parameter cap (camp), direction inflation, all-systems count,
+ * direction-heavy preflight holdback, generic parameter cap, all-systems count,
  * init-failure retry, and adjustment-route regression. Uses test-only fake
  * sparse bundles (dense TS math, no WASM) plus test hooks for exact
  * 127/128/129 station and 63/64/65 system boundaries plus the Phase 9B
@@ -342,24 +342,30 @@ describe('phase 8A.7 preanalysis production hook', () => {
     }
   });
 
-  it('camp fixture falls back atomic under Phase 9B runtime cap 256', async () => {
+  it('camp fixture holds back before the Phase 9B runtime cap 256 sparse attempt', async () => {
     setPreanalysisSparseAutoRouteEnabled(true);
     clearPreanalysisSparseAutoRouteTestHooks();
     try {
       const request = makePreanalysisRequest(CAMP_INPUT);
       const eligibility = derivePreanalysisSparseAutoRouteEligibility(request);
-      // Static station unknowns (46 under the effective project parse the
-      // solver runs) fit the station cap; the direction-inflated
-      // per-system parameter count (~170) fits the Phase 9B runtime cap
-      // 256, so pre-dispatch no longer rejects it — the session still
-      // falls back atomic via the sentinel gates with a clean restart.
+      // The cheap solve-preparation preflight recognizes the camp's
+      // direction-heavy shape before WASM initialization.
       expect(eligibility.unknownCount).toBe(46);
+      expect(eligibility.preflight?.orientationParameterCount).toBe(84);
+      expect(eligibility.preflight?.admitted).toBe(false);
+      let bundleLoads = 0;
       const attempt = await runWithPreanalysisSparseAutoRoute(request, undefined, {
         runSession: runAdjustmentSession,
-        loadBundle: fakeLoader(),
+        loadBundle: async () => {
+          bundleLoads += 1;
+          throw new Error('preflight should avoid bundle loading');
+        },
       });
       expect(attempt.route).toBe('typescript');
-      expect(attempt.reasons.join(' ')).toMatch(/fail-closed|C2|C3|sentinel|fallback/);
+      expect(attempt.sparseAttempted).toBe(false);
+      expect(attempt.bundleLoaded).toBe(false);
+      expect(bundleLoads).toBe(0);
+      expect(attempt.reasons.join(' ')).toMatch(/direction-heavy preflight holdback/);
       const direct = runAdjustmentSession(request);
       expectRestartIdentical(attempt.outcome, direct);
     } finally {
