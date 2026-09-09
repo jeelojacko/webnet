@@ -1,22 +1,21 @@
 import { buildPathPrioritySummary, type PathPrioritySummary } from './preanalysisPathPriority';
+import {
+  attachPreanalysisPathSummary,
+  buildPreanalysisResultMetrics,
+  type PreanalysisResultMetrics,
+} from './preanalysisResultMetrics';
 import type {
   AdjustmentResult,
   PreanalysisImpactDiagnostics,
-  PreanalysisThresholdPlan,
   StationId,
 } from '../types';
 import {
   buildPairKey,
   MAX_RECOMMENDATION_SOLVE_CANDIDATES,
-  medianOf,
   recommendationKindTieWeight,
-  relativeMetrics,
   resolveAppliedPreanalysisActionState,
-  stationMajors,
   templateCorridorPairs,
   templateEffectiveTemplateIds,
-  weakPairCount,
-  weakStationCount,
   type PreanalysisSyntheticSetTemplate,
 } from './preanalysisPlanningShared';
 
@@ -39,41 +38,39 @@ const deltaMetric = (next?: number, current?: number): number => {
   return 0;
 };
 
-const candidateScore = (base: AdjustmentResult, alt: AdjustmentResult, pathSummary: PathPrioritySummary): number => {
-  const baseWorstStation = stationMajors(base);
-  const altWorstStation = stationMajors(alt);
-  const baseWorstStationMajor =
-    baseWorstStation.length > 0 ? Math.max(...baseWorstStation) : undefined;
-  const altWorstStationMajor = altWorstStation.length > 0 ? Math.max(...altWorstStation) : undefined;
-  const baseMedianStationMajor = medianOf(baseWorstStation);
-  const altMedianStationMajor = medianOf(altWorstStation);
-  const baseWorstPair = relativeMetrics(base);
-  const altWorstPair = relativeMetrics(alt);
-  const baseWorstPairSigmaDist = baseWorstPair.length > 0 ? Math.max(...baseWorstPair) : undefined;
-  const altWorstPairSigmaDist = altWorstPair.length > 0 ? Math.max(...altWorstPair) : undefined;
+const candidateScore = (
+  base: AdjustmentResult,
+  alt: AdjustmentResult,
+  pathSummary: PathPrioritySummary,
+  baseMetrics?: PreanalysisResultMetrics,
+  altMetrics?: PreanalysisResultMetrics,
+): number => {
+  const baseResolved = baseMetrics ?? attachPreanalysisPathSummary(base, pathSummary);
+  const altResolved = altMetrics ?? buildPreanalysisResultMetrics(alt);
   const deltaWorstStationMajor =
-    altWorstStationMajor != null && baseWorstStationMajor != null
-      ? altWorstStationMajor - baseWorstStationMajor
+    altResolved.worstStationMajor != null && baseResolved.worstStationMajor != null
+      ? altResolved.worstStationMajor - baseResolved.worstStationMajor
       : 0;
   const deltaMedianStationMajor =
-    altMedianStationMajor != null && baseMedianStationMajor != null
-      ? altMedianStationMajor - baseMedianStationMajor
+    altResolved.medianStationMajor != null && baseResolved.medianStationMajor != null
+      ? altResolved.medianStationMajor - baseResolved.medianStationMajor
       : 0;
   const deltaWorstPairSigmaDist =
-    altWorstPairSigmaDist != null && baseWorstPairSigmaDist != null
-      ? altWorstPairSigmaDist - baseWorstPairSigmaDist
+    altResolved.worstPairSigmaDist != null && baseResolved.worstPairSigmaDist != null
+      ? altResolved.worstPairSigmaDist - baseResolved.worstPairSigmaDist
       : 0;
   const basePrimary = pathSummary.stationDiagnostics.get(pathSummary.stationOrder[0] ?? '');
-  const altPrimarySummary = buildPathPrioritySummary(alt);
-  const altPrimary = altPrimarySummary.stationDiagnostics.get(pathSummary.stationOrder[0] ?? '');
+  const altPrimary = altResolved.pathSummary.stationDiagnostics.get(
+    pathSummary.stationOrder[0] ?? '',
+  );
   return (
     -deltaWorstStationMajor * 100000 -
     -((altPrimary?.pathWorstEdgeMetric ?? 0) - (basePrimary?.pathWorstEdgeMetric ?? 0)) * 10000 -
     -((altPrimary?.pathTotalMetric ?? 0) - (basePrimary?.pathTotalMetric ?? 0)) * 1000 -
     -deltaMedianStationMajor * 100 -
     -deltaWorstPairSigmaDist * 25 -
-    (weakStationCount(base) - weakStationCount(alt)) * 5 -
-    (weakPairCount(base) - weakPairCount(alt)) * 4
+    (baseResolved.weakStations - altResolved.weakStations) * 5 -
+    (baseResolved.weakPairs - altResolved.weakPairs) * 4
   );
 };
 
@@ -83,20 +80,18 @@ export const buildRecommendationEvaluation = (
   alt: AdjustmentResult,
   basePathSummary: PathPrioritySummary,
   targetThresholdMeters?: number,
+  baseMetrics?: PreanalysisResultMetrics,
+  altMetrics?: PreanalysisResultMetrics,
 ): RecommendationEvaluation => {
-  const baseStationValues = stationMajors(base);
-  const altStationValues = stationMajors(alt);
-  const baseWorstStationMajor =
-    baseStationValues.length > 0 ? Math.max(...baseStationValues) : undefined;
-  const altWorstStationMajor = altStationValues.length > 0 ? Math.max(...altStationValues) : undefined;
-  const baseMedianStationMajor = medianOf(baseStationValues);
-  const altMedianStationMajor = medianOf(altStationValues);
-  const basePairValues = relativeMetrics(base);
-  const altPairValues = relativeMetrics(alt);
-  const altPathSummary = buildPathPrioritySummary(alt);
-  const baseWorstPairSigmaDist =
-    basePairValues.length > 0 ? Math.max(...basePairValues) : undefined;
-  const altWorstPairSigmaDist = altPairValues.length > 0 ? Math.max(...altPairValues) : undefined;
+  const baseResolved = baseMetrics ?? attachPreanalysisPathSummary(base, basePathSummary);
+  const altResolved = altMetrics ?? buildPreanalysisResultMetrics(alt);
+  const altPathSummary = altResolved.pathSummary;
+  const baseWorstStationMajor = baseResolved.worstStationMajor;
+  const altWorstStationMajor = altResolved.worstStationMajor;
+  const baseMedianStationMajor = baseResolved.medianStationMajor;
+  const altMedianStationMajor = altResolved.medianStationMajor;
+  const baseWorstPairSigmaDist = baseResolved.worstPairSigmaDist;
+  const altWorstPairSigmaDist = altResolved.worstPairSigmaDist;
   const primaryTargetStationId = basePathSummary.stationOrder[0];
   const primaryDiagnostics =
     primaryTargetStationId != null
@@ -153,9 +148,9 @@ export const buildRecommendationEvaluation = (
       primaryDiagnostics?.pathTotalMetric != null
         ? altPrimaryDiagnostics.pathTotalMetric - primaryDiagnostics.pathTotalMetric
         : undefined,
-    deltaWeakStationCount: weakStationCount(alt) - weakStationCount(base),
-    deltaWeakPairCount: weakPairCount(alt) - weakPairCount(base),
-    score: candidateScore(base, alt, basePathSummary),
+    deltaWeakStationCount: altResolved.weakStations - baseResolved.weakStations,
+    deltaWeakPairCount: altResolved.weakPairs - baseResolved.weakPairs,
+    score: candidateScore(base, alt, basePathSummary, baseResolved, altResolved),
     actionMode: template.actionMode,
     rationale: template.rationale,
     thresholdReached:
@@ -222,9 +217,15 @@ export const resolveCandidateTemplates = (
   templates: PreanalysisSyntheticSetTemplate[],
   base: AdjustmentResult,
   activeTemplateIds: string[],
+  reusedBase?: PathPrioritySummary | PreanalysisResultMetrics,
 ): PreanalysisSyntheticSetTemplate[] => {
   const actionState = resolveAppliedPreanalysisActionState(templates, activeTemplateIds);
-  const pathSummary = buildPathPrioritySummary(base);
+  const pathSummary =
+    reusedBase == null
+      ? buildPathPrioritySummary(base)
+      : 'pathSummary' in reusedBase
+        ? reusedBase.pathSummary
+        : reusedBase;
   const remainingTemplates = templates.filter((template) => {
     if (actionState.activeScenarioIds.has(template.id)) return false;
     if (

@@ -1,4 +1,4 @@
-import { buildPathPrioritySummary } from './preanalysisPathPriority';
+import { createPreanalysisResultMetricsCache } from './preanalysisResultMetrics';
 import {
   wrapPreanalysisSolveScenario,
   type PreanalysisSolveAuditStage,
@@ -10,13 +10,8 @@ import type {
 } from '../types';
 import {
   MAX_RECOMMENDATIONS,
-  medianOf,
-  relativeMetrics,
   resolveAppliedPreanalysisActionState,
-  stationMajors,
   templateEffectiveTemplateIds,
-  weakPairCount,
-  weakStationCount,
   type BuildPreanalysisPlanningDiagnosticsArgs,
   type PreanalysisSyntheticSetTemplate,
 } from './preanalysisPlanningShared';
@@ -49,12 +44,14 @@ export const buildPreanalysisPlanningDiagnostics = ({
   );
   const actionState = resolveAppliedPreanalysisActionState(templates, activeTemplateIds);
   const activeTemplateIdSet = actionState.activeScenarioIds;
-  const candidateTemplates = resolveCandidateTemplates(templates, base, activeTemplateIds);
+  const metricsFor = createPreanalysisResultMetricsCache();
+  const baseMetrics = metricsFor(base);
+  const candidateTemplates = resolveCandidateTemplates(templates, base, activeTemplateIds, baseMetrics);
   const remainingFeasibleScenarioCount = Math.max(
     0,
     templates.filter((template) => !activeTemplateIdSet.has(template.id)).length,
   );
-  const basePathSummary = buildPathPrioritySummary(base);
+  const basePathSummary = baseMetrics.pathSummary;
   const scenarioCache = new Map<string, AdjustmentResult>();
   const solveScenarioCached = (
     stage: PreanalysisSolveAuditStage,
@@ -85,6 +82,8 @@ export const buildPreanalysisPlanningDiagnostics = ({
           alt,
           basePathSummary,
           targetThresholdMeters,
+          baseMetrics,
+          metricsFor(alt),
         );
       } catch {
         return {
@@ -141,9 +140,8 @@ export const buildPreanalysisPlanningDiagnostics = ({
     targetThresholdMeters,
     maxAddedSets,
     (nextIds) => solveScenarioCached('threshold', nextIds),
+    metricsFor,
   );
-  const baseStationValues = stationMajors(base);
-  const baseRelativeValues = relativeMetrics(base);
   const bracePreviewPoints: PreanalysisBracePreviewPoint[] = templates
     .filter(
       (
@@ -196,13 +194,11 @@ export const buildPreanalysisPlanningDiagnostics = ({
     activeSyntheticAdditionCount: actionState.normalizedScenarioIds.length,
     candidateTemplateCount: candidateTemplates.length,
     remainingFeasibleScenarioCount,
-    baseWorstStationMajor:
-      baseStationValues.length > 0 ? Math.max(...baseStationValues) : undefined,
-    baseMedianStationMajor: medianOf(baseStationValues),
-    baseWorstPairSigmaDist:
-      baseRelativeValues.length > 0 ? Math.max(...baseRelativeValues) : undefined,
-    baseWeakStationCount: weakStationCount(base),
-    baseWeakPairCount: weakPairCount(base),
+    baseWorstStationMajor: baseMetrics.worstStationMajor,
+    baseMedianStationMajor: baseMetrics.medianStationMajor,
+    baseWorstPairSigmaDist: baseMetrics.worstPairSigmaDist,
+    baseWeakStationCount: baseMetrics.weakStations,
+    baseWeakPairCount: baseMetrics.weakPairs,
     targetThresholdMeters,
     rows: recommendationRows,
     bracePreviewPoints,
