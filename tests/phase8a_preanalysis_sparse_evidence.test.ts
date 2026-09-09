@@ -268,12 +268,11 @@ describe('phase 8A preanalysis sparse evidence', () => {
         const outcome = success.payload as RunSessionOutcome;
         expect(outcome.result.success).toBe(true);
 
-        // Sparse proof: real WASM bundle, one correction per preanalysis solve
-        // (session counted solves PLUS the single uncounted template-source
-        // solve in resolvePreanalysisTemplates, runSessionSolver.ts), one
-        // selected covariance per solve, zero row products (preanalysis skips
-        // standardized residuals by construction), zero fallbacks.
-        const expectedSparseSolves = outcome.profile.solveInvocationCount + 1;
+        // Sparse proof: real WASM bundle, one correction and selected
+        // covariance per counted preanalysis solve. Empty-active sessions no
+        // longer perform an uncounted template-source solve; zero row products
+        // remain expected because preanalysis skips standardized residuals.
+        const expectedSparseSolves = outcome.profile.solveInvocationCount;
         expect(diagnostics.bundleInitialized).toBe(true);
         expect(diagnostics.sparseCorrectionCalls).toBe(expectedSparseSolves);
         expect(diagnostics.selectedCovarianceCalls).toBe(expectedSparseSolves);

@@ -93,6 +93,16 @@ export const createSessionSolveRunner = ({
     });
   };
 
+  const buildTemplatesFromBase = (base: AdjustmentResult) => {
+    cachedPreanalysisTemplates = buildPreanalysisSyntheticSetTemplates(
+      request.input,
+      base,
+      request.planningMap,
+      activePreanalysisAdditionIds,
+    );
+    return cachedPreanalysisTemplates;
+  };
+
   const resolvePreanalysisTemplates = (
     profileContext: ReturnType<typeof resolveProfileContext>,
     excludeSet: Set<number>,
@@ -150,12 +160,22 @@ export const createSessionSolveRunner = ({
       parseOverride,
       approvedClusterMerges,
     });
-    const preanalysisTemplates = resolvePreanalysisTemplates(
-      profileContext,
-      excludeSet,
-      overrideValues,
-      normalizedMerges,
-    );
+    // Phase 9H lazy templates: with no active additions the main solve needs no
+    // templates up front, so run it once on the base input and derive templates
+    // from that exact result instead of a separate template-source solve.
+    const useLazyTemplateBuild =
+      profileContext.effectiveParse.runMode === 'preanalysis' &&
+      cachedPreanalysisTemplates === undefined &&
+      activePreanalysisAdditionIds.length === 0 &&
+      syntheticAdditionIds.length === 0;
+    const preanalysisTemplates = useLazyTemplateBuild
+      ? []
+      : resolvePreanalysisTemplates(
+          profileContext,
+          excludeSet,
+          overrideValues,
+          normalizedMerges,
+        );
     const normalizedSyntheticAdditionIds =
       profileContext.effectiveParse.runMode === 'preanalysis'
         ? resolveAppliedPreanalysisActionState(preanalysisTemplates, syntheticAdditionIds)
@@ -203,6 +223,7 @@ export const createSessionSolveRunner = ({
       },
     });
     result.preanalysisSyntheticAdditionIds = [...normalizedSyntheticAdditionIds];
+    if (useLazyTemplateBuild) buildTemplatesFromBase(result);
     solveInvocationCount += 1;
     recordStageDuration(meta.stageId, Date.now() - stageStartedAt);
     return result;

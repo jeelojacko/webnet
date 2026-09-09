@@ -244,7 +244,7 @@ describe('phase 8A.5 preanalysis safety calibration', () => {
         if (success?.type !== 'success') continue;
         const outcome = success.payload as RunSessionOutcome;
         expect(outcome.result.success).toBe(true);
-        const expectedSparseSolves = outcome.profile.solveInvocationCount + 1;
+        const expectedSparseSolves = outcome.profile.solveInvocationCount;
         expect(diagnostics.bundleInitialized).toBe(true);
         expect(diagnostics.sparseCorrectionCalls).toBe(expectedSparseSolves);
         expect(diagnostics.selectedCovarianceCalls).toBe(expectedSparseSolves);
