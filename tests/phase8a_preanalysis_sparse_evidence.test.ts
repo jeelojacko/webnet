@@ -24,12 +24,10 @@
  *   redundancy/localTest/MDB/stdResComponents) with raw residual/stdRes
  *   exactly equal.
  * - Sparse proof per case: bundle initialized from the real WASM asset,
- *   correction calls equal the session solve count plus the single uncounted
- *   template-source solve (exactly one per preanalysis solve overall), selected-covariance calls equal
- *   the solve count, row-product calls are zero (expected: preanalysis
- *   skips standardized residuals by construction), and every fallback
- *   counter is zero. Per-system dense-oracle summaries feed the S0-S3
- *   strategy ladder.
+ *   correction and selected-covariance calls equal the session solve count,
+ *   row-product calls are zero (expected: preanalysis skips standardized
+ *   residuals by construction), and every fallback counter is zero.
+ *   Per-system dense-oracle summaries feed the S0-S3 strategy ladder.
  *
  * What is NOT proven / out of scope:
  * - No production routing is changed; the default worker runtime stays
@@ -268,12 +266,11 @@ describe('phase 8A preanalysis sparse evidence', () => {
         const outcome = success.payload as RunSessionOutcome;
         expect(outcome.result.success).toBe(true);
 
-        // Sparse proof: real WASM bundle, one correction per preanalysis solve
-        // (session counted solves PLUS the single uncounted template-source
-        // solve in resolvePreanalysisTemplates, runSessionSolver.ts), one
-        // selected covariance per solve, zero row products (preanalysis skips
-        // standardized residuals by construction), zero fallbacks.
-        const expectedSparseSolves = outcome.profile.solveInvocationCount + 1;
+        // Sparse proof: real WASM bundle, one correction and selected
+        // covariance per counted preanalysis solve. Empty-active sessions no
+        // longer perform an uncounted template-source solve; zero row products
+        // remain expected because preanalysis skips standardized residuals.
+        const expectedSparseSolves = outcome.profile.solveInvocationCount;
         expect(diagnostics.bundleInitialized).toBe(true);
         expect(diagnostics.sparseCorrectionCalls).toBe(expectedSparseSolves);
         expect(diagnostics.selectedCovarianceCalls).toBe(expectedSparseSolves);
@@ -333,7 +330,7 @@ describe('phase 8A preanalysis sparse evidence', () => {
           seuw: outcome.result.seuw,
           iterations: outcome.result.iterations,
           solves: outcome.profile.solveInvocationCount,
-          templateSourceSolves: 1,
+          templateSourceSolves: 0,
           stationCovarianceBlocks: outcome.result.stationCovariances?.length ?? 0,
           relativePrecisionRows: outcome.result.relativePrecision?.length ?? 0,
           correctionCalls: diagnostics.sparseCorrectionCalls,
@@ -384,11 +381,11 @@ describe('phase 8A preanalysis sparse evidence', () => {
         phase: '8A',
         scope: 'TEST/EVIDENCE ONLY — no production routing, defaults, tolerances, or baselines changed',
         worker: 'actual production adjustmentWorker with test-only worker-local runtime (real WASM bundle, legacy-all-pairs selected covariance); auto-route never invoked and asserted ineligible for preanalysis',
-        templateSourceNote: 'each preanalysis session performs one uncounted template-source solveEngine call (resolvePreanalysisTemplates, cached) in addition to profile.solveInvocationCount counted solves; every solve contributes exactly one correction and one selected covariance',
+        templateSourceNote: 'empty-active preanalysis sessions derive templates from the counted main solve; no uncounted template-source solve is performed; every solve contributes exactly one correction and one selected covariance',
         rowProductsNote: 'rowProductsCalls=0 expected for every case: preanalysis skips standardized residuals by construction',
         autoRouteRejectsPreanalysis: true,
         cases: evidence,
-        strategyNote: 'S0 static+final agreement; S1 first-system oracle; S2 first-two-systems; S3 every captured system with captured count equal to session solve count (including the single uncounted template-source solve)',
+        strategyNote: 'S0 static+final agreement; S1 first-system oracle; S2 first-two-systems; S3 every captured system with captured count equal to session solve count',
         unsupportedStrategyEvidence:
           'p-camp-bounded (bounded traverse-only camp design, 48 stations, dof 365) passes S0 fully but S1-S3 fail closed: its planning normal matrix conditions at ~1e51, so the dense rebuild oracle disagrees with every backend correction (diffs 60-242, undamped, finite condition evidence on both sides). The discarded correction cannot move the preanalysis result, so the final contract still agrees exactly.',
         recommendation:

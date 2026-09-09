@@ -5,10 +5,10 @@
 
 | id | dof | seuw | iter | solves | stnCov | relPrec | corrCalls | selCovCalls | rowProd | fallbacks | maxCoord | maxCovAbs | maxCovRel | maxRelCovAbs | maxRelCovRel | maxRelPrecAbs | maxRelPrecRel | S0 | S1 | S2 | S3 |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| p-small-2d | 2 | 1 | 1 | 15 | 2 | 1 | 16 | 16 | 0 | 0 | 0.00e+0 | 4.34e-19 | 4.34e-19 | 4.34e-19 | 4.34e-19 | 1.36e-20 | 1.36e-20 | pass | pass | pass | pass |
-| p-plan-2d | 3 | 1 | 1 | 15 | 2 | 1 | 16 | 16 | 0 | 0 | 0.00e+0 | 0.00e+0 | 0.00e+0 | 6.78e-21 | 6.78e-21 | 6.78e-21 | 6.78e-21 | pass | pass | pass | pass |
-| p-gps-2d | 6 | 1 | 1 | 15 | 2 | 1 | 16 | 16 | 0 | 0 | 0.00e+0 | 0.00e+0 | 0.00e+0 | 0.00e+0 | 0.00e+0 | 0.00e+0 | 0.00e+0 | pass | pass | pass | pass |
-| p-camp-bounded | 365 | 1 | 1 | 17 | 43 | 1032 | 18 | 18 | 0 | 0 | 0.00e+0 | 1.05e-7 | 1.05e-7 | 2.94e-8 | 2.94e-8 | 1.11e-7 | 1.11e-7 | pass | FAIL | FAIL | FAIL |
+| p-small-2d | 2 | 1 | 1 | 11 | 2 | 1 | 11 | 11 | 0 | 0 | 0.00e+0 | 4.34e-19 | 4.34e-19 | 4.34e-19 | 4.34e-19 | 1.36e-20 | 1.36e-20 | pass | pass | pass | pass |
+| p-plan-2d | 3 | 1 | 1 | 11 | 2 | 1 | 11 | 11 | 0 | 0 | 0.00e+0 | 0.00e+0 | 0.00e+0 | 6.78e-21 | 6.78e-21 | 6.78e-21 | 6.78e-21 | pass | pass | pass | pass |
+| p-gps-2d | 6 | 1 | 1 | 11 | 2 | 1 | 11 | 11 | 0 | 0 | 0.00e+0 | 0.00e+0 | 0.00e+0 | 0.00e+0 | 0.00e+0 | 0.00e+0 | 0.00e+0 | pass | pass | pass | pass |
+| p-camp-bounded | 365 | 1 | 1 | 17 | 43 | 1032 | 17 | 17 | 0 | 0 | 0.00e+0 | 1.05e-7 | 1.05e-7 | 2.94e-8 | 2.94e-8 | 1.11e-7 | 1.11e-7 | pass | FAIL | FAIL | FAIL |
 
 ## Recommendation
 
