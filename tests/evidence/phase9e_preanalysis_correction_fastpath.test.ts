@@ -1,12 +1,13 @@
 /**
  * Phase 9E first-stage fast path: fast (default) vs legacy-oracle parity.
+ * Manual evidence tier: repeated full camp sessions.
  *
  * The legacy correction loop is retained as a test oracle via the test-only
  * `preanalysisCorrectionFastPath: false` runtime override (default runs the
  * fast path when eligible). Covers: all 16 camp recommendation scenarios
  * (full result + recommendation list), forced-threshold cache equality, an
- * active-template case, orientation-heavy eligibility, and unsupported-shape
- * fallback (3D + fail-closed eligibility units).
+ * active-template case, and 3D legacy-fallback integration. The bounded
+ * eligibility-unit matrix lives in the agent-tier eligibility test.
  */
 import fs from 'node:fs';
 import path from 'node:path';
@@ -14,21 +15,20 @@ import { describe, expect, it } from 'vitest';
 
 import {
   getPreanalysisCorrectionFastPathStats,
-  isPreanalysisCorrectionFastPathEligible,
   resetPreanalysisCorrectionFastPathStats,
-} from '../src/engine/preanalysisCorrectionFastPath';
+} from '../../src/engine/preanalysisCorrectionFastPath';
 import {
   buildPreanalysisPlanningDiagnostics,
   buildPreanalysisSyntheticSetTemplates,
   buildSyntheticPreanalysisInput,
   resolveAppliedPreanalysisActionState,
-} from '../src/engine/preanalysisPlanning';
-import { createPreanalysisScenarioCacheDiagnostics } from '../src/engine/preanalysisPlanningSolveAudit';
-import { DEFAULT_PLANNING_MAP_STATE } from '../src/engine/planningMapState';
-import { runAdjustmentSession } from '../src/engine/runSession';
-import { solveEngine } from '../src/engine/solveEngine';
-import type { AdjustmentResult } from '../src/types';
-import { createRunSessionRequest } from './helpers/runSessionRequest';
+} from '../../src/engine/preanalysisPlanning';
+import { createPreanalysisScenarioCacheDiagnostics } from '../../src/engine/preanalysisPlanningSolveAudit';
+import { DEFAULT_PLANNING_MAP_STATE } from '../../src/engine/planningMapState';
+import { runAdjustmentSession } from '../../src/engine/runSession';
+import { solveEngine } from '../../src/engine/solveEngine';
+import type { AdjustmentResult } from '../../src/types';
+import { createRunSessionRequest } from '../helpers/runSessionRequest';
 
 const CAMP_INPUT = fs.readFileSync(
   path.join(process.cwd(), 'tests/fixtures/camp_design_preanalysis_traverse_only.dat'),
@@ -204,51 +204,10 @@ describe('phase 9E preanalysis correction fast path', () => {
     expect(stripTiming(fast)).toEqual(stripTiming(legacy));
   }, 120000);
 
-  it('fails closed on unsupported shapes and backends', () => {
-    const eligible = {
-      preanalysisMode: true,
-      is2D: true,
-      debug: false,
-      robustMode: 'none',
-      maxIterations: 10,
-      hasSparseCorrectionSolver: false,
-      hasSparseRowProductsSolver: false,
-      hasSparseSelectedCovarianceSolver: false,
-      hasNormalEquationSolver: false,
-    };
-    expect(isPreanalysisCorrectionFastPathEligible(eligible)).toBe(true);
-    expect(
-      isPreanalysisCorrectionFastPathEligible({ ...eligible, preanalysisMode: false }),
-    ).toBe(false);
-    expect(isPreanalysisCorrectionFastPathEligible({ ...eligible, is2D: false })).toBe(false);
-    expect(isPreanalysisCorrectionFastPathEligible({ ...eligible, debug: true })).toBe(false);
-    expect(
-      isPreanalysisCorrectionFastPathEligible({ ...eligible, robustMode: 'huber' }),
-    ).toBe(false);
-    expect(
-      isPreanalysisCorrectionFastPathEligible({ ...eligible, robustMode: 'danish' }),
-    ).toBe(false);
-    expect(
-      isPreanalysisCorrectionFastPathEligible({ ...eligible, maxIterations: 0 }),
-    ).toBe(false);
-    expect(
-      isPreanalysisCorrectionFastPathEligible({ ...eligible, hasSparseCorrectionSolver: true }),
-    ).toBe(false);
-    expect(
-      isPreanalysisCorrectionFastPathEligible({ ...eligible, hasSparseRowProductsSolver: true }),
-    ).toBe(false);
-    expect(
-      isPreanalysisCorrectionFastPathEligible({
-        ...eligible,
-        hasSparseSelectedCovarianceSolver: true,
-      }),
-    ).toBe(false);
-    expect(
-      isPreanalysisCorrectionFastPathEligible({ ...eligible, hasNormalEquationSolver: true }),
-    ).toBe(false);
-
+  it('falls back to the legacy loop for 3D preanalysis', () => {
     // Integration: 3D preanalysis (covariance augmentation changes the
     // recovery N) runs the legacy loop even with the fast default.
+    // (Unit-shape matrix lives in the agent-tier eligibility test.)
     resetPreanalysisCorrectionFastPathStats();
     const threeD = runAdjustmentSession(makeRequest('3D')).result;
     const stats = getPreanalysisCorrectionFastPathStats();

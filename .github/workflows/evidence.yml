@@ -23,6 +23,8 @@ on:
           - phase9a-faults
           - phase9a-corpus
           - phase9d
+          - phase9e-audit
+          - phase9e-fastpath
       baseline_sha:
         description: 'Explicit baseline SHA recorded into Phase 9A reports (optional)'
         required: false

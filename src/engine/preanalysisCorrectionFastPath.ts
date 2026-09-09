@@ -13,7 +13,9 @@
  * Orientation unknowns are supported (the discarded correction is never
  * applied to stations or orientations, and recovery covers the same
  * parameters). Unsupported shapes fall back to the legacy correction loop
- * with zero behavior change.
+ * with zero behavior change. Degenerate systems (no parameters or no
+ * observation equations) are ineligible because covariance recovery returns
+ * null there while the legacy loop owns the failure contract.
  */
 
 export type PreanalysisCorrectionFastPathShape = {
@@ -26,6 +28,9 @@ export type PreanalysisCorrectionFastPathShape = {
   robustMode?: string;
   /** The legacy loop runs zero passes below 1; the fast path stays out. */
   maxIterations?: number;
+  /** Degenerate sizes route to legacy, which owns the null-recovery failure contract. */
+  numParams: number;
+  numObsEquations: number;
   hasSparseCorrectionSolver: boolean;
   hasSparseRowProductsSolver: boolean;
   hasSparseSelectedCovarianceSolver: boolean;
@@ -45,6 +50,8 @@ export const isPreanalysisCorrectionFastPathEligible = (
   ) {
     return false;
   }
+  // Negated-positive form also rejects NaN/missing sizes (fail-closed).
+  if (!(shape.numParams > 0) || !(shape.numObsEquations > 0)) return false;
   if (shape.hasSparseCorrectionSolver) return false;
   if (shape.hasSparseRowProductsSolver) return false;
   if (shape.hasSparseSelectedCovarianceSolver) return false;

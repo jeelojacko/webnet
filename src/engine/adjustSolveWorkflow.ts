@@ -239,6 +239,8 @@ export const runAdjustmentSolveWorkflow = (
         debug: ctx.debug,
         robustMode: ctx.robustMode,
         maxIterations: ctx.maxIterations,
+        numParams,
+        numObsEquations,
         hasSparseCorrectionSolver: ctx.sparseCorrectionSolver != null,
         hasSparseRowProductsSolver: ctx.sparseRowProductsSolver != null,
         hasSparseSelectedCovarianceSolver: ctx.sparseSelectedCovarianceSolver != null,
