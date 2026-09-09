@@ -7,7 +7,7 @@
       "reasons": [
         "dimension '3D': 3D preanalysis is experimental evidence only"
       ],
-      "detail": "iter=1 dof=0 seuw=1 solves=6 autoRouteEligible=false"
+      "detail": "iter=1 dof=0 seuw=1 solves=4 autoRouteEligible=false"
     },
     {
       "id": "e-gps-covariance-2d",
@@ -15,7 +15,7 @@
       "reasons": [
         "GPS covariance weighting: covariance-weighted preanalysis is experimental evidence only"
       ],
-      "detail": "iter=1 dof=2 seuw=1 solves=6 autoRouteEligible=false"
+      "detail": "iter=1 dof=2 seuw=1 solves=4 autoRouteEligible=false"
     },
     {
       "id": "x-robust-2d",
@@ -23,7 +23,7 @@
       "reasons": [
         "robustMode 'huber': robust preanalysis is ineligible for sparse evidence"
       ],
-      "detail": "iter=1 dof=6 seuw=1 solves=15 autoRouteEligible=false"
+      "detail": "iter=1 dof=6 seuw=1 solves=11 autoRouteEligible=false"
     },
     {
       "id": "x-ts-correlation-2d",
@@ -31,7 +31,7 @@
       "reasons": [
         "TS correlation: correlated preanalysis is ineligible for sparse evidence"
       ],
-      "detail": "iter=1 dof=6 seuw=1 solves=15 autoRouteEligible=false"
+      "detail": "iter=1 dof=6 seuw=1 solves=11 autoRouteEligible=false"
     }
   ]
 }
