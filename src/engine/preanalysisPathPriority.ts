@@ -39,8 +39,10 @@ const severityWeight = (severity: WeakGeometrySeverity): number =>
 const sortStationIds = (left: StationId, right: StationId): number =>
   left.localeCompare(right, undefined, { numeric: true });
 
+// Direct two-element ordering: identical to [from, to].sort(cmp).join('|')
+// (stable 2-sort keeps order iff cmp <= 0), minus the array allocation.
 const buildPairKey = (from: StationId, to: StationId): string =>
-  [from, to].sort(sortStationIds).join('|');
+  sortStationIds(from, to) <= 0 ? `${from}|${to}` : `${to}|${from}`;
 
 const compareStationIdArrays = (left: StationId[], right: StationId[]): number => {
   const length = Math.min(left.length, right.length);
@@ -121,6 +123,33 @@ export const stationFixedRank = (station: StationMap[StationId] | undefined): nu
   return 0;
 };
 
+type FrontierNode = {
+  stationId: StationId;
+  anchorStationId: StationId;
+  pathWorstEdgeMetric: number;
+  pathTotalMetric: number;
+  hopCount: number;
+  pathStationIds: StationId[];
+  pathPairRefs: PreanalysisAddedSetPairRef[];
+};
+
+/**
+ * Legacy frontier selection order (sort-based, no heap: profiled negligible).
+ * Exported as the test oracle for path-priority parity tests.
+ */
+export const compareFrontierNodes = (left: FrontierNode, right: FrontierNode): number => {
+  if (left.pathWorstEdgeMetric !== right.pathWorstEdgeMetric) {
+    return left.pathWorstEdgeMetric - right.pathWorstEdgeMetric;
+  }
+  if (left.pathTotalMetric !== right.pathTotalMetric) {
+    return left.pathTotalMetric - right.pathTotalMetric;
+  }
+  if (left.hopCount !== right.hopCount) return left.hopCount - right.hopCount;
+  const pathCmp = compareStationIdArrays(left.pathStationIds, right.pathStationIds);
+  if (pathCmp !== 0) return pathCmp;
+  return sortStationIds(left.anchorStationId, right.anchorStationId);
+};
+
 const comparePathCandidates = (
   current: StationPathDiagnostics | undefined,
   next: StationPathDiagnostics,
@@ -147,6 +176,11 @@ const comparePathCandidates = (
 
 const buildStationPathDiagnostics = (base: AdjustmentResult): Map<StationId, StationPathDiagnostics> => {
   const edges = buildPathGraph(base);
+  // Keyed lookup replacing the per-pair linear scan: keys are unique by
+  // construction (buildPathGraph dedups by key), so get() returns exactly
+  // what find() returned, with one key build per lookup instead of two per
+  // comparison.
+  const edgeMetricByKey = new Map(edges.map((edge) => [buildPairKey(edge.from, edge.to), edge.metric]));
   const adjacency = new Map<StationId, PathGraphEdge[]>();
   edges.forEach((edge) => {
     const fromList = adjacency.get(edge.from) ?? [];
@@ -169,15 +203,6 @@ const buildStationPathDiagnostics = (base: AdjustmentResult): Map<StationId, Sta
           .filter(([, station]) => stationFixedRank(station) === 1)
           .map(([stationId]) => stationId)
           .sort(sortStationIds);
-  type FrontierNode = {
-    stationId: StationId;
-    anchorStationId: StationId;
-    pathWorstEdgeMetric: number;
-    pathTotalMetric: number;
-    hopCount: number;
-    pathStationIds: StationId[];
-    pathPairRefs: PreanalysisAddedSetPairRef[];
-  };
   const frontier: FrontierNode[] = fallbackAnchors.map((anchorId) => ({
     stationId: anchorId,
     anchorStationId: anchorId,
@@ -189,18 +214,7 @@ const buildStationPathDiagnostics = (base: AdjustmentResult): Map<StationId, Sta
   }));
   const bestByStation = new Map<StationId, FrontierNode>();
   while (frontier.length > 0) {
-    frontier.sort((left, right) => {
-      if (left.pathWorstEdgeMetric !== right.pathWorstEdgeMetric) {
-        return left.pathWorstEdgeMetric - right.pathWorstEdgeMetric;
-      }
-      if (left.pathTotalMetric !== right.pathTotalMetric) {
-        return left.pathTotalMetric - right.pathTotalMetric;
-      }
-      if (left.hopCount !== right.hopCount) return left.hopCount - right.hopCount;
-      const pathCmp = compareStationIdArrays(left.pathStationIds, right.pathStationIds);
-      if (pathCmp !== 0) return pathCmp;
-      return sortStationIds(left.anchorStationId, right.anchorStationId);
-    });
+    frontier.sort(compareFrontierNodes);
     const current = frontier.shift()!;
     const known = bestByStation.get(current.stationId);
     if (known) {
@@ -244,8 +258,8 @@ const buildStationPathDiagnostics = (base: AdjustmentResult): Map<StationId, Sta
   Object.entries(base.stations).forEach(([stationId, station]) => {
     const best = bestByStation.get(stationId);
     const fixedRank = stationFixedRank(station);
-    const pathPairMetrics = (best?.pathPairRefs ?? []).map((pair) =>
-      edges.find((edge) => buildPairKey(edge.from, edge.to) === buildPairKey(pair.from, pair.to))?.metric ?? 0,
+    const pathPairMetrics = (best?.pathPairRefs ?? []).map(
+      (pair) => edgeMetricByKey.get(buildPairKey(pair.from, pair.to)) ?? 0,
     );
     const worstPairIndex =
       pathPairMetrics.length > 0
@@ -294,14 +308,16 @@ export const buildPathPrioritySummary = (base: AdjustmentResult): PathPrioritySu
     if (!diagnosticsRow) return;
     diagnosticsRow.anchorPathStationIds.forEach((id) => prioritizedStations.add(id));
     const pathPairs = diagnosticsRow.anchorPathPairRefs;
-    const orderedPairs = diagnosticsRow.pathWorstEdgePair
+    const worstEdgeKey = diagnosticsRow.pathWorstEdgePair
+      ? buildPairKey(
+          diagnosticsRow.pathWorstEdgePair.from,
+          diagnosticsRow.pathWorstEdgePair.to,
+        )
+      : undefined;
+    const orderedPairs = worstEdgeKey
       ? [
-          diagnosticsRow.pathWorstEdgePair,
-          ...pathPairs.filter(
-            (pair) =>
-              buildPairKey(pair.from, pair.to) !==
-              buildPairKey(diagnosticsRow.pathWorstEdgePair!.from, diagnosticsRow.pathWorstEdgePair!.to),
-          ),
+          diagnosticsRow.pathWorstEdgePair!,
+          ...pathPairs.filter((pair) => buildPairKey(pair.from, pair.to) !== worstEdgeKey),
         ]
       : pathPairs;
     orderedPairs.forEach((pair) => {
