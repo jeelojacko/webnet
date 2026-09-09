@@ -60,6 +60,8 @@ export class LSAEngine extends LSAEngineObservationMethods {
   private experimentalSparseDiagnostics?: ExperimentalSparseRouteDiagnostics;
   private experimentalSelectedCovarianceMode?: boolean;
   private experimentalSelectedCovarianceLegacyAllPairs?: boolean;
+  /** Phase 9E test-only oracle switch; false forces the legacy correction loop. */
+  private preanalysisCorrectionFastPath?: boolean;
 
   private solveNormalEquations(
     N: number[][],
@@ -87,6 +89,7 @@ export class LSAEngine extends LSAEngineObservationMethods {
     numObsEquations: number,
     numParams: number,
     dirParamMap: Record<string, number>,
+    fastPathCapture?: { onDamping?: (_damping: number) => void },
   ): RecoveredFinalCovariance | null {
     const requestedPairs = [
       ...(this.parseState?.relativeLinePairs ?? []),
@@ -111,7 +114,12 @@ export class LSAEngine extends LSAEngineObservationMethods {
       gpsModeledVectorDerivatives: this.gpsModeledVectorDerivatives.bind(this),
       gpsObservedVector: this.gpsObservedVector.bind(this),
       gpsWeight: this.gpsWeight.bind(this),
-      invertNormalMatrixForStats: this.invertNormalMatrixForStats.bind(this),
+      invertNormalMatrixForStats: (normal) =>
+        this.invertNormalMatrixForStats(normal, fastPathCapture?.onDamping),
+      recordRecoveryNormal:
+        fastPathCapture != null
+          ? (normal) => this.recordConditionEstimate(this.estimateCondition(normal))
+          : undefined,
       is2D: this.is2D,
       measuredAngleCorrection: this.measuredAngleCorrection.bind(this),
       modeledAzimuth: this.modeledAzimuth.bind(this),
@@ -141,8 +149,11 @@ export class LSAEngine extends LSAEngineObservationMethods {
     });
   }
 
-  private invertNormalMatrixForStats(N: number[][]): number[][] {
-    return invertNormalMatrixForStatsHelper(N, this.log.bind(this));
+  private invertNormalMatrixForStats(
+    N: number[][],
+    reportDamping?: (_damping: number) => void,
+  ): number[][] {
+    return invertNormalMatrixForStatsHelper(N, this.log.bind(this), reportDamping);
   }
 
   constructor({
@@ -165,6 +176,7 @@ export class LSAEngine extends LSAEngineObservationMethods {
     experimentalSparseDiagnostics,
     experimentalSelectedCovarianceMode,
     experimentalSelectedCovarianceLegacyAllPairs,
+    preanalysisCorrectionFastPath,
   }: EngineOptions) {
     super();
     this.normalEquationSolver = normalEquationSolver;
@@ -174,6 +186,7 @@ export class LSAEngine extends LSAEngineObservationMethods {
     this.experimentalSparseDiagnostics = experimentalSparseDiagnostics;
     this.experimentalSelectedCovarianceMode = experimentalSelectedCovarianceMode;
     this.experimentalSelectedCovarianceLegacyAllPairs = experimentalSelectedCovarianceLegacyAllPairs;
+    this.preanalysisCorrectionFastPath = preanalysisCorrectionFastPath;
     this.input = input;
     this.maxIterations = maxIterations;
     this.instrumentLibrary = { ...instrumentLibrary };
@@ -231,6 +244,7 @@ export class LSAEngine extends LSAEngineObservationMethods {
       experimentalSparseDiagnostics: this.experimentalSparseDiagnostics,
       experimentalSelectedCovarianceMode: this.experimentalSelectedCovarianceMode,
       experimentalSelectedCovarianceLegacyAllPairs: this.experimentalSelectedCovarianceLegacyAllPairs,
+      preanalysisCorrectionFastPath: this.preanalysisCorrectionFastPath,
     }).solve();
   }
 

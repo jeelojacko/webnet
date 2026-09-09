@@ -32,6 +32,12 @@ export interface AdjustmentRuntime {
    * preserves selected-network omission/scaling.
    */
   experimentalSelectedCovarianceLegacyAllPairs?: EngineOptions['experimentalSelectedCovarianceLegacyAllPairs'];
+  /**
+   * Phase 9E test-only oracle switch: false forces the legacy preanalysis
+   * correction loop even when the fast path is eligible. Undefined keeps
+   * the fast default. Never persisted or exposed in UI.
+   */
+  preanalysisCorrectionFastPath?: EngineOptions['preanalysisCorrectionFastPath'];
   /** Test-only experimental correction backend; undefined keeps TS. */
   normalEquationSolver?: EngineOptions['normalEquationSolver'];
 }
@@ -45,6 +51,7 @@ export type AdjustmentRuntimeEngineOptions = Pick<
   | 'experimentalSparseDiagnostics'
   | 'experimentalSelectedCovarianceMode'
   | 'experimentalSelectedCovarianceLegacyAllPairs'
+  | 'preanalysisCorrectionFastPath'
 >;
 
 /** Extracts only defined runtime fields so `undefined` stays exact legacy. */
@@ -74,6 +81,9 @@ export const toEngineOptions = (
   if (runtime.experimentalSelectedCovarianceLegacyAllPairs !== undefined) {
     options.experimentalSelectedCovarianceLegacyAllPairs =
       runtime.experimentalSelectedCovarianceLegacyAllPairs;
+  }
+  if (runtime.preanalysisCorrectionFastPath !== undefined) {
+    options.preanalysisCorrectionFastPath = runtime.preanalysisCorrectionFastPath;
   }
   return options;
 };

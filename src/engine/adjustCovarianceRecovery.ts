@@ -83,6 +83,12 @@ interface RecoverFinalNormalCovarianceOptions {
     wNU?: number;
   };
   invertNormalMatrixForStats: (_normal: number[][]) => number[][];
+  /**
+   * Phase 9E fast path: records the result.condition estimate from the
+   * recovery normal matrix (identical to the discarded correction N in
+   * eligible 2D shapes). Undefined preserves the legacy iteration recording.
+   */
+  recordRecoveryNormal?: (_normal: number[][]) => void;
   is2D: boolean;
   measuredAngleCorrection: (_at: StationId, _from: StationId, _to: StationId) => number;
   modeledAzimuth: (_rawAz: number, _atStationId?: StationId, _applyConvergence?: boolean) => number;
@@ -339,6 +345,7 @@ const recoverDenseCovariance = (
     P,
     options.numParams,
   );
+  options.recordRecoveryNormal?.(normal);
   return options.invertNormalMatrixForStats(normal);
 };
 
