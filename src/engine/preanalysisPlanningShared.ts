@@ -1,3 +1,7 @@
+import type {
+  PreanalysisScenarioCacheDiagnostics,
+  PreanalysisSolveAuditCollector,
+} from './preanalysisPlanningSolveAudit';
 import type { PathGraphEdge } from './preanalysisPathPriority';
 import type {
   AdjustmentResult,
@@ -46,6 +50,12 @@ export type BuildPreanalysisPlanningDiagnosticsArgs = {
   targetThresholdMeters?: number;
   maxAddedSets: number;
   solveScenario: (_activeTemplateIds: string[]) => AdjustmentResult;
+  /** Optional diagnostic-only solve audit; absent = unchanged behavior. */
+  solveAudit?: PreanalysisSolveAuditCollector;
+  /** Optional test diagnostics for the session-local scenario memo. */
+  scenarioCacheDiagnostics?: PreanalysisScenarioCacheDiagnostics;
+  /** Test-only oracle switch; production defaults to the memoized path. */
+  scenarioCacheEnabled?: boolean;
 };
 
 export const MAX_RECOMMENDATIONS = 5;

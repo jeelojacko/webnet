@@ -253,6 +253,10 @@ Authoritative caps are now split: station unknowns 128 (static eligibility + who
 
 Phase 9C adds a cheap conservative preflight before WASM loading. The authoritative station-unknown cap runs first; only requests at or below 128 reach the suitability check. Candidates are held back only when orientation parameters are strictly greater than 16 **and** strictly greater than 25% of predicted parameters. Invalid or non-finite derived metrics fail closed to TypeScript. The camp fixture has 46 station unknowns, 86 effective solve-preparation coordinate parameters, 84 orientations, and 170 predicted parameters; its preserved historical Phase 9B.1 runtime scope was 92 coordinates plus 84 orientations (176 upper range), because the runtime session included a broader coordinate scope than the cheap preparation model. This avoids a predictably wasteful sparse attempt and restart; it does not make sparse mathematics faster. Exact-256, plain-GPS, and small-anchor admitted cases retain the existing sparse route. Reports are under `reports/phase9c/`; C2 remains a separate conditioning-aware research follow-up with unchanged tolerances.
 
+### Phase 9D — session-local preanalysis scenario memo
+
+Phase 9D memoizes identical effective synthetic-addition scenarios only within one `buildPreanalysisPlanningDiagnostics` invocation. The key is the normalized scenario sequence from `resolveAppliedPreanalysisActionState`, not raw caller ordering. Recommendation and threshold planning therefore share safe repeated results; failed solves are not cached, and no cross-session/global cache exists. The camp audit found 16 recommendation scenarios and no default threshold scenarios because the base already meets its target; a forced-threshold test produced 16 cache hits with identical uncached output. This changes no planning algorithm, sparse route, numerical mathematics, caps, or C++ behavior. Reports are under `reports/phase9d/`.
+
 ### Phase 7 — production backend decision / optimization
 
 Move iterative numerical adjustment into C++ while retaining TypeScript for orchestration, parsing/import/export, reporting, and browser workflows.

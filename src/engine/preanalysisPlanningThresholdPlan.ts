@@ -7,7 +7,6 @@ import {
   type RecommendationEvaluation,
 } from './preanalysisPlanningRecommendations';
 import { buildPathPrioritySummary } from './preanalysisPathPriority';
-
 export const buildThresholdPlan = (
   templates: PreanalysisSyntheticSetTemplate[],
   base: AdjustmentResult,
