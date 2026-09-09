@@ -1,0 +1,25 @@
+{
+  "historical": true,
+  "phase": "9B.1",
+  "fixture": "tests/fixtures/camp_design_preanalysis_traverse_only.dat",
+  "stationUnknowns": 46,
+  "coordinateParameters": 92,
+  "orientationParameters": 84,
+  "planningSystems": 18,
+  "parameterRange": [
+    170,
+    176
+  ],
+  "forcedTypeScriptMedianMs": 2607,
+  "baselineCap128MedianMs": 5276,
+  "phase9BCap256MedianMs": 5403,
+  "phase9BSparseAttemptMedianMs": 2836,
+  "nativeCorrectionMs": 5.4,
+  "nativeCovarianceVerificationMs": 15.9,
+  "c1": "PASS",
+  "nativeC2": "FAIL",
+  "typescriptReferenceC2": "FAIL",
+  "conditionEstimate": 1.1645e+51,
+  "normalizedC2Residual": 8.65e-17,
+  "note": "Historical local Phase 9B.1 measurements; not rerun for Phase 9C. coordinateParameters 92 is the historical runtime scope (upper range 176); the Phase 9C effective solve-preparation count is 86 coordinates + 84 orientations = 170 predicted."
+}

@@ -29,6 +29,10 @@ import type { AdjustmentRuntime } from '../engine/adjustmentRuntime';
 import { extractAutoAdjustDirectiveFromInput } from '../engine/autoAdjust';
 import { parseEffectiveProjectInput, resolveEffectiveProjectParse } from '../engine/effectiveProjectParse';
 import { createExperimentalSparseRouteDiagnostics } from '../engine/experimentalSparseDiagnostics';
+import {
+  derivePreanalysisSparsePreflight,
+  type PreanalysisSparsePreflight,
+} from '../engine/preanalysisSparsePreflight';
 import type {
   SparseCorrectionSolveInput,
   SparseCorrectionSolveResult,
@@ -127,6 +131,7 @@ export interface PreanalysisSparseEligibility {
   eligible: boolean;
   reasons: string[];
   unknownCount: number | null;
+  preflight: PreanalysisSparsePreflight | null;
 }
 
 /**
@@ -146,7 +151,7 @@ export const derivePreanalysisSparseAutoRouteEligibility = (
   const reasons: string[] = [];
   if (!preanalysisSparseAutoRouteEnabled) {
     reasons.push('preanalysis sparse auto-route disabled by kill switch');
-    return { eligible: false, reasons, unknownCount: null };
+    return { eligible: false, reasons, unknownCount: null, preflight: null };
   }
   let effectiveParse;
   try {
@@ -154,7 +159,7 @@ export const derivePreanalysisSparseAutoRouteEligibility = (
   } catch (error) {
     const detail = error instanceof Error ? error.message : String(error);
     reasons.push(`effective parse resolution failed: ${detail}`.slice(0, 300));
-    return { eligible: false, reasons, unknownCount: null };
+    return { eligible: false, reasons, unknownCount: null, preflight: null };
   }
   if (effectiveParse.runMode !== 'preanalysis') {
     reasons.push(`unsupported runMode '${effectiveParse.runMode}': preanalysis sparse route requires 'preanalysis'`);
@@ -174,12 +179,12 @@ export const derivePreanalysisSparseAutoRouteEligibility = (
   if (effectiveParse.clusterDetectionEnabled && request.approvedClusterMerges.length > 0) {
     reasons.push('cluster dual-pass not cleared for preanalysis sparse route');
   }
-  if (reasons.length > 0) return { eligible: false, reasons, unknownCount: null };
+  if (reasons.length > 0) return { eligible: false, reasons, unknownCount: null, preflight: null };
   try {
     const inlineAutoAdjust = extractAutoAdjustDirectiveFromInput(request.input);
     if (inlineAutoAdjust?.enabled) {
       reasons.push('inline auto-adjust directive not cleared for preanalysis sparse route');
-      return { eligible: false, reasons, unknownCount: null };
+      return { eligible: false, reasons, unknownCount: null, preflight: null };
     }
     const parsed = parseEffectiveProjectInput(request);
     if (parsed.parseState.autoAdjustEnabled) {
@@ -204,12 +209,15 @@ export const derivePreanalysisSparseAutoRouteEligibility = (
       reasons.push(
         `size guard: station unknown count ${unknownCount} exceeds cap ${stationUnknownCap}`,
       );
+      return { eligible: false, reasons, unknownCount, preflight: null };
     }
-    return { eligible: reasons.length === 0, reasons, unknownCount };
+    const preflight = derivePreanalysisSparsePreflight(parsed, request.excludedIds);
+    if (!preflight.admitted) reasons.push(preflight.reason ?? 'sparse preflight rejected');
+    return { eligible: reasons.length === 0, reasons, unknownCount, preflight };
   } catch (error) {
     const detail = error instanceof Error ? error.message : String(error);
     reasons.push(`eligibility parse failed: ${detail}`.slice(0, 300));
-    return { eligible: false, reasons, unknownCount: null };
+    return { eligible: false, reasons, unknownCount: null, preflight: null };
   }
 };
 
@@ -288,6 +296,10 @@ export interface PreanalysisSparseAutoRouteAttempt {
   route: PreanalysisSparseAutoRouteName;
   reasons: string[];
   warnings: string[];
+  preflight: PreanalysisSparsePreflight | null;
+  sparseAttempted: boolean;
+  bundleLoaded: boolean;
+  fallbackOccurred: boolean;
 }
 
 /**
@@ -308,6 +320,10 @@ export const runWithPreanalysisSparseAutoRoute = async (
       route: 'typescript',
       reasons: eligibility.reasons,
       warnings: [],
+      preflight: eligibility.preflight,
+      sparseAttempted: false,
+      bundleLoaded: false,
+      fallbackOccurred: false,
     };
   }
   let bundle: SparseAutoRouteBundle;
@@ -320,6 +336,10 @@ export const runWithPreanalysisSparseAutoRoute = async (
       route: 'typescript',
       reasons: [`WASM bundle init failed: ${detail}`.slice(0, 300)],
       warnings: [],
+      preflight: eligibility.preflight,
+      sparseAttempted: false,
+      bundleLoaded: false,
+      fallbackOccurred: true,
     };
   }
   const diagnostics = createExperimentalSparseRouteDiagnostics();
@@ -369,6 +389,10 @@ export const runWithPreanalysisSparseAutoRoute = async (
       route: 'typescript',
       reasons: [`sparse run threw: ${detail}`.slice(0, 300)],
       warnings: [],
+      preflight: eligibility.preflight,
+      sparseAttempted: true,
+      bundleLoaded: true,
+      fallbackOccurred: true,
     };
   }
   const fallbackReasons: string[] = [];
@@ -466,7 +490,20 @@ export const runWithPreanalysisSparseAutoRoute = async (
       route: 'typescript',
       reasons: fallbackReasons,
       warnings,
+      preflight: eligibility.preflight,
+      sparseAttempted: true,
+      bundleLoaded: true,
+      fallbackOccurred: true,
     };
   }
-  return { outcome, route: 'sparse', reasons: [], warnings };
+  return {
+    outcome,
+    route: 'sparse',
+    reasons: [],
+    warnings,
+    preflight: eligibility.preflight,
+    sparseAttempted: true,
+    bundleLoaded: true,
+    fallbackOccurred: false,
+  };
 };
