@@ -87,6 +87,13 @@ export interface EngineOptions {
    * undefined/false preserves selected-network omission/scaling.
    */
   experimentalSelectedCovarianceLegacyAllPairs?: boolean;
+  /**
+   * Phase 9E test-only oracle switch: false forces the legacy preanalysis
+   * correction loop even when the fast path is eligible. Undefined (default)
+   * runs the fast path when eligible. Threaded through AdjustmentRuntime;
+   * never persisted or exposed in UI.
+   */
+  preanalysisCorrectionFastPath?: boolean;
 }
 
 export const cloneParsedResultValue = <T>(value: T): T => {

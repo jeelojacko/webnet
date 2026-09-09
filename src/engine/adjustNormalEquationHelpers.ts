@@ -86,9 +86,11 @@ export const solveNormalEquations = (
 export const invertNormalMatrixForStats = (
   normal: number[][],
   log: LogFn,
+  reportDamping?: (_damping: number) => void,
 ): number[][] => {
   const scaled = scaleNormalMatrix(normal);
   const factorization = choleskyDecomposeWithDamping(scaled.scaled);
+  reportDamping?.(factorization.damping);
   if (factorization.damping > 0) {
     log(
       `Warning: covariance factorization required diagonal damping (lambda=${factorization.damping.toExponential(

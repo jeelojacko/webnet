@@ -257,6 +257,10 @@ Phase 9C adds a cheap conservative preflight before WASM loading. The authoritat
 
 Phase 9D memoizes identical effective synthetic-addition scenarios only within one `buildPreanalysisPlanningDiagnostics` invocation. The key is the normalized scenario sequence from `resolveAppliedPreanalysisActionState`, not raw caller ordering. Recommendation and threshold planning therefore share safe repeated results; failed solves are not cached, and no cross-session/global cache exists. The camp audit found 16 recommendation scenarios and no default threshold scenarios because the base already meets its target; a forced-threshold test produced 16 cache hits with identical uncached output. This changes no planning algorithm, sparse route, numerical mathematics, caps, or C++ behavior. Reports are under `reports/phase9d/`.
 
+### Phase 9E — dense-2D preanalysis correction fast path (first stage)
+
+Phase 9E skips the discarded preanalysis correction assembly/factorization in eligible dense 2D solves: the correction vector is computed and then discarded (geometry held at planning coordinates), so the fast path recovers covariance directly and records result.condition from the recovery normal matrix, which is bit-identical to the skipped correction N in eligible shapes (log order preserved). Fail-closed eligibility excludes 3D, debug, non-none robust, any sparse/experimental solver, and maxIterations < 1; orientations stay eligible, and damped recovery reruns the legacy loop for an exact log contract. The legacy loop remains as a test oracle behind the test-only `preanalysisCorrectionFastPath: false` runtime override. No C++/WASM/sparse/C1-C2-C3/inverse changes; no persistence/UI changes.
+
 ### Phase 7 — production backend decision / optimization
 
 Move iterative numerical adjustment into C++ while retaining TypeScript for orchestration, parsing/import/export, reporting, and browser workflows.

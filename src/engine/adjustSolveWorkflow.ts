@@ -6,6 +6,7 @@ import { assembleAdjustmentEquations } from './adjustmentEquationAssembly';
 import { applyAdjustmentCorrections, solveAdjustmentIteration } from './adjustmentIteration';
 import { getObservationSideshotCalcMeta } from './observationMetadata';
 import { recordSparseCorrectionFallback } from './experimentalSparseDiagnostics';
+import type { RecoveredFinalCovariance } from './adjustCovarianceRecovery';
 import { resolveRunModeCompatibilityOptions } from './adjustmentRunModeCompatibility';
 import { loadAndApplySolveWorkflowGeoidModel } from './adjustSolveWorkflowGeoid';
 import { runSolveWorkflowLoopDiagnostics } from './adjustSolveWorkflowLoopDiagnostics';
@@ -18,6 +19,12 @@ import {
 } from './adjustSolveWorkflowPreflight';
 import { resetSolveWorkflowRuntimeState } from './adjustSolveWorkflowRuntime';
 import { applyParsedSolveWorkflowSettings } from './adjustSolveWorkflowSettings';
+import {
+  isPreanalysisCorrectionFastPathEligible,
+  recordPreanalysisCorrectionFastPathEvaluation,
+  recordPreanalysisCorrectionFastPathFallback,
+  recordPreanalysisCorrectionFastPathSolve,
+} from './preanalysisCorrectionFastPath';
 import type {
   AdjustmentResult,
   Observation,
@@ -216,10 +223,34 @@ export const runAdjustmentSolveWorkflow = (
       return ctx.finishSolve(ctx.buildResult());
     }
     finishParseAndSetupTiming();
-    let prevObjectiveBefore: number | null = null;
     const useSparseCorrectionWeights = ctx.sparseCorrectionSolver != null;
 
-    for (let iter = 0; iter < ctx.maxIterations; iter++) {
+    // Phase 9E first-stage fast path: in eligible dense 2D preanalysis solves
+    // the correction loop computes a correction vector that is discarded
+    // (geometry is held; covariance is recovered below at the same planning
+    // geometry). The fast path skips the discarded assembly/factorization
+    // and records result.condition from the recovery normal matrix instead.
+    // Damped recovery falls back to the legacy loop for an exact log contract.
+    const fastPathEligible =
+      ctx.preanalysisCorrectionFastPath !== false &&
+      isPreanalysisCorrectionFastPathEligible({
+        preanalysisMode: ctx.preanalysisMode,
+        is2D: ctx.is2D,
+        debug: ctx.debug,
+        robustMode: ctx.robustMode,
+        maxIterations: ctx.maxIterations,
+        numParams,
+        numObsEquations,
+        hasSparseCorrectionSolver: ctx.sparseCorrectionSolver != null,
+        hasSparseRowProductsSolver: ctx.sparseRowProductsSolver != null,
+        hasSparseSelectedCovarianceSolver: ctx.sparseSelectedCovarianceSolver != null,
+        hasNormalEquationSolver: ctx.normalEquationSolver != null,
+      });
+    if (ctx.preanalysisMode === true) recordPreanalysisCorrectionFastPathEvaluation();
+
+    const runLegacyCorrectionLoop = (): AdjustmentResult | null => {
+      let prevObjectiveBefore: number | null = null;
+      for (let iter = 0; iter < ctx.maxIterations; iter++) {
       ctx.iterations += 1;
       ctx.clearGeometryCache();
       const assemblyStartedAt = Date.now();
@@ -423,21 +454,103 @@ export const runAdjustmentSolveWorkflow = (
         ctx.solveTiming.precisionAndDiagnosticsMs += Date.now() - diagnosticsStartedAt;
         return ctx.finishSolve(ctx.buildResult());
       }
-    }
+      }
+      return null;
+    };
 
-    if (!ctx.converged) ctx.log('Warning: Max iterations reached.');
-    const covarianceStartedAt = Date.now();
-    const recoveredCovariance = ctx.recoverFinalNormalCovariance(
-      activeObservations,
-      constraints,
-      numObsEquations,
-      numParams,
-      dirParamMap,
-    );
-    ctx.Qxx = recoveredCovariance?.kind === 'dense' ? recoveredCovariance.qxx : null;
-    ctx.experimentalSelectedCovarianceStore =
-      recoveredCovariance?.kind === 'selected' ? recoveredCovariance.store : undefined;
-    ctx.solveTiming.matrixFactorizationMs += Date.now() - covarianceStartedAt;
+    const recoverCovariance = (capture: { damping: number } | null): RecoveredFinalCovariance | null => {
+      const covarianceStartedAt = Date.now();
+      const recoveredCovariance = ctx.recoverFinalNormalCovariance(
+        activeObservations,
+        constraints,
+        numObsEquations,
+        numParams,
+        dirParamMap,
+        capture != null
+          ? {
+              onDamping: (damping: number) => {
+                capture.damping = damping;
+              },
+            }
+          : undefined,
+      );
+      ctx.Qxx = recoveredCovariance?.kind === 'dense' ? recoveredCovariance.qxx : null;
+      ctx.experimentalSelectedCovarianceStore =
+        recoveredCovariance?.kind === 'selected' ? recoveredCovariance.store : undefined;
+      ctx.solveTiming.matrixFactorizationMs += Date.now() - covarianceStartedAt;
+      return recoveredCovariance;
+    };
+
+    const logConvergenceWarning = (): void => {
+      if (!ctx.converged) ctx.log('Warning: Max iterations reached.');
+    };
+
+    let recoveredCovariance: RecoveredFinalCovariance | null = null;
+    const restoreFastPathSnapshot = (snapshot: {
+      logLength: number;
+      iterations: number;
+      converged: boolean;
+      condition: unknown;
+      conditionWarned: boolean;
+    }): void => {
+      ctx.logs.length = snapshot.logLength;
+      ctx.iterations = snapshot.iterations;
+      ctx.converged = snapshot.converged;
+      ctx.condition = snapshot.condition;
+      ctx.conditionWarned = snapshot.conditionWarned;
+      ctx.Qxx = null;
+      ctx.experimentalSelectedCovarianceStore = undefined;
+    };
+    const runLegacyLoopWithRecovery = (): AdjustmentResult | null => {
+      const legacyFailure = runLegacyCorrectionLoop();
+      if (legacyFailure) return legacyFailure;
+      logConvergenceWarning();
+      recoveredCovariance = recoverCovariance(null);
+      return null;
+    };
+    if (fastPathEligible) {
+      // Recovery first: it records result.condition (and its warning, if
+      // any) in the same log position as the legacy correction iteration.
+      const fastPathSnapshot = {
+        logLength: ctx.logs.length,
+        iterations: ctx.iterations,
+        converged: ctx.converged,
+        condition: ctx.condition,
+        conditionWarned: ctx.conditionWarned,
+      };
+      const capture = { damping: 0 };
+      let fastRecoveryFailed = false;
+      try {
+        recoveredCovariance = recoverCovariance(capture);
+      } catch {
+        // Non-regularizable recovery: fall back below. The snapshot
+        // restore keeps the legacy rerun log-identical to a pure legacy
+        // solve (whose own recovery throw would likewise propagate).
+        fastRecoveryFailed = true;
+      }
+      if (fastRecoveryFailed || capture.damping > 0) {
+        restoreFastPathSnapshot(fastPathSnapshot);
+        recordPreanalysisCorrectionFastPathFallback();
+        const legacyFailure = runLegacyLoopWithRecovery();
+        if (legacyFailure) return legacyFailure;
+      } else {
+        ctx.iterations += 1;
+        ctx.converged = true;
+        ctx.log('Iter 1: Max Corr = 0.0000');
+        ctx.log(
+          'Iter 1: preanalysis geometry held at approximate coordinates; covariance assembled from the current planning geometry.',
+        );
+        ctx.log(
+          'Converged: preanalysis uses the approximate-geometry covariance build without iterative coordinate updates.',
+        );
+        recordPreanalysisCorrectionFastPathSolve();
+        ctx.emitSolveProgress('iteration');
+      }
+    } else {
+      if (ctx.preanalysisMode === true) recordPreanalysisCorrectionFastPathFallback();
+      const legacyFailure = runLegacyLoopWithRecovery();
+      if (legacyFailure) return legacyFailure;
+    }
     const diagnosticsStartedAt = Date.now();
     ctx.calculateStatistics(
       ctx.paramIndex,
