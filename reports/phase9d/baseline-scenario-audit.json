@@ -1,0 +1,24 @@
+{
+  "phase": "9D",
+  "fixture": "tests/fixtures/camp_design_preanalysis_traverse_only.dat",
+  "cache": "disabled oracle audit",
+  "templateSourceSolves": 1,
+  "mainSolves": 1,
+  "solveScenarioCalls": 16,
+  "uniqueNormalizedScenarios": 16,
+  "duplicateCalls": 0,
+  "recommendationCalls": 16,
+  "thresholdPlanCalls": 0,
+  "totalSolveEngineInvocations": 18,
+  "candidateTemplateCount": 16,
+  "baseWorstStationMajorM": 0.000004166738932165176,
+  "targetThresholdM": 0.001,
+  "note": "The default camp is already below its threshold, so its threshold-plan pass performs no scenario calls. This is an audit result, not an assumption. A forced threshold-plan regression below exercises the cross-pass duplicate path.",
+  "forcedThresholdCacheCheck": {
+    "scenarioRequests": 32,
+    "underlyingSolves": 16,
+    "cacheHits": 16,
+    "peakCacheEntries": 16,
+    "thresholdSteps": 1
+  }
+}

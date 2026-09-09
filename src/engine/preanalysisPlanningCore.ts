@@ -1,4 +1,8 @@
 import { buildPathPrioritySummary } from './preanalysisPathPriority';
+import {
+  wrapPreanalysisSolveScenario,
+  type PreanalysisSolveAuditStage,
+} from './preanalysisPlanningSolveAudit';
 import type {
   AdjustmentResult,
   PreanalysisBracePreviewPoint,
@@ -33,6 +37,9 @@ export const buildPreanalysisPlanningDiagnostics = ({
   targetThresholdMeters,
   maxAddedSets,
   solveScenario,
+  solveAudit,
+  scenarioCacheDiagnostics,
+  scenarioCacheEnabled = true,
 }: BuildPreanalysisPlanningDiagnosticsArgs): PreanalysisImpactDiagnostics => {
   const templates = buildPreanalysisSyntheticSetTemplates(
     input,
@@ -48,10 +55,30 @@ export const buildPreanalysisPlanningDiagnostics = ({
     templates.filter((template) => !activeTemplateIdSet.has(template.id)).length,
   );
   const basePathSummary = buildPathPrioritySummary(base);
+  const scenarioCache = new Map<string, AdjustmentResult>();
+  const solveScenarioCached = (
+    stage: PreanalysisSolveAuditStage,
+    requestedIds: string[],
+  ): AdjustmentResult => {
+    const normalizedIds = resolveAppliedPreanalysisActionState(templates, requestedIds).normalizedScenarioIds;
+    const key = JSON.stringify(normalizedIds);
+    const cached = scenarioCacheEnabled ? scenarioCache.get(key) : undefined;
+    if (cached != null) {
+      scenarioCacheDiagnostics?.recordRequest(normalizedIds, true, scenarioCache.size);
+      return cached;
+    }
+    scenarioCacheDiagnostics?.recordRequest(normalizedIds, false, scenarioCache.size);
+    const auditedSolve = solveAudit
+      ? wrapPreanalysisSolveScenario(stage, solveScenario, () => templates, solveAudit)
+      : solveScenario;
+    const result = auditedSolve(requestedIds);
+    if (scenarioCacheEnabled) scenarioCache.set(key, result);
+    return result;
+  };
   const recommendationRows = candidateTemplates
     .map((template) => {
       try {
-        const alt = solveScenario([...activeTemplateIds, template.id]);
+        const alt = solveScenarioCached('recommendation', [...activeTemplateIds, template.id]);
         return buildRecommendationEvaluation(
           template,
           base,
@@ -113,7 +140,7 @@ export const buildPreanalysisPlanningDiagnostics = ({
     activeTemplateIds,
     targetThresholdMeters,
     maxAddedSets,
-    solveScenario,
+    (nextIds) => solveScenarioCached('threshold', nextIds),
   );
   const baseStationValues = stationMajors(base);
   const baseRelativeValues = relativeMetrics(base);
