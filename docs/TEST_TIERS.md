@@ -21,7 +21,7 @@ policy list, no browser tests in Node manifests).
 | **agent** | `npm run test:agent` | `vitest.agent.config.ts` | Full suite **minus** the evidence, release, and real-WASM integration tests. The broad everyday AI-agent regression gate (~1 min). |
 | **wasm** | `npm run test:wasm` | `vitest.wasm.config.ts` | Only the explicit real-WASM / worker / native integration tests. |
 | **release** | `npm run test:release` | `vitest.release.config.ts` | Only the fast automatic release-certification gates (the Phase 8B.1, Phase 9A, and Phase 9B verdicts over committed reports — no workers, no WASM artifact required). |
-| **evidence** | `npm run test:evidence [-- <suite>]` | `vitest.evidence.config.ts` via `scripts/runEvidence.mjs` | Only the intentionally expensive long numerical campaigns under `tests/evidence/`. Expected to be very slow; manual-only, never runs in CI. Suites: `all` (default), `phase8b1`, `phase8a6`, `phase8a5`, `phase9a` (all three Phase 9A shards), `phase9a-scaling`, `phase9a-faults`, `phase9a-corpus`; unknown names fail fast. |
+| **evidence** | `npm run test:evidence [-- <suite>]` | `vitest.evidence.config.ts` via `scripts/runEvidence.mjs` | Only the intentionally expensive long numerical campaigns under `tests/evidence/`. Expected to be very slow; manual-only, never runs in CI. Suites: `all` (default), `phase8b1`, `phase8a6`, `phase8a5`, `phase9a` (all three Phase 9A shards), `phase9a-scaling`, `phase9a-faults`, `phase9a-corpus`, `phase9d`; unknown names fail fast. |
 
 `npm run test:certify` runs the automatic CI-equivalent partition locally
 (`test:agent` + `test:wasm` + `test:release`).
@@ -41,7 +41,8 @@ lists):
   `tests/evidence/phase8a5_preanalysis_safety_evidence.test.ts`,
   `tests/evidence/phase9a_cap_widening_scaling.test.ts`,
   `tests/evidence/phase9a_cap_widening_faults.test.ts`,
-  `tests/evidence/phase9a_cap_widening_corpus.test.ts`): large repeated
+  `tests/evidence/phase9a_cap_widening_corpus.test.ts`,
+  `tests/evidence/phase9d_solve_audit_timing.test.ts`): large repeated
   numerical campaigns. Manual-only via `npm run test:evidence` or the
   Evidence workflow. The Phase 9A shards share helpers via
   `tests/evidence/phase9aEvidenceShared.ts`, run independently with no

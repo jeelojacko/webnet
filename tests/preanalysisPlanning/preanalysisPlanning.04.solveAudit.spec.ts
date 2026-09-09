@@ -6,7 +6,6 @@
  */
 import fs from 'node:fs';
 import path from 'node:path';
-import { performance } from 'node:perf_hooks';
 import { describe, expect, it } from 'vitest';
 
 import { buildPreanalysisPlanningDiagnostics } from '../../src/engine/preanalysisPlanning';
@@ -198,32 +197,5 @@ describe('phase 9D step 1: preanalysis solve audit (camp fixture, diagnostic-onl
     expect(failingDiagnostics.rows.every((row) => row.status === 'failed')).toBe(true);
     expect(failingCache.cacheHits).toBe(0);
     expect(failingCache.requests).toBe(failingCache.normalizedKeys.length * 2);
-
-    const timings: Array<{ wallMs: number; profile: NonNullable<ReturnType<typeof runAdjustmentSession>['profile']> }> = [];
-    for (let index = 0; index < 4; index += 1) {
-      const startedAt = performance.now();
-      const outcome = runAdjustmentSession(baseRequest);
-      timings.push({ wallMs: performance.now() - startedAt, profile: outcome.profile });
-    }
-    const measured = timings.slice(1);
-    const median = (values: number[]): number => {
-      const sorted = [...values].sort((left, right) => left - right);
-      return sorted[Math.floor(sorted.length / 2)] ?? 0;
-    };
-    const stageMedian = (stageId: string): number =>
-      median(measured.map(({ profile }) => profile.stages.find((stage) => stage.id === stageId)?.durationMs ?? 0));
-    console.log(`[phase9d-timing] ${JSON.stringify({
-      warmupRuns: 1,
-      measuredRuns: 3,
-      totalSessionMedianMs: median(measured.map(({ wallMs }) => wallMs)),
-      templateSourceMedianMs: stageMedian('preanalysis-template-source'),
-      mainMedianMs: stageMedian('main-solve'),
-      recommendationAndThresholdMedianMs: stageMedian('preanalysis-impact'),
-      solveInvocationCounts: measured.map(({ profile }) => profile.solveInvocationCount),
-      cacheScenarioRequests: cacheDiagnostics.requests,
-      cacheUnderlyingSolves: cachedPlanningCalls.count,
-      cacheHits: cacheDiagnostics.cacheHits,
-      cachePeakEntries: cacheDiagnostics.peakEntries,
-    })}`);
   }, 120000);
 });

@@ -22,6 +22,7 @@ on:
           - phase9a-scaling
           - phase9a-faults
           - phase9a-corpus
+          - phase9d
       baseline_sha:
         description: 'Explicit baseline SHA recorded into Phase 9A reports (optional)'
         required: false
