@@ -1,13 +1,18 @@
 /**
  * Phase 9I metric/path-summary reuse profile (EVIDENCE ONLY, manual).
  *
- * Before/after comparison of path-summary construction during preanalysis
- * recommendation scoring on the exact camp fixture: the legacy calling
- * convention (one current-step summary per candidate plus one alt summary
- * each in evaluation and scoring) versus the reused
- * PreanalysisResultMetrics path (one base metrics build per planning
- * invocation, one metrics build per alt). Helper counts and wall times are
- * recorded only, never gated. Result equality is asserted exactly.
+ * Before/after comparison of alt path-summary construction during
+ * preanalysis recommendation scoring on the exact camp fixture.
+ *
+ * The before arm is an explicit legacy oracle replicating the pre-9I
+ * implementation (scalar station/pair metrics plus one alt path summary
+ * in the evaluation body and a second alt path summary inside
+ * candidateScore: two alt builds per candidate). The after arm uses the
+ * current metrics-reuse production path (one cached metrics build per
+ * alt). Base summaries/metrics are built before the counters reset in
+ * both arms, so the helper counts compare per-candidate alt work only
+ * (2N legacy vs N reused). Wall times are recorded only, never gated.
+ * Result equality is asserted exactly (reused rows vs legacy oracle).
  */
 import fs from 'node:fs';
 import path from 'node:path';
@@ -15,6 +20,8 @@ import { performance } from 'node:perf_hooks';
 import { describe, expect, it, vi } from 'vitest';
 
 import type { AdjustmentResult } from '../../src/types';
+import type { PathPrioritySummary } from '../../src/engine/preanalysisPathPriority';
+import type { PreanalysisSyntheticSetTemplate } from '../../src/engine/preanalysisPlanningShared';
 
 vi.mock('../../src/engine/preanalysisPathPriority', async (importOriginal) => {
   const actual =
@@ -36,6 +43,15 @@ const {
 const { resolveCandidateTemplates, buildRecommendationEvaluation, sortRecommendationEvaluations } = await import(
   '../../src/engine/preanalysisPlanningRecommendations'
 );
+// Scalar helpers for the legacy oracle (pre-9I evaluation computed these
+// directly instead of threading PreanalysisResultMetrics).
+const {
+  medianOf,
+  relativeMetrics,
+  stationMajors,
+  weakPairCount,
+  weakStationCount,
+} = await import('../../src/engine/preanalysisPlanningShared');
 const { createPreanalysisResultMetricsCache } = await import(
   '../../src/engine/preanalysisResultMetrics'
 );
@@ -57,6 +73,163 @@ const summaryBuilds = (): number =>
   (globalThis as { __phase9iSummaryBuilds?: number }).__phase9iSummaryBuilds ?? 0;
 const resetSummaryBuilds = (): void => {
   (globalThis as { __phase9iSummaryBuilds?: number }).__phase9iSummaryBuilds = 0;
+};
+
+const deltaMetric = (next?: number, current?: number): number => {
+  const nextValue = Number.isFinite(next) ? (next as number) : undefined;
+  const currentValue = Number.isFinite(current) ? (current as number) : undefined;
+  if (nextValue != null && currentValue != null) return nextValue - currentValue;
+  if (nextValue != null && currentValue == null) return nextValue;
+  if (nextValue == null && currentValue != null) return Number.POSITIVE_INFINITY;
+  return 0;
+};
+
+/** Pre-9I scoring: scalar metrics plus a fresh alt path summary. */
+const legacyCandidateScore = (
+  base: AdjustmentResult,
+  alt: AdjustmentResult,
+  pathSummary: PathPrioritySummary,
+): number => {
+  const baseWorstStation = stationMajors(base);
+  const altWorstStation = stationMajors(alt);
+  const baseWorstStationMajor =
+    baseWorstStation.length > 0 ? Math.max(...baseWorstStation) : undefined;
+  const altWorstStationMajor =
+    altWorstStation.length > 0 ? Math.max(...altWorstStation) : undefined;
+  const baseMedianStationMajor = medianOf(baseWorstStation);
+  const altMedianStationMajor = medianOf(altWorstStation);
+  const baseWorstPair = relativeMetrics(base);
+  const altWorstPair = relativeMetrics(alt);
+  const baseWorstPairSigmaDist = baseWorstPair.length > 0 ? Math.max(...baseWorstPair) : undefined;
+  const altWorstPairSigmaDist = altWorstPair.length > 0 ? Math.max(...altWorstPair) : undefined;
+  const deltaWorstStationMajor =
+    altWorstStationMajor != null && baseWorstStationMajor != null
+      ? altWorstStationMajor - baseWorstStationMajor
+      : 0;
+  const deltaMedianStationMajor =
+    altMedianStationMajor != null && baseMedianStationMajor != null
+      ? altMedianStationMajor - baseMedianStationMajor
+      : 0;
+  const deltaWorstPairSigmaDist =
+    altWorstPairSigmaDist != null && baseWorstPairSigmaDist != null
+      ? altWorstPairSigmaDist - baseWorstPairSigmaDist
+      : 0;
+  const basePrimary = pathSummary.stationDiagnostics.get(pathSummary.stationOrder[0] ?? '');
+  const altPrimarySummary = buildPathPrioritySummary(alt);
+  const altPrimary = altPrimarySummary.stationDiagnostics.get(pathSummary.stationOrder[0] ?? '');
+  return (
+    -deltaWorstStationMajor * 100000 -
+    -((altPrimary?.pathWorstEdgeMetric ?? 0) - (basePrimary?.pathWorstEdgeMetric ?? 0)) * 10000 -
+    -((altPrimary?.pathTotalMetric ?? 0) - (basePrimary?.pathTotalMetric ?? 0)) * 1000 -
+    -deltaMedianStationMajor * 100 -
+    -deltaWorstPairSigmaDist * 25 -
+    (weakStationCount(base) - weakStationCount(alt)) * 5 -
+    (weakPairCount(base) - weakPairCount(alt)) * 4
+  );
+};
+
+/**
+ * Pre-9I recommendation evaluation oracle: scalar station/pair metrics,
+ * one alt path summary for the row/station comparisons, and a second alt
+ * path summary inside scoring. Two alt builds per candidate.
+ */
+const legacyBuildRecommendationEvaluation = (
+  template: PreanalysisSyntheticSetTemplate,
+  base: AdjustmentResult,
+  alt: AdjustmentResult,
+  basePathSummary: PathPrioritySummary,
+  targetThresholdMeters?: number,
+) => {
+  const baseStationValues = stationMajors(base);
+  const altStationValues = stationMajors(alt);
+  const baseWorstStationMajor =
+    baseStationValues.length > 0 ? Math.max(...baseStationValues) : undefined;
+  const altWorstStationMajor =
+    altStationValues.length > 0 ? Math.max(...altStationValues) : undefined;
+  const baseMedianStationMajor = medianOf(baseStationValues);
+  const altMedianStationMajor = medianOf(altStationValues);
+  const basePairValues = relativeMetrics(base);
+  const altPairValues = relativeMetrics(alt);
+  const altPathSummary = buildPathPrioritySummary(alt);
+  const baseWorstPairSigmaDist =
+    basePairValues.length > 0 ? Math.max(...basePairValues) : undefined;
+  const altWorstPairSigmaDist = altPairValues.length > 0 ? Math.max(...altPairValues) : undefined;
+  const primaryTargetStationId = basePathSummary.stationOrder[0];
+  const primaryDiagnostics =
+    primaryTargetStationId != null
+      ? basePathSummary.stationDiagnostics.get(primaryTargetStationId)
+      : undefined;
+  const altPrimaryDiagnostics =
+    primaryTargetStationId != null
+      ? altPathSummary.stationDiagnostics.get(primaryTargetStationId)
+      : undefined;
+  const row = {
+    scenarioId: template.id,
+    scenarioKind: template.scenarioKind,
+    occupyStationId: template.occupyStationId,
+    setupStationIds: [...template.setupStationIds],
+    primaryTargetStationId,
+    anchorStationId: primaryDiagnostics?.anchorStationId,
+    anchorPathStationIds: [...(primaryDiagnostics?.anchorPathStationIds ?? [])],
+    anchorPathPairRefs: (primaryDiagnostics?.anchorPathPairRefs ?? []).map((pair) => ({ ...pair })),
+    bottleneckPair: primaryDiagnostics?.pathWorstEdgePair
+      ? { ...primaryDiagnostics.pathWorstEdgePair }
+      : undefined,
+    templateLabel: template.templateLabel,
+    affectedStations: [...template.affectedStations],
+    affectedPairs: template.affectedPairs.map((pair) => ({ ...pair })),
+    sourceLines: [...template.sourceLines],
+    addedObservationCount: template.addedObservationCount,
+    previewPoints: template.previewPoints.map((point) => ({ ...point, active: false })),
+    previewSegments: template.previewSegments.map((segment) => ({ ...segment, active: false })),
+    deltaWorstStationMajor:
+      altWorstStationMajor != null && baseWorstStationMajor != null
+        ? altWorstStationMajor - baseWorstStationMajor
+        : undefined,
+    deltaMedianStationMajor:
+      altMedianStationMajor != null && baseMedianStationMajor != null
+        ? altMedianStationMajor - baseMedianStationMajor
+        : undefined,
+    deltaWorstPairSigmaDist:
+      altWorstPairSigmaDist != null && baseWorstPairSigmaDist != null
+        ? altWorstPairSigmaDist - baseWorstPairSigmaDist
+        : undefined,
+    deltaPathWorstEdge:
+      altPrimaryDiagnostics?.pathWorstEdgeMetric != null &&
+      primaryDiagnostics?.pathWorstEdgeMetric != null
+        ? altPrimaryDiagnostics.pathWorstEdgeMetric - primaryDiagnostics.pathWorstEdgeMetric
+        : undefined,
+    deltaPathTotalMetric:
+      altPrimaryDiagnostics?.pathTotalMetric != null && primaryDiagnostics?.pathTotalMetric != null
+        ? altPrimaryDiagnostics.pathTotalMetric - primaryDiagnostics.pathTotalMetric
+        : undefined,
+    deltaWeakStationCount: weakStationCount(alt) - weakStationCount(base),
+    deltaWeakPairCount: weakPairCount(alt) - weakPairCount(base),
+    score: legacyCandidateScore(base, alt, basePathSummary),
+    actionMode: template.actionMode,
+    rationale: template.rationale,
+    thresholdReached:
+      targetThresholdMeters != null &&
+      altWorstStationMajor != null &&
+      altWorstStationMajor <= targetThresholdMeters,
+    status: 'ok' as const,
+  };
+  return {
+    row,
+    stationComparisons: basePathSummary.stationOrder.map((stationId) => {
+      const baseStation = basePathSummary.stationDiagnostics.get(stationId);
+      const altStation = altPathSummary.stationDiagnostics.get(stationId);
+      return {
+        stationId,
+        deltaMajor: deltaMetric(altStation?.stationMajor, baseStation?.stationMajor),
+        deltaPathWorst: deltaMetric(
+          altStation?.pathWorstEdgeMetric,
+          baseStation?.pathWorstEdgeMetric,
+        ),
+        deltaPathTotal: deltaMetric(altStation?.pathTotalMetric, baseStation?.pathTotalMetric),
+      };
+    }),
+  };
 };
 
 describe('phase 9I metric reuse profile (camp fixture, evidence-only)', () => {
@@ -111,16 +284,19 @@ describe('phase 9I metric reuse profile (camp fixture, evidence-only)', () => {
     };
     const alts = candidates.map((template) => solveAlt([template.id]));
 
-    // Before: legacy convention — one current-step summary per candidate
-    // plus unshared alt summaries inside evaluation and scoring.
+    // Before (legacy oracle): scalar metrics plus two alt path summaries
+    // per candidate (one in evaluation, one in scoring). The base summary
+    // is built once up front and excluded from the counts, matching the
+    // after arm so both counts compare per-candidate alt work only.
+    const legacyBaseSummary = buildPathPrioritySummary(base);
     resetSummaryBuilds();
     const beforeStartedAt = performance.now();
     const beforeEvaluations = candidates.map((template, index) =>
-      buildRecommendationEvaluation(
+      legacyBuildRecommendationEvaluation(
         template,
         base,
         alts[index]!,
-        buildPathPrioritySummary(base),
+        legacyBaseSummary,
         targetThresholdMeters,
       ),
     );
@@ -128,7 +304,10 @@ describe('phase 9I metric reuse profile (camp fixture, evidence-only)', () => {
     const beforeMs = performance.now() - beforeStartedAt;
     const beforeSummaries = summaryBuilds();
 
-    // After: reused metrics — one base build, one build per alt.
+    // After (reused metrics): base metrics built once up front and
+    // excluded from the counts like the legacy base summary above; the
+    // timed loop builds one cached metrics object (one path summary)
+    // per alt. Reused rows must equal the legacy oracle rows exactly.
     const metricsFor = createPreanalysisResultMetricsCache();
     const baseMetrics = metricsFor(base);
     resetSummaryBuilds();
