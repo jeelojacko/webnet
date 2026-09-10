@@ -11,7 +11,7 @@
  * Both functions are pure and deterministic.
  */
 
-import type { AiStudyMapJob } from '../src/study/ai/studyAiTypes';
+import type { AiStudyMapJob } from '../study-desktop/src/ai/studyAiTypes';
 
 /**
  * Multi-label complexity categories for a job. The same rule table is used by

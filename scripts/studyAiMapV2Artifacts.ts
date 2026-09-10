@@ -5,13 +5,13 @@ import type {
   AiStudyMapJob,
   AiStudyMapResult,
   AiValidationIssue,
-} from '../src/study/ai/studyAiTypes';
+} from '../study-desktop/src/ai/studyAiTypes';
 import {
   mapResultToProposal,
   reconcileAiStudyMapProposals,
   validateAiStudyMapResult,
-} from '../src/study/ai/studyAiValidation';
-import { STUDY_MAP_V3_RESULT_SCHEMA, canonicalJson } from '../src/study/ai/studyAiResultContract';
+} from '../study-desktop/src/ai/studyAiValidation';
+import { STUDY_MAP_V3_RESULT_SCHEMA, canonicalJson } from '../study-desktop/src/ai/studyAiResultContract';
 import { authoringInputFingerprint } from './studyAiFingerprint';
 import { categoryForJob } from './studyAiMapStrata';
 import {
@@ -19,7 +19,7 @@ import {
   buildRunStatusReport,
   verifyFullCorpusPreparation,
 } from './studyAiFullCorpusMap';
-import type { NbLawContentPackage } from '../src/study/content/nbLawTypes';
+import type { NbLawContentPackage } from '../study-desktop/src/content/nbLawTypes';
 
 const RUNS_DIR = 'study-content/ai/runs';
 const DEFAULT_PACKAGE = 'study-content/packages/nb-sit-statute-corpus.content-package.json';

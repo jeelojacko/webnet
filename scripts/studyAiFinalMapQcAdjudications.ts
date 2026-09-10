@@ -54,7 +54,7 @@ import {
   parseMapReviewDecisionFile,
   type ClassifiedDecision,
   type ReviewPriority,
-} from '../src/study/ai/studyAiReviewDecision';
+} from '../study-desktop/src/ai/studyAiReviewDecision';
 import {
   RUNS_DIR,
   batchJobFiles,

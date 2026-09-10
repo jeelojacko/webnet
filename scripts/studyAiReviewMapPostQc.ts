@@ -31,7 +31,7 @@ import {
   REVIEW_DECISION_SCHEMA_VERSION,
   type ClassifiedDecision,
   type ReviewPriority,
-} from '../src/study/ai/studyAiReviewDecision';
+} from '../study-desktop/src/ai/studyAiReviewDecision';
 import { RUNS_DIR } from './studyAiLocalMapAuthor';
 import { loadResults } from './studyAiAuditPostProductionSemantics';
 

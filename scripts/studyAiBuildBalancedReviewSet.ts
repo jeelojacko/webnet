@@ -17,7 +17,7 @@
  */
 import { existsSync, readFileSync, readdirSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
-import type { AiStudyMapJob, AiStudyMapResult } from '../src/study/ai/studyAiTypes';
+import type { AiStudyMapJob, AiStudyMapResult } from '../study-desktop/src/ai/studyAiTypes';
 import { RUNS_DIR, readJsonl } from './studyAiLocalMapAuthor';
 
 export const DEFAULT_RUN =

@@ -31,10 +31,10 @@ import type {
   AiHumanAdjudicationProvenance,
   AiStudyUnitProposal,
   AiUnitAuthoringJob,
-} from '../src/study/ai/studyAiTypes';
-import { validateAiStudyUnitProposal } from '../src/study/ai/studyAiValidation';
-import { sourceComponentsForProposal } from '../src/study/ai/studyAiUnitSourceComponents';
-import type { NbLawContentPackage } from '../src/study/content/nbLawTypes';
+} from '../study-desktop/src/ai/studyAiTypes';
+import { validateAiStudyUnitProposal } from '../study-desktop/src/ai/studyAiValidation';
+import { sourceComponentsForProposal } from '../study-desktop/src/ai/studyAiUnitSourceComponents';
+import type { NbLawContentPackage } from '../study-desktop/src/content/nbLawTypes';
 import {
   RUNS_DIR,
   readJson,

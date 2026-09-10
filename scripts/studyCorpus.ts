@@ -2,9 +2,9 @@ import { createHash } from 'node:crypto';
 import { mkdir, readFile, stat, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import * as pdfjs from 'pdfjs-dist/legacy/build/pdf.mjs';
-import { buildNbLawContentPackage, validateNbLawContentPackage } from '../src/study/content/nbLawContentPackage';
-import { normalizeNbLawDocument, renderNbLawNormalizedMarkdown } from '../src/study/content/nbLawNormalize';
-import type { NbLawNormalizedDocument, NbLawRawFetchMetadata } from '../src/study/content/nbLawTypes';
+import { buildNbLawContentPackage, validateNbLawContentPackage } from '../study-desktop/src/content/nbLawContentPackage';
+import { normalizeNbLawDocument, renderNbLawNormalizedMarkdown } from '../study-desktop/src/content/nbLawNormalize';
+import type { NbLawNormalizedDocument, NbLawRawFetchMetadata } from '../study-desktop/src/content/nbLawTypes';
 import {
   assertSitCorpusInventoryCanFetchRequired,
   buildSitCorpusInventoryReport,
@@ -17,13 +17,13 @@ import {
   NB_SIT_NORMALIZER_VERSION,
   NB_SIT_PACKAGE_SCHEMA_VERSION,
   toNbLawManifestEntry,
-} from '../src/study/content/nbSitCorpus';
+} from '../study-desktop/src/content/nbSitCorpus';
 import type {
   SitCorpusFetchStatusEntry,
   SitCorpusFetchStatusReport,
   SitCorpusManifest,
   SitSourceChange,
-} from '../src/study/content/nbSitCorpusTypes';
+} from '../study-desktop/src/content/nbSitCorpusTypes';
 
 const MANIFEST_PATH = path.resolve('study-content/manifests/nb-sit-statute-corpus.json');
 const RAW_DIR = path.resolve('study-content/raw/nb-sit');

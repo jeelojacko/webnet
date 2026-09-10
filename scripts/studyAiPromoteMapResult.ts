@@ -13,7 +13,7 @@
  */
 import { existsSync, mkdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
-import type { AiStudyMapJob, AiStudyMapResult } from '../src/study/ai/studyAiTypes';
+import type { AiStudyMapJob, AiStudyMapResult } from '../study-desktop/src/ai/studyAiTypes';
 import { authoringInputFingerprint } from './studyAiFingerprint';
 import {
   RUNS_DIR,

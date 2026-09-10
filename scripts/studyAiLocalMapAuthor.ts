@@ -9,14 +9,15 @@ import {
   writeFileSync,
 } from 'node:fs';
 import { basename, dirname, join } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import type {
   AiStudyMapJob,
   AiStudyMapResult,
   AiValidationIssue,
   AiValidationReport,
-} from '../src/study/ai/studyAiTypes';
-import { validateAiStudyMapResult } from '../src/study/ai/studyAiValidation';
-import { STUDY_MAP_V3_RESULT_SCHEMA } from '../src/study/ai/studyAiResultContract';
+} from '../study-desktop/src/ai/studyAiTypes';
+import { validateAiStudyMapResult } from '../study-desktop/src/ai/studyAiValidation';
+import { STUDY_MAP_V3_RESULT_SCHEMA } from '../study-desktop/src/ai/studyAiResultContract';
 import { authoringInputFingerprint } from './studyAiFingerprint';
 import { retryStateFor } from './studyAiLocalMapAuthorRetry';
 import {
@@ -29,7 +30,12 @@ import { waitForProviderHealth } from './studyAiProviderRecovery';
 
 export { buildValidationRetryNote } from './studyAiLocalMapAuthorRetry';
 
-export const RUNS_DIR = 'study-content/ai/runs';
+// Repo root anchored to this file (not process.cwd()) so script functions
+// behave identically however the caller was launched (root CLI, root
+// vitest, or standalone study-desktop runs).
+const REPO_ROOT = join(fileURLToPath(new URL('.', import.meta.url)), '..');
+
+export const RUNS_DIR = join(REPO_ROOT, 'study-content', 'ai', 'runs');
 
 const RUNNER_OWNED_RESULT_IDENTITY: ReadonlySet<string> = new Set([
   'schemaVersion',
@@ -476,7 +482,7 @@ const validateExistingResults = (
 };
 
 /** Path of the canonical Study Map V3 spec; local runner and external providers share it. */
-export const STUDY_MAP_V3_SPEC_PATH = 'study-content/ai/specs/study-map-v3.md';
+export const STUDY_MAP_V3_SPEC_PATH = join(REPO_ROOT, 'study-content', 'ai', 'specs', 'study-map-v3.md');
 
 /**
  * Load the canonical Study Map V3 spec at runtime so the local model receives the

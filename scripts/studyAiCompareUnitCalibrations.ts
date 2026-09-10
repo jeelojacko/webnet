@@ -19,13 +19,13 @@
  */
 import { writeFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
-import { buildCompareDocs } from '../src/study/ai/studyAiUnitCalibrationCompare';
-import { renderComparisonMarkdown, renderCompareHumanReviewMarkdown } from '../src/study/ai/studyAiUnitCalibrationCompare.markdown';
+import { buildCompareDocs } from '../study-desktop/src/ai/studyAiUnitCalibrationCompare';
+import { renderComparisonMarkdown, renderCompareHumanReviewMarkdown } from '../study-desktop/src/ai/studyAiUnitCalibrationCompare.markdown';
 import {
   defaultComparePaths,
   loadCompareContext,
   type CompareLoadPaths,
-} from '../src/study/ai/studyAiUnitCalibrationCompare.load';
+} from '../study-desktop/src/ai/studyAiUnitCalibrationCompare.load';
 
 const DATE_TAG = '20260902';
 const DEFAULT_REPORTS_DIR = 'reports';

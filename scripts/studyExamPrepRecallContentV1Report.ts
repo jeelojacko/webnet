@@ -14,7 +14,7 @@ import {
   buildExamPrepRecallContentV1Markdown,
   buildExamPrepRecallContentV1Summary,
   deriveExamPrepRecallContentV1Records,
-} from '../src/study/examPrep/qa/examPrepRecallContentV1Report';
+} from '../study-desktop/src/examPrep/qa/examPrepRecallContentV1Report';
 
 const REPORTS_DIR = join(dirname(fileURLToPath(import.meta.url)), '..', 'reports', 'exam-prep');
 const MARKDOWN_REPORT = join(REPORTS_DIR, 'recall-content-v1-review.md');

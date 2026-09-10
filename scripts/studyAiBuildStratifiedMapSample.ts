@@ -17,8 +17,8 @@
 import { createHash } from 'node:crypto';
 import { existsSync, readFileSync, readdirSync, writeFileSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
-import type { AiStudyMapJob, AiStudyMapResult } from '../src/study/ai/studyAiTypes';
-import { canonicalJson } from '../src/study/ai/studyAiResultContract';
+import type { AiStudyMapJob, AiStudyMapResult } from '../study-desktop/src/ai/studyAiTypes';
+import { canonicalJson } from '../study-desktop/src/ai/studyAiResultContract';
 import { authoringInputFingerprint } from './studyAiFingerprint';
 import { categoryForJob, structuralStrataForJob } from './studyAiMapStrata';
 import { stripUtf8Bom } from './studyAiProviderFailures';

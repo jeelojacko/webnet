@@ -1,0 +1,7 @@
+{
+  "$schema": "../gen/schemas/desktop-schema.json",
+  "identifier": "default",
+  "description": "Phase 1 baseline: core window/app access only, no plugins.",
+  "windows": ["main"],
+  "permissions": ["core:default"]
+}

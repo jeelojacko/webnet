@@ -12,7 +12,7 @@ const SAFE_ONLY = [
   /^src\/components\//,
   /^src\/hooks\//,
   /^src\/study\//,
-  /^tests\/study\//,
+  /^study-desktop\//,
   /^public\//,
   /^study-content\//,
   /^src\/.*\.(?:css|scss|svg)$/i,

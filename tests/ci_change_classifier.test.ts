@@ -5,7 +5,7 @@ describe('CI change classifier', () => {
   it.each([
     ['docs-only', ['docs/foo.md']],
     ['markdown-only', ['README.md', 'docs/notes.md']],
-    ['study-only', ['tests/study/library.test.ts', 'src/study/studyStorage.ts', 'scripts/studyCorpus.ts']],
+    ['study-only', ['study-desktop/tests/library.test.ts', 'study-desktop/src/studyStorage.ts', 'scripts/studyCorpus.ts']],
     ['component-only', ['src/components/Foo.tsx']],
   ])('%s stays on the fast path', (_name, files) => {
     expect(classifyChangedFiles(files).numericalRequired).toBe(false);

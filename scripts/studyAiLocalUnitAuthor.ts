@@ -1,17 +1,18 @@
 import { appendFileSync, existsSync, mkdirSync, readFileSync, readdirSync } from 'node:fs';
 import { dirname, join } from 'node:path';
-import type { NbLawContentPackage } from '../src/study/content/nbLawTypes';
+import { fileURLToPath } from 'node:url';
+import type { NbLawContentPackage } from '../study-desktop/src/content/nbLawTypes';
 import type {
   AiStudyUnitProposal,
   AiUnitAuthoringJob,
   AiValidationReport,
-} from '../src/study/ai/studyAiTypes';
-import { validateAiStudyUnitProposal } from '../src/study/ai/studyAiValidation';
+} from '../study-desktop/src/ai/studyAiTypes';
+import { validateAiStudyUnitProposal } from '../study-desktop/src/ai/studyAiValidation';
 import {
   UNIT_AUTHORING_V4_LOCAL_RESULT_SCHEMA,
   UNIT_AUTHORING_V4_LOCAL_SCHEMA_NAME,
-} from '../src/study/ai/studyAiUnitLocalSchema';
-import { sourceComponentsForProposal } from '../src/study/ai/studyAiUnitSourceComponents';
+} from '../study-desktop/src/ai/studyAiUnitLocalSchema';
+import { sourceComponentsForProposal } from '../study-desktop/src/ai/studyAiUnitSourceComponents';
 import {
   RUNS_DIR,
   loadBatchJobs,
@@ -32,9 +33,11 @@ import { waitForProviderHealth, type FetchLike } from './studyAiProviderRecovery
 
 export { hashText, readJson, readJsonl, writeJson, writeJsonlAtomic };
 
+const REPO_ROOT = join(fileURLToPath(new URL('.', import.meta.url)), '..');
+
 export const SUPPORTED_UNIT_SPEC_VERSIONS = {
-  'unit-authoring-v4': 'study-content/ai/specs/unit-authoring-v4.md',
-  'unit-authoring-v5': 'study-content/ai/specs/unit-authoring-v5.md',
+  'unit-authoring-v4': join(REPO_ROOT, 'study-content', 'ai', 'specs', 'unit-authoring-v4.md'),
+  'unit-authoring-v5': join(REPO_ROOT, 'study-content', 'ai', 'specs', 'unit-authoring-v5.md'),
 } as const;
 export type UnitSpecVersion = keyof typeof SUPPORTED_UNIT_SPEC_VERSIONS;
 export const UNIT_AUTHORING_V4_SPEC_VERSION = 'unit-authoring-v4';
@@ -46,8 +49,12 @@ const SUPPORTED_UNIT_SPEC_VERSIONS_TEXT = Object.keys(SUPPORTED_UNIT_SPEC_VERSIO
 const isSupportedUnitSpecVersion = (value: unknown): value is UnitSpecVersion =>
   typeof value === 'string' &&
   Object.prototype.hasOwnProperty.call(SUPPORTED_UNIT_SPEC_VERSIONS, value);
-export const DEFAULT_UNIT_AUTHORING_PACKAGE =
-  'study-content/packages/nb-sit-statute-corpus.content-package.json';
+export const DEFAULT_UNIT_AUTHORING_PACKAGE = join(
+  REPO_ROOT,
+  'study-content',
+  'packages',
+  'nb-sit-statute-corpus.content-package.json',
+);
 export const LOCAL_UNIT_RESULTS_FILE = 'local-unit.results.jsonl';
 
 const DEFAULT_LOCAL_UNIT_TIMEOUT_MS = 600_000;

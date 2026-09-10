@@ -1,6 +1,6 @@
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import path from 'node:path';
-import type { NbLawContentPackage } from '../src/study/content/nbLawTypes';
+import type { NbLawContentPackage } from '../study-desktop/src/content/nbLawTypes';
 import {
   buildStudyGenerationAudit,
   compareStudyGenerationAuditBaseline,
@@ -10,7 +10,7 @@ import {
   renderStudyGenerationWarningsMarkdown,
   type StudyGenerationAudit,
   type StudyGenerationAuditOptions,
-} from '../src/study/studyGenerationAudit';
+} from '../study-desktop/src/studyGenerationAudit';
 
 const PACKAGE_PATH = path.resolve('study-content/packages/nb-law-pilot.content-package.json');
 const REPORT_DIR = path.resolve('study-content/reports');

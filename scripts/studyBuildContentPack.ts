@@ -1,8 +1,8 @@
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import path from 'node:path';
-import type { NbLawManifest, NbLawNormalizedDocument } from '../src/study/content/nbLawTypes';
-import { getEnabledNbLawEntries, validateNbLawManifest } from '../src/study/content/nbLawManifest';
-import { buildNbLawContentPackage, validateNbLawContentPackage } from '../src/study/content/nbLawContentPackage';
+import type { NbLawManifest, NbLawNormalizedDocument } from '../study-desktop/src/content/nbLawTypes';
+import { getEnabledNbLawEntries, validateNbLawManifest } from '../study-desktop/src/content/nbLawManifest';
+import { buildNbLawContentPackage, validateNbLawContentPackage } from '../study-desktop/src/content/nbLawContentPackage';
 
 const MANIFEST_PATH = path.resolve('study-content/manifests/nb-law-pilot.json');
 const NORMALIZED_DIR = path.resolve('study-content/normalized/nb-law-pilot');

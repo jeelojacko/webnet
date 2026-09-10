@@ -21,7 +21,7 @@
 import { createHash } from 'node:crypto';
 import { existsSync, readFileSync, readdirSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
-import type { AiStudyMapJob } from '../src/study/ai/studyAiTypes';
+import type { AiStudyMapJob } from '../study-desktop/src/ai/studyAiTypes';
 import { authoringInputFingerprint } from './studyAiFingerprint';
 import { stripUtf8Bom } from './studyAiProviderFailures';
 
