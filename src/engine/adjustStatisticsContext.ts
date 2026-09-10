@@ -84,6 +84,10 @@ export const buildStatisticsContextForEngine = (engine: any): AdjustmentStatisti
       log: (message) => engine.log(message),
       tsCorrelationGroup: (obs) => engine.tsCorrelationGroup(obs),
       detailedSolveProfiler: engine.detailedSolveProfiler,
+      reuseFinalCovarianceInStatistics: engine.reuseFinalCovarianceInStatistics,
+      qxxReuseProbe: engine.qxxReuseProbe,
+      finalCovarianceAugmentedRows: engine.finalCovarianceAugmentedRows ?? 0,
+      finalCovarianceDamping: engine.finalCovarianceDamping ?? 0,
   };
 };
 

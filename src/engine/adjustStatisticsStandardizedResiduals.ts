@@ -1,6 +1,7 @@
 import { transformSymmetricCovariance3 } from './adjustGpsMath';
 import { tryQueryStandardizedResidualRowProducts } from './adjustStatisticsRowProducts';
 import { detailedNow } from './adjustDetailedSolveProfile';
+import { copyMatrix, decideStatisticsQxxReuse } from './qxxReuseEvidence';
 import { accumulateNormalEquationsFromSparseRows, multiplySparseRowsByDenseMatrix, zeros } from './matrix';
 import { assembleAdjustmentEquations } from './adjustmentEquationAssembly';
 import { getObservationSetId } from './observationMetadata';
@@ -209,6 +210,19 @@ export const computeStandardizedResidualStatistics = (
           }
           const { L, rowInfo, sparseRows } = assembled;
           let B: number[][] = [];
+          if (rowProducts) {
+            if (ctx.qxxReuseProbe) {
+              ctx.qxxReuseProbe({
+                stage: 'statistics',
+                reused: false,
+                reason: 'sparse-row-products-active',
+                normalDimension: null,
+                qxxDimension: null,
+                normalAccumulations: 0,
+                inversions: 0,
+              });
+            }
+          }
           if (!rowProducts) {
             const denseP = assembled.P;
             if (!denseP?.length) {
@@ -216,6 +230,39 @@ export const computeStandardizedResidualStatistics = (
                 'Dense fallback statistics require dense weights; disable the experimental sparse row-product path.',
               );
             }
+            const reuseDecision = decideStatisticsQxxReuse({
+              reuseRequested: ctx.reuseFinalCovarianceInStatistics === true,
+              preanalysisMode: ctx.preanalysisMode,
+              robustMode: ctx.robustMode,
+              finalQxx: hasQxx ? ctx.Qxx : null,
+              hasSelectedStore: ctx.experimentalSelectedCovarianceStore != null,
+              sparseRowProductsAvailable: false,
+              numParams,
+              augmentedRowCount: ctx.finalCovarianceAugmentedRows ?? 0,
+              finalCovarianceDamping: ctx.finalCovarianceDamping ?? 0,
+            });
+            // Phase 10D seam: equations are still assembled above (L,
+            // rowInfo, weights); only the statistics normal accumulation
+            // and inversion are skipped when the final dense Qxx is reused.
+            // multiplySparseRowsByDenseMatrix never mutates Qxx.
+            if (reuseDecision.eligible && ctx.Qxx != null) {
+              const reusedQxx = ctx.Qxx;
+              if (ctx.qxxReuseProbe) {
+                ctx.qxxReuseProbe({
+                  stage: 'statistics',
+                  reused: true,
+                  reason: reuseDecision.reason,
+                  normalDimension: null,
+                  qxxDimension: numParams,
+                  normalAccumulations: 0,
+                  inversions: 0,
+                  qxx: copyMatrix(reusedQxx),
+                });
+              }
+              const rowProductDenseStartedAt = profiler ? detailedNow() : 0;
+              B = multiplySparseRowsByDenseMatrix(sparseRows, reusedQxx);
+              if (profiler) rowProductConstructionMs += detailedNow() - rowProductDenseStartedAt;
+            } else {
             const statsAccumulateStartedAt = profiler ? detailedNow() : 0;
             const { normal: N } = accumulateNormalEquationsFromSparseRows(
               sparseRows,
@@ -229,9 +276,23 @@ export const computeStandardizedResidualStatistics = (
             const statsInvertStartedAt = profiler ? detailedNow() : 0;
             const QxxStats = ctx.invertNormalMatrixForStats(N);
             if (profiler) statisticsQxxInversionMs += detailedNow() - statsInvertStartedAt;
+            if (ctx.qxxReuseProbe) {
+              ctx.qxxReuseProbe({
+                stage: 'statistics',
+                reused: false,
+                reason: reuseDecision.reason,
+                normalDimension: numParams,
+                qxxDimension: numParams,
+                normalAccumulations: 1,
+                inversions: 1,
+                normal: copyMatrix(N),
+                qxx: copyMatrix(QxxStats),
+              });
+            }
             const rowProductDenseStartedAt = profiler ? detailedNow() : 0;
             B = multiplySparseRowsByDenseMatrix(sparseRows, QxxStats);
             if (profiler) rowProductConstructionMs += detailedNow() - rowProductDenseStartedAt;
+            }
           }
           const rowStats = new Map<
             number,

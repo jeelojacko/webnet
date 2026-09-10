@@ -41,6 +41,7 @@ import { LSAEngineObservationMethods } from './adjustEngineObservationMethods';
 import { buildSideshotResults } from './adjustmentSideshots';
 import type { CoordinateConstraintEquation } from './adjustmentSolveTypes';
 import type { DetailedSolveProfiler, IterationSystemProbeInput } from './adjustDetailedSolveProfile';
+import type { QxxReuseProbe } from './qxxReuseEvidence';
 import type { ScenarioRunRequest } from './scenarioRunModels';
 import type { SparseCorrectionSolver, SparseRowProductsSolver, SparseSelectedCovarianceSolver } from './numericalBackend';
 import type { ExperimentalSparseRouteDiagnostics } from './experimentalSparseDiagnostics';
@@ -67,6 +68,14 @@ export class LSAEngine extends LSAEngineObservationMethods {
   private iterationSystemProbe?: (_system: IterationSystemProbeInput) => void;
   /** Phase 9E test-only oracle switch; false forces the legacy correction loop. */
   private preanalysisCorrectionFastPath?: boolean;
+  /** Phase 10D test-only Qxx reuse switch; undefined/false keeps legacy recompute. */
+  private reuseFinalCovarianceInStatistics?: boolean;
+  /** Phase 10D test-only Qxx comparison probe; undefined disables capture. */
+  private qxxReuseProbe?: QxxReuseProbe;
+  /** Phase 10D last final-recovery synthetic-row count; 0 keeps reuse eligible. */
+  private finalCovarianceAugmentedRows = 0;
+  /** Phase 10D last final-recovery damping lambda; 0 keeps reuse eligible. */
+  private finalCovarianceDamping = 0;
 
   private solveNormalEquations(
     N: number[][],
@@ -100,6 +109,8 @@ export class LSAEngine extends LSAEngineObservationMethods {
       ...(this.parseState?.relativeLinePairs ?? []),
       ...(this.parseState?.positionalTolerancePairs ?? []),
     ];
+    this.finalCovarianceAugmentedRows = 0;
+    this.finalCovarianceDamping = 0;
     return recoverFinalNormalCovarianceHelper({
       activeObservations,
       augmentCovarianceObservations: (observations) =>
@@ -120,7 +131,10 @@ export class LSAEngine extends LSAEngineObservationMethods {
       gpsObservedVector: this.gpsObservedVector.bind(this),
       gpsWeight: this.gpsWeight.bind(this),
       invertNormalMatrixForStats: (normal) =>
-        this.invertNormalMatrixForStats(normal, fastPathCapture?.onDamping),
+        this.invertNormalMatrixForStats(normal, (damping) => {
+          this.finalCovarianceDamping = damping;
+          fastPathCapture?.onDamping?.(damping);
+        }),
       recordRecoveryNormal:
         fastPathCapture != null
           ? (normal) => this.recordConditionEstimate(this.estimateCondition(normal))
@@ -142,6 +156,10 @@ export class LSAEngine extends LSAEngineObservationMethods {
       connectedPairs: collectConnectedStationPairs(activeObservations),
       requestedPairs,
       detailedSolveProfiler: this.detailedSolveProfiler,
+      qxxReuseProbe: this.qxxReuseProbe,
+      recordAugmentedRowCount: (count) => {
+        this.finalCovarianceAugmentedRows = count;
+      },
       log: this.log.bind(this),
       stations: this.stations,
       wrapToPi: this.wrapToPi.bind(this),
@@ -185,6 +203,8 @@ export class LSAEngine extends LSAEngineObservationMethods {
     detailedSolveProfiler,
     iterationSystemProbe,
     preanalysisCorrectionFastPath,
+    reuseFinalCovarianceInStatistics,
+    qxxReuseProbe,
   }: EngineOptions) {
     super();
     this.normalEquationSolver = normalEquationSolver;
@@ -197,6 +217,8 @@ export class LSAEngine extends LSAEngineObservationMethods {
     this.detailedSolveProfiler = detailedSolveProfiler;
     this.iterationSystemProbe = iterationSystemProbe;
     this.preanalysisCorrectionFastPath = preanalysisCorrectionFastPath;
+    this.reuseFinalCovarianceInStatistics = reuseFinalCovarianceInStatistics;
+    this.qxxReuseProbe = qxxReuseProbe;
     this.input = input;
     this.maxIterations = maxIterations;
     this.instrumentLibrary = { ...instrumentLibrary };
@@ -257,6 +279,8 @@ export class LSAEngine extends LSAEngineObservationMethods {
       detailedSolveProfiler: this.detailedSolveProfiler,
       iterationSystemProbe: this.iterationSystemProbe,
       preanalysisCorrectionFastPath: this.preanalysisCorrectionFastPath,
+      reuseFinalCovarianceInStatistics: this.reuseFinalCovarianceInStatistics,
+      qxxReuseProbe: this.qxxReuseProbe,
     }).solve();
   }
 

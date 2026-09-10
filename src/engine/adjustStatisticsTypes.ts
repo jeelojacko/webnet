@@ -1,4 +1,5 @@
 import type { DetailedSolveProfiler } from './adjustDetailedSolveProfile';
+import type { QxxReuseProbe } from './qxxReuseEvidence';
 import type { SolveTimingBuckets } from './adjustSolveTiming';
 import type { WeightMatrixWriter } from './adjustmentWeightWriter';
 import type { StructuredSymmetricWeights } from './sparseWeightRepresentation';
@@ -70,6 +71,18 @@ export type AdjustmentStatisticsContext = {
   };
   /** Phase 10C test-only detailed profiler; undefined keeps production timing only. */
   detailedSolveProfiler?: DetailedSolveProfiler;
+  /**
+   * Phase 10D test-only Qxx reuse switch: true lets the dense statistics
+   * fallback reuse the recovered final dense Qxx. Undefined/false keeps
+   * the legacy rebuild-and-invert path.
+   */
+  reuseFinalCovarianceInStatistics?: boolean;
+  /** Phase 10D test-only Qxx comparison probe; undefined disables capture. */
+  qxxReuseProbe?: QxxReuseProbe;
+  /** Phase 10D synthetic rows appended for the final recovery (0 = none). */
+  finalCovarianceAugmentedRows?: number;
+  /** Phase 10D damping lambda the final recovery inversion required (0 = none). */
+  finalCovarianceDamping?: number;
   solveTiming: SolveTimingBuckets;
   logs: string[];
   chiSquare?: AdjustmentResult['chiSquare'];
