@@ -84,6 +84,8 @@ export type AdjustmentStatisticsContext = {
    * cohort. Never persisted or exposed in UI.
    */
   forceLegacyStatisticsQxx?: boolean;
+  /** Evidence-only override for validated native dense all-entry Qxx. */
+  allowEvidenceNativeDenseQxxReuse?: boolean;
   /** Solve convergence at statistics time (required for reuse). */
   solveConverged?: boolean;
   /** Phase 10D test-only Qxx comparison probe; undefined disables capture. */

@@ -47,11 +47,26 @@ export interface SparseEquationSystem {
   parameterCount: number;
 }
 
+export interface SparsePhaseTimings {
+  assemblyMs: number;
+  equilibrationMs: number;
+  analyzeMs: number;
+  factorizeMs: number;
+  solveMs: number;
+}
+
 export interface SparseFactorMetadata {
   normalNnz: number;
   factorNnz: number;
   damping: number;
   dampingAttempts: number;
+  /**
+   * Native steady-clock phase timings (ms, diagnostics only). Present only
+   * when the native backend supplied all five finite phase values on
+   * success; absent means the caller must treat timings as unavailable.
+   * Never influences numerics.
+   */
+  timings?: SparsePhaseTimings;
 }
 
 export interface SparseSelectedCovarianceInput extends SparseEquationSystem {

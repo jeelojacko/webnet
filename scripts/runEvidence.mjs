@@ -8,7 +8,7 @@
  * Suites: all (default), phase8a5, phase8a6, phase8b1, phase9a (all three
  * Phase 9A shards), phase9a-scaling, phase9a-faults, phase9a-corpus, phase9d,
  * phase9e-audit, phase9e-fastpath, phase9h, phase9i, phase9j, phase10a,
- * phase10b, phase10c, phase10d, phase10e, phase10f, phase10g.
+ * phase10b, phase10c, phase10d, phase10e, phase10f, phase10g, phase10h.
  * Unknown suite names fail fast with a clear error — never a silent
  * full-campaign run.
  * Execution always goes through the evidence tier config
@@ -56,6 +56,7 @@ const SUITES = {
   phase10e: ['tests/evidence/phase10e_production_qxx_reuse.test.ts'],
   phase10f: ['tests/evidence/phase10f_post_reuse_profile.test.ts'],
   phase10g: ['tests/evidence/phase10g_final_covariance_architecture.test.ts'],
+  phase10h: ['tests/evidence/phase10h_native_qxx_fair_evidence.test.ts'],
 };
 
 const suite = process.argv[2] ?? 'all';

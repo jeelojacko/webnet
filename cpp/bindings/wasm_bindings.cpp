@@ -150,7 +150,9 @@ int webnet_sparse_selected_covariance(
     int equation_count, int parameter_count, const int* query_rows,
     const int* query_columns, int query_count, double* covariance_out,
     int* normal_nnz_out, int* factor_nnz_out, double* damping_out,
-    int* attempts_out, char* err_buf, int err_cap) {
+    int* attempts_out, double* assembly_ms_out, double* equilibration_ms_out,
+    double* analyze_ms_out, double* factorize_ms_out, double* solve_ms_out,
+    char* err_buf, int err_cap) {
   webnet::SparseFactorInfo info;
   std::string error;
   const webnet::SparseSolveStatus status =
@@ -164,6 +166,26 @@ int webnet_sparse_selected_covariance(
     if (factor_nnz_out != nullptr) *factor_nnz_out = info.factor_nnz;
     if (damping_out != nullptr) *damping_out = info.damping;
     if (attempts_out != nullptr) *attempts_out = info.attempts;
+    // Native phase timings (steady_clock ms, diagnostics only): written
+    // only on success when finite; null out pointers are skipped and
+    // failure paths leave caller buffers untouched.
+    if (assembly_ms_out != nullptr && std::isfinite(info.timings.assembly_ms)) {
+      *assembly_ms_out = info.timings.assembly_ms;
+    }
+    if (equilibration_ms_out != nullptr &&
+        std::isfinite(info.timings.equilibration_ms)) {
+      *equilibration_ms_out = info.timings.equilibration_ms;
+    }
+    if (analyze_ms_out != nullptr && std::isfinite(info.timings.analyze_ms)) {
+      *analyze_ms_out = info.timings.analyze_ms;
+    }
+    if (factorize_ms_out != nullptr &&
+        std::isfinite(info.timings.factorize_ms)) {
+      *factorize_ms_out = info.timings.factorize_ms;
+    }
+    if (solve_ms_out != nullptr && std::isfinite(info.timings.solve_ms)) {
+      *solve_ms_out = info.timings.solve_ms;
+    }
   }
   write_message(status == webnet::SparseSolveStatus::kOk ? "" : error,
                 err_buf, err_cap);
@@ -180,7 +202,9 @@ int webnet_sparse_row_products(
     int query_row_count, const int* cross_a, const int* cross_b,
     int cross_count, double* quadratic_out, double* cross_out,
     int* normal_nnz_out, int* factor_nnz_out, double* damping_out,
-    int* attempts_out, char* err_buf, int err_cap) {
+    int* attempts_out, double* assembly_ms_out, double* equilibration_ms_out,
+    double* analyze_ms_out, double* factorize_ms_out, double* solve_ms_out,
+    char* err_buf, int err_cap) {
   webnet::SparseFactorInfo info;
   std::string error;
   const webnet::SparseSolveStatus status = webnet::solve_sparse_row_products(
@@ -194,6 +218,26 @@ int webnet_sparse_row_products(
     if (factor_nnz_out != nullptr) *factor_nnz_out = info.factor_nnz;
     if (damping_out != nullptr) *damping_out = info.damping;
     if (attempts_out != nullptr) *attempts_out = info.attempts;
+    // Native phase timings (steady_clock ms, diagnostics only): written
+    // only on success when finite; null out pointers are skipped and
+    // failure paths leave caller buffers untouched.
+    if (assembly_ms_out != nullptr && std::isfinite(info.timings.assembly_ms)) {
+      *assembly_ms_out = info.timings.assembly_ms;
+    }
+    if (equilibration_ms_out != nullptr &&
+        std::isfinite(info.timings.equilibration_ms)) {
+      *equilibration_ms_out = info.timings.equilibration_ms;
+    }
+    if (analyze_ms_out != nullptr && std::isfinite(info.timings.analyze_ms)) {
+      *analyze_ms_out = info.timings.analyze_ms;
+    }
+    if (factorize_ms_out != nullptr &&
+        std::isfinite(info.timings.factorize_ms)) {
+      *factorize_ms_out = info.timings.factorize_ms;
+    }
+    if (solve_ms_out != nullptr && std::isfinite(info.timings.solve_ms)) {
+      *solve_ms_out = info.timings.solve_ms;
+    }
   }
   write_message(status == webnet::SparseSolveStatus::kOk ? "" : error,
                 err_buf, err_cap);

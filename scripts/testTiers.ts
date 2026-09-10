@@ -52,6 +52,7 @@ export const EVIDENCE_TESTS = [
   'tests/evidence/phase10e_production_qxx_reuse.test.ts',
   'tests/evidence/phase10f_post_reuse_profile.test.ts',
   'tests/evidence/phase10g_final_covariance_architecture.test.ts',
+  'tests/evidence/phase10h_native_qxx_fair_evidence.test.ts',
 ] as const;
 
 /** Fast automatic release-certification gate (committed-report verdict). */
