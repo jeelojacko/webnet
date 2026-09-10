@@ -296,8 +296,7 @@ describe('Phase 10G final-covariance architecture evidence', () => {
           kind: 'selected' | 'rowProducts',
         ): NativeLeg => {
           const leg = emptyLeg();
-          try {
-            const warmupDiagnostics = createExperimentalSparseRouteDiagnostics();
+          const warmupDiagnostics = createExperimentalSparseRouteDiagnostics();
             new LSAEngine({
               input,
               ...options,
@@ -372,10 +371,6 @@ describe('Phase 10G final-covariance architecture evidence', () => {
               leg.fullResultParity = null;
               leg.toleranceParity = null;
             }
-          } catch (error) {
-            leg.ran = true;
-            leg.fallbackReasons = [error instanceof Error ? error.message.slice(0, 300) : String(error).slice(0, 300)];
-          }
           return leg;
         };
         // Keep A/B/C walls focused on final covariance: inject only the
