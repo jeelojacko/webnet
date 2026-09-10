@@ -4,12 +4,16 @@
 // unchanged. Native APIs migrate in a later phase.
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
+mod study_backup;
 mod study_files;
 mod study_store;
 
 fn main() {
     tauri::Builder::default()
+        .plugin(tauri_plugin_dialog::init())
         .invoke_handler(tauri::generate_handler![
+            study_backup::study_backup_import_dialog,
+            study_backup::study_backup_export_dialog,
             study_store::study_native_status,
             study_store::study_native_put,
             study_store::study_native_get,

@@ -11,13 +11,13 @@ type InvokeFn = <T>(_cmd: string, _args?: Record<string, unknown>) => Promise<T>
 
 // Resolved lazily (and only) on the Tauri runtime so browser bundles and
 // non-Tauri test tiers never require the Tauri package to be resolvable.
-// The variable specifier keeps bundlers from statically pulling it in.
-const loadInvoke = (): Promise<InvokeFn> => {
-  const specifier = '@tauri-apps/api/core';
-  return import(/* @vite-ignore */ specifier).then(
+// The literal specifier (with @vite-ignore) matches the Locate bridge: a
+// variable specifier would keep bundlers from statically resolving it, but
+// the packaged Tauri build then fails to resolve the module at runtime.
+const loadInvoke = (): Promise<InvokeFn> =>
+  import(/* @vite-ignore */ '@tauri-apps/api/core').then(
     (mod: unknown) => (mod as { invoke: InvokeFn }).invoke,
   );
-};
 
 async function invoke<T>(cmd: string, args?: Record<string, unknown>): Promise<T> {
   return (await loadInvoke())<T>(cmd, args);
@@ -122,3 +122,25 @@ export const studyNativeFilesDelete = (path: string): Promise<void> =>
 
 export const studyNativeFilesExists = (path: string): Promise<boolean> =>
   invoke<boolean>('study_files_exists', { input: { path } });
+
+// ---- Study backup import/export dialogs (Rust `study_backup.rs`, Phase 3C/3D) ----
+//
+// Coupled dialog+operation commands: the native Open dialog reads the
+// selected JSON backup and the native Save dialog writes the given export
+// text. No filesystem path crosses the bridge in either direction.
+
+export interface NativeBackupOpenResult {
+  cancelled: boolean;
+  contents?: string | null;
+}
+
+export interface NativeBackupSaveResult {
+  cancelled: boolean;
+  bytes: number;
+}
+
+export const studyNativeBackupImport = (): Promise<NativeBackupOpenResult> =>
+  invoke<NativeBackupOpenResult>('study_backup_import_dialog');
+
+export const studyNativeBackupExport = (contents: string): Promise<NativeBackupSaveResult> =>
+  invoke<NativeBackupSaveResult>('study_backup_export_dialog', { input: { contents } });

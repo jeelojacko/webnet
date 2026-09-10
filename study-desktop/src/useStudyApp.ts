@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { exportStudyData, parseStudyImport } from './studyExportImport';
+import { createStudyFileInteractions } from './studyFileInteractions';
 import {
   acknowledgeUnitSourceReview,
   createStudyContentFromSourceSelection,
@@ -623,6 +624,49 @@ export const useStudyApp = () => {
 
   const exportText = useMemo(() => (data ? exportStudyData(data) : ''), [data]);
 
+  // Phase 3B–3E native backup dialogs: selection goes through the
+  // platform-neutral boundary; parsing/storage keep textarea semantics.
+  const fileInteractions = useMemo(() => createStudyFileInteractions(), []);
+
+  const importBackupFromFile = useCallback(async () => {
+    let selection: Awaited<ReturnType<typeof fileInteractions.openBackupForImport>>;
+    try {
+      selection = await fileInteractions.openBackupForImport();
+    } catch (error) {
+      // Native dialog/transport rejection (denied, unreadable, IPC down):
+      // surface it like any other import failure, never an unhandled
+      // rejection and never a silent no-op.
+      setStatusMessage(
+        `Study backup import failed: ${error instanceof Error ? error.message : String(error)}`,
+      );
+      return;
+    }
+    if (selection.cancelled) return;
+    try {
+      const snapshot = parseStudyImport(selection.text);
+      await storage.replaceAll(snapshot);
+      setData({ ...snapshot, legalComponents: [] });
+      setStatusMessage('Study backup imported from file.');
+    } catch (error) {
+      setStatusMessage(
+        `Study backup import failed: ${error instanceof Error ? error.message : String(error)}`,
+      );
+    }
+  }, [fileInteractions, storage]);
+
+  const exportBackupToFile = useCallback(async () => {
+    if (!data) return;
+    try {
+      const result = await fileInteractions.saveBackupExport(exportText);
+      if (result.cancelled) return;
+      setStatusMessage(`Study backup saved (${result.bytes} bytes).`);
+    } catch (error) {
+      setStatusMessage(
+        `Study backup export failed: ${error instanceof Error ? error.message : String(error)}`,
+      );
+    }
+  }, [data, exportText, fileInteractions]);
+
   const officialPackageImport = useStudyOfficialPackageImport({
     data,
     storage,
@@ -921,6 +965,9 @@ export const useStudyApp = () => {
     importText,
     setImportText,
     importData,
+    fileInteractions,
+    importBackupFromFile,
+    exportBackupToFile,
     deleteAllData,
     ...officialPackageImport,
     ...aiAuthoring,

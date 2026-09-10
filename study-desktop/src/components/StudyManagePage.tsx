@@ -9,6 +9,9 @@ type StudyManagePageProps = {
   onImportTextChange: (_text: string) => void;
   onImport: () => Promise<void>;
   onDeleteAllData: () => Promise<void>;
+  nativeBackupAvailable?: boolean;
+  onImportBackupFromFile?: () => Promise<void>;
+  onExportBackupToFile?: () => Promise<void>;
   officialPackageText: string;
   onOfficialPackageTextChange: (_text: string) => void;
   officialPackagePreview: OfficialContentPreview | null;
@@ -24,6 +27,9 @@ const StudyManagePage = ({
   onImportTextChange,
   onImport,
   onDeleteAllData,
+  nativeBackupAvailable = false,
+  onImportBackupFromFile,
+  onExportBackupToFile,
   officialPackageText,
   onOfficialPackageTextChange,
   officialPackagePreview,
@@ -193,6 +199,31 @@ const StudyManagePage = ({
         )}
       </div>
     </section>
+    {nativeBackupAvailable ? (
+    <section className="rounded border border-slate-800 bg-slate-900 p-4">
+      <div className="mb-2 text-xs uppercase tracking-wide text-slate-500">Backup File</div>
+      <p className="text-sm text-slate-400">
+        Open a backup JSON file or save the current export with native dialogs.
+      </p>
+      <div className="mt-3 flex flex-wrap gap-2">
+        <button
+          type="button"
+          onClick={onImportBackupFromFile}
+          className="rounded bg-slate-700 px-4 py-2 text-sm font-medium text-white hover:bg-slate-600"
+        >
+          Open Backup File…
+        </button>
+        <button
+          type="button"
+          onClick={onExportBackupToFile}
+          disabled={!exportText}
+          className="rounded bg-slate-700 px-4 py-2 text-sm font-medium text-white hover:bg-slate-600 disabled:cursor-not-allowed disabled:bg-slate-800"
+        >
+          Save Backup to File…
+        </button>
+      </div>
+    </section>
+    ) : null}
     <section className="rounded border border-slate-800 bg-slate-900 p-4">
       <div className="mb-2 text-xs uppercase tracking-wide text-slate-500">Export JSON</div>
       <textarea

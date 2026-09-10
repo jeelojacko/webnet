@@ -207,6 +207,9 @@ const StudyApp = () => {
           onImportTextChange={study.setImportText}
           onImport={study.importData}
           onDeleteAllData={study.deleteAllData}
+          nativeBackupAvailable={study.fileInteractions.canUseNativeBackupDialogs}
+          onImportBackupFromFile={study.importBackupFromFile}
+          onExportBackupToFile={study.exportBackupToFile}
           officialPackageText={study.officialPackageText}
           onOfficialPackageTextChange={study.setOfficialPackageText}
           officialPackagePreview={study.officialPackagePreview}

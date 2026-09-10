@@ -2,8 +2,8 @@ import { useEffect, useMemo, useState } from 'react';
 import { buildCompleteDocumentText, compareImportedLegalComponents, shouldShowLegalComponentInReader } from '../studyOfficialContent';
 import {
   parseExamPrepLocatePickerSearch,
-  postExamPrepLocatePick,
 } from '../examPrep/examPrepLocatePicker';
+import { resolveLocateWindowBridge } from '../examPrep/locateWindowBridge';
 import type { ImportedLegalComponent, StudyDataSnapshot, StudyDocument, StudyUnit } from '../studyTypes';
 
 type StudyDocumentPageProps = {
@@ -88,6 +88,8 @@ const StudyDocumentPage = ({
     () => parseExamPrepLocatePickerSearch(window.location.search),
     [],
   );
+  // Picker transport: browser uses BroadcastChannel; Tauri uses native events.
+  const locateBridge = useMemo(() => resolveLocateWindowBridge(), []);
   const [pickerSent, setPickerSent] = useState<{
     label: string;
     kind: 'sent' | 'unsupported' | 'error';
@@ -95,8 +97,10 @@ const StudyDocumentPage = ({
 
   const sendPickerPick = (sourceKey: string, label: string): void => {
     if (!pickerContext) return;
-    const posted = postExamPrepLocatePick(pickerContext.token, documentId, sourceKey);
-    setPickerSent({ label, kind: posted });
+    const token = pickerContext.token;
+    void locateBridge.postPick(token, documentId, sourceKey).then((posted) => {
+      setPickerSent({ label, kind: posted });
+    });
   };
 
   useEffect(() => {

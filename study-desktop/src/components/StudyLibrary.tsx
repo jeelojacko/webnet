@@ -7,10 +7,8 @@ import {
   EXAM_PREP_PICKER_READY_TYPE,
   EXAM_PREP_PICKER_SPRINT_ENDED_TYPE,
   parseExamPrepLocatePickerSearch,
-  postExamPrepLocatePick,
-  postExamPrepLocatePickerControl,
-  subscribeExamPrepLocatePickerControl,
 } from '../examPrep/examPrepLocatePicker';
+import { resolveLocateWindowBridge } from '../examPrep/locateWindowBridge';
 import type {
   StudySearchDiagnostics,
   StudySearchResultSummary,
@@ -175,6 +173,8 @@ const StudyLibrary = ({
     Record<string, Awaited<ReturnType<StudyLibraryProps['onLoadLegalDocumentComponentSummary']>>>
   >({});
   const searchService = useMemo(() => createStudySearchService(), []);
+  // Picker transport: browser uses BroadcastChannel; Tauri uses native events.
+  const locateBridge = useMemo(() => resolveLocateWindowBridge(), []);
 
   // Ephemeral Locate picker context (present only when this tab was opened
   // from an active Locate sprint). Pure URL state — never persisted.
@@ -224,14 +224,14 @@ const StudyLibrary = ({
   const pickerSprintId = livePicker?.sprintId ?? null;
   useEffect(() => {
     if (!pickerSprintId) return;
-    postExamPrepLocatePickerControl({ type: EXAM_PREP_PICKER_READY_TYPE, sprintId: pickerSprintId });
+    void locateBridge.postControlToParent({ type: EXAM_PREP_PICKER_READY_TYPE, sprintId: pickerSprintId });
     const heartbeat = window.setInterval(() => {
-      postExamPrepLocatePickerControl({
+      void locateBridge.postControlToParent({
         type: EXAM_PREP_PICKER_READY_TYPE,
         sprintId: pickerSprintId,
       });
     }, EXAM_PREP_PICKER_HEARTBEAT_INTERVAL_MS);
-    const unsubscribe = subscribeExamPrepLocatePickerControl(pickerSprintId, (message) => {
+    const unsubscribe = locateBridge.subscribeControl(pickerSprintId, (message) => {
       if (message.type === EXAM_PREP_PICKER_CONTEXT_TYPE) {
         const current = livePickerRef.current;
         if (current && message.sprintId === current.sprintId && message.token === current.token)
@@ -252,7 +252,7 @@ const StudyLibrary = ({
       window.clearInterval(heartbeat);
       unsubscribe();
     };
-  }, [pickerSprintId]);
+  }, [pickerSprintId, locateBridge]);
 
   /**
    * Builds the CURRENT picker query (live token/prompt/sprint) so in-tab
@@ -424,18 +424,21 @@ const StudyLibrary = ({
     }
     if (!livePicker) return;
     if (result.entityType === 'document' && result.documentId) {
-      const posted = postExamPrepLocatePick(livePicker.token, result.documentId, null);
-      setPickerNotice({ kind: posted, label });
-      if (posted === 'sent') setPickerWaiting(true);
+      const documentId = result.documentId;
+      void locateBridge.postPick(livePicker.token, documentId, null).then((posted) => {
+        setPickerNotice({ kind: posted, label });
+        if (posted === 'sent') setPickerWaiting(true);
+      });
     }
     if (result.entityType === 'official-provision' && result.documentId && result.sourceKey) {
-      const posted = postExamPrepLocatePick(
-        livePicker.token,
-        result.documentId,
-        result.sourceKey,
-      );
-      setPickerNotice({ kind: posted, label });
-      if (posted === 'sent') setPickerWaiting(true);
+      const documentId = result.documentId;
+      const sourceKey = result.sourceKey;
+      void locateBridge
+        .postPick(livePicker.token, documentId, sourceKey)
+        .then((posted) => {
+          setPickerNotice({ kind: posted, label });
+          if (posted === 'sent') setPickerWaiting(true);
+        });
     }
   };
 
@@ -449,9 +452,11 @@ const StudyLibrary = ({
       return;
     }
     if (!livePicker) return;
-    const posted = postExamPrepLocatePick(livePicker.token, documentId, null);
-    setPickerNotice({ kind: posted, label: 'Use this document' });
-    if (posted === 'sent') setPickerWaiting(true);
+    const token = livePicker.token;
+    void locateBridge.postPick(token, documentId, null).then((posted) => {
+      setPickerNotice({ kind: posted, label: 'Use this document' });
+      if (posted === 'sent') setPickerWaiting(true);
+    });
   };
 
   const openDocumentCard = (documentId: string): void => {
