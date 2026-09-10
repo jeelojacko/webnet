@@ -140,7 +140,28 @@ conformance/parity/search tests, not an end-to-end desktop run.
 - Web Worker/MiniSearch: works unchanged; Vite emits the Study search worker separately.
 - URL/history/hash routing: works unchanged inside Study routes.
 - File, Blob/download, import/export, and PDF APIs: retained unchanged for Phase 1.
-- `window.open` and BroadcastChannel: retained unchanged; Locate picker multi-window behavior needs desktop runtime smoke validation and later native replacement.
+- Phase 3B–3E native backup dialogs: `src/studyFileInteractions.ts` is the ONLY
+  module that selects backup file interactions (browser vs Tauri; no scattered
+  host checks). Browser keeps the existing file input, textarea import, and
+  export text byte-for-byte. Tauri adds two coupled Rust commands in
+  `src-tauri/src/study_backup.rs` (`study_backup_import_dialog`,
+  `study_backup_export_dialog`, via `tauri-plugin-dialog`): both commands are
+  `async` so the blocking picker calls run on Tauri worker threads, never the
+  UI thread. The Open dialog
+  reads the selected JSON backup (32 MiB cap, UTF-8) and the Save dialog
+  writes the TypeScript-built export text through a temp sibling + rename
+  (deliberate overwrite) — no filesystem path crosses the bridge, and no
+  generic read/write IPC exists. Validation/parsing stays in TypeScript
+  (`parseStudyImport` + existing `replaceAll` semantics); cancel is a no-op
+  and failures surface as status text. Manage shows Open/Save buttons only
+  on Tauri. Tests: `tests/study_file_interactions.test.ts` (8 boundary +
+  format cases) + `tests/study_backup_dialogs_hook.test.tsx` (8 hook cases:
+  cancel no-ops, valid import, invalid/storage/dialog-rejection failures,
+  export bytes + export rejection) +
+  6 Rust backup read/write tests. No new frontend dialog/fs capability:
+  dialogs run only inside the coupled Rust commands. Known gap: no live
+  GUI dialog validation yet (headless CI cannot click native dialogs).
+- `window.open` and BroadcastChannel: retained unchanged for browser hosts. On Tauri the Locate picker instead uses the platform-neutral `src/examPrep/locateWindowBridge.ts` (stable `study-locate-picker` WebviewWindow + typed `webnet-study-locate-pick` / `webnet-study-locate-control` events, session-scoped, explicit errors, no `window.open`/BroadcastChannel); the child window loads the same Study picker route. Tests: `tests/exam_prep_locate_window_bridge.test.ts` (9 mocked-API cases). Least privilege is split across `src-tauri/capabilities/default.json` (main window: window create/close/focus, webview-window create, event emit-to/listen/unlisten) and `src-tauri/capabilities/study-locate-picker.json` (picker window: only event emit-to/listen/unlisten); the unused event `emit` permission is not granted anywhere. Known gap: no live GUI validation yet (no Tauri runtime in this environment — native window focus/event delivery needs desktop smoke validation).
 
 ## Tooling boundary
 
