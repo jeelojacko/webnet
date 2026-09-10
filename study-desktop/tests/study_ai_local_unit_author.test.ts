@@ -2,7 +2,7 @@ import { afterEach, describe, expect, it } from 'vitest';
 import { studyTestContentPath } from './study_test_paths';
 import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
-import { join } from 'node:path';
+import { dirname, join } from 'node:path';
 import type { AiUnitAuthoringJob } from '../src/ai/studyAiTypes';
 import type { NbLawContentPackage, NbLawNormalizedDocument, NbLawSection } from '../src/content/nbLawTypes';
 import {
@@ -218,7 +218,7 @@ const validPayloadFor = (sourceKey: string): Record<string, unknown> => {
 /* --------------------------------- fixtures --------------------------------- */
 
 const writeText = (path: string, text: string): void => {
-  mkdirSync(path.split('/').slice(0, -1).join('/'), { recursive: true });
+  mkdirSync(dirname(path), { recursive: true });
   writeFileSync(path, text);
 };
 
