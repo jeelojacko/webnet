@@ -47,6 +47,7 @@ export const EVIDENCE_TESTS = [
   'tests/evidence/phase9j_path_priority_profile.test.ts',
   'tests/evidence/phase10a_3d_adjustment_profile.test.ts',
   'tests/evidence/phase10b_native_correction_evidence.test.ts',
+  'tests/evidence/phase10c_covariance_statistics_evidence.test.ts',
 ] as const;
 
 /** Fast automatic release-certification gate (committed-report verdict). */

@@ -83,6 +83,7 @@ export const buildStatisticsContextForEngine = (engine: any): AdjustmentStatisti
       computeSideshotResults: () => engine.computeSideshotResults(),
       log: (message) => engine.log(message),
       tsCorrelationGroup: (obs) => engine.tsCorrelationGroup(obs),
+      detailedSolveProfiler: engine.detailedSolveProfiler,
   };
 };
 

@@ -289,6 +289,8 @@ const trySparseSelectedCovariance = (
 ): RecoveredFinalCovariance => {
   const solver = options.sparseSelectedCovarianceSolver;
   if (!solver) throw new Error('Selected-covariance solver is not injected.');
+  const profiler = options.detailedSolveProfiler;
+  const sparseAssemblyStartedAt = profiler ? detailedNow() : 0;
   const { sparseRows, structuredWeights } = assembleAdjustmentEquations(
     buildAssemblyDependencies(options),
     covarianceObservations,
@@ -301,28 +303,34 @@ const trySparseSelectedCovariance = (
   if (!structuredWeights) {
     throw new Error('Sparse covariance assembly did not produce structured weights.');
   }
-  if (options.experimentalSelectedCovarianceMode === true) {
-    return {
-      kind: 'selected',
-      store: querySelectedCovarianceStore(
-        solver,
-        sparseRows,
-        structuredWeights,
-        covarianceObsEquationCount,
-        options,
-      ),
-    };
+  const sparseAssemblyMs = profiler ? detailedNow() - sparseAssemblyStartedAt : 0;
+  const sparseQueryStartedAt = profiler ? detailedNow() : 0;
+  const recovered: RecoveredFinalCovariance =
+    options.experimentalSelectedCovarianceMode === true
+      ? {
+          kind: 'selected',
+          store: querySelectedCovarianceStore(
+            solver,
+            sparseRows,
+            structuredWeights,
+            covarianceObsEquationCount,
+            options,
+          ),
+        }
+      : {
+          kind: 'dense',
+          qxx: querySparseSelectedCovariance(
+            solver,
+            sparseRows,
+            structuredWeights,
+            covarianceObsEquationCount,
+            options.numParams,
+          ),
+        };
+  if (profiler) {
+    profiler.recordCovariance(sparseAssemblyMs, 0, detailedNow() - sparseQueryStartedAt);
   }
-  return {
-    kind: 'dense',
-    qxx: querySparseSelectedCovariance(
-      solver,
-      sparseRows,
-      structuredWeights,
-      covarianceObsEquationCount,
-      options.numParams,
-    ),
-  };
+  return recovered;
 };
 
 const recoverDenseCovariance = (

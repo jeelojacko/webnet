@@ -1,5 +1,6 @@
 import { transformSymmetricCovariance3 } from './adjustGpsMath';
 import { tryQueryStandardizedResidualRowProducts } from './adjustStatisticsRowProducts';
+import { detailedNow } from './adjustDetailedSolveProfile';
 import { accumulateNormalEquationsFromSparseRows, multiplySparseRowsByDenseMatrix, zeros } from './matrix';
 import { assembleAdjustmentEquations } from './adjustmentEquationAssembly';
 import { getObservationSetId } from './observationMetadata';
@@ -16,6 +17,27 @@ export const computeStandardizedResidualStatistics = (
   activeObservations: Observation[],
   constraints: CoordinateConstraint[],
 ): void => {
+  const profiler = ctx.detailedSolveProfiler;
+  let statisticsEquationAssemblyMs = 0;
+  let robustWeightPreparationMs = 0;
+  let statisticsNormalAccumulationMs = 0;
+  let statisticsQxxInversionMs = 0;
+  let rowProductConstructionMs = 0;
+  let perEquationStatisticsMs = 0;
+  let gpsCrossProductTransformMs = 0;
+  let summaryConstructionMs = 0;
+  const flushStandardizedResidualStages = (): void => {
+    profiler?.recordStandardizedResidualStage({
+      statisticsEquationAssemblyMs,
+      robustWeightPreparationMs,
+      statisticsNormalAccumulationMs,
+      statisticsQxxInversionMs,
+      rowProductConstructionMs,
+      perEquationStatisticsMs,
+      gpsCrossProductTransformMs,
+      summaryConstructionMs,
+    });
+  };
   if (hasQxx) {
     const stationParamCount =
       Object.values(paramIndex).reduce((max, idx) => {
@@ -89,7 +111,9 @@ export const computeStandardizedResidualStatistics = (
           ? { includeDenseA: false, weightRepresentation: 'sparse', omitDenseP: true }
           : { includeDenseA: false },
       );
+      const initialAssemblyStartedAt = profiler ? detailedNow() : 0;
       let assembled = assembleStatsEquations(sparseStatsSupported);
+      if (profiler) statisticsEquationAssemblyMs += detailedNow() - initialAssemblyStartedAt;
       let useSparseRowProductWeights = sparseStatsSupported;
 
       const applyStatsHuberWeights = (): void => {
@@ -120,15 +144,29 @@ export const computeStandardizedResidualStatistics = (
           ctx.log(
             'Warning: sparse Huber statistics lack structured robust support; using dense weights.',
           );
+          const huberFallbackAssemblyStartedAt = profiler ? detailedNow() : 0;
           assembled = assembleStatsEquations(false);
+          if (profiler) {
+            statisticsEquationAssemblyMs += detailedNow() - huberFallbackAssemblyStartedAt;
+          }
           useSparseRowProductWeights = false;
           applyStatsHuberWeights();
         }
       };
+      const huberAssemblyBefore = statisticsEquationAssemblyMs;
+      const robustPrepStartedAt = profiler ? detailedNow() : 0;
       applyStatsHuberWeights();
+      if (profiler) {
+        robustWeightPreparationMs += Math.max(
+          0,
+          detailedNow() - robustPrepStartedAt -
+            (statisticsEquationAssemblyMs - huberAssemblyBefore),
+        );
+      }
 
       if (!ctx.preanalysisMode) {
         try {
+          const rowProductInitialStartedAt = profiler ? detailedNow() : 0;
           let rowProducts = tryQueryStandardizedResidualRowProducts(ctx, {
             sparseRows: assembled.sparseRows,
             weights: assembled.P,
@@ -140,10 +178,25 @@ export const computeStandardizedResidualStatistics = (
             observationEquationCount: numObsEquations,
             parameterCount: numParams,
           });
+          if (profiler) rowProductConstructionMs += detailedNow() - rowProductInitialStartedAt;
           if (!rowProducts && useSparseRowProductWeights) {
+            const retryAssemblyStartedAt = profiler ? detailedNow() : 0;
             assembled = assembleStatsEquations(false);
+            if (profiler) {
+              statisticsEquationAssemblyMs += detailedNow() - retryAssemblyStartedAt;
+            }
             useSparseRowProductWeights = false;
+            const retryHuberAssemblyBefore = statisticsEquationAssemblyMs;
+            const retryRobustPrepStartedAt = profiler ? detailedNow() : 0;
             applyStatsHuberWeights();
+            if (profiler) {
+              robustWeightPreparationMs += Math.max(
+                0,
+                detailedNow() - retryRobustPrepStartedAt -
+                  (statisticsEquationAssemblyMs - retryHuberAssemblyBefore),
+              );
+            }
+            const rowProductRetryStartedAt = profiler ? detailedNow() : 0;
             rowProducts = tryQueryStandardizedResidualRowProducts(ctx, {
               sparseRows: assembled.sparseRows,
               weights: assembled.P,
@@ -152,6 +205,7 @@ export const computeStandardizedResidualStatistics = (
               observationEquationCount: numObsEquations,
               parameterCount: numParams,
             });
+            if (profiler) rowProductConstructionMs += detailedNow() - rowProductRetryStartedAt;
           }
           const { L, rowInfo, sparseRows } = assembled;
           let B: number[][] = [];
@@ -162,14 +216,22 @@ export const computeStandardizedResidualStatistics = (
                 'Dense fallback statistics require dense weights; disable the experimental sparse row-product path.',
               );
             }
+            const statsAccumulateStartedAt = profiler ? detailedNow() : 0;
             const { normal: N } = accumulateNormalEquationsFromSparseRows(
               sparseRows,
               zeros(numObsEquations, 1),
               denseP,
               numParams,
             );
+            if (profiler) {
+              statisticsNormalAccumulationMs += detailedNow() - statsAccumulateStartedAt;
+            }
+            const statsInvertStartedAt = profiler ? detailedNow() : 0;
             const QxxStats = ctx.invertNormalMatrixForStats(N);
+            if (profiler) statisticsQxxInversionMs += detailedNow() - statsInvertStartedAt;
+            const rowProductDenseStartedAt = profiler ? detailedNow() : 0;
             B = multiplySparseRowsByDenseMatrix(sparseRows, QxxStats);
+            if (profiler) rowProductConstructionMs += detailedNow() - rowProductDenseStartedAt;
           }
           const rowStats = new Map<
             number,
@@ -183,6 +245,7 @@ export const computeStandardizedResidualStatistics = (
             }
           >();
           const s0 = ctx.seuw || 1;
+          const perEquationStartedAt = profiler ? detailedNow() : 0;
           for (let i = 0; i < numObsEquations; i += 1) {
             const info = rowInfo[i];
             if (!info) continue;
@@ -232,8 +295,12 @@ export const computeStandardizedResidualStatistics = (
             entry.rows.push(i);
             rowStats.set(info.obs.id, entry);
           }
+          if (profiler) perEquationStatisticsMs += detailedNow() - perEquationStartedAt;
 
+          const gpsBeforeSummary = gpsCrossProductTransformMs;
+          const summaryStartedAt = profiler ? detailedNow() : 0;
           activeObservations.forEach((obs) => {
+            const gpsBranchStartedAt = profiler ? detailedNow() : 0;
             const entry = rowStats.get(obs.id);
             if (!entry) return;
             if (obs.type === 'gps') {
@@ -332,6 +399,7 @@ export const computeStandardizedResidualStatistics = (
                 tN: componentStdRes('N'),
                 tU: componentStdRes('U'),
               };
+              if (profiler) gpsCrossProductTransformMs += detailedNow() - gpsBranchStartedAt;
             }
             if (entry.t.length === 2 && entry.comps.includes('E') && entry.comps.includes('N')) {
               const idxE = entry.comps.indexOf('E');
@@ -365,12 +433,20 @@ export const computeStandardizedResidualStatistics = (
               obs.mdb = entry.mdb[0];
             }
           });
+          if (profiler) {
+            summaryConstructionMs += Math.max(
+              0,
+              detailedNow() - summaryStartedAt -
+                (gpsCrossProductTransformMs - gpsBeforeSummary),
+            );
+          }
         } catch (error) {
           const detail = error instanceof Error ? ` ${error.message}` : '';
           ctx.log(
             `Warning: standardized residuals not computed (normal matrix factorization failed).${detail}`,
           );
         }
+        flushStandardizedResidualStages();
       }
     }
   }
