@@ -35,13 +35,14 @@ blocked by the fail-closed gate by design — see Route B note).
   reconstructed, existing precision/report contract preserved.
 - **Route B (selected legacy-all-pairs):** selected mode +
   `experimentalSelectedCovarianceLegacyAllPairs`; station blocks + all
-  unknown pairs queried into a store. Fairness note: the injected bundle
-  also carries the row-product solver, so the statistics reuse gate fails
-  closed (`sparse-row-products-active` on every leg, measured) and the
-  statistics stage rebuilds the legacy path — Route B as measured is
-  native Qxx for final covariance + legacy statistics, NOT native Qxx
-  feeding stats reuse. A reuse-feeding-native combination needs a new
-  evidence-only seam (production gate change — out of scope).
+  unknown pairs queried into a store. A/B/C timing legs inject only the
+  selected-covariance solver; correction and statistics remain TypeScript.
+  The statistics reuse gate therefore fails closed on
+  `sparse-selected-solver-active`, and the statistics stage rebuilds the
+  legacy path. Route B is native Qxx for final covariance + TS legacy
+  statistics, NOT native Qxx feeding stats reuse. A reuse-feeding-native
+  combination needs a new evidence-only seam (production gate change — out
+  of scope).
 - **Route C (selected network):** selected mode without legacy compat;
   station blocks + connected/requested pairs only (upper-bound demand).
 - **Row-products leg:** `sparseRowProductsSolver` injected alone;
@@ -55,9 +56,9 @@ boundary observations. No timing assertions or production speedup claims.
 
 | Fixture | P/coord | rows | dense wall | A med [min–max] | B med [min–max] | C med [min–max] | RP med [min–max] |
 |---|---:|---:|---:|---|---|---|---|
-| gps-3d-128 | 384/384 | 1027 | 218.70 | 46.97 | 69.31 | 38.79 | 213.86 |
-| gps-3d-64 | 192/192 | 515 | 42.51 | 18.90 | 23.45 | 15.80 | 42.67 |
-| orientation-synth (inadmissible) | 64/48 | 179 | 12.88 | 7.44 | 7.92 | 7.23 | 10.33 |
+| gps-3d-128 | 384/384 | 1027 | 217.08 | 208.82 | 244.56 | 204.53 | 206.18 |
+| gps-3d-64 | 192/192 | 515 | 41.20 | 44.40 | 49.73 | 41.43 | 40.84 |
+| orientation-synth (inadmissible) | 64/48 | 179 | 13.08 | 10.97 | 13.13 | 12.76 | 10.38 |
 
 gps-3d-128 demand (exact): A raw 147456 / unique 73920 / 384 cols;
 B raw 74304 / unique 73920 / 384 cols; C raw 2295 / unique 1911 /
@@ -88,10 +89,11 @@ there. Symmetric-unique entries at 128: A 73920 / B 73920 / C 1911.
   ~4e-10) — a native drop-in needs the tolerance bar used here.
 - Route C omits legacy all-pairs by design (all-pairs rows do not
   resolve on any fixture) — breaks the public contract as-is.
-- Reuse boundary (measured): `statsReuseReason =
-  sparse-row-products-active` on every native leg — production statistics
-  reuse refuses any active sparse solver, so native Qxx never feeds the
-  reuse path today.
+- Reuse boundary (measured): Route A reports
+  `sparse-selected-solver-active`; selected-store Routes B/C report
+  `missing-final-qxx`; production statistics reuse refuses sparse covariance
+  or selected-store output, so native Qxx never feeds reuse. Separate
+  row-products leg reports `sparse-row-products-active`.
 - Factor metadata limitation (stated): normalNnz / factorNnz / damping /
   attempts are returned by the WASM ABI only to the internal caller and
   are not exposed via route diagnostics or the probe. Dense-path damping=0
@@ -122,7 +124,7 @@ there. Symmetric-unique entries at 128: A 73920 / B 73920 / C 1911.
 | Sparse fallback (selected/row-products) | none (0 on all legs) | diagnostics |
 | Damping in native factor | not captured (not routed via diagnostics) | WASM bridge returns damping per solve; dense-path 0 proven by `reused-final-dense-qxx`, synth `damped-final-recovery` |
 | Bit-identity parity | BLOCKED (~4e-10 FP-order) | tolerance 1e-6 asserted instead |
-| Stats reuse over native Qxx | BLOCKED by gate design | `sparse-row-products-active` measured |
+| Stats reuse over native Qxx | BLOCKED by gate design | A=`sparse-selected-solver-active`; B/C=`missing-final-qxx`; row-products=`sparse-row-products-active` |
 | All-pairs from selected store | BLOCKED by omission design | C leg all-pairs rows mismatch |
 | Native phase timings | UNAVAILABLE via ABI | boundary walls only |
 
@@ -176,10 +178,10 @@ fill are unmeasured (design nnz not recorded; dense P\u00b2\u00b712 B upper boun
 
 Fastest contract-preserving route:
 
-- **gps-3d-128:** production dense 218.70 ms; Route B native legacy-all-pairs 69.31 ms covariance-stage boundary; Route C 38.79 ms covariance-stage boundary but contract-different. Route B does not feed native Qxx into statistics reuse, so no fair whole-session gain is established.
+- **gps-3d-128:** production dense 217.08 ms; Route B native legacy-all-pairs 244.56 ms covariance-stage boundary; Route C 204.53 ms covariance-stage boundary but contract-different. Route B does not feed native Qxx into statistics reuse, so no fair whole-session gain is established.
 - **Statistics-stage asymmetry (disclosure):** the dense baseline enjoys production automatic Qxx reuse (skips statistics accumulation+inversion) while every native leg is fail-closed out of reuse by the active sparse solvers and runs legacy statistics, so boundary-wall comparisons are conservative against the native legs and are not apples-to-apples on the statistics stage.
-- **orientation-heavy largest:** production dense 12.88 ms; Route B 7.92 ms boundary; Route C 7.23 ms boundary, both inadmissible because dense reference covariance is damped and Route C omits all-pairs output.
-- **Whole-session improvement:** not established. Native Route B retains legacy statistics rebuild; row-products whole-session boundary is 213.86 ms versus 218.70 ms at gps-3d-128, below the required 15% threshold.
+- **orientation-heavy largest:** production dense 13.08 ms; Route B 13.13 ms boundary; Route C 12.76 ms boundary, both inadmissible because dense reference covariance is damped and Route C omits all-pairs output.
+- **Whole-session improvement:** not established. Native Route B retains legacy statistics rebuild; row-products whole-session boundary is 206.18 ms versus 217.08 ms at gps-3d-128, below the required 15% threshold.
 
 Decision: **NO-GO for transparent production covariance optimization.**
 Recommended Phase 10H: **none**. If work resumes, first run shared-factor/per-phase-timing and controlled native-Qxx statistics-reuse evidence; do not widen production routing.

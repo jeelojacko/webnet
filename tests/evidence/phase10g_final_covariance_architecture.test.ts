@@ -378,10 +378,19 @@ describe('Phase 10G final-covariance architecture evidence', () => {
           }
           return leg;
         };
-        const bundleOptions = (await import('../../src/engine/wasm/experimentalSparseNumericalBundle')).buildExperimentalSparseEngineOptions;
-        legs.allEntryDense = runLeg(bundleOptions(bundle, undefined), 'selected');
-        legs.legacyAllPairs = runLeg(bundleOptions(bundle, undefined, true, true), 'selected');
-        legs.selectedNetwork = runLeg(bundleOptions(bundle, undefined, true, false), 'selected');
+        // Keep A/B/C walls focused on final covariance: inject only the
+        // selected-covariance solver. Correction and statistics stay TS.
+        const covarianceOptions = (
+          selectedMode: boolean,
+          legacyAllPairs: boolean,
+        ): Record<string, unknown> => ({
+          sparseSelectedCovarianceSolver: bundle.sparseSelectedCovarianceSolver,
+          experimentalSelectedCovarianceMode: selectedMode,
+          ...(legacyAllPairs ? { experimentalSelectedCovarianceLegacyAllPairs: true } : {}),
+        });
+        legs.allEntryDense = runLeg(covarianceOptions(false, false), 'selected');
+        legs.legacyAllPairs = runLeg(covarianceOptions(true, true), 'selected');
+        legs.selectedNetwork = runLeg(covarianceOptions(true, false), 'selected');
         legs.rowProducts = runLeg({ sparseRowProductsSolver: bundle.sparseRowProductsSolver }, 'rowProducts');
       }
 
