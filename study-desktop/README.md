@@ -28,6 +28,111 @@ re-exporting it.
   `tauri icon` against real branding before release packaging, adding
   `.icns`/`.ico` for macOS/Windows bundles).
 
+## Phase 2C native SQLite foundation (Rust-owned, unused by the frontend)
+
+`src-tauri/src/study_store.rs` opens `<app_data_dir>/webnet-study/study.sqlite3`
+(app-data dir from Tauri path APIs; no hardcoded user paths) with rusqlite
+(bundled SQLite, WAL + `busy_timeout`). Independent native schema version 1
+in `native_schema_meta`; the browser IndexedDB schema/version
+(`webnet.study.v1`, version 10) is preserved separately.
+
+- One table per browser logical store (all 22, including the derived
+  `searchIndexMetadata`/`searchIndexArtifacts` stores, whose index bytes are
+  stored opaquely — no native search rebuild in this phase). Each table is
+  `(key TEXT PRIMARY KEY, payload TEXT NOT NULL)` holding the browser key
+  plus the record as JSON (`store_key_field` documents the browser key path
+  each native key derives from).
+- Migrations are deterministic (fixed store order) and transactional
+  (single transaction for the v0→v1 create); store names are allowlisted so
+  no caller input reaches SQL as an identifier.
+- Bridge is five narrow typed commands — `study_native_status`,
+  `study_native_put/get/delete`, `study_native_list_keys` — carrying only
+  `{store, key, payload}` JSON. No raw SQL is exposed to React, and no
+  TypeScript selects these commands yet.
+- Rust unit tests (std-only temp dirs): empty creation/version,
+  migration idempotence, CRUD, unknown-store rejection, commit/rollback,
+  reopen persistence, path resolution, bridge serde.
+
+Limitations: per-command open/migrate (no pooled handle); no frontend
+adapter, search rewrite, legacy IndexedDB→SQLite migration, or dialogs.
+
+## Phase 2E+2F native adapter and atomic Study transactions (TypeScript selects native)
+
+- `src/studyNativeIpc.ts` is the ONLY module that touches `invoke` (lazy
+  `@tauri-apps/api/core` import, so browser/root bundles never require the
+  Tauri package). `src/studyNativeStorage.ts` implements the UNCHANGED
+  `StudyStorage` interface over it; `studyStoragePlatform.ts` resolves
+  `browser` vs `tauri` (`__TAURI_INTERNALS__`/`__TAURI__`), and
+  `createStudyStorage()` returns the matching adapter. Native init/IPC
+  failure throws fail-closed — never a silent IndexedDB/OPFS fallback.
+  Browser DB name/version/upgrades and all UI/domain/search behavior are untouched.
+- Rust adds four narrow commands: `study_native_batch` (bounded clears +
+  puts + deletes + generic CAS conditions + a one-active-mock-style
+  uniqueness guard, all in ONE SQLite transaction), `study_native_load_all`,
+  `study_native_list_store`, and `study_native_query_field` (generic
+  top-level-field equality for the `byUnitId`/`byDocumentId`-style lazy
+  reads). Records stay opaque JSON; no business logic moved to Rust.
+- Every multi-store browser transaction maps to one native batch:
+  `saveRatedAttempt`, `saveAttemptProgress`/`saveSchedulingUndo`,
+  `deleteUnitCascade`, `replaceAiAuthoringArtifacts`,
+  `approveAiUnitProposal`, `replaceAll`, official package import, mock
+  CAS + active lock, and recall CAS (immutable `add` via absent-conditions).
+- Tests: `tests/study_native_storage.test.ts` (18 mocked-IPC cases:
+  selection, CRUD, batch payloads, CAS/lock atomicity, init errors, no
+  fallback) + Rust batch commit/rollback/condition/guard tests (22 total).
+
+## Phase 2G desktop search without IndexedDB (main-thread native bootstrap)
+
+Browser search keeps the direct IndexedDB worker path unchanged. The Tauri desktop runtime uses a native bootstrap instead: `src/search/studySearchPlatform.ts` centrally selects the backend, `src/studySearchNativeBridge.ts` (main thread only — workers cannot use Tauri IPC) reads authoritative records plus cached derived artifacts over native IPC/SQLite and writes fresh artifacts back, and pure `src/search/studySearchIndexCore.ts` builds/restores both MiniSearch indexes from supplied records only (never IndexedDB). The worker accepts `native-bootstrap` / `native-study-update` messages, emits `native-persist` only when fresh artifacts were built, and stays fail-closed (stale/unbootstrapped state rebuilds; never falls back to IndexedDB/OPFS). `NATIVE_SEARCH_DB_VERSION` (= native schema v1) is the native drift guard, mirroring the browser `dbVersion` semantics. Coverage: `tests/study_search_native.test.ts`.
+
+## Phase 2H+2I import/export compatibility and native conformance (TypeScript, mocked IPC)
+
+- `src/studyFileAssets.ts` is the platform-neutral Study asset operation
+  boundary: the browser path delegates to the exact OPFS helper
+  (`saveStudyTextAssetToOpfs`, logical paths `study/documents/...`, same
+  metadata semantics); the Tauri path UTF-8-encodes the text and calls the
+  narrow Rust `study_files_*` commands (new `studyNativeFilesWrite/Read/
+  Delete/Exists/Status` helpers in `src/studyNativeIpc.ts`) — bytes land
+  natively, with NO desktop OPFS fallback. Native IPC errors (including Rust
+  traversal rejections) propagate fail-closed. `saveStudyTextAssetToOpfs`
+  itself is byte-unchanged, so all existing browser tests still pass.
+- Compatibility: `tests/study_native_browser_parity.test.ts` proves
+  representative fixture data (pilot official/legal import, FSRS
+  schedules/attempts, drafts, Exam Prep recall/attempts/settings plus a mock
+  session, AI authoring runs/map/unit proposals) is representable as native
+  records and that native `replaceAll`/`loadAll`/export is logically
+  equivalent — per-store counts, spot records, and `exportStudyData` bytes
+  identical to the browser contract, deterministically reloaded. The public
+  export schema/format is unchanged.
+- Conformance: `tests/study_native_conformance.test.ts` covers empty→seed
+  (once-only), CRUD round-trips, draft delete + unit-cascade delete, stale
+  CAS rollback with browser messages (rated attempt, recall rating,
+  immutable attempt-add), restart-like reload over the same mocked backend
+  (byte-identical export), and native asset round-trip/traversal-error
+  propagation. `tests/study_file_assets.test.ts` covers the boundary itself
+  (browser OPFS exactness + null-without-OPFS, native bytes/metadata,
+  traversal + failure propagation). Shared fakes live in
+  `tests/study_native_conformance_support.ts`; existing suites untouched.
+- Legacy Phase 1 migration decision: DEFERRED. There is still no automatic
+  IndexedDB→SQLite or OPFS→native-files migration — a fresh native backend
+  seeds cleanly, and pre-existing browser/desktop installs keep their
+  IndexedDB v10/OPFS contracts unchanged. Migration is not straightforward
+  (record-key mapping is proven, but asset-byte moves plus settings/progress
+  identity across two live backends need a designed, tested cutover), so it
+  stays an explicit later phase; no silent or partial migration ships here.
+
+Known atomicity gaps: native multi-record batches are atomic (one SQLite
+transaction), but Study asset bytes and SQLite records are NOT a single
+atomic unit — a crash between a `study_files_write` and its referencing
+record write (or vice versa) can orphan bytes or dangle a `storagePath`.
+OPFS on browser has the same two-system property. Callers that add asset
+references should write bytes first, then the record, and treat missing-byte
+reads as fail-closed.
+
+Known validation gap: no live Windows/GUI desktop validation yet — native
+persistence is covered by Rust unit tests plus mocked-IPC TypeScript
+conformance/parity/search tests, not an end-to-end desktop run.
+
 ## Runtime API audit
 
 - IndexedDB: works unchanged; database `webnet.study.v1`, open version 10.
@@ -45,4 +150,4 @@ for Phase 1 and import only `study-desktop/src`; relocating that authoring toolc
 planned separately. This keeps runtime independent without mixing a risky tooling move into
 this extraction.
 
-No persistence/native API migration in Phase 1; behavior unchanged.
+Phase 1 changed no persistence behavior; Phase 2C adds the native SQLite foundation below (browser storage still authoritative).
