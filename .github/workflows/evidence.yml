@@ -25,6 +25,7 @@ on:
           - phase9d
           - phase9e-audit
           - phase9e-fastpath
+          - phase10b
       baseline_sha:
         description: 'Explicit baseline SHA recorded into Phase 9A reports (optional)'
         required: false
@@ -91,6 +92,7 @@ jobs:
             reports/phase8a6/
             reports/phase8a5/
             reports/phase9a/
+            artifacts/evidence/phase10b/
           if-no-files-found: warn
       - name: Upload Phase 9A raw fragments
         if: always()

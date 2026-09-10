@@ -22,6 +22,7 @@ import {
 } from './selectedCovarianceStore';
 import type { SelectedCovarianceStore } from './selectedCovarianceStore';
 import { recordSelectedCovarianceCall, recordSelectedCovarianceFallback } from './experimentalSparseDiagnostics';
+import { detailedNow, type DetailedSolveProfiler } from './adjustDetailedSolveProfile';
 import type {
   DistanceObservation,
   GpsObservation,
@@ -128,6 +129,8 @@ interface RecoverFinalNormalCovarianceOptions {
   log?: (_message: string) => void;
   stations: StationMap;
   wrapToPi: (_value: number) => number;
+  /** Phase 10B test-only detailed profiler; undefined keeps production timing only. */
+  detailedSolveProfiler?: DetailedSolveProfiler;
 }
 
 type CovarianceAssemblyDependencies = Pick<
@@ -327,6 +330,8 @@ const recoverDenseCovariance = (
   covarianceObservations: Observation[],
   covarianceObsEquationCount: number,
 ): number[][] => {
+  const profiler = options.detailedSolveProfiler;
+  const assemblyStartedAt = profiler ? detailedNow() : 0;
   const { P, sparseRows } = assembleAdjustmentEquations(
     buildAssemblyDependencies(options),
     covarianceObservations,
@@ -339,14 +344,20 @@ const recoverDenseCovariance = (
   if (!P) {
     throw new Error('Dense weight matrix is required for covariance recovery.');
   }
+  const assemblyMs = profiler ? detailedNow() - assemblyStartedAt : 0;
+  const accumulateStartedAt = profiler ? detailedNow() : 0;
   const { normal } = accumulateNormalEquationsFromSparseRows(
     sparseRows,
     zeros(covarianceObsEquationCount, 1),
     P,
     options.numParams,
   );
+  const accumulateMs = profiler ? detailedNow() - accumulateStartedAt : 0;
   options.recordRecoveryNormal?.(normal);
-  return options.invertNormalMatrixForStats(normal);
+  const invertStartedAt = profiler ? detailedNow() : 0;
+  const qxx = options.invertNormalMatrixForStats(normal);
+  if (profiler) profiler.recordCovariance(assemblyMs, accumulateMs, detailedNow() - invertStartedAt);
+  return qxx;
 };
 
 export const recoverFinalNormalCovariance = (

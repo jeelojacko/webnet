@@ -49,6 +49,7 @@ const SUITES = {
   phase9i: ['tests/evidence/phase9i_metric_reuse_profile.test.ts'],
   phase9j: ['tests/evidence/phase9j_path_priority_profile.test.ts'],
   phase10a: ['tests/evidence/phase10a_3d_adjustment_profile.test.ts'],
+  phase10b: ['tests/evidence/phase10b_native_correction_evidence.test.ts'],
 };
 
 const suite = process.argv[2] ?? 'all';

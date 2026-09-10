@@ -4,6 +4,13 @@ import { runClusterDualPassWorkflow } from './adjustmentClusterWorkflow';
 import { applyAutoDroppedHeightHolds, buildSolvePreparation, cloneSolvePreparationResult } from './adjustmentPreprocessing';
 import { assembleAdjustmentEquations } from './adjustmentEquationAssembly';
 import { applyAdjustmentCorrections, solveAdjustmentIteration } from './adjustmentIteration';
+import { detailedNow } from './adjustDetailedSolveProfile';
+import {
+  packMisclosures,
+  packSparseDesignRows,
+  packUpperTriangleWeights,
+} from './sparseEquationPacking';
+import { structuredWeightsToPackedUpper } from './sparseWeightRepresentation';
 import { getObservationSideshotCalcMeta } from './observationMetadata';
 import { recordSparseCorrectionFallback } from './experimentalSparseDiagnostics';
 import type { RecoveredFinalCovariance } from './adjustCovarianceRecovery';
@@ -253,6 +260,9 @@ export const runAdjustmentSolveWorkflow = (
       for (let iter = 0; iter < ctx.maxIterations; iter++) {
       ctx.iterations += 1;
       ctx.clearGeometryCache();
+      const detailActive =
+        ctx.detailedSolveProfiler != null || ctx.iterationSystemProbe != null;
+      const detailAssemblyStartedAt = detailActive ? detailedNow() : 0;
       const assemblyStartedAt = Date.now();
       const { A, L, P, rowInfo, sparseRows, structuredWeights } = assembleAdjustmentEquations(
         {
@@ -291,6 +301,8 @@ export const runAdjustmentSolveWorkflow = (
           : { includeDenseA: false },
       );
       ctx.solveTiming.equationAssemblyMs += Date.now() - assemblyStartedAt;
+      const detailAssemblyMs = detailActive ? detailedNow() - detailAssemblyStartedAt : 0;
+      const detailSink = detailActive ? { accumulateMs: 0, factorSolveMs: 0 } : undefined;
 
       const factorizationStartedAt = Date.now();
       try {
@@ -323,6 +335,7 @@ export const runAdjustmentSolveWorkflow = (
               sparseRows,
               numParams,
               structuredWeights: useSparseCorrectionWeights ? structuredWeights : undefined,
+              iterationTimingSink: detailSink,
             },
           );
         } catch (sparseError) {
@@ -373,12 +386,69 @@ export const runAdjustmentSolveWorkflow = (
             denseAssembly.P,
             denseAssembly.rowInfo,
             iter + 1,
-            { sparseRows: denseAssembly.sparseRows, numParams },
+            {
+              sparseRows: denseAssembly.sparseRows,
+              numParams,
+              iterationTimingSink: detailSink,
+            },
           );
         }
         ctx.solveTiming.matrixFactorizationMs += Date.now() - factorizationStartedAt;
         ctx.Qxx = iterationResult.qxx ?? null;
         const { correction, sumBefore, sumAfter, maxBefore, maxAfter } = iterationResult;
+        if (detailActive) {
+          try {
+            const packedDesign = packSparseDesignRows(sparseRows);
+            const packedWeights =
+              useSparseCorrectionWeights && structuredWeights
+                ? structuredWeightsToPackedUpper(structuredWeights)
+                : P != null && P.length > 0
+                  ? packUpperTriangleWeights(P, L.length)
+                  : undefined;
+            if (packedWeights) {
+              const flatCorrection = correction.map((row) => row[0] ?? 0);
+              ctx.iterationSystemProbe?.({
+                iteration: iter + 1,
+                design: packedDesign,
+                weights: packedWeights,
+                misclosures: packMisclosures(L, L.length),
+                observationEquationCount: L.length,
+                parameterCount: numParams,
+                tsCorrection: flatCorrection,
+              });
+            }
+          } catch {
+            // Evidence-only probe; never fails the solve.
+          }
+        }
+        const recordDetailIteration = (stateUpdateMs: number): void => {
+          const profiler = ctx.detailedSolveProfiler;
+          if (!profiler || !detailSink) return;
+          let designNnz = 0;
+          let weightNnz = 0;
+          try {
+            designNnz = packSparseDesignRows(sparseRows).values.length;
+            weightNnz =
+              useSparseCorrectionWeights && structuredWeights
+                ? structuredWeightsToPackedUpper(structuredWeights).values.length
+                : P != null && P.length > 0
+                  ? packUpperTriangleWeights(P, L.length).values.length
+                  : 0;
+          } catch {
+            // Evidence-only counts; never fails the solve.
+          }
+          profiler.recordIteration({
+            iteration: iter + 1,
+            parameterCount: numParams,
+            equationCount: L.length,
+            designNnz,
+            weightNnz,
+            assemblyMs: detailAssemblyMs,
+            accumulateMs: detailSink.accumulateMs,
+            factorSolveMs: detailSink.factorSolveMs,
+            stateUpdateMs,
+          });
+        };
         const objectiveDeltaWithinIter = Math.abs(sumBefore - sumAfter);
         const objectiveDeltaBetweenIterations =
           prevObjectiveBefore == null
@@ -416,10 +486,12 @@ export const runAdjustmentSolveWorkflow = (
           ctx.log(
             'Converged: preanalysis uses the approximate-geometry covariance build without iterative coordinate updates.',
           );
+          recordDetailIteration(0);
           ctx.emitSolveProgress('iteration');
           break;
         }
 
+        const stateUpdateStartedAt = detailActive ? detailedNow() : 0;
         const maxCorrection = applyAdjustmentCorrections(
           ctx.stations,
           ctx.paramIndex,
@@ -428,6 +500,7 @@ export const runAdjustmentSolveWorkflow = (
           dirParamMap,
           correction,
         );
+        recordDetailIteration(detailActive ? detailedNow() - stateUpdateStartedAt : 0);
 
         ctx.log(`Iter ${iter + 1}: Max Corr = ${maxCorrection.toFixed(4)}`);
         ctx.log(
@@ -552,12 +625,17 @@ export const runAdjustmentSolveWorkflow = (
       if (legacyFailure) return legacyFailure;
     }
     const diagnosticsStartedAt = Date.now();
+    const detailStatisticsStartedAt =
+      ctx.detailedSolveProfiler != null ? detailedNow() : 0;
     ctx.calculateStatistics(
       ctx.paramIndex,
       recoveredCovariance != null,
       activeObservations,
     );
     ctx.solveTiming.precisionAndDiagnosticsMs += Date.now() - diagnosticsStartedAt;
+    if (ctx.detailedSolveProfiler != null) {
+      ctx.detailedSolveProfiler.recordStatistics(detailedNow() - detailStatisticsStartedAt);
+    }
     return ctx.finishSolve(ctx.buildResult());
 };
 
