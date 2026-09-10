@@ -14,6 +14,8 @@
  * (vitest.evidence.config.ts); the suite argument only narrows the file
  * selection. `npm run test:evidence [-- <suite>]` is the package entry.
  *
+ * phase10a runs the normal 3D adjustment profile.
+ *
  * Phase 9A shards write atomic raw fragments to
  * artifacts/evidence/phase9a/<shard>.json (gitignored). Report assembly
  * from fragments into reports/phase9a/ is a separate step owned by
@@ -46,6 +48,7 @@ const SUITES = {
   phase9h: ['tests/evidence/phase9h_serial_profile.test.ts'],
   phase9i: ['tests/evidence/phase9i_metric_reuse_profile.test.ts'],
   phase9j: ['tests/evidence/phase9j_path_priority_profile.test.ts'],
+  phase10a: ['tests/evidence/phase10a_3d_adjustment_profile.test.ts'],
 };
 
 const suite = process.argv[2] ?? 'all';
