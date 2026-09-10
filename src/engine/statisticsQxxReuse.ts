@@ -39,6 +39,8 @@ export interface StatisticsQxxReuseInput {
    * legacy path.
    */
   hasSparseSelectedCovarianceSolver: boolean;
+  /** Evidence-only override for validated native dense all-entry Qxx. */
+  allowEvidenceNativeDenseQxxReuse?: boolean;
   sparseRowProductsAvailable: boolean;
   numParams: number;
   /** Synthetic rows the final recovery appended (covariance augmentation). */
@@ -77,7 +79,7 @@ export const decideStatisticsQxxReuse = (
   if (input.preanalysisMode) return { eligible: false, reason: 'preanalysis-mode' };
   if (input.finalQxx == null) return { eligible: false, reason: 'missing-final-qxx' };
   if (input.hasSelectedStore) return { eligible: false, reason: 'non-dense-selected-store' };
-  if (input.hasSparseSelectedCovarianceSolver) {
+  if (input.hasSparseSelectedCovarianceSolver && input.allowEvidenceNativeDenseQxxReuse !== true) {
     return { eligible: false, reason: 'sparse-selected-solver-active' };
   }
   if (input.sparseRowProductsAvailable) {

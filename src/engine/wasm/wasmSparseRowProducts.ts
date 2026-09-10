@@ -16,6 +16,23 @@ const ERROR_CAPACITY = 1024;
 const int32 = (module: WebNetWasmModule, pointer: number): number =>
   module.HEAP32[pointer / Int32Array.BYTES_PER_ELEMENT] ?? 0;
 
+const float64 = (module: WebNetWasmModule, pointer: number): number =>
+  module.HEAPF64[pointer / Float64Array.BYTES_PER_ELEMENT] ?? Number.NaN;
+
+const readTimings = (
+  module: WebNetWasmModule,
+  pointers: Record<'assembly' | 'equilibration' | 'analyze' | 'factorize' | 'solve', number>,
+): SparseRowProductsResult['timings'] => {
+  const timings = {
+    assemblyMs: float64(module, pointers.assembly),
+    equilibrationMs: float64(module, pointers.equilibration),
+    analyzeMs: float64(module, pointers.analyze),
+    factorizeMs: float64(module, pointers.factorize),
+    solveMs: float64(module, pointers.solve),
+  };
+  return Object.values(timings).every(Number.isFinite) ? timings : undefined;
+};
+
 const allocate = (module: WebNetWasmModule, bytes: number): number => {
   const pointer = module._malloc(Math.max(1, bytes));
   if (pointer === 0) throw new Error('WASM row products could not allocate solver buffers.');
@@ -129,6 +146,11 @@ export class WasmSparseRowProducts implements SparseRowProductsSolver {
       const factorNnzPointer = alloc(Int32Array.BYTES_PER_ELEMENT);
       const dampingPointer = alloc(Float64Array.BYTES_PER_ELEMENT);
       const attemptsPointer = alloc(Int32Array.BYTES_PER_ELEMENT);
+      const assemblyPointer = alloc(Float64Array.BYTES_PER_ELEMENT);
+      const equilibrationPointer = alloc(Float64Array.BYTES_PER_ELEMENT);
+      const analyzePointer = alloc(Float64Array.BYTES_PER_ELEMENT);
+      const factorizePointer = alloc(Float64Array.BYTES_PER_ELEMENT);
+      const solvePointer = alloc(Float64Array.BYTES_PER_ELEMENT);
       const errorPointer = alloc(error.byteLength);
       this._module.HEAP32.set(design.rowOffsets, rowOffsetsPointer / Int32Array.BYTES_PER_ELEMENT);
       this._module.HEAP32.set(design.columns, designColumnsPointer / Int32Array.BYTES_PER_ELEMENT);
@@ -141,6 +163,13 @@ export class WasmSparseRowProducts implements SparseRowProductsSolver {
       this._module.HEAPF64.set(input.queryValues, queryValuesPointer / Float64Array.BYTES_PER_ELEMENT);
       this._module.HEAP32.set(input.crossA, crossAPointer / Int32Array.BYTES_PER_ELEMENT);
       this._module.HEAP32.set(input.crossB, crossBPointer / Int32Array.BYTES_PER_ELEMENT);
+      // Timing sentinel: an older module that never writes the slots leaves
+      // NaN, so timings stay absent (fail-closed) instead of reading zeros.
+      this._module.HEAPF64[assemblyPointer / Float64Array.BYTES_PER_ELEMENT] = Number.NaN;
+      this._module.HEAPF64[equilibrationPointer / Float64Array.BYTES_PER_ELEMENT] = Number.NaN;
+      this._module.HEAPF64[analyzePointer / Float64Array.BYTES_PER_ELEMENT] = Number.NaN;
+      this._module.HEAPF64[factorizePointer / Float64Array.BYTES_PER_ELEMENT] = Number.NaN;
+      this._module.HEAPF64[solvePointer / Float64Array.BYTES_PER_ELEMENT] = Number.NaN;
       const status = this._module._webnet_sparse_row_products(
         rowOffsetsPointer, designColumnsPointer, designValuesPointer, design.values.length,
         weightRowsPointer, weightColumnsPointer, weightValuesPointer, weights.values.length,
@@ -148,7 +177,10 @@ export class WasmSparseRowProducts implements SparseRowProductsSolver {
         queryOffsetsPointer, queryColumnsPointer, queryValuesPointer, input.queryValues.length,
         queryRowCount, crossAPointer, crossBPointer, cross.length,
         quadraticPointer, crossPointer, normalNnzPointer, factorNnzPointer,
-        dampingPointer, attemptsPointer, errorPointer, error.byteLength,
+        dampingPointer, attemptsPointer,
+        assemblyPointer, equilibrationPointer, analyzePointer,
+        factorizePointer, solvePointer,
+        errorPointer, error.byteLength,
       );
       error.set(this._module.HEAPU8.subarray(errorPointer, errorPointer + error.byteLength));
       if (status !== 0) throw new Error(readCString(error) || `WASM row products failed (${status}).`);
@@ -160,6 +192,13 @@ export class WasmSparseRowProducts implements SparseRowProductsSolver {
         crossPointer / Float64Array.BYTES_PER_ELEMENT,
         crossPointer / Float64Array.BYTES_PER_ELEMENT + cross.length,
       ));
+      const timings = readTimings(this._module, {
+        assembly: assemblyPointer,
+        equilibration: equilibrationPointer,
+        analyze: analyzePointer,
+        factorize: factorizePointer,
+        solve: solvePointer,
+      });
       return {
         quadratic,
         cross,
@@ -167,6 +206,7 @@ export class WasmSparseRowProducts implements SparseRowProductsSolver {
         factorNnz: int32(this._module, factorNnzPointer),
         damping: this._module.HEAPF64[dampingPointer / Float64Array.BYTES_PER_ELEMENT] ?? 0,
         dampingAttempts: int32(this._module, attemptsPointer),
+        ...(timings === undefined ? {} : { timings }),
       };
     } finally {
       pointers.reverse().forEach((pointer) => this._module._free(pointer));

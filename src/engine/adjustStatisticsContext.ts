@@ -86,6 +86,7 @@ export const buildStatisticsContextForEngine = (engine: any): AdjustmentStatisti
       tsCorrelationGroup: (obs) => engine.tsCorrelationGroup(obs),
       detailedSolveProfiler: engine.detailedSolveProfiler,
       forceLegacyStatisticsQxx: engine.forceLegacyStatisticsQxx,
+      allowEvidenceNativeDenseQxxReuse: engine.allowEvidenceNativeDenseQxxReuse,
       solveConverged: engine.converged ?? false,
       qxxReuseProbe: engine.qxxReuseProbe,
       finalCovarianceAugmentedRows: engine.finalCovarianceAugmentedRows ?? 0,

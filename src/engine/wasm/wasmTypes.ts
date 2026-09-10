@@ -56,6 +56,11 @@ export interface WebNetWasmModule {
     _factorNnzOut: number,
     _dampingOut: number,
     _attemptsOut: number,
+    _assemblyMsOut: number,
+    _equilibrationMsOut: number,
+    _analyzeMsOut: number,
+    _factorizeMsOut: number,
+    _solveMsOut: number,
     _error: number,
     _errorCapacity: number,
   ): number;
@@ -84,6 +89,11 @@ export interface WebNetWasmModule {
     _factorNnzOut: number,
     _dampingOut: number,
     _attemptsOut: number,
+    _assemblyMsOut: number,
+    _equilibrationMsOut: number,
+    _analyzeMsOut: number,
+    _factorizeMsOut: number,
+    _solveMsOut: number,
     _error: number,
     _errorCapacity: number,
   ): number;

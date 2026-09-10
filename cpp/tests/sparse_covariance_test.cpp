@@ -26,12 +26,13 @@ extern "C" {
 int webnet_sparse_selected_covariance(
     const int*, const int*, const double*, int, const int*, const int*,
     const double*, int, int, int, const int*, const int*, int, double*, int*,
-    int*, double*, int*, char*, int);
+    int*, double*, int*, double*, double*, double*, double*, double*, char*,
+    int);
 int webnet_sparse_row_products(
     const int*, const int*, const double*, int, const int*, const int*,
     const double*, int, int, int, const int*, const int*, const double*, int,
     int, const int*, const int*, int, double*, double*, int*, int*, double*,
-    int*, char*, int);
+    int*, double*, double*, double*, double*, double*, char*, int);
 }  // extern "C"
 bool near(double a, double b, double tol) {
   return std::fabs(a - b) <= tol;
@@ -309,17 +310,30 @@ int main() {
     int factor_nnz = 0;
     double damping = -1.0;
     int attempts = -1;
+    double assembly_ms = -1.0;
+    double equilibration_ms = -1.0;
+    double analyze_ms = -1.0;
+    double factorize_ms = -1.0;
+    double solve_ms = -1.0;
     char err[128] = "stale";
     const int status = webnet_sparse_selected_covariance(
         kOffsets, kColumns, kValues, kDesignNnz, kWeightRows, kWeightColumns,
         kWeightValues, kWeightNnz, kEquations, kParams, rows, cols, 2, got,
-        &normal_nnz, &factor_nnz, &damping, &attempts, err, sizeof(err));
+        &normal_nnz, &factor_nnz, &damping, &attempts, &assembly_ms,
+        &equilibration_ms, &analyze_ms, &factorize_ms, &solve_ms, err,
+        sizeof(err));
     check(status == 0, "covariance ABI returns 0");
     check(near(got[0], q[0][0], 1e-9) && near(got[1], q[1][2], 1e-9),
           "covariance ABI matches dense reference");
     check(normal_nnz > 0 && factor_nnz > 0 && damping == 0 && attempts == 0,
           "covariance ABI populates metadata");
     check(std::string(err).empty(), "covariance ABI clears error");
+    check(std::isfinite(assembly_ms) && assembly_ms >= 0.0 &&
+              std::isfinite(equilibration_ms) && equilibration_ms >= 0.0 &&
+              std::isfinite(analyze_ms) && analyze_ms >= 0.0 &&
+              std::isfinite(factorize_ms) && factorize_ms >= 0.0 &&
+              std::isfinite(solve_ms) && solve_ms >= 0.0,
+          "covariance ABI populates phase timings");
 
     const int q_offsets[] = {0, 1, 2};
     const int q_cols[] = {0, 1};
@@ -328,17 +342,22 @@ int main() {
     const int cross_b[] = {1};
     double quad[2] = {0.0, 0.0};
     double cross[1] = {0.0};
+    double quad_ms[5] = {-1.0, -1.0, -1.0, -1.0, -1.0};
     char err2[128] = "stale";
     const int pstatus = webnet_sparse_row_products(
         kOffsets, kColumns, kValues, kDesignNnz, kWeightRows, kWeightColumns,
         kWeightValues, kWeightNnz, kEquations, kParams, q_offsets, q_cols,
         q_vals, 2, 2, cross_a, cross_b, 1, quad, cross, nullptr, nullptr,
-        nullptr, nullptr, err2, sizeof(err2));
+        nullptr, nullptr, &quad_ms[0], &quad_ms[1], &quad_ms[2], &quad_ms[3],
+        &quad_ms[4], err2, sizeof(err2));
     const double e0[] = {0.0};
     const double v0[] = {1.0};
     const double e1[] = {1.0};
     const double v1[] = {1.0};
     check(pstatus == 0, "row-product ABI returns 0");
+    check(std::isfinite(quad_ms[0]) && quad_ms[0] >= 0.0 &&
+                std::isfinite(quad_ms[4]) && quad_ms[4] >= 0.0,
+          "row-product ABI populates phase timings");
     check(near(quad[0], row_form(q, e0, v0, 1, e0, v0, 1), 1e-9) &&
                 near(cross[0], row_form(q, e0, v0, 1, e1, v1, 1), 1e-9),
           "row-product ABI matches dense reference");
@@ -348,13 +367,29 @@ int main() {
     std::memset(tiny, 'X', sizeof(tiny));
     const int bad_row[] = {9};
     double one = 0.0;
+    double failed_ms[5] = {-1.0, -1.0, -1.0, -1.0, -1.0};
     check(webnet_sparse_selected_covariance(
               kOffsets, kColumns, kValues, kDesignNnz, kWeightRows,
               kWeightColumns, kWeightValues, kWeightNnz, kEquations, kParams,
               bad_row, cols, 1, &one, nullptr, nullptr, nullptr, nullptr,
-              tiny, sizeof(tiny)) == 1 &&
+              &failed_ms[0], &failed_ms[1], &failed_ms[2], &failed_ms[3],
+              &failed_ms[4], tiny, sizeof(tiny)) == 1 &&
                 tiny[7] == '\0' && std::string(tiny).size() > 0,
           "covariance ABI rejects bad index with truncated message");
+    check(failed_ms[0] == -1.0 && failed_ms[1] == -1.0 &&
+              failed_ms[2] == -1.0 && failed_ms[3] == -1.0 &&
+              failed_ms[4] == -1.0,
+          "covariance ABI failure leaves timing slots untouched");
+    // Null timing outs are accepted and skipped on success.
+    check(webnet_sparse_selected_covariance(
+              kOffsets, kColumns, kValues, kDesignNnz, kWeightRows,
+              kWeightColumns, kWeightValues, kWeightNnz, kEquations, kParams,
+              rows, cols, 2, got, nullptr, nullptr, nullptr, nullptr,
+              nullptr, nullptr, nullptr, nullptr, nullptr, tiny,
+              sizeof(tiny)) == 0,
+          "covariance ABI tolerates null timing outs on success");
+    check(near(got[0], q[0][0], 1e-9),
+          "covariance ABI null-timing path preserves numerics");
   }
 
   if (failures == 0) {

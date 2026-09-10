@@ -71,6 +71,7 @@ describe('WasmSparseSelectedCovariance', () => {
         weightRows, weightColumns, weightValues, weightNnz,
         equationCount, parameterCount, queryRows, queryColumns, queryCount,
         covarianceOut, normalNnzOut, factorNnzOut, dampingOut, attemptsOut,
+        assemblyOut, equilibrationOut, analyzeOut, factorizeOut, solveOut,
         error, errorCapacity) => {
         expect(designNnz).toBe(2);
         expect(weightNnz).toBe(2);
@@ -86,6 +87,11 @@ describe('WasmSparseSelectedCovariance', () => {
         module.HEAP32[factorNnzOut / 4] = 3;
         module.HEAPF64[dampingOut / 8] = 0;
         module.HEAP32[attemptsOut / 4] = 1;
+        module.HEAPF64[assemblyOut / 8] = 0.1;
+        module.HEAPF64[equilibrationOut / 8] = 0.2;
+        module.HEAPF64[analyzeOut / 8] = 0.3;
+        module.HEAPF64[factorizeOut / 8] = 0.4;
+        module.HEAPF64[solveOut / 8] = 0.5;
         writeError(module, error, errorCapacity, '');
         return 0;
       },
@@ -100,7 +106,35 @@ describe('WasmSparseSelectedCovariance', () => {
     expect(result.normalNnz).toBe(4);
     expect(result.factorNnz).toBe(3);
     expect(result.dampingAttempts).toBe(1);
+    expect(result.timings).toEqual({
+      assemblyMs: 0.1,
+      equilibrationMs: 0.2,
+      analyzeMs: 0.3,
+      factorizeMs: 0.4,
+      solveMs: 0.5,
+    });
     expect(module.freed.length).toBeGreaterThan(0);
+  });
+
+  it('leaves timings absent when the native module never writes them', () => {
+    const module = createMockModule({
+      covariance: (...args) => {
+        const covarianceOut = args[13] ?? 0;
+        const error = args[args.length - 2] ?? 0;
+        const capacity = args[args.length - 1] ?? 0;
+        module.HEAPF64[covarianceOut / 8] = 0.25;
+        writeError(module, error, capacity, '');
+        return 0;
+      },
+    });
+    const wrapper = new WasmSparseSelectedCovariance(module);
+    const result = wrapper.querySelected({
+      ...equationSystem(),
+      queryRows: new Int32Array([0]),
+      queryColumns: new Int32Array([0]),
+    });
+    expect(Array.from(result.covariance)).toEqual([0.25]);
+    expect(result.timings).toBeUndefined();
   });
 
   it('rejects mismatched query lengths and out-of-range indices', () => {
@@ -160,7 +194,8 @@ describe('WasmSparseRowProducts', () => {
         equationCount, parameterCount, queryOffsets, queryColumns, queryValues,
         queryNnz, queryRowCount, crossA, crossB, crossCount,
         quadraticOut, crossOut, normalNnzOut, factorNnzOut, dampingOut,
-        attemptsOut, error, errorCapacity) => {
+        attemptsOut, assemblyOut, equilibrationOut, analyzeOut, factorizeOut,
+        solveOut, error, errorCapacity) => {
         expect(queryNnz).toBe(2);
         expect(queryRowCount).toBe(2);
         expect(crossCount).toBe(1);
@@ -176,6 +211,11 @@ describe('WasmSparseRowProducts', () => {
         module.HEAP32[factorNnzOut / 4] = 3;
         module.HEAPF64[dampingOut / 8] = 0;
         module.HEAP32[attemptsOut / 4] = 2;
+        module.HEAPF64[assemblyOut / 8] = 1.1;
+        module.HEAPF64[equilibrationOut / 8] = 1.2;
+        module.HEAPF64[analyzeOut / 8] = 1.3;
+        module.HEAPF64[factorizeOut / 8] = 1.4;
+        module.HEAPF64[solveOut / 8] = 1.5;
         writeError(module, error, errorCapacity, '');
         return 0;
       },
@@ -193,6 +233,13 @@ describe('WasmSparseRowProducts', () => {
     expect(Array.from(result.cross)).toEqual([0.75]);
     expect(result.normalNnz).toBe(4);
     expect(result.dampingAttempts).toBe(2);
+    expect(result.timings).toEqual({
+      assemblyMs: 1.1,
+      equilibrationMs: 1.2,
+      analyzeMs: 1.3,
+      factorizeMs: 1.4,
+      solveMs: 1.5,
+    });
     expect(module.freed.length).toBeGreaterThan(0);
   });
 

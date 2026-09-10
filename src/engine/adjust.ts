@@ -70,6 +70,7 @@ export class LSAEngine extends LSAEngineObservationMethods {
   private preanalysisCorrectionFastPath?: boolean;
   /** Phase 10E test-only oracle; true forces legacy statistics recompute. */
   private forceLegacyStatisticsQxx?: boolean;
+  private allowEvidenceNativeDenseQxxReuse?: boolean;
   /** Phase 10D test-only Qxx comparison probe; undefined disables capture. */
   private qxxReuseProbe?: QxxReuseProbe;
   /** Phase 10D last final-recovery synthetic-row count; 0 keeps reuse eligible. */
@@ -204,6 +205,7 @@ export class LSAEngine extends LSAEngineObservationMethods {
     iterationSystemProbe,
     preanalysisCorrectionFastPath,
     forceLegacyStatisticsQxx,
+    allowEvidenceNativeDenseQxxReuse,
     qxxReuseProbe,
   }: EngineOptions) {
     super();
@@ -218,6 +220,7 @@ export class LSAEngine extends LSAEngineObservationMethods {
     this.iterationSystemProbe = iterationSystemProbe;
     this.preanalysisCorrectionFastPath = preanalysisCorrectionFastPath;
     this.forceLegacyStatisticsQxx = forceLegacyStatisticsQxx;
+    this.allowEvidenceNativeDenseQxxReuse = allowEvidenceNativeDenseQxxReuse;
     this.qxxReuseProbe = qxxReuseProbe;
     this.input = input;
     this.maxIterations = maxIterations;
@@ -280,6 +283,7 @@ export class LSAEngine extends LSAEngineObservationMethods {
       iterationSystemProbe: this.iterationSystemProbe,
       preanalysisCorrectionFastPath: this.preanalysisCorrectionFastPath,
       forceLegacyStatisticsQxx: this.forceLegacyStatisticsQxx,
+      allowEvidenceNativeDenseQxxReuse: this.allowEvidenceNativeDenseQxxReuse,
       qxxReuseProbe: this.qxxReuseProbe,
     }).solve();
   }

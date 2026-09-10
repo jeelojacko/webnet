@@ -106,7 +106,9 @@ export interface EngineOptions {
    * cohort. Never persisted or exposed in UI.
    */
   forceLegacyStatisticsQxx?: boolean;
-   /**
+  /** Evidence-only override, valid only for validated native dense all-entry Qxx. */
+  allowEvidenceNativeDenseQxxReuse?: boolean;
+  /**
    * Phase 10D test-only Qxx comparison probe: receives final-covariance
    * and statistics normals/Qxx plus reuse decisions and call counts.
    * Undefined disables capture.

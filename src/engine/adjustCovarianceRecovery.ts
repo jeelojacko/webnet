@@ -351,6 +351,7 @@ const trySparseSelectedCovariance = (
       qxxDimension: recovered.kind === 'dense' ? options.numParams : null,
       normalAccumulations: 0,
       inversions: 0,
+      ...(recovered.kind === 'dense' ? { qxx: copyMatrix(recovered.qxx) } : {}),
     });
   }
   return recovered;
