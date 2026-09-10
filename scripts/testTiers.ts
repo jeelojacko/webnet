@@ -53,6 +53,7 @@ export const EVIDENCE_TESTS = [
   'tests/evidence/phase10f_post_reuse_profile.test.ts',
   'tests/evidence/phase10g_final_covariance_architecture.test.ts',
   'tests/evidence/phase10h_native_qxx_fair_evidence.test.ts',
+  'tests/evidence/phase10i_native_route_evidence.test.ts',
 ] as const;
 
 /** Fast automatic release-certification gate (committed-report verdict). */
@@ -93,6 +94,7 @@ export const AGENT_REQUIRED_TESTS = [
   'tests/phase8b2_sparse_preanalysis_safety_hotfix.test.ts',
   'tests/phase8a6_covariance_sentinel.test.ts',
   'tests/phase10e_production_qxx_reuse.test.ts',
+  'tests/phase10i_native_fullqxx_route.test.ts',
 ] as const;
 
 /**

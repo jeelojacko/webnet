@@ -86,6 +86,8 @@ export type AdjustmentStatisticsContext = {
   forceLegacyStatisticsQxx?: boolean;
   /** Evidence-only override for validated native dense all-entry Qxx. */
   allowEvidenceNativeDenseQxxReuse?: boolean;
+  /** Phase 10I production provenance: worker-only native full-Qxx route only. */
+  allowVerifiedNativeDenseQxxReuse?: boolean;
   /** Solve convergence at statistics time (required for reuse). */
   solveConverged?: boolean;
   /** Phase 10D test-only Qxx comparison probe; undefined disables capture. */

@@ -108,6 +108,8 @@ export interface EngineOptions {
   forceLegacyStatisticsQxx?: boolean;
   /** Evidence-only override, valid only for validated native dense all-entry Qxx. */
   allowEvidenceNativeDenseQxxReuse?: boolean;
+  /** Phase 10I production provenance: worker-only native full-Qxx route only. */
+  allowVerifiedNativeDenseQxxReuse?: boolean;
   /**
    * Phase 10D test-only Qxx comparison probe: receives final-covariance
    * and statistics normals/Qxx plus reuse decisions and call counts.
