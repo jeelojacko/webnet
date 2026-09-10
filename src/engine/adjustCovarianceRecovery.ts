@@ -23,6 +23,7 @@ import {
 import type { SelectedCovarianceStore } from './selectedCovarianceStore';
 import { recordSelectedCovarianceCall, recordSelectedCovarianceFallback } from './experimentalSparseDiagnostics';
 import { detailedNow, type DetailedSolveProfiler } from './adjustDetailedSolveProfile';
+import { copyMatrix, type QxxReuseProbe } from './qxxReuseEvidence';
 import type {
   DistanceObservation,
   GpsObservation,
@@ -131,6 +132,14 @@ interface RecoverFinalNormalCovarianceOptions {
   wrapToPi: (_value: number) => number;
   /** Phase 10B test-only detailed profiler; undefined keeps production timing only. */
   detailedSolveProfiler?: DetailedSolveProfiler;
+  /** Phase 10D test-only Qxx comparison probe; undefined disables capture. */
+  qxxReuseProbe?: QxxReuseProbe;
+  /**
+   * Phase 10D test-only hook: records how many synthetic observation rows
+   * covariance augmentation appended for the final recovery. Undefined
+   * skips recording.
+   */
+  recordAugmentedRowCount?: (_count: number) => void;
 }
 
 type CovarianceAssemblyDependencies = Pick<
@@ -330,6 +339,20 @@ const trySparseSelectedCovariance = (
   if (profiler) {
     profiler.recordCovariance(sparseAssemblyMs, 0, detailedNow() - sparseQueryStartedAt);
   }
+  if (options.qxxReuseProbe) {
+    options.qxxReuseProbe({
+      stage: 'final-covariance',
+      reused: false,
+      reason:
+        recovered.kind === 'selected'
+          ? 'sparse-selected-store-captured'
+          : 'sparse-dense-qxx-captured',
+      normalDimension: null,
+      qxxDimension: recovered.kind === 'dense' ? options.numParams : null,
+      normalAccumulations: 0,
+      inversions: 0,
+    });
+  }
   return recovered;
 };
 
@@ -365,6 +388,19 @@ const recoverDenseCovariance = (
   const invertStartedAt = profiler ? detailedNow() : 0;
   const qxx = options.invertNormalMatrixForStats(normal);
   if (profiler) profiler.recordCovariance(assemblyMs, accumulateMs, detailedNow() - invertStartedAt);
+  if (options.qxxReuseProbe) {
+    options.qxxReuseProbe({
+      stage: 'final-covariance',
+      reused: false,
+      reason: 'dense-final-covariance-captured',
+      normalDimension: options.numParams,
+      qxxDimension: options.numParams,
+      normalAccumulations: 1,
+      inversions: 1,
+      normal: copyMatrix(normal),
+      qxx: copyMatrix(qxx),
+    });
+  }
   return qxx;
 };
 
@@ -388,6 +424,9 @@ export const recoverFinalNormalCovariance = (
   const covarianceObservations = augmentCovarianceObservations(activeObservations);
   const covarianceObsEquationCount =
     numObsEquations + (covarianceObservations.length - activeObservations.length);
+  options.recordAugmentedRowCount?.(
+    covarianceObservations.length - activeObservations.length,
+  );
   try {
     clearGeometryCache();
     if (options.sparseSelectedCovarianceSolver) {

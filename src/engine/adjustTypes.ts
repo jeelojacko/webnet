@@ -1,5 +1,6 @@
 import type { NormalEquationSolver, SparseCorrectionSolver, SparseRowProductsSolver, SparseSelectedCovarianceSolver } from './numericalBackend';
 import type { DetailedSolveProfiler, IterationSystemProbeInput } from './adjustDetailedSolveProfile';
+import type { QxxReuseProbe } from './qxxReuseEvidence';
 import type { ExperimentalSparseRouteDiagnostics } from './experimentalSparseDiagnostics';
 import type { SolveProgressEvent } from './scenarioRunModels';
 import type { SolvePreparationResult } from './adjustmentPreprocessing';
@@ -98,6 +99,20 @@ export interface EngineOptions {
    * identical-system native comparison. Undefined disables capture.
    */
   iterationSystemProbe?: (_system: IterationSystemProbeInput) => void;
+  /**
+   * Phase 10D test-only Qxx reuse switch: true lets standardized-residual
+   * statistics reuse the recovered final dense Qxx (still assembling
+   * equations) instead of rebuilding and inverting a statistics normal
+   * system. Undefined/false keeps the legacy recompute path. Never
+   * persisted or exposed in UI.
+   */
+   reuseFinalCovarianceInStatistics?: boolean;
+   /**
+   * Phase 10D test-only Qxx comparison probe: receives final-covariance
+   * and statistics normals/Qxx plus reuse decisions and call counts.
+   * Undefined disables capture.
+   */
+  qxxReuseProbe?: QxxReuseProbe;
   /**
    * Phase 9E test-only oracle switch: false forces the legacy preanalysis
    * correction loop even when the fast path is eligible. Undefined (default)
