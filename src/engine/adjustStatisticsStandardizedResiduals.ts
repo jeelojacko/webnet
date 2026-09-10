@@ -239,6 +239,8 @@ export const computeStandardizedResidualStatistics = (
               robustMode: ctx.robustMode,
               finalQxx: hasQxx ? ctx.Qxx : null,
               hasSelectedStore: ctx.experimentalSelectedCovarianceStore != null,
+              hasSparseSelectedCovarianceSolver:
+                ctx.sparseSelectedCovarianceSolverActive === true,
               sparseRowProductsAvailable: false,
               numParams,
               augmentedRowCount: ctx.finalCovarianceAugmentedRows ?? 0,

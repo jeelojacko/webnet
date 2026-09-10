@@ -15,7 +15,7 @@ Sparse/native routing changed: **NO**
 
 ## Production cohort
 
-Automatic reuse applies only to normal, converged 3D dense TypeScript adjustments with finite, correctly dimensioned final Qxx, no covariance augmentation, no damping, no selected covariance store, no sparse row-product statistics route, and no robust mode. TS correlation remains admitted. 2D, preanalysis, and non-converged solves remain legacy.
+Automatic reuse applies only to normal, converged 3D dense TypeScript adjustments with finite, correctly dimensioned final Qxx, no covariance augmentation, no damping, no selected covariance store, no active sparse selected-covariance solver, no sparse row-product statistics route, and no robust mode. Solver presence alone rejects reuse (conservative): while a sparse selected-covariance solver is active the final dense Qxx is normally sparse-derived even when no selected store is captured, and a solve whose sparse recovery fell back to dense still keeps the legacy path. TS correlation remains admitted. 2D, preanalysis, and non-converged solves remain legacy.
 
 The production gate is `src/engine/statisticsQxxReuse.ts`. It performs only cheap state checks; it does not rebuild or compare normal matrices. Statistics equations still assemble for `L`, `rowInfo`, weights, sparse rows, and metadata. Eligible execution uses authoritative recovered `ctx.Qxx` for `B = A * Qxx`; all later formulas remain unchanged.
 
@@ -31,11 +31,12 @@ The production gate is `src/engine/statisticsQxxReuse.ts`. It performs only chea
 | damping | inadmissible | legacy |
 | non-converged | inadmissible | legacy |
 | selected covariance | inadmissible | legacy |
+| active sparse selected solver | inadmissible | legacy (`sparse-selected-solver-active`) |
 | sparse row products | inadmissible | legacy |
 | invalid/nonfinite Qxx | inadmissible | legacy |
 | 2D | not target | legacy |
 
-Fallback reasons are machine-readable and fail closed: `not-converged`, `two-dimensional-legacy`, `preanalysis-mode`, `missing-final-qxx`, `non-dense-selected-store`, `sparse-row-products-active`, `robust-mode-inadmissible`, `covariance-augmentation-active`, `damped-final-recovery`, and `dimension-mismatch-or-non-finite`. Test-only `forceLegacyStatisticsQxx` provides identical legacy oracle execution.
+Fallback reasons are machine-readable and fail closed: `not-converged`, `two-dimensional-legacy`, `preanalysis-mode`, `missing-final-qxx`, `non-dense-selected-store`, `sparse-selected-solver-active`, `sparse-row-products-active`, `robust-mode-inadmissible`, `covariance-augmentation-active`, `damped-final-recovery`, and `dimension-mismatch-or-non-finite`. Test-only `forceLegacyStatisticsQxx` provides identical legacy oracle execution.
 
 ## Eligible corpus parity
 
@@ -43,7 +44,7 @@ Fallback reasons are machine-readable and fail closed: `not-converged`, `two-dim
 
 ## Fallback corpus parity
 
-Agent tests prove full parity for 2D, Huber, and force-legacy. Gate tests cover preanalysis, non-converged, covariance augmentation, damping, selected store, sparse row products, missing Qxx, non-finite Qxx, and dimension mismatch. `industry_demo` remains legacy because it is weak/non-convergent/damped. No user-visible success log is emitted for reuse.
+Agent tests prove full parity for 2D, Huber, and force-legacy. Gate tests cover preanalysis, non-converged, covariance augmentation, damping, selected store, active sparse selected solver, sparse row products, missing Qxx, non-finite Qxx, and dimension mismatch. `industry_demo` remains legacy because it is weak/non-convergent/damped. No user-visible success log is emitted for reuse.
 
 Full parity includes success, convergence, iterations, adjusted XYZ/E-N-H, orientations, residuals and GPS component residuals, SEUW, standardized residuals/components, redundancy/components, MDB/components, local/global tests, station covariance and precision blocks, error ellipses/height precision, all-pairs `relativePrecision` lengths/order/values, `relativeCovariances`, REL/PTOL output, warnings, diagnostics, and array ordering.
 

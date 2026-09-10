@@ -6,7 +6,11 @@
  * a normal converged 3D dense TypeScript solve whose final Qxx is finite
  * and correctly dimensioned, with no preanalysis, robust weighting,
  * covariance augmentation, final-recovery damping, selected-covariance
- * store, or sparse row products. TS correlation is admissible (the same
+ * store, active sparse selected-covariance solver, or sparse row
+ * products. Rejection for the solver is on presence alone (conservative):
+ * while the solver is active the final dense Qxx is normally sparse-derived
+ * even when no selected store is captured, and a solve whose sparse
+ * recovery fell back to dense still keeps the legacy path. TS correlation is admissible (the same
  * correlation transform runs on both paths). Anything else — including
  * 2D solves and non-converged solves — keeps the legacy
  * rebuild-and-invert statistics path.
@@ -28,6 +32,13 @@ export interface StatisticsQxxReuseInput {
   robustMode: string | undefined;
   finalQxx: number[][] | null;
   hasSelectedStore: boolean;
+  /**
+   * Active sparse selected-covariance solver. Presence alone rejects reuse
+   * (conservative): the final dense Qxx is normally sparse-derived even
+   * with no selected store, and a dense-fallback recovery still keeps the
+   * legacy path.
+   */
+  hasSparseSelectedCovarianceSolver: boolean;
   sparseRowProductsAvailable: boolean;
   numParams: number;
   /** Synthetic rows the final recovery appended (covariance augmentation). */
@@ -66,6 +77,9 @@ export const decideStatisticsQxxReuse = (
   if (input.preanalysisMode) return { eligible: false, reason: 'preanalysis-mode' };
   if (input.finalQxx == null) return { eligible: false, reason: 'missing-final-qxx' };
   if (input.hasSelectedStore) return { eligible: false, reason: 'non-dense-selected-store' };
+  if (input.hasSparseSelectedCovarianceSolver) {
+    return { eligible: false, reason: 'sparse-selected-solver-active' };
+  }
   if (input.sparseRowProductsAvailable) {
     return { eligible: false, reason: 'sparse-row-products-active' };
   }

@@ -11,6 +11,14 @@
 import { describe, expect, it } from 'vitest';
 
 import { LSAEngine } from '../src/engine/adjust';
+import { invertNormalMatrixForStats } from '../src/engine/adjustNormalEquationHelpers';
+import { accumulateNormalEquationsFromSparseRows, zeros } from '../src/engine/matrix';
+import type { SparseMatrixRows } from '../src/engine/matrix';
+import type {
+  SparseSelectedCovarianceInput,
+  SparseSelectedCovarianceResult,
+  SparseSelectedCovarianceSolver,
+} from '../src/engine/numericalBackend';
 import { buildPhase6LargeBenchmarkCases } from '../src/engine/phase6BenchmarkNetworks';
 import { decideStatisticsQxxReuse } from '../src/engine/statisticsQxxReuse';
 import type { QxxReuseProbeEvent } from '../src/engine/qxxReuseEvidence';
@@ -57,6 +65,45 @@ const maxAbsDiff = (a: number[][], b: number[][]): number => {
   }
   return max;
 };
+
+/** Dense reference selected-covariance solver: exact inverse, no selected store. */
+const denseReferenceSelectedCovariance = (): SparseSelectedCovarianceSolver => ({
+  querySelected(input: SparseSelectedCovarianceInput): SparseSelectedCovarianceResult {
+    const eqCount = input.observationEquationCount;
+    const paramCount = input.parameterCount;
+    const sparseRows: SparseMatrixRows = Array.from({ length: eqCount }, () => []);
+    for (let row = 0; row < eqCount; row += 1) {
+      const start = input.design.rowOffsets[row] ?? 0;
+      const end = input.design.rowOffsets[row + 1] ?? 0;
+      for (let k = start; k < end; k += 1) {
+        (sparseRows[row] as { index: number; value: number }[]).push({
+          index: input.design.columns[k] ?? 0,
+          value: input.design.values[k] ?? 0,
+        });
+      }
+    }
+    const weights = Array.from({ length: eqCount }, () => new Array<number>(eqCount).fill(0));
+    for (let k = 0; k < input.weights.values.length; k += 1) {
+      const row = input.weights.rows[k] ?? 0;
+      const column = input.weights.columns[k] ?? 0;
+      const value = input.weights.values[k] ?? 0;
+      (weights[row] as number[])[column] = value;
+      (weights[column] as number[])[row] = value;
+    }
+    const { normal } = accumulateNormalEquationsFromSparseRows(
+      sparseRows,
+      zeros(eqCount, 1),
+      weights,
+      paramCount,
+    );
+    const inverse = invertNormalMatrixForStats(normal, () => undefined);
+    const covariance = new Float64Array(input.queryRows.length);
+    for (let k = 0; k < input.queryRows.length; k += 1) {
+      covariance[k] = inverse[input.queryRows[k] ?? 0]?.[input.queryColumns[k] ?? 0] ?? 0;
+    }
+    return { covariance, normalNnz: 0, factorNnz: 0, damping: 0, dampingAttempts: 0 };
+  },
+});
 
 describe('Phase 10E production Qxx reuse contract', () => {
   it('automatically reuses the final dense Qxx on converged 3D with full parity', () => {
@@ -126,6 +173,27 @@ describe('Phase 10E production Qxx reuse contract', () => {
     expect(stats?.reason).toBe('reused-final-dense-qxx');
   });
 
+  it('rejects automatic reuse when a sparse selected solver is active even with no selected store', () => {
+    const events: QxxReuseProbeEvent[] = [];
+    const result = new LSAEngine({
+      input: fixture3d.input,
+      sparseSelectedCovarianceSolver: denseReferenceSelectedCovariance(),
+      qxxReuseProbe: (event) => {
+        events.push(event);
+      },
+    }).solve();
+    expect(result.success).toBe(true);
+    expect(result.converged).toBe(true);
+    // Non-experimental solver mode captures a sparse-derived dense Qxx with
+    // no selected store; statistics must still take the legacy path.
+    const final = events.find((e) => e.stage === 'final-covariance');
+    expect(final?.reason).toBe('sparse-dense-qxx-captured');
+    const stats = events.find((e) => e.stage === 'statistics');
+    expect(stats?.reused).toBe(false);
+    expect(stats?.reason).toBe('sparse-selected-solver-active');
+    expect(stats?.inversions).toBe(1);
+  });
+
   it('rejects every inadmissible shape in the eligibility gate', () => {
     const base = {
       forceLegacy: false,
@@ -138,6 +206,7 @@ describe('Phase 10E production Qxx reuse contract', () => {
         [0.5, 1],
       ],
       hasSelectedStore: false,
+      hasSparseSelectedCovarianceSolver: false,
       sparseRowProductsAvailable: false,
       numParams: 2,
       augmentedRowCount: 0,
@@ -162,6 +231,21 @@ describe('Phase 10E production Qxx reuse contract', () => {
     expect(decideStatisticsQxxReuse({ ...base, hasSelectedStore: true }).reason).toBe(
       'non-dense-selected-store',
     );
+    expect(
+      decideStatisticsQxxReuse({ ...base, hasSparseSelectedCovarianceSolver: true }).reason,
+    ).toBe('sparse-selected-solver-active');
+    expect(
+      decideStatisticsQxxReuse({ ...base, hasSparseSelectedCovarianceSolver: true })
+        .eligible,
+    ).toBe(false);
+    // Test-only oracle keeps precedence over every production rejection.
+    expect(
+      decideStatisticsQxxReuse({
+        ...base,
+        forceLegacy: true,
+        hasSparseSelectedCovarianceSolver: true,
+      }).reason,
+    ).toBe('force-legacy-oracle');
     expect(
       decideStatisticsQxxReuse({ ...base, sparseRowProductsAvailable: true }).reason,
     ).toBe('sparse-row-products-active');

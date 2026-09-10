@@ -4,12 +4,14 @@
  * Evidence-only manual campaign (never runs in CI). Exercises the
  * production default (automatic reuse on the eligible cohort) against
  * the test-only `forceLegacyStatisticsQxx` oracle with 1 warm-up + 5
- * measured timing runs per mode. Records wall medians, probe call
- * counts, final-vs-statistics N/Qxx equivalence, full-result parity,
- * and profiler proof that reuse skips the statistics accumulation and
+ * measured timing runs per mode. Wall medians come from clean solves
+ * with neither `qxxReuseProbe` nor `detailedSolveProfiler` attached; a
+ * separate instrumented solve per mode supplies probe call counts,
+ * final-vs-statistics N/Qxx equivalence, full-result parity, and
+ * profiler proof that reuse skips the statistics accumulation and
  * inversion while still assembling equations. Writes machine artifacts
- * to `artifacts/evidence/phase10e/` (gitignored) and the committed
- * report to `reports/phase10e/phase10e-production-qxx-reuse.md`.
+ * only to `artifacts/evidence/phase10e/` (gitignored); never touches
+ * the committed report under `reports/phase10e/`.
  *
  * No UI, protocol, formula, or routing changes.
  */
@@ -93,35 +95,41 @@ describe('Phase 10E production Qxx reuse evidence', () => {
         profile: DetailedSolveProfile;
         wallMedianMs: number;
       } => {
-        new LSAEngine({
-          input,
-          forceLegacyStatisticsQxx: forceLegacy,
-          detailedSolveProfiler: createDetailedSolveProfiler(),
-        }).solve();
+        // Warm-up (unmeasured, uninstrumented).
+        new LSAEngine({ input, forceLegacyStatisticsQxx: forceLegacy }).solve();
+        // Measured wall times: clean solves with neither qxxReuseProbe nor
+        // detailedSolveProfiler attached, so instrumentation overhead never
+        // leaks into the reported medians.
         const walls: number[] = [];
-        let last: ReturnType<LSAEngine['solve']> | null = null;
-        let lastEvents: QxxReuseProbeEvent[] = [];
-        let lastProfile: DetailedSolveProfile | null = null;
+        let spotCheck: ReturnType<LSAEngine['solve']> | null = null;
         for (let run = 0; run < MEASURED_RUNS; run += 1) {
-          const runEvents: QxxReuseProbeEvent[] = [];
-          const profiler = createDetailedSolveProfiler();
           const started = performance.now();
-          last = new LSAEngine({
+          const measured = new LSAEngine({
             input,
             forceLegacyStatisticsQxx: forceLegacy,
-            qxxReuseProbe: (event) => {
-              runEvents.push(event);
-            },
-            detailedSolveProfiler: profiler,
           }).solve();
           walls.push(performance.now() - started);
-          lastEvents = runEvents;
-          lastProfile = profiler.profile;
+          spotCheck ??= measured;
         }
+        // Cheap guard: clean timing solves must be successful converged
+        // solves, otherwise the medians are meaningless.
+        expect(spotCheck?.success, `${id} clean timing solve succeeds`).toBe(true);
+        expect(spotCheck?.converged, `${id} clean timing solve converges`).toBe(true);
+        // Separate instrumented solve for events/profile/parity (not timed).
+        const runEvents: QxxReuseProbeEvent[] = [];
+        const profiler = createDetailedSolveProfiler();
+        const result = new LSAEngine({
+          input,
+          forceLegacyStatisticsQxx: forceLegacy,
+          qxxReuseProbe: (event) => {
+            runEvents.push(event);
+          },
+          detailedSolveProfiler: profiler,
+        }).solve();
         return {
-          result: last!,
-          events: lastEvents,
-          profile: lastProfile!,
+          result,
+          events: runEvents,
+          profile: profiler.profile,
           wallMedianMs: median(walls),
         };
       };
@@ -185,18 +193,18 @@ describe('Phase 10E production Qxx reuse evidence', () => {
     const payload = {
       status: 'complete',
       method:
-        'per fixture: profiled warm-up solve, then 1 warm-up + 5 measured solves per mode (force-legacy oracle vs production automatic reuse); medians reported; probe captures N/Qxx copies for direct comparison (matrices not serialized, only max diffs)',
+        'per fixture: uninstrumented warm-up solve, then 5 clean measured solves per mode (force-legacy oracle vs production automatic reuse) with neither qxxReuseProbe nor detailedSolveProfiler attached; medians reported; one separate instrumented solve per mode captures probe events and the profiler profile for N/Qxx comparison (matrices not serialized, only max diffs)',
       measuredRuns: MEASURED_RUNS,
       cases: caseEvidence,
     };
     writeFileSync(join(artifactDir, 'phase10e-evidence.json'), `${JSON.stringify(payload, null, 2)}\n`);
 
-    const reportDir = join(process.cwd(), 'reports/phase10e');
-    mkdirSync(reportDir, { recursive: true });
+    // Generated markdown goes only under artifacts/evidence/phase10e; the
+    // committed report under reports/phase10e is never overwritten by reruns.
     const markdown = [
       '# Phase 10E production Qxx reuse evidence',
       '',
-      'Evidence-only dense TypeScript campaign on gps-3d-32/64/128. Per fixture: profiled warm-up solve, then 1 warm-up + 5 measured solves per mode (force-legacy oracle vs production automatic reuse); medians reported. Production default automatically reuses the recovered final dense Qxx as the standardized-residual statistics Qxx on this cohort; equations are still assembled, only the statistics normal accumulation and inversion are skipped.',
+      'Evidence-only dense TypeScript campaign on gps-3d-32/64/128. Per fixture: uninstrumented warm-up solve, then 5 clean measured solves per mode (force-legacy oracle vs production automatic reuse) with neither qxxReuseProbe nor detailedSolveProfiler attached; medians reported. One separate instrumented solve per mode captures probe events and the profiler profile. Production default automatically reuses the recovered final dense Qxx as the standardized-residual statistics Qxx on this cohort; equations are still assembled, only the statistics normal accumulation and inversion are skipped.',
       '',
       '| Fixture | params | iters | oracle wall ms | production wall ms | N max diff | Qxx max diff | full parity | oracle stats inv | production stats inv | production reason |',
       '|---|---:|---:|---:|---:|---:|---:|---|---|---:|---|',
@@ -207,13 +215,12 @@ describe('Phase 10E production Qxx reuse evidence', () => {
       '',
       '## Cohort and fail-closed bounds',
       '',
-      '- Automatic reuse only: normal converged 3D dense TypeScript final Qxx with finite correct dimension; no preanalysis, robust weighting, covariance augmentation, final-recovery damping, selected-covariance store, or sparse row products. TS correlation is admissible.',
+      '- Automatic reuse only: normal converged 3D dense TypeScript final Qxx with finite correct dimension; no preanalysis, robust weighting, covariance augmentation, final-recovery damping, selected-covariance store, active sparse selected-covariance solver, or sparse row products. TS correlation is admissible.',
       '- 2D solves and non-converged solves keep the legacy rebuild-and-invert path; the test-only `forceLegacyStatisticsQxx` oracle forces legacy on any input.',
       '- Gate: `src/engine/statisticsQxxReuse.ts` (`decideStatisticsQxxReuse`); probes stay separate in `src/engine/qxxReuseEvidence.ts`.',
       '- No UI, protocol, formula, or routing changes.',
     ].join('\n');
     writeFileSync(join(artifactDir, 'phase10e-evidence.md'), `${markdown}\n`);
-    writeFileSync(join(reportDir, 'phase10e-production-qxx-reuse.md'), `${markdown}\n`);
 
     expect(caseEvidence.map((c) => c.fixture)).toEqual([
       'gps-3d-32',

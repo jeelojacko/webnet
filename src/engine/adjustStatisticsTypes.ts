@@ -48,6 +48,12 @@ export type AdjustmentStatisticsContext = {
    * the fail-closed accessor and skips legacy all-pairs relativePrecision.
    */
   experimentalSelectedCovarianceStore?: SelectedCovarianceStore;
+  /**
+   * Active sparse selected-covariance solver at statistics time.
+   * Conservative: presence alone rejects automatic reuse, even when no
+   * selected store was captured or the sparse recovery fell back to dense.
+   */
+  sparseSelectedCovarianceSolverActive?: boolean;
   is2D: boolean;
   directionOrientations: Record<string, number>;
   dof: number;

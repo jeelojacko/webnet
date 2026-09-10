@@ -8,6 +8,7 @@ export const buildStatisticsContextForEngine = (engine: any): AdjustmentStatisti
       paramIndex: engine.paramIndex,
       Qxx: engine.Qxx,
       experimentalSelectedCovarianceStore: engine.experimentalSelectedCovarianceStore,
+      sparseSelectedCovarianceSolverActive: engine.sparseSelectedCovarianceSolver != null,
       is2D: engine.is2D,
       directionOrientations: engine.directionOrientations,
       dof: engine.dof,
