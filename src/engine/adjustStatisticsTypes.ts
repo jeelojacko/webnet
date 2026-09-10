@@ -48,6 +48,12 @@ export type AdjustmentStatisticsContext = {
    * the fail-closed accessor and skips legacy all-pairs relativePrecision.
    */
   experimentalSelectedCovarianceStore?: SelectedCovarianceStore;
+  /**
+   * Active sparse selected-covariance solver at statistics time.
+   * Conservative: presence alone rejects automatic reuse, even when no
+   * selected store was captured or the sparse recovery fell back to dense.
+   */
+  sparseSelectedCovarianceSolverActive?: boolean;
   is2D: boolean;
   directionOrientations: Record<string, number>;
   dof: number;
@@ -72,11 +78,14 @@ export type AdjustmentStatisticsContext = {
   /** Phase 10C test-only detailed profiler; undefined keeps production timing only. */
   detailedSolveProfiler?: DetailedSolveProfiler;
   /**
-   * Phase 10D test-only Qxx reuse switch: true lets the dense statistics
-   * fallback reuse the recovered final dense Qxx. Undefined/false keeps
-   * the legacy rebuild-and-invert path.
+   * Phase 10E test-only oracle: true forces the legacy statistics
+   * rebuild-and-invert path even when final-Qxx reuse is eligible.
+   * Undefined/false runs automatic production reuse on the eligible
+   * cohort. Never persisted or exposed in UI.
    */
-  reuseFinalCovarianceInStatistics?: boolean;
+  forceLegacyStatisticsQxx?: boolean;
+  /** Solve convergence at statistics time (required for reuse). */
+  solveConverged?: boolean;
   /** Phase 10D test-only Qxx comparison probe; undefined disables capture. */
   qxxReuseProbe?: QxxReuseProbe;
   /** Phase 10D synthetic rows appended for the final recovery (0 = none). */

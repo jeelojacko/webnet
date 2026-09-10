@@ -2,11 +2,14 @@
  * Phase 10D evidence: Qxx comparison and reuse across final covariance and
  * standardized-residual statistics.
  *
- * Evidence-only manual campaign (never runs in CI). Uses the genuine 3D
+ * Historical campaign (Phase 10E promoted the seam to automatic
+ * production reuse; this file now exercises the same paths via the
+ * test-only `forceLegacyStatisticsQxx` oracle instead of the retired
+ * opt-in flag). Evidence-only manual campaign (never runs in CI). Uses the genuine 3D
  * corpus (industry_demo + gps-3d-cov-08/16/32/64/128) on the dense
- * TypeScript path with the test-only `reuseFinalCovarianceInStatistics`
- * seam (default legacy). Records, per fixture and per mode
- * (legacy recompute vs reuse):
+ * TypeScript path with the `forceLegacyStatisticsQxx` oracle (default
+ * automatic production reuse). Records, per fixture and per mode
+ * (force-legacy oracle recompute vs automatic reuse):
  *
  * - uninstrumented production-path walls (1 warm-up + 3 measured, median)
  * - probe call counts (final-covariance accumulations/inversions,
@@ -102,13 +105,13 @@ interface CaseEvidence {
 const CALL_GRAPH_NOTES = [
   'LSAEngine.solve (src/engine/adjustSolveWorkflow.ts) recovers the final covariance (recoverFinalNormalCovariance, src/engine/adjustCovarianceRecovery.ts) then runs post-solve statistics including computeStandardizedResidualStatistics (src/engine/adjustStatisticsStandardizedResiduals.ts).',
   'Legacy statistics path reassembles statistics equations, accumulates a statistics normal system, and inverts a statistics Qxx before building dense row products (B = A*Qxx) for per-equation standardized residuals.',
-  'Phase 10D seam (src/engine/qxxReuseEvidence.ts): with test-only reuseFinalCovarianceInStatistics === true, the dense statistics fallback reuses ctx.Qxx (the recovered final dense Qxx) for B = A*Qxx while still assembling equations; normal accumulation and inversion are skipped. multiplySparseRowsByDenseMatrix never mutates Qxx.',
+  'Production seam (src/engine/statisticsQxxReuse.ts): the dense statistics fallback automatically reuses ctx.Qxx (the recovered final dense Qxx) for B = A*Qxx while still assembling equations; normal accumulation and inversion are skipped. multiplySparseRowsByDenseMatrix never mutates Qxx.',
   'Fail-closed gate (decideStatisticsQxxReuse): any inadmissible shape — flag off, preanalysis, missing Qxx, selected store, sparse row products, non-none robust mode, covariance augmentation rows, damped final recovery, dimension mismatch / non-finite entries — falls back to the legacy rebuild-and-invert path with a machine-readable probe reason.',
   'Instrumentation (qxxReuseProbe, test-only EngineOptions): final-covariance and statistics events carry deep-copied normals/Qxx plus per-stage accumulation/inversion counts; copies are guarded so production solves pay nothing when the probe is absent.',
 ];
 
 const CONTRACT_NOTES = [
-  'Production default is unchanged: without the opt-in flag every solve takes the legacy recompute path (probe reason reuse-disabled). No formulas, tolerances, or public result fields change.',
+  'Production default reuses automatically on the eligible cohort (converged 3D dense TypeScript solves); the test-only forceLegacyStatisticsQxx oracle forces the legacy recompute path (probe reason force-legacy-oracle). No formulas, tolerances, or public result fields change.',
   'Demand modes A/B/C and any selected/sparse covariance route are NOT involved here; both compared Qxx matrices are dense TypeScript inversions of deterministically assembled normals.',
   'industry_demo is recorded as inadmissible (weak-case observation), never as a parity anchor.',
   'Known log boundary on damped (ill-conditioned) cases: when the final recovery inverts with diagonal damping, reuse falls closed (reason damped-final-recovery) so the legacy statistics path keeps its own damping warning and the full result stays bit-identical including logs (observed on industry_demo). Any future production route must preserve that warning; this seam makes no such change.',
@@ -130,7 +133,7 @@ describe('Phase 10D Qxx comparison and reuse evidence', () => {
         const events: QxxReuseProbeEvent[] = [];
         new LSAEngine({
           input,
-          reuseFinalCovarianceInStatistics: reuse,
+          forceLegacyStatisticsQxx: !reuse,
           qxxReuseProbe: (event) => {
             events.push(event);
           },
@@ -146,7 +149,7 @@ describe('Phase 10D Qxx comparison and reuse evidence', () => {
           const started = performance.now();
           last = new LSAEngine({
             input,
-            reuseFinalCovarianceInStatistics: reuse,
+            forceLegacyStatisticsQxx: !reuse,
             qxxReuseProbe: (event) => {
               runEvents.push(event);
             },
@@ -233,13 +236,12 @@ describe('Phase 10D Qxx comparison and reuse evidence', () => {
       });
     }
 
-    // Robust-Huber inadmissible case: reuse requested but fails closed.
+    // Robust-Huber inadmissible case: automatic reuse fails closed.
     const huberInput = `${generated.find((g) => g.id === 'gps-3d-cov-08')!.input}\n.ROBUST HUBER 1.5\n`;
-    const huberLegacy = new LSAEngine({ input: huberInput }).solve();
+    const huberLegacy = new LSAEngine({ input: huberInput, forceLegacyStatisticsQxx: true }).solve();
     const huberEvents: QxxReuseProbeEvent[] = [];
     const huberReuse = new LSAEngine({
       input: huberInput,
-      reuseFinalCovarianceInStatistics: true,
       qxxReuseProbe: (event) => {
         huberEvents.push(event);
       },
@@ -260,6 +262,7 @@ describe('Phase 10D Qxx comparison and reuse evidence', () => {
     const tscorrLegacyEvents: QxxReuseProbeEvent[] = [];
     const tscorrLegacy = new LSAEngine({
       input: tscorrInput,
+      forceLegacyStatisticsQxx: true,
       qxxReuseProbe: (event) => {
         tscorrLegacyEvents.push(event);
       },
@@ -267,7 +270,6 @@ describe('Phase 10D Qxx comparison and reuse evidence', () => {
     const tscorrReuseEvents: QxxReuseProbeEvent[] = [];
     const tscorrReuse = new LSAEngine({
       input: tscorrInput,
-      reuseFinalCovarianceInStatistics: true,
       qxxReuseProbe: (event) => {
         tscorrReuseEvents.push(event);
       },

@@ -1,7 +1,8 @@
 import { transformSymmetricCovariance3 } from './adjustGpsMath';
 import { tryQueryStandardizedResidualRowProducts } from './adjustStatisticsRowProducts';
 import { detailedNow } from './adjustDetailedSolveProfile';
-import { copyMatrix, decideStatisticsQxxReuse } from './qxxReuseEvidence';
+import { copyMatrix } from './qxxReuseEvidence';
+import { decideStatisticsQxxReuse } from './statisticsQxxReuse';
 import { accumulateNormalEquationsFromSparseRows, multiplySparseRowsByDenseMatrix, zeros } from './matrix';
 import { assembleAdjustmentEquations } from './adjustmentEquationAssembly';
 import { getObservationSetId } from './observationMetadata';
@@ -231,17 +232,21 @@ export const computeStandardizedResidualStatistics = (
               );
             }
             const reuseDecision = decideStatisticsQxxReuse({
-              reuseRequested: ctx.reuseFinalCovarianceInStatistics === true,
+              forceLegacy: ctx.forceLegacyStatisticsQxx === true,
+              converged: ctx.solveConverged === true,
+              is2D: ctx.is2D,
               preanalysisMode: ctx.preanalysisMode,
               robustMode: ctx.robustMode,
               finalQxx: hasQxx ? ctx.Qxx : null,
               hasSelectedStore: ctx.experimentalSelectedCovarianceStore != null,
+              hasSparseSelectedCovarianceSolver:
+                ctx.sparseSelectedCovarianceSolverActive === true,
               sparseRowProductsAvailable: false,
               numParams,
               augmentedRowCount: ctx.finalCovarianceAugmentedRows ?? 0,
               finalCovarianceDamping: ctx.finalCovarianceDamping ?? 0,
             });
-            // Phase 10D seam: equations are still assembled above (L,
+            // Production seam: equations are still assembled above (L,
             // rowInfo, weights); only the statistics normal accumulation
             // and inversion are skipped when the final dense Qxx is reused.
             // multiplySparseRowsByDenseMatrix never mutates Qxx.

@@ -68,8 +68,8 @@ export class LSAEngine extends LSAEngineObservationMethods {
   private iterationSystemProbe?: (_system: IterationSystemProbeInput) => void;
   /** Phase 9E test-only oracle switch; false forces the legacy correction loop. */
   private preanalysisCorrectionFastPath?: boolean;
-  /** Phase 10D test-only Qxx reuse switch; undefined/false keeps legacy recompute. */
-  private reuseFinalCovarianceInStatistics?: boolean;
+  /** Phase 10E test-only oracle; true forces legacy statistics recompute. */
+  private forceLegacyStatisticsQxx?: boolean;
   /** Phase 10D test-only Qxx comparison probe; undefined disables capture. */
   private qxxReuseProbe?: QxxReuseProbe;
   /** Phase 10D last final-recovery synthetic-row count; 0 keeps reuse eligible. */
@@ -203,7 +203,7 @@ export class LSAEngine extends LSAEngineObservationMethods {
     detailedSolveProfiler,
     iterationSystemProbe,
     preanalysisCorrectionFastPath,
-    reuseFinalCovarianceInStatistics,
+    forceLegacyStatisticsQxx,
     qxxReuseProbe,
   }: EngineOptions) {
     super();
@@ -217,7 +217,7 @@ export class LSAEngine extends LSAEngineObservationMethods {
     this.detailedSolveProfiler = detailedSolveProfiler;
     this.iterationSystemProbe = iterationSystemProbe;
     this.preanalysisCorrectionFastPath = preanalysisCorrectionFastPath;
-    this.reuseFinalCovarianceInStatistics = reuseFinalCovarianceInStatistics;
+    this.forceLegacyStatisticsQxx = forceLegacyStatisticsQxx;
     this.qxxReuseProbe = qxxReuseProbe;
     this.input = input;
     this.maxIterations = maxIterations;
@@ -279,7 +279,7 @@ export class LSAEngine extends LSAEngineObservationMethods {
       detailedSolveProfiler: this.detailedSolveProfiler,
       iterationSystemProbe: this.iterationSystemProbe,
       preanalysisCorrectionFastPath: this.preanalysisCorrectionFastPath,
-      reuseFinalCovarianceInStatistics: this.reuseFinalCovarianceInStatistics,
+      forceLegacyStatisticsQxx: this.forceLegacyStatisticsQxx,
       qxxReuseProbe: this.qxxReuseProbe,
     }).solve();
   }

@@ -100,13 +100,12 @@ export interface EngineOptions {
    */
   iterationSystemProbe?: (_system: IterationSystemProbeInput) => void;
   /**
-   * Phase 10D test-only Qxx reuse switch: true lets standardized-residual
-   * statistics reuse the recovered final dense Qxx (still assembling
-   * equations) instead of rebuilding and inverting a statistics normal
-   * system. Undefined/false keeps the legacy recompute path. Never
-   * persisted or exposed in UI.
+   * Phase 10E test-only oracle: true forces the legacy statistics
+   * rebuild-and-invert path even when final-Qxx reuse is eligible.
+   * Undefined/false runs automatic production reuse on the eligible
+   * cohort. Never persisted or exposed in UI.
    */
-   reuseFinalCovarianceInStatistics?: boolean;
+  forceLegacyStatisticsQxx?: boolean;
    /**
    * Phase 10D test-only Qxx comparison probe: receives final-covariance
    * and statistics normals/Qxx plus reuse decisions and call counts.

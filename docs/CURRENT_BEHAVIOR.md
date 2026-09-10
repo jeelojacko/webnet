@@ -286,6 +286,7 @@ Current review behavior includes:
 - safety confirmations for high-risk review/import actions, with explicit action scope in confirmation copy and inline disabled-reason hints on unavailable controls
 - saved-run compare and baseline review workflows
 - heavy jobs now defer full normal-equation covariance recovery until the final adjusted state; intermediate outer iterations solve only for the correction vector
+- standardized-residual statistics automatically reuse the recovered final dense Qxx on the eligible cohort (converged 3D dense TypeScript solves with finite correctly-dimensioned Qxx; no preanalysis, robust weighting, covariance augmentation, final-recovery damping, selected-covariance store/solver, or sparse row products; TS correlation admissible; 2D and non-converged solves keep the legacy rebuild-and-invert path). Equations are still assembled; only the statistics normal accumulation and inversion are skipped (gate: `src/engine/statisticsQxxReuse.ts`; test-only `forceLegacyStatisticsQxx` oracle forces legacy)
 - industry-standard propagated precision is the only live precision-reporting mode exposed in the app and project workflow
 
 ### Cluster and automatic review workflows
