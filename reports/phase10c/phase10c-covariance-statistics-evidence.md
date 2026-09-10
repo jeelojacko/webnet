@@ -4,7 +4,7 @@
 
 - Branch: `feat/3d-covariance-statistics-evidence`
 - Baseline: `9acc178d837d2ea374553078b70fa20994d51879`
-- HEAD: `f6b80cfbea4c917b3885ba109299520f0669510f`
+- HEAD: `8bc3d8f8` (evidence content commit; metadata update follows)
 - PR: [#17](https://github.com/jeelojacko/webnet/pull/17)
 
 ## Contract
