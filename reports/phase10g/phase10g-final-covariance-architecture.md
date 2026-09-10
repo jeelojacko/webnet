@@ -52,13 +52,15 @@ blocked by the fail-closed gate by design — see Route B note).
 
 Dense baseline: warm-up + 3 clean production solves (wall median).
 Native walls use 1 warm-up + 5 measured runs, reported as median [min–max]
-boundary observations. No timing assertions or production speedup claims.
+boundary observations. Timed native solves carry no reuse probe (its
+O(P²) copies would pollute the interval); the reuse reason comes from a
+separate untimed solve. No timing assertions or production speedup claims.
 
 | Fixture | P/coord | rows | dense wall | A med [min–max] | B med [min–max] | C med [min–max] | RP med [min–max] |
 |---|---:|---:|---:|---|---|---|---|
-| gps-3d-128 | 384/384 | 1027 | 205.14 | 209.49 [202.81–218.36] | 239.80 [232.20–252.44] | 203.32 [201.99–207.01] | 200.56 [198.79–208.98] |
-| gps-3d-64 | 192/192 | 515 | 39.00 | 40.87 [40.30–41.83] | 46.40 [45.99–63.89] | 40.16 [39.35–40.46] | 40.60 [40.10–41.02] |
-| orientation-synth (inadmissible) | 64/48 | 179 | 12.77 | 11.00 [10.63–11.24] | 11.62 [10.64–13.69] | 10.69 [10.34–12.54] | 10.09 [9.79–10.24] |
+| gps-3d-128 | 384/384 | 1027 | 203.94 | 210.08 [200.00–225.43] | 236.52 [231.52–253.49] | 193.95 [190.88–202.77] | 195.87 [194.52–203.97] |
+| gps-3d-64 | 192/192 | 515 | 39.28 | 40.96 [40.94–41.50] | 46.20 [45.80–46.84] | 38.77 [38.07–40.11] | 38.94 [38.36–39.69] |
+| orientation-synth (inadmissible) | 64/48 | 179 | 13.16 | 11.16 [10.77–11.33] | 11.98 [10.98–14.00] | 10.24 [9.89–12.78] | 9.98 [9.54–10.26] |
 
 gps-3d-128 demand (exact, from the real query plan): A raw 147456 /
 unique 73920 / 384 cols; B raw 75959 / unique 73920 / 384 cols;
@@ -193,10 +195,10 @@ fill are unmeasured (design nnz not recorded; dense P\u00b2\u00b712 B upper boun
 
 Fastest contract-preserving route:
 
-- **gps-3d-128:** production dense 205.14 ms; Route B native legacy-all-pairs 239.80 [232.20–252.44] ms covariance-stage boundary; Route C 203.32 [201.99–207.01] ms covariance-stage boundary but contract-different. Route B does not feed native Qxx into statistics reuse, so no fair whole-session gain is established.
+- **gps-3d-128:** production dense 203.94 ms; Route B native legacy-all-pairs 236.52 [231.52–253.49] ms covariance-stage boundary; Route C 193.95 [190.88–202.77] ms covariance-stage boundary but contract-different. Route B does not feed native Qxx into statistics reuse, so no fair whole-session gain is established.
 - **Statistics-stage asymmetry (disclosure):** the dense baseline enjoys production automatic Qxx reuse (skips statistics accumulation+inversion) while every native leg is fail-closed out of reuse by the active sparse solvers and runs legacy statistics, so boundary-wall comparisons are conservative against the native legs and are not apples-to-apples on the statistics stage.
-- **orientation-heavy largest:** production dense 12.77 ms; Route B 11.62 [10.64–13.69] ms boundary; Route C 10.69 [10.34–12.54] ms boundary, both inadmissible because dense reference covariance is damped and Route C omits all-pairs output.
-- **Whole-session improvement:** not established. Native Route B retains legacy statistics rebuild; row-products whole-session boundary is 200.56 [198.79–208.98] ms versus 205.14 ms at gps-3d-128, below the required 15% threshold.
+- **orientation-heavy largest:** production dense 13.16 ms; Route B 11.98 [10.98–14.00] ms boundary; Route C 10.24 [9.89–12.78] ms boundary, both inadmissible because dense reference covariance is damped and Route C omits all-pairs output.
+- **Whole-session improvement:** not established. Native Route B retains legacy statistics rebuild; row-products whole-session boundary is 195.87 [194.52–203.97] ms versus 203.94 ms at gps-3d-128, below the required 15% threshold.
 
 Decision: **NO-GO for transparent production covariance optimization.**
 Recommended Phase 10H: **none**. If work resumes, first run shared-factor/per-phase-timing and controlled native-Qxx statistics-reuse evidence; do not widen production routing.

@@ -330,17 +330,12 @@ const runNativeLeg = (spec: NativeLegSpec): NativeLeg => {
     input: spec.input,
     ...spec.options,
     experimentalSparseDiagnostics: warmupDiagnostics,
-    qxxReuseProbe: () => {},
   }).solve();
   const diagnostics = createExperimentalSparseRouteDiagnostics();
-  const nativeProbe: QxxReuseProbeEvent[] = [];
-  const injected = {
-    ...spec.options,
-    experimentalSparseDiagnostics: diagnostics,
-    qxxReuseProbe: (event: QxxReuseProbeEvent) => {
-      nativeProbe.push(event);
-    },
-  };
+  // Timed solves stay clean: an active qxxReuseProbe forces O(P^2)
+  // normal/Qxx deep copies inside the measured interval, so the reuse
+  // reason is collected in a separate untimed solve below.
+  const injected = { ...spec.options, experimentalSparseDiagnostics: diagnostics };
   const walls: number[] = [];
   let solved: SolveResult | null = null;
   for (let run = 0; run < NATIVE_RUNS; run += 1) {
@@ -353,6 +348,15 @@ const runNativeLeg = (spec: NativeLegSpec): NativeLeg => {
   leg.wallMs = median(walls);
   leg.wallMinMs = Math.min(...walls);
   leg.wallMaxMs = Math.max(...walls);
+  const nativeProbe: QxxReuseProbeEvent[] = [];
+  new LSAEngine({
+    input: spec.input,
+    ...spec.options,
+    experimentalSparseDiagnostics: createExperimentalSparseRouteDiagnostics(),
+    qxxReuseProbe: (event: QxxReuseProbeEvent) => {
+      nativeProbe.push(event);
+    },
+  }).solve();
   leg.statsReuseReason = nativeProbe.find((e) => e.stage === 'statistics')?.reason ?? 'no-event';
   // Fallback reasons must be populated before damping inference reads them.
   leg.fallbackReasons = [
@@ -428,8 +432,10 @@ interface AuditRow {
   coverage: string;
   obsMix: Record<string, number>;
   fixedStations: number;
-  success: boolean;
-  converged: boolean;
+  // Null marks explicitly unobserved outcomes (no solve performed),
+  // never a fabricated success.
+  success: boolean | null;
+  converged: boolean | null;
   reuseReason: string;
   requestedRelPtolPairs: number;
   status: string;
@@ -483,8 +489,8 @@ const collectSemanticAudit = (): AuditRow[] => {
     coverage: 'covariance augmentation rows; excluded observations',
     obsMix: {},
     fixedStations: 0,
-    success: true,
-    converged: true,
+    success: null,
+    converged: null,
     reuseReason: 'unobserved-on-corpus (fail-closed by gate/parser)',
     requestedRelPtolPairs: 0,
     status: 'unobserved-fail-closed-by-construction',
