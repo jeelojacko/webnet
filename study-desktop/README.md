@@ -175,7 +175,8 @@ Phase 1 changed no persistence behavior; Phase 2C adds the native SQLite foundat
 
 ## Phase 4 validation hardening (docs + standalone CI, no content changes)
 
-- Canonical manual GUI smoke checklist: `docs/STUDY_DESKTOP_SMOKE_TEST.md`
+- Canonical manual GUI smoke checklist: `docs/STUDY_DESKTOP_SMOKE_TEST.md`.
+  Headed Linux command sequence with isolated XDG data: `docs/STUDY_DESKTOP_HEADED_RUN.md`.
   (PASS/FAIL/NOT TESTED/ENVIRONMENT BLOCKED per step; currently all GUI
   steps ENVIRONMENT BLOCKED — headless host, no display server).
 - Baseline audit: `docs/STUDY_DESKTOP_AUDIT.md` (versions/config/
