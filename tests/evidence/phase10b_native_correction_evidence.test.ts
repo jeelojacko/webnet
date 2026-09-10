@@ -41,6 +41,7 @@ import type { WebNetWasmFactory } from '../../src/engine/wasm/wasmTypes';
 
 const CORRECTION_TOLERANCE = 1e-6;
 const SHADOW_TOLERANCE_M = 1e-6;
+const SEUW_TOLERANCE = 1e-9;
 const MEASURED_RUNS = 3;
 
 const industryDemo = readFileSync(join(process.cwd(), 'public/examples/industry_demo.dat'), 'utf8');
@@ -122,6 +123,7 @@ interface CaseEvidence {
     maxCoordDiffM: number;
     maxHeightDiffM: number;
     maxResidualDiff: number;
+    maxStdResDiff: number;
     seuwDiff: number;
     iterationsMatch: boolean;
     sparseCorrectionFallbacks: number;
@@ -267,8 +269,24 @@ describe('Phase 10B genuine-3D native correction evidence', () => {
         sparseWalls.push(performance.now() - started);
       }
       const comparison = compareSparseShadowResults(ref, sparseCandidate, SHADOW_TOLERANCE_M);
+      const explicitContractReasons = [
+        ...(comparison.maxHeightDiffM <= SHADOW_TOLERANCE_M
+          ? []
+          : [`max height diff ${comparison.maxHeightDiffM} exceeds ${SHADOW_TOLERANCE_M}`]),
+        ...(comparison.maxResidualDiff <= SHADOW_TOLERANCE_M
+          ? []
+          : [`max residual diff ${comparison.maxResidualDiff} exceeds ${SHADOW_TOLERANCE_M}`]),
+        ...(comparison.maxStdResDiff <= SHADOW_TOLERANCE_M
+          ? []
+          : [`max standardized residual diff ${comparison.maxStdResDiff} exceeds ${SHADOW_TOLERANCE_M}`]),
+        ...(comparison.seuwDiff <= SEUW_TOLERANCE
+          ? []
+          : [`SEUW diff ${comparison.seuwDiff} exceeds ${SEUW_TOLERANCE}`]),
+      ];
       const level2Pass =
-        comparison.pass && diagnostics.sparseCorrectionFallbacks === 0;
+        comparison.pass &&
+        explicitContractReasons.length === 0 &&
+        diagnostics.sparseCorrectionFallbacks === 0;
       const sparseWall = median(sparseWalls);
       const factorFraction = tsWall > 0 ? stageMediansMs.factorSolve / tsWall : 0;
 
@@ -300,6 +318,7 @@ describe('Phase 10B genuine-3D native correction evidence', () => {
           pass: admissible ? level2Pass : null,
           passReasons: [
             ...comparison.passReasons,
+            ...explicitContractReasons,
             ...(diagnostics.sparseCorrectionFallbacks === 0
               ? []
               : [`sparse correction fallbacks=${diagnostics.sparseCorrectionFallbacks}`]),
@@ -307,6 +326,7 @@ describe('Phase 10B genuine-3D native correction evidence', () => {
           maxCoordDiffM: comparison.maxCoordDiffM,
           maxHeightDiffM: comparison.maxHeightDiffM,
           maxResidualDiff: comparison.maxResidualDiff,
+          maxStdResDiff: comparison.maxStdResDiff,
           seuwDiff: comparison.seuwDiff,
           iterationsMatch: comparison.iterationsMatch,
           sparseCorrectionFallbacks: diagnostics.sparseCorrectionFallbacks,

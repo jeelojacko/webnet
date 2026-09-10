@@ -92,6 +92,7 @@ jobs:
             reports/phase8a6/
             reports/phase8a5/
             reports/phase9a/
+            artifacts/evidence/phase10b/
           if-no-files-found: warn
       - name: Upload Phase 9A raw fragments
         if: always()
