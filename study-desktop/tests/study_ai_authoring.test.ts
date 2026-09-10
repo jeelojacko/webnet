@@ -1246,14 +1246,12 @@ describe('AI CLI JSONL robustness', () => {
       ['tsx', 'scripts/studyAiAuthoring.ts', 'validate-results', '--run', runId],
       {
         stdio: 'pipe',
-        shell: process.platform === 'win32',
         cwd: STUDY_TEST_REPO_ROOT,
       },
     );
     const report = String(
       execFileSync('npx', ['tsx', 'scripts/studyAiAuthoring.ts', 'status', '--run', runId], {
         stdio: 'pipe',
-        shell: process.platform === 'win32',
         cwd: STUDY_TEST_REPO_ROOT,
       }),
     );
@@ -1283,7 +1281,6 @@ describe('AI CLI JSONL robustness', () => {
       ],
       {
         stdio: 'pipe',
-        shell: process.platform === 'win32',
         cwd: STUDY_TEST_REPO_ROOT,
       },
     );
@@ -1349,7 +1346,6 @@ describe('AI CLI JSONL robustness', () => {
       ],
       {
         stdio: 'pipe',
-        shell: process.platform === 'win32',
         cwd: STUDY_TEST_REPO_ROOT,
       },
     );
@@ -1403,7 +1399,6 @@ describe('AI CLI JSONL robustness', () => {
       ],
       {
         stdio: 'pipe',
-        shell: process.platform === 'win32',
         cwd: STUDY_TEST_REPO_ROOT,
       },
     );
@@ -1567,7 +1562,6 @@ describe('AI CLI JSONL robustness', () => {
       ],
       {
         stdio: 'pipe',
-        shell: process.platform === 'win32',
         cwd: STUDY_TEST_REPO_ROOT,
       },
     );
@@ -1684,7 +1678,6 @@ describe('AI CLI JSONL robustness', () => {
       ],
       {
         stdio: 'pipe',
-        shell: process.platform === 'win32',
         cwd: STUDY_TEST_REPO_ROOT,
       },
     );
@@ -1729,7 +1722,6 @@ describe('AI CLI JSONL robustness', () => {
       ['tsx', 'scripts/studyAiAuthoring.ts', 'validate-results', '--run', runId],
       {
         stdio: 'pipe',
-        shell: process.platform === 'win32',
         cwd: STUDY_TEST_REPO_ROOT,
       },
     );
@@ -1775,7 +1767,6 @@ describe('AI CLI JSONL robustness', () => {
       ],
       {
         stdio: 'pipe',
-        shell: process.platform === 'win32',
         cwd: STUDY_TEST_REPO_ROOT,
       },
     );
@@ -1878,7 +1869,6 @@ describe('AI CLI JSONL robustness', () => {
       ['tsx', 'scripts/studyAiAuthoring.ts', 'pilot-report', '--run', runId, '--unit-run', runId],
       {
         stdio: 'pipe',
-        shell: process.platform === 'win32',
         cwd: STUDY_TEST_REPO_ROOT,
       },
     );
