@@ -32,6 +32,8 @@ Working/
 
 # Local agent / Study AI working state
 .memory/
+# Local graft context-graph cache
+graft/
 temp/study-ai-*/
 
 # Test-run artifacts (regenerated locally, never source data)
