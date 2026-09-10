@@ -2,21 +2,17 @@
 
 import type MiniSearch from 'minisearch';
 import type { ImportedLegalComponent, ImportedLegalDocument, StudyDataSnapshot } from '../studyTypes';
+import { corpusContentHashFor, studyContentRevisionFor } from './studySearchDocuments';
 import {
-  buildDocumentSearchRecords,
-  buildOfficialProvisionSearchRecord,
-  buildStudyUnitSearchRecord,
-  corpusContentHashFor,
-  studyContentRevisionFor,
-} from './studySearchDocuments';
-import {
-  createMiniSearch,
-  deserializeMiniSearch,
-  MINISEARCH_VERSION,
-  SEARCH_INDEX_SCHEMA_VERSION,
-  SEARCH_INDEX_VERSION,
-  serializeMiniSearch,
-} from './studySearchMiniSearch';
+  applyNativeSearchBootstrap,
+  applyNativeStudyUpdate,
+  buildOfficialSearchIndex,
+  buildSearchIndexMetadata,
+  buildStudySearchIndex,
+  createStudySearchIndexState,
+  searchIndexMetadataIsCurrent,
+} from './studySearchIndexCore';
+import { deserializeMiniSearch, serializeMiniSearch } from './studySearchMiniSearch';
 import {
   clearSearchArtifacts,
   openStudySearchDatabase,
@@ -29,7 +25,11 @@ import {
 import { buildMatchedSnippet, exactSearchBoost, meaningfulSearchTokensFor } from './studySearchRanking';
 import { STUDY_DB_VERSION, STUDY_SCHEMA_VERSION } from '../studyDbConfig';
 import type { StudySearchWorkerRequest, StudySearchWorkerResponse } from './studySearchMessages';
-import type { StudySearchRecord, StudySearchResultSummary, StudySearchScope } from './studySearchTypes';
+import type {
+  StudySearchIndexMetadata,
+  StudySearchRecord,
+  StudySearchResultSummary,
+} from './studySearchTypes';
 
 type StoreName =
   | 'documents'
@@ -56,14 +56,27 @@ type StoreName =
 type WorkerState = {
   officialIndex: MiniSearch<StudySearchRecord> | null;
   studyIndex: MiniSearch<StudySearchRecord> | null;
+  searchMetadata: StudySearchIndexMetadata | null;
   latestSearchRequestId: string | null;
+  /**
+   * Set synchronously by the `native-arm` message the service posts on
+   * worker creation (before the async bootstrap resolves). Once armed, this
+   * worker lifetime is native-only and must never open IndexedDB.
+   */
+  nativeArmed: boolean;
+  /** Set once a native bootstrap arrives; the IDB auto-load below then stays off. */
+  nativeBootstrapped: boolean;
 };
 
 const state: WorkerState = {
-  officialIndex: null,
-  studyIndex: null,
+  ...createStudySearchIndexState(),
   latestSearchRequestId: null,
+  nativeArmed: false,
+  nativeBootstrapped: false,
 };
+
+const NATIVE_NOT_BOOTSTRAPPED_MESSAGE =
+  'Study search is not bootstrapped; rebuild the search index first.';
 
 const post = (message: StudySearchWorkerResponse): void => {
   self.postMessage(message);
@@ -160,71 +173,36 @@ const buildOfficialIndex = async (
   requestId: string,
 ): Promise<{ index: MiniSearch<StudySearchRecord>; corpusContentHash: string; recordCount: number }> => {
   const legalDocuments = await readStore<ImportedLegalDocument>(db, 'legalDocuments');
-  const documentsById = new Map(legalDocuments.map((document) => [document.id, document]));
   const legalComponents = await readStore<ImportedLegalComponent & { recordKey?: string }>(
     db,
     'legalComponents',
   );
-  const index = createMiniSearch();
-  index.addAll(buildDocumentSearchRecords(legalDocuments));
-  let indexed = legalDocuments.length;
-  for (const component of legalComponents) {
-    index.add(
-      buildOfficialProvisionSearchRecord({
-        document: documentsById.get(component.documentId),
-        component,
-      }),
-    );
-    indexed += 1;
-    if (indexed % 250 === 0) {
-      post({
-        type: 'progress',
-        requestId,
-        status: {
-          ready: false,
-          phase: 'building',
-          message: `Indexing official legislation ${indexed} / ${legalDocuments.length + legalComponents.length}`,
-          indexed,
-          total: legalDocuments.length + legalComponents.length,
-        },
-      });
-      await new Promise((resolve) => setTimeout(resolve, 0));
-    }
-  }
-  return { index, corpusContentHash: corpusContentHashFor(legalDocuments), recordCount: indexed };
+  return buildOfficialSearchIndex({
+    legalDocuments,
+    legalComponents,
+    requestId,
+    onProgress: post,
+  });
 };
 
 const buildStudyIndex = async (
   db: IDBDatabase,
-): Promise<{ index: MiniSearch<StudySearchRecord>; contentRevision: number; recordCount: number }> => {
-  const snapshot = await readSnapshotWithoutLegalText(db);
-  const index = createMiniSearch();
-  const records = snapshot.units.map((unit) => buildStudyUnitSearchRecord(snapshot, unit));
-  index.addAll(records);
-  return {
-    index,
-    contentRevision: studyContentRevisionFor(snapshot),
-    recordCount: records.length,
-  };
-};
+): Promise<{ index: MiniSearch<StudySearchRecord>; contentRevision: number; recordCount: number }> =>
+  buildStudySearchIndex(await readSnapshotWithoutLegalText(db));
 
 const metadataIsCurrent = (
   metadata: Awaited<ReturnType<typeof readSearchMetadata>>,
   corpusContentHash: string,
   studyContentRevision: number,
 ): boolean =>
-  Boolean(
-    metadata &&
-      metadata.schemaVersion === SEARCH_INDEX_SCHEMA_VERSION &&
-      // DB-version drift guard: the index is current only when it was built
-      // against the SAME IndexedDB open version the Study storage layer uses.
-      metadata.dbVersion === STUDY_DB_VERSION &&
-      metadata.indexVersion === SEARCH_INDEX_VERSION &&
-      metadata.engine === 'minisearch' &&
-      metadata.engineVersion === MINISEARCH_VERSION &&
-      metadata.officialIndex.corpusContentHash === corpusContentHash &&
-      metadata.studyIndex.contentRevision === studyContentRevision,
-  );
+  searchIndexMetadataIsCurrent({
+    metadata,
+    corpusContentHash,
+    studyContentRevision,
+    // DB-version drift guard: the index is current only when it was built
+    // against the SAME IndexedDB open version the Study storage layer uses.
+    dbVersion: STUDY_DB_VERSION,
+  });
 
 const loadOrBuildIndexes = async (requestId: string, forceRebuild = false): Promise<void> => {
   post({
@@ -269,23 +247,15 @@ const loadOrBuildIndexes = async (requestId: string, forceRebuild = false): Prom
     state.studyIndex = study.index;
     await writeSearchArtifact(db, 'official', serializeMiniSearch(official.index));
     await writeSearchArtifact(db, 'study', serializeMiniSearch(study.index));
-    await writeSearchMetadata(db, {
-      schemaVersion: SEARCH_INDEX_SCHEMA_VERSION,
+    const freshMetadata = buildSearchIndexMetadata({
       dbVersion: STUDY_DB_VERSION,
-      indexVersion: SEARCH_INDEX_VERSION,
-      engine: 'minisearch',
-      engineVersion: MINISEARCH_VERSION,
-      officialIndex: {
-        corpusContentHash: official.corpusContentHash,
-        builtAt: new Date().toISOString(),
-        recordCount: official.recordCount,
-      },
-      studyIndex: {
-        contentRevision: study.contentRevision,
-        builtAt: new Date().toISOString(),
-        recordCount: study.recordCount,
-      },
+      corpusContentHash: official.corpusContentHash,
+      officialRecordCount: official.recordCount,
+      studyContentRevision: study.contentRevision,
+      studyRecordCount: study.recordCount,
     });
+    state.searchMetadata = freshMetadata;
+    await writeSearchMetadata(db, freshMetadata);
     post({
       type: 'ready',
       requestId,
@@ -309,18 +279,19 @@ const rebuildStudyIndexOnly = async (requestId: string): Promise<void> => {
     const study = await buildStudyIndex(db);
     state.studyIndex = study.index;
     await writeSearchArtifact(db, 'study', serializeMiniSearch(study.index));
-    await writeSearchMetadata(db, {
+    const refreshed: typeof metadata = {
       ...metadata,
-      schemaVersion: SEARCH_INDEX_SCHEMA_VERSION,
-      dbVersion: STUDY_DB_VERSION,
-      indexVersion: SEARCH_INDEX_VERSION,
-      engineVersion: MINISEARCH_VERSION,
-      studyIndex: {
-        contentRevision: study.contentRevision,
-        builtAt: new Date().toISOString(),
-        recordCount: study.recordCount,
-      },
-    });
+      ...buildSearchIndexMetadata({
+        dbVersion: STUDY_DB_VERSION,
+        corpusContentHash: metadata.officialIndex.corpusContentHash,
+        officialRecordCount: metadata.officialIndex.recordCount,
+        studyContentRevision: study.contentRevision,
+        studyRecordCount: study.recordCount,
+      }),
+      officialIndex: metadata.officialIndex,
+    };
+    state.searchMetadata = refreshed;
+    await writeSearchMetadata(db, refreshed);
     post({
       type: 'ready',
       requestId,
@@ -454,12 +425,46 @@ self.onmessage = (event: MessageEvent<StudySearchWorkerRequest>) => {
   const message = event.data;
   void (async () => {
     try {
+      if (message.type === 'native-arm') {
+        // Synchronous fail-closed latch: this worker lifetime is native-only
+        // from here on, even if the async bootstrap is still pending or fails.
+        state.nativeArmed = true;
+        return;
+      }
+      if (
+        state.nativeArmed &&
+        (message.type === 'initialize' ||
+          message.type === 'rebuild' ||
+          message.type === 'study-bulk-update' ||
+          message.type === 'diagnostics')
+      ) {
+        // Browser-path messages on a native-armed worker: fail closed, never
+        // open IndexedDB. The service owns the native bootstrap instead.
+        throw new Error(NATIVE_NOT_BOOTSTRAPPED_MESSAGE);
+      }
       if (message.type === 'initialize') await loadOrBuildIndexes(message.requestId);
       if (message.type === 'rebuild') await loadOrBuildIndexes(message.requestId, true);
       if (message.type === 'study-bulk-update') await rebuildStudyIndexOnly(message.requestId);
       if (message.type === 'diagnostics') await postDiagnostics(message.requestId);
+      if (message.type === 'native-bootstrap') {
+        state.nativeBootstrapped = true;
+        await applyNativeSearchBootstrap({ state, message, post });
+      }
+      if (message.type === 'native-study-update') {
+        state.nativeBootstrapped = true;
+        await applyNativeStudyUpdate({ state, message, post });
+      }
       if (message.type === 'search') {
-        if (!state.officialIndex || !state.studyIndex) await loadOrBuildIndexes(message.requestId);
+        if (!state.officialIndex || !state.studyIndex) {
+          // Native-armed/bootstrapped workers never touch IndexedDB, even
+          // lazily: the service owns a fresh bootstrap instead (fail-closed
+          // here). `nativeArmed` covers the pre-bootstrap race where a search
+          // arrives before (or after a failed) async bootstrap.
+          if (state.nativeArmed || state.nativeBootstrapped) {
+            throw new Error(NATIVE_NOT_BOOTSTRAPPED_MESSAGE);
+          }
+          await loadOrBuildIndexes(message.requestId);
+        }
         runSearch(message);
       }
     } catch (error) {

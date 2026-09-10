@@ -7,6 +7,11 @@ import {
   previewOfficialContentPackage as previewOfficialContentPackageForSnapshot,
   upsertStudyDocumentsWithOfficialMetadata,
 } from './studyOfficialContent';
+import { resolveStudyStoragePlatform } from './studyStoragePlatform';
+// Runtime-only use inside `createStudyStorage` (never at module-eval time),
+// so the back-import from `studyNativeStorage.ts` (shared snapshot helpers)
+// is a safe ESM cycle.
+import { createNativeStudyStorage } from './studyNativeStorage';
 import type { StudyStorage } from './studyStorageTypes';
 import type {
   AiAuthoringRun,
@@ -305,14 +310,14 @@ const clearDerivedSearchStores = async (db: IDBDatabase): Promise<void> => {
   await transactionDone(transaction);
 };
 
-const legalComponentRecord = (
+export const legalComponentRecord = (
   component: ImportedLegalComponent,
 ): ImportedLegalComponent & { recordKey: string } => ({
   ...component,
   recordKey: `${component.documentId}::${component.sourceKey}`,
 });
 
-const legalComponentFromRecord = (
+export const legalComponentFromRecord = (
   component: ImportedLegalComponent & { recordKey?: string },
 ): ImportedLegalComponent => {
   const { recordKey: _recordKey, ...rest } = component;
@@ -541,7 +546,7 @@ const saveAttemptProgressTransaction = async ({
   }
 };
 
-export const createStudyStorage = (): StudyStorage => {
+export const createBrowserStudyStorage = (): StudyStorage => {
   // Per-instance perf cache for full-document component reads; invalidated by
   // every mutation that rewrites the `legalComponents` store.
   const documentComponentCache = new StudyDocumentComponentCache();
@@ -1111,4 +1116,16 @@ export const createStudyStorage = (): StudyStorage => {
     }
   },
   };
+};
+
+// Composition root: routes to the platform adapter selected by the single
+// centralized seam above. The browser adapter is IndexedDB-backed; the Tauri
+// adapter is SQLite-backed via the narrow native IPC module. A native init or
+// IPC failure throws (fail-closed) — it NEVER silently falls back to
+// IndexedDB/OPFS. Call sites and Study behavior are untouched.
+export const createStudyStorage = (): StudyStorage => {
+  const platform = resolveStudyStoragePlatform();
+  if (platform === 'browser') return createBrowserStudyStorage();
+  if (platform === 'tauri') return createNativeStudyStorage();
+  throw new Error(`Unsupported study storage platform: ${platform}.`);
 };
