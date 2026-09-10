@@ -40,6 +40,7 @@ import { collectConnectedStationPairs } from './selectedCovarianceStore';
 import { LSAEngineObservationMethods } from './adjustEngineObservationMethods';
 import { buildSideshotResults } from './adjustmentSideshots';
 import type { CoordinateConstraintEquation } from './adjustmentSolveTypes';
+import type { DetailedSolveProfiler, IterationSystemProbeInput } from './adjustDetailedSolveProfile';
 import type { ScenarioRunRequest } from './scenarioRunModels';
 import type { SparseCorrectionSolver, SparseRowProductsSolver, SparseSelectedCovarianceSolver } from './numericalBackend';
 import type { ExperimentalSparseRouteDiagnostics } from './experimentalSparseDiagnostics';
@@ -60,6 +61,10 @@ export class LSAEngine extends LSAEngineObservationMethods {
   private experimentalSparseDiagnostics?: ExperimentalSparseRouteDiagnostics;
   private experimentalSelectedCovarianceMode?: boolean;
   private experimentalSelectedCovarianceLegacyAllPairs?: boolean;
+  /** Phase 10B test-only internal detailed profiler; undefined keeps production timing. */
+  private detailedSolveProfiler?: DetailedSolveProfiler;
+  /** Phase 10B test-only per-iteration packed-system probe; undefined disables capture. */
+  private iterationSystemProbe?: (_system: IterationSystemProbeInput) => void;
   /** Phase 9E test-only oracle switch; false forces the legacy correction loop. */
   private preanalysisCorrectionFastPath?: boolean;
 
@@ -136,6 +141,7 @@ export class LSAEngine extends LSAEngineObservationMethods {
       experimentalSelectedCovarianceLegacyAllPairs: this.experimentalSelectedCovarianceLegacyAllPairs,
       connectedPairs: collectConnectedStationPairs(activeObservations),
       requestedPairs,
+      detailedSolveProfiler: this.detailedSolveProfiler,
       log: this.log.bind(this),
       stations: this.stations,
       wrapToPi: this.wrapToPi.bind(this),
@@ -176,6 +182,8 @@ export class LSAEngine extends LSAEngineObservationMethods {
     experimentalSparseDiagnostics,
     experimentalSelectedCovarianceMode,
     experimentalSelectedCovarianceLegacyAllPairs,
+    detailedSolveProfiler,
+    iterationSystemProbe,
     preanalysisCorrectionFastPath,
   }: EngineOptions) {
     super();
@@ -186,6 +194,8 @@ export class LSAEngine extends LSAEngineObservationMethods {
     this.experimentalSparseDiagnostics = experimentalSparseDiagnostics;
     this.experimentalSelectedCovarianceMode = experimentalSelectedCovarianceMode;
     this.experimentalSelectedCovarianceLegacyAllPairs = experimentalSelectedCovarianceLegacyAllPairs;
+    this.detailedSolveProfiler = detailedSolveProfiler;
+    this.iterationSystemProbe = iterationSystemProbe;
     this.preanalysisCorrectionFastPath = preanalysisCorrectionFastPath;
     this.input = input;
     this.maxIterations = maxIterations;
@@ -244,6 +254,8 @@ export class LSAEngine extends LSAEngineObservationMethods {
       experimentalSparseDiagnostics: this.experimentalSparseDiagnostics,
       experimentalSelectedCovarianceMode: this.experimentalSelectedCovarianceMode,
       experimentalSelectedCovarianceLegacyAllPairs: this.experimentalSelectedCovarianceLegacyAllPairs,
+      detailedSolveProfiler: this.detailedSolveProfiler,
+      iterationSystemProbe: this.iterationSystemProbe,
       preanalysisCorrectionFastPath: this.preanalysisCorrectionFastPath,
     }).solve();
   }

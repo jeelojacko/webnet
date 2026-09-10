@@ -1,4 +1,5 @@
 import type { NormalEquationSolver, SparseCorrectionSolver, SparseRowProductsSolver, SparseSelectedCovarianceSolver } from './numericalBackend';
+import type { DetailedSolveProfiler, IterationSystemProbeInput } from './adjustDetailedSolveProfile';
 import type { ExperimentalSparseRouteDiagnostics } from './experimentalSparseDiagnostics';
 import type { SolveProgressEvent } from './scenarioRunModels';
 import type { SolvePreparationResult } from './adjustmentPreprocessing';
@@ -87,6 +88,16 @@ export interface EngineOptions {
    * undefined/false preserves selected-network omission/scaling.
    */
   experimentalSelectedCovarianceLegacyAllPairs?: boolean;
+  /**
+   * Phase 10B test-only internal detailed stage profiler; undefined keeps
+   * the production coarse timing only. Never persisted or exposed in UI.
+   */
+  detailedSolveProfiler?: DetailedSolveProfiler;
+  /**
+   * Phase 10B test-only per-iteration packed-system probe for Level 1
+   * identical-system native comparison. Undefined disables capture.
+   */
+  iterationSystemProbe?: (_system: IterationSystemProbeInput) => void;
   /**
    * Phase 9E test-only oracle switch: false forces the legacy preanalysis
    * correction loop even when the fast path is eligible. Undefined (default)

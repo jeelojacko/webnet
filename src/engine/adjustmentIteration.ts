@@ -9,6 +9,7 @@ import type { ExperimentalSparseRouteDiagnostics } from './experimentalSparseDia
 import { recordSparseConditionEstimate, recordSparseCorrectionCall } from './experimentalSparseDiagnostics';
 import type { StationMap } from '../types';
 import { buildSparseSolveInput, buildSparseSolveInputWithPackedWeights, packSparseDesignRows, packUpperTriangleWeights } from './sparseEquationPacking';
+import { detailedNow } from './adjustDetailedSolveProfile';
 import { estimateSparseNormalCondition } from './sparseNormalCondition';
 import { structuredQuadraticForm, structuredWeightsToPackedUpper } from './sparseWeightRepresentation';
 import type { StructuredSymmetricWeights } from './sparseWeightRepresentation';
@@ -40,6 +41,8 @@ export const solveAdjustmentIteration = (
     sparseRows?: SparseMatrixRows;
     numParams?: number;
     structuredWeights?: StructuredSymmetricWeights;
+    /** Phase 10B test-only per-call dense/sparse stage sink; undefined disables timing. */
+    iterationTimingSink?: { accumulateMs: number; factorSolveMs: number };
   },
 ): AdjustmentIterationComputationResult => {
   const sparseRows = options?.sparseRows ?? denseRowsToSparseRows(A);
@@ -100,12 +103,15 @@ export const solveAdjustmentIteration = (
     }
     return solvedP;
   };
+  const sink = options?.iterationTimingSink;
   const solveWithDenseWeights = (dense: number[][]): void => {
     if (dependencies.sparseCorrectionSolver) {
       recordSparseCorrectionCall(dependencies.experimentalSparseDiagnostics);
+      const sparseStartedAt = sink ? detailedNow() : 0;
       const sparseResult = dependencies.sparseCorrectionSolver.solveFromEquations(
         buildSparseSolveInput(sparseRows, dense, L, numParams),
       );
+      if (sink) sink.factorSolveMs += detailedNow() - sparseStartedAt;
       correction = sparseResult.correction;
       qxx = undefined;
       recordFirstIterationSparseCondition(
@@ -114,14 +120,18 @@ export const solveAdjustmentIteration = (
       );
       return;
     }
+    const accumulateStartedAt = sink ? detailedNow() : 0;
     const { normal: N, rhs: U } = accumulateNormalEquationsFromSparseRows(
       sparseRows,
       L,
       dense,
       numParams,
     );
+    if (sink) sink.accumulateMs += detailedNow() - accumulateStartedAt;
     if (shouldEstimateCondition) dependencies.recordConditionEstimate(dependencies.estimateCondition(N));
+    const factorStartedAt = sink ? detailedNow() : 0;
     const normalSolution = dependencies.solveNormalEquations(N, U, { recoverCovariance: false });
+    if (sink) sink.factorSolveMs += detailedNow() - factorStartedAt;
     correction = normalSolution.correction;
     qxx = normalSolution.qxx;
   };
@@ -133,9 +143,11 @@ export const solveAdjustmentIteration = (
     }
     if (dependencies.sparseCorrectionSolver && packedWeights) {
       recordSparseCorrectionCall(dependencies.experimentalSparseDiagnostics);
+      const sparseStartedAt = sink ? detailedNow() : 0;
       const sparseResult = dependencies.sparseCorrectionSolver.solveFromEquations(
         buildSparseSolveInputWithPackedWeights(sparseRows, packedWeights, L, numParams),
       );
+      if (sink) sink.factorSolveMs += detailedNow() - sparseStartedAt;
       correction = sparseResult.correction;
       qxx = undefined;
       recordFirstIterationSparseCondition(sparseResult.conditionEstimate, packedWeights);

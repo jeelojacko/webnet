@@ -25,6 +25,7 @@ on:
           - phase9d
           - phase9e-audit
           - phase9e-fastpath
+          - phase10b
       baseline_sha:
         description: 'Explicit baseline SHA recorded into Phase 9A reports (optional)'
         required: false
