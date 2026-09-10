@@ -324,15 +324,19 @@ describe('Phase 10F post-reuse production profile evidence', () => {
       const unknowns = Object.values(result.stations).filter((s) => !s.fixed).length;
       const totalParameters =
         unknowns * 3 + (result.directionSetDiagnostics?.length ?? 0);
-      const scalarEquations = result.observations.reduce(
-        (count, obs) => count + (obs.type === 'gps' ? 3 : 1),
-        0,
-      );
+      const firstIteration = profiles[0]?.iterations[0];
+      const scalarEquations =
+        firstIteration?.equationCount ??
+        result.observations.reduce(
+          (count, obs) =>
+            count +
+            (obs.type === 'gps' && Number.isFinite(obs.obs.dU) ? 3 : obs.type === 'gps' ? 2 : 1),
+          0,
+        );
       const allPairsRows = result.relativePrecision?.length ?? 0;
       const expectedAllPairsRows = (unknowns * (unknowns - 1)) / 2;
       const statsEvent = runEvents.find((e) => e.stage === 'statistics');
       const finalEvent = runEvents.find((e) => e.stage === 'final-covariance');
-      const firstIteration = profiles[0]?.iterations[0];
 
       const reuseEligible =
         (statsEvent?.reused ?? false) && statsEvent?.reason === 'reused-final-dense-qxx';

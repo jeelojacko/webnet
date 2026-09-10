@@ -37,11 +37,11 @@ The primary ladder is the genuine generated 3D corpus. No larger than 128-unknow
 
 | Fixture | Unknown stations | Fixed stations | Coord params | Orientation params | Total params | Scalar rows | DOF | Iterations | Clean wall ms | Profiled wall ms | Final Qxx inversion ms | All-pairs rows |
 |---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|
-| gps-3d-cov-08 | 8 | 2 | 24 | 0 | 24 | 75 | 43 | 4 | 3.62 | 3.49 | 0.08 | 28 |
-| gps-3d-16 | 16 | 2 | 48 | 0 | 48 | 147 | 83 | 4 | 5.41 | 9.08 | 0.46 | 120 |
-| gps-3d-32 | 32 | 2 | 96 | 0 | 96 | 291 | 163 | 4 | 12.31 | 14.96 | 1.40 | 496 |
-| gps-3d-64 | 64 | 2 | 192 | 0 | 192 | 579 | 323 | 4 | 39.46 | 52.02 | 11.33 | 2,016 |
-| gps-3d-128 | 128 | 2 | 384 | 0 | 384 | 1,155 | 643 | 4 | **212.28** | 262.63 | **93.33** | 8,128 |
+| gps-3d-cov-08 | 8 | 2 | 24 | 0 | 24 | 67 | 43 | 4 | 3.62 | 3.49 | 0.08 | 28 |
+| gps-3d-16 | 16 | 2 | 48 | 0 | 48 | 131 | 83 | 4 | 5.41 | 9.08 | 0.46 | 120 |
+| gps-3d-32 | 32 | 2 | 96 | 0 | 96 | 259 | 163 | 4 | 12.31 | 14.96 | 1.40 | 496 |
+| gps-3d-64 | 64 | 2 | 192 | 0 | 192 | 515 | 323 | 4 | 39.46 | 52.02 | 11.33 | 2,016 |
+| gps-3d-128 | 128 | 2 | 384 | 0 | 384 | 1,027 | 643 | 4 | **212.28** | 262.63 | **93.33** | 8,128 |
 
 All five ladder cases succeeded and converged. Design NNZ totals were 544, 1,088, 2,176, 4,352, and 8,704 respectively; final normal/Qxx dimensions were 24, 48, 96, 192, and 384. Final covariance recovery calls were exactly one per case.
 
@@ -75,20 +75,20 @@ The meaningful largest case explains 98.6% of coarse clean-run solve timing thro
 
 ## gps-3d-128 detailed stage attribution
 
-Percentages below use clean wall median, 212.28 ms. These are exclusive or clearly scoped stage measurements; nested detail is not summed with its parent.
+Percentages below use profiled wall median, 262.63 ms, so numerator and denominator come from same instrumented cohort. These are exclusive or clearly scoped stage measurements; nested detail is not summed with its parent.
 
-| Rank | Stage | ms | % wall | Growth trend |
+| Rank | Stage | ms | % profiled wall | Growth trend |
 |---:|---|---:|---:|---|
-| 1 | Final covariance dense inversion | 93.33 | 44.0% | Near-cubic at large dimensions |
-| 2 | Correction factor/solve | 34.52 | 16.3% | Grows with correction normal dimension; below final inversion |
-| 3 | Precision propagation, all-pairs included | 10.53 | 5.0% | Quadratic output component; 8,128 rows |
-| 4 | Statistics equation assembly | 4.33 | 2.0% | Roughly linear in rows/design size |
-| 5 | Statistics row products | 3.62 | 1.7% | Grows with rows and Qxx row work |
-| 6 | Correction normal accumulation | 8.15 | 3.8% | Included in correction-loop total; sparse row accumulation |
-| 7 | Correction equation assembly | 18.39 | 8.7% | Included in correction-loop total |
-| 8 | Final covariance assembly + accumulation | 5.86 | 2.8% | Below inversion |
-| 9 | Residual/statistics non-standardized work | 2.90 | 1.4% | Residuals plus diagnostics |
-| 10 | Per-equation statistics + GPS transforms + summary | 0.81 | 0.4% | Small |
+| 1 | Final covariance dense inversion | 93.33 | 35.5% | Near-cubic at large dimensions |
+| 2 | Correction factor/solve | 34.52 | 13.1% | Grows with correction normal dimension; below final inversion |
+| 3 | Correction equation assembly | 18.39 | 7.0% | Grows with rows/design size |
+| 4 | All-pairs precision propagation | 10.53 | 4.0% | Quadratic output component; 8,128 rows |
+| 5 | Correction normal accumulation | 8.15 | 3.1% | Sparse row accumulation |
+| 6 | Final covariance assembly + accumulation | 5.86 | 2.2% | Below inversion |
+| 7 | Statistics equation assembly | 4.33 | 1.6% | Roughly linear in rows/design size |
+| 8 | Statistics row products | 3.62 | 1.4% | Grows with rows and Qxx row work |
+| 9 | Residual/statistics non-standardized work | 2.90 | 1.1% | Residuals plus diagnostics |
+| 10 | Per-equation statistics + GPS transforms + summary | 0.81 | 0.3% | Small |
 
 Coarse top-level attribution gives parse/setup 9 ms, equation assembly 18 ms, matrix factorization 158 ms, precision/diagnostics 20 ms, packaging 3 ms, and 3 ms unclassified. The detailed profiler identifies the dominant part of the coarse factorization bucket: final covariance inversion at 93.33 ms, followed by correction factor/solve at 34.52 ms.
 
@@ -144,23 +144,24 @@ Actual JavaScript nested-array representation has additional array/number/object
 
 ## Correction-loop Amdahl check
 
-At 128, all correction-loop stages totaled 61.29 ms: assembly 18.39, normal accumulation 8.15, factor/solve 34.52, and state update 0.24 ms. Correction loop was 28.9% of clean wall. If correction factor/solve became infinitely fast, the whole-session ceiling would be `1/(1 - 34.52/212.28) = 1.19x`. This remains too small for complicated native correction routing by itself. Phase 10B's NO-GO remains valid after reuse.
+At 128, all correction-loop stages totaled 61.29 ms: assembly 18.39, normal accumulation 8.15, factor/solve 34.52, and state update 0.24 ms. Correction loop was 23.3% of profiled wall. If correction factor/solve became infinitely fast, the whole-session ceiling would be `1/(1 - 34.52/262.63) = 1.15x`. This remains too small for complicated native correction routing by itself. Phase 10B's NO-GO remains valid after reuse.
 
 ## Orientation-heavy 3D observation
 
-`gps-3d-16-orientation-synth` is a deterministic evidence-only genuine 3D derivative with 16 direction setups and 16 orientation parameters: 48 coordinate parameters, 64 total parameters, orientation ratio 25%, 195 scalar rows, 115 DOF, and 3 iterations. It converged, but final covariance recovery required damping; production reuse correctly failed closed with `damped-final-recovery`, so this case is not a scaling anchor and statistics recomputed (one statistics accumulation and inversion). Its clean wall was 13.47 ms, final covariance inversion 1.44 ms, station/all-pairs precision 1.39 ms, and all-pairs rows 120. This confirms future covariance architecture must account for orientation augmentation and fail-closed eligibility; this phase does not alter that routing.
+`gps-3d-16-orientation-synth` is a deterministic evidence-only genuine 3D derivative with 16 direction setups and 16 orientation parameters: 48 coordinate parameters, 64 total parameters, orientation ratio 25%, 179 scalar rows, 115 DOF, and 3 iterations. It converged, but final covariance recovery required damping; production reuse correctly failed closed with `damped-final-recovery`, so this case is not a scaling anchor and statistics recomputed (one statistics accumulation and inversion). Its clean wall was 13.47 ms, final covariance inversion 1.44 ms, station/all-pairs precision 1.39 ms, and all-pairs rows 120. This confirms future covariance architecture must account for orientation augmentation and fail-closed eligibility; this phase does not alter that routing.
 
 ## Candidate opportunity matrix
 
 | Candidate | Measured fraction at 128 | Scaling trend | Plausible speedup | Complexity | Numerical risk | Contract risk | Existing experimental infrastructure |
 |---|---:|---|---:|---|---|---|---|
-| A. Final dense covariance inversion | 44.0% | Near O(n³) at large n | High; ~28% whole-session for 2x inversion improvement | High | High | High | Selected covariance store/native covariance seams exist, but not validated for this production demand |
-| B. Statistics assembly / row products | 3.7% combined | Rows/Qxx work, lower than inversion | Low; <2% whole-session for 2x | Medium | Medium | Medium | Test-only row-product backend exists; not enabled or measured here |
-| C. All-pairs relativePrecision | 5.0% | O(N²) output growth | Low now; grows with output size | Medium | Medium | High, because public all-pairs output must remain | Selected-query infrastructure exists, but changing output contract is out of scope |
-| D. Correction factor/solve | 16.3% | Normal-system solve growth | ~9% whole-session for 2x | High | High | High | Native correction seam exists; Phase 10B parity evidence says routing is not worthwhile |
-| E. Repeated final equation assembly | 2.8% assembly+accumulation | Linear-ish in rows | Low | Medium | Medium | Medium | No approved reuse of equation assemblies |
-| F. Parse/setup/orchestration | 4.2% | Small relative to dense solve | Low | Low/medium | Low | Medium | Existing coarse timing only |
-| G. Result packaging/diagnostics | 6.6% report/diagnostic/package coarse bucket | Mostly output/result size | Low | Medium | Medium | High | Existing result contract requires these outputs |
+| A. Final dense covariance inversion | 35.5% profiled wall | Near O(n³) at large n | High; ~21.6% whole-session for 2x inversion improvement | High | High | High | Selected covariance store/native covariance seams exist, but not validated for this production demand |
+| B. Correction factor/solve | 13.1% profiled wall | Normal-system solve growth | ~7.0% whole-session for 2x | High | High | High | Native correction seam exists; Phase 10B parity evidence says routing is not worthwhile |
+| C. Correction equation assembly | 7.0% profiled wall | Rows/design growth | ~3.6% whole-session for 2x | Medium | Medium | Medium | No approved assembly reuse; existing profiler only |
+| D. All-pairs relativePrecision | 4.0% profiled wall | O(N²) output growth | Low now; grows with output size | Medium | Medium | High, because public all-pairs output must remain | Selected-query infrastructure exists, but changing output contract is out of scope |
+| E. Statistics assembly / row products | 3.0% combined | Rows/Qxx work, lower than inversion | Low; <2% whole-session for 2x | Medium | Medium | Medium | Test-only row-product backend exists; not enabled or measured here |
+| F. Repeated final equation assembly | 2.2% assembly+accumulation | Linear-ish in rows | Low | Medium | Medium | Medium | No approved reuse of equation assemblies |
+| G. Parse/setup/orchestration | 3.4% profiled coarse bucket | Small relative to dense solve | Low | Low/medium | Low | Medium | Existing coarse timing only |
+| H. Result packaging/diagnostics | 8.8% profiled coarse bucket | Mostly output/result size | Low | Medium | Medium | High | Existing result contract requires these outputs |
 
 Fractions are approximate because detailed stages and coarse buckets have different nesting boundaries; no rows are double-counted in wall reconciliation.
 
@@ -168,14 +169,14 @@ Fractions are approximate because detailed stages and coarse buckets have differ
 
 | Case | Candidate | f | Infinite-speed ceiling | Plausible improvement | Expected whole-session speedup |
 |---|---|---:|---:|---|---:|
-| gps-3d-64 | Final covariance inversion | 11.33/39.46 = 28.7% | 1.40x | 2x inversion | 1.17x |
-| gps-3d-64 | Correction factor/solve | 4.66/39.46 = 11.8% | 1.13x | 2x factor/solve | 1.06x |
-| gps-3d-64 | All-pairs precision | 3.58/39.46 = 9.1% | 1.10x | 2x all-pairs loop | 1.05x |
-| gps-3d-128 | Final covariance inversion | 93.33/212.28 = 44.0% | 1.79x | 2x inversion | 1.28x |
-| gps-3d-128 | Correction factor/solve | 34.52/212.28 = 16.3% | 1.19x | 2x factor/solve | 1.09x |
-| gps-3d-128 | All-pairs precision | 10.53/212.28 = 5.0% | 1.05x | 2x all-pairs loop | 1.03x |
+| gps-3d-64 | Final covariance inversion | 11.33/52.02 = 21.8% | 1.28x | 2x inversion | 1.12x |
+| gps-3d-64 | Correction equation assembly | 5.19/52.02 = 10.0% | 1.11x | 2x assembly | 1.05x |
+| gps-3d-64 | Correction factor/solve | 4.66/52.02 = 9.0% | 1.10x | 2x factor/solve | 1.05x |
+| gps-3d-128 | Final covariance inversion | 93.33/262.63 = 35.5% | 1.55x | 2x inversion | 1.22x |
+| gps-3d-128 | Correction factor/solve | 34.52/262.63 = 13.1% | 1.15x | 2x factor/solve | 1.07x |
+| gps-3d-128 | Correction equation assembly | 18.39/262.63 = 7.0% | 1.08x | 2x assembly | 1.04x |
 
-Statistics assembly plus row products is below the top-three candidates at 128: `(4.33 + 3.62)/212.28 = 3.7%`, with an infinite ceiling of only 1.04x.
+All-pairs precision is fourth at 128: `10.53/262.63 = 4.0%`, with infinite ceiling 1.04x and 2x-loop speedup 1.02x. Statistics assembly plus row products is only `(4.33 + 3.62)/262.63 = 3.0%`, with an infinite ceiling of 1.03x.
 
 ## Browser perspective
 
@@ -187,7 +188,7 @@ New dominant stage: **final dense covariance inversion**.
 
 Second-largest stage: **correction factor/solve**.
 
-Third-largest stage: **all-pairs precision propagation** (with statistics equation assembly/row products below it).
+Third-largest stage: **correction equation assembly**. All-pairs precision propagation is fourth.
 
 gps-3d-128 production median: **212.28 ms** on this run.
 
