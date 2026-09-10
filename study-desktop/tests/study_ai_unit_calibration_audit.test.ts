@@ -20,7 +20,7 @@ import { studyTestContentPath } from './study_test_paths';
 import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { createHash } from 'node:crypto';
 import { tmpdir } from 'node:os';
-import { join } from 'node:path';
+import { dirname, join } from 'node:path';
 import type { AiStudyUnitProposal, AiUnitAuthoringJob } from '../src/ai/studyAiTypes';
 import type { NbLawContentPackage, NbLawNormalizedDocument, NbLawSection } from '../src/content/nbLawTypes';
 import { loadAuditInputs } from '../src/ai/studyAiUnitCalibrationAudit.load';
@@ -503,7 +503,7 @@ const buildFixtureJobs = (): FixtureJobs => {
 };
 
 const writeText = (path: string, text: string): void => {
-  mkdirSync(path.split('/').slice(0, -1).join('/'), { recursive: true });
+  mkdirSync(dirname(path), { recursive: true });
   writeFileSync(path, text);
 };
 

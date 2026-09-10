@@ -19,7 +19,7 @@ import { afterEach, describe, expect, it } from 'vitest';
 import { createHash } from 'node:crypto';
 import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
-import { join } from 'node:path';
+import { dirname, join } from 'node:path';
 import type { AiStudyUnitProposal, AiUnitAuthoringJob } from '../src/ai/studyAiTypes';
 import type { UnitAttemptRecord } from '../src/ai/studyAiUnitCalibrationAudit.types';
 import type { NbLawContentPackage, NbLawNormalizedDocument, NbLawSection } from '../src/content/nbLawTypes';
@@ -49,7 +49,7 @@ afterEach(() => {
 });
 
 const writeText = (path: string, text: string): void => {
-  mkdirSync(path.split('/').slice(0, -1).join('/'), { recursive: true });
+  mkdirSync(dirname(path), { recursive: true });
   writeFileSync(path, text);
 };
 
