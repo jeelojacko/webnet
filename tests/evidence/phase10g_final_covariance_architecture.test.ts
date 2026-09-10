@@ -6,19 +6,22 @@
  * evidence-only synthetic orientation-heavy 3D case derived from
  * gps-3d-16) to measure/reference the final-covariance architecture
  * choice. Per fixture: dense baseline (warm-up + 3 solves, wall median)
- * + reuse probe; analytic demand (A all-entry P^2, B legacy all-pairs,
- * C selected network; raw/unique-column counts); native legs via the real
- * WASM bundle when present (all-entry Qxx, legacy-all-pairs store,
+ * + reuse probe; demand derived from the real covariance query plan
+ * (A all-entry P^2, B legacy all-pairs plan, C selected-network plan;
+ * raw/unique counts via buildCovarianceQueryPlan + dedupe); native legs
+ * via the real WASM bundle (all-entry Qxx, legacy-all-pairs store,
  * selected-network store, row products) with boundary walls (1+5) +
  * diagnostics + 1e-6 equivalence; semantic audit (mixed/REL-PTOL/TSCORR/
  * robust variants, dense + probe).
  *
- * Native phase timings are NOT exposed via the ABI/diagnostics: boundary
- * walls only (stated limitation). Dense baseline uses production automatic
- * Qxx reuse while every native leg fails closed out of reuse; native
- * diagnostics counts are per measured solve only. industry_demo is inadmissible
- * (weak-case observation). Artifacts only to `artifacts/evidence/phase10g/`
- * (gitignored).
+ * The campaign fails closed without the real WASM artifact, and every
+ * native leg fails on a thrown solve (no exception swallowing). Native
+ * phase timings are NOT exposed via the ABI/diagnostics: boundary walls
+ * only (stated limitation). Dense baseline uses production automatic Qxx
+ * reuse while every native leg fails closed out of reuse; native
+ * diagnostics counts are per measured solve only. industry_demo is
+ * inadmissible (weak-case observation). Artifacts only to
+ * `artifacts/evidence/phase10g/` (gitignored).
  *
  * No production engine changes.
  */
@@ -28,9 +31,21 @@ import { pathToFileURL } from 'node:url';
 import { describe, expect, it } from 'vitest';
 
 import { LSAEngine } from '../../src/engine/adjust';
+import { buildSolveParameterIndex } from '../../src/engine/adjustmentPreprocessing';
+import { buildCovarianceQueryPlan } from '../../src/engine/covarianceQueryPlan';
+import { createExperimentalSparseRouteDiagnostics } from '../../src/engine/experimentalSparseDiagnostics';
 import { buildPhase6LargeBenchmarkCases } from '../../src/engine/phase6BenchmarkNetworks';
 import type { QxxReuseProbeEvent } from '../../src/engine/qxxReuseEvidence';
+import {
+  collectConnectedStationPairs,
+  dedupeSelectedQueries,
+} from '../../src/engine/selectedCovarianceStore';
+import { createExperimentalSparseNumericalBundle } from '../../src/engine/wasm/experimentalSparseNumericalBundle';
+import type { ExperimentalSparseNumericalBundle } from '../../src/engine/wasm/experimentalSparseNumericalBundle';
 import type { WebNetWasmFactory } from '../../src/engine/wasm/wasmTypes';
+import type { StationId } from '../../src/types';
+
+type SolveResult = ReturnType<LSAEngine['solve']>;
 
 const MEASURED_RUNS = 3;
 const NATIVE_RUNS = 5;
@@ -84,7 +99,7 @@ const median = (values: number[]): number => {
   return sorted[Math.floor(sorted.length / 2)] ?? 0;
 };
 
-const stableResultJson = (result: ReturnType<LSAEngine['solve']>): string => {
+const stableResultJson = (result: SolveResult): string => {
   const logs = result.logs.filter((line) => !line.startsWith('Solve timing (ms):'));
   const { solveTimingProfile: _volatile, logs: _logs, ...stable } = result;
   return JSON.stringify({ ...stable, logs });
@@ -97,6 +112,26 @@ const roundNumbers = (value: unknown): unknown => {
     return Object.fromEntries(Object.entries(value).map(([k, v]) => [k, roundNumbers(v)]));
   }
   return value;
+};
+
+// Deep-strips omitted keys (Route C omits legacy all-pairs rows both at
+// the top level and nested inside precisionModels).
+const stripKeysDeep = (value: unknown, omitKeys: ReadonlySet<string>): unknown => {
+  if (Array.isArray(value)) return value.map((entry) => stripKeysDeep(entry, omitKeys));
+  if (value != null && typeof value === 'object') {
+    return Object.fromEntries(
+      Object.entries(value)
+        .filter(([key]) => !omitKeys.has(key))
+        .map(([key, entry]) => [key, stripKeysDeep(entry, omitKeys)]),
+    );
+  }
+  return value;
+};
+
+const numericJsonOf = (result: SolveResult, omitKeys: string[] = []): string => {
+  const parsed = JSON.parse(stableResultJson(result)) as Record<string, unknown>;
+  const { logs: _dropped, ...numeric } = parsed;
+  return JSON.stringify(roundNumbers(stripKeysDeep(numeric, new Set(omitKeys))));
 };
 
 const loadWasmFactory = async (): Promise<WebNetWasmFactory | null> => {
@@ -135,7 +170,6 @@ interface NativeLeg {
   statsReuseReason: string | null;
   dampingInferred: number | string;
   fallbackReasons: string[];
-  conditionEstimate: number | null;
 }
 
 interface CaseEvidence {
@@ -191,210 +225,427 @@ const emptyLeg = (): NativeLeg => ({
   statsReuseReason: null,
   dampingInferred: 'unmeasured',
   fallbackReasons: [],
-  conditionEstimate: null,
 });
+
+interface DenseBaseline {
+  walls: number[];
+  reference: SolveResult;
+  probed: SolveResult;
+  probeEvents: QxxReuseProbeEvent[];
+}
+
+const measureDenseBaseline = (input: string): DenseBaseline => {
+  new LSAEngine({ input }).solve();
+  const walls: number[] = [];
+  let ref: SolveResult | null = null;
+  for (let run = 0; run < MEASURED_RUNS; run += 1) {
+    const started = performance.now();
+    const solved = new LSAEngine({ input }).solve();
+    walls.push(performance.now() - started);
+    ref ??= solved;
+  }
+  const probeEvents: QxxReuseProbeEvent[] = [];
+  const probed = new LSAEngine({
+    input,
+    qxxReuseProbe: (event) => {
+      probeEvents.push(event);
+    },
+  }).solve();
+  return { walls, reference: ref!, probed, probeEvents };
+};
+
+interface DemandInfo {
+  demand: DemandModel;
+  unknownIds: StationId[];
+  connectedBearing: number;
+  totalParameters: number;
+  coordColumns: number;
+  orientationParameters: number;
+}
+
+const buildDemandModel = (reference: SolveResult): DemandInfo => {
+  const unknownIds = Object.entries(reference.stations)
+    .filter(([, station]) => !station.fixed)
+    .map(([stationId]) => stationId as StationId);
+  const orientationParameters = reference.directionSetDiagnostics?.length ?? 0;
+  // Exact production parameter layout (station coords first, then
+  // orientation unknowns); 3D corpus so height columns are included.
+  const { paramIndex, stationParamCount } = buildSolveParameterIndex(reference.stations, unknownIds, false);
+  const totalParameters = stationParamCount + orientationParameters;
+  const connectedPairs = collectConnectedStationPairs(reference.observations);
+  const connectedBearing = connectedPairs.filter(
+    (pair) => paramIndex[pair.from] != null && paramIndex[pair.to] != null,
+  ).length;
+  // Corpus inputs carry no REL/PTOL directives, so the requested-pair plan
+  // contribution is empty here (requested pairs are covered in the audit).
+  const planFor = (legacyAllPairs: boolean) => {
+    const plan = buildCovarianceQueryPlan({
+      paramIndex,
+      unknowns: unknownIds,
+      stationParamCount,
+      connectedPairs,
+      requestedPairs: [],
+      includeHeight: true,
+      includeAllStationPairs: legacyAllPairs,
+    });
+    return { rawQueries: plan.queries.length, uniqueSymmetric: dedupeSelectedQueries(plan.queries).length };
+  };
+  const planB = planFor(true);
+  const planC = planFor(false);
+  return {
+    demand: {
+      modeAAllEntry: {
+        rawQueries: totalParameters * totalParameters,
+        uniqueSymmetric: (totalParameters * (totalParameters + 1)) / 2,
+        uniqueColumns: totalParameters,
+      },
+      modeBLegacyAllPairs: { ...planB, uniqueColumns: stationParamCount },
+      modeCSelectedNetwork: { ...planC, uniqueColumns: stationParamCount, connectedPairs: connectedBearing },
+    },
+    unknownIds,
+    connectedBearing,
+    totalParameters,
+    coordColumns: stationParamCount,
+    orientationParameters,
+  };
+};
+
+interface NativeLegSpec {
+  input: string;
+  reference: SolveResult;
+  probed: SolveResult;
+  bundle: ExperimentalSparseNumericalBundle;
+  options: Record<string, unknown>;
+  kind: 'selected' | 'rowProducts';
+  omitAllPairsFromParity: boolean;
+}
+
+const runNativeLeg = (spec: NativeLegSpec): NativeLeg => {
+  const leg = emptyLeg();
+  const warmupDiagnostics = createExperimentalSparseRouteDiagnostics();
+  // A throw here (broken module, harness error, failed solve) must fail
+  // the campaign: only route-diagnostic fallbacks are acceptable, never
+  // exceptions escaping solve().
+  new LSAEngine({
+    input: spec.input,
+    ...spec.options,
+    experimentalSparseDiagnostics: warmupDiagnostics,
+    qxxReuseProbe: () => {},
+  }).solve();
+  const diagnostics = createExperimentalSparseRouteDiagnostics();
+  const nativeProbe: QxxReuseProbeEvent[] = [];
+  const injected = {
+    ...spec.options,
+    experimentalSparseDiagnostics: diagnostics,
+    qxxReuseProbe: (event: QxxReuseProbeEvent) => {
+      nativeProbe.push(event);
+    },
+  };
+  const walls: number[] = [];
+  let solved: SolveResult | null = null;
+  for (let run = 0; run < NATIVE_RUNS; run += 1) {
+    const started = performance.now();
+    solved = new LSAEngine({ input: spec.input, ...injected }).solve();
+    walls.push(performance.now() - started);
+  }
+  const last = solved as SolveResult;
+  leg.ran = true;
+  leg.wallMs = median(walls);
+  leg.wallMinMs = Math.min(...walls);
+  leg.wallMaxMs = Math.max(...walls);
+  leg.statsReuseReason = nativeProbe.find((e) => e.stage === 'statistics')?.reason ?? 'no-event';
+  // Fallback reasons must be populated before damping inference reads them.
+  leg.fallbackReasons = [
+    ...diagnostics.selectedCovarianceFallbackReasons,
+    ...diagnostics.rowProductsFallbackReasons,
+    ...diagnostics.sparseCorrectionFallbackReasons,
+  ].slice(0, 3);
+  const dampingHit = leg.fallbackReasons.some((r) => r.toLowerCase().includes('damping'));
+  leg.dampingInferred = dampingHit ? 'fallback-with-damping-reason' : 0;
+  leg.success = last.success;
+  leg.converged = last.converged;
+  leg.stationRowsMatch =
+    (last.stationCovariances?.length ?? -1) === (spec.reference.stationCovariances?.length ?? -2);
+  leg.allPairsRowsMatch = (last.relativePrecision?.length ?? -1) === (spec.reference.relativePrecision?.length ?? -2);
+  leg.selectedCalls = diagnostics.selectedCovarianceCalls;
+  leg.selectedFallbacks = diagnostics.selectedCovarianceFallbacks;
+  leg.rowProductsCalls = diagnostics.rowProductsCalls;
+  leg.rowProductsFallbacks = diagnostics.rowProductsFallbacks;
+  const fellBack =
+    spec.kind === 'selected'
+      ? diagnostics.selectedCovarianceFallbacks > 0
+      : diagnostics.rowProductsFallbacks > 0;
+  if (!fellBack) {
+    if (spec.omitAllPairsFromParity) {
+      // Route C omits legacy all-pairs rows by design, so whole-result
+      // equality is impossible; compare the common output subset
+      // (everything except relativePrecision) at the same 1e-6 bar.
+      leg.fullResultParity = null;
+      leg.toleranceParity = numericJsonOf(last, ['relativePrecision']) === numericJsonOf(spec.probed, ['relativePrecision']);
+    } else {
+      leg.fullResultParity = stableResultJson(last) === stableResultJson(spec.probed);
+      leg.toleranceParity = numericJsonOf(last) === numericJsonOf(spec.probed);
+    }
+  } else {
+    leg.fullResultParity = null;
+    leg.toleranceParity = null;
+  }
+  return leg;
+};
+
+interface NativeLegSet {
+  allEntryDense: NativeLeg;
+  legacyAllPairs: NativeLeg;
+  selectedNetwork: NativeLeg;
+  rowProducts: NativeLeg;
+}
+
+const measureNativeLegs = (
+  input: string,
+  reference: SolveResult,
+  probed: SolveResult,
+  bundle: ExperimentalSparseNumericalBundle,
+): NativeLegSet => {
+  // Keep A/B/C walls focused on final covariance: inject only the
+  // selected-covariance solver. Correction and statistics stay TS, so no
+  // sparse-correction condition estimate is recorded on these legs.
+  const covarianceOptions = (selectedMode: boolean, legacyAllPairs: boolean): Record<string, unknown> => ({
+    sparseSelectedCovarianceSolver: bundle.sparseSelectedCovarianceSolver,
+    experimentalSelectedCovarianceMode: selectedMode,
+    ...(legacyAllPairs ? { experimentalSelectedCovarianceLegacyAllPairs: true } : {}),
+  });
+  const base = { input, reference, probed, bundle };
+  return {
+    allEntryDense: runNativeLeg({ ...base, options: covarianceOptions(false, false), kind: 'selected', omitAllPairsFromParity: false }),
+    legacyAllPairs: runNativeLeg({ ...base, options: covarianceOptions(true, true), kind: 'selected', omitAllPairsFromParity: false }),
+    selectedNetwork: runNativeLeg({ ...base, options: covarianceOptions(true, false), kind: 'selected', omitAllPairsFromParity: true }),
+    rowProducts: runNativeLeg({ ...base, options: { sparseRowProductsSolver: bundle.sparseRowProductsSolver }, kind: 'rowProducts', omitAllPairsFromParity: false }),
+  };
+};
+
+interface AuditRow {
+  id: string;
+  coverage: string;
+  obsMix: Record<string, number>;
+  fixedStations: number;
+  success: boolean;
+  converged: boolean;
+  reuseReason: string;
+  requestedRelPtolPairs: number;
+  status: string;
+}
+
+const auditOne = (id: string, input: string, coverage: string): AuditRow => {
+  const events: QxxReuseProbeEvent[] = [];
+  const solved = new LSAEngine({
+    input,
+    qxxReuseProbe: (event) => {
+      events.push(event);
+    },
+  }).solve();
+  const obsMix: Record<string, number> = {};
+  for (const o of solved.observations) obsMix[o.type] = (obsMix[o.type] ?? 0) + 1;
+  return {
+    id,
+    coverage,
+    obsMix,
+    fixedStations: Object.values(solved.stations).filter((s) => s.fixed).length,
+    success: solved.success,
+    converged: solved.converged,
+    reuseReason: events.find((e) => e.stage === 'statistics')?.reason ?? 'no-event',
+    requestedRelPtolPairs:
+      solved.relativeCovariances?.filter(
+        (r) => r.selectedByRelativeDirective || r.selectedByPositionalToleranceDirective,
+      ).length ?? 0,
+    status: 'measured',
+  };
+};
+
+const collectSemanticAudit = (): AuditRow[] => {
+  const gps08 = generated.find((g) => g.id === 'gps-3d-cov-08');
+  if (!gps08) throw new Error('Missing gps-3d-cov-08 base fixture.');
+  const robust16 = buildPhase6LargeBenchmarkCases(false).find(
+    (g) => g.id === 'chain-2d-robust-tscorr-16',
+  );
+  if (!robust16) throw new Error('Missing chain-2d-robust-tscorr-16 fixture.');
+  const mixedInput = readFileSync(join(process.cwd(), 'public/examples/mixed_grid_tutorial.dat'), 'utf8');
+  const rows: AuditRow[] = [
+    auditOne('mixed-ts-gnss-lev-control', mixedInput, 'mixed TS+GNSS+leveling with fixed control'),
+    auditOne('rel-ptol-requested', `${gps08.input}\n.RELATIVE U1->U2\n.PTOLERANCE U1->U3\n`, 'REL/PTOL-requested pairs'),
+    auditOne('tscorr-admissible', `${gps08.input}\n.TSCORR ON\n`, 'TS correlation'),
+    auditOne('robust-tscorr-fail-closed', robust16.input, 'robust Huber + TSCORR (2D)'),
+  ];
+  // Unobserved here (fail-closed by gate/parser construction):
+  // augmentation rows (no 3D slope-dist trigger, per 10D) and excluded
+  // observations (no exclude directive in any corpus input).
+  rows.push({
+    id: 'augmentation-excluded-unobserved',
+    coverage: 'covariance augmentation rows; excluded observations',
+    obsMix: {},
+    fixedStations: 0,
+    success: true,
+    converged: true,
+    reuseReason: 'unobserved-on-corpus (fail-closed by gate/parser)',
+    requestedRelPtolPairs: 0,
+    status: 'unobserved-fail-closed-by-construction',
+  });
+  return rows;
+};
+
+const buildEvidenceMarkdown = (caseEvidence: CaseEvidence[]): string =>
+  [
+    '# Phase 10G final-covariance architecture evidence',
+    '',
+    'Evidence-only campaign on the Phase 10F corpus + semantic audit. Dense baseline (warm-up + 3 solves) + demand reference + native legs (1+5, boundary walls) when the WASM artifact is present. industry_demo inadmissible. No timing assertions.',
+    '',
+    '| Fixture | params | unknowns | orient ratio | rows | dense wall ms | reuse reason | all-pairs | Mode A raw | Mode B raw | Mode C raw | uniq cols | native all-entry parity | native fallbacks (A/B/C/R) |',
+    '|---|---:|---:|---:|---:|---:|---|---|---:|---:|---:|---:|---|---|---|',
+    ...caseEvidence.map(
+      (c) =>
+        `| ${c.fixture} | ${c.totalParameters} | ${c.unknownStations} | ${c.orientationRatio.toFixed(3)} | ${c.scalarEquations} | ${c.denseWallMedianMs.toFixed(2)} | ${c.reuseReason} | ${c.allPairsRows}/${c.expectedAllPairsRows} | ${c.demand.modeAAllEntry.rawQueries} | ${c.demand.modeBLegacyAllPairs.rawQueries} | ${c.demand.modeCSelectedNetwork.rawQueries} | ${c.demand.modeAAllEntry.uniqueColumns} | ${c.native.artifactAvailable ? (c.native.allEntryDense.fullResultParity == null ? 'n/a (fallback)' : c.native.allEntryDense.fullResultParity ? 'BIT-IDENTICAL' : 'MISMATCH') : 'no-artifact'} | ${c.native.artifactAvailable ? `${c.native.allEntryDense.selectedFallbacks}/${c.native.legacyAllPairs.selectedFallbacks}/${c.native.selectedNetwork.selectedFallbacks}/${c.native.rowProducts.rowProductsFallbacks}` : 'no-artifact'} |`,
+    ),
+    '',
+    '- No UI, protocol, formula, or routing changes.',
+  ].join('\n');
+
+const writeArtifacts = (caseEvidence: CaseEvidence[], semanticAudit: AuditRow[]): void => {
+  const artifactDir = join(process.cwd(), 'artifacts/evidence/phase10g');
+  mkdirSync(artifactDir, { recursive: true });
+  const payload = {
+    status: 'complete',
+    method:
+      'dense warm-up + 3 solves (median) + probe; plan-derived A/B/C demand; native 1+5 injected solves (median/min/max) + diagnostics; semantic audit (dense + probe); boundary walls only, no timing assertions',
+    limitation:
+      'WASM ABI exposes factor metadata only to the internal caller; no per-phase timings or condition estimates via route diagnostics; diagnostics count calls/fallbacks/reasons only.',
+    measuredRuns: MEASURED_RUNS,
+    nativeRuns: NATIVE_RUNS,
+    cases: caseEvidence,
+    semanticAudit,
+  };
+  writeFileSync(join(artifactDir, 'phase10g-evidence.json'), `${JSON.stringify(payload, null, 2)}\n`);
+  writeFileSync(join(artifactDir, 'phase10g-evidence.md'), `${buildEvidenceMarkdown(caseEvidence)}\n`);
+};
+
+const assertNativeLegs = (c: CaseEvidence): void => {
+  const legs = {
+    allEntry: c.native.allEntryDense,
+    legacy: c.native.legacyAllPairs,
+    selected: c.native.selectedNetwork,
+    rowProducts: c.native.rowProducts,
+  };
+  for (const [name, leg] of Object.entries(legs)) {
+    // Diagnostics must prove the native route actually executed: a
+    // surrounding solve() completing is not evidence on its own.
+    if (name === 'rowProducts') {
+      expect(leg.rowProductsCalls ?? 0, `${c.fixture} native ${name} invoked solver`).toBeGreaterThan(0);
+    } else {
+      expect(leg.selectedCalls ?? 0, `${c.fixture} native ${name} invoked solver`).toBeGreaterThan(0);
+    }
+    expect(leg.ran, `${c.fixture} native ${name} ran`).toBe(true);
+    const fellBack =
+      (leg.selectedFallbacks ?? 0) > 0 ||
+      (leg.rowProductsFallbacks ?? 0) > 0 ||
+      leg.fallbackReasons.length > 0;
+    if (!fellBack) {
+      expect(leg.success && leg.converged, `${c.fixture} native ${name} solves`).toBe(true);
+      // Route C omits all-pairs rows by design, so whole-result parity is
+      // impossible; the common subset (minus relativePrecision) is
+      // compared at 1e-6 instead and must hold.
+      expect(leg.toleranceParity, `${c.fixture} native ${name} equivalent to 1e-6`).toBe(true);
+    }
+  }
+};
+
+const assertCaseEvidence = (c: CaseEvidence): void => {
+  expect(c.allPairsRows, `${c.fixture} dense all-pairs count`).toBe(c.expectedAllPairsRows);
+  expect(c.stationCovarianceRows, `${c.fixture} station rows cover unknowns`).toBe(c.unknownStations);
+  expect(c.requestedRelPtolPairs, `${c.fixture} no requested pairs`).toBe(0);
+  if (c.admissible) {
+    expect(c.demand.modeCSelectedNetwork.rawQueries, `${c.fixture} selected upper bound`).toBeLessThanOrEqual(
+      c.demand.modeBLegacyAllPairs.rawQueries,
+    );
+    expect(c.demand.modeBLegacyAllPairs.rawQueries, `${c.fixture} legacy below dense`).toBeLessThanOrEqual(
+      c.demand.modeAAllEntry.rawQueries,
+    );
+  }
+  expect(c.demand.modeAAllEntry.uniqueColumns, `${c.fixture} dense demands all columns`).toBe(c.totalParameters);
+  expect(c.demand.modeBLegacyAllPairs.uniqueColumns, `${c.fixture} legacy demands coordinate columns`).toBe(c.coordinateColumns);
+  expect(c.demand.modeCSelectedNetwork.uniqueColumns, `${c.fixture} selected demands coordinate columns`).toBe(c.coordinateColumns);
+  // Coordinate columns come from the exact parameter layout, which may
+  // hold individual components (e.g. industry_demo height holds).
+  expect(c.coordinateColumns, `${c.fixture} coordinate columns`).toBeLessThanOrEqual(c.unknownStations * 3);
+  if (c.synthetic) {
+    expect(c.avoidedOrientationPct, `${c.fixture} avoided orientation`).toBeCloseTo(25, 9);
+  } else {
+    expect(c.avoidedOrientationPct, `${c.fixture} no orientation avoided`).toBe(0);
+  }
+  if (c.synthetic) {
+    expect(c.orientationParameters, `${c.fixture} 16 direction sets`).toBe(16);
+    expect(c.orientationRatio, `${c.fixture} orientation ratio`).toBeGreaterThan(0);
+    if (!c.admissible) {
+      expect(c.reuseReason, `${c.fixture} damped-final fail-closed`).toBe('damped-final-recovery');
+      expect(c.inadmissibilityReason, `${c.fixture} explicit inadmissibility`).toMatch(
+        /damped-final-recovery|weak-case|non-converged|reuse inadmissible/,
+      );
+      return;
+    }
+  } else if (!c.admissible) {
+    expect(c.inadmissibilityReason).toContain('weak-case observation');
+    return;
+  }
+  expect(c.success && c.converged, `${c.fixture} reference solves`).toBe(true);
+  expect(c.reuseReason, `${c.fixture} production reason`).toBe('reused-final-dense-qxx');
+  assertNativeLegs(c);
+  expect(c.reuseReason, `${c.fixture} zero dense-path damping via reuse eligibility`).toBe(
+    'reused-final-dense-qxx',
+  );
+};
+
+const assertSemanticAudit = (semanticAudit: AuditRow[]): void => {
+  expect(semanticAudit.map((r) => r.id)).toEqual(['mixed-ts-gnss-lev-control', 'rel-ptol-requested', 'tscorr-admissible', 'robust-tscorr-fail-closed', 'augmentation-excluded-unobserved']);
+  const auditById = Object.fromEntries(semanticAudit.map((r) => [r.id, r]));
+  const mixed = auditById['mixed-ts-gnss-lev-control']!;
+  expect(mixed.success && mixed.converged, 'mixed tutorial solves').toBe(true);
+  expect(mixed.fixedStations, 'mixed tutorial has fixed control').toBeGreaterThan(0);
+  expect(Object.keys(mixed.obsMix).length, 'mixed tutorial spans families').toBeGreaterThan(1);
+  const relPtol = auditById['rel-ptol-requested']!;
+  expect(relPtol.success && relPtol.converged, 'REL/PTOL variant solves').toBe(true);
+  expect(relPtol.requestedRelPtolPairs, 'REL/PTOL pairs requested').toBe(2);
+  const tscorr = auditById['tscorr-admissible']!;
+  expect(tscorr.success && tscorr.converged, 'TSCORR variant solves').toBe(true);
+  const robust = auditById['robust-tscorr-fail-closed']!;
+  expect(robust.reuseReason, 'robust fails closed with explicit reason').toMatch(
+    /robust-mode-inadmissible|two-dimensional-legacy|preanalysis-mode|not-converged/,
+  );
+};
 
 describe('Phase 10G final-covariance architecture evidence', () => {
   it('references dense baseline, demand model, and native sparse legs on the 3D corpus', async () => {
     const wasmFactory = await loadWasmFactory();
-    const bundle =
-      wasmFactory == null
-        ? null
-        : await (
-            await import('../../src/engine/wasm/experimentalSparseNumericalBundle')
-          ).createExperimentalSparseNumericalBundle(wasmFactory);
+    if (wasmFactory == null) {
+      expect.fail('Blocked: real WASM artifact cpp/build-wasm/webnet_core.js is unavailable.');
+    }
+    const bundle = await createExperimentalSparseNumericalBundle(wasmFactory);
     const caseEvidence: CaseEvidence[] = [];
 
     for (const { id, input, synthetic = false } of cases) {
-      new LSAEngine({ input }).solve();
-      const walls: number[] = [];
-      let ref: ReturnType<LSAEngine['solve']> | null = null;
-      for (let run = 0; run < MEASURED_RUNS; run += 1) {
-        const started = performance.now();
-        const solved = new LSAEngine({ input }).solve();
-        walls.push(performance.now() - started);
-        ref ??= solved;
-      }
-      const reference = ref!;
-      const probeEvents: QxxReuseProbeEvent[] = [];
-      const probed = new LSAEngine({
-        input,
-        qxxReuseProbe: (event) => {
-          probeEvents.push(event);
-        },
-      }).solve();
+      const { walls, reference, probed, probeEvents } = measureDenseBaseline(input);
+      const demandInfo = buildDemandModel(reference);
       const statsEvent = probeEvents.find((e) => e.stage === 'statistics');
       const finalEvent = probeEvents.find((e) => e.stage === 'final-covariance');
-
-      const unknowns = Object.values(reference.stations).filter((s) => !s.fixed).length;
-      const orientationParameters = reference.directionSetDiagnostics?.length ?? 0;
-      const totalParameters = unknowns * 3 + orientationParameters;
+      const unknowns = demandInfo.unknownIds.length;
       const scalarEquations = reference.observations.reduce(
         (count, obs) =>
           count + (obs.type === 'gps' && Number.isFinite(obs.obs.dU) ? 3 : obs.type === 'gps' ? 2 : 1),
         0,
       );
-      const gpsObservations = reference.observations.filter((o) => o.type === 'gps').length;
-      const allPairsRows = reference.relativePrecision?.length ?? 0;
       const expectedAllPairsRows = (unknowns * (unknowns - 1)) / 2;
-      const relativeCovarianceRows = reference.relativeCovariances?.length ?? 0;
-      const unknownStationIds = new Set(
-        Object.entries(reference.stations)
-          .filter(([, station]) => !station.fixed)
-          .map(([stationId]) => stationId),
-      );
-      // Selected covariance plan has no parameter index for fixed controls;
-      // exclude pairs touching either endpoint without station parameters.
-      const connectedUniquePairs = new Set(
-        (reference.relativeCovariances ?? [])
-          .filter((r) => unknownStationIds.has(r.from) && unknownStationIds.has(r.to))
-          .map((r) =>
-            r.from < r.to ? `${r.from}\u0000${r.to}` : `${r.to}\u0000${r.from}`,
-          ),
-      ).size;
-      const requestedRelPtolPairs =
-        reference.relativeCovariances?.filter(
-          (r) => r.selectedByRelativeDirective || r.selectedByPositionalToleranceDirective,
-        ).length ?? 0;
-
-      // Demand reference (plan-shaped, no production calls): the selected
-      // plan covers station coordinate columns only, so B/C demand
-      // coordColumns while Mode A demands all P columns.
-      const pairCount = (unknowns * (unknowns - 1)) / 2;
-      const stationRaw = unknowns * 9;
-      const stationUnique = unknowns * 6;
-      const coordColumns = unknowns * 3;
-      const avoidedOrientationPct =
-        totalParameters > 0 ? (orientationParameters / totalParameters) * 100 : 0;
-      const demand: DemandModel = {
-        modeAAllEntry: {
-          rawQueries: totalParameters * totalParameters,
-          uniqueSymmetric: (totalParameters * (totalParameters + 1)) / 2,
-          uniqueColumns: totalParameters,
-        },
-        modeBLegacyAllPairs: {
-          rawQueries: stationRaw + pairCount * 9,
-          uniqueSymmetric: stationUnique + pairCount * 9,
-          uniqueColumns: coordColumns,
-        },
-        modeCSelectedNetwork: {
-          rawQueries: stationRaw + connectedUniquePairs * 9,
-          uniqueSymmetric: stationUnique + connectedUniquePairs * 9,
-          uniqueColumns: coordColumns,
-          connectedPairs: connectedUniquePairs,
-        },
-      };
-
-      const nativeAvailable = bundle != null;
-      const legs = { allEntryDense: emptyLeg(), legacyAllPairs: emptyLeg(), selectedNetwork: emptyLeg(), rowProducts: emptyLeg() };
-      if (bundle != null) {
-        const { createExperimentalSparseRouteDiagnostics } = await import(
-          '../../src/engine/experimentalSparseDiagnostics'
-        );
-        const runLeg = (
-          options: Record<string, unknown>,
-          kind: 'selected' | 'rowProducts',
-        ): NativeLeg => {
-          const leg = emptyLeg();
-          const warmupDiagnostics = createExperimentalSparseRouteDiagnostics();
-            new LSAEngine({
-              input,
-              ...options,
-              experimentalSparseDiagnostics: warmupDiagnostics,
-              qxxReuseProbe: () => {},
-            }).solve();
-            const diagnostics = createExperimentalSparseRouteDiagnostics();
-            const nativeProbe: QxxReuseProbeEvent[] = [];
-            const injected = {
-              ...options,
-              experimentalSparseDiagnostics: diagnostics,
-              qxxReuseProbe: (event: QxxReuseProbeEvent) => {
-                nativeProbe.push(event);
-              },
-            };
-            const walls: number[] = [];
-            let solved: ReturnType<LSAEngine['solve']> | null = null;
-            for (let run = 0; run < NATIVE_RUNS; run += 1) {
-              const started = performance.now();
-              solved = new LSAEngine({ input, ...injected }).solve();
-              walls.push(performance.now() - started);
-            }
-            const last = solved as ReturnType<LSAEngine['solve']>;
-            leg.ran = true;
-            leg.wallMs = median(walls);
-            leg.wallMinMs = Math.min(...walls);
-            leg.wallMaxMs = Math.max(...walls);
-            // Fair Route B reading: the reuse gate rejects active sparse
-            // solvers, so this reason documents the reuse boundary.
-            leg.statsReuseReason =
-              nativeProbe.find((e) => e.stage === 'statistics')?.reason ?? 'no-event';
-            // Factor metadata (normalNnz/factorNnz/damping/attempts) is not
-            // exposed via diagnostics/probe; damping is inferred fail-closed
-            // (damping>0 throws into a recorded fallback). Each selected /
-            // row-product call performs one factorization.
-            const dampingHit = leg.fallbackReasons.some((r) =>
-              r.toLowerCase().includes('damping'),
-            );
-            leg.dampingInferred = dampingHit ? 'fallback-with-damping-reason' : 0;
-            leg.success = last.success;
-            leg.converged = last.converged;
-            leg.stationRowsMatch =
-              (last.stationCovariances?.length ?? -1) === (reference.stationCovariances?.length ?? -2);
-            leg.allPairsRowsMatch =
-              (last.relativePrecision?.length ?? -1) === allPairsRows;
-            leg.selectedCalls = diagnostics.selectedCovarianceCalls;
-            leg.selectedFallbacks = diagnostics.selectedCovarianceFallbacks;
-            leg.rowProductsCalls = diagnostics.rowProductsCalls;
-            leg.rowProductsFallbacks = diagnostics.rowProductsFallbacks;
-            leg.fallbackReasons = [
-              ...diagnostics.selectedCovarianceFallbackReasons,
-              ...diagnostics.rowProductsFallbackReasons,
-              ...diagnostics.sparseCorrectionFallbackReasons,
-            ].slice(0, 3);
-            leg.conditionEstimate = diagnostics.sparseConditionEstimates[0] ?? null;
-            const fellBack =
-              kind === 'selected'
-                ? diagnostics.selectedCovarianceFallbacks > 0
-                : diagnostics.rowProductsFallbacks > 0;
-            if (!fellBack) {
-              leg.fullResultParity = stableResultJson(last) === stableResultJson(probed);
-              // FP-order noise expected: 1e-6 equivalence on the numeric
-              // result (logs embed unrounded digits, excluded).
-              const numericOf = (result: ReturnType<LSAEngine['solve']>): unknown => {
-                const parsed = JSON.parse(stableResultJson(result)) as Record<string, unknown>;
-                const { logs: _dropped, ...numeric } = parsed;
-                return roundNumbers(numeric);
-              };
-              leg.toleranceParity =
-                JSON.stringify(numericOf(last)) === JSON.stringify(numericOf(probed));
-            } else {
-              leg.fullResultParity = null;
-              leg.toleranceParity = null;
-            }
-          return leg;
-        };
-        // Keep A/B/C walls focused on final covariance: inject only the
-        // selected-covariance solver. Correction and statistics stay TS.
-        const covarianceOptions = (
-          selectedMode: boolean,
-          legacyAllPairs: boolean,
-        ): Record<string, unknown> => ({
-          sparseSelectedCovarianceSolver: bundle.sparseSelectedCovarianceSolver,
-          experimentalSelectedCovarianceMode: selectedMode,
-          ...(legacyAllPairs ? { experimentalSelectedCovarianceLegacyAllPairs: true } : {}),
-        });
-        legs.allEntryDense = runLeg(covarianceOptions(false, false), 'selected');
-        legs.legacyAllPairs = runLeg(covarianceOptions(true, true), 'selected');
-        legs.selectedNetwork = runLeg(covarianceOptions(true, false), 'selected');
-        legs.rowProducts = runLeg({ sparseRowProductsSolver: bundle.sparseRowProductsSolver }, 'rowProducts');
-      }
-
       const reuseEligible =
         (statsEvent?.reused ?? false) && statsEvent?.reason === 'reused-final-dense-qxx';
       const admissible = synthetic
         ? reference.success && reference.converged && reuseEligible
         : id !== 'industry_demo-3d-terrestrial' && reference.success && reference.converged;
-
+      const legs = measureNativeLegs(input, reference, probed, bundle);
       caseEvidence.push({
         fixture: id,
         synthetic,
@@ -409,114 +660,37 @@ describe('Phase 10G final-covariance architecture evidence', () => {
         success: reference.success,
         converged: reference.converged,
         iterations: reference.iterations,
-        totalParameters,
-        coordinateColumns: coordColumns,
-        avoidedOrientationPct,
+        totalParameters: demandInfo.totalParameters,
+        coordinateColumns: demandInfo.coordColumns,
+        avoidedOrientationPct:
+          demandInfo.totalParameters > 0
+            ? (demandInfo.orientationParameters / demandInfo.totalParameters) * 100
+            : 0,
         scalarEquations,
-        gpsObservations,
+        gpsObservations: reference.observations.filter((o) => o.type === 'gps').length,
         unknownStations: unknowns,
-        orientationParameters,
-        orientationRatio: totalParameters > 0 ? orientationParameters / totalParameters : 0,
+        orientationParameters: demandInfo.orientationParameters,
+        orientationRatio:
+          demandInfo.totalParameters > 0 ? demandInfo.orientationParameters / demandInfo.totalParameters : 0,
         denseWallMedianMs: median(walls),
-        qxxDimension: finalEvent?.qxxDimension ?? (totalParameters > 0 ? totalParameters : null),
+        qxxDimension: finalEvent?.qxxDimension ?? (demandInfo.totalParameters > 0 ? demandInfo.totalParameters : null),
         reuseReason: statsEvent?.reason ?? 'no-event',
-        allPairsRows,
+        allPairsRows: reference.relativePrecision?.length ?? 0,
         expectedAllPairsRows,
         stationCovarianceRows: reference.stationCovariances?.length ?? 0,
-        relativeCovarianceRows,
-        requestedRelPtolPairs,
-        demand,
-        rowProductDemand: { equationRows: scalarEquations, gpsCrossGroups: gpsObservations },
-        native: { artifactAvailable: nativeAvailable, ...legs },
+        relativeCovarianceRows: reference.relativeCovariances?.length ?? 0,
+        requestedRelPtolPairs:
+          reference.relativeCovariances?.filter(
+            (r) => r.selectedByRelativeDirective || r.selectedByPositionalToleranceDirective,
+          ).length ?? 0,
+        demand: demandInfo.demand,
+        rowProductDemand: { equationRows: scalarEquations, gpsCrossGroups: reference.observations.filter((o) => o.type === 'gps').length },
+        native: { artifactAvailable: true, ...legs },
       });
     }
 
-    // Compact semantic audit on existing inputs/deterministic variants
-    // (dense path + reuse probe only): proves the corpus features the
-    // demand model assumes and documents every fail-closed route.
-    const auditInput = (id: string, input: string, coverage: string) => {
-      const events: QxxReuseProbeEvent[] = [];
-      const solved = new LSAEngine({
-        input,
-        qxxReuseProbe: (event) => {
-          events.push(event);
-        },
-      }).solve();
-      const obsMix: Record<string, number> = {};
-      for (const o of solved.observations) obsMix[o.type] = (obsMix[o.type] ?? 0) + 1;
-      return {
-        id,
-        coverage,
-        obsMix,
-        fixedStations: Object.values(solved.stations).filter((s) => s.fixed).length,
-        success: solved.success,
-        converged: solved.converged,
-        reuseReason: events.find((e) => e.stage === 'statistics')?.reason ?? 'no-event',
-        requestedRelPtolPairs:
-          solved.relativeCovariances?.filter(
-            (r) => r.selectedByRelativeDirective || r.selectedByPositionalToleranceDirective,
-          ).length ?? 0,
-        status: 'measured',
-      };
-    };
-    const gps08 = generated.find((g) => g.id === 'gps-3d-cov-08');
-    if (!gps08) throw new Error('Missing gps-3d-cov-08 base fixture.');
-    const robust16 = buildPhase6LargeBenchmarkCases(false).find(
-      (g) => g.id === 'chain-2d-robust-tscorr-16',
-    );
-    if (!robust16) throw new Error('Missing chain-2d-robust-tscorr-16 fixture.');
-    const mixedInput = readFileSync(join(process.cwd(), 'public/examples/mixed_grid_tutorial.dat'), 'utf8');
-    const semanticAudit: ReturnType<typeof auditInput>[] = [
-      auditInput('mixed-ts-gnss-lev-control', mixedInput, 'mixed TS+GNSS+leveling with fixed control'),
-      auditInput('rel-ptol-requested', `${gps08.input}\n.RELATIVE U1->U2\n.PTOLERANCE U1->U3\n`, 'REL/PTOL-requested pairs'),
-      auditInput('tscorr-admissible', `${gps08.input}\n.TSCORR ON\n`, 'TS correlation'),
-      auditInput('robust-tscorr-fail-closed', robust16.input, 'robust Huber + TSCORR (2D)'),
-    ];
-    // Unobserved here (fail-closed by gate/parser construction):
-    // augmentation rows (no 3D slope-dist trigger, per 10D) and excluded
-    // observations (no exclude directive in any corpus input).
-    semanticAudit.push({
-      id: 'augmentation-excluded-unobserved',
-      coverage: 'covariance augmentation rows; excluded observations',
-      obsMix: {},
-      fixedStations: 0,
-      success: true,
-      converged: true,
-      reuseReason: 'unobserved-on-corpus (fail-closed by gate/parser)',
-      requestedRelPtolPairs: 0,
-      status: 'unobserved-fail-closed-by-construction',
-    });
-
-    const artifactDir = join(process.cwd(), 'artifacts/evidence/phase10g');
-    mkdirSync(artifactDir, { recursive: true });
-    const payload = {
-      status: 'complete',
-      method:
-        'dense warm-up + 3 solves (median) + probe; analytic A/B/C demand; native 1+5 injected solves (median/min/max) + diagnostics; semantic audit (dense + probe); boundary walls only, no timing assertions',
-      limitation:
-        'WASM ABI exposes factor metadata + condition estimate only; no per-phase timings; diagnostics count calls/fallbacks/reasons only.',
-      measuredRuns: MEASURED_RUNS,
-      nativeRuns: NATIVE_RUNS,
-      cases: caseEvidence,
-      semanticAudit,
-    };
-    writeFileSync(join(artifactDir, 'phase10g-evidence.json'), `${JSON.stringify(payload, null, 2)}\n`);
-
-    const markdown = [
-      '# Phase 10G final-covariance architecture evidence',
-      '',
-      'Evidence-only campaign on the Phase 10F corpus + semantic audit. Dense baseline (warm-up + 3 solves) + demand reference + native legs (1+5, boundary walls) when the WASM artifact is present. industry_demo inadmissible. No timing assertions.',
-      '',
-      '| Fixture | params | unknowns | orient ratio | rows | dense wall ms | reuse reason | all-pairs | Mode A raw | Mode B raw | Mode C raw | uniq cols | native all-entry parity | native fallbacks (A/B/C/R) |',
-      '|---|---:|---:|---:|---:|---:|---|---|---:|---:|---:|---:|---|---|---|',
-      ...caseEvidence.map(
-        (c) =>
-          `| ${c.fixture} | ${c.totalParameters} | ${c.unknownStations} | ${c.orientationRatio.toFixed(3)} | ${c.scalarEquations} | ${c.denseWallMedianMs.toFixed(2)} | ${c.reuseReason} | ${c.allPairsRows}/${c.expectedAllPairsRows} | ${c.demand.modeAAllEntry.rawQueries} | ${c.demand.modeBLegacyAllPairs.rawQueries} | ${c.demand.modeCSelectedNetwork.rawQueries} | ${c.demand.modeAAllEntry.uniqueColumns} | ${c.native.artifactAvailable ? (c.native.allEntryDense.fullResultParity == null ? 'n/a (fallback)' : c.native.allEntryDense.fullResultParity ? 'BIT-IDENTICAL' : 'MISMATCH') : 'no-artifact'} | ${c.native.artifactAvailable ? `${c.native.allEntryDense.selectedFallbacks}/${c.native.legacyAllPairs.selectedFallbacks}/${c.native.selectedNetwork.selectedFallbacks}/${c.native.rowProducts.rowProductsFallbacks}` : 'no-artifact'} |`,
-      ),
-      '',
-      '- No UI, protocol, formula, or routing changes.',
-    ].join('\n');
-    writeFileSync(join(artifactDir, 'phase10g-evidence.md'), `${markdown}\n`);
+    const semanticAudit = collectSemanticAudit();
+    writeArtifacts(caseEvidence, semanticAudit);
 
     expect(caseEvidence.map((c) => c.fixture)).toEqual([
       'industry_demo-3d-terrestrial',
@@ -527,93 +701,7 @@ describe('Phase 10G final-covariance architecture evidence', () => {
       'gps-3d-128',
       'gps-3d-16-orientation-synth',
     ]);
-    for (const c of caseEvidence) {
-      expect(c.allPairsRows, `${c.fixture} dense all-pairs count`).toBe(c.expectedAllPairsRows);
-      expect(c.stationCovarianceRows, `${c.fixture} station rows cover unknowns`).toBe(c.unknownStations);
-      expect(c.requestedRelPtolPairs, `${c.fixture} no requested pairs`).toBe(0);
-      // Demand ordering holds on the admissible cohort (connected pairs among
-      // unknowns); industry_demo's connected set can reference fixed datum
-      // stations outside the unknown-pair universe, so it is recorded only.
-      if (c.admissible) {
-        expect(c.demand.modeCSelectedNetwork.rawQueries, `${c.fixture} selected upper bound`).toBeLessThanOrEqual(
-          c.demand.modeBLegacyAllPairs.rawQueries,
-        );
-        expect(c.demand.modeBLegacyAllPairs.rawQueries, `${c.fixture} legacy below dense`).toBeLessThanOrEqual(
-          c.demand.modeAAllEntry.rawQueries,
-        );
-      }
-      expect(c.demand.modeAAllEntry.uniqueColumns, `${c.fixture} dense demands all columns`).toBe(c.totalParameters);
-      // Selected plan covers station coordinate columns only.
-      expect(c.demand.modeBLegacyAllPairs.uniqueColumns, `${c.fixture} legacy demands coordinate columns`).toBe(c.coordinateColumns);
-      expect(c.demand.modeCSelectedNetwork.uniqueColumns, `${c.fixture} selected demands coordinate columns`).toBe(c.coordinateColumns);
-      expect(c.coordinateColumns, `${c.fixture} coordinate columns`).toBe(c.unknownStations * 3);
-      if (c.synthetic) {
-        // Orientation-heavy case: 16 of 64 columns avoided by the plan.
-        expect(c.avoidedOrientationPct, `${c.fixture} avoided orientation`).toBeCloseTo(25, 9);
-      } else {
-        expect(c.avoidedOrientationPct, `${c.fixture} no orientation avoided`).toBe(0);
-      }
-      if (c.synthetic) {
-        expect(c.orientationParameters, `${c.fixture} 16 direction sets`).toBe(16);
-        expect(c.orientationRatio, `${c.fixture} orientation ratio`).toBeGreaterThan(0);
-        if (!c.admissible) {
-          expect(c.reuseReason, `${c.fixture} damped-final fail-closed`).toBe('damped-final-recovery');
-          expect(c.inadmissibilityReason, `${c.fixture} explicit inadmissibility`).toMatch(
-            /damped-final-recovery|weak-case|non-converged|reuse inadmissible/,
-          );
-          continue;
-        }
-      } else if (!c.admissible) {
-        expect(c.inadmissibilityReason).toContain('weak-case observation');
-        continue;
-      }
-      expect(c.success && c.converged, `${c.fixture} reference solves`).toBe(true);
-      expect(c.reuseReason, `${c.fixture} production reason`).toBe('reused-final-dense-qxx');
-      if (c.native.artifactAvailable) {
-        // Fail-closed: every native leg must either run clean or record
-        // an explicit fallback reason; silent success divergence is banned.
-        for (const [name, leg] of Object.entries({
-          allEntry: c.native.allEntryDense,
-          legacy: c.native.legacyAllPairs,
-          selected: c.native.selectedNetwork,
-          rowProducts: c.native.rowProducts,
-        })) {
-          expect(leg.ran, `${c.fixture} native ${name} ran`).toBe(true);
-          const fellBack =
-            (leg.selectedFallbacks ?? 0) > 0 ||
-            (leg.rowProductsFallbacks ?? 0) > 0 ||
-            leg.fallbackReasons.length > 0;
-          if (!fellBack) {
-            expect(leg.success && leg.converged, `${c.fixture} native ${name} solves`).toBe(true);
-            if (name !== 'selected') {
-              expect(leg.toleranceParity, `${c.fixture} native ${name} equivalent to 1e-6`).toBe(true);
-            }
-          }
-        }
-        // Damping evidence (dense path only): 'reused-final-dense-qxx'
-        // requires finalCovarianceDamping == 0, so the asserted reuse reason
-        // already proves zero dense-path damping; native per-solve damping
-        // metadata is not routed through route diagnostics and is not captured.
-        expect(c.reuseReason, `${c.fixture} zero dense-path damping via reuse eligibility`).toBe(
-          'reused-final-dense-qxx',
-        );
-      }
-    }
-
-    expect(semanticAudit.map((r) => r.id)).toEqual(['mixed-ts-gnss-lev-control', 'rel-ptol-requested', 'tscorr-admissible', 'robust-tscorr-fail-closed', 'augmentation-excluded-unobserved']);
-    const auditById = Object.fromEntries(semanticAudit.map((r) => [r.id, r]));
-    const mixed = auditById['mixed-ts-gnss-lev-control']!;
-    expect(mixed.success && mixed.converged, 'mixed tutorial solves').toBe(true);
-    expect(mixed.fixedStations, 'mixed tutorial has fixed control').toBeGreaterThan(0);
-    expect(Object.keys(mixed.obsMix).length, 'mixed tutorial spans families').toBeGreaterThan(1);
-    const relPtol = auditById['rel-ptol-requested']!;
-    expect(relPtol.success && relPtol.converged, 'REL/PTOL variant solves').toBe(true);
-    expect(relPtol.requestedRelPtolPairs, 'REL/PTOL pairs requested').toBe(2);
-    const tscorr = auditById['tscorr-admissible']!;
-    expect(tscorr.success && tscorr.converged, 'TSCORR variant solves').toBe(true);
-    const robust = auditById['robust-tscorr-fail-closed']!;
-    expect(robust.reuseReason, 'robust fails closed with explicit reason').toMatch(
-      /robust-mode-inadmissible|two-dimensional-legacy|preanalysis-mode|not-converged/,
-    );
+    for (const c of caseEvidence) assertCaseEvidence(c);
+    assertSemanticAudit(semanticAudit);
   }, 600000);
 });

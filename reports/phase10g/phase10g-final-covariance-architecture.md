@@ -1,9 +1,9 @@
 # Phase 10G final-covariance architecture decision
 
-Branch: `feat/3d-final-covariance-architecture-evidence`  
-Baseline: `6f3ae19838eb6bf9e9677b54632667c93e0ddfa5`  
-HEAD: `fd7a55fe`  
-PR: pending (not opened yet)
+Branch: `feat/3d-final-covariance-architecture-evidence`
+Baseline: `6f3ae19838eb6bf9e9677b54632667c93e0ddfa5`
+HEAD: `455940d8` (pre-review fix)
+PR: #21
 
 Production behavior changed: **NO**  
 Mathematical contract changed: **NO**  
@@ -56,15 +56,18 @@ boundary observations. No timing assertions or production speedup claims.
 
 | Fixture | P/coord | rows | dense wall | A med [min–max] | B med [min–max] | C med [min–max] | RP med [min–max] |
 |---|---:|---:|---:|---|---|---|---|
-| gps-3d-128 | 384/384 | 1027 | 217.08 | 208.82 | 244.56 | 204.53 | 206.18 |
-| gps-3d-64 | 192/192 | 515 | 41.20 | 44.40 | 49.73 | 41.43 | 40.84 |
-| orientation-synth (inadmissible) | 64/48 | 179 | 13.08 | 10.97 | 13.13 | 12.76 | 10.38 |
+| gps-3d-128 | 384/384 | 1027 | 205.14 | 209.49 [202.81–218.36] | 239.80 [232.20–252.44] | 203.32 [201.99–207.01] | 200.56 [198.79–208.98] |
+| gps-3d-64 | 192/192 | 515 | 39.00 | 40.87 [40.30–41.83] | 46.40 [45.99–63.89] | 40.16 [39.35–40.46] | 40.60 [40.10–41.02] |
+| orientation-synth (inadmissible) | 64/48 | 179 | 12.77 | 11.00 [10.63–11.24] | 11.62 [10.64–13.69] | 10.69 [10.34–12.54] | 10.09 [9.79–10.24] |
 
-gps-3d-128 demand (exact): A raw 147456 / unique 73920 / 384 cols;
-B raw 74304 / unique 73920 / 384 cols; C raw 2295 / unique 1911 /
-384 cols (127 parameter-bearing connected pairs; fixed-control pairs excluded).
-Orientation-synth largest values: A raw 4096, B raw 1224, C raw 576;
-plan avoids 16/64 columns (25%).
+gps-3d-128 demand (exact, from the real query plan): A raw 147456 /
+unique 73920 / 384 cols; B raw 75959 / unique 73920 / 384 cols;
+C raw 2807 / unique 1911 / 384 cols (127 parameter-bearing connected
+pairs; fixed-control pairs excluded). Mode B raw counts plan-level
+duplication (connected pairs re-listed alongside all-station pairs) that
+deduplication removes before the WASM call. Orientation-synth largest
+values: A raw 4096, B raw 1720, C raw 640; plan avoids 16/64 columns
+(25%).
 
 ## Demand (corrected): plan covers coordinate columns only
 
@@ -84,11 +87,16 @@ there. Symmetric-unique entries at 128: A 73920 / B 73920 / C 1911.
 ## Parity, reuse boundary, factor metadata
 
 - Admissible cohort, Routes A/B/row-products: converge, 0 fallbacks,
-  station + all-pairs row counts match, numeric results equivalent to
-  1e-6 (asserted). Bit-identity does NOT hold (FP-order diffs to
-  ~4e-10) — a native drop-in needs the tolerance bar used here.
-- Route C omits legacy all-pairs by design (all-pairs rows do not
-  resolve on any fixture) — breaks the public contract as-is.
+  positive solver-call diagnostics (5 calls per leg), station +
+  all-pairs row counts match, numeric results equivalent to 1e-6
+  (asserted). Bit-identity does NOT hold (FP-order diffs to ~4e-10) —
+  a native drop-in needs the tolerance bar used here.
+- Route C omits legacy all-pairs rows by design (all-pairs rows do not
+  resolve on any fixture) — breaks the public contract as-is. The
+  common output subset (everything except `relativePrecision`, top-level
+  and nested in precision models) is compared at the same 1e-6 bar and
+  holds on the admissible cohort, so corrupted station or
+  connected-pair output would still fail the campaign.
 - Reuse boundary (measured): Route A reports
   `sparse-selected-solver-active`; selected-store Routes B/C report
   `missing-final-qxx`; production statistics reuse refuses sparse covariance
@@ -103,10 +111,13 @@ there. Symmetric-unique entries at 128: A 73920 / B 73920 / C 1911.
   metadata is returned by the WASM bridge but not routed through route
   diagnostics and is not captured by this campaign. Each
   selected/row-product call performs one factorization (5 calls per leg =
-  5 measured solves; warm-up uses a separate diagnostics instance). Native correction-condition estimates observed:
-  ~1.7e14 GPS cohort, ~4e48 industry_demo, ~9.4e48 damped synth.
-  Orientation-synth dense path routes `damped-final-recovery`
-  (inadmissible by policy, same bar as 10F).
+  5 measured solves; warm-up uses a separate diagnostics instance).
+  Fallback reasons are recorded before damping inference, so a
+  damping-driven fallback is never misreported as undamped. No
+  sparse-correction solver is injected on any leg, so no
+  correction-condition estimate is recorded (stated gap, not a
+  measurement). Orientation-synth dense path routes
+  `damped-final-recovery` (inadmissible by policy, same bar as 10F).
 
 ## Applicability matrix (C1 admissible GPS / C2 orientation-heavy / C3 weak-case)
 
@@ -145,32 +156,36 @@ synthetic direction sets; constraints via fixed control stations. No
 corpus input triggers augmentation rows or excluded observations, so
 those two routes are recorded as fail-closed-by-construction, not measured.
 
-## Amdahl bounds (derived from measured demand, not timings)
+## Demand-reduction ratios (query demand only, NOT time bounds)
 
-S \u2264 1/((1-p) + p/s), p = eliminated symmetric-unique-entry fraction
-vs Mode A. Upper bound at infinite query speedup (s \u2192 \u221e): S_max = 1/(1-p).
+These are entry-count ratios from the plan-derived demand table, not
+Amdahl time bounds: p is the eliminated symmetric-unique-entry fraction
+vs Mode A, and no measured mapping exists from entry counts to
+factorization, solve, copy, or reconstruction time, so no speedup claim
+is made.
 
-| Fixture | Mode B p | B S_max | Mode C p | C S_max | C raw-query fraction |
+| Fixture | Mode B p | Mode B demand ratio | Mode C p | Mode C demand ratio | C raw-query fraction |
 |---|---:|---:|---:|---:|---:|
-| gps-3d-64 | 0.0000 | 1.00 | 0.9487 | 19.48 | 0.0310 |
-| gps-3d-128 | 0.0000 | 1.00 | 0.9741 | 38.68 | 0.0156 |
-| orientation-synth | 0.4346 | 1.77 | 0.7462 | 3.94 | 0.1406 |
+| gps-3d-64 | 0.0000 | 1.00 | 0.9487 | 19.48 | 0.0379 |
+| gps-3d-128 | 0.0000 | 1.00 | 0.9741 | 38.68 | 0.0190 |
+| orientation-synth | 0.4346 | 1.77 | 0.7462 | 3.94 | 0.1562 |
 
-Mode B saves no unique entries on pure-GPS shapes (bound 1.00) — only
-raw-query halving. Mode C bounds assume the factor cost scales with
+Mode B saves no unique entries on pure-GPS shapes (ratio 1.00) — only
+raw-query reduction. Mode C ratios assume the factor cost scales with
 queries; it does not (factor spans all demanded columns: 384/384 at
-128), so realized speedups sit strictly below these ceilings.
+128), so these ceilings do not transfer to time-based speedups.
 
 ## Memory estimates (derived; factor/packed sides estimated)
 
 | Fixture | dense normal+Qxx (exact) | C store values (exact) | C query indices (exact) |
 |---|---:|---:|---:|
-| gps-3d-64 | 589824 B | 7608 B | 9144 B |
-| gps-3d-128 | 2359296 B (~2.25 MiB) | 15288 B (~14.9 KiB) | 18360 B (~17.9 KiB) |
-| orientation-synth | 65536 B | 4224 B | 4608 B |
+| gps-3d-64 | 589824 B | 7608 B | 7608 B |
+| gps-3d-128 | 2359296 B (~2.25 MiB) | 15288 B (~14.9 KiB) | 15288 B (~14.9 KiB) |
+| orientation-synth | 65536 B | 4224 B | 4224 B |
 
 Exact = P\u00b2\u00b78 B per dense matrix; store values = unique\u00b78 B; query
-indices = raw\u00b72\u00b74 B. Packed design arrays and the native factor
+indices = unique\u00d72\u00d74 B (deduplicated typed buffers actually sent to
+WASM, not pre-dedupe plan length). Packed design arrays and the native factor
 fill are unmeasured (design nnz not recorded; dense P\u00b2\u00b712 B upper bound)
 — a future campaign should record design/weight nnz to close this.
 
@@ -178,10 +193,10 @@ fill are unmeasured (design nnz not recorded; dense P\u00b2\u00b712 B upper boun
 
 Fastest contract-preserving route:
 
-- **gps-3d-128:** production dense 217.08 ms; Route B native legacy-all-pairs 244.56 ms covariance-stage boundary; Route C 204.53 ms covariance-stage boundary but contract-different. Route B does not feed native Qxx into statistics reuse, so no fair whole-session gain is established.
+- **gps-3d-128:** production dense 205.14 ms; Route B native legacy-all-pairs 239.80 [232.20–252.44] ms covariance-stage boundary; Route C 203.32 [201.99–207.01] ms covariance-stage boundary but contract-different. Route B does not feed native Qxx into statistics reuse, so no fair whole-session gain is established.
 - **Statistics-stage asymmetry (disclosure):** the dense baseline enjoys production automatic Qxx reuse (skips statistics accumulation+inversion) while every native leg is fail-closed out of reuse by the active sparse solvers and runs legacy statistics, so boundary-wall comparisons are conservative against the native legs and are not apples-to-apples on the statistics stage.
-- **orientation-heavy largest:** production dense 13.08 ms; Route B 13.13 ms boundary; Route C 12.76 ms boundary, both inadmissible because dense reference covariance is damped and Route C omits all-pairs output.
-- **Whole-session improvement:** not established. Native Route B retains legacy statistics rebuild; row-products whole-session boundary is 206.18 ms versus 217.08 ms at gps-3d-128, below the required 15% threshold.
+- **orientation-heavy largest:** production dense 12.77 ms; Route B 11.62 [10.64–13.69] ms boundary; Route C 10.69 [10.34–12.54] ms boundary, both inadmissible because dense reference covariance is damped and Route C omits all-pairs output.
+- **Whole-session improvement:** not established. Native Route B retains legacy statistics rebuild; row-products whole-session boundary is 200.56 [198.79–208.98] ms versus 205.14 ms at gps-3d-128, below the required 15% threshold.
 
 Decision: **NO-GO for transparent production covariance optimization.**
 Recommended Phase 10H: **none**. If work resumes, first run shared-factor/per-phase-timing and controlled native-Qxx statistics-reuse evidence; do not widen production routing.
@@ -191,6 +206,6 @@ reuse (10E/10F unchanged); experimental seams stay test-only. Semantic audit
 covers mixed TS+GNSS+leveling, slope/zenith, leveling, fixed controls,
 REL/PTOL, TSCORR, robust fail-closed, damping, and non-convergence. Covariance
 augmentation and excluded-observation cases were absent from admissible corpus
-and remain explicitly fail-closed-by-construction. Amdahl demand bounds and
+and remain explicitly fail-closed-by-construction. Demand-reduction ratios and
 exact dense/selected-store memory estimates are recorded above; native packed
 and factor memory remain unmeasured.
