@@ -1,7 +1,6 @@
-// Minimal Tauri 2 shell for the standalone Study desktop app (Phase 1).
-// No commands, plugins, or native persistence yet: the Study frontend keeps
-// its browser storage contracts (IndexedDB `webnet.study.v1`, OPFS `study/…`)
-// unchanged. Native APIs migrate in a later phase.
+// Tauri 2 shell for standalone WebNet Study desktop app.
+// Browser storage contracts remain unchanged; desktop adapters use native
+// SQLite and application-confined document files.
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
 mod study_backup;
@@ -9,6 +8,12 @@ mod study_files;
 mod study_store;
 
 fn main() {
+    eprintln!(
+        "[study][startup] version={} platform={} arch={}",
+        env!("CARGO_PKG_VERSION"),
+        std::env::consts::OS,
+        std::env::consts::ARCH
+    );
     tauri::Builder::default()
         .plugin(tauri_plugin_dialog::init())
         .invoke_handler(tauri::generate_handler![

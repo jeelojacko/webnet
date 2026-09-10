@@ -159,7 +159,11 @@ fn root_from_app(app: &AppHandle) -> Result<PathBuf, String> {
 
 #[tauri::command]
 pub fn study_files_status(app: AppHandle) -> Result<StudyFilesStatus, String> {
-    let root = root_from_app(&app)?;
+    let root = root_from_app(&app).map_err(|error| {
+        eprintln!("[study][documents] document root initialization failed: {error}");
+        error
+    })?;
+    eprintln!("[study][documents] document root ready");
     Ok(StudyFilesStatus {
         root: root.to_string_lossy().into_owned(),
     })

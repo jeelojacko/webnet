@@ -96,17 +96,24 @@ pub async fn study_backup_import_dialog(app: AppHandle) -> Result<StudyBackupOpe
         .add_filter("JSON backup", &["json"])
         .blocking_pick_file();
     let Some(file_path) = picked else {
+        eprintln!("[study][backup] import dialog cancelled");
         return Ok(StudyBackupOpenResult {
             cancelled: true,
             contents: None,
         });
     };
     let Some(path) = file_path.as_path() else {
+        eprintln!("[study][backup] import dialog failed: selection has no path");
         return Err("backup selection has no filesystem path".into());
     };
+    let contents = read_backup_file(path).map_err(|error| {
+        eprintln!("[study][backup] import read failed: {error}");
+        error
+    })?;
+    eprintln!("[study][backup] import dialog selected backup");
     Ok(StudyBackupOpenResult {
         cancelled: false,
-        contents: Some(read_backup_file(path)?),
+        contents: Some(contents),
     })
 }
 
@@ -122,17 +129,24 @@ pub async fn study_backup_export_dialog(
         .add_filter("JSON backup", &["json"])
         .blocking_save_file();
     let Some(file_path) = picked else {
+        eprintln!("[study][backup] export dialog cancelled");
         return Ok(StudyBackupSaveResult {
             cancelled: true,
             bytes: 0,
         });
     };
     let Some(path) = file_path.as_path() else {
+        eprintln!("[study][backup] export dialog failed: destination has no path");
         return Err("backup destination has no filesystem path".into());
     };
+    let bytes = write_backup_file_atomic(path, input.contents.as_bytes()).map_err(|error| {
+        eprintln!("[study][backup] export write failed: {error}");
+        error
+    })?;
+    eprintln!("[study][backup] export saved bytes={bytes}");
     Ok(StudyBackupSaveResult {
         cancelled: false,
-        bytes: write_backup_file_atomic(path, input.contents.as_bytes())?,
+        bytes,
     })
 }
 

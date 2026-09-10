@@ -213,8 +213,10 @@ export const createTauriLocateWindowBridge = (
         );
         const existing = await api.getByLabel(LOCATE_PICKER_WINDOW_LABEL);
         if (existing) {
+          console.info('[study][locate] picker reused and focused');
           await existing.setFocus();
         } else {
+          console.info('[study][locate] picker created');
           await api.create(LOCATE_PICKER_WINDOW_LABEL, url);
         }
         await api.emitTo(
@@ -224,6 +226,7 @@ export const createTauriLocateWindowBridge = (
         );
         return { opened: true };
       } catch (error) {
+        console.error('[study][locate] picker open failed', error);
         return {
           opened: false,
           error: error instanceof Error ? error.message : String(error),
@@ -234,8 +237,12 @@ export const createTauriLocateWindowBridge = (
       try {
         const api = await resolve();
         const existing = await api.getByLabel(LOCATE_PICKER_WINDOW_LABEL);
-        if (existing) await existing.close();
+        if (existing) {
+          await existing.close();
+          console.info('[study][locate] picker closed');
+        }
       } catch {
+        console.warn('[study][locate] picker close failed');
         // Close is best-effort teardown; open/post surface errors instead.
       }
     },

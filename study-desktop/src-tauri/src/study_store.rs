@@ -539,12 +539,27 @@ fn open_from_app(app: &AppHandle) -> Result<(Connection, PathBuf), String> {
 
 #[tauri::command]
 pub fn study_native_status(app: AppHandle) -> Result<StudyNativeStatus, String> {
-    let (conn, path) = open_from_app(&app)?;
-    let schema_version = current_schema_version(&conn).map_err(|e| e.to_string())?;
+    let (conn, path) = open_from_app(&app).map_err(|error| {
+        eprintln!("[study][storage] database initialization failed: {error}");
+        error
+    })?;
+    let schema_version = current_schema_version(&conn).map_err(|error| {
+        eprintln!("[study][storage] schema inspection failed: {error}");
+        error.to_string()
+    })?;
+    let stores = LOGICAL_STORES
+        .iter()
+        .map(|s| s.to_string())
+        .collect::<Vec<_>>();
+    eprintln!(
+        "[study][storage] database ready schema_version={} stores={}",
+        schema_version,
+        stores.len()
+    );
     Ok(StudyNativeStatus {
         db_path: path.to_string_lossy().into_owned(),
         schema_version,
-        stores: LOGICAL_STORES.iter().map(|s| s.to_string()).collect(),
+        stores,
     })
 }
 
