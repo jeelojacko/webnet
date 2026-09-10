@@ -1,0 +1,119 @@
+# Study Desktop standalone coverage (Linux + Windows).
+#
+# Bounded to study-desktop/**: frontend install, Study lint/typecheck/tests/
+# build, Rust fmt/check/test, and a Tauri production build with packaged
+# artifacts. The root numerical workflow (adjustment/C++/WASM/parser/solver)
+# stays separate in ci.yml and is never run here.
+#
+# NOTE: this file lives under .github/workflows/, which the root CI
+# classifier treats as numerical-required on every workflow-file change;
+# study-desktop/** source changes themselves remain safe-only.
+
+name: study-desktop
+
+on:
+  push:
+    branches: ['**']
+    paths:
+      - 'study-desktop/**'
+      - '.github/workflows/study-desktop.yml'
+  pull_request:
+    branches: ['**']
+    paths:
+      - 'study-desktop/**'
+      - '.github/workflows/study-desktop.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  study-desktop-linux:
+    name: study-desktop (linux)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: study-desktop
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+      - name: Setup Node
+        uses: actions/setup-node@v5
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: study-desktop/package-lock.json
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@stable
+      - name: Install Tauri system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf
+      - name: Frontend install
+        run: npm ci
+      - name: Study lint
+        run: npm run lint
+      - name: Study typecheck
+        run: npm run typecheck
+      - name: Study tests
+        run: npm run test
+      - name: Study frontend build
+        run: npm run build
+      - name: Rust fmt
+        run: cargo fmt --check --manifest-path src-tauri/Cargo.toml
+      - name: Rust check
+        run: cargo check --manifest-path src-tauri/Cargo.toml
+      - name: Rust tests
+        run: cargo test --manifest-path src-tauri/Cargo.toml
+      - name: Tauri production build
+        run: npm run tauri:build
+      - name: Upload Linux bundles
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: study-desktop-linux-bundles
+          path: study-desktop/src-tauri/target/release/bundle/
+          if-no-files-found: warn
+
+  study-desktop-windows:
+    name: study-desktop (windows)
+    runs-on: windows-latest
+    defaults:
+      run:
+        working-directory: study-desktop
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+      - name: Setup Node
+        uses: actions/setup-node@v5
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: study-desktop/package-lock.json
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@stable
+      - name: Frontend install
+        run: npm ci
+      - name: Study lint
+        run: npm run lint
+      - name: Study typecheck
+        run: npm run typecheck
+      - name: Study tests
+        run: npm run test
+      - name: Study frontend build
+        run: npm run build
+      - name: Rust fmt
+        run: cargo fmt --check --manifest-path src-tauri/Cargo.toml
+      - name: Rust check
+        run: cargo check --manifest-path src-tauri/Cargo.toml
+      - name: Rust tests
+        run: cargo test --manifest-path src-tauri/Cargo.toml
+      - name: Tauri production build
+        run: npm run tauri:build
+      - name: Upload Windows bundles
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: study-desktop-windows-bundles
+          path: study-desktop/src-tauri/target/release/bundle/
+          if-no-files-found: warn

@@ -577,3 +577,16 @@ Safe manual source-review test:
 11. Later complete a normal memory review for that unit and confirm FSRS scheduling updates normally.
 
 Do not edit the committed production pilot package for this test; use a throwaway copied package or a clean development browser profile.
+
+## Phase 4 Validation Hardening
+
+Phase 4 adds docs plus standalone CI only — no Study content, storage, or
+behavior changes. The canonical manual GUI smoke checklist is
+`docs/STUDY_DESKTOP_SMOKE_TEST.md` and the baseline audit (versions, config,
+capabilities, commands, invariants, metadata, blockers) is
+`docs/STUDY_DESKTOP_AUDIT.md`. Standalone Linux + Windows coverage lives in
+`.github/workflows/study-desktop.yml`; the root numerical workflow stays
+separate. Explicit blockers: no live GUI run yet (headless host, no display
+server), no Windows packaging run yet (icons remain PNG placeholder without
+`.icns`/`.ico`), versions remain `0.0.0` by decision, and legacy
+IndexedDB/OPFS migration stays deferred.

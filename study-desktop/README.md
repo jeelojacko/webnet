@@ -172,3 +172,21 @@ planned separately. This keeps runtime independent without mixing a risky toolin
 this extraction.
 
 Phase 1 changed no persistence behavior; Phase 2C adds the native SQLite foundation below (browser storage still authoritative).
+
+## Phase 4 validation hardening (docs + standalone CI, no content changes)
+
+- Canonical manual GUI smoke checklist: `docs/STUDY_DESKTOP_SMOKE_TEST.md`
+  (PASS/FAIL/NOT TESTED/ENVIRONMENT BLOCKED per step; currently all GUI
+  steps ENVIRONMENT BLOCKED — headless host, no display server).
+- Baseline audit: `docs/STUDY_DESKTOP_AUDIT.md` (versions/config/
+  capabilities/commands/invariants, metadata audit with no changes,
+  explicit GUI/package blockers).
+- Standalone CI: `.github/workflows/study-desktop.yml` (Linux + Windows:
+  frontend install, Study lint/typecheck/tests/build, Rust fmt/check/test,
+  Tauri production build + bundle artifacts). The root numerical workflow
+  stays separate and is never run from it.
+- Metadata deliberately unchanged: version stays `0.0.0`; existing PNG
+  placeholder art remains, with a generated `icon.ico` added for Windows CI.
+  Branding/version policy needs a release decision. No new diagnostics UI —
+  existing `study_native_status` IPC is
+  the surface.
