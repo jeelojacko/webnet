@@ -55,14 +55,15 @@ boundary observations. No timing assertions or production speedup claims.
 
 | Fixture | P/coord | rows | dense wall | A med [min–max] | B med [min–max] | C med [min–max] | RP med [min–max] |
 |---|---:|---:|---:|---|---|---|---|
-| gps-3d-128 | 384/384 | 1027 | 218.76 | 45.68 [44.87–46.99] | 67.75 [65.42–70.40] | 34.82 [34.54–35.37] | 210.64 [208.03–214.91] |
-| gps-3d-64 | 192/192 | 515 | 40.99 | 19.74 [19.12–20.04] | 24.79 [23.96–25.45] | 16.58 [16.19–17.05] | 42.98 [42.24–43.25] |
-| orientation-synth (inadmissible) | 64/48 | 179 | 12.88 | 7.51 [7.40–8.98] | 8.28 [7.65–12.08] | 7.25 [7.22–7.83] | 10.49 [10.05–11.52] |
+| gps-3d-128 | 384/384 | 1027 | 218.70 | 46.97 | 69.31 | 38.79 | 213.86 |
+| gps-3d-64 | 192/192 | 515 | 42.51 | 18.90 | 23.45 | 15.80 | 42.67 |
+| orientation-synth (inadmissible) | 64/48 | 179 | 12.88 | 7.44 | 7.92 | 7.23 | 10.33 |
 
 gps-3d-128 demand (exact): A raw 147456 / unique 73920 / 384 cols;
-B raw 74304 / unique 73920 / 384 cols; C raw 4023 / unique 3639 /
-384 cols (319 connected pairs). Orientation-synth largest values:
-A raw 4096, B raw 1224, C raw 792; plan avoids 16/64 columns (25%).
+B raw 74304 / unique 73920 / 384 cols; C raw 2295 / unique 1911 /
+384 cols (127 parameter-bearing connected pairs; fixed-control pairs excluded).
+Orientation-synth largest values: A raw 4096, B raw 1224, C raw 576;
+plan avoids 16/64 columns (25%).
 
 ## Demand (corrected): plan covers coordinate columns only
 
@@ -77,7 +78,7 @@ demands all P columns; Modes B/C demand the 3·U coordinate columns:
 
 For the pure-GPS ladder (no orientation parameters) all 384 columns are
 demanded in every mode — the selected plan saves queries, never columns,
-there. Symmetric-unique entries at 128: A 73920 / B 73920 / C 3639.
+there. Symmetric-unique entries at 128: A 73920 / B 73920 / C 1911.
 
 ## Parity, reuse boundary, factor metadata
 
@@ -149,9 +150,9 @@ vs Mode A. Upper bound at infinite query speedup (s \u2192 \u221e): S_max = 1/(1
 
 | Fixture | Mode B p | B S_max | Mode C p | C S_max | C raw-query fraction |
 |---|---:|---:|---:|---:|---:|
-| gps-3d-64 | 0.0000 | 1.00 | 0.9020 | 10.21 | 0.0544 |
-| gps-3d-128 | 0.0000 | 1.00 | 0.9508 | 20.31 | 0.0273 |
-| orientation-synth | 0.4346 | 1.77 | 0.6423 | 2.80 | 0.1934 |
+| gps-3d-64 | 0.0000 | 1.00 | 0.9487 | 19.48 | 0.0310 |
+| gps-3d-128 | 0.0000 | 1.00 | 0.9741 | 38.68 | 0.0156 |
+| orientation-synth | 0.4346 | 1.77 | 0.7462 | 3.94 | 0.1406 |
 
 Mode B saves no unique entries on pure-GPS shapes (bound 1.00) — only
 raw-query halving. Mode C bounds assume the factor cost scales with
@@ -162,9 +163,9 @@ queries; it does not (factor spans all demanded columns: 384/384 at
 
 | Fixture | dense normal+Qxx (exact) | C store values (exact) | C query indices (exact) |
 |---|---:|---:|---:|
-| gps-3d-64 | 589824 B | 14520 B | 16056 B |
-| gps-3d-128 | 2359296 B (~2.25 MiB) | 29112 B (~28.4 KiB) | 32184 B (~31.4 KiB) |
-| orientation-synth | 65536 B | 5952 B | 6336 B |
+| gps-3d-64 | 589824 B | 7608 B | 9144 B |
+| gps-3d-128 | 2359296 B (~2.25 MiB) | 15288 B (~14.9 KiB) | 18360 B (~17.9 KiB) |
+| orientation-synth | 65536 B | 4224 B | 4608 B |
 
 Exact = P\u00b2\u00b78 B per dense matrix; store values = unique\u00b78 B; query
 indices = raw\u00b72\u00b74 B. Packed design arrays and the native factor
@@ -175,10 +176,10 @@ fill are unmeasured (design nnz not recorded; dense P\u00b2\u00b712 B upper boun
 
 Fastest contract-preserving route:
 
-- **gps-3d-128:** production dense 218.76 ms; Route B native legacy-all-pairs 67.75 ms covariance-stage boundary; Route C 34.82 ms covariance-stage boundary but contract-different. Route B does not feed native Qxx into statistics reuse, so no fair whole-session gain is established.
+- **gps-3d-128:** production dense 218.70 ms; Route B native legacy-all-pairs 69.31 ms covariance-stage boundary; Route C 38.79 ms covariance-stage boundary but contract-different. Route B does not feed native Qxx into statistics reuse, so no fair whole-session gain is established.
 - **Statistics-stage asymmetry (disclosure):** the dense baseline enjoys production automatic Qxx reuse (skips statistics accumulation+inversion) while every native leg is fail-closed out of reuse by the active sparse solvers and runs legacy statistics, so boundary-wall comparisons are conservative against the native legs and are not apples-to-apples on the statistics stage.
-- **orientation-heavy largest:** production dense 12.88 ms; Route B 8.28 ms boundary; Route C 7.25 ms boundary, both inadmissible because dense reference covariance is damped and Route C omits all-pairs output.
-- **Whole-session improvement:** not established. Native Route B retains legacy statistics rebuild; row-products whole-session boundary is 210.64 ms versus 218.76 ms at gps-3d-128, below the required 15% threshold.
+- **orientation-heavy largest:** production dense 12.88 ms; Route B 7.92 ms boundary; Route C 7.23 ms boundary, both inadmissible because dense reference covariance is damped and Route C omits all-pairs output.
+- **Whole-session improvement:** not established. Native Route B retains legacy statistics rebuild; row-products whole-session boundary is 213.86 ms versus 218.70 ms at gps-3d-128, below the required 15% threshold.
 
 Decision: **NO-GO for transparent production covariance optimization.**
 Recommended Phase 10H: **none**. If work resumes, first run shared-factor/per-phase-timing and controlled native-Qxx statistics-reuse evidence; do not widen production routing.

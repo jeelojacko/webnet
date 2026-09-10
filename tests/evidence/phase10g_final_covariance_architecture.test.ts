@@ -238,10 +238,19 @@ describe('Phase 10G final-covariance architecture evidence', () => {
       const allPairsRows = reference.relativePrecision?.length ?? 0;
       const expectedAllPairsRows = (unknowns * (unknowns - 1)) / 2;
       const relativeCovarianceRows = reference.relativeCovariances?.length ?? 0;
+      const unknownStationIds = new Set(
+        Object.entries(reference.stations)
+          .filter(([, station]) => !station.fixed)
+          .map(([stationId]) => stationId),
+      );
+      // Selected covariance plan has no parameter index for fixed controls;
+      // exclude pairs touching either endpoint without station parameters.
       const connectedUniquePairs = new Set(
-        (reference.relativeCovariances ?? []).map((r) =>
-          r.from < r.to ? `${r.from}\u0000${r.to}` : `${r.to}\u0000${r.from}`,
-        ),
+        (reference.relativeCovariances ?? [])
+          .filter((r) => unknownStationIds.has(r.from) && unknownStationIds.has(r.to))
+          .map((r) =>
+            r.from < r.to ? `${r.from}\u0000${r.to}` : `${r.to}\u0000${r.from}`,
+          ),
       ).size;
       const requestedRelPtolPairs =
         reference.relativeCovariances?.filter(
