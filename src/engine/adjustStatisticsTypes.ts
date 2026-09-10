@@ -1,3 +1,4 @@
+import type { DetailedSolveProfiler } from './adjustDetailedSolveProfile';
 import type { SolveTimingBuckets } from './adjustSolveTiming';
 import type { WeightMatrixWriter } from './adjustmentWeightWriter';
 import type { StructuredSymmetricWeights } from './sparseWeightRepresentation';
@@ -67,6 +68,8 @@ export type AdjustmentStatisticsContext = {
     relativeLinePairs?: Array<{ from: StationId; to: StationId }>;
     positionalTolerancePairs?: Array<{ from: StationId; to: StationId }>;
   };
+  /** Phase 10C test-only detailed profiler; undefined keeps production timing only. */
+  detailedSolveProfiler?: DetailedSolveProfiler;
   solveTiming: SolveTimingBuckets;
   logs: string[];
   chiSquare?: AdjustmentResult['chiSquare'];

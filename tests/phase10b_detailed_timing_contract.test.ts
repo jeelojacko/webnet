@@ -83,6 +83,40 @@ describe('Phase 10B detailed timing/probe contract', () => {
     expect(profiler.profile.covariance.calls).toBe(1);
     expect(profiler.profile.covariance.invertMs).toBeGreaterThanOrEqual(0);
     expect(profiler.profile.statisticsMs).toBeGreaterThanOrEqual(0);
+    // Phase 10C: statistics component breakdown (evidence-only, no result change).
+    const statisticsDetail = profiler.profile.statisticsDetail;
+    expect(statisticsDetail.calls).toBe(1);
+    expect(statisticsDetail.residualsMs).toBeGreaterThanOrEqual(0);
+    expect(statisticsDetail.standardizedResidualsMs).toBeGreaterThanOrEqual(0);
+    expect(statisticsDetail.precisionPropagationMs).toBeGreaterThanOrEqual(0);
+    expect(statisticsDetail.diagnosticsMs).toBeGreaterThanOrEqual(0);
+    expect(
+      statisticsDetail.residualsMs +
+        statisticsDetail.standardizedResidualsMs +
+        statisticsDetail.precisionPropagationMs +
+        statisticsDetail.diagnosticsMs,
+    ).toBeLessThanOrEqual(profiler.profile.statisticsMs);
+    // Granular standardized-residual stages (evidence-only, no result change).
+    const standardizedDetail = profiler.profile.standardizedResidualDetail;
+    expect(standardizedDetail.calls).toBe(1);
+    expect(standardizedDetail.statisticsEquationAssemblyMs).toBeGreaterThanOrEqual(0);
+    expect(standardizedDetail.robustWeightPreparationMs).toBeGreaterThanOrEqual(0);
+    expect(standardizedDetail.statisticsNormalAccumulationMs).toBeGreaterThanOrEqual(0);
+    expect(standardizedDetail.statisticsQxxInversionMs).toBeGreaterThanOrEqual(0);
+    expect(standardizedDetail.rowProductConstructionMs).toBeGreaterThanOrEqual(0);
+    expect(standardizedDetail.perEquationStatisticsMs).toBeGreaterThanOrEqual(0);
+    expect(standardizedDetail.gpsCrossProductTransformMs).toBeGreaterThanOrEqual(0);
+    expect(standardizedDetail.summaryConstructionMs).toBeGreaterThanOrEqual(0);
+    expect(
+      standardizedDetail.statisticsEquationAssemblyMs +
+        standardizedDetail.robustWeightPreparationMs +
+        standardizedDetail.statisticsNormalAccumulationMs +
+        standardizedDetail.statisticsQxxInversionMs +
+        standardizedDetail.rowProductConstructionMs +
+        standardizedDetail.perEquationStatisticsMs +
+        standardizedDetail.gpsCrossProductTransformMs +
+        standardizedDetail.summaryConstructionMs,
+    ).toBeLessThanOrEqual(statisticsDetail.standardizedResidualsMs + 1);
   });
 
   it('captures one well-formed packed system per iteration', () => {

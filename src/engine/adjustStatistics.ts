@@ -5,6 +5,7 @@ import { buildObservationTypeSummary, buildResidualDiagnostics, buildStatistical
 import { propagateAdjustmentPrecision } from './adjustStatisticsPrecision';
 import { accumulateAdjustmentResiduals } from './adjustStatisticsResiduals';
 import { computeStandardizedResidualStatistics } from './adjustStatisticsStandardizedResiduals';
+import { detailedNow } from './adjustDetailedSolveProfile';
 import type { AdjustmentStatisticsContext } from './adjustStatisticsTypes';
 import type { Observation, StationId } from '../types';
 
@@ -16,7 +17,13 @@ export const calculateAdjustmentStatistics = (
   hasQxx: boolean,
   activeObservationsInput?: Observation[],
 ): void => {
+    const profiler = ctx.detailedSolveProfiler;
+    const statisticsTotalStartedAt = profiler ? detailedNow() : 0;
+    let residualsMs = 0;
+    let standardizedResidualsMs = 0;
+    let precisionPropagationMs = 0;
     ctx.clearGeometryCache();
+    const residualsStartedAt = profiler ? detailedNow() : 0;
     const {
       vtpv,
       closureResiduals,
@@ -33,6 +40,7 @@ export const calculateAdjustmentStatistics = (
       weightedByGroup,
       groupOrder,
     } = accumulateAdjustmentResiduals(ctx, paramIndex, activeObservationsInput);
+    if (profiler) residualsMs = detailedNow() - residualsStartedAt;
     ctx.seuw = ctx.preanalysisMode ? 1 : ctx.dof > 0 ? Math.sqrt(vtpv / ctx.dof) : 0;
 
     ctx.chiSquare = undefined;
@@ -50,7 +58,9 @@ export const calculateAdjustmentStatistics = (
       ctx.chiSquare = buildChiSquareSummary(vtpv, ctx.dof, 0.05);
     }
 
+    const standardizedStartedAt = profiler ? detailedNow() : 0;
     computeStandardizedResidualStatistics(ctx, paramIndex, hasQxx, activeObservations, constraints);
+    if (profiler) standardizedResidualsMs = detailedNow() - standardizedStartedAt;
 
     if (!ctx.preanalysisMode) {
       ctx.statisticalSummary = buildStatisticalSummary(weightedByGroup, groupOrder, ctx.dof);
@@ -95,9 +105,11 @@ export const calculateAdjustmentStatistics = (
     ctx.typeSummary = buildObservationTypeSummary(activeObservations);
     ctx.captureObservationWeightingStdDevs(activeObservations);
 
+    const precisionStartedAt = profiler ? detailedNow() : 0;
     if (hasQxx && (ctx.Qxx || ctx.experimentalSelectedCovarianceStore)) {
       propagateAdjustmentPrecision(ctx, paramIndex, activeObservations);
     }
+    if (profiler) precisionPropagationMs = detailedNow() - precisionStartedAt;
 
     const sideshots = ctx.computeSideshotResults();
     ctx.sideshots = sideshots;
@@ -203,5 +215,18 @@ export const calculateAdjustmentStatistics = (
       if (totalTraverseDistance > 0) {
         ctx.logs.push(`Traverse distance sum: ${totalTraverseDistance.toFixed(4)} m`);
       }
+    }
+    if (profiler) {
+      const diagnosticsMs = Math.max(
+        0,
+        detailedNow() - statisticsTotalStartedAt - residualsMs - standardizedResidualsMs -
+          precisionPropagationMs,
+      );
+      profiler.recordStatisticsStage({
+        residualsMs,
+        standardizedResidualsMs,
+        precisionPropagationMs,
+        diagnosticsMs,
+      });
     }
 };
