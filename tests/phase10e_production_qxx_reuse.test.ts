@@ -1,24 +1,25 @@
 /**
- * Phase 10D agent-tier contract: evidence-only Qxx comparison/reuse seam.
+ * Phase 10E agent-tier contract: automatic production Qxx reuse.
  *
  * Fast unit-scope checks (no WASM, no repeated campaigns): production
- * default stays legacy recompute, opt-in reuse is bit-identical on the
- * genuine 3D fixture, probe call counts prove the skipped
- * accumulation/inversion, and every inadmissible shape fails closed.
+ * default automatically reuses the final dense Qxx on the eligible
+ * cohort (converged 3D dense TypeScript solves), the test-only
+ * force-legacy oracle reproduces the legacy path bit-identically, probe
+ * call counts prove the skipped accumulation/inversion, and every
+ * inadmissible shape (2D, non-converged, robust, ...) fails closed.
  */
 import { describe, expect, it } from 'vitest';
 
 import { LSAEngine } from '../src/engine/adjust';
 import { buildPhase6LargeBenchmarkCases } from '../src/engine/phase6BenchmarkNetworks';
-import {
-  decideStatisticsQxxReuse,
-  type QxxReuseProbeEvent,
-} from '../src/engine/qxxReuseEvidence';
+import { decideStatisticsQxxReuse } from '../src/engine/statisticsQxxReuse';
+import type { QxxReuseProbeEvent } from '../src/engine/qxxReuseEvidence';
 
-const fixture = buildPhase6LargeBenchmarkCases(false).find(
-  (item) => item.id === 'gps-3d-cov-08',
-);
-if (!fixture) throw new Error('Missing genuine 3D fixture gps-3d-cov-08.');
+const cases = buildPhase6LargeBenchmarkCases(false);
+const fixture3d = cases.find((item) => item.id === 'gps-3d-cov-08');
+if (!fixture3d) throw new Error('Missing genuine 3D fixture gps-3d-cov-08.');
+const fixture2d = cases.find((item) => item.id === 'gps-2d-cov-08');
+if (!fixture2d) throw new Error('Missing 2D fixture gps-2d-cov-08.');
 
 const stripVolatile = (result: ReturnType<LSAEngine['solve']>) => {
   const logs = result.logs.filter((line) => !line.startsWith('Solve timing (ms):'));
@@ -35,11 +36,11 @@ const stripVolatile = (result: ReturnType<LSAEngine['solve']>) => {
   });
 };
 
-const solveWithProbe = (input: string, reuse: boolean | undefined) => {
+const solveWithProbe = (input: string, forceLegacy: boolean | undefined) => {
   const events: QxxReuseProbeEvent[] = [];
   const result = new LSAEngine({
     input,
-    reuseFinalCovarianceInStatistics: reuse,
+    forceLegacyStatisticsQxx: forceLegacy,
     qxxReuseProbe: (event) => {
       events.push(event);
     },
@@ -57,26 +58,14 @@ const maxAbsDiff = (a: number[][], b: number[][]): number => {
   return max;
 };
 
-describe('Phase 10D Qxx comparison/reuse contract', () => {
-  it('keeps the legacy recompute path by default', () => {
-    const reference = new LSAEngine({ input: fixture.input }).solve();
-    const { result, events } = solveWithProbe(fixture.input, undefined);
-    expect(stripVolatile(result)).toBe(stripVolatile(reference));
-    expect(events.map((e) => e.stage)).toEqual(['final-covariance', 'statistics']);
-    const stats = events.find((e) => e.stage === 'statistics');
-    expect(stats?.reused).toBe(false);
-    expect(stats?.reason).toBe('reuse-disabled');
-    expect(stats?.normalAccumulations).toBe(1);
-    expect(stats?.inversions).toBe(1);
-    expect(stats?.normalDimension).toBe(stats?.qxxDimension);
-  });
-
-  it('reuses the final dense Qxx bit-identically and skips the second inversion', () => {
-    const reference = new LSAEngine({ input: fixture.input }).solve();
-    const { result, events } = solveWithProbe(fixture.input, true);
+describe('Phase 10E production Qxx reuse contract', () => {
+  it('automatically reuses the final dense Qxx on converged 3D with full parity', () => {
+    const { result, events } = solveWithProbe(fixture3d.input, undefined);
     expect(result.success).toBe(true);
     expect(result.converged).toBe(true);
-    expect(stripVolatile(result)).toBe(stripVolatile(reference));
+
+    const oracle = solveWithProbe(fixture3d.input, true);
+    expect(stripVolatile(result)).toBe(stripVolatile(oracle.result));
 
     const final = events.find((e) => e.stage === 'final-covariance');
     const stats = events.find((e) => e.stage === 'statistics');
@@ -89,31 +78,59 @@ describe('Phase 10D Qxx comparison/reuse contract', () => {
     expect(stats?.inversions).toBe(0);
     expect(stats?.normalDimension).toBeNull();
 
-    // Cross-run structural/numeric comparison: legacy statistics normal
-    // and Qxx equal the recovered final ones (deterministic solves).
-    const { events: legacyEvents } = solveWithProbe(fixture.input, undefined);
-    const legacyFinal = legacyEvents.find((e) => e.stage === 'final-covariance');
-    const legacyStats = legacyEvents.find((e) => e.stage === 'statistics');
+    // Cross-run comparison: legacy oracle statistics normal and Qxx equal
+    // the recovered final ones (deterministic solves).
+    const legacyFinal = oracle.events.find((e) => e.stage === 'final-covariance');
+    const legacyStats = oracle.events.find((e) => e.stage === 'statistics');
+    expect(legacyStats?.reused).toBe(false);
+    expect(legacyStats?.reason).toBe('force-legacy-oracle');
+    expect(legacyStats?.normalAccumulations).toBe(1);
+    expect(legacyStats?.inversions).toBe(1);
     expect(legacyFinal?.normalDimension).toBe(legacyStats?.normalDimension);
     expect(maxAbsDiff(legacyFinal!.normal!, legacyStats!.normal!)).toBe(0);
     expect(maxAbsDiff(legacyFinal!.qxx!, legacyStats!.qxx!)).toBe(0);
     expect(maxAbsDiff(legacyFinal!.qxx!, stats!.qxx!)).toBe(0);
   });
 
+  it('keeps 2D solves on the legacy path with full parity', () => {
+    const { result, events } = solveWithProbe(fixture2d.input, undefined);
+    expect(result.success).toBe(true);
+    expect(result.converged).toBe(true);
+    const oracle = solveWithProbe(fixture2d.input, true);
+    expect(stripVolatile(result)).toBe(stripVolatile(oracle.result));
+    const stats = events.find((e) => e.stage === 'statistics');
+    expect(stats?.reused).toBe(false);
+    expect(stats?.reason).toBe('two-dimensional-legacy');
+    expect(stats?.inversions).toBe(1);
+  });
+
   it('fails closed on robust Huber with full parity', () => {
-    const huberInput = `${fixture.input}\n.ROBUST HUBER 1.5\n`;
-    const reference = new LSAEngine({ input: huberInput }).solve();
-    const { result, events } = solveWithProbe(huberInput, true);
-    expect(stripVolatile(result)).toBe(stripVolatile(reference));
+    const huberInput = `${fixture3d.input}\n.ROBUST HUBER 1.5\n`;
+    const { result, events } = solveWithProbe(huberInput, undefined);
+    const oracle = solveWithProbe(huberInput, true);
+    expect(stripVolatile(result)).toBe(stripVolatile(oracle.result));
     const stats = events.find((e) => e.stage === 'statistics');
     expect(stats?.reused).toBe(false);
     expect(stats?.reason).toBe('robust-mode-inadmissible');
     expect(stats?.inversions).toBe(1);
   });
 
+  it('reuses under TS correlation with full parity', () => {
+    const tscorrInput = `${fixture3d.input}\n.TSCORR ON\n`;
+    const { result, events } = solveWithProbe(tscorrInput, undefined);
+    const oracle = solveWithProbe(tscorrInput, true);
+    expect(result.tsCorrelationDiagnostics?.enabled).toBe(true);
+    expect(stripVolatile(result)).toBe(stripVolatile(oracle.result));
+    const stats = events.find((e) => e.stage === 'statistics');
+    expect(stats?.reused).toBe(true);
+    expect(stats?.reason).toBe('reused-final-dense-qxx');
+  });
+
   it('rejects every inadmissible shape in the eligibility gate', () => {
     const base = {
-      reuseRequested: true,
+      forceLegacy: false,
+      converged: true,
+      is2D: false,
       preanalysisMode: false,
       robustMode: 'none' as string | undefined,
       finalQxx: [
@@ -127,8 +144,14 @@ describe('Phase 10D Qxx comparison/reuse contract', () => {
       finalCovarianceDamping: 0,
     };
     expect(decideStatisticsQxxReuse(base).eligible).toBe(true);
-    expect(decideStatisticsQxxReuse({ ...base, reuseRequested: false }).reason).toBe(
-      'reuse-disabled',
+    expect(decideStatisticsQxxReuse({ ...base, forceLegacy: true }).reason).toBe(
+      'force-legacy-oracle',
+    );
+    expect(decideStatisticsQxxReuse({ ...base, converged: false }).reason).toBe(
+      'not-converged',
+    );
+    expect(decideStatisticsQxxReuse({ ...base, is2D: true }).reason).toBe(
+      'two-dimensional-legacy',
     );
     expect(decideStatisticsQxxReuse({ ...base, preanalysisMode: true }).reason).toBe(
       'preanalysis-mode',

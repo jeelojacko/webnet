@@ -33,7 +33,7 @@ const ALWAYS_NUMERICAL = [
   /^src\/workers\//,
   /^src\/cli\.ts$/,
   /^scripts\/(?:phase.*(?:WorkerBridge|Proof)|wasm|cppBuild|benchmarks\/)/i,
-  /^tests\/(?:phase[4-9]|.*(?:sparse|worker|wasm|covariance|parity|evidence|release|preanalysis))/i,
+  /^tests\/(?:phase\d+|.*(?:sparse|worker|wasm|covariance|parity|evidence|release|preanalysis))/i,
 ];
 
 const normalize = (file) => file.replaceAll('\\', '/').replace(/^\.\//, '');
