@@ -109,7 +109,9 @@ jobs:
       - name: Rust tests
         run: cargo test --manifest-path src-tauri/Cargo.toml
       - name: Tauri production build
-        run: npm run tauri:build
+        # WiX MSI rejects SemVer prerelease labels; keep app/package identity
+        # at beta version while using numeric MSI bundle version.
+        run: npx tauri build --config '{"version":"0.1.0"}'
       - name: Upload Windows bundles
         if: always()
         uses: actions/upload-artifact@v7

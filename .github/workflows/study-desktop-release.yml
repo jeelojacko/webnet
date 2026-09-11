@@ -79,9 +79,19 @@ jobs:
       - name: Version consistency check
         run: npm run check:version
       - name: Tauri production build
-        run: npm run tauri:build
+        # WiX MSI rejects SemVer prerelease labels; override only installer
+        # metadata, while frontend/package identity remains beta. Rename below.
+        run: npx tauri build --config '{"version":"0.1.0"}'
         env:
           STUDY_COMMIT: ${{ github.sha }}
+      - name: Rename Windows bundles
+        shell: pwsh
+        run: |
+          Get-ChildItem -Path src-tauri/target/release/bundle -Recurse -File |
+            Where-Object { $_.Name -match '0\.1\.0' } |
+            ForEach-Object {
+              Rename-Item $_.FullName ($_.Name -replace '0\.1\.0', '0.1.0-beta.1')
+            }
       - name: Upload Windows bundles
         uses: actions/upload-artifact@v7
         with:
