@@ -4092,7 +4092,7 @@ dependencies = [
 
 [[package]]
 name = "webnet-study-desktop"
-version = "0.0.0"
+version = "0.1.0-beta.1"
 dependencies = [
  "rusqlite",
  "serde",

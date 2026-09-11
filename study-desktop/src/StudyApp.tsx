@@ -3,6 +3,7 @@ import StudyAuthoringPage from './components/StudyAuthoringPage';
 import StudyDocumentPage from './components/StudyDocumentPage';
 import StudyLayout, { StudyEmptyState } from './components/StudyLayout';
 import StudyLibrary from './components/StudyLibrary';
+import StudyGetStarted from './components/StudyGetStarted';
 import StudyManagePage from './components/StudyManagePage';
 import StudyPreviewPage from './components/StudyPreviewPage';
 import StudyPracticePage from './components/StudyPracticePage';
@@ -12,6 +13,8 @@ import { ExamPrepPage } from './examPrep/ExamPrepPage';
 import { decodeExamPrepView } from './examPrep/examPrepRoutes';
 import { isActiveMockExamRoute } from './examPrep/mock/examPrepMockSelectors';
 import { selectSurprisePracticeUnitId } from './studySessionItems';
+import { isStudyLibraryEmpty, shouldSurfaceBundledUpdatePreview } from './studyOnboarding';
+import { buildCurrentOfficialPackageDiagnostics } from './components/StudyManagePage.utils';
 import { useStudyApp } from './useStudyApp';
 
 const decodeDocumentIdFromPath = (path: string): string | null => {
@@ -215,6 +218,14 @@ const StudyApp = () => {
           officialPackagePreview={study.officialPackagePreview}
           onPreviewOfficialPackage={study.previewOfficialPackage}
           onImportOfficialPackage={study.importOfficialPackage}
+          bundledStatus={study.bundledStatus}
+          bundledFirstRunAvailable={study.bundledFirstRunAvailable}
+          bundledPreview={study.bundledPreview}
+          bundledPreviewError={study.bundledPreviewError}
+          bundledBusy={study.bundledBusy}
+          onLoadBundledPreview={study.loadBundledPreview}
+          onInstallBundledPackage={study.installBundledPackage}
+          onInstallBundledUpdate={study.installBundledUpdate}
           statusMessage={study.statusMessage}
         />
       );
@@ -234,13 +245,41 @@ const StudyApp = () => {
         />
       );
     }
+    const libraryEmpty = isStudyLibraryEmpty(study.data);
+    // Bundled package identity comes from the read-only resource probe
+    // (null outside Tauri or when the resource is missing, keeping the
+    // update hook dormant). Version/release workflow untouched.
+    const bundledOfficialPackageId: string | null = study.bundledPackageId;
+    const currentPackage = buildCurrentOfficialPackageDiagnostics(study.data);
+    const bundledUpdateVisible = shouldSurfaceBundledUpdatePreview({
+      currentPackageIds: currentPackage?.packageIds ?? [],
+      bundledPackageId: bundledOfficialPackageId,
+      hasOfficialCorpus: (currentPackage?.documentCount ?? 0) > 0,
+    });
+    const firstRunOfficialLibrary = study.bundledFirstRunAvailable && currentPackage === null;
+    const showGetStarted = libraryEmpty || bundledUpdateVisible || firstRunOfficialLibrary;
     return (
-      <StudyDashboard
-        data={study.data}
-        sessionItems={study.sessionItems}
-        onNavigate={study.navigate}
-        onSurprisePractice={() => study.navigate('/study/surprise')}
-      />
+      <div className="space-y-5">
+        {showGetStarted ? (
+          <StudyGetStarted
+            libraryEmpty={libraryEmpty}
+            officialLibraryEmpty={firstRunOfficialLibrary}
+            nativeBackupAvailable={study.fileInteractions.canUseNativeBackupDialogs}
+            onImportBackupFromFile={study.importBackupFromFile}
+            onOpenManage={() => study.navigate('/study/manage')}
+            bundledUpdatePackageId={bundledUpdateVisible ? bundledOfficialPackageId : null}
+            bundledFirstRunAvailable={study.bundledFirstRunAvailable}
+            bundledBusy={study.bundledBusy}
+            onInstallBundledPackage={study.installBundledPackage}
+          />
+        ) : null}
+        <StudyDashboard
+          data={study.data}
+          sessionItems={study.sessionItems}
+          onNavigate={study.navigate}
+          onSurprisePractice={() => study.navigate('/study/surprise')}
+        />
+      </div>
     );
   };
 

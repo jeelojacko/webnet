@@ -4,6 +4,7 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
 mod study_backup;
+mod study_bundled;
 mod study_files;
 mod study_store;
 
@@ -19,6 +20,9 @@ fn main() {
         .invoke_handler(tauri::generate_handler![
             study_backup::study_backup_import_dialog,
             study_backup::study_backup_export_dialog,
+            study_bundled::study_bundled_official_package_status,
+            study_bundled::study_bundled_official_package_id,
+            study_bundled::study_bundled_official_package_read,
             study_store::study_native_status,
             study_store::study_native_put,
             study_store::study_native_get,

@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { exportStudyData, parseStudyImport } from './studyExportImport';
 import { createStudyFileInteractions } from './studyFileInteractions';
+import { formatBackupRestoredMessage, summarizeRestoredBackup } from './studyOnboarding';
 import {
   acknowledgeUnitSourceReview,
   createStudyContentFromSourceSelection,
@@ -26,6 +27,7 @@ import { buildStudySessionCompletionSummary } from './studySessionSummary';
 import { persistStudyPracticeAttempt } from './studyPracticePersistence';
 import { useStudyAiAuthoring } from './useStudyAiAuthoring';
 import { useStudyExamPrep } from './useStudyExamPrep';
+import { useStudyBundledOfficialContent } from './useStudyBundledOfficialContent';
 import { useStudyOfficialPackageImport } from './useStudyOfficialPackageImport';
 import { createStudyStorage, STUDY_SCHEMA_VERSION } from './studyStorage';
 import { useStudyNavigation } from './useStudyNavigation';
@@ -646,7 +648,7 @@ export const useStudyApp = () => {
       const snapshot = parseStudyImport(selection.text);
       await storage.replaceAll(snapshot);
       setData({ ...snapshot, legalComponents: [] });
-      setStatusMessage('Study backup imported from file.');
+      setStatusMessage(formatBackupRestoredMessage(summarizeRestoredBackup(snapshot)));
     } catch (error) {
       setStatusMessage(
         `Study backup import failed: ${error instanceof Error ? error.message : String(error)}`,
@@ -674,6 +676,13 @@ export const useStudyApp = () => {
     setStatusMessage,
   });
 
+  const bundledOfficialContent = useStudyBundledOfficialContent({
+    data,
+    storage,
+    setData,
+    setStatusMessage,
+  });
+
   const aiAuthoring = useStudyAiAuthoring({
     data,
     storage,
@@ -693,7 +702,7 @@ export const useStudyApp = () => {
     const snapshot = parseStudyImport(importText);
     await storage.replaceAll(snapshot);
     setData({ ...snapshot, legalComponents: [] });
-    setStatusMessage('Study data imported.');
+    setStatusMessage(formatBackupRestoredMessage(summarizeRestoredBackup(snapshot)));
   }, [importText, storage]);
 
   const deleteAllData = useCallback(async () => {
@@ -970,6 +979,7 @@ export const useStudyApp = () => {
     exportBackupToFile,
     deleteAllData,
     ...officialPackageImport,
+    ...bundledOfficialContent,
     ...aiAuthoring,
     ...examPrep,
     createUnitFromSourceSelection,

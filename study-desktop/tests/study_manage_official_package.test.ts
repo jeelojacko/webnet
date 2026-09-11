@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import {
   buildCurrentOfficialPackageDiagnostics,
+  buildStudyApplicationDiagnostics,
   describePreviewDifference,
 } from '../src/components/StudyManagePage.utils';
 import { createSeedStudyData } from '../src/studySeed';
@@ -64,6 +65,24 @@ const validPreview = (overrides: Partial<OfficialContentPreview> = {}): Official
 });
 
 describe('manage current official package diagnostics', () => {
+  it('builds copyable diagnostics with real line breaks', () => {
+    const diagnostics = buildStudyApplicationDiagnostics({
+      version: '0.1.0-beta.1',
+      commit: 'abc123',
+      platform: 'tauri',
+      currentPackage: null,
+    });
+    expect(diagnostics.split('\n')).toEqual([
+      'WebNet Study 0.1.0-beta.1',
+      'platform=tauri',
+      'storage=native-desktop',
+      'officialPackage=none',
+      'officialDocuments=0',
+      'officialComponents=unknown',
+      'commit=abc123',
+    ]);
+  });
+
   it('returns null when nothing is imported', () => {
     const seed = createSeedStudyData('2026-08-01T10:00:00.000Z');
     expect(buildCurrentOfficialPackageDiagnostics(seed)).toBeNull();

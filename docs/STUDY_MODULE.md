@@ -291,6 +291,10 @@ For testing, Manage also exposes `Delete All Data`. The first click opens an in-
 
 Study units linked to official source material store `documentId`, `sourceKey`, and `contentHashAtLinkTime`. Later package imports mark `sourceReviewRequired` or `sourceReferenceMissing` when linked components change or disappear. Acknowledging review updates link-time hashes for still-present components and records `sourceReviewAcknowledgedAt`.
 
+## Bundled Official Library (desktop only)
+
+The Tauri desktop bundle ships the current official package as a read-only app resource (`bundle.resources` points at the existing `study-content/packages/nb-sit-statute-corpus.content-package.json`; no copy, no second format). Three narrow Rust commands (`study_bundled_official_package_status/id/read` in `study-desktop/src-tauri/src/study_bundled.rs`) expose only that fixed file — no path crosses IPC, oversize/invalid content fails closed, and outside Tauri the library reports unavailable. The frontend seam (`study-desktop/src/studyBundledOfficialContent.ts` + `useStudyBundledOfficialContent.ts`) reuses the existing parse/validate/preview/import core with a browser-safe fallback and test-injected bridge. First-run detection is derived from the loaded snapshot (no official imports, no persistent flag): the dashboard Get Started card and Manage offer an explicit Install Bundled Library that refuses when official imports already exist, and Manage previews bundled match/different state with an explicit Install Update only — never auto-migration or overwrite. Manual package import is unchanged.
+
 ## Reference-Only Forms
 
 Some prescribed forms normalize only as a label. Import classifies a form as `reference-only` when its normalized text, after trimming whitespace and optional consolidation text, contains only its own label. These forms remain navigable, keep source keys and hashes, display an incomplete-body warning, and require explicit confirmation before selection for study-unit creation. Short statutory sections such as repealed provisions are not classified as form stubs.

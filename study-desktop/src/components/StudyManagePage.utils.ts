@@ -84,6 +84,29 @@ export const buildCurrentOfficialPackageDiagnostics = (
   };
 };
 
+export type StudyApplicationDiagnosticsInput = {
+  version: string;
+  commit: string;
+  platform: string;
+  currentPackage: CurrentOfficialPackageDiagnostics | null;
+};
+
+export const buildStudyApplicationDiagnostics = ({
+  version,
+  commit,
+  platform,
+  currentPackage,
+}: StudyApplicationDiagnosticsInput): string =>
+  [
+    `WebNet Study ${version}`,
+    `platform=${platform}`,
+    `storage=${platform === 'tauri' ? 'native-desktop' : 'browser'}`,
+    `officialPackage=${currentPackage?.packageIds.join(',') || 'none'}`,
+    `officialDocuments=${currentPackage?.documentCount ?? 0}`,
+    `officialComponents=${currentPackage?.componentCount ?? 'unknown'}`,
+    `commit=${commit}`,
+  ].join('\n');
+
 export type PreviewDifference = 'matches-current' | 'differs-from-current' | 'first-import';
 
 /**

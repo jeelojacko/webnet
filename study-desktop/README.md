@@ -191,3 +191,19 @@ Phase 1 changed no persistence behavior; Phase 2C adds the native SQLite foundat
   Branding/version policy needs a release decision. No new diagnostics UI —
   existing `study_native_status` IPC is
   the surface.
+
+## Phase 5 version + release (desktop versions independently)
+
+- Version `0.1.0-beta.1` stamped in `package.json`/`package-lock.json`,
+  `src-tauri/tauri.conf.json`, `src-tauri/Cargo.toml`/`Cargo.lock`
+  (identifier `com.webnet.study` / product `WebNet Study` preserved).
+  Check: `npm run check:version` (`scripts/check-version.mjs` +
+  `tests/study_app_version.test.ts`).
+- Commit identity: Vite bakes `STUDY_COMMIT`/`GITHUB_SHA` (local fallback
+  `"local"`) via `src/studyAppInfo.ts`; Manage shows a read-only
+  **Application** section (product, version, commit, platform, storage) with
+  safe Copy diagnostics.
+- Release: `.github/workflows/study-desktop-release.yml` (manual or
+  `study-v*` tag) builds Linux/Windows bundles, gathers artifacts, and
+  emits `SHA256SUMS` — no auto-publish. Policy/signing-deferred/updater-
+  deferred notes: `docs/STUDY_DESKTOP_RELEASE.md`.

@@ -1,10 +1,15 @@
 import { useMemo, useState } from 'react';
 import { useDevMountTiming } from '../studyDevTiming';
+import { getStudyAppInfo } from '../studyAppInfo';
+import { resolveStudyStoragePlatform } from '../studyStoragePlatform';
 import { backupByteLength } from '../studyFileInteractions';
+import type { BundledOfficialPackageStatus } from '../studyBundledOfficialContent';
 import type { OfficialContentPreview } from '../studyOfficialContent';
+import StudyBundledOfficialSection from './StudyBundledOfficialSection';
 import type { StudyDataSnapshot } from '../studyTypes';
 import {
   buildCurrentOfficialPackageDiagnostics,
+  buildStudyApplicationDiagnostics,
   compactCorpusFingerprint,
   describePreviewDifference,
 } from './StudyManagePage.utils';
@@ -24,6 +29,14 @@ type StudyManagePageProps = {
   officialPackagePreview: OfficialContentPreview | null;
   onPreviewOfficialPackage: () => void;
   onImportOfficialPackage: () => Promise<void>;
+  bundledStatus?: BundledOfficialPackageStatus;
+  bundledFirstRunAvailable?: boolean;
+  bundledPreview?: OfficialContentPreview | null;
+  bundledPreviewError?: string | null;
+  bundledBusy?: boolean;
+  onLoadBundledPreview?: () => void;
+  onInstallBundledPackage?: () => void;
+  onInstallBundledUpdate?: () => void;
   statusMessage: string;
 };
 
@@ -42,6 +55,14 @@ const StudyManagePage = ({
   officialPackagePreview,
   onPreviewOfficialPackage,
   onImportOfficialPackage,
+  bundledStatus = { available: false },
+  bundledFirstRunAvailable = false,
+  bundledPreview = null,
+  bundledPreviewError = null,
+  bundledBusy = false,
+  onLoadBundledPreview = () => {},
+  onInstallBundledPackage = () => {},
+  onInstallBundledUpdate = () => {},
   statusMessage,
 }: StudyManagePageProps) => {
   const [confirmingDelete, setConfirmingDelete] = useState(false);
@@ -53,6 +74,19 @@ const StudyManagePage = ({
   const [showExport, setShowExport] = useState(false);
   const [showImport, setShowImport] = useState(false);
   const [showPackage, setShowPackage] = useState(false);
+  const [diagnosticsCopied, setDiagnosticsCopied] = useState(false);
+  const appInfo = getStudyAppInfo();
+  const platform = resolveStudyStoragePlatform();
+  const diagnostics = buildStudyApplicationDiagnostics({
+    ...appInfo,
+    platform,
+    currentPackage,
+  });
+  const copyDiagnostics = async () => {
+    if (!navigator.clipboard) return;
+    await navigator.clipboard.writeText(diagnostics);
+    setDiagnosticsCopied(true);
+  };
   useDevMountTiming('StudyManagePage');
 
   const confirmDeleteAllData = async () => {
@@ -130,6 +164,17 @@ const StudyManagePage = ({
         </div>
       )}
     </section>
+    <StudyBundledOfficialSection
+      bundledStatus={bundledStatus}
+      bundledFirstRunAvailable={bundledFirstRunAvailable}
+      bundledPreview={bundledPreview}
+      bundledPreviewError={bundledPreviewError}
+      bundledBusy={bundledBusy}
+      currentPackage={currentPackage}
+      onLoadBundledPreview={onLoadBundledPreview}
+      onInstallBundledPackage={onInstallBundledPackage}
+      onInstallBundledUpdate={onInstallBundledUpdate}
+    />
     <section className="rounded border border-slate-800 bg-slate-900 p-4">
       <div className="mb-2 text-xs uppercase tracking-wide text-slate-500">Current Official Package</div>
       {!currentPackage ? (
@@ -333,6 +378,23 @@ const StudyManagePage = ({
       </div>
     </section>
     ) : null}
+    <section className="rounded border border-slate-800 bg-slate-900 p-4">
+      <div className="mb-2 text-xs uppercase tracking-wide text-slate-500">Application</div>
+      <div className="space-y-1 text-sm text-slate-300">
+        <div className="font-semibold text-white">WebNet Study</div>
+        <div>Version: {appInfo.version}</div>
+        <div className="break-all font-mono text-xs">Commit: {appInfo.commit}</div>
+        <div>Platform: {platform}</div>
+        <div>Storage: {platform === 'tauri' ? 'Native desktop' : 'Browser'}</div>
+      </div>
+      <button
+        type="button"
+        onClick={() => void copyDiagnostics()}
+        className="mt-3 rounded border border-slate-700 px-3 py-2 text-xs text-slate-300 hover:bg-slate-800"
+      >
+        {diagnosticsCopied ? 'Diagnostics copied' : 'Copy diagnostics'}
+      </button>
+    </section>
     <section className="rounded border border-slate-800 bg-slate-900 p-4">
       <div className="mb-2 text-xs uppercase tracking-wide text-slate-500">Export JSON</div>
       {!showExport ? (

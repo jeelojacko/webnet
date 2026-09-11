@@ -144,3 +144,31 @@ export const studyNativeBackupImport = (): Promise<NativeBackupOpenResult> =>
 
 export const studyNativeBackupExport = (contents: string): Promise<NativeBackupSaveResult> =>
   invoke<NativeBackupSaveResult>('study_backup_export_dialog', { input: { contents } });
+
+// ---- Bundled official content package (Rust `study_bundled.rs`) ----
+//
+// Read-only access to the one fixed official package resource shipped in
+// the desktop bundle. No path crosses the bridge in either direction: the
+// status command reports the fixed resource size and the read command
+// returns its full text for the existing parse/validate/preview/import
+// core. Outside the Tauri runtime both commands reject and callers treat
+// the bundled library as unavailable (browser-safe fallback).
+
+export interface NativeBundledOfficialPackageStatus {
+  available: boolean;
+  byte_length: number;
+}
+
+export const studyNativeBundledOfficialStatus = (): Promise<NativeBundledOfficialPackageStatus> =>
+  invoke<NativeBundledOfficialPackageStatus>('study_bundled_official_package_status');
+
+export const studyNativeBundledOfficialPackageText = (): Promise<string> =>
+  invoke<string>('study_bundled_official_package_read');
+
+export interface NativeBundledOfficialPackageId {
+  id: string;
+  manifest_id: string;
+}
+
+export const studyNativeBundledOfficialPackageId = (): Promise<NativeBundledOfficialPackageId> =>
+  invoke<NativeBundledOfficialPackageId>('study_bundled_official_package_id');

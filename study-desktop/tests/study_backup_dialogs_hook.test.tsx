@@ -99,7 +99,9 @@ describe('native backup dialog actions', () => {
       await hookValue.current?.importBackupFromFile();
     });
     expect(dialogStubs.replaceAll).toHaveBeenCalledTimes(1);
-    expect(hookValue.current?.statusMessage).toBe('Study backup imported from file.');
+    expect(hookValue.current?.statusMessage).toBe(
+      'Study backup restored: 5 documents, 5 units, 0 official documents, 0 attempts.',
+    );
   });
 
   it('invalid backup surfaces a failure without touching storage', async () => {
