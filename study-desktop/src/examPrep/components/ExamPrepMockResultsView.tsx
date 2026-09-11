@@ -68,7 +68,7 @@ export const ExamPrepMockResultsView = ({
           </p>
         ) : (
           <p className="mt-1 text-[11px] italic text-slate-500">
-            No official pass mark is configured for this provisional profile.
+            No official pass mark is configured for this mock exam.
           </p>
         )}
       </header>
@@ -96,8 +96,8 @@ export const ExamPrepMockResultsView = ({
                 <div className="mt-1 text-[11px] text-slate-500">
                   {score.percent !== null ? (
                     <span>
-                      {score.percent}% is a practice score for this provisional profile — no
-                      official pass mark exists yet.
+                      {score.percent}% is a self-assessed practice score — no
+                      official pass mark exists.
                     </span>
                   ) : null}
                 </div>

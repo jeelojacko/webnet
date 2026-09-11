@@ -3,7 +3,7 @@
 //
 // One route (/study/mock-exam) hosts the whole flow. While a current mock is
 // `in_progress` the focused answering UI takes over (the Exam Prep tab bar is
-// hidden by ExamPrepPage). Otherwise this view shows the provisional profile
+// hidden by ExamPrepPage). Otherwise this view shows the practice profile
 // landing screen and recent current-binding history (graded results, grading
 // in progress, abandoned).
 
@@ -108,11 +108,11 @@ export const ExamPrepMockExamView = ({
       <section className="rounded border border-amber-800/60 bg-amber-950/20 p-4">
         <div className="flex items-center gap-2">
           <ClipboardCheck className="text-amber-300" size={18} />
-          <h3 className="text-base font-semibold text-white">Provisional Mock Exam</h3>
+          <h3 className="text-base font-semibold text-white">Mock Exam</h3>
         </div>
         <p className="mt-2 max-w-3xl text-xs text-slate-300">
-          This simulator is based on the exam information currently available. The registrar has
-          not yet confirmed the final question format, resource rules, or pass mark.
+          A timed practice simulation over the frozen exam curriculum. Self-assessed —
+          no official pass mark is configured.
         </p>
 
         <div className="mt-3 grid gap-2 text-xs sm:grid-cols-2 lg:grid-cols-4">

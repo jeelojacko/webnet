@@ -7,7 +7,7 @@
 //  - five independent readiness dimensions: Learn X/133 studied, Recall
 //    introduced X/57 + due now, Recognition coverage X/317 + latest-result
 //    accuracy, Locate coverage X/452 + latest-result accuracy, and Lookup
-//    Drills exam-ready X/24 + attempted X/24 (no combined mastery score),
+//    Drills attempted/accurate/exam-ready X/24 (no combined mastery score),
 //  - Today's Activity derived from the current-hash immutable records on the
 //    local calendar date,
 //  - the all-studied Curriculum coverage note once every Learn unit is
@@ -34,12 +34,17 @@ import type {
   ExamPrepRecallProgress,
   ExamPrepUnitProgress,
 } from '../examPrepTypes';
+import type { ExamPrepMockSession } from '../mock/examPrepMockTypes';
+import {
+  selectLatestGradedMockSummary,
+} from '../mock/examPrepMockSelectors';
 
 export type ExamPrepHomeViewProps = {
   metrics: ExamPrepHomeMetrics;
   unitProgress: ExamPrepUnitProgress[];
   recallProgress: ExamPrepRecallProgress[];
   attempts: ExamPrepAttempt[];
+  mockSessions?: ExamPrepMockSession[];
   now: Date;
   newRecallCardsPerSession: number;
   maxRecallCardsPerSession: number;
@@ -73,6 +78,10 @@ const MEASURE_DEFINITIONS = [
   {
     label: 'Exam-ready drill',
     note: 'You scored 3/3 within the target time on two different practice dates.',
+  },
+  {
+    label: 'Accurate drill',
+    note: 'You scored 3/3 on at least one attempt, regardless of time.',
   },
 ] as const;
 
@@ -133,6 +142,7 @@ export const ExamPrepHomeView = ({
   unitProgress,
   recallProgress,
   attempts,
+  mockSessions = [],
   now,
   newRecallCardsPerSession,
   maxRecallCardsPerSession,
@@ -141,6 +151,7 @@ export const ExamPrepHomeView = ({
   const recommended = selectExamPrepRecommendedAction(unitProgress, recallProgress, attempts, now);
   const recommendedText = recommendedNowText(recommended);
   const today = buildExamPrepTodayActivity(unitProgress, attempts, now);
+  const latestGradedMock = selectLatestGradedMockSummary(mockSessions);
   const allStudied = metrics.studiedLearnUnits >= metrics.totalLearnUnits;
   const zeroToday =
     today.studiedUnits === 0 &&
@@ -287,8 +298,13 @@ export const ExamPrepHomeView = ({
             </span>
           </div>
           <div className="mt-1 text-[11px] text-slate-500">
-            {metrics.drill.attemptedDrills} / {metrics.drill.totalDrills} attempted
+            {metrics.drill.accurateDrills} accurate · {metrics.drill.attemptedDrills} /{' '}
+            {metrics.drill.totalDrills} attempted
           </div>
+          <p className="mt-1 text-[11px] italic text-slate-600">
+            Accurate = 3/3 on any attempt. Exam-ready = 3/3 within the target time on two
+            different practice dates.
+          </p>
           <button
             type="button"
             onClick={() => onNavigate('/study/drills')}
@@ -303,7 +319,7 @@ export const ExamPrepHomeView = ({
         <div className="flex flex-wrap items-center justify-between gap-2">
           <div>
             <div className="text-xs uppercase tracking-wide text-amber-300">
-              Provisional Mock Exam
+              Mock Exam
             </div>
             <p className="mt-1 text-sm text-slate-300">
               {EXAM_PREP_PROVISIONAL_MOCK_V1.durationMinutes} min ·{' '}
@@ -314,8 +330,26 @@ export const ExamPrepHomeView = ({
               questions
             </p>
             <p className="mt-0.5 text-[11px] text-slate-500">
-              Format awaiting registrar confirmation — not the official ANBLS exam format.
+              A timed practice simulation over the frozen exam curriculum. Self-assessed —
+              no official pass mark is configured.
             </p>
+            {latestGradedMock ? (
+              <p className="mt-1 text-[11px] text-slate-300">
+                Latest practice score: {latestGradedMock.points} /{' '}
+                {latestGradedMock.totalPoints}
+                {latestGradedMock.percent !== null ? (
+                  <span> · {latestGradedMock.percent}%</span>
+                ) : null}{' '}
+                <span className="font-mono text-slate-500">
+                  ({latestGradedMock.startedAt.slice(0, 10)})
+                </span>
+              </p>
+            ) : (
+              <p className="mt-1 text-[11px] text-slate-600">
+                No graded mock yet — your latest self-assessed practice score will appear
+                here.
+              </p>
+            )}
           </div>
           <button
             type="button"

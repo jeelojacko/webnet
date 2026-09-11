@@ -188,7 +188,7 @@ describe('Exam Prep mock results view', () => {
     expect(text).toContain('7 / 8');
     expect(text).toContain('7 / 10');
     expect(text).toContain('15 / 18');
-    expect(text).toContain('No official pass mark is configured for this provisional profile.');
+    expect(text).toContain('No official pass mark is configured for this mock exam.');
     expect(text).not.toContain('Passed');
     expect(text).not.toContain('Failed');
     expect(text).not.toContain('Exam grade');

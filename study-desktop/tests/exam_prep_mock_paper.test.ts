@@ -52,7 +52,7 @@ describe('Exam Prep provisional mock profile V1', () => {
   });
 
   it('is explicitly non-official and does not invent a pass mark', () => {
-    expect(EXAM_PREP_PROVISIONAL_MOCK_V1.assumptions.join(' ')).toContain('awaiting');
+    expect(EXAM_PREP_PROVISIONAL_MOCK_V1.assumptions.join(' ')).toContain('may change');
     expect(EXAM_PREP_PROVISIONAL_MOCK_V1.assumptions.join(' ')).toContain('No official pass mark');
   });
 });

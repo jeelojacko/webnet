@@ -5,6 +5,7 @@ import { createRoot, type Root } from 'react-dom/client';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import StudyDocumentPage from '../src/components/StudyDocumentPage';
+import { buildCompleteDocumentText } from '../src/studyOfficialContent';
 import { StudyLegalTextBlock } from '../src/components/StudyLegalTextBlock';
 import { parseLegalDisplayBlocks } from '../src/components/StudyLegalTextBlock.utils';
 import type { ImportedLegalComponent, StudyDataSnapshot } from '../src/studyTypes';
@@ -224,5 +225,133 @@ describe('study legal reader navigation', () => {
     await clickButtonContaining('FORM 1 Form topic');
     expect(document.body.textContent).toContain('Form body text.');
     expect(document.activeElement?.id).toBe('form:form-1-heading');
+  });
+
+  it('renders the complete document as structural clauses with the document title kicker', async () => {
+    await act(async () => {
+      root?.render(
+        <StudyDocumentPage
+          data={createReaderData()}
+          documentId="doc-reader"
+          onSaveDocument={vi.fn()}
+          onSaveUnit={vi.fn()}
+          onCompleteReading={vi.fn()}
+          onCreateUnitFromSelection={vi.fn()}
+          onGenerateMissingStudyContent={vi.fn()}
+          onAcknowledgeSourceReview={vi.fn()}
+          onSelectDocument={vi.fn()}
+          onNavigate={vi.fn()}
+          onPreviewUnit={vi.fn()}
+        />,
+      );
+    });
+
+    const complete = document.getElementById('complete-document');
+    expect(complete).toBeTruthy();
+    // Actual document title replaces the generic kicker.
+    expect(complete?.textContent).toContain('Reader Act');
+    expect(complete?.querySelector('.whitespace-pre-wrap')).toBeNull();
+    // Each visible component renders structurally with its label/heading.
+    expect(complete?.textContent).toContain('Application requirements');
+    expect(complete?.textContent).toContain('Schedule topic');
+    expect(complete?.textContent).toContain('Subsection body text.');
+    // No giant per-provision cards inside the continuous view.
+    expect(complete?.querySelectorAll('article').length ?? 0).toBe(0);
+  });
+
+  it('copies the exact buildCompleteDocumentText payload', async () => {
+    const data = createReaderData();
+    const written: string[] = [];
+    Object.defineProperty(window.navigator, 'clipboard', {
+      value: { writeText: vi.fn((value: string) => {
+        written.push(value);
+        return Promise.resolve();
+      }) },
+      configurable: true,
+    });
+    await act(async () => {
+      root?.render(
+        <StudyDocumentPage
+          data={data}
+          documentId="doc-reader"
+          onSaveDocument={vi.fn()}
+          onSaveUnit={vi.fn()}
+          onCompleteReading={vi.fn()}
+          onCreateUnitFromSelection={vi.fn()}
+          onGenerateMissingStudyContent={vi.fn()}
+          onAcknowledgeSourceReview={vi.fn()}
+          onSelectDocument={vi.fn()}
+          onNavigate={vi.fn()}
+          onPreviewUnit={vi.fn()}
+        />,
+      );
+    });
+
+    await clickButtonContaining('Copy Complete Text');
+    expect(written).toHaveLength(1);
+    expect(written[0]).toBe(buildCompleteDocumentText(data.legalComponents));
+  });
+
+  it('orders complete-document components deterministically regardless of input order', async () => {
+    const data = createReaderData();
+    const shuffled = { ...data, legalComponents: [...data.legalComponents].reverse() };
+    await act(async () => {
+      root?.render(
+        <StudyDocumentPage
+          data={shuffled}
+          documentId="doc-reader"
+          onSaveDocument={vi.fn()}
+          onSaveUnit={vi.fn()}
+          onCompleteReading={vi.fn()}
+          onCreateUnitFromSelection={vi.fn()}
+          onGenerateMissingStudyContent={vi.fn()}
+          onAcknowledgeSourceReview={vi.fn()}
+          onSelectDocument={vi.fn()}
+          onNavigate={vi.fn()}
+          onPreviewUnit={vi.fn()}
+        />,
+      );
+    });
+
+    const headings = Array.from(document.getElementById('complete-document')?.querySelectorAll('h4') ?? []).map(
+      (entry) => entry.textContent,
+    );
+    expect(headings.length).toBeGreaterThanOrEqual(3);
+    // Canonical order: section before schedule before form.
+    expect(headings[0]).toContain('2');
+    expect(headings[1]).toContain('SCHEDULE A');
+    expect(headings[2]).toContain('FORM 1');
+  });
+
+  it('highlights query matches inside the structural complete view', async () => {
+    await act(async () => {
+      root?.render(
+        <StudyDocumentPage
+          data={createReaderData()}
+          documentId="doc-reader"
+          onSaveDocument={vi.fn()}
+          onSaveUnit={vi.fn()}
+          onCompleteReading={vi.fn()}
+          onCreateUnitFromSelection={vi.fn()}
+          onGenerateMissingStudyContent={vi.fn()}
+          onAcknowledgeSourceReview={vi.fn()}
+          onSelectDocument={vi.fn()}
+          onNavigate={vi.fn()}
+          onPreviewUnit={vi.fn()}
+        />,
+      );
+    });
+
+    const input = document.querySelector('input[placeholder="Search official text"]') as HTMLInputElement | null;
+    expect(input).toBeTruthy();
+    await act(async () => {
+      const setter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, 'value')?.set;
+      setter?.call(input, 'substantive');
+      input?.dispatchEvent(new Event('input', { bubbles: true }));
+    });
+
+    const marks = Array.from(document.getElementById('complete-document')?.querySelectorAll('mark') ?? []);
+    expect(marks.length).toBeGreaterThan(0);
+    expect(marks.some((mark) => mark.textContent?.toLowerCase() === 'substantive')).toBe(true);
   });
 });

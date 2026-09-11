@@ -82,14 +82,15 @@ export const examPrepMockProfilePointTotal = (profile: ExamPrepMockProfile): num
   profile.questionCounts.drill * profile.pointsPerQuestion.drill;
 
 /**
- * Provisional Statute Law mock profile V1. Question format, resource rules and
- * pass mark are NOT confirmed by the registrar; `passMarkPercent` is null on
- * purpose and every UI that uses this profile labels it provisional.
+ * Statute Law mock profile V1. Question format, resource rules and pass
+ * mark are not officially confirmed; `passMarkPercent` is null on purpose.
+ * The profile id and `status` field stay stable so persisted sessions keep
+ * resolving; user-facing copy never uses provisional wording.
  */
 export const EXAM_PREP_PROVISIONAL_MOCK_V1: ExamPrepMockProfile = {
   id: 'nb-statute-provisional-v1',
   version: 1,
-  title: 'Provisional Mock Exam',
+  title: 'Mock Exam',
   description:
     'A timed, open-book Statute Law practice simulation over the frozen exam curriculum.',
   status: 'provisional',
@@ -106,7 +107,7 @@ export const EXAM_PREP_PROVISIONAL_MOCK_V1: ExamPrepMockProfile = {
     drill: { direct: 2, routing: 2, cross_document: 2 },
   },
   assumptions: [
-    'Exam-format details are awaiting confirmation from the registrar.',
+    'Exam-format details may change before the official exam.',
     'Open-book format is assumed for this practice profile.',
     'A built-in browser statute library is assumed available.',
     'No official pass mark is configured.',

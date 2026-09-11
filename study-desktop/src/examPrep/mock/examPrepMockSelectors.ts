@@ -9,6 +9,7 @@
 // `selectDuplicateActiveMockSessions`.
 
 import { isCurrentExamPrepBinding } from '../examPrepManifest';
+import { buildMockScore } from './examPrepMockResults';
 import type { ExamPrepMockSession } from './examPrepMockTypes';
 
 export const selectCurrentMockSessions = (
@@ -64,6 +65,34 @@ export const selectGradedMockSessions = (
   selectCurrentMockSessions(sessions)
     .filter((session) => session.status === 'graded')
     .sort(byStartedAtDesc);
+
+export type ExamPrepLatestGradedMockSummary = {
+  sessionId: string;
+  startedAt: string;
+  points: number;
+  totalPoints: number;
+  percent: number | null;
+};
+
+/**
+ * Latest current-binding graded mock for the Home dashboard (newest by
+ * startedAt). Null when nothing is graded yet — callers must render a
+ * neutral "no graded mock" state, never a fake 0 / 0 score.
+ */
+export const selectLatestGradedMockSummary = (
+  sessions: ExamPrepMockSession[],
+): ExamPrepLatestGradedMockSummary | null => {
+  const latest = selectGradedMockSessions(sessions)[0];
+  if (!latest) return null;
+  const score = buildMockScore(latest);
+  return {
+    sessionId: latest.id,
+    startedAt: latest.startedAt,
+    points: score.points,
+    totalPoints: score.totalPoints,
+    percent: score.percent,
+  };
+};
 
 export const selectAbandonedMockSessions = (
   sessions: ExamPrepMockSession[],

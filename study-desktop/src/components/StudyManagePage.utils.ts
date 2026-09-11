@@ -87,6 +87,16 @@ export const buildCurrentOfficialPackageDiagnostics = (
 export type PreviewDifference = 'matches-current' | 'differs-from-current' | 'first-import';
 
 /**
+ * Compact alias for a (potentially very long) corpus fingerprint: leading
+ * and trailing edges joined with an ellipsis. Short values pass through
+ * unchanged so the alias stays exact for small corpora.
+ */
+export const compactCorpusFingerprint = (fingerprint: string, edge = 12): string => {
+  if (fingerprint.length <= edge * 2 + 1) return fingerprint;
+  return `${fingerprint.slice(0, edge)}\u2026${fingerprint.slice(-edge)}`;
+};
+
+/**
  * Newer/different indication for a validated pasted-package preview against
  * the current import. Display-only: callers must not auto-migrate or
  * overwrite on a `differs-from-current` result.

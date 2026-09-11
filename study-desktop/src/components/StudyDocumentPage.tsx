@@ -136,7 +136,10 @@ const StudyDocumentPage = ({
   const relatedRegulations = legalDocument?.documentType === 'act' ? data.legalDocuments.filter((entry) => entry.parentActId === documentId) : [];
   const parentAct = legalDocument?.parentActId ? data.documents.find((entry) => entry.id === legalDocument.parentActId) : undefined;
   const normalizedQuery = normalizeSearch(query);
-  const readerComponents = useMemo(() => components.filter(shouldShowLegalComponentInReader), [components]);
+  const readerComponents = useMemo(
+    () => components.filter(shouldShowLegalComponentInReader).slice().sort(compareImportedLegalComponents),
+    [components],
+  );
 
   const navigateToSourceKey = (sourceKey: string, parentSourceKey = sourceKey) => {
     setExpanded((current) => ({ ...current, [parentSourceKey]: true }));
@@ -355,13 +358,42 @@ const StudyDocumentPage = ({
                   id="complete-document"
                   className={`rounded border bg-slate-900 p-4 ${focusedSourceKey === 'complete-document' ? 'border-amber-400 ring-2 ring-amber-400/40' : 'border-emerald-900'}`}
                 >
-                  <div className="text-xs uppercase tracking-wide text-emerald-300">Official source text</div>
+                  <div className="text-xs uppercase tracking-wide text-emerald-300">{legalDocument?.officialTitle ?? document.title}</div>
                   <h3 id="complete-document-heading" tabIndex={-1} className="font-semibold text-white">
                     Complete document
                   </h3>
                   <p className="text-xs text-slate-500">Combined reader text, with reference-only form stubs omitted.</p>
-                  <div className="mt-3 max-h-[60vh] overflow-auto whitespace-pre-wrap text-sm leading-6 text-slate-200">
-                    {highlight(completeDocumentText, normalizedQuery)}
+                  <div className="mt-3 max-h-[60vh] space-y-4 overflow-auto pr-1 text-sm leading-6 text-slate-200">
+                    {readerComponents.map((component) => (
+                      <section key={component.sourceKey}>
+                        <h4 className="font-semibold text-slate-100">
+                          {highlight(component.label, normalizedQuery)}{' '}
+                          {component.heading ? highlight(component.heading, normalizedQuery) : null}
+                        </h4>
+                        <div className="mt-1">
+                          <StudyLegalTextBlock
+                            text={component.text}
+                            label={component.label}
+                            heading={component.heading}
+                            query={normalizedQuery}
+                            highlight={highlight}
+                          />
+                        </div>
+                        {component.subsections?.map((subsection) => (
+                          <div key={subsection.sourceKey} className="mt-2">
+                            <div className="font-semibold text-slate-200">{highlight(subsection.label, normalizedQuery)}</div>
+                            <div className="mt-1">
+                              <StudyLegalTextBlock
+                                text={subsection.text}
+                                label={subsection.label}
+                                query={normalizedQuery}
+                                highlight={highlight}
+                              />
+                            </div>
+                          </div>
+                        ))}
+                      </section>
+                    ))}
                   </div>
                   <button
                     className="mt-3 rounded bg-slate-800 px-2 py-1 text-xs text-slate-300"

@@ -157,7 +157,7 @@ export const ExamPrepPage = ({
               Study the open-book Statute Law curriculum: browse and mark the 133 A-D + Navigation
               units as studied, review 57 FSRS-scheduled recall cards, recognise which law applies
               from frozen cues, locate the correct statute or controlling provision, practise 24
-              lookup drills, and run provisional timed mock exams.
+              lookup drills, and run timed practice mock exams.
             </p>
           </div>
           <div className="flex flex-wrap gap-2 border-b border-slate-800 pb-2">
@@ -190,6 +190,7 @@ export const ExamPrepPage = ({
           unitProgress={data.examPrepUnitProgress}
           recallProgress={data.examPrepRecallProgress}
           attempts={data.examPrepAttempts}
+          mockSessions={data.examPrepMockSessions}
           now={now}
           newRecallCardsPerSession={settings.newRecallCardsPerSession}
           maxRecallCardsPerSession={settings.maxRecallCardsPerSession}

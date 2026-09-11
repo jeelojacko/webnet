@@ -1,5 +1,6 @@
 import type React from 'react';
 import { ArrowLeft, BookOpen, ChevronLeft, ChevronRight, FileText, GraduationCap, Home, Library, PencilLine, RotateCcw, Settings } from 'lucide-react';
+import { resolveStudyStoragePlatform } from '../studyStoragePlatform';
 
 type StudyLayoutProps = {
   activePath: string;
@@ -72,14 +73,16 @@ const StudyLayout = ({ activePath, sidebarCollapsed, onSidebarCollapsedChange, o
           Return
         </button>
       ) : null}
-      <button
-        className="rounded border border-slate-700 bg-slate-800 px-3 py-1.5 text-xs uppercase tracking-wide text-slate-300 hover:bg-slate-700"
-        onClick={() => {
-          window.location.href = '/';
-        }}
-      >
-        Back To Adjustment
-      </button>
+      {resolveStudyStoragePlatform() !== 'tauri' ? (
+        <button
+          className="rounded border border-slate-700 bg-slate-800 px-3 py-1.5 text-xs uppercase tracking-wide text-slate-300 hover:bg-slate-700"
+          onClick={() => {
+            window.location.href = '/';
+          }}
+        >
+          Back To Adjustment
+        </button>
+      ) : null}
     </header>
     <div className="flex min-h-0 flex-1">
       <nav

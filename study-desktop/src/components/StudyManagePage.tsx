@@ -5,6 +5,7 @@ import type { OfficialContentPreview } from '../studyOfficialContent';
 import type { StudyDataSnapshot } from '../studyTypes';
 import {
   buildCurrentOfficialPackageDiagnostics,
+  compactCorpusFingerprint,
   describePreviewDifference,
 } from './StudyManagePage.utils';
 
@@ -145,7 +146,34 @@ const StudyManagePage = ({
           <div>Package ID: {currentPackage.packageIds.join(', ') || '—'}</div>
           <div>Manifest: {currentPackage.manifestIds.join(', ') || '—'}</div>
           <div>Package date: {currentPackage.packageCreatedAt ?? '—'}</div>
-          <div className="break-all">Package hash: {currentPackage.packageHash || '—'}</div>
+          <div>
+            Corpus fingerprint:{' '}
+            {currentPackage.packageHash ? (
+              <span className="font-mono text-xs" title="Compact alias — open for the full value">
+                {compactCorpusFingerprint(currentPackage.packageHash)}
+              </span>
+            ) : (
+              '—'
+            )}
+          </div>
+          {currentPackage.packageHash ? (
+            <details>
+              <summary className="cursor-pointer text-slate-400 hover:text-slate-200">
+                Show full fingerprint
+              </summary>
+              <div className="mt-1 break-all rounded bg-slate-950 p-2 font-mono text-xs text-slate-300">
+                {currentPackage.packageHash}
+              </div>
+              <button
+                type="button"
+                onClick={() => navigator.clipboard?.writeText(currentPackage.packageHash)}
+                aria-label="Copy full corpus fingerprint"
+                className="mt-1 rounded border border-slate-700 px-2 py-1 text-xs text-slate-300 hover:bg-slate-800"
+              >
+                Copy fingerprint
+              </button>
+            </details>
+          ) : null}
           <div>Imported: {currentPackage.importedAt ?? '—'}</div>
           <div>Documents: {currentPackage.documentCount}</div>
           <div>Components: {currentPackage.componentCount ?? 'unknown (legacy import)'}</div>
@@ -157,13 +185,18 @@ const StudyManagePage = ({
             </div>
           ) : null}
           {currentPackage.documents.length > 0 ? (
-            <div className="max-h-44 overflow-auto rounded bg-slate-950 p-3 font-mono text-xs">
-              {currentPackage.documents.map((document) => (
-                <div key={document.id}>
-                  {document.id} · {document.contentHash}
-                </div>
-              ))}
-            </div>
+            <details>
+              <summary className="cursor-pointer text-slate-400 hover:text-slate-200">
+                Per-document hashes ({currentPackage.documents.length})
+              </summary>
+              <div className="mt-1 max-h-44 overflow-auto rounded bg-slate-950 p-3 font-mono text-xs">
+                {currentPackage.documents.map((document) => (
+                  <div key={document.id} className="break-all">
+                    {document.id} · {document.contentHash}
+                  </div>
+                ))}
+              </div>
+            </details>
           ) : null}
           {previewDifference === 'differs-from-current' ? (
             <div className="rounded border border-amber-800 bg-amber-950/40 px-3 py-2 text-amber-200">

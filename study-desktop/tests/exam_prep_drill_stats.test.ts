@@ -140,7 +140,40 @@ describe('Exam Prep drill metrics and attempt builder', () => {
       perfect({ id: 'archived', taskId: 'drill:DRILL-03', unitId: 'DRILL-03', binding: archivedBinding }),
     ];
     const metrics = buildDrillMetrics(attempts);
-    expect(metrics).toEqual({ attemptedDrills: 2, examReadyDrills: 1 });
+    expect(metrics).toEqual({ attemptedDrills: 2, accurateDrills: 1, examReadyDrills: 1 });
+  });
+
+  it('buildDrillMetrics counts any-3/3 drills as accurate with unique ids', () => {
+    // Slow 3/3 (never within target): accurate but never exam-ready.
+    const slowPerfect = perfect({
+      id: 'slow-1',
+      taskId: 'drill:DRILL-01',
+      unitId: 'DRILL-01',
+      elapsedSeconds: 500,
+      targetSeconds: 90,
+    });
+    // Regressed drill: an earlier 3/3 keeps it accurate in the aggregate even
+    // though the latest imperfect attempt leaves its status developing.
+    const regressed = [
+      perfect({ id: 'reg-old', taskId: 'drill:DRILL-02', unitId: 'DRILL-02' }),
+      perfect({
+        id: 'reg-latest',
+        taskId: 'drill:DRILL-02',
+        unitId: 'DRILL-02',
+        lawIdentified: true,
+        provisionLocated: false,
+        substantiveAnswerComplete: false,
+        completedAt: '2026-09-07T12:00:00.000Z',
+      }),
+    ];
+    const archivedPerfect = perfect({
+      id: 'archived',
+      taskId: 'drill:DRILL-03',
+      unitId: 'DRILL-03',
+      binding: archivedBinding,
+    });
+    const metrics = buildDrillMetrics([slowPerfect, ...regressed, archivedPerfect]);
+    expect(metrics).toEqual({ attemptedDrills: 2, accurateDrills: 2, examReadyDrills: 0 });
   });
 
   it('buildDrillAttempt computes score from the three self-assessment flags', () => {

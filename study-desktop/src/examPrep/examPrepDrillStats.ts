@@ -47,9 +47,13 @@ export const buildExamPrepDrillStats = (
 };
 
 export const buildDrillMetrics = (attempts: ExamPrepAttempt[]) => {
-  const taskIds = new Set(selectDrillAttempts(attempts).map((attempt) => attempt.taskId));
+  const current = selectDrillAttempts(attempts);
+  const taskIds = new Set(current.map((attempt) => attempt.taskId));
   return {
     attemptedDrills: taskIds.size,
+    accurateDrills: [...taskIds].filter((taskId) =>
+      current.some((attempt) => attempt.taskId === taskId && attempt.score === 3),
+    ).length,
     examReadyDrills: [...taskIds].filter(
       (taskId) => buildExamPrepDrillStats(attempts, taskId).status === 'exam_ready',
     ).length,

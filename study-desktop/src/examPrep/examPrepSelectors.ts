@@ -170,6 +170,7 @@ export type ExamPrepHomeMetrics = {
   locate: ExamPrepLocateMetrics;
   drill: {
     attemptedDrills: number;
+    accurateDrills: number;
     examReadyDrills: number;
     totalDrills: number;
   };
@@ -193,6 +194,7 @@ export const buildExamPrepHomeMetrics = (
     locate: buildLocateMetrics(attempts),
     drill: {
       attemptedDrills: drill.attemptedDrills,
+      accurateDrills: drill.accurateDrills,
       examReadyDrills: drill.examReadyDrills,
       totalDrills: EXAM_PREP_TOTAL_LOOKUP_DRILLS,
     },

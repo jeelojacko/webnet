@@ -32,6 +32,7 @@ import {
   selectCurrentMockSessions,
   selectDuplicateActiveMockSessions,
   selectGradedMockSessions,
+  selectLatestGradedMockSummary,
   selectRecentMockResults,
   selectSubmittedMockSessions,
 } from '../src/examPrep/mock/examPrepMockSelectors';
@@ -270,6 +271,37 @@ describe('mock selectors (current-binding filtering)', () => {
   it('selectRecentMockResults respects the display limit', () => {
     const sessions = [makeGradedMockSession(), makeSubmittedMockSession()];
     expect(selectRecentMockResults(sessions, 1)).toHaveLength(1);
+  });
+
+  it('selectLatestGradedMockSummary returns the newest graded score, never a fake zero', () => {
+    expect(selectLatestGradedMockSummary([])).toBeNull();
+    expect(selectLatestGradedMockSummary([makeSubmittedMockSession()])).toBeNull();
+    expect(selectLatestGradedMockSummary([makeMockSession()])).toBeNull();
+    const older = { ...makeGradedMockSession(), startedAt: '2026-09-08T10:00:00.000Z' };
+    const newer = {
+      ...makeGradedMockSession(),
+      id: `${older.id}-newer`,
+      startedAt: '2026-09-09T10:00:00.000Z',
+    };
+    expect(selectLatestGradedMockSummary([older, newer])).toEqual({
+      sessionId: newer.id,
+      startedAt: newer.startedAt,
+      points: 34,
+      totalPoints: 42,
+      percent: 81,
+    });
+  });
+
+  it('selectLatestGradedMockSummary excludes old-hash graded sessions', () => {
+    const archived = {
+      ...makeGradedMockSession(),
+      id: 'archived-graded',
+      startedAt: '2026-09-10T10:00:00.000Z',
+      curriculumContentHash: EXAM_PREP_TEST_ARCHIVED_HASH,
+    };
+    expect(selectLatestGradedMockSummary([archived])).toBeNull();
+    const current = makeGradedMockSession();
+    expect(selectLatestGradedMockSummary([archived, current])?.sessionId).toBe(current.id);
   });
 });
 

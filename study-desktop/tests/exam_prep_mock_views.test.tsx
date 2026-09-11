@@ -15,7 +15,7 @@ import { decodeExamPrepView } from '../src/examPrep/examPrepRoutes';
 import { createSeedStudyData } from '../src/studySeed';
 import type { StudyDataSnapshot } from '../src/studyTypes';
 import { upsertById } from '../src/examPrep/examPrepStateUpdates';
-import { makeMockSession } from './exam_prep_mock_support';
+import { makeGradedMockSession, makeMockSession } from './exam_prep_mock_support';
 import { resolveExamPrepMockQuestionContent } from '../src/examPrep/mock/examPrepMockQuestionContent';
 import { EXAM_PREP_DOCUMENT_TITLES } from '../src/examPrep/examPrepDocTitles';
 import { examPrepProvisionLabel } from '../src/examPrep/examPrepFormat';
@@ -97,17 +97,18 @@ describe('Exam Prep mock page (jsdom)', () => {
     });
   };
 
-  it('shows the provisional landing screen with profile numbers and honest labelling', async () => {
+  it('shows the mock landing screen with profile numbers and honest labelling', async () => {
     await renderPage(dataRef.current);
     const text = bodyText();
-    expect(text).toContain('Provisional Mock Exam');
+    expect(text).toContain('Mock Exam');
+    expect(text).not.toContain('Provisional');
     expect(text).toContain('150 minutes');
     expect(text).toContain('Pass mark');
     expect(text).toContain('Not configured');
     expect(text).toContain('Open-book');
     expect(text).toContain('Built-in statute library enabled');
     expect(text).toContain('Start New Mock');
-    expect(text).toContain('registrar has not yet confirmed');
+    expect(text).toContain('no official pass mark is configured');
     expect(text).toContain('No mock exams yet.');
     expect(text).toContain('Self-assessed points');
     // resource rows spell the configured mix without claiming an official format
@@ -239,7 +240,7 @@ describe('Exam Prep Home — Mock Exam step 6 and provisional CTA', () => {
     vi.restoreAllMocks();
   });
 
-  it('shows Mock Exam as step 6 and a clearly provisional CTA', async () => {
+  it('shows Mock Exam as step 6 and a practice CTA', async () => {
     await act(async () => {
       root?.render(
         <ExamPrepPage
@@ -256,10 +257,33 @@ describe('Exam Prep Home — Mock Exam step 6 and provisional CTA', () => {
     const text = document.body.textContent ?? '';
     expect(text).toContain('6. Mock Exam');
     expect(text).toContain('Combine the full workflow under one timed exam simulation.');
-    expect(text).toContain('Provisional Mock Exam');
+    expect(text).toContain('Mock Exam');
     expect(text).toContain('150 min · 30 questions');
-    expect(text).toContain('Format awaiting registrar confirmation');
+    expect(text).toContain('no official pass mark is configured');
+    expect(text).toContain('No graded mock yet');
     expect(text).toContain('Open Mock Exam');
+    expect(text).not.toContain('Provisional');
+  });
+
+  it('shows the latest graded practice score on Home once a mock is graded', async () => {
+    const graded = makeGradedMockSession();
+    await act(async () => {
+      root?.render(
+        <ExamPrepPage
+          view="home"
+          data={{ ...seed, examPrepMockSessions: [graded] }}
+          onNavigate={vi.fn()}
+          onOpenProvision={vi.fn()}
+          onToggleUnitStudied={vi.fn(async () => undefined)}
+          onRateRecallTask={vi.fn(async () => undefined)}
+          onSaveExamPrepAttempt={vi.fn(async () => undefined)}
+        />,
+      );
+    });
+    const text = document.body.textContent ?? '';
+    expect(text).toContain('Latest practice score');
+    expect(text).toContain('34 / 42');
+    expect(text).not.toContain('No graded mock yet');
   });
 });
 

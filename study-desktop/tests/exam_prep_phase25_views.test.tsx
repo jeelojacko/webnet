@@ -262,6 +262,7 @@ describe('Exam Prep Phase 2.5 views', () => {
       expect(text).toContain('75%'); // Locate latest accuracy
       expect(text).toContain('20 / 452 targets attempted'); // Locate coverage
       expect(text).toContain('3 / 24 exam-ready'); // drill readiness
+      expect(text).toContain('5 accurate'); // any-3/3 drills (incl. exam-ready)
       expect(text).toContain('7 / 24 attempted'); // drill attempted
       // five independent dimensions only — never a combined mastery score
       expect(text).not.toContain('Mastery');
