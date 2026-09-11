@@ -138,10 +138,19 @@ export const createTauriSourceWindowBridge = (
   };
 };
 
+let cachedSourceTauriBridge: SourceWindowBridge | null = null;
+let cachedSourceTauriDeps: SourceWindowTauriDeps | Promise<SourceWindowTauriDeps> | undefined;
+
 /** Platform-neutral entry: browser keeps window.open, Tauri goes native. */
 export const resolveSourceWindowBridge = (
   tauriDeps?: SourceWindowTauriDeps | Promise<SourceWindowTauriDeps>,
-): SourceWindowBridge =>
-  resolveStudyStoragePlatform() === 'tauri'
-    ? createTauriSourceWindowBridge(tauriDeps ?? defaultTauriDeps())
-    : createBrowserBridge();
+): SourceWindowBridge => {
+  if (resolveStudyStoragePlatform() !== 'tauri') return createBrowserBridge();
+  const deps = tauriDeps ?? defaultTauriDeps();
+  if (cachedSourceTauriBridge && cachedSourceTauriDeps === deps) {
+    return cachedSourceTauriBridge;
+  }
+  cachedSourceTauriDeps = deps;
+  cachedSourceTauriBridge = createTauriSourceWindowBridge(deps);
+  return cachedSourceTauriBridge;
+};

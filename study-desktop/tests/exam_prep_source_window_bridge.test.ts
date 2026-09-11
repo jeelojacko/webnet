@@ -207,4 +207,20 @@ describe('Tauri source window bridge', () => {
     }
     expect(resolveSourceWindowBridge().platform).toBe('browser');
   });
+
+  it('reuses resolved Tauri bridge state across caller lookups', async () => {
+    (window as unknown as Record<string, unknown>).__TAURI_INTERNALS__ = {};
+    try {
+      const { deps, state } = createMockDeps();
+      const first = resolveSourceWindowBridge(deps);
+      const second = resolveSourceWindowBridge(deps);
+      expect(second).toBe(first);
+      await first.openProvision('doc-registry-act', 'section:34');
+      await second.openProvision('doc-registry-act', 'section:34');
+      expect(state.created).toHaveLength(1);
+      expect(state.focusCalls).toEqual([SOURCE_READER_WINDOW_LABEL]);
+    } finally {
+      delete (window as unknown as Record<string, unknown>).__TAURI_INTERNALS__;
+    }
+  });
 });
