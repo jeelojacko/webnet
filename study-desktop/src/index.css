@@ -1,0 +1,3 @@
+/* Standalone Study styles: single source of truth stays in the host
+   src/index.css (tailwind directives + theme variables). No duplication. */
+@import "../../src/index.css";

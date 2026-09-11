@@ -1,6 +1,7 @@
 import { existsSync, mkdirSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
 import { basename, join } from 'node:path';
-import type { NbLawContentPackage, NbLawDocumentComponent } from '../src/study/content/nbLawTypes';
+import { fileURLToPath } from 'node:url';
+import type { NbLawContentPackage, NbLawDocumentComponent } from '../study-desktop/src/content/nbLawTypes';
 import type {
   AiAuthoringRun,
   AiStoredUnitProposal,
@@ -10,24 +11,24 @@ import type {
   AiStudyMapResult,
   AiStudyUnitProposal,
   AiUnitAuthoringJob,
-} from '../src/study/ai/studyAiTypes';
-import type { ImportedLegalDocument } from '../src/study/studyTypes';
-import { componentToImported } from '../src/study/ai/studyAiUnitSourceComponents';
+} from '../study-desktop/src/ai/studyAiTypes';
+import type { ImportedLegalDocument } from '../study-desktop/src/studyTypes';
+import { componentToImported } from '../study-desktop/src/ai/studyAiUnitSourceComponents';
 import {
   generateReferenceAnswer,
   generateStudyQuestion,
   generateStudyTitle,
-} from '../src/study/studyDraftGeneration';
-import { generateStudyRubric } from '../src/study/studyRubricGeneration';
+} from '../study-desktop/src/studyDraftGeneration';
+import { generateStudyRubric } from '../study-desktop/src/studyRubricGeneration';
 import {
   mapResultToProposal,
   reconcileAiStudyMapProposals,
   validateAiStudyMapJob,
   validateAiStudyMapResult,
   validateAiStudyUnitProposal,
-} from '../src/study/ai/studyAiValidation';
-import { STUDY_MAP_V3_RESULT_SCHEMA, canonicalJson } from '../src/study/ai/studyAiResultContract';
-import { extractDefinedTerms } from '../src/study/ai/studyAiDefinitions';
+} from '../study-desktop/src/ai/studyAiValidation';
+import { STUDY_MAP_V3_RESULT_SCHEMA, canonicalJson } from '../study-desktop/src/ai/studyAiResultContract';
+import { extractDefinedTerms } from '../study-desktop/src/ai/studyAiDefinitions';
 import {
   cleanAiSourceText,
   classifyRepealOnly,
@@ -35,14 +36,14 @@ import {
   isConsequentialAmendmentText,
   isRepealOnlyText,
   sourceStatusFromComponent,
-} from '../src/study/ai/studyAiComponentText';
+} from '../study-desktop/src/ai/studyAiComponentText';
 export { classifyRepealOnly };
-export type { RepealOnlyClassification } from '../src/study/ai/studyAiComponentText';
+export type { RepealOnlyClassification } from '../study-desktop/src/ai/studyAiComponentText';
 import {
   buildUnitAuthoringJob,
   hashText,
   writeUnitAuthoringRun,
-} from '../src/study/ai/studyAiUnitJobPrep';
+} from '../study-desktop/src/ai/studyAiUnitJobPrep';
 import { authoringInputFingerprint } from './studyAiFingerprint';
 import {
   DEFAULT_FULL_CORPUS_BATCH_POLICY,
@@ -62,9 +63,10 @@ import {
   verifyFullCorpusPreparation,
 } from './studyAiFullCorpusMap';
 
-const DEFAULT_PACKAGE = 'study-content/packages/nb-sit-statute-corpus.content-package.json';
-const RUNS_DIR = 'study-content/ai/runs';
-const SPEC_DIR = 'study-content/ai/specs';
+const REPO_ROOT = join(fileURLToPath(new URL('.', import.meta.url)), '..');
+const DEFAULT_PACKAGE = join(REPO_ROOT, 'study-content', 'packages', 'nb-sit-statute-corpus.content-package.json');
+const RUNS_DIR = join(REPO_ROOT, 'study-content', 'ai', 'runs');
+const SPEC_DIR = join(REPO_ROOT, 'study-content', 'ai', 'specs');
 const MAP_PROMPT_SPEC_VERSION = 'study-map-v3';
 const UNIT_PROMPT_SPEC_VERSION = 'unit-authoring-v4';
 const PHASE_4B13_UNIT_PROMPT_SPEC_VERSION = 'unit-authoring-v3';

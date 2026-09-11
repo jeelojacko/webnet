@@ -111,11 +111,11 @@ export const EVIDENCE_NAME_EXCEPTIONS = [
   'tests/phase5_benchmark_networks.test.ts',
   'tests/phase6_sparse_large_benchmark.test.ts',
   'tests/phase7b7_safety_benchmark.test.ts',
-  'tests/study/study_ai_unit_calibration.test.ts',
-  'tests/study/study_ai_unit_calibration_audit.test.ts',
-  'tests/study/study_ai_unit_calibration_compare.test.ts',
-  'tests/study/study_ai_unit_calibration_v5.test.ts',
-  'tests/study/study_ai_unit_validation_calibration.test.ts',
+  'study-desktop/tests/study_ai_unit_calibration.test.ts',
+  'study-desktop/tests/study_ai_unit_calibration_audit.test.ts',
+  'study-desktop/tests/study_ai_unit_calibration_compare.test.ts',
+  'study-desktop/tests/study_ai_unit_calibration_v5.test.ts',
+  'study-desktop/tests/study_ai_unit_validation_calibration.test.ts',
 ] as const;
 
 /**

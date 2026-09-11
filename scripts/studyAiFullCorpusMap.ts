@@ -1,5 +1,5 @@
 import { createHash } from 'node:crypto';
-import type { NbLawContentPackage, NbLawDocumentComponent } from '../src/study/content/nbLawTypes';
+import type { NbLawContentPackage, NbLawDocumentComponent } from '../study-desktop/src/content/nbLawTypes';
 import type {
   AiConfidence,
   AiStudyDisposition,
@@ -7,7 +7,7 @@ import type {
   AiStudyMapProposal,
   AiStudyMapResult,
   AiValidationIssue,
-} from '../src/study/ai/studyAiTypes';
+} from '../study-desktop/src/ai/studyAiTypes';
 
 export type MapBatchPolicy = {
   maxJobsPerBatch: number;

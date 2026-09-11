@@ -5,7 +5,8 @@ const palette = (name, shades) =>
   Object.fromEntries(shades.map((shade) => [shade, withOpacity(`--theme-${name}-${shade}`)]));
 
 export default {
-  content: ['./index.html', './src/**/*.{js,ts,jsx,tsx}'],
+  // Study source of truth lives in study-desktop/src (transitional shim imports it).
+  content: ['./index.html', './src/**/*.{js,ts,jsx,tsx}', './study-desktop/src/**/*.{js,ts,jsx,tsx}'],
   theme: {
     extend: {
       colors: {

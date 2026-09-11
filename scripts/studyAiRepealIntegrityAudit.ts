@@ -43,7 +43,7 @@ import {
   classifyRepealOnly,
 } from './studyAiAuthoring';
 import { authoringInputFingerprint } from './studyAiFingerprint';
-import { canonicalJson } from '../src/study/ai/studyAiResultContract';
+import { canonicalJson } from '../study-desktop/src/ai/studyAiResultContract';
 
 const RUNS_DIR = 'study-content/ai/runs';
 const DEFAULT_RUN = 'ai-map-2026-08-29T12-23-57-891Z-local-qwen-full-20260829-181342';

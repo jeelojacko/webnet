@@ -188,7 +188,7 @@ Additional blocking Study Map grounding errors include:
 - `FOCUS_EVIDENCE_NOT_IN_SOURCE` when focus evidence is not present in the operative authoring source for that focus source key.
 - `FOCUS_CHILD_LABEL_NOT_IN_SOURCE` when a selected child label is not available under the focus source.
 - `FOCUS_CHILD_LABEL_NOT_USABLE` when a selected child is repeal-only.
-- `DEFINED_TERM_NOT_IN_FOCUS_SOURCE` when a supplied defined term is not defined in the focus source. Defined-term recognition is one canonical module (`src/study/ai/studyAiDefinitions.ts`) shared by extraction and this validation, so both recognize the same `means`/`includes` verbs and `includes`-style terms never round-trip as a spurious failure.
+- `DEFINED_TERM_NOT_IN_FOCUS_SOURCE` when a supplied defined term is not defined in the focus source. Defined-term recognition is one canonical module (`study-desktop/src/ai/studyAiDefinitions.ts`) shared by extraction and this validation, so both recognize the same `means`/`includes` verbs and `includes`-style terms never round-trip as a spurious failure.
 - `GROUP_TOPIC_NOT_GROUNDED` when high-risk topic leakage such as priority, appeal, delegation, or transitional concepts is grounded only in non-authoring context.
 
 Focus-selection grounding is narrowed by child labels **only when the authoritative `sourceFocusOptions` entry provides non-empty `childLabels`**; then `evidenceText` must fall inside the text of the selected children. When the authoritative entry's child-label list is empty (for example a parent lead-in with enumerated clauses the parser did not promote to structural child labels), model-supplied ad-hoc `childLabels` do **not** narrow grounding and evidence is checked against the complete authoritative source text. In both modes every model-supplied child label must still be an authoritative label (`FOCUS_CHILD_LABEL_NOT_IN_SOURCE`) and remain usable (not repeal-only). This repaired the 15 production false negatives on parent lead-in text while preserving the genuine wrong-child rejections (Community Planning Act s.1/s.75, Gas Distribution Act s.52, OHS Act s.9).
@@ -346,7 +346,7 @@ now pinned as `resolved-grouped`). Tracked freeze report:
 ### Study Unit Bridge — freeze gate, equivalence audit, frozen-map group inventory, and unit preflight (2026-09-02)
 
 New deterministic, no-inference bridge tooling for authoring Study Units from the frozen
-Study Map (pure logic in `src/study/ai/`, dispatcher in `scripts/studyUnitBridge.ts`):
+Study Map (pure logic in `study-desktop/src/ai/`, dispatcher in `scripts/studyUnitBridge.ts`):
 
 - `npx tsx scripts/studyUnitBridge.ts verify-freeze` — `verifyFrozenStudyMap` fails
   closed on any mismatch against the tracked freeze report (runId, 3,692 result rows,
@@ -507,7 +507,7 @@ Study Map (pure logic in `src/study/ai/`, dispatcher in `scripts/studyUnitBridge
   groupId), matched 80 / unmatched 0).
 - Deterministic V4/V5 comparison + side-by-side human review (WV5; no AI, no
   wall clock, no RNG):
-  `src/study/ai/studyAiUnitCalibrationCompare.{types,utils,load,markdown,ts}`
+  `study-desktop/src/ai/studyAiUnitCalibrationCompare.{types,utils,load,markdown,ts}`
   (builders; pure helpers incl. the 5-phrase contradiction detector,
   revision-consistency flags and the six-tier ordering; fail-closed loader
   reusing the calibration-80 audit loader untouched for both run dirs) and
@@ -535,7 +535,7 @@ Study Map (pure logic in `src/study/ai/`, dispatcher in `scripts/studyUnitBridge
   `obj-18-2-evidence-entitlement`); anchors 7 → 4 status-change / 3 stable;
   human-review tiers T3 status-change 35, T5 named 17, T6 remainder 28
   (T1/T2/T4 0).
-- Tests: `tests/study/study_ai_unit_calibration_compare.test.ts` (phrase
+- Tests: `study-desktop/tests/study_ai_unit_calibration_compare.test.ts` (phrase
   detector, revision flags, one-job-per-tier, matrix pseudo-status,
   over-target counters, OCR objective ids, temp-dir two-run fixtures with a
   3-row crosswalk, fail-closed missing-job naming, byte determinism).
@@ -549,7 +549,7 @@ Study Map (pure logic in `src/study/ai/`, dispatcher in `scripts/studyUnitBridge
 
 ### V5 fidelity gate and post-human-QC revalidation (2026-09-03)
 
-- New V5-only fidelity gate `src/study/ai/studyAiUnitV5Fidelity.ts`
+- New V5-only fidelity gate `study-desktop/src/ai/studyAiUnitV5Fidelity.ts`
   (`validateUnitV5Fidelity`), wired into `validateAiStudyUnitProposal` only
   when `generationMetadata.promptSpecVersion === 'unit-authoring-v5'` (V4
   behavior byte-identical; V5 prompt/spec bytes unchanged). All codes are
@@ -568,7 +568,7 @@ Study Map (pure logic in `src/study/ai/`, dispatcher in `scripts/studyUnitBridge
   Retry instructions for every code added to
   `scripts/studyAiLocalMapAuthorRetry.ts` (shared by the map and unit
   runners).
-- Tests: `tests/study/study_ai_unit_v5_fidelity.test.ts` (17 cases: each gate
+- Tests: `study-desktop/tests/study_ai_unit_v5_fidelity.test.ts` (17 cases: each gate
   defect with its clean variant plus edge cases).
 - Deterministic no-inference revalidation of the 80 accepted canonical units
   under the new gate: **37/80 invalid** (SOURCE_COVERAGE_EXTRA_LABEL ×63,
@@ -903,7 +903,7 @@ npm run study:ai:review-map-post-qc -- --run <run-id> --decisions <decisions.jso
 
 - `studyAiBuildFinalRetrySet.ts` fail-closes on base-run corruption, duplicate job IDs, missing prepared jobs, fingerprint mismatches, or a remainder that is not exactly the pinned nine permanent failures; it emits `reports/final-production-retry-9-<date>.json` + `.md` (jobId-ordered, with document/section identity, `authoringInputFingerprint`, and final failure issue codes) and reports the output file SHA-256. The 2026-08-31 artifact is `final-production-retry-9-20260831.json` (SHA-256 `04bcefa4daa275abd8c019d42c47b17f8fc70dae942e8ffa042b06cdc2f13cb9`).
 - `studyAiPromoteMapResult.ts` verifies that the job is prepared identically (`authoringInputFingerprint`) in both runs, that the source result row's identity fields (`jobId`, `corpusContentHash`, `inputHash`, `authoringInputFingerprint`) match the target job, refuses same-run promotion, refuses to overwrite existing target results or existing target provenance (no duplicate rows), preserves source artifacts and local-failure history, appends the row atomically with the source row's `runId` preserved (the auditor keys on `jobId`), and writes per-job promotion provenance under the target run. Dry-run validates everything without writing.
-- `studyAiAdjudicateMapResult.ts` (`study:ai:adjudicate-result`) is the human-adjudication path for permanent failures whose saved attempts were semantically sound but structurally ungrounded. It takes a human-corrected plain model-output JSON (no runner identity fields; they are injected by the ordinary `validateLocalResult` path), verifies the production and source prepared jobs carry identical `authoringInputFingerprint` and matching identity fields, confirms the referenced `local-failures/<job-id>/attempt-N` raw/validation artifacts exist in the source run and that the recorded raw hash still matches, refuses jobs that already have an accepted result or provenance, and appends the canonical row atomically with per-job provenance recording `adjudication.humanAdjudicated = true`, `sourceRun`, `sourceAttempt`, `sourceRawHash`, `correctedOutputHash`, `resultRowHash`, `preAdjudicationIssues`, `adjudicationReason = final-production-tail-human-adjudication`, `adjudicatedVia = study:ai:adjudicate-result`, and `adjudicatedAt`. Historical failure artifacts in both runs stay untouched. Used on 2026-08-31 to close the final four production gaps (`map-1c37c940368bec16` Municipalities Act s.100 from attempt 2; `map-1fa5a6239a1f7144` Community Planning Act s.1, `map-208559fbf2dbeffa` Mining Act s.68, and `map-56bae66370b899b1` Community Planning Act s.75 from attempt 3, each with focus-metadata corrections only), taking production to 3,692/3,692 accepted with zero permanent failures. Focused unit tests in `tests/study/study_ai_adjudicate_map_result.test.ts` (10 cases).
+- `studyAiAdjudicateMapResult.ts` (`study:ai:adjudicate-result`) is the human-adjudication path for permanent failures whose saved attempts were semantically sound but structurally ungrounded. It takes a human-corrected plain model-output JSON (no runner identity fields; they are injected by the ordinary `validateLocalResult` path), verifies the production and source prepared jobs carry identical `authoringInputFingerprint` and matching identity fields, confirms the referenced `local-failures/<job-id>/attempt-N` raw/validation artifacts exist in the source run and that the recorded raw hash still matches, refuses jobs that already have an accepted result or provenance, and appends the canonical row atomically with per-job provenance recording `adjudication.humanAdjudicated = true`, `sourceRun`, `sourceAttempt`, `sourceRawHash`, `correctedOutputHash`, `resultRowHash`, `preAdjudicationIssues`, `adjudicationReason = final-production-tail-human-adjudication`, `adjudicatedVia = study:ai:adjudicate-result`, and `adjudicatedAt`. Historical failure artifacts in both runs stay untouched. Used on 2026-08-31 to close the final four production gaps (`map-1c37c940368bec16` Municipalities Act s.100 from attempt 2; `map-1fa5a6239a1f7144` Community Planning Act s.1, `map-208559fbf2dbeffa` Mining Act s.68, and `map-56bae66370b899b1` Community Planning Act s.75 from attempt 3, each with focus-metadata corrections only), taking production to 3,692/3,692 accepted with zero permanent failures. Focused unit tests in `study-desktop/tests/study_ai_adjudicate_map_result.test.ts` (10 cases).
 - `studyAiBuildBalancedReviewSet.ts` selects a fixed-stratum bundle (core NB surveying/licensing laws; clean high-confidence standalone and split controls; medium confidence; skip / reference-only / combine dispositions; large multi-group splits; P1/P2 priorities; broad-focus warnings; capped recovered-retries) plus a document-diversity top-up filling the remainder of `--total` (default 250). Jobs are jobId-deterministic, earlier strata win ties, and the retry stratum is capped (quota 16) so retries cannot dominate. Output: `reports/balanced-review-set-<date>.json` + `.md` (2026-08-31: 250 entries, 61 documents, SHA-256 `c716d32cac86641c4f826e9fd6c1b9c46c86ef0e98c55fe9cf8a1b13c3febd1c`, byte-identical reruns).
 
 ## Post-QC Semantic Audit and Human Review Preparation (2026-08-31)
@@ -991,7 +991,7 @@ with the field blanked).
 
 ### Post-QC review decisions (human-in-the-loop)
 
-`src/study/ai/studyAiReviewDecision.ts` defines the human review-decision schema
+`study-desktop/src/ai/studyAiReviewDecision.ts` defines the human review-decision schema
 (`schemaVersion: 1`, `reviewType: "post-qc-map-semantic-review"`): per job, the reviewer
 chooses a `priorityDecision` (`keep` | `change` + `newPriority`) and a `groupingDecision`
 (`keep` | `split` | `standalone` | `combine` | `reference-only` | `skip` |

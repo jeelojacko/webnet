@@ -14,48 +14,48 @@
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 
-import type { NbLawContentPackage } from '../src/study/content/nbLawTypes';
+import type { NbLawContentPackage } from '../study-desktop/src/content/nbLawTypes';
 import {
   buildExamCurriculumJsonReport,
   buildExamCurriculumManifest,
   examCurriculumTierProjectionHash,
   renderExamCurriculumMarkdown,
-} from '../src/study/examCurriculum/examCurriculumBuild';
+} from '../study-desktop/src/examCurriculum/examCurriculumBuild';
 import {
   EXAM_CURRICULUM_TIER_A_DOCUMENTS,
   EXAM_CURRICULUM_TIER_A_EXPECTED_COUNTS,
   EXAM_CURRICULUM_TIER_A_FAMILIES,
   EXAM_CURRICULUM_TIER_A_TOTAL,
   examCurriculumTierASpecs,
-} from '../src/study/examCurriculum/examCurriculumCatalog';
+} from '../study-desktop/src/examCurriculum/examCurriculumCatalog';
 import {
   EXAM_CURRICULUM_NAV_DOCUMENTS,
   EXAM_CURRICULUM_NAV_TOTAL,
   examCurriculumNavigationSpecs,
-} from '../src/study/examCurriculum/examCurriculumCatalogNavigation';
+} from '../study-desktop/src/examCurriculum/examCurriculumCatalogNavigation';
 import {
   EXAM_CURRICULUM_DRILL_TOTAL,
   EXAM_CURRICULUM_TOTAL,
   examCurriculumAllSpecs,
-} from '../src/study/examCurriculum/examCurriculumCatalogAll';
+} from '../study-desktop/src/examCurriculum/examCurriculumCatalogAll';
 import {
   EXAM_CURRICULUM_DRILL_TIME_TARGETS,
   assertDrillTimeTargets,
   examCurriculumDrillSpecs,
-} from '../src/study/examCurriculum/examCurriculumCatalogDrills';
-import { buildExamCurriculumCorpusView } from '../src/study/examCurriculum/examCurriculumResolve';
+} from '../study-desktop/src/examCurriculum/examCurriculumCatalogDrills';
+import { buildExamCurriculumCorpusView } from '../study-desktop/src/examCurriculum/examCurriculumResolve';
 import type {
   ExamCurriculumManifest,
   ExamCurriculumValidationReport,
-} from '../src/study/examCurriculum/examCurriculumTypes';
-import { validateExamCurriculumUnits } from '../src/study/examCurriculum/examCurriculumValidate';
+} from '../study-desktop/src/examCurriculum/examCurriculumTypes';
+import { validateExamCurriculumUnits } from '../study-desktop/src/examCurriculum/examCurriculumValidate';
 
 import {
   EXAM_CURRICULUM_TIER_B_DOCUMENTS,
   EXAM_CURRICULUM_TIER_B_EXPECTED_COUNTS,
   EXAM_CURRICULUM_TIER_B_TOTAL,
   examCurriculumTierBFamilies,
-} from '../src/study/examCurriculum/examCurriculumCatalogTierB';
+} from '../study-desktop/src/examCurriculum/examCurriculumCatalogTierB';
 import {
   EXAM_CURRICULUM_TIER_C_DOCUMENTS,
   EXAM_CURRICULUM_TIER_C_EXPECTED_COUNTS,
@@ -65,7 +65,7 @@ import {
   EXAM_CURRICULUM_TIER_D_TOTAL,
   examCurriculumTierCFamilies,
   examCurriculumTierDFamilies,
-} from '../src/study/examCurriculum/examCurriculumCatalogTierCD';
+} from '../study-desktop/src/examCurriculum/examCurriculumCatalogTierCD';
 
 const CORPUS_PACKAGE_REL = 'study-content/packages/nb-sit-statute-corpus.content-package.json';
 const MANIFEST_OUT_REL = 'study-content/exam-curriculum/nb-sit-exam-curriculum-v1.json';

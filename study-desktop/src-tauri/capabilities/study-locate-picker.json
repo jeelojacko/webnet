@@ -1,0 +1,11 @@
+{
+  "$schema": "../gen/schemas/desktop-schema.json",
+  "identifier": "study-locate-picker",
+  "description": "Phase 3G: the stable Locate picker window receives only the typed parent-child event transport (pick/control). Window creation, focus, and close stay with the main window.",
+  "windows": ["study-locate-picker"],
+  "permissions": [
+    "core:event:allow-emit-to",
+    "core:event:allow-listen",
+    "core:event:allow-unlisten"
+  ]
+}

@@ -91,9 +91,9 @@
       "componentType": "section",
       "label": "1",
       "heading": "Definitions",
-      "text": "Definitions\n\n1The following definitions apply in this Act.\n“conservation easement” means a conservation easement within the meaning of section 2. (servitude écologique)\n\n“land” means all or any part of the land vested in the owner of the land and includes any water on or under the surface of the land. (bien-fonds)\n\n“land registration office” means a registry office established under the Registry Act or a land titles office established under the Land Titles Act. (bureau de l’enregistrement des biens-fonds)\n\n“Minister” means(ministre)\n\n(a)\nthe Minister of Tourism, Heritage and Culture, and includes any person designated by the Minister to act on the Minister’s behalf, in the case of a conservation easement granted for the purposes of paragraph 3(g); and\n\n(b)\nthe Minister of Natural Resources, and includes any person designated by the Minister to act on the Minister’s behalf, in the case of all other conservation easements.\n\n“registrar” means a registrar under the Registry Act or under the Land Titles Act. (registrateur)\n\n1998, c.C-16.3, s.1; 2004, c.20, s.14; 2010, c.H-4.05, s.114; 2012, c.39, s.53; 2012, c.52, s.17; 2016, c.37, s.36; 2019, c.29, s.169; 2024, c.28, s.16",
+      "text": "Definitions\n\n1 The following definitions apply in this Act.\n“conservation easement” means a conservation easement within the meaning of section 2 . (servitude écologique)\n\n“land” means all or any part of the land vested in the owner of the land and includes any water on or under the surface of the land. (bien-fonds)\n\n“land registration office” means a registry office established under the Registry Act or a land titles office established under the Land Titles Act . (bureau de l’enregistrement des biens-fonds)\n\n“Minister” means(ministre)\n\n( a)\nthe Minister of Tourism, Heritage and Culture, and includes any person designated by the Minister to act on the Minister’s behalf, in the case of a conservation easement granted for the purposes of paragraph 3(g ); and\n\n( b)\nthe Minister of Natural Resources, and includes any person designated by the Minister to act on the Minister’s behalf, in the case of all other conservation easements.\n\n“registrar” means a registrar under the Registry Act or under the Land Titles Act . (registrateur)\n\n1998, c.C-16.3, s.1; 2004, c.20, s.14; 2010, c.H-4.05, s.114; 2012, c.39, s.53; 2012, c.52, s.17; 2016, c.37, s.36; 2019, c.29, s.169; 2024, c.28, s.16",
       "subsections": [],
-      "contentHash": "40f2c4a70c4635923a08dfa315c0ee52ccb1c319e4dd2d84a8a612f807bc3ea5"
+      "contentHash": "09dca8d50bf8519394273359ba2d165f1b60a087a992d3037f23d7a5e114799e"
     },
     {
       "id": "section-2",
@@ -101,38 +101,38 @@
       "componentType": "section",
       "label": "2",
       "heading": "Nature of a conservation easement",
-      "text": "Nature of a conservation easement\n\n2(1)A conservation easement is a voluntary agreement entered into between the grantor of the conservation easement and the holder of the conservation easement that\n\n(a)\ngrants rights and privileges to the holder of the conservation easement respecting land that relate to the purposes for which the conservation easement is granted, and\n\n(b)\nmay impose obligations, either positive or negative, on the holder of the conservation easement, the grantor of the conservation easement or any subsequent owner of the land respecting that land that relate to the purposes for which the conservation easement is granted.\n\n2(2)A conservation easement may exist for a fixed term or for perpetuity.\n\n2(3)No acts done by the holder of a conservation easement or by a person claiming through the holder of a conservation easement, either during the term of the conservation easement or after the conservation easement is terminated, in relation to the land to which the conservation easement relates shall be construed as against any person to give rise to possessory or prescriptive property rights or privileges beyond those rights and privileges expressly granted in the conservation easement, even if the acts exceed the rights or privileges granted by the conservation easement.\n\n2(4)Subject to this Act, a conservation easement runs with the land to which the conservation easement relates for the period set out in the conservation easement and is enforceable by the holder of the conservation easement, whether the conservation easement is positive or negative in nature, against the grantor of the conservation easement or any subsequent owner of the land even though the holder of the conservation easement owns no other land that would be accommodated or benefited by the conservation easement.\n\n1998, c.C-16.3, s.2",
+      "text": "Nature of a conservation easement\n\n2 (1) A conservation easement is a voluntary agreement entered into between the grantor of the conservation easement and the holder of the conservation easement that\n\n( a)\ngrants rights and privileges to the holder of the conservation easement respecting land that relate to the purposes for which the conservation easement is granted, and\n\n( b)\nmay impose obligations, either positive or negative, on the holder of the conservation easement, the grantor of the conservation easement or any subsequent owner of the land respecting that land that relate to the purposes for which the conservation easement is granted.\n\n2 (2) A conservation easement may exist for a fixed term or for perpetuity.\n\n2 (3) No acts done by the holder of a conservation easement or by a person claiming through the holder of a conservation easement, either during the term of the conservation easement or after the conservation easement is terminated, in relation to the land to which the conservation easement relates shall be construed as against any person to give rise to possessory or prescriptive property rights or privileges beyond those rights and privileges expressly granted in the conservation easement, even if the acts exceed the rights or privileges granted by the conservation easement.\n\n2 (4) Subject to this Act, a conservation easement runs with the land to which the conservation easement relates for the period set out in the conservation easement and is enforceable by the holder of the conservation easement, whether the conservation easement is positive or negative in nature, against the grantor of the conservation easement or any subsequent owner of the land even though the holder of the conservation easement owns no other land that would be accommodated or benefited by the conservation easement.\n\n1998, c.C-16.3, s.2",
       "subsections": [
         {
           "id": "2-subsection-1",
           "sourceKey": "section:2/subsection:1",
           "label": "2(1)",
-          "text": "2(1)A conservation easement is a voluntary agreement entered into between the grantor of the conservation easement and the holder of the conservation easement that\n\n(a)\ngrants rights and privileges to the holder of the conservation easement respecting land that relate to the purposes for which the conservation easement is granted, and\n\n(b)\nmay impose obligations, either positive or negative, on the holder of the conservation easement, the grantor of the conservation easement or any subsequent owner of the land respecting that land that relate to the purposes for which the conservation easement is granted.",
-          "contentHash": "660d372a014dbb59ad1eeb6cd69f04804bbd9716f48bdd1103f856146c348b1f"
+          "text": "2 (1) A conservation easement is a voluntary agreement entered into between the grantor of the conservation easement and the holder of the conservation easement that\n\n( a)\ngrants rights and privileges to the holder of the conservation easement respecting land that relate to the purposes for which the conservation easement is granted, and\n\n( b)\nmay impose obligations, either positive or negative, on the holder of the conservation easement, the grantor of the conservation easement or any subsequent owner of the land respecting that land that relate to the purposes for which the conservation easement is granted.",
+          "contentHash": "301133d555b4ebe05b186c4cc1ae0c2a7ed91f47379457e50d34bdd8c0e549f7"
         },
         {
           "id": "2-subsection-2",
           "sourceKey": "section:2/subsection:2",
           "label": "2(2)",
-          "text": "2(2)A conservation easement may exist for a fixed term or for perpetuity.",
-          "contentHash": "9de9f96c3f3012d0d81ceee555e9519fd28dba8d1dab445d8b1e6cc48e0515e5"
+          "text": "2 (2) A conservation easement may exist for a fixed term or for perpetuity.",
+          "contentHash": "0a658601d1d12dad0362c61ceaf62880fb60404f318e56d9a3ddd2fed0a5678c"
         },
         {
           "id": "2-subsection-3",
           "sourceKey": "section:2/subsection:3",
           "label": "2(3)",
-          "text": "2(3)No acts done by the holder of a conservation easement or by a person claiming through the holder of a conservation easement, either during the term of the conservation easement or after the conservation easement is terminated, in relation to the land to which the conservation easement relates shall be construed as against any person to give rise to possessory or prescriptive property rights or privileges beyond those rights and privileges expressly granted in the conservation easement, even if the acts exceed the rights or privileges granted by the conservation easement.",
-          "contentHash": "248591d710343e9909139fa20dcc6ce98368c005402a61ed4a8287fb17c6316c"
+          "text": "2 (3) No acts done by the holder of a conservation easement or by a person claiming through the holder of a conservation easement, either during the term of the conservation easement or after the conservation easement is terminated, in relation to the land to which the conservation easement relates shall be construed as against any person to give rise to possessory or prescriptive property rights or privileges beyond those rights and privileges expressly granted in the conservation easement, even if the acts exceed the rights or privileges granted by the conservation easement.",
+          "contentHash": "d3a2187557f861ae398246f2712364c08ab566b90988953a6c51e664f6b5fc47"
         },
         {
           "id": "2-subsection-4",
           "sourceKey": "section:2/subsection:4",
           "label": "2(4)",
-          "text": "2(4)Subject to this Act, a conservation easement runs with the land to which the conservation easement relates for the period set out in the conservation easement and is enforceable by the holder of the conservation easement, whether the conservation easement is positive or negative in nature, against the grantor of the conservation easement or any subsequent owner of the land even though the holder of the conservation easement owns no other land that would be accommodated or benefited by the conservation easement.\n\n1998, c.C-16.3, s.2",
-          "contentHash": "524ee11169d46bfe9f0c827fb34a308c6082ba52a0b3a0f8f336a0f8ee69e32d"
+          "text": "2 (4) Subject to this Act, a conservation easement runs with the land to which the conservation easement relates for the period set out in the conservation easement and is enforceable by the holder of the conservation easement, whether the conservation easement is positive or negative in nature, against the grantor of the conservation easement or any subsequent owner of the land even though the holder of the conservation easement owns no other land that would be accommodated or benefited by the conservation easement.",
+          "contentHash": "5c031424ab12767420096df1aeccd3109356b0be584539dbc5ce6bc72fa8b243"
         }
       ],
-      "contentHash": "901e1388d49a069feba2cbfb3cc5b75b09ecece06a4266fb27175bd78237a311"
+      "contentHash": "ec95c72d4d567ad899cf74e1b8de976f9500b68598a9c19075bbcde745e64fe2"
     },
     {
       "id": "section-3",
@@ -140,9 +140,9 @@
       "componentType": "section",
       "label": "3",
       "heading": "Purpose of a conservation easement",
-      "text": "Purpose of a conservation easement\n\n3A conservation easement shall be granted only for one or more of the following purposes:\n\n(a)\nthe conservation of ecologically sensitive land;\n\n(b)\nthe protection, enhancement or restoration of natural ecosystems;\n\n(c)\nthe protection or restoration of wildlife habitat or wildlife;\n\n(d)\nthe conservation of habitat of rare or endangered plant or animal species;\n\n(e)\nthe conservation or protection of soil, air, land or water;\n\n(f)\nthe conservation of significant biological, morphological, geological or palaeontological features;\n\n(g)\nthe conservation of places of value due to their archaeological, palaeontological, historic, cultural, natural, scientific or design importance;\n\n(h)\nthe protection or use of land for outdoor recreation;\n\n(i)\nthe use of land for public education; and\n\n(j)\nany other purpose prescribed by regulation.\n\n1998, c.C-16.3, s.3; 2010, c.H-4.05, s.114",
+      "text": "Purpose of a conservation easement\n\n3 A conservation easement shall be granted only for one or more of the following purposes:\n\n( a)\nthe conservation of ecologically sensitive land;\n\n( b)\nthe protection, enhancement or restoration of natural ecosystems;\n\n( c)\nthe protection or restoration of wildlife habitat or wildlife;\n\n( d)\nthe conservation of habitat of rare or endangered plant or animal species;\n\n( e)\nthe conservation or protection of soil, air, land or water;\n\n( f)\nthe conservation of significant biological, morphological, geological or palaeontological features;\n\n( g)\nthe conservation of places of value due to their archaeological, palaeontological, historic, cultural, natural, scientific or design importance;\n\n( h)\nthe protection or use of land for outdoor recreation;\n\n( i)\nthe use of land for public education; and\n\n( j)\nany other purpose prescribed by regulation.\n\n1998, c.C-16.3, s.3; 2010, c.H-4.05, s.114",
       "subsections": [],
-      "contentHash": "021227fd0132d17a06049b2c770704eadafcb035ae3c9ab06ab34f941f8beb90"
+      "contentHash": "abcf2ff3787a07a8085029fd6021f6d6a871f088a8ae1849d2193f38fc7a8e1c"
     },
     {
       "id": "section-4",
@@ -150,31 +150,31 @@
       "componentType": "section",
       "label": "4",
       "heading": "Who may grant a conservation easement",
-      "text": "Who may grant a conservation easement\n\n4(1)Any owner of land in fee simple may grant a conservation easement.\n\n4(2)An owner of land may grant more than one conservation easement respecting that land if there is no conflict between the rights and privileges granted and the obligations imposed by the conservation easements.\n\n4(3)The Crown in right of the Province, the Crown in right of Canada or a local government may grant a conservation easement to itself or to anyone eligible to be the holder of a conservation easement.\n\n1998, c.C-16.3, s.4; 2005, c.7, s.14; 2017, c.20, s.40",
+      "text": "Who may grant a conservation easement\n\n4 (1) Any owner of land in fee simple may grant a conservation easement.\n\n4 (2) An owner of land may grant more than one conservation easement respecting that land if there is no conflict between the rights and privileges granted and the obligations imposed by the conservation easements.\n\n4 (3) The Crown in right of the Province, the Crown in right of Canada or a local government may grant a conservation easement to itself or to anyone eligible to be the holder of a conservation easement.\n\n1998, c.C-16.3, s.4; 2005, c.7, s.14; 2017, c.20, s.40",
       "subsections": [
         {
           "id": "4-subsection-1",
           "sourceKey": "section:4/subsection:1",
           "label": "4(1)",
-          "text": "4(1)Any owner of land in fee simple may grant a conservation easement.",
-          "contentHash": "8aee5a73829f656027c0dc3d3348ca4a7e9c872e544233cb0582126440d64979"
+          "text": "4 (1) Any owner of land in fee simple may grant a conservation easement.",
+          "contentHash": "266ab81ea843a6a3ac40275f2052e9930a97a22dee5cc613c20634b0617bc131"
         },
         {
           "id": "4-subsection-2",
           "sourceKey": "section:4/subsection:2",
           "label": "4(2)",
-          "text": "4(2)An owner of land may grant more than one conservation easement respecting that land if there is no conflict between the rights and privileges granted and the obligations imposed by the conservation easements.",
-          "contentHash": "435e19ed29efefa4cef7f71341e27c734403f25eebe2963093321fe9fd75e7d8"
+          "text": "4 (2) An owner of land may grant more than one conservation easement respecting that land if there is no conflict between the rights and privileges granted and the obligations imposed by the conservation easements.",
+          "contentHash": "5c9d6050064002040951cdf98d2a4b0c7a61b1542fbcd41ce41303f1c045ad04"
         },
         {
           "id": "4-subsection-3",
           "sourceKey": "section:4/subsection:3",
           "label": "4(3)",
-          "text": "4(3)The Crown in right of the Province, the Crown in right of Canada or a local government may grant a conservation easement to itself or to anyone eligible to be the holder of a conservation easement.\n\n1998, c.C-16.3, s.4; 2005, c.7, s.14; 2017, c.20, s.40",
-          "contentHash": "12de6e4dfc6c1e59728dd2c604e108396c43f0e6927e84cf0ef368ba5e9a6067"
+          "text": "4 (3) The Crown in right of the Province, the Crown in right of Canada or a local government may grant a conservation easement to itself or to anyone eligible to be the holder of a conservation easement.",
+          "contentHash": "46e688b7ffa750a01ae73472b4fa54fb642bcb4afeefb24048bf2081700163e9"
         }
       ],
-      "contentHash": "6af98bf83954d2a59a4ed813723453763b2613fda60df4f76e608bfb13dbe3bb"
+      "contentHash": "bccfa5676967e864ca05068b647ca563afe38c449f35fbb98d71aa76f58d0b7a"
     },
     {
       "id": "section-5",
@@ -182,9 +182,9 @@
       "componentType": "section",
       "label": "5",
       "heading": "Who may hold a conservation easement",
-      "text": "Who may hold a conservation easement\n\n5Any of the following may hold a conservation easement:\n\n(a)\nthe Crown in right of the Province or any agency of the Crown in right of the Province;\n\n(b)\nthe Crown in right of Canada or any agency of the Crown in right of Canada;\n\n(c)\na local government or an agency of a local government;\n\n(d)\nRepealed: 2017, c.20, s.40\n\n(e)\na non-profit corporation that has as one of its primary purposes a purpose mentioned in section 3; and\n\n(f)\nany person, body or group or class of persons, bodies or groups eligible to hold an interest in land and prescribed by regulation for the purposes of this paragraph.\n\n1998, c.C-16.3, s.5; 2005, c.7, s.14; 2017, c.20, s.40",
+      "text": "Who may hold a conservation easement\n\n5 Any of the following may hold a conservation easement:\n\n( a)\nthe Crown in right of the Province or any agency of the Crown in right of the Province;\n\n( b)\nthe Crown in right of Canada or any agency of the Crown in right of Canada;\n\n( c)\na local government or an agency of a local government;\n\n( d)\nRepealed: 2017, c.20, s.40\n\n( e)\na non-profit corporation that has as one of its primary purposes a purpose mentioned in section 3 ; and\n\n( f)\nany person, body or group or class of persons, bodies or groups eligible to hold an interest in land and prescribed by regulation for the purposes of this paragraph.\n\n1998, c.C-16.3, s.5; 2005, c.7, s.14; 2017, c.20, s.40",
       "subsections": [],
-      "contentHash": "4560fcfb6079120648aafae2954871b22f26af33327a2c14050eef7a09436431"
+      "contentHash": "8aa5748bc62138dc02cc6131fd4d0558db191db13a6dcb3eea3093dabfa99fa5"
     },
     {
       "id": "section-6",
@@ -192,38 +192,38 @@
       "componentType": "section",
       "label": "6",
       "heading": "Registration of a conservation easement",
-      "text": "Registration of a conservation easement\n\n6(1)The holder of a conservation easement shall submit the conservation easement for registration in the appropriate land registration office.\n\n6(2)The registrar of the land registration office to which a conservation easement is submitted for registration shall register the conservation easement if the conservation easement\n\n(a)\ncontains the information required by regulation to be included in a conservation easement, and\n\n(b)\nis, in the opinion of the registrar, fit for registration.\n\n6(3)A conservation easement has no effect until the conservation easement has been registered in accordance with this Act in the appropriate land registration office.\n\n6(4)The holder of a conservation easement shall, within 30 days after registration of the conservation easement, forward a copy of the conservation easement to the Minister.\n\n1998, c.C-16.3, s.6",
+      "text": "Registration of a conservation easement\n\n6 (1) The holder of a conservation easement shall submit the conservation easement for registration in the appropriate land registration office.\n\n6 (2) The registrar of the land registration office to which a conservation easement is submitted for registration shall register the conservation easement if the conservation easement\n\n( a)\ncontains the information required by regulation to be included in a conservation easement, and\n\n( b)\nis, in the opinion of the registrar, fit for registration.\n\n6 (3) A conservation easement has no effect until the conservation easement has been registered in accordance with this Act in the appropriate land registration office.\n\n6 (4) The holder of a conservation easement shall, within 30 days after registration of the conservation easement, forward a copy of the conservation easement to the Minister.\n\n1998, c.C-16.3, s.6",
       "subsections": [
         {
           "id": "6-subsection-1",
           "sourceKey": "section:6/subsection:1",
           "label": "6(1)",
-          "text": "6(1)The holder of a conservation easement shall submit the conservation easement for registration in the appropriate land registration office.",
-          "contentHash": "26d3052cce0d512704eef967cefcf52d9ec7396357b3c7704780b483689c81a2"
+          "text": "6 (1) The holder of a conservation easement shall submit the conservation easement for registration in the appropriate land registration office.",
+          "contentHash": "076bfda9fa6f503a1f689ed970f634a3fff1deb60a226608c548485886731edf"
         },
         {
           "id": "6-subsection-2",
           "sourceKey": "section:6/subsection:2",
           "label": "6(2)",
-          "text": "6(2)The registrar of the land registration office to which a conservation easement is submitted for registration shall register the conservation easement if the conservation easement\n\n(a)\ncontains the information required by regulation to be included in a conservation easement, and\n\n(b)\nis, in the opinion of the registrar, fit for registration.",
-          "contentHash": "a780f1374b1ae31d86aa5efa12e99f790fd870c42b5b54321de19418ec32812d"
+          "text": "6 (2) The registrar of the land registration office to which a conservation easement is submitted for registration shall register the conservation easement if the conservation easement\n\n( a)\ncontains the information required by regulation to be included in a conservation easement, and\n\n( b)\nis, in the opinion of the registrar, fit for registration.",
+          "contentHash": "39a6ccbfdf3ed8334124e32127765e22bed8499c22bb9f3bdc8f6ba83f530b17"
         },
         {
           "id": "6-subsection-3",
           "sourceKey": "section:6/subsection:3",
           "label": "6(3)",
-          "text": "6(3)A conservation easement has no effect until the conservation easement has been registered in accordance with this Act in the appropriate land registration office.",
-          "contentHash": "8d0866753e432129ae65249ec54ef0986fbdf5a7835111872bf4f583d9a4770d"
+          "text": "6 (3) A conservation easement has no effect until the conservation easement has been registered in accordance with this Act in the appropriate land registration office.",
+          "contentHash": "1e92133418cdcf45603f531e7a3485a3839a8648861b2aa4f58fa40634e264ba"
         },
         {
           "id": "6-subsection-4",
           "sourceKey": "section:6/subsection:4",
           "label": "6(4)",
-          "text": "6(4)The holder of a conservation easement shall, within 30 days after registration of the conservation easement, forward a copy of the conservation easement to the Minister.\n\n1998, c.C-16.3, s.6",
-          "contentHash": "5600d3c11c7bd515e334b3606e8a45b0aa3c4c5940f5eb5411e56b737c70b6fa"
+          "text": "6 (4) The holder of a conservation easement shall, within 30 days after registration of the conservation easement, forward a copy of the conservation easement to the Minister.",
+          "contentHash": "ff13d25a989c09951949710b9a253302f7ae1859bafc3a07fc33a517f30ed2c7"
         }
       ],
-      "contentHash": "2435a7501a0b842ba8713ec7085c182bae5a5152eb1c0717e47319aefd5f9e5a"
+      "contentHash": "19e7cef8b1de6df7e36726f3256f617c2cf8da1eebb8de79c1f35e19450866b8"
     },
     {
       "id": "section-7",
@@ -231,24 +231,24 @@
       "componentType": "section",
       "label": "7",
       "heading": "Priority of other interests",
-      "text": "Priority of other interests\n\n7(1)A conservation easement registered under this Act does not have priority over an interest in the land to which the conservation easement relates registered or filed in the appropriate land registration office before the registration of the conservation easement.\n\n7(2)The registration of a conservation easement under this Act does not abrogate or derogate from any authority or right under any other act or regulation to expropriate land.\n\n1998, c.C-16.3, s.7",
+      "text": "Priority of other interests\n\n7 (1) A conservation easement registered under this Act does not have priority over an interest in the land to which the conservation easement relates registered or filed in the appropriate land registration office before the registration of the conservation easement.\n\n7 (2) The registration of a conservation easement under this Act does not abrogate or derogate from any authority or right under any other act or regulation to expropriate land.\n\n1998, c.C-16.3, s.7",
       "subsections": [
         {
           "id": "7-subsection-1",
           "sourceKey": "section:7/subsection:1",
           "label": "7(1)",
-          "text": "7(1)A conservation easement registered under this Act does not have priority over an interest in the land to which the conservation easement relates registered or filed in the appropriate land registration office before the registration of the conservation easement.",
-          "contentHash": "a6d8b140f4ae9d0a627d45702e848cd78da4d9dd4bf90d32ab817a6551108280"
+          "text": "7 (1) A conservation easement registered under this Act does not have priority over an interest in the land to which the conservation easement relates registered or filed in the appropriate land registration office before the registration of the conservation easement.",
+          "contentHash": "35c6cfd51a8811fd4024e9a571b6937e3f93642160869d979131f49ee86ea0b3"
         },
         {
           "id": "7-subsection-2",
           "sourceKey": "section:7/subsection:2",
           "label": "7(2)",
-          "text": "7(2)The registration of a conservation easement under this Act does not abrogate or derogate from any authority or right under any other act or regulation to expropriate land.\n\n1998, c.C-16.3, s.7",
-          "contentHash": "65d8b9aafc8eed19e7cfbe58ba4bdfdf6848cd3cbc5662e43ff63a5a196642be"
+          "text": "7 (2) The registration of a conservation easement under this Act does not abrogate or derogate from any authority or right under any other act or regulation to expropriate land.",
+          "contentHash": "b65df9e0fca2206ea29dd7921056dc2e1c314372d2415f0dfbc001275f154231"
         }
       ],
-      "contentHash": "f12c28ea250f05b3e9607aed6dc130cccb6606b923f27f32613633abb9b6ed36"
+      "contentHash": "1c2f0c431bad062daee5a98b305dc585bdb9c77833f84fdaf404d3eeb1e43087"
     },
     {
       "id": "section-8",
@@ -256,45 +256,45 @@
       "componentType": "section",
       "label": "8",
       "heading": "Amendment of a conservation easement",
-      "text": "Amendment of a conservation easement\n\n8(1)A conservation easement may be amended by a written agreement between the holder of the conservation easement and the owner of the land to which the conservation easement relates.\n\n8(2)A written agreement referred to in subsection (1) shall be submitted for registration in the appropriate land registration office.\n\n8(3)The registrar of the land registration office to which a written agreement referred to in subsection (1) is submitted for registration shall register the written agreement if the written agreement is, in the opinion of the registrar, fit for registration.\n\n8(4)An amendment of a conservation easement has no effect until the written agreement referred to in subsection (1) has been registered in accordance with this Act in the appropriate land registration office.\n\n8(5)The holder of a conservation easement shall, within 30 days after registration of the written agreement referred to in subsection (1), forward a copy of the written agreement to the Minister.\n\n1998, c.C-16.3, s.8",
+      "text": "Amendment of a conservation easement\n\n8 (1) A conservation easement may be amended by a written agreement between the holder of the conservation easement and the owner of the land to which the conservation easement relates.\n\n8 (2) A written agreement referred to in subsection (1) shall be submitted for registration in the appropriate land registration office.\n\n8 (3) The registrar of the land registration office to which a written agreement referred to in subsection (1) is submitted for registration shall register the written agreement if the written agreement is, in the opinion of the registrar, fit for registration.\n\n8 (4) An amendment of a conservation easement has no effect until the written agreement referred to in subsection (1) has been registered in accordance with this Act in the appropriate land registration office.\n\n8 (5) The holder of a conservation easement shall, within 30 days after registration of the written agreement referred to in subsection (1), forward a copy of the written agreement to the Minister.\n\n1998, c.C-16.3, s.8",
       "subsections": [
         {
           "id": "8-subsection-1",
           "sourceKey": "section:8/subsection:1",
           "label": "8(1)",
-          "text": "8(1)A conservation easement may be amended by a written agreement between the holder of the conservation easement and the owner of the land to which the conservation easement relates.",
-          "contentHash": "af53b443d245d2be2f82fba1f7adf87bee9c114055aee2f943b09e55dc3bd8dd"
+          "text": "8 (1) A conservation easement may be amended by a written agreement between the holder of the conservation easement and the owner of the land to which the conservation easement relates.",
+          "contentHash": "f21270b25f83a4c556a477908a5d5f11ad71a97ec37a42cdfc3119e465d6ecbf"
         },
         {
           "id": "8-subsection-2",
           "sourceKey": "section:8/subsection:2",
           "label": "8(2)",
-          "text": "8(2)A written agreement referred to in subsection (1) shall be submitted for registration in the appropriate land registration office.",
-          "contentHash": "781363f406a1a2283576a5450eb5aa86117c772494c8d10000dfc890a1d77051"
+          "text": "8 (2) A written agreement referred to in subsection (1) shall be submitted for registration in the appropriate land registration office.",
+          "contentHash": "8dc6c2dd114e0ef0e2d109413a93e3b4e05ad79ff1d21b8f262a750c8c2adfa3"
         },
         {
           "id": "8-subsection-3",
           "sourceKey": "section:8/subsection:3",
           "label": "8(3)",
-          "text": "8(3)The registrar of the land registration office to which a written agreement referred to in subsection (1) is submitted for registration shall register the written agreement if the written agreement is, in the opinion of the registrar, fit for registration.",
-          "contentHash": "45aeac7205b37657cea4e2695acb64dfb569c47318ecffa07186eabf0c5a04c4"
+          "text": "8 (3) The registrar of the land registration office to which a written agreement referred to in subsection (1) is submitted for registration shall register the written agreement if the written agreement is, in the opinion of the registrar, fit for registration.",
+          "contentHash": "cf7f79271955d5eb9fed79c21155df8adfff2de1b4cd2e53bb0333a914b0cafb"
         },
         {
           "id": "8-subsection-4",
           "sourceKey": "section:8/subsection:4",
           "label": "8(4)",
-          "text": "8(4)An amendment of a conservation easement has no effect until the written agreement referred to in subsection (1) has been registered in accordance with this Act in the appropriate land registration office.",
-          "contentHash": "80b6c3ee903f41451a4d4758630e6f6912eddb5581b14ea3184972616885fb9a"
+          "text": "8 (4) An amendment of a conservation easement has no effect until the written agreement referred to in subsection (1) has been registered in accordance with this Act in the appropriate land registration office.",
+          "contentHash": "ef98496c4ef59fc66366b90923a6d323227ac995cb5abb8df79d9d12bdbafbc0"
         },
         {
           "id": "8-subsection-5",
           "sourceKey": "section:8/subsection:5",
           "label": "8(5)",
-          "text": "8(5)The holder of a conservation easement shall, within 30 days after registration of the written agreement referred to in subsection (1), forward a copy of the written agreement to the Minister.\n\n1998, c.C-16.3, s.8",
-          "contentHash": "8a2b4d8d75ad7b12afcda63f422bc7d008596ee90ed21a13439ba2dcd2723cb4"
+          "text": "8 (5) The holder of a conservation easement shall, within 30 days after registration of the written agreement referred to in subsection (1), forward a copy of the written agreement to the Minister.",
+          "contentHash": "4b904c75ce371687943521d2820b9ae265babd58a32f15d394a9c9937074fe16"
         }
       ],
-      "contentHash": "5067c6a1c7607fde0463b62c4344925f8c7302cb4a7781d389ff1fddec4b46d6"
+      "contentHash": "3bfc63dc15c663a4a8f8604cffd1a3ca93ac1dc60e138a1b663e74bfb9f928fb"
     },
     {
       "id": "section-9",
@@ -302,45 +302,45 @@
       "componentType": "section",
       "label": "9",
       "heading": "Assignment of a conservation easement",
-      "text": "Assignment of a conservation easement\n\n9(1)A conservation easement may, subject to any terms in the conservation easement, be assigned by the holder of the conservation easement to anyone eligible to be the holder of a conservation easement.\n\n9(2)An assignment of a conservation easement shall be submitted for registration in the appropriate land registration office.\n\n9(3)The registrar of the land registration office to which an assignment of a conservation easement is submitted for registration shall register the assignment if the assignment is, in the opinion of the registrar, fit for registration.\n\n9(4)An assignment of a conservation easement has no effect until the assignment has been registered in accordance with this Act in the appropriate land registration office.\n\n9(5)The holder of an assignment of a conservation easement shall, within 30 days after registration of the assignment, forward a copy of the assignment to the Minister.\n\n1998, c.C-16.3, s.9",
+      "text": "Assignment of a conservation easement\n\n9 (1) A conservation easement may, subject to any terms in the conservation easement, be assigned by the holder of the conservation easement to anyone eligible to be the holder of a conservation easement.\n\n9 (2) An assignment of a conservation easement shall be submitted for registration in the appropriate land registration office.\n\n9 (3) The registrar of the land registration office to which an assignment of a conservation easement is submitted for registration shall register the assignment if the assignment is, in the opinion of the registrar, fit for registration.\n\n9 (4) An assignment of a conservation easement has no effect until the assignment has been registered in accordance with this Act in the appropriate land registration office.\n\n9 (5) The holder of an assignment of a conservation easement shall, within 30 days after registration of the assignment, forward a copy of the assignment to the Minister.\n\n1998, c.C-16.3, s.9",
       "subsections": [
         {
           "id": "9-subsection-1",
           "sourceKey": "section:9/subsection:1",
           "label": "9(1)",
-          "text": "9(1)A conservation easement may, subject to any terms in the conservation easement, be assigned by the holder of the conservation easement to anyone eligible to be the holder of a conservation easement.",
-          "contentHash": "68f9660c34e7aab443609428e1bb14d2b0968fe6d939db379d5d1a6bc364120d"
+          "text": "9 (1) A conservation easement may, subject to any terms in the conservation easement, be assigned by the holder of the conservation easement to anyone eligible to be the holder of a conservation easement.",
+          "contentHash": "2f89f71163eacdd278133370c2f5973c7c91e809d79228c0e2d84246c761a5b1"
         },
         {
           "id": "9-subsection-2",
           "sourceKey": "section:9/subsection:2",
           "label": "9(2)",
-          "text": "9(2)An assignment of a conservation easement shall be submitted for registration in the appropriate land registration office.",
-          "contentHash": "58f82d76a4f816d86ce6d15789cae17de81947fba8e69df76ebd316727f74982"
+          "text": "9 (2) An assignment of a conservation easement shall be submitted for registration in the appropriate land registration office.",
+          "contentHash": "96fac123dcc04af54870818d8d7c939a6a9f6b6a2dd8567b534e3206839851b4"
         },
         {
           "id": "9-subsection-3",
           "sourceKey": "section:9/subsection:3",
           "label": "9(3)",
-          "text": "9(3)The registrar of the land registration office to which an assignment of a conservation easement is submitted for registration shall register the assignment if the assignment is, in the opinion of the registrar, fit for registration.",
-          "contentHash": "9edfd292164f3d651b2cec7a5e227ebde0f40fff3edf799ce6bab35c72e485c3"
+          "text": "9 (3) The registrar of the land registration office to which an assignment of a conservation easement is submitted for registration shall register the assignment if the assignment is, in the opinion of the registrar, fit for registration.",
+          "contentHash": "82af9d4ea4d84850d22e8579c86c146361676c7d855e82829cc980f3e775083f"
         },
         {
           "id": "9-subsection-4",
           "sourceKey": "section:9/subsection:4",
           "label": "9(4)",
-          "text": "9(4)An assignment of a conservation easement has no effect until the assignment has been registered in accordance with this Act in the appropriate land registration office.",
-          "contentHash": "ad6af95746f20bb7b4bd708754cdb8d0e38256aa618f3581fd0700c8d091ca01"
+          "text": "9 (4) An assignment of a conservation easement has no effect until the assignment has been registered in accordance with this Act in the appropriate land registration office.",
+          "contentHash": "ef1d8e35fe2cc730cc04f1fd7975dd20d2c22f9bc1261bdaa2c0bef5a1d5cbb8"
         },
         {
           "id": "9-subsection-5",
           "sourceKey": "section:9/subsection:5",
           "label": "9(5)",
-          "text": "9(5)The holder of an assignment of a conservation easement shall, within 30 days after registration of the assignment, forward a copy of the assignment to the Minister.\n\n1998, c.C-16.3, s.9",
-          "contentHash": "194bd146d77dd6c36ab7ef978ab5e3c6cb055adf864f7af341172f3ba01860dc"
+          "text": "9 (5) The holder of an assignment of a conservation easement shall, within 30 days after registration of the assignment, forward a copy of the assignment to the Minister.",
+          "contentHash": "7410fb66a35acea4372afeb6b63b4bc2ef91f6a51a43b6ff02ae0308c276d62d"
         }
       ],
-      "contentHash": "815127a6ed50ef226e695a5cf1a3eae4552fb8d70147ad1ca71490117722c976"
+      "contentHash": "4bcacaed1d234392a35c9c19c40a85b7eddaa8ffeba35d552f23d2ee2d964ca9"
     },
     {
       "id": "section-10",
@@ -348,66 +348,66 @@
       "componentType": "section",
       "label": "10",
       "heading": "Termination of a conservation easement",
-      "text": "Termination of a conservation easement\n\n10(1)A conservation easement may be terminated\n\n(a)\nby a written agreement between the holder of the conservation easement and the owner of the land to which the conservation easement relates, or\n\n(b)\nby The Court of King’s Bench of New Brunswick on application\n\n(i)\nby the holder of the conservation easement or the owner of the land to which the conservation easement relates, if the Court is of the opinion that continuation of the conservation easement would produce a severe hardship for the applicant, or\n\n(ii)\nby any person whom the Court determines has a sufficient interest, when the holder of the conservation easement dies or ceases to exist.\n\n10(2)A conservation easement may be discharged by registering in the appropriate land registration office\n\n(a)\nif the conservation easement is terminated under paragraph (1)(a), the written agreement referred to in paragraph (1)(a), or\n\n(b)\nif the conservation easement is terminated under paragraph (1)(b), a Court order obtained under paragraph (1)(b) directing the registrar to discharge the conservation easement.\n\n10(3)The registrar of the land registration office to which a written agreement referred to in paragraph (1)(a) is submitted for registration shall register the written agreement if the written agreement is, in the opinion of the registrar, fit for registration.\n\n10(4)The owner of the land to which the conservation easement relates shall, within 30 days after registration of the written agreement referred to in paragraph (1)(a) or a Court order obtained under paragraph (1)(b), forward a copy of the written agreement or the Court order, as the case may be, to the Minister.\n\n10(5)When the holder of a conservation easement dies or ceases to exist, any person wishing to make an application under subparagraph (1)(b)(ii) shall give 30 days’ notice in writing to the Minister on behalf of the Crown in right of the Province of that person’s intention to make the application, and the Minister on behalf of the Crown in right of the Province may, within that period, elect to assume the obligations of the holder of the conservation easement and accept the rights and privileges respecting the conservation easement.\n\n10(6)If the Minister on behalf of the Crown in right of the Province elects under subsection (5) to assume the obligations of the holder of the conservation easement and accept the rights and privileges respecting the conservation easement, the Minister on behalf of the Crown in right of the Province shall, within the period referred to in subsection (5),\n\n(a)\nin writing notify the person wishing to make an application under subparagraph (1)(b)(ii) of the election, and\n\n(b)\nregister in the appropriate land registration office a document confirming the election.\n\n10(7)If, in accordance with paragraph (6)(a), the Minister on behalf of the Crown in right of the Province notifies the person wishing to make an application under subparagraph (1)(b)(ii) that the Minister on behalf of the Crown in right of the Province has elected to assume the obligations of the holder of the conservation easement and accept the rights and privileges respecting the conservation easement, an application under subparagraph (1)(b)(ii) shall not be made by that person and any such application, if made, shall be deemed discontinued.\n\n10(8)If a document referred to in paragraph (6)(b) has been registered in accordance with this Act in the appropriate land registration office, the Crown in right of the Province shall be deemed to be the holder of the conservation easement.\n\n1998, c.C-16.3, s.10; 2023, c.17, s.40",
+      "text": "Termination of a conservation easement\n\n10 (1) A conservation easement may be terminated\n\n( a)\nby a written agreement between the holder of the conservation easement and the owner of the land to which the conservation easement relates, or\n\n( b)\nby The Court of King’s Bench of New Brunswick on application\n\n(i)\nby the holder of the conservation easement or the owner of the land to which the conservation easement relates, if the Court is of the opinion that continuation of the conservation easement would produce a severe hardship for the applicant, or\n\n(ii)\nby any person whom the Court determines has a sufficient interest, when the holder of the conservation easement dies or ceases to exist.\n\n10 (2) A conservation easement may be discharged by registering in the appropriate land registration office\n\n( a)\nif the conservation easement is terminated under paragraph (1)(a ), the written agreement referred to in paragraph (1)(a ), or\n\n( b)\nif the conservation easement is terminated under paragraph (1)(b ), a Court order obtained under paragraph (1)(b ) directing the registrar to discharge the conservation easement.\n\n10 (3) The registrar of the land registration office to which a written agreement referred to in paragraph (1)(a ) is submitted for registration shall register the written agreement if the written agreement is, in the opinion of the registrar, fit for registration.\n\n10 (4) The owner of the land to which the conservation easement relates shall, within 30 days after registration of the written agreement referred to in paragraph (1)(a ) or a Court order obtained under paragraph (1)(b ), forward a copy of the written agreement or the Court order, as the case may be, to the Minister.\n\n10 (5) When the holder of a conservation easement dies or ceases to exist, any person wishing to make an application under subparagraph (1)(b )(ii) shall give 30 days’ notice in writing to the Minister on behalf of the Crown in right of the Province of that person’s intention to make the application, and the Minister on behalf of the Crown in right of the Province may, within that period, elect to assume the obligations of the holder of the conservation easement and accept the rights and privileges respecting the conservation easement.\n\n10 (6) If the Minister on behalf of the Crown in right of the Province elects under subsection (5) to assume the obligations of the holder of the conservation easement and accept the rights and privileges respecting the conservation easement, the Minister on behalf of the Crown in right of the Province shall, within the period referred to in subsection (5),\n\n( a)\nin writing notify the person wishing to make an application under subparagraph (1)(b )(ii) of the election, and\n\n( b)\nregister in the appropriate land registration office a document confirming the election.\n\n10 (7) If, in accordance with paragraph (6)(a ), the Minister on behalf of the Crown in right of the Province notifies the person wishing to make an application under subparagraph (1)(b )(ii) that the Minister on behalf of the Crown in right of the Province has elected to assume the obligations of the holder of the conservation easement and accept the rights and privileges respecting the conservation easement, an application under subparagraph (1)(b )(ii) shall not be made by that person and any such application, if made, shall be deemed discontinued.\n\n10 (8) If a document referred to in paragraph (6)(b ) has been registered in accordance with this Act in the appropriate land registration office, the Crown in right of the Province shall be deemed to be the holder of the conservation easement.\n\n1998, c.C-16.3, s.10; 2023, c.17, s.40",
       "subsections": [
         {
           "id": "10-subsection-1",
           "sourceKey": "section:10/subsection:1",
           "label": "10(1)",
-          "text": "10(1)A conservation easement may be terminated\n\n(a)\nby a written agreement between the holder of the conservation easement and the owner of the land to which the conservation easement relates, or\n\n(b)\nby The Court of King’s Bench of New Brunswick on application\n\n(i)\nby the holder of the conservation easement or the owner of the land to which the conservation easement relates, if the Court is of the opinion that continuation of the conservation easement would produce a severe hardship for the applicant, or\n\n(ii)\nby any person whom the Court determines has a sufficient interest, when the holder of the conservation easement dies or ceases to exist.",
-          "contentHash": "4458e6f883fad633b336fba4bf52063398db225be4488400c31606ed97bcdb03"
+          "text": "10 (1) A conservation easement may be terminated\n\n( a)\nby a written agreement between the holder of the conservation easement and the owner of the land to which the conservation easement relates, or\n\n( b)\nby The Court of King’s Bench of New Brunswick on application\n\n(i)\nby the holder of the conservation easement or the owner of the land to which the conservation easement relates, if the Court is of the opinion that continuation of the conservation easement would produce a severe hardship for the applicant, or\n\n(ii)\nby any person whom the Court determines has a sufficient interest, when the holder of the conservation easement dies or ceases to exist.",
+          "contentHash": "d1118f1777520ce04ed0ba461499c68729d954b5848c0f128da34164ca7cc396"
         },
         {
           "id": "10-subsection-2",
           "sourceKey": "section:10/subsection:2",
           "label": "10(2)",
-          "text": "10(2)A conservation easement may be discharged by registering in the appropriate land registration office\n\n(a)\nif the conservation easement is terminated under paragraph (1)(a), the written agreement referred to in paragraph (1)(a), or\n\n(b)\nif the conservation easement is terminated under paragraph (1)(b), a Court order obtained under paragraph (1)(b) directing the registrar to discharge the conservation easement.",
-          "contentHash": "120d3be4cc3aabdcc8f1d8949d0e7d776db3d00ee53248b6aa274947e9184e99"
+          "text": "10 (2) A conservation easement may be discharged by registering in the appropriate land registration office\n\n( a)\nif the conservation easement is terminated under paragraph (1)(a ), the written agreement referred to in paragraph (1)(a ), or\n\n( b)\nif the conservation easement is terminated under paragraph (1)(b ), a Court order obtained under paragraph (1)(b ) directing the registrar to discharge the conservation easement.",
+          "contentHash": "2230959839194a6f2da657afa2be33a1c90e7cc0036c316b3b9a27d02c03f543"
         },
         {
           "id": "10-subsection-3",
           "sourceKey": "section:10/subsection:3",
           "label": "10(3)",
-          "text": "10(3)The registrar of the land registration office to which a written agreement referred to in paragraph (1)(a) is submitted for registration shall register the written agreement if the written agreement is, in the opinion of the registrar, fit for registration.",
-          "contentHash": "21a1759151fd9ed279b55debb49c225fa0f8bdebc6966a67f9bc5b58e46395cb"
+          "text": "10 (3) The registrar of the land registration office to which a written agreement referred to in paragraph (1)(a ) is submitted for registration shall register the written agreement if the written agreement is, in the opinion of the registrar, fit for registration.",
+          "contentHash": "2e66e9769a9af78981d74706c91ba165dccb3abb1776dd27aa88c9a589ce2924"
         },
         {
           "id": "10-subsection-4",
           "sourceKey": "section:10/subsection:4",
           "label": "10(4)",
-          "text": "10(4)The owner of the land to which the conservation easement relates shall, within 30 days after registration of the written agreement referred to in paragraph (1)(a) or a Court order obtained under paragraph (1)(b), forward a copy of the written agreement or the Court order, as the case may be, to the Minister.",
-          "contentHash": "eb00777d0375369553bd5f9db8d23cba541806b2159994a615f22f49de368a6d"
+          "text": "10 (4) The owner of the land to which the conservation easement relates shall, within 30 days after registration of the written agreement referred to in paragraph (1)(a ) or a Court order obtained under paragraph (1)(b ), forward a copy of the written agreement or the Court order, as the case may be, to the Minister.",
+          "contentHash": "1bc9f4ea6d803e07f41f8a007020001368ac648076163f8172f8301bd4392107"
         },
         {
           "id": "10-subsection-5",
           "sourceKey": "section:10/subsection:5",
           "label": "10(5)",
-          "text": "10(5)When the holder of a conservation easement dies or ceases to exist, any person wishing to make an application under subparagraph (1)(b)(ii) shall give 30 days’ notice in writing to the Minister on behalf of the Crown in right of the Province of that person’s intention to make the application, and the Minister on behalf of the Crown in right of the Province may, within that period, elect to assume the obligations of the holder of the conservation easement and accept the rights and privileges respecting the conservation easement.",
-          "contentHash": "b3089346d43cc9e8fb9410ca1bde7a051f4fb19a2ec666af3f6496d1a98b8516"
+          "text": "10 (5) When the holder of a conservation easement dies or ceases to exist, any person wishing to make an application under subparagraph (1)(b )(ii) shall give 30 days’ notice in writing to the Minister on behalf of the Crown in right of the Province of that person’s intention to make the application, and the Minister on behalf of the Crown in right of the Province may, within that period, elect to assume the obligations of the holder of the conservation easement and accept the rights and privileges respecting the conservation easement.",
+          "contentHash": "781d457e4bc074fc5bcd9e3645207ad4a4004044d30926ead59114ff41fb084a"
         },
         {
           "id": "10-subsection-6",
           "sourceKey": "section:10/subsection:6",
           "label": "10(6)",
-          "text": "10(6)If the Minister on behalf of the Crown in right of the Province elects under subsection (5) to assume the obligations of the holder of the conservation easement and accept the rights and privileges respecting the conservation easement, the Minister on behalf of the Crown in right of the Province shall, within the period referred to in subsection (5),\n\n(a)\nin writing notify the person wishing to make an application under subparagraph (1)(b)(ii) of the election, and\n\n(b)\nregister in the appropriate land registration office a document confirming the election.",
-          "contentHash": "0b8be24d52296fbcdb2e60ab4fdd5205026aef25aa562ea0e9334bbf14e5200b"
+          "text": "10 (6) If the Minister on behalf of the Crown in right of the Province elects under subsection (5) to assume the obligations of the holder of the conservation easement and accept the rights and privileges respecting the conservation easement, the Minister on behalf of the Crown in right of the Province shall, within the period referred to in subsection (5),\n\n( a)\nin writing notify the person wishing to make an application under subparagraph (1)(b )(ii) of the election, and\n\n( b)\nregister in the appropriate land registration office a document confirming the election.",
+          "contentHash": "210e5c485234170f7f6c8cc5be95ecf876b17b6a2ae302e96a4b98501dcf43c4"
         },
         {
           "id": "10-subsection-7",
           "sourceKey": "section:10/subsection:7",
           "label": "10(7)",
-          "text": "10(7)If, in accordance with paragraph (6)(a), the Minister on behalf of the Crown in right of the Province notifies the person wishing to make an application under subparagraph (1)(b)(ii) that the Minister on behalf of the Crown in right of the Province has elected to assume the obligations of the holder of the conservation easement and accept the rights and privileges respecting the conservation easement, an application under subparagraph (1)(b)(ii) shall not be made by that person and any such application, if made, shall be deemed discontinued.",
-          "contentHash": "1af2f788823b8a7a7d47ac554d846b0fb246e59430dc40b84c768e9ecb58e2e7"
+          "text": "10 (7) If, in accordance with paragraph (6)(a ), the Minister on behalf of the Crown in right of the Province notifies the person wishing to make an application under subparagraph (1)(b )(ii) that the Minister on behalf of the Crown in right of the Province has elected to assume the obligations of the holder of the conservation easement and accept the rights and privileges respecting the conservation easement, an application under subparagraph (1)(b )(ii) shall not be made by that person and any such application, if made, shall be deemed discontinued.",
+          "contentHash": "2cc201a241fc03c02dbf8677d5e1c86e14570cd157b607687bcc1ddd7067ab48"
         },
         {
           "id": "10-subsection-8",
           "sourceKey": "section:10/subsection:8",
           "label": "10(8)",
-          "text": "10(8)If a document referred to in paragraph (6)(b) has been registered in accordance with this Act in the appropriate land registration office, the Crown in right of the Province shall be deemed to be the holder of the conservation easement.\n\n1998, c.C-16.3, s.10; 2023, c.17, s.40",
-          "contentHash": "26768928376c59a5d28ccf861872fe904e888cf822f41e0e8fb6ed2acbb3001b"
+          "text": "10 (8) If a document referred to in paragraph (6)(b ) has been registered in accordance with this Act in the appropriate land registration office, the Crown in right of the Province shall be deemed to be the holder of the conservation easement.",
+          "contentHash": "b848cd55b16c13702dea5868fe432442065ab0eac9a33130215aa27e094e735d"
         }
       ],
-      "contentHash": "7a8449e050193fbb38efc86653ca1bdd5c1a7cc44aa0b5e1356ab02f61c98fd9"
+      "contentHash": "a5eca5f9f3dbc6646b1be30ecc8409b339888326db77b2281a81f7e300a0aeaf"
     },
     {
       "id": "section-11",
@@ -415,24 +415,24 @@
       "componentType": "section",
       "label": "11",
       "heading": "Obligations may be enforced",
-      "text": "Obligations may be enforced\n\n11(1)The obligations in a conservation easement, whether positive or negative, on the holder of the conservation easement, the grantor of the conservation easement or a subsequent owner of the land may be enforced by an action in The Court of King’s Bench of New Brunswick by the holder of the conservation easement, the grantor of the conservation easement or a subsequent owner of the land.\n\n11(2)In an action under subsection (1), the Court may do any one or more of the following:\n\n(a)\ngrant any relief or remedy available at common law to any of the parties referred to in subsection (1);\n\n(b)\norder the defendant to take any action the Court considers appropriate to restore or remedy any harm to the land to which the conservation easement relates; and\n\n(c)\nprohibit any activity on the land to which the conservation easement relates that the Court considers contrary to any of the purposes of the conservation easement.\n\n1998, c.C-16.3, s.11; 2023, c.17, s.40",
+      "text": "Obligations may be enforced\n\n11 (1) The obligations in a conservation easement, whether positive or negative, on the holder of the conservation easement, the grantor of the conservation easement or a subsequent owner of the land may be enforced by an action in The Court of King’s Bench of New Brunswick by the holder of the conservation easement, the grantor of the conservation easement or a subsequent owner of the land.\n\n11 (2) In an action under subsection (1), the Court may do any one or more of the following:\n\n( a)\ngrant any relief or remedy available at common law to any of the parties referred to in subsection (1);\n\n( b)\norder the defendant to take any action the Court considers appropriate to restore or remedy any harm to the land to which the conservation easement relates; and\n\n( c)\nprohibit any activity on the land to which the conservation easement relates that the Court considers contrary to any of the purposes of the conservation easement.\n\n1998, c.C-16.3, s.11; 2023, c.17, s.40",
       "subsections": [
         {
           "id": "11-subsection-1",
           "sourceKey": "section:11/subsection:1",
           "label": "11(1)",
-          "text": "11(1)The obligations in a conservation easement, whether positive or negative, on the holder of the conservation easement, the grantor of the conservation easement or a subsequent owner of the land may be enforced by an action in The Court of King’s Bench of New Brunswick by the holder of the conservation easement, the grantor of the conservation easement or a subsequent owner of the land.",
-          "contentHash": "666ac511cc12ee444345cb7f74268f276561a8d37ad0cb5a1a044ee1b17c65bc"
+          "text": "11 (1) The obligations in a conservation easement, whether positive or negative, on the holder of the conservation easement, the grantor of the conservation easement or a subsequent owner of the land may be enforced by an action in The Court of King’s Bench of New Brunswick by the holder of the conservation easement, the grantor of the conservation easement or a subsequent owner of the land.",
+          "contentHash": "6d18e259ed56d776687996f28f55ab490d719f1cd257d1baf42de8f4660951b2"
         },
         {
           "id": "11-subsection-2",
           "sourceKey": "section:11/subsection:2",
           "label": "11(2)",
-          "text": "11(2)In an action under subsection (1), the Court may do any one or more of the following:\n\n(a)\ngrant any relief or remedy available at common law to any of the parties referred to in subsection (1);\n\n(b)\norder the defendant to take any action the Court considers appropriate to restore or remedy any harm to the land to which the conservation easement relates; and\n\n(c)\nprohibit any activity on the land to which the conservation easement relates that the Court considers contrary to any of the purposes of the conservation easement.\n\n1998, c.C-16.3, s.11; 2023, c.17, s.40",
-          "contentHash": "a45c40de6ebd4fed5b3a5f6f37e292479ef47bc28194674ea7cdc43b7949b8ac"
+          "text": "11 (2) In an action under subsection (1), the Court may do any one or more of the following:\n\n( a)\ngrant any relief or remedy available at common law to any of the parties referred to in subsection (1);\n\n( b)\norder the defendant to take any action the Court considers appropriate to restore or remedy any harm to the land to which the conservation easement relates; and\n\n( c)\nprohibit any activity on the land to which the conservation easement relates that the Court considers contrary to any of the purposes of the conservation easement.",
+          "contentHash": "cce702008e3cda3d3fff634f7ce514740fdb5e5d8f1a036d6aa0586a0e6c0164"
         }
       ],
-      "contentHash": "45c4de952487948e73e6bea093b6f569b02ee26ae211f42cb5a28ce4fda4d399"
+      "contentHash": "4a19b9bc47bc22bdc71a026eebcc534c9a7e373d8e158f49c9f1341ec1b3e6f2"
     },
     {
       "id": "section-12",
@@ -440,9 +440,9 @@
       "componentType": "section",
       "label": "12",
       "heading": "Regulations",
-      "text": "Regulations\n\n12The Lieutenant-Governor in Council may make regulations\n\n(a)\nprescribing purposes for which a conservation easement may be granted;\n\n(b)\nprescribing a person, body or group or a class of persons, bodies or groups who may hold a conservation easement;\n\n(c)\nrespecting the information that must be included in a conservation easement;\n\n(d)\ndefining any word or expression used in but not defined in this Act for the purposes of this Act, the regulations or both.\n\n1998, c.C-16.3, s.12\n\nN.B. This Act was proclaimed and came into force September 1, 2011.\n\nN.B. This Act is consolidated to December 13, 2024.",
+      "text": "Regulations\n\n12 The Lieutenant-Governor in Council may make regulations\n\n( a)\nprescribing purposes for which a conservation easement may be granted;\n\n( b)\nprescribing a person, body or group or a class of persons, bodies or groups who may hold a conservation easement;\n\n( c)\nrespecting the information that must be included in a conservation easement;\n\n( d)\ndefining any word or expression used in but not defined in this Act for the purposes of this Act, the regulations or both.\n\n1998, c.C-16.3, s.12\n\nN.B. This Act was proclaimed and came into force September 1, 2011.\n\nN.B. This Act is consolidated to December 13, 2024.",
       "subsections": [],
-      "contentHash": "8caf6e46803a19f04b0885a0a9d92a8067a1c1c40e56903211d52b43e17f3999"
+      "contentHash": "6c21124c9dd812a64dc85f0ad477e49071f6ecc44fd51e6c5db0a8009ef4802d"
     }
   ],
   "sections": [
@@ -452,9 +452,9 @@
       "componentType": "section",
       "label": "1",
       "heading": "Definitions",
-      "text": "Definitions\n\n1The following definitions apply in this Act.\n“conservation easement” means a conservation easement within the meaning of section 2. (servitude écologique)\n\n“land” means all or any part of the land vested in the owner of the land and includes any water on or under the surface of the land. (bien-fonds)\n\n“land registration office” means a registry office established under the Registry Act or a land titles office established under the Land Titles Act. (bureau de l’enregistrement des biens-fonds)\n\n“Minister” means(ministre)\n\n(a)\nthe Minister of Tourism, Heritage and Culture, and includes any person designated by the Minister to act on the Minister’s behalf, in the case of a conservation easement granted for the purposes of paragraph 3(g); and\n\n(b)\nthe Minister of Natural Resources, and includes any person designated by the Minister to act on the Minister’s behalf, in the case of all other conservation easements.\n\n“registrar” means a registrar under the Registry Act or under the Land Titles Act. (registrateur)\n\n1998, c.C-16.3, s.1; 2004, c.20, s.14; 2010, c.H-4.05, s.114; 2012, c.39, s.53; 2012, c.52, s.17; 2016, c.37, s.36; 2019, c.29, s.169; 2024, c.28, s.16",
+      "text": "Definitions\n\n1 The following definitions apply in this Act.\n“conservation easement” means a conservation easement within the meaning of section 2 . (servitude écologique)\n\n“land” means all or any part of the land vested in the owner of the land and includes any water on or under the surface of the land. (bien-fonds)\n\n“land registration office” means a registry office established under the Registry Act or a land titles office established under the Land Titles Act . (bureau de l’enregistrement des biens-fonds)\n\n“Minister” means(ministre)\n\n( a)\nthe Minister of Tourism, Heritage and Culture, and includes any person designated by the Minister to act on the Minister’s behalf, in the case of a conservation easement granted for the purposes of paragraph 3(g ); and\n\n( b)\nthe Minister of Natural Resources, and includes any person designated by the Minister to act on the Minister’s behalf, in the case of all other conservation easements.\n\n“registrar” means a registrar under the Registry Act or under the Land Titles Act . (registrateur)\n\n1998, c.C-16.3, s.1; 2004, c.20, s.14; 2010, c.H-4.05, s.114; 2012, c.39, s.53; 2012, c.52, s.17; 2016, c.37, s.36; 2019, c.29, s.169; 2024, c.28, s.16",
       "subsections": [],
-      "contentHash": "40f2c4a70c4635923a08dfa315c0ee52ccb1c319e4dd2d84a8a612f807bc3ea5"
+      "contentHash": "09dca8d50bf8519394273359ba2d165f1b60a087a992d3037f23d7a5e114799e"
     },
     {
       "id": "section-2",
@@ -462,38 +462,38 @@
       "componentType": "section",
       "label": "2",
       "heading": "Nature of a conservation easement",
-      "text": "Nature of a conservation easement\n\n2(1)A conservation easement is a voluntary agreement entered into between the grantor of the conservation easement and the holder of the conservation easement that\n\n(a)\ngrants rights and privileges to the holder of the conservation easement respecting land that relate to the purposes for which the conservation easement is granted, and\n\n(b)\nmay impose obligations, either positive or negative, on the holder of the conservation easement, the grantor of the conservation easement or any subsequent owner of the land respecting that land that relate to the purposes for which the conservation easement is granted.\n\n2(2)A conservation easement may exist for a fixed term or for perpetuity.\n\n2(3)No acts done by the holder of a conservation easement or by a person claiming through the holder of a conservation easement, either during the term of the conservation easement or after the conservation easement is terminated, in relation to the land to which the conservation easement relates shall be construed as against any person to give rise to possessory or prescriptive property rights or privileges beyond those rights and privileges expressly granted in the conservation easement, even if the acts exceed the rights or privileges granted by the conservation easement.\n\n2(4)Subject to this Act, a conservation easement runs with the land to which the conservation easement relates for the period set out in the conservation easement and is enforceable by the holder of the conservation easement, whether the conservation easement is positive or negative in nature, against the grantor of the conservation easement or any subsequent owner of the land even though the holder of the conservation easement owns no other land that would be accommodated or benefited by the conservation easement.\n\n1998, c.C-16.3, s.2",
+      "text": "Nature of a conservation easement\n\n2 (1) A conservation easement is a voluntary agreement entered into between the grantor of the conservation easement and the holder of the conservation easement that\n\n( a)\ngrants rights and privileges to the holder of the conservation easement respecting land that relate to the purposes for which the conservation easement is granted, and\n\n( b)\nmay impose obligations, either positive or negative, on the holder of the conservation easement, the grantor of the conservation easement or any subsequent owner of the land respecting that land that relate to the purposes for which the conservation easement is granted.\n\n2 (2) A conservation easement may exist for a fixed term or for perpetuity.\n\n2 (3) No acts done by the holder of a conservation easement or by a person claiming through the holder of a conservation easement, either during the term of the conservation easement or after the conservation easement is terminated, in relation to the land to which the conservation easement relates shall be construed as against any person to give rise to possessory or prescriptive property rights or privileges beyond those rights and privileges expressly granted in the conservation easement, even if the acts exceed the rights or privileges granted by the conservation easement.\n\n2 (4) Subject to this Act, a conservation easement runs with the land to which the conservation easement relates for the period set out in the conservation easement and is enforceable by the holder of the conservation easement, whether the conservation easement is positive or negative in nature, against the grantor of the conservation easement or any subsequent owner of the land even though the holder of the conservation easement owns no other land that would be accommodated or benefited by the conservation easement.\n\n1998, c.C-16.3, s.2",
       "subsections": [
         {
           "id": "2-subsection-1",
           "sourceKey": "section:2/subsection:1",
           "label": "2(1)",
-          "text": "2(1)A conservation easement is a voluntary agreement entered into between the grantor of the conservation easement and the holder of the conservation easement that\n\n(a)\ngrants rights and privileges to the holder of the conservation easement respecting land that relate to the purposes for which the conservation easement is granted, and\n\n(b)\nmay impose obligations, either positive or negative, on the holder of the conservation easement, the grantor of the conservation easement or any subsequent owner of the land respecting that land that relate to the purposes for which the conservation easement is granted.",
-          "contentHash": "660d372a014dbb59ad1eeb6cd69f04804bbd9716f48bdd1103f856146c348b1f"
+          "text": "2 (1) A conservation easement is a voluntary agreement entered into between the grantor of the conservation easement and the holder of the conservation easement that\n\n( a)\ngrants rights and privileges to the holder of the conservation easement respecting land that relate to the purposes for which the conservation easement is granted, and\n\n( b)\nmay impose obligations, either positive or negative, on the holder of the conservation easement, the grantor of the conservation easement or any subsequent owner of the land respecting that land that relate to the purposes for which the conservation easement is granted.",
+          "contentHash": "301133d555b4ebe05b186c4cc1ae0c2a7ed91f47379457e50d34bdd8c0e549f7"
         },
         {
           "id": "2-subsection-2",
           "sourceKey": "section:2/subsection:2",
           "label": "2(2)",
-          "text": "2(2)A conservation easement may exist for a fixed term or for perpetuity.",
-          "contentHash": "9de9f96c3f3012d0d81ceee555e9519fd28dba8d1dab445d8b1e6cc48e0515e5"
+          "text": "2 (2) A conservation easement may exist for a fixed term or for perpetuity.",
+          "contentHash": "0a658601d1d12dad0362c61ceaf62880fb60404f318e56d9a3ddd2fed0a5678c"
         },
         {
           "id": "2-subsection-3",
           "sourceKey": "section:2/subsection:3",
           "label": "2(3)",
-          "text": "2(3)No acts done by the holder of a conservation easement or by a person claiming through the holder of a conservation easement, either during the term of the conservation easement or after the conservation easement is terminated, in relation to the land to which the conservation easement relates shall be construed as against any person to give rise to possessory or prescriptive property rights or privileges beyond those rights and privileges expressly granted in the conservation easement, even if the acts exceed the rights or privileges granted by the conservation easement.",
-          "contentHash": "248591d710343e9909139fa20dcc6ce98368c005402a61ed4a8287fb17c6316c"
+          "text": "2 (3) No acts done by the holder of a conservation easement or by a person claiming through the holder of a conservation easement, either during the term of the conservation easement or after the conservation easement is terminated, in relation to the land to which the conservation easement relates shall be construed as against any person to give rise to possessory or prescriptive property rights or privileges beyond those rights and privileges expressly granted in the conservation easement, even if the acts exceed the rights or privileges granted by the conservation easement.",
+          "contentHash": "d3a2187557f861ae398246f2712364c08ab566b90988953a6c51e664f6b5fc47"
         },
         {
           "id": "2-subsection-4",
           "sourceKey": "section:2/subsection:4",
           "label": "2(4)",
-          "text": "2(4)Subject to this Act, a conservation easement runs with the land to which the conservation easement relates for the period set out in the conservation easement and is enforceable by the holder of the conservation easement, whether the conservation easement is positive or negative in nature, against the grantor of the conservation easement or any subsequent owner of the land even though the holder of the conservation easement owns no other land that would be accommodated or benefited by the conservation easement.\n\n1998, c.C-16.3, s.2",
-          "contentHash": "524ee11169d46bfe9f0c827fb34a308c6082ba52a0b3a0f8f336a0f8ee69e32d"
+          "text": "2 (4) Subject to this Act, a conservation easement runs with the land to which the conservation easement relates for the period set out in the conservation easement and is enforceable by the holder of the conservation easement, whether the conservation easement is positive or negative in nature, against the grantor of the conservation easement or any subsequent owner of the land even though the holder of the conservation easement owns no other land that would be accommodated or benefited by the conservation easement.",
+          "contentHash": "5c031424ab12767420096df1aeccd3109356b0be584539dbc5ce6bc72fa8b243"
         }
       ],
-      "contentHash": "901e1388d49a069feba2cbfb3cc5b75b09ecece06a4266fb27175bd78237a311"
+      "contentHash": "ec95c72d4d567ad899cf74e1b8de976f9500b68598a9c19075bbcde745e64fe2"
     },
     {
       "id": "section-3",
@@ -501,9 +501,9 @@
       "componentType": "section",
       "label": "3",
       "heading": "Purpose of a conservation easement",
-      "text": "Purpose of a conservation easement\n\n3A conservation easement shall be granted only for one or more of the following purposes:\n\n(a)\nthe conservation of ecologically sensitive land;\n\n(b)\nthe protection, enhancement or restoration of natural ecosystems;\n\n(c)\nthe protection or restoration of wildlife habitat or wildlife;\n\n(d)\nthe conservation of habitat of rare or endangered plant or animal species;\n\n(e)\nthe conservation or protection of soil, air, land or water;\n\n(f)\nthe conservation of significant biological, morphological, geological or palaeontological features;\n\n(g)\nthe conservation of places of value due to their archaeological, palaeontological, historic, cultural, natural, scientific or design importance;\n\n(h)\nthe protection or use of land for outdoor recreation;\n\n(i)\nthe use of land for public education; and\n\n(j)\nany other purpose prescribed by regulation.\n\n1998, c.C-16.3, s.3; 2010, c.H-4.05, s.114",
+      "text": "Purpose of a conservation easement\n\n3 A conservation easement shall be granted only for one or more of the following purposes:\n\n( a)\nthe conservation of ecologically sensitive land;\n\n( b)\nthe protection, enhancement or restoration of natural ecosystems;\n\n( c)\nthe protection or restoration of wildlife habitat or wildlife;\n\n( d)\nthe conservation of habitat of rare or endangered plant or animal species;\n\n( e)\nthe conservation or protection of soil, air, land or water;\n\n( f)\nthe conservation of significant biological, morphological, geological or palaeontological features;\n\n( g)\nthe conservation of places of value due to their archaeological, palaeontological, historic, cultural, natural, scientific or design importance;\n\n( h)\nthe protection or use of land for outdoor recreation;\n\n( i)\nthe use of land for public education; and\n\n( j)\nany other purpose prescribed by regulation.\n\n1998, c.C-16.3, s.3; 2010, c.H-4.05, s.114",
       "subsections": [],
-      "contentHash": "021227fd0132d17a06049b2c770704eadafcb035ae3c9ab06ab34f941f8beb90"
+      "contentHash": "abcf2ff3787a07a8085029fd6021f6d6a871f088a8ae1849d2193f38fc7a8e1c"
     },
     {
       "id": "section-4",
@@ -511,31 +511,31 @@
       "componentType": "section",
       "label": "4",
       "heading": "Who may grant a conservation easement",
-      "text": "Who may grant a conservation easement\n\n4(1)Any owner of land in fee simple may grant a conservation easement.\n\n4(2)An owner of land may grant more than one conservation easement respecting that land if there is no conflict between the rights and privileges granted and the obligations imposed by the conservation easements.\n\n4(3)The Crown in right of the Province, the Crown in right of Canada or a local government may grant a conservation easement to itself or to anyone eligible to be the holder of a conservation easement.\n\n1998, c.C-16.3, s.4; 2005, c.7, s.14; 2017, c.20, s.40",
+      "text": "Who may grant a conservation easement\n\n4 (1) Any owner of land in fee simple may grant a conservation easement.\n\n4 (2) An owner of land may grant more than one conservation easement respecting that land if there is no conflict between the rights and privileges granted and the obligations imposed by the conservation easements.\n\n4 (3) The Crown in right of the Province, the Crown in right of Canada or a local government may grant a conservation easement to itself or to anyone eligible to be the holder of a conservation easement.\n\n1998, c.C-16.3, s.4; 2005, c.7, s.14; 2017, c.20, s.40",
       "subsections": [
         {
           "id": "4-subsection-1",
           "sourceKey": "section:4/subsection:1",
           "label": "4(1)",
-          "text": "4(1)Any owner of land in fee simple may grant a conservation easement.",
-          "contentHash": "8aee5a73829f656027c0dc3d3348ca4a7e9c872e544233cb0582126440d64979"
+          "text": "4 (1) Any owner of land in fee simple may grant a conservation easement.",
+          "contentHash": "266ab81ea843a6a3ac40275f2052e9930a97a22dee5cc613c20634b0617bc131"
         },
         {
           "id": "4-subsection-2",
           "sourceKey": "section:4/subsection:2",
           "label": "4(2)",
-          "text": "4(2)An owner of land may grant more than one conservation easement respecting that land if there is no conflict between the rights and privileges granted and the obligations imposed by the conservation easements.",
-          "contentHash": "435e19ed29efefa4cef7f71341e27c734403f25eebe2963093321fe9fd75e7d8"
+          "text": "4 (2) An owner of land may grant more than one conservation easement respecting that land if there is no conflict between the rights and privileges granted and the obligations imposed by the conservation easements.",
+          "contentHash": "5c9d6050064002040951cdf98d2a4b0c7a61b1542fbcd41ce41303f1c045ad04"
         },
         {
           "id": "4-subsection-3",
           "sourceKey": "section:4/subsection:3",
           "label": "4(3)",
-          "text": "4(3)The Crown in right of the Province, the Crown in right of Canada or a local government may grant a conservation easement to itself or to anyone eligible to be the holder of a conservation easement.\n\n1998, c.C-16.3, s.4; 2005, c.7, s.14; 2017, c.20, s.40",
-          "contentHash": "12de6e4dfc6c1e59728dd2c604e108396c43f0e6927e84cf0ef368ba5e9a6067"
+          "text": "4 (3) The Crown in right of the Province, the Crown in right of Canada or a local government may grant a conservation easement to itself or to anyone eligible to be the holder of a conservation easement.",
+          "contentHash": "46e688b7ffa750a01ae73472b4fa54fb642bcb4afeefb24048bf2081700163e9"
         }
       ],
-      "contentHash": "6af98bf83954d2a59a4ed813723453763b2613fda60df4f76e608bfb13dbe3bb"
+      "contentHash": "bccfa5676967e864ca05068b647ca563afe38c449f35fbb98d71aa76f58d0b7a"
     },
     {
       "id": "section-5",
@@ -543,9 +543,9 @@
       "componentType": "section",
       "label": "5",
       "heading": "Who may hold a conservation easement",
-      "text": "Who may hold a conservation easement\n\n5Any of the following may hold a conservation easement:\n\n(a)\nthe Crown in right of the Province or any agency of the Crown in right of the Province;\n\n(b)\nthe Crown in right of Canada or any agency of the Crown in right of Canada;\n\n(c)\na local government or an agency of a local government;\n\n(d)\nRepealed: 2017, c.20, s.40\n\n(e)\na non-profit corporation that has as one of its primary purposes a purpose mentioned in section 3; and\n\n(f)\nany person, body or group or class of persons, bodies or groups eligible to hold an interest in land and prescribed by regulation for the purposes of this paragraph.\n\n1998, c.C-16.3, s.5; 2005, c.7, s.14; 2017, c.20, s.40",
+      "text": "Who may hold a conservation easement\n\n5 Any of the following may hold a conservation easement:\n\n( a)\nthe Crown in right of the Province or any agency of the Crown in right of the Province;\n\n( b)\nthe Crown in right of Canada or any agency of the Crown in right of Canada;\n\n( c)\na local government or an agency of a local government;\n\n( d)\nRepealed: 2017, c.20, s.40\n\n( e)\na non-profit corporation that has as one of its primary purposes a purpose mentioned in section 3 ; and\n\n( f)\nany person, body or group or class of persons, bodies or groups eligible to hold an interest in land and prescribed by regulation for the purposes of this paragraph.\n\n1998, c.C-16.3, s.5; 2005, c.7, s.14; 2017, c.20, s.40",
       "subsections": [],
-      "contentHash": "4560fcfb6079120648aafae2954871b22f26af33327a2c14050eef7a09436431"
+      "contentHash": "8aa5748bc62138dc02cc6131fd4d0558db191db13a6dcb3eea3093dabfa99fa5"
     },
     {
       "id": "section-6",
@@ -553,38 +553,38 @@
       "componentType": "section",
       "label": "6",
       "heading": "Registration of a conservation easement",
-      "text": "Registration of a conservation easement\n\n6(1)The holder of a conservation easement shall submit the conservation easement for registration in the appropriate land registration office.\n\n6(2)The registrar of the land registration office to which a conservation easement is submitted for registration shall register the conservation easement if the conservation easement\n\n(a)\ncontains the information required by regulation to be included in a conservation easement, and\n\n(b)\nis, in the opinion of the registrar, fit for registration.\n\n6(3)A conservation easement has no effect until the conservation easement has been registered in accordance with this Act in the appropriate land registration office.\n\n6(4)The holder of a conservation easement shall, within 30 days after registration of the conservation easement, forward a copy of the conservation easement to the Minister.\n\n1998, c.C-16.3, s.6",
+      "text": "Registration of a conservation easement\n\n6 (1) The holder of a conservation easement shall submit the conservation easement for registration in the appropriate land registration office.\n\n6 (2) The registrar of the land registration office to which a conservation easement is submitted for registration shall register the conservation easement if the conservation easement\n\n( a)\ncontains the information required by regulation to be included in a conservation easement, and\n\n( b)\nis, in the opinion of the registrar, fit for registration.\n\n6 (3) A conservation easement has no effect until the conservation easement has been registered in accordance with this Act in the appropriate land registration office.\n\n6 (4) The holder of a conservation easement shall, within 30 days after registration of the conservation easement, forward a copy of the conservation easement to the Minister.\n\n1998, c.C-16.3, s.6",
       "subsections": [
         {
           "id": "6-subsection-1",
           "sourceKey": "section:6/subsection:1",
           "label": "6(1)",
-          "text": "6(1)The holder of a conservation easement shall submit the conservation easement for registration in the appropriate land registration office.",
-          "contentHash": "26d3052cce0d512704eef967cefcf52d9ec7396357b3c7704780b483689c81a2"
+          "text": "6 (1) The holder of a conservation easement shall submit the conservation easement for registration in the appropriate land registration office.",
+          "contentHash": "076bfda9fa6f503a1f689ed970f634a3fff1deb60a226608c548485886731edf"
         },
         {
           "id": "6-subsection-2",
           "sourceKey": "section:6/subsection:2",
           "label": "6(2)",
-          "text": "6(2)The registrar of the land registration office to which a conservation easement is submitted for registration shall register the conservation easement if the conservation easement\n\n(a)\ncontains the information required by regulation to be included in a conservation easement, and\n\n(b)\nis, in the opinion of the registrar, fit for registration.",
-          "contentHash": "a780f1374b1ae31d86aa5efa12e99f790fd870c42b5b54321de19418ec32812d"
+          "text": "6 (2) The registrar of the land registration office to which a conservation easement is submitted for registration shall register the conservation easement if the conservation easement\n\n( a)\ncontains the information required by regulation to be included in a conservation easement, and\n\n( b)\nis, in the opinion of the registrar, fit for registration.",
+          "contentHash": "39a6ccbfdf3ed8334124e32127765e22bed8499c22bb9f3bdc8f6ba83f530b17"
         },
         {
           "id": "6-subsection-3",
           "sourceKey": "section:6/subsection:3",
           "label": "6(3)",
-          "text": "6(3)A conservation easement has no effect until the conservation easement has been registered in accordance with this Act in the appropriate land registration office.",
-          "contentHash": "8d0866753e432129ae65249ec54ef0986fbdf5a7835111872bf4f583d9a4770d"
+          "text": "6 (3) A conservation easement has no effect until the conservation easement has been registered in accordance with this Act in the appropriate land registration office.",
+          "contentHash": "1e92133418cdcf45603f531e7a3485a3839a8648861b2aa4f58fa40634e264ba"
         },
         {
           "id": "6-subsection-4",
           "sourceKey": "section:6/subsection:4",
           "label": "6(4)",
-          "text": "6(4)The holder of a conservation easement shall, within 30 days after registration of the conservation easement, forward a copy of the conservation easement to the Minister.\n\n1998, c.C-16.3, s.6",
-          "contentHash": "5600d3c11c7bd515e334b3606e8a45b0aa3c4c5940f5eb5411e56b737c70b6fa"
+          "text": "6 (4) The holder of a conservation easement shall, within 30 days after registration of the conservation easement, forward a copy of the conservation easement to the Minister.",
+          "contentHash": "ff13d25a989c09951949710b9a253302f7ae1859bafc3a07fc33a517f30ed2c7"
         }
       ],
-      "contentHash": "2435a7501a0b842ba8713ec7085c182bae5a5152eb1c0717e47319aefd5f9e5a"
+      "contentHash": "19e7cef8b1de6df7e36726f3256f617c2cf8da1eebb8de79c1f35e19450866b8"
     },
     {
       "id": "section-7",
@@ -592,24 +592,24 @@
       "componentType": "section",
       "label": "7",
       "heading": "Priority of other interests",
-      "text": "Priority of other interests\n\n7(1)A conservation easement registered under this Act does not have priority over an interest in the land to which the conservation easement relates registered or filed in the appropriate land registration office before the registration of the conservation easement.\n\n7(2)The registration of a conservation easement under this Act does not abrogate or derogate from any authority or right under any other act or regulation to expropriate land.\n\n1998, c.C-16.3, s.7",
+      "text": "Priority of other interests\n\n7 (1) A conservation easement registered under this Act does not have priority over an interest in the land to which the conservation easement relates registered or filed in the appropriate land registration office before the registration of the conservation easement.\n\n7 (2) The registration of a conservation easement under this Act does not abrogate or derogate from any authority or right under any other act or regulation to expropriate land.\n\n1998, c.C-16.3, s.7",
       "subsections": [
         {
           "id": "7-subsection-1",
           "sourceKey": "section:7/subsection:1",
           "label": "7(1)",
-          "text": "7(1)A conservation easement registered under this Act does not have priority over an interest in the land to which the conservation easement relates registered or filed in the appropriate land registration office before the registration of the conservation easement.",
-          "contentHash": "a6d8b140f4ae9d0a627d45702e848cd78da4d9dd4bf90d32ab817a6551108280"
+          "text": "7 (1) A conservation easement registered under this Act does not have priority over an interest in the land to which the conservation easement relates registered or filed in the appropriate land registration office before the registration of the conservation easement.",
+          "contentHash": "35c6cfd51a8811fd4024e9a571b6937e3f93642160869d979131f49ee86ea0b3"
         },
         {
           "id": "7-subsection-2",
           "sourceKey": "section:7/subsection:2",
           "label": "7(2)",
-          "text": "7(2)The registration of a conservation easement under this Act does not abrogate or derogate from any authority or right under any other act or regulation to expropriate land.\n\n1998, c.C-16.3, s.7",
-          "contentHash": "65d8b9aafc8eed19e7cfbe58ba4bdfdf6848cd3cbc5662e43ff63a5a196642be"
+          "text": "7 (2) The registration of a conservation easement under this Act does not abrogate or derogate from any authority or right under any other act or regulation to expropriate land.",
+          "contentHash": "b65df9e0fca2206ea29dd7921056dc2e1c314372d2415f0dfbc001275f154231"
         }
       ],
-      "contentHash": "f12c28ea250f05b3e9607aed6dc130cccb6606b923f27f32613633abb9b6ed36"
+      "contentHash": "1c2f0c431bad062daee5a98b305dc585bdb9c77833f84fdaf404d3eeb1e43087"
     },
     {
       "id": "section-8",
@@ -617,45 +617,45 @@
       "componentType": "section",
       "label": "8",
       "heading": "Amendment of a conservation easement",
-      "text": "Amendment of a conservation easement\n\n8(1)A conservation easement may be amended by a written agreement between the holder of the conservation easement and the owner of the land to which the conservation easement relates.\n\n8(2)A written agreement referred to in subsection (1) shall be submitted for registration in the appropriate land registration office.\n\n8(3)The registrar of the land registration office to which a written agreement referred to in subsection (1) is submitted for registration shall register the written agreement if the written agreement is, in the opinion of the registrar, fit for registration.\n\n8(4)An amendment of a conservation easement has no effect until the written agreement referred to in subsection (1) has been registered in accordance with this Act in the appropriate land registration office.\n\n8(5)The holder of a conservation easement shall, within 30 days after registration of the written agreement referred to in subsection (1), forward a copy of the written agreement to the Minister.\n\n1998, c.C-16.3, s.8",
+      "text": "Amendment of a conservation easement\n\n8 (1) A conservation easement may be amended by a written agreement between the holder of the conservation easement and the owner of the land to which the conservation easement relates.\n\n8 (2) A written agreement referred to in subsection (1) shall be submitted for registration in the appropriate land registration office.\n\n8 (3) The registrar of the land registration office to which a written agreement referred to in subsection (1) is submitted for registration shall register the written agreement if the written agreement is, in the opinion of the registrar, fit for registration.\n\n8 (4) An amendment of a conservation easement has no effect until the written agreement referred to in subsection (1) has been registered in accordance with this Act in the appropriate land registration office.\n\n8 (5) The holder of a conservation easement shall, within 30 days after registration of the written agreement referred to in subsection (1), forward a copy of the written agreement to the Minister.\n\n1998, c.C-16.3, s.8",
       "subsections": [
         {
           "id": "8-subsection-1",
           "sourceKey": "section:8/subsection:1",
           "label": "8(1)",
-          "text": "8(1)A conservation easement may be amended by a written agreement between the holder of the conservation easement and the owner of the land to which the conservation easement relates.",
-          "contentHash": "af53b443d245d2be2f82fba1f7adf87bee9c114055aee2f943b09e55dc3bd8dd"
+          "text": "8 (1) A conservation easement may be amended by a written agreement between the holder of the conservation easement and the owner of the land to which the conservation easement relates.",
+          "contentHash": "f21270b25f83a4c556a477908a5d5f11ad71a97ec37a42cdfc3119e465d6ecbf"
         },
         {
           "id": "8-subsection-2",
           "sourceKey": "section:8/subsection:2",
           "label": "8(2)",
-          "text": "8(2)A written agreement referred to in subsection (1) shall be submitted for registration in the appropriate land registration office.",
-          "contentHash": "781363f406a1a2283576a5450eb5aa86117c772494c8d10000dfc890a1d77051"
+          "text": "8 (2) A written agreement referred to in subsection (1) shall be submitted for registration in the appropriate land registration office.",
+          "contentHash": "8dc6c2dd114e0ef0e2d109413a93e3b4e05ad79ff1d21b8f262a750c8c2adfa3"
         },
         {
           "id": "8-subsection-3",
           "sourceKey": "section:8/subsection:3",
           "label": "8(3)",
-          "text": "8(3)The registrar of the land registration office to which a written agreement referred to in subsection (1) is submitted for registration shall register the written agreement if the written agreement is, in the opinion of the registrar, fit for registration.",
-          "contentHash": "45aeac7205b37657cea4e2695acb64dfb569c47318ecffa07186eabf0c5a04c4"
+          "text": "8 (3) The registrar of the land registration office to which a written agreement referred to in subsection (1) is submitted for registration shall register the written agreement if the written agreement is, in the opinion of the registrar, fit for registration.",
+          "contentHash": "cf7f79271955d5eb9fed79c21155df8adfff2de1b4cd2e53bb0333a914b0cafb"
         },
         {
           "id": "8-subsection-4",
           "sourceKey": "section:8/subsection:4",
           "label": "8(4)",
-          "text": "8(4)An amendment of a conservation easement has no effect until the written agreement referred to in subsection (1) has been registered in accordance with this Act in the appropriate land registration office.",
-          "contentHash": "80b6c3ee903f41451a4d4758630e6f6912eddb5581b14ea3184972616885fb9a"
+          "text": "8 (4) An amendment of a conservation easement has no effect until the written agreement referred to in subsection (1) has been registered in accordance with this Act in the appropriate land registration office.",
+          "contentHash": "ef98496c4ef59fc66366b90923a6d323227ac995cb5abb8df79d9d12bdbafbc0"
         },
         {
           "id": "8-subsection-5",
           "sourceKey": "section:8/subsection:5",
           "label": "8(5)",
-          "text": "8(5)The holder of a conservation easement shall, within 30 days after registration of the written agreement referred to in subsection (1), forward a copy of the written agreement to the Minister.\n\n1998, c.C-16.3, s.8",
-          "contentHash": "8a2b4d8d75ad7b12afcda63f422bc7d008596ee90ed21a13439ba2dcd2723cb4"
+          "text": "8 (5) The holder of a conservation easement shall, within 30 days after registration of the written agreement referred to in subsection (1), forward a copy of the written agreement to the Minister.",
+          "contentHash": "4b904c75ce371687943521d2820b9ae265babd58a32f15d394a9c9937074fe16"
         }
       ],
-      "contentHash": "5067c6a1c7607fde0463b62c4344925f8c7302cb4a7781d389ff1fddec4b46d6"
+      "contentHash": "3bfc63dc15c663a4a8f8604cffd1a3ca93ac1dc60e138a1b663e74bfb9f928fb"
     },
     {
       "id": "section-9",
@@ -663,45 +663,45 @@
       "componentType": "section",
       "label": "9",
       "heading": "Assignment of a conservation easement",
-      "text": "Assignment of a conservation easement\n\n9(1)A conservation easement may, subject to any terms in the conservation easement, be assigned by the holder of the conservation easement to anyone eligible to be the holder of a conservation easement.\n\n9(2)An assignment of a conservation easement shall be submitted for registration in the appropriate land registration office.\n\n9(3)The registrar of the land registration office to which an assignment of a conservation easement is submitted for registration shall register the assignment if the assignment is, in the opinion of the registrar, fit for registration.\n\n9(4)An assignment of a conservation easement has no effect until the assignment has been registered in accordance with this Act in the appropriate land registration office.\n\n9(5)The holder of an assignment of a conservation easement shall, within 30 days after registration of the assignment, forward a copy of the assignment to the Minister.\n\n1998, c.C-16.3, s.9",
+      "text": "Assignment of a conservation easement\n\n9 (1) A conservation easement may, subject to any terms in the conservation easement, be assigned by the holder of the conservation easement to anyone eligible to be the holder of a conservation easement.\n\n9 (2) An assignment of a conservation easement shall be submitted for registration in the appropriate land registration office.\n\n9 (3) The registrar of the land registration office to which an assignment of a conservation easement is submitted for registration shall register the assignment if the assignment is, in the opinion of the registrar, fit for registration.\n\n9 (4) An assignment of a conservation easement has no effect until the assignment has been registered in accordance with this Act in the appropriate land registration office.\n\n9 (5) The holder of an assignment of a conservation easement shall, within 30 days after registration of the assignment, forward a copy of the assignment to the Minister.\n\n1998, c.C-16.3, s.9",
       "subsections": [
         {
           "id": "9-subsection-1",
           "sourceKey": "section:9/subsection:1",
           "label": "9(1)",
-          "text": "9(1)A conservation easement may, subject to any terms in the conservation easement, be assigned by the holder of the conservation easement to anyone eligible to be the holder of a conservation easement.",
-          "contentHash": "68f9660c34e7aab443609428e1bb14d2b0968fe6d939db379d5d1a6bc364120d"
+          "text": "9 (1) A conservation easement may, subject to any terms in the conservation easement, be assigned by the holder of the conservation easement to anyone eligible to be the holder of a conservation easement.",
+          "contentHash": "2f89f71163eacdd278133370c2f5973c7c91e809d79228c0e2d84246c761a5b1"
         },
         {
           "id": "9-subsection-2",
           "sourceKey": "section:9/subsection:2",
           "label": "9(2)",
-          "text": "9(2)An assignment of a conservation easement shall be submitted for registration in the appropriate land registration office.",
-          "contentHash": "58f82d76a4f816d86ce6d15789cae17de81947fba8e69df76ebd316727f74982"
+          "text": "9 (2) An assignment of a conservation easement shall be submitted for registration in the appropriate land registration office.",
+          "contentHash": "96fac123dcc04af54870818d8d7c939a6a9f6b6a2dd8567b534e3206839851b4"
         },
         {
           "id": "9-subsection-3",
           "sourceKey": "section:9/subsection:3",
           "label": "9(3)",
-          "text": "9(3)The registrar of the land registration office to which an assignment of a conservation easement is submitted for registration shall register the assignment if the assignment is, in the opinion of the registrar, fit for registration.",
-          "contentHash": "9edfd292164f3d651b2cec7a5e227ebde0f40fff3edf799ce6bab35c72e485c3"
+          "text": "9 (3) The registrar of the land registration office to which an assignment of a conservation easement is submitted for registration shall register the assignment if the assignment is, in the opinion of the registrar, fit for registration.",
+          "contentHash": "82af9d4ea4d84850d22e8579c86c146361676c7d855e82829cc980f3e775083f"
         },
         {
           "id": "9-subsection-4",
           "sourceKey": "section:9/subsection:4",
           "label": "9(4)",
-          "text": "9(4)An assignment of a conservation easement has no effect until the assignment has been registered in accordance with this Act in the appropriate land registration office.",
-          "contentHash": "ad6af95746f20bb7b4bd708754cdb8d0e38256aa618f3581fd0700c8d091ca01"
+          "text": "9 (4) An assignment of a conservation easement has no effect until the assignment has been registered in accordance with this Act in the appropriate land registration office.",
+          "contentHash": "ef1d8e35fe2cc730cc04f1fd7975dd20d2c22f9bc1261bdaa2c0bef5a1d5cbb8"
         },
         {
           "id": "9-subsection-5",
           "sourceKey": "section:9/subsection:5",
           "label": "9(5)",
-          "text": "9(5)The holder of an assignment of a conservation easement shall, within 30 days after registration of the assignment, forward a copy of the assignment to the Minister.\n\n1998, c.C-16.3, s.9",
-          "contentHash": "194bd146d77dd6c36ab7ef978ab5e3c6cb055adf864f7af341172f3ba01860dc"
+          "text": "9 (5) The holder of an assignment of a conservation easement shall, within 30 days after registration of the assignment, forward a copy of the assignment to the Minister.",
+          "contentHash": "7410fb66a35acea4372afeb6b63b4bc2ef91f6a51a43b6ff02ae0308c276d62d"
         }
       ],
-      "contentHash": "815127a6ed50ef226e695a5cf1a3eae4552fb8d70147ad1ca71490117722c976"
+      "contentHash": "4bcacaed1d234392a35c9c19c40a85b7eddaa8ffeba35d552f23d2ee2d964ca9"
     },
     {
       "id": "section-10",
@@ -709,66 +709,66 @@
       "componentType": "section",
       "label": "10",
       "heading": "Termination of a conservation easement",
-      "text": "Termination of a conservation easement\n\n10(1)A conservation easement may be terminated\n\n(a)\nby a written agreement between the holder of the conservation easement and the owner of the land to which the conservation easement relates, or\n\n(b)\nby The Court of King’s Bench of New Brunswick on application\n\n(i)\nby the holder of the conservation easement or the owner of the land to which the conservation easement relates, if the Court is of the opinion that continuation of the conservation easement would produce a severe hardship for the applicant, or\n\n(ii)\nby any person whom the Court determines has a sufficient interest, when the holder of the conservation easement dies or ceases to exist.\n\n10(2)A conservation easement may be discharged by registering in the appropriate land registration office\n\n(a)\nif the conservation easement is terminated under paragraph (1)(a), the written agreement referred to in paragraph (1)(a), or\n\n(b)\nif the conservation easement is terminated under paragraph (1)(b), a Court order obtained under paragraph (1)(b) directing the registrar to discharge the conservation easement.\n\n10(3)The registrar of the land registration office to which a written agreement referred to in paragraph (1)(a) is submitted for registration shall register the written agreement if the written agreement is, in the opinion of the registrar, fit for registration.\n\n10(4)The owner of the land to which the conservation easement relates shall, within 30 days after registration of the written agreement referred to in paragraph (1)(a) or a Court order obtained under paragraph (1)(b), forward a copy of the written agreement or the Court order, as the case may be, to the Minister.\n\n10(5)When the holder of a conservation easement dies or ceases to exist, any person wishing to make an application under subparagraph (1)(b)(ii) shall give 30 days’ notice in writing to the Minister on behalf of the Crown in right of the Province of that person’s intention to make the application, and the Minister on behalf of the Crown in right of the Province may, within that period, elect to assume the obligations of the holder of the conservation easement and accept the rights and privileges respecting the conservation easement.\n\n10(6)If the Minister on behalf of the Crown in right of the Province elects under subsection (5) to assume the obligations of the holder of the conservation easement and accept the rights and privileges respecting the conservation easement, the Minister on behalf of the Crown in right of the Province shall, within the period referred to in subsection (5),\n\n(a)\nin writing notify the person wishing to make an application under subparagraph (1)(b)(ii) of the election, and\n\n(b)\nregister in the appropriate land registration office a document confirming the election.\n\n10(7)If, in accordance with paragraph (6)(a), the Minister on behalf of the Crown in right of the Province notifies the person wishing to make an application under subparagraph (1)(b)(ii) that the Minister on behalf of the Crown in right of the Province has elected to assume the obligations of the holder of the conservation easement and accept the rights and privileges respecting the conservation easement, an application under subparagraph (1)(b)(ii) shall not be made by that person and any such application, if made, shall be deemed discontinued.\n\n10(8)If a document referred to in paragraph (6)(b) has been registered in accordance with this Act in the appropriate land registration office, the Crown in right of the Province shall be deemed to be the holder of the conservation easement.\n\n1998, c.C-16.3, s.10; 2023, c.17, s.40",
+      "text": "Termination of a conservation easement\n\n10 (1) A conservation easement may be terminated\n\n( a)\nby a written agreement between the holder of the conservation easement and the owner of the land to which the conservation easement relates, or\n\n( b)\nby The Court of King’s Bench of New Brunswick on application\n\n(i)\nby the holder of the conservation easement or the owner of the land to which the conservation easement relates, if the Court is of the opinion that continuation of the conservation easement would produce a severe hardship for the applicant, or\n\n(ii)\nby any person whom the Court determines has a sufficient interest, when the holder of the conservation easement dies or ceases to exist.\n\n10 (2) A conservation easement may be discharged by registering in the appropriate land registration office\n\n( a)\nif the conservation easement is terminated under paragraph (1)(a ), the written agreement referred to in paragraph (1)(a ), or\n\n( b)\nif the conservation easement is terminated under paragraph (1)(b ), a Court order obtained under paragraph (1)(b ) directing the registrar to discharge the conservation easement.\n\n10 (3) The registrar of the land registration office to which a written agreement referred to in paragraph (1)(a ) is submitted for registration shall register the written agreement if the written agreement is, in the opinion of the registrar, fit for registration.\n\n10 (4) The owner of the land to which the conservation easement relates shall, within 30 days after registration of the written agreement referred to in paragraph (1)(a ) or a Court order obtained under paragraph (1)(b ), forward a copy of the written agreement or the Court order, as the case may be, to the Minister.\n\n10 (5) When the holder of a conservation easement dies or ceases to exist, any person wishing to make an application under subparagraph (1)(b )(ii) shall give 30 days’ notice in writing to the Minister on behalf of the Crown in right of the Province of that person’s intention to make the application, and the Minister on behalf of the Crown in right of the Province may, within that period, elect to assume the obligations of the holder of the conservation easement and accept the rights and privileges respecting the conservation easement.\n\n10 (6) If the Minister on behalf of the Crown in right of the Province elects under subsection (5) to assume the obligations of the holder of the conservation easement and accept the rights and privileges respecting the conservation easement, the Minister on behalf of the Crown in right of the Province shall, within the period referred to in subsection (5),\n\n( a)\nin writing notify the person wishing to make an application under subparagraph (1)(b )(ii) of the election, and\n\n( b)\nregister in the appropriate land registration office a document confirming the election.\n\n10 (7) If, in accordance with paragraph (6)(a ), the Minister on behalf of the Crown in right of the Province notifies the person wishing to make an application under subparagraph (1)(b )(ii) that the Minister on behalf of the Crown in right of the Province has elected to assume the obligations of the holder of the conservation easement and accept the rights and privileges respecting the conservation easement, an application under subparagraph (1)(b )(ii) shall not be made by that person and any such application, if made, shall be deemed discontinued.\n\n10 (8) If a document referred to in paragraph (6)(b ) has been registered in accordance with this Act in the appropriate land registration office, the Crown in right of the Province shall be deemed to be the holder of the conservation easement.\n\n1998, c.C-16.3, s.10; 2023, c.17, s.40",
       "subsections": [
         {
           "id": "10-subsection-1",
           "sourceKey": "section:10/subsection:1",
           "label": "10(1)",
-          "text": "10(1)A conservation easement may be terminated\n\n(a)\nby a written agreement between the holder of the conservation easement and the owner of the land to which the conservation easement relates, or\n\n(b)\nby The Court of King’s Bench of New Brunswick on application\n\n(i)\nby the holder of the conservation easement or the owner of the land to which the conservation easement relates, if the Court is of the opinion that continuation of the conservation easement would produce a severe hardship for the applicant, or\n\n(ii)\nby any person whom the Court determines has a sufficient interest, when the holder of the conservation easement dies or ceases to exist.",
-          "contentHash": "4458e6f883fad633b336fba4bf52063398db225be4488400c31606ed97bcdb03"
+          "text": "10 (1) A conservation easement may be terminated\n\n( a)\nby a written agreement between the holder of the conservation easement and the owner of the land to which the conservation easement relates, or\n\n( b)\nby The Court of King’s Bench of New Brunswick on application\n\n(i)\nby the holder of the conservation easement or the owner of the land to which the conservation easement relates, if the Court is of the opinion that continuation of the conservation easement would produce a severe hardship for the applicant, or\n\n(ii)\nby any person whom the Court determines has a sufficient interest, when the holder of the conservation easement dies or ceases to exist.",
+          "contentHash": "d1118f1777520ce04ed0ba461499c68729d954b5848c0f128da34164ca7cc396"
         },
         {
           "id": "10-subsection-2",
           "sourceKey": "section:10/subsection:2",
           "label": "10(2)",
-          "text": "10(2)A conservation easement may be discharged by registering in the appropriate land registration office\n\n(a)\nif the conservation easement is terminated under paragraph (1)(a), the written agreement referred to in paragraph (1)(a), or\n\n(b)\nif the conservation easement is terminated under paragraph (1)(b), a Court order obtained under paragraph (1)(b) directing the registrar to discharge the conservation easement.",
-          "contentHash": "120d3be4cc3aabdcc8f1d8949d0e7d776db3d00ee53248b6aa274947e9184e99"
+          "text": "10 (2) A conservation easement may be discharged by registering in the appropriate land registration office\n\n( a)\nif the conservation easement is terminated under paragraph (1)(a ), the written agreement referred to in paragraph (1)(a ), or\n\n( b)\nif the conservation easement is terminated under paragraph (1)(b ), a Court order obtained under paragraph (1)(b ) directing the registrar to discharge the conservation easement.",
+          "contentHash": "2230959839194a6f2da657afa2be33a1c90e7cc0036c316b3b9a27d02c03f543"
         },
         {
           "id": "10-subsection-3",
           "sourceKey": "section:10/subsection:3",
           "label": "10(3)",
-          "text": "10(3)The registrar of the land registration office to which a written agreement referred to in paragraph (1)(a) is submitted for registration shall register the written agreement if the written agreement is, in the opinion of the registrar, fit for registration.",
-          "contentHash": "21a1759151fd9ed279b55debb49c225fa0f8bdebc6966a67f9bc5b58e46395cb"
+          "text": "10 (3) The registrar of the land registration office to which a written agreement referred to in paragraph (1)(a ) is submitted for registration shall register the written agreement if the written agreement is, in the opinion of the registrar, fit for registration.",
+          "contentHash": "2e66e9769a9af78981d74706c91ba165dccb3abb1776dd27aa88c9a589ce2924"
         },
         {
           "id": "10-subsection-4",
           "sourceKey": "section:10/subsection:4",
           "label": "10(4)",
-          "text": "10(4)The owner of the land to which the conservation easement relates shall, within 30 days after registration of the written agreement referred to in paragraph (1)(a) or a Court order obtained under paragraph (1)(b), forward a copy of the written agreement or the Court order, as the case may be, to the Minister.",
-          "contentHash": "eb00777d0375369553bd5f9db8d23cba541806b2159994a615f22f49de368a6d"
+          "text": "10 (4) The owner of the land to which the conservation easement relates shall, within 30 days after registration of the written agreement referred to in paragraph (1)(a ) or a Court order obtained under paragraph (1)(b ), forward a copy of the written agreement or the Court order, as the case may be, to the Minister.",
+          "contentHash": "1bc9f4ea6d803e07f41f8a007020001368ac648076163f8172f8301bd4392107"
         },
         {
           "id": "10-subsection-5",
           "sourceKey": "section:10/subsection:5",
           "label": "10(5)",
-          "text": "10(5)When the holder of a conservation easement dies or ceases to exist, any person wishing to make an application under subparagraph (1)(b)(ii) shall give 30 days’ notice in writing to the Minister on behalf of the Crown in right of the Province of that person’s intention to make the application, and the Minister on behalf of the Crown in right of the Province may, within that period, elect to assume the obligations of the holder of the conservation easement and accept the rights and privileges respecting the conservation easement.",
-          "contentHash": "b3089346d43cc9e8fb9410ca1bde7a051f4fb19a2ec666af3f6496d1a98b8516"
+          "text": "10 (5) When the holder of a conservation easement dies or ceases to exist, any person wishing to make an application under subparagraph (1)(b )(ii) shall give 30 days’ notice in writing to the Minister on behalf of the Crown in right of the Province of that person’s intention to make the application, and the Minister on behalf of the Crown in right of the Province may, within that period, elect to assume the obligations of the holder of the conservation easement and accept the rights and privileges respecting the conservation easement.",
+          "contentHash": "781d457e4bc074fc5bcd9e3645207ad4a4004044d30926ead59114ff41fb084a"
         },
         {
           "id": "10-subsection-6",
           "sourceKey": "section:10/subsection:6",
           "label": "10(6)",
-          "text": "10(6)If the Minister on behalf of the Crown in right of the Province elects under subsection (5) to assume the obligations of the holder of the conservation easement and accept the rights and privileges respecting the conservation easement, the Minister on behalf of the Crown in right of the Province shall, within the period referred to in subsection (5),\n\n(a)\nin writing notify the person wishing to make an application under subparagraph (1)(b)(ii) of the election, and\n\n(b)\nregister in the appropriate land registration office a document confirming the election.",
-          "contentHash": "0b8be24d52296fbcdb2e60ab4fdd5205026aef25aa562ea0e9334bbf14e5200b"
+          "text": "10 (6) If the Minister on behalf of the Crown in right of the Province elects under subsection (5) to assume the obligations of the holder of the conservation easement and accept the rights and privileges respecting the conservation easement, the Minister on behalf of the Crown in right of the Province shall, within the period referred to in subsection (5),\n\n( a)\nin writing notify the person wishing to make an application under subparagraph (1)(b )(ii) of the election, and\n\n( b)\nregister in the appropriate land registration office a document confirming the election.",
+          "contentHash": "210e5c485234170f7f6c8cc5be95ecf876b17b6a2ae302e96a4b98501dcf43c4"
         },
         {
           "id": "10-subsection-7",
           "sourceKey": "section:10/subsection:7",
           "label": "10(7)",
-          "text": "10(7)If, in accordance with paragraph (6)(a), the Minister on behalf of the Crown in right of the Province notifies the person wishing to make an application under subparagraph (1)(b)(ii) that the Minister on behalf of the Crown in right of the Province has elected to assume the obligations of the holder of the conservation easement and accept the rights and privileges respecting the conservation easement, an application under subparagraph (1)(b)(ii) shall not be made by that person and any such application, if made, shall be deemed discontinued.",
-          "contentHash": "1af2f788823b8a7a7d47ac554d846b0fb246e59430dc40b84c768e9ecb58e2e7"
+          "text": "10 (7) If, in accordance with paragraph (6)(a ), the Minister on behalf of the Crown in right of the Province notifies the person wishing to make an application under subparagraph (1)(b )(ii) that the Minister on behalf of the Crown in right of the Province has elected to assume the obligations of the holder of the conservation easement and accept the rights and privileges respecting the conservation easement, an application under subparagraph (1)(b )(ii) shall not be made by that person and any such application, if made, shall be deemed discontinued.",
+          "contentHash": "2cc201a241fc03c02dbf8677d5e1c86e14570cd157b607687bcc1ddd7067ab48"
         },
         {
           "id": "10-subsection-8",
           "sourceKey": "section:10/subsection:8",
           "label": "10(8)",
-          "text": "10(8)If a document referred to in paragraph (6)(b) has been registered in accordance with this Act in the appropriate land registration office, the Crown in right of the Province shall be deemed to be the holder of the conservation easement.\n\n1998, c.C-16.3, s.10; 2023, c.17, s.40",
-          "contentHash": "26768928376c59a5d28ccf861872fe904e888cf822f41e0e8fb6ed2acbb3001b"
+          "text": "10 (8) If a document referred to in paragraph (6)(b ) has been registered in accordance with this Act in the appropriate land registration office, the Crown in right of the Province shall be deemed to be the holder of the conservation easement.",
+          "contentHash": "b848cd55b16c13702dea5868fe432442065ab0eac9a33130215aa27e094e735d"
         }
       ],
-      "contentHash": "7a8449e050193fbb38efc86653ca1bdd5c1a7cc44aa0b5e1356ab02f61c98fd9"
+      "contentHash": "a5eca5f9f3dbc6646b1be30ecc8409b339888326db77b2281a81f7e300a0aeaf"
     },
     {
       "id": "section-11",
@@ -776,24 +776,24 @@
       "componentType": "section",
       "label": "11",
       "heading": "Obligations may be enforced",
-      "text": "Obligations may be enforced\n\n11(1)The obligations in a conservation easement, whether positive or negative, on the holder of the conservation easement, the grantor of the conservation easement or a subsequent owner of the land may be enforced by an action in The Court of King’s Bench of New Brunswick by the holder of the conservation easement, the grantor of the conservation easement or a subsequent owner of the land.\n\n11(2)In an action under subsection (1), the Court may do any one or more of the following:\n\n(a)\ngrant any relief or remedy available at common law to any of the parties referred to in subsection (1);\n\n(b)\norder the defendant to take any action the Court considers appropriate to restore or remedy any harm to the land to which the conservation easement relates; and\n\n(c)\nprohibit any activity on the land to which the conservation easement relates that the Court considers contrary to any of the purposes of the conservation easement.\n\n1998, c.C-16.3, s.11; 2023, c.17, s.40",
+      "text": "Obligations may be enforced\n\n11 (1) The obligations in a conservation easement, whether positive or negative, on the holder of the conservation easement, the grantor of the conservation easement or a subsequent owner of the land may be enforced by an action in The Court of King’s Bench of New Brunswick by the holder of the conservation easement, the grantor of the conservation easement or a subsequent owner of the land.\n\n11 (2) In an action under subsection (1), the Court may do any one or more of the following:\n\n( a)\ngrant any relief or remedy available at common law to any of the parties referred to in subsection (1);\n\n( b)\norder the defendant to take any action the Court considers appropriate to restore or remedy any harm to the land to which the conservation easement relates; and\n\n( c)\nprohibit any activity on the land to which the conservation easement relates that the Court considers contrary to any of the purposes of the conservation easement.\n\n1998, c.C-16.3, s.11; 2023, c.17, s.40",
       "subsections": [
         {
           "id": "11-subsection-1",
           "sourceKey": "section:11/subsection:1",
           "label": "11(1)",
-          "text": "11(1)The obligations in a conservation easement, whether positive or negative, on the holder of the conservation easement, the grantor of the conservation easement or a subsequent owner of the land may be enforced by an action in The Court of King’s Bench of New Brunswick by the holder of the conservation easement, the grantor of the conservation easement or a subsequent owner of the land.",
-          "contentHash": "666ac511cc12ee444345cb7f74268f276561a8d37ad0cb5a1a044ee1b17c65bc"
+          "text": "11 (1) The obligations in a conservation easement, whether positive or negative, on the holder of the conservation easement, the grantor of the conservation easement or a subsequent owner of the land may be enforced by an action in The Court of King’s Bench of New Brunswick by the holder of the conservation easement, the grantor of the conservation easement or a subsequent owner of the land.",
+          "contentHash": "6d18e259ed56d776687996f28f55ab490d719f1cd257d1baf42de8f4660951b2"
         },
         {
           "id": "11-subsection-2",
           "sourceKey": "section:11/subsection:2",
           "label": "11(2)",
-          "text": "11(2)In an action under subsection (1), the Court may do any one or more of the following:\n\n(a)\ngrant any relief or remedy available at common law to any of the parties referred to in subsection (1);\n\n(b)\norder the defendant to take any action the Court considers appropriate to restore or remedy any harm to the land to which the conservation easement relates; and\n\n(c)\nprohibit any activity on the land to which the conservation easement relates that the Court considers contrary to any of the purposes of the conservation easement.\n\n1998, c.C-16.3, s.11; 2023, c.17, s.40",
-          "contentHash": "a45c40de6ebd4fed5b3a5f6f37e292479ef47bc28194674ea7cdc43b7949b8ac"
+          "text": "11 (2) In an action under subsection (1), the Court may do any one or more of the following:\n\n( a)\ngrant any relief or remedy available at common law to any of the parties referred to in subsection (1);\n\n( b)\norder the defendant to take any action the Court considers appropriate to restore or remedy any harm to the land to which the conservation easement relates; and\n\n( c)\nprohibit any activity on the land to which the conservation easement relates that the Court considers contrary to any of the purposes of the conservation easement.",
+          "contentHash": "cce702008e3cda3d3fff634f7ce514740fdb5e5d8f1a036d6aa0586a0e6c0164"
         }
       ],
-      "contentHash": "45c4de952487948e73e6bea093b6f569b02ee26ae211f42cb5a28ce4fda4d399"
+      "contentHash": "4a19b9bc47bc22bdc71a026eebcc534c9a7e373d8e158f49c9f1341ec1b3e6f2"
     },
     {
       "id": "section-12",
@@ -801,9 +801,9 @@
       "componentType": "section",
       "label": "12",
       "heading": "Regulations",
-      "text": "Regulations\n\n12The Lieutenant-Governor in Council may make regulations\n\n(a)\nprescribing purposes for which a conservation easement may be granted;\n\n(b)\nprescribing a person, body or group or a class of persons, bodies or groups who may hold a conservation easement;\n\n(c)\nrespecting the information that must be included in a conservation easement;\n\n(d)\ndefining any word or expression used in but not defined in this Act for the purposes of this Act, the regulations or both.\n\n1998, c.C-16.3, s.12\n\nN.B. This Act was proclaimed and came into force September 1, 2011.\n\nN.B. This Act is consolidated to December 13, 2024.",
+      "text": "Regulations\n\n12 The Lieutenant-Governor in Council may make regulations\n\n( a)\nprescribing purposes for which a conservation easement may be granted;\n\n( b)\nprescribing a person, body or group or a class of persons, bodies or groups who may hold a conservation easement;\n\n( c)\nrespecting the information that must be included in a conservation easement;\n\n( d)\ndefining any word or expression used in but not defined in this Act for the purposes of this Act, the regulations or both.\n\n1998, c.C-16.3, s.12\n\nN.B. This Act was proclaimed and came into force September 1, 2011.\n\nN.B. This Act is consolidated to December 13, 2024.",
       "subsections": [],
-      "contentHash": "8caf6e46803a19f04b0885a0a9d92a8067a1c1c40e56903211d52b43e17f3999"
+      "contentHash": "6c21124c9dd812a64dc85f0ad477e49071f6ecc44fd51e6c5db0a8009ef4802d"
     }
   ],
   "notes": []

@@ -45,7 +45,7 @@
  */
 import { existsSync, readFileSync, readdirSync, writeFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
-import type { AiStudyMapJob, AiStudyMapResult } from '../src/study/ai/studyAiTypes';
+import type { AiStudyMapJob, AiStudyMapResult } from '../study-desktop/src/ai/studyAiTypes';
 import { RUNS_DIR, readJsonl } from './studyAiLocalMapAuthor';
 import { BROAD_FOCUS_CODES, CORE_SURVEYING_DOCS } from './studyAiBuildBalancedReviewSet';
 import { renderPostQcSemanticAuditMd } from './studyAiAuditPostProductionSemanticsMarkdown';

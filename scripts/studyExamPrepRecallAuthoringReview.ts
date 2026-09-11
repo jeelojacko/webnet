@@ -14,11 +14,11 @@ import { fileURLToPath } from 'node:url';
 import {
   buildExamPrepRecallAuthoringBundle,
   buildExamPrepRecallAuthoringSummary,
-} from '../src/study/examPrep/qa/examPrepRecallAuthoringReview';
+} from '../study-desktop/src/examPrep/qa/examPrepRecallAuthoringReview';
 import {
   buildExamPrepRecallAuthoringMarkdown,
   serializeExamPrepRecallAuthoringJson,
-} from '../src/study/examPrep/qa/examPrepRecallAuthoringReport';
+} from '../study-desktop/src/examPrep/qa/examPrepRecallAuthoringReport';
 
 const REPORTS_DIR = join(dirname(fileURLToPath(import.meta.url)), '..', 'reports', 'exam-prep');
 const JSON_REPORT = join(REPORTS_DIR, 'recall-authoring-review.json');

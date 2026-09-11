@@ -14,7 +14,7 @@ import { basename, isAbsolute, join } from 'node:path';
 
 const RUNS_DIR = 'study-content/ai/runs';
 import { classifyProviderFailure, stripUtf8Bom } from './studyAiProviderFailures';
-import type { AiStudyMapJob, AiStudyMapResult } from '../src/study/ai/studyAiTypes';
+import type { AiStudyMapJob, AiStudyMapResult } from '../study-desktop/src/ai/studyAiTypes';
 import { categoryForJob, structuralStrataForJob } from './studyAiMapStrata';
 
 export type NormalizedIssue = {

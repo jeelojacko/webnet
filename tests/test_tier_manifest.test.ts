@@ -125,6 +125,10 @@ describe('test tier manifest', () => {
         expect(exceptions.has(p), `suspicious campaign-like name outside tests/evidence/: ${p}`).toBe(true);
       }
     }
+    for (const p of collectTestFiles(path.join(here, '..', 'study-desktop', 'tests'))) {
+      if (!SUSPICIOUS_NAME.test(path.basename(p))) continue;
+      expect(exceptions.has(p), `suspicious campaign-like name in study-desktop/tests: ${p}`).toBe(true);
+    }
   });
 
   it('non-full tier manifests are mutually disjoint', () => {

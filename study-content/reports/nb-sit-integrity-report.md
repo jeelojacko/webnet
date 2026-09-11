@@ -3,8 +3,8 @@
 Required Acts: 57
 Required regulations: 6
 Documents normalized: 61
-Total sections: 3673
-Total subsections: 6852
+Total sections: 3671
+Total subsections: 6713
 Schedules: 21
 Forms: 64
 Errors: 0
@@ -335,7 +335,7 @@ Warnings: 0
 
 Title: New Brunswick Land Surveyors Act, 1986
 Sections: 124
-Subsections: 128
+Subsections: 0
 Schedules: 0
 Forms: 0
 Errors: 0
@@ -344,8 +344,8 @@ Warnings: 1
 ## doc-new-brunswick-land-surveyors-bylaws
 
 Title: Association of New Brunswick Land Surveyors Bylaws
-Sections: 217
-Subsections: 11
+Sections: 215
+Subsections: 0
 Schedules: 0
 Forms: 0
 Errors: 0

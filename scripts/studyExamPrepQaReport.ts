@@ -9,8 +9,8 @@
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { EXAM_PREP_RECALL_TASKS } from '../src/study/examPrep/examPrepRecallTasks';
-import { EXAM_PREP_RECOGNITION_TASKS } from '../src/study/examPrep/examPrepRecognitionTasks';
+import { EXAM_PREP_RECALL_TASKS } from '../study-desktop/src/examPrep/examPrepRecallTasks';
+import { EXAM_PREP_RECOGNITION_TASKS } from '../study-desktop/src/examPrep/examPrepRecognitionTasks';
 import {
   buildRecallQaMarkdown,
   buildRecognitionQaMarkdown,
@@ -18,7 +18,7 @@ import {
   recognitionAuditCounts,
   buildRecallQaRows,
   buildRecognitionQaRows,
-} from '../src/study/examPrep/qa/examPrepQaAudit';
+} from '../study-desktop/src/examPrep/qa/examPrepQaAudit';
 
 const REPORTS_DIR = join(dirname(fileURLToPath(import.meta.url)), '..', 'reports', 'exam-prep');
 const RECALL_REPORT = join(REPORTS_DIR, 'recall-quality-audit.md');

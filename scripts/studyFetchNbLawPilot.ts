@@ -1,8 +1,8 @@
 import { createHash } from 'node:crypto';
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import path from 'node:path';
-import type { NbLawManifest, NbLawRawFetchMetadata } from '../src/study/content/nbLawTypes';
-import { buildNbLawSourceUrl, getEnabledNbLawEntries, validateNbLawManifest } from '../src/study/content/nbLawManifest';
+import type { NbLawManifest, NbLawRawFetchMetadata } from '../study-desktop/src/content/nbLawTypes';
+import { buildNbLawSourceUrl, getEnabledNbLawEntries, validateNbLawManifest } from '../study-desktop/src/content/nbLawManifest';
 
 const MANIFEST_PATH = path.resolve('study-content/manifests/nb-law-pilot.json');
 const RAW_DIR = path.resolve('study-content/raw/nb-law-pilot');

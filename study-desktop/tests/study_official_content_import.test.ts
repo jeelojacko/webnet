@@ -1,0 +1,330 @@
+import { describe, expect, it } from 'vitest';
+import { readFileSync } from 'node:fs';
+import contentPackageJson from '../../study-content/packages/nb-law-pilot.content-package.json';
+import type { NbLawContentPackage } from '../src/content/nbLawTypes';
+import {
+  applyOfficialContentPackageToSnapshot,
+  buildCompleteDocumentText,
+  classifyLegalComponentExtractionStatus,
+  compareImportedLegalComponents,
+  displayLegalComponentText,
+  createStudyUnitFromSourceSelection,
+  previewOfficialContentPackage,
+  shouldShowLegalComponentInReader,
+  toImportedLegalComponents,
+  toImportedLegalDocuments,
+  upsertStudyDocumentsWithOfficialMetadata,
+  validateOfficialContentPackageForImport,
+} from '../src/studyOfficialContent';
+import { createSeedStudyData } from '../src/studySeed';
+import type { ImportedLegalComponent, StudyDataSnapshot } from '../src/studyTypes';
+
+const pilotPackage = contentPackageJson as NbLawContentPackage;
+const sitCorpusPackage = JSON.parse(
+  readFileSync(
+    new URL('../../study-content/packages/nb-sit-statute-corpus.content-package.json', import.meta.url),
+    'utf8',
+  ),
+) as NbLawContentPackage;
+
+const clonePackage = (): NbLawContentPackage => JSON.parse(JSON.stringify(pilotPackage)) as NbLawContentPackage;
+const cloneSitCorpusPackage = (): NbLawContentPackage =>
+  JSON.parse(JSON.stringify(sitCorpusPackage)) as NbLawContentPackage;
+
+const importSeed = (): StudyDataSnapshot =>
+  applyOfficialContentPackageToSnapshot({
+    snapshot: createSeedStudyData('2026-08-05T10:00:00.000Z'),
+    contentPackage: clonePackage(),
+    importedAt: '2026-08-05T11:00:00.000Z',
+  }).snapshot;
+
+describe('official content package validation and preview', () => {
+  it('provides one canonical local summary for every SIT official document', () => {
+    const legalDocuments = toImportedLegalDocuments(sitCorpusPackage, '2026-09-11T00:00:00.000Z');
+    const documents = upsertStudyDocumentsWithOfficialMetadata([], legalDocuments);
+    expect(legalDocuments).toHaveLength(61);
+    expect(documents).toHaveLength(61);
+    expect(documents.every((document) => document.summary.trim().length > 0)).toBe(true);
+    expect(documents.every((document) => !document.summary.includes('No local summary yet.'))).toBe(true);
+  });
+
+  it('renders Advisory Committees parent and subsections exactly once', () => {
+    const component = toImportedLegalComponents(sitCorpusPackage).find(
+      (entry) => entry.documentId === 'doc-aquaculture-act' && entry.sourceKey === 'section:5',
+    );
+    expect(component).toBeTruthy();
+    const completeText = buildCompleteDocumentText([component!]);
+    expect(displayLegalComponentText(component!)).toBe('Advisory Committees');
+    expect(completeText.match(/5 \(1\) The Minister may establish advisory committees\./g)).toHaveLength(1);
+    expect(completeText).not.toContain('5 (1) The Minister may establish advisory committees.\n\n5 (1)');
+  });
+
+  it('validates the generated pilot package', () => {
+    expect(validateOfficialContentPackageForImport(clonePackage())).toEqual([]);
+  });
+
+  it('rejects embedded integrity errors', () => {
+    const pkg = clonePackage();
+    pkg.integrityReport!.errors = ['bad package'];
+    expect(validateOfficialContentPackageForImport(pkg).join('\n')).toContain('Embedded integrity report');
+  });
+
+  it('rejects invalid parent relationships and source hash mismatches', () => {
+    const pkg = clonePackage();
+    pkg.relationships[0] = { ...pkg.relationships[0], parentActId: 'missing-act' };
+    pkg.sourceHashes[pkg.documents[0].id] = 'wrong';
+    const errors = validateOfficialContentPackageForImport(pkg).join('\n');
+    expect(errors).toContain('Relationship parent does not exist');
+    expect(errors).toContain('Source hash mismatch');
+  });
+
+  it('previews a new package and an identical re-import', () => {
+    const seed = createSeedStudyData('2026-08-05T10:00:00.000Z');
+    const firstPreview = previewOfficialContentPackage(seed, clonePackage());
+    expect(firstPreview.newDocuments).toHaveLength(10);
+    expect(firstPreview.newComponents.length).toBeGreaterThan(10);
+
+    const imported = importSeed();
+    const secondPreview = previewOfficialContentPackage(imported, clonePackage());
+    expect(secondPreview.newDocuments).toHaveLength(0);
+    expect(secondPreview.updatedDocuments).toHaveLength(0);
+    expect(secondPreview.unchangedDocuments).toHaveLength(10);
+    expect(secondPreview.changedComponents).toHaveLength(0);
+  });
+
+  it('dry-runs the full NB SIT corpus package and treats identical re-import as unchanged', () => {
+    const seed = createSeedStudyData('2026-08-11T10:00:00.000Z');
+    const pkg = cloneSitCorpusPackage();
+    const firstPreview = previewOfficialContentPackage(seed, pkg);
+
+    expect(validateOfficialContentPackageForImport(pkg)).toEqual([]);
+    expect(firstPreview.valid).toBe(true);
+    expect(firstPreview.newDocuments).toHaveLength(61);
+    expect(firstPreview.newComponents).toHaveLength(3756);
+    expect(firstPreview.changedComponents).toHaveLength(0);
+
+    const { snapshot } = applyOfficialContentPackageToSnapshot({
+      snapshot: seed,
+      contentPackage: pkg,
+      importedAt: '2026-08-11T11:00:00.000Z',
+    });
+    expect(snapshot.documents).toHaveLength(61);
+    expect(snapshot.legalDocuments).toHaveLength(61);
+    expect(snapshot.legalComponents).toHaveLength(3756);
+    expect(snapshot.importHistory.at(-1)).toMatchObject({
+      packageId: pkg.id,
+      addedDocuments: 61,
+      addedComponents: 3756,
+      changedDocuments: 0,
+      changedComponents: 0,
+      removedComponents: 0,
+      result: 'success',
+    });
+
+    const secondPreview = previewOfficialContentPackage(snapshot, cloneSitCorpusPackage());
+    expect(secondPreview.valid).toBe(true);
+    expect(secondPreview.newDocuments).toHaveLength(0);
+    expect(secondPreview.updatedDocuments).toHaveLength(0);
+    expect(secondPreview.unchangedDocuments).toHaveLength(61);
+    expect(secondPreview.newComponents).toHaveLength(0);
+    expect(secondPreview.changedComponents).toHaveLength(0);
+    expect(secondPreview.removedComponents).toHaveLength(0);
+    expect(secondPreview.unchangedComponents).toHaveLength(3756);
+    expect(secondPreview.unitsRequiringSourceReview).toHaveLength(0);
+  });
+
+  it('previews changed and removed components', () => {
+    const imported = importSeed();
+    const pkg = clonePackage();
+    const document = pkg.documents.find((entry) => entry.id === 'doc-surveys-act')!;
+    document.components[0].text += '\nChanged source wording.';
+    document.components[0].contentHash = 'changed-hash';
+    document.sections[0].contentHash = 'changed-hash';
+    document.contentHash = 'changed-document-hash';
+    pkg.sourceHashes[document.id] = document.contentHash;
+    const removed = document.components.at(-1)!;
+    document.components = document.components.slice(0, -1);
+    document.tableOfContents = document.tableOfContents.filter((entry) => entry.sourceKey !== removed.sourceKey);
+    const preview = previewOfficialContentPackage(imported, pkg);
+    expect(preview.changedComponents).toContain('doc-surveys-act::section:1');
+    expect(preview.removedComponents.some((key) => key.startsWith('doc-surveys-act::'))).toBe(true);
+  });
+});
+
+describe('official content import behavior', () => {
+  it('imports atomically in pure snapshot form and preserves user-authored data', () => {
+    const seed = createSeedStudyData('2026-08-05T10:00:00.000Z');
+    const customized = {
+      ...seed,
+      documents: [{ ...seed.documents[0], summary: 'user summary' }, ...seed.documents.slice(1)],
+      units: [{ ...seed.units[0], editableSummary: 'user unit summary' }, ...seed.units.slice(1)],
+      attempts: [
+        {
+          id: 'attempt-1',
+          unitId: seed.units[0].id,
+          promptId: seed.prompts[0].id,
+          phase: 'guided-recall' as const,
+          answer: 'answer',
+          coveredConceptIds: [],
+          rating: 'good' as const,
+          startedAt: '2026-08-05T10:00:00.000Z',
+          revealedAt: '2026-08-05T10:01:00.000Z',
+          completedAt: '2026-08-05T10:02:00.000Z',
+        },
+      ],
+    };
+    const { snapshot } = applyOfficialContentPackageToSnapshot({
+      snapshot: customized,
+      contentPackage: clonePackage(),
+      importedAt: '2026-08-05T11:00:00.000Z',
+    });
+    expect(snapshot.legalDocuments).toHaveLength(10);
+    expect(snapshot.documents).toHaveLength(10);
+    expect(snapshot.documents.filter((document) => document.kind === 'regulation')).toHaveLength(5);
+    expect(snapshot.documents.find((document) => document.id === 'reg-surveys-84-76')?.title).toContain(
+      'Regulation 84-76',
+    );
+    expect(snapshot.documents[0].summary).toBe('user summary');
+    expect(snapshot.units[0].editableSummary).toBe('user unit summary');
+    expect(snapshot.attempts).toHaveLength(1);
+    expect(snapshot.importHistory[0].referenceOnlyForms).toBeGreaterThan(0);
+  });
+
+  it('flags changed and missing source references without rewriting study content', () => {
+    const imported = importSeed();
+    const component = imported.legalComponents.find((entry) => entry.documentId === 'doc-surveys-act')!;
+    const unit = {
+      ...imported.units[0],
+      sourceReferences: [
+        {
+          documentId: component.documentId,
+          sourceKey: component.sourceKey,
+          contentHashAtLinkTime: component.contentHash,
+        },
+        {
+          documentId: component.documentId,
+          sourceKey: 'section:missing',
+          contentHashAtLinkTime: 'old',
+        },
+      ],
+      editableSummary: 'keep me',
+    };
+    const pkg = clonePackage();
+    const changed = pkg.documents.find((entry) => entry.id === component.documentId)!.components.find(
+      (entry) => entry.sourceKey === component.sourceKey,
+    )!;
+    changed.text += '\nnew';
+    changed.contentHash = 'new-hash';
+    const changedDocument = pkg.documents.find((entry) => entry.id === component.documentId)!;
+    changedDocument.contentHash = 'new-document-hash';
+    pkg.sourceHashes[changedDocument.id] = changedDocument.contentHash;
+    const { snapshot } = applyOfficialContentPackageToSnapshot({
+      snapshot: { ...imported, units: [unit, ...imported.units.slice(1)] },
+      contentPackage: pkg,
+    });
+    expect(snapshot.units[0].sourceReviewRequired).toBe(true);
+    expect(snapshot.units[0].sourceReferenceMissing).toBe(true);
+    expect(snapshot.units[0].editableSummary).toBe('keep me');
+  });
+
+  it('creates a generated editable study unit from selected official source references', () => {
+    const imported = importSeed();
+    const document = imported.documents.find((entry) => entry.id === 'doc-surveys-act')!;
+    const components = imported.legalComponents.filter((entry) => entry.documentId === document.id).slice(0, 2);
+    const unit = createStudyUnitFromSourceSelection({
+      document,
+      components,
+      existingUnits: imported.units,
+      nowIso: '2026-08-05T12:00:00.000Z',
+    });
+    expect(unit.editableSummary).toBe('');
+    expect(unit.referenceAnswer).toBe('');
+    expect(unit.generatedContentState?.title).toBe('generated');
+    expect(unit.sourceReferences).toHaveLength(2);
+    expect(unit.sourceReferences?.[0].contentHashAtLinkTime).toBe(components[0].contentHash);
+  });
+});
+
+describe('reference-only form classification', () => {
+  it('classifies label-only forms as reference-only', () => {
+    const component: ImportedLegalComponent = {
+      documentId: 'doc',
+      id: 'form-1',
+      sourceKey: 'form:form-1',
+      componentType: 'form',
+      label: 'Form 1',
+      text: 'Form 1',
+      contentHash: 'hash',
+      extractionStatus: 'complete',
+    };
+    expect(classifyLegalComponentExtractionStatus(component)).toBe('reference-only');
+  });
+
+  it('does not classify short statutory sections as form stubs', () => {
+    const component: ImportedLegalComponent = {
+      documentId: 'doc',
+      id: 'section-1',
+      sourceKey: 'section:1',
+      componentType: 'section',
+      label: '1',
+      text: '1Repealed.',
+      contentHash: 'hash',
+      extractionStatus: 'complete',
+    };
+    expect(classifyLegalComponentExtractionStatus(component)).toBe('complete');
+  });
+});
+
+describe('legal reader component display', () => {
+  it('sorts legal sections by numeric label rather than lexicographic source key', () => {
+    const components = ['1', '10', '2', '18.2', '18.10', '18.3'].map(
+      (label): ImportedLegalComponent => ({
+        documentId: 'doc',
+        id: `section-${label}`,
+        sourceKey: `section:${label}`,
+        componentType: 'section',
+        label,
+        text: label,
+        contentHash: label,
+        extractionStatus: 'complete',
+      }),
+    );
+    expect(components.sort(compareImportedLegalComponents).map((component) => component.label)).toEqual([
+      '1',
+      '2',
+      '10',
+      '18.2',
+      '18.3',
+      '18.10',
+    ]);
+  });
+
+  it('omits reference-only forms from reader text while retaining schedules', () => {
+    const components: ImportedLegalComponent[] = [
+      {
+        documentId: 'doc',
+        id: 'schedule-a',
+        sourceKey: 'schedule:schedule-a',
+        componentType: 'schedule',
+        label: 'SCHEDULE A',
+        text: 'SCHEDULE A\nForm 1 APPLICATION',
+        contentHash: 'schedule',
+        extractionStatus: 'complete',
+      },
+      {
+        documentId: 'doc',
+        id: 'form-1',
+        sourceKey: 'form:form-1',
+        componentType: 'form',
+        label: 'Form 1',
+        text: 'Form 1',
+        contentHash: 'form',
+        extractionStatus: 'reference-only',
+      },
+    ];
+    expect(shouldShowLegalComponentInReader(components[0])).toBe(true);
+    expect(shouldShowLegalComponentInReader(components[1])).toBe(false);
+    expect(buildCompleteDocumentText(components)).toContain('SCHEDULE A');
+    expect(buildCompleteDocumentText(components)).not.toBe('SCHEDULE A\nForm 1 APPLICATION\n\nForm 1');
+  });
+});

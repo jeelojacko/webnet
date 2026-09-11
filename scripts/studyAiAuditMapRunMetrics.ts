@@ -4,7 +4,7 @@
  * lists; no filesystem access, no LLM calls.
  */
 
-import type { AiStudyMapJob, AiStudyMapResult } from '../src/study/ai/studyAiTypes';
+import type { AiStudyMapJob, AiStudyMapResult } from '../study-desktop/src/ai/studyAiTypes';
 import { failureOrigin } from './studyAiAuditMapRunCore';
 import type { ComparisonSetJob, JobAuditRecord, NormalizedIssue } from './studyAiAuditMapRunCore';
 

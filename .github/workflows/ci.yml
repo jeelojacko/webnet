@@ -50,6 +50,8 @@ jobs:
           cache: npm
       - name: Install
         run: npm ci
+      - name: Install Study Desktop dependencies
+        run: npm ci --prefix study-desktop
       - name: Lint
         run: npm run lint
       - name: Typecheck

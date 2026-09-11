@@ -1,9 +1,11 @@
 import { existsSync, readFileSync, readdirSync, writeFileSync } from 'node:fs';
-import { join } from 'node:path';
-import type { AiStudyMapJob, AiStudyMapResult } from '../src/study/ai/studyAiTypes';
-import { validateAiStudyMapResult } from '../src/study/ai/studyAiValidation';
+import { isAbsolute, join } from 'node:path';
+import { fileURLToPath } from 'node:url';
+import type { AiStudyMapJob, AiStudyMapResult } from '../study-desktop/src/ai/studyAiTypes';
+import { validateAiStudyMapResult } from '../study-desktop/src/ai/studyAiValidation';
 
-const RUNS_DIR = 'study-content/ai/runs';
+const REPO_ROOT = join(fileURLToPath(new URL('.', import.meta.url)), '..');
+const RUNS_DIR = join(REPO_ROOT, 'study-content', 'ai', 'runs');
 const DEFAULT_OUT = 'study-map-local-comparison-report.json';
 
 const USAGE = [
@@ -232,7 +234,7 @@ const readV2Jobs = (v2Run: string): AiStudyMapJob[] => {
 };
 
 const resolveV1Location = (location: string, v1Run: string): string => {
-  if (location.startsWith('study-content')) return location;
+  if (isAbsolute(location) || location.startsWith('study-content')) return location;
   const relative = location.replace(/^\.?\//, '');
   const underV1Run = relative === v1Run || relative.startsWith(`${v1Run}/`);
   return join(RUNS_DIR, underV1Run ? relative : join(v1Run, relative));

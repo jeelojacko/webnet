@@ -1,4 +1,4 @@
-import type { AiValidationIssue } from '../src/study/ai/studyAiTypes';
+import type { AiValidationIssue } from '../study-desktop/src/ai/studyAiTypes';
 
 /**
  * Concise, code-specific explanations of deterministic validator requirements.

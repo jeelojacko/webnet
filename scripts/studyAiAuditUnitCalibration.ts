@@ -20,11 +20,11 @@
  */
 import { writeFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
-import { loadAuditInputs } from '../src/study/ai/studyAiUnitCalibrationAudit.load';
-import { buildAuditDocs } from '../src/study/ai/studyAiUnitCalibrationAudit';
+import { loadAuditInputs } from '../study-desktop/src/ai/studyAiUnitCalibrationAudit.load';
+import { buildAuditDocs } from '../study-desktop/src/ai/studyAiUnitCalibrationAudit';
 import {
   renderAllMarkdown,
-} from '../src/study/ai/studyAiUnitCalibrationAudit.markdown';
+} from '../study-desktop/src/ai/studyAiUnitCalibrationAudit.markdown';
 
 const DEFAULT_RUN_DIR =
   'study-content/ai/runs/ai-units-2026-09-02-frozen-map-cal80-v4';

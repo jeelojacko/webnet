@@ -9,7 +9,7 @@
  *   total                         86
  *
  * The checkers' predicates are mirrored (not imported) by
- * src/study/ai/studyAiUnitCoverageAudit.ts; each instance is classified
+ * study-desktop/src/ai/studyAiUnitCoverageAudit.ts; each instance is classified
  * A / B / C (A = real defect worth diagnosing, B = false positive under a
  * raw predicate recompute — expected 0, C = duplicate presentation of an
  * omission that UNCOVERED_SUBSTANTIVE_SOURCE already presents) and given a
@@ -22,17 +22,17 @@
  */
 import { writeFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
-import { loadAuditInputs } from '../src/study/ai/studyAiUnitCalibrationAudit.load';
-import { sourceComponentsForProposal } from '../src/study/ai/studyAiUnitSourceComponents';
+import { loadAuditInputs } from '../study-desktop/src/ai/studyAiUnitCalibrationAudit.load';
+import { sourceComponentsForProposal } from '../study-desktop/src/ai/studyAiUnitSourceComponents';
 import {
   APPROVED_FOCUS_NOT_COVERED,
   UNCOVERED_SUBSTANTIVE_SOURCE,
   buildCoverageInstanceRows,
-} from '../src/study/ai/studyAiUnitCoverageAudit';
+} from '../study-desktop/src/ai/studyAiUnitCoverageAudit';
 import type {
   CoverageAuditInstanceRow,
   CoverageWarningCode,
-} from '../src/study/ai/studyAiUnitCoverageAudit';
+} from '../study-desktop/src/ai/studyAiUnitCoverageAudit';
 
 const DATE_TAG = '20260902';
 const GENERATED_AT = '2026-09-02T00:00:00.000Z';

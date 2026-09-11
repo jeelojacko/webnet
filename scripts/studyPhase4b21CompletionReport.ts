@@ -1,7 +1,7 @@
 import { createHash } from 'node:crypto';
 import { existsSync, mkdirSync, readFileSync, readdirSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
-import type { AiStoredUnitProposal, AiStudyUnitProposal, AiValidationIssue } from '../src/study/ai/studyAiTypes';
+import type { AiStoredUnitProposal, AiStudyUnitProposal, AiValidationIssue } from '../study-desktop/src/ai/studyAiTypes';
 
 const RUN_ID = 'ai-units-4b21-expanded-s48-v4fix';
 const OLD_RUN_ID = 'ai-units-4b2-expanded-s48-v4';

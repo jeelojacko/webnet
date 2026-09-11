@@ -1,7 +1,7 @@
 import { createHash } from 'node:crypto';
 import { existsSync, mkdirSync, readFileSync, readdirSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
-import type { NbLawContentPackage, NbLawDocumentComponent } from '../src/study/content/nbLawTypes';
+import type { NbLawContentPackage, NbLawDocumentComponent } from '../study-desktop/src/content/nbLawTypes';
 import type {
   AiMapFocusSelection,
   AiStoredUnitProposal,
@@ -9,9 +9,9 @@ import type {
   AiStudyUnitProposal,
   AiUnitAuthoringJob,
   AiValidationIssue,
-} from '../src/study/ai/studyAiTypes';
-import { validateAiStudyUnitProposal } from '../src/study/ai/studyAiValidation';
-import type { ImportedLegalComponent } from '../src/study/studyTypes';
+} from '../study-desktop/src/ai/studyAiTypes';
+import { validateAiStudyUnitProposal } from '../study-desktop/src/ai/studyAiValidation';
+import type { ImportedLegalComponent } from '../study-desktop/src/studyTypes';
 
 const RUN_ID = 'ai-units-4b2-expanded-s48-v4';
 const FIX_RUN_ID = 'ai-units-4b21-expanded-s48-v4fix';

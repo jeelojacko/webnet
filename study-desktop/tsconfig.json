@@ -1,0 +1,19 @@
+{
+  "compilerOptions": {
+    "target": "ESNext",
+    "useDefineForClassFields": true,
+    "lib": ["DOM", "DOM.Iterable", "ESNext"],
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "allowImportingTsExtensions": true,
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "noEmit": true,
+    "jsx": "react-jsx",
+    "strict": true,
+    "types": ["vite/client", "vitest", "node"],
+    "skipLibCheck": true
+  },
+  "include": ["src", "tests", "vite.config.ts", "vitest.config.ts", "tailwind.config.js"],
+  "exclude": ["dist", "node_modules", "src-tauri"]
+}

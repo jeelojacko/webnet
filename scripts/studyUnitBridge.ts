@@ -10,7 +10,7 @@
  *                    + `.md`; prints a summary.
  *
  * Later bridge tasks add more commands (preflight, calibrate, …). The
- * dispatcher stays trivial; all logic lives in `src/study/ai/`.
+ * dispatcher stays trivial; all logic lives in `study-desktop/src/ai/`.
  *
  * Deterministic by design: no wall-clock timestamps anywhere.
  */
@@ -20,35 +20,35 @@ import {
   auditMapProposalEquivalence,
   sha256File,
   verifyFrozenStudyMap,
-} from '../src/study/ai/studyAiMapFreezeGate';
+} from '../study-desktop/src/ai/studyAiMapFreezeGate';
 import {
   buildFrozenMapGroupInventory,
   writeFrozenMapGroupInventory,
-} from '../src/study/ai/studyAiUnitInventory';
+} from '../study-desktop/src/ai/studyAiUnitInventory';
 import {
   runFrozenUnitPreflight,
   unitAuthoringReportVersionTag,
   type FrozenUnitPreflightOptions,
-} from '../src/study/ai/studyAiUnitPreflight';
+} from '../study-desktop/src/ai/studyAiUnitPreflight';
 import {
   buildUnitAuthoringPreflightReport,
   renderUnitAuthoringPreflightReportMd,
-} from '../src/study/ai/studyAiUnitPreflightReport';
+} from '../study-desktop/src/ai/studyAiUnitPreflightReport';
 import {
   buildCal80V5Run,
   type BuildCal80V5RunOptions,
-} from '../src/study/ai/studyAiUnitCalibrationV5';
-import { renderV4V5CrosswalkReportMd } from '../src/study/ai/studyAiUnitCalibrationV5Report';
+} from '../study-desktop/src/ai/studyAiUnitCalibrationV5';
+import { renderV4V5CrosswalkReportMd } from '../study-desktop/src/ai/studyAiUnitCalibrationV5Report';
 import {
   runUnitCalibration80,
   type RunUnitCalibration80Options,
-} from '../src/study/ai/studyAiUnitCalibrationRun';
+} from '../study-desktop/src/ai/studyAiUnitCalibrationRun';
 import {
   buildCalibrationLaunchManifest,
   buildUnitCalibration80Report,
   renderUnitCalibration80ReportMd,
   renderUnitCalibration80ReviewPackMd,
-} from '../src/study/ai/studyAiUnitCalibrationReport';
+} from '../study-desktop/src/ai/studyAiUnitCalibrationReport';
 
 const EXIT_OK = 0;
 const EXIT_FAILURE = 1;

@@ -13,9 +13,9 @@
  */
 
 import { existsSync, readFileSync, readdirSync, writeFileSync } from 'node:fs';
-import { join } from 'node:path';
-import type { AiStudyMapJob, AiStudyMapResult } from '../src/study/ai/studyAiTypes';
-import { validateAiStudyMapResult } from '../src/study/ai/studyAiValidation';
+import { isAbsolute, join } from 'node:path';
+import type { AiStudyMapJob, AiStudyMapResult } from '../study-desktop/src/ai/studyAiTypes';
+import { validateAiStudyMapResult } from '../study-desktop/src/ai/studyAiValidation';
 import {
   collectJobAuditRecords,
   loadProviderEvents,
@@ -104,7 +104,7 @@ const loadV1Results = (
     const location = setJob.v1KnownGoodResultLocation;
     if (!byFile.has(location)) {
       const path =
-        location.startsWith('study-content/') || location.startsWith('.')
+        isAbsolute(location) || location.startsWith('study-content/') || location.startsWith('.')
           ? location
           : join(RUNS_DIR, location);
       if (!existsSync(path)) continue;
