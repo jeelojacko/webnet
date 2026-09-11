@@ -186,10 +186,20 @@ export const countingCovarianceSolver = (): CountingCovarianceSolver => {
         input.observationEquationCount,
         input.parameterCount,
       );
+      // NOTE: Float64Array.from(mapped) — Int32Array.map would truncate
+      // fractional covariances to int32 zeros.
       const covariance = Float64Array.from(
-        input.queryRows.map((row, index) => inverse[row]?.[input.queryColumns[index] ?? -1] ?? 0),
+        input.queryRows,
+        (row, index) => inverse[row]?.[input.queryColumns[index] ?? -1] ?? 0,
       );
-      return { covariance, normalNnz: 0, factorNnz: 0, damping: 0, dampingAttempts: 0 };
+      return {
+        covariance,
+        normalNnz: 0,
+        factorNnz: 0,
+        damping: 0,
+        dampingAttempts: 0,
+        timings: { assemblyMs: 0, equilibrationMs: 0, analyzeMs: 0, factorizeMs: 0, solveMs: 0 },
+      };
     },
   };
 };

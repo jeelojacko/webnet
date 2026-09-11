@@ -41,6 +41,12 @@ export interface StatisticsQxxReuseInput {
   hasSparseSelectedCovarianceSolver: boolean;
   /** Evidence-only override for validated native dense all-entry Qxx. */
   allowEvidenceNativeDenseQxxReuse?: boolean;
+  /**
+   * Phase 10I production provenance: set only by the worker-only native
+   * full-Qxx auto-route when it injects the all-entry dense native
+   * covariance solver. Never enabled by in-process defaults.
+   */
+  allowVerifiedNativeDenseQxxReuse?: boolean;
   sparseRowProductsAvailable: boolean;
   numParams: number;
   /** Synthetic rows the final recovery appended (covariance augmentation). */
@@ -79,7 +85,11 @@ export const decideStatisticsQxxReuse = (
   if (input.preanalysisMode) return { eligible: false, reason: 'preanalysis-mode' };
   if (input.finalQxx == null) return { eligible: false, reason: 'missing-final-qxx' };
   if (input.hasSelectedStore) return { eligible: false, reason: 'non-dense-selected-store' };
-  if (input.hasSparseSelectedCovarianceSolver && input.allowEvidenceNativeDenseQxxReuse !== true) {
+  if (
+    input.hasSparseSelectedCovarianceSolver &&
+    input.allowEvidenceNativeDenseQxxReuse !== true &&
+    input.allowVerifiedNativeDenseQxxReuse !== true
+  ) {
     return { eligible: false, reason: 'sparse-selected-solver-active' };
   }
   if (input.sparseRowProductsAvailable) {

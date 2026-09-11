@@ -40,6 +40,12 @@ export interface AdjustmentRuntime {
   preanalysisCorrectionFastPath?: EngineOptions['preanalysisCorrectionFastPath'];
   /** Test-only experimental correction backend; undefined keeps TS. */
   normalEquationSolver?: EngineOptions['normalEquationSolver'];
+  /**
+   * Phase 10I production provenance: set only by the worker-only native
+   * full-Qxx auto-route alongside the all-entry dense native covariance
+   * solver. Undefined keeps the legacy statistics path.
+   */
+  allowVerifiedNativeDenseQxxReuse?: EngineOptions['allowVerifiedNativeDenseQxxReuse'];
 }
 
 export type AdjustmentRuntimeEngineOptions = Pick<
@@ -52,6 +58,7 @@ export type AdjustmentRuntimeEngineOptions = Pick<
   | 'experimentalSelectedCovarianceMode'
   | 'experimentalSelectedCovarianceLegacyAllPairs'
   | 'preanalysisCorrectionFastPath'
+  | 'allowVerifiedNativeDenseQxxReuse'
 >;
 
 /** Extracts only defined runtime fields so `undefined` stays exact legacy. */
@@ -84,6 +91,9 @@ export const toEngineOptions = (
   }
   if (runtime.preanalysisCorrectionFastPath !== undefined) {
     options.preanalysisCorrectionFastPath = runtime.preanalysisCorrectionFastPath;
+  }
+  if (runtime.allowVerifiedNativeDenseQxxReuse !== undefined) {
+    options.allowVerifiedNativeDenseQxxReuse = runtime.allowVerifiedNativeDenseQxxReuse;
   }
   return options;
 };

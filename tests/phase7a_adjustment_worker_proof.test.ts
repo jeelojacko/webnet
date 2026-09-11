@@ -3,10 +3,10 @@
  *
  * What is proven:
  * - The test spawns a Node worker_threads worker running
- *   `scripts/phase7aAdjustmentWorkerBridge.ts`, which installs only a
+ *   `scripts/phase7aAdjustmentWorkerBridge.mjs`, which installs only a
  *   browser `self` postMessage/onmessage shim and then imports the
  *   UNMODIFIED production module `src/workers/adjustmentWorker.ts`
- *   (including its lazy `import('../engine/runSession')` delegation).
+ *   (including its direct `runAdjustmentSession` delegation).
  * - A real `RunRequestMessage` goes through the existing worker protocol;
  *   every response is validated with `isAdjustmentWorkerResponseMessage`,
  *   and the run returns queued/solving progress plus a converged success
@@ -36,7 +36,7 @@ import {
 import { runAdjustmentSession } from '../src/engine/runSession';
 import { createRunSessionRequest } from './helpers/runSessionRequest';
 
-const BRIDGE_PATH = path.join(process.cwd(), 'scripts/phase7aAdjustmentWorkerBridge.ts');
+const BRIDGE_PATH = path.join(process.cwd(), 'scripts/phase7aAdjustmentWorkerBridge.mjs');
 
 const SMALL_3D_INPUT = [
   '.3D',
