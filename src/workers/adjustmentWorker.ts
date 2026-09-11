@@ -1,6 +1,6 @@
 /**
- * Production browser worker: delegates runs to the lazily imported
- * `runAdjustmentSession` through the shared testable handler. Dispatch:
+ * Production browser worker: delegates runs to `runAdjustmentSession`
+ * through the shared testable handler. Dispatch:
  * injected worker-local runtime takes precedence and bypasses all
  * auto-routes; preanalysis requests go through the Phase 8A.7 production
  * preanalysis sparse route (enabled by default; disabling short-circuits to
@@ -10,7 +10,7 @@
  * existing Phase 7C automatic sparse route. The worker protocol is unchanged.
  */
 import type { AdjustmentWorkerRequestMessage } from '../engine/adjustmentWorkerProtocol';
-import type { runAdjustmentSession as RunAdjustmentSessionFn } from '../engine/runSession';
+import { runAdjustmentSession } from '../engine/runSession';
 import { createAdjustmentWorkerHandler, type AdjustmentWorkerSessionFn } from './adjustmentWorkerHandler';
 import { runWithNativeFullQxxAutoRoute } from './adjustmentNativeFullQxxAutoRoute';
 import { runWithSparseAutoRoute } from './adjustmentSparseAutoRoute';
@@ -20,20 +20,9 @@ import { getAdjustmentWorkerRuntime } from './adjustmentWorkerRuntime';
 export { getAdjustmentWorkerRuntime, setAdjustmentWorkerRuntime } from './adjustmentWorkerRuntime';
 export { setAdjustmentWorkerRuntimeProvider } from './adjustmentWorkerRuntime';
 
-let runAdjustmentSessionPromise: Promise<typeof RunAdjustmentSessionFn> | null = null;
-
-const loadRunAdjustmentSession = (): Promise<typeof RunAdjustmentSessionFn> => {
-  if (!runAdjustmentSessionPromise) {
-    runAdjustmentSessionPromise = import('../engine/runSession').then(
-      (module) => module.runAdjustmentSession,
-    );
-  }
-  return runAdjustmentSessionPromise;
-};
-
 const handler = createAdjustmentWorkerHandler({
   loadSession: async (): Promise<AdjustmentWorkerSessionFn> => {
-    const runSession = await loadRunAdjustmentSession();
+    const runSession = runAdjustmentSession;
     const routed: AdjustmentWorkerSessionFn = async (payload, onProgress, runtime) => {
       if (runtime !== undefined) return runSession(payload, onProgress, runtime);
       if (payload.parseSettings?.runMode === 'preanalysis') {
