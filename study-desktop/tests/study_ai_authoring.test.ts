@@ -3,6 +3,8 @@ import { STUDY_TEST_REPO_ROOT, studyTestContentPath } from './study_test_paths';
 import { existsSync, mkdirSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
 import { execFileSync } from 'node:child_process';
 import { join } from 'node:path';
+
+const NPM_EXECUTABLE = process.platform === 'win32' ? 'npx.cmd' : 'npx';
 import {
   applyAiProposalApprovalToSnapshot,
   buildStudyUnitFromAiProposal,
@@ -1242,7 +1244,7 @@ describe('AI CLI JSONL robustness', () => {
     );
 
     execFileSync(
-      'npx',
+      NPM_EXECUTABLE,
       ['tsx', 'scripts/studyAiAuthoring.ts', 'validate-results', '--run', runId],
       {
         stdio: 'pipe',
@@ -1250,7 +1252,7 @@ describe('AI CLI JSONL robustness', () => {
       },
     );
     const report = String(
-      execFileSync('npx', ['tsx', 'scripts/studyAiAuthoring.ts', 'status', '--run', runId], {
+      execFileSync(NPM_EXECUTABLE, ['tsx', 'scripts/studyAiAuthoring.ts', 'status', '--run', runId], {
         stdio: 'pipe',
         cwd: STUDY_TEST_REPO_ROOT,
       }),
@@ -1265,7 +1267,7 @@ describe('AI CLI JSONL robustness', () => {
     rmSync(runDir, { recursive: true, force: true });
 
     execFileSync(
-      'npx',
+      NPM_EXECUTABLE,
       [
         'tsx',
         'scripts/studyAiAuthoring.ts',
@@ -1332,7 +1334,7 @@ describe('AI CLI JSONL robustness', () => {
     rmSync(runDir, { recursive: true, force: true });
 
     execFileSync(
-      'npx',
+      NPM_EXECUTABLE,
       [
         'tsx',
         'scripts/studyAiAuthoring.ts',
@@ -1385,7 +1387,7 @@ describe('AI CLI JSONL robustness', () => {
     rmSync(runDir, { recursive: true, force: true });
 
     execFileSync(
-      'npx',
+      NPM_EXECUTABLE,
       [
         'tsx',
         'scripts/studyAiAuthoring.ts',
@@ -1546,7 +1548,7 @@ describe('AI CLI JSONL robustness', () => {
     rmSync(runDir, { recursive: true, force: true });
 
     execFileSync(
-      'npx',
+      NPM_EXECUTABLE,
       [
         'tsx',
         'scripts/studyAiAuthoring.ts',
@@ -1662,7 +1664,7 @@ describe('AI CLI JSONL robustness', () => {
     const runDir = studyTestContentPath( 'ai', 'runs', runId);
     rmSync(runDir, { recursive: true, force: true });
     execFileSync(
-      'npx',
+      NPM_EXECUTABLE,
       [
         'tsx',
         'scripts/studyAiAuthoring.ts',
@@ -1718,7 +1720,7 @@ describe('AI CLI JSONL robustness', () => {
     );
 
     execFileSync(
-      'npx',
+      NPM_EXECUTABLE,
       ['tsx', 'scripts/studyAiAuthoring.ts', 'validate-results', '--run', runId],
       {
         stdio: 'pipe',
@@ -1751,7 +1753,7 @@ describe('AI CLI JSONL robustness', () => {
     rmSync(runDir, { recursive: true, force: true });
 
     execFileSync(
-      'npx',
+      NPM_EXECUTABLE,
       [
         'tsx',
         'scripts/studyAiAuthoring.ts',
@@ -1865,7 +1867,7 @@ describe('AI CLI JSONL robustness', () => {
     );
 
     execFileSync(
-      'npx',
+      NPM_EXECUTABLE,
       ['tsx', 'scripts/studyAiAuthoring.ts', 'pilot-report', '--run', runId, '--unit-run', runId],
       {
         stdio: 'pipe',
