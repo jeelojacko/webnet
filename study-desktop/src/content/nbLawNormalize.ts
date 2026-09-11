@@ -102,6 +102,8 @@ const htmlToText = (html: string): string => {
     .replace(/<br\s*\/?>/gi, '\n')
     .replace(/<\/(div|p|li|tr|h[1-6])>/gi, '\n')
     .replace(/<td[^>]*>/gi, ' | ')
+    // laws.gnb.ca places labels in inline spans/anchors immediately before body text.
+    .replace(/<\/(?:span|a)>/gi, ' ')
     .replace(/<[^>]+>/g, '');
   return normalizeWhitespace(withBreaks);
 };
@@ -179,22 +181,46 @@ const findTopLevelSectionBlocks = (html: string): { id: string; html: string }[]
 const extractSectionHeading = (blockHtml: string): string | undefined =>
   getFirstText(blockHtml, /<div[^>]+class=["'][^"']*sectionheading[^"']*["'][^>]*>([\s\S]*?)<\/div>/i);
 
-const extractSubsections = (sectionLabel: string, sectionSourceKey: string, blockHtml: string): NbLawSubsection[] => {
-  const subsectionStarts = [
-    ...blockHtml.matchAll(
-      new RegExp(`<div\\b[^>]*\\bid=["']se:${sectionLabel.replace('.', '_')}-ss:([0-9]+(?:_[0-9]+)?)["'][^>]*>`, 'gi'),
-    ),
-  ].map((match) => ({
+type HtmlRange = { start: number; end: number };
+
+const findDivEnd = (html: string, start: number, openingLength: number): number => {
+  const tags = /<\/?div\b[^>]*>/gi;
+  tags.lastIndex = start + openingLength;
+  let depth = 1;
+  let match: RegExpExecArray | null;
+  while ((match = tags.exec(html)) !== null) {
+    depth += match[0].startsWith('</') ? -1 : 1;
+    if (depth === 0) return match.index + match[0].length;
+  }
+  return html.length;
+};
+
+const subsectionRanges = (sectionLabel: string, blockHtml: string): Array<HtmlRange & { labelPart: string }> =>
+  [...blockHtml.matchAll(
+    new RegExp(`<div\\b[^>]*\\bid=["']se:${sectionLabel.replace('.', '_')}-ss:([0-9]+(?:_[0-9]+)?)["'][^>]*>`, 'gi'),
+  )].map((match) => ({
     labelPart: match[1].replace(/_/g, '.'),
-    index: match.index ?? 0,
+    start: match.index ?? 0,
+    end: findDivEnd(blockHtml, match.index ?? 0, match[0].length),
   }));
-  return subsectionStarts.map((start, index) => {
-    const end = subsectionStarts[index + 1]?.index ?? blockHtml.length;
-    const label = `${sectionLabel}(${start.labelPart})`;
-    const text = htmlToText(blockHtml.slice(start.index, end));
+
+const removeRanges = (html: string, ranges: HtmlRange[]): string =>
+  ranges
+    .slice()
+    .sort((left, right) => right.start - left.start)
+    .reduce((value, range) => value.slice(0, range.start) + value.slice(range.end), html);
+
+const extractSubsections = (sectionLabel: string, sectionSourceKey: string, blockHtml: string): NbLawSubsection[] => {
+  const ranges = subsectionRanges(sectionLabel, blockHtml);
+  return ranges.map((range) => {
+    const nestedRanges = ranges
+      .filter((candidate) => candidate.start > range.start && candidate.end <= range.end)
+      .map((candidate) => ({ start: candidate.start - range.start, end: candidate.end - range.start }));
+    const text = htmlToText(removeRanges(blockHtml.slice(range.start, range.end), nestedRanges));
+    const label = `${sectionLabel}(${range.labelPart})`;
     return {
-      id: `${sectionLabel.replace(/[^0-9a-z.]+/gi, '-')}-subsection-${start.labelPart}`,
-      sourceKey: `${sectionSourceKey}/subsection:${start.labelPart}`,
+      id: `${sectionLabel.replace(/[^0-9a-z.]+/gi, '-')}-subsection-${range.labelPart}`,
+      sourceKey: `${sectionSourceKey}/subsection:${range.labelPart}`,
       label,
       text,
       contentHash: hashTextSha256(text),
@@ -283,8 +309,11 @@ const buildSupplementalPlacements = (text: string): SupplementalPlacement[] => {
 const componentTextIndex = (
   mainText: string,
   placements: SupplementalPlacement[],
+  sectionIndexes: Map<string, number>,
   component: NbLawDocumentComponent,
 ): number => {
+  const sectionIndex = sectionIndexes.get(component.sourceKey);
+  if (sectionIndex !== undefined) return sectionIndex;
   const placement = placements.find((entry) => entry.component === component);
   if (placement) return placement.textIndex;
   const index = mainText.indexOf(component.text.slice(0, Math.min(60, component.text.length)));
@@ -312,12 +341,15 @@ const normalizeComponents = (mainHtml: string, notes: string[]): NbLawDocumentCo
       contentHash: hashTextSha256(text),
     };
   });
+  const sectionIndexes = new Map(
+    findTopLevelSectionBlocks(mainHtml).map((block, index) => [`section:${decodeSectionIdLabel(block.id)}`, index]),
+  );
   const components: NbLawDocumentComponent[] = [
     ...trimmedSections,
     ...supplementalPlacements.map((entry) => entry.component),
   ];
   return components.sort(
-    (a, b) => componentTextIndex(mainText, supplementalPlacements, a) - componentTextIndex(mainText, supplementalPlacements, b),
+    (a, b) => componentTextIndex(mainText, supplementalPlacements, sectionIndexes, a) - componentTextIndex(mainText, supplementalPlacements, sectionIndexes, b),
   );
 };
 

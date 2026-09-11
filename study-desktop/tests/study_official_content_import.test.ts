@@ -7,9 +7,13 @@ import {
   buildCompleteDocumentText,
   classifyLegalComponentExtractionStatus,
   compareImportedLegalComponents,
+  displayLegalComponentText,
   createStudyUnitFromSourceSelection,
   previewOfficialContentPackage,
   shouldShowLegalComponentInReader,
+  toImportedLegalComponents,
+  toImportedLegalDocuments,
+  upsertStudyDocumentsWithOfficialMetadata,
   validateOfficialContentPackageForImport,
 } from '../src/studyOfficialContent';
 import { createSeedStudyData } from '../src/studySeed';
@@ -35,6 +39,26 @@ const importSeed = (): StudyDataSnapshot =>
   }).snapshot;
 
 describe('official content package validation and preview', () => {
+  it('provides one canonical local summary for every SIT official document', () => {
+    const legalDocuments = toImportedLegalDocuments(sitCorpusPackage, '2026-09-11T00:00:00.000Z');
+    const documents = upsertStudyDocumentsWithOfficialMetadata([], legalDocuments);
+    expect(legalDocuments).toHaveLength(61);
+    expect(documents).toHaveLength(61);
+    expect(documents.every((document) => document.summary.trim().length > 0)).toBe(true);
+    expect(documents.every((document) => !document.summary.includes('No local summary yet.'))).toBe(true);
+  });
+
+  it('renders Advisory Committees parent and subsections exactly once', () => {
+    const component = toImportedLegalComponents(sitCorpusPackage).find(
+      (entry) => entry.documentId === 'doc-aquaculture-act' && entry.sourceKey === 'section:5',
+    );
+    expect(component).toBeTruthy();
+    const completeText = buildCompleteDocumentText([component!]);
+    expect(displayLegalComponentText(component!)).toBe('Advisory Committees');
+    expect(completeText.match(/5 \(1\) The Minister may establish advisory committees\./g)).toHaveLength(1);
+    expect(completeText).not.toContain('5 (1) The Minister may establish advisory committees.\n\n5 (1)');
+  });
+
   it('validates the generated pilot package', () => {
     expect(validateOfficialContentPackageForImport(clonePackage())).toEqual([]);
   });

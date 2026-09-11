@@ -2,10 +2,10 @@
   "schemaVersion": 1,
   "curriculumId": "nb-sit-statute-exam-curriculum-v1",
   "architectureVersion": "exam-curriculum-v1",
-  "sourcePackageId": "nb-sit-statute-corpus-2026-09-11",
+  "sourcePackageId": "nb-sit-statute-corpus-2026-09-11-r2",
   "sourceCorpusContentHash": "cda18a6928900e7014ae0f01853947a676ca52aefbc463a44a29b6df92edfe25",
-  "createdAt": "2026-09-11T12:41:41.815Z",
-  "contentHash": "9d2284adc5a867a41d8a438c86a5a2d9f9de58ad771cf31b5fc514d632785810",
+  "createdAt": "2026-09-11T21:54:06.348Z",
+  "contentHash": "b93a197a410223382b132b30df752589dd10c951ebb25e3ef369ade238de41ac",
   "units": [
     {
       "id": "A-NBLS-01",

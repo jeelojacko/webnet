@@ -3,6 +3,7 @@ import { mkdir, readFile, stat, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import * as pdfjs from 'pdfjs-dist/legacy/build/pdf.mjs';
 import { buildNbLawContentPackage, validateNbLawContentPackage } from '../study-desktop/src/content/nbLawContentPackage';
+import { buildNbLawPresentationAudit } from '../study-desktop/src/content/nbLawPresentationAudit';
 import { normalizeNbLawDocument, renderNbLawNormalizedMarkdown } from '../study-desktop/src/content/nbLawNormalize';
 import type { NbLawNormalizedDocument, NbLawRawFetchMetadata } from '../study-desktop/src/content/nbLawTypes';
 import {
@@ -609,7 +610,7 @@ const runBuild = async (): Promise<void> => {
   }
   const createdAt = new Date().toISOString();
   const contentPackage = buildNbLawContentPackage({
-    id: `${NB_SIT_CORPUS_ID}-${createdAt.slice(0, 10)}`,
+    id: `${NB_SIT_CORPUS_ID}-${createdAt.slice(0, 10)}-r2`,
     manifestId: manifest.corpusId,
     createdAt,
     documents,
@@ -641,6 +642,7 @@ const runBuild = async (): Promise<void> => {
   await writeCoverage(manifest, documents, contentPackage.integrityReport?.documents ?? []);
   await writeSourceReviewQueue(contentPackage.integrityReport?.documents ?? []);
   await writePackageDiagnostics(documents, packageWithMetadata);
+  await writePresentationAudit(documents);
   await writeSourceChanges(documents);
   console.log(`Package: ${PACKAGE_PATH}`);
   console.log(`Corpus hash: ${corpusContentHash}`);
@@ -773,6 +775,35 @@ const writeCoverage = async (
   await writeFile(
     path.join(REPORT_DIR, 'nb-sit-coverage.md'),
     ['# NB SIT Coverage', '', `| ${header.join(' | ')} |`, `| ${header.map(() => '---').join(' | ')} |`, ...rows.map((row) => `| ${row.join(' | ')} |`), ''].join('\n'),
+    'utf8',
+  );
+};
+
+const writePresentationAudit = async (documents: NbLawNormalizedDocument[]): Promise<void> => {
+  const audit = buildNbLawPresentationAudit(documents);
+  await writeJson(path.join(REPORT_DIR, 'nb-sit-presentation-audit.json'), audit);
+  await writeFile(
+    path.join(REPORT_DIR, 'nb-sit-presentation-audit.md'),
+    [
+      '# NB SIT Presentation Audit',
+      '',
+      `Documents: ${audit.documents}`,
+      `Components: ${audit.components}`,
+      `Parent components with children: ${audit.parentComponentsWithChildren}`,
+      `Aggregate parent components: ${audit.aggregateParentComponents}`,
+      `Double-render risk components: ${audit.doubleRenderRiskComponents}`,
+      `Malformed label/body joins: ${audit.malformedLabelBodyJoins}`,
+      `Affected documents: ${audit.affectedDocuments.length}`,
+      '',
+      '## Affected documents',
+      '',
+      ...(audit.affectedDocuments.length ? audit.affectedDocuments.map((id) => `- ${id}`) : ['None']),
+      '',
+      '## Malformed examples',
+      '',
+      ...(audit.malformedExamples.length ? audit.malformedExamples.map((id) => `- ${id}`) : ['None']),
+      '',
+    ].join('\\n'),
     'utf8',
   );
 };

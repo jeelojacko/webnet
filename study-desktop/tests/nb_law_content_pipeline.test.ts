@@ -3,15 +3,18 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
 import manifest from '../../study-content/manifests/nb-law-pilot.json';
+import sitPackage from '../../study-content/packages/nb-sit-statute-corpus.content-package.json';
 import {
   buildNbLawContentPackage,
   validateNbLawContentPackage,
 } from '../src/content/nbLawContentPackage';
+import { buildNbLawPresentationAudit } from '../src/content/nbLawPresentationAudit';
 import { buildNbLawSourceUrl, getEnabledNbLawEntries, validateNbLawManifest } from '../src/content/nbLawManifest';
 import { hashTextSha256, normalizeNbLawDocument } from '../src/content/nbLawNormalize';
 import type { NbLawManifest, NbLawNormalizedDocument } from '../src/content/nbLawTypes';
 
 const pilotManifest = manifest as NbLawManifest;
+const sitCorpusPackage = sitPackage as unknown as { documents: NbLawNormalizedDocument[] };
 const fixtureDir = fileURLToPath(new URL('./fixtures/study/nb-law-pilot/html', import.meta.url));
 
 const normalizeFixture = async (entryId: string): Promise<NbLawNormalizedDocument> => {
@@ -61,7 +64,7 @@ describe('NB law normalization', () => {
         document.components.map((component) => component.label),
       );
       expect(document.sections[0].text).toContain(document.sections[0].label);
-      expect(document.sections.every((section) => section.text.length > 20)).toBe(true);
+      expect(document.sections.every((section) => section.text.length > 0 || section.subsections.length > 0)).toBe(true);
       if (entry.sourceType === 'regulation') {
         expect(document.parentActId).toBe(entry.parentActId);
         expect(document.enablingActs?.length).toBeGreaterThan(0);
@@ -150,14 +153,14 @@ Form 4
     });
     const section7 = document.sections.find((section) => section.sourceKey === 'section:7');
     expect(section7?.text).toBe(
-      '7The certificate referred to in paragraph 11(2)(b) of the Act shall be a Certificate of Title in Form 3.',
+      '7 The certificate referred to in paragraph 11(2)(b) of the Act shall be a Certificate of Title in Form 3.',
     );
     const form3 = document.components.find((component) => component.sourceKey === 'form:form-3');
     expect(form3?.componentType).toBe('form');
     expect(form3?.text).toBe('Form 3');
     const section8 = document.sections.find((section) => section.sourceKey === 'section:8');
     expect(section8?.text).not.toContain('SCHEDULE A');
-    expect(section8?.text ?? '').toMatch(/^8Repealed: 2000-38\./);
+    expect(section8?.text ?? '').toMatch(/^8 Repealed: 2000-38\./);
     expect(document.components.map((component) => component.sourceKey)).toEqual([
       'section:7',
       'section:8',
@@ -194,6 +197,23 @@ Form 4
     });
     expect(document.sections).toEqual([]);
     expect(document.notes.join('\n')).toContain('No section blocks');
+  });
+
+  it('keeps labels separated from body text and removes aggregate child text', async () => {
+    const document = sitCorpusPackage.documents.find((entry) => entry.id === 'doc-aquaculture-act');
+    const section = document?.sections.find((entry) => entry.heading === 'Advisory Committees');
+    expect(section?.text).toContain('5 (1) The Minister may establish advisory committees.');
+    expect(section?.subsections).toHaveLength(7);
+    expect(section?.subsections[0].text).toContain('5 (1) The Minister may establish advisory committees.');
+  });
+
+  it('audits all normalized SIT documents for duplicate rendering and malformed joins', () => {
+    const audit = buildNbLawPresentationAudit(sitCorpusPackage.documents);
+    expect(audit.documents).toBe(61);
+    expect(audit.parentComponentsWithChildren).toBeGreaterThan(0);
+    expect(audit.aggregateParentComponents).toBeGreaterThan(0);
+    expect(audit.doubleRenderRiskComponents).toBe(0);
+    expect(audit.malformedLabelBodyJoins).toBe(0);
   });
 
   it('computes stable hashes for source and section comparison', async () => {

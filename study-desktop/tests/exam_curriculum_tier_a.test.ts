@@ -249,7 +249,7 @@ describe('exam curriculum Tier-A build against the authoritative corpus', () => 
   const corpus = buildExamCurriculumCorpusView(contentPackageJson as never);
 
   it('binds to the authoritative corpus identity and content hash', () => {
-    expect(corpus.packageId).toBe('nb-sit-statute-corpus-2026-09-11');
+    expect(corpus.packageId).toBe('nb-sit-statute-corpus-2026-09-11-r2');
     expect(corpus.corpusContentHash).toBe('cda18a6928900e7014ae0f01853947a676ca52aefbc463a44a29b6df92edfe25');
   });
 
@@ -319,9 +319,9 @@ describe('exam curriculum Tier-A build against the authoritative corpus', () => 
     expect(manifest.schemaVersion).toBe(1);
     expect(manifest.curriculumId).toBe('nb-sit-statute-exam-curriculum-v1');
     expect(manifest.architectureVersion).toBe('exam-curriculum-v1');
-    expect(manifest.sourcePackageId).toBe('nb-sit-statute-corpus-2026-09-11');
+    expect(manifest.sourcePackageId).toBe('nb-sit-statute-corpus-2026-09-11-r2');
     expect(manifest.sourceCorpusContentHash).toBe('cda18a6928900e7014ae0f01853947a676ca52aefbc463a44a29b6df92edfe25');
-    expect(contentPackage['id']).toBe('nb-sit-statute-corpus-2026-09-11');
+    expect(contentPackage['id']).toBe('nb-sit-statute-corpus-2026-09-11-r2');
   });
 });
 

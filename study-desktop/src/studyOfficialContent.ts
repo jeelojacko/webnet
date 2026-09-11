@@ -12,6 +12,7 @@ import {
   suggestRequiredConcepts,
 } from './studyDraftGeneration';
 import { generateStudyRubric } from './studyRubricGeneration';
+import { buildOfficialDocumentSummary } from './studyOfficialSummary';
 import type {
   ImportedLegalComponent,
   ImportedLegalDocument,
@@ -111,12 +112,22 @@ export const compareImportedLegalComponents = (
 export const shouldShowLegalComponentInReader = (component: ImportedLegalComponent): boolean =>
   !(component.componentType === 'form' && component.extractionStatus === 'reference-only');
 
+export const displayLegalComponentText = (component: ImportedLegalComponent): string => {
+  let text = component.text;
+  for (const subsection of (component.subsections ?? []).slice().sort((a, b) => b.text.length - a.text.length)) {
+    const index = text.indexOf(subsection.text);
+    if (index >= 0) text = `${text.slice(0, index)}${text.slice(index + subsection.text.length)}`;
+  }
+  return text.replace(/\n{3,}/g, '\n\n').trim();
+};
+
 export const buildCompleteDocumentText = (components: ImportedLegalComponent[]): string =>
   components
     .filter(shouldShowLegalComponentInReader)
     .slice()
     .sort(compareImportedLegalComponents)
-    .map((component) => component.text)
+    .flatMap((component) => [displayLegalComponentText(component), ...(component.subsections ?? []).map((subsection) => subsection.text)])
+    .filter(Boolean)
     .join('\n\n');
 
 export const parseOfficialContentPackage = (text: string): NbLawContentPackage => {
@@ -318,6 +329,7 @@ export const upsertStudyDocumentsWithOfficialMetadata = (
       title: document.title || legal.officialTitle,
       kind: legal.documentType,
       citation: document.citation ?? legal.officialCitationDisplay,
+      summary: document.summary || buildOfficialDocumentSummary(legal),
       updatedAt: document.updatedAt,
     };
   });
@@ -337,7 +349,7 @@ export const upsertStudyDocumentsWithOfficialMetadata = (
         category: parent?.category ?? (legal.documentType === 'regulation' ? 'Regulation' : 'Statute law'),
         priority: parent?.priority ?? 3,
         citation: legal.officialCitationDisplay,
-        summary: '',
+        summary: buildOfficialDocumentSummary(legal),
         sourceFiles: [],
         createdAt: legal.importedAt,
         updatedAt: legal.importedAt,

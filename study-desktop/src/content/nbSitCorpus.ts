@@ -9,7 +9,7 @@ import type {
 
 export const NB_SIT_CORPUS_ID = 'nb-sit-statute-corpus';
 export const NB_SIT_FETCH_PIPELINE_VERSION = 'nb-sit-fetch-1';
-export const NB_SIT_NORMALIZER_VERSION = 'nb-law-normalizer-2';
+export const NB_SIT_NORMALIZER_VERSION = 'nb-law-normalizer-3';
 export const NB_SIT_PACKAGE_SCHEMA_VERSION = 'nb-law-content-package-1';
 
 const normalizeForHash = (value: unknown): unknown => {

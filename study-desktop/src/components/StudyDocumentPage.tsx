@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { buildCompleteDocumentText, compareImportedLegalComponents, shouldShowLegalComponentInReader } from '../studyOfficialContent';
+import { buildCompleteDocumentText, compareImportedLegalComponents, displayLegalComponentText, shouldShowLegalComponentInReader } from '../studyOfficialContent';
 import {
   parseExamPrepLocatePickerSearch,
 } from '../examPrep/examPrepLocatePicker';
@@ -372,7 +372,7 @@ const StudyDocumentPage = ({
                         </h4>
                         <div className="mt-1">
                           <StudyLegalTextBlock
-                            text={component.text}
+                            text={displayLegalComponentText(component)}
                             label={component.label}
                             heading={component.heading}
                             query={normalizedQuery}
@@ -459,7 +459,7 @@ const StudyDocumentPage = ({
                     {isExpanded ? (
                       <div className="mt-3">
                         <StudyLegalTextBlock
-                          text={component.text}
+                          text={displayLegalComponentText(component)}
                           label={component.label}
                           heading={component.heading}
                           query={normalizedQuery}

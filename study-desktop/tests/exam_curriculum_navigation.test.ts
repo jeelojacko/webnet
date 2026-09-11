@@ -30,7 +30,7 @@ const FROZEN_TIER_C_PROJECTION_HASH = '6f9cd74e46cd66c01d6434117d0489951017f0aae
 const FROZEN_TIER_D_PROJECTION_HASH = 'f118e3624d653ba9964f126534bf5a6a360028e5ac867974e5a1094058046712';
 // Navigation projection hash, pinned after Phase 4C corpus-resolution review (deterministic).
 const NAV_PROJECTION_HASH = '9707e967606c41583938121be1c885c4fd9c51174b70a8317401f89f069a05d6';
-const NAV_MANIFEST_CONTENT_HASH = '9d2284adc5a867a41d8a438c86a5a2d9f9de58ad771cf31b5fc514d632785810';
+const NAV_MANIFEST_CONTENT_HASH = 'b93a197a410223382b132b30df752589dd10c951ebb25e3ef369ade238de41ac';
 const DRILL_PROJECTION_HASH = '30b75f6cde3fd9c1ec70a5244f23ed9b3a5a848abcfff361aa060fdb9f4ca608';
 
 const corpus = buildExamCurriculumCorpusView(contentPackageJson as never);
