@@ -27,6 +27,7 @@ import {
   sourceStatusFromComponent,
 } from './studyAiComponentText';
 import { hashText } from './studyAiUnitJobPrep';
+import { remapStudySourceGroup } from './studyAiSourceKeyMigration';
 import type {
   AiAuthoringProviderKind,
   AiMapFocusSelection,
@@ -487,13 +488,17 @@ export const validateAiUnitAuthoringJob = (
   }
 
   // Frozen proposal identity + group fidelity.
-  const proposalGroup = proposal.proposedGroups[ctx.groupIndex];
-  if (proposalGroup === undefined) {
+  const rawProposalGroup = proposal.proposedGroups[ctx.groupIndex];
+  if (rawProposalGroup === undefined) {
     issues.push(
       `GROUP_INDEX_MISMATCH: ${where} claims group index ${ctx.groupIndex} but the proposal has ${proposal.proposedGroups.length} groups.`,
     );
     return issues;
   }
+  const proposalGroup = remapStudySourceGroup(
+    proposal.document.documentId,
+    rawProposalGroup,
+  );
   if (!isDeepStrictEqual(job.approvedGroup, proposalGroup)) {
     issues.push(
       `APPROVED_GROUP_MISMATCH: ${where} approvedGroup differs from proposal.proposedGroups[${ctx.groupIndex}].`,

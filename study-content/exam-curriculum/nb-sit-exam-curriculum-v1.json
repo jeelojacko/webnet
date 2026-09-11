@@ -2,10 +2,10 @@
   "schemaVersion": 1,
   "curriculumId": "nb-sit-statute-exam-curriculum-v1",
   "architectureVersion": "exam-curriculum-v1",
-  "sourcePackageId": "nb-sit-statute-corpus-2026-08-29",
-  "sourceCorpusContentHash": "6f0442fc121eb0d2bcc9d3c1023c7a624e2cd4adf36922079bc3f6858fdcc32b",
-  "createdAt": "2026-09-04T09:35:49.423Z",
-  "contentHash": "434703f0a6de470095a5d0ad9fc6d1bb9534b15d58b1ab2b47460bba8a88952a",
+  "sourcePackageId": "nb-sit-statute-corpus-2026-09-11",
+  "sourceCorpusContentHash": "cda18a6928900e7014ae0f01853947a676ca52aefbc463a44a29b6df92edfe25",
+  "createdAt": "2026-09-11T12:41:41.815Z",
+  "contentHash": "9d2284adc5a867a41d8a438c86a5a2d9f9de58ad771cf31b5fc514d632785810",
   "units": [
     {
       "id": "A-NBLS-01",
@@ -472,8 +472,8 @@
         },
         {
           "documentId": "doc-new-brunswick-land-surveyors-act",
-          "sourceKey": "section:30",
-          "label": "30",
+          "sourceKey": "section:30(3)",
+          "label": "30(3)",
           "role": "core_rule"
         },
         {
@@ -1220,12 +1220,6 @@
         "doc-new-brunswick-land-surveyors-bylaws"
       ],
       "sourceAnchors": [
-        {
-          "documentId": "doc-new-brunswick-land-surveyors-bylaws",
-          "sourceKey": "section:3",
-          "label": "3",
-          "role": "core_rule"
-        },
         {
           "documentId": "doc-new-brunswick-land-surveyors-bylaws",
           "sourceKey": "section:3.1",
@@ -16854,8 +16848,8 @@
         },
         {
           "documentId": "doc-new-brunswick-land-surveyors-act",
-          "sourceKey": "section:30",
-          "label": "30",
+          "sourceKey": "section:30(3)",
+          "label": "30(3)",
           "role": "navigation"
         },
         {

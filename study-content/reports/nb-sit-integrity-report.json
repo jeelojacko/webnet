@@ -1,5 +1,5 @@
 {
-  "createdAt": "2026-08-29T12:23:41.546Z",
+  "createdAt": "2026-09-11T13:00:38.113Z",
   "documents": [
     {
       "documentId": "doc-agricultural-land-protection-and-development-act",
@@ -937,7 +937,7 @@
       "extractedEnablingActs": [],
       "sourceUrl": "https://www.anbls.nb.ca/pdf/ANBLSActQPrintChap91e.PDF",
       "sectionCount": 124,
-      "subsectionCount": 128,
+      "subsectionCount": 0,
       "scheduleCount": 0,
       "formCount": 0,
       "parsingWarnings": [
@@ -973,8 +973,8 @@
         }
       ],
       "sourceUrl": "https://www.anbls.nb.ca/pdf/ByLaws.pdf",
-      "sectionCount": 217,
-      "subsectionCount": 11,
+      "sectionCount": 215,
+      "subsectionCount": 0,
       "scheduleCount": 0,
       "formCount": 0,
       "parsingWarnings": [

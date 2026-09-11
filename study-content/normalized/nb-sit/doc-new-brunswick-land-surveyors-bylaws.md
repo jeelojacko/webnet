@@ -7,76 +7,76 @@ Content hash: 89357223636d1b6e34dbfda042862fe286e21372c61f1da32cc4eb230df2430a
 
 ## Components
 
-### 1.1.1 - In these by - laws, expressions shall be
+### 1.1.1 - In these by-laws, expressions shall be
 
 Source key: section:1.1.1
 
-1.1.1 In these by - laws, expressions shall be
+1.1.1 In these by-laws, expressions shall be
 interpreted in accordance with the Act, and all words
 not defined herein shall have the same meaning as
 defined in the Act. Revised January 2019
 
-### 1.1.2 - In these by - laws, all words importing the
+### 1.1.2 - In these by-laws, all words importing the
 
 Source key: section:1.1.2
 
-1.1.2 In these by - laws, all words importing the
+1.1.2 In these by-laws, all words importing the
 masculine gender shall include the feminine and neuter
 genders and vice versa.
 
-### 1.1.3 - The following definitions apply in this by - law:
+### 1.1.3 - The following definitions apply in this by-law:
 
 Source key: section:1.1.3
 
-1.1.3 The following definitions apply in this by - law:
-“ Administrative Committee ” as defined in section 6.1
-“ Act ” means An Act to Incorporate the Association of
+1.1.3 The following definitions apply in this by-law:
+“Administrative Committee” as defined in section 6.1
+“Act” means An Act to Incorporate the Association of
 New Brunswick Land Surveyors
-“ Associate members ” means those members as defined
+“Associate members” means those members as defined
 in section 2.1.6.
-“ Association ” means the Association of New
+“Association” means the Association of New
 Brunswick Land Surveyors;
-“ Board ” means the Board of Examiners
-“ CBEPS ” means the Canadian Board of Examiners for
+“Board” means the Board of Examiners
+“CBEPS” means the Canadian Board of Examiners for
 Professional Surveyors
-“ Complaints Committee ” means that committee
+“Complaints Committee” means that committee
 established in section 6.2
-“ Discipline Committee ” means that committee
+“Discipline Committee” means that committee
 established in section 6.3
-“ Member in good standing ” means a land surveyor
-member, surveyor - in - training or holder of a certificate
+“Member in good standing” means a land surveyor
+member, surveyor-in-training or holder of a certificate
 of authorization of the Association who is not in arrears
 of any fees or other amount owing to the Association,
 and who is not under suspension.
-“ Governance Committee ” means that committee
+“Governance Committee” means that committee
 established in section 6.6
-“ Honorary members ” means those members as
+“Honorary members” means those members as
 defined in section 2.1.4
-“ Land surveyor members ” means those members as
+“Land surveyor members” means those members as
 defined in section 2.1.1
-“ Legislative Review Committee ” means that
+“Legislative Review Committee” means that
 committee established in section 6.5
-“ Life members ” means those members as defined in
+“Life members” means those members as defined in
 section 2.1.3
-“ Past president ” means the president elected
+“Past president” means the president elected
 immediately prior to the current president
-“ Planning Committee ” means that committee
+“Planning Committee” means that committee
 established in section 6.9
-“ Practice Review Committee ” means that committee
+“Practice Review Committee” means that committee
 established in section 6.12. Added 2019
-“ Professional Misconduct” Removed from the list January 2020
-“ Registrar ” means the secretary of the Association.
-“ Retired members ” means those members defined in
+“Professional Misconduct” Removed from the list January 2020
+“Registrar” means the secretary of the Association.
+“Retired members” means those members defined in
 section 2.1.7
-“ Special meeting ” means a meeting called in
+“Special meeting” means a meeting called in
 accordance with section 11(5) of the Act.
-“ Standards Manual ” means the Association of New
+“Standards Manual” means the Association of New
 Brunswick Land Surveyors Standards Manual
-“ Student members ” means those members as defined
+“Student members” means those members as defined
 in section 2.1.8
-“ Surveyor - in - training members ” means those
+“Surveyor-in-training members” means those
 members defined in section 2.1.5
-“ Zone ” means the regions of the Province of New
+“Zone” means the regions of the Province of New
 Brunswick defined in section 5.2.1 Added January 2019
 2. MEMBERSHIP
 
@@ -95,7 +95,7 @@ divided into the following categories:
 (a) Land surveyor members;
 (b) Life members;
 (c) Honorary members;
-(d) Surveyors - in - training members;
+(d) Surveyors-in-training members;
 (e) Associate members;
 (f) Retired members; and
 (g) Student members.
@@ -119,7 +119,7 @@ Source key: section:2.1.3
 land surveyor members for a total of at least twenty years
 and have made substantial contributions to the
 Association and/or the land surveying profession and
-who :
+who:
 (a) Are entitled to any and all notices from the
 Association to which a land surveyor member would be
 entitled;
@@ -143,14 +143,14 @@ Association to which a land surveyor member would be
 entitled;
 (b) Are not entitled to vote;
 (c) Are not entitled to hold office; and
-(d) Are not entitled to practice land surveying .
+(d) Are not entitled to practice land surveying.
 Added January 2019
 
-### 2.1.5 - Surveyor - in - training members shall be persons
+### 2.1.5 - Surveyor-in-training members shall be persons
 
 Source key: section:2.1.5
 
-2.1.5 Surveyor - in - training members shall be persons
+2.1.5 Surveyor-in-training members shall be persons
 who are candidates seeking admission or readmission as
 a member of the Association and who:
 (a) Are entitled to any and all notices from the
@@ -161,13 +161,13 @@ entitled;
 (d) Are not entitled to practice land surveying
 Added January 2019
 
-### 2.1.6 - Associate members shall be persons who :
+### 2.1.6 - Associate members shall be persons who:
 
 Source key: section:2.1.6
 
-2.1.6 Associate members shall be persons who :
+2.1.6 Associate members shall be persons who:
 (a) Have the following qualifications:
-i . They are now or were qualified to practice land
+i. They are now or were qualified to practice land
 surveying in any jurisdiction other than New
 Brunswick.
 ii. They have been engaged in work which is closely
@@ -184,11 +184,11 @@ iii. Are not entitled to hold office; and
 iv. They are not entitled to practice land surveying.
 Added January 2019
 
-### 2.1.7 - Retired members shall be persons who :
+### 2.1.7 - Retired members shall be persons who:
 
 Source key: section:2.1.7
 
-2.1.7 Retired members shall be persons who :
+2.1.7 Retired members shall be persons who:
 (a) have been previously a land surveyor member; and
 (b) they are entitled to any and all notices from the
 Association to which a land surveyor member would be
@@ -204,7 +204,7 @@ Added January 2019
 Source key: section:2.1.8
 
 2.1.8 Student members shall be persons who are
-enrolled as a full time, part - time or correspondent
+enrolled as a full time, part-time or correspondent
 student in a geomatics program or a related academic
 program and who:
 (a) are entitled to any and all notices from the
@@ -213,7 +213,7 @@ entitled;
 (b) are not entitled to vote;
 (c) are not entitled to hold office; and
 (d) are not entitled to practice land surveying.
-Added January 201 9
+Added January 2019
 
 ### 2.2 - Application
 
@@ -232,7 +232,7 @@ applications for registration as a member shall:
 (b) Include the fees and dues as prescribed by
 Article 4 herein; and
 (c) be submitted to the Registrar.
-Revised January 20 1 9
+Revised January 2019
 
 ### 2.2.2 - Applicants who have been previously registered
 
@@ -275,25 +275,24 @@ applications.
 Source key: section:2.2.6
 
 2.2.6 For registration as a land surveyor member the
-Surveyor - in - Training shall, within five (5) years of the
-date of registration as a Surveyor - in - Training, complete
+Surveyor-in-Training shall, within five (5) years of the
+date of registration as a Surveyor-in-Training, complete
 all the academic and practical requirements as outlined
-in the Surveyor - in - Training manual and all requirements
+in the Surveyor-in-Training manual and all requirements
 as requested by the Board of Examiners.
-Added January 20 25
+Added January 2025
 
-### 2.2.7 - Upon registration of an applicant as a Surveyor -
+### 2.2.7 - Upon registration of an applicant as a Surveyor-
 
 Source key: section:2.2.7
 
-2.2.7 Upon registration of an applicant as a Surveyor -
-in - Training, a request may be made to the Board of
+2.2.7 Upon registration of an applicant as a Surveyor-in-Training, a request may be made to the Board of
 Examiners for an extension to the prescribed five (5) year
 time limitation to allow for the completion of his or her
-academic, practical and/or other Boar d of Examiners’
+academic, practical and/or other Board of Examiners’
 requirements. The Board of Examiners shall consider the
 merits of the extension request prior to rendering a
-decision. Added January 20 25
+decision. Added January 2025
 
 ### 2.3 - Registration
 
@@ -305,8 +304,8 @@ Source key: section:2.3
 
 Source key: section:2.3.1
 
-2. 3 .1 Registration as a land surveyor member must be
-approved by the Council . Revised January 2019
+2.3.1 Registration as a land surveyor member must be
+approved by the Council. Revised January 2019
 
 ### 2.3.2 - Registration as a life member or an honorary
 
@@ -318,8 +317,7 @@ member shall occur as follows:
 form prescribed by Council by two members,
 both of whom must be land surveyor members.
 (b) The nominee must agree to the nomination.
-(c) The membership must be approved by a two -
-thirds majority of the Council.
+(c) The membership must be approved by a two-thirds majority of the Council.
 Revised January 2019
 
 ### 2.3.3 - Registration as an associate member or retired
@@ -327,14 +325,14 @@ Revised January 2019
 Source key: section:2.3.3
 
 2.3.3 Registration as an associate member or retired
-member must be approved by a two - thirds majority of
+member must be approved by a two-thirds majority of
 the Council. Revised January 2019
 
-### 2.3.4 - Registration as a surveyor - in - training shall occur as
+### 2.3.4 - Registration as a surveyor-in-training shall occur as
 
 Source key: section:2.3.4
 
-2.3.4 Registration as a surveyor - in - training shall occur as
+2.3.4 Registration as a surveyor-in-training shall occur as
 follows:
 (a) An application for registration by a candidate
 must be approved by the majority of the Board.
@@ -384,7 +382,7 @@ Source key: section:2.4.2
 surveyor member from the register, the seal of said
 member shall immediately become the property of and
 be vested in the Association, and the member shall
-return the seal to the Association immediately .
+return the seal to the Association immediately.
 Revised January 2019
 
 ### 2.4.3 - Each person registered with the Association shall
@@ -395,7 +393,7 @@ Source key: section:2.4.3
 provide the Registrar with a mailing address and shall
 promptly notify the Registrar of any change of address.
 The mailing of a notice to the last recorded address shall
-be deemed to constitute service of n otice for any
+be deemed to constitute service of notice for any
 Association purpose. Revised January 2019
 
 ### 2.5 - Designation
@@ -437,12 +435,12 @@ surveyor member can use the “ANBLS (Honorary)”
 designation after their name.
 Revised January 2019
 
-### 2.5.4 - Surveyor - in - training members can use the
+### 2.5.4 - Surveyor-in-training members can use the
 
 Source key: section:2.5.4
 
-2.5.4 Surveyor - in - training members can use the
-“ANBLS (Surveyor - in - Training)” designation after
+2.5.4 Surveyor-in-training members can use the
+“ANBLS (Surveyor-in-Training)” designation after
 their name.
 Revised January 2019
 
@@ -453,12 +451,7 @@ Source key: section:2.5.5
 2.5.5 Student members can use the “ANBLS
 (Student)” designation after their name.
 Revised January 2019
-
-### 3 - . Partnership, Association o f Persons, Corporations
-
-Source key: section:3
-
-3 . Partnership, Association o f Persons, Corporations
+3. Partnership, Association of Persons, Corporations
 
 ### 3.1 - Application
 
@@ -484,17 +477,17 @@ Source key: section:3.1.2
 for a partnership, association of persons, or
 corporation shall include an employee meeting the
 requirements of being an ANBLS Land Surveyor
-Member for a minimum of 3 years. Added January 202 2
+Member for a minimum of 3 years. Added January 2022
 
 ### 3.1.3 - Council will review the application for a
 
 Source key: section:3.1.3
 
-3.1. 3 Council will review the application for a
+3.1.3 Council will review the application for a
 certificate of authorization for a partnership,
 association of persons, or corporation, and subject to
 section 3.1.2, if approved by Council, a certificate will
-be issued. Revised January 20 22
+be issued. Revised January 2022
 4. FEES AND DUES
 
 ### 4.1.1 - Council shall establish fees and dues as
@@ -502,8 +495,8 @@ be issued. Revised January 20 22
 Source key: section:4.1.1
 
 4.1.1 Council shall establish fees and dues as
-required under the Act this amended by - law and any
-other by - laws.
+required under the Act this amended by-law and any
+other by-laws.
 Revised January 2019
 
 ### 4.1.2 - Council shall review and revise its fees and dues
@@ -520,8 +513,8 @@ Source key: section:4.1.3
 
 4.1.3 Fees and dues shall become effective as follows:
 (a) All fees and dues established on or before the
-date of passage of these by - laws shall remain in
-effect upon the establishment of these by - laws.
+date of passage of these by-laws shall remain in
+effect upon the establishment of these by-laws.
 (b) For a change of fees and/or dues of three
 percent (3%) or less over the previous year's
 amount, the change shall become effective by
@@ -580,12 +573,12 @@ member’s land surveying practice until payment of the
 special levy.
 Added January 2019
 
-### 4.5 - “ Section 4.5 prior 2019 ” was removed and
+### 4.5 - “Section 4.5 prior 2019” was removed and
 
 Source key: section:4.5
 
-4.5 “ Section 4.5 prior 2019 ” was removed and
-replaced by “ 4.2.1 to 4.2.4 ” above in January 2019
+4.5 “Section 4.5 prior 2019” was removed and
+replaced by “4.2.1 to 4.2.4” above in January 2019
 
 ### 4.6.1 - A fine of $100.00 plus HST will be assessed after
 
@@ -620,7 +613,7 @@ Professional Surveyors Canada will be established
 by PSC. The Land Surveyor Member will be
 invoiced by the ANBLS at the same time as the
 annual dues and the amount will be recorded as a
-separate item .
+separate item.
 Added October 2017
 
 ### 4.7.2 - The Land Surveyor Member who is already a
@@ -631,7 +624,7 @@ Source key: section:4.7.2
 member of PSC through another Professional
 Association will be refunded the full amount
 retained after providing a proof of membership.
-Added October 201 7
+Added October 2017
 
 ### 4.8 - Fees for Seminars
 
@@ -677,11 +670,11 @@ and in the format of a signed Nomination Consent
 form.
 Revised January 2005
 
-### 5.1.2 - The President, Vice - President and Secretary
+### 5.1.2 - The President, Vice-President and Secretary
 
 Source key: section:5.1.2
 
-5.1.2 The President, Vice - President and Secretary
+5.1.2 The President, Vice-President and Secretary
 shall be elected by the vote of the total membership
 entitled to vote and shall hold office for one year.
 Revised January 2005
@@ -766,7 +759,7 @@ the tie vote will be resolved in the following manner.
 The Governance Committee shall inform the
 Secretary of the tie and a second ballot will be
 prepared at the Annual Meeting containing the names
-of the previously tied candidates and su ch balloting
+of the previously tied candidates and such balloting
 will continue until a winner is declared.
 Revised January 2005
 Revised January 2009
@@ -786,22 +779,22 @@ Province of New Brunswick shall be divided into 1
 Provincial zone and 5 Regional zones according to
 the following:
 Provincial Zone
-Provincial Zone - Is composed of the entire
+Provincial Zone-Is composed of the entire
 membership.
 Regional Zones
-North - West Zone - Is composed of members
+North-West Zone-Is composed of members
 residing in the counties of Madawaska and Victoria
-and also the parishes of Grimmer and Saint - Quentin
+and also the parishes of Grimmer and Saint-Quentin
 of Restigouche County.
-North - East Zone - Is composed of members residing
+North-East Zone-Is composed of members residing
 in the counties of Gloucester, Northumberland and
 Restigouche excluding the parishes of Grimmer and
-Saint - Quentin of the last - mentioned County.
-Moncton Zone - Is composed of members residing
+Saint-Quentin of the last-mentioned County.
+Moncton Zone-Is composed of members residing
 in the counties of Albert, Kent and Westmorland;
-Saint John Zone - Is composed of members residing
+Saint John Zone-Is composed of members residing
 in the counties of Charlotte, Kings and Saint John.
-Fredericton Zone - Is composed of members
+Fredericton Zone-Is composed of members
 residing in the counties of Carleton, Queens, Sunbury
 and York.
 
@@ -811,18 +804,18 @@ Source key: section:5.2.2
 
 5.2.2 The number of councillors representing each
 zone shall be:
-Provincial Zone - 2 Councillors
-North - West Zone - 1 Councillor
-North - East Zone - 1Councillor
-Moncton Zone - 1 Councillor
-Saint John Zone - 1 Councillor
-Fredericton Zone - 1 Councillor
+Provincial Zone -2 Councillors
+North-West Zone -1 Councillor
+North-East Zone -1Councillor
+Moncton Zone -1 Councillor
+Saint John Zone -1 Councillor
+Fredericton Zone -1 Councillor
 Revised January 1997
 Restig ouche
 NORD-EST
 NORD-OUEST
 a
-s k
+sk
 a
 w
 a
@@ -945,7 +938,7 @@ Source key: section:6.1.1
 
 6.1.1 The Administrative Committee shall be
 composed of the President, the Past President, the
-Vice - President and the Secretary.
+Vice-President and the Secretary.
 
 ### 6.1.2 - The Administrative Committee shall be
 
@@ -993,12 +986,12 @@ Source key: section:6.2.2
 6.2.2 The two members of the Complaints
 Committee appointed by the Executive Council as per
 section 20(1) (b) of the New Brunswick Land
-Surveyors Act, 1986 , shall be appointed either for a
+Surveyors Act, 1986, shall be appointed either for a
 term of two years in such a manner as to replace the
 members who had been appointed for a staggered
 term which has expired, or to replace members who
 have resigned, died or been suspended, in which case
-the members shall b e appointed for the unexpired
+the members shall be appointed for the unexpired
 term of the members being replaced.
 
 ### 6.2.3 - The Complaints Committee shall submit an
@@ -1053,15 +1046,15 @@ appointed by the Executive Council shall be
 composed of at least two members. The
 responsibilities of the committee shall be:
 (a) to review the New Brunswick Land
-Surveyors Act, 1986 and by - laws and advise the
+Surveyors Act, 1986 and by-laws and advise the
 Executive Council of any changes considered
 desirable;
 (b) to prepare proposed revisions to the Act or
-by - laws when requested to do so by the Executive
+by-laws when requested to do so by the Executive
 Council;
-(c) to review any proposed by - law by other
+(c) to review any proposed by-law by other
 members to insure it conforms with the Act and is not
-inconsistent with other by - laws.
+inconsistent with other by-laws.
 
 ### 6.5.2 - The Legislative Review Committee shall
 
@@ -1113,7 +1106,7 @@ Revised January 2005
 Source key: section:6.9.2
 
 6.9.2 The Planning Committee shall update and
-present a three - year business plan to the membership,
+present a three-year business plan to the membership,
 for their consideration and approval by majority vote,
 at the Annual General Meeting each and every year.
 Revised January 2005
@@ -1131,15 +1124,15 @@ st
 Source key: section:1.6.10
 
 1 .
-6.1 0 Mandatory Continuing Education Committee
+6.10 Mandatory Continuing Education Committee
 Repealed January 2019
 
-### 6.11 - Quality Assurance Advisory Committee .
+### 6.11 - Quality Assurance Advisory Committee.
 
 Source key: section:6.11
 
-6.11 Quality Assurance Advisory Committee .
-R epealed January 2019
+6.11 Quality Assurance Advisory Committee.
+Repealed January 2019
 
 ### 6.12 - Practice Review Committee
 
@@ -1165,12 +1158,12 @@ Source key: section:6.12.2
 appoint two members for one year, two members for two
 years and one member for three years. In each
 successive year the Council shall appoint or reappoint
-member(s) to succeed those members whose term ha s
+member(s) to succeed those members whose term has
 expired. The Council shall, as required, appoint
 members to replace members who have resigned, died,
 or been suspended, in which case the member shall be
 appointed for the unexpired term of the member being
-replaced. One member of the committee sha ll be
+replaced. One member of the committee shall be
 designated as the chairperson of the Committee by the
 Council. Added January 2019
 
@@ -1192,16 +1185,16 @@ Source key: section:6.12.4
 responsible for:
 (a) Assessment of existing and development of new
 practice standards including maintenance of the
-Standards Manual as outlined in the Standards by - law;
+Standards Manual as outlined in the Standards by-law;
 (b) Administration of the Mandatory Continuing
 Education Program as outlined in the Mandatory
-Continuing Education by - law;
+Continuing Education by-law;
 (c) Management of the Quality Assurance Program as
-outlined in the Quality Assurance by - law, with
+outlined in the Quality Assurance by-law, with
 emphasis on the upgrading and advisory aspects of the
 program. Subject to the approval of Council, the
 Committee will prepare and keep current a Manual of
-Qua lity Assurance Procedures and an assessment list to
+Quality Assurance Procedures and an assessment list to
 be used in the implementation of the program.
 (d) Acting as consultants and advisors to all
 Association members in all matters dealing with the
@@ -1209,7 +1202,7 @@ profession of land surveying and appropriate business
 practice.
 (e) Preparing, reviewing and revising survey standards,
 mandatory continuing education and quality assurance
-by - laws as they relate to this committee, and the
+by-laws as they relate to this committee, and the
 respective programs or manuals. Added January 2019
 
 ### 6.12.5 - The Practice Review Committee shall submit
@@ -1312,7 +1305,7 @@ appeal.
 
 Source key: section:8.2.4.1
 
-8.2.4 .1 (a) Notice of Hearing as defined in
+8.2.4.1 (a) Notice of Hearing as defined in
 Schedule "A" section 15.1 shall be served at least
 fourteen (14) days before the holding of the hearing,
 upon the member whose conduct is being inquired
@@ -1329,14 +1322,14 @@ taken under oath or affirmation, which the chairman
 of the Discipline Committee or any person
 designated to do so on his behalf, is hereby
 authorized to administer, and there shall be full right
-to examine, cross - examine and re - examine
+to examine, cross-examine and re-examine
 witnesses.
 
-### 8.2.4.2 - (d ) ( i ) The Chairman of the Discipline
+### 8.2.4.2 - (d) (i) The Chairman of the Discipline
 
 Source key: section:8.2.4.2
 
-8.2.4 .2 (d ) ( i ) The Chairman of the Discipline
+8.2.4.2 (d) (i) The Chairman of the Discipline
 Committee, or someone designated by him to act on
 his behalf, and upon payment of the fees prescribed
 in the Rules of Court, may issue a Summons to
@@ -1346,16 +1339,16 @@ attendance and evidence, verbal, documentary or
 otherwise, of witnesses before the Committee by
 signing the Summons to Witness and sealing it with
 the seal of the Association.
-( ii ) Pursuant to paragraph 8.2.4(d)(1),
+(ii) Pursuant to paragraph 8.2.4(d)(1),
 the Registrar of the Association shall issue a blank
 Summons to Witness signed by him under the seal of
 the Association and the party may complete the
 summons and insert therein of the required
 particulars.
-( iii ) A Summons to Witness shall be
+(iii) A Summons to Witness shall be
 served personally and service may be proved by
 Affidavit.
-( iv ) A Summons to Witness continues to
+(iv) A Summons to Witness continues to
 have effect until the conclusion of the hearing for
 which the attendance of the witness is required.
 
@@ -1367,7 +1360,7 @@ Source key: section:8.2.5
 disobedience to any Notice of Hearing or Summons
 to Witness shall be the same as provided for in
 section 24.8 of the New Brunswick Land Surveyors
-Act, 1986 .
+Act, 1986.
 
 ### 8.2.6 - On the written authority of the Chairperson
 
@@ -1378,7 +1371,7 @@ of the Committee any evidence to be used at a hearing
 may be taken by affidavit and the Discipline
 Committee may proceed and act upon such evidence
 as to the whole subject matter of the hearing or as to
-any part icular fact.
+any particular fact.
 
 ### 8.2.7 - The Committee shall have all proceedings,
 
@@ -1402,15 +1395,15 @@ Source key: section:8.2.9
 
 8.2.9 It is the duty of the member whose conduct is
 being inquired into to appear at the hearing, but in the
-event of non - attendance of such member, the
+event of non-attendance of such member, the
 Discipline Committee upon receipt of proof by
 affidavit or statutory declaration, of the service of the
-Notice of Heari ng may proceed with the hearing and
+Notice of Hearing may proceed with the hearing and
 without further notice to such member, make a report
 of their findings or take such other action as the
 Discipline Committee is authorized to take under the
 Act and such member shall be bound by the report or
-action of t he Discipline Committee.
+action of the Discipline Committee.
 
 ### 8.2.10 - Notwithstanding:
 
@@ -1469,22 +1462,22 @@ The award shall not be restricted to land surveyors
 and shall not necessarily be presented annually nor
 limited to one award annually.
 
-### 9.2 - Surveyor - in - Training Award
+### 9.2 - Surveyor-in-Training Award
 
 Source key: section:9.2
 
-9.2 Surveyor - in - Training Award
+9.2 Surveyor-in-Training Award
 
-### 9.2.1 - The Surveyor - in - Training Award shall be
+### 9.2.1 - The Surveyor-in-Training Award shall be
 
 Source key: section:9.2.1
 
-9.2.1 The Surveyor - in - Training Award shall be
-awarded to a surveyor - in - training, who in the
+9.2.1 The Surveyor-in-Training Award shall be
+awarded to a surveyor-in-training, who in the
 estimation of the board of examiners has achieved an
 outstanding level of excellence in the completion of
 the Legal Survey Project Technical Report. This
-award shall not nec essarily be granted annually nor
+award shall not necessarily be granted annually nor
 restricted to one award annually.
 
 ### 9.3 - Association of New Brunswick Land
@@ -1500,11 +1493,11 @@ Source key: section:9.3.1
 
 9.3.1 The Association of New Brunswick Land
 Surveyors scholarship may be awarded annually to a
-New Brunswick resident enrolled as a full - time
+New Brunswick resident enrolled as a full-time
 undergraduate student in the Geodesy and Geomatics
 Engineering program at the University of New
 Brunswick.
-Revised January 20 25
+Revised January 2025
 
 ### 9.3.2 - The criteria for the scholarship shall be
 
@@ -1516,7 +1509,7 @@ will be made on the recommendation from the
 Department of Geodesy and Geomatics Engineering at
 the University of New Brunswick. This scholarship
 shall not necessarily be granted annually.
-Revised January 20 25
+Revised January 2025
 
 ### 9.3.3 - The amount of the scholarship shall be
 
@@ -1524,8 +1517,8 @@ Source key: section:9.3.3
 
 9.3.3 The amount of the scholarship shall be
 established by the Executive Council in accordance
-with the financial means of the Association .
-Revised January 20 2 5
+with the financial means of the Association.
+Revised January 2025
 
 ### 9.4 - ANBLS Scholarship Repealed January 2025
 
@@ -1537,7 +1530,7 @@ Source key: section:9.4
 
 Source key: section:9.5
 
-9. 5 Student Assistance Program
+9.5 Student Assistance Program
 
 ### 9.5.1 - Under the Student Assistance Program, the
 
@@ -1548,7 +1541,7 @@ Association of New Brunswick Land Surveyors may
 accept and administer funds received from its
 membership and other interested parties for use in
 assisting students, student societies, or faculty
-departments engage d in the post - secondary study of
+departments engaged in the post-secondary study of
 land surveying. Added January 2025
 
 ### 9.5.2 - Funds received under the Student Assistance
@@ -1569,7 +1562,7 @@ may be provided to students, student societies, or
 faculty departments on an ad hoc basis. While the
 dollar amount cannot exceed the Student Assistance
 Program account balance, Executive Council has
-complete disc retion in both the dollar amount and the
+complete discretion in both the dollar amount and the
 criteria for funds provided in support of any given
 initiative under this program. Added January 2025
 
@@ -1586,7 +1579,7 @@ Added January 2025
 
 Source key: section:10.1.1
 
-10.1 .1 All members of the Association shall always
+10.1.1 All members of the Association shall always
 conduct their practice of land surveying in
 accordance with the Standards Manual.
 Revised January 2019
@@ -1595,7 +1588,7 @@ Revised January 2019
 
 Source key: section:10.1.2
 
-10. 1. 2 A proposed new standard or the amendment
+10.1.2 A proposed new standard or the amendment
 or repeal of all or any part of the Standards Manual
 shall be presented in writing to the secretary signed
 by at least two members sixty days before an annual
@@ -1608,7 +1601,7 @@ Revised January 2019
 
 Source key: section:10.1.3
 
-10. 1. 3 A proposed new standard or an amendment
+10.1.3 A proposed new standard or an amendment
 or repeal of all or any part of the Standards Manual
 shall be approved by a vote of the members at an
 annual or special meeting of the Association.
@@ -1623,21 +1616,21 @@ Source key: section:11.1.1
 the Association will establish a Quality Assurance
 Program under the general administration of the
 Council who shall be responsible for defining all
-procedures implemented under these by - laws.
+procedures implemented under these by-laws.
 Revised January 2019
 
 ### 11.1.2 - The Practice Review Committee shall
 
 Source key: section:11.1.2
 
-11. 1. 2 The Practice Review Committee shall
+11.1.2 The Practice Review Committee shall
 manage the Quality Assurance Program on behalf of
 the Council by identifying opportunities to enhance
 the program to better address trending deficiencies in
 the results of member survey plan and file reviews,
 or to enhance the administration of the program itself.
 The Practice Review Committee shall make such a
-review and deliver s uch recommendations and advice
+review and deliver such recommendations and advice
 in writing as requested by the Council, but not less
 than annually.
 Revised January 2019
@@ -1646,7 +1639,7 @@ Revised January 2019
 
 Source key: section:11.1.3
 
-11. 1. 3 Subject to the approval of the Council, the
+11.1.3 Subject to the approval of the Council, the
 Practice Review Committee will prepare and keep
 current a Manual of Quality Assurance Procedures to
 be used in the implementation of the program.
@@ -1656,7 +1649,7 @@ Revised January 2019
 
 Source key: section:11.1.4
 
-11. 1. 4 The Quality Assurance Program will apply
+11.1.4 The Quality Assurance Program will apply
 equally to all members. It may also respond to
 referrals from the Council.
 Added January 2019
@@ -1670,7 +1663,7 @@ member, retired member or life member to the
 position of Quality Assurance Manager. Responsible
 to the PRC, the Quality Assurance Manager shall
 carry out the duties and responsibilities as further
-provided within thes e by - laws including the Quality
+provided within these by-laws including the Quality
 Assurance Manual.
 Revised January 2019
 Revised January 2021
@@ -1692,7 +1685,7 @@ with the requirements of the Quality Assurance
 program because of health or other legitimate
 reasons may apply to the Practice Review
 Committee for an exemption from the program for a
-specific time. The Practice Re view Committee shall
+specific time. The Practice Review Committee shall
 review this request and make a recommendation to
 Council.
 Added January 2021
@@ -1707,7 +1700,7 @@ Source key: section:11.2
 
 Source key: section:11.2.1
 
-11. 2 .1 Every copy of each plan certified by a New
+11.2.1 Every copy of each plan certified by a New
 Brunswick Land Surveyor must bear a Plan
 Validation Stamp. For the Survey of exterior
 boundaries of Canada Lands the number of the Plan
@@ -1720,7 +1713,7 @@ Revised January 2019
 
 Source key: section:11.2.2
 
-11. 2 .2 The Plan Validation Stamp will consist of:
+11.2.2 The Plan Validation Stamp will consist of:
 (a) an image of a design approved by the
 Executive Council; and
 (b) a Plan Validation Number, which will be:
@@ -1739,9 +1732,8 @@ Revised January 2019
 
 Source key: section:11.2.3
 
-11. 2.3 Land Surveyors using Plan Validation
-Stamps must file with the Association, on the twenty -
-first day of each month, a list of the Plan Validation
+11.2.3 Land Surveyors using Plan Validation
+Stamps must file with the Association, on the twenty-first day of each month, a list of the Plan Validation
 Stamp numbers used in the previous month. The
 content and format of the list will be in a form
 approved by the Executive Council.
@@ -1751,15 +1743,15 @@ Revised January 2019
 
 Source key: section:11.2.4
 
-11. 2.4 If any Land Surveyor and/or participating
+11.2.4 If any Land Surveyor and/or participating
 member company is delinquent in his submission of
-numbers to the Association as per 11. 2.3 , the
-Secretary - Treasurer is authorized to withhold the sale
+numbers to the Association as per 11.2.3, the
+Secretary-Treasurer is authorized to withhold the sale
 of Plan Validation Stamps to that member and/or
 member company until such time as the delinquent
 numbers are submitted to the Association. A member
 may appeal in writing to the Executive Council any
-decision made by the Secretary - Treasurer to
+decision made by the Secretary-Treasurer to
 withhold the sale of stamps.
 Revised January 2019
 
@@ -1767,7 +1759,7 @@ Revised January 2019
 
 Source key: section:11.2.5
 
-11. 2.5 No plans signed by a Land Surveyor member
+11.2.5 No plans signed by a Land Surveyor member
 shall be exempt whether registered publicly or for
 private use, except those plans which do not depict,
 affect, or otherwise make reference to boundaries.
@@ -1788,7 +1780,7 @@ Revised January 2019
 
 Source key: section:11.2.7
 
-11.2. 7 Except for in the case of a plan database
+11.2.7 Except for in the case of a plan database
 record having a “canceled” status, Land Surveyor
 members must submit a corresponding PDF plan to
 Service New Brunswick within sixty (60) days of
@@ -1799,7 +1791,7 @@ Added January 2022
 
 Source key: section:11.2.8
 
-11.2. 8 If a Land Surveyor member is delinquent in
+11.2.8 If a Land Surveyor member is delinquent in
 submission of a PDF plan to Service New
 Brunswick, the ANBLS plan database administrator
 will disable that member’s access to the plan
@@ -1811,12 +1803,12 @@ Added January 2022
 
 Source key: section:11.2.9
 
-11. 2. 9 In certain circumstances, Land Surveyor
+11.2.9 In certain circumstances, Land Surveyor
 members may require more than sixty (60) days to
 submit a PDF plan to Service New Brunswick. The
 ANBLS plan database administrator may extend the
 sixty (60) day deadline for member submission of a
-PDF plan when reque sted. The decision to extend
+PDF plan when requested. The decision to extend
 such an accommodation rest wholly with the ANBLS
 plan database administrator, who will base their
 decision on the individual circumstances of the
@@ -1826,13 +1818,13 @@ request. Added January 2022
 
 Source key: section:11.3
 
-11. 3 Survey Review
+11.3 Survey Review
 
 ### 11.3.1 - The Quality Assurance Manager or auditors
 
 Source key: section:11.3.1
 
-11. 3 .1 The Quality Assurance Manager or auditors
+11.3.1 The Quality Assurance Manager or auditors
 under the Quality Assurance Program may conduct a
 review of job files and office records of land surveyor
 members which may include field inspections and
@@ -1843,7 +1835,7 @@ Added January 2019
 
 Source key: section:11.3.2
 
-11. 3 .2 The Quality Assurance Manager or auditors
+11.3.2 The Quality Assurance Manager or auditors
 under the Quality Assurance Program shall complete
 a detailed report on each survey plan and file review
 and provide a copy to the named member, to the
@@ -1854,7 +1846,7 @@ Added January 2019
 
 Source key: section:11.3.3
 
-11. 3 .3 Following a survey plan or file review in
+11.3.3 Following a survey plan or file review in
 accordance with 11.3.1, the Practice Review
 Committee may provide advice or assistance or
 recommend a program of upgrading to the named
@@ -1887,11 +1879,11 @@ Assurance Program will have their right to practice
 revoked.
 Added January 2021
 
-### 11.4.2 - Council , may, in its discretion and where
+### 11.4.2 - Council, may, in its discretion and where
 
 Source key: section:11.4.2
 
-11.4.2 Council , may, in its discretion and where
+11.4.2 Council, may, in its discretion and where
 special circumstances exist, defer the revocation of a
 member’s right to practice in accordance with
 section 11.4.1 for such period of time and upon such
@@ -1918,7 +1910,7 @@ Added January 2021
 
 Source key: section:12.1.1
 
-12.1 .1 Professional liability insurance is mandatory
+12.1.1 Professional liability insurance is mandatory
 for all land surveyor members and life members who
 maintain the right to practice land surveying.
 
@@ -1926,7 +1918,7 @@ maintain the right to practice land surveying.
 
 Source key: section:12.1.2
 
-12. 1.2 The Executive Council may allow, upon
+12.1.2 The Executive Council may allow, upon
 application, exemptions to those members not
 engaged in the practice of land surveying in New
 Brunswick.
@@ -1935,7 +1927,7 @@ Brunswick.
 
 Source key: section:12.1.3
 
-12. 1. 3 Those members qualifying for the exemption
+12.1.3 Those members qualifying for the exemption
 must file with the Registrar a duly signed and sworn
 affidavit outlining the reasons they should be so
 exempted. Any change of status must be reported to
@@ -1952,7 +1944,7 @@ Repealed January 2006
 
 Source key: section:12.1.5
 
-12. 1. 5 The minimum limit of liability insurance
+12.1.5 The minimum limit of liability insurance
 shall be $250,000.00 per loss and $250,000.00 per
 policy period. The deductible clause shall not exceed
 the amount of $10,000.00.
@@ -1962,16 +1954,16 @@ Revised January 2006
 
 Source key: section:12.1.6
 
-12. 1. 6 Members and/or firms who obtain
+12.1.6 Members and/or firms who obtain
 Professional Liability Insurance in lieu of the Master
 Policy must provide the Association with a copy of
 their policy or certificate on or before January 31
 every year in conjunction with the submission of the
 “Annual Registration Form” to the Association. In
-the event of non - compliance, the Association will
+the event of non-compliance, the Association will
 revoke the member’s or firm’s right to practice.
 a) This policy must have a minimum requirement not
-less than section 12.1.5 and must include a 10 - day
+less than section 12.1.5 and must include a 10-day
 cancellation notice to the Association.
 b) The right to practice will be reinstated when the
 conditions of 12.1.6 are met.
@@ -1981,7 +1973,7 @@ Revised September 2023
 
 Source key: section:12.1.7
 
-12. 1. 7 Members employed by Government or
+12.1.7 Members employed by Government or
 Government Agencies must provide the Association
 a duly signed and sworn affidavit outlining their
 liability coverage.
@@ -1996,7 +1988,7 @@ Revised September 2023
 
 Source key: section:12.1.8
 
-12. 1. 8 Each insured member and/or firm is
+12.1.8 Each insured member and/or firm is
 responsible for notifying the Association of any
 change to their certificates, or to their status.
 
@@ -2004,7 +1996,7 @@ change to their certificates, or to their status.
 
 Source key: section:12.1.9
 
-12. 1. 9 The Executive Council may appoint an
+12.1.9 The Executive Council may appoint an
 Insurance Advisory Committee to evaluate the
 Master Policy and investigate any and all claims
 made against insured members.
@@ -2013,7 +2005,7 @@ made against insured members.
 
 Source key: section:12.1.10
 
-12. 1 .1 0 The Executive Council may, on the
+12.1.10 The Executive Council may, on the
 advice of the Insurance Advisory Committee, refuse
 to issue an insurance certificate from the Master
 Policy to any member who is named in more than
@@ -2024,7 +2016,7 @@ three claims per policy year.
 
 Source key: section:13.1.1
 
-13.1 .1 The conduct of business at a meeting of the
+13.1.1 The conduct of business at a meeting of the
 Association shall be governed by Robert's Rules of
 Order.
 
@@ -2032,7 +2024,7 @@ Order.
 
 Source key: section:13.1.2
 
-13. 1. 2 The Executive Council shall appoint an
+13.1.2 The Executive Council shall appoint an
 Official Parliamentarian for all annual and special
 meetings of the Association.
 
@@ -2040,32 +2032,32 @@ meetings of the Association.
 
 Source key: section:13.1.3
 
-13. 1. 3 The Association of New Brunswick Land
+13.1.3 The Association of New Brunswick Land
 Surveyors shall be a member of Professional
-Surveyors Canada . The Executive Council shall
+Surveyors Canada. The Executive Council shall
 appoint a member of the Association to serve as a
-representative on Professional Surveyors Canada .
+representative on Professional Surveyors Canada.
 The term of the appointment shall be determined by
 the Executive Council. The Executive Council is
 authorized to pay the required fee to belong to the
-P rofessional Surveyors Canada.
+Professional Surveyors Canada.
 Revised January 2011
 
 ### 13.1.4 - The Association of New Brunswick Land
 
 Source key: section:13.1.4
 
-13. 1. 4 The Association of New Brunswick Land
+13.1.4 The Association of New Brunswick Land
 Surveyors shall be a member of the Canadian Board
-of Examiners for Professional Surveyors (CBEPS) .
+of Examiners for Professional Surveyors (CBEPS).
 The Executive Council shall appoint members of the
 Association to serve on the Canadian Board of
-Examiners for Professional Surveyors (CBEPS) . The
+Examiners for Professional Surveyors (CBEPS). The
 term of the appointment shall be determined by the
 Executive Council. The Executive Council is
 authorized to pay the required fee to belong to the
 Canadian Board of Examiners for Professional
-Surveyors (CBEPS) .
+Surveyors (CBEPS).
 Revised September 2008
 14. CANONS OF ETHICS
 
@@ -2073,7 +2065,7 @@ Revised September 2008
 
 Source key: section:14.1.1
 
-14.1 .1 As the keystone of professional conduct is
+14.1.1 As the keystone of professional conduct is
 integrity, it is the duty of land surveyors to practice
 the profession according to these Canons of Ethics.
 
@@ -2081,7 +2073,7 @@ the profession according to these Canons of Ethics.
 
 Source key: section:14.1.2
 
-14. 1. 2 A Land Surveyor will conduct his work to a
+14.1.2 A Land Surveyor will conduct his work to a
 high professional standard always maintaining the
 dignity and honor of the profession and protecting the
 public interest.
@@ -2090,7 +2082,7 @@ public interest.
 
 Source key: section:14.1.3
 
-14. 1.3 A Land Surveyor will cooperate, on a
+14.1.3 A Land Surveyor will cooperate, on a
 continuing basis, in extending the effectiveness of the
 survey profession by interchanging information and
 professional knowledge with his fellow professionals
@@ -2101,7 +2093,7 @@ and objectives of the Association.
 
 Source key: section:14.1.4
 
-14. 1.4 A Land Surveyor will not act as an expert
+14.1.4 A Land Surveyor will not act as an expert
 except in areas where he has personal knowledge and
 honest conviction.
 
@@ -2109,7 +2101,7 @@ honest conviction.
 
 Source key: section:14.1.5
 
-14. 1. 5 A Land Surveyor will not sanction or sign in
+14.1.5 A Land Surveyor will not sanction or sign in
 a professional capacity any work not executed under
 his personal supervision and professional knowledge.
 
@@ -2117,7 +2109,7 @@ his personal supervision and professional knowledge.
 
 Source key: section:14.1.6
 
-14. 1. 6 A Land Surveyor will exercise due restraint
+14.1.6 A Land Surveyor will exercise due restraint
 in criticizing another surveyor's work or reputation in
 public; recognizing there are professional forums for
 such criticisms within the Association.
@@ -2126,8 +2118,8 @@ such criticisms within the Association.
 
 Source key: section:14.1.7
 
-14. 1.7 A Land Surveyor will guard against any
-conflict - of - interest situations by disclosing any
+14.1.7 A Land Surveyor will guard against any
+conflict-of-interest situations by disclosing any
 possible conflicts to his client and/or employer and by
 always putting the honor of his profession before
 personal gain.
@@ -2136,7 +2128,7 @@ personal gain.
 
 Source key: section:14.1.8
 
-14. 1. 8 A Land Surveyor will not compete in an
+14.1.8 A Land Surveyor will not compete in an
 unfair manner with another land surveyor or mislead
 his employers or clients with misleading information
 or unprofessional advertising.
@@ -2145,7 +2137,7 @@ or unprofessional advertising.
 
 Source key: section:14.1.9
 
-14. 1. 9 A Land Surveyor will not disclose
+14.1.9 A Land Surveyor will not disclose
 information concerning the business affairs of clients
 and employers without their consent.
 15. SCHEDULES
@@ -2156,12 +2148,11 @@ Source key: section:15.1
 
 15.1 Schedule "A"
 IN THE MATTER OF THE NEW BRUNSWICK
-LAND SURVEYORS ACT , 1986, any amendments
-thereto and By - Laws thereunder;
-- and -
-IN THE MATTER OF a Hearing Into the Conduct
+LAND SURVEYORS ACT, 1986, any amendments
+thereto and By-Laws thereunder;
+- and-IN THE MATTER OF a Hearing Into the Conduct
 of , hereinafter
-referred to as "the Member ".
+referred to as "the Member".
 NOTICE OF HEARING
 To: The Member,________________________,
 TAKE NOTICE that a Hearing will be held
@@ -2173,21 +2164,16 @@ purpose of the Hearing is to examine the conduct of
 the Member with respect to a breach of the standards
 of surveying established by the Association of New
 Brunswick Land Surveyors, and the alleged failure of
-the Member to comply with the provisi ons of the New
-Brunswick Land Surveyors Act, 1986 , any
-amendments thereto and the By - Laws thereunder, the
+the Member to comply with the provisions of the New
+Brunswick Land Surveyors Act, 1986, any
+amendments thereto and the By-Laws thereunder, the
 particulars of which are attached hereto a Schedule
 "A".
 THE FURTHER PURPOSE of the Hearing
 is to determine whether the Member has been guilty
 of professional misconduct or incompetence as
 referred to in the New Brunswick Land Surveyors Act,
-
-### 1986 - , any amendments thereto and the By - Laws
-
-Source key: section:1986
-
-1986 , any amendments thereto and the By - Laws
+1986, any amendments thereto and the By-Laws
 thereunder.
 AND FURTHER TAKE NOTICE that the
 complete report of the Complaints Committee and all
@@ -2204,7 +2190,7 @@ are entitled to be present at such hearings and to lead
 evidence or make representations on your own
 behalf. You are entitled to be represented by legal
 counsel, at your expense. If you wish to provide the
-Committee with affidavits or other doc umentary
+Committee with affidavits or other documentary
 evidence on your behalf, these must be received by
 the Association office at least three (3) business days
 in advance of the hearing so that a suitable number of
@@ -2238,7 +2224,7 @@ Source key: section:15.2
 15.2 Schedule "B"
 NOTICE OF COMPLAINT
 Amended January 2022
-SEN D TO: The Registrar of the Association of New
+SEND TO: The Registrar of the Association of New
 Brunswick Land Surveyors
 Information about you: (Must include the
 following)
@@ -2282,17 +2268,16 @@ Source key: section:15.3
 A copy of the Summons to Witness is attached to this
 document.
 IN THE MATTER OF THE NEW BRUNSWICK
-LAND SURVEYORS ACT , 1986, any amendments
-thereto and By - Laws thereunder;
-- and -
-IN THE MATTER OF a Hearing into the Conduct
+LAND SURVEYORS ACT, 1986, any amendments
+thereto and By-Laws thereunder;
+- and-IN THE MATTER OF a Hearing into the Conduct
 of hereinafter referred to as "the
 Member".
 SUMMONS TO WITNESS
 To: The Member,
 You are required to attend before the
 Discipline Committee of the Association of New
-Brunswick Land Surveyors at ___________ , 20 ,
+Brunswick Land Surveyors at ___________, 20 ,
 at a.m. (or p.m.) for your examination
 (state purpose of examination),
 ___________________ and to attend from day to
@@ -2313,7 +2298,7 @@ compelling your attendance at your own expense.
 This Summons to Witness is signed and
 sealed for the Association of New Brunswick Land
 Surveyors at , on the
-____________ day of __________________ , 20 .
+____________day of__________________, 20 .
 ASSOCIATION OF NEW BRUNSWICK LAND
 SURVEYORS
 (Seal)
@@ -2342,7 +2327,7 @@ respect to your conduct as a Land Surveyor. This
 investigation was conducted, based on a complaint
 received by the Association:
 from_______________________dated
-the_____day of______________, 20__ _.
+the_____day of______________, 20___.
 As a result of the said investigation, the
 following acts of incompetence and/or professional
 misconduct were discovered: (state particular dates,
@@ -2368,16 +2353,16 @@ Repealed January 2006
 
 Source key: section:16.1.1
 
-16. 1 .1 The surveyor, partnership, association of
+16.1.1 The surveyor, partnership, association of
 persons or corporation shall refrain from using
-misleading statements or self - laudatory language in
+misleading statements or self-laudatory language in
 any advertising.
 
 ### 16.1.2 - Signs or signboards shall be of professional
 
 Source key: section:16.1.2
 
-16. 1. 2 Signs or signboards shall be of professional
+16.1.2 Signs or signboards shall be of professional
 or like quality
 17. RECOMMENDED MINIMUM
 STANDARD TARIFFS OF FEES
@@ -2386,14 +2371,14 @@ STANDARD TARIFFS OF FEES
 
 Source key: section:17.1.1
 
-17.1 .1 The Executive Council shall establish
+17.1.1 The Executive Council shall establish
 recommended minimum standard tariffs of fees.
 
 ### 17.1.2 - The Executive Council shall review the
 
 Source key: section:17.1.2
 
-17. 1. 2 The Executive Council shall review the
+17.1.2 The Executive Council shall review the
 recommended minimum standard tariffs of fees
 annually.
 18. MANDATORY CONTINUING
@@ -2403,7 +2388,7 @@ EDUCATION
 
 Source key: section:18.1.1
 
-18.1 .1 A Mandatory Continuing Education Program
+18.1.1 A Mandatory Continuing Education Program
 will be established and administered by the
 Association, facilitated by a Practice Review
 Committee under the direction of the Executive
@@ -2413,7 +2398,7 @@ Council.
 
 Source key: section:18.1.2
 
-18. 1. 2 All Land Surveyor Members, with the
+18.1.2 All Land Surveyor Members, with the
 exception of life members, are required to participate
 in the Mandatory Continuing Education Program.
 
@@ -2421,7 +2406,7 @@ in the Mandatory Continuing Education Program.
 
 Source key: section:18.1.3
 
-18. 1. 3 The purpose of the Mandatory Continuing
+18.1.3 The purpose of the Mandatory Continuing
 Education Program is to assist in maintaining the
 high standard of quality of services which members
 provide:
@@ -2435,7 +2420,7 @@ Association activities.
 
 Source key: section:18.1.4
 
-18. 1. 4 The Mandatory Continuing Education
+18.1.4 The Mandatory Continuing Education
 Program shall include a credit system to be
 established by the Practice Review Committee and
 approved by Council.
@@ -2462,7 +2447,7 @@ distribute a detailed list of possible course types,
 seminars, activities etc. to participating members.
 Members required to participate in the program may
 recommend other courses, activities etc. to the
-Committee. Th ese will be reviewed and, if deemed
+Committee. These will be reviewed and, if deemed
 acceptable, will be included in the Mandatory
 Continuing Education Program.
 
@@ -2470,10 +2455,10 @@ Continuing Education Program.
 
 Source key: section:18.1.7
 
-18. 1. 7 The Association will maintain a current
+18.1.7 The Association will maintain a current
 record of points accumulated by each member
 required to participate in the Mandatory Continuing
-Education Program .
+Education Program.
 
 ### 18.1.8 - Participating members shall report all MCE
 
@@ -2502,10 +2487,10 @@ able to comply with the requirements of the MCE
 program because of health or other legitimate reasons
 may apply to the Practice Review Committee for an
 exemption from the program for a specific time. The
-Practice Re view Committee shall review this request
+Practice Review Committee shall review this request
 and make a recommendation to Council.
 Revised January 2019
-Added January 202 3
+Added January 2023
 Revised January 2024
 
 ### 18.2 - FAILURE TO COMPLETE OR REPORT
@@ -2523,7 +2508,7 @@ Source key: section:18.2.1
 with section 18.1.9, and subject to section 18.2.2, a
 member who fails to comply with 18.1.2 and 18.1.8
 will have their right to practice revoked.
-Added January 20 19
+Added January 2019
 Revised September 2023
 
 ### 18.2.2 - Council, may, in its discretion and where
@@ -2532,10 +2517,10 @@ Source key: section:18.2.2
 
 18.2.2 Council, may, in its discretion and where
 special circumstances exist, defer the revocation of a
-member’s right to practice in accordance with section s
+member’s right to practice in accordance with sections
 18.1.8 and 18.2.1 for such period of time and upon
 such terms as Council deems reasonable.
-Added January 2 019
+Added January 2019
 Revised September 2023
 
 ### 18.2.3 - At least 30 days before revoking the right to
@@ -2561,10 +2546,10 @@ Source key: section:19.0
 19.0 Requirement for Preparation of a Survey
 Plan subsequent to boundary monumentation
 Any Survey Plan of a property will be prepared
-according to Section G - 4 of the Standards Manual.
+according to Section G-4 of the Standards Manual.
 All surveys that result in monuments being placed
 shall have a Survey Plan prepared according to
-Section G - 4 of the Standards Manual.
+Section G-4 of the Standards Manual.
 The exception to this is when the placed
 monumentation is in compliance with existing
 coordinated plans that are:

@@ -32,6 +32,7 @@ import {
   sourceStatusFromComponent,
 } from './studyAiComponentText';
 import type { AiProposedSourceGroup, AiStudyMapProposal } from './studyAiTypes';
+import { remapStudySourceGroup } from './studyAiSourceKeyMigration';
 import type {
   AiAuthoringProviderKind,
   AiAuthoringRun,
@@ -93,10 +94,15 @@ export const buildUnitAuthoringJob = (args: BuildUnitAuthoringJobArgs): AiUnitAu
       `Cannot build unit authoring job for proposal ${proposal.id} group ${group.groupId}: document ${proposal.document.documentId} is missing from the content package.`,
     );
   }
+  // Phase 4C remap: older frozen AI artifacts called Act subsection 30(3)
+  // `section:30` because PDF parsing duplicated the parent. Keep this
+  // explicit compatibility boundary; generated jobs carry only valid keys.
+  const resolvedGroup = remapStudySourceGroup(proposal.document.documentId, group);
+  const resolvedSourceKeys = resolvedGroup.sourceKeys;
   const componentsByKey = new Map(
     document.components.map((component) => [component.sourceKey, component]),
   );
-  const components = group.sourceKeys
+  const components = resolvedSourceKeys
     .map((sourceKey) => componentsByKey.get(sourceKey))
     .filter((component): component is NbLawDocumentComponent => Boolean(component));
   if (components.length === 0) {
@@ -117,7 +123,7 @@ export const buildUnitAuthoringJob = (args: BuildUnitAuthoringJobArgs): AiUnitAu
         proposalId: proposal.id,
         groupId: group.groupId,
         promptSpecVersion,
-        sourceKeys: group.sourceKeys,
+        sourceKeys: resolvedSourceKeys,
       }),
     ).slice(0, 16)}`,
     runId,
@@ -127,11 +133,11 @@ export const buildUnitAuthoringJob = (args: BuildUnitAuthoringJobArgs): AiUnitAu
     corpusContentHash: proposal.corpusContentHash ?? corpusContentHash,
     inputHash: '',
     document: proposal.document,
-    approvedGroup: group,
+    approvedGroup: resolvedGroup,
     mapDisposition: proposal.disposition,
     mapReason: proposal.reason,
-    approximateLearningGoal: group.approximateLearningGoal,
-    group,
+    approximateLearningGoal: resolvedGroup.approximateLearningGoal,
+    group: resolvedGroup,
     sourceHashes: Object.fromEntries(
       components.map((component) => [component.sourceKey, component.contentHash]),
     ),
@@ -166,7 +172,7 @@ export const buildUnitAuthoringJob = (args: BuildUnitAuthoringJobArgs): AiUnitAu
       relevantDefinitions: proposal.context?.relevantDefinitions,
       directlyReferencedProvisions: proposal.context?.directlyReferencedProvisions,
       relatedSourceKeys: proposal.targetSourceKeys.filter(
-        (sourceKey) => !group.sourceKeys.includes(sourceKey),
+        (sourceKey) => !resolvedSourceKeys.includes(sourceKey),
       ),
       warnings: proposal.warnings,
       omittedContextWarnings: proposal.context?.omittedContextWarnings,

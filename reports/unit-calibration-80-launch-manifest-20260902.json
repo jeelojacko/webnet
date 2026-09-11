@@ -55,11 +55,11 @@
       },
       {
         "file": "jobs/batch-005.jobs.jsonl",
-        "sha256": "58eef9121b317d5d0b95c940639c8e78d6aa773c922649605f237d9d06a722a7"
+        "sha256": "0fa752c42c75649725ac2c573591ba43f050b1663b7562605b42bb9e8e5787b2"
       },
       {
         "file": "jobs/batch-006.jobs.jsonl",
-        "sha256": "d831930a579cb23490a3d1c6d228153a7e10669a863f204730b2981a450288dc"
+        "sha256": "02cffc7688bbb742706376109515f346385e522998eacc4f5248a70ad4a3b961"
       },
       {
         "file": "jobs/batch-007.jobs.jsonl",
@@ -71,7 +71,7 @@
       },
       {
         "file": "jobs/batch-009.jobs.jsonl",
-        "sha256": "53d3b897e02c273873c0b9561f496bc1a8c647babe5ed9eaf04a960ccf54bda5"
+        "sha256": "b6e6df3ef7e8090f46a005b13a574f720d738e8f8420edcc282af9d0fceb28c3"
       },
       {
         "file": "jobs/batch-010.jobs.jsonl",
@@ -120,17 +120,17 @@
         "sha256": null
       }
     ],
-    "runJsonSha256": "28070b348becdc4fa921f3b168501427fc1c141487e5e56b384c8e3565807210",
-    "unitJobReportSha256": "c34123ceb5dcabff473c73ab79a72f72c7dd6c080c9ae0121abb243f8a6f1457"
+    "runJsonSha256": "84065f2ed41fb1b0aacd2f047e2d13baaee2556451d3b9486fc630fdc4efe741",
+    "unitJobReportSha256": "95dfa3973c78d9be1f193bc79a753f65528af843e2f2346ba1cd2885968cdf43"
   },
   "referencedArtifacts": {
     "selectionReportJson": {
       "file": "reports/unit-calibration-80-20260902.json",
-      "sha256": "ccbfb158cf383a35f4b32712b120a1ae897270e13361e702b1fb153e1c681306"
+      "sha256": "1e96ccb5cb0ac3a89bd1d04c28804983c1f7495114dcec1524b546aed7af0da6"
     },
     "reviewPackMd": {
       "file": "reports/unit-calibration-80-review-pack-20260902.md",
-      "sha256": "741bcef6e39e2fcd6e2e90495d0036adac426d7479db0c2f04b3bc3e6af38199"
+      "sha256": "0f171d9cf6eb376a47c963240ac78d8a2b777372d19560748dfce29d093b3e5e"
     }
   }
 }

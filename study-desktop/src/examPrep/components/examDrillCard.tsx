@@ -25,7 +25,7 @@ import {
   examPrepDrillTaskId,
 } from '../examPrepDrillFilters';
 import { EXAM_PREP_OPEN_SOURCE_BUTTON } from './examPrepBits';
-import { openStudyUrlNewTab } from '../../studyWindow';
+import { resolveSourceWindowBridge } from '../../studySourceWindowBridge';
 
 export type ExamDrillCardProps = {
   unit: ExamCurriculumUnit;
@@ -291,7 +291,9 @@ export const ExamDrillCard = ({
                     key={relatedId}
                     type="button"
                     onClick={() => {
-                      void openStudyUrlNewTab(`/study/learn#${examPrepUnitCardId(relatedId)}`);
+                      void resolveSourceWindowBridge().openPath(
+                        `/study/learn#${examPrepUnitCardId(relatedId)}`,
+                      );
                     }}
                     className="inline-flex max-w-full items-center gap-1 rounded-full border border-slate-700 bg-slate-900 px-2 py-0.5 text-[11px] text-sky-200 hover:border-sky-600 hover:bg-sky-950"
                     title={`Open related unit ${relatedId} in Learn`}

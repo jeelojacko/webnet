@@ -20,8 +20,8 @@ import type { ExamCurriculumUnit } from '../src/examCurriculum/examCurriculumTyp
 import { validateExamCurriculumUnits } from '../src/examCurriculum/examCurriculumValidate';
 
 const TEST_CREATED_AT = '2026-09-03T00:00:00.000Z';
-// Frozen baseline: sha256(canonicalJson(Tier-A resolved units)) before Tier B existed.
-const FROZEN_TIER_A_PROJECTION_HASH = '07ae52f1e5e6276dd74a52172bb98cc54cdd136fdc5422ae27fbe3452c4af4a5';
+// Projection baseline after Phase 4C official-PDF normalization.
+const FROZEN_TIER_A_PROJECTION_HASH = '78219084e39b88a19ab80a03f59962957fe1f73cf8210ac450c1405f5a819a78';
 
 const corpus = buildExamCurriculumCorpusView(contentPackageJson as never);
 const manifest = buildExamCurriculumManifest(examCurriculumAllSpecs, corpus, TEST_CREATED_AT);
@@ -202,11 +202,11 @@ describe('exam curriculum cumulative A+B build against the authoritative corpus'
     ]);
   });
 
-  it('reports per-tier metrics: A anchors=742 recall=18 locate=112, B anchors=716 recall=27 locate=140', () => {
+  it('reports per-tier metrics: A anchors=741 recall=18 locate=112, B anchors=716 recall=27 locate=140', () => {
     expect(examCurriculumTierMetrics(manifest.units, 'A')).toEqual({
       totalUnits: 51,
       unitsByType: { document_orientation: 8, core_concept: 43 },
-      totalSourceAnchors: 742,
+      totalSourceAnchors: 741,
       totalMustRecall: 18,
       totalMustLocate: 112,
     });

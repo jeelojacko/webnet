@@ -9,7 +9,7 @@
 // so reopening after an advance starts with a fresh empty search.
 
 import StudyLibrary, { type StudyLibraryProps } from '../../components/StudyLibrary';
-import { openStudyUrlNewTab, openProvisionNewTab } from '../../studyWindow';
+import { resolveSourceWindowBridge } from '../../studySourceWindowBridge';
 import type { StudyDataSnapshot } from '../../studyTypes';
 
 export type ExamPrepLocatePickerOverlayProps = {
@@ -52,19 +52,21 @@ export const ExamPrepLocatePickerOverlay = ({
       <StudyLibrary
         data={data}
         onSelectDocument={(documentId) => {
-          void openStudyUrlNewTab(`/study/document/${encodeURIComponent(documentId)}`);
+          void resolveSourceWindowBridge().openPath(
+            `/study/document/${encodeURIComponent(documentId)}`,
+          );
         }}
         onCreateCustomUnit={() => undefined}
         onEditUnit={() => undefined}
         onPreviewUnit={() => undefined}
         onPracticeUnit={() => undefined}
         onOpenProvision={(documentId, sourceKey) => {
-          void openProvisionNewTab(documentId, sourceKey);
+          void resolveSourceWindowBridge().openProvision(documentId, sourceKey);
         }}
         onDeleteUnit={() => undefined}
         onDuplicateUnit={() => undefined}
         onNavigate={(path) => {
-          void openStudyUrlNewTab(path);
+          void resolveSourceWindowBridge().openPath(path);
         }}
         onLoadLegalDocumentComponentSummary={onLoadLegalDocumentComponentSummary}
         pickerOverlayPrompt={prompt}

@@ -76,7 +76,7 @@ describe('official content package validation and preview', () => {
     expect(validateOfficialContentPackageForImport(pkg)).toEqual([]);
     expect(firstPreview.valid).toBe(true);
     expect(firstPreview.newDocuments).toHaveLength(61);
-    expect(firstPreview.newComponents).toHaveLength(3758);
+    expect(firstPreview.newComponents).toHaveLength(3756);
     expect(firstPreview.changedComponents).toHaveLength(0);
 
     const { snapshot } = applyOfficialContentPackageToSnapshot({
@@ -86,11 +86,11 @@ describe('official content package validation and preview', () => {
     });
     expect(snapshot.documents).toHaveLength(61);
     expect(snapshot.legalDocuments).toHaveLength(61);
-    expect(snapshot.legalComponents).toHaveLength(3758);
+    expect(snapshot.legalComponents).toHaveLength(3756);
     expect(snapshot.importHistory.at(-1)).toMatchObject({
       packageId: pkg.id,
       addedDocuments: 61,
-      addedComponents: 3758,
+      addedComponents: 3756,
       changedDocuments: 0,
       changedComponents: 0,
       removedComponents: 0,
@@ -105,7 +105,7 @@ describe('official content package validation and preview', () => {
     expect(secondPreview.newComponents).toHaveLength(0);
     expect(secondPreview.changedComponents).toHaveLength(0);
     expect(secondPreview.removedComponents).toHaveLength(0);
-    expect(secondPreview.unchangedComponents).toHaveLength(3758);
+    expect(secondPreview.unchangedComponents).toHaveLength(3756);
     expect(secondPreview.unitsRequiringSourceReview).toHaveLength(0);
   });
 

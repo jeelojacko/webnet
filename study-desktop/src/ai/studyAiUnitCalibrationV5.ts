@@ -64,7 +64,7 @@ export const CAL80_V5_PROMPT_SPEC_VERSION = 'unit-authoring-v5';
 export const CAL80_V5_PROVIDER_KIND = 'local-openai-compatible' as const;
 export const CAL80_V5_COHORT_SIZE = 80;
 export const CAL80_V5_PREFLIGHT_JOB_COUNT = 4251;
-export const CAL80_V5_SOURCE_PACKAGE_ID = 'nb-sit-statute-corpus-2026-08-29';
+export const CAL80_V5_SOURCE_PACKAGE_ID = 'nb-sit-statute-corpus-2026-09-11';
 export const CAL80_V5_PRIORITY_DISTRIBUTION: Record<string, number> = {
   P1: 24,
   P2: 28,

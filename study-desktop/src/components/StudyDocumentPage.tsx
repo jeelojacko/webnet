@@ -4,6 +4,7 @@ import {
   parseExamPrepLocatePickerSearch,
 } from '../examPrep/examPrepLocatePicker';
 import { resolveLocateWindowBridge } from '../examPrep/locateWindowBridge';
+import { StudyLegalTextBlock } from './StudyLegalTextBlock';
 import type { ImportedLegalComponent, StudyDataSnapshot, StudyDocument, StudyUnit } from '../studyTypes';
 
 type StudyDocumentPageProps = {
@@ -424,7 +425,15 @@ const StudyDocumentPage = ({
                       </div>
                     ) : null}
                     {isExpanded ? (
-                      <div className="mt-3 whitespace-pre-wrap text-sm leading-6 text-slate-200">{highlight(component.text, normalizedQuery)}</div>
+                      <div className="mt-3">
+                        <StudyLegalTextBlock
+                          text={component.text}
+                          label={component.label}
+                          heading={component.heading}
+                          query={normalizedQuery}
+                          highlight={highlight}
+                        />
+                      </div>
                     ) : null}
                     {isExpanded && component.subsections?.length ? (
                       <div className="mt-3 space-y-2 border-t border-slate-800 pt-3">
@@ -437,7 +446,9 @@ const StudyDocumentPage = ({
                             <div id={`${subsection.sourceKey}-heading`} tabIndex={-1} className="font-semibold text-slate-100">
                               {highlight(subsection.label, normalizedQuery)}
                             </div>
-                            <div className="mt-1 whitespace-pre-wrap">{highlight(subsection.text, normalizedQuery)}</div>
+                            <div className="mt-1">
+                              <StudyLegalTextBlock text={subsection.text} label={subsection.label} query={normalizedQuery} highlight={highlight} />
+                            </div>
                             {pickerContext ? (
                               <button
                                 type="button"

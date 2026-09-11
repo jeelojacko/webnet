@@ -6,7 +6,7 @@
 import { MapPin } from 'lucide-react';
 import type { ExamCurriculumUnit } from '../../examCurriculum/examCurriculumTypes';
 import { EXAM_PREP_LEARNING_DEPTHS } from '../examPrepFormat';
-import { openProvisionNewTab } from '../../studyWindow';
+import { resolveSourceWindowBridge } from '../../studySourceWindowBridge';
 
 export const EXAM_PREP_DEPTH_BADGES = ({ unit }: { unit: ExamCurriculumUnit }) => (
   <span className="flex flex-wrap gap-1">
@@ -61,7 +61,7 @@ export const EXAM_PREP_OPEN_SOURCE_BUTTON = ({
     type="button"
     onClick={() => {
       if (newTab) {
-        openProvisionNewTab(documentId, sourceKey);
+        void resolveSourceWindowBridge().openProvision(documentId, sourceKey);
         return;
       }
       onOpenProvision(documentId, sourceKey);

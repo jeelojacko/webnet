@@ -6,6 +6,12 @@ import { buildNbLawContentPackage, validateNbLawContentPackage } from '../study-
 import { normalizeNbLawDocument, renderNbLawNormalizedMarkdown } from '../study-desktop/src/content/nbLawNormalize';
 import type { NbLawNormalizedDocument, NbLawRawFetchMetadata } from '../study-desktop/src/content/nbLawTypes';
 import {
+  detectPdfSubsectionSpans,
+  normalizePdfHyphenation,
+  renderPdfItemsAsText,
+  type PdfItemGeometry,
+} from './studyCorpusPdf';
+import {
   assertSitCorpusInventoryCanFetchRequired,
   buildSitCorpusInventoryReport,
   getFetchableRequiredSitDocuments,
@@ -345,17 +351,29 @@ const extractPdfText = async (document: SitCorpusManifest['documents'][number]):
   for (let pageNumber = startPage; pageNumber <= Math.min(endPage, pdf.numPages); pageNumber += 1) {
     const page = await pdf.getPage(pageNumber);
     const content = await page.getTextContent();
-    pages.push(content.items.map((item) => ('str' in item ? item.str : '')).join(' '));
+    const items = content.items
+      .filter(
+        (item): item is typeof item & { str: string; transform: number[]; width?: number } => 'str' in item,
+      )
+      .map(toPdfItemGeometry);
+    pages.push(renderPdfItemsAsText(items));
   }
   await pdf.destroy();
   return normalizePdfWhitespace(pages.join('\n'));
 };
 
-type PdfTextItem = {
+type PdfJsTextItem = {
   str: string;
-  x: number;
-  y: number;
+  transform: number[];
+  width?: number;
 };
+
+const toPdfItemGeometry = (item: PdfJsTextItem): PdfItemGeometry => ({
+  str: item.str,
+  x: item.transform[4],
+  width: typeof item.width === 'number' && Number.isFinite(item.width) ? item.width : 0,
+  y: item.transform[5],
+});
 
 const extractPdfSideText = async (
   document: SitCorpusManifest['documents'][number],
@@ -372,35 +390,20 @@ const extractPdfSideText = async (
     const viewport = page.getViewport({ scale: 1 });
     const content = await page.getTextContent();
     const sideItems = content.items
-      .filter((item): item is typeof item & { str: string; transform: number[] } => 'str' in item)
-      .map((item) => ({ str: item.str.trim(), x: item.transform[4], y: item.transform[5] }))
-      .filter((item) => item.str && isItemOnSelectedPdfSide(item, viewport.width, side));
-    pageTexts.push(renderPdfItemsAsLines(sideItems));
+      .filter(
+        (item): item is typeof item & { str: string; transform: number[]; width?: number } => 'str' in item,
+      )
+      .map(toPdfItemGeometry)
+      .filter((item) => isItemOnSelectedPdfSide(item, viewport.width, side));
+    pageTexts.push(renderPdfItemsAsText(sideItems));
   }
   await pdf.destroy();
   return normalizePdfWhitespace(pageTexts.join('\n'));
 };
 
-const isItemOnSelectedPdfSide = (item: PdfTextItem, pageWidth: number, side: 'left' | 'right'): boolean => {
+const isItemOnSelectedPdfSide = (item: PdfItemGeometry, pageWidth: number, side: 'left' | 'right'): boolean => {
   const midpoint = pageWidth / 2;
   return side === 'left' ? item.x < midpoint : item.x >= midpoint;
-};
-
-const renderPdfItemsAsLines = (items: PdfTextItem[]): string => {
-  const rows = new Map<number, PdfTextItem[]>();
-  for (const item of items) {
-    const rowKey = Math.round(item.y * 2) / 2;
-    rows.set(rowKey, [...(rows.get(rowKey) ?? []), item]);
-  }
-  return [...rows.entries()]
-    .sort(([leftY], [rightY]) => rightY - leftY)
-    .map(([, rowItems]) =>
-      rowItems
-        .sort((left, right) => left.x - right.x)
-        .map((item) => item.str)
-        .join(' '),
-    )
-    .join('\n');
 };
 
 type PdfSectionStart = {
@@ -440,21 +443,21 @@ const normalizePdfSections = (text: string): NbLawNormalizedDocument['sections']
     .filter((start): start is PdfSectionStart => start !== undefined);
   return starts.map((start, index) => {
     const end = starts[index + 1]?.index ?? text.length;
-    const sectionText = normalizePdfWhitespace(text.slice(start.index, end));
+    const sectionText = normalizePdfHyphenation(normalizePdfWhitespace(text.slice(start.index, end)));
     const sourceKey = `section:${start.label}`;
-    const subsections = [...sectionText.matchAll(/\(([0-9]+(?:\.[0-9]+)?)\)/g)].map((match) => ({
-      id: `${start.label}-subsection-${match[1]}`,
-      sourceKey: `${sourceKey}/subsection:${match[1]}`,
-      label: `${start.label}(${match[1]})`,
-      text: sectionText,
-      contentHash: sha256(sectionText),
+    const subsections = detectPdfSubsectionSpans(start.label, sectionText).map((span) => ({
+      id: `${start.label}-subsection-${span.number}`,
+      sourceKey: `${sourceKey}/subsection:${span.number}`,
+      label: span.label,
+      text: span.text,
+      contentHash: sha256(span.text),
     }));
     return {
       id: `section-${start.label.replace(/[^0-9a-z.]+/gi, '-')}`,
       sourceKey,
       componentType: 'section' as const,
       label: start.label,
-      heading: start.heading,
+      heading: start.heading ? normalizePdfHyphenation(start.heading) : undefined,
       text: sectionText,
       subsections,
       contentHash: sha256(sectionText),

@@ -46,7 +46,7 @@ import {
   resolveLocateWindowBridge,
   type LocateWindowBridge,
 } from '../locateWindowBridge';
-import { openStudyUrlNewTab, STUDY_LIBRARY_PATH } from '../../studyWindow';
+import { resolveSourceWindowBridge } from '../../studySourceWindowBridge';
 import type { ExamPrepAttempt, ExamPrepLocateTask } from '../examPrepTypes';
 import type { StudyDataSnapshot } from '../../studyTypes';
 import { ExamPrepLocatePickerOverlay } from './ExamPrepLocatePickerOverlay';
@@ -590,7 +590,13 @@ export const ExamPrepLocateView = ({
                 <button
                   type="button"
                   onClick={() => {
-                    void openStudyUrlNewTab(STUDY_LIBRARY_PATH);
+                    void resolveSourceWindowBridge()
+                      .openLibrary()
+                      .then((result) => {
+                        if (!result.opened) {
+                          setSaveError('The Statute Library could not be opened.');
+                        }
+                      });
                   }}
                   className="rounded border border-sky-700 bg-sky-900 px-3 py-1.5 text-xs font-semibold text-sky-100 hover:bg-sky-800"
                 >

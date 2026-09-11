@@ -9,7 +9,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { Flag, Timer } from 'lucide-react';
 import { formatExamMockClock, EXAM_PREP_MOCK_KIND_LABELS } from '../examPrepFormat';
-import { openStudyUrlNewTab, STUDY_LIBRARY_PATH } from '../../studyWindow';
+import { resolveSourceWindowBridge } from '../../studySourceWindowBridge';
 import {
   markMockVisited,
   setMockAnswer,
@@ -336,12 +336,15 @@ export const ExamPrepMockActive = ({
                 type="button"
                 onClick={() => {
                   // noopener/noreferrer gives back no window handle, so a null
-                  // WindowProxy is not a popup failure — only a synchronous
-                  // exception is surfaced.
-                  const opened = openStudyUrlNewTab(STUDY_LIBRARY_PATH);
-                  if (!opened.attempted) {
-                    setSaveError('The Statute Library could not be opened.');
-                  }
+                  // WindowProxy is not a popup failure — only a genuine
+                  // exception (or a native Tauri failure) is surfaced.
+                  void resolveSourceWindowBridge()
+                    .openLibrary()
+                    .then((opened) => {
+                      if (!opened.opened) {
+                        setSaveError('The Statute Library could not be opened.');
+                      }
+                    });
                 }}
                 className="rounded border border-sky-700 bg-sky-900 px-3 py-1.5 text-xs font-semibold text-sky-100 hover:bg-sky-800"
               >

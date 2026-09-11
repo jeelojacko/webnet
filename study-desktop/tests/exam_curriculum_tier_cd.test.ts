@@ -25,8 +25,8 @@ import type { ExamCurriculumUnit } from '../src/examCurriculum/examCurriculumTyp
 import { validateExamCurriculumUnits } from '../src/examCurriculum/examCurriculumValidate';
 
 const TEST_CREATED_AT = '2026-09-03T00:00:00.000Z';
-// Frozen baselines (pre-Tier-C/D): sha256(canonicalJson of the tier's resolved units).
-const FROZEN_TIER_A_PROJECTION_HASH = '07ae52f1e5e6276dd74a52172bb98cc54cdd136fdc5422ae27fbe3452c4af4a5';
+// Projection baselines after Phase 4C official-PDF normalization.
+const FROZEN_TIER_A_PROJECTION_HASH = '78219084e39b88a19ab80a03f59962957fe1f73cf8210ac450c1405f5a819a78';
 const FROZEN_TIER_B_PROJECTION_HASH = '149f725394a0cae0a91759370a62cc70463893d5a7cecc18cdf32c431b121d8a';
 // Tier-C/D projection hashes, pinned after finalization of this batch.
 const TIER_C_PROJECTION_HASH = '6f9cd74e46cd66c01d6434117d0489951017f0aae4f6e423a39476cf68bbfad7';

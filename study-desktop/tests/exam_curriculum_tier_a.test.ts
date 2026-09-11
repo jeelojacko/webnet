@@ -249,8 +249,8 @@ describe('exam curriculum Tier-A build against the authoritative corpus', () => 
   const corpus = buildExamCurriculumCorpusView(contentPackageJson as never);
 
   it('binds to the authoritative corpus identity and content hash', () => {
-    expect(corpus.packageId).toBe('nb-sit-statute-corpus-2026-08-29');
-    expect(corpus.corpusContentHash).toBe('6f0442fc121eb0d2bcc9d3c1023c7a624e2cd4adf36922079bc3f6858fdcc32b');
+    expect(corpus.packageId).toBe('nb-sit-statute-corpus-2026-09-11');
+    expect(corpus.corpusContentHash).toBe('cda18a6928900e7014ae0f01853947a676ca52aefbc463a44a29b6df92edfe25');
   });
 
   it('throws when the content package is missing corpusMetadata.corpusContentHash', () => {
@@ -319,9 +319,9 @@ describe('exam curriculum Tier-A build against the authoritative corpus', () => 
     expect(manifest.schemaVersion).toBe(1);
     expect(manifest.curriculumId).toBe('nb-sit-statute-exam-curriculum-v1');
     expect(manifest.architectureVersion).toBe('exam-curriculum-v1');
-    expect(manifest.sourcePackageId).toBe('nb-sit-statute-corpus-2026-08-29');
-    expect(manifest.sourceCorpusContentHash).toBe('6f0442fc121eb0d2bcc9d3c1023c7a624e2cd4adf36922079bc3f6858fdcc32b');
-    expect(contentPackage['id']).toBe('nb-sit-statute-corpus-2026-08-29');
+    expect(manifest.sourcePackageId).toBe('nb-sit-statute-corpus-2026-09-11');
+    expect(manifest.sourceCorpusContentHash).toBe('cda18a6928900e7014ae0f01853947a676ca52aefbc463a44a29b6df92edfe25');
+    expect(contentPackage['id']).toBe('nb-sit-statute-corpus-2026-09-11');
   });
 });
 

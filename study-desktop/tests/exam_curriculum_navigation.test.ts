@@ -22,14 +22,15 @@ import type {
 import { validateExamCurriculumUnits } from '../src/examCurriculum/examCurriculumValidate';
 
 const TEST_CREATED_AT = '2026-09-04T00:00:00.000Z';
-// Frozen baselines (pre-Navigation) — must remain byte-for-byte unchanged.
-const FROZEN_TIER_A_PROJECTION_HASH = '07ae52f1e5e6276dd74a52172bb98cc54cdd136fdc5422ae27fbe3452c4af4a5';
+// Projection baseline after Phase 4C official-PDF normalization (2026-09-11).
+// Corpus cleanup remaps one malformed Act anchor and removes one title-only Bylaw anchor.
+const FROZEN_TIER_A_PROJECTION_HASH = '78219084e39b88a19ab80a03f59962957fe1f73cf8210ac450c1405f5a819a78';
 const FROZEN_TIER_B_PROJECTION_HASH = '149f725394a0cae0a91759370a62cc70463893d5a7cecc18cdf32c431b121d8a';
 const FROZEN_TIER_C_PROJECTION_HASH = '6f9cd74e46cd66c01d6434117d0489951017f0aae4f6e423a39476cf68bbfad7';
 const FROZEN_TIER_D_PROJECTION_HASH = 'f118e3624d653ba9964f126534bf5a6a360028e5ac867974e5a1094058046712';
-// Navigation projection hash, pinned after corpus-resolution review (deterministic).
-const NAV_PROJECTION_HASH = '184c04c01f767eb4f5175d56c8a6fcde8bf36458ced0702d62cdb829a3a3329b';
-const NAV_MANIFEST_CONTENT_HASH = '434703f0a6de470095a5d0ad9fc6d1bb9534b15d58b1ab2b47460bba8a88952a';
+// Navigation projection hash, pinned after Phase 4C corpus-resolution review (deterministic).
+const NAV_PROJECTION_HASH = '9707e967606c41583938121be1c885c4fd9c51174b70a8317401f89f069a05d6';
+const NAV_MANIFEST_CONTENT_HASH = '9d2284adc5a867a41d8a438c86a5a2d9f9de58ad771cf31b5fc514d632785810';
 const DRILL_PROJECTION_HASH = '30b75f6cde3fd9c1ec70a5244f23ed9b3a5a848abcfff361aa060fdb9f4ca608';
 
 const corpus = buildExamCurriculumCorpusView(contentPackageJson as never);

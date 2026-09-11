@@ -5,6 +5,7 @@ import { createRoot, type Root } from 'react-dom/client';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import StudyDocumentPage from '../src/components/StudyDocumentPage';
+import { StudyLegalTextBlock } from '../src/components/StudyLegalTextBlock';
 import type { ImportedLegalComponent, StudyDataSnapshot } from '../src/studyTypes';
 import { createSeedStudyData } from '../src/studySeed';
 
@@ -130,6 +131,23 @@ describe('study legal reader navigation', () => {
     root = null;
     container = null;
     vi.restoreAllMocks();
+  });
+
+  it('removes duplicate opening heading and aligns clause markers for display', async () => {
+    await act(async () => {
+      root?.render(
+        <StudyLegalTextBlock
+          text={'15(1) Any applicant for registration who:\n(a) is a Canadian citizen;\n    and has met the requirements;\n(b) pays the fee.'}
+          label="15(1)"
+          heading="Any applicant for registration who:"
+          highlight={(value, _query) => value}
+        />,
+      );
+    });
+
+    expect(container?.textContent).toContain('is a Canadian citizen;');
+    expect(container?.textContent).not.toContain('15(1) Any applicant for registration who:');
+    expect(container?.querySelectorAll('.w-8')).toHaveLength(2);
   });
 
   it('expands and focuses sections, subsections, schedules and forms from navigation clicks', async () => {

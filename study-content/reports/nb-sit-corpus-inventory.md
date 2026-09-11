@@ -5,7 +5,7 @@ Manifest hash: 8a111a72d8926ab7f9407750390aba45aea540e4faabc6e62ea24cf65da227ec
 Expected SIT manual entries: 57
 Actual SIT manual entries: 57
 Required regulations: 6
-Candidate regulations: 122
+Candidate regulations: 0
 Missing source URLs: 0
 Duplicate IDs: 0
 Duplicate titles: 0
