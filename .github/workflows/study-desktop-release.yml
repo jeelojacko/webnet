@@ -54,7 +54,10 @@ jobs:
         uses: actions/upload-artifact@v7
         with:
           name: study-desktop-release-linux-${{ github.ref_name }}
-          path: study-desktop/src-tauri/target/release/bundle/
+          path: |
+            study-desktop/src-tauri/target/release/bundle/appimage/*.AppImage
+            study-desktop/src-tauri/target/release/bundle/deb/*.deb
+            study-desktop/src-tauri/target/release/bundle/rpm/*.rpm
           if-no-files-found: error
 
   build-windows:
@@ -96,7 +99,9 @@ jobs:
         uses: actions/upload-artifact@v7
         with:
           name: study-desktop-release-windows-${{ github.ref_name }}
-          path: study-desktop/src-tauri/target/release/bundle/
+          path: |
+            study-desktop/src-tauri/target/release/bundle/msi/*.msi
+            study-desktop/src-tauri/target/release/bundle/nsis/*-setup.exe
           if-no-files-found: error
 
   checksums:
@@ -112,8 +117,34 @@ jobs:
           merge-multiple: false
       - name: Create SHA256SUMS
         run: |
+          set -euo pipefail
           cd release-artifacts
-          find . -type f -print0 | sort -z | xargs -0 sha256sum > ../SHA256SUMS
+          mapfile -d '' distributables < <(
+            find . -type f \( \
+              -name '*.AppImage' -o \
+              -name '*.deb' -o \
+              -name '*.rpm' -o \
+              -name '*.msi' -o \
+              -name '*-setup.exe' \
+            \) -print0 | sort -z
+          )
+          if [[ ${#distributables[@]} -ne 5 ]]; then
+            echo "Expected exactly 5 distributables, found ${#distributables[@]}:"
+            printf '%s\n' "${distributables[@]}"
+            exit 1
+          fi
+          # This workflow currently targets the fixed 0.1.0-beta.1 beta release.
+          for file in "${distributables[@]}"; do
+            name=$(basename "$file")
+            if [[ "$name" != *'0.1.0-beta.1'* ]]; then
+              echo "Distributable filename has unexpected version: $name"
+              exit 1
+            fi
+          done
+          : > ../SHA256SUMS
+          for file in "${distributables[@]}"; do
+            sha256sum "$file" | awk -v name="$(basename "$file")" '{print $1 "  " name}' >> ../SHA256SUMS
+          done
           cat ../SHA256SUMS
       - name: Upload SHA256SUMS
         uses: actions/upload-artifact@v7
