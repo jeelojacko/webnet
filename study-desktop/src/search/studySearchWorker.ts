@@ -12,7 +12,7 @@ import {
   createStudySearchIndexState,
   searchIndexMetadataIsCurrent,
 } from './studySearchIndexCore';
-import { deserializeMiniSearch, serializeMiniSearch } from './studySearchMiniSearch';
+import { deserializeMiniSearch, serializeMiniSearch, STUDY_SEARCH_BOOST, toStudySearchResultSummary } from './studySearchMiniSearch';
 import {
   clearSearchArtifacts,
   openStudySearchDatabase,
@@ -323,26 +323,7 @@ const exactBoost = (query: string, result: StudySearchResultSummary): number => 
   });
 };
 
-const toSummary = (
-  result: Record<string, unknown> & { id: string; score: number },
-): StudySearchResultSummary => ({
-  id: result.id,
-  entityType: result.entityType as StudySearchResultSummary['entityType'],
-  entityId: String(result.entityId),
-  title: String(result.title || result.id),
-  subtitle: String(result.citation || result.heading || ''),
-  citation: typeof result.citation === 'string' ? result.citation : undefined,
-  documentId: typeof result.documentId === 'string' ? result.documentId : undefined,
-  sourceKey: typeof result.sourceKey === 'string' ? result.sourceKey : undefined,
-  unitId: typeof result.unitId === 'string' ? result.unitId : undefined,
-  snippet:
-    typeof result.snippetText === 'string'
-      ? result.snippetText
-      : typeof result.excerpt === 'string'
-        ? result.excerpt
-        : undefined,
-  score: result.score,
-});
+const toSummary = toStudySearchResultSummary;
 
 const limitByCategory = (
   query: string,
@@ -378,13 +359,7 @@ const runSearch = (message: Extract<StudySearchWorkerRequest, { type: 'search' }
   const searchOptions = {
     prefix: (term: string) => term.length >= 3,
     fuzzy: (term: string) => (term.length >= 5 ? 0.16 : false),
-    boost: {
-      title: 8,
-      citation: 10,
-      heading: 6,
-      metadataText: 4,
-      fullText: 1,
-    },
+    boost: { ...STUDY_SEARCH_BOOST },
   };
   const collect = (index: MiniSearch<StudySearchRecord> | null) => {
     if (!index) return [];

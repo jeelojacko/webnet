@@ -89,6 +89,7 @@ export const buildOfficialProvisionSearchRecord = ({
   documentId: component.documentId,
   sourceKey: component.sourceKey,
   title: `${component.label}${component.heading ? ` ${component.heading}` : ''}`.trim(),
+  documentTitle: document?.officialTitle,
   citation: document?.officialCitationDisplay,
   heading: component.heading,
   metadataText: [

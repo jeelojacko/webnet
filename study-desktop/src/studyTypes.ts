@@ -411,6 +411,8 @@ export type StudyOfficialImportHistory = {
   addedComponents: number;
   changedComponents: number;
   removedComponents: number;
+  /** Total components in imported package; optional for legacy history rows. */
+  componentCount?: number;
   referenceOnlyForms: number;
   unitsFlaggedForReview: number;
   result: 'success' | 'failed';

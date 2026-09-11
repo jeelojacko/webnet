@@ -12,8 +12,11 @@ import {
   createMiniSearch,
   deserializeMiniSearch,
   MINISEARCH_VERSION,
+  SEARCH_INDEX_SCHEMA_VERSION,
   SEARCH_INDEX_VERSION,
   serializeMiniSearch,
+  STUDY_SEARCH_BOOST,
+  toStudySearchResultSummary,
 } from '../src/search/studySearchMiniSearch';
 import { buildMatchedSnippet, exactSearchBoost } from '../src/search/studySearchRanking';
 import { createSeedStudyData } from '../src/studySeed';
@@ -73,6 +76,33 @@ describe('study search indexing', () => {
     });
     expect(records[1].fullText).toContain('coordinate monument');
     expect(results[0]?.id).toBe('provision:doc-surveys-act:section-83');
+  });
+
+  it('carries the official parent/document title end-to-end without overloading citation', async () => {
+    expect(SEARCH_INDEX_SCHEMA_VERSION).toBe(2);
+    const record = buildOfficialProvisionSearchRecord({ document: legalDocument, component });
+    expect(record.documentTitle).toBe('Surveys Act');
+    expect(record.citation).toBe('S.N.B. 1976, c. S-17');
+
+    const index = createMiniSearch();
+    index.add(record);
+    const restored = await deserializeMiniSearch(serializeMiniSearch(index));
+    // Field-restricted search proves `documentTitle` itself is indexed.
+    const fieldHit = restored.search('Surveys', { fields: ['documentTitle'] })[0] as
+      | (Record<string, unknown> & { id: string; score: number })
+      | undefined;
+    expect(fieldHit?.id).toBe('provision:doc-surveys-act:section-83');
+
+    const hit = restored.search('Surveys integrated', {
+      prefix: true,
+      boost: { ...STUDY_SEARCH_BOOST },
+    })[0] as Record<string, unknown> & { id: string; score: number };
+    const summary = toStudySearchResultSummary(hit);
+    expect(summary.entityType).toBe('official-provision');
+    expect(summary.documentTitle).toBe('Surveys Act');
+    expect(summary.citation).toBe('S.N.B. 1976, c. S-17');
+    expect(summary.documentId).toBe('doc-surveys-act');
+    expect(summary.sourceKey).toBe('section-83');
   });
 
   it('keeps exact official-provision phrase matches visible in snippets', async () => {

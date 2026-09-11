@@ -391,6 +391,10 @@ export const applyOfficialContentPackageToSnapshot = ({
     addedComponents: preview.newComponents.length,
     changedComponents: preview.changedComponents.length,
     removedComponents: preview.removedComponents.length,
+    componentCount: contentPackage.documents.reduce(
+      (count, document) => count + document.components.length,
+      0,
+    ),
     referenceOnlyForms: preview.referenceOnlyForms.length,
     unitsFlaggedForReview: preview.unitsRequiringSourceReview.length,
     result: 'success',

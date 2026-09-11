@@ -161,4 +161,40 @@ describe('study library search', () => {
     expect(parts).toContainEqual({ text: 'lot', match: true });
     expect(parts.map((part) => part.match ? `[${part.text}]` : part.text).join('')).toContain('[lot], block');
   });
+
+  it('highlights every meaningful token and phrase match, case-insensitively', () => {
+    const parts = highlightLibraryMatch('The Board met; the board of examiners joined the BOARD.', 'board of examiners');
+    const matched = parts.filter((part) => part.match).map((part) => part.text);
+    // Full phrase wins where present; standalone meaningful tokens match elsewhere.
+    expect(matched).toContain('board of examiners');
+    expect(matched.filter((text) => text.toLowerCase() === 'board').length).toBe(2);
+    // Stopwords never highlight on their own.
+    expect(matched.some((text) => text.toLowerCase() === 'of')).toBe(false);
+    expect(parts.map((part) => part.text).join('')).toBe('The Board met; the board of examiners joined the BOARD.');
+  });
+
+  it('highlights three non-contiguous query tokens and leaves no-match text untouched', () => {
+    const parts = highlightLibraryMatch('Land surveyor licensing requirements', 'land surveyor requirements');
+    expect(parts.filter((part) => part.match).map((part) => part.text)).toEqual([
+      'Land',
+      'surveyor',
+      'requirements',
+    ]);
+    expect(highlightLibraryMatch('No relevant provision', 'cadastral survey').every((part) => !part.match)).toBe(true);
+  });
+
+  it('does not highlight a stopword-only query', () => {
+    expect(highlightLibraryMatch('the office of the registrar', 'the of')).toEqual([
+      { text: 'the office of the registrar', match: false },
+    ]);
+  });
+
+  it('normalizes diacritics and resolves overlapping matches deterministically', () => {
+    const first = highlightLibraryMatch('Café survey, cafe records', 'cafe');
+    expect(first.filter((part) => part.match).map((part) => part.text)).toEqual(['Café', 'cafe']);
+    const second = highlightLibraryMatch('Café survey, cafe records', 'cafe');
+    expect(second).toEqual(first);
+    const overlap = highlightLibraryMatch('examiners board', 'board examiners');
+    expect(overlap.filter((part) => part.match).map((part) => part.text).sort()).toEqual(['board', 'examiners']);
+  });
 });

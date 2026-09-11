@@ -5,8 +5,9 @@
 // grouping, REMEMBER/LOOK HERE layout, Navigation display, anchor collapse,
 // and source deep links are preserved from the Exam Curriculum browser.
 
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { MapPin } from 'lucide-react';
+import { useDevMountTiming } from '../../studyDevTiming';
 import type { ExamCurriculumUnit } from '../../examCurriculum/examCurriculumTypes';
 import { EXAM_PREP_LEARN_UNITS } from '../examPrepRecallTasks';
 import { EXAM_PREP_DOCUMENT_TITLES } from '../examPrepDocTitles';
@@ -54,6 +55,7 @@ export const ExamPrepLearnView = ({
   onToggleUnitStudied,
 }: ExamPrepLearnViewProps) => {
   const [filter, setFilter] = useState<LearnFilter>('all');
+  useDevMountTiming('ExamPrepLearnView');
 
   /**
    * Scrolls a unit card into view, clearing any tier filter that would hide
@@ -82,25 +84,35 @@ export const ExamPrepLearnView = ({
   }, []);
   const tierCount = (tier: (typeof FILTER_TIERS)[number]) =>
     EXAM_PREP_LEARN_UNITS.filter((unit) => unit.tier === tier).length;
-  const visibleUnits = EXAM_PREP_LEARN_UNITS.filter((unit) => {
-    if (filter === 'all') return true;
-    return unit.tier === filter;
-  });
-  const groups: Array<{ key: string; units: ExamCurriculumUnit[] }> = [];
-  for (const unit of visibleUnits) {
-    const key = groupKeyFor(unit);
-    const group = groups.find((entry) => entry.key === key);
-    if (group) group.units.push(unit);
-    else groups.push({ key, units: [unit] });
-  }
-  const orientationCount = visibleUnits.filter(
-    (unit) => unit.unitType === 'document_orientation',
-  ).length;
-  const coreConceptCount = visibleUnits.filter((unit) => unit.unitType === 'core_concept')
-    .length;
-  const navigationCount = visibleUnits.filter(
-    (unit) => unit.unitType === 'cross_document_navigation',
-  ).length;
+  const visibleUnits = useMemo(
+    () =>
+      filter === 'all'
+        ? EXAM_PREP_LEARN_UNITS
+        : EXAM_PREP_LEARN_UNITS.filter((unit) => unit.tier === filter),
+    [filter],
+  );
+  const groups = useMemo(() => {
+    const entries: Array<{ key: string; units: ExamCurriculumUnit[] }> = [];
+    for (const unit of visibleUnits) {
+      const key = groupKeyFor(unit);
+      const group = entries.find((entry) => entry.key === key);
+      if (group) group.units.push(unit);
+      else entries.push({ key, units: [unit] });
+    }
+    return entries;
+  }, [visibleUnits]);
+  const orientationCount = useMemo(
+    () => visibleUnits.filter((unit) => unit.unitType === 'document_orientation').length,
+    [visibleUnits],
+  );
+  const coreConceptCount = useMemo(
+    () => visibleUnits.filter((unit) => unit.unitType === 'core_concept').length,
+    [visibleUnits],
+  );
+  const navigationCount = useMemo(
+    () => visibleUnits.filter((unit) => unit.unitType === 'cross_document_navigation').length,
+    [visibleUnits],
+  );
   const filterButtons: Array<{ key: LearnFilter; label: string }> = [
     { key: 'all', label: `All (${EXAM_PREP_LEARN_UNITS.length})` },
     ...FILTER_TIERS.map((tier) => ({

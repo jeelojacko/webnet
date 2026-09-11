@@ -14,6 +14,8 @@ export type StudySearchRecord = {
   sourceKey?: string;
   unitId?: string;
   title?: string;
+  /** Parent/document official title (official provisions only; never overloads citation). */
+  documentTitle?: string;
   citation?: string;
   heading?: string;
   metadataText?: string;
@@ -28,6 +30,8 @@ export type StudySearchResultSummary = {
   entityId: string;
   title: string;
   subtitle?: string;
+  /** Parent/document official title for official provisions. */
+  documentTitle?: string;
   citation?: string;
   documentId?: string;
   sourceKey?: string;

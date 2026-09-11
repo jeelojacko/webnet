@@ -1,3 +1,4 @@
+import { meaningfulSearchTokensFor } from './search/studySearchRanking';
 import type { ImportedLegalComponent, StudyDataSnapshot, StudyDocument, StudyUnit } from './studyTypes';
 
 export type StudyLibrarySearchCategory = 'documents' | 'official-provisions' | 'study-units' | 'custom-units';
@@ -230,21 +231,47 @@ export const searchStudyLibrary = (
 
 export const highlightLibraryMatch = (text: string, query: string): Array<{ text: string; match: boolean }> => {
   const normalizedQuery = normalizeSearchText(query);
-  if (!normalizedQuery) return [{ text, match: false }];
+  if (!normalizedQuery || !text) return [{ text, match: false }];
   const { normalized, map } = normalizeSearchTextWithMap(text);
-  const index = normalized.indexOf(normalizedQuery);
-  const tokenMatches = tokensFor(query)
-    .map((token) => ({ token, index: normalized.indexOf(token) }))
-    .filter((entry) => entry.index >= 0)
-    .sort((left, right) => left.index - right.index);
-  const tokenIndex = index >= 0 ? index : tokenMatches[0]?.index;
-  if (tokenIndex === undefined) return [{ text, match: false }];
-  const matchLength = index >= 0 ? normalizedQuery.length : tokenMatches[0]?.token.length ?? 0;
-  const start = map[tokenIndex] ?? 0;
-  const end = (map[tokenIndex + matchLength - 1] ?? start) + 1;
-  return [
-    { text: text.slice(0, start), match: false },
-    { text: text.slice(start, end), match: true },
-    { text: text.slice(end), match: false },
-  ].filter((part) => part.text);
+  if (!normalized) return [{ text, match: false }];
+  const meaningfulTokens = meaningfulSearchTokensFor(query);
+  const tokenCandidates = meaningfulTokens.filter((token) => token.length >= 2);
+  // Pure stopword queries produce no highlights. Full-phrase matches win over
+  // meaningful token matches; deterministic order.
+  const candidates = [
+    ...(meaningfulTokens.length > 0 ? [normalizedQuery] : []),
+    ...tokenCandidates.filter((token) => token !== normalizedQuery),
+  ];
+  const ranges: Array<{ start: number; end: number }> = [];
+  candidates.forEach((candidate) => {
+    let from = 0;
+    while (from <= normalized.length - candidate.length) {
+      const index = normalized.indexOf(candidate, from);
+      if (index < 0) break;
+      ranges.push({ start: index, end: index + candidate.length });
+      from = index + candidate.length;
+    }
+  });
+  // Overlap-safe: earliest start wins, longer (phrase) match wins ties.
+  const ordered = ranges
+    .map((range, order) => ({ ...range, order }))
+    .sort((left, right) => left.start - right.start || right.end - left.end || left.order - right.order);
+  const accepted: Array<{ start: number; end: number }> = [];
+  ordered.forEach((range) => {
+    if (accepted.some((entry) => range.start < entry.end && entry.start < range.end)) return;
+    accepted.push(range);
+  });
+  accepted.sort((left, right) => left.start - right.start);
+  if (accepted.length === 0) return [{ text, match: false }];
+  const parts: Array<{ text: string; match: boolean }> = [];
+  let cursor = 0;
+  accepted.forEach((range) => {
+    const start = map[range.start] ?? text.length;
+    const end = (map[range.end - 1] ?? start) + 1;
+    if (start > cursor) parts.push({ text: text.slice(cursor, start), match: false });
+    parts.push({ text: text.slice(start, end), match: true });
+    cursor = end;
+  });
+  if (cursor < text.length) parts.push({ text: text.slice(cursor), match: false });
+  return parts.filter((part) => part.text);
 };

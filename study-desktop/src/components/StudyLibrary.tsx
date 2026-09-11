@@ -682,6 +682,12 @@ const StudyLibrary = ({
                           result.entityType === 'official-provision');
                       const actionLabel =
                         result.entityType === 'document' ? 'Use this document' : 'Use this provision';
+                      const resultSubtitle =
+                        result.entityType === 'official-provision' && result.documentTitle
+                          ? [result.documentTitle, result.citation ?? result.subtitle]
+                              .filter(Boolean)
+                              .join(' · ')
+                          : result.subtitle;
                       return (
                         <div
                           key={result.id}
@@ -698,7 +704,7 @@ const StudyLibrary = ({
                             <div className="text-sm font-medium text-slate-100">
                               {renderHighlighted(result.title)}
                             </div>
-                            <div className="mt-1 text-xs text-slate-500">{result.subtitle}</div>
+                            <div className="mt-1 text-xs text-slate-500">{resultSubtitle}</div>
                             {result.snippet ? (
                               <div className="mt-2 text-xs text-slate-300">
                                 {renderHighlighted(result.snippet)}
@@ -706,10 +712,7 @@ const StudyLibrary = ({
                             ) : null}
                           </button>
                           {pickerSelectable ? (
-                            <div className="flex flex-wrap items-center justify-between gap-2 border-t border-slate-800 px-3 py-2">
-                              <span className="text-[11px] text-slate-500">
-                                In picker mode — send this choice straight to your Locate sprint.
-                              </span>
+                            <div className="flex flex-wrap items-center justify-end gap-2 border-t border-slate-800 px-3 py-2">
                               <button
                                 type="button"
                                 onClick={() => sendSearchPickerPick(result, actionLabel)}

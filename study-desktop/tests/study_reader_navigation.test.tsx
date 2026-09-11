@@ -6,6 +6,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import StudyDocumentPage from '../src/components/StudyDocumentPage';
 import { StudyLegalTextBlock } from '../src/components/StudyLegalTextBlock';
+import { parseLegalDisplayBlocks } from '../src/components/StudyLegalTextBlock.utils';
 import type { ImportedLegalComponent, StudyDataSnapshot } from '../src/studyTypes';
 import { createSeedStudyData } from '../src/studySeed';
 
@@ -147,7 +148,41 @@ describe('study legal reader navigation', () => {
 
     expect(container?.textContent).toContain('is a Canadian citizen;');
     expect(container?.textContent).not.toContain('15(1) Any applicant for registration who:');
-    expect(container?.querySelectorAll('.w-8')).toHaveLength(2);
+    // Hanging-indent clause blocks keep exact text in flow (no split marker spans).
+    expect(container?.querySelectorAll('.w-8')).toHaveLength(0);
+    const indented = Array.from(container?.querySelectorAll('div') ?? []).filter(
+      (entry) => (entry as HTMLElement).style.paddingLeft === '2rem',
+    );
+    expect(indented.length).toBeGreaterThanOrEqual(2);
+  });
+
+  it('parses (a)/e) markers, standalone and, paragraph boundaries and closing text', () => {
+    const blocks = parseLegalDisplayBlocks(
+      '15(1) Any applicant for registration who:\n' +
+        '(a) is a Canadian citizen,\n' +
+        '(b) has met the educational requirements\n' +
+        'prescribed in the by-laws,\n' +
+        'and\n' +
+        'e) pays the prescribed fees,\n' +
+        'may be registered as a land surveyor.',
+    );
+    expect(blocks.map((block) => block.kind)).toEqual([
+      'body',
+      'clause',
+      'clause',
+      'and',
+      'clause',
+    ]);
+    // Continuation lines stay with their clause; exact text preserved.
+    expect(blocks[2].text).toBe('(b) has met the educational requirements\nprescribed in the by-laws,');
+    expect(blocks[4].text).toBe('e) pays the prescribed fees,\nmay be registered as a land surveyor.');
+  });
+
+  it('keeps blank-line paragraphs and marker-only lines as logical blocks', () => {
+    const blocks = parseLegalDisplayBlocks('Where the Director may assess it\n\n(a)\nin the name of the estate,\n\n(b)\nin the name of the heirs.\n\nClosing paragraph.');
+    expect(blocks.map((block) => block.kind)).toEqual(['body', 'clause', 'clause', 'body']);
+    expect(blocks[1].text).toBe('(a)\nin the name of the estate,');
+    expect(blocks[3].text).toBe('Closing paragraph.');
   });
 
   it('expands and focuses sections, subsections, schedules and forms from navigation clicks', async () => {

@@ -1,4 +1,5 @@
-import type { ReactNode } from 'react';
+import type { CSSProperties, ReactNode } from 'react';
+import { parseLegalDisplayBlocks, type LegalDisplayBlock } from './StudyLegalTextBlock.utils';
 
 type StudyLegalTextBlockProps = {
   text: string;
@@ -16,33 +17,38 @@ const removeDisplayedHeading = (text: string, label?: string, heading?: string):
   return text.replace(new RegExp(`^\\s*${escapeRegExp(label)}${headingPattern}\\s*`), '');
 };
 
-const renderLine = (
-  line: string,
+const HANGING_INDENT_STYLE: CSSProperties = { paddingLeft: '2rem', textIndent: '-2rem' };
+const AND_INDENT_STYLE: CSSProperties = { paddingLeft: '2rem' };
+
+const renderBlock = (
+  block: LegalDisplayBlock,
   query: string,
   highlight: (_value: string, _query: string) => ReactNode,
   index: number,
 ): ReactNode => {
-  const clause = line.match(/^(\s*)(\([a-z0-9]+(?:\.[a-z0-9]+)?\))\s*(.*)$/i);
-  if (!clause) return <div key={index}>{highlight(line, query)}</div>;
-  return (
-    <div key={index} className="flex gap-3">
-      <span className="w-8 shrink-0 font-semibold text-emerald-300">{clause[2]}</span>
-      <span className="min-w-0 flex-1">{highlight(clause[3], query)}</span>
-    </div>
-  );
+  if (block.kind === 'clause') {
+    return (
+      <div key={index} style={HANGING_INDENT_STYLE}>
+        {highlight(block.text, query)}
+      </div>
+    );
+  }
+  if (block.kind === 'and') {
+    return (
+      <div key={index} style={AND_INDENT_STYLE}>
+        {highlight(block.text, query)}
+      </div>
+    );
+  }
+  return <div key={index}>{highlight(block.text, query)}</div>;
 };
 
 export const StudyLegalTextBlock = ({ text, label, heading, query = '', highlight }: StudyLegalTextBlockProps) => {
   const displayText = removeDisplayedHeading(text, label, heading);
-  const paragraphs = displayText.split(/\n{2,}/);
+  const blocks = parseLegalDisplayBlocks(displayText);
   return (
-    <div className="space-y-2 whitespace-pre-wrap text-sm leading-7 text-slate-200">
-      {paragraphs.flatMap((paragraph, paragraphIndex) => [
-        <div key={`paragraph-${paragraphIndex}`} className="space-y-1">
-          {paragraph.split('\n').map((line, lineIndex) => renderLine(line, query, highlight, lineIndex))}
-        </div>,
-        paragraphIndex < paragraphs.length - 1 ? <div key={`space-${paragraphIndex}`} aria-hidden="true" /> : null,
-      ])}
+    <div className="space-y-2 whitespace-normal text-sm leading-7 text-slate-200">
+      {blocks.map((block, index) => renderBlock(block, query, highlight, index))}
     </div>
   );
 };

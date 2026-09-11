@@ -1,6 +1,12 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
+import { useDevMountTiming } from '../studyDevTiming';
+import { backupByteLength } from '../studyFileInteractions';
 import type { OfficialContentPreview } from '../studyOfficialContent';
 import type { StudyDataSnapshot } from '../studyTypes';
+import {
+  buildCurrentOfficialPackageDiagnostics,
+  describePreviewDifference,
+} from './StudyManagePage.utils';
 
 type StudyManagePageProps = {
   data: StudyDataSnapshot;
@@ -39,6 +45,14 @@ const StudyManagePage = ({
 }: StudyManagePageProps) => {
   const [confirmingDelete, setConfirmingDelete] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const currentPackage = useMemo(() => buildCurrentOfficialPackageDiagnostics(data), [data]);
+  const previewDifference = describePreviewDifference(currentPackage, officialPackagePreview);
+  // Raw JSON/package textareas stay out of the DOM until expanded, so a
+  // large export no longer pays full raw-text DOM cost on every visit.
+  const [showExport, setShowExport] = useState(false);
+  const [showImport, setShowImport] = useState(false);
+  const [showPackage, setShowPackage] = useState(false);
+  useDevMountTiming('StudyManagePage');
 
   const confirmDeleteAllData = async () => {
     setDeleting(true);
@@ -116,13 +130,75 @@ const StudyManagePage = ({
       )}
     </section>
     <section className="rounded border border-slate-800 bg-slate-900 p-4">
+      <div className="mb-2 text-xs uppercase tracking-wide text-slate-500">Current Official Package</div>
+      {!currentPackage ? (
+        <div className="space-y-2 text-sm text-slate-500">
+          <div>No official packages imported.</div>
+          {previewDifference === 'first-import' ? (
+            <div className="rounded border border-sky-800 bg-sky-950/40 px-3 py-2 text-sky-200">
+              No current import — this validated preview would be the first import.
+            </div>
+          ) : null}
+        </div>
+      ) : (
+        <div className="space-y-2 text-sm text-slate-300">
+          <div>Package ID: {currentPackage.packageIds.join(', ') || '—'}</div>
+          <div>Manifest: {currentPackage.manifestIds.join(', ') || '—'}</div>
+          <div>Package date: {currentPackage.packageCreatedAt ?? '—'}</div>
+          <div className="break-all">Package hash: {currentPackage.packageHash || '—'}</div>
+          <div>Imported: {currentPackage.importedAt ?? '—'}</div>
+          <div>Documents: {currentPackage.documentCount}</div>
+          <div>Components: {currentPackage.componentCount ?? 'unknown (legacy import)'}</div>
+          {currentPackage.lastImport ? (
+            <div>
+              Components (last import): +{currentPackage.lastImport.addedComponents} new · ~
+              {currentPackage.lastImport.changedComponents} changed · −
+              {currentPackage.lastImport.removedComponents} removed
+            </div>
+          ) : null}
+          {currentPackage.documents.length > 0 ? (
+            <div className="max-h-44 overflow-auto rounded bg-slate-950 p-3 font-mono text-xs">
+              {currentPackage.documents.map((document) => (
+                <div key={document.id}>
+                  {document.id} · {document.contentHash}
+                </div>
+              ))}
+            </div>
+          ) : null}
+          {previewDifference === 'differs-from-current' ? (
+            <div className="rounded border border-amber-800 bg-amber-950/40 px-3 py-2 text-amber-200">
+              The validated preview differs from the current import — review before importing. No
+              automatic migration or overwrite happens.
+            </div>
+          ) : null}
+          {previewDifference === 'matches-current' ? (
+            <div className="rounded border border-emerald-800 bg-emerald-950/40 px-3 py-2 text-emerald-200">
+              The validated preview matches the current import.
+            </div>
+          ) : null}
+        </div>
+      )}
+    </section>
+    <section className="rounded border border-slate-800 bg-slate-900 p-4">
       <div className="mb-2 text-xs uppercase tracking-wide text-slate-500">Import Official Content Package</div>
+      {!showPackage ? (
+        <button
+          type="button"
+          onClick={() => setShowPackage(true)}
+          className="rounded border border-slate-700 px-3 py-2 text-sm text-slate-300 hover:bg-slate-800"
+        >
+          {officialPackageText
+            ? `Show package text (${backupByteLength(officialPackageText)} bytes)`
+            : 'Paste or choose package text'}
+        </button>
+      ) : (
       <textarea
         value={officialPackageText}
         onChange={(event) => onOfficialPackageTextChange(event.target.value)}
         placeholder="Paste nb-law-pilot.content-package.json here."
         className="min-h-44 w-full rounded border border-slate-700 bg-slate-950 p-3 font-mono text-xs text-slate-300"
       />
+      )}
       <div className="mt-3 flex flex-wrap gap-2">
         <label className="rounded border border-slate-700 px-3 py-2 text-sm text-slate-300 hover:bg-slate-800">
           Choose Package
@@ -226,26 +302,50 @@ const StudyManagePage = ({
     ) : null}
     <section className="rounded border border-slate-800 bg-slate-900 p-4">
       <div className="mb-2 text-xs uppercase tracking-wide text-slate-500">Export JSON</div>
-      <textarea
-        readOnly
-        value={exportText}
-        className="min-h-72 w-full rounded border border-slate-700 bg-slate-950 p-3 font-mono text-xs text-slate-300"
-      />
+      {!showExport ? (
+        <button
+          type="button"
+          onClick={() => setShowExport(true)}
+          className="rounded border border-slate-700 px-3 py-2 text-sm text-slate-300 hover:bg-slate-800"
+        >
+          {exportText
+            ? `Show export text (${backupByteLength(exportText)} bytes)`
+            : 'No export available'}
+        </button>
+      ) : (
+        <textarea
+          readOnly
+          value={exportText}
+          className="min-h-72 w-full rounded border border-slate-700 bg-slate-950 p-3 font-mono text-xs text-slate-300"
+        />
+      )}
     </section>
     <section className="rounded border border-slate-800 bg-slate-900 p-4">
       <div className="mb-2 text-xs uppercase tracking-wide text-slate-500">Import JSON</div>
-      <textarea
-        value={importText}
-        onChange={(event) => onImportTextChange(event.target.value)}
-        className="min-h-44 w-full rounded border border-slate-700 bg-slate-950 p-3 font-mono text-xs text-slate-300"
-      />
-      <button
-        onClick={onImport}
-        disabled={!importText.trim()}
-        className="mt-3 rounded bg-emerald-600 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-500 disabled:cursor-not-allowed disabled:bg-slate-700"
-      >
-        Import Data
-      </button>
+      {!showImport ? (
+        <button
+          type="button"
+          onClick={() => setShowImport(true)}
+          className="rounded border border-slate-700 px-3 py-2 text-sm text-slate-300 hover:bg-slate-800"
+        >
+          {importText ? `Show import text (${backupByteLength(importText)} bytes)` : 'Paste import text'}
+        </button>
+      ) : (
+        <>
+          <textarea
+            value={importText}
+            onChange={(event) => onImportTextChange(event.target.value)}
+            className="min-h-44 w-full rounded border border-slate-700 bg-slate-950 p-3 font-mono text-xs text-slate-300"
+          />
+          <button
+            onClick={onImport}
+            disabled={!importText.trim()}
+            className="mt-3 rounded bg-emerald-600 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-500 disabled:cursor-not-allowed disabled:bg-slate-700"
+          >
+            Import Data
+          </button>
+        </>
+      )}
     </section>
   </div>
   );

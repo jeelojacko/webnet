@@ -123,6 +123,10 @@ export const ExamUnitCard = ({
       id={examPrepUnitCardId(unit.id)}
       tabIndex={-1}
       className="rounded border border-slate-800 bg-slate-900 p-3 outline-none"
+      // Offscreen cards skip layout/paint until scrolled near; all 133
+      // units stay mounted so filters, anchors, toggles, and hash targets
+      // keep working. The intrinsic-size estimate keeps the scrollbar stable.
+      style={{ contentVisibility: 'auto', containIntrinsicSize: 'auto 420px' }}
     >
       <div className="flex flex-wrap items-center gap-2">
         <span className="font-mono text-xs text-emerald-400">{unit.id}</span>
