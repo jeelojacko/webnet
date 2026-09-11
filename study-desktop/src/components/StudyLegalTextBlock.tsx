@@ -11,10 +11,21 @@ type StudyLegalTextBlockProps = {
 
 const escapeRegExp = (value: string): string => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
+const displayLabelPattern = (label: string): string =>
+  [...label]
+    .map((character) => {
+      if (/\\d|[A-Za-z]/.test(character)) return character;
+      if (character === '.') return '\\s*\\.\\s*';
+      if (character === '(') return '\\s*\\(\\s*';
+      if (character === ')') return '\\s*\\)';
+      return escapeRegExp(character);
+    })
+    .join('');
+
 const removeDisplayedHeading = (text: string, label?: string, heading?: string): string => {
   if (!label) return text;
   const headingPattern = heading ? `(?:\\s+${escapeRegExp(heading)})?` : '';
-  return text.replace(new RegExp(`^\\s*${escapeRegExp(label)}${headingPattern}\\s*`), '');
+  return text.replace(new RegExp(`^\\s*${displayLabelPattern(label)}${headingPattern}\\s*`), '');
 };
 
 const HANGING_INDENT_STYLE: CSSProperties = { paddingLeft: '2rem', textIndent: '-2rem' };

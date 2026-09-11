@@ -157,6 +157,35 @@ describe('study legal reader navigation', () => {
     expect(indented.length).toBeGreaterThanOrEqual(2);
   });
 
+  it('removes spaced child labels while preserving clauses for Acts and regulations', async () => {
+    const cases = [
+      ['5(1)', '5 (1) The Minister may establish advisory committees.'],
+      ['15(1)', '15 (1) An applicant may apply.\n(a) in the prescribed form.'],
+      ['3(1)', '3 (1) A regulation provision.'],
+    ] as const;
+    await act(async () => {
+      root?.render(
+        <div>
+          {cases.map(([label, text]) => (
+            <StudyLegalTextBlock
+              key={label}
+              text={text}
+              label={label}
+              highlight={(value, _query) => value}
+            />
+          ))}
+        </div>,
+      );
+    });
+    expect(container?.textContent).toContain('The Minister may establish advisory committees.');
+    expect(container?.textContent).toContain('An applicant may apply.');
+    expect(container?.textContent).toContain('A regulation provision.');
+    expect(container?.textContent).toContain('(a) in the prescribed form.');
+    expect(container?.textContent).not.toContain('5 (1) The');
+    expect(container?.textContent).not.toContain('15 (1) An');
+    expect(container?.textContent).not.toContain('3 (1) A');
+  });
+
   it('parses (a)/e) markers, standalone and, paragraph boundaries and closing text', () => {
     const blocks = parseLegalDisplayBlocks(
       '15(1) Any applicant for registration who:\n' +
