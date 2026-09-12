@@ -173,7 +173,7 @@ describe('Phase 10J 3D native performance decomposition', () => {
     try {
       await runCampaign();
     } finally {
-      setNativeFullQxxRouteEnabled(false);
+      setNativeFullQxxRouteEnabled(true);
     }
   }, 900000);
 });

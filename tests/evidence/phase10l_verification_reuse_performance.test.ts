@@ -138,13 +138,15 @@ interface FixtureResult {
 
 describe('Phase 10L verification-reuse performance', () => {
   it('measures TS / cached-finalizer / legacy-reverify end-to-end walls', async () => {
-    // Kill-switch proof: default OFF at import (before this test enables it).
+    // Kill-switch proof: default ON at import; explicitly disable to prove the gate, then restore.
+    expect(isNativeFullQxxRouteEnabled()).toBe(true);
+    setNativeFullQxxRouteEnabled(false);
     expect(isNativeFullQxxRouteEnabled()).toBe(false);
     setNativeFullQxxRouteEnabled(true);
     try {
       await runCampaign();
     } finally {
-      setNativeFullQxxRouteEnabled(false);
+      setNativeFullQxxRouteEnabled(true);
     }
   }, 900000);
 });

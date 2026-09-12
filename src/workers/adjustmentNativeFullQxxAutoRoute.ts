@@ -63,19 +63,18 @@ import {
 export const NATIVE_FULL_QXX_MAX_PARAMS = 384;
 
 /**
- * Internal kill switch, DISABLED by default. The route is proven safe and
- * parity-exact by Phase 10I evidence, but measured ~2x slower than dense TS
- * (TS-side C1/C2/C3 verification dominates); enable only explicitly until
- * verification cost is addressed. No persisted or UI fields.
+ * Internal kill switch, ENABLED by default (Phase 10M certification: verified
+ * native-faster at 384 params with exact parity; small-job cost is ~ms noise).
+ * Set false to force clean TypeScript fallback. No persisted or UI fields.
  */
-let nativeFullQxxEnabled = false;
+let nativeFullQxxEnabled = true;
 
 /** Disables or re-enables the native full-Qxx route (internal/test-only). */
 export const setNativeFullQxxRouteEnabled = (enabled: boolean): void => {
   nativeFullQxxEnabled = enabled;
 };
 
-/** Reports current kill-switch state (default disabled pending performance proof). */
+/** Reports current kill-switch state (default enabled for the certified <=384 cohort). */
 export const isNativeFullQxxRouteEnabled = (): boolean => nativeFullQxxEnabled;
 
 export interface NativeFullQxxEligibility {
