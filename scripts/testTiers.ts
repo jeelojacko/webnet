@@ -62,6 +62,7 @@ export const EVIDENCE_TESTS = [
   'tests/evidence/phase10m_node_measurement.test.ts',
   'tests/evidence/phase10m_toggle_smoke.test.ts',
   'tests/evidence/phase10n_native_correction_evidence.test.ts',
+  'tests/evidence/phase10o_factorization_lifecycle.test.ts',
 ] as const;
 
 /** Fast automatic release-certification gate (committed-report verdict). */
