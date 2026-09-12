@@ -56,6 +56,7 @@ export const EVIDENCE_TESTS = [
   'tests/evidence/phase10i_native_route_evidence.test.ts',
   'tests/evidence/phase10j_3d_native_performance_decomposition.test.ts',
   'tests/evidence/phase10k_native_verification_boundary.test.ts',
+  'tests/evidence/phase10l_verification_reuse_performance.test.ts',
 ] as const;
 
 /** Fast automatic release-certification gate (committed-report verdict). */

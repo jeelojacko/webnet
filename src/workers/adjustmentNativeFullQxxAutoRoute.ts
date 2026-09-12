@@ -43,6 +43,11 @@ import {
   probeSelectedCovariance,
   validateSentinelPhysical,
 } from '../engine/preanalysisSparseCovarianceSentinel';
+import {
+  sampleDensePhysicalIndex,
+  scanDensePhysical,
+  tryBuildDensePhysicalIndex,
+} from '../engine/sentinelDensePhysicalValidation';
 import type { AdjustmentResult } from '../typesAdjustmentResult';
 import type {
   RunSessionOutcome,
@@ -275,6 +280,15 @@ export class NativeFullQxxCaptureSolver implements SparseSelectedCovarianceSolve
   /** Counts inline per-system verifications (double-verification audit). */
   inlineVerifications = 0;
 
+  /**
+   * Inline verification evidence per captured system (Phase 10L reuse).
+   * Index-aligned with `systems`: entry i is the result of
+   * verifyNativeFullQxxSystems([systems[i]], false, parameterCount)
+   * taken before the native values reached the engine. Private; read via
+   * getInlineVerifications() for route finalization only.
+   */
+  private readonly inlineEvidence: NativeFullQxxVerification[] = [];
+
   constructor(delegate: SparseSelectedCovarianceSolver, verificationTiming?: NativeFullQxxVerificationTiming) {
     this.delegate = delegate;
     this.verificationTiming = verificationTiming;
@@ -322,10 +336,24 @@ export class NativeFullQxxCaptureSolver implements SparseSelectedCovarianceSolve
     // accepting first and checking after downstream numerics already used it.
     const verification = verifyNativeFullQxxSystems([captured], false, input.parameterCount, this.verificationTiming);
     this.inlineVerifications += 1;
+    this.inlineEvidence.push(verification);
     if (!verification.accepted) {
       throw new Error(`native full-Qxx verification rejected: ${verification.reasons.join('; ')}`);
     }
     return result;
+  }
+
+  /**
+   * Narrow read accessor for route finalization only. Returns copies with
+   * fresh reasons/verifiedColumns arrays, so callers can never mutate the
+   * stored evidence (the typed-array snapshots stay owned by the capture).
+   */
+  getInlineVerifications(): readonly NativeFullQxxVerification[] {
+    return this.inlineEvidence.map((verification) => ({
+      ...verification,
+      reasons: [...verification.reasons],
+      verifiedColumns: [...verification.verifiedColumns],
+    }));
   }
 }
 
@@ -473,17 +501,24 @@ export const verifyNativeFullQxxSystems = (
       reasons.push(`${tag}: TS oracle factor damped (degenerate; fail-closed)`);
       return;
     }
-    // Index native values by (row, column) through the captured query
-    // order instead of assuming row-major layout.
+    // Packed dense index built once and shared by C1/C2 bounded sample
+    // extraction and C3 physical scans (replaces the number-key Map and
+    // the string-key legacy Map for proven full-dense inputs). Any
+    // malformed shape falls back to the legacy paths below.
     const nativeIndexStart = now();
-    const nativeByKey = new Map<number, number>();
-    for (let k = 0; k < system.queryRows.length; k += 1) {
-      nativeByKey.set((system.queryRows[k] ?? -1) * n + (system.queryColumns[k] ?? -1), native[k] ?? Number.NaN);
-    }
-    const nativeSample = Array.from(bounded.rows, (row, k) => {
-      const column = bounded.columns[k] ?? -1;
-      return nativeByKey.get((row ?? -1) * n + column) ?? Number.NaN;
-    });
+    const denseIndex = tryBuildDensePhysicalIndex(system.queryRows, system.queryColumns, native, n);
+    const nativeSample = denseIndex
+      ? sampleDensePhysicalIndex(denseIndex, bounded.rows, bounded.columns)
+      : (() => {
+        const nativeByKey = new Map<number, number>();
+        for (let k = 0; k < system.queryRows.length; k += 1) {
+          nativeByKey.set((system.queryRows[k] ?? -1) * n + (system.queryColumns[k] ?? -1), native[k] ?? Number.NaN);
+        }
+        return Array.from(bounded.rows, (row, k) => {
+          const column = bounded.columns[k] ?? -1;
+          return nativeByKey.get((row ?? -1) * n + column) ?? Number.NaN;
+        });
+      })();
     if (timing) timing.nativeIndexMs += now() - nativeIndexStart;
     const c1Start = now();
     const c1 = evaluateSentinelC1(nativeSample, oracle.values);
@@ -501,11 +536,13 @@ export const verifyNativeFullQxxSystems = (
       for (const reason of c2.reasons) reasons.push(`${tag} C2: ${reason}`);
     }
     const c3Start = now();
-    const physical = validateSentinelPhysical({
-      queryRows: system.queryRows,
-      queryColumns: system.queryColumns,
-      values: native,
-    });
+    const physical = denseIndex
+      ? scanDensePhysical(denseIndex, system.queryRows, system.queryColumns, native)
+      : validateSentinelPhysical({
+        queryRows: system.queryRows,
+        queryColumns: system.queryColumns,
+        values: native,
+      });
     if (timing) {
       timing.c3PhysicalMs += now() - c3Start;
       timing.systemsVerified += 1;
@@ -526,6 +563,126 @@ export const verifyNativeFullQxxSystems = (
     accepted: reasons.length === 0,
     reasons,
     oracledSystemCount,
+    maxC1Diff,
+    maxC2Residual,
+    verifiedColumns,
+  };
+};
+
+/** Retags single-system inline reasons (`system 1 ...`) to their capture position. */
+const retagInlineReason = (reason: string, tag: string): string =>
+  reason.replace(/^system 1\b/, tag);
+
+/** Shape check on stored inline evidence; genuine oracle output always passes. */
+const isMalformedInlineVerification = (inline: NativeFullQxxVerification): boolean =>
+  typeof inline.accepted !== 'boolean' ||
+  !Array.isArray(inline.reasons) ||
+  typeof inline.maxC1Diff !== 'number' ||
+  typeof inline.maxC2Residual !== 'number' ||
+  !Array.isArray(inline.verifiedColumns) ||
+  typeof inline.oracledSystemCount !== 'number' ||
+  (!inline.accepted && inline.reasons.length === 0);
+
+/**
+ * Phase 10L cached-evidence finalizer: aggregates stored inline evidence
+ * WITHOUT re-running oracle/C1/C2/C3 numerics. Accept/reject decisions
+ * are bit-identical to verifyNativeFullQxxSystems over the same capture:
+ * truncation/empty reasons use the same strings, per-system reasons are
+ * propagated in capture order with position retagging, parameter-count
+ * eligibility is re-checked against expectedNumParams (inline used the
+ * input count), and maxC1Diff/maxC2Residual/verifiedColumns aggregate
+ * exactly as the legacy loop (max-from-zero, first-system column list).
+ *
+ * Fail-closed on anything the evidence cannot prove: truncation, empty
+ * capture, evidence/capture count mismatch, missing or malformed inline
+ * evidence, any inline rejection, any parameter-count mismatch, and any
+ * accepted aggregate with non-finite maxes or empty column provenance.
+ *
+ * Ownership audit (Phase 10L): between inline verification and route
+ * finalization the snapshot arrays have only readers. The capture owns
+ * deep copies (Int32Array.from/Float64Array.from at capture time); the
+ * engine receives the ORIGINAL delegate result, never the copy. Engine
+ * downstream (reconstructDenseQxx, createSelectedCovarianceStore) only
+ * indexed-reads result.covariance into fresh structures, and both
+ * verifiers only read (Array.from copies, Map index) — no code path
+ * writes into captured typed arrays. `systems` is publicly reachable,
+ * so index-desync tampering (push/shuffle) is defended fail-closed via
+ * the count check plus the per-system parameter re-check; verification
+ * objects are copy-on-read, so finalization input cannot alias the
+ * store. Conclusion: the cached copy is never handed out mutably and
+ * wiring the finalizer into production is safe.
+ */
+export const finalizeNativeFullQxxVerification = (
+  systems: readonly CapturedNativeFullQxxSystem[],
+  inlineResults: readonly NativeFullQxxVerification[],
+  truncated: boolean,
+  expectedNumParams: number | null,
+  timing?: NativeFullQxxVerificationTiming,
+): NativeFullQxxVerification => {
+  const start = timing ? performance.now() : 0;
+  const finish = (): void => {
+    if (timing) timing.otherMs += performance.now() - start;
+  };
+  const reasons: string[] = [];
+  let maxC1Diff = 0;
+  let maxC2Residual = 0;
+  let verifiedColumns: number[] = [];
+  if (truncated) {
+    reasons.push(
+      `oracle bound: capture truncated at ${NATIVE_FULL_QXX_MAX_CAPTURED_SYSTEMS} systems (fail-closed; coverage unproven)`,
+    );
+  }
+  if (systems.length === 0) {
+    reasons.push('verification: no native covariance systems captured (fail-closed)');
+    finish();
+    return { accepted: false, reasons, oracledSystemCount: 0, maxC1Diff, maxC2Residual, verifiedColumns };
+  }
+  if (inlineResults.length !== systems.length) {
+    reasons.push(
+      `verification: inline evidence count ${inlineResults.length} != captured ${systems.length} (fail-closed; provenance unproven)`,
+    );
+    finish();
+    return { accepted: false, reasons, oracledSystemCount: systems.length, maxC1Diff, maxC2Residual, verifiedColumns };
+  }
+  systems.forEach((system, index) => {
+    const tag = `system ${index + 1}`;
+    const n = system.parameterCount;
+    if (!Number.isInteger(n) || n <= 0 || n > NATIVE_FULL_QXX_MAX_PARAMS) {
+      reasons.push(`${tag}: parameter count ${n} outside 1..${NATIVE_FULL_QXX_MAX_PARAMS} (fail-closed)`);
+      return;
+    }
+    if (expectedNumParams != null && n !== expectedNumParams) {
+      reasons.push(
+        `${tag}: parameter count ${n} != eligible ${expectedNumParams} (dimension/provenance mismatch; fail-closed)`,
+      );
+      return;
+    }
+    const inline = inlineResults[index];
+    if (inline == null || isMalformedInlineVerification(inline)) {
+      reasons.push(
+        inline == null
+          ? `${tag}: missing inline verification evidence (fail-closed; provenance unproven)`
+          : `${tag}: inline verification metadata malformed (fail-closed; provenance unproven)`,
+      );
+      return;
+    }
+    maxC1Diff = Math.max(maxC1Diff, inline.maxC1Diff);
+    maxC2Residual = Math.max(maxC2Residual, inline.maxC2Residual);
+    if (verifiedColumns.length === 0 && inline.verifiedColumns.length > 0) {
+      verifiedColumns = [...inline.verifiedColumns];
+    }
+    for (const reason of inline.reasons) reasons.push(retagInlineReason(reason, tag));
+  });
+  if (reasons.length === 0) {
+    if (!Number.isFinite(maxC1Diff) || !Number.isFinite(maxC2Residual) || verifiedColumns.length === 0) {
+      reasons.push('verification: aggregate provenance unprovable (fail-closed)');
+    }
+  }
+  finish();
+  return {
+    accepted: reasons.length === 0,
+    reasons,
+    oracledSystemCount: systems.length,
     maxC1Diff,
     maxC2Residual,
     verifiedColumns,
@@ -624,9 +781,12 @@ export const runWithNativeFullQxxAutoRoute = async (
     fallbackReasons.push('native full-Qxx result non-finite (fail-closed)');
   }
   // C1/C2/C3 verification over the ACTUAL captured native systems:
-  // outcome parity alone never accepts a native result.
-  const verification = verifyNativeFullQxxSystems(
+  // outcome parity alone never accepts a native result. Phase 10L reuses
+  // the cached inline evidence instead of re-running the oracle numerics
+  // (fail-closed aggregation; decisions bit-identical to the legacy path).
+  const verification = finalizeNativeFullQxxVerification(
     capture.systems,
+    capture.getInlineVerifications(),
     capture.truncated,
     eligibility.numParams,
   );
