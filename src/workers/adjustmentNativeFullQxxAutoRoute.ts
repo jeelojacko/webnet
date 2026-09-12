@@ -27,6 +27,7 @@
 import { buildSolvePreparation, collectActiveObservationsForSolve } from '../engine/adjustmentPreprocessing';
 import type { AdjustmentRuntime } from '../engine/adjustmentRuntime';
 import { extractAutoAdjustDirectiveFromInput } from '../engine/autoAdjust';
+import { isGnssBaselineObservation } from '../engine/gnssBaselineTypes';
 import { createExperimentalSparseRouteDiagnostics } from '../engine/experimentalSparseDiagnostics';
 import type {
   SparseSelectedCovarianceInput,
@@ -166,6 +167,11 @@ export const deriveNativeFullQxxEligibility = (
     const preparation = buildSolvePreparation(parsed.stations, parsed.unknowns, active, is2D);
     if (active.some((observation) => observation.type === 'gps' && observation.gpsCovariance3d != null)) {
       reasons.push('3D GPS covariance weighting not yet admitted for native full-Qxx');
+    }
+    // Phase 12B: static GNSS baseline blocks are TS-dense only pending
+    // real-WASM certification; never admit them to any native route.
+    if (active.some((observation) => isGnssBaselineObservation(observation))) {
+      reasons.push('GNSS baseline observations not yet admitted for native full-Qxx');
     }
     if (preparation.directionSetIds.length > 0) {
       reasons.push('orientation parameters not yet admitted for native full-Qxx');

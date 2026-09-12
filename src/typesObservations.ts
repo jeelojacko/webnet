@@ -59,7 +59,7 @@ interface ObservationBase {
   id: number;
   sourceLine?: number;
   sourceFile?: string;
-  type: 'dist' | 'angle' | 'direction' | 'dir' | 'gps' | 'lev' | 'bearing' | 'zenith';
+  type: 'dist' | 'angle' | 'direction' | 'dir' | 'gps' | 'lev' | 'bearing' | 'zenith' | 'gnssBaseline';
   instCode: string;
   setId?: string;
   stdDev: number;

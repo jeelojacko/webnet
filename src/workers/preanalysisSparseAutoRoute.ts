@@ -27,6 +27,7 @@
  */
 import type { AdjustmentRuntime } from '../engine/adjustmentRuntime';
 import { extractAutoAdjustDirectiveFromInput } from '../engine/autoAdjust';
+import { isGnssBaselineObservation } from '../engine/gnssBaselineTypes';
 import { parseEffectiveProjectInput, resolveEffectiveProjectParse } from '../engine/effectiveProjectParse';
 import { createExperimentalSparseRouteDiagnostics } from '../engine/experimentalSparseDiagnostics';
 import {
@@ -201,6 +202,11 @@ export const derivePreanalysisSparseAutoRouteEligibility = (
     );
     if (gpsCovarianceWeighting) {
       reasons.push('GPS covariance weighting not cleared for preanalysis sparse route');
+    }
+    // Phase 12B: static GNSS baseline blocks are TS-dense only pending
+    // real-WASM certification; never admit them to any native route.
+    if (parsed.observations.some((observation) => isGnssBaselineObservation(observation))) {
+      reasons.push('GNSS baseline observations not cleared for preanalysis sparse route');
     }
     const unknownCount = testHooks.unknownCountOverride ?? parsed.unknowns.length;
     const stationUnknownCap =
