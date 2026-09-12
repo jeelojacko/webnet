@@ -281,8 +281,11 @@ export const runDatasetB = (dir: string): void => {
     `TBC reports "${report.chiSquareText}"; WebNet vTPv=${vtpv.toFixed(4)} vs standard 95% chi-square bounds for dof=${result.dof} [${chiLo.toFixed(1)},${chiHi.toFixed(1)}] => ${chiOutcome}. Same reject outcome; TBC's exact test-statistic construction unverified, so outcome-consistent only.`);
 
   const failCount = gates.filter((g) => g.verdict === 'FAIL').length;
+  const failIds = new Set(gates.filter((g) => g.verdict === 'FAIL').map((g) => g.id));
+  const structuralFail = ['C', 'E'].some((id) => failIds.has(id));
   const fPass = gates.find((g) => g.id === 'F')?.verdict === 'PASS';
-  const parityLevel = fPass && gPass ? 3 : gPass ? 2 : 1;
+  // L3 needs F+G pass with zero non-NOTE fails; L2 needs G pass with zero structural (C/E) fails.
+  const parityLevel = fPass && gPass && failCount === 0 ? 3 : gPass && !structuralFail ? 2 : 1;
   const verdict = failCount === 0 && seuw >= 1.965 && seuw < 1.975 && gPass ? 'CASE 1' : 'CASE 2';
 
   const evidence = {

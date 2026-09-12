@@ -39,7 +39,11 @@ const setOf = (ids: string[]): Set<string> => new Set(ids);
 const missing = (need: string[], have: Set<string>): string[] => need.filter((id) => !have.has(id));
 
 const main = (): void => {
-  if (process.argv.includes('--dataset') && (process.argv[process.argv.indexOf('--dataset') + 1] ?? 'a') === 'b') {
+  const eqDataset = process.argv.find((arg) => arg.startsWith('--dataset='))?.split('=')[1];
+  const spacedDataset = process.argv.includes('--dataset')
+    ? (process.argv[process.argv.indexOf('--dataset') + 1] ?? 'a')
+    : undefined;
+  if ((eqDataset ?? spacedDataset ?? 'a') === 'b') {
     const dir = process.argv.slice(2).find((arg) => !arg.startsWith('--') && arg !== 'b');
     if (!dir || !existsSync(dir)) {
       console.log('tbcParityEvidence: pass the dataset-B intake directory (read-only; never modified).');
