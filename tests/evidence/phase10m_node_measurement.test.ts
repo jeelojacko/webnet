@@ -217,7 +217,6 @@ const runCampaign = async (): Promise<void> => {
     const tsVsEngine = resultDiff(engineTsOutcome, engineOutcome);
     expect(tsVsEngine, `m${unknowns} TS/engine parity`).toBeLessThan(PARITY_TOL);
     expect(tsVsRoute, `m${unknowns} TS/route parity`).toBeLessThan(PARITY_TOL);
-    expect(tsVsEngine, `m${unknowns} TS/engine parity`).toBeLessThan(PARITY_TOL);
     const dampingAttempts = Math.max(0, ...engineCalls.map((c) => c.attempts));
     expect(dampingAttempts, `m${unknowns} no damping`).toBe(0);
     expect(engineDiag.sparseCorrectionFallbacks, `m${unknowns} no correction fallback`).toBe(0);

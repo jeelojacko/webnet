@@ -45,7 +45,7 @@ const crossover = {
   perSize: ratios,
   firstClearNativeWin: firstNativeWin ?? null,
   parityRegion: ratios.filter((r) => r.class === 'parity'),
-  verdict: 'small sizes (24-192 params) parity/noisy within ±ms noise; first clear native win at 255 params (0.83), sustained through 384 (0.84) and widening above cap (0.44-0.52 diagnostic)',
+  verdict: 'small sizes (24-192 params) parity/noisy within ±ms noise; first clear native win at 255 params (0.84), sustained through 384 (0.80) and widening above cap (0.45-0.55 diagnostic)',
 };
 const corpus = e10m.corpus.map((c) => ({ id: c.id, note: c.note, status: c.status, parity: c.parity ?? null, reason: c.reason ?? c.reasons ?? null, resultMaxAbsDiff: c.resultMaxAbsDiff ?? null }));
 const summary = {
