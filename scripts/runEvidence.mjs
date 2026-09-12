@@ -9,7 +9,7 @@
  * Phase 9A shards), phase9a-scaling, phase9a-faults, phase9a-corpus, phase9d,
  * phase9e-audit, phase9e-fastpath, phase9h, phase9i, phase9j, phase10a,
  * phase10b, phase10c, phase10d, phase10e, phase10f, phase10g, phase10h,
- * phase10i, phase10j.
+ * phase10i, phase10j, phase10k.
  * Unknown suite names fail fast with a clear error — never a silent
  * full-campaign run.
  * Execution always goes through the evidence tier config
@@ -60,6 +60,7 @@ const SUITES = {
   phase10h: ['tests/evidence/phase10h_native_qxx_fair_evidence.test.ts'],
   phase10i: ['tests/evidence/phase10i_native_route_evidence.test.ts'],
   phase10j: ['tests/evidence/phase10j_3d_native_performance_decomposition.test.ts'],
+  phase10k: ['tests/evidence/phase10k_native_verification_boundary.test.ts'],
 };
 
 const suite = process.argv[2] ?? 'all';
