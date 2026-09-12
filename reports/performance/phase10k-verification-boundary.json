@@ -26,8 +26,8 @@
   "columnMapping": "native numerical = native phase sum; wrapper = wrapper minus native; capture = captureCopy; oracleBuild/C1/C2/C3 = buckets; covCompare = finiteScanConvert+queryBuild+oracleProbe+nativeIndex; statsReuse = precisionPropagationMs; precision = precisionAndDiagnosticsMs remainder; report = reportDiagnosticsMs; other = TOTAL minus the rest (holds iteration-solve/setup/packaging plus noise)",
   "cumulativeVariants": "A engine-only, B +capture, C +C1, D +C1+C2, E +full, F session precision/report buckets, G production-equivalent wall",
   "scaling": "empirical tendency only; no formal complexity claims; 768-param value is a labeled ESTIMATE",
-  "primaryGate": "GATE B (optimize verification implementation, bit-identical C1/C2/C3 decisions)",
-  "goNoGo": "GO for 10L scoped to GATE B; NO-GO for routing/tolerance/coverage/numerical changes",
+  "primaryGate": "GATE A (verification oracle dominates; first bounded 10L target: exact-duplicate pass removal, bit-identical C1/C2/C3)",
+  "goNoGo": "GO for 10L scoped to verification-oracle cost; NO-GO for routing/tolerance/coverage/numerical changes",
   "wallsObservational": true,
   "noProductionChanges": true
  },

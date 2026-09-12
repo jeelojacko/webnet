@@ -81,8 +81,10 @@ reportDiagnosticsMs; other = TOTAL minus all other columns (holds iteration-solv
 | G production-equivalent | measured (native route wall with collector) | reconciled to session total + route-level re-verify + eligibility pre-work |
 | gps-3d-256 production route | ineligible (diagnostic cohort instead) | above the 384-param route cap |
 
-## Recommendation (exactly one primary GATE for 10L direction; no implementation)
+## Recommendation (mission section 16 taxonomy; exactly one primary GATE; no implementation)
 
-GATE B (optimize verification implementation, keep C1/C2/C3 acceptance logic bit-identical): the measured ~2x inline+route-level double verification runs the same function on the same inputs twice, and TS-side oracle/probe/C2 work dominates the route wall while native phase timings stay small. 10L should remove the redundant pass and optimize the TS-side oracle path under the bit-identity assertion proven here. GATE A (status quo) leaves the ~2x cost; GATE C (reduce coverage/demand) changes the safety contract without independent evidence; GATE D (more evidence first) is unnecessary for the duplication removal, which this campaign already proves decision-neutral.
+GATE A - VERIFICATION ORACLE DOMINATES. TS-side oracle/probe/C1/C2/C3 work is the largest attributable block of the route wall (route-level pass ~110 ms at 384 params, x2 with the inline twin = ~220 of ~452 ms rest), and the oracle rebuilds dense N + Cholesky + <=16 solves per verify. First bounded 10L target: eliminate the exactly-duplicated pass (2.0x inline+route factor measured; collector on/off bit-identity proven) with bit-identical C1/C2/C3 decisions; then a cheaper independently-safe oracle contract. Secondary: iteration solve (~195 ms at 128, shared TS baseline both arms pay, 10J TS-arm ballpark) is not verification-recoverable. Tertiary: statistics/reuse/report ~37 ms. Covariance transfer is not dominant (wrapper ~4 ms).
 
-GO for 10L scoped to GATE B only (verification-implementation optimization with bit-identical C1/C2/C3 decisions); NO-GO for any 10L change to routing, tolerances, coverage, or numerical contracts.
+Other-bucket bridge (derived post-hoc from committed medians; medians-of-medians, not a new measurement): other = inline-verify twin (same shape as the itemized route pass) + iteration-solve/setup. gps-3d-32: 18.85 = 5.50 + 13.35 (10J TS ref 12.86). gps-3d-64: 65.94 = 22.64 + 43.30 (10J TS ref 39.49). gps-3d-128: 304.55 = 109.60 + 194.95 (10J TS ref 209.37). Residual to TOTAL <= 1.2 ms on all fixtures.
+
+GO for 10L scoped to verification-oracle cost with bit-identical C1/C2/C3 decisions; NO-GO for any 10L change to routing, tolerances, coverage, or numerical contracts.
