@@ -1,0 +1,592 @@
+{
+ "phase": "11A",
+ "baseline": "43d5a525",
+ "branch": "perf/3d-native-cohort-widening-certification",
+ "environment": {
+  "node": "v26.8.1",
+  "platform": "linux",
+  "arch": "x64"
+ },
+ "productionContractChanged": false,
+ "production": {
+  "capParams": 384,
+  "correctionEnabled": false,
+  "diagnosticSeam": "trailing maxParams (default 384) on eligibility/verifier/finalizer/capture/route; all production call sites omit it",
+  "ordinaryAboveCap": "still clean TypeScript (proven: 480-param request, no bundle load)"
+ },
+ "methodology": {
+  "armA": "pure TypeScript runAdjustmentSession",
+  "armB": "verified route (production at 384, diagnostic maxParams=768 above)",
+  "runsPerArm": 3,
+  "parityTol": 1e-06,
+  "seeds": "3000+unknownCount, gps-covariance 3D",
+  "corrections": "OFF",
+  "classes": "<0.90 native-faster, 0.90-1.10 parity, >1.10 ts-faster"
+ },
+ "ladderNode": {
+  "384": {
+   "tsMs": 220.7,
+   "nativeMs": 175.8,
+   "ratio": 0.797,
+   "absoluteDeltaMs": -44.9,
+   "resultMaxAbsDiff": 0,
+   "qxxMB": 1.12,
+   "c1MaxDiff": 1.257843926672636e-19,
+   "c2MaxResidual": 8.881784197001252e-15,
+   "verifiedColumns": 16,
+   "verifyTimingMs": {
+    "captureCopy": 0.2,
+    "oracleBuild": 0.5,
+    "queryBuild": 0.2,
+    "oracleProbe": 16.4,
+    "nativeIndex": 3.4,
+    "c1": 0.6,
+    "c2": 7.3,
+    "c3Physical": 4.6,
+    "other": 0.1
+   }
+  },
+  "432": {
+   "tsMs": 288.4,
+   "nativeMs": 215.2,
+   "ratio": 0.746,
+   "absoluteDeltaMs": -73.2,
+   "resultMaxAbsDiff": 0,
+   "qxxMB": 1.42,
+   "c1MaxDiff": 6.691560283308973e-20,
+   "c2MaxResidual": 1.0658141036401503e-14,
+   "verifiedColumns": 16,
+   "verifyTimingMs": {
+    "captureCopy": 0.2,
+    "oracleBuild": 0.7,
+    "queryBuild": 0.1,
+    "oracleProbe": 20.1,
+    "nativeIndex": 1.1,
+    "c1": 0.7,
+    "c2": 8.9,
+    "c3Physical": 3.2,
+    "other": 0.0
+   }
+  },
+  "480": {
+   "tsMs": 382.4,
+   "nativeMs": 260.9,
+   "ratio": 0.682,
+   "absoluteDeltaMs": -121.4,
+   "resultMaxAbsDiff": 0,
+   "qxxMB": 1.76,
+   "c1MaxDiff": 4.785736151986797e-20,
+   "c2MaxResidual": 7.105427357601002e-15,
+   "verifiedColumns": 16,
+   "verifyTimingMs": {
+    "captureCopy": 0.3,
+    "oracleBuild": 0.6,
+    "queryBuild": 0.1,
+    "oracleProbe": 25.4,
+    "nativeIndex": 1.0,
+    "c1": 0.1,
+    "c2": 10.9,
+    "c3Physical": 4.0,
+    "other": 0.0
+   }
+  },
+  "513": {
+   "tsMs": 486.5,
+   "nativeMs": 305.5,
+   "ratio": 0.628,
+   "absoluteDeltaMs": -181.0,
+   "resultMaxAbsDiff": 0,
+   "qxxMB": 2.01,
+   "c1MaxDiff": 6.606856988583543e-20,
+   "c2MaxResidual": 7.105427357601002e-15,
+   "verifiedColumns": 16,
+   "verifyTimingMs": {
+    "captureCopy": 0.3,
+    "oracleBuild": 0.7,
+    "queryBuild": 0.1,
+    "oracleProbe": 34.5,
+    "nativeIndex": 2.0,
+    "c1": 0.8,
+    "c2": 12.5,
+    "c3Physical": 4.6,
+    "other": 0.0
+   }
+  },
+  "576": {
+   "tsMs": 638.3,
+   "nativeMs": 394.6,
+   "ratio": 0.618,
+   "absoluteDeltaMs": -243.7,
+   "resultMaxAbsDiff": 0,
+   "qxxMB": 2.53,
+   "c1MaxDiff": 4.1504614415460717e-20,
+   "c2MaxResidual": 8.881784197001252e-15,
+   "verifiedColumns": 16,
+   "verifyTimingMs": {
+    "captureCopy": 1.8,
+    "oracleBuild": 1.6,
+    "queryBuild": 0.1,
+    "oracleProbe": 42.8,
+    "nativeIndex": 2.5,
+    "c1": 1.0,
+    "c2": 15.9,
+    "c3Physical": 6.0,
+    "other": 0.0
+   }
+  },
+  "639": {
+   "tsMs": 878.0,
+   "nativeMs": 510.3,
+   "ratio": 0.581,
+   "absoluteDeltaMs": -367.7,
+   "resultMaxAbsDiff": 0,
+   "qxxMB": 3.12,
+   "c1MaxDiff": 6.437450399132683e-20,
+   "c2MaxResidual": 7.105427357601002e-15,
+   "verifiedColumns": 16,
+   "verifyTimingMs": {
+    "captureCopy": 1.7,
+    "oracleBuild": 2.0,
+    "queryBuild": 0.1,
+    "oracleProbe": 56.1,
+    "nativeIndex": 2.8,
+    "c1": 1.5,
+    "c2": 19.0,
+    "c3Physical": 7.2,
+    "other": 0.0
+   }
+  },
+  "705": {
+   "tsMs": 1173.6,
+   "nativeMs": 633.0,
+   "ratio": 0.539,
+   "absoluteDeltaMs": -540.6,
+   "resultMaxAbsDiff": 0,
+   "qxxMB": 3.79,
+   "c1MaxDiff": 1.4230153513872246e-19,
+   "c2MaxResidual": 1.0658141036401503e-14,
+   "verifiedColumns": 16,
+   "verifyTimingMs": {
+    "captureCopy": 2.5,
+    "oracleBuild": 1.4,
+    "queryBuild": 0.1,
+    "oracleProbe": 71.9,
+    "nativeIndex": 3.1,
+    "c1": 1.1,
+    "c2": 22.7,
+    "c3Physical": 8.6,
+    "other": 0.0
+   }
+  },
+  "768": {
+   "tsMs": 1437.5,
+   "nativeMs": 761.2,
+   "ratio": 0.53,
+   "absoluteDeltaMs": -676.3,
+   "resultMaxAbsDiff": 0,
+   "qxxMB": 4.5,
+   "c1MaxDiff": 7.411538288475128e-20,
+   "c2MaxResidual": 8.881784197001252e-15,
+   "verifiedColumns": 16,
+   "verifyTimingMs": {
+    "captureCopy": 3.2,
+    "oracleBuild": 1.6,
+    "queryBuild": 0.1,
+    "oracleProbe": 92.2,
+    "nativeIndex": 4.2,
+    "c1": 1.0,
+    "c2": 26.7,
+    "c3Physical": 10.1,
+    "other": 0.0
+   }
+  }
+ },
+ "boundaries": [
+  {
+   "unknowns": 170,
+   "numParams": 510,
+   "resultMaxAbsDiff": 0,
+   "accepted": true,
+   "note": "nearest-achievable coord-only; exact odds unreachable"
+  },
+  {
+   "unknowns": 214,
+   "numParams": 642,
+   "resultMaxAbsDiff": 0,
+   "accepted": true,
+   "note": "nearest-achievable coord-only; exact odds unreachable"
+  },
+  {
+   "unknowns": 255,
+   "numParams": 765,
+   "resultMaxAbsDiff": 0,
+   "accepted": true,
+   "note": "nearest-achievable coord-only; exact odds unreachable"
+  },
+  {
+   "unknowns": null,
+   "numParams": null,
+   "resultMaxAbsDiff": null,
+   "accepted": null,
+   "note": "383/384/385: 384 exact at 128u (ladder); 383/385 unreachable coord-only (3*unknowns)"
+  },
+  {
+   "unknowns": null,
+   "numParams": null,
+   "resultMaxAbsDiff": null,
+   "accepted": null,
+   "note": "511/512/513: nearest 510 (170u) + 513 (171u); 639/640/641: nearest 639 (213u) + 642 (214u); 767/768/769: nearest 765 (255u) + 768 (256u)"
+  }
+ ],
+ "reachabilityNote": "3D coord-only params = 3xunknowns (+CTRLA/B fixed): exact 511/512/640/641/767/769 and 383/385 unreachable; nearest achievable disclosed (510/513/639/642/765/768); 384 exact at 128u",
+ "corpus": [
+  {
+   "id": "dist-heavy-128",
+   "status": "excluded",
+   "parity": null,
+   "numParams": 384,
+   "ratio": null,
+   "reason": "native route fell back fail-closed: sparse selected-covariance fallbacks=1 (fail-closed); system 1: damping=1.0000000000000003e-15 (undamped required; fail-closed)"
+  },
+  {
+   "id": "mixed-full-128",
+   "status": "measured",
+   "parity": "pass",
+   "numParams": 384,
+   "ratio": 0.753,
+   "reason": ""
+  },
+  {
+   "id": "gps-dist-128",
+   "status": "measured",
+   "parity": "pass",
+   "numParams": 384,
+   "ratio": 0.73,
+   "reason": ""
+  },
+  {
+   "id": "terrestrial-only-128",
+   "status": "measured",
+   "parity": "pass",
+   "numParams": 384,
+   "ratio": 0.709,
+   "reason": ""
+  },
+  {
+   "id": "weak-chain-128",
+   "status": "measured",
+   "parity": "pass",
+   "numParams": 384,
+   "ratio": 0.647,
+   "reason": ""
+  },
+  {
+   "id": "low-redundancy-128",
+   "status": "measured",
+   "parity": "pass",
+   "numParams": 384,
+   "ratio": 0.678,
+   "reason": ""
+  },
+  {
+   "id": "uneven-128",
+   "status": "measured",
+   "parity": "pass",
+   "numParams": 384,
+   "ratio": 0.75,
+   "reason": ""
+  },
+  {
+   "id": "compact-128",
+   "status": "measured",
+   "parity": "pass",
+   "numParams": 384,
+   "ratio": 0.663,
+   "reason": ""
+  },
+  {
+   "id": "dist-heavy-213",
+   "status": "excluded",
+   "parity": null,
+   "numParams": 639,
+   "ratio": null,
+   "reason": "TS baseline itself did not converge (azimuth-unconstrained) \u2014 parity untestable, not a route rejection"
+  },
+  {
+   "id": "mixed-full-213",
+   "status": "measured",
+   "parity": "pass",
+   "numParams": 639,
+   "ratio": 0.563,
+   "reason": ""
+  },
+  {
+   "id": "gps-dist-213",
+   "status": "measured",
+   "parity": "pass",
+   "numParams": 639,
+   "ratio": 0.538,
+   "reason": ""
+  },
+  {
+   "id": "terrestrial-only-213",
+   "status": "measured",
+   "parity": "pass",
+   "numParams": 639,
+   "ratio": 0.543,
+   "reason": ""
+  }
+ ],
+ "repeatedRuns": [
+  {
+   "unknowns": 128,
+   "runs": 25,
+   "wallMedianMs": 166.2,
+   "heapGrowthMB": 14.6,
+   "leak": "NO"
+  },
+  {
+   "unknowns": 171,
+   "runs": 10,
+   "wallMedianMs": 307.6,
+   "heapGrowthMB": 113.9,
+   "leak": "NO"
+  },
+  {
+   "unknowns": 213,
+   "runs": 10,
+   "wallMedianMs": 499.5,
+   "heapGrowthMB": -103.6,
+   "leak": "NO"
+  }
+ ],
+ "fallbackMatrix": [
+  {
+   "case": "default-routing-proof>384",
+   "route": "typescript",
+   "reason": "",
+   "numParams": 480
+  },
+  {
+   "case": "init-fail",
+   "route": "typescript",
+   "reason": "WASM bundle init failed: synthetic bundle init failure",
+   "numParams": null
+  },
+  {
+   "case": "run-throw",
+   "route": "typescript",
+   "reason": "native full-Qxx run threw: synthetic native throw",
+   "numParams": null
+  },
+  {
+   "case": "kill-switch",
+   "route": "typescript",
+   "reason": "native full-Qxx route disabled by kill switch",
+   "numParams": null
+  },
+  {
+   "case": "non-converge",
+   "route": "typescript",
+   "reason": "native full-Qxx result not converged (fail-closed)",
+   "numParams": null
+  },
+  {
+   "case": "non-finite",
+   "route": "typescript",
+   "reason": "native full-Qxx result non-finite (fail-closed)",
+   "numParams": null
+  },
+  {
+   "case": "damped-solver",
+   "route": "typescript",
+   "reason": "sparse selected-covariance fallbacks=1 (fail-closed); system 1: damping=1 (undamped required; fail-closed)",
+   "numParams": null
+  },
+  {
+   "case": "nonfinite-solver",
+   "route": "typescript",
+   "reason": "sparse selected-covariance fallbacks=1 (fail-closed); system 1: native covariance entry 0 non-finite (fail-closed)",
+   "numParams": null
+  },
+  {
+   "case": "finalizer-truncation",
+   "route": "typescript-equivalent",
+   "reason": "oracle bound: capture truncated at 64 systems (fail-closed; coverage unproven)",
+   "numParams": null
+  },
+  {
+   "case": "finalizer-count-mismatch",
+   "route": "typescript-equivalent",
+   "reason": "verification: inline evidence count 0 != captured 1 (fail-closed; provenance unproven)",
+   "numParams": null
+  },
+  {
+   "case": "finalizer-malformed",
+   "route": "typescript-equivalent",
+   "reason": "verification: aggregate provenance unprovable (fail-closed)",
+   "numParams": null
+  },
+  {
+   "case": "verifier-empty",
+   "route": "typescript-equivalent",
+   "reason": "verification: no native covariance systems captured (fail-closed)",
+   "numParams": null
+  }
+ ],
+ "regression200_384": [
+  {
+   "unknowns": 32,
+   "route": "native-full-qxx",
+   "diff": 0,
+   "verdict": "unregressed"
+  },
+  {
+   "unknowns": 128,
+   "route": "native-full-qxx",
+   "diff": 0,
+   "verdict": "unregressed"
+  }
+ ],
+ "browser": {
+  "method": "phase11aBrowserEvidence.mjs: fresh dist/ build, TS arm = built worker chunk, native arm = esbuild bundle + kill-switch flip + diagnostic 768 in-worker only, fresh worker per fixture+arm, 1 warm-up + 5 measured runs, page round-trip medians",
+  "chromium": {
+   "version": "148.0.7778.96",
+   "uiProbeMs": 1,
+   "uiReadyState": "complete",
+   "m128": {
+    "tsMs": 182,
+    "nativeMs": 182.6,
+    "ratio": 1.0,
+    "parityMaxDiff": 0,
+    "transferSplitMs": {
+     "workerOverEngineMedian": 7.399999976158142,
+     "pageOverWorkerMedian": 14.199999928474426
+    }
+   },
+   "m171": {
+    "tsMs": 469.2,
+    "nativeMs": 326.8,
+    "ratio": 0.7,
+    "parityMaxDiff": 0,
+    "transferSplitMs": {
+     "workerOverEngineMedian": 9.5,
+     "pageOverWorkerMedian": 21.699999928474426
+    }
+   },
+   "m213": {
+    "tsMs": 834.7,
+    "nativeMs": 521.9,
+    "ratio": 0.63,
+    "parityMaxDiff": 0,
+    "transferSplitMs": {
+     "workerOverEngineMedian": 11.899999976158142,
+     "pageOverWorkerMedian": 33.199999928474426
+    }
+   },
+   "m256": {
+    "tsMs": 1305.4,
+    "nativeMs": 798.1,
+    "ratio": 0.61,
+    "parityMaxDiff": 0,
+    "transferSplitMs": {
+     "workerOverEngineMedian": 14.5,
+     "pageOverWorkerMedian": 43.89999997615814
+    }
+   }
+  },
+  "firefox": {
+   "version": "150.0.2",
+   "uiProbeMs": 2,
+   "uiReadyState": "complete",
+   "m128": {
+    "tsMs": 334,
+    "nativeMs": 351,
+    "ratio": 1.05,
+    "parityMaxDiff": 0,
+    "transferSplitMs": {
+     "workerOverEngineMedian": 6,
+     "pageOverWorkerMedian": 25
+    }
+   },
+   "m171": {
+    "tsMs": 1062,
+    "nativeMs": 681,
+    "ratio": 0.64,
+    "parityMaxDiff": 0,
+    "transferSplitMs": {
+     "workerOverEngineMedian": 8,
+     "pageOverWorkerMedian": 36
+    }
+   },
+   "m213": {
+    "tsMs": 1939,
+    "nativeMs": 1250,
+    "ratio": 0.64,
+    "parityMaxDiff": 0,
+    "transferSplitMs": {
+     "workerOverEngineMedian": 10,
+     "pageOverWorkerMedian": 49
+    }
+   },
+   "m256": {
+    "tsMs": 3260,
+    "nativeMs": 2009,
+    "ratio": 0.62,
+    "parityMaxDiff": 0,
+    "transferSplitMs": {
+     "workerOverEngineMedian": 13,
+     "pageOverWorkerMedian": 70
+    }
+   }
+  },
+  "noise": "Automated browser timing is ACCEPTABLE but visibly noisy: max CV 19.7% at chromium/gps-3d-m171/ts; treat medians as approximate, raw spreads reported."
+ },
+ "scorecards": {
+  "512-nearest-513": {
+   "numerical": "PASS parity 0",
+   "verification": "ACCEPTED C1/C2/C3 same coverage(16 cols)/tolerance",
+   "browser": "Chromium 0.70 / Firefox 0.64, parity 0",
+   "memory": "Qxx 2.01MB; verify 56ms",
+   "fallback": "12/12 matrix via @639 covers this size class",
+   "performance": "CLEAR WIN (<=0.70 all platforms)"
+  },
+  "640-nearest-639": {
+   "numerical": "PASS parity 0",
+   "verification": "ACCEPTED same coverage/tolerance",
+   "browser": "Chromium 0.63 / Firefox 0.64, parity 0",
+   "memory": "Qxx 3.12MB; verify 90ms",
+   "fallback": "12/12 matrix AT this size",
+   "performance": "CLEAR WIN (<=0.64 all platforms)"
+  },
+  "768": {
+   "numerical": "PASS parity 0",
+   "verification": "ACCEPTED same coverage/tolerance; C3 10ms, probe 92ms",
+   "browser": "Chromium 0.61 / Firefox 0.62, parity 0",
+   "memory": "Qxx 4.50MB; verify 139ms; RSS peak ~839MB test-process",
+   "fallback": "12/12 matrix class (639) + finalizer unit rejects",
+   "performance": "CLEAR WIN (<=0.62 all platforms)"
+  }
+ },
+ "capRecommendation": {
+  "candidates": [
+   384,
+   512,
+   640,
+   768
+  ],
+  "recommendation": 768,
+  "reason": "Station-exact simple boundary (256 unknown stations x 3 = 768; 512/640 not divisible by 3 so no exact station count); CLEAR WIN <=0.70 on Node AND both browsers at every widened rung with exact parity; same C1/C2/C3 coverage/tolerance; 12/12 fallback; no leaks; Qxx 4.5MB trivial vs compute. EVIDENCE ONLY - production constant NOT changed in this batch.",
+  "realWorldMath": "768 params = 256 free 3D stations (+2 fixed controls); a 200-station 3D control network (~600 params) fits with headroom"
+ },
+ "verdict": "GO for widening certification to 768 (evidence verdict; production change NONE)",
+ "drivers": [
+  "tests/evidence/phase11a_cohort_widening.test.ts",
+  "scripts/phase11aBrowserEvidence.mjs"
+ ],
+ "rawArtifacts": [
+  "artifacts/evidence/phase11a/phase11a-evidence.json",
+  "artifacts/evidence/phase11a-browser/phase11a-browser-raw.json",
+  "artifacts/evidence/phase11a-browser/requests.json"
+ ]
+}
