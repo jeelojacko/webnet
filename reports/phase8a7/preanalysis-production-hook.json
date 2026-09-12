@@ -9,8 +9,7 @@
   "enabledContractReasons": [],
   "caps": {
     "unknownCap": 128,
-    "planningSystemCap": 64,
-    "runtimeParameterCap": 256
+    "planningSystemCap": 64
   },
   "preDispatchEnforcement": true,
   "noForbiddenImports": [],
