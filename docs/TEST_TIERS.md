@@ -21,7 +21,7 @@ policy list, no browser tests in Node manifests).
 | **agent** | `npm run test:agent` | `vitest.agent.config.ts` | Full suite **minus** the evidence, release, and real-WASM integration tests. The broad everyday AI-agent regression gate (~1 min). |
 | **wasm** | `npm run test:wasm` | `vitest.wasm.config.ts` | Only the explicit real-WASM / worker / native integration tests. |
 | **release** | `npm run test:release` | `vitest.release.config.ts` | Only the fast automatic release-certification gates (the Phase 8B.1, Phase 9A, and Phase 9B verdicts over committed reports — no workers, no WASM artifact required). |
-| **evidence** | `npm run test:evidence [-- <suite>]` | `vitest.evidence.config.ts` via `scripts/runEvidence.mjs` | Only the intentionally expensive long numerical campaigns under `tests/evidence/`. Expected to be very slow; manual-only, never runs in CI. Suites: `all` (default), `phase8b1`, `phase8a6`, `phase8a5`, `phase9a` (all three Phase 9A shards), `phase9a-scaling`, `phase9a-faults`, `phase9a-corpus`, `phase9d`, `phase9e-audit`, `phase9e-fastpath`, `phase9h`, `phase9i`, `phase9j`, `phase10a`, `phase10b`, `phase10c`, `phase10d`, `phase10e`, `phase10f`, `phase10g`, `phase10h`, `phase10i`; unknown names fail fast. |
+| **evidence** | `npm run test:evidence [-- <suite>]` | `vitest.evidence.config.ts` via `scripts/runEvidence.mjs` | Only the intentionally expensive long numerical campaigns under `tests/evidence/`. Expected to be very slow; manual-only, never runs in CI. Suites: `all` (default), `phase8b1`, `phase8a6`, `phase8a5`, `phase9a` (all three Phase 9A shards), `phase9a-scaling`, `phase9a-faults`, `phase9a-corpus`, `phase9d`, `phase9e-audit`, `phase9e-fastpath`, `phase9h`, `phase9i`, `phase9j`, `phase10a`, `phase10b`, `phase10c`, `phase10d`, `phase10e`, `phase10f`, `phase10g`, `phase10h`, `phase10i`, `phase10j`; unknown names fail fast. |
 
 `npm run test:certify` runs the automatic CI-equivalent partition locally
 (`test:agent` + `test:wasm` + `test:release`).
@@ -56,7 +56,8 @@ lists):
   `tests/evidence/phase10f_post_reuse_profile.test.ts`,
   `tests/evidence/phase10g_final_covariance_architecture.test.ts`,
   `tests/evidence/phase10h_native_qxx_fair_evidence.test.ts`,
-  `tests/evidence/phase10i_native_route_evidence.test.ts`): large repeated
+  `tests/evidence/phase10i_native_route_evidence.test.ts`,
+  `tests/evidence/phase10j_3d_native_performance_decomposition.test.ts`): large repeated
   numerical campaigns. Manual-only via `npm run test:evidence` or the
   Evidence workflow. The Phase 9A shards share helpers via
   `tests/evidence/phase9aEvidenceShared.ts`, run independently with no
