@@ -195,13 +195,15 @@ observation weight:
 T_i = v_iᵀ · C_vi⁻¹ · v_i,      C_vi = cofactor of v_i from Qvv·σ̂²
 ```
 
-- `T_i ~ χ²` with 3 DOF under the null (one 3-vector block);
 - differs from three component-wise tests: component tests ignore
   off-diagonal correlation and triple the multiple-testing burden; the block
-  test is one 3-DOF statement about the whole solution;
-- requires `Qvv` blocks the current statistics path does not retain per
-  block; Phase 12D must derive whether to add block-`Qvv` recovery or defer
-  to descriptive `q` above plus component standardized residuals.
+  test is one statement about the whole solution;
+- Qvv blocks are recovered per baseline in Phase 12D (see §13); scalar
+  formulas are never applied entry-wise to a correlated block.
+- 12D correction to the "χ² with 3 DOF" simplification: the effective
+  degrees of freedom are rank(Cvv_i), and because the scale σ̂² is
+  estimated in-adjustment, T_i is reported as a normalized diagnostic
+  WITHOUT a p-value (neither χ² nor F applies exactly).
 
 Redundancy for a 3-block: trace of the block redundancy matrix
 `R_i = I − A_i·Qxx·A_iᵀ·P_i`; partial redundancies in [0,3] summing the
@@ -250,3 +252,28 @@ C_s          = Σ C_i
 Normalised closure `sᵀ·C_s⁻¹·s ~ χ²(3)` is the loop QC statistic. Belongs to
 pre-adjustment QC / post-adjustment diagnostics, not to the observation
 equations. Phase 12D scope.
+
+## 13. Phase 12D statistics contract (proven)
+
+Stochastic convention: the imported 3×3 is C_ll = Q_ll numerically
+(a-priori variance factor σ₀² = 1); P = Q_ll⁻¹; Qxx = (AᵀPA)⁻¹;
+posterior σ̂² = vᵀPv/dof scales only reported residual quantities
+(Cvv = σ̂²Qvv, component t), never the weights.
+
+- Qvv_i = Q_ll,i − A_i Qxx A_iᵀ, full symmetric 3×3, O(1) Qxx lookups
+  per block through the [−I +I] rows; no global dense Qvv is formed.
+- Redundancy R_i = Qvv_i P_i; primary measure trace(R_i) ∈ [0, 3]
+  (basis-invariant); Σ trace(R_i) = dof for baseline-only networks.
+- Component t_j = v_j/√Cvv_jj are correlated diagnostics, not
+  independent tests; residual correlations reported alongside.
+- Block diagnostic T_i = vᵀCvv_i⁺v with symmetric-Jacobi eigen
+  pseudoinverse; rank policy τ = λ_max·3·√ε_machine shared by rank,
+  pseudoinverse, and df; materially non-PSD blocks fail hard, pure
+  roundoff negatives are rank-excluded (never jittered).
+- Descriptive q_obs,i = vᵀP v sums exactly to the global vᵀPv.
+- Loop QC: deterministic union-find fundamental cycle basis
+  (E−V+C rank, multigraph-safe), s = Σ±b, C_s = ΣC,
+  T_loop = sᵀC_s⁻¹s; traversal reversal negates s, preserves C_s/T_loop.
+- Blunder unit is one whole baseline; 12D provides suspect ranking plus
+  one-block removal what-if only — no automatic iterative deletion, no
+  block MDB, no p-values (multiple-testing policy deferred with them).
