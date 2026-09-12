@@ -1,0 +1,8 @@
+# WebNet static GNSS baseline network in millimetres (experimental import stage)
+# Must canonicalize identically to the metre representation.
+FRAME ECEF ITRF2020@2020.0 EPOCH 2020.0 ELLIPSOID GRS80
+UNITS MM
+GX A 1000000000 2000000000 3000000000 FIXED
+GX B 1000111111 1999995500 3000001250
+BL A B 111111 -4500 1250 ID BL001
+COV 4 1 0 9 0 16

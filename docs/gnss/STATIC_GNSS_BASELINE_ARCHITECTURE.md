@@ -367,7 +367,6 @@ bounded per §15/§12 (TS dense path, GNSS-only, fixed control, independent
 blocks, no native routing changes, no CRS/geoid/datum machinery).
 
 ## 12B implementation notes (added post-12A, contract unchanged)
-
 - Implemented on `feat/static-gnss-baseline-core` exactly per this contract:
   standalone `gnssBaseline` type, `runGnssBaselineAdjustment` (TS dense
   only), strict Cholesky PD validation, `[−I +I]` rows, preflight datum
@@ -380,3 +379,25 @@ blocks, no native routing changes, no CRS/geoid/datum machinery).
 - `projectLocal` single-origin variant deferred to 12C+ (ECEF only in 12B).
 - Evidence: `reports/gnss/phase12b-core-baseline-adjustment.md`,
   `tests/gnssBaseline/` (40 tests incl. independent Gauss-Jordan golden).
+
+## 12C import boundary notes (added post-12B, contract unchanged)
+
+- Implemented on `feat/static-gnss-baseline-import`: WebNet-native `BL`
+  text syntax plus a generic delimited importer, both canonicalizing into
+  the unchanged Phase 12B `gnssBaseline` observation. Canonical core
+  remains ECEF; import formats are boundary representations only.
+- Syntax: `FRAME` (ECEF, or ENU with one shared `ORIGIN_LAT`/`ORIGIN_LON`
+  rotation origin) + `UNITS M|MM|CM` + `GX` ECEF stations (FIXED/FREE)
+  + `BL` records each followed by exactly one `COV` (xx xy xz yy yz zz)
+  or `SIGCORR` block. Full grammar in
+  `docs/gnss/STATIC_GNSS_BASELINE_FORMAT.md`.
+- Single-origin ENU replaces the deferred `projectLocal` variant: one
+  constant `R` per file, `b_ecef = R^T b_enu`, `C_ecef = R^T C_enu R`;
+  GX stations stay ECEF (absolute positions need no rotation, only unit
+  scale). Per-baseline FROM rotations remain rejected by construction.
+- Units normalized once (`s`, `s^2`); one declaration covers vector and
+  covariance. `gnssBaseline` stays out of the legacy parsed `Observation`
+  union (dedicated entry point; mixed legacy records rejected).
+- No TBC proprietary parser: no real sample in-repo; generic importer
+  carries the mapping seam for 12E.
+- Evidence: `reports/gnss/phase12c-baseline-import.md`.
