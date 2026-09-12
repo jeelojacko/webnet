@@ -21,7 +21,7 @@ policy list, no browser tests in Node manifests).
 | **agent** | `npm run test:agent` | `vitest.agent.config.ts` | Full suite **minus** the evidence, release, and real-WASM integration tests. The broad everyday AI-agent regression gate (~1 min). |
 | **wasm** | `npm run test:wasm` | `vitest.wasm.config.ts` | Only the explicit real-WASM / worker / native integration tests. |
 | **release** | `npm run test:release` | `vitest.release.config.ts` | Only the fast automatic release-certification gates (the Phase 8B.1, Phase 9A, and Phase 9B verdicts over committed reports — no workers, no WASM artifact required). |
-| **evidence** | `npm run test:evidence [-- <suite>]` | `vitest.evidence.config.ts` via `scripts/runEvidence.mjs` | Only the intentionally expensive long numerical campaigns under `tests/evidence/`. Expected to be very slow; manual-only, never runs in CI. Suites: `all` (default), `phase8b1`, `phase8a6`, `phase8a5`, `phase9a` (all three Phase 9A shards), `phase9a-scaling`, `phase9a-faults`, `phase9a-corpus`, `phase9d`, `phase9e-audit`, `phase9e-fastpath`, `phase9h`, `phase9i`, `phase9j`, `phase10a`, `phase10b`, `phase10c`, `phase10d`, `phase10e`, `phase10f`, `phase10g`, `phase10h`, `phase10i`, `phase10j`, `phase10k`, `phase10l`, `phase10m`, `phase10n`, `phase10o`, `phase10p`; unknown names fail fast. |
+| **evidence** | `npm run test:evidence [-- <suite>]` | `vitest.evidence.config.ts` via `scripts/runEvidence.mjs` | Only the intentionally expensive long numerical campaigns under `tests/evidence/`. Expected to be very slow; manual-only, never runs in CI. Suites: `all` (default), `phase8b1`, `phase8a6`, `phase8a5`, `phase9a` (all three Phase 9A shards), `phase9a-scaling`, `phase9a-faults`, `phase9a-corpus`, `phase9d`, `phase9e-audit`, `phase9e-fastpath`, `phase9h`, `phase9i`, `phase9j`, `phase10a`, `phase10b`, `phase10c`, `phase10d`, `phase10e`, `phase10f`, `phase10g`, `phase10h`, `phase10i`, `phase10j`, `phase10k`, `phase10l`, `phase10m`, `phase10n`, `phase10o`, `phase10p`, `phase11a`; unknown names fail fast. |
 
 `npm run test:certify` runs the automatic CI-equivalent partition locally
 (`test:agent` + `test:wasm` + `test:release`).
@@ -87,7 +87,8 @@ lists):
   `tests/phase8a_preanalysis_sparse_evidence.test.ts`,
   `tests/phase7b7_worker_corpus.test.ts`,
   `tests/phase7b5_candidate_corpus.test.ts`,
-  `tests/phase7b_worker_sparse_proof.test.ts`): real worker / real-bundle /
+  `tests/phase7b_worker_sparse_proof.test.ts`,
+  `tests/phase11a_production_route_realwasm.test.ts`): real worker / real-bundle /
   native-integration proofs. The two `phase7b*` files fail (not skip) when
   the WASM artifact is absent, so they must not run in the artifact-free
   agent tier.

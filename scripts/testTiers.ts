@@ -64,6 +64,7 @@ export const EVIDENCE_TESTS = [
   'tests/evidence/phase10n_native_correction_evidence.test.ts',
   'tests/evidence/phase10o_factorization_lifecycle.test.ts',
   'tests/evidence/phase10p_correction_verification.test.ts',
+  'tests/evidence/phase11a_cohort_widening.test.ts',
 ] as const;
 
 /** Fast automatic release-certification gate (committed-report verdict). */
@@ -83,6 +84,7 @@ export const WASM_INTEGRATION_TESTS = [
   'tests/phase7b7_worker_corpus.test.ts',
   'tests/phase7b5_candidate_corpus.test.ts',
   'tests/phase7b_worker_sparse_proof.test.ts',
+  'tests/phase11a_production_route_realwasm.test.ts',
 ] as const;
 
 /** Tests excluded from the everyday agent tier (intentionally disjoint sets). */

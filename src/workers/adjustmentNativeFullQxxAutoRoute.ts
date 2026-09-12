@@ -1,7 +1,7 @@
 /**
  * Phase 10I worker-only native full-Qxx auto-route (fail-closed).
  *
- * Routes ordinary single-solve 3D adjustment jobs with at most 384
+ * Routes ordinary single-solve 3D adjustment jobs with at most 768
  * parameters through the real WASM sparse bundle for FINAL COVARIANCE
  * ONLY (all-entry dense Qxx reconstruction, existing precision/report
  * contract preserved). Correction stays TypeScript; no row-products
@@ -63,7 +63,7 @@ import {
 } from './adjustmentSparseAutoRoute';
 
 /** Conservative 3D coordinate-only parameter cap (Phase 10H corpus max). */
-export const NATIVE_FULL_QXX_MAX_PARAMS = 384;
+export const NATIVE_FULL_QXX_MAX_PARAMS = 768;
 
 /**
  * Internal kill switch, ENABLED by default (Phase 10M certification: verified
@@ -77,7 +77,7 @@ export const setNativeFullQxxRouteEnabled = (enabled: boolean): void => {
   nativeFullQxxEnabled = enabled;
 };
 
-/** Reports current kill-switch state (default enabled for the certified <=384 cohort). */
+/** Reports current kill-switch state (default enabled for the certified <=768 cohort). */
 export const isNativeFullQxxRouteEnabled = (): boolean => nativeFullQxxEnabled;
 
 /**
@@ -108,9 +108,15 @@ export interface NativeFullQxxEligibility {
  * Fail-closed eligibility in fixed gate order. Single-solve 3D
  * adjustment only; 2D/preanalysis/robust/multi-solve shapes stay on
  * their existing routes.
+ *
+ * Phase 11A diagnostic seam: `maxParams` defaults to the production cap
+ * and every production call site omits it. Evidence harnesses ONLY may
+ * pass a wider diagnostic value to study the verified route above the
+ * cap; production reachability above the production cap is never enabled.
  */
 export const deriveNativeFullQxxEligibility = (
   request: RunSessionRequest,
+  maxParams: number = NATIVE_FULL_QXX_MAX_PARAMS,
 ): NativeFullQxxEligibility => {
   const reasons: string[] = [];
   if (!nativeFullQxxEnabled) {
@@ -169,9 +175,9 @@ export const deriveNativeFullQxxEligibility = (
       reasons.push('unmeasurable parameter count (fail-closed)');
       return { eligible: false, reasons, numParams: null };
     }
-    if (numParams > NATIVE_FULL_QXX_MAX_PARAMS) {
+    if (numParams > maxParams) {
       reasons.push(
-        `parameter count ${numParams} exceeds native full-Qxx cap ${NATIVE_FULL_QXX_MAX_PARAMS} (fail-closed)`,
+        `parameter count ${numParams} exceeds native full-Qxx cap ${maxParams} (fail-closed)`,
       );
     }
     const preflight = evaluateSparseGeometryPreflight({
@@ -297,6 +303,13 @@ export class NativeFullQxxCaptureSolver implements SparseSelectedCovarianceSolve
   /** Optional diagnostic timing sink (default off; measurement-only). */
   readonly verificationTiming?: NativeFullQxxVerificationTiming;
 
+  /**
+   * Phase 11A diagnostic cap override for inline verification (default
+   * the production cap). Evidence harnesses ONLY may pass a wider value;
+   * production construction always omits it.
+   */
+  private readonly maxVerificationParams: number;
+
   /** Counts inline per-system verifications (double-verification audit). */
   inlineVerifications = 0;
 
@@ -309,9 +322,14 @@ export class NativeFullQxxCaptureSolver implements SparseSelectedCovarianceSolve
    */
   private readonly inlineEvidence: NativeFullQxxVerification[] = [];
 
-  constructor(delegate: SparseSelectedCovarianceSolver, verificationTiming?: NativeFullQxxVerificationTiming) {
+  constructor(
+    delegate: SparseSelectedCovarianceSolver,
+    verificationTiming?: NativeFullQxxVerificationTiming,
+    maxVerificationParams: number = NATIVE_FULL_QXX_MAX_PARAMS,
+  ) {
     this.delegate = delegate;
     this.verificationTiming = verificationTiming;
+    this.maxVerificationParams = maxVerificationParams;
   }
 
   querySelected(input: SparseSelectedCovarianceInput): SparseSelectedCovarianceResult {
@@ -354,7 +372,13 @@ export class NativeFullQxxCaptureSolver implements SparseSelectedCovarianceSolve
     // Verification happens before returning Qxx to the engine. This makes
     // verified provenance true when statistics reuse runs, rather than
     // accepting first and checking after downstream numerics already used it.
-    const verification = verifyNativeFullQxxSystems([captured], false, input.parameterCount, this.verificationTiming);
+    const verification = verifyNativeFullQxxSystems(
+      [captured],
+      false,
+      input.parameterCount,
+      this.verificationTiming,
+      this.maxVerificationParams,
+    );
     this.inlineVerifications += 1;
     this.inlineEvidence.push(verification);
     if (!verification.accepted) {
@@ -400,6 +424,7 @@ export const verifyNativeFullQxxSystems = (
   truncated: boolean,
   expectedNumParams: number | null,
   timing?: NativeFullQxxVerificationTiming,
+  maxParams: number = NATIVE_FULL_QXX_MAX_PARAMS,
 ): NativeFullQxxVerification => {
   const now = (): number => (timing ? performance.now() : 0);
   const routeStart = now();
@@ -426,8 +451,8 @@ export const verifyNativeFullQxxSystems = (
     const tag = `system ${index + 1}`;
     oracledSystemCount += 1;
     const n = system.parameterCount;
-    if (!Number.isInteger(n) || n <= 0 || n > NATIVE_FULL_QXX_MAX_PARAMS) {
-      reasons.push(`${tag}: parameter count ${n} outside 1..${NATIVE_FULL_QXX_MAX_PARAMS} (fail-closed)`);
+    if (!Number.isInteger(n) || n <= 0 || n > maxParams) {
+      reasons.push(`${tag}: parameter count ${n} outside 1..${maxParams} (fail-closed)`);
       return;
     }
     if (expectedNumParams != null && n !== expectedNumParams) {
@@ -489,7 +514,7 @@ export const verifyNativeFullQxxSystems = (
           observationEquationCount: system.observationEquationCount,
           parameterCount: n,
         },
-        NATIVE_FULL_QXX_MAX_PARAMS,
+        maxParams,
       );
     } catch (error) {
       const detail = error instanceof Error ? error.message : String(error);
@@ -500,7 +525,7 @@ export const verifyNativeFullQxxSystems = (
     let bounded;
     const queryBuildStart = now();
     try {
-      bounded = buildBoundedVerificationQueries(n, undefined, NATIVE_FULL_QXX_MAX_PARAMS);
+      bounded = buildBoundedVerificationQueries(n, undefined, maxParams);
     } catch (error) {
       const detail = error instanceof Error ? error.message : String(error);
       reasons.push(`${tag}: verification query build failed: ${detail}`.slice(0, 300));
@@ -508,7 +533,7 @@ export const verifyNativeFullQxxSystems = (
     }
     if (timing) timing.queryBuildMs += now() - queryBuildStart;
     const oracleProbeStart = now();
-    const oracle = probeSelectedCovariance(normal, bounded.rows, bounded.columns, NATIVE_FULL_QXX_MAX_PARAMS);
+    const oracle = probeSelectedCovariance(normal, bounded.rows, bounded.columns, maxParams);
     if (timing) {
       timing.oracleProbeMs += now() - oracleProbeStart;
       timing.factorizations += 1;
@@ -548,7 +573,7 @@ export const verifyNativeFullQxxSystems = (
       for (const reason of c1.reasons) reasons.push(`${tag} C1: ${reason}`);
     }
     const c2Start = now();
-    const c2 = evaluateSentinelC2(normal, bounded.rows, bounded.columns, nativeSample, undefined, NATIVE_FULL_QXX_MAX_PARAMS);
+    const c2 = evaluateSentinelC2(normal, bounded.rows, bounded.columns, nativeSample, undefined, maxParams);
     if (timing) timing.c2Ms += now() - c2Start;
     if (Number.isFinite(c2.maxResidual)) maxC2Residual = Math.max(maxC2Residual, c2.maxResidual);
     else maxC2Residual = Number.POSITIVE_INFINITY;
@@ -638,6 +663,7 @@ export const finalizeNativeFullQxxVerification = (
   truncated: boolean,
   expectedNumParams: number | null,
   timing?: NativeFullQxxVerificationTiming,
+  maxParams: number = NATIVE_FULL_QXX_MAX_PARAMS,
 ): NativeFullQxxVerification => {
   const start = timing ? performance.now() : 0;
   const finish = (): void => {
@@ -667,8 +693,8 @@ export const finalizeNativeFullQxxVerification = (
   systems.forEach((system, index) => {
     const tag = `system ${index + 1}`;
     const n = system.parameterCount;
-    if (!Number.isInteger(n) || n <= 0 || n > NATIVE_FULL_QXX_MAX_PARAMS) {
-      reasons.push(`${tag}: parameter count ${n} outside 1..${NATIVE_FULL_QXX_MAX_PARAMS} (fail-closed)`);
+    if (!Number.isInteger(n) || n <= 0 || n > maxParams) {
+      reasons.push(`${tag}: parameter count ${n} outside 1..${maxParams} (fail-closed)`);
       return;
     }
     if (expectedNumParams != null && n !== expectedNumParams) {
@@ -741,13 +767,19 @@ export interface NativeFullQxxAttempt {
  * Runs the request through the native full-Qxx route when eligible, else
  * plain TypeScript. Any failure reruns the original request with no
  * runtime, so the returned outcome is always a clean session result.
+ *
+ * Phase 11A diagnostic seam: `maxParams` defaults to the production cap
+ * and every production call site omits it. Evidence harnesses ONLY may
+ * pass a wider diagnostic value (e.g. 768); the threaded value flows
+ * through eligibility, capture-inline verification, and finalization.
  */
 export const runWithNativeFullQxxAutoRoute = async (
   request: RunSessionRequest,
   onProgress: RunSessionProgressCallback | undefined,
   deps: NativeFullQxxDeps,
+  maxParams: number = NATIVE_FULL_QXX_MAX_PARAMS,
 ): Promise<NativeFullQxxAttempt> => {
-  const eligibility = deriveNativeFullQxxEligibility(request);
+  const eligibility = deriveNativeFullQxxEligibility(request, maxParams);
   if (!eligibility.eligible) {
     return {
       outcome: deps.runSession(request, onProgress, undefined),
@@ -776,7 +808,7 @@ export const runWithNativeFullQxxAutoRoute = async (
   // TS-correction+native-Qxx attempt: no proven restart boundary exists).
   if (native3dCorrectionEnabled) {
     const correctionCapture = new SparseAutoRouteCaptureSolver(bundle.sparseCorrectionSolver);
-    const covarianceCapture = new NativeFullQxxCaptureSolver(bundle.sparseSelectedCovarianceSolver);
+    const covarianceCapture = new NativeFullQxxCaptureSolver(bundle.sparseSelectedCovarianceSolver, undefined, maxParams);
     const correctionRuntime: AdjustmentRuntime = {
       sparseCorrectionSolver: correctionCapture,
       sparseSelectedCovarianceSolver: covarianceCapture,
@@ -833,6 +865,8 @@ export const runWithNativeFullQxxAutoRoute = async (
       covarianceCapture.getInlineVerifications(),
       covarianceCapture.truncated,
       eligibility.numParams,
+      undefined,
+      maxParams,
     );
     correctionFallbackReasons.push(...covarianceVerification.reasons);
     if (correctionFallbackReasons.length > 0) {
@@ -851,7 +885,7 @@ export const runWithNativeFullQxxAutoRoute = async (
       nativeCorrectionCalls: correctionCapture.systems.length,
     };
   }
-  const capture = new NativeFullQxxCaptureSolver(bundle.sparseSelectedCovarianceSolver);
+  const capture = new NativeFullQxxCaptureSolver(bundle.sparseSelectedCovarianceSolver, undefined, maxParams);
   const runtime: AdjustmentRuntime = {
     sparseSelectedCovarianceSolver: capture,
     experimentalSparseDiagnostics: diagnostics,
@@ -900,6 +934,8 @@ export const runWithNativeFullQxxAutoRoute = async (
     capture.getInlineVerifications(),
     capture.truncated,
     eligibility.numParams,
+    undefined,
+    maxParams,
   );
   fallbackReasons.push(...verification.reasons);
   if (fallbackReasons.length > 0) {
