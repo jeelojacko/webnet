@@ -1,0 +1,1592 @@
+{
+ "phase": "10O",
+ "baseline": "8c2e3954",
+ "branch": "perf/3d-native-factorization-lifecycle",
+ "environment": {
+  "node": "v26.8.1",
+  "platform": "linux",
+  "arch": "x64"
+ },
+ "methodology": {
+  "measuredRuns": 5,
+  "warmupPerArm": 1,
+  "parityTol": 1e-06,
+  "fingerprint": "FNV-1a over param/eq counts + rowOffsets/columns/weight-structure (pattern) + quantized (1e-12) design/weight values (nValues, N-only) + misclosures where present (values) + rhs/norhs tag (full)",
+  "reuseLevels": "L0 dims-differ, L1 pattern-differs, L2 pattern-same/values-differ, L3 N-same/RHS-differs, L4 bit-identical",
+  "timingProxy": "selected-covariance native phase timings run diagnostically on captured correction systems (<=16 diagonal queries); correction ABI exposes no timings"
+ },
+ "productionContractChanged": false,
+ "correctionSwitchDefault": false,
+ "capParams": 384,
+ "fingerprintVerdicts": {
+  "iterPairs": {
+   "L0": 0,
+   "L1": 0,
+   "L2": 30,
+   "L3": 0,
+   "L4": 0
+  },
+  "iterPairVerdict": "L2 30/30 RHS-inclusive: pattern bit-identical across iterations, values differ every step (relinearization)",
+  "rhsOnlyIterPairs": 0,
+  "rhsOnlyVerdict": "0/30 iter pairs share N with changed RHS only: every iteration relinearizes N values, never an RHS-only update",
+  "lastToFinal": {
+   "L0": 0,
+   "L1": 0,
+   "L2": 2,
+   "L3": 8,
+   "L4": 0
+  },
+  "lastToFinalVerdict": "N-only hash: L3 8/10 (final N identical to last-correction N at 1e-12 quantization; solve-only reuse valid), L2 2/10 (gps-3d-64, gps-3d-112 relinearize N enough to differ)",
+  "hashCaveat": "L3 is N-equality at 1e-12 absolute quantization of packed design/weight values, not bitwise; a production reuse gate would need exact-bit or tolerance-proven comparison"
+ },
+ "reuseLevels": {
+  "L0": 0,
+  "L1": 0,
+  "L2": 32,
+  "L3": 8,
+  "L4": 0
+ },
+ "optionBOutcomes": {
+  "A": 0,
+  "B": 8,
+  "C": 2,
+  "D": 0,
+  "verdict": "B 8/10: same-N solve-only reuse valid for final-cov; C 2/10: symbolic-only"
+ },
+ "symbolicVsNumeric": {
+  "method": "selected-covariance native phase timings run diagnostically on the exact captured correction systems (<=16 diagonal queries); correction ABI exposes no timings",
+  "analyzeMsMedian": 0.0342,
+  "analyzeMsP25": 0.0191,
+  "analyzeMsP75": 0.0474,
+  "analyzeShareOfNativeTotalMedianPct": 29.4,
+  "analyze384PerCallMs": [
+   0.0538,
+   0.0539,
+   0.0546,
+   0.0551
+  ],
+  "finalAnalyze384Ms": 0.0591,
+  "verdict": "factorization reuse (even L3 solve-only) saves ~0.3ms of a ~142ms wall (~0.2%): negligible end-to-end; S3 ~38% dominates"
+ },
+ "prototype": {
+  "built": false,
+  "reason": "same-system reuse saves <0.5% end-to-end (<5% gate: L3 solve-only skips ~0.3ms analyze+factorize, S3 unchanged); SKIP with measured justification"
+ },
+ "fixedSystemBenchmarks": [
+  {
+   "id": "gps-3d-32",
+   "numParams": 96,
+   "endToEndWallMs": {
+    "p25": 15.42515000000003,
+    "median": 15.851517999999487,
+    "p75": 16.343387999999322,
+    "raw": [
+     16.364937000000282,
+     16.343387999999322,
+     15.851517999999487,
+     15.42515000000003,
+     14.948590999999396
+    ]
+   },
+   "correctionKernelPerRunMs": 0.26209919999982956,
+   "covarianceKernelPerRunMs": 0.3839090000001306
+  },
+  {
+   "id": "gps-3d-64",
+   "numParams": 192,
+   "endToEndWallMs": {
+    "p25": 40.145744999999806,
+    "median": 40.18628499999977,
+    "p75": 40.38045500000044,
+    "raw": [
+     40.145744999999806,
+     40.38045500000044,
+     39.36916700000074,
+     40.18628499999977,
+     40.64659399999982
+    ]
+   },
+   "correctionKernelPerRunMs": 0.4258568000004743,
+   "covarianceKernelPerRunMs": 1.463756000000285
+  },
+  {
+   "id": "gps-3d-85",
+   "numParams": 255,
+   "endToEndWallMs": {
+    "p25": 65.3940990000001,
+    "median": 68.61549999999988,
+    "p75": 69.23958000000039,
+    "raw": [
+     64.5708709999999,
+     71.88199199999963,
+     69.23958000000039,
+     68.61549999999988,
+     65.3940990000001
+    ]
+   },
+   "correctionKernelPerRunMs": 0.5431683999995585,
+   "covarianceKernelPerRunMs": 2.552399399999922
+  },
+  {
+   "id": "gps-3d-128",
+   "numParams": 384,
+   "endToEndWallMs": {
+    "p25": 145.8655289999997,
+    "median": 148.79023100000086,
+    "p75": 153.09339,
+    "raw": [
+     154.91197600000032,
+     145.28357999999935,
+     153.09339,
+     148.79023100000086,
+     145.8655289999997
+    ]
+   },
+   "correctionKernelPerRunMs": 0.7868258000000423,
+   "covarianceKernelPerRunMs": 6.112592399999994
+  }
+ ],
+ "abc384": {
+  "armAWallMs": {
+   "p25": 222.77169799999956,
+   "median": 227.1528959999996,
+   "p75": 231.42901500000062,
+   "raw": [
+    227.1528959999996,
+    222.77169799999956,
+    231.42901500000062,
+    219.94430499999999,
+    238.1443479999998
+   ]
+  },
+  "armBWallMs": {
+   "p25": 165.59211700000014,
+   "median": 168.65782899999977,
+   "p75": 170.4266749999997,
+   "raw": [
+    170.4266749999997,
+    165.59211700000014,
+    156.92591999999968,
+    168.65782899999977,
+    189.99763299999904
+   ]
+  },
+  "armCWallMs": {
+   "p25": 146.69119599999976,
+   "median": 151.31803500000024,
+   "p75": 151.96154200000092,
+   "raw": [
+    151.31803500000024,
+    146.69119599999976,
+    156.31207200000063,
+    151.96154200000092,
+    144.31097299999965
+   ]
+  },
+  "ratioCOverB": 0.8971895102479971,
+  "ratioCOverA": 0.6661505869597212
+ },
+ "s3LowerBound": {
+  "s3Oracle384Ms": 53.32,
+  "s3ShareOfCWallPct": 38,
+  "removableNativeDuplicationMs": 0.276,
+  "thisRun": {
+   "floor10NMs": 151.04,
+   "tenPctOver10MThresholdMs": 151.79,
+   "gapMs": -0.75,
+   "cOverB": 0.8972
+  },
+  "priorRun": {
+   "floor10NMs": 142.16,
+   "tenPctOver10MThresholdMs": 141.8,
+   "gapMs": 0.36,
+   "cOverB": 0.904
+  },
+  "committed10N": {
+   "cMedianMs": 153.21,
+   "bMedianMs": 161.01,
+   "cOverB": 0.952,
+   "floorGapMs": 8.0
+  },
+  "canReach10PctOver10M": false,
+  "verdict": "NO: per-run floor straddles the bar within +/-1ms (run-to-run B spread is +/-10ms) while the removable prize is 0.28ms; the committed 10N medians miss the bar by ~8ms. A robust >=10% win is impossible without S3 cost reduction \u2014 hence GATE B."
+ },
+ "memoryEstimateBytes": {
+  "96": {
+   "sparseNBytes": 6416,
+   "factorLBytes": 4172,
+   "permutationBytes": 384,
+   "scratchBytes": 4172,
+   "totalBytes": 15144
+  },
+  "192": {
+   "sparseNBytes": 12944,
+   "factorLBytes": 8396,
+   "permutationBytes": 768,
+   "scratchBytes": 8396,
+   "totalBytes": 30504
+  },
+  "255": {
+   "sparseNBytes": 17228,
+   "factorLBytes": 11168,
+   "permutationBytes": 1020,
+   "scratchBytes": 11168,
+   "totalBytes": 40584
+  },
+  "384": {
+   "sparseNBytes": 26000,
+   "factorLBytes": 16844,
+   "permutationBytes": 1536,
+   "scratchBytes": 16844,
+   "totalBytes": 61224
+  }
+ },
+ "memoryFormula": "sparseN = nnzN*8 + nnzN*4 + (n+1)*8; factorL = nnzL*8 + nnzL*4 + (n+1)*8; perm = n*4; scratch = factorL; total = sum (upper bound; Eigen scalars/indices)",
+ "handleSafety": "N/A: no prototype built (see prototype.reason)",
+ "prototypeParity": "N/A: no prototype built",
+ "browser": "NOT-RUN: no three-arm/fingerprint browser harness exists (committed driver scripts/phase10mBrowserEvidence.mjs is two-arm 10M production only); Node evidence uses the same real WASM kernels",
+ "gate": {
+  "decision": "B",
+  "meaning": "GATE A unmet (factorization-reuse line stops: prize ~0.2%); GATE B MET (S3 ~38% of wall is the structural blocker; no factorization change reaches a robust >=10% win) -> recommend bounded Phase 10P correction-verification boundary study: reduce/bound S3 dense-verify cost WITHOUT weakening S3 acceptance; correction stays default OFF, no prototype, production contract/routing/defaults unchanged"
+ },
+ "cases": [
+  {
+   "id": "gps-3d-cov-08",
+   "numParams": 24,
+   "iterations": 4,
+   "eqCounts": [
+    67,
+    67,
+    67,
+    67
+   ],
+   "finalEqCount": 67,
+   "iterFingerprints": [
+    {
+     "iteration": 0,
+     "pattern": "5e10b0cd",
+     "nValues": "17afd36b",
+     "values": "3b470e63"
+    },
+    {
+     "iteration": 1,
+     "pattern": "5e10b0cd",
+     "nValues": "1ba41190",
+     "values": "3407b898"
+    },
+    {
+     "iteration": 2,
+     "pattern": "5e10b0cd",
+     "nValues": "14c1a946",
+     "values": "bb006c2c"
+    },
+    {
+     "iteration": 3,
+     "pattern": "5e10b0cd",
+     "nValues": "53c2d890",
+     "values": "a05163ad"
+    }
+   ],
+   "finalFingerprint": {
+    "pattern": "5e10b0cd",
+    "nValues": "53c2d890",
+    "values": "53c2d890"
+   },
+   "iterPairs": [
+    "L2",
+    "L2",
+    "L2"
+   ],
+   "rhsOnlyPairs": 0,
+   "lastToFinal": "L3",
+   "optionB": "B",
+   "proxySplits": [
+    {
+     "iteration": 0,
+     "analyzeMs": 0.01479,
+     "factorizeMs": 0.00336,
+     "solveMs": 0.0115,
+     "assemblyMs": 0.00951,
+     "equilibrationMs": 0.00437,
+     "normalNnz": 110,
+     "factorNnz": 67,
+     "timingsPresent": true
+    },
+    {
+     "iteration": 1,
+     "analyzeMs": 0.01248,
+     "factorizeMs": 0.00294,
+     "solveMs": 0.01066,
+     "assemblyMs": 0.00804,
+     "equilibrationMs": 0.00389,
+     "normalNnz": 110,
+     "factorNnz": 67,
+     "timingsPresent": true
+    },
+    {
+     "iteration": 2,
+     "analyzeMs": 0.019149,
+     "factorizeMs": 0.00277,
+     "solveMs": 0.01028,
+     "assemblyMs": 0.00739,
+     "equilibrationMs": 0.00325,
+     "normalNnz": 110,
+     "factorNnz": 67,
+     "timingsPresent": true
+    },
+    {
+     "iteration": 3,
+     "analyzeMs": 0.01025,
+     "factorizeMs": 0.00262,
+     "solveMs": 0.0101,
+     "assemblyMs": 0.00747,
+     "equilibrationMs": 0.00341,
+     "normalNnz": 110,
+     "factorNnz": 67,
+     "timingsPresent": true
+    }
+   ],
+   "finalTimings": {
+    "assemblyMs": 0.00878,
+    "equilibrationMs": 0.00396,
+    "analyzeMs": 0.01299,
+    "factorizeMs": 0.00294,
+    "solveMs": 0.01675
+   },
+   "finalNnz": {
+    "normalNnz": 110,
+    "factorNnz": 67
+   },
+   "corrKernelWrapperMs": [
+    0.08505000000002383,
+    0.07144000000005235,
+    0.0692700000000741,
+    0.07231999999999061
+   ],
+   "covKernelWrapperMs": [
+    0.9033180000000129
+   ],
+   "endToEndWallMs": 8.265197999999941,
+   "s3ReverifyMs": {
+    "p25": 0.29464900000004945,
+    "median": 0.3260890000000245,
+    "p75": 0.3260890000000245,
+    "raw": [
+     0.3966889999999239,
+     0.3260890000000245,
+     0.29464900000004945
+    ]
+   },
+   "maxAbsDiffC": 0,
+   "nativeCorrectionCalls": 4,
+   "maxC1Diff": 2.117582368135751e-21,
+   "maxC2Residual": 8.881784197001252e-16,
+   "maxCorrectionDiff": 9.992007221626409e-16
+  },
+  {
+   "id": "gps-3d-16",
+   "numParams": 48,
+   "iterations": 4,
+   "eqCounts": [
+    131,
+    131,
+    131,
+    131
+   ],
+   "finalEqCount": 131,
+   "iterFingerprints": [
+    {
+     "iteration": 0,
+     "pattern": "e04c39b9",
+     "nValues": "8a32143b",
+     "values": "59200f26"
+    },
+    {
+     "iteration": 1,
+     "pattern": "e04c39b9",
+     "nValues": "2a540302",
+     "values": "8fb71598"
+    },
+    {
+     "iteration": 2,
+     "pattern": "e04c39b9",
+     "nValues": "230127ea",
+     "values": "a8ce2fee"
+    },
+    {
+     "iteration": 3,
+     "pattern": "e04c39b9",
+     "nValues": "13ffb3b5",
+     "values": "1de20919"
+    }
+   ],
+   "finalFingerprint": {
+    "pattern": "e04c39b9",
+    "nValues": "13ffb3b5",
+    "values": "13ffb3b5"
+   },
+   "iterPairs": [
+    "L2",
+    "L2",
+    "L2"
+   ],
+   "rhsOnlyPairs": 0,
+   "lastToFinal": "L3",
+   "optionB": "B",
+   "proxySplits": [
+    {
+     "iteration": 0,
+     "analyzeMs": 0.01835,
+     "factorizeMs": 0.00415,
+     "solveMs": 0.0236,
+     "assemblyMs": 0.01303,
+     "equilibrationMs": 0.0068,
+     "normalNnz": 230,
+     "factorNnz": 139,
+     "timingsPresent": true
+    },
+    {
+     "iteration": 1,
+     "analyzeMs": 0.0135,
+     "factorizeMs": 0.00354,
+     "solveMs": 0.01658,
+     "assemblyMs": 0.01344,
+     "equilibrationMs": 0.00633,
+     "normalNnz": 230,
+     "factorNnz": 139,
+     "timingsPresent": true
+    },
+    {
+     "iteration": 2,
+     "analyzeMs": 0.01118,
+     "factorizeMs": 0.00334,
+     "solveMs": 0.016039,
+     "assemblyMs": 0.0108,
+     "equilibrationMs": 0.00572,
+     "normalNnz": 230,
+     "factorNnz": 139,
+     "timingsPresent": true
+    },
+    {
+     "iteration": 3,
+     "analyzeMs": 0.01027,
+     "factorizeMs": 0.00325,
+     "solveMs": 0.01585,
+     "assemblyMs": 0.01086,
+     "equilibrationMs": 0.00569,
+     "normalNnz": 230,
+     "factorNnz": 139,
+     "timingsPresent": true
+    }
+   ],
+   "finalTimings": {
+    "assemblyMs": 0.01902,
+    "equilibrationMs": 0.00631,
+    "analyzeMs": 0.02071,
+    "factorizeMs": 0.00482,
+    "solveMs": 0.05205
+   },
+   "finalNnz": {
+    "normalNnz": 230,
+    "factorNnz": 139
+   },
+   "corrKernelWrapperMs": [
+    0.10325999999997748,
+    0.08384899999998652,
+    0.08132899999998244,
+    0.0717499999999518
+   ],
+   "covKernelWrapperMs": [
+    1.256966000000034
+   ],
+   "endToEndWallMs": 12.684997000000067,
+   "s3ReverifyMs": {
+    "p25": 1.7564350000000104,
+    "median": 1.7840959999999768,
+    "p75": 1.7840959999999768,
+    "raw": [
+     1.7840959999999768,
+     1.7564350000000104,
+     1.814975000000004
+    ]
+   },
+   "maxAbsDiffC": 0,
+   "nativeCorrectionCalls": 4,
+   "maxC1Diff": 2.964615315390051e-21,
+   "maxC2Residual": 3.1086244689504383e-15,
+   "maxCorrectionDiff": 6.661338147750939e-16
+  },
+  {
+   "id": "gps-3d-32",
+   "numParams": 96,
+   "iterations": 4,
+   "eqCounts": [
+    259,
+    259,
+    259,
+    259
+   ],
+   "finalEqCount": 259,
+   "iterFingerprints": [
+    {
+     "iteration": 0,
+     "pattern": "d9b856a5",
+     "nValues": "0a8bc6c3",
+     "values": "b1bfcf36"
+    },
+    {
+     "iteration": 1,
+     "pattern": "d9b856a5",
+     "nValues": "60d131a4",
+     "values": "87bd9b70"
+    },
+    {
+     "iteration": 2,
+     "pattern": "d9b856a5",
+     "nValues": "13e466ee",
+     "values": "4f66b974"
+    },
+    {
+     "iteration": 3,
+     "pattern": "d9b856a5",
+     "nValues": "f01d8018",
+     "values": "2233ccff"
+    }
+   ],
+   "finalFingerprint": {
+    "pattern": "d9b856a5",
+    "nValues": "f01d8018",
+    "values": "f01d8018"
+   },
+   "iterPairs": [
+    "L2",
+    "L2",
+    "L2"
+   ],
+   "rhsOnlyPairs": 0,
+   "lastToFinal": "L3",
+   "optionB": "B",
+   "proxySplits": [
+    {
+     "iteration": 0,
+     "analyzeMs": 0.02251,
+     "factorizeMs": 0.00668,
+     "solveMs": 0.028389,
+     "assemblyMs": 0.01575,
+     "equilibrationMs": 0.00718,
+     "normalNnz": 470,
+     "factorNnz": 283,
+     "timingsPresent": true
+    },
+    {
+     "iteration": 1,
+     "analyzeMs": 0.01924,
+     "factorizeMs": 0.00627,
+     "solveMs": 0.02535,
+     "assemblyMs": 0.01218,
+     "equilibrationMs": 0.00646,
+     "normalNnz": 470,
+     "factorNnz": 283,
+     "timingsPresent": true
+    },
+    {
+     "iteration": 2,
+     "analyzeMs": 0.01813,
+     "factorizeMs": 0.00598,
+     "solveMs": 0.02027,
+     "assemblyMs": 0.01189,
+     "equilibrationMs": 0.00616,
+     "normalNnz": 470,
+     "factorNnz": 283,
+     "timingsPresent": true
+    },
+    {
+     "iteration": 3,
+     "analyzeMs": 0.01709,
+     "factorizeMs": 0.00602,
+     "solveMs": 0.02008,
+     "assemblyMs": 0.012,
+     "equilibrationMs": 0.00591,
+     "normalNnz": 470,
+     "factorNnz": 283,
+     "timingsPresent": true
+    }
+   ],
+   "finalTimings": {
+    "assemblyMs": 0.01362,
+    "equilibrationMs": 0.0068,
+    "analyzeMs": 0.02012,
+    "factorizeMs": 0.00622,
+    "solveMs": 0.167879
+   },
+   "finalNnz": {
+    "normalNnz": 470,
+    "factorNnz": 283
+   },
+   "corrKernelWrapperMs": [
+    0.08716899999990346,
+    0.09491000000002714,
+    0.07821899999999005,
+    0.09435000000007676
+   ],
+   "covKernelWrapperMs": [
+    2.9704430000001594
+   ],
+   "endToEndWallMs": 19.908357999999907,
+   "s3ReverifyMs": {
+    "p25": 3.0031819999999243,
+    "median": 3.009702000000061,
+    "p75": 3.009702000000061,
+    "raw": [
+     3.009702000000061,
+     3.5437809999998535,
+     3.0031819999999243
+    ]
+   },
+   "maxAbsDiffC": 0,
+   "nativeCorrectionCalls": 4,
+   "maxC1Diff": 1.2281977735187355e-20,
+   "maxC2Residual": 3.552713678800501e-15,
+   "maxCorrectionDiff": 8.326672684688674e-16
+  },
+  {
+   "id": "gps-3d-48",
+   "numParams": 144,
+   "iterations": 4,
+   "eqCounts": [
+    387,
+    387,
+    387,
+    387
+   ],
+   "finalEqCount": 387,
+   "iterFingerprints": [
+    {
+     "iteration": 0,
+     "pattern": "8e30f617",
+     "nValues": "493f2c22",
+     "values": "85a510f3"
+    },
+    {
+     "iteration": 1,
+     "pattern": "8e30f617",
+     "nValues": "912efe3a",
+     "values": "ab5716c4"
+    },
+    {
+     "iteration": 2,
+     "pattern": "8e30f617",
+     "nValues": "b63ad697",
+     "values": "12f8cb35"
+    },
+    {
+     "iteration": 3,
+     "pattern": "8e30f617",
+     "nValues": "a1881b0e",
+     "values": "3523fe0c"
+    }
+   ],
+   "finalFingerprint": {
+    "pattern": "8e30f617",
+    "nValues": "a1881b0e",
+    "values": "a1881b0e"
+   },
+   "iterPairs": [
+    "L2",
+    "L2",
+    "L2"
+   ],
+   "rhsOnlyPairs": 0,
+   "lastToFinal": "L3",
+   "optionB": "B",
+   "proxySplits": [
+    {
+     "iteration": 0,
+     "analyzeMs": 0.02773,
+     "factorizeMs": 0.00644,
+     "solveMs": 0.03064,
+     "assemblyMs": 0.02755,
+     "equilibrationMs": 0.00806,
+     "normalNnz": 710,
+     "factorNnz": 427,
+     "timingsPresent": true
+    },
+    {
+     "iteration": 1,
+     "analyzeMs": 0.02386,
+     "factorizeMs": 0.006099,
+     "solveMs": 0.02925,
+     "assemblyMs": 0.01764,
+     "equilibrationMs": 0.00698,
+     "normalNnz": 710,
+     "factorNnz": 427,
+     "timingsPresent": true
+    },
+    {
+     "iteration": 2,
+     "analyzeMs": 0.02197,
+     "factorizeMs": 0.00585,
+     "solveMs": 0.0291,
+     "assemblyMs": 0.01839,
+     "equilibrationMs": 0.00677,
+     "normalNnz": 710,
+     "factorNnz": 427,
+     "timingsPresent": true
+    },
+    {
+     "iteration": 3,
+     "analyzeMs": 0.02177,
+     "factorizeMs": 0.00588,
+     "solveMs": 0.03554,
+     "assemblyMs": 0.01784,
+     "equilibrationMs": 0.0066,
+     "normalNnz": 710,
+     "factorNnz": 427,
+     "timingsPresent": true
+    }
+   ],
+   "finalTimings": {
+    "assemblyMs": 0.02068,
+    "equilibrationMs": 0.01527,
+    "analyzeMs": 0.02506,
+    "factorizeMs": 0.00624,
+    "solveMs": 0.31861
+   },
+   "finalNnz": {
+    "normalNnz": 710,
+    "factorNnz": 427
+   },
+   "corrKernelWrapperMs": [
+    0.12406000000009954,
+    0.1030399999999645,
+    0.09912000000008447,
+    0.1160299999999097
+   ],
+   "covKernelWrapperMs": [
+    5.341916000000083
+   ],
+   "endToEndWallMs": 31.661836999999878,
+   "s3ReverifyMs": {
+    "p25": 6.617432000000008,
+    "median": 6.685432999999875,
+    "p75": 6.685432999999875,
+    "raw": [
+     7.17743100000007,
+     6.685432999999875,
+     6.617432000000008
+    ]
+   },
+   "maxAbsDiffC": 0,
+   "nativeCorrectionCalls": 4,
+   "maxC1Diff": 2.159934015498466e-20,
+   "maxC2Residual": 5.329070518200751e-15,
+   "maxCorrectionDiff": 2.609024107869118e-15
+  },
+  {
+   "id": "gps-3d-64",
+   "numParams": 192,
+   "iterations": 4,
+   "eqCounts": [
+    515,
+    515,
+    515,
+    515
+   ],
+   "finalEqCount": 515,
+   "iterFingerprints": [
+    {
+     "iteration": 0,
+     "pattern": "cbdbe290",
+     "nValues": "f9eaa1fc",
+     "values": "e67021ab"
+    },
+    {
+     "iteration": 1,
+     "pattern": "cbdbe290",
+     "nValues": "5a4789f7",
+     "values": "6567722f"
+    },
+    {
+     "iteration": 2,
+     "pattern": "cbdbe290",
+     "nValues": "a620cc88",
+     "values": "82f66b3a"
+    },
+    {
+     "iteration": 3,
+     "pattern": "cbdbe290",
+     "nValues": "986d9bd4",
+     "values": "d4e22d9b"
+    }
+   ],
+   "finalFingerprint": {
+    "pattern": "cbdbe290",
+    "nValues": "2613eb7d",
+    "values": "2613eb7d"
+   },
+   "iterPairs": [
+    "L2",
+    "L2",
+    "L2"
+   ],
+   "rhsOnlyPairs": 0,
+   "lastToFinal": "L2",
+   "optionB": "C",
+   "proxySplits": [
+    {
+     "iteration": 0,
+     "analyzeMs": 0.03416,
+     "factorizeMs": 0.00819,
+     "solveMs": 0.03659,
+     "assemblyMs": 0.02778,
+     "equilibrationMs": 0.00962,
+     "normalNnz": 950,
+     "factorNnz": 571,
+     "timingsPresent": true
+    },
+    {
+     "iteration": 1,
+     "analyzeMs": 0.03028,
+     "factorizeMs": 0.00771,
+     "solveMs": 0.030229,
+     "assemblyMs": 0.03002,
+     "equilibrationMs": 0.00886,
+     "normalNnz": 950,
+     "factorNnz": 571,
+     "timingsPresent": true
+    },
+    {
+     "iteration": 2,
+     "analyzeMs": 0.02863,
+     "factorizeMs": 0.00749,
+     "solveMs": 0.03004,
+     "assemblyMs": 0.02355,
+     "equilibrationMs": 0.00841,
+     "normalNnz": 950,
+     "factorNnz": 571,
+     "timingsPresent": true
+    },
+    {
+     "iteration": 3,
+     "analyzeMs": 0.02817,
+     "factorizeMs": 0.0074,
+     "solveMs": 0.03006,
+     "assemblyMs": 0.02401,
+     "equilibrationMs": 0.00837,
+     "normalNnz": 950,
+     "factorNnz": 571,
+     "timingsPresent": true
+    }
+   ],
+   "finalTimings": {
+    "assemblyMs": 0.02591,
+    "equilibrationMs": 0.0095,
+    "analyzeMs": 0.03108,
+    "factorizeMs": 0.00805,
+    "solveMs": 0.451549
+   },
+   "finalNnz": {
+    "normalNnz": 950,
+    "factorNnz": 571
+   },
+   "corrKernelWrapperMs": [
+    0.1364299999997911,
+    0.12022999999999229,
+    0.12847000000010667,
+    0.11515899999994872
+   ],
+   "covKernelWrapperMs": [
+    9.44130499999983
+   ],
+   "endToEndWallMs": 52.824702000000116,
+   "s3ReverifyMs": {
+    "p25": 11.041121000000203,
+    "median": 11.326321000000007,
+    "p75": 11.326321000000007,
+    "raw": [
+     11.641479000000118,
+     11.326321000000007,
+     11.041121000000203
+    ]
+   },
+   "maxAbsDiffC": 0,
+   "nativeCorrectionCalls": 4,
+   "maxC1Diff": 1.9905274260476058e-20,
+   "maxC2Residual": 7.105427357601002e-15,
+   "maxCorrectionDiff": 1.609823385706477e-15
+  },
+  {
+   "id": "gps-3d-85",
+   "numParams": 255,
+   "iterations": 4,
+   "eqCounts": [
+    683,
+    683,
+    683,
+    683
+   ],
+   "finalEqCount": 683,
+   "iterFingerprints": [
+    {
+     "iteration": 0,
+     "pattern": "9c909599",
+     "nValues": "b1dd2c4a",
+     "values": "29855cdd"
+    },
+    {
+     "iteration": 1,
+     "pattern": "9c909599",
+     "nValues": "ab6e0bb1",
+     "values": "fe890208"
+    },
+    {
+     "iteration": 2,
+     "pattern": "9c909599",
+     "nValues": "0dde8d02",
+     "values": "424e068f"
+    },
+    {
+     "iteration": 3,
+     "pattern": "9c909599",
+     "nValues": "72554674",
+     "values": "47639fd2"
+    }
+   ],
+   "finalFingerprint": {
+    "pattern": "9c909599",
+    "nValues": "72554674",
+    "values": "72554674"
+   },
+   "iterPairs": [
+    "L2",
+    "L2",
+    "L2"
+   ],
+   "rhsOnlyPairs": 0,
+   "lastToFinal": "L3",
+   "optionB": "B",
+   "proxySplits": [
+    {
+     "iteration": 0,
+     "analyzeMs": 0.04242,
+     "factorizeMs": 0.01062,
+     "solveMs": 0.04067,
+     "assemblyMs": 0.04849,
+     "equilibrationMs": 0.01339,
+     "normalNnz": 1265,
+     "factorNnz": 760,
+     "timingsPresent": true
+    },
+    {
+     "iteration": 1,
+     "analyzeMs": 0.03847,
+     "factorizeMs": 0.01008,
+     "solveMs": 0.03952,
+     "assemblyMs": 0.03006,
+     "equilibrationMs": 0.0111,
+     "normalNnz": 1265,
+     "factorNnz": 760,
+     "timingsPresent": true
+    },
+    {
+     "iteration": 2,
+     "analyzeMs": 0.03696,
+     "factorizeMs": 0.00975,
+     "solveMs": 0.03945,
+     "assemblyMs": 0.031139,
+     "equilibrationMs": 0.01077,
+     "normalNnz": 1265,
+     "factorNnz": 760,
+     "timingsPresent": true
+    },
+    {
+     "iteration": 3,
+     "analyzeMs": 0.03671,
+     "factorizeMs": 0.00985,
+     "solveMs": 0.04066,
+     "assemblyMs": 0.03118,
+     "equilibrationMs": 0.01071,
+     "normalNnz": 1265,
+     "factorNnz": 760,
+     "timingsPresent": true
+    }
+   ],
+   "finalTimings": {
+    "assemblyMs": 0.03344,
+    "equilibrationMs": 0.01166,
+    "analyzeMs": 0.04045,
+    "factorizeMs": 0.01024,
+    "solveMs": 0.775187
+   },
+   "finalNnz": {
+    "normalNnz": 1265,
+    "factorNnz": 760
+   },
+   "corrKernelWrapperMs": [
+    0.1595389999999952,
+    0.1407890000000407,
+    0.13810000000012224,
+    0.1534999999998945
+   ],
+   "covKernelWrapperMs": [
+    16.35252800000012
+   ],
+   "endToEndWallMs": 89.96244499999989,
+   "s3ReverifyMs": {
+    "p25": 21.00383499999998,
+    "median": 21.406384000000116,
+    "p75": 21.406384000000116,
+    "raw": [
+     21.406384000000116,
+     21.00383499999998,
+     21.627943999999843
+    ]
+   },
+   "maxAbsDiffC": 0,
+   "nativeCorrectionCalls": 4,
+   "maxC1Diff": 4.2351647362715017e-20,
+   "maxC2Residual": 6.217248937900877e-15,
+   "maxCorrectionDiff": 5.627442956068762e-15
+  },
+  {
+   "id": "gps-3d-96",
+   "numParams": 288,
+   "iterations": 4,
+   "eqCounts": [
+    771,
+    771,
+    771,
+    771
+   ],
+   "finalEqCount": 771,
+   "iterFingerprints": [
+    {
+     "iteration": 0,
+     "pattern": "a930f9c9",
+     "nValues": "198c9caa",
+     "values": "aed719e9"
+    },
+    {
+     "iteration": 1,
+     "pattern": "a930f9c9",
+     "nValues": "739e744d",
+     "values": "f56cbf23"
+    },
+    {
+     "iteration": 2,
+     "pattern": "a930f9c9",
+     "nValues": "3358836c",
+     "values": "a76d01f5"
+    },
+    {
+     "iteration": 3,
+     "pattern": "a930f9c9",
+     "nValues": "3d7a4500",
+     "values": "b1238fa8"
+    }
+   ],
+   "finalFingerprint": {
+    "pattern": "a930f9c9",
+    "nValues": "3d7a4500",
+    "values": "3d7a4500"
+   },
+   "iterPairs": [
+    "L2",
+    "L2",
+    "L2"
+   ],
+   "rhsOnlyPairs": 0,
+   "lastToFinal": "L3",
+   "optionB": "B",
+   "proxySplits": [
+    {
+     "iteration": 0,
+     "analyzeMs": 0.04529,
+     "factorizeMs": 0.01167,
+     "solveMs": 0.04643,
+     "assemblyMs": 0.04017,
+     "equilibrationMs": 0.01387,
+     "normalNnz": 1430,
+     "factorNnz": 859,
+     "timingsPresent": true
+    },
+    {
+     "iteration": 1,
+     "analyzeMs": 0.041619,
+     "factorizeMs": 0.01109,
+     "solveMs": 0.04424,
+     "assemblyMs": 0.03599,
+     "equilibrationMs": 0.01271,
+     "normalNnz": 1430,
+     "factorNnz": 859,
+     "timingsPresent": true
+    },
+    {
+     "iteration": 2,
+     "analyzeMs": 0.04053,
+     "factorizeMs": 0.01096,
+     "solveMs": 0.0476,
+     "assemblyMs": 0.03547,
+     "equilibrationMs": 0.01234,
+     "normalNnz": 1430,
+     "factorNnz": 859,
+     "timingsPresent": true
+    },
+    {
+     "iteration": 3,
+     "analyzeMs": 0.04004,
+     "factorizeMs": 0.01097,
+     "solveMs": 0.044249,
+     "assemblyMs": 0.03463,
+     "equilibrationMs": 0.01219,
+     "normalNnz": 1430,
+     "factorNnz": 859,
+     "timingsPresent": true
+    }
+   ],
+   "finalTimings": {
+    "assemblyMs": 0.03643,
+    "equilibrationMs": 0.013,
+    "analyzeMs": 0.04363,
+    "factorizeMs": 0.01135,
+    "solveMs": 0.981868
+   },
+   "finalNnz": {
+    "normalNnz": 1430,
+    "factorNnz": 859
+   },
+   "corrKernelWrapperMs": [
+    0.1738999999997759,
+    0.15183900000010908,
+    0.1486800000002404,
+    0.15480999999999767
+   ],
+   "covKernelWrapperMs": [
+    19.81371799999988
+   ],
+   "endToEndWallMs": 106.56483200000002,
+   "s3ReverifyMs": {
+    "p25": 28.23366699999997,
+    "median": 28.483164999999644,
+    "p75": 28.483164999999644,
+    "raw": [
+     29.512653000000228,
+     28.23366699999997,
+     28.483164999999644
+    ]
+   },
+   "maxAbsDiffC": 0,
+   "nativeCorrectionCalls": 4,
+   "maxC1Diff": 3.3034284942917713e-20,
+   "maxC2Residual": 6.217248937900877e-15,
+   "maxCorrectionDiff": 3.3584246494910985e-15
+  },
+  {
+   "id": "gps-3d-112",
+   "numParams": 336,
+   "iterations": 4,
+   "eqCounts": [
+    899,
+    899,
+    899,
+    899
+   ],
+   "finalEqCount": 899,
+   "iterFingerprints": [
+    {
+     "iteration": 0,
+     "pattern": "54ad22f9",
+     "nValues": "7ab22a6d",
+     "values": "5be64455"
+    },
+    {
+     "iteration": 1,
+     "pattern": "54ad22f9",
+     "nValues": "bb7abede",
+     "values": "b9f1266b"
+    },
+    {
+     "iteration": 2,
+     "pattern": "54ad22f9",
+     "nValues": "899aa249",
+     "values": "b7eab3e7"
+    },
+    {
+     "iteration": 3,
+     "pattern": "54ad22f9",
+     "nValues": "b254d703",
+     "values": "5d623165"
+    }
+   ],
+   "finalFingerprint": {
+    "pattern": "54ad22f9",
+    "nValues": "1cc31735",
+    "values": "1cc31735"
+   },
+   "iterPairs": [
+    "L2",
+    "L2",
+    "L2"
+   ],
+   "rhsOnlyPairs": 0,
+   "lastToFinal": "L2",
+   "optionB": "C",
+   "proxySplits": [
+    {
+     "iteration": 0,
+     "analyzeMs": 0.05266,
+     "factorizeMs": 0.01344,
+     "solveMs": 0.05285,
+     "assemblyMs": 0.04629,
+     "equilibrationMs": 0.015989,
+     "normalNnz": 1670,
+     "factorNnz": 1003,
+     "timingsPresent": true
+    },
+    {
+     "iteration": 1,
+     "analyzeMs": 0.04875,
+     "factorizeMs": 0.01292,
+     "solveMs": 0.05173,
+     "assemblyMs": 0.04115,
+     "equilibrationMs": 0.01456,
+     "normalNnz": 1670,
+     "factorNnz": 1003,
+     "timingsPresent": true
+    },
+    {
+     "iteration": 2,
+     "analyzeMs": 0.04697,
+     "factorizeMs": 0.01293,
+     "solveMs": 0.05156,
+     "assemblyMs": 0.041459,
+     "equilibrationMs": 0.01413,
+     "normalNnz": 1670,
+     "factorNnz": 1003,
+     "timingsPresent": true
+    },
+    {
+     "iteration": 3,
+     "analyzeMs": 0.04736,
+     "factorizeMs": 0.01281,
+     "solveMs": 0.05155,
+     "assemblyMs": 0.04042,
+     "equilibrationMs": 0.01421,
+     "normalNnz": 1670,
+     "factorNnz": 1003,
+     "timingsPresent": true
+    }
+   ],
+   "finalTimings": {
+    "assemblyMs": 0.047369,
+    "equilibrationMs": 0.01506,
+    "analyzeMs": 0.05127,
+    "factorizeMs": 0.01323,
+    "solveMs": 1.336467
+   },
+   "finalNnz": {
+    "normalNnz": 1670,
+    "factorNnz": 1003
+   },
+   "corrKernelWrapperMs": [
+    0.20578900000009526,
+    0.17338899999958812,
+    0.1865389999998115,
+    0.1696700000002238
+   ],
+   "covKernelWrapperMs": [
+    29.00002399999994
+   ],
+   "endToEndWallMs": 137.448891,
+   "s3ReverifyMs": {
+    "p25": 41.61267100000032,
+    "median": 41.69504199999983,
+    "p75": 41.69504199999983,
+    "raw": [
+     42.556768000000375,
+     41.69504199999983,
+     41.61267100000032
+    ]
+   },
+   "maxAbsDiffC": 0,
+   "nativeCorrectionCalls": 4,
+   "maxC1Diff": 1.1604351377383915e-19,
+   "maxC2Residual": 1.0658141036401503e-14,
+   "maxCorrectionDiff": 5.10702591327572e-15
+  },
+  {
+   "id": "gps-3d-128",
+   "numParams": 384,
+   "iterations": 4,
+   "eqCounts": [
+    1027,
+    1027,
+    1027,
+    1027
+   ],
+   "finalEqCount": 1027,
+   "iterFingerprints": [
+    {
+     "iteration": 0,
+     "pattern": "bb448592",
+     "nValues": "41b6cf02",
+     "values": "4b263ae1"
+    },
+    {
+     "iteration": 1,
+     "pattern": "bb448592",
+     "nValues": "d48e7c99",
+     "values": "f16b0225"
+    },
+    {
+     "iteration": 2,
+     "pattern": "bb448592",
+     "nValues": "0d55566e",
+     "values": "dc9520ad"
+    },
+    {
+     "iteration": 3,
+     "pattern": "bb448592",
+     "nValues": "019e3b76",
+     "values": "241c4c11"
+    }
+   ],
+   "finalFingerprint": {
+    "pattern": "bb448592",
+    "nValues": "019e3b76",
+    "values": "019e3b76"
+   },
+   "iterPairs": [
+    "L2",
+    "L2",
+    "L2"
+   ],
+   "rhsOnlyPairs": 0,
+   "lastToFinal": "L3",
+   "optionB": "B",
+   "proxySplits": [
+    {
+     "iteration": 0,
+     "analyzeMs": 0.05994,
+     "factorizeMs": 0.01524,
+     "solveMs": 0.0599,
+     "assemblyMs": 0.05154,
+     "equilibrationMs": 0.01792,
+     "normalNnz": 1910,
+     "factorNnz": 1147,
+     "timingsPresent": true
+    },
+    {
+     "iteration": 1,
+     "analyzeMs": 0.055139,
+     "factorizeMs": 0.01487,
+     "solveMs": 0.05896,
+     "assemblyMs": 0.04716,
+     "equilibrationMs": 0.01721,
+     "normalNnz": 1910,
+     "factorNnz": 1147,
+     "timingsPresent": true
+    },
+    {
+     "iteration": 2,
+     "analyzeMs": 0.0546,
+     "factorizeMs": 0.01449,
+     "solveMs": 0.238039,
+     "assemblyMs": 0.04697,
+     "equilibrationMs": 0.01622,
+     "normalNnz": 1910,
+     "factorNnz": 1147,
+     "timingsPresent": true
+    },
+    {
+     "iteration": 3,
+     "analyzeMs": 0.06147,
+     "factorizeMs": 0.0149,
+     "solveMs": 0.05934,
+     "assemblyMs": 0.04715,
+     "equilibrationMs": 0.0168,
+     "normalNnz": 1910,
+     "factorNnz": 1147,
+     "timingsPresent": true
+    }
+   ],
+   "finalTimings": {
+    "assemblyMs": 0.04846,
+    "equilibrationMs": 0.01751,
+    "analyzeMs": 0.05736,
+    "factorizeMs": 0.01514,
+    "solveMs": 1.753516
+   },
+   "finalNnz": {
+    "normalNnz": 1910,
+    "factorNnz": 1147
+   },
+   "corrKernelWrapperMs": [
+    0.22179999999980282,
+    0.19248899999956848,
+    0.196849999999813,
+    0.18975000000000364
+   ],
+   "covKernelWrapperMs": [
+    40.27329500000042
+   ],
+   "endToEndWallMs": 186.14094399999976,
+   "s3ReverifyMs": {
+    "p25": 57.98666800000001,
+    "median": 57.99669899999981,
+    "p75": 57.99669899999981,
+    "raw": [
+     58.836906,
+     57.98666800000001,
+     57.99669899999981
+    ]
+   },
+   "maxAbsDiffC": 0,
+   "nativeCorrectionCalls": 4,
+   "maxC1Diff": 3.134021904840911e-20,
+   "maxC2Residual": 8.881784197001252e-15,
+   "maxCorrectionDiff": 3.9968028886505635e-15
+  },
+  {
+   "id": "gps-3d-128-altseed",
+   "numParams": 384,
+   "iterations": 4,
+   "eqCounts": [
+    1027,
+    1027,
+    1027,
+    1027
+   ],
+   "finalEqCount": 1027,
+   "iterFingerprints": [
+    {
+     "iteration": 0,
+     "pattern": "bb448592",
+     "nValues": "144d701c",
+     "values": "fa142fac"
+    },
+    {
+     "iteration": 1,
+     "pattern": "bb448592",
+     "nValues": "aeaeb857",
+     "values": "ff9055df"
+    },
+    {
+     "iteration": 2,
+     "pattern": "bb448592",
+     "nValues": "d63d8f33",
+     "values": "9277766e"
+    },
+    {
+     "iteration": 3,
+     "pattern": "bb448592",
+     "nValues": "43e352c8",
+     "values": "99e7f83c"
+    }
+   ],
+   "finalFingerprint": {
+    "pattern": "bb448592",
+    "nValues": "43e352c8",
+    "values": "43e352c8"
+   },
+   "iterPairs": [
+    "L2",
+    "L2",
+    "L2"
+   ],
+   "rhsOnlyPairs": 0,
+   "lastToFinal": "L3",
+   "optionB": "B",
+   "proxySplits": [
+    {
+     "iteration": 0,
+     "analyzeMs": 0.05923,
+     "factorizeMs": 0.01508,
+     "solveMs": 0.05983,
+     "assemblyMs": 0.05086,
+     "equilibrationMs": 0.01793,
+     "normalNnz": 1910,
+     "factorNnz": 1147,
+     "timingsPresent": true
+    },
+    {
+     "iteration": 1,
+     "analyzeMs": 0.05571,
+     "factorizeMs": 0.01461,
+     "solveMs": 0.05873,
+     "assemblyMs": 0.04671,
+     "equilibrationMs": 0.01656,
+     "normalNnz": 1910,
+     "factorNnz": 1147,
+     "timingsPresent": true
+    },
+    {
+     "iteration": 2,
+     "analyzeMs": 0.05383,
+     "factorizeMs": 0.01448,
+     "solveMs": 0.058929,
+     "assemblyMs": 0.0451,
+     "equilibrationMs": 0.01625,
+     "normalNnz": 1910,
+     "factorNnz": 1147,
+     "timingsPresent": true
+    },
+    {
+     "iteration": 3,
+     "analyzeMs": 0.05387,
+     "factorizeMs": 0.01447,
+     "solveMs": 0.05877,
+     "assemblyMs": 0.04802,
+     "equilibrationMs": 0.01618,
+     "normalNnz": 1910,
+     "factorNnz": 1147,
+     "timingsPresent": true
+    }
+   ],
+   "finalTimings": {
+    "assemblyMs": 0.04868,
+    "equilibrationMs": 0.017209,
+    "analyzeMs": 0.05687,
+    "factorizeMs": 0.01486,
+    "solveMs": 1.746796
+   },
+   "finalNnz": {
+    "normalNnz": 1910,
+    "factorNnz": 1147
+   },
+   "corrKernelWrapperMs": [
+    0.217319000000316,
+    0.19599900000048365,
+    0.19644900000002963,
+    0.1899089999997159
+   ],
+   "covKernelWrapperMs": [
+    41.40960199999972
+   ],
+   "endToEndWallMs": 185.89238399999977,
+   "s3ReverifyMs": {
+    "p25": 59.69128400000045,
+    "median": 60.19356299999981,
+    "p75": 60.19356299999981,
+    "raw": [
+     60.19356299999981,
+     59.69128400000045,
+     68.14073199999984
+    ]
+   },
+   "maxAbsDiffC": 0,
+   "nativeCorrectionCalls": 4,
+   "maxC1Diff": 3.8116482626443515e-20,
+   "maxC2Residual": 7.105427357601002e-15,
+   "maxCorrectionDiff": 7.882583474838611e-15
+  }
+ ],
+ "files": [
+  "tests/evidence/phase10o_factorization_lifecycle.test.ts",
+  "scripts/testTiers.ts",
+  "scripts/runEvidence.mjs",
+  "docs/TEST_TIERS.md",
+  "reports/performance/phase10o-factorization-lifecycle.json",
+  "reports/performance/phase10o-factorization-lifecycle.md"
+ ]
+}

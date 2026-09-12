@@ -64,6 +64,7 @@ const SUITES = {
   phase10l: ['tests/evidence/phase10l_verification_reuse_performance.test.ts'],
   phase10m: ['tests/evidence/phase10m_correction_stage_audit.test.ts', 'tests/evidence/phase10m_fallback_gap.test.ts', 'tests/evidence/phase10m_node_measurement.test.ts', 'tests/evidence/phase10m_toggle_smoke.test.ts'],
   phase10n: ['tests/evidence/phase10n_native_correction_evidence.test.ts'],
+  phase10o: ['tests/evidence/phase10o_factorization_lifecycle.test.ts'],
 };
 
 const suite = process.argv[2] ?? 'all';
