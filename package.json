@@ -23,6 +23,7 @@
     "wasm:browser:smoke": "node scripts/wasmBrowserSmoke.mjs",
     "smoke:phase7c:dist": "node scripts/phase7cDistWasmSmoke.mjs",
     "phase7d:release-report": "tsx scripts/phase7dReleaseReport.ts",
+    "gnss:gvx-evidence": "tsx scripts/gnss/gvxEvidence.ts",
     "phase9a:assemble-report": "tsx scripts/phase9a/phase9aAssembleReport.ts",
     "phase8b1:release-proof": "node scripts/runVitest.mjs run tests/evidence/phase8b1_preanalysis_release.test.ts",
     "phase8b1:verdict": "node scripts/runVitest.mjs run tests/phase8b1_release_verdict.test.ts",
