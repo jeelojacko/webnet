@@ -4,6 +4,8 @@
  */
 import { describe, expect, it } from 'vitest';
 import { parseTbcReport } from '../../scripts/gnss/tbcAdjustmentReport';
+import { parseTbcBaselineSummary } from '../../scripts/gnss/tbcBaselineSummary';
+import { classifyGvxDrift, compareGvxMarks, compareGvxVectors } from '../../scripts/gnss/tbcGvxCompare';
 import { decodeXlsxSheet } from '../../scripts/gnss/tbcXlsxReader';
 import { groupMarksByName, setupCovarianceEcef } from '../../scripts/gnss/tbcParityModel';
 import { deflateRawSync } from 'node:zlib';
@@ -210,5 +212,65 @@ describe('setupCovarianceEcef (hypothesis sanity)', () => {
     // Two endpoints summed: horizontal variance 2*0.005^2 at the equator maps to Y/Z.
     expect(cov.yy).toBeCloseTo(2 * 0.005 * 0.005, 12);
     expect(cov.xy).toBeCloseTo(0, 12);
+  });
+});
+
+describe('tbcBaselineSummary (synthetic fixture)', () => {
+  const row = (obs: string, from: string, to: string, type: string): string =>
+    `<tr><tr><td align="left"><small><a href="#">${obs}</a></small></td>` +
+    `<td align="center"><small><a href="#">${from}</a></small></td>` +
+    `<td align="center"><small><a href="#">${to}</a></small></td>` +
+    `<td align="center"><small>${type}</small></td></tr>`;
+  const html =
+    `<h3>Processing Summary</h3><table><tr><th>Observation</th><th>From</th><th>To</th><th>Solution Type</th></tr>` +
+    row('sixtwo --- hanna (B16)', 'sixtwo', 'hanna', 'Fixed') +
+    row('P041 --- sixtwo (B32)', 'P041', 'sixtwo', 'Float') +
+    `</table><h3>Acceptance Summary</h3><table><tr><th>Processed</th><th>Passed</th><th>Flag</th><th>Fail</th></tr>` +
+    `<tr align="center"><td><small>2</small></td><td><small>2</small></td><td><small>0</small></td><td><small>0</small></td></tr></table>`;
+
+  it('extracts acceptance counts and per-baseline rows', () => {
+    const summary = parseTbcBaselineSummary(html);
+    expect(summary.processed).toBe(2);
+    expect(summary.passed).toBe(2);
+    expect(summary.flagged).toBe(0);
+    expect(summary.failed).toBe(0);
+    expect(summary.rows).toEqual([
+      { id: 'B16', from: 'sixtwo', to: 'hanna', solutionType: 'Fixed' },
+      { id: 'B32', from: 'P041', to: 'sixtwo', solutionType: 'Float' },
+    ]);
+  });
+
+  it('is tolerant: missing summaries decode as null/empty, never throw', () => {
+    expect(parseTbcBaselineSummary('<html></html>')).toEqual({
+      processed: null, passed: null, flagged: null, failed: null, rows: [],
+    });
+  });
+});
+
+describe('tbcGvxCompare (synthetic vectors/marks)', () => {
+  const vec = (id: string, dx: number, cxx: number) => ({
+    solutionId: id, from: 'A.1', to: 'A.2', dx, dy: 1, dz: 2,
+    cov: [cxx, 0, 0, 0, 0, 0] as unknown as [number, number, number, number, number, number],
+  });
+
+  it('matches by solutionId and reports max component drift', () => {
+    const cmp = compareGvxVectors([vec('PV1', 1, 1), vec('PV2', 5, 2)], [vec('PV1', 1 + 2e-10, 1), vec('PV3', 5, 2)]);
+    expect(cmp.matched).toBe(1);
+    expect(cmp.preOnly).toEqual(['PV2']);
+    expect(cmp.postOnly).toEqual(['PV3']);
+    expect(cmp.maxAbsDX).toBeCloseTo(2e-10, 15);
+    expect(classifyGvxDrift(cmp.maxAbsDX)).toBe('serialization');
+    expect(classifyGvxDrift(0.01)).toBe('substantive');
+  });
+
+  it('tracks per-NAME station coordinate drift', () => {
+    const mark = (id: string, name: string, x: number) => ({ id, name, x, y: 0, z: 0 });
+    const cmp = compareGvxMarks(
+      [mark('A.1', 'P041', 1), mark('B.1', 'fsi', 2)],
+      [mark('A.1', 'P041', 1), mark('B.1', 'fsi', 2.005)],
+    );
+    expect(cmp.maxAbsCoord).toBeCloseTo(0.005, 12);
+    expect(cmp.perNameMax['P041']).toBe(0);
+    expect(cmp.perNameMax['fsi']).toBeCloseTo(0.005, 12);
   });
 });

@@ -83,3 +83,24 @@ GVX vectors/coordinates are NAD83(2011)@2010; the TBC report adjusts in NAD 1983
 - Derive or source the exact TBC Az/DeltaHt/EllipDist residual conversion before any residual-parity claim.
 - Resolve vectorlist.xlsx column semantics against TBC documentation.
 - Decide whether the Model B setup-covariance hypothesis (or another weighting) explains the SEUW gap, or record the gap as an open modeling difference.
+
+<!-- MANUAL dataset-B appendix: re-append after regenerating this file via `npm run gnss:tbc-parity`. Full machine evidence: reports/gnss/phase12e-tbc-dataset-b-parity.md (`npm run gnss:tbc-parity -- <datasetB-dir> --dataset b`). -->
+
+## Dataset B — ProcessingGNSSBaselines zero-setup-error cross-check (CASE 1, parity level 3/4)
+
+- Intake: `post-BL-processing-b4adjustment.gvx` (AUTHORITATIVE pre-adjustment input, 50 vectors / 100 POINTs / 8 NAMEs: 3, 5, filter, frey, fsi, hanna, P041, sixtwo, NAD83(2011)@2010) + `post-networkadjustment.gvx` (cross-check) + report body `netwrok adjustment report/200aae0c.html` (TOC/wrapper siblings identified by title/frameset content, same pattern as dataset A) + baseline summary `process baseline report/292d12a8.html` + both XLSX vectorlists. Full 71-file manifest (bytes + SHA-256) is recorded in the dataset-B report.
+- Baseline processing (provenance only): processed 50 / passed 50 / flagged 0 / failed 0; all 50 rows Fixed.
+- Reconciliation: pre-GVX <-> report 50/50 exact; pre-GVX <-> pre-XLSX 50/50 exact (FROM/TO are POINT IDs, e.g. PV27.1->PV27.2, so reconciliation is by solutionId, never FROM/TO alone).
+- Pre-vs-post GVX: 50/50 matched, 32 bitwise equal, max|dDX/DY/DZ| <= 9.3e-10 m, covariance diff exactly 0 -> serialization; station marks carry the adjustment (max 1.03 cm), P041 bitwise stable (fixed datum).
+- MODEL B0 (raw pre-adjustment GVX covariance, robust OFF, P041 fixed at full-precision pre-GVX coordinate, others free): n/u/dof = 150/21/129 EXACT (GATE), 2 iterations, SEUW 1.965038 vs TBC 1.97 display ([1.965,1.975)), vTPv 498.1172 vs implied [498.0980,503.1806).
+- Coordinates: within TBC 3-decimal display floor (max|component| 4.92e-4 <= 5e-4 m) AND sub-nanometre vs post-GVX full precision (max3D 1.4e-9 m over 8 NAMEs) — other artifacts hunted before accepting rounding; the post-adjustment GVX export carries TBC adjusted positions at full precision.
+- Precision: TBC per-component a-posteriori DRMS display (mm-rounded) is NOT raw Qxx -> NOT COMPARABLE as covariance; outcome-level only, WebNet posterior sigmas (qxx diag x SEUW) round to the same mm display within the floor.
+- Residuals Az/DeltaHt/EllipDist -> NOT COMPARABLE (no exact conversion derived). Chi-square: TBC "Failed" vs WebNet vTPv outside standard 95% bounds [99.4,162.3] -> same reject outcome, construction unverified (outcome-consistent only).
+- Verdict CASE 1: core least-squares validated for the zero-setup-error case. Dataset-A gap reclassified as setup-error stochastic; Model B stays HYPOTHESIS.
+
+## Cross-dataset conclusion + Dataset A0 recommendation
+
+- Dataset A (91v/16 stations, setup 0.005/0.002): structural parity L1 (DOF 228 exact), open stochastic gap (Model A SEUW 2.10 vs 1.10).
+- Dataset B (50v/8 stations, setup 0.000/0.000): parity L3 (DOF 129 exact, SEUW compatible, coordinates sub-nanometre vs TBC's adjusted export).
+- Together the engine reproduces TBC when the stochastic model is fully captured (raw GVX covariance, zero setup error); the dataset-A gap is isolated to setup-error stochastic modeling.
+- Recommended external experiment Dataset A0 (no production change): re-adjust the original project with 0.000/0.000 setup errors, same 91 vectors/datum/scalar. Prediction: Model A SEUW converges to the displayed reference factor and coordinates agree within reference resolution. No production weighting change until proven.

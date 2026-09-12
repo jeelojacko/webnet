@@ -1,7 +1,11 @@
 /**
  * Phase 12E.2 — REAL-TBC parity evidence harness (evidence only).
  *
- * CLI: tsx scripts/gnss/tbcParityEvidence.ts <intake-dir> [--model a|b]
+ * CLI: tsx scripts/gnss/tbcParityEvidence.ts <intake-dir> [--model a|b] [--dataset a|b]
+ *
+ * Dataset A (default): flat intake layout (Adjusting the Network / cafa0ac3.html).
+ * Dataset B (--dataset b): ProcessingGNSSBaselines layout; delegates to
+ * tbcParityDatasetB.runDatasetB and leaves the dataset-A report untouched.
  *
  * EVIDENCE-FIRST: reads GVX + TBC report + settings.txt + vectorlist.xlsx,
  * groups GVX POINTs by station NAME (fail-closed on coordinate mismatch),
@@ -19,6 +23,7 @@ import { runGnssBaselineAdjustment } from '../../src/engine/gnssBaselineAdjust';
 import type { GnssBaselineObservation } from '../../src/engine/gnssBaselineTypes';
 import type { StationMap } from '../../src/types';
 import { parseTbcReport } from './tbcAdjustmentReport';
+import { runDatasetB } from './tbcParityDatasetB';
 import { decodeXlsxColumnA, decodeXlsxSheet } from './tbcXlsxReader';
 import { groupMarksByName, setupCovarianceEcef } from './tbcParityModel';
 
@@ -34,6 +39,15 @@ const setOf = (ids: string[]): Set<string> => new Set(ids);
 const missing = (need: string[], have: Set<string>): string[] => need.filter((id) => !have.has(id));
 
 const main = (): void => {
+  if (process.argv.includes('--dataset') && (process.argv[process.argv.indexOf('--dataset') + 1] ?? 'a') === 'b') {
+    const dir = process.argv.slice(2).find((arg) => !arg.startsWith('--') && arg !== 'b');
+    if (!dir || !existsSync(dir)) {
+      console.log('tbcParityEvidence: pass the dataset-B intake directory (read-only; never modified).');
+      process.exit(2);
+    }
+    runDatasetB(dir);
+    return;
+  }
   const args = process.argv.slice(2).filter((arg) => !arg.startsWith('--model'));
   const modelFlag = process.argv.includes('--model')
     ? (process.argv[process.argv.indexOf('--model') + 1] ?? 'a')
