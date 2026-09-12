@@ -115,13 +115,13 @@ const maxMatrixDiff = (a: number[][] | undefined, b: number[][] | undefined): nu
 
 describe('Phase 10I real-WASM native route evidence', () => {
   it('compares automatic native full-Qxx against forced TS with verifier metadata', async () => {
-    // The route ships disabled by default (proven safe, slower than TS);
+    // The route ships enabled by default (Phase 10M production batch);
     // the campaign explicitly enables it and restores the default after.
     setNativeFullQxxRouteEnabled(true);
     try {
       await runCampaign();
     } finally {
-      setNativeFullQxxRouteEnabled(false);
+      setNativeFullQxxRouteEnabled(true);
     }
   }, 600000);
 });

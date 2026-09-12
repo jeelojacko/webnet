@@ -198,3 +198,31 @@ STOP. Awaiting explicit approval before any production toggle/cap change.
 Production behavior changed: NO. Numerical contract changed: NO.
 Tolerances changed: NO. Routing changed: NO. Cohort changed: NO.
 Kill switch changed: NO.
+
+## 17. Production batch (Option C approved)
+
+Toggle applied: `nativeFullQxxEnabled` false -> true in
+`src/workers/adjustmentNativeFullQxxAutoRoute.ts` (comment updates only
+beside the one-line toggle). No cap, eligibility, verification,
+tolerance, C1/C2/C3, or fallback changes. Option C approved; no
+Phase 10N work begun.
+
+| Contract | Production behavior |
+|---|---|
+| Native full-Qxx route | YES for the certified single-solve 3D `<=384`-param cohort |
+| Kill switch | DEFAULT YES (internal/test-only setter retained, no persisted/UI setting) |
+| Eligibility (`<=384`, 3D, no robust/TS-correlation/orientation/multi-solve/GPS-covariance) | unchanged, strict |
+| C1/C2/C3 verification over captured native values | unchanged |
+| Fail-closed clean TypeScript fallback | unchanged |
+| `>384` params | unsupported in production (480-768 figures stay diagnostic-engine-only) |
+
+Validation in this batch: `tests/phase10m_default_on_route.test.ts`
+(11 tests: fresh-import default ON, setter-free native routing,
+10 ineligibility gates, kill-switch bit-identical fallback + re-arm,
+8-fault fallback matrix, 4-fixture numerical proof with
+coordinate/seuw parity `<1e-6`); `tests/evidence/phase10m_toggle_smoke.test.ts`
+(Node real-WASM walls, no timing asserts: 32 `17.71 -> 18.29` ms
+ratio 1.03 tiny regression ok, 64 `44.51 -> 45.13` ms ratio 1.01
+parity, 128 `222.55 -> 165.17` ms ratio 0.74 clear win; route
+`native-full-qxx`, C1/C2/C3 accepted on all 3). Raw smoke output:
+`artifacts/evidence/phase10m-toggle/` (gitignored).

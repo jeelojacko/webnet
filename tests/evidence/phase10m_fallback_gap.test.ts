@@ -54,7 +54,7 @@ beforeEach(() => {
   setNativeFullQxxRouteEnabled(true);
 });
 afterEach(() => {
-  setNativeFullQxxRouteEnabled(false);
+  setNativeFullQxxRouteEnabled(true);
 });
 
 describe('Phase 10M fallback gap: result-shape gates', () => {

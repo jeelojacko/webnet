@@ -243,7 +243,7 @@ describe('Phase 10M correction-solve stage audit', () => {
         });
       }
     } finally {
-      setNativeFullQxxRouteEnabled(false);
+      setNativeFullQxxRouteEnabled(true);
     }
 
     const dir = join(process.cwd(), 'artifacts/evidence/phase10m');

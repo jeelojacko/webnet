@@ -282,7 +282,7 @@ describe('Phase 10K native verification boundary', () => {
     try {
       await runCampaign();
     } finally {
-      setNativeFullQxxRouteEnabled(false);
+      setNativeFullQxxRouteEnabled(true);
     }
   }, 900000);
 });

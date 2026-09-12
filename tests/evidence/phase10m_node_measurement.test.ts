@@ -146,7 +146,7 @@ describe('Phase 10M Node measurement campaign', () => {
     try {
       await runCampaign();
     } finally {
-      setNativeFullQxxRouteEnabled(false);
+      setNativeFullQxxRouteEnabled(true);
     }
   }, 1800000);
 });
