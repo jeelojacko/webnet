@@ -80,6 +80,10 @@ const diag256Input = generatePhase6Large3dInput({
 
 const RUNS = 5;
 
+const parameterCount = (result: ReturnType<LSAEngine['solve']>): number =>
+  Object.values(result.stations).filter((station) => !station.fixed).length * 3 +
+  (result.directionSetDiagnostics?.length ?? 0);
+
 const sorted = (xs: number[]): number[] => [...xs].sort((a, b) => a - b);
 const median = (xs: number[]): number => sorted(xs)[Math.floor(xs.length / 2)] ?? 0;
 const quantile = (xs: number[], q: number): number => {
@@ -185,8 +189,8 @@ const runCampaign = async (): Promise<void> => {
     'Attribution: session solveTimingProfile buckets + native SparsePhaseTimings + JS wrapper walls.',
     'C1/C2/C3 verification is wrapper-only (no isolated timing API — no sub-buckets invented).',
     '',
-    '| Fixture | cohort | P | TS med ms | native med ms | native calls | Qxx elems | Qxx bytes | native phase med ms (asm/equ/an/fac/sol) | wrapper overhead med ms | TS+verify rest med ms | C1 max | C2 max | verified cols | reuse |',
-    '|---|---|---:|---:|---:|---:|---:|---:|---|---|---:|---:|---:|---:|---|',
+    '| Fixture | cohort | stations | params | TS med ms | native med ms | native calls | Qxx elems | Qxx bytes | native phase med ms (asm/equ/an/fac/sol) | wrapper overhead med ms | TS+verify rest med ms | C1 max | C2 max | verified cols | reuse |',
+    '|---|---|---:|---:|---:|---:|---:|---:|---:|---|---|---:|---:|---:|---:|---|',
   ];
 
   for (const fixture of routeFixtures) {
@@ -248,7 +252,8 @@ const runCampaign = async (): Promise<void> => {
       JSON.stringify(comparable(tsOutcome.result)) === JSON.stringify(comparable(attempt.outcome.result))
         ? 0
         : maxDiff(comparable(tsOutcome.result), comparable(attempt.outcome.result));
-    const p = Object.keys(attempt.outcome.result.stations).length;
+    const stations = Object.keys(attempt.outcome.result.stations).length;
+    const numParams = parameterCount(attempt.outcome.result);
     expect(attempt.outcome.result.success, `${fixture.id} native outcome must succeed`).toBe(true);
     expect(attempt.route, `${fixture.id} must take the native route`).toBe('native-full-qxx');
     expect(verification?.accepted, `${fixture.id} C1/C2/C3 must accept`).toBe(true);
@@ -288,12 +293,13 @@ const runCampaign = async (): Promise<void> => {
       return out;
     };
     lines.push(
-      `| ${fixture.id} | route | ${p} | ${median(tsWalls).toFixed(2)} | ${median(nativeWalls).toFixed(2)} | ${calls.length} | ${qxxElements} | ${qxxElements * 8} | ${phaseMeds.assembly.toFixed(3)}/${phaseMeds.equilibration.toFixed(3)}/${phaseMeds.analyze.toFixed(3)}/${phaseMeds.factorize.toFixed(3)}/${phaseMeds.solve.toFixed(3)} | ${median(overheads).toFixed(3)} | ${median(rests).toFixed(2)} | ${(verification?.maxC1Diff ?? NaN).toExponential(2)} | ${(verification?.maxC2Residual ?? NaN).toExponential(2)} | ${verification?.verifiedColumns.length ?? 0} | ${reuseReason} |`,
+      `| ${fixture.id} | route | ${stations} | ${numParams} | ${median(tsWalls).toFixed(2)} | ${median(nativeWalls).toFixed(2)} | ${measuredCalls.length} | ${qxxElements} | ${qxxElements * 8} | ${phaseMeds.assembly.toFixed(3)}/${phaseMeds.equilibration.toFixed(3)}/${phaseMeds.analyze.toFixed(3)}/${phaseMeds.factorize.toFixed(3)}/${phaseMeds.solve.toFixed(3)} | ${median(overheads).toFixed(3)} | ${median(rests).toFixed(2)} | ${(verification?.maxC1Diff ?? NaN).toExponential(2)} | ${(verification?.maxC2Residual ?? NaN).toExponential(2)} | ${verification?.verifiedColumns.length ?? 0} | ${reuseReason} |`,
     );
     machine.push({
       fixture: fixture.id,
       cohort: 'production-route',
-      params: p,
+      stations,
+      numParams,
       tsWallMs: { ...stats(tsWalls), runs: RUNS, warmup: 1 },
       nativeWallMs: { ...stats(nativeWalls), runs: RUNS, warmup: 1 },
       tsSessionBucketsMedianMs: bucketMeds(tsBuckets),
@@ -345,6 +351,7 @@ const runCampaign = async (): Promise<void> => {
     tsDiag = new LSAEngine({ input: diag256Input }).solve();
     tsDiagWalls.push(performance.now() - t);
   }
+  new LSAEngine({ input: diag256Input }).solve();
   const nativeDiagWalls: number[] = [];
   let nativeDiag!: ReturnType<LSAEngine['solve']>;
   for (let i = 0; i < RUNS; i += 1) {
@@ -376,11 +383,13 @@ const runCampaign = async (): Promise<void> => {
   };
   const diagQxx = diagCalls.reduce((s, c) => s + c.qxxElements, 0);
   lines.push(
-    `| gps-3d-256 | diagnostic-engine-only | ${Object.keys(nativeDiag.stations).length} | ${median(tsDiagWalls).toFixed(2)} | ${median(nativeDiagWalls).toFixed(2)} | ${diagCalls.length} | ${diagQxx} | ${diagQxx * 8} | ${diagPhases.assembly.toFixed(3)}/${diagPhases.equilibration.toFixed(3)}/${diagPhases.analyze.toFixed(3)}/${diagPhases.factorize.toFixed(3)}/${diagPhases.solve.toFixed(3)} | n/a (engine walls) | n/a (engine walls) | n/a (route-only) | n/a (route-only) | 0 | ${diagReuse.find((e) => e.stage === 'statistics')?.reason ?? 'missing'} |`,
+    `| gps-3d-256 | diagnostic-engine-only | ${Object.keys(nativeDiag.stations).length} | ${parameterCount(nativeDiag)} | ${median(tsDiagWalls).toFixed(2)} | ${median(nativeDiagWalls).toFixed(2)} | ${diagCalls.length} | ${diagQxx} | ${diagQxx * 8} | ${diagPhases.assembly.toFixed(3)}/${diagPhases.equilibration.toFixed(3)}/${diagPhases.analyze.toFixed(3)}/${diagPhases.factorize.toFixed(3)}/${diagPhases.solve.toFixed(3)} | n/a (engine walls) | n/a (engine walls) | n/a (route-only) | n/a (route-only) | 0 | ${diagReuse.find((e) => e.stage === 'statistics')?.reason ?? 'missing'} |`,
   );
   machine.push({
     fixture: 'gps-3d-256',
     cohort: 'diagnostic-engine-only (above 384-param route cap; never the production route)',
+    stations: Object.keys(nativeDiag.stations).length,
+    numParams: parameterCount(nativeDiag),
     generator: { function: 'generatePhase6Large3dInput', seed: DIAG_256_SEED, committedCase: false },
     routeEligibility: { eligible: false, reasons: eligibility.reasons },
     resultMaxAbsDiff: diagDiff,
@@ -423,8 +432,8 @@ const runCampaign = async (): Promise<void> => {
     '',
     '## Scaling observations',
     '',
-    '- Qxx elements and bytes scale as P²; measured Qxx payload rises from 55,296 elements at P=34 to 884,736 at P=130.',
-    '- Native covariance solve and wrapper walls rise with P, while native phase timings remain far below total route wall; these observations do not establish formal complexity.',
+    `- Qxx elements and bytes scale with numParams²; measured payload ranges from ${Math.min(...machine.filter((row) => row.cohort === 'production-route').map((row) => Number(row.qxxElementsTotal)))} to ${Math.max(...machine.filter((row) => row.cohort === 'production-route').map((row) => Number(row.qxxElementsTotal)))} elements across the production route cohort.`,
+    '- Native covariance solve and wrapper walls rise with numParams, while native phase timings remain far below total route wall; these observations do not establish formal complexity.',
     '',
     '## Validation and overhead',
     '',

@@ -4,13 +4,13 @@ Production-equivalent arms (automatic native full-Qxx route vs forced TypeScript
 Attribution: session solveTimingProfile buckets + native SparsePhaseTimings + JS wrapper walls.
 C1/C2/C3 verification is wrapper-only (no isolated timing API — no sub-buckets invented).
 
-| Fixture | cohort | P | TS med ms | native med ms | native calls | Qxx elems | Qxx bytes | native phase med ms (asm/equ/an/fac/sol) | wrapper overhead med ms | TS+verify rest med ms | C1 max | C2 max | verified cols | reuse |
-|---|---|---:|---:|---:|---:|---:|---:|---|---|---:|---:|---:|---:|---|
-| gps-3d-cov-08 | route | 10 | 5.72 | 7.62 | 6 | 2880 | 23040 | 0.010/0.005/0.017/0.005/0.017 | 0.085 | 7.45 | 2.12e-21 | 8.88e-16 | 16 | reused-final-dense-qxx |
-| gps-3d-32 | route | 34 | 12.90 | 23.82 | 6 | 46080 | 368640 | 0.029/0.012/0.023/0.008/0.140 | 0.318 | 23.24 | 9.74e-21 | 2.22e-15 | 16 | reused-final-dense-qxx |
-| gps-3d-64 | route | 66 | 39.31 | 76.08 | 6 | 184320 | 1474560 | 0.028/0.013/0.037/0.012/0.435 | 0.991 | 74.55 | 1.48e-20 | 5.33e-15 | 16 | reused-final-dense-qxx |
-| gps-3d-128 | route | 130 | 210.93 | 357.70 | 6 | 737280 | 5898240 | 0.051/0.019/0.059/0.016/1.750 | 4.550 | 351.21 | 5.63e-20 | 1.24e-14 | 16 | reused-final-dense-qxx |
-| gps-3d-256 | diagnostic-engine-only | 258 | 1298.17 | 587.46 | 5 | 2949120 | 23592960 | 0.100/0.035/0.111/0.031/6.959 | n/a (engine walls) | n/a (engine walls) | n/a (route-only) | n/a (route-only) | 0 | reused-final-dense-qxx |
+| Fixture | cohort | stations | params | TS med ms | native med ms | native calls | Qxx elems | Qxx bytes | native phase med ms (asm/equ/an/fac/sol) | wrapper overhead med ms | TS+verify rest med ms | C1 max | C2 max | verified cols | reuse |
+|---|---|---:|---:|---:|---:|---:|---:|---:|---|---|---:|---:|---:|---:|---|
+| gps-3d-cov-08 | route | 10 | 24 | 5.57 | 7.58 | 5 | 2880 | 23040 | 0.010/0.005/0.015/0.003/0.017 | 0.086 | 7.41 | 2.12e-21 | 8.88e-16 | 16 | reused-final-dense-qxx |
+| gps-3d-32 | route | 34 | 96 | 13.00 | 24.23 | 5 | 46080 | 368640 | 0.029/0.012/0.023/0.007/0.139 | 0.310 | 23.66 | 9.74e-21 | 2.22e-15 | 16 | reused-final-dense-qxx |
+| gps-3d-64 | route | 66 | 192 | 39.44 | 78.79 | 5 | 184320 | 1474560 | 0.032/0.013/0.039/0.012/0.434 | 1.061 | 77.05 | 1.48e-20 | 5.33e-15 | 16 | reused-final-dense-qxx |
+| gps-3d-128 | route | 130 | 384 | 209.65 | 367.82 | 5 | 737280 | 5898240 | 0.052/0.019/0.061/0.016/1.744 | 4.368 | 361.50 | 5.63e-20 | 1.24e-14 | 16 | reused-final-dense-qxx |
+| gps-3d-256 | diagnostic-engine-only | 258 | 768 | 1315.15 | 589.35 | 5 | 2949120 | 23592960 | 0.103/0.035/0.116/0.030/6.958 | n/a (engine walls) | n/a (engine walls) | n/a (route-only) | n/a (route-only) | 0 | reused-final-dense-qxx |
 
 ## Controlled variant verdicts
 
@@ -39,8 +39,8 @@ C1/C2/C3 verification is wrapper-only (no isolated timing API — no sub-buckets
 
 ## Scaling observations
 
-- Qxx elements and bytes scale as P²; measured Qxx payload rises from 55,296 elements at P=34 to 884,736 at P=130.
-- Native covariance solve and wrapper walls rise with P, while native phase timings remain far below total route wall; these observations do not establish formal complexity.
+- Qxx elements and bytes scale with numParams²; measured payload ranges from 2880 to 737280 elements across the production route cohort.
+- Native covariance solve and wrapper walls rise with numParams, while native phase timings remain far below total route wall; these observations do not establish formal complexity.
 
 ## Validation and overhead
 
