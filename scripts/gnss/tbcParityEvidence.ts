@@ -189,6 +189,8 @@ const main = (): void => {
     return { name, dx, dy, dz, norm: Math.hypot(dx, dy, dz) };
   });
   const norms = perStation.map((s) => s.norm ?? Number.NaN).filter(Number.isFinite);
+  const maxAbsComp = Math.max(...perStation.flatMap((s) => [s.dx ?? Number.NaN, s.dy ?? Number.NaN, s.dz ?? Number.NaN]).filter(Number.isFinite));
+  const gPass = norms.length === perStation.length && maxAbsComp <= 5e-5;
   const maxNorm = Math.max(...norms);
   const rms = Math.sqrt(norms.reduce((sum, v) => sum + v * v, 0) / norms.length);
   const withinFloor = norms.filter((v) => v <= 5e-5 * Math.sqrt(3)).length;
@@ -262,9 +264,14 @@ const main = (): void => {
   const passCount = gates.filter((g) => g.verdict === 'PASS').length;
   const failCount = gates.filter((g) => g.verdict === 'FAIL').length;
   const hardFails = gates.filter((g) => g.verdict === 'FAIL' && !['F', 'I'].includes(g.id));
-  const parityLevel = hardFails.length === 0 && failCount === 0 ? 3
-    : gates.find((g) => g.id === 'C')?.verdict === 'PASS' && gates.find((g) => g.id === 'E')?.verdict === 'PASS' ? 2
-    : gates.find((g) => g.id === 'C')?.verdict === 'PASS' ? 1 : 0;
+  // Brief S30 rubric: L0 input parity, L1 structural (n/u/dof), L2 coordinate
+  // (ECEF within reference resolution), L3 stochastic (ref factor/covariance),
+  // L4 residual. L4 is unreachable here (gate J NOT COMPARABLE); L3 needs F.
+  void hardFails;
+  const fPass = gates.find((g) => g.id === 'F')?.verdict === 'PASS';
+  const ePass = gates.find((g) => g.id === 'E')?.verdict === 'PASS';
+  const cPass = gates.find((g) => g.id === 'C')?.verdict === 'PASS';
+  const parityLevel = fPass && gPass ? 3 : gPass ? 2 : ePass ? 1 : cPass ? 0 : 0;
 
   const evidence = {
     ok: failCount === 0,
@@ -311,7 +318,7 @@ const main = (): void => {
     `- vTPv (gate I): WebNet ${vtpvA.toFixed(4)} vs TBC-implied [${tbcVtpv[0].toFixed(4)},${tbcVtpv[1].toFixed(4)}).\n` +
     `- Coordinates (gate G): max3D ${maxNorm.toExponential(3)} m, rms3D ${rms.toExponential(3)} m over ${norms.length} NAMEs; TBC 4-decimal rounding imposes a +-5e-5 m/component reference-resolution floor.\n\n` +
     `## Parity level: ${parityLevel} / 4\n\n` +
-    `Rubric: L0 no observation-set match; L1 obs-set identity; L2 + dof/SEUW agreement; L3 + per-station coordinates within reference resolution; L4 full including residuals (UNREACHABLE — TBC reports Az/DeltaHt/EllipDist derived quantities, not ECEF, so residual parity is NOT COMPARABLE without an exact conversion that was not derived).\n\n` +
+    `Rubric (brief S30): L0 input parity (vector set/datum/frame/stochastic source identified); L1 structural (same n/u/dof/topology/control); L2 coordinate (adjusted ECEF within reference resolution); L3 stochastic (reference factor/covariance/precision after reconciliation); L4 residual (UNREACHABLE — TBC reports Az/DeltaHt/EllipDist derived quantities, not ECEF, so residual parity is NOT COMPARABLE without an exact conversion that was not derived).\n\n` +
     `## Model A (raw GVX, robust OFF)\n\n` +
     `SEUW ${seuwA.toFixed(6)}, vTPv ${vtpvA.toFixed(4)}, iterations ${resultA.iterations}, converged ${resultA.converged}, maxCorrection ${resultA.maxCorrectionM.toExponential(3)} m, Phase-12D statistics blocks ${resultA.statistics.length}.\n\n` +
     `## Model B (setup-covariance HYPOTHESIS${modelB ? ' — RUN' : ' — NOT RUN (pass --model b)'})\n\n` +

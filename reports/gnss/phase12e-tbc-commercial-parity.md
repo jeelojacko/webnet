@@ -35,9 +35,9 @@ Evidence-only. No production math, parser semantics, tolerances, routing, UI, or
 - vTPv (gate I): WebNet 1005.5307 vs TBC-implied [273.3777,278.3937).
 - Coordinates (gate G): max3D 4.334e-3 m, rms3D 2.236e-3 m over 16 NAMEs; TBC 4-decimal rounding imposes a +-5e-5 m/component reference-resolution floor.
 
-## Parity level: 2 / 4
+## Parity level: 1 / 4
 
-Rubric: L0 no observation-set match; L1 obs-set identity; L2 + dof/SEUW agreement; L3 + per-station coordinates within reference resolution; L4 full including residuals (UNREACHABLE — TBC reports Az/DeltaHt/EllipDist derived quantities, not ECEF, so residual parity is NOT COMPARABLE without an exact conversion that was not derived).
+Rubric (brief S30): L0 input parity (vector set/datum/frame/stochastic source identified); L1 structural (same n/u/dof/topology/control); L2 coordinate (adjusted ECEF within reference resolution); L3 stochastic (reference factor/covariance/precision after reconciliation); L4 residual (UNREACHABLE — TBC reports Az/DeltaHt/EllipDist derived quantities, not ECEF, so residual parity is NOT COMPARABLE without an exact conversion that was not derived).
 
 ## Model A (raw GVX, robust OFF)
 
