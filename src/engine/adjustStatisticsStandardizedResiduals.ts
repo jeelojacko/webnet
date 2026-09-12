@@ -308,7 +308,7 @@ export const computeStandardizedResidualStatistics = (
               r: number[];
               mdb: number[];
               pass: boolean[];
-              comps: ('E' | 'N' | 'U' | undefined)[];
+              comps: ('E' | 'N' | 'U' | 'X' | 'Y' | 'Z' | undefined)[];
               rows: number[];
             }
           >();

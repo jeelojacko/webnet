@@ -365,3 +365,18 @@ target.
 **Phase 12B: GO** — no unresolved fundamental mathematical issue; scope
 bounded per §15/§12 (TS dense path, GNSS-only, fixed control, independent
 blocks, no native routing changes, no CRS/geoid/datum machinery).
+
+## 12B implementation notes (added post-12A, contract unchanged)
+
+- Implemented on `feat/static-gnss-baseline-core` exactly per this contract:
+  standalone `gnssBaseline` type, `runGnssBaselineAdjustment` (TS dense
+  only), strict Cholesky PD validation, `[−I +I]` rows, preflight datum
+  rule (≥1 fully fixed 3D station/component), native-route tripwires.
+- Refinement: unset session frame resolves from the unanimous baseline
+  declaration; conflicts still fail closed (see 12B report).
+- Station type carries no per-station frame tag, so fixed-control frame
+  identity is the session declaration by construction (test builder sets
+  it); per-station frame tags remain 12C scope.
+- `projectLocal` single-origin variant deferred to 12C+ (ECEF only in 12B).
+- Evidence: `reports/gnss/phase12b-core-baseline-adjustment.md`,
+  `tests/gnssBaseline/` (40 tests incl. independent Gauss-Jordan golden).

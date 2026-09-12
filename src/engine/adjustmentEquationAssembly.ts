@@ -17,7 +17,9 @@ import type {
 } from './adjustmentSolveTypes';
 import type { Observation, StationId } from '../types';
 import { appendDistanceEquationRows } from './adjustmentDistanceEquationRows';
+import { appendGnssBaselineEquationRows } from './gnssBaselineEquationRows';
 import { appendGpsEquationRows } from './adjustmentGpsEquationRows';
+import { isGnssBaselineObservation } from './gnssBaselineTypes';
 import type {
   AdjustmentEquationAssemblyDependencies,
   AdjustmentEquationAssemblyOptions,
@@ -176,6 +178,17 @@ export const assembleAdjustmentEquations = (
     if (observation.type === 'gps') {
       row = appendGpsEquationRows({
         dependencies,
+        observation,
+        row,
+        state: rowAssemblyState,
+      });
+      return;
+    }
+
+    if (isGnssBaselineObservation(observation)) {
+      row = appendGnssBaselineEquationRows({
+        stations: dependencies.stations,
+        paramIndex: dependencies.paramIndex,
         observation,
         row,
         state: rowAssemblyState,
