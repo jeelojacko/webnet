@@ -35,6 +35,7 @@ on:
           - phase10i
           - phase10j
           - phase10k
+          - phase10l
       baseline_sha:
         description: 'Explicit baseline SHA recorded into Phase 9A reports (optional)'
         required: false

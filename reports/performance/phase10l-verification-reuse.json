@@ -1,0 +1,239 @@
+{
+ "methodology": {
+  "phase": "10L",
+  "title": "verification-reuse end-to-end (measurement-only)",
+  "baselineSha": "9b18161c",
+  "branch": "perf/3d-native-verification-reuse",
+  "head": "9b18161c65c7372af24479f8fb2fb0a0ee4582b6",
+  "environment": {
+   "node": "v26.8.1",
+   "platform": "linux",
+   "arch": "x64"
+  },
+  "arms": [
+   "(a) clean TS route (runAdjustmentSession, no runtime)",
+   "(b) cached-finalizer native route (runWithNativeFullQxxAutoRoute as-is)",
+   "(c) legacy-style route cost (session-with-inline + explicit legacy verifyNativeFullQxxSystems re-pass)"
+  ],
+  "runsPerArm": 5,
+  "statistics": [
+   "median",
+   "p25",
+   "p75"
+  ],
+  "cohorts": [
+   "gps-3d-cov-08/32/64/128 (24/96/192/384 params)"
+  ],
+  "recoveredDefinition": "legacy median wall (c) minus new-route median wall (b)",
+  "floorPredictionMs": 238,
+  "floorVerdict": "DOES NOT HOLD",
+  "routeVsTsVerdict": "A (faster, >=10%)",
+  "routeVsTsRatio128": 0.7407262193529547,
+  "killSwitchDefaultOff": true,
+  "safetyGate": "new route accepted where legacy accepted; new/legacy/TS result parity < 1e-6 (no timing gates)",
+  "parityEvidence": [
+   "tests/phase10l_native_verification_reuse.test.ts (16 tests, 0 mismatches)",
+   "tests/phase10l_dense_physical_validation.test.ts (16 tests, 0 mismatches)"
+  ],
+  "wallsObservational": true,
+  "noProductionChanges": true
+ },
+ "results": [
+  {
+   "fixture": "gps-3d-cov-08",
+   "numParams": 24,
+   "expectedParams": 24,
+   "tsWallMs": {
+    "p25": 5.344434999999976,
+    "median": 5.81923299999994,
+    "p75": 6.0557719999999335,
+    "runs": 5,
+    "warmup": 1
+   },
+   "newRouteWallMs": {
+    "p25": 6.603599000000031,
+    "median": 7.210435999999959,
+    "p75": 7.507535000000075,
+    "runs": 5,
+    "warmup": 2
+   },
+   "legacyRouteWallMs": {
+    "p25": 3.36992500000008,
+    "median": 3.4266839999999092,
+    "p75": 3.5332240000000183,
+    "runs": 5,
+    "warmup": 1,
+    "sessionMedianMs": 3.0477959999999484,
+    "reverifyMedianMs": 0.3788879999999608
+   },
+   "recoveredMedianMs": -3.7837520000000495,
+   "singlePassBreakdownMedianMs": {
+    "oracleBuild": 0.01756000000000313,
+    "c1": 0.00837899999999081,
+    "c2": 0.07794999999998709,
+    "c3": 0.01981999999998152,
+    "scaffolding": 0.217928000000029,
+    "total": 0.35113799999999173
+   },
+   "finalizerMedianMs": 0.0009999999999763531,
+   "legacyCapture": {
+    "systems": 1,
+    "truncated": false,
+    "inlineVerifications": 1
+   },
+   "newRouteVerification": {
+    "accepted": true,
+    "maxC1Diff": 2.117582368135751e-21,
+    "maxC2Residual": 8.881784197001252e-16
+   },
+   "resultMaxAbsDiff": 0
+  },
+  {
+   "fixture": "gps-3d-32",
+   "numParams": 96,
+   "expectedParams": 96,
+   "tsWallMs": {
+    "p25": 12.041954000000032,
+    "median": 12.132894000000078,
+    "p75": 12.321443000000045,
+    "runs": 5,
+    "warmup": 1
+   },
+   "newRouteWallMs": {
+    "p25": 13.818115999999918,
+    "median": 14.607981999999993,
+    "p75": 14.865441000000146,
+    "runs": 5,
+    "warmup": 2
+   },
+   "legacyRouteWallMs": {
+    "p25": 13.902545000000146,
+    "median": 13.918194999999741,
+    "p75": 14.0001749999999,
+    "runs": 5,
+    "warmup": 1,
+    "sessionMedianMs": 11.93481399999996,
+    "reverifyMedianMs": 1.984220999999934
+   },
+   "recoveredMedianMs": -0.6897870000002513,
+   "singlePassBreakdownMedianMs": {
+    "oracleBuild": 0.07500000000004547,
+    "c1": 0.020998999999847,
+    "c2": 0.5599579999998241,
+    "c3": 0.16114900000002308,
+    "scaffolding": 1.1512260000001788,
+    "total": 1.976020999999946
+   },
+   "finalizerMedianMs": 0.0005899999998746353,
+   "legacyCapture": {
+    "systems": 1,
+    "truncated": false,
+    "inlineVerifications": 1
+   },
+   "newRouteVerification": {
+    "accepted": true,
+    "maxC1Diff": 9.740878893424454e-21,
+    "maxC2Residual": 2.220446049250313e-15
+   },
+   "resultMaxAbsDiff": 0
+  },
+  {
+   "fixture": "gps-3d-64",
+   "numParams": 192,
+   "expectedParams": 192,
+   "tsWallMs": {
+    "p25": 37.9980129999999,
+    "median": 38.06145300000003,
+    "p75": 39.42854699999998,
+    "runs": 5,
+    "warmup": 1
+   },
+   "newRouteWallMs": {
+    "p25": 36.757568999999876,
+    "median": 36.92201799999998,
+    "p75": 37.10259699999983,
+    "runs": 5,
+    "warmup": 2
+   },
+   "legacyRouteWallMs": {
+    "p25": 41.25376799999981,
+    "median": 41.27796799999987,
+    "p75": 41.36128699999995,
+    "runs": 5,
+    "warmup": 1,
+    "sessionMedianMs": 34.83564799999999,
+    "reverifyMedianMs": 6.493529999999964
+   },
+   "recoveredMedianMs": 4.355949999999893,
+   "singlePassBreakdownMedianMs": {
+    "oracleBuild": 0.1530289999998331,
+    "c1": 0.03859000000011292,
+    "c2": 1.9229510000000118,
+    "c3": 0.6451470000001791,
+    "scaffolding": 3.7734909999999218,
+    "total": 6.535368999999946
+   },
+   "finalizerMedianMs": 0.000600000000304135,
+   "legacyCapture": {
+    "systems": 1,
+    "truncated": false,
+    "inlineVerifications": 1
+   },
+   "newRouteVerification": {
+    "accepted": true,
+    "maxC1Diff": 1.4823076576950256e-20,
+    "maxC2Residual": 5.329070518200751e-15
+   },
+   "resultMaxAbsDiff": 0
+  },
+  {
+   "fixture": "gps-3d-128",
+   "numParams": 384,
+   "expectedParams": 384,
+   "tsWallMs": {
+    "p25": 196.967893,
+    "median": 209.3642359999999,
+    "p75": 210.16124199999967,
+    "runs": 5,
+    "warmup": 1
+   },
+   "newRouteWallMs": {
+    "p25": 154.07760300000018,
+    "median": 155.0815789999997,
+    "p75": 165.19695100000035,
+    "runs": 5,
+    "warmup": 2
+   },
+   "legacyRouteWallMs": {
+    "p25": 174.4467479999994,
+    "median": 176.6384280000002,
+    "p75": 177.566734,
+    "runs": 5,
+    "warmup": 1,
+    "sessionMedianMs": 147.59636299999966,
+    "reverifyMedianMs": 29.84654099999989
+   },
+   "recoveredMedianMs": 21.55684900000051,
+   "singlePassBreakdownMedianMs": {
+    "oracleBuild": 0.4613469999994777,
+    "c1": 0.07708999999977095,
+    "c2": 7.056446999999935,
+    "c3": 2.5689680000004955,
+    "scaffolding": 19.190730999998777,
+    "total": 29.32965400000012
+   },
+   "finalizerMedianMs": 0.0005799999998998828,
+   "legacyCapture": {
+    "systems": 1,
+    "truncated": false,
+    "inlineVerifications": 1
+   },
+   "newRouteVerification": {
+    "accepted": true,
+    "maxC1Diff": 5.632769099241097e-20,
+    "maxC2Residual": 1.2434497875801753e-14
+   },
+   "resultMaxAbsDiff": 0
+  }
+ ]
+}
