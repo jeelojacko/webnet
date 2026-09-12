@@ -186,6 +186,56 @@ const isFiniteNativeResult = (result: AdjustmentResult): boolean => {
  */
 export const NATIVE_FULL_QXX_MAX_CAPTURED_SYSTEMS = 64;
 
+/**
+ * Diagnostic-only per-bucket timing for native full-Qxx verification.
+ * Measurement only: never influences accept/reject decisions. All fields
+ * accumulate milliseconds (performance.now walls) or dense-op counts.
+ * Pass undefined (the default at every production call site) for zero
+ * behavior change; every write is guarded by `if (timing)`.
+ */
+export interface NativeFullQxxVerificationTiming {
+  captureCopyMs: number;
+  finiteScanConvertMs: number;
+  oracleBuildMs: number;
+  queryBuildMs: number;
+  oracleProbeMs: number;
+  nativeIndexMs: number;
+  c1Ms: number;
+  c2Ms: number;
+  c3PhysicalMs: number;
+  otherMs: number;
+  systemsVerified: number;
+  factorizations: number;
+  solves: number;
+  probedColumns: number;
+  verifiedColumns: number;
+  queryEntries: number;
+  nativeBytesCopied: number;
+  packedBytesCopied: number;
+}
+
+/** Zero-valued timing collector for evidence harnesses (production never allocates one). */
+export const createNativeFullQxxVerificationTiming = (): NativeFullQxxVerificationTiming => ({
+  captureCopyMs: 0,
+  finiteScanConvertMs: 0,
+  oracleBuildMs: 0,
+  queryBuildMs: 0,
+  oracleProbeMs: 0,
+  nativeIndexMs: 0,
+  c1Ms: 0,
+  c2Ms: 0,
+  c3PhysicalMs: 0,
+  otherMs: 0,
+  systemsVerified: 0,
+  factorizations: 0,
+  solves: 0,
+  probedColumns: 0,
+  verifiedColumns: 0,
+  queryEntries: 0,
+  nativeBytesCopied: 0,
+  packedBytesCopied: 0,
+});
+
 export interface CapturedNativeFullQxxSystem {
   design: {
     rowOffsets: Int32Array;
@@ -219,8 +269,15 @@ export class NativeFullQxxCaptureSolver implements SparseSelectedCovarianceSolve
 
   private readonly delegate: SparseSelectedCovarianceSolver;
 
-  constructor(delegate: SparseSelectedCovarianceSolver) {
+  /** Optional diagnostic timing sink (default off; measurement-only). */
+  readonly verificationTiming?: NativeFullQxxVerificationTiming;
+
+  /** Counts inline per-system verifications (double-verification audit). */
+  inlineVerifications = 0;
+
+  constructor(delegate: SparseSelectedCovarianceSolver, verificationTiming?: NativeFullQxxVerificationTiming) {
     this.delegate = delegate;
+    this.verificationTiming = verificationTiming;
   }
 
   querySelected(input: SparseSelectedCovarianceInput): SparseSelectedCovarianceResult {
@@ -229,6 +286,7 @@ export class NativeFullQxxCaptureSolver implements SparseSelectedCovarianceSolve
       return this.delegate.querySelected(input);
     }
     const result = this.delegate.querySelected(input);
+    const copyStart = this.verificationTiming ? performance.now() : 0;
     const captured: CapturedNativeFullQxxSystem = {
       design: {
         rowOffsets: Int32Array.from(input.design.rowOffsets),
@@ -250,10 +308,20 @@ export class NativeFullQxxCaptureSolver implements SparseSelectedCovarianceSolve
       },
     };
     this.systems.push(captured);
+    if (this.verificationTiming) {
+      this.verificationTiming.captureCopyMs += performance.now() - copyStart;
+      this.verificationTiming.nativeBytesCopied += result.covariance.length * 8;
+      this.verificationTiming.packedBytesCopied +=
+        (input.design.values.length + input.weights.values.length) * 8 +
+        (input.design.rowOffsets.length + input.design.columns.length +
+          input.weights.rows.length + input.weights.columns.length +
+          input.queryRows.length + input.queryColumns.length) * 4;
+    }
     // Verification happens before returning Qxx to the engine. This makes
     // verified provenance true when statistics reuse runs, rather than
     // accepting first and checking after downstream numerics already used it.
-    const verification = verifyNativeFullQxxSystems([captured], false, input.parameterCount);
+    const verification = verifyNativeFullQxxSystems([captured], false, input.parameterCount, this.verificationTiming);
+    this.inlineVerifications += 1;
     if (!verification.accepted) {
       throw new Error(`native full-Qxx verification rejected: ${verification.reasons.join('; ')}`);
     }
@@ -283,7 +351,15 @@ export const verifyNativeFullQxxSystems = (
   systems: readonly CapturedNativeFullQxxSystem[],
   truncated: boolean,
   expectedNumParams: number | null,
+  timing?: NativeFullQxxVerificationTiming,
 ): NativeFullQxxVerification => {
+  const now = (): number => (timing ? performance.now() : 0);
+  const routeStart = now();
+  const entryBuckets = timing
+    ? timing.captureCopyMs + timing.finiteScanConvertMs + timing.oracleBuildMs +
+      timing.queryBuildMs + timing.oracleProbeMs + timing.nativeIndexMs +
+      timing.c1Ms + timing.c2Ms + timing.c3PhysicalMs
+    : 0;
   const reasons: string[] = [];
   let oracledSystemCount = 0;
   let maxC1Diff = 0;
@@ -343,6 +419,7 @@ export const verifyNativeFullQxxSystems = (
       reasons.push(`${tag}: non-finite damping attempts (fail-closed)`);
       return;
     }
+    const nativeConvertStart = now();
     const native = Array.from(system.result.covariance);
     for (let k = 0; k < native.length; k += 1) {
       if (!Number.isFinite(native[k])) {
@@ -350,7 +427,12 @@ export const verifyNativeFullQxxSystems = (
         return;
       }
     }
+    if (timing) {
+      timing.finiteScanConvertMs += now() - nativeConvertStart;
+      timing.nativeBytesCopied += system.result.covariance.length * 8;
+    }
     let normal;
+    const oracleBuildStart = now();
     try {
       normal = accumulatePackedNormal(
         {
@@ -366,7 +448,9 @@ export const verifyNativeFullQxxSystems = (
       reasons.push(`${tag}: packed normal rebuild failed: ${detail}`.slice(0, 300));
       return;
     }
+    if (timing) timing.oracleBuildMs += now() - oracleBuildStart;
     let bounded;
+    const queryBuildStart = now();
     try {
       bounded = buildBoundedVerificationQueries(n, undefined, NATIVE_FULL_QXX_MAX_PARAMS);
     } catch (error) {
@@ -374,13 +458,24 @@ export const verifyNativeFullQxxSystems = (
       reasons.push(`${tag}: verification query build failed: ${detail}`.slice(0, 300));
       return;
     }
+    if (timing) timing.queryBuildMs += now() - queryBuildStart;
+    const oracleProbeStart = now();
     const oracle = probeSelectedCovariance(normal, bounded.rows, bounded.columns, NATIVE_FULL_QXX_MAX_PARAMS);
+    if (timing) {
+      timing.oracleProbeMs += now() - oracleProbeStart;
+      timing.factorizations += 1;
+      timing.solves += oracle.probedColumns.length;
+      timing.probedColumns += oracle.probedColumns.length;
+      timing.verifiedColumns += bounded.verifiedColumns.length;
+      timing.queryEntries += system.queryRows.length;
+    }
     if (oracle.damped) {
       reasons.push(`${tag}: TS oracle factor damped (degenerate; fail-closed)`);
       return;
     }
     // Index native values by (row, column) through the captured query
     // order instead of assuming row-major layout.
+    const nativeIndexStart = now();
     const nativeByKey = new Map<number, number>();
     for (let k = 0; k < system.queryRows.length; k += 1) {
       nativeByKey.set((system.queryRows[k] ?? -1) * n + (system.queryColumns[k] ?? -1), native[k] ?? Number.NaN);
@@ -389,27 +484,44 @@ export const verifyNativeFullQxxSystems = (
       const column = bounded.columns[k] ?? -1;
       return nativeByKey.get((row ?? -1) * n + column) ?? Number.NaN;
     });
+    if (timing) timing.nativeIndexMs += now() - nativeIndexStart;
+    const c1Start = now();
     const c1 = evaluateSentinelC1(nativeSample, oracle.values);
+    if (timing) timing.c1Ms += now() - c1Start;
     maxC1Diff = Math.max(maxC1Diff, c1.maxAbsoluteDiff);
     if (!c1.pass) {
       for (const reason of c1.reasons) reasons.push(`${tag} C1: ${reason}`);
     }
+    const c2Start = now();
     const c2 = evaluateSentinelC2(normal, bounded.rows, bounded.columns, nativeSample, undefined, NATIVE_FULL_QXX_MAX_PARAMS);
+    if (timing) timing.c2Ms += now() - c2Start;
     if (Number.isFinite(c2.maxResidual)) maxC2Residual = Math.max(maxC2Residual, c2.maxResidual);
     else maxC2Residual = Number.POSITIVE_INFINITY;
     if (!c2.pass) {
       for (const reason of c2.reasons) reasons.push(`${tag} C2: ${reason}`);
     }
+    const c3Start = now();
     const physical = validateSentinelPhysical({
       queryRows: system.queryRows,
       queryColumns: system.queryColumns,
       values: native,
     });
+    if (timing) {
+      timing.c3PhysicalMs += now() - c3Start;
+      timing.systemsVerified += 1;
+    }
     if (!physical.valid) {
       for (const reason of physical.reasons) reasons.push(`${tag} C3-physical: ${reason}`);
     }
     if (verifiedColumns.length === 0) verifiedColumns = bounded.verifiedColumns;
   });
+  if (timing) {
+    const exitBuckets =
+      timing.captureCopyMs + timing.finiteScanConvertMs + timing.oracleBuildMs +
+      timing.queryBuildMs + timing.oracleProbeMs + timing.nativeIndexMs +
+      timing.c1Ms + timing.c2Ms + timing.c3PhysicalMs;
+    timing.otherMs += Math.max(0, now() - routeStart - (exitBuckets - entryBuckets));
+  }
   return {
     accepted: reasons.length === 0,
     reasons,

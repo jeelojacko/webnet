@@ -34,6 +34,7 @@ on:
           - phase10h
           - phase10i
           - phase10j
+          - phase10k
       baseline_sha:
         description: 'Explicit baseline SHA recorded into Phase 9A reports (optional)'
         required: false
@@ -109,6 +110,7 @@ jobs:
             artifacts/evidence/phase10h/
             artifacts/evidence/phase10i/
             artifacts/evidence/phase10j/
+            artifacts/evidence/phase10k/
             reports/performance/
           if-no-files-found: warn
       - name: Upload Phase 9A raw fragments

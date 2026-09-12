@@ -1,0 +1,503 @@
+{
+ "methodology": {
+  "phase": "10K",
+  "title": "3D native verification boundary (measurement-only)",
+  "baselineSha": "13c9209f",
+  "productionRoute": "runWithNativeFullQxxAutoRoute (worker-only automatic route, Phase 10I bundle)",
+  "instrumentation": "diagnostic-only NativeFullQxxVerificationTiming collector (optional trailing param; production call sites pass nothing; all writes guarded by if (timing))",
+  "timingSources": [
+   "collector buckets per verify call (captureCopy/finiteScanConvert/oracleBuild/queryBuild/oracleProbe/nativeIndex/c1/c2/c3Physical/other)",
+   "dense-op counts (systemsVerified/factorizations/solves/probedColumns/verifiedColumns/queryEntries/nativeBytesCopied/packedBytesCopied)",
+   "native SparsePhaseTimings per querySelected call + JS wrapper walls",
+   "session solveTimingProfile buckets (statistics/reuse/report attribution)"
+  ],
+  "runsPerArm": 5,
+  "warmupPerArm": 1,
+  "stageRepeats": 5,
+  "statistics": [
+   "median",
+   "p25",
+   "p75"
+  ],
+  "cohorts": [
+   "production-route: gps-3d-cov-08/32/64/128 (24/96/192/384 params)",
+   "diagnostic-engine-only: gps-3d-256 (inline existing-generator input, seed 2401; above 384-param route cap)"
+  ],
+  "columnMapping": "native numerical = native phase sum; wrapper = wrapper minus native; capture = captureCopy; oracleBuild/C1/C2/C3 = buckets; covCompare = finiteScanConvert+queryBuild+oracleProbe+nativeIndex; statsReuse = precisionPropagationMs; precision = precisionAndDiagnosticsMs remainder; report = reportDiagnosticsMs; other = TOTAL minus the rest (holds iteration-solve/setup/packaging plus noise)",
+  "cumulativeVariants": "A engine-only, B +capture, C +C1, D +C1+C2, E +full, F session precision/report buckets, G production-equivalent wall",
+  "scaling": "empirical tendency only; no formal complexity claims; 768-param value is a labeled ESTIMATE",
+  "primaryGate": "GATE A (verification oracle dominates; first bounded 10L target: exact-duplicate pass removal, bit-identical C1/C2/C3)",
+  "goNoGo": "GO for 10L scoped to verification-oracle cost; NO-GO for routing/tolerance/coverage/numerical changes",
+  "wallsObservational": true,
+  "noProductionChanges": true
+ },
+ "results": [
+  {
+   "fixture": "gps-3d-cov-08",
+   "cohort": "production-route",
+   "stations": 10,
+   "numParams": 24,
+   "tsWallMs": {
+    "p25": 4.502484999999979,
+    "median": 4.5792240000000675,
+    "p75": 5.671130999999946,
+    "runs": 5,
+    "warmup": 1
+   },
+   "nativeWallMs": {
+    "p25": 6.943535999999995,
+    "median": 7.3783750000000055,
+    "p75": 8.656631000000061,
+    "runs": 5,
+    "warmup": 1
+   },
+   "bucketMedianMs": {
+    "captureCopyMs": 0.014710000000036416,
+    "finiteScanConvertMs": 0.02549999999996544,
+    "oracleBuildMs": 0.05691999999999098,
+    "queryBuildMs": 0.0241800000000012,
+    "oracleProbeMs": 0.20036900000002333,
+    "nativeIndexMs": 0.05984999999998308,
+    "c1Ms": 0.011689999999930478,
+    "c2Ms": 0.08214999999995598,
+    "c3PhysicalMs": 0.22070899999994253,
+    "otherMs": 0.007480000000100517,
+    "systemsVerified": 1,
+    "factorizations": 1,
+    "solves": 16,
+    "probedColumns": 16,
+    "verifiedColumns": 16,
+    "queryEntries": 576,
+    "nativeBytesCopied": 9216,
+    "packedBytesCopied": 7712
+   },
+   "wrapperOverheadMedianMs": 0.08338000000007527,
+   "nativePhaseMedianMs": 0.04911,
+   "sessionProfileMedianMs": {
+    "totalMs": 5,
+    "precisionPropagationMs": 1,
+    "precisionAndDiagnosticsMs": 1,
+    "reportDiagnosticsMs": 1
+   },
+   "cumulativeVariantsMs": {
+    "A": 4.5792240000000675,
+    "B": 4.584393999999975,
+    "C": 4.855142999999998,
+    "D": 4.901252999999997,
+    "E": 5.124961999999869,
+    "G": 7.3783750000000055
+   },
+   "stageMediansMs": {
+    "captureCopy": 0.005169999999907304,
+    "c1Stage": 0.27074900000002344,
+    "c1c2Stage": 0.3168590000000222,
+    "fullVerify": 0.5405679999998938
+   },
+   "reconciliationMs": {
+    "reconciled": 6.808537999999885,
+    "residual": 0.5698370000001205,
+    "eligibilityMs": 0.7232480000000123,
+    "sessionWallMs": 5.396441999999979,
+    "sessionGapMs": 0.3964419999999791
+   },
+   "doubleVerification": {
+    "capturedSystems": 1,
+    "inlineVerifications": 1,
+    "routeOracledSystems": 1,
+    "totalVerifies": 2,
+    "factor": 2
+   },
+   "collectorIdentity": {
+    "acceptedEqual": true,
+    "reasonsEqual": true,
+    "maxC1DiffEqual": true,
+    "maxC2ResidualEqual": true
+   },
+   "resultMaxAbsDiff": 0,
+   "c1MaxDiff": 2.117582368135751e-21,
+   "c2MaxResidual": 8.881784197001252e-16,
+   "verifiedColumns": [
+    0,
+    1,
+    3,
+    4,
+    6,
+    7,
+    9,
+    10,
+    12,
+    13,
+    15,
+    16,
+    18,
+    19,
+    21,
+    23
+   ],
+   "qxxElements": 576,
+   "qxxBytes": 4608
+  },
+  {
+   "fixture": "gps-3d-32",
+   "cohort": "production-route",
+   "stations": 34,
+   "numParams": 96,
+   "tsWallMs": {
+    "p25": 12.232369000000062,
+    "median": 12.413397999999916,
+    "p75": 13.064364999999952,
+    "runs": 5,
+    "warmup": 1
+   },
+   "nativeWallMs": {
+    "p25": 28.46162400000003,
+    "median": 28.898472000000083,
+    "p75": 28.977522000000135,
+    "runs": 5,
+    "warmup": 1
+   },
+   "bucketMedianMs": {
+    "captureCopyMs": 0.013779999999997017,
+    "finiteScanConvertMs": 0.19181899999989582,
+    "oracleBuildMs": 0.07217999999988933,
+    "queryBuildMs": 0.013909999999896172,
+    "oracleProbeMs": 0.8724870000000919,
+    "nativeIndexMs": 0.3932280000001356,
+    "c1Ms": 0.02137999999990825,
+    "c2Ms": 0.5648280000000341,
+    "c3PhysicalMs": 3.379407999999785,
+    "otherMs": 0.0033200000002580055,
+    "systemsVerified": 1,
+    "factorizations": 1,
+    "solves": 16,
+    "probedColumns": 16,
+    "verifiedColumns": 16,
+    "queryEntries": 9216,
+    "nativeBytesCopied": 147456,
+    "packedBytesCopied": 85952
+   },
+   "wrapperOverheadMedianMs": 0.3124679999999911,
+   "nativePhaseMedianMs": 0.21014,
+   "sessionProfileMedianMs": {
+    "totalMs": 22,
+    "precisionPropagationMs": 2,
+    "precisionAndDiagnosticsMs": 3,
+    "reportDiagnosticsMs": 1
+   },
+   "cumulativeVariantsMs": {
+    "A": 12.413397999999916,
+    "B": 12.425848000000087,
+    "C": 13.955683000000136,
+    "D": 14.5148200000001,
+    "E": 17.928369000000203,
+    "G": 28.898472000000083
+   },
+   "stageMediansMs": {
+    "captureCopy": 0.012450000000171713,
+    "c1Stage": 1.5298350000000482,
+    "c1c2Stage": 2.0889720000000125,
+    "fullVerify": 5.502521000000115
+   },
+   "reconciliationMs": {
+    "reconciled": 28.431802999999718,
+    "residual": 0.4666690000003655,
+    "eligibilityMs": 1.1174169999999322,
+    "sessionWallMs": 21.801825999999892,
+    "sessionGapMs": -0.1981740000001082
+   },
+   "doubleVerification": {
+    "capturedSystems": 1,
+    "inlineVerifications": 1,
+    "routeOracledSystems": 1,
+    "totalVerifies": 2,
+    "factor": 2
+   },
+   "collectorIdentity": {
+    "acceptedEqual": true,
+    "reasonsEqual": true,
+    "maxC1DiffEqual": true,
+    "maxC2ResidualEqual": true
+   },
+   "resultMaxAbsDiff": 0,
+   "c1MaxDiff": 9.740878893424454e-21,
+   "c2MaxResidual": 2.220446049250313e-15,
+   "verifiedColumns": [
+    0,
+    6,
+    12,
+    19,
+    25,
+    31,
+    38,
+    44,
+    50,
+    57,
+    63,
+    69,
+    76,
+    82,
+    88,
+    95
+   ],
+   "qxxElements": 9216,
+   "qxxBytes": 73728
+  },
+  {
+   "fixture": "gps-3d-64",
+   "cohort": "production-route",
+   "stations": 66,
+   "numParams": 192,
+   "tsWallMs": {
+    "p25": 39.28136699999982,
+    "median": 39.396885999999995,
+    "p75": 40.0931250000001,
+    "runs": 5,
+    "warmup": 1
+   },
+   "nativeWallMs": {
+    "p25": 98.86128499999995,
+    "median": 99.87624200000005,
+    "p75": 99.97868199999994,
+    "runs": 5,
+    "warmup": 1
+   },
+   "bucketMedianMs": {
+    "captureCopyMs": 0.1997889999997824,
+    "finiteScanConvertMs": 0.606228000000101,
+    "oracleBuildMs": 0.15185900000005859,
+    "queryBuildMs": 0.023760000000038417,
+    "oracleProbeMs": 2.776980999999978,
+    "nativeIndexMs": 2.009702999999945,
+    "c1Ms": 0.038399999999910506,
+    "c2Ms": 1.916103000000021,
+    "c3PhysicalMs": 14.627860999999939,
+    "otherMs": 0.00323000000025786,
+    "systemsVerified": 1,
+    "factorizations": 1,
+    "solves": 16,
+    "probedColumns": 16,
+    "verifiedColumns": 16,
+    "queryEntries": 36864,
+    "nativeBytesCopied": 589824,
+    "packedBytesCopied": 319296
+   },
+   "wrapperOverheadMedianMs": 1.058014999999907,
+   "nativePhaseMedianMs": 0.531269,
+   "sessionProfileMedianMs": {
+    "totalMs": 75,
+    "precisionPropagationMs": 3,
+    "precisionAndDiagnosticsMs": 7,
+    "reportDiagnosticsMs": 3
+   },
+   "cumulativeVariantsMs": {
+    "A": 39.396885999999995,
+    "B": 39.44363599999997,
+    "C": 45.53602499999988,
+    "D": 47.465128999999706,
+    "E": 62.08373900000015,
+    "G": 99.87624200000005
+   },
+   "stageMediansMs": {
+    "captureCopy": 0.046749999999974534,
+    "c1Stage": 6.092388999999912,
+    "c1c2Stage": 8.021492999999737,
+    "fullVerify": 22.64010300000018
+   },
+   "reconciliationMs": {
+    "reconciled": 99.67957200000001,
+    "residual": 0.1966700000000401,
+    "eligibilityMs": 1.9983229999998002,
+    "sessionWallMs": 75.52712399999996,
+    "sessionGapMs": 0.527123999999958
+   },
+   "doubleVerification": {
+    "capturedSystems": 1,
+    "inlineVerifications": 1,
+    "routeOracledSystems": 1,
+    "totalVerifies": 2,
+    "factor": 2
+   },
+   "collectorIdentity": {
+    "acceptedEqual": true,
+    "reasonsEqual": true,
+    "maxC1DiffEqual": true,
+    "maxC2ResidualEqual": true
+   },
+   "resultMaxAbsDiff": 0,
+   "c1MaxDiff": 1.4823076576950256e-20,
+   "c2MaxResidual": 5.329070518200751e-15,
+   "verifiedColumns": [
+    0,
+    12,
+    25,
+    38,
+    50,
+    63,
+    76,
+    89,
+    101,
+    114,
+    127,
+    140,
+    152,
+    165,
+    178,
+    191
+   ],
+   "qxxElements": 36864,
+   "qxxBytes": 294912
+  },
+  {
+   "fixture": "gps-3d-128",
+   "cohort": "production-route",
+   "stations": 130,
+   "numParams": 384,
+   "tsWallMs": {
+    "p25": 209.55576999999994,
+    "median": 211.52111399999967,
+    "p75": 212.42262000000028,
+    "runs": 5,
+    "warmup": 1
+   },
+   "nativeWallMs": {
+    "p25": 456.59510300000056,
+    "median": 458.2114980000006,
+    "p75": 468.0811739999999,
+    "runs": 5,
+    "warmup": 1
+   },
+   "bucketMedianMs": {
+    "captureCopyMs": 0.18706899999961024,
+    "finiteScanConvertMs": 2.48095099999955,
+    "oracleBuildMs": 1.2640049999999974,
+    "queryBuildMs": 0.040860000000066066,
+    "oracleProbeMs": 15.300117999999202,
+    "nativeIndexMs": 9.199478999999883,
+    "c1Ms": 0.07524000000012165,
+    "c2Ms": 7.038155999999617,
+    "c3PhysicalMs": 74.85349700000006,
+    "otherMs": 0.004930000000967993,
+    "systemsVerified": 1,
+    "factorizations": 1,
+    "solves": 16,
+    "probedColumns": 16,
+    "verifiedColumns": 16,
+    "queryEntries": 147456,
+    "nativeBytesCopied": 2359296,
+    "packedBytesCopied": 1228352
+   },
+   "wrapperOverheadMedianMs": 4.302015000000017,
+   "nativePhaseMedianMs": 1.917944,
+   "sessionProfileMedianMs": {
+    "totalMs": 341,
+    "precisionPropagationMs": 10,
+    "precisionAndDiagnosticsMs": 23,
+    "reportDiagnosticsMs": 14
+   },
+   "cumulativeVariantsMs": {
+    "A": 211.52111399999967,
+    "B": 211.70207299999993,
+    "C": 236.7051889999998,
+    "D": 247.11552299999994,
+    "E": 321.29935200000136,
+    "G": 458.2114980000006
+   },
+   "stageMediansMs": {
+    "captureCopy": 0.18095900000025722,
+    "c1Stage": 25.003115999999864,
+    "c1c2Stage": 35.41345000000001,
+    "fullVerify": 109.59727900000144
+   },
+   "reconciliationMs": {
+    "reconciled": 459.3464439999989,
+    "residual": -1.1349459999983083,
+    "eligibilityMs": 5.413731999999072,
+    "sessionWallMs": 343.67547600000034,
+    "sessionGapMs": 2.6754760000003444
+   },
+   "doubleVerification": {
+    "capturedSystems": 1,
+    "inlineVerifications": 1,
+    "routeOracledSystems": 1,
+    "totalVerifies": 2,
+    "factor": 2
+   },
+   "collectorIdentity": {
+    "acceptedEqual": true,
+    "reasonsEqual": true,
+    "maxC1DiffEqual": true,
+    "maxC2ResidualEqual": true
+   },
+   "resultMaxAbsDiff": 0,
+   "c1MaxDiff": 5.632769099241097e-20,
+   "c2MaxResidual": 1.2434497875801753e-14,
+   "verifiedColumns": [
+    0,
+    25,
+    51,
+    76,
+    102,
+    127,
+    153,
+    178,
+    204,
+    229,
+    255,
+    280,
+    306,
+    331,
+    357,
+    383
+   ],
+   "qxxElements": 147456,
+   "qxxBytes": 1179648
+  },
+  {
+   "fixture": "gps-3d-256",
+   "cohort": "diagnostic-engine-only (above 384-param route cap; never the production route)",
+   "stations": 258,
+   "numParams": 768,
+   "generator": {
+    "function": "generatePhase6Large3dInput",
+    "seed": 2401,
+    "committedCase": false
+   },
+   "routeEligibility": {
+    "eligible": false,
+    "reasons": [
+     "parameter count 768 exceeds native full-Qxx cap 384 (fail-closed)"
+    ]
+   },
+   "resultMaxAbsDiff": 0,
+   "tsWallMs": {
+    "p25": 1285.8887909999994,
+    "median": 1297.999221,
+    "p75": 1301.1882700000006,
+    "runs": 5,
+    "warmup": 1
+   },
+   "nativeWallMs": {
+    "p25": 584.9176469999984,
+    "median": 585.4445449999985,
+    "p75": 586.7369709999984,
+    "runs": 5,
+    "warmup": 1
+   },
+   "bridgeStageMedianMs": {
+    "oracleBuild": 1.6180239999994228,
+    "queryBuild": 0.06952999999703025,
+    "oracleProbe": 89.53543699999864,
+    "convertAndIndex": 70.96857000000091,
+    "c1": 0.15410899999915273,
+    "c2": 26.96578899999804,
+    "c3": 450.33210300000064,
+    "fullVerifyEquivalent": 639.6435619999938
+   },
+   "hypothetical768ParamRouteEstimateMs": {
+    "value": 1865.6317059999856,
+    "formula": "nativeEngineWall + 2x fullVerifyEquivalent + captureCopy (ESTIMATE, not a route measurement)"
+   },
+   "sentinelCapOverride": 1024
+  }
+ ]
+}
