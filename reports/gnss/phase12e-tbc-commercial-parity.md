@@ -104,3 +104,11 @@ GVX vectors/coordinates are NAD83(2011)@2010; the TBC report adjusts in NAD 1983
 - Dataset B (50v/8 stations, setup 0.000/0.000): parity L3 (DOF 129 exact, SEUW compatible, coordinates sub-nanometre vs TBC's adjusted export).
 - Together the engine reproduces TBC when the stochastic model is fully captured (raw GVX covariance, zero setup error); the dataset-A gap is isolated to setup-error stochastic modeling.
 - Recommended external experiment Dataset A0 (no production change): re-adjust the original project with 0.000/0.000 setup errors, same 91 vectors/datum/scalar. Prediction: Model A SEUW converges to the displayed reference factor and coordinates agree within reference resolution. No production weighting change until proven.
+
+<!-- MANUAL session-scout appendix: re-append after regenerating this file via `npm run gnss:tbc-parity`. -->
+
+## Pre-experiment session/occupation metadata scout (read-only, no model fitting)
+
+- All 91 vectors carry `SURVEY_SETUP_ID=PP`, a single project-level `Post-processed` block — not a physical occupation id. Zero `session`/`occupation` strings in the GVX; all equipment serials are `0` (receiver types `UNKNOWN`); endpoint equipment (E1–E4 antenna types) is inferable per POINT but is not an occupation key. Report `cafa0ac3.html` has no session/occupation grouping or per-vector timestamps.
+- Proven shared occupations: NONE. Candidate groups only: ~41 exact-timestamp temporal groups (max ~6 vectors per identical interval, e.g. PV116/PV146 14:50–15:48 via Jeffco Reset) — identical times may be copied/trimmed records, so confidence is candidate, never proof.
+- Metadata is INSUFFICIENT for a defensible per-occupation setup-covariance model; shared-session cross-baseline covariance is plausible but unprovable from this intake. A0/AC/AH runs remain necessary — setup-error identification is STOPPED until they are present.
