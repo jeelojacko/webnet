@@ -54,6 +54,7 @@ export const EVIDENCE_TESTS = [
   'tests/evidence/phase10g_final_covariance_architecture.test.ts',
   'tests/evidence/phase10h_native_qxx_fair_evidence.test.ts',
   'tests/evidence/phase10i_native_route_evidence.test.ts',
+  'tests/evidence/phase10j_3d_native_performance_decomposition.test.ts',
 ] as const;
 
 /** Fast automatic release-certification gate (committed-report verdict). */

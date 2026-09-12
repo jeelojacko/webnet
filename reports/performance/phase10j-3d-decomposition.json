@@ -1,0 +1,735 @@
+{
+ "methodology": {
+  "phase": "10J",
+  "title": "3D native performance decomposition (measurement-only)",
+  "productionRoute": "runWithNativeFullQxxAutoRoute (worker-only automatic route, Phase 10I bundle)",
+  "timingSources": [
+   "session solveTimingProfile buckets (TS session work)",
+   "native SparsePhaseTimings per querySelected call (assembly/equilibration/analyze/factorize/solve)",
+   "JS wrapper walls per native call (buffer copies + glue)"
+  ],
+  "runsPerArm": 5,
+  "warmupPerArm": 1,
+  "statistics": [
+   "median",
+   "p25",
+   "p75"
+  ],
+  "arms": [
+   "forced-TypeScript session",
+   "automatic native full-Qxx route"
+  ],
+  "cohorts": [
+   "production-route: gps-3d-32/64/128 + mixed gps-3d-cov-08 (existing committed fixtures)",
+   "diagnostic-engine-only: gps-3d-256 (inline existing-generator input, seed 2401; above 384-param route cap)"
+  ],
+  "attributionModel": {
+   "A": "iteration solve — solveTimingProfile equationAssemblyMs/matrixFactorizationMs",
+   "B": "native Qxx query — SparsePhaseTimings + wrapper wall; overhead = wrapper − native sum",
+   "C": "C1/C2/C3 verification — wrapper-only; sub-buckets unavailable (no isolated timing API)",
+   "D": "statistics + reuse + reporting — precision/statistics buckets; otherMs unattributed"
+  },
+  "controlledVariants": "unavailable where no safe production API (see report); never synthesized",
+  "hypotheses": {
+   "H1": "inconclusive",
+   "H2": "supported at route level",
+   "H3": "not supported",
+   "H4": "inconclusive",
+   "H5": "inconclusive",
+   "H6": "inconclusive"
+  },
+  "scaling": "Qxx elements/bytes scale quadratically with parameter count; empirical timing observations are not formal complexity proofs.",
+  "validation": {
+   "phase10jParity": "pass",
+   "cpp": "7/7",
+   "wasm": "41/41",
+   "industryParity": "25/25",
+   "browserWasmSmoke": "pass",
+   "agent": "469 passed, 3 unrelated Study Desktop failures, 1 skipped"
+  },
+  "instrumentationOverhead": "not separately measurable without adding production timing state; timing remains evidence-side and native metadata diagnostic-only",
+  "recommendation": "Separate Phase 10K evidence-first investigation of verification and covariance-demand boundaries; no optimization in Phase 10J.",
+  "wallsObservational": true,
+  "noProductionChanges": true
+ },
+ "results": [
+  {
+   "fixture": "gps-3d-cov-08",
+   "cohort": "production-route",
+   "params": 10,
+   "tsWallMs": {
+    "p25": 5.245909999999981,
+    "median": 5.715317000000027,
+    "p75": 5.989465999999993,
+    "runs": 5,
+    "warmup": 1
+   },
+   "nativeWallMs": {
+    "p25": 6.191834999999969,
+    "median": 7.615819999999985,
+    "p75": 8.58268600000008,
+    "runs": 5,
+    "warmup": 1
+   },
+   "tsSessionBucketsMedianMs": {
+    "totalMs": 5,
+    "parseAndSetupMs": 1,
+    "equationAssemblyMs": 1,
+    "matrixFactorizationMs": 1,
+    "precisionAndDiagnosticsMs": 2,
+    "precisionPropagationMs": 0,
+    "reportDiagnosticsMs": 2,
+    "resultPackagingMs": 0,
+    "otherMs": 0
+   },
+   "nativeSessionBucketsMedianMs": {
+    "totalMs": 5,
+    "parseAndSetupMs": 1,
+    "equationAssemblyMs": 1,
+    "matrixFactorizationMs": 2,
+    "precisionAndDiagnosticsMs": 2,
+    "precisionPropagationMs": 0,
+    "reportDiagnosticsMs": 1,
+    "resultPackagingMs": 0,
+    "otherMs": 0
+   },
+   "nativeCalls": 5,
+   "qxxElementsTotal": 2880,
+   "qxxBytesTotal": 23040,
+   "nativePhaseMedianMs": {
+    "assembly": 0.00969,
+    "equilibration": 0.00458,
+    "analyze": 0.01653,
+    "factorize": 0.00535,
+    "solve": 0.01716
+   },
+   "wrapperOverheadMedianMs": 0.08526000000008516,
+   "tsPlusVerificationRestMedianMs": 7.445351000000073,
+   "verificationTimingAttribution": "wrapper-only (no isolated C1/C2/C3 timing API; sub-buckets unavailable)",
+   "resultMaxAbsDiff": 0,
+   "statisticsReuseReason": "reused-final-dense-qxx",
+   "c1MaxDiff": 2.117582368135751e-21,
+   "c2MaxResidual": 8.881784197001252e-16,
+   "verifiedColumns": [
+    0,
+    1,
+    3,
+    4,
+    6,
+    7,
+    9,
+    10,
+    12,
+    13,
+    15,
+    16,
+    18,
+    19,
+    21,
+    23
+   ],
+   "oracledSystems": 1,
+   "calls": [
+    {
+     "qxxElements": 576,
+     "qxxBytes": 4608,
+     "normalNnz": 110,
+     "factorNnz": 67,
+     "damping": 0,
+     "dampingAttempts": 0,
+     "wrapperMs": 0.17046899999991183,
+     "timingsMs": {
+      "assemblyMs": 0.01776,
+      "equilibrationMs": 0.00698,
+      "analyzeMs": 0.01653,
+      "factorizeMs": 0.005,
+      "solveMs": 0.01713
+     }
+    },
+    {
+     "qxxElements": 576,
+     "qxxBytes": 4608,
+     "normalNnz": 110,
+     "factorNnz": 67,
+     "damping": 0,
+     "dampingAttempts": 0,
+     "wrapperMs": 0.17022900000006302,
+     "timingsMs": {
+      "assemblyMs": 0.00952,
+      "equilibrationMs": 0.00457,
+      "analyzeMs": 0.01677,
+      "factorizeMs": 0.00535,
+      "solveMs": 0.016989
+     }
+    },
+    {
+     "qxxElements": 576,
+     "qxxBytes": 4608,
+     "normalNnz": 110,
+     "factorNnz": 67,
+     "damping": 0,
+     "dampingAttempts": 0,
+     "wrapperMs": 0.13861000000008517,
+     "timingsMs": {
+      "assemblyMs": 0.00954,
+      "equilibrationMs": 0.00458,
+      "analyzeMs": 0.01654,
+      "factorizeMs": 0.00544,
+      "solveMs": 0.01725
+     }
+    },
+    {
+     "qxxElements": 576,
+     "qxxBytes": 4608,
+     "normalNnz": 110,
+     "factorNnz": 67,
+     "damping": 0,
+     "dampingAttempts": 0,
+     "wrapperMs": 0.1270790000000943,
+     "timingsMs": {
+      "assemblyMs": 0.00969,
+      "equilibrationMs": 0.00456,
+      "analyzeMs": 0.01652,
+      "factorizeMs": 0.00851,
+      "solveMs": 0.01719
+     }
+    },
+    {
+     "qxxElements": 576,
+     "qxxBytes": 4608,
+     "normalNnz": 110,
+     "factorNnz": 67,
+     "damping": 0,
+     "dampingAttempts": 0,
+     "wrapperMs": 0.12051999999994223,
+     "timingsMs": {
+      "assemblyMs": 0.00994,
+      "equilibrationMs": 0.00461,
+      "analyzeMs": 0.01646,
+      "factorizeMs": 0.00521,
+      "solveMs": 0.01716
+     }
+    }
+   ]
+  },
+  {
+   "fixture": "gps-3d-32",
+   "cohort": "production-route",
+   "params": 34,
+   "tsWallMs": {
+    "p25": 12.844989000000169,
+    "median": 12.901059000000032,
+    "p75": 13.488546000000042,
+    "runs": 5,
+    "warmup": 1
+   },
+   "nativeWallMs": {
+    "p25": 23.697725999999875,
+    "median": 23.819985000000088,
+    "p75": 24.427692999999863,
+    "runs": 5,
+    "warmup": 1
+   },
+   "tsSessionBucketsMedianMs": {
+    "totalMs": 13,
+    "parseAndSetupMs": 2,
+    "equationAssemblyMs": 3,
+    "matrixFactorizationMs": 4,
+    "precisionAndDiagnosticsMs": 4,
+    "precisionPropagationMs": 2,
+    "reportDiagnosticsMs": 2,
+    "resultPackagingMs": 0,
+    "otherMs": 0
+   },
+   "nativeSessionBucketsMedianMs": {
+    "totalMs": 16,
+    "parseAndSetupMs": 1,
+    "equationAssemblyMs": 1,
+    "matrixFactorizationMs": 11,
+    "precisionAndDiagnosticsMs": 3,
+    "precisionPropagationMs": 2,
+    "reportDiagnosticsMs": 2,
+    "resultPackagingMs": 0,
+    "otherMs": 0
+   },
+   "nativeCalls": 5,
+   "qxxElementsTotal": 46080,
+   "qxxBytesTotal": 368640,
+   "nativePhaseMedianMs": {
+    "assembly": 0.029409,
+    "equilibration": 0.01244,
+    "analyze": 0.02287,
+    "factorize": 0.00783,
+    "solve": 0.13962
+   },
+   "wrapperOverheadMedianMs": 0.3184269999998427,
+   "tsPlusVerificationRestMedianMs": 23.243238000000247,
+   "verificationTimingAttribution": "wrapper-only (no isolated C1/C2/C3 timing API; sub-buckets unavailable)",
+   "resultMaxAbsDiff": 0,
+   "statisticsReuseReason": "reused-final-dense-qxx",
+   "c1MaxDiff": 9.740878893424454e-21,
+   "c2MaxResidual": 2.220446049250313e-15,
+   "verifiedColumns": [
+    0,
+    6,
+    12,
+    19,
+    25,
+    31,
+    38,
+    44,
+    50,
+    57,
+    63,
+    69,
+    76,
+    82,
+    88,
+    95
+   ],
+   "oracledSystems": 1,
+   "calls": [
+    {
+     "qxxElements": 9216,
+     "qxxBytes": 73728,
+     "normalNnz": 470,
+     "factorNnz": 283,
+     "damping": 0,
+     "dampingAttempts": 0,
+     "wrapperMs": 0.5952079999999569,
+     "timingsMs": {
+      "assemblyMs": 0.029409,
+      "equilibrationMs": 0.01226,
+      "analyzeMs": 0.05226,
+      "factorizeMs": 0.0133,
+      "solveMs": 0.147289
+     }
+    },
+    {
+     "qxxElements": 9216,
+     "qxxBytes": 73728,
+     "normalNnz": 470,
+     "factorNnz": 283,
+     "damping": 0,
+     "dampingAttempts": 0,
+     "wrapperMs": 0.5767469999998411,
+     "timingsMs": {
+      "assemblyMs": 0.02816,
+      "equilibrationMs": 0.01666,
+      "analyzeMs": 0.04806,
+      "factorizeMs": 0.01293,
+      "solveMs": 0.13953
+     }
+    },
+    {
+     "qxxElements": 9216,
+     "qxxBytes": 73728,
+     "normalNnz": 470,
+     "factorNnz": 283,
+     "damping": 0,
+     "dampingAttempts": 0,
+     "wrapperMs": 0.5308169999998427,
+     "timingsMs": {
+      "assemblyMs": 0.02981,
+      "equilibrationMs": 0.01244,
+      "analyzeMs": 0.02287,
+      "factorizeMs": 0.00756,
+      "solveMs": 0.13971
+     }
+    },
+    {
+     "qxxElements": 9216,
+     "qxxBytes": 73728,
+     "normalNnz": 470,
+     "factorNnz": 283,
+     "damping": 0,
+     "dampingAttempts": 0,
+     "wrapperMs": 0.46385799999984556,
+     "timingsMs": {
+      "assemblyMs": 0.02963,
+      "equilibrationMs": 0.01258,
+      "analyzeMs": 0.02251,
+      "factorizeMs": 0.00762,
+      "solveMs": 0.13962
+     }
+    },
+    {
+     "qxxElements": 9216,
+     "qxxBytes": 73728,
+     "normalNnz": 470,
+     "factorNnz": 283,
+     "damping": 0,
+     "dampingAttempts": 0,
+     "wrapperMs": 0.4623780000001716,
+     "timingsMs": {
+      "assemblyMs": 0.02926,
+      "equilibrationMs": 0.01244,
+      "analyzeMs": 0.02218,
+      "factorizeMs": 0.00783,
+      "solveMs": 0.139209
+     }
+    }
+   ]
+  },
+  {
+   "fixture": "gps-3d-64",
+   "cohort": "production-route",
+   "params": 66,
+   "tsWallMs": {
+    "p25": 39.162563999999975,
+    "median": 39.3062530000002,
+    "p75": 39.80543199999988,
+    "runs": 5,
+    "warmup": 1
+   },
+   "nativeWallMs": {
+    "p25": 75.98631799999998,
+    "median": 76.08228800000006,
+    "p75": 77.17190399999981,
+    "runs": 5,
+    "warmup": 1
+   },
+   "tsSessionBucketsMedianMs": {
+    "totalMs": 39,
+    "parseAndSetupMs": 3,
+    "equationAssemblyMs": 5,
+    "matrixFactorizationMs": 24,
+    "precisionAndDiagnosticsMs": 7,
+    "precisionPropagationMs": 4,
+    "reportDiagnosticsMs": 3,
+    "resultPackagingMs": 0,
+    "otherMs": 0
+   },
+   "nativeSessionBucketsMedianMs": {
+    "totalMs": 52,
+    "parseAndSetupMs": 3,
+    "equationAssemblyMs": 5,
+    "matrixFactorizationMs": 38,
+    "precisionAndDiagnosticsMs": 7,
+    "precisionPropagationMs": 4,
+    "reportDiagnosticsMs": 3,
+    "resultPackagingMs": 0,
+    "otherMs": 0
+   },
+   "nativeCalls": 5,
+   "qxxElementsTotal": 184320,
+   "qxxBytesTotal": 1474560,
+   "nativePhaseMedianMs": {
+    "assembly": 0.02784,
+    "equilibration": 0.01256,
+    "analyze": 0.03735,
+    "factorize": 0.01202,
+    "solve": 0.434818
+   },
+   "wrapperOverheadMedianMs": 0.9912449999998781,
+   "tsPlusVerificationRestMedianMs": 74.55139500000018,
+   "verificationTimingAttribution": "wrapper-only (no isolated C1/C2/C3 timing API; sub-buckets unavailable)",
+   "resultMaxAbsDiff": 0,
+   "statisticsReuseReason": "reused-final-dense-qxx",
+   "c1MaxDiff": 1.4823076576950256e-20,
+   "c2MaxResidual": 5.329070518200751e-15,
+   "verifiedColumns": [
+    0,
+    12,
+    25,
+    38,
+    50,
+    63,
+    76,
+    89,
+    101,
+    114,
+    127,
+    140,
+    152,
+    165,
+    178,
+    191
+   ],
+   "oracledSystems": 1,
+   "calls": [
+    {
+     "qxxElements": 36864,
+     "qxxBytes": 294912,
+     "normalNnz": 950,
+     "factorNnz": 571,
+     "damping": 0,
+     "dampingAttempts": 0,
+     "wrapperMs": 1.5825740000000224,
+     "timingsMs": {
+      "assemblyMs": 0.05515,
+      "equilibrationMs": 0.02184,
+      "analyzeMs": 0.037079,
+      "factorizeMs": 0.01228,
+      "solveMs": 0.448669
+     }
+    },
+    {
+     "qxxElements": 36864,
+     "qxxBytes": 294912,
+     "normalNnz": 950,
+     "factorNnz": 571,
+     "damping": 0,
+     "dampingAttempts": 0,
+     "wrapperMs": 1.5029139999999188,
+     "timingsMs": {
+      "assemblyMs": 0.02766,
+      "equilibrationMs": 0.01231,
+      "analyzeMs": 0.03735,
+      "factorizeMs": 0.01195,
+      "solveMs": 0.433138
+     }
+    },
+    {
+     "qxxElements": 36864,
+     "qxxBytes": 294912,
+     "normalNnz": 950,
+     "factorNnz": 571,
+     "damping": 0,
+     "dampingAttempts": 0,
+     "wrapperMs": 1.5208529999999882,
+     "timingsMs": {
+      "assemblyMs": 0.02702,
+      "equilibrationMs": 0.01307,
+      "analyzeMs": 0.03827,
+      "factorizeMs": 0.01202,
+      "solveMs": 0.434818
+     }
+    },
+    {
+     "qxxElements": 36864,
+     "qxxBytes": 294912,
+     "normalNnz": 950,
+     "factorNnz": 571,
+     "damping": 0,
+     "dampingAttempts": 0,
+     "wrapperMs": 1.5308929999998782,
+     "timingsMs": {
+      "assemblyMs": 0.02896,
+      "equilibrationMs": 0.01239,
+      "analyzeMs": 0.04937,
+      "factorizeMs": 0.01224,
+      "solveMs": 0.436688
+     }
+    },
+    {
+     "qxxElements": 36864,
+     "qxxBytes": 294912,
+     "normalNnz": 950,
+     "factorNnz": 571,
+     "damping": 0,
+     "dampingAttempts": 0,
+     "wrapperMs": 1.5095040000001063,
+     "timingsMs": {
+      "assemblyMs": 0.02784,
+      "equilibrationMs": 0.01256,
+      "analyzeMs": 0.03714,
+      "factorizeMs": 0.01201,
+      "solveMs": 0.432829
+     }
+    }
+   ]
+  },
+  {
+   "fixture": "gps-3d-128",
+   "cohort": "production-route",
+   "params": 130,
+   "tsWallMs": {
+    "p25": 203.97931999999992,
+    "median": 210.9289819999999,
+    "p75": 218.9957000000004,
+    "runs": 5,
+    "warmup": 1
+   },
+   "nativeWallMs": {
+    "p25": 347.32198999999946,
+    "median": 357.6965989999999,
+    "p75": 387.6597700000002,
+    "runs": 5,
+    "warmup": 1
+   },
+   "tsSessionBucketsMedianMs": {
+    "totalMs": 211,
+    "parseAndSetupMs": 6,
+    "equationAssemblyMs": 22,
+    "matrixFactorizationMs": 157,
+    "precisionAndDiagnosticsMs": 23,
+    "precisionPropagationMs": 12,
+    "reportDiagnosticsMs": 12,
+    "resultPackagingMs": 1,
+    "otherMs": 0
+   },
+   "nativeSessionBucketsMedianMs": {
+    "totalMs": 238,
+    "parseAndSetupMs": 6,
+    "equationAssemblyMs": 19,
+    "matrixFactorizationMs": 186,
+    "precisionAndDiagnosticsMs": 25,
+    "precisionPropagationMs": 13,
+    "reportDiagnosticsMs": 13,
+    "resultPackagingMs": 1,
+    "otherMs": 0
+   },
+   "nativeCalls": 5,
+   "qxxElementsTotal": 737280,
+   "qxxBytesTotal": 5898240,
+   "nativePhaseMedianMs": {
+    "assembly": 0.05111,
+    "equilibration": 0.01852,
+    "analyze": 0.05919,
+    "factorize": 0.01632,
+    "solve": 1.750223
+   },
+   "wrapperOverheadMedianMs": 4.550243000000084,
+   "tsPlusVerificationRestMedianMs": 351.208885,
+   "verificationTimingAttribution": "wrapper-only (no isolated C1/C2/C3 timing API; sub-buckets unavailable)",
+   "resultMaxAbsDiff": 0,
+   "statisticsReuseReason": "reused-final-dense-qxx",
+   "c1MaxDiff": 5.632769099241097e-20,
+   "c2MaxResidual": 1.2434497875801753e-14,
+   "verifiedColumns": [
+    0,
+    25,
+    51,
+    76,
+    102,
+    127,
+    153,
+    178,
+    204,
+    229,
+    255,
+    280,
+    306,
+    331,
+    357,
+    383
+   ],
+   "oracledSystems": 1,
+   "calls": [
+    {
+     "qxxElements": 147456,
+     "qxxBytes": 1179648,
+     "normalNnz": 1910,
+     "factorNnz": 1147,
+     "damping": 0,
+     "dampingAttempts": 0,
+     "wrapperMs": 6.487713999999869,
+     "timingsMs": {
+      "assemblyMs": 0.05098,
+      "equilibrationMs": 0.03187,
+      "analyzeMs": 0.06639,
+      "factorizeMs": 0.0228,
+      "solveMs": 1.753183
+     }
+    },
+    {
+     "qxxElements": 147456,
+     "qxxBytes": 1179648,
+     "normalNnz": 1910,
+     "factorNnz": 1147,
+     "damping": 0,
+     "dampingAttempts": 0,
+     "wrapperMs": 6.2043559999992794,
+     "timingsMs": {
+      "assemblyMs": 0.051909,
+      "equilibrationMs": 0.01805,
+      "analyzeMs": 0.07434,
+      "factorizeMs": 0.02304,
+      "solveMs": 1.750223
+     }
+    },
+    {
+     "qxxElements": 147456,
+     "qxxBytes": 1179648,
+     "normalNnz": 1910,
+     "factorNnz": 1147,
+     "damping": 0,
+     "dampingAttempts": 0,
+     "wrapperMs": 6.406114999999772,
+     "timingsMs": {
+      "assemblyMs": 0.0507,
+      "equilibrationMs": 0.01852,
+      "analyzeMs": 0.05902,
+      "factorizeMs": 0.01632,
+      "solveMs": 1.754683
+     }
+    },
+    {
+     "qxxElements": 147456,
+     "qxxBytes": 1179648,
+     "normalNnz": 1910,
+     "factorNnz": 1147,
+     "damping": 0,
+     "dampingAttempts": 0,
+     "wrapperMs": 6.443005000000085,
+     "timingsMs": {
+      "assemblyMs": 0.052009,
+      "equilibrationMs": 0.01918,
+      "analyzeMs": 0.05919,
+      "factorizeMs": 0.01563,
+      "solveMs": 1.746753
+     }
+    },
+    {
+     "qxxElements": 147456,
+     "qxxBytes": 1179648,
+     "normalNnz": 1910,
+     "factorNnz": 1147,
+     "damping": 0,
+     "dampingAttempts": 0,
+     "wrapperMs": 6.481525000000147,
+     "timingsMs": {
+      "assemblyMs": 0.05111,
+      "equilibrationMs": 0.01825,
+      "analyzeMs": 0.058789,
+      "factorizeMs": 0.01564,
+      "solveMs": 1.744413
+     }
+    }
+   ]
+  },
+  {
+   "fixture": "gps-3d-256",
+   "cohort": "diagnostic-engine-only (above 384-param route cap; never the production route)",
+   "generator": {
+    "function": "generatePhase6Large3dInput",
+    "seed": 2401,
+    "committedCase": false
+   },
+   "routeEligibility": {
+    "eligible": false,
+    "reasons": [
+     "parameter count 768 exceeds native full-Qxx cap 384 (fail-closed)"
+    ]
+   },
+   "resultMaxAbsDiff": 0,
+   "tsWallMs": {
+    "p25": 1297.1207489999997,
+    "median": 1298.1654359999993,
+    "p75": 1321.466045000001,
+    "runs": 5,
+    "warmup": 1
+   },
+   "nativeWallMs": {
+    "p25": 586.8019210000002,
+    "median": 587.4575779999996,
+    "p75": 590.3710169999995,
+    "runs": 5,
+    "warmup": 1
+   },
+   "nativeCalls": 5,
+   "qxxElementsTotal": 2949120,
+   "qxxBytesTotal": 23592960,
+   "nativePhaseMedianMs": {
+    "assembly": 0.09974,
+    "equilibration": 0.03459,
+    "analyze": 0.110619,
+    "factorize": 0.03104,
+    "solve": 6.958863
+   },
+   "verificationTimingAttribution": "unavailable (C1/C2/C3 live on the production route only)",
+   "statisticsReuseReason": "reused-final-dense-qxx"
+  }
+ ]
+}
