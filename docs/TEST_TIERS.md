@@ -57,7 +57,7 @@ lists):
   `tests/evidence/phase10g_final_covariance_architecture.test.ts`,
   `tests/evidence/phase10h_native_qxx_fair_evidence.test.ts`,
   `tests/evidence/phase10i_native_route_evidence.test.ts`,
-`tests/evidence/phase10j_3d_native_performance_decomposition.test.ts`): large repeated
+  `tests/evidence/phase10j_3d_native_performance_decomposition.test.ts`): large repeated
   numerical campaigns. Manual-only via `npm run test:evidence` or the
   Evidence workflow. The Phase 9A shards share helpers via
   `tests/evidence/phase9aEvidenceShared.ts`, run independently with no
