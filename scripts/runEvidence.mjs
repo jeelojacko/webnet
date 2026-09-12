@@ -62,7 +62,7 @@ const SUITES = {
   phase10j: ['tests/evidence/phase10j_3d_native_performance_decomposition.test.ts'],
   phase10k: ['tests/evidence/phase10k_native_verification_boundary.test.ts'],
   phase10l: ['tests/evidence/phase10l_verification_reuse_performance.test.ts'],
-  phase10m: ['tests/evidence/phase10m_correction_stage_audit.test.ts', 'tests/evidence/phase10m_fallback_gap.test.ts', 'tests/evidence/phase10m_node_measurement.test.ts'],
+  phase10m: ['tests/evidence/phase10m_correction_stage_audit.test.ts', 'tests/evidence/phase10m_fallback_gap.test.ts', 'tests/evidence/phase10m_node_measurement.test.ts', 'tests/evidence/phase10m_toggle_smoke.test.ts'],
 };
 
 const suite = process.argv[2] ?? 'all';
