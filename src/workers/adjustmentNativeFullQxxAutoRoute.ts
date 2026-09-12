@@ -56,7 +56,10 @@ import type {
 } from '../engine/runSessionTypes';
 import {
   loadSparseAutoRouteBundle,
+  SparseAutoRouteCaptureSolver,
+  verifySparseAutoRouteSystems,
   type SparseAutoRouteBundle,
+  type SparseAutoRouteVerification,
 } from './adjustmentSparseAutoRoute';
 
 /** Conservative 3D coordinate-only parameter cap (Phase 10H corpus max). */
@@ -76,6 +79,24 @@ export const setNativeFullQxxRouteEnabled = (enabled: boolean): void => {
 
 /** Reports current kill-switch state (default enabled for the certified <=384 cohort). */
 export const isNativeFullQxxRouteEnabled = (): boolean => nativeFullQxxEnabled;
+
+/**
+ * Phase 10N internal kill switch for native 3D correction, default OFF.
+ * Internal/test-only, no persisted or UI fields, independent of the
+ * full-Qxx switch above. When enabled (and full-Qxx eligibility passes),
+ * the route additionally injects the real WASM correction solver with
+ * S3 every-iteration verification; any proof failure reruns clean
+ * TypeScript. Disabling restores exact Phase 10M behavior.
+ */
+let native3dCorrectionEnabled = false;
+
+/** Enables or disables the native 3D correction experiment (internal/test-only). */
+export const setNative3dCorrectionRouteEnabled = (enabled: boolean): void => {
+  native3dCorrectionEnabled = enabled;
+};
+
+/** Reports the native 3D correction experiment state (default OFF). */
+export const isNative3dCorrectionRouteEnabled = (): boolean => native3dCorrectionEnabled;
 
 export interface NativeFullQxxEligibility {
   eligible: boolean;
@@ -707,6 +728,13 @@ export interface NativeFullQxxAttempt {
   reasons: string[];
   /** C1/C2/C3 verification over captured native systems; present on the native path only. */
   verification?: NativeFullQxxVerification;
+  /**
+   * Phase 10N S3 verification over captured native correction systems;
+   * present only when the correction experiment ran and was accepted.
+   */
+  correctionVerification?: SparseAutoRouteVerification;
+  /** Native correction calls captured in the accepted attempt (10N only). */
+  nativeCorrectionCalls?: number;
 }
 
 /**
@@ -739,6 +767,90 @@ export const runWithNativeFullQxxAutoRoute = async (
     };
   }
   const diagnostics = createExperimentalSparseRouteDiagnostics();
+  // Phase 10N experiment: when the separate default-OFF correction switch
+  // is enabled, also inject the real WASM correction solver behind a
+  // shared S3 capture. Covariance side stays exactly Phase 10M (native
+  // full dense Qxx, 10L cached finalizer, C1/C2/C3 unchanged); no
+  // row-products/selected mode. Any correction-proof failure below reruns
+  // the whole attempt in clean TypeScript (never a mixed
+  // TS-correction+native-Qxx attempt: no proven restart boundary exists).
+  if (native3dCorrectionEnabled) {
+    const correctionCapture = new SparseAutoRouteCaptureSolver(bundle.sparseCorrectionSolver);
+    const covarianceCapture = new NativeFullQxxCaptureSolver(bundle.sparseSelectedCovarianceSolver);
+    const correctionRuntime: AdjustmentRuntime = {
+      sparseCorrectionSolver: correctionCapture,
+      sparseSelectedCovarianceSolver: covarianceCapture,
+      experimentalSparseDiagnostics: diagnostics,
+      experimentalSelectedCovarianceMode: false,
+      allowVerifiedNativeDenseQxxReuse: true,
+    };
+    let correctionOutcome: RunSessionOutcome;
+    try {
+      correctionOutcome = deps.runSession(request, onProgress, correctionRuntime);
+    } catch (error) {
+      const detail = error instanceof Error ? error.message : String(error);
+      return {
+        outcome: deps.runSession(request, onProgress, undefined),
+        route: 'typescript',
+        reasons: [`native 3D correction run threw: ${detail}`.slice(0, 300)],
+      };
+    }
+    const correctionFallbackReasons: string[] = [];
+    if (diagnostics.sparseCorrectionFallbacks > 0) {
+      correctionFallbackReasons.push(
+        `sparse correction fallbacks=${diagnostics.sparseCorrectionFallbacks} (mixed trajectory; fail-closed)`,
+      );
+    }
+    if (diagnostics.rowProductsFallbacks > 0) {
+      correctionFallbackReasons.push(
+        `sparse row-products fallbacks=${diagnostics.rowProductsFallbacks} (fail-closed)`,
+      );
+    }
+    if (diagnostics.selectedCovarianceFallbacks > 0) {
+      correctionFallbackReasons.push(
+        `sparse selected-covariance fallbacks=${diagnostics.selectedCovarianceFallbacks} (fail-closed)`,
+      );
+    }
+    if (!correctionOutcome.result.success || !correctionOutcome.result.converged) {
+      correctionFallbackReasons.push('native 3D correction result not converged (fail-closed)');
+    }
+    if (!isFiniteNativeResult(correctionOutcome.result)) {
+      correctionFallbackReasons.push('native 3D correction result non-finite (fail-closed)');
+    }
+    // S3 every-iteration proof over the ACTUAL native correction calls:
+    // contract unchanged (count==iterations, 1e-9 dense-oracle agreement,
+    // finite, damping==0, finite condition evidence, first-system condition
+    // agreement; warnings stay warnings).
+    const correctionVerification = verifySparseAutoRouteSystems(
+      correctionCapture.systems,
+      correctionCapture.truncated,
+      correctionOutcome.result.iterations,
+      correctionOutcome.result.condition?.estimate,
+    );
+    correctionFallbackReasons.push(...correctionVerification.reasons);
+    const covarianceVerification = finalizeNativeFullQxxVerification(
+      covarianceCapture.systems,
+      covarianceCapture.getInlineVerifications(),
+      covarianceCapture.truncated,
+      eligibility.numParams,
+    );
+    correctionFallbackReasons.push(...covarianceVerification.reasons);
+    if (correctionFallbackReasons.length > 0) {
+      return {
+        outcome: deps.runSession(request, onProgress, undefined),
+        route: 'typescript',
+        reasons: correctionFallbackReasons,
+      };
+    }
+    return {
+      outcome: correctionOutcome,
+      route: 'native-full-qxx',
+      reasons: [],
+      verification: covarianceVerification,
+      correctionVerification,
+      nativeCorrectionCalls: correctionCapture.systems.length,
+    };
+  }
   const capture = new NativeFullQxxCaptureSolver(bundle.sparseSelectedCovarianceSolver);
   const runtime: AdjustmentRuntime = {
     sparseSelectedCovarianceSolver: capture,

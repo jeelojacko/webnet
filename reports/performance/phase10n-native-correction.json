@@ -1,0 +1,303 @@
+{
+ "phase": "10N",
+ "baseline": {
+  "sha": "c5e4cee0",
+  "branch": "perf/3d-native-correction-integration"
+ },
+ "environment": {
+  "node": "v26.8.1",
+  "platform": "linux",
+  "arch": "x64"
+ },
+ "methodology": {
+  "measuredRuns": 5,
+  "warmupPerArm": 1,
+  "parityTol": 1e-06,
+  "arms": "A pure-TS, B 10M (correction OFF), C experimental (correction ON)",
+  "classes": "<=0.90 CLEAR WIN, 0.90-1.10 PARITY, >=1.10 REGRESSION (C/B median)"
+ },
+ "productionContractChanged": false,
+ "correctionSwitchDefault": "OFF",
+ "capParams": 384,
+ "cases": [
+  {
+   "id": "gps-3d-32",
+   "cohort": "ladder",
+   "numParams": 96,
+   "iterations": 4,
+   "armAWallMs": {
+    "p25": 15.8114250000001,
+    "median": 16.783461999999986,
+    "p75": 19.758942000000047,
+    "raw": [
+     21.54450499999996,
+     19.758942000000047,
+     16.783461999999986,
+     15.8114250000001,
+     15.082748000000038
+    ]
+   },
+   "armBWallMs": {
+    "p25": 16.899660999999924,
+    "median": 17.096780999999964,
+    "p75": 19.087334000000055,
+    "raw": [
+     20.458368999999948,
+     19.087334000000055,
+     17.096780999999964,
+     16.899660999999924,
+     16.674802999999883
+    ]
+   },
+   "armCWallMs": {
+    "p25": 15.479516000000103,
+    "median": 15.612526000000116,
+    "p75": 15.745586000000003,
+    "raw": [
+     16.121763999999985,
+     15.612526000000116,
+     15.171127999999953,
+     15.479516000000103,
+     15.745586000000003
+    ]
+   },
+   "ratioExperimentalOver10M": 0.9131851194678197,
+   "ratioExperimentalOverTs": 0.930232749357679,
+   "verdictVs10M": "PARITY",
+   "verdictVsTs": "PARITY",
+   "absoluteDeltaCvsBMs": -1.4842549999998482,
+   "absoluteDeltaCvsAMs": -1.1709359999998696,
+   "stageDecompositionMs": {
+    "correctionKernelWrapperPerRun": 0.5154720000000452,
+    "covarianceKernelWrapperPerRun": 0.5399363999999878,
+    "s3VerifyMedian": 2.8655599999999595,
+    "c123DiagnosticRerunMedian": 0.0019199999999273132,
+    "note": "kernel wrappers measured inline across measured C runs; S3/C1C2C3 timed as diagnostic re-runs over one instrumented capture (production C1/C2/C3 uses the cached inline finalizer)"
+   },
+   "s3OracleTaxMs": 2.8655599999999595,
+   "correctionProof": {
+    "nativeCorrectionCalls": 4,
+    "oracledSystems": 4,
+    "maxCorrectionDiff": 8.326672684688674e-16,
+    "maxC1Diff": 1.2281977735187355e-20,
+    "maxC2Residual": 3.552713678800501e-15,
+    "nativeConditionFirst": 171900204903772.1,
+    "resultCondition": 171900204903772.1
+   },
+   "resultMaxAbsDiffB": 0,
+   "resultMaxAbsDiffC": 0,
+   "parity": "pass"
+  },
+  {
+   "id": "gps-3d-64",
+   "cohort": "ladder",
+   "numParams": 192,
+   "iterations": 4,
+   "armAWallMs": {
+    "p25": 43.87263900000016,
+    "median": 44.74199499999986,
+    "p75": 45.94792100000018,
+    "raw": [
+     53.12786600000004,
+     45.94792100000018,
+     43.87263900000016,
+     42.21080400000005,
+     44.74199499999986
+    ]
+   },
+   "armBWallMs": {
+    "p25": 45.637152000000015,
+    "median": 45.90782100000001,
+    "p75": 46.33470999999986,
+    "raw": [
+     46.96896800000013,
+     45.90782100000001,
+     45.17250400000012,
+     45.637152000000015,
+     46.33470999999986
+    ]
+   },
+   "armCWallMs": {
+    "p25": 41.40343699999994,
+    "median": 41.582706000000144,
+    "p75": 41.90380600000003,
+    "raw": [
+     45.650781999999936,
+     41.90380600000003,
+     41.582706000000144,
+     41.40343699999994,
+     40.861519000000044
+    ]
+   },
+   "ratioExperimentalOver10M": 0.9057869681943765,
+   "ratioExperimentalOverTs": 0.9293887319955284,
+   "verdictVs10M": "PARITY",
+   "verdictVsTs": "PARITY",
+   "absoluteDeltaCvsBMs": -4.325114999999869,
+   "absoluteDeltaCvsAMs": -3.159288999999717,
+   "stageDecompositionMs": {
+    "correctionKernelWrapperPerRun": 0.5779856000000109,
+    "covarianceKernelWrapperPerRun": 1.769036000000051,
+    "s3VerifyMedian": 11.714199000000008,
+    "c123DiagnosticRerunMedian": 0.0017899999998007843,
+    "note": "kernel wrappers measured inline across measured C runs; S3/C1C2C3 timed as diagnostic re-runs over one instrumented capture (production C1/C2/C3 uses the cached inline finalizer)"
+   },
+   "s3OracleTaxMs": 11.714199000000008,
+   "correctionProof": {
+    "nativeCorrectionCalls": 4,
+    "oracledSystems": 4,
+    "maxCorrectionDiff": 1.609823385706477e-15,
+    "maxC1Diff": 1.9905274260476058e-20,
+    "maxC2Residual": 7.105427357601002e-15,
+    "nativeConditionFirst": 179062758887260.06,
+    "resultCondition": 179062758887260.06
+   },
+   "resultMaxAbsDiffB": 0,
+   "resultMaxAbsDiffC": 0,
+   "parity": "pass"
+  },
+  {
+   "id": "gps-3d-128",
+   "cohort": "ladder (~384 params)",
+   "numParams": 384,
+   "iterations": 4,
+   "armAWallMs": {
+    "p25": 222.11652300000014,
+    "median": 228.6250299999997,
+    "p75": 233.39042300000028,
+    "raw": [
+     234.10053100000005,
+     222.11652300000014,
+     228.6250299999997,
+     233.39042300000028,
+     216.4350019999997
+    ]
+   },
+   "armBWallMs": {
+    "p25": 160.05624700000044,
+    "median": 161.0111139999999,
+    "p75": 169.36512500000026,
+    "raw": [
+     158.81892100000005,
+     169.36512500000026,
+     160.05624700000044,
+     174.4982970000001,
+     161.0111139999999
+    ]
+   },
+   "armCWallMs": {
+    "p25": 150.67191900000034,
+    "median": 153.21194000000014,
+    "p75": 153.34745999999996,
+    "raw": [
+     150.67191900000034,
+     146.6221740000001,
+     153.34745999999996,
+     156.0658910000002,
+     153.21194000000014
+    ]
+   },
+   "ratioExperimentalOver10M": 0.9515612692425706,
+   "ratioExperimentalOverTs": 0.6701450842893288,
+   "verdictVs10M": "PARITY",
+   "verdictVsTs": "CLEAR WIN",
+   "absoluteDeltaCvsBMs": -7.799173999999766,
+   "absoluteDeltaCvsAMs": -75.41308999999956,
+   "stageDecompositionMs": {
+    "correctionKernelWrapperPerRun": 0.9167687999999543,
+    "covarianceKernelWrapperPerRun": 7.34011240000018,
+    "s3VerifyMedian": 59.14579500000036,
+    "c123DiagnosticRerunMedian": 0.0020700000004580943,
+    "note": "kernel wrappers measured inline across measured C runs; S3/C1C2C3 timed as diagnostic re-runs over one instrumented capture (production C1/C2/C3 uses the cached inline finalizer)"
+   },
+   "s3OracleTaxMs": 59.14579500000036,
+   "correctionProof": {
+    "nativeCorrectionCalls": 4,
+    "oracledSystems": 4,
+    "maxCorrectionDiff": 3.9968028886505635e-15,
+    "maxC1Diff": 3.134021904840911e-20,
+    "maxC2Residual": 8.881784197001252e-15,
+    "nativeConditionFirst": 173989162398119.3,
+    "resultCondition": 173989162398119.3
+   },
+   "resultMaxAbsDiffB": 0,
+   "resultMaxAbsDiffC": 0,
+   "parity": "pass"
+  },
+  {
+   "id": "gps-3d-128-altseed",
+   "cohort": "realistic alternate geometry (~384 params)",
+   "numParams": 384,
+   "iterations": 4,
+   "armAWallMs": {
+    "p25": 219.77550100000008,
+    "median": 228.69521000000077,
+    "p75": 236.11474399999952,
+    "raw": [
+     218.4210860000003,
+     228.69521000000077,
+     238.25351600000067,
+     219.77550100000008,
+     236.11474399999952
+    ]
+   },
+   "armBWallMs": {
+    "p25": 162.46728900000016,
+    "median": 164.2067819999993,
+    "p75": 168.0912189999999,
+    "raw": [
+     171.34908799999994,
+     162.46728900000016,
+     168.0912189999999,
+     161.6111920000003,
+     164.2067819999993
+    ]
+   },
+   "armCWallMs": {
+    "p25": 146.64922300000035,
+    "median": 150.58612999999968,
+    "p75": 156.07505100000162,
+    "raw": [
+     144.37144099999932,
+     156.07505100000162,
+     150.58612999999968,
+     146.64922300000035,
+     156.3826599999993
+    ]
+   },
+   "ratioExperimentalOver10M": 0.9170518304170916,
+   "ratioExperimentalOverTs": 0.6584577350789252,
+   "verdictVs10M": "PARITY",
+   "verdictVsTs": "CLEAR WIN",
+   "absoluteDeltaCvsBMs": -13.620651999999609,
+   "absoluteDeltaCvsAMs": -78.10908000000109,
+   "stageDecompositionMs": {
+    "correctionKernelWrapperPerRun": 0.9619937999988906,
+    "covarianceKernelWrapperPerRun": 7.380739999999787,
+    "s3VerifyMedian": 59.857082999998966,
+    "c123DiagnosticRerunMedian": 0.0018499999987398041,
+    "note": "kernel wrappers measured inline across measured C runs; S3/C1C2C3 timed as diagnostic re-runs over one instrumented capture (production C1/C2/C3 uses the cached inline finalizer)"
+   },
+   "s3OracleTaxMs": 59.857082999998966,
+   "correctionProof": {
+    "nativeCorrectionCalls": 4,
+    "oracledSystems": 4,
+    "maxCorrectionDiff": 4.829470157119431e-15,
+    "maxC1Diff": 4.997494388800372e-20,
+    "maxC2Residual": 8.881784197001252e-15,
+    "nativeConditionFirst": 179779473160001.38,
+    "resultCondition": 179779473160001.38
+   },
+   "resultMaxAbsDiffB": 0,
+   "resultMaxAbsDiffC": 0,
+   "parity": "pass"
+  }
+ ],
+ "browser": {
+  "status": "NOT-RUN",
+  "reason": "No 10N three-arm browser harness exists; the committed driver (scripts/phase10mBrowserEvidence.mjs) measures the two-arm 10M production route only. Node evidence uses the real WASM bundle (same kernels browsers run) and is the decision-grade signal. Browser corroboration deferred to the phase that proposes correction default-ON."
+ },
+ "factorizationDuplication": "Native factorizes once per correction iteration AND again for final covariance (Option B: final Qxx rebuilt at converged coords via recoverFinalNormalCovariance, not the final-iteration N). No persistent-factor export exists (wasm_bindings.cpp); no handle API implemented per scope. Measured correction kernel ~1ms/run at 384 params vs S3 dense-oracle re-verify ~59ms/run: verification dominates, factorization duplication is second-order.",
+ "finalCovarianceReuseSemantics": "Option B confirmed: final Qxx is rebuilt at converged coordinates, NOT the final correction N. Factor reuse across correction->covariance is NOT valid without a new WASM export. Single-factorization opportunity from 10M (~62-65ms) still requires the handle API; explicitly out of scope.",
+ "recommendation": "Proof succeeds with PARITY verdicts and bit-identical final parity, but experimental C shows no clear win over 10M B (C/B 0.91-0.95: S3 oracle tax ~59ms at 384 consumes the ~60-70ms TS-correction saving). Do NOT default ON (no reproducible performance win over Phase 10M). Next phase options: (a) keep experiment OFF and pursue single-factorization handle API (bigger prize), (b) bound S3 cost (sampled-iteration oracle - weakens contract, not recommended), (c) accept parity-only correction integration for code-path unification (no perf motive)."
+}
