@@ -59,27 +59,27 @@
    "stations": 10,
    "numParams": 24,
    "tsWallMs": {
-    "p25": 5.269589999999994,
-    "median": 5.569299000000001,
-    "p75": 6.035117000000014,
+    "p25": 5.254897000000028,
+    "median": 5.674334999999928,
+    "p75": 5.977845000000002,
     "runs": 5,
     "warmup": 1
    },
    "nativeWallMs": {
-    "p25": 6.213907000000063,
-    "median": 7.58322499999997,
-    "p75": 8.655491999999981,
+    "p25": 6.141275000000064,
+    "median": 7.618889999999965,
+    "p75": 8.456259000000045,
     "runs": 5,
     "warmup": 1
    },
    "tsSessionBucketsMedianMs": {
-    "totalMs": 5,
+    "totalMs": 6,
     "parseAndSetupMs": 1,
-    "equationAssemblyMs": 0,
-    "matrixFactorizationMs": 2,
-    "precisionAndDiagnosticsMs": 2,
+    "equationAssemblyMs": 1,
+    "matrixFactorizationMs": 1,
+    "precisionAndDiagnosticsMs": 1,
     "precisionPropagationMs": 0,
-    "reportDiagnosticsMs": 2,
+    "reportDiagnosticsMs": 1,
     "resultPackagingMs": 0,
     "otherMs": 0
    },
@@ -98,14 +98,14 @@
    "qxxElementsTotal": 2880,
    "qxxBytesTotal": 23040,
    "nativePhaseMedianMs": {
-    "assembly": 0.00954,
-    "equilibration": 0.00453,
-    "analyze": 0.01476,
-    "factorize": 0.00339,
-    "solve": 0.01677
+    "assembly": 0.00937,
+    "equilibration": 0.00446,
+    "analyze": 0.01468,
+    "factorize": 0.00337,
+    "solve": 0.01666
    },
-   "wrapperOverheadMedianMs": 0.08607999999996552,
-   "tsPlusVerificationRestMedianMs": 7.414184999999975,
+   "wrapperOverheadMedianMs": 0.08447900000002817,
+   "tsPlusVerificationRestMedianMs": 7.449040999999966,
    "verificationTimingAttribution": "wrapper-only (no isolated C1/C2/C3 timing API; sub-buckets unavailable)",
    "resultMaxAbsDiff": 0,
    "statisticsReuseReason": "reused-final-dense-qxx",
@@ -138,13 +138,13 @@
      "factorNnz": 67,
      "damping": 0,
      "dampingAttempts": 0,
-     "wrapperMs": 0.16903999999999542,
+     "wrapperMs": 0.16984899999999925,
      "timingsMs": {
-      "assemblyMs": 0.0163,
-      "equilibrationMs": 0.0067,
-      "analyzeMs": 0.01493,
-      "factorizeMs": 0.0035,
-      "solveMs": 0.01688
+      "assemblyMs": 0.01562,
+      "equilibrationMs": 0.00639,
+      "analyzeMs": 0.01468,
+      "factorizeMs": 0.00351,
+      "solveMs": 0.01691
      }
     },
     {
@@ -154,13 +154,29 @@
      "factorNnz": 67,
      "damping": 0,
      "dampingAttempts": 0,
-     "wrapperMs": 0.16563899999994192,
+     "wrapperMs": 0.1661100000000033,
      "timingsMs": {
-      "assemblyMs": 0.00954,
-      "equilibrationMs": 0.0044,
-      "analyzeMs": 0.01467,
+      "assemblyMs": 0.00949,
+      "equilibrationMs": 0.00438,
+      "analyzeMs": 0.01478,
+      "factorizeMs": 0.00343,
+      "solveMs": 0.01655
+     }
+    },
+    {
+     "qxxElements": 576,
+     "qxxBytes": 4608,
+     "normalNnz": 110,
+     "factorNnz": 67,
+     "damping": 0,
+     "dampingAttempts": 0,
+     "wrapperMs": 0.13304900000002817,
+     "timingsMs": {
+      "assemblyMs": 0.00935,
+      "equilibrationMs": 0.00442,
+      "analyzeMs": 0.01475,
       "factorizeMs": 0.00337,
-      "solveMs": 0.01674
+      "solveMs": 0.01668
      }
     },
     {
@@ -170,29 +186,13 @@
      "factorNnz": 67,
      "damping": 0,
      "dampingAttempts": 0,
-     "wrapperMs": 0.1349199999999655,
+     "wrapperMs": 0.12578000000007705,
      "timingsMs": {
-      "assemblyMs": 0.00943,
-      "equilibrationMs": 0.00446,
-      "analyzeMs": 0.01476,
-      "factorizeMs": 0.00342,
-      "solveMs": 0.01677
-     }
-    },
-    {
-     "qxxElements": 576,
-     "qxxBytes": 4608,
-     "normalNnz": 110,
-     "factorNnz": 67,
-     "damping": 0,
-     "dampingAttempts": 0,
-     "wrapperMs": 0.12165999999979249,
-     "timingsMs": {
-      "assemblyMs": 0.00969,
+      "assemblyMs": 0.00937,
       "equilibrationMs": 0.00456,
-      "analyzeMs": 0.0148,
+      "analyzeMs": 0.01462,
       "factorizeMs": 0.00333,
-      "solveMs": 0.01681
+      "solveMs": 0.01666
      }
     },
     {
@@ -202,13 +202,13 @@
      "factorNnz": 67,
      "damping": 0,
      "dampingAttempts": 0,
-     "wrapperMs": 0.1158100000000104,
+     "wrapperMs": 0.11574900000005073,
      "timingsMs": {
-      "assemblyMs": 0.00951,
-      "equilibrationMs": 0.00453,
-      "analyzeMs": 0.01471,
-      "factorizeMs": 0.00339,
-      "solveMs": 0.01672
+      "assemblyMs": 0.00923,
+      "equilibrationMs": 0.00446,
+      "analyzeMs": 0.01462,
+      "factorizeMs": 0.00333,
+      "solveMs": 0.01664
      }
     }
    ]
@@ -219,38 +219,38 @@
    "stations": 34,
    "numParams": 96,
    "tsWallMs": {
-    "p25": 12.829425000000128,
-    "median": 13.001553000000058,
-    "p75": 13.472843000000012,
+    "p25": 12.846418000000085,
+    "median": 12.86222799999996,
+    "p75": 13.46571599999993,
     "runs": 5,
     "warmup": 1
    },
    "nativeWallMs": {
-    "p25": 23.83457199999998,
-    "median": 24.23498100000006,
-    "p75": 24.528610999999955,
+    "p25": 23.889450000000124,
+    "median": 23.925719999999956,
+    "p75": 24.38453800000002,
     "runs": 5,
     "warmup": 1
    },
    "tsSessionBucketsMedianMs": {
     "totalMs": 13,
     "parseAndSetupMs": 2,
-    "equationAssemblyMs": 2,
+    "equationAssemblyMs": 3,
     "matrixFactorizationMs": 5,
-    "precisionAndDiagnosticsMs": 4,
+    "precisionAndDiagnosticsMs": 3,
     "precisionPropagationMs": 2,
-    "reportDiagnosticsMs": 2,
+    "reportDiagnosticsMs": 1,
     "resultPackagingMs": 0,
     "otherMs": 0
    },
    "nativeSessionBucketsMedianMs": {
-    "totalMs": 17,
+    "totalMs": 16,
     "parseAndSetupMs": 2,
-    "equationAssemblyMs": 2,
-    "matrixFactorizationMs": 9,
+    "equationAssemblyMs": 1,
+    "matrixFactorizationMs": 10,
     "precisionAndDiagnosticsMs": 3,
-    "precisionPropagationMs": 2,
-    "reportDiagnosticsMs": 1,
+    "precisionPropagationMs": 1,
+    "reportDiagnosticsMs": 2,
     "resultPackagingMs": 0,
     "otherMs": 0
    },
@@ -258,14 +258,14 @@
    "qxxElementsTotal": 46080,
    "qxxBytesTotal": 368640,
    "nativePhaseMedianMs": {
-    "assembly": 0.02879,
-    "equilibration": 0.01177,
-    "analyze": 0.02252,
-    "factorize": 0.00717,
-    "solve": 0.1392
+    "assembly": 0.02869,
+    "equilibration": 0.01142,
+    "analyze": 0.02205,
+    "factorize": 0.0067,
+    "solve": 0.13907
    },
-   "wrapperOverheadMedianMs": 0.3102799999999458,
-   "tsPlusVerificationRestMedianMs": 23.659392000000025,
+   "wrapperOverheadMedianMs": 0.3120289999999458,
+   "tsPlusVerificationRestMedianMs": 23.469191000000137,
    "verificationTimingAttribution": "wrapper-only (no isolated C1/C2/C3 timing API; sub-buckets unavailable)",
    "resultMaxAbsDiff": 0,
    "statisticsReuseReason": "reused-final-dense-qxx",
@@ -298,13 +298,13 @@
      "factorNnz": 283,
      "damping": 0,
      "dampingAttempts": 0,
-     "wrapperMs": 0.5809289999999692,
+     "wrapperMs": 0.5815779999998085,
      "timingsMs": {
-      "assemblyMs": 0.02787,
-      "equilibrationMs": 0.01177,
-      "analyzeMs": 0.05618,
-      "factorizeMs": 0.0093,
-      "solveMs": 0.14821
+      "assemblyMs": 0.02996,
+      "equilibrationMs": 0.01152,
+      "analyzeMs": 0.05599,
+      "factorizeMs": 0.0092,
+      "solveMs": 0.147999
      }
     },
     {
@@ -314,13 +314,13 @@
      "factorNnz": 283,
      "damping": 0,
      "dampingAttempts": 0,
-     "wrapperMs": 0.5755890000000363,
+     "wrapperMs": 0.5613490000000638,
      "timingsMs": {
-      "assemblyMs": 0.02876,
-      "equilibrationMs": 0.011719,
-      "analyzeMs": 0.04589,
-      "factorizeMs": 0.00907,
-      "solveMs": 0.13887
+      "assemblyMs": 0.02883,
+      "equilibrationMs": 0.01142,
+      "analyzeMs": 0.04523,
+      "factorizeMs": 0.00906,
+      "solveMs": 0.13882
      }
     },
     {
@@ -332,11 +332,11 @@
      "dampingAttempts": 0,
      "wrapperMs": 0.5196089999999458,
      "timingsMs": {
-      "assemblyMs": 0.02879,
-      "equilibrationMs": 0.011989,
-      "analyzeMs": 0.02208,
-      "factorizeMs": 0.00706,
-      "solveMs": 0.13941
+      "assemblyMs": 0.02854,
+      "equilibrationMs": 0.01131,
+      "analyzeMs": 0.02205,
+      "factorizeMs": 0.00661,
+      "solveMs": 0.13907
      }
     },
     {
@@ -346,13 +346,13 @@
      "factorNnz": 283,
      "damping": 0,
      "dampingAttempts": 0,
-     "wrapperMs": 0.4568890000000465,
+     "wrapperMs": 0.45652899999981855,
      "timingsMs": {
-      "assemblyMs": 0.02896,
-      "equilibrationMs": 0.0116,
-      "analyzeMs": 0.02252,
-      "factorizeMs": 0.00717,
-      "solveMs": 0.1392
+      "assemblyMs": 0.02869,
+      "equilibrationMs": 0.0114,
+      "analyzeMs": 0.02194,
+      "factorizeMs": 0.0067,
+      "solveMs": 0.13915
      }
     },
     {
@@ -362,13 +362,13 @@
      "factorNnz": 283,
      "damping": 0,
      "dampingAttempts": 0,
-     "wrapperMs": 0.4546900000000278,
+     "wrapperMs": 0.4529889999998886,
      "timingsMs": {
-      "assemblyMs": 0.0289,
-      "equilibrationMs": 0.01184,
-      "analyzeMs": 0.02199,
-      "factorizeMs": 0.00717,
-      "solveMs": 0.13899
+      "assemblyMs": 0.02862,
+      "equilibrationMs": 0.01157,
+      "analyzeMs": 0.02191,
+      "factorizeMs": 0.00662,
+      "solveMs": 0.13896
      }
     }
    ]
@@ -379,38 +379,38 @@
    "stations": 66,
    "numParams": 192,
    "tsWallMs": {
-    "p25": 39.36175100000014,
-    "median": 39.43707999999992,
-    "p75": 39.82691900000009,
+    "p25": 39.459190000000035,
+    "median": 39.48766100000012,
+    "p75": 39.68199999999979,
     "runs": 5,
     "warmup": 1
    },
    "nativeWallMs": {
-    "p25": 76.86825500000009,
-    "median": 78.78898200000003,
-    "p75": 80.12228900000014,
+    "p25": 75.70695,
+    "median": 77.35249599999997,
+    "p75": 78.11395300000004,
     "runs": 5,
     "warmup": 1
    },
    "tsSessionBucketsMedianMs": {
     "totalMs": 40,
     "parseAndSetupMs": 3,
-    "equationAssemblyMs": 6,
+    "equationAssemblyMs": 5,
     "matrixFactorizationMs": 23,
-    "precisionAndDiagnosticsMs": 7,
-    "precisionPropagationMs": 4,
+    "precisionAndDiagnosticsMs": 8,
+    "precisionPropagationMs": 3,
     "reportDiagnosticsMs": 4,
     "resultPackagingMs": 0,
     "otherMs": 0
    },
    "nativeSessionBucketsMedianMs": {
-    "totalMs": 54,
-    "parseAndSetupMs": 2,
+    "totalMs": 52,
+    "parseAndSetupMs": 3,
     "equationAssemblyMs": 5,
-    "matrixFactorizationMs": 39,
+    "matrixFactorizationMs": 37,
     "precisionAndDiagnosticsMs": 7,
-    "precisionPropagationMs": 3,
-    "reportDiagnosticsMs": 4,
+    "precisionPropagationMs": 4,
+    "reportDiagnosticsMs": 3,
     "resultPackagingMs": 0,
     "otherMs": 0
    },
@@ -418,14 +418,14 @@
    "qxxElementsTotal": 184320,
    "qxxBytesTotal": 1474560,
    "nativePhaseMedianMs": {
-    "assembly": 0.03167,
-    "equilibration": 0.01264,
-    "analyze": 0.03944,
-    "factorize": 0.0124,
-    "solve": 0.433759
+    "assembly": 0.02804,
+    "equilibration": 0.01304,
+    "analyze": 0.03758,
+    "factorize": 0.01222,
+    "solve": 0.434269
    },
-   "wrapperOverheadMedianMs": 1.0611880000001641,
-   "tsPlusVerificationRestMedianMs": 77.05239499999993,
+   "wrapperOverheadMedianMs": 0.990297999999921,
+   "tsPlusVerificationRestMedianMs": 75.82123000000001,
    "verificationTimingAttribution": "wrapper-only (no isolated C1/C2/C3 timing API; sub-buckets unavailable)",
    "resultMaxAbsDiff": 0,
    "statisticsReuseReason": "reused-final-dense-qxx",
@@ -458,13 +458,13 @@
      "factorNnz": 571,
      "damping": 0,
      "dampingAttempts": 0,
-     "wrapperMs": 1.7365870000000996,
+     "wrapperMs": 1.58715600000005,
      "timingsMs": {
-      "assemblyMs": 0.06435,
-      "equilibrationMs": 0.02654,
-      "analyzeMs": 0.04623,
-      "factorizeMs": 0.01548,
-      "solveMs": 0.456139
+      "assemblyMs": 0.054659,
+      "equilibrationMs": 0.02143,
+      "analyzeMs": 0.03678,
+      "factorizeMs": 0.0121,
+      "solveMs": 0.458759
      }
     },
     {
@@ -474,13 +474,13 @@
      "factorNnz": 571,
      "damping": 0,
      "dampingAttempts": 0,
-     "wrapperMs": 1.5015069999999469,
+     "wrapperMs": 1.5056170000000293,
      "timingsMs": {
-      "assemblyMs": 0.02864,
-      "equilibrationMs": 0.0124,
-      "analyzeMs": 0.03766,
-      "factorizeMs": 0.01239,
-      "solveMs": 0.433759
+      "assemblyMs": 0.02781,
+      "equilibrationMs": 0.01304,
+      "analyzeMs": 0.0371,
+      "factorizeMs": 0.01225,
+      "solveMs": 0.430469
      }
     },
     {
@@ -490,13 +490,13 @@
      "factorNnz": 571,
      "damping": 0,
      "dampingAttempts": 0,
-     "wrapperMs": 1.5277470000000903,
+     "wrapperMs": 1.522995999999921,
      "timingsMs": {
-      "assemblyMs": 0.02837,
-      "equilibrationMs": 0.01226,
-      "analyzeMs": 0.05067,
-      "factorizeMs": 0.01243,
-      "solveMs": 0.432709
+      "assemblyMs": 0.028049,
+      "equilibrationMs": 0.01265,
+      "analyzeMs": 0.04542,
+      "factorizeMs": 0.01231,
+      "solveMs": 0.434269
      }
     },
     {
@@ -506,13 +506,13 @@
      "factorNnz": 571,
      "damping": 0,
      "dampingAttempts": 0,
-     "wrapperMs": 1.647946999999931,
+     "wrapperMs": 1.5312659999999596,
      "timingsMs": {
-      "assemblyMs": 0.03167,
-      "equilibrationMs": 0.01321,
-      "analyzeMs": 0.03944,
-      "factorizeMs": 0.0124,
-      "solveMs": 0.458249
+      "assemblyMs": 0.02804,
+      "equilibrationMs": 0.013429,
+      "analyzeMs": 0.03758,
+      "factorizeMs": 0.0121,
+      "solveMs": 0.438659
      }
     },
     {
@@ -522,13 +522,13 @@
      "factorNnz": 571,
      "damping": 0,
      "dampingAttempts": 0,
-     "wrapperMs": 1.588957000000164,
+     "wrapperMs": 1.5060060000000703,
      "timingsMs": {
-      "assemblyMs": 0.03216,
-      "equilibrationMs": 0.01264,
-      "analyzeMs": 0.03785,
-      "factorizeMs": 0.01232,
-      "solveMs": 0.432799
+      "assemblyMs": 0.02766,
+      "equilibrationMs": 0.01259,
+      "analyzeMs": 0.03768,
+      "factorizeMs": 0.01222,
+      "solveMs": 0.432859
      }
     }
    ]
@@ -539,53 +539,53 @@
    "stations": 130,
    "numParams": 384,
    "tsWallMs": {
-    "p25": 204.81593699999985,
-    "median": 209.64827700000023,
-    "p75": 221.94211200000018,
+    "p25": 204.48638600000004,
+    "median": 209.37313300000005,
+    "p75": 217.63517300000012,
     "runs": 5,
     "warmup": 1
    },
    "nativeWallMs": {
-    "p25": 348.8122940000003,
-    "median": 367.82466600000043,
-    "p75": 370.3496189999996,
+    "p25": 339.07810599999993,
+    "median": 350.1380690000001,
+    "p75": 352.7848519999998,
     "runs": 5,
     "warmup": 1
    },
    "tsSessionBucketsMedianMs": {
     "totalMs": 209,
     "parseAndSetupMs": 6,
-    "equationAssemblyMs": 21,
+    "equationAssemblyMs": 20,
     "matrixFactorizationMs": 158,
-    "precisionAndDiagnosticsMs": 24,
-    "precisionPropagationMs": 11,
+    "precisionAndDiagnosticsMs": 25,
+    "precisionPropagationMs": 12,
     "reportDiagnosticsMs": 12,
     "resultPackagingMs": 0,
-    "otherMs": 0
+    "otherMs": 1
    },
    "nativeSessionBucketsMedianMs": {
-    "totalMs": 229,
+    "totalMs": 233,
     "parseAndSetupMs": 6,
-    "equationAssemblyMs": 18,
-    "matrixFactorizationMs": 181,
-    "precisionAndDiagnosticsMs": 27,
+    "equationAssemblyMs": 16,
+    "matrixFactorizationMs": 185,
+    "precisionAndDiagnosticsMs": 26,
     "precisionPropagationMs": 13,
     "reportDiagnosticsMs": 13,
     "resultPackagingMs": 0,
-    "otherMs": 0
+    "otherMs": 1
    },
    "nativeCalls": 5,
    "qxxElementsTotal": 737280,
    "qxxBytesTotal": 5898240,
    "nativePhaseMedianMs": {
-    "assembly": 0.05206,
-    "equilibration": 0.018879,
-    "analyze": 0.06075,
-    "factorize": 0.0156,
-    "solve": 1.744356
+    "assembly": 0.05245,
+    "equilibration": 0.01845,
+    "analyze": 0.05968,
+    "factorize": 0.0158,
+    "solve": 1.747405
    },
-   "wrapperOverheadMedianMs": 4.367561999999923,
-   "tsPlusVerificationRestMedianMs": 361.5004290000006,
+   "wrapperOverheadMedianMs": 4.3315079999995465,
+   "tsPlusVerificationRestMedianMs": 343.63015499999983,
    "verificationTimingAttribution": "wrapper-only (no isolated C1/C2/C3 timing API; sub-buckets unavailable)",
    "resultMaxAbsDiff": 0,
    "statisticsReuseReason": "reused-final-dense-qxx",
@@ -618,13 +618,13 @@
      "factorNnz": 1147,
      "damping": 0,
      "dampingAttempts": 0,
-     "wrapperMs": 6.3089279999999235,
+     "wrapperMs": 6.507914000000255,
      "timingsMs": {
-      "assemblyMs": 0.05206,
-      "equilibrationMs": 0.03129,
-      "analyzeMs": 0.07614,
-      "factorizeMs": 0.0229,
-      "solveMs": 1.758976
+      "assemblyMs": 0.05245,
+      "equilibrationMs": 0.03356,
+      "analyzeMs": 0.06717,
+      "factorizeMs": 0.02598,
+      "solveMs": 1.743035
      }
     },
     {
@@ -634,13 +634,13 @@
      "factorNnz": 1147,
      "damping": 0,
      "dampingAttempts": 0,
-     "wrapperMs": 6.5712869999997565,
+     "wrapperMs": 6.150694999999359,
      "timingsMs": {
-      "assemblyMs": 0.05308,
-      "equilibrationMs": 0.02313,
-      "analyzeMs": 0.07386,
-      "factorizeMs": 0.02297,
-      "solveMs": 1.744356
+      "assemblyMs": 0.05144,
+      "equilibrationMs": 0.01776,
+      "analyzeMs": 0.07331,
+      "factorizeMs": 0.0226,
+      "solveMs": 1.737555
      }
     },
     {
@@ -650,13 +650,13 @@
      "factorNnz": 1147,
      "damping": 0,
      "dampingAttempts": 0,
-     "wrapperMs": 6.324236999999812,
+     "wrapperMs": 6.3889540000000125,
      "timingsMs": {
-      "assemblyMs": 0.05158,
-      "equilibrationMs": 0.01825,
-      "analyzeMs": 0.05901,
-      "factorizeMs": 0.01537,
-      "solveMs": 1.707067
+      "assemblyMs": 0.053,
+      "equilibrationMs": 0.01801,
+      "analyzeMs": 0.0586,
+      "factorizeMs": 0.0154,
+      "solveMs": 1.747405
      }
     },
     {
@@ -666,13 +666,13 @@
      "factorNnz": 1147,
      "damping": 0,
      "dampingAttempts": 0,
-     "wrapperMs": 6.130298000000039,
+     "wrapperMs": 6.153103999999985,
      "timingsMs": {
-      "assemblyMs": 0.05168,
-      "equilibrationMs": 0.01772,
-      "analyzeMs": 0.05977,
-      "factorizeMs": 0.0156,
-      "solveMs": 1.742736
+      "assemblyMs": 0.05292,
+      "equilibrationMs": 0.01845,
+      "analyzeMs": 0.058889,
+      "factorizeMs": 0.0158,
+      "solveMs": 1.748476
      }
     },
     {
@@ -682,13 +682,13 @@
      "factorNnz": 1147,
      "damping": 0,
      "dampingAttempts": 0,
-     "wrapperMs": 6.162046999999802,
+     "wrapperMs": 6.225593999999546,
      "timingsMs": {
-      "assemblyMs": 0.05345,
-      "equilibrationMs": 0.018879,
-      "analyzeMs": 0.06075,
-      "factorizeMs": 0.01557,
-      "solveMs": 1.760657
+      "assemblyMs": 0.05241,
+      "equilibrationMs": 0.01881,
+      "analyzeMs": 0.05968,
+      "factorizeMs": 0.01534,
+      "solveMs": 1.747846
      }
     }
    ]
@@ -711,16 +711,16 @@
    },
    "resultMaxAbsDiff": 0,
    "tsWallMs": {
-    "p25": 1280.8565260000005,
-    "median": 1315.1515419999996,
-    "p75": 1316.2837150000014,
+    "p25": 1302.7653710000004,
+    "median": 1310.5069569999996,
+    "p75": 1326.0440159999998,
     "runs": 5,
     "warmup": 1
    },
    "nativeWallMs": {
-    "p25": 585.8781859999999,
-    "median": 589.3493689999996,
-    "p75": 594.4453759999997,
+    "p25": 586.2615990000013,
+    "median": 591.2368979999992,
+    "p75": 597.5176800000008,
     "runs": 5,
     "warmup": 1
    },
@@ -728,11 +728,11 @@
    "qxxElementsTotal": 2949120,
    "qxxBytesTotal": 23592960,
    "nativePhaseMedianMs": {
-    "assembly": 0.10258,
-    "equilibration": 0.03537,
-    "analyze": 0.11594,
-    "factorize": 0.02988,
-    "solve": 6.958286
+    "assembly": 0.102719,
+    "equilibration": 0.03405,
+    "analyze": 0.109809,
+    "factorize": 0.02947,
+    "solve": 6.961702
    },
    "verificationTimingAttribution": "unavailable (C1/C2/C3 live on the production route only)",
    "statisticsReuseReason": "reused-final-dense-qxx"

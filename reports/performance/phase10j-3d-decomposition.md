@@ -6,11 +6,11 @@ C1/C2/C3 verification is wrapper-only (no isolated timing API — no sub-buckets
 
 | Fixture | cohort | stations | params | TS med ms | native med ms | native calls | Qxx elems | Qxx bytes | native phase med ms (asm/equ/an/fac/sol) | wrapper overhead med ms | TS+verify rest med ms | C1 max | C2 max | verified cols | reuse |
 |---|---|---:|---:|---:|---:|---:|---:|---:|---|---|---:|---:|---:|---:|---|
-| gps-3d-cov-08 | route | 10 | 24 | 5.57 | 7.58 | 5 | 2880 | 23040 | 0.010/0.005/0.015/0.003/0.017 | 0.086 | 7.41 | 2.12e-21 | 8.88e-16 | 16 | reused-final-dense-qxx |
-| gps-3d-32 | route | 34 | 96 | 13.00 | 24.23 | 5 | 46080 | 368640 | 0.029/0.012/0.023/0.007/0.139 | 0.310 | 23.66 | 9.74e-21 | 2.22e-15 | 16 | reused-final-dense-qxx |
-| gps-3d-64 | route | 66 | 192 | 39.44 | 78.79 | 5 | 184320 | 1474560 | 0.032/0.013/0.039/0.012/0.434 | 1.061 | 77.05 | 1.48e-20 | 5.33e-15 | 16 | reused-final-dense-qxx |
-| gps-3d-128 | route | 130 | 384 | 209.65 | 367.82 | 5 | 737280 | 5898240 | 0.052/0.019/0.061/0.016/1.744 | 4.368 | 361.50 | 5.63e-20 | 1.24e-14 | 16 | reused-final-dense-qxx |
-| gps-3d-256 | diagnostic-engine-only | 258 | 768 | 1315.15 | 589.35 | 5 | 2949120 | 23592960 | 0.103/0.035/0.116/0.030/6.958 | n/a (engine walls) | n/a (engine walls) | n/a (route-only) | n/a (route-only) | 0 | reused-final-dense-qxx |
+| gps-3d-cov-08 | route | 10 | 24 | 5.67 | 7.62 | 5 | 2880 | 23040 | 0.009/0.004/0.015/0.003/0.017 | 0.084 | 7.45 | 2.12e-21 | 8.88e-16 | 16 | reused-final-dense-qxx |
+| gps-3d-32 | route | 34 | 96 | 12.86 | 23.93 | 5 | 46080 | 368640 | 0.029/0.011/0.022/0.007/0.139 | 0.312 | 23.47 | 9.74e-21 | 2.22e-15 | 16 | reused-final-dense-qxx |
+| gps-3d-64 | route | 66 | 192 | 39.49 | 77.35 | 5 | 184320 | 1474560 | 0.028/0.013/0.038/0.012/0.434 | 0.990 | 75.82 | 1.48e-20 | 5.33e-15 | 16 | reused-final-dense-qxx |
+| gps-3d-128 | route | 130 | 384 | 209.37 | 350.14 | 5 | 737280 | 5898240 | 0.052/0.018/0.060/0.016/1.747 | 4.332 | 343.63 | 5.63e-20 | 1.24e-14 | 16 | reused-final-dense-qxx |
+| gps-3d-256 | diagnostic-engine-only | 258 | 768 | 1310.51 | 591.24 | 5 | 2949120 | 23592960 | 0.103/0.034/0.110/0.029/6.962 | n/a (engine walls) | n/a (engine walls) | n/a (route-only) | n/a (route-only) | 0 | reused-final-dense-qxx |
 
 ## Controlled variant verdicts
 
@@ -52,5 +52,5 @@ C1/C2/C3 verification is wrapper-only (no isolated timing API — no sub-buckets
 ## Recommendation
 
 - Primary bottleneck: TypeScript-side route overhead dominated by verification/result work, with exact C1/C2/C3 contribution unresolved.
-- Secondary bottleneck: dense Qxx materialization/transfer grows with P² but is not dominant in measured wrapper overhead.
+- Secondary bottleneck: dense Qxx materialization/transfer grows with numParams² but is not dominant in measured wrapper overhead.
 - Phase 10K: instrument or redesign covariance-demand/verification boundaries in a separate evidence-first phase; do not remove C1/C2/C3, change routing, or alter covariance contracts until independent safety evidence exists.

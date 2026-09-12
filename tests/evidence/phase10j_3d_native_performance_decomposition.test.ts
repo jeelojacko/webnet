@@ -445,7 +445,7 @@ const runCampaign = async (): Promise<void> => {
     '## Recommendation',
     '',
     '- Primary bottleneck: TypeScript-side route overhead dominated by verification/result work, with exact C1/C2/C3 contribution unresolved.',
-    '- Secondary bottleneck: dense Qxx materialization/transfer grows with P² but is not dominant in measured wrapper overhead.',
+    '- Secondary bottleneck: dense Qxx materialization/transfer grows with numParams² but is not dominant in measured wrapper overhead.',
     '- Phase 10K: instrument or redesign covariance-demand/verification boundaries in a separate evidence-first phase; do not remove C1/C2/C3, change routing, or alter covariance contracts until independent safety evidence exists.',
   );
 
