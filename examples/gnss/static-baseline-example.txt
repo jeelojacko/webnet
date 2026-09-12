@@ -1,0 +1,21 @@
+# WebNet static GNSS baseline example (EXPERIMENTAL core import stage, Phase 12C).
+#
+# Not production-complete: no UI, no statistics report, no native routing.
+# Canonical core stays ECEF; this file is one boundary representation.
+#
+# Grammar:
+#   FRAME ECEF <frame-id> [EPOCH <epoch>] [ELLIPSOID <ellipsoid>]
+#   FRAME ENU  <frame-id> [EPOCH <epoch>] [ELLIPSOID <ellipsoid>]
+#     ORIGIN_LAT <deg> ORIGIN_LON <deg>   (one shared rotation origin)
+#   UNITS M | MM | CM                     (vector units; covariance is unit^2)
+#   GX <id> <X> <Y> <Z> [FIXED | FREE]    (ECEF metres; FIXED anchors datum)
+#   BL <from> <to> <dx> <dy> <dz>
+#     [ID <code>] [SESSION <s>] [SOLUTION <q>] [SOURCE <t>]
+#   COV <xx> <xy> <xz> <yy> <yz> <zz>     (one block per BL, same units^2)
+#   SIGCORR <sx> <sy> <sz> <rhoXY> <rhoXZ> <rhoYZ>  (alternative stochastic form)
+FRAME ECEF ITRF2020@2020.0 EPOCH 2020.0 ELLIPSOID GRS80
+UNITS M
+GX A 3771793.0 140253.0 5124304.0 FIXED
+GX B 3773027.567 140018.875 5124649.875
+BL A B 1234.567 -234.125 345.875 ID BL001 SESSION 2026-101 SOLUTION FIXED
+COV 0.000004 0.000001 0.0000002 0.000009 -0.0000003 0.000016
