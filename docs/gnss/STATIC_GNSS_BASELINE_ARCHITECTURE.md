@@ -401,3 +401,16 @@ blocks, no native routing changes, no CRS/geoid/datum machinery).
 - No TBC proprietary parser: no real sample in-repo; generic importer
   carries the mapping seam for 12E.
 - Evidence: `reports/gnss/phase12c-baseline-import.md`.
+
+## 12D statistics/QC/reporting notes (added post-12C, contract refined)
+
+- Implemented on `feat/static-gnss-baseline-statistics`: per-baseline
+  Qvv/Cvv blocks, redundancy traces, component diagnostics, block
+  diagnostic T (no p-value), deterministic loop QC, whole-block
+  removal what-if, structured + text ECEF report. Adjustment math
+  unchanged; results gain an additive `statistics` field.
+- Refinement of the 12A §9 simplification: effective df is
+  rank(Cvv_i), and the estimated in-adjustment scale admits neither
+  χ² nor F exactly — hence diagnostic-only labeling (see MATH §13).
+- TS-dense only; no native/sparse/WASM, no robust, no mixed networks,
+  no UI. Evidence: `reports/gnss/phase12d-baseline-statistics.md`.

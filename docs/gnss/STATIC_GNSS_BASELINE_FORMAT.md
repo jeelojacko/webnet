@@ -171,4 +171,11 @@ rotation applied, canonical vector/covariance) is retained for trace.
 
 SINEX, RINEX processing, CRS/datum/velocity transforms, geoid,
 mixed terrestrial+GNSS solves, free networks, stochastic control,
-robust GNSS, block statistics/blunder handling, UI.
+robust GNSS, UI.
+
+Phase 12D adds (see `reports/gnss/phase12d-baseline-statistics.md`):
+per-baseline Qvv/Cvv blocks, redundancy traces, component diagnostics,
+block diagnostic T without p-value, deterministic loop QC, whole-block
+removal what-if, and a structured + text ECEF report
+(`buildGnssReportFromInput` / `renderGnssBaselineTextReport`).
+Block MDB, p-values, and automatic iterative deletion remain deferred.

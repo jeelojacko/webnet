@@ -30,6 +30,10 @@ import {
 } from './gnssBaselineCovariance';
 import { gnssBaselineLabel } from './gnssBaselineEquationRows';
 import { runGnssBaselinePreflight } from './gnssBaselinePreflight';
+import {
+  recoverGnssBaselineStatistics,
+  type GnssBaselineStatistics,
+} from './gnssBaselineStatistics';
 
 export interface GnssBaselineAdjustInput {
   stations: StationMap;
@@ -65,6 +69,8 @@ export interface GnssBaselineAdjustResult {
   readonly qxx: number[][];
   readonly conditionEstimate?: number;
   readonly logs: string[];
+  /** Per-baseline Qvv/Cvv/redundancy/block diagnostics (TS dense). */
+  readonly statistics: GnssBaselineStatistics[];
 }
 
 const unreachableInGnssMode = (name: string): never => {
@@ -300,6 +306,13 @@ export const runGnssBaselineAdjustment = (
   const residualVector: number[][] = residuals.flatMap((r) => [[r.vX], [r.vY], [r.vZ]]);
   const weightedResidualSum = denseWeightedQuadratic(finalP, residualVector);
   const varianceFactor = dof > 0 ? weightedResidualSum / dof : 0;
+  const statistics = recoverGnssBaselineStatistics({
+    baselines,
+    residuals,
+    paramIndex,
+    qxx,
+    seuw: Math.sqrt(Math.max(varianceFactor, 0)),
+  });
   return {
     adjustmentFrame: 'ecef',
     routeProvenance: 'typescript-dense',
@@ -318,5 +331,6 @@ export const runGnssBaselineAdjustment = (
     qxx,
     conditionEstimate,
     logs,
+    statistics,
   };
 };
