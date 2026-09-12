@@ -1,7 +1,7 @@
 /**
  * Phase 10I worker-only native full-Qxx auto-route (fail-closed).
  *
- * Routes ordinary single-solve 3D adjustment jobs with at most 384
+ * Routes ordinary single-solve 3D adjustment jobs with at most 768
  * parameters through the real WASM sparse bundle for FINAL COVARIANCE
  * ONLY (all-entry dense Qxx reconstruction, existing precision/report
  * contract preserved). Correction stays TypeScript; no row-products
@@ -63,7 +63,7 @@ import {
 } from './adjustmentSparseAutoRoute';
 
 /** Conservative 3D coordinate-only parameter cap (Phase 10H corpus max). */
-export const NATIVE_FULL_QXX_MAX_PARAMS = 384;
+export const NATIVE_FULL_QXX_MAX_PARAMS = 768;
 
 /**
  * Internal kill switch, ENABLED by default (Phase 10M certification: verified
@@ -77,7 +77,7 @@ export const setNativeFullQxxRouteEnabled = (enabled: boolean): void => {
   nativeFullQxxEnabled = enabled;
 };
 
-/** Reports current kill-switch state (default enabled for the certified <=384 cohort). */
+/** Reports current kill-switch state (default enabled for the certified <=768 cohort). */
 export const isNativeFullQxxRouteEnabled = (): boolean => nativeFullQxxEnabled;
 
 /**
@@ -111,8 +111,8 @@ export interface NativeFullQxxEligibility {
  *
  * Phase 11A diagnostic seam: `maxParams` defaults to the production cap
  * and every production call site omits it. Evidence harnesses ONLY may
- * pass a wider diagnostic value (e.g. 768) to study the verified route
- * above the cap; production reachability above 384 is never enabled.
+ * pass a wider diagnostic value to study the verified route above the
+ * cap; production reachability above the production cap is never enabled.
  */
 export const deriveNativeFullQxxEligibility = (
   request: RunSessionRequest,

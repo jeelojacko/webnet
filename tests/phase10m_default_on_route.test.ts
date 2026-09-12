@@ -2,7 +2,7 @@
  * Phase 10M agent-tier contract: native full-Qxx route default ON.
  *
  * Proves the production toggle with NO test-only enabler: the fresh-module
- * default is enabled, an eligible 3D <=384 job routes `native-full-qxx`
+ * default is enabled, an eligible 3D <=768 job routes `native-full-qxx`
  * without any setter call, every ineligibility gate still fails closed,
  * the kill switch forces a bit-identical clean TypeScript fallback, and
  * the full fallback matrix plus the production-equivalent corpus hold
@@ -99,7 +99,7 @@ describe('Phase 10M default-ON routing (no setter)', () => {
     expect(isNativeFullQxxRouteEnabled()).toBe(true);
   });
 
-  it('routes an eligible 3D <=384 job native with no enabler call', async () => {
+  it('routes an eligible 3D <=768 job native with no enabler call', async () => {
     let loaded = false;
     const attempt = await runWithNativeFullQxxAutoRoute(request3d(), undefined, {
       runSession: (req, onProgress, runtime) => runAdjustmentSession(req, onProgress, runtime),
@@ -156,18 +156,18 @@ describe('Phase 10M default-ON routing (no setter)', () => {
         reason: /GPS covariance/,
       },
       {
-        label: '>384 params',
+        label: '>768 params',
         request: request3d(
           generatePhase6Large3dInput({
-            id: 'gps-3d-256',
+            id: 'gps-3d-257',
             family: 'gps-2d',
-            unknownCount: 256,
-            seed: 2401,
+            unknownCount: 257,
+            seed: 3257,
             variant: 'gps-covariance',
             dimension: '3d',
           }),
         ),
-        reason: /exceeds native full-Qxx cap/,
+        reason: /exceeds native full-Qxx cap 768/,
       },
     ];
     for (const gate of gates) {

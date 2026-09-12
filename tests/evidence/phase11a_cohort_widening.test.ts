@@ -2,31 +2,35 @@
  * Phase 11A evidence: native 3D full-Qxx cohort widening certification.
  *
  * EVIDENCE ONLY (manual, never CI; registered in scripts/testTiers.ts).
- * NO production cap/routing/eligibility/tolerance change: the production
- * constant NATIVE_FULL_QXX_MAX_PARAMS stays 384, correction stays OFF, and
- * every production call site omits the diagnostic `maxParams` seam (so all
- * ordinary requests above 384 still route to clean TypeScript).
+ * Phase 11A-production widened the production constant
+ * NATIVE_FULL_QXX_MAX_PARAMS 384 -> 768 (cap-only change); correction
+ * stays OFF, and every production call site omits the diagnostic
+ * `maxParams` seam (so all ordinary requests above 768 still route to
+ * clean TypeScript). The pre-widening evidence (diagnostic maxParams=768
+ * above a 384 production cap) is preserved in
+ * reports/performance/phase11a-3d-cohort-widening.md; this file now
+ * exercises the true default production route through the cap.
  *
- * Coverage (all 10M ON at 384, correction OFF throughout):
- * 1. Diagnostic seam proof: default rejects >384 (TS-routed), diagnostic
- *    maxParams=768 admits, production constant still 384, correction OFF.
+ * Coverage (all 10M ON at 768, correction OFF throughout):
+ * 1. Production cap proof: default admits to 768, rejects >768
+ *    (TS-routed), diagnostic seam intact above the cap, correction OFF.
  * 2. Widening ladder (nearest-achievable 3D coord-only unknowns, actual n
  *    disclosed): 128u=384, 144u=432, 160u=480, 171u=513, 192u=576,
- *    213u=639, 235u=705, 256u=768. Arm A = pure TS, arm B = verified route
- *    (production route at 384, diagnostic maxParams=768 above). Full-result
+ *    213u=639, 235u=705, 256u=768. Arm A = pure TS, arm B = default
+ *    production route. Full-result
  *    parity < 1e-6, C1/C2/C3 accepted with empty reasons, no damping /
  *    fallbacks / truncation. Records TS/native medians, ratio, absolute
  *    saving, Qxx bytes, verify maxC1/C2, per-part timing, heap/RSS.
  * 3. Boundary disclosure: 170u=510, 214u=642, 255u=765 (exact 511/512,
  *    640/641, 767/769 unreachable coord-only: 3*unknowns + CTRLA/B fixed).
- * 4. Multi-family breadth: 8 realistic variants at 128u (production
- *    route) + 4-variant subset at 213u (diagnostic), honest exclusions.
+ * 4. Multi-family breadth: 8 realistic variants at 128u
+ *    + 4-variant subset at 213u (both production route), honest exclusions.
  * 5. Repeated-run pressure: 25x @384 + 10x @513 + 10x @639 (heap growth).
- * 6. Fallback matrix via diagnostic routing @639 (+ unit-level finalizer
+ * 6. Fallback matrix via production routing @639 (+ unit-level finalizer
  *    rejects): init-fail / throw / kill-switch / non-converge / non-finite
  *    / damped solver / NaN solver / truncation / malformed / count-mismatch
  *    all land clean TS with no native escape.
- * 7. <=384 regression: 32u + 128u production parity, >384 default TS.
+ * 7. <=768 production regression: 32u + 128u parity, constant intact.
  *
  * Writes raw machine output to artifacts/evidence/phase11a/ (gitignored)
  * plus browser fixtures to artifacts/evidence/phase11a-browser/.
@@ -162,20 +166,30 @@ const machine: Record<string, unknown[]> = { ladder: [], boundaries: [], corpus:
 let browserFixtures: { id: string; inputLength: number; request: unknown }[] = [];
 
 describe('Phase 11A cohort widening', () => {
-  it('diagnostic seam: default cap holds, diagnostic admits, correction OFF', async () => {
-    expect(NATIVE_FULL_QXX_MAX_PARAMS, 'production cap unchanged').toBe(384);
+  it('production cap 768: default admits to cap, diagnostic seam intact, correction OFF', async () => {
+    // Phase 11A-production: cap widened 384 -> 768 (cap-only change).
+    // The diagnostic seam (explicit maxParams) is retained for future
+    // evidence studies above the production cap; production call sites
+    // omit it.
+    expect(NATIVE_FULL_QXX_MAX_PARAMS, 'production cap widened to 768').toBe(768);
     expect(isNative3dCorrectionRouteEnabled(), 'correction stays OFF').toBe(false);
     const big = toRequest(ladderInput(160)); // 480 params
     const def = deriveNativeFullQxxEligibility(big);
-    expect(def.eligible, 'default must reject 480 params').toBe(false);
-    expect(def.reasons.join(' ')).toMatch(/exceeds native full-Qxx cap 384/);
+    expect(def.eligible, 'default must admit 480 params').toBe(true);
     expect(def.numParams).toBe(480);
     const diag = deriveNativeFullQxxEligibility(big, DIAG_MAX);
-    expect(diag.eligible, 'diagnostic 768 must admit 480 params').toBe(true);
+    expect(diag.eligible, 'diagnostic 768 still admits 480 params').toBe(true);
+    // Seam still functions above the production cap (evidence-only): an
+    // explicit wider diagnostic value admits what the default rejects.
+    const over = toRequest(ladderInput(300)); // 900 params
+    const overDef = deriveNativeFullQxxEligibility(over);
+    expect(overDef.eligible, 'default must reject 900 params').toBe(false);
+    expect(overDef.reasons.join(' ')).toMatch(/exceeds native full-Qxx cap 768/);
+    expect(deriveNativeFullQxxEligibility(over, 1024).eligible, 'diagnostic 1024 admits 900').toBe(true);
     // Ordinary request above the cap still routes clean TS (no bundle load).
     let bundleTouched = false;
     const seen: unknown[] = [];
-    const attempt = await runWithNativeFullQxxAutoRoute(big, undefined, {
+    const attempt = await runWithNativeFullQxxAutoRoute(over, undefined, {
       runSession: (request, onProgress, runtime) => {
         seen.push(runtime === undefined ? 'clean-ts' : 'native');
         return runAdjustmentSession(request, onProgress, runtime);
@@ -189,7 +203,7 @@ describe('Phase 11A cohort widening', () => {
     expect(bundleTouched).toBe(false);
     expect(seen).toEqual(['clean-ts']);
     expect(attempt.outcome.result.success).toBe(true);
-    machine.fallback.push({ case: 'default-routing-proof>384', route: attempt.route, numParams: def.numParams });
+    machine.fallback.push({ case: 'default-routing-proof>768', route: attempt.route, numParams: overDef.numParams });
   });
 
   it('widening ladder 384..768: verified route parity + cost', async () => {
@@ -200,10 +214,10 @@ describe('Phase 11A cohort widening', () => {
         const input = ladderInput(unknowns);
         const request = toRequest(input);
         const def = deriveNativeFullQxxEligibility(request);
-        const atCap = unknowns === 128;
-        expect(atCap ? def.eligible : !def.eligible, `m${unknowns} default eligibility`).toBe(true);
-        const diagElig = atCap ? def : deriveNativeFullQxxEligibility(request, DIAG_MAX);
-        expect(diagElig.eligible, `m${unknowns} diagnostic eligibility`).toBe(true);
+        // Phase 11A-production: the whole 384..768 ladder is default-eligible.
+        expect(def.eligible, `m${unknowns} default eligibility`).toBe(true);
+        const diagElig = def;
+        expect(diagElig.eligible, `m${unknowns} production eligibility`).toBe(true);
         const numParams = diagElig.numParams ?? -1;
 
         const memBefore = memMB();
@@ -217,12 +231,12 @@ describe('Phase 11A cohort widening', () => {
         }
         expect(tsOutcome.result.success, `m${unknowns} TS must succeed`).toBe(true);
 
-        await runWithNativeFullQxxAutoRoute(request, undefined, { runSession: runAdjustmentSession, loadBundle: loadBundleFor() }, atCap ? undefined : DIAG_MAX);
+        await runWithNativeFullQxxAutoRoute(request, undefined, { runSession: runAdjustmentSession, loadBundle: loadBundleFor() });
         const routeWalls: number[] = [];
         let attempt!: Awaited<ReturnType<typeof runWithNativeFullQxxAutoRoute>>;
         for (let i = 0; i < LADDER_RUNS; i += 1) {
           const t = performance.now();
-          attempt = await runWithNativeFullQxxAutoRoute(request, undefined, { runSession: runAdjustmentSession, loadBundle: loadBundleFor() }, atCap ? undefined : DIAG_MAX);
+          attempt = await runWithNativeFullQxxAutoRoute(request, undefined, { runSession: runAdjustmentSession, loadBundle: loadBundleFor() });
           routeWalls.push(performance.now() - t);
         }
         expect(attempt.route, `m${unknowns} must take native route`).toBe('native-full-qxx');
@@ -247,7 +261,7 @@ describe('Phase 11A cohort widening', () => {
         const native = stats(routeWalls);
         const ratio = native.median / ts.median;
         machine.ladder.push({
-          unknowns, numParams, cohort: atCap ? 'production-route' : 'diagnostic-route-768',
+          unknowns, numParams, cohort: 'production-route',
           tsWallMs: ts, routeWallMs: native, nativeOverTsRatio: ratio,
           class: ratio < 0.9 ? 'native-faster' : ratio > 1.1 ? 'ts-faster' : 'parity',
           absoluteDeltaMs: native.median - ts.median, resultMaxAbsDiff: diff,
@@ -280,12 +294,12 @@ describe('Phase 11A cohort widening', () => {
       for (const unknowns of BOUNDARIES) {
         const input = ladderInput(unknowns);
         const request = toRequest(input);
-        const diagElig = deriveNativeFullQxxEligibility(request, DIAG_MAX);
-        expect(diagElig.eligible, `m${unknowns} diagnostic eligibility`).toBe(true);
+        const diagElig = deriveNativeFullQxxEligibility(request);
+        expect(diagElig.eligible, `m${unknowns} production eligibility`).toBe(true);
         const numParams = diagElig.numParams ?? -1;
         const tsOutcome = runAdjustmentSession(request, undefined, undefined);
         expect(tsOutcome.result.success, `m${unknowns} TS must succeed`).toBe(true);
-        const attempt = await runWithNativeFullQxxAutoRoute(request, undefined, { runSession: runAdjustmentSession, loadBundle: loadBundleFor() }, DIAG_MAX);
+        const attempt = await runWithNativeFullQxxAutoRoute(request, undefined, { runSession: runAdjustmentSession, loadBundle: loadBundleFor() });
         expect(attempt.route, `m${unknowns} native route`).toBe('native-full-qxx');
         expect(attempt.verification?.accepted, `m${unknowns} C1/C2/C3 accept`).toBe(true);
         const diff = resultDiff(tsOutcome.result, attempt.outcome.result);
@@ -299,7 +313,7 @@ describe('Phase 11A cohort widening', () => {
     }
   }, 1200000);
 
-  it('multi-family breadth at 128u (production) + 213u (diagnostic)', async () => {
+  it('multi-family breadth at 128u + 213u (production route)', async () => {
     setNativeFullQxxRouteEnabled(true);
     try {
       await ensureBundle();
@@ -317,11 +331,12 @@ describe('Phase 11A cohort widening', () => {
           { id: `compact-${unknowns}`, input: keepCrossOnly(base, ['D', 'B', 'V'], chainPairs), note: 'cross-links + GPS, no sequential' },
         ];
       };
-      for (const [unknowns, diag, subset] of [[128, false, 8], [213, true, 4]] as const) {
+      // Phase 11A-production: both cohorts run the default production route.
+      for (const [unknowns, subset] of [[128, 8], [213, 4]] as const) {
         for (const c of build(unknowns).slice(0, subset)) {
           const request = toRequest(c.input);
-          const elig = deriveNativeFullQxxEligibility(request, diag ? DIAG_MAX : undefined);
-          const row: Record<string, unknown> = { id: c.id, note: c.note, eligible: elig.eligible, numParams: elig.numParams, cohort: diag ? 'diagnostic-768' : 'production-384' };
+          const elig = deriveNativeFullQxxEligibility(request);
+          const row: Record<string, unknown> = { id: c.id, note: c.note, eligible: elig.eligible, numParams: elig.numParams, cohort: 'production-route' };
           if (!elig.eligible) { machine.corpus.push({ ...row, status: 'excluded', parity: null, reasons: elig.reasons }); continue; }
           const tsOutcome = runAdjustmentSession(request, undefined, undefined);
           if (!tsOutcome.result.success) {
@@ -338,7 +353,7 @@ describe('Phase 11A cohort widening', () => {
           let attempt!: Awaited<ReturnType<typeof runWithNativeFullQxxAutoRoute>>;
           for (let i = 0; i < LADDER_RUNS; i += 1) {
             const t = performance.now();
-            attempt = await runWithNativeFullQxxAutoRoute(request, undefined, { runSession: runAdjustmentSession, loadBundle: loadBundleFor() }, diag ? DIAG_MAX : undefined);
+            attempt = await runWithNativeFullQxxAutoRoute(request, undefined, { runSession: runAdjustmentSession, loadBundle: loadBundleFor() });
             routeWalls.push(performance.now() - t);
           }
           if (attempt.route !== 'native-full-qxx') {
@@ -369,13 +384,13 @@ describe('Phase 11A cohort widening', () => {
     setNativeFullQxxRouteEnabled(true);
     try {
       await ensureBundle();
-      for (const [unknowns, runs, diag] of [[128, 25, false], [171, 10, true], [213, 10, true]] as const) {
+      for (const [unknowns, runs] of [[128, 25], [171, 10], [213, 10]] as const) {
         const request = toRequest(ladderInput(unknowns));
         const heapBefore = memMB();
         const walls: number[] = [];
         for (let i = 0; i < runs; i += 1) {
           const t = performance.now();
-          const attempt = await runWithNativeFullQxxAutoRoute(request, undefined, { runSession: runAdjustmentSession, loadBundle: loadBundleFor() }, diag ? DIAG_MAX : undefined);
+          const attempt = await runWithNativeFullQxxAutoRoute(request, undefined, { runSession: runAdjustmentSession, loadBundle: loadBundleFor() });
           walls.push(performance.now() - t);
           expect(attempt.route, `m${unknowns} run ${i} native`).toBe('native-full-qxx');
           expect(attempt.verification?.accepted, `m${unknowns} run ${i} accepted`).toBe(true);
@@ -383,7 +398,7 @@ describe('Phase 11A cohort widening', () => {
         if (globalThis.gc) globalThis.gc();
         const heapAfter = memMB();
         machine.repeated.push({
-          unknowns, numParams: unknowns * 3, runs, cohort: diag ? 'diagnostic-768' : 'production-384',
+          unknowns, numParams: unknowns * 3, runs, cohort: 'production-route',
           wallMs: stats(walls), heapBefore, heapAfter,
           heapGrowthMB: heapAfter.heapMB - heapBefore.heapMB,
           leak: heapAfter.heapMB - heapBefore.heapMB > 200 ? 'YES' : 'NO',
@@ -394,12 +409,12 @@ describe('Phase 11A cohort widening', () => {
     }
   }, 1800000);
 
-  it('fallback matrix via diagnostic routing @639', async () => {
+  it('fallback matrix via production routing @639', async () => {
     setNativeFullQxxRouteEnabled(true);
     try {
       await ensureBundle();
       const request = toRequest(ladderInput(213)); // 639 params
-      expect(deriveNativeFullQxxEligibility(request, DIAG_MAX).eligible).toBe(true);
+      expect(deriveNativeFullQxxEligibility(request).eligible).toBe(true);
       const ok = { runSession: runAdjustmentSession, loadBundle: loadBundleFor() };
       const cleanTs = async (label: string, attempt: Awaited<ReturnType<typeof runWithNativeFullQxxAutoRoute>>, pattern: RegExp): Promise<void> => {
         expect(attempt.route, `${label} clean TS`).toBe('typescript');
@@ -410,17 +425,17 @@ describe('Phase 11A cohort widening', () => {
       await cleanTs('init-fail', await runWithNativeFullQxxAutoRoute(request, undefined, {
         runSession: runAdjustmentSession,
         loadBundle: async () => { throw new Error('synthetic bundle init failure'); },
-      }, DIAG_MAX), /init failed/);
+      }), /init failed/);
       await cleanTs('run-throw', await runWithNativeFullQxxAutoRoute(request, undefined, {
         runSession: ((req, onProgress, runtime) => {
           if (runtime !== undefined) throw new Error('synthetic native throw');
           return runAdjustmentSession(req, onProgress, runtime);
         }) as typeof runAdjustmentSession,
         loadBundle: loadBundleFor(),
-      }, DIAG_MAX), /threw/);
+      }), /threw/);
       setNativeFullQxxRouteEnabled(false);
       try {
-        await cleanTs('kill-switch', await runWithNativeFullQxxAutoRoute(request, undefined, ok, DIAG_MAX), /kill switch/);
+        await cleanTs('kill-switch', await runWithNativeFullQxxAutoRoute(request, undefined, ok), /kill switch/);
       } finally {
         setNativeFullQxxRouteEnabled(true);
       }
@@ -431,7 +446,7 @@ describe('Phase 11A cohort widening', () => {
             return runtime === undefined ? outcome : mutate(outcome);
           }) as typeof runAdjustmentSession,
           loadBundle: loadBundleFor(),
-        }, DIAG_MAX).then((attempt) => cleanTs(label, attempt, pattern));
+        }).then((attempt) => cleanTs(label, attempt, pattern));
       await doctor((o) => ({ ...o, result: { ...o.result, success: true, converged: false } }), 'non-converge', /not converged/);
       await doctor((o) => {
         const names = Object.keys(o.result.stations);
@@ -453,11 +468,11 @@ describe('Phase 11A cohort widening', () => {
       };
       await cleanTs('damped-solver', await runWithNativeFullQxxAutoRoute(request, undefined, {
         runSession: runAdjustmentSession, loadBundle: wrapSolver((r) => ({ ...r, damping: 1 })),
-      }, DIAG_MAX), /damping|fallback/);
+      }), /damping|fallback/);
       await cleanTs('nonfinite-solver', await runWithNativeFullQxxAutoRoute(request, undefined, {
         runSession: runAdjustmentSession,
         loadBundle: wrapSolver((r) => ({ ...r, covariance: Float64Array.from(r.covariance, (v, i) => (i === 0 ? Number.NaN : v)) })),
-      }, DIAG_MAX), /non-finite|fallback/);
+      }), /non-finite|fallback/);
       // Unit-level finalizer rejects (fail-closed aggregation, no escape).
       const good = await (async () => {
         const capture = new NativeFullQxxCaptureSolver(shared.bundle!.sparseSelectedCovarianceSolver, undefined, DIAG_MAX);
@@ -487,11 +502,13 @@ describe('Phase 11A cohort widening', () => {
     }
   }, 1200000);
 
-  it('<=384 regression: parity, default TS above cap, constant intact', async () => {
+  it('<=768 production regression: parity, constant intact', async () => {
     setNativeFullQxxRouteEnabled(true);
     try {
       await ensureBundle();
-      expect(NATIVE_FULL_QXX_MAX_PARAMS).toBe(384);
+      // Phase 11A-production: cap widened 384 -> 768; the <=384 cohort
+      // keeps its exact path/verification/results (only 385..768 newly reachable).
+      expect(NATIVE_FULL_QXX_MAX_PARAMS).toBe(768);
       expect(isNative3dCorrectionRouteEnabled()).toBe(false);
       for (const unknowns of [32, 128]) {
         const request = toRequest(ladderInput(unknowns));
@@ -516,7 +533,7 @@ describe('Phase 11A cohort widening', () => {
       environment: { node: process.version, platform: process.platform, arch: process.arch },
       production: { cap: NATIVE_FULL_QXX_MAX_PARAMS, correctionEnabled: isNative3dCorrectionRouteEnabled() },
       methodology: {
-        armA: 'pure TypeScript runAdjustmentSession', armB: 'verified route (production at 384, diagnostic maxParams=768 above)',
+        armA: 'pure TypeScript runAdjustmentSession', armB: 'default production route (cap 768)',
         runsPerArm: LADDER_RUNS, parityTol: PARITY_TOL, seeds: '3000+unknownCount, gps-covariance 3D',
         corrections: 'OFF', classes: '<0.90 native-faster, 0.90-1.10 parity, >1.10 ts-faster',
       },

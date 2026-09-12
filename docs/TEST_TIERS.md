@@ -87,7 +87,8 @@ lists):
   `tests/phase8a_preanalysis_sparse_evidence.test.ts`,
   `tests/phase7b7_worker_corpus.test.ts`,
   `tests/phase7b5_candidate_corpus.test.ts`,
-  `tests/phase7b_worker_sparse_proof.test.ts`): real worker / real-bundle /
+  `tests/phase7b_worker_sparse_proof.test.ts`,
+  `tests/phase11a_production_route_realwasm.test.ts`): real worker / real-bundle /
   native-integration proofs. The two `phase7b*` files fail (not skip) when
   the WASM artifact is absent, so they must not run in the artifact-free
   agent tier.

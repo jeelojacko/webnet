@@ -143,3 +143,96 @@ EVIDENCE ONLY — the production constant is NOT changed in this batch.
 
 Widening certification to 768 is supported on numerical, verification, browser,
 memory, fallback, and performance grounds. No production change in this batch.
+
+---
+
+## 13. FINAL PRODUCTION batch (2026-09-12) — cap 384 -> 768, APPROVED
+
+Explicit approval: the §12 GO verdict is enacted as a CAP-ONLY production change.
+Production-code delta vs the evidence batch: exactly one constant,
+`NATIVE_FULL_QXX_MAX_PARAMS` 384 -> 768 in
+`src/workers/adjustmentNativeFullQxxAutoRoute.ts` (plus cap-wording comments on
+the same file). Eligibility gates, C1/C2/C3 verification, tolerances, S3,
+correction-OFF, fallback behavior, and all other routing are frozen.
+768 params ~= 256 unknown 3D stations (coordinate-only upper bound; orientation,
+preflight, GPS-covariance and other gates still apply per network shape).
+
+### Boundary proof (§3) — real production route, no diagnostic override
+
+Eligibility on the production default: 765 params (255u) ADMITTED, 768 (256u)
+ADMITTED, 771 (257u) REJECTED with
+`parameter count 771 exceeds native full-Qxx cap 768 (fail-closed)`, 900 (300u)
+REJECTED with the size-cap reason. Exact 767/769 are not constructible (3 params
+per unknown station); 765/771 are the nearest realistic rungs. No faked counts.
+Contract: `tests/phase11a_production_cap.test.ts` (agent tier, stub bundle).
+
+### Default route proof (§4) — actual default production route
+
+384/513/639/768 params via the default route (real WASM, no override): every
+size routes `native-full-qxx` with verification + C1/C2/C3 accepted, reasons
+empty, no fallback, converged success. 771 routes clean TypeScript with the
+size-cap reason and no bundle load. Contract:
+`tests/phase11a_production_route_realwasm.test.ts` (WASM tier).
+
+### Parity (§5) — native-vs-TS on approved contracts, no tolerance changes
+
+Max diffs (rounded-1e-6 full-result comparison incl. coords/heights/residuals/
+Qxx/stddev/precision/SEUW/statistics/convergence/reports): 384 -> 0, 513 -> 0,
+639 -> 0, 768 -> 0. Browser page-side parity 0 on all 8 fixture/browser cells.
+Tolerance stays 1e-6 (unchanged); observed diffs are exact.
+
+### Fallback (§6) — 768-param fault injection, clean TS throughout
+
+init-fail, run-throw, non-converge, non-finite stations, damped solver,
+NaN-covariance solver, C1-corrupt solver all land clean TypeScript with reason
+strings (WASM tier, real bundle; 11A fault infra reused). Agent-tier stub matrix
+at 32u adds kill-switch, truncation/empty finalizer rejects. No native escape.
+
+### Browser smoke (§7) — real default worker route post-change
+
+Chromium + Firefox, 4 fixtures (128/171/213/256u), fresh worker per cell:
+8/8 `native-full-qxx`, verification accepted, parity 0, stable. Page-side
+round-trip medians (TS vs native): Chromium 182/184, 345/327, 520/519, 763/756
+ms; Firefox 336/351, 676/680, 1239/1263, 2004/2000 ms — parity class (page-side
+round-trip includes transfer + fresh-WASM-init costs; engine-internal walls keep
+the Node-measured win). Smoke only, no full campaign.
+
+### Memory smoke (§8) — bounded
+
+5 sequential 768-param default-route runs, all admitted/accepted; heap
+348.1 -> 338.3 MB (growth -9.7 MB, no monotonic leak, no retained capture).
+11A already covered 25x @384 / 10x @513 / 10x @639 with NO leak verdict.
+
+### Perf smoke (§9) — classifications consistent with 11A
+
+Single-run Node walls (TS vs native, observation only, never asserted):
+384: 361 -> 222 ms (0.62, native-faster); 513: 502 -> 345 (0.69, clear win);
+639: 835 -> 555 (0.66, clear win); 768: 1619 -> 789 (0.49, clear win).
+Consistent with 11A classes (384 beneficial/parity-by-env, wider rungs clear
+win); this host lands 384 in the beneficial band. NO timing assertions in CI.
+
+### <=384 regression (§10)
+
+32u + 128u keep the exact path/verification/results (agent + WASM contracts);
+129u/387 newly reachable by default. Only 385..768 is newly reachable.
+
+### Evidence deltas vs the evidence batch
+
+- Evidence file `tests/evidence/phase11a_cohort_widening.test.ts` now exercises
+  the true default route (explicit diagnostic args dropped where they equaled
+  the old seam; pins updated 384 -> 768); pre-widening history preserved in
+  §§1-12 above.
+- Browser harness `scripts/phase11aBrowserEvidence.mjs` now proves the real
+  default worker route (diagnostic arg removed).
+- `tests/phase10m_default_on_route.test.ts` over-cap gate moved to 257u/771
+  with the cap-768 reason (256u/768 is now eligible).
+- New contracts: `tests/phase11a_production_cap.test.ts` (agent, 6 tests),
+  `tests/phase11a_production_route_realwasm.test.ts` (WASM tier, 4 tests,
+  registered in `scripts/testTiers.ts`).
+
+### Verdict — READY TO MERGE (pending review; no auto-merge)
+
+Production cap 768 is proven on boundary, route, parity, fallback, browser,
+memory, perf, and regression grounds with correction OFF. Validation summary in
+the worker handoff (lint/typecheck/build/tests/parity/C++/browser all green;
+known-noise gates baseline-verified).

@@ -2,8 +2,8 @@
 //
 // Measures the ACTUAL browser worker route in real browsers: page-side
 // round-trip wall (TS wall vs native wall + ratio) for gps-3d-128/171/213/256
-// (= 384/513/639/768 params; 384 on the production route, above via the
-// diagnostic maxParams=768 seam threaded in-worker only).
+// (= 384/513/639/768 params, all on the default production route post
+// Phase 11A-production widening; no diagnostic override anywhere).
 //
 // Arms (production code paths, no src/** changes):
 // - TS arm: the UNMODIFIED built production worker chunk
@@ -105,13 +105,13 @@ self.onmessage = async (event: MessageEvent) => {
   if (!msg || msg.type !== 'run') return;
   const started = performance.now();
   try {
-    // Phase 11A: diagnostic widening ONLY inside this evidence worker
-    // (production default 384 untouched; ordinary requests still TS-route).
+    // Phase 11A-production: the REAL default worker route (production
+    // cap 768; no diagnostic override — the omitted maxParams defaults
+    // to the production constant).
     const attempt = await runWithNativeFullQxxAutoRoute(
       msg.payload as Parameters<typeof runWithNativeFullQxxAutoRoute>[0],
       undefined,
       { runSession: runAdjustmentSession },
-      768,
     );
     (self as unknown as { postMessage: (m: unknown) => void }).postMessage({
       type: 'success',

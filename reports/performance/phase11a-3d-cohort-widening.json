@@ -7,12 +7,12 @@
   "platform": "linux",
   "arch": "x64"
  },
- "productionContractChanged": false,
+ "productionContractChanged": true,
  "production": {
-  "capParams": 384,
+  "cap": 768,
+  "capChange": "NATIVE_FULL_QXX_MAX_PARAMS 384 -> 768 (cap-only; eligibility/C1-C3/tolerances/correction-OFF/fallback frozen)",
   "correctionEnabled": false,
-  "diagnosticSeam": "trailing maxParams (default 384) on eligibility/verifier/finalizer/capture/route; all production call sites omit it",
-  "ordinaryAboveCap": "still clean TypeScript (proven: 480-param request, no bundle load)"
+  "approxStations": "768 params ~= 256 unknown 3D stations (coordinate-only upper bound; other gates still apply)"
  },
  "methodology": {
   "armA": "pure TypeScript runAdjustmentSession",
@@ -579,7 +579,7 @@
   "reason": "Station-exact simple boundary (256 unknown stations x 3 = 768; 512/640 not divisible by 3 so no exact station count); CLEAR WIN <=0.70 on Node AND both browsers at every widened rung with exact parity; same C1/C2/C3 coverage/tolerance; 12/12 fallback; no leaks; Qxx 4.5MB trivial vs compute. EVIDENCE ONLY - production constant NOT changed in this batch.",
   "realWorldMath": "768 params = 256 free 3D stations (+2 fixed controls); a 200-station 3D control network (~600 params) fits with headroom"
  },
- "verdict": "GO for widening certification to 768 (evidence verdict; production change NONE)",
+ "verdict": "READY TO MERGE: production cap 768 proven on boundary/route/parity/fallback/browser/memory/perf/regression grounds (correction OFF; no auto-merge)",
  "drivers": [
   "tests/evidence/phase11a_cohort_widening.test.ts",
   "scripts/phase11aBrowserEvidence.mjs"
@@ -588,5 +588,99 @@
   "artifacts/evidence/phase11a/phase11a-evidence.json",
   "artifacts/evidence/phase11a-browser/phase11a-browser-raw.json",
   "artifacts/evidence/phase11a-browser/requests.json"
- ]
+ ],
+ "productionProof": {
+  "boundary": {
+   "765": "admitted",
+   "768": "admitted",
+   "771": "rejected(size-cap)",
+   "900": "rejected(size-cap)",
+   "note": "exact 767/769 unconstructible (3-coord structure); no diagnostic override"
+  },
+  "defaultRoute": {
+   "384": "native-full-qxx",
+   "513": "native-full-qxx",
+   "639": "native-full-qxx",
+   "768": "native-full-qxx",
+   "771": "typescript(size-cap, no bundle load)",
+   "verification": "accepted, reasons empty, no fallback"
+  },
+  "parityMaxDiffs": {
+   "384": 0,
+   "513": 0,
+   "639": 0,
+   "768": 0,
+   "tolerance": "1e-6 unchanged"
+  },
+  "fallback768": [
+   "init-fail",
+   "run-throw",
+   "non-converge",
+   "non-finite",
+   "damped-solver",
+   "nonfinite-solver",
+   "c1-corrupt"
+  ],
+  "fallbackVerdict": "all clean TypeScript, no native escape",
+  "browser": {
+   "chromium": "4/4 native, accepted, parity 0",
+   "firefox": "4/4 native, accepted, parity 0",
+   "pageSideMs": {
+    "chromium": [
+     [
+      182,
+      184
+     ],
+     [
+      345,
+      327
+     ],
+     [
+      520,
+      519
+     ],
+     [
+      763,
+      756
+     ]
+    ],
+    "firefox": [
+     [
+      336,
+      351
+     ],
+     [
+      676,
+      680
+     ],
+     [
+      1239,
+      1263
+     ],
+     [
+      2004,
+      2000
+     ]
+    ]
+   }
+  },
+  "memory": {
+   "runs": 5,
+   "params": 768,
+   "heapGrowthMB": -9.7,
+   "verdict": "no monotonic leak, no retained capture"
+  },
+  "perfSmoke": {
+   "384": 0.62,
+   "513": 0.69,
+   "639": 0.66,
+   "768": 0.49,
+   "note": "single-run ratios, observation only, no CI assertions; consistent with 11A classes"
+  },
+  "regression": {
+   "32u": "unregressed",
+   "128u": "unregressed",
+   "newlyReachable": "385..768"
+  }
+ }
 }
