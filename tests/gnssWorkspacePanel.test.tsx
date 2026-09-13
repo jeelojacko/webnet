@@ -196,7 +196,7 @@ describe('gnss workspace panel flow', () => {
       });
       const alert = container.querySelector('[role="alert"]');
       expect(alert).not.toBeNull();
-      expect(alert!.textContent).toMatch(/fully fixed/);
+      expect(alert!.textContent).toMatch(/fixed XYZ control/);
     } finally {
       cleanup();
     }
@@ -235,6 +235,90 @@ describe('gnss workspace panel flow', () => {
       const detail = container.querySelector('[aria-label="Baseline detail"]');
       expect(detail).not.toBeNull();
       expect(detail!.textContent).toContain(fmtCov(contribution!.effectiveCovariance));
+    } finally {
+      cleanup();
+    }
+  });
+});
+
+describe('gnss datum handling selector', () => {
+  const constrainedRadio = (container: HTMLDivElement): HTMLInputElement | null =>
+    container.querySelector<HTMLInputElement>('input[name="gnss-datum-handling"][value="constrained"]');
+  const allowFreeRadio = (container: HTMLDivElement): HTMLInputElement | null =>
+    container.querySelector<HTMLInputElement>('input[name="gnss-datum-handling"][value="allow-free"]');
+
+  it('defaults to constrained with a component datum summary', () => {
+    const { container, cleanup } = mountPanel();
+    try {
+      openGvx('sample.gvx', GVX);
+      expect(constrainedRadio(container)?.checked).toBe(true);
+      expect(allowFreeRadio(container)?.checked).toBe(false);
+      expect(textOf(container)).toContain('Component datum summary');
+      expect(textOf(container)).toContain('Constrained');
+    } finally {
+      cleanup();
+    }
+  });
+
+  it('allow-free passes the free component and adjusts through the injected runner', async () => {
+    let ran = 0;
+    const runner = async (input: GnssBaselineAdjustInput): Promise<GnssRunOutcome> => {
+      ran += 1;
+      expect(input.datumMode).toBe('allow-free');
+      const result = runGnssBaselineAdjustment(input);
+      return { result, route: 'typescript', reasons: ['test runner'], workerBacked: false };
+    };
+    const { container, cleanup } = mountPanel(runner);
+    try {
+      openGvx('sample.gvx', GVX);
+      act(() => {
+        allowFreeRadio(container)!.click();
+      });
+      expect(allowFreeRadio(container)?.checked).toBe(true);
+      expect(textOf(container)).toContain('Free');
+      expect(textOf(container)).toContain('datum invariant');
+      const adjust = [...container.querySelectorAll<HTMLButtonElement>('button')].find((button) =>
+        button.textContent?.includes('Adjust (production route)'),
+      );
+      await act(async () => {
+        adjust!.click();
+        await Promise.resolve();
+      });
+      expect(ran).toBe(1);
+      expect(textOf(container)).toContain('Adjusted ECEF stations');
+    } finally {
+      cleanup();
+    }
+  });
+
+  it('allow-free with all components constrained notes the ordinary constrained adjustment', () => {
+    const { container, cleanup } = mountPanel();
+    try {
+      openGvx('sample.gvx', GVX);
+      const toggle = container.querySelector<HTMLButtonElement>('button[aria-label="A control: free"]');
+      act(() => {
+        toggle!.click();
+      });
+      act(() => {
+        allowFreeRadio(container)!.click();
+      });
+      expect(textOf(container)).toContain('ordinary constrained adjustment');
+      expect(textOf(container)).not.toContain('datum invariant');
+    } finally {
+      cleanup();
+    }
+  });
+
+  it('a new import resets the mode to constrained', () => {
+    const { container, cleanup } = mountPanel();
+    try {
+      openGvx('sample.gvx', GVX);
+      act(() => {
+        allowFreeRadio(container)!.click();
+      });
+      expect(allowFreeRadio(container)?.checked).toBe(true);
+      openGvx('sample2.gvx', GVX);
+      expect(constrainedRadio(container)?.checked).toBe(true);
     } finally {
       cleanup();
     }

@@ -21,6 +21,17 @@ Treat a change as parity-sensitive if it touches any of the following:
 
 If uncertain, treat the change as parity-sensitive.
 
+### Static GNSS free-network datum note
+Free-network datum work (`datumMode: 'allow-free'`) is parity-sensitive
+only where it touches displayed quantities: residuals, standardized
+residuals, loops, and block QC are gauge-invariant (identical to the same
+geometry held to the gauge anchor as control), so reference diffs there
+must stay empty; station covariances/sigmas are datum-dependent by design
+(inner-constrained `Q_free`), so diffs against constrained references are
+expected and must be labeled as datum, not regression. Native R2B is never
+admitted for free networks, so R2B-vs-reference comparisons apply only to
+runs with zero free components.
+
 ## Required validation for parity-sensitive work
 
 ## Separation from Synthetic CRS Harness

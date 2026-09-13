@@ -108,6 +108,101 @@ describe('buildGnssSessionInput', () => {
   });
 });
 
+describe('datumMode (Phase 12I.2)', () => {
+  it("defaults to constrained and passes datumMode through to the adjust input", () => {
+    const network = buildGnssSampleNetwork();
+    expect(buildGnssSessionInput(network, {}).datumMode).toBe('constrained');
+    expect(buildGnssSessionInput(network, { datumMode: 'allow-free' }).datumMode).toBe('allow-free');
+  });
+
+  it('constrained missing-datum message names the component and the opt-in', () => {
+    const network = buildGnssSampleNetwork();
+    const freed: Record<string, boolean> = {};
+    Object.keys(network.stations).forEach((id) => {
+      freed[id] = false;
+    });
+    const preflight = runGnssWorkspacePreflight(buildGnssSessionInput(network, { fixedOverrides: freed }));
+    expect(preflight.pass).toBe(false);
+    const datum = preflight.gates.find((gate) => gate.id === 'datumValid');
+    expect(datum?.pass).toBe(false);
+    expect(datum?.message).toMatch(/Component 1 has no fixed XYZ control/);
+    expect(datum?.message).toMatch(/Allow free components/);
+  });
+
+  it('allow-free passes an uncontrolled component as free with datum defect 3', () => {
+    const network = buildGnssSampleNetwork();
+    const freed: Record<string, boolean> = {};
+    Object.keys(network.stations).forEach((id) => {
+      freed[id] = false;
+    });
+    const input = buildGnssSessionInput(network, { fixedOverrides: freed, datumMode: 'allow-free' });
+    const preflight = runGnssWorkspacePreflight(input, 'allow-free');
+    expect(preflight.pass).toBe(true);
+    const datum = preflight.gates.find((gate) => gate.id === 'datumValid');
+    expect(datum?.pass).toBe(true);
+    expect(datum?.message).toMatch(/Component 1/);
+    expect(datum?.message).toMatch(/datum defect 3/);
+  });
+
+  it('allow-free resolves the mode from the input when no explicit mode is passed', () => {
+    const network = buildGnssSampleNetwork();
+    const freed: Record<string, boolean> = {};
+    Object.keys(network.stations).forEach((id) => {
+      freed[id] = false;
+    });
+    const preflight = runGnssWorkspacePreflight(
+      buildGnssSessionInput(network, { fixedOverrides: freed, datumMode: 'allow-free' }),
+    );
+    expect(preflight.pass).toBe(true);
+  });
+
+  it('allow-free with all components constrained uses the ordinary constrained gate', () => {
+    const input = buildGnssSessionInput(buildGnssSampleNetwork(), { datumMode: 'allow-free' });
+    const preflight = runGnssWorkspacePreflight(input, 'allow-free');
+    expect(preflight.pass).toBe(true);
+    expect(preflight.gates.find((gate) => gate.id === 'datumValid')?.message).toMatch(
+      /every component has a fully fixed 3D station/,
+    );
+  });
+
+  it('allow-free still blocks an invalid covariance', () => {
+    const network = buildGnssSampleNetwork();
+    const broken = {
+      ...network,
+      baselines: network.baselines.map((baseline, index) =>
+        index === 0 ? { ...baseline, covariance: { ...baseline.covariance, xx: 0 } } : baseline,
+      ),
+    };
+    const preflight = runGnssWorkspacePreflight(
+      buildGnssSessionInput(broken, { datumMode: 'allow-free' }),
+      'allow-free',
+    );
+    expect(preflight.pass).toBe(false);
+    expect(preflight.gates.find((entry) => entry.id === 'covarianceValid')?.pass).toBe(false);
+  });
+
+  it('allow-free blocks an over-cap free network with FREE_NETWORK_SIZE_LIMIT', () => {
+    const network = buildGnssSampleNetwork();
+    const template = network.stations.SYN_A ?? Object.values(network.stations)[0];
+    const stations = { ...network.stations };
+    for (let index = 0; index < 260; index += 1) {
+      stations[`PAD_${index}`] = { ...template, fixed: false, fixedX: false, fixedY: false, fixedH: false };
+    }
+    const freed: Record<string, boolean> = {};
+    Object.keys(stations).forEach((id) => {
+      freed[id] = false;
+    });
+    const preflight = runGnssWorkspacePreflight(
+      buildGnssSessionInput({ ...network, stations }, { fixedOverrides: freed, datumMode: 'allow-free' }),
+      'allow-free',
+    );
+    expect(preflight.pass).toBe(false);
+    const datum = preflight.gates.find((gate) => gate.id === 'datumValid');
+    expect(datum?.pass).toBe(false);
+    expect(datum?.message).toMatch(/FREE_NETWORK_SIZE_LIMIT/);
+  });
+});
+
 describe('runGnssWorkspacePreflight', () => {
   it('passes every gate on the controlled sample', () => {
     const input = buildGnssSessionInput(buildGnssSampleNetwork(), {});
@@ -126,7 +221,8 @@ describe('runGnssWorkspacePreflight', () => {
     expect(preflight.pass).toBe(false);
     const datum = preflight.gates.find((gate) => gate.id === 'datumValid');
     expect(datum?.pass).toBe(false);
-    expect(datum?.message).toMatch(/fully fixed/);
+    expect(datum?.message).toMatch(/has no fixed XYZ control/);
+    expect(datum?.message).toMatch(/Allow free components/);
   });
 
   it('maps an invalid covariance verbatim onto covarianceValid', () => {
