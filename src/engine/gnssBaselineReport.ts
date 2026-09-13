@@ -13,6 +13,7 @@ import type {
 import { runGnssBaselineAdjustment } from './gnssBaselineAdjust';
 import type { GnssBaselineStatistics } from './gnssBaselineStatistics';
 import type { GnssSetupModel } from './gnssBaselineSetupUncertainty';
+import type { GnssDatumSummary } from './gnssFreeNetwork';
 import { rankGnssBaselineSuspects } from './gnssBaselineStatistics';
 import type { GnssLoopClosure } from './gnssBaselineLoops';
 import { computeGnssLoopClosures } from './gnssBaselineLoops';
@@ -69,6 +70,11 @@ export interface GnssBaselineReport {
   readonly epoch?: string;
   readonly ellipsoid?: string;
   readonly routeProvenance: 'typescript-dense';
+  /**
+   * Phase 12I.1: datum accounting for allow-free free-network runs.
+   * Absent on every constrained report (legacy JSON unchanged).
+   */
+  readonly datumSummary?: GnssDatumSummary;
   /** Phase 12E.3: resolved endpoint setup model; absent when inactive. */
   readonly setupModel?: GnssSetupModel;
   readonly stationCount: number;
@@ -171,6 +177,7 @@ export const buildGnssBaselineReport = (
     epoch: input.epoch,
     ellipsoid: input.ellipsoid,
     routeProvenance: 'typescript-dense',
+    ...(result.datumSummary ? { datumSummary: result.datumSummary } : {}),
     ...(setupModel ? { setupModel: { ...setupModel } } : {}),
     stationCount: Object.keys(result.stations).length,
     fixedStationCount,
@@ -250,6 +257,23 @@ export const renderGnssBaselineTextReport = (report: GnssBaselineReport): string
     `equations: ${report.observationEquationCount} unknowns: ${report.unknownCount} dof: ${report.degreesOfFreedom}`,
     `variance factor: ${report.varianceFactor.toExponential(6)} seuw: ${report.seuw.toExponential(6)}`,
     `weighted residual sum: ${report.weightedResidualSum.toExponential(6)}`,
+    ...(report.datumSummary
+      ? [
+          `datum: ${report.datumSummary.kind} (requested ${report.datumSummary.modeRequested}) ` +
+            `defect=${report.datumSummary.totalDatumDefect} ` +
+            `params=${report.datumSummary.fullParameterCount} rank=${report.datumSummary.estimableRank} ` +
+            `dof=${report.degreesOfFreedom}`,
+          'inner constraints: per-free-component translation sums constrained to zero; ' +
+            'free-station covariance is inner-constrained (Q_free = S Q_gauge S\u2032); ' +
+            'anchors are computational gauge only, never control; QC is gauge-invariant.',
+          ...report.datumSummary.components.map(
+            (component) =>
+              `datum component [${component.stations.join(', ')}]: ${component.kind}` +
+              (component.anchor ? ` computational-gauge=${component.anchor}` : '') +
+              ` rank=${component.rank}/${component.paramCount} defect=${component.defect}`,
+          ),
+        ]
+      : []),
     ...(report.setupModel
       ? [
           `setup model: independent endpoint local ENU ` +
