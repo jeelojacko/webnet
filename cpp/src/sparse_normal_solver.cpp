@@ -9,6 +9,7 @@
 #include <cstddef>
 #include <limits>
 #include <sstream>
+#include <unordered_map>
 #include <vector>
 
 namespace webnet {
@@ -539,6 +540,161 @@ SparseSolveStatus solve_sparse_selected_covariance(
                   "non-finite sparse covariance entry", error_out);
     }
     covariance_out[k] = value;
+  }
+  fill_factor_info(factored, timings, result_out);
+  if (error_out != nullptr) error_out->clear();
+  return SparseSolveStatus::kOk;
+}
+
+SparseSolveStatus solve_sparse_selected_covariance_blocks(
+    const int* row_offsets, const int* design_columns,
+    const double* design_values, int design_nnz, const int* weight_rows,
+    const int* weight_columns, const double* weight_values, int weight_nnz,
+    int equation_count, int parameter_count, const int* block_row_starts,
+    const int* block_col_starts, int block_count, int block_size,
+    double* blocks_out, const SparseSolveOptions& options,
+    SparseFactorInfo* result_out, std::string* error_out) {
+  if (block_count < 0 || block_size <= 0 ||
+      block_size > parameter_count) {
+    return fail(SparseSolveStatus::kInvalidInput,
+                "invalid sparse covariance block batch size", error_out);
+  }
+  if (block_count > 0 && (block_row_starts == nullptr ||
+                           block_col_starts == nullptr ||
+                           blocks_out == nullptr)) {
+    return fail(SparseSolveStatus::kInvalidInput,
+                sparse_status_message(SparseSolveStatus::kInvalidInput),
+                error_out);
+  }
+  for (int b = 0; b < block_count; ++b) {
+    const int row_base = block_row_starts[b];
+    const int col_base = block_col_starts[b];
+    if (row_base < 0 || col_base < 0 ||
+        row_base > parameter_count - block_size ||
+        col_base > parameter_count - block_size) {
+      return fail(SparseSolveStatus::kInvalidInput,
+                  "covariance block start is out of range", error_out);
+    }
+  }
+  FactoredNormal factored;
+  SparsePhaseTimings timings;
+  const SparseSolveStatus factored_ok = factor_packed_system(
+      row_offsets, design_columns, design_values, design_nnz, weight_rows,
+      weight_columns, weight_values, weight_nnz, equation_count,
+      parameter_count, options, factored, error_out, &timings);
+  if (factored_ok != SparseSolveStatus::kOk) return factored_ok;
+  if (block_count == 0) {
+    fill_factor_info(factored, timings, result_out);
+    if (error_out != nullptr) error_out->clear();
+    return SparseSolveStatus::kOk;
+  }
+  // Canonicalize to the UNIQUE columns needed across all blocks (sorted
+  // for deterministic solve order) and run ONE multi-RHS triangular solve.
+  // The solved matrix holds only the needed columns (never p dense
+  // vectors, never a dense inverse); needed rows are streamed out per
+  // column below and the matrix is discarded at scope end.
+  std::vector<int> columns;
+  columns.reserve(static_cast<std::size_t>(block_count) * 2U *
+                  static_cast<std::size_t>(block_size));
+  for (int b = 0; b < block_count; ++b) {
+    for (int k = 0; k < block_size; ++k) {
+      columns.push_back(block_row_starts[b] + k);
+      columns.push_back(block_col_starts[b] + k);
+    }
+  }
+  std::sort(columns.begin(), columns.end());
+  columns.erase(std::unique(columns.begin(), columns.end()), columns.end());
+  const int n = parameter_count;
+  const auto solve_start = SteadyClock::now();
+  Eigen::MatrixXd rhs =
+      Eigen::MatrixXd::Zero(n, static_cast<int>(columns.size()));
+  for (std::size_t j = 0; j < columns.size(); ++j) rhs(columns[j], j) = 1.0;
+  const Eigen::MatrixXd solved = factored.factor.solve(rhs);
+  timings.solve_ms += elapsed_ms(solve_start, SteadyClock::now());
+  if (factored.factor.info() != Eigen::Success || !solved.allFinite()) {
+    return fail(SparseSolveStatus::kFactorizationFailed,
+                sparse_status_message(
+                    SparseSolveStatus::kFactorizationFailed),
+                error_out);
+  }
+  std::vector<int> slot_of(static_cast<std::size_t>(n), -1);
+  for (std::size_t j = 0; j < columns.size(); ++j) {
+    slot_of[static_cast<std::size_t>(columns[j])] = static_cast<int>(j);
+  }
+  // Identical (row,col) pairs are computed once: Q[row][col] =
+  // solved[row][slot(col)] * scale[row] * scale[col].
+  std::unordered_map<long long, double> memo;
+  memo.reserve(static_cast<std::size_t>(block_count) *
+                 static_cast<std::size_t>(block_size) *
+                 static_cast<std::size_t>(block_size));
+  const auto qvalue = [&](int row, int col, bool* ok) -> double {
+    const long long key =
+        static_cast<long long>(row) * static_cast<long long>(n) + col;
+    const auto found = memo.find(key);
+    if (found != memo.end()) return found->second;
+    const double value =
+        solved(row, static_cast<std::size_t>(slot_of[static_cast<std::size_t>(col)])) *
+        factored.scale[row] * factored.scale[col];
+    if (!std::isfinite(value)) {
+      *ok = false;
+      return 0.0;
+    }
+    memo.emplace(key, value);
+    return value;
+  };
+  // Canonical unordered block pairs computed once; (B,A) requests are
+  // answered as the bitwise transpose of the (A,B) canonical block.
+  std::unordered_map<long long, std::vector<double>> canonical;
+  canonical.reserve(static_cast<std::size_t>(block_count));
+  bool finite = true;
+  for (int b = 0; b < block_count && finite; ++b) {
+    const int row_base = block_row_starts[b];
+    const int col_base = block_col_starts[b];
+    const int lo = std::min(row_base, col_base);
+    const int hi = std::max(row_base, col_base);
+    const long long key =
+        static_cast<long long>(lo) * static_cast<long long>(n) + hi;
+    if (canonical.find(key) != canonical.end()) continue;
+    std::vector<double> block(static_cast<std::size_t>(block_size) *
+                              static_cast<std::size_t>(block_size));
+    for (int i = 0; i < block_size && finite; ++i) {
+      for (int j = 0; j < block_size && finite; ++j) {
+        block[static_cast<std::size_t>(i) *
+              static_cast<std::size_t>(block_size) +
+              static_cast<std::size_t>(j)] = qvalue(lo + i, hi + j, &finite);
+      }
+    }
+    canonical.emplace(key, std::move(block));
+  }
+  if (!finite) {
+    return fail(SparseSolveStatus::kNonFiniteInput,
+                "non-finite sparse covariance entry", error_out);
+  }
+  const std::size_t stride =
+      static_cast<std::size_t>(block_size) * static_cast<std::size_t>(block_size);
+  for (int b = 0; b < block_count; ++b) {
+    const int row_base = block_row_starts[b];
+    const int col_base = block_col_starts[b];
+    const int lo = std::min(row_base, col_base);
+    const int hi = std::max(row_base, col_base);
+    const long long key =
+        static_cast<long long>(lo) * static_cast<long long>(n) + hi;
+    const std::vector<double>& block = canonical.find(key)->second;
+    double* out = blocks_out + static_cast<std::size_t>(b) * stride;
+    if (row_base <= col_base) {
+      std::copy(block.begin(), block.end(), out);
+    } else {
+      for (int i = 0; i < block_size; ++i) {
+        for (int j = 0; j < block_size; ++j) {
+          out[static_cast<std::size_t>(i) *
+                static_cast<std::size_t>(block_size) +
+              static_cast<std::size_t>(j)] =
+              block[static_cast<std::size_t>(j) *
+                    static_cast<std::size_t>(block_size) +
+                    static_cast<std::size_t>(i)];
+        }
+      }
+    }
   }
   fill_factor_info(factored, timings, result_out);
   if (error_out != nullptr) error_out->clear();

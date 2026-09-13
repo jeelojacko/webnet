@@ -90,6 +90,28 @@ SparseSolveStatus solve_sparse_selected_covariance(
     SparseFactorInfo* result_out = nullptr,
     std::string* error_out = nullptr);
 
+// Batched selected-covariance blocks of the normal-equation inverse.
+//
+// Accepts the same packed equation system as solve_sparse_selected_covariance.
+// Each block requests the blockSize x blockSize submatrix
+// Qxx[rowBase + i][colBase + j] (row-major into blocks_out in deterministic
+// REQUEST order). Starts are absolute parameter indices with
+// start + blockSize <= parameter_count. Dimension-generic: the caller
+// chooses blockSize (GNSS uses 3). One factorization is reused and one
+// multi-RHS triangular solve runs over the canonicalized UNIQUE columns
+// needed; no dense inverse is ever formed. Requesting both (A,B) and (B,A)
+// answers the second as the bitwise transpose of the first with no extra
+// solves, and duplicate blocks return bitwise-identical values.
+SparseSolveStatus solve_sparse_selected_covariance_blocks(
+    const int* row_offsets, const int* design_columns,
+    const double* design_values, int design_nnz, const int* weight_rows,
+    const int* weight_columns, const double* weight_values, int weight_nnz,
+    int equation_count, int parameter_count, const int* block_row_starts,
+    const int* block_col_starts, int block_count, int block_size,
+    double* blocks_out, const SparseSolveOptions& options = {},
+    SparseFactorInfo* result_out = nullptr,
+    std::string* error_out = nullptr);
+
 // Batched row quadratic and cross products with the normal-equation inverse:
 //   quadratic_out[k] = r_k^T * Qxx * r_k
 //   cross_out[c] = r_{cross_a[c]}^T * Qxx * r_{cross_b[c]}

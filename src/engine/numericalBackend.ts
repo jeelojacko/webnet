@@ -84,6 +84,24 @@ export interface SparseSelectedCovarianceSolver {
   querySelected(_input: SparseSelectedCovarianceInput): SparseSelectedCovarianceResult;
 }
 
+export interface SparseSelectedBlockInput extends SparseEquationSystem {
+  /** Absolute parameter index of each block's first row. */
+  blockRowStarts: Int32Array;
+  /** Absolute parameter index of each block's first column. */
+  blockColStarts: Int32Array;
+  /** Uniform block dimension (GNSS uses 3); must be positive. */
+  blockSize: number;
+}
+
+export interface SparseSelectedBlockResult extends SparseFactorMetadata {
+  /** Row-major blocks in deterministic request order. */
+  blocks: Float64Array;
+}
+
+export interface SparseSelectedBlockSolver {
+  queryBlocks(_input: SparseSelectedBlockInput): SparseSelectedBlockResult;
+}
+
 export interface SparseRowProductsInput extends SparseEquationSystem {
   /** CSR row offsets over parameter space; length is queryRowCount + 1. */
   queryRowOffsets: Int32Array;
