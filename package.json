@@ -25,6 +25,8 @@
     "phase7d:release-report": "tsx scripts/phase7dReleaseReport.ts",
     "gnss:selected-profile": "tsx scripts/gnss/gnssSelectedCovarianceProfile.ts",
     "gnss:r2b-evidence": "tsx scripts/gnss/gnssR2BEvidence.ts",
+    "gnss:r2b-production-perf": "tsx scripts/gnss/gnssR2BProductionPerf.ts",
+    "gnss:r2b-dataset-proof": "tsx scripts/gnss/gnssR2BDatasetProof.ts",
     "gnss:gvx-evidence": "tsx scripts/gnss/gvxEvidence.ts",
     "gnss:tbc-parity": "tsx scripts/gnss/tbcParityEvidence.ts",
     "phase9a:assemble-report": "tsx scripts/phase9a/phase9aAssembleReport.ts",

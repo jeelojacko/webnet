@@ -279,6 +279,7 @@ export interface GnssNativeR1Deps {
 }
 
 const isFiniteGnssResult = (result: GnssBaselineAdjustResult): boolean => {
+  if (!('qxx' in result)) return false;
   if (!Number.isFinite(result.weightedResidualSum) || !Number.isFinite(result.varianceFactor)) {
     return false;
   }

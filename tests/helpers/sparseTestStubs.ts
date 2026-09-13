@@ -17,6 +17,9 @@ import type {
   SparseRowProductsInput,
   SparseRowProductsSolver,
   SparseRowProductsResult,
+  SparseSelectedBlockInput,
+  SparseSelectedBlockResult,
+  SparseSelectedBlockSolver,
   SparseSelectedCovarianceInput,
   SparseSelectedCovarianceResult,
   SparseSelectedCovarianceSolver,
@@ -201,5 +204,72 @@ export const countingCovarianceSolver = (): CountingCovarianceSolver => {
         timings: { assemblyMs: 0, equilibrationMs: 0, analyzeMs: 0, factorizeMs: 0, solveMs: 0 },
       };
     },
+  };
+};
+
+export type CountingBlockSolver = SparseSelectedBlockSolver & {
+  inputs: SparseSelectedBlockInput[];
+};
+
+/**
+ * Phase 12F.3 test-only dense-backed selected-block stub: inverts the
+ * packed system exactly like the WASM bridge would, then slices the
+ * requested row-major blocks. Out-of-range starts answer NaN so the
+ * production verifier (not the stub) rejects fail-closed.
+ */
+export const countingBlockSolver = (): CountingBlockSolver => {
+  const inputs: SparseSelectedBlockInput[] = [];
+  return {
+    inputs,
+    queryBlocks(input: SparseSelectedBlockInput): SparseSelectedBlockResult {
+      inputs.push(input);
+      const { design, weights } = rebuildDense(
+        input.design.rowOffsets,
+        input.design.columns,
+        input.design.values,
+        input.weights.rows,
+        input.weights.columns,
+        input.weights.values,
+        input.observationEquationCount,
+        input.parameterCount,
+      );
+      const inverse = invertPackedSystem(
+        design,
+        weights,
+        input.observationEquationCount,
+        input.parameterCount,
+      );
+      const size = input.blockSize;
+      const blocks = new Float64Array(input.blockRowStarts.length * size * size);
+      for (let b = 0; b < input.blockRowStarts.length; b += 1) {
+        const rowBase = input.blockRowStarts[b] ?? -1;
+        const colBase = input.blockColStarts[b] ?? -1;
+        for (let i = 0; i < size; i += 1) {
+          for (let j = 0; j < size; j += 1) {
+            blocks[b * size * size + i * size + j] = inverse[rowBase + i]?.[colBase + j] ?? Number.NaN;
+          }
+        }
+      }
+      return {
+        blocks,
+        normalNnz: 0,
+        factorNnz: 0,
+        damping: 0,
+        dampingAttempts: 0,
+        timings: { assemblyMs: 0, equilibrationMs: 0, analyzeMs: 0, factorizeMs: 0, solveMs: 0 },
+      };
+    },
+  };
+};
+
+/** Correction stub with a pinned native factor nnz (R2B fill-gate probes). */
+export const correctionWithFill = (factorNnz: number): CountingCorrectionSolver => {
+  const base = countingCorrectionSolver();
+  return {
+    ...base,
+    solveFromEquations: (input: SparseCorrectionSolveInput) => ({
+      ...base.solveFromEquations(input),
+      factorNnz,
+    }),
   };
 };
