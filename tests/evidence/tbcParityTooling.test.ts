@@ -58,6 +58,7 @@ describe('tbcAdjustmentReport (synthetic fixture)', () => {
     const report = parseTbcReport(MINI_HTML);
     expect(report.iterations).toBe(2);
     expect(report.refFactor).toBeCloseTo(1.1, 10);
+    expect(report.refFactorText).toBe('1.10');
     expect(report.chiSquareText).toBe('Failed');
     expect(report.dof).toBe(228);
     expect(report.gnssRedundancy).toBeCloseTo(228, 10);
@@ -70,6 +71,14 @@ describe('tbcAdjustmentReport (synthetic fixture)', () => {
     expect(report.constrainedStation).toBe('P041');
     expect(report.activeObsIds).toEqual(['PV135', 'PV165']);
     expect(report.ecefRows).toHaveLength(2);
+    const p041row = report.ecefRows.find((row) => row.id === 'P041');
+    expect(p041row?.xErr).toBeNull();
+    expect(p041row?.err3d).toBeNull();
+    const pltc = report.ecefRows.find((row) => row.id === 'PLTC');
+    expect(pltc?.xErr).toBeCloseTo(0.003, 10);
+    expect(pltc?.yErr).toBeCloseTo(0.002, 10);
+    expect(pltc?.zErr).toBeCloseTo(0.002, 10);
+    expect(pltc?.err3d).toBeCloseTo(0.004, 10);
     expect(report.p041Ecef?.x).toBeCloseTo(-1283633.4779, 4);
     expect(report.p041Ecef?.y).toBeCloseTo(-4726429.1942, 4);
     expect(report.p041Ecef?.z).toBeCloseTo(4074798.0851, 4);
@@ -78,6 +87,7 @@ describe('tbcAdjustmentReport (synthetic fixture)', () => {
   it('is tolerant: missing sections decode as null/empty, never throw', () => {
     const report = parseTbcReport('<html><body>empty</body></html>');
     expect(report.dof).toBeNull();
+    expect(report.refFactorText).toBeNull();
     expect(report.ecefRows).toEqual([]);
     expect(report.activeObsIds).toEqual([]);
     expect(report.constrainedStation).toBeNull();
@@ -212,6 +222,35 @@ describe('setupCovarianceEcef (hypothesis sanity)', () => {
     // Two endpoints summed: horizontal variance 2*0.005^2 at the equator maps to Y/Z.
     expect(cov.yy).toBeCloseTo(2 * 0.005 * 0.005, 12);
     expect(cov.xy).toBeCloseTo(0, 12);
+  });
+});
+
+describe('setupCovarianceEcef (parameterized setup pairs)', () => {
+  // At the equator point [a,0,0]: horizontal (E,N) maps to Y/Z, vertical (U) to X.
+  it('zero setup contributes exactly zero', () => {
+    expect(setupCovarianceEcef([6378137, 0, 0], [6378137, 0, 0], 0, 0)).toEqual({
+      xx: 0, yy: 0, zz: 0, xy: 0, xz: 0, yz: 0,
+    });
+  });
+
+  it('centering-only loads Y/Z, antenna-only loads X', () => {
+    const mc = setupCovarianceEcef([6378137, 0, 0], [6378137, 0, 0], 0.005, 0);
+    expect(mc.xx).toBe(0);
+    expect(mc.yy).toBeCloseTo(2 * 0.005 * 0.005, 12);
+    expect(mc.zz).toBeCloseTo(2 * 0.005 * 0.005, 12);
+    const mh = setupCovarianceEcef([6378137, 0, 0], [6378137, 0, 0], 0, 0.002);
+    expect(mh.xx).toBeCloseTo(2 * 0.002 * 0.002, 12);
+    expect(mh.yy).toBe(0);
+    expect(mh.zz).toBe(0);
+  });
+
+  it('combined pair equals the sum of its parts', () => {
+    const mc = setupCovarianceEcef([6378137, 0, 0], [6378137, 0, 0], 0.005, 0);
+    const mh = setupCovarianceEcef([6378137, 0, 0], [6378137, 0, 0], 0, 0.002);
+    const mch = setupCovarianceEcef([6378137, 0, 0], [6378137, 0, 0], 0.005, 0.002);
+    for (const key of ['xx', 'yy', 'zz', 'xy', 'xz', 'yz'] as const) {
+      expect(mch[key]).toBeCloseTo(mc[key] + mh[key], 12);
+    }
   });
 });
 

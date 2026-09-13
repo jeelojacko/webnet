@@ -112,3 +112,65 @@ GVX vectors/coordinates are NAD83(2011)@2010; the TBC report adjusts in NAD 1983
 - All 91 vectors carry `SURVEY_SETUP_ID=PP`, a single project-level `Post-processed` block — not a physical occupation id. Zero `session`/`occupation` strings in the GVX; all equipment serials are `0` (receiver types `UNKNOWN`); endpoint equipment (E1–E4 antenna types) is inferable per POINT but is not an occupation key. Report `cafa0ac3.html` has no session/occupation grouping or per-vector timestamps.
 - Proven shared occupations: NONE. Candidate groups only: ~41 exact-timestamp temporal groups (max ~6 vectors per identical interval, e.g. PV116/PV146 14:50–15:48 via Jeffco Reset) — identical times may be copied/trimmed records, so confidence is candidate, never proof.
 - Metadata is INSUFFICIENT for a defensible per-occupation setup-covariance model; shared-session cross-baseline covariance is plausible but unprovable from this intake. A0/AC/AH runs remain necessary — setup-error identification is STOPPED until they are present.
+- EXPERIMENTAL UPDATE (12E.2 controlled runs, see appendix below): the STOP is lifted. The independent-endpoint ENU model reproduces all four reference factors within display, so per-occupation / shared-session cross-baseline covariance is NOT REQUIRED for this stochastic — any such contribution is below display detectability (coordinate bound ~1.1e-4 m). No per-occupation model will be built.
+
+<!-- MANUAL setup-error experiment appendix: re-append after regenerating this file via `npm run gnss:tbc-parity`. Machine evidence: stdout JSON of the four parameterized runs (`--model m0|mc|mh|mch --report <body>`); intake files are read-only local-only, never committed. -->
+
+## Dataset A Controlled Setup-Error Experiment (A0/AC/AH/A)
+
+Evidence-only: no production math, parser semantics, tolerances, routing, UI, or CRS code was changed. All four models run on the SAME original Dataset-A GVX (`Adjusting the Network.gvx`, 91 vectors, P041 fixed) through the same `runGnssBaselineAdjustment` TS-dense path; only the endpoint setup covariance added via the reused `setupCovarianceEcef` differs. CLI: `--model m0|mc|mh|mch` (single parameterized setup run; legacy `a`/`b` behavior byte-identical) with `--report <TBC body html>` (SEUW/vTPv compatibility intervals derive from that report's own displayed factor precision) and `--out` (parameterized runs skip the markdown report unless `--out` is given, so the canonical file above is never clobbered). Parser generalization (synthetic-fixture tested): `refFactorText` (raw display cell) plus per-station `xErr/yErr/zErr/err3d` display-error columns (`?` fixed cells decode as null).
+
+### Manifest (roles identified BY CONTENT: BODY = `<title>Network Adjustment Report</title>` + `ReportSummary`; TOC = `<title>Table of Contents</title>` + `BodyFrame` targets; WRAPPER = `<frameset` + `BodyFrame`)
+
+| Run | File | Role | Bytes | SHA-256 |
+| --- | --- | --- | --- | --- |
+| A0 | 67233623.html | BODY | 218996 | f642f099f3f8937785f117130c441599c6f20e093c65730c0d7542627ded1d72 |
+| A0 | 6723325e.html | TOC | 3956 | 8b4bca8c6455581350d54ef1f907ac93d7c295c1c5bddfe202fbd079a185f30d |
+| A0 | Rpt66f0dd45.html | WRAPPER | 728 | b69101bbc02096ad3196ab3ddb602a35448eae96c8c9d90e93425b14f6b97611 |
+| AC | ae143a18.html | BODY | 218918 | c710688ef1c2df95649ed5992a1a87ec0edd3692b16d6d6e22688840e64a8643 |
+| AC | ae13888d.html | TOC | 3956 | 7e23ace67c187bf78a7396bb81b6846020ceafe6900811f64ab0e6283d349d37 |
+| AC | Rptade0e6e4.html | WRAPPER | 728 | d0a2461d7db1272c3ea2f439806127c936098ab0d8122b49476fe9a7f8af277d |
+| AH | d1844f73.html | BODY | 218994 | 6b5f47fa19c44a43d116a6df723194b46ada803aaf6017d0c83b7ef663efae9c |
+| AH | d183d9d6.html | TOC | 3956 | a8a886a5bdddbbf3a47b18dc1290639610017e78b5e9ad584c2d54b856d99708 |
+| AH | Rptd15149aa.html | WRAPPER | 728 | 32b4c12eca0ddeafc23a4d37be85a285f259d809a57984c078ad2a763415fed8 |
+| A (orig) | cafa0ac3.html | BODY | 218925 | 86cf07aef5493db71622aa058274d393a6719c48c2a76927eab50e7665696145 |
+
+Authoritative observations for ALL models: original Dataset-A GVX (249087 bytes, SHA-256 7e3cfe2b36c7f9671eb230d4a55e37dacfe701471d45d6b306f64dedabc85ccd).
+
+### Invariant gate: PASS (all four runs)
+
+Existing `parseTbcReport` over A0/AC/AH/A bodies proves identical non-experimental conditions: the same 91 solution IDs as sets (order differs only — table order; GVX set also exact), DOF 228 / redundancy 228, P041 `Local` Fixed/Fixed/Fixed, a-priori scalar 1.00, DRMS confidence, 2 iterations, chi-square Failed, same `.vce` project path, same State Plane 1983 / Colorado North 0501 / NAD 1983 (Conus) / WGS84 / GEOID09, no terrestrial/direction/distance/level sections in any body. The ONLY material differences are centering/height: A0 0.000/0.000, AC 0.005/0.000, AH 0.000/0.002, A 0.005/0.002 — exactly the expected matrix. (Gate C2 is NOTE for the variant runs because the original `settings.txt` describes the 0.005/0.002 project — expected, not a failure; PASS for A.) No other material setting differs: causality is isolated, no inference beyond setup errors is made.
+
+### Four-run scorecard (WebNet DOF 228 in every run; TBC intervals assume half-up display rounding of the shown 2-decimal factor)
+
+| Pair | TBC factor [interval] | WebNet SEUW | Factor diff | max comp | max 3D | RMS 3D | Worst station |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| A0/M0 (raw) | 2.10 [2.095,2.105) | 2.100053 PASS | +0.000053 | 4.991e-5 | 6.846e-5 | 5.089e-5 | filter |
+| AC/MC (0.005/0) | 1.30 [1.295,1.305) | 1.297104 PASS | -0.002896 | 7.808e-5 | 1.073e-4 | 5.024e-5 | PLTC |
+| AH/MH (0/0.002) | 1.99 [1.985,1.995) | 1.988831 PASS | -0.001169 | 5.036e-5 | 6.265e-5 | 4.892e-5 | 3 |
+| A/MCH (0.005/0.002) | 1.10 [1.095,1.105) | 1.102511 PASS | +0.002511 | 5.115e-5 | 7.814e-5 | 4.948e-5 | filter |
+
+vTPv (gate I PASS all runs): M0 1005.5307 vs implied [1000.6977,1010.2737); MC 383.6049 vs [382.3617,388.2897); MH 901.8426 vs [898.3713,907.4457); MCH 277.1410 vs [273.3777,278.3937). Per-run parity levels: A0/M0 = 3/4 (F PASS and max component within the 5e-5 rounding floor); AC/MC, AH/MH, A/MCH = 1/4 (F PASS; coordinates hairline-to-1e-4 above the strict component floor — AH by 0.4 um on one component, A by 1.1 um, AC by 2.8e-5 at PLTC).
+
+Differential response (TBC displayed deltas vs model SEUW deltas; TBC delta quantum +-0.01 from 2-decimal display): A0->AC -0.80 vs -0.802949; A0->AH -0.11 vs -0.111222; A0->A -1.00 vs -0.997542; AC->A -0.20 vs -0.194593; AH->A -0.89 vs -0.886320. The model predicts TBC's response to each setup change within display.
+
+### Height orientation (H1 vs H2)
+
+H1 (ENU-up augmentation, the reused hypothesis) AGREES: MH SEUW 1.988831 in [1.985,1.995), coordinate/precision deltas agree (below). The H2 naive ECEF-Z-only negative control was therefore NOT run — recorded as not-triggered, not as skipped evidence.
+
+### Precision-delta check A0->AC/AH/A (TBC per-station X/Y/Z/3D Error columns are mm-rounded a-posteriori DRMS display, NOT raw Qxx; model sigmas are SEUW x sqrt(qxx diag) via the engine param index)
+
+Absolute ranges agree within display: M0 |sig| 3.4-5.3 mm vs TBC err3d 3-5 mm; MC 4.4-9.1 vs 4-9; MH 3.7-6.3 vs 4-6; MCH 3.9-8.0 vs 4-8. Deltas agree in direction everywhere the TBC display resolves a change (15/15 stations for C; every nonzero displayed H/B delta agrees — the `0.000` entries are sub-display, e.g. barbara C: TBC +0.000 vs model +0.0007; hard B model -0.0001 is negligible) and in magnitude within ~1 mm display quantum (e.g. station 3: C +0.004 vs +0.0038, H +0.001 vs +0.0010, B +0.003 vs +0.0027; filter: C +0.004 vs +0.0038; fsi: C +0.003 vs +0.0031). P041 excluded (fixed, `?` error cells).
+
+### Verdicts
+
+- Causal isolation: PASS. The pre-registered A0 prediction (raw Model A SEUW converges to the displayed factor, coordinates within reference resolution) is confirmed: A0/M0 reaches parity level 3/4, equal to Dataset-B level 3.
+- Independent-endpoint ENU model: SUPPORTED (strongly, four runs) — NOT claimed PROVEN, because 2-decimal factors and 4-decimal coordinates cannot exclude nearby model variants (AC-PLTC exceeds the rounding floor at 1.07e-4).
+- Centering sub-verdict: SUPPORTED (AC/MC factor, deltas, precision all agree). Height sub-verdict: SUPPORTED (AH/MH factor, deltas, precision all agree).
+- Cross-baseline (shared-session) covariance: NO detectable effect — all four reference factors reproduce without it; any contribution is below display detectability (coordinate bound ~1.1e-4 m, worst case AC-PLTC).
+- Brief S16 rotation-convention / failure-order analysis: NOT TRIGGERED (independent model succeeds; no tuning performed, none permitted).
+- Dataset-A revised level: 3/4 via the controlled A0/M0 pair (original-report-only level was 1/4); the original A/MCH pair stays 1/4 by the letter of the strict component floor (single-component excess ~1 um).
+
+### Phase 12E.3 production recommendation (supported by this evidence)
+
+Propose OPTIONAL setup-error sigmas on the GNSS baseline input — e.g. per-run `setupCenteringM` / `setupAntennaM` defaulting to 0.000 (current raw behavior unchanged when unset) — applied as independent-endpoint ENU->ECEF augmentation exactly as validated here, with regression tests locked to the A0/AC/AH/A numbers above. No silent TBC defaults: unset means zero, and any nonzero default must be an explicit, documented operator choice. Docs (`docs/gnss/`, report 12E.3 scope) record the SUPPORTED-not-PROVEN status and the DRMS/not-comparable ledgers.

@@ -1,7 +1,15 @@
 /**
  * Phase 12E.2 — REAL-TBC parity evidence harness (evidence only).
  *
- * CLI: tsx scripts/gnss/tbcParityEvidence.ts <intake-dir> [--model a|b] [--dataset a|b]
+ * CLI: tsx scripts/gnss/tbcParityEvidence.ts <intake-dir> [--model a|b|m0|mc|mh|mch] [--report <file>] [--out <file>] [--dataset a|b]
+ *
+ * --model a (default): MODEL A raw-GVX run vs cafa0ac3.html (dataset-A default,
+ *   unchanged). --model b: legacy MODEL B run (raw + 0.005/0.002 hypothesis).
+ * --model m0|mc|mh|mch: single parameterized setup-error run
+ *   (0,0 / 0.005,0 / 0,0.002 / 0.005,0.002 m) vs --report <body html>
+ *   (default cafa0ac3.html under the intake dir); SEUW/vTPv compatibility
+ *   intervals derive from the report's own displayed factor precision.
+ *   Parameterized runs skip the markdown report unless --out is given.
  *
  * Dataset A (default): flat intake layout (Adjusting the Network / cafa0ac3.html).
  * Dataset B (--dataset b): ProcessingGNSSBaselines layout; delegates to
@@ -19,6 +27,7 @@ import { existsSync, mkdirSync, readFileSync, readdirSync, writeFileSync } from 
 import { join } from 'node:path';
 import { parseGvx } from '../../src/engine/gnssGvxImport';
 import { parseGvxSyntax } from '../../src/engine/gnssGvxSyntax';
+import { buildSolveParameterIndex } from '../../src/engine/adjustmentPreprocessing';
 import { runGnssBaselineAdjustment } from '../../src/engine/gnssBaselineAdjust';
 import type { GnssBaselineObservation } from '../../src/engine/gnssBaselineTypes';
 import type { StationMap } from '../../src/types';
@@ -52,11 +61,37 @@ const main = (): void => {
     runDatasetB(dir);
     return;
   }
-  const args = process.argv.slice(2).filter((arg) => !arg.startsWith('--model'));
-  const modelFlag = process.argv.includes('--model')
-    ? (process.argv[process.argv.indexOf('--model') + 1] ?? 'a')
-    : 'a';
+  const rawArgs = process.argv.slice(2);
+  const flagVal = (name: string): string | undefined => {
+    const eq = rawArgs.find((arg) => arg.startsWith(`${name}=`));
+    if (eq) return eq.slice(name.length + 1);
+    const at = rawArgs.indexOf(name);
+    return at === -1 ? undefined : (rawArgs[at + 1] ?? undefined);
+  };
+  // Positional args: skip flags and their consumed values.
+  const consumed = new Set<string>();
+  for (const name of ['--model', '--report', '--out', '--dataset']) {
+    const at = rawArgs.indexOf(name);
+    if (at !== -1) {
+      consumed.add(rawArgs[at] ?? '');
+      if (rawArgs[at + 1] != null && !(rawArgs[at + 1] ?? '').startsWith('--')) consumed.add(rawArgs[at + 1] ?? '');
+    }
+  }
+  const positionals = rawArgs.filter((arg) => !arg.startsWith('--') && !consumed.has(arg) && !arg.includes('='));
+  const args = positionals;
+  const modelFlag = flagVal('--model') ?? 'a';
+  const SETUPS: Record<string, readonly [number, number] | null> = {
+    a: null, b: null, m0: [0, 0], mc: [0.005, 0], mh: [0, 0.002], mch: [0.005, 0.002],
+  };
+  if (!(modelFlag in SETUPS)) {
+    console.log(`tbcParityEvidence: unknown --model '${modelFlag}' (expect a|b|m0|mc|mh|mch).`);
+    process.exit(2);
+  }
   const modelB = modelFlag === 'b';
+  const setupPair = SETUPS[modelFlag] ?? null;
+  const paramMode = setupPair != null;
+  const reportOverride = flagVal('--report');
+  const outOverride = flagVal('--out');
   const dir = args[0];
   if (!dir || !existsSync(dir)) {
     console.log('tbcParityEvidence: pass the TBC intake directory (read-only; never modified).');
@@ -120,11 +155,14 @@ const main = (): void => {
   }));
 
   // (c) Report + settings.txt + vectorlist.xlsx.
-  const reportPath = join(dir, 'cafa0ac3.html');
-  const report = parseTbcReport(existsSync(reportPath) ? readFileSync(reportPath, 'utf8') : '');
+  const reportPath = reportOverride != null
+    ? (existsSync(reportOverride) ? reportOverride : join(dir, reportOverride))
+    : join(dir, 'cafa0ac3.html');
+  const reportHtml = existsSync(reportPath) ? readFileSync(reportPath, 'utf8') : '';
+  const report = parseTbcReport(reportHtml);
   gates.push({
     id: 'C0', name: 'TBC report parse',
-    verdict: report.dof === 228 && report.refFactor === 1.1 ? 'PASS' : 'FAIL',
+    verdict: report.dof === 228 && report.refFactor != null ? 'PASS' : 'FAIL',
     detail: `iterations=${report.iterations} refFactor=${report.refFactor} chiSq=${report.chiSquareText} dof=${report.dof} redundancy=${report.gnssRedundancy} constrained=${report.constrainedStation} ecefRows=${report.ecefRows.length} obs=${report.activeObsIds.length}`,
   });
   const reportIdSet = setOf(report.activeObsIds);
@@ -146,7 +184,7 @@ const main = (): void => {
   const settingsAntenna = /height of antenna:\s*([\d.]+)/i.exec(gnssSettings)?.[1] ?? null;
   gates.push({
     id: 'C2', name: 'settings.txt cross-check',
-    verdict: settingsCentering === '0.005' && settingsAntenna === '0.002' ? 'PASS' : 'NOTE',
+    verdict: settingsCentering === String(report.centeringErr ?? '') && settingsAntenna === String(report.antennaErr ?? '') && settingsCentering != null ? 'PASS' : 'NOTE',
     detail: `centering=${settingsCentering} antenna=${settingsAntenna} (report: ${report.centeringErr}/${report.antennaErr}); holds P041 fixed in 2D+h per settings note.`,
   });
   let xlsxIds: string[] = [];
@@ -178,21 +216,49 @@ const main = (): void => {
     gates.push({ id: 'D', name: 'Spreadsheet ID reconciliation (GVX <-> xlsx col A)', verdict: 'NOTE', detail: xlsxDetail });
   }
 
-  // (d) MODEL A raw-GVX run (robust OFF by default) + Phase 12D statistics.
+  // (d) Model run (robust OFF by default) + Phase 12D statistics. Legacy a/b
+  // always run raw MODEL A here; --model m0|mc|mh|mch runs the
+  // parameterized setup-error run on the same GVX via setupCovarianceEcef.
   const runModel = (baselines: GnssBaselineObservation[]) =>
     runGnssBaselineAdjustment({ stations, baselines });
-  const resultA = runModel([...remapped].sort((a, b) => a.id - b.id));
+  const nameXyz = new Map<string, [number, number, number]>();
+  [...grouping.groups.values()].forEach((group) => nameXyz.set(group.name, [group.x, group.y, group.z]));
+  const withSetup = (pair: readonly [number, number]): GnssBaselineObservation[] =>
+    remapped.map((b) => {
+      const setup = setupCovarianceEcef(nameXyz.get(b.from) ?? [0, 0, 0], nameXyz.get(b.to) ?? [0, 0, 0], pair[0], pair[1]);
+      return {
+        ...b,
+        covariance: {
+          xx: b.covariance.xx + setup.xx, yy: b.covariance.yy + setup.yy, zz: b.covariance.zz + setup.zz,
+          xy: b.covariance.xy + setup.xy, xz: b.covariance.xz + setup.xz, yz: b.covariance.yz + setup.yz,
+        },
+      };
+    });
+  const active = paramMode && setupPair != null && (setupPair[0] !== 0 || setupPair[1] !== 0)
+    ? withSetup(setupPair)
+    : [...remapped];
+  const resultA = runModel([...active].sort((a, b) => a.id - b.id));
   const seuwA = Math.sqrt(resultA.varianceFactor);
-  const tbcInterval: [number, number] = [1.095, 1.105];
+  // Compatibility interval from the report's own displayed factor precision
+  // ("1.10" => [1.095,1.105)); half-up display rounding assumed (evidence-only).
+  const factorDecimals = /\.(\d+)\s*$/.exec(report.refFactorText ?? '')?.[1]?.length ?? 2;
+  const factorHalf = 0.5 * 10 ** -factorDecimals;
+  const factorQuantum = 10 ** (factorDecimals + 1);
+  const refCenter = report.refFactor ?? Number.NaN;
+  const tbcInterval: [number, number] = [
+    Math.round((refCenter - factorHalf) * factorQuantum) / factorQuantum,
+    Math.round((refCenter + factorHalf) * factorQuantum) / factorQuantum,
+  ];
+  const factorDisplay = report.refFactorText ?? String(report.refFactor);
   gates.push({
     id: 'E', name: 'DOF cross-check',
     verdict: resultA.dof === 228 && resultA.numObsEquations === 273 && resultA.numParams === 45 ? 'PASS' : 'FAIL',
     detail: `n=${resultA.numObsEquations} u=${resultA.numParams} dof=${resultA.dof} (TBC 273/45/228); logicalObs=${resultA.logicalObservations} statistics=${resultA.statistics.length} (Phase 12D).`,
   });
   gates.push({
-    id: 'F', name: 'SEUW vs TBC 1.10 display interval',
+    id: 'F', name: `SEUW vs TBC ${factorDisplay} display interval`,
     verdict: seuwA >= tbcInterval[0] && seuwA < tbcInterval[1] ? 'PASS' : 'FAIL',
-    detail: `SEUW=${seuwA.toFixed(6)} (displayed TBC 1.10 => underlying in [1.095,1.105)).`,
+    detail: `SEUW=${seuwA.toFixed(6)} (displayed TBC ${factorDisplay} => underlying in [${tbcInterval[0]},${tbcInterval[1]})).`,
   });
 
   // (e) Per-station ECEF comparison (NAME-keyed; 16 rows, NOT 182 — corrected).
@@ -229,7 +295,7 @@ const main = (): void => {
       : 'TBC P041 ECEF row missing.',
   });
   const vtpvA = resultA.varianceFactor * resultA.dof;
-  const tbcVtpv: [number, number] = [1.095 * 1.095 * 228, 1.105 * 1.105 * 228];
+  const tbcVtpv: [number, number] = [tbcInterval[0] * tbcInterval[0] * 228, tbcInterval[1] * tbcInterval[1] * 228];
   gates.push({
     id: 'I', name: 'vTPv vs implied TBC interval',
     verdict: vtpvA >= tbcVtpv[0] && vtpvA < tbcVtpv[1] ? 'PASS' : 'FAIL',
@@ -241,21 +307,11 @@ const main = (): void => {
     detail: 'Residuals NOT COMPARABLE (TBC reports Az/DeltaHt/EllipDist derived quantities; WebNet solves raw ECEF DX/DY/DZ — no exact conversion derived). Precision/covariance display terms NOT COMPARABLE (a-posteriori/DRMS display, not raw Qxx). Frame: GVX NAD83(2011)@2010 vs report NAD83(Conus)+State Plane+GEOID09 — ECEF comparison only; grid/geodetic/orthometric NOT compared.',
   });
 
-  // (f) MODEL B setup-covariance hypothesis.
+  // (f) MODEL B setup-covariance hypothesis (legacy --model b only; the
+  // parameterized --model m0|mc|mh|mch modes run their setup above instead).
   let modelBResult: { seuw: number; maxNorm: number; rms: number; vtpv: number; dof: number } | null = null;
   if (modelB) {
-    const nameXyz = new Map<string, [number, number, number]>();
-    [...grouping.groups.values()].forEach((group) => nameXyz.set(group.name, [group.x, group.y, group.z]));
-    const baselinesB = remapped.map((b) => {
-      const setup = setupCovarianceEcef(nameXyz.get(b.from) ?? [0, 0, 0], nameXyz.get(b.to) ?? [0, 0, 0]);
-      return {
-        ...b,
-        covariance: {
-          xx: b.covariance.xx + setup.xx, yy: b.covariance.yy + setup.yy, zz: b.covariance.zz + setup.zz,
-          xy: b.covariance.xy + setup.xy, xz: b.covariance.xz + setup.xz, yz: b.covariance.yz + setup.yz,
-        },
-      };
-    });
+    const baselinesB = withSetup([0.005, 0.002]);
     const resultB = runModel([...baselinesB].sort((a, b) => a.id - b.id));
     const seuwB = Math.sqrt(resultB.varianceFactor);
     const normsB = [...grouping.groups.keys()].sort().map((name) => {
@@ -293,7 +349,27 @@ const main = (): void => {
 
   const evidence = {
     ok: failCount === 0,
-    model: modelB ? 'B' : 'A',
+    model: paramMode ? modelFlag : (modelB ? 'B' : 'A'),
+    setup: paramMode && setupPair != null
+      ? { centeringM: setupPair[0], antennaM: setupPair[1] }
+      : modelB ? { centeringM: 0.005, antennaM: 0.002 } : null,
+    reportFile: reportPath.split('/').pop() ?? reportPath,
+    // Parameterized-run precision-delta support (evidence-only reuse of the
+    // engine param index; TBC errors are mm-rounded DRMS display, NOT raw Qxx).
+    ...(paramMode ? {
+      sigmas: (() => {
+        const { paramIndex } = buildSolveParameterIndex(stations, resultA.unknowns, false);
+        return [...grouping.groups.keys()].sort().map((name) => {
+          const entry = paramIndex[name];
+          const sigma = (i: number | undefined): number | null =>
+            i == null ? null : Math.sqrt(Math.max(resultA.qxx[i]?.[i] ?? Number.NaN, 0)) * seuwA;
+          return { name, sx: sigma(entry?.x), sy: sigma(entry?.y), sz: sigma(entry?.h) };
+        });
+      })(),
+      tbcErrors: report.ecefRows.map((row) => ({
+        id: row.id, xErr: row.xErr, yErr: row.yErr, zErr: row.zErr, err3d: row.err3d,
+      })),
+    } : {}),
     gvxFile, gvxFrame: `${source.pointFrame.name}@${source.pointFrame.epoch}`,
     vectors: source.vectorCount, marks: source.markCount, names: grouping.groups.size,
     report: {
@@ -316,23 +392,42 @@ const main = (): void => {
   };
   console.log(JSON.stringify(evidence, null, 2));
 
-  // (g) Markdown report.
+  // (g) Markdown report. Legacy a/b modes regenerate the canonical dataset-A
+  // file byte-identically; parameterized modes write a compact run report
+  // only when --out is given (stdout JSON is the machine evidence).
   const gateRows = gates.map((g) => `| ${g.id} | ${g.name} | ${g.verdict} | ${g.detail} |`).join('\n');
   const stationRows = perStation.map((s) =>
     `| ${s.name} | ${s.dx != null ? s.dx.toExponential(3) : '?'} | ${s.dy != null ? s.dy.toExponential(3) : '?'} | ${s.dz != null ? s.dz.toExponential(3) : '?'} | ${s.norm != null ? s.norm.toExponential(3) : '?'} |`,
   ).join('\n');
+  if (paramMode) {
+    if (outOverride) {
+      const runMd = `# Phase 12E.2 setup-error experiment run (${modelFlag})\n\n` +
+        `Evidence-only single run: setup centering=${setupPair?.[0]} m antenna=${setupPair?.[1]} m vs report \`${reportPath.split('/').pop()}\` ` +
+        `(TBC centering=${report.centeringErr} antenna=${report.antennaErr}, ref factor ${factorDisplay}, dof=${report.dof}).\n\n` +
+        `GVX: \`${gvxFile}\` — ${source.vectorCount} vectors, ${grouping.groups.size} NAMEs, P041 fixed.\n\n` +
+        `## Gates\n\n| Gate | Name | Verdict | Detail |\n| --- | --- | --- | --- |\n${gateRows}\n\n` +
+        `## Scorecard\n\n` +
+        `- DOF: WebNet n=${resultA.numObsEquations} u=${resultA.numParams} dof=${resultA.dof} vs TBC 273/45/228.\n` +
+        `- SEUW: WebNet ${seuwA.toFixed(6)} vs TBC displayed ${factorDisplay} (underlying in [${tbcInterval[0]},${tbcInterval[1]})).\n` +
+        `- vTPv: WebNet ${vtpvA.toFixed(4)} vs TBC-implied [${(tbcVtpv[0]).toFixed(4)},${(tbcVtpv[1]).toFixed(4)}).\n` +
+        `- Coordinates: max3D ${maxNorm.toExponential(3)} m, rms3D ${rms.toExponential(3)} m over ${norms.length} NAMEs.\n\n` +
+        `## Per-station ECEF differences (WebNet minus TBC, metres)\n\n| Station | dX | dY | dZ | 3D norm |\n| --- | --- | --- | --- | --- |\n${stationRows}\n`;
+      writeFileSync(outOverride, runMd);
+    }
+    return;
+  }
   const md = `# Phase 12E.2 — REAL-TBC commercial parity evidence\n\n` +
     `Evidence-only. No production math, parser semantics, tolerances, routing, UI, or CRS code was modified.\n\n` +
     `## Intake\n\n` +
     `- GVX: \`${gvxFile}\` — ${source.vectorCount} vectors, ${source.markCount} POINT records, ${grouping.groups.size} unique NAMEs, frame ${source.pointFrame.name}@${source.pointFrame.epoch}, GVX v${source.version} converted by Trimble Business Center 42.0 (SOURCE_DATA application block).\n` +
-    `- Report: \`cafa0ac3.html\` — project "Adjusting the Network", US State Plane 1983 / NAD 1983 (Conus), global WGS84, GEOID09, 2 iterations, ref factor 1.10, chi-square FAILED, DOF 228.\n` +
+    `- Report: \`${reportPath.split('/').pop()}\` — project "Adjusting the Network", US State Plane 1983 / NAD 1983 (Conus), global WGS84, GEOID09, ${report.iterations} iterations, ref factor ${factorDisplay}, chi-square ${report.chiSquareText?.toUpperCase() ?? '?'}, DOF ${report.dof}.\n` +
     `- CORRECTION to the phase brief: the Adjusted ECEF table carries 16 rows (one per station NAME), not 182. The 182 figure is the GVX POINT-record count. Per-station comparison is therefore NAME-keyed over all 16 stations.\n` +
     `- P041 fixed 2D+h at the higher-precision GVX coordinate (gate H: agrees with the TBC 4-decimal display within +-5e-5 m/component).\n\n` +
     `## Gates A-J\n\n| Gate | Name | Verdict | Detail |\n| --- | --- | --- | --- |\n${gateRows}\n\n` +
     `## Scorecard\n\n` +
     `- Observation-set identity (gate C): ${gates.find((g) => g.id === 'C')?.verdict} — ${solutionIds.length} GVX solutionIds vs ${report.activeObsIds.length} report IDs.\n` +
     `- DOF (gate E): WebNet n=${resultA.numObsEquations} u=${resultA.numParams} dof=${resultA.dof} vs TBC 273/45/228.\n` +
-    `- SEUW (gate F): WebNet ${seuwA.toFixed(6)} vs TBC displayed 1.10 (underlying in [1.095,1.105)).\n` +
+    `- SEUW (gate F): WebNet ${seuwA.toFixed(6)} vs TBC displayed ${factorDisplay} (underlying in [${tbcInterval[0]},${tbcInterval[1]})).\n` +
     `- vTPv (gate I): WebNet ${vtpvA.toFixed(4)} vs TBC-implied [${tbcVtpv[0].toFixed(4)},${tbcVtpv[1].toFixed(4)}).\n` +
     `- Coordinates (gate G): max3D ${maxNorm.toExponential(3)} m, rms3D ${rms.toExponential(3)} m over ${norms.length} NAMEs; TBC 4-decimal rounding imposes a +-5e-5 m/component reference-resolution floor.\n\n` +
     `## Parity level: ${parityLevel} / 4\n\n` +

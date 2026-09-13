@@ -12,6 +12,11 @@ export interface TbcEcefRow {
   readonly x: number;
   readonly y: number;
   readonly z: number;
+  /** A-posteriori display error cells (mm-rounded DRMS-derived; null for "?" fixed cells). */
+  readonly xErr: number | null;
+  readonly yErr: number | null;
+  readonly zErr: number | null;
+  readonly err3d: number | null;
 }
 
 export interface TbcConstrainedStation {
@@ -37,6 +42,8 @@ export interface TbcReport {
   readonly confidenceMode: string | null;
   readonly iterations: number | null;
   readonly refFactor: number | null;
+  /** Raw displayed reference-factor cell text (e.g. "1.10") — display precision defines the rounding interval. */
+  readonly refFactorText: string | null;
   readonly chiSquareText: string | null;
   readonly dof: number | null;
   readonly gnssRedundancy: number | null;
@@ -126,7 +133,7 @@ const parseEcefRows = (html: string): TbcEcefRow[] => {
     const y = num(cells[2]);
     const z = num(cells[4]);
     if (x == null || y == null || z == null) return;
-    rows.push({ id: ids[0] ?? '', x, y, z });
+    rows.push({ id: ids[0] ?? '', x, y, z, xErr: num(cells[1]), yErr: num(cells[3]), zErr: num(cells[5]), err3d: num(cells[6]) });
   });
   return rows;
 };
@@ -185,6 +192,7 @@ export const parseTbcReport = (html: string): TbcReport => {
     confidenceMode: labelValue(html, 'Precision Confidence Level'),
     iterations: labelNumber(html, 'Number of Iterations for Successful Adjustment'),
     refFactor: labelNumber(html, 'Network Reference Factor') ?? labelNumber(html, 'Reference Factor'),
+    refFactorText: labelValue(html, 'Network Reference Factor') ?? labelValue(html, 'Reference Factor'),
     chiSquareText: labelValue(html, 'Chi Square Test (95%)'),
     dof: labelNumber(html, 'Degrees of Freedom'),
     gnssRedundancy: labelNumber(html, 'Redundancy Number'),
@@ -213,6 +221,7 @@ const main = (): void => {
       geoid: report.geoid,
       iterations: report.iterations,
       refFactor: report.refFactor,
+      refFactorText: report.refFactorText,
       chiSquareText: report.chiSquareText,
       dof: report.dof,
       gnssRedundancy: report.gnssRedundancy,
