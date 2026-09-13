@@ -307,7 +307,12 @@ C_eff             = C_raw + C_from + C_to
   missing/unrecognized ellipsoid (accepted orientation-provenance
   tags: WGS84, GRS80), non-finite/negative sigmas, orientation
   failure, and non-SPD/non-finite C_eff (existing SPD gate, no
-  jitter). The run's ellipsoid is declared onto tagless effective
+  jitter). Note the resulting asymmetry: with a session ellipsoid
+  declared but tagless baselines, a zero-setup run is still rejected
+  by the preflight frame-identity gate (nothing stamps the tag),
+  while a nonzero-setup run succeeds (setup declares the resolved tag
+  onto the effective observations first). Declare ellipsoid tags on
+  the baselines themselves to avoid the difference. The run's ellipsoid is declared onto tagless effective
   observations so the frame-identity gate sees the operator's
   explicit choice; present tags are never overwritten.
 - Raw covariance is preserved per observation (`rawCovariance`);
