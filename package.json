@@ -28,6 +28,7 @@
     "gnss:r2b-production-perf": "tsx scripts/gnss/gnssR2BProductionPerf.ts",
     "gnss:r2b-dataset-proof": "tsx scripts/gnss/gnssR2BDatasetProof.ts",
     "gnss:gvx-evidence": "tsx scripts/gnss/gvxEvidence.ts",
+    "gnss:multifile-split-evidence": "tsx scripts/gnss/gnssMultifileSplitEvidence.ts",
     "gnss:tbc-parity": "tsx scripts/gnss/tbcParityEvidence.ts",
     "phase9a:assemble-report": "tsx scripts/phase9a/phase9aAssembleReport.ts",
     "phase8b1:release-proof": "node scripts/runVitest.mjs run tests/evidence/phase8b1_preanalysis_release.test.ts",
