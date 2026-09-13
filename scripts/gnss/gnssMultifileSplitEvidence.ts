@@ -19,7 +19,6 @@ import { parseGvx } from '../../src/engine/gnssGvxImport';
 import { parseGvxSyntax } from '../../src/engine/gnssGvxSyntax';
 import { groupMarksByName } from './tbcParityModel';
 import { composeGnssBaselineNetworks, type GnssMultifileSource } from '../../src/engine/gnssMultifileComposition';
-import { setGnssMultifileEnabled } from '../../src/engine/gnssMultifileFlag';
 import { runGnssBaselineAdjustment } from '../../src/engine/gnssBaselineAdjust';
 import { computeGnssLoopClosures } from '../../src/engine/gnssBaselineLoops';
 import {
@@ -403,7 +402,7 @@ const runDataset = (
 };
 
 const main = (): void => {
-  setGnssMultifileEnabled(true); // composer enforces the DEFAULT-OFF gate; evidence opts in.
+  // Default-ON proof: no enable call; the composer gate permits the run by default.
   const datasetA = loadIntake(INTAKE_A, 'P041', () => true);
   const datasetB = loadIntake(INTAKE_B, 'P041', (name) => name.toLowerCase().includes('b4adjustment'));
   if (!datasetA || !datasetB) {
