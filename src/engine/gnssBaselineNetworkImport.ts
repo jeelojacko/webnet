@@ -29,6 +29,12 @@ import {
   verifyRotationOrthonormal,
 } from './gnssBaselineRotation';
 import { runGnssBaselinePreflight } from './gnssBaselinePreflight';
+import {
+  checkGnssSetupReadiness,
+  isGnssSetupActive,
+  normalizeGnssSetupUncertainty,
+  type GnssSetupUncertainty,
+} from './gnssBaselineSetupUncertainty';
 
 export type GnssDiagnosticSeverity = 'error' | 'warning';
 
@@ -598,8 +604,34 @@ export const canonicalizeRawNetwork = (
  */
 export const validateGnssBaselineNetwork = (
   network: GnssBaselineNetworkInput,
+  setup?: GnssSetupUncertainty,
 ): GnssDiagnostic[] => {
   const diagnostics: GnssDiagnostic[] = [];
+  // Phase 12E.3 (programmatic-first; no SETUP_SIGMA text directive — see
+  // STATIC_GNSS_BASELINE_FORMAT.md deferral note): optional setup
+  // data-check runs here so bad sigma / missing ellipsoid / orientation
+  // failure surface without requiring a full solve.
+  if (setup !== undefined) {
+    try {
+      const normalized = normalizeGnssSetupUncertainty(setup);
+      if (isGnssSetupActive(normalized)) {
+        for (const problem of checkGnssSetupReadiness({
+          stations: network.stations,
+          baselines: network.baselines,
+          setup,
+          ellipsoid: network.frame.ellipsoid,
+        })) {
+          diagnostics.push({ severity: 'error', code: problem.code, message: problem.message });
+        }
+      }
+    } catch (failure) {
+      diagnostics.push({
+        severity: 'error',
+        code: 'GNSS_BAD_SETUP_SIGMA',
+        message: failure instanceof Error ? failure.message : String(failure),
+      });
+    }
+  }
   try {
     runGnssBaselinePreflight({
       stations: network.stations,

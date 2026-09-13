@@ -277,3 +277,47 @@ posterior σ̂² = vᵀPv/dof scales only reported residual quantities
 - Blunder unit is one whole baseline; 12D provides suspect ranking plus
   one-block removal what-if only — no automatic iterative deletion, no
   block MDB, no p-values (multiple-testing policy deferred with them).
+
+## 14. Phase 12E.3 endpoint setup uncertainty (proven)
+
+Optional network-level stochastic model for tripod centering and
+antenna-height setup error (`setupUncertainty:
+{ horizontalCenteringSigma, antennaHeightSigma }`, metres, 1-sigma,
+generic names; default zero). Each baseline endpoint contributes an
+INDEPENDENT local-ENU covariance:
+
+```text
+C_local(endpoint) = diag(sc^2, sc^2, sh^2)
+C_ecef(endpoint)  = R(endpoint)^T . C_local . R(endpoint)
+C_eff             = C_raw + C_from + C_to
+```
+
+- Orientation is FIXED per endpoint from the a-priori input ECEF
+  coords once before iteration (Bowring/WGS84 ECEF->geodetic for
+  direction only; never iteration-dependent). Fixed (control)
+  endpoints are augmented like free ones.
+- IMPORT-shared-ENU vs SETUP-per-endpoint-ENU: the 12C text import
+  rotates whole files through ONE shared origin R (frame
+  representation change). Setup instead builds one R PER ENDPOINT from
+  that endpoint's own position (local error physics: plumb/vertical
+  at the tripod). The two must never be confused.
+- Zero setup (absent, or both sigmas 0) returns the input observations
+  untouched: effective covariance bitwise-equals raw, no new
+  requirements (no ellipsoid needed). Nonzero setup fails closed on
+  missing/unrecognized ellipsoid (accepted orientation-provenance
+  tags: WGS84, GRS80), non-finite/negative sigmas, orientation
+  failure, and non-SPD/non-finite C_eff (existing SPD gate, no
+  jitter). The run's ellipsoid is declared onto tagless effective
+  observations so the frame-identity gate sees the operator's
+  explicit choice; present tags are never overwritten.
+- Raw covariance is preserved per observation (`rawCovariance`);
+  effective drives the solve weights. Applied once before
+  solve-weight construction; never in import; no SEUW feedback.
+- Text format: programmatic-first, no `SETUP_SIGMA` directive
+  (deferred — the BL file model needs no new directive for an
+  operator-side run option).
+- Status: SUPPORTED, not proven — reproduces the available TBC
+  controlled-adjustment results within the precision exposed by the
+  TBC reports (12E.2 A0/AC/AH/A scorecard; production agreement in
+  `reports/gnss/phase12e3-setup-uncertainty-production.md`). Never
+  "exact proprietary algorithm proven".

@@ -36,8 +36,20 @@ export interface GnssBaselineObservation {
   readonly to: StationId;
   /** Observed vector b_obs = X_TO - X_FROM, metres. */
   readonly vector: GnssBaselineVector;
-  /** Full symmetric 3x3 covariance, m^2. */
+  /** Full symmetric 3x3 covariance, m^2.
+   *
+   * Phase 12E.3: with endpoint setup uncertainty active this is the
+   * EFFECTIVE covariance (raw + endpoint setup); the untouched raw
+   * matrix is preserved on `rawCovariance` below. With setup inactive
+   * (or absent) this IS the raw covariance.
+   */
   readonly covariance: GnssBaselineCovariance;
+  /**
+   * Untouched raw covariance (m^2), present only on setup-augmented
+   * observations. The solve weights use `covariance`; this field is
+   * provenance so exports/reports can always show raw-stays-raw.
+   */
+  readonly rawCovariance?: GnssBaselineCovariance;
   /** Internal coordinate frame of vector + covariance. */
   readonly frame: GnssAdjustmentFrameKind;
   /**

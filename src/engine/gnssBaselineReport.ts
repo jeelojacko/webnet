@@ -12,6 +12,7 @@ import type {
 } from './gnssBaselineAdjust';
 import { runGnssBaselineAdjustment } from './gnssBaselineAdjust';
 import type { GnssBaselineStatistics } from './gnssBaselineStatistics';
+import type { GnssSetupModel } from './gnssBaselineSetupUncertainty';
 import { rankGnssBaselineSuspects } from './gnssBaselineStatistics';
 import type { GnssLoopClosure } from './gnssBaselineLoops';
 import { computeGnssLoopClosures } from './gnssBaselineLoops';
@@ -27,6 +28,17 @@ export interface GnssReportBaseline {
   readonly computed: { x: number; y: number; z: number };
   readonly residual: { x: number; y: number; z: number; magnitude: number };
   readonly inputSigma: { x: number; y: number; z: number };
+  /**
+   * Phase 12E.3: with setup active, `inputSigma` above reflects the
+   * EFFECTIVE covariance (what weighted the solve); raw and summed
+   * endpoint-setup covariances are exposed here. Absent when inactive.
+   */
+  readonly rawCovariance?: {
+    xx: number; xy: number; xz: number; yy: number; yz: number; zz: number;
+  };
+  readonly setupCovariance?: {
+    xx: number; xy: number; xz: number; yy: number; yz: number; zz: number;
+  };
   readonly inputCorrelation: { xy: number; xz: number; yz: number };
   readonly residualSigma: { x?: number; y?: number; z?: number };
   readonly residualCorrelation: { xy?: number; xz?: number; yz?: number };
@@ -57,6 +69,8 @@ export interface GnssBaselineReport {
   readonly epoch?: string;
   readonly ellipsoid?: string;
   readonly routeProvenance: 'typescript-dense';
+  /** Phase 12E.3: resolved endpoint setup model; absent when inactive. */
+  readonly setupModel?: GnssSetupModel;
   readonly stationCount: number;
   readonly fixedStationCount: number;
   readonly baselineCount: number;
@@ -83,7 +97,8 @@ export const buildGnssBaselineReport = (
   statistics: GnssBaselineStatistics[],
   loops: GnssLoopClosure[],
   input: Pick<GnssBaselineAdjustInput, 'referenceFrame' | 'epoch' | 'ellipsoid'>,
-  observations: readonly { id: number; covariance: { xx: number; xy: number; xz: number; yy: number; yz: number; zz: number }; sessionId?: string; solutionId?: string }[],
+  observations: readonly { id: number; covariance: { xx: number; xy: number; xz: number; yy: number; yz: number; zz: number }; sessionId?: string; solutionId?: string; rawCovariance?: { xx: number; xy: number; xz: number; yy: number; yz: number; zz: number }; setupCovariance?: { xx: number; xy: number; xz: number; yy: number; yz: number; zz: number } }[],
+  setupModel?: GnssSetupModel,
 ): GnssBaselineReport => {
   const statsById = new Map(statistics.map((entry) => [entry.baselineId, entry]));
   const residualById = new Map<number, GnssBaselineAdjustedResidual>(
@@ -145,6 +160,8 @@ export const buildGnssBaselineReport = (
       distributionKind: entry.distributionKind,
       status: entry.status,
       residualCovariance: { ...entry.cvv },
+      ...(observation?.rawCovariance ? { rawCovariance: { ...observation.rawCovariance } } : {}),
+      ...(observation?.setupCovariance ? { setupCovariance: { ...observation.setupCovariance } } : {}),
     };
   });
   const suspectRanking = rankGnssBaselineSuspects(statistics).map((entry) => entry.baselineId);
@@ -154,6 +171,7 @@ export const buildGnssBaselineReport = (
     epoch: input.epoch,
     ellipsoid: input.ellipsoid,
     routeProvenance: 'typescript-dense',
+    ...(setupModel ? { setupModel: { ...setupModel } } : {}),
     stationCount: Object.keys(result.stations).length,
     fixedStationCount,
     baselineCount: result.logicalObservations,
@@ -193,7 +211,24 @@ export const buildGnssReportFromInput = (
     throw new Error('GNSS adjustment did not produce baseline statistics.');
   }
   const loops = computeGnssLoopClosures(input.baselines);
-  const report = buildGnssBaselineReport(result, result.statistics, loops.loops, input, input.baselines);
+  // Phase 12E.3: with setup active the solve weights used the effective
+  // covariances; expose raw + summed endpoint setup per baseline while
+  // inputSigma reflects what actually weighted the solve.
+  const effectiveById = new Map(
+    (result.setupContributions ?? []).map((contribution) => [contribution.baselineId, contribution]),
+  );
+  const observations = input.baselines.map((baseline) => {
+    const contribution = effectiveById.get(baseline.id);
+    return contribution
+      ? {
+          ...baseline,
+          covariance: contribution.effectiveCovariance,
+          rawCovariance: contribution.rawCovariance,
+          setupCovariance: contribution.setupCovariance,
+        }
+      : baseline;
+  });
+  const report = buildGnssBaselineReport(result, result.statistics, loops.loops, input, observations, result.setupModel);
   return {
     result,
     report: {
@@ -215,6 +250,14 @@ export const renderGnssBaselineTextReport = (report: GnssBaselineReport): string
     `equations: ${report.observationEquationCount} unknowns: ${report.unknownCount} dof: ${report.degreesOfFreedom}`,
     `variance factor: ${report.varianceFactor.toExponential(6)} seuw: ${report.seuw.toExponential(6)}`,
     `weighted residual sum: ${report.weightedResidualSum.toExponential(6)}`,
+    ...(report.setupModel
+      ? [
+          `setup model: independent endpoint local ENU ` +
+            `centering=${report.setupModel.horizontalCenteringSigma} m ` +
+            `height=${report.setupModel.antennaHeightSigma} m ` +
+            `ellipsoid=${report.setupModel.ellipsoid}`,
+        ]
+      : []),
     `components: ${report.connectedComponents} cycle rank: ${report.cycleRank} closures: ${report.closureCount}`,
     '',
     'ADJUSTED ECEF STATIONS',

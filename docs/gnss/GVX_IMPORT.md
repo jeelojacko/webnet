@@ -58,6 +58,13 @@ Cxx = SDX²   Cyy = SDY²   Czz = SDZ²
 Cxy = PXY·SDX·SDY   Cxz = PXZ·SDX·SDZ   Cyz = PYZ·SDY·SDZ
 ```
 
+Raw-stays-raw: the reconstructed matrix above is the RAW baseline
+covariance. Phase 12E.3 endpoint setup uncertainty never alters the
+import: with setup active the solver carries the raw matrix on each
+observation's `rawCovariance` and weights with the augmented
+effective matrix; with setup inactive (the default) the imported
+matrix solves untouched.
+
 Order is asserted by the covariance-order gate test with distinct
 per-axis SD/P values, so an XY↔XZ or XZ↔YZ swap fails. Non-finite
 inputs, non-positive stddevs, and non-positive-definite matrices are

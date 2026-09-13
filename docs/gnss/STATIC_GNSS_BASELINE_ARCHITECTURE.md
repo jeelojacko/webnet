@@ -414,3 +414,18 @@ blocks, no native routing changes, no CRS/geoid/datum machinery).
   χ² nor F exactly — hence diagnostic-only labeling (see MATH §13).
 - TS-dense only; no native/sparse/WASM, no robust, no mixed networks,
   no UI. Evidence: `reports/gnss/phase12d-baseline-statistics.md`.
+
+## 12E.3 endpoint setup uncertainty notes (production)
+
+- Implemented on `feat/gnss-endpoint-setup-uncertainty`: new
+  `src/engine/gnssBaselineSetupUncertainty.ts` (orientation +
+  augmentation + import-stage readiness check), additive
+  `setupUncertainty?` on `GnssBaselineAdjustInput`, additive
+  `setupModel`/`setupContributions` on the adjust result, additive
+  `setupModel` + per-baseline raw/setup exposure on the structured
+  report, optional `setup?` on `validateGnssBaselineNetwork`.
+- No robust/mixed/native/sparse/WASM/tolerance/UI/CRS/GVX-import
+  changes. Nonzero setup stays TS-dense by the existing
+  `isGnssBaselineObservation` exclusion gates (augmented observations
+  keep the discriminator); covered by the extended route-exclusion
+  test. Evidence: `reports/gnss/phase12e3-setup-uncertainty-production.md`.
