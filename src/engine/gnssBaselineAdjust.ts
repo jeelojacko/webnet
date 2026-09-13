@@ -29,6 +29,12 @@ import {
   invertGnssBaselineCovariance,
 } from './gnssBaselineCovariance';
 import { gnssBaselineLabel } from './gnssBaselineEquationRows';
+import {
+  applyGnssSetupUncertainty,
+  type GnssSetupContribution,
+  type GnssSetupModel,
+  type GnssSetupUncertainty,
+} from './gnssBaselineSetupUncertainty';
 import { runGnssBaselinePreflight } from './gnssBaselinePreflight';
 import {
   recoverGnssBaselineStatistics,
@@ -41,6 +47,15 @@ export interface GnssBaselineAdjustInput {
   referenceFrame?: string;
   epoch?: string;
   ellipsoid?: string;
+  /**
+   * Phase 12E.3: optional endpoint setup uncertainty (metres, 1-sigma).
+   * Absent (or both sigmas 0) => raw covariances solve untouched.
+   * Nonzero => per-endpoint local-ENU augmentation applied once from
+   * the a-priori station coords before iteration; raw preserved on each
+   * observation's `rawCovariance`. Never admit a nonzero-setup network
+   * to a native/sparse route: GNSS stays TS-dense (existing tripwires).
+   */
+  setupUncertainty?: GnssSetupUncertainty;
   maxIterations?: number;
   convergenceThresholdM?: number;
 }
@@ -71,6 +86,10 @@ export interface GnssBaselineAdjustResult {
   readonly logs: string[];
   /** Per-baseline Qvv/Cvv/redundancy/block diagnostics (TS dense). */
   readonly statistics: GnssBaselineStatistics[];
+  /** Phase 12E.3: resolved setup model (null-shape via undefined when inactive). */
+  readonly setupModel?: GnssSetupModel;
+  /** Phase 12E.3: per-baseline raw/setup/effective covariances (undefined when inactive). */
+  readonly setupContributions?: GnssSetupContribution[];
 }
 
 const unreachableInGnssMode = (name: string): never => {
@@ -120,15 +139,33 @@ export const runGnssBaselineAdjustment = (
     Object.entries(input.stations).map(([stationId, station]) => [stationId, { ...station }]),
   );
   const baselines = [...input.baselines].sort((a, b) => a.id - b.id);
-  const preflight = runGnssBaselinePreflight({
+  // Phase 12E.3: endpoint setup augmentation happens ONCE here, from the
+  // a-priori input coords, before preflight and before any iteration.
+  // Fixed (control) endpoints are augmented like free ones. Inactive
+  // setup returns the input observations untouched (bit-identical solve).
+  const setupApplied = applyGnssSetupUncertainty({
     stations,
     baselines,
+    setup: input.setupUncertainty,
+    ellipsoid: input.ellipsoid,
+  });
+  const effectiveBaselines = setupApplied.baselines;
+  if (setupApplied.setupModel) {
+    log(
+      `GNSS setup uncertainty: centering=${setupApplied.setupModel.horizontalCenteringSigma} m ` +
+        `height=${setupApplied.setupModel.antennaHeightSigma} m ` +
+        `orientation=${setupApplied.setupModel.orientation} ellipsoid=${setupApplied.setupModel.ellipsoid}.`,
+    );
+  }
+  const preflight = runGnssBaselinePreflight({
+    stations,
+    baselines: effectiveBaselines,
     referenceFrame: input.referenceFrame,
     epoch: input.epoch,
     ellipsoid: input.ellipsoid,
   });
   log(
-    `GNSS ECEF adjustment: ${baselines.length} baselines, ` +
+    `GNSS ECEF adjustment: ${effectiveBaselines.length} baselines, ` +
       `${preflight.components.length} component(s), ${preflight.equationCount} equations.`,
   );
   const unknowns = preflight.components
@@ -152,7 +189,7 @@ export const runGnssBaselineAdjustment = (
       `GNSS baseline adjustment is under-determined: ${numObsEquations} equations for ${numParams} parameters.`,
     );
   }
-  const assemblyObservations = baselines as unknown as Observation[];
+  const assemblyObservations = effectiveBaselines as unknown as Observation[];
   let conditionEstimate: number | undefined;
   let iterations = 0;
   let converged = false;
@@ -273,7 +310,7 @@ export const runGnssBaselineAdjustment = (
     entries.push({ row, info });
     rowByBaseline.set(obs.id, entries);
   });
-  baselines.forEach((baseline) => {
+  effectiveBaselines.forEach((baseline) => {
     const entries = (rowByBaseline.get(baseline.id) ?? []).sort((a, b) => a.row - b.row);
     if (entries.length !== 3) {
       throw new Error(
@@ -307,7 +344,7 @@ export const runGnssBaselineAdjustment = (
   const weightedResidualSum = denseWeightedQuadratic(finalP, residualVector);
   const varianceFactor = dof > 0 ? weightedResidualSum / dof : 0;
   const statistics = recoverGnssBaselineStatistics({
-    baselines,
+    baselines: effectiveBaselines,
     residuals,
     paramIndex,
     qxx,
@@ -320,7 +357,7 @@ export const runGnssBaselineAdjustment = (
     unknowns,
     numParams,
     numObsEquations,
-    logicalObservations: baselines.length,
+    logicalObservations: effectiveBaselines.length,
     dof,
     iterations,
     converged,
@@ -332,5 +369,11 @@ export const runGnssBaselineAdjustment = (
     conditionEstimate,
     logs,
     statistics,
+    ...(setupApplied.setupModel
+      ? {
+          setupModel: setupApplied.setupModel,
+          setupContributions: setupApplied.contributions,
+        }
+      : {}),
   };
 };

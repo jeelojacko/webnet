@@ -220,6 +220,8 @@ describe('gnssBaselineRouting', () => {
       'gnssBaselineEquationRows.ts',
       'gnssBaselinePreflight.ts',
       'gnssBaselineAdjust.ts',
+      'gnssBaselineSetupUncertainty.ts',
+      'gnssBaselineReport.ts',
     ];
     files.forEach((file) => {
       const source = readFileSync(join(root, file), 'utf8');
