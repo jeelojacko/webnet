@@ -34,6 +34,7 @@ import {
   runNativeGnssRoute,
   runTimedGnssLoop,
   SETUP_CASES,
+  type AuditNetwork,
   type AuditTopology,
   type StageTimings,
 } from '../../scripts/gnss/gnssNativeArchitectureAudit';
@@ -77,9 +78,10 @@ const runCase = async (
   stations: number,
   seed: number,
   bundle: Awaited<ReturnType<typeof createExperimentalSparseNumericalBundle>>,
-  options?: { setupIndex?: number; measured?: number; skipR0Dense?: boolean },
+  options?: { setupIndex?: number; measured?: number; skipR0Dense?: boolean; mutate?: (_network: AuditNetwork) => void },
 ): Promise<CaseRecord> => {
   const network = generateAuditNetwork(topology, stations, seed);
+  options?.mutate?.(network);
   const setup = options?.setupIndex != null ? SETUP_CASES[options.setupIndex]!.setup : undefined;
   const input = buildGnssAdjustInput(network, setup);
   const measured = options?.measured ?? 5;
@@ -88,13 +90,17 @@ const runCase = async (
   // dense-solve repetitions at scale.
   runTimedGnssLoop(input, undefined, { skipFidelity: true });
   const r0Totals: number[] = [];
-  let r0 = runTimedGnssLoop(input);
+  // Fidelity-gated run FIRST: assert the replica against production before
+  // any skipFidelity timing run reassigns r0 (self-comparison would be 0
+  // by construction).
+  const gated = runTimedGnssLoop(input);
+  expect(gated.replicaMaxCoordDiff).toBeLessThan(1e-12);
+  expect(gated.replicaMaxQxxDiff).toBeLessThan(1e-15);
+  const r0 = gated;
   for (let i = 0; i < measured; i += 1) {
     const timed = runTimedGnssLoop(input, undefined, { skipFidelity: true });
     r0Totals.push(timed.stages.totalMs);
-    if (i === 0) r0 = timed;
   }
-  expect(r0.replicaMaxCoordDiff).toBeLessThan(1e-12);
   const heap0 = heapMB();
   runTimedGnssLoop(input, undefined, { skipFidelity: true });
   const heapDeltaR0Mb = heapMB() - heap0;
@@ -128,15 +134,18 @@ const runCase = async (
   const heapDeltaR2Mb = heapMB() - heap2;
   const r1Parity = compareParity(r0.result, r1.result, 'full');
   const r2Parity = compareParity(r0.result, r2.result, 'selected');
-  // Full-vs-selected cross-check (§18): R2 values vs R1 entries at queried positions.
+  // Full-vs-selected cross-check (§18): iterate exactly the queried
+  // positions (upper-triangle + Q_AB spans), so exactly-zero queried
+  // entries are compared, not silently skipped.
   let selectedVsFullMaxAbs = 0;
-  r1.qxx.forEach((row, i) => row.forEach((value, j) => {
-    const selected = r2.qxx[i]?.[j] ?? 0;
-    if (selected !== 0 || r2Parity.redundancyTraceAbs < 1e-6) {
-      // Only positions R2 actually queried carry values; compare those.
-      if (selected !== 0) selectedVsFullMaxAbs = Math.max(selectedVsFullMaxAbs, Math.abs(selected - value));
-    }
-  }));
+  for (let k = 0; k < r2.queryRows.length; k += 1) {
+    const rr = r2.queryRows[k]!;
+    const cc = r2.queryColumns[k]!;
+    selectedVsFullMaxAbs = Math.max(
+      selectedVsFullMaxAbs,
+      Math.abs((r2.qxx[rr]?.[cc] ?? 0) - (r1.qxx[rr]?.[cc] ?? 0)),
+    );
+  }
   const record: CaseRecord = {
     case: label,
     params: r0.result.numParams,
@@ -209,16 +218,34 @@ describe('phase12f0 native architecture audit (real WASM, manual)', () => {
     const bundle = await createExperimentalSparseNumericalBundle(factory);
     mkdirSync(ARTIFACT_DIR, { recursive: true });
     const records: CaseRecord[] = [];
-    const legs: [string, AuditTopology, number, number][] = [
+    const legs: { label: string; topology: AuditTopology; stations: number; seed: number; mutate?: (_network: AuditNetwork) => void }[] = [
       // Bridgeless only (finding F-BRIDGE excludes chains/trees/rays).
-      ['mesh-10', 'sparse-mesh', 10, 1201],
-      ['ring-10', 'ring', 10, 1202],
-      ['repeated-12', 'repeated-edge', 12, 1203],
-      ['mesh-25', 'sparse-mesh', 25, 1204],
-      ['ring-50', 'ring', 50, 1205],
+      { label: 'mesh-10', topology: 'sparse-mesh', stations: 10, seed: 1201 },
+      { label: 'ring-10', topology: 'ring', stations: 10, seed: 1202 },
+      { label: 'repeated-12', topology: 'repeated-edge', stations: 12, seed: 1203 },
+      { label: 'mesh-25', topology: 'sparse-mesh', stations: 25, seed: 1204 },
+      { label: 'ring-50', topology: 'ring', stations: 50, seed: 1205 },
+      // Heterogeneous-sigma probe (MEDIUM 3): one ultra-precise edge
+      // (covariance x1e-4) inside a bridgeless mesh — lopsided weighting
+      // stressing near-zero-redundancy margins without a cut-edge.
+      {
+        label: 'hetero-mesh-25', topology: 'sparse-mesh', stations: 25, seed: 1204,
+        mutate: (network) => {
+          const first = network.baselines[0]!;
+          const scale = 1e-4;
+          network.baselines[0] = {
+            ...first,
+            covariance: {
+              xx: first.covariance.xx * scale, xy: first.covariance.xy * scale,
+              xz: first.covariance.xz * scale, yy: first.covariance.yy * scale,
+              yz: first.covariance.yz * scale, zz: first.covariance.zz * scale,
+            },
+          };
+        },
+      },
     ];
-    for (const [label, topology, stations, seed] of legs) {
-      const record = await runCase(label, topology, stations, seed, bundle);
+    for (const { label, topology, stations, seed, mutate } of legs) {
+      const record = await runCase(label, topology, stations, seed, bundle, { mutate });
       records.push(record);
       expectFullParity(record.r1Parity, `${label}/R1`);
       expectSelectedParity(record.r2Parity, `${label}/R2`);

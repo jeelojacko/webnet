@@ -140,9 +140,11 @@ rel — all pass with 2–5 orders of margin:
 | ring-50 | 147 | 0 | 1.3e-09 | — | — | 0 |
 | mesh-100 | 297 | 0 | 6.4e-11 | 1.0e-11 | 1.4e-14 | 2.2e-20 |
 | mesh-250 | 747 | 0 | 2.4e-10 | — | — | 1.7e-20 |
+| hetero-mesh-25 | 72 | 0 | 2.9e-12 | 1.5e-12 | 6.9e-14 | 4.2e-21 |
 | Dataset A/B | 45/21 | 0 | ≤1.8e-12 | ≤2.1e-14 | ≤4.4e-15 | — |
 
-Small-net R1/R2 maxima over 5 nets: coords 0, vTPv/SEUW rel 0,
+Small-net R1/R2 maxima over 6 nets (incl. the hetero-mesh-25 lopsided-
+weighting probe): coords 0, vTPv/SEUW rel 0,
 residuals 0, Qxx rel ≤ 1.3e-9, Qvv/Cvv rel ≤ 1.4e-11, standardized abs ≤
 1.2e-12. (R2 Qxx columns are 0 by construction — only queried blocks are
 compared; statistics agreement is the R2 contract.)
@@ -150,13 +152,16 @@ compared; statistics agreement is the R2 contract.)
 ## §17 — Redundancy-trace identity (every case)
 
 `Σ trace(Rᵢ) − dof`: ≤ 2.7e-13 (small nets), 5.7e-13 (mesh-100),
-1.4e-12 (mesh-250), 2.8e-14 (Dataset B), **exactly 0.0 at mesh-500 and
-mesh-1000 R2** (selected-blocks-only reconstruction).
+1.4e-12 (mesh-250), 2.8e-14 (Dataset B), 3.6e-12 (mesh-500 R2),
+1.3e-11 (mesh-1000 R2). All roundoff-scale, 80–7000× under the 1e-9
+contract (margin narrows with size as expected for a summed roundoff
+term; the identity is verified, not exact).
 
 ## §18 — Full-vs-selected cross-check
 
-R2 queried entries vs R1 full-Qxx entries: ≤ 2.2e-20 (mesh-100),
-1.7e-20 (mesh-250), 0 (ring-50). R2 statistics reproduce R1 statistics
+R2 queried entries vs R1 full-Qxx entries: ≤ 4.1e-20 (small nets),
+2.2e-20 (mesh-100), 1.7e-20 (mesh-250), bitwise 0 (ring-50). R2
+statistics reproduce R1 statistics
 (Qvv/Cvv/standardized/blockT) to the §16 margins above.
 
 ## §19 — Memory
@@ -168,9 +173,9 @@ R2 queried entries vs R1 full-Qxx entries: ≤ 2.2e-20 (mesh-100),
   306k (1497, 2.4 MB) → 1.17M (2997, 9.3 MB). normalNnz 80k at 1000.
 - TS dense assembly is the limiter, not native: dense P is eqs²·8 B =
   286 MB (500) → 1.15 GB (1000) → 4.6 GB (2000); boxed dense A adds
-  ~same order. Measured worker heap deltas: +43 MB R0 at 100, +86 MB R2
-  at 500, +3.2 GB R2 at 1000.
-- **Ceiling: mesh-1000 R2 completes (trace exact); mesh-2000 OOMs the
+  ~same order. Measured worker heap deltas: +43 MB R0 at 100, +630 MB R2
+  at 500, +2.0 GB R2 at 1000.
+- **Ceiling: mesh-1000 R2 completes (trace 1.3e-11); mesh-2000 OOMs the
   worker in TS dense assembly before any native call.** A hard crash
   cannot be caught in-suite, so 2000 is documented here, not in the
   suite (suite covers ≤ 1000).
@@ -181,13 +186,13 @@ R0 stages `pre/loop/finalAssembly/normalAccum/qxxInvert/statistics`:
 
 | Case (p) | R0 total | R0 split | R1 total | R2 total | R1 native (bridge/factor/covsolve/wall) |
 | --- | --- | --- | --- | --- | --- |
-| mesh-10 (27) | 1.55 | .1/.6/.1/.0/.1/.4 | 1.71 | 1.56 | .07/.01/.04/.19 |
-| mesh-25 (72) | 5.70 | .1/3.1/.3/.2/.7/1.0 | 6.63 | 6.50 | .43/.03/.15/.36 |
-| ring-50 (147) | 9.48 | .1/3.3/.2/.1/4.6/.4 | 4.64 | 4.47 | .32/.01/.26/.66 |
-| mesh-100 (297) | 130.7 | .7/58/6/2/48/4.5 | 108.2 | 109.7 | 8.6/.46/5.1/7.2 |
-| mesh-250 (747) | 1183 | 2/407/40/15/639/12 | 873 | 885 | 101/5.1/64/79 |
-| mesh-500 R2 (1497) | — | — | — | 4333 | 409/37/471/513 |
-| mesh-1000 R2 (2997) | — | — | — | 27720 | 2949/278/3610/3898 |
+| mesh-10 (27) | 1.58 | .2/1.3/.2/.2/.5/.9 | 1.71 | 1.57 | .07/.01/.04/.19 |
+| mesh-25 (72) | 5.59 | .1/3.0/.4/.2/.7/.6 | 6.53 | 6.52 | .43/.03/.15/.36 |
+| ring-50 (147) | 9.38 | .1/3.4/.2/.1/4.6/.4 | 4.63 | 4.51 | .32/.01/.26/.66 |
+| mesh-100 (297) | 122.7 | .7/57/5.5/2.5/45/4.7 | 112.8 | 107.3 | 8.8/.47/5.0/7.1 |
+| mesh-250 (747) | 1239 | 2/407/58/16/626/11 | 835 | 844 | 80/5.3/64/79 |
+| mesh-500 R2 (1497) | — | — | — | 4506 | 424/37/470/511 |
+| mesh-1000 R2 (2997) | — | — | — | 27745 | 3097/278/3597/3885 |
 
 - R0 profile: dense Qxx inversion dominates (37% at 100, 54% at 250);
   solve loop second. Matches Phase 10F structure.
@@ -221,9 +226,14 @@ stays TS (this audit proves the boundary has no blocker).
 
 **Eligibility cohort (evidence-derived).** Admit: GNSS-only ECEF
 sessions, single fixed-datum component or multi-component (both proven),
-bridgeless graphs only (F-BRIDGE until the TS eigen gate is addressed),
+bridgeless graphs (necessary per F-BRIDGE; the hetero-mesh-25 probe — one
+edge 100× more precise inside a bridgeless mesh, full parity margins —
+shows sufficiency holds under lopsided weighting in surveyed sigma
+ranges, but bridgelessness remains necessary-not-sufficient until the TS
+eigen gate is addressed; keying eligibility on measured per-edge
+redundancy margin is the possible refinement),
 params ≤ 750 for R1 (mesh-250 proven + margin under the 768 native cap),
-stations ≤ 1000 for R2 (trace-exact). No lower param bound for
+stations ≤ 1000 for R2 (trace 1.3e-11, 80× under contract). No lower param bound for
 correctness (bitwise ≤ 72); perf crossover ~100–150 params is an
 observation, not a gate. Setup-augmented sessions admitted (TS-side).
 
@@ -271,7 +281,7 @@ artifacts + tier wiring (`scripts/testTiers.ts`, `runEvidence.mjs`
   under 1e-6), faster than TS above ~100–150 params, reuses the proven
   10I route shape.
 - **R2: GO after R1** (not instead): selected blocks reproduce every
-  Phase-12D output (trace exact to 0.0 at 500/1000) and remove dense-Qxx
+  Phase-12D output (trace 1.3e-11 at 1000, 80× under contract) and remove dense-Qxx
   materialization, but production wiring must certify block-sparse Qxx
   consumption — a second bounded step, not assumed.
 - **NO-GO items:** enabling any route in this audit (none wired);

@@ -432,10 +432,15 @@ export const selectedBlockQueries = (
 };
 
 export interface NativeRouteResult {
+  /** Evidence-accurate route tag (never a production route tag). */
+  readonly route: 'evidence-native-r1' | 'evidence-native-r2';
   /** Stations/corrections/residuals/vTPv/SEUW reconstructed in TS. */
   readonly result: GnssBaselineAdjustResult;
   /** Full dense Qxx (R1) or block-sparse Qxx (R2: selected entries only). */
   readonly qxx: number[][];
+  /** Exact queried (row, column) positions (upper-triangle + Q_AB blocks). */
+  readonly queryRows: Int32Array;
+  readonly queryColumns: Int32Array;
   /** True when every selected query round-tripped (R2 completeness). */
   readonly selectedCoverage: number;
   readonly timings: NativeTimings;
@@ -595,6 +600,9 @@ export const runNativeGnssRoute = (
       if (obs?.id === baseline.id) rows.push(row);
     });
     rows.sort((a, b) => a - b);
+    if (rows.length !== 3) {
+      throw new Error(`Audit native route baseline ${baseline.id} assembled ${rows.length} rows instead of 3.`);
+    }
     const vX = finalAssembly.L[rows[0]!]![0]!;
     const vY = finalAssembly.L[rows[1]!]![0]!;
     const vZ = finalAssembly.L[rows[2]!]![0]!;
@@ -642,8 +650,11 @@ export const runNativeGnssRoute = (
       : {}),
   };
   return {
+    route: mode === 'r1-full' ? 'evidence-native-r1' : 'evidence-native-r2',
     result,
     qxx,
+    queryRows,
+    queryColumns,
     selectedCoverage,
     timings: {
       bridgeCopyMs,
