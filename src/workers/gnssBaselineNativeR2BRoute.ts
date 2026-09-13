@@ -1,9 +1,14 @@
 /**
- * Phase 12F.3 worker-only bounded native static-GNSS R2B production proof.
+ * Phase 12F.4 worker-only bounded native static-GNSS R2B production route.
  *
- * PRODUCTION PROOF but DEFAULT OFF: the kill switch below stays false, so
- * production behavior is bit-identical TypeScript unless a caller
- * explicitly enables the route (tests/manual evidence only).
+ * DEFAULT ON for the certified cohort: the kill switch below stays true, so
+ * eligible production jobs route native-sparse-selected-qxx unless a caller
+ * explicitly disables the route (kill switch OFF forces clean TypeScript).
+ *
+ * Certified cohort (frozen 12F.3 classifier): GNSS-only ECEF single-solve
+ * sessions, worker-only, robust OFF, bridgeless graphs (F-BRIDGE stays
+ * TS-dense), params in [225, 2250], total stations <= 750, selected blocks
+ * <= 4000, factor nnz <= 1.5M. R1 stays default OFF and is never a fallback.
  *
  * Option-A reuse: TS owns parse/frame/preflight/setup/assembly/residuals/
  * loops/reports; native supplies ONLY the sparse correction solve
@@ -77,15 +82,15 @@ export class FillGateError extends Error {
   }
 }
 
-/** Dedicated GNSS R2B kill switch, default OFF (production proof only). */
-let gnssNativeR2BEnabled = false;
+/** Dedicated GNSS R2B kill switch, default ON (certified cohort, Phase 12F.4). */
+let gnssNativeR2BEnabled = true;
 
 /** Enables/disables the GNSS native R2B route (internal/test-only). */
 export const setGnssNativeR2BRouteEnabled = (enabled: boolean): void => {
   gnssNativeR2BEnabled = enabled;
 };
 
-/** Reports the GNSS native R2B kill-switch state (default OFF). */
+/** Reports the GNSS native R2B kill-switch state (default ON). */
 export const isGnssNativeR2BRouteEnabled = (): boolean => gnssNativeR2BEnabled;
 
 export interface GnssNativeR2BEligibility {
@@ -153,7 +158,7 @@ export const deriveGnssNativeR2BEligibility = (
   const maxParams = options.maxParams ?? GNSS_NATIVE_R2B_MAX_PARAMS;
   const maxBlocks = options.maxBlocks ?? GNSS_NATIVE_R2B_MAX_BLOCKS;
   if (!gnssNativeR2BEnabled) {
-    reasons.push('GNSS native R2B route disabled by kill switch (default OFF)');
+    reasons.push('GNSS native R2B route disabled by kill switch (default ON)');
     return { eligible: false, reasons, numParams: null, selectedBlockCount: null };
   }
   if (options.isWorker !== true) {

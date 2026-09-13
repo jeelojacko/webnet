@@ -415,6 +415,23 @@ blocks, no native routing changes, no CRS/geoid/datum machinery).
 - TS-dense only; no native/sparse/WASM, no robust, no mixed networks,
   no UI. Evidence: `reports/gnss/phase12d-baseline-statistics.md`.
 
+## 12F.4 R2B default-ON notes (production)
+
+- Enabling phase on `perf/gnss-native-r2b-default-on`: kill-switch
+  default OFF → ON for the certified cohort only
+  (`src/workers/gnssBaselineNativeR2BRoute.ts`, one boolean + comments).
+  Classifier, bounds (225–2250 params, ≤750 stations, ≤4000 blocks,
+  ≤1.5M factor nnz, bridgeless), F-BRIDGE, math, tolerances, and
+  verification untouched; R1 stays default OFF; fallback stays
+  R2B → clean TypeScript (never R1); no dense Qxx.
+- WASM loads only after cheap preflight eligibility (kill-OFF,
+  below-floor, bridged, and non-worker jobs issue zero bundle loads).
+- One-step rollback: disable the R2B switch → pre-12F TypeScript routing.
+- Evidence: `reports/gnss/phase12f4-r2b-default-on.md` (+ NEW
+  `scripts/gnss/gnssR2BDefaultOnProof.ts`: 8/8 real-Worker/real-WASM
+  default-dispatch legs; 60-leg perf ladder reproduces 12F.3 medians
+  with zero plumbing regression; datasets 8/8 with SEUW pins intact).
+
 ## 12E.3 endpoint setup uncertainty notes (production)
 
 - Implemented on `feat/gnss-endpoint-setup-uncertainty`: new
