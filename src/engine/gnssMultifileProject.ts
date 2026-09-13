@@ -25,8 +25,10 @@ import {
   composeGnssBaselineNetworks,
   type GnssMultifileFormat,
   type GnssMultifileProvenance,
+  type GnssMultifileResult,
   type GnssMultifileSource,
 } from './gnssMultifileComposition';
+import { isGnssMultifileEnabled } from './gnssMultifileFlag';
 import { strongDuplicateBlocks } from './gnssMultifileDuplicates';
 import { gnssBaselineComponents, runGnssBaselinePreflight } from './gnssBaselinePreflight';
 import {
@@ -106,28 +108,27 @@ export interface GnssProjectParsedSource {
   readonly diagnostics: GnssDiagnostic[];
 }
 
-/**
- * Parse each ENABLED source independently (never concatenate text, never
- * share parser state). CSV baselines resolve against control-CSV stations
- * plus already-parsed GNSS stations (two-pass); CSV frame comes from run
- * options or the first non-CSV GNSS source.
- */
-export const parseGnssProjectSources = (
-  files: readonly ProjectManifestFileEntry[],
+interface GnssCsvFallbackFrame {
+  readonly referenceFrame: string;
+  readonly epoch?: string;
+  readonly ellipsoid?: string;
+}
+
+interface GnssProjectPass1 {
+  readonly parsed: GnssProjectParsedSource[];
+  readonly unionStations: StationMap;
+  readonly csvFallbackFrame: GnssCsvFallbackFrame | null;
+}
+
+/** Pass 1: GVX + native BL (each parsed independently); seeds union stations + CSV frame. */
+const parseGvxAndNativePass = (
+  enabled: Array<{ id: string; name: string }>,
+  kinds: Readonly<Map<string, GnssProjectSourceKind>>,
   sourceTexts: Readonly<Record<string, string>>,
-  options: GnssMultifileRunOptions = {},
-): GnssProjectParsedSource[] => {
-  const enabled = sortProjectFiles([...files]).filter((file) => file.enabled);
-  const kinds = new Map<string, GnssProjectSourceKind>();
-  enabled.forEach((file) => {
-    const override = options.formatOverrides?.[file.id];
-    const content = sourceTexts[file.id] ?? '';
-    kinds.set(file.id, override ?? detectGnssProjectSourceKind(file.name, content));
-  });
+): GnssProjectPass1 => {
   const parsed: GnssProjectParsedSource[] = [];
-  // Pass 1: GVX + native BL + control CSV stations.
   const unionStations: StationMap = {};
-  let csvFallbackFrame: { referenceFrame: string; epoch?: string; ellipsoid?: string } | null = null;
+  let csvFallbackFrame: GnssCsvFallbackFrame | null = null;
   enabled.forEach((file) => {
     const kind = kinds.get(file.id) ?? 'terrestrial';
     const content = sourceTexts[file.id] ?? '';
@@ -155,7 +156,23 @@ export const parseGnssProjectSources = (
       parsed.push({ fileId: file.id, fileName: file.name, kind, format: 'native', network: result.network, diagnostics: [...result.diagnostics] });
     }
   });
-  // Pass 2: CSV (control stations first, then baselines against union).
+  return { parsed, unionStations, csvFallbackFrame };
+};
+
+/**
+ * Pass 2: CSV (control stations first, then baselines against the union).
+ * Extends unionStations in place; returns only the CSV parsed entries.
+ */
+const parseCsvPass = (
+  enabled: Array<{ id: string; name: string }>,
+  kinds: Readonly<Map<string, GnssProjectSourceKind>>,
+  sourceTexts: Readonly<Record<string, string>>,
+  unionStations: StationMap,
+  csvFallbackFrame: GnssCsvFallbackFrame | null,
+  options: GnssMultifileRunOptions,
+): GnssProjectParsedSource[] => {
+  const parsed: GnssProjectParsedSource[] = [];
+  let frame = csvFallbackFrame;
   enabled.forEach((file) => {
     const kind = kinds.get(file.id) ?? 'terrestrial';
     if (kind !== 'gnss-csv') return;
@@ -163,8 +180,8 @@ export const parseGnssProjectSources = (
     const control = importGnssControlCsv(content, { units: 'm', sourceFile: file.name });
     if (control.stations) {
       Object.assign(unionStations, control.stations);
-      if (!csvFallbackFrame) {
-        csvFallbackFrame = {
+      if (!frame) {
+        frame = {
           referenceFrame: options.csvReferenceFrame ?? 'unknown',
           epoch: options.csvEpoch,
           ellipsoid: options.csvEllipsoid,
@@ -173,22 +190,48 @@ export const parseGnssProjectSources = (
       parsed.push({ fileId: file.id, fileName: file.name, kind, format: 'delimited', network: null, diagnostics: [...control.diagnostics] });
       return;
     }
-    const frame = {
-      referenceFrame: options.csvReferenceFrame ?? csvFallbackFrame?.referenceFrame ?? 'unknown',
-      epoch: options.csvEpoch ?? csvFallbackFrame?.epoch,
-      ellipsoid: options.csvEllipsoid ?? csvFallbackFrame?.ellipsoid,
+    const resolved = {
+      referenceFrame: options.csvReferenceFrame ?? frame?.referenceFrame ?? 'unknown',
+      epoch: options.csvEpoch ?? frame?.epoch,
+      ellipsoid: options.csvEllipsoid ?? frame?.ellipsoid,
     };
     const result = importGnssBaselineDelimited(content, unionStations, {
       units: 'm',
       vectorFrame: 'ecef',
-      referenceFrame: frame.referenceFrame,
-      epoch: frame.epoch,
-      ellipsoid: frame.ellipsoid,
+      referenceFrame: resolved.referenceFrame,
+      epoch: resolved.epoch,
+      ellipsoid: resolved.ellipsoid,
       sourceFile: file.name,
     });
     if (result.network) Object.assign(unionStations, result.network.stations);
     parsed.push({ fileId: file.id, fileName: file.name, kind, format: 'delimited', network: result.network, diagnostics: [...result.diagnostics] });
   });
+  return parsed;
+};
+
+/**
+ * Parse each ENABLED source independently (never concatenate text, never
+ * share parser state). CSV baselines resolve against control-CSV stations
+ * plus already-parsed GNSS stations (two-pass); CSV frame comes from run
+ * options or the first non-CSV GNSS source.
+ */
+export const parseGnssProjectSources = (
+  files: readonly ProjectManifestFileEntry[],
+  sourceTexts: Readonly<Record<string, string>>,
+  options: GnssMultifileRunOptions = {},
+): GnssProjectParsedSource[] => {
+  const enabled = sortProjectFiles([...files]).filter((file) => file.enabled);
+  const kinds = new Map<string, GnssProjectSourceKind>();
+  enabled.forEach((file) => {
+    const override = options.formatOverrides?.[file.id];
+    const content = sourceTexts[file.id] ?? '';
+    kinds.set(file.id, override ?? detectGnssProjectSourceKind(file.name, content));
+  });
+  const pass1 = parseGvxAndNativePass(enabled, kinds, sourceTexts);
+  const parsed: GnssProjectParsedSource[] = [
+    ...pass1.parsed,
+    ...parseCsvPass(enabled, kinds, sourceTexts, pass1.unionStations, pass1.csvFallbackFrame, options),
+  ];
   // Terrestrial + ignored entries (never parsed as GNSS).
   enabled.forEach((file) => {
     const kind = kinds.get(file.id) ?? 'terrestrial';
@@ -222,10 +265,38 @@ export interface GnssPrecompositionSummary {
   readonly status: 'READY' | 'BLOCKED';
 }
 
-/** Precomposition summary: explicit agreed frame, counts, conflicts, READY/BLOCKED. */
-export const summarizeGnssProjectComposition = (
+/**
+ * Failed-parse blocks: importer error diagnostics and null-network GNSS
+ * sources (except control-stations-only CSV) name the failed source.
+ */
+const failedSourceBlocks = (parsed: readonly GnssProjectParsedSource[]): string[] => {
+  const blocks: string[] = [];
+  parsed.forEach((entry) => {
+    entry.diagnostics.forEach((diagnostic) => {
+      if (diagnostic.severity === 'error') {
+        blocks.push(
+          `compose blocked: source '${entry.fileName}' [${entry.fileId}] failed to parse: ${diagnostic.message}`,
+        );
+      }
+    });
+    const isGnssKind =
+      entry.kind === 'gnss-gvx' || entry.kind === 'gnss-native-bl' || entry.kind === 'gnss-csv';
+    if (!isGnssKind || entry.network != null) return;
+    // CSV control-stations-only entries legitimately carry network null.
+    if (entry.kind === 'gnss-csv' && !entry.diagnostics.some((diagnostic) => diagnostic.severity === 'error')) return;
+    if (entry.diagnostics.some((diagnostic) => diagnostic.severity === 'error')) return; // already named above
+    blocks.push(
+      `compose blocked: source '${entry.fileName}' [${entry.fileId}] produced no network (parse failed).`,
+    );
+  });
+  return blocks;
+};
+
+/** Shared summary builder over one precomputed composition (single compose per run). */
+const buildPrecompositionSummary = (
   parsed: readonly GnssProjectParsedSource[],
   totalFiles: number,
+  composed: GnssMultifileResult | null,
 ): GnssPrecompositionSummary => {
   const gnss = parsed.filter((entry) => entry.network != null);
   const warnings: string[] = [];
@@ -234,16 +305,12 @@ export const summarizeGnssProjectComposition = (
       if (diagnostic.severity === 'warning') warnings.push(`[${entry.fileName}] ${diagnostic.message}`);
     });
   });
-  const ordered: GnssMultifileSource[] = gnss.map((entry) => ({
-    network: entry.network as GnssBaselineNetworkInput,
-    sourceId: entry.fileId,
-    fileName: entry.fileName,
-    format: entry.format,
-  }));
-  const composed = ordered.length > 0 ? composeGnssBaselineNetworks(ordered) : null;
-  const blockingErrors = composed == null
-    ? ['compose blocked: no enabled GNSS sources.']
-    : [...composed.blockingErrors, ...strongDuplicateBlocks(composed.duplicateCandidates)];
+  const blockingErrors = [
+    ...failedSourceBlocks(parsed),
+    ...(composed == null
+      ? ['compose blocked: no enabled GNSS sources.']
+      : [...composed.blockingErrors, ...strongDuplicateBlocks(composed.duplicateCandidates)]),
+  ];
   const agreed = (pick: (_network: GnssBaselineNetworkInput) => string | undefined): string => {
     const values = new Set(gnss.map((entry) => textOf(pick(entry.network as GnssBaselineNetworkInput)) || 'unknown'));
     return values.size === 1 ? [...values][0] as string : 'unknown';
@@ -288,6 +355,22 @@ export const summarizeGnssProjectComposition = (
   };
 };
 
+/** Precomposition summary: explicit agreed frame, counts, conflicts, READY/BLOCKED. */
+export const summarizeGnssProjectComposition = (
+  parsed: readonly GnssProjectParsedSource[],
+  totalFiles: number,
+): GnssPrecompositionSummary => {
+  const gnss = parsed.filter((entry) => entry.network != null);
+  const ordered: GnssMultifileSource[] = gnss.map((entry) => ({
+    network: entry.network as GnssBaselineNetworkInput,
+    sourceId: entry.fileId,
+    fileName: entry.fileName,
+    format: entry.format,
+  }));
+  const composed = ordered.length > 0 ? composeGnssBaselineNetworks(ordered) : null;
+  return buildPrecompositionSummary(parsed, totalFiles, composed);
+};
+
 export interface GnssMultifileSolveOutput {
   readonly parsed: GnssProjectParsedSource[];
   readonly summary: GnssPrecompositionSummary;
@@ -307,8 +390,10 @@ export const runGnssMultifileProjectSolve = (
   sourceTexts: Readonly<Record<string, string>>,
   options: GnssMultifileRunOptions = {},
 ): GnssMultifileSolveOutput => {
+  if (!isGnssMultifileEnabled()) {
+    throw new Error('GNSS multifile run blocked: flag OFF (DEFAULT OFF; enable to run).');
+  }
   const parsed = parseGnssProjectSources(files, sourceTexts, options);
-  const summary = summarizeGnssProjectComposition(parsed, files.length);
   const gnss = parsed.filter((entry) => entry.network != null);
   const terrestrial = parsed.filter((entry) => entry.kind === 'terrestrial');
   const nonEmptyTerrestrial = terrestrial.filter((entry) => textOf(sourceTexts[entry.fileId] ?? '') !== '');
@@ -319,17 +404,19 @@ export const runGnssMultifileProjectSolve = (
         `${gnss.map((entry) => `'${entry.fileName}'`).join(', ')} are GNSS). Run them separately.`,
     );
   }
-  if (summary.status === 'BLOCKED') {
-    throw new Error(summary.blockingErrors[0] ?? 'compose blocked');
-  }
+  // Single compose per run: the summary builds over this same result.
   const ordered: GnssMultifileSource[] = gnss.map((entry) => ({
     network: entry.network as GnssBaselineNetworkInput,
     sourceId: entry.fileId,
     fileName: entry.fileName,
     format: entry.format,
   }));
-  const composed = composeGnssBaselineNetworks(ordered);
-  if (!composed.composed) throw new Error(composed.blockingErrors[0] ?? 'compose blocked');
+  const composed = ordered.length > 0 ? composeGnssBaselineNetworks(ordered) : null;
+  const summary = buildPrecompositionSummary(parsed, files.length, composed);
+  if (summary.status === 'BLOCKED') {
+    throw new Error(summary.blockingErrors[0] ?? 'compose blocked');
+  }
+  if (!composed?.composed) throw new Error(composed?.blockingErrors[0] ?? 'compose blocked');
   // Project-level control overrides AFTER composition (exact station ID; sources untouched).
   let stations = Object.fromEntries(
     Object.entries(composed.composed.stations).map(([id, station]) => [id, { ...station }]),
@@ -365,12 +452,15 @@ export const findNonPortableProjectPaths = (
   files: readonly ProjectManifestFileEntry[],
 ): string[] => {
   const offenders: string[] = [];
+  // Any absolute POSIX path or leading ~/ is machine-local: portable
+  // bundles carry embedded content only, never host paths.
   const machineLocal = (value: string): boolean =>
-    value.includes('~/Downloads') ||
-    value.includes('$HOME/Downloads') ||
-    /^\/home\//.test(value) ||
-    /^\/Users\//.test(value) ||
-    /^[A-Za-z]:\\/.test(value) ||
+    value.startsWith('/') ||
+    value === '~' ||
+    value.startsWith('~/') ||
+    value.startsWith('~\\') ||
+    value.includes('$HOME') ||
+    /^[A-Za-z]:[\\/]/.test(value) ||
     value.startsWith('\\\\');
   files.forEach((file) => {
     if (machineLocal(file.path) || machineLocal(file.name)) offenders.push(file.id);

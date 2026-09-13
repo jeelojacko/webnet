@@ -116,8 +116,7 @@ export const classifyGnssDuplicates = (
         const vectorSame =
           vectorsClose(baseA.vector, baseB.vector) && covariancesClose(baseA.covariance, baseB.covariance);
         if (sameVectorId && vectorSame && sameSession) {
-          const certain = sameSource || (provA?.sourceId !== provB?.sourceId && sameSession);
-          if (!sameSource && certain) {
+          if (!sameSource && provA?.sourceId !== provB?.sourceId) {
             candidates.push({
               baselineA: idA,
               baselineB: idB,

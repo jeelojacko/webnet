@@ -1,8 +1,9 @@
 /**
  * Phase 12H.1 — production composer unit tests (synthetic fixtures only).
  */
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, beforeEach } from 'vitest';
 import type { StationMap } from '../../src/types';
+import { setGnssMultifileEnabled } from '../../src/engine/gnssMultifileFlag';
 import type { GnssBaselineObservation } from '../../src/engine/gnssBaselineTypes';
 import {
   parseGnssBaselineText,
@@ -80,6 +81,17 @@ const solve = (net: { stations: StationMap; baselines: GnssBaselineObservation[]
   });
 
 describe('gnss multifile production composer', () => {
+  beforeEach(() => {
+    setGnssMultifileEnabled(true);
+  });
+
+  it('DEFAULT-OFF flag gate: OFF throws fail-closed, ON permits composition', () => {
+    const base = parse(text([{ id: 'A', fixed: true }, { id: 'B' }], [{ from: 'A', to: 'B' }]), 'a.dat');
+    setGnssMultifileEnabled(false);
+    expect(() => composeGnssBaselineNetworks([source(base, 'a')])).toThrow(/flag OFF/);
+    setGnssMultifileEnabled(true);
+    expect(composeGnssBaselineNetworks([source(base, 'a')]).composed).not.toBeNull();
+  });
   it('frame/epoch/ellipsoid mismatches block, naming both sources and both values', () => {
     const base = parse(text([{ id: 'A', fixed: true }, { id: 'B' }], [{ from: 'A', to: 'B' }]), 'a.dat');
     const otherFrame = parse(
@@ -144,6 +156,21 @@ describe('gnss multifile production composer', () => {
       source(parse(text([{ id: 'a' }, { id: 'B' }], [{ from: 'a', to: 'B' }]), 'b.dat'), 'b'),
     ]);
     expect(Object.keys(alias.composed!.stations).sort()).toEqual(['A', 'B', 'a']);
+  });
+
+  it('material conflict names the actual contributing pair (not sources[0])', () => {
+    // Station Z first appears in source b; source c conflicts with b.
+    // The error must name b vs c, never the unrelated first source a.
+    const mkZ = (x: number): GnssBaselineNetworkInput =>
+      parse(text([{ id: 'Z', coord: { x, y: 200, z: 300 } }, { id: 'T', coord: { x: 110, y: 205, z: 320 } }], [{ from: 'Z', to: 'T' }]), 't.dat');
+    const blocked = composeGnssBaselineNetworks([
+      source(parse(text([{ id: 'A', fixed: true }, { id: 'B' }], [{ from: 'A', to: 'B' }]), 'a.dat'), 'a'),
+      source(mkZ(100), 'b'),
+      source(mkZ(100 + 2e-9), 'c'),
+    ]);
+    expect(blocked.composed).toBeNull();
+    expect(blocked.blockingErrors.join(' ')).toMatch(/material station conflict 'Z'.*b.*c/);
+    expect(blocked.blockingErrors.join(' ')).not.toContain("(a 'a.dat'");
   });
 
   it('order-invariance: numerics identical under reorder, provenance follows order', () => {

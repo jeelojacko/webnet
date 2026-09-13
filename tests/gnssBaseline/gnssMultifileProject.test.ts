@@ -110,7 +110,18 @@ describe('gnss multifile flag + source kinds', () => {
 });
 
 describe('gnss multifile project solve', () => {
+  it('DEFAULT-OFF flag gate: OFF blocks the run, ON permits it', () => {
+    const files = [entry('f1', 'p1.dat', 0), entry('f2', 'p2.dat', 1)];
+    const texts = { f1: PART1, f2: PART2 };
+    expect(isGnssMultifileEnabled()).toBe(false);
+    expect(() => runGnssMultifileProjectSolve(files, texts)).toThrow(/flag OFF/);
+    setGnssMultifileEnabled(true);
+    const output = runGnssMultifileProjectSolve(files, texts);
+    expect(output.summary.status).toBe('READY');
+  });
+
   it('two-source solve equals whole single-source; provenance + READY summary', () => {
+    setGnssMultifileEnabled(true);
     const files = [entry('f1', 'p1.dat', 0), entry('f2', 'p2.dat', 1)];
     const texts = { f1: PART1, f2: PART2 };
     const output = runGnssMultifileProjectSolve(files, texts);
@@ -147,12 +158,14 @@ describe('gnss multifile project solve', () => {
   });
 
   it('mixed terrestrial + GNSS blocks clearly before solve', () => {
+    setGnssMultifileEnabled(true);
     const files = [entry('f1', 'p1.dat', 0), entry('f2', 'main.dat', 1)];
     const texts = { f1: PART1, f2: 'STN A 100 200\nDIST A B 50\n' };
     expect(() => runGnssMultifileProjectSolve(files, texts)).toThrow(/mixed terrestrial \+ GNSS/);
   });
 
   it('control overrides apply AFTER composition without mutating sources', () => {
+    setGnssMultifileEnabled(true);
     const free1 = nativeText([{ id: 'A' }, { id: 'B' }], [{ from: 'A', to: 'B' }]);
     const free2 = nativeText([{ id: 'B' }, { id: 'C' }], [{ from: 'B', to: 'C' }]);
     const files = [entry('f1', 'p1.dat', 0), entry('f2', 'p2.dat', 1)];
@@ -165,6 +178,7 @@ describe('gnss multifile project solve', () => {
   });
 
   it('enable/disable recomposes cleanly with no stale state', () => {
+    setGnssMultifileEnabled(true);
     // Minimal declarations: dropping file 2 removes exactly its stations.
     const lean1 = nativeText([{ id: 'A', fixed: true }, { id: 'B' }, { id: 'C' }], ALL_BASELINES.slice(0, 2));
     const lean2 = nativeText([{ id: 'C' }, { id: 'D' }, { id: 'Z' }], [
@@ -189,6 +203,7 @@ describe('gnss multifile project solve', () => {
   });
 
   it('save -> serialize -> reload -> recompose -> adjust equality (order/setup/overrides/provenance)', () => {
+    setGnssMultifileEnabled(true);
     const files = [entry('f1', 'p1.dat', 1), entry('f2', 'p2.dat', 0)];
     const texts = { f1: PART1, f2: PART2 };
     const persisted = {
@@ -216,16 +231,35 @@ describe('gnss multifile project solve', () => {
   });
 
   it('portable save gate forbids machine-local paths', () => {
+    setGnssMultifileEnabled(true);
     const bad: ProjectManifestFileEntry = {
       id: 'f1', name: 'a.gvx', kind: 'dat', path: '~/Downloads/webnet-gnss-12e/a.gvx', enabled: true, order: 0,
     };
     expect(() => assertGnssProjectPortable([bad])).toThrow(/portable save blocked.*machine-local/);
+    // Broadened heuristic: any leading ~/ and any absolute POSIX path.
+    const localPaths = [
+      '~/Documents/job/site.gvx',
+      '~/data/a.gvx',
+      '/root/data/a.gvx',
+      '/mnt/usb/a.gvx',
+      '/media/usb/a.gvx',
+      '/tmp/a.gvx',
+      '/home/operator/a.gvx',
+      'C:\\data\\a.gvx',
+    ];
+    localPaths.forEach((path, index) => {
+      const file: ProjectManifestFileEntry = {
+        id: `bad${index}`, name: 'a.gvx', kind: 'dat', path, enabled: true, order: index,
+      };
+      expect(() => assertGnssProjectPortable([file])).toThrow(/portable save blocked/);
+    });
     expect(() =>
       assertGnssProjectPortable([entry('f1', 'p1.dat', 0)]),
     ).not.toThrow();
   });
 
   it('cross-source Phase12D: loops/redundancy/Qvv/Cvv/standardized/blockT/what-if/covariance are network properties', () => {
+    setGnssMultifileEnabled(true);
     const tree = nativeText(ALL_STATIONS, [
       { from: 'A', to: 'B', noise: 1 },
       { from: 'B', to: 'C', noise: 2 },
@@ -252,6 +286,7 @@ describe('gnss multifile project solve', () => {
   });
 
   it('composed synthetic survives the unchanged R2B gate with stub parity to TS', async () => {
+    setGnssMultifileEnabled(true);
     setGnssNativeR2BRouteEnabled(true);
     // Bridgeless triangle split across two files (chain+spur would trip F-BRIDGE).
     const ring1 = nativeText([{ id: 'A', fixed: true }, { id: 'B' }, { id: 'C' }], [{ from: 'A', to: 'B' }]);
@@ -278,6 +313,7 @@ describe('gnss multifile project solve', () => {
   });
 
   it('precomposition summary renders READY/BLOCKED with agreed frame and conflicts', () => {
+    setGnssMultifileEnabled(true);
     const parsed = parseGnssProjectSources(
       [entry('f1', 'p1.dat', 0), entry('f2', 'p2.dat', 1)],
       { f1: PART1, f2: PART2 },
@@ -304,7 +340,21 @@ describe('gnss multifile project solve', () => {
     expect(blocked.blockingErrors.join(' ')).toMatch(/material station conflict 'D'/);
   });
 
+  it('failed-parse sources block the run and name the bad source', () => {
+    setGnssMultifileEnabled(true);
+    const files = [entry('good', 'p1.dat', 0), entry('bad', 'broken.dat', 1)];
+    const texts = { good: PART1, bad: 'this is not a GNSS file\nno parseable rows here\n' };
+    const parsed = parseGnssProjectSources(files, texts, { formatOverrides: { bad: 'gnss-native-bl' } });
+    const summary = summarizeGnssProjectComposition(parsed, 2);
+    expect(summary.status).toBe('BLOCKED');
+    expect(summary.blockingErrors.join(' ')).toMatch(/broken\.dat.*failed to parse|failed to parse.*broken\.dat/);
+    expect(() => runGnssMultifileProjectSolve(files, texts, { formatOverrides: { bad: 'gnss-native-bl' } })).toThrow(
+      /broken\.dat/,
+    );
+  });
+
   it('composition-only perf: 10/~1k, 50/~10k, 100/~50k baselines measure parse/compose/summary', () => {
+    setGnssMultifileEnabled(true);
     const buildFiles = (fileCount: number, perFile: number): { files: ProjectManifestFileEntry[]; texts: Record<string, string> } => {
       const files: ProjectManifestFileEntry[] = [];
       const texts: Record<string, string> = {};

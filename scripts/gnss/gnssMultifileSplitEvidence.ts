@@ -19,6 +19,7 @@ import { parseGvx } from '../../src/engine/gnssGvxImport';
 import { parseGvxSyntax } from '../../src/engine/gnssGvxSyntax';
 import { groupMarksByName } from './tbcParityModel';
 import { composeGnssBaselineNetworks, type GnssMultifileSource } from '../../src/engine/gnssMultifileComposition';
+import { setGnssMultifileEnabled } from '../../src/engine/gnssMultifileFlag';
 import { runGnssBaselineAdjustment } from '../../src/engine/gnssBaselineAdjust';
 import { computeGnssLoopClosures } from '../../src/engine/gnssBaselineLoops';
 import {
@@ -148,6 +149,88 @@ const normalizeReport = (text: string): string => {
   return [...rest, ...indexed].join('\n');
 }
 
+interface SplitInputs {
+  readonly whole: GnssBaselineNetworkInput;
+  readonly base: ReturnType<typeof runGnssBaselineAdjustment>;
+  readonly other: ReturnType<typeof runGnssBaselineAdjustment>;
+  readonly composedBaselines: GnssBaselineObservation[];
+}
+
+/** Key-based residual alignment: repeated endpoint pairs align by stem, never endpoint sort. */
+const diffAlignedResiduals = (inputs: SplitInputs): number[] => {
+  const alignByKey = (keysA: string[], valsA: number[][], keysB: string[], valsB: number[][]): number[] => {
+    const taken = new Array<boolean>(keysB.length).fill(false);
+    const diffs: number[] = [];
+    keysA.forEach((key, i) => {
+      const j = keysB.findIndex((candidate, k) => !taken[k] && candidate === key);
+      if (j < 0) {
+        diffs.push(Number.POSITIVE_INFINITY);
+        return;
+      }
+      taken[j] = true;
+      valsA[i]!.forEach((x, k) => {
+        diffs.push(Math.abs(x - (valsB[j]![k] ?? Number.NaN)));
+      });
+    });
+    return diffs;
+  };
+  const resKeysOf = (residuals: SplitInputs['base']['residuals'], baselines: GnssBaselineObservation[]): string[] =>
+    residuals.map((r) => {
+      const b = baselines.find((entry) => entry.id === r.baselineId);
+      return `${r.from}->${r.to}|${b?.vector.x ?? 0},${b?.vector.y ?? 0},${b?.vector.z ?? 0}|${b?.sessionId ?? ''}|${b?.solutionId ?? ''}`;
+    });
+  return alignByKey(
+    resKeysOf(inputs.base.residuals, inputs.whole.baselines),
+    inputs.base.residuals.map((r) => [r.vX, r.vY, r.vZ]),
+    resKeysOf(inputs.other.residuals, inputs.composedBaselines),
+    inputs.other.residuals.map((r) => [r.vX, r.vY, r.vZ]),
+  );
+};
+
+/** Physical-observation-stem statistic diffs (repeats align by stem + occurrence). */
+const diffKeyedStatistics = (
+  inputs: SplitInputs,
+  pick: (_entry: { qvv: number[]; cvv: number[]; std: number[]; red: number[]; blockT: number }) => number[],
+): number[] => {
+  const stemOf = (b: GnssBaselineObservation): string =>
+    `${b.from}->${b.to}|${b.vector.x},${b.vector.y},${b.vector.z}|${b.sessionId ?? ''}|${b.solutionId ?? ''}`;
+  const keyedStats = (
+    statistics: SplitInputs['base']['statistics'],
+    baselines: GnssBaselineObservation[],
+  ): Map<string, { qvv: number[]; cvv: number[]; std: number[]; red: number[]; blockT: number }> => {
+    const byId = new Map(baselines.map((b) => [b.id, b]));
+    const occurrence = new Map<string, number>();
+    const out = new Map<string, { qvv: number[]; cvv: number[]; std: number[]; red: number[]; blockT: number }>();
+    statistics.forEach((s) => {
+      const b = byId.get(s.baselineId);
+      if (!b) return;
+      const stem = stemOf(b);
+      const n = (occurrence.get(stem) ?? 0) + 1;
+      occurrence.set(stem, n);
+      out.set(`${stem}#${n}`, {
+        qvv: Object.values(s.qvv),
+        cvv: Object.values(s.cvv),
+        std: Object.values(s.standardized).map((v) => (typeof v === 'number' ? v : 0)),
+        red: Object.values(s.redundancy),
+        blockT: typeof s.blockT === 'number' ? s.blockT : 0,
+      });
+    });
+    return out;
+  };
+  const statsMapA = keyedStats(inputs.base.statistics, inputs.whole.baselines);
+  const statsMapB = keyedStats(inputs.other.statistics, inputs.composedBaselines);
+  const diffs: number[] = [];
+  statsMapA.forEach((entry, key) => {
+    const mate = statsMapB.get(key);
+    if (!mate) {
+      diffs.push(Number.POSITIVE_INFINITY);
+      return;
+    }
+    pick(entry).forEach((x, k) => diffs.push(Math.abs(x - (pick(mate)[k] ?? Number.NaN))));
+  });
+  return diffs;
+};
+
 interface SplitOutcome {
   readonly name: string;
   readonly chunks: number;
@@ -206,93 +289,19 @@ const solveAndCompare = (
     const w = otherCoords.get(k) ?? [Number.NaN, Number.NaN, Number.NaN];
     v.forEach((x, i) => coordDiffs.push(Math.abs(x - (w[i] ?? Number.NaN))));
   });
-  const canonRes = (residuals: Array<{ from: string; to: string; vX: number; vY: number; vZ: number }>): string =>
-    JSON.stringify([...residuals].map((r) => [r.from, r.to, r.vX, r.vY, r.vZ]).sort());
-  // Key-based alignment: intake data carries repeated endpoint pairs
-  // (reobserved vectors); endpoint-only sorting misaligns sessions.
-  const resKey = (from: string, to: string, id: number): string => {
-    const base = (id === -1 ? whole.baselines : composed.composed?.baselines ?? whole.baselines)
-      .find((b) => b.id === id);
-    void base;
-    return `${from}->${to}`;
+  const inputs: SplitInputs = {
+    whole,
+    base,
+    other,
+    composedBaselines: composed.composed?.baselines ?? [],
   };
-  void resKey;
-  const alignByKey = <T,>(keysA: string[], valsA: T[][], keysB: string[], valsB: T[][]): number[] => {
-    const taken = new Array<boolean>(keysB.length).fill(false);
-    const diffs: number[] = [];
-    keysA.forEach((key, i) => {
-      const j = keysB.findIndex((candidate, k) => !taken[k] && candidate === key);
-      if (j < 0) {
-        diffs.push(Number.POSITIVE_INFINITY);
-        return;
-      }
-      taken[j] = true;
-      valsA[i]!.forEach((x, k) => {
-        const a = typeof x === 'number' ? x : 0;
-        const rawB = valsB[j]![k];
-        const b = typeof rawB === 'number' ? rawB : 0;
-        diffs.push(Math.abs(a - b));
-      });
-    });
-    return diffs;
-  };
-  const resKeysOf = (residuals: typeof base.residuals, baselines: GnssBaselineObservation[]): string[] =>
-    residuals.map((r) => {
-      const b = baselines.find((entry) => entry.id === r.baselineId);
-      return `${r.from}->${r.to}|${b?.vector.x ?? 0},${b?.vector.y ?? 0},${b?.vector.z ?? 0}|${b?.sessionId ?? ''}|${b?.solutionId ?? ''}`;
-    });
-  const resDiffs = alignByKey(
-    resKeysOf(base.residuals, whole.baselines),
-    base.residuals.map((r) => [r.vX, r.vY, r.vZ]),
-    resKeysOf(other.residuals, composed.composed?.baselines ?? []),
-    other.residuals.map((r) => [r.vX, r.vY, r.vZ]),
-  );
-  void canonRes;
+  const resDiffs = diffAlignedResiduals(inputs);
+  const zip = (pick: (_entry: { qvv: number[]; cvv: number[]; std: number[]; red: number[]; blockT: number }) => number[]): number[] =>
+    diffKeyedStatistics(inputs, pick);
   const qxxA = (base as { qxx?: number[][] }).qxx ?? [];
   const qxxB = (other as { qxx?: number[][] }).qxx ?? [];
   const qxxDiffs: number[] = [];
   qxxA.forEach((row, i) => row.forEach((x, j) => qxxDiffs.push(Math.abs(x - (qxxB[i]?.[j] ?? Number.NaN)))));
-  // Physical-observation stem: intake data repeats endpoint pairs, so
-  // statistics align by stem + occurrence, never by endpoint sort order.
-  const stemOf = (b: GnssBaselineObservation): string =>
-    `${b.from}->${b.to}|${b.vector.x},${b.vector.y},${b.vector.z}|${b.sessionId ?? ''}|${b.solutionId ?? ''}`;
-  const keyedStats = (
-    statistics: typeof base.statistics,
-    baselines: GnssBaselineObservation[],
-  ): Map<string, { qvv: number[]; cvv: number[]; std: number[]; red: number[]; blockT: number }> => {
-    const byId = new Map(baselines.map((b) => [b.id, b]));
-    const occurrence = new Map<string, number>();
-    const out = new Map<string, { qvv: number[]; cvv: number[]; std: number[]; red: number[]; blockT: number }>();
-    statistics.forEach((s) => {
-      const b = byId.get(s.baselineId);
-      if (!b) return;
-      const stem = stemOf(b);
-      const n = (occurrence.get(stem) ?? 0) + 1;
-      occurrence.set(stem, n);
-      out.set(`${stem}#${n}`, {
-        qvv: Object.values(s.qvv),
-        cvv: Object.values(s.cvv),
-        std: Object.values(s.standardized).map((v) => (typeof v === 'number' ? v : 0)),
-        red: Object.values(s.redundancy),
-        blockT: typeof s.blockT === 'number' ? s.blockT : 0,
-      });
-    });
-    return out;
-  };
-  const statsMapA = keyedStats(base.statistics, whole.baselines);
-  const statsMapB = keyedStats(other.statistics, composed.composed?.baselines ?? []);
-  const zip = (pick: (_entry: { qvv: number[]; cvv: number[]; std: number[]; red: number[]; blockT: number }) => number[]): number[] => {
-    const diffs: number[] = [];
-    statsMapA.forEach((entry, key) => {
-      const mate = statsMapB.get(key);
-      if (!mate) {
-        diffs.push(Number.POSITIVE_INFINITY);
-        return;
-      }
-      pick(entry).forEach((x, k) => diffs.push(Math.abs(x - (pick(mate)[k] ?? Number.NaN))));
-    });
-    return diffs;
-  };
   const loopsA = computeGnssLoopClosures(whole.baselines);
   const loopsB = computeGnssLoopClosures(composed.composed.baselines);
   const reportA = buildGnssReportFromInput({ stations: whole.stations, baselines: whole.baselines, referenceFrame: whole.frame.referenceFrame, epoch: whole.frame.epoch, ellipsoid });
@@ -315,7 +324,86 @@ const solveAndCompare = (
   };
 };
 
+interface DatasetSetup {
+  readonly name: string;
+  readonly setup: { horizontalCenteringSigma: number; antennaHeightSigma: number };
+  readonly pin: number;
+}
+
+const strategiesOf = (network: GnssBaselineNetworkInput): Array<{ name: string; chunks: GnssBaselineObservation[][] }> => {
+  const all = network.baselines;
+  const odd = all.filter((_, i) => i % 2 === 0);
+  const even = all.filter((_, i) => i % 2 === 1);
+  const five: GnssBaselineObservation[][] = [[], [], [], [], []];
+  all.forEach((b, i) => { five[i % 5]!.push(b); });
+  const fixedIds = new Set(Object.entries(network.stations).filter(([, s]) => s?.fixedX).map(([id]) => id));
+  const touching = all.filter((b) => fixedIds.has(b.from) || fixedIds.has(b.to));
+  const rest = all.filter((b) => !fixedIds.has(b.from) && !fixedIds.has(b.to));
+  return [
+    { name: 'whole', chunks: [all] },
+    { name: 'odd-even', chunks: [odd, even] },
+    { name: '5-chunk', chunks: five },
+    { name: 'control-separated', chunks: rest.length > 0 ? [touching, rest] : [touching] },
+    { name: 'reversed-manifest-order', chunks: [even, odd] },
+  ];
+};
+
+/** One dataset phase: pin gate on the whole network, then every split strategy. */
+const runDataset = (
+  lines: string[],
+  label: string,
+  intake: Intake,
+  setups: DatasetSetup[],
+  expectedDof: number,
+): void => {
+  const network = intake.network;
+  lines.push('');
+  lines.push(`## Dataset ${label} ('${intake.file}', vectors=${network.baselines.length}, stations=${Object.keys(network.stations).length})`);
+  setups.forEach(({ name, setup, pin }) => {
+    const whole = runGnssBaselineAdjustment({
+      stations: network.stations,
+      baselines: network.baselines,
+      referenceFrame: network.frame.referenceFrame,
+      epoch: network.frame.epoch,
+      ellipsoid: 'WGS84',
+      setupUncertainty: setup,
+    });
+    const seuw = Math.sqrt(Math.max(whole.varianceFactor, 0));
+    const seuwOk = Math.abs(seuw - pin) < 5e-7;
+    const dofOk = whole.dof === expectedDof;
+    lines.push(`- setup ${name}: SEUW=${seuw.toFixed(6)} pin=${pin.toFixed(6)} ${seuwOk ? 'PIN-PASS' : 'PIN-FAIL'}; DOF=${whole.dof} expected=${expectedDof} ${dofOk ? 'DOF-PASS' : 'DOF-FAIL'}; loops=${computeGnssLoopClosures(network.baselines).loops.length}`);
+    if (!seuwOk || !dofOk) throw new Error(`dataset ${label} setup ${name}: pin gate failed (SEUW ${seuw}, DOF ${whole.dof}).`);
+    strategiesOf(network).forEach(({ name: strategy, chunks }) => {
+      const outcome = solveAndCompare(network, chunks, strategy, setup, 'WGS84');
+      const pass =
+        outcome.maxCoordDiff < 1e-9 &&
+        outcome.maxResidualDiff < 1e-9 &&
+        outcome.maxQxxDiff < 1e-9 &&
+        outcome.maxQvvDiff < 1e-9 &&
+        outcome.maxCvvDiff < 1e-6 &&
+        outcome.maxStdDiff < 1e-6 &&
+        outcome.maxRedundancyDiff < 1e-9 &&
+        outcome.maxBlockTDiff < 1e-6 &&
+        outcome.vtpvDiff < 1e-9 &&
+        outcome.seuwDiff < 1e-12 &&
+        outcome.loopDiff === 0 &&
+        outcome.reportEqual;
+      lines.push(
+        `  - ${setup ? name : name}/${strategy}: chunks=${outcome.chunks} coord=${outcome.maxCoordDiff.toExponential(2)} ` +
+          `res=${outcome.maxResidualDiff.toExponential(2)} qxx=${outcome.maxQxxDiff.toExponential(2)} ` +
+          `qvv=${outcome.maxQvvDiff.toExponential(2)} cvv=${outcome.maxCvvDiff.toExponential(2)} ` +
+          `std=${outcome.maxStdDiff.toExponential(2)} red=${outcome.maxRedundancyDiff.toExponential(2)} ` +
+          `blockT=${outcome.maxBlockTDiff.toExponential(2)} vTPv=${outcome.vtpvDiff.toExponential(2)} ` +
+          `seuw=${outcome.seuwDiff.toExponential(2)} loopsΔ=${outcome.loopDiff} report=${outcome.reportEqual ? 'EQUAL' : 'DIFF'} ` +
+          `${pass ? 'PASS' : 'FAIL'}`,
+      );
+      if (!pass) throw new Error(`dataset ${label} setup ${name} strategy ${strategy}: split parity FAILED.`);
+    });
+  });
+};
+
 const main = (): void => {
+  setGnssMultifileEnabled(true); // composer enforces the DEFAULT-OFF gate; evidence opts in.
   const datasetA = loadIntake(INTAKE_A, 'P041', () => true);
   const datasetB = loadIntake(INTAKE_B, 'P041', (name) => name.toLowerCase().includes('b4adjustment'));
   if (!datasetA || !datasetB) {
@@ -326,81 +414,13 @@ const main = (): void => {
   lines.push('# Phase 12H.1 — commercial split evidence (NUMBERS ONLY)');
   lines.push('');
   lines.push('No vendor content committed. Local-only intake; file hashes recorded, vectors never pasted.');
-  const strategiesOf = (network: GnssBaselineNetworkInput): Array<{ name: string; chunks: GnssBaselineObservation[][] }> => {
-    const all = network.baselines;
-    const odd = all.filter((_, i) => i % 2 === 0);
-    const even = all.filter((_, i) => i % 2 === 1);
-    const five: GnssBaselineObservation[][] = [[], [], [], [], []];
-    all.forEach((b, i) => { five[i % 5]!.push(b); });
-    const fixedIds = new Set(Object.entries(network.stations).filter(([, s]) => s?.fixedX).map(([id]) => id));
-    const touching = all.filter((b) => fixedIds.has(b.from) || fixedIds.has(b.to));
-    const rest = all.filter((b) => !fixedIds.has(b.from) && !fixedIds.has(b.to));
-    return [
-      { name: 'whole', chunks: [all] },
-      { name: 'odd-even', chunks: [odd, even] },
-      { name: '5-chunk', chunks: five },
-      { name: 'control-separated', chunks: rest.length > 0 ? [touching, rest] : [touching] },
-      { name: 'reversed-manifest-order', chunks: [even, odd] },
-    ];
-  };
-  const runDataset = (
-    label: string,
-    intake: Intake,
-    setups: Array<{ name: string; setup: { horizontalCenteringSigma: number; antennaHeightSigma: number }; pin: number }>,
-    expectedDof: number,
-  ): void => {
-    const network = intake.network;
-    lines.push('');
-    lines.push(`## Dataset ${label} ('${intake.file}', vectors=${network.baselines.length}, stations=${Object.keys(network.stations).length})`);
-    setups.forEach(({ name, setup, pin }) => {
-      const whole = runGnssBaselineAdjustment({
-        stations: network.stations,
-        baselines: network.baselines,
-        referenceFrame: network.frame.referenceFrame,
-        epoch: network.frame.epoch,
-        ellipsoid: 'WGS84',
-        setupUncertainty: setup,
-      });
-      const seuw = Math.sqrt(Math.max(whole.varianceFactor, 0));
-      const seuwOk = Math.abs(seuw - pin) < 5e-7;
-      const dofOk = whole.dof === expectedDof;
-      lines.push(`- setup ${name}: SEUW=${seuw.toFixed(6)} pin=${pin.toFixed(6)} ${seuwOk ? 'PIN-PASS' : 'PIN-FAIL'}; DOF=${whole.dof} expected=${expectedDof} ${dofOk ? 'DOF-PASS' : 'DOF-FAIL'}; loops=${computeGnssLoopClosures(network.baselines).loops.length}`);
-      if (!seuwOk || !dofOk) throw new Error(`dataset ${label} setup ${name}: pin gate failed (SEUW ${seuw}, DOF ${whole.dof}).`);
-      strategiesOf(network).forEach(({ name: strategy, chunks }) => {
-        const outcome = solveAndCompare(network, chunks, strategy, setup, 'WGS84');
-        const pass =
-          outcome.maxCoordDiff < 1e-9 &&
-          outcome.maxResidualDiff < 1e-9 &&
-          outcome.maxQxxDiff < 1e-9 &&
-          outcome.maxQvvDiff < 1e-9 &&
-          outcome.maxCvvDiff < 1e-6 &&
-          outcome.maxStdDiff < 1e-6 &&
-          outcome.maxRedundancyDiff < 1e-9 &&
-          outcome.maxBlockTDiff < 1e-6 &&
-          outcome.vtpvDiff < 1e-9 &&
-          outcome.seuwDiff < 1e-12 &&
-          outcome.loopDiff === 0 &&
-          outcome.reportEqual;
-        lines.push(
-          `  - ${setup ? name : name}/${strategy}: chunks=${outcome.chunks} coord=${outcome.maxCoordDiff.toExponential(2)} ` +
-            `res=${outcome.maxResidualDiff.toExponential(2)} qxx=${outcome.maxQxxDiff.toExponential(2)} ` +
-            `qvv=${outcome.maxQvvDiff.toExponential(2)} cvv=${outcome.maxCvvDiff.toExponential(2)} ` +
-            `std=${outcome.maxStdDiff.toExponential(2)} red=${outcome.maxRedundancyDiff.toExponential(2)} ` +
-            `blockT=${outcome.maxBlockTDiff.toExponential(2)} vTPv=${outcome.vtpvDiff.toExponential(2)} ` +
-            `seuw=${outcome.seuwDiff.toExponential(2)} loopsΔ=${outcome.loopDiff} report=${outcome.reportEqual ? 'EQUAL' : 'DIFF'} ` +
-            `${pass ? 'PASS' : 'FAIL'}`,
-        );
-        if (!pass) throw new Error(`dataset ${label} setup ${name} strategy ${strategy}: split parity FAILED.`);
-      });
-    });
-  };
-  runDataset('A', datasetA, [
+  runDataset(lines, 'A', datasetA, [
     { name: 'A0', setup: { horizontalCenteringSigma: 0, antennaHeightSigma: 0 }, pin: 2.100053 },
     { name: 'AC', setup: { horizontalCenteringSigma: 0.005, antennaHeightSigma: 0 }, pin: 1.297104 },
     { name: 'AH', setup: { horizontalCenteringSigma: 0, antennaHeightSigma: 0.002 }, pin: 1.988831 },
     { name: 'A', setup: { horizontalCenteringSigma: 0.005, antennaHeightSigma: 0.002 }, pin: 1.102511 },
   ], 228);
-  runDataset('B', datasetB, [
+  runDataset(lines, 'B', datasetB, [
     { name: 'B0', setup: { horizontalCenteringSigma: 0, antennaHeightSigma: 0 }, pin: 1.965038 },
   ], 129);
   lines.push('');

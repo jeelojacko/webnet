@@ -1,8 +1,9 @@
 /**
  * Phase 12H.1 — indexed duplicate detector tests (synthetic fixtures only).
  */
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, beforeEach } from 'vitest';
 import type { GnssBaselineObservation } from '../../src/engine/gnssBaselineTypes';
+import { setGnssMultifileEnabled } from '../../src/engine/gnssMultifileFlag';
 import {
   parseGnssBaselineText,
   type GnssBaselineNetworkInput,
@@ -67,6 +68,9 @@ const compose2 = (aBody: string, bBody: string): { baselines: GnssBaselineObserv
 };
 
 describe('gnss multifile duplicate detector', () => {
+  beforeEach(() => {
+    setGnssMultifileEnabled(true);
+  });
   it('LEGITIMATE repeats emit no candidate and both observations are retained', () => {
     const { baselines, provenance } = compose2(
       text([{ id: 'A', fixed: true }, { id: 'B' }], [{ from: 'A', to: 'B', session: 'S1', solution: 'Q1' }]),
