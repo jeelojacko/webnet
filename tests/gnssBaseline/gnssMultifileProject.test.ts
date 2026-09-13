@@ -1,7 +1,7 @@
 /**
  * Phase 12H.1 — multifile project wiring tests (synthetic fixtures only).
  */
-import { describe, expect, it, beforeEach } from 'vitest';
+import { describe, expect, it, beforeEach, vi } from 'vitest';
 import type { ProjectManifestFileEntry } from '../../src/engine/projectWorkspaceTypes';
 import {
   parseGnssBaselineText,
@@ -87,17 +87,19 @@ const PART1 = nativeText(ALL_STATIONS, ALL_BASELINES.slice(0, 2));
 const PART2 = nativeText(ALL_STATIONS, ALL_BASELINES.slice(2));
 
 beforeEach(() => {
-  setGnssMultifileEnabled(false);
+  setGnssMultifileEnabled(true);
   setGnssNativeR2BRouteEnabled(false);
 });
 
 describe('gnss multifile flag + source kinds', () => {
-  it('flag defaults OFF and round-trips', () => {
-    expect(isGnssMultifileEnabled()).toBe(false);
-    setGnssMultifileEnabled(true);
-    expect(isGnssMultifileEnabled()).toBe(true);
-    setGnssMultifileEnabled(false);
-    expect(isGnssMultifileEnabled()).toBe(false);
+  it('flag defaults ON and round-trips (kill switch retained)', async () => {
+    vi.resetModules();
+    const fresh = await import('../../src/engine/gnssMultifileFlag');
+    expect(fresh.isGnssMultifileEnabled()).toBe(true);
+    fresh.setGnssMultifileEnabled(false);
+    expect(fresh.isGnssMultifileEnabled()).toBe(false);
+    fresh.setGnssMultifileEnabled(true);
+    expect(fresh.isGnssMultifileEnabled()).toBe(true);
   });
 
   it('detects terrestrial / native / gvx / csv / ignored', () => {
@@ -110,10 +112,14 @@ describe('gnss multifile flag + source kinds', () => {
 });
 
 describe('gnss multifile project solve', () => {
-  it('DEFAULT-OFF flag gate: OFF blocks the run, ON permits it', () => {
+  it('kill-switch gate: OFF blocks the run, ON permits it', () => {
     const files = [entry('f1', 'p1.dat', 0), entry('f2', 'p2.dat', 1)];
     const texts = { f1: PART1, f2: PART2 };
-    expect(isGnssMultifileEnabled()).toBe(false);
+    // Default ON (beforeEach): permitted with no explicit enable call.
+    expect(isGnssMultifileEnabled()).toBe(true);
+    expect(runGnssMultifileProjectSolve(files, texts).summary.status).toBe('READY');
+    // Explicit OFF blocks fail-closed; re-enable restores the same result.
+    setGnssMultifileEnabled(false);
     expect(() => runGnssMultifileProjectSolve(files, texts)).toThrow(/flag OFF/);
     setGnssMultifileEnabled(true);
     const output = runGnssMultifileProjectSolve(files, texts);

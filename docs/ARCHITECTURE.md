@@ -125,7 +125,7 @@ Representative modules include:
 - `projectWorkspace.ts`
 - `projectStorage.ts`
 - `projectBundle.ts`
-- `gnssMultifileComposition.ts` (frozen post-parse composer: exact frame/epoch/ellipsoid match, 1e-9 m station merge, FIXED-wins control, per-baseline provenance; datum preflight stays downstream), `gnssMultifileDuplicates.ts` (indexed ~O(n) duplicate classifier), `gnssMultifileFlag.ts` (DEFAULT-OFF production flag), and `gnssMultifileProject.ts` (manifest-backed project wiring: independent per-source parse, post-composition control overrides, one run-level setup model, precomposition summary, portable save gate, provenance report/JSON export)
+- `gnssMultifileComposition.ts` (frozen post-parse composer: exact frame/epoch/ellipsoid match, 1e-9 m station merge, FIXED-wins control, per-baseline provenance; datum preflight stays downstream), `gnssMultifileDuplicates.ts` (indexed ~O(n) duplicate classifier), `gnssMultifileFlag.ts` (DEFAULT-ON production flag with kill-switch setter), and `gnssMultifileProject.ts` (manifest-backed project wiring: independent per-source parse, post-composition control overrides, one run-level setup model, precomposition summary, portable save gate, provenance report/JSON export)
 
 Current listing seams:
 

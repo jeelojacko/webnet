@@ -1,5 +1,5 @@
 /**
- * Phase 12H.1 — multi-file GNSS project wiring (DEFAULT OFF via gnssMultifileFlag).
+ * Phase 12H.2 — multi-file GNSS project wiring (DEFAULT ON via gnssMultifileFlag).
  *
  * Pure helpers over the existing project manifest: detect/parse each
  * ENABLED GNSS source independently, compose in memory, apply
@@ -391,7 +391,7 @@ export const runGnssMultifileProjectSolve = (
   options: GnssMultifileRunOptions = {},
 ): GnssMultifileSolveOutput => {
   if (!isGnssMultifileEnabled()) {
-    throw new Error('GNSS multifile run blocked: flag OFF (DEFAULT OFF; enable to run).');
+    throw new Error('GNSS multifile run blocked: flag OFF (enable to run).');
   }
   const parsed = parseGnssProjectSources(files, sourceTexts, options);
   const gnss = parsed.filter((entry) => entry.network != null);
@@ -460,6 +460,7 @@ export const findNonPortableProjectPaths = (
     value.startsWith('~/') ||
     value.startsWith('~\\') ||
     value.includes('$HOME') ||
+    value.toLowerCase().startsWith('file://') ||
     /^[A-Za-z]:[\\/]/.test(value) ||
     value.startsWith('\\\\');
   files.forEach((file) => {
