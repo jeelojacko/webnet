@@ -1,0 +1,761 @@
+{
+  "generatedAt": "2026-09-13T14:24:46.013Z",
+  "note": "Phase 12F.2 R2B evidence only: real-WASM batched blocks; no production routing, no R1 default change.",
+  "config": {
+    "sizes": [
+      100,
+      250,
+      500,
+      750,
+      1000,
+      1500,
+      2000
+    ],
+    "topologies": [
+      "chain",
+      "sparse-mesh"
+    ],
+    "seedBase": 7,
+    "timeoutMs": 600000,
+    "setupCase": "A0",
+    "datasetB": null
+  },
+  "identityGate": 0.000001,
+  "absTol": 1e-9,
+  "checks": [
+    "dims/cardinality",
+    "finite",
+    "symmetry",
+    "positive-variance",
+    "transpose-consistency",
+    "psd-spot-6x6",
+    "redundancy-identity",
+    "vtpv/seuw-finite",
+    "ordering"
+  ],
+  "cases": [
+    {
+      "topology": "chain",
+      "stations": 100,
+      "seed": 13107,
+      "status": "partial",
+      "legs": {
+        "r2b": {
+          "status": "ok"
+        },
+        "r0": {
+          "status": "failed",
+          "error": "GNSS statistics for S0000->S0001#1: Qvv block is materially non-PSD (lambda_min=-3.3987335282229295e-19, tau=5.1559738962283786e-26).",
+          "gate": "F-BRIDGE (production statistics PSD gate on ~zero-redundancy bridge; pre-existing, orthogonal to R2B)"
+        },
+        "r2": {
+          "status": "failed",
+          "error": "GNSS statistics for S0004->S0005#5: Qvv block is materially non-PSD (lambda_min=-1.9361364238805905e-20, tau=6.457208338630254e-27).",
+          "gate": "F-BRIDGE (production statistics PSD gate on ~zero-redundancy bridge; pre-existing, orthogonal to R2B)"
+        }
+      },
+      "params": 297,
+      "obs": 300,
+      "edges": 100,
+      "dof": 3,
+      "uniqueEdgeBlocks": 99,
+      "selectedBlocks": 198,
+      "r2bWallMs": 26.152664,
+      "r2bCovMs": 5.687987000000007,
+      "r2bPostMs": 1.737482,
+      "r2bBridgeCalls": 3,
+      "r2bResultBytes": 14256,
+      "r2bStatsError": "GNSS statistics for S0004->S0005#5: Qvv block is materially non-PSD (lambda_min=-5.35341474030893e-21, tau=4.927299008954597e-27).",
+      "jsHeapDeltaMB": 13.266212463378906
+    },
+    {
+      "topology": "chain",
+      "stations": 250,
+      "seed": 32774,
+      "status": "partial",
+      "legs": {
+        "r2b": {
+          "status": "ok"
+        },
+        "r0": {
+          "status": "failed",
+          "error": "GNSS statistics for S0000->S0001#1: Qvv block is materially non-PSD (lambda_min=-2.142524131367796e-21, tau=1.2827071383824776e-26).",
+          "gate": "F-BRIDGE (production statistics PSD gate on ~zero-redundancy bridge; pre-existing, orthogonal to R2B)"
+        },
+        "r2": {
+          "status": "failed",
+          "error": "GNSS statistics for S0000->S0001#1: Qvv block is materially non-PSD (lambda_min=-4.527071670156703e-20, tau=5.3233025028529856e-27).",
+          "gate": "F-BRIDGE (production statistics PSD gate on ~zero-redundancy bridge; pre-existing, orthogonal to R2B)"
+        }
+      },
+      "params": 747,
+      "obs": 750,
+      "edges": 250,
+      "dof": 3,
+      "uniqueEdgeBlocks": 249,
+      "selectedBlocks": 498,
+      "r2bWallMs": 71.212342,
+      "r2bCovMs": 23.772774,
+      "r2bPostMs": 0.8656660000000045,
+      "r2bBridgeCalls": 3,
+      "r2bResultBytes": 35856,
+      "r2bStatsError": "GNSS statistics for S0000->S0001#1: Qvv block is materially non-PSD (lambda_min=-4.524596945129708e-20, tau=5.326745025909748e-27).",
+      "jsHeapDeltaMB": 96.93907928466797
+    },
+    {
+      "topology": "chain",
+      "stations": 500,
+      "seed": 65541,
+      "status": "partial",
+      "legs": {
+        "r2b": {
+          "status": "ok"
+        },
+        "r0": {
+          "status": "failed",
+          "error": "GNSS statistics for S0000->S0001#1: Qvv block is materially non-PSD (lambda_min=-4.745834712328991e-18, tau=7.605495903309593e-28).",
+          "gate": "F-BRIDGE (production statistics PSD gate on ~zero-redundancy bridge; pre-existing, orthogonal to R2B)"
+        },
+        "r2": {
+          "status": "failed",
+          "error": "GNSS statistics for S0000->S0001#1: Qvv block is materially non-PSD (lambda_min=-3.990850780588887e-18, tau=7.664993265502591e-27).",
+          "gate": "F-BRIDGE (production statistics PSD gate on ~zero-redundancy bridge; pre-existing, orthogonal to R2B)"
+        }
+      },
+      "params": 1497,
+      "obs": 1500,
+      "edges": 500,
+      "dof": 3,
+      "uniqueEdgeBlocks": 499,
+      "selectedBlocks": 998,
+      "r2bWallMs": 238.305896,
+      "r2bCovMs": 103.26270199999999,
+      "r2bPostMs": 0.9522460000000024,
+      "r2bBridgeCalls": 3,
+      "r2bResultBytes": 71856,
+      "r2bStatsError": "GNSS statistics for S0000->S0001#1: Qvv block is materially non-PSD (lambda_min=-3.985415573020835e-18, tau=7.430138266452485e-27).",
+      "jsHeapDeltaMB": 111.27286529541016
+    },
+    {
+      "topology": "chain",
+      "stations": 750,
+      "seed": 98308,
+      "status": "partial",
+      "legs": {
+        "r2b": {
+          "status": "ok"
+        },
+        "r0": {
+          "status": "failed",
+          "error": "GNSS statistics for S0000->S0001#1: Qvv block is materially non-PSD (lambda_min=-3.118100374862824e-18, tau=1.306680927108311e-25).",
+          "gate": "F-BRIDGE (production statistics PSD gate on ~zero-redundancy bridge; pre-existing, orthogonal to R2B)"
+        },
+        "r2": {
+          "status": "failed",
+          "error": "GNSS statistics for S0000->S0001#1: Qvv block is materially non-PSD (lambda_min=-3.306916471620323e-18, tau=9.520033940129928e-27).",
+          "gate": "F-BRIDGE (production statistics PSD gate on ~zero-redundancy bridge; pre-existing, orthogonal to R2B)"
+        }
+      },
+      "params": 2247,
+      "obs": 2250,
+      "edges": 750,
+      "dof": 3,
+      "uniqueEdgeBlocks": 749,
+      "selectedBlocks": 1498,
+      "r2bWallMs": 523.1268950000001,
+      "r2bCovMs": 208.426968,
+      "r2bPostMs": 1.0096059999999625,
+      "r2bBridgeCalls": 3,
+      "r2bResultBytes": 107856,
+      "r2bStatsError": "GNSS statistics for S0000->S0001#1: Qvv block is materially non-PSD (lambda_min=-3.3057089230016863e-18, tau=9.220606712621275e-27).",
+      "jsHeapDeltaMB": 407.0133285522461
+    },
+    {
+      "topology": "chain",
+      "stations": 1000,
+      "seed": 131075,
+      "status": "partial",
+      "legs": {
+        "r2b": {
+          "status": "ok"
+        },
+        "r0": {
+          "status": "failed",
+          "error": "GNSS statistics for S0000->S0001#1: Qvv block is materially non-PSD (lambda_min=-2.7405583934737353e-19, tau=4.490179173006807e-26).",
+          "gate": "F-BRIDGE (production statistics PSD gate on ~zero-redundancy bridge; pre-existing, orthogonal to R2B)"
+        },
+        "r2": {
+          "status": "failed",
+          "error": "GNSS statistics for S0000->S0001#1: Qvv block is materially non-PSD (lambda_min=-1.0188626050115619e-19, tau=2.4494797540714253e-26).",
+          "gate": "F-BRIDGE (production statistics PSD gate on ~zero-redundancy bridge; pre-existing, orthogonal to R2B)"
+        }
+      },
+      "params": 2997,
+      "obs": 3000,
+      "edges": 1000,
+      "dof": 3,
+      "uniqueEdgeBlocks": 999,
+      "selectedBlocks": 1998,
+      "r2bWallMs": 973.7853250000001,
+      "r2bCovMs": 458.9468310000001,
+      "r2bPostMs": 1.043175999999903,
+      "r2bBridgeCalls": 3,
+      "r2bResultBytes": 143856,
+      "r2bStatsError": "GNSS statistics for S0000->S0001#1: Qvv block is materially non-PSD (lambda_min=-1.0153771443726634e-19, tau=2.4535074128034953e-26).",
+      "jsHeapDeltaMB": 258.41646575927734
+    },
+    {
+      "topology": "chain",
+      "stations": 1500,
+      "seed": 196592,
+      "status": "partial",
+      "legs": {
+        "r2b": {
+          "status": "ok"
+        },
+        "r0": {
+          "status": "failed",
+          "error": "GNSS statistics for S0000->S0001#1: Qvv block is materially non-PSD (lambda_min=-7.094206397488061e-19, tau=7.388025600790705e-26).",
+          "gate": "F-BRIDGE (production statistics PSD gate on ~zero-redundancy bridge; pre-existing, orthogonal to R2B)"
+        },
+        "r2": {
+          "status": "failed",
+          "error": "GNSS statistics for S0000->S0001#1: Qvv block is materially non-PSD (lambda_min=-3.046563401926388e-18, tau=2.171261924231578e-27).",
+          "gate": "F-BRIDGE (production statistics PSD gate on ~zero-redundancy bridge; pre-existing, orthogonal to R2B)"
+        }
+      },
+      "params": 4497,
+      "obs": 4500,
+      "edges": 1500,
+      "dof": 3,
+      "uniqueEdgeBlocks": 1499,
+      "selectedBlocks": 2998,
+      "r2bWallMs": 2426.453422,
+      "r2bCovMs": 1074.027503,
+      "r2bPostMs": 1.0797750000001543,
+      "r2bBridgeCalls": 3,
+      "r2bResultBytes": 215856,
+      "r2bStatsError": "GNSS statistics for S0000->S0001#1: Qvv block is materially non-PSD (lambda_min=-3.0478403900286983e-18, tau=2.2061346622432938e-27).",
+      "jsHeapDeltaMB": 1101.9722061157227
+    },
+    {
+      "topology": "chain",
+      "stations": 2000,
+      "seed": 262109,
+      "status": "timeout-skipped",
+      "error": "Command failed: /home/jacko/Code/webnet/node_modules/.bin/tsx scripts/gnss/gnssR2BEvidence.ts --case=chain@2000 --case-index=6 --seed=7 --legs=all\n | "
+    },
+    {
+      "topology": "sparse-mesh",
+      "stations": 100,
+      "seed": 13226,
+      "status": "ok",
+      "legs": {
+        "r2b": {
+          "status": "ok"
+        },
+        "r0": {
+          "status": "ok"
+        },
+        "r2": {
+          "status": "ok"
+        }
+      },
+      "params": 297,
+      "obs": 1173,
+      "edges": 391,
+      "dof": 876,
+      "uniqueEdgeBlocks": 380,
+      "selectedBlocks": 479,
+      "r0WallMs": 264.505022,
+      "r2WallMs": 122.31354500000003,
+      "r2QueryMs": 9.083186000000069,
+      "r2BridgeCalls": 3,
+      "r2ResultBytes": 770040,
+      "r2bWallMs": 140.615555,
+      "r2bCovMs": 17.71194300000002,
+      "r2bPostMs": 26.357740000000007,
+      "r2bBridgeCalls": 3,
+      "r2bResultBytes": 34488,
+      "identityR2B": 4.547473508864641e-13,
+      "jsHeapDeltaMB": 133.97985076904297,
+      "speedupR2BvsR0": 1.881050940630288,
+      "speedupR2BvsR2": 0.8698436314531492,
+      "parity": {
+        "coordMaxAbs": 0,
+        "residualMaxAbs": 0,
+        "vtpvRel": 4.2649936450249737e-16,
+        "seuwRel": 2.323998011761026e-16,
+        "stationCovMaxAbs": 5.082197683525802e-20,
+        "stationCovMaxRel": 1.4781409606532518e-12,
+        "qvvMaxRel": 8.054997209367409e-14,
+        "cvvMaxRel": 8.024157755429905e-14,
+        "standardizedMaxAbs": 3.1086244689504383e-15,
+        "redundancyTraceMaxAbs": 3.1086244689504383e-15,
+        "blockTRel": 1.1334714743546046e-14,
+        "whatIfTopMatch": true,
+        "whatIfTop5Match": true,
+        "loopClosureCountMatch": true,
+        "identityR0": 5.684341886080801e-13,
+        "identityR2B": 4.547473508864641e-13
+      },
+      "identityGatePass": true
+    },
+    {
+      "topology": "sparse-mesh",
+      "stations": 250,
+      "seed": 32893,
+      "status": "ok",
+      "legs": {
+        "r2b": {
+          "status": "ok"
+        },
+        "r0": {
+          "status": "ok"
+        },
+        "r2": {
+          "status": "ok"
+        }
+      },
+      "params": 747,
+      "obs": 2973,
+      "edges": 991,
+      "dof": 2226,
+      "uniqueEdgeBlocks": 983,
+      "selectedBlocks": 1232,
+      "r0WallMs": 3119.82796,
+      "r2WallMs": 1304.1541940000006,
+      "r2QueryMs": 74.51079699999991,
+      "r2BridgeCalls": 3,
+      "r2ResultBytes": 4629600,
+      "r2bWallMs": 874.044772,
+      "r2bCovMs": 201.52250200000003,
+      "r2bPostMs": 104.621172,
+      "r2bBridgeCalls": 3,
+      "r2bResultBytes": 88704,
+      "identityR2B": 9.094947017729282e-13,
+      "jsHeapDeltaMB": 505.1558609008789,
+      "speedupR2BvsR0": 3.569414359474025,
+      "speedupR2BvsR2": 1.4920908353651254,
+      "parity": {
+        "coordMaxAbs": 0,
+        "residualMaxAbs": 0,
+        "vtpvRel": 2.5735012828706667e-15,
+        "seuwRel": 1.2512727238241427e-15,
+        "stationCovMaxAbs": 3.2864878353466853e-19,
+        "stationCovMaxRel": 3.7760918170875585e-11,
+        "qvvMaxRel": 1.0305235208328303e-11,
+        "cvvMaxRel": 1.0302835257606053e-11,
+        "standardizedMaxAbs": 1.0880185641326534e-14,
+        "redundancyTraceMaxAbs": 1.0436096431476471e-14,
+        "blockTRel": 1.694617496411833e-14,
+        "whatIfTopMatch": true,
+        "whatIfTop5Match": true,
+        "loopClosureCountMatch": true,
+        "identityR0": 4.547473508864641e-13,
+        "identityR2B": 9.094947017729282e-13
+      },
+      "identityGatePass": true
+    },
+    {
+      "topology": "sparse-mesh",
+      "stations": 500,
+      "seed": 65660,
+      "status": "ok",
+      "legs": {
+        "r2b": {
+          "status": "ok"
+        },
+        "r0": {
+          "status": "ok"
+        },
+        "r2": {
+          "status": "ok"
+        }
+      },
+      "params": 1497,
+      "obs": 5961,
+      "edges": 1987,
+      "dof": 4464,
+      "uniqueEdgeBlocks": 1979,
+      "selectedBlocks": 2478,
+      "r0WallMs": 18088.957566999998,
+      "r2WallMs": 4718.054189000002,
+      "r2QueryMs": 518.2191359999997,
+      "r2BridgeCalls": 3,
+      "r2ResultBytes": 18260928,
+      "r2bWallMs": 4319.029623,
+      "r2bCovMs": 1435.4128030000002,
+      "r2bPostMs": 358.6099549999999,
+      "r2bBridgeCalls": 3,
+      "r2bResultBytes": 178416,
+      "identityR2B": 8.185452315956354e-12,
+      "jsHeapDeltaMB": 1294.2145538330078,
+      "speedupR2BvsR0": 4.188199467461721,
+      "speedupR2BvsR2": 1.0923875501744855,
+      "parity": {
+        "coordMaxAbs": 0,
+        "residualMaxAbs": 0,
+        "vtpvRel": 2.236273141585329e-15,
+        "seuwRel": 1.1090172909115248e-15,
+        "stationCovMaxAbs": 3.3457801416544863e-19,
+        "stationCovMaxRel": 7.025288059981784e-11,
+        "qvvMaxRel": 2.0775815088125773e-13,
+        "cvvMaxRel": 2.0552558774895934e-13,
+        "standardizedMaxAbs": 1.2656542480726785e-14,
+        "redundancyTraceMaxAbs": 3.4638958368304884e-14,
+        "blockTRel": 5.3359499075170715e-14,
+        "whatIfTopMatch": true,
+        "whatIfTop5Match": true,
+        "loopClosureCountMatch": true,
+        "identityR0": 8.185452315956354e-12,
+        "identityR2B": 8.185452315956354e-12
+      },
+      "identityGatePass": true
+    },
+    {
+      "topology": "sparse-mesh",
+      "stations": 750,
+      "seed": 98427,
+      "status": "ok",
+      "legs": {
+        "r2b": {
+          "status": "ok"
+        },
+        "r0": {
+          "status": "ok"
+        },
+        "r2": {
+          "status": "ok"
+        }
+      },
+      "params": 2247,
+      "obs": 8976,
+      "edges": 2992,
+      "dof": 6729,
+      "uniqueEdgeBlocks": 2985,
+      "selectedBlocks": 3734,
+      "r0WallMs": 69196.214775,
+      "r2WallMs": 13281.267942000006,
+      "r2QueryMs": 1653.5307969999994,
+      "r2BridgeCalls": 3,
+      "r2ResultBytes": 40893888,
+      "r2bWallMs": 12026.611106999999,
+      "r2bCovMs": 4631.366697000001,
+      "r2bPostMs": 783.4414359999992,
+      "r2bBridgeCalls": 3,
+      "r2bResultBytes": 268848,
+      "identityR2B": 7.275957614183426e-12,
+      "jsHeapDeltaMB": 2303.610252380371,
+      "speedupR2BvsR0": 5.753592109977254,
+      "speedupR2BvsR2": 1.1043233895099296,
+      "parity": {
+        "coordMaxAbs": 0,
+        "residualMaxAbs": 0,
+        "vtpvRel": 8.09397630187051e-15,
+        "seuwRel": 4.180084399094825e-15,
+        "stationCovMaxAbs": 1.8168856718604742e-18,
+        "stationCovMaxRel": 2.9686157341023785e-9,
+        "qvvMaxRel": 1.3966351797844652e-12,
+        "cvvMaxRel": 1.4048968762522361e-12,
+        "standardizedMaxAbs": 8.759659664292485e-14,
+        "redundancyTraceMaxAbs": 1.5987211554602254e-13,
+        "blockTRel": 1.0265364558609772e-13,
+        "whatIfTopMatch": true,
+        "whatIfTop5Match": true,
+        "loopClosureCountMatch": true,
+        "identityR0": 5.4569682106375694e-12,
+        "identityR2B": 7.275957614183426e-12
+      },
+      "identityGatePass": true
+    },
+    {
+      "topology": "sparse-mesh",
+      "stations": 1000,
+      "seed": 131194,
+      "status": "partial",
+      "legs": {
+        "r2b": {
+          "status": "ok"
+        },
+        "r0": {
+          "status": "skipped"
+        },
+        "r2": {
+          "status": "skipped"
+        }
+      },
+      "params": 2997,
+      "obs": 11976,
+      "edges": 3992,
+      "dof": 8979,
+      "uniqueEdgeBlocks": 3985,
+      "selectedBlocks": 4984,
+      "r2bWallMs": 30163.825196,
+      "r2bCovMs": 10617.779165,
+      "r2bPostMs": 1391.3323950000013,
+      "r2bBridgeCalls": 3,
+      "r2bResultBytes": 358848,
+      "identityR2B": 5.4569682106375694e-12,
+      "jsHeapDeltaMB": 2230.1027603149414,
+      "identityGatePass": true
+    },
+    {
+      "topology": "sparse-mesh",
+      "stations": 1500,
+      "seed": 196711,
+      "status": "partial",
+      "legs": {
+        "r2b": {
+          "status": "ok"
+        },
+        "r0": {
+          "status": "skipped"
+        },
+        "r2": {
+          "status": "skipped"
+        }
+      },
+      "params": 4497,
+      "obs": 17973,
+      "edges": 5991,
+      "dof": 13476,
+      "uniqueEdgeBlocks": 5981,
+      "selectedBlocks": 7480,
+      "r2bWallMs": 83932.095043,
+      "r2bCovMs": 38121.673805,
+      "r2bPostMs": 3050.0236430000077,
+      "r2bBridgeCalls": 3,
+      "r2bResultBytes": 538560,
+      "identityR2B": 4.001776687800884e-11,
+      "jsHeapDeltaMB": 2520.5081329345703,
+      "identityGatePass": true
+    },
+    {
+      "topology": "sparse-mesh",
+      "stations": 2000,
+      "seed": 262228,
+      "status": "error",
+      "error": "MEMORY (JS heap OOM in child; TS-side bound) | Command failed: /home/jacko/Code/webnet/node_modules/.bin/tsx scripts/gnss/gnssR2BEvidence.ts --case=sparse-mesh@2000 --case-index=13 --seed=7 --legs=r2b\n\n<--- Last few GCs --->\n\n[1155649:0x1081d000]     4077 ms: Scavenge 4084.6 (4102.6) -> 4084.6 (4102.6) MB, pooled: 0.0 MB, 0.55 / 0.00 ms (average mu = 0.204, current mu = 0.082) allocation failure; \n[1155649:0x1081d000]     4184 ms: Incremental Mark-Compact (reduce) 4084.9 (4103.0) -> 4084.9 (4102"
+    },
+    {
+      "topology": "ring",
+      "stations": 250,
+      "seed": 32995,
+      "status": "ok",
+      "legs": {
+        "r2b": {
+          "status": "ok"
+        },
+        "r0": {
+          "status": "ok"
+        },
+        "r2": {
+          "status": "ok"
+        }
+      },
+      "params": 747,
+      "obs": 1002,
+      "edges": 334,
+      "dof": 255,
+      "uniqueEdgeBlocks": 331,
+      "selectedBlocks": 580,
+      "r0WallMs": 1630.6970079999999,
+      "r2WallMs": 103.85752400000001,
+      "r2QueryMs": 13.333798999999999,
+      "r2BridgeCalls": 3,
+      "r2ResultBytes": 4519824,
+      "r2bWallMs": 142.579436,
+      "r2bCovMs": 28.464792000000017,
+      "r2bPostMs": 36.44351999999998,
+      "r2bBridgeCalls": 3,
+      "r2bResultBytes": 41760,
+      "identityR2B": 2.7853275241795927e-12,
+      "jsHeapDeltaMB": 205.73495483398438,
+      "speedupR2BvsR0": 11.437112207401354,
+      "speedupR2BvsR2": 0.7284186760284282,
+      "parity": {
+        "coordMaxAbs": 0,
+        "residualMaxAbs": 0,
+        "vtpvRel": 1.7383454759328063e-15,
+        "seuwRel": 8.267553286577447e-16,
+        "stationCovMaxAbs": 9.074772183703672e-16,
+        "stationCovMaxRel": 5.907613587304593e-9,
+        "qvvMaxRel": 4.299124569430182e-10,
+        "cvvMaxRel": 4.2991068201202523e-10,
+        "standardizedMaxAbs": 1.103184210649033e-10,
+        "redundancyTraceMaxAbs": 1.7545964681175974e-12,
+        "blockTRel": 2.400755832362629e-10,
+        "whatIfTopMatch": true,
+        "whatIfTop5Match": true,
+        "loopClosureCountMatch": true,
+        "identityR0": 1.1368683772161603e-12,
+        "identityR2B": 2.7853275241795927e-12
+      },
+      "identityGatePass": true
+    },
+    {
+      "topology": "hub-spoke",
+      "stations": 250,
+      "seed": 33012,
+      "status": "ok",
+      "legs": {
+        "r2b": {
+          "status": "ok"
+        },
+        "r0": {
+          "status": "ok"
+        },
+        "r2": {
+          "status": "ok"
+        }
+      },
+      "params": 747,
+      "obs": 1212,
+      "edges": 404,
+      "dof": 465,
+      "uniqueEdgeBlocks": 154,
+      "selectedBlocks": 403,
+      "r0WallMs": 2233.581197,
+      "r2WallMs": 142.340287,
+      "r2QueryMs": 7.356232000000091,
+      "r2BridgeCalls": 3,
+      "r2ResultBytes": 4501944,
+      "r2bWallMs": 142.120568,
+      "r2bCovMs": 15.585710999999975,
+      "r2bPostMs": 28.615320999999994,
+      "r2bBridgeCalls": 3,
+      "r2bResultBytes": 29016,
+      "identityR2B": 5.684341886080802e-14,
+      "jsHeapDeltaMB": 246.3448715209961,
+      "speedupR2BvsR0": 15.716100972802192,
+      "speedupR2BvsR2": 1.0015460042349393,
+      "parity": {
+        "coordMaxAbs": 0,
+        "residualMaxAbs": 0,
+        "vtpvRel": 2.9726645841183754e-15,
+        "seuwRel": 1.5031797864006702e-15,
+        "stationCovMaxAbs": 8.131516293641283e-20,
+        "stationCovMaxRel": 1.9356208716820465e-13,
+        "qvvMaxRel": 6.987606119026271e-14,
+        "cvvMaxRel": 7.284274180303931e-14,
+        "standardizedMaxAbs": 8.215650382226158e-15,
+        "redundancyTraceMaxAbs": 4.9960036108132044e-15,
+        "blockTRel": 1.8507843322827704e-13,
+        "whatIfTopMatch": true,
+        "whatIfTop5Match": true,
+        "loopClosureCountMatch": true,
+        "identityR0": 1.7053025658242404e-13,
+        "identityR2B": 5.684341886080802e-14
+      },
+      "identityGatePass": true
+    }
+  ],
+  "faults": [
+    {
+      "fault": "clean-store (control)",
+      "caughtBy": [],
+      "detail": "no mutation; expect no checks to fire"
+    },
+    {
+      "fault": "wrong-block-order",
+      "caughtBy": [
+        "psd-spot-6x6",
+        "redundancy-identity"
+      ],
+      "detail": "swap first two off-diagonal chunks, index unchanged"
+    },
+    {
+      "fault": "missing-block",
+      "caughtBy": [
+        "dims/cardinality",
+        "redundancy-identity"
+      ],
+      "detail": "drop last off-diagonal slot + index entry"
+    },
+    {
+      "fault": "duplicate-misaligned",
+      "caughtBy": [
+        "redundancy-identity"
+      ],
+      "detail": "copy slot 0 over slot 1"
+    },
+    {
+      "fault": "nan-injection",
+      "caughtBy": [
+        "finite",
+        "positive-variance",
+        "psd-spot-6x6",
+        "redundancy-identity"
+      ],
+      "detail": "NaN in first diagonal variance"
+    },
+    {
+      "fault": "asymmetric-diagonal",
+      "caughtBy": [
+        "symmetry",
+        "redundancy-identity"
+      ],
+      "detail": "+1e-3 on Q_ii[0,1] only"
+    },
+    {
+      "fault": "negative-variance",
+      "caughtBy": [
+        "positive-variance",
+        "psd-spot-6x6",
+        "redundancy-identity"
+      ],
+      "detail": "negate first diagonal variance; oracle-parity backstop: Qvv max rel 8.14e-1 vs R0"
+    },
+    {
+      "fault": "corrupted-off-diagonal",
+      "caughtBy": [
+        "psd-spot-6x6",
+        "redundancy-identity"
+      ],
+      "detail": "+1.0 on first Q_AB entry; oracle-parity backstop: Qvv max rel 1.00e+0 vs R0"
+    },
+    {
+      "fault": "transposed-wrong-block",
+      "caughtBy": [],
+      "detail": "store Q_AB transposed in place; oracle-parity: numerically identical on this net (Qvv max rel ≤ 1e-9) — structurally invisible to store-internal checks"
+    },
+    {
+      "fault": "random-finite-perturbation",
+      "caughtBy": [
+        "redundancy-identity"
+      ],
+      "detail": "×1.001 on every stored entry; oracle-parity backstop: Qvv max rel 1.01e-2 vs R0"
+    },
+    {
+      "fault": "zeroed-block",
+      "caughtBy": [
+        "positive-variance",
+        "psd-spot-6x6",
+        "redundancy-identity"
+      ],
+      "detail": "first diagonal block zeroed; oracle-parity backstop: Qvv max rel 8.33e-1 vs R0"
+    }
+  ],
+  "bridge": {
+    "case": "chain@12",
+    "scalarQueries": 222,
+    "scalarUniqueColumns": 33,
+    "blockRequests": 21,
+    "blockUniqueColumns": 33,
+    "scalarBridgeCalls": 1,
+    "blockBridgeCalls": 1,
+    "scalarResultBytes": 1776,
+    "blockResultBytes": 1512,
+    "scalarQueryWallMs": 2.397,
+    "blockQueryWallMs": 0.752,
+    "scalarSolveMs": 0.12524,
+    "blockSolveMs": 0.07712,
+    "note": "one bridge call each; blocks dedup repeated edges and ship 6+9 scalars per edge instead of 21 raw queries"
+  },
+  "dataset": {
+    "status": "NOT-RUN",
+    "detail": "no --dataset-b directory supplied"
+  },
+  "decision": "GO-R2B-PRODUCTION-PROOF WITH-BOUNDS (mesh 100-750 + ring/hub-spoke pass parity + identity; R2B query succeeds everywhere 100-1000; chain statistics blocked by the pre-existing F-BRIDGE production PSD gate — R0 itself throws, orthogonal to R2B; 1500/2000 outcomes documented as bounds; next research: F-BRIDGE gate policy + sparse-assembly scaling for the OOM bound)"
+}

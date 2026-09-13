@@ -1,4 +1,7 @@
 import type {
+  SparseSelectedBlockInput,
+  SparseSelectedBlockResult,
+  SparseSelectedBlockSolver,
   SparseSelectedCovarianceInput,
   SparseSelectedCovarianceResult,
   SparseSelectedCovarianceSolver,
@@ -6,6 +9,9 @@ import type {
 import type { WebNetWasmModule } from './wasmTypes';
 
 export type {
+  SparseSelectedBlockInput,
+  SparseSelectedBlockResult,
+  SparseSelectedBlockSolver,
   SparseSelectedCovarianceInput,
   SparseSelectedCovarianceResult,
   SparseSelectedCovarianceSolver,
@@ -44,7 +50,7 @@ const readCString = (buffer: Uint8Array): string => {
   return new TextDecoder().decode(buffer.subarray(0, end < 0 ? buffer.length : end));
 };
 
-const validateEquationSystem = (input: SparseSelectedCovarianceInput): void => {
+const validateEquationSystem = (input: SparseSelectedCovarianceInput | SparseSelectedBlockInput): void => {
   const { design, weights } = input;
   if (
     input.observationEquationCount !== design.rowOffsets.length - 1 ||
@@ -84,8 +90,116 @@ const validateQueries = (input: SparseSelectedCovarianceInput): void => {
  * metadata. This wrapper performs no statistics routing; it only validates
  * counts, copies buffers across the WASM boundary, and decodes errors.
  */
-export class WasmSparseSelectedCovariance implements SparseSelectedCovarianceSolver {
+export class WasmSparseSelectedCovariance implements SparseSelectedCovarianceSolver, SparseSelectedBlockSolver {
   public constructor(private readonly _module: WebNetWasmModule) {}
+
+  /**
+   * Thin wrapper over `webnet_sparse_selected_covariance_blocks`.
+   *
+   * One bridge call per invocation: validates block geometry, copies
+   * buffers across the WASM boundary once, and returns row-major blocks
+   * in deterministic request order alongside factor metadata.
+   */
+  public queryBlocks(input: SparseSelectedBlockInput): SparseSelectedBlockResult {
+    validateEquationSystem(input);
+    if (!Number.isInteger(input.blockSize) || input.blockSize <= 0) {
+      throw new Error('WASM selected blocks require a positive block size.');
+    }
+    if (input.blockRowStarts.length !== input.blockColStarts.length) {
+      throw new Error('WASM selected blocks require one row start per column start.');
+    }
+    if (input.blockSize > input.parameterCount) {
+      throw new Error('WASM selected blocks do not fit the parameter range.');
+    }
+    const blockCount = input.blockRowStarts.length;
+    for (let b = 0; b < blockCount; b += 1) {
+      const rowBase = input.blockRowStarts[b] ?? -1;
+      const colBase = input.blockColStarts[b] ?? -1;
+      if (!Number.isInteger(rowBase) || !Number.isInteger(colBase) ||
+          rowBase < 0 || colBase < 0 ||
+          rowBase > input.parameterCount - input.blockSize ||
+          colBase > input.parameterCount - input.blockSize) {
+        throw new Error(`WASM selected block ${b} starts outside parameter range.`);
+      }
+    }
+    const { design, weights } = input;
+    const blocks = new Float64Array(blockCount * input.blockSize * input.blockSize);
+    const error = new Uint8Array(ERROR_CAPACITY);
+    const pointers: number[] = [];
+    const alloc = (bytes: number): number => {
+      const pointer = allocate(this._module, bytes);
+      pointers.push(pointer);
+      return pointer;
+    };
+    try {
+      const rowOffsetsPointer = alloc(design.rowOffsets.byteLength);
+      const designColumnsPointer = alloc(design.columns.byteLength);
+      const designValuesPointer = alloc(design.values.byteLength);
+      const weightRowsPointer = alloc(weights.rows.byteLength);
+      const weightColumnsPointer = alloc(weights.columns.byteLength);
+      const weightValuesPointer = alloc(weights.values.byteLength);
+      const blockRowStartsPointer = alloc(input.blockRowStarts.byteLength);
+      const blockColStartsPointer = alloc(input.blockColStarts.byteLength);
+      const blocksPointer = alloc(blocks.byteLength);
+      const normalNnzPointer = alloc(Int32Array.BYTES_PER_ELEMENT);
+      const factorNnzPointer = alloc(Int32Array.BYTES_PER_ELEMENT);
+      const dampingPointer = alloc(Float64Array.BYTES_PER_ELEMENT);
+      const attemptsPointer = alloc(Int32Array.BYTES_PER_ELEMENT);
+      const assemblyPointer = alloc(Float64Array.BYTES_PER_ELEMENT);
+      const equilibrationPointer = alloc(Float64Array.BYTES_PER_ELEMENT);
+      const analyzePointer = alloc(Float64Array.BYTES_PER_ELEMENT);
+      const factorizePointer = alloc(Float64Array.BYTES_PER_ELEMENT);
+      const solvePointer = alloc(Float64Array.BYTES_PER_ELEMENT);
+      const errorPointer = alloc(error.byteLength);
+      this._module.HEAP32.set(design.rowOffsets, rowOffsetsPointer / Int32Array.BYTES_PER_ELEMENT);
+      this._module.HEAP32.set(design.columns, designColumnsPointer / Int32Array.BYTES_PER_ELEMENT);
+      this._module.HEAPF64.set(design.values, designValuesPointer / Float64Array.BYTES_PER_ELEMENT);
+      this._module.HEAP32.set(weights.rows, weightRowsPointer / Int32Array.BYTES_PER_ELEMENT);
+      this._module.HEAP32.set(weights.columns, weightColumnsPointer / Int32Array.BYTES_PER_ELEMENT);
+      this._module.HEAPF64.set(weights.values, weightValuesPointer / Float64Array.BYTES_PER_ELEMENT);
+      this._module.HEAP32.set(input.blockRowStarts, blockRowStartsPointer / Int32Array.BYTES_PER_ELEMENT);
+      this._module.HEAP32.set(input.blockColStarts, blockColStartsPointer / Int32Array.BYTES_PER_ELEMENT);
+      this._module.HEAPF64[assemblyPointer / Float64Array.BYTES_PER_ELEMENT] = Number.NaN;
+      this._module.HEAPF64[equilibrationPointer / Float64Array.BYTES_PER_ELEMENT] = Number.NaN;
+      this._module.HEAPF64[analyzePointer / Float64Array.BYTES_PER_ELEMENT] = Number.NaN;
+      this._module.HEAPF64[factorizePointer / Float64Array.BYTES_PER_ELEMENT] = Number.NaN;
+      this._module.HEAPF64[solvePointer / Float64Array.BYTES_PER_ELEMENT] = Number.NaN;
+      const status = this._module._webnet_sparse_selected_covariance_blocks(
+        rowOffsetsPointer, designColumnsPointer, designValuesPointer, design.values.length,
+        weightRowsPointer, weightColumnsPointer, weightValuesPointer, weights.values.length,
+        input.observationEquationCount, input.parameterCount,
+        blockRowStartsPointer, blockColStartsPointer, blockCount, input.blockSize,
+        blocksPointer, normalNnzPointer, factorNnzPointer,
+        dampingPointer, attemptsPointer,
+        assemblyPointer, equilibrationPointer, analyzePointer,
+        factorizePointer, solvePointer,
+        errorPointer, error.byteLength,
+      );
+      error.set(this._module.HEAPU8.subarray(errorPointer, errorPointer + error.byteLength));
+      if (status !== 0) throw new Error(readCString(error) || `WASM selected blocks failed (${status}).`);
+      blocks.set(this._module.HEAPF64.subarray(
+        blocksPointer / Float64Array.BYTES_PER_ELEMENT,
+        blocksPointer / Float64Array.BYTES_PER_ELEMENT + blocks.length,
+      ));
+      const timings = readTimings(this._module, {
+        assembly: assemblyPointer,
+        equilibration: equilibrationPointer,
+        analyze: analyzePointer,
+        factorize: factorizePointer,
+        solve: solvePointer,
+      });
+      return {
+        blocks,
+        normalNnz: int32(this._module, normalNnzPointer),
+        factorNnz: int32(this._module, factorNnzPointer),
+        damping: this._module.HEAPF64[dampingPointer / Float64Array.BYTES_PER_ELEMENT] ?? 0,
+        dampingAttempts: int32(this._module, attemptsPointer),
+        ...(timings === undefined ? {} : { timings }),
+      };
+    } finally {
+      pointers.reverse().forEach((pointer) => this._module._free(pointer));
+    }
+  }
 
   public querySelected(input: SparseSelectedCovarianceInput): SparseSelectedCovarianceResult {
     validateEquationSystem(input);

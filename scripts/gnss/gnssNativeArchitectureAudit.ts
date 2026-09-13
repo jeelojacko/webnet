@@ -102,7 +102,7 @@ export interface TimedOracle {
   readonly replicaMaxQxxDiff: number;
 }
 
-const gnssAssemblyContext = (stations: StationMap, paramIndex: SolveParameterIndex) => ({
+export const gnssAssemblyContext = (stations: StationMap, paramIndex: SolveParameterIndex) => ({
   stations,
   paramIndex,
   is2D: false,
