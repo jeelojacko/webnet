@@ -1,8 +1,9 @@
 /**
- * Phase 12F.3 agent-tier contract, part 1: bounded native static-GNSS R2B route.
+ * Phase 12F.4 agent-tier contract, part 1: bounded native static-GNSS R2B route.
  *
- * Fast unit-scope checks (no WASM, no campaigns): default-OFF proof (no
- * bundle load, no solver touched), eligibility cohort gates, boundary
+ * Fast unit-scope checks (no WASM, no campaigns): default-ON proof (pristine
+ * import admits the certified cohort with no explicit enable; explicit OFF
+ * forces TS with no bundle load and no solver touched), eligibility cohort gates, boundary
  * probes (params/blocks via overrides), dense-backed stub parity (coords
  * bitwise, SEUW rel, Qvv/Cvv rel, trace identity), no-dense tripwires
  * (full-Qxx canary, no qxx field, source guards), and route isolation.
@@ -14,7 +15,7 @@
  */
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
-import { describe, expect, it, beforeEach } from 'vitest';
+import { describe, expect, it, beforeEach, vi } from 'vitest';
 
 import {
   runGnssBaselineAdjustment,
@@ -59,10 +60,28 @@ const rel = (a: number, b: number): number => {
   return denom === 0 ? 0 : Math.abs(a - b) / denom;
 };
 
-describe('default-OFF production proof', () => {
-  it('kill switch defaults OFF and touches nothing', async () => {
+describe('default-ON production + kill switch', () => {
+  it('kill switch defaults ON: pristine import needs no explicit enable', async () => {
+    vi.resetModules();
+    const fresh = await import('../../src/workers/gnssBaselineNativeR2BRoute');
+    expect(fresh.isGnssNativeR2BRouteEnabled()).toBe(true);
+    const input = ringInput(76);
+    const eligibility = fresh.deriveGnssNativeR2BEligibility(input, workerOn);
+    expect(eligibility.numParams).toBe(225);
+    expect(eligibility.eligible).toBe(true);
+    const attempt = await fresh.runGnssBaselineWithNativeR2B(input, {
+      ...workerOn,
+      correctionSolverOverride: countingCorrectionSolver(),
+      blockSolverOverride: countingBlockSolver(),
+    });
+    expect(attempt.route).toBe('native-sparse-selected-qxx');
+    expect(attempt.result.routeProvenance).toBe('native-sparse-selected-qxx');
+  });
+
+  it('explicit OFF forces TS with no bundle load and no solver touched', async () => {
+    setGnssNativeR2BRouteEnabled(false);
     expect(isGnssNativeR2BRouteEnabled()).toBe(false);
-    const input = ringInput(8);
+    const input = ringInput(76);
     const correction = countingCorrectionSolver();
     const blocks = countingBlockSolver();
     let loaded = false;
@@ -83,7 +102,21 @@ describe('default-OFF production proof', () => {
     expect(attempt.reasons.join('; ')).toMatch(/kill switch/);
   });
 
-  it('default-OFF result is bit-identical to plain TS', async () => {
+  it('re-enable restores R2B (no stale state bypasses the switch)', async () => {
+    setGnssNativeR2BRouteEnabled(false);
+    expect(isGnssNativeR2BRouteEnabled()).toBe(false);
+    setGnssNativeR2BRouteEnabled(true);
+    expect(isGnssNativeR2BRouteEnabled()).toBe(true);
+    const attempt = await runGnssBaselineWithNativeR2B(ringInput(76), {
+      ...workerOn,
+      correctionSolverOverride: countingCorrectionSolver(),
+      blockSolverOverride: countingBlockSolver(),
+    });
+    expect(attempt.route).toBe('native-sparse-selected-qxx');
+  });
+
+  it('default-ON below-floor result is bit-identical to plain TS', async () => {
+    setGnssNativeR2BRouteEnabled(true);
     const input = ringInput(8);
     const attempt = await runGnssBaselineWithNativeR2B(input, workerOn);
     const oracle = runGnssBaselineAdjustment(input);
