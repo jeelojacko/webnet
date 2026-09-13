@@ -102,12 +102,16 @@ const isFullyFixed = (stationId: string, stations: StationMap): boolean => {
 export const findGnssBaselineBridges = (
   input: Pick<GnssBaselineAdjustInput, 'stations' | 'baselines'>,
 ): Array<{ from: string; to: string }> => {
-  const adjacency = new Map<string, Map<string, number>>();
+  const adjacency = new Map<string, Map<string, number[]>>();
   const link = (a: string, b: string, id: number): void => {
     if (!adjacency.has(a)) adjacency.set(a, new Map());
     if (!adjacency.has(b)) adjacency.set(b, new Map());
-    adjacency.get(a)?.set(b, id);
-    adjacency.get(b)?.set(a, id);
+    const forward = adjacency.get(a)!;
+    if (!forward.has(b)) forward.set(b, []);
+    forward.get(b)!.push(id);
+    const backward = adjacency.get(b)!;
+    if (!backward.has(a)) backward.set(a, []);
+    backward.get(a)!.push(id);
   };
   input.baselines.forEach((baseline) => link(baseline.from, baseline.to, baseline.id));
   const disc = new Map<string, number>();
@@ -117,11 +121,17 @@ export const findGnssBaselineBridges = (
   const stations = [...adjacency.keys()].sort();
   stations.forEach((root) => {
     if (disc.has(root)) return;
-    // Iterative DFS carrying the edge id used to arrive (parallel edges
-    // between the same pair are distinct ids, so repeated edges never
-    // count as bridges).
-    const stack: Array<{ node: string; parentEdge: number; childIdx: string[] }> = [
-      { node: root, parentEdge: -1, childIdx: [...(adjacency.get(root)?.keys() ?? [])].sort() },
+    // Iterative DFS carrying the edge id used to arrive. Parallel edges
+    // between the same pair keep distinct ids in per-pair arrays, so only
+    // the single arrival edge id is skipped; any additional parallel edge
+    // to the parent is processed as a back edge (low-link update) and the
+    // pair never counts as a bridge.
+    const sortedEdges = (node: string): Array<{ to: string; id: number }> =>
+      [...(adjacency.get(node)?.entries() ?? [])]
+        .flatMap(([to, ids]) => ids.map((id) => ({ to, id })))
+        .sort((a, b) => a.to.localeCompare(b.to) || a.id - b.id);
+    const stack: Array<{ node: string; parentEdge: number; childIdx: Array<{ to: string; id: number }> }> = [
+      { node: root, parentEdge: -1, childIdx: sortedEdges(root) },
     ];
     disc.set(root, clock);
     low.set(root, clock);
@@ -141,8 +151,7 @@ export const findGnssBaselineBridges = (
         }
         continue;
       }
-      const next = frame.childIdx.pop() as string;
-      const edgeId = adjacency.get(frame.node)?.get(next) ?? -1;
+      const { to: next, id: edgeId } = frame.childIdx.pop()!;
       if (edgeId === frame.parentEdge) continue;
       if (disc.has(next)) {
         low.set(frame.node, Math.min(low.get(frame.node) ?? 0, disc.get(next) ?? 0));
@@ -154,7 +163,7 @@ export const findGnssBaselineBridges = (
         stack.push({
           node: next,
           parentEdge: edgeId,
-          childIdx: [...(adjacency.get(next)?.keys() ?? [])].sort(),
+          childIdx: sortedEdges(next),
         });
       }
     }

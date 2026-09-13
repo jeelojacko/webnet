@@ -129,6 +129,18 @@ describe('eligibility cohort', () => {
     expect(findGnssBaselineBridges(input)).toEqual([]);
   });
 
+  it('doubled a-b pair is not a bridge (multigraph Tarjan)', () => {
+    const input = {
+      stations: {},
+      baselines: [
+        { from: 'a', to: 'b', id: 1 },
+        { from: 'a', to: 'b', id: 2 },
+        { from: 'b', to: 'c', id: 3 },
+      ],
+    } as unknown as Parameters<typeof findGnssBaselineBridges>[0];
+    expect(findGnssBaselineBridges(input)).toEqual([{ from: 'b', to: 'c' }]);
+  });
+
   it('rejects non-ECEF frames (never legacy G/GPS)', () => {
     setGnssNativeR1RouteEnabled(true);
     const input = ringInput(8);
