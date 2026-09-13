@@ -17,16 +17,23 @@ import type {
   GnssDiagnostic,
 } from '../../engine/gnssBaselineNetworkImport';
 import { buildGnssSampleNetwork } from '../../engine/gnssSampleNetwork';
-import {
-  buildGnssSessionInput,
+import { buildGnssSessionInput,
   runGnssWorkspacePreflight,
   setStationFixed,
   summarizeGnssImport,
   type GnssImportFormat,
 } from '../../engine/gnssWorkspaceSession';
+import {
+  classifyGnssDatumComponents,
+  GNSS_FREE_NETWORK_MAX_STATIONS,
+  isFullyFixedStation,
+  type GnssDatumMode,
+} from '../../engine/gnssFreeNetwork';
+import { GnssDatumHandlingSelector } from './GnssDatumHandlingSelector';
 import { useGnssBaselineWorker, type GnssRunOutcome } from '../../hooks/useGnssBaselineWorker';
 import { GnssResultsPanel } from './GnssResultsPanel';
 import { GnssStationTable } from './GnssStationTable';
+import { mapGnssRunError } from './gnssRunErrorText';
 
 export interface GnssExternalImport {
   readonly fileName: string;
@@ -50,6 +57,7 @@ export const GnssWorkspacePanel: React.FC<GnssWorkspacePanelProps> = ({ runner, 
   const [csvEpoch, setCsvEpoch] = useState('');
   const [csvEllipsoid, setCsvEllipsoid] = useState('WGS84');
   const [fixedOverrides, setFixedOverrides] = useState<Record<string, boolean>>({});
+  const [datumMode, setDatumMode] = useState<GnssDatumMode>('constrained');
   const [centeringSigma, setCenteringSigma] = useState('0.000');
   const [heightSigma, setHeightSigma] = useState('0.000');
   const [outcome, setOutcome] = useState<GnssRunOutcome | null>(null);
@@ -67,6 +75,7 @@ export const GnssWorkspacePanel: React.FC<GnssWorkspacePanelProps> = ({ runner, 
       setFormat(next ? nextFormat : 'unknown');
       setSourceFile(nextFile);
       setFixedOverrides({});
+      setDatumMode('constrained');
       setOutcome(null);
       setRunError(
         next
@@ -103,13 +112,14 @@ export const GnssWorkspacePanel: React.FC<GnssWorkspacePanelProps> = ({ runner, 
       network
         ? buildGnssSessionInput(network, {
             fixedOverrides,
+            datumMode,
             setup: {
               horizontalCenteringSigma: Number(centeringSigma),
               antennaHeightSigma: Number(heightSigma),
             },
           })
         : null,
-    [network, fixedOverrides, centeringSigma, heightSigma],
+    [network, fixedOverrides, datumMode, centeringSigma, heightSigma],
   );
 
   const summary = useMemo(
@@ -119,9 +129,23 @@ export const GnssWorkspacePanel: React.FC<GnssWorkspacePanelProps> = ({ runner, 
   );
 
   const preflight = useMemo(
-    () => (sessionInput ? runGnssWorkspacePreflight(sessionInput) : null),
+    () => (sessionInput ? runGnssWorkspacePreflight(sessionInput, datumMode) : null),
+    [sessionInput, datumMode],
+  );
+
+  const datumClassification = useMemo(
+    () =>
+      sessionInput
+        ? classifyGnssDatumComponents(sessionInput.stations, sessionInput.baselines)
+        : null,
     [sessionInput],
   );
+  const freeComponentCount = datumClassification?.freeComponents.length ?? 0;
+  const totalStationCount = sessionInput ? Object.keys(sessionInput.stations).length : 0;
+  const freeOverSizeCap =
+    datumMode === 'allow-free' &&
+    freeComponentCount > 0 &&
+    totalStationCount > GNSS_FREE_NETWORK_MAX_STATIONS;
 
   const sigmaInvalid =
     !Number.isFinite(Number(centeringSigma)) ||
@@ -182,6 +206,11 @@ export const GnssWorkspacePanel: React.FC<GnssWorkspacePanelProps> = ({ runner, 
 
   const handleToggleFixed = (id: string, fixed: boolean): void => {
     setFixedOverrides((prev) => ({ ...prev, [id]: fixed }));
+    setOutcome(null);
+  };
+
+  const handleDatumModeChange = (mode: GnssDatumMode): void => {
+    setDatumMode(mode);
     setOutcome(null);
   };
 
@@ -300,6 +329,58 @@ export const GnssWorkspacePanel: React.FC<GnssWorkspacePanelProps> = ({ runner, 
         </section>
       )}
 
+      {sessionInput && datumClassification && (
+        <section aria-label="Datum handling" className="border border-slate-700 rounded p-3 space-y-2">
+          <GnssDatumHandlingSelector value={datumMode} onChange={handleDatumModeChange} />
+          <div className="text-xs">
+            <h4 className="font-medium">Component datum summary</h4>
+            <ul className="mt-1 space-y-0.5">
+              {datumClassification.components.map((component, index) => {
+                const free = datumClassification.freeComponents.some(
+                  (entry) => entry[0] === component[0],
+                );
+                const controls = component.filter((id) =>
+                  isFullyFixedStation(sessionInput.stations, id),
+                );
+                return (
+                  <li key={component[0] ?? index}>
+                    Component {index + 1}: {free ? 'Free' : 'Constrained'} ·{' '}
+                    {controls.length > 0 ? `control ${controls.join(', ')}` : 'no control'} ·{' '}
+                    {component.length} station(s) · defect {free ? 3 : 0}
+                  </li>
+                );
+              })}
+            </ul>
+            <p className="mt-1 text-slate-400">
+              {datumClassification.components.length} component(s) (
+              {datumClassification.components.length - freeComponentCount} constrained,{' '}
+              {freeComponentCount} free) · total datum defect {freeComponentCount * 3}
+            </p>
+          </div>
+          {datumMode === 'allow-free' && freeComponentCount > 0 && !freeOverSizeCap && (
+            <p role="note" className="text-xs text-sky-300">
+              Free-network coordinates and coordinate uncertainties are expressed in an inner-constrained datum. Residuals, network QC, and relative precision are datum invariant.
+            </p>
+          )}
+          {datumMode === 'allow-free' && freeComponentCount === 0 && (
+            <p role="note" className="text-xs text-slate-400">
+              All components are currently constrained by real control. WebNet will use the ordinary constrained adjustment.
+            </p>
+          )}
+          {freeOverSizeCap && (
+            <div role="alert" className="text-xs text-red-200">
+              <p>
+                Free-network size limit exceeded: this network has {totalStationCount} stations (certified maximum {GNSS_FREE_NETWORK_MAX_STATIONS} for the inner-constrained free-network route). Add real control or reduce the network before adjusting.
+              </p>
+              <details className="mt-1 text-slate-400">
+                <summary className="cursor-pointer">Advanced details</summary>
+                <p>FREE_NETWORK_SIZE_LIMIT: {totalStationCount} stations over the certified max {GNSS_FREE_NETWORK_MAX_STATIONS}; fail-closed.</p>
+              </details>
+            </div>
+          )}
+        </section>
+      )}
+
       {network && (
         <section aria-label="Setup uncertainty" className="border border-slate-700 rounded p-3 text-xs space-y-2">
           <h3 className="text-sm font-medium">Setup uncertainty (metres, 1-sigma)</h3>
@@ -352,11 +433,20 @@ export const GnssWorkspacePanel: React.FC<GnssWorkspacePanelProps> = ({ runner, 
         </div>
       )}
 
-      {runError && (
-        <div role="alert" className="border border-red-700 bg-red-950/50 rounded p-3 text-xs text-red-200 whitespace-pre-wrap">
-          {runError}
-        </div>
-      )}
+      {runError && (() => {
+        const mapped = mapGnssRunError(runError);
+        return (
+          <div role="alert" className="border border-red-700 bg-red-950/50 rounded p-3 text-xs text-red-200 whitespace-pre-wrap">
+            {mapped ? mapped.text : runError}
+            {mapped && (
+              <details className="mt-2 text-slate-400">
+                <summary className="cursor-pointer">Advanced details (error code)</summary>
+                <p className="mt-1 font-mono break-all">{mapped.detail}</p>
+              </details>
+            )}
+          </div>
+        );
+      })()}
 
       {outcome && sessionInput && (
         <GnssResultsPanel input={sessionInput} outcome={outcome} />

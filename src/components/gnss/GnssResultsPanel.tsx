@@ -8,6 +8,7 @@
  */
 import React, { useMemo, useState } from 'react';
 import type { GnssBaselineAdjustInput } from '../../engine/gnssBaselineAdjust';
+import type { GnssDatumSummary } from '../../engine/gnssFreeNetwork';
 import { computeGnssLoopClosures } from '../../engine/gnssBaselineLoops';
 import {
   buildGnssBaselineReport,
@@ -19,6 +20,22 @@ import { saveBrowserTextFile } from '../../engine/browserFileIo';
 import type { GnssRunOutcome } from '../../hooks/useGnssBaselineWorker';
 
 const WHAT_IF_BASELINE_LIMIT = 25;
+// ponytail: relative precision deferred — baseline-detail "relative to station" selector
+// (Qrel = Qii + Qjj - Qij - Qji) needs block extraction + selected-blocks fallback; not tiny.
+
+const FREE_QC_TOOLTIP = 'Residual/QC statistics are invariant to the free-network translation datum.';
+const INNER_PRECISION_TOOLTIP =
+  "The coordinate covariance for this station is relative to WebNet's inner-constrained free-network datum. " +
+  'It depends on the chosen datum definition and should not be interpreted as absolute external control uncertainty.';
+
+/** Per-station datum kind from the backend summary (anchor names never surface). */
+const datumKindByStation = (summary: GnssDatumSummary): Map<string, 'constrained' | 'free'> => {
+  const byStation = new Map<string, 'constrained' | 'free'>();
+  summary.components.forEach((component) => {
+    component.stations.forEach((id) => byStation.set(id, component.kind));
+  });
+  return byStation;
+};
 
 const fmt = (value: number | undefined, digits = 4): string =>
   value == null || !Number.isFinite(value) ? 'n/a' : value.toFixed(digits);
@@ -64,12 +81,17 @@ export const GnssResultsPanel: React.FC<GnssResultsPanelProps> = ({ input, outco
     return { ...built, connectedComponents: loops.componentCount, cycleRank: loops.cycleRank };
   }, [input, result]);
 
+  const whatIfInput: GnssBaselineAdjustInput = useMemo(
+    () => (result.datumSummary ? { ...input, datumMode: 'allow-free' } : input),
+    [input, result],
+  );
+
   const whatIf = useMemo(
     () =>
-      input.baselines.length <= WHAT_IF_BASELINE_LIMIT
-        ? input.baselines.map((baseline) => runGnssBaselineRemovalWhatIf(input, baseline.id))
+      whatIfInput.baselines.length <= WHAT_IF_BASELINE_LIMIT
+        ? whatIfInput.baselines.map((baseline) => runGnssBaselineRemovalWhatIf(whatIfInput, baseline.id))
         : null,
-    [input],
+    [whatIfInput],
   );
 
   const stationRows = useMemo(() => {
@@ -133,10 +155,22 @@ export const GnssResultsPanel: React.FC<GnssResultsPanelProps> = ({ input, outco
   const handleJsonExport = (): void => {
     void saveBrowserTextFile(
       'gnss-baseline-report.json',
-      `${JSON.stringify({ report, stations: result.stations, route: outcome.route, reasons: outcome.reasons }, null, 2)}\n`,
+      `${JSON.stringify({ report, stations: result.stations, ...(result.datumSummary ? { datumSummary: result.datumSummary } : {}), route: outcome.route, reasons: outcome.reasons }, null, 2)}\n`,
       [{ description: 'JSON', accept: { 'application/json': ['.json'] } }],
     );
   };
+
+  const datum = result.datumSummary ?? null;
+  const datumByStation = useMemo(() => (datum ? datumKindByStation(datum) : null), [datum]);
+  const fixedIds = useMemo(
+    () =>
+      new Set(
+        Object.entries(result.stations)
+          .filter(([, station]) => !!station?.fixedX && !!station?.fixedY && !!station?.fixedH)
+          .map(([id]) => id),
+      ),
+    [result],
+  );
 
   return (
     <div className="space-y-4">
@@ -158,9 +192,42 @@ export const GnssResultsPanel: React.FC<GnssResultsPanelProps> = ({ input, outco
             Route: {outcome.route}{outcome.workerBacked ? ' (production worker)' : ' (direct)'}
             {outcome.reasons.length > 0 && ` — ${outcome.reasons.join('; ')}`}
             {' '}· report route: {report.routeProvenance}
+            {datum && ' · free-network engine: TypeScript dense inner-constraint (supported production route for free networks, not a fallback failure)'}
           </p>
         </details>
       </section>
+
+      {datum && (
+        <section aria-label="Datum definition" className="border border-sky-700 bg-sky-950/40 rounded p-3 text-xs">
+          <h3 className="text-sm font-medium mb-1">
+            Datum: {datum.kind === 'mixed' ? 'MIXED' : 'FREE — INNER CONSTRAINED'}
+            <span className="sr-only">{datum.kind === 'mixed' ? 'mixed free and constrained components' : 'free network, inner-constrained datum'}</span>
+          </h3>
+          <p className="text-slate-300">Zero-mean ECEF coordinate corrections per free component.</p>
+          <p className="text-slate-400">Datum defect: 3 per free component · requested mode: {datum.modeRequested}</p>
+          <dl className="grid grid-cols-2 md:grid-cols-5 gap-x-4 gap-y-1 mt-2">
+            <div><dt className="text-slate-500">Coordinate parameters</dt><dd>{datum.fullParameterCount}</dd></div>
+            <div><dt className="text-slate-500">Datum defect</dt><dd>{datum.totalDatumDefect}</dd></div>
+            <div><dt className="text-slate-500">Estimable rank</dt><dd>{datum.estimableRank}</dd></div>
+            <div><dt className="text-slate-500">Scalar observations</dt><dd>{result.numObsEquations}</dd></div>
+            <div><dt className="text-slate-500">Degrees of freedom</dt><dd>{result.dof} (expected {result.numObsEquations - datum.estimableRank})</dd></div>
+          </dl>
+          <ul className="mt-2 space-y-1 text-slate-300">
+            {datum.components.map((component, index) => {
+              const control = component.kind === 'constrained'
+                ? component.stations.filter((id) => fixedIds.has(id))
+                : [];
+              return (
+                <li key={index}>
+                  Component {index + 1} — {component.kind === 'constrained'
+                    ? `constrained by ${control.length > 0 ? control.join(', ') : 'control'}`
+                    : 'free, inner constrained'} ({component.stations.length} station(s), rank {component.rank}/{component.paramCount})
+                </li>
+              );
+            })}
+          </ul>
+        </section>
+      )}
 
       <section aria-label="Adjusted stations" className="border border-slate-700 rounded p-3 text-xs">
         <h3 className="text-sm font-medium mb-2">Adjusted ECEF stations (metres)</h3>
@@ -175,7 +242,8 @@ export const GnssResultsPanel: React.FC<GnssResultsPanelProps> = ({ input, outco
               <th className="py-1 pr-2">dY</th>
               <th className="py-1 pr-2">dZ</th>
               <th className="py-1 pr-2">Control</th>
-              <th className="py-1 pr-2">σ (m)</th>
+              {datum && <th className="py-1 pr-2">Datum</th>}
+              <th className="py-1 pr-2" title={datum ? INNER_PRECISION_TOOLTIP : undefined}>{datum ? 'Inner-constrained precision (m)' : 'σ (m)'}</th>
             </tr>
           </thead>
           <tbody className="font-mono">
@@ -189,6 +257,7 @@ export const GnssResultsPanel: React.FC<GnssResultsPanelProps> = ({ input, outco
                 <td className="py-1 pr-2">{row.dy >= 0 ? '+' : ''}{row.dy.toFixed(4)}</td>
                 <td className="py-1 pr-2">{row.dz >= 0 ? '+' : ''}{row.dz.toFixed(4)}</td>
                 <td className="py-1 pr-2 font-sans">{row.fixed ? 'FIXED' : 'FREE'}</td>
+                {datumByStation && <td className="py-1 pr-2 font-sans">{datumByStation.get(row.id) === 'free' ? 'free, inner constrained' : 'constrained'}</td>}
                 <td className="py-1 pr-2">{row.sigma ? `${fmt(row.sigma[0], 5)} / ${fmt(row.sigma[1], 5)} / ${fmt(row.sigma[2], 5)}` : 'n/a (selected-blocks route)'}</td>
               </tr>
             ))}
@@ -197,7 +266,7 @@ export const GnssResultsPanel: React.FC<GnssResultsPanelProps> = ({ input, outco
       </section>
 
       <section aria-label="Baselines" className="border border-slate-700 rounded p-3 text-xs">
-        <h3 className="text-sm font-medium mb-2">Baselines (observed / computed / residual, metres)</h3>
+        <h3 className="text-sm font-medium mb-2" title={datum ? FREE_QC_TOOLTIP : undefined}>Baselines (observed / computed / residual, metres)</h3>
         <table className="w-full">
           <thead>
             <tr className="text-left text-slate-400 border-b border-slate-700">
@@ -262,7 +331,7 @@ export const GnssResultsPanel: React.FC<GnssResultsPanelProps> = ({ input, outco
       </section>
 
       <section aria-label="Loop QC" className="border border-slate-700 rounded p-3 text-xs">
-        <h3 className="text-sm font-medium mb-2" title="Loop closures compare observed vectors around a closed ring before adjustment. A small closure means the sessions agree with each other.">Loop QC</h3>
+        <h3 className="text-sm font-medium mb-2" title={datum ? FREE_QC_TOOLTIP : 'Loop closures compare observed vectors around a closed ring before adjustment. A small closure means the sessions agree with each other.'}>Loop QC</h3>
         {report.loops.length === 0 ? (
           <p className="text-slate-500">(no fundamental cycles — nothing to close)</p>
         ) : (

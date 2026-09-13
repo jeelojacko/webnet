@@ -15,6 +15,14 @@ import type {
 } from './gnssBaselineNetworkImport';
 import { gnssBaselineComponents, runGnssBaselinePreflight } from './gnssBaselinePreflight';
 import {
+  classifyGnssDatumComponents,
+  GNSS_FREE_EXTRA_RANK_DEFECT,
+  GNSS_FREE_NETWORK_MAX_STATIONS,
+  GNSS_FREE_NETWORK_SIZE_LIMIT,
+  isFullyFixedStation,
+  type GnssDatumMode,
+} from './gnssFreeNetwork';
+import {
   checkGnssSetupReadiness,
   isGnssSetupActive,
   normalizeGnssSetupUncertainty,
@@ -117,6 +125,7 @@ export const setStationFixed = (
 export interface GnssSessionInputOptions {
   readonly fixedOverrides?: Readonly<Record<string, boolean>>;
   readonly setup?: GnssSetupUncertainty;
+  readonly datumMode?: GnssDatumMode;
 }
 
 /**
@@ -144,6 +153,7 @@ export const buildGnssSessionInput = (
     epoch: network.frame.epoch,
     ellipsoid: network.frame.ellipsoid,
     setupUncertainty: normalizeGnssSetupUncertainty(options.setup),
+    datumMode: options.datumMode ?? 'constrained',
   };
 };
 
@@ -177,14 +187,133 @@ const gate = (id: GnssPreflightGateId, pass: boolean, message: string): GnssPref
 const firstError = (messages: string[]): string | null =>
   messages.length > 0 ? (messages[0] as string) : null;
 
+/** 1-based deterministic component numbers of the uncontrolled components. */
+const uncontrolledComponentNumbers = (
+  stations: StationMap,
+  baselines: GnssBaselineAdjustInput['baselines'],
+): number[] => {
+  const classification = classifyGnssDatumComponents(stations, baselines);
+  const freeSet = new Set(classification.freeComponents.map((component) => component[0] as string));
+  const numbers: number[] = [];
+  classification.components.forEach((component, index) => {
+    if (freeSet.has(component[0] as string)) numbers.push(index + 1);
+  });
+  return numbers;
+};
+
+const describeMissingDatum = (input: GnssBaselineAdjustInput): string => {
+  const numbers = uncontrolledComponentNumbers(input.stations, input.baselines);
+  const head =
+    numbers.length > 0
+      ? numbers.map((n) => `Component ${n} has no fixed XYZ control.`).join(' ')
+      : 'A component has no fixed XYZ control.';
+  return (
+    `${head} Choose a real control station, or explicitly select ` +
+    "'Allow free components' if a free-network adjustment is intended."
+  );
+};
+
+/**
+ * Allow-free datum/connectivity gates: uncontrolled components pass as free
+ * (inner-constrained datum, defect 3 each); size/extra-rank defects still
+ * block via datumValid, and non-datum backend errors block connectivity.
+ */
+const pushFreeDatumGates = (
+  input: GnssBaselineAdjustInput,
+  backendError: string | null,
+  gates: GnssPreflightGate[],
+): void => {
+  if (backendError == null) {
+    gates.push(gate('connectivityValid', true, 'Network connectivity is valid.'));
+  } else if (/no fully fixed|free-network|uncontrolled/i.test(backendError)) {
+    gates.push(gate('connectivityValid', true, 'Network connectivity is valid.'));
+  } else if (/disagree on declared frame|does not match session|frame/i.test(backendError)) {
+    gates.push(gate('connectivityValid', false, backendError));
+    gates.push(gate('datumValid', true, 'Datum control is valid: every component has a fully fixed 3D station.'));
+    return;
+  } else {
+    gates.push(gate('connectivityValid', false, backendError));
+    gates.push(gate('datumValid', false, backendError));
+    return;
+  }
+  const classification = classifyGnssDatumComponents(input.stations, input.baselines);
+  const totalStations = Object.keys(input.stations).length;
+  if (classification.freeComponents.length > 0 && totalStations > GNSS_FREE_NETWORK_MAX_STATIONS) {
+    gates.push(
+      gate(
+        'datumValid',
+        false,
+        `${GNSS_FREE_NETWORK_SIZE_LIMIT}: free network has ${totalStations} stations ` +
+          `(certified max ${GNSS_FREE_NETWORK_MAX_STATIONS}; fail-closed).`,
+      ),
+    );
+    return;
+  }
+  const partial = Object.keys(input.stations)
+    .sort()
+    .find((stationId) => {
+      const station = input.stations[stationId];
+      const flags = [station?.fixedX, station?.fixedY, station?.fixedH].map((flag) => !!flag);
+      return flags.some(Boolean) && flags.some((flag) => !flag);
+    });
+  if (partial !== undefined) {
+    gates.push(
+      gate(
+        'datumValid',
+        false,
+        `${GNSS_FREE_EXTRA_RANK_DEFECT}: station '${partial}' carries partial XYZ control ` +
+          '(free-network datum requires full-XYZ or nothing; fail-closed).',
+      ),
+    );
+    return;
+  }
+  const edged = new Set(classification.components.flat());
+  const isolated = Object.keys(input.stations)
+    .filter((stationId) => !edged.has(stationId) && !isFullyFixedStation(input.stations, stationId))
+    .sort();
+  if (isolated.length > 0) {
+    gates.push(
+      gate(
+        'datumValid',
+        false,
+        `${GNSS_FREE_EXTRA_RANK_DEFECT}: unobserved free stations [${isolated.join(', ')}] ` +
+          'leave the gauged system rank-deficient (fail-closed).',
+      ),
+    );
+    return;
+  }
+  if (classification.freeComponents.length === 0) {
+    gates.push(gate('datumValid', true, 'Datum control is valid: every component has a fully fixed 3D station.'));
+    return;
+  }
+  const freeSet = new Set(classification.freeComponents.map((component) => component[0] as string));
+  const notes: string[] = [];
+  classification.components.forEach((component, index) => {
+    if (freeSet.has(component[0] as string)) {
+      notes.push(
+        `Component ${index + 1} [${component.join(', ')}] has no fixed XYZ control ` +
+          'and will solve as a free network (inner-constrained datum, datum defect 3).',
+      );
+    }
+  });
+  gates.push(gate('datumValid', true, notes.join(' ')));
+};
+
 /**
  * Fail-closed workspace preflight: independent structural gates plus the
  * backend preflight mapped verbatim onto datum/connectivity. All gates run
  * even after a failure so the operator sees every defect at once.
+ *
+ * datumMode selects the datum gate only (never auto-switched):
+ * 'constrained' (default) blocks every uncontrolled component; 'allow-free'
+ * passes uncontrolled components as free networks (inner-constrained datum,
+ * defect 3 each) while size/extra-rank/covariance/frame still block.
  */
 export const runGnssWorkspacePreflight = (
   input: GnssBaselineAdjustInput,
+  datumMode?: GnssDatumMode,
 ): GnssWorkspacePreflight => {
+  const mode: GnssDatumMode = datumMode ?? input.datumMode ?? 'constrained';
   const gates: GnssPreflightGate[] = [];
   const warnings: string[] = [];
 
@@ -242,12 +371,14 @@ export const runGnssWorkspacePreflight = (
   } catch (failure) {
     backendError = failure instanceof Error ? failure.message : String(failure);
   }
-  if (backendError == null) {
+  if (mode === 'allow-free') {
+    pushFreeDatumGates(input, backendError, gates);
+  } else if (backendError == null) {
     gates.push(gate('connectivityValid', true, 'Network connectivity is valid.'));
     gates.push(gate('datumValid', true, 'Datum control is valid: every component has a fully fixed 3D station.'));
   } else if (/no fully fixed|free-network|uncontrolled/i.test(backendError)) {
     gates.push(gate('connectivityValid', true, 'Network connectivity is valid.'));
-    gates.push(gate('datumValid', false, backendError));
+    gates.push(gate('datumValid', false, describeMissingDatum(input)));
   } else if (/disagree on declared frame|does not match session|frame/i.test(backendError)) {
     gates.push(gate('connectivityValid', false, backendError));
     gates.push(gate('datumValid', true, 'Datum control is valid: every component has a fully fixed 3D station.'));

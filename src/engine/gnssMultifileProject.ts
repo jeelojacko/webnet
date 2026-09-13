@@ -251,6 +251,11 @@ export const parseGnssProjectSources = (
   });
 };
 
+export interface GnssProjectDatumComponent {
+  readonly stations: string[];
+  readonly kind: 'constrained' | 'free';
+}
+
 export interface GnssPrecompositionSummary {
   readonly enabledFiles: number;
   readonly totalFiles: number;
@@ -263,6 +268,14 @@ export interface GnssPrecompositionSummary {
   readonly freeStations: number;
   readonly baselineCount: number;
   readonly componentCount: number;
+  /**
+   * Phase 12I.2: per-component datum classification over the composed
+   * network WITH project control overrides applied (datum is decided
+   * post-compose + post-overrides, never per-source). UI reads this for
+   * the Constrained/Free display; absent datumMode renders 'constrained'.
+   */
+  readonly datumMode: GnssDatumMode;
+  readonly datumComponents: GnssProjectDatumComponent[];
   readonly controlBySource: string[];
   readonly duplicateCandidates: number;
   readonly mergeNotes: string[];
@@ -298,11 +311,34 @@ const failedSourceBlocks = (parsed: readonly GnssProjectParsedSource[]): string[
   return blocks;
 };
 
+/** Options threading the RUN-level datum choice into the summary (never per-source). */
+export interface GnssProjectSummaryOptions {
+  readonly controlOverrides?: Readonly<Record<string, boolean>>;
+  readonly datumMode?: GnssDatumMode;
+}
+
+/** Project control overrides AFTER composition (exact station ID; sources untouched). */
+const withControlOverrides = (
+  stations: StationMap,
+  overrides: Readonly<Record<string, boolean>> | undefined,
+): StationMap => {
+  let next = Object.fromEntries(
+    Object.entries(stations).map(([id, station]) => [id, { ...station }]),
+  );
+  Object.keys(overrides ?? {})
+    .sort()
+    .forEach((id) => {
+      if (next[id]) next = setStationFixed(next, id, overrides?.[id] ?? false);
+    });
+  return next;
+};
+
 /** Shared summary builder over one precomputed composition (single compose per run). */
 const buildPrecompositionSummary = (
   parsed: readonly GnssProjectParsedSource[],
   totalFiles: number,
   composed: GnssMultifileResult | null,
+  summaryOptions: GnssProjectSummaryOptions = {},
 ): GnssPrecompositionSummary => {
   const gnss = parsed.filter((entry) => entry.network != null);
   const warnings: string[] = [];
@@ -331,6 +367,21 @@ const buildPrecompositionSummary = (
     });
   });
   const allBaselines = gnss.flatMap((entry) => (entry.network as GnssBaselineNetworkInput).baselines);
+  // Datum classification for UI: composed stations with the project
+  // control overrides applied (same effective control the solve decides
+  // on), classified per baseline-connected component. No anchors leak:
+  // anchors are adjust-time working state, never summary state.
+  const datumMode = summaryOptions.datumMode ?? 'constrained';
+  let datumComponents: GnssProjectDatumComponent[] = [];
+  if (composed?.composed) {
+    const effectiveStations = withControlOverrides(composed.composed.stations, summaryOptions.controlOverrides);
+    const classification = classifyGnssDatumComponents(effectiveStations, composed.composed.baselines);
+    const freeSet = new Set(classification.freeComponents.flat());
+    datumComponents = classification.components.map((stations) => ({
+      stations: [...stations],
+      kind: freeSet.has(stations[0] as string) ? 'free' : 'constrained',
+    }));
+  }
   return {
     enabledFiles: parsed.filter((entry) => entry.kind !== 'ignored').length,
     totalFiles,
@@ -349,6 +400,8 @@ const buildPrecompositionSummary = (
     freeStations: uniqueStations.size - fixedStations.size,
     baselineCount: allBaselines.length,
     componentCount: allBaselines.length > 0 ? gnssBaselineComponents(allBaselines).length : 0,
+    datumMode,
+    datumComponents,
     controlBySource: [...fixedStations].sort().map((id) => {
       const origin = gnss.find((entry) => (entry.network as GnssBaselineNetworkInput).stations[id]?.fixedX)?.fileName ?? 'unknown';
       return `${id} FIXED (${origin})`;
@@ -365,6 +418,7 @@ const buildPrecompositionSummary = (
 export const summarizeGnssProjectComposition = (
   parsed: readonly GnssProjectParsedSource[],
   totalFiles: number,
+  summaryOptions: GnssProjectSummaryOptions = {},
 ): GnssPrecompositionSummary => {
   const gnss = parsed.filter((entry) => entry.network != null);
   const ordered: GnssMultifileSource[] = gnss.map((entry) => ({
@@ -374,7 +428,7 @@ export const summarizeGnssProjectComposition = (
     format: entry.format,
   }));
   const composed = ordered.length > 0 ? composeGnssBaselineNetworks(ordered) : null;
-  return buildPrecompositionSummary(parsed, totalFiles, composed);
+  return buildPrecompositionSummary(parsed, totalFiles, composed, summaryOptions);
 };
 
 export interface GnssMultifileSolveOutput {
@@ -418,20 +472,16 @@ export const runGnssMultifileProjectSolve = (
     format: entry.format,
   }));
   const composed = ordered.length > 0 ? composeGnssBaselineNetworks(ordered) : null;
-  const summary = buildPrecompositionSummary(parsed, files.length, composed);
+  const summary = buildPrecompositionSummary(parsed, files.length, composed, {
+    controlOverrides: options.controlOverrides,
+    datumMode: options.datumMode ?? 'constrained',
+  });
   if (summary.status === 'BLOCKED') {
     throw new Error(summary.blockingErrors[0] ?? 'compose blocked');
   }
   if (!composed?.composed) throw new Error(composed?.blockingErrors[0] ?? 'compose blocked');
   // Project-level control overrides AFTER composition (exact station ID; sources untouched).
-  let stations = Object.fromEntries(
-    Object.entries(composed.composed.stations).map(([id, station]) => [id, { ...station }]),
-  );
-  Object.keys(options.controlOverrides ?? {})
-    .sort()
-    .forEach((id) => {
-      if (stations[id]) stations = setStationFixed(stations, id, options.controlOverrides?.[id] ?? false);
-    });
+  const stations = withControlOverrides(composed.composed.stations, options.controlOverrides);
   const setup = normalizeGnssSetupUncertainty(options.setup);
   const input: GnssBaselineAdjustInput = {
     stations,

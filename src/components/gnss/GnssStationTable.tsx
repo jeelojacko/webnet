@@ -14,9 +14,11 @@ type SortKey = 'id' | 'fixed';
 interface GnssStationTableProps {
   stations: StationMap;
   onToggleFixed: (_id: string, _fixed: boolean) => void;
+  /** Optional per-station datum kind (free-network result side); column hidden when absent. */
+  datumByStation?: Readonly<Record<string, 'constrained' | 'free'>>;
 }
 
-export const GnssStationTable: React.FC<GnssStationTableProps> = ({ stations, onToggleFixed }) => {
+export const GnssStationTable: React.FC<GnssStationTableProps> = ({ stations, onToggleFixed, datumByStation }) => {
   const [filter, setFilter] = useState('');
   const [sortKey, setSortKey] = useState<SortKey>('id');
   const [page, setPage] = useState(0);
@@ -85,6 +87,7 @@ export const GnssStationTable: React.FC<GnssStationTableProps> = ({ stations, on
             <th className="py-1 pr-2">Y (m)</th>
             <th className="py-1 pr-2">Z (m)</th>
             <th className="py-1 pr-2">Control</th>
+            {datumByStation && <th className="py-1 pr-2">Datum</th>}
           </tr>
         </thead>
         <tbody>
@@ -108,6 +111,11 @@ export const GnssStationTable: React.FC<GnssStationTableProps> = ({ stations, on
                 >
                   {row.fixed ? 'FIXED-XYZ' : 'FREE'}
                 </button>
+                {datumByStation && (
+                  <span className="ml-2 text-slate-400" aria-label={`${row.id} datum: ${datumByStation[row.id] === 'free' ? 'free, inner constrained' : 'constrained'}`}>
+                    {datumByStation[row.id] === 'free' ? 'free, inner constrained' : 'constrained'}
+                  </span>
+                )}
               </td>
             </tr>
           ))}
