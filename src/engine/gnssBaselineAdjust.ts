@@ -431,12 +431,6 @@ export function runGnssBaselineAdjustment(
     });
   });
   residuals.sort((a, b) => a.baselineId - b.baselineId);
-  const { normal } = accumulateNormalEquationsFromSparseRows(
-    finalAssembly.sparseRows,
-    finalAssembly.L,
-    finalP,
-    numParams,
-  );
   // Phase 12F.1: native full-dense Qxx replaces the dense inversion only
   // when a provider is injected; it throws on any fault (dimension,
   // non-finite, verification reject) so the caller falls back to TS.
@@ -445,6 +439,17 @@ export function runGnssBaselineAdjustment(
   if (nativeQxxProvider && nativeSelectedBlocksProvider) {
     throw new Error('GNSS native runtime carries both Qxx providers (fail-closed).');
   }
+  // R2B never consumes the dense normal: skip its boxed p² accumulation
+  // (the shared TS-dense assembly above is untouched; only this dead
+  // normal is skipped, so no math changes on any route).
+  const { normal } = nativeSelectedBlocksProvider
+    ? { normal: [] as number[][] }
+    : accumulateNormalEquationsFromSparseRows(
+        finalAssembly.sparseRows,
+        finalAssembly.L,
+        finalP,
+        numParams,
+      );
   const residualVector: number[][] = residuals.flatMap((r) => [[r.vX], [r.vY], [r.vZ]]);
   const weightedResidualSum = denseWeightedQuadratic(finalP, residualVector);
   const varianceFactor = dof > 0 ? weightedResidualSum / dof : 0;

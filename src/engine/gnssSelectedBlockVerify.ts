@@ -65,6 +65,12 @@ export const verifyGnssSelectedBlocks = (
       if (!((out[i * 3 + i] ?? 0) > 0)) fail(`diagonal block ${pair.blockA} non-positive variance`);
     }
   });
+  // Transpose self-consistency of the TS accessor (both directions derive
+  // from the same stored chunk by construction, so this cannot fire on a
+  // native payload — it pins the accessor wiring only). Native transpose
+  // correctness rests on canonical request orientation + native transpose
+  // memoization + full-oracle parity tests on CI-sized nets, never on this
+  // check or any runtime dense oracle.
   const fwd = new Float64Array(9);
   const rev = new Float64Array(9);
   plan.pairs.forEach((pair) => {

@@ -290,6 +290,30 @@ describe('fill gate + fallback contract', () => {
     });
   });
 
+  it('both-endpoints-fixed baseline => clean-TS downgrade, bit-identical', async () => {
+    setGnssNativeR2BRouteEnabled(true);
+    const input = ring8();
+    const first = [...input.baselines].sort((a, b) => a.id - b.id)[0]!;
+    const stations = Object.fromEntries(
+      Object.entries(input.stations).map(([id, station]) =>
+        id === first.from || id === first.to
+          ? [id, { ...station, fixed: true, fixedX: true, fixedY: true, fixedH: true }]
+          : [id, station],
+      ),
+    );
+    const fixedInput = { ...input, stations };
+    const oracle = runGnssBaselineAdjustment(fixedInput);
+    const attempt = await runGnssBaselineWithNativeR2B(fixedInput, {
+      ...workerOn,
+      ...smallBounds,
+      correctionSolverOverride: countingCorrectionSolver(),
+      blockSolverOverride: countingBlockSolver(),
+    });
+    expect(attempt.route).toBe('typescript');
+    expect(attempt.result.routeProvenance).toBe('typescript-dense');
+    expect(JSON.stringify(attempt.result)).toBe(JSON.stringify(oracle));
+  });
+
   it('WASM bundle init failure => clean-TS restart, bit-identical', async () => {
     setGnssNativeR2BRouteEnabled(true);
     const input = ring8();
