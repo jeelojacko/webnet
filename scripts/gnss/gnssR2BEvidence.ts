@@ -1011,10 +1011,11 @@ const SETUP_SIGMAS: Record<string, { h: number; v: number }> = {
   A: { h: 0.005, v: 0.002 },
 };
 
-const tryDatasetLeg = (
+const tryDatasetLeg = async (
+  module: WebNetWasmModule,
   dir: string | undefined,
   setupCase: string,
-): { status: string; detail: string } => {
+): Promise<{ status: string; detail: string }> => {
   if (!dir) return { status: 'NOT-RUN', detail: 'no --dataset-b directory supplied' };
   if (!existsSync(dir)) return { status: 'NOT-RUN', detail: `directory does not exist: ${dir}` };
   const sigmas = SETUP_SIGMAS[setupCase];
@@ -1062,9 +1063,75 @@ const tryDatasetLeg = (
       undefined,
       { skipFidelity: true },
     );
+    // Full R2B leg on the same vendor intake: sparse-only assembly +
+    // one batched queryBlocks + block-store Phase12D (setup stays TS-side).
+    const stationsR2B: StationMap = Object.fromEntries(
+      Object.entries(stations).map(([id, s]) => [id, { ...s }]),
+    );
+    const setupB = applyGnssSetupUncertainty({
+      stations: stationsR2B,
+      baselines: [...baselines].sort((a, b) => a.id - b.id),
+      setup: { horizontalCenteringSigma: sigmas.h, antennaHeightSigma: sigmas.v },
+      ellipsoid: 'WGS84',
+    });
+    const preflight = runGnssBaselinePreflight({ stations: stationsR2B, baselines: setupB.baselines });
+    const unknowns = preflight.components
+      .flat()
+      .filter((id) => {
+        const station = stationsR2B[id];
+        return !!station && !(station.fixedX && station.fixedY && station.fixedH);
+      })
+      .sort();
+    const { paramIndex, stationParamCount } = buildSolveParameterIndex(stationsR2B, unknowns, false);
+    const r2b = runR2B(module, stationsR2B, setupB.baselines, paramIndex, stationParamCount, preflight.equationCount);
+    let coordMaxAbs = 0;
+    r0.result.unknowns.forEach((id) => {
+      const a = r0.result.stations[id]!;
+      const b = r2b.stations[id]!;
+      coordMaxAbs = Math.max(coordMaxAbs, Math.abs(a.x - b.x), Math.abs(a.y - b.y), Math.abs(a.h - b.h));
+    });
+    const seuwRel = rel(
+      Math.sqrt(Math.max(r0.result.varianceFactor, 0)),
+      Math.sqrt(Math.max(r2b.varianceFactor, 0)),
+    );
+    const out = new Float64Array(9);
+    let stationCovMaxAbs = 0;
+    let stationCovMaxRel = 0;
+    r2b.plan.stationIds.forEach((id, ord) => {
+      readGnssBlock(r2b.store, ord, ord, out);
+      const base = (paramIndex[id]?.['x'] as number) ?? -1;
+      for (let i = 0; i < 3; i += 1) {
+        for (let j = 0; j < 3; j += 1) {
+          const ref = r0.result.qxx[base + i]?.[base + j] ?? 0;
+          const got = out[i * 3 + j] ?? 0;
+          stationCovMaxAbs = Math.max(stationCovMaxAbs, Math.abs(ref - got));
+          stationCovMaxRel = Math.max(stationCovMaxRel, rel(ref, got));
+        }
+      }
+    });
+    const qvv = (s: { xx: number; xy: number; xz: number; yy: number; yz: number; zz: number }): number[] =>
+      [s.xx, s.xy, s.xz, s.yy, s.yz, s.zz];
+    let qvvMaxRel = 0;
+    let cvvMaxRel = 0;
+    let redTrMaxAbs = 0;
+    if (r2b.statistics) {
+      r0.result.statistics.forEach((s, k) => {
+        const c = r2b.statistics![k]!;
+        qvv(s.qvv).forEach((value, m) => { qvvMaxRel = Math.max(qvvMaxRel, rel(value, qvv(c.qvv)[m]!)); });
+        qvv(s.cvv).forEach((value, m) => { cvvMaxRel = Math.max(cvvMaxRel, rel(value, qvv(c.cvv)[m]!)); });
+        redTrMaxAbs = Math.max(redTrMaxAbs, Math.abs(s.redundancy.trace - c.redundancy.trace));
+      });
+    }
+    const identityR0 = r0.result.statistics
+      ? Math.abs(r0.result.statistics.reduce((sum, s) => sum + s.redundancy.trace, 0) - r0.result.dof)
+      : Number.NaN;
+    const identityR2B = r2b.statistics
+      ? Math.abs(r2b.statistics.reduce((sum, s) => sum + s.redundancy.trace, 0) - r0.result.dof)
+      : Number.NaN;
+    const fmt = (v: number): string => (Number.isFinite(v) ? v.toExponential(2) : String(v));
     return {
-      status: 'R0-ONLY',
-      detail: `R0 ok: n=${r0.result.numObsEquations} u=${r0.result.numParams} dof=${r0.result.dof} seuw=${Math.sqrt(r0.result.varianceFactor).toFixed(6)} (setup ${setupCase}); R2B leg on vendor intake deferred — corpus evidence carries the parity gate`,
+      status: r2b.statistics ? 'R0-R2B-PARITY' : `R2B-STATS-BLOCKED: ${r2b.statsError ?? 'unknown'}`,
+      detail: `n=${r0.result.numObsEquations} u=${r0.result.numParams} dof=${r0.result.dof} seuwR0=${Math.sqrt(r0.result.varianceFactor).toFixed(6)} setup=${setupCase}; coordAbs=${fmt(coordMaxAbs)} seuwRel=${fmt(seuwRel)} stnCovAbs=${fmt(stationCovMaxAbs)} stnCovRel=${fmt(stationCovMaxRel)} qvvRel=${fmt(qvvMaxRel)} cvvRel=${fmt(cvvMaxRel)} redTrAbs=${fmt(redTrMaxAbs)} idR0=${fmt(identityR0)} idR2B=${fmt(identityR2B)} covMs=${r2b.covMs.toFixed(1)} postMs=${r2b.postMs.toFixed(1)}`,
     };
   } catch (error) {
     return { status: 'NOT-RUN', detail: `intake leg failed: ${error instanceof Error ? error.message : String(error)}` };
@@ -1221,6 +1288,24 @@ const main = async (): Promise<void> => {
   const timeoutMs = timeoutArg ? Number(timeoutArg) : 600000;
   const setupCase = process.argv.find((a) => a.startsWith('--setup-case='))?.split('=')[1] ?? 'A0';
   const datasetB = process.argv.find((a) => a.startsWith('--dataset-b='))?.split('=')[1];
+  if (process.argv.includes('--dataset-only')) {
+    const module = await loadWasm();
+    const rows: { setupCase: string; status: string; detail: string }[] = [];
+    for (const setup of ['A0', 'AC', 'AH', 'A']) {
+      const leg = await tryDatasetLeg(module, datasetB, setup);
+      rows.push({ setupCase: setup, ...leg });
+      console.log(`dataset-b ${setup}: ${leg.status} — ${leg.detail}`);
+    }
+    const outArg = process.argv.find((a) => a.startsWith('--out='))?.split('=')[1];
+    const outBase = outArg ?? 'reports/gnss/phase12f2-datasetb';
+    mkdirSync(dirname(outBase), { recursive: true });
+    writeFileSync(`${outBase}.json`, `${JSON.stringify({ generatedAt: new Date().toISOString(), datasetB: datasetB ?? null, rows }, null, 2)}\n`);
+    writeFileSync(
+      `${outBase}.md`,
+      `# Phase 12F.2 Dataset B — R0 vs R2B (evidence only)\n\n| setup | status | detail |\n| --- | --- | --- |\n${rows.map((r) => `| ${r.setupCase} | ${r.status} | ${r.detail} |`).join('\n')}\n`,
+    );
+    return;
+  }
   const caseArg = process.argv.find((a) => a.startsWith('--case='))?.split('=')[1];
   if (caseArg) {
     const [topology, sizeText] = caseArg.split('@');
@@ -1292,13 +1377,14 @@ const main = async (): Promise<void> => {
   }
   console.log('r2b: fault matrix + bridge benchmark + dataset hooks (parent, one WASM load)');
   const faults = runFaultMatrix();
+  const wasmModule = await loadWasm();
   let bridge: Record<string, number | string> | null = null;
   try {
-    bridge = await runBridgeBenchmark(await loadWasm());
+    bridge = await runBridgeBenchmark(wasmModule);
   } catch (error) {
     bridge = { status: 'NOT-RUN', detail: error instanceof Error ? error.message : String(error) };
   }
-  const dataset = tryDatasetLeg(datasetB, setupCase);
+  const dataset = await tryDatasetLeg(wasmModule, datasetB, setupCase);
   const okCases = cases.filter((c) => c.status === 'ok');
   const gatesPass = okCases.length > 0 && okCases.every((c) => c.identityGatePass);
   const parityPass = okCases.every((c) =>
