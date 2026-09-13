@@ -1,5 +1,6 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import AppToolbar from '../AppToolbar';
+import { GnssWorkspaceModal } from '../gnss/GnssWorkspaceModal';
 import WorkspaceRecoveryBanner from '../WorkspaceRecoveryBanner';
 import AdjustedPointsTransformSelectModal from './AdjustedPointsTransformSelectModal';
 import AppImportReviewModal from './AppImportReviewModal';
@@ -56,6 +57,20 @@ const AppShell = ({ controller }: AppShellProps) => {
     handleImportReviewReorderRow, handleImportReviewRemoveGroup, handleImportReviewRemoveRow, handleCancelImportReview, handleApplyImportReviewAsNewFile,
     triggerImportReviewSettingsFileSelect, handleApplyImportReview,
   } = controller;
+
+  const [isGnssWorkspaceOpen, setIsGnssWorkspaceOpen] = useState(false);
+  const [pendingGnssImport, setPendingGnssImport] = useState<{ fileName: string; text: string } | null>(null);
+  useEffect(() => {
+    const handleOpenGnss = (event: Event): void => {
+      setIsGnssWorkspaceOpen(true);
+      const detail = (event as CustomEvent<{ fileName?: string; text?: string }>).detail;
+      if (detail && typeof detail.text === 'string') {
+        setPendingGnssImport({ fileName: detail.fileName ?? 'unknown.gvx', text: detail.text });
+      }
+    };
+    window.addEventListener('webnet:open-gnss', handleOpenGnss);
+    return () => window.removeEventListener('webnet:open-gnss', handleOpenGnss);
+  }, []);
 
     return (
     <div className="fixed inset-0 flex flex-col bg-slate-900 text-slate-100 font-sans overflow-hidden">
@@ -125,6 +140,17 @@ const AppShell = ({ controller }: AppShellProps) => {
         onRun={handleValidatedRun}
         onResetToLastRun={handleResetToLastRun}
       />
+      <div className="flex items-center gap-2 border-b border-slate-800 bg-slate-900 px-3 py-1">
+        <button
+          type="button"
+          onClick={() => setIsGnssWorkspaceOpen(true)}
+          className="text-xs px-2 py-1 border border-slate-700 rounded text-slate-300 hover:bg-slate-800"
+        >
+          Static GNSS workspace
+        </button>
+        <span className="text-xs text-slate-500">Processed ECEF baselines (.gvx) — separate from terrestrial flow.</span>
+      </div>
+      <GnssWorkspaceModal open={isGnssWorkspaceOpen} onClose={() => setIsGnssWorkspaceOpen(false)} pendingExternalImport={pendingGnssImport} onConsumeExternalImport={() => setPendingGnssImport(null)} />
       {pendingRecovery && (
         <WorkspaceRecoveryBanner
           savedAt={new Date(pendingRecovery.savedAt).toLocaleString()}

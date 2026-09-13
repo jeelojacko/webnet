@@ -1,7 +1,7 @@
 import type { CrsCatalogGroupFilter, ProjectOptionsTab } from '../appStateTypes';
 import { ACTIVE_INDUSTRY_PARITY_CASE } from '../industryParityCases';
 
-export const IMPORT_FILE_ACCEPT = '.dat,.txt,.sum,.rpt,.xml,.jxl,.jobxml,.htm,.html,.rw5,.cr5,.raw,.dbx';
+export const IMPORT_FILE_ACCEPT = '.dat,.txt,.sum,.rpt,.xml,.jxl,.jobxml,.htm,.html,.rw5,.cr5,.raw,.dbx,.gvx';
 export const PROJECT_FILE_ACCEPT = '.wnproj,.wnproj.json,.json';
 export const ACTIVE_PARITY_STARTUP_DEFAULTS = ACTIVE_INDUSTRY_PARITY_CASE.startupDefaults;
 

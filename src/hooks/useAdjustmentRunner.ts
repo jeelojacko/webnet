@@ -124,6 +124,7 @@ export const useAdjustmentRunner = (
         return;
       }
 
+      if (message.type !== 'failure' && message.type !== 'gnss-failure') return;
       setPipelineState({
         status: 'failed',
         runId: null,
