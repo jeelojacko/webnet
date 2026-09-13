@@ -229,11 +229,18 @@ describe('gnssBaselineRouting', () => {
       imports.forEach((line) => {
         expect(line).not.toMatch(/geoid|wasm|huber/i);
       });
-      expect(source).not.toMatch(/sparseCorrectionSolver:\s*\w+\./);
+      // Only the optional 12F.1 injection form is allowed; an
+      // unconditional solver reference would pin native ON.
+      const injections = source.match(/sparseCorrectionSolver:\s*[^,\n]+/g) ?? [];
+      injections.forEach((site) => {
+        expect(site).toMatch(/input\.nativeRuntime\?\./);
+      });
     });
-    // The orchestrator pins the dense solver by leaving the sparse seam empty.
+    // Phase 12F.1: the sparse seam exists but is strictly optional — the
+    // default call passes nothing, so production stays TS-dense unless the
+    // default-OFF worker route injects it (never legacy G/GPS).
     const adjust = readFileSync(join(root, 'gnssBaselineAdjust.ts'), 'utf8');
-    expect(adjust).toMatch(/sparseCorrectionSolver: undefined/);
+    expect(adjust).toMatch(/sparseCorrectionSolver: input\.nativeRuntime\?\.sparseCorrectionSolver/);
     expect(adjust).toMatch(/robustMode: 'none'/);
   });
 

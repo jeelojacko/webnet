@@ -1,8 +1,9 @@
 /**
  * Phase 12B — internal GNSS-only ECEF baseline adjustment orchestrator.
  *
- * TypeScript dense path ONLY, by construction: iteration dependencies never
- * carry a sparse correction solver, robust mode is hard-disabled, and no
+ * TypeScript dense path by default: iteration dependencies carry a sparse
+ * correction solver ONLY when the default-OFF 12F.1 native route injects
+ * one via `nativeRuntime`; robust mode is hard-disabled, and no
  * geoid/height preprocessing, CRS transform, or terrestrial equation is
  * reachable from this module. Foreign observation types cannot enter
  * (typed input + throwing assembly stubs); frame/datum validation happens
@@ -17,6 +18,8 @@ import type { Observation, StationMap } from '../types';
 import { assembleAdjustmentEquations } from './adjustmentEquationAssembly';
 import type { EquationRowInfo } from './adjustmentSolveTypes';
 import { applyAdjustmentCorrections, solveAdjustmentIteration } from './adjustmentIteration';
+import type { SparseMatrixRows } from './matrix';
+import type { SparseCorrectionSolver } from './numericalBackend';
 import { buildSolveParameterIndex } from './adjustmentPreprocessing';
 import { invertNormalMatrixForStats, solveNormalEquations } from './adjustNormalEquationHelpers';
 import { accumulateNormalEquationsFromSparseRows } from './matrix';
@@ -58,6 +61,26 @@ export interface GnssBaselineAdjustInput {
   setupUncertainty?: GnssSetupUncertainty;
   maxIterations?: number;
   convergenceThresholdM?: number;
+  /**
+   * Phase 12F.1 internal/test-only native R1 seam. Absent (the default)
+   * => TS-dense solve, bit-identical to Phase 12E.3. Present => the
+   * iteration loop solves corrections through `sparseCorrectionSolver`
+   * (existing `solveAdjustmentIteration` seam) and final Qxx comes from
+   * `nativeQxxProvider` (native full-dense query + C1/C2/C3 verification
+   * inside the provider; it throws on any fault). Any provider throw
+   * propagates so the route wrapper can rerun clean TypeScript.
+   */
+  nativeRuntime?: GnssBaselineNativeRuntime;
+}
+
+/** Phase 12F.1 injected native R1 dependencies (never constructed in production TS). */
+export interface GnssBaselineNativeRuntime {
+  readonly sparseCorrectionSolver?: SparseCorrectionSolver;
+  readonly nativeQxxProvider?: (_input: {
+    sparseRows: SparseMatrixRows;
+    weights: number[][];
+    numParams: number;
+  }) => number[][];
 }
 
 export interface GnssBaselineAdjustedResidual extends GnssBaselineResidual {
@@ -68,7 +91,7 @@ export interface GnssBaselineAdjustedResidual extends GnssBaselineResidual {
 
 export interface GnssBaselineAdjustResult {
   readonly adjustmentFrame: 'ecef';
-  readonly routeProvenance: 'typescript-dense';
+  readonly routeProvenance: 'typescript-dense' | 'native-sparse-full-qxx';
   readonly stations: StationMap;
   readonly unknowns: string[];
   readonly numParams: number;
@@ -230,7 +253,7 @@ export const runGnssBaselineAdjustment = (
     const computed = solveAdjustmentIteration(
       {
         robustMode: 'none',
-        sparseCorrectionSolver: undefined,
+        sparseCorrectionSolver: input.nativeRuntime?.sparseCorrectionSolver,
         experimentalSparseDiagnostics: undefined,
         solveNormalEquations: (N, U, options) =>
           solveNormalEquations(N, U, { log, recoverCovariance: options?.recoverCovariance }),
@@ -339,7 +362,26 @@ export const runGnssBaselineAdjustment = (
     finalP,
     numParams,
   );
-  const qxx = invertNormalMatrixForStats(normal, log);
+  // Phase 12F.1: native full-dense Qxx replaces the dense inversion only
+  // when a provider is injected; it throws on any fault (dimension,
+  // non-finite, verification reject) so the caller falls back to TS.
+  const nativeQxxProvider = input.nativeRuntime?.nativeQxxProvider;
+  let qxx: number[][];
+  let routeProvenance: GnssBaselineAdjustResult['routeProvenance'] = 'typescript-dense';
+  if (nativeQxxProvider) {
+    const nativeQxx = nativeQxxProvider({ sparseRows: finalAssembly.sparseRows, weights: finalP, numParams });
+    if (
+      nativeQxx.length !== numParams ||
+      nativeQxx.some((row) => row.length !== numParams || row.some((value) => !Number.isFinite(value)))
+    ) {
+      throw new Error('GNSS native Qxx failed dimension/finite gate (fail-closed).');
+    }
+    qxx = nativeQxx;
+    routeProvenance = 'native-sparse-full-qxx';
+    log('GNSS Qxx: native sparse full-dense (verified).');
+  } else {
+    qxx = invertNormalMatrixForStats(normal, log);
+  }
   const residualVector: number[][] = residuals.flatMap((r) => [[r.vX], [r.vY], [r.vZ]]);
   const weightedResidualSum = denseWeightedQuadratic(finalP, residualVector);
   const varianceFactor = dof > 0 ? weightedResidualSum / dof : 0;
@@ -352,7 +394,7 @@ export const runGnssBaselineAdjustment = (
   });
   return {
     adjustmentFrame: 'ecef',
-    routeProvenance: 'typescript-dense',
+    routeProvenance,
     stations,
     unknowns,
     numParams,
