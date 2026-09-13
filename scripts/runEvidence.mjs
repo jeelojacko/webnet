@@ -68,6 +68,7 @@ const SUITES = {
   phase10o: ['tests/evidence/phase10o_factorization_lifecycle.test.ts'],
   phase10p: ['tests/evidence/phase10p_correction_verification.test.ts'],
   phase11a: ['tests/evidence/phase11a_cohort_widening.test.ts'],
+  phase12f0: ['tests/evidence/phase12f0_native_architecture_audit.test.ts'],
 };
 
 const suite = process.argv[2] ?? 'all';
