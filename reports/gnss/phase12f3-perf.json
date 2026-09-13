@@ -1,0 +1,2310 @@
+{
+  "generatedAt": "2026-09-13T15:25:06.073Z",
+  "legs": [
+    {
+      "topology": "chain",
+      "stations": 100,
+      "kind": "ts-proof",
+      "reps": 1,
+      "seed": 7,
+      "status": "skipped",
+      "skipReason": "GNSS statistics for S0000->S0001#1: Qvv block is materially non-PSD (lambda_min=-4.808146897528301e-19, tau=2.77182064372567e-26).",
+      "repWalls": [],
+      "bundleLoads": 0
+    },
+    {
+      "topology": "chain",
+      "stations": 250,
+      "kind": "ts-proof",
+      "reps": 1,
+      "seed": 7,
+      "status": "skipped",
+      "skipReason": "GNSS statistics for S0000->S0001#1: Qvv block is materially non-PSD (lambda_min=-1.833643314898149e-18, tau=2.814335098093661e-26).",
+      "repWalls": [],
+      "bundleLoads": 0
+    },
+    {
+      "topology": "chain",
+      "stations": 500,
+      "kind": "ts-proof",
+      "reps": 1,
+      "seed": 7,
+      "status": "skipped",
+      "skipReason": "GNSS statistics for S0000->S0001#1: Qvv block is materially non-PSD (lambda_min=-1.1571825669262483e-18, tau=4.317728124187862e-25).",
+      "repWalls": [],
+      "bundleLoads": 0
+    },
+    {
+      "topology": "hub-spoke",
+      "stations": 100,
+      "kind": "r2b",
+      "reps": 3,
+      "seed": 7,
+      "status": "ok",
+      "numParams": 297,
+      "numObsEquations": 492,
+      "dof": 195,
+      "selectedBlockCount": 162,
+      "uniqueFreeFreeEdges": 63,
+      "avgDegree": 2.292929292929293,
+      "maxDegree": 4,
+      "wallMedianMs": 57.840081999999995,
+      "heapMedianMB": 21.150856018066406,
+      "repWalls": [
+        {
+          "wallMs": 84.032445,
+          "heapDeltaMB": 43.044830322265625
+        },
+        {
+          "wallMs": 57.840081999999995,
+          "heapDeltaMB": 21.150856018066406
+        },
+        {
+          "wallMs": 52.42782599999998,
+          "heapDeltaMB": -27.914688110351562
+        }
+      ],
+      "route": "native-sparse-selected-qxx",
+      "factorNnz": 1161,
+      "normalNnz": 2025,
+      "fillRatio": 0.5733333333333334,
+      "uniqueColumns": 297,
+      "dampingAttempts": 0,
+      "timingsMs": {
+        "assemblyMs": 0.03393,
+        "equilibrationMs": 0.02145,
+        "analyzeMs": 0.07547,
+        "factorizeMs": 0.02499,
+        "solveMs": 0.812056
+      },
+      "stationDigest": "2291f0bf",
+      "traceIdentityAbs": 8.526512829121202e-14,
+      "seuw": 1.052873269448916,
+      "bundleLoads": 3,
+      "coordDigestMatch": true,
+      "seuwRelVsTs": 0,
+      "speedup": 1.420935122464038
+    },
+    {
+      "topology": "hub-spoke",
+      "stations": 100,
+      "kind": "ts",
+      "reps": 3,
+      "seed": 7,
+      "status": "ok",
+      "numParams": 297,
+      "numObsEquations": 492,
+      "dof": 195,
+      "selectedBlockCount": 162,
+      "uniqueFreeFreeEdges": 63,
+      "avgDegree": 2.292929292929293,
+      "maxDegree": 4,
+      "wallMedianMs": 82.187004,
+      "heapMedianMB": 25.609466552734375,
+      "repWalls": [
+        {
+          "wallMs": 101.314888,
+          "heapDeltaMB": 34.360374450683594
+        },
+        {
+          "wallMs": 82.187004,
+          "heapDeltaMB": -4.937629699707031
+        },
+        {
+          "wallMs": 66.71538300000003,
+          "heapDeltaMB": 25.609466552734375
+        }
+      ],
+      "route": "typescript-dense",
+      "stationDigest": "2291f0bf",
+      "traceIdentityAbs": 5.684341886080802e-14,
+      "seuw": 1.052873269448916
+    },
+    {
+      "topology": "hub-spoke",
+      "stations": 250,
+      "kind": "r2b",
+      "reps": 3,
+      "seed": 7,
+      "status": "ok",
+      "numParams": 747,
+      "numObsEquations": 1230,
+      "dof": 483,
+      "selectedBlockCount": 409,
+      "uniqueFreeFreeEdges": 160,
+      "avgDegree": 2.289156626506024,
+      "maxDegree": 4,
+      "wallMedianMs": 391.895043,
+      "heapMedianMB": 6.574958801269531,
+      "repWalls": [
+        {
+          "wallMs": 391.895043,
+          "heapDeltaMB": 154.2681427001953
+        },
+        {
+          "wallMs": 327.48939100000007,
+          "heapDeltaMB": 6.574958801269531
+        },
+        {
+          "wallMs": 441.78316199999995,
+          "heapDeltaMB": -16.19908905029297
+        }
+      ],
+      "route": "native-sparse-selected-qxx",
+      "factorNnz": 2970,
+      "normalNnz": 5121,
+      "fillRatio": 0.5799648506151143,
+      "uniqueColumns": 747,
+      "dampingAttempts": 0,
+      "timingsMs": {
+        "assemblyMs": 0.09478,
+        "equilibrationMs": 0.06009,
+        "analyzeMs": 0.151729,
+        "factorizeMs": 0.03995,
+        "solveMs": 5.317057
+      },
+      "stationDigest": "5c99b46a",
+      "traceIdentityAbs": 1.1368683772161603e-13,
+      "seuw": 1.0012988018939735,
+      "bundleLoads": 3,
+      "coordDigestMatch": true,
+      "seuwRelVsTs": 0,
+      "speedup": 2.7191165416195373
+    },
+    {
+      "topology": "hub-spoke",
+      "stations": 250,
+      "kind": "ts",
+      "reps": 3,
+      "seed": 7,
+      "status": "ok",
+      "numParams": 747,
+      "numObsEquations": 1230,
+      "dof": 483,
+      "selectedBlockCount": 409,
+      "uniqueFreeFreeEdges": 160,
+      "avgDegree": 2.289156626506024,
+      "maxDegree": 4,
+      "wallMedianMs": 1065.608294,
+      "heapMedianMB": 155.74584197998047,
+      "repWalls": [
+        {
+          "wallMs": 1065.608294,
+          "heapDeltaMB": 155.74584197998047
+        },
+        {
+          "wallMs": 1172.6248289999999,
+          "heapDeltaMB": -57.340545654296875
+        },
+        {
+          "wallMs": 1009.3275790000002,
+          "heapDeltaMB": 210.13864135742188
+        }
+      ],
+      "route": "typescript-dense",
+      "stationDigest": "5c99b46a",
+      "traceIdentityAbs": 1.1368683772161603e-13,
+      "seuw": 1.0012988018939735
+    },
+    {
+      "topology": "hub-spoke",
+      "stations": 500,
+      "kind": "r2b",
+      "reps": 1,
+      "seed": 7,
+      "status": "ok",
+      "numParams": 1497,
+      "numObsEquations": 2424,
+      "dof": 927,
+      "selectedBlockCount": 807,
+      "uniqueFreeFreeEdges": 308,
+      "avgDegree": 2.2364729458917836,
+      "maxDegree": 4,
+      "wallMedianMs": 1920.9162310000002,
+      "heapMedianMB": 135.45152282714844,
+      "repWalls": [
+        {
+          "wallMs": 1920.9162310000002,
+          "heapDeltaMB": 135.45152282714844
+        }
+      ],
+      "route": "native-sparse-selected-qxx",
+      "factorNnz": 5793,
+      "normalNnz": 10035,
+      "fillRatio": 0.5772795216741405,
+      "uniqueColumns": 1497,
+      "dampingAttempts": 0,
+      "timingsMs": {
+        "assemblyMs": 0.18635,
+        "equilibrationMs": 0.120049,
+        "analyzeMs": 0.284629,
+        "factorizeMs": 0.077009,
+        "solveMs": 58.50524
+      },
+      "stationDigest": "dbebd175",
+      "traceIdentityAbs": 1.0231815394945443e-12,
+      "seuw": 1.0077806824898266,
+      "bundleLoads": 1,
+      "coordDigestMatch": true,
+      "seuwRelVsTs": 0,
+      "speedup": 5.153423448791713
+    },
+    {
+      "topology": "hub-spoke",
+      "stations": 500,
+      "kind": "ts",
+      "reps": 1,
+      "seed": 7,
+      "status": "ok",
+      "numParams": 1497,
+      "numObsEquations": 2424,
+      "dof": 927,
+      "selectedBlockCount": 807,
+      "uniqueFreeFreeEdges": 308,
+      "avgDegree": 2.2364729458917836,
+      "maxDegree": 4,
+      "wallMedianMs": 9899.294748,
+      "heapMedianMB": 257.9318542480469,
+      "repWalls": [
+        {
+          "wallMs": 9899.294748,
+          "heapDeltaMB": 257.9318542480469
+        }
+      ],
+      "route": "typescript-dense",
+      "stationDigest": "dbebd175",
+      "traceIdentityAbs": 1.2505552149377763e-12,
+      "seuw": 1.0077806824898266
+    },
+    {
+      "topology": "repeated-edge",
+      "stations": 25,
+      "kind": "r2b",
+      "reps": 3,
+      "seed": 7,
+      "status": "ok",
+      "numParams": 72,
+      "numObsEquations": 111,
+      "dof": 39,
+      "selectedBlockCount": 47,
+      "uniqueFreeFreeEdges": 34,
+      "avgDegree": 2.9583333333333335,
+      "maxDegree": 3,
+      "wallMedianMs": 6.034772000000004,
+      "heapMedianMB": 1.1958847045898438,
+      "repWalls": [
+        {
+          "wallMs": 24.751094999999992,
+          "heapDeltaMB": 7.462242126464844
+        },
+        {
+          "wallMs": 6.034772000000004,
+          "heapDeltaMB": -5.887626647949219
+        },
+        {
+          "wallMs": 5.012627000000009,
+          "heapDeltaMB": 1.1958847045898438
+        }
+      ],
+      "route": "native-sparse-selected-qxx",
+      "factorNnz": 351,
+      "normalNnz": 630,
+      "fillRatio": 0.5571428571428572,
+      "uniqueColumns": 72,
+      "dampingAttempts": 0,
+      "timingsMs": {
+        "assemblyMs": 0.02472,
+        "equilibrationMs": 0.01269,
+        "analyzeMs": 0.03758,
+        "factorizeMs": 0.0118,
+        "solveMs": 0.128689
+      },
+      "stationDigest": "2b9c76d6",
+      "traceIdentityAbs": 1.4210854715202004e-13,
+      "seuw": 0.8271984530595659,
+      "bundleLoads": 3,
+      "coordDigestMatch": true,
+      "seuwRelVsTs": 0,
+      "speedup": 0.7201365685397912
+    },
+    {
+      "topology": "repeated-edge",
+      "stations": 25,
+      "kind": "ts",
+      "reps": 3,
+      "seed": 7,
+      "status": "ok",
+      "numParams": 72,
+      "numObsEquations": 111,
+      "dof": 39,
+      "selectedBlockCount": 47,
+      "uniqueFreeFreeEdges": 34,
+      "avgDegree": 2.9583333333333335,
+      "maxDegree": 3,
+      "wallMedianMs": 4.345860000000016,
+      "heapMedianMB": 0.9655380249023438,
+      "repWalls": [
+        {
+          "wallMs": 13.551986,
+          "heapDeltaMB": 6.6446990966796875
+        },
+        {
+          "wallMs": 4.345860000000016,
+          "heapDeltaMB": -5.727455139160156
+        },
+        {
+          "wallMs": 3.2130850000000066,
+          "heapDeltaMB": 0.9655380249023438
+        }
+      ],
+      "route": "typescript-dense",
+      "stationDigest": "2b9c76d6",
+      "traceIdentityAbs": 6.394884621840902e-14,
+      "seuw": 0.8271984530595659
+    },
+    {
+      "topology": "repeated-edge",
+      "stations": 50,
+      "kind": "r2b",
+      "reps": 3,
+      "seed": 7,
+      "status": "ok",
+      "numParams": 147,
+      "numObsEquations": 225,
+      "dof": 78,
+      "selectedBlockCount": 97,
+      "uniqueFreeFreeEdges": 72,
+      "avgDegree": 3,
+      "maxDegree": 3,
+      "wallMedianMs": 18.292845,
+      "heapMedianMB": 13.4422607421875,
+      "repWalls": [
+        {
+          "wallMs": 40.493931,
+          "heapDeltaMB": 13.72210693359375
+        },
+        {
+          "wallMs": 18.292845,
+          "heapDeltaMB": 13.4422607421875
+        },
+        {
+          "wallMs": 14.283024000000012,
+          "heapDeltaMB": 0.43402099609375
+        }
+      ],
+      "route": "native-sparse-selected-qxx",
+      "factorNnz": 726,
+      "normalNnz": 1305,
+      "fillRatio": 0.5563218390804597,
+      "uniqueColumns": 147,
+      "dampingAttempts": 0,
+      "timingsMs": {
+        "assemblyMs": 0.02224,
+        "equilibrationMs": 0.0135,
+        "analyzeMs": 0.04476,
+        "factorizeMs": 0.01503,
+        "solveMs": 0.376248
+      },
+      "stationDigest": "b2ca2146",
+      "traceIdentityAbs": 3.126388037344441e-13,
+      "seuw": 0.993444912039764,
+      "bundleLoads": 3,
+      "coordDigestMatch": true,
+      "seuwRelVsTs": 0,
+      "speedup": 1.0384312554990756
+    },
+    {
+      "topology": "repeated-edge",
+      "stations": 50,
+      "kind": "ts",
+      "reps": 3,
+      "seed": 7,
+      "status": "ok",
+      "numParams": 147,
+      "numObsEquations": 225,
+      "dof": 78,
+      "selectedBlockCount": 97,
+      "uniqueFreeFreeEdges": 72,
+      "avgDegree": 3,
+      "maxDegree": 3,
+      "wallMedianMs": 18.99586199999999,
+      "heapMedianMB": 12.553924560546875,
+      "repWalls": [
+        {
+          "wallMs": 26.36894699999999,
+          "heapDeltaMB": 12.553924560546875
+        },
+        {
+          "wallMs": 18.99586199999999,
+          "heapDeltaMB": 0.7410964965820312
+        },
+        {
+          "wallMs": 12.610531000000009,
+          "heapDeltaMB": 14.193962097167969
+        }
+      ],
+      "route": "typescript-dense",
+      "stationDigest": "b2ca2146",
+      "traceIdentityAbs": 4.263256414560601e-14,
+      "seuw": 0.993444912039764
+    },
+    {
+      "topology": "repeated-edge",
+      "stations": 75,
+      "kind": "r2b",
+      "reps": 3,
+      "seed": 7,
+      "status": "ok",
+      "numParams": 222,
+      "numObsEquations": 336,
+      "dof": 114,
+      "selectedBlockCount": 147,
+      "uniqueFreeFreeEdges": 109,
+      "avgDegree": 2.9864864864864864,
+      "maxDegree": 3,
+      "wallMedianMs": 42.14154400000001,
+      "heapMedianMB": 11.826042175292969,
+      "repWalls": [
+        {
+          "wallMs": 61.11293599999999,
+          "heapDeltaMB": 17.487457275390625
+        },
+        {
+          "wallMs": 34.98782700000001,
+          "heapDeltaMB": -9.8662109375
+        },
+        {
+          "wallMs": 42.14154400000001,
+          "heapDeltaMB": 11.826042175292969
+        }
+      ],
+      "route": "native-sparse-selected-qxx",
+      "factorNnz": 1101,
+      "normalNnz": 1980,
+      "fillRatio": 0.556060606060606,
+      "uniqueColumns": 222,
+      "dampingAttempts": 0,
+      "timingsMs": {
+        "assemblyMs": 0.029809,
+        "equilibrationMs": 0.016,
+        "analyzeMs": 0.0534,
+        "factorizeMs": 0.02204,
+        "solveMs": 0.777406
+      },
+      "stationDigest": "b37ca697",
+      "traceIdentityAbs": 7.389644451905042e-13,
+      "seuw": 1.0832271765928763,
+      "bundleLoads": 3,
+      "coordDigestMatch": true,
+      "seuwRelVsTs": 0,
+      "speedup": 0.9531950941332382
+    },
+    {
+      "topology": "repeated-edge",
+      "stations": 75,
+      "kind": "ts",
+      "reps": 3,
+      "seed": 7,
+      "status": "ok",
+      "numParams": 222,
+      "numObsEquations": 336,
+      "dof": 114,
+      "selectedBlockCount": 147,
+      "uniqueFreeFreeEdges": 109,
+      "avgDegree": 2.9864864864864864,
+      "maxDegree": 3,
+      "wallMedianMs": 40.16911300000001,
+      "heapMedianMB": 16.457000732421875,
+      "repWalls": [
+        {
+          "wallMs": 54.37572700000001,
+          "heapDeltaMB": 12.978164672851562
+        },
+        {
+          "wallMs": 40.16911300000001,
+          "heapDeltaMB": 16.457000732421875
+        },
+        {
+          "wallMs": 37.86685399999999,
+          "heapDeltaMB": 29.151763916015625
+        }
+      ],
+      "route": "typescript-dense",
+      "stationDigest": "b37ca697",
+      "traceIdentityAbs": 3.979039320256561e-13,
+      "seuw": 1.0832271765928763
+    },
+    {
+      "topology": "repeated-edge",
+      "stations": 100,
+      "kind": "r2b",
+      "reps": 3,
+      "seed": 7,
+      "status": "ok",
+      "numParams": 297,
+      "numObsEquations": 450,
+      "dof": 153,
+      "selectedBlockCount": 197,
+      "uniqueFreeFreeEdges": 147,
+      "avgDegree": 3,
+      "maxDegree": 3,
+      "wallMedianMs": 59.739382999999975,
+      "heapMedianMB": 24.900466918945312,
+      "repWalls": [
+        {
+          "wallMs": 84.39158700000002,
+          "heapDeltaMB": 24.900466918945312
+        },
+        {
+          "wallMs": 59.739382999999975,
+          "heapDeltaMB": 42.08135986328125
+        },
+        {
+          "wallMs": 56.42867800000005,
+          "heapDeltaMB": 18.149154663085938
+        }
+      ],
+      "route": "native-sparse-selected-qxx",
+      "factorNnz": 1476,
+      "normalNnz": 2655,
+      "fillRatio": 0.5559322033898305,
+      "uniqueColumns": 297,
+      "dampingAttempts": 0,
+      "timingsMs": {
+        "assemblyMs": 0.04658,
+        "equilibrationMs": 0.021579,
+        "analyzeMs": 0.06097,
+        "factorizeMs": 0.02117,
+        "solveMs": 1.430243
+      },
+      "stationDigest": "4d2f0cc2",
+      "traceIdentityAbs": 3.979039320256561e-13,
+      "seuw": 1.1023433663266402,
+      "bundleLoads": 3,
+      "coordDigestMatch": true,
+      "seuwRelVsTs": 0,
+      "speedup": 1.3074682575814347
+    },
+    {
+      "topology": "repeated-edge",
+      "stations": 100,
+      "kind": "ts",
+      "reps": 3,
+      "seed": 7,
+      "status": "ok",
+      "numParams": 297,
+      "numObsEquations": 450,
+      "dof": 153,
+      "selectedBlockCount": 197,
+      "uniqueFreeFreeEdges": 147,
+      "avgDegree": 3,
+      "maxDegree": 3,
+      "wallMedianMs": 78.10734699999995,
+      "heapMedianMB": 18.110374450683594,
+      "repWalls": [
+        {
+          "wallMs": 91.56376400000002,
+          "heapDeltaMB": 43.64720153808594
+        },
+        {
+          "wallMs": 78.10734699999995,
+          "heapDeltaMB": 18.110374450683594
+        },
+        {
+          "wallMs": 77.248851,
+          "heapDeltaMB": -37.095481872558594
+        }
+      ],
+      "route": "typescript-dense",
+      "stationDigest": "4d2f0cc2",
+      "traceIdentityAbs": 1.7053025658242404e-13,
+      "seuw": 1.1023433663266402
+    },
+    {
+      "topology": "repeated-edge",
+      "stations": 150,
+      "kind": "r2b",
+      "reps": 3,
+      "seed": 7,
+      "status": "ok",
+      "numParams": 447,
+      "numObsEquations": 675,
+      "dof": 228,
+      "selectedBlockCount": 297,
+      "uniqueFreeFreeEdges": 222,
+      "avgDegree": 3,
+      "maxDegree": 3,
+      "wallMedianMs": 127.46232800000001,
+      "heapMedianMB": 40.84999084472656,
+      "repWalls": [
+        {
+          "wallMs": 154.01499400000003,
+          "heapDeltaMB": 56.57917022705078
+        },
+        {
+          "wallMs": 108.39381700000001,
+          "heapDeltaMB": -15.114997863769531
+        },
+        {
+          "wallMs": 127.46232800000001,
+          "heapDeltaMB": 40.84999084472656
+        }
+      ],
+      "route": "native-sparse-selected-qxx",
+      "factorNnz": 2226,
+      "normalNnz": 4005,
+      "fillRatio": 0.5558052434456929,
+      "uniqueColumns": 447,
+      "dampingAttempts": 0,
+      "timingsMs": {
+        "assemblyMs": 0.062669,
+        "equilibrationMs": 0.03284,
+        "analyzeMs": 0.09044,
+        "factorizeMs": 0.02973,
+        "solveMs": 3.319524
+      },
+      "stationDigest": "06b68573",
+      "traceIdentityAbs": 3.126388037344441e-13,
+      "seuw": 1.1014847249419266,
+      "bundleLoads": 3,
+      "coordDigestMatch": true,
+      "seuwRelVsTs": 0,
+      "speedup": 1.7938458491045288
+    },
+    {
+      "topology": "repeated-edge",
+      "stations": 150,
+      "kind": "ts",
+      "reps": 3,
+      "seed": 7,
+      "status": "ok",
+      "numParams": 447,
+      "numObsEquations": 675,
+      "dof": 228,
+      "selectedBlockCount": 297,
+      "uniqueFreeFreeEdges": 222,
+      "avgDegree": 3,
+      "maxDegree": 3,
+      "wallMedianMs": 228.64776799999999,
+      "heapMedianMB": 47.297340393066406,
+      "repWalls": [
+        {
+          "wallMs": 244.05519699999996,
+          "heapDeltaMB": 70.97418212890625
+        },
+        {
+          "wallMs": 228.64776799999999,
+          "heapDeltaMB": 5.903053283691406
+        },
+        {
+          "wallMs": 226.32417899999996,
+          "heapDeltaMB": 47.297340393066406
+        }
+      ],
+      "route": "typescript-dense",
+      "stationDigest": "06b68573",
+      "traceIdentityAbs": 1.4210854715202004e-13,
+      "seuw": 1.1014847249419266
+    },
+    {
+      "topology": "repeated-edge",
+      "stations": 250,
+      "kind": "r2b",
+      "reps": 3,
+      "seed": 7,
+      "status": "ok",
+      "numParams": 747,
+      "numObsEquations": 1125,
+      "dof": 378,
+      "selectedBlockCount": 497,
+      "uniqueFreeFreeEdges": 372,
+      "avgDegree": 3,
+      "maxDegree": 3,
+      "wallMedianMs": 371.07012699999996,
+      "heapMedianMB": 22.131927490234375,
+      "repWalls": [
+        {
+          "wallMs": 371.07012699999996,
+          "heapDeltaMB": 155.9184112548828
+        },
+        {
+          "wallMs": 325.4517890000001,
+          "heapDeltaMB": -96.01203155517578
+        },
+        {
+          "wallMs": 441.382691,
+          "heapDeltaMB": 22.131927490234375
+        }
+      ],
+      "route": "native-sparse-selected-qxx",
+      "factorNnz": 3726,
+      "normalNnz": 6705,
+      "fillRatio": 0.5557046979865772,
+      "uniqueColumns": 747,
+      "dampingAttempts": 0,
+      "timingsMs": {
+        "assemblyMs": 0.1108,
+        "equilibrationMs": 0.057069,
+        "analyzeMs": 0.153389,
+        "factorizeMs": 0.04847,
+        "solveMs": 9.345007
+      },
+      "stationDigest": "2abea924",
+      "traceIdentityAbs": 1.7621459846850485e-12,
+      "seuw": 0.9943209608794248,
+      "bundleLoads": 3,
+      "coordDigestMatch": true,
+      "seuwRelVsTs": 0,
+      "speedup": 2.8464892055296067
+    },
+    {
+      "topology": "repeated-edge",
+      "stations": 250,
+      "kind": "ts",
+      "reps": 3,
+      "seed": 7,
+      "status": "ok",
+      "numParams": 747,
+      "numObsEquations": 1125,
+      "dof": 378,
+      "selectedBlockCount": 497,
+      "uniqueFreeFreeEdges": 372,
+      "avgDegree": 3,
+      "maxDegree": 3,
+      "wallMedianMs": 1056.2471110000001,
+      "heapMedianMB": -7.229362487792969,
+      "repWalls": [
+        {
+          "wallMs": 1056.2471110000001,
+          "heapDeltaMB": 153.45689392089844
+        },
+        {
+          "wallMs": 1111.6399970000002,
+          "heapDeltaMB": -7.229362487792969
+        },
+        {
+          "wallMs": 932.4481289999999,
+          "heapDeltaMB": -36.578147888183594
+        }
+      ],
+      "route": "typescript-dense",
+      "stationDigest": "2abea924",
+      "traceIdentityAbs": 1.1937117960769683e-12,
+      "seuw": 0.9943209608794248
+    },
+    {
+      "topology": "repeated-edge",
+      "stations": 500,
+      "kind": "r2b",
+      "reps": 1,
+      "seed": 7,
+      "status": "ok",
+      "numParams": 1497,
+      "numObsEquations": 2250,
+      "dof": 753,
+      "selectedBlockCount": 997,
+      "uniqueFreeFreeEdges": 747,
+      "avgDegree": 3,
+      "maxDegree": 3,
+      "wallMedianMs": 1883.767821,
+      "heapMedianMB": 151.89512634277344,
+      "repWalls": [
+        {
+          "wallMs": 1883.767821,
+          "heapDeltaMB": 151.89512634277344
+        }
+      ],
+      "route": "native-sparse-selected-qxx",
+      "factorNnz": 7476,
+      "normalNnz": 13455,
+      "fillRatio": 0.5556298773690078,
+      "uniqueColumns": 1497,
+      "dampingAttempts": 0,
+      "timingsMs": {
+        "assemblyMs": 0.231759,
+        "equilibrationMs": 0.115689,
+        "analyzeMs": 0.306459,
+        "factorizeMs": 0.09619,
+        "solveMs": 77.82022
+      },
+      "stationDigest": "e6c0e414",
+      "traceIdentityAbs": 3.751665644813329e-12,
+      "seuw": 1.0390943336755158,
+      "bundleLoads": 1,
+      "coordDigestMatch": true,
+      "seuwRelVsTs": 0,
+      "speedup": 5.3318082478275866
+    },
+    {
+      "topology": "repeated-edge",
+      "stations": 500,
+      "kind": "ts",
+      "reps": 1,
+      "seed": 7,
+      "status": "ok",
+      "numParams": 1497,
+      "numObsEquations": 2250,
+      "dof": 753,
+      "selectedBlockCount": 997,
+      "uniqueFreeFreeEdges": 747,
+      "avgDegree": 3,
+      "maxDegree": 3,
+      "wallMedianMs": 10043.888805,
+      "heapMedianMB": 252.21984100341797,
+      "repWalls": [
+        {
+          "wallMs": 10043.888805,
+          "heapDeltaMB": 252.21984100341797
+        }
+      ],
+      "route": "typescript-dense",
+      "stationDigest": "e6c0e414",
+      "traceIdentityAbs": 2.8421709430404007e-12,
+      "seuw": 1.0390943336755158
+    },
+    {
+      "topology": "repeated-edge",
+      "stations": 750,
+      "kind": "r2b",
+      "reps": 1,
+      "seed": 7,
+      "status": "ok",
+      "numParams": 2247,
+      "numObsEquations": 3375,
+      "dof": 1128,
+      "selectedBlockCount": 1497,
+      "uniqueFreeFreeEdges": 1122,
+      "avgDegree": 3,
+      "maxDegree": 3,
+      "wallMedianMs": 5183.59932,
+      "heapMedianMB": 284.8773651123047,
+      "repWalls": [
+        {
+          "wallMs": 5183.59932,
+          "heapDeltaMB": 284.8773651123047
+        }
+      ],
+      "route": "native-sparse-selected-qxx",
+      "factorNnz": 11226,
+      "normalNnz": 20205,
+      "fillRatio": 0.5556050482553824,
+      "uniqueColumns": 2247,
+      "dampingAttempts": 0,
+      "timingsMs": {
+        "assemblyMs": 0.342409,
+        "equilibrationMs": 0.165699,
+        "analyzeMs": 0.452828,
+        "factorizeMs": 0.139519,
+        "solveMs": 182.566051
+      },
+      "stationDigest": "ee7e6b0d",
+      "traceIdentityAbs": 1.4779288903810084e-11,
+      "seuw": 1.023651413757494,
+      "bundleLoads": 1,
+      "coordDigestMatch": true,
+      "seuwRelVsTs": 0,
+      "speedup": 5.8543009057266415
+    },
+    {
+      "topology": "repeated-edge",
+      "stations": 750,
+      "kind": "ts",
+      "reps": 1,
+      "seed": 7,
+      "status": "ok",
+      "numParams": 2247,
+      "numObsEquations": 3375,
+      "dof": 1128,
+      "selectedBlockCount": 1497,
+      "uniqueFreeFreeEdges": 1122,
+      "avgDegree": 3,
+      "maxDegree": 3,
+      "wallMedianMs": 30346.350194000002,
+      "heapMedianMB": 545.3231582641602,
+      "repWalls": [
+        {
+          "wallMs": 30346.350194000002,
+          "heapDeltaMB": 545.3231582641602
+        }
+      ],
+      "route": "typescript-dense",
+      "stationDigest": "ee7e6b0d",
+      "traceIdentityAbs": 1.3642420526593924e-11,
+      "seuw": 1.023651413757494
+    },
+    {
+      "topology": "ring",
+      "stations": 25,
+      "kind": "r2b",
+      "reps": 3,
+      "seed": 7,
+      "status": "ok",
+      "numParams": 72,
+      "numObsEquations": 102,
+      "dof": 30,
+      "selectedBlockCount": 55,
+      "uniqueFreeFreeEdges": 31,
+      "avgDegree": 2.7083333333333335,
+      "maxDegree": 3,
+      "wallMedianMs": 6.70951500000001,
+      "heapMedianMB": 1.2979202270507812,
+      "repWalls": [
+        {
+          "wallMs": 25.66704899999999,
+          "heapDeltaMB": 0.652008056640625
+        },
+        {
+          "wallMs": 5.6736410000000035,
+          "heapDeltaMB": 1.2979202270507812
+        },
+        {
+          "wallMs": 6.70951500000001,
+          "heapDeltaMB": 7.512748718261719
+        }
+      ],
+      "route": "native-sparse-selected-qxx",
+      "factorNnz": 603,
+      "normalNnz": 774,
+      "fillRatio": 0.7790697674418605,
+      "uniqueColumns": 72,
+      "dampingAttempts": 0,
+      "timingsMs": {
+        "assemblyMs": 0.02405,
+        "equilibrationMs": 0.01524,
+        "analyzeMs": 0.05955,
+        "factorizeMs": 0.01856,
+        "solveMs": 0.10326
+      },
+      "stationDigest": "7d40b132",
+      "traceIdentityAbs": 3.552713678800501e-15,
+      "seuw": 1.1480687693992542,
+      "bundleLoads": 3,
+      "coordDigestMatch": true,
+      "seuwRelVsTs": 0,
+      "speedup": 0.6726115076872177
+    },
+    {
+      "topology": "ring",
+      "stations": 25,
+      "kind": "ts",
+      "reps": 3,
+      "seed": 7,
+      "status": "ok",
+      "numParams": 72,
+      "numObsEquations": 102,
+      "dof": 30,
+      "selectedBlockCount": 55,
+      "uniqueFreeFreeEdges": 31,
+      "avgDegree": 2.7083333333333335,
+      "maxDegree": 3,
+      "wallMedianMs": 4.5128970000000095,
+      "heapMedianMB": 0.6559677124023438,
+      "repWalls": [
+        {
+          "wallMs": 13.562660000000022,
+          "heapDeltaMB": 6.061676025390625
+        },
+        {
+          "wallMs": 4.5128970000000095,
+          "heapDeltaMB": 0.6559677124023438
+        },
+        {
+          "wallMs": 2.997564000000011,
+          "heapDeltaMB": -0.22246551513671875
+        }
+      ],
+      "route": "typescript-dense",
+      "stationDigest": "7d40b132",
+      "traceIdentityAbs": 3.197442310920451e-14,
+      "seuw": 1.1480687693992542
+    },
+    {
+      "topology": "ring",
+      "stations": 50,
+      "kind": "r2b",
+      "reps": 3,
+      "seed": 7,
+      "status": "ok",
+      "numParams": 147,
+      "numObsEquations": 201,
+      "dof": 54,
+      "selectedBlockCount": 112,
+      "uniqueFreeFreeEdges": 63,
+      "avgDegree": 2.6530612244897958,
+      "maxDegree": 3,
+      "wallMedianMs": 18.680503999999985,
+      "heapMedianMB": 9.875816345214844,
+      "repWalls": [
+        {
+          "wallMs": 37.897446,
+          "heapDeltaMB": 10.484718322753906
+        },
+        {
+          "wallMs": 18.680503999999985,
+          "heapDeltaMB": -1.4397735595703125
+        },
+        {
+          "wallMs": 13.115643000000006,
+          "heapDeltaMB": 9.875816345214844
+        }
+      ],
+      "route": "native-sparse-selected-qxx",
+      "factorNnz": 861,
+      "normalNnz": 1575,
+      "fillRatio": 0.5466666666666666,
+      "uniqueColumns": 147,
+      "dampingAttempts": 0,
+      "timingsMs": {
+        "assemblyMs": 0.01952,
+        "equilibrationMs": 0.01617,
+        "analyzeMs": 0.04979,
+        "factorizeMs": 0.01797,
+        "solveMs": 0.317948
+      },
+      "stationDigest": "8377e23b",
+      "traceIdentityAbs": 8.526512829121202e-14,
+      "seuw": 1.0034407451568346,
+      "bundleLoads": 3,
+      "coordDigestMatch": true,
+      "seuwRelVsTs": 0,
+      "speedup": 0.96519328386429
+    },
+    {
+      "topology": "ring",
+      "stations": 50,
+      "kind": "ts",
+      "reps": 3,
+      "seed": 7,
+      "status": "ok",
+      "numParams": 147,
+      "numObsEquations": 201,
+      "dof": 54,
+      "selectedBlockCount": 112,
+      "uniqueFreeFreeEdges": 63,
+      "avgDegree": 2.6530612244897958,
+      "maxDegree": 3,
+      "wallMedianMs": 18.03029699999999,
+      "heapMedianMB": 10.359207153320312,
+      "repWalls": [
+        {
+          "wallMs": 24.785562999999996,
+          "heapDeltaMB": 10.359207153320312
+        },
+        {
+          "wallMs": 18.03029699999999,
+          "heapDeltaMB": 10.648918151855469
+        },
+        {
+          "wallMs": 12.813095000000004,
+          "heapDeltaMB": -0.39600372314453125
+        }
+      ],
+      "route": "typescript-dense",
+      "stationDigest": "8377e23b",
+      "traceIdentityAbs": 1.7763568394002505e-13,
+      "seuw": 1.0034407451568346
+    },
+    {
+      "topology": "ring",
+      "stations": 75,
+      "kind": "r2b",
+      "reps": 3,
+      "seed": 7,
+      "status": "ok",
+      "numParams": 222,
+      "numObsEquations": 300,
+      "dof": 78,
+      "selectedBlockCount": 171,
+      "uniqueFreeFreeEdges": 97,
+      "avgDegree": 2.6621621621621623,
+      "maxDegree": 3,
+      "wallMedianMs": 35.27221900000001,
+      "heapMedianMB": 17.269927978515625,
+      "repWalls": [
+        {
+          "wallMs": 57.22915699999999,
+          "heapDeltaMB": 18.300621032714844
+        },
+        {
+          "wallMs": 30.958270999999996,
+          "heapDeltaMB": 4.191413879394531
+        },
+        {
+          "wallMs": 35.27221900000001,
+          "heapDeltaMB": 17.269927978515625
+        }
+      ],
+      "route": "native-sparse-selected-qxx",
+      "factorNnz": 1317,
+      "normalNnz": 2412,
+      "fillRatio": 0.5460199004975125,
+      "uniqueColumns": 222,
+      "dampingAttempts": 0,
+      "timingsMs": {
+        "assemblyMs": 0.02755,
+        "equilibrationMs": 0.01871,
+        "analyzeMs": 0.05348,
+        "factorizeMs": 0.018639,
+        "solveMs": 0.782356
+      },
+      "stationDigest": "9522ec3a",
+      "traceIdentityAbs": 4.263256414560601e-13,
+      "seuw": 1.225913919783326,
+      "bundleLoads": 3,
+      "coordDigestMatch": true,
+      "seuwRelVsTs": 0,
+      "speedup": 1.1525087775169454
+    },
+    {
+      "topology": "ring",
+      "stations": 75,
+      "kind": "ts",
+      "reps": 3,
+      "seed": 7,
+      "status": "ok",
+      "numParams": 222,
+      "numObsEquations": 300,
+      "dof": 78,
+      "selectedBlockCount": 171,
+      "uniqueFreeFreeEdges": 97,
+      "avgDegree": 2.6621621621621623,
+      "maxDegree": 3,
+      "wallMedianMs": 40.65154199999998,
+      "heapMedianMB": 22.197219848632812,
+      "repWalls": [
+        {
+          "wallMs": 53.211577000000005,
+          "heapDeltaMB": 13.377708435058594
+        },
+        {
+          "wallMs": 32.704612,
+          "heapDeltaMB": 24.98675537109375
+        },
+        {
+          "wallMs": 40.65154199999998,
+          "heapDeltaMB": 22.197219848632812
+        }
+      ],
+      "route": "typescript-dense",
+      "stationDigest": "9522ec3a",
+      "traceIdentityAbs": 2.5579538487363607e-13,
+      "seuw": 1.225913919783326
+    },
+    {
+      "topology": "ring",
+      "stations": 100,
+      "kind": "r2b",
+      "reps": 3,
+      "seed": 7,
+      "status": "ok",
+      "numParams": 297,
+      "numObsEquations": 402,
+      "dof": 105,
+      "selectedBlockCount": 230,
+      "uniqueFreeFreeEdges": 131,
+      "avgDegree": 2.676767676767677,
+      "maxDegree": 3,
+      "wallMedianMs": 61.098737,
+      "heapMedianMB": 27.96300506591797,
+      "repWalls": [
+        {
+          "wallMs": 76.66657800000002,
+          "heapDeltaMB": 27.96300506591797
+        },
+        {
+          "wallMs": 61.098737,
+          "heapDeltaMB": 9.353767395019531
+        },
+        {
+          "wallMs": 52.830918999999994,
+          "heapDeltaMB": 30.796142578125
+        }
+      ],
+      "route": "native-sparse-selected-qxx",
+      "factorNnz": 2628,
+      "normalNnz": 3249,
+      "fillRatio": 0.8088642659279779,
+      "uniqueColumns": 297,
+      "dampingAttempts": 0,
+      "timingsMs": {
+        "assemblyMs": 0.03611,
+        "equilibrationMs": 0.02549,
+        "analyzeMs": 0.07686,
+        "factorizeMs": 0.03123,
+        "solveMs": 1.611662
+      },
+      "stationDigest": "c984efe8",
+      "traceIdentityAbs": 5.968558980384842e-13,
+      "seuw": 1.1073691157475096,
+      "bundleLoads": 3,
+      "coordDigestMatch": true,
+      "seuwRelVsTs": 0,
+      "speedup": 1.2415418996304297
+    },
+    {
+      "topology": "ring",
+      "stations": 100,
+      "kind": "ts",
+      "reps": 3,
+      "seed": 7,
+      "status": "ok",
+      "numParams": 297,
+      "numObsEquations": 402,
+      "dof": 105,
+      "selectedBlockCount": 230,
+      "uniqueFreeFreeEdges": 131,
+      "avgDegree": 2.676767676767677,
+      "maxDegree": 3,
+      "wallMedianMs": 75.85664200000002,
+      "heapMedianMB": 32.206298828125,
+      "repWalls": [
+        {
+          "wallMs": 87.992849,
+          "heapDeltaMB": 33.70787048339844
+        },
+        {
+          "wallMs": 75.761312,
+          "heapDeltaMB": 32.206298828125
+        },
+        {
+          "wallMs": 75.85664200000002,
+          "heapDeltaMB": -39.40629577636719
+        }
+      ],
+      "route": "typescript-dense",
+      "stationDigest": "c984efe8",
+      "traceIdentityAbs": 4.405364961712621e-13,
+      "seuw": 1.1073691157475096
+    },
+    {
+      "topology": "ring",
+      "stations": 150,
+      "kind": "r2b",
+      "reps": 3,
+      "seed": 7,
+      "status": "ok",
+      "numParams": 447,
+      "numObsEquations": 600,
+      "dof": 153,
+      "selectedBlockCount": 346,
+      "uniqueFreeFreeEdges": 197,
+      "avgDegree": 2.664429530201342,
+      "maxDegree": 3,
+      "wallMedianMs": 95.96920899999998,
+      "heapMedianMB": 38.6060791015625,
+      "repWalls": [
+        {
+          "wallMs": 147.42415599999998,
+          "heapDeltaMB": 37.13887023925781
+        },
+        {
+          "wallMs": 95.96920899999998,
+          "heapDeltaMB": 48.06848907470703
+        },
+        {
+          "wallMs": 92.14704899999998,
+          "heapDeltaMB": 38.6060791015625
+        }
+      ],
+      "route": "native-sparse-selected-qxx",
+      "factorNnz": 2667,
+      "normalNnz": 4887,
+      "fillRatio": 0.5457335788827502,
+      "uniqueColumns": 447,
+      "dampingAttempts": 0,
+      "timingsMs": {
+        "assemblyMs": 0.055489,
+        "equilibrationMs": 0.03711,
+        "analyzeMs": 0.10514,
+        "factorizeMs": 0.035009,
+        "solveMs": 3.369603
+      },
+      "stationDigest": "92e18747",
+      "traceIdentityAbs": 7.673861546209082e-13,
+      "seuw": 1.0802588481151125,
+      "bundleLoads": 3,
+      "coordDigestMatch": true,
+      "seuwRelVsTs": 0,
+      "speedup": 2.399423371302352
+    },
+    {
+      "topology": "ring",
+      "stations": 150,
+      "kind": "ts",
+      "reps": 3,
+      "seed": 7,
+      "status": "ok",
+      "numParams": 447,
+      "numObsEquations": 600,
+      "dof": 153,
+      "selectedBlockCount": 346,
+      "uniqueFreeFreeEdges": 197,
+      "avgDegree": 2.664429530201342,
+      "maxDegree": 3,
+      "wallMedianMs": 230.270763,
+      "heapMedianMB": 66.18169403076172,
+      "repWalls": [
+        {
+          "wallMs": 254.694157,
+          "heapDeltaMB": 75.86360931396484
+        },
+        {
+          "wallMs": 230.270763,
+          "heapDeltaMB": -8.730865478515625
+        },
+        {
+          "wallMs": 206.301285,
+          "heapDeltaMB": 66.18169403076172
+        }
+      ],
+      "route": "typescript-dense",
+      "stationDigest": "92e18747",
+      "traceIdentityAbs": 2.8421709430404007e-13,
+      "seuw": 1.0802588481151125
+    },
+    {
+      "topology": "ring",
+      "stations": 250,
+      "kind": "r2b",
+      "reps": 3,
+      "seed": 7,
+      "status": "ok",
+      "numParams": 747,
+      "numObsEquations": 1002,
+      "dof": 255,
+      "selectedBlockCount": 580,
+      "uniqueFreeFreeEdges": 331,
+      "avgDegree": 2.6706827309236947,
+      "maxDegree": 3,
+      "wallMedianMs": 358.981095,
+      "heapMedianMB": 7.054962158203125,
+      "repWalls": [
+        {
+          "wallMs": 358.981095,
+          "heapDeltaMB": 132.78419494628906
+        },
+        {
+          "wallMs": 298.5757239999999,
+          "heapDeltaMB": 7.054962158203125
+        },
+        {
+          "wallMs": 419.70278599999995,
+          "heapDeltaMB": -17.32262420654297
+        }
+      ],
+      "route": "native-sparse-selected-qxx",
+      "factorNnz": 6678,
+      "normalNnz": 8199,
+      "fillRatio": 0.814489571899012,
+      "uniqueColumns": 747,
+      "dampingAttempts": 0,
+      "timingsMs": {
+        "assemblyMs": 0.101359,
+        "equilibrationMs": 0.06515,
+        "analyzeMs": 0.177559,
+        "factorizeMs": 0.07673,
+        "solveMs": 10.831015
+      },
+      "stationDigest": "005305e0",
+      "traceIdentityAbs": 2.5011104298755527e-12,
+      "seuw": 1.0258418253487565,
+      "bundleLoads": 3,
+      "coordDigestMatch": true,
+      "seuwRelVsTs": 0,
+      "speedup": 2.936563965854525
+    },
+    {
+      "topology": "ring",
+      "stations": 250,
+      "kind": "ts",
+      "reps": 3,
+      "seed": 7,
+      "status": "ok",
+      "numParams": 747,
+      "numObsEquations": 1002,
+      "dof": 255,
+      "selectedBlockCount": 580,
+      "uniqueFreeFreeEdges": 331,
+      "avgDegree": 2.6706827309236947,
+      "maxDegree": 3,
+      "wallMedianMs": 1054.170948,
+      "heapMedianMB": 15.679794311523438,
+      "repWalls": [
+        {
+          "wallMs": 1054.170948,
+          "heapDeltaMB": 122.6969985961914
+        },
+        {
+          "wallMs": 1111.802607,
+          "heapDeltaMB": -62.202842712402344
+        },
+        {
+          "wallMs": 977.244737,
+          "heapDeltaMB": 15.679794311523438
+        }
+      ],
+      "route": "typescript-dense",
+      "stationDigest": "005305e0",
+      "traceIdentityAbs": 3.410605131648481e-13,
+      "seuw": 1.0258418253487565
+    },
+    {
+      "topology": "ring",
+      "stations": 500,
+      "kind": "r2b",
+      "reps": 1,
+      "seed": 7,
+      "status": "ok",
+      "numParams": 1497,
+      "numObsEquations": 2001,
+      "dof": 504,
+      "selectedBlockCount": 1162,
+      "uniqueFreeFreeEdges": 663,
+      "avgDegree": 2.6653306613226455,
+      "maxDegree": 3,
+      "wallMedianMs": 1750.942832,
+      "heapMedianMB": 120.71117401123047,
+      "repWalls": [
+        {
+          "wallMs": 1750.942832,
+          "heapDeltaMB": 120.71117401123047
+        }
+      ],
+      "route": "native-sparse-selected-qxx",
+      "factorNnz": 8961,
+      "normalNnz": 16425,
+      "fillRatio": 0.5455707762557077,
+      "uniqueColumns": 1497,
+      "dampingAttempts": 0,
+      "timingsMs": {
+        "assemblyMs": 0.215239,
+        "equilibrationMs": 0.13034,
+        "analyzeMs": 0.358708,
+        "factorizeMs": 0.115269,
+        "solveMs": 75.767784
+      },
+      "stationDigest": "c50c0c2b",
+      "traceIdentityAbs": 2.6716406864579767e-12,
+      "seuw": 1.0008444503019025,
+      "bundleLoads": 1,
+      "coordDigestMatch": true,
+      "seuwRelVsTs": 0,
+      "speedup": 5.684294146617804
+    },
+    {
+      "topology": "ring",
+      "stations": 500,
+      "kind": "ts",
+      "reps": 1,
+      "seed": 7,
+      "status": "ok",
+      "numParams": 1497,
+      "numObsEquations": 2001,
+      "dof": 504,
+      "selectedBlockCount": 1162,
+      "uniqueFreeFreeEdges": 663,
+      "avgDegree": 2.6653306613226455,
+      "maxDegree": 3,
+      "wallMedianMs": 9952.874091,
+      "heapMedianMB": 227.3790054321289,
+      "repWalls": [
+        {
+          "wallMs": 9952.874091,
+          "heapDeltaMB": 227.3790054321289
+        }
+      ],
+      "route": "typescript-dense",
+      "stationDigest": "c50c0c2b",
+      "traceIdentityAbs": 1.2505552149377763e-12,
+      "seuw": 1.0008444503019025
+    },
+    {
+      "topology": "ring",
+      "stations": 750,
+      "kind": "r2b",
+      "reps": 1,
+      "seed": 7,
+      "status": "ok",
+      "numParams": 2247,
+      "numObsEquations": 3000,
+      "dof": 753,
+      "selectedBlockCount": 1746,
+      "uniqueFreeFreeEdges": 997,
+      "avgDegree": 2.6662216288384513,
+      "maxDegree": 3,
+      "wallMedianMs": 4713.920714000001,
+      "heapMedianMB": 189.97354125976562,
+      "repWalls": [
+        {
+          "wallMs": 4713.920714000001,
+          "heapDeltaMB": 189.97354125976562
+        }
+      ],
+      "route": "native-sparse-selected-qxx",
+      "factorNnz": 13467,
+      "normalNnz": 24687,
+      "fillRatio": 0.5455097824766071,
+      "uniqueColumns": 2247,
+      "dampingAttempts": 0,
+      "timingsMs": {
+        "assemblyMs": 0.310759,
+        "equilibrationMs": 0.186719,
+        "analyzeMs": 0.507347,
+        "factorizeMs": 0.169009,
+        "solveMs": 199.484463
+      },
+      "stationDigest": "dd688a56",
+      "traceIdentityAbs": 2.955857780762017e-11,
+      "seuw": 1.0453670607880015,
+      "bundleLoads": 1,
+      "coordDigestMatch": true,
+      "seuwRelVsTs": 0,
+      "speedup": 6.032969088457179
+    },
+    {
+      "topology": "ring",
+      "stations": 750,
+      "kind": "ts",
+      "reps": 1,
+      "seed": 7,
+      "status": "ok",
+      "numParams": 2247,
+      "numObsEquations": 3000,
+      "dof": 753,
+      "selectedBlockCount": 1746,
+      "uniqueFreeFreeEdges": 997,
+      "avgDegree": 2.6662216288384513,
+      "maxDegree": 3,
+      "wallMedianMs": 28438.937953,
+      "heapMedianMB": 475.0116882324219,
+      "repWalls": [
+        {
+          "wallMs": 28438.937953,
+          "heapDeltaMB": 475.0116882324219
+        }
+      ],
+      "route": "typescript-dense",
+      "stationDigest": "dd688a56",
+      "traceIdentityAbs": 1.2278178473934531e-11,
+      "seuw": 1.0453670607880015
+    },
+    {
+      "topology": "sparse-mesh",
+      "stations": 25,
+      "kind": "r2b",
+      "reps": 3,
+      "seed": 7,
+      "status": "ok",
+      "numParams": 72,
+      "numObsEquations": 267,
+      "dof": 195,
+      "selectedBlockCount": 106,
+      "uniqueFreeFreeEdges": 82,
+      "avgDegree": 7.125,
+      "maxDegree": 11,
+      "wallMedianMs": 20.374498999999986,
+      "heapMedianMB": 1.1164779663085938,
+      "repWalls": [
+        {
+          "wallMs": 38.906138,
+          "heapDeltaMB": 14.901802062988281
+        },
+        {
+          "wallMs": 20.374498999999986,
+          "heapDeltaMB": 1.1164779663085938
+        },
+        {
+          "wallMs": 13.286003999999991,
+          "heapDeltaMB": 0.99237060546875
+        }
+      ],
+      "route": "native-sparse-selected-qxx",
+      "factorNnz": 1512,
+      "normalNnz": 1692,
+      "fillRatio": 0.8936170212765957,
+      "uniqueColumns": 72,
+      "dampingAttempts": 0,
+      "timingsMs": {
+        "assemblyMs": 0.02509,
+        "equilibrationMs": 0.01615,
+        "analyzeMs": 0.05926,
+        "factorizeMs": 0.03521,
+        "solveMs": 0.150779
+      },
+      "stationDigest": "b7d99d30",
+      "traceIdentityAbs": 0,
+      "seuw": 1.047343205122028,
+      "bundleLoads": 3,
+      "coordDigestMatch": true,
+      "seuwRelVsTs": 0,
+      "speedup": 0.6885676550868817
+    },
+    {
+      "topology": "sparse-mesh",
+      "stations": 25,
+      "kind": "ts",
+      "reps": 3,
+      "seed": 7,
+      "status": "ok",
+      "numParams": 72,
+      "numObsEquations": 267,
+      "dof": 195,
+      "selectedBlockCount": 106,
+      "uniqueFreeFreeEdges": 82,
+      "avgDegree": 7.125,
+      "maxDegree": 11,
+      "wallMedianMs": 14.029221000000007,
+      "heapMedianMB": 8.735443115234375,
+      "repWalls": [
+        {
+          "wallMs": 19.604692999999997,
+          "heapDeltaMB": 8.735443115234375
+        },
+        {
+          "wallMs": 14.029221000000007,
+          "heapDeltaMB": 9.379676818847656
+        },
+        {
+          "wallMs": 9.802740999999997,
+          "heapDeltaMB": -2.7813568115234375
+        }
+      ],
+      "route": "typescript-dense",
+      "stationDigest": "b7d99d30",
+      "traceIdentityAbs": 2.842170943040401e-14,
+      "seuw": 1.047343205122028
+    },
+    {
+      "topology": "sparse-mesh",
+      "stations": 50,
+      "kind": "r2b",
+      "reps": 3,
+      "seed": 7,
+      "status": "ok",
+      "numParams": 147,
+      "numObsEquations": 570,
+      "dof": 423,
+      "selectedBlockCount": 230,
+      "uniqueFreeFreeEdges": 181,
+      "avgDegree": 7.571428571428571,
+      "maxDegree": 11,
+      "wallMedianMs": 58.54607099999998,
+      "heapMedianMB": 22.300674438476562,
+      "repWalls": [
+        {
+          "wallMs": 85.75763599999999,
+          "heapDeltaMB": 18.219398498535156
+        },
+        {
+          "wallMs": 58.54607099999998,
+          "heapDeltaMB": 42.018951416015625
+        },
+        {
+          "wallMs": 47.538995,
+          "heapDeltaMB": 22.300674438476562
+        }
+      ],
+      "route": "native-sparse-selected-qxx",
+      "factorNnz": 5064,
+      "normalNnz": 3699,
+      "fillRatio": 1.3690186536901865,
+      "uniqueColumns": 147,
+      "dampingAttempts": 0,
+      "timingsMs": {
+        "assemblyMs": 0.050219,
+        "equilibrationMs": 0.02714,
+        "analyzeMs": 0.10343,
+        "factorizeMs": 0.105129,
+        "solveMs": 0.892216
+      },
+      "stationDigest": "032b676b",
+      "traceIdentityAbs": 2.2737367544323206e-13,
+      "seuw": 0.9999037803513218,
+      "bundleLoads": 3,
+      "coordDigestMatch": true,
+      "seuwRelVsTs": 0,
+      "speedup": 0.7186089908578153
+    },
+    {
+      "topology": "sparse-mesh",
+      "stations": 50,
+      "kind": "ts",
+      "reps": 3,
+      "seed": 7,
+      "status": "ok",
+      "numParams": 147,
+      "numObsEquations": 570,
+      "dof": 423,
+      "selectedBlockCount": 230,
+      "uniqueFreeFreeEdges": 181,
+      "avgDegree": 7.571428571428571,
+      "maxDegree": 11,
+      "wallMedianMs": 42.071732999999995,
+      "heapMedianMB": 27.78205108642578,
+      "repWalls": [
+        {
+          "wallMs": 49.45076599999999,
+          "heapDeltaMB": 27.78205108642578
+        },
+        {
+          "wallMs": 42.071732999999995,
+          "heapDeltaMB": 30.491905212402344
+        },
+        {
+          "wallMs": 30.15482000000003,
+          "heapDeltaMB": -34.13385009765625
+        }
+      ],
+      "route": "typescript-dense",
+      "stationDigest": "032b676b",
+      "traceIdentityAbs": 3.410605131648481e-13,
+      "seuw": 0.9999037803513218
+    },
+    {
+      "topology": "sparse-mesh",
+      "stations": 75,
+      "kind": "r2b",
+      "reps": 3,
+      "seed": 7,
+      "status": "ok",
+      "numParams": 222,
+      "numObsEquations": 882,
+      "dof": 660,
+      "selectedBlockCount": 358,
+      "uniqueFreeFreeEdges": 284,
+      "avgDegree": 7.8108108108108105,
+      "maxDegree": 13,
+      "wallMedianMs": 106.74862300000001,
+      "heapMedianMB": 48.031951904296875,
+      "repWalls": [
+        {
+          "wallMs": 165.272073,
+          "heapDeltaMB": 51.401222229003906
+        },
+        {
+          "wallMs": 104.98197199999998,
+          "heapDeltaMB": 48.031951904296875
+        },
+        {
+          "wallMs": 106.74862300000001,
+          "heapDeltaMB": -86.01730346679688
+        }
+      ],
+      "route": "native-sparse-selected-qxx",
+      "factorNnz": 9471,
+      "normalNnz": 5778,
+      "fillRatio": 1.6391484942886811,
+      "uniqueColumns": 222,
+      "dampingAttempts": 0,
+      "timingsMs": {
+        "assemblyMs": 0.08646,
+        "equilibrationMs": 0.04749,
+        "analyzeMs": 0.168399,
+        "factorizeMs": 0.221979,
+        "solveMs": 2.327139
+      },
+      "stationDigest": "c10defc2",
+      "traceIdentityAbs": 0,
+      "seuw": 1.0112890684025775,
+      "bundleLoads": 3,
+      "coordDigestMatch": true,
+      "seuwRelVsTs": 0,
+      "speedup": 0.7478014587598005
+    },
+    {
+      "topology": "sparse-mesh",
+      "stations": 75,
+      "kind": "ts",
+      "reps": 3,
+      "seed": 7,
+      "status": "ok",
+      "numParams": 222,
+      "numObsEquations": 882,
+      "dof": 660,
+      "selectedBlockCount": 358,
+      "uniqueFreeFreeEdges": 284,
+      "avgDegree": 7.8108108108108105,
+      "maxDegree": 13,
+      "wallMedianMs": 79.826776,
+      "heapMedianMB": 59.08556365966797,
+      "repWalls": [
+        {
+          "wallMs": 101.600369,
+          "heapDeltaMB": 59.08556365966797
+        },
+        {
+          "wallMs": 79.826776,
+          "heapDeltaMB": 6.8971710205078125
+        },
+        {
+          "wallMs": 70.047414,
+          "heapDeltaMB": 62.43878936767578
+        }
+      ],
+      "route": "typescript-dense",
+      "stationDigest": "c10defc2",
+      "traceIdentityAbs": 0,
+      "seuw": 1.0112890684025775
+    },
+    {
+      "topology": "sparse-mesh",
+      "stations": 100,
+      "kind": "r2b",
+      "reps": 3,
+      "seed": 7,
+      "status": "ok",
+      "numParams": 297,
+      "numObsEquations": 1167,
+      "dof": 870,
+      "selectedBlockCount": 483,
+      "uniqueFreeFreeEdges": 384,
+      "avgDegree": 7.808080808080808,
+      "maxDegree": 12,
+      "wallMedianMs": 188.393051,
+      "heapMedianMB": 86.75439453125,
+      "repWalls": [
+        {
+          "wallMs": 238.72158300000004,
+          "heapDeltaMB": 86.75439453125
+        },
+        {
+          "wallMs": 188.393051,
+          "heapDeltaMB": -12.742477416992188
+        },
+        {
+          "wallMs": 176.86921799999993,
+          "heapDeltaMB": 104.78902435302734
+        }
+      ],
+      "route": "native-sparse-selected-qxx",
+      "factorNnz": 15903,
+      "normalNnz": 7803,
+      "fillRatio": 2.038062283737024,
+      "uniqueColumns": 297,
+      "dampingAttempts": 0,
+      "timingsMs": {
+        "assemblyMs": 0.116029,
+        "equilibrationMs": 0.06535,
+        "analyzeMs": 0.241348,
+        "factorizeMs": 0.444818,
+        "solveMs": 5.075495
+      },
+      "stationDigest": "1519ccc5",
+      "traceIdentityAbs": 4.547473508864641e-13,
+      "seuw": 1.017582142491359,
+      "bundleLoads": 3,
+      "coordDigestMatch": true,
+      "seuwRelVsTs": 0,
+      "speedup": 0.7806723454996224
+    },
+    {
+      "topology": "sparse-mesh",
+      "stations": 100,
+      "kind": "ts",
+      "reps": 3,
+      "seed": 7,
+      "status": "ok",
+      "numParams": 297,
+      "numObsEquations": 1167,
+      "dof": 870,
+      "selectedBlockCount": 483,
+      "uniqueFreeFreeEdges": 384,
+      "avgDegree": 7.808080808080808,
+      "maxDegree": 12,
+      "wallMedianMs": 147.073245,
+      "heapMedianMB": 57.13459777832031,
+      "repWalls": [
+        {
+          "wallMs": 174.675598,
+          "heapDeltaMB": 57.13459777832031
+        },
+        {
+          "wallMs": 147.073245,
+          "heapDeltaMB": 84.33306884765625
+        },
+        {
+          "wallMs": 127.12552400000004,
+          "heapDeltaMB": -63.679229736328125
+        }
+      ],
+      "route": "typescript-dense",
+      "stationDigest": "1519ccc5",
+      "traceIdentityAbs": 2.2737367544323206e-13,
+      "seuw": 1.017582142491359
+    },
+    {
+      "topology": "sparse-mesh",
+      "stations": 150,
+      "kind": "r2b",
+      "reps": 3,
+      "seed": 7,
+      "status": "ok",
+      "numParams": 447,
+      "numObsEquations": 1761,
+      "dof": 1314,
+      "selectedBlockCount": 728,
+      "uniqueFreeFreeEdges": 579,
+      "avgDegree": 7.825503355704698,
+      "maxDegree": 13,
+      "wallMedianMs": 440.33017000000007,
+      "heapMedianMB": 56.09434509277344,
+      "repWalls": [
+        {
+          "wallMs": 554.179438,
+          "heapDeltaMB": 56.09434509277344
+        },
+        {
+          "wallMs": 440.33017000000007,
+          "heapDeltaMB": 171.03089141845703
+        },
+        {
+          "wallMs": 429.006887,
+          "heapDeltaMB": -40.13996124267578
+        }
+      ],
+      "route": "native-sparse-selected-qxx",
+      "factorNnz": 32880,
+      "normalNnz": 11763,
+      "fillRatio": 2.7952053047691914,
+      "uniqueColumns": 447,
+      "dampingAttempts": 0,
+      "timingsMs": {
+        "assemblyMs": 0.182009,
+        "equilibrationMs": 0.09963,
+        "analyzeMs": 0.344688,
+        "factorizeMs": 1.188614,
+        "solveMs": 15.388354
+      },
+      "stationDigest": "8b9b1c53",
+      "traceIdentityAbs": 6.821210263296962e-13,
+      "seuw": 1.0186127193058578,
+      "bundleLoads": 3,
+      "coordDigestMatch": true,
+      "seuwRelVsTs": 0,
+      "speedup": 0.8935116392319878
+    },
+    {
+      "topology": "sparse-mesh",
+      "stations": 150,
+      "kind": "ts",
+      "reps": 3,
+      "seed": 7,
+      "status": "ok",
+      "numParams": 447,
+      "numObsEquations": 1761,
+      "dof": 1314,
+      "selectedBlockCount": 728,
+      "uniqueFreeFreeEdges": 579,
+      "avgDegree": 7.825503355704698,
+      "maxDegree": 13,
+      "wallMedianMs": 393.44013199999995,
+      "heapMedianMB": 90.66588592529297,
+      "repWalls": [
+        {
+          "wallMs": 412.90397599999994,
+          "heapDeltaMB": 90.66588592529297
+        },
+        {
+          "wallMs": 393.44013199999995,
+          "heapDeltaMB": 259.4281921386719
+        },
+        {
+          "wallMs": 324.46719299999995,
+          "heapDeltaMB": -274.7327651977539
+        }
+      ],
+      "route": "typescript-dense",
+      "stationDigest": "8b9b1c53",
+      "traceIdentityAbs": 6.821210263296962e-13,
+      "seuw": 1.0186127193058578
+    },
+    {
+      "topology": "sparse-mesh",
+      "stations": 250,
+      "kind": "r2b",
+      "reps": 3,
+      "seed": 7,
+      "status": "ok",
+      "numParams": 747,
+      "numObsEquations": 2982,
+      "dof": 2235,
+      "selectedBlockCount": 1232,
+      "uniqueFreeFreeEdges": 983,
+      "avgDegree": 7.9397590361445785,
+      "maxDegree": 14,
+      "wallMedianMs": 1436.4416229999997,
+      "heapMedianMB": 110.74869537353516,
+      "repWalls": [
+        {
+          "wallMs": 1670.652623,
+          "heapDeltaMB": 110.74869537353516
+        },
+        {
+          "wallMs": 1436.4416229999997,
+          "heapDeltaMB": 388.97682189941406
+        },
+        {
+          "wallMs": 1356.7422300000003,
+          "heapDeltaMB": -220.5623550415039
+        }
+      ],
+      "route": "native-sparse-selected-qxx",
+      "factorNnz": 84339,
+      "normalNnz": 19935,
+      "fillRatio": 4.230699774266366,
+      "uniqueColumns": 747,
+      "dampingAttempts": 0,
+      "timingsMs": {
+        "assemblyMs": 0.303808,
+        "equilibrationMs": 0.160049,
+        "analyzeMs": 0.594037,
+        "factorizeMs": 5.271874,
+        "solveMs": 65.16282
+      },
+      "stationDigest": "dfd34db7",
+      "traceIdentityAbs": 4.547473508864641e-13,
+      "seuw": 0.9974450353964516,
+      "bundleLoads": 3,
+      "coordDigestMatch": true,
+      "seuwRelVsTs": 0,
+      "speedup": 1.2454614231127723
+    },
+    {
+      "topology": "sparse-mesh",
+      "stations": 250,
+      "kind": "ts",
+      "reps": 3,
+      "seed": 7,
+      "status": "ok",
+      "numParams": 747,
+      "numObsEquations": 2982,
+      "dof": 2235,
+      "selectedBlockCount": 1232,
+      "uniqueFreeFreeEdges": 983,
+      "avgDegree": 7.9397590361445785,
+      "maxDegree": 14,
+      "wallMedianMs": 1789.032628,
+      "heapMedianMB": 82.09661865234375,
+      "repWalls": [
+        {
+          "wallMs": 1875.7580429999998,
+          "heapDeltaMB": 221.76227569580078
+        },
+        {
+          "wallMs": 1789.032628,
+          "heapDeltaMB": 82.09661865234375
+        },
+        {
+          "wallMs": 1619.661376,
+          "heapDeltaMB": -97.50597381591797
+        }
+      ],
+      "route": "typescript-dense",
+      "stationDigest": "dfd34db7",
+      "traceIdentityAbs": 9.094947017729282e-13,
+      "seuw": 0.9974450353964516
+    },
+    {
+      "topology": "sparse-mesh",
+      "stations": 500,
+      "kind": "r2b",
+      "reps": 1,
+      "seed": 7,
+      "status": "ok",
+      "numParams": 1497,
+      "numObsEquations": 5967,
+      "dof": 4470,
+      "selectedBlockCount": 2476,
+      "uniqueFreeFreeEdges": 1977,
+      "avgDegree": 7.947895791583166,
+      "maxDegree": 14,
+      "wallMedianMs": 8237.665993,
+      "heapMedianMB": 541.549674987793,
+      "repWalls": [
+        {
+          "wallMs": 8237.665993,
+          "heapDeltaMB": 541.549674987793
+        }
+      ],
+      "route": "native-sparse-selected-qxx",
+      "factorNnz": 306096,
+      "normalNnz": 40077,
+      "fillRatio": 7.637697432442548,
+      "uniqueColumns": 1497,
+      "dampingAttempts": 0,
+      "timingsMs": {
+        "assemblyMs": 0.659957,
+        "equilibrationMs": 0.366698,
+        "analyzeMs": 1.265034,
+        "factorizeMs": 37.233098,
+        "solveMs": 1383.791899
+      },
+      "stationDigest": "a332ae18",
+      "traceIdentityAbs": 9.094947017729282e-13,
+      "seuw": 1.012827597161141,
+      "bundleLoads": 1,
+      "coordDigestMatch": true,
+      "seuwRelVsTs": 0,
+      "speedup": 1.4355206936101372
+    },
+    {
+      "topology": "sparse-mesh",
+      "stations": 500,
+      "kind": "ts",
+      "reps": 1,
+      "seed": 7,
+      "status": "ok",
+      "numParams": 1497,
+      "numObsEquations": 5967,
+      "dof": 4470,
+      "selectedBlockCount": 2476,
+      "uniqueFreeFreeEdges": 1977,
+      "avgDegree": 7.947895791583166,
+      "maxDegree": 14,
+      "wallMedianMs": 11825.34,
+      "heapMedianMB": 807.7868194580078,
+      "repWalls": [
+        {
+          "wallMs": 11825.34,
+          "heapDeltaMB": 807.7868194580078
+        }
+      ],
+      "route": "typescript-dense",
+      "stationDigest": "a332ae18",
+      "traceIdentityAbs": 9.094947017729282e-13,
+      "seuw": 1.012827597161141
+    },
+    {
+      "topology": "sparse-mesh",
+      "stations": 750,
+      "kind": "r2b",
+      "reps": 1,
+      "seed": 7,
+      "status": "ok",
+      "numParams": 2247,
+      "numObsEquations": 8985,
+      "dof": 6738,
+      "selectedBlockCount": 3733,
+      "uniqueFreeFreeEdges": 2984,
+      "avgDegree": 7.9826435246996,
+      "maxDegree": 15,
+      "wallMedianMs": 23417.772656,
+      "heapMedianMB": 2248.2465744018555,
+      "repWalls": [
+        {
+          "wallMs": 23417.772656,
+          "heapDeltaMB": 2248.2465744018555
+        }
+      ],
+      "route": "native-sparse-selected-qxx",
+      "factorNnz": 669414,
+      "normalNnz": 60453,
+      "fillRatio": 11.073296610590045,
+      "uniqueColumns": 2247,
+      "dampingAttempts": 0,
+      "timingsMs": {
+        "assemblyMs": 1.023285,
+        "equilibrationMs": 0.535717,
+        "analyzeMs": 1.987501,
+        "factorizeMs": 122.437964,
+        "solveMs": 4426.540187
+      },
+      "stationDigest": "e6a82fa1",
+      "traceIdentityAbs": 1.0913936421275139e-11,
+      "seuw": 1.013845468939869,
+      "bundleLoads": 1,
+      "coordDigestMatch": true,
+      "seuwRelVsTs": 0,
+      "speedup": 1.588087259420527
+    },
+    {
+      "topology": "sparse-mesh",
+      "stations": 750,
+      "kind": "ts",
+      "reps": 1,
+      "seed": 7,
+      "status": "ok",
+      "numParams": 2247,
+      "numObsEquations": 8985,
+      "dof": 6738,
+      "selectedBlockCount": 3733,
+      "uniqueFreeFreeEdges": 2984,
+      "avgDegree": 7.9826435246996,
+      "maxDegree": 15,
+      "wallMedianMs": 37189.466399,
+      "heapMedianMB": 1789.9645767211914,
+      "repWalls": [
+        {
+          "wallMs": 37189.466399,
+          "heapDeltaMB": 1789.9645767211914
+        }
+      ],
+      "route": "typescript-dense",
+      "stationDigest": "e6a82fa1",
+      "traceIdentityAbs": 1.0913936421275139e-11,
+      "seuw": 1.013845468939869
+    },
+    {
+      "topology": "survey",
+      "stations": 100,
+      "kind": "ts-proof",
+      "reps": 1,
+      "seed": 7,
+      "status": "skipped",
+      "skipReason": "GNSS statistics for S0003->S0004#92: Qvv block is materially non-PSD (lambda_min=-1.3675452749045434e-18, tau=1.7549067941018525e-25).",
+      "repWalls": [],
+      "bundleLoads": 0
+    },
+    {
+      "topology": "survey",
+      "stations": 250,
+      "kind": "ts-proof",
+      "reps": 1,
+      "seed": 7,
+      "status": "ok",
+      "numParams": 747,
+      "numObsEquations": 1077,
+      "dof": 330,
+      "selectedBlockCount": 599,
+      "uniqueFreeFreeEdges": 350,
+      "avgDegree": 2.8473895582329316,
+      "maxDegree": 10,
+      "wallMedianMs": 367.19494000000003,
+      "heapMedianMB": 147.60594177246094,
+      "repWalls": [
+        {
+          "wallMs": 367.19494000000003,
+          "heapDeltaMB": 147.60594177246094
+        }
+      ],
+      "route": "native-sparse-selected-qxx",
+      "factorNnz": 6012,
+      "normalNnz": 8541,
+      "fillRatio": 0.7038988408851422,
+      "uniqueColumns": 747,
+      "dampingAttempts": 0,
+      "timingsMs": {
+        "assemblyMs": 0.14641,
+        "equilibrationMs": 0.071549,
+        "analyzeMs": 0.258109,
+        "factorizeMs": 0.10346,
+        "solveMs": 18.42791
+      },
+      "stationDigest": "9d27713c",
+      "traceIdentityAbs": 0,
+      "seuw": 0.997983964604699,
+      "bundleLoads": 1
+    },
+    {
+      "topology": "survey",
+      "stations": 500,
+      "kind": "ts-proof",
+      "reps": 1,
+      "seed": 7,
+      "status": "skipped",
+      "skipReason": "GNSS statistics for S0031->S0032#470: Qvv block is materially non-PSD (lambda_min=-2.4044474654842284e-19, tau=2.880647089669905e-24).",
+      "repWalls": [],
+      "bundleLoads": 0
+    }
+  ]
+}
