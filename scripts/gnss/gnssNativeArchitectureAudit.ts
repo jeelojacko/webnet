@@ -714,6 +714,9 @@ export const compareParity = (
   let qxxMaxAbs = 0;
   let qxxMaxRel = 0;
   if (qxxMode === 'full') {
+    if (!('qxx' in oracle) || !('qxx' in candidate)) {
+      throw new Error('Parity full-Qxx mode requires dense results (fail-closed).');
+    }
     oracle.qxx.forEach((row, i) => row.forEach((value, j) => {
       const other = candidate.qxx[i]?.[j] ?? 0;
       qxxMaxAbs = Math.max(qxxMaxAbs, Math.abs(value - other));

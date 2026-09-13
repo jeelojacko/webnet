@@ -17,9 +17,10 @@
 import type { Observation, StationMap } from '../types';
 import { assembleAdjustmentEquations } from './adjustmentEquationAssembly';
 import type { EquationRowInfo } from './adjustmentSolveTypes';
+import type { SolveParameterIndex } from './adjustmentSolveTypes';
 import { applyAdjustmentCorrections, solveAdjustmentIteration } from './adjustmentIteration';
 import type { SparseMatrixRows } from './matrix';
-import type { SparseCorrectionSolver } from './numericalBackend';
+import type { SparseCorrectionSolver, SparseFactorMetadata } from './numericalBackend';
 import { buildSolveParameterIndex } from './adjustmentPreprocessing';
 import { invertNormalMatrixForStats, solveNormalEquations } from './adjustNormalEquationHelpers';
 import { accumulateNormalEquationsFromSparseRows } from './matrix';
@@ -38,11 +39,15 @@ import {
   type GnssSetupModel,
   type GnssSetupUncertainty,
 } from './gnssBaselineSetupUncertainty';
-import { runGnssBaselinePreflight } from './gnssBaselinePreflight';
+import { buildGnssSelectedBlockPlan, type GnssSelectedBlockPlan } from './gnssSelectedBlockPlan';
+import { verifyGnssSelectedBlocks } from './gnssSelectedBlockVerify';
+import type { GnssSelectedBlockStore } from './gnssSelectedBlockQuery';
+import { recoverGnssBaselineStatisticsFromBlocks } from './gnssBlockStatistics';
 import {
   recoverGnssBaselineStatistics,
   type GnssBaselineStatistics,
 } from './gnssBaselineStatistics';
+import { runGnssBaselinePreflight } from './gnssBaselinePreflight';
 
 export interface GnssBaselineAdjustInput {
   stations: StationMap;
@@ -73,6 +78,27 @@ export interface GnssBaselineAdjustInput {
   nativeRuntime?: GnssBaselineNativeRuntime;
 }
 
+/**
+ * Phase 12F.3 internal/test-only native R2B selected-blocks provider.
+ * Receives the canonical block plan plus the final packed system context,
+ * performs exactly one batched `queryBlocks` bridge call, and returns the
+ * folded block store with native factor metadata. Throws on any fault
+ * (including the pre-solve fill gate) so the route reruns clean TS.
+ */
+export interface GnssBaselineNativeSelectedBlocksProviderInput {
+  readonly sparseRows: SparseMatrixRows;
+  readonly weights: number[][];
+  readonly numParams: number;
+  readonly plan: GnssSelectedBlockPlan;
+  readonly paramIndex: SolveParameterIndex;
+}
+
+export interface GnssBaselineNativeSelectedBlocks {
+  readonly store: GnssSelectedBlockStore;
+  readonly meta: SparseFactorMetadata;
+  readonly uniqueColumns: number;
+}
+
 /** Phase 12F.1 injected native R1 dependencies (never constructed in production TS). */
 export interface GnssBaselineNativeRuntime {
   readonly sparseCorrectionSolver?: SparseCorrectionSolver;
@@ -81,6 +107,13 @@ export interface GnssBaselineNativeRuntime {
     weights: number[][];
     numParams: number;
   }) => number[][];
+  /**
+   * Phase 12F.3 injected native R2B dependency. Mutually exclusive with
+   * `nativeQxxProvider`: both present throws fail-closed.
+   */
+  readonly nativeSelectedBlocksProvider?: (
+    _input: GnssBaselineNativeSelectedBlocksProviderInput,
+  ) => GnssBaselineNativeSelectedBlocks;
 }
 
 export interface GnssBaselineAdjustedResidual extends GnssBaselineResidual {
@@ -89,9 +122,13 @@ export interface GnssBaselineAdjustedResidual extends GnssBaselineResidual {
   to: string;
 }
 
-export interface GnssBaselineAdjustResult {
+/** Common R2B/dense result fields; dense and selected variants add their Qxx source. */
+export interface GnssBaselineAdjustResultBase {
   readonly adjustmentFrame: 'ecef';
-  readonly routeProvenance: 'typescript-dense' | 'native-sparse-full-qxx';
+  readonly routeProvenance:
+    | 'typescript-dense'
+    | 'native-sparse-full-qxx'
+    | 'native-sparse-selected-qxx';
   readonly stations: StationMap;
   readonly unknowns: string[];
   readonly numParams: number;
@@ -104,7 +141,6 @@ export interface GnssBaselineAdjustResult {
   readonly residuals: GnssBaselineAdjustedResidual[];
   readonly weightedResidualSum: number;
   readonly varianceFactor: number;
-  readonly qxx: number[][];
   readonly conditionEstimate?: number;
   readonly logs: string[];
   /** Per-baseline Qvv/Cvv/redundancy/block diagnostics (TS dense). */
@@ -114,6 +150,26 @@ export interface GnssBaselineAdjustResult {
   /** Phase 12E.3: per-baseline raw/setup/effective covariances (undefined when inactive). */
   readonly setupContributions?: GnssSetupContribution[];
 }
+
+/** Dense Qxx result: clean TS or Phase 12F.1 native full-dense. */
+export interface GnssBaselineDenseAdjustResult extends GnssBaselineAdjustResultBase {
+  readonly routeProvenance: 'typescript-dense' | 'native-sparse-full-qxx';
+  readonly qxx: number[][];
+}
+
+/**
+ * Phase 12F.3 R2B result: block-store Qxx source, NO qxx field. Statistics
+ * are Phase-12D-identical, recovered from the verified block store.
+ */
+export interface GnssBaselineSelectedAdjustResult extends GnssBaselineAdjustResultBase {
+  readonly routeProvenance: 'native-sparse-selected-qxx';
+  readonly selectedBlocks: GnssBaselineNativeSelectedBlocks;
+}
+
+/** Production result: dense by default, selected-blocks only via the R2B seam. */
+export type GnssBaselineAdjustResult =
+  | GnssBaselineDenseAdjustResult
+  | GnssBaselineSelectedAdjustResult;
 
 const unreachableInGnssMode = (name: string): never => {
   throw new Error(`GNSS-only ECEF adjustment reached unexpected helper '${name}'.`);
@@ -148,9 +204,28 @@ const estimateCondition = (N: number[][]): number => {
   return rowMax * colMax;
 };
 
-export const runGnssBaselineAdjustment = (
+/**
+ * Overloads keep existing TS callers zero-change: anything that can not
+ * carry a selected-blocks provider returns the dense result type; only a
+ * runtime with the R2B provider returns the selected-blocks union member.
+ */
+export function runGnssBaselineAdjustment(
+  _input: GnssBaselineAdjustInput & {
+    nativeRuntime: GnssBaselineNativeRuntime & {
+      nativeSelectedBlocksProvider: NonNullable<
+        GnssBaselineNativeRuntime['nativeSelectedBlocksProvider']
+      >;
+    };
+  },
+): GnssBaselineSelectedAdjustResult;
+// eslint-disable-next-line no-redeclare -- overload signature for the dense result
+export function runGnssBaselineAdjustment(
+  _input: GnssBaselineAdjustInput,
+): GnssBaselineDenseAdjustResult;
+// eslint-disable-next-line no-redeclare -- implementation of the overloaded signatures
+export function runGnssBaselineAdjustment(
   input: GnssBaselineAdjustInput,
-): GnssBaselineAdjustResult => {
+): GnssBaselineAdjustResult {
   const logs: string[] = [];
   const log = (message: string): void => {
     logs.push(message);
@@ -366,8 +441,87 @@ export const runGnssBaselineAdjustment = (
   // when a provider is injected; it throws on any fault (dimension,
   // non-finite, verification reject) so the caller falls back to TS.
   const nativeQxxProvider = input.nativeRuntime?.nativeQxxProvider;
+  const nativeSelectedBlocksProvider = input.nativeRuntime?.nativeSelectedBlocksProvider;
+  if (nativeQxxProvider && nativeSelectedBlocksProvider) {
+    throw new Error('GNSS native runtime carries both Qxx providers (fail-closed).');
+  }
+  const residualVector: number[][] = residuals.flatMap((r) => [[r.vX], [r.vY], [r.vZ]]);
+  const weightedResidualSum = denseWeightedQuadratic(finalP, residualVector);
+  const varianceFactor = dof > 0 ? weightedResidualSum / dof : 0;
+  const seuw = Math.sqrt(Math.max(varianceFactor, 0));
+  const setupTail = setupApplied.setupModel
+    ? {
+        setupModel: setupApplied.setupModel,
+        setupContributions: setupApplied.contributions,
+      }
+    : {};
+  // --- R2B selected-blocks branch (begin): the normal matrix is never
+  // inverted on this path and no full-dense covariance provider is used.
+  // No scalar-selected queries either: one batched block query only.
+  if (nativeSelectedBlocksProvider) {
+    const plan = buildGnssSelectedBlockPlan(
+      paramIndex,
+      effectiveBaselines.map((baseline) => ({ from: baseline.from, to: baseline.to })),
+      numParams,
+    );
+    const selected = nativeSelectedBlocksProvider({
+      sparseRows: finalAssembly.sparseRows,
+      weights: finalP,
+      numParams,
+      plan,
+      paramIndex,
+    });
+    verifyGnssSelectedBlocks(selected.store, plan);
+    const statistics = recoverGnssBaselineStatisticsFromBlocks({
+      baselines: effectiveBaselines,
+      residuals,
+      paramIndex,
+      stationIds: plan.stationIds,
+      store: selected.store,
+      seuw,
+    });
+    const identityViolation = Math.abs(
+      statistics.reduce((sum, stat) => sum + stat.redundancy.trace, 0) - dof,
+    );
+    if (!(identityViolation < 1e-9)) {
+      throw new Error(
+        `GNSS selected-block identity gate tripped: |sum trace(R) - dof| = ${identityViolation} (fail-closed).`,
+      );
+    }
+    const totalStations = Object.keys(stations).length;
+    log(
+      `GNSS selected blocks: stations=${totalStations} free=${unknowns.length} ` +
+        `fixed=${totalStations - unknowns.length} params=${numParams} ` +
+        `baselines=${effectiveBaselines.length} freeFreeEdges=${plan.counts.uniqueFreeFreeEdges} ` +
+        `blocks=${plan.counts.uniqueBlocks} uniqueColumns=${selected.uniqueColumns} ` +
+        `factorNnz=${selected.meta.factorNnz}.`,
+    );
+    log('GNSS Qxx: native sparse selected-blocks (verified).');
+    return {
+      adjustmentFrame: 'ecef',
+      routeProvenance: 'native-sparse-selected-qxx',
+      stations,
+      unknowns,
+      numParams,
+      numObsEquations,
+      logicalObservations: effectiveBaselines.length,
+      dof,
+      iterations,
+      converged,
+      maxCorrectionM,
+      residuals,
+      weightedResidualSum,
+      varianceFactor,
+      conditionEstimate,
+      logs,
+      statistics,
+      selectedBlocks: selected,
+      ...setupTail,
+    };
+  }
+  // --- R2B selected-blocks branch (end).
   let qxx: number[][];
-  let routeProvenance: GnssBaselineAdjustResult['routeProvenance'] = 'typescript-dense';
+  let routeProvenance: GnssBaselineDenseAdjustResult['routeProvenance'] = 'typescript-dense';
   if (nativeQxxProvider) {
     const nativeQxx = nativeQxxProvider({ sparseRows: finalAssembly.sparseRows, weights: finalP, numParams });
     if (
@@ -382,15 +536,12 @@ export const runGnssBaselineAdjustment = (
   } else {
     qxx = invertNormalMatrixForStats(normal, log);
   }
-  const residualVector: number[][] = residuals.flatMap((r) => [[r.vX], [r.vY], [r.vZ]]);
-  const weightedResidualSum = denseWeightedQuadratic(finalP, residualVector);
-  const varianceFactor = dof > 0 ? weightedResidualSum / dof : 0;
   const statistics = recoverGnssBaselineStatistics({
     baselines: effectiveBaselines,
     residuals,
     paramIndex,
     qxx,
-    seuw: Math.sqrt(Math.max(varianceFactor, 0)),
+    seuw,
   });
   return {
     adjustmentFrame: 'ecef',
@@ -411,11 +562,6 @@ export const runGnssBaselineAdjustment = (
     conditionEstimate,
     logs,
     statistics,
-    ...(setupApplied.setupModel
-      ? {
-          setupModel: setupApplied.setupModel,
-          setupContributions: setupApplied.contributions,
-        }
-      : {}),
+    ...setupTail,
   };
-};
+}
