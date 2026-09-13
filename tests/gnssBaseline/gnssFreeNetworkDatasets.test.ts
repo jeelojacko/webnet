@@ -309,7 +309,9 @@ const solveLeg = (net: IntakeNetwork, setup?: GnssSetupUncertainty, anchor?: str
 
 describe.skipIf(!NET_B)('12I.0B dataset B free-network commercial evidence', () => {
   const net = NET_B as IntakeNetwork;
-  const anchor = pickTempAnchor(net);
+  // Lazy: describe bodies evaluate at collection even when skipIf skips
+  // (CI has no vendor intake, so NET_B is null there).
+  const anchor = (): string => pickTempAnchor(net);
 
   it('intake pin: 50 vectors, pre-adjustment GVX', () => {
     expect(net.vectors).toBe(50);
@@ -326,11 +328,11 @@ describe.skipIf(!NET_B)('12I.0B dataset B free-network commercial evidence', () 
 
   it('free candidate parity after translation (coords <=1e-6, stats <=1e-9)', () => {
     const constrained = solveLeg(net);
-    const freeGauge = solveLeg(net, undefined, anchor);
+    const freeGauge = solveLeg(net, undefined, anchor());
     expectFreeParity(constrained, freeGauge, net.stations, net.baselines, net.fixedName, 'dataset-B');
     console.log(
       `Dataset B free parity: seuw=${Math.sqrt(constrained.varianceFactor).toFixed(6)} ` +
-        `dof=${constrained.dof} anchor=${anchor}`,
+        `dof=${constrained.dof} anchor=${anchor()}`,
     );
   });
 });
@@ -341,7 +343,8 @@ describe.skipIf(!NET_B)('12I.0B dataset B free-network commercial evidence', () 
 
 describe.skipIf(!NET_A)('12I.0B dataset A free-network commercial evidence', () => {
   const net = NET_A as IntakeNetwork;
-  const anchor = pickTempAnchor(net);
+  // Lazy: see Dataset B block — collection runs even under skipIf.
+  const anchor = (): string => pickTempAnchor(net);
 
   it('intake pin: 91 vectors', () => {
     expect(net.vectors).toBe(91);
@@ -357,7 +360,7 @@ describe.skipIf(!NET_A)('12I.0B dataset A free-network commercial evidence', () 
 
     it(`free candidate ${name}: parity after translation`, () => {
       const constrained = solveLeg(net, setup);
-      const freeGauge = solveLeg(net, setup, anchor);
+      const freeGauge = solveLeg(net, setup, anchor());
       expectFreeParity(constrained, freeGauge, net.stations, net.baselines, net.fixedName, `dataset-A-${name}`);
     });
   });
