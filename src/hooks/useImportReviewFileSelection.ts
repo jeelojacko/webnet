@@ -16,6 +16,15 @@ export const useImportReviewFileSelection = ({ fileInputRef, settingsFileInputRe
       faceMode?: ImportFacePromptChoice,
       importStyle: ImportStyleChoice = 'generic',
     ) => {
+      if (/\.gvx$/i.test(file.name)) {
+        const gvxReader = new FileReader();
+        gvxReader.onload = () => {
+          const text = typeof gvxReader.result === 'string' ? gvxReader.result : '';
+          window.dispatchEvent(new CustomEvent('webnet:open-gnss', { detail: { fileName: file.name, text } }));
+        };
+        gvxReader.readAsText(file);
+        return;
+      }
       const reader = new FileReader();
       reader.onload = () => {
         void (async () => {

@@ -86,6 +86,7 @@ npm run test:map-browser
 - [docs/CURRENT_BEHAVIOR.md](docs/CURRENT_BEHAVIOR.md) - maintained feature inventory and current workflow contract
 - [docs/IMPORT_WORKFLOW.md](docs/IMPORT_WORKFLOW.md) - staged import and reconciliation workflow
 - [docs/PARITY_WORKFLOW.md](docs/PARITY_WORKFLOW.md) - parity-sensitive validation workflow
+- [docs/gnss/STATIC_GNSS_WORKFLOW.md](docs/gnss/STATIC_GNSS_WORKFLOW.md) - static GNSS baseline workspace (processed ECEF baselines)
 - [docs/CPP_WASM_ENGINE.md](docs/CPP_WASM_ENGINE.md) - incremental C++/WebAssembly engine migration, baseline, and roadmap
 - [docs/STUDY_MODULE.md](docs/STUDY_MODULE.md) - local-first statute and survey-law study module
 - [docs/STUDY_AI_AUTHORING.md](docs/STUDY_AI_AUTHORING.md) - provider-neutral AI Study authoring workflow and validation

@@ -45,5 +45,28 @@ const handler = createAdjustmentWorkerHandler({
 });
 
 self.onmessage = (event: MessageEvent<AdjustmentWorkerRequestMessage>) => {
-  handler.handleMessage(event.data);
+  const message = event.data;
+  if (message && message.type === 'gnss-run') {
+    const runId = message.runId;
+    const payload = message.payload;
+    void (async () => {
+      try {
+        const { runGnssBaselineWithNativeR2B } = await import('./gnssBaselineNativeR2BRoute');
+        const attempt = await runGnssBaselineWithNativeR2B(payload, { isWorker: true });
+        self.postMessage({
+          type: 'gnss-success',
+          runId,
+          payload: { result: attempt.result, route: attempt.route, reasons: attempt.reasons },
+        });
+      } catch (error) {
+        self.postMessage({
+          type: 'gnss-failure',
+          runId,
+          error: error instanceof Error ? error.message : String(error),
+        });
+      }
+    })();
+    return;
+  }
+  handler.handleMessage(message);
 };

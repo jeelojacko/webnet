@@ -1,4 +1,5 @@
 import type { RunSessionOutcome, RunSessionRequest } from './runSession';
+import type { GnssBaselineAdjustInput, GnssBaselineAdjustResult } from './gnssBaselineAdjust';
 
 export type RunPhase = 'queued' | 'solving' | 'finalizing';
 
@@ -13,7 +14,13 @@ export interface RunCancelMessage {
   runId: string;
 }
 
-export type AdjustmentWorkerRequestMessage = RunRequestMessage | RunCancelMessage;
+export interface GnssRunRequestMessage {
+  type: 'gnss-run';
+  runId: string;
+  payload: GnssBaselineAdjustInput;
+}
+
+export type AdjustmentWorkerRequestMessage = RunRequestMessage | RunCancelMessage | GnssRunRequestMessage;
 
 export interface RunProgressMessage {
   type: 'progress';
@@ -44,11 +51,29 @@ export interface RunCancelledMessage {
   runId: string;
 }
 
+export interface GnssRunSuccessMessage {
+  type: 'gnss-success';
+  runId: string;
+  payload: {
+    result: GnssBaselineAdjustResult;
+    route: string;
+    reasons: string[];
+  };
+}
+
+export interface GnssRunFailureMessage {
+  type: 'gnss-failure';
+  runId: string;
+  error: string;
+}
+
 export type AdjustmentWorkerResponseMessage =
   | RunProgressMessage
   | RunSuccessMessage
   | RunFailureMessage
-  | RunCancelledMessage;
+  | RunCancelledMessage
+  | GnssRunSuccessMessage
+  | GnssRunFailureMessage;
 
 const isObjectRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === 'object' && value != null;
@@ -66,6 +91,10 @@ export const isAdjustmentWorkerResponseMessage = (
       return typeof value.runId === 'string' && typeof value.error === 'string';
     case 'cancelled':
       return typeof value.runId === 'string';
+    case 'gnss-success':
+      return typeof value.runId === 'string' && 'payload' in value;
+    case 'gnss-failure':
+      return typeof value.runId === 'string' && typeof value.error === 'string';
     default:
       return false;
   }

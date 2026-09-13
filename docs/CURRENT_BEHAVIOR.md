@@ -105,6 +105,7 @@ Current startup and workflow defaults include:
 - the active startup dataset is currently rotated to the Camp Design preanalysis case, including the committed planning-network fixture loaded directly into the editor, the matching Camp Design project default plus `S9`/`SX12` instrument library from the reference settings, and the UTM83-19 grid startup defaults with positive-west longitude convention, preanalysis run mode, and slope/zenith reduction with refraction `k=0.07`
 - the active startup dataset may be rotated to the current industry-parity working case during parity-sensitive batches
 - browser-local recovery restores workspace state but intentionally does not restore stale solve results without rerun
+- a separate **Static GNSS Baseline Workspace** (toolbar `Static GNSS workspace` button; `*.gvx` picked from normal import routes there automatically) adjusts processed ECEF baseline networks with full 3×3 correlated covariance through the production worker route — GVX/delimited-CSV/synthetic-sample import, FREE/FIXED-XYZ control, metre-only setup sigmas defaulting to 0, fail-closed preflight, loop QC, diagnostic what-if, and text/JSON export; terrestrial flow and legacy `GPS` wording are untouched (see `docs/gnss/STATIC_GNSS_WORKFLOW.md`)
 
 ## Supported input model
 
