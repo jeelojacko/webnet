@@ -48,6 +48,18 @@ import {
   type GnssBaselineStatistics,
 } from './gnssBaselineStatistics';
 import { runGnssBaselinePreflight } from './gnssBaselinePreflight';
+import {
+  buildGnssFreeGaugeStations,
+  classifyGnssDatumComponents,
+  GNSS_FREE_EXTRA_RANK_DEFECT,
+  GNSS_FREE_NETWORK_MAX_STATIONS,
+  GNSS_FREE_NETWORK_SIZE_LIMIT,
+  isFullyFixedStation,
+  pickGnssFreeAnchors,
+  transformGnssFreeGaugeToInner,
+  type GnssDatumMode,
+  type GnssDatumSummary,
+} from './gnssFreeNetwork';
 
 export interface GnssBaselineAdjustInput {
   stations: StationMap;
@@ -64,6 +76,16 @@ export interface GnssBaselineAdjustInput {
    * to a native/sparse route: GNSS stays TS-dense (existing tripwires).
    */
   setupUncertainty?: GnssSetupUncertainty;
+  /**
+   * Phase 12I.1: explicit datum opt-in. Absent (the default) =>
+   * 'constrained' with bit-identical legacy behavior: any component
+   * without real fixed XYZ control fails in preflight, and free
+   * networks never silently solve. 'allow-free' with >= 1 free
+   * component => TS-dense temporary-gauge + inner-constraint
+   * S-transform (never native/R1/R2B); with zero free components the
+   * existing constrained path runs unchanged (R2B eligible).
+   */
+  datumMode?: GnssDatumMode;
   maxIterations?: number;
   convergenceThresholdM?: number;
   /**
@@ -145,6 +167,11 @@ export interface GnssBaselineAdjustResultBase {
   readonly logs: string[];
   /** Per-baseline Qvv/Cvv/redundancy/block diagnostics (TS dense). */
   readonly statistics: GnssBaselineStatistics[];
+  /**
+   * Phase 12I.1: datum accounting for allow-free runs with >= 1 free
+   * component. Absent on every constrained-path result (legacy shape).
+   */
+  readonly datumSummary?: GnssDatumSummary;
   /** Phase 12E.3: resolved setup model (null-shape via undefined when inactive). */
   readonly setupModel?: GnssSetupModel;
   /** Phase 12E.3: per-baseline raw/setup/effective covariances (undefined when inactive). */
@@ -209,7 +236,7 @@ const estimateCondition = (N: number[][]): number => {
  * carry a selected-blocks provider returns the dense result type; only a
  * runtime with the R2B provider returns the selected-blocks union member.
  */
-export function runGnssBaselineAdjustment(
+export function runConstrainedGnssBaselineAdjustment(
   _input: GnssBaselineAdjustInput & {
     nativeRuntime: GnssBaselineNativeRuntime & {
       nativeSelectedBlocksProvider: NonNullable<
@@ -219,11 +246,11 @@ export function runGnssBaselineAdjustment(
   },
 ): GnssBaselineSelectedAdjustResult;
 // eslint-disable-next-line no-redeclare -- overload signature for the dense result
-export function runGnssBaselineAdjustment(
+export function runConstrainedGnssBaselineAdjustment(
   _input: GnssBaselineAdjustInput,
 ): GnssBaselineDenseAdjustResult;
 // eslint-disable-next-line no-redeclare -- implementation of the overloaded signatures
-export function runGnssBaselineAdjustment(
+export function runConstrainedGnssBaselineAdjustment(
   input: GnssBaselineAdjustInput,
 ): GnssBaselineAdjustResult {
   const logs: string[] = [];
@@ -569,4 +596,213 @@ export function runGnssBaselineAdjustment(
     statistics,
     ...setupTail,
   };
+}
+
+/**
+ * Phase 12I.1 free-network path: TS-dense temporary gauge + per-component
+ * inner-constraint S-transform behind `datumMode: 'allow-free'`. The gauge
+ * is the unmodified constrained core over a working copy (anchors held at
+ * a-priori); coordinates/covariance/rank below are the inner datum.
+ */
+const runFreeNetworkGnssAdjustment = (
+  input: GnssBaselineAdjustInput,
+  freeComponents: string[][],
+  constrainedComponents: string[][],
+): GnssBaselineDenseAdjustResult => {
+  if (input.nativeRuntime) {
+    throw new Error(
+      'GNSS free-network allow-free requires the TypeScript dense route: ' +
+        'native R1/R2B/Qxx providers are never admitted for free networks (fail-closed).',
+    );
+  }
+  const totalStations = Object.keys(input.stations).length;
+  if (totalStations > GNSS_FREE_NETWORK_MAX_STATIONS) {
+    throw new Error(
+      `${GNSS_FREE_NETWORK_SIZE_LIMIT}: free network has ${totalStations} stations ` +
+        `(certified max ${GNSS_FREE_NETWORK_MAX_STATIONS}; fail-closed).`,
+    );
+  }
+  // No partial XYZ: datum classification is defined only for full-XYZ control.
+  Object.entries(input.stations).forEach(([stationId, station]) => {
+    const flags = [station?.fixedX, station?.fixedY, station?.fixedH].map((flag) => !!flag);
+    if (flags.some(Boolean) && flags.some((flag) => !flag)) {
+      throw new Error(
+        `${GNSS_FREE_EXTRA_RANK_DEFECT}: station '${stationId}' carries partial XYZ control ` +
+          '(free-network datum requires full-XYZ or nothing; fail-closed).',
+      );
+    }
+  });
+  // Structural audit order matches preflight: self-baselines keep their
+  // exact audit error (never mapped to the extra-defect code).
+  [...input.baselines].sort((a, b) => a.id - b.id).forEach((baseline) => {
+    if (baseline.from === baseline.to) {
+      throw new Error(`GNSS baseline ${gnssBaselineLabel(baseline)} is a self-baseline (from == to).`);
+    }
+  });
+  // Stations with no baseline edge carry 3 silent zero-columns each.
+  const edged = new Set([...freeComponents, ...constrainedComponents].flat());
+  const isolated = Object.keys(input.stations)
+    .filter((stationId) => !edged.has(stationId) && !isFullyFixedStation(input.stations, stationId))
+    .sort();
+  if (isolated.length > 0) {
+    throw new Error(
+      `${GNSS_FREE_EXTRA_RANK_DEFECT}: unobserved free stations [${isolated.join(', ')}] ` +
+        'leave the gauged system rank-deficient (fail-closed).',
+    );
+  }
+  const anchors = pickGnssFreeAnchors(freeComponents);
+  const gaugeStations = buildGnssFreeGaugeStations(input.stations, anchors);
+  let gauge: GnssBaselineAdjustResult;
+  try {
+    gauge = runConstrainedGnssBaselineAdjustment({
+      ...input,
+      stations: gaugeStations,
+      datumMode: 'constrained',
+      nativeRuntime: undefined,
+    });
+  } catch (error) {
+    const detail = error instanceof Error ? error.message : String(error);
+    if (/singular|diagonal damping|under-determined|Non-finite covariance/i.test(detail)) {
+      throw new Error(`${GNSS_FREE_EXTRA_RANK_DEFECT}: gauged free network still rank-deficient: ${detail}`);
+    }
+    throw error;
+  }
+  if (gauge.routeProvenance !== 'typescript-dense' || !('qxx' in gauge)) {
+    throw new Error(`${GNSS_FREE_EXTRA_RANK_DEFECT}: gauge solve left no dense covariance (fail-closed).`);
+  }
+  if (gauge.logs.some((line) => line.includes('diagonal damping'))) {
+    throw new Error(
+      `${GNSS_FREE_EXTRA_RANK_DEFECT}: gauge factorization required diagonal damping ` +
+        '(regularization is never applied to free networks; fail-closed).',
+    );
+  }
+  // Effective (setup-augmented) baselines, recomputed pure from the
+  // untouched a-priori input: identical to what the gauge solve weighted.
+  const aprioriStations: StationMap = Object.fromEntries(
+    Object.entries(input.stations).map(([stationId, station]) => [stationId, { ...station }]),
+  );
+  const setupApplied = applyGnssSetupUncertainty({
+    stations: aprioriStations,
+    baselines: [...input.baselines].sort((a, b) => a.id - b.id),
+    setup: input.setupUncertainty,
+    ellipsoid: input.ellipsoid,
+  });
+  const transformed = transformGnssFreeGaugeToInner({
+    aprioriStations: input.stations,
+    gaugeStations: gauge.stations,
+    gaugeQxx: gauge.qxx,
+    gaugeUnknowns: gauge.unknowns,
+    freeComponents,
+    constrainedComponents,
+  });
+  const { datumSummary } = transformed;
+  const dof = gauge.numObsEquations - datumSummary.estimableRank;
+  if (dof < 0) {
+    throw new Error(
+      `${GNSS_FREE_EXTRA_RANK_DEFECT}: free network is under-determined: ` +
+        `${gauge.numObsEquations} equations for rank ${datumSummary.estimableRank} (fail-closed).`,
+    );
+  }
+  // Per-component translations cancel in every observed-minus-computed
+  // baseline difference, so gauge residuals (and their weighted sum)
+  // carry over verbatim; only the rank-based DOF rescales the variance.
+  const varianceFactor = dof > 0 ? gauge.weightedResidualSum / dof : 0;
+  const seuw = Math.sqrt(Math.max(varianceFactor, 0));
+  const statistics = recoverGnssBaselineStatistics({
+    baselines: setupApplied.baselines,
+    residuals: gauge.residuals,
+    paramIndex: transformed.paramIndex,
+    qxx: transformed.qxx,
+    seuw,
+  });
+  const redundancyTrace = statistics.reduce((sum, entry) => sum + entry.redundancy.trace, 0);
+  if (!(Math.abs(redundancyTrace - dof) < 1e-9)) {
+    throw new Error(
+      `${GNSS_FREE_EXTRA_RANK_DEFECT}: redundancy identity gate tripped: ` +
+        `|sum trace(R) - dof| = ${Math.abs(redundancyTrace - dof)} (fail-closed).`,
+    );
+  }
+  const anchorNote = anchors.join(', ');
+  const setupTail =
+    gauge.setupModel || gauge.setupContributions
+      ? {
+          ...(gauge.setupModel ? { setupModel: gauge.setupModel } : {}),
+          ...(gauge.setupContributions ? { setupContributions: gauge.setupContributions } : {}),
+        }
+      : {};
+  return {
+    adjustmentFrame: 'ecef',
+    routeProvenance: 'typescript-dense',
+    stations: transformed.stations,
+    unknowns: transformed.unknowns,
+    numParams: datumSummary.fullParameterCount,
+    numObsEquations: gauge.numObsEquations,
+    logicalObservations: gauge.logicalObservations,
+    dof,
+    iterations: gauge.iterations,
+    converged: gauge.converged,
+    maxCorrectionM: transformed.maxFreeCorrectionM,
+    residuals: gauge.residuals,
+    weightedResidualSum: gauge.weightedResidualSum,
+    varianceFactor,
+    qxx: transformed.qxx,
+    conditionEstimate: gauge.conditionEstimate,
+    logs: [
+      ...gauge.logs,
+      `GNSS free-network datum (allow-free): kind=${datumSummary.kind} ` +
+        `free-components=${freeComponents.length} constrained-components=${constrainedComponents.length} ` +
+        `defect=${datumSummary.totalDatumDefect} params=${datumSummary.fullParameterCount} ` +
+        `rank=${datumSummary.estimableRank} dof=${dof}.`,
+      'GNSS free-network covariance: inner-constrained Q_free = S Q_gauge S\u2032 per free component ' +
+        '(anchor rows/cols zero-embedded, blockwise O(p\u00b2)); free-station sigmas are inner-datum, ' +
+        'cross-component covariance is zero; QC (residuals, loops, block T) is gauge-invariant.',
+      `GNSS free-network computational gauge (debug only, never control/provenance): anchors=[${anchorNote}] ` +
+        'held at a-priori for the working solve, then released by the S-transform.',
+    ],
+    statistics,
+    datumSummary,
+    ...setupTail,
+  };
+};
+
+/**
+ * Phase 12I.1 dispatcher: explicit datum opt-in with fail-closed default.
+ * 'constrained' (or absent) => the legacy path bit-for-bit; 'allow-free'
+ * with zero free components => the same legacy path (R2B eligible); with
+ * >= 1 free component => the TS-only inner-constraint path above.
+ *
+ * Overloads keep existing callers zero-change (same contract as the
+ * constrained core: only an R2B provider returns the selected union).
+ */
+export function runGnssBaselineAdjustment(
+  _input: GnssBaselineAdjustInput & {
+    nativeRuntime: GnssBaselineNativeRuntime & {
+      nativeSelectedBlocksProvider: NonNullable<
+        GnssBaselineNativeRuntime['nativeSelectedBlocksProvider']
+      >;
+    };
+  },
+): GnssBaselineSelectedAdjustResult;
+// eslint-disable-next-line no-redeclare -- overload signature for the dense result
+export function runGnssBaselineAdjustment(
+  _input: GnssBaselineAdjustInput,
+): GnssBaselineDenseAdjustResult;
+// eslint-disable-next-line no-redeclare -- implementation of the overloaded signatures
+export function runGnssBaselineAdjustment(
+  input: GnssBaselineAdjustInput,
+): GnssBaselineAdjustResult {
+  const datumMode: GnssDatumMode = input.datumMode ?? 'constrained';
+  if (datumMode !== 'constrained' && datumMode !== 'allow-free') {
+    throw new Error(
+      `GNSS datumMode '${(input as { datumMode?: unknown }).datumMode}' is not supported ` +
+        "(expected 'constrained' | 'allow-free'; fail-closed).",
+    );
+  }
+  if (datumMode === 'allow-free') {
+    const classification = classifyGnssDatumComponents(input.stations, input.baselines);
+    if (classification.freeComponents.length > 0) {
+      return runFreeNetworkGnssAdjustment(input, classification.freeComponents, classification.constrainedComponents);
+    }
+  }
+  return runConstrainedGnssBaselineAdjustment(input);
 }

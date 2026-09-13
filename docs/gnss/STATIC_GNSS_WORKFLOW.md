@@ -41,8 +41,13 @@ automatically).
 
 - RINEX / PPP / raw receiver data (processed vectors only).
 - Mixed terrestrial + first-class ECEF `gnssBaseline` sessions (GNSS networks are GNSS-only; legacy `G`/`GPS` observations stay on the terrestrial path).
-- Free-network (datumless) adjustment — deferred by the backend; fix X/Y/Z
-  of at least one station per component.
+- Free-network (datumless) adjustment — programmatic-only explicit opt-in
+  (`datumMode: 'allow-free'` on the adjust input / multifile run options,
+  default `'constrained'`; no UI): TS-dense temporary-gauge +
+  inner-constraint S-transform per free component (see
+  `STATIC_GNSS_BASELINE_MATH.md` §11); native R2B is never admitted for
+  free networks. Without the opt-in the backend still refuses free
+  components — fix X/Y/Z of at least one station per component.
 - Datum transformations / epoch propagation (exact frame/epoch/ellipsoid
   match required; mismatches block).
 - Per-source setup sigmas (one run-level setup-uncertainty model per

@@ -38,6 +38,7 @@ import {
   type GnssBaselineNativeRuntime,
 } from './gnssBaselineAdjust';
 import { setStationFixed } from './gnssWorkspaceSession';
+import { classifyGnssDatumComponents, type GnssDatumMode } from './gnssFreeNetwork';
 import {
   normalizeGnssSetupUncertainty,
   type GnssSetupUncertainty,
@@ -54,6 +55,8 @@ export type GnssProjectSourceKind =
 export interface GnssMultifileRunOptions {
   readonly formatOverrides?: Readonly<Record<string, GnssProjectSourceKind>>;
   readonly controlOverrides?: Readonly<Record<string, boolean>>;
+  /** Phase 12I.1: explicit datum opt-in, default 'constrained' (no UI). */
+  readonly datumMode?: GnssDatumMode;
   readonly setup?: GnssSetupUncertainty;
   readonly csvReferenceFrame?: string;
   readonly csvEpoch?: string;
@@ -65,6 +68,8 @@ export interface GnssMultifilePersistedV1 {
   readonly version: 1;
   readonly formatOverrides: Record<string, GnssProjectSourceKind>;
   readonly controlOverrides: Record<string, boolean>;
+  /** Phase 12I.1: retained datum opt-in, default 'constrained' (no UI). */
+  readonly datumMode: GnssDatumMode;
   readonly setup: GnssSetupUncertainty;
   readonly displayNames: Record<string, string>;
 }
@@ -75,6 +80,7 @@ export const emptyGnssMultifilePersisted = (): GnssMultifilePersistedV1 => ({
   version: 1,
   formatOverrides: {},
   controlOverrides: {},
+  datumMode: 'constrained',
   setup: { horizontalCenteringSigma: 0, antennaHeightSigma: 0 },
   displayNames: {},
 });
@@ -434,15 +440,28 @@ export const runGnssMultifileProjectSolve = (
     epoch: composed.composed.frame.epoch,
     ellipsoid: composed.composed.frame.ellipsoid,
     setupUncertainty: setup,
+    // Phase 12I.1: datum classification happens here at adjust time, hence
+    // AFTER composition + the control overrides above (never per-source).
+    datumMode: options.datumMode ?? 'constrained',
     nativeRuntime: options.nativeRuntime,
   };
-  runGnssBaselinePreflight({
-    stations: input.stations,
-    baselines: input.baselines,
-    referenceFrame: input.referenceFrame,
-    epoch: input.epoch,
-    ellipsoid: input.ellipsoid,
-  });
+  // Phase 12I.1: the standalone preflight stays the early gate for
+  // constrained runs; allow-free runs with >= 1 free component skip it
+  // because datum classification lives in the adjust dispatch (the gauge
+  // core still runs the full preflight — frames, covariances, audit — on
+  // the anchored working copy, so no check is lost).
+  const projectFreeComponents = input.datumMode === 'allow-free'
+    ? classifyGnssDatumComponents(input.stations, input.baselines).freeComponents
+    : [];
+  if (projectFreeComponents.length === 0) {
+    runGnssBaselinePreflight({
+      stations: input.stations,
+      baselines: input.baselines,
+      referenceFrame: input.referenceFrame,
+      epoch: input.epoch,
+      ellipsoid: input.ellipsoid,
+    });
+  }
   const result = runGnssBaselineAdjustment(input);
   return { parsed, summary, provenance: composed.provenance, mergeNotes: composed.mergeNotes, input, result };
 };
@@ -491,10 +510,12 @@ export const deserializeGnssMultifilePersisted = (
 ): GnssMultifilePersistedV1 => {
   const raw = settings?.[GNSS_MULTIFILE_SETTINGS_KEY] as Partial<GnssMultifilePersistedV1> | undefined;
   if (!raw || typeof raw !== 'object') return emptyGnssMultifilePersisted();
+  const datumMode = raw.datumMode;
   return {
     version: 1,
     formatOverrides: { ...(raw.formatOverrides ?? {}) },
     controlOverrides: { ...(raw.controlOverrides ?? {}) },
+    datumMode: datumMode === 'allow-free' ? 'allow-free' : 'constrained',
     setup: { ...(raw.setup ?? { horizontalCenteringSigma: 0, antennaHeightSigma: 0 }) },
     displayNames: { ...(raw.displayNames ?? {}) },
   };
@@ -558,6 +579,11 @@ export const buildGnssMultifileJsonExport = (output: GnssMultifileSolveOutput): 
   compositionNotes: output.mergeNotes,
   setup: output.input.setupUncertainty,
   controlOverrides: output.input.stations,
+  // Phase 12I.1: datum keys appear only on allow-free free-network runs;
+  // constrained exports keep their legacy shape.
+  ...(output.input.datumMode === 'allow-free' && output.result.datumSummary
+    ? { datumMode: output.input.datumMode, datumSummary: output.result.datumSummary }
+    : {}),
   result: {
     varianceFactor: output.result.varianceFactor,
     weightedResidualSum: output.result.weightedResidualSum,

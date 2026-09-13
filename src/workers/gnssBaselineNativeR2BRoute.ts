@@ -34,6 +34,7 @@ import {
   type GnssBaselineAdjustInput,
   type GnssBaselineAdjustResult,
 } from '../engine/gnssBaselineAdjust';
+import { classifyGnssDatumComponents } from '../engine/gnssFreeNetwork';
 import { validateGnssBaselineCovariance } from '../engine/gnssBaselineCovariance';
 import { gnssBaselineComponents } from '../engine/gnssBaselinePreflight';
 import { buildSolveParameterIndex } from '../engine/adjustmentPreprocessing';
@@ -290,6 +291,20 @@ export const runGnssBaselineWithNativeR2B = async (
   input: GnssBaselineAdjustInput,
   deps: GnssNativeR2BDeps = {},
 ): Promise<GnssNativeR2BAttempt> => {
+  // Phase 12I.1: free networks never enter R2B (TS-dense inner datum only).
+  if ((input.datumMode ?? 'constrained') === 'allow-free') {
+    const classification = classifyGnssDatumComponents(input.stations, input.baselines);
+    if (classification.freeComponents.length > 0) {
+      return {
+        result: cleanTypescriptResult(input),
+        route: 'typescript',
+        reasons: [
+          `free-network allow-free with ${classification.freeComponents.length} free component(s): ` +
+            'native R2B not admitted, clean TypeScript inner-constraint solve (fail-closed)',
+        ],
+      };
+    }
+  }
   const eligibility = deriveGnssNativeR2BEligibility(input, {
     isWorker: deps.isWorker,
     wasmAvailable: deps.correctionSolverOverride ?? deps.blockSolverOverride ? true : undefined,

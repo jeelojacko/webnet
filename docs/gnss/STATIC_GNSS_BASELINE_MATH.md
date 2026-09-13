@@ -237,7 +237,24 @@ in a known-oriented frame (ECEF or single-origin local):
 Minimum datum: one fixed 3D station (3 coordinates) removes the defect.
 Each additional fixed station adds checks, not datum necessity. A connected
 component with no fixed 3D station is rank-deficient by exactly 3 — the
-preflight must report it before solving (free-network machinery deferred).
+preflight must report it before solving.
+
+Phase 12I.1 production free network (explicit `datumMode: 'allow-free'`,
+no UI): each baseline-connected component classifies AFTER source
+composition + project control overrides (≥ 1 real fixed XYZ = constrained,
+else free; no partial XYZ). Per free component a deterministic computational
+gauge anchor (first station ID in canonical sort) is held at its a-priori in
+a working copy through the unchanged dense solve — setup uncertainty already
+folded into the effective covariances beforehand — then released by the
+inner-constraint S-transform (coords = a-priori + zero-meaned correction;
+Q_free = S Q_gauge S′ blockwise, symmetric, PSD, gauge-invariant;
+cross-component covariance zero). Rank per free component is 3m − 3
+(defect 3); DOF = n − rank; redundancy trace = DOF is a hard gate. Free
+networks are TS-dense only (never R1/R2B/native); any extra rank defect
+after gauging throws `GNSS_FREE_EXTRA_RANK_DEFECT`; networks over 250 total
+stations throw `FREE_NETWORK_SIZE_LIMIT`. Residuals, vTPv, SEUW, Qvv/Cvv,
+block T, and loops are gauge-invariant and match the same geometry held to
+the anchor as control.
 
 ## 12. Loop closure (future QC)
 
