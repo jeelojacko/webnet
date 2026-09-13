@@ -85,7 +85,7 @@ describe('gnss multifile production composer', () => {
     setGnssMultifileEnabled(true);
   });
 
-  it('DEFAULT-OFF flag gate: OFF throws fail-closed, ON permits composition', () => {
+  it('flag gate: OFF throws fail-closed, ON permits composition', () => {
     const base = parse(text([{ id: 'A', fixed: true }, { id: 'B' }], [{ from: 'A', to: 'B' }]), 'a.dat');
     setGnssMultifileEnabled(false);
     expect(() => composeGnssBaselineNetworks([source(base, 'a')])).toThrow(/flag OFF/);

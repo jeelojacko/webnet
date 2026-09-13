@@ -35,16 +35,20 @@ automatically).
 - **Reports**: text + JSON export (structured report plus adjusted ECEF
   stations, route, and reasons). Raw vs setup vs effective covariance is
   shown per baseline in expandable detail.
+- **Multi-file projects (PRODUCTION / DEFAULT ON)**: named-project runs compose compatible sources automatically (native-BL `FRAME ECEF` / `BL` text, GVX 1.0, delimited CSV against the parsed station union). Composition is post-parse only — exact frame/epoch/ellipsoid match, 1e-9 m no-averaging station merge, FIXED-wins control, every baseline retained, STRONG cross-source duplicates block — with project control overrides applied after composition and one composed solve through the unchanged dispatch. Kill switch `setGnssMultifileEnabled(false)` restores single-session behavior (OFF throws fail-closed).
 
 ## NOT supported
 
 - RINEX / PPP / raw receiver data (processed vectors only).
-- Mixed terrestrial + GNSS sessions (GNSS networks are GNSS-only).
+- Mixed terrestrial + first-class ECEF `gnssBaseline` sessions (GNSS networks are GNSS-only; legacy `G`/`GPS` observations stay on the terrestrial path).
 - Free-network (datumless) adjustment — deferred by the backend; fix X/Y/Z
   of at least one station per component.
+- Datum transformations / epoch propagation (exact frame/epoch/ellipsoid
+  match required; mismatches block).
+- Per-source setup sigmas (one run-level setup-uncertainty model per
+  composed project run).
 - CRS transforms / projected coordinates / lat-lon display (ECEF is
   authoritative).
-- Multi-file sessions (single GVX / single CSV pair / single sample).
 - Legacy `GPS` wording or terrestrial surfaces (untouched; GNSS labels
   always read `Static GNSS Baseline Network — ECEF dX/dY/dZ`).
 

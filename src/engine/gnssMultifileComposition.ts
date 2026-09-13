@@ -217,8 +217,8 @@ const assembleComposedBaselines = (sources: readonly GnssMultifileSource[]): {
 };
 
 /**
- * Compose ordered canonical sources. Fail-closed: the DEFAULT-OFF flag
- * gate throws when OFF; any frame/epoch/ellipsoid mismatch or material
+ * Compose ordered canonical sources. Fail-closed: the flag gate throws
+ * when OFF; any frame/epoch/ellipsoid mismatch or material
  * station conflict yields blockingErrors with composed=null. Never throws
  * for composition problems (empty input throws: caller contract violation).
  */
@@ -226,7 +226,7 @@ export const composeGnssBaselineNetworks = (
   sources: readonly GnssMultifileSource[],
 ): GnssMultifileResult => {
   if (!isGnssMultifileEnabled()) {
-    throw new Error('GNSS multifile composition blocked: flag OFF (DEFAULT OFF; enable to run).');
+    throw new Error('GNSS multifile composition blocked: flag OFF (enable to run).');
   }
   if (sources.length === 0) throw new Error('compose: no sources');
   const blockingErrors: string[] = checkFrameAgreement(sources);
