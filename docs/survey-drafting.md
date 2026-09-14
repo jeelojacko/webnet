@@ -72,11 +72,15 @@ order, which also sets PDF page order and sheet numbering.
   the sheet definition, Standard-14 Helvetica only (no embedding),
   non-ASCII text (°, ², Δ) as UTF-16BE hex strings; multi-page order is
   the explicit input order.
-- **DXF is model space only** (`dxf/` adapter boundary): points, lines,
-  closed boundaries, arcs, and model texts in survey coordinates.
-  Paper-space objects (viewports, title blocks, north arrows, scale bars,
-  sheet notes) are deliberately excluded — flattening them into fake model
-  coordinates would corrupt the survey grid.
+- **DXF is dual-contract** (`dxf/` adapter boundary): `buildDxfModelSpaceText`
+  keeps the R12 model-space-only survey export byte-identical (points,
+  lines, closed boundaries, arcs, model texts in survey coordinates; paper
+  objects deliberately excluded so the grid is never corrupted), while
+  `buildDxfLayoutText` adds an R2000 (`$ACADVER AC1015`) multi-layout
+  export — one named LAYOUT per sheet (paper size in mm), VIEWPORT id 1+
+  per layout carrying center/scale (view height) /twist, title block as
+  BLOCK+INSERT, and paper annotations in mm; unrepresentable sheet
+  objects return explicit warnings instead of fake geometry.
 - **DXF R12 limits:** `$ACADVER AC1009` ASCII with fixed group codes, no
   handles/reactors/dictionaries; closed boundaries use LWPOLYLINE (one
   widely-accepted post-R12 concession); serialisation precision is
