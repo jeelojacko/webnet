@@ -240,44 +240,70 @@ else:
     s0 = _m.exp(my - k * mx)
     print(f'SL diagnostic: s0={s0:.3f} k={k:.3f} (L0=30km, FIT only)')
     res['SL'] = {'s0': round(s0, 3), 'k': round(k, 3)}
-    # CL coarse grid (gates A+B pass, n=107 FIT supports 4 params):
-    # sH(L)^2=aH^2+(bH L)^2, sV(L)^2=aV^2+(bV L)^2, ENU + rotate back.
-    print('--- CL coarse grid (FIT 1h matched) ---')
-    grid_a = [i * 0.005 for i in range(0, 5)]
-    grid_b = [i * 0.00025 for i in range(0, 5)]
-    bestcl = None
-    for aH in grid_a:
-        for aV in grid_a:
-            for bH in grid_b:
-                for bV in grid_b:
-                    ts = []
-                    for a, b in pairs_fit:
-                        La, Lb = LEN[a['pair']], LEN[b['pair']]
-                        sHa2 = aH * aH + (bH * La) ** 2
-                        sVa2 = aV * aV + (bV * La) ** 2
-                        sHb2 = aH * aH + (bH * Lb) ** 2
-                        sVb2 = aV * aV + (bV * Lb) ** 2
-                        Ca, PHa, PVa = PC[a['id']]
-                        Cb, PHb, PVb = PC[b['id']]
-                        Ca2 = [[Ca[i][j] + sHa2 * PHa[i][j]
-                                + sVa2 * PVa[i][j] for j in range(3)]
-                               for i in range(3)]
-                        Cb2 = [[Cb[i][j] + sHb2 * PHb[i][j]
-                                + sVb2 * PVb[i][j] for j in range(3)]
-                               for i in range(3)]
-                        t = T_of(a['vec'], Ca2, b['vec'], Cb2)
-                        if t is not None:
-                            ts.append(t)
-                    d = abs(S.median(ts) - CHIMED)
-                    if bestcl is None or d < bestcl[0] - 1e-12:
-                        bestcl = (d, aH, aV, bH, bV, S.median(ts))
+    # CL grid estimator (documented; the frozen plan underspecified the
+    # estimator/grid, recorded here as plan-gap fix, plan file not backdated):
+    # extra variance is constant-plus-ppm in PHYSICAL units throughout:
+    #   sH_mm(L)^2 = aH_mm^2 + (bH_mm_per_km * L_km)^2  (same for V),
+    # converted to m^2 (x1e-6) only at covariance assembly. Objective:
+    # |median(T) - CHIMED| over FIT 1h matched pairs. Deterministic
+    # two-pass grid, lexicographic tie-break: pass 1 coarse (aH 0..40
+    # step 5, aV 0..80 step 5, bH/bV 0..2 step 0.5), pass 2 refine
+    # +/-5mm / +/-0.5 mm/km around the pass-1 winner (1mm / 0.1 steps).
+    print('--- CL grid (FIT 1h matched, mm/km units) ---')
+
+    def cl_med(aH, aV, bH, bV):
+        ts = []
+        for a, b in pairs_fit:
+            LKa, LKb = LEN[a['pair']] / 1000.0, LEN[b['pair']] / 1000.0
+            sHa2 = (aH * aH + (bH * LKa) ** 2) * 1e-6
+            sVa2 = (aV * aV + (bV * LKa) ** 2) * 1e-6
+            sHb2 = (aH * aH + (bH * LKb) ** 2) * 1e-6
+            sVb2 = (aV * aV + (bV * LKb) ** 2) * 1e-6
+            Ca, PHa, PVa = PC[a['id']]
+            Cb, PHb, PVb = PC[b['id']]
+            Ca2 = [[Ca[i][j] + sHa2 * PHa[i][j]
+                    + sVa2 * PVa[i][j] for j in range(3)]
+                   for i in range(3)]
+            Cb2 = [[Cb[i][j] + sHb2 * PHb[i][j]
+                    + sVb2 * PVb[i][j] for j in range(3)]
+                   for i in range(3)]
+            t = T_of(a['vec'], Ca2, b['vec'], Cb2)
+            if t is not None:
+                ts.append(t)
+        return ts
+
+    def cl_search(aHs, aVs, bHs, bVs, seed=None):
+        best = seed
+        for aH in aHs:
+            for aV in aVs:
+                for bH in bHs:
+                    for bV in bVs:
+                        ts = cl_med(aH, aV, bH, bV)
+                        d = abs(S.median(ts) - CHIMED)
+                        if best is None or d < best[0] - 1e-12:
+                            best = (d, aH, aV, bH, bV, S.median(ts))
+        return best
+
+    coarse = cl_search(range(0, 41, 5), range(0, 81, 5),
+                       [i * 0.5 for i in range(0, 5)],
+                       [i * 0.5 for i in range(0, 5)])
+    _, cH, cV, cbH, cbV, _ = coarse
+    aHrg = [x for x in range(max(0, cH - 5), cH + 6)]
+    aVrg = [x for x in range(max(0, cV - 5), cV + 6)]
+    bHrg = [round(x * 0.1, 1) for x in
+            range(int(round(max(0.0, cbH - 0.5) * 10)),
+                  int(round((cbH + 0.5) * 10)) + 1)]
+    bVrg = [round(x * 0.1, 1) for x in
+            range(int(round(max(0.0, cbV - 0.5) * 10)),
+                  int(round((cbV + 0.5) * 10)) + 1)]
+    bestcl = cl_search(aHrg, aVrg, bHrg, bVrg, coarse)
     _, aH, aV, bH, bV, medcl = bestcl
-    print(f'CL: aH={aH * 1000:.0f}mm aV={aV * 1000:.0f}mm '
-          f'bH={bH * 1000:.3f}mm/km bV={bV * 1000:.3f}mm/km '
+    print(f'CL: aH={aH:.0f}mm aV={aV:.0f}mm '
+          f'bH={bH:.1f}mm/km bV={bV:.1f}mm/km '
           f'(FIT med={medcl:.2f})')
-    res['CL'] = {'aH_mm': round(aH * 1000), 'aV_mm': round(aV * 1000),
-                 'bH_mm_km': round(bH * 1000, 3),
-                 'bV_mm_km': round(bV * 1000, 3),
+    res['CL'] = {'aH_mm': aH, 'aV_mm': aV,
+                 'bH_mm_km': round(bH, 1),
+                 'bV_mm_km': round(bV, 1),
                  'fit_med': round(medcl, 2)}
 
 P_S = {'s': s}
@@ -296,9 +322,9 @@ if isinstance(res.get('CL'), dict):
 
     def cl_cov(rid, _P=None, _cl=cl):
         r = next(x for x in fix if x['id'] == rid)
-        L = LEN[r['pair']]
-        sH2 = (_cl['aH_mm'] / 1000) ** 2 + (_cl['bH_mm_km'] / 1000 * L) ** 2
-        sV2 = (_cl['aV_mm'] / 1000) ** 2 + (_cl['bV_mm_km'] / 1000 * L) ** 2
+        L_km = LEN[r['pair']] / 1000.0
+        sH2 = (_cl['aH_mm'] ** 2 + (_cl['bH_mm_km'] * L_km) ** 2) * 1e-6
+        sV2 = (_cl['aV_mm'] ** 2 + (_cl['bV_mm_km'] * L_km) ** 2) * 1e-6
         C, PH, PV = PC[rid]
         return [[C[i][j] + sH2 * PH[i][j] + sV2 * PV[i][j]
                  for j in range(3)] for i in range(3)]
@@ -381,10 +407,14 @@ print(f'primary loops closed: {len(LOOPS)} (target >= 10)')
 ls = sorted(L['len_mm'] for L in LOOPS)
 print(f'closure |mm|: med={S.median(ls):.1f} max={max(ls):.1f} '
       f'rms={math.sqrt(sum(x * x for x in ls) / len(ls)):.1f}')
-loop_stats = {}
-for nm, (kind, P) in cands.items():
+VAL_LOOPS = [L for L in LOOPS if L['doy'] in VAL]
+print(f'VAL loops (selection): n={len(VAL_LOOPS)}; TEST loops in primary '
+      f'set (winner S only): n={len([L for L in LOOPS if L["doy"] in TEST])}')
+
+
+def loop_Ts(subset, kind, P):
     ts = []
-    for L in LOOPS:
+    for L in subset:
         a = next(r for r in fix if r['id'] == L['a'])
         b = next(r for r in fix if r['id'] == L['b'])
         c = next(r for r in fix if r['id'] == L['c'])
@@ -397,13 +427,26 @@ for nm, (kind, P) in cands.items():
             ts.append(dot(cl, mv(inv3(Cs), cl)))
         except ValueError:
             pass
-    loop_stats[nm] = tstats(ts, f'loopT {nm} (n={len(LOOPS)} primary)')
-res['loops'] = {'n': len(LOOPS),
+    return ts
+
+
+# Selection table uses VAL-only loops: no TEST observation influences
+# selection. All-15-loop stats are post-selection confirmation only.
+loop_stats = {}
+for nm, (kind, P) in cands.items():
+    loop_stats[nm] = tstats(loop_Ts(VAL_LOOPS, kind, P),
+                            f'loopT {nm} VAL-only (n={len(VAL_LOOPS)})')
+loop_confirm = {}
+for nm, (kind, P) in cands.items():
+    loop_confirm[nm] = tstats(loop_Ts(LOOPS, kind, P),
+                              f'loopT {nm} ALL-15 confirmation')
+res['loops'] = {'n': len(LOOPS), 'n_val': len(VAL_LOOPS),
                 'closure_med_mm': round(S.median(ls), 1),
                 'closure_max_mm': round(max(ls), 1),
                 'closure_rms_mm': round(math.sqrt(sum(x * x for x in ls)
                                                   / len(ls)), 1),
                 'T': loop_stats,
+                'T_all_confirmation': loop_confirm,
                 'combos': [(L['doy'], L['a'], L['b'], L['c']) for L in LOOPS]}
 # secondary: core triangle (WERB-dependent, characterization only)
 CORE = []
@@ -545,7 +588,7 @@ if 'WARE' in prop and 'EIJS' in prop:
         'note': ('datum-independent; rover absolute offsets ~0.9m are '
                  'the sitelog-vs-SSC base datum difference, not solution '
                  f'error (sitelog base vs propagated SSC WARE: '
-                 f'{datum:.0f}mm)')} 
+                 f'{datum:.0f}mm)')}
     print('EIJS-WARE SSC vs sol:', oracle['EIJS_WARE_length'])
 res['oracle'] = oracle
 
