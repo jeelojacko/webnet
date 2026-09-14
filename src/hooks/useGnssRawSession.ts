@@ -300,6 +300,7 @@ export interface UseGnssRawSession {
   readonly snapshot: SessionPoolSnapshot;
   readonly status: RawSessionStatus;
   readonly failed: string[];
+  readonly failedDetails: Readonly<Record<string, string>>;
   readonly start: (_sessionId: string, _specs: readonly SessionEdgeSpec[]) => void;
   readonly cancel: () => void;
   readonly results: ProcessedRawGnssBaseline[];
@@ -348,6 +349,9 @@ export const useGnssRawSession = (par: number = DEFAULT_SESSION_PAR): UseGnssRaw
       snapshot: pool.snapshot(),
       status: pool.sessionStatus(),
       failed: pool.failedEdges(),
+      failedDetails: Object.fromEntries(
+        pool.failedEdges().map((id) => [id, pool.edgeError(id)?.message ?? 'unknown failure']),
+      ),
       start,
       cancel,
       results: pool.completedResults(),

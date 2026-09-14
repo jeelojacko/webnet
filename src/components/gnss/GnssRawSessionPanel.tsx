@@ -428,6 +428,11 @@ export const GnssRawSessionPanel: React.FC<PanelProps> = ({ onRestart }) => {
       {settled && session.failed.length > 0 && (
         <div data-testid="raw-session-failed" className="text-xs text-amber-300">
           Failed edge(s): {session.failed.join(', ')}
+          <ul className="list-disc pl-5">
+            {Object.entries(session.failedDetails).map(([edge, why]) => (
+              <li key={edge}>{edge}: {why}</li>
+            ))}
+          </ul>
         </div>
       )}
       <div className="text-xs text-slate-300">
