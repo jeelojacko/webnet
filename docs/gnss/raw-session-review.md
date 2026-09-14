@@ -72,7 +72,9 @@ workspace, where provenance is recorded.
    (processor pin, file hashes, ANTEX subset hash). FLOAT diagnostic-only,
    FAILED no export — same per-edge policy as the MVP.
 7. Export `webnet-raw-static-session/1` (JSON) + reopen without
-   reprocessing; upload order does not affect bytes.
+   reprocessing; upload order does not affect semantic bytes
+   (envelope `exportedAt` and per-baseline `processedAt` are wall-clock
+   marks excluded from the comparison, never from the archive).
 
 ## ANTEX verdict (this track)
 
@@ -84,7 +86,10 @@ two Belgian 1 h precise legs with byte-identical `.pos` output
 subset-of-subset for all three production antenna combos). Coverage is
 still narrow (one window, precise-only, two combos at processing level),
 so no certification is claimed; calibration stays status-only
-(`CALIBRATION_UNAVAILABLE`, never silent correction).
+(`CALIBRATION_UNAVAILABLE`, never silent correction). Browser synthetic
+proof covers subset staging + provenance only: with- and without-subset
+solutions are bit-identical there (even a garbage-ANTEX probe changes
+nothing), so a visible PCV correction effect remains unproven.
 
 ## DIRECT_INGEST
 

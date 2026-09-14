@@ -244,7 +244,14 @@ describe('gnss-raw driver + worker protocol (wasm tier, synthetic)', () => {
     expect(b.provenance.optionsHash).not.toBe(a1.provenance.optionsHash);
   });
 
-  it('ANTEX subset path applies receiver calibration to the synthetic pair', async () => {
+  it('ANTEX subset stages into the job (application unproven on synthetics)', async () => {
+    // Honest contract: this proves exact-match staging + rinexhead conf wiring
+    // on real WASM. Whether RTKLIB visibly moves the solution (dv > 0) depends
+    // on the calibration data; on the current synthetic pair (including a
+    // garbage-ANTEX probe) the solution is bit-identical, so application of
+    // PCV to survey data remains unproven and the ANTEX verdict stays
+    // REVIEW_ONLY. A dv > 0 branch is kept: if calibration ever moves the
+    // solution, the test proves application instead of staging.
     // Required serials come from the fixture headers themselves (both
     // declare SYN-GENX00 NONE), so the subset build cannot drift from the
     // pair under test. RTKLIB does not gate on ANTEX validity dates (see

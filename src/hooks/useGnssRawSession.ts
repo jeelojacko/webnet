@@ -384,7 +384,13 @@ export const useGnssRawSession = (par: number = DEFAULT_SESSION_PAR): UseGnssRaw
         status: pool.sessionStatus(),
         failed: pool.failedEdges(),
         failedDetails: Object.fromEntries(
-          pool.failedEdges().map((id) => [id, pool.edgeError(id)?.message ?? 'unknown failure']),
+          pool.failedEdges().map((id) => {
+            const err = pool.edgeError(id);
+            const why = err == null
+              ? 'unknown failure'
+              : `${err.code}: ${err.message}${err.detail ? ` (${err.detail})` : ''}`;
+            return [id, why];
+          }),
         ),
         start,
         cancel,

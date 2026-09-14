@@ -486,17 +486,19 @@ describe('duplicate marker intake gate', () => {
 });
 
 describe('NAV intake bound', () => {
-  it('panel blocks Process beyond 4 NAV files', async () => {
+  it('panel refuses the 5th NAV file before reading it', async () => {
     const { container, root } = mount(<GnssRawSessionPanel onRestart={() => {}} />);
     await upload(container, 'raw-session-obs-input', ['base.06o', 'rover.06o']);
     await waitForText(container, 'SYNR');
     for (let i = 0; i < 5; i += 1) {
       await upload(container, 'raw-session-nav-input', ['nav.06n']);
     }
+    // The excess file is refused pre-read: a file error names the bound,
+    // no 5-NAV blocker state is reachable, intake stays at 4 NAV.
     await waitForText(container, 'max 4 NAV files');
-    expect(byTestId(container, 'raw-session-blocker')?.textContent)
+    expect(byTestId(container, 'raw-session-file-error')?.textContent)
       .toMatch(/max 4 NAV files/);
-    expect((byTestId(container, 'raw-session-process') as HTMLButtonElement).disabled).toBe(true);
+    expect(byTestId(container, 'raw-session-blocker')).toBeNull();
     act(() => {
       root.unmount();
     });

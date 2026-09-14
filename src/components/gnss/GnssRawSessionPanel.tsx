@@ -21,6 +21,7 @@ import {
   validateIntakeSize,
   type SessionAntennaTable,
 } from '../../engine/gnssRawSessionModel';
+import { assignDependencyGroup } from '../../engine/gnssRawSession';
 import { createAntexSubsetCache, type GnssAntexSubsetResult } from '../../engine/gnssAntexSubset';
 import type { RawGnssFileMetadata } from '../../engine/gnssRawTypes';
 import {
@@ -99,6 +100,10 @@ export const GnssRawSessionPanel: React.FC<PanelProps> = ({ onRestart }) => {
   const [reimportError, setReimportError] = useState<string | null>(null);
   const [imported, setImported] = useState<ProcessedRawGnssSession | null>(null);
   const [started, setStarted] = useState(false);
+  // Launch race guard: set synchronously before the first await in run()
+  // so a double-click cannot reach session.start() twice (pool.reset()
+  // no-ops while active, then enqueue would throw Duplicate).
+  const [preparing, setPreparing] = useState(false);
   const snapRef = useRef<RunSnapshot | null>(null);
   const [snapRev, setSnapRev] = useState(0);
   const [repairs, setRepairs] = useState<Readonly<Record<string, string>>>({});
@@ -108,18 +113,20 @@ export const GnssRawSessionPanel: React.FC<PanelProps> = ({ onRestart }) => {
 
   const addFiles = async (files: File[], kind: 'obs' | 'nav'): Promise<void> => {
     setFileError(null);
+    // Pre-read bounds: reject oversized selections before allocating bytes.
+    if (kind === 'obs' && obs.length + files.length > 20) {
+      setFileError('Session bound: max 20 observation files.');
+      return;
+    }
+    if (kind === 'nav' && nav.length + files.length > 4) {
+      setFileError('Session bound: max 4 NAV files.');
+      return;
+    }
     try {
       const entries: RawFileEntry[] = [];
       for (const f of files) entries.push(await readFileEntry(f));
-      if (kind === 'obs') {
-        if (obs.length + entries.length > 20) {
-          setFileError('Session bound: max 20 observation files.');
-          return;
-        }
-        setObs((prev) => [...prev, ...entries]);
-      } else {
-        setNav((prev) => [...prev, ...entries]);
-      }
+      if (kind === 'obs') setObs((prev) => [...prev, ...entries]);
+      else setNav((prev) => [...prev, ...entries]);
     } catch (e) {
       setFileError(e instanceof Error ? e.message : String(e));
     }
@@ -180,8 +187,10 @@ export const GnssRawSessionPanel: React.FC<PanelProps> = ({ onRestart }) => {
   const blockReason = blocker();
 
   const run = async (): Promise<void> => {
+    if (preparing) return;
     if (blockReason || !graph || !windowResult || !windowResult.ok
       || intervalPlan?.resolved == null || !antennas) return;
+    setPreparing(true);
     let antex: GnssAntexSubsetResult | null = null;
     if (antexFile) {
       const plan = await prepareAntexSubset({
@@ -227,11 +236,16 @@ export const GnssRawSessionPanel: React.FC<PanelProps> = ({ onRestart }) => {
     setReplaceText({});
     setReplaceError({});
     setStarted(true);
-    session.start(snap.sessionId, buildSessionEdgeSpecs({
-      graph: snap.graph, occupations: snap.occupations, nav: snap.nav, sp3: snap.sp3,
-      options: snap.options, windowStart: snap.windowStart, windowStop: snap.windowStop,
-      resolvedInterval: snap.intervalResolved, antex: snap.antex,
-    }));
+    try {
+      session.start(snap.sessionId, buildSessionEdgeSpecs({
+        graph: snap.graph, occupations: snap.occupations, nav: snap.nav, sp3: snap.sp3,
+        options: snap.options, windowStart: snap.windowStart, windowStop: snap.windowStop,
+        resolvedInterval: snap.intervalResolved, antex: snap.antex,
+      }));
+    } finally {
+      // Preparation over: either locked (in-flight run) or released (throw).
+      setPreparing(false);
+    }
     setSnapRev((v) => v + 1);
   };
 
@@ -299,13 +313,35 @@ export const GnssRawSessionPanel: React.FC<PanelProps> = ({ onRestart }) => {
       fail('Replacement endpoints match no staged occupation.');
       return;
     }
+    // Commit real provenance on the repaired edge: the planned placeholder
+    // carries empty hashes/marker-derived group, but the job (and the
+    // exported dependencyGroups) use the true file SHAs — reconcile now.
+    const patchedEdges = out.graph.edges.map((e) =>
+      (e.from === pairs[0]!.from && e.to === pairs[0]!.to)
+        ? {
+          ...e,
+          baseObsSha: spec.job.hashes.baseObsSha256,
+          roverObsSha: spec.job.hashes.roverObsSha256,
+          dependencyGroup: assignDependencyGroup({
+            baseObsSha: spec.job.hashes.baseObsSha256,
+            roverObsSha: spec.job.hashes.roverObsSha256,
+          }),
+        }
+        : e,
+    );
+    const patchedGraph: SessionGraph = { ...out.graph, edges: patchedEdges };
+    const antennasNext = resolveSessionAntennas(snap.occupations, patchedGraph.edges);
+    if (!antennasNext) {
+      fail('Antenna assessment failed for the repaired graph.');
+      return;
+    }
     try {
       session.requeue([spec]);
     } catch (e) {
       fail(e instanceof Error ? e.message : String(e));
       return;
     }
-    snapRef.current = { ...snap, graph: out.graph };
+    snapRef.current = { ...snap, graph: patchedGraph, antennas: antennasNext };
     session.forget(edgeId);
     setRepairs((p) => ({ ...p, [edgeId]: spec.edgeId }));
     setReplaceError((p) => ({ ...p, [edgeId]: null }));
@@ -534,7 +570,7 @@ export const GnssRawSessionPanel: React.FC<PanelProps> = ({ onRestart }) => {
       )}
       <div className="flex items-center gap-2">
         <button type="button" data-testid="raw-session-process" onClick={() => void run()}
-          disabled={blockReason != null || (started && !settled)}
+          disabled={blockReason != null || preparing || (started && !settled)}
           className="px-2 py-1 text-xs border border-slate-600 rounded hover:bg-slate-700 disabled:opacity-40">
           Process raw session
         </button>
@@ -575,13 +611,14 @@ export const GnssRawSessionPanel: React.FC<PanelProps> = ({ onRestart }) => {
                 })
                 : null;
               const prefill = suggestion ? `${suggestion.from}->${suggestion.to}` : '';
-              const repairedAs = repairs[edge];
-              const repairedState = repairedAs ? session.snapshot[repairedAs] : undefined;
+              // Superseded edges are forgotten from the pool, so the repair
+              // note lives on the replacement row ("replaces X").
+              const replaces = Object.entries(repairs).find(([, v]) => v === edge)?.[0];
               return (
                 <li key={edge}>{edge}: {why}
-                  {repairedAs && (
+                  {replaces && (
                     <span className="ml-1 text-slate-400">
-                      replaced by {repairedAs}{repairedState ? ` (${repairedState})` : ''}
+                      replaces {replaces}
                     </span>
                   )}
                   <label className="ml-2 text-slate-300">Replace with

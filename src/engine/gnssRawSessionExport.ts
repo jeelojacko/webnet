@@ -8,7 +8,10 @@
  *
  * Determinism: stations, baselines, groups, and hashes are sorted on
  * build; serialization uses stable key order. Reordered uploads give
- * identical bytes modulo `exportedAt`, which is marked nonsemantic.
+ * identical semantic bytes (see sessionSemanticBytes); raw exported JSON
+ * still carries two wall-clock marks — envelope `exportedAt` and
+ * per-baseline `provenance.processedAt` — which are excluded from the
+ * semantic comparison, never from the archive.
  */
 import { buildRawBaselineExport, type RawBaselineExport } from './gnssRawExport';
 import type { RawGnssProcessingOptions, RawGnssFileMetadata } from './gnssRawTypes';
@@ -140,7 +143,9 @@ export const buildRawSessionExport = (session: ProcessedRawGnssSession): RawSess
   session,
 });
 
-/** Deterministic bytes modulo exportedAt (stable key order, sorted lists). */
+/** Deterministic bytes: stable key order, sorted lists. Semantic
+ * comparison excludes the two wall-clock marks (envelope exportedAt and
+ * per-baseline provenance.processedAt); see sessionSemanticBytes. */
 export const serializeRawSessionExport = (doc: RawSessionExport): string =>
   JSON.stringify(stableClone(doc), null, 2);
 

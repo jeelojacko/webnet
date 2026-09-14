@@ -195,7 +195,7 @@ test.describe('Raw static session review', () => {
     await expect(dialog.getByTestId('raw-session-progress')).toContainText('SYNF->SYNR', { timeout: 15_000 });
     await expect(dialog.getByTestId('raw-session-failed')).toContainText('SYNF->SYNR', { timeout: 300_000 });
     const after = await dialog.getByTestId('raw-session-failed').textContent();
-    expect(after ?? '').toMatch(/replaced by SYNF->SYNR/);
+    expect(after ?? '').toMatch(/replaces SYNB->SYNF/);
     expect(after ?? '').toMatch(/PROCESSOR_FAILURE|no solution epochs/);
     await expect(dialog.getByTestId('raw-session-status')).toContainText('PARTIAL');
     expect(pageErrors).toEqual([]);
