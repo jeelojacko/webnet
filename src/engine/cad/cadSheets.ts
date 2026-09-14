@@ -190,7 +190,12 @@ export const buildScaleBar = ({ scaleDenominator, divisions = 4, modelPerDivisio
   }));
 
 // Title-block tokens (bounded set; unknown tokens stay literal + warn).
-export const SHEET_TOKENS = ['PROJECT_NAME', 'SHEET_NAME', 'SHEET_NUMBER', 'SCALE', 'CRS', 'DATE'] as const;
+// Definition-vs-instance semantics: a DraftTitleBlockDefinition is the
+// reusable template (geometry + token placeholders, stable id); a
+// TitleBlockInstance binds one sheet to one definition with per-sheet field
+// values. Editing a definition changes every sheet using it; editing an
+// instance changes only that sheet.
+export const SHEET_TOKENS = ['PROJECT_NAME', 'PROJECT_NUMBER', 'SHEET_NAME', 'SHEET_NUMBER', 'SCALE', 'CRS', 'DATE', 'DRAWN_BY', 'CHECKED_BY', 'CLIENT', 'LOCATION'] as const;
 export type SheetTokenId = (typeof SHEET_TOKENS)[number];
 export type SheetTokenContext = Partial<Record<SheetTokenId, string>>;
 
@@ -214,6 +219,103 @@ export const createTitleBlockInstance = ({ sheetId, definitionId, values = {} }:
 
 export const setTitleBlockField = (instance: TitleBlockInstance, field: string, value: string): TitleBlockInstance => ({
   ...instance, values: { ...instance.values, [field]: value },
+});
+
+// Shared token context so preview, SVG, PDF, and layout-DXF expand the same
+// text from the same paper-mm numerics. SCALE lists viewport scales.
+export const buildSheetTokenContext = (args: {
+  sheet: { name: string; viewports: readonly { scaleDenominator: number }[] };
+  sheetNumber: number;
+  projectName?: string;
+  projectNumber?: string;
+  crs?: string;
+  date?: string;
+  drawnBy?: string;
+  checkedBy?: string;
+  client?: string;
+  location?: string;
+}): SheetTokenContext => ({
+  PROJECT_NAME: args.projectName ?? '',
+  PROJECT_NUMBER: args.projectNumber ?? '',
+  SHEET_NAME: args.sheet.name,
+  SHEET_NUMBER: `${args.sheetNumber}`,
+  SCALE: args.sheet.viewports.map((viewport) => `1:${viewport.scaleDenominator}`).join(', '),
+  CRS: args.crs ?? '',
+  DATE: args.date ?? new Date().toISOString().slice(0, 10),
+  DRAWN_BY: args.drawnBy ?? '',
+  CHECKED_BY: args.checkedBy ?? '',
+  CLIENT: args.client ?? '',
+  LOCATION: args.location ?? '',
+});
+
+// Template management (pure; run inside runDraftSheetCommand for undo/redo).
+export const createTitleBlockTemplate = (name: string): import('./cadDraftTypes').DraftTitleBlockDefinition => ({
+  id: createStableRuntimeId('draft-title-block'),
+  name,
+  fieldNames: [],
+  elements: [],
+});
+
+export const duplicateTitleBlockTemplate = (
+  draft: DraftDocument,
+  definitionId: string,
+): DraftDocument => {
+  const source = draft.titleBlockDefinitions.find((entry) => entry.id === definitionId);
+  if (!source) return draft;
+  return {
+    ...draft,
+    titleBlockDefinitions: [
+      ...draft.titleBlockDefinitions,
+      {
+        ...source,
+        id: createStableRuntimeId('draft-title-block'),
+        name: `${source.name} copy`,
+        fieldNames: [...source.fieldNames],
+        ...(source.elements ? { elements: source.elements.map((element) => ({ ...element, id: createStableRuntimeId('draft-title-block-element') })) } : {}),
+      },
+    ],
+  };
+};
+
+export const renameTitleBlockTemplate = (draft: DraftDocument, definitionId: string, name: string): DraftDocument => ({
+  ...draft,
+  titleBlockDefinitions: draft.titleBlockDefinitions.map((entry) =>
+    entry.id === definitionId ? { ...entry, name } : entry,
+  ),
+});
+
+export const editTitleBlockTemplateElements = (
+  draft: DraftDocument,
+  definitionId: string,
+  elements: import('./cadDraftTypes').DraftTitleBlockElement[],
+): DraftDocument => ({
+  ...draft,
+  titleBlockDefinitions: draft.titleBlockDefinitions.map((entry) =>
+    entry.id === definitionId ? { ...entry, elements: elements.map((element) => ({ ...element })) } : entry,
+  ),
+});
+
+// Fails closed: a template in use by any sheet is kept and reported.
+export const deleteTitleBlockTemplateIfUnused = (
+  draft: DraftDocument,
+  definitionId: string,
+): { draft: DraftDocument; deleted: boolean } => {
+  const inUse = draft.sheets.some((sheet) => sheet.titleBlockId === definitionId);
+  if (inUse) return { draft, deleted: false };
+  return {
+    draft: {
+      ...draft,
+      titleBlockDefinitions: draft.titleBlockDefinitions.filter((entry) => entry.id !== definitionId),
+    },
+    deleted: true,
+  };
+};
+
+export const assignTitleBlockToSheet = (draft: DraftDocument, sheetId: string, definitionId: string | undefined): DraftDocument => ({
+  ...draft,
+  sheets: draft.sheets.map((sheet) =>
+    sheet.id === sheetId ? { ...sheet, ...(definitionId ? { titleBlockId: definitionId } : { titleBlockId: undefined }) } : sheet,
+  ),
 });
 
 // Plan notes: multiline paper-space text objects.

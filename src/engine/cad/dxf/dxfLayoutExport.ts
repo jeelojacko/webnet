@@ -1,3 +1,4 @@
+import { buildSheetTokenContext } from '../cadSheets';
 import type { DraftDocument } from '../cadDraftTypes';
 import type { CadProject } from '../cadTypes';
 import {
@@ -366,7 +367,9 @@ export const buildDxfLayoutText = (args: BuildDxfLayoutArgs): DxfLayoutResult =>
     }
     // Title block (rect outline, sheet fields, sheet-object texts) as
     // BLOCK+INSERT at the origin so paper coordinates stay absolute.
-    const title = buildTitleBlockItems(sheet, 'title-block');
+    const title = buildTitleBlockItems(sheet, 'title-block',
+      sheet.titleBlockId ? args.draft.titleBlockDefinitions.find((entry) => entry.id === sheet.titleBlockId) : undefined,
+      buildSheetTokenContext({ sheet, sheetNumber: sheetIndex + 1, projectName: args.project.name }));
     title.unknownTokens.forEach((token) => {
       warnings.push({ code: 'UNKNOWN_TOKEN', message: `sheet ${sheet.name}: unknown sheet token {${token}}` });
     });

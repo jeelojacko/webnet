@@ -2,7 +2,7 @@ import { buildCadDisplayScene } from './cadRenderer';
 import type { CadDisplayPrimitive } from './cadDisplayTypes';
 import { BROKEN_REFERENCE_TEXT } from './cadLabelEngine';
 import type { DraftSheet, DraftDocument } from './cadDraftTypes';
-import { expandSheetTokens, asPlanViewport } from './cadSheets';
+import { expandSheetTokens, asPlanViewport, buildSheetTokenContext } from './cadSheets';
 import type { CadProject } from './cadTypes';
 
 export interface ExportWarning {
@@ -295,9 +295,55 @@ export const buildScaleBarItems = (
     fill: i % 2 === 0 ? '#000000' : '#ffffff',
   }));
 
-export const buildTitleBlockItems = (sheet: DraftSheet, layer: string): { items: ExportItem[]; unknownTokens: string[] } => {
+// One renderer for preview, SVG, PDF, and layout-DXF: identical paper-mm
+// numerics everywhere. When the sheet references a visual template, its
+// elements render verbatim; otherwise the legacy bar renders.
+export const buildTitleBlockItems = (
+  sheet: DraftSheet,
+  layer: string,
+  template?: import('./cadDraftTypes').DraftTitleBlockDefinition,
+  tokenContext?: import('./cadSheets').SheetTokenContext,
+): { items: ExportItem[]; unknownTokens: string[] } => {
   const items: ExportItem[] = [];
   const unknownTokens: string[] = [];
+  const noteUnknown = (names: readonly string[]): void => {
+    names.forEach((token) => {
+      if (!unknownTokens.includes(token)) unknownTokens.push(token);
+    });
+  };
+  if (template?.elements && template.elements.length > 0) {
+    const ordered = [...template.elements].sort((a, b) => (a.id < b.id ? -1 : a.id > b.id ? 1 : 0));
+    ordered.forEach((element) => {
+      if (element.kind === 'rect') {
+        items.push({
+          kind: 'rect', layer,
+          x: element.xMm, y: element.yMm,
+          width: Math.max(0.1, element.widthMm ?? 10),
+          height: Math.max(0.1, element.heightMm ?? 5),
+        });
+        return;
+      }
+      if (element.kind === 'line') {
+        items.push({
+          kind: 'line', layer,
+          x1: element.xMm, y1: element.yMm,
+          x2: element.x2Mm ?? element.xMm, y2: element.y2Mm ?? element.yMm,
+          ...(element.lineweightMm != null ? { widthMm: element.lineweightMm } : {}),
+        });
+        return;
+      }
+      const raw = element.kind === 'token-text' ? (element.tokenTemplate ?? element.text ?? '') : (element.text ?? '');
+      const { text, unknownTokens: unknown } = expandSheetTokens(raw, tokenContext ?? {});
+      noteUnknown(unknown);
+      items.push({
+        kind: 'text', layer,
+        x: element.xMm, y: element.yMm, text,
+        heightMm: Math.max(0.5, element.fontSizeMm ?? 3),
+        anchor: element.alignment === 'center' ? 'middle' : element.alignment === 'right' ? 'end' : 'start',
+      });
+    });
+    return { items, unknownTokens };
+  }
   const barH = 14;
   const y = sheet.heightMm - sheet.margins.bottomMm - barH;
   items.push({ kind: 'rect', layer, x: sheet.margins.leftMm, y, width: sheet.widthMm - sheet.margins.leftMm - sheet.margins.rightMm, height: barH });
@@ -405,7 +451,15 @@ export const buildExportSheetScene = (args: BuildSceneArgs): { scene: ExportShee
     items.push(...placed.items);
   });
 
-  const title = buildTitleBlockItems(sheet, 'title-block');
+  const sheetIndex = args.draft.sheets.findIndex((entry) => entry.id === sheet.id);
+  const template = sheet.titleBlockId
+    ? args.draft.titleBlockDefinitions.find((entry) => entry.id === sheet.titleBlockId)
+    : undefined;
+  const title = buildTitleBlockItems(sheet, 'title-block', template, buildSheetTokenContext({
+    sheet,
+    sheetNumber: sheetIndex + 1,
+    projectName: args.project.name,
+  }));
   items.push(...title.items);
   title.unknownTokens.forEach((token) => {
     warnings.push({ code: 'UNKNOWN_TOKEN', message: `unknown sheet token {${token}}` });

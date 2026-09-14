@@ -128,10 +128,63 @@ export interface DraftSheet {
   sheetObjects: DraftSheetObject[];
 }
 
+export interface DraftTitleBlockElement {
+  id: string;
+  kind: 'line' | 'rect' | 'static-text' | 'token-text';
+  /** Paper-mm origin (top-left). All geometry is paper-mm only. */
+  xMm: number;
+  yMm: number;
+  /** Line end (kind 'line') in paper-mm. */
+  x2Mm?: number;
+  y2Mm?: number;
+  /** Box size (kind 'rect' / text bounds) in paper-mm. */
+  widthMm?: number;
+  heightMm?: number;
+  text?: string;
+  tokenTemplate?: string;
+  alignment?: DraftTextAlignment;
+  fontSizeMm?: number;
+  lineweightMm?: number;
+}
+
 export interface DraftTitleBlockDefinition {
   id: string;
   name: string;
   fieldNames: string[];
+  /** Visual template primitives in paper-mm (additive; absent = legacy bar). */
+  elements?: DraftTitleBlockElement[];
+}
+
+export type DraftTableContinueMode = 'MANUAL' | 'AUTO';
+
+export interface DraftTableRowRange {
+  start: number;
+  count: number;
+}
+
+export interface DraftLogicalTable {
+  id: string;
+  name: string;
+  headers: string[];
+  /** The single owned copy of rows; fragments reference ranges only. */
+  rows: string[][];
+  continueMode: DraftTableContinueMode;
+  headerRepeat: boolean;
+  showContinuedMarker: boolean;
+  maxRowsPerFragment: number;
+  order?: string;
+  selectionIds?: string[];
+}
+
+export interface DraftTableFragment {
+  id: string;
+  logicalTableId: string;
+  sheetId: string;
+  fragmentIndex: number;
+  rowRange: DraftTableRowRange;
+  /** Paper-mm placement; moving a fragment never touches source rows. */
+  paperXmm: number;
+  paperYmm: number;
 }
 
 export interface DraftDocumentMetadata {
@@ -150,6 +203,9 @@ export interface DraftDocument {
   sheets: DraftSheet[];
   titleBlockDefinitions: DraftTitleBlockDefinition[];
   labels: DraftDocumentLabel[];
+  /** Logical tables own rows; fragments reference deterministic row ranges. */
+  tables: DraftLogicalTable[];
+  tableFragments: DraftTableFragment[];
   metadata: DraftDocumentMetadata;
 }
 
@@ -214,6 +270,8 @@ export const createBlankDraftDocument = ({
     sheets: [],
     titleBlockDefinitions: [],
     labels: [],
+    tables: [],
+    tableFragments: [],
     metadata: { createdAt: nowIso, updatedAt: nowIso },
   };
 };
@@ -266,6 +324,17 @@ export const cloneDraftDocument = (draft: DraftDocument): DraftDocument => ({
   titleBlockDefinitions: draft.titleBlockDefinitions.map((entry) => ({
     ...entry,
     fieldNames: [...entry.fieldNames],
+    ...(entry.elements ? { elements: entry.elements.map((element) => ({ ...element })) } : {}),
+  })),
+  tables: (draft.tables ?? []).map((table) => ({
+    ...table,
+    headers: [...table.headers],
+    rows: table.rows.map((row) => [...row]),
+    ...(table.selectionIds ? { selectionIds: [...table.selectionIds] } : {}),
+  })),
+  tableFragments: (draft.tableFragments ?? []).map((fragment) => ({
+    ...fragment,
+    rowRange: { ...fragment.rowRange },
   })),
   metadata: { ...draft.metadata },
 });
@@ -457,15 +526,83 @@ export const sanitizeDraftDocument = (
     titleBlockDefinitions: Array.isArray(value.titleBlockDefinitions)
       ? value.titleBlockDefinitions.flatMap((entry): DraftTitleBlockDefinition[] => {
           if (!isRecord(entry)) return [];
-          return [
-            {
-              id: stableId(entry.id, 'draft-title-block'),
-              name: asString(entry.name, 'Unnamed title block'),
-              fieldNames: Array.isArray(entry.fieldNames)
-                ? entry.fieldNames.filter((name): name is string => typeof name === 'string')
-                : [],
+          const definition: DraftTitleBlockDefinition = {
+            id: stableId(entry.id, 'draft-title-block'),
+            name: asString(entry.name, 'Unnamed title block'),
+            fieldNames: Array.isArray(entry.fieldNames)
+              ? entry.fieldNames.filter((name): name is string => typeof name === 'string')
+              : [],
+          };
+          if (Array.isArray(entry.elements)) {
+            const elements = entry.elements.flatMap((raw): DraftTitleBlockElement[] => {
+              if (!isRecord(raw)) return [];
+              const kind = raw.kind;
+              if (kind !== 'line' && kind !== 'rect' && kind !== 'static-text' && kind !== 'token-text') return [];
+              const element: DraftTitleBlockElement = {
+                id: stableId(raw.id, 'draft-title-block-element'),
+                kind,
+                xMm: asFinite(raw.xMm, 0),
+                yMm: asFinite(raw.yMm, 0),
+              };
+              for (const key of ['x2Mm', 'y2Mm', 'widthMm', 'heightMm', 'fontSizeMm', 'lineweightMm'] as const) {
+                const v = raw[key];
+                if (typeof v === 'number' && Number.isFinite(v)) (element as unknown as Record<string, unknown>)[key] = v;
+              }
+              if (typeof raw.text === 'string') element.text = raw.text;
+              if (typeof raw.tokenTemplate === 'string') element.tokenTemplate = raw.tokenTemplate;
+              if (raw.alignment === 'center' || raw.alignment === 'right' || raw.alignment === 'left') {
+                element.alignment = raw.alignment;
+              }
+              return [element];
+            });
+            definition.elements = elements;
+          }
+          return [definition];
+        })
+      : [],
+    tables: Array.isArray((value as Record<string, unknown>).tables)
+      ? ((value as Record<string, unknown>).tables as unknown[]).flatMap((entry): DraftLogicalTable[] => {
+          if (!isRecord(entry)) return [];
+          const maxRows = Math.max(1, Math.floor(asFinite(entry.maxRowsPerFragment, 25)));
+          return [{
+            id: stableId(entry.id, 'draft-table'),
+            name: asString(entry.name, 'Table'),
+            headers: Array.isArray(entry.headers)
+              ? entry.headers.filter((h): h is string => typeof h === 'string')
+              : [],
+            rows: Array.isArray(entry.rows)
+              ? entry.rows.flatMap((row): string[][] =>
+                  Array.isArray(row) ? [row.map((cell) => (typeof cell === 'string' ? cell : String(cell ?? '')))] : [],
+                )
+              : [],
+            continueMode: entry.continueMode === 'MANUAL' ? 'MANUAL' : 'AUTO',
+            headerRepeat: entry.headerRepeat !== false,
+            showContinuedMarker: entry.showContinuedMarker !== false,
+            maxRowsPerFragment: maxRows,
+            ...(typeof entry.order === 'string' ? { order: entry.order } : {}),
+            ...(Array.isArray(entry.selectionIds)
+              ? { selectionIds: entry.selectionIds.filter((id): id is string => typeof id === 'string') }
+              : {}),
+          }];
+        })
+      : [],
+    tableFragments: Array.isArray((value as Record<string, unknown>).tableFragments)
+      ? ((value as Record<string, unknown>).tableFragments as unknown[]).flatMap((entry): DraftTableFragment[] => {
+          if (!isRecord(entry)) return [];
+          if (typeof entry.logicalTableId !== 'string' || typeof entry.sheetId !== 'string') return [];
+          const range = isRecord(entry.rowRange) ? entry.rowRange : {};
+          return [{
+            id: stableId(entry.id, 'draft-table-fragment'),
+            logicalTableId: entry.logicalTableId,
+            sheetId: entry.sheetId,
+            fragmentIndex: Math.max(0, Math.floor(asFinite(entry.fragmentIndex, 0))),
+            rowRange: {
+              start: Math.max(0, Math.floor(asFinite(range.start, 0))),
+              count: Math.max(0, Math.floor(asFinite(range.count, 0))),
             },
-          ];
+            paperXmm: asFinite(entry.paperXmm, 10),
+            paperYmm: asFinite(entry.paperYmm, 10),
+          }];
         })
       : [],
     labels: Array.isArray(value.labels)
