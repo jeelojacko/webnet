@@ -71,6 +71,21 @@ export interface DraftSheetViewport {
   layerOverrides?: Record<string, { visible?: boolean }>;
 }
 
+export type DraftLabelPlacementState = 'AUTO' | 'MANUAL';
+
+export interface DraftLabelViewportPlacementOverride {
+  dxMm?: number;
+  dyMm?: number;
+  rotationDeg?: number;
+  visible?: boolean;
+}
+
+export interface DraftLabelLeaderState {
+  enabled: boolean;
+  elbowMm?: number;
+  lineweightMm?: number;
+}
+
 export interface DraftDocumentLabel {
   id: string;
   text: string;
@@ -80,6 +95,15 @@ export interface DraftDocumentLabel {
   heightMm?: number;
   provenance?: string;
   overrideText?: string;
+  /** Placement state (default AUTO); manual always wins over auto-place. */
+  placement?: DraftLabelPlacementState;
+  /** Per-viewport paper-mm overrides; presentation only. */
+  viewportOverrides?: Record<string, DraftLabelViewportPlacementOverride>;
+  /** Presentation-only leader reference to the label/source point. */
+  leader?: DraftLabelLeaderState;
+  /** Source entity reference; missing source resolves to BROKEN_REFERENCE. */
+  sourceEntityId?: string;
+  rotationDeg?: number;
 }
 
 export interface DraftSheetObject {
@@ -234,7 +258,11 @@ export const cloneDraftDocument = (draft: DraftDocument): DraftDocument => ({
     })),
     sheetObjects: sheet.sheetObjects.map((object) => ({ ...object })),
   })),
-  labels: draft.labels.map((label) => ({ ...label })),
+  labels: draft.labels.map((label) => ({
+    ...label,
+    ...(label.viewportOverrides ? { viewportOverrides: { ...label.viewportOverrides } } : {}),
+    ...(label.leader ? { leader: { ...label.leader } } : {}),
+  })),
   titleBlockDefinitions: draft.titleBlockDefinitions.map((entry) => ({
     ...entry,
     fieldNames: [...entry.fieldNames],
@@ -455,6 +483,40 @@ export const sanitizeDraftDocument = (
           }
           if (typeof entry.provenance === 'string') label.provenance = entry.provenance;
           if (typeof entry.overrideText === 'string') label.overrideText = entry.overrideText;
+          // AUTO_GENERATED/MANUAL_OVERRIDE read back as AUTO/MANUAL.
+          if (entry.placement === 'MANUAL' || entry.placement === 'MANUAL_OVERRIDE') label.placement = 'MANUAL';
+          else if (entry.placement === 'AUTO' || entry.placement === 'AUTO_GENERATED') label.placement = 'AUTO';
+          if (typeof entry.sourceEntityId === 'string' && entry.sourceEntityId.length > 0) {
+            label.sourceEntityId = entry.sourceEntityId;
+          }
+          if (typeof entry.rotationDeg === 'number' && Number.isFinite(entry.rotationDeg)) {
+            label.rotationDeg = entry.rotationDeg;
+          }
+          if (isRecord(entry.leader)) {
+            const leader: DraftLabelLeaderState = { enabled: entry.leader.enabled === true };
+            if (typeof entry.leader.elbowMm === 'number' && Number.isFinite(entry.leader.elbowMm)) {
+              leader.elbowMm = entry.leader.elbowMm;
+            }
+            if (typeof entry.leader.lineweightMm === 'number' && Number.isFinite(entry.leader.lineweightMm)) {
+              leader.lineweightMm = entry.leader.lineweightMm;
+            }
+            label.leader = leader;
+          }
+          if (isRecord(entry.viewportOverrides)) {
+            const overrides: Record<string, DraftLabelViewportPlacementOverride> = {};
+            for (const [viewportId, override] of Object.entries(entry.viewportOverrides)) {
+              if (!isRecord(override)) continue;
+              const next: DraftLabelViewportPlacementOverride = {};
+              if (typeof override.dxMm === 'number' && Number.isFinite(override.dxMm)) next.dxMm = override.dxMm;
+              if (typeof override.dyMm === 'number' && Number.isFinite(override.dyMm)) next.dyMm = override.dyMm;
+              if (typeof override.rotationDeg === 'number' && Number.isFinite(override.rotationDeg)) {
+                next.rotationDeg = override.rotationDeg;
+              }
+              if (typeof override.visible === 'boolean') next.visible = override.visible;
+              if (Object.keys(next).length > 0) overrides[viewportId] = next;
+            }
+            if (Object.keys(overrides).length > 0) label.viewportOverrides = overrides;
+          }
           return [label];
         })
       : [],

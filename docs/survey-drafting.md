@@ -95,6 +95,10 @@ identical. Drafting operations never touch observations, weights, GNSS
 state, adjustment settings, or CRS — pinned by an isolation test that
 snapshots those domains across the full drafting battery.
 
+## Label deconfliction + leaders (Phase 13C §§12-21)
+
+Labels carry placement state `AUTO`/`MANUAL` (legacy `AUTO_GENERATED`/`MANUAL_OVERRIDE` read back to the same states) plus optional per-viewport paper-mm overrides (`dxMm`/`dyMm`/`rotationDeg`/`visible`) and a presentation-only leader (`enabled`, `elbowMm`, `lineweightMm`) — all persisted on the draft document (schema stays v1, additive only) and never touching source geometry. `cadLabelAutoPlacement.ts` offers optional paper-mm auto-placement over a deterministic 8-candidate set (NE/NW/SE/SW/above/below/along-left/along-right) scored by overlap + leader length + distance + clipping with label-id tie-breaks; it touches AUTO labels only unless `reset: true`, enables leaders beyond a paper-mm threshold (default 3 mm), and any manual edit flips the label to MANUAL. Geometry edits refresh label text while keeping manual placement; a missing source resolves to `BROKEN_REFERENCE`. SVG, PDF, and layout DXF share one per-viewport resolver (`buildPaperLabelItems`), so placed text + leaders render identically in all three.
+
 ## Sample
 
 `public/examples/survey_plan_sample.wncad`: adjusted + COGO points, one

@@ -1,7 +1,10 @@
 import type { DraftDocument } from '../cadDraftTypes';
 import type { CadProject } from '../cadTypes';
 import {
+  buildPaperLabelItems,
   buildTitleBlockItems,
+  draftLabelsToPlacements,
+  modelToPaperPoint,
   type ExportItem,
   type ModelLabelPlacement,
 } from '../cadExportScene';
@@ -349,6 +352,18 @@ export const buildDxfLayoutText = (args: BuildDxfLayoutArgs): DxfLayoutResult =>
         pair(69, String(viewportIndex + 1)),
       );
     });
+    // Paper-space labels (document DXF subset): same per-viewport
+    // resolution as SVG/PDF via buildPaperLabelItems; leaders ride along
+    // as LINE items. Scene coords (top-left origin); emitPaperItem flips.
+    {
+      const effective = args.modelLabels ?? draftLabelsToPlacements(args.draft.labels);
+      sheet.viewports.forEach((viewport) => {
+        const toPaper = (x: number, y: number): { xMm: number; yMm: number } =>
+          modelToPaperPoint(x, y, viewport, viewport.rotationDeg ?? 0);
+        const placed = buildPaperLabelItems(effective, viewport.id, toPaper);
+        placed.items.forEach((item) => emitPaperItem(ctx, item));
+      });
+    }
     // Title block (rect outline, sheet fields, sheet-object texts) as
     // BLOCK+INSERT at the origin so paper coordinates stay absolute.
     const title = buildTitleBlockItems(sheet, 'title-block');

@@ -59,6 +59,13 @@ export interface ModelLabelPlacement {
   yModel: number;
   heightMm?: number;
   layerId?: string;
+  /** Presentation-only paper-mm nudge applied after projection. */
+  offsetMm?: { dxMm?: number; dyMm?: number };
+  rotationDeg?: number;
+  /** Presentation-only leader from the source point to the placed text. */
+  leader?: { enabled?: boolean; lineweightMm?: number };
+  /** Per-viewport overrides keyed by viewport id; manual always wins. */
+  viewportOverrides?: Record<string, { dxMm?: number; dyMm?: number; rotationDeg?: number; visible?: boolean }>;
 }
 
 export interface PaperTextPlacement {
@@ -192,7 +199,61 @@ const primitiveToPaper = (
   }
 };
 
-// North arrow (grid north only) and scale bar are paper-space items built by
+export const draftLabelsToPlacements = (labels: DraftDocument['labels']): ModelLabelPlacement[] =>
+  (labels ?? []).map((label) => ({
+    id: label.id,
+    text: label.overrideText ?? label.text,
+    xModel: label.xModel,
+    yModel: label.yModel,
+    heightMm: label.heightMm,
+    layerId: label.layerId,
+    ...(label.rotationDeg != null ? { rotationDeg: label.rotationDeg } : {}),
+    ...(label.leader != null ? { leader: { ...label.leader } } : {}),
+    ...(label.viewportOverrides != null ? { viewportOverrides: { ...label.viewportOverrides } } : {}),
+  }));
+
+// Per-viewport label resolution shared by SVG/PDF (scene) and layout DXF:
+// one definition so all deliverables place the same text identically.
+// Manual per-viewport overrides win over base offsets; hidden labels
+// (visible === false) emit nothing. Leaders are presentation-only lines
+// from the source point to the placed text; geometry is never touched.
+export const buildPaperLabelItems = (
+  labels: ModelLabelPlacement[],
+  viewportId: string,
+  toPaper: (_x: number, _y: number) => { xMm: number; yMm: number },
+  clipId?: string,
+): { items: ExportItem[]; brokenIds: string[] } => {
+  const items: ExportItem[] = [];
+  const brokenIds: string[] = [];
+  const ordered = [...labels].sort((a, b) => (a.id < b.id ? -1 : a.id > b.id ? 1 : 0));
+  ordered.forEach((label) => {
+    const override = label.viewportOverrides?.[viewportId];
+    if (override?.visible === false) return;
+    if (label.broken || label.text == null) brokenIds.push(label.id);
+    const p = toPaper(label.xModel, label.yModel);
+    const dx = override?.dxMm ?? label.offsetMm?.dxMm ?? 0;
+    const dy = override?.dyMm ?? label.offsetMm?.dyMm ?? 0;
+    const x = p.xMm + dx;
+    const y = p.yMm + dy;
+    if (label.leader?.enabled && (dx !== 0 || dy !== 0)) {
+      items.push({ kind: 'line', layer: label.layerId ?? 'labels', ...(clipId ? { clipId } : {}), x1: p.xMm, y1: p.yMm, x2: x, y2: y, widthMm: label.leader.lineweightMm });
+    }
+    items.push({
+      kind: 'text',
+      layer: label.layerId ?? 'labels',
+      ...(clipId ? { clipId } : {}),
+      x,
+      y,
+      text: label.broken || label.text == null ? BROKEN_REFERENCE_TEXT : label.text,
+      heightMm: label.heightMm ?? 2.5,
+      anchor: 'middle',
+      ...(override?.rotationDeg ?? label.rotationDeg
+        ? { rotationDeg: override?.rotationDeg ?? label.rotationDeg }
+        : {}),
+    });
+  });
+  return { items, brokenIds };
+};
 // these helpers so fixture, SVG, and PDF share one definition.
 // The arrow triangle rotates clockwise by rotationDeg about its base point so
 // it agrees with rotated viewport geometry; the scale bar is pure paper
@@ -290,14 +351,7 @@ export const buildExportSheetScene = (args: BuildSceneArgs): { scene: ExportShee
     const inDraft = args.draft.layers.find((layer) => layer.id === layerId);
     return [inProject, inDraft].some((layer) => layer != null && layer[flag] === false);
   };
-  const persistedLabels: ModelLabelPlacement[] = (args.draft.labels ?? []).map((label) => ({
-    id: label.id,
-    text: label.overrideText ?? label.text,
-    xModel: label.xModel,
-    yModel: label.yModel,
-    heightMm: label.heightMm,
-    layerId: label.layerId,
-  }));
+  const persistedLabels: ModelLabelPlacement[] = draftLabelsToPlacements(args.draft.labels);
   const effectiveLabels = args.modelLabels ?? persistedLabels;
   sheet.viewports.forEach((viewport) => {
     const plan = asPlanViewport(viewport);
@@ -339,24 +393,16 @@ export const buildExportSheetScene = (args: BuildSceneArgs): { scene: ExportShee
       });
     items.push({ kind: 'rect', layer: 'paper-frame', x: plan.paperXmm, y: plan.paperYmm, width: plan.paperWidthMm, height: plan.paperHeightMm });
     const toPaperForLabels = toPaper;
-    effectiveLabels
-      .filter((label) => !isHidden(label.layerId ?? 'labels'))
-      .forEach((label) => {
-        if (label.broken || label.text == null) {
-          warnings.push({ code: 'BROKEN_REFERENCE', message: `label ${label.id} has a broken reference` });
-        }
-        const p = toPaperForLabels(label.xModel, label.yModel);
-        items.push({
-          kind: 'text',
-          layer: label.layerId ?? 'labels',
-          clipId,
-          x: p.xMm,
-          y: p.yMm,
-          text: label.broken || label.text == null ? BROKEN_REFERENCE_TEXT : label.text,
-          heightMm: label.heightMm ?? 2.5,
-          anchor: 'middle',
-        });
-      });
+    const placed = buildPaperLabelItems(
+      effectiveLabels.filter((label) => !isHidden(label.layerId ?? 'labels')),
+      plan.id,
+      toPaperForLabels,
+      clipId,
+    );
+    placed.brokenIds.forEach((id) => {
+      warnings.push({ code: 'BROKEN_REFERENCE', message: `label ${id} has a broken reference` });
+    });
+    items.push(...placed.items);
   });
 
   const title = buildTitleBlockItems(sheet, 'title-block');

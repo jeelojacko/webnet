@@ -39,6 +39,27 @@ export interface DraftLabelOffsetMm {
 export interface DraftLabelLeader {
   enabled: boolean;
   elbowMm?: number;
+  /** Presentation-only paper-mm endpoints, resolved at export; never geometry. */
+  anchor?: { xMm: number; yMm: number };
+  landing?: { xMm: number; yMm: number };
+  lineweightMm?: number;
+}
+
+/** Label placement state: AUTO may be re-placed; MANUAL always wins. */
+export type DraftLabelPlacementState = 'AUTO' | 'MANUAL';
+
+// Legacy aliases: AUTO_GENERATED maps to AUTO, MANUAL_OVERRIDE to MANUAL.
+export const AUTO_GENERATED: DraftLabelPlacementState = 'AUTO';
+export const MANUAL_OVERRIDE: DraftLabelPlacementState = 'MANUAL';
+
+export const normalizePlacementState = (value: unknown): DraftLabelPlacementState =>
+  value === 'MANUAL' || value === 'MANUAL_OVERRIDE' ? 'MANUAL' : 'AUTO';
+
+export interface DraftLabelViewportOverride {
+  dxMm?: number;
+  dyMm?: number;
+  rotationDeg?: number;
+  visible?: boolean;
 }
 
 export interface CadDraftLabel {
@@ -54,6 +75,10 @@ export interface CadDraftLabel {
   autoValue: string;
   displayText: string;
   state: DraftLabelValueState;
+  /** Placement state (default AUTO). Manual edits set MANUAL; auto-place skips MANUAL. */
+  placement?: DraftLabelPlacementState;
+  /** Per-viewport paper-mm overrides; presentation only, no geometry dup. */
+  viewportOverrides?: Record<string, DraftLabelViewportOverride>;
 }
 
 export type DraftLabelSource =
@@ -254,6 +279,8 @@ export const createDraftLabel = (args: {
   leader?: DraftLabelLeader;
   overrideText?: string;
   precision?: Partial<DraftPrecisionProfile>;
+  placement?: DraftLabelPlacementState | 'AUTO_GENERATED' | 'MANUAL_OVERRIDE';
+  viewportOverrides?: Record<string, DraftLabelViewportOverride>;
 }): CadDraftLabel => {
   const profile = asPrecision(args.precision);
   const autoValue = args.source ? deriveAutoText(args.labelType, args.source, profile) : BROKEN_REFERENCE_TEXT;
@@ -272,6 +299,8 @@ export const createDraftLabel = (args: {
       : {}),
     ...(args.leader ? { leader: { ...args.leader } } : {}),
     ...(args.overrideText != null ? { overrideText: args.overrideText } : {}),
+    ...(args.placement != null ? { placement: normalizePlacementState(args.placement) } : {}),
+    ...(args.viewportOverrides ? { viewportOverrides: { ...args.viewportOverrides } } : {}),
     provenance: args.provenance,
     autoValue,
     displayText,
@@ -284,6 +313,7 @@ export const resolveDraftLabel = (
   source: DraftLabelSource | undefined,
   precision?: Partial<DraftPrecisionProfile>,
 ): CadDraftLabel => {
+  // Geometry change updates text only; placement + offsets are kept (manual wins).
   const autoValue = deriveAutoText(label.labelType, source, asPrecision(precision));
   const { displayText, state } = resolveDisplay(autoValue, label.overrideText);
   return { ...label, offsetMm: { ...label.offsetMm }, autoValue, displayText, state };
@@ -323,6 +353,27 @@ export const moveDraftLabel = (
     dxMm: asFiniteOr(offsetMm.dxMm ?? label.offsetMm.dxMm, label.offsetMm.dxMm),
     dyMm: asFiniteOr(offsetMm.dyMm ?? label.offsetMm.dyMm, label.offsetMm.dyMm),
   },
+  // Any manual edit claims MANUAL placement so auto-place leaves it alone.
+  placement: 'MANUAL',
+});
+
+export const setLabelViewportOverride = (
+  label: CadDraftLabel,
+  viewportId: string,
+  override: DraftLabelViewportOverride | undefined,
+): CadDraftLabel => {
+  const viewportOverrides = { ...(label.viewportOverrides ?? {}) };
+  if (override === undefined) delete viewportOverrides[viewportId];
+  else viewportOverrides[viewportId] = { ...override };
+  return { ...label, viewportOverrides, placement: 'MANUAL' };
+};
+
+export const resetLabelToAuto = (label: CadDraftLabel): CadDraftLabel => ({
+  ...label,
+  offsetMm: { dxMm: 0, dyMm: 0 },
+  viewportOverrides: undefined,
+  leader: label.leader ? { ...label.leader, enabled: false } : undefined,
+  placement: 'AUTO',
 });
 
 export const classifyLabelReference = (
