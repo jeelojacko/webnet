@@ -41,7 +41,20 @@ export type CadCommandKey =
   | 'TRIM'
   | 'INTERSECT_POINT'
   | 'EDIT_ENTITY'
-  | 'GRIP_EDIT';
+  | 'GRIP_EDIT'
+  | 'SHEET_ADD'
+  | 'SHEET_DELETE'
+  | 'VIEWPORT_MOVE'
+  | 'VIEWPORT_SCALE'
+  | 'VIEWPORT_ROTATE'
+  | 'TITLE_BLOCK_EDIT'
+  | 'LAYER_CREATE'
+  | 'LAYER_RENAME'
+  | 'LAYER_VISIBILITY'
+  | 'LAYER_LOCKED'
+  | 'LAYER_PRINTABLE'
+  | 'LAYER_MOVE_OBJECTS'
+  | 'LAYER_DELETE';
 export type CadCommandPhase = 'idle' | 'committed';
 
 export interface CadCommandState {
@@ -292,6 +305,82 @@ export type CadCommand =
       x: number;
       y: number;
       vertexIndex?: number;
+    }
+  | {
+      key: 'SHEET_ADD';
+      sheetId: string;
+      sheetName: string;
+    }
+  | {
+      key: 'SHEET_DELETE';
+      sheetId: string;
+    }
+  | {
+      key: 'VIEWPORT_MOVE';
+      sheetId: string;
+      viewportId: string;
+      x: number;
+      y: number;
+    }
+  | {
+      key: 'VIEWPORT_SCALE';
+      sheetId: string;
+      viewportId: string;
+      scaleDenominator: number;
+    }
+  | {
+      key: 'VIEWPORT_ROTATE';
+      sheetId: string;
+      viewportId: string;
+      rotationDeg: number;
+    }
+  | {
+      key: 'TITLE_BLOCK_EDIT';
+      sheetId: string;
+      definitionId: string;
+      values: Record<string, string>;
+    }
+  | {
+      key: 'LAYER_CREATE';
+      name: string;
+      color?: string;
+      role?:
+        | 'points'
+        | 'control-points'
+        | 'observation-lines'
+        | 'error-ellipses'
+        | 'labels'
+        | 'parcels'
+        | 'planning';
+    }
+  | {
+      key: 'LAYER_RENAME';
+      layerId: string;
+      name: string;
+    }
+  | {
+      key: 'LAYER_VISIBILITY';
+      layerId: string;
+      visible: boolean;
+    }
+  | {
+      key: 'LAYER_LOCKED';
+      layerId: string;
+      locked: boolean;
+    }
+  | {
+      key: 'LAYER_PRINTABLE';
+      layerId: string;
+      printable: boolean;
+    }
+  | {
+      key: 'LAYER_MOVE_OBJECTS';
+      fromLayerId: string;
+      toLayerId: string;
+    }
+  | {
+      key: 'LAYER_DELETE';
+      layerId: string;
     };
 
 export interface CadTransaction {
