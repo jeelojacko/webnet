@@ -138,6 +138,8 @@ describe('GnssRawSessionPanel intake', () => {
     // Upload rover first: tree order must not follow upload order.
     await upload(container, 'raw-session-obs-input', ['rover.06o', 'base.06o']);
     await upload(container, 'raw-session-nav-input', ['nav.06n']);
+    await waitForText(container, 'SYNB');
+    await waitForText(container, 'SYNR');
     const inventory = byTestId(container, 'raw-session-inventory')?.textContent ?? '';
     expect(inventory).toContain('SYNB');
     expect(inventory).toContain('SYNR');
