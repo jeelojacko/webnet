@@ -133,7 +133,9 @@ const fail = (
   detail?: string,
 ): PreflightFail => ({ ok: false, error: { code, message, detail } });
 
-const SUPPORTED_VERSIONS = [/^2\.10/, /^2\.11/, /^3\./];
+// RINEX 4 observation files keep RINEX 3 `>` epoch records (12J.10: proven
+// on real RINEX 4.01 Belgian intake, native + production parse).
+const SUPPORTED_VERSIONS = [/^2\.10/, /^2\.11/, /^3\./, /^4\./];
 
 interface NavToe {
   readonly toeMsList: number[];
@@ -261,7 +263,7 @@ export function preflightRawGnss(input: PreflightInput): PreflightResult {
     if (!SUPPORTED_VERSIONS.some((re) => re.test(v))) {
       return fail(
         'UNSUPPORTED_RINEX',
-        `RINEX version ${v} in the ${tag} file is not supported (need 2.10, 2.11, or 3.x).`,
+        `RINEX version ${v} in the ${tag} file is not supported (need 2.10, 2.11, 3.x, or 4.x).`,
       );
     }
     if (!parsed.metadata.constellations.includes('G')) {

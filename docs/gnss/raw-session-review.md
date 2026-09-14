@@ -76,20 +76,21 @@ workspace, where provenance is recorded.
    (envelope `exportedAt` and per-baseline `processedAt` are wall-clock
    marks excluded from the comparison, never from the archive).
 
-## ANTEX verdict (this track)
+## ANTEX verdict (12J.10 terminal — supersedes REVIEW_ONLY above)
 
-**ANTEX_REVIEW_ONLY** — unchanged from 12J.8. Full `igs20.atx` was
-obtained (public IGS, sha256 `8715268e…`, 60,295,761 bytes — same upstream
-file as the 12J.8 stage-2c check) and full-vs-subset parity now passes on
-two Belgian 1 h precise legs with byte-identical `.pos` output
-(TGRN-WARE and WERB-WARE, DOY126 h00; subset-of-full hashes equal
-subset-of-subset for all three production antenna combos). Coverage is
-still narrow (one window, precise-only, two combos at processing level),
-so no certification is claimed; calibration stays status-only
-(`CALIBRATION_UNAVAILABLE`, never silent correction). Browser synthetic
-proof covers subset staging + provenance only: with- and without-subset
-solutions are bit-identical there (even a garbage-ANTEX probe changes
-nothing), so a visible PCV correction effect remains unproven.
+**ANTEX_PRODUCTION_READY_WITH_SUBSET.** Full evidence in
+`reports/gnss/phase12j10-final-hardening.md` (§3): 63/63 full-vs-subset
+byte-identical solution lines across 7 legs × 3 days × 4/2 windows
+(TRM59800.00 / LEIAR25.R3 / LEIAR25.R4, precise SP3); orientation
+closure ≤ 0.1 mm; falsification control (+5 m PCO → 124.9 mm, path
+live); production subsets 540 KB–1.15 MB from the same 60 MB `igs20.atx`
+(sha256 `8715268e…`); exact TYPE+RADOME matching, deterministic builds,
+cache isolation, hash provenance, bounded memory, clean-clone E2E.
+12J.10 also repaired the endpoint configuration (both postypes effective
+by dropping the clobbering `-r`; explicit header anttype/antdel so
+receiver PCV actually applies) and accepts RINEX 4 obs. The 12J.9
+"bit-identical" browser note below described the unfixed lineage
+(satellite-PCV-only staging); it no longer applies.
 
 ## DIRECT_INGEST
 
@@ -97,3 +98,17 @@ nothing), so a visible PCV correction effect remains unproven.
 raw-formal covariance into any project, network, or adjustment store
 (verified: Track C sources import no adjustment/store modules; session
 queue tests assert the boundary).
+
+## Phase 12J.10 terminal notes
+
+- Panel split with zero behavior change: `GnssRawSessionPanel` (now 219
+  lines) + `useRawGnssSessionProcessing` hook + `RawGnssSessionIntake` /
+  `Inventory` / `GraphControls` / `Progress`. Snapshot/launch-guard/
+  repair/reimport semantics preserved; see report §2.
+- RINEX 4.x observation files accepted (epoch records are RINEX-3
+  compatible; `>` event records skipped, fail closed on zero epochs).
+- Clean-clone browser E2E: `npm run e2e:raw-session` / `e2e:raw-review`
+  build + stage + run; staged glue gitignored, never committed.
+- Phase 12J is COMPLETE (report §7). No covariance fitting, no direct
+  ingest, no all-pairs networks, no math/R2B/free-network/tolerance
+  changes were made in this track.

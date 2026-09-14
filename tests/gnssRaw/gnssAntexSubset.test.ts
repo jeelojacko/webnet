@@ -113,6 +113,42 @@ describe('extractAntexSubsetText', () => {
       }),
     ).toThrow(/exceeds/);
   });
+  it('is order-invariant: serial permutation gives identical bytes/hash (12J.10 §14)', async () => {
+    const fwd = await buildAntexSubset({ sourceText: SOURCE, requiredReceiverSerials: [...REQUIRED] });
+    const rev = await buildAntexSubset({
+      sourceText: SOURCE, requiredReceiverSerials: [...REQUIRED].reverse(),
+    });
+    expect(rev.subsetBytes).toEqual(fwd.subsetBytes);
+    expect(rev.subsetSha256).toBe(fwd.subsetSha256);
+    expect(rev.subsetText).toBe(fwd.subsetText);
+    // validAt is provenance-only: different dates, same subset bytes.
+    const dated = await buildAntexSubset({
+      sourceText: SOURCE, requiredReceiverSerials: [...REQUIRED], validAt: '2024-06-01T00:00:00.000Z',
+    });
+    expect(dated.subsetBytes).toEqual(fwd.subsetBytes);
+  });
+});
+
+describe('antex cache isolation (12J.10 §15)', () => {
+  it('A, then B, then A again: A1 === A2, B distinct, no stale state', async () => {
+    const cache = createAntexSubsetCache();
+    const a1 = storeAntexSubset(cache, await buildAntexSubset({
+      sourceText: SOURCE, requiredReceiverSerials: ['TRM59800.00 NONE'],
+    }));
+    const b = storeAntexSubset(cache, await buildAntexSubset({
+      sourceText: SOURCE, requiredReceiverSerials: ['LEIAR25.R4 LEIT'],
+    }));
+    const a2 = storeAntexSubset(cache, await buildAntexSubset({
+      sourceText: SOURCE, requiredReceiverSerials: ['TRM59800.00 NONE'],
+    }));
+    expect(a2).toBe(a1);
+    expect(a2.subsetBytes).toEqual(a1.subsetBytes);
+    expect(b.subsetSha256).not.toBe(a1.subsetSha256);
+    expect(b.receiverSerials).toEqual(['LEIAR25.R4 LEIT']);
+    expect(a2.receiverSerials).toEqual(['TRM59800.00 NONE']);
+    expect(getCachedAntexSubset(cache, a1.subsetSha256)).toBe(a1);
+    expect(getCachedAntexSubset(cache, b.subsetSha256)).toBe(b);
+  });
 });
 
 describe('antex subset cache', () => {
@@ -170,7 +206,22 @@ describe('rnx2rtkp ANTEX staging', () => {
     const conf = new TextDecoder().decode(mod.files.get('/work/prec.conf') as Uint8Array);
     expect(conf).toContain('file-rcvantfile=/work/antex.atx');
     expect(conf).toContain('file-satantfile=/work/antex.atx');
+    // 12J.10 §7: both endpoints resolve antenna position/type from their
+    // own RINEX headers — never one-sided. Explicit anttype selects the
+    // exact receiver PCV (RTKLIB default "" never matches); explicit
+    // antdel steers the PCV point without moving the fixed base.
+    expect(conf).toContain('ant1-postype=rinexhead');
     expect(conf).toContain('ant2-postype=rinexhead');
+    expect(conf).toContain('ant1-anttype=');
+    expect(conf).toContain('ant2-anttype=');
+    expect(conf).toContain('ant1-antdelu=0');
+    expect(conf).toContain('ant2-antdelu=0');
+    // 12J.10: -r resets refpos=rovpos=XYZ in rnx2rtkp's second argv pass,
+    // silently voiding the conf postypes — so ANTEX jobs must omit it.
+    expect(withAntex).not.toContain('-r');
+    // Non-ANTEX jobs keep the legacy -r anchor byte-identical.
+    expect(legacy).toContain('-r');
+    expect(legacy.slice(legacy.indexOf('-r') + 1, legacy.indexOf('-r') + 4)).toEqual(['1', '2', '3']);
     expect(mod.files.get('/work/antex.atx')).toEqual(new Uint8Array([7]));
   });
 

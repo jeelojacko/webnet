@@ -118,7 +118,10 @@ export function parseObs2Epoch(line: string): { ms: number; sats: string[] } | n
 export function parseObs3Epoch(line: string): { ms: number } | null {
   if (!line.startsWith('>')) return null;
   const f = line.slice(1).trim().split(/\s+/);
-  if (f.length < 6) throw new RinexParseError('Malformed RINEX 3 epoch line.');
+  // RINEX 4 event/aux records reuse the `>` marker (`>  4327`); only
+  // full date-led lines are observation epochs. Short lines are skipped:
+  // a file with no valid epochs fails closed downstream (NO_COMMON_TIME).
+  if (f.length === 0 || !/^\d{4}$/.test(f[0]!) || f.length < 6) return null;
   const { ms } = epochIso({
     year: strictInt(f[0]!, 'epoch year'),
     month: strictInt(f[1]!, 'epoch month'),

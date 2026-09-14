@@ -201,7 +201,11 @@ export function parseRinexObs(
   }
   if (endIndex < 0) throw new RinexParseError('Missing END OF HEADER.');
 
-  const isRinex3 = (st.version ?? '').startsWith('3');
+  // RINEX 4 keeps the RINEX 3 `>` epoch records; 12J.10 proved this on
+  // real RINEX 4.01 Belgian files (native + browser intake). Anything else
+  // stays on the legacy RINEX 2 epoch path and fails closed on mismatch.
+  const v = st.version ?? '';
+  const isRinex3 = v.startsWith('3') || v.startsWith('4');
   const epochTimesMs: number[] = [];
   let firstMs: number | null = null;
   let lastMs: number | null = null;

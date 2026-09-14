@@ -354,16 +354,19 @@ function main() {
   writeFileSync(join(HERE, 'malformed.06o'), good.replace(approxRe, badApprox.padEnd(60, ' ')));
 
   writeRinex3Pair(stations, t0, ephs, baseLat, baseLon);
+  // RINEX 4.01 pair: identical `>`-record body, version line only.
+  writeRinex3Pair(stations, t0, ephs, baseLat, baseLon, '4.01');
   console.log('fixtures written to', HERE);
 }
 
-function writeRinex3Pair(stations, t0, ephs, baseLat, baseLon) {
+function writeRinex3Pair(stations, t0, ephs, baseLat, baseLon, version = '3.04') {
   const codes = ['C1C', 'L1C', 'D1C', 'S1C', 'C2W', 'L2W', 'D2W', 'S2W'];
   const N_EPOCH = 6;
   const INT = 30;
   for (const st of [stations[0], stations[1]]) {
     let h = '';
-    h += hdr('     3.04           OBSERVATION DATA    M (MIXED)', 'RINEX VERSION / TYPE');
+    // RINEX 4 keeps the RINEX 3 `>` epoch records; only the version differs.
+    h += hdr(`     ${version}           OBSERVATION DATA    M (MIXED)`, 'RINEX VERSION / TYPE');
     h += hdr('SYNTHGEN  SYNTHETIC FIXTURES            20240101 000000 UTC', 'PGM / RUN BY / DATE');
     h += hdr(st.marker, 'MARKER NAME');
     h += hdr('1                    SYNTHRCV            1.0', 'REC # / TYPE / VERS');
@@ -404,7 +407,8 @@ function writeRinex3Pair(stations, t0, ephs, baseLat, baseLon) {
       }
     }
     void d0;
-    writeFileSync(join(HERE, st.marker === 'SYNB' ? 'r3base.24o' : 'r3rover.24o'), h + body);
+    const tag = st.marker === 'SYNB' ? 'base' : 'rover';
+    writeFileSync(join(HERE, `r${version[0]}${tag}.24o`), h + body);
   }
 }
 

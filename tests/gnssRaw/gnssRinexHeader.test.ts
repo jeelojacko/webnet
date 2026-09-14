@@ -39,6 +39,17 @@ describe('parseRinexObs (RINEX 2.10)', () => {
   });
 });
 
+describe('parseRinexObs (RINEX 4.01)', () => {
+  it('parses the synthetic RINEX 4 base file like RINEX 3', () => {
+    const p = parseRinexObs(read('r4base.24o'));
+    expect(p.metadata.rinexVersion).toBe('4.01');
+    expect(p.metadata.marker).toBe('SYNB');
+    expect(p.metadata.constellations).toEqual(['G']);
+    expect(p.epochCount).toBe(6);
+    expect(p.metadata.approxXyz?.[0]).toBeCloseTo(-1284945.5806, 3);
+  });
+});
+
 describe('parseRinexObs (RINEX 3.04)', () => {
   it('parses the synthetic RINEX 3 base file', () => {
     const p = parseRinexObs(read('r3base.24o'));

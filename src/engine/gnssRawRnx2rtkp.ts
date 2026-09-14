@@ -315,7 +315,21 @@ export const buildRnx2rtkpArgs = (
     if (job.options?.precise === true && job.sp3) confLines.push('pos1-sateph=precise');
     // 12J.9 fix: rinexhead antenna position is load-bearing — without it
     // every epoch solves Q=0 (proven: 0/13 vs 13/13 solution epochs natively).
-    if (antex) confLines.push(`file-rcvantfile=${ANTEX_NAME}`, `file-satantfile=${ANTEX_NAME}`, 'ant2-postype=rinexhead');
+    // 12J.10: BOTH endpoints resolve from their own RINEX headers, and -r
+    // is omitted for ANTEX jobs — rnx2rtkp loads -k in a first argv pass
+    // and applies -r in a second pass that resets refpos=rovpos=XYZ,
+    // which silently voided ant2-postype=rinexhead in 12J.9 production
+    // invocations (the native proof omitted -r, so it never saw this).
+    // Header positions anchor both ends; the reported vector is still
+    // solution minus the base header approx, so the origin is unchanged.
+    // 12J.10 endpoint completion: explicit ant*-anttype from the staged
+    // RINEX headers selects the exact receiver PCV (RTKLIB defaults
+    // anttype to "", which never matches — receiver PCV was silently off
+    // in 12J.9). Explicit type (not "*") keeps antpos from re-adding the
+    // header DELTA to the fixed base, so the reported vector stays
+    // first-order unbiased under either agency header convention; antdel
+    // only steers the PCV application point (second order). ant1 = rover.
+    if (antex) confLines.push(`file-rcvantfile=${ANTEX_NAME}`, `file-satantfile=${ANTEX_NAME}`, 'ant1-postype=rinexhead', 'ant2-postype=rinexhead', `ant1-anttype=${job.roverAntenna.antennaModel}`, `ant1-antdele=${job.roverAntenna.east}`, `ant1-antdeln=${job.roverAntenna.north}`, `ant1-antdelu=${job.roverAntenna.height}`, `ant2-anttype=${job.baseAntenna.antennaModel}`, `ant2-antdele=${job.baseAntenna.east}`, `ant2-antdeln=${job.baseAntenna.north}`, `ant2-antdelu=${job.baseAntenna.height}`);
     mod.FS.writeFile(NAMES.conf, new TextEncoder().encode(`${confLines.join('\n')}\n`));
     args.push('-k', NAMES.conf);
     if (job.options?.precise === true && job.sp3) {
@@ -324,6 +338,7 @@ export const buildRnx2rtkpArgs = (
       allInputs.push(p);
     }
   }
+  if (antex) return [...args, '-o', NAMES.out, ...allInputs];
   return [...args, '-o', NAMES.out, '-r', ...job.baseXyz.map(String), ...allInputs];
 };
 
