@@ -153,6 +153,19 @@ export class RawSessionPool {
     return 'FAILED';
   }
 
+  /** Release a latched cancel so the pool accepts new work.
+   * Safe after StrictMode remount (no jobs yet) and before an explicit
+   * user re-run. Drops terminal 'cancelled' records only; done/failed
+   * results are retained. Never called while jobs are active. */
+  reset(): void {
+    if (this.active > 0) return;
+    this.cancelled = false;
+    for (const [id, rec] of this.edges) {
+      if (rec.state === 'cancelled') this.edges.delete(id);
+    }
+    this.order = [];
+  }
+
   cancel(): void {
     this.generation += 1;
     this.cancelled = true;
@@ -307,6 +320,7 @@ export const useGnssRawSession = (par: number = DEFAULT_SESSION_PAR): UseGnssRaw
   );
 
   useEffect(() => {
+    pool.reset();
     pool.setOnChange(refresh);
     return () => {
       pool.cancel();
@@ -317,6 +331,7 @@ export const useGnssRawSession = (par: number = DEFAULT_SESSION_PAR): UseGnssRaw
   const start = useCallback(
     (_sessionId: string, specs: readonly SessionEdgeSpec[]): void => {
       checkStationBound([...new Set(specs.flatMap((s) => [s.from, s.to]))]);
+      pool.reset();
       pool.enqueue(specs);
       refresh();
     },

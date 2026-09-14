@@ -216,6 +216,32 @@ describe('session pool cancel', () => {
   });
 });
 
+describe('session pool reset (StrictMode remount / re-run after cancel)', () => {
+  it('reset releases a latched cancel so the pool accepts new work', () => {
+    const launched: Pending[] = [];
+    const pool = new RawSessionPool(manualDriver(launched), 2);
+    pool.cancel();
+    pool.enqueue([spec('A', 'B')]);
+    expect(launched).toHaveLength(0);
+    pool.reset();
+    pool.enqueue([spec('A', 'B')]);
+    expect(launched).toHaveLength(1);
+    launched[0]!.succeed(fixedResult('A', 'B'));
+    expect(pool.sessionStatus()).toBe('COMPLETE');
+  });
+
+  it('reset drops cancelled records but retains done results', () => {
+    const launched: Pending[] = [];
+    const pool = new RawSessionPool(manualDriver(launched), 2);
+    pool.enqueue([spec('A', 'B'), spec('A', 'C')]);
+    launched[0]!.succeed(fixedResult('A', 'B'));
+    pool.cancel();
+    pool.reset();
+    expect(pool.snapshot()['A->C']).toBeUndefined();
+    expect(pool.edgeResult('A->B')?.status).toBe('FIXED');
+  });
+});
+
 describe('replacement edge', () => {
   it('revalidates the tree and records provenance', () => {
     const graph = buildStarGraph([occ('A'), occ('B'), occ('C')], 'A');
