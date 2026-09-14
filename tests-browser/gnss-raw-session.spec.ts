@@ -2,23 +2,13 @@
  * Phase 12J.9 Track E1 — real-browser raw static-session review workflow.
  *
  * Real app + real Chromium + real pinned rnx2rtkp WASM path, synthetic
- * fixtures only (tests/fixtures/gnssRaw). Intake/planning letters (A–D,
- * I-planning, L, N-planning, R, P) run against the live UI. Processing
- * letters (E–H, J, K, M, O) are blocked by a product bug documented
- * below — they assert the correct behavior and FAIL rather than faking
- * a pass. Q (ANTEX subset staging) has no UI staging path and is
- * annotated SKIP.
+ * fixtures only (tests/fixtures/gnssRaw). Covers mission letters A-R:
+ * intake/planning (A-D, L, N-planning, R, P), processing (E-H, J, K),
+ * PARTIAL isolation (M), cancel (O), ANTEX subset staging (Q).
  *
- * PRODUCT BUG (src/hooks/useGnssRawSession.ts, NOT touched per Track E1
- * scope): the hook's unmount cleanup calls pool.cancel(), which sets a
- * permanent cancelled flag, and RawSessionPool.enqueue() silently drops
- * jobs once cancelled. Under React StrictMode (src/main.tsx, active in
- * `npm run dev`) the initial mount runs setup→cleanup→setup on the SAME
- * pool instance, so the live pool is already cancelled before the first
- * run: clicking "Process raw session" settles instantly with zero jobs —
- * no progress, no review, no failed edges, Start-over appears. Signature
- * in this spec: raw-session-progress never appears; raw-session-review
- * and raw-session-failed never appear; no page error.
+ * Environment note: the dev server serves the RTKLIB glue from public/, so
+ * run `npm run wasm:build:rtklib` then copy cpp/build-wasm/rtklib-rnx2rtkp.*
+ * to public/ before this spec (artifacts are build outputs, never committed).
  */
 import { readFile } from 'node:fs/promises';
 import { expect, test, type Page } from '@playwright/test';
@@ -86,13 +76,9 @@ test.describe('Raw static session review', () => {
     // R: missing antenna => calibration warning (formal precision only).
     await expect(dialog.getByTestId('raw-session-antenna-banner')).toContainText('formal precision only');
 
-    // Q: ANTEX subset staging has no UI path — label is provenance-only.
-    await dialog.getByTestId('raw-session-antex').fill('igs20.atx');
-    await expect(dialog.getByTestId('raw-session-antex')).toHaveValue('igs20.atx');
-    test.info().annotations.push({
-      type: 'Q-ANTEX-subset',
-      description: 'SKIP: no ANTEX file staging exists in the session UI; the label input is provenance-only and unplumbed into the export (antexSourceSha256 always null).',
-    });
+    // Q (intake half): the ANTEX file slot stages a real file; the subset is
+    // generated at process time (covered end-to-end in the Q test below).
+    await dialog.getByTestId('raw-session-antex-input').setInputFiles(`${FX}/synth.atx`);
 
     // L: base swap changes the tree deterministically.
     await dialog.getByTestId('raw-session-base').selectOption('SYNB');
@@ -217,6 +203,38 @@ test.describe('Raw static session review', () => {
     await dialog.getByTestId('raw-session-cancel').click();
     await expect(dialog.getByTestId('raw-session-progress')).toHaveCount(0);
     await expect(dialog.getByTestId('raw-session-review')).toHaveCount(0);
+    expect(pageErrors).toEqual([]);
+  });
+
+  test('Q: ANTEX exact-match subset stages into every session job', async ({ page }) => {
+    test.setTimeout(600_000);
+    const pageErrors: string[] = [];
+    page.on('pageerror', (error) => pageErrors.push(error.message));
+    await page.goto('/');
+    await page.waitForFunction(
+      () => localStorage.getItem('webnet.workspace-recovery.v1') != null,
+      null,
+      { timeout: 30_000 },
+    );
+    await openSessionDialog(page);
+    const dialog = page.getByRole('dialog', { name: 'Raw static session review' });
+    await uploadTrio(page, [`${FX}/base.06o`, `${FX}/rover.06o`, `${FX}/aux.06o`]);
+    await dialog.getByTestId('raw-session-antex-input').setInputFiles(`${FX}/synth.atx`);
+    await dialog.getByTestId('raw-session-process').click();
+    await expect(dialog.getByTestId('raw-session-review')).toBeVisible({ timeout: 300_000 });
+    await expect(dialog.getByTestId('raw-session-status')).toContainText('COMPLETE');
+    const [download] = await Promise.all([
+      page.waitForEvent('download'),
+      dialog.getByTestId('raw-session-export').click(),
+    ]);
+    await download.saveAs(EXPORT_PATH);
+    const exported = JSON.parse(await readFile(EXPORT_PATH, 'utf8')) as {
+      session: { provenance: { antexSourceSha256: string | null; antexSubsetSha256: string | null } };
+    };
+    const { antexSourceSha256, antexSubsetSha256 } = exported.session.provenance;
+    expect(antexSourceSha256).toMatch(/^[0-9a-f]{64}$/);
+    expect(antexSubsetSha256).toMatch(/^[0-9a-f]{64}$/);
+    expect(antexSubsetSha256).not.toBe(antexSourceSha256);
     expect(pageErrors).toEqual([]);
   });
 });

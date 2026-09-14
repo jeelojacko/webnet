@@ -170,6 +170,7 @@ describe('rnx2rtkp ANTEX staging', () => {
     const conf = new TextDecoder().decode(mod.files.get('/work/prec.conf') as Uint8Array);
     expect(conf).toContain('file-rcvantfile=/work/antex.atx');
     expect(conf).toContain('file-satantfile=/work/antex.atx');
+    expect(conf).toContain('ant2-postype=rinexhead');
     expect(mod.files.get('/work/antex.atx')).toEqual(new Uint8Array([7]));
   });
 

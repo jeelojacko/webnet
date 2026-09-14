@@ -307,7 +307,9 @@ export const buildRnx2rtkpArgs = (
     // satantfile. Precise-only jobs emit byte-identical args to before.
     const confLines: string[] = [];
     if (job.options?.precise === true && job.sp3) confLines.push('pos1-sateph=precise');
-    if (antex) confLines.push(`file-rcvantfile=${ANTEX_NAME}`, `file-satantfile=${ANTEX_NAME}`);
+    // 12J.9 fix: rinexhead antenna position is load-bearing — without it
+    // every epoch solves Q=0 (proven: 0/13 vs 13/13 solution epochs natively).
+    if (antex) confLines.push(`file-rcvantfile=${ANTEX_NAME}`, `file-satantfile=${ANTEX_NAME}`, 'ant2-postype=rinexhead');
     mod.FS.writeFile(NAMES.conf, new TextEncoder().encode(`${confLines.join('\n')}\n`));
     args.push('-k', NAMES.conf);
     if (job.options?.precise === true && job.sp3) {
