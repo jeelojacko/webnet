@@ -5,6 +5,7 @@ import type {
   CadStyleLibrary,
   CadTextStyle,
 } from './cadTypes';
+import type { DraftPrecisionProfile } from './cadDraftTypes';
 
 const DEFAULT_LINE_TYPES: CadLineType[] = [
   { id: 'continuous', name: 'Continuous', dashPattern: [] },
@@ -74,4 +75,22 @@ export const DEFAULT_CAD_STYLE_LIBRARY: CadStyleLibrary = {
   textStyles: DEFAULT_TEXT_STYLES,
   pointSymbols: DEFAULT_POINT_SYMBOLS,
   styles: DEFAULT_STYLES,
+};
+
+// Drafting (paper-space) defaults. Paper units are millimetres internally.
+// Display-only formatting profile; never feeds adjustment or listing output.
+export const DEFAULT_DRAFT_PAPER_TEXT_HEIGHTS_MM = {
+  small: 2.5,
+  normal: 3.5,
+  large: 5.0,
+} as const;
+
+export const DEFAULT_DRAFT_TEXT_ALIGNMENT = 'left' as const;
+
+export const DEFAULT_DRAFT_PRECISION_PROFILE: DraftPrecisionProfile = {
+  bearingDecimals: 0,
+  distanceDecimals: 3,
+  areaDecimals: 1,
+  coordinateDecimals: 3,
+  unitsMode: 'm',
 };

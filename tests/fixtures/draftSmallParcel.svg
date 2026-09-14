@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="297mm" height="210mm" viewBox="0 0 297 210">
+<defs>
+<clipPath id="viewport-viewport-small-parcel"><rect x="15" y="15" width="200" height="130"/></clipPath>
+</defs>
+<g id="layer-parcels">
+<line x1="65" y1="120" x2="165" y2="120" clip-path="url(#viewport-viewport-small-parcel)"/>
+<line x1="165" y1="120" x2="165" y2="40" clip-path="url(#viewport-viewport-small-parcel)"/>
+<line x1="165" y1="40" x2="65" y2="40" clip-path="url(#viewport-viewport-small-parcel)"/>
+<line x1="65" y1="40" x2="65" y2="120" clip-path="url(#viewport-viewport-small-parcel)"/>
+<line x1="65" y1="120" x2="165" y2="120" clip-path="url(#viewport-viewport-small-parcel)"/>
+<line x1="165" y1="120" x2="165" y2="40" clip-path="url(#viewport-viewport-small-parcel)"/>
+<line x1="165" y1="40" x2="65" y2="40" clip-path="url(#viewport-viewport-small-parcel)"/>
+<line x1="65" y1="40" x2="65" y2="120" clip-path="url(#viewport-viewport-small-parcel)"/>
+</g>
+<g id="layer-points">
+<circle cx="65" cy="120" r="1.8" clip-path="url(#viewport-viewport-small-parcel)"/>
+<circle cx="165" cy="120" r="1.8" clip-path="url(#viewport-viewport-small-parcel)"/>
+<circle cx="165" cy="40" r="1.8" clip-path="url(#viewport-viewport-small-parcel)"/>
+<circle cx="65" cy="40" r="1.8" clip-path="url(#viewport-viewport-small-parcel)"/>
+</g>
+<g id="layer-paper-frame">
+<rect x="15" y="15" width="200" height="130" fill="none"/>
+</g>
+<g id="layer-labels">
+<text x="115" y="120" font-size="2.5" text-anchor="middle" clip-path="url(#viewport-viewport-small-parcel)">N90-00-00.00E 50.000 m</text>
+<text x="165" y="80" font-size="2.5" text-anchor="middle" clip-path="url(#viewport-viewport-small-parcel)">N00-00-00.00E 40.000 m</text>
+<text x="115" y="40" font-size="2.5" text-anchor="middle" clip-path="url(#viewport-viewport-small-parcel)">S90-00-00.00W 50.000 m</text>
+<text x="65" y="80" font-size="2.5" text-anchor="middle" clip-path="url(#viewport-viewport-small-parcel)">S00-00-00.00E 40.000 m</text>
+<text x="115" y="80" font-size="2.5" text-anchor="middle" clip-path="url(#viewport-viewport-small-parcel)">2000.0 m²</text>
+</g>
+<g id="layer-title-block">
+<rect x="10" y="186" width="277" height="14" fill="none"/>
+<text x="12" y="194" font-size="3" text-anchor="start">C1 - Parcel</text>
+<text x="72" y="194" font-size="3" text-anchor="start">297x210mm</text>
+</g>
+<g id="layer-paper-symbols">
+<polygon points="270,28 273.6,40 270,43 266.4,40" fill="none"/>
+<text x="270" y="26.5" font-size="2.5" text-anchor="middle">N (grid)</text>
+<rect x="220" y="175" width="10" height="2" fill="#000000"/>
+<rect x="230" y="175" width="10" height="2" fill="#ffffff"/>
+<rect x="240" y="175" width="10" height="2" fill="#000000"/>
+<rect x="250" y="175" width="10" height="2" fill="#ffffff"/>
+</g>
+</svg>

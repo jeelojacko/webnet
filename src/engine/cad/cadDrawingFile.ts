@@ -1,6 +1,7 @@
 import { createStableRuntimeId } from '../id';
 import { buildCadBounds } from './cadProjectState';
 import { cloneCadProject, cloneSurveyCadPersistedState, sanitizeSurveyCadPersistedState } from './cadPersistence';
+import { cloneDraftDocument, createBlankDraftDocument, sanitizeDraftDocument } from './cadDraftTypes';
 import type {
   CadDrawingDocument,
   CadDrawingImportRecord,
@@ -61,17 +62,19 @@ export const createBlankCadDrawingDocument = ({
   units: UnitsMode;
 }): CadDrawingDocument => {
   const nowIso = new Date().toISOString();
+  const project = createBlankCadProject({ name, units });
   return {
     kind: 'webnet-cad-drawing',
-    schemaVersion: 1,
+    schemaVersion: 2,
     drawingId: createStableRuntimeId('cad-drawing'),
     name,
     createdAt: nowIso,
     updatedAt: nowIso,
     units,
-    project: createBlankCadProject({ name, units }),
+    project,
     showParcelLabels: true,
     imports: [],
+    draft: createBlankDraftDocument({ projectId: project.id, layers: project.layers }),
   };
 };
 
@@ -96,7 +99,7 @@ export const cloneCadDrawingDocument = (
   document: CadDrawingDocument,
 ): CadDrawingDocument => ({
   kind: 'webnet-cad-drawing',
-  schemaVersion: 1,
+  schemaVersion: document.schemaVersion,
   drawingId: document.drawingId,
   name: document.name,
   createdAt: document.createdAt,
@@ -106,7 +109,29 @@ export const cloneCadDrawingDocument = (
   parcelLayout: cloneParcelLayout(document.parcelLayout),
   showParcelLabels: document.showParcelLabels ?? true,
   imports: (document.imports ?? []).map(cloneImportRecord),
+  draft:
+    sanitizeDraftDocument(document.draft, document.project.id, document.project.layers) ??
+    createBlankDraftDocument({
+      projectId: document.project.id,
+      layers: document.project.layers,
+    }),
 });
+
+export const migrateV1ToV2 = (document: CadDrawingDocument): CadDrawingDocument => {
+  if (document.schemaVersion === 2) return cloneCadDrawingDocument(document);
+  const migrated = cloneCadDrawingDocument(document);
+  return {
+    ...migrated,
+    schemaVersion: 2,
+    draft:
+      document.draft != null
+        ? cloneDraftDocument(document.draft)
+        : createBlankDraftDocument({
+            projectId: document.project.id,
+            layers: document.project.layers,
+          }),
+  };
+};
 
 export const buildCadDrawingFileName = (name: string): string => {
   const stem =
@@ -135,7 +160,7 @@ export const migrateSurveyCadStateToDrawing = ({
   const project = cloneSurveyCadPersistedState(state).project;
   return {
     kind: 'webnet-cad-drawing',
-    schemaVersion: 1,
+    schemaVersion: 2,
     drawingId: `cad-drawing:${state.sourceSignature || state.project.id}`,
     name,
     createdAt: nowIso,
@@ -149,12 +174,15 @@ export const migrateSurveyCadStateToDrawing = ({
     parcelLayout: cloneParcelLayout(state.parcelLayout),
     showParcelLabels: state.showParcelLabels ?? true,
     imports: [],
+    draft: createBlankDraftDocument({ projectId: project.id, layers: project.layers }),
   };
 };
 
 const sanitizeCadDrawingDocument = (value: unknown): CadDrawingDocument | undefined => {
   if (!isRecord(value)) return undefined;
-  if (value.kind !== 'webnet-cad-drawing' || value.schemaVersion !== 1) return undefined;
+  if (value.kind !== 'webnet-cad-drawing' || (value.schemaVersion !== 1 && value.schemaVersion !== 2)) {
+    return undefined;
+  }
   if (
     typeof value.drawingId !== 'string' ||
     typeof value.name !== 'string' ||
@@ -180,7 +208,9 @@ export const parseCadDrawingFile = (jsonText: string): { ok: true; drawing: CadD
     return { ok: false, errors: ['CAD drawing file is not valid JSON.'] };
   }
   const drawing = sanitizeCadDrawingDocument(parsed);
-  if (drawing) return { ok: true, drawing };
+  if (drawing) {
+    return { ok: true, drawing: drawing.schemaVersion === 1 ? migrateV1ToV2(drawing) : drawing };
+  }
 
   const legacySidecar = isRecord(parsed) ? sanitizeSurveyCadPersistedState(parsed.surveyCad) : undefined;
   const legacyState = legacySidecar ?? sanitizeSurveyCadPersistedState(parsed);

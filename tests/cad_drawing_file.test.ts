@@ -53,7 +53,7 @@ describe('CAD drawing file', () => {
     expect(parsed.ok).toBe(true);
     if (!parsed.ok) return;
     expect(parsed.drawing.kind).toBe('webnet-cad-drawing');
-    expect(parsed.drawing.schemaVersion).toBe(1);
+    expect(parsed.drawing.schemaVersion).toBe(2);
     expect(parsed.drawing.name).toBe('Boundary Drawing');
     expect(parsed.drawing.project.entities).toEqual([]);
   });

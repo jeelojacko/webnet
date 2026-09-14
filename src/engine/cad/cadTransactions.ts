@@ -100,6 +100,7 @@ export type {
 import type {
   CadEntity,
   CadEntityId,
+  CadLayer,
   CadLineEntity,
   CadProject,
   CadSurveyPointEntity,
@@ -345,6 +346,142 @@ const lineCommand: CadCommandDefinition<{
   },
 };
 
+// Track C sheet/viewport/title-block commands are draft-only intents: they commit
+// a transaction for history without mutating model-space geometry or
+// adjustment results. The caller applies the matching cadSheets pure op to its
+// DraftDocument alongside runCadCommand.
+const draftOnlyCommand = (
+  key: CadCommandKey,
+  label: string,
+): CadCommandDefinition<CadCommand> => ({
+  key: key as 'SELECT_ALL',
+  execute: (snapshot) => ({
+    nextSnapshot: { project: snapshot.project, selection: snapshot.selection },
+    commandState: { key, phase: 'committed', prompt: `${label} committed (draft only).` },
+    transactionLabel: label,
+    addedEntityIds: [],
+    removedEntityIds: [],
+  }),
+});
+
+const commitLayerProject = (
+  key: CadCommandKey,
+  snapshot: CadWorkspaceSnapshot,
+  nextProject: CadProject,
+  label: string,
+): CadCommandExecutionResult => ({
+  nextSnapshot: {
+    project: nextProject,
+    selection: createCadSelectionState(nextProject, snapshot.selection.selectedEntityIds),
+  },
+  commandState: { key, phase: 'committed', prompt: `${label} committed.` },
+  transactionLabel: label,
+  addedEntityIds: [],
+  removedEntityIds: [],
+});
+
+const layerCreateCommand: CadCommandDefinition<Extract<CadCommand, { key: 'LAYER_CREATE' }>> = {
+  key: 'LAYER_CREATE',
+  execute: (snapshot, command) => {
+    const name = command.name.trim();
+    if (!name) return null;
+    const layer: CadLayer = {
+      id: createStableRuntimeId('cad-layer'),
+      name,
+      color: command.color ?? '#ffffff',
+      visible: true,
+      locked: false,
+      printable: true,
+      role: command.role ?? 'planning',
+    };
+    const nextProject: CadProject = { ...snapshot.project, layers: [...snapshot.project.layers, layer] };
+    return commitLayerProject('LAYER_CREATE', snapshot, nextProject, `LAYER_CREATE (${name})`);
+  },
+};
+
+const layerRenameCommand: CadCommandDefinition<Extract<CadCommand, { key: 'LAYER_RENAME' }>> = {
+  key: 'LAYER_RENAME',
+  execute: (snapshot, command) => {
+    const name = command.name.trim();
+    if (!name) return null;
+    const nextProject = withLayer(snapshot.project, command.layerId, { name });
+    if (!nextProject) return null;
+    return commitLayerProject('LAYER_RENAME', snapshot, nextProject, `LAYER_RENAME (${name})`);
+  },
+};
+
+const layerVisibilityCommand: CadCommandDefinition<Extract<CadCommand, { key: 'LAYER_VISIBILITY' }>> = {
+  key: 'LAYER_VISIBILITY',
+  execute: (snapshot, command) => {
+    const nextProject = withLayer(snapshot.project, command.layerId, { visible: command.visible });
+    if (!nextProject) return null;
+    return commitLayerProject('LAYER_VISIBILITY', snapshot, nextProject, `LAYER_VISIBILITY (${command.layerId})`);
+  },
+};
+
+const layerLockedCommand: CadCommandDefinition<Extract<CadCommand, { key: 'LAYER_LOCKED' }>> = {
+  key: 'LAYER_LOCKED',
+  execute: (snapshot, command) => {
+    const nextProject = withLayer(snapshot.project, command.layerId, { locked: command.locked });
+    if (!nextProject) return null;
+    return commitLayerProject('LAYER_LOCKED', snapshot, nextProject, `LAYER_LOCKED (${command.layerId})`);
+  },
+};
+
+const layerPrintableCommand: CadCommandDefinition<Extract<CadCommand, { key: 'LAYER_PRINTABLE' }>> = {
+  key: 'LAYER_PRINTABLE',
+  execute: (snapshot, command) => {
+    const nextProject = withLayer(snapshot.project, command.layerId, { printable: command.printable });
+    if (!nextProject) return null;
+    return commitLayerProject('LAYER_PRINTABLE', snapshot, nextProject, `LAYER_PRINTABLE (${command.layerId})`);
+  },
+};
+
+const layerMoveObjectsCommand: CadCommandDefinition<Extract<CadCommand, { key: 'LAYER_MOVE_OBJECTS' }>> = {
+  key: 'LAYER_MOVE_OBJECTS',
+  execute: (snapshot, command) => {
+    const ids = new Set(snapshot.project.layers.map((entry) => entry.id));
+    if (!ids.has(command.fromLayerId) || !ids.has(command.toLayerId)) return null;
+    if (command.fromLayerId === command.toLayerId) return null;
+    const moved = snapshot.project.entities.filter((entity) => entity.layerId === command.fromLayerId);
+    if (moved.length === 0) return null;
+    const nextProject = replaceCadProjectEntities(
+      snapshot.project,
+      snapshot.project.entities.map((entity) =>
+        entity.layerId === command.fromLayerId ? { ...entity, layerId: command.toLayerId } : entity,
+      ),
+    );
+    return commitLayerProject('LAYER_MOVE_OBJECTS', snapshot, nextProject, `LAYER_MOVE_OBJECTS (${moved.length})`);
+  },
+};
+
+const layerDeleteCommand: CadCommandDefinition<Extract<CadCommand, { key: 'LAYER_DELETE' }>> = {
+  key: 'LAYER_DELETE',
+  execute: (snapshot, command) => {
+    if (!snapshot.project.layers.some((entry) => entry.id === command.layerId)) return null;
+    // Populated-layer guard: move objects off first (UI confirms before doing so).
+    if (snapshot.project.entities.some((entity) => entity.layerId === command.layerId)) return null;
+    const nextProject: CadProject = {
+      ...snapshot.project,
+      layers: snapshot.project.layers.filter((entry) => entry.id !== command.layerId),
+    };
+    return commitLayerProject('LAYER_DELETE', snapshot, nextProject, `LAYER_DELETE (${command.layerId})`);
+  },
+};
+
+const withLayer = (
+  project: CadProject,
+  layerId: string,
+  patch: Partial<CadLayer>,
+): CadProject | null => {
+  const layer = project.layers.find((entry) => entry.id === layerId);
+  if (!layer) return null;
+  return {
+    ...project,
+    layers: project.layers.map((entry) => (entry.id === layerId ? { ...entry, ...patch } : entry)),
+  };
+};
+
 export const CAD_COMMAND_REGISTRY: Record<CadCommandKey, CadCommandDefinition<CadCommand>> = {
   SELECT_ALL: selectAllCommand as CadCommandDefinition<CadCommand>,
   CLEAR_SELECTION: clearSelectionCommand as CadCommandDefinition<CadCommand>,
@@ -380,6 +517,22 @@ export const CAD_COMMAND_REGISTRY: Record<CadCommandKey, CadCommandDefinition<Ca
   TRIM: trimCommand as CadCommandDefinition<CadCommand>,
   INTERSECT_POINT: intersectPointCommand as CadCommandDefinition<CadCommand>,
   GRIP_EDIT: gripEditCommand as CadCommandDefinition<CadCommand>,
+  SHEET_ADD: draftOnlyCommand('SHEET_ADD', 'SHEET_ADD') as CadCommandDefinition<CadCommand>,
+  SHEET_DELETE: draftOnlyCommand('SHEET_DELETE', 'SHEET_DELETE') as CadCommandDefinition<CadCommand>,
+  VIEWPORT_MOVE: draftOnlyCommand('VIEWPORT_MOVE', 'VIEWPORT_MOVE') as CadCommandDefinition<CadCommand>,
+  VIEWPORT_SCALE: draftOnlyCommand('VIEWPORT_SCALE', 'VIEWPORT_SCALE') as CadCommandDefinition<CadCommand>,
+  VIEWPORT_ROTATE: draftOnlyCommand('VIEWPORT_ROTATE', 'VIEWPORT_ROTATE') as CadCommandDefinition<CadCommand>,
+  TITLE_BLOCK_EDIT: draftOnlyCommand(
+    'TITLE_BLOCK_EDIT',
+    'TITLE_BLOCK_EDIT',
+  ) as CadCommandDefinition<CadCommand>,
+  LAYER_CREATE: layerCreateCommand as CadCommandDefinition<CadCommand>,
+  LAYER_RENAME: layerRenameCommand as CadCommandDefinition<CadCommand>,
+  LAYER_VISIBILITY: layerVisibilityCommand as CadCommandDefinition<CadCommand>,
+  LAYER_LOCKED: layerLockedCommand as CadCommandDefinition<CadCommand>,
+  LAYER_PRINTABLE: layerPrintableCommand as CadCommandDefinition<CadCommand>,
+  LAYER_MOVE_OBJECTS: layerMoveObjectsCommand as CadCommandDefinition<CadCommand>,
+  LAYER_DELETE: layerDeleteCommand as CadCommandDefinition<CadCommand>,
 };
 
 export const createCadIdleCommandState = createIdleCommandState;

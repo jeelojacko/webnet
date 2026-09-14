@@ -16,7 +16,7 @@
     },
     "campCapRealWasm": {
       "route": "typescript",
-      "reasonSample": "system 1: parameterCount 170 exceeds cap 128 (fail-closed; not delegated)",
+      "reasonSample": "direction-heavy preflight holdback: 84 orientation parameters of 170 (49.4%)",
       "restartIdentical": true
     },
     "corruptRestart": {
@@ -32,8 +32,8 @@
       "deepEqualTypeScript": true
     },
     "workerAnchor": {
-      "correctionCalls": 16,
-      "covarianceCalls": 32,
+      "correctionCalls": 11,
+      "covarianceCalls": 22,
       "contractPass": true,
       "maxCoordDiff": 0,
       "maxCovarianceDiff": 4.336808689942018e-19
