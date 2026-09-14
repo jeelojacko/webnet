@@ -74,24 +74,29 @@ export interface PaperTextPlacement {
 // in model units BEFORE scaling, so E≈2.4M/N≈7.4M grids lose nothing to
 // float cancellation. Stored geometry is never touched.
 // Rotation θ (deg, clockwise as seen on the sheet) turns content about the
-// model-center's paper position: paper = P0 + Rot(θ)·(north-up offset).
-// θ=0 is exactly the old mapping, so unrotated output is byte-identical.
+// viewport midpoint: paper = C + Rot(θ)·(north-up offset), matching the
+// sheet preview convention (modelCenter lands at viewport center).
+// NOTE (Phase 13B): this changed θ=0 output vs the old top-left anchor —
+// every point shifts by half the viewport (+w/2, +h/2); distances, scale,
+// and rotation behavior are unchanged. Goldens were regenerated.
 export const modelToPaperPoint = (
   xModel: number,
   yModel: number,
-  viewport: { modelCenterX: number; modelCenterY: number; scaleDenominator: number; paperXmm: number; paperYmm: number },
+  viewport: { modelCenterX: number; modelCenterY: number; scaleDenominator: number; paperXmm: number; paperYmm: number; paperWidthMm?: number; paperHeightMm?: number },
   rotationDeg = 0,
 ): { xMm: number; yMm: number } => {
   const k = 1000 / viewport.scaleDenominator;
   const qx = (xModel - viewport.modelCenterX) * k;
   const qy = -(yModel - viewport.modelCenterY) * k;
-  if (rotationDeg === 0) return { xMm: viewport.paperXmm + qx, yMm: viewport.paperYmm + qy };
+  const cx = viewport.paperXmm + (viewport.paperWidthMm ?? 0) / 2;
+  const cy = viewport.paperYmm + (viewport.paperHeightMm ?? 0) / 2;
+  if (rotationDeg === 0) return { xMm: cx + qx, yMm: cy + qy };
   const a = (rotationDeg * Math.PI) / 180;
   const cos = Math.cos(a);
   const sin = Math.sin(a);
   return {
-    xMm: viewport.paperXmm + qx * cos - qy * sin,
-    yMm: viewport.paperYmm + qx * sin + qy * cos,
+    xMm: cx + qx * cos - qy * sin,
+    yMm: cy + qx * sin + qy * cos,
   };
 };
 
@@ -166,6 +171,9 @@ const primitiveToPaper = (
       const c = toPaper(primitive.center.x, primitive.center.y);
       const ex = toPaper(primitive.center.x + primitive.semiMajor, primitive.center.y);
       const ey = toPaper(primitive.center.x, primitive.center.y + primitive.semiMinor);
+      // Axis endpoints transform as vectors: under viewport rotation the
+      // offset rotates rigidly, so per-component abs would collapse (e.g.
+      // rx→0 at 90°). Hypot recovers the true semi-axis lengths.
       return [
         {
           kind: 'ellipse',
@@ -173,8 +181,8 @@ const primitiveToPaper = (
           clipId,
           cx: c.xMm,
           cy: c.yMm,
-          rx: Math.abs(ex.xMm - c.xMm),
-          ry: Math.abs(ey.yMm - c.yMm),
+          rx: Math.hypot(ex.xMm - c.xMm, ex.yMm - c.yMm),
+          ry: Math.hypot(ey.xMm - c.xMm, ey.yMm - c.yMm),
           rotationDeg: primitive.thetaDeg + rotationDeg,
         },
       ];
@@ -274,19 +282,54 @@ export const buildExportSheetScene = (args: BuildSceneArgs): { scene: ExportShee
   const display = buildCadDisplayScene(args.project);
   const sorted = [...display.primitives].sort((a, b) => (a.id < b.id ? -1 : a.id > b.id ? 1 : 0));
 
-  sheet.viewports.forEach((viewport, index) => {
+  // Layers govern output: a layer hidden (visible=false) or non-printable
+  // (printable=false) in the project or draft layers is excluded; a viewport
+  // override of visible=false hides, visible=true re-shows for that viewport.
+  const layerGone = (layerId: string): boolean => {
+    const inProject = args.project.layers.find((layer) => layer.id === layerId);
+    const inDraft = args.draft.layers.find((layer) => layer.id === layerId);
+    return [inProject, inDraft].some(
+      (layer) => layer != null && (layer.visible === false || layer.printable === false),
+    );
+  };
+  const persistedLabels: ModelLabelPlacement[] = (args.draft.labels ?? []).map((label) => ({
+    id: label.id,
+    text: label.overrideText ?? label.text,
+    xModel: label.xModel,
+    yModel: label.yModel,
+    heightMm: label.heightMm,
+    layerId: label.layerId,
+  }));
+  const effectiveLabels = args.modelLabels ?? persistedLabels;
+  sheet.viewports.forEach((viewport) => {
     const plan = asPlanViewport(viewport);
-    const clipId = `viewport-${index}`;
-    clips.push({ id: clipId, xMm: plan.paperXmm, yMm: plan.paperYmm, widthMm: plan.paperWidthMm, heightMm: plan.paperHeightMm });
+    const clipId = `viewport-${plan.id}`;
+    const customClip =
+      plan.clipWidthMm != null && plan.clipHeightMm != null
+        ? {
+            xMm: plan.clipXmm ?? plan.paperXmm,
+            yMm: plan.clipYmm ?? plan.paperYmm,
+            widthMm: plan.clipWidthMm,
+            heightMm: plan.clipHeightMm,
+          }
+        : { xMm: plan.paperXmm, yMm: plan.paperYmm, widthMm: plan.paperWidthMm, heightMm: plan.paperHeightMm };
+    clips.push({ id: clipId, ...customClip });
     const hidden = new Set(
       Object.entries(plan.layerOverrides ?? {})
         .filter(([, override]) => override.visible === false)
         .map(([layerId]) => layerId),
     );
+    const shown = new Set(
+      Object.entries(plan.layerOverrides ?? {})
+        .filter(([, override]) => override.visible === true)
+        .map(([layerId]) => layerId),
+    );
+    const isHidden = (layerId: string): boolean =>
+      hidden.has(layerId) || (layerGone(layerId) && !shown.has(layerId));
     const toPaper = (x: number, y: number): { xMm: number; yMm: number } =>
       modelToPaperPoint(x, y, plan, plan.rotationDeg);
     sorted
-      .filter((primitive) => !hidden.has(primitive.layerId))
+      .filter((primitive) => !isHidden(primitive.layerId))
       .forEach((primitive) => {
         try {
           items.push(...primitiveToPaper(primitive, toPaper, clipId, plan.rotationDeg));
@@ -296,22 +339,24 @@ export const buildExportSheetScene = (args: BuildSceneArgs): { scene: ExportShee
       });
     items.push({ kind: 'rect', layer: 'paper-frame', x: plan.paperXmm, y: plan.paperYmm, width: plan.paperWidthMm, height: plan.paperHeightMm });
     const toPaperForLabels = toPaper;
-    (args.modelLabels ?? []).forEach((label) => {
-      if (label.broken || label.text == null) {
-        warnings.push({ code: 'BROKEN_REFERENCE', message: `label ${label.id} has a broken reference` });
-      }
-      const p = toPaperForLabels(label.xModel, label.yModel);
-      items.push({
-        kind: 'text',
-        layer: label.layerId ?? 'labels',
-        clipId,
-        x: p.xMm,
-        y: p.yMm,
-        text: label.broken || label.text == null ? BROKEN_REFERENCE_TEXT : label.text,
-        heightMm: label.heightMm ?? 2.5,
-        anchor: 'middle',
+    effectiveLabels
+      .filter((label) => !isHidden(label.layerId ?? 'labels'))
+      .forEach((label) => {
+        if (label.broken || label.text == null) {
+          warnings.push({ code: 'BROKEN_REFERENCE', message: `label ${label.id} has a broken reference` });
+        }
+        const p = toPaperForLabels(label.xModel, label.yModel);
+        items.push({
+          kind: 'text',
+          layer: label.layerId ?? 'labels',
+          clipId,
+          x: p.xMm,
+          y: p.yMm,
+          text: label.broken || label.text == null ? BROKEN_REFERENCE_TEXT : label.text,
+          heightMm: label.heightMm ?? 2.5,
+          anchor: 'middle',
+        });
       });
-    });
   });
 
   const title = buildTitleBlockItems(sheet, 'title-block');

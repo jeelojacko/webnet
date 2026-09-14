@@ -2,7 +2,7 @@ import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import { buildSmallParcelFixture } from './fixtures/draftSmallParcel';
 import { buildExportSheetScene, buildNorthArrowItems, buildScaleBarItems, modelToPaperPoint } from '../src/engine/cad/cadExportScene';
-import { rotateViewport } from '../src/engine/cad/cadSheets';
+import { rotateViewport, setViewportClip, setViewportLayerOverride } from '../src/engine/cad/cadSheets';
 import { serializeExportSceneToSvg } from '../src/engine/cad/cadSvgSerializer';
 import { exportScenesToPdf } from '../src/engine/cad/cadPdfExport';
 import { buildDxfExportModel } from '../src/engine/cad/dxf/dxfExportModel';
@@ -181,13 +181,140 @@ describe('draft deliverable exporters', () => {
     ).toThrow();
   });
 
+  it('centers parcel corners on the viewport midpoint at θ=0 with scale unchanged', () => {
+    const { scene } = buildScene();
+    // Viewport paper (15,15,200,130) → midpoint (115,80); k=1000/500=2.
+    // P1(0,0)→(65,120) P2(50,0)→(165,120) P3(50,40)→(165,40) P4(0,40)→(65,40).
+    const ends = scene.items.flatMap((item) =>
+      item.kind === 'line' && item.clipId ? [[item.x1, item.y1], [item.x2, item.y2]] : [],
+    );
+    for (const corner of [[65, 120], [165, 120], [165, 40], [65, 40]]) {
+      expect(ends.some(([x, y]) => Math.abs(x - corner[0] as number) < 1e-9 && Math.abs(y - corner[1] as number) < 1e-9)).toBe(true);
+    }
+    // Diagonal midpoint is the viewport center; 50 m side is 100 mm paper.
+    expect((65 + 165) / 2).toBeCloseTo(115, 9);
+    expect((120 + 40) / 2).toBeCloseTo(80, 9);
+    const side = Math.hypot(165 - 65, 120 - 120);
+    expect(side).toBeCloseTo(100, 9);
+  });
+
+  it('exports persisted draft labels with overrides and no caller placements', () => {
+    const fixture = buildSmallParcelFixture();
+    const draft = {
+      ...fixture.draft,
+      labels: [
+        {
+          id: 'label-persisted', text: 'AUTO P1', xModel: 0, yModel: 0,
+          layerId: 'labels', heightMm: 3, provenance: 'COGO' as const, overrideText: 'P1 pinned',
+        },
+      ],
+    };
+    const { scene, warnings } = buildExportSheetScene({
+      draft, sheetId: fixture.sheetId, project: fixture.project,
+    });
+    expect(warnings).toEqual([]);
+    const texts = scene.items.filter((item) => item.kind === 'text' && item.text === 'P1 pinned');
+    expect(texts).toHaveLength(1);
+    // P1(0,0) maps to the same centered paper point as the F3 check.
+    const label = texts[0] as { x: number; y: number };
+    expect(label.x).toBeCloseTo(65, 9);
+    expect(label.y).toBeCloseTo(120, 9);
+  });
+
+  it('keeps ellipse semi-axes under 90° viewport rotation', () => {
+    const fixture = buildSmallParcelFixture();
+    fixture.project.entities.push({
+      type: 'error-ellipse',
+      id: 'ellipse-E1',
+      layerId: 'parcels',
+      visible: true,
+      locked: false,
+      stationId: 'P1',
+      centerX: 25,
+      centerY: 20,
+      semiMajor: 5,
+      semiMinor: 2,
+      thetaDeg: 0,
+    } as never);
+    const viewportId = (fixture.draft.sheets[0] as { viewports: Array<{ id: string }> }).viewports[0]?.id as string;
+    const rotatedDraft = rotateViewport(fixture.draft, fixture.sheetId, viewportId, 90) ?? fixture.draft;
+    const { scene } = buildExportSheetScene({
+      draft: rotatedDraft, sheetId: fixture.sheetId, project: fixture.project,
+    });
+    const ellipses = scene.items.filter((item) => item.kind === 'ellipse');
+    expect(ellipses).toHaveLength(1);
+    // k=2: 5 m → 10 mm, 2 m → 4 mm. Per-component abs would collapse rx→0.
+    const ellipse = ellipses[0] as { rx: number; ry: number };
+    expect(ellipse.rx).toBeCloseTo(10, 9);
+    expect(ellipse.ry).toBeCloseTo(4, 9);
+  });
+
+  it('excludes hidden and non-printable layers from SVG and PDF', () => {
+    const fixture = buildSmallParcelFixture();
+    const hidden = {
+      ...fixture.project,
+      layers: fixture.project.layers.map((layer) =>
+        layer.id === 'parcels' ? { ...layer, printable: false } : layer,
+      ),
+    };
+    const hiddenDraft = {
+      ...fixture.draft,
+      layers: fixture.draft.layers.map((layer) =>
+        layer.id === 'parcels' ? { ...layer, printable: false } : layer,
+      ),
+    };
+    const common = { sheetId: fixture.sheetId, modelLabels: fixture.modelLabels, paperExtras: fixture.paperExtras };
+    const gone = buildExportSheetScene({ draft: hiddenDraft, project: hidden, ...common }).scene;
+    expect(gone.items.some((item) => item.layer === 'parcels')).toBe(false);
+    expect(serializeExportSceneToSvg(gone)).not.toContain('layer-parcels');
+    expect(new TextDecoder().decode(exportScenesToPdf([gone]))).not.toContain('layer-parcels');
+    // A viewport override of visible=true re-shows the layer for that sheet.
+    const viewportId = (hiddenDraft.sheets[0] as { viewports: Array<{ id: string }> }).viewports[0]?.id as string;
+    const reshown = setViewportLayerOverride(hiddenDraft, fixture.sheetId, viewportId, 'parcels', { visible: true });
+    const back = buildExportSheetScene({ draft: reshown, project: hidden, ...common }).scene;
+    expect(back.items.some((item) => item.layer === 'parcels')).toBe(true);
+  });
+
+  it('honors clip rects and text rotation in PDF with SVG-matching placement', () => {
+    const fixture = buildSmallParcelFixture();
+    const viewportId = (fixture.draft.sheets[0] as { viewports: Array<{ id: string }> }).viewports[0]?.id as string;
+    const draft = setViewportClip(fixture.draft, fixture.sheetId, viewportId,
+      { xMm: 20, yMm: 25, widthMm: 100, heightMm: 60 });
+    const rotatedText = {
+      kind: 'text' as const, layer: 'paper-text', x: 115, y: 80,
+      text: 'rotated note', heightMm: 3, anchor: 'middle' as const, rotationDeg: 45,
+    };
+    const { scene } = buildExportSheetScene({
+      draft, sheetId: fixture.sheetId, project: fixture.project,
+      modelLabels: fixture.modelLabels, paperExtras: [...fixture.paperExtras, rotatedText],
+    });
+    expect(scene.clips[0]).toMatchObject({ xMm: 20, yMm: 25, widthMm: 100, heightMm: 60 });
+    const svg = serializeExportSceneToSvg(scene);
+    expect(svg).toContain('<clipPath id="viewport-viewport-small-parcel">');
+    expect(svg).toContain('<rect x="20" y="25" width="100" height="60"/>');
+    expect(svg).toContain('rotate(45 115 80)');
+    const pdf = new TextDecoder().decode(exportScenesToPdf([scene]));
+    // Same clip rect, flipped to PDF user space; same rotated-text semantics.
+    expect(pdf).toContain('re W n');
+    expect(pdf).toContain(' Tm ');
+    const s = 72 / 25.4;
+    const pageH = 210 * s;
+    const clipY = pageH - (25 + 60) * s;
+    expect(pdf).toContain(`${(20 * s).toFixed(2)} ${clipY.toFixed(2)} ${(100 * s).toFixed(2)} ${(60 * s).toFixed(2)} re W n`);
+    const cos = Math.cos(Math.PI / 4).toFixed(2);
+    const sin = Math.sin(Math.PI / 4).toFixed(2);
+    expect(pdf).toContain(`${cos} -${sin} ${sin} ${cos} `);
+  });
+
   it('rotates viewport geometry rigidly with an agreeing north arrow', () => {
     const fixture = buildSmallParcelFixture();
     const viewportId = (fixture.draft.sheets[0] as { viewports: Array<{ id: string }> }).viewports[0]?.id as string;
     const rotatedDraft = rotateViewport(fixture.draft, fixture.sheetId, viewportId, 90) ?? fixture.draft;
     const common = { sheetId: fixture.sheetId, project: fixture.project, modelLabels: fixture.modelLabels, paperExtras: fixture.paperExtras };
     const plain = buildExportSheetScene({ draft: fixture.draft, ...common }).scene;
-    const rotated = buildExportSheetScene({ draft: rotatedDraft, ...common }).scene;
+    // Rotation-consistent extras through the scene helper (no detached arrow).
+    const rotatedExtras = [...buildNorthArrowItems(270, 40, 12, 'paper-symbols', 90), ...buildScaleBarItems(220, 175, 4, 10, 'paper-symbols')];
+    const rotated = buildExportSheetScene({ draft: rotatedDraft, sheetId: fixture.sheetId, project: fixture.project, modelLabels: fixture.modelLabels, paperExtras: rotatedExtras }).scene;
     type Seg = { x1: number; y1: number; x2: number; y2: number };
     const linesOf = (scene: typeof plain): Seg[] =>
       scene.items.flatMap((item) => (item.kind === 'line' && item.clipId ? [{ x1: item.x1, y1: item.y1, x2: item.x2, y2: item.y2 }] : []));
@@ -216,6 +343,14 @@ describe('draft deliverable exporters', () => {
     const tip = (arrow[0] as { points: Array<{ x: number; y: number }> }).points[0] as { x: number; y: number };
     expect(tip.x).toBeCloseTo(282, 9);
     expect(tip.y).toBeCloseTo(40, 9);
+    // Asserted on the exported scene's own arrow item, not a detached construct.
+    const sceneArrows = rotated.items.filter(
+      (item) => item.kind === 'polyline' && item.layer === 'paper-symbols' && item.close,
+    );
+    expect(sceneArrows).toHaveLength(1);
+    const sceneTip = (sceneArrows[0] as { points: Array<{ x: number; y: number }> }).points[0] as { x: number; y: number };
+    expect(sceneTip.x).toBeCloseTo(282, 9);
+    expect(sceneTip.y).toBeCloseTo(40, 9);
     // Scale bar is pure paper geometry: identical with or without rotation.
     expect(buildScaleBarItems(220, 175, 4, 10, 'paper-symbols')).toEqual(
       buildScaleBarItems(220, 175, 4, 10, 'paper-symbols'),

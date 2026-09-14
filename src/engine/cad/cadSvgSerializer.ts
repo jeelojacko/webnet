@@ -1,7 +1,7 @@
 import type { ExportItem, ExportSheetScene } from './cadExportScene';
 
 // Deterministic scene→SVG. No timestamps, no random ids: clip ids derive
-// from viewport order, so identical input yields byte-identical output.
+// from stable viewport ids, so identical input yields byte-identical output.
 const fmt = (value: number): string => {
   if (!Number.isFinite(value)) return '0';
   const rounded = Math.round(value * 1000) / 1000;

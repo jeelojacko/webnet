@@ -145,7 +145,7 @@ describe('draft final integration', () => {
     const labels: ModelLabelPlacement[] = [
       { id: 'label-line', text: deriveInverseAutoText({ x: 0, y: 0 }, { x: 100, y: 0 }, 'bearing-distance'), xModel: 50, yModel: 0 },
     ];
-    const extras = [...buildNorthArrowItems(270, 40, 12, 'paper-symbols'), ...buildScaleBarItems(220, 175, 4, 10, 'paper-symbols')];
+    const extras = [...buildNorthArrowItems(270, 40, 12, 'paper-symbols', viewport.rotationDeg), ...buildScaleBarItems(220, 175, 4, 10, 'paper-symbols')];
     const { scene, warnings } = buildExportSheetScene({ draft, sheetId, project, modelLabels: labels, paperExtras: extras });
     expect(warnings).toEqual([]);
     // Viewport clip rect is emitted and labels are still placed inside the scene.

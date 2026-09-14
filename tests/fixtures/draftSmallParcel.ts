@@ -79,7 +79,11 @@ export const buildSmallParcelFixture = (): SmallParcelFixture => {
 
   let draft = createBlankDraftDocument({ projectId: project.id, layers: project.layers });
   draft = addSheetToDraft(draft, createPlanSheet({ name: 'C1 - Parcel', sizeId: 'ISO A4', orientation: 'landscape' }));
-  const sheetId = draft.sheets[0]?.id as string;
+  // Pinned ids: clip ids derive from the viewport id, so the byte-identical
+  // SVG golden needs deterministic ids (runtime ids are random per build).
+  const sheet = draft.sheets[0] as { id: string };
+  sheet.id = 'sheet-small-parcel';
+  const sheetId = sheet.id;
   draft = addViewportToSheet(draft, sheetId, {
     name: 'Parcel viewport',
     modelCenterX: 25,
@@ -90,6 +94,8 @@ export const buildSmallParcelFixture = (): SmallParcelFixture => {
     paperWidthMm: 200,
     paperHeightMm: 130,
   });
+  const goldenViewport = draft.sheets[0]?.viewports[0] as { id: string };
+  goldenViewport.id = 'viewport-small-parcel';
 
   const modelLabels: ModelLabelPlacement[] = corners.flatMap((corner, index) => {
     const next = corners[(index + 1) % corners.length] as { id: string; x: number; y: number };
@@ -112,7 +118,7 @@ export const buildSmallParcelFixture = (): SmallParcelFixture => {
   });
 
   const paperExtras: ExportItem[] = [
-    ...buildNorthArrowItems(270, 40, 12, 'paper-symbols'),
+    ...buildNorthArrowItems(270, 40, 12, 'paper-symbols', 0),
     ...buildScaleBarItems(220, 175, 4, 10, 'paper-symbols'),
   ];
 

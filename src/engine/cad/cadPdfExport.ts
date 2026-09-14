@@ -86,8 +86,20 @@ const emitText = (ctx: Ctx, item: Extract<ExportItem, { kind: 'text' }>): void =
   // centering is a viewer-side concern, presence and position are exact.
   const approxWidthMm = item.text.length * item.heightMm * 0.5;
   const x = item.anchor === 'middle' ? item.x - approxWidthMm / 2 : item.anchor === 'end' ? item.x - approxWidthMm : item.x;
+  const e = fmt(toPt(x));
+  const f = fmt(flipY(item.y, ctx));
+  const rotationDeg = item.rotationDeg ?? 0;
+  if (rotationDeg === 0) {
+    ctx.ops.push(`BT /F1 ${fmt(sizePt)} Tf ${e} ${f} Td ${encodePdfText(item.text)} Tj ET`);
+    return;
+  }
+  // SVG rotate(θ) is visually clockwise on the sheet; in y-up PDF user
+  // space that is [cosθ -sinθ / sinθ cosθ], same semantics as the SVG.
+  const a = (rotationDeg * Math.PI) / 180;
+  const cos = Math.cos(a);
+  const sin = Math.sin(a);
   ctx.ops.push(
-    `BT /F1 ${fmt(sizePt)} Tf ${fmt(toPt(x))} ${fmt(flipY(item.y, ctx))} Td ${encodePdfText(item.text)} Tj ET`,
+    `BT /F1 ${fmt(sizePt)} Tf ${fmt(cos)} ${fmt(-sin)} ${fmt(sin)} ${fmt(cos)} ${e} ${f} Tm ${encodePdfText(item.text)} Tj ET`,
   );
 };
 
@@ -116,11 +128,28 @@ const emitItem = (ctx: Ctx, item: ExportItem): void => {
   }
 };
 
+const clipRectOp = (ctx: Ctx, clip: { xMm: number; yMm: number; widthMm: number; heightMm: number }): string =>
+  `${fmt(toPt(clip.xMm))} ${fmt(flipY(clip.yMm + clip.heightMm, ctx))} ${fmt(toPt(clip.widthMm))} ${fmt(toPt(clip.heightMm))} re W n`;
+
 const buildPageContent = (scene: ExportSheetScene): string => {
   const ctx: Ctx = { ops: [], pageHpt: toPt(scene.heightMm) };
-  // Clipping is a viewer-side optimization here: viewport rects are stroked
-  // as frames; items outside the frame are still emitted (never dropped).
-  scene.items.forEach((item) => emitItem(ctx, item));
+  // Clipped items are wrapped in a PDF clipping path (q … re W n … Q) so
+  // the PDF honors the same clip rects the SVG enforces via clipPath.
+  // Unclipped items (frames, title block, paper extras) emit directly.
+  const byClip = new Map<string | undefined, ExportItem[]>();
+  scene.items.forEach((item) => {
+    const key = item.kind === 'rect' && item.layer === 'paper-frame' ? undefined : item.clipId;
+    const list = byClip.get(key) ?? [];
+    list.push(item);
+    byClip.set(key, list);
+  });
+  const clips = new Map(scene.clips.map((clip) => [clip.id, clip]));
+  byClip.forEach((group, clipId) => {
+    const clip = clipId != null ? clips.get(clipId) : undefined;
+    if (clip) ctx.ops.push(`q ${clipRectOp(ctx, clip)}`);
+    group.forEach((item) => emitItem(ctx, item));
+    if (clip) ctx.ops.push('Q');
+  });
   return `${ctx.ops.join('\n')}\n`;
 };
 

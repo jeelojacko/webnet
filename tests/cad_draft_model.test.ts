@@ -70,6 +70,7 @@ describe('drafting document model (.wncad v2)', () => {
       paperYmm: 10,
       paperWidthMm: 277,
       paperHeightMm: 190,
+      rotationDeg: 0,
     });
     sheet.sheetObjects.push({
       id: 'note-1',

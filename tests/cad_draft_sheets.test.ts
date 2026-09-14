@@ -25,6 +25,8 @@ import {
   rotateViewport,
   runDraftSheetCommand,
   setTitleBlockField,
+  setViewportClip,
+  setViewportLayerOverride,
   setViewportScale,
   suggestViewportScale,
   undoDraftSheetHistory,
@@ -121,6 +123,47 @@ describe('draft sheets', () => {
     draft = reorderSheetsInDraft(draft, [draft.sheets[2]?.id as string, draft.sheets[0]?.id as string, draft.sheets[1]?.id as string]);
     const revived = sanitizeDraftDocument(JSON.parse(JSON.stringify(draft)), 'p1', []);
     expect(revived?.sheets.map((sheet) => sheet.name)).toEqual(['Three', 'One', 'Two']);
+  });
+
+  it('round-trips viewport rotation, custom clip, layer overrides, and labels with stable ids', () => {
+    let draft = addSheetToDraft(createBlankDraftDocument({ projectId: 'p1' }), createPlanSheet({ name: 'S' }));
+    const sheetId = draft.sheets[0]?.id as string;
+    draft = addViewportToSheet(draft, sheetId, { modelCenterX: 10, modelCenterY: 20 });
+    const viewportId = draft.sheets[0]?.viewports[0]?.id as string;
+    draft = rotateViewport(draft, sheetId, viewportId, 30) ?? draft;
+    draft = setViewportClip(draft, sheetId, viewportId, { xMm: 20, yMm: 25, widthMm: 100, heightMm: 60 });
+    draft = setViewportLayerOverride(draft, sheetId, viewportId, 'parcels', { visible: false });
+    draft = {
+      ...draft,
+      labels: [
+        {
+          id: 'label-authored', text: 'P1 N 2.000, E 1.000', xModel: 1, yModel: 2,
+          layerId: 'labels', heightMm: 3, provenance: 'COGO', overrideText: 'P1 custom',
+        },
+      ],
+    };
+    const revived = sanitizeDraftDocument(JSON.parse(JSON.stringify(draft)), 'p1', []);
+    const viewport = asPlanViewport(revived?.sheets[0]?.viewports[0] as never);
+    expect(viewport.rotationDeg).toBe(30);
+    expect([viewport.clipXmm, viewport.clipYmm, viewport.clipWidthMm, viewport.clipHeightMm]).toEqual([20, 25, 100, 60]);
+    expect(viewport.layerOverrides).toEqual({ parcels: { visible: false } });
+    expect(revived?.labels).toEqual(draft.labels);
+    // Sanitize twice: every present id survives unchanged; generation only
+    // fills genuinely missing ids.
+    const collectIds = (doc: typeof draft): string[] => [
+      ...doc.sheets.map((sheet) => sheet.id),
+      ...doc.sheets.flatMap((sheet) => sheet.viewports.map((entry) => entry.id)),
+      ...doc.labels.map((label) => label.id),
+    ];
+    const twice = sanitizeDraftDocument(JSON.parse(JSON.stringify(revived)), 'p1', []);
+    expect(collectIds(twice as typeof draft)).toEqual(collectIds(revived as typeof draft));
+    // Old documents without the fields default safely.
+    const legacy = sanitizeDraftDocument({ sheets: [{ viewports: [{}] }] }, 'p1', []);
+    const legacyViewport = asPlanViewport(legacy?.sheets[0]?.viewports[0] as never);
+    expect(legacyViewport.rotationDeg).toBe(0);
+    expect(legacyViewport.clipWidthMm).toBeUndefined();
+    expect(legacyViewport.layerOverrides).toBeUndefined();
+    expect(legacy?.labels).toEqual([]);
   });
 
   it('suggests fit-to-page scales but records the actual denominator', () => {

@@ -1,8 +1,7 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { createRoot } from 'react-dom/client';
 
-import { LayerPanel } from '../components/surveyCad/LayerPanel';
-import { SheetWorkspace } from '../components/surveyCad/SheetWorkspace';
+import { SurveyDraftingResults } from './surveyDraftingResults';
 import {
   createBlankCadDrawingDocument,
   parseCadDrawingFile,
@@ -263,9 +262,12 @@ export const SurveyDraftingApp = (): React.JSX.Element => {
       }
       case 'I': {
         const segments = buildScaleBar({ scaleDenominator: 500, divisions: 4, modelPerDivisionM: 10 });
+        // Rotation-consistent arrow: same helper + viewport rotation the
+        // export scene uses, so the arrow never detaches from the content.
+        const rotation = asPlanViewport(mustDraft(s.doc).sheets[0]?.viewports[0] as never).rotationDeg;
         const extras: ExportItem[] = [
           ...s.extras.filter((item) => item.layer !== 'paper-symbols'),
-          ...buildNorthArrowItems(270, 40, 12, 'paper-symbols'),
+          ...buildNorthArrowItems(270, 40, 12, 'paper-symbols', rotation),
           ...buildScaleBarItems(220, 175, 4, 10, 'paper-symbols'),
         ];
         commit({ ...s, extras }, `I:scalebar:${segments.length}x10m:${segments[0]?.paperLengthMm}mm`);
@@ -361,13 +363,12 @@ export const SurveyDraftingApp = (): React.JSX.Element => {
 
   const sheet = mustDraft(state.doc).sheets[0];
   const viewport = sheet?.viewports[0];
-  const entityCounts = useMemo(() => {
-    const counts: Record<string, number> = {};
-    state.doc.project.entities.forEach((entity: CadEntity) => {
-      counts[entity.layerId] = (counts[entity.layerId] ?? 0) + 1;
-    });
-    return counts;
-  }, [state.doc.project.entities]);
+  const reloadDrawing = (doc: CadDrawingDocument): void => {
+    commit({ ...stateRef.current, doc }, 'file:reloaded:via-input');
+  };
+  const noteReloadFailed = (): void => {
+    setLog((current) => [...current, 'file:reload:FAILED']);
+  };
 
   return (
     <main style={{ padding: 16, fontFamily: 'sans-serif' }}>
@@ -397,47 +398,14 @@ export const SurveyDraftingApp = (): React.JSX.Element => {
         {`svg:${state.exports.svgLength}:pdf:${state.exports.pdfLength}:dxf:${state.exports.dxfLength}`}
       </div>
       {state.reloaded ? <div data-testid="draft-reload-info">{`reload:sheets:${state.reloaded.sheets}:coordsMatch:${state.reloaded.coordsMatch}`}</div> : null}
-      <label>
-        Reload saved .wncad
-        <input
-          data-testid="draft-open-input"
-          type="file"
-          accept=".wncad,.json"
-          onChange={(event) => {
-            const file = event.target.files?.[0];
-            if (!file) return;
-            void file.text().then((text) => {
-              const parsed = parseCadDrawingFile(text);
-              if (parsed.ok) {
-                commit({ ...stateRef.current, doc: parsed.drawing }, 'file:reloaded:via-input');
-              } else {
-                setLog((current) => [...current, 'file:reload:FAILED']);
-              }
-            });
-          }}
-        />
-      </label>
-      <LayerPanel layers={state.doc.project.layers} entityCounts={entityCounts} />
-      <SheetWorkspace
-        project={state.doc.project}
+      <SurveyDraftingResults
+        doc={state.doc}
         draft={mustDraft(state.doc)}
-        activeSheetId={sheet?.id}
         titleBlocks={state.titleBlocks}
-        projectName="Harness Plan"
+        pointTableRows={state.pointTableRows}
+        onReload={reloadDrawing}
+        onReloadFailed={noteReloadFailed}
       />
-      {state.pointTableRows.length > 0 ? (
-        <table data-testid="draft-point-table">
-          <tbody>
-            {state.pointTableRows.map((row) => (
-              <tr key={row[0]}>
-                {row.map((cell, index) => (
-                  <td key={index}>{cell}</td>
-                ))}
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      ) : null}
     </main>
   );
 };

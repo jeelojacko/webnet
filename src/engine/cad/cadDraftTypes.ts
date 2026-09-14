@@ -62,6 +62,24 @@ export interface DraftSheetViewport {
   paperYmm: number;
   paperWidthMm: number;
   paperHeightMm: number;
+  /** Viewport-only clockwise rotation (deg); model coordinates untouched. */
+  rotationDeg: number;
+  clipXmm?: number;
+  clipYmm?: number;
+  clipWidthMm?: number;
+  clipHeightMm?: number;
+  layerOverrides?: Record<string, { visible?: boolean }>;
+}
+
+export interface DraftDocumentLabel {
+  id: string;
+  text: string;
+  xModel: number;
+  yModel: number;
+  layerId: string;
+  heightMm?: number;
+  provenance?: string;
+  overrideText?: string;
 }
 
 export interface DraftSheetObject {
@@ -107,6 +125,7 @@ export interface DraftDocument {
   precision: DraftPrecisionProfile;
   sheets: DraftSheet[];
   titleBlockDefinitions: DraftTitleBlockDefinition[];
+  labels: DraftDocumentLabel[];
   metadata: DraftDocumentMetadata;
 }
 
@@ -170,6 +189,7 @@ export const createBlankDraftDocument = ({
     precision: { ...DEFAULT_DRAFT_PRECISION_PROFILE },
     sheets: [],
     titleBlockDefinitions: [],
+    labels: [],
     metadata: { createdAt: nowIso, updatedAt: nowIso },
   };
 };
@@ -208,9 +228,13 @@ export const cloneDraftDocument = (draft: DraftDocument): DraftDocument => ({
   sheets: draft.sheets.map((sheet) => ({
     ...sheet,
     margins: { ...sheet.margins },
-    viewports: sheet.viewports.map((viewport) => ({ ...viewport })),
+    viewports: sheet.viewports.map((viewport) => ({
+      ...viewport,
+      ...(viewport.layerOverrides ? { layerOverrides: { ...viewport.layerOverrides } } : {}),
+    })),
     sheetObjects: sheet.sheetObjects.map((object) => ({ ...object })),
   })),
+  labels: draft.labels.map((label) => ({ ...label })),
   titleBlockDefinitions: draft.titleBlockDefinitions.map((entry) => ({
     ...entry,
     fieldNames: [...entry.fieldNames],
@@ -252,11 +276,26 @@ const sanitizeLabelStyle = (value: unknown): DraftLabelStyle | undefined => {
   return labelStyle;
 };
 
+// Stable ids: a present non-empty id always survives; generation is only
+// for genuinely missing ids so sanitize-serialize-sanitize is idempotent.
+const stableId = (value: unknown, prefix: string): string =>
+  typeof value === 'string' && value.length > 0 ? value : createStableRuntimeId(prefix);
+
+const sanitizeLayerOverrides = (value: unknown): Record<string, { visible?: boolean }> | undefined => {
+  if (!isRecord(value)) return undefined;
+  const overrides: Record<string, { visible?: boolean }> = {};
+  for (const [layerId, override] of Object.entries(value)) {
+    if (typeof layerId !== 'string' || layerId.length === 0 || !isRecord(override)) continue;
+    if (typeof override.visible === 'boolean') overrides[layerId] = { visible: override.visible };
+  }
+  return Object.keys(overrides).length > 0 ? overrides : undefined;
+};
+
 const sanitizeSheet = (value: unknown): DraftSheet | undefined => {
   if (!isRecord(value)) return undefined;
   const margins = isRecord(value.margins) ? value.margins : {};
   return {
-    id: asString(value.id, createStableRuntimeId('draft-sheet')),
+    id: stableId(value.id, 'draft-sheet'),
     name: asString(value.name, 'Unnamed sheet'),
     widthMm: asFinite(value.widthMm, 297),
     heightMm: asFinite(value.heightMm, 210),
@@ -270,19 +309,30 @@ const sanitizeSheet = (value: unknown): DraftSheet | undefined => {
     viewports: Array.isArray(value.viewports)
       ? value.viewports.flatMap((entry): DraftSheetViewport[] => {
           if (!isRecord(entry)) return [];
-          return [
-            {
-              id: asString(entry.id, createStableRuntimeId('draft-viewport')),
-              name: asString(entry.name, 'Viewport'),
-              modelCenterX: asFinite(entry.modelCenterX, 0),
-              modelCenterY: asFinite(entry.modelCenterY, 0),
-              scaleDenominator: asFinite(entry.scaleDenominator, 1000),
-              paperXmm: asFinite(entry.paperXmm, 10),
-              paperYmm: asFinite(entry.paperYmm, 10),
-              paperWidthMm: asFinite(entry.paperWidthMm, 100),
-              paperHeightMm: asFinite(entry.paperHeightMm, 100),
-            },
-          ];
+          const viewport: DraftSheetViewport = {
+            id: stableId(entry.id, 'draft-viewport'),
+            name: asString(entry.name, 'Viewport'),
+            modelCenterX: asFinite(entry.modelCenterX, 0),
+            modelCenterY: asFinite(entry.modelCenterY, 0),
+            scaleDenominator: asFinite(entry.scaleDenominator, 1000),
+            paperXmm: asFinite(entry.paperXmm, 10),
+            paperYmm: asFinite(entry.paperYmm, 10),
+            paperWidthMm: asFinite(entry.paperWidthMm, 100),
+            paperHeightMm: asFinite(entry.paperHeightMm, 100),
+            rotationDeg: asFinite(entry.rotationDeg, 0),
+          };
+          const clip = isRecord(entry.clip) ? entry.clip : entry;
+          if (typeof clip.clipXmm === 'number' && Number.isFinite(clip.clipXmm)) viewport.clipXmm = clip.clipXmm;
+          if (typeof clip.clipYmm === 'number' && Number.isFinite(clip.clipYmm)) viewport.clipYmm = clip.clipYmm;
+          if (typeof clip.clipWidthMm === 'number' && Number.isFinite(clip.clipWidthMm) && clip.clipWidthMm > 0) {
+            viewport.clipWidthMm = clip.clipWidthMm;
+          }
+          if (typeof clip.clipHeightMm === 'number' && Number.isFinite(clip.clipHeightMm) && clip.clipHeightMm > 0) {
+            viewport.clipHeightMm = clip.clipHeightMm;
+          }
+          const overrides = sanitizeLayerOverrides(entry.layerOverrides);
+          if (overrides) viewport.layerOverrides = overrides;
+          return [viewport];
         })
       : [],
     titleBlockId: typeof value.titleBlockId === 'string' ? value.titleBlockId : undefined,
@@ -290,7 +340,7 @@ const sanitizeSheet = (value: unknown): DraftSheet | undefined => {
       ? value.sheetObjects.flatMap((entry): DraftSheetObject[] => {
           if (!isRecord(entry) || typeof entry.layerId !== 'string') return [];
           const object: DraftSheetObject = {
-            id: asString(entry.id, createStableRuntimeId('draft-sheet-object')),
+            id: stableId(entry.id, 'draft-sheet-object'),
             kind: asString(entry.kind, 'text'),
             layerId: entry.layerId,
             paperXmm: asFinite(entry.paperXmm, 0),
@@ -381,13 +431,31 @@ export const sanitizeDraftDocument = (
           if (!isRecord(entry)) return [];
           return [
             {
-              id: asString(entry.id, createStableRuntimeId('draft-title-block')),
+              id: stableId(entry.id, 'draft-title-block'),
               name: asString(entry.name, 'Unnamed title block'),
               fieldNames: Array.isArray(entry.fieldNames)
                 ? entry.fieldNames.filter((name): name is string => typeof name === 'string')
                 : [],
             },
           ];
+        })
+      : [],
+    labels: Array.isArray(value.labels)
+      ? value.labels.flatMap((entry): DraftDocumentLabel[] => {
+          if (!isRecord(entry) || typeof entry.text !== 'string' || typeof entry.layerId !== 'string') return [];
+          const label: DraftDocumentLabel = {
+            id: stableId(entry.id, 'draft-label'),
+            text: entry.text,
+            xModel: asFinite(entry.xModel, 0),
+            yModel: asFinite(entry.yModel, 0),
+            layerId: entry.layerId,
+          };
+          if (typeof entry.heightMm === 'number' && Number.isFinite(entry.heightMm) && entry.heightMm > 0) {
+            label.heightMm = entry.heightMm;
+          }
+          if (typeof entry.provenance === 'string') label.provenance = entry.provenance;
+          if (typeof entry.overrideText === 'string') label.overrideText = entry.overrideText;
+          return [label];
         })
       : [],
     metadata: {

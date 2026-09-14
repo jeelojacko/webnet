@@ -27,21 +27,18 @@ export type StandardSheetSizeId = keyof typeof STANDARD_SHEET_SIZES_MM | 'CUSTOM
 export type SheetOrientation = 'portrait' | 'landscape';
 export const STANDARD_VIEWPORT_SCALES = [100, 200, 250, 500, 1000] as const;
 
-// Viewport extras ride on the runtime viewport object (viewport-only; survey
-// coordinates are never mutated). Spread-based clones preserve them in memory.
-export interface PlanViewport extends DraftSheetViewport {
-  rotationDeg: number;
-  clipXmm?: number;
-  clipYmm?: number;
-  clipWidthMm?: number;
-  clipHeightMm?: number;
-  layerOverrides?: Record<string, { visible?: boolean }>;
-}
+// Viewport extras are persisted fields on DraftSheetViewport (viewport-only;
+// survey coordinates are never mutated). asPlanViewport backfills safe
+// defaults for documents saved before the fields existed.
+export type PlanViewport = DraftSheetViewport;
 
-export const asPlanViewport = (viewport: DraftSheetViewport): PlanViewport => {
-  const rotation = (viewport as Partial<PlanViewport>).rotationDeg;
-  return { ...viewport, rotationDeg: typeof rotation === 'number' && Number.isFinite(rotation) ? rotation : 0 };
-};
+export const asPlanViewport = (viewport: DraftSheetViewport): PlanViewport => ({
+  ...viewport,
+  rotationDeg:
+    typeof viewport.rotationDeg === 'number' && Number.isFinite(viewport.rotationDeg)
+      ? viewport.rotationDeg
+      : 0,
+});
 
 const findSheet = (draft: DraftDocument, sheetId: string): DraftSheet | undefined =>
   draft.sheets.find((sheet) => sheet.id === sheetId);
@@ -113,16 +110,14 @@ export const addViewportToSheet = (draft: DraftDocument, sheetId: string,
   viewport: Partial<DraftSheetViewport> & { modelCenterX: number; modelCenterY: number }): DraftDocument =>
   withSheet(draft, sheetId, (sheet) => ({
     ...sheet,
-    viewports: [...sheet.viewports, {
-      ...asPlanViewport({
-        id: createStableRuntimeId('draft-viewport'), name: 'Viewport', scaleDenominator: 500,
-        paperXmm: sheet.margins.leftMm, paperYmm: sheet.margins.topMm,
-        paperWidthMm: Math.max(10, sheet.widthMm - sheet.margins.leftMm - sheet.margins.rightMm),
-        paperHeightMm: Math.max(10, sheet.heightMm - sheet.margins.topMm - sheet.margins.bottomMm),
-        ...viewport,
-      } as DraftSheetViewport),
+    viewports: [...sheet.viewports, asPlanViewport({
+      id: createStableRuntimeId('draft-viewport'), name: 'Viewport', scaleDenominator: 500,
+      paperXmm: sheet.margins.leftMm, paperYmm: sheet.margins.topMm,
+      paperWidthMm: Math.max(10, sheet.widthMm - sheet.margins.leftMm - sheet.margins.rightMm),
+      paperHeightMm: Math.max(10, sheet.heightMm - sheet.margins.topMm - sheet.margins.bottomMm),
       rotationDeg: 0,
-    }],
+      ...viewport,
+    } as DraftSheetViewport)],
   }));
 
 // Viewport-only transforms below: model-space coordinates are never touched.
@@ -151,7 +146,7 @@ export const setViewportLayerOverride = (draft: DraftDocument, sheetId: string, 
   withSheet(draft, sheetId, (sheet) => {
     const current = asPlanViewport(sheet.viewports.find((entry) => entry.id === viewportId) ?? {
       id: viewportId, name: 'Viewport', modelCenterX: 0, modelCenterY: 0, scaleDenominator: 500,
-      paperXmm: 0, paperYmm: 0, paperWidthMm: 10, paperHeightMm: 10,
+      paperXmm: 0, paperYmm: 0, paperWidthMm: 10, paperHeightMm: 10, rotationDeg: 0,
     });
     const layerOverrides = { ...(current.layerOverrides ?? {}) };
     if (override === undefined) delete layerOverrides[layerId];
