@@ -2,7 +2,8 @@
  * Phase 12J.4 — real-browser raw static-baseline review workflow.
  *
  * Real app + real dedicated Worker + real pinned rnx2rtkp WASM
- * (served from public/ symlinks in dev): synthetic base/rover/NAV load →
+ * (served from public/ by `npm run e2e:raw-review`; staged automatically,
+ * never committed): synthetic base/rover/NAV load →
  * metadata → process → review (vector + FORMAL_UNCALIBRATED) → JSON
  * export → project unchanged. Swap reverses the vector sign; bad inputs
  * block at preflight without WASM; cancel keeps no stale result.

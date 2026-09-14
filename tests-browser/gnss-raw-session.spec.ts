@@ -6,9 +6,9 @@
  * intake/planning (A-D, L, N-planning, R, P), processing (E-H, J, K),
  * PARTIAL isolation (M), cancel (O), ANTEX subset staging (Q).
  *
- * Environment note: the dev server serves the RTKLIB glue from public/, so
- * run `npm run wasm:build:rtklib` then copy cpp/build-wasm/rtklib-rnx2rtkp.*
- * to public/ before this spec (artifacts are build outputs, never committed).
+ * Environment note: one documented command stages + runs everything:
+ * `npm run e2e:raw-session` (builds RTKLIB WASM, stages the glue into
+ * public/, runs this spec). No manual public/ copies.
  */
 import { readFile } from 'node:fs/promises';
 import { expect, test, type Page } from '@playwright/test';
