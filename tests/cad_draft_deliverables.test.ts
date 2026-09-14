@@ -1,7 +1,8 @@
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import { buildSmallParcelFixture } from './fixtures/draftSmallParcel';
-import { buildExportSheetScene } from '../src/engine/cad/cadExportScene';
+import { buildExportSheetScene, buildNorthArrowItems, buildScaleBarItems, modelToPaperPoint } from '../src/engine/cad/cadExportScene';
+import { rotateViewport } from '../src/engine/cad/cadSheets';
 import { serializeExportSceneToSvg } from '../src/engine/cad/cadSvgSerializer';
 import { exportScenesToPdf } from '../src/engine/cad/cadPdfExport';
 import { buildDxfExportModel } from '../src/engine/cad/dxf/dxfExportModel';
@@ -178,5 +179,46 @@ describe('draft deliverable exporters', () => {
     expect(() =>
       buildExportSheetScene({ draft: fixture.draft, sheetId: 'missing-sheet', project: fixture.project }),
     ).toThrow();
+  });
+
+  it('rotates viewport geometry rigidly with an agreeing north arrow', () => {
+    const fixture = buildSmallParcelFixture();
+    const viewportId = (fixture.draft.sheets[0] as { viewports: Array<{ id: string }> }).viewports[0]?.id as string;
+    const rotatedDraft = rotateViewport(fixture.draft, fixture.sheetId, viewportId, 90) ?? fixture.draft;
+    const common = { sheetId: fixture.sheetId, project: fixture.project, modelLabels: fixture.modelLabels, paperExtras: fixture.paperExtras };
+    const plain = buildExportSheetScene({ draft: fixture.draft, ...common }).scene;
+    const rotated = buildExportSheetScene({ draft: rotatedDraft, ...common }).scene;
+    type Seg = { x1: number; y1: number; x2: number; y2: number };
+    const linesOf = (scene: typeof plain): Seg[] =>
+      scene.items.flatMap((item) => (item.kind === 'line' && item.clipId ? [{ x1: item.x1, y1: item.y1, x2: item.x2, y2: item.y2 }] : []));
+    const plainLines = linesOf(plain);
+    const rotatedLines = linesOf(rotated);
+    expect(rotatedLines).toHaveLength(plainLines.length);
+    // Rigid: every length preserved, every direction turned 90° clockwise.
+    plainLines.forEach((line, index) => {
+      const other = rotatedLines[index] as Seg;
+      expect(Math.hypot(other.x2 - other.x1, other.y2 - other.y1)).toBeCloseTo(
+        Math.hypot(line.x2 - line.x1, line.y2 - line.y1), 9,
+      );
+      expect(other.x2 - other.x1).toBeCloseTo(-(line.y2 - line.y1), 9);
+      expect(other.y2 - other.y1).toBeCloseTo(line.x2 - line.x1, 9);
+    });
+    // East-running boundary (100, 0) now runs (0, 100): east→south on paper.
+    expect((plainLines[0] as Seg).x2 - (plainLines[0] as Seg).x1).toBeCloseTo(100, 9);
+    expect((rotatedLines[0] as Seg).x2 - (rotatedLines[0] as Seg).x1).toBeCloseTo(0, 9);
+    expect((rotatedLines[0] as Seg).y2 - (rotatedLines[0] as Seg).y1).toBeCloseTo(100, 9);
+    // Model north lands east of center; the θ=90 arrow tip points east too.
+    const vp = { modelCenterX: 25, modelCenterY: 20, scaleDenominator: 500, paperXmm: 15, paperYmm: 15 };
+    const north90 = modelToPaperPoint(25, 60, vp, 90);
+    expect(north90.xMm).toBeCloseTo(95, 9);
+    expect(north90.yMm).toBeCloseTo(15, 9);
+    const arrow = buildNorthArrowItems(270, 40, 12, 'paper-symbols', 90);
+    const tip = (arrow[0] as { points: Array<{ x: number; y: number }> }).points[0] as { x: number; y: number };
+    expect(tip.x).toBeCloseTo(282, 9);
+    expect(tip.y).toBeCloseTo(40, 9);
+    // Scale bar is pure paper geometry: identical with or without rotation.
+    expect(buildScaleBarItems(220, 175, 4, 10, 'paper-symbols')).toEqual(
+      buildScaleBarItems(220, 175, 4, 10, 'paper-symbols'),
+    );
   });
 });

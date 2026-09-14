@@ -135,8 +135,8 @@ describe('draft final integration', () => {
     const draft = rotateViewport(scaled, sheetId, viewportId, 30) ?? scaled;
     const viewport = asPlanViewport(draft.sheets[0]?.viewports[0] as never);
 
-    // Grid-north arrow counter-rotates; scale bar is rotation-invariant.
-    expect(northArrowAngleDeg(viewport.rotationDeg)).toBeCloseTo(330, 9);
+    // Grid-north arrow rotates with the content (+θ); scale bar is rotation-invariant.
+    expect(northArrowAngleDeg(viewport.rotationDeg)).toBeCloseTo(30, 9);
     const segments = buildScaleBar({ scaleDenominator: viewport.scaleDenominator, divisions: 4, modelPerDivisionM: 10 });
     segments.forEach((segment) => {
       expect(segment.paperLengthMm).toBeCloseTo(modelToPaperMm(10, 1000), 9);

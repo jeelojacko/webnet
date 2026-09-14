@@ -73,15 +73,25 @@ export interface PaperTextPlacement {
 // Precision-safe model→paper mapping: the viewport-center offset is removed
 // in model units BEFORE scaling, so E≈2.4M/N≈7.4M grids lose nothing to
 // float cancellation. Stored geometry is never touched.
+// Rotation θ (deg, clockwise as seen on the sheet) turns content about the
+// model-center's paper position: paper = P0 + Rot(θ)·(north-up offset).
+// θ=0 is exactly the old mapping, so unrotated output is byte-identical.
 export const modelToPaperPoint = (
   xModel: number,
   yModel: number,
   viewport: { modelCenterX: number; modelCenterY: number; scaleDenominator: number; paperXmm: number; paperYmm: number },
+  rotationDeg = 0,
 ): { xMm: number; yMm: number } => {
   const k = 1000 / viewport.scaleDenominator;
+  const qx = (xModel - viewport.modelCenterX) * k;
+  const qy = -(yModel - viewport.modelCenterY) * k;
+  if (rotationDeg === 0) return { xMm: viewport.paperXmm + qx, yMm: viewport.paperYmm + qy };
+  const a = (rotationDeg * Math.PI) / 180;
+  const cos = Math.cos(a);
+  const sin = Math.sin(a);
   return {
-    xMm: viewport.paperXmm + (xModel - viewport.modelCenterX) * k,
-    yMm: viewport.paperYmm - (yModel - viewport.modelCenterY) * k,
+    xMm: viewport.paperXmm + qx * cos - qy * sin,
+    yMm: viewport.paperYmm + qx * sin + qy * cos,
   };
 };
 
@@ -107,6 +117,7 @@ const primitiveToPaper = (
   primitive: CadDisplayPrimitive,
   toPaper: (_x: number, _y: number) => { xMm: number; yMm: number },
   clipId: string,
+  rotationDeg = 0,
 ): ExportItem[] => {
   const layer = primitive.layerId;
   switch (primitive.kind) {
@@ -121,9 +132,6 @@ const primitiveToPaper = (
       return [{ kind: 'circle', layer, clipId, cx: p.xMm, cy: p.yMm, r: primitive.radius }];
     }
     case 'arc': {
-      const c = toPaper(primitive.center.x, primitive.center.y);
-      const k = Math.abs(toPaper(primitive.center.x + primitive.radius, primitive.center.y).xMm - c.xMm);
-      void k;
       return [
         {
           kind: 'polyline',
@@ -167,7 +175,7 @@ const primitiveToPaper = (
           cy: c.yMm,
           rx: Math.abs(ex.xMm - c.xMm),
           ry: Math.abs(ey.yMm - c.yMm),
-          rotationDeg: primitive.thetaDeg,
+          rotationDeg: primitive.thetaDeg + rotationDeg,
         },
       ];
     }
@@ -178,10 +186,28 @@ const primitiveToPaper = (
 
 // North arrow (grid north only) and scale bar are paper-space items built by
 // these helpers so fixture, SVG, and PDF share one definition.
-export const buildNorthArrowItems = (xMm: number, yMm: number, sizeMm: number, layer: string): ExportItem[] => [
-  { kind: 'polyline', layer, points: [{ x: xMm, y: yMm - sizeMm }, { x: xMm + sizeMm * 0.3, y: yMm }, { x: xMm, y: yMm + sizeMm * 0.25 }, { x: xMm - sizeMm * 0.3, y: yMm }], close: true },
-  { kind: 'text', layer, x: xMm, y: yMm - sizeMm - 1.5, text: 'N (grid)', heightMm: 2.5, anchor: 'middle' },
-];
+// The arrow triangle rotates clockwise by rotationDeg about its base point so
+// it agrees with rotated viewport geometry; the scale bar is pure paper
+// geometry (no model coordinates), hence rotation-invariant by construction.
+// The viewport clip stays an axis-aligned paper rect under rotation — content
+// outside it is clipped, never reprojected.
+export const buildNorthArrowItems = (xMm: number, yMm: number, sizeMm: number, layer: string, rotationDeg = 0): ExportItem[] => {
+  const tip = { x: xMm, y: yMm - sizeMm };
+  const right = { x: xMm + sizeMm * 0.3, y: yMm };
+  const tail = { x: xMm, y: yMm + sizeMm * 0.25 };
+  const left = { x: xMm - sizeMm * 0.3, y: yMm };
+  const rotate = (point: { x: number; y: number }): { x: number; y: number } => {
+    if (rotationDeg === 0) return point;
+    const a = (rotationDeg * Math.PI) / 180;
+    const dx = point.x - xMm;
+    const dy = point.y - yMm;
+    return { x: xMm + dx * Math.cos(a) - dy * Math.sin(a), y: yMm + dx * Math.sin(a) + dy * Math.cos(a) };
+  };
+  return [
+    { kind: 'polyline', layer, points: [rotate(tip), rotate(right), rotate(tail), rotate(left)], close: true },
+    { kind: 'text', layer, x: xMm, y: yMm - sizeMm - 1.5, text: 'N (grid)', heightMm: 2.5, anchor: 'middle' },
+  ];
+};
 
 export const buildScaleBarItems = (
   xMm: number,
@@ -257,12 +283,13 @@ export const buildExportSheetScene = (args: BuildSceneArgs): { scene: ExportShee
         .filter(([, override]) => override.visible === false)
         .map(([layerId]) => layerId),
     );
-    const toPaper = (x: number, y: number): { xMm: number; yMm: number } => modelToPaperPoint(x, y, plan);
+    const toPaper = (x: number, y: number): { xMm: number; yMm: number } =>
+      modelToPaperPoint(x, y, plan, plan.rotationDeg);
     sorted
       .filter((primitive) => !hidden.has(primitive.layerId))
       .forEach((primitive) => {
         try {
-          items.push(...primitiveToPaper(primitive, toPaper, clipId));
+          items.push(...primitiveToPaper(primitive, toPaper, clipId, plan.rotationDeg));
         } catch {
           warnings.push({ code: 'SKIPPED_ENTITY', message: `skipped entity ${primitive.sourceEntityId}` });
         }

@@ -46,10 +46,13 @@ Labels are derived from live geometry via `cadLabelEngine.ts`:
 
 ## Grid-north semantics
 
-The north arrow is **grid north only** — never true/geodetic north. It
-counter-rotates against the viewport (`−rotation`, normalised to 0–360°)
-so it always points along the survey grid. Scale bars are likewise linked
-to the viewport denominator and are rotation-invariant.
+The north arrow is **grid north only** — never true/geodetic north. Viewport
+rotation θ turns model content clockwise by θ as seen on the sheet (up/north
+at θ=0), so the arrow points θ-clockwise-from-up (`+rotation`, normalised to
+0–360°) and always agrees with the rotated geometry. Scale bars are likewise
+linked to the viewport denominator and are rotation-invariant (pure paper
+geometry). The sheet preview renders the same north-up frame as SVG/PDF;
+the viewport clip stays an axis-aligned paper rect under rotation.
 
 ## Title-block tokens
 

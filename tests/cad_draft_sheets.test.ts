@@ -90,13 +90,13 @@ describe('draft sheets', () => {
     expect(rotateViewport(draft, sheetId, viewportId, Number.NaN)).toBeUndefined();
   });
 
-  it('computes grid-north arrow angles as the negative viewport rotation', () => {
+  it('computes grid-north arrow angles as the viewport rotation (clockwise content)', () => {
     expect(NORTH_REFERENCE).toBe('grid');
     expect(northArrowAngleDeg(0)).toBe(0);
-    expect(northArrowAngleDeg(90)).toBe(270);
-    expect(northArrowAngleDeg(-90)).toBe(90);
+    expect(northArrowAngleDeg(90)).toBe(90);
+    expect(northArrowAngleDeg(-90)).toBe(270);
     expect(northArrowAngleDeg(360)).toBe(0);
-    expect(northArrowAngleDeg(45)).toBe(315);
+    expect(northArrowAngleDeg(45)).toBe(45);
   });
 
   it('expands bounded tokens and keeps unknown tokens literal with warnings', () => {

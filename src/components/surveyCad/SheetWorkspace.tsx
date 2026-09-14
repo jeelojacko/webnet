@@ -17,7 +17,10 @@ type WorkspaceView = 'MODEL' | 'SHEET';
 // Display zoom: screen px per paper mm.
 const PX_PER_MM = 2.5;
 
-const primitiveToSvg = (primitive: CadDisplayPrimitive, key: string): React.ReactNode => {
+// Sheet view renders model content north-up to match SVG/PDF export: the
+// viewport group mirrors model-y (scale(k,-k)) and text is counter-mirrored
+// about its anchor so glyphs stay readable. MODEL view stays raw coordinates.
+const primitiveToSvg = (primitive: CadDisplayPrimitive, key: string, mirrorText = false): React.ReactNode => {
   switch (primitive.kind) {
     case 'line':
       return (
@@ -31,13 +34,19 @@ const primitiveToSvg = (primitive: CadDisplayPrimitive, key: string): React.Reac
       );
     case 'point':
       return <circle key={key} cx={primitive.point.x} cy={primitive.point.y} r={primitive.radius} fill={primitive.stroke} />;
-    case 'text':
+    case 'text': {
+      const mirror = mirrorText
+        ? `translate(${primitive.point.x} ${primitive.point.y}) scale(1 -1) translate(${-primitive.point.x} ${-primitive.point.y})`
+        : undefined;
       return (
-        <text key={key} x={primitive.point.x} y={primitive.point.y} fontSize={primitive.fontSize} fill={primitive.stroke}>
+        <text key={key} x={primitive.point.x} y={primitive.point.y} fontSize={primitive.fontSize} fill={primitive.stroke} transform={mirror}>
           {primitive.text}
         </text>
       );
+    }
     case 'ellipse':
+      // Negated angle: the sheet viewport group mirrors model-y, and
+      // mirror·rotate(−θ) = rotate(+θ)·mirror, matching export orientation.
       return (
         <ellipse
           key={key}
@@ -54,8 +63,10 @@ const primitiveToSvg = (primitive: CadDisplayPrimitive, key: string): React.Reac
     case 'arc': {
       const { center, radius, startAngleDeg, endAngleDeg } = primitive;
       const toRad = (deg: number): number => (deg * Math.PI) / 180;
-      const start = { x: center.x + radius * Math.cos(toRad(startAngleDeg)), y: center.y - radius * Math.sin(toRad(startAngleDeg)) };
-      const end = { x: center.x + radius * Math.cos(toRad(endAngleDeg)), y: center.y - radius * Math.sin(toRad(endAngleDeg)) };
+      // Raw model coords; the sheet viewport group applies the north-up
+      // mirror. (A baked y-flip here double-mirrored arcs vs lines.)
+      const start = { x: center.x + radius * Math.cos(toRad(startAngleDeg)), y: center.y + radius * Math.sin(toRad(startAngleDeg)) };
+      const end = { x: center.x + radius * Math.cos(toRad(endAngleDeg)), y: center.y + radius * Math.sin(toRad(endAngleDeg)) };
       const sweep = endAngleDeg - startAngleDeg > 180 ? 1 : 0;
       return (
         <path
@@ -175,8 +186,8 @@ export const SheetWorkspace = ({
               </clipPath>
               <rect x={viewport.paperXmm} y={viewport.paperYmm} width={viewport.paperWidthMm} height={viewport.paperHeightMm} fill="none" stroke="#111111" />
               <g clipPath={`url(#${clipId})`}>
-                <g transform={`translate(${paperCx} ${paperCy}) rotate(${viewport.rotationDeg}) scale(${k}) translate(${-viewport.modelCenterX} ${-viewport.modelCenterY})`}>
-                  {scene.primitives.map((primitive, index) => primitiveToSvg(primitive, `${viewport.id}-${primitive.id}-${index}`))}
+                <g transform={`translate(${paperCx} ${paperCy}) rotate(${viewport.rotationDeg}) scale(${k} ${-k}) translate(${-viewport.modelCenterX} ${-viewport.modelCenterY})`}>
+                  {scene.primitives.map((primitive, index) => primitiveToSvg(primitive, `${viewport.id}-${primitive.id}-${index}`, true))}
                 </g>
               </g>
               <g transform={`translate(${viewport.paperXmm + 8} ${viewport.paperYmm + 12}) rotate(${northAngle} 0 6)`} aria-label={`Grid north arrow (${NORTH_REFERENCE} north, ${northAngle.toFixed(1)} degrees)`}>

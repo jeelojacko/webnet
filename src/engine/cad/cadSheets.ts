@@ -176,9 +176,13 @@ export const suggestViewportScale = ({ modelWidthM, modelHeightM, paperWidthMm, 
 };
 
 // North arrow: grid-north only, rotation-aware. Never true/geodetic north.
+// Convention: viewport rotation θ turns model content clockwise by θ as seen
+// on the sheet (SVG rotate(θ) direction), so grid north — up at θ=0 — points
+// θ-clockwise-from-up and the arrow angle is +θ normalised to 0–360°.
+// Export scene, SVG, PDF, and sheet preview all share this convention.
 export const NORTH_REFERENCE = 'grid' as const;
 export const northArrowAngleDeg = (viewportRotationDeg: number): number =>
-  ((-viewportRotationDeg % 360) + 360) % 360;
+  ((viewportRotationDeg % 360) + 360) % 360;
 
 // Scale bar linked to viewport scale.
 export interface ScaleBarSegment { index: number; paperLengthMm: number; modelLengthM: number; }
