@@ -47,6 +47,11 @@ const SESSION_UI = [
   'src/components/gnss/GnssRawSessionPanel.utils.ts',
   'src/components/gnss/GnssRawSessionReview.tsx',
   'src/components/gnss/GnssRawSessionModal.tsx',
+  'src/components/gnss/RawGnssSessionIntake.tsx',
+  'src/components/gnss/RawGnssSessionInventory.tsx',
+  'src/components/gnss/RawGnssSessionGraphControls.tsx',
+  'src/components/gnss/RawGnssSessionProgress.tsx',
+  'src/hooks/useRawGnssSessionProcessing.ts',
   'src/hooks/useGnssRawSession.ts',
   'src/engine/gnssRawSessionExport.ts',
 ];
@@ -537,6 +542,21 @@ describe('session ANTEX slot bound', () => {
     await waitForText(container, 'big.atx');
     expect(byTestId(container, 'raw-session-file-error')).toBeNull();
     expect(container.textContent).toContain('big.atx');
+    act(() => {
+      root.unmount();
+    });
+  });
+  it('removing the ANTEX source clears the staged file (12J.10 hook ownership)', async () => {
+    const { container, root } = mount(<GnssRawSessionPanel onRestart={() => {}} />);
+    await upload(container, 'raw-session-antex-input', ['synth.atx']);
+    await waitForText(container, 'synth.atx');
+    const remove = [...container.querySelectorAll('button')]
+      .find((b) => b.textContent === 'remove');
+    expect(remove).toBeDefined();
+    await act(async () => {
+      remove!.dispatchEvent(new Event('click', { bubbles: true }));
+    });
+    expect(container.textContent).not.toContain('synth.atx');
     act(() => {
       root.unmount();
     });
