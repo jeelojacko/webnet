@@ -48,11 +48,11 @@ test.describe('Survey drafting deliverables', () => {
     await step('G');
     await expect(page.getByTestId('draft-viewport-info')).toContainText('rotation:15');
 
-    // H: grid-north arrow counter-rotates (345.0°) in the real sheet preview.
+    // H: grid-north arrow follows viewport rotation (+15.0°) in the real sheet preview.
     await step('H');
     const workspace = page.locator('section[aria-label="Draft workspace"]');
     await workspace.getByRole('tab', { name: 'Sheet' }).click();
-    await expect(workspace.getByLabel(/Grid north arrow \(grid north, 345\.0 degrees\)/)).toBeVisible();
+    await expect(workspace.getByLabel(/Grid north arrow \(grid north, 15\.0 degrees\)/)).toBeVisible();
     await expect(workspace.getByLabel('Scale bar 1:500')).toBeVisible();
 
     // I/J/K: scale bar + title block + coordinate table.
