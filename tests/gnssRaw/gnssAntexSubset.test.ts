@@ -113,6 +113,42 @@ describe('extractAntexSubsetText', () => {
       }),
     ).toThrow(/exceeds/);
   });
+  it('is order-invariant: serial permutation gives identical bytes/hash (12J.10 §14)', async () => {
+    const fwd = await buildAntexSubset({ sourceText: SOURCE, requiredReceiverSerials: [...REQUIRED] });
+    const rev = await buildAntexSubset({
+      sourceText: SOURCE, requiredReceiverSerials: [...REQUIRED].reverse(),
+    });
+    expect(rev.subsetBytes).toEqual(fwd.subsetBytes);
+    expect(rev.subsetSha256).toBe(fwd.subsetSha256);
+    expect(rev.subsetText).toBe(fwd.subsetText);
+    // validAt is provenance-only: different dates, same subset bytes.
+    const dated = await buildAntexSubset({
+      sourceText: SOURCE, requiredReceiverSerials: [...REQUIRED], validAt: '2024-06-01T00:00:00.000Z',
+    });
+    expect(dated.subsetBytes).toEqual(fwd.subsetBytes);
+  });
+});
+
+describe('antex cache isolation (12J.10 §15)', () => {
+  it('A, then B, then A again: A1 === A2, B distinct, no stale state', async () => {
+    const cache = createAntexSubsetCache();
+    const a1 = storeAntexSubset(cache, await buildAntexSubset({
+      sourceText: SOURCE, requiredReceiverSerials: ['TRM59800.00 NONE'],
+    }));
+    const b = storeAntexSubset(cache, await buildAntexSubset({
+      sourceText: SOURCE, requiredReceiverSerials: ['LEIAR25.R4 LEIT'],
+    }));
+    const a2 = storeAntexSubset(cache, await buildAntexSubset({
+      sourceText: SOURCE, requiredReceiverSerials: ['TRM59800.00 NONE'],
+    }));
+    expect(a2).toBe(a1);
+    expect(a2.subsetBytes).toEqual(a1.subsetBytes);
+    expect(b.subsetSha256).not.toBe(a1.subsetSha256);
+    expect(b.receiverSerials).toEqual(['LEIAR25.R4 LEIT']);
+    expect(a2.receiverSerials).toEqual(['TRM59800.00 NONE']);
+    expect(getCachedAntexSubset(cache, a1.subsetSha256)).toBe(a1);
+    expect(getCachedAntexSubset(cache, b.subsetSha256)).toBe(b);
+  });
 });
 
 describe('antex subset cache', () => {
