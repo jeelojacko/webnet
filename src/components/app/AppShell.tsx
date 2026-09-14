@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import AppToolbar from '../AppToolbar';
+import { GnssRawBaselineModal } from '../gnss/GnssRawBaselineModal';
 import { GnssWorkspaceModal } from '../gnss/GnssWorkspaceModal';
 import WorkspaceRecoveryBanner from '../WorkspaceRecoveryBanner';
 import AdjustedPointsTransformSelectModal from './AdjustedPointsTransformSelectModal';
@@ -59,6 +60,7 @@ const AppShell = ({ controller }: AppShellProps) => {
   } = controller;
 
   const [isGnssWorkspaceOpen, setIsGnssWorkspaceOpen] = useState(false);
+  const [isGnssRawOpen, setIsGnssRawOpen] = useState(false);
   const [pendingGnssImport, setPendingGnssImport] = useState<{ fileName: string; text: string } | null>(null);
   useEffect(() => {
     const handleOpenGnss = (event: Event): void => {
@@ -148,9 +150,17 @@ const AppShell = ({ controller }: AppShellProps) => {
         >
           Static GNSS workspace
         </button>
+        <button
+          type="button"
+          onClick={() => setIsGnssRawOpen(true)}
+          className="text-xs px-2 py-1 border border-slate-700 rounded text-slate-300 hover:bg-slate-800"
+        >
+          Process Raw Baseline
+        </button>
         <span className="text-xs text-slate-500">Processed ECEF baselines (.gvx) — separate from terrestrial flow.</span>
       </div>
       <GnssWorkspaceModal open={isGnssWorkspaceOpen} onClose={() => setIsGnssWorkspaceOpen(false)} pendingExternalImport={pendingGnssImport} onConsumeExternalImport={() => setPendingGnssImport(null)} />
+      <GnssRawBaselineModal open={isGnssRawOpen} onClose={() => setIsGnssRawOpen(false)} />
       {pendingRecovery && (
         <WorkspaceRecoveryBanner
           savedAt={new Date(pendingRecovery.savedAt).toLocaleString()}

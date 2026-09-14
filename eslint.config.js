@@ -6,7 +6,8 @@ import tsParser from '@typescript-eslint/parser';
 import { defineConfig, globalIgnores } from 'eslint/config';
 
 export default defineConfig([
-  globalIgnores(['dist', 'dist-webnet', 'test-results', 'playwright-report', 'emsdk-cache', 'cpp/build*', 'study-desktop/dist', 'study-desktop/src-tauri/target', 'artifacts']),
+  // public/rtklib-* are dev-serving symlinks into cpp/build-wasm (generated Emscripten glue, never linted).
+  globalIgnores(['dist', 'dist-webnet', 'test-results', 'playwright-report', 'emsdk-cache', 'cpp/build*', 'public/rtklib-*', 'study-desktop/dist', 'study-desktop/src-tauri/target', 'artifacts']),
   {
     files: ['**/*.{js,jsx,ts,tsx}'],
     ignores: ['node_modules'],
