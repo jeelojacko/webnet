@@ -27,6 +27,7 @@ import { buildDraftPointTable } from '../src/engine/cad/cadDraftTables';
 import type {
   DraftDocument,
 } from '../src/engine/cad/cadDraftTypes';
+import { sanitizePdfText } from '../src/engine/cad/cadDraftGlyphs';
 import { exportScenesToPdf } from '../src/engine/cad/cadPdfExport';
 import {
   addSheetToDraft,
@@ -44,9 +45,14 @@ import type { CadDrawingDocument, CadEntity, CadProject } from '../src/engine/ca
 
 const pdfVisibleText = (pdf: string): string => {
   const parts: string[] = [];
-  const literals = /\((?:\\[\\()]|[^\\()])*\)/g;
+  const literals = /\((?:\\[\\()]|\\\d{3}|[^\\()])*\)/g;
   for (const match of pdf.matchAll(literals)) {
-    parts.push(match[0].slice(1, -1).replace(/\\([\\()])/g, '$1'));
+    parts.push(
+      match[0]
+        .slice(1, -1)
+        .replace(/\\(\d{3})/g, (_, oct: string) => String.fromCharCode(parseInt(oct, 8)))
+        .replace(/\\([\\()])/g, '$1'),
+    );
   }
   for (const match of pdf.matchAll(/<([0-9A-Fa-f]+)>/g)) {
     const hex = match[1] as string;
@@ -115,11 +121,13 @@ describe('draft final integration', () => {
     const pdf = new TextDecoder().decode(exportScenesToPdf([scene]));
     const dxf = serializeDxfModel(buildDxfExportModel({ project, modelLabels }));
 
-    // Each label's numbers survive in all three deliverables.
+    // Each label's numbers survive in all three deliverables. The PDF
+    // carries WinAnsi-safe text, so non-WinAnsi glyphs (the Δ in the curve
+    // label) appear in their documented substituted form.
     for (const label of [lineText, curveText]) {
       expect(svg).toContain(label);
       expect(dxf).toContain(label);
-      expect(pdfVisibleText(pdf)).toContain(label);
+      expect(pdfVisibleText(pdf)).toContain(sanitizePdfText(label).text);
     }
     // ARC geometry itself reaches DXF with full model coordinates.
     expect(dxf).toContain('\nARC\n');

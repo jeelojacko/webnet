@@ -69,7 +69,7 @@ describe('draft deliverable exporters', () => {
     expect(pdf).toContain('/BaseFont/Helvetica');
     expect(pdf).toContain('(C1 - Parcel)');
     expect(pdf).toContain('(N \\(grid\\))');
-    expect(pdf).toContain('<FEFF'); // UTF-16BE hex for the m² area label
+    expect(pdf).toContain('\\262'); // WinAnsi octal escape for the ² in the m² area label
     expect(pdf).toContain(' Tj ET');
     expect(pdf).toMatch(/[ml] S/);
     expect(pdf).toContain('/Count 1');
