@@ -1,6 +1,7 @@
 import type { ParseOptions, StationErrorEllipse, StationId, UnitsMode } from '../../types';
 import type { CadCogoComputation } from './cadCogoTypes';
 import type { CadDisplayPoint } from './cadDisplayTypes';
+import type { DraftDocument } from './cadDraftTypes';
 export type {
   CadDisplayArcPrimitive,
   CadDisplayEllipsePrimitive,
@@ -45,6 +46,8 @@ export interface CadLayer {
   defaultStyleId?: CadStyleId;
   visible: boolean;
   locked: boolean;
+  printable?: boolean;
+  lineweightMm?: number;
   role:
     | 'points'
     | 'control-points'
@@ -249,7 +252,7 @@ export interface CadDrawingImportRecord {
 
 export interface CadDrawingDocument {
   kind: 'webnet-cad-drawing';
-  schemaVersion: 1;
+  schemaVersion: 1 | 2;
   drawingId: string;
   name: string;
   createdAt: string;
@@ -259,6 +262,7 @@ export interface CadDrawingDocument {
   parcelLayout?: CadParcelLayoutUiState;
   showParcelLabels?: boolean;
   imports?: CadDrawingImportRecord[];
+  draft?: DraftDocument;
 }
 
 export type CadParcelLayoutSolutionPreference =

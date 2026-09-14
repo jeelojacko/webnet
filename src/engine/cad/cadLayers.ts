@@ -13,6 +13,8 @@ export const DEFAULT_CAD_LAYERS: CadLayer[] = [
     defaultStyleId: DEFAULT_STYLE_IDS['Control Point'],
     visible: true,
     locked: false,
+    printable: true,
+    lineweightMm: 0.25,
     role: 'control-points',
   },
   {
@@ -22,6 +24,8 @@ export const DEFAULT_CAD_LAYERS: CadLayer[] = [
     defaultStyleId: DEFAULT_STYLE_IDS['Survey Point'],
     visible: true,
     locked: false,
+    printable: true,
+    lineweightMm: 0.25,
     role: 'points',
   },
   {
@@ -31,6 +35,8 @@ export const DEFAULT_CAD_LAYERS: CadLayer[] = [
     defaultStyleId: DEFAULT_STYLE_IDS['Observation Line'],
     visible: true,
     locked: false,
+    printable: true,
+    lineweightMm: 0.25,
     role: 'observation-lines',
   },
   {
@@ -41,6 +47,8 @@ export const DEFAULT_CAD_LAYERS: CadLayer[] = [
     defaultStyleId: DEFAULT_STYLE_IDS['Error Ellipse'],
     visible: true,
     locked: false,
+    printable: true,
+    lineweightMm: 0.25,
     role: 'error-ellipses',
   },
   {
@@ -50,6 +58,8 @@ export const DEFAULT_CAD_LAYERS: CadLayer[] = [
     defaultStyleId: DEFAULT_STYLE_IDS['Label'],
     visible: true,
     locked: false,
+    printable: true,
+    lineweightMm: 0.25,
     role: 'labels',
   },
   {
@@ -59,6 +69,8 @@ export const DEFAULT_CAD_LAYERS: CadLayer[] = [
     defaultStyleId: DEFAULT_STYLE_IDS['Parcel'],
     visible: true,
     locked: false,
+    printable: true,
+    lineweightMm: 0.25,
     role: 'parcels',
   },
 ];
