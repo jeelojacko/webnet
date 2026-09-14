@@ -51,6 +51,7 @@ export const GnssRawBaselinePanel: React.FC = () => {
       </div>
       <GnssRawFileSlots
         base={hook.base} rover={hook.rover} nav={hook.nav} sp3={hook.sp3}
+        ephemeris={hook.options.ephemeris}
         preflight={hook.preflight}
         onBase={(file) => void hook.setBaseFile(file)}
         onRover={(file) => void hook.setRoverFile(file)}
@@ -58,7 +59,10 @@ export const GnssRawBaselinePanel: React.FC = () => {
         onSp3={(file) => void hook.setSp3File(file)}
         onClearNav={hook.clearNav} onClearSp3={hook.clearSp3} onSwap={hook.swap}
       />
-      <GnssRawOptionsForm options={hook.options} onChange={hook.setOptions} />
+      <GnssRawOptionsForm options={hook.options} onChange={(next) => {
+        hook.setOptions(next);
+        if (next.ephemeris === 'BROADCAST' && hook.sp3) hook.clearSp3();
+      }} />
       {fileError && <div data-testid="raw-file-error" className="text-xs text-red-300">{fileError}</div>}
       {gateError && (
         <div data-testid="raw-preflight-error" className="text-xs text-red-300">

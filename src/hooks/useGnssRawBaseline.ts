@@ -6,7 +6,7 @@
  * state, preflight gating, dedicated-worker run with 7-stage progress, and
  * job-token cancellation (terminate/reset, ignore stale responses).
  *
- * NEVER imports adjustment hooks/state. There is NO auto-ingest path here
+ * NEVER imports solve hooks/state. There is NO auto-ingest path here
  * or anywhere downstream of this hook: results stay in local state for
  * review/export only.
  */
@@ -246,6 +246,7 @@ export const useGnssRawBaseline = () => {
       options: {
         elevationMaskDegrees: options.elevationMaskDegrees,
         intervalSeconds: options.intervalMode === 'AUTO' ? 'AUTO' : options.intervalSeconds,
+        resolvedIntervalSeconds: ok.resolvedInterval,
         windowStart: options.windowStart.trim() === '' ? null : options.windowStart.trim(),
         windowStop: options.windowStop.trim() === '' ? null : options.windowStop.trim(),
         precise: options.ephemeris === 'PRECISE',

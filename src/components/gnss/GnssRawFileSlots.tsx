@@ -15,6 +15,7 @@ interface FileSlotsProps {
   readonly rover: RawFileEntry | null;
   readonly nav: RawFileEntry[];
   readonly sp3: RawFileEntry | null;
+  readonly ephemeris: 'BROADCAST' | 'PRECISE';
   readonly preflight: PreflightOk | RawGnssProcessingError | null;
   readonly onBase: (_file: File) => void;
   readonly onRover: (_file: File) => void;
@@ -41,9 +42,10 @@ const fmtXyz = (xyz: [number, number, number] | null): string =>
   xyz ? xyz.map((v) => v.toFixed(3)).join(', ') : '—';
 
 export const GnssRawFileSlots: React.FC<FileSlotsProps> = ({
-  base, rover, nav, sp3, preflight, onBase, onRover, onNav, onSp3, onClearNav, onClearSp3, onSwap,
+  base, rover, nav, sp3, ephemeris, preflight, onBase, onRover, onNav, onSp3, onClearNav, onClearSp3, onSwap,
 }) => {
   const ok = preflight && !('code' in preflight) ? preflight : null;
+  const broadcast = ephemeris === 'BROADCAST';
   return (
     <div className="space-y-2">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
@@ -72,10 +74,15 @@ export const GnssRawFileSlots: React.FC<FileSlotsProps> = ({
             </span>
           ))}
         </label>
-        <label className="block text-xs text-slate-300">
+        <label className={`block text-xs ${broadcast ? 'text-slate-500' : 'text-slate-300'}`}>
           SP3 precise ephemeris (optional; required for precise mode)
-          <input type="file" data-testid="raw-sp3-input" accept=".sp3,.txt"
-            onChange={(e) => pickOne(e, onSp3)} className="mt-1 block w-full text-xs text-slate-400" />
+          <input type="file" data-testid="raw-sp3-input" accept=".sp3,.txt" disabled={broadcast}
+            onChange={(e) => pickOne(e, onSp3)} className="mt-1 block w-full text-xs text-slate-400 disabled:opacity-40" />
+          {broadcast && (
+            <span data-testid="raw-sp3-hint" className="block text-slate-500">
+              SP3 is only used with Precise ephemeris.
+            </span>
+          )}
           {sp3 && (
             <span className="text-slate-400">{sp3.fileName}{' '}
               <button type="button" onClick={onClearSp3} className="underline">remove</button>

@@ -43,11 +43,10 @@ export const GnssRawReview: React.FC<ReviewProps> = ({ result, exportDoc }) => {
   const sigma = (v: number): number => (v >= 0 && Number.isFinite(v) ? Math.sqrt(v) : NaN);
   const authoritative = isAuthoritativeExportable(result);
   const diagnosticOnly = isDiagnosticExportable(result);
-  const download = (kind: 'authoritative' | 'diagnostic'): void => {
+  const download = (): void => {
     if (!exportDoc) return;
     const name = `raw-baseline-${result.from}-${result.to}-${result.status}.json`;
     downloadTextFile(name, serializeRawBaselineExport(exportDoc));
-    void kind;
   };
   return (
     <div data-testid="raw-review" className="space-y-2 text-xs text-slate-200">
@@ -112,7 +111,7 @@ export const GnssRawReview: React.FC<ReviewProps> = ({ result, exportDoc }) => {
         </div>
       </details>
       {authoritative && exportDoc && (
-        <button type="button" data-testid="raw-export-json" onClick={() => download('authoritative')}
+        <button type="button" data-testid="raw-export-json" onClick={download}
           className="px-2 py-1 border border-slate-600 rounded hover:bg-slate-700">
           Export authoritative JSON
         </button>
@@ -121,7 +120,7 @@ export const GnssRawReview: React.FC<ReviewProps> = ({ result, exportDoc }) => {
         <div data-testid="raw-float-policy" className="border border-amber-500 p-2 text-amber-200">
           FLOAT solution: diagnostic view only — NOT EXPORTABLE as a survey baseline.
           {exportDoc && (
-            <button type="button" data-testid="raw-export-diagnostic" onClick={() => download('diagnostic')}
+            <button type="button" data-testid="raw-export-diagnostic" onClick={download}
               className="ml-2 px-2 py-1 border border-amber-500 rounded hover:bg-slate-700">
               Download diagnostic JSON
             </button>

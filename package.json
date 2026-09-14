@@ -10,6 +10,7 @@
     "cpp:build": "node scripts/cppBuild.mjs build",
     "cpp:test": "node scripts/cppBuild.mjs test",
     "wasm:build": "node scripts/cppBuild.mjs wasm",
+    "wasm:build:rtklib": "node scripts/gnss/buildRtklibWasm.mjs",
     "wasm:smoke": "node scripts/wasmSmoke.mjs",
     "wasm:solver:smoke": "tsx scripts/wasmDenseSmoke.ts",
     "wasm:solver:parity": "tsx scripts/wasmDenseParity.ts",

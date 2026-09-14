@@ -18,6 +18,12 @@ const RAW_TRACK = [
   'src/components/gnss/GnssRawOptionsForm.tsx',
   'src/components/gnss/GnssRawReview.tsx',
   'src/engine/gnssRawExport.ts',
+  'src/engine/gnssRawRnx2rtkp.ts',
+  'src/workers/gnssRawWorker.ts',
+  'src/engine/gnssRawWorkerProtocol.ts',
+  'src/engine/gnssRawPreflight.ts',
+  'src/engine/gnssRawHash.ts',
+  'src/engine/gnssRawTypes.ts',
 ];
 
 const FORBIDDEN = [
@@ -25,6 +31,9 @@ const FORBIDDEN = [
   'useGnssBaselineWorker',
   'adjustmentWorker',
   'projectSession',
+  'projectStorage',
+  'runSession',
+  'adjust',
   'gnssBaselineAdjust',
   'runGnssBaseline',
   'importGnssBaseline',

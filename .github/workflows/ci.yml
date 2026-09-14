@@ -106,6 +106,9 @@ jobs:
       - name: Build WASM test artifact
         if: ${{ needs.classify.outputs.numerical_required == 'true' }}
         run: npm run wasm:build
+      - name: Build RTKLIB rnx2rtkp WASM
+        if: ${{ needs.classify.outputs.numerical_required == 'true' }}
+        run: npm run wasm:build:rtklib
       - name: Configure native C++ tests
         if: ${{ needs.classify.outputs.numerical_required == 'true' }}
         run: npm run cpp:configure

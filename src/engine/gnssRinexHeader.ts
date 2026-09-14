@@ -23,7 +23,7 @@ export { RinexParseError };
 /** Epoch times kept for AUTO interval derivation (first N only). */
 const KEPT_EPOCHS = 64;
 /** Hard stop on body epoch records; file is rejected past this. */
-const MAX_EPOCHS = 20000;
+const MAX_EPOCHS = 200000;
 
 export interface ParsedRinexObs {
   readonly metadata: Omit<RawGnssFileMetadata, 'fileName' | 'sha256' | 'role'>;
@@ -218,7 +218,7 @@ export function parseRinexObs(
           count += 1;
           if (epochTimesMs.length < KEPT_EPOCHS) epochTimesMs.push(e.ms);
           if (count > maxEpochs) {
-            throw new RinexParseError('Epoch record cap exceeded.');
+            throw new RinexParseError('Too many epochs for the browser MVP.');
           }
         }
       } else {
@@ -234,7 +234,7 @@ export function parseRinexObs(
         if (epochTimesMs.length < KEPT_EPOCHS) epochTimesMs.push(e.ms);
         for (const s of e.sats) st.constellations.add(s[0]!);
         if (count > maxEpochs) {
-          throw new RinexParseError('Epoch record cap exceeded.');
+          throw new RinexParseError('Too many epochs for the browser MVP.');
         }
       }
     }

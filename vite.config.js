@@ -13,7 +13,7 @@ const webnetWasmArtifacts = () => ({
   name: 'webnet-wasm-artifacts',
   writeBundle(options) {
     const outDir = options.dir ?? 'dist';
-    for (const file of ['webnet_core.js', 'webnet_core.wasm']) {
+    for (const file of ['webnet_core.js', 'webnet_core.wasm', 'rtklib-rnx2rtkp.js', 'rtklib-rnx2rtkp.wasm']) {
       const source = join('cpp', 'build-wasm', file);
       if (!existsSync(source)) {
         this.warn(`webnet-wasm-artifacts: ${source} missing; skipping (sparse auto-route will fail closed).`);
