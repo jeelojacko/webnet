@@ -1,0 +1,616 @@
+{
+  "kind": "webnet-cad-drawing",
+  "schemaVersion": 2,
+  "drawingId": "cad-drawing-c4972b4c-beb6-497a-8d84-f94ea22497f4",
+  "name": "Survey Plan Sample",
+  "createdAt": "2026-09-14T22:30:22.459Z",
+  "updatedAt": "2026-09-14T22:30:22.459Z",
+  "units": "m",
+  "project": {
+    "version": 2,
+    "id": "cad-project-8c8b1ec2-0407-4b2b-941e-85a44679bd72",
+    "name": "Survey Plan Sample",
+    "metadata": {
+      "source": "parsed-input",
+      "runMode": "unknown",
+      "units": "m",
+      "stationCount": 0,
+      "observationCount": 0,
+      "adjustedStationCount": 0
+    },
+    "layers": [
+      {
+        "id": "control-points",
+        "name": "Control Points",
+        "color": "#f59e0b",
+        "defaultStyleId": "style-control-point",
+        "visible": true,
+        "locked": false,
+        "printable": true,
+        "lineweightMm": 0.25,
+        "role": "control-points"
+      },
+      {
+        "id": "points",
+        "name": "Survey Points",
+        "color": "#38bdf8",
+        "defaultStyleId": "style-point",
+        "visible": true,
+        "locked": false,
+        "printable": true,
+        "lineweightMm": 0.25,
+        "role": "points"
+      },
+      {
+        "id": "observation-lines",
+        "name": "Observation Lines",
+        "color": "#22c55e",
+        "defaultStyleId": "style-observation-line",
+        "visible": true,
+        "locked": false,
+        "printable": true,
+        "lineweightMm": 0.25,
+        "role": "observation-lines"
+      },
+      {
+        "id": "error-ellipses",
+        "name": "Error Ellipses",
+        "color": "#f472b6",
+        "lineTypeId": "dash-short",
+        "defaultStyleId": "style-error-ellipse",
+        "visible": true,
+        "locked": false,
+        "printable": true,
+        "lineweightMm": 0.25,
+        "role": "error-ellipses"
+      },
+      {
+        "id": "labels",
+        "name": "Labels",
+        "color": "#e2e8f0",
+        "defaultStyleId": "style-label",
+        "visible": true,
+        "locked": false,
+        "printable": true,
+        "lineweightMm": 0.25,
+        "role": "labels"
+      },
+      {
+        "id": "parcels",
+        "name": "Parcels",
+        "color": "#f59e0b",
+        "defaultStyleId": "style-parcel",
+        "visible": true,
+        "locked": false,
+        "printable": true,
+        "lineweightMm": 0.25,
+        "role": "parcels"
+      }
+    ],
+    "styleLibrary": {
+      "lineTypes": [
+        {
+          "id": "continuous",
+          "name": "Continuous",
+          "dashPattern": []
+        },
+        {
+          "id": "dash-short",
+          "name": "Dash Short",
+          "dashPattern": [
+            6,
+            4
+          ]
+        }
+      ],
+      "textStyles": [
+        {
+          "id": "label-default",
+          "name": "Label Default",
+          "fontFamily": "ui-monospace, SFMono-Regular, Menlo, Consolas, monospace",
+          "fontSize": 11
+        }
+      ],
+      "pointSymbols": [
+        {
+          "id": "point-free",
+          "name": "Free Point",
+          "radius": 1.8
+        },
+        {
+          "id": "point-control",
+          "name": "Control Point",
+          "radius": 2.4
+        }
+      ],
+      "styles": [
+        {
+          "id": "style-control-point",
+          "name": "Control Point",
+          "color": "#f59e0b",
+          "strokeWidth": 1.2,
+          "pointSymbolId": "point-control"
+        },
+        {
+          "id": "style-point",
+          "name": "Survey Point",
+          "color": "#38bdf8",
+          "strokeWidth": 1.2,
+          "pointSymbolId": "point-free"
+        },
+        {
+          "id": "style-observation-line",
+          "name": "Observation Line",
+          "color": "#22c55e",
+          "strokeWidth": 1.25,
+          "lineTypeId": "continuous"
+        },
+        {
+          "id": "style-error-ellipse",
+          "name": "Error Ellipse",
+          "color": "#f472b6",
+          "strokeWidth": 1.1,
+          "lineTypeId": "dash-short"
+        },
+        {
+          "id": "style-label",
+          "name": "Label",
+          "color": "#e2e8f0",
+          "textStyleId": "label-default"
+        },
+        {
+          "id": "style-parcel",
+          "name": "Parcel",
+          "color": "#f59e0b",
+          "strokeWidth": 1.5,
+          "lineTypeId": "continuous"
+        }
+      ]
+    },
+    "entities": [
+      {
+        "type": "survey-point",
+        "id": "pt-P1",
+        "layerId": "control-points",
+        "visible": true,
+        "locked": false,
+        "stationId": "P1",
+        "x": 0,
+        "y": 0,
+        "pointClass": "control",
+        "source": "adjustment-result"
+      },
+      {
+        "type": "survey-point",
+        "id": "pt-P2",
+        "layerId": "control-points",
+        "visible": true,
+        "locked": false,
+        "stationId": "P2",
+        "x": 50,
+        "y": 0,
+        "pointClass": "control",
+        "source": "adjustment-result"
+      },
+      {
+        "type": "survey-point",
+        "id": "pt-P3",
+        "layerId": "points",
+        "visible": true,
+        "locked": false,
+        "stationId": "P3",
+        "x": 50,
+        "y": 40,
+        "pointClass": "free",
+        "source": "parsed-input"
+      },
+      {
+        "type": "survey-point",
+        "id": "pt-P4",
+        "layerId": "points",
+        "visible": true,
+        "locked": false,
+        "stationId": "P4",
+        "x": 0,
+        "y": 40,
+        "pointClass": "free",
+        "source": "parsed-input"
+      },
+      {
+        "type": "survey-point",
+        "id": "pt-C1",
+        "layerId": "points",
+        "visible": true,
+        "locked": false,
+        "stationId": "C1",
+        "x": 80,
+        "y": 20,
+        "pointClass": "free",
+        "source": "parsed-input",
+        "description": "COGO curve center"
+      },
+      {
+        "type": "line",
+        "id": "line-L1",
+        "layerId": "parcels",
+        "visible": true,
+        "locked": false,
+        "fromStationId": "P1",
+        "toStationId": "P2",
+        "fromX": 0,
+        "fromY": 0,
+        "toX": 50,
+        "toY": 0,
+        "sourceObservationIds": []
+      },
+      {
+        "type": "line",
+        "id": "line-L2",
+        "layerId": "parcels",
+        "visible": true,
+        "locked": false,
+        "fromStationId": "P2",
+        "toStationId": "P3",
+        "fromX": 50,
+        "fromY": 0,
+        "toX": 50,
+        "toY": 40,
+        "sourceObservationIds": []
+      },
+      {
+        "type": "line",
+        "id": "line-L3",
+        "layerId": "parcels",
+        "visible": true,
+        "locked": false,
+        "fromStationId": "P3",
+        "toStationId": "P4",
+        "fromX": 50,
+        "fromY": 40,
+        "toX": 0,
+        "toY": 40,
+        "sourceObservationIds": []
+      },
+      {
+        "type": "line",
+        "id": "line-L4",
+        "layerId": "parcels",
+        "visible": true,
+        "locked": false,
+        "fromStationId": "P4",
+        "toStationId": "P1",
+        "fromX": 0,
+        "fromY": 40,
+        "toX": 0,
+        "toY": 0,
+        "sourceObservationIds": []
+      },
+      {
+        "type": "arc",
+        "id": "arc-C1",
+        "layerId": "parcels",
+        "visible": true,
+        "locked": false,
+        "centerX": 80,
+        "centerY": 20,
+        "radius": 30,
+        "startAngleDeg": 0,
+        "endAngleDeg": 60
+      },
+      {
+        "type": "parcel",
+        "id": "parcel-A",
+        "layerId": "parcels",
+        "visible": true,
+        "locked": false,
+        "vertices": [
+          {
+            "x": 0,
+            "y": 0
+          },
+          {
+            "x": 50,
+            "y": 0
+          },
+          {
+            "x": 50,
+            "y": 40
+          },
+          {
+            "x": 0,
+            "y": 40
+          }
+        ],
+        "vertexLabels": [
+          "P1",
+          "P2",
+          "P3",
+          "P4"
+        ],
+        "parcelName": "Lot A"
+      },
+      {
+        "type": "text",
+        "id": "text-P1",
+        "layerId": "labels",
+        "visible": true,
+        "locked": false,
+        "x": 0,
+        "y": 0,
+        "text": "P1 N 0.000, E 0.000",
+        "anchorEntityId": "pt-P1"
+      },
+      {
+        "type": "text",
+        "id": "text-P2",
+        "layerId": "labels",
+        "visible": true,
+        "locked": false,
+        "x": 50,
+        "y": 0,
+        "text": "P2 N 0.000, E 50.000",
+        "anchorEntityId": "pt-P2"
+      },
+      {
+        "type": "text",
+        "id": "text-P3",
+        "layerId": "labels",
+        "visible": true,
+        "locked": false,
+        "x": 50,
+        "y": 40,
+        "text": "P3 N 40.000, E 50.000",
+        "anchorEntityId": "pt-P3"
+      },
+      {
+        "type": "text",
+        "id": "text-P4",
+        "layerId": "labels",
+        "visible": true,
+        "locked": false,
+        "x": 0,
+        "y": 40,
+        "text": "P4 N 40.000, E 0.000",
+        "anchorEntityId": "pt-P4"
+      },
+      {
+        "type": "text",
+        "id": "text-L1",
+        "layerId": "labels",
+        "visible": true,
+        "locked": false,
+        "x": 25,
+        "y": 0,
+        "text": "N90-00-00.00E 50.000 m",
+        "anchorEntityId": "line-L1"
+      },
+      {
+        "type": "text",
+        "id": "text-L2",
+        "layerId": "labels",
+        "visible": true,
+        "locked": false,
+        "x": 50,
+        "y": 20,
+        "text": "N00-00-00.00E 40.000 m",
+        "anchorEntityId": "line-L2"
+      },
+      {
+        "type": "text",
+        "id": "text-L3",
+        "layerId": "labels",
+        "visible": true,
+        "locked": false,
+        "x": 25,
+        "y": 40,
+        "text": "S90-00-00.00W 50.000 m",
+        "anchorEntityId": "line-L3"
+      },
+      {
+        "type": "text",
+        "id": "text-L4",
+        "layerId": "labels",
+        "visible": true,
+        "locked": false,
+        "x": 0,
+        "y": 20,
+        "text": "S00-00-00.00E 40.000 m",
+        "anchorEntityId": "line-L4"
+      },
+      {
+        "type": "text",
+        "id": "text-curve",
+        "layerId": "labels",
+        "visible": true,
+        "locked": false,
+        "x": 80,
+        "y": 20,
+        "text": "R 30.000 m Δ N60-00-00.00E Arc 31.416 m Ch 30.000 m",
+        "anchorEntityId": "arc-C1"
+      },
+      {
+        "type": "text",
+        "id": "text-area",
+        "layerId": "labels",
+        "visible": true,
+        "locked": false,
+        "x": 25,
+        "y": 20,
+        "text": "Lot A 2000.0 m²",
+        "anchorEntityId": "parcel-A"
+      }
+    ],
+    "cogoComputations": [],
+    "bounds": {
+      "minX": 0,
+      "minY": 0,
+      "maxX": 110,
+      "maxY": 50
+    }
+  },
+  "showParcelLabels": true,
+  "imports": [],
+  "draft": {
+    "version": 1,
+    "modelSpaceProjectId": "cad-project-8c8b1ec2-0407-4b2b-941e-85a44679bd72",
+    "layers": [
+      {
+        "id": "control-points",
+        "name": "Control Points",
+        "color": "#f59e0b",
+        "visible": true,
+        "locked": false,
+        "role": "control-points",
+        "defaultStyleId": "style-control-point",
+        "printable": true,
+        "lineweightMm": 0.25
+      },
+      {
+        "id": "points",
+        "name": "Survey Points",
+        "color": "#38bdf8",
+        "visible": true,
+        "locked": false,
+        "role": "points",
+        "defaultStyleId": "style-point",
+        "printable": true,
+        "lineweightMm": 0.25
+      },
+      {
+        "id": "observation-lines",
+        "name": "Observation Lines",
+        "color": "#22c55e",
+        "visible": true,
+        "locked": false,
+        "role": "observation-lines",
+        "defaultStyleId": "style-observation-line",
+        "printable": true,
+        "lineweightMm": 0.25
+      },
+      {
+        "id": "error-ellipses",
+        "name": "Error Ellipses",
+        "color": "#f472b6",
+        "visible": true,
+        "locked": false,
+        "role": "error-ellipses",
+        "lineTypeId": "dash-short",
+        "defaultStyleId": "style-error-ellipse",
+        "printable": true,
+        "lineweightMm": 0.25
+      },
+      {
+        "id": "labels",
+        "name": "Labels",
+        "color": "#e2e8f0",
+        "visible": true,
+        "locked": false,
+        "role": "labels",
+        "defaultStyleId": "style-label",
+        "printable": true,
+        "lineweightMm": 0.25
+      },
+      {
+        "id": "parcels",
+        "name": "Parcels",
+        "color": "#f59e0b",
+        "visible": true,
+        "locked": false,
+        "role": "parcels",
+        "defaultStyleId": "style-parcel",
+        "printable": true,
+        "lineweightMm": 0.25
+      }
+    ],
+    "annotationStyles": {
+      "textStyles": [
+        {
+          "id": "draft-text-style-b4aa6733-156b-4fe2-9729-49225e0ad673",
+          "name": "Normal",
+          "paperHeightMm": 3.5,
+          "fontFamily": "ui-monospace, SFMono-Regular, Menlo, Consolas, monospace",
+          "alignment": "left"
+        }
+      ],
+      "lineStyles": [
+        {
+          "id": "draft-line-style-9977cf01-e3a7-4ff8-8a96-44d940ace055",
+          "name": "Normal",
+          "lineweightMm": 0.25,
+          "lineTypeId": "continuous"
+        }
+      ],
+      "labelStyles": []
+    },
+    "precision": {
+      "bearingDecimals": 0,
+      "distanceDecimals": 3,
+      "areaDecimals": 1,
+      "coordinateDecimals": 3,
+      "unitsMode": "m"
+    },
+    "sheets": [
+      {
+        "id": "draft-sheet-8e55bfb6-a550-4ca2-b441-efdc1d273769",
+        "name": "C1 - Plan",
+        "widthMm": 420,
+        "heightMm": 297,
+        "orientation": "landscape",
+        "margins": {
+          "topMm": 10,
+          "bottomMm": 10,
+          "leftMm": 10,
+          "rightMm": 10
+        },
+        "viewports": [
+          {
+            "id": "draft-viewport-cd4f1f70-ccc8-47e3-851a-09fa04ece7e0",
+            "name": "Plan viewport",
+            "modelCenterX": 40,
+            "modelCenterY": 20,
+            "scaleDenominator": 500,
+            "paperXmm": 15,
+            "paperYmm": 15,
+            "paperWidthMm": 350,
+            "paperHeightMm": 200
+          }
+        ],
+        "titleBlockId": "tb-sample",
+        "sheetObjects": [
+          {
+            "id": "sheetobj-title",
+            "kind": "title-block",
+            "layerId": "labels",
+            "paperXmm": 15,
+            "paperYmm": 262,
+            "text": "{SHEET_NAME} @ {SCALE} — {PROJECT_NAME}"
+          },
+          {
+            "id": "sheetobj-note",
+            "kind": "plan-note",
+            "layerId": "labels",
+            "paperXmm": 15,
+            "paperYmm": 250,
+            "text": "Draft plan — not a legal or certified survey document."
+          }
+        ]
+      }
+    ],
+    "titleBlockDefinitions": [
+      {
+        "id": "tb-sample",
+        "name": "Sample title block",
+        "fieldNames": [
+          "PROJECT_NAME",
+          "SHEET_NAME",
+          "SCALE",
+          "DATE"
+        ]
+      }
+    ],
+    "metadata": {
+      "createdAt": "2026-09-14T22:30:22.459Z",
+      "updatedAt": "2026-09-14T22:30:22.459Z"
+    }
+  }
+}
