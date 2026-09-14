@@ -187,6 +187,17 @@ test.describe('Raw static session review', () => {
     // The reason names the worker failure, not just that an edge is missing.
     expect(reason ?? '').toMatch(/PROCESSOR_FAILURE|no solution epochs/);
     await expect(dialog.getByTestId('raw-session-status')).toContainText('PARTIAL');
+    // §27 repair: the deterministic suggestion reconnects SYNF via SYNR;
+    // the blanked file cannot solve, so the single-edge reprocess honestly
+    // settles PARTIAL again with the new edge named (not a faked COMPLETE).
+    await expect(dialog.getByTestId('raw-session-replace-SYNB->SYNF')).toHaveValue('SYNF->SYNR');
+    await dialog.getByTestId('raw-session-replace-go-SYNB->SYNF').click();
+    await expect(dialog.getByTestId('raw-session-progress')).toContainText('SYNF->SYNR', { timeout: 15_000 });
+    await expect(dialog.getByTestId('raw-session-failed')).toContainText('SYNF->SYNR', { timeout: 300_000 });
+    const after = await dialog.getByTestId('raw-session-failed').textContent();
+    expect(after ?? '').toMatch(/replaced by SYNF->SYNR/);
+    expect(after ?? '').toMatch(/PROCESSOR_FAILURE|no solution epochs/);
+    await expect(dialog.getByTestId('raw-session-status')).toContainText('PARTIAL');
     expect(pageErrors).toEqual([]);
   });
 
