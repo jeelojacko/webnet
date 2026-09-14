@@ -308,7 +308,7 @@ export interface UseGnssRawSession {
 /** Bounded queue over one Worker per active job (PAR default 2). */
 export const useGnssRawSession = (par: number = DEFAULT_SESSION_PAR): UseGnssRawSession => {
   const [cancels] = useState<Array<() => void>>(() => []);
-  const [, bump] = useState(0);
+  const [tick, bump] = useState(0);
   const refresh = useCallback(() => bump((n) => n + 1), []);
   const [pool] = useState(
     () => new RawSessionPool(
@@ -352,6 +352,6 @@ export const useGnssRawSession = (par: number = DEFAULT_SESSION_PAR): UseGnssRaw
       cancel,
       results: pool.completedResults(),
     }),
-    [pool, start, cancel],
+    [pool, start, cancel, tick],
   );
 };
