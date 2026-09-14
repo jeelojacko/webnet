@@ -190,12 +190,15 @@ test.describe('Raw static session review', () => {
     await page.goto('/');
     await openSessionDialog(page);
     const dialog = page.getByRole('dialog', { name: 'Raw static session review' });
-    // L1-only third station (SYNU): its edge must fail while siblings succeed.
-    await uploadTrio(page, [`${FX}/base.06o`, `${FX}/rover.06o`, `${FX}/auxbad.06o`]);
-    await expect(dialog.getByTestId('raw-session-inventory')).toContainText('SYNU');
+    // Blanked-observation third station (SYNF): its edge fails in the worker
+    // while the healthy sibling succeeds -> PARTIAL with a named reason.
+    await uploadTrio(page, [`${FX}/base.06o`, `${FX}/rover.06o`, `${FX}/auxfail.06o`]);
+    await expect(dialog.getByTestId('raw-session-inventory')).toContainText('SYNF');
     await dialog.getByTestId('raw-session-process').click();
     await expect(dialog.getByTestId('raw-session-progress')).toBeVisible({ timeout: 15_000 });
-    await expect(dialog.getByTestId('raw-session-failed')).toBeVisible({ timeout: 300_000 });
+    await expect(dialog.getByTestId('raw-session-failed')).toContainText('SYNB->SYNF', { timeout: 300_000 });
+    const reason = await dialog.getByTestId('raw-session-failed').textContent();
+    expect((reason ?? '').replace('SYNB->SYNF', '').trim().length).toBeGreaterThan('Failed edge(s): ,'.length);
     await expect(dialog.getByTestId('raw-session-status')).toContainText('PARTIAL');
     expect(pageErrors).toEqual([]);
   });
