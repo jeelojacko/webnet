@@ -207,9 +207,15 @@ describe('rnx2rtkp ANTEX staging', () => {
     expect(conf).toContain('file-rcvantfile=/work/antex.atx');
     expect(conf).toContain('file-satantfile=/work/antex.atx');
     // 12J.10 §7: both endpoints resolve antenna position/type from their
-    // own RINEX headers — never one-sided.
+    // own RINEX headers — never one-sided. Explicit anttype selects the
+    // exact receiver PCV (RTKLIB default "" never matches); explicit
+    // antdel steers the PCV point without moving the fixed base.
     expect(conf).toContain('ant1-postype=rinexhead');
     expect(conf).toContain('ant2-postype=rinexhead');
+    expect(conf).toContain('ant1-anttype=');
+    expect(conf).toContain('ant2-anttype=');
+    expect(conf).toContain('ant1-antdelu=0');
+    expect(conf).toContain('ant2-antdelu=0');
     // 12J.10: -r resets refpos=rovpos=XYZ in rnx2rtkp's second argv pass,
     // silently voiding the conf postypes — so ANTEX jobs must omit it.
     expect(withAntex).not.toContain('-r');
