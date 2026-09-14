@@ -84,20 +84,23 @@ const emitText = (ctx: Ctx, item: Extract<ExportItem, { kind: 'text' }>): void =
   const sizePt = Math.max(1, toPt(item.heightMm));
   // Anchor offset uses an average Helvetica advance (~0.55em/char); exact
   // centering is a viewer-side concern, presence and position are exact.
-  const approxWidthMm = item.text.length * item.heightMm * 0.5;
-  const x = item.anchor === 'middle' ? item.x - approxWidthMm / 2 : item.anchor === 'end' ? item.x - approxWidthMm : item.x;
-  const e = fmt(toPt(x));
-  const f = fmt(flipY(item.y, ctx));
+  // The offset is applied in the text-local rotated frame — SVG
+  // rotate(θ)-about-point semantics — so middle/end anchors stay centered
+  // on (x, y) along the rotated baseline instead of drifting in page axes.
   const rotationDeg = item.rotationDeg ?? 0;
+  const a = (rotationDeg * Math.PI) / 180;
+  const cos = Math.cos(a);
+  const sin = Math.sin(a);
+  const approxWidthMm = item.text.length * item.heightMm * 0.5;
+  const along = item.anchor === 'middle' ? approxWidthMm / 2 : item.anchor === 'end' ? approxWidthMm : 0;
+  const e = fmt(toPt(item.x - along * cos));
+  const f = fmt(flipY(item.y - along * sin, ctx));
   if (rotationDeg === 0) {
     ctx.ops.push(`BT /F1 ${fmt(sizePt)} Tf ${e} ${f} Td ${encodePdfText(item.text)} Tj ET`);
     return;
   }
   // SVG rotate(θ) is visually clockwise on the sheet; in y-up PDF user
   // space that is [cosθ -sinθ / sinθ cosθ], same semantics as the SVG.
-  const a = (rotationDeg * Math.PI) / 180;
-  const cos = Math.cos(a);
-  const sin = Math.sin(a);
   ctx.ops.push(
     `BT /F1 ${fmt(sizePt)} Tf ${fmt(cos)} ${fmt(-sin)} ${fmt(sin)} ${fmt(cos)} ${e} ${f} Tm ${encodePdfText(item.text)} Tj ET`,
   );

@@ -282,15 +282,13 @@ export const buildExportSheetScene = (args: BuildSceneArgs): { scene: ExportShee
   const display = buildCadDisplayScene(args.project);
   const sorted = [...display.primitives].sort((a, b) => (a.id < b.id ? -1 : a.id > b.id ? 1 : 0));
 
-  // Layers govern output: a layer hidden (visible=false) or non-printable
-  // (printable=false) in the project or draft layers is excluded; a viewport
-  // override of visible=false hides, visible=true re-shows for that viewport.
-  const layerGone = (layerId: string): boolean => {
+  // Layers govern output: visible=false hides (a viewport visible=true
+  // override re-shows for that viewport), but printable=false is
+  // unconditional — excluded from SVG + PDF regardless of overrides.
+  const layerFlagged = (layerId: string, flag: 'visible' | 'printable'): boolean => {
     const inProject = args.project.layers.find((layer) => layer.id === layerId);
     const inDraft = args.draft.layers.find((layer) => layer.id === layerId);
-    return [inProject, inDraft].some(
-      (layer) => layer != null && (layer.visible === false || layer.printable === false),
-    );
+    return [inProject, inDraft].some((layer) => layer != null && layer[flag] === false);
   };
   const persistedLabels: ModelLabelPlacement[] = (args.draft.labels ?? []).map((label) => ({
     id: label.id,
@@ -325,7 +323,9 @@ export const buildExportSheetScene = (args: BuildSceneArgs): { scene: ExportShee
         .map(([layerId]) => layerId),
     );
     const isHidden = (layerId: string): boolean =>
-      hidden.has(layerId) || (layerGone(layerId) && !shown.has(layerId));
+      hidden.has(layerId) ||
+      (layerFlagged(layerId, 'visible') && !shown.has(layerId)) ||
+      layerFlagged(layerId, 'printable');
     const toPaper = (x: number, y: number): { xMm: number; yMm: number } =>
       modelToPaperPoint(x, y, plan, plan.rotationDeg);
     sorted

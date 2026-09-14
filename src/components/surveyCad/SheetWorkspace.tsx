@@ -83,6 +83,62 @@ const primitiveToSvg = (primitive: CadDisplayPrimitive, key: string, mirrorText 
   }
 };
 
+interface SheetViewportGroupProps {
+  viewportId: string;
+  paperXmm: number;
+  paperYmm: number;
+  paperWidthMm: number;
+  paperHeightMm: number;
+  modelCenterX: number;
+  modelCenterY: number;
+  scaleDenominator: number;
+  rotationDeg: number;
+  clip: { x: number; y: number; w: number; h: number };
+  primitives: CadDisplayPrimitive[];
+}
+
+const SheetViewportGroup = ({
+  viewportId,
+  paperXmm,
+  paperYmm,
+  paperWidthMm,
+  paperHeightMm,
+  modelCenterX,
+  modelCenterY,
+  scaleDenominator,
+  rotationDeg,
+  clip,
+  primitives,
+}: SheetViewportGroupProps): React.JSX.Element => {
+  const clipId = `clip-${viewportId}`;
+  const k = 1000 / scaleDenominator;
+  const paperCx = paperXmm + paperWidthMm / 2;
+  const paperCy = paperYmm + paperHeightMm / 2;
+  const northAngle = northArrowAngleDeg(rotationDeg);
+  const barLen = modelToPaperMm(10, scaleDenominator);
+  return (
+    <g key={viewportId}>
+      <clipPath id={clipId}>
+        <rect x={clip.x} y={clip.y} width={clip.w} height={clip.h} />
+      </clipPath>
+      <rect x={paperXmm} y={paperYmm} width={paperWidthMm} height={paperHeightMm} fill="none" stroke="#111111" />
+      <g clipPath={`url(#${clipId})`}>
+        <g transform={`translate(${paperCx} ${paperCy}) rotate(${rotationDeg}) scale(${k} ${-k}) translate(${-modelCenterX} ${-modelCenterY})`}>
+          {primitives.map((primitive, index) => primitiveToSvg(primitive, `${viewportId}-${primitive.id}-${index}`, true))}
+        </g>
+      </g>
+      <g transform={`translate(${paperXmm + 8} ${paperYmm + 12}) rotate(${northAngle} 0 6)`} aria-label={`Grid north arrow (${NORTH_REFERENCE} north, ${northAngle.toFixed(1)} degrees)`}>
+        <polygon points="0,0 3,12 -3,12" fill="#111111" />
+        <text y={18} fontSize={4} textAnchor="middle">N</text>
+      </g>
+      <g transform={`translate(${paperXmm} ${paperYmm + paperHeightMm - 6})`} aria-label={`Scale bar 1:${scaleDenominator}`}>
+        <rect x={0} y={0} width={barLen} height={1.5} fill="#111111" />
+        <text x={barLen + 2} y={1.5} fontSize={3}>10 m @ 1:{scaleDenominator}</text>
+      </g>
+    </g>
+  );
+};
+
 export interface SheetWorkspaceProps {
   project: CadProject;
   draft: DraftDocument;
@@ -170,35 +226,23 @@ export const SheetWorkspace = ({
         />
         {sheet.viewports.map((raw) => {
           const viewport = asPlanViewport(raw);
-          const clipId = `clip-${viewport.id}`;
-          const k = 1000 / viewport.scaleDenominator;
-          const paperCx = viewport.paperXmm + viewport.paperWidthMm / 2;
-          const paperCy = viewport.paperYmm + viewport.paperHeightMm / 2;
-          const clip = viewport.clipWidthMm && viewport.clipHeightMm
-            ? { x: viewport.clipXmm ?? viewport.paperXmm, y: viewport.clipYmm ?? viewport.paperYmm, w: viewport.clipWidthMm, h: viewport.clipHeightMm }
-            : { x: viewport.paperXmm, y: viewport.paperYmm, w: viewport.paperWidthMm, h: viewport.paperHeightMm };
-          const northAngle = northArrowAngleDeg(viewport.rotationDeg);
-          const barLen = modelToPaperMm(10, viewport.scaleDenominator);
           return (
-            <g key={viewport.id}>
-              <clipPath id={clipId}>
-                <rect x={clip.x} y={clip.y} width={clip.w} height={clip.h} />
-              </clipPath>
-              <rect x={viewport.paperXmm} y={viewport.paperYmm} width={viewport.paperWidthMm} height={viewport.paperHeightMm} fill="none" stroke="#111111" />
-              <g clipPath={`url(#${clipId})`}>
-                <g transform={`translate(${paperCx} ${paperCy}) rotate(${viewport.rotationDeg}) scale(${k} ${-k}) translate(${-viewport.modelCenterX} ${-viewport.modelCenterY})`}>
-                  {scene.primitives.map((primitive, index) => primitiveToSvg(primitive, `${viewport.id}-${primitive.id}-${index}`, true))}
-                </g>
-              </g>
-              <g transform={`translate(${viewport.paperXmm + 8} ${viewport.paperYmm + 12}) rotate(${northAngle} 0 6)`} aria-label={`Grid north arrow (${NORTH_REFERENCE} north, ${northAngle.toFixed(1)} degrees)`}>
-                <polygon points="0,0 3,12 -3,12" fill="#111111" />
-                <text y={18} fontSize={4} textAnchor="middle">N</text>
-              </g>
-              <g transform={`translate(${viewport.paperXmm} ${viewport.paperYmm + viewport.paperHeightMm - 6})`} aria-label={`Scale bar 1:${viewport.scaleDenominator}`}>
-                <rect x={0} y={0} width={barLen} height={1.5} fill="#111111" />
-                <text x={barLen + 2} y={1.5} fontSize={3}>10 m @ 1:{viewport.scaleDenominator}</text>
-              </g>
-            </g>
+            <SheetViewportGroup
+              key={viewport.id}
+              viewportId={viewport.id}
+              paperXmm={viewport.paperXmm}
+              paperYmm={viewport.paperYmm}
+              paperWidthMm={viewport.paperWidthMm}
+              paperHeightMm={viewport.paperHeightMm}
+              modelCenterX={viewport.modelCenterX}
+              modelCenterY={viewport.modelCenterY}
+              scaleDenominator={viewport.scaleDenominator}
+              rotationDeg={viewport.rotationDeg}
+              clip={viewport.clipWidthMm && viewport.clipHeightMm
+                ? { x: viewport.clipXmm ?? viewport.paperXmm, y: viewport.clipYmm ?? viewport.paperYmm, w: viewport.clipWidthMm, h: viewport.clipHeightMm }
+                : { x: viewport.paperXmm, y: viewport.paperYmm, w: viewport.paperWidthMm, h: viewport.paperHeightMm }}
+              primitives={scene.primitives}
+            />
           );
         })}
         {sheet.sheetObjects

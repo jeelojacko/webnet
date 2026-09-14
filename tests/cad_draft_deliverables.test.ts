@@ -249,30 +249,39 @@ describe('draft deliverable exporters', () => {
     expect(ellipse.ry).toBeCloseTo(4, 9);
   });
 
-  it('excludes hidden and non-printable layers from SVG and PDF', () => {
+  it('excludes hidden layers from SVG and PDF, with viewport visible=true re-showing', () => {
     const fixture = buildSmallParcelFixture();
-    const hidden = {
-      ...fixture.project,
-      layers: fixture.project.layers.map((layer) =>
-        layer.id === 'parcels' ? { ...layer, printable: false } : layer,
-      ),
-    };
-    const hiddenDraft = {
-      ...fixture.draft,
-      layers: fixture.draft.layers.map((layer) =>
-        layer.id === 'parcels' ? { ...layer, printable: false } : layer,
-      ),
-    };
+    const markHidden = (layers: Array<{ id: string; visible?: boolean }>): typeof fixture.project.layers =>
+      layers.map((layer) => (layer.id === 'parcels' ? { ...layer, visible: false } : layer)) as typeof fixture.project.layers;
+    const hidden = { ...fixture.project, layers: markHidden(fixture.project.layers) };
+    const hiddenDraft = { ...fixture.draft, layers: markHidden(fixture.draft.layers) };
     const common = { sheetId: fixture.sheetId, modelLabels: fixture.modelLabels, paperExtras: fixture.paperExtras };
     const gone = buildExportSheetScene({ draft: hiddenDraft, project: hidden, ...common }).scene;
     expect(gone.items.some((item) => item.layer === 'parcels')).toBe(false);
     expect(serializeExportSceneToSvg(gone)).not.toContain('layer-parcels');
     expect(new TextDecoder().decode(exportScenesToPdf([gone]))).not.toContain('layer-parcels');
-    // A viewport override of visible=true re-shows the layer for that sheet.
+    // A viewport override of visible=true re-shows a merely hidden layer.
     const viewportId = (hiddenDraft.sheets[0] as { viewports: Array<{ id: string }> }).viewports[0]?.id as string;
     const reshown = setViewportLayerOverride(hiddenDraft, fixture.sheetId, viewportId, 'parcels', { visible: true });
     const back = buildExportSheetScene({ draft: reshown, project: hidden, ...common }).scene;
     expect(back.items.some((item) => item.layer === 'parcels')).toBe(true);
+  });
+
+  it('keeps printable:false layers excluded even under a visible=true override', () => {
+    const fixture = buildSmallParcelFixture();
+    const markNonPrintable = (layers: Array<{ id: string }>): typeof fixture.project.layers =>
+      layers.map((layer) =>
+        layer.id === 'parcels' ? { ...layer, printable: false } : layer,
+      ) as typeof fixture.project.layers;
+    const project = { ...fixture.project, layers: markNonPrintable(fixture.project.layers) };
+    const draft = { ...fixture.draft, layers: markNonPrintable(fixture.draft.layers) };
+    const common = { sheetId: fixture.sheetId, modelLabels: fixture.modelLabels, paperExtras: fixture.paperExtras };
+    const viewportId = (draft.sheets[0] as { viewports: Array<{ id: string }> }).viewports[0]?.id as string;
+    const overridden = setViewportLayerOverride(draft, fixture.sheetId, viewportId, 'parcels', { visible: true });
+    const scene = buildExportSheetScene({ draft: overridden, project, ...common }).scene;
+    expect(scene.items.some((item) => item.layer === 'parcels')).toBe(false);
+    expect(serializeExportSceneToSvg(scene)).not.toContain('layer-parcels');
+    expect(new TextDecoder().decode(exportScenesToPdf([scene]))).not.toContain('layer-parcels');
   });
 
   it('honors clip rects and text rotation in PDF with SVG-matching placement', () => {
@@ -304,6 +313,26 @@ describe('draft deliverable exporters', () => {
     const cos = Math.cos(Math.PI / 4).toFixed(2);
     const sin = Math.sin(Math.PI / 4).toFixed(2);
     expect(pdf).toContain(`${cos} -${sin} ${sin} ${cos} `);
+  });
+
+  it('anchors middle-rotated text in the rotated frame with SVG-equivalent Tm', () => {
+    const fixture = buildSmallParcelFixture();
+    const anchored = {
+      kind: 'text' as const, layer: 'paper-text', x: 115, y: 80,
+      text: 'AB', heightMm: 3, anchor: 'middle' as const, rotationDeg: 90,
+    };
+    const { scene } = buildExportSheetScene({
+      draft: fixture.draft, sheetId: fixture.sheetId, project: fixture.project,
+      modelLabels: [], paperExtras: [anchored],
+    });
+    // SVG rotate-about-point: 'AB' ≈ 3 mm wide, centered on (115, 80) along
+    // the 90° baseline → start (115, 78.5); PDF Tm carries that translation.
+    const s = 72 / 25.4;
+    const pageH = 210 * s;
+    const e = (115 * s).toFixed(2);
+    const f = (pageH - 78.5 * s).toFixed(2);
+    const pdf = new TextDecoder().decode(exportScenesToPdf([scene]));
+    expect(pdf).toContain(`0 -1 1 0 ${e} ${f} Tm (AB) Tj ET`);
   });
 
   it('rotates viewport geometry rigidly with an agreeing north arrow', () => {
