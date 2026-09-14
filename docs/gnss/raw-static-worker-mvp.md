@@ -75,3 +75,11 @@ terminable at any point with job-token stale-response ignore.
 No result caching in this MVP: every run reprocesses from file bytes +
 options hash. A content-addressed cache is deferred until provenance
 replay demand justifies it.
+
+## Raw sessions (12J.9 review track)
+
+Multi-baseline sessions (2–20 files, STAR/MST/manual N−1 trees, bounded
+PAR=2 pool, review/export only, no ingest) are specified with their
+covariance policy, external-covariance audit, and evidence verdicts in
+[raw-session-review.md](raw-session-review.md); evidence in
+`reports/gnss/phase12j9-session-evidence.md`.

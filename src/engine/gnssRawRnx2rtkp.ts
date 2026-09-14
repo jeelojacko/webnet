@@ -62,6 +62,13 @@ export interface GnssRawEndpointMeta {
   readonly north: number;
 }
 
+/** Optional 12J.9 ANTEX subset staged read-only for PCV (RTKLIB -k conf). */
+export interface GnssRawAntexSubsetStaging {
+  readonly bytes: Uint8Array;
+  readonly sourceSha256: string;
+  readonly subsetSha256: string;
+}
+
 export interface GnssRawRnx2rtkpOptions {
   readonly elevationMaskDegrees?: number;
   readonly intervalSeconds?: number | 'AUTO';
@@ -70,6 +77,8 @@ export interface GnssRawRnx2rtkpOptions {
   readonly windowStart?: string | null;
   readonly windowStop?: string | null;
   readonly precise?: boolean;
+  /** Absent = legacy single-baseline path (no calibration, CALIBRATION_UNAVAILABLE). */
+  readonly antexSubset?: GnssRawAntexSubsetStaging;
 }
 
 export interface GnssRawRnx2rtkpJob {
@@ -101,6 +110,7 @@ const NAMES = {
   conf: `${WORK}/prec.conf`,
 } as const;
 const navName = (index: number): string => `${WORK}/nav${index}.nav`;
+const ANTEX_NAME = `${WORK}/antex.atx`;
 const sp3Name = (index: number): string => `${WORK}/sp3_${index}.sp3`;
 
 const fail = (code: RawGnssProcessingError['code'], message: string, detail?: string): never => {
@@ -220,6 +230,8 @@ export const hashOptions = (options: GnssRawRnx2rtkpOptions): string => {
     ts: options.windowStart ?? null,
     te: options.windowStop ?? null,
     p: options.precise ?? false,
+    // Present only with an ANTEX subset, so legacy jobs hash identically.
+    ...(options.antexSubset ? { ax: options.antexSubset.subsetSha256 } : {}),
   });
   let h = 0x811c9dc5;
   for (let i = 0; i < text.length; i += 1) {
@@ -246,6 +258,7 @@ export const stageInputs = (mod: GnssRawWasmModule, job: GnssRawRnx2rtkpJob): st
   checkSize('roverObs', job.roverObs);
   job.nav.forEach((buf, i) => checkSize(`nav[${i}]`, buf));
   if (job.options?.precise === true && job.sp3) checkSize('sp3', job.sp3);
+  if (job.options?.antexSubset) checkSize('antexSubset', job.options.antexSubset.bytes);
   try {
     mod.FS.mkdir(WORK);
   } catch { /* exists */ }
@@ -254,6 +267,9 @@ export const stageInputs = (mod: GnssRawWasmModule, job: GnssRawRnx2rtkpJob): st
   } catch { /* absent */ }
   try {
     mod.FS.unlink(NAMES.conf);
+  } catch { /* absent */ }
+  try {
+    mod.FS.unlink(ANTEX_NAME);
   } catch { /* absent */ }
   mod.FS.writeFile(NAMES.roverObs, job.roverObs);
   mod.FS.writeFile(NAMES.baseObs, job.baseObs);
@@ -282,14 +298,31 @@ export const buildRnx2rtkpArgs = (
   // yyyy/mm/dd time (default is week/TOW). Both match the 12J.1 pin.
   const allInputs = [...inputs];
   args.push('-e', '-t');
-  if (job.options?.precise === true && job.sp3) {
+  const antex = job.options?.antexSubset;
+  if (antex) mod.FS.writeFile(ANTEX_NAME, antex.bytes);
+  if ((job.options?.precise === true && job.sp3) || antex) {
     // 12J.2 ladder pattern: SP3-as-input alone stays broadcast; the ONLY CLI
     // path to precise is a `-k` conf with `pos1-sateph=precise`.
-    mod.FS.writeFile(NAMES.conf, new TextEncoder().encode('pos1-sateph=precise\n'));
+    // 12J.9: an ANTEX subset rides the same conf via file-rcvantfile/-
+    // satantfile. Precise-only jobs emit byte-identical args to before.
+    // RTKLIB does not gate on ANTEX validity dates: readantex parses every
+    // kept block and satantoff silently applies zero where no block covers
+    // the processing epoch, so expired satellite blocks (e.g. fixtures
+    // valid until ~2011 run at a 2024 epoch) never fail the run — they
+    // simply contribute no satellite-PCV correction. Receiver PCV still
+    // applies via the rinexhead antenna type below.
+    const confLines: string[] = [];
+    if (job.options?.precise === true && job.sp3) confLines.push('pos1-sateph=precise');
+    // 12J.9 fix: rinexhead antenna position is load-bearing — without it
+    // every epoch solves Q=0 (proven: 0/13 vs 13/13 solution epochs natively).
+    if (antex) confLines.push(`file-rcvantfile=${ANTEX_NAME}`, `file-satantfile=${ANTEX_NAME}`, 'ant2-postype=rinexhead');
+    mod.FS.writeFile(NAMES.conf, new TextEncoder().encode(`${confLines.join('\n')}\n`));
     args.push('-k', NAMES.conf);
-    const p = sp3Name(job.nav.length);
-    mod.FS.writeFile(p, job.sp3);
-    allInputs.push(p);
+    if (job.options?.precise === true && job.sp3) {
+      const p = sp3Name(job.nav.length);
+      mod.FS.writeFile(p, job.sp3);
+      allInputs.push(p);
+    }
   }
   return [...args, '-o', NAMES.out, '-r', ...job.baseXyz.map(String), ...allInputs];
 };
@@ -298,6 +331,12 @@ export const buildRnx2rtkpArgs = (
  * Runs one static baseline job against a WASM module instance. Callers
  * should use a fresh module per job for isolation; sharing is allowed only
  * with proven-cleared MEMFS (outputs are always unlinked before each run).
+ *
+ * 12J.9 antenna-state note: the ANTEX subset is staged as immutable bytes
+ * and consumed read-only by the processor; no per-baseline mutable antenna
+ * state is retained in this module. The session-scope subset cache holds
+ * frozen results keyed by subset SHA256, so sharing a cache across jobs
+ * cannot leak calibration state from one baseline into another.
  */
 export const runRawBaseline = (
   mod: GnssRawWasmModule,
@@ -379,6 +418,7 @@ export const runRawBaseline = (
   const intervalResolved = typeof intervalRequested === 'number'
     ? intervalRequested
     : (typeof intervalHint === 'number' ? intervalHint : deriveIntervalSeconds(lines));
+  const antexStaging = job.options?.antexSubset;
   return {
     status,
     acceptance,
@@ -436,6 +476,9 @@ export const runRawBaseline = (
       processedAt: new Date().toISOString(),
     },
     diagnostics: [
+      ...(antexStaging
+        ? [`antex subset sha256=${antexStaging.subsetSha256} source=${antexStaging.sourceSha256}`]
+        : []),
       `status=${status} q=${solution.q} ratio=${solution.ratio} sats=${solution.sats} epochs=${lines.length}`,
       `frame=${referenceFrame} mask=${job.options?.elevationMaskDegrees ?? 10}deg`,
       `marker reduction H_rov=${job.roverAntenna.height} H_base=${job.baseAntenna.height} (WGS84 ellipsoidal Up)`,
