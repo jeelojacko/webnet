@@ -11,7 +11,7 @@ Two authoritative IGS files were checked. Neither was written into the repo.
 
 | File | Provenance | Size (bytes) | sha256 | Version / date |
 | --- | --- | --- | --- | --- |
-| `/tmp/rtklib-evidence/data/ant/igs14.atx` | Ships with pinned RTKLIB tree 62d4677 (pre-existing in /tmp, no download) | 18422911 | `d59a41977668af938af52f4c6f1a09467784cb3d1f530d4415f4b7f1f685d9e` | ANTEX 1.4, receiver blocks dated 29-JAN-17, 708 TYPE/SERIAL records |
+| `/tmp/rtklib-evidence/data/ant/igs14.atx` | Ships with pinned RTKLIB tree 62d4677 (pre-existing in /tmp, no download) | 18422911 | `d59a419776e68af938af52f4c6f1a09467784cb3d1f530d4415f4b7f1f685d9e` | ANTEX 1.4, receiver blocks dated 29-JAN-17, 708 TYPE/SERIAL records |
 | `/tmp/igs20.atx` | Downloaded `https://files.igs.org/pub/station/general/igs20.atx` (http 200, server content-length 60295761) | 60295761 | `8715268e17e09e5447f4949d67cbd067e7f0f33d48dd698aafe14f5cffb26de2` | IGS20 release (GPS week 2220), receiver updates noted through week 2354 |
 
 Caveat: the hosted igs20 copy ends at the C06 satellite block with no
