@@ -153,17 +153,18 @@ export class RawSessionPool {
     return 'FAILED';
   }
 
-  /** Release a latched cancel so the pool accepts new work.
-   * Safe after StrictMode remount (no jobs yet) and before an explicit
-   * user re-run. Drops terminal 'cancelled' records only; done/failed
-   * results are retained. Never called while jobs are active. */
+  /** Release latches and drop ALL records once nothing is in flight.
+   * Runs at new-run start (start() calls it before enqueue), so a settled
+   * COMPLETE/PARTIAL/CANCELLED run never leaks results into the next one
+   * and re-enqueueing the same specs cannot throw Duplicate. Never called
+   * while jobs are active. Export-before-reprocess is unaffected: exports
+   * serialize from already-returned results, never from pool state. */
   reset(): void {
     if (this.active > 0) return;
     this.cancelled = false;
-    for (const [id, rec] of this.edges) {
-      if (rec.state === 'cancelled') this.edges.delete(id);
-    }
+    this.edges.clear();
     this.order = [];
+    this.settled();
   }
 
   cancel(): void {
@@ -302,6 +303,10 @@ export interface UseGnssRawSession {
   readonly failed: string[];
   readonly failedDetails: Readonly<Record<string, string>>;
   readonly start: (_sessionId: string, _specs: readonly SessionEdgeSpec[]) => void;
+  /** Enqueue without reset: single-edge §27 repair on a settled pool. */
+  readonly requeue: (_specs: readonly SessionEdgeSpec[]) => void;
+  /** Drop all records once settled (Start-over wiring). */
+  readonly reset: () => void;
   readonly cancel: () => void;
   readonly results: ProcessedRawGnssBaseline[];
 }
@@ -344,18 +349,33 @@ export const useGnssRawSession = (par: number = DEFAULT_SESSION_PAR): UseGnssRaw
     refresh();
   }, [pool, refresh]);
 
+  const requeue = useCallback((_specs: readonly SessionEdgeSpec[]): void => {
+    pool.enqueue(_specs);
+    refresh();
+  }, [pool, refresh]);
+
+  const reset = useCallback((): void => {
+    pool.reset();
+    refresh();
+  }, [pool, refresh]);
+
   return useMemo(
-    () => ({
-      snapshot: pool.snapshot(),
-      status: pool.sessionStatus(),
-      failed: pool.failedEdges(),
-      failedDetails: Object.fromEntries(
-        pool.failedEdges().map((id) => [id, pool.edgeError(id)?.message ?? 'unknown failure']),
-      ),
-      start,
-      cancel,
-      results: pool.completedResults(),
-    }),
-    [pool, start, cancel, tick],
+    () => {
+      void tick;
+      return {
+        snapshot: pool.snapshot(),
+        status: pool.sessionStatus(),
+        failed: pool.failedEdges(),
+        failedDetails: Object.fromEntries(
+          pool.failedEdges().map((id) => [id, pool.edgeError(id)?.message ?? 'unknown failure']),
+        ),
+        start,
+        cancel,
+        requeue,
+        reset,
+        results: pool.completedResults(),
+      };
+    },
+    [pool, start, cancel, requeue, reset, tick],
   );
 };

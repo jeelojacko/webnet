@@ -305,6 +305,12 @@ export const buildRnx2rtkpArgs = (
     // path to precise is a `-k` conf with `pos1-sateph=precise`.
     // 12J.9: an ANTEX subset rides the same conf via file-rcvantfile/-
     // satantfile. Precise-only jobs emit byte-identical args to before.
+    // RTKLIB does not gate on ANTEX validity dates: readantex parses every
+    // kept block and satantoff silently applies zero where no block covers
+    // the processing epoch, so expired satellite blocks (e.g. fixtures
+    // valid until ~2011 run at a 2024 epoch) never fail the run — they
+    // simply contribute no satellite-PCV correction. Receiver PCV still
+    // applies via the rinexhead antenna type below.
     const confLines: string[] = [];
     if (job.options?.precise === true && job.sp3) confLines.push('pos1-sateph=precise');
     // 12J.9 fix: rinexhead antenna position is load-bearing — without it

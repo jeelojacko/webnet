@@ -216,7 +216,7 @@ describe('session pool cancel', () => {
   });
 });
 
-describe('session pool reset (StrictMode remount / re-run after cancel)', () => {
+describe('session pool reset (StrictMode remount / re-run after settle)', () => {
   it('reset releases a latched cancel so the pool accepts new work', () => {
     const launched: Pending[] = [];
     const pool = new RawSessionPool(manualDriver(launched), 2);
@@ -230,15 +230,33 @@ describe('session pool reset (StrictMode remount / re-run after cancel)', () => 
     expect(pool.sessionStatus()).toBe('COMPLETE');
   });
 
-  it('reset drops cancelled records but retains done results', () => {
+  it('reset drops every record once settled, so a re-run starts clean', () => {
     const launched: Pending[] = [];
     const pool = new RawSessionPool(manualDriver(launched), 2);
     pool.enqueue([spec('A', 'B'), spec('A', 'C')]);
     launched[0]!.succeed(fixedResult('A', 'B'));
-    pool.cancel();
+    launched[1]!.fail({ code: 'PROCESSOR_FAILURE', message: 'boom' });
+    expect(pool.sessionStatus()).toBe('PARTIAL');
     pool.reset();
-    expect(pool.snapshot()['A->C']).toBeUndefined();
-    expect(pool.edgeResult('A->B')?.status).toBe('FIXED');
+    expect(pool.snapshot()).toEqual({});
+    expect(pool.completedResults()).toEqual([]);
+    expect(pool.failedEdges()).toEqual([]);
+  });
+
+  it('settle COMPLETE then start() same specs: no Duplicate, old results cleared', () => {
+    const launched: Pending[] = [];
+    const pool = new RawSessionPool(manualDriver(launched), 2);
+    const specs = [spec('A', 'B'), spec('A', 'C')];
+    pool.enqueue(specs);
+    launched[0]!.succeed(fixedResult('A', 'B'));
+    launched[1]!.succeed(fixedResult('A', 'C'));
+    expect(pool.sessionStatus()).toBe('COMPLETE');
+    expect(pool.completedResults()).toHaveLength(2);
+    // start() shape: reset at new-run start, then enqueue the same specs.
+    pool.reset();
+    expect(() => pool.enqueue(specs)).not.toThrow();
+    expect(Object.values(pool.snapshot()).sort()).toEqual(['active', 'active']);
+    expect(pool.completedResults()).toEqual([]);
   });
 });
 
@@ -270,9 +288,19 @@ describe('session export contract', () => {
     for (const d of docs) expect(d.kind).toBe('webnet-raw-static-baseline/1');
   });
 
-  it('reordered uploads give identical semantic bytes', () => {
-    const a = buildRawSessionExport(buildRawSession(sessionInput(['A', 'B', 'C'])));
-    const b = buildRawSessionExport(buildRawSession(sessionInput(['C', 'B', 'A'])));
+  it('reordered uploads give identical semantic bytes even as processedAt varies', () => {
+    const withClock = (markers: string[]): BuildRawSessionInput => {
+      const input = sessionInput(markers);
+      return {
+        ...input,
+        baselines: input.baselines.map((b, i) => ({
+          ...b,
+          provenance: { ...b.provenance, processedAt: `2024-05-0${i + 1}T00:00:00.000Z` },
+        })),
+      };
+    };
+    const a = buildRawSessionExport(buildRawSession(withClock(['A', 'B', 'C'])));
+    const b = buildRawSessionExport(buildRawSession(withClock(['C', 'B', 'A'])));
     expect(sessionSemanticBytes(a)).toBe(sessionSemanticBytes(b));
   });
 

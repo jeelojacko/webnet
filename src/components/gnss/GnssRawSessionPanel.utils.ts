@@ -5,6 +5,7 @@
  * and processed-session assembly. No React, no workers, no project state.
  */
 import { assignDependencyGroup } from '../../engine/gnssRawSession';
+import { sha256Hex } from '../../engine/gnssRawHash';
 import {
   buildAntexSubset,
   storeAntexSubset,
@@ -262,4 +263,112 @@ export const prepareAntexSubset = async (args: {
       warning: `ANTENNA CALIBRATION INCOMPLETE: ${e instanceof Error ? e.message : String(e)}`,
     };
   }
+};
+
+/**
+ * Fail-closed duplicate-marker gate: two staged obs files resolving to the
+ * same marker would diverge planning (entryByMarker picks first-by-sha)
+ * from processing, so intake blocks with both filenames named. Returns
+ * the blocker message, or null when every marker maps to one file.
+ */
+export const duplicateMarkerBlocker = (
+  occupations: readonly OccupationEntry[],
+): string | null => {
+  const byMarker = new Map<string, string[]>();
+  for (const o of occupations) {
+    const marker = o.meta.marker;
+    if (!marker) continue;
+    const list = byMarker.get(marker) ?? [];
+    list.push(o.fileName);
+    byMarker.set(marker, list);
+  }
+  for (const marker of [...byMarker.keys()].sort()) {
+    const files = [...byMarker.get(marker)!].sort();
+    if (files.length > 1) {
+      return `Duplicate marker ${marker} in files ${files.join(', ')}: ` +
+        'keep one file per station before processing.';
+    }
+  }
+  return null;
+};
+
+/**
+ * Deterministic §27 repair suggestion: union-find over the kept edges
+ * (failed leg removed) splits the tree into two components; the
+ * lexicographically first marker pair reconnecting them — oriented
+ * min-first, excluding the failed pair itself — is the prefill. Null
+ * when no alternative pair exists (e.g. a two-station session) or the
+ * kept edges still connect the failed endpoints.
+ */
+export const suggestReplacementPair = (
+  graph: SessionGraph,
+  failedEdge: { readonly from: string; readonly to: string },
+): { readonly from: string; readonly to: string } | null => {
+  const kept = graph.edges.filter(
+    (e) => !(e.from === failedEdge.from && e.to === failedEdge.to),
+  );
+  const parent = new Map(graph.markers.map((m) => [m, m] as const));
+  const find = (m: string): string => {
+    let r = m;
+    while (parent.get(r) !== r) r = parent.get(r)!;
+    return r;
+  };
+  for (const e of kept) {
+    const ra = find(e.from);
+    const rb = find(e.to);
+    if (ra === rb) continue;
+    if (ra < rb) parent.set(rb, ra);
+    else parent.set(ra, rb);
+  }
+  const norm = (a: string, b: string): string => (a < b ? `${a}->${b}` : `${b}->${a}`);
+  const failedNorm = norm(failedEdge.from, failedEdge.to);
+  if (find(failedEdge.from) === find(failedEdge.to)) return null;
+  const compF = find(failedEdge.from);
+  const compT = find(failedEdge.to);
+  let best: string | null = null;
+  for (const m of graph.markers) {
+    for (const n of graph.markers) {
+      if (m >= n) continue;
+      const label = `${m}->${n}`;
+      if (label === failedNorm) continue;
+      const cm = find(m);
+      const cn = find(n);
+      if ((cm === compF && cn === compT) || (cm === compT && cn === compF)) {
+        if (best === null || label < best) best = label;
+      }
+    }
+  }
+  if (!best) return null;
+  const [from = '', to = ''] = best.split('->');
+  return { from, to };
+};
+
+/**
+ * Session ANTEX slot bound (100 MiB), independent of the 32 MiB per-file
+ * staging cap enforced by readFileEntry for obs/NAV/SP3 (unchanged) and
+ * the ≤4 MiB ANTEX subset target (GNSS_ANTEX_SUBSET_MAX_BYTES): only the
+ * extracted subset is ever staged into the worker, never the full upload.
+ */
+export const MAX_SESSION_ANTEX_BYTES = 100 * 1024 * 1024;
+
+/** ANTEX-slot reader: same shape as readFileEntry, 100 MiB fail-closed cap. */
+export const readSessionAntexEntry = async (file: File): Promise<RawFileEntry> => {
+  if (file.size > MAX_SESSION_ANTEX_BYTES) {
+    throw new Error(
+      `ANTEX ${file.name} exceeds the 100 MiB session calibration cap (${file.size} bytes).`,
+    );
+  }
+  const buffer = await file.arrayBuffer();
+  const bytes = new Uint8Array(buffer);
+  if (bytes.byteLength > MAX_SESSION_ANTEX_BYTES) {
+    throw new Error(
+      `ANTEX ${file.name} exceeds the 100 MiB session calibration cap (${bytes.byteLength} bytes).`,
+    );
+  }
+  return {
+    fileName: file.name,
+    bytes,
+    text: new TextDecoder().decode(bytes),
+    sha256: await sha256Hex(bytes),
+  };
 };

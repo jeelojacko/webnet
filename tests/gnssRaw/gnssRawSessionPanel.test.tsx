@@ -29,10 +29,14 @@ import { GnssRawSessionReview } from '../../src/components/gnss/GnssRawSessionRe
 import {
   buildProcessedSession,
   buildSessionEdgeSpecs,
+  duplicateMarkerBlocker,
   prepareAntexSubset,
+  readSessionAntexEntry,
+  suggestReplacementPair,
   type OccupationEntry,
 } from '../../src/components/gnss/GnssRawSessionPanel.utils';
 import { createAntexSubsetCache } from '../../src/engine/gnssAntexSubset';
+import { buildStarGraph } from '../../src/engine/gnssRawSessionGraph';
 import type { SessionGraph } from '../../src/engine/gnssRawSessionGraph';
 import { DEFAULT_RAW_OPTIONS, type RawFileEntry } from '../../src/hooks/useGnssRawBaseline';
 
@@ -116,6 +120,16 @@ const upload = async (
 
 const byTestId = (container: HTMLElement, id: string): HTMLElement | null =>
   container.querySelector(`[data-testid="${id}"]`);
+
+/** File intake is fire-and-forget; poll until the async reader settles. */
+const waitForText = async (container: HTMLElement, text: string): Promise<void> => {
+  await act(async () => {
+    for (let i = 0; i < 200; i += 1) {
+      if (container.textContent?.includes(text)) return;
+      await new Promise((r) => setTimeout(r, 10));
+    }
+  });
+};
 
 describe('GnssRawSessionPanel intake', () => {
   it('stages fixtures into inventory with a deterministic STAR tree', async () => {
@@ -434,5 +448,111 @@ describe('ANTEX subset session wiring', () => {
     for (const spec of specs) {
       expect('antexSubset' in (spec.job.options ?? {})).toBe(false);
     }
+  });
+});
+
+describe('duplicate marker intake gate', () => {
+  it('names the marker and both files', () => {
+    const blocked = duplicateMarkerBlocker([
+      occupationWithAntenna('A', 'TRM59800.00 NONE'),
+      occupationWithAntenna('A', 'LEIAR25.R4 LEIT'),
+    ]);
+    expect(blocked).toMatch(/Duplicate marker A in files A\.06o, A\.06o/);
+  });
+
+  it('passes distinct markers', () => {
+    expect(duplicateMarkerBlocker([
+      occupationWithAntenna('A', 'TRM59800.00 NONE'),
+      occupationWithAntenna('B', 'LEIAR25.R4 LEIT'),
+    ])).toBeNull();
+  });
+
+  it('panel blocks Process fail-closed when two staged files share a marker', async () => {
+    const { container, root } = mount(<GnssRawSessionPanel onRestart={() => {}} />);
+    // One file per upload: addFiles is fire-and-forget, so each upload
+    // settles separately before the next begins.
+    await upload(container, 'raw-session-obs-input', ['base.06o']);
+    await waitForText(container, 'SYNB');
+    await upload(container, 'raw-session-obs-input', ['base.06o']);
+    await upload(container, 'raw-session-nav-input', ['nav.06n']);
+    await waitForText(container, 'Duplicate marker');
+    expect(byTestId(container, 'raw-session-blocker')?.textContent)
+      .toMatch(/Duplicate marker SYNB/);
+    expect((byTestId(container, 'raw-session-process') as HTMLButtonElement).disabled).toBe(true);
+    act(() => {
+      root.unmount();
+    });
+  });
+});
+
+describe('NAV intake bound', () => {
+  it('panel blocks Process beyond 4 NAV files', async () => {
+    const { container, root } = mount(<GnssRawSessionPanel onRestart={() => {}} />);
+    await upload(container, 'raw-session-obs-input', ['base.06o', 'rover.06o']);
+    await waitForText(container, 'SYNR');
+    for (let i = 0; i < 5; i += 1) {
+      await upload(container, 'raw-session-nav-input', ['nav.06n']);
+    }
+    await waitForText(container, 'max 4 NAV files');
+    expect(byTestId(container, 'raw-session-blocker')?.textContent)
+      .toMatch(/max 4 NAV files/);
+    expect((byTestId(container, 'raw-session-process') as HTMLButtonElement).disabled).toBe(true);
+    act(() => {
+      root.unmount();
+    });
+  });
+});
+
+describe('session ANTEX slot bound', () => {
+  it('rejects uploads over 100 MiB naming the file and size', async () => {
+    const huge = {
+      name: 'huge.atx',
+      size: 150 * 1024 * 1024,
+      arrayBuffer: async () => new ArrayBuffer(0),
+    } as unknown as File;
+    await expect(readSessionAntexEntry(huge)).rejects.toThrow(
+      /ANTEX huge\.atx exceeds the 100 MiB.*157286400 bytes/,
+    );
+  });
+
+  it('panel accepts a 33 MiB ANTEX file above the 32 MiB staging cap', async () => {
+    const { container, root } = mount(<GnssRawSessionPanel onRestart={() => {}} />);
+    // Sparse zeros constructed in-test; no big fixture is committed.
+    const bytes = new Uint8Array(33 * 1024 * 1024);
+    const file = new File([bytes], 'big.atx');
+    Object.defineProperty(file, 'arrayBuffer', {
+      value: async () => bytes.buffer,
+      configurable: true,
+    });
+    const input = container.querySelector('[data-testid="raw-session-antex-input"]') as HTMLInputElement;
+    Object.defineProperty(input, 'files', { value: [file], configurable: true });
+    await act(async () => {
+      input.dispatchEvent(new Event('change', { bubbles: true }));
+    });
+    // 33 MiB of hashing/decoding outlives one act flush; poll to settle.
+    await waitForText(container, 'big.atx');
+    expect(byTestId(container, 'raw-session-file-error')).toBeNull();
+    expect(container.textContent).toContain('big.atx');
+    act(() => {
+      root.unmount();
+    });
+  });
+});
+
+describe('suggestReplacementPair', () => {
+  it('prefills the lexicographically first reconnecting pair', () => {
+    const graph = buildStarGraph(
+      [occupationWithAntenna('A', ''), occupationWithAntenna('B', ''), occupationWithAntenna('C', '')],
+      'A',
+    );
+    expect(suggestReplacementPair(graph, { from: 'A', to: 'B' })).toEqual({ from: 'B', to: 'C' });
+  });
+
+  it('returns null when no alternative pair exists', () => {
+    const graph = buildStarGraph(
+      [occupationWithAntenna('A', ''), occupationWithAntenna('B', '')],
+      'A',
+    );
+    expect(suggestReplacementPair(graph, { from: 'A', to: 'B' })).toBeNull();
   });
 });

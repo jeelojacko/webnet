@@ -184,7 +184,8 @@ test.describe('Raw static session review', () => {
     await expect(dialog.getByTestId('raw-session-progress')).toBeVisible({ timeout: 15_000 });
     await expect(dialog.getByTestId('raw-session-failed')).toContainText('SYNB->SYNF', { timeout: 300_000 });
     const reason = await dialog.getByTestId('raw-session-failed').textContent();
-    expect((reason ?? '').replace('SYNB->SYNF', '').trim().length).toBeGreaterThan('Failed edge(s): ,'.length);
+    // The reason names the worker failure, not just that an edge is missing.
+    expect(reason ?? '').toMatch(/PROCESSOR_FAILURE|no solution epochs/);
     await expect(dialog.getByTestId('raw-session-status')).toContainText('PARTIAL');
     expect(pageErrors).toEqual([]);
   });

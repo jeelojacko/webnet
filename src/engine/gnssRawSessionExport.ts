@@ -163,9 +163,21 @@ export const parseRawSessionExport = (text: string): RawSessionExport => {
 export const reopenRawSession = (text: string): ProcessedRawGnssSession =>
   parseRawSessionExport(text).session;
 
-/** Semantic bytes: everything except the nonsemantic exportedAt stamp. */
+/** Semantic bytes: everything except nonsemantic wall-clock stamps.
+ * exportedAt (envelope) and per-baseline provenance.processedAt are
+ * redacted: both are run-time marks, never solution content. Solution
+ * epoch start/stop stay semantic. */
 export const sessionSemanticBytes = (doc: RawSessionExport): string =>
-  JSON.stringify(stableClone({ kind: doc.kind, session: doc.session }));
+  JSON.stringify(stableClone({
+    kind: doc.kind,
+    session: {
+      ...doc.session,
+      baselines: doc.session.baselines.map((b) => ({
+        ...b,
+        provenance: { ...b.provenance, processedAt: '<processed-at>' },
+      })),
+    },
+  }));
 
 const stationFileFor = (
   session: ProcessedRawGnssSession,

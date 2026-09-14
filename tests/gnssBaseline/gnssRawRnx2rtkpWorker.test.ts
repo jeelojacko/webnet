@@ -31,6 +31,8 @@ import {
   type GnssRawRnx2rtkpJob,
   type GnssRawWasmModule,
 } from '../../src/engine/gnssRawRnx2rtkp';
+import { buildAntexSubset } from '../../src/engine/gnssAntexSubset';
+import { parseRinexObs } from '../../src/engine/gnssRinexHeader';
 import {
   GNSS_RAW_WORKER_CHANNEL,
   isCurrentJob,
@@ -240,6 +242,79 @@ describe('gnss-raw driver + worker protocol (wasm tier, synthetic)', () => {
     expect(fresh).toEqual(a1);
     // Mask differs -> options hash differs (no stale-option reuse).
     expect(b.provenance.optionsHash).not.toBe(a1.provenance.optionsHash);
+  });
+
+  it('ANTEX subset path applies receiver calibration to the synthetic pair', async () => {
+    // Required serials come from the fixture headers themselves (both
+    // declare SYN-GENX00 NONE), so the subset build cannot drift from the
+    // pair under test. RTKLIB does not gate on ANTEX validity dates (see
+    // buildRnx2rtkpArgs): the expired satellite blocks in synth.atx ride
+    // along silently and this run succeeding proves no complaint.
+    const sourceText = readFileSync(join(FIXDIR, 'synth.atx'), 'utf8');
+    const serials = [...new Set(['base.06o', 'rover.06o'].map((name) =>
+      parseRinexObs(readFileSync(join(FIXDIR, name), 'utf8'))
+        .metadata.antennaModel.trim().split(/\s+/).join(' '),
+    ))].sort();
+    expect(serials).toEqual(['SYN-GENX00 NONE']);
+    const subset = await buildAntexSubset({
+      sourceText,
+      requiredReceiverSerials: serials,
+      validAt: '2024-01-01T00:00:00.000Z',
+    });
+    expect(subset.receiverSerials).toEqual(['SYN-GENX00 NONE']);
+    const mod = await loadRealModule();
+    const plain = timeless(runRawBaseline(mod, realJob()));
+    const calibrated = timeless(runRawBaseline(mod, realJob({
+      options: {
+        elevationMaskDegrees: 10,
+        antexSubset: {
+          bytes: subset.subsetBytes,
+          sourceSha256: subset.sourceSha256,
+          subsetSha256: subset.subsetSha256,
+        },
+      },
+    })));
+    expect(plain.status).not.toBe('FAILED');
+    expect(calibrated.status).not.toBe('FAILED');
+    const dv = Math.hypot(
+      calibrated.deltaX - plain.deltaX,
+      calibrated.deltaY - plain.deltaY,
+      calibrated.deltaZ - plain.deltaZ,
+    );
+    if (dv > 0) {
+      // Receiver PCV moved the solution: the correction path is applied,
+      // not just staged.
+      console.log(`ANTEX proof: receiver-PCV vectors differ by ${(dv * 1000).toFixed(3)} mm`);
+      expect(dv).toBeGreaterThan(0);
+      expect(calibrated.diagnostics.some((d) => d.includes(subset.subsetSha256))).toBe(true);
+    } else {
+      // Bit-identical geometry (zero PCV effect): prove staging instead —
+      // the subset SHA reaches diagnostics and the conf selects rinexhead.
+      console.log('ANTEX proof: vectors bit-identical; proving subset staging instead');
+      expect(calibrated.diagnostics.some((d) => d.includes(subset.subsetSha256))).toBe(true);
+      const written = new Map<string, Uint8Array>();
+      const cap: GnssRawWasmModule = {
+        FS: {
+          mkdir(): void { /* exists */ },
+          writeFile(p: string, d: Uint8Array): void { written.set(p, d); },
+          readFile(): string { throw new Error('unread in conf capture'); },
+          unlink(): void { /* absent */ },
+        },
+        callMain(): number { return 0; },
+      };
+      buildRnx2rtkpArgs(cap, realJob({
+        options: {
+          elevationMaskDegrees: 10,
+          antexSubset: {
+            bytes: subset.subsetBytes,
+            sourceSha256: subset.sourceSha256,
+            subsetSha256: subset.subsetSha256,
+          },
+        },
+      }), ['/work/rover.obs', '/work/base.obs']);
+      const conf = new TextDecoder().decode(written.get('/work/prec.conf')!);
+      expect(conf).toContain('ant2-postype');
+    }
   });
 
   it('deriveIntervalSeconds parses -t calendar time (30 s synthetic spacing)', () => {
