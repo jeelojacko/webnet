@@ -28,7 +28,8 @@ const MARKER: Record<string, V3> = {
   WERB: [4055527.7993, 403142.4181, 4890387.0011],
 };
 // directed edges from->to with value to-minus-from (DOY124 h00 prec FIXED)
-const g = sol.filter((r) => r.doy === '124' && r.tag === 'h00' && r.eph === 'prec' && r.status === 'FIXED');
+const DOY = process.env['DOY'] ?? '124'; // independent-data check: DOY=125..128 reruns
+const g = sol.filter((r) => r.doy === DOY && r.tag === 'h00' && r.eph === 'prec' && r.status === 'FIXED');
 const sub = (a: V3, b: V3): V3 => [a[0] - b[0], a[1] - b[1], a[2] - b[2]];
 const neg = (a: V3): V3 => [-a[0], -a[1], -a[2]];
 interface Edge { from: string; to: string; d: V3; c: GnssBaselineCovariance; ratio: number; pair: string }

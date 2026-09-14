@@ -7,7 +7,7 @@
 # Gotcha honored: -r (base marker ECEF) comes AFTER -k on the command line.
 # Two-arg -ts/-te. Resumable: existing .pos files are skipped.
 # Usage: PAR=2 scripts/gnss/gnss12j7Process.sh   (PAR=1 for serial timing)
-set -u
+set -euo pipefail
 CORP=${CORPUS_DIR:-$HOME/Downloads/webnet-gnss-medium/belgian}
 BIN=${RNX2RTKP:-/tmp/rtklib-evidence/app/consapp/rnx2rtkp/gcc/rnx2rtkp}
 ATX=$CORP/belgian-subset.atx
@@ -44,7 +44,10 @@ run_one() { # rover base doy eph ts te tag (ts/te empty = full day)
   local id="\${ROV}-\${BAS}-\${DOY}-\${TAG}-\${EPH}"
   local pos="\$OUT/\$id.pos"
   local conf="\$OUT/\$id.conf"
-  [ -f "\$pos" ] && { echo "SKIP \$id"; return; }
+  # Re-run incomplete/failed outputs: skip only if .pos exists, is non-empty,
+  # and holds solution epochs (lines starting with a year). Mere existence
+  # (e.g. header-only .pos from a failed run) does NOT skip.
+  if [ -s "\$pos" ] && grep -q "^20[0-9][0-9]/" "\$pos"; then echo "SKIP \$id"; return; fi
   { echo "ant1-anttype=\${ANT[\$ROV]}"; echo "ant1-antdele=0.0"; echo "ant1-antdeln=0.0"; echo "ant1-antdelu=\${DEL[\$ROV]}"
     echo "ant2-anttype=\${ANT[\$BAS]}"; echo "ant2-antdele=0.0"; echo "ant2-antdeln=0.0"; echo "ant2-antdelu=\${DEL[\$BAS]}"
     echo "ant2-postype=rinexhead"; echo "file-rcvantfile=\$ATX"; echo "file-satantfile=\$ATX"
@@ -55,7 +58,9 @@ run_one() { # rover base doy eph ts te tag (ts/te empty = full day)
   [ "\$EPH" = "prec" ] && args+=("\$W/sp3/\$DOY.sp3")
   local t0; t0=\$(date +%s)
   "\$BIN" "\${args[@]}" -o "\$pos" 2>"\$OUT/\$id.err"; local rc=\$?
-  echo -e "\$id\\t\$(( \$(date +%s) - t0 ))\\t\$rc" >> "\$OUT/times.tsv"
+  # Per-worker timing files (PID-suffixed) merged sorted after xargs,
+  # so concurrent appends stay deterministic.
+  echo -e "\$id\\t\$(( \$(date +%s) - t0 ))\\t\$rc" >> "\$OUT/times.worker.\$\$.tsv"
   echo "DONE \$id rc=\$rc"
 }
 EOF
@@ -96,9 +101,19 @@ for DOY in 124 125 126 127 128; do DT=$(D2DATE "$DOY")
   done
 done
 } > "$JOBS"
-if [ -n "$ONLY" ]; then grep -F "$ONLY" "$JOBS" > "$JOBS.f" && mv "$JOBS.f" "$JOBS"; fi
+if [ -n "$ONLY" ]; then grep -F "$ONLY" "$JOBS" > "$JOBS.f" || true; mv "$JOBS.f" "$JOBS"; fi
 echo "jobs: $(wc -l < "$JOBS")"
 # shellcheck disable=SC1090
 export RUNNER
-xargs -a "$JOBS" -d '\n' -P "$PAR" -I{} bash -c "source $RUNNER; {}"
+rm -f "$OUT"/times.worker.*.tsv
+# Fail closed: no ALL_DONE after worker failure (xargs rc propagates).
+XRC=0
+xargs -a "$JOBS" -d '\n' -P "$PAR" -I{} bash -c "source $RUNNER; {}" || XRC=$?
+if ls "$OUT"/times.worker.*.tsv >/dev/null 2>&1; then
+  cat "$OUT"/times.worker.*.tsv >> "$OUT/times.tsv"
+  rm -f "$OUT"/times.worker.*.tsv
+fi
+# Timing records always deterministic: sorted + deduped, even on all-SKIP runs.
+sort -u -o "$OUT/times.tsv" "$OUT/times.tsv"
+if [ "$XRC" -ne 0 ]; then echo "WORKER_FAILURE rc=$XRC"; exit "$XRC"; fi
 echo ALL_DONE

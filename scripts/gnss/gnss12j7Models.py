@@ -81,11 +81,18 @@ def tstats(Ts, label):
 
 
 res = {}
-# 5. independent-time loops: legs TV+VW-TW with 3 disjoint windows; 4 combos/day
-print('--- loops TGRN-VOER + VOER-WERB - TGRN-WERB (prec FIXED, disjoint windows) ---')
+# 5. STRICTLY INDEPENDENT loops: ONE loop/day on fixed disjoint windows
+# (h00,h06,h12) -> 5 loops total (FIT 3 / VAL 2), no solution-row reuse across
+# loops, non-overlapping windows within each loop. Characterization ONLY.
+# COMBINATORIAL BLOCKER for >=10: each day offers 4 disjoint 1h windows; one
+# loop consumes 3 distinct windows (legs must not share a session), leaving 1
+# unused window that cannot form a second disjoint triple -> max 1 loop/day.
+# 5 days -> max 5 independent loops. >=10 needs >=10 days (or >=6 disjoint
+# windows/day), neither available in this corpus. Acceptance D: BLOCKER-PROVEN.
+print('--- loops TGRN-VOER + VOER-WERB - TGRN-WERB (prec FIXED, independent: 1/day) ---')
 LOOPS = []
 for doy in ('124', '125', '126', '127', '128'):
-    for combo in (('h00', 'h06', 'h12'), ('h00', 'h06', 'h18'), ('h00', 'h12', 'h18'), ('h06', 'h12', 'h18')):
+    for combo in (('h00', 'h06', 'h12'),):
         a, b, c = get('TGRN-VOER', doy, combo[0]), get('VOER-WERB', doy, combo[1]), get('TGRN-WERB', doy, combo[2])
         if a and b and c:
             cl = [a['vec'][i] + b['vec'][i] - c['vec'][i] for i in range(3)]
@@ -96,7 +103,7 @@ for doy in ('124', '125', '126', '127', '128'):
                 t = None
             LOOPS.append({'doy': doy, 'combo': combo, 'closure': cl, 'T': t,
                           'len_mm': math.dist(cl, (0, 0, 0)) * 1000})
-print(f'loops closed: {len(LOOPS)} (target >= 10)')
+print(f'loops closed: {len(LOOPS)} (target >= 10 BLOCKED: max 1/day x 5 days = 5; characterization only)')
 ls = sorted(L['len_mm'] for L in LOOPS)
 print(f'loop closure |mm|: med={S.median(ls):.1f} max={max(ls):.1f}')
 res['loops'] = {'n': len(LOOPS), 'T': tstats([L['T'] for L in LOOPS], 'loopT'), 'closures': LOOPS}
@@ -144,14 +151,18 @@ res['dependence'] = 'see stdout (kept OUT of independent T pools by construction
 # 6. candidates on FIT 1h STAR prec; freeze; evaluate on VAL (+legs/loops)
 print('--- candidates (fit FIT 1h STAR prec, freeze, validate VAL) ---')
 def pool_T(pairs, days, fn=None):
+    # Independence-aware: greedy chronological pairing within each (pair,split)
+    # cell — each solution in at most one contrast (cf. gnss12j7Analyze.matched_T).
     out = []
     for pair in pairs:
-        G = [r for r in fix if r['pair'] == pair and r['dur'] == '1h' and r['eph'] == 'prec' and r['doy'] in days]
-        for i, a in enumerate(G):
-            for b in G[i + 1:]:
-                Ca = fn(a['cov'], a['abs']) if fn else a['cov']
-                Cb = fn(b['cov'], b['abs']) if fn else b['cov']
-                out.append(T_of(a['vec'], Ca, b['vec'], Cb))
+        G = sorted((r for r in fix if r['pair'] == pair and r['dur'] == '1h'
+                    and r['eph'] == 'prec' and r['doy'] in days),
+                   key=lambda r: (r['doy'], r['tag']))
+        for i in range(0, len(G) - 1, 2):
+            a, b = G[i], G[i + 1]
+            Ca = fn(a['cov'], a['abs']) if fn else a['cov']
+            Cb = fn(b['cov'], b['abs']) if fn else b['cov']
+            out.append(T_of(a['vec'], Ca, b['vec'], Cb))
     return [t for t in out if t is not None]
 
 

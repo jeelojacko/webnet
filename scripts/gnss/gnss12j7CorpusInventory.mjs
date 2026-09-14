@@ -32,10 +32,25 @@ const BASELINES = [
 ];
 
 const rinexName = (id, doy) => `${id}_${KIND[id]}_2026${doy}0000_01D_30S_MO.crx.gz`;
+// Decompressed RINEX working inputs derived from the .crx.gz above (same basename,
+// `.crx` + `.rnx` under rnx/). Listed fail-closed: processing reads these, not the .gz.
+const rnxBase = (id, doy) => `rnx/${id}_${KIND[id]}_2026${doy}0000_01D_30S_MO`;
 const sp3Name = (doy) => `sp3/COD0OPSFIN_2026${doy}0000_01D_05M_ORB.SP3.gz`;
+// Broadcast NAV inputs read by the driver (per-day .Z decompressed to work12j7/nav/).
+// ade31270.26n.Z is the stage-1 DOY127 file (parses but yields zero solutions in this
+// RTKLIB build; superseded by the IGS merged daily BRDC documented in the report).
+const NAVS = [
+  'nav/zimm1240.26n.Z',
+  'nav/zimm1250.26n.Z',
+  'nav/zimm1260.26n.Z',
+  'nav/ade31270.26n.Z',
+  'nav/zimm1280.26n.Z',
+];
 
 const EXPECTED = [
   ...STATIONS.flatMap((s) => DOYS.map((d) => rinexName(s.id, d))),
+  ...STATIONS.flatMap((s) => DOYS.flatMap((d) => [`${rnxBase(s.id, d)}.crx`, `${rnxBase(s.id, d)}.rnx`])),
+  ...NAVS,
   ...STATIONS.map((s) => `sitelog_${s.id}.log`),
   ...DOYS.map(sp3Name),
   'belgian-subset.atx',

@@ -19,7 +19,12 @@ No constellation widening. No math/R2B/free-network/tolerance changes.**
   `file-rcvantfile/file-satantfile`=subset, `ant2-postype=rinexhead`,
   per-station anttype/delE/delN/delU from sitelogs, `-r` base marker ECEF **after** `-k`
   (stage-1 gotcha; verified `-r` wins), two-arg `-ts/-te`.
-- Driver: `scripts/gnss/gnss12j7Process.sh` (deterministic, resumable, `PAR=` workers).
+- Driver: `scripts/gnss/gnss12j7Process.sh` (deterministic, `set -euo pipefail`,
+  fail-closed xargs workers, content-checked skip — header-only .pos reruns,
+  per-worker timing files merged sorted, `PAR=` workers). Inventory:
+  `scripts/gnss/gnss12j7CorpusInventory.mjs` (75-file manifest: RINEX .gz +
+  decompressed rnx inputs + broadcast NAV + sitelogs + SP3 + ANTEX subset,
+  fail-closed). No reprocessing in the fix round — solutions already complete.
   Analysis: `scripts/gnss/gnss12j7Analyze.py` (parse/repeatability/T/length-fit/broadcast),
   `scripts/gnss/gnss12j7Models.py` (loops/dependence/candidates/bias/QC/perf),
   `scripts/gnss/gnss12j7SessionGraph.ts` (engine session/tree helpers, read-only).
@@ -127,24 +132,35 @@ Formals are sub-mm horizontal at 1h; empirics are cm-level with clear length gro
 
 ## 10. Normalized T (raw formal F)
 
-Within-pair disjoint-window pools, precise FIXED:
+PRIMARY pools are MATCHED PAIRS (independence-aware): greedy chronological pairing
+within each (pair, dur, split) cell — each solution in at most one contrast.
+Effective n is stated everywhere; all-pairs contrasts are pseudoreplicated
+(each solution reused many times) and kept ONLY as a diagnostic appendix below.
 
-| Pool | n | mean | med | p95 | p99 | >95% | >99% |
+| Pool (matched) | n | mean | med | p95 | p99 | >95% | >99% |
 |---|---|---|---|---|---|---|---|
-| 30m all | 126 | 2302 | 979 | 11127 | 18614 | 98% | 98% |
-| 1h all | 1084 | 1449 | 869 | 4745 | 7820 | 99.9% | 99.7% |
-| 2h all | 30 | 1262 | 646 | 3195 | 7743 | 100% | 100% |
-| 24h all | 30 | 1835 | 1308 | 5367 | 6224 | 100% | 100% |
-| 1h by length: 18.7k | 190 | 385 | 322 | 976 | 1350 | 100% | 99% |
-| 1h by length: 33.7k | 190 | 1349 | 1171 | 3238 | 4558 | 100% | 100% |
-| 1h by length: 45.9k | 190 | 2391 | 1803 | 6043 | 10004 | 99% | 99% |
-| 1h STAR FIT | 198 | 1458 | 802 | 5534 | 10004 | 100% | 100% |
-| 1h STAR VAL | 84 | 1090 | 786 | 3146 | 5386 | 100% | 100% |
+| 30m all | 14 | 2917 | 1023 | 14517 | 14517 | 100% | 100% |
+| 1h all | 58 | 1121 | 655 | 4318 | 5350 | 100% | 100% |
+| 2h all | 6 | 1087 | 291 | 3195 | 3195 | 100% | 100% |
+| 24h all | 6 | 1513 | 1001 | 4493 | 4493 | 100% | 100% |
+| 1h by length: 18.7k | 10 | 409 | 364 | 729 | 729 | 100% | 100% |
+| 1h by length: 33.7k | 10 | 1052 | 932 | 2115 | 2115 | 100% | 100% |
+| 1h by length: 45.9k | 10 | 1848 | 1319 | 4318 | 4318 | 100% | 100% |
+| 1h STAR FIT | 18 | 1042 | 701 | 4318 | 4318 | 100% | 100% |
+| 1h STAR VAL | 12 | 1194 | 914 | 4301 | 4301 | 100% | 100% |
 
-Raw formals rejected at ~100%: the processor's internal precision is not survey
-weighting (consistent with 12J.6 short-baseline pattern, larger scale here).
-Broadcast-vs-precise same-window T (n=30): med 4.9, exc95 33% — ephemeris class matters
-far less than the formal optimism; broadcast dlen vs precise: mean +3.0mm, max |61.2|mm.
+Raw formals rejected at ~100% on independent contrasts: the processor's internal
+precision is not survey weighting (consistent with 12J.6 short-baseline pattern,
+larger scale here). Underpowered per-cell n (6–18) cannot resolve duration-specific
+scales — no per-duration claim is made.
+
+Diagnostic appendix (PSEUDOREPLICATED all-pairs, do not cite as evidence):
+30m n=126 med 979; 1h n=1084 med 869; 2h n=30 med 646; 24h n=30 med 1308;
+1h FIT n=198 med 802; 1h VAL n=84 med 786. Same qualitative direction, inflated n.
+
+Broadcast-vs-precise same-window T (n=30, each window used once): med 4.9,
+exc95 33% — ephemeris class matters far less than the formal optimism;
+broadcast dlen vs precise: mean +3.0mm, max |61.2|mm.
 
 ## 11. Same-session dependence
 
@@ -156,13 +172,22 @@ Legs sharing a rover show weak/negative correlation (e.g. TGRN-WARE×TGRN-VOER:
 same-window pairs are OUT of the independent T pools by construction (pools are
 within-pair, disjoint windows only).
 
-## 12. Independent-time loops
+## 12. Independent loops (characterization only)
 
-Triangle TGRN-VOER + VOER-WERB − TGRN-WERB on 3 disjoint windows; 4 combos/day × 5 days.
-**20/20 loops closed (target ≥10 met).** Closure |mm|: med 55.3, max 111.3.
-Loop T raw: med 1120, exc95/99 100%. Under frozen S: FIT med 5.32 / VAL med 2.29
-(exc 0/0 on VAL); under frozen ENU: FIT med 5.08 / VAL med 2.98. Loops (which cancel
-common biases) validate slightly conservative — acceptable.
+Triangle TGRN-VOER + VOER-WERB − TGRN-WERB, STRICTLY independent: one loop/day on
+fixed disjoint windows (h00, h06, h12) — no solution-row reuse across loops,
+non-overlapping windows within each loop. **5/5 loops closed** (FIT 3 / VAL 2).
+Closure |mm|: med 65.0, max 85.8. Loop T raw: med 1614, exc95/99 100% (n=5).
+Under frozen S=17.2: FIT med 6.72 (n=3, 1 exc95), VAL med 2.61 (n=2, 0 exc);
+under frozen ENU: FIT med 7.74 (n=3), VAL med 2.81 (n=2). VAL loop n=2 cannot
+validate anything — reported for the record only.
+
+COMBINATORIAL BLOCKER for ≥10 (acceptance D: BLOCKER-PROVEN, not met): each day
+offers 4 disjoint 1h windows; one loop consumes 3 distinct windows (legs must not
+share a session), leaving 1 unused window that cannot form a second disjoint
+triple → max 1 independent loop/day. 5 days → max 5. ≥10 needs ≥10 days (or ≥6
+disjoint windows/day) — neither available in this corpus. Loop evidence is
+characterization-only.
 
 ## 13. Length dependence
 
@@ -174,22 +199,30 @@ V constant-floor 35.94mm; const+ppm a=−6.37mm (unphysical intercept), b=1.291m
 Conclusion: length growth is real (esp. vertical) but 3 length groups cannot identify
 a ppm law — feeds the CL rejection below.
 
-## 14. Candidates (fit FIT only; frozen; VAL held out)
+## 14. Candidates (fit FIT-matched only; frozen; VAL-matched held out)
 
-- F (raw formal): rejected by §10 (≈100% exceedance).
-- S (single scalar): **s = 18.411** from FIT median T=802.0 (n=198). VAL: med 2.32,
-  exc95 9.5%, exc99 2.4% (n=84). Component-agnostic, generalizes.
-- ENU floor (grid search, deterministic): **h = 9.0mm, v = 56.0mm** (FIT med 2.37).
-  VAL: med 2.12, exc95 14.3%, exc99 10.7% — heavier tails than S on held-out data.
+- F (raw formal): rejected by §10 (≈100% exceedance on independent contrasts).
+- S (single scalar): **s = 17.208 → 17.2** from FIT-matched median T=700.6 (n=18).
+  FIT-matched scaled: med 2.37, exc95 11.1% (2/18), exc99 5.6% (1/18).
+  VAL-matched: med 3.09, exc95 8.3% (1/12), exc99 8.3% (1/12).
+  Descriptively plausible (median near χ²(3) 2.37) but n=12 VAL is underpowered —
+  exceedance rates have ±20pp-scale binomial noise; NOT a certification.
+- ENU floor (grid search, deterministic): **h = 10.0mm, v = 32.0mm** (FIT-matched
+  med 2.37). VAL-matched: med 2.67, exc95 16.7%, exc99 8.3% — heavier tails than
+  S on held-out data.
 - CL (aH,bH,aV,bV): **REJECTED as underidentified** — 4 parameters on 3 length groups
   (§13); fitting it would be numerology. More distinct lengths required first.
-- Selected: **S = 18.4**. Loop holdout under frozen S: VAL med 2.29, 0/8 exceedances.
+- Selected: **none certified**. S = 17.2 retained as an evidence-only prior
+  (characterization only); ENU recorded for the record. Loop holdout under frozen
+  S: VAL med 2.61 on n=2 — record only (see §12).
 
-## 15. Held-out summary (VAL 127–128, no refitting)
+## 15. Held-out summary (VAL 127–128, matched, no refitting)
 
-STAR-1h S: med 2.32 / p95 9.28 / p99 15.89 / exc95 9.5% / exc99 2.4%.
-Loops S: med 2.29, no exceedances. ENU tails heavier. FIT/VAL medians agree
-(802 vs 786 raw; 2.37 vs 2.32 scaled) — no regime shift across the split.
+STAR-1h S=17.2 (n=12): med 3.09 / p95 14.52 / exc95 8.3% (1/12) / exc99 8.3% (1/12).
+Loops S (n=2): med 2.61, no exceedances — record only. ENU tails heavier.
+FIT/VAL raw medians agree in direction (701 vs 914) — no regime shift across the
+split beyond small-sample noise. With n=30 total matched contrasts, exceedance
+rates are underpowered: this is characterization, not validation.
 
 ## 16. Session graph
 
@@ -197,11 +230,16 @@ One window (DOY124 h00, 6 baselines, WARE fixed): engine `composeSession` unions
 members into **1 dependency group** (shared RINEX inputs) with a shared-observation
 warning; `selectSpanningTree` deterministically selects the **STAR** (WARE hub).
 Weighted LS: STAR vs MST(operator: shortest-total-length tree TGRN-VOER/TGRN-WARE/
-VOER-WERB) vs full-graph: |STAR−FULL| ≤ 6.7mm, |MST−FULL| ≤ 7.0mm, |STAR−MST| ≤ 11.9mm
-per station; FULL dof=9, SEUW=3.5 (formal-cov optimism artifact, same direction as §10).
-Tree-choice sensitivity is mm-to-cm on this data.
-**Verdict: SPANNING_TREE_SUFFICIENT_INITIAL** (for 4-station short sessions; revisit if
-cross-covariance terms are ever modelled).
+VOER-WERB) vs full-graph on DOY124 h00: |STAR−FULL| ≤ 6.7mm, |MST−FULL| ≤ 7.0mm,
+|STAR−MST| ≤ 11.9mm per station; FULL dof=9, SEUW=3.5 (formal-cov optimism artifact,
+same direction as §10). Independent-data check (fix round): reran the same
+deterministic comparison on the h00 window of DOY125/127/128 (DOY126 h00 not
+checkable — VOER-WERB leg is FLOAT there, a documented §7 exclusion). Engine tree
+pick varies by day (data-dependent, deterministic); verdict
+SPANNING_TREE_SUFFICIENT_INITIAL on all 4 checkable windows; worst-day
+|STAR−FULL| 22.0mm (DOY125 WERB). Tree-choice sensitivity is mm-to-cm.
+**Verdict: SPANNING_TREE_SUFFICIENT_INITIAL** (for 4-station short sessions;
+revisit if cross-covariance terms are ever modelled).
 
 ## 17. Systematic bias gate
 
@@ -225,7 +263,8 @@ Per-run wall (single worker class): 30m mean 0.6s, 1h 0.5s, 2h 0.6s, 24h 1.5–1
 (max 2s). Full 210-run matrix: PAR=1 wall 131s vs PAR=2 wall 66s (CPU ≈122s both;
 speedup 1.98×). Peak RSS 87MB (24h run incl. SP3+obs+ANTEX). **Recommend bounded
 concurrency PAR=2** (4 unjustified; each worker re-reads the 2.36MB ANTEX subset —
-trivial duplication). 32MiB cap untouched (not applicable to the CLI harness).
+trivial duplication). Timing records are deterministic (per-worker files merged
+sorted). 32MiB cap untouched (not applicable to the CLI harness).
 
 ## 20. ANTEX bound
 
@@ -236,32 +275,39 @@ duplication trivial; byte-identical subset-vs-full check from stage 1 retained.
 
 ## 21. Certified scope
 
-Calibrated: **1h GPS-only L1/L2 static FIXED, 15–46km, scalar S=18.4 on formal
-covariance** (held-out + loop validated). Characterized but NOT calibrated: 30m/2h/24h
-(T medians 979/646/1308 imply duration-specific scales ~17–24 — transfer not claimed),
-broadcast (bias/repeatability delta only), legs beyond loop use. No absolute vectors.
-No TBC fit. No cross-covariance.
+**No certified scope.** S=17.2 is characterization only (evidence-only prior:
+descriptively plausible FIT-matched + VAL-matched medians, exceedance rates
+underpowered at n=30 total). Characterized but NOT calibrated: 1h STAR (matched
+n=18/12), 30m/2h/24h (matched n=14/6/6 — no per-duration claim), broadcast
+(bias/repeatability delta only), legs beyond loop use, loops (n=5, blocker-proven).
+No absolute vectors. No TBC fit. No cross-covariance.
 
 ## 22. Acceptance self-check (A–U mapping to frozen gates)
 
 A disjoint repeats processed (210/210, no sliding windows) ✓ · B FIX rate reported
-(§7: 98.1%) ✓ · C T by length (§10) ✓ · D ≥10 loops (20, §12) ✓ · E FIT/VAL frozen
-(124–126/127–128) ✓ · F held-out done, no refitting (§15) ✓ · G no TBC fit ✓ ·
-H bias separated, not absorbed (§17) ✓ · I graph tested, verdict returned (§16) ✓ ·
-J ANTEX bound retained (§20) ✓ · K direct ingest off ✓ · L no adjustment/math changes
-(no `src/` diff) ✓ · M broadcast comparison bounded, same-window (§10) ✓ ·
-N dependence measured, pools independent (§11) ✓ · O length dependence raw-first,
+(§7: 98.1%) ✓ · C T by length, matched (§10) ✓ · D ≥10 loops BLOCKER-PROVEN
+(5 max, §12) ✗-as-blocker · E FIT/VAL frozen (124–126/127–128), matched within cell ✓ ·
+F held-out done, no refitting (§15) ✓ · G no TBC fit ✓ ·
+H bias separated, not absorbed (§17) ✓ · I graph tested on 4 independent windows,
+verdict returned (§16) ✓ · J ANTEX bound retained (§20) ✓ · K direct ingest off ✓ ·
+L no adjustment/math changes (no `src/` diff) ✓ · M broadcast comparison bounded,
+same-window (§10) ✓ · N dependence measured, pools dependence-aware (matched +
+within-pair only, §10–11) ✓ · O length dependence raw-first,
 CL rejected with reason (§13–14) ✓ · P ratio gate assessed, FIXED≠guaranteed (§18) ✓ ·
 Q performance measured, PAR=2 recommended (§19) ✓ · R licenses + DOIs recorded (§4) ✓ ·
 S antenna type-mean proof (§5) ✓ · T completeness + DOY127 blocker documented (§6) ✓ ·
-U certified scope bounded (§21) ✓.
+U no certified scope; S=17.2 characterization only (§21) ✓.
 
 ## 23. Decisions
 
-- Model: **MEDIUM_MODEL_VALIDATED** — scalar S=18.4 for 1h medium baselines
-  (SHORT_ONLY_MODEL rejected: 12J.6 short-baseline scale does not transfer; REVIEW_ONLY
-  rejected: held-out + loops pass; MORE_DATA deferred specifically for CL/ppm
-  identification and duration-specific scales).
+- Model: **REVIEW_ONLY** — scalar S=17.2 for 1h medium baselines is an
+evidence-only prior (matched n=30 total underpowered; VAL loop n=2 record-only).
+  MEDIUM_MODEL_VALIDATED rejected: independence-aware effective n (≈18 FIT / 12 VAL)
+  plus 5 blocker-capped loops cannot establish it. MORE_DATA specified: ≥10 days
+  (or ≥6 disjoint windows/day) for ≥10 independent loops + CL/ppm identification
+  and duration-specific scales.
+- SESSION_GRAPH: **SPANNING_TREE_SUFFICIENT_INITIAL** (survives 4-window
+  independent-data check; DOY126 gap documented).
 - SESSION_GRAPH: **SPANNING_TREE_SUFFICIENT_INITIAL**.
 - ANTEX: **retain 2.36MB subset bound**.
 - DIRECT_INGEST: **NO** (evidence stays offline; no production ingest path touched).

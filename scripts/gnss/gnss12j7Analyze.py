@@ -175,30 +175,45 @@ def tstats(Ts, label):
     return o
 
 
-# 2. T per duration class, by length, FIT/VAL (prec, FIXED, within-pair disjoint windows)
-print('--- T pools (prec FIXED, within-pair) ---')
+# 2. T per duration class, by length, FIT/VAL (prec, FIXED, within-pair).
+# PRIMARY pools are MATCHED PAIRS: greedy chronological pairing within each
+# (pair,dur,eph[,split]) cell — sort by (doy,tag), pair adjacent solutions.
+# Each solution appears in AT MOST ONE contrast per pool -> independent trials.
+# ALL-PAIRS contrasts are kept ONLY as a pseudoreplicated diagnostic appendix
+# (each solution reused many times; n inflated) and MUST NOT be cited as evidence.
+print('--- T pools (prec FIXED, within-pair, matched) ---')
 T = {}
 Tp = {}
+Mp = {}
+def matched_T(group):
+    g = sorted(group, key=lambda r: (r['doy'], r['tag']))
+    return [T_of(g[i]['vec'], g[i]['cov'], g[i + 1]['vec'], g[i + 1]['cov'])
+            for i in range(0, len(g) - 1, 2)]
 for (pair, dur, eph), m in ref.items():
     if eph != 'prec':
         continue
     g = [r for r in fix if (r['pair'], r['dur'], r['eph']) == (pair, dur, eph)]
-    ts = [T_of(a['vec'], a['cov'], b['vec'], b['cov']) for i, a in enumerate(g) for b in g[i + 1:]]
-    Tp[(pair, dur)] = ts
+    Tp[(pair, dur)] = [T_of(a['vec'], a['cov'], b['vec'], b['cov'])
+                       for i, a in enumerate(g) for b in g[i + 1:]]
+    Mp[(pair, dur)] = matched_T(g)
 for dur in ('30m', '1h', '2h', '24h'):
-    pool = [t for (p, d), ts in Tp.items() if d == dur for t in ts]
-    T[dur] = tstats(pool, f'T {dur} all')
+    T[f'pseudo/{dur}'] = tstats([t for (p, d), ts in Tp.items() if d == dur for t in ts],
+                                f'T-pseudo {dur} all (PSEUDOREPLICATED appendix, do not cite)')
+    pool = [t for (p, d), ts in Mp.items() if d == dur for t in ts]
+    T[dur] = tstats(pool, f'T {dur} matched')
 for pair in ('TGRN-WARE', 'VOER-WARE', 'WERB-WARE', 'TGRN-VOER', 'VOER-WERB', 'TGRN-WERB'):
-    pool = [t for (p, d), ts in Tp.items() if p == pair and d == '1h' for t in ts]
-    T[f'1h/{pair}'] = tstats(pool, f'T 1h {pair}')
+    T[f'pseudo/1h/{pair}'] = tstats([t for (p, d), ts in Tp.items() if p == pair and d == '1h' for t in ts],
+                                    f'T-pseudo 1h {pair} (PSEUDOREPLICATED appendix)')
+    pool = [t for (p, d), ts in Mp.items() if p == pair and d == '1h' for t in ts]
+    T[f'1h/{pair}'] = tstats(pool, f'T 1h {pair} matched')
 for split, days in (('FIT', FIT), ('VAL', VAL)):
     pool = []
-    for (pair, dur), ts in Tp.items():
+    for (pair, dur) in Mp:
         if dur != '1h' or not pair.endswith('WARE'):
             continue
         g = [r for r in fix if r['pair'] == pair and r['dur'] == '1h' and r['eph'] == 'prec' and r['doy'] in days]
-        pool += [T_of(a['vec'], a['cov'], b['vec'], b['cov']) for i, a in enumerate(g) for b in g[i + 1:]]
-    T[f'1hSTAR/{split}'] = tstats(pool, f'T 1h STAR {split}')
+        pool += matched_T(g)  # matched WITHIN split cell: FIT 12->6/baseline (18), VAL 8->4 (12)
+    T[f'1hSTAR/{split}'] = tstats(pool, f'T 1h STAR {split} matched')
 brdc = []
 for pair in ('TGRN-WARE', 'VOER-WARE', 'WERB-WARE'):
     for tag in ('h00', 'h12'):
