@@ -89,6 +89,7 @@ export const WASM_INTEGRATION_TESTS = [
   'tests/phase11a_production_route_realwasm.test.ts',
   'tests/gnssBaseline/gnssSelectedBlocksRealWasm.test.ts',
   'tests/gnssBaseline/gnssBaselineNativeR2BRealWasm.test.ts',
+  'tests/gnssBaseline/gnssRawRnx2rtkpWorker.test.ts',
 ] as const;
 
 /** Tests excluded from the everyday agent tier (intentionally disjoint sets). */

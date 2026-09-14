@@ -101,3 +101,9 @@ network: AMD reduced factor nonzeros (6,824 vs 7,957) but was slower for this
 small path-shaped case (0.348 vs 0.132 ms). AMD is retained because the
 representative sparse benchmark's lower fill is the relevant memory/scaling
 signal; both were deterministic with zero repeated-solve difference.
+
+## RTKLIB vendored processor (Phase 12J.4)
+
+RTKLIB v2.5.1 is vendored as a *processor*, not a `cpp/` dependency: nothing
+under `cpp/` includes or links it. Evaluation record lives in
+`third_party/rtklib/PIN.md`; rebuild via `npm run wasm:build:rtklib`.
