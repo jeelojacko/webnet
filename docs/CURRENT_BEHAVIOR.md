@@ -322,7 +322,7 @@ Current output surfaces include:
 - adjusted-points export
 - observations-and-residuals CSV
 - GeoJSON network export
-- LandXML export
+- LandXML export (adjustment export frozen byte-identical — see tests/landxml_export_golden.test.ts; linearUnit="foot" means the international foot, 0.3048 m exactly; bounded LandXML 1.2 subset import via buildLandXmlImportPreview in src/engine/landxmlImport.ts takes CAD/COGO geometry only, never observations; CAD→LandXML via buildLandXmlFromCadGeometry in src/engine/landxmlCad.ts; CRS retained as metadata, never auto-transformed)
 - QA bundle export presets
 
 ### Listing and report expectations

@@ -49,7 +49,7 @@ type ExportConnection = {
   sigmaAz?: number;
 };
 
-const xmlEscape = (value: string): string =>
+export const xmlEscape = (value: string): string =>
   value
     .replaceAll('&', '&amp;')
     .replaceAll('<', '&lt;')
@@ -57,7 +57,7 @@ const xmlEscape = (value: string): string =>
     .replaceAll('"', '&quot;')
     .replaceAll("'", '&apos;');
 
-const formatNumber = (value: number): string => {
+export const formatNumber = (value: number): string => {
   if (!Number.isFinite(value)) return '0.000000';
   const normalized = Math.abs(value) < 5e-13 ? 0 : value;
   return normalized.toFixed(6);
