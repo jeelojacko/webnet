@@ -121,11 +121,23 @@ describe('preflightRawGnss rejections', () => {
     expect(res.error.code).toBe('NO_DUAL_FREQUENCY');
   });
 
-  it('UNSUPPORTED_RINEX for a version 4.00 file', async () => {
+  it('accepts a version 4.01 pair (RINEX 4 keeps RINEX 3 epoch records)', async () => {
+    const input = await baseInput({
+      base: await file('r4base.24o'),
+      rover: await file('r4rover.24o'),
+    });
+    const res = preflightRawGnss(input);
+    expect(res.ok).toBe(true);
+    if (!res.ok) return;
+    expect(res.commonStart).toBe('2024-01-01T00:00:00.000Z');
+    expect(res.resolvedInterval).toBe(30);
+  });
+
+  it('UNSUPPORTED_RINEX for a version 5.00 file', async () => {
     const input = await baseInput();
     const edited: PreflightInputFile = {
       ...input.base,
-      text: input.base.text.replace('2.10', '4.00'),
+      text: input.base.text.replace('2.10', '5.00'),
     };
     const res = preflightRawGnss({ ...input, base: edited });
     expect(res.ok).toBe(false);
