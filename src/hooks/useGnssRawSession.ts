@@ -167,6 +167,16 @@ export class RawSessionPool {
     this.settled();
   }
 
+  /** Drop one terminal record (repair supersede). No-op unless the edge
+   * exists and is done/failed/cancelled — never touches in-flight work. */
+  dropEdge(edgeId: string): void {
+    const rec = this.edges.get(edgeId);
+    if (rec && rec.state !== 'queued' && rec.state !== 'active') {
+      this.edges.delete(edgeId);
+      this.settled();
+    }
+  }
+
   cancel(): void {
     this.generation += 1;
     this.cancelled = true;
@@ -307,6 +317,8 @@ export interface UseGnssRawSession {
   readonly requeue: (_specs: readonly SessionEdgeSpec[]) => void;
   /** Drop all records once settled (Start-over wiring). */
   readonly reset: () => void;
+  /** Drop one terminal record once superseded by a §27 replacement. */
+  readonly forget: (_edgeId: string) => void;
   readonly cancel: () => void;
   readonly results: ProcessedRawGnssBaseline[];
 }
@@ -359,6 +371,11 @@ export const useGnssRawSession = (par: number = DEFAULT_SESSION_PAR): UseGnssRaw
     refresh();
   }, [pool, refresh]);
 
+  const forget = useCallback((_edgeId: string): void => {
+    pool.dropEdge(_edgeId);
+    refresh();
+  }, [pool, refresh]);
+
   return useMemo(
     () => {
       void tick;
@@ -373,9 +390,10 @@ export const useGnssRawSession = (par: number = DEFAULT_SESSION_PAR): UseGnssRaw
         cancel,
         requeue,
         reset,
+        forget,
         results: pool.completedResults(),
       };
     },
-    [pool, start, cancel, requeue, reset, tick],
+    [pool, start, cancel, requeue, reset, forget, tick],
   );
 };

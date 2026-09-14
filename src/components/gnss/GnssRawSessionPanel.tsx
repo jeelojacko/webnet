@@ -222,6 +222,7 @@ export const GnssRawSessionPanel: React.FC<PanelProps> = ({ onRestart }) => {
       antex,
     };
     snapRef.current = snap;
+    setImported(null);
     setRepairs({});
     setReplaceText({});
     setReplaceError({});
@@ -305,6 +306,7 @@ export const GnssRawSessionPanel: React.FC<PanelProps> = ({ onRestart }) => {
       return;
     }
     snapRef.current = { ...snap, graph: out.graph };
+    session.forget(edgeId);
     setRepairs((p) => ({ ...p, [edgeId]: spec.edgeId }));
     setReplaceError((p) => ({ ...p, [edgeId]: null }));
     setSnapRev((v) => v + 1);

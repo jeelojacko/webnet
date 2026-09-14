@@ -260,6 +260,23 @@ describe('session pool reset (StrictMode remount / re-run after settle)', () => 
   });
 });
 
+describe('session pool dropEdge (repair supersede)', () => {
+  it('drops a terminal record and ignores in-flight edges', () => {
+    const launched: Pending[] = [];
+    const pool = new RawSessionPool(manualDriver(launched), 2);
+    pool.enqueue([spec('A', 'B'), spec('A', 'C')]);
+    launched[0]!.fail({ code: 'PROCESSOR_FAILURE', message: 'boom' });
+    expect(pool.failedEdges()).toEqual(['A->B']);
+    pool.dropEdge('A->B');
+    expect(pool.failedEdges()).toEqual([]);
+    expect(pool.edgeError('A->B')).toBeNull();
+    pool.dropEdge('A->C');
+    expect(pool.snapshot()['A->C']).toBe('active');
+    launched[1]!.succeed(fixedResult('A', 'C'));
+    expect(pool.sessionStatus()).toBe('COMPLETE');
+  });
+});
+
 describe('replacement edge', () => {
   it('revalidates the tree and records provenance', () => {
     const graph = buildStarGraph([occ('A'), occ('B'), occ('C')], 'A');
