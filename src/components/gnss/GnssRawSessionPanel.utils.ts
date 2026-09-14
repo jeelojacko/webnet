@@ -5,6 +5,12 @@
  * and processed-session assembly. No React, no workers, no project state.
  */
 import { assignDependencyGroup } from '../../engine/gnssRawSession';
+import {
+  buildAntexSubset,
+  storeAntexSubset,
+  type GnssAntexSubsetCache,
+  type GnssAntexSubsetResult,
+} from '../../engine/gnssAntexSubset';
 import { parseRinexObs } from '../../engine/gnssRinexHeader';
 import type { SessionGraph } from '../../engine/gnssRawSessionGraph';
 import {
@@ -87,6 +93,8 @@ export interface EdgeSpecArgs {
   readonly windowStart: string;
   readonly windowStop: string;
   readonly resolvedInterval: number;
+  /** Absent/null = legacy path (no antexSubset staged, byte-identical jobs). */
+  readonly antex?: GnssAntexSubsetResult | null;
 }
 
 /** One worker job per planned tree leg; skips legs with missing endpoints. */
@@ -109,6 +117,14 @@ export const buildSessionEdgeSpecs = (args: EdgeSpecArgs): SessionEdgeSpec[] => 
         windowStart: args.windowStart,
         windowStop: args.windowStop,
         precise: args.options.ephemeris === 'PRECISE',
+        // One cached subset object shared by every edge; absent => legacy key shape.
+        ...(args.antex ? {
+          antexSubset: {
+            bytes: args.antex.subsetBytes,
+            sourceSha256: args.antex.sourceSha256,
+            subsetSha256: args.antex.subsetSha256,
+          },
+        } : {}),
       },
       from: edge.from,
       to: edge.to,
@@ -148,6 +164,8 @@ export interface ProcessedSessionArgs {
   readonly navSha256: readonly string[];
   readonly sp3: RawFileEntry | null;
   readonly failedCount: number;
+  /** Absent/null = legacy path (both ANTEX provenance hashes stay null). */
+  readonly antex?: GnssAntexSubsetResult | null;
 }
 
 /** Normalized processed-session assembly (sorted by buildRawSession). */
@@ -187,8 +205,8 @@ export const buildProcessedSession = (
       obsSha256: args.obsSha256,
       navSha256: args.navSha256,
       sp3Sha256: args.sp3 ? args.sp3.sha256 : null,
-      antexSourceSha256: null,
-      antexSubsetSha256: null,
+      antexSourceSha256: args.antex ? args.antex.sourceSha256 : null,
+      antexSubsetSha256: args.antex ? args.antex.subsetSha256 : null,
       processor: first.processor,
       optionsHash: first.optionsHash,
       treePolicy: args.treePolicy,
@@ -198,4 +216,50 @@ export const buildProcessedSession = (
       intervalResolved: args.intervalResolved,
     },
   });
+};
+
+/**
+ * Session-scope ANTEX staging. Collects the distinct receiver antenna
+ * identities declared by the resolved occupations, builds one subset over
+ * the common-window date, and canonicalizes it through the cache so every
+ * edge shares a single object. Never throws: a missing identity (or
+ * oversize subset) becomes a session-level ANTENNA CALIBRATION INCOMPLETE
+ * warning and the affected baselines still process on the legacy path.
+ */
+export interface AntexSubsetPlan {
+  readonly result: GnssAntexSubsetResult | null;
+  readonly warning: string | null;
+}
+
+export const requiredAntennaSerials = (
+  occupations: readonly OccupationEntry[],
+): string[] => [...new Set(
+  occupations
+    .map((o) => o.meta.antennaModel.trim().split(/\s+/).join(' '))
+    .filter((s) => s !== ''),
+)].sort();
+
+export const prepareAntexSubset = async (args: {
+  readonly sourceText: string;
+  readonly occupations: readonly OccupationEntry[];
+  readonly validAt: string | null;
+  readonly cache?: GnssAntexSubsetCache;
+}): Promise<AntexSubsetPlan> => {
+  const required = requiredAntennaSerials(args.occupations);
+  // No declared identities => nothing to stage; stay on the legacy path.
+  if (required.length === 0) return { result: null, warning: null };
+  try {
+    const built = await buildAntexSubset({
+      sourceText: args.sourceText, requiredReceiverSerials: required, validAt: args.validAt,
+    });
+    return {
+      result: args.cache ? storeAntexSubset(args.cache, built) : built,
+      warning: null,
+    };
+  } catch (e) {
+    return {
+      result: null,
+      warning: `ANTENNA CALIBRATION INCOMPLETE: ${e instanceof Error ? e.message : String(e)}`,
+    };
+  }
 };

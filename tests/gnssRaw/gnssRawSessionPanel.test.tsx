@@ -26,6 +26,15 @@ import type {
 } from '../../src/engine/gnssRawTypes';
 import { GnssRawSessionPanel } from '../../src/components/gnss/GnssRawSessionPanel';
 import { GnssRawSessionReview } from '../../src/components/gnss/GnssRawSessionReview';
+import {
+  buildProcessedSession,
+  buildSessionEdgeSpecs,
+  prepareAntexSubset,
+  type OccupationEntry,
+} from '../../src/components/gnss/GnssRawSessionPanel.utils';
+import { createAntexSubsetCache } from '../../src/engine/gnssAntexSubset';
+import type { SessionGraph } from '../../src/engine/gnssRawSessionGraph';
+import { DEFAULT_RAW_OPTIONS, type RawFileEntry } from '../../src/hooks/useGnssRawBaseline';
 
 (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
 
@@ -273,5 +282,157 @@ describe('GnssRawSessionReview', () => {
     };
     const b = sessionSemanticBytes(buildRawSessionExport(buildRawSession(reordered)));
     expect(a).toBe(b);
+  });
+});
+
+/** Phase 12J.9 fix: ANTEX subset wired into the session panel util path. */
+const tagged = (body: string, tag: string): string => `${body.padEnd(60, ' ')}${tag}`;
+
+const rcvBlock = (serial: string, marker: string): string[] => [
+  tagged('', 'START OF ANTENNA'),
+  tagged(serial, 'TYPE / SERIAL NO'),
+  tagged(marker, 'MARKER NAME'),
+  tagged('G01', 'START OF FREQUENCY'),
+  tagged('G01', 'END OF FREQUENCY'),
+  tagged('', 'END OF ANTENNA'),
+];
+
+const ANTEX_SOURCE = [
+  tagged('1.4', 'ANTEX VERSION / SYST'),
+  tagged('', 'END OF HEADER'),
+  ...rcvBlock('TRM59800.00 NONE', 'KEEP_A'),
+  ...rcvBlock('LEIAR25.R4 LEIT', 'KEEP_B'),
+  ...rcvBlock('ASH700936D_M NONE', 'DROP_ME'),
+  tagged('', 'START OF ANTENNA'),
+  tagged('BLOCK IIF G01 G063 2011-036A', 'TYPE / SERIAL NO'),
+  tagged('G01', 'START OF FREQUENCY'),
+  tagged('G01', 'END OF FREQUENCY'),
+  tagged('', 'END OF ANTENNA'),
+  tagged('', 'END OF FILE'),
+].join('\n');
+
+const occupationWithAntenna = (marker: string, antennaModel: string): OccupationEntry => ({
+  meta: { ...stationFile(marker, 30), marker, antennaModel },
+  epochCount: 120,
+  fileName: `${marker}.06o`,
+  bytes: new Uint8Array([1, 2, 3]),
+});
+
+const navEntry = (name: string): RawFileEntry => ({
+  fileName: name,
+  bytes: new Uint8Array([9]),
+  text: 'nav',
+  sha256: `sha-${name}`,
+});
+
+const starGraph = (): SessionGraph => ({
+  kind: 'STAR',
+  markers: ['A', 'B', 'C'],
+  edges: ['B', 'C'].map((to) => ({
+    from: 'A',
+    to,
+    deltaX: 0,
+    deltaY: 0,
+    deltaZ: 0,
+    covariance: { xx: 0, xy: 0, xz: 0, yy: 0, yz: 0, zz: 0 },
+    baseObsSha: 'sha-A',
+    roverObsSha: `sha-${to}`,
+    dependencyGroup: 'g1',
+    stochastic: SESSION_STOCHASTIC_FREEZE,
+  })),
+  provenance: ['STAR hub=A'],
+  stochastic: SESSION_STOCHASTIC_FREEZE,
+});
+
+describe('ANTEX subset session wiring', () => {
+  it('generates one cached subset across edges and records hashes', async () => {
+    const cache = createAntexSubsetCache();
+    const occupations = [
+      occupationWithAntenna('A', 'TRM59800.00 NONE'),
+      occupationWithAntenna('B', 'LEIAR25.R4 LEIT'),
+      occupationWithAntenna('C', 'TRM59800.00 NONE'),
+    ];
+    const plan = await prepareAntexSubset({
+      sourceText: ANTEX_SOURCE,
+      occupations,
+      validAt: '2024-01-01T00:00:00.000Z',
+      cache,
+    });
+    expect(plan.warning).toBeNull();
+    expect(plan.result?.receiverSerials).toEqual(['LEIAR25.R4 LEIT', 'TRM59800.00 NONE']);
+    // Repeat preparation reuses the cached instance (subset generated once).
+    const again = await prepareAntexSubset({
+      sourceText: ANTEX_SOURCE, occupations, validAt: '2024-01-01T00:00:00.000Z', cache,
+    });
+    expect(again.result).toBe(plan.result);
+
+    const specs = buildSessionEdgeSpecs({
+      graph: starGraph(),
+      occupations,
+      nav: [navEntry('nav.06n')],
+      sp3: null,
+      options: DEFAULT_RAW_OPTIONS,
+      windowStart: '2024-01-01T00:00:00.000Z',
+      windowStop: '2024-01-01T01:00:00.000Z',
+      resolvedInterval: 30,
+      antex: plan.result,
+    });
+    expect(specs).toHaveLength(2);
+    for (const spec of specs) {
+      expect(spec.job.options?.antexSubset?.subsetSha256).toBe(plan.result!.subsetSha256);
+      expect(spec.job.options?.antexSubset?.sourceSha256).toBe(plan.result!.sourceSha256);
+    }
+    // Cache hit across edges: every job shares the same subset bytes object.
+    expect(specs[0]!.job.options?.antexSubset?.bytes)
+      .toBe(specs[1]!.job.options?.antexSubset?.bytes);
+
+    const processed = buildProcessedSession({
+      graph: starGraph(),
+      occupations,
+      markers: ['A', 'B', 'C'],
+      stationFiles: [stationFile('A', 30), stationFile('B', 15), stationFile('C', 30)],
+      baselines: [baseline('A', 'B', 'FIXED'), baseline('A', 'C', 'FIXED')],
+      options: DEFAULT_RAW_OPTIONS,
+      windowStart: '2024-01-01T00:00:00.000Z',
+      windowStop: '2024-01-01T01:00:00.000Z',
+      windowExplicit: false,
+      intervalResolved: 30,
+      treePolicy: 'STAR',
+      antennaAssessment: partialInput().antennaAssessment,
+      base: 'A',
+      obsSha256: ['sha-A', 'sha-B', 'sha-C'],
+      navSha256: ['sha-nav.06n'],
+      sp3: null,
+      failedCount: 0,
+      antex: plan.result,
+    });
+    expect(processed?.provenance.antexSourceSha256).toBe(plan.result!.sourceSha256);
+    expect(processed?.provenance.antexSubsetSha256).toBe(plan.result!.subsetSha256);
+  });
+
+  it('maps a missing identity to a PARTIAL warning, never a throw', async () => {
+    const plan = await prepareAntexSubset({
+      sourceText: ANTEX_SOURCE,
+      occupations: [occupationWithAntenna('A', 'NOPE.X NONE'), occupationWithAntenna('B', '')],
+      validAt: '2024-01-01T00:00:00.000Z',
+    });
+    expect(plan.result).toBeNull();
+    expect(plan.warning).toMatch(/ANTENNA CALIBRATION INCOMPLETE/);
+
+    // Legacy path stays byte-identical: no antexSubset key on the job options.
+    const specs = buildSessionEdgeSpecs({
+      graph: starGraph(),
+      occupations: [occupationWithAntenna('A', ''), occupationWithAntenna('B', ''), occupationWithAntenna('C', '')],
+      nav: [navEntry('nav.06n')],
+      sp3: null,
+      options: DEFAULT_RAW_OPTIONS,
+      windowStart: '2024-01-01T00:00:00.000Z',
+      windowStop: '2024-01-01T01:00:00.000Z',
+      resolvedInterval: 30,
+    });
+    expect(specs).toHaveLength(2);
+    for (const spec of specs) {
+      expect('antexSubset' in (spec.job.options ?? {})).toBe(false);
+    }
   });
 });

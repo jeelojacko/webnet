@@ -20,6 +20,7 @@ import {
   sessionIdentity,
   validateIntakeSize,
 } from '../../engine/gnssRawSessionModel';
+import { createAntexSubsetCache, type GnssAntexSubsetResult } from '../../engine/gnssAntexSubset';
 import {
   reopenRawSession,
   type ProcessedRawGnssSession,
@@ -40,6 +41,7 @@ import {
   durationText,
   parseManualPairs,
   parseOccupations,
+  prepareAntexSubset,
   type OccupationEntry,
 } from './GnssRawSessionPanel.utils';
 
@@ -53,7 +55,11 @@ export const GnssRawSessionPanel: React.FC<PanelProps> = ({ onRestart }) => {
   const [obs, setObs] = useState<RawFileEntry[]>([]);
   const [nav, setNav] = useState<RawFileEntry[]>([]);
   const [sp3, setSp3] = useState<RawFileEntry | null>(null);
+  const [antexFile, setAntexFile] = useState<RawFileEntry | null>(null);
   const [antexLabel, setAntexLabel] = useState('');
+  const [antexResult, setAntexResult] = useState<GnssAntexSubsetResult | null>(null);
+  const [antexWarning, setAntexWarning] = useState<string | null>(null);
+  const antexCache = useMemo(() => createAntexSubsetCache(), []);
   const [options, setOptions] = useState<RawBaselineOptions>(DEFAULT_RAW_OPTIONS);
   const [policy, setPolicy] = useState<TreePolicy>('STAR');
   const [base, setBase] = useState('');
@@ -134,13 +140,28 @@ export const GnssRawSessionPanel: React.FC<PanelProps> = ({ onRestart }) => {
   };
   const blockReason = blocker();
 
-  const run = (): void => {
+  const run = async (): Promise<void> => {
     if (blockReason || !graph || !windowResult || !windowResult.ok || !intervalPlan?.resolved) return;
+    let antex: GnssAntexSubsetResult | null = null;
+    if (antexFile) {
+      const plan = await prepareAntexSubset({
+        sourceText: antexFile.text,
+        occupations,
+        validAt: windowResult.start,
+        cache: antexCache,
+      });
+      antex = plan.result;
+      setAntexResult(plan.result);
+      setAntexWarning(plan.warning);
+    } else {
+      setAntexResult(null);
+      setAntexWarning(null);
+    }
     setStarted(true);
     session.start(sessionIdentity(occupations), buildSessionEdgeSpecs({
       graph, occupations, nav, sp3, options,
       windowStart: windowResult.start, windowStop: windowResult.stop,
-      resolvedInterval: intervalPlan.resolved,
+      resolvedInterval: intervalPlan.resolved, antex,
     }));
   };
 
@@ -157,7 +178,7 @@ export const GnssRawSessionPanel: React.FC<PanelProps> = ({ onRestart }) => {
       windowExplicit: explicitWindow, intervalResolved: intervalPlan.resolved,
       treePolicy: policy, antennaAssessment: antennas, base,
       obsSha256: obs.map((e) => e.sha256), navSha256: nav.map((e) => e.sha256),
-      sp3, failedCount: session.failed.length,
+      sp3, failedCount: session.failed.length, antex: antexResult,
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [settled]);
@@ -223,6 +244,34 @@ export const GnssRawSessionPanel: React.FC<PanelProps> = ({ onRestart }) => {
             className="mt-1 block w-full text-xs text-slate-400" />
           {sp3 && <span className="block text-slate-400">{sp3.fileName}{' '}
             <button type="button" onClick={() => setSp3(null)} className="underline">remove</button></span>}
+        </label>
+        <label className="block">
+          ANTEX antenna calibration (optional)
+          <input type="file" data-testid="raw-session-antex-input" accept=".atx,.txt"
+            onChange={(e) => {
+              const f = e.target.files?.[0];
+              if (f) void readFileEntry(f).then((entry) => {
+                setAntexFile(entry);
+                if (antexLabel === '') setAntexLabel(entry.fileName);
+              }, (err: unknown) =>
+                setFileError(err instanceof Error ? err.message : String(err)));
+              e.target.value = '';
+            }}
+            className="mt-1 block w-full text-xs text-slate-400" />
+          {antexFile && <span className="block text-slate-400">{antexFile.fileName}{' '}
+            <button type="button" onClick={() => { setAntexFile(null); setAntexResult(null); setAntexWarning(null); }}
+              className="underline">remove</button></span>}
+          {antexResult && (
+            <span data-testid="raw-session-antex-info" className="block text-slate-400">
+              subset {antexResult.subsetSha256.slice(0, 16)}… · {antexResult.subsetSizeBytes} bytes ·
+              {' '}{antexResult.receiverSerials.join(', ') || 'satellites only'}
+            </span>
+          )}
+          {antexWarning && (
+            <span data-testid="raw-session-antex-warning" className="block text-amber-300">
+              {antexWarning}
+            </span>
+          )}
         </label>
         <label className="block">
           ANTEX label (provenance only, optional)
@@ -340,12 +389,13 @@ export const GnssRawSessionPanel: React.FC<PanelProps> = ({ onRestart }) => {
           {antennas.overall !== 'COMPLETE' && (
             <div data-testid="raw-session-antenna-banner" className="text-xs text-amber-300">
               Antenna calibration {antennas.overall}: formal precision only, nothing substituted.
+              {antexWarning && <span className="block">{antexWarning}</span>}
             </div>
           )}
         </div>
       )}
       <div className="flex items-center gap-2">
-        <button type="button" data-testid="raw-session-process" onClick={run}
+        <button type="button" data-testid="raw-session-process" onClick={() => void run()}
           disabled={blockReason != null || (started && !settled)}
           className="px-2 py-1 text-xs border border-slate-600 rounded hover:bg-slate-700 disabled:opacity-40">
           Process raw session
