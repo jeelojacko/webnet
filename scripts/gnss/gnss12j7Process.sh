@@ -62,6 +62,9 @@ run_one() { # rover base doy eph ts te tag (ts/te empty = full day)
   # so concurrent appends stay deterministic.
   echo -e "\$id\\t\$(( \$(date +%s) - t0 ))\\t\$rc" >> "\$OUT/times.worker.\$\$.tsv"
   echo "DONE \$id rc=\$rc"
+  # Fail closed: propagate rnx2rtkp failure — a trailing successful echo would
+  # otherwise mask rc and xargs would report success (ALL_DONE on failure).
+  return \$rc
 }
 EOF
 

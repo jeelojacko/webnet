@@ -178,7 +178,9 @@ def tstats(Ts, label):
 # 2. T per duration class, by length, FIT/VAL (prec, FIXED, within-pair).
 # PRIMARY pools are MATCHED PAIRS: greedy chronological pairing within each
 # (pair,dur,eph[,split]) cell — sort by (doy,tag), pair adjacent solutions.
-# Each solution appears in AT MOST ONE contrast per pool -> independent trials.
+# Each solution appears in AT MOST ONE contrast per pool (matched pairs:
+# within-baseline no-reuse; cross-baseline sessions share anchor obs —
+# correlated, characterization only).
 # ALL-PAIRS contrasts are kept ONLY as a pseudoreplicated diagnostic appendix
 # (each solution reused many times; n inflated) and MUST NOT be cited as evidence.
 print('--- T pools (prec FIXED, within-pair, matched) ---')

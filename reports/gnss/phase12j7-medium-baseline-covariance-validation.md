@@ -149,7 +149,9 @@ Effective n is stated everywhere; all-pairs contrasts are pseudoreplicated
 | 1h STAR FIT | 18 | 1042 | 701 | 4318 | 4318 | 100% | 100% |
 | 1h STAR VAL | 12 | 1194 | 914 | 4301 | 4301 | 100% | 100% |
 
-Raw formals rejected at ~100% on independent contrasts: the processor's internal
+Raw formals rejected at ~100% on matched-pair contrasts (within-baseline
+no-reuse; cross-baseline sessions share anchor obs — correlated per §11,
+characterization only): the processor's internal
 precision is not survey weighting (consistent with 12J.6 short-baseline pattern,
 larger scale here). Underpowered per-cell n (6–18) cannot resolve duration-specific
 scales — no per-duration claim is made.
@@ -169,8 +171,9 @@ TGRN-WARE×VOER-WARE (share WARE): X 0.69 / Y 0.89 / Z 0.61;
 TGRN-WARE×WERB-WARE: 0.21/0.63/0.45; VOER-WARE×WERB-WARE: 0.55/0.56/0.73.
 Legs sharing a rover show weak/negative correlation (e.g. TGRN-WARE×TGRN-VOER:
 −0.51/−0.70/−0.75). Dependence is real and session-structured; all cross-baseline
-same-window pairs are OUT of the independent T pools by construction (pools are
-within-pair, disjoint windows only).
+same-window pairs are OUT of the matched T pools by construction (pools are
+within-pair, disjoint windows only; cross-baseline sessions sharing anchor
+obs remain correlated per above).
 
 ## 12. Independent loops (characterization only)
 
@@ -201,7 +204,7 @@ a ppm law — feeds the CL rejection below.
 
 ## 14. Candidates (fit FIT-matched only; frozen; VAL-matched held out)
 
-- F (raw formal): rejected by §10 (≈100% exceedance on independent contrasts).
+- F (raw formal): rejected by §10 (≈100% exceedance on matched-pair contrasts).
 - S (single scalar): **s = 17.208 → 17.2** from FIT-matched median T=700.6 (n=18).
   FIT-matched scaled: med 2.37, exc95 11.1% (2/18), exc99 5.6% (1/18).
   VAL-matched: med 3.09, exc95 8.3% (1/12), exc99 8.3% (1/12).
@@ -255,7 +258,7 @@ inflated to hide bias** (S fit uses reference-free pairwise T only).
 FIXED ratios: min 3.0 (the AR validation threshold — by construction), med 6.1,
 max 152.8. FLOAT ratios 1.1–2.4. FIXED≠guaranteed: raw T up to ~10⁴ occurs among
 ratio-fixed solutions, so a conservative ratio gate alone does not certify agreement;
-the calibrated covariance (S) is the backstop, not the ratio.
+the characterization-only scale S (not certified) is the backstop, not the ratio.
 
 ## 19. Performance
 
@@ -291,8 +294,9 @@ F held-out done, no refitting (§15) ✓ · G no TBC fit ✓ ·
 H bias separated, not absorbed (§17) ✓ · I graph tested on 4 independent windows,
 verdict returned (§16) ✓ · J ANTEX bound retained (§20) ✓ · K direct ingest off ✓ ·
 L no adjustment/math changes (no `src/` diff) ✓ · M broadcast comparison bounded,
-same-window (§10) ✓ · N dependence measured, pools dependence-aware (matched +
-within-pair only, §10–11) ✓ · O length dependence raw-first,
+same-window (§10) ✓ · N dependence measured (§11); matched-pair PARTIAL — within-baseline no-reuse,
+cross-baseline sessions share anchor obs (correlated, characterization only),
+§10–11 PARTIAL · O length dependence raw-first,
 CL rejected with reason (§13–14) ✓ · P ratio gate assessed, FIXED≠guaranteed (§18) ✓ ·
 Q performance measured, PAR=2 recommended (§19) ✓ · R licenses + DOIs recorded (§4) ✓ ·
 S antenna type-mean proof (§5) ✓ · T completeness + DOY127 blocker documented (§6) ✓ ·
@@ -308,6 +312,5 @@ evidence-only prior (matched n=30 total underpowered; VAL loop n=2 record-only).
   and duration-specific scales.
 - SESSION_GRAPH: **SPANNING_TREE_SUFFICIENT_INITIAL** (survives 4-window
   independent-data check; DOY126 gap documented).
-- SESSION_GRAPH: **SPANNING_TREE_SUFFICIENT_INITIAL**.
 - ANTEX: **retain 2.36MB subset bound**.
 - DIRECT_INGEST: **NO** (evidence stays offline; no production ingest path touched).

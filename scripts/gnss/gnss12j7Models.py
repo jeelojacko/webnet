@@ -146,7 +146,7 @@ for p1, p2, why in (('TGRN-WARE', 'VOER-WARE', 'share WARE+window'), ('TGRN-WARE
                     ('VOER-WARE', 'WERB-WARE', 'share WARE+window'), ('TGRN-VOER', 'VOER-WERB', 'share VOER+window'),
                     ('TGRN-WARE', 'TGRN-VOER', 'share TGRN+window'), ('TGRN-WARE', 'TGRN-WERB', 'share TGRN+window')):
     print(f'{p1} x {p2} ({why}): {xcorr(p1, p2)}')
-res['dependence'] = 'see stdout (kept OUT of independent T pools by construction: pools are within-pair only)'
+res['dependence'] = 'see stdout (kept OUT of matched T pools by construction: pools are within-pair only; cross-baseline sessions share anchor obs — correlated, characterization only)'
 
 # 6. candidates on FIT 1h STAR prec; freeze; evaluate on VAL (+legs/loops)
 print('--- candidates (fit FIT 1h STAR prec, freeze, validate VAL) ---')
