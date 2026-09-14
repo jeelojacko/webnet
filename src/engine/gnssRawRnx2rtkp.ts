@@ -315,7 +315,14 @@ export const buildRnx2rtkpArgs = (
     if (job.options?.precise === true && job.sp3) confLines.push('pos1-sateph=precise');
     // 12J.9 fix: rinexhead antenna position is load-bearing — without it
     // every epoch solves Q=0 (proven: 0/13 vs 13/13 solution epochs natively).
-    if (antex) confLines.push(`file-rcvantfile=${ANTEX_NAME}`, `file-satantfile=${ANTEX_NAME}`, 'ant2-postype=rinexhead');
+    // 12J.10: BOTH endpoints resolve from their own RINEX headers, and -r
+    // is omitted for ANTEX jobs — rnx2rtkp loads -k in a first argv pass
+    // and applies -r in a second pass that resets refpos=rovpos=XYZ,
+    // which silently voided ant2-postype=rinexhead in 12J.9 production
+    // invocations (the native proof omitted -r, so it never saw this).
+    // Header positions anchor both ends; the reported vector is still
+    // solution minus the base header approx, so the origin is unchanged.
+    if (antex) confLines.push(`file-rcvantfile=${ANTEX_NAME}`, `file-satantfile=${ANTEX_NAME}`, 'ant1-postype=rinexhead', 'ant2-postype=rinexhead');
     mod.FS.writeFile(NAMES.conf, new TextEncoder().encode(`${confLines.join('\n')}\n`));
     args.push('-k', NAMES.conf);
     if (job.options?.precise === true && job.sp3) {
@@ -324,6 +331,7 @@ export const buildRnx2rtkpArgs = (
       allInputs.push(p);
     }
   }
+  if (antex) return [...args, '-o', NAMES.out, ...allInputs];
   return [...args, '-o', NAMES.out, '-r', ...job.baseXyz.map(String), ...allInputs];
 };
 

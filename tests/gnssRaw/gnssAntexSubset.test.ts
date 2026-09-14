@@ -170,7 +170,16 @@ describe('rnx2rtkp ANTEX staging', () => {
     const conf = new TextDecoder().decode(mod.files.get('/work/prec.conf') as Uint8Array);
     expect(conf).toContain('file-rcvantfile=/work/antex.atx');
     expect(conf).toContain('file-satantfile=/work/antex.atx');
+    // 12J.10 §7: both endpoints resolve antenna position/type from their
+    // own RINEX headers — never one-sided.
+    expect(conf).toContain('ant1-postype=rinexhead');
     expect(conf).toContain('ant2-postype=rinexhead');
+    // 12J.10: -r resets refpos=rovpos=XYZ in rnx2rtkp's second argv pass,
+    // silently voiding the conf postypes — so ANTEX jobs must omit it.
+    expect(withAntex).not.toContain('-r');
+    // Non-ANTEX jobs keep the legacy -r anchor byte-identical.
+    expect(legacy).toContain('-r');
+    expect(legacy.slice(legacy.indexOf('-r') + 1, legacy.indexOf('-r') + 4)).toEqual(['1', '2', '3']);
     expect(mod.files.get('/work/antex.atx')).toEqual(new Uint8Array([7]));
   });
 

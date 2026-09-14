@@ -320,7 +320,8 @@ describe('gnss-raw driver + worker protocol (wasm tier, synthetic)', () => {
         },
       }), ['/work/rover.obs', '/work/base.obs']);
       const conf = new TextDecoder().decode(written.get('/work/prec.conf')!);
-      expect(conf).toContain('ant2-postype');
+      expect(conf).toContain('ant1-postype=rinexhead');
+      expect(conf).toContain('ant2-postype=rinexhead');
     }
   });
 
