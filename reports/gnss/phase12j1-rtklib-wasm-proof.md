@@ -140,4 +140,4 @@ evidence (stochastic parity, calibrated Helmert, ANTEX leg) — not argument.
 | P | F1 native formals fail closed (§40) | PASS | F1 gate message |
 | Q | F2 S32 5-net gate recorded (§40) | PASS | F2 gate message |
 | R | MVP table + readiness decision (§§41-42) | PASS | WITH-RESTRICTIONS + 6 restrictions |
-| S | Report committed, no vendor data, pushed (§§43-44) | PASS | this file + commit SHA below |
+| S | Report committed, no vendor data, pushed (§§43-44) | PASS | this file on branch HEAD |

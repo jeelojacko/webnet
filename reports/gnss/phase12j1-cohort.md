@@ -44,7 +44,7 @@ Every leg: TBC solution type Fixed, RTKLIB holds FIX ≥95% of epochs
 established golden values exactly (90/93, 22.3/28.6, 22.6 mm).
 
 Covariance finding (one-liner): on all five legs the RTKLIB formal
-sigmas are ~4–10× tighter than the TBC aposteriori sigmas (trace ratio
+sigmas are ~4–17× tighter than the TBC aposteriori sigmas (worst leg σy 16.9×; trace ratio
 0.00–0.08) with the same elongation axis family — RTKLIB
 under-disperses relative to TBC, so TBC covariances stay the
 conservative weighting choice; no leg justifies shrinking the
