@@ -111,17 +111,22 @@ export const GnssRawSessionPanel: React.FC<PanelProps> = ({ onRestart }) => {
   const [replaceError, setReplaceError] = useState<Readonly<Record<string, string | null>>>({});
   const session = useGnssRawSession(2);
 
+  // In-flight read counter: overlapping file-picker selections each pass
+  // the pre-read bound against staged + already-pending files, so the
+  // memory bound holds absolutely, not just per selection event.
+  const pendingRef = useRef(0);
   const addFiles = async (files: File[], kind: 'obs' | 'nav'): Promise<void> => {
     setFileError(null);
     // Pre-read bounds: reject oversized selections before allocating bytes.
-    if (kind === 'obs' && obs.length + files.length > 20) {
+    if (kind === 'obs' && obs.length + pendingRef.current + files.length > 20) {
       setFileError('Session bound: max 20 observation files.');
       return;
     }
-    if (kind === 'nav' && nav.length + files.length > 4) {
+    if (kind === 'nav' && nav.length + pendingRef.current + files.length > 4) {
       setFileError('Session bound: max 4 NAV files.');
       return;
     }
+    pendingRef.current += files.length;
     try {
       const entries: RawFileEntry[] = [];
       for (const f of files) entries.push(await readFileEntry(f));
@@ -129,6 +134,8 @@ export const GnssRawSessionPanel: React.FC<PanelProps> = ({ onRestart }) => {
       else setNav((prev) => [...prev, ...entries]);
     } catch (e) {
       setFileError(e instanceof Error ? e.message : String(e));
+    } finally {
+      pendingRef.current -= files.length;
     }
   };
 
@@ -252,7 +259,7 @@ export const GnssRawSessionPanel: React.FC<PanelProps> = ({ onRestart }) => {
   const settled = started && Object.values(session.snapshot).every(
     (s) => s !== 'queued' && s !== 'active',
   );
-  const locked = started && !settled;
+  const locked = (started && !settled) || preparing;
   // Final assembly reads ONLY the frozen snapshot — never live intake.
   const processed: ProcessedRawGnssSession | null = useMemo(() => {
     void snapRev;
