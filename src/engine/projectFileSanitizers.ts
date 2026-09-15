@@ -14,6 +14,11 @@ import {
   type ProjectManifestFileEntry,
   type ProjectManifestWorkspaceState,
 } from './projectWorkspace';
+import type { GnssMultifilePersistedV1 } from './gnssMultifileProject';
+import {
+  GNSS_MULTIFILE_SETTINGS_KEY,
+  deserializeGnssMultifilePersisted,
+} from './gnssMultifileProject';
 
 export const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === 'object' && value != null && !Array.isArray(value);
@@ -70,6 +75,21 @@ export const mergeKnownKeys = (
     next[key] = defaultValue;
   });
   return next;
+};
+
+/**
+ * Phase 13F B1: mergeKnownKeys keeps only primitive defaults-bag keys, so
+ * the nested gnssMultifile record is re-attached here via its own
+ * sanitizer. Absent when the candidate carries no gnssMultifile record.
+ */
+export const attachGnssMultifileSettings = (
+  settings: Record<string, unknown>,
+  candidate: unknown,
+): void => {
+  if (!isRecord(candidate)) return;
+  if (!isRecord(candidate[GNSS_MULTIFILE_SETTINGS_KEY])) return;
+  const sanitized: GnssMultifilePersistedV1 = deserializeGnssMultifilePersisted(candidate);
+  settings[GNSS_MULTIFILE_SETTINGS_KEY] = sanitized;
 };
 
 export const sanitizeInstrumentLibrary = (

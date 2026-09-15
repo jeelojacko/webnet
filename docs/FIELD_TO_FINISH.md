@@ -155,11 +155,20 @@ The Field-to-Finish tab (`SurveyCadFieldToFinishPanel`, hosted in
 `src/engine/fieldToFinish/linkedSync.ts` records WHICH source + catalog
 revision produced the current F2F linework (`FieldToFinishLink` on project
 metadata: generation run id, catalog id/revision, source kind
-`adjustment` | `coordinate-import`, composite `sourceRevision`
-`<inputFingerprint>:<settingsFingerprint>`, source record ids, station
-ids, generated entity/label ids, `syncPolicy: 'manual'`, `status`).
-Limitation: the revision identifies adjustment INPUTS+SETTINGS, not the
-result — identical inputs under a different solver version read CURRENT.
+`adjustment` | `coordinate-import`, authoritative `sourceRevision`,
+optional provenance (`inputFingerprint`, `settingsFingerprint`,
+`resultFingerprint`), source record ids, station ids, generated
+entity/label ids, `syncPolicy: 'manual'`, `status`). New adjustment links
+stamp the canonical result fingerprint (`adjustment-result/v1`, see
+`src/engine/adjustmentResultFingerprint.ts`: sorted station ids + x/y/h +
+fixed/free/lost/constraintMode, dimensional mode, sorted sideshot
+from/to/mode/coords; logs/stats/QC excluded) as `sourceRevision`, keeping
+input/settings fingerprints as provenance. Legacy links still carry the
+`<inputFingerprint>:<settingsFingerprint>` composite: they fail closed
+against result-fingerprint snapshots (shape mismatch →
+COORDINATES_CHANGED, never a silent CURRENT). Residual limitation:
+legacy-composite links still identify INPUTS+SETTINGS only — identical
+inputs under a different solver version read CURRENT until relinked.
 
 Sync states (`FieldToFinishSyncStatus`, classifier precedence UNLINKED >
 MISSING_SOURCE > MANUAL_CONFLICT > CATALOG_CHANGED >

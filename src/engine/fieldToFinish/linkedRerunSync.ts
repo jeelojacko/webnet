@@ -146,6 +146,8 @@ export interface AdjustmentRerunSyncInput {
   result: AdjustmentResult | null;
   inputFingerprint?: string;
   settingsFingerprint?: string;
+  /** Authoritative revision for the link; preferred over the legacy input:settings composite. */
+  resultFingerprint?: string;
   /** Current catalog version; mismatch vs link stamps CATALOG_CHANGED. */
   catalogRevision?: string;
   /** Current feature source-record ids; mismatch stamps FEATURE_METADATA_CHANGED. */
@@ -217,9 +219,21 @@ export const applyAdjustmentRerunToLinkedF2f = (
   if (!result || !result.success) return emptySyncOutcome(project, link.status);
   if (link.sourceKind !== 'adjustment') return emptySyncOutcome(project, link.status);
   const authoritative = authoritativeCoordinatesOf(result);
-  const revision = input.inputFingerprint !== undefined || input.settingsFingerprint !== undefined
-    ? buildSourceRevision({ inputFingerprint: input.inputFingerprint, settingsFingerprint: input.settingsFingerprint })
+  const revision = input.resultFingerprint !== undefined
+      || input.inputFingerprint !== undefined
+      || input.settingsFingerprint !== undefined
+    ? buildSourceRevision({
+      inputFingerprint: input.inputFingerprint,
+      settingsFingerprint: input.settingsFingerprint,
+      resultFingerprint: input.resultFingerprint,
+    })
     : undefined;
+  const provenancePatch = {
+    ...(revision !== undefined ? { sourceRevision: revision } : {}),
+    ...(input.inputFingerprint !== undefined ? { inputFingerprint: input.inputFingerprint } : {}),
+    ...(input.settingsFingerprint !== undefined ? { settingsFingerprint: input.settingsFingerprint } : {}),
+    ...(input.resultFingerprint !== undefined ? { resultFingerprint: input.resultFingerprint } : {}),
+  };
   const index = buildStationEntityIndex(project);
   const affectedOf = (stations: readonly string[]): string[] => {
     const ids = new Set<string>();
@@ -287,13 +301,21 @@ export const applyAdjustmentRerunToLinkedF2f = (
     // Manual overrides still surface: a MANUAL_OVERRIDE entity diverges from
     // what F2F would generate even when coordinates match, so the link must
     // not read CURRENT. DETACHED stays silent (never counted).
+    // Legacy fail-closed: a legacy link (no stamped resultFingerprint)
+    // carries the input:settings composite, which is a different shape from
+    // a result fingerprint — a zero coordinate delta against live geometry
+    // proves nothing about the solved result, so a rerun that supplies a
+    // resultFingerprint stamps COORDINATES_CHANGED instead of silently
+    // preserving CURRENT. Higher-precedence existing/manual states
+    // (MANUAL_CONFLICT and structural staleness) are preserved.
     const manualConflict = hasLinkedManualOverrides(project.entities, link.stationIds);
-    const status: FieldToFinishSyncStatus = manualConflict ? 'MANUAL_CONFLICT' : link.status;
+    let status: FieldToFinishSyncStatus = manualConflict ? 'MANUAL_CONFLICT' : link.status;
+    const legacyResultUpgrade = input.resultFingerprint !== undefined && link.resultFingerprint === undefined;
+    if (!manualConflict && legacyResultUpgrade && (status === 'CURRENT' || status === 'COORDINATES_CHANGED')) {
+      status = 'COORDINATES_CHANGED';
+    }
     const stamped = revision !== undefined || manualConflict
-      ? stampFieldToFinishLink(project, {
-        status,
-        ...(revision !== undefined ? { sourceRevision: revision } : {}),
-      })
+      ? stampFieldToFinishLink(project, { status, ...provenancePatch })
       : project;
     return emptySyncOutcome(stamped, stamped.metadata.fieldToFinishLink?.status ?? 'CURRENT');
   }
@@ -316,10 +338,7 @@ export const applyAdjustmentRerunToLinkedF2f = (
       : link.status === 'CURRENT' || link.status === 'COORDINATES_CHANGED'
         ? 'CURRENT'
         : link.status;
-  const stamped = stampFieldToFinishLink(applied.project, {
-    status,
-    ...(revision !== undefined ? { sourceRevision: revision } : {}),
-  });
+  const stamped = stampFieldToFinishLink(applied.project, { status, ...provenancePatch });
   return {
     project: stamped,
     status,
@@ -405,13 +424,14 @@ export const resolveFieldToFinishCoordinates = (
  */
 export const applySuccessfulAdjustmentRunToDrawing = (
   current: CadDrawingDocument | null,
-  info: { result: AdjustmentResult; inputFingerprint: string; settingsFingerprint: string },
+  info: { result: AdjustmentResult; inputFingerprint: string; settingsFingerprint: string; resultFingerprint?: string },
 ): CadDrawingDocument | null => {
   if (!current || !current.project.metadata.fieldToFinishLink) return current;
   const outcome = applyAdjustmentRerunToLinkedF2f(current.project, {
     result: info.result,
     inputFingerprint: info.inputFingerprint,
     settingsFingerprint: info.settingsFingerprint,
+    ...(info.resultFingerprint !== undefined ? { resultFingerprint: info.resultFingerprint } : {}),
   });
   if (outcome.project === current.project) return current;
   return cloneCadDrawingDocument({

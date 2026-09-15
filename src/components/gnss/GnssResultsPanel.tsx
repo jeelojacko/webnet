@@ -18,6 +18,8 @@ import {
 } from '../../engine/gnssBaselineReport';
 import { saveBrowserTextFile } from '../../engine/browserFileIo';
 import type { GnssRunOutcome } from '../../hooks/useGnssBaselineWorker';
+import { GnssMultifileReviewSection } from './GnssMultifileReview';
+import { sourceOfBaseline, type GnssMultifileReviewInfo } from './GnssMultifileReview.utils';
 
 const WHAT_IF_BASELINE_LIMIT = 25;
 // ponytail: relative precision deferred — baseline-detail "relative to station" selector
@@ -48,11 +50,19 @@ const covToString = (cov: { xx: number; xy: number; xz: number; yy: number; yz: 
 interface GnssResultsPanelProps {
   input: GnssBaselineAdjustInput;
   outcome: GnssRunOutcome;
+  /** Multifile review context (B2): source filter + trace + warnings, display only. */
+  review?: GnssMultifileReviewInfo;
+  /** Extra text lines appended to the text export (multifile block). */
+  reportSuffix?: string[];
+  /** Extra top-level fields merged into the JSON export (multifile block). */
+  jsonExtra?: Record<string, unknown>;
 }
 
-export const GnssResultsPanel: React.FC<GnssResultsPanelProps> = ({ input, outcome }) => {
+export const GnssResultsPanel: React.FC<GnssResultsPanelProps> = ({ input, outcome, review, reportSuffix, jsonExtra }) => {
   const [selectedBaseline, setSelectedBaseline] = useState<number | null>(null);
+  const [sourceFilter, setSourceFilter] = useState<string | null>(null);
   const { result } = outcome;
+  const effectiveFilter = review ? sourceFilter : null;
 
   const report: GnssBaselineReport = useMemo(() => {
     const loops = computeGnssLoopClosures(input.baselines);
@@ -80,6 +90,19 @@ export const GnssResultsPanel: React.FC<GnssResultsPanelProps> = ({ input, outco
     );
     return { ...built, connectedComponents: loops.componentCount, cycleRank: loops.cycleRank };
   }, [input, result]);
+
+  // Review-only source filter: narrows the displayed baseline table, never
+  // the solve or the exports. Provenance is parallel to composed baseline
+  // ids (composer renumbers 1..n in order; report sorts by baselineId).
+  const visibleBaselines = useMemo(
+    () =>
+      effectiveFilter == null
+        ? report.baselines
+        : report.baselines.filter(
+            (entry) => sourceOfBaseline(review?.provenance ?? [], entry.baselineId) === effectiveFilter,
+          ),
+    [report, effectiveFilter, review],
+  );
 
   const whatIfInput: GnssBaselineAdjustInput = useMemo(
     () => (result.datumSummary ? { ...input, datumMode: 'allow-free' } : input),
@@ -147,7 +170,8 @@ export const GnssResultsPanel: React.FC<GnssResultsPanelProps> = ({ input, outco
     const stations = stationRows
       .map((row) => `${row.id} X=${row.x.toFixed(4)} Y=${row.y.toFixed(4)} Z=${row.z.toFixed(4)} ${row.fixed ? 'FIXED' : 'FREE'}`)
       .join('\n');
-    void saveBrowserTextFile('gnss-baseline-report.txt', `${renderGnssBaselineTextReport(report)}\nADJUSTED ECEF STATIONS\n${stations}\n`, [
+    const suffix = reportSuffix && reportSuffix.length > 0 ? `\n${reportSuffix.join('\n')}\n` : '';
+    void saveBrowserTextFile('gnss-baseline-report.txt', `${renderGnssBaselineTextReport(report)}\nADJUSTED ECEF STATIONS\n${stations}\n${suffix}`, [
       { description: 'Text', accept: { 'text/plain': ['.txt'] } },
     ]);
   };
@@ -155,7 +179,7 @@ export const GnssResultsPanel: React.FC<GnssResultsPanelProps> = ({ input, outco
   const handleJsonExport = (): void => {
     void saveBrowserTextFile(
       'gnss-baseline-report.json',
-      `${JSON.stringify({ report, stations: result.stations, ...(result.datumSummary ? { datumSummary: result.datumSummary } : {}), route: outcome.route, reasons: outcome.reasons }, null, 2)}\n`,
+      `${JSON.stringify({ report, stations: result.stations, ...(result.datumSummary ? { datumSummary: result.datumSummary } : {}), route: outcome.route, reasons: outcome.reasons, ...(jsonExtra ?? {}) }, null, 2)}\n`,
       [{ description: 'JSON', accept: { 'application/json': ['.json'] } }],
     );
   };
@@ -196,6 +220,10 @@ export const GnssResultsPanel: React.FC<GnssResultsPanelProps> = ({ input, outco
           </p>
         </details>
       </section>
+
+      {review && (
+        <GnssMultifileReviewSection review={review} sourceFilter={effectiveFilter} onSourceFilter={setSourceFilter} />
+      )}
 
       {datum && (
         <section aria-label="Datum definition" className="border border-sky-700 bg-sky-950/40 rounded p-3 text-xs">
@@ -280,7 +308,7 @@ export const GnssResultsPanel: React.FC<GnssResultsPanelProps> = ({ input, outco
             </tr>
           </thead>
           <tbody className="font-mono">
-            {report.baselines.map((entry) => (
+            {visibleBaselines.map((entry) => (
               <tr
                 key={entry.baselineId}
                 onClick={() => setSelectedBaseline(entry.baselineId)}

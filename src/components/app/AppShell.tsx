@@ -168,7 +168,7 @@ const AppShell = ({ controller }: AppShellProps) => {
         </button>
         <span className="text-xs text-slate-500">Processed ECEF baselines (.gvx) — separate from terrestrial flow.</span>
       </div>
-      <GnssWorkspaceModal open={isGnssWorkspaceOpen} onClose={() => setIsGnssWorkspaceOpen(false)} pendingExternalImport={pendingGnssImport} onConsumeExternalImport={() => setPendingGnssImport(null)} />
+      <GnssWorkspaceModal open={isGnssWorkspaceOpen} onClose={() => setIsGnssWorkspaceOpen(false)} pendingExternalImport={pendingGnssImport} onConsumeExternalImport={() => setPendingGnssImport(null)} projectId={projectSession?.indexRow.id} />
       <GnssRawBaselineModal open={isGnssRawOpen} onClose={() => setIsGnssRawOpen(false)} />
       <GnssRawSessionModal open={isGnssRawSessionOpen} onClose={() => setIsGnssRawSessionOpen(false)} />
       {pendingRecovery && (

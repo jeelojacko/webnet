@@ -211,6 +211,55 @@ describe('cad f2f linked rerun sync', () => {
     expect(second.project).toBe(first.project);
   });
 
+  it('fails closed: a legacy CURRENT link cannot be silently kept CURRENT by a result-fingerprinted rerun', () => {
+    // Legacy links (no stamped resultFingerprint) carry the
+    // input:settings composite — a different shape from a result
+    // fingerprint — so a zero-coordinate-delta rerun that supplies one
+    // must stamp COORDINATES_CHANGED, never silently preserve CURRENT.
+    const project = seed();
+    expect(project.metadata.fieldToFinishLink?.resultFingerprint).toBeUndefined();
+    expect(project.metadata.fieldToFinishLink?.status).toBe('CURRENT');
+    const linkRecords = project.metadata.fieldToFinishLink?.sourceRecordIds ?? [];
+    const outcome = applyAdjustmentRerunToLinkedF2f(project, {
+      result: baseResult(),
+      inputFingerprint: 'in-1',
+      settingsFingerprint: 'set-1',
+      resultFingerprint: 'fnv1a:result-1',
+      catalogRevision: '3',
+      sourceRecordIds: linkRecords,
+    });
+    expect(outcome.changed).toBe(false);
+    expect(outcome.updated).toEqual([]);
+    expect(outcome.project.entities).toEqual(project.entities);
+    expect(outcome.status).toBe('COORDINATES_CHANGED');
+    expect(outcome.project.metadata.fieldToFinishLink?.status).toBe('COORDINATES_CHANGED');
+    expect(outcome.project.metadata.fieldToFinishLink?.resultFingerprint).toBe('fnv1a:result-1');
+    expect(outcome.project.metadata.fieldToFinishLink?.sourceRevision).toBe('fnv1a:result-1');
+
+    // Higher-precedence states still win: pre-existing structural staleness
+    // is preserved, and live manual overrides still read MANUAL_CONFLICT.
+    const stale = stampFieldToFinishLink(seed(), { status: 'CATALOG_CHANGED' });
+    const preserved = applyAdjustmentRerunToLinkedF2f(stale, {
+      result: baseResult(),
+      inputFingerprint: 'in-1',
+      settingsFingerprint: 'set-1',
+      resultFingerprint: 'fnv1a:result-1',
+      catalogRevision: '3',
+      sourceRecordIds: linkRecords,
+    });
+    expect(preserved.status).toBe('CATALOG_CHANGED');
+    expect(preserved.project.metadata.fieldToFinishLink?.resultFingerprint).toBe('fnv1a:result-1');
+
+    const overridden = markFieldToFinishManualOverride(seed(), lineOf(seed()).id);
+    const conflicted = applyAdjustmentRerunToLinkedF2f(overridden, {
+      result: baseResult(),
+      inputFingerprint: 'in-1',
+      settingsFingerprint: 'set-1',
+      resultFingerprint: 'fnv1a:result-1',
+    });
+    expect(conflicted.status).toBe('MANUAL_CONFLICT');
+  });
+
   it('flags MANUAL_CONFLICT on a bit-identical rerun when manual overrides remain', () => {
     // Manually overridden line, source coordinates unchanged: zero deltas,
     // but the link must not read CURRENT.

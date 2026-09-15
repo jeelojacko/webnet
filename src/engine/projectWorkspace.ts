@@ -54,7 +54,7 @@ export const sanitizeProjectFileStorageName = (value: string): string => {
 export const buildProjectFileStoragePath = (fileId: string, name: string): string => `data/${fileId}-${sanitizeProjectFileStorageName(name)}`;
 
 export const normalizeProjectFileKind = (value: unknown, fallback: ProjectSourceFileKind = 'dat'): ProjectSourceFileKind => {
-  if (value === 'dat' || value === 'control' || value === 'notes' || value === 'report' || value === 'other') {
+  if (value === 'dat' || value === 'control' || value === 'gnss' || value === 'notes' || value === 'report' || value === 'other') {
     return value;
   }
   if (value === 'main' || value === 'include' || value === 'import') return 'dat';

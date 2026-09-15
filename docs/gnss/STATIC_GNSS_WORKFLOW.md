@@ -35,7 +35,7 @@ automatically).
 - **Reports**: text + JSON export (structured report plus adjusted ECEF
   stations, route, and reasons). Raw vs setup vs effective covariance is
   shown per baseline in expandable detail.
-- **Multi-file projects (PRODUCTION / DEFAULT ON)**: named-project runs compose compatible sources automatically (native-BL `FRAME ECEF` / `BL` text, GVX 1.0, delimited CSV against the parsed station union). Composition is post-parse only — exact frame/epoch/ellipsoid match, 1e-9 m no-averaging station merge, FIXED-wins control, every baseline retained, STRONG cross-source duplicates block — with project control overrides applied after composition and one composed solve through the unchanged dispatch. Kill switch `setGnssMultifileEnabled(false)` restores single-session behavior (OFF throws fail-closed).
+- **Multi-file projects (PRODUCTION / DEFAULT ON)**: named-project runs compose compatible sources automatically (native-BL `FRAME ECEF` / `BL` text, GVX 1.0, delimited CSV against the parsed station union). Composition is post-parse only — exact frame/epoch/ellipsoid match, 1e-9 m no-averaging station merge, FIXED-wins control, every baseline retained, STRONG cross-source duplicates block — with project control overrides applied after composition and one composed solve through the unchanged dispatch. Kill switch `setGnssMultifileEnabled(false)` restores single-session behavior (OFF throws fail-closed). Production UI: the workspace modal `Multi-file project` tab (`GnssMultifileProjectPanel` + `useGnssMultifileProject`) owns the source list, composition preview, control/datum/setup options, and posts the composed input through the existing worker route with a frozen run snapshot (never cleared by edits — any edit only marks it STALE until the next solve; superseded late results are dropped, no worker cancel since composition is synchronous). Review over the shared results panel (`GnssMultifileReview` + `.utils`, no second renderer): review-only baseline source filter, station source trace (contributing files + FIXED/FREE declarations + composed control), composition warnings/notes, and a concise multifile export block in text + JSON (project name, enabled sources + hashes in manifest order, warnings, datum mode — never file contents). Scale posture (synthetic, TS-dense main-thread dispatch; production UI posts the same input via the gnss-run worker): 5 files/~1k baselines parse ~15 ms / compose ~14 ms / solve ~566 ms / report ~13 ms; parse/compose-only 10/~10k (~182 ms total), 25/~25k (~645 ms), 50/~50k (~959 ms). Full solves at 10k+ and piling tens of thousands of baselines onto a handful of endpoint pairs stay in the manual evidence tier (dense residual covariance / quadratic duplicate-group classification — pre-existing engine characteristics, see `tests/gnssBaseline/gnssMultifilePerfSplits.test.ts`).
 
 ## NOT supported
 
@@ -101,7 +101,18 @@ automatically).
   `constrained` with no migration prompt, saved `allow-free` reopens as
   `allow-free` with identical behavior. The precomposition summary
   exposes `datumMode` + per-component `datumComponents` (constrained /
-  free, no anchors) for display.
+  free, no anchors) for display. The project tab additionally persists
+  sources + settings + the frozen run snapshot per named project
+  (`src/engine/gnssMultifilePersistence.ts`: manifest `gnss` entries +
+  embedded content + settings bag, localStorage-backed, best-effort
+  writes; corrupt documents load as empty, never crash). Review/export
+  render exclusively from the frozen snapshot; display names ride the run
+  fingerprint so a rename banners STALE. Control-stations-only CSVs keep
+  `controlStations` on the parsed entry (network stays null: numerics
+  untouched) so the station trace and `controlBySource` name the control
+  file. The 10/25/50-file scaling campaign is manual-only evidence
+  (`tests/evidence/gnssMultifileScalingEvidence.test.ts`); the agent tier
+  keeps the 5-file/~1k solve+report smoke leg.
 
 ## Notes
 

@@ -7,6 +7,7 @@ import type {
   ObservationOverride,
 } from '../types';
 import type { RunSessionOutcome } from '../engine/runSession';
+import { buildAdjustmentResultFingerprint } from '../engine/adjustmentResultFingerprint';
 import { noteUiPerfStage } from './useUiPerfMonitor';
 import {
   buildRejectedClusterProposals,
@@ -19,6 +20,12 @@ export type SuccessfulAdjustmentRunInfo = {
   result: AdjustmentResult;
   inputFingerprint: string;
   settingsFingerprint: string;
+  /**
+   * Authoritative result revision (adjustment-result/v1); the link stamps
+   * this as sourceRevision. Optional so legacy/test callers without result
+   * context still compile — absent falls back to the input:settings composite.
+   */
+  resultFingerprint?: string;
 };
 
 export type ApplyRunOutcomeContext = {
@@ -181,6 +188,7 @@ export const useAdjustmentOutcomeApplication = <TRunDiagnostics>({
           result: solved,
           inputFingerprint: context.inputFingerprint,
           settingsFingerprint: context.settingsFingerprint,
+          resultFingerprint: buildAdjustmentResultFingerprint(solved),
         });
       }
       noteUiPerfStage('applyRunOutcomeComplete');

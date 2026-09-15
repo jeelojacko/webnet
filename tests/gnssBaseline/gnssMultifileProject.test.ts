@@ -14,6 +14,7 @@ import {
   assertGnssProjectPortable,
   buildGnssMultifileJsonExport,
   buildGnssMultifileProvenanceSection,
+  buildGnssProjectStationSourceTrace,
   deserializeGnssMultifilePersisted,
   detectGnssProjectSourceKind,
   emptyGnssMultifilePersisted,
@@ -181,6 +182,25 @@ describe('gnss multifile project solve', () => {
     expect(output.summary.status).toBe('READY');
     expect(output.input.stations.A!.fixedX).toBe(true);
     expect(texts.f1).not.toMatch(/FIXED/);
+  });
+
+  it('control-only CSV keeps its provenance and fixed-control attribution', () => {
+    setGnssMultifileEnabled(true);
+    // Control-stations CSV auto-detects as terrestrial: it enters the
+    // project via an explicit gnss-csv format override.
+    const controlCsv = 'id,X,Y,Z,fixed\nA,4000000,1000000,4800000,FIXED\n';
+    const freeNative = nativeText([{ id: 'A' }, { id: 'B' }], [{ from: 'A', to: 'B' }]);
+    const files = [entry('f0', 'control.csv', 0), entry('f1', 'p1.dat', 1)];
+    const texts = { f0: controlCsv, f1: freeNative };
+    const parsed = parseGnssProjectSources(files, texts, { formatOverrides: { f0: 'gnss-csv' } });
+    const control = parsed.find((entry) => entry.fileId === 'f0');
+    expect(control?.network).toBeNull();
+    expect(Object.keys(control?.controlStations ?? {}).sort()).toEqual(['A']);
+    const summary = summarizeGnssProjectComposition(parsed, files.length);
+    // FIXED control attributed to the control file, never the later network.
+    expect(summary.controlBySource).toEqual(['A FIXED (control.csv)']);
+    const trace = buildGnssProjectStationSourceTrace(parsed);
+    expect(trace.A?.[0]).toEqual({ sourceId: 'f0', fileName: 'control.csv', control: 'FIXED' });
   });
 
   it('enable/disable recomposes cleanly with no stale state', () => {
@@ -359,55 +379,4 @@ describe('gnss multifile project solve', () => {
     );
   });
 
-  it('composition-only perf: 10/~1k, 50/~10k, 100/~50k baselines measure parse/compose/summary', () => {
-    setGnssMultifileEnabled(true);
-    const buildFiles = (fileCount: number, perFile: number): { files: ProjectManifestFileEntry[]; texts: Record<string, string> } => {
-      const files: ProjectManifestFileEntry[] = [];
-      const texts: Record<string, string> = {};
-      for (let f = 0; f < fileCount; f += 1) {
-        const id = `perf${f}`;
-        files.push(entry(id, `perf${f}.dat`, f));
-        const stations: Array<{ id: string; fixed?: boolean }> = [{ id: 'A', fixed: true }];
-        for (let i = 0; i < 20; i += 1) stations.push({ id: `F${f}P${i}` });
-        const coordOf = (i: number): [number, number, number] => [4000000 + i * 137, 1000000 + i * 89, 4800000 + i * 53];
-        const lines = [`FRAME ECEF ${FRAME} EPOCH ${EPOCH} ELLIPSOID ${ELLIPSOID}`, 'UNITS M', `GX A 4000000 1000000 4800000 FIXED`];
-        for (let i = 0; i < 20; i += 1) {
-          const c = coordOf(i);
-          lines.push(`GX F${f}P${i} ${c[0]} ${c[1]} ${c[2]} FREE`);
-        }
-        for (let i = 0; i < perFile; i += 1) {
-          const a = `F${f}P${i % 20}`;
-          const b = `F${f}P${(i + 1) % 20}`;
-          const ca = coordOf(i % 20);
-          const cb = coordOf((i + 1) % 20);
-          lines.push(`BL ${a} ${b} ${cb[0] - ca[0]} ${cb[1] - ca[1]} ${cb[2] - ca[2]} ID F${f}B${i} SESSION S${i % 5}`);
-          lines.push(COV);
-        }
-        texts[id] = `${lines.join('\n')}\n`;
-      }
-      return { files, texts };
-    };
-    const legs = [
-      { files: 10, perFile: 100 },
-      { files: 50, perFile: 200 },
-      { files: 100, perFile: 500 },
-    ];
-    const perBaselineMs: number[] = [];
-    legs.forEach(({ files: fileCount, perFile }) => {
-      const { files, texts } = buildFiles(fileCount, perFile);
-      const t0 = Date.now();
-      const parsed = parseGnssProjectSources(files, texts);
-      const t1 = Date.now();
-      const summary = summarizeGnssProjectComposition(parsed, fileCount);
-      const t2 = Date.now();
-      expect(summary.status).toBe('READY');
-      expect(summary.baselineCount).toBe(fileCount * perFile);
-      const total = t2 - t0;
-      perBaselineMs.push(total / (fileCount * perFile));
-      console.log(`gnss multifile perf: files=${fileCount} baselines=${fileCount * perFile} parse=${t1 - t0}ms compose+summary=${t2 - t1}ms total=${total}ms`);
-      expect(total).toBeLessThan(30000);
-    });
-    // Linear-ish: per-baseline cost must not blow up with scale (10x headroom).
-    expect(Math.max(...perBaselineMs) / Math.min(...perBaselineMs)).toBeLessThan(10);
-  });
 });

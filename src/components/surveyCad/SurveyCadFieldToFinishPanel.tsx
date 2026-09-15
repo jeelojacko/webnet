@@ -129,6 +129,7 @@ export const SurveyCadFieldToFinishPanel: React.FC<FieldToFinishPanelProps> = ({
         sourceKind: 'adjustment',
         inputFingerprint: adjustmentSource.inputFingerprint,
         settingsFingerprint: adjustmentSource.settingsFingerprint,
+        resultFingerprint: adjustmentSource.resultFingerprint,
       },
     });
     return { payload: built.payload, adjustedCount: points.length, total: points.length, missing: [] };

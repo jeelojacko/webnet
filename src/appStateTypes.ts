@@ -52,6 +52,7 @@ import type {
 import type { PreparedAssociatedProjectSettingsImport } from './hooks/useProjectFileWorkflow';
 import type { CadDrawingDocument } from './engine/cad/cadTypes';
 import type { PersistedSavedRunSnapshot, SolveProfile, Units } from './appRunStateTypes';
+import type { GnssMultifilePersistedV1 } from './engine/gnssMultifileProject';
 
 export type {
   PersistedSavedRunSnapshot,
@@ -219,6 +220,7 @@ export type SettingsState = {
   listingSortCoordinatesBy: ListingSortCoordinatesBy;
   listingSortObservationsBy: ListingSortObservationsBy;
   listingObservationLimit: number;
+  gnssMultifile?: GnssMultifilePersistedV1;
 };
 
 export type ParseSettings = {
