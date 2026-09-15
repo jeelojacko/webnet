@@ -5,12 +5,13 @@
  * current F2F linework so later work can detect staleness. No math,
  * no auto-sync wiring, no behavior change to regeneration.ts.
  *
- * sourceRevision is a documented composite of the existing adjustment
- * `inputFingerprint` + `settingsFingerprint`
- * (`<input>:<settings>`). Limitation: it identities the adjustment
- * INPUTS+SETTINGS, not the result — two runs with identical inputs but
- * different solver versions read CURRENT. A result hash does not exist
- * yet; add one when the solver stamps it.
+ * sourceRevision is the authoritative adjustment-result fingerprint
+ * (`adjustment-result/v1`, see `../adjustmentResultFingerprint.ts`) for
+ * links stamped with result context; older links carry the legacy composite
+ * `<inputFingerprint>:<settingsFingerprint>` (inputs+settings only — two
+ * runs with identical inputs but different solver versions read CURRENT).
+ * Legacy links fail closed: they never compare CURRENT against a
+ * result-fingerprint snapshot.
  */
 import type { CadEntity, CadProject } from '../cad/cadTypes';
 import type { FieldToFinishCadPayload, FieldToFinishProvenance } from './cadGeneration';
@@ -43,10 +44,20 @@ export interface FieldToFinishLink {
   catalogRevision: string;
   sourceKind: FieldToFinishSourceKind;
   /**
-   * Documented composite `<inputFingerprint>:<settingsFingerprint>`.
+   * Authoritative revision: the adjustment-result fingerprint
+   * (`adjustment-result/v1`) for links stamped with result context;
+   * legacy `<inputFingerprint>:<settingsFingerprint>` composite otherwise.
    * Empty string = unknown (legacy/auto-stamped without fingerprint context).
+   *
+   * Legacy-composite links NEVER compare CURRENT against a result-fingerprint
+   * snapshot (different shapes always mismatch → COORDINATES_CHANGED,
+   * fail-closed). No silent false CURRENT.
    */
   sourceRevision: string;
+  /** Provenance retained alongside the authoritative revision (all optional, additive). */
+  inputFingerprint?: string;
+  settingsFingerprint?: string;
+  resultFingerprint?: string;
   sourceRecordIds: string[];
   stationIds: string[];
   generatedEntityIds: string[];
@@ -55,12 +66,18 @@ export interface FieldToFinishLink {
   status: FieldToFinishSyncStatus;
 }
 
-/** `<inputFingerprint>:<settingsFingerprint>` (empty parts stay empty). */
+/**
+ * Authoritative revision: the result fingerprint when known, else the
+ * legacy `<inputFingerprint>:<settingsFingerprint>` composite (empty parts
+ * stay empty). New linked runs always pass the result fingerprint.
+ */
 export const buildSourceRevision = (fingerprints: {
   inputFingerprint?: string;
   settingsFingerprint?: string;
+  resultFingerprint?: string;
 }): string =>
-  `${fingerprints.inputFingerprint ?? ''}:${fingerprints.settingsFingerprint ?? ''}`;
+  fingerprints.resultFingerprint
+  ?? `${fingerprints.inputFingerprint ?? ''}:${fingerprints.settingsFingerprint ?? ''}`;
 
 export const cloneFieldToFinishLink = (link: FieldToFinishLink): FieldToFinishLink => ({
   ...link,
@@ -77,6 +94,7 @@ export const buildFieldToFinishLink = (init: {
   sourceKind?: FieldToFinishSourceKind;
   inputFingerprint?: string;
   settingsFingerprint?: string;
+  resultFingerprint?: string;
   sourceRevision?: string;
   sourceRecordIds: readonly string[];
   stationIds: readonly string[];
@@ -88,6 +106,9 @@ export const buildFieldToFinishLink = (init: {
   catalogRevision: init.catalogRevision,
   sourceKind: init.sourceKind ?? 'coordinate-import',
   sourceRevision: init.sourceRevision ?? buildSourceRevision(init),
+  ...(init.inputFingerprint !== undefined ? { inputFingerprint: init.inputFingerprint } : {}),
+  ...(init.settingsFingerprint !== undefined ? { settingsFingerprint: init.settingsFingerprint } : {}),
+  ...(init.resultFingerprint !== undefined ? { resultFingerprint: init.resultFingerprint } : {}),
   sourceRecordIds: dedupeSorted(init.sourceRecordIds),
   stationIds: dedupeSorted(init.stationIds),
   generatedEntityIds: dedupeSorted(init.generatedEntityIds),
@@ -233,9 +254,14 @@ export const buildStationEntityIndex = (project: CadProject): StationEntityIndex
 export interface LinkOfPayloadSource {
   /** Which source produced this generation: adjustment-backed generations stamp 'adjustment' so rerun auto-sync applies; coordinate imports keep the default. */
   sourceKind?: FieldToFinishSourceKind;
-  /** Fingerprints for the composite sourceRevision; when absent the prior link revision is preserved. */
+  /**
+   * Fingerprint context: resultFingerprint is authoritative for the
+   * sourceRevision (new runs); input/settings are retained as provenance.
+   * When absent the prior link revision is preserved.
+   */
   inputFingerprint?: string;
   settingsFingerprint?: string;
+  resultFingerprint?: string;
 }
 
 /**
@@ -274,12 +300,17 @@ export const linkOfPayload = (
       .filter((id): id is string => !!id),
   )];
   const source = payload.source ?? {};
-  const hasFingerprints = source.inputFingerprint !== undefined || source.settingsFingerprint !== undefined;
+  const hasFingerprints = source.inputFingerprint !== undefined
+    || source.settingsFingerprint !== undefined
+    || source.resultFingerprint !== undefined;
   return buildFieldToFinishLink({
     generationRunId: first.generationRunId ?? 'unknown',
     catalogId: first.catalogId ?? 'unknown',
     catalogRevision: first.catalogVersion ?? '',
     ...(source.sourceKind !== undefined ? { sourceKind: source.sourceKind } : {}),
+    ...(source.inputFingerprint !== undefined ? { inputFingerprint: source.inputFingerprint } : {}),
+    ...(source.settingsFingerprint !== undefined ? { settingsFingerprint: source.settingsFingerprint } : {}),
+    ...(source.resultFingerprint !== undefined ? { resultFingerprint: source.resultFingerprint } : {}),
     sourceRecordIds,
     stationIds,
     generatedEntityIds: payload.upsertEntities.map((entity) => entity.id),
@@ -291,6 +322,7 @@ export const linkOfPayload = (
         sourceRevision: buildSourceRevision({
           inputFingerprint: source.inputFingerprint,
           settingsFingerprint: source.settingsFingerprint,
+          resultFingerprint: source.resultFingerprint,
         }),
       }
       : priorSourceRevision !== undefined
@@ -312,12 +344,21 @@ const stationOfLabel = (id: string, anchor: string | undefined): string | undefi
  */
 export const stampFieldToFinishLink = (
   project: CadProject,
-  patch: { status?: FieldToFinishSyncStatus; sourceRevision?: string },
+  patch: {
+    status?: FieldToFinishSyncStatus;
+    sourceRevision?: string;
+    inputFingerprint?: string;
+    settingsFingerprint?: string;
+    resultFingerprint?: string;
+  },
 ): CadProject => {
   const link = project.metadata.fieldToFinishLink;
   if (!link) return project;
   if (patch.status !== undefined && patch.status === link.status
-    && (patch.sourceRevision === undefined || patch.sourceRevision === link.sourceRevision)) {
+    && (patch.sourceRevision === undefined || patch.sourceRevision === link.sourceRevision)
+    && (patch.inputFingerprint === undefined || patch.inputFingerprint === link.inputFingerprint)
+    && (patch.settingsFingerprint === undefined || patch.settingsFingerprint === link.settingsFingerprint)
+    && (patch.resultFingerprint === undefined || patch.resultFingerprint === link.resultFingerprint)) {
     return project;
   }
   return {
@@ -328,6 +369,9 @@ export const stampFieldToFinishLink = (
         ...cloneFieldToFinishLink(link),
         ...(patch.status !== undefined ? { status: patch.status } : {}),
         ...(patch.sourceRevision !== undefined ? { sourceRevision: patch.sourceRevision } : {}),
+        ...(patch.inputFingerprint !== undefined ? { inputFingerprint: patch.inputFingerprint } : {}),
+        ...(patch.settingsFingerprint !== undefined ? { settingsFingerprint: patch.settingsFingerprint } : {}),
+        ...(patch.resultFingerprint !== undefined ? { resultFingerprint: patch.resultFingerprint } : {}),
       },
     },
   };

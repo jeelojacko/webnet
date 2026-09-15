@@ -4,6 +4,7 @@ import { LEVEL_LOOP_TOLERANCE_PRESETS } from '../engine/levelLoopTolerance';
 import { type ImportedInputNotice } from '../engine/importers';
 import { useAppRunWorkflowShell } from './useAppRunWorkflowShell';
 import { applySuccessfulAdjustmentRunToDrawing } from '../engine/fieldToFinish/linkedRerunSync';
+import { buildAdjustmentResultFingerprint } from '../engine/adjustmentResultFingerprint';
 import type { SuccessfulAdjustmentRunInfo } from './useAdjustmentOutcomeApplication';
 import { useAppControllerProjectWorkspace } from './useAppControllerProjectWorkspace';
 import { useAppCrsDraftCatalog } from './useAppCrsDraftCatalog';
@@ -273,6 +274,7 @@ export const useAppController = ({
       result: snapshot.result,
       inputFingerprint: snapshot.inputFingerprint,
       settingsFingerprint: snapshot.settingsFingerprint,
+      resultFingerprint: buildAdjustmentResultFingerprint(snapshot.result),
     };
   }, [currentRunSnapshot]);
 
