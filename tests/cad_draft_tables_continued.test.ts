@@ -16,6 +16,7 @@ import {
 } from '../src/engine/cad/cadSheets';
 import {
   addLogicalTableToDraft,
+  CONTINUED_REPEAT_CASCADE_MM,
   continuedRangesForTable,
   createLogicalTableFromDraftTable,
   fragmentTitleForView,
@@ -175,5 +176,32 @@ describe('history and persistence', () => {
     expect(revived?.tableFragments.map((f) => f.id)).toEqual(added.draft.tableFragments.map((f) => f.id));
     const twice = sanitizeDraftDocument(JSON.parse(JSON.stringify(revived)), 'p', []);
     expect(twice?.tables[0]?.rows).toEqual(table.rows);
+  });
+});
+
+describe('continued fragment repeat cascade', () => {
+  it('cascades repeated fragments deterministically instead of stacking them (30 rows, 1 placement)', () => {
+    let draft = createBlankDraftDocument({ projectId: 'p' });
+    draft = addSheetToDraft(draft, createPlanSheet({ name: 'S1' }));
+    const source = buildDraftPointTable(
+      Array.from({ length: 30 }, (_, i) => ({ pointId: `P${i}`, northing: i, easting: i })),
+      { order: 'pointId' },
+    );
+    const table = createLogicalTableFromDraftTable({
+      name: 'Points', headers: source.headers, rows: source.rows, maxRowsPerFragment: 25,
+    });
+    draft = addLogicalTableToDraft(draft, table);
+    const sheetId = draft.sheets[0]?.id as string;
+    draft = layoutContinuedFragments(draft, table.id, [{ sheetId, paperXmm: 10, paperYmm: 20 }]);
+    const fragments = draft.tableFragments.filter((f) => f.logicalTableId === table.id);
+    expect(fragments).toHaveLength(2);
+    // Same sheet, but origins never coincide: the repeat cascades in paper-mm.
+    const origins = fragments.map((f) => `${f.sheetId}@${f.paperXmm},${f.paperYmm}`);
+    expect(new Set(origins).size).toBe(fragments.length);
+    expect(fragments[1]).toMatchObject({
+      paperXmm: 10 + CONTINUED_REPEAT_CASCADE_MM,
+      paperYmm: 20 + CONTINUED_REPEAT_CASCADE_MM,
+    });
+    expect(validateContinuedCoverage(table, fragments)).toEqual({ ok: true, missing: [], duplicated: [] });
   });
 });

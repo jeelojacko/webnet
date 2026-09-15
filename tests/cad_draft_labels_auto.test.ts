@@ -265,6 +265,57 @@ describe('cad draft label auto-placement', () => {
     expect(hidden.items).toEqual([]);
   });
 
+  it('clamps labels inside the viewport on the top edge (Y axis)', () => {
+    const viewportMm = { xMm: 0, yMm: 0, widthMm: 200, heightMm: 200 };
+    const sizeMm = { width: 12, height: 3.5 };
+    const label = createDraftLabel({
+      id: 'top-edge',
+      labelType: 'point',
+      provenance: 'ADJUSTED',
+      source: { kind: 'point', point: { x: 0, y: 0 } },
+    });
+    const [result] = autoPlaceViewportLabels({
+      labels: [{ label, anchorMm: { x: 100, y: 0.5 }, sizeMm }],
+      viewportId: 'v1',
+      obstaclesMm: [],
+      viewportMm,
+    });
+    expect(result).toBeDefined();
+    const box = {
+      xMm: 100 + (result?.override.dxMm ?? 0) - sizeMm.width / 2,
+      yMm: 0.5 + (result?.override.dyMm ?? 0) - sizeMm.height / 2,
+    };
+    expect(box.yMm).toBeGreaterThanOrEqual(viewportMm.yMm - 1e-9);
+    expect(box.yMm + sizeMm.height).toBeLessThanOrEqual(viewportMm.yMm + viewportMm.heightMm + 1e-9);
+    // Leader threshold reflects the clamped (actually rendered) offset.
+    expect(result?.leaderEnabled).toBe(Math.hypot(result?.override.dxMm ?? 0, result?.override.dyMm ?? 0) > DEFAULT_LEADER_THRESHOLD_MM);
+  });
+
+  it('clamps labels inside the viewport on the bottom edge (Y axis)', () => {
+    const viewportMm = { xMm: 0, yMm: 0, widthMm: 200, heightMm: 200 };
+    const sizeMm = { width: 12, height: 3.5 };
+    const label = createDraftLabel({
+      id: 'bottom-edge',
+      labelType: 'point',
+      provenance: 'ADJUSTED',
+      source: { kind: 'point', point: { x: 0, y: 0 } },
+    });
+    const [result] = autoPlaceViewportLabels({
+      labels: [{ label, anchorMm: { x: 100, y: 199.5 }, sizeMm }],
+      viewportId: 'v1',
+      obstaclesMm: [],
+      viewportMm,
+    });
+    expect(result).toBeDefined();
+    const box = {
+      xMm: 100 + (result?.override.dxMm ?? 0) - sizeMm.width / 2,
+      yMm: 199.5 + (result?.override.dyMm ?? 0) - sizeMm.height / 2,
+    };
+    expect(box.yMm).toBeGreaterThanOrEqual(viewportMm.yMm - 1e-9);
+    expect(box.yMm + sizeMm.height).toBeLessThanOrEqual(viewportMm.yMm + viewportMm.heightMm + 1e-9);
+    expect(result?.leaderEnabled).toBe(Math.hypot(result?.override.dxMm ?? 0, result?.override.dyMm ?? 0) > DEFAULT_LEADER_THRESHOLD_MM);
+  });
+
   it('keeps large-grid precision (E≈2400000) through model→paper', () => {
     const fixture = buildSmallParcelFixture();
     const { viewport } = viewportOf(fixture.draft);
@@ -275,5 +326,47 @@ describe('cad draft label auto-placement', () => {
     // 1 m at 1:500 → exactly 2 mm, no float-cancellation drift.
     expect(p.xMm - center.xMm).toBeCloseTo(2, 9);
     expect(p.yMm - center.yMm).toBeCloseTo(0, 9);
+  });
+});
+
+describe('leader elbow', () => {
+  it('renders the documented two-segment elbow in the scene and SVG', () => {
+    const labels: ModelLabelPlacement[] = [{
+      id: 'L-elbow',
+      text: 'P1',
+      xModel: 0,
+      yModel: 0,
+      layerId: 'labels',
+      offsetMm: { dxMm: 10, dyMm: -6 },
+      leader: { enabled: true, elbowMm: 4, lineweightMm: 0.25 },
+    }];
+    const { items, brokenIds } = buildPaperLabelItems(labels, 'v1', (x, y) => ({ xMm: x, yMm: y }));
+    expect(brokenIds).toEqual([]);
+    const elbow = items.find((item) => item.kind === 'polyline');
+    expect(elbow).toMatchObject({
+      kind: 'polyline',
+      points: [{ x: 0, y: 0 }, { x: 4, y: 0 }, { x: 10, y: -6 }],
+      close: false,
+    });
+    // No straight leader line alongside the elbow.
+    expect(items.filter((item) => item.kind === 'line')).toHaveLength(0);
+    const svg = serializeExportSceneToSvg({ sheetId: 's1', sheetName: 'S1', widthMm: 100, heightMm: 100, clips: [], items });
+    expect(svg).toContain('<polyline');
+    // Elbow clamps to |dx| so the jog never overshoots the text.
+    const clamped = buildPaperLabelItems(
+      [{ ...labels[0] as ModelLabelPlacement, offsetMm: { dxMm: 2, dyMm: -6 }, leader: { enabled: true, elbowMm: 9 } }],
+      'v1',
+      (x, y) => ({ xMm: x, yMm: y }),
+    );
+    expect(clamped.items.find((item) => item.kind === 'polyline')).toMatchObject({
+      points: [{ x: 0, y: 0 }, { x: 2, y: 0 }, { x: 2, y: -6 }],
+    });
+    // No elbow configured: unchanged straight single segment.
+    const straight = buildPaperLabelItems(
+      [{ ...labels[0] as ModelLabelPlacement, leader: { enabled: true } }],
+      'v1',
+      (x, y) => ({ xMm: x, yMm: y }),
+    );
+    expect(straight.items.find((item) => item.kind === 'line')).toMatchObject({ x1: 0, y1: 0, x2: 10, y2: -6 });
   });
 });

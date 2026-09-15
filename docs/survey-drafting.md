@@ -69,9 +69,13 @@ order, which also sets PDF page order and sheet numbering.
   three deliverables in `tests/cad_draft_integration.test.ts`.
 - **SVG** is the canonical paper deliverable (mm, viewport clips as
   `clipPath`). **PDF** is a hand-rolled vector adapter: page size equals
-  the sheet definition, Standard-14 Helvetica only (no embedding),
-  non-ASCII text (°, ², Δ) as UTF-16BE hex strings; multi-page order is
-  the explicit input order.
+  the sheet definition, Standard-14 Helvetica only (no embedding) with
+  `/Encoding /WinAnsiEncoding` declared on the font dictionary.
+  WinAnsi-encodable text is emitted as literal bytes (delimiter/octal
+  escapes); non-WinAnsi glyphs (Δ, primes, and others) use deterministic
+  substitutions via `sanitizePdfText`, each reported as an explicit
+  `GLYPH_SUBSTITUTION` warning — never UTF-16BE hex; multi-page order
+  is the explicit input order.
 - **DXF is dual-contract** (`dxf/` adapter boundary): `buildDxfModelSpaceText`
   keeps the R12 model-space-only survey export byte-identical (points,
   lines, closed boundaries, arcs, model texts in survey coordinates; paper
@@ -97,7 +101,7 @@ snapshots those domains across the full drafting battery.
 
 ## Label deconfliction + leaders (Phase 13C §§12-21)
 
-Labels carry placement state `AUTO`/`MANUAL` (legacy `AUTO_GENERATED`/`MANUAL_OVERRIDE` read back to the same states) plus optional per-viewport paper-mm overrides (`dxMm`/`dyMm`/`rotationDeg`/`visible`) and a presentation-only leader (`enabled`, `elbowMm`, `lineweightMm`) — all persisted on the draft document (schema stays v1, additive only) and never touching source geometry. `cadLabelAutoPlacement.ts` offers optional paper-mm auto-placement over a deterministic 8-candidate set (NE/NW/SE/SW/above/below/along-left/along-right) scored by overlap + leader length + distance + clipping with label-id tie-breaks; it touches AUTO labels only unless `reset: true`, enables leaders beyond a paper-mm threshold (default 3 mm), and any manual edit flips the label to MANUAL. Geometry edits refresh label text while keeping manual placement; a missing source resolves to `BROKEN_REFERENCE`. SVG, PDF, and layout DXF share one per-viewport resolver (`buildPaperLabelItems`), so placed text + leaders render identically in all three.
+Labels carry placement state `AUTO`/`MANUAL` (legacy `AUTO_GENERATED`/`MANUAL_OVERRIDE` read back to the same states) plus optional per-viewport paper-mm overrides (`dxMm`/`dyMm`/`rotationDeg`/`visible`) and a presentation-only leader (`enabled`, `elbowMm`, `lineweightMm`) — all persisted on the draft document (schema stays v1, additive only) and never touching source geometry. `cadLabelAutoPlacement.ts` offers optional paper-mm auto-placement over a deterministic 8-candidate set (NE/NW/SE/SW/above/below/along-left/along-right) scored by overlap + leader length + distance + clipping with label-id tie-breaks; it touches AUTO labels only unless `reset: true`, enables leaders beyond a paper-mm threshold (default 3 mm), and any manual edit flips the label to MANUAL. Geometry edits refresh label text while keeping manual placement; a missing source resolves to `BROKEN_REFERENCE`. SVG, PDF, and layout DXF share one per-viewport resolver (`buildPaperLabelItems`), so placed text + leaders render identically in all three. A positive `elbowMm` renders a two-segment elbow (horizontal jog from the source point, clamped to |dx|, then straight to the text); otherwise the leader is a single straight segment.
 
 ## Table continuation + title-block templates (Phase 13C §§22-30)
 

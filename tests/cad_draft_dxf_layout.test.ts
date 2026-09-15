@@ -69,7 +69,7 @@ describe('dual dxf contract', () => {
     expect(buildDxfModelSpaceText(args)).toContain('AC1009');
   });
 
-  it('emits the R2000 layout structure with named layouts and viewport id 1', async () => {
+  it('emits the R2000 layout structure with named layouts and default viewport 1 plus floating viewport 2', async () => {
     const fixture = buildSmallParcelFixture();
     const project = withArcAndText(fixture.project);
     const { dxf, warnings, layouts } = buildDxfLayoutText({
@@ -134,18 +134,33 @@ describe('dual dxf contract', () => {
     const viewports = paperEntities.filter((entity) => entity.type === 'Viewport') as unknown as Array<{
       number: number; centerPoint: { x: number; y: number };
       viewCenter: { x: number; y: number }; viewHeight: number;
+      width?: number; height?: number;
     }>;
-    expect(viewports).toHaveLength(1);
+    expect(viewports.map((entry) => entry.number).sort()).toEqual([1, 2]);
+    // Default viewport 1 is sheet-sized (297 x 210) and centered.
+    const def = viewports.find((entry) => entry.number === 1) as unknown as {
+      centerPoint: { x: number; y: number }; viewHeight: number;
+    };
+    expect(def.centerPoint.x).toBeCloseTo(297 / 2, 9);
+    expect(def.centerPoint.y).toBeCloseTo(210 / 2, 9);
+    expect(def.viewHeight).toBeCloseTo(210, 9);
+    const model = viewports.find((entry) => entry.number === 2) as unknown as {
+      centerPoint: { x: number; y: number };
+      viewCenter: { x: number; y: number }; viewHeight: number;
+    };
     // Viewport center in paper mm, bottom-left origin: (15+100, 210-(15+65)).
-    expect(viewports[0]?.number).toBe(1);
-    expect(viewports[0]?.centerPoint.x).toBeCloseTo(115, 9);
-    expect(viewports[0]?.centerPoint.y).toBeCloseTo(130, 9);
+    expect(model.centerPoint.x).toBeCloseTo(115, 9);
+    expect(model.centerPoint.y).toBeCloseTo(130, 9);
     // Exact model center (no rebasing) and 130 mm @1:500 → 65 m view height.
-    expect(viewports[0]?.viewCenter.x).toBeCloseTo(25, 9);
-    expect(viewports[0]?.viewCenter.y).toBeCloseTo(20, 9);
-    expect(viewports[0]?.viewHeight).toBeCloseTo(65, 9);
-    // Twist is not modeled by the runtime reader; assert the raw pair.
-    expect(readGroupAfter(dxf, 'VIEWPORT', '51')).toBe('0');
+    expect(model.viewCenter.x).toBeCloseTo(25, 9);
+    expect(model.viewCenter.y).toBeCloseTo(20, 9);
+    expect(model.viewHeight).toBeCloseTo(65, 9);
+    // Twist is not modeled by the runtime reader; assert the raw pairs:
+    // occurrence 0 is the default viewport, occurrence 1 the model view.
+    expect(readGroupAfter(dxf, 'VIEWPORT', '51', 0)).toBe('0');
+    expect(readGroupAfter(dxf, 'VIEWPORT', '51', 1)).toBe('0');
+    expect(readGroupAfter(dxf, 'VIEWPORT', '69', 0)).toBe('1');
+    expect(readGroupAfter(dxf, 'VIEWPORT', '69', 1)).toBe('2');
     // Title block travels as BLOCK+INSERT, not flattened geometry.
     const inserts = paperEntities.filter((entity) => entity.type === 'BlockReference');
     expect(inserts.map((entity) => entity.blockName)).toContain('TB_C1 - Parcel');
@@ -200,7 +215,7 @@ describe('dual dxf contract', () => {
     const paper = blockRecordByName(db, '*Paper_Space') as unknown as {
       newIterator: () => { toArray: () => Array<{ type: string; viewCenter?: { x: number; y: number } }> };
     };
-    const viewport = entitiesOf(paper).find((entity) => entity.type === 'Viewport') as unknown as {
+    const viewport = entitiesOf(paper).find((entity) => entity.type === 'Viewport' && (entity as unknown as { number?: number }).number === 2) as unknown as {
       viewCenter: { x: number; y: number };
     };
     expect(viewport.viewCenter.x).toBe(2400025);
@@ -229,7 +244,15 @@ describe('dual dxf contract', () => {
     expect(layouts).toEqual(['C1 - Parcel', 'C1 - Parcel_details_']);
     expect(warnings.some((warning) => warning.code === 'UNKNOWN_TOKEN' && warning.message.includes('BOGUS'))).toBe(true);
     expect(warnings.some((warning) => warning.code === 'UNSUPPORTED_SHEET_OBJECT')).toBe(true);
-    expect(readGroupAfter(dxf, 'VIEWPORT', '51', 1)).toBe('90');
+    // Raw order per layout: default viewport 1, then the floating model view.
+    expect(readGroupAfter(dxf, 'VIEWPORT', '69', 0)).toBe('1');
+    expect(readGroupAfter(dxf, 'VIEWPORT', '69', 1)).toBe('2');
+    expect(readGroupAfter(dxf, 'VIEWPORT', '69', 2)).toBe('1');
+    expect(readGroupAfter(dxf, 'VIEWPORT', '69', 3)).toBe('2');
+    expect(readGroupAfter(dxf, 'VIEWPORT', '51', 0)).toBe('0');
+    expect(readGroupAfter(dxf, 'VIEWPORT', '51', 1)).toBe('0');
+    expect(readGroupAfter(dxf, 'VIEWPORT', '51', 2)).toBe('0');
+    expect(readGroupAfter(dxf, 'VIEWPORT', '51', 3)).toBe('90');
 
     const runtime = await loadRuntime();
     const db = await readDatabase(runtime, dxf);
@@ -239,10 +262,15 @@ describe('dual dxf contract', () => {
       newIterator: () => { toArray: () => Array<{ type: string; number?: number; viewHeight?: number }> };
     };
     const viewports = entitiesOf(secondPaper).filter((entity) => entity.type === 'Viewport');
-    expect(viewports).toHaveLength(1);
-    expect(viewports[0]?.number).toBe(1);
+    expect(viewports.map((entity) => entity.number).sort()).toEqual([1, 2]);
+    const floating = viewports.find((entity) => entity.number === 2);
     // 100 mm @1:100 → 10 m view height.
-    expect(viewports[0]?.viewHeight).toBeCloseTo(10, 9);
+    expect(floating?.viewHeight).toBeCloseTo(10, 9);
+    // Each layout keeps its own sheet-sized default viewport 1.
+    const firstPaper = blockRecordByName(db, '*Paper_Space') as unknown as {
+      newIterator: () => { toArray: () => Array<{ type: string; number?: number }> };
+    };
+    expect(entitiesOf(firstPaper).filter((entity) => entity.type === 'Viewport').map((entity) => entity.number).sort()).toEqual([1, 2]);
     const secondLayout = (db.objects.layout.newIterator().toArray() as Array<{
       layoutName: string; limits: { max: { x: number; y: number } };
     }>).find((entry) => entry.layoutName === 'C1 - Parcel_details_');
@@ -263,6 +291,8 @@ describe('dual dxf contract', () => {
     const viewportId = (fixture.draft.sheets[0] as { viewports: Array<{ id: string }> }).viewports[0]?.id as string;
     const draft = rotateViewport(fixture.draft, fixture.sheetId, viewportId, 90) ?? fixture.draft;
     const { dxf } = buildDxfLayoutText({ project: fixture.project, draft });
-    expect(readGroupAfter(dxf, 'VIEWPORT', '51')).toBe('90');
+    // Occurrence 0 is the sheet-sized default (twist 0); the model view follows.
+    expect(readGroupAfter(dxf, 'VIEWPORT', '51', 0)).toBe('0');
+    expect(readGroupAfter(dxf, 'VIEWPORT', '51', 1)).toBe('90');
   });
 });

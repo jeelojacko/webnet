@@ -10,6 +10,7 @@ import {
   type ModelLabelPlacement,
 } from '../cadExportScene';
 import { buildDxfExportModel, type BuildDxfModelArgs, type DxfExportModel } from './dxfExportModel';
+import { buildTableFragmentItems } from '../cadExportTables';
 import { serializeDxfModel } from './dxfSerializer';
 
 // Dual DXF contract (Phase 13C §§6-10):
@@ -337,6 +338,19 @@ export const buildDxfLayoutText = (args: BuildDxfLayoutArgs): DxfLayoutResult =>
     const record = paperRecords[sheetIndex] as { handle: string; name: string };
     const flipY = (y: number): number => sheet.heightMm - y;
     const ctx: PaperContext = { out: section, owner: record.handle, flipY, layers: paperLayers, warnings, takeHandle };
+    // Required full-paper default viewport (id 1): some readers ignore
+    // paper space without it. Sheet-sized, centered, 1:1 view height.
+    section.push(
+      pair(0, 'VIEWPORT'), pair(5, takeHandle()), pair(330, record.handle),
+      pair(100, 'AcDbEntity'), pair(8, '0'),
+      pair(100, 'AcDbViewport'),
+      pair(10, fmt(sheet.widthMm / 2)), pair(20, fmt(sheet.heightMm / 2)), pair(30, '0'),
+      pair(40, fmt(sheet.widthMm)), pair(41, fmt(sheet.heightMm)),
+      pair(12, '0'), pair(22, '0'), pair(32, '0'),
+      pair(45, fmt(sheet.heightMm)),
+      pair(51, '0'),
+      pair(69, '1'),
+    );
     sheet.viewports.forEach((viewport, viewportIndex) => {
       const cxPaper = viewport.paperXmm + viewport.paperWidthMm / 2;
       const cyPaper = flipY(viewport.paperYmm + viewport.paperHeightMm / 2);
@@ -350,7 +364,8 @@ export const buildDxfLayoutText = (args: BuildDxfLayoutArgs): DxfLayoutResult =>
         pair(12, fmt(viewport.modelCenterX)), pair(22, fmt(viewport.modelCenterY)), pair(32, '0'),
         pair(45, fmt(viewHeight)),
         pair(51, fmt(normDeg(viewport.rotationDeg))),
-        pair(69, String(viewportIndex + 1)),
+        // Default viewport above owns id 1; floating model views start at 2.
+        pair(69, String(viewportIndex + 2)),
       );
     });
     // Paper-space labels (document DXF subset): same per-viewport
@@ -391,6 +406,9 @@ export const buildDxfLayoutText = (args: BuildDxfLayoutArgs): DxfLayoutResult =>
       pair(10, '0'), pair(20, '0'), pair(30, '0'),
     );
     paperLayers.add('title-block');
+    // Persisted continued tables: same paper-mm renderer as the scene, so
+    // layout DXF carries identical headers/rows/Continued titles.
+    buildTableFragmentItems(args.draft, sheet.id).forEach((item) => emitPaperItem(ctx, item));
     (args.paperExtras ?? []).forEach((item) => emitPaperItem(ctx, item));
   });
 

@@ -17,9 +17,10 @@ const fmt = (value: number): string => {
 // WinAnsi literal: ASCII passes through with delimiter escapes, WinAnsi
 // bytes (° \260, ± \261, ² \262, …) use 3-digit octal escapes so the
 // output stays pure ASCII and standard-14 Helvetica renders it directly.
-// No /Encoding or /ToUnicode is declared on the font, so anything outside
-// WinAnsi must be substituted upstream (sanitizePdfText) — never emitted
-// as UTF-16BE hex, which bare Helvetica cannot decode (mojibake).
+// The font dictionary declares /Encoding /WinAnsiEncoding, so viewers map
+// those bytes deterministically; anything outside WinAnsi must still be
+// substituted upstream (sanitizePdfText) — never emitted as UTF-16BE hex,
+// which bare Helvetica cannot decode (mojibake).
 const encodePdfText = (text: string): string => {
   let out = '';
   for (const char of text) {
@@ -205,7 +206,7 @@ export const exportScenesToPdfWithWarnings = (
     const stream = contents[index] as string;
     objects.push(`${pageId + 1} 0 obj<</Length ${stream.length}>>stream\n${stream}endstream\nendobj`);
   });
-  objects.push(`${fontId} 0 obj<</Type/Font/Subtype/Type1/BaseFont/Helvetica>>endobj`);
+  objects.push(`${fontId} 0 obj<</Type/Font/Subtype/Type1/BaseFont/Helvetica/Encoding/WinAnsiEncoding>>endobj`);
 
   const header = '%PDF-1.4\n';
   const catalog = '1 0 obj<</Type/Catalog/Pages 2 0 R>>endobj';

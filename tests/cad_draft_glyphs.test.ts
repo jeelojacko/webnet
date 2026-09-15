@@ -85,6 +85,8 @@ describe('draft survey glyph gate', () => {
     const { bytes } = exportScenesToPdfWithWarnings([buildGlyphScene()]);
     const pdf = new TextDecoder().decode(bytes);
     expect([...pdf].every((char) => (char.codePointAt(0) as number) < 128)).toBe(true);
+    // Octal WinAnsi bytes are only unambiguous with the declared encoding.
+    expect(pdf).toContain('/Encoding/WinAnsiEncoding');
     const visible = pdfVisibleText(pdf);
     expect(visible).toContain('45°12');
     expect(visible).toContain('±0.005');

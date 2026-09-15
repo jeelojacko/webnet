@@ -203,12 +203,20 @@ describe('drafting interoperability polish', () => {
       { id: 'el-scale', kind: 'token-text', xMm: 10, yMm: 190, text: 'Scale {SCALE}', tokenTemplate: 'Scale {SCALE}' },
     ]);
     draft = assignTitleBlockToSheet(draft, sheetId, template.id);
-    const { scene } = buildExportSheetScene({
-      draft, sheetId, project,
-      paperTexts: [{ text: continuedTitle, xMm: 15, yMm: 150 }],
-    });
+    const { scene } = buildExportSheetScene({ draft, sheetId, project });
     const svg = serializeExportSceneToSvg(scene);
     const visible = pdfText(new TextDecoder().decode(exportScenesToPdf([scene])));
+    const layoutDxf = buildDxfLayoutText({ project, draft }).dxf;
+    // Table content comes from draft.tables/tableFragments — never injected.
+    const sceneTexts = scene.items.filter((item) => item.kind === 'text').map((item) => (item as { text: string }).text);
+    for (const text of ['Point schedule', continuedTitle, 'ID', 'E', 'N', 'P1', 'P25', 'P26', 'P30']) {
+      expect(sceneTexts.some((entry) => entry.includes(text))).toBe(true);
+      expect(svg).toContain(text);
+      expect(visible).toContain(text);
+      expect(layoutDxf).toContain(text);
+    }
+    // The continued fragment repeats headers and carries the marker.
+    expect(sceneTexts.filter((entry) => entry === 'ID')).toHaveLength(2);
     for (const text of [continuedTitle, 'Scale 1:500']) {
       expect(scene.items.some((item) => item.kind === 'text' && item.text.includes(text))).toBe(true);
       expect(svg).toContain(text);

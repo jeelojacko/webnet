@@ -96,7 +96,17 @@ export const buildLandXmlFromCadGeometry = (
   const generatedAt = settings.generatedAt ?? new Date();
   const projectName = settings.projectName ?? 'WebNet CAD Export';
   const version = settings.applicationVersion ?? '0.0.0';
-  const ids = new Set(geom.points.map((point) => point.id));
+  const seenIds = new Set<string>();
+  geom.points.forEach((point) => {
+    if (!point.id || point.id.trim() === '') {
+      throw new Error('LandXML CAD export: point with empty ID.');
+    }
+    if (seenIds.has(point.id)) {
+      throw new Error(`LandXML CAD export: duplicate point ID ${JSON.stringify(point.id)}.`);
+    }
+    seenIds.add(point.id);
+  });
+  const ids = seenIds;
   const requireRef = (ref: string, what: string): void => {
     if (!ids.has(ref)) {
       throw new Error(`LandXML CAD export: ${what} references unknown point ${JSON.stringify(ref)}.`);
@@ -192,22 +202,37 @@ export const buildLandXmlFromCadGeometry = (
     lines.push('  </PlanFeatures>');
   }
 
-  (geom.parcels ?? []).forEach((parcel) => {
-    parcel.ring.forEach((ref) => requireRef(ref, `Parcel ${parcel.name}`));
-    lines.push(`  <Parcels><Parcel name="${xmlEscape(parcel.name)}">`);
-    const ringLines: CadLandXmlLine[] = [];
-    for (let i = 0; i + 1 < parcel.ring.length; i += 1) {
-      ringLines.push({ from: parcel.ring[i] as string, to: parcel.ring[i + 1] as string });
-    }
-    coordGeomBlock(ringLines, [], '    ');
-    lines.push('  </Parcel></Parcels>');
-  });
+  const parcels = geom.parcels ?? [];
+  if (parcels.length > 0) {
+    lines.push('  <Parcels>');
+    parcels.forEach((parcel) => {
+      if (parcel.ring.length < 4 || parcel.ring[0] !== parcel.ring[parcel.ring.length - 1]) {
+        throw new Error(
+          `LandXML CAD export: parcel ${JSON.stringify(parcel.name)} ring must be closed with at least 4 refs and first===last.`,
+        );
+      }
+      parcel.ring.forEach((ref) => requireRef(ref, `Parcel ${parcel.name}`));
+      lines.push(`    <Parcel name="${xmlEscape(parcel.name)}">`);
+      const ringLines: CadLandXmlLine[] = [];
+      for (let i = 0; i + 1 < parcel.ring.length; i += 1) {
+        ringLines.push({ from: parcel.ring[i] as string, to: parcel.ring[i + 1] as string });
+      }
+      coordGeomBlock(ringLines, [], '      ');
+      lines.push('    </Parcel>');
+    });
+    lines.push('  </Parcels>');
+  }
 
-  (geom.alignments ?? []).forEach((alignment) => {
-    lines.push(`  <Alignments><Alignment name="${xmlEscape(alignment.name)}">`);
-    coordGeomBlock(alignment.lines, alignment.curves, '    ');
-    lines.push('  </Alignment></Alignments>');
-  });
+  const alignments = geom.alignments ?? [];
+  if (alignments.length > 0) {
+    lines.push('  <Alignments>');
+    alignments.forEach((alignment) => {
+      lines.push(`    <Alignment name="${xmlEscape(alignment.name)}">`);
+      coordGeomBlock(alignment.lines, alignment.curves, '      ');
+      lines.push('    </Alignment>');
+    });
+    lines.push('  </Alignments>');
+  }
 
   lines.push('</LandXML>');
   return lines.join('\n');

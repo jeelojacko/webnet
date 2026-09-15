@@ -98,7 +98,11 @@ export const autoPlaceViewportLabels = (args: AutoPlaceArgs): AutoPlaceResult[] 
   const placed: PaperRect[] = [];
   const results: AutoPlaceResult[] = [];
   // Deterministic input order: sort by label id (same doc+viewport → same output).
-  const ordered = [...args.labels].sort((a, b) => (a.label.id < b.label.id ? -1 : 1));
+  const ordered = [...args.labels].sort((a, b) => {
+    if (a.label.id < b.label.id) return -1;
+    if (a.label.id > b.label.id) return 1;
+    return 0;
+  });
   for (const entry of ordered) {
     const placement = normalizePlacementState(entry.label.placement ?? 'AUTO');
     if (placement === 'MANUAL' && !args.reset) continue;
@@ -117,28 +121,43 @@ export const autoPlaceViewportLabels = (args: AutoPlaceArgs): AutoPlaceResult[] 
     }
     const chosen = best ?? { name: 'NE', ...CANDIDATE_OFFSET_MM.NE, score: 0 };
     const box = boxAt(entry.anchorMm, entry.sizeMm, chosen);
-    // Keep the label inside the viewport when possible without re-scoring.
-    const clampedDx =
-      box.xMm < args.viewportMm.xMm
+    // Keep the label inside the viewport on both axes when the box can fit, without re-scoring.
+    const fitsX = entry.sizeMm.width <= args.viewportMm.widthMm;
+    const fitsY = entry.sizeMm.height <= args.viewportMm.heightMm;
+    const clampedDx = !fitsX
+      ? chosen.dx
+      : box.xMm < args.viewportMm.xMm
         ? chosen.dx + (args.viewportMm.xMm - box.xMm)
         : box.xMm + box.widthMm > args.viewportMm.xMm + args.viewportMm.widthMm
           ? chosen.dx - (box.xMm + box.widthMm - args.viewportMm.xMm - args.viewportMm.widthMm)
           : chosen.dx;
-    placed.push(boxAt(entry.anchorMm, entry.sizeMm, { dx: clampedDx, dy: chosen.dy }));
-    const leaderEnabled = Math.hypot(clampedDx, chosen.dy) > threshold;
+    const clampedBoxX = boxAt(entry.anchorMm, entry.sizeMm, { dx: clampedDx, dy: chosen.dy });
+    const clampedDy = !fitsY
+      ? chosen.dy
+      : clampedBoxX.yMm < args.viewportMm.yMm
+        ? chosen.dy + (args.viewportMm.yMm - clampedBoxX.yMm)
+        : clampedBoxX.yMm + clampedBoxX.heightMm > args.viewportMm.yMm + args.viewportMm.heightMm
+          ? chosen.dy - (clampedBoxX.yMm + clampedBoxX.heightMm - args.viewportMm.yMm - args.viewportMm.heightMm)
+          : chosen.dy;
+    placed.push(boxAt(entry.anchorMm, entry.sizeMm, { dx: clampedDx, dy: clampedDy }));
+    const leaderEnabled = Math.hypot(clampedDx, clampedDy) > threshold;
     results.push({
       labelId: entry.label.id,
       viewportId: args.viewportId,
       override: {
         dxMm: Math.round(clampedDx * 1000) / 1000,
-        dyMm: Math.round(chosen.dy * 1000) / 1000,
+        dyMm: Math.round(clampedDy * 1000) / 1000,
       },
       leaderEnabled,
       candidate: chosen.name,
     });
   }
   // Deterministic output order (tie-break by label id, already ordered).
-  return results.sort((a, b) => (a.labelId < b.labelId ? -1 : 1));
+  return results.sort((a, b) => {
+    if (a.labelId < b.labelId) return -1;
+    if (a.labelId > b.labelId) return 1;
+    return 0;
+  });
 };
 
 export const isBlocked = (box: PaperRect, obstacles: PaperRect[]): boolean =>

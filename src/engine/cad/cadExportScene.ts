@@ -3,6 +3,7 @@ import type { CadDisplayPrimitive } from './cadDisplayTypes';
 import { BROKEN_REFERENCE_TEXT } from './cadLabelEngine';
 import type { DraftSheet, DraftDocument } from './cadDraftTypes';
 import { expandSheetTokens, asPlanViewport, buildSheetTokenContext } from './cadSheets';
+import { buildTableFragmentItems } from './cadExportTables';
 import type { CadProject } from './cadTypes';
 
 export interface ExportWarning {
@@ -63,7 +64,7 @@ export interface ModelLabelPlacement {
   offsetMm?: { dxMm?: number; dyMm?: number };
   rotationDeg?: number;
   /** Presentation-only leader from the source point to the placed text. */
-  leader?: { enabled?: boolean; lineweightMm?: number };
+  leader?: { enabled?: boolean; elbowMm?: number; lineweightMm?: number };
   /** Per-viewport overrides keyed by viewport id; manual always wins. */
   viewportOverrides?: Record<string, { dxMm?: number; dyMm?: number; rotationDeg?: number; visible?: boolean }>;
 }
@@ -236,7 +237,25 @@ export const buildPaperLabelItems = (
     const x = p.xMm + dx;
     const y = p.yMm + dy;
     if (label.leader?.enabled && (dx !== 0 || dy !== 0)) {
-      items.push({ kind: 'line', layer: label.layerId ?? 'labels', ...(clipId ? { clipId } : {}), x1: p.xMm, y1: p.yMm, x2: x, y2: y, widthMm: label.leader.lineweightMm });
+      // Two-segment elbow: horizontal jog of elbowMm from the source point
+      // toward the text, then straight to the text. elbowMm clamps to |dx|
+      // so the jog never overshoots; dx === 0 (or no positive elbow) stays
+      // a single straight segment. All serializers share this resolver, so
+      // the elbow renders identically in scene, SVG, PDF, and layout-DXF.
+      const elbowMm = label.leader.elbowMm ?? 0;
+      if (elbowMm > 0 && dx !== 0) {
+        const jog = Math.sign(dx) * Math.min(elbowMm, Math.abs(dx));
+        items.push({
+          kind: 'polyline',
+          layer: label.layerId ?? 'labels',
+          ...(clipId ? { clipId } : {}),
+          points: [{ x: p.xMm, y: p.yMm }, { x: p.xMm + jog, y: p.yMm }, { x, y }],
+          close: false,
+          widthMm: label.leader.lineweightMm,
+        });
+      } else {
+        items.push({ kind: 'line', layer: label.layerId ?? 'labels', ...(clipId ? { clipId } : {}), x1: p.xMm, y1: p.yMm, x2: x, y2: y, widthMm: label.leader.lineweightMm });
+      }
     }
     items.push({
       kind: 'text',
@@ -464,6 +483,9 @@ export const buildExportSheetScene = (args: BuildSceneArgs): { scene: ExportShee
   title.unknownTokens.forEach((token) => {
     warnings.push({ code: 'UNKNOWN_TOKEN', message: `unknown sheet token {${token}}` });
   });
+  // Persisted continued-table fragments render from logical rows + row
+  // ranges (deterministic order, repeated headers, Continued marker).
+  items.push(...buildTableFragmentItems(args.draft, sheet.id));
   (args.paperTexts ?? []).forEach((placement) => {
     items.push({
       kind: 'text',

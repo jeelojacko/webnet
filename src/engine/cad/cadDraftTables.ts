@@ -248,10 +248,15 @@ export const addLogicalTableToDraft = (draft: DraftDocument, table: DraftLogical
 
 export interface ContinuedPlacement { sheetId: string; paperXmm: number; paperYmm: number }
 
+// Paper-mm cascade step applied per repeat cycle when AUTO ranges exceed
+// the supplied placements, so repeated fragments never stack silently.
+// ponytail: fixed 8mm diagonal cascade; collision-aware packing only if sheets get crowded.
+export const CONTINUED_REPEAT_CASCADE_MM = 8;
+
 // AUTO layout: one fragment per row range, placed round-robin over the
 // given sheet placements (deterministic; repeats sheets when ranges exceed
-// placements). MANUAL mode creates only the first fragment; the caller
-// positions the rest by hand.
+// placements). Fragments that reuse a placement cascade diagonally in
+// paper-mm per repeat cycle, so no two fragments share one origin.
 export const layoutContinuedFragments = (
   draft: DraftDocument,
   tableId: string,
@@ -263,14 +268,15 @@ export const layoutContinuedFragments = (
   const kept = (draft.tableFragments ?? []).filter((fragment) => fragment.logicalTableId !== tableId);
   const created: DraftTableFragment[] = ranges.map((rowRange, fragmentIndex) => {
     const placement = placements[fragmentIndex % placements.length] as ContinuedPlacement;
+    const repeatCycle = Math.floor(fragmentIndex / placements.length);
     return {
       id: createStableRuntimeId('draft-table-fragment'),
       logicalTableId: tableId,
       sheetId: placement.sheetId,
       fragmentIndex,
       rowRange: { ...rowRange },
-      paperXmm: placement.paperXmm,
-      paperYmm: placement.paperYmm + fragmentIndex * 0, // same origin per sheet; sheets disambiguate
+      paperXmm: placement.paperXmm + repeatCycle * CONTINUED_REPEAT_CASCADE_MM,
+      paperYmm: placement.paperYmm + repeatCycle * CONTINUED_REPEAT_CASCADE_MM,
     };
   });
   return { ...draft, tableFragments: [...kept, ...created] };

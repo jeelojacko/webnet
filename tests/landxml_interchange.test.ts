@@ -143,6 +143,70 @@ describe('LandXML interchange', () => {
     });
   });
 
+  it('rejects CAD export with empty or duplicate point IDs (no silent collapse)', () => {
+    const dup = {
+      points: [
+        { id: 'P1', x: 1, y: 2 },
+        { id: 'P1', x: 3, y: 4 },
+      ],
+    };
+    expect(() => buildLandXmlFromCadGeometry(dup, { units: 'm' })).toThrow(/duplicate point ID/);
+    const empty = { points: [{ id: '   ', x: 1, y: 2 }] };
+    expect(() => buildLandXmlFromCadGeometry(empty, { units: 'm' })).toThrow(/empty ID/);
+  });
+
+  it('rejects CAD export with open or short parcel rings (fail closed)', () => {
+    const base = {
+      points: [
+        { id: 'P1', x: 0, y: 0 },
+        { id: 'P2', x: 1, y: 0 },
+        { id: 'P3', x: 1, y: 1 },
+      ],
+    };
+    expect(() =>
+      buildLandXmlFromCadGeometry({ ...base, parcels: [{ name: 'OPEN', ring: ['P1', 'P2', 'P3', 'P2'] }] }, { units: 'm' }),
+    ).toThrow(/must be closed/);
+    expect(() =>
+      buildLandXmlFromCadGeometry({ ...base, parcels: [{ name: 'SHORT', ring: ['P1', 'P2', 'P1'] }] }, { units: 'm' }),
+    ).toThrow(/at least 4/);
+    expect(() =>
+      buildLandXmlFromCadGeometry({ ...base, parcels: [{ name: 'OPEN2', ring: ['P1', 'P2', 'P3'] }] }, { units: 'm' }),
+    ).toThrow(/must be closed/);
+  });
+
+  it('groups multi-parcel/multi-alignment output under single containers and round-trips', () => {
+    const geom = {
+      points: [
+        { id: 'P1', x: 0, y: 0 },
+        { id: 'P2', x: 10, y: 0 },
+        { id: 'P3', x: 10, y: 10 },
+        { id: 'P4', x: 0, y: 10 },
+      ],
+      parcels: [
+        { name: 'LOT-A', ring: ['P1', 'P2', 'P3', 'P1'] },
+        { name: 'LOT-B', ring: ['P1', 'P3', 'P4', 'P1'] },
+      ],
+      alignments: [
+        { name: 'CL-1', lines: [{ from: 'P1', to: 'P2' }], curves: [] },
+        { name: 'CL-2', lines: [{ from: 'P3', to: 'P4' }], curves: [] },
+      ],
+    };
+    const xml = buildLandXmlFromCadGeometry(geom, { units: 'm', projectName: 'grouped' });
+    expect(xml.match(/<Parcels>/g)).toHaveLength(1);
+    expect(xml.match(/<\/Parcels>/g)).toHaveLength(1);
+    expect(xml.match(/<Alignments>/g)).toHaveLength(1);
+    expect(xml.match(/<\/Alignments>/g)).toHaveLength(1);
+    expect(xml.indexOf('LOT-A')).toBeLessThan(xml.indexOf('LOT-B'));
+    expect(xml.indexOf('CL-1')).toBeLessThan(xml.indexOf('CL-2'));
+    const back = buildLandXmlImportPreview(xml);
+    expect(back.parcels.map((p) => p.name)).toEqual(['LOT-A', 'LOT-B']);
+    expect(back.parcels[0]?.ring).toEqual(['P1', 'P2', 'P3', 'P1']);
+    expect(back.parcels[1]?.ring).toEqual(['P1', 'P3', 'P4', 'P1']);
+    expect(back.alignments.map((a) => a.name)).toEqual(['CL-1', 'CL-2']);
+    expect(back.alignments[0]?.lines).toEqual([{ from: 'P1', to: 'P2' }]);
+    expect(back.alignments[1]?.lines).toEqual([{ from: 'P3', to: 'P4' }]);
+  });
+
   it('rejects CAD export with broken refs or invalid curves (no partial XML)', () => {
     const base = { points: [{ id: 'P1', x: 1, y: 2 }] };
     expect(() => buildLandXmlFromCadGeometry({ ...base, lines: [{ from: 'P1', to: 'GHOST' }] }, { units: 'm' })).toThrow(/unknown point/);
