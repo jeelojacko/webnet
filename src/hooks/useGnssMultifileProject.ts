@@ -193,6 +193,13 @@ export const useGnssMultifileProject = (options: GnssMultifileProjectOptions = {
   // same commit still sees the previous pair and skips the stale write:
   // without this, the old project's entries would be saved under the new
   // project's key before hydration applies.
+  // Run sequence: composition is synchronous (fast, non-cancellable) and
+  // only the worker await below is async. A newer run supersedes an older
+  // one — late results from an earlier run are dropped, never applied.
+  // There is no worker cancel: a superseded run still finishes in the
+  // background, its outcome is just ignored. A project/store switch also
+  // invalidates pending solves so a late A result can never land in B.
+  const runSeq = useRef(0);
   const bootKey = useRef(projectId);
   const bootStore = useRef(store);
   const [hydratedKey, setHydratedKey] = useState(() => ({ id: projectId, store }));
@@ -200,6 +207,8 @@ export const useGnssMultifileProject = (options: GnssMultifileProjectOptions = {
     if (bootKey.current === projectId && bootStore.current === store) return;
     bootKey.current = projectId;
     bootStore.current = store;
+    // Invalidate pending solves: a late A result must never land in B.
+    runSeq.current += 1;
     const next = loadGnssMultifileProject(projectId, store);
     setSources(
       (next?.entries ?? []).map((entry) => ({
@@ -220,12 +229,6 @@ export const useGnssMultifileProject = (options: GnssMultifileProjectOptions = {
     setSolving(false);
     setHydratedKey({ id: projectId, store });
   }, [projectId, store]);
-  // Run sequence: composition is synchronous (fast, non-cancellable) and
-  // only the worker await below is async. A newer run supersedes an older
-  // one — late results from an earlier run are dropped, never applied.
-  // There is no worker cancel: a superseded run still finishes in the
-  // background, its outcome is just ignored.
-  const runSeq = useRef(0);
 
   const hashes = useMemo(
     () => Object.fromEntries(sources.map((source) => [source.id, buildValueFingerprint(source.text)])),

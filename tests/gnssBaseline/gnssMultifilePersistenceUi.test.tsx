@@ -270,4 +270,63 @@ describe('multifile project durability (unmount/remount, project isolation)', ()
       unmountHook(mounted);
     }
   });
+
+  it('pending A solve that resolves after a same-mount switch never snapshots into B', async () => {
+    const store = spyingStore();
+    const api: { current: GnssMultifileProject | null } = { current: null };
+    const mounted = mountSwitchableHook('race-A', store, api);
+    try {
+      act(() => {
+        api.current?.addSource('a-only.dat', nativeText(''));
+      });
+      // Deferred worker: A starts a solve but the promise stays pending.
+      let resolveRun: () => void = () => {};
+      const deferredRun: GnssProjectRunFn = (input) =>
+        new Promise<GnssRunOutcome>((resolve) => {
+          resolveRun = () =>
+            resolve({
+              route: 'test-inline',
+              reasons: ['test'],
+              workerBacked: false,
+              result: { stations: input.stations, converged: true },
+            } as unknown as GnssRunOutcome);
+        });
+      let pending: Promise<void> | undefined;
+      act(() => {
+        pending = api.current?.solve(deferredRun);
+      });
+      expect(api.current?.solving).toBe(true);
+
+      // Same-mount switch while A is still solving: B hydrates empty.
+      mounted.show('race-B');
+      expect(api.current?.sources).toHaveLength(0);
+      expect(api.current?.snapshot).toBeNull();
+      expect(api.current?.solving).toBe(false);
+
+      // A's late result resolves now and must be dropped, not snapshotted
+      // into B (nor persisted under B's key).
+      await act(async () => {
+        resolveRun();
+        await pending;
+      });
+      expect(api.current?.sources).toHaveLength(0);
+      expect(api.current?.snapshot).toBeNull();
+      expect(api.current?.solving).toBe(false);
+      const bWrites = store.writes.filter(
+        (write) => write.key === 'webnet.gnss-multifile-project.v1.race-B',
+      );
+      expect(bWrites.length).toBeGreaterThan(0);
+      for (const write of bWrites) {
+        expect(write.value).not.toContain('a-only.dat');
+      }
+
+      // A keeps its source but holds no snapshot: the superseded solve
+      // never committed anywhere.
+      mounted.show('race-A');
+      expect(api.current?.sources.map((source) => source.name)).toEqual(['a-only.dat']);
+      expect(api.current?.snapshot).toBeNull();
+    } finally {
+      unmountHook(mounted);
+    }
+  });
 });
