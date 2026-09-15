@@ -11,6 +11,17 @@ import {
   normalizeReliabilityPolicy,
   statisticalMdb,
 } from './reliabilityPolicy';
+import {
+  buildCouplingGroupRows,
+  computeExternalInfluences,
+  EXTERNAL_REASON_NO_COVARIANCE,
+  isFreeNetworkDatum,
+} from './adjustExternalReliability';
+import type {
+  ExternalInfluence,
+  ExternalParamColumn,
+  ExternalRowInput,
+} from './adjustExternalReliability';
 import { tryQueryStandardizedResidualRowProducts } from './adjustStatisticsRowProducts';
 import { detailedNow } from './adjustDetailedSolveProfile';
 import { copyMatrix } from './qxxReuseEvidence';
@@ -460,6 +471,8 @@ export const computeStandardizedResidualStatistics = (
           // Phase two: verdicts against the run-level threshold.
           // MDB keeps the legacy 3.29 detection scaling in every mode (~50%
           // power limitation acknowledged; beta-aware MDB deferred to Phase 14B).
+          // Phase 14B: per-row MDBs for external-reliability propagation.
+          const mdbByRow = new Map<number, { mdb: number; mdbStat: number }>();
           for (const eq of pendingEquations) {
             const stat = useW ? eq.w : eq.tau;
             // Zero-redundancy equations carry no outlier signal: statistic is
@@ -497,9 +510,63 @@ export const computeStandardizedResidualStatistics = (
             entry.testable.push(rowTestable);
             entry.comps.push(eq.component);
             entry.rows.push(eq.row);
+            mdbByRow.set(eq.row, { mdb, mdbStat });
             rowStats.set(eq.obsId, entry);
           }
           if (profiler) perEquationStatisticsMs += detailedNow() - perEquationStartedAt;
+
+          // Phase 14B Worker 2: analytical external reliability over the same
+          // dense B/P rows (no per-observation re-solve). Propagates the
+          // active-model MDB (statistical when available, else legacy) through
+          // the TRUE P column, so TS-correlation groups and GPS covariance
+          // blocks use their coupled weights. Sparse-route runs (no dense
+          // B/P) and free-network datums report unavailable with a reason.
+          const externalByRow = ((): Map<number, ExternalInfluence> => {
+            const obsById = new Map(activeObservations.map((obs) => [obs.id, obs]));
+            const groups = buildCouplingGroupRows(
+              rowInfo.map((info) =>
+                info ? { obsId: info.obs.id, component: info.component } : null,
+              ),
+              (obsId) => {
+                const obs = obsById.get(obsId);
+                return obs ? (ctx.tsCorrelationGroup(obs)?.key ?? null) : null;
+              },
+            );
+            const paramColumns: ExternalParamColumn[] = [];
+            for (const [stationId, idx] of Object.entries(paramIndex)) {
+              if (idx.x == null || idx.y == null) continue;
+              paramColumns.push({
+                stationId,
+                e: idx.x,
+                n: idx.y,
+                ...(idx.h != null ? { h: idx.h } : {}),
+              });
+            }
+            const extRows: ExternalRowInput[] = pendingEquations.map((eq) => {
+              const m = mdbByRow.get(eq.row);
+              const useStat =
+                reliabilityAvailable && Number.isFinite(m?.mdbStat) && (m?.mdbStat ?? 0) > 0;
+              return {
+                row: eq.row,
+                mdbNative: useStat ? (m?.mdbStat as number) : (m?.mdb as number),
+                mdbModel: useStat ? 'statistical' : 'legacy-3.29',
+                groupRows: groups.get(eq.row) ?? [eq.row],
+              };
+            });
+            return computeExternalInfluences({
+              is2D: ctx.is2D,
+              B,
+              P: assembled.P,
+              equationCount: numObsEquations,
+              paramColumns,
+              rows: extRows,
+              freeNetwork: isFreeNetworkDatum({
+                stations: ctx.stations,
+                constraintCount: constraints.length,
+              }),
+              robustApproximate: ctx.robustMode === 'huber',
+            });
+          })();
 
           const gpsBeforeSummary = gpsCrossProductTransformMs;
           const summaryStartedAt = profiler ? detailedNow() : 0;
@@ -511,6 +578,22 @@ export const computeStandardizedResidualStatistics = (
             b: boolean | null,
           ): boolean | null =>
             a === false || b === false ? false : a == null || b == null ? null : true;
+          const externalOfRow = (row: number | undefined): ExternalInfluence =>
+            externalByRow.get(row ?? -1) ?? {
+              available: false,
+              reason: EXTERNAL_REASON_NO_COVARIANCE,
+            };
+          const externalComponentsOf = (
+            comps: (string | undefined)[],
+            rows: number[],
+          ): Partial<Record<'E' | 'N' | 'U', ExternalInfluence>> => {
+            const out: Partial<Record<'E' | 'N' | 'U', ExternalInfluence>> = {};
+            (['E', 'N', 'U'] as const).forEach((comp) => {
+              const idx = comps.indexOf(comp);
+              if (idx >= 0) out[comp] = externalOfRow(rows[idx]);
+            });
+            return out;
+          };
           activeObservations.forEach((obs) => {
             const gpsBranchStartedAt = profiler ? detailedNow() : 0;
             const entry = rowStats.get(obs.id);
@@ -642,6 +725,10 @@ export const computeStandardizedResidualStatistics = (
               obs.reliability = {
                 mdb: Math.min(mE, mN),
                 method: ctx.reliabilitySummary?.method ?? 'legacy-3.29',
+                externalComponents: {
+                  E: externalOfRow(entry.rows[idxE]),
+                  N: externalOfRow(entry.rows[idxN]),
+                },
                 ...(reliabilityAvailable
                   ? {
                     mdbStatistical: Math.min(entry.mdbStat[idxE], entry.mdbStat[idxN]),
@@ -670,6 +757,7 @@ export const computeStandardizedResidualStatistics = (
               obs.reliability = {
                 mdb: obs.mdb,
                 method: ctx.reliabilitySummary?.method ?? 'legacy-3.29',
+                externalComponents: externalComponentsOf(entry.comps, entry.rows),
                 ...(reliabilityAvailable
                   ? {
                     mdbStatistical: Math.min(
@@ -696,6 +784,7 @@ export const computeStandardizedResidualStatistics = (
               obs.reliability = {
                 mdb: entry.mdb[0],
                 method: ctx.reliabilitySummary?.method ?? 'legacy-3.29',
+                external: externalOfRow(entry.rows[0]),
                 ...(reliabilityAvailable
                   ? { mdbStatistical: entry.mdbStat[0] }
                   : {}),

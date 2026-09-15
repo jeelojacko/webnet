@@ -97,6 +97,16 @@ interface ObservationBase {
     /** Linear MDB in mm for angular observations; present only when computable. */
     mdbLinearMm?: number;
     method: import('./engine/reliabilityPolicy').ReliabilityMethod;
+    /**
+     * Phase 14B analytical external reliability (first-order coordinate
+     * influence of a marginally-detectable blunder). Scalar equations carry
+     * `external`; multi-row observations (GPS) carry per-component entries.
+     * Absent on the preanalysis path (per-obs MDBs unavailable there).
+     */
+    external?: import('./engine/adjustExternalReliability').ExternalInfluence;
+    externalComponents?: Partial<
+      Record<'E' | 'N' | 'U', import('./engine/adjustExternalReliability').ExternalInfluence>
+    >;
   };
   inputSpace?: ReductionInputSpace;
   distanceKind?: ReductionDistanceKind;
