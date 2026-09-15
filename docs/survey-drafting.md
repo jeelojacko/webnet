@@ -1,4 +1,4 @@
-# Survey drafting + deliverables (Phase 13B)
+# Survey drafting + deliverables (Phase 13B + 13C polish)
 
 Plan-production layer over the Survey CAD model: paper-space sheets with
 scaled viewports, derived labels and tables, and SVG/PDF/DXF deliverables.
@@ -98,6 +98,56 @@ snapshots those domains across the full drafting battery.
 ## Label deconfliction + leaders (Phase 13C §§12-21)
 
 Labels carry placement state `AUTO`/`MANUAL` (legacy `AUTO_GENERATED`/`MANUAL_OVERRIDE` read back to the same states) plus optional per-viewport paper-mm overrides (`dxMm`/`dyMm`/`rotationDeg`/`visible`) and a presentation-only leader (`enabled`, `elbowMm`, `lineweightMm`) — all persisted on the draft document (schema stays v1, additive only) and never touching source geometry. `cadLabelAutoPlacement.ts` offers optional paper-mm auto-placement over a deterministic 8-candidate set (NE/NW/SE/SW/above/below/along-left/along-right) scored by overlap + leader length + distance + clipping with label-id tie-breaks; it touches AUTO labels only unless `reset: true`, enables leaders beyond a paper-mm threshold (default 3 mm), and any manual edit flips the label to MANUAL. Geometry edits refresh label text while keeping manual placement; a missing source resolves to `BROKEN_REFERENCE`. SVG, PDF, and layout DXF share one per-viewport resolver (`buildPaperLabelItems`), so placed text + leaders render identically in all three.
+
+## Table continuation + title-block templates (Phase 13C §§22-30)
+
+- A logical table owns its rows; fragments reference deterministic row
+  ranges only (no copies). AUTO slices sequentially, MANUAL keeps the
+  first fragment; headers repeat and later fragments carry a `Continued`
+  marker. Source edits recompute all ranges; coverage (every row exactly
+  once, in order) is validated, never silently resized.
+- Title blocks are visual templates: paper-mm line/rect/static-text/
+  token-text elements with alignment, font size, and lineweight. Bounded
+  11-token set including viewport `{SCALE}`; unknown tokens stay literal
+  with `UNKNOWN_TOKEN` warnings. Create/duplicate/rename/edit/
+  delete-if-unused/assign; one renderer (`buildTitleBlockItems`) feeds
+  preview, SVG, PDF, and layout DXF. History- and persist-round-tripped
+  with stable ids.
+
+## LandXML interchange (Phase 13C §§31-48)
+
+- **Import** (`landxmlImport.ts`, preview-only staged review): bounded
+  LandXML 1.2 subset — CgPoints (N-E order), lines + circular curves,
+  geometric parcel rings, line+curve alignments. Spirals and other
+  out-of-subset geometry warn + count, never silently drop.
+- **Units** are explicit only: `meter`, `foot` (international foot,
+  0.3048 m exactly), `USSurveyFoot` (1200/3937 m); unknown units fail
+  closed. **CRS** is retained as opaque metadata, never auto-transformed
+  (`UNKNOWN` when absent).
+- Duplicates reject-or-rename; all failures are bounded throws, never
+  partial trees. XML parses via `parseXmlDocument` (16 MiB / 200k-node /
+  64-deep bounds, no DTD/DOCTYPE/ENTITY — no XXE). The adjustment
+  LandXML exporter is frozen byte-identical (golden-pinned).
+- **Export** (`landxmlCad.ts`): CAD/COGO geometry in metres → LandXML
+  1.2, reusing the adjustment serializer helpers (N-E order, 6 decimals)
+  so both writers stay byte-consistent.
+- **Geometry vs legal:** parcels and alignments cross the boundary as
+  geometric data only — no area, ownership, priority, monument, or
+  certification inference is encoded or imported. Imports never create
+  observations and never enter the least-squares adjustment.
+
+## Polish integration (Phase 13C §§49-52,55-59)
+
+- One sheet pins identical text across scene, SVG, and PDF (auto + manual
+  placements, leaders, continued-table titles, tokenised title block,
+  viewport scale, grid-north arrow, scale bar); layout DXF maps the same
+  sheet to the documented R2000 subset. Large-grid (E=2400000/N=7400000)
+  round-trips exactly through labels, layout DXF, and LandXML.
+- Save/reopen is semantically identical (schema stays v2; pre-13C v2
+  files open with safe drafting defaults). Auto-place, reset, leader,
+  table-continuation, and title-block edits are undoable; a LandXML
+  import stages as a single draft transaction. Pinned by
+  `tests/cad_draft_polish_integration.test.ts` (11 tests).
 
 ## Sample
 
