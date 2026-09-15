@@ -101,7 +101,18 @@ automatically).
   `constrained` with no migration prompt, saved `allow-free` reopens as
   `allow-free` with identical behavior. The precomposition summary
   exposes `datumMode` + per-component `datumComponents` (constrained /
-  free, no anchors) for display.
+  free, no anchors) for display. The project tab additionally persists
+  sources + settings + the frozen run snapshot per named project
+  (`src/engine/gnssMultifilePersistence.ts`: manifest `gnss` entries +
+  embedded content + settings bag, localStorage-backed, best-effort
+  writes; corrupt documents load as empty, never crash). Review/export
+  render exclusively from the frozen snapshot; display names ride the run
+  fingerprint so a rename banners STALE. Control-stations-only CSVs keep
+  `controlStations` on the parsed entry (network stays null: numerics
+  untouched) so the station trace and `controlBySource` name the control
+  file. The 10/25/50-file scaling campaign is manual-only evidence
+  (`tests/evidence/gnssMultifileScalingEvidence.test.ts`); the agent tier
+  keeps the 5-file/~1k solve+report smoke leg.
 
 ## Notes
 

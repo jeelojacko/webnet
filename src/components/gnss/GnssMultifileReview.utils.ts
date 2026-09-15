@@ -7,7 +7,10 @@
  * shared GnssResultsPanel export paths.
  */
 import type { GnssMultifileProvenance } from '../../engine/gnssMultifileComposition';
-import type { GnssProjectParsedSource } from '../../engine/gnssMultifileProject';
+import {
+  buildGnssProjectStationSourceTrace,
+  type GnssProjectParsedSource,
+} from '../../engine/gnssMultifileProject';
 
 export interface GnssReviewSource {
   readonly id: string;
@@ -41,30 +44,14 @@ export const sourceOfBaseline = (
 ): string | undefined => provenance[baselineId - 1]?.sourceId;
 
 /**
- * Per-station source trace from the parsed (pre-composition) sources:
- * every station id maps to its declaring files + declared control, in
- * manifest order. Deterministic: station ids sorted, sources in order.
+ * Per-station source trace (engine builder, re-exported for existing
+ * callers): every station id maps to its declaring files + declared
+ * control, in manifest order. Control-stations-only CSV declarations
+ * (network null) are included so control provenance survives.
  */
-export const buildStationSourceTrace = (
-  parsed: readonly GnssProjectParsedSource[],
-): Record<string, GnssStationDeclaration[]> => {
-  const trace: Record<string, GnssStationDeclaration[]> = {};
-  parsed.forEach((entry) => {
-    if (!entry.network) return;
-    Object.keys(entry.network.stations)
-      .sort()
-      .forEach((id) => {
-        const station = entry.network?.stations[id];
-        if (!station) return;
-        const control = station.fixedX && station.fixedY && station.fixedH ? 'FIXED' : 'FREE';
-        trace[id] = [
-          ...(trace[id] ?? []),
-          { sourceId: entry.fileId, fileName: entry.fileName, control },
-        ];
-      });
-  });
-  return trace;
-};
+export const buildStationSourceTrace: (
+  _parsed: readonly GnssProjectParsedSource[],
+) => Record<string, GnssStationDeclaration[]> = buildGnssProjectStationSourceTrace;
 
 /**
  * Concise multi-file export block: project name, enabled sources with

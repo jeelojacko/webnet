@@ -14,9 +14,11 @@ interface GnssWorkspaceModalProps {
   onClose: () => void;
   pendingExternalImport?: GnssExternalImport | null;
   onConsumeExternalImport?: () => void;
+  /** Named-project id scoping multifile durability (default 'scratch'). */
+  projectId?: string;
 }
 
-export const GnssWorkspaceModal: React.FC<GnssWorkspaceModalProps> = ({ open, onClose, pendingExternalImport = null, onConsumeExternalImport }) => {
+export const GnssWorkspaceModal: React.FC<GnssWorkspaceModalProps> = ({ open, onClose, pendingExternalImport = null, onConsumeExternalImport, projectId }) => {
   const [tab, setTab] = useState<'single' | 'project'>('single');
   if (!open) return null;
   return (
@@ -52,7 +54,7 @@ export const GnssWorkspaceModal: React.FC<GnssWorkspaceModalProps> = ({ open, on
         {tab === 'single' ? (
           <GnssWorkspacePanel pendingExternalImport={pendingExternalImport} onConsumePendingImport={onConsumeExternalImport} />
         ) : (
-          <GnssMultifileProjectPanel />
+          <GnssMultifileProjectPanel projectId={projectId} />
         )}
       </div>
     </div>

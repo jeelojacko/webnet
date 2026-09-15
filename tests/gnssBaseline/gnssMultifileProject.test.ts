@@ -14,6 +14,7 @@ import {
   assertGnssProjectPortable,
   buildGnssMultifileJsonExport,
   buildGnssMultifileProvenanceSection,
+  buildGnssProjectStationSourceTrace,
   deserializeGnssMultifilePersisted,
   detectGnssProjectSourceKind,
   emptyGnssMultifilePersisted,
@@ -181,6 +182,25 @@ describe('gnss multifile project solve', () => {
     expect(output.summary.status).toBe('READY');
     expect(output.input.stations.A!.fixedX).toBe(true);
     expect(texts.f1).not.toMatch(/FIXED/);
+  });
+
+  it('control-only CSV keeps its provenance and fixed-control attribution', () => {
+    setGnssMultifileEnabled(true);
+    // Control-stations CSV auto-detects as terrestrial: it enters the
+    // project via an explicit gnss-csv format override.
+    const controlCsv = 'id,X,Y,Z,fixed\nA,4000000,1000000,4800000,FIXED\n';
+    const freeNative = nativeText([{ id: 'A' }, { id: 'B' }], [{ from: 'A', to: 'B' }]);
+    const files = [entry('f0', 'control.csv', 0), entry('f1', 'p1.dat', 1)];
+    const texts = { f0: controlCsv, f1: freeNative };
+    const parsed = parseGnssProjectSources(files, texts, { formatOverrides: { f0: 'gnss-csv' } });
+    const control = parsed.find((entry) => entry.fileId === 'f0');
+    expect(control?.network).toBeNull();
+    expect(Object.keys(control?.controlStations ?? {}).sort()).toEqual(['A']);
+    const summary = summarizeGnssProjectComposition(parsed, files.length);
+    // FIXED control attributed to the control file, never the later network.
+    expect(summary.controlBySource).toEqual(['A FIXED (control.csv)']);
+    const trace = buildGnssProjectStationSourceTrace(parsed);
+    expect(trace.A?.[0]).toEqual({ sourceId: 'f0', fileName: 'control.csv', control: 'FIXED' });
   });
 
   it('enable/disable recomposes cleanly with no stale state', () => {

@@ -33,12 +33,27 @@ import { buildValueFingerprint } from './qaWorkflowSnapshots';
 
 export const ADJUSTMENT_RESULT_FINGERPRINT_VERSION = 'adjustment-result/v1';
 
+/**
+ * Deterministic code-unit comparator (UTF-16 `<`/`>`), local to this
+ * module. Station/sideshot canonicalization must not depend on the
+ * runtime locale: `String.localeCompare` with `numeric: true` orders
+ * e.g. `P2` before `P10` and folds case per locale, so the same result
+ * could hash differently across environments. Code-unit order is stable
+ * everywhere. Deliberately local — shared `buildValueFingerprint` is
+ * untouched.
+ */
+const compareCodeUnits = (a: string, b: string): number => {
+  if (a < b) return -1;
+  if (a > b) return 1;
+  return 0;
+};
+
 const num = (value: number | undefined): number | null =>
   typeof value === 'number' && Number.isFinite(value) ? value : null;
 
 export const buildAdjustmentResultFingerprint = (result: AdjustmentResult): string => {
   const stations = Object.entries(result.stations ?? {})
-    .sort(([a], [b]) => a.localeCompare(b, undefined, { numeric: true }))
+    .sort(([a], [b]) => compareCodeUnits(a, b))
     .map(([id, station]) => ({
       id,
       x: num(station.x),
@@ -64,9 +79,9 @@ export const buildAdjustmentResultFingerprint = (result: AdjustmentResult): stri
       height: num(shot.height),
     }))
     .sort((a, b) =>
-      a.from.localeCompare(b.from, undefined, { numeric: true })
-      || a.to.localeCompare(b.to, undefined, { numeric: true })
-      || a.id.localeCompare(b.id, undefined, { numeric: true }));
+      compareCodeUnits(a.from, b.from)
+      || compareCodeUnits(a.to, b.to)
+      || compareCodeUnits(a.id, b.id));
   return buildValueFingerprint({
     version: ADJUSTMENT_RESULT_FINGERPRINT_VERSION,
     coordMode: result.parseState?.coordMode ?? null,

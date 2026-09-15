@@ -43,7 +43,7 @@ import {
   normalizeGnssSetupUncertainty,
   type GnssSetupUncertainty,
 } from './gnssBaselineSetupUncertainty';
-import { computeGnssLoopClosures } from './gnssBaselineLoops';
+
 
 export type GnssProjectSourceKind =
   | 'terrestrial'
@@ -111,6 +111,14 @@ export interface GnssProjectParsedSource {
   readonly kind: GnssProjectSourceKind;
   readonly format: GnssMultifileFormat;
   readonly network: GnssBaselineNetworkInput | null;
+  /**
+   * Control-stations-only CSV declarations. Network stays null (no
+   * baselines, no frame) so composition numerics are untouched; the
+   * declarations are retained here so the station trace and fixed-control
+   * attribution name the control source instead of vanishing or leaking
+   * onto a later baseline network.
+   */
+  readonly controlStations?: StationMap | null;
   readonly diagnostics: GnssDiagnostic[];
 }
 
@@ -193,7 +201,7 @@ const parseCsvPass = (
           ellipsoid: options.csvEllipsoid,
         };
       }
-      parsed.push({ fileId: file.id, fileName: file.name, kind, format: 'delimited', network: null, diagnostics: [...control.diagnostics] });
+      parsed.push({ fileId: file.id, fileName: file.name, kind, format: 'delimited', network: null, controlStations: control.stations, diagnostics: [...control.diagnostics] });
       return;
     }
     const resolved = {
@@ -366,6 +374,20 @@ const buildPrecompositionSummary = (
       if (station?.fixedX && station?.fixedY && station?.fixedH) fixedStations.add(id);
     });
   });
+  // Fixed-control attribution prefers the control-stations-only CSV that
+  // declared it (manifest order); only then the first baseline network.
+  // Without this the control source vanishes from the trace and its FIXED
+  // stations get misattributed to whichever later network re-declares them.
+  const controlOrigin = new Map<string, string>();
+  parsed.forEach((entry) => {
+    if (!entry.controlStations) return;
+    Object.entries(entry.controlStations).forEach(([id, station]) => {
+      if (station?.fixedX && station?.fixedY && station?.fixedH && !controlOrigin.has(id)) {
+        controlOrigin.set(id, entry.fileName);
+      }
+    });
+  });
+  controlOrigin.forEach((_, id) => fixedStations.add(id));
   const allBaselines = gnss.flatMap((entry) => (entry.network as GnssBaselineNetworkInput).baselines);
   // Datum classification for UI: composed stations with the project
   // control overrides applied (same effective control the solve decides
@@ -403,7 +425,9 @@ const buildPrecompositionSummary = (
     datumMode,
     datumComponents,
     controlBySource: [...fixedStations].sort().map((id) => {
-      const origin = gnss.find((entry) => (entry.network as GnssBaselineNetworkInput).stations[id]?.fixedX)?.fileName ?? 'unknown';
+      const origin = controlOrigin.get(id)
+        ?? gnss.find((entry) => (entry.network as GnssBaselineNetworkInput).stations[id]?.fixedX)?.fileName
+        ?? 'unknown';
       return `${id} FIXED (${origin})`;
     }),
     duplicateCandidates: composed?.duplicateCandidates.length ?? 0,
@@ -570,6 +594,35 @@ export const assertGnssProjectPortable = (
   }
 };
 
+/**
+ * Per-station source trace from the parsed (pre-composition) sources:
+ * every station id maps to its declaring files + declared control, in
+ * manifest order. Deterministic: station ids sorted, sources in order.
+ * Control-stations-only CSV declarations (network null) are included so
+ * control provenance survives.
+ */
+export const buildGnssProjectStationSourceTrace = (
+  parsed: readonly GnssProjectParsedSource[],
+): Record<string, Array<{ sourceId: string; fileName: string; control: 'FIXED' | 'FREE' }>> => {
+  const trace: Record<string, Array<{ sourceId: string; fileName: string; control: 'FIXED' | 'FREE' }>> = {};
+  parsed.forEach((entry) => {
+    const declared = entry.network?.stations ?? entry.controlStations ?? null;
+    if (!declared) return;
+    Object.keys(declared)
+      .sort()
+      .forEach((id) => {
+        const station = declared[id];
+        if (!station) return;
+        const control = station.fixedX && station.fixedY && station.fixedH ? 'FIXED' : 'FREE';
+        trace[id] = [
+          ...(trace[id] ?? []),
+          { sourceId: entry.fileId, fileName: entry.fileName, control },
+        ];
+      });
+  });
+  return trace;
+};
+
 /** Persisted helpers: settings-bag round-trip (never persists the composed network). */
 export const serializeGnssMultifilePersisted = (
   persisted: GnssMultifilePersistedV1,
@@ -591,78 +644,8 @@ export const deserializeGnssMultifilePersisted = (
   };
 };
 
-/** Report provenance section (no math recomputation): per-baseline origin + loop origins + warnings. */
-export const buildGnssMultifileProvenanceSection = (
-  provenance: readonly GnssMultifileProvenance[],
-  baselines: GnssBaselineAdjustInput['baselines'],
-  mergeNotes: readonly string[],
-  blockingErrors: readonly string[],
-): string[] => {
-  const lines: string[] = ['Multifile composition provenance:'];
-  provenance.forEach((entry, index) => {
-    const baseline = baselines[index];
-    lines.push(
-      `  BL ${index + 1} (${baseline?.from ?? '?'}->${baseline?.to ?? '?'}) from '${entry.fileName}' [${entry.sourceId}] original ID ${entry.originalId} (${entry.format}).`,
-    );
-  });
-  try {
-    const loops = computeGnssLoopClosures(baselines.map((baseline) => ({ ...baseline })));
-    loops.loops.forEach((loop, index) => {
-      const origins = [...new Set(loop.members.map((member) => provenance[member.baselineId - 1]?.sourceId ?? '?'))];
-      lines.push(`  loop ${index + 1}: members span ${origins.join('+')}.`);
-    });
-  } catch {
-    lines.push('  loop QC unavailable (backend error).');
-  }
-  if (mergeNotes.length > 0) {
-    lines.push('Composition notes:');
-    mergeNotes.forEach((note) => lines.push(`  note: ${note}`));
-  }
-  if (blockingErrors.length > 0) {
-    lines.push('Composition conflicts:');
-    blockingErrors.forEach((error) => lines.push(`  BLOCKED: ${error}`));
-  }
-  return lines;
-};
-
-/** JSON export: sources, frame, provenance, diagnostics, setup, overrides, results. */
-export const buildGnssMultifileJsonExport = (output: GnssMultifileSolveOutput): Record<string, unknown> => ({
-  kind: 'webnet-gnss-multifile-export',
-  version: 1,
-  sources: output.parsed
-    .filter((entry) => entry.network != null)
-    .map((entry) => ({
-      sourceId: entry.fileId,
-      fileName: entry.fileName,
-      format: entry.format,
-      stations: Object.keys((entry.network as GnssBaselineNetworkInput).stations).length,
-      baselines: (entry.network as GnssBaselineNetworkInput).baselines.length,
-      diagnostics: entry.diagnostics,
-    })),
-  composedFrame: {
-    referenceFrame: output.input.referenceFrame,
-    epoch: output.input.epoch,
-    ellipsoid: output.input.ellipsoid,
-  },
-  stationProvenance: output.summary.controlBySource,
-  baselineProvenance: output.provenance,
-  compositionNotes: output.mergeNotes,
-  setup: output.input.setupUncertainty,
-  controlOverrides: output.input.stations,
-  // Phase 12I.1: datum keys appear only on allow-free free-network runs;
-  // constrained exports keep their legacy shape.
-  ...(output.input.datumMode === 'allow-free' && output.result.datumSummary
-    ? { datumMode: output.input.datumMode, datumSummary: output.result.datumSummary }
-    : {}),
-  result: {
-    varianceFactor: output.result.varianceFactor,
-    weightedResidualSum: output.result.weightedResidualSum,
-    dof: output.result.dof,
-    iterations: output.result.iterations,
-    converged: output.result.converged,
-    stations: output.result.stations,
-    residuals: output.result.residuals,
-    statistics: output.result.statistics,
-    routeProvenance: output.result.routeProvenance,
-  },
-});
+/**
+ * Report/export builders live in ./gnssMultifileExport (600-line hygiene
+ * split); re-exported here so existing callers are untouched.
+ */
+export { buildGnssMultifileJsonExport, buildGnssMultifileProvenanceSection } from './gnssMultifileExport';

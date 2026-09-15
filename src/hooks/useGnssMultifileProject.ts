@@ -13,19 +13,26 @@
  * superseded run are dropped by the sequence guard (no worker cancel:
  * composition itself is synchronous, so there is nothing to cancel).
  */
-import { useCallback, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { StationMap } from '../types';
 import type { GnssMultifileProvenance } from '../engine/gnssMultifileComposition';
 import type { GnssBaselineAdjustInput } from '../engine/gnssBaselineAdjust';
 import {
   buildGnssMultifileAdjustInput,
   buildGnssMultifileProvenanceSection,
+  buildGnssProjectStationSourceTrace,
   findNonPortableProjectPaths,
   parseGnssProjectSources,
   summarizeGnssProjectComposition,
   type GnssPrecompositionSummary,
   type GnssProjectParsedSource,
 } from '../engine/gnssMultifileProject';
+import {
+  defaultGnssMultifileProjectStore,
+  loadGnssMultifileProject,
+  saveGnssMultifileProject,
+  type GnssMultifileProjectStore,
+} from '../engine/gnssMultifilePersistence';
 import type { GnssDatumMode } from '../engine/gnssFreeNetwork';
 import { setStationFixed } from '../engine/gnssWorkspaceSession';
 import { buildValueFingerprint } from '../engine/qaWorkflowSnapshots';
@@ -57,12 +64,44 @@ export interface GnssProjectSourceStatus {
   readonly messages: string[];
 }
 
+export interface GnssProjectFrozenSource {
+  readonly id: string;
+  readonly name: string;
+  readonly hash: string;
+  readonly order: number;
+}
+
+export interface GnssProjectFrozenStationDecl {
+  readonly sourceId: string;
+  readonly fileName: string;
+  readonly control: 'FIXED' | 'FREE';
+}
+
 export interface GnssProjectRunSnapshot {
   readonly fingerprint: string;
   readonly provenance: GnssMultifileProvenance[];
   readonly mergeNotes: string[];
   readonly input: GnssBaselineAdjustInput;
   readonly outcome: GnssRunOutcome;
+  /**
+   * Frozen solve-time review/export context. Render and export read ONLY
+   * these fields: later edits (rename, retoggle, reorder, datum change)
+   * must never be attributed to this solution. Edits only flip the STALE
+   * flag via the run fingerprint until the next solve replaces the snapshot.
+   */
+  readonly enabledSources: GnssProjectFrozenSource[];
+  readonly datumMode: GnssDatumMode;
+  readonly warnings: string[];
+  readonly controlBySource: string[];
+  readonly stationTrace: Record<string, GnssProjectFrozenStationDecl[]>;
+  readonly composedControl: Record<string, 'FIXED' | 'FREE'>;
+}
+
+export interface GnssMultifileProjectOptions {
+  /** Named-project id scoping the durable store (default 'scratch'). */
+  readonly projectId?: string;
+  /** Durability store (default localStorage; null disables persistence). */
+  readonly store?: GnssMultifileProjectStore | null;
 }
 
 export type GnssProjectRunFn = (_input: GnssBaselineAdjustInput) => Promise<GnssRunOutcome>;
@@ -115,16 +154,63 @@ const statusOf = (entry: GnssProjectParsedSource, hash: string): GnssProjectSour
   };
 };
 
-export const useGnssMultifileProject = () => {
-  const [sources, setSources] = useState<GnssProjectFileState[]>([]);
-  const [controlOverrides, setControlOverrides] = useState<Record<string, boolean>>({});
-  const [datumMode, setDatumMode] = useState<GnssDatumMode>('constrained');
-  const [centeringSigma, setCenteringSigma] = useState('0.000');
-  const [heightSigma, setHeightSigma] = useState('0.000');
-  const [acknowledgedHashes, setAcknowledgedHashes] = useState<string[]>([]);
-  const [snapshot, setSnapshot] = useState<GnssProjectRunSnapshot | null>(null);
+export const useGnssMultifileProject = (options: GnssMultifileProjectOptions = {}) => {
+  const projectId = options.projectId ?? 'scratch';
+  const store = useMemo(
+    () => (options.store === undefined ? defaultGnssMultifileProjectStore() : options.store),
+    [options.store],
+  );
+  // Durable named-project state: hydrate once per mount/project-open from
+  // the manifest-entries + content + settings-bag document (B1 'gnss'
+  // kind + settings re-attach, actually used here).
+  const [boot] = useState(() => loadGnssMultifileProject(projectId, store));
+  const [sources, setSources] = useState<GnssProjectFileState[]>(() =>
+    (boot?.entries ?? []).map((entry) => ({
+      id: entry.id,
+      name: entry.name,
+      text: boot?.texts[entry.id] ?? '',
+      enabled: entry.enabled,
+      order: entry.order,
+    })),
+  );
+  const [controlOverrides, setControlOverrides] = useState<Record<string, boolean>>(
+    () => ({ ...(boot?.settings.controlOverrides ?? {}) }),
+  );
+  const [datumMode, setDatumMode] = useState<GnssDatumMode>(() => boot?.settings.datumMode ?? 'constrained');
+  const [centeringSigma, setCenteringSigma] = useState(() => boot?.ui.centeringSigma ?? '0.000');
+  const [heightSigma, setHeightSigma] = useState(() => boot?.ui.heightSigma ?? '0.000');
+  const [acknowledgedHashes, setAcknowledgedHashes] = useState<string[]>(() => [
+    ...(boot?.ui.acknowledgedHashes ?? []),
+  ]);
+  const [snapshot, setSnapshot] = useState<GnssProjectRunSnapshot | null>(
+    () => (boot?.snapshot as GnssProjectRunSnapshot | null) ?? null,
+  );
   const [runError, setRunError] = useState<string | null>(null);
   const [solving, setSolving] = useState(false);
+  // Project open/switch: re-hydrate when the named project changes.
+  const bootKey = useRef(projectId);
+  useEffect(() => {
+    if (bootKey.current === projectId) return;
+    bootKey.current = projectId;
+    const next = loadGnssMultifileProject(projectId, store);
+    setSources(
+      (next?.entries ?? []).map((entry) => ({
+        id: entry.id,
+        name: entry.name,
+        text: next?.texts[entry.id] ?? '',
+        enabled: entry.enabled,
+        order: entry.order,
+      })),
+    );
+    setControlOverrides({ ...(next?.settings.controlOverrides ?? {}) });
+    setDatumMode(next?.settings.datumMode ?? 'constrained');
+    setCenteringSigma(next?.ui.centeringSigma ?? '0.000');
+    setHeightSigma(next?.ui.heightSigma ?? '0.000');
+    setAcknowledgedHashes([...(next?.ui.acknowledgedHashes ?? [])]);
+    setSnapshot((next?.snapshot as GnssProjectRunSnapshot | null) ?? null);
+    setRunError(null);
+    setSolving(false);
+  }, [projectId, store]);
   // Run sequence: composition is synchronous (fast, non-cancellable) and
   // only the worker await below is async. A newer run supersedes an older
   // one — late results from an earlier run are dropped, never applied.
@@ -222,6 +308,9 @@ export const useGnssMultifileProject = () => {
       buildValueFingerprint({
         hashes: sortedSources(sources).filter((source) => source.enabled).map((source) => hashes[source.id] ?? ''),
         order: sortedSources(sources).filter((source) => source.enabled).map((source) => source.id),
+        // Display names ride the frozen export block: a rename must banner
+        // stale (the frozen solution keeps its solve-time names).
+        names: sortedSources(sources).filter((source) => source.enabled).map((source) => source.name),
         datumMode,
         controlOverrides,
         setup,
@@ -296,7 +385,36 @@ export const useGnssMultifileProject = () => {
         const fingerprint = runFingerprint;
         const outcome = await run(built.input);
         if (seq !== runSeq.current) return;
-        setSnapshot({ fingerprint, provenance: built.provenance, mergeNotes: built.mergeNotes, input: built.input, outcome });
+        // Freeze the complete review/export context at solve time: source
+        // names/hashes/order, datum, warnings, control attribution, and
+        // station trace inputs. Render/export read ONLY the frozen copy.
+        const composedControl: Record<string, 'FIXED' | 'FREE'> = {};
+        Object.keys(built.input.stations)
+          .sort()
+          .forEach((id) => {
+            const station = built.input.stations[id];
+            composedControl[id] = station?.fixedX && station?.fixedY && station?.fixedH ? 'FIXED' : 'FREE';
+          });
+        setSnapshot({
+          fingerprint,
+          provenance: built.provenance,
+          mergeNotes: built.mergeNotes,
+          input: built.input,
+          outcome,
+          enabledSources: sortedSources(sources)
+            .filter((source) => source.enabled)
+            .map((source) => ({
+              id: source.id,
+              name: source.name,
+              hash: buildValueFingerprint(source.text),
+              order: source.order,
+            })),
+          datumMode,
+          warnings: [...built.summary.warnings],
+          controlBySource: [...built.summary.controlBySource],
+          stationTrace: buildGnssProjectStationSourceTrace(built.parsed),
+          composedControl,
+        });
       } catch (failure) {
         if (seq !== runSeq.current) return;
         setRunError(failure instanceof Error ? failure.message : String(failure));
@@ -304,9 +422,13 @@ export const useGnssMultifileProject = () => {
         if (seq === runSeq.current) setSolving(false);
       }
     },
-    [sigmaInvalid, solving, entries, sourceTexts, controlOverrides, datumMode, setup, runFingerprint],
+    [sigmaInvalid, solving, entries, sourceTexts, controlOverrides, datumMode, setup, runFingerprint, sources],
   );
 
+  // Provenance renders EXCLUSIVELY from the frozen snapshot (conflicts are
+  // always empty on a solved snapshot: BLOCKED throws before snapshotting).
+  // Live conflicts stay in the composition-preview section, never under an
+  // old solution.
   const provenanceLines = useMemo(
     () =>
       snapshot
@@ -314,11 +436,37 @@ export const useGnssMultifileProject = () => {
             snapshot.provenance,
             snapshot.input.baselines,
             snapshot.mergeNotes,
-            summary.blockingErrors,
+            [],
           )
         : [],
-    [snapshot, summary.blockingErrors],
+    [snapshot],
   );
+
+  // Write-through durability: every change lands in the named-project
+  // document (manifest entries + content + settings bag + frozen snapshot).
+  useEffect(() => {
+    const finiteOrZero = (value: string): number => {
+      const parsed = Number(value);
+      return Number.isFinite(parsed) ? parsed : 0;
+    };
+    saveGnssMultifileProject(projectId, store, {
+      entries,
+      texts: sourceTexts,
+      settings: {
+        version: 1,
+        formatOverrides: {},
+        controlOverrides,
+        datumMode,
+        setup: {
+          horizontalCenteringSigma: finiteOrZero(centeringSigma),
+          antennaHeightSigma: finiteOrZero(heightSigma),
+        },
+        displayNames: {},
+      },
+      ui: { centeringSigma, heightSigma, acknowledgedHashes },
+      snapshot: snapshot as unknown as Record<string, unknown> | null,
+    });
+  }, [projectId, store, entries, sourceTexts, controlOverrides, datumMode, centeringSigma, heightSigma, acknowledgedHashes, snapshot]);
 
   return {
     sources: sortedSources(sources),

@@ -301,8 +301,19 @@ export const applyAdjustmentRerunToLinkedF2f = (
     // Manual overrides still surface: a MANUAL_OVERRIDE entity diverges from
     // what F2F would generate even when coordinates match, so the link must
     // not read CURRENT. DETACHED stays silent (never counted).
+    // Legacy fail-closed: a legacy link (no stamped resultFingerprint)
+    // carries the input:settings composite, which is a different shape from
+    // a result fingerprint — a zero coordinate delta against live geometry
+    // proves nothing about the solved result, so a rerun that supplies a
+    // resultFingerprint stamps COORDINATES_CHANGED instead of silently
+    // preserving CURRENT. Higher-precedence existing/manual states
+    // (MANUAL_CONFLICT and structural staleness) are preserved.
     const manualConflict = hasLinkedManualOverrides(project.entities, link.stationIds);
-    const status: FieldToFinishSyncStatus = manualConflict ? 'MANUAL_CONFLICT' : link.status;
+    let status: FieldToFinishSyncStatus = manualConflict ? 'MANUAL_CONFLICT' : link.status;
+    const legacyResultUpgrade = input.resultFingerprint !== undefined && link.resultFingerprint === undefined;
+    if (!manualConflict && legacyResultUpgrade && (status === 'CURRENT' || status === 'COORDINATES_CHANGED')) {
+      status = 'COORDINATES_CHANGED';
+    }
     const stamped = revision !== undefined || manualConflict
       ? stampFieldToFinishLink(project, { status, ...provenancePatch })
       : project;

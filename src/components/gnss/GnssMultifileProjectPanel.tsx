@@ -13,16 +13,15 @@ import { GnssDatumHandlingSelector } from './GnssDatumHandlingSelector';
 import {
   buildGnssMultifileExportJson,
   buildGnssMultifileExportLines,
-  buildStationSourceTrace,
   type GnssMultifileReviewInfo,
 } from './GnssMultifileReview.utils';
 import { GnssResultsPanel } from './GnssResultsPanel';
 import { GnssStationTable } from './GnssStationTable';
 import { mapGnssRunError } from './gnssRunErrorText';
 
-export const GnssMultifileProjectPanel: React.FC = () => {
+export const GnssMultifileProjectPanel: React.FC<{ projectId?: string }> = ({ projectId }) => {
   const worker = useGnssBaselineWorker();
-  const project = useGnssMultifileProject();
+  const project = useGnssMultifileProject({ projectId });
   const running = worker.status === 'running' || project.solving;
 
   const handleAddFiles = (files: FileList | null): void => {
@@ -47,37 +46,24 @@ export const GnssMultifileProjectPanel: React.FC = () => {
 
   const runError = project.runError ? mapGnssRunError(project.runError) : null;
 
-  // Review context over the frozen run snapshot (display only, never re-solved).
+  // Review context reads EXCLUSIVELY from the frozen run snapshot (display
+  // only, never re-solved): an old solution is never attributed to the
+  // edited project. Staleness is bannered; refresh requires re-adjust.
   const review: GnssMultifileReviewInfo | undefined = useMemo(() => {
     if (!project.snapshot) return undefined;
-    const statusById = new Map(project.sourceStatuses.map((row) => [row.fileId, row]));
-    const enabledSources = project.sources
-      .filter((source) => source.enabled)
-      .map((source) => ({
-        id: source.id,
-        name: source.name,
-        hash: statusById.get(source.id)?.hash ?? '',
-        order: source.order,
-      }));
-    const composedControl: Record<string, 'FIXED' | 'FREE'> = {};
-    Object.keys(project.snapshot.input.stations)
-      .sort()
-      .forEach((id) => {
-        const station = project.snapshot?.input.stations[id];
-        composedControl[id] = station?.fixedX && station?.fixedY && station?.fixedH ? 'FIXED' : 'FREE';
-      });
+    const frozen = project.snapshot;
     return {
       projectName: 'gnss-multifile-project',
-      datumMode: project.datumMode,
-      enabledSources,
-      warnings: [...project.summary.warnings],
-      mergeNotes: [...project.snapshot.mergeNotes],
-      controlBySource: [...project.summary.controlBySource],
-      provenance: project.snapshot.provenance,
-      stationTrace: buildStationSourceTrace(project.parsed),
-      composedControl,
+      datumMode: frozen.datumMode,
+      enabledSources: frozen.enabledSources.map((source) => ({ ...source })),
+      warnings: [...frozen.warnings],
+      mergeNotes: [...frozen.mergeNotes],
+      controlBySource: [...frozen.controlBySource],
+      provenance: frozen.provenance,
+      stationTrace: frozen.stationTrace,
+      composedControl: { ...frozen.composedControl },
     };
-  }, [project.snapshot, project.sources, project.sourceStatuses, project.summary, project.parsed, project.datumMode]);
+  }, [project.snapshot]);
 
   return (
     <div className="p-4 space-y-4 text-slate-200 max-w-5xl">
