@@ -1,4 +1,6 @@
 import type { ExportItem, ExportSheetScene } from './cadExportScene';
+import { BROKEN_REFERENCE_TEXT } from './cadLabelEngine';
+import { emptyExportResult, finalizeExportResult, type ExportResult } from './exportResult';
 
 // Deterministic scene→SVG. No timestamps, no random ids: clip ids derive
 // from stable viewport ids, so identical input yields byte-identical output.
@@ -13,27 +15,40 @@ const escapeXml = (text: string): string =>
 
 const anchorOf = (anchor: 'start' | 'middle' | 'end' | undefined): string => ` text-anchor="${anchor ?? 'start'}"`;
 
+// Color attrs emit only when the item carries a resolved color, so
+// hand-built scenes without color serialize exactly as before.
+const strokeAttrs = (item: ExportItem): string => {
+  let out = '';
+  if (item.stroke != null) out += ` stroke="${escapeXml(item.stroke)}"`;
+  if (item.kind === 'line' || item.kind === 'polyline' || item.kind === 'circle' || item.kind === 'ellipse') {
+    if (item.widthMm != null) out += ` stroke-width="${fmt(item.widthMm)}"`;
+    if (item.dash != null) out += ` stroke-dasharray="${escapeXml(item.dash)}"`;
+  }
+  return out;
+};
+
 const serializeItem = (item: ExportItem): string => {
   switch (item.kind) {
     case 'line':
-      return `<line x1="${fmt(item.x1)}" y1="${fmt(item.y1)}" x2="${fmt(item.x2)}" y2="${fmt(item.y2)}"${item.clipId ? ` clip-path="url(#${item.clipId})"` : ''}/>`;
+      return `<line x1="${fmt(item.x1)}" y1="${fmt(item.y1)}" x2="${fmt(item.x2)}" y2="${fmt(item.y2)}"${strokeAttrs(item)}${item.clipId ? ` clip-path="url(#${item.clipId})"` : ''}/>`;
     case 'polyline': {
       const points = item.points.map((p) => `${fmt(p.x)},${fmt(p.y)}`).join(' ');
       const tag = item.close ? 'polygon' : 'polyline';
-      return `<${tag} points="${points}" fill="${item.close ? 'none' : 'none'}"${item.clipId ? ` clip-path="url(#${item.clipId})"` : ''}/>`;
+      return `<${tag} points="${points}" fill="${item.fill ?? 'none'}"${strokeAttrs(item)}${item.clipId ? ` clip-path="url(#${item.clipId})"` : ''}/>`;
     }
     case 'rect':
-      return `<rect x="${fmt(item.x)}" y="${fmt(item.y)}" width="${fmt(item.width)}" height="${fmt(item.height)}" fill="${item.fill ?? 'none'}"${item.clipId ? ` clip-path="url(#${item.clipId})"` : ''}/>`;
+      return `<rect x="${fmt(item.x)}" y="${fmt(item.y)}" width="${fmt(item.width)}" height="${fmt(item.height)}" fill="${item.fill ?? 'none'}"${strokeAttrs(item)}${item.clipId ? ` clip-path="url(#${item.clipId})"` : ''}/>`;
     case 'circle':
-      return `<circle cx="${fmt(item.cx)}" cy="${fmt(item.cy)}" r="${fmt(item.r)}"${item.clipId ? ` clip-path="url(#${item.clipId})"` : ''}/>`;
+      return `<circle cx="${fmt(item.cx)}" cy="${fmt(item.cy)}" r="${fmt(item.r)}" fill="${item.fill ?? 'none'}"${strokeAttrs(item)}${item.clipId ? ` clip-path="url(#${item.clipId})"` : ''}/>`;
     case 'ellipse':
-      return `<ellipse cx="${fmt(item.cx)}" cy="${fmt(item.cy)}" rx="${fmt(item.rx)}" ry="${fmt(item.ry)}" transform="rotate(${fmt(item.rotationDeg)} ${fmt(item.cx)} ${fmt(item.cy)})"${item.clipId ? ` clip-path="url(#${item.clipId})"` : ''}/>`;
+      return `<ellipse cx="${fmt(item.cx)}" cy="${fmt(item.cy)}" rx="${fmt(item.rx)}" ry="${fmt(item.ry)}" transform="rotate(${fmt(item.rotationDeg)} ${fmt(item.cx)} ${fmt(item.cy)})" fill="none"${strokeAttrs(item)}${item.clipId ? ` clip-path="url(#${item.clipId})"` : ''}/>`;
     case 'arc':
-      return `<path d="M ${fmt(item.cx + item.r * Math.cos((item.startDeg * Math.PI) / 180))} ${fmt(item.cy - item.r * Math.sin((item.startDeg * Math.PI) / 180))} A ${fmt(item.r)} ${fmt(item.r)} 0 0 0 ${fmt(item.cx + item.r * Math.cos((item.endDeg * Math.PI) / 180))} ${fmt(item.cy - item.r * Math.sin((item.endDeg * Math.PI) / 180))}" fill="none"${item.clipId ? ` clip-path="url(#${item.clipId})"` : ''}/>`;
+      return `<path d="M ${fmt(item.cx + item.r * Math.cos((item.startDeg * Math.PI) / 180))} ${fmt(item.cy - item.r * Math.sin((item.startDeg * Math.PI) / 180))} A ${fmt(item.r)} ${fmt(item.r)} 0 0 0 ${fmt(item.cx + item.r * Math.cos((item.endDeg * Math.PI) / 180))} ${fmt(item.cy - item.r * Math.sin((item.endDeg * Math.PI) / 180))}" fill="none"${strokeAttrs(item)}${item.clipId ? ` clip-path="url(#${item.clipId})"` : ''}/>`;
     case 'text': {
       const rotation = item.rotationDeg ? ` transform="rotate(${fmt(item.rotationDeg)} ${fmt(item.x)} ${fmt(item.y)})"` : '';
       const clip = item.clipId ? ` clip-path="url(#${item.clipId})"` : '';
-      return `<text x="${fmt(item.x)}" y="${fmt(item.y)}" font-size="${fmt(item.heightMm)}"${anchorOf(item.anchor)}${rotation}${clip}>${escapeXml(item.text)}</text>`;
+      const fill = item.stroke != null ? ` fill="${escapeXml(item.stroke)}"` : '';
+      return `<text x="${fmt(item.x)}" y="${fmt(item.y)}" font-size="${fmt(item.heightMm)}"${anchorOf(item.anchor)}${fill}${rotation}${clip}>${escapeXml(item.text)}</text>`;
     }
   }
 };
@@ -64,4 +79,20 @@ export const serializeExportSceneToSvg = (scene: ExportSheetScene): string => {
   if (currentLayer !== undefined) lines.push('</g>');
   lines.push('</svg>');
   return `${lines.join('\n')}\n`;
+};
+
+// Same bytes as serializeExportSceneToSvg, plus BROKEN_REFERENCE warnings
+// for placeholder text items so the warning survives the scene→SVG hop.
+// Entity attribution lives in buildExportSheetSceneWithResult; the
+// serializer only knows items, so it reports source ids when present.
+export const serializeExportSceneToSvgWithResult = (scene: ExportSheetScene): ExportResult<string> => {
+  const result = emptyExportResult(serializeExportSceneToSvg(scene));
+  const exportedEntityIds: string[] = [];
+  scene.items.forEach((item) => {
+    if (item.sourceEntityId != null) exportedEntityIds.push(item.sourceEntityId);
+    if (item.kind === 'text' && item.text === BROKEN_REFERENCE_TEXT) {
+      result.warnings.push({ code: 'BROKEN_REFERENCE', message: 'scene contains a broken-reference placeholder', ...(item.sourceEntityId ? { entityId: item.sourceEntityId } : {}) });
+    }
+  });
+  return finalizeExportResult({ ...result, exportedEntityIds });
 };
