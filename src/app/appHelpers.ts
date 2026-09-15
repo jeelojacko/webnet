@@ -1,6 +1,10 @@
 import { CRS_CATALOG } from '../engine/crsCatalog';
 import { DEFAULT_S9_INSTRUMENT_CENTERING_HORIZ_M } from '../engine/defaults';
 import { getExportFormatMetadata } from '../engine/exportFormats';
+import {
+  formatLocalTestPolicyLine,
+  localTestPoliciesEqual,
+} from '../engine/localTestPolicy';
 import { buildValueFingerprint } from '../engine/qaWorkflow';
 import type {
   CrsCatalogGroupFilter,
@@ -179,6 +183,7 @@ export const createRunSettingsSnapshot = (
   tsCorrelationRho: parseSettings.tsCorrelationRho,
   robustMode: parseSettings.robustMode,
   robustK: parseSettings.robustK,
+  localTestPolicy: parseSettings.localTestPolicy,
   clusterDetectionEnabled: parseSettings.clusterDetectionEnabled,
   autoSideshotEnabled: parseSettings.autoSideshotEnabled,
   autoAdjustEnabled: parseSettings.autoAdjustEnabled,
@@ -262,6 +267,11 @@ export const buildPendingRunSettingDiffs = (
     previous.autoAdjustStdResThreshold,
   );
   pushDiff('Suspect Impact', current.suspectImpactMode, previous.suspectImpactMode);
+  if (!localTestPoliciesEqual(current.localTestPolicy, previous.localTestPolicy)) {
+    diffs.push(
+      `Local Test: ${formatLocalTestPolicyLine(previous.localTestPolicy)} -> ${formatLocalTestPolicyLine(current.localTestPolicy)}`,
+    );
+  }
   pushDiff(
     'Preanalysis Threshold',
     current.preanalysisAccuracyThresholdMeters,

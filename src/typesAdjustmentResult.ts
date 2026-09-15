@@ -3,6 +3,7 @@ import type { PreanalysisImpactDiagnostics } from './typesPlanning';
 import type { Observation, StationMap, DirectionRejectDiagnostic } from './typesObservations';
 import type { ParseOptions } from './typesParseOptions';
 import type { ClusterApprovedMerge, ClusterMergeOutcome, ClusterRejectedProposal, AutoAdjustDiagnostics, AutoSideshotDiagnostics, LevelingLoopDiagnostics } from './typesDiagnostics';
+import type { LocalTestSummary } from './engine/localTestPolicy';
 import type { ClusterLinkageMode, RobustMode, TsCorrelationScope } from './typesParseSettings';
 
 import type { AdjustmentSolveTimingProfile } from './typesSolveTiming';
@@ -39,6 +40,7 @@ export interface AdjustmentResult {
     varianceFactorLower: number;
     varianceFactorUpper: number;
   };
+  localTestSummary?: LocalTestSummary;
   statisticalSummary?: {
     byGroup: {
       label: string;

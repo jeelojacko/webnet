@@ -59,6 +59,27 @@ describe('adjustmentSetupTraverseDiagnostics', () => {
     expect(diagnostics?.[1].rmsStdRes).toBeCloseTo(Math.sqrt((1.5 ** 2 + 2.5 ** 2 + 1.2 ** 2) / 3), 8);
   });
 
+  it('treats null local-test verdicts as unavailable, never failed', () => {
+    const activeObservations = [
+      { type: 'dist', from: 'O', to: 'A', stdRes: 1.1, sourceLine: 10, localTest: { pass: null } },
+      {
+        type: 'gps',
+        from: 'O',
+        to: 'B',
+        stdRes: 0.9,
+        sourceLine: 11,
+        localTestComponents: { passE: null, passN: null },
+      },
+    ] as Observation[];
+
+    const diagnostics = buildSetupDiagnostics({ activeObservations });
+
+    expect(diagnostics).toBeDefined();
+    for (const setup of diagnostics ?? []) {
+      expect(setup.localFailCount).toBe(0);
+    }
+  });
+
   it('builds traverse diagnostics with ranked loop severity and fallback no-geometry summaries', () => {
     const thresholds = {
       minClosureRatio: 1500,

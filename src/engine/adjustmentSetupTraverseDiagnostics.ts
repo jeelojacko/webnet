@@ -138,9 +138,9 @@ export const buildSetupDiagnostics = ({
 
     const localComp = obs.localTestComponents;
     if (localComp) {
-      if (!localComp.passE) setup.localFailCount += 1;
-      if (!localComp.passN) setup.localFailCount += 1;
-    } else if (obs.localTest && !obs.localTest.pass) {
+      if (localComp.passE === false) setup.localFailCount += 1;
+      if (localComp.passN === false) setup.localFailCount += 1;
+    } else if (obs.localTest && obs.localTest.pass === false) {
       setup.localFailCount += 1;
     }
   });

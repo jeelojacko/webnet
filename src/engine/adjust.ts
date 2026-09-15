@@ -424,6 +424,7 @@ export class LSAEngine extends LSAEngineObservationMethods {
     calculateAdjustmentStatistics(statsContext, paramIndex, hasQxx, activeObservationsInput);
     this.seuw = statsContext.seuw;
     this.chiSquare = statsContext.chiSquare;
+    this.localTestSummary = statsContext.localTestSummary;
     this.statisticalSummary = statsContext.statisticalSummary;
     this.typeSummary = statsContext.typeSummary;
     this.directionSetDiagnostics = statsContext.directionSetDiagnostics;

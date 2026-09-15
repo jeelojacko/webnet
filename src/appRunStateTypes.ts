@@ -33,6 +33,7 @@ import type {
   VerticalReductionMode,
 } from './types';
 import type { SavedRunSnapshot } from './engine/qaWorkflow';
+import type { LocalTestPolicy } from './engine/localTestPolicy';
 
 export type Units = 'm' | 'ft';
 export type SolveProfile =
@@ -179,6 +180,7 @@ export type RunSettingsSnapshot = {
   tsCorrelationRho: number;
   robustMode: RobustMode;
   robustK: number;
+  localTestPolicy?: LocalTestPolicy;
   clusterDetectionEnabled: boolean;
   autoSideshotEnabled: boolean;
   autoAdjustEnabled: boolean;

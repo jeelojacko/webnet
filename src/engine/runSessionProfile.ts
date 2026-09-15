@@ -225,6 +225,7 @@ export const buildParseOptions = (
   tsCorrelationScope: effectiveParse.tsCorrelationScope,
   robustMode: effectiveParse.robustMode,
   robustK: effectiveParse.robustK,
+  localTestPolicy: effectiveParse.localTestPolicy,
   parseCompatibilityMode: effectiveParse.parseCompatibilityMode,
   parseModeMigrated: effectiveParse.parseModeMigrated,
   autoAdjustEnabled: effectiveParse.autoAdjustEnabled,

@@ -1,5 +1,7 @@
 import React from 'react';
 import type { ParseSettings } from '../../../appStateTypes';
+import { normalizeLocalTestPolicy } from '../../../engine/localTestPolicy';
+import type { LocalTestPolicy } from '../../../engine/localTestPolicy';
 import type {
   AngleMode,
   RobustMode,
@@ -24,6 +26,13 @@ const SpecialProjectOptionsTab: React.FC<SpecialProjectOptionsTabProps> = ({ con
     parityProfileActive,
     parseSettingsDraft,
   } = context;
+
+  const localTestPolicy: LocalTestPolicy = normalizeLocalTestPolicy(
+    parseSettingsDraft.localTestPolicy,
+  );
+  const updateLocalTestPolicy = (patch: Partial<LocalTestPolicy>): void => {
+    handleDraftParseSetting('localTestPolicy', { ...localTestPolicy, ...patch });
+  };
 
   return (
     <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
@@ -264,6 +273,86 @@ const SpecialProjectOptionsTab: React.FC<SpecialProjectOptionsTabProps> = ({ con
             disabled={parityProfileActive}
             className={`${optionInputClass} disabled:opacity-100 disabled:cursor-not-allowed`}
           />
+        </SettingsRow>
+      </SettingsCard>
+      <SettingsCard
+        title="Local Test Policy"
+        tooltip="Single-outlier data-snooping policy for local test verdicts. Legacy fixed (3.29) is the default."
+        disabled={parityProfileActive}
+      >
+        <SettingsRow label="Test Mode" tooltip={SETTINGS_TOOLTIPS.localTestMode}>
+          <select
+            title={SETTINGS_TOOLTIPS.localTestMode}
+            value={localTestPolicy.mode}
+            onChange={(e) =>
+              updateLocalTestPolicy({
+                mode: e.target.value as LocalTestPolicy['mode'],
+              })
+            }
+            disabled={parityProfileActive}
+            className={`${optionInputClass} disabled:opacity-100 disabled:cursor-not-allowed`}
+          >
+            <option value="legacy-fixed">Legacy fixed (3.29)</option>
+            <option value="baarda-w">Baarda w</option>
+            <option value="pope-tau">Pope τ</option>
+          </select>
+        </SettingsRow>
+        <SettingsRow label="Significance α" tooltip={SETTINGS_TOOLTIPS.localTestAlpha}>
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              title="Nominal significance 5% (per-test when correction is None)"
+              disabled={parityProfileActive || localTestPolicy.mode === 'legacy-fixed'}
+              onClick={() => updateLocalTestPolicy({ alpha: 0.05 })}
+              className={`${optionInputClass} px-2 py-1 disabled:opacity-100 disabled:cursor-not-allowed ${localTestPolicy.alpha === 0.05 ? 'font-bold' : ''}`}
+            >
+              5%
+            </button>
+            <button
+              type="button"
+              title="Nominal significance 1% (per-test when correction is None)"
+              disabled={parityProfileActive || localTestPolicy.mode === 'legacy-fixed'}
+              onClick={() => updateLocalTestPolicy({ alpha: 0.01 })}
+              className={`${optionInputClass} px-2 py-1 disabled:opacity-100 disabled:cursor-not-allowed ${localTestPolicy.alpha === 0.01 ? 'font-bold' : ''}`}
+            >
+              1%
+            </button>
+            <input
+              title={SETTINGS_TOOLTIPS.localTestAlpha}
+              type="number"
+              min={0.0001}
+              max={0.5}
+              step={0.01}
+              value={localTestPolicy.alpha}
+              onChange={(e) => {
+                const parsed = parseFloat(e.target.value);
+                updateLocalTestPolicy({
+                  alpha: Number.isFinite(parsed)
+                    ? Math.max(0.0001, Math.min(0.5, parsed))
+                    : 0.05,
+                });
+              }}
+              disabled={parityProfileActive || localTestPolicy.mode === 'legacy-fixed'}
+              className={`${optionInputClass} disabled:opacity-100 disabled:cursor-not-allowed`}
+            />
+          </div>
+        </SettingsRow>
+        <SettingsRow label="Correction" tooltip={SETTINGS_TOOLTIPS.localTestCorrection}>
+          <select
+            title={SETTINGS_TOOLTIPS.localTestCorrection}
+            value={localTestPolicy.correction}
+            onChange={(e) =>
+              updateLocalTestPolicy({
+                correction: e.target.value as LocalTestPolicy['correction'],
+              })
+            }
+            disabled={parityProfileActive || localTestPolicy.mode === 'legacy-fixed'}
+            className={`${optionInputClass} disabled:opacity-100 disabled:cursor-not-allowed`}
+          >
+            <option value="none">None</option>
+            <option value="bonferroni">Bonferroni</option>
+            <option value="sidak">Šidák</option>
+          </select>
         </SettingsRow>
       </SettingsCard>
     </div>

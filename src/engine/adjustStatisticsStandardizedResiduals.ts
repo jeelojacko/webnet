@@ -1,4 +1,10 @@
 import { transformSymmetricCovariance3 } from './adjustGpsMath';
+import {
+  LEGACY_LOCAL_TEST_CRITICAL,
+  deriveLocalTestCritical,
+  isTestableEquation,
+  normalizeLocalTestPolicy,
+} from './localTestPolicy';
 import { tryQueryStandardizedResidualRowProducts } from './adjustStatisticsRowProducts';
 import { detailedNow } from './adjustDetailedSolveProfile';
 import { copyMatrix } from './qxxReuseEvidence';
@@ -307,13 +313,31 @@ export const computeStandardizedResidualStatistics = (
               t: number[];
               r: number[];
               mdb: number[];
-              pass: boolean[];
+              pass: (boolean | null)[];
+              stat: number[];
+              testable: boolean[];
               comps: ('E' | 'N' | 'U' | 'X' | 'Y' | 'Z' | undefined)[];
               rows: number[];
             }
           >();
+          // Legacy parity: SEUW 0 falls back to 1 exactly as before. Formal
+          // pope-tau with non-positive SEUW is gated unavailable at derivation,
+          // so this fallback can never produce a formal verdict.
           const s0 = ctx.seuw || 1;
           const perEquationStartedAt = profiler ? detailedNow() : 0;
+          // Phase one: per-equation variance components (no thresholds yet).
+          const pendingEquations: {
+            obsId: number;
+            component: 'E' | 'N' | 'U' | 'X' | 'Y' | 'Z' | undefined;
+            row: number;
+            qll: number;
+            qvv: number;
+            r: number;
+            /** Pre-clamp redundancy driving testability (clamped qvv hides r ~= 0). */
+            rUnclamped: number;
+            w: number;
+            tau: number;
+          }[] = [];
           for (let i = 0; i < numObsEquations; i += 1) {
             const info = rowInfo[i];
             if (!info) continue;
@@ -338,39 +362,107 @@ export const computeStandardizedResidualStatistics = (
                 diag += B[i][entry.index] * entry.value;
               }
             }
-            const qvv = Math.max(qll - diag, 1e-20);
-            const t = L[i][0] / (s0 * Math.sqrt(qvv));
+            const qvvUnclamped = qll - diag;
+            const qvv = Math.max(qvvUnclamped, 1e-20);
+            const residual = L[i][0];
             const r = qll > 0 ? qvv / qll : 0;
-            const pass = Math.abs(t) <= ctx.localTestCritical;
-            const sigmaQll = Math.sqrt(Math.max(qll, 0));
+            const rUnclamped = qll > 0 ? qvvUnclamped / qll : 0;
+            pendingEquations.push({
+              obsId: info.obs.id,
+              component: info.component,
+              row: i,
+              qll,
+              qvv,
+              r,
+              rUnclamped,
+              w: residual / Math.sqrt(qvv),
+              tau: residual / (s0 * Math.sqrt(qvv)),
+            });
+          }
+          // Phase 14A: derive the run-level detection threshold ONCE per run.
+          // Test count m = testable scalar equations (GPS counts per component).
+          const policy = normalizeLocalTestPolicy(ctx.localTestPolicy);
+          const testCount = pendingEquations.filter((eq) =>
+            isTestableEquation(eq.rUnclamped, eq.qll),
+          ).length;
+          const derivation = deriveLocalTestCritical({
+            mode: policy.mode,
+            alpha: policy.alpha,
+            correction: policy.correction,
+            testCount,
+            dof: ctx.dof,
+            legacyCritical: policy.critical,
+            seuw: ctx.seuw,
+          });
+          const robustApproximation =
+            ctx.robustMode === 'huber' && policy.mode !== 'legacy-fixed';
+          ctx.localTestSummary = {
+            ...derivation,
+            mode: policy.mode,
+            legacyCritical: policy.critical,
+            robustApproximation,
+            ...(robustApproximation
+              ? {
+                robustApproximationReason:
+                  'Huber reweighting active; classical w/tau significance is approximate.',
+              }
+              : {}),
+          };
+          const useW = derivation.statisticFamily === 'w';
+          const localCritical = derivation.criticalValue;
+          const localAvailable = derivation.available;
+          // Phase two: verdicts against the run-level threshold.
+          // MDB keeps the legacy 3.29 detection scaling in every mode (~50%
+          // power limitation acknowledged; beta-aware MDB deferred to Phase 14B).
+          for (const eq of pendingEquations) {
+            const stat = useW ? eq.w : eq.tau;
+            // Zero-redundancy equations carry no outlier signal: statistic is
+            // still reported, but the verdict stays null and m excludes them.
+            const rowTestable = isTestableEquation(eq.rUnclamped, eq.qll);
+            const pass =
+              localAvailable && rowTestable ? Math.abs(stat) <= localCritical : null;
+            const sigmaQll = Math.sqrt(Math.max(eq.qll, 0));
             const mdb =
-              r > 1e-12
-                ? (ctx.localTestCritical * s0 * sigmaQll) / Math.sqrt(r)
+              eq.r > 1e-12
+                ? (LEGACY_LOCAL_TEST_CRITICAL * s0 * sigmaQll) / Math.sqrt(eq.r)
                 : Number.POSITIVE_INFINITY;
-            const entry = rowStats.get(info.obs.id) ?? {
+            const entry = rowStats.get(eq.obsId) ?? {
               t: [],
               r: [],
               mdb: [],
               pass: [],
+              stat: [],
+              testable: [],
               comps: [],
               rows: [],
             };
-            entry.t.push(t);
-            entry.r.push(r);
+            entry.t.push(eq.tau);
+            entry.r.push(eq.r);
             entry.mdb.push(mdb);
             entry.pass.push(pass);
-            entry.comps.push(info.component);
-            entry.rows.push(i);
-            rowStats.set(info.obs.id, entry);
+            entry.stat.push(stat);
+            entry.testable.push(rowTestable);
+            entry.comps.push(eq.component);
+            entry.rows.push(eq.row);
+            rowStats.set(eq.obsId, entry);
           }
           if (profiler) perEquationStatisticsMs += detailedNow() - perEquationStartedAt;
 
           const gpsBeforeSummary = gpsCrossProductTransformMs;
           const summaryStartedAt = profiler ? detailedNow() : 0;
+          const summaryFamily = ctx.localTestSummary?.statisticFamily ?? 'tau';
+          const summaryCritical = ctx.localTestSummary?.criticalValue ?? ctx.localTestCritical;
+          const summaryAvailable = ctx.localTestSummary?.available ?? true;
+          const andPass = (
+            a: boolean | null,
+            b: boolean | null,
+          ): boolean | null =>
+            a === false || b === false ? false : a == null || b == null ? null : true;
           activeObservations.forEach((obs) => {
             const gpsBranchStartedAt = profiler ? detailedNow() : 0;
             const entry = rowStats.get(obs.id);
             if (!entry) return;
+            const rowAvailable = summaryAvailable && entry.testable.every(Boolean);
             if (obs.type === 'gps') {
               const gpsObs = obs as GpsObservation;
               const componentOrder = entry.comps.filter(
@@ -480,24 +572,45 @@ export const computeStandardizedResidualStatistics = (
               const mN = entry.mdb[idxN];
               const passE = entry.pass[idxE];
               const passN = entry.pass[idxN];
+              const statE = entry.stat[idxE];
+              const statN = entry.stat[idxN];
               obs.stdResComponents = { tE, tN };
               obs.stdRes = Math.max(Math.abs(tE), Math.abs(tN));
               obs.redundancy = { rE, rN };
-              obs.localTest = { critical: ctx.localTestCritical, pass: passE && passN };
-              obs.localTestComponents = { passE, passN };
+              obs.localTest = {
+                critical: summaryCritical,
+                pass: andPass(passE ?? null, passN ?? null),
+                statistic: Math.max(Math.abs(statE), Math.abs(statN)),
+                statisticFamily: summaryFamily,
+                available: rowAvailable,
+              };
+              obs.localTestComponents = { passE: passE ?? null, passN: passN ?? null };
               obs.mdbComponents = { mE, mN };
             } else if (obs.type === 'gps' && entry.t.length > 2) {
               obs.stdRes = Math.max(...entry.t.map((value) => Math.abs(value)));
               obs.redundancy = Math.min(...entry.r);
               obs.localTest = {
-                critical: ctx.localTestCritical,
-                pass: entry.pass.every(Boolean),
+                critical: summaryCritical,
+                pass: entry.pass.some((value) => value === false)
+                  ? false
+                  : entry.pass.some((value) => value == null)
+                    ? null
+                    : true,
+                statistic: Math.max(...entry.stat.map((value) => Math.abs(value))),
+                statisticFamily: summaryFamily,
+                available: rowAvailable,
               };
               obs.mdb = Math.min(...entry.mdb.filter((value) => Number.isFinite(value)));
             } else {
               obs.stdRes = Math.abs(entry.t[0]);
               obs.redundancy = entry.r[0];
-              obs.localTest = { critical: ctx.localTestCritical, pass: entry.pass[0] };
+              obs.localTest = {
+                critical: summaryCritical,
+                pass: entry.pass[0] ?? null,
+                statistic: entry.stat[0],
+                statisticFamily: summaryFamily,
+                available: rowAvailable,
+              };
               obs.mdb = entry.mdb[0];
             }
           });

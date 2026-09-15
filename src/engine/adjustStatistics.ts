@@ -66,6 +66,17 @@ export const calculateAdjustmentStatistics = (
       ctx.statisticalSummary = buildStatisticalSummary(weightedByGroup, groupOrder, ctx.dof);
     }
 
+    // Run-level local-test threshold for log/diagnostic reporting: the derived
+    // summary critical when it is a finite available value; otherwise the legacy
+    // critical, so a NaN from an unavailable derivation is never used as a threshold.
+    const summaryCritical = ctx.localTestSummary?.criticalValue;
+    const effectiveCritical =
+      summaryCritical != null && Number.isFinite(summaryCritical)
+        ? summaryCritical
+        : ctx.localTestCritical;
+    const localFamily = ctx.localTestSummary?.statisticFamily ?? 'tau';
+    const localSymbol = localFamily === 'w' ? 'w' : 'τ';
+
     if (!ctx.preanalysisMode) {
       // Flag very large standardized residuals
       const flagged = ctx.observations.filter((o) => Math.abs(o.stdRes || 0) > ctx.maxStdRes);
@@ -75,11 +86,11 @@ export const calculateAdjustmentStatistics = (
         );
       }
       const localFailed = ctx.observations.filter(
-        (o) => ctx.isObservationActive(o) && o.localTest != null && !o.localTest.pass,
+        (o) => ctx.isObservationActive(o) && o.localTest != null && o.localTest.pass === false,
       );
       if (localFailed.length) {
         ctx.log(
-          `Local test: ${localFailed.length} observation(s) exceed critical |t|>${ctx.localTestCritical.toFixed(
+          `Local test: ${localFailed.length} observation(s) exceed critical |${localSymbol}|>${effectiveCritical.toFixed(
             2,
           )}.`,
         );
@@ -89,7 +100,7 @@ export const calculateAdjustmentStatistics = (
     if (!ctx.preanalysisMode) {
       const residualDiagnostics = buildResidualDiagnostics(
         activeObservations,
-        ctx.localTestCritical,
+        effectiveCritical,
       );
       ctx.residualDiagnostics = residualDiagnostics;
       ctx.log(

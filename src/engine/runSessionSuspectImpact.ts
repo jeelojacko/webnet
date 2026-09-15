@@ -21,8 +21,8 @@ const observationStationsLabel = (obs: Observation): string => {
 };
 
 const hasLocalFailure = (obs: Observation): boolean => {
-  if (obs.localTestComponents) return !obs.localTestComponents.passE || !obs.localTestComponents.passN;
-  if (obs.localTest) return !obs.localTest.pass;
+  if (obs.localTestComponents) return obs.localTestComponents.passE === false || obs.localTestComponents.passN === false;
+  if (obs.localTest) return obs.localTest.pass === false;
   return false;
 };
 

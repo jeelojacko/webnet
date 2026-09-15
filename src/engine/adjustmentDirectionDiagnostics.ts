@@ -128,7 +128,7 @@ export const buildDirectionDiagnostics = (
             const residualArcSec =
               typeof dir.residual === 'number' ? dir.residual * RAD_TO_DEG * 3600 : undefined;
             const stdResAbs = Number.isFinite(dir.stdRes) ? Math.abs(dir.stdRes ?? 0) : undefined;
-            const localPass = dir.localTest?.pass;
+            const localPass = dir.localTest?.pass ?? undefined;
             const mdbArcSec = dir.mdb != null ? dir.mdb * RAD_TO_DEG * 3600 : undefined;
 
             let suspectScore = 0;

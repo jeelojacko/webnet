@@ -15,6 +15,7 @@ import {
   type ProjectManifestWorkspaceState,
 } from './projectWorkspace';
 import type { GnssMultifilePersistedV1 } from './gnssMultifileProject';
+import { sanitizeLocalTestPolicy } from './localTestPolicy';
 import {
   GNSS_MULTIFILE_SETTINGS_KEY,
   deserializeGnssMultifilePersisted,
@@ -90,6 +91,23 @@ export const attachGnssMultifileSettings = (
   if (!isRecord(candidate[GNSS_MULTIFILE_SETTINGS_KEY])) return;
   const sanitized: GnssMultifilePersistedV1 = deserializeGnssMultifilePersisted(candidate);
   settings[GNSS_MULTIFILE_SETTINGS_KEY] = sanitized;
+};
+
+/**
+ * Phase 14A: mergeKnownKeys keeps only primitive defaults-bag keys, so the
+ * nested localTestPolicy record is re-attached here via its own sanitizer.
+ * Absent in legacy projects (loads as legacy-fixed default); invalid values
+ * are dropped back to the default rather than failing the load.
+ */
+export const attachLocalTestPolicySettings = (
+  parseSettings: Record<string, unknown>,
+  candidate: unknown,
+): void => {
+  if (!isRecord(candidate)) return;
+  const raw = candidate.localTestPolicy;
+  if (raw == null) return;
+  const sanitized = sanitizeLocalTestPolicy(raw);
+  if (sanitized) parseSettings.localTestPolicy = sanitized;
 };
 
 export const sanitizeInstrumentLibrary = (

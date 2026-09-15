@@ -79,7 +79,7 @@ export const buildResidualDiagnostics = (
   const over3 = withStd.filter((obs) => Math.abs(obs.stdRes ?? 0) > 3).length;
   const over4 = withStd.filter((obs) => Math.abs(obs.stdRes ?? 0) > 4).length;
   const localFailCount = activeObservations.filter(
-    (obs) => obs.localTest != null && !obs.localTest.pass,
+    (obs) => obs.localTest != null && obs.localTest.pass === false,
   ).length;
 
   const redundancies = activeObservations
@@ -98,7 +98,7 @@ export const buildResidualDiagnostics = (
       obs,
       stdRes: Math.abs(obs.stdRes ?? 0),
       redundancy: diagnosticRedundancyValue(obs),
-      localPass: obs.localTest?.pass,
+      localPass: obs.localTest?.pass ?? undefined,
     }))
     .sort((a, b) => {
       if (b.stdRes !== a.stdRes) return b.stdRes - a.stdRes;
@@ -139,7 +139,7 @@ export const buildResidualDiagnostics = (
       row.maxStdRes = Math.max(row.maxStdRes ?? 0, Math.abs(obs.stdRes ?? 0));
       if (Math.abs(obs.stdRes ?? 0) > 3) row.over3SigmaCount += 1;
     }
-    if (obs.localTest != null && !obs.localTest.pass) row.localFailCount += 1;
+    if (obs.localTest != null && obs.localTest.pass === false) row.localFailCount += 1;
     const redundancy = diagnosticRedundancyValue(obs);
     if (redundancy != null && Number.isFinite(redundancy)) {
       row.redundancies.push(redundancy);

@@ -76,8 +76,14 @@ interface ObservationBase {
   stdResComponents?: { tE: number; tN: number };
   effectiveDistance?: number;
   redundancy?: number | { rE: number; rN: number };
-  localTest?: { critical: number; pass: boolean };
-  localTestComponents?: { passE: boolean; passN: boolean };
+  localTest?: {
+    critical: number;
+    pass: boolean | null;
+    statistic?: number;
+    statisticFamily?: 'w' | 'tau';
+    available?: boolean;
+  };
+  localTestComponents?: { passE: boolean | null; passN: boolean | null };
   mdb?: number;
   mdbComponents?: { mE: number; mN: number };
   inputSpace?: ReductionInputSpace;

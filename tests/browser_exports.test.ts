@@ -135,6 +135,31 @@ describe('browser export serializers', () => {
     expect(lines[3]).toContain(',0.120000,');
   });
 
+  it('keeps every legacy CSV column index stable with new local-test statistics at the absolute end', () => {
+    const cols = [...OBSERVATIONS_RESIDUALS_CSV_COLUMNS];
+    // Pre-existing tail order is unchanged (new columns must not shift it).
+    expect(cols.slice(cols.indexOf('localTestPass'), cols.indexOf('sigmaUnit') + 1)).toEqual([
+      'localTestPass',
+      'localTestCritical',
+      'localTestPassE',
+      'localTestPassN',
+      'mdb',
+      'mdbE',
+      'mdbN',
+      'effectiveDistance',
+      'observedUnit',
+      'residualUnit',
+      'sigmaUnit',
+    ]);
+    // The two new statistic columns live at the absolute end.
+    expect(cols.slice(-2)).toEqual(['localTestStatistic', 'localTestStatisticFamily']);
+
+    const text = buildObservationsResidualsCsvText({ result, units: 'm' });
+    const lines = text.split('\n');
+    expect(lines[0].split(',').length).toBe(cols.length);
+    expect(lines[1].split(',').length).toBe(cols.length);
+  });
+
   it('builds GeoJSON with stable station and connection feature metadata', () => {
     const text = buildNetworkGeoJsonText({ result, units: 'm', includeLostStations: true });
     const geoJson = JSON.parse(text) as {

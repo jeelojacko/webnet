@@ -136,15 +136,15 @@ export const appendObservationResidualSections = ({
         }
         stations = `${stations}${aliasRefsForLine(obs.sourceLine)}`;
 
+        const localLetter = (pass: boolean | null): string =>
+          pass == null ? '-' : pass ? 'PASS' : 'FAIL';
         const localTest =
           obs.localTestComponents != null
-            ? `E:${obs.localTestComponents.passE ? 'PASS' : 'FAIL'} N:${
-                obs.localTestComponents.passN ? 'PASS' : 'FAIL'
-              }`
+            ? `E:${localLetter(obs.localTestComponents.passE)} N:${localLetter(
+                obs.localTestComponents.passN,
+              )}`
             : obs.localTest != null
-              ? obs.localTest.pass
-                ? 'PASS'
-                : 'FAIL'
+              ? localLetter(obs.localTest.pass)
               : '-';
         const mdb =
           obs.mdbComponents != null

@@ -99,6 +99,59 @@ describe('adjustmentStatisticsBuilders', () => {
     });
   });
 
+  it('never counts unavailable (null-pass) local tests as failures', () => {
+    const observations: Observation[] = [
+      {
+        id: 1,
+        type: 'dist',
+        subtype: 'ts',
+        from: 'A',
+        to: 'B',
+        obs: 10,
+        instCode: 'S9',
+        stdDev: 1,
+        residual: 0.1,
+        stdRes: 5.5,
+        redundancy: 0.4,
+        localTest: { critical: 3.29, pass: null },
+      },
+      {
+        id: 2,
+        type: 'dist',
+        subtype: 'ts',
+        from: 'B',
+        to: 'C',
+        obs: 10,
+        instCode: 'S9',
+        stdDev: 1,
+        residual: 0.2,
+        stdRes: 4.4,
+        redundancy: 0.4,
+      },
+      {
+        id: 3,
+        type: 'angle',
+        at: 'B',
+        from: 'A',
+        to: 'C',
+        obs: 0,
+        instCode: 'S9',
+        stdDev: 1,
+        residual: 0.0001,
+        stdRes: 4.1,
+        redundancy: 0.3,
+        localTest: { critical: 3.29, pass: false },
+      },
+    ] as Observation[];
+
+    const diagnostics = buildResidualDiagnostics(observations, 3.29);
+
+    // Only the explicit pass === false row fails — null and missing never count.
+    expect(diagnostics?.localFailCount).toBe(1);
+    expect(diagnostics?.byType.find((row) => row.type === 'dist')?.localFailCount).toBe(0);
+    expect(diagnostics?.byType.find((row) => row.type === 'angle')?.localFailCount).toBe(1);
+  });
+
   it('builds per-type residual summaries with angle and gps unit handling', () => {
     const observations: Observation[] = [
       {

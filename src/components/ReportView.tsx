@@ -327,6 +327,7 @@ const ReportView: React.FC<ReportViewProps> = ({
         flaggedStationCues={flaggedStationCues}
         focusFilterRequestKey={focusFilterRequestKey}
         formatMdb={formatMdb}
+        localTestSummary={result.localTestSummary}
         importedGroupOptions={importedGroupOptions}
         isDataCheck={isDataCheck}
         isDetailSectionPinned={isDetailSectionPinned}
