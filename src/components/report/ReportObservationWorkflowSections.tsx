@@ -28,9 +28,7 @@ type SectionControls = {
 type SharedObservationTableProps = SectionControls & {
   autoSideshotObsIds: Set<number>;
   excludedIds: Set<number>;
-  formatEffectiveDistance: (_value?: number) => string;
   formatMdb: (_value: number, _angular: boolean) => string;
-  observationWeightLabel: (_observation: Observation) => string;
   onSelectObservation?: (_observationId: number) => void;
   onToggleExclude: (_observationId: number) => void;
   prismAnnotation: (_observation: Observation) => string;
@@ -40,7 +38,6 @@ type SharedObservationTableProps = SectionControls & {
   showAllRows: (_key: string, _totalCount: number) => void;
   showMoreRows: (_key: string, _step?: number) => void;
   unitScale: number;
-  units: 'm' | 'ft';
   visibleRowsFor: <T>(_key: string, _rows: T[], _defaultSize?: number) => T[];
 };
 
