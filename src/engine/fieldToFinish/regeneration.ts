@@ -460,7 +460,10 @@ export const applyAdjustmentRerunToLinkedF2f = (
   if (input.catalogRevision !== undefined && input.catalogRevision !== link.catalogRevision) {
     return emptySyncOutcome(stampFieldToFinishLink(project, { status: 'CATALOG_CHANGED' }), 'CATALOG_CHANGED');
   }
-  if (Object.keys(result.stations).some((id) => !link.stationIds.includes(id))) {
+  // Set lookup: the includes() scan here used to make topology detection
+  // O(stations^2).
+  const linkedStations = new Set(link.stationIds);
+  if (Object.keys(result.stations).some((id) => !linkedStations.has(id))) {
     return emptySyncOutcome(
       stampFieldToFinishLink(project, { status: 'SOURCE_TOPOLOGY_CHANGED' }),
       'SOURCE_TOPOLOGY_CHANGED',
@@ -472,13 +475,19 @@ export const applyAdjustmentRerunToLinkedF2f = (
       'FEATURE_METADATA_CHANGED',
     );
   }
+  // Station -> point lookup built once: the per-station find() here used to
+  // make delta detection O(stations x entities). First-match wins, as before.
+  const pointByStation = new Map<string, CadSurveyPointEntity>();
+  for (const entity of project.entities) {
+    if (entity.type === 'survey-point' && !pointByStation.has(entity.stationId)) {
+      pointByStation.set(entity.stationId, entity);
+    }
+  }
   const deltas = new Map<string, FieldToFinishCoordinate>();
   for (const stationId of link.stationIds) {
     const coords = authoritative.get(stationId);
     if (!coords) continue;
-    const point = project.entities.find(
-      (entity): entity is CadSurveyPointEntity => entity.type === 'survey-point' && entity.stationId === stationId,
-    );
+    const point = pointByStation.get(stationId);
     if (!point) continue;
     if (coords.x !== point.x || coords.y !== point.y || (coords.z ?? point.z) !== point.z) {
       deltas.set(stationId, coords);
