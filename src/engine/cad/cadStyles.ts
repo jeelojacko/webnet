@@ -24,6 +24,13 @@ const DEFAULT_TEXT_STYLES: CadTextStyle[] = [
 const DEFAULT_POINT_SYMBOLS: CadPointSymbol[] = [
   { id: 'point-free', name: 'Free Point', radius: 1.8 },
   { id: 'point-control', name: 'Control Point', radius: 2.4 },
+  // Bounded field-to-finish symbol set (additive; existing ids/colors untouched).
+  { id: 'point-f2f-circle', name: 'F2F Circle', radius: 1.8, shape: 'circle' },
+  { id: 'point-f2f-square', name: 'F2F Square', radius: 1.8, shape: 'square' },
+  { id: 'point-f2f-triangle', name: 'F2F Triangle', radius: 2.0, shape: 'triangle' },
+  { id: 'point-f2f-cross', name: 'F2F Cross', radius: 2.0, shape: 'cross' },
+  { id: 'point-f2f-x', name: 'F2F X', radius: 2.0, shape: 'x' },
+  { id: 'point-f2f-dot', name: 'F2F Dot', radius: 1.2, shape: 'dot' },
 ];
 
 const DEFAULT_STYLES: CadStyle[] = [

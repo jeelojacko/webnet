@@ -60,6 +60,7 @@ import {
   trimCommand,
 } from './cadTransactionsModifyCommands';
 import { getExpandedSelectedEntities } from './cadTransactionsSelection';
+import { f2fGenerateCommand } from '../fieldToFinish/cadGeneration';
 export {
   applyCadGripEdit,
   buildCadGripHandles,
@@ -533,6 +534,7 @@ export const CAD_COMMAND_REGISTRY: Record<CadCommandKey, CadCommandDefinition<Ca
   LAYER_PRINTABLE: layerPrintableCommand as CadCommandDefinition<CadCommand>,
   LAYER_MOVE_OBJECTS: layerMoveObjectsCommand as CadCommandDefinition<CadCommand>,
   LAYER_DELETE: layerDeleteCommand as CadCommandDefinition<CadCommand>,
+  F2F_GENERATE: f2fGenerateCommand as CadCommandDefinition<CadCommand>,
 };
 
 export const createCadIdleCommandState = createIdleCommandState;
