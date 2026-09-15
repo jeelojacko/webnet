@@ -8,18 +8,30 @@ export const getReportHeaderTooltip = (rawLabel: string): string | undefined => 
     '#': 'Ranking index within this table.',
     USE: 'Toggle observation inclusion in the next adjustment run.',
     TYPE: 'Observation or diagnostic record type.',
-    STATIONS: 'Station IDs used by this observation or diagnostic row.',
+    STATIONS:
+      'Concise station pair (triple for angles); set, raw face counts, prism and AUTO-SS detail in the cell tooltip.',
     LOOP: 'Traverse closure loop identifier (from->to closure leg).',
     LINE: 'Original source line number from the input data file.',
-    OBS: 'Observed value from input data (converted to display units).',
-    CALC: 'Computed value from adjusted coordinates and model.',
-    RESIDUAL: 'Observed minus computed value (v).',
-    EFFDIST: 'Effective distance used as angular geometry context for this residual row.',
-    STDRES: 'Standardized residual: residual scaled by its uncertainty.',
+    OBS: 'Observed value from input data in display units (angles as DMS, distances in current length unit).',
+    CALC: 'Computed value from adjusted coordinates and the observation model.',
+    RESIDUAL:
+      'Observed minus computed (v, browser sign convention). Angular residuals show arcseconds; see LinRes for the linear equivalent in mm.',
+    EFFDIST:
+      'Effective distance (m) formerly shown per row; now available inside the LinRes tooltip as geometry context.',
+    LINRES:
+      'Linear equivalent of the residual in millimetres (browser sign: observed minus computed). Angular: v_rad x effective distance; distance/leveling: v x 1000. GNSS shows -. Effective distance is in the cell tooltip.',
+    STDRES:
+      'Standardized residual: residual divided by its a-posteriori standard error (unitless). |StdRes| > 1 warns, > 3 flags.',
     REDUND:
-      'Redundancy number (checkability); higher generally means better blunder detectability.',
-    LOCAL: 'Local statistical test result for blunder detection (PASS/FAIL).',
-    MDB: 'Minimal Detectable Bias for this observation at the configured local-test level.',
+      'Redundancy number r (0-1 checkability); higher means better blunder detectability.',
+    LOCAL:
+      'Local test of |StdRes| against the configured critical value (PASS/FAIL); per-component E/N verdicts for 2D GNSS when available, aggregate verdict for 3D GNSS.',
+    MDB:
+      'Minimal Detectable Bias: smallest blunder detectable here, from the configured critical value, SEUW, sigma and redundancy.',
+    'Σ':
+      'A priori sigma actually used for weighting (effective sigma, post-solve capture). Number shown, or - for defaults with the value in the tooltip; provenance (explicit/default/fixed/float) is always in the tooltip. GNSS rows show provenance labels (e.g. EXPLICIT, E=FIXED N=FLOAT), not a numeric sigma.',
+    SIGMA:
+      'A priori sigma actually used for weighting (effective sigma, post-solve capture). Number shown, or - for defaults with the value in the tooltip; provenance (explicit/default/fixed/float) is always in the tooltip. GNSS rows show provenance labels (e.g. EXPLICIT, E=FIXED N=FLOAT), not a numeric sigma.',
     ACTION: 'Quick action available for this row.',
     APPLY: 'Apply the listed remove/add-back scenario and re-run preanalysis.',
     RAW: 'Number of raw shots contributing to a reduced direction/target estimate.',

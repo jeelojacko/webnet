@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useRef } from 'react';
-import type { Observation, RunMode } from '../types';
+import type { RunMode } from '../types';
 import type { ReportViewProps } from './ReportView.types';
 import { REPORT_DIAGNOSTIC_WINDOW_SIZE, type CollapsibleDetailSectionId } from './report/reportSectionRegistry';
 import ReportViewTopSections from './report/ReportViewTopSections';
@@ -140,10 +140,10 @@ const ReportView: React.FC<ReportViewProps> = ({
     clusterRevertDisabledReason, clusterReviewStats, dataCheckDiffRows, descriptionAppendDelimiter, descriptionConflicts,
     descriptionReconcileMode, descriptionRefsByStation, descriptionScanSummary, directionRejects, directionSetCount, directionTreatmentDiagnostics,
     filteredRelativeCovariances, filteredRelativePrecision, filteredSortedObs, filteredStationCovariances, filteredStationRows, fixedSigmaLabel,
-    flaggedRelativeCues, flaggedStationCues, formatEffectiveDistance, formatMdb, formatReductionUsage, gpsCoordinateSideshots, gpsLoopDiagnostics,
+    flaggedRelativeCues, flaggedStationCues, formatMdb, formatReductionUsage, gpsCoordinateSideshots, gpsLoopDiagnostics,
     gpsLoopSuspects, gpsOffsetObservations, gpsSideshots, gpsVectorSideshots, highlightedLevelingSegmentLines, importedGroupOptions,
     levelingLoopDiagnostics, levelingLoopSuspects, levelingSegmentSuspects, lockedPreanalysisObservations, lostStationIds, maxAbsStdRes,
-    observationStationsLabel, observationValueLabel, observationWeightLabel, preanalysisImpactDiagnostics, preanalysisLabelTooltip, prismAnnotation,
+    observationStationsLabel, observationValueLabel, preanalysisImpactDiagnostics, preanalysisLabelTooltip, prismAnnotation,
     relativeCovariances, setupDiagnostics, setupLocalFailCount, setupObsCount, setupWorstStdRes, showAutoSideshotDiagnosticsSection,
     showClusterMergeRevert, showLevelingLoopDiagnosticsSection, showTsCorrelationDiagnosticsSection, sortedObs, stationCovariances,
     stationDescription, stationTypeBadge, suspectImpactActionableCount, suspectImpactDiagnostics, suspectImpactExcludedCount,
@@ -326,7 +326,6 @@ const ReportView: React.FC<ReportViewProps> = ({
         flaggedRelativeCues={flaggedRelativeCues}
         flaggedStationCues={flaggedStationCues}
         focusFilterRequestKey={focusFilterRequestKey}
-        formatEffectiveDistance={formatEffectiveDistance}
         formatMdb={formatMdb}
         importedGroupOptions={importedGroupOptions}
         isDataCheck={isDataCheck}
@@ -336,7 +335,6 @@ const ReportView: React.FC<ReportViewProps> = ({
         isSectionCollapsed={isSectionCollapsed}
         logs={result.logs}
         normalizedReportFilterQuery={normalizedReportFilterQuery}
-        observationWeightLabel={observationWeightLabel}
         onEllipseModeChange={setEllipseMode}
         onHeaderRef={registerDetailSectionHeader}
         onReportExclusionFilterChange={setReportExclusionFilter}

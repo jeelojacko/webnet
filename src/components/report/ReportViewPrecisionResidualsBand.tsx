@@ -54,7 +54,6 @@ type ReportViewPrecisionResidualsBandProps = {
   flaggedRelativeCues: React.ComponentProps<typeof WeakGeometryCuesSection>['flaggedRelativeCues'];
   flaggedStationCues: React.ComponentProps<typeof WeakGeometryCuesSection>['flaggedStationCues'];
   focusFilterRequestKey: number;
-  formatEffectiveDistance: (_value?: number) => string;
   formatMdb: (_value: number, _angular: boolean) => string;
   importedGroupOptions: string[];
   isDataCheck: boolean;
@@ -64,7 +63,6 @@ type ReportViewPrecisionResidualsBandProps = {
   isSectionCollapsed: (_id: CollapsibleDetailSectionId) => boolean;
   logs: string[];
   normalizedReportFilterQuery: string;
-  observationWeightLabel: (_obs: Observation) => string;
   onEllipseModeChange: React.ComponentProps<
     typeof ReportFilterAndCoordinatesSections
   >['onEllipseModeChange'];
@@ -160,7 +158,6 @@ const ReportViewPrecisionResidualsBand: React.FC<ReportViewPrecisionResidualsBan
   flaggedRelativeCues,
   flaggedStationCues,
   focusFilterRequestKey,
-  formatEffectiveDistance,
   formatMdb,
   importedGroupOptions,
   isDataCheck,
@@ -170,7 +167,6 @@ const ReportViewPrecisionResidualsBand: React.FC<ReportViewPrecisionResidualsBan
   isSectionCollapsed,
   logs,
   normalizedReportFilterQuery,
-  observationWeightLabel,
   onEllipseModeChange,
   onHeaderRef,
   onReportExclusionFilterChange,
@@ -334,11 +330,9 @@ const ReportViewPrecisionResidualsBand: React.FC<ReportViewPrecisionResidualsBan
         autoSideshotObsIds={autoSideshotObsIds}
         byType={byType}
         excludedIds={excludedIds}
-        formatEffectiveDistance={formatEffectiveDistance}
         formatMdb={formatMdb}
         isDetailSectionPinned={isDetailSectionPinned}
         isSectionCollapsed={isSectionCollapsed}
-        observationWeightLabel={observationWeightLabel}
         onHeaderRef={onHeaderRef}
         onSelectObservation={onSelectObservation}
         onToggleExclude={onToggleExclude}
@@ -351,7 +345,6 @@ const ReportViewPrecisionResidualsBand: React.FC<ReportViewPrecisionResidualsBan
         toggleDetailSection={toggleDetailSection}
         togglePinnedDetailSection={togglePinnedDetailSection}
         unitScale={unitScale}
-        units={units}
         visibleRowsFor={visibleRowsFor}
       />
     </ObservationResidualsSummarySections>

@@ -208,7 +208,7 @@ describe('ReportView operator workflows', () => {
     await clickSectionToggle(container, 'Distances (TS)');
     await clickSectionToggle(container, 'GPS Vectors');
 
-    expect(container.textContent).toContain('Weight');
+    expect(container.textContent).toContain('σ');
     expect(container.textContent).toContain('FIXED');
     expect(container.textContent).toContain('FLOAT');
     expect(container.textContent).toContain('E=FIXED N=FLOAT');

@@ -36,11 +36,6 @@ export const formatMdb = (value: number, angular: boolean, unitScale: number): s
   return angular ? `${(value * RAD_TO_DEG * 3600).toFixed(2)}"` : (value * unitScale).toFixed(4);
 };
 
-export const formatEffectiveDistance = (value: number | undefined, unitScale: number): string => {
-  if (value == null || !Number.isFinite(value) || value <= 0) return '-';
-  return (value * unitScale).toFixed(4);
-};
-
 export const formatFixedOrScientific = (
   value: number | undefined,
   decimals: number,

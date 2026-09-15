@@ -5,12 +5,16 @@ import type { CollapsibleDetailSectionId } from './reportSectionRegistry';
 import { REPORT_TABLE_WINDOW_SIZE } from './reportSectionRegistry';
 import CollapsibleSectionHeader from './CollapsibleSectionHeader';
 import ReportLoadMoreFooter from './ReportLoadMoreFooter';
+import {
+  formatObservationLinearResidualMm,
+  formatObservationSigmaDisplay,
+  getObservationStationDisplay,
+} from './observationReportDisplay';
 
 interface ObservationTableSectionProps {
   obsList: Observation[];
   title: string;
   sectionId?: CollapsibleDetailSectionId;
-  units: 'm' | 'ft';
   unitScale: number;
   excludedIds: Set<number>;
   autoSideshotObsIds: Set<number>;
@@ -28,16 +32,13 @@ interface ObservationTableSectionProps {
   togglePinnedDetailSection: (_sectionId: CollapsibleDetailSectionId, _label: string) => void;
   onHeaderRef?: (_sectionId: CollapsibleDetailSectionId, _node: HTMLDivElement | null) => void;
   formatMdb: (_value: number, _angular: boolean) => string;
-  formatEffectiveDistance: (_value?: number) => string;
   prismAnnotation: (_observation: Observation) => string;
-  observationWeightLabel: (_observation: Observation) => string;
 }
 
 const ObservationTableSection: React.FC<ObservationTableSectionProps> = ({
   obsList,
   title,
   sectionId,
-  units,
   unitScale,
   excludedIds,
   autoSideshotObsIds,
@@ -55,9 +56,7 @@ const ObservationTableSection: React.FC<ObservationTableSectionProps> = ({
   togglePinnedDetailSection,
   onHeaderRef,
   formatMdb,
-  formatEffectiveDistance,
   prismAnnotation,
-  observationWeightLabel,
 }) => {
   if (!obsList.length) return null;
 
@@ -95,22 +94,22 @@ const ObservationTableSection: React.FC<ObservationTableSectionProps> = ({
       )}
       {!collapsed && (
         <>
+          <div className="overflow-x-auto">
           <table className="w-full text-left text-xs">
             <thead>
               <tr className="text-slate-500 border-b border-slate-800/50">
                 <th className="py-2 px-4">Use</th>
-                <th className="py-2">Type</th>
                 <th className="py-2">Stations</th>
                 <th className="py-2 text-right">Line</th>
                 <th className="py-2 text-right">Obs</th>
                 <th className="py-2 text-right">Calc</th>
                 <th className="py-2 text-right">Residual</th>
-                <th className="py-2 text-right">EffDist ({units})</th>
+                <th className="py-2 text-right">LinRes (mm)</th>
                 <th className="py-2 text-right">StdRes</th>
                 <th className="py-2 text-right">Redund</th>
                 <th className="py-2 text-right">Local</th>
                 <th className="py-2 text-right">MDB</th>
-                <th className="py-2 text-right px-4">Weight</th>
+                <th className="py-2 text-right px-4">σ</th>
               </tr>
             </thead>
             <tbody className="text-slate-300">
@@ -118,7 +117,6 @@ const ObservationTableSection: React.FC<ObservationTableSectionProps> = ({
                 const isFail = Math.abs(obs.stdRes || 0) > 3;
                 const isWarn = Math.abs(obs.stdRes || 0) > 1 && !isFail;
                 const excluded = excludedIds.has(obs.id);
-                let stationsLabel = '';
                 let obsStr = '';
                 let calcStr = '';
                 let resStr = '';
@@ -126,11 +124,9 @@ const ObservationTableSection: React.FC<ObservationTableSectionProps> = ({
                 let redundancyStr = '-';
                 let localStr = '-';
                 let mdbStr = '-';
-                let effectiveDistanceStr = '-';
                 const angular = isAngularType(obs.type);
 
                 if (obs.type === 'angle') {
-                  stationsLabel = `${obs.at}-${obs.from}-${obs.to}`;
                   obsStr = radToDmsStr(obs.obs);
                   calcStr = obs.calc != null ? radToDmsStr(obs.calc as number) : '-';
                   resStr =
@@ -138,11 +134,6 @@ const ObservationTableSection: React.FC<ObservationTableSectionProps> = ({
                       ? `${((obs.residual as number) * RAD_TO_DEG * 3600).toFixed(2)}"`
                       : '-';
                 } else if (obs.type === 'direction') {
-                  const reductionLabel =
-                    obs.rawCount != null
-                      ? ` [raw ${obs.rawCount}->1, F1:${obs.rawFace1Count ?? '-'} F2:${obs.rawFace2Count ?? '-'}]`
-                      : '';
-                  stationsLabel = `${obs.at}-${obs.to} (${obs.setId})${reductionLabel}`;
                   obsStr = radToDmsStr(obs.obs);
                   calcStr = obs.calc != null ? radToDmsStr(obs.calc as number) : '-';
                   resStr =
@@ -150,36 +141,32 @@ const ObservationTableSection: React.FC<ObservationTableSectionProps> = ({
                       ? `${((obs.residual as number) * RAD_TO_DEG * 3600).toFixed(2)}"`
                       : '-';
                 } else if (obs.type === 'dist') {
-                  stationsLabel = `${obs.from}-${obs.to}`;
                   obsStr = (obs.obs * unitScale).toFixed(4);
                   calcStr = obs.calc != null ? ((obs.calc as number) * unitScale).toFixed(4) : '-';
                   resStr =
                     obs.residual != null ? ((obs.residual as number) * unitScale).toFixed(4) : '-';
                 } else if (obs.type === 'gps') {
-                  stationsLabel = `${obs.from}-${obs.to}`;
                   obsStr = `dE=${(obs.obs.dE * unitScale).toFixed(3)}, dN=${(
                     obs.obs.dN * unitScale
                   ).toFixed(3)}`;
                   calcStr =
                     obs.calc != null
                       ? `dE=${((obs.calc as { dE: number }).dE * unitScale).toFixed(3)}, dN=${(
-                          obs.calc as { dN: number; dE: number }
-                        ).dN.toFixed(3)}`
+                          (obs.calc as { dN: number; dE: number }).dN * unitScale
+                        ).toFixed(3)}`
                       : '-';
                   resStr =
                     obs.residual != null
                       ? `vE=${((obs.residual as { vE: number }).vE * unitScale).toFixed(3)}, vN=${(
-                          obs.residual as { vN: number; vE: number }
-                        ).vN.toFixed(3)}`
+                          (obs.residual as { vN: number; vE: number }).vN * unitScale
+                        ).toFixed(3)}`
                       : '-';
                 } else if (obs.type === 'lev') {
-                  stationsLabel = `${obs.from}-${obs.to}`;
                   obsStr = (obs.obs * unitScale).toFixed(4);
                   calcStr = obs.calc != null ? ((obs.calc as number) * unitScale).toFixed(4) : '-';
                   resStr =
                     obs.residual != null ? ((obs.residual as number) * unitScale).toFixed(4) : '-';
                 } else if (obs.type === 'bearing' || obs.type === 'dir' || obs.type === 'zenith') {
-                  stationsLabel = `${obs.from}-${obs.to}`;
                   obsStr = radToDmsStr(obs.obs);
                   calcStr = obs.calc != null ? radToDmsStr(obs.calc as number) : '-';
                   resStr =
@@ -214,16 +201,14 @@ const ObservationTableSection: React.FC<ObservationTableSectionProps> = ({
                 } else if (obs.mdb != null) {
                   mdbStr = formatMdb(obs.mdb, angular);
                 }
-                if (angular) {
-                  effectiveDistanceStr = formatEffectiveDistance(obs.effectiveDistance);
-                }
-                if (autoSideshotObsIds.has(obs.id)) {
-                  stationsLabel = `${stationsLabel} [AUTO-SS]`;
-                }
-                const prismTag = prismAnnotation(obs);
-                if (prismTag) {
-                  stationsLabel = `${stationsLabel}${prismTag}`;
-                }
+                const stationDisplay = getObservationStationDisplay(obs, {
+                  autoSideshot: autoSideshotObsIds.has(obs.id),
+                  prismTag: prismAnnotation(obs),
+                });
+                const linRes = formatObservationLinearResidualMm(obs);
+                const linResText = linRes?.text ?? '-';
+                const linResTitle = linRes?.title ?? 'Linear equivalent not available for GNSS.';
+                const sigmaDisplay = formatObservationSigmaDisplay(obs);
 
                 return (
                   <tr
@@ -242,29 +227,41 @@ const ObservationTableSection: React.FC<ObservationTableSectionProps> = ({
                         className="accent-blue-500"
                       />
                     </td>
-                    <td className="py-1 uppercase text-slate-500">
-                      {obs.type === 'dir' ? 'dir' : obs.type}
+                    <td className="py-1">
+                      <span
+                        tabIndex={0}
+                        title={stationDisplay.title}
+                        aria-label={stationDisplay.ariaLabel}
+                      >
+                        {stationDisplay.visible}
+                      </span>
                     </td>
-                    <td className="py-1">{stationsLabel}</td>
-                    <td className="py-1 text-right font-mono text-slate-500">
+                    <td className="py-1 px-2 text-right font-mono tabular-nums whitespace-nowrap text-slate-500">
                       {renderSourceLineLink(obs.sourceLine)}
                     </td>
-                    <td className="py-1 text-right font-mono text-slate-400">{obsStr || '-'}</td>
-                    <td className="py-1 text-right font-mono text-slate-500">{calcStr}</td>
+                    <td className="py-1 px-2 text-right font-mono tabular-nums whitespace-nowrap text-slate-400">{obsStr || '-'}</td>
+                    <td className="py-1 px-2 text-right font-mono tabular-nums whitespace-nowrap text-slate-500">{calcStr}</td>
                     <td
-                      className={`py-1 text-right font-bold font-mono ${
+                      className={`py-1 px-2 text-right font-bold font-mono tabular-nums whitespace-nowrap ${
                         isFail ? 'text-red-500' : isWarn ? 'text-yellow-500' : 'text-green-500'
                       }`}
                     >
                       {resStr}
                     </td>
-                    <td className="py-1 text-right font-mono text-slate-400">
-                      {effectiveDistanceStr}
-                    </td>
-                    <td className="py-1 text-right font-mono text-slate-400">{stdResStr}</td>
-                    <td className="py-1 text-right font-mono text-slate-500">{redundancyStr}</td>
                     <td
-                      className={`py-1 text-right font-mono ${
+                      className="py-1 px-3 text-right font-mono tabular-nums whitespace-nowrap text-slate-400 border-l border-slate-800/60"
+                      title={linResTitle}
+                    >
+                      {linResText}
+                    </td>
+                    <td
+                      className="py-1 px-3 text-right font-mono tabular-nums whitespace-nowrap text-slate-400 border-l border-slate-800/60"
+                    >
+                      {stdResStr}
+                    </td>
+                    <td className="py-1 px-2 text-right font-mono tabular-nums whitespace-nowrap text-slate-500">{redundancyStr}</td>
+                    <td
+                      className={`py-1 px-2 text-right font-mono tabular-nums whitespace-nowrap ${
                         localStr.includes('F') || localStr === 'FAIL'
                           ? 'text-red-400'
                           : 'text-slate-400'
@@ -272,15 +269,19 @@ const ObservationTableSection: React.FC<ObservationTableSectionProps> = ({
                     >
                       {localStr}
                     </td>
-                    <td className="py-1 text-right font-mono text-slate-500">{mdbStr}</td>
-                    <td className="py-1 text-right font-mono text-slate-400">
-                      {observationWeightLabel(obs)}
+                    <td className="py-1 px-2 text-right font-mono tabular-nums whitespace-nowrap text-slate-500">{mdbStr}</td>
+                    <td
+                      className="py-1 px-2 text-right font-mono tabular-nums whitespace-nowrap text-slate-400"
+                      title={sigmaDisplay.title}
+                    >
+                      {sigmaDisplay.visible}
                     </td>
                   </tr>
                 );
               })}
             </tbody>
           </table>
+          </div>
           {tableKey ? (
             <ReportLoadMoreFooter
               rowKey={tableKey}

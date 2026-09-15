@@ -9,14 +9,12 @@ import {
 import { sortObservationsByStdRes, type SortedObservation } from '../../engine/resultDerivedModels';
 import {
   buildStationTypeBadge,
-  formatEffectiveDistance as reportFormatEffectiveDistance,
   formatMdb as reportFormatMdb,
   formatPrismAnnotation,
   formatReductionUsage,
   getFixedSigmaLabel,
   getObservationStationsLabel,
   getObservationValueLabel,
-  getObservationWeightLabel,
   getPreanalysisLabelTooltip,
 } from './reportFormatters';
 import { buildReportObservationSelectorModel } from './reportObservationSelectors';
@@ -233,10 +231,6 @@ export const useReportViewModel = ({
     (value: number, angular: boolean) => reportFormatMdb(value, angular, unitScale),
     [unitScale],
   );
-  const formatEffectiveDistance = useCallback(
-    (value?: number) => reportFormatEffectiveDistance(value, unitScale),
-    [unitScale],
-  );
   const stationTypeBadge = useCallback(
     (station: Station) => buildStationTypeBadge(station, result.parseState?.coordMode),
     [result.parseState?.coordMode],
@@ -265,7 +259,6 @@ export const useReportViewModel = ({
       result.clusterDiagnostics?.enabled === true
         ? 'No applied cluster merges to revert in this run.'
         : 'Cluster detection is disabled for this run profile.',
-    formatEffectiveDistance,
     formatMdb,
     formatReductionUsage,
     fixedSigmaLabel,
@@ -275,7 +268,6 @@ export const useReportViewModel = ({
     levelingLoopDiagnostics,
     observationStationsLabel: getObservationStationsLabel,
     observationValueLabel,
-    observationWeightLabel: getObservationWeightLabel,
     preanalysisImpactDiagnostics: result.preanalysisImpactDiagnostics,
     preanalysisLabelTooltip: getPreanalysisLabelTooltip,
     prismAnnotation,
