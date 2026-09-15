@@ -4,6 +4,7 @@ import type { Observation, StationMap, DirectionRejectDiagnostic } from './types
 import type { ParseOptions } from './typesParseOptions';
 import type { ClusterApprovedMerge, ClusterMergeOutcome, ClusterRejectedProposal, AutoAdjustDiagnostics, AutoSideshotDiagnostics, LevelingLoopDiagnostics } from './typesDiagnostics';
 import type { LocalTestSummary } from './engine/localTestPolicy';
+import type { ReliabilitySummary } from './engine/reliabilityPolicy';
 import type { ClusterLinkageMode, RobustMode, TsCorrelationScope } from './typesParseSettings';
 
 import type { AdjustmentSolveTimingProfile } from './typesSolveTiming';
@@ -41,6 +42,7 @@ export interface AdjustmentResult {
     varianceFactorUpper: number;
   };
   localTestSummary?: LocalTestSummary;
+  reliabilitySummary?: ReliabilitySummary;
   statisticalSummary?: {
     byGroup: {
       label: string;

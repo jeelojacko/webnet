@@ -5,6 +5,12 @@ import {
   isTestableEquation,
   normalizeLocalTestPolicy,
 } from './localTestPolicy';
+import {
+  deriveReliability,
+  mdbLinearMm,
+  normalizeReliabilityPolicy,
+  statisticalMdb,
+} from './reliabilityPolicy';
 import { tryQueryStandardizedResidualRowProducts } from './adjustStatisticsRowProducts';
 import { detailedNow } from './adjustDetailedSolveProfile';
 import { copyMatrix } from './qxxReuseEvidence';
@@ -25,6 +31,32 @@ export const computeStandardizedResidualStatistics = (
   activeObservations: Observation[],
   constraints: CoordinateConstraint[],
 ): void => {
+  // Phase 14B: provisional run-level reliability summary. The adjustment
+  // path below overwrites it with the true local-test statistic family;
+  // the preanalysis / no-model paths keep this guarded value.
+  const reliabilityPolicy = normalizeReliabilityPolicy(ctx.reliabilityPolicy);
+  const provisionalFamily =
+    normalizeLocalTestPolicy(ctx.localTestPolicy).mode === 'baarda-w' ? 'w' : 'tau';
+  ctx.reliabilitySummary = deriveReliability({
+    policy: reliabilityPolicy,
+    statisticFamily: provisionalFamily,
+    robustMode: ctx.robustMode,
+  });
+  if (ctx.preanalysisMode) {
+    ctx.reliabilitySummary = {
+      ...ctx.reliabilitySummary,
+      reason: [ctx.reliabilitySummary.reason, 'preanalysis-a-priori-seuw-1-no-per-observation-mdb']
+        .filter(Boolean)
+        .join(';'),
+    };
+  }
+  if (!hasQxx) {
+    ctx.reliabilitySummary = {
+      ...ctx.reliabilitySummary,
+      available: false,
+      reason: 'no-adjustment-model',
+    };
+  }
   const profiler = ctx.detailedSolveProfiler;
   let statisticsEquationAssemblyMs = 0;
   let robustWeightPreparationMs = 0;
@@ -313,6 +345,7 @@ export const computeStandardizedResidualStatistics = (
               t: number[];
               r: number[];
               mdb: number[];
+              mdbStat: number[];
               pass: (boolean | null)[];
               stat: number[];
               testable: boolean[];
@@ -408,6 +441,19 @@ export const computeStandardizedResidualStatistics = (
               }
               : {}),
           };
+          // Phase 14B: true run-level reliability (statistic family now known).
+          // The legacy model keeps the historical MDB computation below untouched.
+          const statisticalActive = reliabilityPolicy.model === 'statistical';
+          ctx.reliabilitySummary = deriveReliability({
+            policy: reliabilityPolicy,
+            statisticFamily: derivation.statisticFamily,
+            robustMode: ctx.robustMode,
+          });
+          const reliabilityDelta0 = statisticalActive
+            ? ctx.reliabilitySummary.delta0
+            : Number.NaN;
+          const reliabilityAvailable =
+            statisticalActive && ctx.reliabilitySummary.available;
           const useW = derivation.statisticFamily === 'w';
           const localCritical = derivation.criticalValue;
           const localAvailable = derivation.available;
@@ -426,10 +472,16 @@ export const computeStandardizedResidualStatistics = (
               eq.r > 1e-12
                 ? (LEGACY_LOCAL_TEST_CRITICAL * s0 * sigmaQll) / Math.sqrt(eq.r)
                 : Number.POSITIVE_INFINITY;
+            // Phase 14B: statistical MDB only when requested; the legacy
+            // mdb above is untouched (bit-identical default path).
+            const mdbStat = reliabilityAvailable
+              ? statisticalMdb(eq.qll, eq.r, reliabilityDelta0)
+              : Number.POSITIVE_INFINITY;
             const entry = rowStats.get(eq.obsId) ?? {
               t: [],
               r: [],
               mdb: [],
+              mdbStat: [],
               pass: [],
               stat: [],
               testable: [],
@@ -439,6 +491,7 @@ export const computeStandardizedResidualStatistics = (
             entry.t.push(eq.tau);
             entry.r.push(eq.r);
             entry.mdb.push(mdb);
+            entry.mdbStat.push(mdbStat);
             entry.pass.push(pass);
             entry.stat.push(stat);
             entry.testable.push(rowTestable);
@@ -586,6 +639,19 @@ export const computeStandardizedResidualStatistics = (
               };
               obs.localTestComponents = { passE: passE ?? null, passN: passN ?? null };
               obs.mdbComponents = { mE, mN };
+              obs.reliability = {
+                mdb: Math.min(mE, mN),
+                method: ctx.reliabilitySummary?.method ?? 'legacy-3.29',
+                ...(reliabilityAvailable
+                  ? {
+                    mdbStatistical: Math.min(entry.mdbStat[idxE], entry.mdbStat[idxN]),
+                    mdbStatisticalComponents: {
+                      mE: entry.mdbStat[idxE],
+                      mN: entry.mdbStat[idxN],
+                    },
+                  }
+                  : {}),
+              };
             } else if (obs.type === 'gps' && entry.t.length > 2) {
               obs.stdRes = Math.max(...entry.t.map((value) => Math.abs(value)));
               obs.redundancy = Math.min(...entry.r);
@@ -601,6 +667,17 @@ export const computeStandardizedResidualStatistics = (
                 available: rowAvailable,
               };
               obs.mdb = Math.min(...entry.mdb.filter((value) => Number.isFinite(value)));
+              obs.reliability = {
+                mdb: obs.mdb,
+                method: ctx.reliabilitySummary?.method ?? 'legacy-3.29',
+                ...(reliabilityAvailable
+                  ? {
+                    mdbStatistical: Math.min(
+                      ...entry.mdbStat.filter((value) => Number.isFinite(value)),
+                    ),
+                  }
+                  : {}),
+              };
             } else {
               obs.stdRes = Math.abs(entry.t[0]);
               obs.redundancy = entry.r[0];
@@ -612,6 +689,18 @@ export const computeStandardizedResidualStatistics = (
                 available: rowAvailable,
               };
               obs.mdb = entry.mdb[0];
+              const linearMm = mdbLinearMm(
+                entry.mdb[0],
+                ctx.effectiveDistanceForAngularObservation(obs),
+              );
+              obs.reliability = {
+                mdb: entry.mdb[0],
+                method: ctx.reliabilitySummary?.method ?? 'legacy-3.29',
+                ...(reliabilityAvailable
+                  ? { mdbStatistical: entry.mdbStat[0] }
+                  : {}),
+                ...(linearMm !== undefined ? { mdbLinearMm: linearMm } : {}),
+              };
             }
           });
           if (profiler) {

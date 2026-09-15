@@ -86,6 +86,18 @@ interface ObservationBase {
   localTestComponents?: { passE: boolean | null; passN: boolean | null };
   mdb?: number;
   mdbComponents?: { mE: number; mN: number };
+  /** Phase 14B per-observation reliability (MDB); mdb stays legacy-bit-identical by default. */
+  reliability?: {
+    /** Legacy MDB in native units (same value as mdb). */
+    mdb: number;
+    /** Statistical MDB in native units; present only when model='statistical'. */
+    mdbStatistical?: number;
+    /** Statistical components for 2D GPS; present only when model='statistical'. */
+    mdbStatisticalComponents?: { mE: number; mN: number };
+    /** Linear MDB in mm for angular observations; present only when computable. */
+    mdbLinearMm?: number;
+    method: import('./engine/reliabilityPolicy').ReliabilityMethod;
+  };
   inputSpace?: ReductionInputSpace;
   distanceKind?: ReductionDistanceKind;
   gridObsMode?: GridObservationMode;
