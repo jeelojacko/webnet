@@ -149,3 +149,24 @@ The Field-to-Finish tab (`SurveyCadFieldToFinishPanel`, hosted in
 - Properties panel: generated entities show read-only imported attributes
   (Generated Linework state Generated/Manual override/Detached, feature
   codes, source record); generated-vs-manual state is visible at a glance.
+
+## Browser E2E (Phase 13D final validation)
+
+`tests-browser/survey-drafting-f2f.spec.ts` walks missions A-W through the
+Chromium harness (`src/dev/surveyDraftingHarness.tsx` +
+`src/dev/surveyDraftingF2fSteps.ts`, following the 13C steps pattern):
+open F2F workflow, import the terrestrial CSV fixture
+(`tests/fixtures/f2f_fxl_sample.csv`, meters), header-driven column mapping,
+code/description distinction, sample catalog (7 definitions, EP alias,
+implicit CENTERLINE), unmapped ROCK warning, 3-chain linework preview,
+one-transaction commit, layers/styles/symbols/labels/linework presence,
+manual label edit, source modification, regen preview/apply with manual
+survival, SVG + PDF + model-DXF exports, `.wncad` save/reopen with
+provenance/catalog retained, adjustment/GNSS freeze. All 23 steps pass with
+zero page errors. One wiring fix fell out of the harness: the import-review
+preview (`f2fReviewUtils`) now splits combined `CODE CONTROL` cells into
+code + controls against the catalog, so preview agrees with what commit
+builds (previously combined cells previewed as Unmapped with 0 chains while
+commit mapped them). `tests/cad_f2f_review.test.ts` pins the agreement
+(12 mapped / 1 unmapped / 3 chains). No math, tolerance, engine, or importer
+changes; JobXML/RW5/FieldGenius/DBX specs pass unmodified.
