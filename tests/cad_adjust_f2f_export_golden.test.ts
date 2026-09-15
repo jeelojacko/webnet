@@ -117,6 +117,7 @@ describe('cad adjust→f2f→export canonical golden (§44)', () => {
       points: adjustedStationsToFieldToFinishPoints(basePoints(), adjusted(first)),
       catalog: SAMPLE_CATALOG,
       generationRunId: 'canon-1',
+      source: { sourceKind: 'adjustment', inputFingerprint: 'run-1', settingsFingerprint: 'settings-1' },
     }).project;
     expect(project.metadata.fieldToFinishLink?.status).toBe('CURRENT');
 

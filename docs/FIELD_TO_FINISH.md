@@ -170,15 +170,41 @@ conflict, missing source) stamps the status and requires an explicit
 structural regen preview — zero silent regeneration.
 
 Auto coordinate propagation (Bucket A2): successful production adjustment
-runs fire `onSuccessfulAdjustmentRun` from
-`useAdjustmentOutcomeApplication`, and `applyAdjustmentRerunToLinkedF2f`
-(`regeneration.ts`) applies coordinate-only deltas to dependents via the
-station index. GENERATED entities move in place (stable ids, order,
-provenance); anchored labels translate by station delta so offsets survive
-with only the derived EL token refreshed; adjusted > sideshot >
-coordinate-only resolution reads adjustment inputs only. Failed runs never
-mutate. Bit-identical reruns are entity-identical. The subscriber commits
-the result as one CAD history entry, so rerun+sync undo together.
+runs fire `onSuccessfulAdjustmentRun` (carrying the `inputFingerprint` +
+deterministic `settingsFingerprint` composite) from
+`useAdjustmentOutcomeApplication`, threaded through `useAdjustmentWorkflow`
+and `useAppRunWorkflowShell` to a subscriber in `useAppController` that
+applies `applyAdjustmentRerunToLinkedF2f` (`linkedRerunSync.ts`) to the
+active linked CAD drawing as one atomic persisted-drawing update.
+GENERATED entities move in place (stable ids, order, provenance); anchored
+labels translate by station delta so offsets survive with only the derived
+EL token refreshed; adjusted > sideshot > coordinate-only resolution reads
+adjustment inputs only. Failed, cancelled, and preanalysis runs never reach
+the subscriber. Bit-identical reruns are entity-identical; settings-only
+changes advance the link `sourceRevision` without touching entities.
+Auto-sync applies ONLY to `sourceKind: 'adjustment'` links —
+coordinate-import links are returned untouched (identical project), even
+when station ids coincide; there is no silent relinking. Adjustment links
+are created only through one explicit production path: the Field-to-Finish
+preview offers "Commit linked to adjustment run" whenever the latest
+successful production run is available, overlaying its adjusted
+coordinates onto the reviewed points and stamping `sourceKind:
+'adjustment'` with that run's fingerprints via
+`FieldToFinishCadArgs.source`; the plain commit stays coordinate-import.
+A rerun that moves coordinates never clears structural staleness — only an
+explicit regen resolves it. Workspace catalog edits stamp the linked
+project `CATALOG_CHANGED` (version bump) or `FEATURE_METADATA_CHANGED`
+(definition/alias edits) with zero entity changes; the rerun subscriber
+cannot see workspace catalog state, so edit-time stamping is the detection
+point and the sync preserves (never downgrades) those statuses. Delta comparison reads linked F2F
+points only, so same-station non-F2F points neither suppress nor trigger
+deltas (and never mask manual conflicts). Top-level state cannot push CAD
+history entries — history is workspace-local — so the sync is NOT a single
+undoable CAD transaction: the workspace adopts the synced document as the
+new history baseline (consistent with `replaceCadProject`), and re-running
+the adjustment re-derives the same sync. Stale link statuses surface in
+the Field-to-Finish panel as an explicit preview-required banner (no
+silent regen).
 
 Structural-regen-preview requirement: added/removed stations, catalog
 revision mismatch, or feature-metadata drift never auto-regenerate — the
@@ -192,7 +218,10 @@ Manual override semantics (model vs presentation): GENERATED = owned by
 F2F, moves/deletes with sync+regen. MANUAL_OVERRIDE = operator-touched;
 coordinate sync skips it and flags MANUAL_CONFLICT (preserved, stale)
 while structural regen keeps it and reports the conflict — never
-auto-deleted. DETACHED = cut loose from F2F entirely; sync stays silent.
+auto-deleted. MANUAL_CONFLICT is recomputed from surviving entities, never
+just cleared: bit-identical reruns and confirmed regens both restamp
+MANUAL_CONFLICT while linked MANUAL_OVERRIDE entities remain (DETACHED
+never counts). DETACHED = cut loose from F2F entirely; sync stays silent.
 Presentation-only label state (AUTO/MANUAL placement, paper-mm overrides,
 leaders — see `docs/survey-drafting.md`) is orthogonal: moving a label on
 the sheet does not change its GENERATED/MANUAL_OVERRIDE/DETACHED model

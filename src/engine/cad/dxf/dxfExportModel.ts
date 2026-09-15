@@ -88,6 +88,13 @@ const ellipseToVertices = (
 
 const finitePair = (x: number, y: number): boolean => Number.isFinite(x) && Number.isFinite(y);
 
+const finiteAngle = (deg: number): boolean => Number.isFinite(deg);
+
+/** Every vertex must be finite; serializers coerce non-finite to 0, so
+ *  invalid rings are omitted with a warning instead of corrupting output. */
+const finiteVertices = (vertices: ReadonlyArray<{ x: number; y: number }>): boolean =>
+  vertices.every((vertex) => finitePair(vertex.x, vertex.y));
+
 export const buildDxfExportModelWithResult = (args: BuildDxfModelArgs): ExportResult<DxfExportModel> => {
   const result = emptyExportResult<DxfExportModel>({
     layers: [],
@@ -170,7 +177,12 @@ export const buildDxfExportModelWithResult = (args: BuildDxfModelArgs): ExportRe
         });
         result.exportedEntityIds.push(entity.id);
         break;
-      case 'polyline':
+      case 'polyline': {
+        if (entity.vertices.length < 2 || !finiteVertices(entity.vertices)) {
+          warn({ code: 'SKIPPED_ENTITY', message: `polyline ${entity.id} has fewer than 2 finite vertices`, entityId: entity.id });
+          result.omittedEntityIds.push(entity.id);
+          break;
+        }
         model.polylines.push({
           layer: registerLayer(entity.layerId),
           vertices: entity.vertices.map((v) => ({ x: v.x, y: v.y })),
@@ -179,10 +191,17 @@ export const buildDxfExportModelWithResult = (args: BuildDxfModelArgs): ExportRe
         });
         result.exportedEntityIds.push(entity.id);
         break;
+      }
       case 'polygon':
-      case 'parcel':
+      case 'parcel': {
         // §35: boundary geometry as a closed polyline (geometric only —
-        // LandXML/DXF carry no legal parcel meaning).
+        // LandXML/DXF carry no legal parcel meaning). The closed-polyline
+        // encoding is an APPROXIMATED representation: always warned.
+        if (entity.vertices.length < 3 || !finiteVertices(entity.vertices)) {
+          warn({ code: 'SKIPPED_ENTITY', message: `${entity.type} ${entity.id} has fewer than 3 finite vertices`, entityId: entity.id });
+          result.omittedEntityIds.push(entity.id);
+          break;
+        }
         model.polylines.push({
           layer: registerLayer(entity.layerId),
           vertices: entity.vertices.map((v) => ({ x: v.x, y: v.y })),
@@ -190,9 +209,16 @@ export const buildDxfExportModelWithResult = (args: BuildDxfModelArgs): ExportRe
           ...entryStyle(entity),
         });
         result.exportedEntityIds.push(entity.id);
+        result.approximatedEntityIds.push(entity.id);
+        warn({ code: 'SKIPPED_ENTITY', message: `${entity.type} ${entity.id} approximated as closed polyline (geometric only, no legal parcel meaning)`, entityId: entity.id });
         break;
+      }
       case 'arc':
-        if (!finitePair(entity.centerX, entity.centerY) || !Number.isFinite(entity.radius) || entity.radius <= 0) {
+        if (
+          !finitePair(entity.centerX, entity.centerY) ||
+          !Number.isFinite(entity.radius) || entity.radius <= 0 ||
+          !finiteAngle(entity.startAngleDeg) || !finiteAngle(entity.endAngleDeg)
+        ) {
           warn({ code: 'SKIPPED_ENTITY', message: `arc ${entity.id} has invalid geometry`, entityId: entity.id });
           result.omittedEntityIds.push(entity.id);
           break;
@@ -208,25 +234,41 @@ export const buildDxfExportModelWithResult = (args: BuildDxfModelArgs): ExportRe
         result.exportedEntityIds.push(entity.id);
         break;
       case 'text':
+        if (!finitePair(entity.x, entity.y)) {
+          warn({ code: 'SKIPPED_ENTITY', message: `text ${entity.id} has non-finite coordinates`, entityId: entity.id });
+          result.omittedEntityIds.push(entity.id);
+          break;
+        }
         model.texts.push({ layer: registerLayer(entity.layerId), at: { x: entity.x, y: entity.y }, height: 2.5, text: entity.text, ...entryStyle(entity) });
         result.exportedEntityIds.push(entity.id);
         break;
       case 'alignment': {
         // §36: the wrapper is never dropped silently — each line/arc
         // element rides as its own primitive (attributed to the wrapper id
-        // via sourceId); only unrepresentable elements warn individually.
+        // via sourceId). Element expansion is an APPROXIMATED
+        // representation of the alignment wrapper: always warned when any
+        // element exports. Unrepresentable elements warn individually
+        // (entity-attributed) while the wrapper stays exported +
+        // approximated — never exported+omitted.
         let exported = 0;
+        let skipped = 0;
         entity.elements.forEach((element, index) => {
           if (element.kind === 'line') {
             if (!finitePair(element.start.x, element.start.y) || !finitePair(element.end.x, element.end.y)) {
               warn({ code: 'SKIPPED_ENTITY', message: `alignment ${entity.id} element ${index} (line) has non-finite coordinates`, entityId: entity.id });
+              skipped += 1;
               return;
             }
             model.lines.push({ layer: registerLayer(entity.layerId), from: { ...element.start }, to: { ...element.end }, ...entryStyle(entity) });
             exported += 1;
           } else if (element.kind === 'arc') {
-            if (!finitePair(element.center.x, element.center.y) || !Number.isFinite(element.radius) || element.radius <= 0) {
+            if (
+              !finitePair(element.center.x, element.center.y) ||
+              !Number.isFinite(element.radius) || element.radius <= 0 ||
+              !finiteAngle(element.startAngleDeg) || !finiteAngle(element.endAngleDeg)
+            ) {
               warn({ code: 'SKIPPED_ENTITY', message: `alignment ${entity.id} element ${index} (arc) has invalid geometry`, entityId: entity.id });
+              skipped += 1;
               return;
             }
             model.arcs.push({
@@ -240,10 +282,19 @@ export const buildDxfExportModelWithResult = (args: BuildDxfModelArgs): ExportRe
             exported += 1;
           } else {
             warn({ code: 'SKIPPED_ENTITY', message: `alignment ${entity.id} element ${index} has unknown kind`, entityId: entity.id });
+            skipped += 1;
           }
         });
         if (exported > 0) {
           result.exportedEntityIds.push(entity.id);
+          result.approximatedEntityIds.push(entity.id);
+          warn({
+            code: 'SKIPPED_ENTITY',
+            message: skipped > 0
+              ? `alignment ${entity.id} expanded to ${exported} line/arc primitives (${skipped} elements skipped)`
+              : `alignment ${entity.id} expanded to ${exported} line/arc primitives`,
+            entityId: entity.id,
+          });
         } else {
           warn({ code: 'SKIPPED_ENTITY', message: `alignment ${entity.id} exported no representable elements`, entityId: entity.id });
           result.omittedEntityIds.push(entity.id);
@@ -283,6 +334,10 @@ export const buildDxfExportModelWithResult = (args: BuildDxfModelArgs): ExportRe
   });
   (args.modelLabels ?? []).forEach((label) => {
     if (label.broken || label.text == null) return;
+    if (!finitePair(label.xModel, label.yModel)) {
+      warn({ code: 'SKIPPED_ENTITY', message: `model label ${label.id} has non-finite coordinates` });
+      return;
+    }
     model.texts.push({ layer: registerLayer(label.layerId ?? 'labels'), at: { x: label.xModel, y: label.yModel }, height: 2.5, text: label.text });
   });
   model.layers.sort();

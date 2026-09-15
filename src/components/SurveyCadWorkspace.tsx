@@ -14,6 +14,7 @@ import {
 } from '../engine/browserFileIo';
 import {
   buildCadDrawingFileName,
+  cloneCadDrawingDocument,
   createBlankCadDrawingDocument,
   MAX_CAD_DRAWING_TEXT_BYTES,
   migrateSurveyCadStateToDrawing,
@@ -21,10 +22,14 @@ import {
   serializeCadDrawingFile,
 } from '../engine/cad/cadDrawingFile';
 import { importAdjustedPointsIntoCadDrawing } from '../engine/cad/cadAdjustedPointsImport';
+import type { FeatureCodeCatalog } from '../engine/fieldToFinish/featureCatalog';
+import { classifyCatalogChange, stampCatalogStaleStatus } from '../engine/fieldToFinish/linkedSync';
 import { noteUiTabReady } from '../hooks/useUiPerfMonitor';
+import type { SuccessfulAdjustmentRunInfo } from '../hooks/useAdjustmentOutcomeApplication';
 import { useSurveyCadWorkspace } from '../hooks/surveyCad/useSurveyCadWorkspace';
 import SurveyCadCommandToolbar from './surveyCad/SurveyCadCommandToolbar';
 import { SurveyCadDraftingPanel } from './surveyCad/SurveyCadDraftingPanel';
+import { cloneSampleCatalog } from './surveyCad/cloneSampleCatalog';
 import { ExportCenterPanel } from './surveyCad/ExportCenterPanel';
 import SurveyCadWorkspaceSurface from './SurveyCadWorkspaceSurface';
 import { useSurveyCadCommandDisplay } from './useSurveyCadCommandDisplay';
@@ -48,6 +53,8 @@ interface SurveyCadWorkspaceProps {
   onDrawingChange?: Dispatch<SetStateAction<CadDrawingDocument | null>>;
   persistedState?: SurveyCadPersistedState | null;
   onPersistedStateChange?: Dispatch<SetStateAction<SurveyCadPersistedState | null>>;
+  /** Latest successful production run for explicit adjustment-backed F2F commits; absent = no run yet. */
+  adjustmentSource?: SuccessfulAdjustmentRunInfo | null;
 }
 
 const CAD_DRAWING_FILE_TYPES = [
@@ -69,6 +76,7 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
   onDrawingChange,
   persistedState = null,
   onPersistedStateChange,
+  adjustmentSource = null,
 }) => {
   const cloneBounds = (bounds: CadBounds | null): CadBounds | null =>
     bounds
@@ -158,6 +166,37 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
   const [reverseDirectionModifier, setReverseDirectionModifier] = useState(false);
   const [draftingPanelOpen, setDraftingPanelOpen] = useState(false);
   const [exportCenterOpen, setExportCenterOpen] = useState(false);
+  // Workspace-owned active feature catalog: the F2F panel edits it and the
+  // Export Center catalog tab exports exactly this object.
+  const [featureCatalog, setFeatureCatalog] = useState(cloneSampleCatalog);
+  const featureCatalogRef = useRef(featureCatalog);
+  // Catalog edits mark a linked project stale (no regeneration): the edit
+  // is the only moment the UI knows the generation inputs changed, and the
+  // rerun subscriber cannot see workspace catalog state. Stamping is
+  // idempotent; the workspace adopts the stamped document as its history
+  // baseline like any other external document update.
+  const handleFeatureCatalogChange = (next: FeatureCodeCatalog) => {
+    const change = classifyCatalogChange(featureCatalogRef.current, next);
+    featureCatalogRef.current = next;
+    setFeatureCatalog(next);
+    // NOTE: intentionally not via linkedRerunSync (which pulls cadLabelEngine
+    // into this graph and trips the cadCogoParcel* star-export cycle —
+    // cadCogoParcelGeometry * cadCogoParcelDiagnostics *
+    // cadCogoParcelLineworkDiagnostics resolve undefined when entered from
+    // that side). stampCatalogStaleStatus + clone stay on cycle-free edges.
+    if (change) {
+      emitDrawingChange((current) => {
+        if (!current || !current.project.metadata.fieldToFinishLink) return current;
+        const stamped = stampCatalogStaleStatus(current.project, change);
+        if (stamped === current.project) return current;
+        return cloneCadDrawingDocument({
+          ...current,
+          updatedAt: new Date().toISOString(),
+          project: stamped,
+        });
+      });
+    }
+  };
   const cadWorkspace = useSurveyCadWorkspace(
     cadProject,
     activeDrawing.drawingId,
@@ -433,10 +472,13 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
             }}
             onClose={() => setDraftingPanelOpen(false)}
             onCommitFieldToFinishPayload={cadWorkspace.commitFieldToFinishPayload}
+            catalog={featureCatalog}
+            onCatalogChange={handleFeatureCatalogChange}
+            adjustmentSource={adjustmentSource}
           />
         ) : null}
         {exportCenterOpen ? (
-          <ExportCenterPanel drawing={activeDrawing} onClose={() => setExportCenterOpen(false)} />
+          <ExportCenterPanel drawing={activeDrawing} catalog={featureCatalog} onClose={() => setExportCenterOpen(false)} />
         ) : null}
         <SurveyCadWorkspaceSurface
           workspace={cadWorkspace}

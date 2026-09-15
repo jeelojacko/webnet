@@ -16,8 +16,11 @@ import {
   buildFieldToFinishLink,
   buildSourceRevision,
   buildStationEntityIndex,
+  classifyCatalogChange,
   computeSyncStatus,
   getFieldToFinishSyncStatus,
+  stampCatalogStaleStatus,
+  stampFieldToFinishLink,
 } from '../src/engine/fieldToFinish/linkedSync';
 import {
   detachFieldToFinishEntity,
@@ -164,6 +167,85 @@ describe('cad f2f link', () => {
     expect(index['P1']?.pointEntityId).toBe('pt:P1');
     expect(index['P1']?.labelEntityId).toBe('label:P1');
     expect(Object.keys(index).sort()).toEqual(['P1', 'P2', 'P3']);
+  });
+
+  it('builds link record ids from point records only (no label derivatives)', () => {
+    const { project } = buildFieldToFinishProject(
+      createBlankCadProject({ name: 'F2F', units: 'm' }),
+      argsOf(seedPoints),
+    );
+    const link = project.metadata.fieldToFinishLink;
+    // Raw source-record snapshot: sourceLine ids only, no `<record>:label`.
+    expect(link?.sourceRecordIds).toEqual(['1', '2', '3']);
+    expect(getFieldToFinishSyncStatus(project, {
+      catalogRevision: '3',
+      stationIds: ['P1', 'P2', 'P3'],
+      sourceRecordIds: ['1', '2', '3'],
+    })).toBe('CURRENT');
+  });
+
+  it('compares id sets by content, not duplicate-bearing length', () => {
+    const link = buildFieldToFinishLink({
+      generationRunId: 'run-1',
+      catalogId: 'test-catalog',
+      catalogRevision: '3',
+      sourceKind: 'adjustment',
+      inputFingerprint: 'in-1',
+      settingsFingerprint: 'set-1',
+      sourceRecordIds: ['1', '1', '2'],
+      stationIds: ['P1', 'P2', 'P2'],
+      generatedEntityIds: ['pt:P1'],
+      generatedLabelIds: ['label:P1'],
+    });
+    // Construction canonicalizes: deduped + sorted.
+    expect(link.sourceRecordIds).toEqual(['1', '2']);
+    expect(link.stationIds).toEqual(['P1', 'P2']);
+    // Duplicate-bearing snapshots compare by set content: ['1','1'] vs
+    // ['1','2'] is a real drift, ['P1','P1','P2'] vs ['P1','P2'] is not.
+    const base = {
+      sourceRevision: buildSourceRevision({ inputFingerprint: 'in-1', settingsFingerprint: 'set-1' }),
+      catalogRevision: '3',
+      stationIds: ['P1', 'P1', 'P2'],
+      sourceRecordIds: ['1', '2', '2'],
+    };
+    expect(computeSyncStatus(link, base)).toBe('CURRENT');
+    expect(computeSyncStatus(link, { ...base, sourceRecordIds: ['1', '1'] })).toBe('FEATURE_METADATA_CHANGED');
+    expect(computeSyncStatus(link, { ...base, stationIds: ['P1', 'P2', 'P3'] })).toBe('SOURCE_TOPOLOGY_CHANGED');
+  });
+
+  it('classifies catalog edits without regenerating', () => {
+    const editedVersion = { ...catalog, version: '4' };
+    expect(classifyCatalogChange(catalog, editedVersion)).toBe('CATALOG_CHANGED');
+    const editedDefs = {
+      ...catalog,
+      definitions: catalog.definitions.map((def) =>
+        def.id === 'ep' ? { ...def, layer: 'RD-EP2' } : def,
+      ),
+    };
+    expect(classifyCatalogChange(catalog, editedDefs)).toBe('FEATURE_METADATA_CHANGED');
+    const editedAliases = { ...catalog, aliases: [{ alias: 'E', targetCode: 'EP' }] };
+    expect(classifyCatalogChange(catalog, editedAliases)).toBe('FEATURE_METADATA_CHANGED');
+    expect(classifyCatalogChange(catalog, catalog)).toBeNull();
+    expect(classifyCatalogChange(catalog, { ...catalog })).toBeNull();
+  });
+
+  it('stamps catalog staleness without touching entities', () => {
+    const { project } = buildFieldToFinishProject(
+      createBlankCadProject({ name: 'F2F', units: 'm' }),
+      argsOf(seedPoints),
+    );
+    const before = JSON.stringify(project.entities);
+    const stale = stampCatalogStaleStatus(project, 'CATALOG_CHANGED');
+    expect(stale.metadata.fieldToFinishLink?.status).toBe('CATALOG_CHANGED');
+    expect(JSON.stringify(stale.entities)).toBe(before);
+    // Idempotent: already stale restamps to the identical project.
+    expect(stampCatalogStaleStatus(stale, 'CATALOG_CHANGED')).toBe(stale);
+    // Higher-precedence states are preserved, never downgraded.
+    const conflicted = stampFieldToFinishLink(stale, { status: 'MANUAL_CONFLICT' });
+    expect(stampCatalogStaleStatus(conflicted, 'FEATURE_METADATA_CHANGED')).toBe(conflicted);
+    // No link: identical project back.
+    const bare = createBlankCadProject({ name: 'bare', units: 'm' });
+    expect(stampCatalogStaleStatus(bare, 'CATALOG_CHANGED')).toBe(bare);
   });
 });
 

@@ -49,10 +49,57 @@ export const emptyExportResult = <T>(output: T): ExportResult<T> => ({
 
 const unique = (ids: string[]): string[] => [...new Set(ids)].sort();
 
-/** Sort id lists deterministically before handing a result to callers. */
-export const finalizeExportResult = <T>(result: ExportResult<T>): ExportResult<T> => ({
-  ...result,
-  exportedEntityIds: unique(result.exportedEntityIds),
-  omittedEntityIds: unique(result.omittedEntityIds),
-  approximatedEntityIds: unique(result.approximatedEntityIds),
-});
+/**
+ * Sort id lists deterministically and enforce the documented invariant:
+ * exported XOR omitted, approximated ⊆ exported. Fail-closed normalize
+ * policy (deterministic, no silent drops):
+ * - an id in both exported and omitted is treated as OMITTED (never claim
+ *   an export that was also recorded as skipped) and dropped from
+ *   approximated, with a SKIPPED_ENTITY warning;
+ * - an approximated id present in neither exported nor omitted is treated
+ *   as OMITTED (never claim an approximation that was not exported) and
+ *   moved to omitted, with a SKIPPED_ENTITY warning.
+ * Both repairs warn entity-attributed so no disposition change is silent.
+ */
+export const finalizeExportResult = <T>(result: ExportResult<T>): ExportResult<T> => {
+  const exported = new Set(result.exportedEntityIds);
+  const omitted = new Set(result.omittedEntityIds);
+  const approximated = new Set(result.approximatedEntityIds);
+  const warnings = [...result.warnings];
+  exported.forEach((id) => {
+    if (omitted.has(id)) {
+      exported.delete(id);
+      approximated.delete(id);
+      warnings.push({
+        code: 'SKIPPED_ENTITY',
+        message: `entity ${id} recorded as both exported and omitted; treated as omitted`,
+        entityId: id,
+      });
+    }
+  });
+  approximated.forEach((id) => {
+    if (!exported.has(id) && !omitted.has(id)) {
+      approximated.delete(id);
+      omitted.add(id);
+      warnings.push({
+        code: 'SKIPPED_ENTITY',
+        message: `entity ${id} marked approximated but not exported; treated as omitted`,
+        entityId: id,
+      });
+    } else if (omitted.has(id)) {
+      approximated.delete(id);
+      warnings.push({
+        code: 'SKIPPED_ENTITY',
+        message: `entity ${id} marked approximated but omitted; approximation dropped`,
+        entityId: id,
+      });
+    }
+  });
+  return {
+    ...result,
+    warnings,
+    exportedEntityIds: unique([...exported]),
+    omittedEntityIds: unique([...omitted]),
+    approximatedEntityIds: unique([...approximated]),
+  };
+};

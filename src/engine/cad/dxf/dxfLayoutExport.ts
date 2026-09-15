@@ -9,7 +9,7 @@ import {
   type ExportItem,
   type ModelLabelPlacement,
 } from '../cadExportScene';
-import { buildDxfExportModel, type BuildDxfModelArgs, type DxfExportModel } from './dxfExportModel';
+import { buildDxfExportModelWithResult, type BuildDxfModelArgs, type DxfExportModel } from './dxfExportModel';
 import {
   DXF_LINETYPE_CATALOG,
   dxfLinetypeName,
@@ -20,20 +20,37 @@ import {
 } from './dxfColorMap';
 import { resolveEffectiveColor } from '../resolveEffectiveColor';
 import { buildTableFragmentItems } from '../cadExportTables';
-import { serializeDxfModel } from './dxfSerializer';
+import { serializeDxfModelWithResult } from './dxfSerializer';
+import { finalizeExportResult, type ExportResult, type ExportWarning } from '../exportResult';
 
 // Dual DXF contract (Phase 13C §§6-10):
 // - buildDxfModelSpaceText: R12 (AC1009) model-space-only survey export.
 //   Byte-identical to serializeDxfModel(buildDxfExportModel(...)); paper
-//   deliverables never leak into it.
+//   deliverables never leak into it. The WithResult variant merges model +
+//   serializer warnings (unknown-linetype fallback, R12 lineweights) with
+//   the model dispositions while producing byte-identical payload text.
 // - buildDxfLayoutText (below): R2000 (AC1015) multi-layout export. Model
 //   space keeps exact survey coordinates (meters, never rebased); each
 //   DraftSheet becomes a named paper-space LAYOUT with VIEWPORT entities,
-//   title block (BLOCK+INSERT), and paper annotations in mm.
+//   title block (BLOCK+INSERT), and paper annotations in mm. The WithResult
+//   variant additionally surfaces the model warnings/dispositions.
 // Paper space uses bottom-left origin: yDxf = sheetHeightMm - ySceneMm.
 
+export const buildDxfModelSpaceTextWithResult = (args: BuildDxfModelArgs): ExportResult<string> => {
+  const modelResult = buildDxfExportModelWithResult(args);
+  const serialized = serializeDxfModelWithResult(modelResult.output);
+  return finalizeExportResult({
+    output: serialized.output,
+    warnings: [...modelResult.warnings, ...serialized.warnings],
+    errors: [],
+    exportedEntityIds: [...modelResult.exportedEntityIds],
+    omittedEntityIds: [...modelResult.omittedEntityIds],
+    approximatedEntityIds: [...modelResult.approximatedEntityIds],
+  });
+};
+
 export const buildDxfModelSpaceText = (args: BuildDxfModelArgs): string =>
-  serializeDxfModel(buildDxfExportModel(args));
+  buildDxfModelSpaceTextWithResult(args).output;
 
 export interface BuildDxfLayoutArgs {
   project: CadProject;
@@ -244,7 +261,27 @@ const modelBounds = (model: DxfExportModel): { minX: number; minY: number; maxX:
   };
 };
 
-export const buildDxfLayoutText = (args: BuildDxfLayoutArgs): DxfLayoutResult => {
+export interface DxfLayoutContent {
+  dxf: string;
+  layouts: string[];
+}
+
+/** Paper-only warnings use layout codes; the WithResult variant maps them
+ *  into the shared ExportWarning union (SKIPPED_PAPER_ITEM and
+ *  UNKNOWN_LINETYPE ride as SKIPPED_ENTITY) preserving message text. */
+const toExportWarnings = (warnings: DxfLayoutWarning[]): ExportWarning[] =>
+  warnings.map((warning) => ({
+    code: (warning.code === 'UNKNOWN_TOKEN' || warning.code === 'UNSUPPORTED_SHEET_OBJECT'
+      ? warning.code
+      : 'SKIPPED_ENTITY') as ExportWarning['code'],
+    message: warning.message,
+  }));
+
+interface DxfLayoutInner extends DxfLayoutResult {
+  modelResult: ExportResult<DxfExportModel>;
+}
+
+const buildDxfLayoutInner = (args: BuildDxfLayoutArgs): DxfLayoutInner => {
   const warnings: DxfLayoutWarning[] = [];
   let nextHandle = 0x20;
   const takeHandle = (): string => {
@@ -253,7 +290,8 @@ export const buildDxfLayoutText = (args: BuildDxfLayoutArgs): DxfLayoutResult =>
     return handle;
   };
 
-  const model = buildDxfExportModel({ project: args.project, modelLabels: args.modelLabels });
+  const modelResult = buildDxfExportModelWithResult({ project: args.project, modelLabels: args.modelLabels });
+  const model = modelResult.output;
   const paperLayers = new Set<string>();
   const takenNames = new Set<string>(['model']);
   const layoutNames = args.draft.sheets.map((sheet) => sanitizeLayoutName(sheet.name, takenNames));
@@ -680,5 +718,25 @@ export const buildDxfLayoutText = (args: BuildDxfLayoutArgs): DxfLayoutResult =>
   });
   dxf.push(pair(0, 'ENDSEC'), pair(0, 'EOF'));
 
-  return { dxf: `${dxf.join('\n')}\n`, warnings, layouts: layoutNames };
+  return { dxf: `${dxf.join('\n')}\n`, warnings, layouts: layoutNames, modelResult };
+};
+
+/** Legacy bare-layout path (paper warnings only). Prefer WithResult for new callers. */
+export const buildDxfLayoutText = (args: BuildDxfLayoutArgs): DxfLayoutResult => {
+  const { modelResult: _dropped, ...bare } = buildDxfLayoutInner(args);
+  return bare;
+};
+
+/** R2000 with the unified result contract: model warnings/dispositions
+ *  plus the mapped paper warnings; payload identical to the bare path. */
+export const buildDxfLayoutTextWithResult = (args: BuildDxfLayoutArgs): ExportResult<DxfLayoutContent> => {
+  const inner = buildDxfLayoutInner(args);
+  return finalizeExportResult({
+    output: { dxf: inner.dxf, layouts: inner.layouts },
+    warnings: [...inner.modelResult.warnings, ...toExportWarnings(inner.warnings)],
+    errors: [],
+    exportedEntityIds: [...inner.modelResult.exportedEntityIds],
+    omittedEntityIds: [...inner.modelResult.omittedEntityIds],
+    approximatedEntityIds: [...inner.modelResult.approximatedEntityIds],
+  });
 };

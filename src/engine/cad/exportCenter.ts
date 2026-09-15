@@ -11,13 +11,8 @@ import {
 } from './cadExportScene';
 import { serializeExportSceneToSvgWithResult } from './cadSvgSerializer';
 import { exportScenesToPdfWithResult } from './cadPdfExport';
-import { buildDxfModelSpaceText } from './dxf/dxfLayoutExport';
-import { buildDxfExportModelWithResult } from './dxf/dxfExportModel';
-import { buildDxfLayoutText } from './dxf/dxfLayoutExport';
-import {
-  buildLandXmlFromCadGeometry,
-  type CadLandXmlGeometry,
-} from '../landxmlCad';
+import { buildDxfLayoutTextWithResult, buildDxfModelSpaceTextWithResult } from './dxf/dxfLayoutExport';
+import { buildLandXmlProjectExportWithResult } from '../landxmlCad';
 import {
   buildCadDrawingFileName,
   serializeCadDrawingFile,
@@ -125,12 +120,20 @@ export const buildExportCenterFileName = (
   }
 };
 
-const mergeWarnings = (results: Array<Pick<ExportResult<unknown>, 'warnings' | 'omittedEntityIds' | 'approximatedEntityIds'>>): Pick<ExportResult<unknown>, 'warnings' | 'omittedEntityIds' | 'approximatedEntityIds'> => {
+type DispositionLists = Pick<ExportResult<unknown>, 'warnings' | 'exportedEntityIds' | 'omittedEntityIds' | 'approximatedEntityIds'>;
+
+// Merge per-stage dispositions for the preview. Exported ids must ride
+// along: finalizing with exportedEntityIds=[] would convert every valid
+// scene approximation into omitted (fail-closed repair on an incomplete
+// contract). The preview exposes omitted/approximated only.
+const mergeWarnings = (results: Array<DispositionLists>): DispositionLists => {
   const warnings: ExportWarning[] = [];
+  const exported: string[] = [];
   const omitted: string[] = [];
   const approximated: string[] = [];
   results.forEach((result) => {
     warnings.push(...result.warnings);
+    exported.push(...result.exportedEntityIds);
     omitted.push(...result.omittedEntityIds);
     approximated.push(...result.approximatedEntityIds);
   });
@@ -138,7 +141,7 @@ const mergeWarnings = (results: Array<Pick<ExportResult<unknown>, 'warnings' | '
     output: undefined,
     warnings,
     errors: [],
-    exportedEntityIds: [],
+    exportedEntityIds: exported,
     omittedEntityIds: omitted,
     approximatedEntityIds: approximated,
   });
@@ -164,7 +167,7 @@ const resolveSheets = (drawing: CadDrawingDocument, selection: ExportCenterSelec
   return { ok: true, sheets: [{ id: sheet.id, name: sheet.name }] };
 };
 
-type SceneDisposition = Pick<ExportResult<unknown>, 'warnings' | 'omittedEntityIds' | 'approximatedEntityIds'>;
+type SceneDisposition = DispositionLists;
 
 type SceneBuild = { ok: true; scenes: ExportSheetScene[]; merged: SceneDisposition } | { ok: false; message: string };
 
@@ -246,7 +249,10 @@ const describeDxfR12 = (drawing: CadDrawingDocument): ExportCenterOutcome => {
   if (drawing.project.entities.length === 0) {
     return { ok: false, message: 'No model geometry to export. Import or draw entities first.' };
   }
-  const model = buildDxfExportModelWithResult({ project: drawing.project });
+  // Result-aware path: model + serializer warnings (unknown linetypes,
+  // R12 lineweights) surface pre-download; the payload is the downloaded
+  // bytes exactly.
+  const result = buildDxfModelSpaceTextWithResult({ project: drawing.project });
   return {
     ok: true,
     preview: {
@@ -257,11 +263,11 @@ const describeDxfR12 = (drawing: CadDrawingDocument): ExportCenterOutcome => {
       filename: buildExportCenterFileName(drawing.project.name, 'dxf-r12'),
       mimeType: 'application/dxf',
       isBinary: false,
-      warnings: model.warnings,
-      omittedEntityIds: model.omittedEntityIds,
-      approximatedEntityIds: model.approximatedEntityIds,
+      warnings: result.warnings,
+      omittedEntityIds: result.omittedEntityIds,
+      approximatedEntityIds: result.approximatedEntityIds,
       warningsPending: false,
-      payload: buildDxfModelSpaceText({ project: drawing.project }),
+      payload: result.output,
     },
   };
 };
@@ -270,82 +276,54 @@ const describeDxfR2000 = (drawing: CadDrawingDocument): ExportCenterOutcome => {
   if (!drawing.draft || drawing.draft.sheets.length === 0) {
     return { ok: false, message: 'No sheets yet. Create a sheet before exporting layouts.' };
   }
-  const laid = buildDxfLayoutText({ project: drawing.project, draft: drawing.draft });
+  // WithResult path: model warnings/dispositions plus mapped paper
+  // warnings surface pre-download; the payload is the downloaded bytes.
+  const result = buildDxfLayoutTextWithResult({ project: drawing.project, draft: drawing.draft });
   return {
     ok: true,
     preview: {
       format: 'dxf-r2000',
       formatLabel: EXPORT_FORMAT_LABELS['dxf-r2000'],
-      scopeLabel: `${EXPORT_SCOPE_LABELS['dxf-r2000']}: ${laid.layouts.join(', ')}`,
+      scopeLabel: `${EXPORT_SCOPE_LABELS['dxf-r2000']}: ${result.output.layouts.join(', ')}`,
       sheetNames: drawing.draft.sheets.map((sheet) => sheet.name),
       filename: buildExportCenterFileName(drawing.project.name, 'dxf-r2000'),
       mimeType: 'application/dxf',
       isBinary: false,
-      warnings: laid.warnings.map((warning) => ({ code: warning.code as ExportWarning['code'], message: warning.message })),
-      omittedEntityIds: [],
-      approximatedEntityIds: [],
+      warnings: result.warnings,
+      omittedEntityIds: result.omittedEntityIds,
+      approximatedEntityIds: result.approximatedEntityIds,
       warningsPending: false,
-      payload: laid.dxf,
+      payload: result.output.dxf,
     },
   };
 };
 
-const projectToLandXmlGeometry = (drawing: CadDrawingDocument): { geom: CadLandXmlGeometry; skippedKinds: string[] } => {
-  const points = drawing.project.entities
-    .filter((entity) => entity.type === 'survey-point')
-    .map((entity) => ({
-      id: entity.stationId,
-      x: entity.x,
-      y: entity.y,
-      ...(entity.z != null ? { z: entity.z } : {}),
-      ...(entity.description ? { desc: entity.description } : {}),
-      ...(entity.featureCode ? { code: entity.featureCode } : {}),
-    }))
-    .sort((a, b) => (a.id < b.id ? -1 : a.id > b.id ? 1 : 0));
-  const pointIds = new Set(points.map((point) => point.id));
-  const lines = drawing.project.entities
-    .filter((entity) => entity.type === 'line')
-    .filter((entity) => pointIds.has(entity.fromStationId) && pointIds.has(entity.toStationId))
-    .map((entity) => ({ from: entity.fromStationId, to: entity.toStationId }));
-  const skipped = new Set<string>();
-  drawing.project.entities.forEach((entity) => {
-    if (entity.type !== 'survey-point' && entity.type !== 'line') skipped.add(entity.type);
-  });
-  drawing.project.entities
-    .filter((entity) => entity.type === 'line')
-    .forEach((entity) => {
-      if (!pointIds.has(entity.fromStationId) || !pointIds.has(entity.toStationId)) skipped.add('line (unresolved endpoints)');
-    });
-  return { geom: { points, lines, crs: 'UNKNOWN' }, skippedKinds: [...skipped].sort() };
-};
-
 const describeLandxml = (drawing: CadDrawingDocument): ExportCenterOutcome => {
-  const { geom, skippedKinds } = projectToLandXmlGeometry(drawing);
-  if (geom.points.length === 0) {
-    return { ok: false, message: 'No survey points to export. Import or draw points first.' };
-  }
-  const xml = buildLandXmlFromCadGeometry(geom, {
+  // Production CAD→LandXML adapter with per-entity disposition: every
+  // project entity is exported XOR omitted, approximated ⊆ exported —
+  // no silent drops, no warningsPending.
+  const result = buildLandXmlProjectExportWithResult(drawing.project, {
     units: drawing.units === 'ft' ? 'ft' : 'm',
     projectName: drawing.project.name,
   });
+  if (result.exportedEntityIds.length === 0) {
+    return { ok: false, message: 'No exportable geometry. Import or draw points first.' };
+  }
   return {
     ok: true,
     preview: {
       format: 'landxml',
       formatLabel: EXPORT_FORMAT_LABELS.landxml,
-      scopeLabel: `${EXPORT_SCOPE_LABELS.landxml} (${geom.points.length} points, ${geom.lines?.length ?? 0} lines)`,
+      scopeLabel: `${EXPORT_SCOPE_LABELS.landxml} (${result.exportedEntityIds.length} entities, ${result.omittedEntityIds.length} omitted)`,
       sheetNames: [],
       filename: buildExportCenterFileName(drawing.project.name, 'landxml'),
       mimeType: 'application/xml',
       isBinary: false,
-      warnings: [],
-      omittedEntityIds: [],
-      approximatedEntityIds: [],
-      warningsPending: true,
-      ...(skippedKinds.length > 0
-        ? { notice: `Out of scope for this subset: ${skippedKinds.join(', ')}. Detailed warnings surface in progress.` }
-        : { notice: 'Detailed per-entity warnings surface in progress.' }),
-      payload: xml,
+      warnings: result.warnings,
+      omittedEntityIds: result.omittedEntityIds,
+      approximatedEntityIds: result.approximatedEntityIds,
+      warningsPending: false,
+      payload: result.output,
     },
   };
 };

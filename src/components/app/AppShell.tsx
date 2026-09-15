@@ -33,7 +33,7 @@ const AppShell = ({ controller }: AppShellProps) => {
     openFileTab, closeFileTab, switchActiveProjectFile, createBlankProjectFile, duplicateProjectFile,
     renameProjectFile, deleteProjectFile, setProjectFileEnabled, reorderProjectFiles, importNotice,
     setImportNotice, handleDividerMouseDown, effectiveRunInput, projectInstruments, surveyCadParseOptions,
-    settings, surveyCadState, setSurveyCadState, showRunComparisonPanel, currentRunSnapshot,
+    settings, surveyCadState, setSurveyCadState, adjustmentF2fSource, showRunComparisonPanel, currentRunSnapshot,
     baselineRunSnapshot, comparisonCandidates, savedRunSnapshots, currentSavedRunSnapshot, comparisonSelection,
     runComparisonSummary, handleSaveCurrentSnapshot, handleRestoreSavedRun, handleCompareWithSavedRun, handleRenameSavedRun,
     handleUpdateSavedRunNotes, handleDeleteSavedRun, handleSelectBaseline, handleTogglePinBaseline, handleStationThresholdChange,
@@ -242,6 +242,7 @@ const AppShell = ({ controller }: AppShellProps) => {
         result={result}
         surveyCadState={surveyCadState}
         setSurveyCadState={setSurveyCadState}
+        adjustmentSource={adjustmentF2fSource}
         settingsShowRunComparisonPanel={settings.showRunComparisonPanel}
         showRunComparisonPanel={showRunComparisonPanel}
         runComparisonPanelProps={{

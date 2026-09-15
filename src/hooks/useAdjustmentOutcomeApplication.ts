@@ -14,11 +14,20 @@ import {
   type RunReviewContext,
 } from './useAdjustmentWorkflowClusters';
 
+/** Payload fired once per successful production adjustment run for linked-F2F rerun sync. */
+export type SuccessfulAdjustmentRunInfo = {
+  result: AdjustmentResult;
+  inputFingerprint: string;
+  settingsFingerprint: string;
+};
+
 export type ApplyRunOutcomeContext = {
   inputSnapshot: string;
   parseSettingsSnapshot: ParseSettings;
   settingsSnapshot: RunSettingsSnapshot;
   inputFingerprint: string;
+  /** Deterministic fingerprint of the run settings snapshot; pairs with inputFingerprint in the F2F link sourceRevision. */
+  settingsFingerprint: string;
   overrideIds: number[];
   reviewContext?: RunReviewContext;
 };
@@ -43,13 +52,16 @@ interface UseAdjustmentOutcomeApplicationArgs<TRunDiagnostics> {
    * Linked-F2F rerun seam (Bucket A2). Fired once per successful PRODUCTION
    * run (success && !preanalysisMode) after the outcome is applied; never on
    * failure, cancellation, or preanalysis. The subscriber derives linked-doc
-   * updates via applyAdjustmentRerunToLinkedF2f and commits the returned
-   * project as a SINGLE CAD history entry, so adjustment rerun + linked
-   * update undo/redo as one coherent authoritative update. Run history stays
-   * append-only: CAD undo never alters recorded results, and re-running the
-   * adjustment re-derives the same sync.
+   * updates via applyAdjustmentRerunToLinkedF2f (passing both fingerprints so
+   * the link sourceRevision stays a true `<input>:<settings>` composite) and
+   * commits the returned project as one atomic persisted-drawing update.
+   * Top-level state cannot push CAD history entries — history is
+   * workspace-local — so this is NOT a single undoable CAD transaction; the
+   * workspace adopts it as the new history baseline (consistent with
+   * replaceCadProject). Run history stays append-only: CAD undo never alters
+   * recorded results, and re-running the adjustment re-derives the same sync.
    */
-  onSuccessfulAdjustmentRun?: (_info: { result: AdjustmentResult; inputFingerprint: string }) => void;
+  onSuccessfulAdjustmentRun?: (_info: SuccessfulAdjustmentRunInfo) => void;
   recordRunSnapshot: (_snapshot: {
     result: AdjustmentResult;
     runDiagnostics: TRunDiagnostics;
@@ -165,7 +177,11 @@ export const useAdjustmentOutcomeApplication = <TRunDiagnostics>({
         setRunElapsedMs(outcome.elapsedMs);
       });
       if (solved.success && !solved.preanalysisMode) {
-        onSuccessfulAdjustmentRun?.({ result: solved, inputFingerprint: context.inputFingerprint });
+        onSuccessfulAdjustmentRun?.({
+          result: solved,
+          inputFingerprint: context.inputFingerprint,
+          settingsFingerprint: context.settingsFingerprint,
+        });
       }
       noteUiPerfStage('applyRunOutcomeComplete');
     },

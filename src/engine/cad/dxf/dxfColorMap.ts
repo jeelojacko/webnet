@@ -6,11 +6,10 @@
 // colors to ACI so both serializers agree; entity color itself is resolved
 // upstream by resolveEffectiveColor (override → style → layer → default).
 //
-// The ACI table below is exact for 1-9 (primary/white/gray) and a
-// deterministic generated ramp for 10-249 (24 hues × 10 shades) plus a gray
-// ramp for 250-255. It approximates the Autodesk palette — nearest-color
-// picks can differ from desktop CAD on craftsman-shade colors. Pure
-// functions; ties resolve to the lowest ACI index.
+// The ACI table below is the standard Autodesk palette: exact 1-9
+// (primary/white/gray), decades 10-249 (24 pure hues × shade/tint pairs),
+// and the gray ramp 250-255. Pure functions; ties resolve to the lowest
+// ACI index.
 
 export interface Rgb255 {
   r: number;
@@ -30,41 +29,40 @@ export const hexToRgb255 = (hex: string): Rgb255 => {
   };
 };
 
-const hslToRgb255 = (hDeg: number, s: number, l: number): Rgb255 => {
-  const h = ((hDeg % 360) + 360) % 360;
-  const c = (1 - Math.abs(2 * l - 1)) * s;
-  const x = c * (1 - Math.abs(((h / 60) % 2) - 1));
-  const m = l - c / 2;
-  let r = 0;
-  let g = 0;
-  let b = 0;
-  if (h < 60) {
-    r = c;
-    g = x;
-  } else if (h < 120) {
-    r = x;
-    g = c;
-  } else if (h < 180) {
-    g = c;
-    b = x;
-  } else if (h < 240) {
-    g = x;
-    b = c;
-  } else if (h < 300) {
-    r = x;
-    b = c;
-  } else {
-    r = c;
-    b = x;
-  }
+// Standard Autodesk ACI palette, 1-9 exact; decades 10-249 as pure hues
+// (24 uniform hue-wheel steps shared by the published ACI references) with
+// shade factors [1.0, 0.8, 0.6, 0.5, 0.3] on even columns and white-mix
+// tints (channel average with white, rounded down) on odd columns — e.g.
+// ACI 10 is 255,0,0 and ACI 12 is 204,0,0. Gray ramp 250-255 is the
+// standard (51, 80, 105, 130, 190, 255) — 250 is dark gray, not black.
+const ACI_PURE_HUES: ReadonlyArray<readonly [number, number, number]> = [
+  [255, 0, 0], [255, 63, 0], [255, 127, 0], [255, 191, 0],
+  [255, 255, 0], [191, 255, 0], [127, 255, 0], [63, 255, 0],
+  [0, 255, 0], [0, 255, 63], [0, 255, 127], [0, 255, 191],
+  [0, 255, 255], [0, 191, 255], [0, 127, 255], [0, 63, 255],
+  [0, 0, 255], [63, 0, 255], [127, 0, 255], [191, 0, 255],
+  [255, 0, 255], [255, 0, 191], [255, 0, 127], [255, 0, 63],
+];
+
+const ACI_SHADE_FACTORS = [1.0, 0.8, 0.6, 0.5, 0.3];
+
+const shadeChannel = (pure: number, tint: boolean, factor: number): number =>
+  Math.round((tint ? Math.floor((pure + 255) / 2) : pure) * factor);
+
+const aciDecadeColor = (aci: number): Rgb255 => {
+  const slot = aci - 10;
+  const hue = ACI_PURE_HUES[Math.floor(slot / 10)] as readonly [number, number, number];
+  const column = slot % 10;
+  const factor = ACI_SHADE_FACTORS[Math.floor(column / 2)] as number;
+  const tint = column % 2 === 1;
   return {
-    r: Math.round((r + m) * 255),
-    g: Math.round((g + m) * 255),
-    b: Math.round((b + m) * 255),
+    r: shadeChannel(hue[0], tint, factor),
+    g: shadeChannel(hue[1], tint, factor),
+    b: shadeChannel(hue[2], tint, factor),
   };
 };
 
-// Exact primaries/white/grays; generated hues for 10-249; gray ramp 250-255.
+// Exact primaries/white/grays; standard decade hues for 10-249; gray ramp 250-255.
 const aciColor = (aci: number): Rgb255 => {
   switch (aci) {
     case 1:
@@ -89,18 +87,16 @@ const aciColor = (aci: number): Rgb255 => {
       break;
   }
   if (aci >= 250 && aci <= 255) {
-    const v = Math.round(((aci - 250) / 5) * 255);
+    // Standard Autodesk gray ramp (not a linear black→white interpolation).
+    const v = [51, 80, 105, 130, 190, 255][aci - 250] as number;
     return { r: v, g: v, b: v };
   }
-  if (aci >= 10 && aci <= 249) {
-    const slot = aci - 10;
-    const hue = Math.floor(slot / 10) * 15;
-    const shade = slot % 10;
-    // Dark → saturated → pale across the ten shades.
-    return hslToRgb255(hue, 0.85, 0.12 + (shade / 9) * 0.68);
-  }
+  if (aci >= 10 && aci <= 249) return aciDecadeColor(aci);
   return { r: 255, g: 255, b: 255 };
 };
+
+/** Standard-table RGB for an ACI index (1-255); out of range → white. */
+export const aciToRgb255 = (aci: number): Rgb255 => aciColor(aci);
 
 /** Nearest ACI index (1-255) for a hex color. Deterministic; ties → lowest. */
 export const nearestAci = (hex: string): number => {

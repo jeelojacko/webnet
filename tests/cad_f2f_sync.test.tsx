@@ -19,6 +19,7 @@ import {
   detachFieldToFinishEntity,
   markFieldToFinishManualOverride,
 } from '../src/engine/fieldToFinish/regeneration';
+import { stampFieldToFinishLink } from '../src/engine/fieldToFinish/linkedSync';
 import { useAdjustmentOutcomeApplication } from '../src/hooks/useAdjustmentOutcomeApplication';
 import type { ApplyRunOutcomeContext } from '../src/hooks/useAdjustmentOutcomeApplication';
 import type { AdjustmentResult, Station } from '../src/types';
@@ -66,8 +67,42 @@ const seedPoints = (): FieldToFinishCadPoint[] => [
 const seed = (points: FieldToFinishCadPoint[] = seedPoints()): CadProject =>
   buildFieldToFinishProject(
     createBlankCadProject({ name: 'F2F', units: 'm' }),
+    {
+      points,
+      catalog,
+      generationRunId: 'run-1',
+      source: { sourceKind: 'adjustment', inputFingerprint: 'in-1', settingsFingerprint: 'set-1' },
+    } satisfies FieldToFinishCadArgs,
+  ).project;
+
+/** Coordinate-import seed: same geometry, but never eligible for rerun auto-sync. */
+const seedImport = (points: FieldToFinishCadPoint[] = seedPoints()): CadProject =>
+  buildFieldToFinishProject(
+    createBlankCadProject({ name: 'F2F', units: 'm' }),
     { points, catalog, generationRunId: 'run-1' } satisfies FieldToFinishCadArgs,
   ).project;
+
+/** Same-station non-F2F point (no provenance): must not participate in delta comparison. */
+const nonF2fPoint = (stationId: string, x: number, y: number, z?: number): CadSurveyPointEntity => ({
+  id: `manual:${stationId}`,
+  type: 'survey-point',
+  layerId: 'layer-points',
+  styleId: 'style-point',
+  visible: true,
+  locked: false,
+  stationId,
+  x,
+  y,
+  ...(z !== undefined ? { z } : {}),
+  pointClass: 'free',
+  source: 'parsed-input',
+}) as CadSurveyPointEntity;
+
+/** Prepend (first-match-wins order) a non-F2F same-station point. */
+const withLeadingNonF2f = (project: CadProject, point: CadSurveyPointEntity): CadProject => ({
+  ...project,
+  entities: [point, ...project.entities],
+});
 
 const station = (x: number, y: number, h: number): Station =>
   ({ x, y, h, fixed: false }) as Station;
@@ -174,6 +209,46 @@ describe('cad f2f linked rerun sync', () => {
       sourceRecordIds: linkRecords,
     });
     expect(second.project).toBe(first.project);
+  });
+
+  it('flags MANUAL_CONFLICT on a bit-identical rerun when manual overrides remain', () => {
+    // Manually overridden line, source coordinates unchanged: zero deltas,
+    // but the link must not read CURRENT.
+    const lineId = lineOf(seed()).id;
+    const project = markFieldToFinishManualOverride(seed(), lineId);
+    const outcome = applyAdjustmentRerunToLinkedF2f(project, { result: baseResult() });
+    expect(outcome.status).toBe('MANUAL_CONFLICT');
+    expect(outcome.changed).toBe(false);
+    expect(outcome.skippedManual).toEqual([]);
+    expect(outcome.manualConflicts).toEqual([]);
+    expect(outcome.project.entities).toEqual(project.entities);
+    expect(outcome.project.metadata.fieldToFinishLink?.status).toBe('MANUAL_CONFLICT');
+  });
+
+  it('leaves DETACHED entities silent on a bit-identical rerun', () => {
+    const lineId = lineOf(seed()).id;
+    const project = detachFieldToFinishEntity(seed(), lineId);
+    const outcome = applyAdjustmentRerunToLinkedF2f(project, { result: baseResult() });
+    expect(outcome.status).toBe('CURRENT');
+    expect(outcome.changed).toBe(false);
+    expect(outcome.project).toBe(project);
+  });
+
+  it('preserves catalog staleness across a coordinate-moving rerun', () => {
+    // A catalog edit stamps CATALOG_CHANGED; a later rerun that moves
+    // coordinates must apply the moves without clearing the stamp — only
+    // an explicit regen resolves structural staleness.
+    const stale = stampFieldToFinishLink(seed(), { status: 'CATALOG_CHANGED' });
+    const outcome = applyAdjustmentRerunToLinkedF2f(stale, {
+      result: baseResult({ P2: station(12, 3, 15) }),
+      inputFingerprint: 'in-2',
+      settingsFingerprint: 'set-2',
+    });
+    expect(outcome.changed).toBe(true);
+    expect(outcome.updated).toEqual(['P2']);
+    expect(outcome.status).toBe('CATALOG_CHANGED');
+    expect(outcome.project.metadata.fieldToFinishLink?.status).toBe('CATALOG_CHANGED');
+    expect([pointOf(outcome.project, 'pt:P2').x, pointOf(outcome.project, 'pt:P2').y]).toEqual([12, 3]);
   });
 
   it('moves only dependents on a partial-station update', () => {
@@ -325,13 +400,95 @@ describe('cad f2f linked rerun sync', () => {
     expect(outcome.project).toBe(project);
   });
 
+  it('ignores same-station non-F2F points in delta comparison', () => {
+    // Suppression case: F2F point stale, non-F2F decoy first at authoritative coords.
+    const stale = withLeadingNonF2f(seed(), nonF2fPoint('P2', 12, 3, 15));
+    const moved = applyAdjustmentRerunToLinkedF2f(stale, {
+      result: baseResult({ P2: station(12, 3, 15) }),
+      inputFingerprint: 'in-2',
+      settingsFingerprint: 'set-2',
+      catalogRevision: '3',
+      sourceRecordIds: stale.metadata.fieldToFinishLink?.sourceRecordIds ?? [],
+    });
+    expect(moved.changed).toBe(true);
+    expect(moved.updated).toEqual(['P2']);
+    expect([pointOf(moved.project, 'pt:P2').x, pointOf(moved.project, 'pt:P2').y]).toEqual([12, 3]);
+    // Decoy itself untouched.
+    const decoy = moved.project.entities.find((entry) => entry.id === 'manual:P2');
+    expect(decoy).toEqual(stale.entities.find((entry) => entry.id === 'manual:P2'));
+
+    // Conflict-visibility case: MANUAL_OVERRIDE F2F stale, decoy at authoritative
+    // coords must not mask the manual conflict.
+    const manual = markFieldToFinishManualOverride(seed(), 'pt:P2');
+    const masked = withLeadingNonF2f(manual, nonF2fPoint('P2', 12, 3, 15));
+    const conflicted = applyAdjustmentRerunToLinkedF2f(masked, {
+      result: baseResult({ P2: station(12, 3, 15) }),
+      inputFingerprint: 'in-2',
+      settingsFingerprint: 'set-2',
+      catalogRevision: '3',
+      sourceRecordIds: masked.metadata.fieldToFinishLink?.sourceRecordIds ?? [],
+    });
+    expect(conflicted.status).toBe('MANUAL_CONFLICT');
+    expect(conflicted.skippedManual).toEqual(['P2']);
+    expect([pointOf(conflicted.project, 'pt:P2').x, pointOf(conflicted.project, 'pt:P2').y]).toEqual([10, 0]);
+
+    // No-spurious-trigger case: F2F current, stale decoy first, no fingerprints
+    // → true bit-identical path returns the identical project.
+    const current = withLeadingNonF2f(seed(), nonF2fPoint('P2', 99, 99));
+    const identical = applyAdjustmentRerunToLinkedF2f(current, { result: baseResult() });
+    expect(identical.changed).toBe(false);
+    expect(identical.status).toBe('CURRENT');
+    expect(identical.project).toBe(current);
+  });
+
+  it('leaves coordinate-import links untouched (no silent relinking)', () => {
+    const project = seedImport();
+    expect(project.metadata.fieldToFinishLink?.sourceKind).toBe('coordinate-import');
+    const outcome = applyAdjustmentRerunToLinkedF2f(project, {
+      result: baseResult({ P2: station(12, 3, 15) }),
+      inputFingerprint: 'in-2',
+      settingsFingerprint: 'set-2',
+    });
+    expect(outcome.changed).toBe(false);
+    expect(outcome.updated).toEqual([]);
+    expect(outcome.status).toBe('CURRENT');
+    expect(outcome.project).toBe(project);
+    expect(pointOf(outcome.project, 'pt:P2').x).toBe(10);
+  });
+
+  it('stamps adjustment links from generation source context', () => {
+    const project = seed();
+    const link = project.metadata.fieldToFinishLink;
+    expect(link?.sourceKind).toBe('adjustment');
+    expect(link?.sourceRevision).toBe('in-1:set-1');
+    // Raw source-record snapshot (no `:label` derivatives) compares CURRENT.
+    expect(link?.sourceRecordIds.some((id) => id.endsWith(':label'))).toBe(false);
+  });
+
+  it('tracks settings-only revision changes without structural regeneration', () => {
+    const project = seed();
+    const outcome = applyAdjustmentRerunToLinkedF2f(project, {
+      result: baseResult(),
+      inputFingerprint: 'in-1',
+      settingsFingerprint: 'set-2',
+      catalogRevision: '3',
+      sourceRecordIds: project.metadata.fieldToFinishLink?.sourceRecordIds ?? [],
+    });
+    expect(outcome.status).toBe('CURRENT');
+    expect(outcome.changed).toBe(false);
+    expect(outcome.updated).toEqual([]);
+    expect(outcome.project.entities).toEqual(project.entities);
+    expect(outcome.project.metadata.fieldToFinishLink?.sourceRevision).toBe('in-1:set-2');
+  });
+
   it('fires the hook seam only for successful production runs', async () => {
-    const calls: { result: AdjustmentResult; inputFingerprint: string }[] = [];
+    const calls: { result: AdjustmentResult; inputFingerprint: string; settingsFingerprint: string }[] = [];
     const context = {
       inputSnapshot: 'in',
       parseSettingsSnapshot: {},
       settingsSnapshot: {},
       inputFingerprint: 'in-1',
+      settingsFingerprint: 'set-1',
       overrideIds: [],
     } as unknown as ApplyRunOutcomeContext;
     const outcomeOf = (result: AdjustmentResult): RunSessionOutcome =>
@@ -370,6 +527,7 @@ describe('cad f2f linked rerun sync', () => {
     await mount(outcomeOf(resultOf({ P1: station(0, 0, 10) })));
     expect(calls).toHaveLength(1);
     expect(calls[0]?.inputFingerprint).toBe('in-1');
+    expect(calls[0]?.settingsFingerprint).toBe('set-1');
     await mount(outcomeOf(resultOf({ P1: station(0, 0, 10) }, { success: false })));
     await mount(outcomeOf(resultOf({ P1: station(0, 0, 10) }, { preanalysisMode: true })));
     expect(calls).toHaveLength(1);

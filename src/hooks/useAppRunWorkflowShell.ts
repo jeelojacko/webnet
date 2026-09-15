@@ -17,6 +17,7 @@ import type {
   PlanningMapState,
 } from '../types';
 import { useAdjustmentWorkflow } from './useAdjustmentWorkflow';
+import type { SuccessfulAdjustmentRunInfo } from './useAdjustmentOutcomeApplication';
 
 interface UseAppRunWorkflowShellArgs {
   projectInstruments: InstrumentLibrary;
@@ -42,6 +43,8 @@ interface UseAppRunWorkflowShellArgs {
   setLastRunInput: (_value: string | null) => void;
   setLastRunSettingsSnapshot: (_value: RunSettingsSnapshot | null) => void;
   activateReportTab: () => void;
+  /** Linked-F2F rerun subscriber; forwarded to useAdjustmentWorkflow. */
+  onSuccessfulAdjustmentRun?: (_info: SuccessfulAdjustmentRunInfo) => void;
   recordRunSnapshot: (_snapshot: {
     result: AdjustmentResult;
     runDiagnostics: RunDiagnostics;
@@ -81,6 +84,7 @@ export const useAppRunWorkflowShell = ({
   setLastRunInput,
   setLastRunSettingsSnapshot,
   activateReportTab,
+  onSuccessfulAdjustmentRun,
   recordRunSnapshot,
   projectRunValidation,
   setImportNotice,
@@ -137,6 +141,7 @@ export const useAppRunWorkflowShell = ({
     setLastRunInput,
     setLastRunSettingsSnapshot,
     activateReportTab,
+    onSuccessfulAdjustmentRun,
     recordRunSnapshot,
   });
 

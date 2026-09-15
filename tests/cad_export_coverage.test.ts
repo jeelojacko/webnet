@@ -24,10 +24,7 @@ import { createBlankDraftDocument } from '../src/engine/cad/cadDraftTypes';
 import { addSheetToDraft, addViewportToSheet, createPlanSheet } from '../src/engine/cad/cadSheets';
 import { createTitleBlockTemplate } from '../src/engine/cad/cadSheets';
 import type { CadEntity, CadProject } from '../src/engine/cad/cadTypes';
-import {
-  buildLandXmlFromCadGeometryWithResult,
-  type CadLandXmlGeometry,
-} from '../src/engine/landxmlCad';
+import { buildLandXmlProjectExportWithResult } from '../src/engine/landxmlCad';
 
 type Cell = 'FULL' | 'APPROXIMATED' | 'NOT_APPLICABLE' | 'UNSUPPORTED_WITH_WARNING';
 
@@ -84,108 +81,24 @@ const buildDraftWithObjects = (project: CadProject) => {
   return { draft, sheetId, paperExtras };
 };
 
-/** Test-local CAD → LandXML mapper with per-entity disposition. */
-const exportProjectToLandXml = (project: CadProject): { xml: string; warnings: { message: string; entityId?: string }[]; exported: string[]; omitted: string[]; approximated: string[]; notApplicable: string[] } => {
-  const geom: CadLandXmlGeometry = { points: [], lines: [], parcels: [], alignments: [] };
-  const exported: string[] = [];
-  const omitted: string[] = [];
-  const approximated: string[] = [];
-  const notApplicable: string[] = [];
-  const warnings: { message: string; entityId?: string }[] = [];
-  const points = geom.points as { id: string; x: number; y: number; desc?: string }[];
-  const lines = geom.lines as { from: string; to: string }[];
-  const parcels = geom.parcels as { name: string; ring: string[] }[];
-  const alignments = geom.alignments as { name: string; lines: { from: string; to: string }[]; curves: never[] }[];
-  const ensurePoint = (id: string, x: number, y: number): void => {
-    if (!points.some((point) => point.id === id)) points.push({ id, x, y, desc: 'cad' });
+/** Production CAD → LandXML adapter with per-entity disposition (no test-local mapper). */
+const exportProjectToLandXml = (project: CadProject): { xml: string; warnings: { message: string; entityId?: string }[]; exported: string[]; omitted: string[]; approximated: string[] } => {
+  const result = buildLandXmlProjectExportWithResult(project, { units: 'm', projectName: 'Coverage' });
+  return {
+    xml: result.output,
+    warnings: result.warnings.map((warning) => ({ message: warning.message, entityId: warning.entityId })),
+    exported: [...result.exportedEntityIds],
+    omitted: [...result.omittedEntityIds],
+    approximated: [...result.approximatedEntityIds],
   };
-  for (const entity of project.entities) {
-    switch (entity.type) {
-      case 'survey-point':
-        points.push({ id: entity.stationId, x: entity.x, y: entity.y, ...(entity.description ? { desc: entity.description } : {}) });
-        exported.push(entity.id);
-        break;
-      case 'line':
-        ensurePoint(entity.fromStationId, entity.fromX, entity.fromY);
-        ensurePoint(entity.toStationId, entity.toX, entity.toY);
-        lines.push({ from: entity.fromStationId, to: entity.toStationId });
-        exported.push(entity.id);
-        break;
-      case 'polyline':
-        entity.vertices.forEach((vertex, index) => ensurePoint(`${entity.id}:v${index}`, vertex.x, vertex.y));
-        if (entity.closed) {
-          const ring = entity.vertices.map((_, index) => `${entity.id}:v${index}`);
-          ring.push(`${entity.id}:v0`);
-          parcels.push({ name: entity.id, ring });
-        } else {
-          for (let index = 0; index + 1 < entity.vertices.length; index += 1) {
-            lines.push({ from: `${entity.id}:v${index}`, to: `${entity.id}:v${index + 1}` });
-          }
-        }
-        exported.push(entity.id);
-        break;
-      case 'polygon':
-      case 'parcel': {
-        entity.vertices.forEach((vertex, index) => ensurePoint(`${entity.id}:v${index}`, vertex.x, vertex.y));
-        const ring = entity.vertices.map((_, index) => `${entity.id}:v${index}`);
-        ring.push(`${entity.id}:v0`);
-        parcels.push({ name: entity.type === 'parcel' ? entity.parcelName : entity.id, ring });
-        exported.push(entity.id);
-        break;
-      }
-      case 'arc': {
-        // Arc → chord line (documented approximation): LandXML curves need
-        // endpoint refs; the chord keeps connectivity, radius is dropped.
-        const ax = entity.centerX + entity.radius * Math.cos((entity.startAngleDeg * Math.PI) / 180);
-        const ay = entity.centerY + entity.radius * Math.sin((entity.startAngleDeg * Math.PI) / 180);
-        const bx = entity.centerX + entity.radius * Math.cos((entity.endAngleDeg * Math.PI) / 180);
-        const by = entity.centerY + entity.radius * Math.sin((entity.endAngleDeg * Math.PI) / 180);
-        ensurePoint(`${entity.id}:a`, ax, ay);
-        ensurePoint(`${entity.id}:b`, bx, by);
-        lines.push({ from: `${entity.id}:a`, to: `${entity.id}:b` });
-        exported.push(entity.id);
-        approximated.push(entity.id);
-        warnings.push({ message: `arc ${entity.id} approximated as chord (radius dropped)`, entityId: entity.id });
-        break;
-      }
-      case 'alignment': {
-        const lineElements = entity.elements.filter((element) => element.kind === 'line');
-        lineElements.forEach((element, index) => {
-          if (element.kind !== 'line') return;
-          ensurePoint(`${entity.id}:s${index}`, element.start.x, element.start.y);
-          ensurePoint(`${entity.id}:e${index}`, element.end.x, element.end.y);
-          lines.push({ from: `${entity.id}:s${index}`, to: `${entity.id}:e${index}` });
-        });
-        alignments.push({ name: entity.name, lines: lineElements.map((_, index) => ({ from: `${entity.id}:s${index}`, to: `${entity.id}:e${index}` })), curves: [] });
-        exported.push(entity.id);
-        break;
-      }
-      case 'text':
-        // Free text has no LandXML geometry: documented, warned, omitted.
-        omitted.push(entity.id);
-        warnings.push({ message: `text ${entity.id} has no LandXML representation (NOT_APPLICABLE)`, entityId: entity.id });
-        break;
-      case 'error-ellipse':
-        notApplicable.push(entity.id);
-        break;
-    }
-  }
-  const ellipseIds = project.entities.filter((entity) => entity.type === 'error-ellipse').map((entity) => entity.id);
-  const result = buildLandXmlFromCadGeometryWithResult({ ...geom, errorEllipseIds: ellipseIds }, { units: 'm', projectName: 'Coverage' });
-  for (const warning of result.warnings) warnings.push({ message: warning.message, entityId: warning.entityId });
-  for (const id of result.omittedEntityIds) if (!omitted.includes(id) && !notApplicable.includes(id)) omitted.push(id);
-  return { xml: result.output, warnings, exported, omitted, approximated, notApplicable };
 };
 
 const assertPartition = (ids: readonly string[], exported: string[], omitted: string[], approximated: string[]): void => {
-  // Engine contract (exportResult.ts + dxfExportModel.ts): approximated is
-  // a SUBSET flag of exported, not a disjoint bucket — an approximated
-  // entity appears in BOTH lists. No-silent-drop therefore means: every id
-  // is in exported XOR omitted, and every approximated id is also exported.
-  // NOTE (§22 wording deviation, reported): the task brief says "exactly
-  // one of exported/omitted/approximated", but the engine's frozen
-  // contract puts approximated ids in both exported and approximated;
-  // src/ is intentionally untouched, so the tests assert the real contract.
+  // Engine contract (exportResult.ts): approximated is a SUBSET flag of
+  // exported, not a disjoint bucket — an approximated entity appears in
+  // BOTH lists. No-silent-drop therefore means: every id is in exported
+  // XOR omitted, and every approximated id is also exported.
+  // finalizeExportResult enforces this fail-closed (omitted wins).
   for (const id of ids) {
     const inExported = exported.includes(id);
     const inOmitted = omitted.includes(id);
@@ -231,9 +144,9 @@ describe('cad export coverage matrix (§22)', () => {
     const model = buildDxfExportModelWithResult({ project });
     const matrix: Record<string, Cell> = {
       'cov-pt': 'APPROXIMATED', 'cov-pt2': 'APPROXIMATED', 'cov-line': 'FULL',
-      'cov-poly': 'FULL', 'cov-arc': 'FULL', 'cov-align': 'FULL',
-      'cov-polygon': 'FULL', 'cov-parcel': 'FULL', 'cov-text': 'FULL',
-      'cov-ellipse': 'APPROXIMATED',
+      'cov-poly': 'FULL', 'cov-arc': 'FULL', 'cov-align': 'APPROXIMATED',
+      'cov-polygon': 'APPROXIMATED', 'cov-parcel': 'APPROXIMATED',
+      'cov-text': 'FULL', 'cov-ellipse': 'APPROXIMATED',
     };
     for (const [id, cell] of Object.entries(matrix)) {
       if (cell === 'FULL') {
@@ -270,25 +183,59 @@ describe('cad export coverage matrix (§22)', () => {
     const exported = exportProjectToLandXml(project);
     const matrix: Record<string, Cell> = {
       'cov-pt': 'FULL', 'cov-pt2': 'FULL', 'cov-line': 'FULL', 'cov-poly': 'FULL',
-      'cov-arc': 'APPROXIMATED', 'cov-align': 'FULL', 'cov-polygon': 'FULL',
-      'cov-parcel': 'FULL', 'cov-text': 'UNSUPPORTED_WITH_WARNING', 'cov-ellipse': 'NOT_APPLICABLE',
+      'cov-arc': 'APPROXIMATED', 'cov-align': 'FULL', 'cov-polygon': 'APPROXIMATED',
+      'cov-parcel': 'APPROXIMATED', 'cov-text': 'UNSUPPORTED_WITH_WARNING', 'cov-ellipse': 'NOT_APPLICABLE',
     };
     for (const [id, cell] of Object.entries(matrix)) {
-      if (cell === 'FULL') expect(exported.exported, id).toContain(id);
-      else if (cell === 'APPROXIMATED') {
+      if (cell === 'FULL') {
+        expect(exported.exported, id).toContain(id);
+        expect(exported.approximated, id).not.toContain(id);
+      } else if (cell === 'APPROXIMATED') {
+        expect(exported.exported, id).toContain(id);
         expect(exported.approximated, id).toContain(id);
         expect(exported.warnings.some((warning) => warning.entityId === id), `${id} warned`).toBe(true);
       } else {
         // UNSUPPORTED_WITH_WARNING → omitted + warning; NOT_APPLICABLE →
         // documented + warning, no geometry, no crash.
-        expect([...exported.omitted, ...exported.notApplicable], id).toContain(id);
+        expect(exported.omitted, id).toContain(id);
         expect(exported.warnings.some((warning) => warning.entityId === id), `${id} warned`).toBe(true);
         expect(exported.xml, `${id} contributes no geometry`).not.toContain(id);
       }
     }
-    assertPartition(ENTITY_IDS, exported.exported, [...exported.omitted, ...exported.notApplicable], exported.approximated);
+    assertPartition(ENTITY_IDS, exported.exported, exported.omitted, exported.approximated);
     expect(exported.xml).toContain('CP1');
     expect(exported.xml).toContain('LOT 1');
+  });
+
+  it('never substitutes coordinates on duplicate station ids', () => {
+    const project = createBlankCadProject({ name: 'Dup stations', units: 'm' });
+    project.layers = [{ id: LAYER, name: 'Coverage', color: '#123456', visible: true, locked: false, role: 'planning' }];
+    const base = { layerId: LAYER, visible: true, locked: false } as const;
+    const entities: CadEntity[] = [
+      { ...base, id: 'dup-a', type: 'survey-point', stationId: 'D1', x: 100, y: 200, pointClass: 'free', source: 'parsed-input' },
+      { ...base, id: 'dup-b', type: 'survey-point', stationId: 'D1', x: 100, y: 200, pointClass: 'free', source: 'parsed-input' },
+      { ...base, id: 'dup-c', type: 'survey-point', stationId: 'D1', x: 999, y: 888, pointClass: 'free', source: 'parsed-input' },
+      { ...base, id: 'dup-line', type: 'line', fromStationId: 'D1', toStationId: 'D2', fromX: 500, fromY: 600, toX: 700, toY: 800, sourceObservationIds: [] },
+    ];
+    const result = buildLandXmlProjectExportWithResult({ ...project, entities }, { units: 'm', projectName: 'Dup' });
+    // Same-coords duplicate shares the station: both exported, one CgPoint.
+    expect(result.exportedEntityIds).toContain('dup-a');
+    expect(result.exportedEntityIds).toContain('dup-b');
+    // Conflicting duplicate is omitted + warned — never another point's coords.
+    expect(result.omittedEntityIds).toContain('dup-c');
+    expect(result.exportedEntityIds).not.toContain('dup-c');
+    expect(result.warnings.some((warning) => warning.entityId === 'dup-c' && warning.message.includes('conflicts'))).toBe(true);
+    expect(result.output).toContain('200.000000 100.000000');
+    expect(result.output).not.toContain('888.000000 999.000000');
+    // Colliding line endpoint keeps its ACTUAL coordinates via a synthetic
+    // ref (exact geometry, renamed reference) + warning; still exported.
+    expect(result.exportedEntityIds).toContain('dup-line');
+    expect(result.omittedEntityIds).not.toContain('dup-line');
+    expect(result.warnings.some((warning) => warning.entityId === 'dup-line' && warning.message.includes('synthetic'))).toBe(true);
+    expect(result.output).toContain('pntRef="D1~2"');
+    expect(result.output).toContain('600.000000 500.000000');
+    expect(result.output).toContain('800.000000 700.000000');
+    assertPartition(['dup-a', 'dup-b', 'dup-c', 'dup-line'], result.exportedEntityIds, result.omittedEntityIds, result.approximatedEntityIds);
   });
 
   it('documents paper drafting objects as NOT_APPLICABLE outside sheet formats', () => {

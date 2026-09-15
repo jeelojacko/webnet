@@ -89,6 +89,7 @@ export const buildRunRequestAndContext = ({
         runFiles: projectRunFiles,
         includeFiles: projectIncludeFiles,
       }),
+      settingsFingerprint: buildValueFingerprint(currentRunSettingsSnapshot),
       overrideIds,
       reviewContext,
     },

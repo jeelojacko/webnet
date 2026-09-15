@@ -3,6 +3,8 @@ import { createStableRuntimeId } from '../../engine/id';
 import type { DraftDocument } from '../../engine/cad/cadDraftTypes';
 import type { CadLayer, CadProject } from '../../engine/cad/cadTypes';
 import type { FieldToFinishCadPayload } from '../../engine/fieldToFinish/cadGeneration';
+import type { FeatureCodeCatalog } from '../../engine/fieldToFinish/featureCatalog';
+import type { SuccessfulAdjustmentRunInfo } from '../../hooks/useAdjustmentOutcomeApplication';
 import { LayerPanel } from './LayerPanel';
 import { SurveyCadFieldToFinishPanel } from './SurveyCadFieldToFinishPanel';
 import { SheetWorkspace } from './SheetWorkspace';
@@ -17,6 +19,11 @@ interface SurveyCadDraftingPanelProps {
   onDraftChange: (_draft: DraftDocument) => void;
   onClose: () => void;
   onCommitFieldToFinishPayload?: (_payload: FieldToFinishCadPayload) => void;
+  /** Workspace-owned active catalog, shared with the Export Center. */
+  catalog?: FeatureCodeCatalog;
+  onCatalogChange?: (_catalog: FeatureCodeCatalog) => void;
+  /** Latest successful production run; enables the explicit adjustment-linked commit. */
+  adjustmentSource?: SuccessfulAdjustmentRunInfo | null;
 }
 
 export const SurveyCadDraftingPanel = ({
@@ -26,6 +33,9 @@ export const SurveyCadDraftingPanel = ({
   onDraftChange,
   onClose,
   onCommitFieldToFinishPayload,
+  catalog,
+  onCatalogChange,
+  adjustmentSource = null,
 }: SurveyCadDraftingPanelProps): React.JSX.Element => {
   const [tab, setTab] = useState<DraftingTab>('SHEETS');
   const entityCounts = useMemo(() => {
@@ -109,7 +119,7 @@ export const SurveyCadDraftingPanel = ({
         )
       ) : tab === 'FIELD_TO_FINISH' ? (
         onCommitFieldToFinishPayload ? (
-          <SurveyCadFieldToFinishPanel project={project} onCommitPayload={onCommitFieldToFinishPayload} />
+          <SurveyCadFieldToFinishPanel project={project} onCommitPayload={onCommitFieldToFinishPayload} catalog={catalog} onCatalogChange={onCatalogChange} adjustmentSource={adjustmentSource} />
         ) : (
           <p className="text-[12px] text-slate-400">
             Field-to-Finish commit is unavailable in this context.

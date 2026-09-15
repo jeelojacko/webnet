@@ -89,10 +89,14 @@ layouts, all sheets), LandXML (model/CAD geometry), `.wncad` (full
 drawing), Feature Catalog JSON (active catalog). Filenames derive from
 the sanitized project stem (`sanitizeExportStem`). The panel shows a
 pre-download preview (format label, scope label, filename) plus the
-per-entity warnings for the selection before download — detailed
-per-entity warnings surface in progress for formats that compute them
-lazily. Sheet picker shows for SVG and current-sheet PDF; PDF scope
-toggle shows for PDF only.
+per-entity warnings for the selection before download — every format
+computes its warnings and exported/omitted/approximated dispositions
+before download (LandXML goes through the production CAD→LandXML
+adapter, DXF R12 merges model + serializer warnings, DXF R2000 surfaces
+model dispositions alongside paper warnings). The Feature Catalog JSON
+tab exports the workspace-owned active catalog — the same object the
+Field-to-Finish panel edits. Sheet picker shows for SVG and current-sheet
+PDF; PDF scope toggle shows for PDF only.
 
 ## Color policy + precedence (§§24-27, §57)
 
@@ -102,7 +106,9 @@ building, SVG, and PDF all resolve through it. DXF maps the resolved
 hex through `dxf/dxfColorMap.ts`: R12 stores nearest-ACI group 62 only
 (an approximation, never exact RGB; omitted groups mean BYLAYER); R2000
 adds group 420 true color alongside the compatibility ACI. The ACI
-table is exact for 1-9 with a deterministic generated ramp for 10-255;
+table is the standard Autodesk palette: exact 1-9, decades 10-249 (24
+pure hues × shade factors 1.0/0.8/0.6/0.5/0.3 with white-mix tints —
+e.g. ACI 10 is 255,0,0 and ACI 12 is 204,0,0), gray ramp 250-255;
 ties resolve to the lowest index. Non-hex color input resolves to
 mid-gray (documented).
 
@@ -117,6 +123,13 @@ mid-gray (documented).
   fixed-set member (non-finite → 25).
 - Point symbols: POINT+TEXT always, `POINT_SYMBOL_APPROXIMATED` always
   warned (no block library).
+- Polygons/parcels: closed polyline, APPROXIMATED + warned (geometric
+  only, no legal parcel meaning). Alignments: expanded line/arc
+  primitives, APPROXIMATED + warned; partially skipped elements warn
+  entity-attributed while the wrapper stays exported + approximated.
+- Degenerate polylines/polygons/parcels/texts/arcs (too few or
+  non-finite vertices, non-finite coordinates/angles) are omitted with
+  a warning — serializers never coerce non-finite numbers to 0.
 - Ellipses: 36-gon closed polyline in DXF (warned); NOT_APPLICABLE in
   LandXML.
 

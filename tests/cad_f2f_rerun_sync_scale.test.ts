@@ -48,6 +48,7 @@ describe('f2f rerun sync indexed-path guard (§52)', () => {
       points,
       catalog: SAMPLE_CATALOG,
       generationRunId: 'guard-1',
+      source: { sourceKind: 'adjustment', inputFingerprint: 'guard-in', settingsFingerprint: 'guard-set' },
     }).project;
     const moved = points[150]?.stationId as string;
     const stations: Record<string, Station> = {};

@@ -132,6 +132,7 @@ export const apply13eStep = (s: Draft13eState, step: string): { next: Draft13eSt
         points: adjustedStationsToFieldToFinishPoints(e13BasePoints(), adjustedOf(s.first)),
         catalog: SAMPLE_CATALOG,
         generationRunId: 'e13-1',
+        source: { sourceKind: 'adjustment', inputFingerprint: 'e13-run-1', settingsFingerprint: 'settings-1' },
       }).project;
       return { next: { ...s, doc: { ...s.doc, project } }, entry: `C:f2f-generated:link:${project.metadata.fieldToFinishLink?.status ?? 'missing'}` };
     }

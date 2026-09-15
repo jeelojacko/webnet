@@ -2,9 +2,9 @@
 // point symbols, alignment/ellipse/parcel policy, LandXML NOT_APPLICABLE.
 import { describe, expect, it } from 'vitest';
 import { buildDxfExportModel, buildDxfExportModelWithResult } from '../src/engine/cad/dxf/dxfExportModel';
-import { nearestAci, trueColorDxf420 } from '../src/engine/cad/dxf/dxfColorMap';
+import { aciToRgb255, nearestAci, trueColorDxf420 } from '../src/engine/cad/dxf/dxfColorMap';
 import { serializeDxfModel, serializeDxfModelWithResult } from '../src/engine/cad/dxf/dxfSerializer';
-import { buildDxfLayoutText, buildDxfModelSpaceText } from '../src/engine/cad/dxf/dxfLayoutExport';
+import { buildDxfLayoutText, buildDxfLayoutTextWithResult, buildDxfModelSpaceText, buildDxfModelSpaceTextWithResult } from '../src/engine/cad/dxf/dxfLayoutExport';
 import {
   buildLandXmlFromCadGeometry,
   buildLandXmlFromCadGeometryWithResult,
@@ -113,7 +113,7 @@ const buildHardeningProject = (): CadProject => {
       name: 'CL', startStation: 0,
       elements: [
         { kind: 'line', start: { x: 0, y: 0 }, end: { x: 100, y: 0 } },
-        { kind: 'arc', center: { x: 100, y: 50 }, radius: 50, startAngleDeg: 270, endDeg: 90 },
+        { kind: 'arc', center: { x: 100, y: 50 }, radius: 50, startAngleDeg: 270, endAngleDeg: 90 },
       ],
     } as never,
     {
@@ -142,7 +142,8 @@ describe('dxf color map', () => {
     expect(nearestAci('#0000ff')).toBe(5);
     expect(nearestAci('#ff00ff')).toBe(6);
     expect(nearestAci('#ffffff')).toBe(7);
-    expect(nearestAci('#000000')).toBe(250);
+    // Black is not in the palette: nearest is the darkest entry, ACI 18.
+    expect(nearestAci('#000000')).toBe(18);
     // Deterministic across calls.
     expect(nearestAci('#f59e0b')).toBe(nearestAci('#f59e0b'));
     expect(nearestAci('#38bdf8')).toBe(nearestAci('#38bdf8'));
@@ -152,6 +153,49 @@ describe('dxf color map', () => {
     expect(trueColorDxf420('#ff0000')).toBe(16711680);
     expect(trueColorDxf420('#0000ff')).toBe(255);
     expect(trueColorDxf420('#ffffff')).toBe(16777215);
+  });
+
+  it('implements the standard ACI palette (representative exact shades)', () => {
+    // Primaries / white / grays.
+    expect(aciToRgb255(1)).toEqual({ r: 255, g: 0, b: 0 });
+    expect(aciToRgb255(5)).toEqual({ r: 0, g: 0, b: 255 });
+    expect(aciToRgb255(7)).toEqual({ r: 255, g: 255, b: 255 });
+    expect(aciToRgb255(8)).toEqual({ r: 128, g: 128, b: 128 });
+    expect(aciToRgb255(9)).toEqual({ r: 192, g: 192, b: 192 });
+    // Red decade: pure, tint, and shade columns.
+    expect(aciToRgb255(10)).toEqual({ r: 255, g: 0, b: 0 });
+    expect(aciToRgb255(11)).toEqual({ r: 255, g: 127, b: 127 });
+    expect(aciToRgb255(12)).toEqual({ r: 204, g: 0, b: 0 });
+    expect(aciToRgb255(13)).toEqual({ r: 204, g: 102, b: 102 });
+    expect(aciToRgb255(14)).toEqual({ r: 153, g: 0, b: 0 });
+    expect(aciToRgb255(16)).toEqual({ r: 128, g: 0, b: 0 });
+    expect(aciToRgb255(18)).toEqual({ r: 77, g: 0, b: 0 });
+    expect(aciToRgb255(19)).toEqual({ r: 77, g: 38, b: 38 });
+    // Other decade anchors: orange, yellow, green, cyan, blue, magenta.
+    expect(aciToRgb255(20)).toEqual({ r: 255, g: 63, b: 0 });
+    expect(aciToRgb255(30)).toEqual({ r: 255, g: 127, b: 0 });
+    expect(aciToRgb255(50)).toEqual({ r: 255, g: 255, b: 0 });
+    expect(aciToRgb255(51)).toEqual({ r: 255, g: 255, b: 127 });
+    expect(aciToRgb255(90)).toEqual({ r: 0, g: 255, b: 0 });
+    expect(aciToRgb255(130)).toEqual({ r: 0, g: 255, b: 255 });
+    expect(aciToRgb255(170)).toEqual({ r: 0, g: 0, b: 255 });
+    expect(aciToRgb255(210)).toEqual({ r: 255, g: 0, b: 255 });
+    // Standard gray ramp (not a linear black→white interpolation).
+    expect(aciToRgb255(250)).toEqual({ r: 51, g: 51, b: 51 });
+    expect(aciToRgb255(251)).toEqual({ r: 80, g: 80, b: 80 });
+    expect(aciToRgb255(252)).toEqual({ r: 105, g: 105, b: 105 });
+    expect(aciToRgb255(253)).toEqual({ r: 130, g: 130, b: 130 });
+    expect(aciToRgb255(254)).toEqual({ r: 190, g: 190, b: 190 });
+    expect(aciToRgb255(255)).toEqual({ r: 255, g: 255, b: 255 });
+  });
+
+  it('maps nearest ACI deterministically with ties to the lowest index', () => {
+    expect(nearestAci('#cc0000')).toBe(12);
+    expect(nearestAci('#ff0000')).toBe(1);
+    expect(nearestAci('#ffffff')).toBe(7);
+    expect(nearestAci('#000000')).toBe(18);
+    expect(nearestAci('#f59e0b')).toBe(nearestAci('#F59E0B'));
+    expect(nearestAci('#38bdf8')).toBe(nearestAci('#38bdf8'));
   });
 });
 
@@ -209,6 +253,9 @@ describe('R12 dxf hardening', () => {
   it('exports alignment elements and never drops the wrapper silently', () => {
     const result = buildDxfExportModelWithResult({ project: buildHardeningProject() });
     expect(result.exportedEntityIds).toContain('al-1');
+    // Element expansion is an APPROXIMATED representation of the wrapper.
+    expect(result.approximatedEntityIds).toContain('al-1');
+    expect(result.warnings.some((w) => w.entityId === 'al-1' && w.message.includes('expanded to 2'))).toBe(true);
     expect(result.omittedEntityIds).toContain('al-empty');
     expect(result.warnings.some((w) => w.entityId === 'al-empty' && w.message.includes('no representable'))).toBe(true);
     const dxf = serializeDxfModel(result.output);
@@ -231,11 +278,45 @@ describe('R12 dxf hardening', () => {
     expect(polys[0]?.values.get('10')).toHaveLength(36);
   });
 
-  it('exports parcels as closed polylines', () => {
-    const entities = parseEntities(serializeDxfModel(buildDxfExportModel({ project: buildHardeningProject() })));
+  it('exports parcels as closed polylines (approximated, geometric only)', () => {
+    const result = buildDxfExportModelWithResult({ project: buildHardeningProject() });
+    expect(result.exportedEntityIds).toContain('pa-1');
+    expect(result.approximatedEntityIds).toContain('pa-1');
+    expect(result.warnings.some((w) => w.entityId === 'pa-1' && w.message.includes('no legal parcel meaning'))).toBe(true);
+    const entities = parseEntities(serializeDxfModel(result.output));
     const parcel = ofType(entities, 'LWPOLYLINE').find((entity) => entity.values.get('8')?.[0] === 'parcels');
     expect(parcel?.values.get('70')?.[0]).toBe('1');
     expect(parcel?.values.get('10')).toHaveLength(4);
+  });
+
+  it('omits degenerate polylines/polygons/parcels/text/arcs instead of coercing to 0', () => {
+    const project = buildHardeningProject();
+    const degenerate = [
+      { type: 'polyline', id: 'bad-poly', layerId: 'red-line', visible: true, locked: false, vertices: [{ x: 1, y: 1 }], vertexLabels: [], closed: false },
+      { type: 'polyline', id: 'nan-poly', layerId: 'red-line', visible: true, locked: false, vertices: [{ x: NaN, y: 0 }, { x: 1, y: 1 }], vertexLabels: [], closed: false },
+      { type: 'polygon', id: 'bad-gon', layerId: 'red-line', visible: true, locked: false, vertices: [{ x: 0, y: 0 }, { x: 1, y: 1 }], vertexLabels: [] },
+      { type: 'parcel', id: 'nan-parcel', layerId: 'parcels', visible: true, locked: false, vertices: [{ x: 0, y: 0 }, { x: 1, y: NaN }, { x: 1, y: 1 }], vertexLabels: [], parcelName: 'BAD' },
+      { type: 'text', id: 'nan-text', layerId: 'red-line', visible: true, locked: false, x: Infinity, y: 0, text: 'bad' },
+      { type: 'arc', id: 'nan-arc', layerId: 'red-line', visible: true, locked: false, centerX: 0, centerY: 0, radius: 5, startAngleDeg: NaN, endAngleDeg: 90 },
+      { type: 'alignment', id: 'al-partial', layerId: 'red-line', visible: true, locked: false, name: 'P', startStation: 0, elements: [{ kind: 'line', start: { x: 0, y: 0 }, end: { x: NaN, y: 0 } }, { kind: 'line', start: { x: 0, y: 0 }, end: { x: 5, y: 5 } }] },
+    ] as never[];
+    degenerate.forEach((entity) => project.entities.push(entity));
+    const result = buildDxfExportModelWithResult({ project });
+    for (const id of ['bad-poly', 'nan-poly', 'bad-gon', 'nan-parcel', 'nan-text', 'nan-arc']) {
+      expect(result.omittedEntityIds, id).toContain(id);
+      expect(result.exportedEntityIds, id).not.toContain(id);
+      expect(result.warnings.some((w) => w.entityId === id), `${id} warned`).toBe(true);
+    }
+    // Partial alignment: skipped element warns entity-attributed, wrapper
+    // stays exported + approximated (never exported+omitted).
+    expect(result.exportedEntityIds).toContain('al-partial');
+    expect(result.approximatedEntityIds).toContain('al-partial');
+    expect(result.omittedEntityIds).not.toContain('al-partial');
+    expect(result.warnings.some((w) => w.entityId === 'al-partial' && w.message.includes('1 elements skipped'))).toBe(true);
+    // No non-finite coordinates leak into the serialized payload.
+    const dxf = serializeDxfModel(result.output);
+    expect(dxf).not.toContain('NaN');
+    expect(dxf).not.toContain('Infinity');
   });
 
   it('is byte-identical across runs', () => {
@@ -243,6 +324,28 @@ describe('R12 dxf hardening', () => {
     const args = { project };
     expect(serializeDxfModel(buildDxfExportModel(args))).toBe(serializeDxfModel(buildDxfExportModel(args)));
     expect(buildDxfModelSpaceText(args)).toBe(serializeDxfModel(buildDxfExportModel(args)));
+  });
+
+  it('surfaces serializer-only warnings pre-download with identical bytes', () => {
+    const project = buildHardeningProject();
+    const result = buildDxfModelSpaceTextWithResult({ project });
+    // Payload is exactly the downloaded bytes.
+    expect(result.output).toBe(buildDxfModelSpaceText({ project }));
+    // Model dispositions ride along.
+    expect(result.exportedEntityIds).toContain('pt-1');
+    expect(result.approximatedEntityIds).toContain('pt-1');
+    expect(result.omittedEntityIds).toContain('al-empty');
+    // Serializer-only warnings (R12 lineweights) are no longer dropped.
+    expect(result.warnings.some((w) => w.message.includes('lineweight'))).toBe(true);
+    const bogus = buildHardeningProject();
+    bogus.layers.push({ id: 'bogus', name: 'Bogus', color: '#ffffff', visible: true, locked: false, role: 'planning', lineTypeId: 'nope' });
+    bogus.entities.push({
+      type: 'line', id: 'ln-bogus', layerId: 'bogus', visible: true, locked: false,
+      fromStationId: 'P1', toStationId: 'P2', fromX: 0, fromY: 0, toX: 1, toY: 1,
+      sourceObservationIds: [],
+    } as never);
+    const bogusResult = buildDxfModelSpaceTextWithResult({ project: bogus });
+    expect(bogusResult.warnings.some((w) => w.message.includes('nope'))).toBe(true);
   });
 });
 
@@ -274,6 +377,25 @@ describe('R2000 dxf hardening', () => {
     expect(ofType(entities, 'ARC').length).toBeGreaterThanOrEqual(1);
     const parcel = ofType(entities, 'LWPOLYLINE').find((entity) => entity.values.get('8')?.[0] === 'parcels');
     expect(parcel?.values.get('70')?.[0]).toBe('1');
+  });
+
+  it('surfaces model warnings/dispositions pre-download with identical bytes', () => {
+    const project = buildHardeningProject();
+    const fixture = buildSmallParcelFixture();
+    const result = buildDxfLayoutTextWithResult({ project, draft: fixture.draft });
+    const bare = buildDxfLayoutText({ project, draft: fixture.draft });
+    // Payload is exactly the downloaded bytes; layouts preserved.
+    expect(result.output.dxf).toBe(bare.dxf);
+    expect(result.output.layouts).toEqual(bare.layouts);
+    // Model dispositions ride along (paper path no longer drops them).
+    for (const id of ['pt-1', 'ln-1', 'al-1', 'pa-1', 'el-1']) {
+      expect(result.exportedEntityIds, id).toContain(id);
+    }
+    for (const id of ['pt-1', 'al-1', 'pa-1', 'el-1']) {
+      expect(result.approximatedEntityIds, id).toContain(id);
+      expect(result.warnings.some((w) => w.entityId === id), `${id} warned`).toBe(true);
+    }
+    expect(result.omittedEntityIds).toContain('al-empty');
   });
 });
 
