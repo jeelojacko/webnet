@@ -58,6 +58,31 @@ const resolveSourceEntityLabel = (project: CadProject, sourceEntityId: CadEntity
   return entity ? getCadEntityDisplayLabel(entity) : sourceEntityId;
 };
 
+const FIELD_TO_FINISH_STATE_LABELS: Record<string, string> = {
+  GENERATED: 'Generated',
+  MANUAL_OVERRIDE: 'Manual override',
+  DETACHED: 'Detached',
+};
+
+/** Read-only Field-to-Finish import state (generated vs manual). */
+const appendFieldToFinishRows = (rows: CadEntityPropertyRow[], entity: CadEntity): void => {
+  const metadata = entity.metadata as Record<string, unknown> | undefined;
+  const provenance = metadata?.['provenance'];
+  if (typeof provenance !== 'object' || provenance == null) return;
+  const record = provenance as Record<string, unknown>;
+  if (record['generatedBy'] !== 'FIELD_TO_FINISH') return;
+  const state = typeof record['state'] === 'string' ? record['state'] : '';
+  rows.push(
+    row('f2f-state', 'Generated Linework', (FIELD_TO_FINISH_STATE_LABELS[state] ?? state) || 'Generated'),
+  );
+  const codes = metadata?.['featureCodes'];
+  if (Array.isArray(codes) && codes.every((value): value is string => typeof value === 'string') && codes.length > 0) {
+    rows.push(row('f2f-codes', 'Feature codes', codes.join(', ')));
+  }
+  const sourceRecord = typeof record['sourceRecordId'] === 'string' ? record['sourceRecordId'] : null;
+  if (sourceRecord) rows.push(row('f2f-source', 'Source record', sourceRecord));
+};
+
 const appendCommonRows = (project: CadProject, entity: CadEntity): CadEntityPropertyRow[] => {
   const rows: CadEntityPropertyRow[] = [
     row('type', 'Type', CAD_ENTITY_TYPE_SINGULAR_LABELS[entity.type]),
@@ -110,6 +135,7 @@ const appendCommonRows = (project: CadProject, entity: CadEntity): CadEntityProp
       );
     }
   }
+  appendFieldToFinishRows(rows, entity);
   return rows;
 };
 

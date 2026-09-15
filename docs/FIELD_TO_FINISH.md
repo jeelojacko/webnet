@@ -125,3 +125,27 @@ control tokens, enum encodings, attribute syntax) is undocumented, so any
 mapping would be guesswork that risks mis-coding field data. FLD support stays
 deferred until a documented grammar or reference corpus exists; do not hand-roll
 an FLD parser from samples alone.
+
+## UI (Survey CAD drafting panel)
+
+The Field-to-Finish tab (`SurveyCadFieldToFinishPanel`, hosted in
+`SurveyCadDraftingPanel`) has three steps, all vendor-neutral in wording
+(Feature Code/Definition, Field-to-Finish, Generated Linework, Unmapped Code):
+
+- Feature catalog editor: code, description, layer, point symbol, point/line
+  style, label style, linework on/off, implicit-continuation toggle; add,
+  duplicate, rename, edit, delete, alias add/remove; `validateCatalog`
+  issues inline; per-row style preview (symbol + line + label swatch).
+- Import review: paste or load sample coded CSV (parsed by the existing
+  terrestrial import, meters in); per-point rows show Point ID, coords, raw
+  code, normalized definitions, description, linework controls, mapping
+  status (Mapped / Unmapped Code / No code), and warnings; the summary
+  counts mapped, unmapped, invalid controls, chains, and linework
+  warnings/failures.
+- Preview and commit: counts (create/update, labels, Generated Linework,
+  layers/styles, unmapped) plus diagnostics (END w/o BEGIN and friends)
+  with a confirm button committing one undoable `F2F_GENERATE` transaction
+  (`useSurveyCadWorkspace.commitFieldToFinishPayload`).
+- Properties panel: generated entities show read-only imported attributes
+  (Generated Linework state Generated/Manual override/Detached, feature
+  codes, source record); generated-vs-manual state is visible at a glance.

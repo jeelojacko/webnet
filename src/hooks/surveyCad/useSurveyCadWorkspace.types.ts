@@ -15,6 +15,7 @@ import type {
   MlightcadSpikeScene,
 } from '../../engine/cad/cadTypes';
 import type { CadSnapPreferences } from './useSurveyCadSnapping';
+import type { FieldToFinishCadPayload } from '../../engine/fieldToFinish/cadGeneration';
 
 export interface CommandHoverTarget {
   entityId: string;
@@ -197,6 +198,7 @@ export interface UseSurveyCadWorkspaceResult {
   historyDepth: number;
   redoDepth: number;
   replaceCadProject: (_project: CadProject, _statusText?: string) => void;
+  commitFieldToFinishPayload: (_payload: FieldToFinishCadPayload) => void;
   startPointCommand: () => void;
   startCogoPointCommand: () => void;
   startLineCommand: () => void;

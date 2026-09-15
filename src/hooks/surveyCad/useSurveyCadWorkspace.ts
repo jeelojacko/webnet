@@ -34,6 +34,8 @@ import type {
 } from '../../engine/cad/cadTypes';
 import type { CadEntityId } from '../../engine/cad/cadTypes';
 import { createCadSelectionState } from '../../engine/cad/cadSelection';
+import { runFieldToFinishCommand } from '../../engine/fieldToFinish/regeneration';
+import type { FieldToFinishCadPayload } from '../../engine/fieldToFinish/cadGeneration';
 
 export const useSurveyCadWorkspace = (
   baseProject: CadProject,
@@ -362,6 +364,9 @@ export const useSurveyCadWorkspace = (
           prompt: statusText,
         },
       }));
+    },
+    commitFieldToFinishPayload: (payload: FieldToFinishCadPayload) => {
+      applyHistoryUpdate((current) => runFieldToFinishCommand(current, payload));
     },
     startPointCommand: commandState.startPointCommand,
     startCogoPointCommand: commandState.startCogoPointCommand,

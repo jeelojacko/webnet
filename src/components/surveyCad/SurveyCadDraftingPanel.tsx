@@ -2,11 +2,13 @@ import React, { useMemo, useState } from 'react';
 import { createStableRuntimeId } from '../../engine/id';
 import type { DraftDocument } from '../../engine/cad/cadDraftTypes';
 import type { CadLayer, CadProject } from '../../engine/cad/cadTypes';
+import type { FieldToFinishCadPayload } from '../../engine/fieldToFinish/cadGeneration';
 import { LayerPanel } from './LayerPanel';
+import { SurveyCadFieldToFinishPanel } from './SurveyCadFieldToFinishPanel';
 import { SheetWorkspace } from './SheetWorkspace';
 import { TitleBlockTemplateEditor } from './TitleBlockTemplateEditor';
 
-type DraftingTab = 'SHEETS' | 'LAYERS' | 'TITLE_BLOCKS';
+type DraftingTab = 'SHEETS' | 'LAYERS' | 'TITLE_BLOCKS' | 'FIELD_TO_FINISH';
 
 interface SurveyCadDraftingPanelProps {
   project: CadProject;
@@ -14,6 +16,7 @@ interface SurveyCadDraftingPanelProps {
   onProjectLayersChange: (_layers: CadLayer[]) => void;
   onDraftChange: (_draft: DraftDocument) => void;
   onClose: () => void;
+  onCommitFieldToFinishPayload?: (_payload: FieldToFinishCadPayload) => void;
 }
 
 export const SurveyCadDraftingPanel = ({
@@ -22,6 +25,7 @@ export const SurveyCadDraftingPanel = ({
   onProjectLayersChange,
   onDraftChange,
   onClose,
+  onCommitFieldToFinishPayload,
 }: SurveyCadDraftingPanelProps): React.JSX.Element => {
   const [tab, setTab] = useState<DraftingTab>('SHEETS');
   const entityCounts = useMemo(() => {
@@ -70,6 +74,15 @@ export const SurveyCadDraftingPanel = ({
           >
             Title Blocks
           </button>
+          <button
+            type="button"
+            role="tab"
+            aria-selected={tab === 'FIELD_TO_FINISH'}
+            className="rounded border border-slate-600 px-2 py-1 hover:bg-slate-800"
+            onClick={() => setTab('FIELD_TO_FINISH')}
+          >
+            Field-to-Finish
+          </button>
         </div>
         <button
           type="button"
@@ -93,6 +106,14 @@ export const SurveyCadDraftingPanel = ({
           <TitleBlockTemplateEditor draft={draft} projectName={project.name} onDraftChange={onDraftChange} />
         ) : (
           <p className="text-[12px] text-slate-400">No draft yet. Title blocks live on the draft document.</p>
+        )
+      ) : tab === 'FIELD_TO_FINISH' ? (
+        onCommitFieldToFinishPayload ? (
+          <SurveyCadFieldToFinishPanel project={project} onCommitPayload={onCommitFieldToFinishPayload} />
+        ) : (
+          <p className="text-[12px] text-slate-400">
+            Field-to-Finish commit is unavailable in this context.
+          </p>
         )
       ) : (
         <LayerPanel
