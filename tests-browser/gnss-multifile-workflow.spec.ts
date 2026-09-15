@@ -454,3 +454,237 @@ test.describe('Static GNSS multifile (real browser)', () => {
     expect(pageErrors).toEqual([]);
   });
 });
+
+/**
+ * Phase 13F B2 — production UI legs U1-U8 over the Multi-file project tab.
+ *
+ * Real Chromium against the real Vite-served app: synthetic native-BL
+ * sources only (no vendor files). Solves go through the production
+ * gnss-run worker route. Complements the engine-level A-K legs above.
+ */
+test.describe('Static GNSS multifile project tab (production UI)', () => {
+  test.beforeEach(async ({ page }) => {
+    await page.goto('/');
+    await expect(
+      page.getByRole('button', { name: 'Static GNSS workspace' }),
+    ).toBeVisible({ timeout: 30_000 });
+  });
+
+  const COORDS: Record<string, [number, number, number]> = {
+    A: [4000000, 1000000, 4800000],
+    B: [4000100, 1000050, 4800020],
+    C: [4000200, 999950, 4800100],
+    D: [4000150, 1000100, 4799950],
+  };
+  const nativeText = (
+    stations: Array<{ id: string; fixed?: boolean }>,
+    baselines: Array<{ from: string; to: string; noise?: number }>,
+  ): string => {
+    const coordOf = (id: string): [number, number, number] =>
+      COORDS[id] ?? [4000500, 1000500, 4800500];
+    const lines = [
+      'FRAME ECEF ITRF2020@2020.0 EPOCH 2020.0 ELLIPSOID GRS80',
+      'UNITS M',
+    ];
+    stations.forEach((s) => {
+      const c = coordOf(s.id);
+      lines.push(`GX ${s.id} ${c[0]} ${c[1]} ${c[2]} ${s.fixed ? 'FIXED' : 'FREE'}`);
+    });
+    baselines.forEach((b, i) => {
+      const from = coordOf(b.from);
+      const to = coordOf(b.to);
+      const j = (b.noise ?? 0) * 0.001;
+      lines.push(
+        `BL ${b.from} ${b.to} ${to[0] - from[0] + j} ${to[1] - from[1] - j} ${to[2] - from[2] + j} ` +
+          `ID B${i + 1} SESSION S1`,
+      );
+      lines.push('COV 0.000025 0 0 0.000025 0 0.000025');
+    });
+    return `${lines.join('\n')}\n`;
+  };
+  const ALL = [{ id: 'A', fixed: true }, { id: 'B' }, { id: 'C' }, { id: 'D' }];
+  const P1 = nativeText(ALL, [
+    { from: 'A', to: 'B', noise: 1 },
+    { from: 'B', to: 'C', noise: 2 },
+  ]);
+  const P2 = nativeText(ALL, [
+    { from: 'C', to: 'D', noise: 3 },
+    { from: 'A', to: 'C', noise: 5 },
+  ]);
+  const filePayload = (name: string, text: string): { name: string; mimeType: string; buffer: Buffer } => ({
+    name,
+    mimeType: 'text/plain',
+    buffer: Buffer.from(text, 'utf8'),
+  });
+
+  const openProjectTab = async (page: import('@playwright/test').Page) => {
+    await page.getByRole('button', { name: 'Static GNSS workspace' }).click();
+    const dialog = page.getByRole('dialog', { name: 'Static GNSS baseline workspace' });
+    await expect(dialog).toBeVisible();
+    await dialog.getByRole('tab', { name: 'Multi-file project' }).click();
+    return dialog;
+  };
+
+  const addSources = async (
+    dialog: import('@playwright/test').Locator,
+    payloads: Array<{ name: string; mimeType: string; buffer: Buffer }>,
+  ): Promise<void> => {
+    await dialog.locator('#gnss-project-files').setInputFiles(payloads);
+  };
+
+  const solveButton = (dialog: import('@playwright/test').Locator) =>
+    dialog.getByRole('button', { name: 'Adjust composed project (production route)' });
+
+  test('U1: project tab opens with empty state', async ({ page }) => {
+    const dialog = await openProjectTab(page);
+    await expect(dialog).toContainText('No sources yet');
+  });
+
+  test('U2: add 2 sources, preview, constrained solve, provenance + review', async ({ page }) => {
+    const dialog = await openProjectTab(page);
+    await addSources(dialog, [filePayload('p1.bl', P1), filePayload('p2.bl', P2)]);
+    const preview = dialog.locator('section[aria-label="Composition preview"]');
+    await expect(preview).toContainText('2/2 enabled');
+    await expect(preview).toContainText('4 (1 fixed, 3 free)');
+    await solveButton(dialog).click();
+    await expect(dialog).toContainText('Adjusted ECEF stations', { timeout: 60_000 });
+    await expect(dialog).toContainText('Multifile composition provenance');
+    await expect(dialog).toContainText('Baseline source filter (review only)');
+    await expect(dialog).toContainText('Station source trace');
+  });
+
+  test('U3: station trace names contributing files + declarations', async ({ page }) => {
+    const dialog = await openProjectTab(page);
+    await addSources(dialog, [filePayload('p1.bl', P1), filePayload('p2.bl', P2)]);
+    await solveButton(dialog).click();
+    await expect(dialog).toContainText('Adjusted ECEF stations', { timeout: 60_000 });
+    await dialog.locator('section[aria-label="Station source trace"] summary').click();
+    const trace = dialog.locator('section[aria-label="Station source trace"]');
+    await expect(trace).toContainText('p1.bl');
+    await expect(trace).toContainText('p2.bl');
+    await expect(trace).toContainText(`A: files=[p1.bl, p2.bl]`);
+  });
+
+  test('U4: disable source narrows compose, marks stale, rerun restores', async ({ page }) => {
+    const dialog = await openProjectTab(page);
+    await addSources(dialog, [filePayload('p1.bl', P1), filePayload('p2.bl', P2)]);
+    await solveButton(dialog).click();
+    await expect(dialog).toContainText('Adjusted ECEF stations', { timeout: 60_000 });
+    await dialog.getByRole('checkbox', { name: 'Enable p2.bl' }).uncheck();
+    await expect(dialog).toContainText('Project changed since the last run');
+    const preview = dialog.locator('section[aria-label="Composition preview"]');
+    await expect(preview).toContainText('1/2 enabled');
+    await solveButton(dialog).click();
+    await expect(dialog).toContainText('Adjusted ECEF stations', { timeout: 60_000 });
+    await expect(preview).toContainText('1/2 enabled');
+    await dialog.getByRole('checkbox', { name: 'Enable p2.bl' }).check();
+    await solveButton(dialog).click();
+    await expect(dialog).toContainText('Adjusted ECEF stations', { timeout: 60_000 });
+    await expect(preview).toContainText('2/2 enabled');
+  });
+
+  test('U5: reorder keeps numerics (SEUW identical across rerun)', async ({ page }) => {
+    const dialog = await openProjectTab(page);
+    await addSources(dialog, [filePayload('p1.bl', P1), filePayload('p2.bl', P2)]);
+    await solveButton(dialog).click();
+    await expect(dialog).toContainText('Adjusted ECEF stations', { timeout: 60_000 });
+    const summary = dialog.locator('section[aria-label="Adjustment summary"]');
+    const before = await summary.innerText();
+    const seuwBefore = (before.match(/SEUW\s+([0-9.]+)/) ?? [])[1] ?? '';
+    expect(seuwBefore.length).toBeGreaterThan(0);
+    await dialog.getByRole('button', { name: 'Move p1.bl down' }).click();
+    await expect(dialog).toContainText('Project changed since the last run');
+    await solveButton(dialog).click();
+    await expect(dialog).toContainText('Adjusted ECEF stations', { timeout: 60_000 });
+    const after = await summary.innerText();
+    const seuwAfter = (after.match(/SEUW\s+([0-9.]+)/) ?? [])[1] ?? '';
+    expect(seuwAfter).toBe(seuwBefore);
+  });
+
+  test('U6: conflicting source blocks solve naming both files', async ({ page }) => {
+    const shifted = P2.split('\n')
+      .map((line) => (line.startsWith('GX D ') ? 'GX D 4000150.005 1000100 4799950 FREE' : line))
+      .join('\n');
+    const dialog = await openProjectTab(page);
+    await addSources(dialog, [filePayload('p1.bl', P1), filePayload('p2.bl', shifted)]);
+    const preview = dialog.locator('section[aria-label="Composition preview"]');
+    await expect(preview).toContainText('material station conflict', { timeout: 30_000 });
+    await expect(preview).toContainText('p1.bl');
+    await expect(preview).toContainText('p2.bl');
+    await expect(solveButton(dialog)).toBeDisabled();
+  });
+
+  test('U7: allow-free solves uncontrolled pair with inner-constraint wording', async ({ page }) => {
+    const free1 = nativeText([{ id: 'A' }, { id: 'B' }, { id: 'C' }], [
+      { from: 'A', to: 'B', noise: 1 },
+      { from: 'B', to: 'C', noise: 2 },
+      { from: 'C', to: 'A', noise: 3 },
+    ]);
+    const free2 = nativeText([{ id: 'C' }, { id: 'D' }, { id: 'E' }], [
+      { from: 'C', to: 'D', noise: 1 },
+      { from: 'D', to: 'E', noise: 2 },
+      { from: 'E', to: 'C', noise: 3 },
+    ]);
+    const dialog = await openProjectTab(page);
+    await addSources(dialog, [filePayload('free1.bl', free1), filePayload('free2.bl', free2)]);
+    await dialog.getByRole('radio', { name: /Allow free components/ }).check();
+    await solveButton(dialog).click();
+    await expect(dialog).toContainText('INNER CONSTRAINED', { timeout: 60_000 });
+  });
+
+  test('U8: source filter narrows the table only (solve untouched)', async ({ page }) => {
+    const dialog = await openProjectTab(page);
+    await addSources(dialog, [filePayload('p1.bl', P1), filePayload('p2.bl', P2)]);
+    await solveButton(dialog).click();
+    await expect(dialog).toContainText('Adjusted ECEF stations', { timeout: 60_000 });
+    const baselines = dialog.locator('section[aria-label="Baselines"]');
+    await expect(baselines.getByRole('row')).toHaveCount(5);
+    const summary = dialog.locator('section[aria-label="Adjustment summary"]');
+    const before = await summary.innerText();
+    await dialog.locator('#gnss-review-source-filter').selectOption({ label: 'p1.bl' });
+    await expect(baselines.getByRole('row')).toHaveCount(3);
+    const after = await summary.innerText();
+    expect(after).toBe(before);
+    await dialog.locator('#gnss-review-source-filter').selectOption({ label: 'All sources' });
+    await expect(baselines.getByRole('row')).toHaveCount(5);
+  });
+});
+
+test.describe('Static GNSS multifile duplicate gate (production UI)', () => {
+  test.beforeEach(async ({ page }) => {
+    await page.goto('/');
+    await expect(
+      page.getByRole('button', { name: 'Static GNSS workspace' }),
+    ).toBeVisible({ timeout: 30_000 });
+  });
+
+  test('U9: exact-duplicate upload warns, blocks solve, acknowledges to proceed', async ({ page }) => {
+    await page.getByRole('button', { name: 'Static GNSS workspace' }).click();
+    const dialog = page.getByRole('dialog', { name: 'Static GNSS baseline workspace' });
+    await expect(dialog).toBeVisible();
+    await dialog.getByRole('tab', { name: 'Multi-file project' }).click();
+    const text = [
+      'FRAME ECEF ITRF2020@2020.0 EPOCH 2020.0 ELLIPSOID GRS80',
+      'UNITS M',
+      'GX A 4000000 1000000 4800000 FIXED',
+      'GX B 4000100 1000050 4800020 FREE',
+      'BL A B 100 50 20 ID B1 SESSION S1',
+      'COV 0.000025 0 0 0.000025 0 0.000025',
+      '',
+    ].join('\n');
+    const payload = (name: string): { name: string; mimeType: string; buffer: Buffer } => ({
+      name,
+      mimeType: 'text/plain',
+      buffer: Buffer.from(text, 'utf8'),
+    });
+    await dialog.locator('#gnss-project-files').setInputFiles([payload('dup.bl'), payload('dup.bl')]);
+    await expect(dialog).toContainText('Exact-duplicate content uploaded', { timeout: 30_000 });
+    await expect(dialog).toContainText('dup.bl, dup.bl');
+    const solve = dialog.getByRole('button', { name: 'Adjust composed project (production route)' });
+    await expect(solve).toBeDisabled();
+    await dialog.getByRole('button', { name: 'Acknowledge duplicate' }).click();
+    await expect(solve).toBeEnabled();
+    await solve.click();
+    await expect(dialog).toContainText('Adjusted ECEF stations', { timeout: 60_000 });
+  });
+});

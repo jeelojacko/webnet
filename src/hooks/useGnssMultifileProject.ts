@@ -6,8 +6,14 @@
  * summarizeGnssProjectComposition, and solves by building the composed
  * input with buildGnssMultifileAdjustInput and posting it through the
  * existing worker path. No math lives here; engine errors surface verbatim.
+ *
+ * Snapshot policy (B2 audit): the last run snapshot is frozen and NEVER
+ * cleared by edits — any edit only flips the STALE flag via the run
+ * fingerprint until the next solve replaces it. Late results from a
+ * superseded run are dropped by the sequence guard (no worker cancel:
+ * composition itself is synchronous, so there is nothing to cancel).
  */
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useMemo, useRef, useState } from 'react';
 import type { StationMap } from '../types';
 import type { GnssMultifileProvenance } from '../engine/gnssMultifileComposition';
 import type { GnssBaselineAdjustInput } from '../engine/gnssBaselineAdjust';
@@ -119,6 +125,12 @@ export const useGnssMultifileProject = () => {
   const [snapshot, setSnapshot] = useState<GnssProjectRunSnapshot | null>(null);
   const [runError, setRunError] = useState<string | null>(null);
   const [solving, setSolving] = useState(false);
+  // Run sequence: composition is synchronous (fast, non-cancellable) and
+  // only the worker await below is async. A newer run supersedes an older
+  // one — late results from an earlier run are dropped, never applied.
+  // There is no worker cancel: a superseded run still finishes in the
+  // background, its outcome is just ignored.
+  const runSeq = useRef(0);
 
   const hashes = useMemo(
     () => Object.fromEntries(sources.map((source) => [source.id, buildValueFingerprint(source.text)])),
@@ -225,24 +237,20 @@ export const useGnssMultifileProject = () => {
       const prevMax = prev.reduce((max, source) => Math.max(max, source.order), -1);
       return [...prev, { id, name: trimmed, text, enabled: true, order: prevMax + 1 }];
     });
-    setSnapshot(null);
   }, []);
 
   const removeSource = useCallback((id: string): void => {
     setSources((prev) => prev.filter((source) => source.id !== id));
-    setSnapshot(null);
   }, []);
 
   const toggleSource = useCallback((id: string, enabled: boolean): void => {
     setSources((prev) => prev.map((source) => (source.id === id ? { ...source, enabled } : source)));
-    setSnapshot(null);
   }, []);
 
   const renameSource = useCallback((id: string, name: string): void => {
     const trimmed = name.trim();
     if (trimmed === '') return;
     setSources((prev) => prev.map((source) => (source.id === id ? { ...source, name: trimmed } : source)));
-    setSnapshot(null);
   }, []);
 
   const moveSource = useCallback((id: string, direction: -1 | 1): void => {
@@ -258,17 +266,14 @@ export const useGnssMultifileProject = () => {
       next[swapIndex] = { ...other, order: current.order };
       return next;
     });
-    setSnapshot(null);
   }, []);
 
   const toggleFixed = useCallback((id: string, fixed: boolean): void => {
     setControlOverrides((prev) => ({ ...prev, [id]: fixed }));
-    setSnapshot(null);
   }, []);
 
   const changeDatumMode = useCallback((mode: GnssDatumMode): void => {
     setDatumMode(mode);
-    setSnapshot(null);
   }, []);
 
   const acknowledgeDuplicates = useCallback((hash: string): void => {
@@ -278,6 +283,8 @@ export const useGnssMultifileProject = () => {
   const solve = useCallback(
     async (run: GnssProjectRunFn): Promise<void> => {
       if (sigmaInvalid || solving) return;
+      runSeq.current += 1;
+      const seq = runSeq.current;
       setSolving(true);
       setRunError(null);
       try {
@@ -288,11 +295,13 @@ export const useGnssMultifileProject = () => {
         });
         const fingerprint = runFingerprint;
         const outcome = await run(built.input);
+        if (seq !== runSeq.current) return;
         setSnapshot({ fingerprint, provenance: built.provenance, mergeNotes: built.mergeNotes, input: built.input, outcome });
       } catch (failure) {
+        if (seq !== runSeq.current) return;
         setRunError(failure instanceof Error ? failure.message : String(failure));
       } finally {
-        setSolving(false);
+        if (seq === runSeq.current) setSolving(false);
       }
     },
     [sigmaInvalid, solving, entries, sourceTexts, controlOverrides, datumMode, setup, runFingerprint],
