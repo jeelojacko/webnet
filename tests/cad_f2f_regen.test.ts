@@ -158,6 +158,70 @@ describe('cad f2f regen', () => {
     expect(shifted[1]).toBe(points[1]);
   });
 
+  it('keeps valid linework byte-identical on regen with no source change', () => {
+    const chained = (id: string, x: number, order: number, code: string, instance: string | undefined, control: FieldLineworkControl): FieldToFinishCadPoint => ({
+      ...pt(id, x, id.startsWith('Q') ? 10 : 0, order),
+      codes: [{ code, ...(instance ? { instance } : {}), controls: [control] }],
+    });
+    const points = [
+      chained('P1', 0, 1, 'EP', undefined, FieldLineworkControl.BEGIN),
+      chained('P2', 10, 2, 'EP', undefined, FieldLineworkControl.END),
+      chained('Q1', 0, 3, 'EP', '1', FieldLineworkControl.BEGIN),
+      chained('Q2', 10, 4, 'EP', '1', FieldLineworkControl.END),
+    ];
+    const first = buildFieldToFinishProject(
+      createBlankCadProject({ name: 'F2F', units: 'm' }),
+      argsOf(points, 'run-1'),
+    );
+    const lineworkJson = (project: { entities: { type: string }[] }): string[] =>
+      project.entities
+        .filter((entity) => entity.type === 'line' || entity.type === 'polyline')
+        .map((entity) => JSON.stringify(entity))
+        .sort();
+    expect(first.project.entities.filter((e) => e.type === 'line' || e.type === 'polyline')).toHaveLength(2);
+
+    const preview = previewFieldToFinishRegen(first.project, argsOf(points, 'run-2'), 'import-1');
+    expect(preview.lineworkChanged).toEqual([]);
+
+    const applied = applyFieldToFinishRegen(first.project, argsOf(points, 'run-2'), 'import-1', { confirmed: true });
+    expect(applied.removedEntityIds).toEqual([]);
+    expect(lineworkJson(applied.project)).toEqual(lineworkJson(first.project));
+  });
+
+  it('updates only the affected chain when one point is added', () => {
+    const chained = (id: string, x: number, order: number, instance: string | undefined, control: FieldLineworkControl): FieldToFinishCadPoint => ({
+      ...pt(id, x, id.startsWith('Q') ? 10 : 0, order),
+      codes: [{ code: 'EP', ...(instance ? { instance } : {}), controls: [control] }],
+    });
+    const base = [
+      chained('P1', 0, 1, undefined, FieldLineworkControl.BEGIN),
+      chained('P2', 10, 2, undefined, FieldLineworkControl.END),
+      chained('Q1', 0, 3, '1', FieldLineworkControl.BEGIN),
+      chained('Q2', 10, 4, '1', FieldLineworkControl.CONTINUE),
+    ];
+    const first = buildFieldToFinishProject(
+      createBlankCadProject({ name: 'F2F', units: 'm' }),
+      argsOf(base, 'run-1'),
+    );
+    const before = new Map(first.project.entities.map((entity) => [entity.id, JSON.stringify(entity)]));
+    const chainA = 'f2f-lw-ep-1';
+    const chainB = 'f2f-lw-ep-1-3';
+    expect(before.has(chainA)).toBe(true);
+    expect(before.has(chainB)).toBe(true);
+
+    const grown = [...base, chained('Q3', 20, 5, '1', FieldLineworkControl.CONTINUE)];
+    const preview = previewFieldToFinishRegen(first.project, argsOf(grown, 'run-2'), 'import-1');
+    expect(preview.lineworkChanged).toEqual([chainB]);
+
+    const applied = applyFieldToFinishRegen(first.project, argsOf(grown, 'run-2'), 'import-1', { confirmed: true });
+    expect(applied.removedEntityIds).toEqual([]);
+    const after = new Map(applied.project.entities.map((entity) => [entity.id, entity]));
+    expect(JSON.stringify(after.get(chainA))).toBe(before.get(chainA));
+    const changed = after.get(chainB);
+    expect(changed?.type).toBe('polyline');
+    expect(changed?.type === 'polyline' && changed.vertices).toHaveLength(3);
+  });
+
   it('chains linework end-to-end (BEGIN/CONTINUE/END) and flags linework changes', () => {
     const project = buildFieldToFinishProject(
       createBlankCadProject({ name: 'F2F', units: 'm' }),

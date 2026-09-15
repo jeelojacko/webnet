@@ -164,6 +164,25 @@ export const isFieldToFinishEntity = (entity: CadEntity): boolean =>
 export const getFieldToFinishState = (entity: CadEntity): FieldToFinishEntityState | undefined =>
   provenanceOf(entity)?.state;
 
+/**
+ * Per-chain linework equality for regen diffing. Compares content only —
+ * `generationRunId` is a stamp, not geometry, so a regen with no source
+ * change compares equal and the existing entity is kept byte-identical.
+ */
+export const isSameFieldToFinishLinework = (a: CadEntity, b: CadEntity): boolean => {
+  const strip = (entity: CadEntity): unknown => {
+    const metadata = { ...(entity.metadata ?? {}) } as Record<string, unknown>;
+    const provenance = metadata['provenance'];
+    if (typeof provenance === 'object' && provenance !== null) {
+      const { generationRunId: _ignored, ...rest } = provenance as Record<string, unknown>;
+      metadata['provenance'] = rest;
+    }
+    const { id: _id, ...body } = entity as unknown as Record<string, unknown>;
+    return { ...body, metadata };
+  };
+  return JSON.stringify(strip(a)) === JSON.stringify(strip(b));
+};
+
 const splitInstance = (token: string): { code: string; instance?: string } => {
   const match = /^([^\d\s]+)(\d+)$/.exec(token.trim());
   if (match?.[1]) return { code: match[1], ...(match[2] ? { instance: match[2] } : {}) };
@@ -524,7 +543,7 @@ export const buildFieldToFinishPayload = (
     const definition = chain.definitionId ? defsById.get(chain.definitionId) : undefined;
     const styleId = resolveStyleId(definition, layer);
     const entityId = `f2f-lw-${slug(chain.code)}${chain.instance ? `-${slug(chain.instance)}` : ''}-${chain.vertices[0]?.sourceOrder ?? 0}`;
-    if (existingById.get(entityId)) continue; // Stable regen identity: never duplicate.
+    const existingLinework = existingById.get(entityId);
     const sourcePointIds = chain.vertices.map((vertex) => vertex.pointId);
     const provenance: FieldToFinishProvenance = {
       generatedBy: FIELD_TO_FINISH_GENERATOR,
@@ -542,16 +561,23 @@ export const buildFieldToFinishPayload = (
       ...(chain.definitionId ? { definitionId: chain.definitionId } : {}),
       provenance,
     };
+    // Stable regen identity per chain (code+instance+sourceOrder): never
+    // duplicate. Unchanged chains re-upsert the existing entity so regen
+    // keeps them byte-identical; changed chains update in place; only
+    // chains whose source coding vanished disappear (see regeneration.ts).
+    const keepVisible = existingLinework?.visible ?? true;
+    const keepLocked = existingLinework?.locked ?? false;
+    let next: CadLineEntity | CadPolylineEntity;
     if (chain.vertices.length === 2) {
       const from = coords[0] as { vertex: { pointId: string }; point: FieldToFinishCadPoint };
       const to = coords[1] as { vertex: { pointId: string }; point: FieldToFinishCadPoint };
-      const line: CadLineEntity = {
+      next = {
         id: entityId,
         type: 'line',
         layerId: layer.id,
         styleId,
-        visible: true,
-        locked: false,
+        visible: keepVisible,
+        locked: keepLocked,
         fromStationId: from.vertex.pointId,
         toStationId: to.vertex.pointId,
         fromX: from.point.x,
@@ -561,24 +587,40 @@ export const buildFieldToFinishPayload = (
         sourceObservationIds: [],
         metadata,
       };
-      upsertEntities.push(line);
     } else {
-      const polyline: CadPolylineEntity = {
+      next = {
         id: entityId,
         type: 'polyline',
         layerId: layer.id,
         styleId,
-        visible: true,
-        locked: false,
+        visible: keepVisible,
+        locked: keepLocked,
         vertices: coords.map((entry) => ({ x: (entry.point as FieldToFinishCadPoint).x, y: (entry.point as FieldToFinishCadPoint).y })),
         vertexLabels: sourcePointIds,
         closed: chain.closed,
         metadata,
       };
-      upsertEntities.push(polyline);
     }
-    addedEntityIds.push(entityId);
-    lineworkCount += 1;
+    if (!existingLinework) {
+      upsertEntities.push(next);
+      addedEntityIds.push(entityId);
+      lineworkCount += 1;
+    } else if (existingLinework.type !== 'line' && existingLinework.type !== 'polyline') {
+      upsertEntities.push(next);
+      updatedEntityIds.push(entityId);
+    } else {
+      const state = getFieldToFinishState(existingLinework);
+      if (state === 'MANUAL_OVERRIDE' || state === 'DETACHED'
+        || (existingLinework.metadata?.['manual'] === true && !isFieldToFinishEntity(existingLinework))) {
+        warnings.push({ code: 'F2F_MANUAL', message: `Manual linework "${entityId}" kept; auto geometry skipped.` });
+        upsertEntities.push(existingLinework);
+      } else if (isSameFieldToFinishLinework(existingLinework, next)) {
+        upsertEntities.push(existingLinework);
+      } else {
+        upsertEntities.push(next);
+        updatedEntityIds.push(entityId);
+      }
+    }
   }
 
   const payload: FieldToFinishCadPayload = {

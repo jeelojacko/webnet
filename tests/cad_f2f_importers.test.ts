@@ -12,6 +12,7 @@ import {
 } from '../src/engine/importers';
 import { parseTerrestrialCoordinateCsv } from '../src/engine/terrestrialCsvImport';
 import { parseInput } from '../src/engine/parse';
+import { splitImportedCodeDescription } from '../src/engine/importers/shared';
 
 const surveyFixture = readFileSync('tests/fixtures/trimble_survey_report_sample.htm', 'utf-8');
 const jobxmlFixture = readFileSync('tests/fixtures/jobxml_measurement_sample.jxl', 'utf-8');
@@ -115,6 +116,31 @@ describe('Phase 13D importer code/description normalization', () => {
     const shot = dataset!.observations.find((obs) => 'toId' in obs && obs.toId === 'SHOT_1');
     expect(shot?.description).toBe('Trail edge');
     expect(shot?.feature?.codes?.[0]).toMatchObject({ code: 'TRL', role: 'both' });
+  });
+
+  it('leaves description-only records without feature codes', () => {
+    const split = splitImportedCodeDescription(undefined, 'Trail edge', 7);
+    expect(split.description).toBe('Trail edge');
+    expect(split.feature).toBeUndefined();
+  });
+
+  it('preserves raw whitespace while canonical codes match trimmed', () => {
+    const split = splitImportedCodeDescription('  EP  ', '  Edge  ', 3);
+    expect(split.feature?.codes?.[0]).toMatchObject({ code: 'EP', rawCode: '  EP  ', role: 'both' });
+    expect(split.feature?.rawCodeText).toBe('  EP  ');
+    expect(split.description).toBe('Edge');
+  });
+
+  it('does not invent FieldGenius shot codes from descriptions alone', () => {
+    const input = [
+      'OC,PN=STN1,E=5000.000,N=1000.000,Z=100.000,HI=1.500',
+      'BK,PN=BS1,E=5000.000,N=900.000,Z=99.500',
+      'SS,PN=P9,E=5070.000,N=1070.000,Z=99.100,HA=45.1234,SD=100.000,VA=95.0000,HT=1.800,DESC=Trail',
+    ].join('\n');
+    const dataset = parseFieldGenius(input, 'desc-only.raw');
+    const shot = dataset!.observations.find((obs) => 'toId' in obs && obs.toId === 'P9');
+    expect(shot?.description).toBe('Trail');
+    expect(shot?.feature).toBeUndefined();
   });
 
   it('keeps RW5 numerical outputs unchanged after normalization', () => {

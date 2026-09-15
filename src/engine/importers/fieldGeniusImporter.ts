@@ -134,7 +134,7 @@ export const parseFieldGenius = (input: string, sourceName?: string): ImportedDa
       const zenithDeg = pickNumberField(fields, ['VA', 'ZE', 'ZENITH', 'VZ']);
       const deltaHM = pickNumberField(fields, ['DH', 'DELTAH', 'VD']);
       const shotSplit = splitImportedCodeDescription(
-        pickField(fields, ['CODE', 'FC']) ?? pickField(fields, ['DESC', 'DESCRIPTION']),
+        pickField(fields, ['CODE', 'FC']),
         pickField(fields, ['DESC', 'DESCRIPTION']),
         sourceLine,
       );

@@ -6,9 +6,10 @@
  * Source identity is stable (import key + station id + record identity —
  * never array index). Manual work is never auto-deleted: GENERATED entities
  * vanish only on confirmed regen (and are reported); MANUAL_OVERRIDE and
- * DETACHED entities are preserved. Adjustment reruns flow through the
- * coordinate-update path, which touches F2F geometry only — adjustment
- * inputs are only read, never altered.
+ * DETACHED entities are preserved. An explicit coordinate-update helper
+ * exists for adjustment reruns (currently not auto-wired — treat rerun
+ * propagation as manual until wired); it touches F2F geometry only —
+ * adjustment inputs are only read, never altered.
  */
 import { runCadCommand, type CadHistoryState } from '../cad/cadUndoRedo';
 import { replaceCadProjectEntities } from '../cad/cadProjectState';
@@ -20,6 +21,7 @@ import {
   buildFieldToFinishPayload,
   getFieldToFinishState,
   isFieldToFinishEntity,
+  isSameFieldToFinishLinework,
   type FieldToFinishCadArgs,
   type FieldToFinishCadPayload,
   type FieldToFinishCadPoint,
@@ -131,17 +133,26 @@ export const previewFieldToFinishRegen = (
       else preview.manualConflicts.push((entity as CadSurveyPointEntity).stationId);
     }
   }
-  // Linework: fresh chain signature vs current generated linework entities.
-  const currentLinework = new Set(
+  // Linework: per-chain diff (code+instance+sourceOrder identity). The
+  // valid set is every linework entity in the fresh payload — including
+  // unchanged chains re-upserted in place — so only chains whose source
+  // coding actually vanished read as removed. Same-id geometry changes
+  // compare equal only when content matches (runId stamp ignored).
+  const currentLinework = new Map(
     project.entities
       .filter((entity) => (entity.type === 'line' || entity.type === 'polyline') && isFieldToFinishEntity(entity))
-      .map((entity) => entity.id),
+      .map((entity) => [entity.id, entity] as const),
   );
-  const nextLinework = new Set(built.addedEntityIds.filter((id) => id.startsWith('f2f-lw-')));
-  for (const id of nextLinework) {
-    if (!currentLinework.has(id)) preview.lineworkChanged.push(id);
+  const nextLinework = new Map(
+    built.payload.upsertEntities
+      .filter((entity) => entity.type === 'line' || entity.type === 'polyline')
+      .map((entity) => [entity.id, entity] as const),
+  );
+  for (const [id, next] of nextLinework) {
+    const current = currentLinework.get(id);
+    if (!current || !isSameFieldToFinishLinework(current, next)) preview.lineworkChanged.push(id);
   }
-  for (const id of currentLinework) {
+  for (const id of currentLinework.keys()) {
     if (!nextLinework.has(id) && !preview.lineworkChanged.includes(id)) preview.lineworkChanged.push(id);
   }
   preview.unmapped.push(...built.stats.unmapped > 0
@@ -167,6 +178,11 @@ export const applyFieldToFinishRegen = (
   const preview = previewFieldToFinishRegen(project, args, importKey);
   const built = buildFieldToFinishPayload(project, args);
   const nextKeys = new Set(args.points.map((point) => sourceKeyOfPoint(point, importKey)));
+  const validLineworkIds = new Set(
+    built.payload.upsertEntities
+      .filter((entity) => entity.type === 'line' || entity.type === 'polyline')
+      .map((entity) => entity.id),
+  );
   const removeEntityIds: string[] = [];
   if (options.confirmed) {
     for (const entity of project.entities) {
@@ -185,8 +201,7 @@ export const applyFieldToFinishRegen = (
           ? removeEntityIds.includes(entity.anchorEntityId) || preview.removed.some((station) => entity.anchorEntityId === `pt:${station}`)
           : false;
         const staleLinework = (entity.type === 'line' || entity.type === 'polyline')
-          && !built.addedEntityIds.includes(entity.id)
-          && !built.updatedEntityIds.includes(entity.id);
+          && !validLineworkIds.has(entity.id);
         if (anchorGone || staleLinework) removeEntityIds.push(entity.id);
       }
     }

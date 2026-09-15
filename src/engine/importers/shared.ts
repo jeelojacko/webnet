@@ -158,13 +158,17 @@ export const splitImportedCodeDescription = (
   const code = codeText?.trim() || undefined;
   const desc = descText?.trim() || undefined;
   if (!code && !desc) return {};
-  const effective = code ?? desc ?? '';
-  const raw = codeText ?? descText;
+  // Description-only records carry no feature code: inventing one from the
+  // description would drag free text into code matching and linework.
+  if (!code) return { description: desc };
+  // Raw source text stays exact (whitespace preserved); only the canonical
+  // `code` is trimmed for matching.
+  const raw = codeText as string;
   return {
     description: desc ?? code,
     feature: {
-      rawCodeText: raw?.trim() || effective,
-      codes: [{ code: effective, rawCode: raw?.trim() || effective, role: 'both' }],
+      rawCodeText: raw,
+      codes: [{ code, rawCode: raw, role: 'both' }],
       description: desc,
       sourceOrder,
     },
