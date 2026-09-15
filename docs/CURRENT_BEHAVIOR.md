@@ -446,7 +446,8 @@ Current GNSS behavior includes:
 Current import behavior includes:
 
 - generic importer registry and normalized imported-data model
-- first-party importers for OPUS/OPUS-RS, JobXML, industry-style survey-report HTML, FieldGenius raw, Carlson/TDS RW5-style raw, and DBX text/XML exports
+- first-party importers for OPUS/OPUS-RS, JobXML, industry-style survey-report HTML, FieldGenius raw, Carlson/TDS RW5-style raw, DBX text/XML exports, and terrestrial coordinate CSV (explicit units, Trimble Access preset, manual column mapping; CRS metadata-only)
+- importers preserve field coding distinctly from descriptions: code-like attrs (RW5/FieldGenius CODE/FC/DESC, DBX Code/FeatureCode/Description, JobXML Code/FeatureCode vs Description/Descriptor, survey-report Code) populate record `feature` (raw text + codes[] + source order) while descriptive text populates `description`; observation text output is unaffected so adjustment numerics are unchanged
 - staged import-review modal before editor mutation
 - setup-aware grouping and output-style presets
 - opt-in JobXML `Industry Style` review output that locks the prompt into a fixed raw-fieldbook mode, defaults staged review to exclude `MTA` rows, preserves raw horizontal-circle values, corrected slope distances, raw zenith values, JobXML point codes, and exact HI/HT provenance, and emits round-grouped `DB/DN/DM/DE` blocks for direct-reading direction-set imports while leaving the generic WebNet and TS-direction-set presets unchanged

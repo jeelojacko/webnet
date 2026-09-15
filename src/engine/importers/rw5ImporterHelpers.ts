@@ -3,6 +3,7 @@ import {
   parseDmsAngleDegrees,
   parseQuadrantBearingDegrees,
   sanitizeStationId,
+  splitImportedCodeDescription,
   takeLeadingLines,
 } from './shared';
 import { detectFieldGeniusRaw } from './fieldGeniusImporter';
@@ -221,6 +222,11 @@ export const buildLocalStationFromRw5 = (
   const northM = pickRw5NumberField(fields, ['N', 'NORTH', 'NORTHING', 'Y']);
   const heightM = pickRw5NumberField(fields, ['EL', 'ELEV', 'ELEVATION', 'Z', 'H', 'HEIGHT']) ?? 0;
   if (eastM == null || northM == null) return null;
+  const split = splitImportedCodeDescription(
+    pickRw5Field(fields, ['CODE', 'FC']),
+    pickRw5Field(fields, ['DESC']),
+    sourceLine,
+  );
   return {
     kind: 'control-station',
     coordinateMode: 'local',
@@ -228,7 +234,8 @@ export const buildLocalStationFromRw5 = (
     eastM,
     northM,
     heightM,
-    description: pickRw5Field(fields, ['DESC', 'CODE', 'FC']),
+    description: split.description,
+    feature: split.feature,
     sourceLine,
     sourceCode: code,
   };

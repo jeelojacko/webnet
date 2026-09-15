@@ -2,6 +2,7 @@ import type { ImportedControlStationRecord } from '../importers';
 import {
   choosePreferredStation,
   sanitizeStationId,
+  splitImportedCodeDescription,
   takeLeadingLines,
 } from './shared';
 
@@ -133,6 +134,11 @@ export const buildLocalStationFromFieldGenius = (
   const northM = pickNumberField(fields, ['N', 'NORTH', 'NORTHING', 'Y']);
   const heightM = pickNumberField(fields, ['Z', 'EL', 'ELEV', 'ELEVATION', 'H', 'HEIGHT']) ?? 0;
   if (eastM == null || northM == null) return null;
+  const split = splitImportedCodeDescription(
+    pickField(fields, ['CODE', 'FC']),
+    pickField(fields, ['DESC', 'DESCRIPTION']),
+    sourceLine,
+  );
   return {
     kind: 'control-station',
     coordinateMode: 'local',
@@ -140,7 +146,8 @@ export const buildLocalStationFromFieldGenius = (
     eastM,
     northM,
     heightM,
-    description: pickField(fields, ['DESC', 'DESCRIPTION', 'CODE', 'FC']),
+    description: split.description,
+    feature: split.feature,
     sourceLine,
     sourceCode: code,
   };

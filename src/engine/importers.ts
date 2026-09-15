@@ -4,6 +4,7 @@ import { jobXmlImporter } from './importers/jobXmlImporter';
 import { opusImporter } from './importers/opusImporter';
 import { carlsonImporter, tdsImporter } from './importers/rw5Importer';
 import { trimbleSurveyReportImporter } from './importers/surveyReportImporter';
+import { terrestrialCsvImporter, type TerrestrialCsvRegistryOptions } from './terrestrialCsvImport';
 import { convertImportedDatasetToWebNetInput, enrichImportedDatasetDirectionFaces } from './importers/shared';
 
 export interface OpusCovarianceSummary {
@@ -92,10 +93,24 @@ export interface ImportedJobXmlExtras {
   htSource?: 'observation' | 'target';
 }
 
+export interface ImportedFeatureCodeEntry {
+  code: string;
+  rawCode?: string;
+  role?: 'both' | 'code' | 'description';
+}
+
+export interface ImportedFeatureMetadata {
+  rawCodeText?: string;
+  codes?: ImportedFeatureCodeEntry[];
+  description?: string;
+  sourceOrder?: number;
+}
+
 export interface ImportedRecordBase {
   sourceLine?: number;
   sourceCode?: string;
   description?: string;
+  feature?: ImportedFeatureMetadata;
   note?: string;
   importSourceKey?: string;
   importSourceName?: string;
@@ -229,6 +244,7 @@ export type ExternalImportAngleMode = 'raw' | 'reduced';
 
 export interface ExternalImportParseOptions {
   angleMode?: ExternalImportAngleMode;
+  terrestrialCsv?: TerrestrialCsvRegistryOptions;
 }
 
 export interface ExternalInputImporter {
@@ -289,6 +305,7 @@ export {
   plural,
   sanitizeStationId,
   sourceLeaf,
+  splitImportedCodeDescription,
   stripHtmlTags,
   tableRowPairsToMap,
   takeLeadingLines,
@@ -301,6 +318,16 @@ export { detectCarlsonRw5, detectTdsRaw, parseRw5Dataset } from './importers/rw5
 export { detectFieldGeniusRaw, fieldGeniusImporter, parseFieldGenius } from './importers/fieldGeniusImporter';
 export { detectTrimbleSurveyReport, parseTrimbleSurveyReport, trimbleSurveyReportImporter } from './importers/surveyReportImporter';
 export { dbxImporter, detectDbxTextExport, parseDbxTextExport } from './importers/dbxImporter';
+export {
+  detectTerrestrialCoordinateCsv,
+  parseTerrestrialCoordinateCsv,
+  terrestrialCsvImporter,
+  type TerrestrialCsvColumnMapping,
+  type TerrestrialCsvImportOptions,
+  type TerrestrialCsvPreset,
+  type TerrestrialCsvRegistryOptions,
+  type TerrestrialCsvUnits,
+} from './terrestrialCsvImport';
 
 const REGISTERED_IMPORTERS: ExternalInputImporter[] = [
   dbxImporter,
@@ -309,6 +336,7 @@ const REGISTERED_IMPORTERS: ExternalInputImporter[] = [
   carlsonImporter,
   tdsImporter,
   fieldGeniusImporter,
+  terrestrialCsvImporter,
   opusImporter,
 ];
 

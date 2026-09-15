@@ -10,6 +10,7 @@ import {
   extractXmlText,
   hasXmlTag,
   sanitizeStationId,
+  splitImportedCodeDescription,
 } from './shared';
 import { registerJobXmlPointReference } from './jobXmlImporter.helpers';
 
@@ -72,7 +73,12 @@ export const collectJobXmlPointRecords = ({
     const sigmaEastM = extractXmlNumber(block, ['SigmaEast', 'StdDevEast', 'StdevEast']);
     const sigmaHeightM = extractXmlNumber(block, ['SigmaHeight', 'StdDevHeight', 'StdevHeight']);
     const corrEN = extractXmlNumber(block, ['CorrelationEN', 'CorrEN']);
-    const description = extractXmlText(block, ['Code', 'Description', 'Descriptor', 'FeatureCode']);
+    const pointSplit = splitImportedCodeDescription(
+      extractXmlText(block, ['Code', 'FeatureCode']),
+      extractXmlText(block, ['Description', 'Descriptor']),
+    );
+    const description = pointSplit.description;
+    const feature = pointSplit.feature;
     const looksLikeMeasurement = hasXmlTag(block, [
       'Circle',
       'StationID',
@@ -119,6 +125,7 @@ export const collectJobXmlPointRecords = ({
         sigmaHeightM,
         corrEN,
         description,
+        feature,
         sourceLine,
         sourceCode: 'PointRecord',
       };
@@ -158,6 +165,7 @@ export const collectJobXmlPointRecords = ({
         sigmaHeightM,
         corrEN,
         description,
+        feature,
         sourceLine,
         sourceCode: 'PointRecord',
       };
@@ -210,7 +218,12 @@ export const collectJobXmlPointRecords = ({
     const latitudeDeg = extractXmlNumber(gridBlock, ['Latitude', 'Lat']);
     const longitudeDeg = extractXmlNumber(gridBlock, ['Longitude', 'Lon', 'Long']);
     const ellipsoidHeightM = extractXmlNumber(gridBlock, ['EllipsoidHeight', 'EllHeight']);
-    const description = extractXmlText(block, ['Code', 'Description', 'Descriptor', 'FeatureCode']);
+    const pointSplit = splitImportedCodeDescription(
+      extractXmlText(block, ['Code', 'FeatureCode']),
+      extractXmlText(block, ['Description', 'Descriptor']),
+    );
+    const description = pointSplit.description;
+    const feature = pointSplit.feature;
 
     if (!stationId) return;
 
@@ -225,6 +238,7 @@ export const collectJobXmlPointRecords = ({
         heightDatum: ellipsoidHeightM != null ? 'ellipsoid' : 'orthometric',
         heightM: ellipsoidHeightM ?? elevationM ?? 0,
         description,
+        feature,
         sourceLine,
         sourceCode: 'Point',
       };
@@ -237,6 +251,7 @@ export const collectJobXmlPointRecords = ({
         eastM,
         heightM: elevationM,
         description,
+        feature,
         sourceLine,
         sourceCode: 'Point',
       };

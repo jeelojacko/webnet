@@ -1,6 +1,7 @@
 import type {
   ImportedControlStationRecord,
   ImportedDataset,
+  ImportedFeatureMetadata,
   ImportedObservationRecord,
   ImportedSourceMetadata,
   ImportedTraceEntry,
@@ -144,7 +145,31 @@ interface ImportedObservationBundleOptions {
   raw?: string;
   tracePrefix?: string;
   sourceMeta?: ImportedSourceMetadata;
+  description?: string;
+  featureCode?: string;
+  featureSourceOrder?: number;
 }
+
+export const splitImportedCodeDescription = (
+  codeText?: string,
+  descText?: string,
+  sourceOrder?: number,
+): { description?: string; feature?: ImportedFeatureMetadata } => {
+  const code = codeText?.trim() || undefined;
+  const desc = descText?.trim() || undefined;
+  if (!code && !desc) return {};
+  const effective = code ?? desc ?? '';
+  const raw = codeText ?? descText;
+  return {
+    description: desc ?? code,
+    feature: {
+      rawCodeText: raw?.trim() || effective,
+      codes: [{ code: effective, rawCode: raw?.trim() || effective, role: 'both' }],
+      description: desc,
+      sourceOrder,
+    },
+  };
+};
 
 export const appendImportedObservationBundle = ({
   observations,
@@ -165,7 +190,13 @@ export const appendImportedObservationBundle = ({
   raw,
   tracePrefix = 'Observation',
   sourceMeta,
+  description,
+  featureCode,
+  featureSourceOrder,
 }: ImportedObservationBundleOptions): void => {
+  const split = splitImportedCodeDescription(featureCode, description, featureSourceOrder);
+  const recordDescription = split.description;
+  const recordFeature = split.feature;
   const hasVertical = verticalMode != null && verticalValue != null;
   const useMeasurementRecord =
     backsightId != null && angleDeg != null && distanceMode !== 'horizontal';
@@ -185,6 +216,8 @@ export const appendImportedObservationBundle = ({
         verticalValue,
         hiM,
         htM,
+        description: recordDescription,
+        feature: recordFeature,
         sourceLine,
         sourceCode,
         note: 'converted to M',
@@ -199,6 +232,8 @@ export const appendImportedObservationBundle = ({
       fromId: backsightId,
       toId: targetId,
       angleDeg: normalizeAngleDeg(angleDeg),
+      description: recordDescription,
+      feature: recordFeature,
       sourceLine,
       sourceCode,
       note: 'converted to A',
@@ -210,6 +245,8 @@ export const appendImportedObservationBundle = ({
       fromId: occupyId,
       toId: targetId,
       bearingDeg: normalizeAngleDeg(bearingDeg),
+      description: recordDescription,
+      feature: recordFeature,
       sourceLine,
       sourceCode,
       note: 'converted to B',
@@ -227,6 +264,8 @@ export const appendImportedObservationBundle = ({
       verticalValue: verticalValue!,
       hiM,
       htM,
+      description: recordDescription,
+      feature: recordFeature,
       sourceLine,
       sourceCode,
       note: 'converted to DV',
@@ -243,6 +282,8 @@ export const appendImportedObservationBundle = ({
       distanceM,
       hiM,
       htM,
+      description: recordDescription,
+      feature: recordFeature,
       sourceLine,
       sourceCode,
       note: 'converted to D',
@@ -259,6 +300,8 @@ export const appendImportedObservationBundle = ({
       verticalValue: verticalValue!,
       hiM,
       htM,
+      description: recordDescription,
+      feature: recordFeature,
       sourceLine,
       sourceCode,
       note: 'converted to V',
