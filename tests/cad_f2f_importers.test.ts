@@ -82,6 +82,41 @@ describe('Phase 13D importer code/description normalization', () => {
     expect(shot?.feature?.codes?.[0]).toMatchObject({ code: 'SS', role: 'both' });
   });
 
+  it('does not invent DBX observation codes from descriptions alone', () => {
+    const input = `<?xml version="1.0" encoding="UTF-8"?>
+<DBXSurveyExport>
+  <Points>
+    <Point name="STN9"><Northing>3000.0</Northing><Easting>7000.0</Easting><Elevation>75.0</Elevation><Code>CTRL</Code><Description>Control mark</Description></Point>
+    <Point name="BS9"><Northing>2900.0</Northing><Easting>7000.0</Easting><Elevation>74.5</Elevation></Point>
+  </Points>
+  <Setups><Setup id="SET1"><OccupyPoint>STN9</OccupyPoint><BacksightPoint>BS9</BacksightPoint></Setup></Setups>
+  <Observations>
+    <Observation setupId="SET1"><TargetPoint>P9</TargetPoint><HorizontalAngle>45.0</HorizontalAngle><SlopeDistance>80.0</SlopeDistance><Zenith>92.5</Zenith><Description>Side shot</Description></Observation>
+  </Observations>
+</DBXSurveyExport>`;
+    const dataset = parseDbxTextExport(input, 'desc-only.dbx');
+    expect(dataset).not.toBeNull();
+    const shot = dataset!.observations.find((obs) => 'toId' in obs && obs.toId === 'P9');
+    expect(shot?.description).toBe('Side shot');
+    expect(shot?.feature).toBeUndefined();
+  });
+
+  it('does not invent RW5 shot codes from descriptions alone', () => {
+    const input = [
+      'JB,NM,CODED',
+      'MO,AD0,UN0,SF1.0000',
+      'OC,OPSTN1,N 1000.0000,E 5000.0000,EL100.0000,--SETUP',
+      'BK,OPSTN1,BPBS1',
+      'LS,HI1.5000,HR1.8000',
+      'SS,OPSTN1,FPP1,AR45.1234,SD100.0000,ZE95.0000,--Trail edge',
+    ].join('\n');
+    const dataset = parseRw5Dataset(input, 'desc-only.rw5', 'carlson');
+    expect(dataset).not.toBeNull();
+    const shot = dataset!.observations.find((obs) => 'toId' in obs && obs.toId === 'P1');
+    expect(shot?.description).toBe('Trail edge');
+    expect(shot?.feature).toBeUndefined();
+  });
+
   it('leaves survey-report shots empty when no Code column value exists', () => {
     const dataset = parseTrimbleSurveyReport(surveyFixture, 'trimble_survey_report_sample.htm');
     expect(dataset).not.toBeNull();

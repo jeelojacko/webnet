@@ -221,9 +221,7 @@ export const parseDbxTextExport = (input: string, sourceName?: string): Imported
       htM,
       tracePrefix: 'DBX observation',
       description: extractXmlText(block, ['Description']),
-      featureCode:
-        extractXmlText(block, ['Code', 'FeatureCode']) ??
-        extractXmlText(block, ['Description']),
+      featureCode: extractXmlText(block, ['Code', 'FeatureCode']),
       featureSourceOrder: sourceLine,
     });
   });
