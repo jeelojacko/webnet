@@ -9,7 +9,7 @@ import type { PersistedSavedRunSnapshot } from '../appStateTypes';
 import type { SurveyCadPersistedState } from './cad/cadTypes';
 
 export type ProjectStorageBackend = 'opfs' | 'indexeddb';
-export type ProjectSourceFileKind = 'dat' | 'control' | 'notes' | 'report' | 'other';
+export type ProjectSourceFileKind = 'dat' | 'control' | 'gnss' | 'notes' | 'report' | 'other';
 
 export interface ProjectIndexRow {
   id: string;

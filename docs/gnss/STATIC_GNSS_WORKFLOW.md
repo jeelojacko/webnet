@@ -35,7 +35,7 @@ automatically).
 - **Reports**: text + JSON export (structured report plus adjusted ECEF
   stations, route, and reasons). Raw vs setup vs effective covariance is
   shown per baseline in expandable detail.
-- **Multi-file projects (PRODUCTION / DEFAULT ON)**: named-project runs compose compatible sources automatically (native-BL `FRAME ECEF` / `BL` text, GVX 1.0, delimited CSV against the parsed station union). Composition is post-parse only — exact frame/epoch/ellipsoid match, 1e-9 m no-averaging station merge, FIXED-wins control, every baseline retained, STRONG cross-source duplicates block — with project control overrides applied after composition and one composed solve through the unchanged dispatch. Kill switch `setGnssMultifileEnabled(false)` restores single-session behavior (OFF throws fail-closed).
+- **Multi-file projects (PRODUCTION / DEFAULT ON)**: named-project runs compose compatible sources automatically (native-BL `FRAME ECEF` / `BL` text, GVX 1.0, delimited CSV against the parsed station union). Composition is post-parse only — exact frame/epoch/ellipsoid match, 1e-9 m no-averaging station merge, FIXED-wins control, every baseline retained, STRONG cross-source duplicates block — with project control overrides applied after composition and one composed solve through the unchanged dispatch. Kill switch `setGnssMultifileEnabled(false)` restores single-session behavior (OFF throws fail-closed). Production UI: the workspace modal `Multi-file project` tab (`GnssMultifileProjectPanel` + `useGnssMultifileProject`) owns the source list, composition preview, control/datum/setup options, and posts the composed input through the existing worker route with a frozen run snapshot (stale-result marking on edit).
 
 ## NOT supported
 

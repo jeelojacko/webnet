@@ -431,25 +431,30 @@ export const summarizeGnssProjectComposition = (
   return buildPrecompositionSummary(parsed, totalFiles, composed, summaryOptions);
 };
 
-export interface GnssMultifileSolveOutput {
+export interface GnssMultifileSolveInput {
   readonly parsed: GnssProjectParsedSource[];
   readonly summary: GnssPrecompositionSummary;
   readonly provenance: GnssMultifileProvenance[];
   readonly mergeNotes: string[];
   readonly input: GnssBaselineAdjustInput;
+}
+
+export interface GnssMultifileSolveOutput extends GnssMultifileSolveInput {
   readonly result: GnssBaselineAdjustResult;
 }
 
 /**
- * Full project solve: mixed terrestrial+GNSS guard, compose, STRONG
- * duplicate block, project control overrides AFTER composition, existing
- * datum preflight on the composed network, ONE solve via unchanged dispatch.
+ * Production input builder: everything through the composed adjust input
+ * (mixed-source guard, single compose, BLOCKED throws, project control
+ * overrides AFTER composition). Shared by the direct solve and the
+ * production worker path (which posts the built input to the existing
+ * 'gnss-run' route). No math lives here beyond the frozen composer.
  */
-export const runGnssMultifileProjectSolve = (
+export const buildGnssMultifileAdjustInput = (
   files: readonly ProjectManifestFileEntry[],
   sourceTexts: Readonly<Record<string, string>>,
   options: GnssMultifileRunOptions = {},
-): GnssMultifileSolveOutput => {
+): GnssMultifileSolveInput => {
   if (!isGnssMultifileEnabled()) {
     throw new Error('GNSS multifile run blocked: flag OFF (enable to run).');
   }
@@ -495,6 +500,21 @@ export const runGnssMultifileProjectSolve = (
     datumMode: options.datumMode ?? 'constrained',
     nativeRuntime: options.nativeRuntime,
   };
+  return { parsed, summary, provenance: composed.provenance, mergeNotes: composed.mergeNotes, input };
+};
+
+/**
+ * Full project solve: mixed terrestrial+GNSS guard, compose, STRONG
+ * duplicate block, project control overrides AFTER composition, existing
+ * datum preflight on the composed network, ONE solve via unchanged dispatch.
+ */
+export const runGnssMultifileProjectSolve = (
+  files: readonly ProjectManifestFileEntry[],
+  sourceTexts: Readonly<Record<string, string>>,
+  options: GnssMultifileRunOptions = {},
+): GnssMultifileSolveOutput => {
+  const built = buildGnssMultifileAdjustInput(files, sourceTexts, options);
+  const { input } = built;
   // Phase 12I.1: the standalone preflight stays the early gate for
   // constrained runs; allow-free runs with >= 1 free component skip it
   // because datum classification lives in the adjust dispatch (the gauge
@@ -513,7 +533,7 @@ export const runGnssMultifileProjectSolve = (
     });
   }
   const result = runGnssBaselineAdjustment(input);
-  return { parsed, summary, provenance: composed.provenance, mergeNotes: composed.mergeNotes, input, result };
+  return { ...built, result };
 };
 
 /** Machine-local absolute paths must never enter portable bundles. */

@@ -32,6 +32,7 @@ import {
   cloneRecord,
   isRecord,
   mergeKnownKeys,
+  attachGnssMultifileSettings,
   normalizeRetiredParseSettings,
   sanitizeCustomPresets,
   sanitizeExportFormat,
@@ -225,6 +226,9 @@ export const parseProjectFile = (
     ? stripLocalOnlyProjectSettings(cloneRecord(ui.settings))
     : ui.settings;
   const settings = mergeKnownKeys(defaults.settings, settingsCandidate);
+  // Phase 13F B1: mergeKnownKeys keeps only primitive defaults-bag keys, so
+  // the nested gnssMultifile record is re-attached via its own sanitizer.
+  attachGnssMultifileSettings(settings, settingsCandidate);
   const parseSettings = mergeKnownKeys(defaults.parseSettings, parseSettingsRaw);
   const exportFormat = sanitizeExportFormat(ui.exportFormat, defaults.exportFormat);
   const adjustedPointsExport = sanitizeAdjustedPointsExportSettings(
