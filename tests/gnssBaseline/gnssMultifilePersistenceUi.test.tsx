@@ -90,6 +90,45 @@ const unmountHook = (mounted: { root: Root; el: HTMLElement }): void => {
   mounted.el.remove();
 };
 
+const spyingStore = (): GnssMultifileProjectStore & {
+  readonly writes: { key: string; value: string }[];
+} => {
+  const data: Record<string, string> = {};
+  const writes: { key: string; value: string }[] = [];
+  return {
+    writes,
+    getItem: (key) => data[key] ?? null,
+    setItem: (key, value) => {
+      data[key] = value;
+      writes.push({ key, value });
+    },
+  };
+};
+
+const mountSwitchableHook = (
+  initialProjectId: string,
+  store: GnssMultifileProjectStore,
+  api: { current: GnssMultifileProject | null },
+): { root: Root; el: HTMLElement; show: (_projectId: string) => void } => {
+  const Harness: React.FC<{ pid: string }> = ({ pid }) => {
+    const project = useGnssMultifileProject({ projectId: pid, store });
+    useEffect(() => {
+      api.current = project;
+    });
+    return null;
+  };
+  const el = document.createElement('div');
+  document.body.appendChild(el);
+  const root = createRoot(el);
+  const show = (pid: string): void => {
+    act(() => {
+      root.render(<Harness pid={pid} />);
+    });
+  };
+  show(initialProjectId);
+  return { root, el, show };
+};
+
 beforeEach(() => {
   setGnssMultifileEnabled(true);
 });
@@ -175,6 +214,60 @@ describe('multifile project durability (unmount/remount, project isolation)', ()
       expect(api3.current?.snapshot).not.toBeNull();
     } finally {
       unmountHook(third);
+    }
+  });
+
+  it('same-mount projectId switch (rerender A→B→A) never writes A state under the B key', async () => {
+    const store = spyingStore();
+    const api: { current: GnssMultifileProject | null } = { current: null };
+    const mounted = mountSwitchableHook('switch-A', store, api);
+    try {
+      act(() => {
+        api.current?.addSource('a-only.dat', nativeText(''));
+      });
+      await act(async () => {
+        await api.current?.solve(fakeRun);
+      });
+      expect(api.current?.sources.map((source) => source.name)).toEqual(['a-only.dat']);
+      expect(api.current?.snapshot).not.toBeNull();
+      const fingerprintA = api.current?.snapshot?.fingerprint;
+      store.writes.length = 0;
+
+      // Same-mount switch to an empty project: B must hydrate empty even
+      // though the switch commit still closes over A's live state.
+      mounted.show('switch-B');
+      expect(api.current?.sources).toHaveLength(0);
+      expect(api.current?.snapshot).toBeNull();
+      const bWrites = store.writes.filter(
+        (write) => write.key === 'webnet.gnss-multifile-project.v1.switch-B',
+      );
+      expect(bWrites.length).toBeGreaterThan(0);
+      for (const write of bWrites) {
+        expect(write.value).not.toContain('a-only.dat');
+      }
+
+      // B keeps independent state.
+      act(() => {
+        api.current?.addSource('b-only.dat', nativeText('EXTRA'));
+      });
+      expect(api.current?.sources.map((source) => source.name)).toEqual(['b-only.dat']);
+
+      // Switch back: A is intact, B's content never leaked into it.
+      mounted.show('switch-A');
+      expect(api.current?.sources.map((source) => source.name)).toEqual(['a-only.dat']);
+      expect(api.current?.snapshot?.fingerprint).toBe(fingerprintA);
+
+      // And B still holds only its own content.
+      mounted.show('switch-B');
+      expect(api.current?.sources.map((source) => source.name)).toEqual(['b-only.dat']);
+      const bWritesAfter = store.writes.filter(
+        (write) => write.key === 'webnet.gnss-multifile-project.v1.switch-B',
+      );
+      for (const write of bWritesAfter) {
+        expect(write.value).not.toContain('a-only.dat');
+      }
+    } finally {
+      unmountHook(mounted);
     }
   });
 });

@@ -188,10 +188,18 @@ export const useGnssMultifileProject = (options: GnssMultifileProjectOptions = {
   const [runError, setRunError] = useState<string | null>(null);
   const [solving, setSolving] = useState(false);
   // Project open/switch: re-hydrate when the named project changes.
+  // hydratedKey marks which (projectId, store) pair the live state
+  // belongs to. It is STATE (not a ref) so the persistence effect in the
+  // same commit still sees the previous pair and skips the stale write:
+  // without this, the old project's entries would be saved under the new
+  // project's key before hydration applies.
   const bootKey = useRef(projectId);
+  const bootStore = useRef(store);
+  const [hydratedKey, setHydratedKey] = useState(() => ({ id: projectId, store }));
   useEffect(() => {
-    if (bootKey.current === projectId) return;
+    if (bootKey.current === projectId && bootStore.current === store) return;
     bootKey.current = projectId;
+    bootStore.current = store;
     const next = loadGnssMultifileProject(projectId, store);
     setSources(
       (next?.entries ?? []).map((entry) => ({
@@ -210,6 +218,7 @@ export const useGnssMultifileProject = (options: GnssMultifileProjectOptions = {
     setSnapshot((next?.snapshot as GnssProjectRunSnapshot | null) ?? null);
     setRunError(null);
     setSolving(false);
+    setHydratedKey({ id: projectId, store });
   }, [projectId, store]);
   // Run sequence: composition is synchronous (fast, non-cancellable) and
   // only the worker await below is async. A newer run supersedes an older
@@ -444,7 +453,10 @@ export const useGnssMultifileProject = (options: GnssMultifileProjectOptions = {
 
   // Write-through durability: every change lands in the named-project
   // document (manifest entries + content + settings bag + frozen snapshot).
+  // Skipped while live state still belongs to the previous (projectId,
+  // store) pair — see hydratedKey above.
   useEffect(() => {
+    if (hydratedKey.id !== projectId || hydratedKey.store !== store) return;
     const finiteOrZero = (value: string): number => {
       const parsed = Number(value);
       return Number.isFinite(parsed) ? parsed : 0;
@@ -466,7 +478,7 @@ export const useGnssMultifileProject = (options: GnssMultifileProjectOptions = {
       ui: { centeringSigma, heightSigma, acknowledgedHashes },
       snapshot: snapshot as unknown as Record<string, unknown> | null,
     });
-  }, [projectId, store, entries, sourceTexts, controlOverrides, datumMode, centeringSigma, heightSigma, acknowledgedHashes, snapshot]);
+  }, [projectId, store, hydratedKey, entries, sourceTexts, controlOverrides, datumMode, centeringSigma, heightSigma, acknowledgedHashes, snapshot]);
 
   return {
     sources: sortedSources(sources),
