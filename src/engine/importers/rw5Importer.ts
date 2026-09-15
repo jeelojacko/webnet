@@ -185,6 +185,9 @@ export const parseRw5Dataset = (
         htM,
         raw,
         tracePrefix: 'Shot',
+        description: pickRw5Field(fields, ['DESC']),
+        featureCode: pickRw5Field(fields, ['CODE', 'FC']),
+        featureSourceOrder: sourceLine,
       });
       return;
     }

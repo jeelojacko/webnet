@@ -10,6 +10,7 @@ import {
   plural,
   sanitizeStationId,
   sourceLeaf,
+  splitImportedCodeDescription,
 } from './shared';
 import {
   FIELDGENIUS_RECORD_CODES,
@@ -132,6 +133,11 @@ export const parseFieldGenius = (input: string, sourceName?: string): ImportedDa
       const distanceM = pickNumberField(fields, ['SD', 'HD', 'DIST', 'DISTANCE', 'SLOPE']);
       const zenithDeg = pickNumberField(fields, ['VA', 'ZE', 'ZENITH', 'VZ']);
       const deltaHM = pickNumberField(fields, ['DH', 'DELTAH', 'VD']);
+      const shotSplit = splitImportedCodeDescription(
+        pickField(fields, ['CODE', 'FC']),
+        pickField(fields, ['DESC', 'DESCRIPTION']),
+        sourceLine,
+      );
 
       if (angleDeg != null && backsightId && distanceM != null) {
         observations.push({
@@ -145,6 +151,8 @@ export const parseFieldGenius = (input: string, sourceName?: string): ImportedDa
           verticalValue: zenithDeg ?? deltaHM,
           hiM,
           htM,
+          description: shotSplit.description,
+          feature: shotSplit.feature,
           sourceLine,
           sourceCode: code,
           note: 'converted to M',
@@ -159,6 +167,8 @@ export const parseFieldGenius = (input: string, sourceName?: string): ImportedDa
           fromId: backsightId,
           toId: targetId,
           angleDeg,
+          description: shotSplit.description,
+          feature: shotSplit.feature,
           sourceLine,
           sourceCode: code,
           note: 'converted to A',
@@ -172,6 +182,8 @@ export const parseFieldGenius = (input: string, sourceName?: string): ImportedDa
           fromId: occupyId,
           toId: targetId,
           bearingDeg: azimuthDeg,
+          description: shotSplit.description,
+          feature: shotSplit.feature,
           sourceLine,
           sourceCode: code,
           note: 'converted to B',
@@ -186,6 +198,8 @@ export const parseFieldGenius = (input: string, sourceName?: string): ImportedDa
             verticalValue: zenithDeg ?? deltaHM ?? 0,
             hiM,
             htM,
+            description: shotSplit.description,
+            feature: shotSplit.feature,
             sourceLine,
             sourceCode: code,
             note: 'converted to DV',
@@ -198,6 +212,8 @@ export const parseFieldGenius = (input: string, sourceName?: string): ImportedDa
             distanceM,
             hiM,
             htM,
+            description: shotSplit.description,
+            feature: shotSplit.feature,
             sourceLine,
             sourceCode: code,
             note: 'converted to D',
@@ -216,6 +232,8 @@ export const parseFieldGenius = (input: string, sourceName?: string): ImportedDa
           verticalValue: zenithDeg ?? deltaHM ?? 0,
           hiM,
           htM,
+          description: shotSplit.description,
+          feature: shotSplit.feature,
           sourceLine,
           sourceCode: code,
           note: 'converted to DV',
@@ -237,6 +255,8 @@ export const parseFieldGenius = (input: string, sourceName?: string): ImportedDa
           distanceM,
           hiM,
           htM,
+          description: shotSplit.description,
+          feature: shotSplit.feature,
           sourceLine,
           sourceCode: code,
           note: 'converted to D',

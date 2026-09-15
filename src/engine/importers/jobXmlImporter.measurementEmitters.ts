@@ -1,6 +1,7 @@
 import type {
   ImportedDistanceObservationRecord,
   ImportedDistanceVerticalObservationRecord,
+  ImportedFeatureMetadata,
   ImportedJobXmlExtras,
   ImportedObservationRecord,
   ImportedSourceMetadata,
@@ -19,6 +20,7 @@ interface EmitJobXmlMeasurementObservationArgs {
   jobXml: ImportedJobXmlExtras;
   observations: ImportedObservationRecord[];
   observationDescription?: string;
+  observationFeature?: ImportedFeatureMetadata;
   occupyId?: string;
   sourceLine: number;
   sourceMeta: ImportedSourceMetadata;
@@ -39,6 +41,7 @@ export const emitJobXmlMeasurementObservation = ({
   jobXml,
   observations,
   observationDescription,
+  observationFeature,
   occupyId,
   sourceLine,
   sourceMeta,
@@ -62,6 +65,7 @@ export const emitJobXmlMeasurementObservation = ({
         hiM,
         htM,
         description: observationDescription,
+      feature: observationFeature,
         sourceLine,
         sourceCode: 'PointRecord',
         note: 'converted to M',
@@ -76,6 +80,7 @@ export const emitJobXmlMeasurementObservation = ({
         toId: targetId,
         angleDeg: derivedAngleDeg,
         description: observationDescription,
+      feature: observationFeature,
         sourceLine,
         sourceCode: 'PointRecord',
         note: 'converted to A',
@@ -92,6 +97,7 @@ export const emitJobXmlMeasurementObservation = ({
           hiM,
           htM,
           description: observationDescription,
+      feature: observationFeature,
           sourceLine,
           sourceCode: 'PointRecord',
           note: 'converted to V',
@@ -110,6 +116,7 @@ export const emitJobXmlMeasurementObservation = ({
       toId: targetId,
       bearingDeg: derivedBearingDeg,
       description: observationDescription,
+      feature: observationFeature,
       sourceLine,
       sourceCode: 'PointRecord',
       note: 'converted to B',
@@ -127,6 +134,7 @@ export const emitJobXmlMeasurementObservation = ({
         hiM,
         htM,
         description: observationDescription,
+      feature: observationFeature,
         sourceLine,
         sourceCode: 'PointRecord',
         note: 'converted to DV',
@@ -142,6 +150,7 @@ export const emitJobXmlMeasurementObservation = ({
         hiM,
         htM,
         description: observationDescription,
+      feature: observationFeature,
         sourceLine,
         sourceCode: 'PointRecord',
         note: 'converted to D',
@@ -158,6 +167,7 @@ export const emitJobXmlMeasurementObservation = ({
         hiM,
         htM,
         description: observationDescription,
+      feature: observationFeature,
         sourceLine,
         sourceCode: 'PointRecord',
         note: 'converted to V',
@@ -183,6 +193,7 @@ export const emitJobXmlMeasurementObservation = ({
       hiM,
       htM,
       description: observationDescription,
+      feature: observationFeature,
       sourceLine,
       sourceCode: 'PointRecord',
       note: hasVertical ? 'converted to DV' : 'converted to D',

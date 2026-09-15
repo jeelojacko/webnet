@@ -13,6 +13,7 @@ import {
   extractXmlText,
   hasXmlTag,
   sanitizeStationId,
+  splitImportedCodeDescription,
 } from './shared';
 import {
   correctJobXmlSlopeDistance,
@@ -82,6 +83,13 @@ export const convertJobXmlMeasurements = ({
     const method = collapseWhitespace(extractXmlText(block, ['Method']) ?? '').toUpperCase();
     const classification = collapseWhitespace(extractXmlText(block, ['Classification']) ?? '');
     const description = extractXmlText(block, ['Code', 'Description', 'Descriptor', 'FeatureCode']);
+    const measurementSplit = splitImportedCodeDescription(
+      extractXmlText(block, ['Code', 'FeatureCode']),
+      extractXmlText(block, ['Description', 'Descriptor']),
+      sourceLine,
+    );
+    const observationFeature = measurementSplit.feature;
+    const observationDescriptiveText = measurementSplit.description;
     const isDirectReading = method === 'DIRECTREADING';
     const isMta = method === 'MEANTURNEDANGLE' || hasXmlTag(block, ['MTA']);
 
@@ -303,7 +311,8 @@ export const convertJobXmlMeasurements = ({
       htM,
       jobXml,
       observations,
-      observationDescription: descriptionCode || targetContext?.code,
+      observationDescription: observationDescriptiveText ?? descriptionCode ?? targetContext?.code,
+      observationFeature,
       occupyId,
       sourceLine,
       sourceMeta,

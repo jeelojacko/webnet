@@ -71,10 +71,14 @@ export interface CadTextStyle {
   fontSize: number;
 }
 
+export type CadPointSymbolShape = 'circle' | 'square' | 'triangle' | 'cross' | 'x' | 'dot';
+
 export interface CadPointSymbol {
   id: CadPointSymbolId;
   name: string;
   radius: number;
+  /** Symbol shape (default circle). Optional so legacy files open unchanged. */
+  shape?: CadPointSymbolShape;
 }
 
 export interface CadStyle {

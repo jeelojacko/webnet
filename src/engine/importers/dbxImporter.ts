@@ -18,6 +18,7 @@ import {
   plural,
   sanitizeStationId,
   sourceLeaf,
+  splitImportedCodeDescription,
 } from './shared';
 
 interface DbxSetupContext {
@@ -69,7 +70,13 @@ export const parseDbxTextExport = (input: string, sourceName?: string): Imported
     const sigmaEastM = extractXmlNumber(block, ['SigmaEast', 'StdDevEast']);
     const sigmaHeightM = extractXmlNumber(block, ['SigmaHeight', 'StdDevHeight']);
     const corrEN = extractXmlNumber(block, ['CorrelationEN', 'CorrEN']);
-    const description = extractXmlText(block, ['Code', 'Description', 'FeatureCode']);
+    const split = splitImportedCodeDescription(
+      extractXmlText(block, ['Code', 'FeatureCode']),
+      extractXmlText(block, ['Description']),
+      sourceLine,
+    );
+    const description = split.description;
+    const feature = split.feature;
 
     let candidate: ImportedControlStationRecord | null = null;
     if (latitudeDeg != null && longitudeDeg != null) {
@@ -86,6 +93,7 @@ export const parseDbxTextExport = (input: string, sourceName?: string): Imported
         sigmaHeightM,
         corrEN,
         description,
+        feature,
         sourceLine,
         sourceCode: 'Point',
       };
@@ -102,6 +110,7 @@ export const parseDbxTextExport = (input: string, sourceName?: string): Imported
         sigmaHeightM,
         corrEN,
         description,
+        feature,
         sourceLine,
         sourceCode: 'Point',
       };
@@ -211,6 +220,9 @@ export const parseDbxTextExport = (input: string, sourceName?: string): Imported
       hiM,
       htM,
       tracePrefix: 'DBX observation',
+      description: extractXmlText(block, ['Description']),
+      featureCode: extractXmlText(block, ['Code', 'FeatureCode']),
+      featureSourceOrder: sourceLine,
     });
   });
 

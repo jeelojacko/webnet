@@ -16,6 +16,7 @@ import {
   plural,
   sanitizeStationId,
   sourceLeaf,
+  splitImportedCodeDescription,
   tableRowPairsToMap,
 } from './shared';
 
@@ -108,6 +109,11 @@ export const parseTrimbleSurveyReport = (
         });
         return;
       }
+      const pointSplit = splitImportedCodeDescription(
+        firstRowMap['Code'],
+        undefined,
+        sourceLine,
+      );
       const candidate: ImportedControlStationRecord = {
         kind: 'control-station',
         coordinateMode: 'local',
@@ -115,7 +121,8 @@ export const parseTrimbleSurveyReport = (
         northM,
         eastM,
         heightM: parseSurveyReportLinear(firstRowMap['Elevation']) ?? 0,
-        description: firstRowMap['Code'] || undefined,
+        description: pointSplit.description,
+        feature: pointSplit.feature,
         sourceLine,
         sourceCode: 'Point',
       };
@@ -170,6 +177,9 @@ export const parseTrimbleSurveyReport = (
         htM,
         raw,
         tracePrefix: 'Survey report shot',
+        description: values['Code'] || undefined,
+        featureCode: values['Code'] || undefined,
+        featureSourceOrder: sourceLine,
         sourceMeta: {
           classification,
           setupType: currentSetup.setupType,

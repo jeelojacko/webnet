@@ -427,6 +427,7 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
               replaceActiveDrawing({ ...activeDrawing, draft }, 'Updated title block template.');
             }}
             onClose={() => setDraftingPanelOpen(false)}
+            onCommitFieldToFinishPayload={cadWorkspace.commitFieldToFinishPayload}
           />
         ) : null}
         <SurveyCadWorkspaceSurface

@@ -1,4 +1,5 @@
 import type { CadSelectionState } from './cadSelection';
+import type { FieldToFinishCadPayload } from '../fieldToFinish/cadGeneration';
 import type { CadBatchCogoDraft } from './cadBatchCogo';
 import type {
   CadEntityId,
@@ -54,7 +55,8 @@ export type CadCommandKey =
   | 'LAYER_LOCKED'
   | 'LAYER_PRINTABLE'
   | 'LAYER_MOVE_OBJECTS'
-  | 'LAYER_DELETE';
+  | 'LAYER_DELETE'
+  | 'F2F_GENERATE';
 export type CadCommandPhase = 'idle' | 'committed';
 
 export interface CadCommandState {
@@ -381,6 +383,10 @@ export type CadCommand =
   | {
       key: 'LAYER_DELETE';
       layerId: string;
+    }
+  | {
+      key: 'F2F_GENERATE';
+      payload: FieldToFinishCadPayload;
     };
 
 export interface CadTransaction {

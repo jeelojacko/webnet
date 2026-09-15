@@ -13,6 +13,7 @@ import {
 } from './surveyDraftingSteps';
 import { asPlanViewport, northArrowAngleDeg } from '../engine/cad/cadSheets';
 import { apply13cStep, initial13cState, type Draft13cState } from './surveyDrafting13cSteps';
+import { applyF2fStep, initialF2fState } from './surveyDraftingF2fSteps';
 import type { CadDrawingDocument } from '../engine/cad/cadTypes';
 
 type HarnessGlobal = typeof globalThis & {
@@ -28,6 +29,8 @@ export const SurveyDraftingApp = (): React.JSX.Element => {
   const [log, setLog] = useState<string[]>([]);
   const [state13c, setState13c] = useState<Draft13cState>(initial13cState);
   const [log13c, setLog13c] = useState<string[]>([]);
+  const [stateF2f, setStateF2f] = useState(initialF2fState);
+  const [logF2f, setLogF2f] = useState<string[]>([]);
   const stateRef = useRef(state);
   useEffect(() => {
     stateRef.current = state;
@@ -50,6 +53,15 @@ export const SurveyDraftingApp = (): React.JSX.Element => {
       setLog13c((current) => [...current, applied.entry]);
     }
   };
+
+  const runF2fStep = (step: string): void => {
+    const applied = applyF2fStep(stateF2f, step);
+    if (applied) {
+      setStateF2f(applied.next);
+      setLogF2f((current) => [...current, applied.entry]);
+    }
+  };
+  const F2F_STEPS = ['A','B','C','D','E','F','G','H','I','J','K','L','M','N','O','P','Q','R','S','T','U','V','W'];
 
   const harness = useMemo<HarnessGlobal['__SURVEY_DRAFTING_HARNESS__']>(
     () => ({
@@ -114,6 +126,21 @@ export const SurveyDraftingApp = (): React.JSX.Element => {
         ))}
       </ol>
       <div data-testid="draft13c-info">{`entities:${state13c.doc.project.entities.length}:sheets:${mustDraft(state13c.doc).sheets.length}:labels:${state13c.labels.length}:tables:${(mustDraft(state13c.doc).tables ?? []).length}:templates:${mustDraft(state13c.doc).titleBlockDefinitions.length}`}</div>
+      <h2>Phase 13D field-to-finish flow</h2>
+      <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
+        {F2F_STEPS.map((step) => (
+          <button key={step} type="button" data-testid={`draftf2f-step-${step}`} onClick={() => runF2fStep(step)}>
+            {`F2F ${step}`}
+          </button>
+        ))}
+      </div>
+      <ol data-testid="draftf2f-flow-log">
+        {logF2f.map((entry, index) => (
+          <li key={`${index}-${entry}`}>{entry}</li>
+        ))}
+      </ol>
+      <div data-testid="draftf2f-info">{`points:${stateF2f.points.length}:entities:${stateF2f.doc.project.entities.length}:catalog:${stateF2f.catalogId}`}</div>
+      <div data-testid="draftf2f-export-info">{`svg:${stateF2f.exports.svg}:pdf:${stateF2f.exports.pdf}:dxf:${stateF2f.exports.dxf}`}</div>
       <div data-testid="draft13c-export-info">{`svg:${state13c.exports.svg}:pdf:${state13c.exports.pdf}:r12:${state13c.exports.r12}:layout:${state13c.exports.layout}`}</div>
       <SurveyDraftingResults
         doc={state.doc}
