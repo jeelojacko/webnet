@@ -22,6 +22,7 @@ import { resolveControlToken, type ControlTokenAliasProfile } from './catalogIo'
 import type { FeatureCodeCatalog, FeatureDefinition } from './featureCatalog';
 import { FieldLineworkControl, type ParsedFeatureCode } from './featureMetadata';
 import { generateLinework, type CodedPointInput } from './linework';
+import { linkOfPayload, type LinkOfPayloadSource } from './linkedSync';
 import { formatDraftCoordinate } from '../cad/cadLabelEngine';
 import { replaceCadProjectEntities } from '../cad/cadProjectState';
 import { createCadSelectionState } from '../cad/cadSelection';
@@ -91,6 +92,11 @@ export interface FieldToFinishCadArgs {
   generationRunId: string;
   controlTokenAliases?: ControlTokenAliasProfile;
   labels?: FieldToFinishLabelOptions;
+  /**
+   * Link source context for adjustment-backed generation. Coordinate-import
+   * callers omit this (link stamps 'coordinate-import', never auto-synced).
+   */
+  source?: LinkOfPayloadSource;
 }
 
 export interface FieldToFinishWarning {
@@ -112,6 +118,13 @@ export interface FieldToFinishCadPayload {
   upsertEntities: CadEntity[];
   removeEntityIds: string[];
   label: string;
+  /**
+   * Link source context stamped by linkOfPayload. Only set when the caller
+   * provides it; absent = coordinate import (the historical default).
+   * Adjustment-backed generations set sourceKind 'adjustment' plus run
+   * fingerprints so rerun auto-sync applies to the resulting link.
+   */
+  source?: LinkOfPayloadSource;
 }
 
 export interface FieldToFinishCadResult {
@@ -163,6 +176,35 @@ export const isFieldToFinishEntity = (entity: CadEntity): boolean =>
 
 export const getFieldToFinishState = (entity: CadEntity): FieldToFinishEntityState | undefined =>
   provenanceOf(entity)?.state;
+
+/**
+ * True when any F2F MANUAL_OVERRIDE entity is tied to one of the given
+ * stations. DETACHED entities never count — detaching cuts the entity
+ * loose silently. Unrecognized entity shapes count conservatively so a
+ * manual override can never hide behind an unknown linkage.
+ */
+export const hasLinkedManualOverrides = (
+  entities: readonly CadEntity[],
+  stationIds: ReadonlySet<string> | readonly string[],
+): boolean => {
+  const linked = stationIds instanceof Set ? stationIds : new Set(stationIds);
+  return entities.some((entity) => {
+    if (!isFieldToFinishEntity(entity) || getFieldToFinishState(entity) !== 'MANUAL_OVERRIDE') return false;
+    if (entity.type === 'survey-point') return linked.has(entity.stationId);
+    const metadata = (entity.metadata ?? {}) as Record<string, unknown>;
+    if (typeof metadata['stationId'] === 'string') return linked.has(metadata['stationId']);
+    const sourcePointIds = metadata['sourcePointIds'];
+    if (Array.isArray(sourcePointIds)) {
+      return sourcePointIds.some((id) => typeof id === 'string' && linked.has(id));
+    }
+    if (entity.type === 'line') return linked.has(entity.fromStationId) || linked.has(entity.toStationId);
+    if (entity.type === 'polyline') return entity.vertexLabels.some((label) => linked.has(label));
+    if (entity.type === 'text' && typeof entity.anchorEntityId === 'string' && entity.anchorEntityId.startsWith('pt:')) {
+      return linked.has(entity.anchorEntityId.slice('pt:'.length));
+    }
+    return true;
+  });
+};
 
 /**
  * Per-chain linework equality for regen diffing. Compares content only —
@@ -629,6 +671,7 @@ export const buildFieldToFinishPayload = (
     upsertEntities,
     removeEntityIds: [],
     label: `FIELD_TO_FINISH (${ordered.length} points, ${lineworkCount} linework)`,
+    ...(args.source !== undefined ? { source: { ...args.source } } : {}),
   };
   return {
     payload,
@@ -672,10 +715,23 @@ export const applyFieldToFinishPayload = (
     if (!known.has(entity.id)) entities.push(entity);
   }
   entities.sort((a, b) => (a.id < b.id ? -1 : a.id > b.id ? 1 : 0));
-  return replaceCadProjectEntities(
+  const withEntities = replaceCadProjectEntities(
     { ...project, layers, styleLibrary: { ...project.styleLibrary, styles } },
     entities,
   );
+  const link = linkOfPayload(payload, project.metadata.fieldToFinishLink?.sourceRevision);
+  if (!link) return withEntities;
+  // Recompute conflict status from the surviving entities: MANUAL_OVERRIDE
+  // entities preserved/skipped by the payload (points, labels, linework)
+  // keep the fresh link from reading CURRENT. A confirmed regen that drops
+  // every override returns to CURRENT; DETACHED never counts.
+  const stamped: typeof link = hasLinkedManualOverrides(withEntities.entities, link.stationIds)
+    ? { ...link, status: 'MANUAL_CONFLICT' }
+    : link;
+  return {
+    ...withEntities,
+    metadata: { ...withEntities.metadata, fieldToFinishLink: stamped },
+  };
 };
 
 export const buildFieldToFinishProject = (

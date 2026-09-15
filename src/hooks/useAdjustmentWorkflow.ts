@@ -11,7 +11,7 @@ import type {
 import type { ProjectRunFile } from '../engine/projectWorkspace';
 import type { RunSessionOutcome, RunSessionRequest } from '../engine/runSession';
 import { DEFAULT_PLANNING_MAP_STATE } from '../engine/planningMapState';
-import { useAdjustmentOutcomeApplication } from './useAdjustmentOutcomeApplication';
+import { useAdjustmentOutcomeApplication, type SuccessfulAdjustmentRunInfo } from './useAdjustmentOutcomeApplication';
 import { buildRunRequestAndContext } from './useAdjustmentRunRequest';
 import {
   buildApprovedClusterMerges,
@@ -41,6 +41,8 @@ interface UseAdjustmentWorkflowArgs<TRunDiagnostics> {
   setLastRunInput: (_value: string | null) => void;
   setLastRunSettingsSnapshot: (_value: RunSettingsSnapshot | null) => void;
   activateReportTab: () => void;
+  /** Linked-F2F rerun subscriber; forwarded to useAdjustmentOutcomeApplication. */
+  onSuccessfulAdjustmentRun?: (_info: SuccessfulAdjustmentRunInfo) => void;
   recordRunSnapshot: (_snapshot: {
     result: AdjustmentResult;
     runDiagnostics: TRunDiagnostics;
@@ -75,6 +77,7 @@ export const useAdjustmentWorkflow = <TRunDiagnostics>({
   setLastRunInput,
   setLastRunSettingsSnapshot,
   activateReportTab,
+  onSuccessfulAdjustmentRun,
   recordRunSnapshot,
 }: UseAdjustmentWorkflowArgs<TRunDiagnostics>) => {
   const [excludedIds, setExcludedIds] = useState<Set<number>>(new Set());
@@ -114,6 +117,7 @@ export const useAdjustmentWorkflow = <TRunDiagnostics>({
     setLastRunInput,
     setLastRunSettingsSnapshot,
     activateReportTab,
+    onSuccessfulAdjustmentRun,
     recordRunSnapshot,
   });
 

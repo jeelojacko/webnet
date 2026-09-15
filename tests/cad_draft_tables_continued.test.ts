@@ -149,7 +149,8 @@ describe('title-block templates', () => {
     const direct = buildTitleBlockItems(draft.sheets[0]!, 'title-block', template, context);
     const { scene } = buildExportSheetScene({ draft, sheetId, project });
     const titleItems = scene.items.filter((item) => item.layer === 'title-block');
-    expect(titleItems).toEqual(direct.items);
+    // Scene items carry the backfilled layer color; direct builder items do not.
+    expect(titleItems).toEqual(direct.items.map((item) => ({ ...item, stroke: '#94a3b8' })));
     const text = titleItems.find((item) => item.kind === 'text');
     expect(text).toMatchObject({ x: 12, y: 188, heightMm: 3.5 });
     expect(direct.unknownTokens).toEqual([]);

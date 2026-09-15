@@ -1,5 +1,8 @@
 import type { ExportItem, ExportSheetScene } from './cadExportScene';
 import { sanitizePdfText, substitutionWarnings, type GlyphSubstitutionWarning } from './cadDraftGlyphs';
+import { BROKEN_REFERENCE_TEXT } from './cadLabelEngine';
+import { hexToRgb01 } from './resolveEffectiveColor';
+import { emptyExportResult, finalizeExportResult, type ExportResult, type ExportWarning } from './exportResult';
 
 // Vector-first PDF adapter hand-rolled on purpose: the deliverable needs
 // only lines, filled rects, segmented curves, and Helvetica text, so a
@@ -47,27 +50,40 @@ const flipY = (yMm: number, ctx: Ctx): number => ctx.pageHpt - toPt(yMm);
 
 const strokeWidth = (widthMm: number | undefined): string => `${fmt(toPt(widthMm ?? 0.25))} w`;
 
-const emitLine = (ctx: Ctx, x1: number, y1: number, x2: number, y2: number, widthMm?: number): void => {
+// Resolved RGB for stroking (RG) / non-stroking (rg) color ops. Items
+// without a resolved color emit no color op, preserving legacy bytes.
+const rgbOp = (hex: string): string => {
+  const { r, g, b } = hexToRgb01(hex);
+  return `${fmt(r)} ${fmt(g)} ${fmt(b)}`;
+};
+
+const emitLine = (ctx: Ctx, x1: number, y1: number, x2: number, y2: number, widthMm?: number, stroke?: string): void => {
+  if (stroke != null) ctx.ops.push(`${rgbOp(stroke)} RG`);
   ctx.ops.push(
     `${strokeWidth(widthMm)} ${fmt(toPt(x1))} ${fmt(flipY(y1, ctx))} m ${fmt(toPt(x2))} ${fmt(flipY(y2, ctx))} l S`,
   );
 };
 
-const emitSegments = (ctx: Ctx, points: Array<{ x: number; y: number }>, close: boolean, widthMm?: number): void => {
+const emitSegments = (ctx: Ctx, points: Array<{ x: number; y: number }>, close: boolean, widthMm?: number, stroke?: string): void => {
   if (points.length < 2) return;
+  if (stroke != null) ctx.ops.push(`${rgbOp(stroke)} RG`);
   const path = points.map((p, i) => `${fmt(toPt(p.x))} ${fmt(flipY(p.y, ctx))} ${i === 0 ? 'm' : 'l'}`).join(' ');
   ctx.ops.push(`${strokeWidth(widthMm)} ${path}${close ? ' h' : ''} S`);
 };
 
-const emitRect = (ctx: Ctx, x: number, y: number, width: number, height: number, fill?: string): void => {
+const emitRect = (ctx: Ctx, x: number, y: number, width: number, height: number, fill?: string, stroke?: string): void => {
   // y-flip: rect origin is its top-left in paper space.
   const box = `${fmt(toPt(x))} ${fmt(flipY(y + height, ctx))} ${fmt(toPt(width))} ${fmt(toPt(height))} re`;
   if (fill === '#000000') ctx.ops.push(`0 g ${box} f`);
   else if (fill === '#ffffff') ctx.ops.push(`1 g ${box} f`);
-  else ctx.ops.push(`${box} S`);
+  else if (fill != null) ctx.ops.push(`${rgbOp(fill)} rg ${box} f`);
+  else {
+    if (stroke != null) ctx.ops.push(`${rgbOp(stroke)} RG`);
+    ctx.ops.push(`${box} S`);
+  }
 };
 
-const emitEllipse = (ctx: Ctx, cx: number, cy: number, rx: number, ry: number, rotationDeg: number, widthMm?: number): void => {
+const emitEllipse = (ctx: Ctx, cx: number, cy: number, rx: number, ry: number, rotationDeg: number, widthMm?: number, stroke?: string): void => {
   const rot = (rotationDeg * Math.PI) / 180;
   const points = Array.from({ length: 25 }, (_, i) => {
     const a = (i / 24) * Math.PI * 2;
@@ -75,10 +91,10 @@ const emitEllipse = (ctx: Ctx, cx: number, cy: number, rx: number, ry: number, r
     const ey = ry * Math.sin(a);
     return { x: cx + ex * Math.cos(rot) - ey * Math.sin(rot), y: cy + ex * Math.sin(rot) + ey * Math.cos(rot) };
   });
-  emitSegments(ctx, points, true, widthMm);
+  emitSegments(ctx, points, true, widthMm, stroke);
 };
 
-const emitArc = (ctx: Ctx, cx: number, cy: number, r: number, startDeg: number, endDeg: number, widthMm?: number): void => {
+const emitArc = (ctx: Ctx, cx: number, cy: number, r: number, startDeg: number, endDeg: number, widthMm?: number, stroke?: string): void => {
   let sweep = endDeg - startDeg;
   while (sweep <= 0) sweep += 360;
   const steps = Math.max(8, Math.ceil((sweep / 360) * 48));
@@ -87,7 +103,7 @@ const emitArc = (ctx: Ctx, cx: number, cy: number, r: number, startDeg: number, 
     const a = ((startDeg + (sweep * i) / steps) * Math.PI) / 180;
     return { x: cx + r * Math.cos(a), y: cy - r * Math.sin(a) };
   });
-  emitSegments(ctx, points, false, widthMm);
+  emitSegments(ctx, points, false, widthMm, stroke);
 };
 
 const emitText = (ctx: Ctx, item: Extract<ExportItem, { kind: 'text' }>): void => {
@@ -113,6 +129,7 @@ const emitText = (ctx: Ctx, item: Extract<ExportItem, { kind: 'text' }>): void =
   // safeText is WinAnsi by construction, so encodePdfText's octal escapes
   // cover every non-ASCII byte it can contain.
   const encoded = encodePdfText(safeText);
+  if (item.stroke != null) ctx.ops.push(`${rgbOp(item.stroke)} rg`);
   if (rotationDeg === 0) {
     ctx.ops.push(`BT /F1 ${fmt(sizePt)} Tf ${e} ${f} Td ${encoded} Tj ET`);
     return;
@@ -127,22 +144,22 @@ const emitText = (ctx: Ctx, item: Extract<ExportItem, { kind: 'text' }>): void =
 const emitItem = (ctx: Ctx, item: ExportItem): void => {
   switch (item.kind) {
     case 'line':
-      emitLine(ctx, item.x1, item.y1, item.x2, item.y2, item.widthMm);
+      emitLine(ctx, item.x1, item.y1, item.x2, item.y2, item.widthMm, item.stroke);
       return;
     case 'polyline':
-      emitSegments(ctx, item.points, item.close, item.widthMm);
+      emitSegments(ctx, item.points, item.close, item.widthMm, item.stroke);
       return;
     case 'rect':
-      emitRect(ctx, item.x, item.y, item.width, item.height, item.fill);
+      emitRect(ctx, item.x, item.y, item.width, item.height, item.fill, item.stroke);
       return;
     case 'circle':
-      emitEllipse(ctx, item.cx, item.cy, item.r, item.r, 0);
+      emitEllipse(ctx, item.cx, item.cy, item.r, item.r, 0, item.widthMm, item.stroke);
       return;
     case 'ellipse':
-      emitEllipse(ctx, item.cx, item.cy, item.rx, item.ry, item.rotationDeg);
+      emitEllipse(ctx, item.cx, item.cy, item.rx, item.ry, item.rotationDeg, item.widthMm, item.stroke);
       return;
     case 'arc':
-      emitArc(ctx, item.cx, item.cy, item.r, item.startDeg, item.endDeg);
+      emitArc(ctx, item.cx, item.cy, item.r, item.startDeg, item.endDeg, undefined, item.stroke);
       return;
     case 'text':
       emitText(ctx, item);
@@ -230,3 +247,28 @@ export const exportScenesToPdfWithWarnings = (
 
 export const exportScenesToPdf = (scenes: ExportSheetScene[]): Uint8Array =>
   exportScenesToPdfWithWarnings(scenes).bytes;
+
+// Unified result: same bytes as exportScenesToPdf, glyph warnings converted
+// to the shared contract, plus BROKEN_REFERENCE warnings for placeholder
+// text items so the warning survives the scene→PDF hop. Entity attribution
+// lives in buildExportSheetSceneWithResult; the serializer reports source
+// ids only when items carry them.
+export const exportScenesToPdfWithResult = (scenes: ExportSheetScene[]): ExportResult<Uint8Array> => {
+  const { bytes, warnings: glyphWarnings } = exportScenesToPdfWithWarnings(scenes);
+  const result = emptyExportResult(bytes);
+  const exportedEntityIds: string[] = [];
+  const brokenRefs: ExportWarning[] = [];
+  scenes.forEach((scene) => {
+    scene.items.forEach((item) => {
+      if (item.sourceEntityId != null) exportedEntityIds.push(item.sourceEntityId);
+      if (item.kind === 'text' && item.text === BROKEN_REFERENCE_TEXT) {
+        brokenRefs.push({ code: 'BROKEN_REFERENCE', message: 'scene contains a broken-reference placeholder', ...(item.sourceEntityId ? { entityId: item.sourceEntityId } : {}) });
+      }
+    });
+  });
+  glyphWarnings.forEach((warning) => {
+    result.warnings.push({ code: warning.code, message: warning.message });
+  });
+  result.warnings.push(...brokenRefs);
+  return finalizeExportResult({ ...result, exportedEntityIds });
+};

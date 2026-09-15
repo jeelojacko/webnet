@@ -1,15 +1,14 @@
 import { buildCadDisplayScene } from './cadRenderer';
 import type { CadDisplayPrimitive } from './cadDisplayTypes';
 import { BROKEN_REFERENCE_TEXT } from './cadLabelEngine';
+import { resolveEffectiveColor } from './resolveEffectiveColor';
+import { finalizeExportResult, type ExportResult, type ExportWarning, type ExportWarningCode } from './exportResult';
+
+export type { ExportResult, ExportWarning, ExportWarningCode };
 import type { DraftSheet, DraftDocument } from './cadDraftTypes';
 import { expandSheetTokens, asPlanViewport, buildSheetTokenContext } from './cadSheets';
 import { buildTableFragmentItems } from './cadExportTables';
 import type { CadProject } from './cadTypes';
-
-export interface ExportWarning {
-  code: 'BROKEN_REFERENCE' | 'UNKNOWN_TOKEN' | 'MISSING_STYLE' | 'SKIPPED_ENTITY';
-  message: string;
-}
 
 export interface ExportClip {
   id: string;
@@ -22,12 +21,22 @@ export interface ExportClip {
 export interface ExportBase {
   layer: string;
   clipId?: string;
+  /** Resolved stroke color (hex). Absent only on hand-built scenes. */
+  stroke?: string;
+  /** Resolved fill color (hex). */
+  fill?: string;
+  /** SVG dash pattern from the source line type. */
+  dash?: string;
+  /** Source entity for disposition tracking; labels/paper items omit it. */
+  sourceEntityId?: string;
+  /** Resolved line weight in mm (from the source style or fallback). */
+  widthMm?: number;
 }
 
 export type ExportItem =
-  | (ExportBase & { kind: 'line'; x1: number; y1: number; x2: number; y2: number; widthMm?: number })
-  | (ExportBase & { kind: 'polyline'; points: Array<{ x: number; y: number }>; close: boolean; widthMm?: number })
-  | (ExportBase & { kind: 'rect'; x: number; y: number; width: number; height: number; fill?: string })
+  | (ExportBase & { kind: 'line'; x1: number; y1: number; x2: number; y2: number })
+  | (ExportBase & { kind: 'polyline'; points: Array<{ x: number; y: number }>; close: boolean })
+  | (ExportBase & { kind: 'rect'; x: number; y: number; width: number; height: number })
   | (ExportBase & { kind: 'circle'; cx: number; cy: number; r: number })
   | (ExportBase & { kind: 'ellipse'; cx: number; cy: number; rx: number; ry: number; rotationDeg: number })
   | (ExportBase & { kind: 'arc'; cx: number; cy: number; r: number; startDeg: number; endDeg: number })
@@ -126,6 +135,9 @@ const arcToPolyline = (
   });
 };
 
+// Color flows from the display primitive (screen-resolved: style override →
+// style → layer → default) into every export item, so SVG/PDF match the
+// screen. strokeWidth maps to widthMm; dash passes through when present.
 const primitiveToPaper = (
   primitive: CadDisplayPrimitive,
   toPaper: (_x: number, _y: number) => { xMm: number; yMm: number },
@@ -133,16 +145,22 @@ const primitiveToPaper = (
   rotationDeg = 0,
 ): ExportItem[] => {
   const layer = primitive.layerId;
+  const sourceEntityId = primitive.sourceEntityId;
+  const stroke = primitive.stroke;
+  const dash = primitive.strokeDasharray;
+  const paint = { stroke, ...(dash ? { dash } : {}), sourceEntityId };
+  const widthOf = (width: number | undefined): { widthMm?: number } =>
+    width != null ? { widthMm: width } : {};
   switch (primitive.kind) {
     case 'line': {
       const [a, b] = primitive.points;
       const pa = toPaper(a.x, a.y);
       const pb = toPaper(b.x, b.y);
-      return [{ kind: 'line', layer, clipId, x1: pa.xMm, y1: pa.yMm, x2: pb.xMm, y2: pb.yMm }];
+      return [{ kind: 'line', layer, clipId, x1: pa.xMm, y1: pa.yMm, x2: pb.xMm, y2: pb.yMm, ...paint, ...widthOf(primitive.strokeWidth) }];
     }
     case 'point': {
       const p = toPaper(primitive.point.x, primitive.point.y);
-      return [{ kind: 'circle', layer, clipId, cx: p.xMm, cy: p.yMm, r: primitive.radius }];
+      return [{ kind: 'circle', layer, clipId, cx: p.xMm, cy: p.yMm, r: primitive.radius, ...paint, ...(primitive.fill ? { fill: primitive.fill } : {}) }];
     }
     case 'arc': {
       return [
@@ -157,6 +175,8 @@ const primitiveToPaper = (
             },
           ),
           close: false,
+          ...paint,
+          ...widthOf(primitive.strokeWidth),
         },
       ];
     }
@@ -172,6 +192,7 @@ const primitiveToPaper = (
           text: primitive.text,
           heightMm: Math.max(0.5, primitive.fontSize * 0.35),
           anchor: primitive.textAnchor,
+          ...paint,
         },
       ];
     }
@@ -192,6 +213,8 @@ const primitiveToPaper = (
           rx: Math.hypot(ex.xMm - c.xMm, ex.yMm - c.yMm),
           ry: Math.hypot(ey.xMm - c.xMm, ey.yMm - c.yMm),
           rotationDeg: primitive.thetaDeg + rotationDeg,
+          ...paint,
+          ...widthOf(primitive.strokeWidth),
         },
       ];
     }
@@ -397,10 +420,29 @@ export interface BuildSceneArgs {
   paperExtras?: ExportItem[];
 }
 
+// Paper-space items that carry no resolved color (labels, frames, title
+// block, caller paper extras) inherit their layer color through the shared
+// resolver, so every scene item reaches SVG/PDF with an explicit stroke.
+// Items that already carry a stroke (primitive-derived, caller-painted)
+// are never overwritten.
+const backfillItemColor = (
+  item: ExportItem,
+  layerColorOf: (_layerId: string) => string | undefined,
+): ExportItem => {
+  if (item.stroke != null) return item;
+  const stroke = resolveEffectiveColor({ layer: layerColorOf(item.layer) });
+  if (item.kind === 'rect' && item.fill != null) return { ...item, stroke };
+  return { ...item, stroke };
+};
+
 // Throws only when the sheet itself is missing (essential object). Broken
 // label refs and unknown tokens become warnings; the export still completes.
-export const buildExportSheetScene = (args: BuildSceneArgs): { scene: ExportSheetScene; warnings: ExportWarning[] } => {
+// Full unified result: entity disposition lists included, no silent drops.
+export const buildExportSheetSceneWithResult = (args: BuildSceneArgs): ExportResult<ExportSheetScene> => {
   const warnings: ExportWarning[] = [];
+  const exportedEntityIds: string[] = [];
+  const omittedEntityIds: string[] = [];
+  const approximatedEntityIds: string[] = [];
   const sheet = args.draft.sheets.find((entry) => entry.id === args.sheetId);
   if (!sheet) throw new Error(`export: sheet ${args.sheetId} not found`);
   const clips: ExportClip[] = [];
@@ -415,6 +457,23 @@ export const buildExportSheetScene = (args: BuildSceneArgs): { scene: ExportShee
     const inProject = args.project.layers.find((layer) => layer.id === layerId);
     const inDraft = args.draft.layers.find((layer) => layer.id === layerId);
     return [inProject, inDraft].some((layer) => layer != null && layer[flag] === false);
+  };
+  const layerColorOf = (layerId: string): string | undefined =>
+    args.project.layers.find((layer) => layer.id === layerId)?.color ??
+    args.draft.layers.find((layer) => layer.id === layerId)?.color;
+  // Non-circle point symbols (square/triangle/cross/x) render as circles:
+  // explicit approximation, never silent.
+  const approximatedShapeOf = (entityId: string): boolean => {
+    const entity = args.project.entities.find((entry) => entry.id === entityId);
+    if (entity?.type !== 'survey-point' || entity.styleId == null) return false;
+    const style = args.project.styleLibrary.styles.find((entry) => entry.id === entity.styleId);
+    const shape = args.project.styleLibrary.pointSymbols.find((entry) => entry.id === style?.pointSymbolId)?.shape;
+    return shape != null && shape !== 'circle' && shape !== 'dot';
+  };
+  const noteApproximated = (entityId: string): void => {
+    if (approximatedEntityIds.includes(entityId)) return;
+    approximatedEntityIds.push(entityId);
+    warnings.push({ code: 'POINT_SYMBOL_APPROXIMATED', message: `point ${entityId} symbol approximated as circle`, entityId });
   };
   const persistedLabels: ModelLabelPlacement[] = draftLabelsToPlacements(args.draft.labels);
   const effectiveLabels = args.modelLabels ?? persistedLabels;
@@ -451,9 +510,20 @@ export const buildExportSheetScene = (args: BuildSceneArgs): { scene: ExportShee
       .filter((primitive) => !isHidden(primitive.layerId))
       .forEach((primitive) => {
         try {
-          items.push(...primitiveToPaper(primitive, toPaper, clipId, plan.rotationDeg));
+          const produced = primitiveToPaper(primitive, toPaper, clipId, plan.rotationDeg);
+          if (produced.length === 0) {
+            omittedEntityIds.push(primitive.sourceEntityId);
+            warnings.push({ code: 'SKIPPED_ENTITY', message: `skipped entity ${primitive.sourceEntityId} (no export geometry)`, entityId: primitive.sourceEntityId });
+            return;
+          }
+          items.push(...produced);
+          exportedEntityIds.push(primitive.sourceEntityId);
+          if (primitive.kind === 'point' && approximatedShapeOf(primitive.sourceEntityId)) {
+            noteApproximated(primitive.sourceEntityId);
+          }
         } catch {
-          warnings.push({ code: 'SKIPPED_ENTITY', message: `skipped entity ${primitive.sourceEntityId}` });
+          omittedEntityIds.push(primitive.sourceEntityId);
+          warnings.push({ code: 'SKIPPED_ENTITY', message: `skipped entity ${primitive.sourceEntityId}`, entityId: primitive.sourceEntityId });
         }
       });
     items.push({ kind: 'rect', layer: 'paper-frame', x: plan.paperXmm, y: plan.paperYmm, width: plan.paperWidthMm, height: plan.paperHeightMm });
@@ -499,8 +569,39 @@ export const buildExportSheetScene = (args: BuildSceneArgs): { scene: ExportShee
   });
   items.push(...(args.paperExtras ?? []));
 
-  return {
-    scene: { sheetId: sheet.id, sheetName: sheet.name, widthMm: sheet.widthMm, heightMm: sheet.heightMm, clips, items },
+  // Entities that yield zero display primitives (degenerate geometry such
+  // as a single-vertex polyline) would otherwise vanish silently: they are
+  // omitted with an explicit warning. Intentionally hidden content
+  // (invisible entities/layers, non-printable layers) is excluded, and
+  // viewport-override hiding never triggers this — hidden entities still
+  // own display primitives, they are just filtered per viewport.
+  const primitiveCounts = new Map<string, number>();
+  display.primitives.forEach((primitive) => {
+    primitiveCounts.set(primitive.sourceEntityId, (primitiveCounts.get(primitive.sourceEntityId) ?? 0) + 1);
+  });
+  args.project.entities.forEach((entity) => {
+    if (!entity.visible) return;
+    if ((primitiveCounts.get(entity.id) ?? 0) > 0) return;
+    if (omittedEntityIds.includes(entity.id)) return;
+    if (layerFlagged(entity.layerId, 'visible') || layerFlagged(entity.layerId, 'printable')) return;
+    omittedEntityIds.push(entity.id);
+    warnings.push({ code: 'SKIPPED_ENTITY', message: `skipped entity ${entity.id} (no export geometry)`, entityId: entity.id });
+  });
+
+  const painted = items.map((item) => backfillItemColor(item, layerColorOf));
+  return finalizeExportResult({
+    output: { sheetId: sheet.id, sheetName: sheet.name, widthMm: sheet.widthMm, heightMm: sheet.heightMm, clips, items: painted },
     warnings,
-  };
+    errors: [],
+    exportedEntityIds,
+    omittedEntityIds,
+    approximatedEntityIds,
+  });
+};
+
+// Legacy shape: thin wrapper so the dev harness and existing callers keep
+// compiling. New code should prefer buildExportSheetSceneWithResult.
+export const buildExportSheetScene = (args: BuildSceneArgs): { scene: ExportSheetScene; warnings: ExportWarning[] } => {
+  const result = buildExportSheetSceneWithResult(args);
+  return { scene: result.output, warnings: result.warnings };
 };

@@ -14,6 +14,9 @@ import {
 import { asPlanViewport, northArrowAngleDeg } from '../engine/cad/cadSheets';
 import { apply13cStep, initial13cState, type Draft13cState } from './surveyDrafting13cSteps';
 import { applyF2fStep, initialF2fState } from './surveyDraftingF2fSteps';
+import { apply13eStep, initial13eState } from './surveyDrafting13eSteps';
+import { ExportCenterPanel } from '../components/surveyCad/ExportCenterPanel';
+import { SAMPLE_CATALOG } from '../engine/fieldToFinish/sampleCatalog';
 import type { CadDrawingDocument } from '../engine/cad/cadTypes';
 
 type HarnessGlobal = typeof globalThis & {
@@ -31,6 +34,8 @@ export const SurveyDraftingApp = (): React.JSX.Element => {
   const [log13c, setLog13c] = useState<string[]>([]);
   const [stateF2f, setStateF2f] = useState(initialF2fState);
   const [logF2f, setLogF2f] = useState<string[]>([]);
+  const [state13e, setState13e] = useState(initial13eState);
+  const [log13e, setLog13e] = useState<string[]>([]);
   const stateRef = useRef(state);
   useEffect(() => {
     stateRef.current = state;
@@ -62,6 +67,14 @@ export const SurveyDraftingApp = (): React.JSX.Element => {
     }
   };
   const F2F_STEPS = ['A','B','C','D','E','F','G','H','I','J','K','L','M','N','O','P','Q','R','S','T','U','V','W'];
+
+  const run13eStep = (step: string): void => {
+    const applied = apply13eStep(state13e, step);
+    if (applied) {
+      setState13e(applied.next);
+      setLog13e((current) => [...current, applied.entry]);
+    }
+  };
 
   const harness = useMemo<HarnessGlobal['__SURVEY_DRAFTING_HARNESS__']>(
     () => ({
@@ -140,6 +153,24 @@ export const SurveyDraftingApp = (): React.JSX.Element => {
         ))}
       </ol>
       <div data-testid="draftf2f-info">{`points:${stateF2f.points.length}:entities:${stateF2f.doc.project.entities.length}:catalog:${stateF2f.catalogId}`}</div>
+      <h2>Phase 13E linked-sync + Export Center flow</h2>
+      <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
+        {F2F_STEPS.map((step) => (
+          <button key={step} type="button" data-testid={`draft13e-step-${step}`} onClick={() => run13eStep(step)}>
+            {`13E ${step}`}
+          </button>
+        ))}
+      </div>
+      <ol data-testid="draft13e-flow-log">
+        {log13e.map((entry, index) => (
+          <li key={`${index}-${entry}`}>{entry}</li>
+        ))}
+      </ol>
+      <div data-testid="draft13e-info">{`stations:${state13e.first ? Object.keys(state13e.first.stations).length : 0}:entities:${state13e.doc.project.entities.length}:link:${state13e.doc.project.metadata.fieldToFinishLink?.status ?? 'none'}`}</div>
+      <div data-testid="draft13e-export-info">{`svg:${state13e.exports.svg ?? 0}:pdf:${state13e.exports.pdf ?? 0}:r12:${state13e.exports.r12 ?? 0}:r2000:${state13e.exports.r2000 ?? 0}:landxml:${state13e.exports.landxml ?? 0}`}</div>
+      <div data-testid="draft13e-export-center" style={{ position: 'relative' }}>
+        <ExportCenterPanel drawing={state13e.doc} catalog={SAMPLE_CATALOG} onClose={() => undefined} />
+      </div>
       <div data-testid="draftf2f-export-info">{`svg:${stateF2f.exports.svg}:pdf:${stateF2f.exports.pdf}:dxf:${stateF2f.exports.dxf}`}</div>
       <div data-testid="draft13c-export-info">{`svg:${state13c.exports.svg}:pdf:${state13c.exports.pdf}:r12:${state13c.exports.r12}:layout:${state13c.exports.layout}`}</div>
       <SurveyDraftingResults

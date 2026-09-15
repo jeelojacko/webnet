@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { createCadHistoryState, type CadHistoryState } from '../../engine/cad/cadUndoRedo';
+import { buildCadProjectSignature } from '../../engine/cad/cadProjectState';
 import type { CadProject } from '../../engine/cad/cadTypes';
 
 export const useSurveyCadWorkspaceHistory = (
@@ -39,6 +40,25 @@ export const useSurveyCadWorkspaceHistory = (
         baseProject.entities[0] ? [baseProject.entities[0].id] : [],
       ),
     );
+  }, [baseProject, resetKey]);
+
+  // Adopt authoritative external document updates (e.g. linked-F2F rerun
+  // sync via top-level drawing state) as the new history baseline.
+  // External updates cannot push history entries — history is
+  // workspace-local — so the baseline resets (consistent with
+  // replaceCadProject); re-running the source re-derives the same state.
+  // Signature-guarded: the workspace's own persistence writes compare
+  // equal, so no update loop is possible.
+  useEffect(() => {
+    if (resetKeyRef.current !== resetKey) return;
+    if (buildCadProjectSignature(history.present.project) === buildCadProjectSignature(baseProject)) return;
+    replaceHistory(
+      createCadHistoryState(
+        baseProject,
+        baseProject.entities[0] ? [baseProject.entities[0].id] : [],
+      ),
+    );
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [baseProject, resetKey]);
 
 

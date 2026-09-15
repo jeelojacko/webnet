@@ -100,7 +100,20 @@ export const cloneCadProject = (project: CadProject): CadProject => ({
   version: 2,
   id: project.id,
   name: project.name,
-  metadata: { ...project.metadata },
+  metadata: {
+    ...project.metadata,
+    ...(project.metadata.fieldToFinishLink
+      ? {
+          fieldToFinishLink: {
+            ...project.metadata.fieldToFinishLink,
+            sourceRecordIds: [...project.metadata.fieldToFinishLink.sourceRecordIds],
+            stationIds: [...project.metadata.fieldToFinishLink.stationIds],
+            generatedEntityIds: [...project.metadata.fieldToFinishLink.generatedEntityIds],
+            generatedLabelIds: [...project.metadata.fieldToFinishLink.generatedLabelIds],
+          },
+        }
+      : {}),
+  },
   layers: project.layers.map(cloneLayer),
   styleLibrary: cloneStyleLibrary(project.styleLibrary),
   entities: project.entities.map(cloneCadEntity),

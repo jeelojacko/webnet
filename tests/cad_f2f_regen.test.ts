@@ -106,6 +106,31 @@ describe('cad f2f regen', () => {
     expect(applied.removedEntityIds).toEqual([]);
   });
 
+  it('stamps MANUAL_CONFLICT on confirmed regen while manual overrides remain', () => {
+    let project = seed();
+    project = markFieldToFinishManualOverride(project, 'pt:P2');
+    project = detachFieldToFinishEntity(project, 'pt:P3');
+    const applied = applyFieldToFinishRegen(
+      project,
+      argsOf([pt('P1', 0, 0, 1, 'EP'), pt('P2', 10, 0, 2, 'EP'), pt('P3', 20, 0, 3, 'EP')], 'run-2'),
+      'import-1',
+      { confirmed: true },
+    );
+    // MANUAL_OVERRIDE P2 survives → conflict; DETACHED P3 alone never flags.
+    expect(applied.project.metadata.fieldToFinishLink?.status).toBe('MANUAL_CONFLICT');
+    const detachedOnly = applyFieldToFinishRegen(
+      detachFieldToFinishEntity(seed(), 'pt:P3'),
+      argsOf([pt('P1', 0, 0, 1, 'EP'), pt('P2', 10, 0, 2, 'EP'), pt('P3', 20, 0, 3, 'EP')], 'run-2'),
+      'import-1',
+      { confirmed: true },
+    );
+    expect(detachedOnly.project.metadata.fieldToFinishLink?.status).toBe('CURRENT');
+    const clean = applyFieldToFinishRegen(seed(), argsOf([
+      pt('P1', 0, 0, 1, 'EP'), pt('P2', 10, 0, 2, 'EP'), pt('P3', 20, 0, 3, 'EP'),
+    ], 'run-2'), 'import-1', { confirmed: true });
+    expect(clean.project.metadata.fieldToFinishLink?.status).toBe('CURRENT');
+  });
+
   it('updates coordinates on adjustment rerun, skipping manual overrides', () => {
     const project = markFieldToFinishManualOverride(seed(), 'pt:P2');
     const { project: next, updated, skippedManual } = updateFieldToFinishCoordinates(

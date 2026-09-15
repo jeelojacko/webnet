@@ -1,12 +1,17 @@
 import React, { useMemo, useState } from 'react';
 import type { CadProject } from '../../engine/cad/cadTypes';
+import type { FeatureCodeCatalog } from '../../engine/fieldToFinish/featureCatalog';
 import {
   buildFieldToFinishPayload,
   type FieldToFinishCadPayload,
   type FieldToFinishCadPoint,
 } from '../../engine/fieldToFinish/cadGeneration';
-import { SAMPLE_CATALOG } from '../../engine/fieldToFinish/sampleCatalog';
+import { cloneSampleCatalog } from './cloneSampleCatalog';
+import type { FieldToFinishSyncStatus } from '../../engine/fieldToFinish/linkedSync';
+import type { SuccessfulAdjustmentRunInfo } from '../../hooks/useAdjustmentOutcomeApplication';
 import {
+  adjustedStationsToFieldToFinishPoints,
+  authoritativeCoordinatesOf,
   controlStationsToFieldToFinishPoints,
 } from '../../engine/fieldToFinish/regeneration';
 import { parseTerrestrialCoordinateCsv } from '../../engine/terrestrialCsvImport';
@@ -16,6 +21,12 @@ import { buildF2FReviewRows, summarizeF2FReview } from './f2fReviewUtils';
 interface FieldToFinishPanelProps {
   project: CadProject;
   onCommitPayload: (_payload: FieldToFinishCadPayload) => void;
+  /** Controlled active catalog (workspace-owned so Export Center exports
+   *  the same catalog). Absent = panel-local state (legacy contexts). */
+  catalog?: FeatureCodeCatalog;
+  onCatalogChange?: (_catalog: FeatureCodeCatalog) => void;
+  /** Latest successful production run; enables the explicit adjustment-linked commit. */
+  adjustmentSource?: SuccessfulAdjustmentRunInfo | null;
 }
 
 type PanelTab = 'CATALOG' | 'REVIEW' | 'PREVIEW';
@@ -30,21 +41,31 @@ const INLINE_SAMPLE = [
   'R1,990,5070,100.2,ROCK,Unmapped rock',
 ].join('\n');
 
-const cloneSampleCatalog = (): typeof SAMPLE_CATALOG => ({
-  ...SAMPLE_CATALOG,
-  definitions: SAMPLE_CATALOG.definitions.map((entry) => ({
-    ...entry,
-    lineworkBehavior: { ...entry.lineworkBehavior },
-  })),
-  aliases: SAMPLE_CATALOG.aliases.map((alias) => ({ ...alias })),
-});
+/** Operator-facing explanation per stale link status; CURRENT/UNLINKED render no banner. */
+const STALE_LINK_COPY: Record<Exclude<FieldToFinishSyncStatus, 'CURRENT' | 'UNLINKED'>, string> = {
+  COORDINATES_CHANGED: 'Adjusted coordinates changed since generation.',
+  SOURCE_TOPOLOGY_CHANGED: 'Adjustment stations were added or removed since generation.',
+  CATALOG_CHANGED: 'The feature catalog changed since generation.',
+  FEATURE_METADATA_CHANGED: 'Field coding changed since generation.',
+  MANUAL_CONFLICT: 'Manual overrides conflict with generated geometry.',
+  MISSING_SOURCE: 'Linked source stations are missing from the latest result.',
+};
 
 export const SurveyCadFieldToFinishPanel: React.FC<FieldToFinishPanelProps> = ({
   project,
   onCommitPayload,
+  catalog: controlledCatalog,
+  onCatalogChange,
+  adjustmentSource = null,
 }) => {
   const [tab, setTab] = useState<PanelTab>('CATALOG');
-  const [catalog, setCatalog] = useState(cloneSampleCatalog);
+  const [localCatalog, setLocalCatalog] = useState(cloneSampleCatalog);
+  // Controlled when the workspace shares the active catalog (so the Export
+  // Center catalog tab exports exactly what the F2F panel edits). Both
+  // props are required for controlled mode; otherwise panel-local state.
+  const controlled = controlledCatalog !== undefined && onCatalogChange !== undefined;
+  const catalog = controlled ? (controlledCatalog as FeatureCodeCatalog) : localCatalog;
+  const setCatalog = controlled ? (onCatalogChange as (_catalog: FeatureCodeCatalog) => void) : setLocalCatalog;
   const [csvText, setCsvText] = useState(INLINE_SAMPLE);
   const [points, setPoints] = useState<FieldToFinishCadPoint[] | null>(null);
   const [importNote, setImportNote] = useState('');
@@ -80,6 +101,39 @@ export const SurveyCadFieldToFinishPanel: React.FC<FieldToFinishPanelProps> = ({
     };
   }, [points, project, catalog, runId]);
 
+  // Explicit adjustment-backed commit: reviewed points overlaid with the
+  // run's authoritative coordinates (same adjusted-wins/sideshots-fill
+  // resolution as rerun sync, so a linked station is never committed
+  // without coverage). Offered only when every reviewed station resolves —
+  // otherwise the first rerun would trip MISSING_SOURCE and update nothing.
+  // Committed only via its own button; the plain commit stays
+  // coordinate-import.
+  const adjustedCommit = useMemo((): {
+    payload: FieldToFinishCadPayload | null;
+    adjustedCount: number;
+    total: number;
+    missing: string[];
+  } | null => {
+    if (!points || !adjustmentSource) return null;
+    const coords = authoritativeCoordinatesOf(adjustmentSource.result);
+    const missing = points
+      .map((point) => point.stationId)
+      .filter((stationId) => !coords.has(stationId));
+    if (missing.length > 0) return { payload: null, adjustedCount: points.length - missing.length, total: points.length, missing };
+    const overlaid = adjustedStationsToFieldToFinishPoints(points, coords);
+    const built = buildFieldToFinishPayload(project, {
+      points: overlaid,
+      catalog,
+      generationRunId: runId,
+      source: {
+        sourceKind: 'adjustment',
+        inputFingerprint: adjustmentSource.inputFingerprint,
+        settingsFingerprint: adjustmentSource.settingsFingerprint,
+      },
+    });
+    return { payload: built.payload, adjustedCount: points.length, total: points.length, missing: [] };
+  }, [points, adjustmentSource, project, catalog, runId]);
+
   const runImport = (text: string): void => {
     const dataset = parseTerrestrialCoordinateCsv(text, { units: 'm' }, 'f2f-import.csv');
     if (!dataset) {
@@ -93,8 +147,27 @@ export const SurveyCadFieldToFinishPanel: React.FC<FieldToFinishPanelProps> = ({
     setRunId((current) => `ui-${Number(current.slice(3)) + 1}`);
   };
 
+  const link = project.metadata.fieldToFinishLink;
+  const staleCopy = link && link.status !== 'CURRENT' && link.status !== 'UNLINKED'
+    ? STALE_LINK_COPY[link.status]
+    : null;
+
   return (
     <div className="grid gap-2" data-f2f-panel>
+      {staleCopy ? (
+        <div className="rounded border border-amber-500 bg-amber-950 px-2 py-1 text-[12px] text-amber-200" data-f2f-link-status={link?.status}>
+          <span>Linked sync {link?.status}: {staleCopy} Structural changes need an explicit preview before regenerating — nothing is applied automatically.</span>
+          {' '}
+          <button
+            type="button"
+            className="underline hover:text-amber-100"
+            onClick={() => setTab('REVIEW')}
+            data-f2f-link-review
+          >
+            Review source &amp; preview
+          </button>
+        </div>
+      ) : null}
       <div role="tablist" aria-label="Field-to-Finish" className="flex gap-1">
         {(['CATALOG', 'REVIEW', 'PREVIEW'] as const).map((key) => (
           <button
@@ -180,6 +253,22 @@ export const SurveyCadFieldToFinishPanel: React.FC<FieldToFinishPanelProps> = ({
               ) : (
                 <p className="text-[12px] text-emerald-300">No diagnostics.</p>
               )}
+              {adjustedCommit ? (
+                <p className="text-[12px] text-slate-300" data-f2f-adjusted-note>
+                  {adjustedCommit.missing.length === 0 ? (
+                    <>
+                      {adjustedCommit.adjustedCount} of {adjustedCommit.total} stations use adjusted
+                      coordinates from the current run; committing linked enables rerun auto-sync.
+                    </>
+                  ) : (
+                    <>
+                      Linked commit unavailable: {adjustedCommit.missing.join(', ')} has no
+                      adjusted or sideshot coordinates in the current run. Commit
+                      coordinate-import instead — it never auto-syncs.
+                    </>
+                  )}
+                </p>
+              ) : null}
               <div className="flex items-center gap-1">
                 <button
                   type="button"
@@ -189,6 +278,16 @@ export const SurveyCadFieldToFinishPanel: React.FC<FieldToFinishPanelProps> = ({
                 >
                   Confirm commit (one transaction)
                 </button>
+                {adjustedCommit?.payload ? (
+                  <button
+                    type="button"
+                    className="rounded border border-emerald-500 bg-emerald-950 px-2 py-1 text-[12px] hover:bg-emerald-900"
+                    onClick={() => adjustedCommit.payload && onCommitPayload(adjustedCommit.payload)}
+                    data-f2f-commit-adjusted
+                  >
+                    Commit linked to adjustment run
+                  </button>
+                ) : null}
                 <button
                   type="button"
                   className="rounded border border-slate-600 px-2 py-1 text-[12px] hover:bg-slate-800"

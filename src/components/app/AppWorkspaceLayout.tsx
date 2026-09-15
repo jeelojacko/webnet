@@ -74,6 +74,7 @@ export type AppWorkspaceLayoutProps = {
   result: AdjustmentResult | null;
   surveyCadState: SurveyCadState;
   setSurveyCadState: React.ComponentProps<typeof SurveyCadWorkspace>['onDrawingChange'];
+  adjustmentSource: React.ComponentProps<typeof SurveyCadWorkspace>['adjustmentSource'];
   settingsShowRunComparisonPanel: boolean;
   showRunComparisonPanel: RunComparison['showRunComparisonPanel'];
   runComparisonPanelProps: Omit<
@@ -173,6 +174,7 @@ const AppWorkspaceLayout = ({
   result,
   surveyCadState,
   setSurveyCadState,
+  adjustmentSource,
   settingsShowRunComparisonPanel,
   showRunComparisonPanel,
   runComparisonPanelProps,
@@ -273,6 +275,7 @@ const AppWorkspaceLayout = ({
           result={result}
           drawing={surveyCadState}
           onDrawingChange={setSurveyCadState}
+          adjustmentSource={adjustmentSource}
         />
       ) : (
         <>

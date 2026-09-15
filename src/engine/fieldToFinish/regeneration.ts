@@ -6,10 +6,9 @@
  * Source identity is stable (import key + station id + record identity —
  * never array index). Manual work is never auto-deleted: GENERATED entities
  * vanish only on confirmed regen (and are reported); MANUAL_OVERRIDE and
- * DETACHED entities are preserved. An explicit coordinate-update helper
- * exists for adjustment reruns (currently not auto-wired — treat rerun
- * propagation as manual until wired); it touches F2F geometry only —
- * adjustment inputs are only read, never altered.
+ * DETACHED entities are preserved. Adjustment-rerun coordinate propagation
+ * lives in linkedRerunSync.ts (re-exported below for compatibility); it
+ * touches F2F geometry only — adjustment inputs are only read, never altered.
  */
 import { runCadCommand, type CadHistoryState } from '../cad/cadUndoRedo';
 import { replaceCadProjectEntities } from '../cad/cadProjectState';
@@ -28,6 +27,19 @@ import {
   type FieldToFinishProvenance,
   type FieldToFinishWarning,
 } from './cadGeneration';
+import type { FieldToFinishCoordinate } from './linkedRerunSync';
+
+export {
+  applyAdjustmentRerunToLinkedF2f,
+  authoritativeCoordinatesOf,
+  resolveFieldToFinishCoordinates,
+  updateFieldToFinishCoordinates,
+  type AdjustmentRerunSyncInput,
+  type AdjustmentRerunSyncOutcome,
+  type FieldToFinishCoordinate,
+  type FieldToFinishCoordinateOrigin,
+  type FieldToFinishCoordinateSources,
+} from './linkedRerunSync';
 
 export interface FieldToFinishSourceKey {
   importKey: string;
@@ -238,95 +250,6 @@ export const detachFieldToFinishEntity = (project: CadProject, entityId: string)
       return { ...entity, metadata };
     }),
   );
-
-export interface FieldToFinishCoordinate {
-  x: number;
-  y: number;
-  z?: number;
-}
-
-/**
- * Adjustment-rerun coordinate update: moves GENERATED F2F points (and their
- * generated linework vertices + anchored labels) to new coordinates.
- * MANUAL_OVERRIDE points are skipped + reported. Read-only w.r.t.
- * adjustment inputs.
- */
-export const updateFieldToFinishCoordinates = (
-  project: CadProject,
-  coordinates: ReadonlyMap<string, FieldToFinishCoordinate>,
-): { project: CadProject; updated: string[]; skippedManual: string[] } => {
-  const updated: string[] = [];
-  const skippedManual: string[] = [];
-  const next = project.entities.map((entity) => {
-    if (entity.type === 'survey-point' && isFieldToFinishEntity(entity)) {
-      const coords = coordinates.get(entity.stationId);
-      if (!coords) return entity;
-      if (getFieldToFinishState(entity) !== 'GENERATED') {
-        skippedManual.push(entity.stationId);
-        return entity;
-      }
-      updated.push(entity.stationId);
-      return { ...entity, x: coords.x, y: coords.y, z: coords.z ?? entity.z };
-    }
-    return entity;
-  });
-  const moved = new Map(updated.map((stationId) => [stationId, coordinates.get(stationId) as FieldToFinishCoordinate]));
-  const synced = next.map((entity) => {
-    if ((entity.type === 'line' || entity.type === 'polyline') && isFieldToFinishEntity(entity)) {
-      if (entity.type === 'line') {
-        const from = moved.get(entity.fromStationId);
-        const to = moved.get(entity.toStationId);
-        if (!from && !to) return entity;
-        return {
-          ...entity,
-          fromX: from?.x ?? entity.fromX,
-          fromY: from?.y ?? entity.fromY,
-          toX: to?.x ?? entity.toX,
-          toY: to?.y ?? entity.toY,
-        };
-      }
-      let changed = false;
-      const vertices = entity.vertices.map((vertex, index) => {
-        const coords = moved.get(entity.vertexLabels[index] ?? '');
-        if (!coords) return vertex;
-        changed = true;
-        return { x: coords.x, y: coords.y };
-      });
-      return changed ? { ...entity, vertices } : entity;
-    }
-    if (entity.type === 'text' && isFieldToFinishEntity(entity) && entity.anchorEntityId) {
-      const station = entity.anchorEntityId.replace(/^pt:/, '');
-      const coords = moved.get(station);
-      if (!coords) return entity;
-      return { ...entity, x: coords.x, y: coords.y };
-    }
-    return entity;
-  });
-  updated.sort();
-  skippedManual.sort();
-  return { project: replaceCadProjectEntities(project, synced), updated, skippedManual };
-};
-
-export type FieldToFinishCoordinateOrigin = 'adjusted' | 'sideshot' | 'coordinate-only';
-
-export interface FieldToFinishCoordinateSources {
-  adjusted?: FieldToFinishCoordinate;
-  sideshot?: FieldToFinishCoordinate;
-  coordinateOnly?: FieldToFinishCoordinate;
-}
-
-/**
- * Sideshot + coordinate-only + adjusted-point resolution. Adjusted coords
- * win when present; inputs are read, never altered.
- */
-export const resolveFieldToFinishCoordinates = (
-  sources: FieldToFinishCoordinateSources,
-): { coords: FieldToFinishCoordinate; origin: FieldToFinishCoordinateOrigin } | undefined => {
-  if (sources.adjusted) return { coords: { ...sources.adjusted }, origin: 'adjusted' };
-  if (sources.sideshot) return { coords: { ...sources.sideshot }, origin: 'sideshot' };
-  if (sources.coordinateOnly) return { coords: { ...sources.coordinateOnly }, origin: 'coordinate-only' };
-  return undefined;
-};
 
 /** Coordinate-only path: control-station records -> CAD points (meters in). */
 export const controlStationsToFieldToFinishPoints = (
