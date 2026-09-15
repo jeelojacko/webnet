@@ -55,7 +55,7 @@ test.describe('Raw static session review', () => {
     const dialog = page.getByRole('dialog', { name: 'Raw static session review' });
 
     // A: upload 3 synthetic stations + NAV.
-    await uploadTrio(page, [`${FX}/base.06o`, `${FX}/rover.06o`, `${FX}/aux.06o`]);
+    await uploadTrio(page, [`${FX}/base.06o`, `${FX}/rover.06o`, `${FX}/station_aux.06o`]);
 
     // B: inventory appears with all three markers, no duplicates.
     const inventory = dialog.getByTestId('raw-session-inventory');
@@ -109,7 +109,7 @@ test.describe('Raw static session review', () => {
     );
     await openSessionDialog(page);
     const dialog = page.getByRole('dialog', { name: 'Raw static session review' });
-    await uploadTrio(page, [`${FX}/base.06o`, `${FX}/rover.06o`, `${FX}/aux.06o`]);
+    await uploadTrio(page, [`${FX}/base.06o`, `${FX}/rover.06o`, `${FX}/station_aux.06o`]);
     await expect(dialog.getByTestId('raw-session-edges')).toHaveText('STAR · SYNA→SYNB, SYNA→SYNR');
 
     // E: process the session (bounded wait: a live pool shows progress at once).
@@ -208,7 +208,7 @@ test.describe('Raw static session review', () => {
     await page.goto('/');
     await openSessionDialog(page);
     const dialog = page.getByRole('dialog', { name: 'Raw static session review' });
-    await uploadTrio(page, [`${FX}/base.06o`, `${FX}/rover.06o`, `${FX}/aux.06o`]);
+    await uploadTrio(page, [`${FX}/base.06o`, `${FX}/rover.06o`, `${FX}/station_aux.06o`]);
     await expect(dialog.getByTestId('raw-session-edges')).toContainText('SYNA→SYNB');
     await dialog.getByTestId('raw-session-process').click();
     await expect(dialog.getByTestId('raw-session-cancel')).toBeVisible({ timeout: 15_000 });
@@ -230,7 +230,7 @@ test.describe('Raw static session review', () => {
     );
     await openSessionDialog(page);
     const dialog = page.getByRole('dialog', { name: 'Raw static session review' });
-    await uploadTrio(page, [`${FX}/base.06o`, `${FX}/rover.06o`, `${FX}/aux.06o`]);
+    await uploadTrio(page, [`${FX}/base.06o`, `${FX}/rover.06o`, `${FX}/station_aux.06o`]);
     await dialog.getByTestId('raw-session-antex-input').setInputFiles(`${FX}/synth.atx`);
     await dialog.getByTestId('raw-session-process').click();
     await expect(dialog.getByTestId('raw-session-review')).toBeVisible({ timeout: 300_000 });

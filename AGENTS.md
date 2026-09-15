@@ -20,6 +20,7 @@ WebNet is a browser-based least-squares adjustment application for mixed survey 
 - Keep station IDs and observation IDs as strings.
 - Prefer strict TypeScript types and shared helpers over `any`.
 - Preserve deterministic ordering in reports, listings, exports, diagnostics, and fixture-backed outputs.
+- Keep file paths cross-platform portable: no Windows reserved device basenames (CON/PRN/AUX/NUL/COM1-9/LPT1-9, extension does not exempt), no forbidden chars (< > : " \\ | ? *), no trailing space/dot, no case-only-distinct paths. Run `npm run check:portable-paths` before adding/renaming files; prefer descriptive fixture names (e.g. station_aux.06o).
 - Avoid changing output wording, row inclusion, ordering, or rounding unless the task requires it and regression coverage is updated.
 
 ## TypeScript file structure rules
