@@ -22,6 +22,7 @@ import { resolveControlToken, type ControlTokenAliasProfile } from './catalogIo'
 import type { FeatureCodeCatalog, FeatureDefinition } from './featureCatalog';
 import { FieldLineworkControl, type ParsedFeatureCode } from './featureMetadata';
 import { generateLinework, type CodedPointInput } from './linework';
+import { linkOfPayload } from './linkedSync';
 import { formatDraftCoordinate } from '../cad/cadLabelEngine';
 import { replaceCadProjectEntities } from '../cad/cadProjectState';
 import { createCadSelectionState } from '../cad/cadSelection';
@@ -672,10 +673,16 @@ export const applyFieldToFinishPayload = (
     if (!known.has(entity.id)) entities.push(entity);
   }
   entities.sort((a, b) => (a.id < b.id ? -1 : a.id > b.id ? 1 : 0));
-  return replaceCadProjectEntities(
+  const withEntities = replaceCadProjectEntities(
     { ...project, layers, styleLibrary: { ...project.styleLibrary, styles } },
     entities,
   );
+  const link = linkOfPayload(payload, project.metadata.fieldToFinishLink?.sourceRevision);
+  if (!link) return withEntities;
+  return {
+    ...withEntities,
+    metadata: { ...withEntities.metadata, fieldToFinishLink: link },
+  };
 };
 
 export const buildFieldToFinishProject = (

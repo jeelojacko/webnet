@@ -39,6 +39,17 @@ interface UseAdjustmentOutcomeApplicationArgs<TRunDiagnostics> {
   setLastRunInput: (_value: string | null) => void;
   setLastRunSettingsSnapshot: (_value: RunSettingsSnapshot | null) => void;
   activateReportTab: () => void;
+  /**
+   * Linked-F2F rerun seam (Bucket A2). Fired once per successful PRODUCTION
+   * run (success && !preanalysisMode) after the outcome is applied; never on
+   * failure, cancellation, or preanalysis. The subscriber derives linked-doc
+   * updates via applyAdjustmentRerunToLinkedF2f and commits the returned
+   * project as a SINGLE CAD history entry, so adjustment rerun + linked
+   * update undo/redo as one coherent authoritative update. Run history stays
+   * append-only: CAD undo never alters recorded results, and re-running the
+   * adjustment re-derives the same sync.
+   */
+  onSuccessfulAdjustmentRun?: (_info: { result: AdjustmentResult; inputFingerprint: string }) => void;
   recordRunSnapshot: (_snapshot: {
     result: AdjustmentResult;
     runDiagnostics: TRunDiagnostics;
@@ -104,6 +115,7 @@ export const useAdjustmentOutcomeApplication = <TRunDiagnostics>({
   setLastRunSettingsSnapshot,
   activateReportTab,
   recordRunSnapshot,
+  onSuccessfulAdjustmentRun,
 }: UseAdjustmentOutcomeApplicationArgs<TRunDiagnostics>) =>
   useCallback(
     (outcome: RunSessionOutcome, context: ApplyRunOutcomeContext) => {
@@ -152,6 +164,9 @@ export const useAdjustmentOutcomeApplication = <TRunDiagnostics>({
         setRunDiagnostics(runProfile);
         setRunElapsedMs(outcome.elapsedMs);
       });
+      if (solved.success && !solved.preanalysisMode) {
+        onSuccessfulAdjustmentRun?.({ result: solved, inputFingerprint: context.inputFingerprint });
+      }
       noteUiPerfStage('applyRunOutcomeComplete');
     },
     [
@@ -160,6 +175,7 @@ export const useAdjustmentOutcomeApplication = <TRunDiagnostics>({
       clusterReviewDecisions,
       overrides,
       recordRunSnapshot,
+      onSuccessfulAdjustmentRun,
       result?.clusterDiagnostics?.candidates,
       setActiveClusterApprovedMerges,
       setActivePreanalysisAdditionIds,

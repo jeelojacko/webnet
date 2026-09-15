@@ -1,4 +1,5 @@
 import type { ParseOptions, StationErrorEllipse, StationId, UnitsMode } from '../../types';
+import type { FieldToFinishLink } from '../fieldToFinish/linkedSync';
 import type { CadCogoComputation } from './cadCogoTypes';
 import type { CadDisplayPoint } from './cadDisplayTypes';
 import type { DraftDocument } from './cadDraftTypes';
@@ -222,6 +223,8 @@ export interface CadProjectMetadata {
   stationCount: number;
   observationCount: number;
   adjustedStationCount: number;
+  /** Phase 13E A1: optional F2F source link (absent = legacy/UNLINKED). */
+  fieldToFinishLink?: FieldToFinishLink;
 }
 
 export interface CadProject {

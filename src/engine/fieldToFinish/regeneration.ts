@@ -12,10 +12,18 @@
  * adjustment inputs are only read, never altered.
  */
 import { runCadCommand, type CadHistoryState } from '../cad/cadUndoRedo';
+import { formatDraftCoordinate } from '../cad/cadLabelEngine';
 import { replaceCadProjectEntities } from '../cad/cadProjectState';
 import type { CadCommand } from '../cad/cadTransactions.types';
-import type { CadEntity, CadProject, CadSurveyPointEntity } from '../cad/cadTypes';
+import type { AdjustmentResult } from '../../types';
+import type { CadEntity, CadProject, CadSurveyPointEntity, CadTextEntity } from '../cad/cadTypes';
 import type { ImportedControlStationRecord } from '../importers';
+import {
+  buildSourceRevision,
+  buildStationEntityIndex,
+  stampFieldToFinishLink,
+  type FieldToFinishSyncStatus,
+} from './linkedSync';
 import {
   applyFieldToFinishPayload,
   buildFieldToFinishPayload,
@@ -248,15 +256,25 @@ export interface FieldToFinishCoordinate {
 /**
  * Adjustment-rerun coordinate update: moves GENERATED F2F points (and their
  * generated linework vertices + anchored labels) to new coordinates.
- * MANUAL_OVERRIDE points are skipped + reported. Read-only w.r.t.
- * adjustment inputs.
+ * MANUAL_OVERRIDE/DETACHED points are skipped + reported (never overwritten).
+ * GENERATED labels translate by the station delta so dragged/deconflicted
+ * offsets survive; only the derived `EL <n>` token refreshes when height
+ * changes. Non-F2F entities (parcels, tables, plan text, sheets) are never
+ * touched — they are not F2F-generated. Read-only w.r.t. adjustment inputs.
  */
 export const updateFieldToFinishCoordinates = (
   project: CadProject,
   coordinates: ReadonlyMap<string, FieldToFinishCoordinate>,
-): { project: CadProject; updated: string[]; skippedManual: string[] } => {
+): { project: CadProject; updated: string[]; skippedManual: string[]; manualConflicts: string[] } => {
   const updated: string[] = [];
   const skippedManual: string[] = [];
+  const manualConflicts: string[] = [];
+  const prior = new Map<string, FieldToFinishCoordinate>();
+  for (const entity of project.entities) {
+    if (entity.type === 'survey-point' && isFieldToFinishEntity(entity) && coordinates.has(entity.stationId)) {
+      prior.set(entity.stationId, { x: entity.x, y: entity.y, ...(entity.z !== undefined ? { z: entity.z } : {}) });
+    }
+  }
   const next = project.entities.map((entity) => {
     if (entity.type === 'survey-point' && isFieldToFinishEntity(entity)) {
       const coords = coordinates.get(entity.stationId);
@@ -265,6 +283,7 @@ export const updateFieldToFinishCoordinates = (
         skippedManual.push(entity.stationId);
         return entity;
       }
+      if (coords.x === entity.x && coords.y === entity.y && (coords.z ?? entity.z) === entity.z) return entity;
       updated.push(entity.stationId);
       return { ...entity, x: coords.x, y: coords.y, z: coords.z ?? entity.z };
     }
@@ -273,6 +292,10 @@ export const updateFieldToFinishCoordinates = (
   const moved = new Map(updated.map((stationId) => [stationId, coordinates.get(stationId) as FieldToFinishCoordinate]));
   const synced = next.map((entity) => {
     if ((entity.type === 'line' || entity.type === 'polyline') && isFieldToFinishEntity(entity)) {
+      if (getFieldToFinishState(entity) !== 'GENERATED') {
+        if (stationsOfLinework(entity).some((station) => moved.has(station))) manualConflicts.push(entity.id);
+        return entity;
+      }
       if (entity.type === 'line') {
         const from = moved.get(entity.fromStationId);
         const to = moved.get(entity.toStationId);
@@ -294,17 +317,236 @@ export const updateFieldToFinishCoordinates = (
       });
       return changed ? { ...entity, vertices } : entity;
     }
-    if (entity.type === 'text' && isFieldToFinishEntity(entity) && entity.anchorEntityId) {
-      const station = entity.anchorEntityId.replace(/^pt:/, '');
-      const coords = moved.get(station);
-      if (!coords) return entity;
-      return { ...entity, x: coords.x, y: coords.y };
+    if (entity.type === 'text' && isFieldToFinishEntity(entity)) {
+      const station = stationOfAnchoredLabel(entity);
+      const coords = station ? moved.get(station) : undefined;
+      if (!coords || !station) return entity;
+      if (getFieldToFinishState(entity) !== 'GENERATED') {
+        manualConflicts.push(entity.id);
+        return entity;
+      }
+      // Translate by the station delta: dragged labels, deconfliction
+      // stacking, and sheet placement offsets survive; numeric text updates.
+      const before = prior.get(station) ?? { x: entity.x, y: entity.y };
+      const text = refreshElevationToken(entity.text, before.z, coords.z);
+      return { ...entity, x: entity.x + (coords.x - before.x), y: entity.y + (coords.y - before.y), text };
     }
     return entity;
   });
   updated.sort();
   skippedManual.sort();
-  return { project: replaceCadProjectEntities(project, synced), updated, skippedManual };
+  manualConflicts.sort();
+  return { project: replaceCadProjectEntities(project, synced), updated, skippedManual, manualConflicts };
+};
+
+/** Stations referenced by F2F linework (provenance first, endpoint fallback). */
+const stationsOfLinework = (entity: CadEntity): string[] => {
+  const metadata = (entity.metadata ?? {}) as Record<string, unknown>;
+  const ids = metadata['sourcePointIds'];
+  if (Array.isArray(ids)) return ids.filter((id): id is string => typeof id === 'string');
+  if (entity.type === 'line') return [entity.fromStationId, entity.toStationId];
+  if (entity.type === 'polyline') return [...entity.vertexLabels];
+  return [];
+};
+
+const stationOfAnchoredLabel = (entity: CadTextEntity): string | undefined => {
+  if (entity.anchorEntityId?.startsWith('pt:')) return entity.anchorEntityId.slice('pt:'.length);
+  if (entity.id.startsWith('label:')) return entity.id.slice('label:'.length);
+  return undefined;
+};
+
+/** Refresh only the derived `EL <n>` token; every other token (notes, codes) is kept byte-identical. */
+const refreshElevationToken = (text: string, beforeZ: number | undefined, afterZ: number | undefined): string => {
+  if (afterZ === undefined || !Number.isFinite(afterZ) || afterZ === beforeZ) return text;
+  if (!/EL\s+-?\d/.test(text)) return text;
+  return text.replace(/EL\s+-?\d+(?:\.\d+)?/, `EL ${formatDraftCoordinate(afterZ)}`);
+};
+
+export interface AdjustmentRerunSyncInput {
+  /** Null or success:false = failed run: zero F2F mutation. */
+  result: AdjustmentResult | null;
+  inputFingerprint?: string;
+  settingsFingerprint?: string;
+  /** Current catalog version; mismatch vs link stamps CATALOG_CHANGED. */
+  catalogRevision?: string;
+  /** Current feature source-record ids; mismatch stamps FEATURE_METADATA_CHANGED. */
+  sourceRecordIds?: readonly string[];
+}
+
+export interface AdjustmentRerunSyncOutcome {
+  project: CadProject;
+  status: FieldToFinishSyncStatus;
+  /** True only when generated entities moved (link stamps alone set false). */
+  changed: boolean;
+  updated: string[];
+  skippedManual: string[];
+  /** Non-GENERATED derivations referencing moved stations (preserved, stale). */
+  manualConflicts: string[];
+  /** Linked stations with no authoritative coordinates. */
+  missingStations: string[];
+  /** Dependent entity ids for updated/skipped/missing stations (via station index). */
+  affectedEntityIds: string[];
+}
+
+const emptySyncOutcome = (project: CadProject, status: FieldToFinishSyncStatus): AdjustmentRerunSyncOutcome => ({
+  project,
+  status,
+  changed: false,
+  updated: [],
+  skippedManual: [],
+  manualConflicts: [],
+  missingStations: [],
+  affectedEntityIds: [],
+});
+
+/**
+ * Linked F2F adjustment-rerun sync (Bucket A2). Pure: reads the authoritative
+ * result (stations win, sideshots fill gaps via resolveFieldToFinishCoordinates),
+ * never alters adjustment inputs.
+ *
+ * - No link → UNLINKED, identical project. Failed run → identical project.
+ * - Missing linked station → MISSING_SOURCE + affected entities surfaced;
+ *   never binds a similarly-named station (exact id match only).
+ * - Added station / catalog / feature-metadata drift → stale stamp, no
+ *   auto-regen (caller previews via previewFieldToFinishRegen).
+ * - Coordinate-only deltas → GENERATED dependents move in place (stable ids,
+ *   order, provenance); MANUAL_OVERRIDE blocks + flags MANUAL_CONFLICT;
+ *   DETACHED stays silent; bit-identical reruns return entity-identical docs.
+ * - Scope is exactly what F2F generates (points, line/polyline, anchored
+ *   labels). Parcels, tables, plan text, layers/styles, codes, and sheets are
+ *   never touched; geometry-dependent plan content refreshes via explicit regen.
+ *
+ * Undo/redo: the returned project is one coherent authoritative update — the
+ * subscriber commits it as a SINGLE CAD history entry, so one undo restores
+ * pre-rerun geometry + link stamp atomically. Run history is append-only:
+ * CAD undo never alters recorded results, and re-running the adjustment
+ * re-derives the same sync.
+ */
+export const applyAdjustmentRerunToLinkedF2f = (
+  project: CadProject,
+  input: AdjustmentRerunSyncInput,
+): AdjustmentRerunSyncOutcome => {
+  const link = project.metadata.fieldToFinishLink;
+  if (!link) return emptySyncOutcome(project, 'UNLINKED');
+  const result = input.result;
+  if (!result || !result.success) return emptySyncOutcome(project, link.status);
+  const authoritative = authoritativeCoordinatesOf(result);
+  const revision = input.inputFingerprint !== undefined || input.settingsFingerprint !== undefined
+    ? buildSourceRevision({ inputFingerprint: input.inputFingerprint, settingsFingerprint: input.settingsFingerprint })
+    : undefined;
+  const index = buildStationEntityIndex(project);
+  const affectedOf = (stations: readonly string[]): string[] => {
+    const ids = new Set<string>();
+    for (const station of stations) {
+      const entry = index[station];
+      if (!entry) continue;
+      if (entry.pointEntityId) ids.add(entry.pointEntityId);
+      if (entry.labelEntityId) ids.add(entry.labelEntityId);
+      for (const id of entry.lineworkEntityIds) ids.add(id);
+    }
+    return [...ids].sort();
+  };
+  const missingStations = link.stationIds.filter((id) => !authoritative.has(id)).sort();
+  if (missingStations.length > 0) {
+    return {
+      ...emptySyncOutcome(
+        stampFieldToFinishLink(project, { status: 'MISSING_SOURCE' }),
+        'MISSING_SOURCE',
+      ),
+      missingStations,
+      affectedEntityIds: affectedOf(missingStations),
+    };
+  }
+  if (input.catalogRevision !== undefined && input.catalogRevision !== link.catalogRevision) {
+    return emptySyncOutcome(stampFieldToFinishLink(project, { status: 'CATALOG_CHANGED' }), 'CATALOG_CHANGED');
+  }
+  if (Object.keys(result.stations).some((id) => !link.stationIds.includes(id))) {
+    return emptySyncOutcome(
+      stampFieldToFinishLink(project, { status: 'SOURCE_TOPOLOGY_CHANGED' }),
+      'SOURCE_TOPOLOGY_CHANGED',
+    );
+  }
+  if (input.sourceRecordIds !== undefined && !sameIdSet(input.sourceRecordIds, link.sourceRecordIds)) {
+    return emptySyncOutcome(
+      stampFieldToFinishLink(project, { status: 'FEATURE_METADATA_CHANGED' }),
+      'FEATURE_METADATA_CHANGED',
+    );
+  }
+  const deltas = new Map<string, FieldToFinishCoordinate>();
+  for (const stationId of link.stationIds) {
+    const coords = authoritative.get(stationId);
+    if (!coords) continue;
+    const point = project.entities.find(
+      (entity): entity is CadSurveyPointEntity => entity.type === 'survey-point' && entity.stationId === stationId,
+    );
+    if (!point) continue;
+    if (coords.x !== point.x || coords.y !== point.y || (coords.z ?? point.z) !== point.z) {
+      deltas.set(stationId, coords);
+    }
+  }
+  if (deltas.size === 0) {
+    // Bit-identical rerun: entities untouched (same values, same order, same
+    // provenance); only the run revision advances on the stamped link.
+    const stamped = revision !== undefined && link.status === 'CURRENT'
+      ? stampFieldToFinishLink(project, { status: 'CURRENT', sourceRevision: revision })
+      : revision !== undefined
+        ? stampFieldToFinishLink(project, { sourceRevision: revision })
+        : project;
+    return emptySyncOutcome(stamped, stamped.metadata.fieldToFinishLink?.status ?? 'CURRENT');
+  }
+  const applied = updateFieldToFinishCoordinates(project, deltas);
+  const conflictStations = applied.skippedManual.filter((stationId) => {
+    const point = applied.project.entities.find(
+      (entity): entity is CadSurveyPointEntity => entity.type === 'survey-point' && entity.stationId === stationId,
+    );
+    return point !== undefined && getFieldToFinishState(point) === 'MANUAL_OVERRIDE';
+  });
+  const status: FieldToFinishSyncStatus =
+    conflictStations.length > 0 || applied.manualConflicts.length > 0 ? 'MANUAL_CONFLICT' : 'CURRENT';
+  const stamped = stampFieldToFinishLink(applied.project, {
+    status,
+    ...(revision !== undefined ? { sourceRevision: revision } : {}),
+  });
+  return {
+    project: stamped,
+    status,
+    changed: applied.updated.length > 0,
+    updated: applied.updated,
+    skippedManual: applied.skippedManual,
+    manualConflicts: applied.manualConflicts,
+    missingStations: [],
+    affectedEntityIds: affectedOf([...applied.updated, ...applied.skippedManual]),
+  };
+};
+
+const sameIdSet = (a: readonly string[], b: readonly string[]): boolean =>
+  a.length === b.length && new Set([...a, ...b]).size === a.length;
+
+/** Authoritative coordinates: adjusted stations win, sideshots fill gaps. */
+const authoritativeCoordinatesOf = (result: AdjustmentResult): Map<string, FieldToFinishCoordinate> => {
+  const sources = new Map<string, FieldToFinishCoordinateSources>();
+  for (const [id, station] of Object.entries(result.stations)) {
+    sources.set(id, { adjusted: { x: station.x, y: station.y, z: station.h } });
+  }
+  for (const sideshot of result.sideshots ?? []) {
+    if (!sideshot || !Number.isFinite(sideshot.easting) || !Number.isFinite(sideshot.northing)) continue;
+    const prior = sources.get(sideshot.to);
+    if (prior?.adjusted) continue;
+    sources.set(sideshot.to, {
+      ...prior,
+      sideshot: {
+        x: sideshot.easting as number,
+        y: sideshot.northing as number,
+        ...(sideshot.height !== undefined ? { z: sideshot.height } : {}),
+      },
+    });
+  }
+  const coords = new Map<string, FieldToFinishCoordinate>();
+  for (const [id, source] of sources) {
+    const resolved = resolveFieldToFinishCoordinates(source);
+    if (resolved) coords.set(id, resolved.coords);
+  }
+  return coords;
 };
 
 export type FieldToFinishCoordinateOrigin = 'adjusted' | 'sideshot' | 'coordinate-only';
