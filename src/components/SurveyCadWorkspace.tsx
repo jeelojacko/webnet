@@ -25,6 +25,7 @@ import { noteUiTabReady } from '../hooks/useUiPerfMonitor';
 import { useSurveyCadWorkspace } from '../hooks/surveyCad/useSurveyCadWorkspace';
 import SurveyCadCommandToolbar from './surveyCad/SurveyCadCommandToolbar';
 import { SurveyCadDraftingPanel } from './surveyCad/SurveyCadDraftingPanel';
+import { ExportCenterPanel } from './surveyCad/ExportCenterPanel';
 import SurveyCadWorkspaceSurface from './SurveyCadWorkspaceSurface';
 import { useSurveyCadCommandDisplay } from './useSurveyCadCommandDisplay';
 import { useSurveyCadFloatingPanels } from './useSurveyCadFloatingPanels';
@@ -156,6 +157,7 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
   const [copiedEntityIds, setCopiedEntityIds] = useState<string[]>([]);
   const [reverseDirectionModifier, setReverseDirectionModifier] = useState(false);
   const [draftingPanelOpen, setDraftingPanelOpen] = useState(false);
+  const [exportCenterOpen, setExportCenterOpen] = useState(false);
   const cadWorkspace = useSurveyCadWorkspace(
     cadProject,
     activeDrawing.drawingId,
@@ -389,6 +391,9 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
             <button type="button" className="rounded border border-slate-600 bg-slate-900 px-2 py-1 text-slate-100 hover:bg-slate-800" onClick={() => setDraftingPanelOpen((current) => !current)} data-survey-cad-drafting-panels>
               Sheets &amp; Layers
             </button>
+            <button type="button" className="rounded border border-slate-600 bg-slate-900 px-2 py-1 text-slate-100 hover:bg-slate-800" onClick={() => setExportCenterOpen((current) => !current)} data-survey-cad-export-center>
+              Export Center
+            </button>
             <button
               type="button"
               className="rounded border border-sky-500 bg-sky-950 px-2 py-1 text-sky-100 hover:bg-sky-900 disabled:cursor-not-allowed disabled:border-slate-700 disabled:bg-slate-900 disabled:text-slate-500"
@@ -429,6 +434,9 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
             onClose={() => setDraftingPanelOpen(false)}
             onCommitFieldToFinishPayload={cadWorkspace.commitFieldToFinishPayload}
           />
+        ) : null}
+        {exportCenterOpen ? (
+          <ExportCenterPanel drawing={activeDrawing} onClose={() => setExportCenterOpen(false)} />
         ) : null}
         <SurveyCadWorkspaceSurface
           workspace={cadWorkspace}
