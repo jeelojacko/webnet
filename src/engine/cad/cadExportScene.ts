@@ -2,7 +2,8 @@ import { buildCadDisplayScene } from './cadRenderer';
 import type { CadDisplayPrimitive } from './cadDisplayTypes';
 import { BROKEN_REFERENCE_TEXT } from './cadLabelEngine';
 import type { DraftSheet, DraftDocument } from './cadDraftTypes';
-import { expandSheetTokens, asPlanViewport } from './cadSheets';
+import { expandSheetTokens, asPlanViewport, buildSheetTokenContext } from './cadSheets';
+import { buildTableFragmentItems } from './cadExportTables';
 import type { CadProject } from './cadTypes';
 
 export interface ExportWarning {
@@ -59,6 +60,13 @@ export interface ModelLabelPlacement {
   yModel: number;
   heightMm?: number;
   layerId?: string;
+  /** Presentation-only paper-mm nudge applied after projection. */
+  offsetMm?: { dxMm?: number; dyMm?: number };
+  rotationDeg?: number;
+  /** Presentation-only leader from the source point to the placed text. */
+  leader?: { enabled?: boolean; elbowMm?: number; lineweightMm?: number };
+  /** Per-viewport overrides keyed by viewport id; manual always wins. */
+  viewportOverrides?: Record<string, { dxMm?: number; dyMm?: number; rotationDeg?: number; visible?: boolean }>;
 }
 
 export interface PaperTextPlacement {
@@ -192,7 +200,79 @@ const primitiveToPaper = (
   }
 };
 
-// North arrow (grid north only) and scale bar are paper-space items built by
+export const draftLabelsToPlacements = (labels: DraftDocument['labels']): ModelLabelPlacement[] =>
+  (labels ?? []).map((label) => ({
+    id: label.id,
+    text: label.overrideText ?? label.text,
+    xModel: label.xModel,
+    yModel: label.yModel,
+    heightMm: label.heightMm,
+    layerId: label.layerId,
+    ...(label.rotationDeg != null ? { rotationDeg: label.rotationDeg } : {}),
+    ...(label.leader != null ? { leader: { ...label.leader } } : {}),
+    ...(label.viewportOverrides != null ? { viewportOverrides: { ...label.viewportOverrides } } : {}),
+  }));
+
+// Per-viewport label resolution shared by SVG/PDF (scene) and layout DXF:
+// one definition so all deliverables place the same text identically.
+// Manual per-viewport overrides win over base offsets; hidden labels
+// (visible === false) emit nothing. Leaders are presentation-only lines
+// from the source point to the placed text; geometry is never touched.
+export const buildPaperLabelItems = (
+  labels: ModelLabelPlacement[],
+  viewportId: string,
+  toPaper: (_x: number, _y: number) => { xMm: number; yMm: number },
+  clipId?: string,
+): { items: ExportItem[]; brokenIds: string[] } => {
+  const items: ExportItem[] = [];
+  const brokenIds: string[] = [];
+  const ordered = [...labels].sort((a, b) => (a.id < b.id ? -1 : a.id > b.id ? 1 : 0));
+  ordered.forEach((label) => {
+    const override = label.viewportOverrides?.[viewportId];
+    if (override?.visible === false) return;
+    if (label.broken || label.text == null) brokenIds.push(label.id);
+    const p = toPaper(label.xModel, label.yModel);
+    const dx = override?.dxMm ?? label.offsetMm?.dxMm ?? 0;
+    const dy = override?.dyMm ?? label.offsetMm?.dyMm ?? 0;
+    const x = p.xMm + dx;
+    const y = p.yMm + dy;
+    if (label.leader?.enabled && (dx !== 0 || dy !== 0)) {
+      // Two-segment elbow: horizontal jog of elbowMm from the source point
+      // toward the text, then straight to the text. elbowMm clamps to |dx|
+      // so the jog never overshoots; dx === 0 (or no positive elbow) stays
+      // a single straight segment. All serializers share this resolver, so
+      // the elbow renders identically in scene, SVG, PDF, and layout-DXF.
+      const elbowMm = label.leader.elbowMm ?? 0;
+      if (elbowMm > 0 && dx !== 0) {
+        const jog = Math.sign(dx) * Math.min(elbowMm, Math.abs(dx));
+        items.push({
+          kind: 'polyline',
+          layer: label.layerId ?? 'labels',
+          ...(clipId ? { clipId } : {}),
+          points: [{ x: p.xMm, y: p.yMm }, { x: p.xMm + jog, y: p.yMm }, { x, y }],
+          close: false,
+          widthMm: label.leader.lineweightMm,
+        });
+      } else {
+        items.push({ kind: 'line', layer: label.layerId ?? 'labels', ...(clipId ? { clipId } : {}), x1: p.xMm, y1: p.yMm, x2: x, y2: y, widthMm: label.leader.lineweightMm });
+      }
+    }
+    items.push({
+      kind: 'text',
+      layer: label.layerId ?? 'labels',
+      ...(clipId ? { clipId } : {}),
+      x,
+      y,
+      text: label.broken || label.text == null ? BROKEN_REFERENCE_TEXT : label.text,
+      heightMm: label.heightMm ?? 2.5,
+      anchor: 'middle',
+      ...(override?.rotationDeg ?? label.rotationDeg
+        ? { rotationDeg: override?.rotationDeg ?? label.rotationDeg }
+        : {}),
+    });
+  });
+  return { items, brokenIds };
+};
 // these helpers so fixture, SVG, and PDF share one definition.
 // The arrow triangle rotates clockwise by rotationDeg about its base point so
 // it agrees with rotated viewport geometry; the scale bar is pure paper
@@ -234,9 +314,55 @@ export const buildScaleBarItems = (
     fill: i % 2 === 0 ? '#000000' : '#ffffff',
   }));
 
-export const buildTitleBlockItems = (sheet: DraftSheet, layer: string): { items: ExportItem[]; unknownTokens: string[] } => {
+// One renderer for preview, SVG, PDF, and layout-DXF: identical paper-mm
+// numerics everywhere. When the sheet references a visual template, its
+// elements render verbatim; otherwise the legacy bar renders.
+export const buildTitleBlockItems = (
+  sheet: DraftSheet,
+  layer: string,
+  template?: import('./cadDraftTypes').DraftTitleBlockDefinition,
+  tokenContext?: import('./cadSheets').SheetTokenContext,
+): { items: ExportItem[]; unknownTokens: string[] } => {
   const items: ExportItem[] = [];
   const unknownTokens: string[] = [];
+  const noteUnknown = (names: readonly string[]): void => {
+    names.forEach((token) => {
+      if (!unknownTokens.includes(token)) unknownTokens.push(token);
+    });
+  };
+  if (template?.elements && template.elements.length > 0) {
+    const ordered = [...template.elements].sort((a, b) => (a.id < b.id ? -1 : a.id > b.id ? 1 : 0));
+    ordered.forEach((element) => {
+      if (element.kind === 'rect') {
+        items.push({
+          kind: 'rect', layer,
+          x: element.xMm, y: element.yMm,
+          width: Math.max(0.1, element.widthMm ?? 10),
+          height: Math.max(0.1, element.heightMm ?? 5),
+        });
+        return;
+      }
+      if (element.kind === 'line') {
+        items.push({
+          kind: 'line', layer,
+          x1: element.xMm, y1: element.yMm,
+          x2: element.x2Mm ?? element.xMm, y2: element.y2Mm ?? element.yMm,
+          ...(element.lineweightMm != null ? { widthMm: element.lineweightMm } : {}),
+        });
+        return;
+      }
+      const raw = element.kind === 'token-text' ? (element.tokenTemplate ?? element.text ?? '') : (element.text ?? '');
+      const { text, unknownTokens: unknown } = expandSheetTokens(raw, tokenContext ?? {});
+      noteUnknown(unknown);
+      items.push({
+        kind: 'text', layer,
+        x: element.xMm, y: element.yMm, text,
+        heightMm: Math.max(0.5, element.fontSizeMm ?? 3),
+        anchor: element.alignment === 'center' ? 'middle' : element.alignment === 'right' ? 'end' : 'start',
+      });
+    });
+    return { items, unknownTokens };
+  }
   const barH = 14;
   const y = sheet.heightMm - sheet.margins.bottomMm - barH;
   items.push({ kind: 'rect', layer, x: sheet.margins.leftMm, y, width: sheet.widthMm - sheet.margins.leftMm - sheet.margins.rightMm, height: barH });
@@ -290,14 +416,7 @@ export const buildExportSheetScene = (args: BuildSceneArgs): { scene: ExportShee
     const inDraft = args.draft.layers.find((layer) => layer.id === layerId);
     return [inProject, inDraft].some((layer) => layer != null && layer[flag] === false);
   };
-  const persistedLabels: ModelLabelPlacement[] = (args.draft.labels ?? []).map((label) => ({
-    id: label.id,
-    text: label.overrideText ?? label.text,
-    xModel: label.xModel,
-    yModel: label.yModel,
-    heightMm: label.heightMm,
-    layerId: label.layerId,
-  }));
+  const persistedLabels: ModelLabelPlacement[] = draftLabelsToPlacements(args.draft.labels);
   const effectiveLabels = args.modelLabels ?? persistedLabels;
   sheet.viewports.forEach((viewport) => {
     const plan = asPlanViewport(viewport);
@@ -339,31 +458,34 @@ export const buildExportSheetScene = (args: BuildSceneArgs): { scene: ExportShee
       });
     items.push({ kind: 'rect', layer: 'paper-frame', x: plan.paperXmm, y: plan.paperYmm, width: plan.paperWidthMm, height: plan.paperHeightMm });
     const toPaperForLabels = toPaper;
-    effectiveLabels
-      .filter((label) => !isHidden(label.layerId ?? 'labels'))
-      .forEach((label) => {
-        if (label.broken || label.text == null) {
-          warnings.push({ code: 'BROKEN_REFERENCE', message: `label ${label.id} has a broken reference` });
-        }
-        const p = toPaperForLabels(label.xModel, label.yModel);
-        items.push({
-          kind: 'text',
-          layer: label.layerId ?? 'labels',
-          clipId,
-          x: p.xMm,
-          y: p.yMm,
-          text: label.broken || label.text == null ? BROKEN_REFERENCE_TEXT : label.text,
-          heightMm: label.heightMm ?? 2.5,
-          anchor: 'middle',
-        });
-      });
+    const placed = buildPaperLabelItems(
+      effectiveLabels.filter((label) => !isHidden(label.layerId ?? 'labels')),
+      plan.id,
+      toPaperForLabels,
+      clipId,
+    );
+    placed.brokenIds.forEach((id) => {
+      warnings.push({ code: 'BROKEN_REFERENCE', message: `label ${id} has a broken reference` });
+    });
+    items.push(...placed.items);
   });
 
-  const title = buildTitleBlockItems(sheet, 'title-block');
+  const sheetIndex = args.draft.sheets.findIndex((entry) => entry.id === sheet.id);
+  const template = sheet.titleBlockId
+    ? args.draft.titleBlockDefinitions.find((entry) => entry.id === sheet.titleBlockId)
+    : undefined;
+  const title = buildTitleBlockItems(sheet, 'title-block', template, buildSheetTokenContext({
+    sheet,
+    sheetNumber: sheetIndex + 1,
+    projectName: args.project.name,
+  }));
   items.push(...title.items);
   title.unknownTokens.forEach((token) => {
     warnings.push({ code: 'UNKNOWN_TOKEN', message: `unknown sheet token {${token}}` });
   });
+  // Persisted continued-table fragments render from logical rows + row
+  // ranges (deterministic order, repeated headers, Continued marker).
+  items.push(...buildTableFragmentItems(args.draft, sheet.id));
   (args.paperTexts ?? []).forEach((placement) => {
     items.push({
       kind: 'text',

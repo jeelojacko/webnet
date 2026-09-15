@@ -12,6 +12,7 @@ import {
   type HarnessStep,
 } from './surveyDraftingSteps';
 import { asPlanViewport, northArrowAngleDeg } from '../engine/cad/cadSheets';
+import { apply13cStep, initial13cState, type Draft13cState } from './surveyDrafting13cSteps';
 import type { CadDrawingDocument } from '../engine/cad/cadTypes';
 
 type HarnessGlobal = typeof globalThis & {
@@ -25,6 +26,8 @@ type HarnessGlobal = typeof globalThis & {
 export const SurveyDraftingApp = (): React.JSX.Element => {
   const [state, setState] = useState<HarnessState>(initialHarnessState);
   const [log, setLog] = useState<string[]>([]);
+  const [state13c, setState13c] = useState<Draft13cState>(initial13cState);
+  const [log13c, setLog13c] = useState<string[]>([]);
   const stateRef = useRef(state);
   useEffect(() => {
     stateRef.current = state;
@@ -38,6 +41,14 @@ export const SurveyDraftingApp = (): React.JSX.Element => {
   const runStep = (step: HarnessStep): void => {
     const applied = applyHarnessStep(stateRef.current, step);
     if (applied) commit(applied.next, applied.entry);
+  };
+
+  const run13cStep = (step: string): void => {
+    const applied = apply13cStep(state13c, step);
+    if (applied) {
+      setState13c(applied.next);
+      setLog13c((current) => [...current, applied.entry]);
+    }
   };
 
   const harness = useMemo<HarnessGlobal['__SURVEY_DRAFTING_HARNESS__']>(
@@ -89,6 +100,21 @@ export const SurveyDraftingApp = (): React.JSX.Element => {
         {`svg:${state.exports.svgLength}:pdf:${state.exports.pdfLength}:dxf:${state.exports.dxfLength}`}
       </div>
       {state.reloaded ? <div data-testid="draft-reload-info">{`reload:sheets:${state.reloaded.sheets}:coordsMatch:${state.reloaded.coordsMatch}`}</div> : null}
+      <h2>Phase 13C extended flow</h2>
+      <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
+        {STEP_IDS.map((step) => (
+          <button key={step} type="button" data-testid={`draft13c-step-${step}`} onClick={() => run13cStep(step)}>
+            {`13C ${step}`}
+          </button>
+        ))}
+      </div>
+      <ol data-testid="draft13c-flow-log">
+        {log13c.map((entry, index) => (
+          <li key={`${index}-${entry}`}>{entry}</li>
+        ))}
+      </ol>
+      <div data-testid="draft13c-info">{`entities:${state13c.doc.project.entities.length}:sheets:${mustDraft(state13c.doc).sheets.length}:labels:${state13c.labels.length}:tables:${(mustDraft(state13c.doc).tables ?? []).length}:templates:${mustDraft(state13c.doc).titleBlockDefinitions.length}`}</div>
+      <div data-testid="draft13c-export-info">{`svg:${state13c.exports.svg}:pdf:${state13c.exports.pdf}:r12:${state13c.exports.r12}:layout:${state13c.exports.layout}`}</div>
       <SurveyDraftingResults
         doc={state.doc}
         draft={mustDraft(state.doc)}

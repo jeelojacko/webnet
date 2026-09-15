@@ -2,12 +2,14 @@ import React, { useMemo, useState } from 'react';
 import { buildCadDisplayScene } from '../../engine/cad/cadRenderer';
 import {
   asPlanViewport,
+  buildSheetTokenContext,
   expandSheetTokens,
   modelToPaperMm,
   northArrowAngleDeg,
   NORTH_REFERENCE,
   type TitleBlockInstance,
 } from '../../engine/cad/cadSheets';
+import { buildTitleBlockItems } from '../../engine/cad/cadExportScene';
 import type { DraftDocument } from '../../engine/cad/cadDraftTypes';
 import type { CadProject } from '../../engine/cad/cadTypes';
 import type { CadDisplayPrimitive } from '../../engine/cad/cadDisplayTypes';
@@ -163,21 +165,22 @@ export const SheetWorkspace = ({
 
   const titlePreview = useMemo(() => {
     if (!sheet) return null;
+    const visual = sheet.titleBlockId
+      ? draft.titleBlockDefinitions.find((entry) => entry.id === sheet.titleBlockId)
+      : undefined;
+    const sheetIndex = draft.sheets.findIndex((entry) => entry.id === sheet.id);
+    const context = buildSheetTokenContext({ sheet, sheetNumber: sheetIndex + 1, projectName, crs: crsLabel });
+    // Identical paper-mm numerics to SVG/PDF/layout-DXF via buildTitleBlockItems.
+    if (visual?.elements && visual.elements.length > 0) {
+      return { mode: 'items' as const, ...buildTitleBlockItems(sheet, 'title-block', visual, context) };
+    }
     const instance = titleBlocks.find((entry) => entry.sheetId === sheet.id);
-    const template = Object.entries(instance?.values ?? {})
+    const legacy = Object.entries(instance?.values ?? {})
       .map(([field, value]) => `${field}: ${value}`)
       .join('  |  ');
-    const sheetIndex = draft.sheets.findIndex((entry) => entry.id === sheet.id);
-    const { text, unknownTokens } = expandSheetTokens(template, {
-      PROJECT_NAME: projectName,
-      SHEET_NAME: sheet.name,
-      SHEET_NUMBER: `${sheetIndex + 1}`,
-      SCALE: sheet.viewports.map((viewport) => `1:${viewport.scaleDenominator}`).join(', '),
-      CRS: crsLabel,
-      DATE: new Date().toISOString().slice(0, 10),
-    });
-    return { text, unknownTokens };
-  }, [sheet, titleBlocks, draft.sheets, projectName, crsLabel]);
+    const { text, unknownTokens } = expandSheetTokens(legacy, context);
+    return { mode: 'text' as const, text, unknownTokens };
+  }, [sheet, titleBlocks, draft, projectName, crsLabel]);
 
   if (view === 'MODEL' || !sheet) {
     return (
@@ -252,7 +255,22 @@ export const SheetWorkspace = ({
               {object.text}
             </text>
           ))}
-        {titlePreview && titlePreview.text && (
+        {titlePreview && titlePreview.mode === 'items' && (
+          <g aria-label="Title block preview">
+            {titlePreview.items.map((item, index) => {
+              if (item.kind === 'rect') return <rect key={index} x={item.x} y={item.y} width={item.width} height={item.height} fill="none" stroke="#111111" />;
+              if (item.kind === 'line') return <line key={index} x1={item.x1} y1={item.y1} x2={item.x2} y2={item.y2} stroke="#111111" strokeWidth={item.widthMm ?? 0.25} />;
+              if (item.kind === 'text') return <text key={index} x={item.x} y={item.y} fontSize={item.heightMm} textAnchor={item.anchor ?? 'start'}>{item.text}</text>;
+              return null;
+            })}
+            {titlePreview.unknownTokens.length > 0 && (
+              <text x={sheet.margins.leftMm} y={sheet.heightMm - sheet.margins.bottomMm + 8} fontSize={2.5} fill="#aa0000">
+                {`Unknown tokens kept literal: ${titlePreview.unknownTokens.join(', ')}`}
+              </text>
+            )}
+          </g>
+        )}
+        {titlePreview && titlePreview.mode === 'text' && titlePreview.text && (
           <g aria-label="Title block preview">
             <text x={sheet.margins.leftMm} y={sheet.heightMm - sheet.margins.bottomMm + 4} fontSize={3.5}>
               {titlePreview.text}

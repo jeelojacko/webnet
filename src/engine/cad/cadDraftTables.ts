@@ -1,4 +1,12 @@
+import { createStableRuntimeId } from '../id';
 import { buildCadInverseSummary } from './cadCogoSummaries';
+import type {
+  DraftDocument,
+  DraftLogicalTable,
+  DraftTableContinueMode,
+  DraftTableFragment,
+  DraftTableRowRange,
+} from './cadDraftTypes';
 import { cadBuildCurveMetricsSummaryFromRadiusDelta } from './cadCogoCurveMetrics';
 import type { CadWorldPoint } from './cadGeometry';
 import type { DraftPrecisionProfile } from './cadDraftTypes';
@@ -146,3 +154,179 @@ export const buildDraftCurveTable = (
   const rows = options.maxRows != null ? allRows.slice(0, Math.max(0, Math.floor(options.maxRows))) : allRows;
   return { headers: ['CurveID', 'Radius', 'Arc', 'Chord', 'Delta'], rows, warnings };
 };
+
+// ---- Continued tables (Phase 13C §§22-30) ----
+// One logical table owns rows; fragments reference deterministic row ranges
+// (no data copies). All geometry is sheet/paper-mm only; moving a fragment
+// never touches source rows. AUTO mode slices rows sequentially into
+// subsequent fragments/sheets; columns, format, order, header, source
+// selection, and precision are preserved from the logical table and text is
+// never silently resized to fit.
+
+export const CONTINUED_MARKER_TEXT = 'Continued';
+
+export const createLogicalTableFromDraftTable = (args: {
+  name: string;
+  headers: readonly string[];
+  rows: readonly (readonly string[])[];
+  continueMode?: DraftTableContinueMode;
+  headerRepeat?: boolean;
+  showContinuedMarker?: boolean;
+  maxRowsPerFragment?: number;
+  order?: string;
+  selectionIds?: readonly string[];
+}): DraftLogicalTable => ({
+  id: createStableRuntimeId('draft-table'),
+  name: args.name,
+  headers: [...args.headers],
+  rows: args.rows.map((row) => [...row]),
+  continueMode: args.continueMode ?? 'AUTO',
+  headerRepeat: args.headerRepeat !== false,
+  showContinuedMarker: args.showContinuedMarker !== false,
+  maxRowsPerFragment: Math.max(1, Math.floor(args.maxRowsPerFragment ?? 25)),
+  ...(args.order != null ? { order: args.order } : {}),
+  ...(args.selectionIds ? { selectionIds: [...args.selectionIds] } : {}),
+});
+
+export const continuedRowRangesForCount = (rowCount: number, maxRowsPerFragment: number): DraftTableRowRange[] => {
+  const per = Math.max(1, Math.floor(maxRowsPerFragment));
+  const ranges: DraftTableRowRange[] = [];
+  for (let start = 0; start < rowCount; start += per) {
+    ranges.push({ start, count: Math.min(per, rowCount - start) });
+  }
+  return ranges;
+};
+
+export const continuedRangesForTable = (table: DraftLogicalTable): DraftTableRowRange[] =>
+  continuedRowRangesForCount(table.rows.length, table.maxRowsPerFragment);
+
+// Fragment view: header (repeated when enabled) plus the referenced slice.
+// The slice is a view over owned rows; callers must not mutate it.
+export const resolveFragmentView = (
+  table: DraftLogicalTable,
+  fragment: Pick<DraftTableFragment, 'rowRange' | 'fragmentIndex'>,
+): { headers: string[]; rows: string[][]; continued: boolean } => {
+  const { start, count } = fragment.rowRange;
+  const rows = table.rows.slice(start, start + Math.max(0, count));
+  return {
+    headers: table.headerRepeat ? [...table.headers] : fragment.fragmentIndex === 0 ? [...table.headers] : [],
+    rows,
+    continued: table.showContinuedMarker && fragment.fragmentIndex > 0,
+  };
+};
+
+export const fragmentTitleForView = (tableName: string, fragmentIndex: number, continued: boolean): string =>
+  continued ? `${tableName} (${CONTINUED_MARKER_TEXT} ${fragmentIndex + 1})` : tableName;
+
+// Coverage check: every source row appears exactly once, in order.
+export const validateContinuedCoverage = (
+  table: DraftLogicalTable,
+  fragments: readonly Pick<DraftTableFragment, 'rowRange' | 'fragmentIndex'>[],
+): { ok: boolean; missing: number[]; duplicated: number[] } => {
+  const seen = new Map<number, number>();
+  fragments.forEach((fragment) => {
+    const { start, count } = fragment.rowRange;
+    for (let i = start; i < start + Math.max(0, count); i += 1) {
+      seen.set(i, (seen.get(i) ?? 0) + 1);
+    }
+  });
+  const missing: number[] = [];
+  const duplicated: number[] = [];
+  for (let i = 0; i < table.rows.length; i += 1) {
+    const hits = seen.get(i) ?? 0;
+    if (hits === 0) missing.push(i);
+    else if (hits > 1) duplicated.push(i);
+  }
+  return { ok: missing.length === 0 && duplicated.length === 0, missing, duplicated };
+};
+
+// Draft-level ops (pure; run inside runDraftSheetCommand for undo/redo).
+export const addLogicalTableToDraft = (draft: DraftDocument, table: DraftLogicalTable): DraftDocument => ({
+  ...draft,
+  tables: [...(draft.tables ?? []), table],
+});
+
+export interface ContinuedPlacement { sheetId: string; paperXmm: number; paperYmm: number }
+
+// Paper-mm cascade step applied per repeat cycle when AUTO ranges exceed
+// the supplied placements, so repeated fragments never stack silently.
+// ponytail: fixed 8mm diagonal cascade; collision-aware packing only if sheets get crowded.
+export const CONTINUED_REPEAT_CASCADE_MM = 8;
+
+// AUTO layout: one fragment per row range, placed round-robin over the
+// given sheet placements (deterministic; repeats sheets when ranges exceed
+// placements). Fragments that reuse a placement cascade diagonally in
+// paper-mm per repeat cycle, so no two fragments share one origin.
+export const layoutContinuedFragments = (
+  draft: DraftDocument,
+  tableId: string,
+  placements: readonly ContinuedPlacement[],
+): DraftDocument => {
+  const table = (draft.tables ?? []).find((entry) => entry.id === tableId);
+  if (!table || placements.length === 0) return draft;
+  const ranges = table.continueMode === 'AUTO' ? continuedRangesForTable(table) : continuedRowRangesForCount(Math.min(table.rows.length, table.maxRowsPerFragment), table.maxRowsPerFragment);
+  const kept = (draft.tableFragments ?? []).filter((fragment) => fragment.logicalTableId !== tableId);
+  const created: DraftTableFragment[] = ranges.map((rowRange, fragmentIndex) => {
+    const placement = placements[fragmentIndex % placements.length] as ContinuedPlacement;
+    const repeatCycle = Math.floor(fragmentIndex / placements.length);
+    return {
+      id: createStableRuntimeId('draft-table-fragment'),
+      logicalTableId: tableId,
+      sheetId: placement.sheetId,
+      fragmentIndex,
+      rowRange: { ...rowRange },
+      paperXmm: placement.paperXmm + repeatCycle * CONTINUED_REPEAT_CASCADE_MM,
+      paperYmm: placement.paperYmm + repeatCycle * CONTINUED_REPEAT_CASCADE_MM,
+    };
+  });
+  return { ...draft, tableFragments: [...kept, ...created] };
+};
+
+// Source change: replace owned rows, then recompute AUTO ranges so all
+// fragments update together with no missing/duplicated rows.
+export const updateLogicalTableRowsInDraft = (
+  draft: DraftDocument,
+  tableId: string,
+  rows: readonly (readonly string[])[],
+): DraftDocument => {
+  const table = (draft.tables ?? []).find((entry) => entry.id === tableId);
+  if (!table) return draft;
+  const next: DraftLogicalTable = { ...table, rows: rows.map((row) => [...row]) };
+  const ranges = next.continueMode === 'AUTO'
+    ? continuedRangesForTable(next)
+    : continuedRowRangesForCount(Math.min(next.rows.length, next.maxRowsPerFragment), next.maxRowsPerFragment);
+  const prior = (draft.tableFragments ?? []).filter((fragment) => fragment.logicalTableId === tableId)
+    .sort((a, b) => a.fragmentIndex - b.fragmentIndex);
+  const fallbackSheet = prior[0]?.sheetId ?? draft.sheets[0]?.id;
+  if (fallbackSheet == null) {
+    return { ...draft, tables: (draft.tables ?? []).map((entry) => (entry.id === tableId ? next : entry)) };
+  }
+  const rebuilt: DraftTableFragment[] = ranges.map((rowRange, fragmentIndex) => {
+    const keep = prior[Math.min(fragmentIndex, prior.length - 1)] as DraftTableFragment | undefined;
+    return {
+      id: keep && fragmentIndex < prior.length ? (prior[fragmentIndex] as DraftTableFragment).id : createStableRuntimeId('draft-table-fragment'),
+      logicalTableId: tableId,
+      sheetId: keep?.sheetId ?? fallbackSheet,
+      fragmentIndex,
+      rowRange: { ...rowRange },
+      paperXmm: keep?.paperXmm ?? 10,
+      paperYmm: keep?.paperYmm ?? 10,
+    };
+  });
+  return {
+    ...draft,
+    tables: (draft.tables ?? []).map((entry) => (entry.id === tableId ? next : entry)),
+    tableFragments: [...(draft.tableFragments ?? []).filter((fragment) => fragment.logicalTableId !== tableId), ...rebuilt],
+  };
+};
+
+export const moveTableFragmentInDraft = (
+  draft: DraftDocument,
+  fragmentId: string,
+  paper: { xMm: number; yMm: number },
+): DraftDocument => ({
+  ...draft,
+  tableFragments: (draft.tableFragments ?? []).map((fragment) =>
+    fragment.id === fragmentId ? { ...fragment, paperXmm: paper.xMm, paperYmm: paper.yMm } : fragment,
+  ),
+});

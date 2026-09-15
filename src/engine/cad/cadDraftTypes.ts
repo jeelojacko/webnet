@@ -71,6 +71,21 @@ export interface DraftSheetViewport {
   layerOverrides?: Record<string, { visible?: boolean }>;
 }
 
+export type DraftLabelPlacementState = 'AUTO' | 'MANUAL';
+
+export interface DraftLabelViewportPlacementOverride {
+  dxMm?: number;
+  dyMm?: number;
+  rotationDeg?: number;
+  visible?: boolean;
+}
+
+export interface DraftLabelLeaderState {
+  enabled: boolean;
+  elbowMm?: number;
+  lineweightMm?: number;
+}
+
 export interface DraftDocumentLabel {
   id: string;
   text: string;
@@ -80,6 +95,15 @@ export interface DraftDocumentLabel {
   heightMm?: number;
   provenance?: string;
   overrideText?: string;
+  /** Placement state (default AUTO); manual always wins over auto-place. */
+  placement?: DraftLabelPlacementState;
+  /** Per-viewport paper-mm overrides; presentation only. */
+  viewportOverrides?: Record<string, DraftLabelViewportPlacementOverride>;
+  /** Presentation-only leader reference to the label/source point. */
+  leader?: DraftLabelLeaderState;
+  /** Source entity reference; missing source resolves to BROKEN_REFERENCE. */
+  sourceEntityId?: string;
+  rotationDeg?: number;
 }
 
 export interface DraftSheetObject {
@@ -104,10 +128,63 @@ export interface DraftSheet {
   sheetObjects: DraftSheetObject[];
 }
 
+export interface DraftTitleBlockElement {
+  id: string;
+  kind: 'line' | 'rect' | 'static-text' | 'token-text';
+  /** Paper-mm origin (top-left). All geometry is paper-mm only. */
+  xMm: number;
+  yMm: number;
+  /** Line end (kind 'line') in paper-mm. */
+  x2Mm?: number;
+  y2Mm?: number;
+  /** Box size (kind 'rect' / text bounds) in paper-mm. */
+  widthMm?: number;
+  heightMm?: number;
+  text?: string;
+  tokenTemplate?: string;
+  alignment?: DraftTextAlignment;
+  fontSizeMm?: number;
+  lineweightMm?: number;
+}
+
 export interface DraftTitleBlockDefinition {
   id: string;
   name: string;
   fieldNames: string[];
+  /** Visual template primitives in paper-mm (additive; absent = legacy bar). */
+  elements?: DraftTitleBlockElement[];
+}
+
+export type DraftTableContinueMode = 'MANUAL' | 'AUTO';
+
+export interface DraftTableRowRange {
+  start: number;
+  count: number;
+}
+
+export interface DraftLogicalTable {
+  id: string;
+  name: string;
+  headers: string[];
+  /** The single owned copy of rows; fragments reference ranges only. */
+  rows: string[][];
+  continueMode: DraftTableContinueMode;
+  headerRepeat: boolean;
+  showContinuedMarker: boolean;
+  maxRowsPerFragment: number;
+  order?: string;
+  selectionIds?: string[];
+}
+
+export interface DraftTableFragment {
+  id: string;
+  logicalTableId: string;
+  sheetId: string;
+  fragmentIndex: number;
+  rowRange: DraftTableRowRange;
+  /** Paper-mm placement; moving a fragment never touches source rows. */
+  paperXmm: number;
+  paperYmm: number;
 }
 
 export interface DraftDocumentMetadata {
@@ -126,6 +203,9 @@ export interface DraftDocument {
   sheets: DraftSheet[];
   titleBlockDefinitions: DraftTitleBlockDefinition[];
   labels: DraftDocumentLabel[];
+  /** Logical tables own rows; fragments reference deterministic row ranges. */
+  tables: DraftLogicalTable[];
+  tableFragments: DraftTableFragment[];
   metadata: DraftDocumentMetadata;
 }
 
@@ -190,6 +270,8 @@ export const createBlankDraftDocument = ({
     sheets: [],
     titleBlockDefinitions: [],
     labels: [],
+    tables: [],
+    tableFragments: [],
     metadata: { createdAt: nowIso, updatedAt: nowIso },
   };
 };
@@ -234,10 +316,25 @@ export const cloneDraftDocument = (draft: DraftDocument): DraftDocument => ({
     })),
     sheetObjects: sheet.sheetObjects.map((object) => ({ ...object })),
   })),
-  labels: draft.labels.map((label) => ({ ...label })),
+  labels: draft.labels.map((label) => ({
+    ...label,
+    ...(label.viewportOverrides ? { viewportOverrides: { ...label.viewportOverrides } } : {}),
+    ...(label.leader ? { leader: { ...label.leader } } : {}),
+  })),
   titleBlockDefinitions: draft.titleBlockDefinitions.map((entry) => ({
     ...entry,
     fieldNames: [...entry.fieldNames],
+    ...(entry.elements ? { elements: entry.elements.map((element) => ({ ...element })) } : {}),
+  })),
+  tables: (draft.tables ?? []).map((table) => ({
+    ...table,
+    headers: [...table.headers],
+    rows: table.rows.map((row) => [...row]),
+    ...(table.selectionIds ? { selectionIds: [...table.selectionIds] } : {}),
+  })),
+  tableFragments: (draft.tableFragments ?? []).map((fragment) => ({
+    ...fragment,
+    rowRange: { ...fragment.rowRange },
   })),
   metadata: { ...draft.metadata },
 });
@@ -429,15 +526,83 @@ export const sanitizeDraftDocument = (
     titleBlockDefinitions: Array.isArray(value.titleBlockDefinitions)
       ? value.titleBlockDefinitions.flatMap((entry): DraftTitleBlockDefinition[] => {
           if (!isRecord(entry)) return [];
-          return [
-            {
-              id: stableId(entry.id, 'draft-title-block'),
-              name: asString(entry.name, 'Unnamed title block'),
-              fieldNames: Array.isArray(entry.fieldNames)
-                ? entry.fieldNames.filter((name): name is string => typeof name === 'string')
-                : [],
+          const definition: DraftTitleBlockDefinition = {
+            id: stableId(entry.id, 'draft-title-block'),
+            name: asString(entry.name, 'Unnamed title block'),
+            fieldNames: Array.isArray(entry.fieldNames)
+              ? entry.fieldNames.filter((name): name is string => typeof name === 'string')
+              : [],
+          };
+          if (Array.isArray(entry.elements)) {
+            const elements = entry.elements.flatMap((raw): DraftTitleBlockElement[] => {
+              if (!isRecord(raw)) return [];
+              const kind = raw.kind;
+              if (kind !== 'line' && kind !== 'rect' && kind !== 'static-text' && kind !== 'token-text') return [];
+              const element: DraftTitleBlockElement = {
+                id: stableId(raw.id, 'draft-title-block-element'),
+                kind,
+                xMm: asFinite(raw.xMm, 0),
+                yMm: asFinite(raw.yMm, 0),
+              };
+              for (const key of ['x2Mm', 'y2Mm', 'widthMm', 'heightMm', 'fontSizeMm', 'lineweightMm'] as const) {
+                const v = raw[key];
+                if (typeof v === 'number' && Number.isFinite(v)) (element as unknown as Record<string, unknown>)[key] = v;
+              }
+              if (typeof raw.text === 'string') element.text = raw.text;
+              if (typeof raw.tokenTemplate === 'string') element.tokenTemplate = raw.tokenTemplate;
+              if (raw.alignment === 'center' || raw.alignment === 'right' || raw.alignment === 'left') {
+                element.alignment = raw.alignment;
+              }
+              return [element];
+            });
+            definition.elements = elements;
+          }
+          return [definition];
+        })
+      : [],
+    tables: Array.isArray((value as Record<string, unknown>).tables)
+      ? ((value as Record<string, unknown>).tables as unknown[]).flatMap((entry): DraftLogicalTable[] => {
+          if (!isRecord(entry)) return [];
+          const maxRows = Math.max(1, Math.floor(asFinite(entry.maxRowsPerFragment, 25)));
+          return [{
+            id: stableId(entry.id, 'draft-table'),
+            name: asString(entry.name, 'Table'),
+            headers: Array.isArray(entry.headers)
+              ? entry.headers.filter((h): h is string => typeof h === 'string')
+              : [],
+            rows: Array.isArray(entry.rows)
+              ? entry.rows.flatMap((row): string[][] =>
+                  Array.isArray(row) ? [row.map((cell) => (typeof cell === 'string' ? cell : String(cell ?? '')))] : [],
+                )
+              : [],
+            continueMode: entry.continueMode === 'MANUAL' ? 'MANUAL' : 'AUTO',
+            headerRepeat: entry.headerRepeat !== false,
+            showContinuedMarker: entry.showContinuedMarker !== false,
+            maxRowsPerFragment: maxRows,
+            ...(typeof entry.order === 'string' ? { order: entry.order } : {}),
+            ...(Array.isArray(entry.selectionIds)
+              ? { selectionIds: entry.selectionIds.filter((id): id is string => typeof id === 'string') }
+              : {}),
+          }];
+        })
+      : [],
+    tableFragments: Array.isArray((value as Record<string, unknown>).tableFragments)
+      ? ((value as Record<string, unknown>).tableFragments as unknown[]).flatMap((entry): DraftTableFragment[] => {
+          if (!isRecord(entry)) return [];
+          if (typeof entry.logicalTableId !== 'string' || typeof entry.sheetId !== 'string') return [];
+          const range = isRecord(entry.rowRange) ? entry.rowRange : {};
+          return [{
+            id: stableId(entry.id, 'draft-table-fragment'),
+            logicalTableId: entry.logicalTableId,
+            sheetId: entry.sheetId,
+            fragmentIndex: Math.max(0, Math.floor(asFinite(entry.fragmentIndex, 0))),
+            rowRange: {
+              start: Math.max(0, Math.floor(asFinite(range.start, 0))),
+              count: Math.max(0, Math.floor(asFinite(range.count, 0))),
             },
-          ];
+            paperXmm: asFinite(entry.paperXmm, 10),
+            paperYmm: asFinite(entry.paperYmm, 10),
+          }];
         })
       : [],
     labels: Array.isArray(value.labels)
@@ -455,6 +620,40 @@ export const sanitizeDraftDocument = (
           }
           if (typeof entry.provenance === 'string') label.provenance = entry.provenance;
           if (typeof entry.overrideText === 'string') label.overrideText = entry.overrideText;
+          // AUTO_GENERATED/MANUAL_OVERRIDE read back as AUTO/MANUAL.
+          if (entry.placement === 'MANUAL' || entry.placement === 'MANUAL_OVERRIDE') label.placement = 'MANUAL';
+          else if (entry.placement === 'AUTO' || entry.placement === 'AUTO_GENERATED') label.placement = 'AUTO';
+          if (typeof entry.sourceEntityId === 'string' && entry.sourceEntityId.length > 0) {
+            label.sourceEntityId = entry.sourceEntityId;
+          }
+          if (typeof entry.rotationDeg === 'number' && Number.isFinite(entry.rotationDeg)) {
+            label.rotationDeg = entry.rotationDeg;
+          }
+          if (isRecord(entry.leader)) {
+            const leader: DraftLabelLeaderState = { enabled: entry.leader.enabled === true };
+            if (typeof entry.leader.elbowMm === 'number' && Number.isFinite(entry.leader.elbowMm)) {
+              leader.elbowMm = entry.leader.elbowMm;
+            }
+            if (typeof entry.leader.lineweightMm === 'number' && Number.isFinite(entry.leader.lineweightMm)) {
+              leader.lineweightMm = entry.leader.lineweightMm;
+            }
+            label.leader = leader;
+          }
+          if (isRecord(entry.viewportOverrides)) {
+            const overrides: Record<string, DraftLabelViewportPlacementOverride> = {};
+            for (const [viewportId, override] of Object.entries(entry.viewportOverrides)) {
+              if (!isRecord(override)) continue;
+              const next: DraftLabelViewportPlacementOverride = {};
+              if (typeof override.dxMm === 'number' && Number.isFinite(override.dxMm)) next.dxMm = override.dxMm;
+              if (typeof override.dyMm === 'number' && Number.isFinite(override.dyMm)) next.dyMm = override.dyMm;
+              if (typeof override.rotationDeg === 'number' && Number.isFinite(override.rotationDeg)) {
+                next.rotationDeg = override.rotationDeg;
+              }
+              if (typeof override.visible === 'boolean') next.visible = override.visible;
+              if (Object.keys(next).length > 0) overrides[viewportId] = next;
+            }
+            if (Object.keys(overrides).length > 0) label.viewportOverrides = overrides;
+          }
           return [label];
         })
       : [],

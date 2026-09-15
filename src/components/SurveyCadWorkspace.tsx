@@ -423,6 +423,9 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
                 'Updated CAD layers.',
               );
             }}
+            onDraftChange={(draft) => {
+              replaceActiveDrawing({ ...activeDrawing, draft }, 'Updated title block template.');
+            }}
             onClose={() => setDraftingPanelOpen(false)}
           />
         ) : null}

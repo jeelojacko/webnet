@@ -4,13 +4,15 @@ import type { DraftDocument } from '../../engine/cad/cadDraftTypes';
 import type { CadLayer, CadProject } from '../../engine/cad/cadTypes';
 import { LayerPanel } from './LayerPanel';
 import { SheetWorkspace } from './SheetWorkspace';
+import { TitleBlockTemplateEditor } from './TitleBlockTemplateEditor';
 
-type DraftingTab = 'SHEETS' | 'LAYERS';
+type DraftingTab = 'SHEETS' | 'LAYERS' | 'TITLE_BLOCKS';
 
 interface SurveyCadDraftingPanelProps {
   project: CadProject;
   draft: DraftDocument | undefined;
   onProjectLayersChange: (_layers: CadLayer[]) => void;
+  onDraftChange: (_draft: DraftDocument) => void;
   onClose: () => void;
 }
 
@@ -18,6 +20,7 @@ export const SurveyCadDraftingPanel = ({
   project,
   draft,
   onProjectLayersChange,
+  onDraftChange,
   onClose,
 }: SurveyCadDraftingPanelProps): React.JSX.Element => {
   const [tab, setTab] = useState<DraftingTab>('SHEETS');
@@ -58,6 +61,15 @@ export const SurveyCadDraftingPanel = ({
           >
             Layers
           </button>
+          <button
+            type="button"
+            role="tab"
+            aria-selected={tab === 'TITLE_BLOCKS'}
+            className="rounded border border-slate-600 px-2 py-1 hover:bg-slate-800"
+            onClick={() => setTab('TITLE_BLOCKS')}
+          >
+            Title Blocks
+          </button>
         </div>
         <button
           type="button"
@@ -75,6 +87,12 @@ export const SurveyCadDraftingPanel = ({
           <p className="text-[12px] text-slate-400">
             No sheets yet. Sheets are created with the plan viewport from the current model.
           </p>
+        )
+      ) : tab === 'TITLE_BLOCKS' ? (
+        draft ? (
+          <TitleBlockTemplateEditor draft={draft} projectName={project.name} onDraftChange={onDraftChange} />
+        ) : (
+          <p className="text-[12px] text-slate-400">No draft yet. Title blocks live on the draft document.</p>
         )
       ) : (
         <LayerPanel
