@@ -150,6 +150,54 @@ The Field-to-Finish tab (`SurveyCadFieldToFinishPanel`, hosted in
   (Generated Linework state Generated/Manual override/Detached, feature
   codes, source record); generated-vs-manual state is visible at a glance.
 
+## Adjustment-linked F2F sync (Phase 13E §§1-16,53-56)
+
+`src/engine/fieldToFinish/linkedSync.ts` records WHICH source + catalog
+revision produced the current F2F linework (`FieldToFinishLink` on project
+metadata: generation run id, catalog id/revision, source kind
+`adjustment` | `coordinate-import`, composite `sourceRevision`
+`<inputFingerprint>:<settingsFingerprint>`, source record ids, station
+ids, generated entity/label ids, `syncPolicy: 'manual'`, `status`).
+Limitation: the revision identifies adjustment INPUTS+SETTINGS, not the
+result — identical inputs under a different solver version read CURRENT.
+
+Sync states (`FieldToFinishSyncStatus`, classifier precedence UNLINKED >
+MISSING_SOURCE > MANUAL_CONFLICT > CATALOG_CHANGED >
+SOURCE_TOPOLOGY_CHANGED > FEATURE_METADATA_CHANGED > COORDINATES_CHANGED
+> CURRENT): coordinate-only drift auto-syncs (below); any structural drift
+(new/removed stations, catalog or feature-metadata change, manual
+conflict, missing source) stamps the status and requires an explicit
+structural regen preview — zero silent regeneration.
+
+Auto coordinate propagation (Bucket A2): successful production adjustment
+runs fire `onSuccessfulAdjustmentRun` from
+`useAdjustmentOutcomeApplication`, and `applyAdjustmentRerunToLinkedF2f`
+(`regeneration.ts`) applies coordinate-only deltas to dependents via the
+station index. GENERATED entities move in place (stable ids, order,
+provenance); anchored labels translate by station delta so offsets survive
+with only the derived EL token refreshed; adjusted > sideshot >
+coordinate-only resolution reads adjustment inputs only. Failed runs never
+mutate. Bit-identical reruns are entity-identical. The subscriber commits
+the result as one CAD history entry, so rerun+sync undo together.
+
+Structural-regen-preview requirement: added/removed stations, catalog
+revision mismatch, or feature-metadata drift never auto-regenerate — the
+caller previews via `previewFieldToFinishRegen`
+(added/updated/removed/codes-changed/linework-changed/unmapped/
+manual-conflicts) and applies explicitly with confirmation. Generated
+entities are removed only on confirmed regen; manual entities are never
+auto-deleted.
+
+Manual override semantics (model vs presentation): GENERATED = owned by
+F2F, moves/deletes with sync+regen. MANUAL_OVERRIDE = operator-touched;
+coordinate sync skips it and flags MANUAL_CONFLICT (preserved, stale)
+while structural regen keeps it and reports the conflict — never
+auto-deleted. DETACHED = cut loose from F2F entirely; sync stays silent.
+Presentation-only label state (AUTO/MANUAL placement, paper-mm overrides,
+leaders — see `docs/survey-drafting.md`) is orthogonal: moving a label on
+the sheet does not change its GENERATED/MANUAL_OVERRIDE/DETACHED model
+state, and model sync never rewrites paper placement.
+
 ## Browser E2E (Phase 13D final validation)
 
 `tests-browser/survey-drafting-f2f.spec.ts` walks missions A-W through the

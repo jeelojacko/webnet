@@ -3,7 +3,9 @@
 // Every exporter speaks one shape: the payload plus warnings, errors, and
 // per-entity disposition lists. No silent drops — every skipped entity lands
 // in omittedEntityIds with a warning, every approximated one in
-// approximatedEntityIds with a warning. Serializers that cannot attribute
+// approximatedEntityIds with a warning. Contract: exported XOR omitted;
+// approximated is a subset flag of exported (approximated ⇒ exported +
+// warning). Serializers that cannot attribute
 // entities (pure scene→bytes paths) leave the id lists empty and say so.
 
 export type ExportWarningCode =
