@@ -9,9 +9,15 @@
  * Units: 'm' → Metric/meter; 'ft' → Imperial/foot (INTERNATIONAL foot,
  * 0.3048 m exactly); 'usft' → Imperial/USSurveyFoot (1200/3937 m).
  * Parcels are geometric data only — no legal inference is encoded.
+ *
+ * Error ellipses (§37) are NOT_APPLICABLE in LandXML: confidence-ellipse
+ * semantics have no LandXML 1.2 representation, so requesting them emits a
+ * warning per id and no geometry — never a silent drop, never faked as a
+ * parcel ring or alignment.
  */
 
 import { formatNumber, xmlEscape } from './landxml';
+import { emptyExportResult, finalizeExportResult, type ExportResult } from './cad/exportResult';
 
 export interface CadLandXmlPoint {
   /** Point ID (CgPoint name/oID). */
@@ -56,6 +62,12 @@ export interface CadLandXmlGeometry {
   readonly curves?: readonly CadLandXmlCurve[];
   readonly parcels?: readonly CadLandXmlParcel[];
   readonly alignments?: readonly CadLandXmlAlignment[];
+  /**
+   * Error-ellipse station ids explicitly requested for export. LandXML has
+   * no ellipse representation (NOT_APPLICABLE): each id yields a warning
+   * and no geometry. Absent = nothing requested, no warnings.
+   */
+  readonly errorEllipseIds?: readonly string[];
   /** Opaque CRS metadata string (retained, never transformed). */
   readonly crs?: string;
 }
@@ -83,6 +95,31 @@ const UNIT_ELEMENT: Record<CadLandXmlSettings['units'], string> = {
 /** LandXML point order is NORTHING EASTING elevation. */
 const coordText = (northing: number, easting: number, elevation: number): string =>
   `${formatNumber(northing)} ${formatNumber(easting)} ${formatNumber(elevation)}`;
+
+/**
+ * Serialize CAD geometry to LandXML 1.2 with an ExportResult warning channel.
+ * Throws on unknown point refs, non-finite coordinates, or invalid curve
+ * radii (fail-safe, no partial XML). Requested error ellipses warn per id
+ * (NOT_APPLICABLE) and contribute no geometry.
+ */
+export const buildLandXmlFromCadGeometryWithResult = (
+  geom: CadLandXmlGeometry,
+  settings: CadLandXmlSettings,
+): ExportResult<string> => {
+  const result = emptyExportResult('');
+  (geom.errorEllipseIds ?? []).forEach((id) => {
+    // No NOT_APPLICABLE code in the frozen union — SKIPPED_ENTITY carries
+    // the message; the id list records the disposition.
+    result.warnings.push({
+      code: 'SKIPPED_ENTITY',
+      message: `error-ellipse ${id} has no LandXML representation (NOT_APPLICABLE)`,
+      entityId: id,
+    });
+    result.omittedEntityIds.push(id);
+  });
+  result.output = buildLandXmlFromCadGeometry(geom, settings);
+  return finalizeExportResult(result);
+}
 
 /**
  * Serialize CAD geometry to LandXML 1.2. Throws on unknown point refs,

@@ -10,6 +10,15 @@ import {
   type ModelLabelPlacement,
 } from '../cadExportScene';
 import { buildDxfExportModel, type BuildDxfModelArgs, type DxfExportModel } from './dxfExportModel';
+import {
+  DXF_LINETYPE_CATALOG,
+  dxfLinetypeName,
+  isKnownDxfLinetype,
+  lineweightMmToDxf370,
+  nearestAci,
+  trueColorDxf420,
+} from './dxfColorMap';
+import { resolveEffectiveColor } from '../resolveEffectiveColor';
 import { buildTableFragmentItems } from '../cadExportTables';
 import { serializeDxfModel } from './dxfSerializer';
 
@@ -35,7 +44,7 @@ export interface BuildDxfLayoutArgs {
 }
 
 export interface DxfLayoutWarning {
-  code: 'UNKNOWN_TOKEN' | 'UNSUPPORTED_SHEET_OBJECT' | 'SKIPPED_PAPER_ITEM';
+  code: 'UNKNOWN_TOKEN' | 'UNSUPPORTED_SHEET_OBJECT' | 'SKIPPED_PAPER_ITEM' | 'UNKNOWN_LINETYPE';
   message: string;
 }
 
@@ -81,8 +90,23 @@ interface PaperContext {
   owner: string;
   flipY: (_y: number) => number;
   layers: Set<string>;
+  /** First-seen base hex per paper layer (layer-record color). */
+  layerBase: Map<string, string>;
+  paperColorOf: (_layer: string) => string;
   warnings: DxfLayoutWarning[];
   takeHandle: () => string;
+}
+
+// Same color treatment as model space: nearest-ACI 62 for compatibility
+// plus 420 true color. Omitted only when the item matches its layer base.
+const paperPaint = (ctx: PaperContext, layer: string, stroke: string | undefined): string[] => {
+  const base = ctx.paperColorOf(layer);
+  ctx.layers.add(layer);
+  if (!ctx.layerBase.has(layer)) ctx.layerBase.set(layer, base);
+  const eff = stroke ?? base;
+  if (eff === base && stroke == null) return [];
+  if (eff === base) return [];
+  return [pair(62, String(nearestAci(eff))), pair(420, String(trueColorDxf420(eff)))];
 }
 
 const emitPaperText = (
@@ -93,11 +117,12 @@ const emitPaperText = (
   height: number,
   text: string,
   rotationSceneDeg = 0,
+  stroke?: string,
 ): void => {
-  ctx.layers.add(layer);
+  const paint = paperPaint(ctx, layer, stroke);
   ctx.out.push(
     pair(0, 'TEXT'), pair(5, ctx.takeHandle()), pair(330, ctx.owner),
-    pair(100, 'AcDbEntity'), pair(8, layer),
+    pair(100, 'AcDbEntity'), pair(8, layer), ...paint,
     pair(100, 'AcDbText'),
     pair(10, fmt(x)), pair(20, fmt(ctx.flipY(yScene))), pair(30, '0'),
     pair(40, fmt(height)), pair(1, cleanText(text)), pair(7, 'Standard'),
@@ -107,12 +132,12 @@ const emitPaperText = (
   if (normDeg(rotationSceneDeg) !== 0) ctx.out.push(pair(50, fmt(normDeg(-rotationSceneDeg))));
 };
 
-const emitPaperPolyline = (ctx: PaperContext, layer: string, points: Array<{ x: number; y: number }>, closed: boolean): void => {
+const emitPaperPolyline = (ctx: PaperContext, layer: string, points: Array<{ x: number; y: number }>, closed: boolean, stroke?: string): void => {
   if (points.length === 0) return;
-  ctx.layers.add(layer);
+  const paint = paperPaint(ctx, layer, stroke);
   ctx.out.push(
     pair(0, 'LWPOLYLINE'), pair(5, ctx.takeHandle()), pair(330, ctx.owner),
-    pair(100, 'AcDbEntity'), pair(8, layer),
+    pair(100, 'AcDbEntity'), pair(8, layer), ...paint,
     pair(100, 'AcDbPolyline'),
     pair(90, String(points.length)), pair(70, closed ? '1' : '0'),
   );
@@ -124,17 +149,16 @@ const emitPaperPolyline = (ctx: PaperContext, layer: string, points: Array<{ x: 
 const emitPaperItem = (ctx: PaperContext, item: ExportItem): void => {
   switch (item.kind) {
     case 'line':
-      ctx.layers.add(item.layer);
       ctx.out.push(
         pair(0, 'LINE'), pair(5, ctx.takeHandle()), pair(330, ctx.owner),
-        pair(100, 'AcDbEntity'), pair(8, item.layer),
+        pair(100, 'AcDbEntity'), pair(8, item.layer), ...paperPaint(ctx, item.layer, item.stroke),
         pair(100, 'AcDbLine'),
         pair(10, fmt(item.x1)), pair(20, fmt(ctx.flipY(item.y1))), pair(30, '0'),
         pair(11, fmt(item.x2)), pair(21, fmt(ctx.flipY(item.y2))), pair(31, '0'),
       );
       break;
     case 'polyline':
-      emitPaperPolyline(ctx, item.layer, item.points, item.close);
+      emitPaperPolyline(ctx, item.layer, item.points, item.close, item.stroke);
       break;
     case 'rect':
       emitPaperPolyline(ctx, item.layer, [
@@ -142,13 +166,12 @@ const emitPaperItem = (ctx: PaperContext, item: ExportItem): void => {
         { x: item.x + item.width, y: item.y },
         { x: item.x + item.width, y: item.y + item.height },
         { x: item.x, y: item.y + item.height },
-      ], true);
+      ], true, item.stroke);
       break;
     case 'circle':
-      ctx.layers.add(item.layer);
       ctx.out.push(
         pair(0, 'CIRCLE'), pair(5, ctx.takeHandle()), pair(330, ctx.owner),
-        pair(100, 'AcDbEntity'), pair(8, item.layer),
+        pair(100, 'AcDbEntity'), pair(8, item.layer), ...paperPaint(ctx, item.layer, item.stroke),
         pair(100, 'AcDbCircle'),
         pair(10, fmt(item.cx)), pair(20, fmt(ctx.flipY(item.cy))), pair(30, '0'),
         pair(40, fmt(item.r)),
@@ -162,10 +185,9 @@ const emitPaperItem = (ctx: PaperContext, item: ExportItem): void => {
       const twist = ((-(item.rotationDeg ?? 0)) * Math.PI) / 180;
       const cx = item.cx;
       const cy = ctx.flipY(item.cy);
-      ctx.layers.add(item.layer);
       ctx.out.push(
         pair(0, 'ELLIPSE'), pair(5, ctx.takeHandle()), pair(330, ctx.owner),
-        pair(100, 'AcDbEntity'), pair(8, item.layer),
+        pair(100, 'AcDbEntity'), pair(8, item.layer), ...paperPaint(ctx, item.layer, item.stroke),
         pair(100, 'AcDbEllipse'),
         pair(10, fmt(cx)), pair(20, fmt(cy)), pair(30, '0'),
         pair(11, fmt(item.rx * Math.cos(twist))), pair(21, fmt(item.rx * Math.sin(twist))), pair(31, '0'),
@@ -175,10 +197,9 @@ const emitPaperItem = (ctx: PaperContext, item: ExportItem): void => {
       break;
     }
     case 'arc':
-      ctx.layers.add(item.layer);
       ctx.out.push(
         pair(0, 'ARC'), pair(5, ctx.takeHandle()), pair(330, ctx.owner),
-        pair(100, 'AcDbEntity'), pair(8, item.layer),
+        pair(100, 'AcDbEntity'), pair(8, item.layer), ...paperPaint(ctx, item.layer, item.stroke),
         pair(100, 'AcDbArc'),
         pair(10, fmt(item.cx)), pair(20, fmt(ctx.flipY(item.cy))), pair(30, '0'),
         pair(40, fmt(item.r)),
@@ -187,7 +208,7 @@ const emitPaperItem = (ctx: PaperContext, item: ExportItem): void => {
       );
       break;
     case 'text':
-      emitPaperText(ctx, item.layer, item.x, item.y, item.heightMm, item.text, item.rotationDeg ?? 0);
+      emitPaperText(ctx, item.layer, item.x, item.y, item.heightMm, item.text, item.rotationDeg ?? 0, item.stroke);
       break;
     default:
       break;
@@ -237,11 +258,35 @@ export const buildDxfLayoutText = (args: BuildDxfLayoutArgs): DxfLayoutResult =>
   const takenNames = new Set<string>(['model']);
   const layoutNames = args.draft.sheets.map((sheet) => sanitizeLayoutName(sheet.name, takenNames));
 
+  // Paper layer colors resolve through the shared resolver (project layer
+  // first, then draft layer), matching the scene builder's inheritance.
+  const paperLayerBase = new Map<string, string>();
+  const paperColorOf = (layer: string): string =>
+    resolveEffectiveColor({
+      layer:
+        args.project.layers.find((entry) => entry.id === layer)?.color ??
+        args.draft.layers.find((entry) => entry.id === layer)?.color,
+    });
+  // Full LTYPE table for every referenced type: ByBlock/ByLayer plus each
+  // model linetype. Unknown ids fall back to Continuous AND warn via
+  // UNKNOWN_LINETYPE — never silently solidified.
+  const usedLinetypeIds = [...(model.usedLinetypes ?? ['continuous'])].sort();
+  usedLinetypeIds.forEach((id) => {
+    if (!isKnownDxfLinetype(id)) {
+      warnings.push({ code: 'UNKNOWN_LINETYPE', message: `linetype ${JSON.stringify(id)} falls back to Continuous` });
+    }
+  });
+  const usedLinetypeNames = [...new Set(usedLinetypeIds.map((id) => dxfLinetypeName(id)))].sort();
+
   // Pre-assign structural handles (owners are referenced before definition).
   const vportTable = takeHandle();
   const vportActive = takeHandle();
   const ltypeTable = takeHandle();
-  const ltypeHandles = [takeHandle(), takeHandle(), takeHandle()];
+  const ltypeByBlock = takeHandle();
+  const ltypeByLayer = takeHandle();
+  const ltypeHandles = new Map<string, string>(
+    usedLinetypeNames.map((name) => [name, takeHandle()]),
+  );
   const layerTable = takeHandle();
   const layerHandles = new Map<string, string>();
   layerHandles.set('0', takeHandle());
@@ -280,11 +325,36 @@ export const buildDxfLayoutText = (args: BuildDxfLayoutArgs): DxfLayoutResult =>
   };
 
   // Model-space entities: exact survey coordinates, full precision.
+  // Color treatment matches R12 (nearest-ACI 62) plus 420 true color;
+  // 370 lineweights ride where the model carries them; 6 linetype only
+  // when the entity differs from its layer (BYLAYER by omission).
   const modelOwner = modelSpaceRecord;
+  const modelLayerHex = (layer: string): string => model.layerColors?.[layer] ?? '#ffffff';
+  const modelLayerLinetype = (layer: string): string =>
+    dxfLinetypeName(model.layerLinetypes?.[layer] ?? 'continuous');
+  const modelPaint = (
+    layer: string,
+    colorHex: string | undefined,
+    linetypeId: string | undefined,
+    lineweightMm: number | undefined,
+  ): string[] => {
+    const codes: string[] = [];
+    if (colorHex != null && colorHex !== modelLayerHex(layer)) {
+      codes.push(pair(62, String(nearestAci(colorHex))), pair(420, String(trueColorDxf420(colorHex))));
+    }
+    if (linetypeId != null && dxfLinetypeName(linetypeId) !== modelLayerLinetype(layer)) {
+      codes.push(pair(6, dxfLinetypeName(linetypeId)));
+    }
+    // Layer lineweights ride on the layer table record; entities carry 370
+    // only when they override (BYLAYER by omission otherwise).
+    if (lineweightMm != null) codes.push(pair(370, String(lineweightMmToDxf370(lineweightMm))));
+    return codes;
+  };
   model.points.forEach((point) => {
     emitModelEntity([
       pair(0, 'POINT'), pair(5, takeHandle()), pair(330, modelOwner),
       pair(100, 'AcDbEntity'), pair(8, point.layer),
+      ...modelPaint(point.layer, point.colorHex, point.linetypeId, point.lineweightMm),
       pair(100, 'AcDbPoint'),
       pair(10, fmt(point.at.x)), pair(20, fmt(point.at.y)), pair(30, '0'),
     ]);
@@ -293,6 +363,7 @@ export const buildDxfLayoutText = (args: BuildDxfLayoutArgs): DxfLayoutResult =>
     emitModelEntity([
       pair(0, 'LINE'), pair(5, takeHandle()), pair(330, modelOwner),
       pair(100, 'AcDbEntity'), pair(8, line.layer),
+      ...modelPaint(line.layer, line.colorHex, line.linetypeId, line.lineweightMm),
       pair(100, 'AcDbLine'),
       pair(10, fmt(line.from.x)), pair(20, fmt(line.from.y)), pair(30, '0'),
       pair(11, fmt(line.to.x)), pair(21, fmt(line.to.y)), pair(31, '0'),
@@ -302,6 +373,7 @@ export const buildDxfLayoutText = (args: BuildDxfLayoutArgs): DxfLayoutResult =>
     emitModelEntity([
       pair(0, 'LWPOLYLINE'), pair(5, takeHandle()), pair(330, modelOwner),
       pair(100, 'AcDbEntity'), pair(8, polyline.layer),
+      ...modelPaint(polyline.layer, polyline.colorHex, polyline.linetypeId, polyline.lineweightMm),
       pair(100, 'AcDbPolyline'),
       pair(90, String(polyline.vertices.length)), pair(70, polyline.closed ? '1' : '0'),
     ]);
@@ -313,6 +385,7 @@ export const buildDxfLayoutText = (args: BuildDxfLayoutArgs): DxfLayoutResult =>
     emitModelEntity([
       pair(0, 'ARC'), pair(5, takeHandle()), pair(330, modelOwner),
       pair(100, 'AcDbEntity'), pair(8, arc.layer),
+      ...modelPaint(arc.layer, arc.colorHex, arc.linetypeId, arc.lineweightMm),
       pair(100, 'AcDbArc'),
       pair(10, fmt(arc.center.x)), pair(20, fmt(arc.center.y)), pair(30, '0'),
       pair(40, fmt(arc.radius)), pair(50, fmt(arc.startDeg)), pair(51, fmt(arc.endDeg)),
@@ -322,6 +395,7 @@ export const buildDxfLayoutText = (args: BuildDxfLayoutArgs): DxfLayoutResult =>
     emitModelEntity([
       pair(0, 'TEXT'), pair(5, takeHandle()), pair(330, modelOwner),
       pair(100, 'AcDbEntity'), pair(8, entry.layer),
+      ...modelPaint(entry.layer, entry.colorHex, entry.linetypeId, entry.lineweightMm),
       pair(100, 'AcDbText'),
       pair(10, fmt(entry.at.x)), pair(20, fmt(entry.at.y)), pair(30, '0'),
       pair(40, fmt(entry.height)), pair(1, cleanText(entry.text)), pair(7, 'Standard'),
@@ -337,7 +411,7 @@ export const buildDxfLayoutText = (args: BuildDxfLayoutArgs): DxfLayoutResult =>
     const section: string[] = [];
     const record = paperRecords[sheetIndex] as { handle: string; name: string };
     const flipY = (y: number): number => sheet.heightMm - y;
-    const ctx: PaperContext = { out: section, owner: record.handle, flipY, layers: paperLayers, warnings, takeHandle };
+    const ctx: PaperContext = { out: section, owner: record.handle, flipY, layers: paperLayers, layerBase: paperLayerBase, paperColorOf, warnings, takeHandle };
     // Required full-paper default viewport (id 1): some readers ignore
     // paper space without it. Sheet-sized, centered, 1:1 view height.
     section.push(
@@ -394,7 +468,7 @@ export const buildDxfLayoutText = (args: BuildDxfLayoutArgs): DxfLayoutResult =>
       }
     });
     const titleRecord = titleRecords[sheetIndex] as { handle: string; name: string };
-    const blockCtx: PaperContext = { out: [], owner: titleRecord.handle, flipY, layers: paperLayers, warnings, takeHandle };
+    const blockCtx: PaperContext = { out: [], owner: titleRecord.handle, flipY, layers: paperLayers, layerBase: paperLayerBase, paperColorOf, warnings, takeHandle };
     title.items.forEach((item) => emitPaperItem(blockCtx, item));
     titleBodies.push(blockCtx.out);
     paperBodies.push(section);
@@ -435,26 +509,52 @@ export const buildDxfLayoutText = (args: BuildDxfLayoutArgs): DxfLayoutResult =>
     pair(2, '*Active'), pair(70, '0'),
     pair(0, 'ENDTAB'),
     pair(0, 'TABLE'), pair(2, 'LTYPE'), pair(5, ltypeTable), pair(330, '0'),
-    pair(100, 'AcDbSymbolTable'), pair(70, '3'),
-    pair(0, 'LTYPE'), pair(5, ltypeHandles[0]), pair(330, ltypeTable),
+    pair(100, 'AcDbSymbolTable'), pair(70, String(2 + ltypeHandles.size)),
+    pair(0, 'LTYPE'), pair(5, ltypeByBlock), pair(330, ltypeTable),
     pair(100, 'AcDbSymbolTableRecord'), pair(100, 'AcDbLinetypeTableRecord'),
     pair(2, 'ByBlock'), pair(70, '0'), pair(3, ''), pair(72, '65'), pair(73, '0'), pair(40, '0'),
-    pair(0, 'LTYPE'), pair(5, ltypeHandles[1]), pair(330, ltypeTable),
+    pair(0, 'LTYPE'), pair(5, ltypeByLayer), pair(330, ltypeTable),
     pair(100, 'AcDbSymbolTableRecord'), pair(100, 'AcDbLinetypeTableRecord'),
     pair(2, 'ByLayer'), pair(70, '0'), pair(3, ''), pair(72, '65'), pair(73, '0'), pair(40, '0'),
-    pair(0, 'LTYPE'), pair(5, ltypeHandles[2]), pair(330, ltypeTable),
-    pair(100, 'AcDbSymbolTableRecord'), pair(100, 'AcDbLinetypeTableRecord'),
-    pair(2, 'Continuous'), pair(70, '0'), pair(3, 'Solid line'), pair(72, '65'), pair(73, '0'), pair(40, '0'),
+    ...usedLinetypeNames.flatMap((name) => {
+      const id = usedLinetypeIds.find((entry) => dxfLinetypeName(entry) === name) ?? 'continuous';
+      const def = DXF_LINETYPE_CATALOG[id] ?? DXF_LINETYPE_CATALOG['continuous'];
+      const entry = def as { name: string; pattern: number[] };
+      const rec: string[] = [
+        pair(0, 'LTYPE'), pair(5, ltypeHandles.get(name) as string), pair(330, ltypeTable),
+        pair(100, 'AcDbSymbolTableRecord'), pair(100, 'AcDbLinetypeTableRecord'),
+        pair(2, name), pair(70, '0'),
+      ];
+      if (entry.pattern.length === 0) {
+        rec.push(pair(3, 'Solid line'), pair(72, '65'), pair(73, '0'), pair(40, '0'));
+      } else {
+        const total = entry.pattern.reduce((sum, el) => sum + Math.abs(el), 0);
+        rec.push(
+          pair(3, 'Short dashes'), pair(72, '65'), pair(73, String(entry.pattern.length)),
+          pair(40, fmt(total)),
+        );
+        entry.pattern.forEach((el) => {
+          rec.push(pair(49, fmt(el)), pair(74, el >= 0 ? '0' : '1'));
+        });
+      }
+      return rec;
+    }),
     pair(0, 'ENDTAB'),
     pair(0, 'TABLE'), pair(2, 'LAYER'), pair(5, layerTable), pair(330, '0'),
     pair(100, 'AcDbSymbolTable'), pair(70, String(layerHandles.size)),
   );
   [...layerHandles.entries()].sort((a, b) => (a[0] < b[0] ? -1 : 1)).forEach(([layer, handle]) => {
-    dxf.push(
+    const hex = model.layerColors?.[layer] ?? paperLayerBase.get(layer) ?? '#ffffff';
+    const codes: string[] = [
       pair(0, 'LAYER'), pair(5, handle), pair(330, layerTable),
       pair(100, 'AcDbSymbolTableRecord'), pair(100, 'AcDbLayerTableRecord'),
-      pair(2, layer), pair(70, '0'), pair(62, '7'), pair(6, 'Continuous'),
-    );
+      pair(2, layer), pair(70, '0'),
+      pair(62, String(nearestAci(hex))), pair(420, String(trueColorDxf420(hex))),
+      pair(6, dxfLinetypeName(model.layerLinetypes?.[layer] ?? 'continuous')),
+    ];
+    const weight = model.layerLineweights?.[layer];
+    if (weight != null) codes.push(pair(370, String(lineweightMmToDxf370(weight))));
+    dxf.push(...codes);
   });
   dxf.push(
     pair(0, 'ENDTAB'),
