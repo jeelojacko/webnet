@@ -120,6 +120,7 @@ export const buildAdjustmentResultFromContext = (
       precisionModels: ctx.precisionModels,
       weakGeometryDiagnostics: ctx.weakGeometryDiagnostics,
       chiSquare: ctx.chiSquare,
+      localTestSummary: ctx.localTestSummary,
       statisticalSummary: ctx.statisticalSummary,
       typeSummary: ctx.typeSummary,
       relativePrecision: ctx.relativePrecision,

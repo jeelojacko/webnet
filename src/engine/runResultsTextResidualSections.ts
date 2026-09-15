@@ -1,5 +1,6 @@
 import type { RunResultsTextContext } from './runResultsTextContext';
 import type { AdjustmentResult } from '../types';
+import { formatLocalTestPolicyLine } from './localTestPolicy';
 
 type ResidualSectionContext = Pick<
   RunResultsTextContext,
@@ -113,7 +114,15 @@ const appendResidualDiagnosticsSection = ({
   lines.push(
     `Redundancy: mean=${rd.meanRedundancy != null ? rd.meanRedundancy.toFixed(4) : '-'}, min=${rd.minRedundancy != null ? rd.minRedundancy.toFixed(4) : '-'}, <0.2=${rd.lowRedundancyCount}, <0.1=${rd.veryLowRedundancyCount}`,
   );
-  lines.push(`Critical |t| threshold: ${rd.criticalT.toFixed(2)}`);
+  const localFamily = res.localTestSummary?.statisticFamily ?? 'tau';
+  const localSymbol = localFamily === 'w' ? 'w' : 'τ';
+  // Unavailable derivations carry criticalValue=NaN: render '-' honestly rather
+  // than NaN or a fallback constant that was never derived for this policy.
+  const criticalText =
+    res.localTestSummary?.available === false || !Number.isFinite(rd.criticalT)
+      ? '-'
+      : rd.criticalT.toFixed(2);
+  lines.push(`Critical |${localSymbol}| threshold: ${criticalText} (local-test policy: ${formatLocalTestPolicyLine(res.localTestSummary ?? undefined)})`);
   if (rd.worst) {
     lines.push(
       `Worst: #${rd.worst.obsId} ${rd.worst.type.toUpperCase()} ${rd.worst.stations} line=${rd.worst.sourceLine ?? '-'} |t|=${rd.worst.stdRes != null ? rd.worst.stdRes.toFixed(2) : '-'} r=${rd.worst.redundancy != null ? rd.worst.redundancy.toFixed(3) : '-'} local=${rd.worst.localPass == null ? '-' : rd.worst.localPass ? 'PASS' : 'FAIL'}`,

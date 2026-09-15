@@ -19,6 +19,8 @@ export const buildStatisticsContextForEngine = (engine: any): AdjustmentStatisti
       tsCorrelationRho: engine.tsCorrelationRho,
       tsCorrelationScope: engine.tsCorrelationScope,
       localTestCritical: engine.localTestCritical,
+      localTestPolicy: engine.localTestPolicy,
+      localTestSummary: engine.localTestSummary,
       maxStdRes: engine.maxStdRes,
       traverseThresholds: { ...engine.traverseThresholds },
       parseState: engine.parseState,

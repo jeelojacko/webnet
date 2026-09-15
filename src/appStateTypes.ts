@@ -53,6 +53,7 @@ import type { PreparedAssociatedProjectSettingsImport } from './hooks/useProject
 import type { CadDrawingDocument } from './engine/cad/cadTypes';
 import type { PersistedSavedRunSnapshot, SolveProfile, Units } from './appRunStateTypes';
 import type { GnssMultifilePersistedV1 } from './engine/gnssMultifileProject';
+import type { LocalTestPolicy } from './engine/localTestPolicy';
 
 export type {
   PersistedSavedRunSnapshot,
@@ -304,6 +305,7 @@ export type ParseSettings = {
   tsCorrelationScope: TsCorrelationScope;
   robustMode: RobustMode;
   robustK: number;
+  localTestPolicy?: LocalTestPolicy;
   parseCompatibilityMode: ParseCompatibilityMode;
   parseModeMigrated: boolean;
 };

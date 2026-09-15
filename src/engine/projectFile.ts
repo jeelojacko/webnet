@@ -33,6 +33,7 @@ import {
   isRecord,
   mergeKnownKeys,
   attachGnssMultifileSettings,
+  attachLocalTestPolicySettings,
   normalizeRetiredParseSettings,
   sanitizeCustomPresets,
   sanitizeExportFormat,
@@ -230,6 +231,7 @@ export const parseProjectFile = (
   // the nested gnssMultifile record is re-attached via its own sanitizer.
   attachGnssMultifileSettings(settings, settingsCandidate);
   const parseSettings = mergeKnownKeys(defaults.parseSettings, parseSettingsRaw);
+  attachLocalTestPolicySettings(parseSettings, parseSettingsRaw);
   const exportFormat = sanitizeExportFormat(ui.exportFormat, defaults.exportFormat);
   const adjustedPointsExport = sanitizeAdjustedPointsExportSettings(
     ui.adjustedPointsExport,

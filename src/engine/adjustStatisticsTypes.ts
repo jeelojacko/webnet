@@ -7,6 +7,7 @@ import type { SparseRowProductsSolver } from './numericalBackend';
 import type { ExperimentalSparseRouteDiagnostics } from './experimentalSparseDiagnostics';
 import type { SelectedCovarianceStore } from './selectedCovarianceStore';
 import type { GpsCovariance, GpsSolveVector, GpsVectorDerivatives } from './adjustTypes';
+import type { LocalTestPolicy, LocalTestSummary } from './localTestPolicy';
 import type {
   EquationRowInfo,
   RobustWeightMatrixBase,
@@ -64,6 +65,10 @@ export type AdjustmentStatisticsContext = {
   tsCorrelationRho: number;
   tsCorrelationScope: 'setup' | 'set' | undefined;
   localTestCritical: number;
+  /** Phase 14A formal local-test policy; undefined preserves the legacy 3.29 behavior. */
+  localTestPolicy?: LocalTestPolicy;
+  /** Phase 14A run-level derived local-test summary (set by standardized residuals). */
+  localTestSummary?: LocalTestSummary;
   maxStdRes: number;
   traverseThresholds: {
     minClosureRatio: number;

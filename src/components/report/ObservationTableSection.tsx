@@ -1,7 +1,9 @@
 import React from 'react';
 import type { Observation } from '../../types';
 import { RAD_TO_DEG, radToDmsStr } from '../../engine/angles';
+import type { LocalTestSummary } from '../../engine/localTestPolicy';
 import type { CollapsibleDetailSectionId } from './reportSectionRegistry';
+import { buildLocalTestCellTooltip, formatLocalTestCell } from './localTestDisplay';
 import { REPORT_TABLE_WINDOW_SIZE } from './reportSectionRegistry';
 import CollapsibleSectionHeader from './CollapsibleSectionHeader';
 import ReportLoadMoreFooter from './ReportLoadMoreFooter';
@@ -33,6 +35,7 @@ interface ObservationTableSectionProps {
   onHeaderRef?: (_sectionId: CollapsibleDetailSectionId, _node: HTMLDivElement | null) => void;
   formatMdb: (_value: number, _angular: boolean) => string;
   prismAnnotation: (_observation: Observation) => string;
+  localTestSummary?: LocalTestSummary | null;
 }
 
 const ObservationTableSection: React.FC<ObservationTableSectionProps> = ({
@@ -57,6 +60,7 @@ const ObservationTableSection: React.FC<ObservationTableSectionProps> = ({
   onHeaderRef,
   formatMdb,
   prismAnnotation,
+  localTestSummary,
 }) => {
   if (!obsList.length) return null;
 
@@ -186,13 +190,7 @@ const ObservationTableSection: React.FC<ObservationTableSectionProps> = ({
                 } else if (typeof obs.redundancy === 'number') {
                   redundancyStr = obs.redundancy.toFixed(2);
                 }
-                if (obs.localTestComponents) {
-                  localStr = `E:${obs.localTestComponents.passE ? 'P' : 'F'} N:${
-                    obs.localTestComponents.passN ? 'P' : 'F'
-                  }`;
-                } else if (obs.localTest) {
-                  localStr = obs.localTest.pass ? 'PASS' : 'FAIL';
-                }
+                localStr = formatLocalTestCell(obs);
                 if (obs.mdbComponents) {
                   mdbStr = `E=${formatMdb(obs.mdbComponents.mE, angular)} N=${formatMdb(
                     obs.mdbComponents.mN,
@@ -266,8 +264,11 @@ const ObservationTableSection: React.FC<ObservationTableSectionProps> = ({
                           ? 'text-red-400'
                           : 'text-slate-400'
                       }`}
+                      title={buildLocalTestCellTooltip(obs, localTestSummary)}
                     >
-                      {localStr}
+                      <span tabIndex={0} aria-label={`Local test ${localStr}`}>
+                        {localStr}
+                      </span>
                     </td>
                     <td className="py-1 px-2 text-right font-mono tabular-nums whitespace-nowrap text-slate-500">{mdbStr}</td>
                     <td

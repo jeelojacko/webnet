@@ -158,6 +158,12 @@ export const SETTINGS_TOOLTIPS = {
     'Optional robust adjustment mode. HUBER downweights large normalized residuals during iterations.',
   robustK:
     'Huber tuning constant k (typical 1.5). Lower values downweight outliers more aggressively.',
+  localTestMode:
+    'Local single-outlier test policy. Legacy fixed (3.29) is the default and preserves historical verdicts; Baarda w-test treats sigma0 as known; Pope τ-test estimates sigma (uses SEUW and DOF).',
+  localTestAlpha:
+    'Two-sided nominal significance level (entered alpha; false-positive rate) for formal local tests, between 0 and 0.5: per-test when correction is None, target family-wise level under Bonferroni/Šidák. Ignored by the legacy-fixed policy.',
+  localTestCorrection:
+    'Multiplicity correction over the run test count (testable scalar equations; GPS counts per component). None, Bonferroni, or Šidák. Ignored by the legacy-fixed policy. Bonferroni controls the family-wise rate regardless of dependence; Šidák is exact under independence (conservative for classical jointly Gaussian Baarda two-sided tests) but not guaranteed for Pope shared-SEUW or Huber (approximate).',
   instrument:
     'Select an instrument code to view parsed EDM/angle/centering and other precision parameters.',
   newInstrument:

@@ -3,6 +3,8 @@ import { AlertTriangle, CheckCircle } from 'lucide-react';
 
 import type { AdjustmentResult, Observation } from '../../types';
 import type { SortedObservation } from '../../engine/resultDerivedModels';
+import { formatLocalTestModeLabel } from '../../engine/localTestPolicy';
+import { buildLocalTestSummaryLine } from './localTestDisplay';
 import type { ReportObservationSelectorModel } from './reportObservationSelectors';
 import { REPORT_STATIC_TOOLTIPS } from './reportTooltips';
 
@@ -294,6 +296,60 @@ export const BlunderDetectSummarySection: React.FC<{
           </div>
         </div>
       )}
+    </div>
+  );
+};
+
+/**
+ * Compact LOCAL TESTING strip beneath the Adjustment Summary cards.
+ * Suppressed for preanalysis/data-check/special runs like other diagnostics;
+ * those modes already carry their own disabled-messaging sections.
+ */
+export const LocalTestSummarySection: React.FC<{
+  isDataCheck: boolean;
+  isPreanalysis: boolean;
+  isSpecialRunMode: boolean;
+  result: AdjustmentResult;
+}> = ({ isDataCheck, isPreanalysis, isSpecialRunMode, result }) => {
+  if (isSpecialRunMode || isPreanalysis || isDataCheck) return null;
+  const summary = result.localTestSummary;
+  if (!summary) {
+    return (
+      <div className="mb-6 text-xs text-slate-500" style={{ order: -205 }}>
+        Local testing unavailable for this run.
+      </div>
+    );
+  }
+  const flaggedCount = result.observations.filter(
+    (obs) => obs.localTest != null && obs.localTest.pass === false,
+  ).length;
+  return (
+    <div className="mb-6 text-xs text-slate-300" style={{ order: -205 }}>
+      <span
+        className="uppercase tracking-wider text-slate-500 mr-2"
+        title="Single-outlier data-snooping verdicts under the run policy. Flagged means suspect, never proven blunder."
+      >
+        Local testing
+      </span>
+      <span title={buildLocalTestSummaryLine(summary, flaggedCount)}>
+        {summary.available ? (
+          <>
+            {formatLocalTestModeLabel(summary.mode)} · critical{' '}
+            {Number.isFinite(summary.criticalValue) ? summary.criticalValue.toFixed(2) : '-'} ·{' '}
+            {flaggedCount} flagged of {summary.testCount} tested
+          </>
+        ) : (
+          <>Local testing unavailable — not tested ({summary.unavailableReason ?? 'unknown reason'})</>
+        )}
+      </span>
+      {summary.robustApproximation ? (
+        <span
+          className="ml-2 text-amber-300/90"
+          title={summary.robustApproximationReason ?? 'Robust reweighting active; classical significance is approximate.'}
+        >
+          (robust approximation)
+        </span>
+      ) : null}
     </div>
   );
 };

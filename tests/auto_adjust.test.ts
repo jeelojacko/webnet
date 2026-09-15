@@ -86,4 +86,26 @@ describe('autoAdjust utilities', () => {
     expect(summary.cycles[0].removals).toHaveLength(1);
     expect(summary.cycles[2].removals).toHaveLength(0);
   });
+
+  it('treats null (unavailable) local-test verdicts as not failed, never suspect', () => {
+    const nullPass = makeDistObs(20, 1.0, { sourceLine: 20 });
+    nullPass.localTest = { critical: 2, pass: null };
+    const nullComps = makeDistObs(21, 1.0, { sourceLine: 21 });
+    nullComps.localTest = undefined;
+    nullComps.localTestComponents = { passE: null, passN: null };
+    const explicitFail = makeDistObs(22, 1.0, { localPass: false, sourceLine: 22 });
+    const result = makeResult([nullPass, nullComps, explicitFail]);
+
+    const removals = pickAutoAdjustRemovals(result, new Set(), {
+      enabled: true,
+      stdResThreshold: 3,
+      maxCycles: 3,
+      maxRemovalsPerCycle: 5,
+      minRedundancy: 0.05,
+    });
+
+    // Below-threshold null rows are not selected; only the explicit failure is.
+    expect(removals.map((r) => r.obsId)).toEqual([22]);
+    expect(removals[0].reason).toBe('local-test');
+  });
 });

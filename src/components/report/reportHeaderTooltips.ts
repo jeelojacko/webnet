@@ -25,9 +25,9 @@ export const getReportHeaderTooltip = (rawLabel: string): string | undefined => 
     REDUND:
       'Redundancy number r (0-1 checkability); higher means better blunder detectability.',
     LOCAL:
-      'Local test of |StdRes| against the configured critical value (PASS/FAIL); per-component E/N verdicts for 2D GNSS when available, aggregate verdict for 3D GNSS.',
+      'Local single-outlier test on the standardized residual (PASS/FAIL, - when not tested). Default policy is legacy-fixed (critical 3.29); formal options are the Baarda w-test (sigma0 known) and the Pope τ-test (sigma estimated). Per-component E/N verdicts for 2D GNSS when available. See the LOCAL TESTING summary for the run policy.',
     MDB:
-      'Minimal Detectable Bias: smallest blunder detectable here, from the configured critical value, SEUW, sigma and redundancy.',
+      'Minimal Detectable Bias: smallest blunder detectable here from the legacy 3.29 critical value, SEUW, sigma and redundancy (reliability-model based, ~50% detection level; see docs/STATISTICAL_TESTING.md).',
     'Σ':
       'A priori sigma actually used for weighting (effective sigma, post-solve capture). Number shown, or - for defaults with the value in the tooltip; provenance (explicit/default/fixed/float) is always in the tooltip. GNSS rows show provenance labels (e.g. EXPLICIT, E=FIXED N=FLOAT), not a numeric sigma.',
     SIGMA:

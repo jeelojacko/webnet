@@ -55,6 +55,7 @@ type ReportViewPrecisionResidualsBandProps = {
   flaggedStationCues: React.ComponentProps<typeof WeakGeometryCuesSection>['flaggedStationCues'];
   focusFilterRequestKey: number;
   formatMdb: (_value: number, _angular: boolean) => string;
+  localTestSummary?: AdjustmentResult['localTestSummary'];
   importedGroupOptions: string[];
   isDataCheck: boolean;
   isDetailSectionPinned: (_id: CollapsibleDetailSectionId) => boolean;
@@ -159,6 +160,7 @@ const ReportViewPrecisionResidualsBand: React.FC<ReportViewPrecisionResidualsBan
   flaggedStationCues,
   focusFilterRequestKey,
   formatMdb,
+  localTestSummary,
   importedGroupOptions,
   isDataCheck,
   isDetailSectionPinned,
@@ -331,6 +333,7 @@ const ReportViewPrecisionResidualsBand: React.FC<ReportViewPrecisionResidualsBan
         byType={byType}
         excludedIds={excludedIds}
         formatMdb={formatMdb}
+        localTestSummary={localTestSummary}
         isDetailSectionPinned={isDetailSectionPinned}
         isSectionCollapsed={isSectionCollapsed}
         onHeaderRef={onHeaderRef}

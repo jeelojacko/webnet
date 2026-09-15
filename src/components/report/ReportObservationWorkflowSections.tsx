@@ -1,6 +1,7 @@
 import React from 'react';
 
 import type { SortedObservation } from '../../engine/resultDerivedModels';
+import type { LocalTestSummary } from '../../engine/localTestPolicy';
 import type { AdjustmentResult, Observation, Station } from '../../types';
 import AdjustedCoordinatesSection from './AdjustedCoordinatesSection';
 import ObservationTableSection from './ObservationTableSection';
@@ -29,6 +30,7 @@ type SharedObservationTableProps = SectionControls & {
   autoSideshotObsIds: Set<number>;
   excludedIds: Set<number>;
   formatMdb: (_value: number, _angular: boolean) => string;
+  localTestSummary?: LocalTestSummary | null;
   onSelectObservation?: (_observationId: number) => void;
   onToggleExclude: (_observationId: number) => void;
   prismAnnotation: (_observation: Observation) => string;

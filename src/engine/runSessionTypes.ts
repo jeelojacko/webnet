@@ -1,4 +1,5 @@
 import type { ProjectRunFile } from './projectWorkspace';
+import type { LocalTestPolicy } from './localTestPolicy';
 import type {
   AdjustmentResult,
   ClusterApprovedMerge,
@@ -108,6 +109,7 @@ export interface RunSessionParseSettings {
   tsCorrelationScope: TsCorrelationScope;
   robustMode: RobustMode;
   robustK: number;
+  localTestPolicy?: LocalTestPolicy;
   parseCompatibilityMode: ParseCompatibilityMode;
   parseModeMigrated: boolean;
 }

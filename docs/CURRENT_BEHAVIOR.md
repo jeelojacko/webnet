@@ -175,6 +175,7 @@ Current solve behavior includes:
 - weighted control and elevation constraints from station standard errors
 - under-observed-station and setup diagnostics
 - SEUW, DOF, condition diagnostics, chi-square summaries, local tests, and MDB values
+- local-test policy selection (legacy-fixed default, Baarda w, Pope τ) with run-level critical values; see `docs/STATISTICAL_TESTING.md` for the global-vs-local-vs-MDB distinction
 - redundancy numbers and residual diagnostics
 - point precision and relative precision
 - deterministic review-oriented ranking and sorting

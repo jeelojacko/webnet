@@ -106,6 +106,7 @@ export interface AdjustmentResultPayloadInput {
   precisionModels?: AdjustmentResult['precisionModels'];
   weakGeometryDiagnostics?: AdjustmentResult['weakGeometryDiagnostics'];
   chiSquare?: AdjustmentResult['chiSquare'];
+  localTestSummary?: AdjustmentResult['localTestSummary'];
   statisticalSummary?: AdjustmentResult['statisticalSummary'];
   typeSummary?: AdjustmentResult['typeSummary'];
   relativePrecision?: AdjustmentResult['relativePrecision'];
@@ -146,6 +147,7 @@ export const buildAdjustmentResultPayload = (
   precisionModels: input.precisionModels,
   weakGeometryDiagnostics: input.weakGeometryDiagnostics,
   chiSquare: input.chiSquare,
+  localTestSummary: input.localTestSummary,
   statisticalSummary: input.statisticalSummary,
   typeSummary: input.typeSummary,
   relativePrecision: input.relativePrecision,
