@@ -2,8 +2,11 @@ import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, it } from 'vitest';
 
 import { solveEngine } from '../src/engine/solveEngine';
+import { RAD_TO_DEG } from '../src/engine/angles';
 import type { ReliabilityPolicy } from '../src/engine/reliabilityPolicy';
 import {
+  activeMdbComponentsOf,
+  activeMdbOf,
   buildCoordEffCellTooltip,
   buildMdbCellTooltip,
   buildMdbHeaderTooltip,
@@ -120,6 +123,46 @@ describe('reliability cell rendering', () => {
     expect(tip).toContain('power 0.9');
     expect(tip).toContain('Linear equivalent');
   });
+
+  it('selects the active statistical value in the table cell, tooltip, and summary line', () => {
+    const statistical = run(OUTLIER_INPUT, { model: 'statistical', alpha: 0.001, power: 0.8 });
+    const legacy = run(OUTLIER_INPUT);
+    const summary = statistical.reliabilitySummary!;
+    const angular = (statistical.observations as Observation[]).find(
+      (o) => o.type === 'angle',
+    ) as Observation;
+    const legacyAngular = (legacy.observations as Observation[]).find(
+      (o) => o.id === angular.id,
+    ) as Observation;
+    const statArcSec = ((angular.reliability?.mdbStatistical as number) * RAD_TO_DEG * 3600).toFixed(2);
+    const legacyArcSec = ((legacyAngular.mdb as number) * RAD_TO_DEG * 3600).toFixed(2);
+    expect(statArcSec).not.toBe(legacyArcSec);
+    // Tooltip shows the active statistical MDB, not the legacy value.
+    const tip = buildMdbCellTooltip(angular, summary);
+    expect(tip).toContain(`MDB ${statArcSec}"`);
+    expect(tip).not.toContain(`MDB ${legacyArcSec}"`);
+    // Table cell shows the active statistical MDB, not the legacy value.
+    const html = renderToStaticMarkup(
+      <ObservationTableSection
+        {...tableProps}
+        obsList={statistical.observations}
+        reliabilitySummary={summary}
+      />,
+    );
+    expect(html).toContain(
+      `MDB ${(angular.reliability?.mdbStatistical as number).toFixed(3)}`,
+    );
+    // Worst-internal summary ranks the active statistical values.
+    const line = buildReliabilitySummaryLine(
+      summary,
+      statistical.observations as Observation[],
+    );
+    const worstLinear = (statistical.observations as Observation[])
+      .filter((o) => o.type !== 'angle')
+      .reduce((best, o) => Math.max(best, activeMdbOf(o, summary)), Number.NEGATIVE_INFINITY);
+    expect(line).toContain(`worst internal (linear)`);
+    expect(line).toContain(`${(worstLinear * 1000).toFixed(1)}mm`);
+  });
 });
 
 describe('reliability summary section', () => {
@@ -149,6 +192,7 @@ describe('reliability summary section', () => {
     expect(line).toContain('worst internal (linear)');
     expect(line).toContain('worst internal (angular)');
     expect(line).toContain('worst coordinate influence');
+    expect(line).toContain('(horizontal)');
   });
 
   it('is suppressed for preanalysis and data-check runs', () => {
@@ -162,6 +206,82 @@ describe('reliability summary section', () => {
       />,
     );
     expect(preHtml).toBe('');
+  });
+});
+
+describe('fail-closed statistical display', () => {
+  it('never substitutes legacy MDB under a Statistical label when statistical storage is missing/nonfinite', () => {
+    const statistical = run(OUTLIER_INPUT, { model: 'statistical', alpha: 0.001, power: 0.8 });
+    const summary = statistical.reliabilitySummary!;
+    const target = (statistical.observations as Observation[])[0] as Observation;
+    expect(target.reliability?.mdbStatistical).toBeDefined();
+    // Missing statistical storage (unavailable/untestable row): legacy stays
+    // in storage but must never surface under the statistical model.
+    const { mdbStatistical: _dropped, ...reliabilityRest } = target.reliability as Record<
+      string,
+      unknown
+    >;
+    void _dropped;
+    const missing = {
+      ...target,
+      reliability: { ...(reliabilityRest as Observation['reliability']) },
+    } as Observation;
+    expect(Number.isNaN(activeMdbOf(missing, summary))).toBe(true);
+    expect(activeMdbComponentsOf(missing, summary)).toBeUndefined();
+    // Legacy/default selection is untouched (bit-identical default path).
+    expect(activeMdbOf(missing, undefined)).toBe(missing.mdb);
+    // Components never fall back to legacy storage in statistical mode.
+    const legacyComps = {
+      mdbComponents: { mE: 0.01, mN: 0.02 },
+      reliability: { mdb: 0.01, mdbStatistical: 0.005, method: 'exact-normal' },
+    } as unknown as Observation;
+    expect(activeMdbComponentsOf(legacyComps, summary)).toBeUndefined();
+    // Tooltip labels Statistical MDB with an untestable value, not legacy.
+    const tip = buildMdbCellTooltip(missing, summary);
+    expect(tip).toContain('Statistical MDB');
+    expect(tip).toContain('untestable');
+    // Table cell is blank, not the legacy value.
+    const html = renderToStaticMarkup(
+      <ObservationTableSection
+        {...tableProps}
+        obsList={[missing]}
+        reliabilitySummary={summary}
+      />,
+    );
+    expect(html).toContain('MDB -');
+    expect(html).not.toContain(`MDB ${(missing.mdb as number).toFixed(3)}`);
+    // CSV active column is blank while the legacy compatibility column stays.
+    const patched = {
+      ...(statistical as unknown as AdjustmentResult),
+      observations: (statistical.observations as Observation[]).map((o) =>
+        o.id === missing.id ? missing : o,
+      ),
+    } as unknown as AdjustmentResult;
+    const text = buildObservationsResidualsCsvText({ result: patched, units: 'm' });
+    const lines = text.split('\n');
+    const header = lines[0].split(',');
+    const row = lines.find((l) => l.startsWith(`${missing.id},`))!.split(',');
+    expect(row[header.indexOf('reliabilityMdb')]).toBe('');
+    expect(row[header.indexOf('mdb')]).toBe((missing.mdb as number).toFixed(4));
+    // +Inf statistical storage likewise never resolves to legacy.
+    const infObs = {
+      ...target,
+      reliability: { ...target.reliability, mdbStatistical: Number.POSITIVE_INFINITY },
+    } as Observation;
+    expect(activeMdbOf(infObs, summary)).toBe(Number.POSITIVE_INFINITY);
+    expect(buildMdbCellTooltip(infObs, summary)).toContain('untestable');
+    const patchedInf = {
+      ...(statistical as unknown as AdjustmentResult),
+      observations: (statistical.observations as Observation[]).map((o) =>
+        o.id === target.id ? infObs : o,
+      ),
+    } as unknown as AdjustmentResult;
+    const infText = buildObservationsResidualsCsvText({ result: patchedInf, units: 'm' });
+    const infRow = infText
+      .split('\n')
+      .find((l) => l.startsWith(`${target.id},`))!
+      .split(',');
+    expect(infRow[header.indexOf('reliabilityMdb')]).toBe('');
   });
 });
 
@@ -181,14 +301,18 @@ describe('reliability CSV fields', () => {
       'reliabilityAlpha',
       'reliabilityPower',
       'reliabilityDelta0',
-      'mdb',
-      'mdbLinearMm',
-      'externalPrimaryMm',
-      'externalAffectedStation',
-      'externalDEmm',
-      'externalDNmm',
-      'externalDHmm',
+      'reliabilityMdb',
+      'reliabilityMdbLinearMm',
+      'reliabilityExternalPrimaryMm',
+      'reliabilityExternalAffectedStation',
+      'reliabilityExternalDEmm',
+      'reliabilityExternalDNmm',
+      'reliabilityExternalDHmm',
     ]);
+    // Every CSV header is unique; legacy compatibility MDB columns stay
+    // separate from the active-model reliability MDB columns.
+    expect(new Set(header).size).toBe(header.length);
+    expect(header.indexOf('mdb')).toBeLessThan(header.indexOf('reliabilityMdb'));
     const idx = (name: string): number => header.indexOf(name);
     expect(lines[1].split(',').length).toBe(header.length);
     const dataRow = lines[1].split(',');
@@ -196,8 +320,50 @@ describe('reliability CSV fields', () => {
     expect(dataRow[idx('reliabilityAlpha')]).toBe('0.001');
     expect(dataRow[idx('reliabilityPower')]).toBe('0.8');
     expect(dataRow[idx('reliabilityDelta0')]).toBe('4.132');
-    expect(dataRow[idx('mdb')]).not.toBe('');
-    expect(dataRow[idx('externalPrimaryMm')]).not.toBe('');
-    expect(dataRow[idx('externalAffectedStation')]).not.toBe('');
+    expect(dataRow[idx('reliabilityMdb')]).not.toBe('');
+    expect(dataRow[idx('reliabilityExternalPrimaryMm')]).not.toBe('');
+    expect(dataRow[idx('reliabilityExternalAffectedStation')]).not.toBe('');
+  });
+
+  it('reports the active statistical MDB in reliabilityMdb while legacy mdb stays historical', () => {
+    const statistical = run(OUTLIER_INPUT, { model: 'statistical', alpha: 0.001, power: 0.8 });
+    const legacy = run(OUTLIER_INPUT);
+    const text = buildObservationsResidualsCsvText({
+      result: statistical as unknown as AdjustmentResult,
+      units: 'm',
+    });
+    const lines = text.split('\n');
+    const header = lines[0].split(',');
+    const idx = (name: string): number => header.indexOf(name);
+    // First data row is the first distance observation in both runs.
+    const statObs = (statistical.observations as Observation[])[0] as Observation;
+    const legacyObs = (legacy.observations as Observation[]).find(
+      (o) => o.id === statObs.id,
+    ) as Observation;
+    const expectedActive =
+      statObs.reliability?.mdbStatistical ?? statObs.reliability?.mdb ?? statObs.mdb;
+    const row = lines[1].split(',');
+    // Active reliability column carries the statistical value, formatted
+    // with the same linear formatter as the legacy column.
+    expect(row[idx('reliabilityMdb')]).toBe(
+      (expectedActive as number).toFixed(4),
+    );
+    // Legacy compatibility column keeps the historical 3.29-scaled value.
+    expect(row[idx('mdb')]).toBe((legacyObs.mdb as number).toFixed(4));
+    expect(row[idx('reliabilityMdb')]).not.toBe(row[idx('mdb')]);
+    // Angular linear equivalent follows the active (statistical) model.
+    const angular = (statistical.observations as Observation[]).find(
+      (o) => o.type === 'angle',
+    ) as Observation;
+    expect(angular.reliability?.mdbLinearMm).toBeDefined();
+    const legacyAngular = (legacy.observations as Observation[]).find(
+      (o) => o.type === 'angle',
+    ) as Observation;
+    const expectedRatio =
+      (angular.reliability?.mdbStatistical as number) / (angular.mdb as number);
+    expect(angular.reliability?.mdbLinearMm).toBeCloseTo(
+      (legacyAngular.reliability?.mdbLinearMm as number) * expectedRatio,
+      9,
+    );
   });
 });

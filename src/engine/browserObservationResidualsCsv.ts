@@ -1,5 +1,6 @@
 import { formatObservationStationsLabel } from './resultDerivedModels';
-import { primaryExternalOf } from './reliabilityDisplay';
+import { activeMdbOf, primaryExternalOf } from './reliabilityDisplay';
+import type { ReliabilitySummary } from './reliabilityPolicy';
 import {
   csvRow,
   formatArcSeconds,
@@ -93,17 +94,18 @@ const observationUnits = (
   };
 };
 
-const scalarMdbNative = (obs: Observation): number | null => {
-  if (obs.mdb != null && Number.isFinite(obs.mdb)) return obs.mdb;
-  if (obs.reliability != null && Number.isFinite(obs.reliability.mdb)) {
-    return obs.reliability.mdb;
-  }
-  const comps = obs.mdbComponents;
-  if (comps) {
-    const finite = [comps.mE, comps.mN].filter((value) => Number.isFinite(value));
-    if (finite.length > 0) return Math.min(...finite);
-  }
-  return null;
+/**
+ * Active run-model MDB for the reliability CSV columns: the statistical MDB
+ * when the run model is statistical and the observation carries one, else
+ * the legacy compatibility value. Legacy `mdb`/`mdbE`/`mdbN` columns keep
+ * the historical legacy value untouched.
+ */
+const activeMdbNative = (
+  obs: Observation,
+  summary?: ReliabilitySummary | null,
+): number | null => {
+  const active = activeMdbOf(obs, summary);
+  return Number.isFinite(active) ? active : null;
 };
 
 /** Additive Phase 14B reliability columns; empty strings when unavailable. */
@@ -111,6 +113,7 @@ const buildReliabilityValueFields = (
   obs: Observation,
   unitScale: number,
   reliabilityHeader: { model: string; alpha: string; power: string; delta0: string },
+  summary?: ReliabilitySummary | null,
 ): {
   reliabilityModel: string;
   reliabilityAlpha: string;
@@ -137,7 +140,7 @@ const buildReliabilityValueFields = (
     reliabilityExternalDNmm: '',
     reliabilityExternalDHmm: '',
   };
-  const mdb = scalarMdbNative(obs);
+  const mdb = activeMdbNative(obs, summary);
   if (mdb != null) {
     empty.reliabilityMdb = isAngularObservation(obs)
       ? formatArcSeconds(mdb)
@@ -160,6 +163,7 @@ const buildObservationValueFields = (
   obs: Observation,
   unitScale: number,
   reliabilityHeader: { model: string; alpha: string; power: string; delta0: string },
+  summary?: ReliabilitySummary | null,
 ): {
   observedValue: string;
   observedDeltaE: string;
@@ -239,7 +243,7 @@ const buildObservationValueFields = (
     mdbE: formatLinear(obs.mdbComponents?.mE, unitScale),
     mdbN: formatLinear(obs.mdbComponents?.mN, unitScale),
     effectiveDistance: formatLinear(obs.effectiveDistance, unitScale),
-    ...buildReliabilityValueFields(obs, unitScale, reliabilityHeader),
+    ...buildReliabilityValueFields(obs, unitScale, reliabilityHeader, summary),
   };
 
   if (obs.type === 'gps') {
@@ -339,13 +343,13 @@ export const OBSERVATIONS_RESIDUALS_CSV_COLUMNS = [
   'reliabilityAlpha',
   'reliabilityPower',
   'reliabilityDelta0',
-  'mdb',
-  'mdbLinearMm',
-  'externalPrimaryMm',
-  'externalAffectedStation',
-  'externalDEmm',
-  'externalDNmm',
-  'externalDHmm',
+  'reliabilityMdb',
+  'reliabilityMdbLinearMm',
+  'reliabilityExternalPrimaryMm',
+  'reliabilityExternalAffectedStation',
+  'reliabilityExternalDEmm',
+  'reliabilityExternalDNmm',
+  'reliabilityExternalDHmm',
 ] as const;
 
 export const buildObservationsResidualsCsvText = (params: {
@@ -370,7 +374,7 @@ export const buildObservationsResidualsCsvText = (params: {
     .forEach((obs) => {
       const endpoints = observationEndpoints(obs);
       const unitsRow = observationUnits(obs, linearUnitLabel);
-      const values = buildObservationValueFields(obs, unitScale, reliabilityHeader);
+      const values = buildObservationValueFields(obs, unitScale, reliabilityHeader, summary);
       lines.push(
         csvRow([
           obs.id,

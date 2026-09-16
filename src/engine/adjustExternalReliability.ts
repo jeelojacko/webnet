@@ -158,6 +158,18 @@ const shiftForRow = (
   });
 };
 
+/**
+ * Argmax stability for worst-station selection: symmetric geometries
+ * (e.g. leveling between adjacent benchmarks) produce exact-magnitude
+ * ties with opposite signs, and native-vs-TS Qxx noise flips strict->
+ * winners in the last ulp — relabeling the affected station and the
+ * reported shift sign. Keep the incumbent (earlier station) unless the
+ * challenger leads beyond solver-noise scale (1e-9 relative, 1e-18 mm
+ * floor); reported magnitudes are unaffected at display/parity resolution.
+ */
+const isDecisiveLead = (candidate: number, incumbent: number): boolean =>
+  candidate > incumbent * (1 + 1e-9) && candidate > incumbent + 1e-18;
+
 const summarizeShifts = (
   is2D: boolean,
   shifts: ExternalStationShift[],
@@ -175,7 +187,7 @@ const summarizeShifts = (
     maxComponentMm = Math.max(maxComponentMm, Math.abs(shift.dE), Math.abs(shift.dN));
     if (shift.dH != null) maxComponentMm = Math.max(maxComponentMm, Math.abs(shift.dH));
     const horizontal = Math.sqrt(shift.dE * shift.dE + shift.dN * shift.dN);
-    if (horizontal > maxHorizontalMm) {
+    if (isDecisiveLead(horizontal, maxHorizontalMm)) {
       maxHorizontalMm = horizontal;
       if (is2D) {
         affectedStation = shift.stationId;
@@ -185,7 +197,7 @@ const summarizeShifts = (
     if (!is2D && shift.dH != null) {
       maxVerticalMm = Math.max(maxVerticalMm ?? 0, Math.abs(shift.dH));
       const mag3d = Math.sqrt(horizontal * horizontal + shift.dH * shift.dH);
-      if (max3dMm == null || mag3d > max3dMm) {
+      if (max3dMm == null || isDecisiveLead(mag3d, max3dMm)) {
         max3dMm = mag3d;
         affectedStation = shift.stationId;
         affected = shift;

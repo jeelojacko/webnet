@@ -160,13 +160,13 @@ describe('browser export serializers', () => {
       'reliabilityAlpha',
       'reliabilityPower',
       'reliabilityDelta0',
-      'mdb',
-      'mdbLinearMm',
-      'externalPrimaryMm',
-      'externalAffectedStation',
-      'externalDEmm',
-      'externalDNmm',
-      'externalDHmm',
+      'reliabilityMdb',
+      'reliabilityMdbLinearMm',
+      'reliabilityExternalPrimaryMm',
+      'reliabilityExternalAffectedStation',
+      'reliabilityExternalDEmm',
+      'reliabilityExternalDNmm',
+      'reliabilityExternalDHmm',
     ]);
 
     const text = buildObservationsResidualsCsvText({ result, units: 'm' });

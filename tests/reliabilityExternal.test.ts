@@ -11,6 +11,7 @@ import {
 } from '../src/engine/adjustExternalReliability';
 import type { ExternalInfluence } from '../src/engine/adjustExternalReliability';
 import { statisticalMdb } from '../src/engine/reliabilityPolicy';
+import { primaryExternalOf } from '../src/engine/reliabilityDisplay';
 import type { Observation } from '../src/types';
 
 type Available = Extract<ExternalInfluence, { available: true }>;
@@ -441,6 +442,194 @@ describe('GPS components use the coupled 2x2 block (J)', () => {
     };
     expect(vectorRelErr(brute, analytic)).toBeLessThan(1e-6);
     expect(Math.sign(brute.dE)).toBe(Math.sign(analytic.dE));
+  });
+});
+
+describe('realistic-sigma nonlinear re-solve (M)', () => {
+  // NOTE on tolerance: the fixtures above use exact-geometry, tiny-sigma
+  // networks so perturb-by-MDB re-solves stay in the linear regime
+  // (agreement 1e-6). Here the sigmas are realistic (10 mm / 1 arcsec),
+  // the network carries a 40 mm outlier, and the MDB step itself is
+  // ~50 mm on a 64 m line: the re-solve samples second-order curvature
+  // plus iterative-solve noise. Agreement at 1e-3 relative (~0.1%) is the
+  // documented curvature-regime check; it still verifies sign, magnitude,
+  // and the full-P-column coupling.
+  it('matches perturb-by-+MDB re-solves to 1e-3 with realistic sigmas', () => {
+    const base = run2D(OUTLIER_INPUT);
+    expect(base.success).toBe(true);
+    for (const obs of base.observations) {
+      if (obs.type !== 'dist') continue;
+      const ext = available(obs);
+      const mdb = (obs.reliability as unknown as { mdbStatistical: number }).mdbStatistical;
+      expect(Number.isFinite(mdb)).toBe(true);
+      const raw = (obs as unknown as { obs: number }).obs;
+      const pert = run2D(OUTLIER_INPUT, { [obs.id]: { obs: raw + mdb } });
+      expect(pert.success).toBe(true);
+      const analytic = shiftOf(ext, 'P');
+      const brute = {
+        dE: (pert.stations.P.x - base.stations.P.x) * 1000,
+        dN: (pert.stations.P.y - base.stations.P.y) * 1000,
+        dH: 0,
+      };
+      expect(vectorRelErr(brute, analytic)).toBeLessThan(1e-3);
+      const dom = Math.abs(analytic.dE) >= Math.abs(analytic.dN) ? 'dE' : 'dN';
+      expect(Math.sign((brute as Record<string, number>)[dom])).toBe(Math.sign(analytic[dom]));
+    }
+  });
+});
+
+/** 3D GPS covariance fixture: two fixed controls, one free point, redundant distances. */
+const GPS_3D_INPUT = [
+  '.3D',
+  'C A 0 0 100 ! ! !',
+  'C B 100 0 100 ! ! !',
+  'C P 50 40 101',
+  '.GPS WEIGHT COVARIANCE',
+  "G0 'probe",
+  'G1 A-P 50.0 40.0 1.0',
+  'G2 0.0001 0.0001 0.0001',
+  'G3 0.0 0.0 0.0',
+  'G1 B-P -50.0 40.0 1.0',
+  'G2 0.0001 0.0001 0.0001',
+  'G3 0.0 0.0 0.0',
+  'D A-P 64.0390505863415 0.01',
+  'D B-P 64.0390505863415 0.01',
+].join('\n');
+
+describe('3D GPS U component and max-component aggregation (N)', () => {
+  it('exposes E/N/U statistical MDBs with a min-finite aggregate', () => {
+    const result = solveEngine({
+      input: GPS_3D_INPUT,
+      maxIterations: 30,
+      parseOptions: { coordMode: '3D', units: 'm', reliabilityPolicy: { model: 'statistical' } },
+    });
+    expect(result.success).toBe(true);
+    const gps = result.observations.find((o) => o.type === 'gps');
+    expect(gps).toBeDefined();
+    const statComps = gps?.reliability?.mdbStatisticalComponents;
+    expect(statComps?.mE).toBeDefined();
+    expect(statComps?.mN).toBeDefined();
+    expect(statComps?.mU).toBeDefined();
+    expect(Number.isFinite(statComps?.mE)).toBe(true);
+    expect(Number.isFinite(statComps?.mN)).toBe(true);
+    expect(Number.isFinite(statComps?.mU)).toBe(true);
+    const finite = [statComps?.mE, statComps?.mN, statComps?.mU].filter(
+      (value): value is number => Number.isFinite(value),
+    );
+    expect(gps?.reliability?.mdbStatistical).toBe(Math.min(...finite));
+  });
+
+  it('aggregates external influence by max component and matches the E re-solve', () => {
+    const run3DStat = (inp: string, over?: Record<number, { obs: { dE: number; dN: number } }>) =>
+      solveEngine({
+        input: inp,
+        maxIterations: 30,
+        ...(over ? { overrides: over } : {}),
+        parseOptions: { coordMode: '3D', units: 'm', reliabilityPolicy: { model: 'statistical' } },
+      });
+    const base = run3DStat(GPS_3D_INPUT);
+    expect(base.success).toBe(true);
+    const gps = base.observations.find((o) => o.type === 'gps');
+    const comps = gps?.reliability?.externalComponents;
+    expect(comps?.E?.available).toBe(true);
+    expect(comps?.N?.available).toBe(true);
+    expect(comps?.U?.available).toBe(true);
+    // Max-component aggregation: the observation-level influence is the
+    // strongest per-component effect, not a joint vector influence.
+    const primaries = [comps?.E, comps?.N, comps?.U]
+      .filter((entry): entry is Available => entry?.available === true)
+      .map((entry) => entry.primaryMm);
+    expect(primaryExternalOf(gps as Observation)?.available).toBe(true);
+    expect((primaryExternalOf(gps as Observation) as Available).primaryMm).toBe(
+      Math.max(...primaries),
+    );
+    // Perturb dE by the E-component statistical MDB (curvature-regime
+    // tolerance per the note in (M)).
+    const statComps = gps?.reliability?.mdbStatisticalComponents as { mE: number };
+    const raw = (gps as unknown as { obs: { dE: number; dN: number } }).obs;
+    const pert = run3DStat(GPS_3D_INPUT, {
+      [gps?.id as number]: { obs: { dE: raw.dE + statComps.mE, dN: raw.dN } },
+    });
+    expect(pert.success).toBe(true);
+    const analytic = shiftOf(comps?.E as Available, 'P');
+    const brute = {
+      dE: (pert.stations.P.x - base.stations.P.x) * 1000,
+      dN: (pert.stations.P.y - base.stations.P.y) * 1000,
+      dH: (pert.stations.P.h - base.stations.P.h) * 1000,
+    };
+    expect(vectorRelErr(brute, analytic)).toBeLessThan(1e-3);
+  });
+});
+
+describe('invalid statistical policy stays statistical (O)', () => {
+  it('reports untestable external with no legacy fallback or linear equivalent', () => {
+    const result = run2D(OUTLIER_INPUT, undefined, {
+      reliabilityPolicy: { model: 'statistical', power: 0.4 },
+    });
+    expect(result.success).toBe(true);
+    expect(result.reliabilitySummary?.model).toBe('statistical');
+    expect(result.reliabilitySummary?.available).toBe(false);
+    expect(result.reliabilitySummary?.reason).toMatch(/power/);
+    let checked = 0;
+    const check = (ext: ExternalInfluence | undefined): void => {
+      if (!ext) return;
+      checked += 1;
+      expect(ext.available).toBe(false);
+      if (!ext.available) expect(ext.reason).toBe(EXTERNAL_REASON_UNTESTABLE);
+    };
+    for (const obs of result.observations) {
+      const rel = obs.reliability;
+      if (!rel) continue;
+      // No legacy model mixing: provenance stays statistical, no
+      // statistical MDB or linear equivalent is exposed, and no external
+      // influence is propagated or legacy-labeled.
+      expect(rel.method).not.toBe('legacy-3.29');
+      expect(rel.mdbStatistical).toBeUndefined();
+      expect(rel.mdbLinearMm).toBeUndefined();
+      check(rel.external);
+      for (const comp of Object.values(rel.externalComponents ?? {})) check(comp);
+    }
+    expect(checked).toBeGreaterThan(0);
+  });
+});
+
+describe('worst-station argmax stability (P)', () => {
+  // Mirrored shifts (exact-magnitude tie, opposite signs, as in leveling
+  // between adjacent benchmarks): the first station wins deterministically
+  // instead of flipping on last-ulp solver noise across routes.
+  const tieArgs = (s2h: number): Parameters<typeof computeExternalInfluences>[0] => ({
+    is2D: false,
+    B: [[0, 0, 1, 0, 0, s2h]],
+    P: [[2]],
+    equationCount: 1,
+    paramColumns: [
+      { stationId: 'S1', e: 0, n: 1, h: 2 },
+      { stationId: 'S2', e: 3, n: 4, h: 5 },
+    ],
+    rows: [{ row: 0, mdbNative: 0.001, mdbModel: 'statistical', groupRows: [0] }],
+    freeNetwork: false,
+    robustApproximate: false,
+  });
+
+  it('keeps the first station on an exact-magnitude tie', () => {
+    const out = computeExternalInfluences(tieArgs(-1));
+    const ext = out.get(0);
+    expect(ext?.available).toBe(true);
+    if (ext?.available === true) {
+      expect(ext.affectedStation).toBe('S1');
+      expect(ext.dHmm).toBeCloseTo(2, 12);
+      expect(ext.max3dMm).toBeCloseTo(2, 12);
+    }
+  });
+
+  it('yields to a decisive lead beyond solver-noise scale', () => {
+    const out = computeExternalInfluences(tieArgs(-3));
+    const ext = out.get(0);
+    expect(ext?.available).toBe(true);
+    if (ext?.available === true) {
+      expect(ext.affectedStation).toBe('S2');
+      expect(ext.dHmm).toBeCloseTo(-6, 12);
+    }
   });
 });
 

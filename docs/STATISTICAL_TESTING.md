@@ -113,14 +113,32 @@ policy. The default everywhere is **legacy-3.29**, which preserves the
 historical MDBs bit-identically for old projects (no migration).
 
 - **Legacy 3.29** — MDB = 3.29 · seuw · sigma / sqrt(r), with the
-a-posteriori SEUW and the same clamped redundancy r as the statistical
-model. Roughly 50% detection power; alpha/power settings are ignored.
-- **Statistical** — single-alternative Baarda MDB0 = δ0 · sigma / sqrt(r),
-with the a-priori sigma (**no SEUW factor** — pure a-priori per
-Teunissen) and δ0 = z(1−α/2) + z(power) from normal theory. The
-statistical MDB intentionally omits the SEUW multiplier, so legacy and
-statistical MDBs differ by δ0/(3.29·seuw); on a seuw = 1 run the ratio
-is exactly δ0/3.29.
+a-posteriori SEUW and the clamped diagonal redundancy r = qvv_clamped/qll.
+Roughly 50% detection power; alpha/power settings are ignored. The legacy
+computation is bit-identical to the pre-14B code path.
+- **Statistical** — single-alternative Baarda MDB0 = δ0 · sqrt(qvv_ii) / |R_ii|,
+with the a-priori residual cofactor qvv_ii (**no SEUW factor** — pure
+a-priori per Teunissen), δ0 = z(1−α/2) + z(power) from normal theory,
+and the correlated scalar-residual sensitivity R_ii = (Qvv·P)_ii =
+1 − (A·Qxx·A′·P)_ii summed over the true weight-matrix column (see
+below). The statistical MDB intentionally omits the SEUW multiplier; on
+a diagonal-P seuw = 1 run the legacy/statistical ratio is exactly
+δ0/3.29, but correlated blocks never share one clamped redundancy with
+legacy (earlier text claiming they did was wrong).
+
+### Correlated scalar-residual sensitivity
+
+The project tests the scalar residual w_i = v_i / sqrt(qvv_ii), so the
+matching single-alternative sensitivity is the diagonal of R = Qvv·P,
+not the diagonal-only ratio qvv_ii/qll_ii (which equals R_ii only when P
+is diagonal). R_ii = 1 − Σ_l (a_i·Qxx·a_l′)·P[l][i] runs over the rows
+coupled to i: TS-correlation groups and GPS covariance blocks use their
+full off-diagonal weights, everywhere else P[l][i] is exactly 0. Dense
+and sparse row-product statistics evaluate the same sum (cross forms
+come from B·a dots vs the row-product solver, including TS-group pairs),
+so both paths agree. A row is testable under the statistical model when
+|R_ii| > 1e-12 (finite); at or below that — or with a non-finite
+qvv_ii/sensitivity/δ0 — the MDB is +Inf (untestable), never NaN.
 
 Reference noncentralities (δ0):
 
@@ -144,7 +162,11 @@ when the local-test policy uses one — documented, not corrected.
 
 Power is the probability of detecting a bias of MDB magnitude under the
 selected reliability model. The report labels the power input "Detection
-Power" for exactly this meaning.
+Power" for exactly this meaning. Valid powers are finite 0.5 <= power < 1
+(alpha stays finite in [1e-12, 0.5]); an out-of-range direct policy makes
+the statistical summary unavailable (`available: false` with an
+invalid-alpha/invalid-power reason, δ0 = +Inf) instead of being clamped
+into range, and every per-row statistical MDB then reports +Inf.
 
 ### Pope approximation honesty
 
@@ -152,7 +174,10 @@ The normal-theory δ0 is exact for the Baarda w-test (sigma0 known). Under
 the Pope τ-test (sigma estimated) the exact test needs a noncentral-t
 noncentrality, so the run summary flags method
 `approximation-normal-for-tau` and the report shows an "(approximate)"
-note. Legacy-fixed runs keep method `legacy-3.29`.
+note. Runs using the legacy-3.29 reliability model keep method
+`legacy-3.29`; statistical reliability paired with the legacy-fixed local
+policy uses that policy's tau-family statistic and is therefore flagged as
+the same normal-for-tau approximation.
 
 ### Approximation and availability gates
 
@@ -166,13 +191,17 @@ anchored component keeps it available.
 - **Sparse-route gate**: external reliability needs dense B/P rows; on the
 sparse row-product route it is unavailable
 (`sparse-route-unavailable`) — never a silent diagonal approximation.
-Correlated equations (TS groups, GPS blocks, CTRLXY pairs) always use
-the true P column.
+Candidate TS and GPS equations always use the true P column. Correlated
+CTRLXY rows are control constraints rather than candidate observation-bias
+rows: their full block enters the normal matrix and Qxx, while observation
+P columns have no cross-block weight to those constraints.
 - **Preanalysis / data check**: preanalysis has no per-observation MDBs
 and data check reports screening values only; external reliability is
 unavailable there and the RELIABILITY strip is suppressed.
-- **Untestable rows** (r ≤ 1e-12, non-finite MDB) carry no external
-influence (`untestable-no-mdb`).
+- **Untestable rows** (|R_ii| ≤ 1e-12, non-finite MDB) carry no external
+influence (`untestable-no-mdb`). Under statistical selection the
+propagated MDB is always the statistical one: an untestable statistical
+row is never silently replaced by the legacy MDB.
 
 ### Sign and linearity
 
@@ -185,7 +214,10 @@ response.
 ### GPS component semantics
 
 Scalar equations carry one `external` influence; multi-row observations
-(GPS) carry per-component entries (`externalComponents` E/N/U). The
+(GPS) carry per-component entries (`externalComponents` E/N/U). GPS
+observations additionally carry per-component statistical MDBs
+(`mdbStatisticalComponents` mE/mN, plus mU in 3D); the aggregate
+`mdbStatistical` is the min over finite components. The
 CoordEff column and worst-external ranking use the strongest component
 (max primaryMm). The aggregate is a max over scalar component effects,
 not a joint/vector multivariate influence; a vector test is not
@@ -195,7 +227,15 @@ implemented.
 
 Internal MDBs stay in native observation units (arcsec for angular,
 length units for linear); angular rows additionally carry the linear
-equivalent `mdbLinearMm`. All external shifts are millimetres. Worst-
+equivalent `mdbLinearMm`, computed from the **active run-model** MDB
+(statistical when the run model is statistical, else legacy). Legacy
+`obs.mdb` / `obs.mdbComponents` storage always keeps the historical
+3.29-scaled value; the table, tooltips, worst-internal summary, and CSV
+reliability columns select the active model at the display/export
+boundary. In the observations/residuals CSV the legacy compatibility
+columns (`mdb`, `mdbE`, `mdbN`) are unchanged, while the appended
+active-model columns are explicitly prefixed (`reliabilityMdb`,
+`reliabilityMdbLinearMm`, `reliabilityExternal*`). All external shifts are millimetres. Worst-
 internal MDBs rank **within compatible unit groups only** (angular vs
 linear); worst-external ranks by primaryMm in millimetres, which is
 cross-type comparable and labeled "Coordinate influence".

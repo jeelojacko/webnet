@@ -92,8 +92,11 @@ interface ObservationBase {
     mdb: number;
     /** Statistical MDB in native units; present only when model='statistical'. */
     mdbStatistical?: number;
-    /** Statistical components for 2D GPS; present only when model='statistical'. */
-    mdbStatisticalComponents?: { mE: number; mN: number };
+    /**
+     * Statistical components for multi-row GPS (E/N in 2D, plus U in 3D);
+     * present only when model='statistical'.
+     */
+    mdbStatisticalComponents?: { mE: number; mN: number; mU?: number };
     /** Linear MDB in mm for angular observations; present only when computable. */
     mdbLinearMm?: number;
     method: import('./engine/reliabilityPolicy').ReliabilityMethod;

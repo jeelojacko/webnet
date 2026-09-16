@@ -4,6 +4,8 @@ import { RAD_TO_DEG, radToDmsStr } from '../../engine/angles';
 import type { LocalTestSummary } from '../../engine/localTestPolicy';
 import type { ReliabilitySummary } from '../../engine/reliabilityPolicy';
 import {
+  activeMdbComponentsOf,
+  activeMdbOf,
   buildCoordEffCellTooltip,
   buildMdbCellTooltip,
   buildMdbHeaderTooltip,
@@ -203,13 +205,15 @@ const ObservationTableSection: React.FC<ObservationTableSectionProps> = ({
                   redundancyStr = obs.redundancy.toFixed(2);
                 }
                 localStr = formatLocalTestCell(obs);
-                if (obs.mdbComponents) {
-                  mdbStr = `E=${formatMdb(obs.mdbComponents.mE, angular)} N=${formatMdb(
-                    obs.mdbComponents.mN,
+                const activeComps = activeMdbComponentsOf(obs, reliabilitySummary);
+                if (activeComps) {
+                  mdbStr = `E=${formatMdb(activeComps.mE, angular)} N=${formatMdb(
+                    activeComps.mN,
                     angular,
                   )}`;
-                } else if (obs.mdb != null) {
-                  mdbStr = formatMdb(obs.mdb, angular);
+                } else {
+                  const activeMdb = activeMdbOf(obs, reliabilitySummary);
+                  if (!Number.isNaN(activeMdb)) mdbStr = formatMdb(activeMdb, angular);
                 }
                 const stationDisplay = getObservationStationDisplay(obs, {
                   autoSideshot: autoSideshotObsIds.has(obs.id),

@@ -169,7 +169,7 @@ export const SETTINGS_TOOLTIPS = {
   reliabilityAlpha:
     'Two-sided significance level for the statistical MDB (single-alternative alpha, not multiplicity-corrected), between 0 and 0.5. Ignored by the legacy model.',
   reliabilityPower:
-    'Probability of detecting a bias of MDB magnitude under the selected reliability model. Ignored by the legacy model (legacy scaling corresponds to roughly 50% power).',
+    'Probability of detecting a bias of MDB magnitude under the selected reliability model, from 0.5 to 0.999. Values outside fail closed (run reports reliability unavailable). Ignored by the legacy model (legacy scaling corresponds to roughly 50% power).',
   instrument:
     'Select an instrument code to view parsed EDM/angle/centering and other precision parameters.',
   newInstrument:

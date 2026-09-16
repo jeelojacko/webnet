@@ -170,6 +170,74 @@ describe('standardized residual row-product routing', () => {
     assertStatsClose(summarizeStats(routed.observations), summarizeStats(baseline.observations), 'stdRes');
   });
 
+  it('agrees on statistical MDBs between dense and row-product paths', () => {
+    // Full-P-column sensitivity must match whether cross forms come from
+    // the sparse solver (GPS blocks + TS groups via extraCrossGroups) or
+    // dense B.a dots: statistical MDBs and external influences agree.
+    const lines = [
+      '.2D',
+      'C A 0 0 0 ! !',
+      'C B 100 0 0 ! !',
+      'C P 50 40 0',
+      'D A-P 64.0312423743285 0.00001',
+      'D B-P 64.0312423743285 0.00001',
+      'G GPS1 A P 50.0 40.0 0.00001 0.00001 0.5',
+      'DB P',
+      'DN A 231-20-24.690285276 0.001',
+      'DN B 128-39-35.309714724 0.001',
+      'DE',
+    ].join('\n');
+    const baseline = new LSAEngine({
+      input: lines,
+      parseOptions: {
+        reliabilityPolicy: { model: 'statistical' },
+        tsCorrelationEnabled: true,
+        tsCorrelationRho: 0.5,
+        tsCorrelationScope: 'set',
+      },
+    }).solve();
+    expect(baseline.success).toBe(true);
+    const routed = new LSAEngine({
+      input: lines,
+      sparseRowProductsSolver: denseReferenceSolver(),
+      parseOptions: {
+        reliabilityPolicy: { model: 'statistical' },
+        tsCorrelationEnabled: true,
+        tsCorrelationRho: 0.5,
+        tsCorrelationScope: 'set',
+      },
+    }).solve();
+    expect(routed.success).toBe(true);
+    const statOf = (observations: Observation[]) =>
+      observations.map((obs) => ({
+        id: obs.id,
+        mdbStatistical: obs.reliability?.mdbStatistical,
+        mdbStatisticalComponents: obs.reliability?.mdbStatisticalComponents,
+      }));
+    assertStatsClose(statOf(routed.observations), statOf(baseline.observations), 'statistical-mdb');
+  });
+
+  it('requests TS-group cross pairs via extraCrossGroups', () => {
+    const distA = { id: 3, type: 'dist', from: 'A', to: 'B', obs: 10 } as unknown as Observation;
+    const distB = { id: 4, type: 'dist', from: 'A', to: 'C', obs: 10 } as unknown as Observation;
+    const spy = vi.fn((input: SparseRowProductsInput): SparseRowProductsResult => ({
+      quadratic: new Float64Array(input.queryRowOffsets.length - 1),
+      cross: new Float64Array(input.crossA.length),
+      normalNnz: 0, factorNnz: 0, damping: 0, dampingAttempts: 0,
+    }));
+    queryStandardizedResidualRowProducts({ queryRowProducts: spy }, {
+      sparseRows: [[{ index: 0, value: 2 }], [{ index: 0, value: 1 }]],
+      weights: [[1, 0.5], [0.5, 1]],
+      rowInfo: [{ obs: distA }, { obs: distB }],
+      activeObservations: [distA, distB],
+      extraCrossGroups: [[0, 1]],
+      observationEquationCount: 2,
+      parameterCount: 1,
+    });
+    expect(Array.from(spy.mock.calls[0]?.[0].crossA ?? [])).toEqual([0, 0, 1, 1]);
+    expect(Array.from(spy.mock.calls[0]?.[0].crossB ?? [])).toEqual([0, 1, 0, 1]);
+  });
+
   it('falls back to dense statistics when the injected solver fails', () => {
     const input = loadTutorialInput();
     const baseline = new LSAEngine({ input }).solve();

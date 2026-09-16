@@ -8,16 +8,21 @@
  *
  * Two models (deliberately separate from LocalTestPolicy):
  * - 'legacy-3.29' (default): the historical MDB = 3.29 * s0 * sigma / sqrt(r)
- *   with the a-posteriori variance factor s0. Bit-identical to the
- *   pre-14B code path; old projects reproduce with zero migration.
- * - 'statistical': single-alternative Baarda MDB0 = delta0 * sigma / sqrt(r)
- *   with a-priori sigma (NO SEUW factor — pure a-priori per Teunissen),
- *   where delta0 = z(1-alpha/2) + z(power) is the normal-theory
- *   noncentrality for the given significance level and detection power.
+ *   with the a-posteriori variance factor s0 and the clamped diagonal
+ *   redundancy r = qvv_clamped/qll. Bit-identical to the pre-14B code
+ *   path; old projects reproduce with zero migration.
+ * - 'statistical': single-alternative Baarda MDB0 = delta0 * sqrt(qvv_ii) / |R_ii|
+ *   with a-priori cofactor qvv_ii (NO SEUW factor — pure a-priori per
+ *   Teunissen), where delta0 = z(1-alpha/2) + z(power) is the normal-theory
+ *   noncentrality for the given significance level and detection power,
+ *   and R_ii = (Qvv P)_ii = 1 - (A Qxx A' P)_ii is the correlated
+ *   scalar-residual sensitivity over the TRUE weight-matrix column
+ *   (diagonal P recovers R_ii = r, so the diagonal case is unchanged).
  *
  * Scale break vs legacy: the statistical MDB intentionally omits the SEUW
- * multiplier, so legacy and statistical MDBs differ by delta0/(3.29*seuw).
- * With a seuw=1 run the ratio is exactly delta0/3.29.
+ * multiplier. On diagonal-P runs legacy and statistical MDBs differ by
+ * delta0/(3.29*seuw) (exactly delta0/3.29 at seuw=1); correlated blocks
+ * use the full-column sensitivity instead, so no single ratio holds there.
  *
  * Multiple testing: the statistical MDB is the single-alternative Baarda
  * upper bound (Rofatto). No multiplicity correction is applied to the MDB
@@ -32,8 +37,10 @@ export type ReliabilityModel = 'legacy-3.29' | 'statistical';
 /**
  * Method provenance per run:
  * - 'legacy-3.29': historical 3.29 scaling (legacy model, or fallback).
- * - 'exact-normal': Baarda w (or legacy-fixed formal) — the normal delta0
- *   is the exact single-alternative noncentrality.
+ * - 'exact-normal': Baarda w only — the normal delta0 is the exact
+ *   single-alternative noncentrality. (Legacy-fixed local mode reports the
+ *   tau family, so statistical reliability paired with it classifies as
+ *   the tau approximation below.)
  * - 'approximation-normal-for-tau': Pope tau — the exact test needs a
  *   noncentral-t noncentrality, so the normal delta0 is flagged approximate.
  */
@@ -90,7 +97,7 @@ const isValidAlpha = (alpha: number): boolean =>
   Number.isFinite(alpha) && alpha >= 1e-12 && alpha <= 0.5;
 
 const isValidPower = (power: number): boolean =>
-  Number.isFinite(power) && power > 0 && power < 1;
+  Number.isFinite(power) && power >= 0.5 && power < 1;
 
 /**
  * Normal-theory noncentrality for the single-alternative Baarda MDB:
@@ -133,21 +140,33 @@ export const deriveReliability = (args: DeriveReliabilityArgs): ReliabilitySumma
       robustApproximation,
     };
   }
-  const clampNotes: string[] = [];
-  let alpha = normalized.alpha;
-  let power = normalized.power;
-  if (!isValidAlpha(alpha)) {
-    clampNotes.push(`alpha-clamped-${alpha}`);
-    alpha = Math.min(Math.max(alpha, 1e-12), 0.5);
-    if (!Number.isFinite(alpha)) alpha = DEFAULT_RELIABILITY_ALPHA;
-  }
-  if (!isValidPower(power)) {
-    clampNotes.push(`power-clamped-${power}`);
-    power = power <= 0 ? Number.MIN_VALUE : 1 - Number.EPSILON;
-    if (!Number.isFinite(power)) power = DEFAULT_RELIABILITY_POWER;
+  const alpha = normalized.alpha;
+  const power = normalized.power;
+  // Fail closed: out-of-range alpha/power (alpha outside finite
+  // [1e-12, 0.5], power outside finite [0.5, 1)) yields
+  // available=false. Invalid direct policies are never clamped into
+  // range (no MIN_VALUE/EPSILON coercion); delta0/lambda0 report +Inf
+  // so downstream MDBs are untestable rather than silently rescaled.
+  if (!isValidAlpha(alpha) || !isValidPower(power)) {
+    const reasons: string[] = [];
+    if (!isValidAlpha(alpha)) reasons.push(`invalid-alpha-${alpha}`);
+    if (!isValidPower(power)) reasons.push(`invalid-power-${power}`);
+    return {
+      model: 'statistical',
+      alpha,
+      power,
+      delta0: Number.POSITIVE_INFINITY,
+      lambda0: Number.POSITIVE_INFINITY,
+      method:
+        args.statisticFamily === 'tau' ? 'approximation-normal-for-tau' : 'exact-normal',
+      approximate: true,
+      available: false,
+      reason: reasons.join(';'),
+      robustApproximation,
+    };
   }
   const { delta0, lambda0 } = solveNoncentrality(alpha, power);
-  if (!Number.isFinite(delta0)) {
+  if (!Number.isFinite(delta0) || !(delta0 > 0)) {
     return {
       model: 'statistical',
       alpha,
@@ -164,7 +183,7 @@ export const deriveReliability = (args: DeriveReliabilityArgs): ReliabilitySumma
   }
   const tauApproximation = args.statisticFamily === 'tau';
   const approximate = tauApproximation || robustApproximation;
-  const reasons = [...clampNotes];
+  const reasons: string[] = [];
   if (tauApproximation) reasons.push('tau-needs-noncentral-t');
   if (robustApproximation) reasons.push('robust-frozen-weights');
   return {
@@ -182,22 +201,70 @@ export const deriveReliability = (args: DeriveReliabilityArgs): ReliabilitySumma
 };
 
 /**
- * Statistical (a-priori) MDB for one testable scalar equation:
- * MDB = delta0 * sigma / sqrt(r), with sigma = sqrt(qll) and NO SEUW factor.
- * Uses the same CLAMPED redundancy r as legacy for continuity.
- * Returns +Inf for r <= 1e-12 (untestable); never NaN, never throws.
+ * Unclamped sensitivity/testability floor shared by the statistical MDB
+ * and external-reliability gating: sensitivities at or below this (or
+ * non-finite) mean the scalar residual carries no detectable signal.
+ */
+export const STATISTICAL_SENSITIVITY_FLOOR = 1e-12;
+
+/** True when the correlated sensitivity carries a detectable signal. */
+export const isTestableSensitivity = (sensitivity: number): boolean =>
+  Number.isFinite(sensitivity) && Math.abs(sensitivity) > STATISTICAL_SENSITIVITY_FLOOR;
+
+/**
+ * Correlated scalar-residual sensitivity R_ii = (Qvv P)_ii for one scalar
+ * equation, evaluated as 1 - (A Qxx A' P)_ii over the TRUE weight-matrix
+ * column: R = 1 - sum_{l in group} (a_i Qxx a_l') P[l][i].
+ *
+ * The cross-form provider returns (a_row Qxx a_col') — dense callers pass
+ * B[row].a_col dots, sparse row-product callers pass crossFor (falling
+ * back to the quadratic for the diagonal). Only rows coupled through P
+ * (TS-correlation groups, GPS covariance blocks) contribute; everywhere
+ * else P[l][i] is exactly 0. Diagonal P recovers R_ii = r_ii.
+ *
+ * Returns NaN when a coupled cross form or weight is missing (fail
+ * closed: the MDB helper maps that to +Inf); never throws.
+ */
+export const statisticalSensitivity = (
+  row: number,
+  groupRows: number[],
+  crossAqxxat: (_rowA: number, _rowB: number) => number | undefined,
+  weightAt: (_coupledRow: number, _row: number) => number,
+): number => {
+  let coupled = 0;
+  for (const coupledRow of groupRows) {
+    const aqxxat = crossAqxxat(row, coupledRow);
+    const weight = weightAt(coupledRow, row);
+    if (aqxxat == null || !Number.isFinite(aqxxat)) return Number.NaN;
+    if (!Number.isFinite(weight)) return Number.NaN;
+    coupled += aqxxat * weight;
+  }
+  const sensitivity = 1 - coupled;
+  return Number.isFinite(sensitivity) ? sensitivity : Number.NaN;
+};
+
+/**
+ * Statistical (a-priori) MDB for one scalar equation:
+ * MDB = delta0 * sqrt(qvv_ii) / |R_ii|, with the a-priori residual
+ * cofactor qvv_ii (NO SEUW factor) and the correlated sensitivity R_ii
+ * from statisticalSensitivity. The legacy MDB deliberately keeps the old
+ * clamped-diagonal form (bit-identical default path); only the
+ * statistical model uses this sensitivity form.
+ *
+ * Returns +Inf for non-positive/non-finite qvv, untestable sensitivity
+ * (|R| <= 1e-12 or non-finite), or non-finite/non-positive delta0;
+ * never NaN, never throws.
  */
 export const statisticalMdb = (
-  qll: number,
-  redundancyClamped: number,
+  qvv: number,
+  sensitivity: number,
   delta0: number,
 ): number => {
-  if (!(qll > 0) || !Number.isFinite(delta0) || !(redundancyClamped > 1e-12)) {
-    return Number.POSITIVE_INFINITY;
-  }
-  const sigma = Math.sqrt(qll);
-  if (!Number.isFinite(sigma)) return Number.POSITIVE_INFINITY;
-  return (delta0 * sigma) / Math.sqrt(redundancyClamped);
+  if (!Number.isFinite(qvv) || !(qvv > 0)) return Number.POSITIVE_INFINITY;
+  if (!isTestableSensitivity(sensitivity)) return Number.POSITIVE_INFINITY;
+  if (!Number.isFinite(delta0) || !(delta0 > 0)) return Number.POSITIVE_INFINITY;
+  const mdb = (delta0 * Math.sqrt(qvv)) / Math.abs(sensitivity);
+  return Number.isFinite(mdb) && mdb > 0 ? mdb : Number.POSITIVE_INFINITY;
 };
 
 /**

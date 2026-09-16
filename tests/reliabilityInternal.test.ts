@@ -3,11 +3,13 @@ import { describe, expect, it } from 'vitest';
 import { solveEngine } from '../src/engine/solveEngine';
 import {
   deriveReliability,
+  isTestableSensitivity,
   mdbLinearMm,
   reliabilityPoliciesEqual,
   sanitizeReliabilityPolicy,
   solveNoncentrality,
   statisticalMdb,
+  statisticalSensitivity,
 } from '../src/engine/reliabilityPolicy';
 import type { ReliabilityPolicy } from '../src/engine/reliabilityPolicy';
 import type { LocalTestPolicy } from '../src/engine/localTestPolicy';
@@ -270,6 +272,90 @@ describe('TS correlation (I)', () => {
   });
 });
 
+describe('correlated sensitivity hand check (L)', () => {
+  // One-parameter, two-equation hand system with non-diagonal weights:
+  // A = [[1], [1]], P = [[4, 1], [1, 2]]. Then N = A'PA = 8, Qxx = 1/8,
+  // Qll = P^-1 = [[2/7, -1/7], [-1/7, 4/7]], A Qxx A' = ones(2,2)/8, and
+  // R = Qvv P has R_00 = 21/56 = 0.375 = 1 - 5/8.
+  const P = [[4, 1], [1, 2]];
+  const QXX = 1 / 8;
+  const cross = (_rowA: number, _rowB: number): number => QXX;
+  const weightAt = (coupledRow: number, row: number): number => P[coupledRow][row];
+  const QLL_00 = 2 / 7;
+  const QVV_00 = 2 / 7 - 1 / 8;
+  const R_00 = 0.375;
+
+  it('matches the direct QvvP product for non-diagonal P', () => {
+    // Independent reference: explicit Qvv row dotted with the P column.
+    const qvv00 = QLL_00 - QXX;
+    const qvv01 = -1 / 7 - QXX;
+    const expected = qvv00 * P[0][0] + qvv01 * P[1][0];
+    expect(expected).toBeCloseTo(R_00, 15);
+    expect(statisticalSensitivity(0, [0, 1], cross, weightAt)).toBeCloseTo(expected, 15);
+  });
+
+  it('passes the new MDB while the diagonal-naive formula fails', () => {
+    const delta0 = 4.132;
+    expect(statisticalMdb(QVV_00, R_00, delta0)).toBeCloseTo(
+      (delta0 * Math.sqrt(QVV_00)) / R_00,
+      15,
+    );
+    // Diagonal-naive legacy-style value from r = qvv/qll.
+    const rDiag = QVV_00 / QLL_00;
+    const mdbOld = (delta0 * Math.sqrt(QLL_00)) / Math.sqrt(rDiag);
+    expect(Math.abs(mdbOld - statisticalMdb(QVV_00, R_00, delta0)) / mdbOld).toBeGreaterThan(
+      0.1,
+    );
+  });
+
+  it('coincides with the diagonal formula when P is diagonal', () => {
+    const delta0 = 4.132;
+    const qxx = 1 / 6;
+    const crossD = (): number => qxx;
+    const weightD = (coupledRow: number, row: number): number =>
+      coupledRow === row ? (row === 0 ? 4 : 2) : 0;
+    const r = statisticalSensitivity(0, [0], crossD, weightD);
+    expect(r).toBeCloseTo(1 - qxx * 4, 15);
+    const qvv = 1 / 4 - qxx;
+    expect(statisticalMdb(qvv, r, delta0)).toBeCloseTo(
+      (delta0 * Math.sqrt(1 / 4)) / Math.sqrt(qvv / (1 / 4)),
+      12,
+    );
+  });
+
+  it('fails closed on missing coupling or vanishing sensitivity', () => {
+    expect(statisticalSensitivity(0, [0, 1], () => undefined, weightAt)).toBeNaN();
+    expect(isTestableSensitivity(0.5)).toBe(true);
+    expect(isTestableSensitivity(1e-13)).toBe(false);
+    expect(isTestableSensitivity(Number.NaN)).toBe(false);
+  });
+});
+
+describe('correlated GPS block (M)', () => {
+  // Same network as (J) but with a strong E/N correlation: the 2x2 P
+  // block couples the components, so the full-column sensitivity must
+  // move the statistical MDBs off the diagonal-naive scaled-legacy value.
+  const CORR_INPUT = GPS_INPUT.replaceAll(' 0.01 0.01\n', ' 0.01 0.01 0.9\n');
+
+  it('moves the statistical components off the diagonal-naive value', () => {
+    const result = run(CORR_INPUT, STAT);
+    const gps = result.observations.find((o) => o.type === 'gps');
+    const summary = result.reliabilitySummary;
+    const ratio = (summary?.delta0 as number) / (3.29 * result.seuw);
+    const comps = gps?.mdbComponents as { mE: number; mN: number };
+    const statComps = gps?.reliability?.mdbStatisticalComponents;
+    expect(statComps).toBeDefined();
+    for (const [legacy, stat] of [[comps.mE, statComps?.mE], [comps.mN, statComps?.mN]] as const) {
+      const naive = (legacy as number) * ratio;
+      const relDiff = Math.abs((stat as number) - naive) / naive;
+      expect(relDiff).toBeGreaterThan(1e-3);
+    }
+    expect(gps?.reliability?.mdbStatistical).toBe(
+      Math.min(statComps?.mE as number, statComps?.mN as number),
+    );
+  });
+});
+
 describe('GPS components (J)', () => {
   it('scales per-component MDBs by delta0/(3.29*seuw) with min aggregate', () => {
     const result = run(GPS_INPUT, STAT);
@@ -295,7 +381,9 @@ describe('linear MDB (K)', () => {
     const angle = result.observations.find((o) => o.type === 'angle');
     const linear = angle?.reliability?.mdbLinearMm;
     expect(Number.isFinite(linear)).toBe(true);
-    const expected = (angle?.reliability?.mdb as number) * (angle?.effectiveDistance as number) * 1000;
+    // Linear equivalent follows the active run model (statistical here).
+    const expected =
+      (angle?.reliability?.mdbStatistical as number) * (angle?.effectiveDistance as number) * 1000;
     expect(linear).toBeCloseTo(expected, 9);
     expect(mdbLinearMm(1e-4, 100)).toBeCloseTo(10, 12);
     expect(mdbLinearMm(Number.NaN, 100)).toBeUndefined();
@@ -336,7 +424,35 @@ describe('policy helpers', () => {
   it('never returns NaN from the scalar MDB helper on bad input', () => {
     expect(statisticalMdb(0, 0.5, 4.132)).toBe(Number.POSITIVE_INFINITY);
     expect(statisticalMdb(1e-4, 0, 4.132)).toBe(Number.POSITIVE_INFINITY);
+    expect(statisticalMdb(1e-4, Number.NaN, 4.132)).toBe(Number.POSITIVE_INFINITY);
+    expect(statisticalMdb(1e-4, 1e-13, 4.132)).toBe(Number.POSITIVE_INFINITY);
     expect(statisticalMdb(1e-4, 0.5, Number.NaN)).toBe(Number.POSITIVE_INFINITY);
-    expect(deriveReliability({ policy: { model: 'statistical', alpha: -1 } }).available).toBe(true);
+    expect(statisticalMdb(1e-4, 0.5, 0)).toBe(Number.POSITIVE_INFINITY);
+    // Fail closed: an invalid direct policy is unavailable, never clamped.
+    const badAlpha = deriveReliability({ policy: { model: 'statistical', alpha: -1 } });
+    expect(badAlpha.available).toBe(false);
+    expect(badAlpha.reason).toMatch(/alpha/);
+    expect(badAlpha.delta0).toBe(Number.POSITIVE_INFINITY);
+  });
+
+  it('enforces 0.5 <= power < 1 with no clamping', () => {
+    expect(
+      deriveReliability({ policy: { model: 'statistical', power: 0.5 } }).available,
+    ).toBe(true);
+    expect(
+      deriveReliability({ policy: { model: 'statistical', power: 0.99 } }).available,
+    ).toBe(true);
+    for (const power of [0.4, 0, -1, 1, Number.NaN, Number.POSITIVE_INFINITY]) {
+      const summary = deriveReliability({ policy: { model: 'statistical', power } });
+      expect(summary.available).toBe(false);
+      expect(summary.reason).toMatch(/power/);
+      expect(summary.delta0).toBe(Number.POSITIVE_INFINITY);
+      expect(Number.isNaN(summary.delta0)).toBe(false);
+    }
+    expect(sanitizeReliabilityPolicy({ model: 'statistical', power: 0.4 })).toBeUndefined();
+    expect(sanitizeReliabilityPolicy({ model: 'statistical', power: 0.5 })).toEqual({
+      model: 'statistical',
+      power: 0.5,
+    });
   });
 });

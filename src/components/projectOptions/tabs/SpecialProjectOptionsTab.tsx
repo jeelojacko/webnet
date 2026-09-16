@@ -447,7 +447,7 @@ const SpecialProjectOptionsTab: React.FC<SpecialProjectOptionsTabProps> = ({ con
             <input
               title={SETTINGS_TOOLTIPS.reliabilityPower}
               type="number"
-              min={0.01}
+              min={0.5}
               max={0.999}
               step={0.01}
               value={reliabilityPolicy.power}
@@ -455,7 +455,7 @@ const SpecialProjectOptionsTab: React.FC<SpecialProjectOptionsTabProps> = ({ con
                 const parsed = parseFloat(e.target.value);
                 updateReliabilityPolicy({
                   power: Number.isFinite(parsed)
-                    ? Math.max(0.01, Math.min(0.999, parsed))
+                    ? Math.max(0.5, Math.min(0.999, parsed))
                     : DEFAULT_RELIABILITY_POWER,
                 });
               }}

@@ -56,7 +56,7 @@ export const buildCoordEffCellTooltip = (
 ): string => {
   const external = primaryExternalOf(obs);
   const angular = isAngularType(obs.type);
-  const mdbText = formatNativeMdb(obs.reliability?.mdb ?? obs.mdb ?? Number.NaN, angular);
+  const mdbText = formatNativeMdb(activeMdbOf(obs, summary), angular);
   const model = summary ? formatReliabilityModelLabel(summary.model) : 'Legacy MDB (3.29)';
   const power = summary ? `power ${summary.power}` : 'power ~50% (legacy scaling)';
   if (!external || external.available !== true) {
@@ -65,10 +65,52 @@ export const buildCoordEffCellTooltip = (
     return `Coordinate influence of an MDB-sized bias (${mdbText}): unavailable${reason}. ${model}, ${power}.`;
   }
   const station = external.affectedStation ?? '-';
+  const kind = external.primaryKind === '3d' ? '3D' : 'horizontal';
   return (
-    `Coordinate influence of an MDB-sized bias (${mdbText}): max ${external.primaryMm.toFixed(1)}mm ` +
+    `Coordinate influence of an MDB-sized bias (${mdbText}): max ${kind} ${external.primaryMm.toFixed(1)}mm ` +
     `at ${station} (${formatShiftVector(external)}). ${model}, ${power}.`
   );
+};
+
+/**
+ * True when the run model is statistical. Display/export must then use
+ * statistical storage only — fail-closed, never legacy (no model mixing).
+ */
+export const isStatisticalReliabilityRun = (
+  summary?: ReliabilitySummary | null,
+): boolean => summary?.model === 'statistical';
+
+/**
+ * Active run-model scalar MDB in native units. In statistical mode this is
+ * always the statistical storage: missing storage yields NaN and +Inf
+ * passes through (both render untestable/blank) — legacy `obs.mdb` is
+ * never substituted under a Statistical MDB label. Legacy/default runs
+ * use the legacy scalar (bit-identical default path). Legacy storage is
+ * never mutated; selection happens here at the display boundary.
+ */
+export const activeMdbOf = (
+  obs: Observation,
+  summary?: ReliabilitySummary | null,
+): number => {
+  if (summary?.model === 'statistical') {
+    return obs.reliability?.mdbStatistical ?? Number.NaN;
+  }
+  return scalarMdbOf(obs);
+};
+
+/**
+ * Active run-model MDB components for multi-row observations (GPS).
+ * In statistical mode this is always the statistical components (possibly
+ * undefined) — never the legacy `obs.mdbComponents` storage.
+ */
+export const activeMdbComponentsOf = (
+  obs: Observation,
+  summary?: ReliabilitySummary | null,
+): { mE: number; mN: number } | undefined => {
+  if (summary?.model === 'statistical') {
+    return obs.reliability?.mdbStatisticalComponents;
+  }
+  return obs.mdbComponents;
 };
 
 /** MDB cell tooltip: run model/alpha/power plus the linear-equivalent note. */
@@ -77,7 +119,7 @@ export const buildMdbCellTooltip = (
   summary?: ReliabilitySummary | null,
 ): string => {
   const angular = isAngularType(obs.type);
-  const mdbText = formatNativeMdb(obs.reliability?.mdb ?? obs.mdb ?? Number.NaN, angular);
+  const mdbText = formatNativeMdb(activeMdbOf(obs, summary), angular);
   const model = summary ? formatReliabilityModelLabel(summary.model) : 'Legacy MDB (3.29)';
   const alphaPower = summary
     ? `alpha ${summary.alpha}, power ${summary.power}, δ0 ${summary.delta0.toFixed(3)}`
@@ -100,7 +142,7 @@ export const buildMdbHeaderTooltip = (summary?: ReliabilitySummary | null): stri
     : 'Minimal Detectable Bias: smallest blunder detectable here (legacy 3.29 scaling, ~50% detection level; see docs/STATISTICAL_TESTING.md).';
 
 export const COORD_EFF_HEADER_TOOLTIP =
-  'Coordinate influence (mm): max station-coordinate displacement from an MDB-sized bias under the run reliability model. Cell tooltip names the most-affected station and shift vector.';
+  'Coordinate influence (mm): max station-coordinate displacement from an MDB-sized bias under the run reliability model (horizontal magnitude in 2D, 3D magnitude in 3D runs). Cell tooltip names the most-affected station and shift vector.';
 
 /** Worst internal MDB within one compatible unit group (never cross-unit). */
 export interface WorstInternalMdb {
@@ -120,13 +162,16 @@ const scalarMdbOf = (obs: Observation): number => {
   return Number.NaN;
 };
 
-export const findWorstInternalMdb = (observations: Observation[]): WorstInternalMdb[] => {
+export const findWorstInternalMdb = (
+  observations: Observation[],
+  summary?: ReliabilitySummary | null,
+): WorstInternalMdb[] => {
   const best: Record<'angular' | 'linear', { mdb: number; entry: WorstInternalMdb } | null> = {
     angular: null,
     linear: null,
   };
   for (const obs of observations) {
-    const mdb = scalarMdbOf(obs);
+    const mdb = activeMdbOf(obs, summary);
     if (!Number.isFinite(mdb)) continue;
     const group = isAngularType(obs.type) ? 'angular' : 'linear';
     if (best[group] == null || mdb > best[group].mdb) {
@@ -151,6 +196,8 @@ export interface WorstExternalInfluence {
   obsId: number;
   label: string;
   primaryMm: number;
+  /** 'horizontal' in 2D, '3d' in 3D runs (matches primaryMm). */
+  kind: 'horizontal' | '3d';
   affectedStation?: string;
 }
 
@@ -164,6 +211,7 @@ export const findWorstExternal = (observations: Observation[]): WorstExternalInf
         obsId: obs.id,
         label: `#${obs.id} ${obs.type.toUpperCase()}`,
         primaryMm: external.primaryMm,
+        kind: external.primaryKind,
         ...(external.affectedStation != null
           ? { affectedStation: String(external.affectedStation) }
           : {}),
@@ -184,13 +232,13 @@ export const buildReliabilitySummaryLine = (
     return `${head}. Reliability unavailable (${summary.reason ?? 'unknown reason'}).`;
   }
   const parts = [head];
-  for (const worst of findWorstInternalMdb(observations)) {
+  for (const worst of findWorstInternalMdb(observations, summary)) {
     parts.push(`worst internal (${worst.group}) ${worst.label} ${worst.mdbText}`);
   }
   const external = findWorstExternal(observations);
   if (external) {
     parts.push(
-      `worst coordinate influence ${external.label} ${external.primaryMm.toFixed(1)}mm` +
+      `worst coordinate influence ${external.label} ${external.primaryMm.toFixed(1)}mm (${external.kind})` +
         (external.affectedStation ? ` at ${external.affectedStation}` : ''),
     );
   }
