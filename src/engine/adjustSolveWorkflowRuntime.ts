@@ -16,6 +16,7 @@ export const resetSolveWorkflowRuntimeState = (
   ctx.levelingLoopDiagnostics = undefined;
   ctx.chiSquare = undefined;
   ctx.statisticalSummary = undefined;
+  ctx.stochasticDiagnostics = undefined;
   ctx.typeSummary = undefined;
   ctx.relativePrecision = undefined;
   ctx.stationCovariances = undefined;

@@ -2,6 +2,12 @@ import type { RunResultsTextContext } from './runResultsTextContext';
 import type { AdjustmentResult } from '../types';
 import { formatLocalTestPolicyLine } from './localTestPolicy';
 import { buildReliabilitySummaryLine } from './reliabilityDisplay';
+import {
+  buildStochasticPointerLine,
+  formatStochasticRedundancy,
+  formatStochasticScale,
+  formatStochasticStatus,
+} from './stochasticDiagnosticsDisplay';
 import { formatReliabilityPolicyLine } from './reliabilityPolicy';
 
 type ResidualSectionContext = Pick<
@@ -23,6 +29,7 @@ export const appendTypeAndResidualSections = ({
   appendTypeSummarySection({ lines, res, context });
   appendResidualDiagnosticsSection({ lines, res });
   appendReliabilitySection({ lines, res });
+  appendStochasticDiagnosticsSection({ lines, res });
 };
 
 const appendReliabilitySection = ({
@@ -40,6 +47,41 @@ const appendReliabilitySection = ({
       (Number.isFinite(summary.delta0) ? `, delta0=${summary.delta0.toFixed(3)}` : ''),
   );
   lines.push(buildReliabilitySummaryLine(summary, res.observations ?? []));
+  lines.push('');
+};
+
+/**
+ * Additive STOCHASTIC MODEL DIAGNOSTICS block. Neutral wording: raw
+ * redundancy DOF, no threshold verdicts; non-estimated rows keep reasons.
+ * Never touches the industry listing, CSV layout, or parity paths.
+ */
+const appendStochasticDiagnosticsSection = ({
+  lines,
+  res,
+}: {
+  lines: string[];
+  res: AdjustmentResult;
+}): void => {
+  const diagnostics = res.stochasticDiagnostics;
+  if (!diagnostics) return;
+  lines.push('--- Stochastic Model Diagnostics ---');
+  lines.push(
+    'Empirical first-pass group diagnostic (s^2 = quadform/redundancy, redundancy = tr(P.Qvv)), ' +
+      'not unbiased VCE. Weighted control-constraint rows excluded by reporting policy; ' +
+      'diagnostics only, no automatic reweighting.',
+  );
+  const pointer = buildStochasticPointerLine(res);
+  if (pointer) lines.push(pointer);
+  if (diagnostics.groups.length === 0 && diagnostics.reason) {
+    lines.push(`unavailable (${diagnostics.reason})`);
+  }
+  diagnostics.groups.forEach((group) => {
+    const scale = group.status === 'estimated' ? formatStochasticScale(group.sigmaScale) : '-';
+    lines.push(
+      `${group.label}: eqns=${group.equations}, redund=${formatStochasticRedundancy(group.redundancyDof)}, ` +
+        `quadform=${Number.isFinite(group.quadForm) ? (group.quadForm as number).toFixed(4) : '-'}, scale=${scale}, ${formatStochasticStatus(group)}`,
+    );
+  });
   lines.push('');
 };
 

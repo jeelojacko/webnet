@@ -5,6 +5,7 @@ import { buildObservationTypeSummary, buildResidualDiagnostics, buildStatistical
 import { propagateAdjustmentPrecision } from './adjustStatisticsPrecision';
 import { accumulateAdjustmentResiduals } from './adjustStatisticsResiduals';
 import { computeStandardizedResidualStatistics } from './adjustStatisticsStandardizedResiduals';
+import { unavailableStochasticDiagnostics } from './stochasticGroupDiagnostics';
 import { detailedNow } from './adjustDetailedSolveProfile';
 import type { AdjustmentStatisticsContext } from './adjustStatisticsTypes';
 import type { Observation, StationId } from '../types';
@@ -45,6 +46,7 @@ export const calculateAdjustmentStatistics = (
 
     ctx.chiSquare = undefined;
     ctx.statisticalSummary = undefined;
+    ctx.stochasticDiagnostics = undefined;
     ctx.typeSummary = undefined;
     ctx.directionSetDiagnostics = undefined;
     ctx.directionTargetDiagnostics = undefined;
@@ -61,6 +63,11 @@ export const calculateAdjustmentStatistics = (
     const standardizedStartedAt = profiler ? detailedNow() : 0;
     computeStandardizedResidualStatistics(ctx, paramIndex, hasQxx, activeObservations, constraints);
     if (profiler) standardizedResidualsMs = detailedNow() - standardizedStartedAt;
+    if (ctx.stochasticDiagnostics == null && (ctx.preanalysisMode || !hasQxx)) {
+      ctx.stochasticDiagnostics = unavailableStochasticDiagnostics(
+        'no LS residual covariance in preanalysis or data-check mode',
+      );
+    }
 
     if (!ctx.preanalysisMode) {
       ctx.statisticalSummary = buildStatisticalSummary(weightedByGroup, groupOrder, ctx.dof);

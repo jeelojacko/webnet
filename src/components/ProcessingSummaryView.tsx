@@ -9,6 +9,12 @@ import { buildReductionUsageSignature } from '../engine/plainData';
 import { noteUiPerfStage, noteUiTabReady } from '../hooks/useUiPerfMonitor';
 import { appendRunDiagnosticsSummaryLines } from './ProcessingSummaryDiagnosticsText';
 import { appendEffectiveDistanceSummaryLines } from './ProcessingSummaryEffectiveDistanceText';
+import {
+  buildStochasticPointerLine,
+  formatStochasticRedundancy,
+  formatStochasticScale,
+  formatStochasticStatus,
+} from '../engine/stochasticDiagnosticsDisplay';
 import type { ProcessingSummaryViewProps } from './ProcessingSummaryView.types';
 
 const FT_PER_M = 3.280839895;
@@ -152,6 +158,24 @@ const ProcessingSummaryView: React.FC<ProcessingSummaryViewProps> = ({
       lines.push(
         `Error Factor Bounds (${Math.sqrt(result.chiSquare.varianceFactorLower).toFixed(3)}/${Math.sqrt(result.chiSquare.varianceFactorUpper).toFixed(3)})`,
       );
+    }
+    if (result.stochasticDiagnostics) {
+      lines.push('');
+      lines.push('Stochastic Model Diagnostics');
+      const pointer = buildStochasticPointerLine(result);
+      if (pointer) lines.push(pointer);
+      if (
+        result.stochasticDiagnostics.groups.length === 0 &&
+        result.stochasticDiagnostics.reason
+      ) {
+        lines.push(`unavailable (${result.stochasticDiagnostics.reason})`);
+      }
+      result.stochasticDiagnostics.groups.forEach((group) => {
+        const scale = group.status === 'estimated' ? formatStochasticScale(group.sigmaScale) : '-';
+        lines.push(
+          `${padRight(group.label, 14)}${padLeft(String(group.equations), 6)}${padLeft(formatStochasticRedundancy(group.redundancyDof), 10)}${padLeft(Number.isFinite(group.quadForm) ? (group.quadForm as number).toFixed(4) : '-', 12)}${padLeft(scale, 8)}  ${formatStochasticStatus(group)}`,
+        );
+      });
     }
     if (runDiagnostics) {
       appendRunDiagnosticsSummaryLines({
