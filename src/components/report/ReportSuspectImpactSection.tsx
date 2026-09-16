@@ -7,6 +7,7 @@ import {
   describeSuspectImpactFailure,
   formatLooShift,
 } from './ReportSuspectImpactSection.utils';
+import { semanticTooltip } from '../../engine/statisticalSemantics';
 import CollapsibleSectionHeader from './CollapsibleSectionHeader';
 import type { CollapsibleDetailSectionId } from './reportSectionRegistry';
 
@@ -124,7 +125,7 @@ export const ReportSuspectImpactSection: React.FC<{
       <CollapsibleSectionHeader
         sectionId={sectionId}
         label="LEAVE-ONE-OUT INFLUENCE"
-        title="What-if exclusion analysis: each candidate re-solved with that observation excluded; comparison only, nothing auto-excluded"
+        title={semanticTooltip('looShift')}
         className="px-4 py-2 border-b border-slate-800 bg-slate-900/60 text-xs uppercase tracking-wider"
         labelClassName="text-slate-100"
         collapsed={isSectionCollapsed(sectionId)}
@@ -166,7 +167,7 @@ export const ReportSuspectImpactSection: React.FC<{
               <th className="py-2 text-right">Base |t|</th>
               <th className="py-2 text-right">Local</th>
               <th className="py-2 text-right">Without Obs</th>
-              <th className="py-2 text-right">Coord Shift</th>
+              <th className="py-2 text-right" title={semanticTooltip('looShift')}>Coord Shift</th>
               <th className="py-2 text-right">Status</th>
               <th className="py-2 text-right px-3">Action</th>
             </tr>

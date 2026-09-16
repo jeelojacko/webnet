@@ -1,9 +1,9 @@
 import React from 'react';
 import type { AdjustmentResult } from '../../types';
 import { setupFamilyDisplayUnit } from '../../engine/systematicPatternDiagnostics';
+import { semanticTooltip } from '../../engine/statisticalSemantics';
 
-const DESCRIPTIVE_TITLE =
-  'Descriptive only — not a statistical test, probability, or significance.';
+const DESCRIPTIVE_TITLE: string = semanticTooltip('systematicTrend');
 
 const Desc: React.FC<{ title?: string }> = ({ title }) => (
   <span

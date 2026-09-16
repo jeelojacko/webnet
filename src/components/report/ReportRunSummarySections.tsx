@@ -15,6 +15,7 @@ import {
 } from '../../engine/stochasticDiagnosticsDisplay';
 import type { ReportObservationSelectorModel } from './reportObservationSelectors';
 import { REPORT_STATIC_TOOLTIPS } from './reportTooltips';
+import { semanticTooltip } from '../../engine/statisticalSemantics';
 
 type SourceLineRenderer = (_line: number | null | undefined) => React.ReactNode;
 
@@ -335,7 +336,7 @@ export const LocalTestSummarySection: React.FC<{
     <div className="mb-6 text-xs text-slate-300" style={{ order: -205 }}>
       <span
         className="uppercase tracking-wider text-slate-500 mr-2"
-        title="Single-outlier data-snooping verdicts under the run policy. Flagged means suspect, never proven blunder."
+        title={semanticTooltip('localTest')}
       >
         Local testing
       </span>
@@ -386,7 +387,7 @@ export const ReliabilitySummarySection: React.FC<{
     <div className="mb-6 text-xs text-slate-300" style={{ order: -204 }}>
       <span
         className="uppercase tracking-wider text-slate-500 mr-2"
-        title="Minimal Detectable Bias under the run reliability model, plus the worst coordinate influence of an MDB-sized bias. Worst-internal MDBs rank within compatible unit groups only; coordinate influence ranks by millimetres and is cross-type comparable."
+        title={`${semanticTooltip('mdbLegacy')} ${semanticTooltip('coordEff')}`}
       >
         Reliability
       </span>
@@ -436,7 +437,7 @@ export const StochasticDiagnosticsSection: React.FC<{
     <div className="mb-6 text-xs text-slate-300" style={{ order: -203 }}>
       <span
         className="uppercase tracking-wider text-slate-500 mr-2"
-        title="Empirical first-pass group diagnostic (s² = Ω/R, R = tr(P·Qvv)), not unbiased VCE. Weighted control-constraint rows are excluded by reporting policy, so group quadforms sum below the global vTPv. Diagnostics only — no automatic reweighting."
+        title={semanticTooltip('diagnosticScale')}
       >
         Stochastic model diagnostics
       </span>
@@ -449,13 +450,13 @@ export const StochasticDiagnosticsSection: React.FC<{
           <tr className="text-slate-500">
             <th className="text-left pr-3 font-normal">Group</th>
             <th className="text-right pr-3 font-normal">Eqns</th>
-            <th className="text-right pr-3 font-normal" title="Group redundancy R = tr(P·Qvv), shown raw with no pass/fail threshold.">
+            <th className="text-right pr-3 font-normal" title={semanticTooltip('redundancy')}>
               Redund
             </th>
             <th className="text-right pr-3 font-normal" title="Group quadform Ω = v′Pv with the same weights as the solve.">
               vTPv
             </th>
-            <th className="text-right pr-3 font-normal" title="Purely descriptive: sqrt(Ω/n). No statistical claim.">
+            <th className="text-right pr-3 font-normal" title={semanticTooltip('descriptiveFactor')}>
               Descr
             </th>
             <th className="text-right pr-3 font-normal" title={STOCHASTIC_SCALE_TOOLTIP}>

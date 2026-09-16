@@ -1,4 +1,5 @@
 import type { AdjustmentResult } from '../types';
+import { semanticTooltip } from './statisticalSemantics';
 
 /**
  * Presentation helpers for the empirical first-pass stochastic group
@@ -7,11 +8,7 @@ import type { AdjustmentResult } from '../types';
  */
 
 /** Spec §25 tooltip: neutral scale reading, no threshold verdict. */
-export const STOCHASTIC_SCALE_TOOLTIP =
-  'Group sigma scale s = sqrt(Ω/R): observed variation relative to stated precision. ' +
-  'Scale > 1 means observed variation exceeds stated precision; < 1 means stated sigmas look ' +
-  'conservative for this group; ≈ 1 means consistent, subject to estimation uncertainty. ' +
-  'First-pass diagnostic only — no automatic reweighting.';
+export const STOCHASTIC_SCALE_TOOLTIP: string = semanticTooltip('diagnosticScale');
 
 export const formatStochasticScale = (sigmaScale: number | undefined): string =>
   sigmaScale != null && Number.isFinite(sigmaScale) ? `×${sigmaScale.toFixed(2)}` : '-';

@@ -2,6 +2,7 @@ import { RAD_TO_DEG } from './angles';
 import type { ExternalInfluence } from './adjustExternalReliability';
 import type { ReliabilitySummary } from './reliabilityPolicy';
 import { formatReliabilityModelLabel } from './reliabilityPolicy';
+import { semanticTooltip } from './statisticalSemantics';
 import type { Observation } from '../types';
 
 const isAngularType = (type: Observation['type']): boolean =>
@@ -68,7 +69,8 @@ export const buildCoordEffCellTooltip = (
   const kind = external.primaryKind === '3d' ? '3D' : 'horizontal';
   return (
     `Coordinate influence of an MDB-sized bias (${mdbText}): max ${kind} ${external.primaryMm.toFixed(1)}mm ` +
-    `at ${station} (${formatShiftVector(external)}). ${model}, ${power}.`
+    `at ${station} (${formatShiftVector(external)}). ${model}, ${power}. ` +
+    'Unlike the leave-one-out shift (actual re-solve change for this residual), this is the MDB-sized detectability scale.'
   );
 };
 
@@ -139,10 +141,9 @@ export const buildMdbHeaderTooltip = (summary?: ReliabilitySummary | null): stri
     ? `Minimal Detectable Bias under ${formatReliabilityModelLabel(summary.model)} ` +
       `(alpha ${summary.alpha}, power ${summary.power}, δ0 ${summary.delta0.toFixed(3)}). ` +
       `Angular MDB shows arcsec (linear equivalent in the cell tooltip); linear MDB shows native units.`
-    : 'Minimal Detectable Bias: smallest blunder detectable here (legacy 3.29 scaling, ~50% detection level; see docs/STATISTICAL_TESTING.md).';
+    : 'Minimal Detectable Bias: smallest bias detectable here (legacy 3.29 scaling, ~50% detection level; not interchangeable with the statistical a-priori MDB0 — see docs/STATISTICAL_TESTING.md).';
 
-export const COORD_EFF_HEADER_TOOLTIP =
-  'Coordinate influence (mm): max station-coordinate displacement from an MDB-sized bias under the run reliability model (horizontal magnitude in 2D, 3D magnitude in 3D runs). Cell tooltip names the most-affected station and shift vector.';
+export const COORD_EFF_HEADER_TOOLTIP: string = semanticTooltip('coordEff');
 
 /** Worst internal MDB within one compatible unit group (never cross-unit). */
 export interface WorstInternalMdb {

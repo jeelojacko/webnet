@@ -1,3 +1,5 @@
+import { semanticTooltip } from '../../engine/statisticalSemantics';
+
 export const PREANALYSIS_LABEL_TOOLTIPS: Record<string, string> = {
   'Preanalysis Planning Summary':
     'Overview of predicted precision for the current planned network. Values are derived from approximate geometry with sigma0^2 fixed to 1.0.',
@@ -101,5 +103,4 @@ export const REPORT_STATIC_TOOLTIPS: Record<string, string> = {
     'Summary of the active default instrument and stochastic-model values used for weighting.',
 };
 
-export const HEURISTIC_SCORE_TOOLTIP =
-  'Deterministic ordering aid only \u2014 not a statistical test, probability, or significance.';
+export const HEURISTIC_SCORE_TOOLTIP: string = semanticTooltip('heuristicScore');
