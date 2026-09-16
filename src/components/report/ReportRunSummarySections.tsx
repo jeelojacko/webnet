@@ -13,6 +13,7 @@ import {
   formatStochasticStatus,
   STOCHASTIC_SCALE_TOOLTIP,
 } from '../../engine/stochasticDiagnosticsDisplay';
+import { formatQcSummaryMissing } from '../../engine/qcAvailability';
 import type { ReportObservationSelectorModel } from './reportObservationSelectors';
 import { REPORT_STATIC_TOOLTIPS } from './reportTooltips';
 import { semanticTooltip } from '../../engine/statisticalSemantics';
@@ -325,7 +326,7 @@ export const LocalTestSummarySection: React.FC<{
   if (!summary) {
     return (
       <div className="mb-6 text-xs text-slate-500" style={{ order: -205 }}>
-        Local testing unavailable for this run.
+        {formatQcSummaryMissing('Local testing')}
       </div>
     );
   }
@@ -379,7 +380,7 @@ export const ReliabilitySummarySection: React.FC<{
   if (!summary) {
     return (
       <div className="mb-6 text-xs text-slate-500" style={{ order: -204 }}>
-        Reliability unavailable for this run.
+        {formatQcSummaryMissing('Reliability')}
       </div>
     );
   }
@@ -428,7 +429,7 @@ export const StochasticDiagnosticsSection: React.FC<{
   if (!diagnostics) {
     return (
       <div className="mb-6 text-xs text-slate-500" style={{ order: -203 }}>
-        Stochastic model diagnostics unavailable for this run.
+        {formatQcSummaryMissing('Stochastic model diagnostics')}
       </div>
     );
   }
