@@ -242,9 +242,13 @@ export const computeStochasticGroupDiagnostics = (
       }
     }
     const finiteInputs = Number.isFinite(quadForm) && Number.isFinite(redundancyDof);
-    const safeQuad = !finiteInputs || quadForm < -1e-12 ? Number.NaN : Math.max(quadForm, 0);
-    const descriptiveFactor = equations > 0 && !Number.isNaN(safeQuad)
-      ? Math.sqrt(safeQuad / equations)
+    // Fail closed on ANY negative quadform (even rounding-scale): v'Pv < 0 is
+    // numerically impossible for a valid solve, so no descriptive/scale value
+    // may be fabricated from it. Raw quadForm stays visible; descriptive is
+    // withheld (null) on this path, never a clamped zero masquerading as valid.
+    const quadInvalid = !finiteInputs || quadForm < 0;
+    const descriptiveValue = !quadInvalid && equations > 0
+      ? Math.sqrt(quadForm / equations)
       : 0;
     const contaminatedGroup = contaminated.has(label);
     // Cross-group-contaminated groups: withhold partial values entirely — a
@@ -254,7 +258,7 @@ export const computeStochasticGroupDiagnostics = (
       equations,
       redundancyDof,
       quadForm: contaminatedGroup ? null : quadForm,
-      descriptiveFactor: contaminatedGroup ? null : descriptiveFactor,
+      descriptiveFactor: contaminatedGroup || quadInvalid ? null : descriptiveValue,
     };
     if (!hasModel) {
       return { ...base, status: 'unavailable', reason: 'no LS residual covariance (preanalysis or data-check mode)' };
@@ -272,7 +276,7 @@ export const computeStochasticGroupDiagnostics = (
     if (equations <= 1) {
       return { ...base, status: 'unestimable', reason: 'single-equation group carries no redundancy check' };
     }
-    if (Number.isNaN(safeQuad)) {
+    if (quadInvalid) {
       return { ...base, status: 'unestimable', reason: 'non-finite or negative group quadform (numerical)' };
     }
     if (!(redundancyDof > STOCHASTIC_REDUNDANCY_EPS) || !Number.isFinite(redundancyDof)) {
@@ -282,12 +286,12 @@ export const computeStochasticGroupDiagnostics = (
         reason: 'group redundancy is zero (uncontrolled or singular)',
       };
     }
-    const varianceFactor = safeQuad / redundancyDof;
+    const varianceFactor = quadForm / redundancyDof;
     // No Infinity/Infinity → NaN scale: s² and its root must both be finite.
     if (!Number.isFinite(varianceFactor)) {
       return { ...base, status: 'unestimable', reason: 'non-finite diagnostic scale (numerical)' };
     }
-    const sigmaScale = Math.sqrt(Math.max(varianceFactor, 0));
+    const sigmaScale = Math.sqrt(varianceFactor);
     if (!Number.isFinite(sigmaScale)) {
       return { ...base, status: 'unestimable', reason: 'non-finite diagnostic scale (numerical)' };
     }

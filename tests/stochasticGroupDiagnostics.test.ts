@@ -446,6 +446,35 @@ describe('stochasticGroupDiagnostics', () => {
     expect(diagnostics.reason).toMatch(/boom/);
   });
 
+  it('fails closed on a tiny negative quadform instead of clamping to zero', () => {
+    // Rounding-scale negative Ω_k = −5e-13 with healthy equations/redundancy:
+    // scalar rows contribute 0, one intra-group cross term contributes
+    // 2·10000·(5e-9)·(−5e-9) = −5e-13. Must be UNESTIMABLE with the raw
+    // quadform visible but NO fabricated descriptive/variance/sigma values.
+    const result = computeStochasticGroupDiagnostics({
+      scalarRows: [
+        { row: 0, group: 'Distances', v: 0, w: 10000, qvv: 5e-5 },
+        { row: 1, group: 'Distances', v: 0, w: 10000, qvv: 5e-5 },
+      ],
+      blocks: [],
+      crossTerms: [
+        { group: 'Distances', wAB: 10000, qvvAB: 1e-5, vA: 5e-9, vB: -5e-9 },
+      ],
+      crossGroupContaminatedGroups: [],
+      robustMode: 'none',
+    });
+    expect(result.groups).toHaveLength(1);
+    const group = result.groups[0] as (typeof result.groups)[number];
+    expect(group.equations).toBe(2);
+    expect(group.redundancyDof).toBeGreaterThan(0);
+    expect(group.quadForm).toBeCloseTo(-5e-13, 20);
+    expect(group.status).toBe('unestimable');
+    expect(group.reason).toMatch(/quadform/);
+    expect(group.descriptiveFactor).toBeNull();
+    expect(group.varianceFactor).toBeUndefined();
+    expect(group.sigmaScale).toBeUndefined();
+  });
+
   it('formats tiny redundancy adaptively and softens weak-redundancy rows', () => {
     expect(formatStochasticRedundancy(1.234567)).toBe('1.235');
     expect(formatStochasticRedundancy(4e-5)).toBe((4e-5).toExponential(2));
