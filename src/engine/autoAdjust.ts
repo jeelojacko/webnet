@@ -1,4 +1,9 @@
 import type { AdjustmentResult, Observation } from '../types';
+import {
+  hasLocalFailure,
+  maxAbsStdRes,
+  observationStationsLabel,
+} from './suspectImpactShared';
 
 export interface AutoAdjustConfig {
   enabled: boolean;
@@ -133,21 +138,6 @@ export const extractAutoAdjustDirectiveFromInput = (
   return latest;
 };
 
-const observationStationsLabel = (obs: Observation): string => {
-  if ('at' in obs && 'from' in obs && 'to' in obs) return `${obs.at}-${obs.from}-${obs.to}`;
-  if ('at' in obs && 'to' in obs) return `${obs.at}-${obs.to}`;
-  if ('from' in obs && 'to' in obs) return `${obs.from}-${obs.to}`;
-  return '-';
-};
-
-const hasLocalFailure = (obs: Observation): boolean => {
-  if (obs.localTestComponents) {
-    return obs.localTestComponents.passE === false || obs.localTestComponents.passN === false;
-  }
-  if (obs.localTest) return obs.localTest.pass === false;
-  return false;
-};
-
 const redundancyValue = (obs: Observation): number | undefined => {
   if (typeof obs.redundancy === 'number')
     return Number.isFinite(obs.redundancy) ? obs.redundancy : undefined;
@@ -158,12 +148,6 @@ const redundancyValue = (obs: Observation): number | undefined => {
   }
   return undefined;
 };
-
-const maxAbsStdRes = (res: AdjustmentResult): number =>
-  res.observations.reduce((maxVal, obs) => {
-    if (!Number.isFinite(obs.stdRes)) return maxVal;
-    return Math.max(maxVal, Math.abs(obs.stdRes ?? 0));
-  }, 0);
 
 export const pickAutoAdjustRemovals = (
   result: AdjustmentResult,

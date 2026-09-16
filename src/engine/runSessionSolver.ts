@@ -308,6 +308,12 @@ export const createSessionSolveRunner = ({
         overrideValues,
         approvedClusterMerges,
         solveCore,
+        {
+          analysisMode:
+            profileContext.effectiveParse.suspectImpactMode === 'on' ? 'always' : 'auto',
+          robustReSolve:
+            solved.parseState?.robustMode != null && solved.parseState.robustMode !== 'none',
+        },
       );
     }
     solved.preanalysisImpactDiagnostics = undefined;
