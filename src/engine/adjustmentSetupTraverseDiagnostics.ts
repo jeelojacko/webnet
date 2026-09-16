@@ -140,6 +140,7 @@ export const buildSetupDiagnostics = ({
     if (localComp) {
       if (localComp.passE === false) setup.localFailCount += 1;
       if (localComp.passN === false) setup.localFailCount += 1;
+      if (localComp.passU === false) setup.localFailCount += 1;
     } else if (obs.localTest && obs.localTest.pass === false) {
       setup.localFailCount += 1;
     }

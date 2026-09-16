@@ -75,24 +75,50 @@ export const QcOverviewSection: React.FC<{
   /** Active report filters can hide a jump target; when provided the jump clears them first. */
   onClearFilters?: () => void;
 }> = ({ isDataCheck, isPreanalysis, isSpecialRunMode, result, onJumpToSection, onSelectObservation, onClearFilters }) => {
+  const [pendingScrollObsId, setPendingScrollObsId] = React.useState<number | null>(null);
+
+  // Post-render scroll: the target row mounts only after the parent clears
+  // filters / expands the section, so wait for it deterministically instead
+  // of a fixed timeout (which deferred rendering can miss). Hooks stay above
+  // the early return below.
+  React.useEffect(() => {
+    if (pendingScrollObsId == null) return;
+    const selector = `[data-report-observation-row="${pendingScrollObsId}"]`;
+    const scrollToRow = (): boolean => {
+      const row = document.querySelector(selector);
+      if (row == null) return false;
+      row.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+      return true;
+    };
+    if (scrollToRow()) {
+      setPendingScrollObsId(null);
+      return;
+    }
+    const observer = new MutationObserver(() => {
+      if (scrollToRow()) {
+        setPendingScrollObsId(null);
+        observer.disconnect();
+      }
+    });
+    observer.observe(document.body, { childList: true, subtree: true });
+    return () => observer.disconnect();
+  }, [pendingScrollObsId]);
+
   if (isSpecialRunMode || isPreanalysis || isDataCheck) return null;
   const overview = buildQcOverview(result);
   const attention = buildQcAttention(result);
 
   const jumpToObservation = (obsId: number): void => {
     // Clear active filters first so the target row cannot stay hidden, then
-    // select + jump to the section, then scroll to the row itself (the
-    // section jump lands on the header only).
+    // select + jump to the section (which expands it); the effect above
+    // scrolls to the row itself once it mounts (the section jump lands on
+    // the header only).
     onClearFilters?.();
     onSelectObservation?.(obsId);
     const obs = result.observations.find((o) => o.id === obsId);
     const section = obs ? OBS_TYPE_SECTION[obs.type] : undefined;
     if (section) onJumpToSection(section);
-    window.setTimeout(() => {
-      document
-        .querySelector(`[data-report-observation-row="${obsId}"]`)
-        ?.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
-    }, 60);
+    setPendingScrollObsId(obsId);
   };
 
   const renderItem = (item: QcAttentionItem): React.ReactNode => {

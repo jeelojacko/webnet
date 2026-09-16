@@ -188,6 +188,7 @@ const buildObservationValueFields = (
   localTestCritical: string;
   localTestPassE: string;
   localTestPassN: string;
+  localTestPassU: string;
   localTestStatistic: string;
   localTestStatisticFamily: string;
   mdbValue: string;
@@ -236,6 +237,10 @@ const buildObservationValueFields = (
     localTestPassN:
       typeof obs.localTestComponents?.passN === 'boolean'
         ? String(obs.localTestComponents.passN)
+        : '',
+    localTestPassU:
+      typeof obs.localTestComponents?.passU === 'boolean'
+        ? String(obs.localTestComponents.passU)
         : '',
     localTestStatistic: formatNumber(obs.localTest?.statistic, 3),
     localTestStatisticFamily: obs.localTest?.statisticFamily ?? '',
@@ -350,6 +355,7 @@ export const OBSERVATIONS_RESIDUALS_CSV_COLUMNS = [
   'reliabilityExternalDEmm',
   'reliabilityExternalDNmm',
   'reliabilityExternalDHmm',
+  'localTestPassU',
 ] as const;
 
 export const buildObservationsResidualsCsvText = (params: {
@@ -434,6 +440,7 @@ export const buildObservationsResidualsCsvText = (params: {
           values.reliabilityExternalDEmm,
           values.reliabilityExternalDNmm,
           values.reliabilityExternalDHmm,
+          values.localTestPassU,
         ]),
       );
     });

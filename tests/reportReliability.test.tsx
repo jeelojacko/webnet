@@ -316,7 +316,9 @@ describe('reliability CSV fields', () => {
     });
     const lines = text.split('\n');
     const header = lines[0].split(',');
-    expect(header.slice(-13)).toEqual([
+    // Additive per-component verdicts (localTestPassU) sit at the absolute
+    // end so no legacy or reliability index shifts.
+    expect(header.slice(-14)).toEqual([
       'localTestStatistic',
       'localTestStatisticFamily',
       'reliabilityModel',
@@ -330,6 +332,7 @@ describe('reliability CSV fields', () => {
       'reliabilityExternalDEmm',
       'reliabilityExternalDNmm',
       'reliabilityExternalDHmm',
+      'localTestPassU',
     ]);
     // Every CSV header is unique; legacy compatibility MDB columns stay
     // separate from the active-model reliability MDB columns.

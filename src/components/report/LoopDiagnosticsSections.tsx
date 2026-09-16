@@ -318,7 +318,7 @@ const LoopDiagnosticsSections: React.FC<LoopDiagnosticsSectionsProps> = ({
                       <td className="py-1 text-right font-mono">{loop.linearPpm != null ? loop.linearPpm.toFixed(1) : '-'}</td>
                       <td className="py-1 text-right font-mono">{loop.closureRatio != null ? `1:${loop.closureRatio.toFixed(0)}` : '-'}</td>
                       <td className="py-1 text-right font-mono">{loop.severity.toFixed(2)}</td>
-                      <td className="py-1 px-3 text-right font-mono text-yellow-400">WARN</td>
+                      <td className="py-1 px-3 text-right font-mono text-yellow-400" title={LOOP_TOLERANCE_STATUS_TOOLTIP}>WARN</td>
                     </tr>
                   ))}
                 </tbody>
