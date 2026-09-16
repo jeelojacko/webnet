@@ -356,7 +356,6 @@ export const computeStandardizedResidualStatistics = (
             const reuseDecision = decideStatisticsQxxReuse({
               forceLegacy: ctx.forceLegacyStatisticsQxx === true,
               converged: ctx.solveConverged === true,
-              is2D: ctx.is2D,
               preanalysisMode: ctx.preanalysisMode,
               robustMode: ctx.robustMode,
               finalQxx: hasQxx ? ctx.Qxx : null,
@@ -373,7 +372,10 @@ export const computeStandardizedResidualStatistics = (
             // Production seam: equations are still assembled above (L,
             // rowInfo, weights); only the statistics normal accumulation
             // and inversion are skipped when the final dense Qxx is reused.
-            // multiplySparseRowsByDenseMatrix never mutates Qxx.
+            // multiplySparseRowsByDenseMatrix never mutates Qxx, and the
+            // reused reference below is strictly read-only: no stats consumer
+            // writes through it (result packaging never surfaces raw Qxx),
+            // so the canonical ctx.Qxx needs no copy on this path.
             if (reuseDecision.eligible && ctx.Qxx != null) {
               const reusedQxx = ctx.Qxx;
               if (ctx.qxxReuseProbe) {

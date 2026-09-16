@@ -139,15 +139,33 @@ describe('Phase 10E production Qxx reuse contract', () => {
     expect(maxAbsDiff(legacyFinal!.qxx!, stats!.qxx!)).toBe(0);
   });
 
-  it('keeps 2D solves on the legacy path with full parity', () => {
+  it('automatically reuses the final dense Qxx on converged 2D with full parity', () => {
     const { result, events } = solveWithProbe(fixture2d.input, undefined);
     expect(result.success).toBe(true);
     expect(result.converged).toBe(true);
     const oracle = solveWithProbe(fixture2d.input, true);
     expect(stripVolatile(result)).toBe(stripVolatile(oracle.result));
     const stats = events.find((e) => e.stage === 'statistics');
+    expect(stats?.reused).toBe(true);
+    expect(stats?.reason).toBe('reused-final-dense-qxx');
+    expect(stats?.normalAccumulations).toBe(0);
+    expect(stats?.inversions).toBe(0);
+    expect(stats?.normalDimension).toBeNull();
+    const legacyStats = oracle.events.find((e) => e.stage === 'statistics');
+    expect(legacyStats?.reused).toBe(false);
+    expect(legacyStats?.reason).toBe('force-legacy-oracle');
+    expect(legacyStats?.inversions).toBe(1);
+    expect(maxAbsDiff(legacyStats!.qxx!, stats!.qxx!)).toBe(0);
+  });
+
+  it('keeps genuinely-inadmissible 2D (robust Huber) on the legacy path with full parity', () => {
+    const huber2d = `${fixture2d.input}\n.ROBUST HUBER 1.5\n`;
+    const { result, events } = solveWithProbe(huber2d, undefined);
+    const oracle = solveWithProbe(huber2d, true);
+    expect(stripVolatile(result)).toBe(stripVolatile(oracle.result));
+    const stats = events.find((e) => e.stage === 'statistics');
     expect(stats?.reused).toBe(false);
-    expect(stats?.reason).toBe('two-dimensional-legacy');
+    expect(stats?.reason).toBe('robust-mode-inadmissible');
     expect(stats?.inversions).toBe(1);
   });
 
@@ -198,7 +216,6 @@ describe('Phase 10E production Qxx reuse contract', () => {
     const base = {
       forceLegacy: false,
       converged: true,
-      is2D: false,
       preanalysisMode: false,
       robustMode: 'none' as string | undefined,
       finalQxx: [
@@ -219,9 +236,7 @@ describe('Phase 10E production Qxx reuse contract', () => {
     expect(decideStatisticsQxxReuse({ ...base, converged: false }).reason).toBe(
       'not-converged',
     );
-    expect(decideStatisticsQxxReuse({ ...base, is2D: true }).reason).toBe(
-      'two-dimensional-legacy',
-    );
+    expect(decideStatisticsQxxReuse(base).reason).toBe('reused-final-dense-qxx');
     expect(decideStatisticsQxxReuse({ ...base, preanalysisMode: true }).reason).toBe(
       'preanalysis-mode',
     );
