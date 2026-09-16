@@ -38,7 +38,7 @@ test.describe('Systematic pattern diagnostics browser validation', () => {
       await expect(page.getByTestId('case-terrestrial')).toContainText(
         'intercept pattern and slope pattern not separable',
       );
-      await expect(page.getByTestId('case-terrestrial')).toContainText('Face balance');
+      await expect(page.getByTestId('case-terrestrial')).toContainText('Face-count balance');
       // Trend case: descriptive slope + leveling drift.
       await expect(page.getByTestId('case-trend')).toContainText('mm/km');
       await expect(page.getByTestId('case-trend')).toContainText('input sequence');

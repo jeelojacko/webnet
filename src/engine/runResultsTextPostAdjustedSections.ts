@@ -165,7 +165,7 @@ export const appendPostAdjustedSections = ({
         tolerance: `Tol(${linearUnit})`,
         ppm: 'Linear(ppm)',
         ratio: 'Ratio',
-        severity: 'Severity',
+        severity: 'Heuristic severity',
         lines: 'Lines',
         path: 'Path',
       };

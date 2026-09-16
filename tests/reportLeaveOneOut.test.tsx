@@ -241,11 +241,41 @@ describe('leave-one-out text export', () => {
     expect(text).toContain('--- Leave-One-Out Influence / What-if Exclusion ---');
     expect(text).not.toContain('Suspect Impact Analysis');
     expect(text).not.toContain('Score');
-    expect(text).toContain('base |t|=2.44 local=FAIL');
+    expect(text).toContain('base |StdRes|=2.44 local=FAIL');
     expect(text).toContain('SEUW 1.5234->1.0102');
     expect(text).toContain('T=12.345/3.210 DOF=4/3 p=0.0153/0.3602');
     expect(text).toContain('max shift 0.0045 m @ P');
     expect(text).toContain('re-solve singular; status FAILED');
     expect(text).toContain('shift unavailable (free-network datum)');
+  });
+
+  it('labels LOO values as |StdRes| (studentized tau), never bare |t|', () => {
+    // Displayed LOO values come from baseStdRes/maxStdRes (abs studentized
+    // residual tau per the central semantics registry), not from
+    // localTest.statistic — so the label is |StdRes| under every local-test
+    // policy (legacy-fixed, Baarda w, Pope tau); only the Local verdict
+    // column beside it varies by run family.
+    const lines: string[] = [];
+    appendLeaveOneOutInfluenceSection({
+      lines,
+      res: { suspectImpactDiagnostics: [okRow] } as AdjustmentResult,
+      linearUnit: 'm',
+      unitScale: 1,
+    });
+    const text = lines.join('\n');
+    expect(text).toContain('base |StdRes|=2.44');
+    expect(text).toContain('max|StdRes| 2.44->1.10');
+    expect(text).not.toContain('|t|');
+    expect(text).not.toContain('|w|');
+  });
+
+  it('labels browser LOO fields as |StdRes|, never bare |t|', () => {
+    const html = renderToStaticMarkup(
+      <ReportSuspectImpactSection {...sectionProps} suspectImpactDiagnostics={[okRow]} />,
+    );
+    expect(html).toContain('Worst Base |StdRes|');
+    expect(html).toContain('Base |StdRes|');
+    expect(html).toContain('Base standardized residual |StdRes|=2.44');
+    expect(html).not.toContain('Base |t|');
   });
 });

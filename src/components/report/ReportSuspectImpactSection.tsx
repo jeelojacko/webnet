@@ -154,7 +154,7 @@ export const ReportSuspectImpactSection: React.FC<{
           <div>{suspectImpactExcludedCount}</div>
         </div>
         <div>
-          <div className="text-slate-500">Worst Base |t|</div>
+          <div className="text-slate-500">Worst Base |StdRes|</div>
           <div>{suspectImpactWorstBaseStdRes.toFixed(2)}</div>
         </div>
       </div>
@@ -166,7 +166,7 @@ export const ReportSuspectImpactSection: React.FC<{
               <th className="py-2 px-3">#</th>
               <th className="py-2">Observation</th>
               <th className="py-2">Stations</th>
-              <th className="py-2 text-right">Base |t|</th>
+              <th className="py-2 text-right">Base |StdRes|</th>
               <th className="py-2 text-right">Local</th>
               <th className="py-2 text-right">Without Obs</th>
               <th className="py-2 text-right" title={semanticTooltip('looShift')}>Coord Shift</th>
@@ -188,7 +188,7 @@ export const ReportSuspectImpactSection: React.FC<{
                     className="py-1 text-right font-mono"
                     title={
                       d.baseStdRes != null
-                        ? `Base standardized residual |t|=${d.baseStdRes.toFixed(2)}`
+                        ? `Base standardized residual |StdRes|=${d.baseStdRes.toFixed(2)}`
                         : 'Base standardized residual unavailable'
                     }
                   >

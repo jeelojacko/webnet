@@ -48,7 +48,7 @@ export const appendLeaveOneOutInfluenceSection = ({
     const head =
       `#${idx + 1} ${d.type.toUpperCase()} ${d.stations} ` +
       `(obs #${d.obsId}, line ${d.sourceLine ?? '-'}): ` +
-      `base |t|=${fmt(d.baseStdRes, 2)} local=${d.baseLocalFail ? 'FAIL' : '-'}` +
+      `base |StdRes|=${fmt(d.baseStdRes, 2)} local=${d.baseLocalFail ? 'FAIL' : '-'}` +
       (d.robustReSolve ? ' [robust re-solve]' : '');
     if (d.status !== 'ok') {
       lines.push(`${head}; ${failureText(d)}; status FAILED`);
@@ -60,7 +60,7 @@ export const appendLeaveOneOutInfluenceSection = ({
       `p=${fmt(d.baseChi?.p, 4)}/${fmt(d.altChi?.p, 4)})`;
     lines.push(
       `${head}; SEUW ${fmt(d.baseSeuw, 4)}->${fmt(d.altSeuw, 4)}; ${chi}; ` +
-        `max|t| ${fmt(d.baseMaxStdRes, 2)}->${fmt(d.altMaxStdRes, 2)}; ` +
+        `max|StdRes| ${fmt(d.baseMaxStdRes, 2)}->${fmt(d.altMaxStdRes, 2)}; ` +
         `local fails ${d.baseLocalFails ?? '-'}` +
         `->${d.altLocalFails ?? '-'}`,
     );
