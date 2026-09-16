@@ -139,6 +139,14 @@ export const computeStandardizedResidualStatistics = (
       const sparseStatsSupported =
         ctx.sparseRowProductsSolver != null &&
         ctx.applyTsCorrelationToWeightWriter != null;
+      // Phase 16B dead-P elimination: in preanalysis mode no consumer reads
+      // assembled.P (Huber returns early above; row products, sensitivity,
+      // and external propagation sit inside `if (!ctx.preanalysisMode)`), so
+      // assemble structured with omitDenseP and skip the m×m allocation.
+      // The writer TS hook keeps tsCorrelationDiagnostics identical; without
+      // it, stay on the legacy dense path.
+      const omitDeadPreanalysisP =
+        ctx.preanalysisMode === true && ctx.applyTsCorrelationToWeightWriter != null;
       const assembleStatsEquations = (sparse: boolean) => assembleAdjustmentEquations(
         {
           stations: ctx.stations,
@@ -162,7 +170,7 @@ export const computeStandardizedResidualStatistics = (
           curvatureRefractionAngle: ctx.curvatureRefractionAngle.bind(this),
           applyTsCorrelationToWeightMatrix: (weightMatrix, weightRowInfo) =>
             ctx.applyTsCorrelationToWeightMatrix(weightMatrix, weightRowInfo, true),
-          applyTsCorrelationToWeightWriter: sparse
+          applyTsCorrelationToWeightWriter: sparse || omitDeadPreanalysisP
             ? (weights, weightRowInfo) =>
               ctx.applyTsCorrelationToWeightWriter?.(weights, weightRowInfo, true)
             : undefined,
@@ -172,7 +180,7 @@ export const computeStandardizedResidualStatistics = (
         numObsEquations,
         numParams,
         undefined,
-        sparse
+        sparse || omitDeadPreanalysisP
           ? { includeDenseA: false, weightRepresentation: 'sparse', omitDenseP: true }
           : { includeDenseA: false },
       );

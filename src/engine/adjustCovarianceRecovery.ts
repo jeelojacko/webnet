@@ -23,6 +23,8 @@ import {
 import type { SelectedCovarianceStore } from './selectedCovarianceStore';
 import { recordSelectedCovarianceCall, recordSelectedCovarianceFallback } from './experimentalSparseDiagnostics';
 import { detailedNow, type DetailedSolveProfiler } from './adjustDetailedSolveProfile';
+import { accumulateNormalFromStructuredWeights, structuredWeightTransferEligible } from './structuredWeightOracle';
+import { recordStructuredFallback } from './structuredWeightTelemetry';
 import { copyMatrix, type QxxReuseProbe } from './qxxReuseEvidence';
 import type {
   DistanceObservation,
@@ -123,6 +125,12 @@ interface RecoverFinalNormalCovarianceOptions {
    * undefined/false preserves selected-network scaling/omission.
    */
   experimentalSelectedCovarianceLegacyAllPairs?: boolean;
+  /**
+   * Phase 16B test-only switch: false forces the legacy dense weight path
+   * for final-covariance recovery. Undefined (default) allows the
+   * structured candidate with fail-closed dense fallback.
+   */
+  structuredWeightTransfer?: boolean;
   /** Observed station pairs feeding the selected-mode query plan. */
   connectedPairs?: readonly CovariancePair[];
   /** REL/PTOL-requested pairs feeding the selected-mode query plan. */
@@ -363,7 +371,60 @@ const recoverDenseCovariance = (
   covarianceObsEquationCount: number,
 ): number[][] => {
   const profiler = options.detailedSolveProfiler;
-  const assemblyStartedAt = profiler ? detailedNow() : 0;
+  let assemblyStartedAt = profiler ? detailedNow() : 0;
+  // Phase 16B structured candidate: identical assembly through the sparse
+  // writer, N accumulated in dense-identical row-major order. Dense fallback
+  // below the measured crossover (allocation trivial, finalize dominates)
+  // or on any doubt (disabled switch, missing/unsupported weights) with no
+  // log/output change.
+  if (
+    options.structuredWeightTransfer !== false &&
+    structuredWeightTransferEligible(covarianceObsEquationCount)
+  ) {
+    try {
+      const structured = assembleAdjustmentEquations(
+        buildAssemblyDependencies(options),
+        covarianceObservations,
+        options.constraints,
+        covarianceObsEquationCount,
+        options.numParams,
+        undefined,
+        { includeDenseA: false, weightRepresentation: 'sparse', omitDenseP: true },
+      );
+      const structuredWeights = structured.structuredWeights;
+      if (!structuredWeights) throw new Error('Structured weights unavailable.');
+      const assemblyMs = profiler ? detailedNow() - assemblyStartedAt : 0;
+      const accumulateStartedAt = profiler ? detailedNow() : 0;
+      const { normal } = accumulateNormalFromStructuredWeights(
+        structured.sparseRows,
+        zeros(covarianceObsEquationCount, 1),
+        structuredWeights,
+        options.numParams,
+      );
+      const accumulateMs = profiler ? detailedNow() - accumulateStartedAt : 0;
+      options.recordRecoveryNormal?.(normal);
+      const invertStartedAt = profiler ? detailedNow() : 0;
+      const qxx = options.invertNormalMatrixForStats(normal);
+      if (profiler) profiler.recordCovariance(assemblyMs, accumulateMs, detailedNow() - invertStartedAt);
+      if (options.qxxReuseProbe) {
+        options.qxxReuseProbe({
+          stage: 'final-covariance',
+          reused: false,
+          reason: 'structured-final-covariance-captured',
+          normalDimension: options.numParams,
+          qxxDimension: options.numParams,
+          normalAccumulations: 1,
+          inversions: 1,
+          normal: copyMatrix(normal),
+          qxx: copyMatrix(qxx),
+        });
+      }
+      return qxx;
+    } catch {
+      recordStructuredFallback();
+      if (profiler) assemblyStartedAt = detailedNow();
+    }
+  }
   const { P, sparseRows } = assembleAdjustmentEquations(
     buildAssemblyDependencies(options),
     covarianceObservations,
