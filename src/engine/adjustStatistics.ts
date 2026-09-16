@@ -5,6 +5,7 @@ import { buildObservationTypeSummary, buildResidualDiagnostics, buildStatistical
 import { propagateAdjustmentPrecision } from './adjustStatisticsPrecision';
 import { accumulateAdjustmentResiduals } from './adjustStatisticsResiduals';
 import { computeStandardizedResidualStatistics } from './adjustStatisticsStandardizedResiduals';
+import { unavailableStochasticDiagnostics } from './stochasticGroupDiagnostics';
 import { detailedNow } from './adjustDetailedSolveProfile';
 import type { AdjustmentStatisticsContext } from './adjustStatisticsTypes';
 import type { Observation, StationId } from '../types';
@@ -63,11 +64,9 @@ export const calculateAdjustmentStatistics = (
     computeStandardizedResidualStatistics(ctx, paramIndex, hasQxx, activeObservations, constraints);
     if (profiler) standardizedResidualsMs = detailedNow() - standardizedStartedAt;
     if (ctx.stochasticDiagnostics == null && (ctx.preanalysisMode || !hasQxx)) {
-      ctx.stochasticDiagnostics = {
-        groups: [],
-        globalNote:
-          'Stochastic group diagnostics unavailable: no LS residual covariance in preanalysis or data-check mode.',
-      };
+      ctx.stochasticDiagnostics = unavailableStochasticDiagnostics(
+        'no LS residual covariance in preanalysis or data-check mode',
+      );
     }
 
     if (!ctx.preanalysisMode) {

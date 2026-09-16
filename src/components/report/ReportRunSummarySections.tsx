@@ -8,7 +8,9 @@ import { buildLocalTestSummaryLine } from './localTestDisplay';
 import { buildReliabilitySummaryLine } from '../../engine/reliabilityDisplay';
 import {
   buildStochasticPointerLine,
+  formatStochasticRedundancy,
   formatStochasticScale,
+  formatStochasticStatus,
   STOCHASTIC_SCALE_TOOLTIP,
 } from '../../engine/stochasticDiagnosticsDisplay';
 import type { ReportObservationSelectorModel } from './reportObservationSelectors';
@@ -434,11 +436,14 @@ export const StochasticDiagnosticsSection: React.FC<{
     <div className="mb-6 text-xs text-slate-300" style={{ order: -203 }}>
       <span
         className="uppercase tracking-wider text-slate-500 mr-2"
-        title="Single-pass Förstner group components (s² = Ω/R, R = tr(P·Qvv)). Control-constraint rows are excluded, so group quadforms sum below the global vTPv. Diagnostics only — no automatic reweighting."
+        title="Empirical first-pass group diagnostic (s² = Ω/R, R = tr(P·Qvv)), not unbiased VCE. Weighted control-constraint rows are excluded by reporting policy, so group quadforms sum below the global vTPv. Diagnostics only — no automatic reweighting."
       >
         Stochastic model diagnostics
       </span>
       {pointer ? <div className="mt-1 text-slate-200">{pointer}</div> : null}
+      {diagnostics.groups.length === 0 && diagnostics.reason ? (
+        <div className="mt-1 text-slate-400">unavailable — {diagnostics.reason}</div>
+      ) : null}
       <table className="mt-2 border-collapse font-mono text-[11px]">
         <thead>
           <tr className="text-slate-500">
@@ -464,23 +469,17 @@ export const StochasticDiagnosticsSection: React.FC<{
             <tr key={group.label} className="border-t border-slate-800">
               <td className="pr-3 text-slate-200">{group.label}</td>
               <td className="text-right pr-3">{group.equations}</td>
+              <td className="text-right pr-3">{formatStochasticRedundancy(group.redundancyDof)}</td>
               <td className="text-right pr-3">
-                {Number.isFinite(group.redundancyDof) ? group.redundancyDof.toFixed(3) : '-'}
+                {Number.isFinite(group.quadForm) ? (group.quadForm as number).toFixed(4) : '-'}
               </td>
               <td className="text-right pr-3">
-                {Number.isFinite(group.quadForm) ? group.quadForm.toFixed(4) : '-'}
-              </td>
-              <td className="text-right pr-3">
-                {Number.isFinite(group.descriptiveFactor) ? group.descriptiveFactor.toFixed(4) : '-'}
+                {Number.isFinite(group.descriptiveFactor) ? (group.descriptiveFactor as number).toFixed(4) : '-'}
               </td>
               <td className="text-right pr-3" title={STOCHASTIC_SCALE_TOOLTIP}>
                 {group.status === 'estimated' ? formatStochasticScale(group.sigmaScale) : '-'}
               </td>
-              <td className="text-slate-400">
-                {group.status === 'estimated'
-                  ? 'estimated'
-                  : `${group.status}${group.reason ? ` — ${group.reason}` : ''}`}
-              </td>
+              <td className="text-slate-400">{formatStochasticStatus(group)}</td>
             </tr>
           ))}
         </tbody>

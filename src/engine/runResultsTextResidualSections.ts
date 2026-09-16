@@ -2,7 +2,12 @@ import type { RunResultsTextContext } from './runResultsTextContext';
 import type { AdjustmentResult } from '../types';
 import { formatLocalTestPolicyLine } from './localTestPolicy';
 import { buildReliabilitySummaryLine } from './reliabilityDisplay';
-import { buildStochasticPointerLine, formatStochasticScale } from './stochasticDiagnosticsDisplay';
+import {
+  buildStochasticPointerLine,
+  formatStochasticRedundancy,
+  formatStochasticScale,
+  formatStochasticStatus,
+} from './stochasticDiagnosticsDisplay';
 import { formatReliabilityPolicyLine } from './reliabilityPolicy';
 
 type ResidualSectionContext = Pick<
@@ -61,20 +66,20 @@ const appendStochasticDiagnosticsSection = ({
   if (!diagnostics) return;
   lines.push('--- Stochastic Model Diagnostics ---');
   lines.push(
-    'Single-pass Foerstner group components (s^2 = quadform/redundancy, redundancy = tr(P.Qvv)). ' +
-      'Control-constraint rows excluded; diagnostics only, no automatic reweighting.',
+    'Empirical first-pass group diagnostic (s^2 = quadform/redundancy, redundancy = tr(P.Qvv)), ' +
+      'not unbiased VCE. Weighted control-constraint rows excluded by reporting policy; ' +
+      'diagnostics only, no automatic reweighting.',
   );
   const pointer = buildStochasticPointerLine(res);
   if (pointer) lines.push(pointer);
+  if (diagnostics.groups.length === 0 && diagnostics.reason) {
+    lines.push(`unavailable (${diagnostics.reason})`);
+  }
   diagnostics.groups.forEach((group) => {
     const scale = group.status === 'estimated' ? formatStochasticScale(group.sigmaScale) : '-';
-    const status =
-      group.status === 'estimated'
-        ? 'estimated'
-        : `${group.status}${group.reason ? ` (${group.reason})` : ''}`;
     lines.push(
-      `${group.label}: eqns=${group.equations}, redund=${Number.isFinite(group.redundancyDof) ? group.redundancyDof.toFixed(3) : '-'}, ` +
-        `quadform=${Number.isFinite(group.quadForm) ? group.quadForm.toFixed(4) : '-'}, scale=${scale}, ${status}`,
+      `${group.label}: eqns=${group.equations}, redund=${formatStochasticRedundancy(group.redundancyDof)}, ` +
+        `quadform=${Number.isFinite(group.quadForm) ? (group.quadForm as number).toFixed(4) : '-'}, scale=${scale}, ${formatStochasticStatus(group)}`,
     );
   });
   lines.push('');

@@ -5,6 +5,7 @@ import type { ParseOptions } from './typesParseOptions';
 import type { ClusterApprovedMerge, ClusterMergeOutcome, ClusterRejectedProposal, AutoAdjustDiagnostics, AutoSideshotDiagnostics, LevelingLoopDiagnostics } from './typesDiagnostics';
 import type { LocalTestSummary } from './engine/localTestPolicy';
 import type { ReliabilitySummary } from './engine/reliabilityPolicy';
+import type { StochasticDiagnostics } from './engine/stochasticGroupDiagnostics';
 import type { ClusterLinkageMode, RobustMode, TsCorrelationScope } from './typesParseSettings';
 
 import type { AdjustmentSolveTimingProfile } from './typesSolveTiming';
@@ -55,20 +56,7 @@ export interface AdjustmentResult {
     totalErrorFactorByCount: number;
     totalErrorFactorByDof: number;
   };
-  stochasticDiagnostics?: {
-    groups: {
-      label: string;
-      equations: number;
-      redundancyDof: number;
-      quadForm: number;
-      descriptiveFactor: number;
-      varianceFactor?: number;
-      sigmaScale?: number;
-      status: 'estimated' | 'unestimable' | 'unavailable';
-      reason?: string;
-    }[];
-    globalNote?: string;
-  };
+  stochasticDiagnostics?: StochasticDiagnostics;
   typeSummary?: Record<
     string,
     {

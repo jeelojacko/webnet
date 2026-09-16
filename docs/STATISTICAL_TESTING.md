@@ -258,41 +258,74 @@ Four related numbers must not be confused:
   variance component.
 - **Descriptive factor** (diagnostics table): sqrt(Ω_k/n_k), purely
   descriptive, no statistical claim.
-- **Förstner diagnostic s_k²** (diagnostics table): Ω_k/R_k, the first
-  iteration of the IAUE scheme. Unbiased only under the **disjunctive
-  group model**: groups mutually uncorrelated, arbitrary correlation
-  within a group (GNSS covariance blocks included). Iterated to
-  convergence it becomes Helmert/MINQUE/REML; what is reported here is
-  deliberately the first iteration only, so between-group coupling is
-  ignored and simultaneous multi-group VCE is deferred.
+- **First-pass diagnostic s_k²** (diagnostics table, Förstner-style):
+  Ω_k/R_k, the first iteration of the IAUE scheme. This is an empirical
+  first-pass diagnostic scale, NOT an unbiased variance-component estimate:
+  under parameter coupling E[Ω_k] = Σ_l a_kl θ_l mixes the variance
+  components of ALL groups, so group-uncorrelatedness alone (the
+  disjunctive group model: groups mutually uncorrelated, arbitrary
+  correlation within a group, GNSS covariance blocks included) does NOT
+  imply unbiasedness — negligible between-group coupling through the
+  parameters would additionally be required. Iterated to convergence the
+  scheme becomes Helmert/MINQUE/REML; what is reported here is deliberately
+  the first iteration only, so simultaneous multi-group VCE is deferred.
 - **Full VCE**: not computed. There is no iterative re-solve and no
   automatic reweighting — diagnostics only.
 
 Validity conditions and gates:
 
-- **Constraint exclusion**: control-constraint rows carry no LS residual
-  covariance in this formulation, so they are excluded from groups by
-  design. Group quadforms therefore sum below the global vTPv by exactly
-  the constraint contribution (plus the TS-correlation vTPv delta, which
-  is distributed to groups via off-diagonal cross terms).
+- **Constraint exclusion (reporting policy)**: weighted coordinate controls
+  ARE finite-sigma pseudo-observations with L/A/P rows that enter the normal
+  matrix, Qxx, and the global vTPv — they are not covariance-free (only truly
+  fixed coordinates are). They are excluded from groups by reporting policy
+  to keep datum/constraint semantics separate from observation-group
+  diagnostics, not because they lack covariance. Group quadforms therefore
+  sum below the global vTPv by exactly the constraint contribution (plus the
+  TS-correlation vTPv delta, which is distributed to groups via
+  off-diagonal cross terms).
+- **Same-group TS correlation**: intra-group pairs enter R with the FULL
+  cross-cofactor Qvv_AB = Qll_AB − a_A·Qxx·a_B', where
+  Qll_AB = ρ·σ_A·σ_B for pairs sharing a TS-correlation group (same capped ρ
+  as the weight build); Ω cross terms use the full P. Omitting the Qll term
+  would understate same-group redundancy.
 - **Correlated pairs spanning two groups** (e.g. an angle + direction at
   the same setup under setup-scoped TS correlation) are never split: every
-  affected group is marked UNESTIMABLE, fail closed.
+  affected group is marked UNESTIMABLE, fail closed, with its
+  quadform/descriptive values withheld (never shown as partial numbers).
+- **Single-equation groups** are always UNESTIMABLE: one equation carries no
+  redundancy check even when R looks positive.
+- **Finiteness gates**: Ω, R, s², and the scale must each be finite; a
+  non-finite anywhere yields UNESTIMABLE, never a NaN scale.
 - **Robust mode** (Huber reweighting active), **preanalysis**, and
-  **data-check** runs report UNAVAILABLE: classical VCE is inapplicable to
-  frozen weights, and no LS residual covariance exists in the latter modes.
+  **data-check** runs report UNAVAILABLE: first-pass diagnostics are
+  inapplicable to frozen weights, and no LS residual covariance exists in
+  the latter modes.
+- **Standalone GNSS-baseline route**: runConstrainedGnssBaselineAdjustment
+  builds no group diagnostics (no residual-covariance plumbing there), so
+  stochastic diagnostics are unavailable for that route by contract. In the
+  main route, static-GNSS baselines would join the GPS group as one 3-row
+  full-covariance block each (equation counts, never observation counts).
 - **Chi-square confidence intervals apply to the global variance factor
   only** and are never attached to group components.
-- The top-of-report pointer line ("Global stochastic model failed.
-  Largest estimated group scale: …") appears ONLY when the global
-  chi-square fails; a passing global test carries no per-group correctness
-  implication. Scale reading is neutral: > 1 means observed variation
-  exceeds stated precision, < 1 means stated sigmas look conservative,
-  ≈ 1 means consistent subject to estimation uncertainty. No
-  red/yellow/green threshold coloring is applied.
+- The top-of-report pointer line ("Global stochastic model check failed.
+  First-pass pointer only … largest/smallest diagnostic group scale: …")
+  appears ONLY when the global chi-square fails; a passing global test
+  carries no per-group correctness implication. Upper-tail failure points at
+  the largest scale (stated sigmas may be optimistic); lower-tail failure
+  points at the smallest scale (stated sigmas may be conservative). The
+  wording is deliberately first-pass ("may indicate"): parameter coupling
+  means no single group is proven responsible. Scale reading is neutral:
+  > 1 means observed variation exceeds stated precision, < 1 means stated
+  sigmas look conservative, ≈ 1 means consistent subject to estimation
+  uncertainty. No red/yellow/green threshold coloring is applied.
+- Redundancy displays adaptively (tiny-but-positive R in exponential
+  notation, never "0.000" beside a confident-looking scale), and
+  low-redundancy diagnostic rows are labeled indicative-only.
 
-Overhead: the diagnostics consume the solve residuals and Qvv diagonal map
-directly (no solver import, no re-solve — 0 extra solves). Measured mean
+Overhead: the diagnostics consume the solve residuals and the UNCLAMPED Qvv
+diagonal map directly (no solver import, no re-solve — 0 extra solves). The
+clamped per-equation qvv is never reused here: clamping hides R ≈ 0 and would
+fabricate a diagnostic scale from a singular group. Measured mean
 compute time 0.143ms for ~1k equations (vs ~2.5ms for a full
 7-observation solve on the same machine, 2026-09-16).
 

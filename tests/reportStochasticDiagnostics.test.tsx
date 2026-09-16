@@ -6,6 +6,7 @@ import { appendTypeAndResidualSections } from '../src/engine/runResultsTextResid
 import { buildObservationsResidualsCsvText } from '../src/engine/browserObservationResidualsCsv';
 import { computeStochasticGroupDiagnostics } from '../src/engine/stochasticGroupDiagnostics';
 import type { AdjustmentResult } from '../src/types';
+import { buildStochasticPointerLine } from '../src/engine/stochasticDiagnosticsDisplay';
 import { StochasticDiagnosticsSection } from '../src/components/report/ReportRunSummarySections';
 
 /** Two fixed controls, one free point, plus a redundant outlier distance. */
@@ -42,9 +43,9 @@ describe('stochastic diagnostics report section', () => {
     expect(html).toContain('Distances');
     expect(html).toContain('Angles');
     expect(html).toContain('×2.04');
-    expect(html).toContain(
-      'Global stochastic model failed. Largest estimated group scale: Distances ×2.04.',
-    );
+    expect(html).toContain('First-pass pointer only');
+    expect(html).toContain('largest diagnostic group scale Distances ×2.04');
+    expect(html).toContain('may indicate');
     // Neutral presentation: no threshold coloring classes on the table.
     expect(html).not.toContain('text-green-400');
     expect(html).not.toContain('text-red-400');
@@ -60,7 +61,7 @@ describe('stochastic diagnostics report section', () => {
     } as AdjustmentResult;
     const html = renderSection(passing);
     expect(html).toContain('Stochastic model diagnostics');
-    expect(html).not.toContain('Global stochastic model failed');
+    expect(html).not.toContain('Global stochastic model check failed');
   });
 
   it('shows unestimable and unavailable rows with reasons, never hidden', () => {
@@ -85,7 +86,7 @@ describe('stochastic diagnostics report section', () => {
             quadForm: 4.2,
             descriptiveFactor: 0.8,
             status: 'unavailable',
-            reason: 'Huber reweighting active; classical VCE inapplicable to frozen weights',
+            reason: 'Huber reweighting active; first-pass diagnostics inapplicable to frozen weights',
           },
         ],
       },
@@ -95,7 +96,7 @@ describe('stochastic diagnostics report section', () => {
     expect(html).toContain('unestimable — group redundancy is zero (uncontrolled or singular)');
     expect(html).toContain('GPS');
     expect(html).toContain(
-      'unavailable — Huber reweighting active; classical VCE inapplicable to frozen weights',
+      'unavailable — Huber reweighting active; first-pass diagnostics inapplicable to frozen weights',
     );
   });
 
@@ -122,6 +123,97 @@ describe('stochastic diagnostics report section', () => {
   });
 });
 
+describe('stochastic pointer tail direction', () => {
+  const pointerResult = (varianceFactor: number, lower: number, upper: number) =>
+    ({
+      chiSquare: {
+        T: varianceFactor * 2,
+        dof: 2,
+        p: 0.01,
+        pass95: false,
+        alpha: 0.05,
+        lower: lower * 2,
+        upper: upper * 2,
+        varianceFactor,
+        varianceFactorLower: lower,
+        varianceFactorUpper: upper,
+      },
+      stochasticDiagnostics: {
+        groups: [
+          {
+            label: 'Distances',
+            equations: 3,
+            redundancyDof: 2,
+            quadForm: 8,
+            descriptiveFactor: 1.63,
+            varianceFactor: 4,
+            sigmaScale: 2,
+            status: 'estimated',
+          },
+          {
+            label: 'Angles',
+            equations: 3,
+            redundancyDof: 2,
+            quadForm: 0.5,
+            descriptiveFactor: 0.41,
+            varianceFactor: 0.25,
+            sigmaScale: 0.5,
+            status: 'estimated',
+          },
+        ],
+      },
+    }) as unknown as AdjustmentResult;
+
+  it('points at the largest scale on upper-tail failure', () => {
+    const line = buildStochasticPointerLine(pointerResult(4, 0.5, 2.5));
+    expect(line).toContain('largest diagnostic group scale Distances ×2.00');
+    expect(line).toContain('may indicate');
+  });
+
+  it('points at the smallest scale on lower-tail failure', () => {
+    const line = buildStochasticPointerLine(pointerResult(0.2, 0.5, 2.5));
+    expect(line).toContain('smallest diagnostic group scale Angles ×0.50');
+    expect(line).toContain('may indicate');
+  });
+
+  it('renders contaminated groups without quadform/descriptive numbers', () => {
+    const base = run(OUTLIER_INPUT) as unknown as AdjustmentResult;
+    const patched = {
+      ...base,
+      stochasticDiagnostics: {
+        groups: [
+          {
+            label: 'Angles',
+            equations: 1,
+            redundancyDof: 0.4,
+            quadForm: null,
+            descriptiveFactor: null,
+            status: 'unestimable',
+            reason: 'a correlated pair spans two stochastic groups; refusing to split it (fail closed)',
+          },
+          {
+            label: 'Distances',
+            equations: 3,
+            redundancyDof: 4e-5,
+            quadForm: 0.5,
+            descriptiveFactor: 0.41,
+            varianceFactor: 12500,
+            sigmaScale: 111.8,
+            status: 'estimated',
+          },
+        ],
+      },
+    } as unknown as AdjustmentResult;
+    const html = renderSection(patched);
+    // Withheld values render as '-' (dash cells), never as partial numbers.
+    expect(html).toContain('Angles');
+    expect(html).toContain('refusing to split it');
+    // Low-redundancy estimated row is labeled indicative-only with adaptive R.
+    expect(html).toContain('indicative only');
+    expect(html).toContain((4e-5).toExponential(2));
+  });
+});
+
 describe('stochastic diagnostics text export', () => {
   it('appends an additive diagnostics block without touching listing/CSV paths', () => {
     const result = run(OUTLIER_INPUT) as unknown as AdjustmentResult;
@@ -135,9 +227,7 @@ describe('stochastic diagnostics text export', () => {
     expect(text).toContain('--- Stochastic Model Diagnostics ---');
     expect(text).toContain('Distances: eqns=3');
     expect(text).toContain('scale=×2.04');
-    expect(text).toContain(
-      'Global stochastic model failed. Largest estimated group scale: Distances ×2.04.',
-    );
+    expect(text).toContain('largest diagnostic group scale Distances ×2.04');
     // Reliability block still precedes it; ordering preserved.
     expect(text.indexOf('--- Reliability (MDB / External) ---')).toBeLessThan(
       text.indexOf('--- Stochastic Model Diagnostics ---'),

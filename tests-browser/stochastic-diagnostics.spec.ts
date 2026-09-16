@@ -38,7 +38,7 @@ test.describe('Stochastic diagnostics browser validation', () => {
 
       // Failed-chi-square pointer present only on the synthetic case.
       await expect(page.getByTestId('case-failed-chi')).toContainText(
-        'Global stochastic model failed. Largest estimated group scale:',
+        'Global stochastic model check failed. First-pass pointer only',
       );
       expect(pageErrors).toEqual([]);
     });

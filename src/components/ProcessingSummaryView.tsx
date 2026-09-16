@@ -11,7 +11,9 @@ import { appendRunDiagnosticsSummaryLines } from './ProcessingSummaryDiagnostics
 import { appendEffectiveDistanceSummaryLines } from './ProcessingSummaryEffectiveDistanceText';
 import {
   buildStochasticPointerLine,
+  formatStochasticRedundancy,
   formatStochasticScale,
+  formatStochasticStatus,
 } from '../engine/stochasticDiagnosticsDisplay';
 import type { ProcessingSummaryViewProps } from './ProcessingSummaryView.types';
 
@@ -162,14 +164,16 @@ const ProcessingSummaryView: React.FC<ProcessingSummaryViewProps> = ({
       lines.push('Stochastic Model Diagnostics');
       const pointer = buildStochasticPointerLine(result);
       if (pointer) lines.push(pointer);
+      if (
+        result.stochasticDiagnostics.groups.length === 0 &&
+        result.stochasticDiagnostics.reason
+      ) {
+        lines.push(`unavailable (${result.stochasticDiagnostics.reason})`);
+      }
       result.stochasticDiagnostics.groups.forEach((group) => {
         const scale = group.status === 'estimated' ? formatStochasticScale(group.sigmaScale) : '-';
-        const status =
-          group.status === 'estimated'
-            ? 'estimated'
-            : `${group.status}${group.reason ? ` (${group.reason})` : ''}`;
         lines.push(
-          `${padRight(group.label, 14)}${padLeft(String(group.equations), 6)}${padLeft(Number.isFinite(group.redundancyDof) ? group.redundancyDof.toFixed(3) : '-', 10)}${padLeft(Number.isFinite(group.quadForm) ? group.quadForm.toFixed(4) : '-', 12)}${padLeft(scale, 8)}  ${status}`,
+          `${padRight(group.label, 14)}${padLeft(String(group.equations), 6)}${padLeft(formatStochasticRedundancy(group.redundancyDof), 10)}${padLeft(Number.isFinite(group.quadForm) ? (group.quadForm as number).toFixed(4) : '-', 12)}${padLeft(scale, 8)}  ${formatStochasticStatus(group)}`,
         );
       });
     }

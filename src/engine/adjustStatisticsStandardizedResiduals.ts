@@ -28,6 +28,7 @@ import { tryQueryStandardizedResidualRowProducts } from './adjustStatisticsRowPr
 import {
   assembleStochasticGroupInputs,
   computeStochasticGroupDiagnostics,
+  unavailableStochasticDiagnostics,
 } from './stochasticGroupDiagnostics';
 import { detailedNow } from './adjustDetailedSolveProfile';
 import { copyMatrix } from './qxxReuseEvidence';
@@ -114,6 +115,11 @@ export const computeStandardizedResidualStatistics = (
       dirParamMap[id] = stationParamCount + idx;
     });
     const numParams = stationParamCount + directionSetIds.length;
+    // Equation counts, not observation counts: the assembler emits 3 rows per
+    // static-GNSS baseline (X/Y/Z) exactly as for 3-D GPS. The main-route
+    // Observation union cannot currently carry 'gnssBaseline' (standalone
+    // GNSS-baseline route only, which builds no stochastic diagnostics), so
+    // this is a defensive runtime-string check, not a union narrowing.
     const numObsEquations =
       activeObservations.reduce(
         (acc, o) =>
@@ -122,7 +128,9 @@ export const computeStandardizedResidualStatistics = (
             ? 3
             : o.type === 'gps'
               ? 2
-              : 1),
+              : (o as { type: string }).type === 'gnssBaseline'
+                ? 3
+                : 1),
         0,
       ) +
       constraints.length;
@@ -910,8 +918,11 @@ export const computeStandardizedResidualStatistics = (
             }
           });
           try {
+            // UNCLAMPED cofactors: the clamped qvv hides R ≈ 0 and would
+            // fabricate a diagnostic scale from a singular group. R is
+            // validated (finite, > eps) inside computeStochasticGroupDiagnostics.
             const qvvDiagonalByRow = new Map<number, number>();
-            for (const eq of pendingEquations) qvvDiagonalByRow.set(eq.row, eq.qvv);
+            for (const eq of pendingEquations) qvvDiagonalByRow.set(eq.row, eq.qvvUnclamped);
             ctx.stochasticDiagnostics = computeStochasticGroupDiagnostics({
               ...assembleStochasticGroupInputs({
                 rowLabels: rowInfo.map((info) => {
@@ -942,6 +953,25 @@ export const computeStandardizedResidualStatistics = (
                 couplingGroups: extraCrossGroups,
                 crossAqxxat,
                 weightAt,
+                // A-priori cross-covariance for TS-correlated pairs sharing one
+                // TS group: Qll_AB = ρ·σ_A·σ_B with the same capped ρ used to
+                // build P, so R uses the full Qvv_AB = Qll_AB − a_A·Qxx·a_B'.
+                // Zero for all other pairs (distinct vector observations have
+                // no a-priori cross-covariance; within-block terms ride on
+                // the block Qll, never on cross terms).
+                qllCrossAt: (rowA, rowB) => {
+                  if (!ctx.tsCorrelationEnabled || !(ctx.tsCorrelationRho > 0)) return 0;
+                  const infoA = rowInfo[rowA];
+                  const infoB = rowInfo[rowB];
+                  if (!infoA || !infoB) return 0;
+                  const groupA = ctx.tsCorrelationGroup(infoA.obs);
+                  const groupB = ctx.tsCorrelationGroup(infoB.obs);
+                  if (!groupA || !groupB || groupA.key !== groupB.key) return 0;
+                  const sigmaA = ctx.effectiveStdDev(infoA.obs);
+                  const sigmaB = ctx.effectiveStdDev(infoB.obs);
+                  if (!Number.isFinite(sigmaA) || !Number.isFinite(sigmaB) || sigmaA <= 0 || sigmaB <= 0) return 0;
+                  return Math.min(0.95, Math.max(0, ctx.tsCorrelationRho)) * sigmaA * sigmaB;
+                },
                 gpsCovarianceOf: (row) => {
                   const info = rowInfo[row];
                   if (!info) throw new Error('stochastic diagnostics: missing row info');
@@ -952,8 +982,11 @@ export const computeStandardizedResidualStatistics = (
               preanalysisMode: ctx.preanalysisMode,
               hasModel: true,
             });
-          } catch {
-            ctx.stochasticDiagnostics = undefined;
+          } catch (error) {
+            // Fail closed with a recorded reason instead of silent missing data.
+            ctx.stochasticDiagnostics = unavailableStochasticDiagnostics(
+              `group assembly failed${error instanceof Error && error.message ? `: ${error.message}` : ''}`,
+            );
           }
           if (profiler) {
             summaryConstructionMs += Math.max(

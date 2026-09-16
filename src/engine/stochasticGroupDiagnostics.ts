@@ -1,15 +1,19 @@
 /**
- * Phase 14C worker 1 — equation-group stochastic diagnostics (engine only).
+ * Phase 14C — equation-group stochastic diagnostics (engine only).
  *
- * Literature mapping (Förstner 1979 variance-component estimation):
+ * Empirical first-pass group diagnostic in the spirit of Förstner (1979):
  *   group quadform      Ω_k  = v_k' P_k v_k            (same P as the solve)
  *   group redundancy    R_k  = tr(P_k Qvv_k)           (trace, never a diagonal sum)
- *   diagnostic factor   s_k² = Ω_k / R_k               (unbiased under the
- *     DISJUNCTIVE group model: groups mutually uncorrelated, arbitrary
- *     correlation within a group, GNSS blocks included; iterated to
- *     convergence it is Helmert / MINQUE / REML).
- * What is reported here is deliberately the FIRST (single-pass) iteration
- * only: simultaneous multi-group VCE with between-group coupling is deferred.
+ *   diagnostic scale    s_k² = Ω_k / R_k               (FIRST IAUE iteration only)
+ * This is NOT an unbiased variance-component estimate in general: under
+ * parameter coupling E[Ω_k] mixes the variance components of ALL groups
+ * (E[Ω_k] = Σ_l a_kl θ_l with coupling coefficients a_kl), so
+ * group-uncorrelatedness alone does not imply unbiasedness — negligible
+ * between-group coupling through the parameters would additionally be
+ * required. Simultaneous multi-group VCE (iterated Helmert / MINQUE / REML
+ * to convergence) is deferred; what is reported here is deliberately an
+ * empirical first-pass diagnostic scale per group, never a variance
+ * component with a distributional claim.
  * Chi-square confidence intervals apply to the GLOBAL variance factor only
  * and are never attached to group components here.
  *
@@ -25,20 +29,32 @@
  *   the solver emits 3 equations per baseline — group equation counts here
  *   are equation counts (n_k), never observation counts.
  * - Any other equation type lands in 'Other' (deterministic, sorted last).
- * - Constraint rows (null rowInfo) are EXCLUDED: control constraints carry
- *   no LS residual covariance in this formulation, and their weighted sum
- *   stays inside the global vtpv. Hence Σ_k Ω_k ≤ vtpv by exactly the
- *   constraint contribution (plus the TS-correlation vtpv delta, which IS
- *   distributed to groups via the off-diagonal cross terms below).
+ * - Constraint rows (null rowInfo) are EXCLUDED by reporting policy: weighted
+ *   coordinate controls ARE finite-sigma pseudo-observations with L/A/P rows
+ *   that enter the normal matrix, Qxx, and the global vtpv — they are not
+ *   covariance-free (only truly fixed coordinates are). Exclusion keeps datum
+ *   / constraint semantics separate from observation-group diagnostics, so
+ *   Σ_k Ω_k sits below vtpv by exactly the constraint contribution (plus the
+ *   TS-correlation vtpv delta, which IS distributed to groups via the
+ *   off-diagonal cross terms below).
  *
  * Correlated structures: GPS/GNSS blocks use the full block trace
  * tr(P_block · Qvv_block) and block quadform v'Pv (off-diagonals included).
  * TS-correlation pairs are audited first: the TS group key is station(+set),
  * so one pair CAN span two conservative groups (e.g. angle + direction at
  * the same setup under scope 'setup'). Such pairs are never split — every
- * affected group is marked UNESTIMABLE (fail closed) with a reason.
- * Intra-group pairs contribute 2·w_AB·v_A·v_B to Ω_k and 2·w_AB·Qvv_AB
- * (with Qvv_AB = −a_A·Qxx·a_B', a-priori cross-covariance is zero) to R_k.
+ * affected group is marked UNESTIMABLE (fail closed) with a reason, and its
+ * quadform/descriptive values are withheld (null), never shown as full values.
+ * Intra-group pairs contribute 2·P_AB·v_A·v_B to Ω_k (full P, consistent with
+ * the solve) and 2·P_AB·Qvv_AB to R_k with the FULL cross-cofactor
+ * Qvv_AB = Qll_AB − a_A·Qxx·a_B', where Qll_AB = ρ·σ_A·σ_B for pairs sharing
+ * a TS-correlation group (supplied via qllCrossAt) and 0 elsewhere (GPS/GNSS
+ * a-priori cross-covariance between distinct vector observations is zero;
+ * within-block covariance rides on the block Qll, not on cross terms).
+ *
+ * Standalone GNSS-baseline route: runConstrainedGnssBaselineAdjustment never
+ * builds these diagnostics (no LS residual-covariance plumbing there) — group
+ * diagnostics are unavailable for that route by contract, not by omission.
  */
 import type { GpsCovariance } from './adjustTypes';
 
@@ -52,7 +68,7 @@ export const STOCHASTIC_GROUP_ORDER = [
   'Zenith',
 ] as const;
 
-/** Minimum group redundancy for a classical estimate (fail closed below). */
+/** Minimum group redundancy for a diagnostic scale (fail closed below). */
 export const STOCHASTIC_REDUNDANCY_EPS = 1e-12;
 
 export type StochasticGroupStatus = 'estimated' | 'unestimable' | 'unavailable';
@@ -61,9 +77,10 @@ export interface StochasticGroupResult {
   label: string;
   equations: number;
   redundancyDof: number;
-  quadForm: number;
-  /** sqrt(Ω_k / n_k): purely descriptive, no statistical claim. */
-  descriptiveFactor: number;
+  /** Withheld (null) for cross-group-contaminated groups: never a partial value. */
+  quadForm: number | null;
+  /** sqrt(Ω_k / n_k): purely descriptive, no statistical claim; null when withheld. */
+  descriptiveFactor: number | null;
   /** s_k² = Ω_k / R_k when status is 'estimated', else undefined. */
   varianceFactor?: number;
   /** sqrt(s_k²) when status is 'estimated', else undefined. */
@@ -75,7 +92,16 @@ export interface StochasticGroupResult {
 export interface StochasticDiagnostics {
   groups: StochasticGroupResult[];
   globalNote?: string;
+  /** Top-level assembly failure (fail closed): groups empty, reason recorded. */
+  reason?: string;
 }
+
+/** Empty fail-closed payload carrying a reason instead of silent missing data. */
+export const unavailableStochasticDiagnostics = (reason: string): StochasticDiagnostics => ({
+  groups: [],
+  globalNote: 'Stochastic group diagnostics unavailable.',
+  reason,
+});
 
 export interface StochasticScalarRow {
   row: number;
@@ -83,7 +109,11 @@ export interface StochasticScalarRow {
   v: number;
   /** Diagonal weight from the SAME P used in the solve. */
   w: number;
-  /** Diagonal residual cofactor (clamped, consistent with per-equation r). */
+  /**
+   * Diagonal residual cofactor, UNCLAMPED (qvv_unclamped = qll − a·Qxx·a').
+   * The per-equation clamped qvv must NOT be reused here: clamping hides
+   * R ≈ 0 and would fabricate a diagnostic scale from a singular group.
+   */
   qvv: number;
 }
 
@@ -140,10 +170,11 @@ const orderGroups = (labels: Iterable<string>): string[] => {
 };
 
 const GLOBAL_NOTE =
-  'Single-pass Förstner group components (first IAUE iteration): s_k² = Ω_k/R_k with ' +
-  'R_k = tr(P_k·Qvv_k). Control-constraint rows are excluded, so group quadforms sum below ' +
-  'the global vtpv by the constraint contribution. Between-group coupling is ignored; ' +
-  'simultaneous multi-group VCE is deferred.';
+  'Empirical first-pass group diagnostic (first IAUE iteration, not unbiased VCE): ' +
+  's_k² = Ω_k/R_k with R_k = tr(P_k·Qvv_k). Weighted control-constraint rows are excluded ' +
+  'by reporting policy (separate datum semantics), so group quadforms sum below the ' +
+  'global vtpv by the constraint contribution. E[Ω_k] mixes variance components across ' +
+  'groups through parameter coupling; simultaneous multi-group VCE is deferred.';
 
 export const computeStochasticGroupDiagnostics = (
   input: StochasticDiagnosticsInput,
@@ -210,37 +241,57 @@ export const computeStochasticGroupDiagnostics = (
         quadForm += 2 * term.wAB * term.vA * term.vB;
       }
     }
-    const safeQuad = quadForm < -1e-12 ? Number.NaN : Math.max(quadForm, 0);
+    const finiteInputs = Number.isFinite(quadForm) && Number.isFinite(redundancyDof);
+    const safeQuad = !finiteInputs || quadForm < -1e-12 ? Number.NaN : Math.max(quadForm, 0);
     const descriptiveFactor = equations > 0 && !Number.isNaN(safeQuad)
       ? Math.sqrt(safeQuad / equations)
       : 0;
-    const base = { label, equations, redundancyDof, quadForm, descriptiveFactor };
+    const contaminatedGroup = contaminated.has(label);
+    // Cross-group-contaminated groups: withhold partial values entirely — a
+    // diagonal-only quadform/descriptive number would masquerade as complete.
+    const base = {
+      label,
+      equations,
+      redundancyDof,
+      quadForm: contaminatedGroup ? null : quadForm,
+      descriptiveFactor: contaminatedGroup ? null : descriptiveFactor,
+    };
     if (!hasModel) {
       return { ...base, status: 'unavailable', reason: 'no LS residual covariance (preanalysis or data-check mode)' };
     }
     if (robustFrozen) {
-      return { ...base, status: 'unavailable', reason: 'Huber reweighting active; classical VCE inapplicable to frozen weights' };
+      return { ...base, status: 'unavailable', reason: 'Huber reweighting active; first-pass diagnostics inapplicable to frozen weights' };
     }
-    if (contaminated.has(label)) {
+    if (contaminatedGroup) {
       return { ...base, status: 'unestimable', reason: 'a correlated pair spans two stochastic groups; refusing to split it (fail closed)' };
     }
     if (unsupported != null) {
       return { ...base, status: 'unestimable', reason: unsupported };
     }
-    if (Number.isNaN(safeQuad)) {
-      return { ...base, status: 'unestimable', reason: 'negative group quadform (numerical)' };
+    // A single equation carries no redundancy check even when R looks positive.
+    if (equations <= 1) {
+      return { ...base, status: 'unestimable', reason: 'single-equation group carries no redundancy check' };
     }
-    if (!(redundancyDof > STOCHASTIC_REDUNDANCY_EPS)) {
+    if (Number.isNaN(safeQuad)) {
+      return { ...base, status: 'unestimable', reason: 'non-finite or negative group quadform (numerical)' };
+    }
+    if (!(redundancyDof > STOCHASTIC_REDUNDANCY_EPS) || !Number.isFinite(redundancyDof)) {
       return {
         ...base,
         status: 'unestimable',
-        reason: equations <= 1
-          ? 'single-equation group carries no redundancy check'
-          : 'group redundancy is zero (uncontrolled or singular)',
+        reason: 'group redundancy is zero (uncontrolled or singular)',
       };
     }
     const varianceFactor = safeQuad / redundancyDof;
-    return { ...base, status: 'estimated', varianceFactor, sigmaScale: Math.sqrt(Math.max(varianceFactor, 0)) };
+    // No Infinity/Infinity → NaN scale: s² and its root must both be finite.
+    if (!Number.isFinite(varianceFactor)) {
+      return { ...base, status: 'unestimable', reason: 'non-finite diagnostic scale (numerical)' };
+    }
+    const sigmaScale = Math.sqrt(Math.max(varianceFactor, 0));
+    if (!Number.isFinite(sigmaScale)) {
+      return { ...base, status: 'unestimable', reason: 'non-finite diagnostic scale (numerical)' };
+    }
+    return { ...base, status: 'estimated', varianceFactor, sigmaScale };
   });
   return { groups, globalNote: GLOBAL_NOTE };
 };
@@ -305,6 +356,12 @@ export const assembleStochasticGroupInputs = (args: {
   crossAqxxat: (_rowA: number, _rowB: number) => number | undefined;
   weightAt: (_row: number, _col: number) => number;
   gpsCovarianceOf: (_row: number) => GpsCovariance;
+  /**
+   * A-priori cross-covariance Qll_AB for a correlated pair (ρ·σ_A·σ_B for
+   * pairs sharing a TS-correlation group, 0 elsewhere). Defaults to 0, which
+   * is exact only when no intra-group correlated pairs exist.
+   */
+  qllCrossAt?: (_rowA: number, _rowB: number) => number;
 }): Omit<StochasticDiagnosticsInput, 'robustMode' | 'preanalysisMode' | 'hasModel'> => {
   const scalarRows: StochasticScalarRow[] = [];
   const blocks: StochasticWeightBlock[] = [];
@@ -365,10 +422,13 @@ export const assembleStochasticGroupInputs = (args: {
         const rowA = members[a] as number;
         const rowB = members[b] as number;
         const cross = args.crossAqxxat(rowA, rowB);
+        // Full cross-cofactor Qvv_AB = Qll_AB − a_A·Qxx·a_B': omitting the
+        // Qll term (ρ·σ_A·σ_B for TS pairs) understates same-group redundancy.
+        const qllCross = args.qllCrossAt?.(rowA, rowB) ?? 0;
         crossTerms.push({
           group: label,
           wAB: args.weightAt(rowA, rowB),
-          qvvAB: cross == null ? Number.NaN : -cross,
+          qvvAB: cross == null || !Number.isFinite(qllCross) ? Number.NaN : qllCross - cross,
           vA: args.residuals[rowA] ?? Number.NaN,
           vB: args.residuals[rowB] ?? Number.NaN,
         });
