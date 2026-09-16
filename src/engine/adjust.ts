@@ -427,6 +427,7 @@ export class LSAEngine extends LSAEngineObservationMethods {
     this.localTestSummary = statsContext.localTestSummary;
     this.reliabilitySummary = statsContext.reliabilitySummary;
     this.statisticalSummary = statsContext.statisticalSummary;
+    this.stochasticDiagnostics = statsContext.stochasticDiagnostics;
     this.typeSummary = statsContext.typeSummary;
     this.directionSetDiagnostics = statsContext.directionSetDiagnostics;
     this.directionTargetDiagnostics = statsContext.directionTargetDiagnostics;

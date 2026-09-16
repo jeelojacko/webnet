@@ -30,6 +30,7 @@ export const buildStatisticsContextForEngine = (engine: any): AdjustmentStatisti
       logs: engine.logs,
       chiSquare: engine.chiSquare,
       statisticalSummary: engine.statisticalSummary,
+      stochasticDiagnostics: engine.stochasticDiagnostics,
       typeSummary: engine.typeSummary,
       directionSetDiagnostics: engine.directionSetDiagnostics,
       directionTargetDiagnostics: engine.directionTargetDiagnostics,

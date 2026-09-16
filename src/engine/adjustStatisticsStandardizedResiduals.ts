@@ -25,6 +25,10 @@ import type {
   ExternalRowInput,
 } from './adjustExternalReliability';
 import { tryQueryStandardizedResidualRowProducts } from './adjustStatisticsRowProducts';
+import {
+  assembleStochasticGroupInputs,
+  computeStochasticGroupDiagnostics,
+} from './stochasticGroupDiagnostics';
 import { detailedNow } from './adjustDetailedSolveProfile';
 import { copyMatrix } from './qxxReuseEvidence';
 import { decideStatisticsQxxReuse } from './statisticsQxxReuse';
@@ -905,6 +909,52 @@ export const computeStandardizedResidualStatistics = (
               };
             }
           });
+          try {
+            const qvvDiagonalByRow = new Map<number, number>();
+            for (const eq of pendingEquations) qvvDiagonalByRow.set(eq.row, eq.qvv);
+            ctx.stochasticDiagnostics = computeStochasticGroupDiagnostics({
+              ...assembleStochasticGroupInputs({
+                rowLabels: rowInfo.map((info) => {
+                  if (!info) return null;
+                  const obsType = String(
+                    (info.obs as { type?: unknown }).type ?? '',
+                  );
+                  return {
+                    obsType,
+                    component: info.component ?? undefined,
+                    covariance:
+                      obsType === 'gnssBaseline'
+                        ? (info.obs as unknown as {
+                          covariance?: {
+                            xx: number;
+                            xy: number;
+                            xz: number;
+                            yy: number;
+                            yz: number;
+                            zz: number;
+                          };
+                        }).covariance
+                        : undefined,
+                  };
+                }),
+                residuals: L.map((equationRow) => equationRow[0]),
+                qvvDiagonalByRow,
+                couplingGroups: extraCrossGroups,
+                crossAqxxat,
+                weightAt,
+                gpsCovarianceOf: (row) => {
+                  const info = rowInfo[row];
+                  if (!info) throw new Error('stochastic diagnostics: missing row info');
+                  return ctx.gpsCovariance(info.obs);
+                },
+              }),
+              robustMode: ctx.robustMode,
+              preanalysisMode: ctx.preanalysisMode,
+              hasModel: true,
+            });
+          } catch {
+            ctx.stochasticDiagnostics = undefined;
+          }
           if (profiler) {
             summaryConstructionMs += Math.max(
               0,

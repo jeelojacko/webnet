@@ -112,6 +112,7 @@ export abstract class LSAEngineState {
   protected localTestSummary?: AdjustmentResult['localTestSummary'];
   protected reliabilitySummary?: AdjustmentResult['reliabilitySummary'];
   protected statisticalSummary?: AdjustmentResult['statisticalSummary'];
+  protected stochasticDiagnostics?: AdjustmentResult['stochasticDiagnostics'];
   protected typeSummary?: Record<
     string,
     {

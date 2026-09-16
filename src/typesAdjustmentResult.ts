@@ -55,6 +55,20 @@ export interface AdjustmentResult {
     totalErrorFactorByCount: number;
     totalErrorFactorByDof: number;
   };
+  stochasticDiagnostics?: {
+    groups: {
+      label: string;
+      equations: number;
+      redundancyDof: number;
+      quadForm: number;
+      descriptiveFactor: number;
+      varianceFactor?: number;
+      sigmaScale?: number;
+      status: 'estimated' | 'unestimable' | 'unavailable';
+      reason?: string;
+    }[];
+    globalNote?: string;
+  };
   typeSummary?: Record<
     string,
     {

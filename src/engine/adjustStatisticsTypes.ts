@@ -110,6 +110,7 @@ export type AdjustmentStatisticsContext = {
   logs: string[];
   chiSquare?: AdjustmentResult['chiSquare'];
   statisticalSummary?: AdjustmentResult['statisticalSummary'];
+  stochasticDiagnostics?: AdjustmentResult['stochasticDiagnostics'];
   typeSummary?: AdjustmentResult['typeSummary'];
   directionSetDiagnostics?: AdjustmentResult['directionSetDiagnostics'];
   directionTargetDiagnostics?: AdjustmentResult['directionTargetDiagnostics'];

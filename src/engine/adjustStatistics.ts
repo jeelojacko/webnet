@@ -45,6 +45,7 @@ export const calculateAdjustmentStatistics = (
 
     ctx.chiSquare = undefined;
     ctx.statisticalSummary = undefined;
+    ctx.stochasticDiagnostics = undefined;
     ctx.typeSummary = undefined;
     ctx.directionSetDiagnostics = undefined;
     ctx.directionTargetDiagnostics = undefined;
@@ -61,6 +62,13 @@ export const calculateAdjustmentStatistics = (
     const standardizedStartedAt = profiler ? detailedNow() : 0;
     computeStandardizedResidualStatistics(ctx, paramIndex, hasQxx, activeObservations, constraints);
     if (profiler) standardizedResidualsMs = detailedNow() - standardizedStartedAt;
+    if (ctx.stochasticDiagnostics == null && (ctx.preanalysisMode || !hasQxx)) {
+      ctx.stochasticDiagnostics = {
+        groups: [],
+        globalNote:
+          'Stochastic group diagnostics unavailable: no LS residual covariance in preanalysis or data-check mode.',
+      };
+    }
 
     if (!ctx.preanalysisMode) {
       ctx.statisticalSummary = buildStatisticalSummary(weightedByGroup, groupOrder, ctx.dof);

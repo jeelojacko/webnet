@@ -123,6 +123,7 @@ export const buildAdjustmentResultFromContext = (
       localTestSummary: ctx.localTestSummary,
       reliabilitySummary: ctx.reliabilitySummary,
       statisticalSummary: ctx.statisticalSummary,
+      stochasticDiagnostics: ctx.stochasticDiagnostics,
       typeSummary: ctx.typeSummary,
       relativePrecision: ctx.relativePrecision,
       directionSetDiagnostics: ctx.directionSetDiagnostics,
