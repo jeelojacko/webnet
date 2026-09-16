@@ -182,6 +182,7 @@ const ReportView: React.FC<ReportViewProps> = ({
         blunderFlaggedCount={blunderFlaggedCount}
         byType={byType}
         clearPinnedDetailSections={clearPinnedDetailSections}
+        onClearFilters={clearFilters}
         clusterAppliedMergeCount={clusterAppliedMerges.length}
         clusterRevertDisabledReason={clusterRevertDisabledReason}
         dataCheckDiffRows={dataCheckDiffRows}

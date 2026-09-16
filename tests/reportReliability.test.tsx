@@ -114,6 +114,28 @@ describe('reliability cell rendering', () => {
     expect(tip).toContain('Legacy MDB (3.29)');
   });
 
+  it('shows the SELECTED component MDB in the CoordEff tooltip, not the aggregate min', () => {
+    const gps = {
+      id: 7,
+      type: 'gps',
+      mdbComponents: { mE: 0.001, mN: 0.005 },
+      reliability: {
+        mdb: 0.001,
+        externalComponents: {
+          E: { available: true, mdbUsed: 0.001, primaryMm: 1.0, primaryKind: 'horizontal' },
+          N: { available: true, mdbUsed: 0.005, primaryMm: 9.0, primaryKind: 'horizontal' },
+        },
+      },
+    } as unknown as Observation;
+    // N wins (max effect) but the aggregate min-MDB belongs to E.
+    expect(primaryExternalOf(gps)).toBe(
+      (gps.reliability as unknown as { externalComponents: { N: unknown } }).externalComponents.N,
+    );
+    const tip = buildCoordEffCellTooltip(gps, null);
+    expect(tip).toContain('5.0mm');
+    expect(tip).not.toContain('1.0mm');
+  });
+
   it('discloses the statistical model, alpha/power, and linear equivalent in the MDB tooltip', () => {
     const result = run(OUTLIER_INPUT, { model: 'statistical', alpha: 0.001, power: 0.9 });
     const angular = result.observations.find((o) => o.type === 'angle') as Observation;

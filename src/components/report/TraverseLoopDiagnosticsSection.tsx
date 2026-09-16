@@ -1,7 +1,7 @@
 import React from 'react';
 import type { HeaderParams, TraverseLoop } from './LoopDiagnosticsSections.types';
 import type { CollapsibleDetailSectionId } from './reportSectionRegistry';
-import { HEURISTIC_SCORE_TOOLTIP } from './reportTooltips';
+import { HEURISTIC_SCORE_TOOLTIP, LOOP_TOLERANCE_STATUS_TOOLTIP } from './reportTooltips';
 
 interface TraverseLoopDiagnosticsSectionProps {
   diagnostics: {
@@ -56,7 +56,7 @@ const TraverseLoopDiagnosticsSection: React.FC<TraverseLoopDiagnosticsSectionPro
       })}
       <div className="grid grid-cols-2 md:grid-cols-5 gap-3 p-3 text-xs text-slate-300 border-b border-slate-800/60">
         <div><div className="text-slate-500">Closure Count</div><div>{diagnostics.closureCount}</div></div>
-        <div><div className="text-slate-500">Status</div><div className={diagnostics.passes?.overall ? 'text-green-400' : 'text-yellow-400'}>{diagnostics.passes?.overall ? 'PASS' : 'WARN'}</div></div>
+        <div><div className="text-slate-500">Status</div><div className={diagnostics.passes?.overall ? 'text-green-400' : 'text-yellow-400'} title={LOOP_TOLERANCE_STATUS_TOOLTIP}>{diagnostics.passes?.overall ? 'PASS' : 'WARN'}</div></div>
         <div><div className="text-slate-500">Misclosure dE ({units})</div><div>{(diagnostics.misclosureE * unitScale).toFixed(4)}</div></div>
         <div><div className="text-slate-500">Misclosure dN ({units})</div><div>{(diagnostics.misclosureN * unitScale).toFixed(4)}</div></div>
         <div><div className="text-slate-500">Misclosure Mag ({units})</div><div>{(diagnostics.misclosureMag * unitScale).toFixed(4)}</div></div>
@@ -82,16 +82,16 @@ const TraverseLoopDiagnosticsSection: React.FC<TraverseLoopDiagnosticsSectionPro
               <table className="w-full text-left border-collapse text-xs">
                 <thead>
                   <tr className="text-slate-200 border-b border-slate-700">
-                    <th className="py-2 px-3 font-semibold">#</th>
-                    <th className="py-2 px-3 font-semibold">Loop</th>
-                    <th className="py-2 px-3 font-semibold text-right">Mag ({units})</th>
-                    <th className="py-2 px-3 font-semibold text-right">Dist ({units})</th>
-                    <th className="py-2 px-3 font-semibold text-right">Ratio</th>
-                    <th className="py-2 px-3 font-semibold text-right">Linear (ppm)</th>
-                    <th className="py-2 px-3 font-semibold text-right">Ang Miscl (")</th>
-                    <th className="py-2 px-3 font-semibold text-right">Vert Miscl ({units})</th>
-                    <th className="py-2 px-3 font-semibold text-right" title={HEURISTIC_SCORE_TOOLTIP}>Heuristic severity</th>
-                    <th className="py-2 px-3 font-semibold text-right">Status</th>
+                    <th scope="col" className="py-2 px-3 font-semibold">#</th>
+                    <th scope="col" className="py-2 px-3 font-semibold">Loop</th>
+                    <th scope="col" className="py-2 px-3 font-semibold text-right">Mag ({units})</th>
+                    <th scope="col" className="py-2 px-3 font-semibold text-right">Dist ({units})</th>
+                    <th scope="col" className="py-2 px-3 font-semibold text-right">Ratio</th>
+                    <th scope="col" className="py-2 px-3 font-semibold text-right">Linear (ppm)</th>
+                    <th scope="col" className="py-2 px-3 font-semibold text-right">Ang Miscl (")</th>
+                    <th scope="col" className="py-2 px-3 font-semibold text-right">Vert Miscl ({units})</th>
+                    <th scope="col" className="py-2 px-3 font-semibold text-right" title={HEURISTIC_SCORE_TOOLTIP}>Heuristic severity</th>
+                    <th scope="col" className="py-2 px-3 font-semibold text-right">Status</th>
                   </tr>
                 </thead>
                 <tbody className="text-slate-300">
@@ -106,7 +106,7 @@ const TraverseLoopDiagnosticsSection: React.FC<TraverseLoopDiagnosticsSectionPro
                       <td className="py-1 px-3 text-right">{l.angularMisclosureArcSec != null ? l.angularMisclosureArcSec.toFixed(2) : '-'}</td>
                       <td className="py-1 px-3 text-right">{l.verticalMisclosure != null ? (l.verticalMisclosure * unitScale).toFixed(4) : '-'}</td>
                       <td className="py-1 px-3 text-right font-mono">{l.severity.toFixed(1)}</td>
-                      <td className={`py-1 px-3 text-right ${l.pass ? 'text-green-400' : 'text-yellow-400'}`}>{l.pass ? 'PASS' : 'WARN'}</td>
+                      <td className={`py-1 px-3 text-right ${l.pass ? 'text-green-400' : 'text-yellow-400'}`} title={LOOP_TOLERANCE_STATUS_TOOLTIP}>{l.pass ? 'PASS' : 'WARN'}</td>
                     </tr>
                   ))}
                 </tbody>

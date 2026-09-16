@@ -12,9 +12,10 @@ export const formatLocalTestCell = (obs: Observation): string => {
   if (comps) {
     const e = comps.passE;
     const n = comps.passN;
-    if (e == null && n == null) return '-';
-    const letter = (pass: boolean | null): string => (pass == null ? '-' : pass ? 'P' : 'F');
-    return `E:${letter(e)} N:${letter(n)}`;
+    const u = comps.passU;
+    if (e == null && n == null && u == null) return '-';
+    const letter = (pass: boolean | null | undefined): string => (pass == null ? '-' : pass ? 'P' : 'F');
+    return u != null ? `E:${letter(e)} N:${letter(n)} U:${letter(u)}` : `E:${letter(e)} N:${letter(n)}`;
   }
   const test = obs.localTest;
   if (!test || test.pass == null) return '-';

@@ -15,7 +15,7 @@
  * "suspect" dual use).
  */
 
-export type SemanticKind = 'formal' | 'descriptive' | 'what-if';
+export type SemanticKind = 'formal' | 'formal-adjacent' | 'descriptive' | 'what-if';
 
 export interface StatisticalSemantic {
   /** Canonical display name shown in headers and summaries. */
@@ -54,9 +54,9 @@ export const STATISTICAL_SEMANTICS = {
     'Standard error of unit weight',
     'SEUW',
     'SEUW = sqrt(vTPv / DOF): overall consistency of residuals with stated precisions.',
-    'formal',
+    'formal-adjacent',
     'unitless',
-    'Values near 1 usually indicate realistic stochastic modeling; the formal verdict is the global chi-square test, not SEUW alone.',
+    'A supporting statistic with no verdict of its own; values near 1 usually indicate realistic stochastic modeling; the formal verdict is the global chi-square test, not SEUW alone.',
   ),
   chiSquare: entry(
     'Global chi-square model test',
@@ -70,9 +70,9 @@ export const STATISTICAL_SEMANTICS = {
     'Standardized residual',
     'StdRes',
     'Internally studentized residual tau = v / (seuw·sqrt(qvv)): residual divided by its a-posteriori standard error.',
-    'formal',
+    'formal-adjacent',
     'unitless',
-    '|StdRes| > 1 warns, > 3 flags; this is the tau statistic (SEUW estimated), never plain "t".',
+    'Stored as the absolute value |τ| (scalar, sign discarded); multi-component GPS rows store the max over absolute component values. A supporting statistic with no verdict of its own: |StdRes| > 1 warns, > 3 flags; this is the tau statistic (SEUW estimated), never plain "t". Only the local test beside it carries PASS/FAIL.',
   ),
   localTest: entry(
     'Local single-outlier data-snooping test',

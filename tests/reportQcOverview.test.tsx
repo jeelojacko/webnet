@@ -69,6 +69,16 @@ describe('§31 local flag counts match the data model', () => {
     });
   });
 
+  it('counts 3D E/N/U per-component verdicts against the scalar denominator', () => {
+    const gps3d = {
+      id: 5,
+      type: 'gps',
+      localTest: { pass: false },
+      localTestComponents: { passE: false, passN: true, passU: false },
+    } as Observation;
+    expect(countLocalFlags([gps3d])).toEqual({ flagged: 2, hasComponents: true });
+  });
+
   it('counts aggregate-only rows once and reports equation units without components', () => {
     const aggregateGps = { id: 7, type: 'gps', localTest: { pass: false } } as Observation;
     expect(countLocalFlags([aggregateGps])).toEqual({ flagged: 1, hasComponents: false });

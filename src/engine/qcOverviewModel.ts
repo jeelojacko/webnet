@@ -9,8 +9,10 @@
  * - local flagged: flagged scalar equations. A scalar observation with
  *   localTest.pass === false contributes 1. A 2D GPS row carries two tested
  *   equations with per-component verdicts (localTestComponents.passE/passN);
- *   each failed component contributes 1. Aggregate-only GPS rows (3+
- *   components, no per-component verdicts) contribute 1 per failed aggregate.
+ *   each failed component contributes 1. A 3D E/N/U GPS row carries three
+ *   per-component verdicts (passE/passN/passU); each failed component
+ *   contributes 1. Aggregate-only rows (X/Y/Z components, no per-component
+ *   verdicts) contribute 1 per failed aggregate.
  *   Tested (m) is localTestSummary.testCount = testable scalar equations
  *   (GPS counts per component). The unit noun is 'components' when any
  *   per-component verdict exists, else 'equations'.
@@ -51,10 +53,11 @@ export const countLocalFlags = (
   let hasComponents = false;
   for (const obs of observations) {
     const comps = obs.localTestComponents;
-    if (comps && (comps.passE != null || comps.passN != null)) {
+    if (comps && (comps.passE != null || comps.passN != null || comps.passU != null)) {
       hasComponents = true;
       if (comps.passE === false) flagged += 1;
       if (comps.passN === false) flagged += 1;
+      if (comps.passU === false) flagged += 1;
     } else if (obs.localTest?.pass === false) {
       flagged += 1;
     }
@@ -64,14 +67,15 @@ export const countLocalFlags = (
 
 export interface QcOverview {
   chi: { pass: boolean | null };
-  local: { flagged: number; tested: number; unit: 'equations' | 'components' };
+  /** tested is null when no local-test summary exists (renders "not analyzed", never 0). */
+  local: { flagged: number; tested: number | null; unit: 'equations' | 'components' };
   coordEff: {
     obsId: number;
     label: string;
     primaryMm: number;
     affectedStation?: string;
   } | null;
-  stochastic: { estimable: number; largest: { label: string; scale: number } | null };
+  stochastic: { estimable: number | null; largest: { label: string; scale: number } | null };
   loo: {
     analyzed: number;
     candidates: number;
@@ -84,6 +88,7 @@ export const buildQcOverview = (result: AdjustmentResult): QcOverview => {
   const { flagged, hasComponents } = countLocalFlags(result.observations);
   const worst = findWorstExternal(result.observations);
   const groups = result.stochasticDiagnostics?.groups ?? [];
+  const stochasticAbsent = result.stochasticDiagnostics == null;
   const estimated = groups.filter(
     (g) => g.status === 'estimated' && g.sigmaScale != null && Number.isFinite(g.sigmaScale),
   );
@@ -114,7 +119,7 @@ export const buildQcOverview = (result: AdjustmentResult): QcOverview => {
     chi: { pass: result.chiSquare ? result.chiSquare.pass95 : null },
     local: {
       flagged,
-      tested: result.localTestSummary?.testCount ?? 0,
+      tested: result.localTestSummary != null ? (result.localTestSummary.testCount ?? 0) : null,
       unit: hasComponents ? 'components' : 'equations',
     },
     coordEff: worst
@@ -125,7 +130,7 @@ export const buildQcOverview = (result: AdjustmentResult): QcOverview => {
           ...(worst.affectedStation != null ? { affectedStation: worst.affectedStation } : {}),
         }
       : null,
-    stochastic: { estimable: estimated.length, largest: largestScale },
+    stochastic: { estimable: stochasticAbsent ? null : estimated.length, largest: largestScale },
     loo: { analyzed: analyzed.length, candidates: looRows.length, largest: largestShift },
     systematic: {
       available: slots.filter((s) => s === 'descriptive').length,
@@ -172,9 +177,9 @@ export const buildQcAttention = (result: AdjustmentResult): QcAttention => {
   }
   for (const obs of result.observations) {
     const comps = obs.localTestComponents;
-    if (comps && (comps.passE != null || comps.passN != null)) {
-      for (const comp of ['E', 'N'] as const) {
-        const pass = comp === 'E' ? comps.passE : comps.passN;
+    if (comps && (comps.passE != null || comps.passN != null || comps.passU != null)) {
+      for (const comp of ['E', 'N', 'U'] as const) {
+        const pass = comp === 'E' ? comps.passE : comp === 'N' ? comps.passN : comps.passU;
         if (pass === false) {
           formal.push({
             key: `local-${obs.id}-${comp}`,

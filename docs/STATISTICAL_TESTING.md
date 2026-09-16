@@ -35,7 +35,10 @@ tau = v / (seuw * sqrt(qvv))
 
 where `v` is the residual, `qvv` its cofactor, and `seuw` the a-posteriori
 standard error of unit weight. Dividing by SEUW (rather than the a-priori
-sigma0) is what makes it tau rather than w.
+sigma0) is what makes it tau rather than w. Stored StdRes is the absolute
+value |τ| (scalar, sign discarded); for multi-component GPS rows the stored
+value is the max over absolute component values, and per-component signed
+values live in `stdResComponents` (tE/tN) where available.
 
 ### Local-test policies
 
@@ -97,7 +100,8 @@ in small networks they differ, and tau is the honest one.
 With Huber reweighting active, formal w/tau significance is **approximate**
 (classical distributions do not cover data-dependent robust reweighting). Formal runs under
 robust mode carry a `robustApproximation` flag, surfaced in the report as a
-"(robust approximation)" note. Legacy-fixed verdicts are unaffected.
+"(robust approximation)" note — including legacy-fixed (Huber frozen weights
+make classical 3.29 significance approximate too).
 
 ### Blunder-detect threshold
 
@@ -112,10 +116,14 @@ correlated weights, so verdicts already reflect the correlation modeling.
 ### GPS handling
 
 Each GPS vector contributes one scalar test per component (E/N, plus U in 3D).
-The report shows per-component E:N verdicts for 2D GNSS where available and
-the aggregate verdict for 3D GNSS. The aggregate row verdict is OR/max over
+The report shows per-component verdicts (E:N in 2D, E:N:U in 3D) wherever the
+components carry E/N (/U) tags, and the aggregate verdict otherwise (X/Y/Z rows).
+The aggregate row verdict is OR/max over
 the scalar component tests and is not a joint/vector multivariate test;
-a vector test is not implemented.
+a vector test is not implemented. Overview flagged counts follow the same
+components model: each failed per-component verdict contributes 1 (matching the
+scalar-equation testCount denominator); aggregate-only rows contribute 1 per
+failed aggregate.
 
 ## Reliability (RELIABILITY)
 
@@ -171,8 +179,11 @@ when the local-test policy uses one — documented, not corrected.
 
 ### Power semantics
 
-Power is the probability of detecting a bias of MDB magnitude under the
-selected reliability model. The report labels the power input "Detection
+Power is the nominal probability of detecting a bias of MDB magnitude under the
+selected reliability model, computed from the two-sided normal approximation
+δ0 = z(1−α/2) + z(power). It is exact for the Baarda w-test noncentrality
+construction (sigma0 known) and approximate otherwise — never a finite-sample
+detection probability. The report labels the power input "Detection
 Power" for exactly this meaning. Valid powers are finite 0.5 <= power < 1
 (alpha stays finite in [1e-12, 0.5]); an out-of-range direct policy makes
 the statistical summary unavailable (`available: false` with an
@@ -181,7 +192,9 @@ into range, and every per-row statistical MDB then reports +Inf.
 
 ### Pope approximation honesty
 
-The normal-theory δ0 is exact for the Baarda w-test (sigma0 known). Under
+The normal-theory δ0 is exact for the Baarda w-test noncentrality construction
+(sigma0 known) — still a large-sample normal approximation, not a finite-sample
+detection probability. Under
 the Pope τ-test (sigma estimated) the exact test needs a noncentral-t
 noncentrality, so the run summary flags method
 `approximation-normal-for-tau` and the report shows an "(approximate)"
@@ -230,7 +243,9 @@ observations additionally carry per-component statistical MDBs
 (`mdbStatisticalComponents` mE/mN, plus mU in 3D); the aggregate
 `mdbStatistical` is the min over finite components. The
 CoordEff column and worst-external ranking use the strongest component
-(max primaryMm). The aggregate is a max over scalar component effects,
+(max primaryMm). The CoordEff cell tooltip shows the SELECTED component's
+propagated MDB (`mdbUsed`) in native units — never the aggregate min-MDB,
+which can belong to a different component. The aggregate is a max over scalar component effects,
 not a joint/vector multivariate influence; a vector test is not
 implemented.
 

@@ -33,6 +33,7 @@ type ReportViewTopSectionsProps = {
   blunderFlaggedCount: number;
   byType: (_type: Observation['type']) => SortedObservation[];
   clearPinnedDetailSections: () => void;
+  onClearFilters?: () => void;
   clusterAppliedMergeCount: number;
   clusterRevertDisabledReason: string;
   dataCheckDiffRows: React.ComponentProps<typeof DataCheckSummarySection>['dataCheckDiffRows'];
@@ -125,6 +126,7 @@ const ReportViewTopSections: React.FC<ReportViewTopSectionsProps> = ({
   onApplyPreanalysisAction,
   onClearClusterMerges,
   onClearExclusions,
+  onClearFilters,
   onHeaderRef,
   onJumpToSection,
   onReRun,
@@ -191,6 +193,7 @@ const ReportViewTopSections: React.FC<ReportViewTopSectionsProps> = ({
         result={result}
         onJumpToSection={onJumpToSection}
         onSelectObservation={onSelectObservation}
+        onClearFilters={onClearFilters}
       />
 
       <LocalTestSummarySection

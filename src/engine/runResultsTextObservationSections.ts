@@ -142,7 +142,7 @@ export const appendObservationResidualSections = ({
           obs.localTestComponents != null
             ? `E:${localLetter(obs.localTestComponents.passE)} N:${localLetter(
                 obs.localTestComponents.passN,
-              )}`
+              )}${obs.localTestComponents.passU != null ? ` U:${localLetter(obs.localTestComponents.passU)}` : ''}`
             : obs.localTest != null
               ? localLetter(obs.localTest.pass)
               : '-';

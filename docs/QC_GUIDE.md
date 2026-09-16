@@ -87,12 +87,14 @@ Math: [`STATISTICAL_TESTING.md`](STATISTICAL_TESTING.md#systematic-pattern-diagn
 
 ## Glossary
 
-Kinds: **formal** = statistical test with a verdict; **descriptive** =
+Kinds: **formal** = statistical test with a verdict; **formal-adjacent** =
+supporting statistic with no verdict of its own (feeds a formal test);
+**descriptive** =
 summary number with no verdict; **what-if** = comparison re-solve, never
 automatic. Wording matches `STATISTICAL_SEMANTICS` in
 `src/engine/statisticalSemantics.ts`.
 
-- **Standard error of unit weight** (SEUW; formal; unitless): SEUW =
+- **Standard error of unit weight** (SEUW; formal-adjacent; unitless): SEUW =
   sqrt(vTPv / DOF): overall consistency of residuals with stated precisions.
   Values near 1 usually indicate realistic stochastic modeling; the formal
   verdict is the global chi-square test, not SEUW alone.
@@ -100,10 +102,11 @@ automatic. Wording matches `STATISTICAL_SEMANTICS` in
   p-value, variance-factor interval): global model test of the variance
   factor against its 95% confidence interval. PASS means globally consistent
   with stated precisions; it says nothing about which observation is suspect.
-- **Standardized residual** (StdRes; formal; unitless): internally
+- **Standardized residual** (StdRes; formal-adjacent; unitless): internally
   studentized residual tau = v / (seuw·sqrt(qvv)): residual divided by its
   a-posteriori standard error. |StdRes| > 1 warns, > 3 flags; this is the tau
-  statistic (SEUW estimated), never plain "t".
+  statistic (SEUW estimated), never plain "t". Only the local test beside it
+  carries PASS/FAIL.
 - **Local single-outlier data-snooping test** (Local; formal; verdict
   PASS/FAIL, - when not tested): per-equation single-outlier test of the
   standardized residual against one run-level critical value. A FAIL means

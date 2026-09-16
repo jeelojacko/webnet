@@ -304,7 +304,18 @@ const ObservationTableSection: React.FC<ObservationTableSectionProps> = ({
   if (!obsList.length) return null;
 
   const tableKey = sectionId ? `observations-${sectionId}` : null;
-  const visibleObsList = tableKey ? visibleRowsFor(tableKey, obsList) : obsList;
+  const windowedObsList = tableKey ? visibleRowsFor(tableKey, obsList) : obsList;
+  // A QC-overview jump selects the row: keep the selected row rendered even
+  // beyond the 25-row window so the target is never invisible.
+  const visibleObsList =
+    selectedObservationId != null &&
+    obsList.some((obs) => obs.id === selectedObservationId) &&
+    !windowedObsList.some((obs) => obs.id === selectedObservationId)
+      ? [
+        ...windowedObsList,
+        obsList.find((obs) => obs.id === selectedObservationId) as Observation,
+      ]
+      : windowedObsList;
   const collapsed = sectionId ? isSectionCollapsed(sectionId) : false;
   const isAngularType = (type: Observation['type']) =>
     type === 'angle' ||
@@ -341,19 +352,19 @@ const ObservationTableSection: React.FC<ObservationTableSectionProps> = ({
           <table className="w-full text-left text-xs">
             <thead>
               <tr className="text-slate-500 border-b border-slate-800/50">
-                <th className="py-2 px-4">Use</th>
-                <th className="py-2">Stations</th>
-                <th className="py-2 text-right">Line</th>
-                <th className="py-2 text-right">Obs</th>
-                <th className="py-2 text-right">Calc</th>
-                <th className="py-2 text-right">Residual</th>
-                <th className="py-2 text-right">LinRes (mm)</th>
-                <th className="py-2 text-right">StdRes</th>
-                <th className="py-2 text-right">Redund</th>
-                <th className="py-2 text-right" title={buildLocalTestHeaderTooltip(localTestSummary)}>Local</th>
-                <th className="py-2 text-right" title={buildMdbHeaderTooltip(reliabilitySummary ?? undefined)}>MDB</th>
-                <th className="py-2 text-right" title={COORD_EFF_HEADER_TOOLTIP}>CoordEff</th>
-                <th className="py-2 text-right px-4">σ</th>
+                <th scope="col" className="py-2 px-4">Use</th>
+                <th scope="col" className="py-2">Stations</th>
+                <th scope="col" className="py-2 text-right">Line</th>
+                <th scope="col" className="py-2 text-right">Obs</th>
+                <th scope="col" className="py-2 text-right">Calc</th>
+                <th scope="col" className="py-2 text-right">Residual</th>
+                <th scope="col" className="py-2 text-right">LinRes (mm)</th>
+                <th scope="col" className="py-2 text-right">StdRes</th>
+                <th scope="col" className="py-2 text-right">Redund</th>
+                <th scope="col" className="py-2 text-right" title={buildLocalTestHeaderTooltip(localTestSummary)}>Local</th>
+                <th scope="col" className="py-2 text-right" title={buildMdbHeaderTooltip(reliabilitySummary ?? undefined)}>MDB</th>
+                <th scope="col" className="py-2 text-right" title={COORD_EFF_HEADER_TOOLTIP}>CoordEff</th>
+                <th scope="col" className="py-2 text-right px-4">σ</th>
               </tr>
             </thead>
             <tbody className="text-slate-300">

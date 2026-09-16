@@ -67,7 +67,11 @@ export const observationStationsLabel = (obs: Observation): string => {
 /** Phase 14A null semantics: only an explicit `pass === false` counts. */
 export const hasLocalFailure = (obs: Observation): boolean => {
   if (obs.localTestComponents) {
-    return obs.localTestComponents.passE === false || obs.localTestComponents.passN === false;
+    return (
+      obs.localTestComponents.passE === false ||
+      obs.localTestComponents.passN === false ||
+      obs.localTestComponents.passU === false
+    );
   }
   if (obs.localTest) return obs.localTest.pass === false;
   return false;

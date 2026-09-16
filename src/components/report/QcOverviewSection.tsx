@@ -31,6 +31,7 @@ const OBS_TYPE_SECTION: Record<string, CollapsibleDetailSectionId> = {
   dir: 'directions-azimuth',
   zenith: 'zenith-vertical-angles',
   gps: 'gps-vectors',
+  gnssBaseline: 'gps-vectors',
   lev: 'leveling-dh',
 };
 
@@ -71,16 +72,27 @@ export const QcOverviewSection: React.FC<{
   result: AdjustmentResult;
   onJumpToSection: (_id: CollapsibleDetailSectionId) => void;
   onSelectObservation?: (_observationId: number) => void;
-}> = ({ isDataCheck, isPreanalysis, isSpecialRunMode, result, onJumpToSection, onSelectObservation }) => {
+  /** Active report filters can hide a jump target; when provided the jump clears them first. */
+  onClearFilters?: () => void;
+}> = ({ isDataCheck, isPreanalysis, isSpecialRunMode, result, onJumpToSection, onSelectObservation, onClearFilters }) => {
   if (isSpecialRunMode || isPreanalysis || isDataCheck) return null;
   const overview = buildQcOverview(result);
   const attention = buildQcAttention(result);
 
   const jumpToObservation = (obsId: number): void => {
+    // Clear active filters first so the target row cannot stay hidden, then
+    // select + jump to the section, then scroll to the row itself (the
+    // section jump lands on the header only).
+    onClearFilters?.();
     onSelectObservation?.(obsId);
     const obs = result.observations.find((o) => o.id === obsId);
     const section = obs ? OBS_TYPE_SECTION[obs.type] : undefined;
     if (section) onJumpToSection(section);
+    window.setTimeout(() => {
+      document
+        .querySelector(`[data-report-observation-row="${obsId}"]`)
+        ?.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+    }, 60);
   };
 
   const renderItem = (item: QcAttentionItem): React.ReactNode => {
@@ -125,7 +137,9 @@ export const QcOverviewSection: React.FC<{
         <div>
           <div className="text-slate-500" title={semanticTooltip('localTest')}>Local flagged / tested</div>
           <div className="font-mono">
-            {overview.loo.candidates > 0 ? (
+            {overview.local.tested == null ? (
+              <span title="Local testing was not run for this result">not analyzed</span>
+            ) : overview.loo.candidates > 0 ? (
               <Link
                 title="Jump to the leave-one-out suspect list"
                 onJump={() => onJumpToSection('suspect-impact-analysis')}
@@ -158,14 +172,22 @@ export const QcOverviewSection: React.FC<{
         <div>
           <div className="text-slate-500" title={semanticTooltip('diagnosticScale')}>Stochastic estimable groups</div>
           <div className="font-mono">
+            {overview.stochastic.estimable == null ? (
+              <span title="Stochastic diagnostics are absent for this result">not analyzed</span>
+            ) : (
+            <>
             {overview.stochastic.estimable}
             {overview.stochastic.largest ? ` · largest ${overview.stochastic.largest.label} ×${overview.stochastic.largest.scale.toFixed(2)}` : ''}
+            </>
+            )}
           </div>
         </div>
         <div>
           <div className="text-slate-500" title={semanticTooltip('looShift')}>Leave-one-out analyzed</div>
           <div className="font-mono">
-            {overview.loo.largest && onSelectObservation ? (
+            {overview.loo.candidates === 0 ? (
+              <span title="No leave-one-out candidates for this result">not analyzed</span>
+            ) : overview.loo.largest && onSelectObservation ? (
               <Link
                 title="Jump to the leave-one-out suspect list and select the largest shift"
                 onJump={() => {

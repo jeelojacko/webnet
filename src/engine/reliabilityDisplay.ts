@@ -57,7 +57,13 @@ export const buildCoordEffCellTooltip = (
 ): string => {
   const external = primaryExternalOf(obs);
   const angular = isAngularType(obs.type);
-  const mdbText = formatNativeMdb(activeMdbOf(obs, summary), angular);
+  // Selected-component MDB: primaryExternalOf picks the strongest component,
+  // so the tooltip must show THAT component's mdbUsed — never the aggregate
+  // min-MDB (which can belong to a different component).
+  const mdbText = formatNativeMdb(
+    external?.available === true ? external.mdbUsed : activeMdbOf(obs, summary),
+    angular,
+  );
   const model = summary ? formatReliabilityModelLabel(summary.model) : 'Legacy MDB (3.29)';
   const power = summary ? `power ${summary.power}` : 'power ~50% (legacy scaling)';
   if (!external || external.available !== true) {

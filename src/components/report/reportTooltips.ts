@@ -104,3 +104,6 @@ export const REPORT_STATIC_TOOLTIPS: Record<string, string> = {
 };
 
 export const HEURISTIC_SCORE_TOOLTIP: string = semanticTooltip('heuristicScore');
+
+export const LOOP_TOLERANCE_STATUS_TOOLTIP: string =
+  'Tolerance check against the loop threshold — not a hypothesis test; PASS means within tolerance, never proven clean.';
