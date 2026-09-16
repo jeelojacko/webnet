@@ -2,23 +2,42 @@
  * Production eligibility gate for reusing the recovered final dense Qxx
  * as the standardized-residual statistics Qxx.
  *
- * Automatic (default-on) reuse applies only to the Phase 10D cohort:
- * a normal converged 3D dense TypeScript solve whose final Qxx is finite
- * and correctly dimensioned, with no preanalysis, robust weighting,
- * covariance augmentation, final-recovery damping, selected-covariance
- * store, active sparse selected-covariance solver, or sparse row
- * products. Rejection for the solver is on presence alone (conservative):
- * while the solver is active the final dense Qxx is normally sparse-derived
- * even when no selected store is captured, and a solve whose sparse
- * recovery fell back to dense still keeps the legacy path. TS correlation is admissible (the same
- * correlation transform runs on both paths). Anything else — including
- * 2D solves and non-converged solves — keeps the legacy
- * rebuild-and-invert statistics path.
+ * Automatic (default-on) reuse applies to the dimension-independent dense
+ * cohort: a normal converged dense TypeScript solve (2D or 3D) whose final
+ * Qxx is finite and correctly dimensioned, with no preanalysis, robust
+ * weighting, covariance augmentation, final-recovery damping,
+ * selected-covariance store, active sparse selected-covariance solver, or
+ * sparse row products. Rejection for the solver is on presence alone
+ * (conservative): while the solver is active the final dense Qxx is
+ * normally sparse-derived even when no selected store is captured, and a
+ * solve whose sparse recovery fell back to dense still keeps the legacy
+ * path. TS correlation is admissible (the same correlation transform runs
+ * on both paths). Anything else — including non-converged solves — keeps
+ * the legacy rebuild-and-invert statistics path.
+ *
+ * N_final == N_stats argument (why 2D reuse is sound): statistics
+ * re-assembles the same equations (L, rowInfo, weights) from the same
+ * activeObservations/constraints/numParams path as the final iteration,
+ * and the two known 2D/3D divergences cannot split the normals by
+ * construction — covariance augmentation early-returns for 2D
+ * (augmentCovarianceObservations) and the weak-float-zenith display
+ * projection early-returns for 2D
+ * (projectWeakFloatZenithLeafStationsForDisplay). Orientation unknowns,
+ * GPS/TS-correlation/weighted-control weighting, and station ordering are
+ * preserved through the shared assembly path, so no new gates are needed
+ * for them. Free-network needs no gate here: terrestrial solves have no
+ * free-network path, and static-GNSS free networks never enter native R2B
+ * (native dense 2D stays on its existing fallback, untouched).
  *
  * Reuse still assembles the statistics equations (L, rowInfo, weights);
  * only the statistics normal accumulation and inversion are skipped.
  * Enabling reuse never changes numerics on its own: the gate is
  * fail-closed with a machine-readable reason.
+ *
+ * Kill switch: the existing forceLegacyStatisticsQxx oracle
+ * (test-only, deterministic) forces the legacy path; the
+ * allowEvidence/allowVerified native-dense flags only widen the
+ * sparse-solver gate and never admit anything else. No new switch needed.
  */
 
 export interface StatisticsQxxReuseInput {
@@ -26,8 +45,6 @@ export interface StatisticsQxxReuseInput {
   forceLegacy?: boolean;
   /** The solve converged explicitly (required). */
   converged: boolean;
-  /** 2D solves always keep the legacy path. */
-  is2D: boolean;
   preanalysisMode: boolean;
   robustMode: string | undefined;
   finalQxx: number[][] | null;
@@ -81,7 +98,6 @@ export const decideStatisticsQxxReuse = (
 ): StatisticsQxxReuseDecision => {
   if (input.forceLegacy === true) return { eligible: false, reason: 'force-legacy-oracle' };
   if (!input.converged) return { eligible: false, reason: 'not-converged' };
-  if (input.is2D) return { eligible: false, reason: 'two-dimensional-legacy' };
   if (input.preanalysisMode) return { eligible: false, reason: 'preanalysis-mode' };
   if (input.finalQxx == null) return { eligible: false, reason: 'missing-final-qxx' };
   if (input.hasSelectedStore) return { eligible: false, reason: 'non-dense-selected-store' };
