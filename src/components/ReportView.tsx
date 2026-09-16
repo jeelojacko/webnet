@@ -368,6 +368,7 @@ const ReportView: React.FC<ReportViewProps> = ({
         sortedObservationCount={sortedObs.length}
         stationDescription={stationDescription}
         stationTypeBadge={stationTypeBadge}
+        suspectImpactRows={suspectImpactDiagnostics}
         toggleDetailSection={toggleDetailSection}
         togglePinnedDetailSection={togglePinnedDetailSection}
         topRelativeCovarianceRow={topRelativeCovarianceRow}

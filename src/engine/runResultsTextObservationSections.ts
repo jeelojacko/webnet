@@ -1,4 +1,5 @@
 import { RAD_TO_DEG, radToDmsStr } from './angles';
+import { appendLeaveOneOutInfluenceSection } from './runResultsTextLeaveOneOut';
 import type { RunResultsTextContext } from './runResultsTextContext';
 import type { AdjustmentResult, Observation } from '../types';
 
@@ -246,91 +247,7 @@ export const appendObservationResidualSections = ({
         lines.push('');
       }
 
-      if (res.suspectImpactDiagnostics && res.suspectImpactDiagnostics.length > 0) {
-        lines.push('--- Suspect Impact Analysis (what-if exclusion) ---');
-        const impactRows = res.suspectImpactDiagnostics.map((d, idx) => ({
-          rank: String(idx + 1),
-          type: d.type,
-          stations: d.stations,
-          line: d.sourceLine != null ? String(d.sourceLine) : '-',
-          baseStdRes: d.baseStdRes != null ? d.baseStdRes.toFixed(2) : '-',
-          dSeuw: d.deltaSeuw != null ? d.deltaSeuw.toFixed(4) : '-',
-          dMaxStd: d.deltaMaxStdRes != null ? d.deltaMaxStdRes.toFixed(2) : '-',
-          chi: d.chiDelta,
-          shift: d.maxCoordShift != null ? (d.maxCoordShift * unitScale).toFixed(4) : '-',
-          score: d.score != null ? d.score.toFixed(1) : '-',
-          status: d.status.toUpperCase(),
-        }));
-        const impactHeader = {
-          rank: '#',
-          type: 'Type',
-          stations: 'Stations',
-          line: 'Line',
-          baseStdRes: 'Base|t|',
-          dSeuw: 'dSEUW',
-          dMaxStd: 'dMax|t|',
-          chi: 'ChiDelta',
-          shift: `MaxShift(${linearUnit})`,
-          score: 'Score',
-          status: 'Status',
-        };
-        const impactWidths = {
-          rank: Math.max(impactHeader.rank.length, ...impactRows.map((r) => r.rank.length)),
-          type: Math.max(impactHeader.type.length, ...impactRows.map((r) => r.type.length)),
-          stations: Math.max(
-            impactHeader.stations.length,
-            ...impactRows.map((r) => r.stations.length),
-          ),
-          line: Math.max(impactHeader.line.length, ...impactRows.map((r) => r.line.length)),
-          baseStdRes: Math.max(
-            impactHeader.baseStdRes.length,
-            ...impactRows.map((r) => r.baseStdRes.length),
-          ),
-          dSeuw: Math.max(impactHeader.dSeuw.length, ...impactRows.map((r) => r.dSeuw.length)),
-          dMaxStd: Math.max(
-            impactHeader.dMaxStd.length,
-            ...impactRows.map((r) => r.dMaxStd.length),
-          ),
-          chi: Math.max(impactHeader.chi.length, ...impactRows.map((r) => r.chi.length)),
-          shift: Math.max(impactHeader.shift.length, ...impactRows.map((r) => r.shift.length)),
-          score: Math.max(impactHeader.score.length, ...impactRows.map((r) => r.score.length)),
-          status: Math.max(impactHeader.status.length, ...impactRows.map((r) => r.status.length)),
-        };
-        const pad = (value: string, size: number) => value.padEnd(size, ' ');
-        lines.push(
-          [
-            pad(impactHeader.rank, impactWidths.rank),
-            pad(impactHeader.type, impactWidths.type),
-            pad(impactHeader.stations, impactWidths.stations),
-            pad(impactHeader.line, impactWidths.line),
-            pad(impactHeader.baseStdRes, impactWidths.baseStdRes),
-            pad(impactHeader.dSeuw, impactWidths.dSeuw),
-            pad(impactHeader.dMaxStd, impactWidths.dMaxStd),
-            pad(impactHeader.chi, impactWidths.chi),
-            pad(impactHeader.shift, impactWidths.shift),
-            pad(impactHeader.score, impactWidths.score),
-            pad(impactHeader.status, impactWidths.status),
-          ].join('  '),
-        );
-        impactRows.forEach((r) => {
-          lines.push(
-            [
-              pad(r.rank, impactWidths.rank),
-              pad(r.type, impactWidths.type),
-              pad(r.stations, impactWidths.stations),
-              pad(r.line, impactWidths.line),
-              pad(r.baseStdRes, impactWidths.baseStdRes),
-              pad(r.dSeuw, impactWidths.dSeuw),
-              pad(r.dMaxStd, impactWidths.dMaxStd),
-              pad(r.chi, impactWidths.chi),
-              pad(r.shift, impactWidths.shift),
-              pad(r.score, impactWidths.score),
-              pad(r.status, impactWidths.status),
-            ].join('  '),
-          );
-        });
-        lines.push('');
-      }
+      appendLeaveOneOutInfluenceSection({ lines, res, linearUnit, unitScale });
 
       const headers = {
         type: 'Type',

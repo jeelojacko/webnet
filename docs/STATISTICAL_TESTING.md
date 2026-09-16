@@ -329,6 +329,49 @@ fabricate a diagnostic scale from a singular group. Measured mean
 compute time 0.143ms for ~1k equations (vs ~2.5ms for a full
 7-observation solve on the same machine, 2026-09-16).
 
+## Leave-one-out influence
+
+A what-if, not a verdict. Each candidate is re-solved with exactly that
+observation excluded (BASE vs ALTERNATE vs IMPACT): the report compares the
+base run against the alternate run and shows what changed — SEUW, global
+chi-square, worst standardized residual, local-failure count, and the actual
+coordinate shifts from the re-solve. Nothing is ever excluded automatically;
+the only exclusion path is the explicit Exclude + Re-run action with a
+confirm guard.
+
+- **Candidates**: local-FAIL or |StdRes| >= 2, at most 3, ordered by the
+  transparent hierarchy (ok first, base local-FAIL first, base |StdRes|
+  descending, chi FAIL→PASS first, local-fail reduction, max shift,
+  observation id). There is no heuristic score.
+- **Observation-level deletion contract**: scalar rows delete one row; a GPS
+  observation deletes the whole vector; correlated-TS setups rebuild fully;
+  direction sets recompute (removing the last target removes the set).
+- **CoordEff vs LOO shift**: CoordEff (reliability section) is a first-order
+  MDB effect — the coordinate change a *just-detectable* bias would cause.
+  The LOO shift is the *actual* re-solve change for *this* residual. The two
+  must NOT match; one is a detectability scale, the other a measured
+  what-if.
+- **SEUW honesty**: a lower alternate SEUW is not "better" below 1 — it
+  means the remaining residuals look small against their sigmas. The formal
+  test is the global chi-square, reported before/after with T, DOF, p, and
+  PASS/FAIL.
+- **Chi-square DOF-change caveat**: excluding an observation changes the
+  degrees of freedom, so base and alternate chi-square values live on
+different distributions; the PASS/FAIL comparison is indicative, not a
+  formal nested test.
+- **Free-network runs**: absolute coordinate shifts are datum-dependent
+  without fixed control, so shifts render unavailable-with-reason while the
+  statistical comparison is kept.
+- **Robust re-solves** are labeled as such: classical distributions do not
+  cover data-dependent reweighting.
+- **Aborted alternates** (singular, too few observations, solver failure)
+  are marked failed with the reason and never ranked as improvements.
+- **No blunder claims**: a large influence means "review this observation",
+  never "proven blunder" (see Language).
+
+Overhead: up to 3 extra full solves; auto mode skips them when the main
+solve already took over 5 s.
+
 ## Preanalysis and data check
 
 Formal local tests are disabled there: preanalysis predicts precision from

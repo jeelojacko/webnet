@@ -13,6 +13,11 @@ import {
   formatCoordEffCell,
 } from '../../engine/reliabilityDisplay';
 import type { CollapsibleDetailSectionId } from './reportSectionRegistry';
+import type { SuspectImpactRow } from '../../typesAdjustmentResult';
+import {
+  describeSuspectImpactFailure,
+  formatLooShift,
+} from './ReportSuspectImpactSection.utils';
 import { buildLocalTestCellTooltip, formatLocalTestCell } from './localTestDisplay';
 import { REPORT_TABLE_WINDOW_SIZE } from './reportSectionRegistry';
 import CollapsibleSectionHeader from './CollapsibleSectionHeader';
@@ -47,7 +52,116 @@ interface ObservationTableSectionProps {
   prismAnnotation: (_observation: Observation) => string;
   localTestSummary?: LocalTestSummary | null;
   reliabilitySummary?: ReliabilitySummary | null;
+  suspectImpactRows?: SuspectImpactRow[];
+  units?: 'm' | 'ft';
 }
+
+/**
+ * Leave-one-out detail for the selected observation. Complements (never
+ * duplicates) the LEAVE-ONE-OUT INFLUENCE table: BASE reuses the row's
+ * read-only observation fields, WITHOUT OBSERVATION shows the re-solve
+ * comparison, COORDINATE CHANGE shows the actual re-solve shift.
+ */
+const SelectedObservationLooDetail: React.FC<{
+  looRow: SuspectImpactRow;
+  unitScale: number;
+  units: 'm' | 'ft';
+  stdResStr: string;
+  redundancyStr: string;
+  localStr: string;
+  mdbStr: string;
+  coordEffStr: string;
+  linResText: string;
+}> = ({
+  looRow,
+  unitScale,
+  units,
+  stdResStr,
+  redundancyStr,
+  localStr,
+  mdbStr,
+  coordEffStr,
+  linResText,
+}) => {
+  const fmt = (value: number | undefined, digits: number): string =>
+    value != null && Number.isFinite(value) ? value.toFixed(digits) : '-';
+  const chiPass = (pass: boolean | undefined): string =>
+    pass == null ? '-' : pass ? 'PASS' : 'FAIL';
+  const failed = looRow.status !== 'ok';
+  const most = looRow.mostAffectedStation;
+  const shiftUnavailable = looRow.shiftStatus === 'free-network-unavailable';
+  return (
+    <div className="text-[11px] text-slate-300">
+      <div className="font-bold text-blue-300 uppercase tracking-wider mb-1">
+        Leave-one-out: #{looRow.obsId} {looRow.type} {looRow.stations}
+        {looRow.robustReSolve ? ' (Robust re-solve comparison)' : null}
+      </div>
+      {failed ? (
+        <div className="text-slate-400">
+          Without-observation re-solve {describeSuspectImpactFailure(looRow)}; no comparison
+          available.
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+          <div>
+            <div className="text-slate-500 uppercase tracking-wider">Base</div>
+            <div className="font-mono">
+              StdRes {stdResStr} · Local {localStr} · Redund {redundancyStr}
+              <br />
+              MDB {mdbStr} · CoordEff {coordEffStr} · LinRes {linResText}
+            </div>
+          </div>
+          <div>
+            <div className="text-slate-500 uppercase tracking-wider">Without observation</div>
+            <div
+              className="font-mono"
+              title={
+                looRow.baseChi && looRow.altChi
+                  ? `Base χ² T=${looRow.baseChi.T.toFixed(3)} DOF=${looRow.baseChi.dof} p=${looRow.baseChi.p.toFixed(4)}; alt χ² T=${looRow.altChi.T.toFixed(3)} DOF=${looRow.altChi.dof} p=${looRow.altChi.p.toFixed(4)}`
+                  : undefined
+              }
+            >
+              SEUW {fmt(looRow.baseSeuw, 4)}-&gt;{fmt(looRow.altSeuw, 4)}
+              <br />χ² {chiPass(looRow.baseChiPass)}-&gt;{chiPass(looRow.altChiPass)}
+              <br />
+              max|t| {fmt(looRow.baseMaxStdRes, 2)}-&gt;{fmt(looRow.altMaxStdRes, 2)} ·
+              fails {looRow.baseLocalFails ?? '-'}-&gt;{looRow.altLocalFails ?? '-'}
+            </div>
+          </div>
+          <div>
+            <div className="text-slate-500 uppercase tracking-wider">Coordinate change</div>
+            {shiftUnavailable ? (
+              <div className="font-mono text-slate-500">unavailable (free-network datum)</div>
+            ) : most ? (
+              <div className="font-mono">
+                {most.id}: dE={(most.dE * 1000).toFixed(2)}mm dN={(most.dN * 1000).toFixed(2)}mm
+                dH={(most.dH * 1000).toFixed(2)}mm<br />
+                horiz={formatLooShift(most.horiz, unitScale, units)} · 3D=
+                {formatLooShift(most.mag3d, unitScale, units)}
+                {(looRow.topAffectedStations?.length ?? 0) > 1 ? (
+                  <details className="mt-1">
+                    <summary className="cursor-pointer text-blue-300">
+                      Top-{(looRow.topAffectedStations ?? []).length} stations
+                    </summary>
+                    {(looRow.topAffectedStations ?? []).map((station) => (
+                      <div key={station.id}>
+                        {station.id}: dE={(station.dE * 1000).toFixed(2)}mm dN=
+                        {(station.dN * 1000).toFixed(2)}mm dH={(station.dH * 1000).toFixed(2)}mm ·
+                        3D={formatLooShift(station.mag3d, unitScale, units)}
+                      </div>
+                    ))}
+                  </details>
+                ) : null}
+              </div>
+            ) : (
+              <div className="font-mono text-slate-500">-</div>
+            )}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
 
 const ObservationTableSection: React.FC<ObservationTableSectionProps> = ({
   obsList,
@@ -73,6 +187,8 @@ const ObservationTableSection: React.FC<ObservationTableSectionProps> = ({
   prismAnnotation,
   localTestSummary,
   reliabilitySummary,
+  suspectImpactRows,
+  units = 'm',
 }) => {
   if (!obsList.length) return null;
 
@@ -224,9 +340,13 @@ const ObservationTableSection: React.FC<ObservationTableSectionProps> = ({
                 const linResTitle = linRes?.title ?? 'Linear equivalent not available for GNSS.';
                 const sigmaDisplay = formatObservationSigmaDisplay(obs);
 
+                const looRow =
+                  selectedObservationId === obs.id
+                    ? suspectImpactRows?.find((row) => row.obsId === obs.id)
+                    : undefined;
                 return (
+                  <React.Fragment key={obs.id}>
                   <tr
-                    key={obs.id}
                     data-report-observation-row={obs.id}
                     onClick={() => onSelectObservation?.(obs.id)}
                     className={`border-b border-slate-800/30 ${excluded ? 'opacity-50' : ''} ${rowSelectionClass(
@@ -309,6 +429,24 @@ const ObservationTableSection: React.FC<ObservationTableSectionProps> = ({
                       {sigmaDisplay.visible}
                     </td>
                   </tr>
+                  {looRow ? (
+                    <tr key={`loo-detail-${obs.id}`} className="border-b border-blue-900/40 bg-blue-950/20">
+                      <td colSpan={13} className="py-2 px-4">
+                        <SelectedObservationLooDetail
+                          looRow={looRow}
+                          unitScale={unitScale}
+                          units={units}
+                          stdResStr={stdResStr}
+                          redundancyStr={redundancyStr}
+                          localStr={localStr}
+                          mdbStr={mdbStr}
+                          coordEffStr={coordEffStr}
+                          linResText={linResText}
+                        />
+                      </td>
+                    </tr>
+                  ) : null}
+                  </React.Fragment>
                 );
               })}
             </tbody>
