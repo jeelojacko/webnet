@@ -1,5 +1,4 @@
 import { RAD_TO_DEG, radToDmsStr } from './angles';
-import { appendLeaveOneOutInfluenceSection } from './runResultsTextLeaveOneOut';
 import type { RunResultsTextContext } from './runResultsTextContext';
 import type { AdjustmentResult, Observation } from '../types';
 
@@ -246,8 +245,6 @@ export const appendObservationResidualSections = ({
         });
         lines.push('');
       }
-
-      appendLeaveOneOutInfluenceSection({ lines, res, linearUnit, unitScale });
 
       const headers = {
         type: 'Type',

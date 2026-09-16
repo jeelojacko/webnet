@@ -121,7 +121,7 @@ export const ReportSuspectImpactSection: React.FC<{
   const sectionId: CollapsibleDetailSectionId = 'suspect-impact-analysis';
   const robust = suspectImpactDiagnostics.some((row) => row.robustReSolve);
   return (
-    <div className="mb-8 border border-slate-800 rounded overflow-hidden" style={{ order: -140 }}>
+    <div className="mb-8 border border-slate-800 rounded overflow-hidden" style={{ order: -202 }}>
       <CollapsibleSectionHeader
         sectionId={sectionId}
         label="LEAVE-ONE-OUT INFLUENCE"

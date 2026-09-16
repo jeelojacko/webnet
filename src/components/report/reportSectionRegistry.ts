@@ -21,6 +21,7 @@ export const OBSERVATION_FILTER_OPTIONS: Array<{
 export const COLLAPSIBLE_DETAIL_SECTION_IDS = [
   'report-filters',
   'suspect-impact-analysis',
+  'systematic-pattern-diagnostics',
   'solve-profile-diagnostics',
   'auto-adjust-diagnostics',
   'auto-sideshot-candidates',
@@ -73,6 +74,7 @@ export type CollapsibleDetailSectionId = (typeof COLLAPSIBLE_DETAIL_SECTION_IDS)
 const DEFAULT_COLLAPSED_DETAIL_SECTION_IDS = new Set<CollapsibleDetailSectionId>([
   'report-filters',
   'suspect-impact-analysis',
+  'systematic-pattern-diagnostics',
   'solve-profile-diagnostics',
   'auto-adjust-diagnostics',
   'auto-sideshot-candidates',

@@ -1,6 +1,7 @@
 import { appendCoordinateAndCovarianceSections } from './runResultsTextCoordinateSections';
 import { appendDirectionQualitySections } from './runResultsTextDirectionQualitySections';
 import { appendDirectionSummarySections } from './runResultsTextDirectionSummarySections';
+import { appendLeaveOneOutInfluenceSection } from './runResultsTextLeaveOneOut';
 import { appendObservationResidualSections } from './runResultsTextObservationSections';
 import { appendPostAdjustedSections } from './runResultsTextPostAdjustedSections';
 import { appendPreanalysisGeometrySections } from './runResultsTextPreanalysisSections';
@@ -42,7 +43,7 @@ export const createRunResultsTextBuilder = ({
       runDiagnostics,
       buildRunDiagnostics,
     });
-    const { aliasTrace } = textContext;
+    const { aliasTrace, linearUnit, unitScale } = textContext;
     appendRunResultsHeaderAndStatus({
       lines,
       res,
@@ -65,6 +66,16 @@ export const createRunResultsTextBuilder = ({
       res,
       context: textContext,
     });
+    appendLeaveOneOutInfluenceSection({
+      lines,
+      res,
+      linearUnit,
+      unitScale,
+    });
+    appendSystematicPatternSections({
+      lines,
+      res,
+    });
     appendWorkflowDiagnosticsSections({
       lines,
       res,
@@ -75,10 +86,6 @@ export const createRunResultsTextBuilder = ({
       res,
     });
     appendDirectionQualitySections({
-      lines,
-      res,
-    });
-    appendSystematicPatternSections({
       lines,
       res,
     });

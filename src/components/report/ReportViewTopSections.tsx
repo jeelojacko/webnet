@@ -172,25 +172,6 @@ const ReportViewTopSections: React.FC<ReportViewTopSectionsProps> = ({
         onJumpToPinnedSection={jumpToPinnedSection}
       />
 
-      <ReportSuspectImpactSection
-        excludedIds={excludedIds}
-        isDetailSectionPinned={isDetailSectionPinned}
-        isPreanalysis={isPreanalysis}
-        isSectionCollapsed={isSectionCollapsed}
-        isSpecialRunMode={isSpecialRunMode}
-        onApplyImpactExclude={onApplyImpactExclude}
-        onHeaderRef={onHeaderRef}
-        renderSourceLineLink={renderSourceLineLink}
-        suspectImpactActionableCount={suspectImpactActionableCount}
-        suspectImpactDiagnostics={suspectImpactDiagnostics}
-        suspectImpactExcludedCount={suspectImpactExcludedCount}
-        suspectImpactWorstBaseStdRes={suspectImpactWorstBaseStdRes}
-        toggleDetailSection={toggleDetailSection}
-        togglePinnedDetailSection={togglePinnedDetailSection}
-        unitScale={unitScale}
-        units={units}
-      />
-
       <AdjustmentSummarySection
         byType={byType}
         isPreanalysis={isPreanalysis}
@@ -219,11 +200,35 @@ const ReportViewTopSections: React.FC<ReportViewTopSectionsProps> = ({
         result={result}
       />
 
+      <ReportSuspectImpactSection
+        excludedIds={excludedIds}
+        isDetailSectionPinned={isDetailSectionPinned}
+        isPreanalysis={isPreanalysis}
+        isSectionCollapsed={isSectionCollapsed}
+        isSpecialRunMode={isSpecialRunMode}
+        onApplyImpactExclude={onApplyImpactExclude}
+        onHeaderRef={onHeaderRef}
+        renderSourceLineLink={renderSourceLineLink}
+        suspectImpactActionableCount={suspectImpactActionableCount}
+        suspectImpactDiagnostics={suspectImpactDiagnostics}
+        suspectImpactExcludedCount={suspectImpactExcludedCount}
+        suspectImpactWorstBaseStdRes={suspectImpactWorstBaseStdRes}
+        toggleDetailSection={toggleDetailSection}
+        togglePinnedDetailSection={togglePinnedDetailSection}
+        unitScale={unitScale}
+        units={units}
+      />
+
       <SystematicPatternSection
         isDataCheck={isDataCheck}
         isPreanalysis={isPreanalysis}
+        isDetailSectionPinned={isDetailSectionPinned}
+        isSectionCollapsed={isSectionCollapsed}
+        onHeaderRef={onHeaderRef}
         renderSourceLineLink={renderSourceLineLink}
         result={result}
+        toggleDetailSection={toggleDetailSection}
+        togglePinnedDetailSection={togglePinnedDetailSection}
       />
 
       <DataCheckSummarySection

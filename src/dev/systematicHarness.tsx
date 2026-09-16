@@ -76,12 +76,17 @@ const CaseBlock: React.FC<{ testId: string; title: string; result: AdjustmentRes
     <SystematicPatternSection
       isDataCheck={false}
       isPreanalysis={false}
+      isDetailSectionPinned={() => false}
+      isSectionCollapsed={() => false}
+      onHeaderRef={() => {}}
       renderSourceLineLink={(line) => (
         <a href={`#line-${line ?? 'na'}`} data-testid={`srcline-${line ?? 'na'}`}>
           {line ?? '-'}
         </a>
       )}
       result={result}
+      toggleDetailSection={() => {}}
+      togglePinnedDetailSection={() => {}}
     />
     <ObservationTableSection
       obsList={result.observations}
