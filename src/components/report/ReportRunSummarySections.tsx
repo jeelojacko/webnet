@@ -16,7 +16,9 @@ import {
 import { formatQcSummaryMissing } from '../../engine/qcAvailability';
 import type { ReportObservationSelectorModel } from './reportObservationSelectors';
 import { REPORT_STATIC_TOOLTIPS } from './reportTooltips';
+import { countLocalFlags } from '../../engine/qcOverviewModel';
 import { semanticTooltip } from '../../engine/statisticalSemantics';
+import { QcCategoryTag } from './QcOverviewSection';
 
 type SourceLineRenderer = (_line: number | null | undefined) => React.ReactNode;
 
@@ -114,6 +116,7 @@ export const AdjustmentSummarySection: React.FC<{
             }
           >
             {isPreanalysis ? 'RESIDUAL QC' : 'CHI-SQUARE (95%)'}
+            {isPreanalysis ? null : <QcCategoryTag category="formal" />}
           </span>
           {!isPreanalysis && result.chiSquare ? (
             <>
@@ -330,9 +333,10 @@ export const LocalTestSummarySection: React.FC<{
       </div>
     );
   }
-  const flaggedCount = result.observations.filter(
-    (obs) => obs.localTest != null && obs.localTest.pass === false,
-  ).length;
+  // §31: flagged scalar equations (GPS counts per component), matching
+  // localTestSummary.testCount = testable scalar equations.
+  const { flagged: flaggedCount, hasComponents } = countLocalFlags(result.observations);
+  const testedUnit = hasComponents ? 'components' : 'equations';
   return (
     <div className="mb-6 text-xs text-slate-300" style={{ order: -205 }}>
       <span
@@ -340,13 +344,14 @@ export const LocalTestSummarySection: React.FC<{
         title={semanticTooltip('localTest')}
       >
         Local testing
+        <QcCategoryTag category="formal" />
       </span>
       <span title={buildLocalTestSummaryLine(summary, flaggedCount)}>
         {summary.available ? (
           <>
             {formatLocalTestModeLabel(summary.mode)} · critical{' '}
             {Number.isFinite(summary.criticalValue) ? summary.criticalValue.toFixed(2) : '-'} ·{' '}
-            {flaggedCount} flagged of {summary.testCount} tested
+            {flaggedCount} flagged of {summary.testCount} tested ({testedUnit})
           </>
         ) : (
           <>Local testing unavailable — not tested ({summary.unavailableReason ?? 'unknown reason'})</>
@@ -391,6 +396,7 @@ export const ReliabilitySummarySection: React.FC<{
         title={`${semanticTooltip('mdbLegacy')} ${semanticTooltip('coordEff')}`}
       >
         Reliability
+        <QcCategoryTag category="descriptive" />
       </span>
       <span title={buildReliabilitySummaryLine(summary, result.observations)}>
         {summary.available ? (
@@ -441,6 +447,7 @@ export const StochasticDiagnosticsSection: React.FC<{
         title={semanticTooltip('diagnosticScale')}
       >
         Stochastic model diagnostics
+        <QcCategoryTag category="first-pass" />
       </span>
       {pointer ? <div className="mt-1 text-slate-200">{pointer}</div> : null}
       {diagnostics.groups.length === 0 && diagnostics.reason ? (

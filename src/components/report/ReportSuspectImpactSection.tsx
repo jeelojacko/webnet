@@ -8,6 +8,7 @@ import {
   formatLooShift,
 } from './ReportSuspectImpactSection.utils';
 import { semanticTooltip } from '../../engine/statisticalSemantics';
+import { QcCategoryTag } from './QcOverviewSection';
 import CollapsibleSectionHeader from './CollapsibleSectionHeader';
 import type { CollapsibleDetailSectionId } from './reportSectionRegistry';
 
@@ -136,6 +137,7 @@ export const ReportSuspectImpactSection: React.FC<{
       />
       <div className="px-4 py-1 text-[11px] text-slate-400 border-b border-slate-800/60">
         What-if exclusion analysis
+        <QcCategoryTag category="what-if" />
         {robust ? ' — Robust re-solve comparison (robust weights active in alternates)' : null}
       </div>
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3 p-3 text-xs text-slate-300 border-b border-slate-800/60">

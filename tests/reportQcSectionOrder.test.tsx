@@ -36,7 +36,9 @@ describe('QC report section order', () => {
     };
     const summary = idx('Adjustment Summary');
     const local = idx('Local testing');
-    const reliability = idx('Reliability');
+    // Bare 'Reliability' also matches the QC overview attention heading
+    // ('Reliability concerns'); anchor on the strip label element instead.
+    const reliability = idx('Reliability<span');
     const stochastic = idx('Stochastic model diagnostics');
     const loo = idx('LEAVE-ONE-OUT INFLUENCE');
     const systematic = idx('SYSTEMATIC PATTERN DIAGNOSTICS');

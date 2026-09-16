@@ -14,6 +14,7 @@ import {
   DataCheckSummarySection,
   PendingRunSettingsDiffBanner,
 } from './ReportRunSummarySections';
+import { QcOverviewSection } from './QcOverviewSection';
 import { ReportSuspectImpactSection } from './ReportSuspectImpactSection';
 import SystematicPatternSection from './SystematicPatternSection';
 import SolveProfileDiagnosticsSection from './SolveProfileDiagnosticsSection';
@@ -62,7 +63,9 @@ type ReportViewTopSectionsProps = {
   onClearClusterMerges: ReportViewProps['onClearClusterMerges'];
   onClearExclusions: ReportViewProps['onClearExclusions'];
   onHeaderRef: (_id: CollapsibleDetailSectionId, _node: HTMLDivElement | null) => void;
+  onJumpToSection: (_id: CollapsibleDetailSectionId) => void;
   onReRun: ReportViewProps['onReRun'];
+  onSelectObservation?: (_observationId: number) => void;
   onResetOverrides: ReportViewProps['onResetOverrides'];
   pendingRunSettingDiffs: NonNullable<ReportViewProps['pendingRunSettingDiffs']>;
   pinnedDetailSections: PinnedDetailSection[];
@@ -123,7 +126,9 @@ const ReportViewTopSections: React.FC<ReportViewTopSectionsProps> = ({
   onClearClusterMerges,
   onClearExclusions,
   onHeaderRef,
+  onJumpToSection,
   onReRun,
+  onSelectObservation,
   onResetOverrides,
   pendingRunSettingDiffs,
   pinnedDetailSections,
@@ -177,6 +182,15 @@ const ReportViewTopSections: React.FC<ReportViewTopSectionsProps> = ({
         isPreanalysis={isPreanalysis}
         isSpecialRunMode={isSpecialRunMode}
         result={result}
+      />
+
+      <QcOverviewSection
+        isDataCheck={isDataCheck}
+        isPreanalysis={isPreanalysis}
+        isSpecialRunMode={isSpecialRunMode}
+        result={result}
+        onJumpToSection={onJumpToSection}
+        onSelectObservation={onSelectObservation}
       />
 
       <LocalTestSummarySection
