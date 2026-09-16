@@ -10,7 +10,7 @@
  * phase9e-audit, phase9e-fastpath, phase9h, phase9i, phase9j, phase10a,
  * phase10b, phase10c, phase10d, phase10e, phase10f, phase10g, phase10h,
  * phase10i, phase10j, phase10k, phase10l, phase10m, phase10n, phase10o,
- * phase10p, phase11a, phase15a.
+ * phase10p, phase11a, phase15a, phase15b.
  * Unknown suite names fail fast with a clear error — never a silent
  * full-campaign run.
  * Execution always goes through the evidence tier config
@@ -70,6 +70,7 @@ const SUITES = {
   phase11a: ['tests/evidence/phase11a_cohort_widening.test.ts'],
   phase12f0: ['tests/evidence/phase12f0_native_architecture_audit.test.ts'],
   phase15a: ['tests/evidence/phase15a_covariance_operation_benchmark.test.ts'],
+  phase15b: ['tests/evidence/phase15b_2d_reuse_benchmark.test.ts'],
 };
 
 const suite = process.argv[2] ?? 'all';
