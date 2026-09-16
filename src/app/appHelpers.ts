@@ -5,6 +5,10 @@ import {
   formatLocalTestPolicyLine,
   localTestPoliciesEqual,
 } from '../engine/localTestPolicy';
+import {
+  formatReliabilityPolicyLine,
+  reliabilityPoliciesEqual,
+} from '../engine/reliabilityPolicy';
 import { buildValueFingerprint } from '../engine/qaWorkflow';
 import type {
   CrsCatalogGroupFilter,
@@ -184,6 +188,7 @@ export const createRunSettingsSnapshot = (
   robustMode: parseSettings.robustMode,
   robustK: parseSettings.robustK,
   localTestPolicy: parseSettings.localTestPolicy,
+  reliabilityPolicy: parseSettings.reliabilityPolicy,
   clusterDetectionEnabled: parseSettings.clusterDetectionEnabled,
   autoSideshotEnabled: parseSettings.autoSideshotEnabled,
   autoAdjustEnabled: parseSettings.autoAdjustEnabled,
@@ -270,6 +275,11 @@ export const buildPendingRunSettingDiffs = (
   if (!localTestPoliciesEqual(current.localTestPolicy, previous.localTestPolicy)) {
     diffs.push(
       `Local Test: ${formatLocalTestPolicyLine(previous.localTestPolicy)} -> ${formatLocalTestPolicyLine(current.localTestPolicy)}`,
+    );
+  }
+  if (!reliabilityPoliciesEqual(current.reliabilityPolicy, previous.reliabilityPolicy)) {
+    diffs.push(
+      `Reliability: ${formatReliabilityPolicyLine(previous.reliabilityPolicy)} -> ${formatReliabilityPolicyLine(current.reliabilityPolicy)}`,
     );
   }
   pushDiff(

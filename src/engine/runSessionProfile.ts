@@ -226,6 +226,7 @@ export const buildParseOptions = (
   robustMode: effectiveParse.robustMode,
   robustK: effectiveParse.robustK,
   localTestPolicy: effectiveParse.localTestPolicy,
+  reliabilityPolicy: effectiveParse.reliabilityPolicy,
   parseCompatibilityMode: effectiveParse.parseCompatibilityMode,
   parseModeMigrated: effectiveParse.parseModeMigrated,
   autoAdjustEnabled: effectiveParse.autoAdjustEnabled,

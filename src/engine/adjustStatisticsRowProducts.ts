@@ -19,6 +19,13 @@ export interface StandardizedResidualRowProducts {
 
 export interface StandardizedResidualRowProductRequest {
   sparseRows: SparseMatrixRows;
+  /**
+   * Extra coupled row groups (TS-correlation groups) whose pairwise
+   * cross products the statistical MDB needs for (A Qxx A' P)_ii.
+   * GPS blocks are collected internally; groups here are merged in and
+   * deduplicated, so callers may pass overlapping groups safely.
+   */
+  extraCrossGroups?: number[][];
   /** Dense weights for the default path; either weights or structuredWeights is required. */
   weights?: number[][];
   /** Structured weights for the experimental sparse path; preferred when present. */
@@ -92,11 +99,18 @@ export const queryStandardizedResidualRowProducts = (
     ? structuredWeightsToPackedUpper(request.structuredWeights)
     : packUpperTriangleWeights(requireDenseRowProductWeights(request), request.observationEquationCount);
   const groups = collectGpsCrossGroups(request.rowInfo, request.activeObservations);
+  for (const extra of request.extraCrossGroups ?? []) {
+    if (extra.length > 1) groups.push([...extra]);
+  }
   const crossA: number[] = [];
   const crossB: number[] = [];
+  const seenPairs = new Set<string>();
   groups.forEach((rows) => {
     rows.forEach((rowA) => {
       rows.forEach((rowB) => {
+        const key = crossKey(rowA, rowB);
+        if (seenPairs.has(key)) return;
+        seenPairs.add(key);
         crossA.push(rowA);
         crossB.push(rowB);
       });

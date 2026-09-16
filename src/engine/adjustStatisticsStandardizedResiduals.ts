@@ -5,6 +5,25 @@ import {
   isTestableEquation,
   normalizeLocalTestPolicy,
 } from './localTestPolicy';
+import {
+  deriveReliability,
+  mdbLinearMm,
+  normalizeReliabilityPolicy,
+  statisticalMdb,
+  statisticalSensitivity,
+} from './reliabilityPolicy';
+import type { StructuredSymmetricWeights } from './sparseWeightRepresentation';
+import {
+  buildCouplingGroupRows,
+  computeExternalInfluences,
+  EXTERNAL_REASON_NO_COVARIANCE,
+  isFreeNetworkDatum,
+} from './adjustExternalReliability';
+import type {
+  ExternalInfluence,
+  ExternalParamColumn,
+  ExternalRowInput,
+} from './adjustExternalReliability';
 import { tryQueryStandardizedResidualRowProducts } from './adjustStatisticsRowProducts';
 import { detailedNow } from './adjustDetailedSolveProfile';
 import { copyMatrix } from './qxxReuseEvidence';
@@ -25,6 +44,32 @@ export const computeStandardizedResidualStatistics = (
   activeObservations: Observation[],
   constraints: CoordinateConstraint[],
 ): void => {
+  // Phase 14B: provisional run-level reliability summary. The adjustment
+  // path below overwrites it with the true local-test statistic family;
+  // the preanalysis / no-model paths keep this guarded value.
+  const reliabilityPolicy = normalizeReliabilityPolicy(ctx.reliabilityPolicy);
+  const provisionalFamily =
+    normalizeLocalTestPolicy(ctx.localTestPolicy).mode === 'baarda-w' ? 'w' : 'tau';
+  ctx.reliabilitySummary = deriveReliability({
+    policy: reliabilityPolicy,
+    statisticFamily: provisionalFamily,
+    robustMode: ctx.robustMode,
+  });
+  if (ctx.preanalysisMode) {
+    ctx.reliabilitySummary = {
+      ...ctx.reliabilitySummary,
+      reason: [ctx.reliabilitySummary.reason, 'preanalysis-a-priori-seuw-1-no-per-observation-mdb']
+        .filter(Boolean)
+        .join(';'),
+    };
+  }
+  if (!hasQxx) {
+    ctx.reliabilitySummary = {
+      ...ctx.reliabilitySummary,
+      available: false,
+      reason: 'no-adjustment-model',
+    };
+  }
   const profiler = ctx.detailedSolveProfiler;
   let statisticsEquationAssemblyMs = 0;
   let robustWeightPreparationMs = 0;
@@ -172,6 +217,32 @@ export const computeStandardizedResidualStatistics = (
         );
       }
 
+      // True-P coupling groups shared by the statistical MDB sensitivity
+      // and external propagation: same GPS observation (covariance block),
+      // same TS-correlation group, else singletons. Row info depends only
+      // on observations/constraints, so one grouping serves every assembly.
+      const statsObsById = new Map(activeObservations.map((obs) => [obs.id, obs]));
+      const couplingByRow = buildCouplingGroupRows(
+        assembled.rowInfo.map((info) =>
+          info ? { obsId: info.obs.id, component: info.component } : null,
+        ),
+        (obsId) => {
+          const obs = statsObsById.get(obsId);
+          return obs ? (ctx.tsCorrelationGroup(obs)?.key ?? null) : null;
+        },
+      );
+      const extraCrossGroups: number[][] = [];
+      {
+        const seenGroupKeys = new Set<string>();
+        couplingByRow.forEach((group) => {
+          if (group.length < 2) return;
+          const key = [...group].sort((a, b) => a - b).join(',');
+          if (seenGroupKeys.has(key)) return;
+          seenGroupKeys.add(key);
+          extraCrossGroups.push([...group]);
+        });
+      }
+
       if (!ctx.preanalysisMode) {
         try {
           const rowProductInitialStartedAt = profiler ? detailedNow() : 0;
@@ -183,6 +254,7 @@ export const computeStandardizedResidualStatistics = (
               : undefined,
             rowInfo: assembled.rowInfo,
             activeObservations,
+            extraCrossGroups,
             observationEquationCount: numObsEquations,
             parameterCount: numParams,
           });
@@ -210,12 +282,44 @@ export const computeStandardizedResidualStatistics = (
               weights: assembled.P,
               rowInfo: assembled.rowInfo,
               activeObservations,
+              extraCrossGroups,
               observationEquationCount: numObsEquations,
               parameterCount: numParams,
             });
             if (profiler) rowProductConstructionMs += detailedNow() - rowProductRetryStartedAt;
           }
           const { L, rowInfo, sparseRows } = assembled;
+          // Weight-column reader for the sensitivity sum: dense P when
+          // present, else the structured sparse weights (symmetric packed
+          // upper triangle). Missing entries are exactly 0 off-diagonal.
+          const statsStructuredWeights: StructuredSymmetricWeights | undefined =
+            assembled.structuredWeights;
+          const statsWeightOffDiag = new Map<string, number>();
+          if (statsStructuredWeights) {
+            for (let k = 0; k < statsStructuredWeights.offValues.length; k += 1) {
+              statsWeightOffDiag.set(
+                `${statsStructuredWeights.offRows[k]}:${statsStructuredWeights.offColumns[k]}`,
+                statsStructuredWeights.offValues[k] as number,
+              );
+            }
+          }
+          const weightAt = (coupledRow: number, row: number): number => {
+            const dense = assembled.P;
+            if (dense?.length) {
+              const value = dense[coupledRow]?.[row];
+              return typeof value === 'number' ? value : Number.NaN;
+            }
+            if (statsStructuredWeights) {
+              if (coupledRow === row) {
+                const diagValue = statsStructuredWeights.diagonal[coupledRow];
+                return typeof diagValue === 'number' ? diagValue : Number.NaN;
+              }
+              const lo = Math.min(coupledRow, row);
+              const hi = Math.max(coupledRow, row);
+              return statsWeightOffDiag.get(`${lo}:${hi}`) ?? 0;
+            }
+            return Number.NaN;
+          };
           let B: number[][] = [];
           if (rowProducts) {
             if (ctx.qxxReuseProbe) {
@@ -313,6 +417,7 @@ export const computeStandardizedResidualStatistics = (
               t: number[];
               r: number[];
               mdb: number[];
+              mdbStat: number[];
               pass: (boolean | null)[];
               stat: number[];
               testable: boolean[];
@@ -335,6 +440,8 @@ export const computeStandardizedResidualStatistics = (
             r: number;
             /** Pre-clamp redundancy driving testability (clamped qvv hides r ~= 0). */
             rUnclamped: number;
+            /** A-priori residual cofactor feeding the statistical MDB. */
+            qvvUnclamped: number;
             w: number;
             tau: number;
           }[] = [];
@@ -375,6 +482,7 @@ export const computeStandardizedResidualStatistics = (
               qvv,
               r,
               rUnclamped,
+              qvvUnclamped,
               w: residual / Math.sqrt(qvv),
               tau: residual / (s0 * Math.sqrt(qvv)),
             });
@@ -408,12 +516,50 @@ export const computeStandardizedResidualStatistics = (
               }
               : {}),
           };
+          // Phase 14B: true run-level reliability (statistic family now known).
+          // The legacy model keeps the historical MDB computation below untouched.
+          const statisticalActive = reliabilityPolicy.model === 'statistical';
+          ctx.reliabilitySummary = deriveReliability({
+            policy: reliabilityPolicy,
+            statisticFamily: derivation.statisticFamily,
+            robustMode: ctx.robustMode,
+          });
+          const reliabilityDelta0 = statisticalActive
+            ? ctx.reliabilitySummary.delta0
+            : Number.NaN;
+          const reliabilityAvailable =
+            statisticalActive && ctx.reliabilitySummary.available;
           const useW = derivation.statisticFamily === 'w';
           const localCritical = derivation.criticalValue;
           const localAvailable = derivation.available;
+          // Cross-form reader for the sensitivity sum: sparse row-product
+          // crosses (diagonal falls back to the all-rows quadratic) or
+          // dense B.a dots. Both equal (a_row Qxx a_col').
+          const crossAqxxat = (rowA: number, rowB: number): number | undefined => {
+            if (rowProducts) {
+              if (rowA === rowB) return rowProducts.quadratic[rowA] as number;
+              return rowProducts.crossFor(rowA, rowB) ?? undefined;
+            }
+            const brow = B[rowA];
+            const arow = sparseRows[rowB] ?? [];
+            if (!brow) return undefined;
+            let sum = 0;
+            for (const entry of arow) sum += (brow[entry.index] ?? 0) * entry.value;
+            return sum;
+          };
+          const sensitivityOf = (row: number): number =>
+            statisticalSensitivity(
+              row,
+              couplingByRow.get(row) ?? [row],
+              crossAqxxat,
+              weightAt,
+            );
           // Phase two: verdicts against the run-level threshold.
-          // MDB keeps the legacy 3.29 detection scaling in every mode (~50%
-          // power limitation acknowledged; beta-aware MDB deferred to Phase 14B).
+          // Legacy MDB keeps the historical 3.29 scaling in every mode
+          // (~50% power limitation acknowledged). Statistical MDB uses the
+          // a-priori cofactor with the full-P-column sensitivity.
+          // Phase 14B: per-row MDBs for external-reliability propagation.
+          const mdbByRow = new Map<number, { mdb: number; mdbStat: number }>();
           for (const eq of pendingEquations) {
             const stat = useW ? eq.w : eq.tau;
             // Zero-redundancy equations carry no outlier signal: statistic is
@@ -426,10 +572,21 @@ export const computeStandardizedResidualStatistics = (
               eq.r > 1e-12
                 ? (LEGACY_LOCAL_TEST_CRITICAL * s0 * sigmaQll) / Math.sqrt(eq.r)
                 : Number.POSITIVE_INFINITY;
+            // Phase 14B: statistical MDB whenever the statistical model is
+            // selected, from the a-priori residual cofactor and the
+            // correlated sensitivity R_ii = (Qvv P)_ii; the legacy mdb above
+            // is untouched (bit-identical default path). Branching on model
+            // selection (not availability) keeps an invalid statistical
+            // policy statistical: delta0 is +Inf there, so every mdbStat is
+            // +Inf/untestable and never silently replaced by legacy.
+            const mdbStat = statisticalActive
+              ? statisticalMdb(eq.qvvUnclamped, sensitivityOf(eq.row), reliabilityDelta0)
+              : Number.POSITIVE_INFINITY;
             const entry = rowStats.get(eq.obsId) ?? {
               t: [],
               r: [],
               mdb: [],
+              mdbStat: [],
               pass: [],
               stat: [],
               testable: [],
@@ -439,14 +596,69 @@ export const computeStandardizedResidualStatistics = (
             entry.t.push(eq.tau);
             entry.r.push(eq.r);
             entry.mdb.push(mdb);
+            entry.mdbStat.push(mdbStat);
             entry.pass.push(pass);
             entry.stat.push(stat);
             entry.testable.push(rowTestable);
             entry.comps.push(eq.component);
             entry.rows.push(eq.row);
+            mdbByRow.set(eq.row, { mdb, mdbStat });
             rowStats.set(eq.obsId, entry);
           }
           if (profiler) perEquationStatisticsMs += detailedNow() - perEquationStartedAt;
+
+          // Phase 14B Worker 2: analytical external reliability over the same
+          // dense B/P rows (no per-observation re-solve). Propagates the
+          // active-model MDB through the TRUE P column, so TS-correlation
+          // groups and GPS covariance blocks use their coupled weights.
+          // Model selection (not availability) drives propagation: under
+          // statistical selection an untestable statistical MDB stays
+          // untestable downstream — never silently replaced by legacy.
+          // Sparse-route runs (no dense B/P) and free-network datums report
+          // unavailable with a reason.
+          const externalByRow = ((): Map<number, ExternalInfluence> => {
+            const groups = couplingByRow;
+            const paramColumns: ExternalParamColumn[] = [];
+            for (const [stationId, idx] of Object.entries(paramIndex)) {
+              if (idx.x == null || idx.y == null) continue;
+              paramColumns.push({
+                stationId,
+                e: idx.x,
+                n: idx.y,
+                ...(idx.h != null ? { h: idx.h } : {}),
+              });
+            }
+            const extRows: ExternalRowInput[] = pendingEquations.map((eq) => {
+              const m = mdbByRow.get(eq.row);
+              if (statisticalActive) {
+                return {
+                  row: eq.row,
+                  mdbNative: m?.mdbStat ?? Number.POSITIVE_INFINITY,
+                  mdbModel: 'statistical' as const,
+                  groupRows: groups.get(eq.row) ?? [eq.row],
+                };
+              }
+              return {
+                row: eq.row,
+                mdbNative: m?.mdb ?? Number.POSITIVE_INFINITY,
+                mdbModel: 'legacy-3.29' as const,
+                groupRows: groups.get(eq.row) ?? [eq.row],
+              };
+            });
+            return computeExternalInfluences({
+              is2D: ctx.is2D,
+              B,
+              P: assembled.P,
+              equationCount: numObsEquations,
+              paramColumns,
+              rows: extRows,
+              freeNetwork: isFreeNetworkDatum({
+                stations: ctx.stations,
+                constraintCount: constraints.length,
+              }),
+              robustApproximate: ctx.robustMode === 'huber',
+            });
+          })();
 
           const gpsBeforeSummary = gpsCrossProductTransformMs;
           const summaryStartedAt = profiler ? detailedNow() : 0;
@@ -458,6 +670,22 @@ export const computeStandardizedResidualStatistics = (
             b: boolean | null,
           ): boolean | null =>
             a === false || b === false ? false : a == null || b == null ? null : true;
+          const externalOfRow = (row: number | undefined): ExternalInfluence =>
+            externalByRow.get(row ?? -1) ?? {
+              available: false,
+              reason: EXTERNAL_REASON_NO_COVARIANCE,
+            };
+          const externalComponentsOf = (
+            comps: (string | undefined)[],
+            rows: number[],
+          ): Partial<Record<'E' | 'N' | 'U', ExternalInfluence>> => {
+            const out: Partial<Record<'E' | 'N' | 'U', ExternalInfluence>> = {};
+            (['E', 'N', 'U'] as const).forEach((comp) => {
+              const idx = comps.indexOf(comp);
+              if (idx >= 0) out[comp] = externalOfRow(rows[idx]);
+            });
+            return out;
+          };
           activeObservations.forEach((obs) => {
             const gpsBranchStartedAt = profiler ? detailedNow() : 0;
             const entry = rowStats.get(obs.id);
@@ -586,6 +814,23 @@ export const computeStandardizedResidualStatistics = (
               };
               obs.localTestComponents = { passE: passE ?? null, passN: passN ?? null };
               obs.mdbComponents = { mE, mN };
+              obs.reliability = {
+                mdb: Math.min(mE, mN),
+                method: ctx.reliabilitySummary?.method ?? 'legacy-3.29',
+                externalComponents: {
+                  E: externalOfRow(entry.rows[idxE]),
+                  N: externalOfRow(entry.rows[idxN]),
+                },
+                ...(reliabilityAvailable
+                  ? {
+                    mdbStatistical: Math.min(entry.mdbStat[idxE], entry.mdbStat[idxN]),
+                    mdbStatisticalComponents: {
+                      mE: entry.mdbStat[idxE],
+                      mN: entry.mdbStat[idxN],
+                    },
+                  }
+                  : {}),
+              };
             } else if (obs.type === 'gps' && entry.t.length > 2) {
               obs.stdRes = Math.max(...entry.t.map((value) => Math.abs(value)));
               obs.redundancy = Math.min(...entry.r);
@@ -601,6 +846,33 @@ export const computeStandardizedResidualStatistics = (
                 available: rowAvailable,
               };
               obs.mdb = Math.min(...entry.mdb.filter((value) => Number.isFinite(value)));
+              // Per-component statistical MDBs (E/N/U); the aggregate is
+              // the min over finite components. X/Y/Z rows (GNSS baselines
+              // carry those tags) contribute to the aggregate only.
+              const idxE3 = entry.comps.indexOf('E');
+              const idxN3 = entry.comps.indexOf('N');
+              const idxU3 = entry.comps.indexOf('U');
+              obs.reliability = {
+                mdb: obs.mdb,
+                method: ctx.reliabilitySummary?.method ?? 'legacy-3.29',
+                externalComponents: externalComponentsOf(entry.comps, entry.rows),
+                ...(reliabilityAvailable
+                  ? {
+                    mdbStatistical: Math.min(
+                      ...entry.mdbStat.filter((value) => Number.isFinite(value)),
+                    ),
+                    ...(idxE3 >= 0 && idxN3 >= 0
+                      ? {
+                        mdbStatisticalComponents: {
+                          mE: entry.mdbStat[idxE3],
+                          mN: entry.mdbStat[idxN3],
+                          ...(idxU3 >= 0 ? { mU: entry.mdbStat[idxU3] } : {}),
+                        },
+                      }
+                      : {}),
+                  }
+                  : {}),
+              };
             } else {
               obs.stdRes = Math.abs(entry.t[0]);
               obs.redundancy = entry.r[0];
@@ -612,6 +884,25 @@ export const computeStandardizedResidualStatistics = (
                 available: rowAvailable,
               };
               obs.mdb = entry.mdb[0];
+              // Phase 14B display fix: the stored linear equivalent follows
+              // model selection (statistical when selected, else legacy)
+              // with no silent model mixing: an untestable statistical MDB
+              // (+Inf, e.g. invalid policy) yields no linear equivalent.
+              // Legacy storage `obs.mdb` above is untouched.
+              const linearSource = statisticalActive ? entry.mdbStat[0] : entry.mdb[0];
+              const linearMm = mdbLinearMm(
+                linearSource,
+                ctx.effectiveDistanceForAngularObservation(obs),
+              );
+              obs.reliability = {
+                mdb: entry.mdb[0],
+                method: ctx.reliabilitySummary?.method ?? 'legacy-3.29',
+                external: externalOfRow(entry.rows[0]),
+                ...(reliabilityAvailable
+                  ? { mdbStatistical: entry.mdbStat[0] }
+                  : {}),
+                ...(linearMm !== undefined ? { mdbLinearMm: linearMm } : {}),
+              };
             }
           });
           if (profiler) {

@@ -1,5 +1,6 @@
 import type { ProjectRunFile } from './projectWorkspace';
 import type { LocalTestPolicy } from './localTestPolicy';
+import type { ReliabilityPolicy } from './reliabilityPolicy';
 import type {
   AdjustmentResult,
   ClusterApprovedMerge,
@@ -110,6 +111,7 @@ export interface RunSessionParseSettings {
   robustMode: RobustMode;
   robustK: number;
   localTestPolicy?: LocalTestPolicy;
+  reliabilityPolicy?: ReliabilityPolicy;
   parseCompatibilityMode: ParseCompatibilityMode;
   parseModeMigrated: boolean;
 }

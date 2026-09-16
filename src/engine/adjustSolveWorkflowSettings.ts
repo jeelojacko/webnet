@@ -103,6 +103,8 @@ export const applyParsedSolveWorkflowSettings = (
   ctx.robustK = parsed.parseState?.robustK ?? ctx.parseOptions?.robustK ?? 1.5;
   ctx.localTestPolicy =
     parsed.parseState?.localTestPolicy ?? ctx.parseOptions?.localTestPolicy;
+  ctx.reliabilityPolicy =
+    parsed.parseState?.reliabilityPolicy ?? ctx.parseOptions?.reliabilityPolicy;
   if (ctx.preanalysisMode || ctx.runMode === 'data-check') {
     ctx.robustMode = 'none';
   }

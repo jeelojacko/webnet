@@ -21,6 +21,8 @@ export const buildStatisticsContextForEngine = (engine: any): AdjustmentStatisti
       localTestCritical: engine.localTestCritical,
       localTestPolicy: engine.localTestPolicy,
       localTestSummary: engine.localTestSummary,
+      reliabilityPolicy: engine.reliabilityPolicy,
+      reliabilitySummary: engine.reliabilitySummary,
       maxStdRes: engine.maxStdRes,
       traverseThresholds: { ...engine.traverseThresholds },
       parseState: engine.parseState,

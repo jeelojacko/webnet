@@ -5,6 +5,7 @@ import {
 import { createEmptySolveTiming } from './adjustSolveTiming';
 import type { SolveParameterIndex } from './adjustmentSolveTypes';
 import type { LocalTestPolicy } from './localTestPolicy';
+import type { ReliabilityPolicy } from './reliabilityPolicy';
 import type { SolvePreparationResult } from './adjustmentPreprocessing';
 import type { GeoidGridModel } from './geoid';
 import type { SolveProgressEvent } from './scenarioRunModels';
@@ -50,6 +51,7 @@ export abstract class LSAEngineState {
   protected maxStdRes = 10;
   protected localTestCritical = 3.29;
   protected localTestPolicy?: LocalTestPolicy;
+  protected reliabilityPolicy?: ReliabilityPolicy;
   protected traverseThresholds = {
     minClosureRatio: 5000,
     maxLinearPpm: 200,
@@ -108,6 +110,7 @@ export abstract class LSAEngineState {
   protected levelLoopTolerancePerSqrtKmMm = LEVEL_LOOP_DEFAULT_PER_SQRT_KM_MM;
   protected chiSquare?: AdjustmentResult['chiSquare'];
   protected localTestSummary?: AdjustmentResult['localTestSummary'];
+  protected reliabilitySummary?: AdjustmentResult['reliabilitySummary'];
   protected statisticalSummary?: AdjustmentResult['statisticalSummary'];
   protected typeSummary?: Record<
     string,

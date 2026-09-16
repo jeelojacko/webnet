@@ -151,8 +151,23 @@ describe('browser export serializers', () => {
       'residualUnit',
       'sigmaUnit',
     ]);
-    // The two new statistic columns live at the absolute end.
-    expect(cols.slice(-2)).toEqual(['localTestStatistic', 'localTestStatisticFamily']);
+    // The 14A statistic columns keep their relative order, followed by the
+    // Phase 14B reliability columns at the absolute end.
+    expect(cols.slice(-13)).toEqual([
+      'localTestStatistic',
+      'localTestStatisticFamily',
+      'reliabilityModel',
+      'reliabilityAlpha',
+      'reliabilityPower',
+      'reliabilityDelta0',
+      'reliabilityMdb',
+      'reliabilityMdbLinearMm',
+      'reliabilityExternalPrimaryMm',
+      'reliabilityExternalAffectedStation',
+      'reliabilityExternalDEmm',
+      'reliabilityExternalDNmm',
+      'reliabilityExternalDHmm',
+    ]);
 
     const text = buildObservationsResidualsCsvText({ result, units: 'm' });
     const lines = text.split('\n');

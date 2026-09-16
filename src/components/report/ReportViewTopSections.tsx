@@ -8,6 +8,7 @@ import PinnedSectionsPanel from './PinnedSectionsPanel';
 import {
   AdjustmentSummarySection,
   LocalTestSummarySection,
+  ReliabilitySummarySection,
   BlunderDetectSummarySection,
   DataCheckSummarySection,
   PendingRunSettingsDiffBanner,
@@ -196,6 +197,13 @@ const ReportViewTopSections: React.FC<ReportViewTopSectionsProps> = ({
       />
 
       <LocalTestSummarySection
+        isDataCheck={isDataCheck}
+        isPreanalysis={isPreanalysis}
+        isSpecialRunMode={isSpecialRunMode}
+        result={result}
+      />
+
+      <ReliabilitySummarySection
         isDataCheck={isDataCheck}
         isPreanalysis={isPreanalysis}
         isSpecialRunMode={isSpecialRunMode}
