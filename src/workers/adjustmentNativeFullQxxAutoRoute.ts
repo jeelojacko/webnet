@@ -1,8 +1,10 @@
 /**
- * Phase 10I worker-only native full-Qxx auto-route (fail-closed).
+ * Phase 15C worker-only native full-Qxx auto-route (fail-closed).
  *
- * Routes ordinary single-solve 3D adjustment jobs with at most 768
- * parameters through the real WASM sparse bundle for FINAL COVARIANCE
+ * Routes ordinary 3D adjustment jobs with at most 768 parameters whose
+ * extra solves are limited to suspect-impact/LOO alternates (primary +
+ * up to 3 alternates, whole-session verified, any failure reruns clean
+ * TypeScript) through the real WASM sparse bundle for FINAL COVARIANCE
  * ONLY (all-entry dense Qxx reconstruction, existing precision/report
  * contract preserved). Correction stays TypeScript; no row-products
  * solver, no selected-covariance store, no selected mode.
@@ -106,9 +108,11 @@ export interface NativeFullQxxEligibility {
 }
 
 /**
- * Fail-closed eligibility in fixed gate order. Single-solve 3D
- * adjustment only; 2D/preanalysis/robust/multi-solve shapes stay on
- * their existing routes.
+ * Fail-closed eligibility in fixed gate order. 3D adjustment sessions
+ * whose extra solves are limited to suspect-impact/LOO alternates
+ * (primary + up to 3 alternates, whole-session verified, any failure
+ * reruns clean TypeScript); 2D/preanalysis/robust/auto-adjust/cluster
+ * multi-solve shapes stay on their existing routes.
  *
  * Phase 11A diagnostic seam: `maxParams` defaults to the production cap
  * and every production call site omits it. Evidence harnesses ONLY may
@@ -140,9 +144,9 @@ export const deriveNativeFullQxxEligibility = (
   if (parse.tsCorrelationEnabled) {
     reasons.push('TS correlation not yet admitted for native full-Qxx');
   }
-  if (parse.suspectImpactMode !== 'off') {
+  if (parse.suspectImpactMode !== 'off' && parse.suspectImpactMode !== 'auto') {
     reasons.push(
-      `suspect-impact mode '${parse.suspectImpactMode}' not cleared for native full-Qxx (single-solve sessions only)`,
+      `suspect-impact mode '${parse.suspectImpactMode}' not cleared for native full-Qxx (auto/off sessions only)`,
     );
   }
   if (parse.autoAdjustEnabled) {

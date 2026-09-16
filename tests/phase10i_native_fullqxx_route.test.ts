@@ -103,7 +103,7 @@ describe('Phase 10I native full-Qxx eligibility', () => {
       false,
     );
     expect(
-      deriveNativeFullQxxEligibility(request3d({ suspectImpactMode: 'auto' })).eligible,
+      deriveNativeFullQxxEligibility(request3d({ suspectImpactMode: 'on' })).eligible,
     ).toBe(false);
     expect(
       deriveNativeFullQxxEligibility(request3d({ autoAdjustEnabled: true })).eligible,

@@ -69,6 +69,9 @@ export const EVIDENCE_TESTS = [
   'tests/evidence/phase12f0_native_architecture_audit.test.ts',
   'tests/evidence/phase15a_covariance_operation_benchmark.test.ts',
   'tests/evidence/phase15b_2d_reuse_benchmark.test.ts',
+  'tests/evidence/phase15c_baseline_reachability.test.ts',
+  'tests/evidence/phase15c_default_session_parity.test.ts',
+  'tests/evidence/phase15c_default_session_benchmark.test.ts',
   'tests/evidence/tbcParityTooling.test.ts',
   'tests/evidence/gnssMultifileScalingEvidence.test.ts',
 ] as const;
