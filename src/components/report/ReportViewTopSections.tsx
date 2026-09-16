@@ -9,6 +9,7 @@ import {
   AdjustmentSummarySection,
   LocalTestSummarySection,
   ReliabilitySummarySection,
+  StochasticDiagnosticsSection,
   BlunderDetectSummarySection,
   DataCheckSummarySection,
   PendingRunSettingsDiffBanner,
@@ -204,6 +205,13 @@ const ReportViewTopSections: React.FC<ReportViewTopSectionsProps> = ({
       />
 
       <ReliabilitySummarySection
+        isDataCheck={isDataCheck}
+        isPreanalysis={isPreanalysis}
+        isSpecialRunMode={isSpecialRunMode}
+        result={result}
+      />
+
+      <StochasticDiagnosticsSection
         isDataCheck={isDataCheck}
         isPreanalysis={isPreanalysis}
         isSpecialRunMode={isSpecialRunMode}

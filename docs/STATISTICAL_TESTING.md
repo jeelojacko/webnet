@@ -240,6 +240,62 @@ internal MDBs rank **within compatible unit groups only** (angular vs
 linear); worst-external ranks by primaryMm in millimetres, which is
 cross-type comparable and labeled "Coordinate influence".
 
+## Stochastic group diagnostics (single-pass Förstner)
+
+The report's STOCHASTIC MODEL DIAGNOSTICS section carries one row per
+observation group with the single-pass Förstner component
+s_k² = Ω_k / R_k, where Ω_k = v_k′P_kv_k uses the same weights as the
+solve and R_k = tr(P_k·Qvv_k) is the full block trace (never a diagonal
+sum). The sigma scale shown is s = √(Ω/R). Groups are ordered
+deterministically (Angles, Directions, Distances, Az/Bearings, GPS,
+Level Data, Zenith, then any Other group alphabetically).
+
+Four related numbers must not be confused:
+
+- **Legacy error factor** (Statistical Summary table): a descriptive
+  sqrt(Ω_group/n_group)-style scaling, rescaled by the run totals. It is
+  NOT Ω_g/r_g, uses no group redundancy, and must never be read as a
+  variance component.
+- **Descriptive factor** (diagnostics table): sqrt(Ω_k/n_k), purely
+  descriptive, no statistical claim.
+- **Förstner diagnostic s_k²** (diagnostics table): Ω_k/R_k, the first
+  iteration of the IAUE scheme. Unbiased only under the **disjunctive
+  group model**: groups mutually uncorrelated, arbitrary correlation
+  within a group (GNSS covariance blocks included). Iterated to
+  convergence it becomes Helmert/MINQUE/REML; what is reported here is
+  deliberately the first iteration only, so between-group coupling is
+  ignored and simultaneous multi-group VCE is deferred.
+- **Full VCE**: not computed. There is no iterative re-solve and no
+  automatic reweighting — diagnostics only.
+
+Validity conditions and gates:
+
+- **Constraint exclusion**: control-constraint rows carry no LS residual
+  covariance in this formulation, so they are excluded from groups by
+  design. Group quadforms therefore sum below the global vTPv by exactly
+  the constraint contribution (plus the TS-correlation vTPv delta, which
+  is distributed to groups via off-diagonal cross terms).
+- **Correlated pairs spanning two groups** (e.g. an angle + direction at
+  the same setup under setup-scoped TS correlation) are never split: every
+  affected group is marked UNESTIMABLE, fail closed.
+- **Robust mode** (Huber reweighting active), **preanalysis**, and
+  **data-check** runs report UNAVAILABLE: classical VCE is inapplicable to
+  frozen weights, and no LS residual covariance exists in the latter modes.
+- **Chi-square confidence intervals apply to the global variance factor
+  only** and are never attached to group components.
+- The top-of-report pointer line ("Global stochastic model failed.
+  Largest estimated group scale: …") appears ONLY when the global
+  chi-square fails; a passing global test carries no per-group correctness
+  implication. Scale reading is neutral: > 1 means observed variation
+  exceeds stated precision, < 1 means stated sigmas look conservative,
+  ≈ 1 means consistent subject to estimation uncertainty. No
+  red/yellow/green threshold coloring is applied.
+
+Overhead: the diagnostics consume the solve residuals and Qvv diagonal map
+directly (no solver import, no re-solve — 0 extra solves). Measured mean
+compute time 0.143ms for ~1k equations (vs ~2.5ms for a full
+7-observation solve on the same machine, 2026-09-16).
+
 ## Preanalysis and data check
 
 Formal local tests are disabled there: preanalysis predicts precision from

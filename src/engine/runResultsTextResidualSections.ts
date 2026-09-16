@@ -2,6 +2,7 @@ import type { RunResultsTextContext } from './runResultsTextContext';
 import type { AdjustmentResult } from '../types';
 import { formatLocalTestPolicyLine } from './localTestPolicy';
 import { buildReliabilitySummaryLine } from './reliabilityDisplay';
+import { buildStochasticPointerLine, formatStochasticScale } from './stochasticDiagnosticsDisplay';
 import { formatReliabilityPolicyLine } from './reliabilityPolicy';
 
 type ResidualSectionContext = Pick<
@@ -23,6 +24,7 @@ export const appendTypeAndResidualSections = ({
   appendTypeSummarySection({ lines, res, context });
   appendResidualDiagnosticsSection({ lines, res });
   appendReliabilitySection({ lines, res });
+  appendStochasticDiagnosticsSection({ lines, res });
 };
 
 const appendReliabilitySection = ({
@@ -40,6 +42,41 @@ const appendReliabilitySection = ({
       (Number.isFinite(summary.delta0) ? `, delta0=${summary.delta0.toFixed(3)}` : ''),
   );
   lines.push(buildReliabilitySummaryLine(summary, res.observations ?? []));
+  lines.push('');
+};
+
+/**
+ * Additive STOCHASTIC MODEL DIAGNOSTICS block. Neutral wording: raw
+ * redundancy DOF, no threshold verdicts; non-estimated rows keep reasons.
+ * Never touches the industry listing, CSV layout, or parity paths.
+ */
+const appendStochasticDiagnosticsSection = ({
+  lines,
+  res,
+}: {
+  lines: string[];
+  res: AdjustmentResult;
+}): void => {
+  const diagnostics = res.stochasticDiagnostics;
+  if (!diagnostics) return;
+  lines.push('--- Stochastic Model Diagnostics ---');
+  lines.push(
+    'Single-pass Foerstner group components (s^2 = quadform/redundancy, redundancy = tr(P.Qvv)). ' +
+      'Control-constraint rows excluded; diagnostics only, no automatic reweighting.',
+  );
+  const pointer = buildStochasticPointerLine(res);
+  if (pointer) lines.push(pointer);
+  diagnostics.groups.forEach((group) => {
+    const scale = group.status === 'estimated' ? formatStochasticScale(group.sigmaScale) : '-';
+    const status =
+      group.status === 'estimated'
+        ? 'estimated'
+        : `${group.status}${group.reason ? ` (${group.reason})` : ''}`;
+    lines.push(
+      `${group.label}: eqns=${group.equations}, redund=${Number.isFinite(group.redundancyDof) ? group.redundancyDof.toFixed(3) : '-'}, ` +
+        `quadform=${Number.isFinite(group.quadForm) ? group.quadForm.toFixed(4) : '-'}, scale=${scale}, ${status}`,
+    );
+  });
   lines.push('');
 };
 

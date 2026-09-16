@@ -6,6 +6,11 @@ import type { SortedObservation } from '../../engine/resultDerivedModels';
 import { formatLocalTestModeLabel } from '../../engine/localTestPolicy';
 import { buildLocalTestSummaryLine } from './localTestDisplay';
 import { buildReliabilitySummaryLine } from '../../engine/reliabilityDisplay';
+import {
+  buildStochasticPointerLine,
+  formatStochasticScale,
+  STOCHASTIC_SCALE_TOOLTIP,
+} from '../../engine/stochasticDiagnosticsDisplay';
 import type { ReportObservationSelectorModel } from './reportObservationSelectors';
 import { REPORT_STATIC_TOOLTIPS } from './reportTooltips';
 
@@ -398,6 +403,88 @@ export const ReliabilitySummarySection: React.FC<{
           (approximate)
         </span>
       ) : null}
+    </div>
+  );
+};
+
+/**
+ * Dedicated STOCHASTIC MODEL DIAGNOSTICS section beneath the RELIABILITY strip.
+ * Neutral presentation: raw redundancy DOF, no threshold coloring, and
+ * UNESTIMABLE/UNAVAILABLE rows shown with their reason, never hidden.
+ * Same suppression rules as the other QC strips (preanalysis/data-check/
+ * special runs carry their own disabled-messaging sections).
+ */
+export const StochasticDiagnosticsSection: React.FC<{
+  isDataCheck: boolean;
+  isPreanalysis: boolean;
+  isSpecialRunMode: boolean;
+  result: AdjustmentResult;
+}> = ({ isDataCheck, isPreanalysis, isSpecialRunMode, result }) => {
+  if (isSpecialRunMode || isPreanalysis || isDataCheck) return null;
+  const diagnostics = result.stochasticDiagnostics;
+  if (!diagnostics) {
+    return (
+      <div className="mb-6 text-xs text-slate-500" style={{ order: -203 }}>
+        Stochastic model diagnostics unavailable for this run.
+      </div>
+    );
+  }
+  const pointer = buildStochasticPointerLine(result);
+  return (
+    <div className="mb-6 text-xs text-slate-300" style={{ order: -203 }}>
+      <span
+        className="uppercase tracking-wider text-slate-500 mr-2"
+        title="Single-pass Förstner group components (s² = Ω/R, R = tr(P·Qvv)). Control-constraint rows are excluded, so group quadforms sum below the global vTPv. Diagnostics only — no automatic reweighting."
+      >
+        Stochastic model diagnostics
+      </span>
+      {pointer ? <div className="mt-1 text-slate-200">{pointer}</div> : null}
+      <table className="mt-2 border-collapse font-mono text-[11px]">
+        <thead>
+          <tr className="text-slate-500">
+            <th className="text-left pr-3 font-normal">Group</th>
+            <th className="text-right pr-3 font-normal">Eqns</th>
+            <th className="text-right pr-3 font-normal" title="Group redundancy R = tr(P·Qvv), shown raw with no pass/fail threshold.">
+              Redund
+            </th>
+            <th className="text-right pr-3 font-normal" title="Group quadform Ω = v′Pv with the same weights as the solve.">
+              vTPv
+            </th>
+            <th className="text-right pr-3 font-normal" title="Purely descriptive: sqrt(Ω/n). No statistical claim.">
+              Descr
+            </th>
+            <th className="text-right pr-3 font-normal" title={STOCHASTIC_SCALE_TOOLTIP}>
+              Scale
+            </th>
+            <th className="text-left font-normal">Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          {diagnostics.groups.map((group) => (
+            <tr key={group.label} className="border-t border-slate-800">
+              <td className="pr-3 text-slate-200">{group.label}</td>
+              <td className="text-right pr-3">{group.equations}</td>
+              <td className="text-right pr-3">
+                {Number.isFinite(group.redundancyDof) ? group.redundancyDof.toFixed(3) : '-'}
+              </td>
+              <td className="text-right pr-3">
+                {Number.isFinite(group.quadForm) ? group.quadForm.toFixed(4) : '-'}
+              </td>
+              <td className="text-right pr-3">
+                {Number.isFinite(group.descriptiveFactor) ? group.descriptiveFactor.toFixed(4) : '-'}
+              </td>
+              <td className="text-right pr-3" title={STOCHASTIC_SCALE_TOOLTIP}>
+                {group.status === 'estimated' ? formatStochasticScale(group.sigmaScale) : '-'}
+              </td>
+              <td className="text-slate-400">
+                {group.status === 'estimated'
+                  ? 'estimated'
+                  : `${group.status}${group.reason ? ` — ${group.reason}` : ''}`}
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
     </div>
   );
 };
