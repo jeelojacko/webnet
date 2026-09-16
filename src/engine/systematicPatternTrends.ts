@@ -3,8 +3,15 @@
 export interface OlsTrend {
   slope: number;
   intercept: number;
-  /** Correlation between intercept and slope estimates (identifiability gate). */
-  corrInterceptSlope: number;
+  /**
+   * Deterministic design-collinearity proxy from the regressor spread only:
+   * -mean(x)/sqrt(mean(x^2)). It is a pure function of where observations
+   * fall on the x-axis, not a stochastic correlation between coefficient
+   * estimates: adjusted residuals are correlated (Cov(v) = Qvv), so no
+   * IID-based correlation interpretation applies. Used only as a heuristic
+   * practical-separability guard for intercept-vs-slope shape descriptors.
+   */
+  designCollinearity: number;
 }
 
 /** Ordinary least squares on (xs, ys); null when degenerate. No p-values. */
@@ -31,8 +38,8 @@ export const olsTrend = (xs: number[], ys: number[]): OlsTrend | null => {
   const meanY = sumY / n;
   const intercept = meanY - slope * meanX;
   const meanXX = sumXX / n;
-  const corr = meanXX > 0 ? -meanX / Math.sqrt(meanXX) : 0;
-  return { slope, intercept, corrInterceptSlope: corr };
+  const collinearity = meanXX > 0 ? -meanX / Math.sqrt(meanXX) : 0;
+  return { slope, intercept, designCollinearity: collinearity };
 };
 
 export interface SignRunStats {

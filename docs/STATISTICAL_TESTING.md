@@ -393,17 +393,28 @@ instead of a value.
   Odijk formulations; NQC reporting). It needs per-equation Qvv exposure
   plus a dense oracle and Monte Carlo validation, which is beyond this
   phase — so no pattern p-value is reported anywhere.
-- **Per-pattern semantics and gates** (status is `descriptive`,
+- **No IID interpretation**: the OLS intercept/slope metric is a
+  deterministic design-collinearity proxy computed from the regressor
+  spread only — never a stochastic correlation between coefficient
+  estimates, which would assume IID despite adjusted-residual
+  correlation. It serves only as a heuristic practical-separability
+  guard for the intercept-vs-slope shape descriptors. UI and text never
+  call it plain `corr`, and separability is never called statistical
+  identifiability.
+- **Coverage guards, not thresholds**: the fixed count/span/collinearity
+  gates below are descriptive product coverage guards marking where shape
+  descriptors are practically separable — not calibrated test thresholds.
+- **Per-pattern semantics and coverage guards** (status is `descriptive`,
   `insufficient-data`, or `unavailable`):
 
   | Pattern | Descriptor | Gate |
   |---|---|---|
-  | Setup family (by station × family) | mean/RMS/max│v│, +/−/zero counts, local fails | mean needs ≥2 complete residuals; never averaged across units |
-  | Distance trend | OLS slope mm/km, intercept mm, intercept–slope correlation | ≥5 residuals, span ≥20 m and ≥5% of max distance, \|corr\| < 0.95 or intercept/slope declared inseparable |
-  | Direction face balance | balanced/unbalanced sets, largest face-pair delta | needs direction targets; absolute pair deltas only |
+  | Setup family (by station × family) | mean/RMS/max│v│, +/−/zero/missing counts, mean \|StdRes\|, local fails | mean needs ≥2 complete residuals; never averaged across units; angular families display arcsec, linear families mm; GNSS vectors omitted here (see GNSS means); missing scalars never labeled zero |
+  | Distance trend | OLS slope mm/km, intercept mm, design-collinearity proxy | ≥5 residuals, span ≥20 m and ≥5% of max distance, \|collinearity\| < 0.95 or intercept/slope declared inseparable; describes residual association only, never a cause |
+  | Direction face balance | face-count balanced/unbalanced/unpaired set-target rows (not sets), largest face-pair delta | needs direction targets; singleton rows missing either face count are unpaired (face-count balance not assessable), never balanced; largest delta is observed FL/FR agreement, absolute raw metadata only |
   | Direction repeat same-sign | per occupy-target set/same-sign counts, dominant sign | ≥2 sets |
   | Zenith residual vs distance | slope ″/km, +/− counts | ≥2 residuals; slope needs ≥5 with valid distances |
-  | Leveling input-sequence | drift mm/km over cumulative km, runs, sign changes | ≥5 sequenced residuals over ≥0.05 km; ordered by input-document order, never time |
+  | Leveling input-sequence | drift mm/km over cumulative km, runs, sign changes | ≥5 residuals over ≥0.05 km; ordered by global parser/input sequence (observation id ascending), never time; no row dropped for lacking file-local sourceLine |
   | GNSS component means | E/N/U mean and RMS, mm | ≥2 residuals; U only when all vectors carry height |
   | Sign runs | longest runs, sign changes per direction-set / leveling sequence | needs non-zero residuals |
 
@@ -411,9 +422,11 @@ instead of a value.
   unknowns, so direction-set and face rows are reported as descriptive
   with that caveat, and the worst set / largest face pair link back to
   their source lines for review.
-- **Policy**: robust runs add a descriptive-only note (formal tests are
-  unavailable under reweighting); free-network runs add a datum note
-  (patterns absorb the datum definition); correlated-TS observations
+- **Policy**: robust runs note that these descriptors add no formal
+  pattern tests and use final robust-fit residuals (no claim that all
+  formal residual tests are unavailable under reweighting); free-network
+  runs note that observation residual descriptors are datum/gauge
+  invariant (no datum-absorption warning); correlated-TS observations
   carry a correlation warning; no multiple-testing correction is applied
   because no tests are performed.
 - **Relation to 14A–14D**: no composite score combines the global test

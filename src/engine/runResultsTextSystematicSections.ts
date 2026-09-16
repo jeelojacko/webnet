@@ -1,4 +1,5 @@
 import type { AdjustmentResult } from '../types';
+import { setupFamilyDisplayUnit } from './systematicPatternDiagnostics';
 
 const fmt = (v: number | null | undefined, digits: number): string =>
   v != null && Number.isFinite(v) ? v.toFixed(digits) : '-';
@@ -21,10 +22,20 @@ export const appendSystematicPatternSections = ({
     return;
   }
   if (sys.setupFamilies.length > 0) {
-    lines.push('Setup family residual summary (by family; never averaged across units):');
+    lines.push(
+      'Setup family residual summary (by family; never averaged across units; ' +
+        'direction/zenith in arcsec, distance/leveling in mm; GNSS vectors omitted here, see GNSS means):',
+    );
     sys.setupFamilies.forEach((f) => {
+      const { unit, factor } = setupFamilyDisplayUnit(f.family);
+      const disp = (v: number | null, digits: number): string =>
+        v != null && Number.isFinite(v) ? `${(v * factor).toFixed(digits)}${unit}` : '-';
       lines.push(
-        `  ${f.station} ${f.family}: n=${f.count}, mean=${fmt(f.meanResidual, 4)}, rms=${fmt(f.rmsResidual, 4)}, maxAbs=${fmt(f.maxAbsResidual, 4)}, meanStdRes=${fmt(f.meanStdRes, 2)} (${f.stdResNote ?? ''}), +-${f.posCount}/${f.negCount} zero=${f.zeroUntestableCount}, localFail=${f.localFailCount}`,
+        `  ${f.station} ${f.family}: n=${f.count}, mean=${disp(f.meanResidual, 3)}, ` +
+          `rms=${disp(f.rmsResidual, 3)}, maxAbs=${disp(f.maxAbsResidual, 3)}, ` +
+          `meanAbsStdRes=${fmt(f.meanAbsStdRes, 2)} (${f.stdResNote ?? ''}), ` +
+          `+-${f.posCount}/${f.negCount} zero=${f.zeroCount} missing=${f.missingCount}, ` +
+          `localFail=${f.localFailCount}`,
       );
     });
   }
@@ -32,12 +43,15 @@ export const appendSystematicPatternSections = ({
   lines.push(
     `Distance trend: n=${dt.count}, range=${fmt(dt.minDist, 2)}-${fmt(dt.maxDist, 2)}m ` +
       `slope=${fmt(dt.slopeMmPerKm, 3)}mm/km intercept=${fmt(dt.interceptMm, 3)}mm ` +
-      `corr=${fmt(dt.corrInterceptSlope, 3)} identifiable=${dt.identifiable ? 'YES' : 'NO'} ` +
+      `designCollinearity=${fmt(dt.designCollinearity, 3)} separable=${dt.separable ? 'YES' : 'NO'} ` +
       `status=${dt.status}${dt.reason ? ` (${dt.reason})` : ''}`,
   );
-  if (dt.identifiable) {
+  lines.push(
+    '  Describes the observed residual association only; does not identify a cause.',
+  );
+  if (dt.separable) {
     lines.push(
-      '  Possible systematic pattern in distance residuals; intercept pattern / slope pattern wording only; review recommended.',
+      '  Intercept pattern / slope pattern wording only; review recommended.',
     );
   }
   if (sys.worstDirectionSet) {
@@ -48,7 +62,8 @@ export const appendSystematicPatternSections = ({
   }
   const fb = sys.directionFaceBalance;
   lines.push(
-    `Face balance: balanced=${fb.balancedSets} unbalanced=${fb.unbalancedSets} ` +
+    `Face-count balance (direction set-target rows, not sets): balanced=${fb.balancedTargets} ` +
+      `unbalanced=${fb.unbalancedTargets} unpaired-not-assessable=${fb.unpairedTargets} ` +
       `largestPairDelta=${fmt(fb.largestFacePairDeltaArcSec, 2)}"` +
       `${fb.largestFacePairSetId ? ` (${fb.largestFacePairSetId}${fb.largestFacePairTarget ? ` ${fb.largestFacePairTarget}` : ''})` : ''} ` +
       `status=${fb.status}${fb.reason ? ` (${fb.reason})` : ''}`,

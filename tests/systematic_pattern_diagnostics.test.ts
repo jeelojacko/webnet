@@ -1,5 +1,8 @@
 import { describe, expect, it } from 'vitest';
-import { buildSystematicDiagnostics } from '../src/engine/systematicPatternDiagnostics';
+import {
+  buildSystematicDiagnostics,
+  setupFamilyDisplayUnit,
+} from '../src/engine/systematicPatternDiagnostics';
 import type { Observation } from '../src/types';
 
 let nextId = 1;
@@ -95,7 +98,7 @@ const manualSlope = (xs: number[], ys: number[]): { slope: number; intercept: nu
   return { slope, intercept: my - slope * mx };
 };
 
-const FORBIDDEN = /refraction|collimation|scale error|rod error|significan|p-value|pValue/i;
+const FORBIDDEN = /refraction|collimation|scale error|rod error|significan|p-value|pValue|consistent with scale|modeling effects|absorb datum|identifiab/i;
 
 describe('systematic pattern diagnostics (descriptive only)', () => {
   it('recovers injected distance slope sign and magnitude', () => {
@@ -106,7 +109,7 @@ describe('systematic pattern diagnostics (descriptive only)', () => {
     expect(diag.available).toBe(true);
     const t = diag.distanceTrend;
     expect(t.status).toBe('descriptive');
-    expect(t.identifiable).toBe(true);
+    expect(t.separable).toBe(true);
     const expected = manualSlope(
       lens.map((L) => L / 1000),
       lens.map((L) => (0.005 + 0.00002 * L) * 1000),
@@ -149,7 +152,7 @@ describe('systematic pattern diagnostics (descriptive only)', () => {
       {},
     )!;
     expect(few.distanceTrend.status).toBe('insufficient-data');
-    expect(few.distanceTrend.identifiable).toBe(false);
+    expect(few.distanceTrend.separable).toBe(false);
     const narrow = buildSystematicDiagnostics(
       [100, 100.5, 101, 101.5, 102].map((L, i) => distObs('A', `T${i}`, L, 0.001 * (i + 1))),
       {},
@@ -158,7 +161,25 @@ describe('systematic pattern diagnostics (descriptive only)', () => {
     expect(narrow.distanceTrend.reason).toMatch(/range too narrow/);
   });
 
-  it('summarizes face balance and largest pair delta', () => {
+  it('design-collinearity proxy is deterministic spread, never stochastic correlation', () => {
+    nextId = 1600;
+    const lens = [100, 200, 300, 400, 500, 600];
+    const diag = buildSystematicDiagnostics(
+      lens.map((L, i) => distObs('A', `T${i}`, L, 0.005)),
+      {},
+    )!;
+    const t = diag.distanceTrend;
+    // New framing present; IID correlation / statistical-identifiability wording gone.
+    expect(t.designCollinearity).not.toBeNull();
+    const raw = JSON.stringify(diag.distanceTrend);
+    expect(raw).toContain('designCollinearity');
+    expect(raw).toContain('separable');
+    expect(raw).not.toMatch(/corrInterceptSlope/);
+    expect(raw).not.toMatch(/identifiab/);
+    expect(raw).not.toMatch(/\bcorr\b/i);
+    expect(JSON.stringify(diag)).not.toMatch(FORBIDDEN);
+  });
+  it('summarizes face balance per set-target row with unpaired never balanced', () => {
     nextId = 400;
     const diag = buildSystematicDiagnostics([dirObs('S1', 'T1', 'SET1', 0.00001)], {
       directionTargetDiagnostics: [
@@ -175,8 +196,11 @@ describe('systematic pattern diagnostics (descriptive only)', () => {
       ],
     })!;
     expect(diag.directionFaceBalance.status).toBe('descriptive');
-    expect(diag.directionFaceBalance.balancedSets).toBe(1);
-    expect(diag.directionFaceBalance.unbalancedSets).toBe(1);
+    // Counts direction set-target rows, not sets: T1 balanced, T2 singleton
+    // (missing face-2 count) is unpaired/not-assessable, never balanced.
+    expect(diag.directionFaceBalance.balancedTargets).toBe(1);
+    expect(diag.directionFaceBalance.unbalancedTargets).toBe(0);
+    expect(diag.directionFaceBalance.unpairedTargets).toBe(1);
     expect(diag.directionFaceBalance.largestFacePairDeltaArcSec).toBeCloseTo(9.25, 9);
     expect(diag.directionFaceBalance.largestFacePairTarget).toBe('T2');
   });
@@ -219,7 +243,35 @@ describe('systematic pattern diagnostics (descriptive only)', () => {
     expect(thin.zenithPatterns.status).toBe('insufficient-data');
   });
 
-  it('recovers leveling drift and gates sequence problems', () => {
+  it('keeps every leveling row in id order despite partial/file-local source lines', () => {
+    nextId = 850;
+    // Multifile-like input: file-local sourceLine resets per file and some rows
+    // lack sourceLine entirely. Global parser/input sequence is id ascending.
+    const obs = [
+      levObs('A', 'T1', 0.001, 0.2, 31),
+      levObs('A', 'T2', -0.001, 0.2),
+      levObs('A', 'T3', 0.001, 0.2, 2),
+      levObs('A', 'T4', -0.001, 0.2, 3),
+      levObs('A', 'T5', 0.001, 0.2),
+      levObs('A', 'T6', -0.001, 0.2, 1),
+    ];
+    const ids = (obs as { id: number }[]).map((o) => o.id);
+    const diag = buildSystematicDiagnostics(obs, {})!;
+    // Nothing dropped: all six rows counted even though sourceLine is partial.
+    expect(diag.levelingPatterns.count).toBe(6);
+    expect(diag.levelingPatterns.status).toBe('descriptive');
+    expect(diag.levelingPatterns.orderedBy).toBe('input-sequence');
+    // Sign-run leveling sequence follows the same global id order.
+    const run = diag.signRuns.find((r) => r.key === 'leveling:input-sequence')!;
+    expect(run.count).toBe(6);
+    expect(run.pos).toBe(3);
+    expect(run.neg).toBe(3);
+    // Ids are the sequence actually used: ascending by construction here.
+    expect([...ids].sort((a, b) => a - b)).toEqual(ids);
+    expect(JSON.stringify(diag.levelingPatterns)).not.toMatch(/time/i);
+  });
+
+  it('recovers leveling drift and gates thin sequences', () => {
     nextId = 800;
     const obs = [0, 1, 2, 3, 4, 5].map((i) =>
       levObs('A', `T${i}`, 0.002 + 0.001 * (i + 1) * 0.2, 0.2, 10 + i),
@@ -233,8 +285,10 @@ describe('systematic pattern diagnostics (descriptive only)', () => {
       [0, 1, 2].map((i) => levObs('A', `T${i}`, 0.001, 0.2)),
       {},
     )!;
-    expect(noSeq.levelingPatterns.status).toBe('unavailable');
-    expect(noSeq.levelingPatterns.reason).toMatch(/input sequence/);
+    // Rows without sourceLine are kept in id order; three rows only gates
+    // thin-sequence coverage, never unavailable.
+    expect(noSeq.levelingPatterns.count).toBe(3);
+    expect(noSeq.levelingPatterns.status).toBe('insufficient-data');
     const thin = buildSystematicDiagnostics(
       [0, 1, 2].map((i) => levObs('A', `T${i}`, 0.001, 0.2, 10 + i)),
       {},
@@ -256,6 +310,58 @@ describe('systematic pattern diagnostics (descriptive only)', () => {
     expect(thin.gnssPatterns.status).toBe('insufficient-data');
   });
 
+  it('omits GNSS vectors from scalar setup-family rows', () => {
+    nextId = 950;
+    const diag = buildSystematicDiagnostics(
+      [gpsObs('A', 'B', 0.004, -0.002, 0.006), gpsObs('B', 'C', 0.006, -0.004, 0.008)],
+      {},
+    )!;
+    // GNSS vectors have no scalar residual: no scalar setup-family row, so
+    // they are never presented as scalar zero/untestable.
+    expect(diag.setupFamilies.some((f) => (f.family as string) === 'gnss')).toBe(false);
+    expect(diag.gnssPatterns.status).toBe('descriptive');
+  });
+
+  it('labels mean |StdRes| as absolute and never counts missing as zero', () => {
+    nextId = 960;
+    const withMissing = {
+      id: nextId++,
+      type: 'dist',
+      subtype: 'ts',
+      instCode: 'T1',
+      from: 'A',
+      to: 'T9',
+      obs: 100,
+      stdDev: 0.005,
+      // No residual and no stdRes: a genuinely missing scalar row.
+    } as unknown as Observation;
+    const diag = buildSystematicDiagnostics(
+      [distObs('A', 'T1', 100, 0.003), distObs('A', 'T2', 200, -0.004), withMissing],
+      {},
+    )!;
+    const fam = diag.setupFamilies.find((f) => f.family === 'distance')!;
+    expect(fam.count).toBe(3);
+    expect(fam.missingCount).toBe(1);
+    expect(fam.zeroCount).toBe(0);
+    // Upstream stdRes is absolute: the mean is over |stdRes|, labeled as such.
+    expect(fam.meanAbsStdRes).toBeNull(); // withheld: incomplete |stdRes| coverage
+    expect(fam.stdResNote).toMatch(/mean \|StdRes\| withheld/);
+    expect(fam.stdResNote).toMatch(/incomplete or insufficient data/);
+    expect(JSON.stringify(fam)).not.toMatch(/meanStdRes/);
+    expect(JSON.stringify(fam)).not.toMatch(/mixed units|cross-unit/);
+    const clean = buildSystematicDiagnostics(
+      [distObs('A', 'T1', 100, 0.003), distObs('A', 'T2', 200, -0.004)],
+      {},
+    )!;
+    const fam2 = clean.setupFamilies.find((f) => f.family === 'distance')!;
+    expect(fam2.missingCount).toBe(0);
+    expect(fam2.meanAbsStdRes).not.toBeNull();
+    expect(fam2.stdResNote).toMatch(/mean \|StdRes\|/);
+    // |StdRes| is dimensionless and groups never mix units.
+    expect(fam2.stdResNote).toMatch(/correlated descriptive magnitude only/);
+    expect(fam2.stdResNote).not.toMatch(/mixed units|cross-unit/);
+  });
+
   it('withholds family means below minimum count', () => {
     nextId = 1000;
     const diag = buildSystematicDiagnostics([distObs('A', 'T1', 100, 0.003)], {})!;
@@ -275,7 +381,7 @@ describe('systematic pattern diagnostics (descriptive only)', () => {
     expect(dc.unavailableReason).toMatch(/data-check/);
   });
 
-  it('adds descriptive robust note without formal tests', () => {
+  it('scopes the robust note to these descriptors and final robust-fit residuals', () => {
     nextId = 1200;
     const diag = buildSystematicDiagnostics([distObs('A', 'T1', 100, 0.001)], {
       isRobust: true,
@@ -283,10 +389,16 @@ describe('systematic pattern diagnostics (descriptive only)', () => {
     })!;
     expect(diag.available).toBe(true);
     expect(diag.robustNote).toMatch(/huber/);
+    // Honest scope: these descriptors add no formal pattern tests and use
+    // final robust-fit residuals; never claims all formal tests unavailable.
+    expect(diag.robustNote).toMatch(/no formal pattern tests/);
+    expect(diag.robustNote).toMatch(/final robust-fit residuals/);
+    expect(diag.robustNote).not.toMatch(/formal residual tests unavailable/);
     expect(diag.warnings.some((w) => w.match(/robust/i))).toBe(true);
+    expect(diag.warnings.some((w) => w.match(/formal residual tests unavailable/))).toBe(false);
   });
 
-  it('notes correlated and free-network conditions', () => {
+  it('states datum/gauge invariance for free-network runs', () => {
     nextId = 1300;
     const diag = buildSystematicDiagnostics([distObs('A', 'T1', 100, 0.001)], {
       tsCorrelated: true,
@@ -294,6 +406,10 @@ describe('systematic pattern diagnostics (descriptive only)', () => {
     })!;
     expect(diag.warnings.some((w) => w.match(/correlated where applicable/))).toBe(true);
     expect(diag.freeNetworkNote).toMatch(/free-network/);
+    // Accurate claim only: residual descriptors are datum/gauge invariant;
+    // the backwards absorb-datum-definition wording is gone.
+    expect(diag.freeNetworkNote).toMatch(/datum\/gauge invariant/);
+    expect(JSON.stringify(diag)).not.toMatch(/absorb datum definition/);
   });
 
   it('uses descriptive wording only, never causal or formal claims', () => {
@@ -307,6 +423,17 @@ describe('systematic pattern diagnostics (descriptive only)', () => {
     ];
     const diag = buildSystematicDiagnostics(obs, { freeNetwork: true })!;
     expect(JSON.stringify(diag)).not.toMatch(FORBIDDEN);
+  });
+
+  it('maps setup families to explicit display units at the display boundary', () => {
+    // Angular families display arcseconds, linear families millimeters.
+    expect(setupFamilyDisplayUnit('direction')).toEqual({
+      unit: '"',
+      factor: (180 / Math.PI) * 3600,
+    });
+    expect(setupFamilyDisplayUnit('zenith').unit).toBe('"');
+    expect(setupFamilyDisplayUnit('distance')).toEqual({ unit: 'mm', factor: 1000 });
+    expect(setupFamilyDisplayUnit('leveling').unit).toBe('mm');
   });
 
   it('orders families and sign runs deterministically', () => {

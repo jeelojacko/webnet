@@ -68,6 +68,20 @@ const levObs = (residual: number, line: number): Observation =>
     sourceLine: line,
   }) as unknown as Observation;
 
+const dirObs = (residual: number): Observation =>
+  ({
+    id: nextId++,
+    type: 'direction',
+    instCode: 'T1',
+    setId: 'SET1',
+    at: 'S1',
+    to: 'T1',
+    obs: 0.5,
+    stdDev: 0.00002,
+    residual,
+    stdRes: Math.abs(residual / 0.00002),
+  }) as unknown as Observation;
+
 describe('systematic pattern report section', () => {
   it('renders descriptive summaries with reasons where data are insufficient', () => {
     const result = solveTerrestrial();
@@ -87,7 +101,7 @@ describe('systematic pattern report section', () => {
     // No leveling in this job: availability reason shown.
     expect(html).toContain('no leveling residuals available');
     // Direction face facts present with a source-line link.
-    expect(html).toContain('Face balance');
+    expect(html).toContain('Face-count balance');
     expect(html).toContain('DESCRIPTIVE');
   });
 
@@ -130,12 +144,14 @@ describe('systematic pattern report section', () => {
       levObs(-0.001, 4),
       levObs(0.002, 5),
       levObs(-0.0015, 6),
+      dirObs(0.00002),
+      dirObs(-0.00001),
     ];
     const patched = {
       ...base,
       systematicDiagnostics: buildSystematicDiagnostics(obs, {}),
     } as AdjustmentResult;
-    expect(patched.systematicDiagnostics?.distanceTrend.identifiable).toBe(true);
+    expect(patched.systematicDiagnostics?.distanceTrend.separable).toBe(true);
     expect(patched.systematicDiagnostics?.levelingPatterns.status).toBe('descriptive');
     const html = renderToStaticMarkup(
       <SystematicPatternSection
@@ -148,6 +164,17 @@ describe('systematic pattern report section', () => {
     expect(html).toContain('mm/km');
     expect(html).toContain('input sequence');
     expect(html).toContain('DESCRIPTIVE');
+    // Setup-family display units and honest labels.
+    expect(html).toContain('Mean|StdRes|');
+    expect(html).toContain('mm');
+    // Direction family mean (0.000005 rad) displays converted to arcseconds.
+    expect(html).toContain('1.031');
+    // Distance tooltip stays facts-not-causes.
+    expect(html).not.toContain('consistent with scale or modeling effects');
+    expect(html).toContain('does not identify a cause');
+    expect(html).not.toMatch(/\bcorr\b/);
+    // Face summary counts set-target rows, never plain sets.
+    expect(html).toContain('unpaired');
   });
 
   it('labels direction scores as heuristic ordering aids', () => {
@@ -174,6 +201,17 @@ describe('systematic pattern report section', () => {
     const text = lines.join('\n');
     expect(text).toContain('--- Systematic Pattern Diagnostics ---');
     expect(text).toContain('Descriptive only');
+    // Honest framing in text export: design-collinearity proxy, set-target
+    // face rows with unpaired counts, absolute |StdRes| means, no causes.
+    expect(text).toContain('designCollinearity');
+    expect(text).toContain('separable');
+    expect(text).toContain('set-target rows');
+    expect(text).toContain('Face-count balance');
+    expect(text).toContain('unpaired-not-assessable');
+    expect(text).toContain('meanAbsStdRes');
+    expect(text).toContain('does not identify a cause');
+    expect(text).not.toMatch(/\bcorr=/);
+    expect(text).not.toContain('consistent with scale or modeling effects');
     const logs = (result.logs ?? []).join('\n');
     expect(logs).toContain('scores heuristic');
   });

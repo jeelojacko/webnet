@@ -12,17 +12,22 @@ export type SystematicStatus = 'descriptive' | 'insufficient-data' | 'unavailabl
 
 export interface SystematicSetupFamily {
   station: StationId;
-  family: 'distance' | 'direction' | 'zenith' | 'leveling' | 'gnss';
+  /** Scalar setup families only; GNSS vectors are omitted here (see GNSS component means). */
+  family: 'distance' | 'direction' | 'zenith' | 'leveling';
   count: number;
+  /** Native units (rad for angles, m for lengths); convert at display boundaries. */
   meanResidual: number | null;
   rmsResidual: number | null;
   maxAbsResidual: number | null;
-  /** Signed where available (direction, leveling, distance, zenith); null for mixed-unit groups. */
-  meanStdRes: number | null;
+  /** Mean of |standardized residuals|; upstream stdRes is absolute, never signed. */
+  meanAbsStdRes: number | null;
   stdResNote?: string;
   posCount: number;
   negCount: number;
-  zeroUntestableCount: number;
+  /** Genuine near-zero residuals only; missing residuals are counted separately. */
+  zeroCount: number;
+  /** Rows with no scalar residual; never counted or labeled as zero. */
+  missingCount: number;
   longestSameSignRun?: number;
   localFailCount: number;
 }
@@ -34,15 +39,25 @@ export interface SystematicDistanceTrend {
   span: number | null;
   slopeMmPerKm: number | null;
   interceptMm: number | null;
-  corrInterceptSlope: number | null;
-  identifiable: boolean;
+  /** Deterministic design-collinearity proxy (regressor spread only), not a stochastic correlation. */
+  designCollinearity: number | null;
+  /** Heuristic practical separability of intercept vs slope descriptors; not statistical identifiability. */
+  separable: boolean;
   status: SystematicStatus;
   reason?: string;
 }
 
 export interface SystematicFaceBalance {
-  balancedSets: number;
-  unbalancedSets: number;
+  /** Direction set-target rows whose face counts balance (|F1-F2|<=1). */
+  balancedTargets: number;
+  /** Direction set-target rows whose face counts unbalance. */
+  unbalancedTargets: number;
+  /**
+   * Singleton/unpaired set-target rows (either face count missing): face-count
+   * balance not assessable, never counted as balanced or unbalanced.
+   */
+  unpairedTargets: number;
+  /** Largest absolute raw face-pair metadata value only; not a test. */
   largestFacePairDeltaArcSec: number | null;
   largestFacePairSetId?: string;
   largestFacePairTarget?: StationId;
@@ -139,12 +154,30 @@ const MIN_FAMILY_MEAN_COUNT = 2;
 const MIN_TREND_COUNT = 5;
 const MIN_TREND_SPAN_M = 20;
 const MIN_TREND_REL_SPAN = 0.05;
-const MAX_TREND_CORR = 0.95;
+/**
+ * Descriptive product coverage guard on the design-collinearity proxy, not a
+ * calibrated test threshold: below this spread the intercept and slope shape
+ * descriptors are not practically separable.
+ */
+const MAX_TREND_COLLINEARITY = 0.95;
 const MIN_REPEAT_SETS = 2;
 const MIN_LEVEL_DRIFT_COUNT = 5;
 const MIN_LEVEL_DRIFT_KM = 0.05;
 
 const ARCSEC_PER_RAD = RAD_TO_DEG * 3600;
+
+/**
+ * Display unit and native-to-display factor per scalar setup family.
+ * Angular direction/zenith residuals are native radians → arcseconds;
+ * linear distance/leveling residuals are native meters → millimeters.
+ * Conversion happens only here at the display boundary.
+ */
+export const setupFamilyDisplayUnit = (
+  family: SystematicSetupFamily['family'],
+): { unit: '"' | 'mm'; factor: number } =>
+  family === 'direction' || family === 'zenith'
+    ? { unit: '"', factor: ARCSEC_PER_RAD }
+    : { unit: 'mm', factor: 1000 };
 
 const familyOf = (obs: Observation): SystematicSetupFamily['family'] | null => {
   if (obs.type === 'dist') return 'distance';
@@ -152,7 +185,8 @@ const familyOf = (obs: Observation): SystematicSetupFamily['family'] | null => {
   if (obs.type === 'bearing') return 'direction';
   if (obs.type === 'zenith') return 'zenith';
   if (obs.type === 'lev') return 'leveling';
-  if (obs.type === 'gps') return 'gnss';
+  // GNSS vectors have no scalar residual: they are described by the GNSS
+  // component-means section, never by scalar setup-family rows.
   return null;
 };
 
@@ -197,24 +231,23 @@ const buildSetupFamilies = (active: Observation[]): SystematicSetupFamily[] => {
         .filter((v): v is number => v != null);
       const complete = residuals.length === count && count > 0;
       const stdVals = obs
-        .map((o) => (Number.isFinite(o.stdRes) ? (o.stdRes as number) : null))
+        .map((o) => (Number.isFinite(o.stdRes) ? Math.abs(o.stdRes as number) : null))
         .filter((v): v is number => v != null);
-      // GPS stdRes is a combined magnitude; never average it with signed scalars.
-      const signed =
-        family !== 'gnss' && stdVals.length === count && count >= MIN_FAMILY_MEAN_COUNT;
+      const hasAbsStd = stdVals.length === count && count >= MIN_FAMILY_MEAN_COUNT;
       let posCount = 0;
       let negCount = 0;
-      let zeroUntestableCount = 0;
+      let zeroCount = 0;
+      let missingCount = 0;
       obs.forEach((o) => {
         const r = scalarResidual(o);
         if (r == null) {
-          zeroUntestableCount += 1;
+          missingCount += 1;
           return;
         }
         const s = residualSign(r);
         if (s > 0) posCount += 1;
         else if (s < 0) negCount += 1;
-        else zeroUntestableCount += 1;
+        else zeroCount += 1;
       });
       const runs =
         posCount + negCount > 0
@@ -227,13 +260,14 @@ const buildSetupFamilies = (active: Observation[]): SystematicSetupFamily[] => {
         meanResidual: complete && count >= MIN_FAMILY_MEAN_COUNT ? meanOf(residuals) : null,
         rmsResidual: complete ? rmsOf(residuals) : null,
         maxAbsResidual: complete ? Math.max(...residuals.map((v) => Math.abs(v))) : null,
-        meanStdRes: signed ? meanOf(stdVals) : null,
-        stdResNote: signed
-          ? 'cross-unit descriptive only'
-          : 'standardized mean withheld: mixed units or insufficient data',
+        meanAbsStdRes: hasAbsStd ? meanOf(stdVals) : null,
+        stdResNote: hasAbsStd
+          ? 'mean |StdRes| (absolute standardized residuals), correlated descriptive magnitude only'
+          : 'mean |StdRes| withheld: incomplete or insufficient data',
         posCount,
         negCount,
-        zeroUntestableCount,
+        zeroCount,
+        missingCount,
         longestSameSignRun: runs ? runs.longestSameSign : undefined,
         localFailCount: obs.filter((o) => o.localTest?.pass === false).length,
       };
@@ -262,8 +296,8 @@ const insufficientTrend = (
   span,
   slopeMmPerKm: null,
   interceptMm: null,
-  corrInterceptSlope: null,
-  identifiable: false,
+  designCollinearity: null,
+  separable: false,
   status: 'insufficient-data',
   reason,
 });
@@ -301,19 +335,19 @@ const buildDistanceTrend = (active: Observation[]): SystematicDistanceTrend => {
       rows.length, minDist, maxDist, span, 'degenerate distance spread',
     );
   }
-  if (Math.abs(fit.corrInterceptSlope) >= MAX_TREND_CORR) {
+  if (Math.abs(fit.designCollinearity) >= MAX_TREND_COLLINEARITY) {
     return {
       count: rows.length, minDist, maxDist, span,
-      slopeMmPerKm: null, interceptMm: null, corrInterceptSlope: fit.corrInterceptSlope,
-      identifiable: false, status: 'insufficient-data',
+      slopeMmPerKm: null, interceptMm: null, designCollinearity: fit.designCollinearity,
+      separable: false, status: 'insufficient-data',
       reason: 'intercept pattern and slope pattern not separable over this range',
     };
   }
   return {
     count: rows.length, minDist, maxDist, span,
     slopeMmPerKm: fit.slope, interceptMm: fit.intercept,
-    corrInterceptSlope: fit.corrInterceptSlope,
-    identifiable: true, status: 'descriptive',
+    designCollinearity: fit.designCollinearity,
+    separable: true, status: 'descriptive',
   };
 };
 
@@ -322,20 +356,27 @@ const buildFaceBalance = (
 ): SystematicFaceBalance => {
   if (!targets || targets.length === 0) {
     return {
-      balancedSets: 0, unbalancedSets: 0, largestFacePairDeltaArcSec: null,
+      balancedTargets: 0, unpairedTargets: 0, unbalancedTargets: 0,
+      largestFacePairDeltaArcSec: null,
       status: 'insufficient-data', reason: 'no direction targets available',
     };
   }
   let balanced = 0;
   let unbalanced = 0;
+  let unpaired = 0;
   let largest: number | null = null;
   let largestSetId: string | undefined;
   let largestTarget: StationId | undefined;
   targets.forEach((t) => {
-    if (t.faceBalanced) balanced += 1;
+    // A set-target row missing either face count is unpaired: face-count
+    // balance not assessable, never balanced or unbalanced.
+    if (!(t.face1Count > 0) || !(t.face2Count > 0)) {
+      unpaired += 1;
+    } else if (t.faceBalanced) balanced += 1;
     else unbalanced += 1;
+    // Largest absolute raw metadata value only; the stored value is reported as-is.
     if (t.facePairDeltaArcSec != null && Number.isFinite(t.facePairDeltaArcSec)) {
-      if (largest == null || t.facePairDeltaArcSec > largest) {
+      if (largest == null || Math.abs(t.facePairDeltaArcSec) > Math.abs(largest)) {
         largest = t.facePairDeltaArcSec;
         largestSetId = t.setId;
         largestTarget = t.target;
@@ -343,8 +384,9 @@ const buildFaceBalance = (
     }
   });
   return {
-    balancedSets: balanced,
-    unbalancedSets: unbalanced,
+    balancedTargets: balanced,
+    unbalancedTargets: unbalanced,
+    unpairedTargets: unpaired,
     largestFacePairDeltaArcSec: largest,
     largestFacePairSetId: largestSetId,
     largestFacePairTarget: largestTarget,
@@ -417,7 +459,7 @@ const buildZenithPatterns = (active: Observation[]): SystematicZenithPatterns =>
       withDist.map((row) => (zenithDistOf(row.o) as number) / 1000),
       withDist.map((row) => row.r * ARCSEC_PER_RAD),
     );
-    if (fit && Math.abs(fit.corrInterceptSlope) < MAX_TREND_CORR) slope = fit.slope;
+    if (fit && Math.abs(fit.designCollinearity) < MAX_TREND_COLLINEARITY) slope = fit.slope;
   }
   return { count, slopeVsDistanceArcSecPerKm: slope, posCount, negCount, status: 'descriptive' };
 };
@@ -441,20 +483,12 @@ const buildLevelingPatterns = (active: Observation[]): SystematicLevelingPattern
       ...base, count: 0, status: 'unavailable', reason: 'no leveling residuals available',
     };
   }
-  const sequenced = obs.filter(
-    (o) => typeof o.sourceLine === 'number' && Number.isFinite(o.sourceLine),
-  );
-  // Input sequence only — sourceLine is document order, never time.
-  if (sequenced.length === 0) {
-    return {
-      ...base, count: obs.length, status: 'unavailable',
-      reason: 'no valid input sequence for leveling observations',
-    };
-  }
-  const ordered = [...sequenced].sort((a, b) => {
-    const line = (a.sourceLine as number) - (b.sourceLine as number);
-    return line !== 0 ? line : a.id - b.id;
-  });
+  // Global parser/input sequence is observation id ascending: parseInputCore
+  // assigns ids monotonically in input order, while sourceLine is file-local
+  // document order (reset per file) and may be absent. Every residual row is
+  // kept; nothing is dropped for lacking sourceLine. Input sequence only —
+  // never time.
+  const ordered = [...obs].sort((a, b) => a.id - b.id);
   const signs = ordered.map((o) => residualSign(o.residual as number));
   const runs = signRunStats(signs);
   const cumulativeKm = ordered.reduce(
@@ -487,7 +521,7 @@ const buildLevelingPatterns = (active: Observation[]): SystematicLevelingPattern
   });
   const fit = olsTrend(xs, ys);
   const drift =
-    fit && Math.abs(fit.corrInterceptSlope) < MAX_TREND_CORR ? fit.slope : null;
+    fit && Math.abs(fit.designCollinearity) < MAX_TREND_COLLINEARITY ? fit.slope : null;
   return {
     ...base,
     count,
@@ -562,14 +596,11 @@ const buildSignRuns = (active: Observation[]): SystematicSignRun[] => {
         status: nz > 0 ? 'descriptive' : 'insufficient-data',
       });
     });
-  // Leveling input sequence.
+  // Leveling input sequence: observation id ascending (global parser/input
+  // sequence), never file-local sourceLine, never time.
   const lev = (active.filter((o) => o.type === 'lev') as LevelObservation[])
     .filter((o) => typeof o.residual === 'number' && Number.isFinite(o.residual))
-    .sort((a, b) => {
-      const la = typeof a.sourceLine === 'number' ? a.sourceLine : a.id;
-      const lb = typeof b.sourceLine === 'number' ? b.sourceLine : b.id;
-      return la - lb || a.id - b.id;
-    });
+    .sort((a, b) => a.id - b.id);
   if (lev.length > 0) {
     const signs = lev.map((o) => residualSign(o.residual as number));
     const runs = signRunStats(signs);
@@ -593,7 +624,8 @@ const unavailable = (reason: string): SystematicDiagnostics => ({
   setupFamilies: [],
   distanceTrend: insufficientTrend(0, null, null, null, reason),
   directionFaceBalance: {
-    balancedSets: 0, unbalancedSets: 0, largestFacePairDeltaArcSec: null,
+    balancedTargets: 0, unbalancedTargets: 0, unpairedTargets: 0,
+    largestFacePairDeltaArcSec: null,
     status: 'unavailable', reason,
   },
   directionRepeatSameSign: [],
@@ -616,8 +648,10 @@ const unavailable = (reason: string): SystematicDiagnostics => ({
 
 /**
  * Descriptive-only systematic pattern diagnostics. No p-values, no formal
- * tests, no causal labels — wording stays at 'pattern consistent with...'.
- * Per-set direction means are orientation-absorbed and reported as such.
+ * tests, no causal labels — values describe residual association only and
+ * never identify a cause. Per-set direction means are orientation-absorbed
+ * and reported as such. Count/span/collinearity gates are descriptive
+ * product coverage guards, not calibrated test thresholds.
  */
 export const buildSystematicDiagnostics = (
   activeObservations: Observation[],
@@ -642,15 +676,20 @@ export const buildSystematicDiagnostics = (
   let robustNote: string | undefined;
   if (input.isRobust) {
     robustNote =
-      `robust mode (${input.robustMode ?? 'robust'}): descriptive patterns only, ` +
-      'formal residual tests unavailable under reweighting';
-    warnings.push('robust reweighting active: formal tests unavailable, descriptive only');
+      `robust mode (${input.robustMode ?? 'robust'}): these descriptors add no ` +
+      'formal pattern tests and use final robust-fit residuals (descriptive only)';
+    warnings.push(
+      'robust reweighting active: pattern descriptors use final robust-fit residuals, descriptive only',
+    );
   }
   let freeNetworkNote: string | undefined;
   if (input.freeNetwork) {
     freeNetworkNote =
-      'free-network datum: residual patterns absorb datum definition; review recommended';
-    warnings.push('free-network datum: patterns absorb datum definition');
+      'free-network datum: observation residual descriptors are datum/gauge invariant; ' +
+      'no datum-related pattern warning applies';
+    warnings.push(
+      'free-network datum: observation residual descriptors are datum/gauge invariant',
+    );
   }
   return {
     available: true,

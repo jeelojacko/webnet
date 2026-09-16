@@ -1,5 +1,6 @@
 import React from 'react';
 import type { AdjustmentResult } from '../../types';
+import { setupFamilyDisplayUnit } from '../../engine/systematicPatternDiagnostics';
 
 const DESCRIPTIVE_TITLE =
   'Descriptive only — not a statistical test, probability, or significance.';
@@ -80,11 +81,14 @@ const SystematicPatternSection: React.FC<{
   const zp = sys.zenithPatterns;
   const gp = sys.gnssPatterns;
   const repeats = sys.directionRepeatSameSign.filter((r) => r.status === 'descriptive');
+  const faceSummary =
+    `Face-count balance: ${fb.balancedTargets} balanced / ${fb.unbalancedTargets} unbalanced targets` +
+    `, ${fb.unpairedTargets} unpaired (not assessable)`;
   const summary: string[] = [
-    dt.identifiable
+    dt.separable
       ? `Distance residuals show a descriptive slope of ${fmt(dt.slopeMmPerKm, 3)} mm/km over ${fmt(dt.minDist, 1)}–${fmt(dt.maxDist, 1)} m.`
       : `Distance trend insufficient (${dt.reason ?? 'no data'}).`,
-    `Face balance: ${fb.balancedSets} balanced / ${fb.unbalancedSets} unbalanced sets` +
+    faceSummary +
       (fb.largestFacePairDeltaArcSec != null
         ? `, largest face-pair delta ${fmt(fb.largestFacePairDeltaArcSec, 2)}".`
         : '.'),
@@ -122,12 +126,27 @@ const SystematicPatternSection: React.FC<{
                   <th className="text-right pr-3 font-normal">Mean</th>
                   <th className="text-right pr-3 font-normal">RMS</th>
                   <th className="text-right pr-3 font-normal">Max|v|</th>
-                  <th className="text-right pr-3 font-normal">+/-zero</th>
+                  <th
+                    className="text-right pr-3 font-normal"
+                    title="Mean of absolute standardized residuals; upstream stdRes is absolute, never signed."
+                  >
+                    Mean|StdRes|
+                  </th>
+                  <th
+                    className="text-right pr-3 font-normal"
+                    title="Positive / negative / near-zero / missing-scalar counts; missing residuals are never labeled zero."
+                  >
+                    +/{'-'}/0/miss
+                  </th>
                   <th className="text-right font-normal">LocalFail</th>
                 </tr>
               </thead>
               <tbody>
-                {sys.setupFamilies.map((f) => (
+                {sys.setupFamilies.map((f) => {
+                  const { unit, factor } = setupFamilyDisplayUnit(f.family);
+                  const disp = (v: number | null, digits: number): string =>
+                    v != null && Number.isFinite(v) ? (v * factor).toFixed(digits) : '-';
+                  return (
                   <tr
                     key={`${f.station}-${f.family}`}
                     className="border-t border-slate-800"
@@ -136,20 +155,27 @@ const SystematicPatternSection: React.FC<{
                     <td className="pr-3 text-slate-400">{f.family}</td>
                     <td className="pr-3 text-right">{f.count}</td>
                     <td className="pr-3 text-right">
-                      {f.meanResidual != null ? f.meanResidual.toFixed(4) : '-'}
+                      {disp(f.meanResidual, 3)} {unit}
                     </td>
                     <td className="pr-3 text-right">
-                      {f.rmsResidual != null ? f.rmsResidual.toFixed(4) : '-'}
+                      {disp(f.rmsResidual, 3)} {unit}
                     </td>
                     <td className="pr-3 text-right">
-                      {f.maxAbsResidual != null ? f.maxAbsResidual.toFixed(4) : '-'}
+                      {disp(f.maxAbsResidual, 3)} {unit}
+                    </td>
+                    <td
+                      className="pr-3 text-right"
+                      title={f.stdResNote ?? 'mean |StdRes|'}
+                    >
+                      {f.meanAbsStdRes != null ? f.meanAbsStdRes.toFixed(2) : '-'}
                     </td>
                     <td className="pr-3 text-right">
-                      {f.posCount}/{f.negCount}/{f.zeroUntestableCount}
+                      {f.posCount}/{f.negCount}/{f.zeroCount}/{f.missingCount}
                     </td>
                     <td className="text-right">{f.localFailCount}</td>
                   </tr>
-                ))}
+                  );
+                })}
               </tbody>
             </table>
           </div>
@@ -158,12 +184,12 @@ const SystematicPatternSection: React.FC<{
 
       <Sub
         label="Distance trends"
-        title="Distance residuals increase with measured distance over this span; consistent with scale or modeling effects; review calibration, reductions, control, geometry."
+        title="Distance residuals vs measured distance over this span; describes the observed residual association only and does not identify a cause."
       >
         n={dt.count}, range {fmt(dt.minDist, 2)}–{fmt(dt.maxDist, 2)} m, slope{' '}
         {fmt(dt.slopeMmPerKm, 3)} mm/km, intercept {fmt(dt.interceptMm, 3)} mm,
-        corr {fmt(dt.corrInterceptSlope, 3)}, identifiable{' '}
-        {dt.identifiable ? 'YES' : 'NO'}, status {dt.status}
+        design collinearity {fmt(dt.designCollinearity, 3)}, separable{' '}
+        {dt.separable ? 'YES' : 'NO'}, status {dt.status}
         {dt.reason ? ` — ${dt.reason}` : ''}
       </Sub>
 
@@ -185,7 +211,8 @@ const SystematicPatternSection: React.FC<{
           </div>
         )}
         <div>
-          Balanced {fb.balancedSets} / unbalanced {fb.unbalancedSets}
+          Face-count balanced {fb.balancedTargets} / unbalanced {fb.unbalancedTargets} targets
+          {`, ${fb.unpairedTargets} unpaired (not assessable)`}
           {fb.largestFacePairDeltaArcSec != null && (
             <>
               {'; largest pair delta '}
