@@ -63,7 +63,10 @@ normal accumulation, Qxx recovery, row-product construction are separate rows.
 
 ## All-pairs relativePrecision note (no code changed)
 
-| Fixture | unknowns traced | params | all-pairs rows | precision bucket ms | per-pair µs |
+Walls are machine-local medians and regenerate on rerun (counts/reasons stable).
+Per-pair figures are UPPER BOUNDS (precision bucket includes station covariances).
+
+| Fixture | unknowns traced | params | all-pairs rows | precision bucket ms (upper bound: incl. station covariances) | per-pair µs (upper bound) |
 |---|---:|---:|---:|---:|---:|
 | chain-2d-32 | 32 | 64 | 496 | 1 | 2.02 |
 | chain-2d-64 | 64 | 128 | 2016 | 3 | 1.49 |

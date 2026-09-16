@@ -10,7 +10,7 @@
  * phase9e-audit, phase9e-fastpath, phase9h, phase9i, phase9j, phase10a,
  * phase10b, phase10c, phase10d, phase10e, phase10f, phase10g, phase10h,
  * phase10i, phase10j, phase10k, phase10l, phase10m, phase10n, phase10o,
- * phase10p, phase11a.
+ * phase10p, phase11a, phase15a.
  * Unknown suite names fail fast with a clear error — never a silent
  * full-campaign run.
  * Execution always goes through the evidence tier config
