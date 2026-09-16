@@ -1,6 +1,7 @@
 import React from 'react';
 import type { HeaderParams, TraverseLoop } from './LoopDiagnosticsSections.types';
 import type { CollapsibleDetailSectionId } from './reportSectionRegistry';
+import { HEURISTIC_SCORE_TOOLTIP } from './reportTooltips';
 
 interface TraverseLoopDiagnosticsSectionProps {
   diagnostics: {
@@ -89,7 +90,7 @@ const TraverseLoopDiagnosticsSection: React.FC<TraverseLoopDiagnosticsSectionPro
                     <th className="py-2 px-3 font-semibold text-right">Linear (ppm)</th>
                     <th className="py-2 px-3 font-semibold text-right">Ang Miscl (")</th>
                     <th className="py-2 px-3 font-semibold text-right">Vert Miscl ({units})</th>
-                    <th className="py-2 px-3 font-semibold text-right">Severity</th>
+                    <th className="py-2 px-3 font-semibold text-right" title={HEURISTIC_SCORE_TOOLTIP}>Heuristic severity</th>
                     <th className="py-2 px-3 font-semibold text-right">Status</th>
                   </tr>
                 </thead>

@@ -25,7 +25,7 @@ export const runSolveWorkflowLoopDiagnostics = (
       eps: EPS,
     });
     ctx.log(
-      `GPS loop check: vectors=${ctx.gpsLoopDiagnostics.vectorCount}, loops=${ctx.gpsLoopDiagnostics.loopCount}, pass=${ctx.gpsLoopDiagnostics.passCount}, warn=${ctx.gpsLoopDiagnostics.warnCount}, tolerance=${ctx.gpsLoopDiagnostics.thresholds.baseToleranceM.toFixed(3)}m+${ctx.gpsLoopDiagnostics.thresholds.ppmTolerance}ppm*dist`,
+      `GPS loop check: vectors=${ctx.gpsLoopDiagnostics.vectorCount}, loops=${ctx.gpsLoopDiagnostics.loopCount}, pass=${ctx.gpsLoopDiagnostics.passCount}, warn=${ctx.gpsLoopDiagnostics.warnCount}, tolerance=${ctx.gpsLoopDiagnostics.thresholds.baseToleranceM.toFixed(3)}m+${ctx.gpsLoopDiagnostics.thresholds.ppmTolerance}ppm*dist (sev heuristic — ordering aid only)`,
     );
     ctx.gpsLoopDiagnostics.loops.slice(0, 10).forEach((loop: any) => {
       ctx.log(
@@ -44,7 +44,7 @@ export const runSolveWorkflowLoopDiagnostics = (
       eps: EPS,
     });
     ctx.log(
-      `Leveling loop check: observations=${ctx.levelingLoopDiagnostics.observationCount}, loops=${ctx.levelingLoopDiagnostics.loopCount}, totalLength=${ctx.levelingLoopDiagnostics.totalLengthKm.toFixed(3)}km, tolerance=${ctx.levelingLoopDiagnostics.thresholds.baseMm.toFixed(3)}mm+${ctx.levelingLoopDiagnostics.thresholds.perSqrtKmMm.toFixed(3)}mm*sqrt(km)`,
+      `Leveling loop check: observations=${ctx.levelingLoopDiagnostics.observationCount}, loops=${ctx.levelingLoopDiagnostics.loopCount}, totalLength=${ctx.levelingLoopDiagnostics.totalLengthKm.toFixed(3)}km, tolerance=${ctx.levelingLoopDiagnostics.thresholds.baseMm.toFixed(3)}mm+${ctx.levelingLoopDiagnostics.thresholds.perSqrtKmMm.toFixed(3)}mm*sqrt(km) (suspect scores heuristic — ordering aid only)`,
     );
     ctx.levelingLoopDiagnostics.loops.slice(0, 10).forEach((loop: any) => {
       ctx.log(

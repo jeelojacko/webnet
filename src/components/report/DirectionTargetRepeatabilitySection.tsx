@@ -4,6 +4,7 @@ import type {
   HeaderParams,
 } from './DirectionDiagnosticsSections.types';
 import { formatDirectionStations } from './DirectionDiagnosticsSections.utils';
+import { HEURISTIC_SCORE_TOOLTIP } from './reportTooltips';
 import type { CollapsibleDetailSectionId } from './reportSectionRegistry';
 
 interface DirectionTargetRepeatabilitySectionProps {
@@ -59,7 +60,7 @@ const DirectionTargetRepeatabilitySection: React.FC<
           <div>{topDirectionTargetDiagnostic?.rawSpreadArcSec != null ? topDirectionTargetDiagnostic.rawSpreadArcSec.toFixed(2) : '-'}</div>
         </div>
         <div>
-          <div className="text-slate-500">Worst Score</div>
+          <div className="text-slate-500" title={HEURISTIC_SCORE_TOOLTIP}>Worst heuristic score</div>
           <div>{topDirectionTargetDiagnostic ? topDirectionTargetDiagnostic.suspectScore.toFixed(1) : '-'}</div>
         </div>
         <div>
@@ -94,7 +95,7 @@ const DirectionTargetRepeatabilitySection: React.FC<
                 <th className="py-2 px-3 font-semibold text-right">StdRes</th>
                 <th className="py-2 px-3 font-semibold text-right">Local</th>
                 <th className="py-2 px-3 font-semibold text-right">MDB (")</th>
-                <th className="py-2 px-3 font-semibold text-right">Score</th>
+                <th className="py-2 px-3 font-semibold text-right" title={HEURISTIC_SCORE_TOOLTIP}>Heuristic score</th>
               </tr>
             </thead>
             <tbody className="text-slate-300">

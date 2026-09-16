@@ -373,6 +373,58 @@ different distributions; the PASS/FAIL comparison is indicative, not a
 Overhead: up to 3 extra full solves; auto mode skips them when the main
 solve already took over 5 s.
 
+## Systematic pattern diagnostics (14E)
+
+Descriptive residual-pattern summaries with no formal tests, no p-values,
+and no significance claims. Every value in the report section carries a
+DESCRIPTIVE label; unavailable or insufficient cells show the reason
+instead of a value.
+
+- **Residuals are not IID**: adjusted residuals have Cov(v) = Qvv with
+  rank m − n (m observations, n unknowns), so naive IID runs tests,
+  Pearson correlations, and OLS p-values are invalid on residuals. The
+  OLS slopes and sign-run counts reported here are shape descriptors
+  only.
+- **Pattern test investigated, not implemented**: the covariance-aware
+  alternative is T_q = e′Qy⁻¹C[C′Qy⁻¹QvvQy⁻¹C]⁻¹C′Qy⁻¹e ~ χ²(q) for a
+  q-column pattern matrix C, never inverting Qvv, with the
+  identifiability pre-check c′Qy⁻¹QvvQy⁻¹c (Teunissen, Testing Theory:
+  an Introduction, 2nd ed., Delft/VSSD; Teunissen–De Bakker–Huisman–
+  Odijk formulations; NQC reporting). It needs per-equation Qvv exposure
+  plus a dense oracle and Monte Carlo validation, which is beyond this
+  phase — so no pattern p-value is reported anywhere.
+- **Per-pattern semantics and gates** (status is `descriptive`,
+  `insufficient-data`, or `unavailable`):
+
+  | Pattern | Descriptor | Gate |
+  |---|---|---|
+  | Setup family (by station × family) | mean/RMS/max│v│, +/−/zero counts, local fails | mean needs ≥2 complete residuals; never averaged across units |
+  | Distance trend | OLS slope mm/km, intercept mm, intercept–slope correlation | ≥5 residuals, span ≥20 m and ≥5% of max distance, \|corr\| < 0.95 or intercept/slope declared inseparable |
+  | Direction face balance | balanced/unbalanced sets, largest face-pair delta | needs direction targets; absolute pair deltas only |
+  | Direction repeat same-sign | per occupy-target set/same-sign counts, dominant sign | ≥2 sets |
+  | Zenith residual vs distance | slope ″/km, +/− counts | ≥2 residuals; slope needs ≥5 with valid distances |
+  | Leveling input-sequence | drift mm/km over cumulative km, runs, sign changes | ≥5 sequenced residuals over ≥0.05 km; ordered by input-document order, never time |
+  | GNSS component means | E/N/U mean and RMS, mm | ≥2 residuals; U only when all vectors carry height |
+  | Sign runs | longest runs, sign changes per direction-set / leveling sequence | needs non-zero residuals |
+
+- **Orientation absorption**: per-set direction means absorb orientation
+  unknowns, so direction-set and face rows are reported as descriptive
+  with that caveat, and the worst set / largest face pair link back to
+  their source lines for review.
+- **Policy**: robust runs add a descriptive-only note (formal tests are
+  unavailable under reweighting); free-network runs add a datum note
+  (patterns absorb the datum definition); correlated-TS observations
+  carry a correlation warning; no multiple-testing correction is applied
+  because no tests are performed.
+- **Relation to 14A–14D**: no composite score combines the global test
+  (14A), reliability (14B), stochastic groups (14C), leave-one-out (14D),
+  and these pattern descriptors. Pre-existing deterministic ordering
+  aids — direction target/repeatability suspectScore and
+  traverse/leveling/GPS severity scores — stay computed for stable
+  ranking but are labeled "Heuristic score" / "Heuristic severity"
+  (report tooltips and text-export headers) to mark them as
+  non-statistical.
+
 ## Preanalysis and data check
 
 Formal local tests are disabled there: preanalysis predicts precision from

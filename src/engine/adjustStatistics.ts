@@ -212,7 +212,7 @@ export const calculateAdjustmentStatistics = (
         }
         const traverseLoops = traverseDiagnostics.loops ?? [];
         if (traverseLoops.length > 0) {
-          ctx.logs.push('Traverse closure loop ranking (worst first):');
+          ctx.logs.push('Traverse closure loop ranking (worst first; sev heuristic — ordering aid only):');
           traverseLoops.slice(0, 8).forEach((l) => {
             ctx.logs.push(
               `  ${l.key}: ratio=${l.closureRatio != null ? `1:${l.closureRatio.toFixed(0)}` : '-'}, ppm=${l.linearPpm != null ? l.linearPpm.toFixed(1) : '-'}, ang=${l.angularMisclosureArcSec != null ? `${l.angularMisclosureArcSec.toFixed(2)}"` : '-'}, dH=${l.verticalMisclosure != null ? `${l.verticalMisclosure.toFixed(4)}m` : '-'}, sev=${l.severity.toFixed(1)} ${l.pass ? 'PASS' : 'WARN'}`,

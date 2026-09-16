@@ -1,6 +1,7 @@
 import React from 'react';
 import type { LoopDiagnosticsSectionsProps } from './LoopDiagnosticsSections.types';
 import TraverseLoopDiagnosticsSection from './TraverseLoopDiagnosticsSection';
+import { HEURISTIC_SCORE_TOOLTIP } from './reportTooltips';
 
 const LoopDiagnosticsSections: React.FC<LoopDiagnosticsSectionsProps> = ({
   result,
@@ -54,7 +55,7 @@ const LoopDiagnosticsSections: React.FC<LoopDiagnosticsSectionsProps> = ({
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3 p-3 text-xs text-slate-300 border-b border-slate-800/60">
             <div><div className="text-slate-500">Warn Loops</div><div>{traverseLoopSuspects.length}</div></div>
             <div><div className="text-slate-500">Worst Ratio</div><div>{topTraverseLoopSuspect?.closureRatio != null ? `1:${topTraverseLoopSuspect.closureRatio.toFixed(0)}` : '-'}</div></div>
-            <div><div className="text-slate-500">Worst Severity</div><div>{topTraverseLoopSuspect ? topTraverseLoopSuspect.severity.toFixed(1) : '-'}</div></div>
+            <div><div className="text-slate-500" title={HEURISTIC_SCORE_TOOLTIP}>Worst heuristic severity</div><div>{topTraverseLoopSuspect ? topTraverseLoopSuspect.severity.toFixed(1) : '-'}</div></div>
             <div><div className="text-slate-500">Top Loop</div><div className="font-mono">{topTraverseLoopSuspect?.key ?? '-'}</div></div>
           </div>
           {!isSectionCollapsed('traverse-closure-suspects') && (
@@ -68,7 +69,7 @@ const LoopDiagnosticsSections: React.FC<LoopDiagnosticsSectionsProps> = ({
                     <th className="py-2 text-right">Linear (ppm)</th>
                     <th className="py-2 text-right">Ang Miscl (")</th>
                     <th className="py-2 text-right">Vert Miscl ({units})</th>
-                    <th className="py-2 text-right">Severity</th>
+                    <th className="py-2 text-right" title={HEURISTIC_SCORE_TOOLTIP}>Heuristic severity</th>
                     <th className="py-2 text-right px-3">Status</th>
                   </tr>
                 </thead>
@@ -115,7 +116,7 @@ const LoopDiagnosticsSections: React.FC<LoopDiagnosticsSectionsProps> = ({
               {gpsLoopDiagnostics.loops.length > 0 && (
                 <div className="overflow-x-auto w-full border-t border-slate-800">
                   <table className="w-full text-left border-collapse text-xs">
-                    <thead><tr className="text-slate-200 border-b border-slate-700"><th className="py-2 px-3 font-semibold">#</th><th className="py-2 px-3 font-semibold">Loop</th><th className="py-2 px-3 font-semibold">Path</th><th className="py-2 px-3 font-semibold text-right">Mag ({units})</th><th className="py-2 px-3 font-semibold text-right">Tol ({units})</th><th className="py-2 px-3 font-semibold text-right">Linear (ppm)</th><th className="py-2 px-3 font-semibold text-right">Ratio</th><th className="py-2 px-3 font-semibold text-right">Severity</th><th className="py-2 px-3 font-semibold text-right">Status</th><th className="py-2 px-3 font-semibold text-right">Lines</th></tr></thead>
+                    <thead><tr className="text-slate-200 border-b border-slate-700"><th className="py-2 px-3 font-semibold">#</th><th className="py-2 px-3 font-semibold">Loop</th><th className="py-2 px-3 font-semibold">Path</th><th className="py-2 px-3 font-semibold text-right">Mag ({units})</th><th className="py-2 px-3 font-semibold text-right">Tol ({units})</th><th className="py-2 px-3 font-semibold text-right">Linear (ppm)</th><th className="py-2 px-3 font-semibold text-right">Ratio</th><th className="py-2 px-3 font-semibold text-right" title={HEURISTIC_SCORE_TOOLTIP}>Heuristic severity</th><th className="py-2 px-3 font-semibold text-right">Status</th><th className="py-2 px-3 font-semibold text-right">Lines</th></tr></thead>
                     <tbody className="text-slate-300">
                       {gpsLoopDiagnostics.loops.map((loop) => (
                         <tr key={`gps-loop-${loop.key}-${loop.rank}`} className="border-b border-slate-800/50">
@@ -263,13 +264,13 @@ const LoopDiagnosticsSections: React.FC<LoopDiagnosticsSectionsProps> = ({
           })}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3 p-3 text-xs text-slate-300 border-b border-slate-800/60">
             <div><div className="text-slate-500">Suspect Segments</div><div>{levelingSegmentSuspects.length}</div></div>
-            <div><div className="text-slate-500">Top Score</div><div>{topLevelingSegmentSuspect ? topLevelingSegmentSuspect.suspectScore.toFixed(2) : '-'}</div></div>
+            <div><div className="text-slate-500" title={HEURISTIC_SCORE_TOOLTIP}>Top heuristic score</div><div>{topLevelingSegmentSuspect ? topLevelingSegmentSuspect.suspectScore.toFixed(2) : '-'}</div></div>
             <div><div className="text-slate-500">Top Max |dH| ({units})</div><div>{topLevelingSegmentSuspect ? (topLevelingSegmentSuspect.maxAbsDh * unitScale).toFixed(4) : '-'}</div></div>
             <div><div className="text-slate-500">Top Segment</div><div className="font-mono">{topLevelingSegmentSuspect ? `${topLevelingSegmentSuspect.from}->${topLevelingSegmentSuspect.to}` : '-'}</div></div>
           </div>
           {!isSectionCollapsed('leveling-segment-suspects') && (
             <table className="w-full text-left text-xs">
-              <thead><tr className="text-slate-200 border-b border-slate-700/80"><th className="py-2 px-3">#</th><th className="py-2">Segment</th><th className="py-2 text-right">Line</th><th className="py-2 text-right">Warn Loops</th><th className="py-2 text-right">Score</th><th className="py-2 text-right">Max |dH| ({units})</th><th className="py-2 text-right">Worst Loop</th></tr></thead>
+              <thead><tr className="text-slate-200 border-b border-slate-700/80"><th className="py-2 px-3">#</th><th className="py-2">Segment</th><th className="py-2 text-right">Line</th><th className="py-2 text-right">Warn Loops</th><th className="py-2 text-right" title={HEURISTIC_SCORE_TOOLTIP}>Heuristic score</th><th className="py-2 text-right">Max |dH| ({units})</th><th className="py-2 text-right">Worst Loop</th></tr></thead>
               <tbody className="text-slate-300">
                 {levelingSegmentSuspects.map((segment) => (
                   <tr key={`level-segment-suspect-${segment.key}`} className="border-b border-slate-800/30">
@@ -299,14 +300,14 @@ const LoopDiagnosticsSections: React.FC<LoopDiagnosticsSectionsProps> = ({
           })}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3 p-3 text-xs text-slate-300 border-b border-slate-800/60">
             <div><div className="text-slate-500">Warn Loops</div><div>{gpsLoopSuspects.length}</div></div>
-            <div><div className="text-slate-500">Worst Severity</div><div>{topGpsLoopSuspect ? topGpsLoopSuspect.severity.toFixed(2) : '-'}</div></div>
+            <div><div className="text-slate-500" title={HEURISTIC_SCORE_TOOLTIP}>Worst heuristic severity</div><div>{topGpsLoopSuspect ? topGpsLoopSuspect.severity.toFixed(2) : '-'}</div></div>
             <div><div className="text-slate-500">Worst Mag ({units})</div><div>{topGpsLoopSuspect ? (topGpsLoopSuspect.closureMag * unitScale).toFixed(4) : '-'}</div></div>
             <div><div className="text-slate-500">Top Loop</div><div className="font-mono">{topGpsLoopSuspect?.key ?? '-'}</div></div>
           </div>
           {!isSectionCollapsed('gps-loop-suspects') && (
             <>
               <table className="w-full text-left text-xs">
-                <thead><tr className="text-slate-200 border-b border-slate-700/80"><th className="py-2 px-3">#</th><th className="py-2">Loop</th><th className="py-2 text-right">Mag ({units})</th><th className="py-2 text-right">Tol ({units})</th><th className="py-2 text-right">Linear (ppm)</th><th className="py-2 text-right">Ratio</th><th className="py-2 text-right">Severity</th><th className="py-2 text-right px-3">Status</th></tr></thead>
+                <thead><tr className="text-slate-200 border-b border-slate-700/80"><th className="py-2 px-3">#</th><th className="py-2">Loop</th><th className="py-2 text-right">Mag ({units})</th><th className="py-2 text-right">Tol ({units})</th><th className="py-2 text-right">Linear (ppm)</th><th className="py-2 text-right">Ratio</th><th className="py-2 text-right" title={HEURISTIC_SCORE_TOOLTIP}>Heuristic severity</th><th className="py-2 text-right px-3">Status</th></tr></thead>
                 <tbody className="text-slate-300">
                   {visibleGpsLoopSuspects.map((loop, idx) => (
                     <tr key={`gps-loop-suspect-${loop.key}-${idx}`} className="border-b border-slate-800/30">

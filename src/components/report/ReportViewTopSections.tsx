@@ -15,6 +15,7 @@ import {
   PendingRunSettingsDiffBanner,
 } from './ReportRunSummarySections';
 import { ReportSuspectImpactSection } from './ReportSuspectImpactSection';
+import SystematicPatternSection from './SystematicPatternSection';
 import SolveProfileDiagnosticsSection from './SolveProfileDiagnosticsSection';
 import {
   LockedPlannedObservationsSection,
@@ -215,6 +216,13 @@ const ReportViewTopSections: React.FC<ReportViewTopSectionsProps> = ({
         isDataCheck={isDataCheck}
         isPreanalysis={isPreanalysis}
         isSpecialRunMode={isSpecialRunMode}
+        result={result}
+      />
+
+      <SystematicPatternSection
+        isDataCheck={isDataCheck}
+        isPreanalysis={isPreanalysis}
+        renderSourceLineLink={renderSourceLineLink}
         result={result}
       />
 
