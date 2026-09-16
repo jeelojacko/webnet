@@ -33,6 +33,14 @@ import {
 import { detailedNow } from './adjustDetailedSolveProfile';
 import { copyMatrix } from './qxxReuseEvidence';
 import { decideStatisticsQxxReuse } from './statisticsQxxReuse';
+import {
+  createDenseRowProductCache,
+  recordDenseRowProductCounters,
+} from './statisticsDenseRowProductCache';
+import type {
+  DenseRowProductCache,
+  DenseRowProductCacheCounters,
+} from './statisticsDenseRowProductCache';
 import { accumulateNormalEquationsFromSparseRows, multiplySparseRowsByDenseMatrix, zeros } from './matrix';
 import { assembleAdjustmentEquations } from './adjustmentEquationAssembly';
 import { getObservationSetId } from './observationMetadata';
@@ -84,7 +92,14 @@ export const computeStandardizedResidualStatistics = (
   let perEquationStatisticsMs = 0;
   let gpsCrossProductTransformMs = 0;
   let summaryConstructionMs = 0;
+  // Phase 15E telemetry slot: the dense-path cache assigns its counters
+  // here (solve-local); flush publishes the snapshot. Telemetry only.
+  let pendingDenseRowProductCache: DenseRowProductCache | null = null;
   const flushStandardizedResidualStages = (): void => {
+    const pending: DenseRowProductCacheCounters | null =
+      pendingDenseRowProductCache?.counters ?? null;
+    pendingDenseRowProductCache = null;
+    if (pending) recordDenseRowProductCounters(pending);
     profiler?.recordStandardizedResidualStage({
       statisticsEquationAssemblyMs,
       robustWeightPreparationMs,
@@ -425,6 +440,15 @@ export const computeStandardizedResidualStatistics = (
             if (profiler) rowProductConstructionMs += detailedNow() - rowProductDenseStartedAt;
             }
           }
+          // Phase 15E: solve-local memo over the transient dense B rows.
+          // The memo shares B's lifetime (fresh per statistics call, never
+          // across solves/iterations) and only skips exact recomputation
+          // of ordered-pair dots with identical accumulation order.
+          // The sparse row-product route above never reaches this line.
+          const denseRowProductCache = rowProducts
+            ? null
+            : createDenseRowProductCache(B, sparseRows);
+          pendingDenseRowProductCache = denseRowProductCache;
           const rowStats = new Map<
             number,
             {
@@ -476,6 +500,19 @@ export const computeStandardizedResidualStatistics = (
             let diag = 0;
             if (rowProducts) {
               diag = rowProducts.quadratic[i] ?? 0;
+            } else if (denseRowProductCache) {
+              const cached = denseRowProductCache.quadratic(i);
+              if (cached === undefined) {
+                // Fail-closed exactly like the legacy inline loop below
+                // (missing B row with a non-empty equation row throws).
+                const sparseRow = sparseRows[i] ?? [];
+                for (let j = 0; j < sparseRow.length; j += 1) {
+                  const entry = sparseRow[j];
+                  diag += B[i][entry.index] * entry.value;
+                }
+              } else {
+                diag = cached;
+              }
             } else {
               const sparseRow = sparseRows[i] ?? [];
               for (let j = 0; j < sparseRow.length; j += 1) {
@@ -556,6 +593,7 @@ export const computeStandardizedResidualStatistics = (
               if (rowA === rowB) return rowProducts.quadratic[rowA] as number;
               return rowProducts.crossFor(rowA, rowB) ?? undefined;
             }
+            if (denseRowProductCache) return denseRowProductCache.cross(rowA, rowB);
             const brow = B[rowA];
             const arow = sparseRows[rowB] ?? [];
             if (!brow) return undefined;
@@ -746,6 +784,15 @@ export const computeStandardizedResidualStatistics = (
                       throw new Error('Sparse row products are missing a GPS cross pair.');
                     }
                     aqxxat = cross;
+                  } else if (denseRowProductCache) {
+                    const cached = denseRowProductCache.cross(
+                      entry.rows[rowIndex] ?? -1,
+                      entry.rows[colIndex] ?? -1,
+                    );
+                    if (cached == null) {
+                      throw new Error('Dense row products are missing a GPS cross pair.');
+                    }
+                    aqxxat = cached;
                   } else {
                     const sparseColRow = sparseRows[entry.rows[colIndex]] ?? [];
                     for (let paramEntryIndex = 0; paramEntryIndex < sparseColRow.length; paramEntryIndex += 1) {
