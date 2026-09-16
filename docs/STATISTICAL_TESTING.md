@@ -344,7 +344,8 @@ confirm guard.
   descending, chi FAIL→PASS first, local-fail reduction, max shift,
   observation id). There is no heuristic score.
 - **Observation-level deletion contract**: scalar rows delete one row; a GPS
-  observation deletes the whole vector; correlated-TS setups rebuild fully;
+  observation deletes the whole vector (the observation row stays listed with
+  unavailable statistics but contributes no equations); correlated-TS setups rebuild fully;
   direction sets recompute (removing the last target removes the set).
 - **CoordEff vs LOO shift**: CoordEff (reliability section) is a first-order
   MDB effect — the coordinate change a *just-detectable* bias would cause.

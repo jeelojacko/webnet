@@ -263,6 +263,9 @@ describe('suspectImpactExactness (direct-helper determinism evidence)', () => {
           fixture.parseOptions,
           new Set([row.obsId]),
         );
+        // Determinism pin only (same helper twice): family evidence for the
+        // correlated-TS contraction lives in the candidate/row-pair assertions
+        // in suspectImpactSessionExactness.test.ts.
         expectSameSolve(alt, direct);
       }
     });

@@ -4,9 +4,6 @@
  * Single home for candidate collection/ranking, local-failure semantics,
  * chi-delta derivation, coordinate-shift detail, aborted-solve detection,
  * the transparent row-sort comparator, and the alternate-result cache-key
- * Single home for candidate collection/ranking, local-failure semantics,
- * chi-delta derivation, coordinate-shift detail, aborted-solve detection,
- * the transparent row-sort comparator, and the alternate-result cache-key
  * builder. The session path (`runSessionSuspectImpact`) builds rows through
  * `buildSuspectImpactRows` here; `autoAdjust` reuses the identical pure
  * scalar helpers only.
