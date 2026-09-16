@@ -41,6 +41,8 @@ type SharedObservationTableProps = SectionControls & {
   selectedObservationId: number | null;
   showAllRows: (_key: string, _totalCount: number) => void;
   showMoreRows: (_key: string, _step?: number) => void;
+  suspectImpactRows?: NonNullable<AdjustmentResult['suspectImpactDiagnostics']>;
+  units: 'm' | 'ft';
   unitScale: number;
   visibleRowsFor: <T>(_key: string, _rows: T[], _defaultSize?: number) => T[];
 };

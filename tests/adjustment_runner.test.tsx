@@ -211,4 +211,193 @@ describe('useAdjustmentRunner', () => {
     if (workerDescriptor) Object.defineProperty(globalThis, 'Worker', workerDescriptor);
     else delete (globalThis as { Worker?: unknown }).Worker;
   });
+
+  it('drops a worker-backed success that arrives after host cancellation', async () => {
+    const workerDescriptor = Object.getOwnPropertyDescriptor(globalThis, 'Worker');
+    const instances: {
+      onmessage: ((_event: MessageEvent) => void) | null;
+      posted: unknown[];
+    }[] = [];
+
+    class MockWorker {
+      onmessage: ((_event: MessageEvent) => void) | null = null;
+
+      posted: unknown[] = [];
+
+      constructor() {
+        instances.push(this);
+      }
+
+      addEventListener(type: string, listener: (_event: MessageEvent) => void) {
+        if (type === 'message') this.onmessage = listener;
+      }
+
+      removeEventListener(type: string, listener: (_event: MessageEvent) => void) {
+        if (type === 'message' && this.onmessage === listener) this.onmessage = null;
+      }
+
+      postMessage(message: unknown) {
+        this.posted.push(message);
+      }
+
+      terminate() {}
+    }
+
+    Object.defineProperty(globalThis, 'Worker', {
+      configurable: true,
+      value: MockWorker,
+    });
+
+    const container = document.createElement('div');
+    document.body.appendChild(container);
+    const root: Root = createRoot(container);
+    let outcome = 'pending';
+    const Harness = () => {
+      const { pipelineState, run, cancel } = useAdjustmentRunner(() => mockOutcome);
+      return (
+        <div>
+          <button
+            type="button"
+            onClick={() => {
+              void run(request)
+                .then(() => {
+                  outcome = 'resolved';
+                })
+                .catch((error) => {
+                  outcome = `rejected:${error instanceof Error ? error.message : String(error)}`;
+                });
+            }}
+          >
+            Run
+          </button>
+          <button type="button" onClick={cancel}>
+            Cancel
+          </button>
+          <div id="status">{`${pipelineState.status}:${pipelineState.phase ?? 'none'}`}</div>
+        </div>
+      );
+    };
+    await act(async () => {
+      root.render(<Harness />);
+    });
+    const buttons = container.querySelectorAll('button');
+    await act(async () => {
+      (buttons[0] as HTMLButtonElement).click();
+    });
+    const runId = (instances[0]?.posted[0] as { runId?: string })?.runId;
+    expect(typeof runId).toBe('string');
+    await act(async () => {
+      (buttons[1] as HTMLButtonElement).click();
+    });
+    // Synchronous worker run completes after the host cancellation: the
+    // late success must reject as cancelled so applyRunOutcome never runs.
+    await act(async () => {
+      instances[0]?.onmessage?.({
+        data: { type: 'success', runId, payload: mockOutcome },
+      } as MessageEvent);
+    });
+    expect(outcome).toBe('rejected:Run cancelled');
+    expect(container.querySelector('#status')?.textContent).toBe('cancelled:none');
+    // The worker's own late cancel acknowledgement finds no pending run
+    // and is ignored without changing state.
+    await act(async () => {
+      instances[0]?.onmessage?.({ data: { type: 'cancelled', runId } } as MessageEvent);
+    });
+    expect(outcome).toBe('rejected:Run cancelled');
+    expect(container.querySelector('#status')?.textContent).toBe('cancelled:none');
+    await act(async () => {
+      root.unmount();
+    });
+    container.remove();
+    if (workerDescriptor) Object.defineProperty(globalThis, 'Worker', workerDescriptor);
+    else delete (globalThis as { Worker?: unknown }).Worker;
+  });
+
+  it('still resolves a worker-backed success that arrives before cancellation', async () => {
+    const workerDescriptor = Object.getOwnPropertyDescriptor(globalThis, 'Worker');
+    const instances: {
+      onmessage: ((_event: MessageEvent) => void) | null;
+      posted: unknown[];
+    }[] = [];
+
+    class MockWorker {
+      onmessage: ((_event: MessageEvent) => void) | null = null;
+
+      posted: unknown[] = [];
+
+      constructor() {
+        instances.push(this);
+      }
+
+      addEventListener(type: string, listener: (_event: MessageEvent) => void) {
+        if (type === 'message') this.onmessage = listener;
+      }
+
+      removeEventListener(type: string, listener: (_event: MessageEvent) => void) {
+        if (type === 'message' && this.onmessage === listener) this.onmessage = null;
+      }
+
+      postMessage(message: unknown) {
+        this.posted.push(message);
+      }
+
+      terminate() {}
+    }
+
+    Object.defineProperty(globalThis, 'Worker', {
+      configurable: true,
+      value: MockWorker,
+    });
+
+    const container = document.createElement('div');
+    document.body.appendChild(container);
+    const root: Root = createRoot(container);
+    let outcome = 'pending';
+    const Harness = () => {
+      const { pipelineState, run, cancel } = useAdjustmentRunner(() => mockOutcome);
+      return (
+        <div>
+          <button
+            type="button"
+            onClick={() => {
+              void run(request)
+                .then(() => {
+                  outcome = 'resolved';
+                })
+                .catch((error) => {
+                  outcome = `rejected:${error instanceof Error ? error.message : String(error)}`;
+                });
+            }}
+          >
+            Run
+          </button>
+          <button type="button" onClick={cancel}>
+            Cancel
+          </button>
+          <div id="status">{`${pipelineState.status}:${pipelineState.phase ?? 'none'}`}</div>
+        </div>
+      );
+    };
+    await act(async () => {
+      root.render(<Harness />);
+    });
+    const buttons = container.querySelectorAll('button');
+    await act(async () => {
+      (buttons[0] as HTMLButtonElement).click();
+    });
+    const runId = (instances[0]?.posted[0] as { runId?: string })?.runId;
+    await act(async () => {
+      instances[0]?.onmessage?.({
+        data: { type: 'success', runId, payload: mockOutcome },
+      } as MessageEvent);
+    });
+    expect(outcome).toBe('resolved');
+    expect(container.querySelector('#status')?.textContent).toBe('idle:none');
+    await act(async () => {
+      root.unmount();
+    });
+    container.remove();
+    if (workerDescriptor) Object.defineProperty(globalThis, 'Worker', workerDescriptor);
+    else delete (globalThis as { Worker?: unknown }).Worker;
+  });
 });

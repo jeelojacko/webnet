@@ -105,6 +105,7 @@ type ReportViewPrecisionResidualsBandProps = {
   showMoreRows: React.ComponentProps<typeof ObservationTypeTables>['showMoreRows'];
   sortedObservationCount: number;
   stationDescription: (_stationId: string) => string;
+  suspectImpactRows?: React.ComponentProps<typeof ObservationTypeTables>['suspectImpactRows'];
   stationTypeBadge: React.ComponentProps<typeof ReportFilterAndCoordinatesSections>['stationTypeBadge'];
   toggleDetailSection: (_id: CollapsibleDetailSectionId) => void;
   togglePinnedDetailSection: (_id: CollapsibleDetailSectionId, _label: string) => void;
@@ -201,6 +202,7 @@ const ReportViewPrecisionResidualsBand: React.FC<ReportViewPrecisionResidualsBan
   showMoreRows,
   sortedObservationCount,
   stationDescription,
+  suspectImpactRows,
   stationTypeBadge,
   toggleDetailSection,
   togglePinnedDetailSection,
@@ -348,6 +350,8 @@ const ReportViewPrecisionResidualsBand: React.FC<ReportViewPrecisionResidualsBan
         selectedObservationId={selectedObservationId}
         showAllRows={showAllRows}
         showMoreRows={showMoreRows}
+        suspectImpactRows={suspectImpactRows}
+        units={units}
         toggleDetailSection={toggleDetailSection}
         togglePinnedDetailSection={togglePinnedDetailSection}
         unitScale={unitScale}

@@ -59,7 +59,7 @@ describe('ReportView adjustment-layout sections', () => {
     ] as any;
 
     const html = renderReport(result);
-    expect(html).toContain('Suspect Impact Analysis (what-if exclusion)');
+    expect(html).toContain('LEAVE-ONE-OUT INFLUENCE');
     expect(html).toContain('Setup Diagnostics');
     expect(html).toContain('Candidates');
     expect(html).toContain('Actionable');

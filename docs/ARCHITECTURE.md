@@ -115,7 +115,6 @@ Representative modules include:
 - `crsCatalog.ts`, with shared CRS catalog types/helpers in `crsCatalogCore.ts`, Canada CRS data split through `crsCatalogCanada*.ts`, and US SPCS data split through `crsCatalogUsSpcs*.ts`
 - `runSession.ts`
 - `solveEngine.ts`, with correction-only `normalEquationSolver`, equation-level `sparseCorrectionSolver`, and experimental standardized-residual `SparseRowProductsSolver` plus selected-covariance seams in `numericalBackend.ts`; weight writers live in `adjustmentWeightWriter.ts`/`sparseWeightRepresentation.ts`, sparse packing lives in `sparseEquationPacking.ts`, covariance demand planning in `covarianceQueryPlan.ts`, and lazy WASM implementations live in `wasm/wasmModule.ts`, `wasm/wasmDenseNormalSolver.ts`, `wasm/wasmSparseNormalSolver.ts`, `wasm/wasmSparseCovariance.ts`, and `wasm/wasmSparseRowProducts.ts`; production covariance remains TypeScript
-- `directRunPipeline.ts`
 - `preanalysisPlanning.ts`
 - `planningMapState.ts`
 - `runProfileBuilders.ts`

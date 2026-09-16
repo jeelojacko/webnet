@@ -10,6 +10,72 @@ import type { ClusterLinkageMode, RobustMode, TsCorrelationScope } from './types
 
 import type { AdjustmentSolveTimingProfile } from './typesSolveTiming';
 
+export type SuspectImpactFailureReason =
+  | 'none'
+  | 'singular'
+  | 'insufficient-observations'
+  | 'invalid-after-removal'
+  | 'solver-failed'
+  | 'cancelled'
+  | 'unsupported'
+  | 'unknown';
+
+export type SuspectImpactAnalysisMode = 'auto' | 'manual' | 'always';
+
+export type SuspectImpactShiftStatus = 'available' | 'free-network-unavailable';
+
+export interface SuspectImpactChiSummary {
+  T: number;
+  dof: number;
+  p: number;
+  pass: boolean;
+}
+
+export interface SuspectImpactStationShift {
+  id: string;
+  dE: number;
+  dN: number;
+  dH: number;
+  horiz: number;
+  vert: number;
+  mag3d: number;
+}
+
+export interface SuspectImpactRow {
+  obsId: number;
+  type: string;
+  stations: string;
+  sourceLine?: number;
+  baseStdRes?: number;
+  baseLocalFail: boolean;
+  deltaSeuw?: number;
+  deltaMaxStdRes?: number;
+  baseChiPass?: boolean;
+  altChiPass?: boolean;
+  chiDelta: 'improved' | 'degraded' | 'unchanged' | '-';
+  maxCoordShift?: number;
+  status: 'ok' | 'failed';
+  baseSeuw?: number;
+  altSeuw?: number;
+  baseMaxStdRes?: number;
+  altMaxStdRes?: number;
+  baseChi?: SuspectImpactChiSummary;
+  altChi?: SuspectImpactChiSummary;
+  baseLocalFails?: number;
+  altLocalFails?: number;
+  baseDof?: number;
+  altDof?: number;
+  baseObsCount?: number;
+  altObsCount?: number;
+  mostAffectedStation?: SuspectImpactStationShift | null;
+  topAffectedStations?: SuspectImpactStationShift[];
+  shiftStatus?: SuspectImpactShiftStatus;
+  failureReason?: SuspectImpactFailureReason;
+  analysisMode?: SuspectImpactAnalysisMode;
+  robustReSolve?: boolean;
+  elapsedMs?: number;
+}
+
 export interface AdjustmentResult {
   success: boolean;
   converged: boolean;
@@ -138,22 +204,13 @@ export interface AdjustmentResult {
     worstLine?: number;
     suspectScore: number;
   }[];
-  suspectImpactDiagnostics?: {
-    obsId: number;
-    type: string;
-    stations: string;
-    sourceLine?: number;
-    baseStdRes?: number;
-    baseLocalFail: boolean;
-    deltaSeuw?: number;
-    deltaMaxStdRes?: number;
-    baseChiPass?: boolean;
-    altChiPass?: boolean;
-    chiDelta: 'improved' | 'degraded' | 'unchanged' | '-';
-    maxCoordShift?: number;
-    score?: number;
-    status: 'ok' | 'failed';
-  }[];
+  /**
+   * Phase 14D leave-one-out suspect-impact rows. Rows sort by the
+   * transparent hierarchy in `compareSuspectImpactRows` (status, base
+   * local-FAIL, base |StdRes|, chi FAIL->PASS, local-fail reduction,
+   * max shift, obsId); there is no heuristic score.
+   */
+  suspectImpactDiagnostics?: SuspectImpactRow[];
   setupDiagnostics?: {
     station: StationId;
     directionSetCount: number;
