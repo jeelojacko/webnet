@@ -251,6 +251,9 @@ export interface NativeFullQxxVerificationTiming {
   probedColumns: number;
   verifiedColumns: number;
   queryEntries: number;
+  // Phase 15D: legacy-zero. The captured-covariance copy was removed
+  // (capture holds the engine-owned buffer by reference), so nothing
+  // accumulates here anymore. Field retained for evidence-harness shape.
   nativeBytesCopied: number;
   packedBytesCopied: number;
 }
@@ -349,6 +352,12 @@ export class NativeFullQxxCaptureSolver implements SparseSelectedCovarianceSolve
     }
     const result = this.delegate.querySelected(input);
     const copyStart = this.verificationTiming ? performance.now() : 0;
+    // Phase 15D: captured covariance is the engine-owned result buffer BY
+    // REFERENCE (no Float64Array.from copy). Lifetime: the capture instance
+    // lives for the whole session and verification below runs synchronously
+    // before `result` reaches the engine; reconstructDenseQxx only
+    // indexed-reads result.covariance into fresh structures, so no code path
+    // mutates the buffer between verify and engine handoff.
     const captured: CapturedNativeFullQxxSystem = {
       design: {
         rowOffsets: Int32Array.from(input.design.rowOffsets),
@@ -366,13 +375,12 @@ export class NativeFullQxxCaptureSolver implements SparseSelectedCovarianceSolve
       queryColumns: Int32Array.from(input.queryColumns),
       result: {
         ...result,
-        covariance: Float64Array.from(result.covariance),
+        covariance: result.covariance,
       },
     };
     this.systems.push(captured);
     if (this.verificationTiming) {
       this.verificationTiming.captureCopyMs += performance.now() - copyStart;
-      this.verificationTiming.nativeBytesCopied += result.covariance.length * 8;
       this.verificationTiming.packedBytesCopied +=
         (input.design.values.length + input.weights.values.length) * 8 +
         (input.design.rowOffsets.length + input.design.columns.length +
@@ -502,8 +510,10 @@ export const verifyNativeFullQxxSystems = (
       reasons.push(`${tag}: non-finite damping attempts (fail-closed)`);
       return;
     }
+    // Phase 15D: finite-scan the captured Float64Array directly (no
+    // Array.from copy). Float64Array has no holes; math unchanged.
     const nativeConvertStart = now();
-    const native = Array.from(system.result.covariance);
+    const native = system.result.covariance;
     for (let k = 0; k < native.length; k += 1) {
       if (!Number.isFinite(native[k])) {
         reasons.push(`${tag}: native covariance entry ${k} non-finite (fail-closed)`);
@@ -512,7 +522,6 @@ export const verifyNativeFullQxxSystems = (
     }
     if (timing) {
       timing.finiteScanConvertMs += now() - nativeConvertStart;
-      timing.nativeBytesCopied += system.result.covariance.length * 8;
     }
     let normal;
     const oracleBuildStart = now();
@@ -596,7 +605,9 @@ export const verifyNativeFullQxxSystems = (
       : validateSentinelPhysical({
         queryRows: system.queryRows,
         queryColumns: system.queryColumns,
-        values: native,
+        // Runtime-compatible: Float64Array supports length/forEach like
+        // number[]; cast avoids a copy on the malformed-shape fallback path.
+        values: native as unknown as number[],
       });
     if (timing) {
       timing.c3PhysicalMs += now() - c3Start;
@@ -653,19 +664,18 @@ const isMalformedInlineVerification = (inline: NativeFullQxxVerification): boole
  * evidence, any inline rejection, any parameter-count mismatch, and any
  * accepted aggregate with non-finite maxes or empty column provenance.
  *
- * Ownership audit (Phase 10L): between inline verification and route
- * finalization the snapshot arrays have only readers. The capture owns
- * deep copies (Int32Array.from/Float64Array.from at capture time); the
- * engine receives the ORIGINAL delegate result, never the copy. Engine
- * downstream (reconstructDenseQxx, createSelectedCovarianceStore) only
- * indexed-reads result.covariance into fresh structures, and both
- * verifiers only read (Array.from copies, Map index) — no code path
- * writes into captured typed arrays. `systems` is publicly reachable,
- * so index-desync tampering (push/shuffle) is defended fail-closed via
- * the count check plus the per-system parameter re-check; verification
- * objects are copy-on-read, so finalization input cannot alias the
- * store. Conclusion: the cached copy is never handed out mutably and
- * wiring the finalizer into production is safe.
+ * Ownership audit (Phase 15D): captured covariance is the engine-owned
+ * result buffer BY REFERENCE (packed design/weights/queries stay deep
+ * copies). Between inline verification and engine handoff there is no
+ * mutation window: querySelected verifies synchronously then returns the
+ * same buffer, and engine downstream (reconstructDenseQxx,
+ * createSelectedCovarianceStore) only indexed-reads it into fresh
+ * structures; both verifiers only read (indexed finite scan, Map/index
+ * lookups) — no code path writes into captured typed arrays. `systems`
+ * is publicly reachable, so index-desync tampering (push/shuffle) is
+ * defended fail-closed via the count check plus the per-system parameter
+ * re-check; verification objects are copy-on-read, so finalization input
+ * cannot alias the store.
  */
 export const finalizeNativeFullQxxVerification = (
   systems: readonly CapturedNativeFullQxxSystem[],
