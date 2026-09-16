@@ -16,6 +16,7 @@ import {
 } from './projectWorkspace';
 import type { GnssMultifilePersistedV1 } from './gnssMultifileProject';
 import { sanitizeLocalTestPolicy } from './localTestPolicy';
+import { sanitizeReliabilityPolicy } from './reliabilityPolicy';
 import {
   GNSS_MULTIFILE_SETTINGS_KEY,
   deserializeGnssMultifilePersisted,
@@ -108,6 +109,23 @@ export const attachLocalTestPolicySettings = (
   if (raw == null) return;
   const sanitized = sanitizeLocalTestPolicy(raw);
   if (sanitized) parseSettings.localTestPolicy = sanitized;
+};
+
+/**
+ * Phase 14B: mergeKnownKeys keeps only primitive defaults-bag keys, so the
+ * nested reliabilityPolicy record is re-attached here via its own sanitizer.
+ * Absent in legacy projects (loads as legacy-3.29 default); invalid values
+ * are dropped back to the default rather than failing the load.
+ */
+export const attachReliabilitySettings = (
+  parseSettings: Record<string, unknown>,
+  candidate: unknown,
+): void => {
+  if (!isRecord(candidate)) return;
+  const raw = candidate.reliabilityPolicy;
+  if (raw == null) return;
+  const sanitized = sanitizeReliabilityPolicy(raw);
+  if (sanitized) parseSettings.reliabilityPolicy = sanitized;
 };
 
 export const sanitizeInstrumentLibrary = (

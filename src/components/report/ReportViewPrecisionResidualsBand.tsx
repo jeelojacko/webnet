@@ -56,6 +56,7 @@ type ReportViewPrecisionResidualsBandProps = {
   focusFilterRequestKey: number;
   formatMdb: (_value: number, _angular: boolean) => string;
   localTestSummary?: AdjustmentResult['localTestSummary'];
+  reliabilitySummary?: AdjustmentResult['reliabilitySummary'];
   importedGroupOptions: string[];
   isDataCheck: boolean;
   isDetailSectionPinned: (_id: CollapsibleDetailSectionId) => boolean;
@@ -161,6 +162,7 @@ const ReportViewPrecisionResidualsBand: React.FC<ReportViewPrecisionResidualsBan
   focusFilterRequestKey,
   formatMdb,
   localTestSummary,
+  reliabilitySummary,
   importedGroupOptions,
   isDataCheck,
   isDetailSectionPinned,
@@ -334,6 +336,7 @@ const ReportViewPrecisionResidualsBand: React.FC<ReportViewPrecisionResidualsBan
         excludedIds={excludedIds}
         formatMdb={formatMdb}
         localTestSummary={localTestSummary}
+        reliabilitySummary={reliabilitySummary}
         isDetailSectionPinned={isDetailSectionPinned}
         isSectionCollapsed={isSectionCollapsed}
         onHeaderRef={onHeaderRef}

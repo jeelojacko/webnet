@@ -2,6 +2,12 @@ import React from 'react';
 import type { ParseSettings } from '../../../appStateTypes';
 import { normalizeLocalTestPolicy } from '../../../engine/localTestPolicy';
 import type { LocalTestPolicy } from '../../../engine/localTestPolicy';
+import {
+  DEFAULT_RELIABILITY_ALPHA,
+  DEFAULT_RELIABILITY_POWER,
+  normalizeReliabilityPolicy,
+} from '../../../engine/reliabilityPolicy';
+import type { ReliabilityPolicy } from '../../../engine/reliabilityPolicy';
 import type {
   AngleMode,
   RobustMode,
@@ -33,6 +39,13 @@ const SpecialProjectOptionsTab: React.FC<SpecialProjectOptionsTabProps> = ({ con
   const updateLocalTestPolicy = (patch: Partial<LocalTestPolicy>): void => {
     handleDraftParseSetting('localTestPolicy', { ...localTestPolicy, ...patch });
   };
+  const reliabilityPolicy: Required<ReliabilityPolicy> = normalizeReliabilityPolicy(
+    parseSettingsDraft.reliabilityPolicy,
+  );
+  const updateReliabilityPolicy = (patch: Partial<ReliabilityPolicy>): void => {
+    handleDraftParseSetting('reliabilityPolicy', { ...reliabilityPolicy, ...patch });
+  };
+  const reliabilityStatistical = reliabilityPolicy.model === 'statistical';
 
   return (
     <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
@@ -353,6 +366,103 @@ const SpecialProjectOptionsTab: React.FC<SpecialProjectOptionsTabProps> = ({ con
             <option value="bonferroni">Bonferroni</option>
             <option value="sidak">Šidák</option>
           </select>
+        </SettingsRow>
+      </SettingsCard>
+      <SettingsCard
+        title="Reliability (MDB)"
+        tooltip="Minimal Detectable Bias model for internal and external reliability. Legacy 3.29 is the default and reproduces historical MDBs bit-identically."
+        disabled={parityProfileActive}
+      >
+        <SettingsRow label="MDB Model" tooltip={SETTINGS_TOOLTIPS.reliabilityModel}>
+          <div className="flex items-center gap-3">
+            <label className="flex items-center gap-1 text-xs text-slate-200">
+              <input
+                type="radio"
+                title={SETTINGS_TOOLTIPS.reliabilityModel}
+                checked={!reliabilityStatistical}
+                disabled={parityProfileActive}
+                onChange={() => updateReliabilityPolicy({ model: 'legacy-3.29' })}
+                className="accent-blue-500"
+              />
+              Legacy 3.29
+            </label>
+            <label className="flex items-center gap-1 text-xs text-slate-200">
+              <input
+                type="radio"
+                title={SETTINGS_TOOLTIPS.reliabilityModel}
+                checked={reliabilityStatistical}
+                disabled={parityProfileActive}
+                onChange={() => updateReliabilityPolicy({ model: 'statistical' })}
+                className="accent-blue-500"
+              />
+              Statistical α/β
+            </label>
+          </div>
+        </SettingsRow>
+        <SettingsRow label="Significance α" tooltip={SETTINGS_TOOLTIPS.reliabilityAlpha}>
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              title="Statistical MDB significance 0.1% (default)"
+              disabled={parityProfileActive || !reliabilityStatistical}
+              onClick={() => updateReliabilityPolicy({ alpha: DEFAULT_RELIABILITY_ALPHA })}
+              className={`${optionInputClass} px-2 py-1 disabled:opacity-100 disabled:cursor-not-allowed ${reliabilityPolicy.alpha === DEFAULT_RELIABILITY_ALPHA ? 'font-bold' : ''}`}
+            >
+              0.1%
+            </button>
+            <input
+              title={SETTINGS_TOOLTIPS.reliabilityAlpha}
+              type="number"
+              min={0.0001}
+              max={0.5}
+              step={0.001}
+              value={reliabilityPolicy.alpha}
+              onChange={(e) => {
+                const parsed = parseFloat(e.target.value);
+                updateReliabilityPolicy({
+                  alpha: Number.isFinite(parsed)
+                    ? Math.max(0.0001, Math.min(0.5, parsed))
+                    : DEFAULT_RELIABILITY_ALPHA,
+                });
+              }}
+              disabled={parityProfileActive || !reliabilityStatistical}
+              className={`${optionInputClass} disabled:opacity-100 disabled:cursor-not-allowed`}
+            />
+          </div>
+        </SettingsRow>
+        <SettingsRow label="Detection Power" tooltip={SETTINGS_TOOLTIPS.reliabilityPower}>
+          <div className="flex items-center gap-2">
+            {([0.8, 0.9, 0.95] as const).map((preset) => (
+              <button
+                key={preset}
+                type="button"
+                title={`Detection power ${(preset * 100).toFixed(0)}%`}
+                disabled={parityProfileActive || !reliabilityStatistical}
+                onClick={() => updateReliabilityPolicy({ power: preset })}
+                className={`${optionInputClass} px-2 py-1 disabled:opacity-100 disabled:cursor-not-allowed ${reliabilityPolicy.power === preset ? 'font-bold' : ''}`}
+              >
+                {(preset * 100).toFixed(0)}%
+              </button>
+            ))}
+            <input
+              title={SETTINGS_TOOLTIPS.reliabilityPower}
+              type="number"
+              min={0.01}
+              max={0.999}
+              step={0.01}
+              value={reliabilityPolicy.power}
+              onChange={(e) => {
+                const parsed = parseFloat(e.target.value);
+                updateReliabilityPolicy({
+                  power: Number.isFinite(parsed)
+                    ? Math.max(0.01, Math.min(0.999, parsed))
+                    : DEFAULT_RELIABILITY_POWER,
+                });
+              }}
+              disabled={parityProfileActive || !reliabilityStatistical}
+              className={`${optionInputClass} disabled:opacity-100 disabled:cursor-not-allowed`}
+            />
+          </div>
         </SettingsRow>
       </SettingsCard>
     </div>

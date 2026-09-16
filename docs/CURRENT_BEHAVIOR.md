@@ -176,6 +176,7 @@ Current solve behavior includes:
 - under-observed-station and setup diagnostics
 - SEUW, DOF, condition diagnostics, chi-square summaries, local tests, and MDB values
 - local-test policy selection (legacy-fixed default, Baarda w, Pope τ) with run-level critical values; see `docs/STATISTICAL_TESTING.md` for the global-vs-local-vs-MDB distinction
+- reliability (MDB) model selection (legacy 3.29 default, statistical α/power) with internal MDBs and first-order external coordinate influence; see `docs/STATISTICAL_TESTING.md` for the reliability section
 - redundancy numbers and residual diagnostics
 - point precision and relative precision
 - deterministic review-oriented ranking and sorting

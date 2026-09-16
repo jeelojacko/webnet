@@ -106,11 +106,99 @@ the aggregate verdict for 3D GNSS. The aggregate row verdict is OR/max over
 the scalar component tests and is not a joint/vector multivariate test;
 a vector test is not implemented.
 
-## MDB power limitation
+## Reliability (MDB) models
 
-MDB uses the legacy 3.29 detection scaling in every mode, which corresponds
-to roughly **50% detection power**. Beta-aware (power-specified) MDB is
-deferred to Phase 14B.
+Set in Project/Adjustment settings (Special tab), beside the local-test
+policy. The default everywhere is **legacy-3.29**, which preserves the
+historical MDBs bit-identically for old projects (no migration).
+
+- **Legacy 3.29** — MDB = 3.29 · seuw · sigma / sqrt(r), with the
+a-posteriori SEUW and the same clamped redundancy r as the statistical
+model. Roughly 50% detection power; alpha/power settings are ignored.
+- **Statistical** — single-alternative Baarda MDB0 = δ0 · sigma / sqrt(r),
+with the a-priori sigma (**no SEUW factor** — pure a-priori per
+Teunissen) and δ0 = z(1−α/2) + z(power) from normal theory. The
+statistical MDB intentionally omits the SEUW multiplier, so legacy and
+statistical MDBs differ by δ0/(3.29·seuw); on a seuw = 1 run the ratio
+is exactly δ0/3.29.
+
+Reference noncentralities (δ0):
+
+| alpha | power 80% | power 90% | power 95% |
+|-------|-----------|-----------|-----------|
+| 0.05  | 2.802     | 3.242     | 3.605     |
+| 0.01  | 3.417     | 3.857     | 4.221     |
+| 0.001 | 4.132     | 4.572     | 4.935     |
+
+(Default alpha 0.001 / power 80% gives δ0 = 4.132, λ0 = 17.07.)
+
+### Alpha semantics (reliability)
+
+The reliability alpha is a **separate single-alternative α₁** (default
+0.001), independent of the local-test policy alpha. It is **not**
+multiplicity-corrected: the statistical MDB is the single-alternative
+Baarda upper bound (Rofatto), with no Bonferroni/Šidák adjustment even
+when the local-test policy uses one — documented, not corrected.
+
+### Power semantics
+
+Power is the probability of detecting a bias of MDB magnitude under the
+selected reliability model. The report labels the power input "Detection
+Power" for exactly this meaning.
+
+### Pope approximation honesty
+
+The normal-theory δ0 is exact for the Baarda w-test (sigma0 known). Under
+the Pope τ-test (sigma estimated) the exact test needs a noncentral-t
+noncentrality, so the run summary flags method
+`approximation-normal-for-tau` and the report shows an "(approximate)"
+note. Legacy-fixed runs keep method `legacy-3.29`.
+
+### Approximation and availability gates
+
+- **Robust frozen weights**: under Huber reweighting the final weights are
+data-dependent, so internal and external reliability are approximate
+(flagged, never silent).
+- **Free-datum gate**: on a free network (no fixed/weighted coordinate
+components and no constraint rows) external influence is
+datum-dependent and reported unavailable (`free-network-datum`). Any
+anchored component keeps it available.
+- **Sparse-route gate**: external reliability needs dense B/P rows; on the
+sparse row-product route it is unavailable
+(`sparse-route-unavailable`) — never a silent diagonal approximation.
+Correlated equations (TS groups, GPS blocks, CTRLXY pairs) always use
+the true P column.
+- **Preanalysis / data check**: preanalysis has no per-observation MDBs
+and data check reports screening values only; external reliability is
+unavailable there and the RELIABILITY strip is suppressed.
+- **Untestable rows** (r ≤ 1e-12, non-finite MDB) carry no external
+influence (`untestable-no-mdb`).
+
+### Sign and linearity
+
+External influence is first-order / local-linear theory
+(Baarda/Teunissen): dx̂ = +Qxx · A′ · P · eᵢ · ∇0, with the **positive**
+sign verified empirically against brute-force perturb-by-MDB re-solves.
+Effects scale linearly with the MDB; the shift vector is the +MDB
+response.
+
+### GPS component semantics
+
+Scalar equations carry one `external` influence; multi-row observations
+(GPS) carry per-component entries (`externalComponents` E/N/U). The
+CoordEff column and worst-external ranking use the strongest component
+(max primaryMm). The aggregate is a max over scalar component effects,
+not a joint/vector multivariate influence; a vector test is not
+implemented.
+
+### Unit rules
+
+Internal MDBs stay in native observation units (arcsec for angular,
+length units for linear); angular rows additionally carry the linear
+equivalent `mdbLinearMm`. All external shifts are millimetres. Worst-
+internal MDBs rank **within compatible unit groups only** (angular vs
+linear); worst-external ranks by primaryMm in millimetres, which is
+cross-type comparable and labeled "Coordinate influence".
 
 ## Preanalysis and data check
 

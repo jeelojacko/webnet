@@ -164,6 +164,12 @@ export const SETTINGS_TOOLTIPS = {
     'Two-sided nominal significance level (entered alpha; false-positive rate) for formal local tests, between 0 and 0.5: per-test when correction is None, target family-wise level under Bonferroni/Šidák. Ignored by the legacy-fixed policy.',
   localTestCorrection:
     'Multiplicity correction over the run test count (testable scalar equations; GPS counts per component). None, Bonferroni, or Šidák. Ignored by the legacy-fixed policy. Bonferroni controls the family-wise rate regardless of dependence; Šidák is exact under independence (conservative for classical jointly Gaussian Baarda two-sided tests) but not guaranteed for Pope shared-SEUW or Huber (approximate).',
+  reliabilityModel:
+    'Minimal Detectable Bias (MDB) model. Legacy 3.29 reproduces the historical bit-identical MDB scaling; Statistical derives the single-alternative Baarda MDB from the significance level and detection power below.',
+  reliabilityAlpha:
+    'Two-sided significance level for the statistical MDB (single-alternative alpha, not multiplicity-corrected), between 0 and 0.5. Ignored by the legacy model.',
+  reliabilityPower:
+    'Probability of detecting a bias of MDB magnitude under the selected reliability model. Ignored by the legacy model (legacy scaling corresponds to roughly 50% power).',
   instrument:
     'Select an instrument code to view parsed EDM/angle/centering and other precision parameters.',
   newInstrument:

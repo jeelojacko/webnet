@@ -101,6 +101,7 @@ export const useReportRenderHelpers = ({
     if (!root) return;
     const headers = root.querySelectorAll('th');
     headers.forEach((th) => {
+      if (th.hasAttribute('title')) return;
       const label = th.textContent ?? '';
       const tip = getReportHeaderTooltip(label);
       if (tip) th.setAttribute('title', tip);

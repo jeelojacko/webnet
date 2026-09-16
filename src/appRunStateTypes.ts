@@ -34,6 +34,7 @@ import type {
 } from './types';
 import type { SavedRunSnapshot } from './engine/qaWorkflow';
 import type { LocalTestPolicy } from './engine/localTestPolicy';
+import type { ReliabilityPolicy } from './engine/reliabilityPolicy';
 
 export type Units = 'm' | 'ft';
 export type SolveProfile =
@@ -181,6 +182,7 @@ export type RunSettingsSnapshot = {
   robustMode: RobustMode;
   robustK: number;
   localTestPolicy?: LocalTestPolicy;
+  reliabilityPolicy?: ReliabilityPolicy;
   clusterDetectionEnabled: boolean;
   autoSideshotEnabled: boolean;
   autoAdjustEnabled: boolean;

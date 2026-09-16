@@ -34,6 +34,7 @@ import {
   mergeKnownKeys,
   attachGnssMultifileSettings,
   attachLocalTestPolicySettings,
+  attachReliabilitySettings,
   normalizeRetiredParseSettings,
   sanitizeCustomPresets,
   sanitizeExportFormat,
@@ -232,6 +233,7 @@ export const parseProjectFile = (
   attachGnssMultifileSettings(settings, settingsCandidate);
   const parseSettings = mergeKnownKeys(defaults.parseSettings, parseSettingsRaw);
   attachLocalTestPolicySettings(parseSettings, parseSettingsRaw);
+  attachReliabilitySettings(parseSettings, parseSettingsRaw);
   const exportFormat = sanitizeExportFormat(ui.exportFormat, defaults.exportFormat);
   const adjustedPointsExport = sanitizeAdjustedPointsExportSettings(
     ui.adjustedPointsExport,

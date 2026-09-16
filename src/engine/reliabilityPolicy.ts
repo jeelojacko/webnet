@@ -261,3 +261,12 @@ export const formatReliabilityModelLabel = (model: ReliabilityModel): string => 
   if (model === 'statistical') return 'Statistical MDB';
   return 'Legacy MDB (3.29)';
 };
+
+/** One-line policy description, e.g. for text exports and stale-run diffs. */
+export const formatReliabilityPolicyLine = (policy?: ReliabilityPolicy): string => {
+  const normalized = normalizeReliabilityPolicy(policy);
+  if (normalized.model === 'legacy-3.29') {
+    return `Legacy MDB (3.29)`;
+  }
+  return `Statistical MDB, alpha=${normalized.alpha}, power=${normalized.power}`;
+};

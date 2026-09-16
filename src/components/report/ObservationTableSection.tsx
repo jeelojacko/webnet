@@ -2,6 +2,14 @@ import React from 'react';
 import type { Observation } from '../../types';
 import { RAD_TO_DEG, radToDmsStr } from '../../engine/angles';
 import type { LocalTestSummary } from '../../engine/localTestPolicy';
+import type { ReliabilitySummary } from '../../engine/reliabilityPolicy';
+import {
+  buildCoordEffCellTooltip,
+  buildMdbCellTooltip,
+  buildMdbHeaderTooltip,
+  COORD_EFF_HEADER_TOOLTIP,
+  formatCoordEffCell,
+} from '../../engine/reliabilityDisplay';
 import type { CollapsibleDetailSectionId } from './reportSectionRegistry';
 import { buildLocalTestCellTooltip, formatLocalTestCell } from './localTestDisplay';
 import { REPORT_TABLE_WINDOW_SIZE } from './reportSectionRegistry';
@@ -36,6 +44,7 @@ interface ObservationTableSectionProps {
   formatMdb: (_value: number, _angular: boolean) => string;
   prismAnnotation: (_observation: Observation) => string;
   localTestSummary?: LocalTestSummary | null;
+  reliabilitySummary?: ReliabilitySummary | null;
 }
 
 const ObservationTableSection: React.FC<ObservationTableSectionProps> = ({
@@ -61,6 +70,7 @@ const ObservationTableSection: React.FC<ObservationTableSectionProps> = ({
   formatMdb,
   prismAnnotation,
   localTestSummary,
+  reliabilitySummary,
 }) => {
   if (!obsList.length) return null;
 
@@ -112,7 +122,8 @@ const ObservationTableSection: React.FC<ObservationTableSectionProps> = ({
                 <th className="py-2 text-right">StdRes</th>
                 <th className="py-2 text-right">Redund</th>
                 <th className="py-2 text-right">Local</th>
-                <th className="py-2 text-right">MDB</th>
+                <th className="py-2 text-right" title={buildMdbHeaderTooltip(reliabilitySummary ?? undefined)}>MDB</th>
+                <th className="py-2 text-right" title={COORD_EFF_HEADER_TOOLTIP}>CoordEff</th>
                 <th className="py-2 text-right px-4">σ</th>
               </tr>
             </thead>
@@ -128,6 +139,7 @@ const ObservationTableSection: React.FC<ObservationTableSectionProps> = ({
                 let redundancyStr = '-';
                 let localStr = '-';
                 let mdbStr = '-';
+                const coordEffStr = formatCoordEffCell(obs);
                 const angular = isAngularType(obs.type);
 
                 if (obs.type === 'angle') {
@@ -270,7 +282,22 @@ const ObservationTableSection: React.FC<ObservationTableSectionProps> = ({
                         {localStr}
                       </span>
                     </td>
-                    <td className="py-1 px-2 text-right font-mono tabular-nums whitespace-nowrap text-slate-500">{mdbStr}</td>
+                    <td
+                      className="py-1 px-2 text-right font-mono tabular-nums whitespace-nowrap text-slate-500"
+                      title={buildMdbCellTooltip(obs, reliabilitySummary)}
+                    >
+                      <span tabIndex={0} aria-label={`MDB ${mdbStr}`}>
+                        {mdbStr}
+                      </span>
+                    </td>
+                    <td
+                      className="py-1 px-2 text-right font-mono tabular-nums whitespace-nowrap text-slate-500"
+                      title={buildCoordEffCellTooltip(obs, reliabilitySummary)}
+                    >
+                      <span tabIndex={0} aria-label={`Coordinate influence ${coordEffStr} millimetres`}>
+                        {coordEffStr}
+                      </span>
+                    </td>
                     <td
                       className="py-1 px-2 text-right font-mono tabular-nums whitespace-nowrap text-slate-400"
                       title={sigmaDisplay.title}

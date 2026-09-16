@@ -1,4 +1,5 @@
 import { formatObservationStationsLabel } from './resultDerivedModels';
+import { primaryExternalOf } from './reliabilityDisplay';
 import {
   csvRow,
   formatArcSeconds,
@@ -92,9 +93,73 @@ const observationUnits = (
   };
 };
 
+const scalarMdbNative = (obs: Observation): number | null => {
+  if (obs.mdb != null && Number.isFinite(obs.mdb)) return obs.mdb;
+  if (obs.reliability != null && Number.isFinite(obs.reliability.mdb)) {
+    return obs.reliability.mdb;
+  }
+  const comps = obs.mdbComponents;
+  if (comps) {
+    const finite = [comps.mE, comps.mN].filter((value) => Number.isFinite(value));
+    if (finite.length > 0) return Math.min(...finite);
+  }
+  return null;
+};
+
+/** Additive Phase 14B reliability columns; empty strings when unavailable. */
+const buildReliabilityValueFields = (
+  obs: Observation,
+  unitScale: number,
+  reliabilityHeader: { model: string; alpha: string; power: string; delta0: string },
+): {
+  reliabilityModel: string;
+  reliabilityAlpha: string;
+  reliabilityPower: string;
+  reliabilityDelta0: string;
+  reliabilityMdb: string;
+  reliabilityMdbLinearMm: string;
+  reliabilityExternalPrimaryMm: string;
+  reliabilityExternalAffectedStation: string;
+  reliabilityExternalDEmm: string;
+  reliabilityExternalDNmm: string;
+  reliabilityExternalDHmm: string;
+} => {
+  const empty = {
+    reliabilityModel: reliabilityHeader.model,
+    reliabilityAlpha: reliabilityHeader.alpha,
+    reliabilityPower: reliabilityHeader.power,
+    reliabilityDelta0: reliabilityHeader.delta0,
+    reliabilityMdb: '',
+    reliabilityMdbLinearMm: '',
+    reliabilityExternalPrimaryMm: '',
+    reliabilityExternalAffectedStation: '',
+    reliabilityExternalDEmm: '',
+    reliabilityExternalDNmm: '',
+    reliabilityExternalDHmm: '',
+  };
+  const mdb = scalarMdbNative(obs);
+  if (mdb != null) {
+    empty.reliabilityMdb = isAngularObservation(obs)
+      ? formatArcSeconds(mdb)
+      : formatLinear(mdb, unitScale);
+  }
+  empty.reliabilityMdbLinearMm = formatNumber(obs.reliability?.mdbLinearMm, 2);
+  const external = primaryExternalOf(obs);
+  if (external && external.available === true) {
+    empty.reliabilityExternalPrimaryMm = formatNumber(external.primaryMm, 2);
+    empty.reliabilityExternalAffectedStation =
+      external.affectedStation != null ? String(external.affectedStation) : '';
+    empty.reliabilityExternalDEmm = formatNumber(external.dEmm, 2);
+    empty.reliabilityExternalDNmm = formatNumber(external.dNmm, 2);
+    empty.reliabilityExternalDHmm = formatNumber(external.dHmm, 2);
+  }
+  return empty;
+};
+
 const buildObservationValueFields = (
   obs: Observation,
   unitScale: number,
+  reliabilityHeader: { model: string; alpha: string; power: string; delta0: string },
 ): {
   observedValue: string;
   observedDeltaE: string;
@@ -125,6 +190,17 @@ const buildObservationValueFields = (
   mdbE: string;
   mdbN: string;
   effectiveDistance: string;
+  reliabilityModel: string;
+  reliabilityAlpha: string;
+  reliabilityPower: string;
+  reliabilityDelta0: string;
+  reliabilityMdb: string;
+  reliabilityMdbLinearMm: string;
+  reliabilityExternalPrimaryMm: string;
+  reliabilityExternalAffectedStation: string;
+  reliabilityExternalDEmm: string;
+  reliabilityExternalDNmm: string;
+  reliabilityExternalDHmm: string;
 } => {
   const base = {
     observedValue: '',
@@ -163,6 +239,7 @@ const buildObservationValueFields = (
     mdbE: formatLinear(obs.mdbComponents?.mE, unitScale),
     mdbN: formatLinear(obs.mdbComponents?.mN, unitScale),
     effectiveDistance: formatLinear(obs.effectiveDistance, unitScale),
+    ...buildReliabilityValueFields(obs, unitScale, reliabilityHeader),
   };
 
   if (obs.type === 'gps') {
@@ -258,6 +335,17 @@ export const OBSERVATIONS_RESIDUALS_CSV_COLUMNS = [
   'sigmaUnit',
   'localTestStatistic',
   'localTestStatisticFamily',
+  'reliabilityModel',
+  'reliabilityAlpha',
+  'reliabilityPower',
+  'reliabilityDelta0',
+  'mdb',
+  'mdbLinearMm',
+  'externalPrimaryMm',
+  'externalAffectedStation',
+  'externalDEmm',
+  'externalDNmm',
+  'externalDHmm',
 ] as const;
 
 export const buildObservationsResidualsCsvText = (params: {
@@ -268,6 +356,13 @@ export const buildObservationsResidualsCsvText = (params: {
   const { result, units } = params;
   const unitScale = units === 'ft' ? FT_PER_M : 1;
   const linearUnitLabel = units === 'ft' ? 'ft' : 'm';
+  const summary = result.reliabilitySummary;
+  const reliabilityHeader = {
+    model: summary?.model ?? 'legacy-3.29',
+    alpha: summary != null ? String(summary.alpha) : '',
+    power: summary != null ? String(summary.power) : '',
+    delta0: summary != null && Number.isFinite(summary.delta0) ? summary.delta0.toFixed(3) : '',
+  };
   const lines = [csvRow([...OBSERVATIONS_RESIDUALS_CSV_COLUMNS])];
 
   [...(result.observations ?? [])]
@@ -275,7 +370,7 @@ export const buildObservationsResidualsCsvText = (params: {
     .forEach((obs) => {
       const endpoints = observationEndpoints(obs);
       const unitsRow = observationUnits(obs, linearUnitLabel);
-      const values = buildObservationValueFields(obs, unitScale);
+      const values = buildObservationValueFields(obs, unitScale, reliabilityHeader);
       lines.push(
         csvRow([
           obs.id,
@@ -324,6 +419,17 @@ export const buildObservationsResidualsCsvText = (params: {
           unitsRow.sigmaUnit,
           values.localTestStatistic,
           values.localTestStatisticFamily,
+          values.reliabilityModel,
+          values.reliabilityAlpha,
+          values.reliabilityPower,
+          values.reliabilityDelta0,
+          values.reliabilityMdb,
+          values.reliabilityMdbLinearMm,
+          values.reliabilityExternalPrimaryMm,
+          values.reliabilityExternalAffectedStation,
+          values.reliabilityExternalDEmm,
+          values.reliabilityExternalDNmm,
+          values.reliabilityExternalDHmm,
         ]),
       );
     });
