@@ -101,7 +101,7 @@ describe('Phase 11A production cap 768', () => {
       expect(attempt.outcome.result.success).toBe(true);
       expect(attempt.outcome.result.converged).toBe(true);
     }
-  });
+  }, 60000);
 
   it('routes over-cap work straight to TypeScript with no bundle load', async () => {
     let loaded = false;

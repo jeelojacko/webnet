@@ -142,7 +142,7 @@ describe('Phase 10M default-ON routing (no setter)', () => {
       },
       {
         label: 'multi-solve suspect-impact shape',
-        request: request3d(fixture3d.input, { suspectImpactMode: 'auto' }),
+        request: request3d(fixture3d.input, { suspectImpactMode: 'on' }),
         reason: /suspect-impact/,
       },
       {
