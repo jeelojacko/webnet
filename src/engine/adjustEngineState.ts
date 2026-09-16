@@ -134,6 +134,7 @@ export abstract class LSAEngineState {
   protected directionTargetDiagnostics?: AdjustmentResult['directionTargetDiagnostics'];
   protected directionRepeatabilityDiagnostics?: AdjustmentResult['directionRepeatabilityDiagnostics'];
   protected directionRejectDiagnostics?: DirectionRejectDiagnostic[];
+  protected systematicDiagnostics?: AdjustmentResult['systematicDiagnostics'];
   protected setupDiagnostics?: AdjustmentResult['setupDiagnostics'];
   protected tsCorrelationDiagnostics?: AdjustmentResult['tsCorrelationDiagnostics'];
   protected robustDiagnostics?: AdjustmentResult['robustDiagnostics'];

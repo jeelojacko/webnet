@@ -139,6 +139,7 @@ export const buildAdjustmentResultFromContext = (
       levelingLoopDiagnostics: ctx.levelingLoopDiagnostics,
       autoSideshotDiagnostics: ctx.autoSideshotDiagnostics,
       clusterDiagnostics: ctx.clusterDiagnostics,
+      systematicDiagnostics: ctx.systematicDiagnostics,
       directionRejectDiagnostics: ctx.directionRejectDiagnostics,
     });
     ctx.solveTiming.resultPackagingMs += Date.now() - resultPackagingStartedAt;

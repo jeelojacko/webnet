@@ -1,5 +1,7 @@
 import { buildChiSquareSummary } from './adjustmentStatisticalMath';
 import { buildDirectionDiagnostics } from './adjustmentDirectionDiagnostics';
+import { isFreeNetworkDatum } from './adjustExternalReliability';
+import { buildSystematicDiagnostics } from './systematicPatternDiagnostics';
 import { buildSetupDiagnostics, buildTraverseDiagnostics } from './adjustmentSetupTraverseDiagnostics';
 import { buildObservationTypeSummary, buildResidualDiagnostics, buildStatisticalSummary } from './adjustmentStatisticsBuilders';
 import { propagateAdjustmentPrecision } from './adjustStatisticsPrecision';
@@ -141,6 +143,20 @@ export const calculateAdjustmentStatistics = (
     ctx.directionTargetDiagnostics = directionDiagnostics.directionTargetDiagnostics;
     ctx.directionRepeatabilityDiagnostics = directionDiagnostics.directionRepeatabilityDiagnostics;
     ctx.logs.push(...directionDiagnostics.logs);
+    ctx.systematicDiagnostics = buildSystematicDiagnostics(activeObservations, {
+      directionSetDiagnostics: ctx.directionSetDiagnostics,
+      directionTargetDiagnostics: ctx.directionTargetDiagnostics,
+      directionRepeatabilityDiagnostics: ctx.directionRepeatabilityDiagnostics,
+      isPreanalysis: ctx.preanalysisMode,
+      isDataCheck: ctx.runMode === 'data-check',
+      isRobust: ctx.robustMode != null && ctx.robustMode !== 'none',
+      robustMode: ctx.robustMode ?? undefined,
+      freeNetwork: isFreeNetworkDatum({
+        stations: ctx.stations,
+        constraintCount: constraints.length,
+      }),
+      tsCorrelated: ctx.tsCorrelationEnabled,
+    });
     ctx.setupDiagnostics = buildSetupDiagnostics({
       activeObservations,
       directionSetDiagnostics: ctx.directionSetDiagnostics,

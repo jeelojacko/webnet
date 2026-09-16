@@ -61,6 +61,7 @@ export type AdjustmentStatisticsContext = {
   dof: number;
   seuw: number;
   preanalysisMode: boolean;
+  runMode?: string;
   robustMode: string | undefined;
   tsCorrelationEnabled: boolean;
   tsCorrelationRho: number;
@@ -111,6 +112,7 @@ export type AdjustmentStatisticsContext = {
   chiSquare?: AdjustmentResult['chiSquare'];
   statisticalSummary?: AdjustmentResult['statisticalSummary'];
   stochasticDiagnostics?: AdjustmentResult['stochasticDiagnostics'];
+  systematicDiagnostics?: AdjustmentResult['systematicDiagnostics'];
   typeSummary?: AdjustmentResult['typeSummary'];
   directionSetDiagnostics?: AdjustmentResult['directionSetDiagnostics'];
   directionTargetDiagnostics?: AdjustmentResult['directionTargetDiagnostics'];
