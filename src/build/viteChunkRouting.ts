@@ -28,7 +28,6 @@ export const APP_CHUNKS = [
       '/src/engine/runSession.ts',
       '/src/engine/runProfileBuilders.ts',
       '/src/engine/runOutputBuilders.ts',
-      '/src/engine/directRunPipeline.ts',
       '/src/engine/geodesy.ts',
       '/src/engine/matrix',
       '/src/engine/parse.ts',

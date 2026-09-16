@@ -54,7 +54,6 @@ export interface SuspectImpactRow {
   altChiPass?: boolean;
   chiDelta: 'improved' | 'degraded' | 'unchanged' | '-';
   maxCoordShift?: number;
-  score?: number;
   status: 'ok' | 'failed';
   baseSeuw?: number;
   altSeuw?: number;
@@ -206,11 +205,10 @@ export interface AdjustmentResult {
     suspectScore: number;
   }[];
   /**
-   * Phase 14D leave-one-out suspect-impact rows. `score` is
-   * deprecated-for-compat (retained for existing consumers) and is no
-   * longer used for row ordering; rows sort by the transparent hierarchy
-   * in `compareSuspectImpactRows` (status, base local-FAIL, base |StdRes|,
-   * chi FAIL->PASS, local-fail reduction, max shift, obsId).
+   * Phase 14D leave-one-out suspect-impact rows. Rows sort by the
+   * transparent hierarchy in `compareSuspectImpactRows` (status, base
+   * local-FAIL, base |StdRes|, chi FAIL->PASS, local-fail reduction,
+   * max shift, obsId); there is no heuristic score.
    */
   suspectImpactDiagnostics?: SuspectImpactRow[];
   setupDiagnostics?: {

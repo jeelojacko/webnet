@@ -206,8 +206,8 @@ describe('suspectImpactQc', () => {
       robustReSolve: false,
       solveAlt: (exclusions) => (exclusions.has(11) ? abortedAlt : okAlt),
     });
-    // Under the old score (-deltaSeuw rewards a zero-SEUW abort) the aborted
-    // row for obs 11 would have ranked first; it must now sort last.
+    // The aborted row for obs 11 must sort last (fail-closed): aborted
+    // alternates never rank as improvements.
     expect(rows[0]?.obsId).toBe(12);
     expect(rows[0]?.status).toBe('ok');
     expect(rows[1]?.obsId).toBe(11);

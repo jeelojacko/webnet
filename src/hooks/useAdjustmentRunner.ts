@@ -89,6 +89,23 @@ export const useAdjustmentRunner = (
 
       if (message.type === 'success') {
         noteUiPerfStage('workerSuccessReceived');
+        if (pending.cancelled) {
+          setPipelineState({
+            status: 'cancelled',
+            runId: null,
+            phase: null,
+            error: null,
+            workerBacked: true,
+            elapsedMs: null,
+            detail: null,
+            solveIndex: null,
+            solveTotalHint: null,
+            iteration: null,
+            maxIterations: null,
+          });
+          pending.reject(new Error('Run cancelled'));
+          return;
+        }
         setPipelineState({
           status: 'idle',
           runId: null,

@@ -4,8 +4,10 @@
  * Single home for candidate collection/ranking, local-failure semantics,
  * chi-delta derivation, coordinate-shift detail, aborted-solve detection,
  * the transparent row-sort comparator, and the alternate-result cache-key
- * builder. Both the session path (`runSessionSuspectImpact`) and the
- * direct path (`directRunDiagnostics`) build rows through
+ * Single home for candidate collection/ranking, local-failure semantics,
+ * chi-delta derivation, coordinate-shift detail, aborted-solve detection,
+ * the transparent row-sort comparator, and the alternate-result cache-key
+ * builder. The session path (`runSessionSuspectImpact`) builds rows through
  * `buildSuspectImpactRows` here; `autoAdjust` reuses the identical pure
  * scalar helpers only.
  *
@@ -265,8 +267,8 @@ export interface SuspectImpactBuildOptions {
 /**
  * Shared leave-one-out row builder. Each candidate is re-solved with the
  * candidate excluded; aborted alternates are marked failed (never ranked
- * as improvements). Legacy `score` is still computed for compat but plays
- * no part in ordering.
+ * as improvements). Row order is the transparent `compareSuspectImpactRows`
+ * hierarchy; there is no heuristic score.
  */
 export const buildSuspectImpactRows = ({
   base,
@@ -328,10 +330,6 @@ export const buildSuspectImpactRows = ({
       const deltaMaxStdRes = altMaxStd - baseMaxStd;
       const shift = shiftUnavailable ? { most: null, top: [] } : computeShiftDetail(base, alt);
       const maxCoordShift = shift.most?.mag3d ?? 0;
-      // Deprecated-for-compat score (ordering no longer uses it).
-      let score = -deltaSeuw * 40 - deltaMaxStdRes * 20 - maxCoordShift * 15;
-      if (chiDelta === 'improved') score += 20;
-      if (chiDelta === 'degraded') score -= 20;
       return {
         ...row,
         deltaSeuw,
@@ -348,7 +346,6 @@ export const buildSuspectImpactRows = ({
         mostAffectedStation: shift.most,
         topAffectedStations: shift.top,
         maxCoordShift,
-        score: Number.isFinite(score) ? score : undefined,
         status: 'ok',
         failureReason: 'none',
         elapsedMs,

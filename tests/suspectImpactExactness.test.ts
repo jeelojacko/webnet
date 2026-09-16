@@ -126,7 +126,24 @@ const CASES: ExactnessCase[] = [
   },
   {
     name: 'correlated-ts',
-    input: [...GPSDIR_BASE, 'D A-P 74.031 0.01', ...DIRECTION_SET].join('\n'),
+    // Three-member set: the blundered C reading (+120 s) is a correlated
+    // group member and the leave-one-out candidate (see
+    // suspectImpactSessionExactness for the contracted-count assertions).
+    input: [
+      '.2D',
+      'C A 0 0 0 ! !',
+      'C B 100 0 0 ! !',
+      'C C 0 100 0 ! !',
+      'C P 50 40 0',
+      'G GPS1 A P 50.0 40.0 0.01 0.01',
+      'G GPS1 B P -50.0 40.0 0.01 0.01',
+      'D A-P 64.0312423743285 0.01',
+      'DB P',
+      'DN A 231-20-24.690285276 0.5',
+      'DN B 128-39-35.309714724 0.5',
+      'DN C 320-13-39.944067845 0.5',
+      'DE',
+    ].join('\n'),
     parseOptions: {
       coordMode: '2D',
       units: 'm',
@@ -192,7 +209,12 @@ const expectSameSolve = (actual: AdjustmentResult, expected: AdjustmentResult): 
   });
 };
 
-describe('suspectImpactExactness', () => {
+describe('suspectImpactExactness (direct-helper determinism evidence)', () => {
+  // Determinism evidence only: these tests drive buildSuspectImpactRows with
+  // a solveEngine closure and compare against the same helper, so they pin
+  // determinism — not production threading. Production-path exactness (via
+  // runAdjustmentSession, with exclusions/overrides/merges threaded) lives
+  // in suspectImpactSessionExactness.test.ts.
   for (const fixture of CASES) {
     it(`matches a direct manual-exclusion solve for ${fixture.name}`, () => {
       const base = solveDirect(fixture.input, fixture.parseOptions, new Set());
