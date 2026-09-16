@@ -1,3 +1,5 @@
+import { semanticTooltip } from '../../engine/statisticalSemantics';
+
 export const getReportHeaderTooltip = (rawLabel: string): string | undefined => {
   const label = rawLabel.replace(/\s+/g, ' ').trim();
   const clean = label.replace(/\([^)]*\)/g, '').trim();
@@ -20,16 +22,12 @@ export const getReportHeaderTooltip = (rawLabel: string): string | undefined => 
       'Effective distance (m) formerly shown per row; now available inside the LinRes tooltip as geometry context.',
     LINRES:
       'Linear equivalent of the residual in millimetres (browser sign: observed minus computed). Angular: v_rad x effective distance; distance/leveling: v x 1000. GNSS shows -. Effective distance is in the cell tooltip.',
-    STDRES:
-      'Standardized residual: residual divided by its a-posteriori standard error (unitless). |StdRes| > 1 warns, > 3 flags.',
-    REDUND:
-      'Redundancy number r (0-1 checkability); higher means better blunder detectability.',
-    LOCAL:
-      'Local single-outlier test on the standardized residual (PASS/FAIL, - when not tested). Default policy is legacy-fixed (critical 3.29); formal options are the Baarda w-test (sigma0 known) and the Pope τ-test (sigma estimated). Per-component E/N verdicts for 2D GNSS when available. See the LOCAL TESTING summary for the run policy.',
+    STDRES: semanticTooltip('stdRes'),
+    REDUND: semanticTooltip('redundancy'),
+    LOCAL: semanticTooltip('localTest'),
     MDB:
-      'Minimal Detectable Bias: smallest blunder detectable here from sigma and redundancy under the run reliability model (legacy 3.29 scaling at ~50% detection level by default; statistical model uses alpha/power via δ0 — see the RELIABILITY summary and docs/STATISTICAL_TESTING.md). Angular MDB shows arcsec with the linear equivalent in the cell tooltip.',
-    COORDEFF:
-      'Coordinate influence (mm): max station-coordinate displacement from an MDB-sized bias under the run reliability model. Cell tooltip names the most-affected station and shift vector.',
+      `${semanticTooltip('mdbLegacy')} Statistical runs use the a-priori MDB0 instead under the run reliability model (alpha/power via δ0 — see the RELIABILITY summary and docs/STATISTICAL_TESTING.md); the two MDBs are not interchangeable. Angular MDB shows arcsec with the linear equivalent in the cell tooltip.`,
+    COORDEFF: semanticTooltip('coordEff'),
     'Σ':
       'A priori sigma actually used for weighting (effective sigma, post-solve capture). Number shown, or - for defaults with the value in the tooltip; provenance (explicit/default/fixed/float) is always in the tooltip. GNSS rows show provenance labels (e.g. EXPLICIT, E=FIXED N=FLOAT), not a numeric sigma.',
     SIGMA:
@@ -59,9 +57,9 @@ export const getReportHeaderTooltip = (rawLabel: string): string | undefined => 
     NORM: 'Normalized residual magnitude |v/sigma| used for robust weighting.',
     'MAX DW': 'Maximum change in robust weights between inner reweighting passes this iteration.',
     TARGET: 'Observed foresight/target station.',
-    SCORE: 'Ranking score used to prioritize likely suspect rows.',
+    SCORE: semanticTooltip('heuristicScore'),
     STATUS: 'Pass/warn classification against configured closure thresholds.',
-    SEVERITY: 'Relative closure-risk score used to rank suspect loops.',
+    SEVERITY: semanticTooltip('heuristicScore'),
     SETS: 'Number of repeated sets contributing to trend diagnostics.',
     SETUP: 'Instrument setup station summary row.',
     WITH: 'Count of rows where the listed statistic is available/computed.',

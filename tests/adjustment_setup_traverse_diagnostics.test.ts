@@ -59,6 +59,24 @@ describe('adjustmentSetupTraverseDiagnostics', () => {
     expect(diagnostics?.[1].rmsStdRes).toBeCloseTo(Math.sqrt((1.5 ** 2 + 2.5 ** 2 + 1.2 ** 2) / 3), 8);
   });
 
+  it('counts 3D GPS U-component failures alongside E/N', () => {
+    const activeObservations = [
+      {
+        type: 'gps',
+        from: 'G',
+        to: 'H',
+        stdRes: 0.8,
+        sourceLine: 13,
+        localTestComponents: { passE: true, passN: true, passU: false },
+      },
+    ] as Observation[];
+
+    const diagnostics = buildSetupDiagnostics({ activeObservations });
+
+    expect(diagnostics).toBeDefined();
+    expect(diagnostics?.[0]).toMatchObject({ station: 'G', localFailCount: 1 });
+  });
+
   it('treats null local-test verdicts as unavailable, never failed', () => {
     const activeObservations = [
       { type: 'dist', from: 'O', to: 'A', stdRes: 1.1, sourceLine: 10, localTest: { pass: null } },
@@ -68,7 +86,7 @@ describe('adjustmentSetupTraverseDiagnostics', () => {
         to: 'B',
         stdRes: 0.9,
         sourceLine: 11,
-        localTestComponents: { passE: null, passN: null },
+        localTestComponents: { passE: null, passN: null, passU: null },
       },
     ] as Observation[];
 

@@ -7,6 +7,8 @@ import {
   describeSuspectImpactFailure,
   formatLooShift,
 } from './ReportSuspectImpactSection.utils';
+import { semanticTooltip } from '../../engine/statisticalSemantics';
+import { QcCategoryTag } from './QcOverviewSection';
 import CollapsibleSectionHeader from './CollapsibleSectionHeader';
 import type { CollapsibleDetailSectionId } from './reportSectionRegistry';
 
@@ -120,11 +122,11 @@ export const ReportSuspectImpactSection: React.FC<{
   const sectionId: CollapsibleDetailSectionId = 'suspect-impact-analysis';
   const robust = suspectImpactDiagnostics.some((row) => row.robustReSolve);
   return (
-    <div className="mb-8 border border-slate-800 rounded overflow-hidden" style={{ order: -140 }}>
+    <div className="mb-8 border border-slate-800 rounded overflow-hidden" style={{ order: -202 }}>
       <CollapsibleSectionHeader
         sectionId={sectionId}
         label="LEAVE-ONE-OUT INFLUENCE"
-        title="What-if exclusion analysis: each candidate re-solved with that observation excluded; comparison only, nothing auto-excluded"
+        title={semanticTooltip('looShift')}
         className="px-4 py-2 border-b border-slate-800 bg-slate-900/60 text-xs uppercase tracking-wider"
         labelClassName="text-slate-100"
         collapsed={isSectionCollapsed(sectionId)}
@@ -135,6 +137,7 @@ export const ReportSuspectImpactSection: React.FC<{
       />
       <div className="px-4 py-1 text-[11px] text-slate-400 border-b border-slate-800/60">
         What-if exclusion analysis
+        <QcCategoryTag category="what-if" />
         {robust ? ' — Robust re-solve comparison (robust weights active in alternates)' : null}
       </div>
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3 p-3 text-xs text-slate-300 border-b border-slate-800/60">
@@ -151,7 +154,7 @@ export const ReportSuspectImpactSection: React.FC<{
           <div>{suspectImpactExcludedCount}</div>
         </div>
         <div>
-          <div className="text-slate-500">Worst Base |t|</div>
+          <div className="text-slate-500">Worst Base |StdRes|</div>
           <div>{suspectImpactWorstBaseStdRes.toFixed(2)}</div>
         </div>
       </div>
@@ -163,10 +166,10 @@ export const ReportSuspectImpactSection: React.FC<{
               <th className="py-2 px-3">#</th>
               <th className="py-2">Observation</th>
               <th className="py-2">Stations</th>
-              <th className="py-2 text-right">Base |t|</th>
+              <th className="py-2 text-right">Base |StdRes|</th>
               <th className="py-2 text-right">Local</th>
               <th className="py-2 text-right">Without Obs</th>
-              <th className="py-2 text-right">Coord Shift</th>
+              <th className="py-2 text-right" title={semanticTooltip('looShift')}>Coord Shift</th>
               <th className="py-2 text-right">Status</th>
               <th className="py-2 text-right px-3">Action</th>
             </tr>
@@ -185,7 +188,7 @@ export const ReportSuspectImpactSection: React.FC<{
                     className="py-1 text-right font-mono"
                     title={
                       d.baseStdRes != null
-                        ? `Base standardized residual |t|=${d.baseStdRes.toFixed(2)}`
+                        ? `Base standardized residual |StdRes|=${d.baseStdRes.toFixed(2)}`
                         : 'Base standardized residual unavailable'
                     }
                   >

@@ -241,7 +241,7 @@ export const appendWorkflowDiagnosticsSections = ({
       }
       if (res.traverseDiagnostics.loops && res.traverseDiagnostics.loops.length > 0) {
         lines.push('');
-        lines.push('Traverse closure loops (ranked by severity):');
+        lines.push('Traverse closure loops (ranked by heuristic severity):');
         const rows = res.traverseDiagnostics.loops.map((l, idx) => ({
           rank: String(idx + 1),
           loop: l.key,
@@ -263,7 +263,7 @@ export const appendWorkflowDiagnosticsSections = ({
           ppm: 'Linear(ppm)',
           ang: 'Ang(")',
           vert: `dH(${linearUnit})`,
-          severity: 'Severity',
+          severity: 'Heuristic severity',
           status: 'Status',
         };
         const widths = {

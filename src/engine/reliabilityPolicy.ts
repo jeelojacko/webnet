@@ -13,8 +13,9 @@
  *   path; old projects reproduce with zero migration.
  * - 'statistical': single-alternative Baarda MDB0 = delta0 * sqrt(qvv_ii) / |R_ii|
  *   with a-priori cofactor qvv_ii (NO SEUW factor — pure a-priori per
- *   Teunissen), where delta0 = z(1-alpha/2) + z(power) is the normal-theory
- *   noncentrality for the given significance level and detection power,
+ *   Teunissen), where delta0 = z(1-alpha/2) + z(power) is the two-sided
+ *   normal-approximation noncentrality for the given significance level
+ *   and nominal detection power (exact only for the w-test construction),
  *   and R_ii = (Qvv P)_ii = 1 - (A Qxx A' P)_ii is the correlated
  *   scalar-residual sensitivity over the TRUE weight-matrix column
  *   (diagonal P recovers R_ii = r, so the diagonal case is unchanged).
@@ -102,6 +103,9 @@ const isValidPower = (power: number): boolean =>
 /**
  * Normal-theory noncentrality for the single-alternative Baarda MDB:
  * delta0 = z(1-alpha/2) + z(power), lambda0 = delta0^2.
+ * Two-sided normal approximation: exact for the Baarda w-test
+ * noncentrality construction (sigma0 known), approximate for Pope tau
+ * (flagged separately) and never a finite-sample detection probability.
  * Returns NaN parts for invalid input; never throws.
  */
 export const solveNoncentrality = (

@@ -1,9 +1,12 @@
 import React from 'react';
 import type { AdjustmentResult } from '../../types';
 import { setupFamilyDisplayUnit } from '../../engine/systematicPatternDiagnostics';
+import CollapsibleSectionHeader from './CollapsibleSectionHeader';
+import type { CollapsibleDetailSectionId } from './reportSectionRegistry';
 
-const DESCRIPTIVE_TITLE =
-  'Descriptive only — not a statistical test, probability, or significance.';
+import { semanticTooltip } from '../../engine/statisticalSemantics';
+
+const DESCRIPTIVE_TITLE: string = semanticTooltip('systematicTrend');
 
 const Desc: React.FC<{ title?: string }> = ({ title }) => (
   <span
@@ -47,30 +50,64 @@ const findTargetLine = (
 const SystematicPatternSection: React.FC<{
   isDataCheck: boolean;
   isPreanalysis: boolean;
+  isDetailSectionPinned: (_id: CollapsibleDetailSectionId) => boolean;
+  isSectionCollapsed: (_id: CollapsibleDetailSectionId) => boolean;
+  onHeaderRef: (_id: CollapsibleDetailSectionId, _node: HTMLDivElement | null) => void;
   renderSourceLineLink: (_line: number | null | undefined) => React.ReactNode;
   result: AdjustmentResult;
-}> = ({ isDataCheck, isPreanalysis, renderSourceLineLink, result }) => {
+  toggleDetailSection: (_id: CollapsibleDetailSectionId) => void;
+  togglePinnedDetailSection: (_id: CollapsibleDetailSectionId, _label: string) => void;
+}> = ({
+  isDataCheck,
+  isPreanalysis,
+  isDetailSectionPinned,
+  isSectionCollapsed,
+  onHeaderRef,
+  renderSourceLineLink,
+  result,
+  toggleDetailSection,
+  togglePinnedDetailSection,
+}) => {
   if (isPreanalysis || isDataCheck) return null;
+  const sectionId: CollapsibleDetailSectionId = 'systematic-pattern-diagnostics';
+  const renderHeader = () => (
+    <CollapsibleSectionHeader
+      sectionId={sectionId}
+      label="SYSTEMATIC PATTERN DIAGNOSTICS"
+      title="Descriptive residual-pattern summaries only: no formal tests, no p-values, no significance claims."
+      className="px-4 py-2 border-b border-slate-800 bg-slate-900/60 text-xs uppercase tracking-wider"
+      labelClassName="text-slate-100"
+      collapsed={isSectionCollapsed(sectionId)}
+      pinned={isDetailSectionPinned(sectionId)}
+      onToggleCollapse={toggleDetailSection}
+      onTogglePin={togglePinnedDetailSection}
+      onHeaderRef={onHeaderRef}
+    />
+  );
   const sys = result.systematicDiagnostics;
   if (!sys) {
     return (
-      <div className="mb-6 text-xs text-slate-500">
-        Systematic pattern diagnostics unavailable for this run.
+      <div className="mb-6 border border-slate-800 rounded overflow-hidden" style={{ order: -201 }}>
+        {renderHeader()}
+        <div className="px-4 py-2 text-xs text-slate-500">
+          Systematic pattern diagnostics not analyzed for this run.
+        </div>
       </div>
     );
   }
   if (!sys.available) {
     return (
-      <div className="mb-6 text-xs text-slate-300">
-        <span
-          className="uppercase tracking-wider text-slate-500 mr-2"
-          title={DESCRIPTIVE_TITLE}
-        >
-          Systematic pattern diagnostics
-          <Desc />
-        </span>
-        <div className="mt-1 text-slate-400">
-          unavailable — {sys.unavailableReason ?? 'no residuals'}
+      <div className="mb-6 border border-slate-800 rounded overflow-hidden" style={{ order: -201 }}>
+        {renderHeader()}
+        <div className="px-4 py-2 text-xs text-slate-400">
+          <span
+            className="uppercase tracking-wider text-slate-500 mr-2"
+            title={DESCRIPTIVE_TITLE}
+          >
+            Systematic pattern diagnostics
+            <Desc />
+          </span>
+          <div className="mt-1">unavailable — {sys.unavailableReason ?? 'no residuals'}</div>
         </div>
       </div>
     );
@@ -97,7 +134,9 @@ const SystematicPatternSection: React.FC<{
       : `Leveling patterns ${lp.status} (${lp.reason ?? 'no data'}).`,
   ];
   return (
-    <div className="mb-6 text-xs text-slate-300">
+    <div className="mb-6 border border-slate-800 rounded overflow-hidden text-xs text-slate-300" style={{ order: -201 }}>
+      {renderHeader()}
+      <div className="px-4 py-2">
       <span
         className="uppercase tracking-wider text-slate-500 mr-2"
         title="Descriptive residual-pattern summaries only: no formal tests, no p-values, no significance claims. Residuals are correlated with rank-deficient covariance, so IID-based runs/Pearson/OLS tests do not apply."
@@ -110,8 +149,9 @@ const SystematicPatternSection: React.FC<{
           {line}
         </div>
       ))}
-
-      {sys.setupFamilies.length > 0 && (
+      {!isSectionCollapsed(sectionId) && (
+        <>
+          {sys.setupFamilies.length > 0 && (
         <Sub
           label="Setup patterns"
           title="Setup-family means describe residuals grouped by station and family; per-set direction means absorb orientation unknowns."
@@ -336,6 +376,8 @@ const SystematicPatternSection: React.FC<{
           </div>
         </Sub>
       )}
+        </>
+      )}
 
       {sys.warnings.length > 0 && (
         <div className="mt-2 text-slate-400">
@@ -348,6 +390,7 @@ const SystematicPatternSection: React.FC<{
       {sys.freeNetworkNote && (
         <div className="mt-1 text-slate-400">{sys.freeNetworkNote}</div>
       )}
+      </div>
     </div>
   );
 };

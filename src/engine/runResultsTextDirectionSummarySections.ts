@@ -128,6 +128,7 @@ export const appendDirectionSummarySections = ({
     }
     if (res.directionTargetDiagnostics && res.directionTargetDiagnostics.length > 0) {
       lines.push('--- Direction Target Repeatability (ranked) ---');
+      lines.push('(Heuristic score: deterministic ordering aid only, not a statistical test.)');
       const rows = res.directionTargetDiagnostics.map((d, idx) => ({
         rank: String(idx + 1),
         setId: d.setId,
@@ -168,7 +169,7 @@ export const appendDirectionSummarySections = ({
         stdRes: 'StdRes',
         local: 'Local',
         mdb: 'MDB(")',
-        score: 'Score',
+        score: 'Heuristic score',
       };
       const widths = {
         rank: Math.max(header.rank.length, ...rows.map((r) => r.rank.length)),
@@ -249,6 +250,7 @@ export const appendDirectionSummarySections = ({
         .slice(0, 20);
       if (suspects.length > 0) {
         lines.push('--- Direction Target Suspects ---');
+        lines.push('(Heuristic score: deterministic ordering aid only, not a statistical test.)');
         const suspectRows = suspects.map((d, idx) => ({
           rank: String(idx + 1),
           setId: d.setId,
@@ -265,7 +267,7 @@ export const appendDirectionSummarySections = ({
           spread: 'Spread(")',
           stdRes: 'StdRes',
           local: 'Local',
-          score: 'Score',
+          score: 'Heuristic score',
         };
         const suspectWidths = {
           rank: Math.max(suspectHeader.rank.length, ...suspectRows.map((r) => r.rank.length)),

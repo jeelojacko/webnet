@@ -90,7 +90,7 @@ const result = {
       stdResComponents: { tE: 0.5, tN: -0.5 },
       redundancy: { rE: 0.31, rN: 0.29 },
       localTest: { critical: 2.5, pass: true },
-      localTestComponents: { passE: true, passN: true },
+      localTestComponents: { passE: true, passN: true, passU: false },
       mdbComponents: { mE: 0.02, mN: 0.03 },
       corrEN: 0.12,
       instCode: 'GPS',
@@ -152,8 +152,9 @@ describe('browser export serializers', () => {
       'sigmaUnit',
     ]);
     // The 14A statistic columns keep their relative order, followed by the
-    // Phase 14B reliability columns at the absolute end.
-    expect(cols.slice(-13)).toEqual([
+    // Phase 14B reliability columns, with additive per-component verdicts
+    // (localTestPassU) appended at the absolute end so no legacy index shifts.
+    expect(cols.slice(-14)).toEqual([
       'localTestStatistic',
       'localTestStatisticFamily',
       'reliabilityModel',
@@ -167,12 +168,18 @@ describe('browser export serializers', () => {
       'reliabilityExternalDEmm',
       'reliabilityExternalDNmm',
       'reliabilityExternalDHmm',
+      'localTestPassU',
     ]);
 
     const text = buildObservationsResidualsCsvText({ result, units: 'm' });
     const lines = text.split('\n');
     expect(lines[0].split(',').length).toBe(cols.length);
     expect(lines[1].split(',').length).toBe(cols.length);
+    // The appended U-verdict column carries the 3D GPS passU value; scalar
+    // rows stay empty.
+    expect(lines[0].split(',').at(-1)).toBe('localTestPassU');
+    expect(lines[3].split(',').at(-1)).toBe('false');
+    expect(lines[1].split(',').at(-1)).toBe('');
   });
 
   it('builds GeoJSON with stable station and connection feature metadata', () => {

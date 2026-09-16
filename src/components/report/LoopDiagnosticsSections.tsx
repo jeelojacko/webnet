@@ -1,7 +1,7 @@
 import React from 'react';
 import type { LoopDiagnosticsSectionsProps } from './LoopDiagnosticsSections.types';
 import TraverseLoopDiagnosticsSection from './TraverseLoopDiagnosticsSection';
-import { HEURISTIC_SCORE_TOOLTIP } from './reportTooltips';
+import { HEURISTIC_SCORE_TOOLTIP, LOOP_TOLERANCE_STATUS_TOOLTIP } from './reportTooltips';
 
 const LoopDiagnosticsSections: React.FC<LoopDiagnosticsSectionsProps> = ({
   result,
@@ -63,14 +63,14 @@ const LoopDiagnosticsSections: React.FC<LoopDiagnosticsSectionsProps> = ({
               <table className="w-full text-left text-xs">
                 <thead>
                   <tr className="text-slate-200 border-b border-slate-700/80">
-                    <th className="py-2 px-3">#</th>
-                    <th className="py-2">Loop</th>
-                    <th className="py-2 text-right">Ratio</th>
-                    <th className="py-2 text-right">Linear (ppm)</th>
-                    <th className="py-2 text-right">Ang Miscl (")</th>
-                    <th className="py-2 text-right">Vert Miscl ({units})</th>
-                    <th className="py-2 text-right" title={HEURISTIC_SCORE_TOOLTIP}>Heuristic severity</th>
-                    <th className="py-2 text-right px-3">Status</th>
+                    <th scope="col" className="py-2 px-3">#</th>
+                    <th scope="col" className="py-2">Loop</th>
+                    <th scope="col" className="py-2 text-right">Ratio</th>
+                    <th scope="col" className="py-2 text-right">Linear (ppm)</th>
+                    <th scope="col" className="py-2 text-right">Ang Miscl (")</th>
+                    <th scope="col" className="py-2 text-right">Vert Miscl ({units})</th>
+                    <th scope="col" className="py-2 text-right" title={HEURISTIC_SCORE_TOOLTIP}>Heuristic severity</th>
+                    <th scope="col" className="py-2 text-right px-3">Status</th>
                   </tr>
                 </thead>
                 <tbody className="text-slate-300">
@@ -83,7 +83,7 @@ const LoopDiagnosticsSections: React.FC<LoopDiagnosticsSectionsProps> = ({
                       <td className="py-1 text-right font-mono">{l.angularMisclosureArcSec != null ? l.angularMisclosureArcSec.toFixed(2) : '-'}</td>
                       <td className="py-1 text-right font-mono">{l.verticalMisclosure != null ? (l.verticalMisclosure * unitScale).toFixed(4) : '-'}</td>
                       <td className="py-1 text-right font-mono">{l.severity.toFixed(1)}</td>
-                      <td className={`py-1 px-3 text-right font-mono ${l.pass ? 'text-green-400' : 'text-yellow-400'}`}>{l.pass ? 'PASS' : 'WARN'}</td>
+                      <td className={`py-1 px-3 text-right font-mono ${l.pass ? 'text-green-400' : 'text-yellow-400'}`} title={LOOP_TOLERANCE_STATUS_TOOLTIP}>{l.pass ? 'PASS' : 'WARN'}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -106,7 +106,7 @@ const LoopDiagnosticsSections: React.FC<LoopDiagnosticsSectionsProps> = ({
           <div className="grid grid-cols-2 md:grid-cols-6 gap-3 p-3 text-xs text-slate-300 border-b border-slate-800/60">
             <div><div className="text-slate-500">Vectors</div><div>{gpsLoopDiagnostics.vectorCount}</div></div>
             <div><div className="text-slate-500">Loop Count</div><div>{gpsLoopDiagnostics.loopCount}</div></div>
-            <div><div className="text-slate-500">Status</div><div className={gpsLoopDiagnostics.warnCount > 0 ? 'text-yellow-400' : 'text-green-400'}>{gpsLoopDiagnostics.warnCount > 0 ? 'WARN' : 'PASS'}</div></div>
+            <div><div className="text-slate-500">Status</div><div className={gpsLoopDiagnostics.warnCount > 0 ? 'text-yellow-400' : 'text-green-400'} title={LOOP_TOLERANCE_STATUS_TOOLTIP}>{gpsLoopDiagnostics.warnCount > 0 ? 'WARN' : 'PASS'}</div></div>
             <div><div className="text-slate-500">Pass</div><div>{gpsLoopDiagnostics.passCount}</div></div>
             <div><div className="text-slate-500">Warn</div><div>{gpsLoopDiagnostics.warnCount}</div></div>
             <div><div className="text-slate-500">Tolerance</div><div className="font-mono text-[11px]">{(gpsLoopDiagnostics.thresholds.baseToleranceM * unitScale).toFixed(4)}{units} + {gpsLoopDiagnostics.thresholds.ppmTolerance}ppm*dist</div></div>
@@ -116,7 +116,7 @@ const LoopDiagnosticsSections: React.FC<LoopDiagnosticsSectionsProps> = ({
               {gpsLoopDiagnostics.loops.length > 0 && (
                 <div className="overflow-x-auto w-full border-t border-slate-800">
                   <table className="w-full text-left border-collapse text-xs">
-                    <thead><tr className="text-slate-200 border-b border-slate-700"><th className="py-2 px-3 font-semibold">#</th><th className="py-2 px-3 font-semibold">Loop</th><th className="py-2 px-3 font-semibold">Path</th><th className="py-2 px-3 font-semibold text-right">Mag ({units})</th><th className="py-2 px-3 font-semibold text-right">Tol ({units})</th><th className="py-2 px-3 font-semibold text-right">Linear (ppm)</th><th className="py-2 px-3 font-semibold text-right">Ratio</th><th className="py-2 px-3 font-semibold text-right" title={HEURISTIC_SCORE_TOOLTIP}>Heuristic severity</th><th className="py-2 px-3 font-semibold text-right">Status</th><th className="py-2 px-3 font-semibold text-right">Lines</th></tr></thead>
+                    <thead><tr className="text-slate-200 border-b border-slate-700"><th scope="col" className="py-2 px-3 font-semibold">#</th><th scope="col" className="py-2 px-3 font-semibold">Loop</th><th scope="col" className="py-2 px-3 font-semibold">Path</th><th scope="col" className="py-2 px-3 font-semibold text-right">Mag ({units})</th><th scope="col" className="py-2 px-3 font-semibold text-right">Tol ({units})</th><th scope="col" className="py-2 px-3 font-semibold text-right">Linear (ppm)</th><th scope="col" className="py-2 px-3 font-semibold text-right">Ratio</th><th scope="col" className="py-2 px-3 font-semibold text-right" title={HEURISTIC_SCORE_TOOLTIP}>Heuristic severity</th><th scope="col" className="py-2 px-3 font-semibold text-right">Status</th><th scope="col" className="py-2 px-3 font-semibold text-right">Lines</th></tr></thead>
                     <tbody className="text-slate-300">
                       {gpsLoopDiagnostics.loops.map((loop) => (
                         <tr key={`gps-loop-${loop.key}-${loop.rank}`} className="border-b border-slate-800/50">
@@ -128,7 +128,7 @@ const LoopDiagnosticsSections: React.FC<LoopDiagnosticsSectionsProps> = ({
                           <td className="py-1 px-3 text-right">{loop.linearPpm != null ? loop.linearPpm.toFixed(1) : '-'}</td>
                           <td className="py-1 px-3 text-right">{loop.closureRatio != null ? `1:${loop.closureRatio.toFixed(0)}` : '-'}</td>
                           <td className="py-1 px-3 text-right font-mono">{loop.severity.toFixed(2)}</td>
-                          <td className={`py-1 px-3 text-right ${loop.pass ? 'text-green-400' : 'text-yellow-400'}`}>{loop.pass ? 'PASS' : 'WARN'}</td>
+                          <td className={`py-1 px-3 text-right ${loop.pass ? 'text-green-400' : 'text-yellow-400'}`} title={LOOP_TOLERANCE_STATUS_TOOLTIP}>{loop.pass ? 'PASS' : 'WARN'}</td>
                           <td className="py-1 px-3 text-right text-slate-500">{loop.sourceLines.length > 0 ? loop.sourceLines.join(',') : '-'}</td>
                         </tr>
                       ))}
@@ -167,7 +167,7 @@ const LoopDiagnosticsSections: React.FC<LoopDiagnosticsSectionsProps> = ({
               {levelingLoopDiagnostics.loops.length > 0 && (
                 <div className="overflow-x-auto w-full border-t border-slate-800">
                   <table className="w-full text-left border-collapse text-xs">
-                    <thead><tr className="text-slate-200 border-b border-slate-700"><th className="py-2 px-3 font-semibold">#</th><th className="py-2 px-3 font-semibold">Loop</th><th className="py-2 px-3 font-semibold">Path</th><th className="py-2 px-3 font-semibold text-right">dH ({units})</th><th className="py-2 px-3 font-semibold text-right">|dH| ({units})</th><th className="py-2 px-3 font-semibold text-right">Len (km)</th><th className="py-2 px-3 font-semibold text-right">Tol (mm)</th><th className="py-2 px-3 font-semibold text-right">mm/sqrt(km)</th><th className="py-2 px-3 font-semibold text-right">Status</th><th className="py-2 px-3 font-semibold text-right">Lines</th></tr></thead>
+                    <thead><tr className="text-slate-200 border-b border-slate-700"><th scope="col" className="py-2 px-3 font-semibold">#</th><th scope="col" className="py-2 px-3 font-semibold">Loop</th><th scope="col" className="py-2 px-3 font-semibold">Path</th><th scope="col" className="py-2 px-3 font-semibold text-right">dH ({units})</th><th scope="col" className="py-2 px-3 font-semibold text-right">|dH| ({units})</th><th scope="col" className="py-2 px-3 font-semibold text-right">Len (km)</th><th scope="col" className="py-2 px-3 font-semibold text-right">Tol (mm)</th><th scope="col" className="py-2 px-3 font-semibold text-right">mm/sqrt(km)</th><th scope="col" className="py-2 px-3 font-semibold text-right">Status</th><th scope="col" className="py-2 px-3 font-semibold text-right">Lines</th></tr></thead>
                     <tbody className="text-slate-300">
                       {levelingLoopDiagnostics.loops.map((loop) => (
                         <tr key={loop.key} className="border-b border-slate-800/50">
@@ -179,7 +179,7 @@ const LoopDiagnosticsSections: React.FC<LoopDiagnosticsSectionsProps> = ({
                           <td className="py-1 px-3 text-right">{loop.loopLengthKm.toFixed(3)}</td>
                           <td className="py-1 px-3 text-right">{loop.toleranceMm.toFixed(2)}</td>
                           <td className="py-1 px-3 text-right">{loop.closurePerSqrtKmMm.toFixed(2)}</td>
-                          <td className={`py-1 px-3 text-right ${loop.pass ? 'text-green-400' : 'text-yellow-400'}`}>{loop.pass ? 'PASS' : 'WARN'}</td>
+                          <td className={`py-1 px-3 text-right ${loop.pass ? 'text-green-400' : 'text-yellow-400'}`} title={LOOP_TOLERANCE_STATUS_TOOLTIP}>{loop.pass ? 'PASS' : 'WARN'}</td>
                           <td className="py-1 px-3 text-right">{loop.sourceLines.length > 0 ? loop.sourceLines.join(',') : '-'}</td>
                         </tr>
                       ))}
@@ -190,7 +190,7 @@ const LoopDiagnosticsSections: React.FC<LoopDiagnosticsSectionsProps> = ({
               {levelingLoopDiagnostics.loops.length > 0 && (
                 <div className="overflow-x-auto w-full border-t border-slate-800">
                   <table className="w-full text-left border-collapse text-xs">
-                    <thead><tr className="text-slate-200 border-b border-slate-700"><th className="py-2 px-3 font-semibold">Loop</th><th className="py-2 px-3 font-semibold text-right">Seg</th><th className="py-2 px-3 font-semibold">From</th><th className="py-2 px-3 font-semibold">To</th><th className="py-2 px-3 font-semibold text-right">dH ({units})</th><th className="py-2 px-3 font-semibold text-right">Len (km)</th><th className="py-2 px-3 font-semibold text-right">Line</th><th className="py-2 px-3 font-semibold text-right">Role</th></tr></thead>
+                    <thead><tr className="text-slate-200 border-b border-slate-700"><th scope="col" className="py-2 px-3 font-semibold">Loop</th><th scope="col" className="py-2 px-3 font-semibold text-right">Seg</th><th scope="col" className="py-2 px-3 font-semibold">From</th><th scope="col" className="py-2 px-3 font-semibold">To</th><th scope="col" className="py-2 px-3 font-semibold text-right">dH ({units})</th><th scope="col" className="py-2 px-3 font-semibold text-right">Len (km)</th><th scope="col" className="py-2 px-3 font-semibold text-right">Line</th><th scope="col" className="py-2 px-3 font-semibold text-right">Role</th></tr></thead>
                     <tbody className="text-slate-300">
                       {levelingLoopDiagnostics.loops.flatMap((loop) => loop.segments.map((segment, index) => (
                         <tr key={`${loop.key}-${index}-${segment.from}-${segment.to}`} className={`border-b border-slate-800/50 ${segment.sourceLine != null && highlightedLevelingSegmentLines.has(segment.sourceLine) ? 'bg-yellow-950/20' : ''}`}>
@@ -231,7 +231,7 @@ const LoopDiagnosticsSections: React.FC<LoopDiagnosticsSectionsProps> = ({
           {!isSectionCollapsed('leveling-loop-suspects') && (
             <>
               <table className="w-full text-left text-xs">
-                <thead><tr className="text-slate-200 border-b border-slate-700/80"><th className="py-2 px-3">#</th><th className="py-2">Loop</th><th className="py-2">Path</th><th className="py-2 text-right">|dH| ({units})</th><th className="py-2 text-right">Len (km)</th><th className="py-2 text-right">Tol (mm)</th><th className="py-2 text-right">mm/sqrt(km)</th><th className="py-2 text-right px-3">Lines</th></tr></thead>
+                <thead><tr className="text-slate-200 border-b border-slate-700/80"><th scope="col" className="py-2 px-3">#</th><th scope="col" className="py-2">Loop</th><th scope="col" className="py-2">Path</th><th scope="col" className="py-2 text-right">|dH| ({units})</th><th scope="col" className="py-2 text-right">Len (km)</th><th scope="col" className="py-2 text-right">Tol (mm)</th><th scope="col" className="py-2 text-right">mm/sqrt(km)</th><th scope="col" className="py-2 text-right px-3">Lines</th></tr></thead>
                 <tbody className="text-slate-300">
                   {visibleLevelingLoopSuspects.map((loop) => (
                     <tr key={`level-suspect-${loop.key}`} className="border-b border-slate-800/30">
@@ -270,7 +270,7 @@ const LoopDiagnosticsSections: React.FC<LoopDiagnosticsSectionsProps> = ({
           </div>
           {!isSectionCollapsed('leveling-segment-suspects') && (
             <table className="w-full text-left text-xs">
-              <thead><tr className="text-slate-200 border-b border-slate-700/80"><th className="py-2 px-3">#</th><th className="py-2">Segment</th><th className="py-2 text-right">Line</th><th className="py-2 text-right">Warn Loops</th><th className="py-2 text-right" title={HEURISTIC_SCORE_TOOLTIP}>Heuristic score</th><th className="py-2 text-right">Max |dH| ({units})</th><th className="py-2 text-right">Worst Loop</th></tr></thead>
+              <thead><tr className="text-slate-200 border-b border-slate-700/80"><th scope="col" className="py-2 px-3">#</th><th scope="col" className="py-2">Segment</th><th scope="col" className="py-2 text-right">Line</th><th scope="col" className="py-2 text-right">Warn Loops</th><th scope="col" className="py-2 text-right" title={HEURISTIC_SCORE_TOOLTIP}>Heuristic score</th><th scope="col" className="py-2 text-right">Max |dH| ({units})</th><th scope="col" className="py-2 text-right">Worst Loop</th></tr></thead>
               <tbody className="text-slate-300">
                 {levelingSegmentSuspects.map((segment) => (
                   <tr key={`level-segment-suspect-${segment.key}`} className="border-b border-slate-800/30">
@@ -307,7 +307,7 @@ const LoopDiagnosticsSections: React.FC<LoopDiagnosticsSectionsProps> = ({
           {!isSectionCollapsed('gps-loop-suspects') && (
             <>
               <table className="w-full text-left text-xs">
-                <thead><tr className="text-slate-200 border-b border-slate-700/80"><th className="py-2 px-3">#</th><th className="py-2">Loop</th><th className="py-2 text-right">Mag ({units})</th><th className="py-2 text-right">Tol ({units})</th><th className="py-2 text-right">Linear (ppm)</th><th className="py-2 text-right">Ratio</th><th className="py-2 text-right" title={HEURISTIC_SCORE_TOOLTIP}>Heuristic severity</th><th className="py-2 text-right px-3">Status</th></tr></thead>
+                <thead><tr className="text-slate-200 border-b border-slate-700/80"><th scope="col" className="py-2 px-3">#</th><th scope="col" className="py-2">Loop</th><th scope="col" className="py-2 text-right">Mag ({units})</th><th scope="col" className="py-2 text-right">Tol ({units})</th><th scope="col" className="py-2 text-right">Linear (ppm)</th><th scope="col" className="py-2 text-right">Ratio</th><th scope="col" className="py-2 text-right" title={HEURISTIC_SCORE_TOOLTIP}>Heuristic severity</th><th scope="col" className="py-2 text-right px-3">Status</th></tr></thead>
                 <tbody className="text-slate-300">
                   {visibleGpsLoopSuspects.map((loop, idx) => (
                     <tr key={`gps-loop-suspect-${loop.key}-${idx}`} className="border-b border-slate-800/30">
@@ -318,7 +318,7 @@ const LoopDiagnosticsSections: React.FC<LoopDiagnosticsSectionsProps> = ({
                       <td className="py-1 text-right font-mono">{loop.linearPpm != null ? loop.linearPpm.toFixed(1) : '-'}</td>
                       <td className="py-1 text-right font-mono">{loop.closureRatio != null ? `1:${loop.closureRatio.toFixed(0)}` : '-'}</td>
                       <td className="py-1 text-right font-mono">{loop.severity.toFixed(2)}</td>
-                      <td className="py-1 px-3 text-right font-mono text-yellow-400">WARN</td>
+                      <td className="py-1 px-3 text-right font-mono text-yellow-400" title={LOOP_TOLERANCE_STATUS_TOOLTIP}>WARN</td>
                     </tr>
                   ))}
                 </tbody>

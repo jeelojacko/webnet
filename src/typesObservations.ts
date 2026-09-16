@@ -83,7 +83,7 @@ interface ObservationBase {
     statisticFamily?: 'w' | 'tau';
     available?: boolean;
   };
-  localTestComponents?: { passE: boolean | null; passN: boolean | null };
+  localTestComponents?: { passE: boolean | null; passN: boolean | null; passU?: boolean | null };
   mdb?: number;
   mdbComponents?: { mE: number; mN: number };
   /** Phase 14B per-observation reliability (MDB); mdb stays legacy-bit-identical by default. */

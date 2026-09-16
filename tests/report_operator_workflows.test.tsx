@@ -218,4 +218,77 @@ describe('ReportView operator workflows', () => {
     });
     container.remove();
   });
+
+  it('expands a collapsed detail section when a QC overview jump link targets it', async () => {
+    const container = document.createElement('div');
+    document.body.appendChild(container);
+    const root: Root = createRoot(container);
+    const result = new LSAEngine({ input: baseInput, maxIterations: 8 }).solve();
+    result.suspectImpactDiagnostics = [
+      {
+        obsId: result.observations[0]?.id ?? 1,
+        type: 'dist',
+        stations: 'A-C',
+        sourceLine: 5,
+        baseStdRes: 2.4,
+        baseLocalFail: true,
+        status: 'ok',
+        shiftStatus: 'available',
+        maxCoordShift: 0.004,
+        mostAffectedStation: { id: 'C', dE: 0.001, dN: 0.002, dH: 0, horiz: 0.002, mag3d: 0.004 },
+      },
+    ] as any;
+    const scrollSpy = vi.fn();
+    const originalScrollIntoView = Element.prototype.scrollIntoView;
+    Element.prototype.scrollIntoView = scrollSpy;
+
+    await act(async () => {
+      root.render(
+        <ReportView
+          result={result}
+          units="m"
+          runDiagnostics={null}
+          excludedIds={new Set<number>()}
+          onToggleExclude={() => {}}
+          onApplyImpactExclude={() => {}}
+          onApplyPreanalysisAction={() => {}}
+          onReRun={() => {}}
+          onClearExclusions={() => {}}
+          overrides={{}}
+          onOverride={() => {}}
+          onResetOverrides={() => {}}
+          clusterReviewDecisions={{}}
+          activeClusterApprovedMerges={[]}
+          onClusterDecisionStatus={() => {}}
+          onClusterCanonicalSelection={() => {}}
+          onApplyClusterMerges={() => {}}
+          onResetClusterReview={() => {}}
+          onClearClusterMerges={() => {}}
+        />,
+      );
+    });
+
+    const sectionToggle = () =>
+      Array.from(container.querySelectorAll('button[aria-expanded]')).find((entry) =>
+        entry.textContent?.includes('LEAVE-ONE-OUT INFLUENCE'),
+      ) as HTMLButtonElement | undefined;
+
+    expect(sectionToggle()?.getAttribute('aria-expanded')).toBe('false');
+
+    const jumpButton = container.querySelector(
+      'button[title="Jump to the leave-one-out suspect list"]',
+    ) as HTMLButtonElement;
+    await act(async () => {
+      jumpButton.click();
+    });
+
+    expect(sectionToggle()?.getAttribute('aria-expanded')).toBe('true');
+    expect(scrollSpy).toHaveBeenCalled();
+
+    Element.prototype.scrollIntoView = originalScrollIntoView;
+    await act(async () => {
+      root.unmount();
+    });
+    container.remove();
+  });
 });

@@ -90,8 +90,13 @@ describe('systematic pattern report section', () => {
       <SystematicPatternSection
         isDataCheck={false}
         isPreanalysis={false}
+        isDetailSectionPinned={() => false}
+        isSectionCollapsed={() => false}
+        onHeaderRef={() => {}}
         renderSourceLineLink={link}
         result={result}
+        toggleDetailSection={() => {}}
+        togglePinnedDetailSection={() => {}}
       />,
     );
     expect(html).toContain('Systematic pattern diagnostics');
@@ -112,8 +117,13 @@ describe('systematic pattern report section', () => {
         <SystematicPatternSection
           isDataCheck={false}
           isPreanalysis
+          isDetailSectionPinned={() => false}
+          isSectionCollapsed={() => false}
+          onHeaderRef={() => {}}
           renderSourceLineLink={link}
           result={result}
+          toggleDetailSection={() => {}}
+          togglePinnedDetailSection={() => {}}
         />,
       ),
     ).toBe('');
@@ -122,8 +132,13 @@ describe('systematic pattern report section', () => {
         <SystematicPatternSection
           isDataCheck
           isPreanalysis={false}
+          isDetailSectionPinned={() => false}
+          isSectionCollapsed={() => false}
+          onHeaderRef={() => {}}
           renderSourceLineLink={link}
           result={result}
+          toggleDetailSection={() => {}}
+          togglePinnedDetailSection={() => {}}
         />,
       ),
     ).toBe('');
@@ -157,8 +172,13 @@ describe('systematic pattern report section', () => {
       <SystematicPatternSection
         isDataCheck={false}
         isPreanalysis={false}
+        isDetailSectionPinned={() => false}
+        isSectionCollapsed={() => false}
+        onHeaderRef={() => {}}
         renderSourceLineLink={link}
         result={patched}
+        toggleDetailSection={() => {}}
+        togglePinnedDetailSection={() => {}}
       />,
     );
     expect(html).toContain('mm/km');
@@ -175,6 +195,36 @@ describe('systematic pattern report section', () => {
     expect(html).not.toMatch(/\bcorr\b/);
     // Face summary counts set-target rows, never plain sets.
     expect(html).toContain('unpaired');
+  });
+
+  it('collapses detail tables by default while keeping the descriptive summary visible', () => {
+    const result = solveTerrestrial();
+    const renderSection = (collapsed: boolean) =>
+      renderToStaticMarkup(
+        <SystematicPatternSection
+          isDataCheck={false}
+          isPreanalysis={false}
+          isDetailSectionPinned={() => false}
+          isSectionCollapsed={() => collapsed}
+          onHeaderRef={() => {}}
+          renderSourceLineLink={link}
+          result={result}
+          toggleDetailSection={() => {}}
+          togglePinnedDetailSection={() => {}}
+        />,
+      );
+    const open = renderSection(false);
+    expect(open).toContain('SYSTEMATIC PATTERN DIAGNOSTICS');
+    expect(open).toContain('Hide');
+    const shut = renderSection(true);
+    // Header + pin control + summary lines stay visible when collapsed.
+    expect(shut).toContain('SYSTEMATIC PATTERN DIAGNOSTICS');
+    expect(shut).toContain('Show');
+    expect(shut).toContain('Face-count balance');
+    // Detail-only blocks (setup families, trend/face/zenith/leveling/GNSS subs) hide.
+    expect(shut).not.toContain('Setup patterns');
+    expect(shut).not.toContain('Distance trends');
+    expect(open).toContain('Setup patterns');
   });
 
   it('labels direction scores as heuristic ordering aids', () => {

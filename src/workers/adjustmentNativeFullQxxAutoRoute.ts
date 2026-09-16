@@ -468,7 +468,7 @@ export const verifyNativeFullQxxSystems = (
       return;
     }
     if (!Number.isInteger(system.observationEquationCount) || system.observationEquationCount <= 0) {
-      reasons.push(`${tag}: bad observation equation count (fail-closed)`);
+      reasons.push(`${tag}: invalid observation equation count (fail-closed)`);
       return;
     }
     // Dense all-entry coverage proof: the full-Qxx contract requires

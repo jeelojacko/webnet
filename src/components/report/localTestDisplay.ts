@@ -1,4 +1,5 @@
 import type { Observation } from '../../types';
+import { semanticTooltip } from '../../engine/statisticalSemantics';
 import type { LocalTestSummary } from '../../engine/localTestPolicy';
 import {
   formatLocalTestModeLabel,
@@ -11,9 +12,10 @@ export const formatLocalTestCell = (obs: Observation): string => {
   if (comps) {
     const e = comps.passE;
     const n = comps.passN;
-    if (e == null && n == null) return '-';
-    const letter = (pass: boolean | null): string => (pass == null ? '-' : pass ? 'P' : 'F');
-    return `E:${letter(e)} N:${letter(n)}`;
+    const u = comps.passU;
+    if (e == null && n == null && u == null) return '-';
+    const letter = (pass: boolean | null | undefined): string => (pass == null ? '-' : pass ? 'P' : 'F');
+    return u != null ? `E:${letter(e)} N:${letter(n)} U:${letter(u)}` : `E:${letter(e)} N:${letter(n)}`;
   }
   const test = obs.localTest;
   if (!test || test.pass == null) return '-';
@@ -82,5 +84,25 @@ export const buildLocalTestSummaryLine = (
     `${formatLocalTestModeLabel(summary.mode)}: alpha ${summary.alpha} ` +
     `(${summary.correction} over ${summary.testCount} tests, effective ${eff}), ` +
     `critical ${crit}, ${flaggedCount} flagged of ${summary.testCount} tested${dofPart}`
+  );
+};
+
+/** Local column header tooltip: canonical definition plus the actual run policy. */
+export const buildLocalTestHeaderTooltip = (
+  summary?: LocalTestSummary | null,
+): string => {
+  const base = semanticTooltip('localTest');
+  if (!summary || !summary.available) return base;
+  const crit = Number.isFinite(summary.criticalValue)
+    ? summary.criticalValue.toFixed(2)
+    : '-';
+  if (summary.mode === 'legacy-fixed')
+    return `${base} Run policy: legacy fixed critical ${crit}.`;
+  const eff = Number.isFinite(summary.effectiveAlpha)
+    ? summary.effectiveAlpha.toExponential(2)
+    : '-';
+  return (
+    `${base} Run policy: ${formatLocalTestModeLabel(summary.mode)}; ` +
+    `alpha ${summary.alpha} (${summary.correction} over ${summary.testCount} tests, effective ${eff}); critical ${crit}.`
   );
 };

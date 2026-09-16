@@ -82,6 +82,7 @@ export const appendDirectionQualitySections = ({
     }
     if (res.directionRepeatabilityDiagnostics && res.directionRepeatabilityDiagnostics.length > 0) {
       lines.push('--- Direction Repeatability By Occupy-Target (multi-set) ---');
+      lines.push('(Heuristic score: deterministic ordering aid only, not a statistical test.)');
       const rows = res.directionRepeatabilityDiagnostics.map((d, idx) => ({
         rank: String(idx + 1),
         occupy: d.occupy,
@@ -118,7 +119,7 @@ export const appendDirectionQualitySections = ({
         spreadMax: 'SpreadMax(")',
         worstSet: 'WorstSet',
         line: 'Line',
-        score: 'Score',
+        score: 'Heuristic score',
       };
       const widths = {
         rank: Math.max(header.rank.length, ...rows.map((r) => r.rank.length)),
@@ -194,6 +195,7 @@ export const appendDirectionQualitySections = ({
         .slice(0, 20);
       if (suspects.length > 0) {
         lines.push('--- Direction Repeatability Suspects ---');
+        lines.push('(Heuristic score: deterministic ordering aid only, not a statistical test.)');
         const suspectRows = suspects.map((d, idx) => ({
           rank: String(idx + 1),
           stations: `${d.occupy}-${d.target}`,
@@ -212,7 +214,7 @@ export const appendDirectionQualitySections = ({
           maxStd: 'Max|t|',
           spreadMax: 'SpreadMax(")',
           localFail: 'LocalFail',
-          score: 'Score',
+          score: 'Heuristic score',
         };
         const suspectWidths = {
           rank: Math.max(suspectHeader.rank.length, ...suspectRows.map((r) => r.rank.length)),

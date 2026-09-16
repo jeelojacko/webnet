@@ -8,6 +8,7 @@ import {
   normalizeReliabilityPolicy,
 } from '../../../engine/reliabilityPolicy';
 import type { ReliabilityPolicy } from '../../../engine/reliabilityPolicy';
+import { QC_RESTRICTION_NOTES } from '../../../engine/qcRestrictionNotes';
 import type {
   AngleMode,
   RobustMode,
@@ -269,7 +270,7 @@ const SpecialProjectOptionsTab: React.FC<SpecialProjectOptionsTabProps> = ({ con
         </SettingsRow>
         <SettingsRow label="Robust k" tooltip={SETTINGS_TOOLTIPS.robustK}>
           <input
-            title={SETTINGS_TOOLTIPS.robustK}
+            title={`${SETTINGS_TOOLTIPS.robustK} Unused while Robust Mode is OFF.`}
             type="number"
             min={0.5}
             max={10}
@@ -283,10 +284,17 @@ const SpecialProjectOptionsTab: React.FC<SpecialProjectOptionsTabProps> = ({ con
                   : 1.5,
               )
             }
-            disabled={parityProfileActive}
+            disabled={parityProfileActive || parseSettingsDraft.robustMode === 'none'}
             className={`${optionInputClass} disabled:opacity-100 disabled:cursor-not-allowed`}
           />
         </SettingsRow>
+        {parseSettingsDraft.robustMode === 'none' ? (
+          <div className="text-[11px] text-slate-400">
+            Robust k is unused while Robust Mode is OFF.
+          </div>
+        ) : (
+          <div className="text-[11px] text-amber-200/90">{QC_RESTRICTION_NOTES.robustFrozenWeights}</div>
+        )}
       </SettingsCard>
       <SettingsCard
         title="Local Test Policy"
@@ -367,6 +375,11 @@ const SpecialProjectOptionsTab: React.FC<SpecialProjectOptionsTabProps> = ({ con
             <option value="sidak">Šidák</option>
           </select>
         </SettingsRow>
+        {localTestPolicy.mode === 'legacy-fixed' ? (
+          <div className="text-[11px] text-slate-400">
+            Compatibility default — significance α and correction are not applied.
+          </div>
+        ) : null}
       </SettingsCard>
       <SettingsCard
         title="Reliability (MDB)"
@@ -464,6 +477,11 @@ const SpecialProjectOptionsTab: React.FC<SpecialProjectOptionsTabProps> = ({ con
             />
           </div>
         </SettingsRow>
+        {!reliabilityStatistical ? (
+          <div className="text-[11px] text-slate-400">
+            Compatibility default — significance α and detection power are not applied (legacy scaling ≈50% detection level).
+          </div>
+        ) : null}
       </SettingsCard>
     </div>
   );

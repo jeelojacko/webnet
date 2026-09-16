@@ -280,6 +280,7 @@ const appendLevelingLoopDiagnostics = ({
   );
   if (levelingLoopDiagnostics.suspectSegments.length === 0) return;
   lines.push('');
+  lines.push('(Heuristic score: deterministic ordering aid only, not a statistical test.)');
   const levelingSuspectRows = levelingLoopDiagnostics.suspectSegments.map((segment) => [
     String(segment.rank),
     `${segment.from}->${segment.to}`,
@@ -290,7 +291,7 @@ const appendLevelingLoopDiagnostics = ({
     segment.worstLoopKey ?? '-',
   ]);
   renderTextTable(
-    ['#', 'Segment', 'Line', 'WarnLoops', 'Score', `Max |dH| (${linearUnit})`, 'Worst Loop'],
+    ['#', 'Segment', 'Line', 'WarnLoops', 'Heuristic score', `Max |dH| (${linearUnit})`, 'Worst Loop'],
     levelingSuspectRows,
     [2, 3, 4, 5],
   );

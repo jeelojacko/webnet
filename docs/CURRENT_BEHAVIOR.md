@@ -175,6 +175,7 @@ Current solve behavior includes:
 - weighted control and elevation constraints from station standard errors
 - under-observed-station and setup diagnostics
 - SEUW, DOF, condition diagnostics, chi-square summaries, local tests, and MDB values
+- workflow-first statistical QC guide -> use `docs/QC_GUIDE.md` (deep math in `docs/STATISTICAL_TESTING.md`)
 - local-test policy selection (legacy-fixed default, Baarda w, Pope τ) with run-level critical values; see `docs/STATISTICAL_TESTING.md` for the global-vs-local-vs-MDB distinction
 - reliability (MDB) model selection (legacy 3.29 default, statistical α/power) with internal MDBs and first-order external coordinate influence; see `docs/STATISTICAL_TESTING.md` for the reliability section
 - empirical first-pass stochastic group diagnostics (Förstner-style s² = Ω/R per observation group, weighted control constraints excluded by reporting policy, diagnostics-only with no auto-reweight, not unbiased VCE); see `docs/STATISTICAL_TESTING.md` for the stochastic group diagnostics section
@@ -335,6 +336,7 @@ Current output surfaces include:
 Current listing/report behavior includes:
 
 - summary-first report ordering
+- QC hierarchy in Band A and the results text: `Adjustment Summary` (global chi-square) -> `Local testing` -> `Reliability` -> `Stochastic model diagnostics` -> `Leave-One-Out Influence` -> `Systematic Pattern Diagnostics` (descriptive-only, collapsed by default), then specialized diagnostics; coordinates/observation tables follow the QC chain
 - the WebNet report now uses stronger progressive disclosure for heavy late-report sections: `Residual Diagnostics` downward, including lower-priority diagnostics, observation-family residual tables, and the final `Processing Log`, start collapsed and do not render their inner table/log content until opened
 - `Direction Face Treatment Diagnostics` is hidden in preanalysis reports and, for regular adjustment runs, is rendered as a late collapsed diagnostics block immediately above `Processing Log`
 - report table windowing now defaults to 25 rows per section instead of 100, and windowed sections expose both `Show more` and `Show all`

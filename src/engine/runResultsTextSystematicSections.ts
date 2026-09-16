@@ -12,8 +12,15 @@ export const appendSystematicPatternSections = ({
   lines: string[];
   res: AdjustmentResult;
 }): void => {
+  if (res.preanalysisMode === true) return;
   const sys = res.systematicDiagnostics;
-  if (!sys) return;
+  if (!sys) {
+    lines.push('--- Systematic Pattern Diagnostics ---');
+    lines.push('Descriptive only: no formal tests, no significance claims.');
+    lines.push('Status: not analyzed for this run');
+    lines.push('');
+    return;
+  }
   lines.push('--- Systematic Pattern Diagnostics ---');
   lines.push('Descriptive only: no formal tests, no significance claims.');
   if (!sys.available) {

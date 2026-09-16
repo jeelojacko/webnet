@@ -14,6 +14,7 @@ import {
   DataCheckSummarySection,
   PendingRunSettingsDiffBanner,
 } from './ReportRunSummarySections';
+import { QcOverviewSection } from './QcOverviewSection';
 import { ReportSuspectImpactSection } from './ReportSuspectImpactSection';
 import SystematicPatternSection from './SystematicPatternSection';
 import SolveProfileDiagnosticsSection from './SolveProfileDiagnosticsSection';
@@ -32,6 +33,7 @@ type ReportViewTopSectionsProps = {
   blunderFlaggedCount: number;
   byType: (_type: Observation['type']) => SortedObservation[];
   clearPinnedDetailSections: () => void;
+  onClearFilters?: () => void;
   clusterAppliedMergeCount: number;
   clusterRevertDisabledReason: string;
   dataCheckDiffRows: React.ComponentProps<typeof DataCheckSummarySection>['dataCheckDiffRows'];
@@ -62,7 +64,9 @@ type ReportViewTopSectionsProps = {
   onClearClusterMerges: ReportViewProps['onClearClusterMerges'];
   onClearExclusions: ReportViewProps['onClearExclusions'];
   onHeaderRef: (_id: CollapsibleDetailSectionId, _node: HTMLDivElement | null) => void;
+  onJumpToSection: (_id: CollapsibleDetailSectionId) => void;
   onReRun: ReportViewProps['onReRun'];
+  onSelectObservation?: (_observationId: number) => void;
   onResetOverrides: ReportViewProps['onResetOverrides'];
   pendingRunSettingDiffs: NonNullable<ReportViewProps['pendingRunSettingDiffs']>;
   pinnedDetailSections: PinnedDetailSection[];
@@ -122,8 +126,11 @@ const ReportViewTopSections: React.FC<ReportViewTopSectionsProps> = ({
   onApplyPreanalysisAction,
   onClearClusterMerges,
   onClearExclusions,
+  onClearFilters,
   onHeaderRef,
+  onJumpToSection,
   onReRun,
+  onSelectObservation,
   onResetOverrides,
   pendingRunSettingDiffs,
   pinnedDetailSections,
@@ -172,30 +179,21 @@ const ReportViewTopSections: React.FC<ReportViewTopSectionsProps> = ({
         onJumpToPinnedSection={jumpToPinnedSection}
       />
 
-      <ReportSuspectImpactSection
-        excludedIds={excludedIds}
-        isDetailSectionPinned={isDetailSectionPinned}
-        isPreanalysis={isPreanalysis}
-        isSectionCollapsed={isSectionCollapsed}
-        isSpecialRunMode={isSpecialRunMode}
-        onApplyImpactExclude={onApplyImpactExclude}
-        onHeaderRef={onHeaderRef}
-        renderSourceLineLink={renderSourceLineLink}
-        suspectImpactActionableCount={suspectImpactActionableCount}
-        suspectImpactDiagnostics={suspectImpactDiagnostics}
-        suspectImpactExcludedCount={suspectImpactExcludedCount}
-        suspectImpactWorstBaseStdRes={suspectImpactWorstBaseStdRes}
-        toggleDetailSection={toggleDetailSection}
-        togglePinnedDetailSection={togglePinnedDetailSection}
-        unitScale={unitScale}
-        units={units}
-      />
-
       <AdjustmentSummarySection
         byType={byType}
         isPreanalysis={isPreanalysis}
         isSpecialRunMode={isSpecialRunMode}
         result={result}
+      />
+
+      <QcOverviewSection
+        isDataCheck={isDataCheck}
+        isPreanalysis={isPreanalysis}
+        isSpecialRunMode={isSpecialRunMode}
+        result={result}
+        onJumpToSection={onJumpToSection}
+        onSelectObservation={onSelectObservation}
+        onClearFilters={onClearFilters}
       />
 
       <LocalTestSummarySection
@@ -219,11 +217,35 @@ const ReportViewTopSections: React.FC<ReportViewTopSectionsProps> = ({
         result={result}
       />
 
+      <ReportSuspectImpactSection
+        excludedIds={excludedIds}
+        isDetailSectionPinned={isDetailSectionPinned}
+        isPreanalysis={isPreanalysis}
+        isSectionCollapsed={isSectionCollapsed}
+        isSpecialRunMode={isSpecialRunMode}
+        onApplyImpactExclude={onApplyImpactExclude}
+        onHeaderRef={onHeaderRef}
+        renderSourceLineLink={renderSourceLineLink}
+        suspectImpactActionableCount={suspectImpactActionableCount}
+        suspectImpactDiagnostics={suspectImpactDiagnostics}
+        suspectImpactExcludedCount={suspectImpactExcludedCount}
+        suspectImpactWorstBaseStdRes={suspectImpactWorstBaseStdRes}
+        toggleDetailSection={toggleDetailSection}
+        togglePinnedDetailSection={togglePinnedDetailSection}
+        unitScale={unitScale}
+        units={units}
+      />
+
       <SystematicPatternSection
         isDataCheck={isDataCheck}
         isPreanalysis={isPreanalysis}
+        isDetailSectionPinned={isDetailSectionPinned}
+        isSectionCollapsed={isSectionCollapsed}
+        onHeaderRef={onHeaderRef}
         renderSourceLineLink={renderSourceLineLink}
         result={result}
+        toggleDetailSection={toggleDetailSection}
+        togglePinnedDetailSection={togglePinnedDetailSection}
       />
 
       <DataCheckSummarySection

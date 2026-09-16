@@ -146,10 +146,14 @@ export const useAdjustmentWorkflow = <TRunDiagnostics>({
         currentRunSettingsSnapshot,
         reviewContext,
       });
+      // Race model (authoritative in useAdjustmentRunner via latestRunIdRef):
+      // the runner never resolves a stale/superseded outcome, so only the
+      // current run reaches applyRunOutcome. Expected supersession and
+      // cancellation rejections are swallowed silently here.
       void runAdjustment(request)
         .then((outcome) => applyRunOutcome(outcome, context))
         .catch((error) => {
-          if (error instanceof Error && error.message === 'Run cancelled') return;
+          if (error instanceof Error && (error.message === 'Run cancelled' || error.message === 'Run superseded')) return;
           console.error(error);
         });
     },

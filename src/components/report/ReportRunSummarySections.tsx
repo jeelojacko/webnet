@@ -13,8 +13,12 @@ import {
   formatStochasticStatus,
   STOCHASTIC_SCALE_TOOLTIP,
 } from '../../engine/stochasticDiagnosticsDisplay';
+import { formatQcSummaryMissing } from '../../engine/qcAvailability';
 import type { ReportObservationSelectorModel } from './reportObservationSelectors';
 import { REPORT_STATIC_TOOLTIPS } from './reportTooltips';
+import { countLocalFlags } from '../../engine/qcOverviewModel';
+import { semanticTooltip } from '../../engine/statisticalSemantics';
+import { QcCategoryTag } from './QcOverviewSection';
 
 type SourceLineRenderer = (_line: number | null | undefined) => React.ReactNode;
 
@@ -112,6 +116,7 @@ export const AdjustmentSummarySection: React.FC<{
             }
           >
             {isPreanalysis ? 'RESIDUAL QC' : 'CHI-SQUARE (95%)'}
+            {isPreanalysis ? null : <QcCategoryTag category="formal" />}
           </span>
           {!isPreanalysis && result.chiSquare ? (
             <>
@@ -324,27 +329,29 @@ export const LocalTestSummarySection: React.FC<{
   if (!summary) {
     return (
       <div className="mb-6 text-xs text-slate-500" style={{ order: -205 }}>
-        Local testing unavailable for this run.
+        {formatQcSummaryMissing('Local testing')}
       </div>
     );
   }
-  const flaggedCount = result.observations.filter(
-    (obs) => obs.localTest != null && obs.localTest.pass === false,
-  ).length;
+  // §31: flagged scalar equations (GPS counts per component), matching
+  // localTestSummary.testCount = testable scalar equations.
+  const { flagged: flaggedCount, hasComponents } = countLocalFlags(result.observations);
+  const testedUnit = hasComponents ? 'components' : 'equations';
   return (
     <div className="mb-6 text-xs text-slate-300" style={{ order: -205 }}>
       <span
         className="uppercase tracking-wider text-slate-500 mr-2"
-        title="Single-outlier data-snooping verdicts under the run policy. Flagged means suspect, never proven blunder."
+        title={semanticTooltip('localTest')}
       >
         Local testing
+        <QcCategoryTag category="formal" />
       </span>
       <span title={buildLocalTestSummaryLine(summary, flaggedCount)}>
         {summary.available ? (
           <>
             {formatLocalTestModeLabel(summary.mode)} · critical{' '}
             {Number.isFinite(summary.criticalValue) ? summary.criticalValue.toFixed(2) : '-'} ·{' '}
-            {flaggedCount} flagged of {summary.testCount} tested
+            {flaggedCount} flagged of {summary.testCount} tested ({testedUnit})
           </>
         ) : (
           <>Local testing unavailable — not tested ({summary.unavailableReason ?? 'unknown reason'})</>
@@ -378,7 +385,7 @@ export const ReliabilitySummarySection: React.FC<{
   if (!summary) {
     return (
       <div className="mb-6 text-xs text-slate-500" style={{ order: -204 }}>
-        Reliability unavailable for this run.
+        {formatQcSummaryMissing('Reliability')}
       </div>
     );
   }
@@ -386,9 +393,10 @@ export const ReliabilitySummarySection: React.FC<{
     <div className="mb-6 text-xs text-slate-300" style={{ order: -204 }}>
       <span
         className="uppercase tracking-wider text-slate-500 mr-2"
-        title="Minimal Detectable Bias under the run reliability model, plus the worst coordinate influence of an MDB-sized bias. Worst-internal MDBs rank within compatible unit groups only; coordinate influence ranks by millimetres and is cross-type comparable."
+        title={`${semanticTooltip('mdbLegacy')} ${semanticTooltip('coordEff')}`}
       >
         Reliability
+        <QcCategoryTag category="descriptive" />
       </span>
       <span title={buildReliabilitySummaryLine(summary, result.observations)}>
         {summary.available ? (
@@ -427,7 +435,7 @@ export const StochasticDiagnosticsSection: React.FC<{
   if (!diagnostics) {
     return (
       <div className="mb-6 text-xs text-slate-500" style={{ order: -203 }}>
-        Stochastic model diagnostics unavailable for this run.
+        {formatQcSummaryMissing('Stochastic model diagnostics')}
       </div>
     );
   }
@@ -436,9 +444,10 @@ export const StochasticDiagnosticsSection: React.FC<{
     <div className="mb-6 text-xs text-slate-300" style={{ order: -203 }}>
       <span
         className="uppercase tracking-wider text-slate-500 mr-2"
-        title="Empirical first-pass group diagnostic (s² = Ω/R, R = tr(P·Qvv)), not unbiased VCE. Weighted control-constraint rows are excluded by reporting policy, so group quadforms sum below the global vTPv. Diagnostics only — no automatic reweighting."
+        title={semanticTooltip('diagnosticScale')}
       >
         Stochastic model diagnostics
+        <QcCategoryTag category="first-pass" />
       </span>
       {pointer ? <div className="mt-1 text-slate-200">{pointer}</div> : null}
       {diagnostics.groups.length === 0 && diagnostics.reason ? (
@@ -449,13 +458,13 @@ export const StochasticDiagnosticsSection: React.FC<{
           <tr className="text-slate-500">
             <th className="text-left pr-3 font-normal">Group</th>
             <th className="text-right pr-3 font-normal">Eqns</th>
-            <th className="text-right pr-3 font-normal" title="Group redundancy R = tr(P·Qvv), shown raw with no pass/fail threshold.">
+            <th className="text-right pr-3 font-normal" title={semanticTooltip('redundancy')}>
               Redund
             </th>
             <th className="text-right pr-3 font-normal" title="Group quadform Ω = v′Pv with the same weights as the solve.">
               vTPv
             </th>
-            <th className="text-right pr-3 font-normal" title="Purely descriptive: sqrt(Ω/n). No statistical claim.">
+            <th className="text-right pr-3 font-normal" title={semanticTooltip('descriptiveFactor')}>
               Descr
             </th>
             <th className="text-right pr-3 font-normal" title={STOCHASTIC_SCALE_TOOLTIP}>

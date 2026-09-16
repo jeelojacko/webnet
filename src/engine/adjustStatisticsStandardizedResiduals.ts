@@ -514,8 +514,10 @@ export const computeStandardizedResidualStatistics = (
             legacyCritical: policy.critical,
             seuw: ctx.seuw,
           });
-          const robustApproximation =
-            ctx.robustMode === 'huber' && policy.mode !== 'legacy-fixed';
+          const robustApproximation = ctx.robustMode === 'huber';
+          // Huber frozen weights make every family approximate, including
+          // legacy-fixed (classical 3.29 significance does not cover
+          // data-dependent reweighting).
           ctx.localTestSummary = {
             ...derivation,
             mode: policy.mode,
@@ -864,6 +866,16 @@ export const computeStandardizedResidualStatistics = (
               const idxE3 = entry.comps.indexOf('E');
               const idxN3 = entry.comps.indexOf('N');
               const idxU3 = entry.comps.indexOf('U');
+              // 3D E/N/U rows carry per-component verdicts (components model:
+              // flagged counts per failed component, matching the scalar
+              // testCount denominator). X/Y/Z rows stay aggregate-only.
+              if (idxE3 >= 0 && idxN3 >= 0 && idxU3 >= 0) {
+                obs.localTestComponents = {
+                  passE: entry.pass[idxE3] ?? null,
+                  passN: entry.pass[idxN3] ?? null,
+                  passU: entry.pass[idxU3] ?? null,
+                };
+              }
               obs.reliability = {
                 mdb: obs.mdb,
                 method: ctx.reliabilitySummary?.method ?? 'legacy-3.29',

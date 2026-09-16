@@ -1,5 +1,4 @@
 import { RAD_TO_DEG, radToDmsStr } from './angles';
-import { appendLeaveOneOutInfluenceSection } from './runResultsTextLeaveOneOut';
 import type { RunResultsTextContext } from './runResultsTextContext';
 import type { AdjustmentResult, Observation } from '../types';
 
@@ -143,7 +142,7 @@ export const appendObservationResidualSections = ({
           obs.localTestComponents != null
             ? `E:${localLetter(obs.localTestComponents.passE)} N:${localLetter(
                 obs.localTestComponents.passN,
-              )}`
+              )}${obs.localTestComponents.passU != null ? ` U:${localLetter(obs.localTestComponents.passU)}` : ''}`
             : obs.localTest != null
               ? localLetter(obs.localTest.pass)
               : '-';
@@ -246,8 +245,6 @@ export const appendObservationResidualSections = ({
         });
         lines.push('');
       }
-
-      appendLeaveOneOutInfluenceSection({ lines, res, linearUnit, unitScale });
 
       const headers = {
         type: 'Type',
