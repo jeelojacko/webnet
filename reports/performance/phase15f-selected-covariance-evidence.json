@@ -1,0 +1,284 @@
+{
+  "routeA": [
+    {
+      "fixture": "chain-2d-32",
+      "kind": "2D",
+      "arm": "base",
+      "success": true,
+      "converged": true,
+      "iterations": 4,
+      "numParams": 64,
+      "equations": 130,
+      "stations": 34,
+      "relPrecisionRows": 496,
+      "wallMedianMs": 14.88,
+      "covarianceMs": 6.86,
+      "finalCovMs": 1.34,
+      "statsMs": 5.52
+    },
+    {
+      "fixture": "chain-2d-64",
+      "kind": "2D",
+      "arm": "base",
+      "success": true,
+      "converged": true,
+      "iterations": 4,
+      "numParams": 128,
+      "equations": 258,
+      "stations": 66,
+      "relPrecisionRows": 2016,
+      "wallMedianMs": 25.05,
+      "covarianceMs": 11.27,
+      "finalCovMs": 3.85,
+      "statsMs": 7.42
+    },
+    {
+      "fixture": "chain-2d-128",
+      "kind": "2D",
+      "arm": "base",
+      "success": true,
+      "converged": true,
+      "iterations": 4,
+      "numParams": 256,
+      "equations": 514,
+      "stations": 130,
+      "relPrecisionRows": 8128,
+      "wallMedianMs": 88.67,
+      "covarianceMs": 43.09,
+      "finalCovMs": 26.75,
+      "statsMs": 16.34
+    },
+    {
+      "fixture": "gps-2d-64",
+      "kind": "2D",
+      "arm": "base",
+      "success": true,
+      "converged": true,
+      "iterations": 4,
+      "numParams": 128,
+      "equations": 322,
+      "stations": 66,
+      "relPrecisionRows": 2016,
+      "wallMedianMs": 38.05,
+      "covarianceMs": 15.2,
+      "finalCovMs": 5.08,
+      "statsMs": 10.12
+    },
+    {
+      "fixture": "gps-2d-128",
+      "kind": "2D",
+      "arm": "base",
+      "success": true,
+      "converged": true,
+      "iterations": 4,
+      "numParams": 256,
+      "equations": 642,
+      "stations": 130,
+      "relPrecisionRows": 8128,
+      "wallMedianMs": 136.23,
+      "covarianceMs": 58.69,
+      "finalCovMs": 33.18,
+      "statsMs": 25.51
+    },
+    {
+      "fixture": "gps-3d-64",
+      "kind": "3D",
+      "arm": "base",
+      "success": true,
+      "converged": true,
+      "iterations": 4,
+      "numParams": 192,
+      "equations": 451,
+      "stations": 66,
+      "relPrecisionRows": 2016,
+      "wallMedianMs": 75.98,
+      "covarianceMs": 33.95,
+      "finalCovMs": 16.39,
+      "statsMs": 17.56
+    },
+    {
+      "fixture": "gps-3d-128",
+      "kind": "3D",
+      "arm": "base",
+      "success": true,
+      "converged": true,
+      "iterations": 4,
+      "numParams": 384,
+      "equations": 899,
+      "stations": 130,
+      "relPrecisionRows": 8128,
+      "wallMedianMs": 295.74,
+      "covarianceMs": 140.14,
+      "finalCovMs": 106.63,
+      "statsMs": 33.51
+    },
+    {
+      "fixture": "chain-2d-64",
+      "kind": "2D",
+      "arm": "ts-correlated",
+      "success": true,
+      "converged": true,
+      "iterations": 4,
+      "numParams": 128,
+      "equations": 258,
+      "stations": 66,
+      "relPrecisionRows": 2016,
+      "wallMedianMs": 23.93,
+      "covarianceMs": 11.54,
+      "finalCovMs": 4.34,
+      "statsMs": 7.2
+    },
+    {
+      "fixture": "chain-2d-64",
+      "kind": "2D",
+      "arm": "robust-final",
+      "success": true,
+      "converged": true,
+      "iterations": 4,
+      "numParams": 128,
+      "equations": 258,
+      "stations": 66,
+      "relPrecisionRows": 2016,
+      "wallMedianMs": 29.73,
+      "covarianceMs": 16.8,
+      "finalCovMs": 4.65,
+      "statsMs": 12.15
+    }
+  ],
+  "derived": [
+    {
+      "fixture": "chain-2d-32",
+      "arm": "base",
+      "routeA_covMs": 6.86,
+      "routeB_ms": 0.56,
+      "routeC_ms": 0.72,
+      "routeD_ms": 1.28
+    },
+    {
+      "fixture": "chain-2d-64",
+      "arm": "base",
+      "routeA_covMs": 11.27,
+      "routeB_ms": 4.38,
+      "routeC_ms": 5.71,
+      "routeD_ms": 10.09
+    },
+    {
+      "fixture": "chain-2d-128",
+      "arm": "base",
+      "routeA_covMs": 43.09,
+      "routeB_ms": 34.54,
+      "routeC_ms": 45.52,
+      "routeD_ms": 80.06
+    },
+    {
+      "fixture": "gps-2d-64",
+      "arm": "base",
+      "routeA_covMs": 15.2,
+      "routeB_ms": 4.38,
+      "routeC_ms": 7.13,
+      "routeD_ms": 11.51
+    },
+    {
+      "fixture": "gps-2d-128",
+      "arm": "base",
+      "routeA_covMs": 58.69,
+      "routeB_ms": 34.54,
+      "routeC_ms": 56.85,
+      "routeD_ms": 91.39
+    },
+    {
+      "fixture": "gps-3d-64",
+      "arm": "base",
+      "routeA_covMs": 33.95,
+      "routeB_ms": 9.86,
+      "routeC_ms": 22.47,
+      "routeD_ms": 32.33
+    },
+    {
+      "fixture": "gps-3d-128",
+      "arm": "base",
+      "routeA_covMs": 140.14,
+      "routeB_ms": 77.71,
+      "routeC_ms": 179.13,
+      "routeD_ms": 256.84
+    },
+    {
+      "fixture": "chain-2d-64",
+      "arm": "ts-correlated",
+      "routeA_covMs": 11.54,
+      "routeB_ms": 4.38,
+      "routeC_ms": 5.71,
+      "routeD_ms": 10.09
+    },
+    {
+      "fixture": "chain-2d-64",
+      "arm": "robust-final",
+      "routeA_covMs": 16.8,
+      "routeB_ms": 4.38,
+      "routeC_ms": 5.71,
+      "routeD_ms": 10.09
+    }
+  ],
+  "allPairs": [
+    {
+      "stations": 32,
+      "pairs": 496,
+      "calcLoopMs": 0.01,
+      "retainedBytes": 129334,
+      "postMessageBytes": 129334,
+      "jsonBytes": 129334
+    },
+    {
+      "stations": 64,
+      "pairs": 2016,
+      "calcLoopMs": 0.04,
+      "retainedBytes": 525680,
+      "postMessageBytes": 525680,
+      "jsonBytes": 525680
+    },
+    {
+      "stations": 128,
+      "pairs": 8128,
+      "calcLoopMs": 0.17,
+      "retainedBytes": 2119409,
+      "postMessageBytes": 2119409,
+      "jsonBytes": 2119409
+    },
+    {
+      "stations": 256,
+      "pairs": 32640,
+      "calcLoopMs": 0.66,
+      "retainedBytes": 8511012,
+      "postMessageBytes": 8511012,
+      "jsonBytes": 8511012
+    }
+  ],
+  "counters": {
+    "chain-2d-64": {
+      "fullQxxRequiredBy": [
+        "station-covariances×64",
+        "relative-precision×2016"
+      ],
+      "selectedCovarianceRequiredBy": [
+        "station-cov-blocks×64"
+      ],
+      "relativePrecisionRows": 2016,
+      "externalReliabilityRows": 258
+    },
+    "gps-3d-128": {
+      "fullQxxRequiredBy": [
+        "station-covariances×128",
+        "relative-precision×8128"
+      ],
+      "selectedCovarianceRequiredBy": [
+        "station-cov-blocks×128"
+      ],
+      "relativePrecisionRows": 8128,
+      "externalReliabilityRows": 899
+    }
+  },
+  "unitCost": {
+    "fullSolve192Ms": 9.56,
+    "perColMs": 0.04981303645833416
+  }
+}
