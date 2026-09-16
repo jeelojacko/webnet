@@ -1,6 +1,8 @@
 import type { RunResultsTextContext } from './runResultsTextContext';
 import type { AdjustmentResult } from '../types';
 import { formatLocalTestPolicyLine } from './localTestPolicy';
+import { buildReliabilitySummaryLine } from './reliabilityDisplay';
+import { formatReliabilityPolicyLine } from './reliabilityPolicy';
 
 type ResidualSectionContext = Pick<
   RunResultsTextContext,
@@ -20,6 +22,25 @@ export const appendTypeAndResidualSections = ({
 
   appendTypeSummarySection({ lines, res, context });
   appendResidualDiagnosticsSection({ lines, res });
+  appendReliabilitySection({ lines, res });
+};
+
+const appendReliabilitySection = ({
+  lines,
+  res,
+}: {
+  lines: string[];
+  res: AdjustmentResult;
+}): void => {
+  const summary = res.reliabilitySummary;
+  if (!summary) return;
+  lines.push('--- Reliability (MDB / External) ---');
+  lines.push(
+    `Policy: ${formatReliabilityPolicyLine(summary.model ? { model: summary.model, alpha: summary.alpha, power: summary.power } : undefined)}` +
+      (Number.isFinite(summary.delta0) ? `, delta0=${summary.delta0.toFixed(3)}` : ''),
+  );
+  lines.push(buildReliabilitySummaryLine(summary, res.observations ?? []));
+  lines.push('');
 };
 
 const appendTypeSummarySection = ({

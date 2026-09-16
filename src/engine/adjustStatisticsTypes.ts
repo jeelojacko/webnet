@@ -8,6 +8,7 @@ import type { ExperimentalSparseRouteDiagnostics } from './experimentalSparseDia
 import type { SelectedCovarianceStore } from './selectedCovarianceStore';
 import type { GpsCovariance, GpsSolveVector, GpsVectorDerivatives } from './adjustTypes';
 import type { LocalTestPolicy, LocalTestSummary } from './localTestPolicy';
+import type { ReliabilityPolicy, ReliabilitySummary } from './reliabilityPolicy';
 import type {
   EquationRowInfo,
   RobustWeightMatrixBase,
@@ -67,6 +68,10 @@ export type AdjustmentStatisticsContext = {
   localTestCritical: number;
   /** Phase 14A formal local-test policy; undefined preserves the legacy 3.29 behavior. */
   localTestPolicy?: LocalTestPolicy;
+  /** Phase 14B reliability (MDB) policy; undefined preserves the legacy 3.29 MDB. */
+  reliabilityPolicy?: ReliabilityPolicy;
+  /** Phase 14B run-level derived reliability summary (set by standardized residuals). */
+  reliabilitySummary?: ReliabilitySummary;
   /** Phase 14A run-level derived local-test summary (set by standardized residuals). */
   localTestSummary?: LocalTestSummary;
   maxStdRes: number;

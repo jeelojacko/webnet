@@ -5,6 +5,7 @@ import type { AdjustmentResult, Observation } from '../../types';
 import type { SortedObservation } from '../../engine/resultDerivedModels';
 import { formatLocalTestModeLabel } from '../../engine/localTestPolicy';
 import { buildLocalTestSummaryLine } from './localTestDisplay';
+import { buildReliabilitySummaryLine } from '../../engine/reliabilityDisplay';
 import type { ReportObservationSelectorModel } from './reportObservationSelectors';
 import { REPORT_STATIC_TOOLTIPS } from './reportTooltips';
 
@@ -348,6 +349,53 @@ export const LocalTestSummarySection: React.FC<{
           title={summary.robustApproximationReason ?? 'Robust reweighting active; classical significance is approximate.'}
         >
           (robust approximation)
+        </span>
+      ) : null}
+    </div>
+  );
+};
+
+/**
+ * Compact RELIABILITY strip beneath the LOCAL TESTING strip.
+ * Same suppression rules: preanalysis has no per-observation MDBs and
+ * data check reports screening values only.
+ */
+export const ReliabilitySummarySection: React.FC<{
+  isDataCheck: boolean;
+  isPreanalysis: boolean;
+  isSpecialRunMode: boolean;
+  result: AdjustmentResult;
+}> = ({ isDataCheck, isPreanalysis, isSpecialRunMode, result }) => {
+  if (isSpecialRunMode || isPreanalysis || isDataCheck) return null;
+  const summary = result.reliabilitySummary;
+  if (!summary) {
+    return (
+      <div className="mb-6 text-xs text-slate-500" style={{ order: -204 }}>
+        Reliability unavailable for this run.
+      </div>
+    );
+  }
+  return (
+    <div className="mb-6 text-xs text-slate-300" style={{ order: -204 }}>
+      <span
+        className="uppercase tracking-wider text-slate-500 mr-2"
+        title="Minimal Detectable Bias under the run reliability model, plus the worst coordinate influence of an MDB-sized bias. Worst-internal MDBs rank within compatible unit groups only; coordinate influence ranks by millimetres and is cross-type comparable."
+      >
+        Reliability
+      </span>
+      <span title={buildReliabilitySummaryLine(summary, result.observations)}>
+        {summary.available ? (
+          <>{buildReliabilitySummaryLine(summary, result.observations)}</>
+        ) : (
+          <>Reliability unavailable — not computed ({summary.reason ?? 'unknown reason'})</>
+        )}
+      </span>
+      {summary.approximate ? (
+        <span
+          className="ml-2 text-amber-300/90"
+          title={summary.reason ?? 'Approximate reliability derivation.'}
+        >
+          (approximate)
         </span>
       ) : null}
     </div>

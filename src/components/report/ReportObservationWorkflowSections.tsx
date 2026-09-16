@@ -2,6 +2,7 @@ import React from 'react';
 
 import type { SortedObservation } from '../../engine/resultDerivedModels';
 import type { LocalTestSummary } from '../../engine/localTestPolicy';
+import type { ReliabilitySummary } from '../../engine/reliabilityPolicy';
 import type { AdjustmentResult, Observation, Station } from '../../types';
 import AdjustedCoordinatesSection from './AdjustedCoordinatesSection';
 import ObservationTableSection from './ObservationTableSection';
@@ -31,6 +32,7 @@ type SharedObservationTableProps = SectionControls & {
   excludedIds: Set<number>;
   formatMdb: (_value: number, _angular: boolean) => string;
   localTestSummary?: LocalTestSummary | null;
+  reliabilitySummary?: ReliabilitySummary | null;
   onSelectObservation?: (_observationId: number) => void;
   onToggleExclude: (_observationId: number) => void;
   prismAnnotation: (_observation: Observation) => string;

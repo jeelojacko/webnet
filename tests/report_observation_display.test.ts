@@ -280,8 +280,9 @@ describe('getReportHeaderTooltip', () => {
     const redund = getReportHeaderTooltip('REDUND');
     expect(redund).toContain('detectability');
     expect(redund).not.toContain('StdRes');
-    expect(getReportHeaderTooltip('MDB')).toContain('critical value');
-    expect(getReportHeaderTooltip('MDB')).not.toContain('power');
+    expect(getReportHeaderTooltip('MDB')).toContain('reliability model');
+    expect(getReportHeaderTooltip('MDB')).toContain('alpha/power');
+    expect(getReportHeaderTooltip('MDB')).toContain('linear equivalent');
     expect(getReportHeaderTooltip('LOCAL')).toContain('2D GNSS');
     expect(getReportHeaderTooltip('σ')).toContain('GNSS');
   });

@@ -54,6 +54,7 @@ import type { CadDrawingDocument } from './engine/cad/cadTypes';
 import type { PersistedSavedRunSnapshot, SolveProfile, Units } from './appRunStateTypes';
 import type { GnssMultifilePersistedV1 } from './engine/gnssMultifileProject';
 import type { LocalTestPolicy } from './engine/localTestPolicy';
+import type { ReliabilityPolicy } from './engine/reliabilityPolicy';
 
 export type {
   PersistedSavedRunSnapshot,
@@ -306,6 +307,7 @@ export type ParseSettings = {
   robustMode: RobustMode;
   robustK: number;
   localTestPolicy?: LocalTestPolicy;
+  reliabilityPolicy?: ReliabilityPolicy;
   parseCompatibilityMode: ParseCompatibilityMode;
   parseModeMigrated: boolean;
 };

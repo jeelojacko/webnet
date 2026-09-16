@@ -1,5 +1,6 @@
 import type { StationId } from './typesBase';
 import type { LocalTestPolicy } from './engine/localTestPolicy';
+import type { ReliabilityPolicy } from './engine/reliabilityPolicy';
 import type { Station } from './typesObservations';
 import type { ParseIncludeError, ParseIncludeResolver, RunModeCompatibilityDiagnostic, ClusterApprovedMerge, AliasExplicitMapping, AliasRuleSummary, AliasTraceEntry, DescriptionTraceEntry, DescriptionScanSummary, GpsTopoCoordinateShot, InputStationSnapshot } from './typesDiagnostics';
 import type { DirectionSetTreatmentDiagnostic } from './typesObservations';
@@ -188,6 +189,7 @@ export interface ParseOptions {
   robustMode?: RobustMode;
   robustK?: number;
   localTestPolicy?: LocalTestPolicy;
+  reliabilityPolicy?: ReliabilityPolicy;
   qFixLinearSigmaM?: number;
   qFixAngularSigmaSec?: number;
   prismEnabled?: boolean;
