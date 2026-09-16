@@ -196,7 +196,7 @@ describe('selected-observation leave-one-out detail', () => {
     expect(html).toContain('P:');
   });
 
-  it('renders nothing extra when the selected observation has no LOO row', () => {
+  it('renders the evidence chain without a LOO block when the selected observation has no LOO row', () => {
     const result = solveEngine({ input: INPUT, maxIterations: 8 });
     const target = result.observations[0];
     const html = renderToStaticMarkup(
@@ -208,7 +208,23 @@ describe('selected-observation leave-one-out detail', () => {
         suspectImpactRows={[]}
       />,
     );
+    expect(html).toContain('Evidence:');
+    expect(html).toContain('Test policy');
+    expect(html).toContain('Not in the leave-one-out table');
     expect(html).not.toContain('Leave-one-out:');
+  });
+
+  it('names the actual local-test policy in the Local column header tooltip', () => {
+    const result = solveEngine({ input: INPUT, maxIterations: 8 });
+    const html = renderToStaticMarkup(
+      <ObservationTableSection
+        {...tableProps}
+        obsList={result.observations}
+        selectedObservationId={null}
+        localTestSummary={result.localTestSummary}
+      />,
+    );
+    expect(html).toContain('Run policy:');
   });
 });
 

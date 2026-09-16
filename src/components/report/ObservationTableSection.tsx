@@ -18,7 +18,13 @@ import {
   describeSuspectImpactFailure,
   formatLooShift,
 } from './ReportSuspectImpactSection.utils';
-import { buildLocalTestCellTooltip, formatLocalTestCell } from './localTestDisplay';
+import {
+  buildLocalTestCellTooltip,
+  buildLocalTestHeaderTooltip,
+  formatLocalTestCell,
+} from './localTestDisplay';
+import { getReportHeaderTooltip } from './reportHeaderTooltips';
+import { semanticTooltip } from '../../engine/statisticalSemantics';
 import { REPORT_TABLE_WINDOW_SIZE } from './reportSectionRegistry';
 import CollapsibleSectionHeader from './CollapsibleSectionHeader';
 import ReportLoadMoreFooter from './ReportLoadMoreFooter';
@@ -163,6 +169,111 @@ const SelectedObservationLooDetail: React.FC<{
   );
 };
 
+const observationSetupStation = (obs: Observation): string => {
+  if (obs.type === 'angle' || obs.type === 'direction') return obs.at;
+  return obs.from;
+};
+
+/**
+ * Per-observation evidence chain for the selected row. Reuses the row's
+ * existing cell strings and tooltip builders — no new tables. The LOO
+ * comparison appears only when this observation has a suspect-impact row;
+ * every other link of the chain always renders.
+ */
+const SelectedObservationEvidenceDetail: React.FC<{
+  obs: Observation;
+  looRow?: SuspectImpactRow;
+  unitScale: number;
+  units: 'm' | 'ft';
+  resText: string;
+  stdResStr: string;
+  redundancyStr: string;
+  localStr: string;
+  mdbStr: string;
+  coordEffStr: string;
+  linResText: string;
+  linResTitle: string;
+  sigmaText: string;
+  sigmaTitle: string;
+  stationText: string;
+  localTip: string;
+  mdbTip: string;
+  coordEffTip: string;
+}> = ({
+  obs,
+  looRow,
+  unitScale,
+  units,
+  resText,
+  stdResStr,
+  redundancyStr,
+  localStr,
+  mdbStr,
+  coordEffStr,
+  linResText,
+  linResTitle,
+  sigmaText,
+  sigmaTitle,
+  stationText,
+  localTip,
+  mdbTip,
+  coordEffTip,
+}) => {
+  const identity = [
+    `#${obs.id} ${obs.type} ${stationText}`,
+    obs.sourceLine != null ? `line ${obs.sourceLine}` : null,
+    `setup ${observationSetupStation(obs)}`,
+    obs.setId ? `set ${obs.setId}` : null,
+    `inst ${obs.instCode}`,
+  ].filter((part): part is string => part != null);
+  return (
+    <div className="text-[11px] text-slate-300">
+      <div className="font-bold text-blue-300 uppercase tracking-wider mb-1">
+        Evidence: {identity.join(' · ')}
+      </div>
+      <div className="font-mono">
+        Residual {resText} · LinRes {linResText} · StdRes {stdResStr} · Local {localStr} ·
+        Redund {redundancyStr} · MDB {mdbStr} · CoordEff {coordEffStr} · σ {sigmaText}
+      </div>
+      <details className="mt-1">
+        <summary className="cursor-pointer text-blue-300">Test policy &amp; context</summary>
+        <div className="font-mono mt-1 space-y-1">
+          <div>Local — {localTip}</div>
+          <div>MDB — {mdbTip}</div>
+          <div>CoordEff — {coordEffTip}</div>
+          <div>LinRes — {linResTitle}</div>
+          <div>σ — {sigmaTitle}</div>
+          <div className="text-slate-400">
+            Context — LOCAL TESTING and RELIABILITY strips; STOCHASTIC MODEL
+            DIAGNOSTICS; SETUP DIAGNOSTICS; SYSTEMATIC PATTERN DIAGNOSTICS;
+            ranked re-solve comparison in LEAVE-ONE-OUT INFLUENCE.
+          </div>
+        </div>
+      </details>
+      {looRow ? (
+        <div className="mt-2 border-t border-slate-800/60 pt-2">
+          <SelectedObservationLooDetail
+            looRow={looRow}
+            unitScale={unitScale}
+            units={units}
+            stdResStr={stdResStr}
+            redundancyStr={redundancyStr}
+            localStr={localStr}
+            mdbStr={mdbStr}
+            coordEffStr={coordEffStr}
+            linResText={linResText}
+          />
+        </div>
+      ) : (
+        <div className="mt-1 text-slate-400">
+          Not in the leave-one-out table — only top suspects are re-solved; see
+          LEAVE-ONE-OUT INFLUENCE for the ranked list.
+        </div>
+      )}
+    </div>
+  );
+};
+
 const ObservationTableSection: React.FC<ObservationTableSectionProps> = ({
   obsList,
   title,
@@ -239,7 +350,7 @@ const ObservationTableSection: React.FC<ObservationTableSectionProps> = ({
                 <th className="py-2 text-right">LinRes (mm)</th>
                 <th className="py-2 text-right">StdRes</th>
                 <th className="py-2 text-right">Redund</th>
-                <th className="py-2 text-right">Local</th>
+                <th className="py-2 text-right" title={buildLocalTestHeaderTooltip(localTestSummary)}>Local</th>
                 <th className="py-2 text-right" title={buildMdbHeaderTooltip(reliabilitySummary ?? undefined)}>MDB</th>
                 <th className="py-2 text-right" title={COORD_EFF_HEADER_TOOLTIP}>CoordEff</th>
                 <th className="py-2 text-right px-4">σ</th>
@@ -380,20 +491,42 @@ const ObservationTableSection: React.FC<ObservationTableSectionProps> = ({
                         isFail ? 'text-red-500' : isWarn ? 'text-yellow-500' : 'text-green-500'
                       }`}
                     >
-                      {resStr}
+                      <span
+                        tabIndex={0}
+                        title={getReportHeaderTooltip('Residual')}
+                        aria-label={`Residual ${resStr}`}
+                      >
+                        {resStr}
+                      </span>
                     </td>
                     <td
                       className="py-1 px-3 text-right font-mono tabular-nums whitespace-nowrap text-slate-400 border-l border-slate-800/60"
                       title={linResTitle}
                     >
-                      {linResText}
+                      <span tabIndex={0} aria-label={`Linear residual ${linResText}`}>
+                        {linResText}
+                      </span>
                     </td>
                     <td
                       className="py-1 px-3 text-right font-mono tabular-nums whitespace-nowrap text-slate-400 border-l border-slate-800/60"
                     >
-                      {stdResStr}
+                      <span
+                        tabIndex={0}
+                        title={semanticTooltip('stdRes')}
+                        aria-label={`Standardized residual ${stdResStr}`}
+                      >
+                        {stdResStr}
+                      </span>
                     </td>
-                    <td className="py-1 px-2 text-right font-mono tabular-nums whitespace-nowrap text-slate-500">{redundancyStr}</td>
+                    <td className="py-1 px-2 text-right font-mono tabular-nums whitespace-nowrap text-slate-500">
+                      <span
+                        tabIndex={0}
+                        title={semanticTooltip('redundancy')}
+                        aria-label={`Redundancy number ${redundancyStr}`}
+                      >
+                        {redundancyStr}
+                      </span>
+                    </td>
                     <td
                       className={`py-1 px-2 text-right font-mono tabular-nums whitespace-nowrap ${
                         localStr.includes('F') || localStr === 'FAIL'
@@ -426,22 +559,33 @@ const ObservationTableSection: React.FC<ObservationTableSectionProps> = ({
                       className="py-1 px-2 text-right font-mono tabular-nums whitespace-nowrap text-slate-400"
                       title={sigmaDisplay.title}
                     >
-                      {sigmaDisplay.visible}
+                      <span tabIndex={0} aria-label={sigmaDisplay.title}>
+                        {sigmaDisplay.visible}
+                      </span>
                     </td>
                   </tr>
-                  {looRow ? (
-                    <tr key={`loo-detail-${obs.id}`} className="border-b border-blue-900/40 bg-blue-950/20">
+                  {selectedObservationId === obs.id ? (
+                    <tr key={`evidence-detail-${obs.id}`} className="border-b border-blue-900/40 bg-blue-950/20">
                       <td colSpan={13} className="py-2 px-4">
-                        <SelectedObservationLooDetail
+                        <SelectedObservationEvidenceDetail
+                          obs={obs}
                           looRow={looRow}
                           unitScale={unitScale}
                           units={units}
+                          resText={resStr}
                           stdResStr={stdResStr}
                           redundancyStr={redundancyStr}
                           localStr={localStr}
                           mdbStr={mdbStr}
                           coordEffStr={coordEffStr}
                           linResText={linResText}
+                          linResTitle={linResTitle}
+                          sigmaText={sigmaDisplay.visible}
+                          sigmaTitle={sigmaDisplay.title}
+                          stationText={stationDisplay.visible}
+                          localTip={buildLocalTestCellTooltip(obs, localTestSummary)}
+                          mdbTip={buildMdbCellTooltip(obs, reliabilitySummary)}
+                          coordEffTip={buildCoordEffCellTooltip(obs, reliabilitySummary)}
                         />
                       </td>
                     </tr>

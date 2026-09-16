@@ -1,4 +1,5 @@
 import type { Observation } from '../../types';
+import { semanticTooltip } from '../../engine/statisticalSemantics';
 import type { LocalTestSummary } from '../../engine/localTestPolicy';
 import {
   formatLocalTestModeLabel,
@@ -82,5 +83,25 @@ export const buildLocalTestSummaryLine = (
     `${formatLocalTestModeLabel(summary.mode)}: alpha ${summary.alpha} ` +
     `(${summary.correction} over ${summary.testCount} tests, effective ${eff}), ` +
     `critical ${crit}, ${flaggedCount} flagged of ${summary.testCount} tested${dofPart}`
+  );
+};
+
+/** Local column header tooltip: canonical definition plus the actual run policy. */
+export const buildLocalTestHeaderTooltip = (
+  summary?: LocalTestSummary | null,
+): string => {
+  const base = semanticTooltip('localTest');
+  if (!summary || !summary.available) return base;
+  const crit = Number.isFinite(summary.criticalValue)
+    ? summary.criticalValue.toFixed(2)
+    : '-';
+  if (summary.mode === 'legacy-fixed')
+    return `${base} Run policy: legacy fixed critical ${crit}.`;
+  const eff = Number.isFinite(summary.effectiveAlpha)
+    ? summary.effectiveAlpha.toExponential(2)
+    : '-';
+  return (
+    `${base} Run policy: ${formatLocalTestModeLabel(summary.mode)}; ` +
+    `alpha ${summary.alpha} (${summary.correction} over ${summary.testCount} tests, effective ${eff}); critical ${crit}.`
   );
 };
