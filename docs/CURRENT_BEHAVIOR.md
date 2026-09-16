@@ -179,6 +179,7 @@ Current solve behavior includes:
 - reliability (MDB) model selection (legacy 3.29 default, statistical α/power) with internal MDBs and first-order external coordinate influence; see `docs/STATISTICAL_TESTING.md` for the reliability section
 - empirical first-pass stochastic group diagnostics (Förstner-style s² = Ω/R per observation group, weighted control constraints excluded by reporting policy, diagnostics-only with no auto-reweight, not unbiased VCE); see `docs/STATISTICAL_TESTING.md` for the stochastic group diagnostics section
 - leave-one-out influence (what-if exclusion re-solve per suspect observation, comparison-only with no automatic exclusion); see `docs/STATISTICAL_TESTING.md` for the leave-one-out influence section
+- descriptive systematic pattern diagnostics (setup/distance-trend/face/zenith/leveling/GNSS/sign-runs, no tests or p-values, heuristic ordering scores labeled as such); see `docs/STATISTICAL_TESTING.md` for the systematic pattern diagnostics section
 - redundancy numbers and residual diagnostics
 - point precision and relative precision
 - deterministic review-oriented ranking and sorting

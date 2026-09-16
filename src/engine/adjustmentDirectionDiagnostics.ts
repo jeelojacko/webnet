@@ -184,7 +184,7 @@ export const buildDirectionDiagnostics = (
 
         if (directionTargets.length > 0) {
           directionTargetDiagnostics = directionTargets;
-          logs.push('Direction target repeatability (top suspects):');
+          logs.push('Direction target repeatability (top suspects; scores heuristic — ordering aid only):');
           directionTargets.slice(0, 8).forEach((d) => {
             logs.push(
               `  ${d.setId} ${d.occupy}->${d.target}: raw=${d.rawCount}, F1=${d.face1Count}, F2=${d.face2Count}, spread=${d.rawSpreadArcSec != null ? `${d.rawSpreadArcSec.toFixed(2)}"` : '-'}, stdRes=${d.stdRes != null ? d.stdRes.toFixed(2) : '-'}, local=${d.localPass == null ? '-' : d.localPass ? 'PASS' : 'FAIL'}, score=${d.suspectScore.toFixed(1)}`,
@@ -333,7 +333,7 @@ export const buildDirectionDiagnostics = (
 
           if (repeatRows.length > 0) {
             directionRepeatabilityDiagnostics = repeatRows;
-            logs.push('Direction repeatability by occupy-target (top suspects):');
+            logs.push('Direction repeatability by occupy-target (top suspects; scores heuristic — ordering aid only):');
             repeatRows.slice(0, 8).forEach((d) => {
               logs.push(
                 `  ${d.occupy}->${d.target}: sets=${d.setCount}, range=${d.residualRangeArcSec != null ? `${d.residualRangeArcSec.toFixed(2)}"` : '-'}, max|t|=${d.maxStdRes != null ? d.maxStdRes.toFixed(2) : '-'}, spreadMax=${d.maxRawSpreadArcSec != null ? `${d.maxRawSpreadArcSec.toFixed(2)}"` : '-'}, localFail=${d.localFailCount}, score=${d.suspectScore.toFixed(1)}`,

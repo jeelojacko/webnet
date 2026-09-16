@@ -373,6 +373,71 @@ different distributions; the PASS/FAIL comparison is indicative, not a
 Overhead: up to 3 extra full solves; auto mode skips them when the main
 solve already took over 5 s.
 
+## Systematic pattern diagnostics (14E)
+
+Descriptive residual-pattern summaries with no formal tests, no p-values,
+and no significance claims. Every value in the report section carries a
+DESCRIPTIVE label; unavailable or insufficient cells show the reason
+instead of a value.
+
+- **Residuals are not IID**: adjusted residuals have Cov(v) = Qvv with
+  rank m − n (m observations, n unknowns), so naive IID runs tests,
+  Pearson correlations, and OLS p-values are invalid on residuals. The
+  OLS slopes and sign-run counts reported here are shape descriptors
+  only.
+- **Pattern test investigated, not implemented**: the covariance-aware
+  alternative is T_q = e′Qy⁻¹C[C′Qy⁻¹QvvQy⁻¹C]⁻¹C′Qy⁻¹e ~ χ²(q) for a
+  q-column pattern matrix C, never inverting Qvv, with the
+  identifiability pre-check c′Qy⁻¹QvvQy⁻¹c (Teunissen, Testing Theory:
+  an Introduction, 2nd ed., Delft/VSSD; Teunissen–De Bakker–Huisman–
+  Odijk formulations; NQC reporting). It needs per-equation Qvv exposure
+  plus a dense oracle and Monte Carlo validation, which is beyond this
+  phase — so no pattern p-value is reported anywhere.
+- **No IID interpretation**: the OLS intercept/slope metric is a
+  deterministic design-collinearity proxy computed from the regressor
+  spread only — never a stochastic correlation between coefficient
+  estimates, which would assume IID despite adjusted-residual
+  correlation. It serves only as a heuristic practical-separability
+  guard for the intercept-vs-slope shape descriptors. UI and text never
+  call it plain `corr`, and separability is never called statistical
+  identifiability.
+- **Coverage guards, not thresholds**: the fixed count/span/collinearity
+  gates below are descriptive product coverage guards marking where shape
+  descriptors are practically separable — not calibrated test thresholds.
+- **Per-pattern semantics and coverage guards** (status is `descriptive`,
+  `insufficient-data`, or `unavailable`):
+
+  | Pattern | Descriptor | Gate |
+  |---|---|---|
+  | Setup family (by station × family) | mean/RMS/max│v│, +/−/zero/missing counts, mean \|StdRes\|, local fails | mean needs ≥2 complete residuals; never averaged across units; angular families display arcsec, linear families mm; GNSS vectors omitted here (see GNSS means); missing scalars never labeled zero |
+  | Distance trend | OLS slope mm/km, intercept mm, design-collinearity proxy | ≥5 residuals, span ≥20 m and ≥5% of max distance, \|collinearity\| < 0.95 or intercept/slope declared inseparable; describes residual association only, never a cause |
+  | Direction face balance | face-count balanced/unbalanced/unpaired set-target rows (not sets), largest face-pair delta | needs direction targets; singleton rows missing either face count are unpaired (face-count balance not assessable), never balanced; largest delta is observed FL/FR agreement, absolute raw metadata only |
+  | Direction repeat same-sign | per occupy-target set/same-sign counts, dominant sign | ≥2 sets |
+  | Zenith residual vs distance | slope ″/km, +/− counts | ≥2 residuals; slope needs ≥5 with valid distances |
+  | Leveling input-sequence | drift mm/km over cumulative km, runs, sign changes | ≥5 residuals over ≥0.05 km; ordered by global parser/input sequence (observation id ascending), never time; no row dropped for lacking file-local sourceLine |
+  | GNSS component means | E/N/U mean and RMS, mm | ≥2 residuals; U only when all vectors carry height |
+  | Sign runs | longest runs, sign changes per direction-set / leveling sequence | needs non-zero residuals |
+
+- **Orientation absorption**: per-set direction means absorb orientation
+  unknowns, so direction-set and face rows are reported as descriptive
+  with that caveat, and the worst set / largest face pair link back to
+  their source lines for review.
+- **Policy**: robust runs note that these descriptors add no formal
+  pattern tests and use final robust-fit residuals (no claim that all
+  formal residual tests are unavailable under reweighting); free-network
+  runs note that observation residual descriptors are datum/gauge
+  invariant (no datum-absorption warning); correlated-TS observations
+  carry a correlation warning; no multiple-testing correction is applied
+  because no tests are performed.
+- **Relation to 14A–14D**: no composite score combines the global test
+  (14A), reliability (14B), stochastic groups (14C), leave-one-out (14D),
+  and these pattern descriptors. Pre-existing deterministic ordering
+  aids — direction target/repeatability suspectScore and
+  traverse/leveling/GPS severity scores — stay computed for stable
+  ranking but are labeled "Heuristic score" / "Heuristic severity"
+  (report tooltips and text-export headers) to mark them as
+  non-statistical.
+
 ## Preanalysis and data check
 
 Formal local tests are disabled there: preanalysis predicts precision from

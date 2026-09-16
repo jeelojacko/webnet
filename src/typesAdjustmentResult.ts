@@ -4,6 +4,7 @@ import type { Observation, StationMap, DirectionRejectDiagnostic } from './types
 import type { ParseOptions } from './typesParseOptions';
 import type { ClusterApprovedMerge, ClusterMergeOutcome, ClusterRejectedProposal, AutoAdjustDiagnostics, AutoSideshotDiagnostics, LevelingLoopDiagnostics } from './typesDiagnostics';
 import type { LocalTestSummary } from './engine/localTestPolicy';
+import type { SystematicDiagnostics } from './engine/systematicPatternDiagnostics';
 import type { ReliabilitySummary } from './engine/reliabilityPolicy';
 import type { StochasticDiagnostics } from './engine/stochasticGroupDiagnostics';
 import type { ClusterLinkageMode, RobustMode, TsCorrelationScope } from './typesParseSettings';
@@ -123,6 +124,7 @@ export interface AdjustmentResult {
     totalErrorFactorByDof: number;
   };
   stochasticDiagnostics?: StochasticDiagnostics;
+  systematicDiagnostics?: SystematicDiagnostics;
   typeSummary?: Record<
     string,
     {

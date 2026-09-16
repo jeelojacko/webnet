@@ -8,6 +8,7 @@ import { formatDirectionStations } from './DirectionDiagnosticsSections.utils';
 import DirectionRejectDiagnosticsSection from './DirectionRejectDiagnosticsSection';
 import DirectionSetDiagnosticsSection from './DirectionSetDiagnosticsSection';
 import DirectionTargetRepeatabilitySection from './DirectionTargetRepeatabilitySection';
+import { HEURISTIC_SCORE_TOOLTIP } from './reportTooltips';
 
 export { DirectionFaceTreatmentDiagnosticsSection } from './DirectionFaceTreatmentDiagnosticsSection';
 
@@ -107,7 +108,7 @@ const DirectionDiagnosticsSections: React.FC<DirectionDiagnosticsSectionsProps> 
               </div>
             </div>
             <div>
-              <div className="text-slate-500">Top Score</div>
+              <div className="text-slate-500" title={HEURISTIC_SCORE_TOOLTIP}>Top heuristic score</div>
               <div>{topDirectionTargetSuspect?.suspectScore.toFixed(1) ?? '-'}</div>
             </div>
           </div>
@@ -121,7 +122,7 @@ const DirectionDiagnosticsSections: React.FC<DirectionDiagnosticsSectionsProps> 
                   <th className="py-2 text-right">Spread (")</th>
                   <th className="py-2 text-right">StdRes</th>
                   <th className="py-2 text-right">Local</th>
-                  <th className="py-2 text-right px-3">Score</th>
+                  <th className="py-2 text-right px-3" title={HEURISTIC_SCORE_TOOLTIP}>Heuristic score</th>
                 </tr>
               </thead>
               <tbody className="text-slate-300">
@@ -184,7 +185,7 @@ const DirectionDiagnosticsSections: React.FC<DirectionDiagnosticsSectionsProps> 
                 </div>
               </div>
               <div>
-                <div className="text-slate-500">Worst Score</div>
+                <div className="text-slate-500" title={HEURISTIC_SCORE_TOOLTIP}>Worst heuristic score</div>
                 <div>
                   {topDirectionRepeatabilityDiagnostic
                     ? topDirectionRepeatabilityDiagnostic.suspectScore.toFixed(1)
@@ -224,7 +225,7 @@ const DirectionDiagnosticsSections: React.FC<DirectionDiagnosticsSectionsProps> 
                       <th className="py-2 px-3 font-semibold text-right">Spread Max (")</th>
                       <th className="py-2 px-3 font-semibold">Worst Set</th>
                       <th className="py-2 px-3 font-semibold text-right">Line</th>
-                      <th className="py-2 px-3 font-semibold text-right">Score</th>
+                      <th className="py-2 px-3 font-semibold text-right" title={HEURISTIC_SCORE_TOOLTIP}>Heuristic score</th>
                     </tr>
                   </thead>
                   <tbody className="text-slate-300">
@@ -322,7 +323,7 @@ const DirectionDiagnosticsSections: React.FC<DirectionDiagnosticsSectionsProps> 
               </div>
             </div>
             <div>
-              <div className="text-slate-500">Top Score</div>
+              <div className="text-slate-500" title={HEURISTIC_SCORE_TOOLTIP}>Top heuristic score</div>
               <div>{topDirectionRepeatabilitySuspect?.suspectScore.toFixed(1) ?? '-'}</div>
             </div>
           </div>
@@ -337,7 +338,7 @@ const DirectionDiagnosticsSections: React.FC<DirectionDiagnosticsSectionsProps> 
                   <th className="py-2 text-right">Max |t|</th>
                   <th className="py-2 text-right">Spread Max (")</th>
                   <th className="py-2 text-right">Local Fail</th>
-                  <th className="py-2 text-right px-3">Score</th>
+                  <th className="py-2 text-right px-3" title={HEURISTIC_SCORE_TOOLTIP}>Heuristic score</th>
                 </tr>
               </thead>
               <tbody className="text-slate-300">

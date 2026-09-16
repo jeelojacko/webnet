@@ -100,3 +100,6 @@ export const REPORT_STATIC_TOOLTIPS: Record<string, string> = {
   'Stochastic Defaults':
     'Summary of the active default instrument and stochastic-model values used for weighting.',
 };
+
+export const HEURISTIC_SCORE_TOOLTIP =
+  'Deterministic ordering aid only \u2014 not a statistical test, probability, or significance.';

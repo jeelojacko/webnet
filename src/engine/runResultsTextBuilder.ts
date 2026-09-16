@@ -6,6 +6,7 @@ import { appendPostAdjustedSections } from './runResultsTextPostAdjustedSections
 import { appendPreanalysisGeometrySections } from './runResultsTextPreanalysisSections';
 import { appendRunResultsHeaderAndStatus } from './runResultsTextSummarySections';
 import { appendSetupDiagnosticsSection } from './runResultsTextSetupSections';
+import { appendSystematicPatternSections } from './runResultsTextSystematicSections';
 import { appendTypeAndResidualSections } from './runResultsTextResidualSections';
 import { appendWorkflowDiagnosticsSections } from './runResultsTextWorkflowDiagnostics';
 import { prepareRunResultsTextContext } from './runResultsTextContext';
@@ -74,6 +75,10 @@ export const createRunResultsTextBuilder = ({
       res,
     });
     appendDirectionQualitySections({
+      lines,
+      res,
+    });
+    appendSystematicPatternSections({
       lines,
       res,
     });

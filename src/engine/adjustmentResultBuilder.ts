@@ -110,6 +110,7 @@ export interface AdjustmentResultPayloadInput {
   reliabilitySummary?: AdjustmentResult['reliabilitySummary'];
   statisticalSummary?: AdjustmentResult['statisticalSummary'];
   stochasticDiagnostics?: AdjustmentResult['stochasticDiagnostics'];
+  systematicDiagnostics?: AdjustmentResult['systematicDiagnostics'];
   typeSummary?: AdjustmentResult['typeSummary'];
   relativePrecision?: AdjustmentResult['relativePrecision'];
   directionSetDiagnostics?: AdjustmentResult['directionSetDiagnostics'];
@@ -153,6 +154,7 @@ export const buildAdjustmentResultPayload = (
   reliabilitySummary: input.reliabilitySummary,
   statisticalSummary: input.statisticalSummary,
   stochasticDiagnostics: input.stochasticDiagnostics,
+  systematicDiagnostics: input.systematicDiagnostics,
   typeSummary: input.typeSummary,
   relativePrecision: input.relativePrecision,
   directionSetDiagnostics: input.directionSetDiagnostics,

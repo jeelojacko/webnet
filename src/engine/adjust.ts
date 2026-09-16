@@ -432,6 +432,7 @@ export class LSAEngine extends LSAEngineObservationMethods {
     this.directionSetDiagnostics = statsContext.directionSetDiagnostics;
     this.directionTargetDiagnostics = statsContext.directionTargetDiagnostics;
     this.directionRepeatabilityDiagnostics = statsContext.directionRepeatabilityDiagnostics;
+    this.systematicDiagnostics = statsContext.systematicDiagnostics;
     this.setupDiagnostics = statsContext.setupDiagnostics;
     this.residualDiagnostics = statsContext.residualDiagnostics;
     this.traverseDiagnostics = statsContext.traverseDiagnostics;

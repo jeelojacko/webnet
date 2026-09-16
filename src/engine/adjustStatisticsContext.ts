@@ -14,6 +14,7 @@ export const buildStatisticsContextForEngine = (engine: any): AdjustmentStatisti
       dof: engine.dof,
       seuw: engine.seuw,
       preanalysisMode: engine.preanalysisMode,
+      runMode: engine.runMode,
       robustMode: engine.robustMode,
       tsCorrelationEnabled: engine.tsCorrelationEnabled,
       tsCorrelationRho: engine.tsCorrelationRho,

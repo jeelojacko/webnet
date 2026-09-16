@@ -127,9 +127,9 @@ describe('ReportView adjustment-layout sections', () => {
     expect(html).toContain('Leveling Segment Suspects');
     expect(html).toContain('Warn Loops');
     expect(html).toContain('Worst Ratio');
-    expect(html).toContain('Worst Severity');
+    expect(html).toContain('Worst heuristic severity');
     expect(html).toContain('Suspect Segments');
-    expect(html).toContain('Top Score');
+    expect(html).toContain('Top heuristic score');
     expect(html).toContain('Show');
     expect(html).not.toContain('Path</th>');
     expect(html).not.toContain('Segment</th>');

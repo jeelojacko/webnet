@@ -1,5 +1,7 @@
 import { buildChiSquareSummary } from './adjustmentStatisticalMath';
 import { buildDirectionDiagnostics } from './adjustmentDirectionDiagnostics';
+import { isFreeNetworkDatum } from './adjustExternalReliability';
+import { buildSystematicDiagnostics } from './systematicPatternDiagnostics';
 import { buildSetupDiagnostics, buildTraverseDiagnostics } from './adjustmentSetupTraverseDiagnostics';
 import { buildObservationTypeSummary, buildResidualDiagnostics, buildStatisticalSummary } from './adjustmentStatisticsBuilders';
 import { propagateAdjustmentPrecision } from './adjustStatisticsPrecision';
@@ -141,6 +143,20 @@ export const calculateAdjustmentStatistics = (
     ctx.directionTargetDiagnostics = directionDiagnostics.directionTargetDiagnostics;
     ctx.directionRepeatabilityDiagnostics = directionDiagnostics.directionRepeatabilityDiagnostics;
     ctx.logs.push(...directionDiagnostics.logs);
+    ctx.systematicDiagnostics = buildSystematicDiagnostics(activeObservations, {
+      directionSetDiagnostics: ctx.directionSetDiagnostics,
+      directionTargetDiagnostics: ctx.directionTargetDiagnostics,
+      directionRepeatabilityDiagnostics: ctx.directionRepeatabilityDiagnostics,
+      isPreanalysis: ctx.preanalysisMode,
+      isDataCheck: ctx.runMode === 'data-check',
+      isRobust: ctx.robustMode != null && ctx.robustMode !== 'none',
+      robustMode: ctx.robustMode ?? undefined,
+      freeNetwork: isFreeNetworkDatum({
+        stations: ctx.stations,
+        constraintCount: constraints.length,
+      }),
+      tsCorrelated: ctx.tsCorrelationEnabled,
+    });
     ctx.setupDiagnostics = buildSetupDiagnostics({
       activeObservations,
       directionSetDiagnostics: ctx.directionSetDiagnostics,
@@ -196,7 +212,7 @@ export const calculateAdjustmentStatistics = (
         }
         const traverseLoops = traverseDiagnostics.loops ?? [];
         if (traverseLoops.length > 0) {
-          ctx.logs.push('Traverse closure loop ranking (worst first):');
+          ctx.logs.push('Traverse closure loop ranking (worst first; sev heuristic — ordering aid only):');
           traverseLoops.slice(0, 8).forEach((l) => {
             ctx.logs.push(
               `  ${l.key}: ratio=${l.closureRatio != null ? `1:${l.closureRatio.toFixed(0)}` : '-'}, ppm=${l.linearPpm != null ? l.linearPpm.toFixed(1) : '-'}, ang=${l.angularMisclosureArcSec != null ? `${l.angularMisclosureArcSec.toFixed(2)}"` : '-'}, dH=${l.verticalMisclosure != null ? `${l.verticalMisclosure.toFixed(4)}m` : '-'}, sev=${l.severity.toFixed(1)} ${l.pass ? 'PASS' : 'WARN'}`,
