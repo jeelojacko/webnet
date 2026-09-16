@@ -77,6 +77,26 @@ export interface SuspectImpactRow {
   elapsedMs?: number;
 }
 
+/**
+ * Phase 14F §26 result-model audit note (2026-09-16, conservative: document-only).
+ *
+ * Known overlapping summaries (all live, intentional — do NOT merge without
+ * compatibility evidence):
+ * - `statisticalSummary` (weighted-group error factors) feeds the industry
+ *   listing via `buildResultStatisticalSummaryModel`; group `label` strings
+ *   ('GPS', 'Level Data') are matched downstream — renaming breaks output.
+ * - `typeSummary` (per-type rms/maxAbs/maxStdRes/over3/over4) feeds the text
+ *   residual section; `residualDiagnostics.byType` (per-type local-fail +
+ *   redundancy stats) feeds the adjacent by-type table. Same grouping, but
+ *   different consumers — keep both.
+ * - `SuspectImpactRow` base-/alt- pairs are intentional base-vs-resolve
+ *   comparisons, not duplication.
+ * - `directionTargetDiagnostics.suspectScore` /
+ *   `directionRepeatabilityDiagnostics.suspectScore` are heuristic ordering
+ *   aids only (Phase 14F S29); ordering, never verdicts.
+ * No dead/obsolete fields proven on this pass — every optional field has a
+ * live reader (engine, text/CSV/industry export, or report selector).
+ */
 export interface AdjustmentResult {
   success: boolean;
   converged: boolean;
