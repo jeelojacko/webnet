@@ -175,6 +175,7 @@ Current solve behavior includes:
 - weighted control and elevation constraints from station standard errors
 - under-observed-station and setup diagnostics
 - SEUW, DOF, condition diagnostics, chi-square summaries, local tests, and MDB values
+- workflow-first statistical QC guide -> use `docs/QC_GUIDE.md` (deep math in `docs/STATISTICAL_TESTING.md`)
 - local-test policy selection (legacy-fixed default, Baarda w, Pope τ) with run-level critical values; see `docs/STATISTICAL_TESTING.md` for the global-vs-local-vs-MDB distinction
 - reliability (MDB) model selection (legacy 3.29 default, statistical α/power) with internal MDBs and first-order external coordinate influence; see `docs/STATISTICAL_TESTING.md` for the reliability section
 - empirical first-pass stochastic group diagnostics (Förstner-style s² = Ω/R per observation group, weighted control constraints excluded by reporting policy, diagnostics-only with no auto-reweight, not unbiased VCE); see `docs/STATISTICAL_TESTING.md` for the stochastic group diagnostics section

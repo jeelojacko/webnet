@@ -14,7 +14,18 @@ Three separate questions, three separate tools. Do not mix them.
   *here* under the reliability model?" A planning/detectability number per
   observation from redundancy, sigma, and SEUW — not a verdict.
 
-## Standardized residual
+## Global statistical test (GLOBAL STATISTICAL TEST)
+
+Overall consistency of the residuals with the stated precisions, via the
+standard error of unit weight SEUW = sqrt(vTPv / DOF) and the formal
+chi-square test of the variance factor against its 95% confidence interval
+(T statistic, p-value, variance-factor interval reported). PASS means the
+run is globally consistent; it says nothing about *which* observation is
+suspect — that is the job of the local tests below.
+
+## Local observation testing (LOCAL OBSERVATION TESTING)
+
+### Standardized residual
 
 The per-equation statistic is the internally studentized residual
 
@@ -26,7 +37,7 @@ where `v` is the residual, `qvv` its cofactor, and `seuw` the a-posteriori
 standard error of unit weight. Dividing by SEUW (rather than the a-priori
 sigma0) is what makes it tau rather than w.
 
-## Local-test policies
+### Local-test policies
 
 Set in Project/Adjustment settings (Special tab). The default everywhere is
 **legacy-fixed**, which preserves the historical 3.29 verdicts for testable
@@ -49,7 +60,7 @@ Set in Project/Adjustment settings (Special tab). The default everywhere is
   bounded by sqrt(DOF); at DOF ≤ 1 tau degenerates and equations are
   *untestable* (verdict null, shown as `-`).
 
-## Alpha semantics
+### Alpha semantics
 
 Alpha is the **false-positive rate** (fraction of clean equations expected to
 flag), not a "confidence level". The entered alpha is the two-sided nominal
@@ -57,7 +68,7 @@ significance: it is the per-test level when correction is None, and the
 target family-wise level (split over m) under Bonferroni/Šidák. The run
 default for formal policies is 0.05. Custom entries are bounded to (0, 0.5].
 
-## Multiplicity corrections
+### Multiplicity corrections
 
 Formal policies optionally reduce the entered (nominal) alpha to a per-test level
 over the run **test count = testable scalar equations** (each GPS component
@@ -74,31 +85,31 @@ Baarda two-sided tests via the Gaussian Šidák inequality, but it is not
 generally guaranteed for Pope tests (shared SEUW) or Huber (approximate) —
 do not claim correlated residuals make both corrections universally conservative.
 
-## Known vs estimated variance
+### Known vs estimated variance
 
 Baarda-w conditions on sigma0 as known and uses normal critical values;
 Pope-tau propagates the fact that sigma was estimated from the same data and
 uses tau critical values with DOF. In large networks the two agree closely;
 in small networks they differ, and tau is the honest one.
 
-## Robust-mode approximation
+### Robust-mode approximation
 
 With Huber reweighting active, formal w/tau significance is **approximate**
 (classical distributions do not cover data-dependent robust reweighting). Formal runs under
 robust mode carry a `robustApproximation` flag, surfaced in the report as a
 "(robust approximation)" note. Legacy-fixed verdicts are unaffected.
 
-## Blunder-detect threshold
+### Blunder-detect threshold
 
 Blunder-detect mode keeps its own separate screening threshold (3) and is
 unchanged by the local-test policy.
 
-## TS correlation
+### TS correlation
 
 When TS angular correlation is enabled, statistics are computed with the
 correlated weights, so verdicts already reflect the correlation modeling.
 
-## GPS handling
+### GPS handling
 
 Each GPS vector contributes one scalar test per component (E/N, plus U in 3D).
 The report shows per-component E:N verdicts for 2D GNSS where available and
@@ -106,9 +117,9 @@ the aggregate verdict for 3D GNSS. The aggregate row verdict is OR/max over
 the scalar component tests and is not a joint/vector multivariate test;
 a vector test is not implemented.
 
-## Reliability (MDB) models
+## Reliability (RELIABILITY)
 
-Set in Project/Adjustment settings (Special tab), beside the local-test
+MDB (Minimal Detectable Bias) models. Set in Project/Adjustment settings (Special tab), beside the local-test
 policy. The default everywhere is **legacy-3.29**, which preserves the
 historical MDBs bit-identically for old projects (no migration).
 
@@ -240,9 +251,9 @@ internal MDBs rank **within compatible unit groups only** (angular vs
 linear); worst-external ranks by primaryMm in millimetres, which is
 cross-type comparable and labeled "Coordinate influence".
 
-## Stochastic group diagnostics (single-pass Förstner)
+## Stochastic model diagnostics (STOCHASTIC MODEL DIAGNOSTICS)
 
-The report's STOCHASTIC MODEL DIAGNOSTICS section carries one row per
+Single-pass Förstner-style group diagnostics. The report's STOCHASTIC MODEL DIAGNOSTICS section carries one row per
 observation group with the single-pass Förstner component
 s_k² = Ω_k / R_k, where Ω_k = v_k′P_kv_k uses the same weights as the
 solve and R_k = tr(P_k·Qvv_k) is the full block trace (never a diagonal
@@ -329,7 +340,7 @@ fabricate a diagnostic scale from a singular group. Measured mean
 compute time 0.143ms for ~1k equations (vs ~2.5ms for a full
 7-observation solve on the same machine, 2026-09-16).
 
-## Leave-one-out influence
+## Leave-one-out influence (LEAVE-ONE-OUT INFLUENCE)
 
 A what-if, not a verdict. Each candidate is re-solved with exactly that
 observation excluded (BASE vs ALTERNATE vs IMPACT): the report compares the
@@ -373,9 +384,9 @@ different distributions; the PASS/FAIL comparison is indicative, not a
 Overhead: up to 3 extra full solves; auto mode skips them when the main
 solve already took over 5 s.
 
-## Systematic pattern diagnostics (14E)
+## Systematic pattern diagnostics (SYSTEMATIC PATTERN DIAGNOSTICS)
 
-Descriptive residual-pattern summaries with no formal tests, no p-values,
+Phase 14E descriptive residual-pattern summaries with no formal tests, no p-values,
 and no significance claims. Every value in the report section carries a
 DESCRIPTIVE label; unavailable or insufficient cells show the reason
 instead of a value.
