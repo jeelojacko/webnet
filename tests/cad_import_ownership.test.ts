@@ -329,4 +329,24 @@ describe('linked F2F sync stamping', () => {
     expect(unstamped.status).toBe('CURRENT');
     expect(dependencyOf(unstamped.project.entities.find((entity) => entity.id === 'pt:A')!)).toBeNull();
   });
+
+  it('never stamps DETACHED F2F entities CURRENT', () => {
+    const detached: CadEntity = {
+      ...f2fPoint('A', 10, 20),
+      metadata: {
+        ...(f2fPoint('A', 10, 20).metadata as Record<string, unknown>),
+        provenance: { ...f2fProvenance('A').provenance, state: 'DETACHED' },
+      },
+    };
+    const project = projectWith([detached], ['A']);
+    const outcome = applyAdjustmentRerunToLinkedF2f(project, {
+      result: resultOf({ A: { x: 11, y: 21 } }),
+      resultDependencyIdentity: IDENTITY,
+    });
+    const entity = outcome.project.entities.find((entry) => entry.id === 'pt:A')!;
+    expect(dependencyOf(entity)).toBeNull();
+    expect(
+      evaluateCadEntityDependency(entity, IDENTITY, { f2fLinkStatus: outcome.status }).status,
+    ).not.toBe('CURRENT');
+  });
 });

@@ -93,8 +93,10 @@ export const ownerOfCadEntity = (entity: CadEntity): CadEntityOwner => {
   }
   if (metadata['manual'] === true) return 'MANUAL';
   // Phase 17E: parsed-input spike geometry is user-input-derived, never
-  // adjustment-derived — no adjustment dependency regardless of shape.
-  if (metadata['spikeSource'] === 'parsed-input') return 'MANUAL';
+  // adjustment-derived — but the marker applies only to UNSTAMPED entities:
+  // a well-formed stamp always wins, so hand-edited metadata cannot demote
+  // a stamped adjustment entity to MANUAL and bypass the deliverable gate.
+  if (metadata['spikeSource'] === 'parsed-input' && dependencyOf(entity) === null) return 'MANUAL';
   if (metadata['importedFrom'] === 'adjusted-points') return 'ADJUSTMENT_IMPORT';
   if (typeof metadata['cogo'] === 'object' && metadata['cogo'] !== null) return 'COGO';
   if (entity.type === 'parcel') {

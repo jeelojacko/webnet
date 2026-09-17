@@ -205,6 +205,10 @@ const stampSyncedF2fEntities = (
   let touched = false;
   const entities = project.entities.map((entity) => {
     if (!isFieldToFinishEntity(entity)) return entity;
+    // Phase 17E reviewer hardening: DETACHED entities are user-owned —
+    // never stamp them CURRENT (ownerOf reads them as F2F_GENERATED,
+    // so a stamp would falsely claim adjustment currency).
+    if (getFieldToFinishState(entity) === 'DETACHED') return entity;
     touched = true;
     return stampAdjustmentDependency(entity, identity);
   });

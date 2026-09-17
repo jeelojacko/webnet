@@ -256,4 +256,21 @@ describe('summary and verdict', () => {
     expect(verdict.reason).toBe('CAD_SOURCE_RESULT_REPLACED');
     expect(verdict.blockMessage).toContain('Refresh adjusted points');
   });
+
+  it('lets a well-formed stamp win over a parsed-input spikeSource marker', () => {
+    const stamped = stampAdjustmentDependency(
+      point({ metadata: { spikeSource: 'parsed-input' } }),
+      CURRENT,
+    );
+    expect(evaluateCadEntityDependency(stamped, CURRENT)).toEqual({
+      status: 'CURRENT',
+      reason: 'CAD_CURRENT',
+    });
+    expect(evaluateCadEntityDependency(stamped, OTHER).status).toBe('STALE');
+    const unstamped = point({ metadata: { spikeSource: 'parsed-input' } });
+    expect(evaluateCadEntityDependency(unstamped, CURRENT)).toEqual({
+      status: 'MANUAL',
+      reason: 'CAD_NO_DEPENDENCY',
+    });
+  });
 });
