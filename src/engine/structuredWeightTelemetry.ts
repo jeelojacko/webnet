@@ -22,6 +22,22 @@ export interface StructuredWeightTransferCounters {
   denseMaterializationBytes: number;
   /** Structured covariance attempts that fell back to dense. */
   structuredFallbacks: number;
+  /** Statistics dense-P allocations (assembly dense branch at stats time). */
+  statisticsDensePAllocations: number;
+  /** Bytes requested by statistics dense-P allocations (8 bytes per entry). */
+  statisticsDensePBytes: number;
+  /** Statistics solves consuming structured weights without a dense P. */
+  statisticsStructuredAccesses: number;
+  /** weightAt reads served (either backing). */
+  weightAtCalls: number;
+  /** forEachCoupled traversals started. */
+  coupledIterationCalls: number;
+  /** Nonzero coupled entries visited. */
+  coupledEntriesVisited: number;
+  /** Structured-statistics attempts that fell back to dense. */
+  statisticsDenseFallbacks: number;
+  /** Last structured-statistics fallback reason (null when none). */
+  statisticsDenseFallbackReason: string | null;
 }
 
 const counters: StructuredWeightTransferCounters = {
@@ -32,6 +48,14 @@ const counters: StructuredWeightTransferCounters = {
   denseMaterializations: 0,
   denseMaterializationBytes: 0,
   structuredFallbacks: 0,
+  statisticsDensePAllocations: 0,
+  statisticsDensePBytes: 0,
+  statisticsStructuredAccesses: 0,
+  weightAtCalls: 0,
+  coupledIterationCalls: 0,
+  coupledEntriesVisited: 0,
+  statisticsDenseFallbacks: 0,
+  statisticsDenseFallbackReason: null,
 };
 
 export const recordDensePAllocation = (size: number): void => {
@@ -53,6 +77,29 @@ export const recordStructuredFallback = (): void => {
   counters.structuredFallbacks += 1;
 };
 
+export const recordStatisticsDensePAllocation = (size: number): void => {
+  counters.statisticsDensePAllocations += 1;
+  counters.statisticsDensePBytes += size * size * 8;
+};
+
+export const recordStatisticsStructuredAccess = (): void => {
+  counters.statisticsStructuredAccesses += 1;
+};
+
+export const recordWeightAtCall = (): void => {
+  counters.weightAtCalls += 1;
+};
+
+export const recordCoupledIteration = (entriesVisited: number): void => {
+  counters.coupledIterationCalls += 1;
+  counters.coupledEntriesVisited += entriesVisited;
+};
+
+export const recordStatisticsDenseFallback = (reason: string): void => {
+  counters.statisticsDenseFallbacks += 1;
+  counters.statisticsDenseFallbackReason = reason;
+};
+
 export const resetStructuredWeightTelemetry = (): void => {
   counters.densePAllocations = 0;
   counters.densePBytesAllocated = 0;
@@ -61,6 +108,14 @@ export const resetStructuredWeightTelemetry = (): void => {
   counters.denseMaterializations = 0;
   counters.denseMaterializationBytes = 0;
   counters.structuredFallbacks = 0;
+  counters.statisticsDensePAllocations = 0;
+  counters.statisticsDensePBytes = 0;
+  counters.statisticsStructuredAccesses = 0;
+  counters.weightAtCalls = 0;
+  counters.coupledIterationCalls = 0;
+  counters.coupledEntriesVisited = 0;
+  counters.statisticsDenseFallbacks = 0;
+  counters.statisticsDenseFallbackReason = null;
 };
 
 export const snapshotStructuredWeightTelemetry = (): StructuredWeightTransferCounters => ({

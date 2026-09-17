@@ -70,6 +70,7 @@ export class LSAEngine extends LSAEngineObservationMethods {
   private preanalysisCorrectionFastPath?: boolean;
   /** Phase 16B test-only switch; false forces the legacy dense weight path. */
   private structuredWeightTransfer?: boolean;
+  private structuredStatisticsWeights?: boolean;
   /** Phase 10E test-only oracle; true forces legacy statistics recompute. */
   private forceLegacyStatisticsQxx?: boolean;
   private allowEvidenceNativeDenseQxxReuse?: boolean;
@@ -213,6 +214,7 @@ export class LSAEngine extends LSAEngineObservationMethods {
     iterationSystemProbe,
     preanalysisCorrectionFastPath,
     structuredWeightTransfer,
+    structuredStatisticsWeights,
     forceLegacyStatisticsQxx,
     allowEvidenceNativeDenseQxxReuse,
     allowVerifiedNativeDenseQxxReuse,
@@ -230,6 +232,7 @@ export class LSAEngine extends LSAEngineObservationMethods {
     this.iterationSystemProbe = iterationSystemProbe;
     this.preanalysisCorrectionFastPath = preanalysisCorrectionFastPath;
     this.structuredWeightTransfer = structuredWeightTransfer;
+    this.structuredStatisticsWeights = structuredStatisticsWeights;
     this.forceLegacyStatisticsQxx = forceLegacyStatisticsQxx;
     this.allowEvidenceNativeDenseQxxReuse = allowEvidenceNativeDenseQxxReuse;
     this.allowVerifiedNativeDenseQxxReuse = allowVerifiedNativeDenseQxxReuse;
@@ -295,6 +298,7 @@ export class LSAEngine extends LSAEngineObservationMethods {
       iterationSystemProbe: this.iterationSystemProbe,
       preanalysisCorrectionFastPath: this.preanalysisCorrectionFastPath,
       structuredWeightTransfer: this.structuredWeightTransfer,
+      structuredStatisticsWeights: this.structuredStatisticsWeights,
       forceLegacyStatisticsQxx: this.forceLegacyStatisticsQxx,
       allowEvidenceNativeDenseQxxReuse: this.allowEvidenceNativeDenseQxxReuse,
       allowVerifiedNativeDenseQxxReuse: this.allowVerifiedNativeDenseQxxReuse,

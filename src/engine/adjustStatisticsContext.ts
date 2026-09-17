@@ -67,6 +67,8 @@ export const buildStatisticsContextForEngine = (engine: any): AdjustmentStatisti
       invertNormalMatrixForStats: (normal) => engine.invertNormalMatrixForStats(normal),
       sparseRowProductsSolver: engine.sparseRowProductsSolver,
       experimentalSparseDiagnostics: engine.experimentalSparseDiagnostics,
+      structuredWeightTransfer: engine.structuredWeightTransfer,
+      structuredStatisticsWeights: engine.structuredStatisticsWeights,
       isObservationActive: (obs) => engine.isObservationActive(obs),
       measuredAngleCorrection: (at, from, to) => engine.measuredAngleCorrection(at, from, to),
       modeledAzimuth: (rawAz, atStationId, applyConvergence) =>

@@ -20,6 +20,7 @@
  */
 
 import type { StationId } from '../typesBase';
+import { recordCoupledIteration } from './structuredWeightTelemetry';
 
 export type ExternalInfluenceMethod = 'first-order-linear';
 
@@ -100,6 +101,11 @@ export interface ComputeExternalInfluencesArgs {
   B: number[][];
   /** Dense true weight matrix (with TS/GPS/CTRLXY coupling); may be undefined. */
   P?: number[][];
+  /**
+   * Phase 16C structured read for P[row][column]; when present it takes
+   * precedence over P so statistics needs no dense weight matrix.
+   */
+  weightAt?: (_row: number, _column: number) => number;
   equationCount: number;
   paramColumns: ExternalParamColumn[];
   rows: ExternalRowInput[];
@@ -135,19 +141,22 @@ const shiftForRow = (
   is2D: boolean,
   B: number[][],
   P: number[][],
+  weightAt: ((_row: number, _column: number) => number) | undefined,
   groupRows: number[],
   row: number,
   mdb: number,
   paramColumns: ExternalParamColumn[],
 ): ExternalStationShift[] => {
   const delta = new Array<number>(B[0]?.length ?? 0).fill(0);
+  let coupledVisited = 0;
   for (const coupled of groupRows) {
-    const weight = P[coupled]?.[row] ?? 0;
-    if (weight === 0 || B[coupled] == null) continue;
+    const weight = weightAt ? weightAt(coupled, row) : (P[coupled]?.[row] ?? 0);
+    if (!Number.isFinite(weight) || weight === 0 || B[coupled] == null) continue;
+    coupledVisited += 1;
     const brow = B[coupled] as number[];
     for (let k = 0; k < delta.length; k += 1) delta[k] += brow[k] * weight * mdb;
   }
-  return paramColumns.map((col) => {
+  const shifts = paramColumns.map((col) => {
     const shift: ExternalStationShift = {
       stationId: col.stationId,
       dE: (delta[col.e] ?? 0) * 1000,
@@ -156,7 +165,9 @@ const shiftForRow = (
     if (!is2D && col.h != null) shift.dH = (delta[col.h] ?? 0) * 1000;
     return shift;
   });
-};
+  recordCoupledIteration(coupledVisited);
+  return shifts;
+}
 
 /**
  * Argmax stability for worst-station selection: symmetric geometries
@@ -243,18 +254,19 @@ export const computeExternalInfluences = (
     }
     const usable =
       args.B.length >= args.equationCount &&
-      args.P != null &&
-      args.P.length >= args.equationCount &&
+      (args.weightAt != null ||
+        (args.P != null && args.P.length >= args.equationCount)) &&
       (args.B[0]?.length ?? 0) > 0;
     if (!usable) {
       const reason =
-        args.B.length > 0 || args.P == null
+        args.B.length > 0 || (args.P == null && args.weightAt == null)
           ? EXTERNAL_REASON_SPARSE_ROUTE
           : EXTERNAL_REASON_NO_COVARIANCE;
       for (const input of args.rows) result.set(input.row, unavailable(reason));
       return result;
     }
-    const P = args.P as number[][];
+    const P = (args.P ?? []) as number[][];
+    const weightAt = args.weightAt;
     for (const input of args.rows) {
       if (!Number.isFinite(input.mdbNative) || input.mdbNative <= 0) {
         result.set(input.row, unavailable(EXTERNAL_REASON_UNTESTABLE));
@@ -264,6 +276,7 @@ export const computeExternalInfluences = (
         args.is2D,
         args.B,
         P,
+        weightAt,
         input.groupRows,
         input.row,
         input.mdbNative,
