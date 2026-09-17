@@ -9,6 +9,7 @@ import type {
   CadStyleLibrary,
   SurveyCadPersistedState,
 } from './cadTypes';
+import { backfillCadProjectStandards } from './cadLayers';
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === 'object' && value != null && !Array.isArray(value);
@@ -50,11 +51,16 @@ const cloneStyleLibrary = (styleLibrary: CadStyleLibrary): CadStyleLibrary => ({
   styles: styleLibrary.styles.map((entry) => ({ ...entry })),
 });
 
+const cloneAppearance = (
+  appearance: CadEntity['appearance'],
+): CadEntity['appearance'] => (appearance ? { ...appearance } : undefined);
+
 export const cloneCadEntity = (entity: CadEntity): CadEntity => {
   switch (entity.type) {
     case 'survey-point':
       return {
         ...entity,
+        appearance: cloneAppearance(entity.appearance),
         errorEllipse: entity.errorEllipse ? { ...entity.errorEllipse } : undefined,
         metadata: cloneMetadata(entity.metadata),
       };
@@ -64,11 +70,13 @@ export const cloneCadEntity = (entity: CadEntity): CadEntity => {
     case 'arc':
       return {
         ...entity,
+        appearance: cloneAppearance(entity.appearance),
         metadata: cloneMetadata(entity.metadata),
       };
     case 'alignment':
       return {
         ...entity,
+        appearance: cloneAppearance(entity.appearance),
         elements: entity.elements.map((element) =>
           element.kind === 'line'
             ? {
@@ -89,6 +97,7 @@ export const cloneCadEntity = (entity: CadEntity): CadEntity => {
     case 'parcel':
       return {
         ...entity,
+        appearance: cloneAppearance(entity.appearance),
         vertices: entity.vertices.map(clonePoint),
         vertexLabels: [...entity.vertexLabels],
         metadata: cloneMetadata(entity.metadata),
@@ -119,6 +128,8 @@ export const cloneCadProject = (project: CadProject): CadProject => ({
   entities: project.entities.map(cloneCadEntity),
   cogoComputations: (project.cogoComputations ?? []).map((computation) => cloneJsonValue(computation)),
   bounds: cloneBounds(project.bounds),
+  ...(project.currentLayerId != null ? { currentLayerId: project.currentLayerId } : {}),
+  ...(project.linetypeScale != null ? { linetypeScale: project.linetypeScale } : {}),
 });
 
 const cloneParcelLayoutSettings = (
@@ -179,7 +190,9 @@ export const sanitizeSurveyCadPersistedState = (
     return undefined;
   }
   try {
-    return cloneSurveyCadPersistedState(value as unknown as SurveyCadPersistedState);
+    const cloned = cloneSurveyCadPersistedState(value as unknown as SurveyCadPersistedState);
+    // Load-time standards backfill: idempotent, no legacy visual change.
+    return { ...cloned, project: backfillCadProjectStandards(cloned.project) };
   } catch {
     return undefined;
   }

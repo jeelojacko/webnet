@@ -114,8 +114,10 @@ mid-gray (documented).
 
 ## DXF approximation rules (§§28,29,31,32, §57)
 
-- Linetypes: bounded catalog — `continuous` + `dash-short` (DASHSHORT)
-  only. The R12/R2000 LTYPE table carries exactly the referenced types;
+- Linetypes: bounded catalog — `continuous`, `dashed`, `hidden`, `center`,
+  `center2`, `dash-dot`, `dotted`, `phantom` (+ deprecated `dash-short` alias
+  for DASHSHORT, remapped to `dashed` on load) only. The R12/R2000 LTYPE
+  table carries exactly the referenced types;
   unknown ids fall back to Continuous with a call-site warning, never a
   silent solidify.
 - Lineweights: R12 has no group 370 — a lineweight warning is emitted

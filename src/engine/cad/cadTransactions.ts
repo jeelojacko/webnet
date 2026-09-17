@@ -100,13 +100,23 @@ export type {
 } from './cadTransactions.types';
 import type {
   CadEntity,
-  CadEntityId,
   CadLayer,
-  CadLineEntity,
   CadProject,
   CadSurveyPointEntity,
 } from './cadTypes';
 import { createStableRuntimeId } from '../id';
+import {
+  commitLayerProject,
+  isLayerNameTaken,
+  layerColorCommand,
+  layerDescriptionCommand,
+  layerFrozenCommand,
+  layerLinetypeCommand,
+  layerLineweightCommand,
+  layerSetCurrentCommand,
+  layerTransparencyCommand,
+  withLayer,
+} from './cadTransactionsLayerCommands';
 
 const createIdleCommandState = (): CadCommandState => ({
   key: 'IDLE',
@@ -365,27 +375,11 @@ const draftOnlyCommand = (
   }),
 });
 
-const commitLayerProject = (
-  key: CadCommandKey,
-  snapshot: CadWorkspaceSnapshot,
-  nextProject: CadProject,
-  label: string,
-): CadCommandExecutionResult => ({
-  nextSnapshot: {
-    project: nextProject,
-    selection: createCadSelectionState(nextProject, snapshot.selection.selectedEntityIds),
-  },
-  commandState: { key, phase: 'committed', prompt: `${label} committed.` },
-  transactionLabel: label,
-  addedEntityIds: [],
-  removedEntityIds: [],
-});
-
 const layerCreateCommand: CadCommandDefinition<Extract<CadCommand, { key: 'LAYER_CREATE' }>> = {
   key: 'LAYER_CREATE',
   execute: (snapshot, command) => {
     const name = command.name.trim();
-    if (!name) return null;
+    if (!name || isLayerNameTaken(snapshot.project, name)) return null;
     const layer: CadLayer = {
       id: createStableRuntimeId('cad-layer'),
       name,
@@ -404,7 +398,7 @@ const layerRenameCommand: CadCommandDefinition<Extract<CadCommand, { key: 'LAYER
   key: 'LAYER_RENAME',
   execute: (snapshot, command) => {
     const name = command.name.trim();
-    if (!name) return null;
+    if (!name || isLayerNameTaken(snapshot.project, name, command.layerId)) return null;
     const nextProject = withLayer(snapshot.project, command.layerId, { name });
     if (!nextProject) return null;
     return commitLayerProject('LAYER_RENAME', snapshot, nextProject, `LAYER_RENAME (${name})`);
@@ -470,19 +464,6 @@ const layerDeleteCommand: CadCommandDefinition<Extract<CadCommand, { key: 'LAYER
   },
 };
 
-const withLayer = (
-  project: CadProject,
-  layerId: string,
-  patch: Partial<CadLayer>,
-): CadProject | null => {
-  const layer = project.layers.find((entry) => entry.id === layerId);
-  if (!layer) return null;
-  return {
-    ...project,
-    layers: project.layers.map((entry) => (entry.id === layerId ? { ...entry, ...patch } : entry)),
-  };
-};
-
 export const CAD_COMMAND_REGISTRY: Record<CadCommandKey, CadCommandDefinition<CadCommand>> = {
   SELECT_ALL: selectAllCommand as CadCommandDefinition<CadCommand>,
   CLEAR_SELECTION: clearSelectionCommand as CadCommandDefinition<CadCommand>,
@@ -532,6 +513,13 @@ export const CAD_COMMAND_REGISTRY: Record<CadCommandKey, CadCommandDefinition<Ca
   LAYER_VISIBILITY: layerVisibilityCommand as CadCommandDefinition<CadCommand>,
   LAYER_LOCKED: layerLockedCommand as CadCommandDefinition<CadCommand>,
   LAYER_PRINTABLE: layerPrintableCommand as CadCommandDefinition<CadCommand>,
+  LAYER_COLOR: layerColorCommand as CadCommandDefinition<CadCommand>,
+  LAYER_LINETYPE: layerLinetypeCommand as CadCommandDefinition<CadCommand>,
+  LAYER_LINEWEIGHT: layerLineweightCommand as CadCommandDefinition<CadCommand>,
+  LAYER_TRANSPARENCY: layerTransparencyCommand as CadCommandDefinition<CadCommand>,
+  LAYER_FROZEN: layerFrozenCommand as CadCommandDefinition<CadCommand>,
+  LAYER_DESCRIPTION: layerDescriptionCommand as CadCommandDefinition<CadCommand>,
+  LAYER_SET_CURRENT: layerSetCurrentCommand as CadCommandDefinition<CadCommand>,
   LAYER_MOVE_OBJECTS: layerMoveObjectsCommand as CadCommandDefinition<CadCommand>,
   LAYER_DELETE: layerDeleteCommand as CadCommandDefinition<CadCommand>,
   F2F_GENERATE: f2fGenerateCommand as CadCommandDefinition<CadCommand>,

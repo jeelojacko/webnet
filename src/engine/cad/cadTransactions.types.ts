@@ -54,6 +54,13 @@ export type CadCommandKey =
   | 'LAYER_VISIBILITY'
   | 'LAYER_LOCKED'
   | 'LAYER_PRINTABLE'
+  | 'LAYER_COLOR'
+  | 'LAYER_LINETYPE'
+  | 'LAYER_LINEWEIGHT'
+  | 'LAYER_TRANSPARENCY'
+  | 'LAYER_FROZEN'
+  | 'LAYER_DESCRIPTION'
+  | 'LAYER_SET_CURRENT'
   | 'LAYER_MOVE_OBJECTS'
   | 'LAYER_DELETE'
   | 'F2F_GENERATE';
@@ -374,6 +381,41 @@ export type CadCommand =
       key: 'LAYER_PRINTABLE';
       layerId: string;
       printable: boolean;
+    }
+  | {
+      key: 'LAYER_COLOR';
+      layerId: string;
+      color: string;
+    }
+  | {
+      key: 'LAYER_LINETYPE';
+      layerId: string;
+      lineTypeId: string;
+    }
+  | {
+      key: 'LAYER_LINEWEIGHT';
+      layerId: string;
+      /** Undefined = Default. */
+      lineweightMm?: number;
+    }
+  | {
+      key: 'LAYER_TRANSPARENCY';
+      layerId: string;
+      transparency: number;
+    }
+  | {
+      key: 'LAYER_FROZEN';
+      layerId: string;
+      frozen: boolean;
+    }
+  | {
+      key: 'LAYER_DESCRIPTION';
+      layerId: string;
+      description: string;
+    }
+  | {
+      key: 'LAYER_SET_CURRENT';
+      layerId: string;
     }
   | {
       key: 'LAYER_MOVE_OBJECTS';

@@ -7,6 +7,7 @@ import {
   serializeCadDrawingFile,
 } from '../src/engine/cad/cadDrawingFile';
 import { createDraftSheet } from '../src/engine/cad/cadDraftTypes';
+import { DEFAULT_RESOLVED_LINEWEIGHT_MM } from '../src/engine/cad/cadAppearance';
 
 const asRecord = (value: unknown): Record<string, unknown> => value as Record<string, unknown>;
 
@@ -122,10 +123,16 @@ describe('drafting document model (.wncad v2)', () => {
   it('keeps printable and lineweight on default layers', () => {
     const drawing = createBlankCadDrawingDocument({ name: 'Layers', units: 'm' });
 
-    expect(drawing.project.layers).toHaveLength(6);
+    expect(drawing.project.layers).toHaveLength(7);
+    expect(drawing.project.layers.some((layer) => layer.id === 'general')).toBe(true);
     for (const layer of drawing.project.layers) {
       expect(layer.printable).toBe(true);
-      expect(typeof layer.lineweightMm).toBe('number');
+      // Undefined = Default (resolves 0.25); otherwise a physical-mm value.
+      expect(
+        layer.lineweightMm === undefined || typeof layer.lineweightMm === 'number',
+      ).toBe(true);
     }
+    const general = drawing.project.layers.find((layer) => layer.id === 'general');
+    expect(general?.lineweightMm ?? DEFAULT_RESOLVED_LINEWEIGHT_MM).toBe(0.25);
   });
 });

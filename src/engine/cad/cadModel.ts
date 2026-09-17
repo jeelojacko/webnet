@@ -186,11 +186,21 @@ const buildCadProjectFromParsed = (
       observationCount: parsed.observations.length,
       adjustedStationCount: source === 'adjustment-result' ? pointEntities.length : 0,
     },
-    layers: DEFAULT_CAD_LAYERS,
-    styleLibrary: DEFAULT_CAD_STYLE_LIBRARY,
+    // Clone the default table (never hand out the singletons by reference).
+    layers: DEFAULT_CAD_LAYERS.map((layer) => ({ ...layer })),
+    styleLibrary: {
+      lineTypes: DEFAULT_CAD_STYLE_LIBRARY.lineTypes.map((entry) => ({
+        ...entry,
+        dashPattern: [...entry.dashPattern],
+      })),
+      textStyles: DEFAULT_CAD_STYLE_LIBRARY.textStyles.map((entry) => ({ ...entry })),
+      pointSymbols: DEFAULT_CAD_STYLE_LIBRARY.pointSymbols.map((entry) => ({ ...entry })),
+      styles: DEFAULT_CAD_STYLE_LIBRARY.styles.map((entry) => ({ ...entry })),
+    },
     entities,
     cogoComputations: [],
     bounds: buildCadBounds(entities),
+    currentLayerId: 'general',
   };
 };
 

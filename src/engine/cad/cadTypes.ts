@@ -29,6 +29,17 @@ export interface CadBounds {
   maxY: number;
 }
 
+export interface CadEntityAppearance {
+  /** Hex color; undefined = ByLayer. */
+  color?: string;
+  /** Undefined = ByLayer. */
+  lineTypeId?: CadLineTypeId;
+  /** Physical mm; undefined = ByLayer. */
+  lineweightMm?: number;
+  /** 0 (opaque) .. 1 (fully transparent); undefined = ByLayer. */
+  transparency?: number;
+}
+
 export interface CadBaseEntity {
   id: CadEntityId;
   type: string;
@@ -36,6 +47,8 @@ export interface CadBaseEntity {
   styleId?: CadStyleId;
   visible: boolean;
   locked: boolean;
+  /** Appearance intent (ByLayer-or-explicit); absent = ByLayer. Never resolved values. */
+  appearance?: CadEntityAppearance;
   metadata?: Record<string, unknown>;
 }
 
@@ -45,8 +58,15 @@ export interface CadLayer {
   color: string;
   lineTypeId?: CadLineTypeId;
   defaultStyleId?: CadStyleId;
+  /** ON meaning (unchanged). OFF hides via view-layer filters, not the display scene. */
   visible: boolean;
   locked: boolean;
+  /** Frozen layers hide like OFF via the same filter path. Default false. */
+  frozen?: boolean;
+  /** 0 (opaque) .. 1 (fully transparent). Default 0. */
+  transparency?: number;
+  /** Free-text note. Default ''. */
+  description?: string;
   printable?: boolean;
   lineweightMm?: number;
   role:
@@ -237,6 +257,10 @@ export interface CadProject {
   entities: CadEntity[];
   cogoComputations: CadCogoComputation[];
   bounds: CadBounds | null;
+  /** Drawing-owned current layer; absent/unusable = default (`general`). */
+  currentLayerId?: CadLayerId;
+  /** Global drawing linetype scale (drawing units); absent = 1.0. */
+  linetypeScale?: number;
 }
 
 export interface SurveyCadPersistedState {
