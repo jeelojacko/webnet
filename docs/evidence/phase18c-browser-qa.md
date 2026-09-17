@@ -89,5 +89,5 @@ assertions pin current behavior with `flip once fixed` comments.
 
 ## HEAD
 
-`2a6bb04a` + working tree: `tests-browser/cad-drawing-18c.spec.ts` (new),
-4 source fixes above. Screenshots in `docs/evidence/phase18c/` are local-only.
+`1d2a797b28771b2f6ffa19f63730d78d21e6e582` — spec + report + 4 source
+fixes in one commit. Screenshots in `docs/evidence/phase18c/` are local-only.
