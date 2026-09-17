@@ -10,6 +10,7 @@ import type {
   SurveyCadPersistedState,
 } from './cadTypes';
 import { backfillCadProjectStandards } from './cadLayers';
+import { backfillCadPointStyles, cloneCadPointStyles, migrateLegacySurveyPointStyles } from './cadPointStyles';
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === 'object' && value != null && !Array.isArray(value);
@@ -125,6 +126,7 @@ export const cloneCadProject = (project: CadProject): CadProject => ({
   },
   layers: project.layers.map(cloneLayer),
   styleLibrary: cloneStyleLibrary(project.styleLibrary),
+  ...(project.pointStyles != null ? { pointStyles: cloneCadPointStyles(project.pointStyles) } : {}),
   entities: project.entities.map(cloneCadEntity),
   cogoComputations: (project.cogoComputations ?? []).map((computation) => cloneJsonValue(computation)),
   bounds: cloneBounds(project.bounds),
@@ -192,7 +194,15 @@ export const sanitizeSurveyCadPersistedState = (
   try {
     const cloned = cloneSurveyCadPersistedState(value as unknown as SurveyCadPersistedState);
     // Load-time standards backfill: idempotent, no legacy visual change.
-    return { ...cloned, project: backfillCadProjectStandards(cloned.project) };
+    // Point-style migration seeds defaults + compat base refs (same marker).
+    const migrated = migrateLegacySurveyPointStyles(cloned.project);
+    return {
+      ...cloned,
+      project: backfillCadProjectStandards({
+        ...migrated,
+        pointStyles: cloneCadPointStyles(backfillCadPointStyles(migrated.pointStyles)),
+      }),
+    };
   } catch {
     return undefined;
   }

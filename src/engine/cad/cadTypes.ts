@@ -112,6 +112,29 @@ export interface CadStyle {
   lineTypeId?: CadLineTypeId;
 }
 
+export type CadPointStyleId = string;
+
+/**
+ * Phase 18D: marker presentation ONLY (symbol + scale + rotation + visibility).
+ * Color/layer/coordinate ownership stays with the 18C resolver (authoritative
+ * for color/transparency/visibility). Radius semantics: markerScale multiplies
+ * the referenced symbol radius in drawing units (NOT paper mm; the SVG/PDF
+ * paper-mm gap is a known-future item, see phase18d-point-style-notes.md).
+ */
+export interface CadPointStyle {
+  id: CadPointStyleId;
+  name: string;
+  /** Ref into styleLibrary.pointSymbols. */
+  markerSymbolId: CadPointSymbolId;
+  /** Multiplier on the symbol radius (drawing units). Default 1. */
+  markerScale?: number;
+  /** Marker rotation in degrees. Default 0. */
+  rotationDeg?: number;
+  /** False = marker not drawn (label/layer visibility unaffected). */
+  displayMarker: boolean;
+  description?: string;
+}
+
 export interface CadStyleLibrary {
   lineTypes: CadLineType[];
   textStyles: CadTextStyle[];
@@ -130,6 +153,10 @@ export interface CadSurveyPointEntity extends CadBaseEntity {
   description?: string;
   featureCode?: string;
   errorEllipse?: StationErrorEllipse;
+  /** Phase 18D BASE point style (marker presentation). Undefined = drawing default. */
+  pointStyleId?: CadPointStyleId;
+  /** Phase 18D MANUAL override (undefined = By Default). Never stores resolved output. */
+  pointStyleOverrideId?: CadPointStyleId;
 }
 
 export interface CadLineEntity extends CadBaseEntity {
@@ -254,6 +281,9 @@ export interface CadProject {
   metadata: CadProjectMetadata;
   layers: CadLayer[];
   styleLibrary: CadStyleLibrary;
+  /** Phase 18D: drawing-owned point styles (marker presentation). Optional so
+   * legacy files stay schema-compatible; load paths backfill defaults. */
+  pointStyles?: CadPointStyle[];
   entities: CadEntity[];
   cogoComputations: CadCogoComputation[];
   bounds: CadBounds | null;

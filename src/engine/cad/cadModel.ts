@@ -19,6 +19,7 @@ import type {
 import { DEFAULT_CAD_LAYERS } from './cadLayers';
 import { buildCadBounds } from './cadProjectState';
 import { DEFAULT_CAD_STYLE_LIBRARY } from './cadStyles';
+import { basePointStyleIdForClass, createDefaultCadPointStyles } from './cadPointStyles';
 import { stampAdjustmentDependency } from './cadAdjustmentDependency';
 import type { ResultDependencyIdentity } from '../resultIntegrity';
 
@@ -50,6 +51,11 @@ const buildPointEntities = (
 ): CadSurveyPointEntity[] =>
   sortStationIds(Object.keys(stations)).map((stationId) => {
     const station = stations[stationId];
+    const pointClass = station.fixed
+      ? 'control'
+      : station.coordInputClass === 'unknown'
+        ? 'unknown'
+        : 'free';
     return {
       id: `pt:${stationId}`,
       type: 'survey-point',
@@ -61,8 +67,9 @@ const buildPointEntities = (
       x: station.x,
       y: station.y,
       z: station.h,
-      pointClass: station.fixed ? 'control' : station.coordInputClass === 'unknown' ? 'unknown' : 'free',
+      pointClass,
       source,
+      pointStyleId: basePointStyleIdForClass(pointClass),
       errorEllipse: station.errorEllipse,
       metadata: {
         fixed: station.fixed,
@@ -198,6 +205,7 @@ const buildCadProjectFromParsed = (
       styles: DEFAULT_CAD_STYLE_LIBRARY.styles.map((entry) => ({ ...entry })),
     },
     entities,
+    pointStyles: createDefaultCadPointStyles(),
     cogoComputations: [],
     bounds: buildCadBounds(entities),
     currentLayerId: 'general',

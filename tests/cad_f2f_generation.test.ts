@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import { createBlankCadDrawingDocument, parseCadDrawingFile, serializeCadDrawingFile } from '../src/engine/cad/cadDrawingFile';
 import { createBlankCadProject } from '../src/engine/cad/cadDrawingFile';
+import { migrateLegacySurveyPointStyles } from '../src/engine/cad/cadPointStyles';
 import { createCadHistoryState, undoCadHistory } from '../src/engine/cad/cadUndoRedo';
 import type { CadSurveyPointEntity, CadTextEntity } from '../src/engine/cad/cadTypes';
 import {
@@ -209,13 +210,18 @@ describe('cad f2f generation', () => {
     if (!parsed.ok) return;
     expect(parsed.drawing.schemaVersion).toBe(2);
     const reopened = parsed.drawing.project;
-    expect(reopened.entities).toEqual(project.entities);
+    // Phase 18D: reopen backfills the additive point-style table and assigns
+    // compatibility BASE refs (same symbol, scale 1 — marker appearance unchanged).
+    const expected = migrateLegacySurveyPointStyles(project);
+    expect(reopened.entities).toEqual(expected.entities);
+    expect(reopened.pointStyles).toEqual(expected.pointStyles);
     expect(reopened.layers).toEqual(project.layers);
     expect(reopened.styleLibrary).toEqual(project.styleLibrary);
     // Manual content survives untouched and stays non-F2F.
     const reopenedManual = reopened.entities.find((e) => e.id === 'pt:MANUAL1')!;
     expect(isFieldToFinishEntity(reopenedManual)).toBe(false);
-    expect(reopenedManual).toEqual(manual);
+    // Compatibility BASE ref only; color/styleId/marker symbol all untouched.
+    expect(reopenedManual).toEqual({ ...manual, pointStyleId: 'point-style-survey' });
     expect(reopened.entities.filter(isFieldToFinishEntity).length).toBeGreaterThan(0);
   });
 
