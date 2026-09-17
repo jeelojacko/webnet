@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useRef } from 'react';
 import { flushSync } from 'react-dom';
 import {
   SURVEY_CAD_MAX_ZOOM,
@@ -65,8 +65,63 @@ const SurveyCadPreviewCanvas: React.FC<SurveyCadPreviewCanvasProps> = ({
   updateGripDragInteraction,
   viewport,
   visibleWorldBounds,
-}) => (
+}) => {
+  const svgRef = useRef<SVGSVGElement | null>(null);
+  // Latest-props ref: the native wheel listener below is attached once
+  // (React delivers wheel/touch listeners as passive, so preventDefault
+  // inside onWheel logs "Unable to preventDefault inside passive event
+  // listener"), while the zoom math must always see fresh viewport data.
+  const wheelProps = {
+    screenPointFromMouseEvent,
+    unproject,
+    viewport,
+    onViewportChange,
+    normalized,
+    baseScale,
+  };
+  const wheelPropsRef = useRef(wheelProps);
+  useEffect(() => {
+    wheelPropsRef.current = wheelProps;
+  });
+  useEffect(() => {
+    const node = svgRef.current;
+    if (!node) return;
+    const handleWheelNative = (event: WheelEvent): void => {
+      event.preventDefault();
+      const props = wheelPropsRef.current;
+      const screenPoint = props.screenPointFromMouseEvent({
+        clientX: event.clientX,
+        clientY: event.clientY,
+        currentTarget: node,
+      } as React.MouseEvent<SVGSVGElement>);
+      if (!screenPoint) return;
+      const { viewX, viewY } = screenPoint;
+      const worldPoint = props.unproject(viewX, viewY);
+      const nextZoom = Math.max(
+        SURVEY_CAD_MIN_ZOOM,
+        Math.min(SURVEY_CAD_MAX_ZOOM, props.viewport.zoom * (event.deltaY < 0 ? 1.12 : 1 / 1.12)),
+      );
+      if (Math.abs(nextZoom - props.viewport.zoom) <= 1e-9) return;
+      props.onViewportChange({
+        zoom: nextZoom,
+        panX:
+          viewX -
+          (SURVEY_CAD_PREVIEW_PADDING + (worldPoint.x - props.normalized.minX) * props.baseScale * nextZoom),
+        panY:
+          viewY -
+          (SURVEY_CAD_PREVIEW_HEIGHT -
+            SURVEY_CAD_PREVIEW_PADDING -
+            (worldPoint.y - props.normalized.minY) * props.baseScale * nextZoom),
+      });
+    };
+    node.addEventListener('wheel', handleWheelNative, { passive: false });
+    return () => {
+      node.removeEventListener('wheel', handleWheelNative);
+    };
+  }, []);
+  return (
   <svg
+    ref={svgRef}
     viewBox={`0 0 ${SURVEY_CAD_PREVIEW_WIDTH} ${SURVEY_CAD_PREVIEW_HEIGHT}`}
     className="h-full w-full bg-slate-950 select-none"
     data-survey-cad-preview
@@ -236,29 +291,6 @@ const SurveyCadPreviewCanvas: React.FC<SurveyCadPreviewCanvasProps> = ({
       setDidDrag(false);
       setDragState({ kind: 'none' });
     }}
-    onWheel={(event) => {
-      event.preventDefault();
-      const screenPoint = screenPointFromMouseEvent(event);
-      if (!screenPoint) return;
-      const { viewX, viewY } = screenPoint;
-      const worldPoint = unproject(viewX, viewY);
-      const nextZoom = Math.max(
-        SURVEY_CAD_MIN_ZOOM,
-        Math.min(SURVEY_CAD_MAX_ZOOM, viewport.zoom * (event.deltaY < 0 ? 1.12 : 1 / 1.12)),
-      );
-      if (Math.abs(nextZoom - viewport.zoom) <= 1e-9) return;
-      onViewportChange({
-        zoom: nextZoom,
-        panX:
-          viewX -
-          (SURVEY_CAD_PREVIEW_PADDING + (worldPoint.x - normalized.minX) * baseScale * nextZoom),
-        panY:
-          viewY -
-          (SURVEY_CAD_PREVIEW_HEIGHT -
-            SURVEY_CAD_PREVIEW_PADDING -
-            (worldPoint.y - normalized.minY) * baseScale * nextZoom),
-      });
-    }}
   >
     <rect
       x={0}
@@ -331,6 +363,7 @@ const SurveyCadPreviewCanvas: React.FC<SurveyCadPreviewCanvasProps> = ({
       <SelectionBoxLayer selectionBox={selectionBox} />
     </g>
   </svg>
-);
+  );
+};
 
 export default SurveyCadPreviewCanvas;

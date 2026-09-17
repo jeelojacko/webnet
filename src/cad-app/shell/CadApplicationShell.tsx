@@ -217,6 +217,7 @@ export const CadApplicationShell: React.FC<CadApplicationShellProps> = ({ contro
                   resultDependencyIdentity={latestRegistryEntry?.appliedRunIdentity ?? null}
                   shellLink={link}
                   shellChrome
+                  lineweightDisplay={layout.layout.lineweightDisplay ? 'scaled' : 'thin'}
                 />
               </CadPanelErrorBoundary>
             ) : (

@@ -4,6 +4,7 @@ import { cloneCadDrawingDocument } from '../../engine/cad/cadDrawingFile';
 import { buildMlightcadSpikeScene } from '../../engine/cad/cadMlightcadAdapter';
 import { checkCadEntityEditable } from '../../engine/cad/cadAppearance';
 import { buildCadDisplayScene } from '../../engine/cad/cadRenderer';
+import type { LineweightDisplayMode } from '../../engine/cad/cadViewportAppearance';
 import {
   filterCadDisplaySceneForViewport,
   viewportHiddenEntityIds,
@@ -52,6 +53,9 @@ export const useSurveyCadWorkspace = (
   parcelLayoutState: CadParcelLayoutUiState | undefined,
   showParcelLabels: boolean,
   reverseDirectionModifier = false,
+  // Phase 18C LWT: workspace-only display preference (never dirties the
+  // drawing or the stored mm value).
+  lineweightDisplay: LineweightDisplayMode = 'thin',
 ): UseSurveyCadWorkspaceResult => {
   const { history, historyRef, applyHistoryUpdate: applyHistoryUpdateBase } = useSurveyCadWorkspaceHistory(
     baseProject,
@@ -92,8 +96,12 @@ export const useSurveyCadWorkspace = (
   // viewport consumer — never inside buildCadDisplayScene (export scene
   // needs hidden primitives). Unknown/missing layers default visible.
   const displayScene = useMemo(
-    () => filterCadDisplaySceneForViewport(cadProject, buildCadDisplayScene(cadProject)),
-    [cadProject],
+    () =>
+      filterCadDisplaySceneForViewport(
+        cadProject,
+        buildCadDisplayScene(cadProject, { lineweightDisplay }),
+      ),
+    [cadProject, lineweightDisplay],
   );
   // Retire selection of newly hidden ids so grips never float on invisible geometry.
   useEffect(() => {

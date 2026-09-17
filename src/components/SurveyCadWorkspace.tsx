@@ -104,6 +104,11 @@ interface SurveyCadWorkspaceProps {
    */
   shellLink?: CadShellLink | null;
   shellChrome?: boolean;
+  /**
+   * Phase 18C LWT: workspace-only lineweight display preference driven by
+   * the shell status bar. Never dirties the drawing or the stored mm value.
+   */
+  lineweightDisplay?: import('../engine/cad/cadViewportAppearance').LineweightDisplayMode;
 }
 
 /** Phase 17E: first reason code in words for the dependency status chip. */
@@ -160,6 +165,7 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
   resultDependencyIdentity = null,
   shellLink = null,
   shellChrome = false,
+  lineweightDisplay = 'thin',
 }) => {
   const cloneBounds = (bounds: CadBounds | null): CadBounds | null =>
     bounds
@@ -328,6 +334,7 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
     parcelLayoutState,
     showParcelLabels,
     reverseDirectionModifier,
+    lineweightDisplay,
   );
   const {
     cadProject: activeProject,
