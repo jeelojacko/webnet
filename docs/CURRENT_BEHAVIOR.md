@@ -454,7 +454,7 @@ Current GNSS behavior includes:
 Current import behavior includes:
 
 - generic importer registry and normalized imported-data model
-- first-party importers for OPUS/OPUS-RS, JobXML, industry-style survey-report HTML, FieldGenius raw, Carlson/TDS RW5-style raw, DBX text/XML exports, and terrestrial coordinate CSV (explicit units, Trimble Access preset, manual column mapping; CRS metadata-only)
+- first-party importers for OPUS/OPUS-RS, JobXML, industry-style survey-report HTML, FieldGenius raw, Carlson/TDS RW5-style raw, DBX text/XML exports, and terrestrial coordinate CSV (explicit units, Trimble Access preset, manual column mapping; CRS metadata-only). Phase 17C: every import carries unit provenance (`source-declared` for native `.UNITS` / GNSS BL, `unknown-legacy` BLOCKING-until-confirmed for the rest); terrestrial CSV without explicit units blocks commit; missing or non-numeric elevation imports as 2D with a `HEIGHT_MISSING` warning (never silent 0); the static-GNSS panel confirms CSV/GVX units in-panel with Adjust BLOCKING until confirmed; adjusted-points CSV (`P,N,E,Z,D`) is output-only and fails closed on reimport; exact reimports block (`SOURCE_ALREADY_IMPORTED`), revisions require explicit replace/add/cancel with atomic replace; identical station definitions merge while differing coords block (`STATION_DEFINITION_CONFLICT`); repeated identical observations are preserved; JobXML `Deleted=true` rows are excluded with an INFO count (see `docs/IMPORT_WORKFLOW.md`)
 - importers preserve field coding distinctly from descriptions: code-like attrs (RW5/FieldGenius CODE/FC/DESC, DBX Code/FeatureCode/Description, JobXML Code/FeatureCode vs Description/Descriptor, survey-report Code) populate record `feature` (raw text + codes[] + source order) while descriptive text populates `description`; observation text output is unaffected so adjustment numerics are unchanged
 - staged import-review modal before editor mutation
 - setup-aware grouping and output-style presets
@@ -465,6 +465,8 @@ Current import behavior includes:
 - staged-review apply actions for replacing editor text, importing the resolved text as a new project `.dat` file, and importing associated `.wnproj*` / `.snproj` settings into the current workspace without replacing the project file manifest
 - associated `.wnproj*` / `.snproj` selection during staged import review now stages a prepared settings payload instead of applying immediately; the staged settings survive review-draft restore, show pending status in the modal, and apply only after the reviewed text import succeeds
 - persistence of import-review and reconciliation state through local draft recovery
+- native C/P/E/PH records: redefining an already-defined station component with differing coordinates or fixity logs a parse warning (last definition wins); exact repeats merge silently, and the C+E height flow stays quiet. Merging staged sources with differing coords for the same station ID raises BLOCKING `STATION_DEFINITION_CONFLICT` in review.
+- GNSS networks carry `sourceUnits` directly: BL `UNITS` is source-declared; GVX and CSV default to unknown-BLOCKING until the caller confirms (CSV via explicit `unitsConfirmed`)
 
 For detailed import behavior, see `docs/IMPORT_WORKFLOW.md`.
 

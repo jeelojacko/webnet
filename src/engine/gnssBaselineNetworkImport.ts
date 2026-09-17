@@ -17,6 +17,7 @@
  * Canonical output is ECEF metres / m^2 (Phase 12B observation).
  */
 import type { StationMap } from '../types';
+import type { SourceUnits } from './importUnitProvenance';
 import type {
   GnssBaselineCovariance,
   GnssBaselineObservation,
@@ -80,6 +81,11 @@ export interface GnssBaselineNetworkInput {
   inputUnits: GnssInputUnits;
   provenance: GnssImportProvenance[];
   sourceFile?: string;
+  /** Phase 17C — linear-unit provenance emitted directly by the importer
+   * (never inferred downstream). Absent means legacy (treat as unknown). */
+  sourceUnits?: SourceUnits;
+  /** True when commit must stay disabled until the user confirms units. */
+  needsUnitConfirmation?: boolean;
 }
 
 export interface GnssParseResult {
@@ -594,6 +600,9 @@ export const canonicalizeRawNetwork = (
     inputUnits: units,
     provenance,
     sourceFile,
+    // BL files carry an explicit UNITS directive: source-declared.
+    sourceUnits: { linear: units.toLowerCase() as SourceUnits['linear'], origin: 'source-declared' },
+    needsUnitConfirmation: false,
   };
 };
 

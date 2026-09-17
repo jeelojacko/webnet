@@ -1,3 +1,6 @@
+import type { SourceUnits } from './importUnitProvenance';
+import { UNKNOWN_UNIT_IMPORTER_IDS, unknownLegacyUnits } from './importUnitProvenance';
+import { contentFingerprint as fingerprintSourceText } from './importSourceIdentity';
 import { dbxImporter } from './importers/dbxImporter';
 import { fieldGeniusImporter } from './importers/fieldGeniusImporter';
 import { jobXmlImporter } from './importers/jobXmlImporter';
@@ -224,6 +227,14 @@ export interface ImportedDataset {
   controlStations: ImportedControlStationRecord[];
   observations: ImportedObservationRecord[];
   trace: ImportedTraceEntry[];
+  /** Phase 17C — linear-unit provenance. Absent means legacy (treat as unknown). */
+  sourceUnits?: SourceUnits;
+  /** True when commit must stay disabled until the user confirms units. */
+  needsUnitConfirmation?: boolean;
+  /** Deterministic content fingerprint of the raw source text. */
+  contentFingerprint?: string;
+  /** Interpreted column mapping (`canonical field -> header name`), CSV-family only. */
+  columnMapping?: Record<string, string>;
   legacy?: {
     opus?: OpusImportResult;
   };
@@ -364,10 +375,35 @@ export const importExternalInput = (
       text: input,
     };
   }
-  const dataset =
+  const enriched =
     parsedDataset.importerId === 'jobxml' || parsedDataset.importerId === 'trimble-survey-report'
       ? enrichImportedDatasetDirectionFaces(parsedDataset)
       : parsedDataset;
+  // Phase 17C: importers whose formats carry no unit declaration must never
+  // silently pass as metres. Attach unknown-legacy provenance (BLOCKING until
+  // the user confirms) and a deterministic content fingerprint.
+  const dataset: ImportedDataset =
+    enriched.sourceUnits ?? !UNKNOWN_UNIT_IMPORTER_IDS.has(enriched.importerId)
+      ? {
+          ...enriched,
+          contentFingerprint: enriched.contentFingerprint ?? fingerprintSourceText(input),
+        }
+      : {
+          ...enriched,
+          sourceUnits: unknownLegacyUnits(),
+          needsUnitConfirmation: true,
+          contentFingerprint: enriched.contentFingerprint ?? fingerprintSourceText(input),
+          trace: [
+            {
+              level: 'warning',
+              sourceCode: 'UNIT_UNKNOWN',
+              message:
+                'Source declares no linear unit; metres assumed pending user confirmation. ' +
+                'Commit is blocked until units are confirmed (UNIT_UNKNOWN).',
+            },
+            ...enriched.trace,
+          ],
+        };
 
   return {
     detected: true,

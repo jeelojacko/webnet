@@ -3,6 +3,8 @@ import type { HandleControlRecordArgs } from './parseControlRecordTypes';
 import {
   createEmptyStation,
   logFixityWarnings,
+  logStationRedefinitionConflict,
+  markDefinedStationComponents,
   parseControlFixityTail,
   parseNumericSlot,
 } from './parseControlRecordUtils';
@@ -72,6 +74,15 @@ export const handleGeodeticControlRecord = ({
     crsId: state.crsId,
   });
   const toMeters = linearToMetersFactor();
+  const is3D = coordCount === 3;
+  logStationRedefinitionConflict(logs, lineNum, code, id, stations, {
+    x: east,
+    y: north,
+    ...(is3D ? { h: elev * toMeters, fixH: fixityState.fixities[2] } : {}),
+    fixX: fixityState.fixities[1] ?? false,
+    fixY: fixityState.fixities[0] ?? false,
+  });
+  markDefinedStationComponents(stations, id, is3D ? ['x', 'y', 'h'] : ['x', 'y']);
   const station = stations[id] ?? createEmptyStation();
   station.x = east;
   station.y = north;

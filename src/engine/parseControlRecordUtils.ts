@@ -22,6 +22,79 @@ export const parseNumericSlot = (
   return Number.isFinite(value) ? value : undefined;
 };
 
+/** Phase 17C — tracks which components a C/P/E record explicitly defined
+ * per parse (keyed by the stations map identity), so redefinition warnings
+ * only compare components both definitions set (C+E height flow stays quiet). */
+type StationComponent = 'x' | 'y' | 'h';
+const definedComponents = new WeakMap<object, Map<string, Set<StationComponent>>>();
+
+export const markDefinedStationComponents = (
+  stations: StationMap,
+  id: string,
+  components: readonly StationComponent[],
+): void => {
+  let perParse = definedComponents.get(stations);
+  if (!perParse) {
+    perParse = new Map();
+    definedComponents.set(stations, perParse);
+  }
+  const entry = perParse.get(id) ?? new Set<StationComponent>();
+  components.forEach((component) => entry.add(component));
+  perParse.set(id, entry);
+};
+
+const REDEFINE_TOL_M = 1e-9;
+
+export interface IncomingStationDefinition {
+  x?: number;
+  y?: number;
+  h?: number;
+  fixX?: boolean;
+  fixY?: boolean;
+  fixH?: boolean;
+}
+
+/** Warn once when a record redefines an already-defined component with a
+ * differing coordinate or fixity (last definition still wins). Exact same
+ * ID+coords+fixity merges silently; repeated observations never reach here. */
+export const logStationRedefinitionConflict = (
+  logs: string[],
+  lineNum: number,
+  code: string,
+  id: string,
+  stations: StationMap,
+  incoming: IncomingStationDefinition,
+): void => {
+  const prev = stations[id];
+  const defined = definedComponents.get(stations)?.get(id);
+  if (!prev || !defined) return;
+  const diffs: string[] = [];
+  const coordOf = (component: StationComponent): number | undefined =>
+    component === 'x' ? incoming.x : component === 'y' ? incoming.y : incoming.h;
+  const prevCoordOf = (component: StationComponent): number =>
+    component === 'x' ? prev.x : component === 'y' ? prev.y : prev.h;
+  const fixOf = (component: StationComponent): boolean | undefined =>
+    component === 'x' ? incoming.fixX : component === 'y' ? incoming.fixY : incoming.fixH;
+  const prevFixOf = (component: StationComponent): boolean =>
+    component === 'x' ? (prev.fixedX ?? false) : component === 'y' ? (prev.fixedY ?? false) : (prev.fixedH ?? false);
+  (['x', 'y', 'h'] as const).forEach((component) => {
+    if (!defined.has(component)) return;
+    const next = coordOf(component);
+    if (next !== undefined && Math.abs(prevCoordOf(component) - next) > REDEFINE_TOL_M) {
+      diffs.push(component.toUpperCase());
+    }
+    const nextFix = fixOf(component);
+    if (nextFix !== undefined && prevFixOf(component) !== nextFix) {
+      diffs.push(`fixity-${component.toUpperCase()}`);
+    }
+  });
+  if (diffs.length > 0) {
+    logs.push(
+      `${code} record line ${lineNum} redefines station ${id} with conflicting ${diffs.join('/')} (last definition wins); repeated identical definitions merge silently.`,
+    );
+  }
+};
+
 const hasFixityMarker = (token: string | undefined): boolean =>
   token === '!' || token === '*' || /^[!*]+$/.test(token ?? '');
 

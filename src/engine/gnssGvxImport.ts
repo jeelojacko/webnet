@@ -7,6 +7,7 @@
  * TBC-specific behavior. Syntax lives in gnssGvxSyntax.ts; this module
  * canonicalizes and validates. See docs/gnss/GVX_IMPORT.md.
  */
+import { unknownLegacyUnits } from './importUnitProvenance';
 import type { StationMap } from '../types';
 import type {
   GnssBaselineCovariance,
@@ -52,6 +53,13 @@ export const parseGvx = (text: string, sourceFile?: string): GvxParseResult => {
       message: `GVX/GVX: ignored ${syntax.source.ignoredElements.length} non-math extension element(s): ${syntax.source.ignoredElements.join(', ')}.`,
     });
   }
+  syntax.diagnostics.push({
+    severity: 'warning',
+    code: 'GNSS_UNIT_UNKNOWN',
+    message:
+      'GVX linear units are not honored at intake; metres assumed pending user confirmation. ' +
+      'Commit is blocked until units are confirmed (GNSS_UNIT_UNKNOWN).',
+  });
   return { network, diagnostics: syntax.diagnostics, source: syntax.source };
 };
 
@@ -166,6 +174,10 @@ export const canonicalizeGvxDocument = (
     inputUnits: 'm',
     provenance,
     sourceFile: document.sourceFile,
+    // Phase 17C — GVX linear units are not honored at intake; metres are
+    // assumed pending user confirmation (unknown-BLOCKING, never silent).
+    sourceUnits: unknownLegacyUnits(),
+    needsUnitConfirmation: true,
   };
 };
 

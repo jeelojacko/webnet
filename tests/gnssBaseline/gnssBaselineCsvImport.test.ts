@@ -64,11 +64,22 @@ describe('gnss delimited importer', () => {
   it('imports covariance CSV with header aliases', () => {
     const { stations } = controlStations();
     const result = importGnssBaselineDelimited(COV_CSV, stations!, { ...csvOptions });
-    expect(result.diagnostics).toEqual([]);
+    // Phase 17C — caller options are not user confirmation: unknown-BLOCKING.
+    expect(result.diagnostics.map((diagnostic) => diagnostic.code)).toEqual(['GNSS_UNIT_UNKNOWN']);
+    expect(result.network!.sourceUnits).toMatchObject({ linear: 'm', origin: 'unknown-legacy' });
+    expect(result.network!.needsUnitConfirmation).toBe(true);
     expect(result.network).not.toBeNull();
     expect(result.network!.baselines).toHaveLength(3);
     expect(result.network!.baselines[0]!.covariance.xy).toBeCloseTo(0.000001, 15);
     expect(result.network!.baselines[0]!.sessionId).toBe('2026-101');
+  });
+
+  it('treats an explicit operator confirmation as user-confirmed (unblocked)', () => {
+    const { stations } = controlStations();
+    const result = importGnssBaselineDelimited(COV_CSV, stations!, { ...csvOptions, unitsConfirmed: true });
+    expect(result.network!.sourceUnits).toMatchObject({ linear: 'm', origin: 'user-confirmed' });
+    expect(result.network!.needsUnitConfirmation).toBe(false);
+    expect(result.diagnostics.map((diagnostic) => diagnostic.code)).not.toContain('GNSS_UNIT_UNKNOWN');
   });
 
   it('imports sigma/correlation CSV to equivalent covariance', () => {

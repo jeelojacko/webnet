@@ -117,7 +117,7 @@ export const useImportReviewWorkflow = ({
     buildImportConflicts,
   });
 
-  const { handleCancelImportReview, handleImportReviewCompareFile, handleImportReviewClearComparison, handleApplyImportReview, handleApplyImportReviewAsNewFile, handleImportReviewSettingsFileChange, importReviewDisplayedRows, importReviewMoveTargetGroups, importReviewSnapshot, restoreImportReviewWorkflow } = useImportReviewApplyActions({
+  const { handleCancelImportReview, handleConfirmSourceUnits, handleImportReviewCompareFile, handleImportReviewClearComparison, handleApplyImportReview, handleApplyImportReviewAsNewFile, handleImportReviewSettingsFileChange, importReviewDisplayedRows, importReviewMoveTargetGroups, importReviewSnapshot, restoreImportReviewWorkflow } = useImportReviewApplyActions({
     importReviewState, setImportReviewState, setPendingAnglePromptFile, filePickerModeRef,
     triggerFileSelect, buildImportConflicts, currentInput, currentIncludeFiles, parseSettings,
     projectInstruments, coordMode, setInput, setProjectIncludeFiles, setImportNotice,
@@ -160,6 +160,7 @@ export const useImportReviewWorkflow = ({
     handleImportReviewRemoveRow,
     handleImportReviewRemoveGroup,
     handleCancelImportReview,
+    handleConfirmSourceUnits,
     handleImportReviewCompareFile,
     handleImportReviewClearComparison,
     handleApplyImportReview,

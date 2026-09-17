@@ -10,6 +10,7 @@
  * only the 'generic' profile ships. A documented TBC mapping seam is the
  * COLUMN_ALIASES table plus GnssCsvImportOptions below (12E work).
  */
+import { unknownLegacyUnits } from './importUnitProvenance';
 import type { StationMap } from '../types';
 import {
   canonicalizeRawNetwork,
@@ -24,6 +25,9 @@ import {
 export interface GnssCsvImportOptions {
   delimiter?: string;
   units: GnssInputUnits | string;
+  /** Phase 17C — set true only when the caller explicitly confirmed the
+   * units with the user (never for hard-coded defaults). */
+  unitsConfirmed?: boolean;
   vectorFrame: 'ecef' | 'enu' | string;
   referenceFrame: string;
   epoch?: string;
@@ -437,6 +441,25 @@ export const importGnssBaselineDelimited = (
     const errors = validation.filter((diagnostic) => diagnostic.severity === 'error');
     if (errors.length > 0) {
       return { network: null, diagnostics: [...diagnostics, ...validation] };
+    }
+    // Phase 17C — CSV units arrive via caller options, not the file. Only a
+    // caller-explicit confirmation counts; otherwise unknown-BLOCKING.
+    if (options.unitsConfirmed) {
+      network.sourceUnits = {
+        linear: unit as GnssInputUnits,
+        origin: 'user-confirmed',
+      };
+      network.needsUnitConfirmation = false;
+    } else {
+      network.sourceUnits = unknownLegacyUnits();
+      network.needsUnitConfirmation = true;
+      diagnostics.push({
+        severity: 'warning',
+        code: 'GNSS_UNIT_UNKNOWN',
+        message:
+          'CSV declares no linear unit; metres assumed pending user confirmation. ' +
+          'Commit is blocked until units are confirmed (GNSS_UNIT_UNKNOWN).',
+      });
     }
     return { network, diagnostics };
   } catch (failure) {

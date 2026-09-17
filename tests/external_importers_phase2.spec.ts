@@ -39,7 +39,9 @@ describe('Phase 2 external importers', () => {
     expect(imported.notice?.detailLines[0]).toContain('Imported 2 points and 2 observations');
     expect(imported.dataset?.controlStations).toHaveLength(2);
     expect(imported.dataset?.observations).toHaveLength(2);
-    expect(imported.dataset?.trace).toHaveLength(0);
+    // Phase 17C: survey-report declares no units, so one UNIT_UNKNOWN warning is prepended.
+    expect(imported.dataset?.trace).toHaveLength(1);
+    expect(imported.dataset?.trace[0]?.sourceCode).toBe('UNIT_UNKNOWN');
 
     expect(imported.text).toContain('.ORDER EN');
     expect(imported.text).toContain('C 1000 0.9960 2.0630 0.0000');
@@ -78,7 +80,9 @@ describe('Phase 2 external importers', () => {
     expect(imported.notice?.detailLines[1]).toContain('Warnings: 1');
     expect(imported.dataset?.controlStations).toHaveLength(2);
     expect(imported.dataset?.observations).toHaveLength(0);
-    expect(imported.dataset?.trace).toHaveLength(1);
+    // Phase 17C: +1 UNIT_UNKNOWN provenance warning on top of the conversion warning.
+    expect(imported.dataset?.trace).toHaveLength(2);
+    expect(imported.dataset?.trace[0]?.sourceCode).toBe('UNIT_UNKNOWN');
     expect(imported.text).toContain('.ORDER EN');
     expect(imported.text).toContain("C STN1 5000.0000 1000.0000 100.0000 'SETUP");
     expect(imported.text).toContain(
@@ -103,7 +107,9 @@ describe('Phase 2 external importers', () => {
     expect(imported.notice?.detailLines[0]).toContain('Imported 2 points and 1 observation');
     expect(imported.dataset?.controlStations).toHaveLength(2);
     expect(imported.dataset?.observations).toHaveLength(1);
-    expect(imported.dataset?.trace).toHaveLength(0);
+    // Phase 17C: JobXML declares no units, so one UNIT_UNKNOWN warning is prepended.
+    expect(imported.dataset?.trace).toHaveLength(1);
+    expect(imported.dataset?.trace[0]?.sourceCode).toBe('UNIT_UNKNOWN');
     expect(imported.text).toContain('[PointRecord] converted to M');
     expect(imported.text).toContain(
       'M STN1-BS1-SHOT_1 045-07-24.2 100.0000 095-00-00.0 1.5000/1.8000',
@@ -147,7 +153,9 @@ describe('Phase 2 external importers', () => {
     expect(imported.notice?.detailLines[0]).toContain('Imported 4 points and 6 observations');
     expect(imported.dataset?.controlStations).toHaveLength(4);
     expect(imported.dataset?.observations).toHaveLength(6);
-    expect(imported.dataset?.trace).toHaveLength(0);
+    // Phase 17C: +1 UNIT_UNKNOWN provenance warning on top of the existing warning.
+    expect(imported.dataset?.trace).toHaveLength(2);
+    expect(imported.dataset?.trace[0]?.sourceCode).toBe('UNIT_UNKNOWN');
 
     const measurementObs = imported.dataset?.observations.filter(
       (obs) => obs.kind === 'measurement',

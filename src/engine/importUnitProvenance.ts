@@ -1,0 +1,210 @@
+/**
+ * Phase 17C — linear-unit provenance for imported datasets.
+ *
+ * Canonical internal units are metres (linear) + radians (angular). Unit
+ * conversion happens exactly once at the parse boundary; serialized text
+ * then truthfully carries `.UNITS M`. A dataset that cannot name its source
+ * unit is flagged `needsUnitConfirmation` (BLOCKING) until the user confirms.
+ */
+import type { ImportedDataset } from './importers';
+
+/** Canonical linear units. `us-ft` is the US survey foot (1200/3937 m). */
+export type LinearUnit = 'm' | 'ft' | 'us-ft' | 'mm' | 'cm';
+
+/** Where the declared linear unit came from. */
+export type UnitOrigin =
+  | 'source-declared'
+  | 'format-defined'
+  | 'user-confirmed'
+  | 'unknown-legacy';
+
+export interface SourceUnits {
+  linear: LinearUnit;
+  origin: UnitOrigin;
+}
+
+/** Exact conversion factors to metres. ft is exact; us-ft is 1200/3937. */
+export const UNIT_TO_METERS: Record<LinearUnit, number> = {
+  m: 1,
+  ft: 0.3048,
+  'us-ft': 1200 / 3937,
+  mm: 0.001,
+  cm: 0.01,
+};
+
+/** Accept historical aliases (`usft`, `us_ft`, `feet`, ...). */
+export const normalizeLinearUnit = (value: string | undefined): LinearUnit | undefined => {
+  const key = value?.trim().toLowerCase().replace(/[_\s]/g, '') ?? '';
+  if (key === 'm' || key === 'meter' || key === 'meters' || key === 'metre' || key === 'metres') return 'm';
+  if (key === 'ft' || key === 'foot' || key === 'feet' || key === 'intlft' || key === 'internationalfoot') return 'ft';
+  if (key === 'us-ft' || key === 'usft' || key === 'ussurveyfoot' || key === 'ussurveyfeet') return 'us-ft';
+  if (key === 'mm' || key === 'millimeter' || key === 'millimetre') return 'mm';
+  if (key === 'cm' || key === 'centimeter' || key === 'centimetre') return 'cm';
+  return undefined;
+};
+
+export const linearToMeters = (value: number, unit: LinearUnit): number =>
+  value * UNIT_TO_METERS[unit];
+
+export const metersToLinear = (valueMeters: number, unit: LinearUnit): number =>
+  valueMeters / UNIT_TO_METERS[unit];
+
+/** Covariance scales with f^2; sigmas/coords/elevations/HI/HT scale with f. Never angular sigma. */
+export const varianceScale = (unit: LinearUnit): number => {
+  const factor = UNIT_TO_METERS[unit];
+  return factor * factor;
+};
+
+export const sourceUnitsEqual = (left?: SourceUnits, right?: SourceUnits): boolean =>
+  left?.linear === right?.linear && left?.origin === right?.origin;
+
+export const describeSourceUnits = (units?: SourceUnits): string => {
+  if (!units) return 'unknown (legacy)';
+  const originLabel: Record<UnitOrigin, string> = {
+    'source-declared': 'declared by source',
+    'format-defined': 'defined by format',
+    'user-confirmed': 'confirmed by user',
+    'unknown-legacy': 'unknown (legacy)',
+  };
+  return `${units.linear} (${originLabel[units.origin]})`;
+};
+
+/**
+ * Importer IDs whose formats carry no unit declaration, so their metre
+ * outputs are unconfirmed until the user says otherwise. Evidence: no unit
+ * element/attribute in the format; numeric outputs are hard-coded metres at
+ * the call site. Do NOT claim `format-defined` for these.
+ */
+export const UNKNOWN_UNIT_IMPORTER_IDS: ReadonlySet<string> = new Set([
+  'dbx-export',
+  'jobxml',
+  'carlson-rw5',
+  'tds-raw',
+  'fieldgenius-raw',
+  'trimble-survey-report',
+  'opus-report',
+  'gvx',
+  'gnss-csv',
+  'terrestrial-csv',
+]);
+
+/** Importer IDs whose formats declare units in-band (honored, not assumed).
+ * NOTE: there is no LandXML entry here on purpose — the bounded LandXML
+ * preview (buildLandXmlImportPreview) takes CAD/COGO geometry only and never
+ * produces an ImportedDataset, so claiming source-declared provenance for it
+ * would be dead/misleading code. */
+export const SOURCE_DECLARED_IMPORTER_IDS: ReadonlySet<string> = new Set([
+  'native-dat', // .UNITS directive, parsed at the core boundary
+  'gnss-bl', // originalUnits carried by the GNSS network import
+]);
+
+export const unknownLegacyUnits = (): SourceUnits => ({ linear: 'm', origin: 'unknown-legacy' });
+
+/** True when the dataset must not commit until the user confirms units. */
+export const needsUnitConfirmation = (dataset: {
+  sourceUnits?: SourceUnits;
+  needsUnitConfirmation?: boolean;
+}): boolean =>
+  dataset.needsUnitConfirmation === true ||
+  dataset.sourceUnits == null ||
+  dataset.sourceUnits.origin === 'unknown-legacy';
+
+/**
+ * Record an explicit user confirmation. Keeps the already-normalized metre
+ * values untouched — confirmation labels provenance, never reconverts.
+ */
+export const confirmDatasetUnits = <T extends { sourceUnits?: SourceUnits; needsUnitConfirmation?: boolean }>(
+  dataset: T,
+  linear: LinearUnit,
+): T => ({
+  ...dataset,
+  sourceUnits: { linear, origin: 'user-confirmed' },
+  needsUnitConfirmation: false,
+});
+
+const scaleIfFinite = (value: number | undefined, factor: number): number | undefined =>
+  value === undefined ? undefined : value * factor;
+
+/**
+ * Recompute a dataset parsed under the metre assumption into the confirmed
+ * source unit. Applied exactly once to the fresh parse of retained raw
+ * values (never to an already-scaled dataset), so no compound drift.
+ * Angular fields (degrees, correlations) are never scaled.
+ */
+export const rescaleDatasetFromAssumedMeters = (
+  dataset: ImportedDataset,
+  linear: LinearUnit,
+): ImportedDataset => {
+  const factor = UNIT_TO_METERS[linear];
+  if (factor === 1) return confirmDatasetUnits(dataset, linear);
+  return confirmDatasetUnits(
+    {
+      ...dataset,
+      controlStations: dataset.controlStations.map((station) => ({
+        ...station,
+        eastM: scaleIfFinite(station.eastM, factor),
+        northM: scaleIfFinite(station.northM, factor),
+        heightM: scaleIfFinite(station.heightM, factor),
+        sigmaNorthM: scaleIfFinite(station.sigmaNorthM, factor),
+        sigmaEastM: scaleIfFinite(station.sigmaEastM, factor),
+        sigmaHeightM: scaleIfFinite(station.sigmaHeightM, factor),
+      })),
+      observations: dataset.observations.map((observation) => {
+        switch (observation.kind) {
+          case 'gnss-vector':
+            return {
+              ...observation,
+              deltaEastM: observation.deltaEastM * factor,
+              deltaNorthM: observation.deltaNorthM * factor,
+              deltaHeightM: scaleIfFinite(observation.deltaHeightM, factor),
+              sigmaEastM: scaleIfFinite(observation.sigmaEastM, factor),
+              sigmaNorthM: scaleIfFinite(observation.sigmaNorthM, factor),
+              sigmaHeightM: scaleIfFinite(observation.sigmaHeightM, factor),
+            };
+          case 'distance':
+            return {
+              ...observation,
+              distanceM: observation.distanceM * factor,
+              hiM: scaleIfFinite(observation.hiM, factor),
+              htM: scaleIfFinite(observation.htM, factor),
+            };
+          case 'distance-vertical':
+            return {
+              ...observation,
+              distanceM: observation.distanceM * factor,
+              verticalValue:
+                observation.verticalMode === 'delta-h'
+                  ? observation.verticalValue * factor
+                  : observation.verticalValue,
+              hiM: scaleIfFinite(observation.hiM, factor),
+              htM: scaleIfFinite(observation.htM, factor),
+            };
+          case 'vertical':
+            return {
+              ...observation,
+              verticalValue:
+                observation.verticalMode === 'delta-h'
+                  ? observation.verticalValue * factor
+                  : observation.verticalValue,
+              hiM: scaleIfFinite(observation.hiM, factor),
+              htM: scaleIfFinite(observation.htM, factor),
+            };
+          case 'measurement':
+            return {
+              ...observation,
+              distanceM: observation.distanceM * factor,
+              verticalValue:
+                observation.verticalMode === 'delta-h'
+                  ? scaleIfFinite(observation.verticalValue, factor)
+                  : observation.verticalValue,
+              hiM: scaleIfFinite(observation.hiM, factor),
+              htM: scaleIfFinite(observation.htM, factor),
+            };
+          default:
+            return observation;
+        }
+      }),
+    },
+    linear,
+  );
+};

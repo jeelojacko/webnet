@@ -22,6 +22,8 @@ import {
   sourceLeaf,
   splitImportedCodeDescription,
 } from './importers/shared';
+import type { SourceUnits } from './importUnitProvenance';
+import { normalizeLinearUnit } from './importUnitProvenance';
 
 export type TerrestrialCsvUnits = 'm' | 'mm' | 'cm' | 'ft' | 'usft';
 export type TerrestrialCsvPreset = 'generic' | 'trimble-access';
@@ -39,6 +41,8 @@ export interface TerrestrialCsvColumnMapping {
 export interface TerrestrialCsvImportOptions {
   /** Explicit linear unit of the coordinate columns. Required — never guessed. */
   units: TerrestrialCsvUnits | string;
+  /** Phase 17C: false when the caller fell back to the default (units unconfirmed). */
+  unitsExplicit?: boolean;
   delimiter?: string;
   preset?: TerrestrialCsvPreset | string;
   /** Canonical field -> exact header name in the file. Bypasses alias lookup. */
@@ -253,13 +257,25 @@ export const parseTerrestrialCoordinateCsv = (
     }
     const stationId = sanitizeStationId(rawId);
     const split = splitImportedCodeDescription(cell(codeCol) || undefined, cell(descCol) || undefined, sourceLine);
+    // Phase 17C: absent (or present-but-non-numeric) elevation stays absent
+    // (2D) with a HEIGHT_MISSING warning. Never invent 0 silently.
+    const elevRaw = elevCol != null ? cell(elevCol) : '';
+    const elevParsed = elevRaw ? parseFiniteNumber(elevRaw) : undefined;
+    if (elevCol == null || !elevRaw || elevParsed == null) {
+      trace.push({
+        level: 'warning',
+        sourceLine,
+        sourceCode: 'HEIGHT_MISSING',
+        message: `Point ${stationId} has no usable elevation; imported as 2D (HEIGHT_MISSING).`,
+      });
+    }
     const candidate: ImportedControlStationRecord = {
       kind: 'control-station',
       coordinateMode: 'local',
       stationId,
       northM: north * toMeters,
       eastM: east * toMeters,
-      heightM: (elevCol != null && cell(elevCol) ? parseFiniteNumber(cell(elevCol)) ?? 0 : 0) * toMeters,
+      heightM: elevParsed != null ? elevParsed * toMeters : undefined,
       description: split.description,
       feature: split.feature,
       note: cell(noteCol) || undefined,
@@ -280,17 +296,52 @@ export const parseTerrestrialCoordinateCsv = (
 
   const controlStations = [...stationMap.values()];
   if (controlStations.length === 0) return null;
+  // Phase 17C: surface the interpreted column mapping; record unit provenance.
+  const headerNames = headers.map((header) => header.trim());
+  const columnMapping: Record<string, string> = {};
+  const mappingCols: Array<[string, number | undefined]> = [
+    ['id', idCol],
+    ['northing', northCol],
+    ['easting', eastCol],
+    ['elevation', elevCol],
+    ['code', codeCol],
+    ['description', descCol],
+    ['note', noteCol],
+  ];
+  mappingCols.forEach(([field, col]) => {
+    if (col != null && headerNames[col]) columnMapping[field] = headerNames[col]!;
+  });
+  const sourceUnits: SourceUnits =
+    options.unitsExplicit === false
+      ? { linear: normalizeLinearUnit(unitKey) ?? 'm', origin: 'unknown-legacy' }
+      : { linear: normalizeLinearUnit(unitKey) ?? 'm', origin: 'user-confirmed' };
   const detailLines = [
     `Imported ${plural(controlStations.length, 'point')} from ${fileLabel} into normalized WebNet input.`,
     `Units: ${unitKey}; CRS: ${options.crs ?? 'caller-assigned (no transform applied)'}.`,
+    `Columns: ${Object.entries(columnMapping).map(([field, header]) => `${field}<-${header}`).join(', ')}.`,
   ];
   const traceDetail = buildTraceDetailLine(trace);
   if (traceDetail) detailLines.push(traceDetail);
 
+  const needsUnitConfirmation = options.unitsExplicit === false;
+  const provenanceTrace: ImportedTraceEntry[] = needsUnitConfirmation
+    ? [
+        {
+          level: 'warning',
+          sourceCode: 'UNIT_USER_CONFIRMATION_REQUIRED',
+          message:
+            'No units were specified for this CSV; metres assumed pending user confirmation. ' +
+            'Commit is blocked until units are selected (UNIT_USER_CONFIRMATION_REQUIRED).',
+        },
+      ]
+    : [];
   return {
     importerId: 'terrestrial-csv',
     formatLabel: 'Terrestrial coordinate CSV',
     summary: `Imported CSV dataset with ${plural(controlStations.length, 'point')}`,
+    sourceUnits,
+    needsUnitConfirmation,
+    columnMapping,
     notice: { title: 'Imported terrestrial CSV dataset', detailLines },
     comments: [
       'Imported from terrestrial coordinate CSV',
@@ -301,7 +352,7 @@ export const parseTerrestrialCoordinateCsv = (
     ],
     controlStations,
     observations: [],
-    trace,
+    trace: [...provenanceTrace, ...trace],
   };
 };
 
@@ -329,6 +380,8 @@ export const terrestrialCsvImporter: ExternalInputImporter = {
       input,
       {
         units: options?.terrestrialCsv?.units ?? 'm',
+        // Phase 17C: the production default path is BLOCKING until confirmed.
+        unitsExplicit: options?.terrestrialCsv?.units != null,
         delimiter: options?.terrestrialCsv?.delimiter,
         preset: options?.terrestrialCsv?.preset,
         columnMapping: options?.terrestrialCsv?.columnMapping,

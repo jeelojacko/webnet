@@ -115,12 +115,14 @@ export const createImportReviewSource = (
   notice: ImportedInputNotice,
   dataset: ImportedDataset,
   isPrimary: boolean,
+  rawText?: string,
 ): ImportReviewWorkspaceSource => ({
   key,
   sourceName,
   notice,
   dataset,
   isPrimary,
+  ...(rawText !== undefined ? { rawText } : {}),
 });
 
 export const buildWorkspaceFromSources = (

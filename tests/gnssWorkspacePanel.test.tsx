@@ -151,6 +151,15 @@ describe('gnss workspace panel flow', () => {
       });
       expect(textOf(container)).toContain('FIXED-XYZ');
 
+      // Phase 17C — GVX metres are assumed until the operator confirms them.
+      const confirm = container.querySelector<HTMLButtonElement>(
+        'section[aria-label="Unit confirmation"] button',
+      );
+      expect(confirm).not.toBeNull();
+      act(() => {
+        confirm!.click();
+      });
+
       const adjust = [...container.querySelectorAll<HTMLButtonElement>('button')].find((button) =>
         button.textContent?.includes('Adjust (production route)'),
       );
@@ -187,6 +196,9 @@ describe('gnss workspace panel flow', () => {
     });
     try {
       openGvx('sample.gvx', GVX);
+      act(() => {
+        container.querySelector<HTMLButtonElement>('section[aria-label="Unit confirmation"] button')!.click();
+      });
       const adjust = [...container.querySelectorAll<HTMLButtonElement>('button')].find((button) =>
         button.textContent?.includes('Adjust (production route)'),
       );
@@ -197,6 +209,48 @@ describe('gnss workspace panel flow', () => {
       const alert = container.querySelector('[role="alert"]');
       expect(alert).not.toBeNull();
       expect(alert!.textContent).toMatch(/fixed XYZ control/);
+    } finally {
+      cleanup();
+    }
+  });
+
+  it('blocks GVX adjustment until metres are confirmed, then runs', async () => {
+    let ran = 0;
+    const runner = async (input: GnssBaselineAdjustInput): Promise<GnssRunOutcome> => {
+      ran += 1;
+      const result = runGnssBaselineAdjustment(input);
+      return { result, route: 'typescript', reasons: ['test runner'], workerBacked: false };
+    };
+    const { container, cleanup } = mountPanel(runner);
+    try {
+      openGvx('sample.gvx', GVX);
+      expect(textOf(container)).toContain('Unit confirmation');
+      const adjust = [...container.querySelectorAll<HTMLButtonElement>('button')].find((button) =>
+        button.textContent?.includes('Adjust (production route)'),
+      );
+      expect(adjust?.disabled).toBe(true);
+      await act(async () => {
+        adjust!.click();
+        await Promise.resolve();
+      });
+      expect(ran).toBe(0);
+      act(() => {
+        container.querySelector<HTMLButtonElement>('section[aria-label="Unit confirmation"] button')!.click();
+      });
+      expect(textOf(container)).not.toContain('Unit confirmation');
+      const toggle = container.querySelector<HTMLButtonElement>('button[aria-label="A control: free"]');
+      act(() => {
+        toggle!.click();
+      });
+      const adjustAfter = [...container.querySelectorAll<HTMLButtonElement>('button')].find((button) =>
+        button.textContent?.includes('Adjust (production route)'),
+      );
+      await act(async () => {
+        adjustAfter!.click();
+        await Promise.resolve();
+      });
+      expect(ran).toBe(1);
+      expect(textOf(container)).toContain('Adjusted ECEF stations');
     } finally {
       cleanup();
     }
@@ -277,6 +331,9 @@ describe('gnss datum handling selector', () => {
       expect(allowFreeRadio(container)?.checked).toBe(true);
       expect(textOf(container)).toContain('Free');
       expect(textOf(container)).toContain('datum invariant');
+      act(() => {
+        container.querySelector<HTMLButtonElement>('section[aria-label="Unit confirmation"] button')!.click();
+      });
       const adjust = [...container.querySelectorAll<HTMLButtonElement>('button')].find((button) =>
         button.textContent?.includes('Adjust (production route)'),
       );

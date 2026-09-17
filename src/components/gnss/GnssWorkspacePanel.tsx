@@ -15,6 +15,7 @@ import {
 import type {
   GnssBaselineNetworkInput,
   GnssDiagnostic,
+  GnssInputUnits,
 } from '../../engine/gnssBaselineNetworkImport';
 import { buildGnssSampleNetwork } from '../../engine/gnssSampleNetwork';
 import { buildGnssSessionInput,
@@ -53,6 +54,14 @@ export const GnssWorkspacePanel: React.FC<GnssWorkspacePanelProps> = ({ runner, 
   const [format, setFormat] = useState<GnssImportFormat>('unknown');
   const [sourceFile, setSourceFile] = useState('');
   const [csvStations, setCsvStations] = useState<StationMap | null>(null);
+  // Phase 17C — delimited CSV files declare no linear unit. The operator picks
+  // the unit explicitly and confirms it below; adjust stays BLOCKING until then.
+  const [csvUnits, setCsvUnits] = useState<GnssInputUnits>('m');
+  const [csvStationsUnits, setCsvStationsUnits] = useState<string | null>(null);
+  const [baselineCsvText, setBaselineCsvText] = useState<string | null>(null);
+  const [baselineCsvName, setBaselineCsvName] = useState('');
+  const [baselineCsvMeta, setBaselineCsvMeta] = useState<{ frame: string; epoch?: string; ellipsoid?: string } | null>(null);
+  const [unitNotice, setUnitNotice] = useState<string | null>(null);
   const [csvFrame, setCsvFrame] = useState('');
   const [csvEpoch, setCsvEpoch] = useState('');
   const [csvEllipsoid, setCsvEllipsoid] = useState('WGS84');
@@ -75,6 +84,7 @@ export const GnssWorkspacePanel: React.FC<GnssWorkspacePanelProps> = ({ runner, 
       setFormat(next ? nextFormat : 'unknown');
       setSourceFile(nextFile);
       setFixedOverrides({});
+      setUnitNotice(null);
       setDatumMode('constrained');
       setOutcome(null);
       setRunError(
@@ -164,15 +174,17 @@ export const GnssWorkspacePanel: React.FC<GnssWorkspacePanelProps> = ({ runner, 
   };
 
   const handleControlCsv = (file: File): void => {
+    const unitsAtLoad = csvUnits;
     const reader = new FileReader();
     reader.onload = () => {
       const text = typeof reader.result === 'string' ? reader.result : '';
-      const imported = importGnssControlCsv(text, { units: 'm', sourceFile: file.name });
+      const imported = importGnssControlCsv(text, { units: unitsAtLoad, sourceFile: file.name });
       if (!imported.stations) {
         setRunError(imported.diagnostics.map((entry) => entry.message).join('\n'));
         return;
       }
       setCsvStations(imported.stations);
+      setCsvStationsUnits(unitsAtLoad);
       setRunError(null);
     };
     reader.readAsText(file);
@@ -183,20 +195,71 @@ export const GnssWorkspacePanel: React.FC<GnssWorkspacePanelProps> = ({ runner, 
       setRunError('Load a stations/control CSV first, then the baselines CSV.');
       return;
     }
+    const unitsAtLoad = csvUnits;
+    const frameAtLoad = csvFrame.trim() === '' ? 'unknown' : csvFrame.trim();
+    const epochAtLoad = csvEpoch.trim() === '' ? undefined : csvEpoch.trim();
+    const ellipsoidAtLoad = csvEllipsoid.trim() === '' ? undefined : csvEllipsoid.trim();
     const reader = new FileReader();
     reader.onload = () => {
       const text = typeof reader.result === 'string' ? reader.result : '';
+      // Loading is not confirmation: the operator confirms the selected unit
+      // below, which reparses this retained text with unitsConfirmed.
       const imported = importGnssBaselineDelimited(text, csvStations, {
-        units: 'm',
+        units: unitsAtLoad,
         vectorFrame: 'ecef',
-        referenceFrame: csvFrame.trim() === '' ? 'unknown' : csvFrame.trim(),
-        epoch: csvEpoch.trim() === '' ? undefined : csvEpoch.trim(),
-        ellipsoid: csvEllipsoid.trim() === '' ? undefined : csvEllipsoid.trim(),
+        referenceFrame: frameAtLoad,
+        epoch: epochAtLoad,
+        ellipsoid: ellipsoidAtLoad,
         sourceFile: file.name,
       });
+      setBaselineCsvText(text);
+      setBaselineCsvName(file.name);
+      setBaselineCsvMeta({ frame: frameAtLoad, epoch: epochAtLoad, ellipsoid: ellipsoidAtLoad });
       loadNetwork(imported.network, imported.diagnostics, 'delimited', file.name);
     };
     reader.readAsText(file);
+  };
+
+  // Phase 17C — confirm metre-assumed GVX values. Factor-1 labelling only, so
+  // no rescale is needed; non-metre GVX files must come through the CSV path.
+  const handleConfirmGvxMetres = (): void => {
+    if (!network) return;
+    setNetwork({
+      ...network,
+      sourceUnits: { linear: 'm', origin: 'user-confirmed' },
+      needsUnitConfirmation: false,
+    });
+    setUnitNotice(null);
+  };
+
+  // Phase 17C — confirm delimited-CSV units by reparsing the retained raw
+  // text with unitsConfirmed (exactly-once scaling, no compound drift).
+  const handleConfirmCsvUnits = (): void => {
+    if (!network || !baselineCsvText || !csvStations || !baselineCsvMeta) return;
+    if (csvUnits !== csvStationsUnits) {
+      setUnitNotice(
+        `Stations were loaded as '${csvStationsUnits ?? 'unknown'}' but '${csvUnits}' is selected. ` +
+        'Reload the stations CSV with the selected units, then confirm.',
+      );
+      return;
+    }
+    const imported = importGnssBaselineDelimited(baselineCsvText, csvStations, {
+      units: csvUnits,
+      unitsConfirmed: true,
+      vectorFrame: 'ecef',
+      referenceFrame: baselineCsvMeta.frame,
+      epoch: baselineCsvMeta.epoch,
+      ellipsoid: baselineCsvMeta.ellipsoid,
+      sourceFile: baselineCsvName,
+    });
+    if (!imported.network) {
+      setUnitNotice(
+        imported.diagnostics.map((entry) => entry.message).join('\n') ||
+        'Unit confirmation reparse failed; adjust stays blocked.',
+      );
+      return;
+    }
+    loadNetwork(imported.network, imported.diagnostics, 'delimited', baselineCsvName);
   };
 
   const handleSample = (): void => {
@@ -225,8 +288,17 @@ export const GnssWorkspacePanel: React.FC<GnssWorkspacePanelProps> = ({ runner, 
     return stations;
   }, [network, fixedOverrides]);
 
+  const unitsUnconfirmed = network?.needsUnitConfirmation === true;
+
   const handleAdjust = (): void => {
     if (!sessionInput || sigmaInvalid) return;
+    if (unitsUnconfirmed) {
+      setRunError(
+        'Units unconfirmed: metre values are assumed, not declared. ' +
+        'Confirm units below before adjusting (BLOCKING).',
+      );
+      return;
+    }
     if (preflight && !preflight.pass) {
       setRunError(preflight.gates.filter((gate) => !gate.pass).map((gate) => gate.message).join('\n'));
       return;
@@ -277,6 +349,14 @@ export const GnssWorkspacePanel: React.FC<GnssWorkspacePanelProps> = ({ runner, 
         <details className="text-xs">
           <summary className="cursor-pointer text-slate-300">Delimited CSV (stations + baselines)</summary>
           <div className="mt-2 space-y-2">
+            <div className="flex flex-wrap gap-2 items-center">
+              <label htmlFor="gnss-csv-units">CSV units (file declares none — confirm below before adjusting)</label>
+              <select id="gnss-csv-units" value={csvUnits} onChange={(e) => setCsvUnits(e.target.value as GnssInputUnits)} className="bg-slate-800 border border-slate-700 rounded px-2 py-1">
+                <option value="m">m</option>
+                <option value="mm">mm</option>
+                <option value="cm">cm</option>
+              </select>
+            </div>
             <div className="flex flex-wrap gap-2 items-center">
               <label htmlFor="gnss-csv-frame">Reference frame</label>
               <input id="gnss-csv-frame" type="text" value={csvFrame} onChange={(e) => setCsvFrame(e.target.value)} placeholder="e.g. ITRF2020" className="bg-slate-800 border border-slate-700 rounded px-2 py-1" />
@@ -420,12 +500,48 @@ export const GnssWorkspacePanel: React.FC<GnssWorkspacePanelProps> = ({ runner, 
         </section>
       )}
 
+      {unitsUnconfirmed && network && (
+        <section aria-label="Unit confirmation" className="border border-amber-700 rounded p-3 text-xs space-y-2">
+          <h3 className="text-sm font-medium text-amber-200">Unit confirmation (BLOCKING)</h3>
+          {format === 'delimited' ? (
+            <>
+              <p className="text-slate-300">
+                This CSV declares no linear unit; values were read as {csvUnits} pending confirmation.
+                Confirming reparses the retained file text exactly once — no compound drift.
+              </p>
+              <button
+                type="button"
+                onClick={handleConfirmCsvUnits}
+                className="px-3 py-1 border border-amber-600 rounded hover:bg-slate-800"
+              >
+                Confirm CSV units ({csvUnits})
+              </button>
+            </>
+          ) : (
+            <>
+              <p className="text-slate-300">
+                GVX linear units are not honored at intake; values were read as metres, unconfirmed.
+                Non-metre GVX files must come through the delimited-CSV path with explicit units.
+              </p>
+              <button
+                type="button"
+                onClick={handleConfirmGvxMetres}
+                className="px-3 py-1 border border-amber-600 rounded hover:bg-slate-800"
+              >
+                Confirm metres
+              </button>
+            </>
+          )}
+          {unitNotice && <p role="alert" className="text-red-300">{unitNotice}</p>}
+        </section>
+      )}
+
       {network && (
         <div>
           <button
             type="button"
             onClick={handleAdjust}
-            disabled={running || sigmaInvalid || !sessionInput}
+            disabled={running || sigmaInvalid || !sessionInput || unitsUnconfirmed}
             className="px-4 py-1.5 bg-blue-700 hover:bg-blue-600 disabled:opacity-50 rounded text-sm font-medium"
           >
             {running ? 'Adjusting…' : 'Adjust (production route)'}

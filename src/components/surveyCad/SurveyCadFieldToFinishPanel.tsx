@@ -136,7 +136,8 @@ export const SurveyCadFieldToFinishPanel: React.FC<FieldToFinishPanelProps> = ({
   }, [points, adjustmentSource, project, catalog, runId]);
 
   const runImport = (text: string): void => {
-    const dataset = parseTerrestrialCoordinateCsv(text, { units: 'm' }, 'f2f-import.csv');
+    // Phase 17C: UI states metres explicitly (see failure note below), so this counts as user-confirmed.
+    const dataset = parseTerrestrialCoordinateCsv(text, { units: 'm', unitsExplicit: true }, 'f2f-import.csv');
     if (!dataset) {
       setPoints(null);
       setImportNote('Import failed: header must carry Point/ID + Northing + Easting (units m).');

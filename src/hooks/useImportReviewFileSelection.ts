@@ -46,6 +46,7 @@ export const useImportReviewFileSelection = ({ fileInputRef, settingsFileInputRe
                         imported.notice!,
                         imported.dataset!,
                         false,
+                        text,
                       );
                       const nextSources = [...prev.sources, nextSource];
                       const nextWorkspace = appendImportReviewSource(
@@ -98,6 +99,7 @@ export const useImportReviewFileSelection = ({ fileInputRef, settingsFileInputRe
               imported.notice!,
               imported.dataset!,
               true,
+              text,
             );
             const workspace = buildWorkspaceFromSources([primarySource]);
             const conflicts = buildImportConflicts(workspace.dataset);

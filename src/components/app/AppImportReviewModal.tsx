@@ -1,5 +1,6 @@
 import React from 'react';
 import { confirmActionGuard } from '../../engine/actionGuards';
+import { buildStagedSourceSummary, type StagedSourceSummary } from '../../engine/importReviewModel';
 import { ImportReviewModal } from '../../app/AppLazyViews';
 import type { useAppProjectImportWorkspace } from '../../hooks/useAppProjectImportWorkspace';
 
@@ -36,6 +37,7 @@ export type AppImportReviewModalProps = {
   onRemoveGroup: ImportReviewModalProps['onRemoveGroup'];
   onRemoveRow: ImportReviewModalProps['onRemoveRow'];
   onCancel: ImportReviewModalProps['onCancel'];
+  onConfirmSourceUnits: NonNullable<ImportReviewModalProps['onConfirmSourceUnits']>;
   onImportAssociatedProjectSettings: ImportReviewModalProps['onImportAssociatedProjectSettings'];
   onApplyImportReviewAsNewFile: () => void | Promise<void>;
   onApplyImportReview: () => void | Promise<void>;
@@ -79,9 +81,40 @@ const AppImportReviewModal = ({
   moveTargetGroups,
   onApplyImportReviewAsNewFile,
   onApplyImportReview,
+  onConfirmSourceUnits,
   ...modalHandlers
 }: AppImportReviewModalProps) => {
   if (!importReviewState) return null;
+
+  // Phase 17C — per staged source rows + BLOCKING commit gate. Relation is
+  // filename-based: same name + same fingerprint is an exact duplicate
+  // (BLOCKING), same name + different fingerprint a possible revision.
+  const stagedSources: StagedSourceSummary[] = importReviewState.sources.map((source) => {
+    const sibling = importReviewState.sources.find(
+      (other) => other.key !== source.key && other.sourceName === source.sourceName,
+    );
+    const relationNote = sibling
+      ? sibling.dataset.contentFingerprint != null &&
+        sibling.dataset.contentFingerprint === source.dataset.contentFingerprint
+        ? `Exact duplicate of ${sibling.sourceName}`
+        : `Possible revision of ${sibling.sourceName}`
+      : undefined;
+    return buildStagedSourceSummary(source.dataset, {
+      sourceKey: source.key,
+      sourceName: source.sourceName,
+      relationNote,
+    });
+  });
+  const unconfirmed = stagedSources.find((summary) => summary.unitConfirmationRequired);
+  const exactDuplicate = stagedSources.find((summary) =>
+    summary.warnings.some((warning) => warning.sourceCode === 'SOURCE_ALREADY_IMPORTED') ||
+    (summary.relationNote?.startsWith('Exact duplicate') ?? false),
+  );
+  const commitBlockedReason = unconfirmed
+    ? `Units unconfirmed for ${unconfirmed.sourceName ?? 'source'} — select a unit to enable commit.`
+    : exactDuplicate
+      ? `Exact duplicate staged (${exactDuplicate.sourceName ?? 'source'}) — cancel or replace it before commit.`
+      : null;
 
   return (
     <React.Suspense fallback={null}>
@@ -104,6 +137,9 @@ const AppImportReviewModal = ({
         conflictRenameValues={importReviewState.conflictRenameValues}
         resolutionValidationMessage={importReviewState.resolutionValidationMessage}
         moveTargetGroups={moveTargetGroups}
+        stagedSources={stagedSources}
+        onConfirmSourceUnits={onConfirmSourceUnits}
+        commitBlockedReason={commitBlockedReason}
         {...modalHandlers}
         pendingAssociatedSettingsSourceName={
           importReviewState.stagedAssociatedSettings?.sourceName ?? null
