@@ -65,6 +65,9 @@ interface UseAppRunWorkspaceReviewArgs {
   setPendingEditorJumpLine: Dispatch<SetStateAction<number | null>>;
   setLastRunInput: Dispatch<SetStateAction<string | null>>;
   setLastRunSettingsSnapshot: Dispatch<SetStateAction<RunSettingsSnapshot | null>>;
+  setAppliedRunIdentity: Dispatch<
+    SetStateAction<import('../engine/resultIntegrity').AppliedRunIdentity | null>
+  >;
   setImportNotice: Dispatch<
     SetStateAction<{ title: string; detailLines: string[] } | null>
   >;
@@ -91,6 +94,7 @@ export const useAppRunWorkspaceReview = ({
   setPendingEditorJumpLine,
   setLastRunInput,
   setLastRunSettingsSnapshot,
+  setAppliedRunIdentity,
   setImportNotice,
   setActiveTab,
 }: UseAppRunWorkspaceReviewArgs) => {
@@ -263,6 +267,7 @@ export const useAppRunWorkspaceReview = ({
         restoredSnapshot.inputFingerprint === activeInputFingerprint ? effectiveRunInput : null,
       );
       setLastRunSettingsSnapshot(restoredSnapshot.settingsSnapshot);
+      setAppliedRunIdentity(restoredSnapshot.appliedRunIdentity ?? null);
       restoreAdjustmentWorkflowState({
         result: restoredResult,
         excludedIds: restoredSnapshot.excludedIds,
@@ -302,6 +307,7 @@ export const useAppRunWorkspaceReview = ({
       setImportNotice,
       setLastRunInput,
       setLastRunSettingsSnapshot,
+      setAppliedRunIdentity,
       setPendingEditorJumpLine,
       setResult,
       setRunDiagnostics,
