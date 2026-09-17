@@ -37,6 +37,12 @@ export type SuccessfulAdjustmentRunInfo = {
    * context still compile — absent falls back to the input:settings composite.
    */
   resultFingerprint?: string;
+  /**
+   * Phase 17E: the new result's dependency identity (== current identity
+   * at fire time) for stamping synced F2F entities. Optional so
+   * legacy/test callers still compile — absent means no stamping.
+   */
+  resultDependencyIdentity?: import('../engine/resultIntegrity').ResultDependencyIdentity | null;
 };
 
 export type ApplyRunOutcomeContext = {
@@ -223,6 +229,7 @@ export const useAdjustmentOutcomeApplication = <TRunDiagnostics>({
           settingsFingerprint: context.settingsFingerprint,
           runMode: context.appliedRunIdentity.runMode,
           resultFingerprint: buildAdjustmentResultFingerprint(solved),
+          resultDependencyIdentity: effectiveAppliedIdentity,
         });
       }
       noteUiPerfStage('applyRunOutcomeComplete');

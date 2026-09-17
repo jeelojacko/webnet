@@ -10,6 +10,8 @@
  * untouched (identical project, no status rewrite).
  */
 import { formatDraftCoordinate } from '../cad/cadLabelEngine';
+import { stampAdjustmentDependency } from '../cad/cadAdjustmentDependency';
+import type { ResultDependencyIdentity } from '../resultIntegrity';
 import { cloneCadDrawingDocument } from '../cad/cadDrawingFile';
 import { replaceCadProjectEntities } from '../cad/cadProjectState';
 import type { AdjustmentResult } from '../../types';
@@ -152,6 +154,12 @@ export interface AdjustmentRerunSyncInput {
   catalogRevision?: string;
   /** Current feature source-record ids; mismatch stamps FEATURE_METADATA_CHANGED. */
   sourceRecordIds?: readonly string[];
+  /**
+   * Phase 17E: new result identity for stamping synced F2F entities so
+   * they evaluate CURRENT. Fail-closed: absent/null = no stamping (prior
+   * behavior preserved byte-for-byte).
+   */
+  resultDependencyIdentity?: ResultDependencyIdentity | null;
 }
 
 export interface AdjustmentRerunSyncOutcome {
@@ -179,6 +187,29 @@ const emptySyncOutcome = (project: CadProject, status: FieldToFinishSyncStatus):
   missingStations: [],
   affectedEntityIds: [],
 });
+
+/**
+ * Phase 17E: after a COMPLETE coordinate sync (link status CURRENT),
+ * stamp every synced F2F entity (moved points/labels/linework) with the
+ * new result identity so it evaluates CURRENT. Any other status
+ * (conflict, drift, missing) stamps nothing — the link already reads
+ * non-CURRENT so the core yields STALE/CAD_F2F_SYNC_INCOMPLETE.
+ * Fail-closed: null/absent identity returns the identical project.
+ */
+const stampSyncedF2fEntities = (
+  project: CadProject,
+  status: FieldToFinishSyncStatus,
+  identity: ResultDependencyIdentity | null | undefined,
+): CadProject => {
+  if (status !== 'CURRENT' || !identity) return project;
+  let touched = false;
+  const entities = project.entities.map((entity) => {
+    if (!isFieldToFinishEntity(entity)) return entity;
+    touched = true;
+    return stampAdjustmentDependency(entity, identity);
+  });
+  return touched ? replaceCadProjectEntities(project, entities) : project;
+};
 
 /**
  * Linked F2F adjustment-rerun sync (Bucket A2). Pure: reads the authoritative
@@ -317,7 +348,11 @@ export const applyAdjustmentRerunToLinkedF2f = (
     const stamped = revision !== undefined || manualConflict
       ? stampFieldToFinishLink(project, { status, ...provenancePatch })
       : project;
-    return emptySyncOutcome(stamped, stamped.metadata.fieldToFinishLink?.status ?? 'CURRENT');
+    // Phase 17E: bit-identical reruns still stamp synced F2F entities with
+    // the new result identity (metadata only, geometry untouched) so they
+    // evaluate CURRENT; absent identity leaves entities byte-identical.
+    const final = stampSyncedF2fEntities(stamped, status, input.resultDependencyIdentity);
+    return emptySyncOutcome(final, final.metadata.fieldToFinishLink?.status ?? 'CURRENT');
   }
   const applied = updateFieldToFinishCoordinates(project, deltas);
   const conflictStations = applied.skippedManual.filter((stationId) => {
@@ -339,8 +374,9 @@ export const applyAdjustmentRerunToLinkedF2f = (
         ? 'CURRENT'
         : link.status;
   const stamped = stampFieldToFinishLink(applied.project, { status, ...provenancePatch });
+  const final = stampSyncedF2fEntities(stamped, status, input.resultDependencyIdentity);
   return {
-    project: stamped,
+    project: final,
     status,
     changed: applied.updated.length > 0,
     updated: applied.updated,
@@ -424,7 +460,7 @@ export const resolveFieldToFinishCoordinates = (
  */
 export const applySuccessfulAdjustmentRunToDrawing = (
   current: CadDrawingDocument | null,
-  info: { result: AdjustmentResult; inputFingerprint: string; settingsFingerprint: string; resultFingerprint?: string },
+  info: { result: AdjustmentResult; inputFingerprint: string; settingsFingerprint: string; resultFingerprint?: string; resultDependencyIdentity?: ResultDependencyIdentity | null },
 ): CadDrawingDocument | null => {
   if (!current || !current.project.metadata.fieldToFinishLink) return current;
   const outcome = applyAdjustmentRerunToLinkedF2f(current.project, {
@@ -432,6 +468,7 @@ export const applySuccessfulAdjustmentRunToDrawing = (
     inputFingerprint: info.inputFingerprint,
     settingsFingerprint: info.settingsFingerprint,
     ...(info.resultFingerprint !== undefined ? { resultFingerprint: info.resultFingerprint } : {}),
+    ...(info.resultDependencyIdentity ? { resultDependencyIdentity: info.resultDependencyIdentity } : {}),
   });
   if (outcome.project === current.project) return current;
   return cloneCadDrawingDocument({

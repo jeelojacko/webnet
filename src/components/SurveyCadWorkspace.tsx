@@ -26,6 +26,17 @@ import type { FeatureCodeCatalog } from '../engine/fieldToFinish/featureCatalog'
 import { classifyCatalogChange, stampCatalogStaleStatus } from '../engine/fieldToFinish/linkedSync';
 import { noteUiTabReady } from '../hooks/useUiPerfMonitor';
 import type { SuccessfulAdjustmentRunInfo } from '../hooks/useAdjustmentOutcomeApplication';
+import type { ResultDependencyIdentity } from '../engine/resultIntegrity';
+import {
+  summarizeDrawingDependency,
+  type CadDependencyReasonCode,
+  type DrawingDependencySummary,
+} from '../engine/cad/cadAdjustmentDependency';
+import {
+  buildDraftLabelEntityStatusMap,
+  evaluateDraftLabelDependencies,
+  hasStaleDerivedDraftLabel,
+} from '../engine/cad/cadDraftLabelDependency';
 import { useSurveyCadWorkspace } from '../hooks/surveyCad/useSurveyCadWorkspace';
 import SurveyCadCommandToolbar from './surveyCad/SurveyCadCommandToolbar';
 import { SurveyCadDraftingPanel } from './surveyCad/SurveyCadDraftingPanel';
@@ -56,12 +67,45 @@ interface SurveyCadWorkspaceProps {
   /** Latest successful production run for explicit adjustment-backed F2F commits; absent = no run yet. */
   adjustmentSource?: SuccessfulAdjustmentRunInfo | null;
   /**
+   * Current adjustment-result identity for the CAD dependency chip and the
+   * Export Center deliverable gate. Absent/null = unknown (fail-closed).
+   */
+  resultDependencyIdentity?: ResultDependencyIdentity | null;
+  /**
    * Freshness gate for NEW drafting feeds (auto spike + Import Adjusted
    * Points). False blocks new feeds without touching existing CAD entities.
    * Defaults false (fail-closed).
    */
   canFeedDraftingFromResult?: boolean;
 }
+
+/** Phase 17E: first reason code in words for the dependency status chip. */
+const DEPENDENCY_CAUSE_WORDS: Record<CadDependencyReasonCode, string> = {
+  CAD_CURRENT: 'dependencies current',
+  CAD_NO_DEPENDENCY: 'manual only',
+  CAD_SOURCE_RESULT_STALE: 'result stale',
+  CAD_SOURCE_RESULT_REPLACED: 'result replaced',
+  CAD_SOURCE_STATION_MISSING: 'linked stations missing',
+  CAD_LEGACY_DEPENDENCY_UNKNOWN: 'unstamped legacy entities',
+  CAD_PARCEL_METRICS_STALE: 'parcel metrics changed',
+  CAD_F2F_SYNC_INCOMPLETE: 'field-to-finish sync incomplete',
+  CAD_DERIVED_LABEL_STALE: 'derived annotations stale',
+  CAD_OWNER_CONFLICT: 'conflicting ownership',
+};
+
+/** Phase 17E: action hint for the dependency status chip. */
+const DEPENDENCY_ACTION_HINT: Record<CadDependencyReasonCode, string> = {
+  CAD_CURRENT: '',
+  CAD_NO_DEPENDENCY: '',
+  CAD_SOURCE_RESULT_STALE: 'Refresh adjusted points',
+  CAD_SOURCE_RESULT_REPLACED: 'Refresh adjusted points',
+  CAD_SOURCE_STATION_MISSING: 'Refresh adjusted points',
+  CAD_LEGACY_DEPENDENCY_UNKNOWN: 'Review parcel',
+  CAD_PARCEL_METRICS_STALE: 'Review parcel',
+  CAD_F2F_SYNC_INCOMPLETE: 'Sync linked F2F',
+  CAD_DERIVED_LABEL_STALE: 'Refresh derived annotations',
+  CAD_OWNER_CONFLICT: 'Review parcel',
+};
 
 const CAD_DRAWING_FILE_TYPES = [
   {
@@ -84,6 +128,7 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
   onPersistedStateChange,
   adjustmentSource = null,
   canFeedDraftingFromResult = false,
+  resultDependencyIdentity = null,
 }) => {
   const cloneBounds = (bounds: CadBounds | null): CadBounds | null =>
     bounds
@@ -113,6 +158,7 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
         parseOptions,
         units,
         result: canFeedDraftingFromResult ? result : null,
+        resultDependencyIdentity,
       });
       const migrated = migrateSurveyCadStateToDrawing({
         state: {
@@ -126,7 +172,7 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
       return migrated;
     }
     return createBlankCadDrawingDocument({ units });
-  }, [canFeedDraftingFromResult, input, instrumentLibrary, parseOptions, persistedState, result, units]);
+  }, [canFeedDraftingFromResult, input, instrumentLibrary, parseOptions, persistedState, result, resultDependencyIdentity, units]);
   const activeDrawing = drawing ?? legacyDrawing;
   const emitDrawingChange: Dispatch<SetStateAction<CadDrawingDocument | null>> =
     onDrawingChange ??
@@ -152,6 +198,37 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
       });
     });
   const cadProject = activeDrawing.project;
+  // Phase 17E drawing dependency status (single text chip, not color-only).
+  const stationIds = useMemo(() => new Set(Object.keys(result?.stations ?? {})), [result]);
+  const f2fLinkStatus = activeDrawing.project.metadata.fieldToFinishLink?.status;
+  const f2fLinkSourceKind = activeDrawing.project.metadata.fieldToFinishLink?.sourceKind;
+  const dependencySummary: DrawingDependencySummary = useMemo(() => {
+    const summary = summarizeDrawingDependency(activeDrawing.project, resultDependencyIdentity, {
+      stationIds,
+      f2fLinkStatus,
+      f2fLinkSourceKind,
+    });
+    if (summary.status === 'STALE') return summary;
+    const labels = activeDrawing.draft?.labels ?? [];
+    if (labels.length === 0) return summary;
+    const statusMap = buildDraftLabelEntityStatusMap(activeDrawing.project.entities, resultDependencyIdentity, {
+      stationIds,
+      f2fLinkStatus,
+      f2fLinkSourceKind,
+    });
+    if (!hasStaleDerivedDraftLabel(evaluateDraftLabelDependencies(labels, statusMap))) return summary;
+    return {
+      ...summary,
+      status: 'STALE',
+      reasons: summary.reasons.includes('CAD_DERIVED_LABEL_STALE')
+        ? summary.reasons
+        : [...summary.reasons, 'CAD_DERIVED_LABEL_STALE'],
+    };
+  }, [activeDrawing, resultDependencyIdentity, stationIds, f2fLinkStatus, f2fLinkSourceKind]);
+  const dependencyCause = DEPENDENCY_CAUSE_WORDS[dependencySummary.reasons[0] ?? 'CAD_OWNER_CONFLICT'];
+  const dependencyAction = dependencySummary.status === 'CURRENT' || dependencySummary.status === 'MANUAL_ONLY'
+    ? null
+    : DEPENDENCY_ACTION_HINT[dependencySummary.reasons[0] ?? 'CAD_OWNER_CONFLICT'];
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const [fileStatusText, setFileStatusText] = useState('');
   const [viewport, setViewport] = useState({ zoom: 1, panX: 0, panY: 0 });
@@ -371,7 +448,7 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
   };
 
   const handleImportAdjustedPoints = () => {
-    if (!result || !canFeedDraftingFromResult) {
+    if (!result || !canFeedDraftingFromResult || !resultDependencyIdentity) {
       setFileStatusText(
         'Import blocked: the adjustment result is not current (stale, failed, or non-production run). Re-run the adjustment, then import again.',
       );
@@ -379,6 +456,7 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
     }
     const nextDrawing = importAdjustedPointsIntoCadDrawing({
       document: activeDrawing,
+      identity: resultDependencyIdentity,
       result,
       sourceName: 'Current adjustment',
     });
@@ -449,7 +527,7 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
               type="button"
               className="rounded border border-sky-500 bg-sky-950 px-2 py-1 text-sky-100 hover:bg-sky-900 disabled:cursor-not-allowed disabled:border-slate-700 disabled:bg-slate-900 disabled:text-slate-500"
               onClick={handleImportAdjustedPoints}
-              disabled={!result || !canFeedDraftingFromResult}
+              disabled={!result || !canFeedDraftingFromResult || !resultDependencyIdentity}
               title={
                 canFeedDraftingFromResult
                   ? 'Import adjusted points from the current result'
@@ -466,6 +544,16 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
             {fileStatusText}
           </div>
         ) : null}
+        <div
+          className="absolute left-5 top-14 z-40 max-w-xl truncate text-[11px] text-slate-300"
+          data-survey-cad-dependency-status
+          title={dependencyAction ?? undefined}
+        >
+          {`CAD status: ${dependencySummary.status === 'MANUAL_ONLY' ? 'MANUAL-ONLY' : dependencySummary.status}`}
+          {dependencySummary.status === 'CURRENT' || dependencySummary.status === 'MANUAL_ONLY'
+            ? ` — ${dependencyCause}.`
+            : ` — ${dependencyCause}.${dependencyAction ? ` ${dependencyAction}.` : ''}`}
+        </div>
         <SurveyCadCommandToolbar
           workspace={cadWorkspace}
           canSplitParcelBySlideOrSwing={parcelLayoutWorkflow.canSplitParcelBySlideOrSwing}
@@ -495,7 +583,15 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
           />
         ) : null}
         {exportCenterOpen ? (
-          <ExportCenterPanel drawing={activeDrawing} catalog={featureCatalog} onClose={() => setExportCenterOpen(false)} />
+          <ExportCenterPanel
+            drawing={activeDrawing}
+            catalog={featureCatalog}
+            resultIdentity={resultDependencyIdentity}
+            stationIds={stationIds}
+            f2fLinkStatus={f2fLinkStatus}
+            f2fLinkSourceKind={f2fLinkSourceKind}
+            onClose={() => setExportCenterOpen(false)}
+          />
         ) : null}
         <SurveyCadWorkspaceSurface
           workspace={cadWorkspace}

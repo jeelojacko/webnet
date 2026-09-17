@@ -23,6 +23,8 @@ import type { FeatureCodeCatalog, FeatureDefinition } from './featureCatalog';
 import { FieldLineworkControl, type ParsedFeatureCode } from './featureMetadata';
 import { generateLinework, type CodedPointInput } from './linework';
 import { linkOfPayload, type LinkOfPayloadSource } from './linkedSync';
+import { stampAdjustmentDependency } from '../cad/cadAdjustmentDependency';
+import type { ResultDependencyIdentity } from '../resultIntegrity';
 import { formatDraftCoordinate } from '../cad/cadLabelEngine';
 import { replaceCadProjectEntities } from '../cad/cadProjectState';
 import { createCadSelectionState } from '../cad/cadSelection';
@@ -97,6 +99,12 @@ export interface FieldToFinishCadArgs {
    * callers omit this (link stamps 'coordinate-import', never auto-synced).
    */
   source?: LinkOfPayloadSource;
+  /**
+   * Phase 17E: stamp generated entities so they evaluate CURRENT against
+   * the commit-time result. Honored only when sourceKind==='adjustment';
+   * absent = today's unstamped behavior (fail-closed).
+   */
+  resultDependencyIdentity?: ResultDependencyIdentity | null;
 }
 
 export interface FieldToFinishWarning {
@@ -125,6 +133,12 @@ export interface FieldToFinishCadPayload {
    * fingerprints so rerun auto-sync applies to the resulting link.
    */
   source?: LinkOfPayloadSource;
+  /**
+   * Phase 17E: commit-time result identity, carried through the undoable
+   * command so generated entities stamp CURRENT on apply. Set only for
+   * adjustment-backed generations; absent = unstamped (fail-closed).
+   */
+  resultDependencyIdentity?: ResultDependencyIdentity | null;
 }
 
 export interface FieldToFinishCadResult {
@@ -665,13 +679,23 @@ export const buildFieldToFinishPayload = (
     }
   }
 
+  // Phase 17E: stamp adjustment-backed generations so fresh commits
+  // evaluate CURRENT. Coordinate-import commits never stamp — their
+  // lineage tracking is out of scope and they must stay exportable.
+  const commitIdentity = args.source?.sourceKind === 'adjustment'
+    ? args.resultDependencyIdentity ?? null
+    : null;
+  const stampedUpserts = commitIdentity
+    ? upsertEntities.map((entity) => stampAdjustmentDependency(entity, commitIdentity))
+    : upsertEntities;
   const payload: FieldToFinishCadPayload = {
     layersToAdd,
     stylesToAdd,
-    upsertEntities,
+    upsertEntities: stampedUpserts,
     removeEntityIds: [],
     label: `FIELD_TO_FINISH (${ordered.length} points, ${lineworkCount} linework)`,
     ...(args.source !== undefined ? { source: { ...args.source } } : {}),
+    ...(commitIdentity ? { resultDependencyIdentity: commitIdentity } : {}),
   };
   return {
     payload,
@@ -693,6 +717,15 @@ export const applyFieldToFinishPayload = (
   project: CadProject,
   payload: FieldToFinishCadPayload,
 ): CadProject => {
+  // Phase 17E: the undoable command path stamps here so hand-built
+  // payloads carrying an adjustment identity also commit CURRENT.
+  // Idempotent with the builder stamp; coordinate-import never stamps.
+  const commitIdentity = payload.source?.sourceKind === 'adjustment'
+    ? payload.resultDependencyIdentity ?? null
+    : null;
+  const upserts = commitIdentity
+    ? payload.upsertEntities.map((entity) => stampAdjustmentDependency(entity, commitIdentity))
+    : payload.upsertEntities;
   const layerNames = new Set(project.layers.map((layer) => layer.name));
   const layerIds = new Set(project.layers.map((layer) => layer.id));
   const layers = [
@@ -706,12 +739,12 @@ export const applyFieldToFinishPayload = (
     ...payload.stylesToAdd.filter((style) => !styleIds.has(style.id) && !styleNames.has(style.name)),
   ];
   const removed = new Set(payload.removeEntityIds);
-  const upsert = new Map(payload.upsertEntities.map((entity) => [entity.id, entity]));
+  const upsert = new Map(upserts.map((entity) => [entity.id, entity]));
   const entities = project.entities
     .filter((entity) => !removed.has(entity.id))
     .map((entity) => upsert.get(entity.id) ?? entity);
   const known = new Set(entities.map((entity) => entity.id));
-  for (const entity of payload.upsertEntities) {
+  for (const entity of upserts) {
     if (!known.has(entity.id)) entities.push(entity);
   }
   entities.sort((a, b) => (a.id < b.id ? -1 : a.id > b.id ? 1 : 0));

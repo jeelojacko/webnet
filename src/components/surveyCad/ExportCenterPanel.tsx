@@ -11,6 +11,7 @@ import {
   saveBrowserTextFile,
 } from '../../engine/browserFileIo';
 import type { CadDrawingDocument } from '../../engine/cad/cadTypes';
+import type { ResultDependencyIdentity } from '../../engine/resultIntegrity';
 import type { FeatureCodeCatalog } from '../../engine/fieldToFinish/featureCatalog';
 
 const FORMATS: ExportCenterFormat[] = ['svg', 'pdf', 'dxf-r12', 'dxf-r2000', 'landxml', 'wncad', 'catalog'];
@@ -31,6 +32,11 @@ interface ExportCenterPanelProps {
   drawing: CadDrawingDocument;
   catalog?: FeatureCodeCatalog | null;
   activeSheetId?: string;
+  /** Phase 17E deliverable gate inputs; absent = legacy behavior, unchanged. */
+  resultIdentity?: ResultDependencyIdentity | null;
+  stationIds?: Set<string>;
+  f2fLinkStatus?: string;
+  f2fLinkSourceKind?: string;
   onClose: () => void;
   saveTextFile?: (_name: string, _text: string, _picker: PickerType) => Promise<boolean>;
   saveBinaryFile?: (_name: string, _bytes: Uint8Array, _picker: PickerType) => Promise<boolean>;
@@ -59,6 +65,10 @@ export const ExportCenterPanel = ({
   drawing,
   catalog = null,
   activeSheetId,
+  resultIdentity,
+  stationIds,
+  f2fLinkStatus,
+  f2fLinkSourceKind,
   onClose,
   saveTextFile = async (name, text, picker) => saveBrowserTextFile(name, text, [picker]),
   saveBinaryFile = async (name, bytes, picker) => saveBrowserBinaryFile(name, bytes, [picker]),
@@ -69,10 +79,12 @@ export const ExportCenterPanel = ({
   const [sheetId, setSheetId] = useState<string | undefined>(activeSheetId ?? sheets[0]?.id);
   const [status, setStatus] = useState('');
 
-  const outcome = useMemo(
-    () => buildExportCenterPreview(drawing, { format, pdfScope, sheetId, catalog }),
-    [drawing, format, pdfScope, sheetId, catalog],
-  );
+  const outcome = useMemo(() => {
+    const depOpts = resultIdentity !== undefined || stationIds !== undefined || f2fLinkStatus !== undefined || f2fLinkSourceKind !== undefined
+      ? { resultIdentity: resultIdentity ?? null, stationIds, f2fLinkStatus, f2fLinkSourceKind }
+      : undefined;
+    return buildExportCenterPreview(drawing, { format, pdfScope, sheetId, catalog }, depOpts);
+  }, [drawing, format, pdfScope, sheetId, catalog, resultIdentity, stationIds, f2fLinkStatus, f2fLinkSourceKind]);
   const preview = outcome.ok ? outcome.preview : null;
 
   const handleDownload = async (): Promise<void> => {

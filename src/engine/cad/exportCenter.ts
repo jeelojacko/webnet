@@ -17,6 +17,16 @@ import {
   buildCadDrawingFileName,
   serializeCadDrawingFile,
 } from './cadDrawingFile';
+import {
+  decideCadDeliverableVerdict,
+  summarizeDrawingDependency,
+} from './cadAdjustmentDependency';
+import {
+  buildDraftLabelEntityStatusMap,
+  evaluateDraftLabelDependencies,
+  hasStaleDerivedDraftLabel,
+} from './cadDraftLabelDependency';
+import type { ResultDependencyIdentity } from '../resultIntegrity';
 import { exportCatalog } from '../fieldToFinish/catalogIo';
 import type { FeatureCodeCatalog } from '../fieldToFinish/featureCatalog';
 import type { CadDrawingDocument } from './cadTypes';
@@ -64,6 +74,67 @@ export interface ExportCenterPreview {
 export type ExportCenterOutcome =
   | { ok: true; preview: ExportCenterPreview }
   | { ok: false; message: string };
+
+/**
+ * Phase 17E deliverable gate (opt-in). Absent = legacy behavior, unchanged.
+ * Present = coordinate-bearing deliverables block when the drawing is not
+ * backed by the current adjustment result. MANUAL_ONLY / CURRENT pass
+ * through; the `.wncad` native save path and catalog export never block.
+ * (Exact format keys live in ExportCenterFormat — there is no `cad-csv`
+ * deliverable; the gated set is svg/pdf/dxf-r12/dxf-r2000/landxml.)
+ */
+export interface ExportDependencyOptions {
+  resultIdentity?: ResultDependencyIdentity | null;
+  stationIds?: Set<string>;
+  f2fLinkStatus?: string;
+  /** Phase 17E: coordinate-import F2F stays exportable (MANUAL-ish). */
+  f2fLinkSourceKind?: string;
+}
+
+/** Coordinate-bearing deliverables gated on adjustment freshness. */
+const COORDINATE_DELIVERABLES: ReadonlySet<ExportCenterFormat> = new Set([
+  'svg',
+  'pdf',
+  'dxf-r12',
+  'dxf-r2000',
+  'landxml',
+]);
+
+const blockedDeliverable = (format: ExportCenterFormat, reason: string, blockMessage: string): ExportCenterOutcome => ({
+  ok: false,
+  message: `[${reason}] ${EXPORT_FORMAT_LABELS[format]} export blocked: ${blockMessage}`,
+});
+
+/** Null = deliverable gate passes; non-null = blocked outcome to return. */
+const checkDeliverableDependency = (
+  drawing: CadDrawingDocument,
+  format: ExportCenterFormat,
+  depOpts: ExportDependencyOptions,
+): ExportCenterOutcome | null => {
+  const identity = depOpts.resultIdentity ?? null;
+  const evalOpts = { stationIds: depOpts.stationIds, f2fLinkStatus: depOpts.f2fLinkStatus, f2fLinkSourceKind: depOpts.f2fLinkSourceKind };
+  const summary = summarizeDrawingDependency(drawing.project, identity, evalOpts);
+  // Manual-only drawings carry no adjustment dependency: always exportable.
+  if (summary.status === 'MANUAL_ONLY') return null;
+  if (COORDINATE_DELIVERABLES.has(format)) {
+    const verdict = decideCadDeliverableVerdict(summary);
+    if (!verdict.allowed) {
+      return blockedDeliverable(format, verdict.reason ?? 'CAD_OWNER_CONFLICT', verdict.blockMessage ?? 'Resolve CAD dependencies before delivery.');
+    }
+  }
+  // Production sheet exports additionally block on stale derived
+  // annotations, even when model entities are current.
+  if (format === 'svg' || format === 'pdf') {
+    const labels = drawing.draft?.labels ?? [];
+    if (labels.length > 0) {
+      const statusMap = buildDraftLabelEntityStatusMap(drawing.project.entities, identity, evalOpts);
+      if (hasStaleDerivedDraftLabel(evaluateDraftLabelDependencies(labels, statusMap))) {
+        return blockedDeliverable(format, 'CAD_DERIVED_LABEL_STALE', 'Refresh derived annotations before delivery.');
+      }
+    }
+  }
+  return null;
+};
 
 export const EXPORT_FORMAT_LABELS: Record<ExportCenterFormat, string> = {
   svg: 'SVG (current sheet)',
@@ -332,8 +403,13 @@ const describeLandxml = (drawing: CadDrawingDocument): ExportCenterOutcome => {
 export const buildExportCenterPreview = (
   drawing: CadDrawingDocument,
   selection: ExportCenterSelection,
+  depOpts?: ExportDependencyOptions,
 ): ExportCenterOutcome => {
   try {
+    const gate = depOpts !== undefined
+      ? checkDeliverableDependency(drawing, selection.format, depOpts)
+      : null;
+    if (gate) return gate;
     switch (selection.format) {
       case 'svg':
         return describeSvg(drawing, selection);
