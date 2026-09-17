@@ -19,6 +19,32 @@ Define model/layout plotting direction early so annotation and deliverable logic
 - PDF export
 - plot preview
 
+## Layer-state × format policy (Phase 18C §6)
+
+OFF (`visible=false`), FROZEN (`frozen=true`), NO-PLOT (`printable=false`), and
+individually hidden entities (`entity.visible=false`) behave per format:
+
+| State | SVG / PDF (plot) | DXF R12 | DXF R2000 | LandXML | WNCAD |
+| --- | --- | --- | --- | --- | --- |
+| OFF layer | excluded (viewport `visible=true` override re-shows) | retained; layer rides as negative ACI 62 | retained; negative 62 + 420 true color kept | retained (no layer lookup) | preserved |
+| FROZEN layer | excluded via the same filter path as OFF (persistence, not viewport result, is the difference) | retained; LAYER 70 bit 1 | retained; 70 bit 1 | retained (no layer lookup) | preserved |
+| LOCKED layer | rendered + selectable; mutations rejected (`LAYER_LOCKED`) | retained; LAYER 70 bit 4 | retained; 70 bit 4 | retained | preserved |
+| NO-PLOT layer | unconditionally excluded (beats viewport re-show) | retained (no plot filtering) | retained (no plot filtering) | retained (no plot filtering) | preserved |
+| entity `visible=false` | excluded | retained; entity carries group 60 (invisible) | retained; group 60 | skipped (only visibility filter; disposition unchanged from before) | preserved |
+
+- DXF entity lineweights (group 370, R2000 only) come from the RESOLVED
+  lineweight (explicit > layer > legacy `style.strokeWidth` > Default 0.25mm),
+  emitted only when the entity differs from its layer (BYLAYER by omission);
+  layer 370 rides on the layer record. R12 has no 370 — one warning, never faked.
+- DXF transparency: neither writer supports it (no 440 group in R12/R2000
+  output) — documented restriction, not silent: translucent entities keep
+  their model transparency, the DXF simply carries no alpha.
+- SVG/PDF apply resolved transparency as `opacity` / ExtGState constant-alpha;
+  opaque-only scenes emit byte-identical output to before (no ExtGState).
+- LandXML semantic policy: geometry only — no layer lookup, no plot
+  filtering, no linetype/lineweight/transparency; `entity.visible=false` is
+  the sole filter (behavior unchanged).
+
 ## Export result contract + color fidelity (Phase 13E B1+C1)
 
 - `src/engine/cad/exportResult.ts` is the unified result shape for

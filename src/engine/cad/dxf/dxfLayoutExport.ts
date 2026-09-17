@@ -366,7 +366,11 @@ const buildDxfLayoutInner = (args: BuildDxfLayoutArgs): DxfLayoutInner => {
   // Color treatment matches R12 (nearest-ACI 62) plus 420 true color;
   // 370 lineweights ride where the model carries them; 6 linetype only
   // when the entity differs from its layer (BYLAYER by omission).
+  // OFF layers ride as negative 62; frozen/locked ride in the layer-table
+  // 70 bits; individually hidden entities ride as group 60 (invisible).
   const modelOwner = modelSpaceRecord;
+  const invisible60 = (invisible: boolean | undefined): string[] =>
+    invisible === true ? [pair(60, '1')] : [];
   const modelLayerHex = (layer: string): string => model.layerColors?.[layer] ?? '#ffffff';
   const modelLayerLinetype = (layer: string): string =>
     dxfLinetypeName(model.layerLinetypes?.[layer] ?? 'continuous');
@@ -393,6 +397,7 @@ const buildDxfLayoutInner = (args: BuildDxfLayoutArgs): DxfLayoutInner => {
       pair(0, 'POINT'), pair(5, takeHandle()), pair(330, modelOwner),
       pair(100, 'AcDbEntity'), pair(8, point.layer),
       ...modelPaint(point.layer, point.colorHex, point.linetypeId, point.lineweightMm),
+      ...invisible60(point.invisible),
       pair(100, 'AcDbPoint'),
       pair(10, fmt(point.at.x)), pair(20, fmt(point.at.y)), pair(30, '0'),
     ]);
@@ -402,6 +407,7 @@ const buildDxfLayoutInner = (args: BuildDxfLayoutArgs): DxfLayoutInner => {
       pair(0, 'LINE'), pair(5, takeHandle()), pair(330, modelOwner),
       pair(100, 'AcDbEntity'), pair(8, line.layer),
       ...modelPaint(line.layer, line.colorHex, line.linetypeId, line.lineweightMm),
+      ...invisible60(line.invisible),
       pair(100, 'AcDbLine'),
       pair(10, fmt(line.from.x)), pair(20, fmt(line.from.y)), pair(30, '0'),
       pair(11, fmt(line.to.x)), pair(21, fmt(line.to.y)), pair(31, '0'),
@@ -412,6 +418,7 @@ const buildDxfLayoutInner = (args: BuildDxfLayoutArgs): DxfLayoutInner => {
       pair(0, 'LWPOLYLINE'), pair(5, takeHandle()), pair(330, modelOwner),
       pair(100, 'AcDbEntity'), pair(8, polyline.layer),
       ...modelPaint(polyline.layer, polyline.colorHex, polyline.linetypeId, polyline.lineweightMm),
+      ...invisible60(polyline.invisible),
       pair(100, 'AcDbPolyline'),
       pair(90, String(polyline.vertices.length)), pair(70, polyline.closed ? '1' : '0'),
     ]);
@@ -424,6 +431,7 @@ const buildDxfLayoutInner = (args: BuildDxfLayoutArgs): DxfLayoutInner => {
       pair(0, 'ARC'), pair(5, takeHandle()), pair(330, modelOwner),
       pair(100, 'AcDbEntity'), pair(8, arc.layer),
       ...modelPaint(arc.layer, arc.colorHex, arc.linetypeId, arc.lineweightMm),
+      ...invisible60(arc.invisible),
       pair(100, 'AcDbArc'),
       pair(10, fmt(arc.center.x)), pair(20, fmt(arc.center.y)), pair(30, '0'),
       pair(40, fmt(arc.radius)), pair(50, fmt(arc.startDeg)), pair(51, fmt(arc.endDeg)),
@@ -434,6 +442,7 @@ const buildDxfLayoutInner = (args: BuildDxfLayoutArgs): DxfLayoutInner => {
       pair(0, 'TEXT'), pair(5, takeHandle()), pair(330, modelOwner),
       pair(100, 'AcDbEntity'), pair(8, entry.layer),
       ...modelPaint(entry.layer, entry.colorHex, entry.linetypeId, entry.lineweightMm),
+      ...invisible60(entry.invisible),
       pair(100, 'AcDbText'),
       pair(10, fmt(entry.at.x)), pair(20, fmt(entry.at.y)), pair(30, '0'),
       pair(40, fmt(entry.height)), pair(1, cleanText(entry.text)), pair(7, 'Standard'),
@@ -583,11 +592,17 @@ const buildDxfLayoutInner = (args: BuildDxfLayoutArgs): DxfLayoutInner => {
   );
   [...layerHandles.entries()].sort((a, b) => (a[0] < b[0] ? -1 : 1)).forEach(([layer, handle]) => {
     const hex = model.layerColors?.[layer] ?? paperLayerBase.get(layer) ?? '#ffffff';
+    const flags = model.layerFlags?.[layer];
+    const aci = nearestAci(hex);
+    let bits70 = 0;
+    if (flags?.frozen === true) bits70 |= 1;
+    if (flags?.locked === true) bits70 |= 4;
     const codes: string[] = [
       pair(0, 'LAYER'), pair(5, handle), pair(330, layerTable),
       pair(100, 'AcDbSymbolTableRecord'), pair(100, 'AcDbLayerTableRecord'),
-      pair(2, layer), pair(70, '0'),
-      pair(62, String(nearestAci(hex))), pair(420, String(trueColorDxf420(hex))),
+      pair(2, layer), pair(70, String(bits70)),
+      // OFF rides as negative 62 (420 true color stays positive).
+      pair(62, String(flags?.off === true ? -aci : aci)), pair(420, String(trueColorDxf420(hex))),
       pair(6, dxfLinetypeName(model.layerLinetypes?.[layer] ?? 'continuous')),
     ];
     const weight = model.layerLineweights?.[layer];
