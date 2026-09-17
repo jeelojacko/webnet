@@ -28,6 +28,15 @@ export interface CadShellLink {
   actions: CadShellActions | null;
 }
 
+const countsEqual = (
+  a: CadWorkspaceSnapshot['layerEntityCounts'],
+  b: CadWorkspaceSnapshot['layerEntityCounts'],
+): boolean => {
+  const keysA = Object.keys(a);
+  const keysB = Object.keys(b);
+  return keysA.length === keysB.length && keysA.every((key) => a[key] === b[key]);
+};
+
 const snapshotsEqual = (a: CadWorkspaceSnapshot | null, b: CadWorkspaceSnapshot | null): boolean => {
   if (a === b) return true;
   if (!a || !b) return false;
@@ -50,6 +59,7 @@ const snapshotsEqual = (a: CadWorkspaceSnapshot | null, b: CadWorkspaceSnapshot 
     arraysEqual(a.availableCommands, b.availableCommands) &&
     arraysEqual(a.selectedEntityIds, b.selectedEntityIds) &&
     layersEqual(a.layers, b.layers) &&
+    countsEqual(a.layerEntityCounts, b.layerEntityCounts) &&
     a.sheets.length === b.sheets.length &&
     a.sheets.every((sheet, index) => sheet.id === b.sheets[index]?.id && sheet.name === b.sheets[index]?.name) &&
     prefsEqual(a.snapPreferences, b.snapPreferences) &&

@@ -10,8 +10,8 @@ interface CadLayerPaletteProps {
 /**
  * Phase 18B — dockable layer manager. Columns are the honest supported
  * subset (name, color, visible, locked, printable, entity count). There is
- * no current-layer/active-layer concept in the engine: the ribbon/status
- * layer control is display-only and says so (gap note below, 18C candidate).
+ * no current-layer/active-layer concept in the engine (gap note below,
+ * 18C candidate). Visibility toggles hide entities in the viewport.
  */
 export const CadLayerPalette: React.FC<CadLayerPaletteProps> = ({ snapshot, actions }) => {
   if (!snapshot) return <p className="cad-shell-empty">No drawing loaded.</p>;
@@ -20,6 +20,7 @@ export const CadLayerPalette: React.FC<CadLayerPaletteProps> = ({ snapshot, acti
       <LayerPanel
         layers={snapshot.layers}
         entityCounts={snapshot.layerEntityCounts}
+        visibilityRequestOnly
         onToggleVisibility={
           actions ? (layerId, visible) => actions.setLayerPatch(layerId, { visible }) : undefined
         }
@@ -32,8 +33,9 @@ export const CadLayerPalette: React.FC<CadLayerPaletteProps> = ({ snapshot, acti
         onDelete={actions ? (layerId) => actions.deleteLayer(layerId) : undefined}
       />
       <p className="cad-shell-gap-note">
-        No active layer yet — new entities use their default layer. Populated layers cannot be deleted;
-        move objects off first. A current-layer model arrives with the engine change (18C).
+        No active layer yet — new entities use their default layer. Hiding a layer does not hide its
+        entities in the viewport yet — 18C. Populated layers cannot be deleted; move objects off
+        first. A current-layer model arrives with the engine change (18C).
       </p>
     </div>
   );

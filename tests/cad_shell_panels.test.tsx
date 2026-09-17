@@ -255,7 +255,8 @@ describe('cad shell panels', () => {
     );
     expect(container.querySelector('[data-cad-layers]')).not.toBeNull();
     expect(container.textContent).toContain('No active layer yet');
-    const hide = container.querySelector('[aria-label="Hide layer Points"]');
+    expect(container.textContent).toContain('does not hide its entities in the viewport yet');
+    const hide = container.querySelector('[aria-label^="Request hiding layer Points"]');
     expect(hide).not.toBeNull();
     await click(hide);
     expect(actions.setLayerPatch).toHaveBeenCalledWith('l1', { visible: false });

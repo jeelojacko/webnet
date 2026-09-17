@@ -10,6 +10,7 @@ interface CadStatusBarProps {
   activeLayout: CadActiveLayout;
 }
 
+// Status-bar quick subset (6 common modes); Toolspace Settings lists all 14 CadSnapKind modes.
 const SNAP_ORDER: CadSnapKind[] = [
   'endpoint',
   'midpoint',

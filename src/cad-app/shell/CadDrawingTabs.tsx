@@ -18,7 +18,10 @@ interface CadDrawingTabsProps {
  * history/selection/viewport (useSurveyCadWorkspace is single-history per
  * mount); tabs already address drawings by id so a tab list can attach
  * later without changing this strip. Dirty tabs carry an asterisk;
- * close is guarded Save/Don't Save/Cancel by the caller.
+ * close parks the drawing on the Start tab (nothing destroyed); when dirty
+ * the caller runs a confirm-discard guard first (see handleCloseDrawing in
+ * CadApplicationShell via requireCleanOrConfirm) — there is no 3-way
+ * Save/Don't Save/Cancel modal.
  */
 export const CadDrawingTabs: React.FC<CadDrawingTabsProps> = ({
   drawingName,
