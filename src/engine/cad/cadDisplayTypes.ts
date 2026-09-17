@@ -16,8 +16,9 @@ export interface CadDisplayPrimitiveBase {
   strokeDasharray?: string;
   /**
    * Viewport-only dash pattern in drawing units (already × linetypeScale).
-   * Converted to screen space at render time via `toScreenDash`; ignored by
-   * exporters, which keep passing `strokeDasharray` through untouched.
+   * Converted to screen space at render time via `toScreenDash`; plot
+   * export scales it to paper mm, while `strokeDasharray` (preview-only)
+   * still passes through untouched.
    */
   dashPatternUnits?: number[];
   /** Drawing-unit phase offset for continuous polyline dashes. */

@@ -24,7 +24,7 @@ import {
 import { resolveCadEntityAppearance } from './cadAppearance';
 import type { LineweightDisplayMode } from './cadViewportAppearance';
 import { displayedStrokeWidthPx, opacityFromTransparency } from './cadViewportAppearance';
-import { entityStyle, layerColor, pointRadius, strokeWidth, textFontSize } from './cadRendererStyle';
+import { pointRadius, strokeWidth, textFontSize } from './cadRendererStyle';
 
 export interface BuildCadDisplaySceneOptions {
   /**
@@ -56,6 +56,15 @@ interface EntityScreenStyle {
   dashPatternUnits: number[] | undefined;
   widthPx: (_legacyFallbackPx?: number) => number;
 }
+
+/** Synthesized-label color: the SOURCE entity's resolved color (trap #5) —
+ *  explicit override → style → layer → default — never the labels layer. */
+const sourceLabelStroke = (project: CadProject, entity: CadEntity): string =>
+  resolveCadEntityAppearance({
+    entity,
+    layer: project.layers.find((layer) => layer.id === entity.layerId) ?? null,
+    styleLibrary: project.styleLibrary,
+  }).color;
 
 /** Authoritative entity styling: every geometry primitive resolves color,
  *  linetype, lineweight, and transparency through the §4-5 resolver.
@@ -168,7 +177,7 @@ const buildTraverseLabelPrimitives = (
   entity: CadPolylineEntity,
 ): CadDisplayPrimitive[] => {
   if (entity.metadata?.createdBy !== 'TRAVERSE') return [];
-  const stroke = entityStyle(project, entity)?.color ?? layerColor(project, entity.layerId);
+  const stroke = sourceLabelStroke(project, entity);
   const fontSize = textFontSize(project, entity, 11);
   return polylineSegments(entity).flatMap((segment) => {
     const inverse = buildCadInverseSummary(segment.start, segment.end);
@@ -234,7 +243,7 @@ const buildParcelLabelPrimitive = (
     id: `primitive:${entity.id}:parcel-label`,
     layerId: 'labels',
     sourceEntityId: entity.id,
-    stroke: entityStyle(project, entity)?.color ?? layerColor(project, 'labels'),
+    stroke: sourceLabelStroke(project, entity),
     point: metrics.centroid,
     text: `${entity.areaSquareMeters.toFixed(3)} m²\n${entity.perimeterMeters.toFixed(3)} m`,
     fontSize: textFontSize(project, entity, 11),
@@ -261,7 +270,7 @@ const buildArcLabelPrimitive = (
     id: `primitive:${entity.id}:curve-label`,
     layerId: 'labels',
     sourceEntityId: entity.id,
-    stroke: entityStyle(project, entity)?.color ?? layerColor(project, 'labels'),
+    stroke: sourceLabelStroke(project, entity),
     point: {
       x: entity.centerX + Math.cos(midAngleRad) * labelRadius,
       y: entity.centerY + Math.sin(midAngleRad) * labelRadius,
@@ -298,7 +307,7 @@ const buildAlignmentLabelPrimitive = (
     id: `primitive:${entity.id}:alignment-label`,
     layerId: 'labels',
     sourceEntityId: entity.id,
-    stroke: entityStyle(project, entity)?.color ?? layerColor(project, 'labels'),
+    stroke: sourceLabelStroke(project, entity),
     point: midpoint.point,
     text: `${entity.name}\nSTA ${formatCadStation(entity.startStation)} - ${formatCadStation(endStation)}`,
     fontSize: textFontSize(project, entity, 11),
@@ -343,7 +352,7 @@ const buildAlignmentStationEquationLabelPrimitives = (
       id: `primitive:${entity.id}:station-equation-label:${index + 1}`,
       layerId: 'labels',
       sourceEntityId: entity.id,
-      stroke: entityStyle(project, entity)?.color ?? layerColor(project, 'labels'),
+      stroke: sourceLabelStroke(project, entity),
       point: marker.point,
       text: `EQ ${formatCadStation(equation.backStation)} = ${formatCadStation(equation.aheadStation)}`,
       fontSize: textFontSize(project, entity, 10),

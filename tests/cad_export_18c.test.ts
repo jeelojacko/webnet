@@ -13,6 +13,7 @@ import { serializeExportSceneToSvg } from '../src/engine/cad/cadSvgSerializer';
 import { exportScenesToPdf } from '../src/engine/cad/cadPdfExport';
 import { buildLandXmlProjectExportWithResult } from '../src/engine/landxmlCad';
 import type { CadProject } from '../src/engine/cad/cadTypes';
+import { DEFAULT_CAD_STYLE_LIBRARY } from '../src/engine/cad/cadStyles';
 import { buildCadQaDraft, buildCadQaProject } from './fixtures/cadQaDrawing';
 
 // Independent R12 pair parser (shares no code with the serializers).
@@ -150,6 +151,23 @@ describe('18C SVG/PDF plot parity', () => {
     const bylayer = bySource.get('qa-bylayer') as ExportItem;
     expect(bylayer.stroke).toBe('#ff0000');
     expect(bylayer.opacity).toBeUndefined();
+  });
+
+  it('plots viewport dashes as paper-mm stroke-dasharray (continuous stays dash-free)', () => {
+    const project: CadProject = { ...buildCadQaProject(), styleLibrary: DEFAULT_CAD_STYLE_LIBRARY };
+    const { draft, sheetId } = buildCadQaDraft(project);
+    const { scene } = buildExportSheetScene({ draft, sheetId, project });
+    // Parcel rides the center-heavy layer: center pattern [12,3,2,3] at 1:1000
+    // scales to identical paper-mm values (linetypeScale 1.0).
+    const parcelEdges = scene.items.filter(
+      (item) => item.sourceEntityId === 'qa-parcel-1' && item.kind === 'line',
+    );
+    expect(parcelEdges.length).toBeGreaterThan(0);
+    parcelEdges.forEach((item) => expect(item.dash).toBe('12 3 2 3'));
+    expect(serializeExportSceneToSvg(scene)).toContain('stroke-dasharray="12 3 2 3"');
+    // Continuous entities stay dash-free (opaque/byte-identical behavior).
+    const bylayer = scene.items.find((item) => item.sourceEntityId === 'qa-bylayer');
+    expect(bylayer?.dash).toBeUndefined();
   });
 
   it('pins a small opacity golden and stays byte-deterministic', () => {

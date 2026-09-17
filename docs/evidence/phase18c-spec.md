@@ -50,10 +50,12 @@ selectable; locked may remain current (creation then fails with LAYER_LOCKED).
 
 ## 4. Precedence (locked by tests)
 
-For color / linetype / lineweight / transparency, ordinary entities:
+For ordinary entities, per property (locked by tests):
 
 ```
-explicit entity appearance  >  legacy style value  >  layer value  >  built-in default
+color / linetype:  explicit entity appearance  >  legacy style value  >  layer value  >  built-in default
+lineweight:        explicit entity appearance  >  layer value  >  legacy style value  >  built-in default
+transparency:      explicit entity appearance  >  layer value  >  built-in default (0)
 ```
 
 Built-in defaults: color `#94a3b8`, linetype `continuous`, lineweight Default

@@ -138,19 +138,33 @@ const arcToPolyline = (
   });
 };
 
+// Paper-mm dash from a viewport-only drawing-unit pattern: the pattern
+// already includes linetypeScale, so only the viewport model→paper factor
+// (1000 / scaleDenominator, the same k as modelToPaperPoint) applies.
+// Continuous patterns (absent/empty) stay dash-free, byte-identical.
+const dashPatternToPaperMm = (pattern: number[] | undefined, unitsToPaperMm: number): string | undefined => {
+  if (pattern == null || pattern.length === 0) return undefined;
+  if (!Number.isFinite(unitsToPaperMm) || unitsToPaperMm <= 0) return undefined;
+  const parts = pattern.map((entry) => Math.round(entry * unitsToPaperMm * 1000) / 1000);
+  if (parts.some((entry) => !Number.isFinite(entry) || entry < 0)) return undefined;
+  return parts.join(' ');
+};
+
 // Color flows from the display primitive (screen-resolved: style override →
 // style → layer → default) into every export item, so SVG/PDF match the
-// screen. strokeWidth maps to widthMm; dash passes through when present.
+// screen. strokeWidth maps to widthMm; dash passes through when present,
+// else falls back to the viewport dash pattern scaled to paper mm.
 const primitiveToPaper = (
   primitive: CadDisplayPrimitive,
   toPaper: (_x: number, _y: number) => { xMm: number; yMm: number },
   clipId: string,
   rotationDeg = 0,
+  unitsToPaperMm: number,
 ): ExportItem[] => {
   const layer = primitive.layerId;
   const sourceEntityId = primitive.sourceEntityId;
   const stroke = primitive.stroke;
-  const dash = primitive.strokeDasharray;
+  const dash = primitive.strokeDasharray ?? dashPatternToPaperMm(primitive.dashPatternUnits, unitsToPaperMm);
   const paint = {
     stroke,
     ...(dash ? { dash } : {}),
@@ -552,7 +566,7 @@ export const buildExportSheetSceneWithResult = (args: BuildSceneArgs): ExportRes
       .filter((primitive) => !isHidden(primitive.layerId))
       .forEach((primitive) => {
         try {
-          const produced = primitiveToPaper(primitive, toPaper, clipId, plan.rotationDeg);
+          const produced = primitiveToPaper(primitive, toPaper, clipId, plan.rotationDeg, 1000 / plan.scaleDenominator);
           if (produced.length === 0) {
             omittedEntityIds.push(primitive.sourceEntityId);
             warnings.push({ code: 'SKIPPED_ENTITY', message: `skipped entity ${primitive.sourceEntityId} (no export geometry)`, entityId: primitive.sourceEntityId });

@@ -159,6 +159,40 @@ describe('CAD renderer labels', () => {
     expect(parcelLabel.textAnchor).toBe('middle');
   });
 
+  it('resolves synthesized labels through the source entity appearance override (trap #5)', () => {
+    const traverseResult = executeCadCommand(createSnapshot(), {
+      key: 'TRAVERSE',
+      vertices: [
+        { x: 0, y: 0, label: 'A' },
+        { x: 25, y: 0, label: 'B' },
+        { x: 25, y: 15, label: 'C' },
+        { x: 0, y: 0, label: 'A' },
+      ],
+    });
+    if (!traverseResult) throw new Error('Traverse result missing');
+    const parcelResult = executeCadCommand(traverseResult.nextSnapshot, {
+      key: 'PARCEL_CREATE',
+      sourceEntityIds: [traverseResult.addedEntityIds[traverseResult.addedEntityIds.length - 1]!],
+    });
+    if (!parcelResult) throw new Error('Parcel result missing');
+    const parcelId = parcelResult.addedEntityIds[0];
+    const project = parcelResult.nextSnapshot.project;
+    const patched = {
+      ...project,
+      entities: project.entities.map((entity) =>
+        entity.id === parcelId ? { ...entity, appearance: { color: '#123456' } } : entity,
+      ),
+    };
+    const scene = buildCadDisplayScene(patched);
+    const parcelLabels = scene.primitives.filter(
+      (primitive) => primitive.kind === 'text' && primitive.sourceEntityId === parcelId,
+    );
+    expect(parcelLabels).toHaveLength(1);
+    const parcelLabel = parcelLabels[0];
+    if (parcelLabel.kind !== 'text') throw new Error('Parcel label primitive missing');
+    expect(parcelLabel.stroke).toBe('#123456');
+  });
+
   it('renders geometry-tied labels for arcs without adding labels to ordinary LINE entities', () => {
     const arcResult = executeCadCommand(createSnapshot(), {
       key: 'ARC_3PT',
