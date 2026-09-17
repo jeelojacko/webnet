@@ -45,7 +45,9 @@ export interface ExportCoordinateContext {
   verticalReference: 'solve-frame h';
 }
 
-/** Stable machine codes for the coordinate-validity gate (tests key on these). */
+/** Stable machine codes for the coordinate-validity gate (tests key on these).
+ * AXIS_ORDER_UNRESOLVED is reserved: all catalog rows are fixed 'E,N' and every
+ * exporter pins its own format-required order, so the code is never emitted today. */
 export type ExportCrsCode =
   | 'EXPORT_CRS_INVALID'
   | 'CRS_UNKNOWN'
