@@ -25,7 +25,6 @@ export const polylineCommand: CadCommandDefinition<{
       id: createStableRuntimeId('cad-polyline'),
       type: 'polyline',
       layerId: resolveCurrentCadLayerId(snapshot.project),
-      styleId: 'style-observation-line',
       visible: true,
       locked: false,
       vertices: vertices.map((vertex) => ({ x: vertex.x, y: vertex.y })),

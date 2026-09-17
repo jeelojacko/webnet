@@ -43,8 +43,9 @@ const lineOf = (project: CadProject, lineId: string): CadLineEntity => {
 };
 
 describe('Phase 18C render standards', () => {
-  // Generic entities keep their legacy style: §4 precedence is
-  // explicit appearance > legacy style > layer > built-in default.
+  // Generic creates are pure ByLayer (spec §10/§34): no legacy style stamp.
+  // §4 precedence is explicit appearance > legacy style > layer > default —
+  // covered below by stamping a legacy style manually onto a generic entity.
   const byLayer = (project: CadProject, lineId: string): CadProject => ({
     ...project,
     entities: project.entities.map((entity) =>
@@ -52,17 +53,24 @@ describe('Phase 18C render standards', () => {
     ),
   });
 
+  const withLegacyStyle = (project: CadProject, lineId: string): CadProject => ({
+    ...project,
+    entities: project.entities.map((entity) =>
+      entity.id === lineId ? { ...entity, styleId: 'style-observation-line' } : entity,
+    ),
+  });
+
   it('resolves stroke through the §4 precedence chain', () => {
     const { project, lineId } = withLine(blank());
-    // Legacy style beats the layer.
+    // Generic creates are ByLayer: general layer color flows to the stroke.
     const scene = buildCadDisplayScene(project);
-    expect(scene.primitives.find((p) => p.sourceEntityId === lineId)?.stroke).toBe('#22c55e');
-    // ByLayer: general layer color flows to the stroke.
-    const layerDriven = byLayer(project, lineId);
+    expect(scene.primitives.find((p) => p.sourceEntityId === lineId)?.stroke).toBe('#e2e8f0');
+    // Legacy style (e.g. domain imports) still beats the layer.
+    const styled = withLegacyStyle(project, lineId);
     expect(
-      buildCadDisplayScene(layerDriven).primitives.find((p) => p.sourceEntityId === lineId)
+      buildCadDisplayScene(styled).primitives.find((p) => p.sourceEntityId === lineId)
         ?.stroke,
-    ).toBe('#e2e8f0');
+    ).toBe('#22c55e');
     // Explicit appearance wins over style and layer.
     const explicit: CadProject = {
       ...project,
@@ -95,7 +103,7 @@ describe('Phase 18C render standards', () => {
     ).toBe('#123456');
   });
 
-  it('keeps synthesized labels in the source-style color on layer change', () => {
+  it('keeps synthesized labels on explicitly styled sources; ByLayer sources follow the layer', () => {
     const started = executeCadCommand(
       { project: blank(), selection: createCadSelectionState(blank()) },
       {
@@ -124,7 +132,23 @@ describe('Phase 18C render standards', () => {
         layer.id === 'general' ? { ...layer, color: '#abcdef' } : layer,
       ),
     };
-    expect(labelStroke(recolored)).toEqual(before);
+    // ByLayer traverse source: labels follow the layer.
+    expect(labelStroke(recolored)).toEqual(before.map(() => '#abcdef'));
+    // Explicitly styled source: labels keep the source-style color (trap #5).
+    const styled: CadProject = {
+      ...started.nextSnapshot.project,
+      entities: started.nextSnapshot.project.entities.map((entity) =>
+        entity.id === traverseId ? { ...entity, styleId: 'style-observation-line' } : entity,
+      ),
+    };
+    const styledBefore = labelStroke(styled);
+    const styledRecolored: CadProject = {
+      ...styled,
+      layers: styled.layers.map((layer) =>
+        layer.id === 'general' ? { ...layer, color: '#abcdef' } : layer,
+      ),
+    };
+    expect(labelStroke(styledRecolored)).toEqual(styledBefore);
   });
 
   it('emits drawing-unit dash patterns scaled by linetypeScale', () => {

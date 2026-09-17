@@ -161,7 +161,6 @@ export const filletCommand: CadCommandDefinition<{
       id: createStableRuntimeId('cad-arc'),
       type: 'arc',
       layerId: resolveCurrentCadLayerId(snapshot.project),
-      styleId: 'style-observation-line',
       visible: true,
       locked: false,
       centerX: fillet.arcDefinition.center.x,

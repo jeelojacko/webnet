@@ -333,7 +333,6 @@ const lineCommand: CadCommandDefinition<{
       id: createStableRuntimeId('cad-line'),
       type: 'line',
       layerId: resolveCurrentCadLayerId(snapshot.project),
-      styleId: 'style-observation-line',
       visible: true,
       locked: false,
       fromStationId: command.start.label,

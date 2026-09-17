@@ -110,8 +110,8 @@ export const createManualPointEntities = (
     type: 'survey-point',
     // Manual points land on the current layer (fallback `general`); the
     // anchored text label stays on `labels` (domain-required special).
+    // Both are pure ByLayer: no legacy style stamp (spec §10/§34).
     layerId: resolveCurrentCadLayerId(project),
-    styleId: 'style-point',
     visible: true,
     locked: false,
     stationId,
@@ -136,7 +136,6 @@ export const createManualPointEntities = (
       id: `label:${stationId}`,
       type: 'text',
       layerId: 'labels',
-      styleId: 'style-label',
       visible: true,
       locked: false,
       x,

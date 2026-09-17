@@ -14,13 +14,13 @@ Properties palette, LWT toggle, Export Center downloads, WNCAD save/reopen.
 | A Layer Manager CRUD | **PASS** | New layer (deterministic name), rename to QA-Walls, set current (★), color #ff0000, linetype center, lineweight 0.5, transparency 25%, description — all persist in-row; ribbon current-layer dropdown follows. |
 | B Visibility OFF/ON, Freeze/Thaw | **PASS** | OFF hides the QA-B line and clears its selection; ON restores. Freeze/Thaw behave identically in the viewport. |
 | C Lock blocks MOVE | **PASS (fixed)** | Locked MOVE is rejected, geometry byte-identical, prompt shows `MOVE blocked: selection is locked (LAYER_LOCKED)…`. Unlock → same MOVE displaces the entity. Required fix #1 (rejection was silent). |
-| D ByLayer follows layer | **FAIL — bug B-18C-1** | Layer General → red/blue dispatches (manager `title` proves it), but the drawn line keeps rendering `#22c55e`. The committed test pins current behavior with flip instructions. |
-| E Explicit override | **PARTIAL** | Explicit green survives layer changes: **PASS**. Back-to-ByLayer resumes *style* green, not layer red: **FAIL — same bug B-18C-1** (pinned + commented). |
+| D ByLayer follows layer | **PASS (fixed)** | Layer General → red/blue dispatches recolor the drawn line immediately; generic creates are pure ByLayer (no legacy style stamp). |
+| E Explicit override | **PASS (fixed)** | Explicit green survives layer changes; back-to-ByLayer resumes following the layer (red). Same fix as D. |
 | F New LINE lands on current layer | **PASS** | Set QA-B/QA-F current (manager radio AND ribbon dropdown paths); Properties Layer row of the new line confirms. |
-| G Linetype across pan/zoom | **FAIL (inheritance) / PASS (stability)** | Layer linetype center never reaches the styled entity — **same bug B-18C-1** (pinned). Wheel-zoom + middle-drag pan keep rendering stable with zero errors (required fix #3). |
+| G Linetype across pan/zoom | **PASS (fixed)** | Layer linetype center reaches the ByLayer entity; wheel-zoom + middle-drag pan keep rendering stable with zero errors. |
 | H LWT toggle | **PASS (fixed)** | Toggle flips display width (thin-normalized vs mapped 2 mm → clamped px); stored `Lineweight` row still `ByLayer (2 mm)`. Required fix #2 (toggle was unwired). |
 | I Properties single/multi/undo | **PASS** | Single edit works; multi shows `*VARIES*` placeholder; multi-edit recolors both. Note: multi-edit commits **one undo step per entity** (2 undos to revert 2 entities) — behavior note, not a bug. |
-| J WNCAD persistence | **PASS** | Save → bytes contain `QA-J`, `currentLayerId`, description, lineweight; blank-session reopen restores manager state + entity. Rendered color subject to B-18C-1 (pinned). |
+| J WNCAD persistence | **PASS** | Save → bytes contain `QA-J`, `currentLayerId`, description, lineweight; blank-session reopen restores manager state + entity, rendered in the persisted layer color (ByLayer). |
 | K Plot exclusion | **PASS** | No-plot `QA-K` group absent from downloaded SVG while printable `general` present; PDF generates via the same scene builder; WNCAD keeps all entities. Needed the plan sample (blank drawings have no sheets — note N3). |
 
 ## Bugs fixed during QA (small, focused)
@@ -46,10 +46,30 @@ Validation for the fixes: `npx eslint` clean on all touched files; vitest
 Repo `typecheck` shows only the pre-existing phase9l sibling dirt
 (`runSessionAsync.ts`, `preanalysisScenario*` — untracked, not mine).
 
-## Reported, NOT fixed (needs product sign-off)
+## Fixed (was "Reported, NOT fixed")
 
-**B-18C-1 — interactive generic factories stamp a colored legacy style that shadows the layer.**
-Every interactive draw command hardcodes `styleId: 'style-observation-line'`
+**B-18C-1 — interactive generic factories stamped a colored legacy style that shadowed the layer.**
+Fixed: generic creates no longer stamp a legacy `styleId` (pure ByLayer per spec
+§10 + §34) — LINE (`cadTransactions.ts`), PLINE (`cadTransactionsPolylineCommand.ts`),
+TRAVERSE (`cadTransactionsTraverseCommand.ts`), arcs (`cadTransactionsCurveCommands.ts`,
+FILLET in `cadTransactionsModifyCommands.ts`), PARCEL_CREATE
+(`cadTransactionsParcelBasicCommands.ts`), manual POINT/text
+(`cadTransactionsEntityFactories.ts`). Domain pipelines keep their stamps:
+F2F `cadGeneration`, `cadAdjustedPointsImport`, error-ellipse pipeline, parsed-observation
+seed (`cadModel.ts`), alignments, batch-COGO, parcel splits (inherit
+`parcelEntity.styleId`), and FILLET previews (transient `preview` layer).
+No new fallback code was needed — every consumer already resolves style-undefined
+gracefully: renderer width fallbacks per family (1.25 line / 1.5 parcel / 1.1 ellipse /
+1.2 point-or-text via `entityScreenStyle`), `pointRadius` by pointClass
+(free 1.8 / control 2.4), `textFontSize` fallback 11 (= `label-default`), the §4
+resolver (explicit > style > layer > default), and DXF/SVG export via the same
+resolver (`entryStyle` emits only deltas from the layer). Default layer colors
+equal their style counterparts (observation-lines #22c55e, points #38bdf8,
+labels #e2e8f0, parcels/control #f59e0b), so domain imports render unchanged.
+The 18C-D/E/G/J spec assertions are flipped to the fixed behavior and pass.
+
+(Original bug note, kept for history: every interactive draw command hardcoded
+`styleId: 'style-observation-line'`
 (color `#22c55e`, linetype `continuous`):
 `src/engine/cad/cadTransactions.ts:336` (LINE),
 `src/engine/cad/cadTransactionsPolylineCommand.ts:28` (PLINE),
@@ -59,14 +79,12 @@ Every interactive draw command hardcodes `styleId: 'style-observation-line'`
 (`src/engine/cad/cadAppearance.ts`), so no drawn entity ever follows its layer —
 breaking spec §4 ("changing layer color immediately recolors ByLayer entities")
 and §10 ("new generic entities take currentLayerId + ByLayer appearance").
-Repro: `/cad` → LINE → Layer Manager sets General to red → line stays `#22c55e`
-(proven at data level: saved WNCAD shows `layerId: general` + red layer +
-`styleId: style-observation-line`).
-Fix direction: stop stamping a colored legacy style on generic creates. NOT done
-here: it changes the default look of all newly drawn geometry and breaks
-`tests/cadCommandHistory/*` expectations asserting the stamp — a product
-decision with test fallout, not a QA drive-by. The committed 18C-D/E/G/J
-assertions pin current behavior with `flip once fixed` comments.
+(Original repro, now fixed: `/cad` → LINE → Layer Manager sets General to red →
+line stayed `#22c55e`; saved WNCAD showed `layerId: general` + red layer +
+`styleId: style-observation-line`.)
+Done — see above. Test fallout was limited to `tests/cad_render_standards.test.ts`
+(two assertions pinning the stamp, updated to the ByLayer contract);
+`tests/cadCommandHistory/*` passed unchanged (fixtures, not create-assertions).
 
 ## Other notes (minor / environmental)
 

@@ -316,17 +316,14 @@ test('18C-D: ByLayer entity recolors immediately with its layer', async ({ page 
 
   await openLayerManager(page);
   await setLayerColor(page, 'General', '#ff0000');
-  // KNOWN BUG (see 18C-E comment + browser-qa report §D): the LINE factory
-  // stamps legacy style-observation-line (#22c55e), which outranks the layer
-  // in resolveCadEntityAppearance. The entity does NOT follow General (red).
-  // Assert current behavior; flip both polls to /ff0000/ and /0000ff/ once
-  // generic factories stop stamping a colored legacy style.
+  // Generic LINE creates are pure ByLayer (spec §10/§34): the entity follows
+  // General (red), then blue.
   await page.waitForTimeout(500);
-  expect(((await renderStroke(page, id).getAttribute('stroke')) ?? '').toLowerCase()).toMatch(/22c55e/);
+  expect(((await renderStroke(page, id).getAttribute('stroke')) ?? '').toLowerCase()).toMatch(/ff0000/);
 
   await setLayerColor(page, 'General', '#0000ff');
   await page.waitForTimeout(500);
-  expect(((await renderStroke(page, id).getAttribute('stroke')) ?? '').toLowerCase()).toMatch(/22c55e/);
+  expect(((await renderStroke(page, id).getAttribute('stroke')) ?? '').toLowerCase()).toMatch(/0000ff/);
   await page.screenshot({ path: `${SHOT_DIR}/18c-D-bylayer.png` });
   expect(errors).toEqual([]);
 });
@@ -352,15 +349,12 @@ test('18C-E: explicit color survives layer changes; ByLayer resumes following', 
   await page.waitForTimeout(300);
   expect(((await renderStroke(page, id).getAttribute('stroke')) ?? '').toLowerCase()).toMatch(/00ff00/);
 
-  // Resume ByLayer: KNOWN BUG — the LINE factory stamps legacy
-  // style-observation-line (green), which outranks the layer in the resolver
-  // (src/engine/cad/cadTransactions.ts:336). The entity falls back to the
-  // style color instead of following General (red). Assert current behavior;
-  // flip to /ff0000/ once the factory stops stamping a colored legacy style.
+  // Resume ByLayer: the entity follows General (red) again — generic
+  // creates carry no legacy style stamp (spec §10/§34).
   await selectRendered(page, id);
   await propsEdit(page, 'Color', 'ByLayer');
   await clearSelection(page);
-  await expect.poll(async () => renderStroke(page, id).getAttribute('stroke')).toMatch(/22c55e/i);
+  await expect.poll(async () => renderStroke(page, id).getAttribute('stroke')).toMatch(/ff0000/i);
   await page.screenshot({ path: `${SHOT_DIR}/18c-E-explicit.png` });
   expect(errors).toEqual([]);
 });
@@ -398,11 +392,9 @@ test('18C-G: center linetype pattern survives zoom and pan', async ({ page }) =>
 
   await openLayerManager(page);
   await managerScope(page).locator('select[aria-label="Linetype for layer General"]').selectOption('center');
-  // KNOWN BUG (same style-shadow as 18C-D): the stamped legacy style pins
-  // linetype to continuous, so the layer's center never reaches the entity.
-  // Assert current behavior; flip to the dasharray assertions below once
-  // generic factories stop stamping a legacy style.
-  await expect.poll(async () => renderStroke(page, id).getAttribute('stroke-dasharray')).toBeNull();
+  // Generic creates are pure ByLayer: the layer's center pattern reaches the
+  // entity (spec §10/§34).
+  await expect.poll(async () => renderStroke(page, id).getAttribute('stroke-dasharray')).not.toBeNull();
 
   const center = await canvasPoint(page, 0.5, 0.5);
   await page.mouse.move(center.x, center.y);
@@ -416,7 +408,7 @@ test('18C-G: center linetype pattern survives zoom and pan', async ({ page }) =>
   await page.mouse.up({ button: 'middle' });
   await page.waitForTimeout(400);
   await expect.poll(async () => renderStroke(page, id).count()).toBeGreaterThan(0);
-  expect(await renderStroke(page, id).getAttribute('stroke-dasharray')).toBeNull();
+  expect(await renderStroke(page, id).getAttribute('stroke-dasharray')).not.toBeNull();
   await page.screenshot({ path: `${SHOT_DIR}/18c-G-linetype.png` });
   expect(errors).toEqual([]);
 });
@@ -552,12 +544,11 @@ test('18C-J: WNCAD save/reopen retains drawing standards', async ({ page }) => {
   const reopenedIds = await renderEntityIds(page);
   expect(reopenedIds).toHaveLength(1);
   const reopenedId = reopenedIds[0] as string;
-  // Appearance intent round-tripped (layer red + ByLayer entity); the
-  // rendered color is the stamped legacy style (same known style-shadow as
-  // 18C-D). Flip to /ff0000/ with that fix.
+  // Appearance intent round-tripped (layer red + ByLayer entity): the
+  // rendered color follows the layer (pure-ByLayer generic creates).
   await expect
     .poll(async () => renderStroke(page, reopenedId as string).getAttribute('stroke'))
-    .toMatch(/22c55e/i);
+    .toMatch(/ff0000/i);
   await page.screenshot({ path: `${SHOT_DIR}/18c-J-reopened.png` });
   fs.rmSync(path.dirname(savedPath), { recursive: true, force: true });
   expect(errors).toEqual([]);

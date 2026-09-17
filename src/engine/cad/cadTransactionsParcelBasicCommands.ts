@@ -69,7 +69,6 @@ export const parcelCreateCommand: CadCommandDefinition<{
       id: createStableRuntimeId('cad-parcel'),
       type: 'parcel',
       layerId: resolveCurrentCadLayerId(snapshot.project),
-      styleId: 'style-parcel',
       visible: true,
       locked: false,
       vertices: parcelSource.vertices.map((vertex) => ({ x: vertex.x, y: vertex.y })),
