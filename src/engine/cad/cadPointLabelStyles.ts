@@ -1,5 +1,6 @@
 import type {
   CadPointLabelStyle,
+  CadProject,
   CadSurveyPointEntity,
   CadTextEntity,
 } from './cadTypes';
@@ -223,6 +224,46 @@ export const materializePointLabel = (
     rotationDeg: binding?.rotationOverrideDeg ?? labelStyle.rotationDeg ?? 0,
     visible: labelStyle.visible,
   };
+};
+
+/**
+ * Phase 18D bound-label resolver for renderer/export (single call site per
+ * caller — do not duplicate). Returns the materialized label, or null when
+ * the label has no binding OR the binding cannot resolve (missing point or
+ * unknown style): callers fall back to the baked x/y/text snapshot.
+ *
+ * Orphan policy: a bound label whose source point was deleted, or whose
+ * style id is unknown (e.g. table replaced on import), stays visible with
+ * its baked snapshot so content is never silently dropped and export never
+ * crashes. Rebind or delete the label to clear it; a future Toolspace pass
+ * may surface orphans explicitly.
+ */
+export const materializeBoundPointLabel = (
+  label: CadTextEntity,
+  project: CadProject,
+): MaterializedPointLabel | null => {
+  const binding = label.pointLabel;
+  if (binding == null) return null;
+  const point = project.entities.find(
+    (entry): entry is CadSurveyPointEntity =>
+      entry.type === 'survey-point' && entry.id === binding.pointEntityId,
+  );
+  const labelStyle = (project.labelStyles ?? []).find(
+    (entry) => entry.id === binding.labelStyleId,
+  );
+  if (point == null || labelStyle == null) return null;
+  return materializePointLabel(
+    label,
+    {
+      stationId: point.stationId,
+      x: point.x,
+      y: point.y,
+      z: point.z,
+      description: point.description,
+      featureCode: point.featureCode,
+    },
+    labelStyle,
+  );
 };
 
 const F2F_GENERATOR = 'FIELD_TO_FINISH';

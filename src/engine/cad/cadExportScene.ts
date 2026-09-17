@@ -1,5 +1,8 @@
 import { buildCadDisplayScene } from './cadRenderer';
 import type { CadDisplayPrimitive } from './cadDisplayTypes';
+import { describePointSymbolShape } from './cadPointSymbolShape';
+import { surveyPointMarker } from './cadRendererStyle';
+import { materializeBoundPointLabel } from './cadPointLabelStyles';
 import { resolveCadEntityAppearance } from './cadAppearance';
 import { BROKEN_REFERENCE_TEXT } from './cadLabelEngine';
 import { resolveEffectiveColor } from './resolveEffectiveColor';
@@ -181,8 +184,36 @@ const primitiveToPaper = (
       return [{ kind: 'line', layer, clipId, x1: pa.xMm, y1: pa.yMm, x2: pb.xMm, y2: pb.yMm, ...paint, ...widthOf(primitive.strokeWidth) }];
     }
     case 'point': {
-      const p = toPaper(primitive.point.x, primitive.point.y);
-      return [{ kind: 'circle', layer, clipId, cx: p.xMm, cy: p.yMm, r: primitive.radius, ...paint, ...(primitive.fill ? { fill: primitive.fill } : {}) }];
+      // Honest marker shapes (shared geometry with the screen preview):
+      // circle/dot stay circles; every other shape rides as a closed
+      // polyline or line items. The SVG/PDF writers represent all six, so
+      // no POINT_SYMBOL_APPROXIMATED warning is emitted here — only writers
+      // that cannot represent a shape warn (DXF: POINT+TEXT, always).
+      // Radius keeps the pinned drawing-units-as-paper-mm semantics.
+      const geometry = describePointSymbolShape(primitive.shape, primitive.radius);
+      if (geometry.kind === 'circle' || geometry.kind === 'dot') {
+        const p = toPaper(primitive.point.x, primitive.point.y);
+        return [{ kind: 'circle', layer, clipId, cx: p.xMm, cy: p.yMm, r: primitive.radius, ...paint, ...(primitive.fill ? { fill: primitive.fill } : {}) }];
+      }
+      if (geometry.kind === 'polygon') {
+        return [{
+          kind: 'polyline',
+          layer,
+          clipId,
+          points: geometry.points.map((offset) => {
+            const q = toPaper(primitive.point.x + offset.x, primitive.point.y + offset.y);
+            return { x: q.xMm, y: q.yMm };
+          }),
+          close: true,
+          ...paint,
+          ...(primitive.fill ? { fill: primitive.fill } : {}),
+        }];
+      }
+      return geometry.segments.map(([from, to]) => {
+        const pa = toPaper(primitive.point.x + from.x, primitive.point.y + from.y);
+        const pb = toPaper(primitive.point.x + to.x, primitive.point.y + to.y);
+        return { kind: 'line' as const, layer, clipId, x1: pa.xMm, y1: pa.yMm, x2: pb.xMm, y2: pb.yMm, ...paint };
+      });
     }
     case 'arc': {
       return [
@@ -517,20 +548,6 @@ export const buildExportSheetSceneWithResult = (args: BuildSceneArgs): ExportRes
   const layerColorOf = (layerId: string): string | undefined =>
     args.project.layers.find((layer) => layer.id === layerId)?.color ??
     args.draft.layers.find((layer) => layer.id === layerId)?.color;
-  // Non-circle point symbols (square/triangle/cross/x) render as circles:
-  // explicit approximation, never silent.
-  const approximatedShapeOf = (entityId: string): boolean => {
-    const entity = args.project.entities.find((entry) => entry.id === entityId);
-    if (entity?.type !== 'survey-point' || entity.styleId == null) return false;
-    const style = args.project.styleLibrary.styles.find((entry) => entry.id === entity.styleId);
-    const shape = args.project.styleLibrary.pointSymbols.find((entry) => entry.id === style?.pointSymbolId)?.shape;
-    return shape != null && shape !== 'circle' && shape !== 'dot';
-  };
-  const noteApproximated = (entityId: string): void => {
-    if (approximatedEntityIds.includes(entityId)) return;
-    approximatedEntityIds.push(entityId);
-    warnings.push({ code: 'POINT_SYMBOL_APPROXIMATED', message: `point ${entityId} symbol approximated as circle`, entityId });
-  };
   const persistedLabels: ModelLabelPlacement[] = draftLabelsToPlacements(args.draft.labels);
   const effectiveLabels = args.modelLabels ?? persistedLabels;
   sheet.viewports.forEach((viewport) => {
@@ -574,9 +591,6 @@ export const buildExportSheetSceneWithResult = (args: BuildSceneArgs): ExportRes
           }
           items.push(...produced);
           exportedEntityIds.push(primitive.sourceEntityId);
-          if (primitive.kind === 'point' && approximatedShapeOf(primitive.sourceEntityId)) {
-            noteApproximated(primitive.sourceEntityId);
-          }
         } catch {
           omittedEntityIds.push(primitive.sourceEntityId);
           warnings.push({ code: 'SKIPPED_ENTITY', message: `skipped entity ${primitive.sourceEntityId}`, entityId: primitive.sourceEntityId });
@@ -630,7 +644,15 @@ export const buildExportSheetSceneWithResult = (args: BuildSceneArgs): ExportRes
   // omitted with an explicit warning. Intentionally hidden content
   // (invisible entities/layers, non-printable layers) is excluded, and
   // viewport-override hiding never triggers this — hidden entities still
-  // own display primitives, they are just filtered per viewport.
+  // own display primitives, they are just filtered per viewport. Likewise
+  // a No Display point style or No Label label style is an explicit style
+  // choice, not degenerate geometry: those entities are excluded here.
+  const intentionallyUnplotted = (entityId: string): boolean => {
+    const entity = args.project.entities.find((entry) => entry.id === entityId);
+    if (entity?.type === 'survey-point') return surveyPointMarker(args.project, entity).hidden;
+    if (entity?.type === 'text') return materializeBoundPointLabel(entity, args.project)?.visible === false;
+    return false;
+  };
   const primitiveCounts = new Map<string, number>();
   display.primitives.forEach((primitive) => {
     primitiveCounts.set(primitive.sourceEntityId, (primitiveCounts.get(primitive.sourceEntityId) ?? 0) + 1);
@@ -640,6 +662,7 @@ export const buildExportSheetSceneWithResult = (args: BuildSceneArgs): ExportRes
     if ((primitiveCounts.get(entity.id) ?? 0) > 0) return;
     if (omittedEntityIds.includes(entity.id)) return;
     if (layerFlagged(entity.layerId, 'visible') || layerFlagged(entity.layerId, 'printable')) return;
+    if (intentionallyUnplotted(entity.id)) return;
     omittedEntityIds.push(entity.id);
     warnings.push({ code: 'SKIPPED_ENTITY', message: `skipped entity ${entity.id} (no export geometry)`, entityId: entity.id });
   });

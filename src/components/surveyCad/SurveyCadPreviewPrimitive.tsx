@@ -1,6 +1,10 @@
 import React from 'react';
 import type { CadDisplayPrimitive } from '../../engine/cad/cadTypes';
 import { toScreenDash } from '../../engine/cad/cadViewportAppearance';
+import {
+  describePointSymbolShape,
+  normalizePointSymbolShape,
+} from '../../engine/cad/cadPointSymbolShape';
 import { arcPathFromPrimitive, textPrimitiveScreenBox } from './SurveyCadPreview.geometry';
 import type { ProjectPoint } from './SurveyCadPreview.types';
 
@@ -147,6 +151,21 @@ export const renderPrimitive = ({
     }
     case 'point': {
       const point = project(primitive.point.x, primitive.point.y);
+      // Honest marker shapes (shared geometry with export): unknown/missing
+      // shape draws as a circle. The hit target stays a generous circle for
+      // every shape so small markers remain selectable.
+      const markerRadius = isSelected ? primitive.radius + 1.8 : primitive.radius;
+      const geometry = describePointSymbolShape(
+        normalizePointSymbolShape(primitive.shape),
+        markerRadius,
+      );
+      const markerFill = isSelected ? '#fbbf24' : primitive.fill ?? primitive.stroke;
+      const markerStroke = isSelected ? '#fef3c7' : '#0f172a';
+      const markerOpacity = entityOpacityOverrides[primitive.sourceEntityId] ?? primitive.opacity ?? 1;
+      const at = (offset: { x: number; y: number }): { x: number; y: number } => ({
+        x: point.x + offset.x,
+        y: point.y + offset.y,
+      });
       return (
         <g key={primitive.id}>
           <circle
@@ -160,18 +179,50 @@ export const renderPrimitive = ({
             fillOpacity={0.001}
             pointerEvents="fill"
           />
-          <circle
-            cx={point.x}
-            cy={point.y}
-            r={isSelected ? primitive.radius + 1.8 : primitive.radius}
-            {...commonProps}
-            data-survey-cad-render-entity-id={primitive.sourceEntityId}
-            fill={isSelected ? '#fbbf24' : primitive.fill ?? primitive.stroke}
-            stroke={isSelected ? '#fef3c7' : '#0f172a'}
-            strokeWidth={1.2}
-            opacity={entityOpacityOverrides[primitive.sourceEntityId] ?? primitive.opacity ?? 1}
-            pointerEvents="all"
-          />
+          {geometry.kind === 'polygon' ? (
+            <polygon
+              {...commonProps}
+              data-survey-cad-render-entity-id={primitive.sourceEntityId}
+              points={geometry.points.map((offset) => {
+                const p = at(offset);
+                return `${p.x},${p.y}`;
+              }).join(' ')}
+              fill={markerFill}
+              stroke={markerStroke}
+              strokeWidth={1.2}
+              opacity={markerOpacity}
+              pointerEvents="all"
+            />
+          ) : geometry.kind === 'segments' ? (
+            <g
+              {...commonProps}
+              data-survey-cad-render-entity-id={primitive.sourceEntityId}
+              stroke={markerFill}
+              strokeWidth={2}
+              strokeLinecap="round"
+              opacity={markerOpacity}
+              pointerEvents="all"
+            >
+              {geometry.segments.map(([from, to], index) => {
+                const a = at(from);
+                const b = at(to);
+                return <line key={`${primitive.id}:seg:${index + 1}`} x1={a.x} y1={a.y} x2={b.x} y2={b.y} />;
+              })}
+            </g>
+          ) : (
+            <circle
+              cx={point.x}
+              cy={point.y}
+              r={geometry.kind === 'dot' ? Math.max(1.5, markerRadius * 0.6) : markerRadius}
+              {...commonProps}
+              data-survey-cad-render-entity-id={primitive.sourceEntityId}
+              fill={markerFill}
+              stroke={geometry.kind === 'dot' ? 'none' : markerStroke}
+              strokeWidth={geometry.kind === 'dot' ? 0 : 1.2}
+              opacity={markerOpacity}
+              pointerEvents="all"
+            />
+          )}
         </g>
       );
     }

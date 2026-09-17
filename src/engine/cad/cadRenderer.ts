@@ -24,7 +24,8 @@ import {
 import { resolveCadEntityAppearance } from './cadAppearance';
 import type { LineweightDisplayMode } from './cadViewportAppearance';
 import { displayedStrokeWidthPx, opacityFromTransparency } from './cadViewportAppearance';
-import { pointRadius, strokeWidth, textFontSize } from './cadRendererStyle';
+import { strokeWidth, surveyPointMarker, textFontSize } from './cadRendererStyle';
+import { materializeBoundPointLabel } from './cadPointLabelStyles';
 
 export interface BuildCadDisplaySceneOptions {
   /**
@@ -383,6 +384,10 @@ const toPrimitives = (
   switch (entity.type) {
     case 'survey-point': {
       const style = entityScreenStyle(project, ctx, entity, 1.2);
+      const marker = surveyPointMarker(project, entity);
+      // No Display style: no marker primitive. The entity still exists and
+      // stays selectable via Toolspace; only the marker is omitted.
+      if (marker.hidden) return [];
       return [{
         kind: 'point',
         id: `primitive:${entity.id}`,
@@ -392,7 +397,8 @@ const toPrimitives = (
         fill: style.stroke,
         ...withOpacity(style),
         point: { x: entity.x, y: entity.y },
-        radius: pointRadius(project, entity),
+        radius: marker.radius,
+        ...(marker.shape != null ? { shape: marker.shape } : {}),
       }];
     }
     case 'line': {
@@ -487,6 +493,25 @@ const toPrimitives = (
     }
     case 'text': {
       const style = entityScreenStyle(project, ctx, entity, 1.2);
+      // Associative label: materialized text/position/rotation; a No Label
+      // style emits nothing. Unresolvable bindings fall back to baked.
+      const bound = materializeBoundPointLabel(entity, project);
+      if (bound != null) {
+        if (!bound.visible) return [];
+        return [{
+          kind: 'text',
+          id: `primitive:${entity.id}`,
+          layerId: entity.layerId,
+          sourceEntityId: entity.id,
+          stroke: style.stroke,
+          ...withOpacity(style),
+          point: { x: bound.x, y: bound.y },
+          text: bound.text,
+          fontSize: textFontSize(project, entity, 11),
+          ...(bound.rotationDeg !== 0 ? { rotationDeg: bound.rotationDeg } : {}),
+          textAnchor: 'start',
+        }];
+      }
       return [{
         kind: 'text',
         id: `primitive:${entity.id}`,

@@ -1,4 +1,4 @@
-import type { CadBounds, CadEntityId } from './cadTypes';
+import type { CadBounds, CadEntityId, CadPointSymbolShape } from './cadTypes';
 
 export interface CadDisplayPoint {
   x: number;
@@ -29,6 +29,8 @@ export interface CadDisplayPointPrimitive extends CadDisplayPrimitiveBase {
   kind: 'point';
   point: CadDisplayPoint;
   radius: number;
+  /** Phase 18D: effective marker shape. Absent = circle (legacy/unknown). */
+  shape?: CadPointSymbolShape;
 }
 
 export interface CadDisplayLinePrimitive extends CadDisplayPrimitiveBase {
