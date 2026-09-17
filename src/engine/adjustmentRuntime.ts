@@ -38,6 +38,11 @@ export interface AdjustmentRuntime {
    * the fast default. Never persisted or exposed in UI.
    */
   preanalysisCorrectionFastPath?: EngineOptions['preanalysisCorrectionFastPath'];
+  /**
+   * Phase 16B test-only switch: false forces the legacy dense weight path.
+   * Undefined keeps the structured candidate with fail-closed fallback.
+   */
+  structuredWeightTransfer?: EngineOptions['structuredWeightTransfer'];
   /** Test-only experimental correction backend; undefined keeps TS. */
   normalEquationSolver?: EngineOptions['normalEquationSolver'];
   /**
@@ -58,6 +63,7 @@ export type AdjustmentRuntimeEngineOptions = Pick<
   | 'experimentalSelectedCovarianceMode'
   | 'experimentalSelectedCovarianceLegacyAllPairs'
   | 'preanalysisCorrectionFastPath'
+  | 'structuredWeightTransfer'
   | 'allowVerifiedNativeDenseQxxReuse'
 >;
 
@@ -91,6 +97,9 @@ export const toEngineOptions = (
   }
   if (runtime.preanalysisCorrectionFastPath !== undefined) {
     options.preanalysisCorrectionFastPath = runtime.preanalysisCorrectionFastPath;
+  }
+  if (runtime.structuredWeightTransfer !== undefined) {
+    options.structuredWeightTransfer = runtime.structuredWeightTransfer;
   }
   if (runtime.allowVerifiedNativeDenseQxxReuse !== undefined) {
     options.allowVerifiedNativeDenseQxxReuse = runtime.allowVerifiedNativeDenseQxxReuse;

@@ -76,6 +76,9 @@ export const EVIDENCE_TESTS = [
   'tests/evidence/phase15f_benchmark_matrix.test.ts',
   'tests/evidence/phase16a_weight_sparsity.test.ts',
   'tests/evidence/phase16a_structured_prototypes.test.ts',
+  'tests/evidence/phase16b_weight_transfer_bench.test.ts',
+  'tests/evidence/phase16b_iteration_gates.test.ts',
+  'tests/evidence/phase16b_full_parity.test.ts',
   'tests/evidence/tbcParityTooling.test.ts',
   'tests/evidence/gnssMultifileScalingEvidence.test.ts',
 ] as const;

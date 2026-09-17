@@ -11,6 +11,10 @@ import {
   packUpperTriangleWeights,
 } from './sparseEquationPacking';
 import { structuredWeightsToPackedUpper } from './sparseWeightRepresentation';
+import {
+  estimateStructuredWeightDensityUB,
+  shouldAssembleStructuredWeights,
+} from './structuredWeightOracle';
 import { getObservationSideshotCalcMeta } from './observationMetadata';
 import { recordSparseCorrectionFallback } from './experimentalSparseDiagnostics';
 import type { RecoveredFinalCovariance } from './adjustCovarianceRecovery';
@@ -231,6 +235,32 @@ export const runAdjustmentSolveWorkflow = (
     }
     finishParseAndSetupTiming();
     const useSparseCorrectionWeights = ctx.sparseCorrectionSolver != null;
+    // Phase 16B structured-weight transfer: route the correction loop
+    // through sparse assembly with omitDenseP (no per-iteration dense P)
+    // when the hybrid policy admits this system. Observations and
+    // constraints are fixed across iterations, so the pre-assembly density
+    // upper bound is computed once; the exact writer-metadata gate inside
+    // the iteration solve backstops it per solve. Fresh weights are
+    // assembled every iteration — nothing carries across nonlinear,
+    // robust, LOO-alternate, or auto-adjust solves. Robust Huber stays on
+    // the legacy dense path (rejected with reason: its inner reweighting
+    // needs per-iteration correlated proof not provided here).
+    const structuredDensityUB = estimateStructuredWeightDensityUB({
+      equationCount: numObsEquations,
+      observations: activeObservations,
+      tsCorrelationEnabled: ctx.tsCorrelationEnabled === true,
+      tsCorrelationRho: ctx.tsCorrelationRho ?? 0,
+      tsCorrelationScope: ctx.tsCorrelationScope,
+      is2D: ctx.is2D === true,
+      constraintCount: constraints.length,
+    });
+    const useStructuredTransferWeights = shouldAssembleStructuredWeights({
+      equationCount: numObsEquations,
+      densityUB: structuredDensityUB,
+      robustMode: ctx.robustMode,
+      structuredWeightTransfer: ctx.structuredWeightTransfer,
+    });
+    const useSparseWeightAssembly = useSparseCorrectionWeights || useStructuredTransferWeights;
 
     // Phase 9E first-stage fast path: in eligible dense 2D preanalysis solves
     // the correction loop computes a correction vector that is discarded
@@ -286,7 +316,7 @@ export const runAdjustmentSolveWorkflow = (
           getModeledZenith: ctx.getModeledZenith.bind(ctx),
           curvatureRefractionAngle: ctx.curvatureRefractionAngle.bind(ctx),
           applyTsCorrelationToWeightMatrix: ctx.applyTsCorrelationToWeightMatrix.bind(ctx),
-          applyTsCorrelationToWeightWriter: useSparseCorrectionWeights
+          applyTsCorrelationToWeightWriter: useSparseWeightAssembly
             ? ctx.applyTsCorrelationToWeightWriter.bind(ctx)
             : undefined,
           logObsDebug: ctx.logObsDebug.bind(ctx),
@@ -296,7 +326,7 @@ export const runAdjustmentSolveWorkflow = (
         numObsEquations,
         numParams,
         iter + 1,
-        useSparseCorrectionWeights
+        useSparseWeightAssembly
           ? { includeDenseA: false, weightRepresentation: 'sparse', omitDenseP: true }
           : { includeDenseA: false },
       );
@@ -334,7 +364,7 @@ export const runAdjustmentSolveWorkflow = (
             {
               sparseRows,
               numParams,
-              structuredWeights: useSparseCorrectionWeights ? structuredWeights : undefined,
+              structuredWeights: useSparseWeightAssembly ? structuredWeights : undefined,
               iterationTimingSink: detailSink,
             },
           );

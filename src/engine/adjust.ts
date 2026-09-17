@@ -68,6 +68,8 @@ export class LSAEngine extends LSAEngineObservationMethods {
   private iterationSystemProbe?: (_system: IterationSystemProbeInput) => void;
   /** Phase 9E test-only oracle switch; false forces the legacy correction loop. */
   private preanalysisCorrectionFastPath?: boolean;
+  /** Phase 16B test-only switch; false forces the legacy dense weight path. */
+  private structuredWeightTransfer?: boolean;
   /** Phase 10E test-only oracle; true forces legacy statistics recompute. */
   private forceLegacyStatisticsQxx?: boolean;
   private allowEvidenceNativeDenseQxxReuse?: boolean;
@@ -156,6 +158,10 @@ export class LSAEngine extends LSAEngineObservationMethods {
       experimentalSparseDiagnostics: this.experimentalSparseDiagnostics,
       experimentalSelectedCovarianceMode: this.experimentalSelectedCovarianceMode,
       experimentalSelectedCovarianceLegacyAllPairs: this.experimentalSelectedCovarianceLegacyAllPairs,
+      structuredWeightTransfer: this.structuredWeightTransfer,
+      tsCorrelationEnabled: this.tsCorrelationEnabled,
+      tsCorrelationRho: this.tsCorrelationRho,
+      tsCorrelationScope: this.tsCorrelationScope,
       connectedPairs: collectConnectedStationPairs(activeObservations),
       requestedPairs,
       detailedSolveProfiler: this.detailedSolveProfiler,
@@ -206,6 +212,7 @@ export class LSAEngine extends LSAEngineObservationMethods {
     detailedSolveProfiler,
     iterationSystemProbe,
     preanalysisCorrectionFastPath,
+    structuredWeightTransfer,
     forceLegacyStatisticsQxx,
     allowEvidenceNativeDenseQxxReuse,
     allowVerifiedNativeDenseQxxReuse,
@@ -222,6 +229,7 @@ export class LSAEngine extends LSAEngineObservationMethods {
     this.detailedSolveProfiler = detailedSolveProfiler;
     this.iterationSystemProbe = iterationSystemProbe;
     this.preanalysisCorrectionFastPath = preanalysisCorrectionFastPath;
+    this.structuredWeightTransfer = structuredWeightTransfer;
     this.forceLegacyStatisticsQxx = forceLegacyStatisticsQxx;
     this.allowEvidenceNativeDenseQxxReuse = allowEvidenceNativeDenseQxxReuse;
     this.allowVerifiedNativeDenseQxxReuse = allowVerifiedNativeDenseQxxReuse;
@@ -286,6 +294,7 @@ export class LSAEngine extends LSAEngineObservationMethods {
       detailedSolveProfiler: this.detailedSolveProfiler,
       iterationSystemProbe: this.iterationSystemProbe,
       preanalysisCorrectionFastPath: this.preanalysisCorrectionFastPath,
+      structuredWeightTransfer: this.structuredWeightTransfer,
       forceLegacyStatisticsQxx: this.forceLegacyStatisticsQxx,
       allowEvidenceNativeDenseQxxReuse: this.allowEvidenceNativeDenseQxxReuse,
       allowVerifiedNativeDenseQxxReuse: this.allowVerifiedNativeDenseQxxReuse,

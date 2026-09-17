@@ -10,6 +10,7 @@ import {
 } from './sparseWeightRepresentation';
 import type { StructuredSymmetricWeights } from './sparseWeightRepresentation';
 import { applyCoordinateConstraintCorrelationWeightsToWriter } from './adjustmentConstraints';
+import { recordDenseMaterialization, recordDensePAllocation, recordStructuredWeightBuild } from './structuredWeightTelemetry';
 import type {
   CoordinateConstraintRowPlacement,
   EquationRowInfo,
@@ -80,6 +81,7 @@ export const assembleAdjustmentEquations = (
     weights = writer;
   } else {
     const matrix = zeros(numObsEquations, numObsEquations);
+    recordDensePAllocation(numObsEquations);
     denseP = matrix;
     const writer = new DenseWeightWriter(matrix);
     weights = writer;
@@ -354,11 +356,19 @@ export const assembleAdjustmentEquations = (
     if (dependencies.applyTsCorrelationToWeightWriter) {
       dependencies.applyTsCorrelationToWeightWriter(weights, rowInfo);
       structuredWeights = sparseWeightWriter.finalize();
-      P = options?.omitDenseP ? undefined : structuredWeightsToDense(structuredWeights);
+      recordStructuredWeightBuild(structuredWeights.offValues.length);
+      if (options?.omitDenseP) {
+        P = undefined;
+      } else {
+        P = structuredWeightsToDense(structuredWeights);
+        recordDenseMaterialization(numObsEquations);
+      }
     } else {
       const materialized = structuredWeightsToDense(sparseWeightWriter.finalize());
+      recordDenseMaterialization(numObsEquations);
       dependencies.applyTsCorrelationToWeightMatrix(materialized, rowInfo);
       structuredWeights = structuredWeightsFromDense(materialized, numObsEquations);
+      recordStructuredWeightBuild(structuredWeights.offValues.length);
       P = options?.omitDenseP ? undefined : materialized;
     }
   } else {

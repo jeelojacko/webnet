@@ -123,6 +123,13 @@ export interface EngineOptions {
    * never persisted or exposed in UI.
    */
   preanalysisCorrectionFastPath?: boolean;
+  /**
+   * Phase 16B test-only switch: false forces the legacy dense weight path
+   * even when a structured candidate is available. Undefined (default)
+   * allows the structured candidate with fail-closed dense fallback.
+   * Threaded through AdjustmentRuntime; never persisted or exposed in UI.
+   */
+  structuredWeightTransfer?: boolean;
 }
 
 export const cloneParsedResultValue = <T>(value: T): T => {
