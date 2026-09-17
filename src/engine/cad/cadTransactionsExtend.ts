@@ -23,6 +23,7 @@ import {
   TRIM_EPSILON,
   type CadTrimEntity,
 } from './cadTransactionsTrimCommon';
+import { checkCadEntityEditable } from './cadAppearance';
 import type {
   CadArcEntity,
   CadEntity,
@@ -304,7 +305,9 @@ export const buildCadExtendPreview = (
   if (boundaryEntities.some((entity) => entity.id === targetEntityId)) return null;
   const targetEntity = project.entities.find(
     (entity): entity is CadTrimEntity =>
-      entity.id === targetEntityId && isTrimmableEntity(entity) && !entity.locked,
+      entity.id === targetEntityId &&
+      isTrimmableEntity(entity) &&
+      checkCadEntityEditable(project, entity).editable,
   );
   if (!targetEntity) return null;
   const previewEntities = buildExtendedTrimEntity(

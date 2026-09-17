@@ -3,6 +3,8 @@ import {
   createCadSelectionState,
   selectAllCadEntities,
 } from './cadSelection';
+import { checkCadEntityEditable } from './cadAppearance';
+import { resolveCurrentCadLayerId } from './cadLayers';
 import { buildCadCogoEntityMetadata } from './cadCogoTypes';
 import {
   compactManualPointEntities,
@@ -178,6 +180,14 @@ const eraseCommand: CadCommandDefinition<{ key: 'ERASE' }> = {
   execute: (snapshot) => {
     const selectedEntities = getExpandedSelectedEntities(snapshot);
     if (selectedEntities.length === 0) return null;
+    // Atomic reject: any locked/hidden source blocks the whole erase (LAYER_LOCKED).
+    if (
+      selectedEntities.some(
+        (entity) => !checkCadEntityEditable(snapshot.project, entity).editable,
+      )
+    ) {
+      return null;
+    }
     const removedEntityIds = selectedEntities.map((entity) => entity.id);
     const removedEntityIdSet = new Set(removedEntityIds);
     const nextProject = replaceCadProjectEntities(
@@ -322,7 +332,7 @@ const lineCommand: CadCommandDefinition<{
     const lineEntity: CadEntity = {
       id: createStableRuntimeId('cad-line'),
       type: 'line',
-      layerId: 'observation-lines',
+      layerId: resolveCurrentCadLayerId(snapshot.project),
       styleId: 'style-observation-line',
       visible: true,
       locked: false,
@@ -440,6 +450,18 @@ const layerMoveObjectsCommand: CadCommandDefinition<Extract<CadCommand, { key: '
     if (command.fromLayerId === command.toLayerId) return null;
     const moved = snapshot.project.entities.filter((entity) => entity.layerId === command.fromLayerId);
     if (moved.length === 0) return null;
+    // Locked target layer rejects (creation-on-locked); any locked/hidden
+    // moved source rejects the whole move (LAYER_LOCKED).
+    if (
+      snapshot.project.layers.find((entry) => entry.id === command.toLayerId)?.locked === true
+    ) {
+      return null;
+    }
+    if (
+      moved.some((entity) => !checkCadEntityEditable(snapshot.project, entity).editable)
+    ) {
+      return null;
+    }
     const nextProject = replaceCadProjectEntities(
       snapshot.project,
       snapshot.project.entities.map((entity) =>

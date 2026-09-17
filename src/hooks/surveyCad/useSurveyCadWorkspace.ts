@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState, type Dispatch, type SetStateAction } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, type Dispatch, type SetStateAction } from 'react';
 import { cadIntersectLineLikeEntities } from '../../engine/cad/cadCogo';
 import { cloneCadDrawingDocument } from '../../engine/cad/cadDrawingFile';
 import { buildMlightcadSpikeScene } from '../../engine/cad/cadMlightcadAdapter';
@@ -57,25 +57,33 @@ export const useSurveyCadWorkspace = (
     baseProject,
     resetKey,
   );
-  const applyHistoryUpdate = (updater: (_history: import('../../engine/cad/cadUndoRedo').CadHistoryState) => import('../../engine/cad/cadUndoRedo').CadHistoryState) => {
-    let nextProject: CadProject | null = null;
-    applyHistoryUpdateBase((current) => {
-      const next = updater(current);
-      nextProject = next.present.project;
-      return next;
-    });
-    if (!nextProject) return;
-    onProjectChange((current) => {
-      if (!current || current.drawingId !== drawing.drawingId) return current;
-      return cloneCadDrawingDocument({
-        ...current,
-        updatedAt: new Date().toISOString(),
-        project: nextProject!,
-        parcelLayout: parcelLayoutState,
-        showParcelLabels,
+  // Memoized so viewport effects (e.g. hidden-selection retirement) can depend on it.
+  const applyHistoryUpdate = useCallback(
+    (
+      updater: (
+        _history: import('../../engine/cad/cadUndoRedo').CadHistoryState,
+      ) => import('../../engine/cad/cadUndoRedo').CadHistoryState,
+    ) => {
+      let nextProject: CadProject | null = null;
+      applyHistoryUpdateBase((current) => {
+        const next = updater(current);
+        nextProject = next.present.project;
+        return next;
       });
-    });
-  };
+      if (!nextProject) return;
+      onProjectChange((current) => {
+        if (!current || current.drawingId !== drawing.drawingId) return current;
+        return cloneCadDrawingDocument({
+          ...current,
+          updatedAt: new Date().toISOString(),
+          project: nextProject!,
+          parcelLayout: parcelLayoutState,
+          showParcelLabels,
+        });
+      });
+    },
+    [applyHistoryUpdateBase, drawing.drawingId, onProjectChange, parcelLayoutState, showParcelLabels],
+  );
   const cadProject = history.present.project;
   const selection = history.present.selection;
   const activeGripHandleRef = useRef<CadGripHandle | null>(null);

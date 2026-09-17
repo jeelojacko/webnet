@@ -7,6 +7,7 @@ import type {
   CadEntity,
   CadLayer,
   CadLineTypeId,
+  CadProject,
   CadStyle,
   CadStyleLibrary,
 } from './cadTypes';
@@ -42,6 +43,16 @@ export interface ResolveCadEntityAppearanceArgs {
   styleLibrary?: CadStyleLibrary | null;
 }
 
+/** Stable rejection code for locked-source mutations (spec §6). */
+export const CAD_EDIT_LOCKED_REASON = 'LAYER_LOCKED' as const;
+
+export type CadEntityEditBlockReason = typeof CAD_EDIT_LOCKED_REASON | 'ENTITY_HIDDEN';
+
+export interface CadEntityEditCheck {
+  editable: boolean;
+  reason: CadEntityEditBlockReason | null;
+}
+
 export interface ResolvedCadEntityAppearance {
   visible: boolean;
   selectable: boolean;
@@ -53,7 +64,31 @@ export interface ResolvedCadEntityAppearance {
   printable: boolean;
 }
 
-export const resolveCadEntityAppearance = ({
+/**
+ * Central editability gate (spec §6). Single choke point for move / erase /
+ * trim / fillet / extend / properties-edit / layer-move paths: locked source
+ * (entity or its layer) rejects with stable `LAYER_LOCKED`; hidden source
+ * rejects with `ENTITY_HIDDEN`. Unknown/missing layer stays editable unless
+ * the entity itself is locked or hidden.
+ */
+export const checkCadEntityEditable = (
+  project: Pick<CadProject, 'layers' | 'styleLibrary'>,
+  entity: CadEntity,
+): CadEntityEditCheck => {
+  const layer = project.layers.find((candidate) => candidate.id === entity.layerId);
+  if (entity.locked || layer?.locked === true) {
+    return { editable: false, reason: CAD_EDIT_LOCKED_REASON };
+  }
+  const { visible } = resolveCadEntityAppearance({
+    entity,
+    layer,
+    styleLibrary: project.styleLibrary,
+  });
+  if (!visible) return { editable: false, reason: 'ENTITY_HIDDEN' };
+  return { editable: true, reason: null };
+};
+
+export const resolveCadEntityAppearance = ({ 
   entity,
   layer,
   styleLibrary,

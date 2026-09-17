@@ -1,5 +1,7 @@
 import { buildCadCogoEntityMetadata } from './cadCogoTypes';
 import { createCadSelectionState } from './cadSelection';
+import { checkCadEntityEditable } from './cadAppearance';
+import { resolveCurrentCadLayerId } from './cadLayers';
 import {
   buildCurveLabels,
   compactManualPointEntities,
@@ -49,7 +51,9 @@ export const extendCommand: CadCommandDefinition<{
     if (boundaryEntities.some((entity) => entity.id === command.targetEntityId)) return null;
     const targetEntity = snapshot.project.entities.find(
       (entity): entity is CadTrimEntity =>
-        entity.id === command.targetEntityId && isTrimmableEntity(entity) && !entity.locked,
+        entity.id === command.targetEntityId &&
+        isTrimmableEntity(entity) &&
+        checkCadEntityEditable(snapshot.project, entity).editable,
     );
     if (!targetEntity) return null;
     const extendedPieces = buildExtendedTrimEntity(
@@ -103,11 +107,15 @@ export const filletCommand: CadCommandDefinition<{
     }
     const firstEntity = snapshot.project.entities.find(
       (entity): entity is CadFilletEntity =>
-        entity.id === command.firstEntityId && isTrimmableEntity(entity) && !entity.locked,
+        entity.id === command.firstEntityId &&
+        isTrimmableEntity(entity) &&
+        checkCadEntityEditable(snapshot.project, entity).editable,
     );
     const secondEntity = snapshot.project.entities.find(
       (entity): entity is CadFilletEntity =>
-        entity.id === command.secondEntityId && isTrimmableEntity(entity) && !entity.locked,
+        entity.id === command.secondEntityId &&
+        isTrimmableEntity(entity) &&
+        checkCadEntityEditable(snapshot.project, entity).editable,
     );
     if (!firstEntity || !secondEntity) return null;
 
@@ -152,7 +160,7 @@ export const filletCommand: CadCommandDefinition<{
     const arcEntity: CadArcEntity = {
       id: createStableRuntimeId('cad-arc'),
       type: 'arc',
-      layerId: 'observation-lines',
+      layerId: resolveCurrentCadLayerId(snapshot.project),
       styleId: 'style-observation-line',
       visible: true,
       locked: false,
@@ -208,7 +216,9 @@ export const trimCommand: CadCommandDefinition<{
     if (cuttingEntities.some((entity) => entity.id === command.targetEntityId)) return null;
     const targetEntity = snapshot.project.entities.find(
       (entity): entity is CadTrimEntity =>
-        entity.id === command.targetEntityId && isTrimmableEntity(entity) && !entity.locked,
+        entity.id === command.targetEntityId &&
+        isTrimmableEntity(entity) &&
+        checkCadEntityEditable(snapshot.project, entity).editable,
     );
     if (!targetEntity) return null;
 
@@ -331,6 +341,10 @@ export const gripEditCommand: CadCommandDefinition<{
 }> = {
   key: 'GRIP_EDIT',
   execute: (snapshot, command) => {
+    const gripTarget = snapshot.project.entities.find((entity) => entity.id === command.entityId);
+    if (!gripTarget || !checkCadEntityEditable(snapshot.project, gripTarget).editable) {
+      return null;
+    }
     const nextProject = applyCadGripEdit(snapshot.project, command);
     if (!nextProject) return null;
     return {

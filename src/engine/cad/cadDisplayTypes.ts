@@ -14,6 +14,14 @@ export interface CadDisplayPrimitiveBase {
   fill?: string;
   opacity?: number;
   strokeDasharray?: string;
+  /**
+   * Viewport-only dash pattern in drawing units (already × linetypeScale).
+   * Converted to screen space at render time via `toScreenDash`; ignored by
+   * exporters, which keep passing `strokeDasharray` through untouched.
+   */
+  dashPatternUnits?: number[];
+  /** Drawing-unit phase offset for continuous polyline dashes. */
+  dashOffsetUnits?: number;
 }
 
 export interface CadDisplayPointPrimitive extends CadDisplayPrimitiveBase {

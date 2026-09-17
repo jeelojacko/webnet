@@ -21,29 +21,113 @@ import {
   formatCadStation,
   cadPointAtAlignmentStationOffset,
 } from './cadAlignment';
+import { resolveCadEntityAppearance } from './cadAppearance';
+import type { LineweightDisplayMode } from './cadViewportAppearance';
+import { displayedStrokeWidthPx, opacityFromTransparency } from './cadViewportAppearance';
 import { entityStyle, layerColor, pointRadius, strokeWidth, textFontSize } from './cadRendererStyle';
+
+export interface BuildCadDisplaySceneOptions {
+  /**
+   * Workspace-only display preference (never dirties the drawing or the
+   * stored mm value). `thin` (default) reproduces the legacy normalized
+   * look exactly; `scaled` maps the resolved lineweight with clamping.
+   */
+  lineweightDisplay?: LineweightDisplayMode;
+}
+
+interface SceneRenderContext {
+  layerById: Map<string, CadProject['layers'][number]>;
+  linetypeScale: number;
+  lineweightDisplay: LineweightDisplayMode;
+}
+
+const sceneRenderContext = (
+  project: CadProject,
+  options?: BuildCadDisplaySceneOptions,
+): SceneRenderContext => ({
+  layerById: new Map(project.layers.map((layer) => [layer.id, layer])),
+  linetypeScale: project.linetypeScale ?? 1,
+  lineweightDisplay: options?.lineweightDisplay ?? 'thin',
+});
+
+interface EntityScreenStyle {
+  stroke: string;
+  opacity: number | undefined;
+  dashPatternUnits: number[] | undefined;
+  widthPx: (_legacyFallbackPx?: number) => number;
+}
+
+/** Authoritative entity styling: every geometry primitive resolves color,
+ *  linetype, lineweight, and transparency through the §4-5 resolver.
+ *  Synthesized *label* primitives intentionally keep the source-style color
+ *  (trap #5) and bypass this helper. */
+const entityScreenStyle = (
+  project: CadProject,
+  ctx: SceneRenderContext,
+  entity: CadEntity,
+  legacyFallbackPx: number,
+): EntityScreenStyle => {
+  const resolved = resolveCadEntityAppearance({
+    entity,
+    layer: ctx.layerById.get(entity.layerId),
+    styleLibrary: project.styleLibrary,
+  });
+  const pattern = project.styleLibrary.lineTypes.find(
+    (lineType) => lineType.id === resolved.lineTypeId,
+  )?.dashPattern;
+  // Legacy exact px (style.strokeWidth ?? per-type fallback): thin mode must
+  // reproduce today's rendering pixel-for-pixel, including custom styles.
+  const legacyPx = strokeWidth(project, entity, legacyFallbackPx);
+  return {
+    stroke: resolved.color,
+    opacity: opacityFromTransparency(resolved.transparency),
+    dashPatternUnits:
+      pattern != null && pattern.length > 0
+        ? pattern.map((entry) => entry * ctx.linetypeScale)
+        : undefined,
+    widthPx: (legacyFallback: number = legacyPx): number =>
+      displayedStrokeWidthPx(resolved.lineweightMm, ctx.lineweightDisplay, legacyFallback),
+  };
+};
 
 const buildVertexPrimitives = (
   project: CadProject,
+  ctx: SceneRenderContext,
   entity: Extract<CadEntity, { vertices: Array<{ x: number; y: number }> }>,
 ): CadDisplayPrimitive[] => {
-  const stroke = entityStyle(project, entity)?.color ?? layerColor(project, entity.layerId);
+  const style = entityScreenStyle(
+    project,
+    ctx,
+    entity,
+    entity.type === 'parcel' ? 1.5 : 1.25,
+  );
   const points =
     entity.type === 'polygon' || entity.type === 'parcel'
       ? [...entity.vertices, entity.vertices[0]].filter(
           (point): point is { x: number; y: number } => point != null,
         )
       : entity.vertices;
-  return points.slice(0, -1).map((vertex, index) => ({
-    kind: 'line',
-    id: `primitive:${entity.id}:${index + 1}`,
-    layerId: entity.layerId,
-    sourceEntityId: entity.id,
-    sourceSegmentId: `${entity.id}#${index}`,
-    stroke,
-    points: [vertex, points[index + 1]!],
-    strokeWidth: strokeWidth(project, entity, entity.type === 'parcel' ? 1.5 : 1.25),
-  }));
+  // Accumulated drawing-unit length keeps dashes continuous across segments.
+  let accumulatedUnits = 0;
+  return points.slice(0, -1).map((vertex, index) => {
+    const next = points[index + 1]!;
+    const offsetUnits = style.dashPatternUnits != null ? accumulatedUnits : undefined;
+    accumulatedUnits += Math.hypot(next.x - vertex.x, next.y - vertex.y) * ctx.linetypeScale;
+    return {
+      kind: 'line',
+      id: `primitive:${entity.id}:${index + 1}`,
+      layerId: entity.layerId,
+      sourceEntityId: entity.id,
+      sourceSegmentId: `${entity.id}#${index}`,
+      stroke: style.stroke,
+      ...(style.opacity != null ? { opacity: style.opacity } : {}),
+      ...(style.dashPatternUnits != null
+        ? { dashPatternUnits: style.dashPatternUnits, dashOffsetUnits: offsetUnits ?? 0 }
+        : {}),
+      points: [vertex, next],
+      strokeWidth: style.widthPx(),
+    };
+  });
 };
 
 const polylineSegments = (
@@ -269,21 +353,41 @@ const buildAlignmentStationEquationLabelPrimitives = (
   });
 };
 
-const toPrimitives = (project: CadProject, entity: CadEntity): CadDisplayPrimitive[] => {
-  const stroke = entityStyle(project, entity)?.color ?? layerColor(project, entity.layerId);
+const withDash = (
+  style: EntityScreenStyle,
+  offsetUnits = 0,
+): { dashPatternUnits?: number[]; dashOffsetUnits?: number } =>
+  style.dashPatternUnits != null
+    ? { dashPatternUnits: style.dashPatternUnits, dashOffsetUnits: offsetUnits }
+    : {};
+
+const withOpacity = (
+  style: EntityScreenStyle,
+): { opacity?: number } =>
+  style.opacity != null ? { opacity: style.opacity } : {};
+
+const toPrimitives = (
+  project: CadProject,
+  ctx: SceneRenderContext,
+  entity: CadEntity,
+): CadDisplayPrimitive[] => {
   switch (entity.type) {
-    case 'survey-point':
+    case 'survey-point': {
+      const style = entityScreenStyle(project, ctx, entity, 1.2);
       return [{
         kind: 'point',
         id: `primitive:${entity.id}`,
         layerId: entity.layerId,
         sourceEntityId: entity.id,
-        stroke,
-        fill: stroke,
+        stroke: style.stroke,
+        fill: style.stroke,
+        ...withOpacity(style),
         point: { x: entity.x, y: entity.y },
         radius: pointRadius(project, entity),
       }];
-    case 'line':
+    }
+    case 'line': {
+      const style = entityScreenStyle(project, ctx, entity, 1.25);
       return [
         {
           kind: 'line',
@@ -291,43 +395,51 @@ const toPrimitives = (project: CadProject, entity: CadEntity): CadDisplayPrimiti
           layerId: entity.layerId,
           sourceEntityId: entity.id,
           sourceSegmentId: `${entity.id}#0`,
-          stroke,
+          stroke: style.stroke,
+          ...withOpacity(style),
+          ...withDash(style),
           points: [
             { x: entity.fromX, y: entity.fromY },
             { x: entity.toX, y: entity.toY },
           ],
-          strokeWidth: strokeWidth(project, entity, 1.25),
+          strokeWidth: style.widthPx(),
         },
       ];
+    }
     case 'polyline':
       return [
-        ...buildVertexPrimitives(project, entity),
+        ...buildVertexPrimitives(project, ctx, entity),
         ...buildTraverseLabelPrimitives(project, entity),
       ];
     case 'polygon':
-      return buildVertexPrimitives(project, entity);
+      return buildVertexPrimitives(project, ctx, entity);
     case 'parcel':
       return [
-        ...buildVertexPrimitives(project, entity),
+        ...buildVertexPrimitives(project, ctx, entity),
         ...buildParcelLabelPrimitive(project, entity),
       ];
-    case 'arc':
+    case 'arc': {
+      const style = entityScreenStyle(project, ctx, entity, 1.25);
       return [
         {
           kind: 'arc',
           id: `primitive:${entity.id}`,
           layerId: entity.layerId,
           sourceEntityId: entity.id,
-          stroke,
+          stroke: style.stroke,
+          ...withOpacity(style),
+          ...withDash(style),
           center: { x: entity.centerX, y: entity.centerY },
           radius: entity.radius,
           startAngleDeg: entity.startAngleDeg,
           endAngleDeg: entity.endAngleDeg,
-          strokeWidth: strokeWidth(project, entity, 1.25),
+          strokeWidth: style.widthPx(),
         },
         ...buildArcLabelPrimitive(project, entity),
       ];
-    case 'alignment':
+    }
+    case 'alignment': {
+      const style = entityScreenStyle(project, ctx, entity, 1.5);
       return [
         ...entity.elements.flatMap((element, index): CadDisplayPrimitive[] => {
           if (element.kind === 'line') {
@@ -337,9 +449,11 @@ const toPrimitives = (project: CadProject, entity: CadEntity): CadDisplayPrimiti
               layerId: entity.layerId,
               sourceEntityId: entity.id,
               sourceSegmentId: `${entity.id}#${index}`,
-              stroke,
+              stroke: style.stroke,
+              ...withOpacity(style),
+              ...withDash(style),
               points: [element.start, element.end],
-              strokeWidth: strokeWidth(project, entity, 1.5),
+              strokeWidth: style.widthPx(),
             }];
           }
           return [{
@@ -348,48 +462,66 @@ const toPrimitives = (project: CadProject, entity: CadEntity): CadDisplayPrimiti
             layerId: entity.layerId,
             sourceEntityId: entity.id,
             sourceSegmentId: `${entity.id}#${index}`,
-            stroke,
+            stroke: style.stroke,
+            ...withOpacity(style),
+            ...withDash(style),
             center: element.center,
             radius: element.radius,
             startAngleDeg: element.startAngleDeg,
             endAngleDeg: element.endAngleDeg,
-            strokeWidth: strokeWidth(project, entity, 1.5),
+            strokeWidth: style.widthPx(),
           }];
         }),
         ...buildAlignmentLabelPrimitive(project, entity),
         ...buildAlignmentStationEquationLabelPrimitives(project, entity),
       ];
-    case 'text':
+    }
+    case 'text': {
+      const style = entityScreenStyle(project, ctx, entity, 1.2);
       return [{
         kind: 'text',
         id: `primitive:${entity.id}`,
         layerId: entity.layerId,
         sourceEntityId: entity.id,
-        stroke,
+        stroke: style.stroke,
+        ...withOpacity(style),
         point: { x: entity.x, y: entity.y },
         text: entity.text,
         fontSize: textFontSize(project, entity, 11),
         textAnchor: 'start',
       }];
-    case 'error-ellipse':
+    }
+    case 'error-ellipse': {
+      const style = entityScreenStyle(project, ctx, entity, 1.1);
       return [{
         kind: 'ellipse',
         id: `primitive:${entity.id}`,
         layerId: entity.layerId,
         sourceEntityId: entity.id,
-        stroke,
+        stroke: style.stroke,
+        ...withOpacity(style),
+        ...withDash(style),
         center: { x: entity.centerX, y: entity.centerY },
         semiMajor: entity.semiMajor,
         semiMinor: entity.semiMinor,
         thetaDeg: entity.thetaDeg,
-        strokeWidth: strokeWidth(project, entity, 1.1),
+        strokeWidth: style.widthPx(),
       }];
+    }
   }
 };
 
-export const buildCadDisplayScene = (project: CadProject): CadDisplayScene => ({
-  bounds: project.bounds,
-  primitives: project.entities
-    .filter((entity) => entity.visible)
-    .flatMap((entity) => toPrimitives(project, entity)),
-});
+// NOTE: no layer-visibility filtering here (trap #1). The export scene needs
+// hidden primitives; viewports filter via filterCadDisplaySceneForViewport.
+export const buildCadDisplayScene = (
+  project: CadProject,
+  options?: BuildCadDisplaySceneOptions,
+): CadDisplayScene => {
+  const ctx = sceneRenderContext(project, options);
+  return {
+    bounds: project.bounds,
+    primitives: project.entities
+      .filter((entity) => entity.visible)
+      .flatMap((entity) => toPrimitives(project, ctx, entity)),
+  };
+};

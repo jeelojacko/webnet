@@ -1,5 +1,7 @@
 import { createCadSelectionState } from './cadSelection';
+import { checkCadEntityEditable } from './cadAppearance';
 import { getCadEntityEditableName } from './cadEntityNames';
+import { resolveCurrentCadLayerId } from './cadLayers';
 import {
   buildCurveLabels,
 } from './cadTransactionsEntityFactories';
@@ -204,7 +206,12 @@ const buildCopiedEntities = (
     }
   });
 
-  return copiedEntities;
+  // Copies land on the current layer (labels stay on labels); appearance
+  // intent is preserved, never rewritten from the layer color.
+  const currentLayerId = resolveCurrentCadLayerId(project);
+  return copiedEntities.map((entity) =>
+    entity.layerId === 'labels' ? entity : { ...entity, layerId: currentLayerId },
+  );
 };
 
 export const moveCommand: CadCommandDefinition<{
@@ -217,6 +224,15 @@ export const moveCommand: CadCommandDefinition<{
     if (Math.abs(command.deltaX) <= 1e-9 && Math.abs(command.deltaY) <= 1e-9) return null;
     const selectedEntities = getExpandedSelectedEntities(snapshot);
     if (selectedEntities.length === 0) return null;
+    // Atomic reject: entity.locked never blocked move before — the central
+    // gate now covers entity + layer locks (LAYER_LOCKED).
+    if (
+      selectedEntities.some(
+        (entity) => !checkCadEntityEditable(snapshot.project, entity).editable,
+      )
+    ) {
+      return null;
+    }
     const selectedIdSet = new Set(selectedEntities.map((entity) => entity.id));
     const nextProjectBase = replaceCadProjectEntities(
       snapshot.project,

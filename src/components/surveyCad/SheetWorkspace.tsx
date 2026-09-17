@@ -1,5 +1,6 @@
 import React, { useMemo, useState } from 'react';
 import { buildCadDisplayScene } from '../../engine/cad/cadRenderer';
+import { filterCadDisplaySceneForViewport } from '../../engine/cad/cadViewportAppearance';
 import {
   asPlanViewport,
   buildSheetTokenContext,
@@ -163,7 +164,12 @@ export const SheetWorkspace = ({
 }: SheetWorkspaceProps): React.JSX.Element => {
   const [view, setView] = useState<WorkspaceView>(initialView);
   const [sheetId, setSheetId] = useState<string | undefined>(activeSheetId ?? draft.sheets[0]?.id);
-  const scene = useMemo(() => buildCadDisplayScene(project), [project]);
+  // Sheet viewports are scene consumers: same view-layer filter as the
+  // model canvas (OFF/frozen hidden, unknown layers visible).
+  const scene = useMemo(
+    () => filterCadDisplaySceneForViewport(project, buildCadDisplayScene(project)),
+    [project],
+  );
   const sheet = draft.sheets.find((entry) => entry.id === sheetId) ?? draft.sheets[0];
 
   const titlePreview = useMemo(() => {

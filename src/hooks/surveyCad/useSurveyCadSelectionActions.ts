@@ -6,6 +6,7 @@ import {
   toggleCadSelectionEntity,
 } from '../../engine/cad/cadSelection';
 import { runCadCommand, type CadHistoryState } from '../../engine/cad/cadUndoRedo';
+import { viewportHiddenEntityIds } from '../../engine/cad/cadViewportAppearance';
 import type { CadGripHandle, CadEntityId } from '../../engine/cad/cadTypes';
 
 interface UseSurveyCadSelectionActionsOptions {
@@ -72,7 +73,13 @@ export const useSurveyCadSelectionActions = ({
       selectAll: () => {
         setActiveGripHandle(null);
         updateHistory((current) => {
-          const nextSelection = selectAllCadEntities(current.present.project);
+          // Viewport select-all never grabs OFF/frozen-layer entities.
+          const hidden = viewportHiddenEntityIds(current.present.project);
+          const allSelected = selectAllCadEntities(current.present.project);
+          const nextSelection = replaceCadSelection(
+            current.present.project,
+            allSelected.selectedEntityIds.filter((entityId) => !hidden.has(entityId)),
+          );
           return {
             ...current,
             present: {

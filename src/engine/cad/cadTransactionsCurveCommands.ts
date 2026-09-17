@@ -4,6 +4,7 @@ import {
   cadBuildTangentCurve,
 } from './cadGeometry';
 import { createCadSelectionState } from './cadSelection';
+import { resolveCurrentCadLayerId } from './cadLayers';
 import {
   buildCurveLabels,
   nextCurveSequence,
@@ -46,7 +47,7 @@ export const arc3ptCommand: CadCommandDefinition<{
     const arcEntity: CadEntity = {
       id: createStableRuntimeId('cad-arc'),
       type: 'arc',
-      layerId: 'observation-lines',
+      layerId: resolveCurrentCadLayerId(snapshot.project),
       styleId: 'style-observation-line',
       visible: true,
       locked: false,
@@ -133,7 +134,7 @@ export const arcCreateCommand: CadCommandDefinition<{
     const arcEntity: CadEntity = {
       id: createStableRuntimeId('cad-arc'),
       type: 'arc',
-      layerId: 'observation-lines',
+      layerId: resolveCurrentCadLayerId(snapshot.project),
       styleId: 'style-observation-line',
       visible: true,
       locked: false,
@@ -226,7 +227,7 @@ export const tangentCurveCommand: CadCommandDefinition<{
     const arcEntity: CadEntity = {
       id: createStableRuntimeId('cad-arc'),
       type: 'arc',
-      layerId: 'observation-lines',
+      layerId: resolveCurrentCadLayerId(snapshot.project),
       styleId: 'style-observation-line',
       visible: true,
       locked: false,
