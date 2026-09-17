@@ -23,10 +23,12 @@ import type { RunPipelineState } from '../hooks/useAdjustmentRunner';
 interface AppToolbarProps {
   isSidebarOpen: boolean;
   showSidebarToggle?: boolean;
-  isSurveyCadActive?: boolean;
   onToggleSidebar: () => void;
   onOpenProjectOptions: () => void;
   onOpenSurveyCad: () => void;
+  onSendToCad?: () => void;
+  canSendToCad?: boolean;
+  sendToCadBlockMessage?: string | null;
   onOpenStudy: () => void;
   onOpenImportFile: () => void;
   onOpenProjectFile: () => void;
@@ -55,10 +57,12 @@ interface AppToolbarProps {
 const AppToolbar: React.FC<AppToolbarProps> = ({
   isSidebarOpen,
   showSidebarToggle = true,
-  isSurveyCadActive = false,
   onToggleSidebar,
   onOpenProjectOptions,
   onOpenSurveyCad,
+  onSendToCad,
+  canSendToCad = false,
+  sendToCadBlockMessage = null,
   onOpenStudy,
   onOpenImportFile,
   onOpenProjectFile,
@@ -135,11 +139,23 @@ const AppToolbar: React.FC<AppToolbarProps> = ({
         </button>
         <button
           onClick={onOpenSurveyCad}
-          title={isSurveyCadActive ? 'Return to the main adjustment workspace' : 'Open Survey CAD workspace'}
+          title="Open WebNet CAD in its own workspace"
           className="hidden sm:flex items-center space-x-2 px-3 py-1.5 rounded border text-xs uppercase tracking-wide bg-slate-900/60 border-slate-700 text-slate-300 hover:bg-slate-700"
         >
           <Ruler size={14} />
-          <span>{isSurveyCadActive ? 'Back To Results' : 'Survey CAD'}</span>
+          <span>Open CAD</span>
+        </button>
+        <button
+          onClick={onSendToCad}
+          disabled={!onSendToCad || !canSendToCad}
+          title={
+            canSendToCad
+              ? 'Publish this adjustment result as a CAD source and open WebNet CAD'
+              : `Send to CAD is available after a fresh successful production run${sendToCadBlockMessage ? `: ${sendToCadBlockMessage}` : ''}`
+          }
+          className="hidden sm:flex items-center space-x-2 px-3 py-1.5 rounded border text-xs uppercase tracking-wide bg-slate-900/60 border-slate-700 text-slate-300 hover:bg-slate-700 disabled:cursor-not-allowed disabled:opacity-50"
+        >
+          <span>Send to CAD</span>
         </button>
         <button
           onClick={onOpenStudy}
@@ -161,7 +177,7 @@ const AppToolbar: React.FC<AppToolbarProps> = ({
         </button>
         <button
           onClick={onOpenSurveyCad}
-          title={isSurveyCadActive ? 'Return to the main adjustment workspace' : 'Open Survey CAD workspace'}
+          title="Open WebNet CAD in its own workspace"
           className="sm:hidden p-2 bg-slate-700 hover:bg-slate-600 rounded text-slate-300 transition-colors"
         >
           <Ruler size={18} />

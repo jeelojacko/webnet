@@ -2,7 +2,6 @@ import React, { type Dispatch, type RefObject, type SetStateAction } from 'react
 import { type InputPaneHandle } from '../InputPane';
 import RunComparisonPanel from '../RunComparisonPanel';
 import ReviewQueuePanel from '../ReviewQueuePanel';
-import SurveyCadWorkspace from '../SurveyCadWorkspace';
 import AppInputSidebar from './AppInputSidebar';
 import AppWorkspaceTabs from './AppWorkspaceTabs';
 import {
@@ -26,7 +25,6 @@ import type {
   ClusterApprovedMerge,
   InstrumentLibrary,
   ObservationOverride,
-  ParseOptions,
 } from '../../types';
 import type { AdjustmentResult } from '../../types';
 import type { MapViewSnapshot } from '../MapView';
@@ -38,11 +36,9 @@ type ReviewQueue = ReturnType<typeof useAppReviewQueue>;
 type ProjectWorkflowResult = ReturnType<typeof useProjectFileWorkflow>;
 type ImportWorkspace = ReturnType<typeof useAppProjectImportWorkspace>;
 type ProjectSession = ImportWorkspace['projectSession'];
-type SurveyCadState = React.ComponentProps<typeof SurveyCadWorkspace>['drawing'];
 
 export type AppWorkspaceLayoutProps = {
   layoutRef: RefObject<HTMLDivElement | null>;
-  isSurveyCadWorkspaceActive: boolean;
   isSidebarOpen: boolean;
   splitPercent: number;
   inputPaneRef: RefObject<InputPaneHandle | null>;
@@ -69,14 +65,8 @@ export type AppWorkspaceLayoutProps = {
   handleDividerMouseDown: (_e: React.MouseEvent<HTMLDivElement>) => void;
   effectiveRunInput: string;
   projectInstruments: InstrumentLibrary;
-  surveyCadParseOptions: ParseOptions;
   units: React.ComponentProps<typeof ReportView>['units'];
   result: AdjustmentResult | null;
-  surveyCadState: SurveyCadState;
-  setSurveyCadState: React.ComponentProps<typeof SurveyCadWorkspace>['onDrawingChange'];
-  adjustmentSource: React.ComponentProps<typeof SurveyCadWorkspace>['adjustmentSource'];
-  canFeedDraftingFromResult: React.ComponentProps<typeof SurveyCadWorkspace>['canFeedDraftingFromResult'];
-  resultDependencyIdentity: React.ComponentProps<typeof SurveyCadWorkspace>['resultDependencyIdentity'];
   settingsShowRunComparisonPanel: boolean;
   showRunComparisonPanel: RunComparison['showRunComparisonPanel'];
   runComparisonPanelProps: Omit<
@@ -147,7 +137,6 @@ export type AppWorkspaceLayoutProps = {
 
 const AppWorkspaceLayout = ({
   layoutRef,
-  isSurveyCadWorkspaceActive,
   isSidebarOpen,
   splitPercent,
   inputPaneRef,
@@ -174,11 +163,6 @@ const AppWorkspaceLayout = ({
   handleDividerMouseDown,
   units,
   result,
-  surveyCadState,
-  setSurveyCadState,
-  adjustmentSource,
-  canFeedDraftingFromResult,
-  resultDependencyIdentity,
   settingsShowRunComparisonPanel,
   showRunComparisonPanel,
   runComparisonPanelProps,
@@ -244,7 +228,7 @@ const AppWorkspaceLayout = ({
   setMapViewSnapshot,
 }: AppWorkspaceLayoutProps) => (
   <div ref={layoutRef} className="flex-1 flex overflow-hidden w-full">
-    {!isSurveyCadWorkspaceActive && isSidebarOpen && (
+    {isSidebarOpen && (
       <AppInputSidebar
         splitPercent={splitPercent}
         inputPaneRef={inputPaneRef}
@@ -273,19 +257,7 @@ const AppWorkspaceLayout = ({
     )}
 
     <div className="flex flex-col bg-slate-950 flex-1 min-w-0 overflow-hidden">
-      {isSurveyCadWorkspaceActive ? (
-        <SurveyCadWorkspace
-          units={units}
-          result={result}
-          drawing={surveyCadState}
-          onDrawingChange={setSurveyCadState}
-          adjustmentSource={adjustmentSource}
-          canFeedDraftingFromResult={canFeedDraftingFromResult}
-          resultDependencyIdentity={resultDependencyIdentity}
-        />
-      ) : (
-        <>
-          {settingsShowRunComparisonPanel && showRunComparisonPanel && (
+      {settingsShowRunComparisonPanel && showRunComparisonPanel && (
             <RunComparisonPanel
               {...runComparisonPanelProps}
               reviewActionsContent={
@@ -365,8 +337,6 @@ const AppWorkspaceLayout = ({
             mapViewSnapshot={mapViewSnapshot}
             setMapViewSnapshot={setMapViewSnapshot}
           />
-        </>
-      )}
     </div>
   </div>
 );

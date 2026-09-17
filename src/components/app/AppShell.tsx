@@ -11,6 +11,7 @@ import ImportAnglePromptModal from './ImportAnglePromptModal';
 import { ProjectOptionsModal } from '../../app/AppLazyViews';
 import { IMPORT_FILE_ACCEPT, PROJECT_FILE_ACCEPT } from '../../app/appConfig';
 import { getExportFormatLabel, getExportFormatTooltip } from '../../app/appHelpers';
+import { stageLegacyMigrationCandidate } from '../../cad-app/cadSourceBridge';
 import type { useAppController } from '../../hooks/useAppController';
 
 type AppShellProps = {
@@ -21,9 +22,9 @@ const AppShell = ({ controller }: AppShellProps) => {
   const {
     fileInputRef, projectFileInputRef, projectSourceFileInputRef, importReviewSettingsFileInputRef, handleFileChange,
     handleProjectFileChange, handleProjectSourceFileChange, handleImportReviewSettingsFileChange, projectSourceAccept, associatedProjectSettingsAccept,
-    isSidebarOpen, isSurveyCadWorkspaceActive, setIsSidebarOpen, openProjectOptions, setActiveTab,
+    isSidebarOpen, setIsSidebarOpen, openProjectOptions, setActiveTab,
     triggerFileSelect, handleOpenProjectWorkspacePanel, handleSaveProject, exportFormat, setExportFormat,
-    handleExportResults, result, resultIntegrity, currentIntegrityIdentity, hasStoredDraft, handleClearCurrentDraft, selectedObservation,
+    handleExportResults, result, resultIntegrity, hasStoredDraft, handleClearCurrentDraft, selectedObservation,
     pinnedObservations, togglePinnedObservation, pipelineState, runPhaseLabel, pendingRunSettingDiffs,
     cancelAdjustment, handleValidatedRun, handleResetToLastRun, pendingRecovery, recoverDraft,
     discardRecoveredDraft, isSettingsModalOpen, projectOptionsModalContext, isAdjustedPointsTransformSelectOpen, adjustedPointsDraftStationIds,
@@ -32,8 +33,8 @@ const AppShell = ({ controller }: AppShellProps) => {
     currentProjectFile, activeProjectFileViews, projectRunValidation, createLocalProjectFromCurrentWorkspace, triggerProjectSourceFileSelect,
     openFileTab, closeFileTab, switchActiveProjectFile, createBlankProjectFile, duplicateProjectFile,
     renameProjectFile, deleteProjectFile, setProjectFileEnabled, reorderProjectFiles, importNotice,
-    setImportNotice, handleDividerMouseDown, effectiveRunInput, projectInstruments, surveyCadParseOptions,
-    settings, surveyCadState, setSurveyCadState, adjustmentF2fSource, showRunComparisonPanel, currentRunSnapshot,
+    setImportNotice, handleDividerMouseDown, effectiveRunInput, projectInstruments,
+    settings, surveyCadState, canSendToCad, handleSendToCad, showRunComparisonPanel, currentRunSnapshot,
     baselineRunSnapshot, comparisonCandidates, savedRunSnapshots, currentSavedRunSnapshot, comparisonSelection,
     runComparisonSummary, handleSaveCurrentSnapshot, handleRestoreSavedRun, handleCompareWithSavedRun, handleRenameSavedRun,
     handleUpdateSavedRunNotes, handleDeleteSavedRun, handleSelectBaseline, handleTogglePinBaseline, handleStationThresholdChange,
@@ -64,6 +65,9 @@ const AppShell = ({ controller }: AppShellProps) => {
   const [isGnssRawOpen, setIsGnssRawOpen] = useState(false);
   const [isGnssRawSessionOpen, setIsGnssRawSessionOpen] = useState(false);
   const [pendingGnssImport, setPendingGnssImport] = useState<{ fileName: string; text: string } | null>(null);
+  useEffect(() => {
+    document.title = 'WebNet Adjustment';
+  }, []);
   useEffect(() => {
     const handleOpenGnss = (event: Event): void => {
       setIsGnssWorkspaceOpen(true);
@@ -110,11 +114,17 @@ const AppShell = ({ controller }: AppShellProps) => {
       />
       <AppToolbar
         isSidebarOpen={isSidebarOpen}
-        showSidebarToggle={!isSurveyCadWorkspaceActive}
-        isSurveyCadActive={isSurveyCadWorkspaceActive}
         onToggleSidebar={() => setIsSidebarOpen(!isSidebarOpen)}
         onOpenProjectOptions={openProjectOptions}
-        onOpenSurveyCad={() => setActiveTab(isSurveyCadWorkspaceActive ? 'report' : 'survey-cad')}
+        onOpenSurveyCad={() => {
+          window.location.href = '/cad';
+        }}
+        onSendToCad={() => {
+          const sourceId = handleSendToCad();
+          if (sourceId) window.location.href = `/cad?source=${encodeURIComponent(sourceId)}`;
+        }}
+        canSendToCad={canSendToCad}
+        sendToCadBlockMessage={resultIntegrity.blockMessage}
         onOpenStudy={() => {
           window.location.href = '/study';
         }}
@@ -180,6 +190,24 @@ const AppShell = ({ controller }: AppShellProps) => {
           onDiscard={discardRecoveredDraft}
         />
       )}
+      {surveyCadState != null && surveyCadState.project.entities.length > 0 && (
+        <div className="flex flex-wrap items-center gap-2 border-b border-violet-800 bg-violet-950 px-3 py-1 text-xs text-violet-100">
+          <span>
+            This project carries a legacy CAD drawing ({surveyCadState.project.entities.length} entities).
+            WebNet CAD opens it only as an explicit migration candidate — never automatically.
+          </span>
+          <button
+            type="button"
+            onClick={() => {
+              stageLegacyMigrationCandidate(surveyCadState);
+              window.location.href = '/cad?migrate=1';
+            }}
+            className="px-2 py-1 border border-violet-500 rounded bg-violet-900 hover:bg-violet-800"
+          >
+            Open legacy drawing in WebNet CAD
+          </button>
+        </div>
+      )}
 
       <React.Suspense
         fallback={
@@ -212,7 +240,6 @@ const AppShell = ({ controller }: AppShellProps) => {
 
       <AppWorkspaceLayout
         layoutRef={layoutRef}
-        isSurveyCadWorkspaceActive={isSurveyCadWorkspaceActive}
         isSidebarOpen={isSidebarOpen}
         splitPercent={splitPercent}
         inputPaneRef={inputPaneRef}
@@ -239,14 +266,8 @@ const AppShell = ({ controller }: AppShellProps) => {
         handleDividerMouseDown={handleDividerMouseDown}
         effectiveRunInput={effectiveRunInput}
         projectInstruments={projectInstruments}
-        surveyCadParseOptions={surveyCadParseOptions}
         units={settings.units}
         result={result}
-        surveyCadState={surveyCadState}
-        setSurveyCadState={setSurveyCadState}
-        adjustmentSource={adjustmentF2fSource}
-        canFeedDraftingFromResult={resultIntegrity.state === 'FRESH_SUCCESS'}
-        resultDependencyIdentity={currentIntegrityIdentity ?? null}
         settingsShowRunComparisonPanel={settings.showRunComparisonPanel}
         showRunComparisonPanel={showRunComparisonPanel}
         runComparisonPanelProps={{

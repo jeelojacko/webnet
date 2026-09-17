@@ -313,7 +313,11 @@ export const useAppWorkspaceDraft = ({
     setCrsCatalogGroupFilter(resolveCatalogGroupFromCrsId(snapshot.parseSettings.crsId));
     setCrsSearchQuery('');
     setShowCrsProjectionParams(false);
-    setActiveTab(snapshot.view.activeTab);
+    // Phase 18A: 'survey-cad' lived here before the CAD extraction; legacy
+    // drafts restore to the report tab instead of a dead tab.
+    setActiveTab(
+      (snapshot.view.activeTab as string) === 'survey-cad' ? 'report' : snapshot.view.activeTab,
+    );
     setSplitPercent(Math.max(20, Math.min(80, snapshot.view.splitPercent)));
     setIsSidebarOpen(snapshot.view.isSidebarOpen);
     setMapDeclutterPreset(snapshot.view.mapDeclutterPreset ?? 'standard');

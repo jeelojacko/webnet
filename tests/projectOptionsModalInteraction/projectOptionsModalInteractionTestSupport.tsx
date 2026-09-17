@@ -164,7 +164,7 @@ export const clickOpenProjectWorkspace = async (container: HTMLElement): Promise
 
 export const clickOpenSurveyCad = async (container: HTMLElement): Promise<void> => {
   const openButton = container.querySelector(
-    'button[title="Open Survey CAD workspace"]',
+    'button[title="Open WebNet CAD in its own workspace"]',
   ) as HTMLButtonElement | null;
   if (!openButton) throw new Error('Survey CAD launcher button not found.');
   await act(async () => {

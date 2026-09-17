@@ -81,7 +81,7 @@ const buildAdjustedPointEntities = ({
 }: {
   identity: ResultDependencyIdentity;
   importId: string;
-  result: AdjustmentResult;
+  result: Pick<AdjustmentResult, 'stations'>;
   sourceName: string;
   stationIds: string[];
 }): CadEntity[] =>
@@ -222,7 +222,7 @@ const refreshParcelsForMovedStations = ({
 }: {
   entities: CadEntity[];
   identity: ResultDependencyIdentity;
-  result: AdjustmentResult;
+  result: Pick<AdjustmentResult, 'stations'>;
   stationIds: string[];
 }): CadEntity[] => {
   const moved = new Set(stationIds);
@@ -260,7 +260,7 @@ export const importAdjustedPointsIntoCadProject = ({
   identity: ResultDependencyIdentity;
   importedAtIso?: string;
   project: CadProject;
-  result: AdjustmentResult;
+  result: Pick<AdjustmentResult, 'stations'>;
   sourceName?: string;
 }): { project: CadProject; record: CadDrawingImportRecord } => {
   const importId = buildImportId(importedAtIso);
@@ -339,7 +339,7 @@ export const importAdjustedPointsIntoCadDrawing = ({
 }: {
   document: CadDrawingDocument;
   identity: ResultDependencyIdentity;
-  result: AdjustmentResult;
+  result: Pick<AdjustmentResult, 'stations'>;
   sourceName?: string;
 }): CadDrawingDocument => {
   const importedAtIso = new Date().toISOString();

@@ -55,7 +55,7 @@ describe('Project Options modal workspace and general interactions', () => {
     }
   });
 
-  modalIt('opens the survey CAD workspace tab from the toolbar launcher', async () => {
+  modalIt('navigates to the standalone CAD app from the toolbar launcher', async () => {
     document.documentElement.setAttribute('data-theme', 'gruvbox-dark');
     const container = document.createElement('div');
     document.body.appendChild(container);
@@ -66,17 +66,25 @@ describe('Project Options modal workspace and general interactions', () => {
         root.render(<App initialSettingsModalOpen={false} />);
       });
 
+      // Phase 18A: CAD no longer lives in an embedded tab.
       expect(container.querySelector('[data-survey-cad-preview]')).toBeNull();
 
-      await clickOpenSurveyCad(container);
+      const descriptor = Object.getOwnPropertyDescriptor(window, 'location');
+      const stub = { href: 'http://localhost/' };
+      Object.defineProperty(window, 'location', {
+        configurable: true,
+        writable: true,
+        value: stub,
+      });
+      try {
+        await clickOpenSurveyCad(container);
+        expect(stub.href).toBe('/cad');
+      } finally {
+        if (descriptor) Object.defineProperty(window, 'location', descriptor);
+      }
 
-      expect(container.querySelector('[data-survey-cad-preview]')).not.toBeNull();
-      expect(container.textContent).toContain('LINE');
-      expect(container.textContent).not.toContain('Zoom Extents');
-      expect(container.textContent).not.toContain('Zoom Window');
-      expect(container.querySelector('textarea')).toBeNull();
-      expect(container.textContent).not.toContain('Map & Ellipses');
-      expect(container.textContent).not.toContain('Adjustment Report');
+      // No inline CAD workspace opens; navigation carries the transition.
+      expect(container.querySelector('[data-survey-cad-preview]')).toBeNull();
     } finally {
       await act(async () => {
         root.unmount();

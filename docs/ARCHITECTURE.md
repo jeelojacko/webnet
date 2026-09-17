@@ -51,6 +51,21 @@ These modules coordinate:
 - saved runs and compare workflows
 - post-solve hydration timing, deferred QA-derived review state, and staged heavy-tab warmup
 
+### CAD module
+
+The `/cad` route is a standalone CAD application under `src/cad-app/` (Phase 18A extraction; no router dependency, pathname dispatch in `src/App.tsx` with route-level `React.lazy`, own error boundary, document title `WebNet CAD`). It never instantiates `useAppController`; the Adjustment app never instantiates `useCadAppController` (throwing-mock import tests prove both directions).
+
+It owns:
+
+- `cadNavigation.ts` for route resolution plus small-descriptor URL helpers (`/cad?source=<id>`, `/cad?migrate=1`)
+- `cadSourceBridge.ts` for the explicit Adjustment → CAD handoff: versioned browser-local `AdjustmentSourceSnapshot` payloads (adjusted stations only + reused 17B `AppliedRunIdentity`, deterministic `cad-src:<projectId>:<resultFingerprint>` ids), a per-project latest-source registry, and a legacy-drawing migration slot. Engine-free so Adjustment publishing never pulls CAD UI code
+- `cadSnapshotImport.ts` for the snapshot → drawing import adapter through the existing 17E-stamped path (units/context mismatch fails closed, never transforms)
+- `useCadAppController.ts` for the active drawing/document session (single-document UI, `CadDocumentSession` shaped for future multi-document), dirty clean/dirty tracking, pending-source notices (explicit Import/Refresh or Dismiss, never silent import), legacy migration open/dismiss, and the narrow unsaved guard (Back-to-Adjustment / unload / replace)
+- `CadApp.tsx` for the minimal shell (`WebNet CAD` title, back navigation, dirty indicator, notices) rendering `SurveyCadWorkspace` as a lazily loaded view with `result={null}` and the snapshot as its only adjustment input
+- external-update settling (Phase 18A fix): the history-adoption effect owns external→internal sync while `useSurveyCadWorkspacePersistence` reacts to internal changes only and skips when the project signature moved underneath it — this ends the adoption/persistence ping-pong any external drawing update could trigger (content comparison keeps the legacy persisted-state fallback working)
+
+The Adjustment side publishes via `Send to CAD` (FRESH_SUCCESS-gated through the existing `adjustmentF2fSource`, snapshot + registry update only, explicit navigation, no drawing mutation) and an `Open CAD` toolbar button (plain `/cad` navigation). The embedded `survey-cad` workspace tab and the live linked-rerun CAD sync are removed; `.wnproj` payloads stay CAD-free while legacy `project.surveyCad` still decodes into a dormant holder surfaced only as an explicit migration candidate.
+
 ### Study module
 
 The `/study` route is a separate local-first study application under `study-desktop/src/` (relocated from `src/study`; one source of truth for the standalone Tauri desktop shell). The host keeps a transitional `src/study/StudyApp.tsx` shim re-exporting the relocated app, so the browser route is unchanged.
@@ -121,7 +136,7 @@ Representative modules include:
 - `runResultsTextBuilder.ts`
 - `runOutputBuilders.ts`
 - `resultDerivedModels.ts`
-- Phase 17E CAD dependency integrity: `cad/cadAdjustmentDependency.ts` (owner derivation, metadata stamps reusing the 17B identity, pure per-entity/drawing evaluation, deliverable verdict) + `cad/cadDraftLabelDependency.ts` (derived draft-label evaluation); stamped at import/commit/spike/sync creation points, gated in `cad/exportCenter.ts`, surfaced in `SurveyCadWorkspace`
+- Phase 17E CAD dependency integrity: `cad/cadAdjustmentDependency.ts` (owner derivation, metadata stamps reusing the 17B identity, pure per-entity/drawing evaluation, deliverable verdict) + `cad/cadDraftLabelDependency.ts` (derived draft-label evaluation); stamped at import/commit/spike creation points, gated in `cad/exportCenter.ts`, surfaced in `SurveyCadWorkspace`. Phase 18A: the standalone CAD app imports from explicit `AdjustmentSourceSnapshot` payloads (same stamp semantics); the dependency chip compares against the registry latest published identity, and the live linked-rerun sync is removed
 - `projectWorkspace.ts`
 - `projectStorage.ts`
 - `projectBundle.ts`
@@ -215,7 +230,7 @@ Current Survey CAD spike seams:
 - `src/engine/cad/cadBatchCogo.ts` owns the pasted deed/batch parser for `START`, bearing-distance, and tangent-curve rows plus preview-row, warning, and preview-geometry assembly before the command layer commits anything
 - `src/engine/cad/cadAlignment.ts` owns selected line/arc chain ordering plus station, point-at-station, and point-to-alignment projection helpers for the native alignment/stationing workflows; offset-alignment construction lives in `src/engine/cad/cadAlignmentOffset.ts`, and station-equation/display-station conversion helpers live in `src/engine/cad/cadAlignmentStationing.ts`
 - `src/engine/cad/cadModel.ts` builds a native CAD project from current WebNet input or solved results
-- `src/engine/cad/cadDrawingFile.ts` owns standalone `.wncad` drawing documents plus legacy Survey CAD sidecar migration, while `src/engine/cad/cadAdjustedPointsImport.ts` owns the explicit adjusted-point import bridge from adjustment results into an active CAD drawing
+- `src/engine/cad/cadDrawingFile.ts` owns standalone `.wncad` drawing documents plus legacy Survey CAD sidecar migration, while `src/engine/cad/cadAdjustedPointsImport.ts` owns the explicit adjusted-point import bridge (stations-only input: live `AdjustmentResult` and serialized `AdjustmentSourceSnapshot` both feed it) into an active CAD drawing
 - drafting deliverables (Phase 13B/13C, see `docs/survey-drafting.md`): `src/engine/cad/cadDraftTypes.ts` owns the `DraftDocument` paper-space model (sheets, viewports, labels, logical tables + fragments, title-block templates; v1 additive, model geometry never touched), `src/engine/cad/cadSheets.ts` owns sheet/viewport/scale/rotation/north/scale-bar/token/title-template/history helpers, `src/engine/cad/cadLabelEngine.ts` owns derived label text + provenance + manual overrides, `src/engine/cad/cadLabelAutoPlacement.ts` owns deterministic paper-mm auto-placement + leader policy, `src/engine/cad/cadDraftTables.ts` owns logical-table continuation, `src/engine/cad/cadExportScene.ts` owns the one canonical paper scene feeding preview/SVG/PDF, `src/engine/cad/cadSvgSerializer.ts` + `src/engine/cad/cadPdfExport.ts` own the SVG/PDF adapters, `src/engine/cad/dxf/` owns the dual DXF contract (R12 model-space byte-identical vs R2000 multi-layout), and `src/engine/landxmlImport.ts` + `src/engine/landxmlCad.ts` own the bounded LandXML 1.2 subset import (preview-only, never observations) and CAD-geometry export
 - `src/engine/cad/cadProjectState.ts` owns CAD project bounds/signature helpers used by renderer and history layers
 - `src/engine/cad/cadPersistence.ts` owns deterministic clone/sanitize helpers for legacy Survey CAD state compatibility
@@ -290,7 +305,7 @@ Those browser-facing artifacts are stored in workspace state and can also be:
 - exported/imported as flattened portable `.wnproj` snapshots or zipped manifest bundles
 - restored from saved run snapshots for compare workflows
 
-Survey CAD drawings are separate `.wncad` documents. Adjustment projects do not automatically own or refresh CAD state; the explicit `Import Adjusted Points` command copies the current successful adjustment result into the active CAD drawing.
+Survey CAD drawings are separate `.wncad` documents edited in the standalone `/cad` application (`src/cad-app/`). Adjustment projects do not automatically own or refresh CAD state: a FRESH_SUCCESS-gated `Send to CAD` action publishes an explicit serialized source snapshot (stations + 17B identity) that CAD imports only on operator confirmation, and legacy project CAD decodes into a dormant holder exposed solely as a migration candidate.
 
 Named-project source-file workspaces now distinguish:
 
