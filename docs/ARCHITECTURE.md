@@ -121,6 +121,7 @@ Representative modules include:
 - `runResultsTextBuilder.ts`
 - `runOutputBuilders.ts`
 - `resultDerivedModels.ts`
+- Phase 17E CAD dependency integrity: `cad/cadAdjustmentDependency.ts` (owner derivation, metadata stamps reusing the 17B identity, pure per-entity/drawing evaluation, deliverable verdict) + `cad/cadDraftLabelDependency.ts` (derived draft-label evaluation); stamped at import/commit/spike/sync creation points, gated in `cad/exportCenter.ts`, surfaced in `SurveyCadWorkspace`
 - `projectWorkspace.ts`
 - `projectStorage.ts`
 - `projectBundle.ts`
