@@ -5,6 +5,7 @@ import {
   isShellCommandAvailable,
   type CadShellCommandDef,
 } from './cadCommandRegistry';
+import { CadLayersGroup } from './CadLayersGroup';
 import type { CadShellActions, CadWorkspaceSnapshot } from './cadShellTypes';
 
 interface CadRibbonProps {
@@ -65,6 +66,7 @@ export const CadRibbon: React.FC<CadRibbonProps> = ({ snapshot, actions, collaps
         </button>
       </div>
       <div className="cad-shell-ribbon-groups">
+        {tab === 'Home' ? <CadLayersGroup snapshot={snapshot} actions={actions} /> : null}
         {groups.map((group) => (
           <div key={group} className="cad-shell-ribbon-group" aria-label={group}>
             <span className="cad-shell-ribbon-group-label">{group}</span>

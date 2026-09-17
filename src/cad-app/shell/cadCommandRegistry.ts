@@ -116,6 +116,8 @@ export const CAD_SHELL_COMMANDS: CadShellCommandDef[] = [
   action('SHELL_SAVE', 'Save Drawing', 'File', 'Save the drawing (WNCAD).', 'Ctrl+S'),
   action('SHELL_EXPORT_CENTER', 'Export Center', 'File', 'Open export and deliverables.'),
   action('SHELL_SHEETS_LAYERS', 'Sheets & Layers', 'File', 'Open sheets, layers, and field-to-finish.'),
+  // Phase 18C — Layer Properties Manager (current-layer dropdown lives in the ribbon Layers group).
+  action('LAYER', 'Layers', 'Edit', 'Open the Layer Properties Manager.', undefined),
 ];
 
 const COMMAND_BY_KEY = new Map<string, CadShellCommandDef>(
@@ -216,6 +218,9 @@ export const executeShellCommand = (
       return true;
     case 'SHELL_SHEETS_LAYERS':
       actions.toggleDraftingPanel();
+      return true;
+    case 'LAYER':
+      actions.openLayerManager();
       return true;
     default:
       return false;

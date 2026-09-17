@@ -1,165 +1,166 @@
-import React, { useState } from 'react';
-import type { CadLayer } from '../../engine/cad/cadTypes';
+import React, { useMemo, useState } from 'react';
+import {
+  nextDeterministicLayerName,
+  validateLayerDelete,
+  validateLayerRename,
+  validateSetCurrent,
+} from './LayerPanel.guards';
+import type { LayerPanelProps } from './LayerPanel.types';
+import { LayerManagerRow } from './LayerManagerRow';
 
-export interface LayerPanelProps {
-  layers: CadLayer[];
-  /** Entity count per layer id; drives the populated-layer delete guard. */
-  entityCounts?: Record<string, number>;
-  onCreate?: (_name: string) => void;
-  onRename?: (_layerId: string, _name: string) => void;
-  onToggleVisibility?: (_layerId: string, _visible: boolean) => void;
-  onToggleLocked?: (_layerId: string, _locked: boolean) => void;
-  onTogglePrintable?: (_layerId: string, _printable: boolean) => void;
-  onDelete?: (_layerId: string) => void;
-  /** Request-hide wording: the flag reaches export, not the viewport (18C). */
-  visibilityRequestOnly?: boolean;
-}
-
+/**
+ * Phase 18C Layer Properties Manager: status/current, name, on, freeze,
+ * lock, plot, color, linetype, lineweight, transparency, description +
+ * entity count. Sort + name filter + inline edits + deterministic
+ * Layer1/Layer2… naming. Delete is blocked for `general`, the current
+ * layer, and layers with entities (count + message, no silent erase).
+ * Every mutation routes through an undoable LAYER_* transaction.
+ */
 export const LayerPanel = ({
   layers,
+  currentLayerId,
+  lineTypes,
   entityCounts = {},
-  onCreate,
-  onRename,
-  onToggleVisibility,
-  onToggleLocked,
-  onTogglePrintable,
-  onDelete,
-  visibilityRequestOnly = false,
+  onLayerCommand,
+  onSetCurrent,
 }: LayerPanelProps): React.JSX.Element => {
-  const [newName, setNewName] = useState('');
+  const [filter, setFilter] = useState('');
+  const [sortDesc, setSortDesc] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editName, setEditName] = useState('');
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
+  const [message, setMessage] = useState<string | null>(null);
+
+  const visibleRows = useMemo(() => {
+    const token = filter.trim().toLowerCase();
+    const rows = token
+      ? layers.filter((layer) => layer.name.toLowerCase().includes(token))
+      : [...layers];
+    rows.sort((a, b) => {
+      const order = a.name.localeCompare(b.name);
+      return sortDesc ? -order : order;
+    });
+    return rows;
+  }, [layers, filter, sortDesc]);
 
   const create = (): void => {
-    const name = newName.trim();
-    if (!name) return;
-    onCreate?.(name);
-    setNewName('');
+    setMessage(null);
+    setConfirmDeleteId(null);
+    onLayerCommand({ key: 'LAYER_CREATE', name: nextDeterministicLayerName(layers) });
+  };
+
+  const requestSetCurrent = (layerId: string): void => {
+    const blocked = validateSetCurrent(layers, layerId);
+    if (blocked) {
+      setMessage(blocked);
+      return;
+    }
+    setMessage(null);
+    onSetCurrent(layerId);
   };
 
   const commitRename = (layerId: string): void => {
-    const name = editName.trim();
-    if (name) onRename?.(layerId, name);
+    const blocked = validateLayerRename(layers, layerId, editName);
+    if (blocked) {
+      setMessage(blocked);
+      setEditingId(null);
+      return;
+    }
+    setMessage(null);
     setEditingId(null);
+    onLayerCommand({ key: 'LAYER_RENAME', layerId, name: editName.trim() });
   };
 
   const requestDelete = (layerId: string): void => {
     if (confirmDeleteId === layerId) {
-      onDelete?.(layerId);
       setConfirmDeleteId(null);
-    } else {
-      setConfirmDeleteId(layerId);
+      setMessage(null);
+      onLayerCommand({ key: 'LAYER_DELETE', layerId });
+      return;
     }
+    const blocked = validateLayerDelete(layers, entityCounts, currentLayerId, layerId);
+    if (blocked) {
+      setMessage(blocked);
+      setConfirmDeleteId(null);
+      return;
+    }
+    setMessage(null);
+    setConfirmDeleteId(layerId);
   };
 
   return (
-    <section aria-label="Layer panel">
+    <section aria-label="Layer properties manager">
       <h2>Layers</h2>
-      <form
-        onSubmit={(event) => {
-          event.preventDefault();
-          create();
-        }}
-      >
+      <div>
         <label>
-          New layer name
+          Filter layers
           <input
-            aria-label="New layer name"
-            value={newName}
-            onChange={(event) => setNewName(event.target.value)}
+            aria-label="Filter layers"
+            value={filter}
+            onChange={(event) => setFilter(event.target.value)}
+            placeholder="Name contains…"
           />
         </label>
-        <button type="submit" aria-label="Create layer">Add layer</button>
-      </form>
-      <ul>
-        {layers.map((layer) => {
-          const count = entityCounts[layer.id] ?? 0;
-          const armed = confirmDeleteId === layer.id;
-          return (
-            <li key={layer.id}>
-              {editingId === layer.id ? (
-                <form
-                  onSubmit={(event) => {
-                    event.preventDefault();
-                    commitRename(layer.id);
-                  }}
-                >
-                  <label>
-                    Rename layer {layer.name}
-                    <input
-                      aria-label={`Rename layer ${layer.name}`}
-                      value={editName}
-                      onChange={(event) => setEditName(event.target.value)}
-                      onBlur={() => commitRename(layer.id)}
-                      autoFocus
-                    />
-                  </label>
-                </form>
-              ) : (
-                <span>{layer.name}</span>
-              )}
-              <span aria-label={`${count} objects on ${layer.name}`}>{` (${count})`}</span>
-              <button
-                type="button"
-                aria-label={
-                  layer.visible
-                    ? visibilityRequestOnly
-                      ? `Request hiding layer ${layer.name} (export only; viewport unchanged)`
-                      : `Hide layer ${layer.name}`
-                    : `Show layer ${layer.name}`
-                }
-                aria-pressed={layer.visible}
-                onClick={() => onToggleVisibility?.(layer.id, !layer.visible)}
-              >
-                {layer.visible ? (visibilityRequestOnly ? 'Request hide' : 'Hide') : 'Show'}
-              </button>
-              <button
-                type="button"
-                aria-label={layer.locked ? `Unlock layer ${layer.name}` : `Lock layer ${layer.name}`}
-                aria-pressed={layer.locked}
-                onClick={() => onToggleLocked?.(layer.id, !layer.locked)}
-              >
-                {layer.locked ? 'Unlock' : 'Lock'}
-              </button>
-              <button
-                type="button"
-                aria-label={layer.printable === false ? `Mark layer ${layer.name} printable` : `Mark layer ${layer.name} non-printable`}
-                aria-pressed={layer.printable !== false}
-                onClick={() => onTogglePrintable?.(layer.id, layer.printable === false)}
-              >
-                {layer.printable === false ? 'Non-printing' : 'Printing'}
-              </button>
-              <button
-                type="button"
-                aria-label={`Rename layer ${layer.name}`}
-                onClick={() => {
-                  setEditingId(layer.id);
-                  setEditName(layer.name);
-                }}
-              >
-                Rename
-              </button>
-              <button
-                type="button"
-                aria-label={
-                  armed
-                    ? `Confirm delete layer ${layer.name}${count > 0 ? ` with ${count} objects` : ''}`
-                    : `Delete layer ${layer.name}`
-                }
-                onClick={() => requestDelete(layer.id)}
-              >
-                {armed ? (count > 0 ? `Confirm delete (${count} objects)` : 'Confirm delete') : 'Delete'}
-              </button>
-              {armed && (
-                <button type="button" aria-label={`Cancel delete layer ${layer.name}`} onClick={() => setConfirmDeleteId(null)}>
-                  Cancel
-                </button>
-              )}
-            </li>
-          );
-        })}
-      </ul>
+        <button
+          type="button"
+          aria-label={sortDesc ? 'Sort layers A to Z' : 'Sort layers Z to A'}
+          onClick={() => setSortDesc((current) => !current)}
+        >
+          {sortDesc ? 'Sort A–Z' : 'Sort Z–A'}
+        </button>
+        <button type="button" aria-label="Create layer" onClick={create}>
+          New layer
+        </button>
+      </div>
+      {message ? <p role="status">{message}</p> : null}
+      <table>
+        <thead>
+          <tr>
+            <th scope="col">Status</th>
+            <th scope="col">Current</th>
+            <th scope="col">Name</th>
+            <th scope="col">On</th>
+            <th scope="col">Freeze</th>
+            <th scope="col">Lock</th>
+            <th scope="col">Plot</th>
+            <th scope="col">Color</th>
+            <th scope="col">Linetype</th>
+            <th scope="col">Lineweight</th>
+            <th scope="col">Transparency</th>
+            <th scope="col">Description</th>
+            <th scope="col">Objects</th>
+            <th scope="col">Delete</th>
+          </tr>
+        </thead>
+        <tbody>
+          {visibleRows.map((layer) => (
+            <LayerManagerRow
+              key={layer.id}
+              layer={layer}
+              isCurrent={layer.id === currentLayerId}
+              entityCount={entityCounts[layer.id] ?? 0}
+              lineTypes={lineTypes}
+              onLayerCommand={onLayerCommand}
+              onSetCurrent={requestSetCurrent}
+              onDeleteRequest={requestDelete}
+              confirmArmed={confirmDeleteId === layer.id}
+              onCancelDelete={() => {
+                setConfirmDeleteId(null);
+                setMessage(null);
+              }}
+              editing={editingId === layer.id}
+              editName={editName}
+              onEditNameChange={setEditName}
+              onCommitRename={commitRename}
+              onStartRename={(id) => {
+                setMessage(null);
+                setEditingId(id);
+                setEditName(layers.find((entry) => entry.id === id)?.name ?? '');
+              }}
+            />
+          ))}
+        </tbody>
+      </table>
     </section>
   );
 };

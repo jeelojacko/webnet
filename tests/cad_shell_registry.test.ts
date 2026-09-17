@@ -24,11 +24,17 @@ const stubActions = (): CadShellActions & { calls: string[] } => {
     selectEntities: (ids) => void calls.push(`select:${ids.join(',')}`),
     editField: () => {
       calls.push('edit');
+      return { applied: true };
+    },
+    runLayerCommand: (command) => {
+      calls.push(`layer-cmd:${command.key}`);
       return true;
     },
-    setLayerPatch: (id) => void calls.push(`layer:${id}`),
-    createLayer: (name) => void calls.push(`create:${name}`),
-    deleteLayer: (id) => void calls.push(`delete:${id}`),
+    setCurrentLayer: (id) => {
+      calls.push(`current:${id}`);
+      return true;
+    },
+    openLayerManager: () => void calls.push('layers'),
     setSnapPreference: (kind) => void calls.push(`snap:${kind}`),
     newDrawing: () => void calls.push('new'),
     openDrawingFile: () => void calls.push('open'),
@@ -51,6 +57,8 @@ const baseSnapshot = (overrides: Partial<CadWorkspaceSnapshot> = {}): CadWorkspa
     selectionPreview: [],
     layers: [],
     layerEntityCounts: {},
+    currentLayerId: 'general',
+    lineTypes: [],
     sheets: [],
     properties: null,
     activeCommandKey: null,
@@ -126,6 +134,14 @@ describe('cad shell command registry', () => {
     expect(actions.calls).toContain('undo');
     expect(executeShellCommand(resolveShellCommandText('SHELL_SAVE')!, actions)).toBe(true);
     expect(actions.calls).toContain('save');
+  });
+
+  it('LAYER opens the Layer Properties Manager', () => {
+    const actions = stubActions();
+    expect(resolveShellCommandText('LAYER')?.key).toBe('LAYER');
+    expect(resolveShellCommandText('layer')?.key).toBe('LAYER');
+    expect(executeShellCommand(resolveShellCommandText('LAYER')!, actions)).toBe(true);
+    expect(actions.calls).toContain('layers');
   });
 
   it('returns false without actions or for unknown pseudo-keys', () => {

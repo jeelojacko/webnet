@@ -301,7 +301,9 @@ export interface UseSurveyCadWorkspaceResult {
     _entityId: CadEntityId,
     _field: import('../../engine/cad/cadProperties').CadEntityPropertyEditField,
     _value: string,
-  ) => boolean;
+  ) => import('./surveyCadPropertiesEdit').CadPropertiesEditOutcome;
+  /** Dispatch one undoable command (LAYER_* family); false when rejected. */
+  runLayerCommand: (_command: import('../../engine/cad/cadTransactions.types').CadCommand) => boolean;
   replaceTraverseDraftLeg: (_legIndex: number, _inputValue: string) => boolean;
   appendTraverseDraftPoint: (_inputValue: string) => boolean;
   insertTraverseDraftLeg: (_legIndex: number, _inputValue: string) => boolean;

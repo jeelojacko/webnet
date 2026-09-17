@@ -2,8 +2,15 @@ import { useEffect, useMemo, useRef, useState, type Dispatch, type SetStateActio
 import { cadIntersectLineLikeEntities } from '../../engine/cad/cadCogo';
 import { cloneCadDrawingDocument } from '../../engine/cad/cadDrawingFile';
 import { buildMlightcadSpikeScene } from '../../engine/cad/cadMlightcadAdapter';
+import { checkCadEntityEditable } from '../../engine/cad/cadAppearance';
 import { buildCadDisplayScene } from '../../engine/cad/cadRenderer';
+import {
+  filterCadDisplaySceneForViewport,
+  viewportHiddenEntityIds,
+} from '../../engine/cad/cadViewportAppearance';
 import type { CadCogoComputation } from '../../engine/cad/cadCogoTypes';
+import type { CadCommand } from '../../engine/cad/cadTransactions.types';
+import { runCadCommand } from '../../engine/cad/cadUndoRedo';
 import { editSurveyCadPropertiesField } from './surveyCadPropertiesEdit';
 import { useSurveyCadSnapping, type CadSnapPreferences } from './useSurveyCadSnapping';
 import { useSurveyCadSelectionDerivations } from './useSurveyCadSelectionDerivations';
@@ -73,7 +80,34 @@ export const useSurveyCadWorkspace = (
   const selection = history.present.selection;
   const activeGripHandleRef = useRef<CadGripHandle | null>(null);
 
-  const displayScene = useMemo(() => buildCadDisplayScene(cadProject), [cadProject]);
+  // View-layer filter (spec §6): OFF/frozen-layer primitives hide at the
+  // viewport consumer — never inside buildCadDisplayScene (export scene
+  // needs hidden primitives). Unknown/missing layers default visible.
+  const displayScene = useMemo(
+    () => filterCadDisplaySceneForViewport(cadProject, buildCadDisplayScene(cadProject)),
+    [cadProject],
+  );
+  // Retire selection of newly hidden ids so grips never float on invisible geometry.
+  useEffect(() => {
+    const hidden = viewportHiddenEntityIds(cadProject);
+    if (!selection.selectedEntityIds.some((entityId) => hidden.has(entityId))) return;
+    applyHistoryUpdate((current) => {
+      const retired = viewportHiddenEntityIds(current.present.project);
+      const visibleIds = current.present.selection.selectedEntityIds.filter(
+        (entityId) => !retired.has(entityId),
+      );
+      if (visibleIds.length === current.present.selection.selectedEntityIds.length) {
+        return current;
+      }
+      return {
+        ...current,
+        present: {
+          ...current.present,
+          selection: createCadSelectionState(current.present.project, visibleIds),
+        },
+      };
+    });
+  }, [applyHistoryUpdate, cadProject, selection.selectedEntityIds]);
   const mlightcadScene = useMemo(() => buildMlightcadSpikeScene(cadProject), [cadProject]);
   const {
     propertiesPanelState,
@@ -98,7 +132,7 @@ export const useSurveyCadWorkspace = (
     entityId: CadEntityId,
     field: import('../../engine/cad/cadProperties').CadEntityPropertyEditField,
     value: string,
-  ): boolean =>
+  ): import('./surveyCadPropertiesEdit').CadPropertiesEditOutcome =>
     editSurveyCadPropertiesField({
       entityId,
       field,
@@ -106,6 +140,20 @@ export const useSurveyCadWorkspace = (
       updateHistory: applyHistoryUpdate,
       value,
     });
+  /**
+   * Phase 18C — dispatch one undoable command (LAYER_* family) through
+   * history. Replaces the replaceActiveDrawing layer paths (undo-wipe +
+   * selection-steal). Returns false when the command rejects.
+   */
+  const runLayerCommand = (command: CadCommand): boolean => {
+    let applied = false;
+    applyHistoryUpdate((current) => {
+      const next = runCadCommand(current, command);
+      applied = next !== current;
+      return next;
+    });
+    return applied;
+  };
   const [activeGripHandle, setActiveGripHandle] = useState<CadGripHandle | null>(null);
   const selectionActions = useSurveyCadSelectionActions({
     updateHistory: applyHistoryUpdate,
@@ -115,12 +163,18 @@ export const useSurveyCadWorkspace = (
     activeGripHandleRef.current = activeGripHandle;
   }, [activeGripHandle]);
   const editableSelectedEntity = useMemo(
-    () =>
-      selectedEntities.length === 1 &&
-      ['line', 'polyline', 'polygon', 'parcel', 'arc'].includes(selectedEntities[0]!.type)
-        ? selectedEntities[0]!
-        : null,
-    [selectedEntities],
+    () => {
+      if (
+        selectedEntities.length !== 1 ||
+        !['line', 'polyline', 'polygon', 'parcel', 'arc'].includes(selectedEntities[0]!.type)
+      ) {
+        return null;
+      }
+      // No grips on locked sources: grip edits route through the same gate.
+      const candidate = selectedEntities[0]!;
+      return checkCadEntityEditable(cadProject, candidate).editable ? candidate : null;
+    },
+    [cadProject, selectedEntities],
   );
   const [snapConstructionContext, setSnapConstructionContext] = useState<CadSnapConstructionContext>({
     active: false,
@@ -350,6 +404,7 @@ export const useSurveyCadWorkspace = (
     snapPreferences,
     historyDepth: history.undoStack.length,
     redoDepth: history.redoStack.length,
+    runLayerCommand,
     replaceCadProject: (project: CadProject, statusText = 'Drawing updated.') => {
       applyHistoryUpdate((current) => ({
         ...current,

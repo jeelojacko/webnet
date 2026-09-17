@@ -16,6 +16,7 @@ import {
   cadPointOnCircle,
   cadSignedSweepDeg,
 } from './cadGeometry';
+import { resolveCadEntityAppearance } from './cadAppearance';
 import { getCadEntityDisplayLabel, getCadEntityEditableName } from './cadEntityNames';
 import {
   CAD_ENTITY_TYPE_LABELS,
@@ -64,6 +65,62 @@ const FIELD_TO_FINISH_STATE_LABELS: Record<string, string> = {
   DETACHED: 'Detached',
 };
 
+const lineTypeLabel = (project: CadProject, lineTypeId: string): string =>
+  project.styleLibrary.lineTypes.find((entry) => entry.id === lineTypeId)?.name ?? lineTypeId;
+
+const transparencyLabel = (transparency: number | undefined): string =>
+  transparency == null ? 'ByLayer' : `${Math.round(transparency * 100)}%`;
+
+/**
+ * Phase 18C — Layer (editable = move) + Color/Linetype/Lineweight/
+ * Transparency as ByLayer-or-explicit, effective value as secondary text.
+ * No ByBlock option: no block model exists (spec §12, deferred).
+ */
+const appendAppearanceRows = (rows: CadEntityPropertyRow[], project: CadProject, entity: CadEntity): void => {
+  const layer = project.layers.find((entry) => entry.id === entity.layerId);
+  const resolved = resolveCadEntityAppearance({
+    entity,
+    layer,
+    styleLibrary: project.styleLibrary,
+  });
+  const appearance = entity.appearance;
+  const layerIndex = rows.findIndex((entry) => entry.key === 'layer');
+  const appearanceRows: CadEntityPropertyRow[] = [
+    row(
+      'appearance-color',
+      'Color',
+      appearance?.color != null ? appearance.color : `ByLayer (${resolved.color})`,
+      { kind: 'entity-color' },
+    ),
+    row(
+      'appearance-linetype',
+      'Linetype',
+      appearance?.lineTypeId != null
+        ? lineTypeLabel(project, appearance.lineTypeId)
+        : `ByLayer (${lineTypeLabel(project, resolved.lineTypeId)})`,
+      { kind: 'entity-linetype' },
+    ),
+    row(
+      'appearance-lineweight',
+      'Lineweight',
+      appearance?.lineweightMm != null
+        ? `${numeric(appearance.lineweightMm)} mm`
+        : `ByLayer (${numeric(resolved.lineweightMm)} mm)`,
+      { kind: 'entity-lineweight' },
+    ),
+    row(
+      'appearance-transparency',
+      'Transparency',
+      appearance?.transparency != null
+        ? transparencyLabel(appearance.transparency)
+        : `ByLayer (${transparencyLabel(resolved.transparency)})`,
+      { kind: 'entity-transparency' },
+    ),
+  ];
+  if (layerIndex >= 0) rows.splice(layerIndex + 1, 0, ...appearanceRows);
+  else rows.push(...appearanceRows);
+};
+
 /** Read-only Field-to-Finish import state (generated vs manual). */
 const appendFieldToFinishRows = (rows: CadEntityPropertyRow[], entity: CadEntity): void => {
   const metadata = entity.metadata as Record<string, unknown> | undefined;
@@ -86,10 +143,11 @@ const appendFieldToFinishRows = (rows: CadEntityPropertyRow[], entity: CadEntity
 const appendCommonRows = (project: CadProject, entity: CadEntity): CadEntityPropertyRow[] => {
   const rows: CadEntityPropertyRow[] = [
     row('type', 'Type', CAD_ENTITY_TYPE_SINGULAR_LABELS[entity.type]),
-    row('layer', 'Layer', layerLabel(project.layers, entity.layerId)),
+    row('layer', 'Layer', layerLabel(project.layers, entity.layerId), { kind: 'entity-layer' }),
     row('visible', 'Visible', yesNo(entity.visible)),
     row('locked', 'Locked', yesNo(entity.locked)),
   ];
+  appendAppearanceRows(rows, project, entity);
   const createdBy = typeof entity.metadata?.createdBy === 'string' ? entity.metadata.createdBy : null;
   if (createdBy) {
     rows.push(row('created-by', 'Created by', createdBy));

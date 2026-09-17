@@ -34,7 +34,8 @@ import type { CadShellLink } from '../cad-app/shell/cadShellLink';
 import type { ActiveCommandKey } from '../hooks/surveyCad/useSurveyCadCommandTypes';
 import type { CadShellActions, CadWorkspaceSnapshot } from '../cad-app/shell/cadShellTypes';
 import { getCadEntityDisplayLabel } from '../engine/cad/cadEntityNames';
-import { createStableRuntimeId } from '../engine/id';
+import { resolveCurrentCadLayerId } from '../engine/cad/cadLayers';
+import { validateSetCurrent } from './surveyCad/LayerPanel.guards';
 import {
   summarizeDrawingDependency,
   type CadDependencyReasonCode,
@@ -611,6 +612,8 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
         .map((entity) => ({ id: entity.id, type: entity.type, label: getCadEntityDisplayLabel(entity) })),
       layers: activeProject.layers,
       layerEntityCounts,
+      currentLayerId: resolveCurrentCadLayerId(activeProject),
+      lineTypes: activeProject.styleLibrary.lineTypes,
       sheets: activeDrawing.draft?.sheets ?? [],
       properties: propertiesPanelState,
       activeCommandKey,
@@ -665,51 +668,13 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
       eraseSelection,
       selectEntities: (entityIds, append) => cadWorkspace.selectEntities(entityIds, append),
       editField: (entityId, field, value) => cadWorkspace.editPropertiesField(entityId, field, value),
-      setLayerPatch: (layerId, patch) => {
-        replaceActiveDrawing(
-          { ...activeDrawing, project: { ...activeDrawing.project, layers: activeDrawing.project.layers.map((layer) => (layer.id === layerId ? { ...layer, ...patch } : layer)) } },
-          'Updated CAD layers.',
-        );
+      runLayerCommand: (command) => cadWorkspace.runLayerCommand(command),
+      setCurrentLayer: (layerId) => {
+        // SET_CURRENT guard (spec §3): must exist, be ON, not frozen.
+        if (validateSetCurrent(activeProject.layers, layerId) != null) return false;
+        return cadWorkspace.runLayerCommand({ key: 'LAYER_SET_CURRENT', layerId });
       },
-      createLayer: (name) => {
-        const trimmed = name.trim();
-        if (!trimmed) return;
-        replaceActiveDrawing(
-          {
-            ...activeDrawing,
-            project: {
-              ...activeDrawing.project,
-              layers: [
-                ...activeDrawing.project.layers,
-                {
-                  id: createStableRuntimeId('cad-layer'),
-                  name: trimmed,
-                  color: '#ffffff',
-                  visible: true,
-                  locked: false,
-                  printable: true,
-                  role: 'planning',
-                },
-              ],
-            },
-          },
-          'Updated CAD layers.',
-        );
-      },
-      deleteLayer: (layerId) => {
-        // Populated-layer guard mirrors LAYER_DELETE (move objects off first).
-        if (activeDrawing.project.entities.some((entity) => entity.layerId === layerId)) return;
-        replaceActiveDrawing(
-          {
-            ...activeDrawing,
-            project: {
-              ...activeDrawing.project,
-              layers: activeDrawing.project.layers.filter((layer) => layer.id !== layerId),
-            },
-          },
-          'Updated CAD layers.',
-        );
-      },
+      openLayerManager: () => shellLink.requestLayerManager?.(),
       setSnapPreference: (kind, enabled) => cadWorkspace.setSnapPreference(kind, enabled),
       newDrawing: () => handleNewDrawing(),
       openDrawingFile: () => fileInputRef.current?.click(),
@@ -836,11 +801,10 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
           <SurveyCadDraftingPanel
             project={activeProject}
             draft={activeDrawing.draft}
-            onProjectLayersChange={(layers) => {
-              replaceActiveDrawing(
-                { ...activeDrawing, project: { ...activeDrawing.project, layers } },
-                'Updated CAD layers.',
-              );
+            onLayerCommand={(command) => void cadWorkspace.runLayerCommand(command)}
+            onSetCurrentLayer={(layerId) => {
+              if (validateSetCurrent(activeProject.layers, layerId) != null) return;
+              void cadWorkspace.runLayerCommand({ key: 'LAYER_SET_CURRENT', layerId });
             }}
             onDraftChange={(draft) => {
               replaceActiveDrawing({ ...activeDrawing, draft }, 'Updated title block template.');

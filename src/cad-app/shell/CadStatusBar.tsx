@@ -8,6 +8,9 @@ interface CadStatusBarProps {
   snapshot: CadWorkspaceSnapshot | null;
   dirty: boolean;
   activeLayout: CadActiveLayout;
+  /** Phase 18C LWT: workspace-only display preference (never dirties the drawing). */
+  lineweightDisplay: boolean;
+  onToggleLineweightDisplay: (_enabled: boolean) => void;
 }
 
 // Status-bar quick subset (6 common modes); Toolspace Settings lists all 14 CadSnapKind modes.
@@ -26,7 +29,7 @@ const SNAP_ORDER: CadSnapKind[] = [
  * units, Model/Layout indicator. Ortho/polar/grid omitted: no engine
  * support, and unsupported chrome is never faked.
  */
-export const CadStatusBar: React.FC<CadStatusBarProps> = ({ link, snapshot, dirty, activeLayout }) => {
+export const CadStatusBar: React.FC<CadStatusBarProps> = ({ link, snapshot, dirty, activeLayout, lineweightDisplay, onToggleLineweightDisplay }) => {
   const cursor = useCadShellCursor(link);
   const [snapOpen, setSnapOpen] = useState(false);
   const snapRef = useRef<HTMLDivElement>(null);
@@ -80,6 +83,15 @@ export const CadStatusBar: React.FC<CadStatusBarProps> = ({ link, snapshot, dirt
         ) : null}
       </div>
       <span title="Drawing units">{snapshot?.units ?? '—'}</span>
+      <button
+        type="button"
+        aria-pressed={lineweightDisplay}
+        title="Lineweight display (workspace only — never changes the drawing)"
+        onClick={() => onToggleLineweightDisplay(!lineweightDisplay)}
+        data-cad-lwt-toggle
+      >
+        LWT {lineweightDisplay ? 'on' : 'off'}
+      </button>
       <span title="Active space">{layoutLabel}</span>
       <span title={dirty ? 'Unsaved changes' : 'No unsaved changes'}>{dirty ? '●' : '○'}</span>
     </footer>

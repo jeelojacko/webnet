@@ -67,7 +67,22 @@ export const CadApplicationShell: React.FC<CadApplicationShellProps> = ({ contro
   }, [session.drawing.name, session.dirty]);
 
   const activeSheetId =
-    layout.activeLayout === 'MODEL' ? null : (layout.activeLayout as { sheetId: string }).sheetId;
+    layout.activeLayout === 'MODEL' ? null : (layout.activeLayout as { sheetId: string }).sheetId;  // Phase 18C — LAYER command / ribbon / manager focus path: reveal the
+  // Layers dock (right side when hidden) then focus its filter input.
+  useEffect(() => {
+    link.requestLayerManager = () => {
+      if (layout.layout.leftPanel !== 'layers' && layout.layout.rightPanel !== 'layers') {
+        layout.setSidePanel('right', 'layers');
+      }
+      requestAnimationFrame(() => {
+        document.querySelector<HTMLElement>('[data-cad-layers] input')?.focus();
+      });
+    };
+    return () => {
+      link.requestLayerManager = null;
+    };
+  }, [link, layout]);
+
   const activeSheet = activeSheetId
     ? (snapshot?.sheets.find((sheet) => sheet.id === activeSheetId) ?? null)
     : null;
@@ -246,7 +261,14 @@ export const CadApplicationShell: React.FC<CadApplicationShellProps> = ({ contro
         </div>
         {renderSidePanel(layout.layout.rightPanel, 'right')}
       </div>
-      <CadStatusBar link={link} snapshot={snapshot} dirty={session.dirty} activeLayout={layout.activeLayout} />
+      <CadStatusBar
+        link={link}
+        snapshot={snapshot}
+        dirty={session.dirty}
+        activeLayout={layout.activeLayout}
+        lineweightDisplay={layout.layout.lineweightDisplay}
+        onToggleLineweightDisplay={layout.setLineweightDisplay}
+      />
     </div>
   );
 };

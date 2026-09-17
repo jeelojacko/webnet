@@ -2,7 +2,9 @@ import type { CadSelectionState } from './cadSelection';
 import type { FieldToFinishCadPayload } from '../fieldToFinish/cadGeneration';
 import type { CadBatchCogoDraft } from './cadBatchCogo';
 import type {
+  CadEntityAppearance,
   CadEntityId,
+  CadLayerId,
   CadGripHandleKind,
   CadParcelLayoutSettings,
   CadProject,
@@ -305,7 +307,9 @@ export type CadCommand =
         | { kind: 'point-y'; value: number }
         | { kind: 'point-z'; value: number | null }
         | { kind: 'line-end'; toX: number; toY: number }
-        | { kind: 'polyline-vertex'; vertexIndex: number; x: number; y: number };
+        | { kind: 'polyline-vertex'; vertexIndex: number; x: number; y: number }
+        | { kind: 'entity-layer'; layerId: CadLayerId }
+        | { kind: 'entity-appearance'; patch: CadEntityAppearance };
     }
   | {
       key: 'GRIP_EDIT';

@@ -157,6 +157,60 @@ const SettingsTab: React.FC<{ snapshot: CadWorkspaceSnapshot | null; actions: Ca
           </label>
         ))}
       </TreeGroup>
+      <TreeGroup label={`Layers (${snapshot.layers.length})`}>
+        {snapshot.layers.map((layer) => {
+          const isCurrent = layer.id === snapshot.currentLayerId;
+          const blocked = layer.visible === false || layer.frozen === true;
+          return (
+            <button
+              key={layer.id}
+              type="button"
+              className="cad-shell-tree-node"
+              title={
+                isCurrent
+                  ? `${layer.name} — current layer`
+                  : blocked
+                    ? `${layer.name} — cannot be current while ${layer.visible === false ? 'off' : 'frozen'}`
+                    : `${layer.name} — set current`
+              }
+              disabled={isCurrent || blocked}
+              onClick={() => actions?.setCurrentLayer(layer.id)}
+            >
+              <span
+                className="cad-shell-layer-swatch"
+                style={{ backgroundColor: layer.color }}
+                aria-hidden="true"
+              />
+              {isCurrent ? `★ ${layer.name}` : layer.name}
+              <span className="cad-shell-count">{snapshot.layerEntityCounts[layer.id] ?? 0}</span>
+            </button>
+          );
+        })}
+        {snapshot.layers.length === 0 ? <div className="cad-shell-tree-row cad-shell-empty">No layers.</div> : null}
+      </TreeGroup>
+      <TreeGroup label={`Linetypes (${snapshot.lineTypes.length})`}>
+        {snapshot.lineTypes.map((lineType) => {
+          const usedByLayers = snapshot.layers.filter((layer) => layer.lineTypeId === lineType.id).length;
+          return (
+            <div key={lineType.id} className="cad-shell-tree-row" title={`${lineType.name} — ${usedByLayers} layer${usedByLayers === 1 ? '' : 's'}`}>
+              <svg width="48" height="8" aria-hidden="true">
+                <line
+                  x1="0"
+                  y1="4"
+                  x2="48"
+                  y2="4"
+                  stroke="currentColor"
+                  strokeWidth="1.5"
+                  strokeDasharray={lineType.dashPattern.length > 0 ? lineType.dashPattern.join(' ') : undefined}
+                />
+              </svg>
+              {lineType.name}
+              <span className="cad-shell-count">{usedByLayers}</span>
+            </div>
+          );
+        })}
+        {snapshot.lineTypes.length === 0 ? <div className="cad-shell-tree-row cad-shell-empty">No linetypes.</div> : null}
+      </TreeGroup>
       <TreeGroup label="Drawing">
         <div className="cad-shell-tree-row">Units: {snapshot.units}</div>
       </TreeGroup>

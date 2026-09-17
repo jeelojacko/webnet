@@ -17,7 +17,12 @@ export type CadEntityPropertyEditField =
   | { kind: 'polyline-vertex-x'; vertexIndex: number }
   | { kind: 'polyline-vertex-y'; vertexIndex: number }
   | { kind: 'polyline-segment-length'; segmentIndex: number }
-  | { kind: 'polyline-segment-azimuth'; segmentIndex: number };
+  | { kind: 'polyline-segment-azimuth'; segmentIndex: number }
+  | { kind: 'entity-layer' }
+  | { kind: 'entity-color' }
+  | { kind: 'entity-linetype' }
+  | { kind: 'entity-lineweight' }
+  | { kind: 'entity-transparency' };
 
 export interface CadPropertiesEntityView {
   entityId: CadEntityId;

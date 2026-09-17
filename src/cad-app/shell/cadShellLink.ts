@@ -26,6 +26,11 @@ export interface CadShellLink {
   publishCursor: (_point: CadCursorPoint | null) => void;
   /** Set by the workspace; null until the workspace mounts. */
   actions: CadShellActions | null;
+  /**
+   * Phase 18C — set by the shell; the workspace LAYER command (typed text,
+   * ribbon, manager) focuses the Layer Properties Manager through it.
+   */
+  requestLayerManager: (() => void) | null;
 }
 
 const countsEqual = (
@@ -60,6 +65,11 @@ const snapshotsEqual = (a: CadWorkspaceSnapshot | null, b: CadWorkspaceSnapshot 
     arraysEqual(a.selectedEntityIds, b.selectedEntityIds) &&
     layersEqual(a.layers, b.layers) &&
     countsEqual(a.layerEntityCounts, b.layerEntityCounts) &&
+    a.currentLayerId === b.currentLayerId &&
+    arraysEqual(
+      a.lineTypes.map((entry) => entry.id),
+      b.lineTypes.map((entry) => entry.id),
+    ) &&
     a.sheets.length === b.sheets.length &&
     a.sheets.every((sheet, index) => sheet.id === b.sheets[index]?.id && sheet.name === b.sheets[index]?.name) &&
     prefsEqual(a.snapPreferences, b.snapPreferences) &&
@@ -82,7 +92,11 @@ const layersEqual = (a: CadWorkspaceSnapshot['layers'], b: CadWorkspaceSnapshot[
       layer.color === other.color &&
       layer.visible === other.visible &&
       layer.locked === other.locked &&
+      layer.frozen === other.frozen &&
       layer.printable === other.printable &&
+      layer.lineTypeId === other.lineTypeId &&
+      layer.description === other.description &&
+      (layer.transparency ?? 0) === (other.transparency ?? 0) &&
       layer.lineweightMm === other.lineweightMm
     );
   });
@@ -139,6 +153,7 @@ export const createCadShellLink = (): CadShellLink => {
       cursorListeners.forEach((listener) => listener());
     },
     actions: null,
+    requestLayerManager: null,
   };
 };
 

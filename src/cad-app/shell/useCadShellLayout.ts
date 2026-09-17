@@ -16,6 +16,7 @@ export const DEFAULT_SHELL_LAYOUT: CadShellLayoutState = {
   commandHeightPx: 148,
   toolspaceTab: 'prospector',
   ribbonCollapsed: false,
+  lineweightDisplay: false,
 };
 
 const MIN_PANEL_PX = 180;
@@ -46,6 +47,7 @@ const sanitizeLayout = (value: unknown): CadShellLayoutState => {
     ),
     toolspaceTab: tab(raw.toolspaceTab),
     ribbonCollapsed: raw.ribbonCollapsed === true,
+    lineweightDisplay: raw.lineweightDisplay === true,
   };
 };
 
@@ -79,6 +81,7 @@ export interface CadShellLayoutController {
   setCommandHeight: (_heightPx: number) => void;
   setToolspaceTab: (_tab: CadToolspaceTab) => void;
   setRibbonCollapsed: (_collapsed: boolean) => void;
+  setLineweightDisplay: (_enabled: boolean) => void;
   resetWorkspace: () => void;
   activeLayout: CadActiveLayout;
   setActiveLayout: (_layout: CadActiveLayout) => void;
@@ -146,6 +149,7 @@ export const useCadShellLayout = (): CadShellLayoutController => {
     setCommandHeight: useCallback((heightPx) => update({ commandHeightPx: heightPx }), [update]),
     setToolspaceTab: useCallback((tab) => update({ toolspaceTab: tab }), [update]),
     setRibbonCollapsed: useCallback((collapsed) => update({ ribbonCollapsed: collapsed }), [update]),
+    setLineweightDisplay: useCallback((enabled) => update({ lineweightDisplay: enabled }), [update]),
     resetWorkspace,
     activeLayout,
     setActiveLayout,

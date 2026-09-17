@@ -2,6 +2,7 @@ import type {
   CadEntity,
   CadEntityId,
   CadLayer,
+  CadLineType,
   CadSnapKind,
 } from '../../engine/cad/cadTypes';
 import type { CadSnapPreferences } from '../../hooks/surveyCad/useSurveyCadSnapping';
@@ -9,6 +10,7 @@ import type {
   CadEntityPropertyEditField,
   CadPropertiesPanelState,
 } from '../../engine/cad/cadProperties';
+import type { CadCommand } from '../../engine/cad/cadTransactions.types';
 import type { ActiveCommandKey } from '../../hooks/surveyCad/useSurveyCadCommandTypes';
 import type { DraftSheet } from '../../engine/cad/cadDraftTypes';
 
@@ -37,6 +39,11 @@ export interface CadShellLayoutState {
   commandHeightPx: number;
   toolspaceTab: CadToolspaceTab;
   ribbonCollapsed: boolean;
+  /**
+   * Phase 18C — lineweight display toggle. WORKSPACE-ONLY: persisted with
+   * shell chrome (localStorage), never written to the drawing, never dirty.
+   */
+  lineweightDisplay: boolean;
 }
 
 export const CAD_SHELL_LAYOUT_STORAGE_KEY = 'webnet.cad.shell.v1';
@@ -57,6 +64,10 @@ export interface CadWorkspaceSnapshot {
   selectionPreview: Array<{ id: string; type: CadEntity['type']; label: string }>;
   layers: CadLayer[];
   layerEntityCounts: Record<string, number>;
+  /** Project-owned current layer (always resolved; falls back to `general`). */
+  currentLayerId: string;
+  /** Drawing-owned linetype library (manager dropdown, Toolspace list). */
+  lineTypes: CadLineType[];
   sheets: DraftSheet[];
   properties: CadPropertiesPanelState | null;
   activeCommandKey: string | null;
@@ -99,10 +110,13 @@ export interface CadShellActions {
     _entityId: CadEntityId,
     _field: CadEntityPropertyEditField,
     _value: string,
-  ) => boolean;
-  setLayerPatch: (_layerId: string, _patch: Partial<CadLayer>) => void;
-  createLayer: (_name: string) => void;
-  deleteLayer: (_layerId: string) => void;
+  ) => import('../../hooks/surveyCad/surveyCadPropertiesEdit').CadPropertiesEditOutcome;
+  /** Route one undoable layer-table mutation (LAYER_* family). */
+  runLayerCommand: (_command: CadCommand) => boolean;
+  /** Guarded set-current (must exist/ON/thawed); false + no-op when blocked. */
+  setCurrentLayer: (_layerId: string) => boolean;
+  /** Show + focus the Layer Properties Manager. */
+  openLayerManager: () => void;
   setSnapPreference: (_kind: CadSnapKind, _enabled: boolean) => void;
   newDrawing: () => void;
   openDrawingFile: () => void;
