@@ -19,6 +19,8 @@ import type {
 import { DEFAULT_CAD_LAYERS } from './cadLayers';
 import { buildCadBounds } from './cadProjectState';
 import { DEFAULT_CAD_STYLE_LIBRARY } from './cadStyles';
+import { stampAdjustmentDependency } from './cadAdjustmentDependency';
+import type { ResultDependencyIdentity } from '../resultIntegrity';
 
 const sortStationIds = (ids: StationId[]) =>
   [...ids].sort((left, right) => left.localeCompare(right, undefined, { numeric: true }));
@@ -65,6 +67,7 @@ const buildPointEntities = (
       metadata: {
         fixed: station.fixed,
         coordInputClass: station.coordInputClass ?? 'unknown',
+        spikeSource: source,
       },
     };
   });
@@ -83,6 +86,7 @@ const buildLabelEntities = (points: CadSurveyPointEntity[]): CadTextEntity[] =>
     anchorEntityId: point.id,
     metadata: {
       stationId: point.stationId,
+      spikeSource: point.source,
     },
   }));
 
@@ -104,12 +108,14 @@ const buildEllipseEntities = (points: CadSurveyPointEntity[]): CadErrorEllipseEn
       thetaDeg: point.errorEllipse!.theta,
       metadata: {
         stationId: point.stationId,
+        spikeSource: point.source,
       },
     }));
 
 const buildLineEntities = (
   stations: ParseResult['stations'],
   observations: Observation[],
+  source: Pick<CadProject['metadata'], 'source'>['source'],
 ): CadLineEntity[] => {
   const pairs = new Map<string, CadLineEntity>();
   observations.forEach((observation) => {
@@ -143,6 +149,7 @@ const buildLineEntities = (
       sourceObservationIds: [observation.id],
       metadata: {
         pairKey,
+        spikeSource: source,
       },
     });
   });
@@ -157,7 +164,7 @@ const buildCadProjectFromParsed = (
   source: CadProject['metadata']['source'],
 ): CadProject => {
   const pointEntities = buildPointEntities(source, parsed.stations);
-  const lineEntities = buildLineEntities(parsed.stations, parsed.observations);
+  const lineEntities = buildLineEntities(parsed.stations, parsed.observations, source);
   const ellipseEntities = buildEllipseEntities(pointEntities);
   const labelEntities = buildLabelEntities(pointEntities);
   const entities: CadEntity[] = [
@@ -193,6 +200,12 @@ export interface BuildSurveyCadSpikeProjectArgs {
   parseOptions: ParseOptions;
   units: UnitsMode;
   result?: AdjustmentResult | null;
+  /**
+   * Phase 17E: stamp result-built entities so they evaluate CURRENT.
+   * Optional (backward-compatible); absent = legacy unstamped behavior.
+   * Parsed-input builds never stamp.
+   */
+  resultDependencyIdentity?: ResultDependencyIdentity | null;
 }
 
 export const buildSurveyCadSpikeProject = ({
@@ -201,9 +214,10 @@ export const buildSurveyCadSpikeProject = ({
   parseOptions,
   units,
   result,
+  resultDependencyIdentity = null,
 }: BuildSurveyCadSpikeProjectArgs): CadProject => {
   if (result) {
-    return buildCadProjectFromParsed(
+    const project = buildCadProjectFromParsed(
       {
         stations: result.stations,
         observations: result.observations,
@@ -215,6 +229,11 @@ export const buildSurveyCadSpikeProject = ({
       units,
       'adjustment-result',
     );
+    if (!resultDependencyIdentity) return project;
+    return {
+      ...project,
+      entities: project.entities.map((entity) => stampAdjustmentDependency(entity, resultDependencyIdentity)),
+    };
   }
 
   const parsed = parseInput(input, instrumentLibrary, parseOptions);

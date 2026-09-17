@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import { importAdjustedPointsIntoCadProject } from '../src/engine/cad/cadAdjustedPointsImport';
+import { dependencyOf } from '../src/engine/cad/cadAdjustmentDependency';
 import {
   createBlankCadDrawingDocument,
   migrateSurveyCadStateToDrawing,
@@ -40,6 +41,12 @@ const adjustmentResult = {
     },
   },
 } as AdjustmentResult;
+
+const IDENTITY = {
+  inputFingerprint: 'input-a',
+  mathFingerprint: 'math-a',
+  exclusionFingerprint: 'excl-a',
+};
 
 describe('CAD drawing file', () => {
   it('round-trips standalone .wncad documents deterministically', () => {
@@ -119,6 +126,7 @@ describe('Import Adjusted Points', () => {
     ]);
 
     const imported = importAdjustedPointsIntoCadProject({
+      identity: IDENTITY,
       importedAtIso: '2026-08-05T12:00:00.000Z',
       project: projectWithManualLine,
       result: adjustmentResult,
@@ -139,5 +147,8 @@ describe('Import Adjusted Points', () => {
     expect(imported.project.entities.some((entity) => entity.id === 'pt:B')).toBe(true);
     expect(imported.project.entities.some((entity) => entity.id === 'ellipse:A')).toBe(true);
     expect(imported.project.cogoComputations.at(-1)?.toolKey).toBe('IMPORT_ADJUSTED_POINTS');
+    expect(imported.record.skippedF2fStationIds ?? []).toEqual([]);
+    const stampedA = imported.project.entities.find((entity) => entity.id === 'pt:A');
+    expect(dependencyOf(stampedA!)).toEqual(IDENTITY);
   });
 });

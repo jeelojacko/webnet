@@ -76,6 +76,7 @@ export type AppWorkspaceLayoutProps = {
   setSurveyCadState: React.ComponentProps<typeof SurveyCadWorkspace>['onDrawingChange'];
   adjustmentSource: React.ComponentProps<typeof SurveyCadWorkspace>['adjustmentSource'];
   canFeedDraftingFromResult: React.ComponentProps<typeof SurveyCadWorkspace>['canFeedDraftingFromResult'];
+  resultDependencyIdentity: React.ComponentProps<typeof SurveyCadWorkspace>['resultDependencyIdentity'];
   settingsShowRunComparisonPanel: boolean;
   showRunComparisonPanel: RunComparison['showRunComparisonPanel'];
   runComparisonPanelProps: Omit<
@@ -177,6 +178,7 @@ const AppWorkspaceLayout = ({
   setSurveyCadState,
   adjustmentSource,
   canFeedDraftingFromResult,
+  resultDependencyIdentity,
   settingsShowRunComparisonPanel,
   showRunComparisonPanel,
   runComparisonPanelProps,
@@ -279,6 +281,7 @@ const AppWorkspaceLayout = ({
           onDrawingChange={setSurveyCadState}
           adjustmentSource={adjustmentSource}
           canFeedDraftingFromResult={canFeedDraftingFromResult}
+          resultDependencyIdentity={resultDependencyIdentity}
         />
       ) : (
         <>

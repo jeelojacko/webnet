@@ -255,6 +255,8 @@ export interface CadDrawingImportRecord {
   createdPointCount: number;
   updatedPointCount: number;
   ellipseCount: number;
+  /** Phase 17E MODEL A: incoming stations skipped because F2F owns their entities. */
+  skippedF2fStationIds?: string[];
 }
 
 export interface CadDrawingDocument {

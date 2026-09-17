@@ -23,7 +23,7 @@ const AppShell = ({ controller }: AppShellProps) => {
     handleProjectFileChange, handleProjectSourceFileChange, handleImportReviewSettingsFileChange, projectSourceAccept, associatedProjectSettingsAccept,
     isSidebarOpen, isSurveyCadWorkspaceActive, setIsSidebarOpen, openProjectOptions, setActiveTab,
     triggerFileSelect, handleOpenProjectWorkspacePanel, handleSaveProject, exportFormat, setExportFormat,
-    handleExportResults, result, resultIntegrity, hasStoredDraft, handleClearCurrentDraft, selectedObservation,
+    handleExportResults, result, resultIntegrity, currentIntegrityIdentity, hasStoredDraft, handleClearCurrentDraft, selectedObservation,
     pinnedObservations, togglePinnedObservation, pipelineState, runPhaseLabel, pendingRunSettingDiffs,
     cancelAdjustment, handleValidatedRun, handleResetToLastRun, pendingRecovery, recoverDraft,
     discardRecoveredDraft, isSettingsModalOpen, projectOptionsModalContext, isAdjustedPointsTransformSelectOpen, adjustedPointsDraftStationIds,
@@ -246,6 +246,7 @@ const AppShell = ({ controller }: AppShellProps) => {
         setSurveyCadState={setSurveyCadState}
         adjustmentSource={adjustmentF2fSource}
         canFeedDraftingFromResult={resultIntegrity.state === 'FRESH_SUCCESS'}
+        resultDependencyIdentity={currentIntegrityIdentity ?? null}
         settingsShowRunComparisonPanel={settings.showRunComparisonPanel}
         showRunComparisonPanel={showRunComparisonPanel}
         runComparisonPanelProps={{
