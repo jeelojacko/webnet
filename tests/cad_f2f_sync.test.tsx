@@ -539,6 +539,12 @@ describe('cad f2f linked rerun sync', () => {
       inputFingerprint: 'in-1',
       settingsFingerprint: 'set-1',
       overrideIds: [],
+      appliedRunIdentity: {
+        inputFingerprint: 'in-1',
+        mathFingerprint: 'math-1',
+        exclusionFingerprint: 'excl-1',
+        runMode: 'adjustment',
+      },
     } as unknown as ApplyRunOutcomeContext;
     const outcomeOf = (result: AdjustmentResult): RunSessionOutcome =>
       ({ result, inputChangedSinceLastRun: false }) as unknown as RunSessionOutcome;
@@ -558,6 +564,7 @@ describe('cad f2f linked rerun sync', () => {
         setRunElapsedMs: () => {},
         setLastRunInput: () => {},
         setLastRunSettingsSnapshot: () => {},
+        setAppliedRunIdentity: () => {},
         activateReportTab: () => {},
         recordRunSnapshot: () => {},
         onSuccessfulAdjustmentRun: (info) => { calls.push(info); },
