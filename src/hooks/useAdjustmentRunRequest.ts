@@ -8,6 +8,7 @@ import type {
 import type { ProjectRunFile } from '../engine/projectWorkspace';
 import type { RunSessionRequest } from '../engine/runSession';
 import { buildValueFingerprint } from '../engine/qaWorkflow';
+import { buildAppliedRunIdentity, type AppliedRunIdentity } from '../engine/resultIntegrity';
 import type { ApplyRunOutcomeContext } from './useAdjustmentOutcomeApplication';
 import type { RunReviewContext } from './useAdjustmentWorkflowClusters';
 
@@ -54,6 +55,21 @@ export const buildRunRequestAndContext = ({
   const overrideIds = Object.keys(overrides)
     .map((value) => Number.parseInt(value, 10))
     .filter((value) => Number.isFinite(value));
+  const appliedRunIdentity: AppliedRunIdentity = buildAppliedRunIdentity({
+    input,
+    runFiles: projectRunFiles,
+    includeFiles: projectIncludeFiles,
+    runSnapshot: currentRunSettingsSnapshot,
+    parseSnapshot: parseSettings,
+    projectInstruments,
+    selectedInstrument,
+    geoidSourceData,
+    excludedIds: [...excludeSet],
+    overrides,
+    overrideIds,
+    activePreanalysisAdditionIds: [...preanalysisAdditionSet],
+    approvedClusterMerges,
+  });
   return {
     request: {
       input,
@@ -92,6 +108,7 @@ export const buildRunRequestAndContext = ({
       settingsFingerprint: buildValueFingerprint(currentRunSettingsSnapshot),
       overrideIds,
       reviewContext,
+      appliedRunIdentity,
     },
   };
 };

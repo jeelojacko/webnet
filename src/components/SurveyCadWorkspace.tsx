@@ -55,6 +55,12 @@ interface SurveyCadWorkspaceProps {
   onPersistedStateChange?: Dispatch<SetStateAction<SurveyCadPersistedState | null>>;
   /** Latest successful production run for explicit adjustment-backed F2F commits; absent = no run yet. */
   adjustmentSource?: SuccessfulAdjustmentRunInfo | null;
+  /**
+   * Freshness gate for NEW drafting feeds (auto spike + Import Adjusted
+   * Points). False blocks new feeds without touching existing CAD entities.
+   * Defaults false (fail-closed).
+   */
+  canFeedDraftingFromResult?: boolean;
 }
 
 const CAD_DRAWING_FILE_TYPES = [
@@ -77,6 +83,7 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
   persistedState = null,
   onPersistedStateChange,
   adjustmentSource = null,
+  canFeedDraftingFromResult = false,
 }) => {
   const cloneBounds = (bounds: CadBounds | null): CadBounds | null =>
     bounds
@@ -105,7 +112,7 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
         instrumentLibrary,
         parseOptions,
         units,
-        result,
+        result: canFeedDraftingFromResult ? result : null,
       });
       const migrated = migrateSurveyCadStateToDrawing({
         state: {
@@ -119,7 +126,7 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
       return migrated;
     }
     return createBlankCadDrawingDocument({ units });
-  }, [input, instrumentLibrary, parseOptions, persistedState, result, units]);
+  }, [canFeedDraftingFromResult, input, instrumentLibrary, parseOptions, persistedState, result, units]);
   const activeDrawing = drawing ?? legacyDrawing;
   const emitDrawingChange: Dispatch<SetStateAction<CadDrawingDocument | null>> =
     onDrawingChange ??
@@ -364,7 +371,12 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
   };
 
   const handleImportAdjustedPoints = () => {
-    if (!result) return;
+    if (!result || !canFeedDraftingFromResult) {
+      setFileStatusText(
+        'Import blocked: the adjustment result is not current (stale, failed, or non-production run). Re-run the adjustment, then import again.',
+      );
+      return;
+    }
     const nextDrawing = importAdjustedPointsIntoCadDrawing({
       document: activeDrawing,
       result,
@@ -437,7 +449,12 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
               type="button"
               className="rounded border border-sky-500 bg-sky-950 px-2 py-1 text-sky-100 hover:bg-sky-900 disabled:cursor-not-allowed disabled:border-slate-700 disabled:bg-slate-900 disabled:text-slate-500"
               onClick={handleImportAdjustedPoints}
-              disabled={!result}
+              disabled={!result || !canFeedDraftingFromResult}
+              title={
+                canFeedDraftingFromResult
+                  ? 'Import adjusted points from the current result'
+                  : 'Import blocked: the adjustment result is not current'
+              }
               data-survey-cad-import-adjusted-points
             >
               Import Adjusted Points

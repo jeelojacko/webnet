@@ -7,6 +7,7 @@ import {
   cloneAdjustedPointsExportSettings,
 } from '../../src/engine/adjustedPointsExport';
 import { useExportWorkflow } from '../../src/hooks/useExportWorkflow';
+import { FRESH_SUCCESS_INTEGRITY } from '../../src/engine/resultIntegrity';
 import type {
   BuildExportArtifactsRequest,
   BuildExportArtifactsResult,
@@ -140,6 +141,7 @@ export const renderExportHarness = (options?: {
   adjustedPointsExportSettings?: AdjustedPointsExportSettings;
   currentComparisonText?: string;
   buildArtifacts?: (_request: BuildExportArtifactsRequest) => Promise<BuildExportArtifactsResult>;
+  integrity?: import('../../src/engine/resultIntegrity').ResultIntegrityAssessment;
 }) => {
   const container = document.createElement('div');
   document.body.appendChild(container);
@@ -235,6 +237,7 @@ export const renderExportHarness = (options?: {
     const [importNotice, setImportNotice] = useState<ImportedInputNotice | null>(null);
     const { handleExportResults } = useExportWorkflow({
       result: baseResult,
+      integrity: options?.integrity ?? FRESH_SUCCESS_INTEGRITY,
       exportFormat: options?.exportFormat ?? 'points',
       units: 'm',
       settings: baseSettings,

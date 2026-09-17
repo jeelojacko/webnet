@@ -1,6 +1,11 @@
 import { useCallback, type Dispatch, type SetStateAction } from 'react';
 import { validateAdjustedPointsTransform } from '../engine/adjustedPointsExport';
 import {
+  decideExportVerdict,
+  statusLineForAssessment,
+  type ResultIntegrityAssessment,
+} from '../engine/resultIntegrity';
+import {
   buildExportArtifacts,
   type BuildExportArtifactsRequest,
   type BuildExportArtifactsResult,
@@ -72,6 +77,8 @@ const transformBlockedTitleByFormat: Partial<Record<ProjectExportFormat, string>
 
 interface UseExportWorkflowArgs {
   result: AdjustmentResult | null;
+  /** Authoritative freshness assessment; deliverable formats require FRESH_SUCCESS. */
+  integrity: ResultIntegrityAssessment;
   exportFormat: ProjectExportFormat;
   units: 'm' | 'ft';
   settings: SettingsState;
@@ -86,6 +93,7 @@ interface UseExportWorkflowArgs {
 
 export const useExportWorkflow = ({
   result,
+  integrity,
   exportFormat,
   units,
   settings,
@@ -128,6 +136,21 @@ export const useExportWorkflow = ({
   const handleExportFormat = useCallback(
     async (format: ProjectExportFormat) => {
       if (!result || !runDiagnostics) return;
+      const verdict = decideExportVerdict(format, integrity);
+      if (verdict === 'BLOCK') {
+        setImportNotice({
+          title: transformBlockedTitleByFormat[format] ?? 'Export Blocked',
+          detailLines: [
+            integrity.blockMessage ?? 'This result is not current. Re-run the adjustment to refresh it.',
+            'Stale or unsuccessful results cannot be exported as deliverables.',
+          ],
+        });
+        return;
+      }
+      const diagnosticStatusLine =
+        verdict === 'ALLOW_DIAGNOSTIC_WITH_STATUS'
+          ? statusLineForAssessment(integrity)
+          : null;
       const requiresAdjustedPointsValidation =
         format === 'points' ||
         format === 'points-csv' ||
@@ -163,6 +186,13 @@ export const useExportWorkflow = ({
           levelLoopCustomPresets,
           currentComparisonText,
         });
+        if (diagnosticStatusLine) {
+          artifactResult.files.forEach((file) => {
+            if (file.mimeType === 'text/plain') {
+              file.text = `${diagnosticStatusLine}\n\n${file.text}`;
+            }
+          });
+        }
         if (artifactResult.files.length === 0) return;
         if (artifactResult.files.length > 1) {
           artifactResult.files.forEach((file) =>
@@ -202,6 +232,7 @@ export const useExportWorkflow = ({
       adjustedPointsExportSettings,
       buildArtifacts,
       currentComparisonText,
+      integrity,
       levelLoopCustomPresets,
       parseSettings,
       result,

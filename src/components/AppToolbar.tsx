@@ -17,6 +17,7 @@ import {
 } from 'lucide-react';
 import { EXPORT_FORMAT_OPTIONS } from '../engine/exportFormats';
 import type { ProjectExportFormat } from '../types';
+import type { ResultIntegrityState } from '../engine/resultIntegrity';
 import type { RunPipelineState } from '../hooks/useAdjustmentRunner';
 
 interface AppToolbarProps {
@@ -42,6 +43,8 @@ interface AppToolbarProps {
   isSelectedObservationPinned: boolean;
   onTogglePinSelectedObservation: () => void;
   pipelineState: RunPipelineState;
+  integrityState?: ResultIntegrityState;
+  integrityBlockMessage?: string | null;
   runPhaseLabel: string | null;
   pendingRunSettingDiffs: string[];
   onCancelRun: () => void;
@@ -72,6 +75,8 @@ const AppToolbar: React.FC<AppToolbarProps> = ({
   isSelectedObservationPinned,
   onTogglePinSelectedObservation,
   pipelineState,
+  integrityState = 'NO_RESULT',
+  integrityBlockMessage = null,
   runPhaseLabel,
   pendingRunSettingDiffs,
   onCancelRun,
@@ -220,7 +225,11 @@ const AppToolbar: React.FC<AppToolbarProps> = ({
         <button
           onClick={onExportResults}
           disabled={!canExport}
-          title={canExport ? `Export ${exportLabel}` : 'Run adjustment to export results'}
+          title={
+            !canExport
+              ? 'Run adjustment to export results'
+              : (integrityBlockMessage ?? `Export ${exportLabel}`)
+          }
           className={`p-2 rounded text-slate-300 transition-colors ${
             canExport
               ? 'bg-slate-700 hover:bg-slate-600'
@@ -253,6 +262,18 @@ const AppToolbar: React.FC<AppToolbarProps> = ({
           >
             <Play size={16} /> <span>Adjust</span>
           </button>
+        )}
+        {pipelineState.status !== 'running' && (
+          <div
+            className="rounded border px-2 py-1 text-[10px] uppercase tracking-wide"
+            title={integrityBlockMessage ?? `Result status: ${integrityState}`}
+            data-result-integrity-status={integrityState}
+          >
+            {integrityState === 'FRESH_SUCCESS' ? '● Current' : null}
+            {integrityState === 'STALE_SUCCESS' || integrityState === 'STALE_FAILED' ? '▲ Stale — re-run' : null}
+            {integrityState === 'FRESH_FAILED' ? '✖ Run failed' : null}
+            {integrityState === 'NO_RESULT' ? '○ No result' : null}
+          </div>
         )}
         {pendingRunSettingDiffs.length > 0 && pipelineState.status !== 'running' && (
           <div

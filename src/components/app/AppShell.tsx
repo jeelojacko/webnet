@@ -23,7 +23,7 @@ const AppShell = ({ controller }: AppShellProps) => {
     handleProjectFileChange, handleProjectSourceFileChange, handleImportReviewSettingsFileChange, projectSourceAccept, associatedProjectSettingsAccept,
     isSidebarOpen, isSurveyCadWorkspaceActive, setIsSidebarOpen, openProjectOptions, setActiveTab,
     triggerFileSelect, handleOpenProjectWorkspacePanel, handleSaveProject, exportFormat, setExportFormat,
-    handleExportResults, result, hasStoredDraft, handleClearCurrentDraft, selectedObservation,
+    handleExportResults, result, resultIntegrity, hasStoredDraft, handleClearCurrentDraft, selectedObservation,
     pinnedObservations, togglePinnedObservation, pipelineState, runPhaseLabel, pendingRunSettingDiffs,
     cancelAdjustment, handleValidatedRun, handleResetToLastRun, pendingRecovery, recoverDraft,
     discardRecoveredDraft, isSettingsModalOpen, projectOptionsModalContext, isAdjustedPointsTransformSelectOpen, adjustedPointsDraftStationIds,
@@ -127,6 +127,8 @@ const AppShell = ({ controller }: AppShellProps) => {
         exportLabel={getExportFormatLabel(exportFormat)}
         onExportResults={handleExportResults}
         canExport={!!result}
+        integrityState={resultIntegrity.state}
+        integrityBlockMessage={resultIntegrity.blockMessage}
         hasStoredDraft={hasStoredDraft}
         onClearCurrentDraft={handleClearCurrentDraft}
         selectedObservationId={selectedObservation?.id ?? null}
@@ -243,6 +245,7 @@ const AppShell = ({ controller }: AppShellProps) => {
         surveyCadState={surveyCadState}
         setSurveyCadState={setSurveyCadState}
         adjustmentSource={adjustmentF2fSource}
+        canFeedDraftingFromResult={resultIntegrity.state === 'FRESH_SUCCESS'}
         settingsShowRunComparisonPanel={settings.showRunComparisonPanel}
         showRunComparisonPanel={showRunComparisonPanel}
         runComparisonPanelProps={{
