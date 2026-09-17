@@ -5,8 +5,10 @@ import type {
   CadBounds,
   CadDrawingDocument,
   CadParcelLayoutUiState,
+  CadSurveyPointEntity,
   SurveyCadPersistedState,
 } from '../engine/cad/cadTypes';
+import { evaluatePointGroupMembership } from '../engine/cad/cadPointGroups';
 import {
   assertBrowserFileSize,
   readBrowserFileAsText,
@@ -32,7 +34,8 @@ import { importSnapshotIntoCadDrawing } from '../cad-app/cadSnapshotImport';
 import type { CadDrawingLifecycleEvent } from '../cad-app/cadAppTypes';
 import type { CadShellLink } from '../cad-app/shell/cadShellLink';
 import type { ActiveCommandKey } from '../hooks/surveyCad/useSurveyCadCommandTypes';
-import type { CadShellActions, CadWorkspaceSnapshot } from '../cad-app/shell/cadShellTypes';
+import type { CadShellActions, CadWorkspaceSnapshot, SurveyManagerKind } from '../cad-app/shell/cadShellTypes';
+import { buildCadSurveySnapshot } from '../cad-app/shell/cadSurveySnapshot';
 import { getCadEntityDisplayLabel } from '../engine/cad/cadEntityNames';
 import { resolveCurrentCadLayerId } from '../engine/cad/cadLayers';
 import { validateSetCurrent } from './surveyCad/LayerPanel.guards';
@@ -48,7 +51,10 @@ import {
 } from '../engine/cad/cadDraftLabelDependency';
 import { useSurveyCadWorkspace } from '../hooks/surveyCad/useSurveyCadWorkspace';
 import SurveyCadCommandToolbar from './surveyCad/SurveyCadCommandToolbar';
-import { SurveyCadDraftingPanel } from './surveyCad/SurveyCadDraftingPanel';
+import { SurveyCadDraftingPanel, type SurveyCadDraftingTab } from './surveyCad/SurveyCadDraftingPanel';
+import { SurveyPointGroupManager } from './surveyCad/SurveyPointGroupManager';
+import { SurveyPointLabelStyleManager } from './surveyCad/SurveyPointLabelStyleManager';
+import { SurveyPointStyleManager } from './surveyCad/SurveyPointStyleManager';
 import { cloneSampleCatalog } from './surveyCad/cloneSampleCatalog';
 import { ExportCenterPanel } from './surveyCad/ExportCenterPanel';
 import SurveyCadWorkspaceSurface from './SurveyCadWorkspaceSurface';
@@ -294,7 +300,10 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
   const [copiedEntityIds, setCopiedEntityIds] = useState<string[]>([]);
   const [reverseDirectionModifier, setReverseDirectionModifier] = useState(false);
   const [draftingPanelOpen, setDraftingPanelOpen] = useState(false);
+  const [draftingInitialTab, setDraftingInitialTab] = useState<SurveyCadDraftingTab>('SHEETS');
   const [exportCenterOpen, setExportCenterOpen] = useState(false);
+  // Phase 18D — survey style/group manager dialog (one at a time).
+  const [surveyManager, setSurveyManager] = useState<{ kind: SurveyManagerKind; selectedId?: string } | null>(null);
   // Workspace-owned active feature catalog: the F2F panel edits it and the
   // Export Center catalog tab exports exactly this object.
   const [featureCatalog, setFeatureCatalog] = useState(cloneSampleCatalog);
@@ -634,6 +643,7 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
       snapStatusText: enabledSnaps.length > 0 ? `SNAP: ${enabledSnaps.join(', ')}` : 'OSNAP off',
       stationCount: stationIds.size,
       dependencyStatus: dependencySummary.status,
+      survey: buildCadSurveySnapshot(activeProject, selectedEntityIds),
       availableCommands: shellAvailableCommands,
     };
   }, [
@@ -676,6 +686,34 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
       selectEntities: (entityIds, append) => cadWorkspace.selectEntities(entityIds, append),
       editField: (entityId, field, value) => cadWorkspace.editPropertiesField(entityId, field, value),
       runLayerCommand: (command) => cadWorkspace.runLayerCommand(command),
+      runSurveyCommand: (command) => cadWorkspace.runLayerCommand(command),
+      openSurveyManager: (kind, selectedId) => {
+        if (kind === 'points') {
+          shellLink.requestToolspaceTab?.('survey');
+          return;
+        }
+        if (kind === 'f2f') {
+          setDraftingInitialTab('FIELD_TO_FINISH');
+          setDraftingPanelOpen(true);
+          return;
+        }
+        setSurveyManager({ kind, selectedId });
+      },
+      selectAllSurveyPoints: () => {
+        cadWorkspace.selectEntities(
+          activeProject.entities.filter((entity) => entity.type === 'survey-point').map((entity) => entity.id),
+        );
+      },
+      selectSurveyGroupPoints: (groupId) => {
+        const group = (activeProject.pointGroups ?? []).find((entry) => entry.id === groupId);
+        if (!group) return;
+        cadWorkspace.selectEntities(
+          activeProject.entities.filter(
+            (entity): entity is CadSurveyPointEntity =>
+              entity.type === 'survey-point' && evaluatePointGroupMembership(entity, group),
+          ).map((entity) => entity.id),
+        );
+      },
       setCurrentLayer: (layerId) => {
         // SET_CURRENT guard (spec §3): must exist, be ON, not frozen.
         if (validateSetCurrent(activeProject.layers, layerId) != null) return false;
@@ -807,6 +845,7 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
         {draftingPanelOpen ? (
           <SurveyCadDraftingPanel
             project={activeProject}
+            initialTab={draftingInitialTab}
             draft={activeDrawing.draft}
             onLayerCommand={(command) => void cadWorkspace.runLayerCommand(command)}
             onSetCurrentLayer={(layerId) => {
@@ -821,6 +860,56 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
             catalog={featureCatalog}
             onCatalogChange={handleFeatureCatalogChange}
             adjustmentSource={adjustmentSource}
+          />
+        ) : null}
+        {surveyManager?.kind === 'point-styles' ? (
+          <SurveyPointStyleManager
+            project={activeProject}
+            catalog={featureCatalog}
+            onSurveyCommand={(command) => cadWorkspace.runLayerCommand(command)}
+            onCatalogRewire={(table, fromId, toId) => {
+              handleFeatureCatalogChange({
+                ...featureCatalogRef.current,
+                definitions: featureCatalogRef.current.definitions.map((def) =>
+                  table === 'point' && def.pointStyleId === fromId
+                    ? { ...def, pointStyleId: toId }
+                    : table === 'label' && def.labelStyleId === fromId
+                      ? { ...def, labelStyleId: toId }
+                      : def,
+                ),
+              });
+            }}
+            initialSelectedId={surveyManager.selectedId}
+            onClose={() => setSurveyManager(null)}
+          />
+        ) : null}
+        {surveyManager?.kind === 'point-label-styles' ? (
+          <SurveyPointLabelStyleManager
+            project={activeProject}
+            catalog={featureCatalog}
+            onSurveyCommand={(command) => cadWorkspace.runLayerCommand(command)}
+            onCatalogRewire={(table, fromId, toId) => {
+              handleFeatureCatalogChange({
+                ...featureCatalogRef.current,
+                definitions: featureCatalogRef.current.definitions.map((def) =>
+                  table === 'point' && def.pointStyleId === fromId
+                    ? { ...def, pointStyleId: toId }
+                    : table === 'label' && def.labelStyleId === fromId
+                      ? { ...def, labelStyleId: toId }
+                      : def,
+                ),
+              });
+            }}
+            initialSelectedId={surveyManager.selectedId}
+            onClose={() => setSurveyManager(null)}
+          />
+        ) : null}
+        {surveyManager?.kind === 'point-groups' ? (
+          <SurveyPointGroupManager
+            project={activeProject}
+            onSurveyCommand={(command) => cadWorkspace.runLayerCommand(command)}
+            initialSelectedId={surveyManager.selectedId}
+            onClose={() => setSurveyManager(null)}
           />
         ) : null}
         {exportCenterOpen ? (

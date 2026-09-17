@@ -7,6 +7,13 @@ import type {
   CadLayerId,
   CadGripHandleKind,
   CadParcelLayoutSettings,
+  CadPointGroup,
+  CadPointGroupId,
+  CadPointGroupQuery,
+  CadPointLabelStyle,
+  CadPointLabelStyleId,
+  CadPointStyle,
+  CadPointStyleId,
   CadProject,
 } from './cadTypes';
 
@@ -65,7 +72,10 @@ export type CadCommandKey =
   | 'LAYER_SET_CURRENT'
   | 'LAYER_MOVE_OBJECTS'
   | 'LAYER_DELETE'
-  | 'F2F_GENERATE';
+  | 'F2F_GENERATE'
+  | 'SURVEY_POINT_OVERRIDE'
+  | 'SURVEY_STYLE_TABLE'
+  | 'SURVEY_GROUP_TABLE';
 export type CadCommandPhase = 'idle' | 'committed';
 
 export interface CadCommandState {
@@ -433,6 +443,119 @@ export type CadCommand =
   | {
       key: 'F2F_GENERATE';
       payload: FieldToFinishCadPayload;
+    }
+  | {
+      key: 'SURVEY_POINT_OVERRIDE';
+      entityIds: CadEntityId[];
+      /** undefined = leave, null = clear, id = set (must exist in its table). */
+      pointStyleOverrideId?: CadPointStyleId | null;
+      /** undefined = leave, null = clear, id = set (must exist in its table). */
+      pointLabelStyleOverrideId?: CadPointLabelStyleId | null;
+    }
+  | {
+      key: 'SURVEY_STYLE_TABLE';
+      table: 'point';
+      op: 'create';
+      style: CadPointStyle;
+    }
+  | {
+      key: 'SURVEY_STYLE_TABLE';
+      table: 'point';
+      op: 'duplicate';
+      styleId: CadPointStyleId;
+      newId: CadPointStyleId;
+      name: string;
+    }
+  | {
+      key: 'SURVEY_STYLE_TABLE';
+      table: 'point';
+      op: 'rename';
+      styleId: CadPointStyleId;
+      name: string;
+    }
+  | {
+      key: 'SURVEY_STYLE_TABLE';
+      table: 'point';
+      op: 'update';
+      styleId: CadPointStyleId;
+      patch: Partial<CadPointStyle>;
+    }
+  | {
+      key: 'SURVEY_STYLE_TABLE';
+      table: 'point';
+      op: 'delete';
+      styleId: CadPointStyleId;
+      /** Required when points/groups reference the style; refs rewire to it. */
+      replacementId?: CadPointStyleId;
+    }
+  | {
+      key: 'SURVEY_STYLE_TABLE';
+      table: 'label';
+      op: 'create';
+      style: CadPointLabelStyle;
+    }
+  | {
+      key: 'SURVEY_STYLE_TABLE';
+      table: 'label';
+      op: 'duplicate';
+      styleId: CadPointLabelStyleId;
+      newId: CadPointLabelStyleId;
+      name: string;
+    }
+  | {
+      key: 'SURVEY_STYLE_TABLE';
+      table: 'label';
+      op: 'rename';
+      styleId: CadPointLabelStyleId;
+      name: string;
+    }
+  | {
+      key: 'SURVEY_STYLE_TABLE';
+      table: 'label';
+      op: 'update';
+      styleId: CadPointLabelStyleId;
+      patch: Partial<CadPointLabelStyle>;
+    }
+  | {
+      key: 'SURVEY_STYLE_TABLE';
+      table: 'label';
+      op: 'delete';
+      styleId: CadPointLabelStyleId;
+      /** Required when points/groups reference the style; refs rewire to it. */
+      replacementId?: CadPointLabelStyleId;
+    }
+  | {
+      key: 'SURVEY_GROUP_TABLE';
+      op: 'create';
+      group: CadPointGroup;
+    }
+  | {
+      key: 'SURVEY_GROUP_TABLE';
+      op: 'rename';
+      groupId: CadPointGroupId;
+      name: string;
+    }
+  | {
+      key: 'SURVEY_GROUP_TABLE';
+      op: 'update';
+      groupId: CadPointGroupId;
+      query?: Partial<CadPointGroupQuery>;
+      description?: string | null;
+      /** undefined = leave, null = clear, id = set (must exist in its table). */
+      pointStyleOverrideId?: CadPointStyleId | null;
+      /** undefined = leave, null = clear, id = set (must exist in its table). */
+      pointLabelStyleOverrideId?: CadPointLabelStyleId | null;
+    }
+  | {
+      key: 'SURVEY_GROUP_TABLE';
+      op: 'move';
+      groupId: CadPointGroupId;
+      direction: 'up' | 'down';
+    }
+  | {
+      key: 'SURVEY_GROUP_TABLE';
+      op: 'delete';
+      groupId: CadPointGroupId;
     };
 
 export interface CadTransaction {

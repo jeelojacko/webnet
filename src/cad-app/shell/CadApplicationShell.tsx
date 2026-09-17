@@ -78,8 +78,16 @@ export const CadApplicationShell: React.FC<CadApplicationShellProps> = ({ contro
         document.querySelector<HTMLElement>('[data-cad-layers] input')?.focus();
       });
     };
+    // Phase 18D — survey ribbon entry points focus the Toolspace Survey tab.
+    link.requestToolspaceTab = (tab) => {
+      if (layout.layout.leftPanel !== 'toolspace' && layout.layout.rightPanel !== 'toolspace') {
+        layout.setSidePanel('left', 'toolspace');
+      }
+      layout.setToolspaceTab(tab);
+    };
     return () => {
       link.requestLayerManager = null;
+      link.requestToolspaceTab = null;
     };
   }, [link, layout]);
 

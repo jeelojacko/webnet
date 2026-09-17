@@ -11,10 +11,11 @@ import { SurveyCadFieldToFinishPanel } from './SurveyCadFieldToFinishPanel';
 import { SheetWorkspace } from './SheetWorkspace';
 import { TitleBlockTemplateEditor } from './TitleBlockTemplateEditor';
 
-type DraftingTab = 'SHEETS' | 'LAYERS' | 'TITLE_BLOCKS' | 'FIELD_TO_FINISH';
+export type SurveyCadDraftingTab = 'SHEETS' | 'LAYERS' | 'TITLE_BLOCKS' | 'FIELD_TO_FINISH';
 
 interface SurveyCadDraftingPanelProps {
   project: CadProject;
+  initialTab?: SurveyCadDraftingTab;
   draft: DraftDocument | undefined;
   /** Undoable layer-table mutations (LAYER_* transactions, never replace). */
   onLayerCommand: (_command: LayerManagerCommand) => void;
@@ -32,6 +33,7 @@ interface SurveyCadDraftingPanelProps {
 
 export const SurveyCadDraftingPanel = ({
   project,
+  initialTab = 'SHEETS',
   draft,
   onLayerCommand,
   onSetCurrentLayer,
@@ -42,7 +44,7 @@ export const SurveyCadDraftingPanel = ({
   onCatalogChange,
   adjustmentSource = null,
 }: SurveyCadDraftingPanelProps): React.JSX.Element => {
-  const [tab, setTab] = useState<DraftingTab>('SHEETS');
+  const [tab, setTab] = useState<SurveyCadDraftingTab>(initialTab);
   const entityCounts = useMemo(() => {
     const counts: Record<string, number> = {};
     for (const entity of project.entities) counts[entity.layerId] = (counts[entity.layerId] ?? 0) + 1;

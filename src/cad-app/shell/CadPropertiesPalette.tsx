@@ -1,6 +1,11 @@
 import React, { useEffect, useState } from 'react';
 import type { CadEntityPropertyRow, CadPropertiesTypeGroup } from '../../engine/cad/cadPropertiesModel';
-import type { CadShellActions, CadWorkspaceSnapshot } from './cadShellTypes';
+import type {
+  CadShellActions,
+  CadSurveyPointDisplayInfo,
+  CadSurveySnapshot,
+  CadWorkspaceSnapshot,
+} from './cadShellTypes';
 
 interface CadPropertiesPaletteProps {
   snapshot: CadWorkspaceSnapshot | null;
@@ -35,6 +40,9 @@ export const CadPropertiesPalette: React.FC<CadPropertiesPaletteProps> = ({ snap
   }
   const panel = snapshot.properties;
   if (panel.mode === 'single') {
+    const surveyInfo =
+      snapshot.survey?.selected.find((info) => info.entityId === panel.entity.entityId) ??
+      (snapshot.survey?.selected.length === 1 ? snapshot.survey.selected[0] : undefined);
     return (
       <div className="cad-shell-props" data-cad-properties="single">
         <h3>{panel.entity.entityLabel}</h3>
@@ -43,10 +51,20 @@ export const CadPropertiesPalette: React.FC<CadPropertiesPaletteProps> = ({ snap
           entityId={panel.entity.entityId}
           actions={actions}
         />
+        {surveyInfo && snapshot.survey ? (
+          <SurveyPointDisplay info={surveyInfo} survey={snapshot.survey} actions={actions} />
+        ) : null}
       </div>
     );
   }
-  return <MultiProperties groups={panel.groups} defaultTypeKey={panel.defaultTypeKey} actions={actions} />;
+  return (
+    <>
+      <MultiProperties groups={panel.groups} defaultTypeKey={panel.defaultTypeKey} actions={actions} />
+      {snapshot.survey && snapshot.survey.selected.length > 1 ? (
+        <SurveyPointBatch survey={snapshot.survey} actions={actions} />
+      ) : null}
+    </>
+  );
 };
 
 const MultiProperties: React.FC<{
@@ -191,6 +209,148 @@ const PropertyRow: React.FC<{
         />
         {error ? <span role="status">{error}</span> : null}
       </dd>
+    </div>
+  );
+};
+
+/**
+ * Phase 18D — SURVEY POINT + POINT DISPLAY sections for one selected survey
+ * point. Coordinates stay read-only under the existing contract; only the
+ * MANUAL overrides write (undoable SURVEY_POINT_OVERRIDE).
+ */
+const SurveyPointDisplay: React.FC<{
+  info: CadSurveyPointDisplayInfo;
+  survey: CadSurveySnapshot;
+  actions: CadShellActions | null;
+}> = ({ info, survey, actions }) => {
+  const pickPointStyle = (styleId: string | null): void => {
+    actions?.runSurveyCommand({
+      key: 'SURVEY_POINT_OVERRIDE',
+      entityIds: [info.entityId],
+      pointStyleOverrideId: styleId,
+    });
+  };
+  const pickLabelStyle = (styleId: string | null): void => {
+    actions?.runSurveyCommand({
+      key: 'SURVEY_POINT_OVERRIDE',
+      entityIds: [info.entityId],
+      pointLabelStyleOverrideId: styleId,
+    });
+  };
+  return (
+    <div className="cad-shell-props-group" data-cad-survey-point>
+      <h4>Survey Point</h4>
+      <dl>
+        <div><dt>Point ID</dt><dd>{info.stationId}</dd></div>
+        <div><dt>Description</dt><dd>{info.description ?? '--'}</dd></div>
+        <div><dt>Feature Code</dt><dd>{info.featureCode ?? '--'}</dd></div>
+        <div><dt>Class</dt><dd>{info.pointClass}</dd></div>
+        <div><dt>Source</dt><dd>{info.source}</dd></div>
+      </dl>
+      <h4>Point Display</h4>
+      <dl>
+        <div><dt>Base Point Style</dt><dd>{info.basePointStyleName}</dd></div>
+        <OverrideSelect
+          label="Point Style Override"
+          overrideId={info.pointStyleOverrideId}
+          options={survey.pointStyles}
+          onPick={pickPointStyle}
+        />
+        <div>
+          <dt>Effective Point Style</dt>
+          <dd>Effective: {info.effectivePointStyleName} — Source: {info.pointStyleSourceText}</dd>
+        </div>
+        <div><dt>Base Label Style</dt><dd>{info.baseLabelStyleName}</dd></div>
+        <OverrideSelect
+          label="Label Style Override"
+          overrideId={info.pointLabelStyleOverrideId}
+          options={survey.labelStyles}
+          onPick={pickLabelStyle}
+        />
+        <div>
+          <dt>Effective Label Style</dt>
+          <dd>Effective: {info.effectiveLabelStyleName} — Source: {info.labelStyleSourceText}</dd>
+        </div>
+        <div>
+          <dt>Matching Point Groups</dt>
+          <dd>{info.matchingGroupNames.length > 0 ? info.matchingGroupNames.join(', ') : '(none)'}</dd>
+        </div>
+      </dl>
+    </div>
+  );
+};
+
+const OverrideSelect: React.FC<{
+  label: string;
+  overrideId: string | null | undefined;
+  /** undefined = VARIES across the batch (multi-select only). */
+  options: Array<{ id: string; name: string }>;
+  onPick: (_styleId: string | null) => void;
+}> = ({ label, overrideId, options, onPick }) => (
+  <div>
+    <dt>{label}</dt>
+    <dd>
+      <select
+        aria-label={label}
+        value={overrideId === undefined ? '__varies__' : (overrideId ?? '')}
+        onChange={(event) => {
+          const value = event.target.value;
+          if (value === '__varies__') return;
+          onPick(value === '' ? null : value);
+        }}
+      >
+        {overrideId === undefined ? <option value="__varies__">*VARIES*</option> : null}
+        <option value="">By Default (no override)</option>
+        {options.map((option) => (
+          <option key={option.id} value={option.id}>
+            {option.name}
+          </option>
+        ))}
+      </select>
+    </dd>
+  </div>
+);
+
+/**
+ * Phase 18D — multi-select: override dropdowns show the COMMON value or
+ * VARIES; batch set/clear only (coordinates are never touched here).
+ */
+const SurveyPointBatch: React.FC<{
+  survey: CadSurveySnapshot;
+  actions: CadShellActions | null;
+}> = ({ survey, actions }) => {
+  const entityIds = survey.selected.map((info) => info.entityId);
+  const commonValue = (pick: (_info: CadSurveyPointDisplayInfo) => string | null): string | null | undefined => {
+    const values = new Set(survey.selected.map(pick));
+    return values.size === 1 ? [...values][0]! : undefined;
+  };
+  const commonPoint = commonValue((info) => info.pointStyleOverrideId);
+  const commonLabel = commonValue((info) => info.pointLabelStyleOverrideId);
+  return (
+    <div className="cad-shell-props" data-cad-properties="survey-batch">
+      <h3>Survey Points — {survey.selected.length} selected</h3>
+      <dl>
+        <OverrideSelect
+          label="Point Style Override"
+          overrideId={commonPoint}
+          options={survey.pointStyles}
+          onPick={(styleId) => actions?.runSurveyCommand({
+            key: 'SURVEY_POINT_OVERRIDE',
+            entityIds,
+            pointStyleOverrideId: styleId,
+          })}
+        />
+        <OverrideSelect
+          label="Label Style Override"
+          overrideId={commonLabel}
+          options={survey.labelStyles}
+          onPick={(styleId) => actions?.runSurveyCommand({
+            key: 'SURVEY_POINT_OVERRIDE',
+            entityIds,
+            pointLabelStyleOverrideId: styleId,
+          })}
+        />
+      </dl>
     </div>
   );
 };
