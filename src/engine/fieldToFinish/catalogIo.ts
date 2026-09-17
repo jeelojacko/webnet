@@ -94,6 +94,7 @@ const parseDefinition = (raw: unknown): FeatureDefinition | null => {
     layer: typeof raw['layer'] === 'string' ? raw['layer'] : '',
     pointSymbolId: typeof raw['pointSymbolId'] === 'string' ? raw['pointSymbolId'] : undefined,
     styleId: typeof raw['styleId'] === 'string' ? raw['styleId'] : undefined,
+    pointStyleId: typeof raw['pointStyleId'] === 'string' ? raw['pointStyleId'] : undefined,
     labelStyleId: typeof raw['labelStyleId'] === 'string' ? raw['labelStyleId'] : undefined,
     pointBehavior: raw['pointBehavior'] === 'none' ? 'none' : 'point',
     lineworkBehavior: {
@@ -161,6 +162,39 @@ export const importCatalog = (json: string): ImportCatalogResult => {
   return { catalog, issues };
 };
 
+/**
+ * Phase 18D: unresolved style refs against a drawing's tables. Import
+ * itself always succeeds (refs pass through); the caller surfaces these
+ * warnings and generation falls back deterministically (never crashes).
+ * Tables absent = unknown drawing, no warnings (cannot validate).
+ */
+export interface CatalogStyleTables {
+  pointStyles?: ReadonlyArray<{ id: string }>;
+  labelStyles?: ReadonlyArray<{ id: string }>;
+  pointSymbols?: ReadonlyArray<{ id: string }>;
+}
+
+export const validateCatalogStyleReferences = (
+  catalog: FeatureCodeCatalog,
+  tables: CatalogStyleTables,
+): CatalogValidationIssue[] => {
+  const issues: CatalogValidationIssue[] = [];
+  const has = (list: ReadonlyArray<{ id: string }> | undefined, id: string): boolean | undefined =>
+    list == null ? undefined : list.some((entry) => entry.id === id);
+  for (const def of catalog.definitions) {
+    if (def.pointStyleId && has(tables.pointStyles, def.pointStyleId) === false) {
+      issues.push({ severity: 'warning', message: `Definition ${def.id} references unknown point style "${def.pointStyleId}"; drawing default applies.` });
+    }
+    if (def.labelStyleId && has(tables.labelStyles, def.labelStyleId) === false) {
+      issues.push({ severity: 'warning', message: `Definition ${def.id} references unknown label style "${def.labelStyleId}"; F2F Full compat applies.` });
+    }
+    if (def.pointSymbolId && has(tables.pointSymbols, def.pointSymbolId) === false) {
+      issues.push({ severity: 'warning', message: `Definition ${def.id} references unknown point symbol "${def.pointSymbolId}"; point-free fallback applies.` });
+    }
+  }
+  return issues;
+};
+
 /** Semantic identity: same canonical codes, aliases, layers, and behaviors. */
 export const catalogsSemanticallyEqual = (a: FeatureCodeCatalog, b: FeatureCodeCatalog): boolean => {
   const normDefs = (catalog: FeatureCodeCatalog): string[] =>
@@ -171,6 +205,7 @@ export const catalogsSemanticallyEqual = (a: FeatureCodeCatalog, b: FeatureCodeC
           def.layer,
           def.pointSymbolId ?? '',
           def.styleId ?? '',
+          def.pointStyleId ?? '',
           def.labelStyleId ?? '',
           def.pointBehavior,
           String(def.lineworkBehavior.enabled),

@@ -8,6 +8,15 @@ import { validateCatalog } from '../../engine/fieldToFinish/catalogIo';
 interface CatalogEditorProps {
   catalog: FeatureCodeCatalog;
   onCatalogChange: (_catalog: FeatureCodeCatalog) => void;
+  /**
+   * Phase 18D: drawing style tables for dropdowns. Absent (component
+   * lacks project context) = free-text inputs + unresolved-style warning.
+   */
+  drawing?: {
+    pointSymbols: ReadonlyArray<{ id: string; name?: string }>;
+    pointStyles: ReadonlyArray<{ id: string; name?: string }>;
+    labelStyles: ReadonlyArray<{ id: string; name?: string }>;
+  };
 }
 
 const emptyDefinition = (code: string): FeatureDefinition => ({
@@ -34,6 +43,7 @@ const StylePreview: React.FC<{ definition: FeatureDefinition }> = ({ definition 
 export const SurveyCadFeatureCatalogEditor: React.FC<CatalogEditorProps> = ({
   catalog,
   onCatalogChange,
+  drawing,
 }) => {
   const [selectedId, setSelectedId] = useState<string | null>(
     catalog.definitions[0]?.id ?? null,
@@ -142,25 +152,103 @@ export const SurveyCadFeatureCatalogEditor: React.FC<CatalogEditorProps> = ({
             onChange={(event) => patchDefinition(selected.id, { layer: event.target.value })}
           />
           <label htmlFor="f2f-def-symbol">Point symbol</label>
-          <input
-            id="f2f-def-symbol"
-            className="rounded border border-slate-700 bg-slate-900 px-1.5 py-0.5 font-mono"
-            value={selected.pointSymbolId ?? ''}
-            placeholder="default"
-            onChange={(event) =>
-              patchDefinition(selected.id, { pointSymbolId: event.target.value || undefined })
-            }
-          />
+          {drawing ? (
+            <select
+              id="f2f-def-symbol"
+              className="rounded border border-slate-700 bg-slate-900 px-1.5 py-0.5 font-mono"
+              value={selected.pointSymbolId ?? ''}
+              onChange={(event) =>
+                patchDefinition(selected.id, { pointSymbolId: event.target.value || undefined })
+              }
+            >
+              <option value="">(drawing default)</option>
+              {drawing.pointSymbols.map((symbol) => (
+                <option key={symbol.id} value={symbol.id}>{symbol.name ?? symbol.id}</option>
+              ))}
+            </select>
+          ) : (
+            <input
+              id="f2f-def-symbol"
+              className="rounded border border-slate-700 bg-slate-900 px-1.5 py-0.5 font-mono"
+              value={selected.pointSymbolId ?? ''}
+              placeholder="default"
+              onChange={(event) =>
+                patchDefinition(selected.id, { pointSymbolId: event.target.value || undefined })
+              }
+            />
+          )}
+          <label htmlFor="f2f-def-point-style">Point style</label>
+          {drawing ? (
+            <span className="grid gap-0.5">
+              <select
+                id="f2f-def-point-style"
+                className="rounded border border-slate-700 bg-slate-900 px-1.5 py-0.5 font-mono"
+                value={selected.pointStyleId ?? ''}
+                onChange={(event) =>
+                  patchDefinition(selected.id, { pointStyleId: event.target.value || undefined })
+                }
+              >
+                <option value="">(drawing default)</option>
+                {drawing.pointStyles.map((style) => (
+                  <option key={style.id} value={style.id}>{style.name ?? style.id}</option>
+                ))}
+              </select>
+              {selected.pointStyleId && !drawing.pointStyles.some((style) => style.id === selected.pointStyleId) ? (
+                <span className="text-[11px] text-amber-300">Unknown point style “{selected.pointStyleId}”; drawing default applies.</span>
+              ) : null}
+            </span>
+          ) : (
+            <span className="grid gap-0.5">
+              <input
+                id="f2f-def-point-style"
+                className="rounded border border-slate-700 bg-slate-900 px-1.5 py-0.5 font-mono"
+                value={selected.pointStyleId ?? ''}
+                placeholder="default"
+                onChange={(event) =>
+                  patchDefinition(selected.id, { pointStyleId: event.target.value || undefined })
+                }
+              />
+              {selected.pointStyleId ? (
+                <span className="text-[11px] text-amber-300">Drawing styles unavailable — “{selected.pointStyleId}” cannot be validated; unknown ids fall back to the drawing default.</span>
+              ) : null}
+            </span>
+          )}
           <label htmlFor="f2f-def-label-style">Label style</label>
-          <input
-            id="f2f-def-label-style"
-            className="rounded border border-slate-700 bg-slate-900 px-1.5 py-0.5 font-mono"
-            value={selected.labelStyleId ?? ''}
-            placeholder="default"
-            onChange={(event) =>
-              patchDefinition(selected.id, { labelStyleId: event.target.value || undefined })
-            }
-          />
+          {drawing ? (
+            <span className="grid gap-0.5">
+              <select
+                id="f2f-def-label-style"
+                className="rounded border border-slate-700 bg-slate-900 px-1.5 py-0.5 font-mono"
+                value={selected.labelStyleId ?? ''}
+                onChange={(event) =>
+                  patchDefinition(selected.id, { labelStyleId: event.target.value || undefined })
+                }
+              >
+                <option value="">(F2F Full compat)</option>
+                {drawing.labelStyles.map((style) => (
+                  <option key={style.id} value={style.id}>{style.name ?? style.id}</option>
+                ))}
+              </select>
+              {selected.labelStyleId && !drawing.labelStyles.some((style) => style.id === selected.labelStyleId) ? (
+                <span className="text-[11px] text-amber-300">Unknown label style “{selected.labelStyleId}”; F2F Full compat applies.</span>
+              ) : null}
+            </span>
+          ) : (
+            <span className="grid gap-0.5">
+              <input
+                id="f2f-def-label-style"
+                className="rounded border border-slate-700 bg-slate-900 px-1.5 py-0.5 font-mono"
+                value={selected.labelStyleId ?? ''}
+                placeholder="default"
+                onChange={(event) =>
+                  patchDefinition(selected.id, { labelStyleId: event.target.value || undefined })
+                }
+              />
+              {selected.labelStyleId ? (
+                <span className="text-[11px] text-amber-300">Drawing styles unavailable — “{selected.labelStyleId}” cannot be validated; unknown ids fall back to F2F Full compat.</span>
+              ) : null}
+            </span>
+          )}
           <span>Point / line style</span>
           <span className="flex items-center gap-2">
             <select

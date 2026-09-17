@@ -22,6 +22,8 @@ export interface FeatureDefinition {
   layer: string;
   pointSymbolId?: string;
   styleId?: string;
+  /** Phase 18D BASE point-style ref (marker presentation). Undefined = drawing default. */
+  pointStyleId?: string;
   labelStyleId?: string;
   pointBehavior: FeaturePointBehavior;
   lineworkBehavior: LineworkBehavior;
