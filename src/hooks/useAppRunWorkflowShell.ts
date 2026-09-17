@@ -55,6 +55,7 @@ interface UseAppRunWorkflowShellArgs {
     overrideIds: number[];
     overrides: Record<number, ObservationOverride>;
     approvedClusterMerges: import('../types').ClusterApprovedMerge[];
+    appliedRunIdentity?: import('../engine/resultIntegrity').AppliedRunIdentity | null;
   }) => void;
   projectRunValidation: { ok: boolean; errors: string[] };
   setImportNotice: (_value: { title: string; detailLines: string[] } | null) => void;

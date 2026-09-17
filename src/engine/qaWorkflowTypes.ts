@@ -4,6 +4,7 @@ import type {
   Observation,
   ObservationOverride,
 } from '../types';
+import type { AppliedRunIdentity } from './resultIntegrity';
 
 export interface DerivedObservationRef {
   id: number;
@@ -58,6 +59,8 @@ export interface RunSnapshot<TSettingsSnapshot = unknown, TRunDiagnostics = unkn
   overrides: Record<number, ObservationOverride>;
   approvedClusterMerges: ClusterApprovedMerge[];
   reopenState: SavedRunWorkspaceState | null;
+  /** Apply-time dependency identity; absent on legacy snapshots (treated as unprovable). */
+  appliedRunIdentity?: AppliedRunIdentity | null;
 }
 
 export interface RunSnapshotSummary {

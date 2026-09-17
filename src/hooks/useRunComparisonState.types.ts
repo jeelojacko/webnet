@@ -4,6 +4,7 @@ import type {
   SavedRunSnapshot,
   SavedRunWorkspaceState,
 } from '../engine/qaWorkflow';
+import type { AppliedRunIdentity } from '../engine/resultIntegrity';
 
 export interface RecordRunSnapshotArgs<TSettingsSnapshot, TRunDiagnostics> {
   result: AdjustmentResult;
@@ -16,6 +17,7 @@ export interface RecordRunSnapshotArgs<TSettingsSnapshot, TRunDiagnostics> {
   overrides: Record<number, ObservationOverride>;
   approvedClusterMerges: ClusterApprovedMerge[];
   reopenState?: SavedRunWorkspaceState | null;
+  appliedRunIdentity?: AppliedRunIdentity | null;
 }
 
 export interface SaveCurrentRunSnapshotOptions {

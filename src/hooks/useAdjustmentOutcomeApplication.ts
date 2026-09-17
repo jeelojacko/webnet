@@ -8,6 +8,11 @@ import type {
 } from '../types';
 import type { RunSessionOutcome } from '../engine/runSession';
 import { buildAdjustmentResultFingerprint } from '../engine/adjustmentResultFingerprint';
+import {
+  buildExclusionDependencyFingerprint,
+  isDeliverableRunMode,
+  type AppliedRunIdentity,
+} from '../engine/resultIntegrity';
 import { noteUiPerfStage } from './useUiPerfMonitor';
 import {
   buildRejectedClusterProposals,
@@ -20,6 +25,12 @@ export type SuccessfulAdjustmentRunInfo = {
   result: AdjustmentResult;
   inputFingerprint: string;
   settingsFingerprint: string;
+  /**
+   * RunSettingsSnapshot.runMode behind the run; only 'adjustment' feeds
+   * drafting. Optional so legacy/test callers without run context still
+   * compile — absent is treated as unknown (never implicitly deliverable).
+   */
+  runMode?: string;
   /**
    * Authoritative result revision (adjustment-result/v1); the link stamps
    * this as sourceRevision. Optional so legacy/test callers without result
@@ -37,6 +48,7 @@ export type ApplyRunOutcomeContext = {
   settingsFingerprint: string;
   overrideIds: number[];
   reviewContext?: RunReviewContext;
+  appliedRunIdentity: AppliedRunIdentity;
 };
 
 interface UseAdjustmentOutcomeApplicationArgs<TRunDiagnostics> {
@@ -54,11 +66,13 @@ interface UseAdjustmentOutcomeApplicationArgs<TRunDiagnostics> {
   setRunElapsedMs: (_value: number | null) => void;
   setLastRunInput: (_value: string | null) => void;
   setLastRunSettingsSnapshot: (_value: RunSettingsSnapshot | null) => void;
+  setAppliedRunIdentity: (_value: AppliedRunIdentity | null) => void;
   activateReportTab: () => void;
   /**
    * Linked-F2F rerun seam (Bucket A2). Fired once per successful PRODUCTION
-   * run (success && !preanalysisMode) after the outcome is applied; never on
-   * failure, cancellation, or preanalysis. The subscriber derives linked-doc
+   * run (success && converged && mode='adjustment' && !preanalysisMode)
+   * after the outcome is applied; never on failure, cancellation,
+   * preanalysis, data-check, or blunder-detect runs. The subscriber derives linked-doc
    * updates via applyAdjustmentRerunToLinkedF2f (passing both fingerprints so
    * the link sourceRevision stays a true `<input>:<settings>` composite) and
    * commits the returned project as one atomic persisted-drawing update.
@@ -79,6 +93,7 @@ interface UseAdjustmentOutcomeApplicationArgs<TRunDiagnostics> {
     overrideIds: number[];
     overrides: Record<number, ObservationOverride>;
     approvedClusterMerges: ClusterApprovedMerge[];
+    appliedRunIdentity?: AppliedRunIdentity | null;
   }) => void;
 }
 
@@ -132,6 +147,7 @@ export const useAdjustmentOutcomeApplication = <TRunDiagnostics>({
   setRunElapsedMs,
   setLastRunInput,
   setLastRunSettingsSnapshot,
+  setAppliedRunIdentity,
   activateReportTab,
   recordRunSnapshot,
   onSuccessfulAdjustmentRun,
@@ -147,13 +163,13 @@ export const useAdjustmentOutcomeApplication = <TRunDiagnostics>({
       );
       const runProfile = buildRunDiagnostics(context.parseSettingsSnapshot, solved);
       prependRunProfileLogs(solved, runProfile);
-      if (
+      const droppedRunState =
         outcome.inputChangedSinceLastRun &&
         (outcome.droppedExclusions > 0 ||
           outcome.droppedPreanalysisAdditions > 0 ||
           outcome.droppedOverrides > 0 ||
-          outcome.droppedClusterMerges > 0)
-      ) {
+          outcome.droppedClusterMerges > 0);
+      if (droppedRunState) {
         solved.logs.unshift(
           `Input changed since previous run: cleared ${outcome.droppedExclusions} exclusion(s), ${outcome.droppedPreanalysisAdditions} preanalysis addition(s), ${outcome.droppedOverrides} override(s), and ${outcome.droppedClusterMerges} approved cluster merge(s).`,
         );
@@ -163,6 +179,17 @@ export const useAdjustmentOutcomeApplication = <TRunDiagnostics>({
       }
       setLastRunInput(context.inputSnapshot);
       setLastRunSettingsSnapshot(context.settingsSnapshot);
+      const effectiveOverridesForIdentity = droppedRunState ? {} : overrides;
+      const effectiveAppliedIdentity: AppliedRunIdentity = {
+        ...context.appliedRunIdentity,
+        exclusionFingerprint: buildExclusionDependencyFingerprint({
+          excludedIds: outcome.effectiveExcludedIds,
+          overrides: effectiveOverridesForIdentity,
+          activePreanalysisAdditionIds: outcome.activePreanalysisAdditionIds,
+          approvedClusterMerges: outcome.effectiveClusterApprovedMerges,
+        }),
+      };
+      setAppliedRunIdentity(effectiveAppliedIdentity);
       setExcludedIds(new Set(outcome.effectiveExcludedIds));
       setActivePreanalysisAdditionIds(new Set(outcome.activePreanalysisAdditionIds));
       setResult(solved);
@@ -177,17 +204,24 @@ export const useAdjustmentOutcomeApplication = <TRunDiagnostics>({
         overrideIds: context.overrideIds,
         overrides,
         approvedClusterMerges: outcome.effectiveClusterApprovedMerges,
+        appliedRunIdentity: effectiveAppliedIdentity,
       });
       startTransition(() => {
         setActiveClusterApprovedMerges(outcome.effectiveClusterApprovedMerges);
         setRunDiagnostics(runProfile);
         setRunElapsedMs(outcome.elapsedMs);
       });
-      if (solved.success && !solved.preanalysisMode) {
+      if (
+        solved.success &&
+        solved.converged &&
+        !solved.preanalysisMode &&
+        isDeliverableRunMode(context.appliedRunIdentity?.runMode ?? '')
+      ) {
         onSuccessfulAdjustmentRun?.({
           result: solved,
           inputFingerprint: context.inputFingerprint,
           settingsFingerprint: context.settingsFingerprint,
+          runMode: context.appliedRunIdentity.runMode,
           resultFingerprint: buildAdjustmentResultFingerprint(solved),
         });
       }
@@ -207,6 +241,7 @@ export const useAdjustmentOutcomeApplication = <TRunDiagnostics>({
       setExcludedIds,
       setLastRunInput,
       setLastRunSettingsSnapshot,
+      setAppliedRunIdentity,
       setOverrides,
       setResult,
       setRunDiagnostics,

@@ -124,6 +124,7 @@ export const useRunComparisonState = <TSettingsSnapshot, TRunDiagnostics>({
       overrides,
       approvedClusterMerges,
       reopenState = null,
+      appliedRunIdentity = null,
     }: RecordRunSnapshotArgs<TSettingsSnapshot, TRunDiagnostics>) => {
       const nextSnapshot: RunSnapshot<TSettingsSnapshot, TRunDiagnostics> = {
         id: `run-${runSnapshotCounterRef.current}`,
@@ -143,6 +144,7 @@ export const useRunComparisonState = <TSettingsSnapshot, TRunDiagnostics>({
         overrides: deepClonePlain(overrides),
         approvedClusterMerges: approvedClusterMerges.map((merge) => ({ ...merge })),
         reopenState: reopenState ? deepClonePlain(reopenState) : null,
+        appliedRunIdentity: appliedRunIdentity ? { ...appliedRunIdentity } : null,
       };
       runSnapshotCounterRef.current += 1;
       setCurrentRunSnapshot(nextSnapshot);

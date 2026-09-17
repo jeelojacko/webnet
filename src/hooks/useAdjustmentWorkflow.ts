@@ -12,6 +12,8 @@ import type { ProjectRunFile } from '../engine/projectWorkspace';
 import type { RunSessionOutcome, RunSessionRequest } from '../engine/runSession';
 import { DEFAULT_PLANNING_MAP_STATE } from '../engine/planningMapState';
 import { useAdjustmentOutcomeApplication, type SuccessfulAdjustmentRunInfo } from './useAdjustmentOutcomeApplication';
+import type { AppliedRunIdentity } from '../engine/resultIntegrity';
+import { useResultIntegrity } from './useResultIntegrity';
 import { buildRunRequestAndContext } from './useAdjustmentRunRequest';
 import {
   buildApprovedClusterMerges,
@@ -53,6 +55,7 @@ interface UseAdjustmentWorkflowArgs<TRunDiagnostics> {
     overrideIds: number[];
     overrides: Record<number, ObservationOverride>;
     approvedClusterMerges: ClusterApprovedMerge[];
+    appliedRunIdentity?: import('../engine/resultIntegrity').AppliedRunIdentity | null;
   }) => void;
 }
 
@@ -93,6 +96,10 @@ export const useAdjustmentWorkflow = <TRunDiagnostics>({
   >([]);
   const { pipelineState, run: runAdjustment, cancel: cancelAdjustment } =
     useAdjustmentRunner(directRunner);
+  const [appliedRunIdentity, setAppliedRunIdentity] = useState<AppliedRunIdentity | null>(null);
+  useEffect(() => {
+    if (result == null) setAppliedRunIdentity(null);
+  }, [result]);
 
   useEffect(() => {
     const candidates = result?.clusterDiagnostics?.candidates ?? [];
@@ -116,9 +123,27 @@ export const useAdjustmentWorkflow = <TRunDiagnostics>({
     setRunElapsedMs,
     setLastRunInput,
     setLastRunSettingsSnapshot,
+    setAppliedRunIdentity,
     activateReportTab,
     onSuccessfulAdjustmentRun,
     recordRunSnapshot,
+  });
+
+  const { current: currentIntegrityIdentity, assessment: resultIntegrity } = useResultIntegrity({
+    result,
+    applied: appliedRunIdentity,
+    input,
+    runFiles: projectRunFiles,
+    includeFiles: projectIncludeFiles,
+    runSnapshot: currentRunSettingsSnapshot,
+    parseSettings,
+    projectInstruments,
+    selectedInstrument,
+    geoidSourceData,
+    excludedIds,
+    overrides,
+    activePreanalysisAdditionIds,
+    approvedClusterMerges: activeClusterApprovedMerges,
   });
 
   const runWithExclusions = useCallback(
@@ -350,6 +375,7 @@ export const useAdjustmentWorkflow = <TRunDiagnostics>({
     setOverrides({});
     setClusterReviewDecisions({});
     setActiveClusterApprovedMerges([]);
+    setAppliedRunIdentity(null);
   }, []);
 
   const restoreAdjustmentWorkflowState = useCallback(
@@ -380,6 +406,10 @@ export const useAdjustmentWorkflow = <TRunDiagnostics>({
   return {
     pipelineState,
     cancelAdjustment,
+    appliedRunIdentity,
+    setAppliedRunIdentity,
+    currentIntegrityIdentity,
+    resultIntegrity,
     excludedIds,
     activePreanalysisAdditionIds,
     overrides,
