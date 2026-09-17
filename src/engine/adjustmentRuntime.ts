@@ -43,6 +43,12 @@ export interface AdjustmentRuntime {
    * Undefined keeps the structured candidate with fail-closed fallback.
    */
   structuredWeightTransfer?: EngineOptions['structuredWeightTransfer'];
+  /**
+   * Phase 16C test-only switch: false forces legacy dense statistics
+   * weights. Undefined keeps the structured candidate with fail-closed
+   * fallback.
+   */
+  structuredStatisticsWeights?: EngineOptions['structuredStatisticsWeights'];
   /** Test-only experimental correction backend; undefined keeps TS. */
   normalEquationSolver?: EngineOptions['normalEquationSolver'];
   /**
@@ -64,6 +70,7 @@ export type AdjustmentRuntimeEngineOptions = Pick<
   | 'experimentalSelectedCovarianceLegacyAllPairs'
   | 'preanalysisCorrectionFastPath'
   | 'structuredWeightTransfer'
+  | 'structuredStatisticsWeights'
   | 'allowVerifiedNativeDenseQxxReuse'
 >;
 
@@ -100,6 +107,9 @@ export const toEngineOptions = (
   }
   if (runtime.structuredWeightTransfer !== undefined) {
     options.structuredWeightTransfer = runtime.structuredWeightTransfer;
+  }
+  if (runtime.structuredStatisticsWeights !== undefined) {
+    options.structuredStatisticsWeights = runtime.structuredStatisticsWeights;
   }
   if (runtime.allowVerifiedNativeDenseQxxReuse !== undefined) {
     options.allowVerifiedNativeDenseQxxReuse = runtime.allowVerifiedNativeDenseQxxReuse;

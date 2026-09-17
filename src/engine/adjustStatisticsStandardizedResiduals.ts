@@ -12,7 +12,7 @@ import {
   statisticalMdb,
   statisticalSensitivity,
 } from './reliabilityPolicy';
-import type { StructuredSymmetricWeights } from './sparseWeightRepresentation';
+import type { WeightAccess } from './structuredWeightAccess';
 import {
   buildCouplingGroupRows,
   computeExternalInfluences,
@@ -34,6 +34,24 @@ import { detailedNow } from './adjustDetailedSolveProfile';
 import { copyMatrix } from './qxxReuseEvidence';
 import { decideStatisticsQxxReuse } from './statisticsQxxReuse';
 import { accumulateNormalEquationsFromSparseRows, multiplySparseRowsByDenseMatrix, zeros } from './matrix';
+import {
+  accumulateNormalFromStructuredWeights,
+  estimateStructuredWeightDensityUB,
+  shouldAssembleStructuredWeights,
+  structuredWeightDensity,
+  structuredWeightTransferEligible,
+} from './structuredWeightOracle';
+import {
+  couplingGroupRowsOf,
+  materializeDenseWeightMatrix,
+  structuredWeightAccess,
+} from './structuredWeightAccess';
+import {
+  recordStatisticsDenseFallback,
+  recordStatisticsDensePAllocation,
+  recordStatisticsStructuredAccess,
+  recordWeightAtCall,
+} from './structuredWeightTelemetry';
 import { assembleAdjustmentEquations } from './adjustmentEquationAssembly';
 import { getObservationSetId } from './observationMetadata';
 import type { AdjustmentStatisticsContext } from './adjustStatisticsTypes';
@@ -147,6 +165,32 @@ export const computeStandardizedResidualStatistics = (
       // it, stay on the legacy dense path.
       const omitDeadPreanalysisP =
         ctx.preanalysisMode === true && ctx.applyTsCorrelationToWeightWriter != null;
+      // Phase 16C structured statistics: the statistics stage consumes
+      // finalized structured weights directly (no dense P) on the 16B
+      // cohort. Admission reuses the 16B oracle gates verbatim (m>=128,
+      // density UB, non-Huber, solve kill switch); the statistics kill
+      // switch forces dense. Preanalysis keeps its existing dead-P path.
+      // An exact post-assembly density gate below keeps this fail-closed.
+      const statsStructuredDensityUB = estimateStructuredWeightDensityUB({
+        equationCount: numObsEquations,
+        observations: activeObservations,
+        tsCorrelationEnabled: ctx.tsCorrelationEnabled,
+        tsCorrelationRho: ctx.tsCorrelationRho,
+        tsCorrelationScope: ctx.tsCorrelationScope,
+        is2D: ctx.is2D,
+        constraintCount: constraints.length,
+      });
+      const statsStructuredCandidate =
+        ctx.preanalysisMode !== true &&
+        ctx.structuredStatisticsWeights !== false &&
+        ctx.applyTsCorrelationToWeightWriter != null &&
+        shouldAssembleStructuredWeights({
+          equationCount: numObsEquations,
+          densityUB: statsStructuredDensityUB,
+          robustMode: ctx.robustMode,
+          structuredWeightTransfer: ctx.structuredWeightTransfer,
+        });
+      const omitStatsDenseP = omitDeadPreanalysisP || statsStructuredCandidate;
       const assembleStatsEquations = (sparse: boolean) => assembleAdjustmentEquations(
         {
           stations: ctx.stations,
@@ -170,7 +214,7 @@ export const computeStandardizedResidualStatistics = (
           curvatureRefractionAngle: ctx.curvatureRefractionAngle.bind(this),
           applyTsCorrelationToWeightMatrix: (weightMatrix, weightRowInfo) =>
             ctx.applyTsCorrelationToWeightMatrix(weightMatrix, weightRowInfo, true),
-          applyTsCorrelationToWeightWriter: sparse || omitDeadPreanalysisP
+          applyTsCorrelationToWeightWriter: sparse || omitStatsDenseP
             ? (weights, weightRowInfo) =>
               ctx.applyTsCorrelationToWeightWriter?.(weights, weightRowInfo, true)
             : undefined,
@@ -180,12 +224,12 @@ export const computeStandardizedResidualStatistics = (
         numObsEquations,
         numParams,
         undefined,
-        sparse || omitDeadPreanalysisP
+        sparse || omitStatsDenseP
           ? { includeDenseA: false, weightRepresentation: 'sparse', omitDenseP: true }
           : { includeDenseA: false },
       );
       const initialAssemblyStartedAt = profiler ? detailedNow() : 0;
-      let assembled = assembleStatsEquations(sparseStatsSupported);
+      let assembled = assembleStatsEquations(sparseStatsSupported || statsStructuredCandidate);
       if (profiler) statisticsEquationAssemblyMs += detailedNow() - initialAssemblyStartedAt;
       let useSparseRowProductWeights = sparseStatsSupported;
 
@@ -263,13 +307,87 @@ export const computeStandardizedResidualStatistics = (
         });
       }
 
+      // Phase 16C structured-statistics resolution: with an admitted
+      // candidate the assembly above omitted the dense P, so every
+      // statistics weight read below routes through one WeightAccess over
+      // the finalized structured weights. Fail closed: anything missing,
+      // mismatched, over-dense, or malformed materializes one dense P and
+      // runs the legacy path (no partial structured statistics).
+      // The read adapter below also serves non-admitted sparse assemblies
+      // (replacing the legacy Map lookup with identical values).
+      let structuredReadAccess: WeightAccess | null = null;
+      let structuredStatsAccess: WeightAccess | null = null;
+      if (!ctx.preanalysisMode) {
+        const statsStructuredForRead = assembled.structuredWeights;
+        if (
+          statsStructuredForRead != null &&
+          statsStructuredForRead.size === numObsEquations
+        ) {
+          structuredReadAccess = structuredWeightAccess(
+            statsStructuredForRead,
+            couplingGroupRowsOf(
+              assembled.rowInfo.map((info) =>
+                info ? { obsId: info.obs.id, component: info.component } : null,
+              ),
+              (obsId) => {
+                const obs = statsObsById.get(obsId);
+                return obs ? (ctx.tsCorrelationGroup(obs)?.key ?? null) : null;
+              },
+            ),
+          );
+        }
+      }
+      if (statsStructuredCandidate && !ctx.preanalysisMode) {
+        const fallbackToDenseStats = (reason: string): void => {
+          recordStatisticsDenseFallback(reason);
+          structuredStatsAccess = null;
+          structuredReadAccess = null;
+          // A materialized dense P satisfies the legacy readers below, so
+          // the sparse row-product retry is no longer needed either way.
+          useSparseRowProductWeights = false;
+          try {
+            const structured = assembled.structuredWeights;
+            if (structured == null) throw new Error('missing structured weights');
+            assembled.P = materializeDenseWeightMatrix(structured);
+          } catch {
+            // Materialization itself failed: reassemble the legacy dense
+            // system (non-Huber admission makes robust reweight a no-op).
+            const fallbackAssemblyStartedAt = profiler ? detailedNow() : 0;
+            assembled = assembleStatsEquations(false);
+            if (profiler) {
+              statisticsEquationAssemblyMs += detailedNow() - fallbackAssemblyStartedAt;
+            }
+            useSparseRowProductWeights = false;
+          }
+        };
+        const statsStructured = assembled.structuredWeights;
+        if (statsStructured == null) {
+          fallbackToDenseStats('missing-representation');
+        } else if (statsStructured.size !== numObsEquations) {
+          fallbackToDenseStats('row-mismatch');
+        } else if (
+          !structuredWeightTransferEligible(
+            numObsEquations,
+            structuredWeightDensity(statsStructured),
+          )
+        ) {
+          fallbackToDenseStats('density-post-gate');
+        } else if (structuredReadAccess == null) {
+          fallbackToDenseStats('malformed-weights');
+        } else {
+          structuredStatsAccess = structuredReadAccess;
+        }
+      }
+      if (structuredStatsAccess != null) recordStatisticsStructuredAccess();
+      else if (assembled.P?.length) recordStatisticsDensePAllocation(numObsEquations);
+
       if (!ctx.preanalysisMode) {
         try {
           const rowProductInitialStartedAt = profiler ? detailedNow() : 0;
           let rowProducts = tryQueryStandardizedResidualRowProducts(ctx, {
             sparseRows: assembled.sparseRows,
             weights: assembled.P,
-            structuredWeights: useSparseRowProductWeights
+            structuredWeights: useSparseRowProductWeights || structuredStatsAccess != null
               ? assembled.structuredWeights
               : undefined,
             rowInfo: assembled.rowInfo,
@@ -279,7 +397,7 @@ export const computeStandardizedResidualStatistics = (
             parameterCount: numParams,
           });
           if (profiler) rowProductConstructionMs += detailedNow() - rowProductInitialStartedAt;
-          if (!rowProducts && useSparseRowProductWeights) {
+          if (!rowProducts && useSparseRowProductWeights && structuredStatsAccess == null) {
             const retryAssemblyStartedAt = profiler ? detailedNow() : 0;
             assembled = assembleStatsEquations(false);
             if (profiler) {
@@ -309,34 +427,16 @@ export const computeStandardizedResidualStatistics = (
             if (profiler) rowProductConstructionMs += detailedNow() - rowProductRetryStartedAt;
           }
           const { L, rowInfo, sparseRows } = assembled;
-          // Weight-column reader for the sensitivity sum: dense P when
-          // present, else the structured sparse weights (symmetric packed
-          // upper triangle). Missing entries are exactly 0 off-diagonal.
-          const statsStructuredWeights: StructuredSymmetricWeights | undefined =
-            assembled.structuredWeights;
-          const statsWeightOffDiag = new Map<string, number>();
-          if (statsStructuredWeights) {
-            for (let k = 0; k < statsStructuredWeights.offValues.length; k += 1) {
-              statsWeightOffDiag.set(
-                `${statsStructuredWeights.offRows[k]}:${statsStructuredWeights.offColumns[k]}`,
-                statsStructuredWeights.offValues[k] as number,
-              );
-            }
-          }
+          // Weight-column reader for the sensitivity sum: one WeightAccess
+          // (structured when admitted, dense adapter otherwise) so every
+          // consumer reads exactly denseP[row][col] (0 for absent).
           const weightAt = (coupledRow: number, row: number): number => {
+            recordWeightAtCall();
+            if (structuredReadAccess) return structuredReadAccess.weight(coupledRow, row);
             const dense = assembled.P;
             if (dense?.length) {
               const value = dense[coupledRow]?.[row];
               return typeof value === 'number' ? value : Number.NaN;
-            }
-            if (statsStructuredWeights) {
-              if (coupledRow === row) {
-                const diagValue = statsStructuredWeights.diagonal[coupledRow];
-                return typeof diagValue === 'number' ? diagValue : Number.NaN;
-              }
-              const lo = Math.min(coupledRow, row);
-              const hi = Math.max(coupledRow, row);
-              return statsWeightOffDiag.get(`${lo}:${hi}`) ?? 0;
             }
             return Number.NaN;
           };
@@ -355,12 +455,10 @@ export const computeStandardizedResidualStatistics = (
             }
           }
           if (!rowProducts) {
-            const denseP = assembled.P;
-            if (!denseP?.length) {
-              throw new Error(
-                'Dense fallback statistics require dense weights; disable the experimental sparse row-product path.',
-              );
-            }
+            // Phase 16C: admitted statistics accumulates N from structured
+            // weights (bit-identical twin); otherwise the legacy dense path.
+            const statsStructuredForAccumulate =
+              structuredStatsAccess != null ? assembled.structuredWeights : undefined;
             const reuseDecision = decideStatisticsQxxReuse({
               forceLegacy: ctx.forceLegacyStatisticsQxx === true,
               converged: ctx.solveConverged === true,
@@ -403,12 +501,29 @@ export const computeStandardizedResidualStatistics = (
               if (profiler) rowProductConstructionMs += detailedNow() - rowProductDenseStartedAt;
             } else {
             const statsAccumulateStartedAt = profiler ? detailedNow() : 0;
-            const { normal: N } = accumulateNormalEquationsFromSparseRows(
-              sparseRows,
-              zeros(numObsEquations, 1),
-              denseP,
-              numParams,
-            );
+            let statsNormal: number[][];
+            if (statsStructuredForAccumulate != null) {
+              statsNormal = accumulateNormalFromStructuredWeights(
+                sparseRows,
+                zeros(numObsEquations, 1),
+                statsStructuredForAccumulate,
+                numParams,
+              ).normal;
+            } else {
+              const denseP = assembled.P;
+              if (!denseP?.length) {
+                throw new Error(
+                  'Dense fallback statistics require dense weights; disable the experimental sparse row-product path.',
+                );
+              }
+              statsNormal = accumulateNormalEquationsFromSparseRows(
+                sparseRows,
+                zeros(numObsEquations, 1),
+                denseP,
+                numParams,
+              ).normal;
+            }
+            const N = statsNormal;
             if (profiler) {
               statisticsNormalAccumulationMs += detailedNow() - statsAccumulateStartedAt;
             }
@@ -669,10 +784,16 @@ export const computeStandardizedResidualStatistics = (
                 groupRows: groups.get(eq.row) ?? [eq.row],
               };
             });
+            const externalWeightAccess = structuredReadAccess;
             return computeExternalInfluences({
               is2D: ctx.is2D,
               B,
               P: assembled.P,
+              // Phase 16C: admitted statistics propagates through the
+              // structured adapter (all coupled rows, never P_ii-only).
+              weightAt: externalWeightAccess != null
+                ? externalWeightAccess.weight.bind(externalWeightAccess)
+                : undefined,
               equationCount: numObsEquations,
               paramColumns,
               rows: extRows,

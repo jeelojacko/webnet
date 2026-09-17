@@ -130,6 +130,14 @@ export interface EngineOptions {
    * Threaded through AdjustmentRuntime; never persisted or exposed in UI.
    */
   structuredWeightTransfer?: boolean;
+  /**
+   * Phase 16C test-only switch: false forces the legacy dense statistics
+   * weight path even when structured statistics weights are available.
+   * Undefined (default) allows structured statistics with fail-closed
+   * dense fallback. Threaded through AdjustmentRuntime; never persisted
+   * or exposed in UI.
+   */
+  structuredStatisticsWeights?: boolean;
 }
 
 export const cloneParsedResultValue = <T>(value: T): T => {

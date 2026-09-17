@@ -160,6 +160,18 @@ export type AdjustmentStatisticsContext = {
   sparseRowProductsSolver?: SparseRowProductsSolver;
   /** Test-only sparse route diagnostics; undefined disables counting. */
   experimentalSparseDiagnostics?: ExperimentalSparseRouteDiagnostics;
+  /**
+   * Phase 16B test-only switch; false forces the legacy dense solve
+   * weight path. Read by statistics so a dense solve route stays dense
+   * in statistics (no second competing policy).
+   */
+  structuredWeightTransfer?: boolean;
+  /**
+   * Phase 16C test-only switch; false forces legacy dense statistics
+   * weights. Undefined (default) allows structured statistics with
+   * fail-closed dense fallback.
+   */
+  structuredStatisticsWeights?: boolean;
   isObservationActive: (_obs: Observation) => boolean;
   measuredAngleCorrection: (_at: StationId, _from: StationId, _to: StationId) => number;
   modeledAzimuth: (_rawAz: number, _atStationId?: StationId, _applyConvergence?: boolean) => number;
