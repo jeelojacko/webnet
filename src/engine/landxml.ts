@@ -1,4 +1,9 @@
 import { getRelativePrecisionRows, getStationPrecision } from './resultPrecision';
+import { getCrsDefinition } from './crsCatalog';
+import {
+  assessCoordinateReadiness,
+  resolveExportCoordinateContext,
+} from './exportCoordinateContext';
 import type {
   AdjustmentResult,
   Observation,
@@ -22,6 +27,11 @@ export interface LandXmlExportSettings {
   applicationName?: string;
   applicationVersion?: string;
   generatedAt?: Date;
+  /** Project coordinate context (derives CRS honesty; values stay exact). */
+  coord?: {
+    coordSystemMode?: string;
+    crsId?: string;
+  };
 }
 
 type ExportPoint = {
@@ -130,6 +140,21 @@ export const buildLandXmlText = (
   const unitScale = settings.units === 'ft' ? FT_PER_M : 1;
   const showLostStations = settings.showLostStations ?? true;
   const generatedAt = settings.generatedAt ?? new Date();
+  // INVALID CRS blocks this transform-dependent export (fail-closed, never
+  // substitute). PROJECT_DEFAULT / LOCAL / UNKNOWN omit any CRS claim;
+  // only EXPLICIT earns a <CoordinateSystem> from registry metadata.
+  const coordContext = resolveExportCoordinateContext({
+    coordSystemMode: settings.coord?.coordSystemMode,
+    crsId: settings.coord?.crsId,
+    units: settings.units,
+  });
+  const coordReadiness = assessCoordinateReadiness({
+    context: coordContext,
+    formatClass: 'landxml',
+  });
+  if (!coordReadiness.allowed) {
+    throw new Error(`${coordReadiness.code}: ${coordReadiness.message}`);
+  }
   const projectName = settings.projectName ?? 'WebNet Adjustment Export';
   const applicationName = settings.applicationName ?? 'WebNet';
   const applicationVersion = settings.applicationVersion ?? '0.0.0';
@@ -272,6 +297,17 @@ export const buildLandXmlText = (
     )}" desc="Least-squares adjustment export" />`,
     `  <Project name="${xmlEscape(projectName)}" desc="${xmlEscape(projectDesc)}" />`,
   ];
+
+  // <CoordinateSystem> ONLY for EXPLICIT provenance, from registry metadata
+  // (epsgCode when present, else id+label). Never invent WKT/datum; values
+  // below stay byte-exact regardless of this claim.
+  if (coordContext.crsProvenance === 'EXPLICIT' && coordContext.crsId) {
+    const def = getCrsDefinition(coordContext.crsId);
+    const epsg = def?.epsgCode ? ` epsgCode="${xmlEscape(def.epsgCode)}"` : '';
+    lines.push(
+      `  <CoordinateSystem name="${xmlEscape(coordContext.crsId)}" desc="${xmlEscape(def?.label ?? coordContext.crsName)}"${epsg} />`,
+    );
+  }
 
   if (points.length > 0) {
     lines.push('  <CgPoints>');

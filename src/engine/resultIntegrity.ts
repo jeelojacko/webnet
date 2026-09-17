@@ -316,7 +316,10 @@ export interface ExportIntegrityMetadata {
   projectName?: string;
   units?: string;
   crsId?: string;
-  crsProvenance?: 'EXPLICIT' | 'INFERRED' | 'UNKNOWN';
+  // Phase 17D derivations (EXPLICIT | PROJECT_DEFAULT | LOCAL |
+  // UNKNOWN_LEGACY | INVALID) map onto this legacy union via
+  // integrityProvenanceForContext; INFERRED/UNKNOWN kept for compatibility.
+  crsProvenance?: 'EXPLICIT' | 'PROJECT_DEFAULT' | 'LOCAL' | 'UNKNOWN_LEGACY' | 'INVALID' | 'INFERRED' | 'UNKNOWN';
   exclusionCount?: number;
   sourceFileCount?: number;
 }

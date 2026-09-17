@@ -1,4 +1,8 @@
 import { RAD_TO_DEG } from './angles';
+import {
+  describeExportCoordinateContext,
+  resolveExportCoordinateContext,
+} from './exportCoordinateContext';
 import { appendSolveProfileDiagnostics } from './runResultsTextDiagnostics';
 import type { RunResultsTextContext } from './runResultsTextContext';
 import type { AdjustmentResult, CustomLevelLoopTolerancePreset } from '../types';
@@ -28,6 +32,15 @@ export const appendRunResultsHeaderAndStatus = ({
     lines.push(`# WebNet Adjustment Results`);
     lines.push(`# Generated: ${now.toLocaleString()}`);
     lines.push(`# Linear units: ${linearUnit}`);
+    // Authoritative coordinate truth for the adjusted values below: CRS /
+    // LOCAL + units + grid-vs-ground (exported grid coords are GRID, never
+    // ground; Z stays solve-frame h). 17B stale/failed lines are untouched.
+    const coordContext = resolveExportCoordinateContext({
+      coordSystemMode: res.parseState?.coordSystemMode,
+      crsId: res.parseState?.crsId,
+      units: linearUnit === 'ft' ? 'ft' : 'm',
+    });
+    describeExportCoordinateContext(coordContext).forEach((line) => lines.push(`# ${line}`));
     lines.push(
       `# Reduction: profile=${runDiag.solveProfile}, runMode=${runModeProfileText}, autoSideshot=${runDiag.autoSideshotEnabled ? 'ON' : 'OFF'}, autoAdjust=${runDiag.autoAdjustEnabled ? 'ON' : 'OFF'}(|t|>=${runDiag.autoAdjustStdResThreshold.toFixed(2)},cycles=${runDiag.autoAdjustMaxCycles},maxRm=${runDiag.autoAdjustMaxRemovalsPerCycle}), dirSets=${runDiag.directionSetMode}, mapMode=${runDiag.mapMode}, mapScale=${runDiag.mapScaleFactor.toFixed(8)}, crsScale=${runDiag.crsGridScaleEnabled ? `ON(${runDiag.crsGridScaleFactor.toFixed(8)})` : 'OFF'}, crsConv=${runDiag.crsConvergenceEnabled ? `ON(${(runDiag.crsConvergenceAngleRad * RAD_TO_DEG).toFixed(6)}deg)` : 'OFF'}, geoid=${runDiag.geoidModelEnabled ? `ON(${runDiag.geoidModelId},${runDiag.geoidInterpolation.toUpperCase()})` : 'OFF'}, geoidH=${runDiag.geoidHeightConversionEnabled ? `ON(${runDiag.geoidOutputHeightDatum.toUpperCase()},conv=${runDiag.geoidConvertedStationCount},skip=${runDiag.geoidSkippedStationCount})` : 'OFF'}, gpsLoop=${runDiag.gpsLoopCheckEnabled ? 'ON' : 'OFF'}, levelLoopTol=${runDiag.levelLoopToleranceBaseMm.toFixed(2)}mm+${runDiag.levelLoopTolerancePerSqrtKmMm.toFixed(2)}mm*sqrt(km), gpsAddHiHt=${runDiag.gpsAddHiHtEnabled ? `ON(HI=${(runDiag.gpsAddHiHtHiM * unitScale).toFixed(4)}${linearUnit},HT=${(runDiag.gpsAddHiHtHtM * unitScale).toFixed(4)}${linearUnit})` : 'OFF'}, curvRef=${runDiag.applyCurvatureRefraction ? 'ON' : 'OFF'}, k=${runDiag.refractionCoefficient.toFixed(3)}, vRed=${runDiag.verticalReduction}, qfixLin=${(runDiag.qFixLinearSigmaM * unitScale).toExponential(6)}${linearUnit}, qfixAng=${runDiag.qFixAngularSigmaSec.toExponential(6)}sec, prism=${runDiag.prismEnabled ? `ON(${runDiag.prismOffset.toFixed(4)}m,${runDiag.prismScope})` : 'OFF'}, rotation=${(runDiag.rotationAngleRad * RAD_TO_DEG).toFixed(6)}deg, tsCorr=${runDiag.tsCorrelationEnabled ? 'ON' : 'OFF'}(${runDiag.tsCorrelationScope},rho=${runDiag.tsCorrelationRho.toFixed(3)}), robust=${runDiag.robustMode.toUpperCase()}(k=${runDiag.robustK.toFixed(2)})`,
     );

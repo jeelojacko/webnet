@@ -120,6 +120,8 @@ export const buildExportArtifacts = (
         units,
         precisionReportingMode: settings.precisionReportingMode,
         includeLostStations: adjustedPointsExportSettings.includeLostStations,
+        coordSystemMode: parseSettings.coordSystemMode,
+        crsId: parseSettings.crsId,
       }),
     });
   }

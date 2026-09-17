@@ -1,6 +1,7 @@
 import React from 'react';
 import type { ProjectOptionsModalContext } from '../../../../hooks/useProjectOptionsModalController';
 import type { AdjustedPointsExportSettings, AdjustedPointsPresetId } from '../../../../types';
+import { ExportCoordinateSummary } from './ExportCoordinateSummary';
 
 type AdjustedPointsExportCardProps = {
   context: ProjectOptionsModalContext;
@@ -188,6 +189,7 @@ const AdjustedPointsExportCard: React.FC<AdjustedPointsExportCardProps> = ({
           <div className="rounded border border-slate-500 bg-slate-700/30 px-2 py-2 text-xs text-slate-200">
             Use the main export selector for adjusted-points output.
           </div>
+          <ExportCoordinateSummary context={context} exportFormat="points" />
         </div>
       </div>
     </SettingsCard>

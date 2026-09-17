@@ -84,6 +84,8 @@ export interface AppendIndustryListingTopSectionsArgs {
   coordMode: string;
   crsId: string;
   crsLabel: string;
+  crsDisplayId?: string;
+  crsDisplayLabel?: string;
   averageGeoidHeight: number;
   gpsObservationRows: Observation[];
   gpsVectorFactorSummary: string;

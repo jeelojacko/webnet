@@ -1,6 +1,11 @@
 import { useCallback, type Dispatch, type SetStateAction } from 'react';
 import { validateAdjustedPointsTransform } from '../engine/adjustedPointsExport';
 import {
+  assessCoordinateReadiness,
+  classifyExportFormatForCoordGate,
+  resolveExportCoordinateContext,
+} from '../engine/exportCoordinateContext';
+import {
   decideExportVerdict,
   statusLineForAssessment,
   type ResultIntegrityAssessment,
@@ -71,6 +76,9 @@ const trySaveTextFile = async (params: {
 const transformBlockedTitleByFormat: Partial<Record<ProjectExportFormat, string>> = {
   points: 'Adjusted Points Export Blocked',
   'points-csv': 'Adjusted Points CSV Export Blocked',
+  geojson: 'GeoJSON Export Blocked',
+  landxml: 'LandXML Export Blocked',
+  'industry-style': 'Industry Listing Export Blocked',
   'bundle-qa-standard': 'QA Bundle Export Blocked',
   'bundle-qa-standard-with-landxml': 'QA Bundle Export Blocked',
 };
@@ -151,6 +159,31 @@ export const useExportWorkflow = ({
         verdict === 'ALLOW_DIAGNOSTIC_WITH_STATUS'
           ? statusLineForAssessment(integrity)
           : null;
+      // Step 2 of the export gate (17B integrity already passed above, so
+      // STALE stays primary over CRS): coordinate-context validity, then
+      // format requirements, then serialize. The diagnostic text path
+      // (`webnet`) stays reviewable; its header block carries CRS truth.
+      if (format !== 'webnet') {
+        const coordContext = resolveExportCoordinateContext({
+          coordSystemMode: parseSettings.coordSystemMode,
+          crsId: parseSettings.crsId,
+          units,
+        });
+        const coordReadiness = assessCoordinateReadiness({
+          context: coordContext,
+          formatClass: classifyExportFormatForCoordGate(format),
+        });
+        if (!coordReadiness.allowed) {
+          setImportNotice({
+            title: transformBlockedTitleByFormat[format] ?? 'Export Blocked',
+            detailLines: [
+              `${coordReadiness.code}: ${coordReadiness.message}`,
+              'Open Project Options -> Coordinate System to set an explicit project CRS.',
+            ],
+          });
+          return;
+        }
+      }
       const requiresAdjustedPointsValidation =
         format === 'points' ||
         format === 'points-csv' ||

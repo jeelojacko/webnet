@@ -120,6 +120,10 @@ export const buildAdjustedPointsExportText = (params: {
   const noteLines = [
     '# TRANSFORM NOTES',
     '# Transforms enabled (post-adjustment export only)',
+    '# Column semantics: N/E are project grid northing/easting (metres internally;',
+    '# transformed section repeats them after SCALE->ROTATE->TRANSLATE); LAT/LON',
+    '# are solve-frame geodetic degrees, NOT transformed. Column ids are kept',
+    '# stable for parser compatibility; see docs on export coordinate context.',
     '# Active order: SCALE -> ROTATE -> TRANSLATE',
     `# Reference point: ${transformPreview.referenceStationId}`,
     `# Scope: ${scopeLabel}`,

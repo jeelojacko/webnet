@@ -4,6 +4,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import {
   DEFAULT_ADJUSTED_POINTS_EXPORT_SETTINGS,
+  baseParseSettings,
   cloneAdjustedPointsExportSettings,
   renderExportHarness,
 } from './exportWorkflowStateTestSupport';
@@ -179,6 +180,12 @@ describe('useExportWorkflow save-picker exports', () => {
 
     const harness = renderExportHarness({
       exportFormat: 'geojson',
+      // GeoJSON is strictly geographic: a grid project CRS is required.
+      parseSettings: {
+        ...baseParseSettings,
+        coordSystemMode: 'grid',
+        crsId: 'CA_NAD83_CSRS_UTM_20N',
+      },
     });
 
     await harness.render();
@@ -196,6 +203,30 @@ describe('useExportWorkflow save-picker exports', () => {
       }),
     );
     expect(close).toHaveBeenCalledTimes(1);
+
+    await harness.cleanup();
+    (window as Window & { showSaveFilePicker?: unknown }).showSaveFilePicker = previousPicker;
+  });
+
+  it('blocks GeoJSON export for a local project with an actionable CRS code', async () => {
+    const previousPicker = (window as Window & { showSaveFilePicker?: unknown }).showSaveFilePicker;
+    const showSaveFilePicker = vi.fn();
+    (window as Window & { showSaveFilePicker?: unknown }).showSaveFilePicker = showSaveFilePicker;
+
+    const harness = renderExportHarness({
+      exportFormat: 'geojson',
+    });
+
+    await harness.render();
+    await harness.clickExport();
+
+    expect(harness.container.querySelector('#notice-title')?.textContent).toBe(
+      'GeoJSON Export Blocked',
+    );
+    expect(harness.container.querySelector('#notice-detail')?.textContent).toContain(
+      'FORMAT_REQUIRES_GEOGRAPHIC',
+    );
+    expect(showSaveFilePicker).not.toHaveBeenCalled();
 
     await harness.cleanup();
     (window as Window & { showSaveFilePicker?: unknown }).showSaveFilePicker = previousPicker;
