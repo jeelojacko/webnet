@@ -113,6 +113,53 @@ export interface CadStyle {
 }
 
 export type CadPointStyleId = string;
+export type CadPointLabelStyleId = string;
+
+export type CadPointLabelComponent = 'pointNumber' | 'description' | 'elevation' | 'featureCode';
+
+/**
+ * Phase 18D: point label content/layout ONLY (which components, order,
+ * separator, elevation decimals, placement offset, visibility). Color/font
+ * stay with the label's own layer/style; no annotation scale yet (future).
+ */
+export interface CadPointLabelStyle {
+  id: CadPointLabelStyleId;
+  name: string;
+  components: {
+    pointNumber?: boolean;
+    description?: boolean;
+    elevation?: boolean;
+    featureCode?: boolean;
+    prefix?: string;
+    suffix?: string;
+  };
+  componentOrder: CadPointLabelComponent[];
+  separator: string;
+  /** Elevation decimals, 0-4. Drawing units; never the global precision. */
+  elevationDecimals: number;
+  textStyleId: CadTextStyleId;
+  /** Base placement offset in drawing units (point + offset). */
+  offsetX: number;
+  offsetY: number;
+  rotationDeg?: number;
+  /** False = label not drawn (point/layer visibility unaffected). */
+  visible: boolean;
+  description?: string;
+}
+
+/**
+ * Phase 18D: associative binding on a text label. x/y/text remain compat
+ * snapshots; the binding is the associative source of truth. offsetOverride
+ * WINS over the style offset (not additive); the label keeps its own layer
+ * (no visibility coupling to the point).
+ */
+export interface CadPointLabelBinding {
+  pointEntityId: CadEntityId;
+  labelStyleId: CadPointLabelStyleId;
+  offsetOverride?: { dx: number; dy: number };
+  rotationOverrideDeg?: number;
+  content: { mode: 'derived' } | { mode: 'manual'; text: string };
+}
 
 /**
  * Phase 18D: marker presentation ONLY (symbol + scale + rotation + visibility).
@@ -240,6 +287,8 @@ export interface CadTextEntity extends CadBaseEntity {
   y: number;
   text: string;
   anchorEntityId?: CadEntityId;
+  /** Phase 18D associative label binding. Absent = free (legacy baked) text. */
+  pointLabel?: CadPointLabelBinding;
 }
 
 export interface CadErrorEllipseEntity extends CadBaseEntity {
@@ -284,6 +333,9 @@ export interface CadProject {
   /** Phase 18D: drawing-owned point styles (marker presentation). Optional so
    * legacy files stay schema-compatible; load paths backfill defaults. */
   pointStyles?: CadPointStyle[];
+  /** Phase 18D: drawing-owned point label styles (content/layout). Optional
+   * so legacy files stay schema-compatible; load paths backfill defaults. */
+  labelStyles?: CadPointLabelStyle[];
   entities: CadEntity[];
   cogoComputations: CadCogoComputation[];
   bounds: CadBounds | null;

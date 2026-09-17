@@ -11,6 +11,7 @@ import type {
 } from './cadTypes';
 import { DEFAULT_CAD_LAYERS, backfillCadLayerList, backfillCadProjectStandards } from './cadLayers';
 import { DEFAULT_CAD_STYLE_LIBRARY } from './cadStyles';
+import { backfillCadPointLabelStyles, cloneCadPointLabelStyles } from './cadPointLabelStyles';
 import { backfillCadPointStyles, cloneCadPointStyles, migrateLegacySurveyPointStyles } from './cadPointStyles';
 import type { UnitsMode } from '../../types';
 
@@ -51,6 +52,7 @@ export const createBlankCadProject = ({
     styles: DEFAULT_CAD_STYLE_LIBRARY.styles.map((entry) => ({ ...entry })),
   },
   pointStyles: backfillCadPointStyles(undefined),
+  labelStyles: backfillCadPointLabelStyles(undefined),
   entities: [],
   cogoComputations: [],
   bounds: null,
@@ -127,7 +129,10 @@ export const migrateV1ToV2 = (document: CadDrawingDocument): CadDrawingDocument 
   return {
     ...migrated,
     schemaVersion: 2,
-    project: migratedProject,
+    project: {
+      ...migratedProject,
+      labelStyles: cloneCadPointLabelStyles(backfillCadPointLabelStyles(migratedProject.labelStyles)),
+    },
     draft:
       document.draft != null
         ? cloneDraftDocument(document.draft)
@@ -166,6 +171,7 @@ export const migrateSurveyCadStateToDrawing = ({
   const project = backfillCadProjectStandards({
     ...sanitized,
     pointStyles: cloneCadPointStyles(backfillCadPointStyles(sanitized.pointStyles)),
+    labelStyles: cloneCadPointLabelStyles(backfillCadPointLabelStyles(sanitized.labelStyles)),
   });
   return {
     kind: 'webnet-cad-drawing',
@@ -210,6 +216,7 @@ const sanitizeCadDrawingDocument = (value: unknown): CadDrawingDocument | undefi
     const project = backfillCadProjectStandards({
       ...migrated,
       pointStyles: cloneCadPointStyles(backfillCadPointStyles(migrated.pointStyles)),
+      labelStyles: cloneCadPointLabelStyles(backfillCadPointLabelStyles(migrated.labelStyles)),
     });
     const draft = cloned.draft
       ? { ...cloned.draft, layers: backfillCadLayerList(cloned.draft.layers) }

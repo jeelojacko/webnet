@@ -19,6 +19,7 @@ import type {
 import { DEFAULT_CAD_LAYERS } from './cadLayers';
 import { buildCadBounds } from './cadProjectState';
 import { DEFAULT_CAD_STYLE_LIBRARY } from './cadStyles';
+import { createDefaultCadPointLabelStyles } from './cadPointLabelStyles';
 import { basePointStyleIdForClass, createDefaultCadPointStyles } from './cadPointStyles';
 import { stampAdjustmentDependency } from './cadAdjustmentDependency';
 import type { ResultDependencyIdentity } from '../resultIntegrity';
@@ -206,6 +207,7 @@ const buildCadProjectFromParsed = (
     },
     entities,
     pointStyles: createDefaultCadPointStyles(),
+    labelStyles: createDefaultCadPointLabelStyles(),
     cogoComputations: [],
     bounds: buildCadBounds(entities),
     currentLayerId: 'general',

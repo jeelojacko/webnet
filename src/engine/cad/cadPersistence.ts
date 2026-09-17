@@ -10,6 +10,7 @@ import type {
   SurveyCadPersistedState,
 } from './cadTypes';
 import { backfillCadProjectStandards } from './cadLayers';
+import { backfillCadPointLabelStyles, cloneCadPointLabelStyles } from './cadPointLabelStyles';
 import { backfillCadPointStyles, cloneCadPointStyles, migrateLegacySurveyPointStyles } from './cadPointStyles';
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
@@ -66,13 +67,29 @@ export const cloneCadEntity = (entity: CadEntity): CadEntity => {
         metadata: cloneMetadata(entity.metadata),
       };
     case 'line':
-    case 'text':
     case 'error-ellipse':
     case 'arc':
       return {
         ...entity,
         appearance: cloneAppearance(entity.appearance),
         metadata: cloneMetadata(entity.metadata),
+      };
+    case 'text':
+      return {
+        ...entity,
+        appearance: cloneAppearance(entity.appearance),
+        metadata: cloneMetadata(entity.metadata),
+        ...(entity.pointLabel != null
+          ? {
+              pointLabel: {
+                ...entity.pointLabel,
+                ...(entity.pointLabel.offsetOverride != null
+                  ? { offsetOverride: { ...entity.pointLabel.offsetOverride } }
+                  : {}),
+                content: { ...entity.pointLabel.content },
+              },
+            }
+          : {}),
       };
     case 'alignment':
       return {
@@ -127,6 +144,7 @@ export const cloneCadProject = (project: CadProject): CadProject => ({
   layers: project.layers.map(cloneLayer),
   styleLibrary: cloneStyleLibrary(project.styleLibrary),
   ...(project.pointStyles != null ? { pointStyles: cloneCadPointStyles(project.pointStyles) } : {}),
+  ...(project.labelStyles != null ? { labelStyles: cloneCadPointLabelStyles(project.labelStyles) } : {}),
   entities: project.entities.map(cloneCadEntity),
   cogoComputations: (project.cogoComputations ?? []).map((computation) => cloneJsonValue(computation)),
   bounds: cloneBounds(project.bounds),
@@ -201,6 +219,7 @@ export const sanitizeSurveyCadPersistedState = (
       project: backfillCadProjectStandards({
         ...migrated,
         pointStyles: cloneCadPointStyles(backfillCadPointStyles(migrated.pointStyles)),
+        labelStyles: cloneCadPointLabelStyles(backfillCadPointLabelStyles(migrated.labelStyles)),
       }),
     };
   } catch {
