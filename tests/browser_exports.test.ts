@@ -183,7 +183,15 @@ describe('browser export serializers', () => {
   });
 
   it('builds GeoJSON with stable station and connection feature metadata', () => {
-    const text = buildNetworkGeoJsonText({ result, units: 'm', includeLostStations: true });
+    // Strict geographic output: grid project CRS inverts to [lon, lat] with
+    // no Z (exported heights are solve-frame h, not ellipsoidal).
+    const text = buildNetworkGeoJsonText({
+      result,
+      units: 'm',
+      includeLostStations: true,
+      coordSystemMode: 'grid',
+      crsId: 'CA_NAD83_CSRS_UTM_20N',
+    });
     const geoJson = JSON.parse(text) as {
       type: string;
       properties: Record<string, unknown>;
@@ -196,6 +204,10 @@ describe('browser export serializers', () => {
 
     expect(geoJson.type).toBe('FeatureCollection');
     expect(geoJson.properties.units).toBe('m');
+    expect(geoJson.properties.coordSpace).toBe('geographic-lon-lat-deg');
+    expect(geoJson.properties.crsId).toBe('CA_NAD83_CSRS_UTM_20N');
+    expect(geoJson.properties.crsProvenance).toBe('PROJECT_DEFAULT');
+    expect(geoJson.features[0]?.geometry.coordinates).toHaveLength(2);
     expect(geoJson.properties.stationCount).toBe(2);
     expect(geoJson.properties.connectionCount).toBe(1);
     expect(geoJson.features.map((feature) => feature.id)).toEqual([

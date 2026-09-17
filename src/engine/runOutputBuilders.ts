@@ -114,16 +114,22 @@ export const createRunOutputBuilders = ({
     );
   };
 
-  const buildLandXmlExportText = (solved: AdjustmentResult) =>
-    buildLandXmlText(solved, {
+  const buildLandXmlExportText = (solved: AdjustmentResult) => {
+    const landXmlRunDiag = runDiagnostics ?? buildRunDiagnostics(parseSettings, solved);
+    return buildLandXmlText(solved, {
       units: settings.units,
       precisionReportingMode: 'industry-standard',
-      solveProfile: (runDiagnostics ?? buildRunDiagnostics(parseSettings, solved)).solveProfile,
+      solveProfile: landXmlRunDiag.solveProfile,
       showLostStations: settings.listingShowLostStations,
       projectName: 'webnet-adjustment',
       applicationName: 'WebNet',
       applicationVersion: '0.0.0',
+      coord: {
+        coordSystemMode: parseSettings.coordSystemMode ?? landXmlRunDiag.coordSystemMode,
+        crsId: parseSettings.crsId ?? landXmlRunDiag.crsId,
+      },
     });
+  };
 
   return {
     buildIndustryListingText,

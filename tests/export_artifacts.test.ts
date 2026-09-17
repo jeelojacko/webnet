@@ -110,6 +110,13 @@ describe('buildExportArtifacts', () => {
     const geoJson = buildExportArtifacts({
       ...baseRequest,
       exportFormat: 'geojson',
+      // Strict GeoJSON is geographic: this local solve exports under an
+      // explicit grid CRS (projected solve-frame metres invert to lon/lat).
+      parseSettings: {
+        ...(baseRequest.parseSettings as ParseSettings),
+        coordSystemMode: 'grid',
+        crsId: 'CA_NAD83_CSRS_UTM_20N',
+      },
     });
     expect(geoJson.files).toEqual([
       expect.objectContaining({

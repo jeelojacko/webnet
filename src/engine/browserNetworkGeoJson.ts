@@ -5,11 +5,16 @@ import {
   formatNumber,
   FT_PER_M,
 } from './browserExportFormatting';
+import {
+  assessCoordinateReadiness,
+  resolveExportCoordinateContext,
+} from './exportCoordinateContext';
+import { inverseGrid } from './geodesyProjection';
 import type { AdjustmentResult, Observation, PrecisionReportingMode, Station } from '../types';
 
 type GeoJsonGeometry =
-  | { type: 'Point'; coordinates: [number, number, number] }
-  | { type: 'LineString'; coordinates: [[number, number, number], [number, number, number]] };
+  | { type: 'Point'; coordinates: [number, number] }
+  | { type: 'LineString'; coordinates: [[number, number], [number, number]] };
 
 interface GeoJsonFeature {
   type: 'Feature';
@@ -61,8 +66,64 @@ export const buildNetworkGeoJsonText = (params: {
   units: 'm' | 'ft';
   precisionReportingMode?: PrecisionReportingMode;
   includeLostStations?: boolean;
+  coordSystemMode?: string;
+  crsId?: string;
 }): string => {
-  const { result, units, precisionReportingMode = 'industry-standard', includeLostStations = true } = params;
+  const {
+    result,
+    units,
+    precisionReportingMode = 'industry-standard',
+    includeLostStations = true,
+    coordSystemMode,
+    crsId,
+  } = params;
+  // Strict geographic output: EXPLICIT or PROJECT_DEFAULT grid contexts
+  // only. LOCAL / UNKNOWN_LEGACY / INVALID block here (fail-closed); the
+  // export-workflow hook gates the same codes earlier for a nicer message.
+  const coordContext = resolveExportCoordinateContext({ coordSystemMode, crsId, units });
+  const readiness = assessCoordinateReadiness({ context: coordContext, formatClass: 'geographic' });
+  if (!readiness.allowed) {
+    throw new Error(`${readiness.code}: ${readiness.message}`);
+  }
+  // Positions are [lon, lat] in degrees with NO third coordinate: exported
+  // heights are solve-frame h, not proven ellipsoidal heights, so emitting
+  // them as GeoJSON Z would mislabel them. Never emit [E, N] metres here.
+  const toGeoPosition = (stationId: string, station: Station): [number, number] => {
+    if (
+      station.coordInputClass === 'geodetic' &&
+      Number.isFinite(station.latDeg) &&
+      Number.isFinite(station.lonDeg)
+    ) {
+      const latDeg = station.latDeg as number;
+      const lonDeg = station.lonDeg as number;
+      if (lonDeg >= -180 && lonDeg <= 180 && latDeg >= -90 && latDeg <= 90) {
+        return [lonDeg, latDeg];
+      }
+      throw new Error(
+        `CRS_TRANSFORM_UNAVAILABLE: station '${stationId}' geodetic position is out of range.`,
+      );
+    }
+    // Solve-frame E/N are canonical metres; inverseGrid consumes them as-is.
+    const inv = inverseGrid(station.x, station.y, coordContext.crsId ?? undefined);
+    if ('failureReason' in inv) {
+      throw new Error(
+        `CRS_TRANSFORM_UNAVAILABLE: inverse projection failed for station '${stationId}' (${inv.failureReason}). Datum operations are labels only; unsupported transforms block export.`,
+      );
+    }
+    if (
+      !Number.isFinite(inv.lonDeg) ||
+      !Number.isFinite(inv.latDeg) ||
+      inv.lonDeg < -180 ||
+      inv.lonDeg > 180 ||
+      inv.latDeg < -90 ||
+      inv.latDeg > 90
+    ) {
+      throw new Error(
+        `CRS_TRANSFORM_UNAVAILABLE: station '${stationId}' inverse position is out of range.`,
+      );
+    }
+    return [inv.lonDeg, inv.latDeg];
+  };
   const unitScale = units === 'ft' ? FT_PER_M : 1;
   const descriptions = result.parseState?.reconciledDescriptions ?? {};
   const visibleStationIds = Object.entries(result.stations)
@@ -78,7 +139,7 @@ export const buildNetworkGeoJsonText = (params: {
       id: `station:${stationId}`,
       geometry: {
         type: 'Point',
-        coordinates: [station.x * unitScale, station.y * unitScale, station.h * unitScale],
+        coordinates: toGeoPosition(stationId, station),
       },
       properties: {
         featureType: 'station',
@@ -166,8 +227,8 @@ export const buildNetworkGeoJsonText = (params: {
         geometry: {
           type: 'LineString',
           coordinates: [
-            [fromStation.x * unitScale, fromStation.y * unitScale, fromStation.h * unitScale],
-            [toStation.x * unitScale, toStation.y * unitScale, toStation.h * unitScale],
+            toGeoPosition(connection.from, fromStation),
+            toGeoPosition(connection.to, toStation),
           ],
         },
         properties: {
@@ -193,6 +254,9 @@ export const buildNetworkGeoJsonText = (params: {
       properties: {
         generatedAt: new Date().toISOString(),
         units,
+        coordSpace: 'geographic-lon-lat-deg',
+        crsId: coordContext.crsId,
+        crsProvenance: coordContext.crsProvenance,
         coordMode: result.parseState?.coordMode ?? '3D',
         preanalysis: result.preanalysisMode === true,
         stationCount: stationFeatures.length,

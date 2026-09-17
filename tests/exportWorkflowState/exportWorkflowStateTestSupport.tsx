@@ -140,6 +140,7 @@ export const renderExportHarness = (options?: {
   exportFormat?: ProjectExportFormat;
   adjustedPointsExportSettings?: AdjustedPointsExportSettings;
   currentComparisonText?: string;
+  parseSettings?: ParseSettings;
   buildArtifacts?: (_request: BuildExportArtifactsRequest) => Promise<BuildExportArtifactsResult>;
   integrity?: import('../../src/engine/resultIntegrity').ResultIntegrityAssessment;
 }) => {
@@ -241,7 +242,7 @@ export const renderExportHarness = (options?: {
       exportFormat: options?.exportFormat ?? 'points',
       units: 'm',
       settings: baseSettings,
-      parseSettings: baseParseSettings,
+      parseSettings: options?.parseSettings ?? baseParseSettings,
       runDiagnostics: baseRunDiagnostics,
       adjustedPointsExportSettings:
         options?.adjustedPointsExportSettings ??

@@ -255,15 +255,20 @@ describe('createRunResultsTextBuilder', () => {
     const normalizedPrefix = report
       .replace(/^# Generated: .*$/m, '# Generated: <normalized>')
       .split('\n')
-      .slice(0, 8);
+      .slice(0, 12);
 
     expect(normalizedPrefix[0]).toBe('# WebNet Adjustment Results');
     expect(normalizedPrefix[1]).toBe('# Generated: <normalized>');
     expect(normalizedPrefix[2]).toBe('# Linear units: m');
-    expect(normalizedPrefix[3]).toContain('profile=industry-parity');
-    expect(normalizedPrefix[3]).toContain('dirSets=raw');
-    expect(normalizedPrefix[4]).toContain('profileFallback=ON');
-    expect(normalizedPrefix[6]).toBe('--- Solve Profile Diagnostics ---');
+    // Phase 17D authoritative coordinate truth (local solve: no CRS claim).
+    expect(normalizedPrefix[3]).toBe('# Coordinate system: Local coordinates (local)');
+    expect(normalizedPrefix[4]).toBe('# Coordinate space: local project coordinates');
+    expect(normalizedPrefix[5]).toBe('# Units: metres');
+    expect(normalizedPrefix[6]).toBe('# Local project coordinates (no CRS, no grid).');
+    expect(normalizedPrefix[7]).toContain('profile=industry-parity');
+    expect(normalizedPrefix[7]).toContain('dirSets=raw');
+    expect(normalizedPrefix[8]).toContain('profileFallback=ON');
+    expect(normalizedPrefix[10]).toBe('--- Solve Profile Diagnostics ---');
   });
 });
 

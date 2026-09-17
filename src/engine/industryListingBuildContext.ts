@@ -1,4 +1,5 @@
 import { DEFAULT_QFIX_ANGULAR_SIGMA_SEC, DEFAULT_QFIX_LINEAR_SIGMA_M } from './defaults';
+import { getCrsDefinition } from './crsCatalog';
 import { buildResultStatisticalSummaryModel, buildResultTraceabilityModel } from './resultDerivedModels';
 import { buildIndustryListingStationContext, observationStationIds } from './industryListingStationContext';
 import { buildLevelingOnlyIndustryListingText } from './industryListingLeveling';
@@ -65,7 +66,18 @@ export const buildIndustryListingContext = ({
     runDiag.qFixAngularSigmaSec ??
     DEFAULT_QFIX_ANGULAR_SIGMA_SEC;
   const coordSystemMode = parseState?.coordSystemMode ?? runDiag.coordSystemMode ?? 'local';
-  const crsId = parseState?.crsId ?? runDiag.crsId ?? 'CA_NAD83_CSRS_UTM_20N';
+  const resolvedCrsId = parseState?.crsId ?? runDiag.crsId;
+  const crsId = resolvedCrsId ?? 'CA_NAD83_CSRS_UTM_20N';
+  // Honest display id: the internal crsId above keeps a legacy silent default
+  // for plumbing, but listings must never print that default as committed.
+  const resolvedCrsDef = coordSystemMode === 'grid' && resolvedCrsId
+    ? getCrsDefinition(resolvedCrsId)
+    : undefined;
+  const crsDisplayId = coordSystemMode !== 'grid'
+    ? 'LOCAL'
+    : !resolvedCrsId?.trim()
+      ? 'UNKNOWN'
+      : (resolvedCrsDef?.id ?? `INVALID(${resolvedCrsId.trim().toUpperCase()})`);
   const localDatumScheme =
     parseState?.localDatumScheme ?? runDiag.localDatumScheme ?? 'average-scale';
   const averageScaleFactor = parseState?.averageScaleFactor ?? runDiag.averageScaleFactor ?? 1;
@@ -109,6 +121,9 @@ export const buildIndustryListingContext = ({
   const crsProjectionModel =
     parseState?.crsProjectionModel ?? runDiag.crsProjectionModel ?? 'legacy-equirectangular';
   const crsLabel = parseState?.crsLabel ?? runDiag.crsLabel ?? '';
+  // Display label gated on resolvability: never print a stale label next to
+  // LOCAL / UNKNOWN / INVALID display ids.
+  const crsDisplayLabel = resolvedCrsDef ? crsLabel : '';
   const crsGridScaleEnabled =
     parseState?.crsGridScaleEnabled ?? runDiag.crsGridScaleEnabled ?? false;
   const crsGridScaleFactor = parseState?.crsGridScaleFactor ?? runDiag.crsGridScaleFactor ?? 1;
@@ -300,6 +315,8 @@ export const buildIndustryListingContext = ({
     crsGridScaleEnabled,
     crsGridScaleFactor,
     crsId,
+    crsDisplayId,
+    crsDisplayLabel,
     crsLabel,
     crsOffReason,
     crsOutOfAreaStationCount,

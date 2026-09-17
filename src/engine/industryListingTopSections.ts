@@ -38,6 +38,8 @@ export const appendIndustryListingTopSections = ({
   runPurpose,
   coordMode,
   crsId,
+  crsDisplayId,
+  crsDisplayLabel,
   crsLabel,
   averageGeoidHeight,
   gpsObservationRows,
@@ -150,7 +152,7 @@ export const appendIndustryListingTopSections = ({
 
   if (usesClassicParityLayout || usesCompactGnssParityLayout) {
     appendClassicTopProjectOptionSettings({
-      lines, crsId, crsLabel, runMode, coordMode, linearUnit, parseState, parseSettings,
+      lines, crsId: crsDisplayId ?? crsId, crsLabel: crsDisplayLabel ?? crsLabel, runMode, coordMode, linearUnit, parseState, parseSettings,
       averageGeoidHeight, unitScale, displayVerticalDeflectionNorthSec,
       displayVerticalDeflectionEastSec, convergenceLimit, settings, gpsObservationRows,
       gpsVectorFactorSummary,
@@ -210,7 +212,7 @@ export const appendIndustryListingTopSections = ({
         ? `ON (${(rotationAngleRad * RAD_TO_DEG).toFixed(6)} deg)`
         : 'OFF',
     );
-    pushSettingRow('Coordinate System Mode', `${coordSystemMode.toUpperCase()} (CRS=${crsId})`);
+    pushSettingRow('Coordinate System Mode', `${coordSystemMode.toUpperCase()} (CRS=${crsDisplayId ?? crsId})`);
     if (coordSystemMode === 'local') {
       pushSettingRow(
         'Local Datum Scheme',

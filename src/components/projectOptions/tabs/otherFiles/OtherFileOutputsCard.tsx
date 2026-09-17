@@ -2,6 +2,7 @@ import React from 'react';
 import { EXPORT_FORMAT_OPTIONS } from '../../../../engine/exportFormats';
 import type { ProjectOptionsModalContext } from '../../../../hooks/useProjectOptionsModalController';
 import type { ProjectExportFormat } from '../../../../types';
+import { ExportCoordinateSummary } from './ExportCoordinateSummary';
 
 type OtherFileOutputsCardProps = {
   context: ProjectOptionsModalContext;
@@ -67,6 +68,7 @@ const OtherFileOutputsCard: React.FC<OtherFileOutputsCardProps> = ({ context }) 
           {getExportFormatTooltip(exportFormat)}
         </div>
       </SettingsRow>
+      <ExportCoordinateSummary context={context} />
     </SettingsCard>
   );
 };

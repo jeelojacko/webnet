@@ -76,6 +76,8 @@ export const appendIndustryListingSummaryWorkflow = ({
     crsGridScaleEnabled: context.crsGridScaleEnabled,
     crsGridScaleFactor: context.crsGridScaleFactor,
     crsId: context.crsId,
+    crsDisplayId: context.crsDisplayId,
+    crsDisplayLabel: context.crsDisplayLabel,
     crsLabel: context.crsLabel,
     crsOffReason: context.crsOffReason,
     crsOutOfAreaStationCount: context.crsOutOfAreaStationCount,
