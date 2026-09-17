@@ -11,6 +11,7 @@ import type {
 } from './cadTypes';
 import { backfillCadProjectStandards } from './cadLayers';
 import { backfillCadPointLabelStyles, cloneCadPointLabelStyles } from './cadPointLabelStyles';
+import { backfillCadPointGroups, cloneCadPointGroups, migrateLegacyPointGroups } from './cadPointGroups';
 import { backfillCadPointStyles, cloneCadPointStyles, migrateLegacySurveyPointStyles } from './cadPointStyles';
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
@@ -150,6 +151,10 @@ export const cloneCadProject = (project: CadProject): CadProject => ({
   bounds: cloneBounds(project.bounds),
   ...(project.currentLayerId != null ? { currentLayerId: project.currentLayerId } : {}),
   ...(project.linetypeScale != null ? { linetypeScale: project.linetypeScale } : {}),
+  // Trailing (like the migrate path, which appends a missing table last):
+  // JSON.stringify project signatures are key-order-sensitive, so clone
+  // must not move the table or the persistence sync guard never settles.
+  ...(project.pointGroups != null ? { pointGroups: cloneCadPointGroups(project.pointGroups) } : {}),
 });
 
 const cloneParcelLayoutSettings = (
@@ -212,14 +217,16 @@ export const sanitizeSurveyCadPersistedState = (
   try {
     const cloned = cloneSurveyCadPersistedState(value as unknown as SurveyCadPersistedState);
     // Load-time standards backfill: idempotent, no legacy visual change.
-    // Point-style migration seeds defaults + compat base refs (same marker).
-    const migrated = migrateLegacySurveyPointStyles(cloned.project);
+    // Point-style migration seeds defaults + compat base refs (same marker);
+    // point-group migration seeds the appearance-neutral All/Control groups.
+    const migrated = migrateLegacyPointGroups(migrateLegacySurveyPointStyles(cloned.project));
     return {
       ...cloned,
       project: backfillCadProjectStandards({
         ...migrated,
         pointStyles: cloneCadPointStyles(backfillCadPointStyles(migrated.pointStyles)),
         labelStyles: cloneCadPointLabelStyles(backfillCadPointLabelStyles(migrated.labelStyles)),
+        pointGroups: cloneCadPointGroups(backfillCadPointGroups(migrated.pointGroups)),
       }),
     };
   } catch {

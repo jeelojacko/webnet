@@ -114,6 +114,47 @@ export interface CadStyle {
 
 export type CadPointStyleId = string;
 export type CadPointLabelStyleId = string;
+export type CadPointGroupId = string;
+
+/**
+ * Phase 18D point-group query. DISPLAY/ORGANIZATION ONLY: matching never
+ * duplicates geometry and never mutates coordinates. Wildcards `*` (any run)
+ * and `?` (exactly one char) are supported ONLY in descriptionPattern and
+ * featureCodePattern, matched case-INSENSITIVELY. Regex/bracket syntax is
+ * not supported: any pattern containing `[`, `]` or `\` is malformed and
+ * fails closed (matches nothing; see validatePointGroupQuery). Entity-id
+ * lists match exactly (case-sensitive); excludePointIds always wins over
+ * includePointIds and query constraints.
+ */
+export interface CadPointGroupQuery {
+  /** Entity ids (point.id) explicitly included (OR with query constraints). */
+  includePointIds?: string[];
+  /** Entity ids always excluded; wins over include and query. */
+  excludePointIds?: string[];
+  descriptionPattern?: string;
+  featureCodePattern?: string;
+  pointClass?: 'control' | 'free' | 'unknown';
+  layerId?: string;
+  source?: 'adjustment-result' | 'parsed-input';
+  elevationMin?: number;
+  elevationMax?: number;
+}
+
+/**
+ * Phase 18D point group: a named, ordered query rule carrying optional
+ * per-property style overrides. Overrides are display-only references;
+ * unknown style ids fall back deterministically at resolve time.
+ */
+export interface CadPointGroup {
+  id: CadPointGroupId;
+  name: string;
+  query: CadPointGroupQuery;
+  pointStyleOverrideId?: CadPointStyleId;
+  pointLabelStyleOverrideId?: CadPointLabelStyleId;
+  /** Lower = higher precedence; list order is the tiebreak. */
+  priority: number;
+  description?: string;
+}
 
 export type CadPointLabelComponent = 'pointNumber' | 'description' | 'elevation' | 'featureCode';
 
@@ -204,6 +245,10 @@ export interface CadSurveyPointEntity extends CadBaseEntity {
   pointStyleId?: CadPointStyleId;
   /** Phase 18D MANUAL override (undefined = By Default). Never stores resolved output. */
   pointStyleOverrideId?: CadPointStyleId;
+  /** Phase 18D BASE label style (content/layout). Undefined = drawing default. */
+  pointLabelStyleId?: CadPointLabelStyleId;
+  /** Phase 18D MANUAL label override (undefined = By Default). Never stores resolved output. */
+  pointLabelStyleOverrideId?: CadPointLabelStyleId;
 }
 
 export interface CadLineEntity extends CadBaseEntity {
@@ -336,6 +381,10 @@ export interface CadProject {
   /** Phase 18D: drawing-owned point label styles (content/layout). Optional
    * so legacy files stay schema-compatible; load paths backfill defaults. */
   labelStyles?: CadPointLabelStyle[];
+  /** Phase 18D: drawing-owned point groups (display/organization rules).
+   * Optional so legacy files stay schema-compatible; load paths backfill
+   * the two seed groups. Array order is the priority tiebreak. */
+  pointGroups?: CadPointGroup[];
   entities: CadEntity[];
   cogoComputations: CadCogoComputation[];
   bounds: CadBounds | null;
