@@ -193,6 +193,8 @@ export interface UseSurveyCadWorkspaceResult {
   isGripEditing: boolean;
   activeSnap: CadSnapCandidate | null;
   nearbySnaps: readonly CadSnapCandidate[];
+  /** Raw pointer in drawing units (null when outside the viewport). Shell cursor readout. */
+  pointerWorldPoint: { x: number; y: number } | null;
   snapConstructionContext: CadSnapConstructionContext;
   snapPreferences: CadSnapPreferences;
   historyDepth: number;

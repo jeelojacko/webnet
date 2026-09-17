@@ -1,0 +1,444 @@
+/* Phase 18B — CAD shell tokens. Scoped under .cad-shell; no global rewrite. */
+.cad-shell {
+  --cad-bg: #0b1220;
+  --cad-panel: #111a2e;
+  --cad-panel-edge: #233150;
+  --cad-text: #dbe4f5;
+  --cad-dim: #8ea0c2;
+  --cad-accent: #5aa9ff;
+  --cad-warn: #f5b85a;
+  --cad-font-size: 12px;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+  background: var(--cad-bg);
+  color: var(--cad-text);
+  font-size: var(--cad-font-size);
+}
+
+.cad-shell button {
+  font-size: var(--cad-font-size);
+  color: var(--cad-text);
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 3px;
+  padding: 2px 7px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.cad-shell button:hover:not(:disabled) {
+  background: #1b2742;
+}
+
+.cad-shell button:disabled {
+  opacity: 0.38;
+  cursor: default;
+}
+
+.cad-shell-menubar {
+  display: flex;
+  align-items: stretch;
+  gap: 1px;
+  background: var(--cad-panel);
+  border-bottom: 1px solid var(--cad-panel-edge);
+  padding: 0 6px;
+}
+
+.cad-shell-quickaccess {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  background: var(--cad-panel);
+  border-bottom: 1px solid var(--cad-panel-edge);
+  padding: 3px 8px;
+}
+
+.cad-shell-appname {
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  margin-right: 8px;
+}
+
+.cad-shell-menu-wrap {
+  position: relative;
+}
+
+.cad-shell-menu-trigger.open {
+  background: #1b2742;
+}
+
+.cad-shell-menu {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  z-index: 80;
+  min-width: 220px;
+  background: var(--cad-panel);
+  border: 1px solid var(--cad-panel-edge);
+  border-radius: 4px;
+  padding: 3px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+}
+
+.cad-shell-menu-item {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  width: 100%;
+  text-align: left;
+  padding: 4px 8px;
+}
+
+.cad-shell-shortcut {
+  color: var(--cad-dim);
+}
+
+.cad-shell-menu-sep {
+  border-top: 1px solid var(--cad-panel-edge);
+  margin: 3px 0;
+}
+
+.cad-shell-ribbon {
+  background: var(--cad-panel);
+  border-bottom: 1px solid var(--cad-panel-edge);
+}
+
+.cad-shell-ribbon-collapsed {
+  background: var(--cad-panel);
+  border-bottom: 1px solid var(--cad-panel-edge);
+  padding: 0 6px;
+}
+
+.cad-shell-ribbon-tabs {
+  display: flex;
+  gap: 2px;
+  padding: 2px 6px 0;
+}
+
+.cad-shell-ribbon-tab.active {
+  background: #1b2742;
+  border-color: var(--cad-panel-edge);
+}
+
+.cad-shell-ribbon-groups {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  padding: 4px 8px 6px;
+}
+
+.cad-shell-ribbon-group {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  border-right: 1px solid var(--cad-panel-edge);
+  padding-right: 10px;
+}
+
+.cad-shell-ribbon-group-label {
+  color: var(--cad-dim);
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.cad-shell-ribbon-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px;
+  max-width: 560px;
+}
+
+.cad-shell-ribbon-button {
+  border: 1px solid var(--cad-panel-edge);
+  background: #141f38;
+}
+
+.cad-shell-main {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+}
+
+.cad-shell-dock-panel {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  background: var(--cad-panel);
+  border-right: 1px solid var(--cad-panel-edge);
+  position: relative;
+  flex: none;
+}
+
+.cad-shell-dock-panel[data-side='right'] {
+  border-right: none;
+  border-left: 1px solid var(--cad-panel-edge);
+}
+
+.cad-shell-dock-header {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  padding: 3px 4px 3px 8px;
+  border-bottom: 1px solid var(--cad-panel-edge);
+}
+
+.cad-shell-dock-title {
+  flex: 1;
+  font-weight: 600;
+}
+
+.cad-shell-dock-body {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  padding: 6px 8px;
+}
+
+.cad-shell-dock-resize {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 6px;
+  cursor: ew-resize;
+}
+
+.cad-shell-center {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+}
+
+.cad-shell-viewport {
+  flex: 1;
+  min-height: 0;
+  position: relative;
+  overflow: hidden;
+}
+
+.cad-shell-filetabs,
+.cad-shell-layouttabs {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  background: var(--cad-panel);
+  padding: 2px 6px;
+}
+
+.cad-shell-filetabs {
+  border-bottom: 1px solid var(--cad-panel-edge);
+}
+
+.cad-shell-layouttabs {
+  border-top: 1px solid var(--cad-panel-edge);
+}
+
+.cad-shell-tab.active {
+  background: #1b2742;
+  border-color: var(--cad-panel-edge);
+}
+
+.cad-shell-tabs {
+  display: flex;
+  gap: 2px;
+  margin-bottom: 6px;
+}
+
+.cad-shell-tree-group {
+  margin-bottom: 6px;
+}
+
+.cad-shell-tree-group > summary {
+  cursor: pointer;
+  font-weight: 600;
+  padding: 2px 0;
+}
+
+.cad-shell-tree-children {
+  padding-left: 10px;
+}
+
+.cad-shell-tree-row,
+.cad-shell-tree-node,
+.cad-shell-check-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 2px 4px;
+  width: 100%;
+  text-align: left;
+}
+
+.cad-shell-count {
+  margin-left: auto;
+  color: var(--cad-dim);
+}
+
+.cad-shell-layer-swatch {
+  width: 10px;
+  height: 10px;
+  border-radius: 2px;
+  flex: none;
+}
+
+.cad-shell-empty {
+  color: var(--cad-dim);
+}
+
+.cad-shell-gap-note {
+  color: var(--cad-warn);
+  font-size: 11px;
+  margin-top: 8px;
+}
+
+.cad-shell-props dl > div {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 2px 0;
+  border-bottom: 1px dotted #22304f;
+}
+
+.cad-shell-props dt {
+  color: var(--cad-dim);
+}
+
+.cad-shell-props dd {
+  margin: 0;
+  text-align: right;
+}
+
+.cad-shell-props input {
+  width: 110px;
+  background: #0b1220;
+  border: 1px solid var(--cad-panel-edge);
+  border-radius: 3px;
+  color: var(--cad-text);
+  padding: 1px 4px;
+  text-align: right;
+}
+
+.cad-shell-command {
+  border-top: 1px solid var(--cad-panel-edge);
+  background: var(--cad-panel);
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  flex: none;
+}
+
+.cad-shell-command-resize {
+  position: absolute;
+  top: -3px;
+  left: 0;
+  right: 0;
+  height: 6px;
+  cursor: ns-resize;
+}
+
+.cad-shell-command-prompt {
+  padding: 3px 8px;
+  color: var(--cad-accent);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.cad-shell-command-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0 8px 3px;
+}
+
+.cad-shell-command-row input {
+  flex: 1;
+  background: #0b1220;
+  border: 1px solid var(--cad-panel-edge);
+  border-radius: 3px;
+  color: var(--cad-text);
+  padding: 3px 6px;
+}
+
+.cad-shell-command-suggest {
+  list-style: none;
+  margin: 0;
+  padding: 0 8px 3px;
+  max-height: 120px;
+  overflow: auto;
+}
+
+.cad-shell-command-suggest button {
+  width: 100%;
+  text-align: left;
+}
+
+.cad-shell-command-echo {
+  padding: 0 8px 2px;
+  color: var(--cad-dim);
+}
+
+.cad-shell-command-history {
+  display: flex;
+  gap: 8px;
+  padding: 0 8px 3px;
+  color: var(--cad-dim);
+  font-size: 11px;
+}
+
+.cad-shell-statusbar {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  background: var(--cad-panel);
+  border-top: 1px solid var(--cad-panel-edge);
+  padding: 3px 10px;
+  font-size: 11px;
+}
+
+.cad-shell-snap-wrap {
+  position: relative;
+}
+
+.cad-shell-snap-menu {
+  position: absolute;
+  bottom: 100%;
+  left: 0;
+  z-index: 80;
+  background: var(--cad-panel);
+  border: 1px solid var(--cad-panel-edge);
+  border-radius: 4px;
+  padding: 4px 8px;
+  box-shadow: 0 -8px 24px rgba(0, 0, 0, 0.5);
+}
+
+.cad-shell-panel-error {
+  color: #f5a3a3;
+  padding: 8px;
+}
+
+.cad-shell-start {
+  padding: 24px;
+  max-width: 640px;
+}
+
+.cad-shell-start h2 {
+  margin: 0 0 4px;
+}
+
+.cad-shell-start-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 12px 0;
+}
+
+.cad-shell-start-actions button {
+  border: 1px solid var(--cad-panel-edge);
+  background: #141f38;
+  padding: 6px 12px;
+}

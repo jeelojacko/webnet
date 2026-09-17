@@ -1,12 +1,11 @@
-import React, { useEffect } from 'react';
+import React from 'react';
 import { useCadAppController } from './useCadAppController';
 import {
   buildAdjustmentUrl,
   hasCadMigrationRequest,
   readCadSourceIdFromLocation,
 } from './cadNavigation';
-
-const SurveyCadWorkspace = React.lazy(() => import('../components/SurveyCadWorkspace'));
+import { CadApplicationShell } from './shell/CadApplicationShell';
 
 class CadErrorBoundary extends React.Component<
   { children: React.ReactNode },
@@ -33,6 +32,11 @@ class CadErrorBoundary extends React.Component<
   }
 }
 
+/**
+ * Phase 18B — standalone CAD app: adjustment-source banners + the
+ * professional shell (menu/ribbon/tabs/docks/command dock/statusbar).
+ * The shell owns the chrome; SurveyCadWorkspace stays the viewport.
+ */
 const CadApp: React.FC = () => {
   const controller = useCadAppController({
     initialSourceId:
@@ -41,24 +45,16 @@ const CadApp: React.FC = () => {
       typeof window !== 'undefined' ? hasCadMigrationRequest(window.location.search) : false,
   });
   const {
-    session,
     notice,
     pendingSnapshot,
     invalidSourceId,
     migrationCandidate,
-    latestRegistryEntry,
-    applyDrawingChange,
-    applyLifecycleEvent,
-    requireCleanOrConfirm,
     handleImportPendingSource,
     handleDismissPendingSource,
     handleOpenMigrationCandidate,
     handleDismissMigrationCandidate,
+    requireCleanOrConfirm,
   } = controller;
-
-  useEffect(() => {
-    document.title = 'WebNet CAD';
-  }, []);
 
   const handleBackToAdjustment = (): void => {
     if (!requireCleanOrConfirm('Leave WebNet CAD')) return;
@@ -67,23 +63,6 @@ const CadApp: React.FC = () => {
 
   return (
     <div className="fixed inset-0 flex flex-col bg-slate-900 text-slate-100 font-sans overflow-hidden">
-      <div className="flex items-center gap-3 border-b border-slate-800 bg-slate-900 px-3 py-2">
-        <button
-          type="button"
-          onClick={handleBackToAdjustment}
-          className="text-xs px-2 py-1 border border-slate-700 rounded text-slate-300 hover:bg-slate-800"
-        >
-          Back to Adjustment
-        </button>
-        <span className="text-sm font-semibold tracking-wide">WebNet CAD</span>
-        <span
-          className="text-[11px] text-slate-400"
-          title={session.dirty ? 'Unsaved changes' : 'No unsaved changes'}
-        >
-          {session.dirty ? '● Unsaved' : '○ Saved'}
-        </span>
-        <span className="min-w-0 flex-1 truncate text-[11px] text-slate-500">{session.drawing.name}</span>
-      </div>
       {invalidSourceId ? (
         <div className="border-b border-amber-800 bg-amber-950 px-3 py-2 text-xs text-amber-200">
           Adjustment source “{invalidSourceId}” is not available (unknown or expired). The CAD drawing
@@ -152,15 +131,7 @@ const CadApp: React.FC = () => {
               </div>
             }
           >
-            <SurveyCadWorkspace
-              units={session.drawing.units}
-              result={null}
-              drawing={session.drawing}
-              onDrawingChange={applyDrawingChange}
-              onDrawingLifecycle={applyLifecycleEvent}
-              adjustmentSnapshot={pendingSnapshot}
-              resultDependencyIdentity={latestRegistryEntry?.appliedRunIdentity ?? null}
-            />
+            <CadApplicationShell controller={controller} onBackToAdjustment={handleBackToAdjustment} />
           </React.Suspense>
         </CadErrorBoundary>
       </div>
