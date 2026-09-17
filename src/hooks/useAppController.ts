@@ -3,9 +3,12 @@ import { DEFAULT_INPUT } from '../defaultInput';
 import { LEVEL_LOOP_TOLERANCE_PRESETS } from '../engine/levelLoopTolerance';
 import { type ImportedInputNotice } from '../engine/importers';
 import { useAppRunWorkflowShell } from './useAppRunWorkflowShell';
-import { applySuccessfulAdjustmentRunToDrawing } from '../engine/fieldToFinish/linkedRerunSync';
 import { buildAdjustmentResultFingerprint } from '../engine/adjustmentResultFingerprint';
 import type { SuccessfulAdjustmentRunInfo } from './useAdjustmentOutcomeApplication';
+import {
+  buildAdjustmentSourceSnapshot,
+  publishAdjustmentSource,
+} from '../cad-app/cadSourceBridge';
 import { useAppControllerProjectWorkspace } from './useAppControllerProjectWorkspace';
 import { useAppCrsDraftCatalog } from './useAppCrsDraftCatalog';
 import { useAppControllerEffects } from './useAppControllerEffects';
@@ -22,6 +25,7 @@ import {
   INDUSTRY_DEFAULT_INSTRUMENT_CODE,
 } from '../app/appHelpers';
 import type { ListingSortCoordinatesBy, ListingSortObservationsBy, ParseSettings, ProjectOptionsTab, RunDiagnostics, RunSettingsSnapshot, SolveProfile, WorkspaceTabKey } from '../appStateTypes';
+import type { AppliedRunIdentity } from '../engine/resultIntegrity';
 import type { AdjustmentResult, ParseResult } from '../types';
 import type { Instrument, CoordMode, AdjustedPointsPresetId, DirectionSetMode, ParseOptions, OrderMode, DeltaMode, MapMode, AngleMode, VerticalReductionMode, ProjectExportFormat, TsCorrelationScope, RobustMode, CrsProjectionModel, CoordSystemMode, LocalDatumScheme, GridObservationMode, GridDistanceInputMode, ObservationModeSettings, GeoidInterpolationMethod, GeoidHeightDatum, GeoidSourceFormat, GnssVectorFrame, ParseCompatibilityMode, FaceNormalizationMode, RunMode } from '../types';
 
@@ -63,7 +67,6 @@ export const useAppController = ({
     planningMap,
     setPlanningMap,
     surveyCadState,
-    setSurveyCadState,
   } = workspaceState;
   useUiLongTaskObserver();
 
@@ -107,7 +110,6 @@ export const useAppController = ({
     normalizeSolveProfile,
     resetRunStateAfterImportedInput,
   });
-  const isSurveyCadWorkspaceActive = activeTab === 'survey-cad';
   const {
     isSettingsModalOpen,
     activeOptionsTab,
@@ -202,23 +204,6 @@ export const useAppController = ({
     importReviewMoveTargetGroups,
     adjustedPointsDraftStationIds,
   } = projectWorkspaceState;
-  const surveyCadParseOptions = useMemo(
-    () => ({
-      ...parseSettings,
-      units: settings.units,
-      sourceFile: activeProjectRunFiles[0]?.name ?? '<survey-cad>',
-      includeFiles: effectiveRunIncludeFiles,
-      projectRunFiles: activeProjectRunFiles,
-      currentInstrument: selectedInstrument,
-    }),
-    [
-      activeProjectRunFiles,
-      effectiveRunIncludeFiles,
-      parseSettings,
-      selectedInstrument,
-      settings.units,
-    ],
-  );
   const crsDraftCatalogState = useAppCrsDraftCatalog({
     parseSettingsDraft,
     setParseSettingsDraft,
@@ -256,15 +241,6 @@ export const useAppController = ({
     setActiveTab('report');
   }, [setActiveTab]);
 
-  // Linked-F2F rerun subscriber (Bucket A2): applies successful production
-  // adjustments to the active linked CAD drawing as one atomic
-  // persisted-drawing update. Pure w.r.t. adjustment inputs; failed,
-  // cancelled, and preanalysis runs never reach here (hook seam filters
-  // them). Non-adjustment links are returned untouched by the sync itself.
-  const handleSuccessfulAdjustmentRun = useCallback((info: SuccessfulAdjustmentRunInfo) => {
-    setSurveyCadState((current) => applySuccessfulAdjustmentRunToDrawing(current, info));
-  }, [setSurveyCadState]);
-
   const runWorkflowState = useAppRunWorkflowShell({
     projectInstruments,
     selectedInstrument,
@@ -289,7 +265,6 @@ export const useAppController = ({
     setLastRunInput,
     setLastRunSettingsSnapshot,
     activateReportTab,
-    onSuccessfulAdjustmentRun: handleSuccessfulAdjustmentRun,
     recordRunSnapshot,
     projectRunValidation,
     setImportNotice,
@@ -331,6 +306,36 @@ export const useAppController = ({
       resultFingerprint: buildAdjustmentResultFingerprint(snapshot.result),
     };
   }, [currentRunSnapshot, runWorkflowState.resultIntegrity]);
+  // Phase 18A explicit bridge: publish the gated F2F source as a serialized
+  // snapshot for the standalone CAD app. Requires FRESH_SUCCESS (via
+  // adjustmentF2fSource); publishes + registry update only, never mutates any
+  // drawing and never auto-opens CAD — the caller navigates explicitly.
+  const canSendToCad = adjustmentF2fSource != null;
+  const handleSendToCad = useCallback((): string | null => {
+    const source = adjustmentF2fSource;
+    const snapshot = currentRunSnapshot;
+    if (!source || !snapshot || !snapshot.result.success || snapshot.result.preanalysisMode) return null;
+    const appliedIdentity: AppliedRunIdentity | null =
+      snapshot.appliedRunIdentity ??
+      (runWorkflowState.currentIntegrityIdentity
+        ? { ...runWorkflowState.currentIntegrityIdentity, runMode: source.runMode ?? 'adjustment' }
+        : null);
+    if (!appliedIdentity) return null;
+    const published = buildAdjustmentSourceSnapshot({
+      projectId: projectSession?.indexRow.id ?? 'default-project',
+      projectName: projectSession?.indexRow.name ?? null,
+      runMode: source.runMode ?? 'adjustment',
+      appliedRunIdentity: appliedIdentity,
+      resultFingerprint: source.resultFingerprint ?? buildAdjustmentResultFingerprint(snapshot.result),
+      generatedAt: new Date().toISOString(),
+      units: settings.units,
+      crsId: parseSettings.crsId ?? null,
+      crsLabel: parseSettings.crsLabel ?? null,
+      stations: snapshot.result.stations,
+    });
+    if (!publishAdjustmentSource(published)) return null;
+    return published.sourceId;
+  }, [adjustmentF2fSource, currentRunSnapshot, projectSession, settings.units, parseSettings.crsId, parseSettings.crsLabel, runWorkflowState.currentIntegrityIdentity]);
   const handleInputChange = (value: string) => {
     setEditorInput(value);
     if (importNotice) setImportNotice(null);
@@ -349,5 +354,5 @@ export const useAppController = ({
     resetRunStateAfterImportedInputInternal();
   }
 
-  return { fileInputRef, projectFileInputRef, projectSourceFileInputRef, importReviewSettingsFileInputRef, handleFileChange, handleProjectFileChange, handleProjectSourceFileChange, handleImportReviewSettingsFileChange, projectSourceAccept, associatedProjectSettingsAccept, isSidebarOpen, isSurveyCadWorkspaceActive, setIsSidebarOpen, openProjectOptions, setActiveTab, triggerFileSelect, handleOpenProjectWorkspacePanel, handleSaveProject, exportFormat, setExportFormat, handleExportResults, result, resultIntegrity: runWorkflowState.resultIntegrity, currentIntegrityIdentity: runWorkflowState.currentIntegrityIdentity, hasStoredDraft, handleClearCurrentDraft, selectedObservation, pinnedObservations, togglePinnedObservation, pipelineState, runPhaseLabel, pendingRunSettingDiffs, cancelAdjustment, handleValidatedRun, handleResetToLastRun, pendingRecovery, recoverDraft, discardRecoveredDraft, isSettingsModalOpen, projectOptionsModalContext, isAdjustedPointsTransformSelectOpen, adjustedPointsDraftStationIds, adjustedPointsTransformSelectedDraft, handleAdjustedPointsTransformToggleSelected, applyAdjustedPointsTransformSelection, closeAdjustedPointsTransformSelectModal, layoutRef, splitPercent, inputPaneRef, input, handleInputChange, projectSession, currentProjectFile, activeProjectFileViews, projectRunValidation, createLocalProjectFromCurrentWorkspace, triggerProjectSourceFileSelect, openFileTab, closeFileTab, switchActiveProjectFile, createBlankProjectFile, duplicateProjectFile, renameProjectFile, deleteProjectFile, setProjectFileEnabled, reorderProjectFiles, importNotice, setImportNotice, handleDividerMouseDown, effectiveRunInput, projectInstruments, surveyCadParseOptions, settings, surveyCadState, setSurveyCadState, adjustmentF2fSource, showRunComparisonPanel, currentRunSnapshot, baselineRunSnapshot, comparisonCandidates, savedRunSnapshots, currentSavedRunSnapshot, comparisonSelection, runComparisonSummary, handleSaveCurrentSnapshot, handleRestoreSavedRun, handleCompareWithSavedRun, handleRenameSavedRun, handleUpdateSavedRunNotes, handleDeleteSavedRun, handleSelectBaseline, handleTogglePinBaseline, handleStationThresholdChange, handleResidualThresholdChange, handleCompareSelectStation, handleCompareSelectObservation, hasSuspects, selection, selectedStation, selectPreviousSuspect, selectNextSuspect, selectObservation, clearSelection, handleJumpToSourceLine, handleFocusReportFilter, filteredReviewQueueItems, selectedReviewQueueItemId, reviewQueueSeverityFilter, reviewQueueSourceFilter, reviewQueueUnresolvedOnly, reviewQueueImportedGroupFilter, reviewQueueImportedGroupOptions, setReviewQueueSeverityFilter, setReviewQueueSourceFilter, setReviewQueueUnresolvedOnly, setReviewQueueImportedGroupFilter, handleSelectReviewQueueItem, handleNextUnresolvedQueueItem, clearReviewQueueFilters, activeTab, handleWorkspaceTabChange, workspaceReviewState, runDiagnostics, excludedIds, toggleExclude, applyImpactExclusion, applyPreanalysisPlanningAction, applyAllPreanalysisPlanningActions, clearExclusions, overrides, handleOverride, resetOverrides, clusterReviewDecisions, activeClusterApprovedMerges, handleClusterDecisionStatus, handleClusterCanonicalSelection, applyClusterReviewMerges, resetClusterReview, clearClusterApprovedMerges, reportFilterFocusRequestKey, handleReportStationSelection, handleReportObservationSelection, canRenderTab, runElapsedMs, processingSummaryDiagnostics, industryOutputText, handleIndustryListingSortChange, mapResult, planningMap, setPlanningMap, planningMapPreview, handleLoadPlanningInputPoints, adjustedPointsExportSettings, qaDerivedResult, handleMapStationSelection, handleMapObservationSelection, mapViewSnapshot, setMapViewSnapshot, pendingAnglePromptFile, handleImportAnglePromptSetImportStyle, handleImportAnglePromptSetAngleMode, handleImportAnglePromptSetFaceMode, handleImportAnglePromptCancel, handleImportAnglePromptAccept, importReviewState, importReviewDisplayedRows, importReviewMoveTargetGroups, handleImportReviewCompareFile, handleImportReviewClearComparison, handleImportReviewComparisonModeChange, handleImportReviewPresetChange, handleImportReviewSetBulkExcludeMta, handleImportReviewSetBulkExcludeRaw, handleImportReviewConvertSlopeZenithToHd2D, handleImportReviewSetGroupExcluded, handleImportConflictResolutionChange, handleImportConflictRenameValueChange, handleImportReviewToggleExclude, handleImportReviewToggleFixed, handleImportReviewCreateEmptySetupGroup, handleImportReviewGroupLabelChange, handleImportReviewCommentChange, handleImportReviewRowTextChange, handleImportReviewRowTypeChange, handleImportReviewDuplicateRow, handleImportReviewInsertCommentBelow, handleImportReviewCreateSetupGroup, handleImportReviewMoveRow, handleImportReviewReorderRow, handleImportReviewRemoveGroup, handleImportReviewRemoveRow, handleCancelImportReview, handleConfirmSourceUnits, handleApplyImportReviewAsNewFile, triggerImportReviewSettingsFileSelect, handleApplyImportReview };
+  return { fileInputRef, projectFileInputRef, projectSourceFileInputRef, importReviewSettingsFileInputRef, handleFileChange, handleProjectFileChange, handleProjectSourceFileChange, handleImportReviewSettingsFileChange, projectSourceAccept, associatedProjectSettingsAccept, isSidebarOpen, setIsSidebarOpen, openProjectOptions, setActiveTab, triggerFileSelect, handleOpenProjectWorkspacePanel, handleSaveProject, exportFormat, setExportFormat, handleExportResults, result, resultIntegrity: runWorkflowState.resultIntegrity, currentIntegrityIdentity: runWorkflowState.currentIntegrityIdentity, hasStoredDraft, handleClearCurrentDraft, selectedObservation, pinnedObservations, togglePinnedObservation, pipelineState, runPhaseLabel, pendingRunSettingDiffs, cancelAdjustment, handleValidatedRun, handleResetToLastRun, pendingRecovery, recoverDraft, discardRecoveredDraft, isSettingsModalOpen, projectOptionsModalContext, isAdjustedPointsTransformSelectOpen, adjustedPointsDraftStationIds, adjustedPointsTransformSelectedDraft, handleAdjustedPointsTransformToggleSelected, applyAdjustedPointsTransformSelection, closeAdjustedPointsTransformSelectModal, layoutRef, splitPercent, inputPaneRef, input, handleInputChange, projectSession, currentProjectFile, activeProjectFileViews, projectRunValidation, createLocalProjectFromCurrentWorkspace, triggerProjectSourceFileSelect, openFileTab, closeFileTab, switchActiveProjectFile, createBlankProjectFile, duplicateProjectFile, renameProjectFile, deleteProjectFile, setProjectFileEnabled, reorderProjectFiles, importNotice, setImportNotice, handleDividerMouseDown, effectiveRunInput, projectInstruments, settings, surveyCadState, canSendToCad, handleSendToCad, showRunComparisonPanel, currentRunSnapshot, baselineRunSnapshot, comparisonCandidates, savedRunSnapshots, currentSavedRunSnapshot, comparisonSelection, runComparisonSummary, handleSaveCurrentSnapshot, handleRestoreSavedRun, handleCompareWithSavedRun, handleRenameSavedRun, handleUpdateSavedRunNotes, handleDeleteSavedRun, handleSelectBaseline, handleTogglePinBaseline, handleStationThresholdChange, handleResidualThresholdChange, handleCompareSelectStation, handleCompareSelectObservation, hasSuspects, selection, selectedStation, selectPreviousSuspect, selectNextSuspect, selectObservation, clearSelection, handleJumpToSourceLine, handleFocusReportFilter, filteredReviewQueueItems, selectedReviewQueueItemId, reviewQueueSeverityFilter, reviewQueueSourceFilter, reviewQueueUnresolvedOnly, reviewQueueImportedGroupFilter, reviewQueueImportedGroupOptions, setReviewQueueSeverityFilter, setReviewQueueSourceFilter, setReviewQueueUnresolvedOnly, setReviewQueueImportedGroupFilter, handleSelectReviewQueueItem, handleNextUnresolvedQueueItem, clearReviewQueueFilters, activeTab, handleWorkspaceTabChange, workspaceReviewState, runDiagnostics, excludedIds, toggleExclude, applyImpactExclusion, applyPreanalysisPlanningAction, applyAllPreanalysisPlanningActions, clearExclusions, overrides, handleOverride, resetOverrides, clusterReviewDecisions, activeClusterApprovedMerges, handleClusterDecisionStatus, handleClusterCanonicalSelection, applyClusterReviewMerges, resetClusterReview, clearClusterApprovedMerges, reportFilterFocusRequestKey, handleReportStationSelection, handleReportObservationSelection, canRenderTab, runElapsedMs, processingSummaryDiagnostics, industryOutputText, handleIndustryListingSortChange, mapResult, planningMap, setPlanningMap, planningMapPreview, handleLoadPlanningInputPoints, adjustedPointsExportSettings, qaDerivedResult, handleMapStationSelection, handleMapObservationSelection, mapViewSnapshot, setMapViewSnapshot, pendingAnglePromptFile, handleImportAnglePromptSetImportStyle, handleImportAnglePromptSetAngleMode, handleImportAnglePromptSetFaceMode, handleImportAnglePromptCancel, handleImportAnglePromptAccept, importReviewState, importReviewDisplayedRows, importReviewMoveTargetGroups, handleImportReviewCompareFile, handleImportReviewClearComparison, handleImportReviewComparisonModeChange, handleImportReviewPresetChange, handleImportReviewSetBulkExcludeMta, handleImportReviewSetBulkExcludeRaw, handleImportReviewConvertSlopeZenithToHd2D, handleImportReviewSetGroupExcluded, handleImportConflictResolutionChange, handleImportConflictRenameValueChange, handleImportReviewToggleExclude, handleImportReviewToggleFixed, handleImportReviewCreateEmptySetupGroup, handleImportReviewGroupLabelChange, handleImportReviewCommentChange, handleImportReviewRowTextChange, handleImportReviewRowTypeChange, handleImportReviewDuplicateRow, handleImportReviewInsertCommentBelow, handleImportReviewCreateSetupGroup, handleImportReviewMoveRow, handleImportReviewReorderRow, handleImportReviewRemoveGroup, handleImportReviewRemoveRow, handleCancelImportReview, handleConfirmSourceUnits, handleApplyImportReviewAsNewFile, triggerImportReviewSettingsFileSelect, handleApplyImportReview };
 };

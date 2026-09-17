@@ -280,7 +280,13 @@ export const useAppRunWorkspaceReview = ({
           ? buildWorkspaceReviewStateFromSavedRun(restoredSnapshot.reopenState.review)
           : createDefaultWorkspaceReviewState(),
       );
-      setActiveTab(restoredSnapshot.reopenState?.activeTab ?? 'report');
+      // Phase 18A: saved runs may predate the CAD extraction; a stored
+      // 'survey-cad' tab restores to report instead of a dead tab.
+      setActiveTab(
+        restoredSnapshot.reopenState?.activeTab === 'survey-cad'
+          ? 'report'
+          : (restoredSnapshot.reopenState?.activeTab ?? 'report'),
+      );
       setImportNotice({
         title: 'Saved run restored',
         detailLines:

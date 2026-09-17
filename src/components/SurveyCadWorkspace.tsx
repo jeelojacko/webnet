@@ -27,6 +27,9 @@ import { classifyCatalogChange, stampCatalogStaleStatus } from '../engine/fieldT
 import { noteUiTabReady } from '../hooks/useUiPerfMonitor';
 import type { SuccessfulAdjustmentRunInfo } from '../hooks/useAdjustmentOutcomeApplication';
 import type { ResultDependencyIdentity } from '../engine/resultIntegrity';
+import type { AdjustmentSourceSnapshot } from '../cad-app/cadSourceBridge';
+import { importSnapshotIntoCadDrawing } from '../cad-app/cadSnapshotImport';
+import type { CadDrawingLifecycleEvent } from '../cad-app/cadAppTypes';
 import {
   summarizeDrawingDependency,
   type CadDependencyReasonCode,
@@ -66,6 +69,16 @@ interface SurveyCadWorkspaceProps {
   onPersistedStateChange?: Dispatch<SetStateAction<SurveyCadPersistedState | null>>;
   /** Latest successful production run for explicit adjustment-backed F2F commits; absent = no run yet. */
   adjustmentSource?: SuccessfulAdjustmentRunInfo | null;
+  /**
+   * Phase 18A explicit bridge snapshot (standalone CAD app). Takes the import
+   * role of `result` when no live adjustment result is present; never both.
+   */
+  adjustmentSnapshot?: AdjustmentSourceSnapshot | null;
+  /**
+   * Phase 18A lifecycle hook so the standalone CAD controller can track
+   * save/open/new for dirty state. Best-effort; absent = no tracking.
+   */
+  onDrawingLifecycle?: (_event: CadDrawingLifecycleEvent, _fileName: string | null) => void;
   /**
    * Current adjustment-result identity for the CAD dependency chip and the
    * Export Center deliverable gate. Absent/null = unknown (fail-closed).
@@ -127,6 +140,8 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
   persistedState = null,
   onPersistedStateChange,
   adjustmentSource = null,
+  adjustmentSnapshot = null,
+  onDrawingLifecycle,
   canFeedDraftingFromResult = false,
   resultDependencyIdentity = null,
 }) => {
@@ -141,7 +156,9 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
       : null;
 
   useEffect(() => {
-    noteUiTabReady('survey-cad');
+    // Phase 18A: CAD now has its own app/route; keep the perf marker on the
+    // closest adjustment tab key so telemetry stays schema-valid.
+    noteUiTabReady('map');
   }, []);
 
   const legacyDrawing = useMemo<CadDrawingDocument>(() => {
@@ -199,7 +216,13 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
     });
   const cadProject = activeDrawing.project;
   // Phase 17E drawing dependency status (single text chip, not color-only).
-  const stationIds = useMemo(() => new Set(Object.keys(result?.stations ?? {})), [result]);
+  // Phase 18A: standalone CAD consumes the explicit bridge snapshot; the
+  // live result path is kept for embedded/test callers. Never both at once.
+  const effectiveStations = useMemo(
+    () => adjustmentSnapshot?.stations ?? result?.stations ?? {},
+    [adjustmentSnapshot, result],
+  );
+  const stationIds = useMemo(() => new Set(Object.keys(effectiveStations)), [effectiveStations]);
   const f2fLinkStatus = activeDrawing.project.metadata.fieldToFinishLink?.status;
   const f2fLinkSourceKind = activeDrawing.project.metadata.fieldToFinishLink?.sourceKind;
   const dependencySummary: DrawingDependencySummary = useMemo(() => {
@@ -418,15 +441,20 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
       createBlankCadDrawingDocument({ units }),
       'New CAD drawing created.',
     );
+    onDrawingLifecycle?.('cad-created', null);
   };
 
   const handleSaveDrawing = async () => {
+    const fileName = buildCadDrawingFileName(activeDrawing.name);
     const saved = await saveBrowserTextFile(
-      buildCadDrawingFileName(activeDrawing.name),
+      fileName,
       serializeCadDrawingFile(activeDrawing),
       CAD_DRAWING_FILE_TYPES,
     );
-    if (saved) setFileStatusText(`Saved ${buildCadDrawingFileName(activeDrawing.name)}.`);
+    if (saved) {
+      setFileStatusText(`Saved ${fileName}.`);
+      onDrawingLifecycle?.('cad-saved', fileName);
+    }
   };
 
   const handleOpenDrawingChange = async (event: ChangeEvent<HTMLInputElement>) => {
@@ -442,12 +470,27 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
         return;
       }
       replaceActiveDrawing(parsed.drawing, `Opened ${file.name}.`);
+      onDrawingLifecycle?.('cad-opened', file.name);
     } catch (error) {
       setFileStatusText(error instanceof Error ? error.message : String(error));
     }
   };
 
+  const hasAdjustmentSource = adjustmentSnapshot != null || (result != null && canFeedDraftingFromResult && resultDependencyIdentity != null);
   const handleImportAdjustedPoints = () => {
+    // Phase 18A: explicit bridge snapshot first (standalone CAD has no live result).
+    if (adjustmentSnapshot) {
+      const imported = importSnapshotIntoCadDrawing({
+        document: activeDrawing,
+        snapshot: adjustmentSnapshot,
+      });
+      if (!imported.ok) {
+        setFileStatusText(imported.message);
+        return;
+      }
+      replaceActiveDrawing(imported.drawing, 'Imported adjusted points.');
+      return;
+    }
     if (!result || !canFeedDraftingFromResult || !resultDependencyIdentity) {
       setFileStatusText(
         'Import blocked: the adjustment result is not current (stale, failed, or non-production run). Re-run the adjustment, then import again.',
@@ -523,20 +566,24 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
             <button type="button" className="rounded border border-slate-600 bg-slate-900 px-2 py-1 text-slate-100 hover:bg-slate-800" onClick={() => setExportCenterOpen((current) => !current)} data-survey-cad-export-center>
               Export Center
             </button>
-            <button
-              type="button"
-              className="rounded border border-sky-500 bg-sky-950 px-2 py-1 text-sky-100 hover:bg-sky-900 disabled:cursor-not-allowed disabled:border-slate-700 disabled:bg-slate-900 disabled:text-slate-500"
-              onClick={handleImportAdjustedPoints}
-              disabled={!result || !canFeedDraftingFromResult || !resultDependencyIdentity}
-              title={
-                canFeedDraftingFromResult
-                  ? 'Import adjusted points from the current result'
-                  : 'Import blocked: the adjustment result is not current'
-              }
-              data-survey-cad-import-adjusted-points
-            >
-              Import Adjusted Points
-            </button>
+            {hasAdjustmentSource ? (
+              <button
+                type="button"
+                className="rounded border border-sky-500 bg-sky-950 px-2 py-1 text-sky-100 hover:bg-sky-900 disabled:cursor-not-allowed disabled:border-slate-700 disabled:bg-slate-900 disabled:text-slate-500"
+                onClick={handleImportAdjustedPoints}
+                disabled={adjustmentSnapshot != null ? false : (!result || !canFeedDraftingFromResult || !resultDependencyIdentity)}
+                title={
+                  adjustmentSnapshot != null
+                    ? 'Import adjusted points from the published adjustment source'
+                    : canFeedDraftingFromResult
+                      ? 'Import adjusted points from the current result'
+                      : 'Import blocked: the adjustment result is not current'
+                }
+                data-survey-cad-import-adjusted-points
+              >
+                Import Adjusted Points
+              </button>
+            ) : null}
           </div>
         </div>
         {fileStatusText ? (

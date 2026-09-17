@@ -10,7 +10,6 @@ const createColdHydrationState = (): HydrationState => ({
   'processing-summary': 'cold',
   'industry-output': 'cold',
   map: 'cold',
-  'survey-cad': 'ready',
 });
 
 const createResultHydrationState = (): HydrationState => ({
@@ -18,7 +17,6 @@ const createResultHydrationState = (): HydrationState => ({
   'processing-summary': 'cold',
   'industry-output': 'cold',
   map: 'cold',
-  'survey-cad': 'ready',
 });
 
 const scheduleAfterPaint = (callback: () => void): (() => void) => {
@@ -77,7 +75,7 @@ export const useHeavyTabHydration = (
   const canRenderTab = useMemo(
     () =>
       (tab: WorkspaceTabKey) =>
-        tab === 'report' || tab === 'survey-cad' || hydrationState[tab] === 'ready',
+        tab === 'report' || hydrationState[tab] === 'ready',
     [hydrationState],
   );
 

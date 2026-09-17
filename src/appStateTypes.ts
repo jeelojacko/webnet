@@ -84,8 +84,7 @@ export type WorkspaceTabKey =
   | 'report'
   | 'processing-summary'
   | 'industry-output'
-  | 'map'
-  | 'survey-cad';
+  | 'map';
 export type CrsCatalogGroupFilter =
   | 'all'
   | 'global'
