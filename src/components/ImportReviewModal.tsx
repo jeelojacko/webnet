@@ -6,6 +6,7 @@ import ImportReviewDiagnosticsSection from './importReviewModal/ImportReviewDiag
 import ImportReviewGroupSection from './importReviewModal/ImportReviewGroupSection';
 import ImportReviewModalFooter from './importReviewModal/ImportReviewModalFooter';
 import ImportReviewModalHeader from './importReviewModal/ImportReviewModalHeader';
+import ImportReviewSourceSummary from './importReviewModal/ImportReviewSourceSummary';
 import type { ImportReviewModalProps } from './importReviewModal/ImportReviewModal.types';
 
 const ImportReviewModal: React.FC<ImportReviewModalProps> = ({
@@ -51,6 +52,9 @@ const ImportReviewModal: React.FC<ImportReviewModalProps> = ({
   onReorderRow,
   onRemoveGroup,
   onRemoveRow,
+  stagedSources = [],
+  onConfirmSourceUnits,
+  commitBlockedReason = null,
   onCancel,
   onImportAsNewFile,
   onImportAssociatedProjectSettings,
@@ -116,6 +120,9 @@ const ImportReviewModal: React.FC<ImportReviewModalProps> = ({
         />
 
         <div className="flex-1 space-y-4 overflow-y-auto bg-slate-950 px-5 py-4">
+          {stagedSources.length > 0 && (
+            <ImportReviewSourceSummary sources={stagedSources} onConfirmSourceUnits={onConfirmSourceUnits} />
+          )}
           <ImportReviewConflictSection
             conflicts={conflicts}
             conflictResolutions={conflictResolutions}
@@ -166,6 +173,8 @@ const ImportReviewModal: React.FC<ImportReviewModalProps> = ({
           onCancel={onCancel}
           onImport={onImport}
           onImportAsNewFile={onImportAsNewFile}
+          commitDisabled={commitBlockedReason != null}
+          commitBlockedReason={commitBlockedReason}
         />
       </div>
     </div>

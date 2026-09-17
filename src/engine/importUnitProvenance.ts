@@ -4,9 +4,9 @@
  * Canonical internal units are metres (linear) + radians (angular). Unit
  * conversion happens exactly once at the parse boundary; serialized text
  * then truthfully carries `.UNITS M`. A dataset that cannot name its source
- * unit is flagged `needsUnitConfirmation` (BLOCKING) instead of silently
- * assuming metres.
+ * unit is flagged `needsUnitConfirmation` (BLOCKING) until the user confirms.
  */
+import type { ImportedDataset } from './importers';
 
 /** Canonical linear units. `us-ft` is the US survey foot (1200/3937 m). */
 export type LinearUnit = 'm' | 'ft' | 'us-ft' | 'mm' | 'cm';
@@ -118,3 +118,90 @@ export const confirmDatasetUnits = <T extends { sourceUnits?: SourceUnits; needs
   sourceUnits: { linear, origin: 'user-confirmed' },
   needsUnitConfirmation: false,
 });
+
+const scaleIfFinite = (value: number | undefined, factor: number): number | undefined =>
+  value === undefined ? undefined : value * factor;
+
+/**
+ * Recompute a dataset parsed under the metre assumption into the confirmed
+ * source unit. Applied exactly once to the fresh parse of retained raw
+ * values (never to an already-scaled dataset), so no compound drift.
+ * Angular fields (degrees, correlations) are never scaled.
+ */
+export const rescaleDatasetFromAssumedMeters = (
+  dataset: ImportedDataset,
+  linear: LinearUnit,
+): ImportedDataset => {
+  const factor = UNIT_TO_METERS[linear];
+  if (factor === 1) return confirmDatasetUnits(dataset, linear);
+  return confirmDatasetUnits(
+    {
+      ...dataset,
+      controlStations: dataset.controlStations.map((station) => ({
+        ...station,
+        eastM: scaleIfFinite(station.eastM, factor),
+        northM: scaleIfFinite(station.northM, factor),
+        heightM: scaleIfFinite(station.heightM, factor),
+        sigmaNorthM: scaleIfFinite(station.sigmaNorthM, factor),
+        sigmaEastM: scaleIfFinite(station.sigmaEastM, factor),
+        sigmaHeightM: scaleIfFinite(station.sigmaHeightM, factor),
+      })),
+      observations: dataset.observations.map((observation) => {
+        switch (observation.kind) {
+          case 'gnss-vector':
+            return {
+              ...observation,
+              deltaEastM: observation.deltaEastM * factor,
+              deltaNorthM: observation.deltaNorthM * factor,
+              deltaHeightM: scaleIfFinite(observation.deltaHeightM, factor),
+              sigmaEastM: scaleIfFinite(observation.sigmaEastM, factor),
+              sigmaNorthM: scaleIfFinite(observation.sigmaNorthM, factor),
+              sigmaHeightM: scaleIfFinite(observation.sigmaHeightM, factor),
+            };
+          case 'distance':
+            return {
+              ...observation,
+              distanceM: observation.distanceM * factor,
+              hiM: scaleIfFinite(observation.hiM, factor),
+              htM: scaleIfFinite(observation.htM, factor),
+            };
+          case 'distance-vertical':
+            return {
+              ...observation,
+              distanceM: observation.distanceM * factor,
+              verticalValue:
+                observation.verticalMode === 'delta-h'
+                  ? observation.verticalValue * factor
+                  : observation.verticalValue,
+              hiM: scaleIfFinite(observation.hiM, factor),
+              htM: scaleIfFinite(observation.htM, factor),
+            };
+          case 'vertical':
+            return {
+              ...observation,
+              verticalValue:
+                observation.verticalMode === 'delta-h'
+                  ? observation.verticalValue * factor
+                  : observation.verticalValue,
+              hiM: scaleIfFinite(observation.hiM, factor),
+              htM: scaleIfFinite(observation.htM, factor),
+            };
+          case 'measurement':
+            return {
+              ...observation,
+              distanceM: observation.distanceM * factor,
+              verticalValue:
+                observation.verticalMode === 'delta-h'
+                  ? scaleIfFinite(observation.verticalValue, factor)
+                  : observation.verticalValue,
+              hiM: scaleIfFinite(observation.hiM, factor),
+              htM: scaleIfFinite(observation.htM, factor),
+            };
+          default:
+            return observation;
+        }
+      }),
+    },
+    linear,
+  );
+};

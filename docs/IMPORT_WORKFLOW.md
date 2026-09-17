@@ -52,6 +52,9 @@ The staged review surface supports:
 - applying the reviewed import back into the editor
 - importing the reviewed output as a new project source file
 - importing associated project settings from `.wnproj*` or `.snproj` files
+- per staged source: filename, format, units with unit source (source/format/user), record counts, warnings, and relation ("Possible revision of X" / "Exact duplicate of X")
+- unknown units: commit stays BLOCKING-disabled until a unit (m / ft / us-ft / mm / cm) is selected per source; selection reparses retained raw values and rescales exactly once, so no compound drift
+- exact duplicates / revisions: Cancel (default, discards), Import (replace, prior results go stale), Import As New File (adds a copy), each with consequence text
 
 ### 4. Output shaping
 Before committing to the editor, the operator can choose output-style shaping. Current presets include:

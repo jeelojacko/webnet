@@ -56,7 +56,7 @@ const AppShell = ({ controller }: AppShellProps) => {
     handleImportReviewConvertSlopeZenithToHd2D, handleImportReviewSetGroupExcluded, handleImportConflictResolutionChange, handleImportConflictRenameValueChange, handleImportReviewToggleExclude,
     handleImportReviewToggleFixed, handleImportReviewCreateEmptySetupGroup, handleImportReviewGroupLabelChange, handleImportReviewCommentChange, handleImportReviewRowTextChange,
     handleImportReviewRowTypeChange, handleImportReviewDuplicateRow, handleImportReviewInsertCommentBelow, handleImportReviewCreateSetupGroup, handleImportReviewMoveRow,
-    handleImportReviewReorderRow, handleImportReviewRemoveGroup, handleImportReviewRemoveRow, handleCancelImportReview, handleApplyImportReviewAsNewFile,
+    handleImportReviewReorderRow, handleImportReviewRemoveGroup, handleImportReviewRemoveRow, handleCancelImportReview, handleConfirmSourceUnits, handleApplyImportReviewAsNewFile,
     triggerImportReviewSettingsFileSelect, handleApplyImportReview,
   } = controller;
 
@@ -387,6 +387,7 @@ const AppShell = ({ controller }: AppShellProps) => {
         onRemoveGroup={handleImportReviewRemoveGroup}
         onRemoveRow={handleImportReviewRemoveRow}
         onCancel={handleCancelImportReview}
+        onConfirmSourceUnits={handleConfirmSourceUnits}
         onApplyImportReviewAsNewFile={handleApplyImportReviewAsNewFile}
         onImportAssociatedProjectSettings={triggerImportReviewSettingsFileSelect}
         onApplyImportReview={handleApplyImportReview}

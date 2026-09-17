@@ -131,6 +131,8 @@ export interface ImportReviewWorkspaceSource {
   notice: ImportedInputNotice;
   dataset: ImportedDataset;
   isPrimary: boolean;
+  /** Phase 17C — retained raw text so unit confirmation recomputes without drift. */
+  rawText?: string;
 }
 
 export interface BuildImportReviewTextOptions {

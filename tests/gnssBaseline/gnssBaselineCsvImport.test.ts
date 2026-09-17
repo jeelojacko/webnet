@@ -64,7 +64,10 @@ describe('gnss delimited importer', () => {
   it('imports covariance CSV with header aliases', () => {
     const { stations } = controlStations();
     const result = importGnssBaselineDelimited(COV_CSV, stations!, { ...csvOptions });
-    expect(result.diagnostics).toEqual([]);
+    // Phase 17C — caller options are not user confirmation: unknown-BLOCKING.
+    expect(result.diagnostics.map((diagnostic) => diagnostic.code)).toEqual(['GNSS_UNIT_UNKNOWN']);
+    expect(result.network!.sourceUnits).toMatchObject({ linear: 'm', origin: 'unknown-legacy' });
+    expect(result.network!.needsUnitConfirmation).toBe(true);
     expect(result.network).not.toBeNull();
     expect(result.network!.baselines).toHaveLength(3);
     expect(result.network!.baselines[0]!.covariance.xy).toBeCloseTo(0.000001, 15);

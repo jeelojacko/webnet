@@ -465,6 +465,8 @@ Current import behavior includes:
 - staged-review apply actions for replacing editor text, importing the resolved text as a new project `.dat` file, and importing associated `.wnproj*` / `.snproj` settings into the current workspace without replacing the project file manifest
 - associated `.wnproj*` / `.snproj` selection during staged import review now stages a prepared settings payload instead of applying immediately; the staged settings survive review-draft restore, show pending status in the modal, and apply only after the reviewed text import succeeds
 - persistence of import-review and reconciliation state through local draft recovery
+- native C/P/E/PH records: redefining an already-defined station component with differing coordinates or fixity logs a parse warning (last definition wins); exact repeats merge silently, and the C+E height flow stays quiet. Merging staged sources with differing coords for the same station ID raises BLOCKING `STATION_DEFINITION_CONFLICT` in review.
+- GNSS networks carry `sourceUnits` directly: BL `UNITS` is source-declared; GVX and CSV default to unknown-BLOCKING until the caller confirms (CSV via explicit `unitsConfirmed`)
 
 For detailed import behavior, see `docs/IMPORT_WORKFLOW.md`.
 

@@ -2,6 +2,7 @@ import { useCallback, useMemo, type ChangeEvent, type Dispatch, type MutableRefO
 import { buildImportReviewDisplayTextMap, type ImportReviewWorkspaceSource } from '../engine/importReview';
 import { buildResolvedImportText, type ImportConflict } from '../engine/importConflictReview';
 import type { ImportedDataset, ImportedInputNotice } from '../engine/importers';
+import { confirmDatasetUnits, rescaleDatasetFromAssumedMeters, type LinearUnit } from '../engine/importUnitProvenance';
 import type { ImportReviewDraftSnapshot, ParseSettings } from '../appStateTypes';
 import type { CoordMode, InstrumentLibrary } from '../types';
 import type { PreparedAssociatedProjectSettingsImport } from './useProjectFileWorkflow';
@@ -346,5 +347,64 @@ export const useImportReviewApplyActions = ({ importReviewState, setImportReview
       }));
   }, [importReviewState]);
 
-  return { handleCancelImportReview, handleImportReviewCompareFile, handleImportReviewClearComparison, handleApplyImportReview, handleApplyImportReviewAsNewFile, handleImportReviewSettingsFileChange, importReviewDisplayedRows, importReviewMoveTargetGroups, importReviewSnapshot, restoreImportReviewWorkflow };
+  /** Phase 17C — confirm a staged source's units. Reparses retained raw
+   * text and rescales exactly once from the metre assumption (no compound
+   * drift); falls back to labelling when raw text is unavailable. Selections
+   * and edits survive via id-preserving workspace rebuild. */
+  const handleConfirmSourceUnits = useCallback((_sourceKey: string | undefined, _unit: LinearUnit) => {
+    if (!importReviewState || !_sourceKey) return;
+    const target = importReviewState.sources.find((source) => source.key === _sourceKey);
+    if (!target) return;
+    const angleMode = importReviewState.importAngleMode;
+    void (async () => {
+      let confirmed = confirmDatasetUnits(target.dataset, _unit);
+      if (target.rawText !== undefined) {
+        try {
+          const { importExternalInput } = await import('../engine/importers');
+          const reparsed = importExternalInput(
+            target.rawText,
+            target.sourceName,
+            angleMode != null ? { angleMode } : {},
+          );
+          if (reparsed.detected && reparsed.dataset) {
+            confirmed = rescaleDatasetFromAssumedMeters(reparsed.dataset, _unit);
+          }
+        } catch {
+          return;
+        }
+      }
+      const nextSources = importReviewState.sources.map((source) =>
+        source.key === _sourceKey ? { ...source, dataset: confirmed } : source,
+      );
+      const nextWorkspace = buildWorkspaceFromSources(nextSources);
+      const nextItemIds = new Set(nextWorkspace.reviewModel.items.map((item) => item.id));
+      const nextConflicts = buildImportConflicts(nextWorkspace.dataset);
+      setImportReviewState((prev) => {
+        if (!prev) return prev;
+        const keptLabels: Record<string, string> = {};
+        const keptComments: Record<string, string> = {};
+        nextWorkspace.reviewModel.groups.forEach((group) => {
+          keptLabels[group.key] = prev.groupLabels[group.key] ?? group.label;
+          keptComments[group.key] = prev.groupComments[group.key] ?? group.defaultComment;
+        });
+        return {
+          ...prev,
+          sources: nextSources,
+          dataset: nextWorkspace.dataset,
+          reviewModel: nextWorkspace.reviewModel,
+          excludedItemIds: new Set([...prev.excludedItemIds].filter((itemId) => nextItemIds.has(itemId))),
+          fixedItemIds: new Set([...prev.fixedItemIds].filter((itemId) => nextItemIds.has(itemId))),
+          groupLabels: keptLabels,
+          groupComments: keptComments,
+          comparisonSummary: buildImportReviewComparisonSummaryForSources(nextSources, prev.comparisonMode),
+          conflicts: nextConflicts,
+          conflictResolutions: mergeConflictResolutionDefaults(nextConflicts, prev.conflictResolutions),
+          conflictRenameValues: mergeConflictRenameValues(nextConflicts, prev.conflictRenameValues),
+          resolutionValidationMessage: null,
+        };
+      });
+    })();
+  }, [buildImportConflicts, importReviewState, setImportReviewState]);
+
+  return { handleCancelImportReview, handleConfirmSourceUnits, handleImportReviewCompareFile, handleImportReviewClearComparison, handleApplyImportReview, handleApplyImportReviewAsNewFile, handleImportReviewSettingsFileChange, importReviewDisplayedRows, importReviewMoveTargetGroups, importReviewSnapshot, restoreImportReviewWorkflow };
 };

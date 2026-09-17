@@ -6,6 +6,8 @@ import type {
   ImportReviewOutputPreset,
   ImportReviewRowTypeOverride,
 } from '../../engine/importReview';
+import type { StagedSourceSummary } from '../../engine/importReviewModel';
+import type { LinearUnit } from '../../engine/importUnitProvenance';
 
 export interface ImportReviewModalProps {
   sourceName: string;
@@ -25,6 +27,11 @@ export interface ImportReviewModalProps {
   conflictResolutions: Record<string, ImportResolution>;
   conflictRenameValues: Record<string, string>;
   resolutionValidationMessage?: string | null;
+  /** Phase 17C — per staged source rows (units, counts, warnings, relation). */
+  stagedSources?: StagedSourceSummary[];
+  onConfirmSourceUnits?: (_sourceKey: string | undefined, _unit: LinearUnit) => void;
+  /** Phase 17C — BLOCKING reason; commit buttons stay disabled until null. */
+  commitBlockedReason?: string | null;
   moveTargetGroups: Array<{ key: string; label: string }>;
   onCompareFile: () => void;
   onClearComparison: () => void;

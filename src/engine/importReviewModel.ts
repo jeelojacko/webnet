@@ -5,6 +5,7 @@ import type {
   ImportedTraceEntry,
 } from './importers';
 import { describeSourceUnits, needsUnitConfirmation } from './importUnitProvenance';
+import { detectStationDefinitionConflicts } from './importSourceIdentity';
 import type {
   ImportReviewGroup,
   ImportReviewItem,
@@ -317,28 +318,49 @@ export const appendImportReviewSource = (
     observationOffset,
   );
 
+  const mergedControlStations = [
+    ...dataset.controlStations,
+    ...source.dataset.controlStations.map((station) =>
+      cloneImportedRecordWithSource(station, source.key, source.sourceName),
+    ),
+  ];
+  // Phase 17C — same ID with differing coords across staged sources is a
+  // BLOCKING STATION_DEFINITION_CONFLICT (never silent last-wins). Exact
+  // same ID+coords merges silently; repeated observations are untouched.
+  const seenConflictKeys = new Set(
+    dataset.trace
+      .filter((entry) => entry.sourceCode === 'STATION_DEFINITION_CONFLICT' && entry.raw != null)
+      .map((entry) => entry.raw as string),
+  );
+  const conflictEntries: ImportedTraceEntry[] = [];
+  detectStationDefinitionConflicts(mergedControlStations).forEach((conflict) => {
+    if (seenConflictKeys.has(conflict.stationId)) return;
+    seenConflictKeys.add(conflict.stationId);
+    conflictEntries.push({
+      level: 'warning',
+      sourceCode: 'STATION_DEFINITION_CONFLICT',
+      message: conflict.reason,
+      raw: conflict.stationId,
+    });
+  });
+
   return {
     dataset: {
       ...dataset,
       comments: [...dataset.comments, ...source.dataset.comments],
-      controlStations: [
-        ...dataset.controlStations,
-        ...source.dataset.controlStations.map((station) =>
-          cloneImportedRecordWithSource(station, source.key, source.sourceName),
-        ),
-      ],
+      controlStations: mergedControlStations,
       observations: [
         ...dataset.observations,
         ...source.dataset.observations.map((observation) =>
           cloneImportedRecordWithSource(observation, source.key, source.sourceName),
         ),
       ],
-      trace: [...dataset.trace, ...source.dataset.trace],
+      trace: [...dataset.trace, ...source.dataset.trace, ...conflictEntries],
     },
     reviewModel: {
       groups: [...model.groups, ...scopedModel.groups],
       items: [...model.items, ...scopedModel.items],
-      warnings: [...model.warnings, ...scopedModel.warnings],
+      warnings: [...model.warnings, ...scopedModel.warnings, ...conflictEntries],
       errors: [...model.errors, ...scopedModel.errors],
     },
   };

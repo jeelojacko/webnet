@@ -3,6 +3,8 @@ import type { HandleControlRecordArgs } from './parseControlRecordTypes';
 import {
   createEmptyStation,
   logFixityWarnings,
+  logStationRedefinitionConflict,
+  markDefinedStationComponents,
   parseControlFixityTail,
   parseNumericSlot,
   shouldSkipLegacyPlanarHeightPlaceholder,
@@ -53,6 +55,14 @@ export const handleControlRecord = (args: HandleControlRecordArgs): boolean => {
       state.order === 'NE' ? fixityState.componentModes[1] : fixityState.componentModes[0];
     const modeH = is3D ? fixityState.componentModes[2] : 'inherit';
     const toMeters = linearToMetersFactor();
+    logStationRedefinitionConflict(logs, lineNum, 'C', id, stations, {
+      x: east * toMeters,
+      y: north * toMeters,
+      ...(is3D ? { h: h * toMeters, fixH } : {}),
+      fixX: fixE,
+      fixY: fixN,
+    });
+    markDefinedStationComponents(stations, id, is3D ? ['x', 'y', 'h'] : ['x', 'y']);
     const station = stations[id] ?? createEmptyStation();
     station.x = east * toMeters;
     station.y = north * toMeters;
@@ -159,6 +169,15 @@ export const handleControlRecord = (args: HandleControlRecordArgs): boolean => {
     const modeE =
       state.order === 'NE' ? fixityState.componentModes[1] : fixityState.componentModes[0];
     const modeH = is3D ? fixityState.componentModes[2] : 'inherit';
+    logStationRedefinitionConflict(logs, lineNum, code, id, stations, {
+      x: east * toMeters,
+      y: north * toMeters,
+      h: h * toMeters,
+      fixX: fixE,
+      fixY: fixN,
+      fixH,
+    });
+    markDefinedStationComponents(stations, id, ['x', 'y', 'h']);
     applyFixities(
       station,
       { x: fixE, y: fixN, h: is3D ? fixH : undefined },
@@ -230,6 +249,11 @@ export const handleControlRecord = (args: HandleControlRecordArgs): boolean => {
     const fixH = fixityState.fixities[0] ?? false;
     const modeH = fixityState.componentModes[0];
     const toMeters = linearToMetersFactor();
+    logStationRedefinitionConflict(logs, lineNum, 'E', id, stations, {
+      h: elev * toMeters,
+      fixH,
+    });
+    markDefinedStationComponents(stations, id, ['h']);
     const station = stations[id] ?? createEmptyStation();
     station.h = elev * toMeters;
     applyFixities(station, { h: fixH }, state.coordMode);
