@@ -8,6 +8,8 @@ import { zeros } from './matrix';
 import type { Matrix, SparseMatrixRows } from './matrix';
 import { structuredWeightsToDense } from './sparseWeightRepresentation';
 import type { StructuredSymmetricWeights } from './sparseWeightRepresentation';
+import { tsCorrelationGroup } from './adjustTsCorrelationWeights';
+import type { Observation, ParseOptions } from '../types';
 
 export interface StructuredWeightRoundTrip {
   maxAbs: number;
@@ -16,16 +18,130 @@ export interface StructuredWeightRoundTrip {
 }
 
 /**
- * Phase 16B routing: dense fallback below the measured crossover.
- * Assembly probes (median ms, dense vs structured-omit): chain m=32
- * 0.06/0.09, m=64 0.22/0.07; setup-scope m=32 0.20/0.64, m=64 0.20/1.27;
- * ts-set-8x8 (m=64) 0.24/0.38. Below 128 the dense allocation is at most
- * 128KB while the structured finalize dominates, so dense is the standing
- * choice there. Both paths are bit-identical (oracle-proven), so this is
- * performance-only routing.
+ * Phase 16B hybrid routing policy (deterministic, fail-closed, no settings).
+ *
+ * Measured crossover (16B evidence, assembly + accumulation medians):
+ * - chain/gps-2d at m=128 (density <= 0.0156): structured wins 12-23%.
+ * - gps-3d at m=129 (0.0233), ts 42x12 at m=504 (0.0238): structured
+ *   loses ~21-27% (builder-finalize string-sort dominates).
+ * - ts 16x8 at m=128 (0.0625) and denser: structured loses 80% to 20x.
+ * - chain/ts-250x8 at m=2000 (density <= 0.004): structured wins 27-45%.
+ * MAX_DENSITY sits in the measured gap with margin on both sides.
  */
-export const structuredWeightTransferEligible = (equationCount: number): boolean =>
-  Number.isInteger(equationCount) && equationCount >= 128;
+export const STRUCTURED_WEIGHT_MIN_EQUATIONS = 128;
+export const STRUCTURED_WEIGHT_MAX_DENSITY = 0.02;
+
+/**
+ * Phase 16B routing: dense fallback below the measured crossover.
+ * Below 128 equations the dense allocation is at most 128KB while the
+ * structured finalize dominates, so dense is the standing choice there.
+ * Above the density cap the finalize string-sort dominates, so dense is
+ * likewise the standing choice. Both paths are bit-identical
+ * (oracle-proven), so this is performance-only routing.
+ */
+export const structuredWeightTransferEligible = (
+  equationCount: number,
+  density?: number,
+): boolean => {
+  if (!Number.isInteger(equationCount) || equationCount < STRUCTURED_WEIGHT_MIN_EQUATIONS) {
+    return false;
+  }
+  if (density === undefined) return true;
+  if (!Number.isFinite(density) || density < 0) return false;
+  return density <= STRUCTURED_WEIGHT_MAX_DENSITY;
+};
+
+/**
+ * Exact stored density of finalized structured weights from writer
+ * metadata only (diagonal is always stored; off-diagonal triplets are
+ * upper-triangle, hence doubled). O(1); never builds a dense P.
+ */
+export const structuredWeightDensity = (weights: StructuredSymmetricWeights): number => {
+  if (!Number.isInteger(weights.size) || weights.size <= 0) return 0;
+  return (weights.size + 2 * weights.offValues.length) / (weights.size * weights.size);
+};
+
+export interface StructuredWeightDensityEstimateInput {
+  equationCount: number;
+  observations: readonly Observation[];
+  tsCorrelationEnabled: boolean;
+  tsCorrelationRho: number;
+  tsCorrelationScope: ParseOptions['tsCorrelationScope'];
+  is2D: boolean;
+  constraintCount: number;
+}
+
+/**
+ * Pre-assembly upper bound on the structured weight density, O(m) over the
+ * observation list with no dense P. TS group sizes come from the same pure
+ * grouping the weight writer uses (groups only shrink afterwards via
+ * skipped rows, so the pair count is a true upper bound); GPS/GNSS blocks
+ * are bounded per baseline (3 in 3D, 1 in 2D where the U row cannot
+ * exist); each constraint correlation pair costs at most one off-diagonal.
+ * Malformed input yields +Infinity so callers fail closed to dense.
+ */
+export const estimateStructuredWeightDensityUB = (
+  input: StructuredWeightDensityEstimateInput,
+): number => {
+  const equationCount = input.equationCount;
+  if (!Number.isInteger(equationCount) || equationCount <= 0) return Number.POSITIVE_INFINITY;
+  if (!Array.isArray(input.observations)) return Number.POSITIVE_INFINITY;
+  if (typeof input.is2D !== 'boolean') return Number.POSITIVE_INFINITY;
+  if (!Number.isInteger(input.constraintCount) || input.constraintCount < 0) {
+    return Number.POSITIVE_INFINITY;
+  }
+  const tsActive =
+    input.tsCorrelationEnabled === true &&
+    Number.isFinite(input.tsCorrelationRho) &&
+    (input.tsCorrelationRho as number) > 0;
+  const groupSizes = new Map<string, number>();
+  let gpsBaselines = 0;
+  let gnssBaselines = 0;
+  for (const observation of input.observations) {
+    if (!observation || typeof observation.type !== 'string') return Number.POSITIVE_INFINITY;
+    if (observation.type === 'gps') gpsBaselines += 1;
+    else if (observation.type === 'gnssBaseline') gnssBaselines += 1;
+    if (!tsActive) continue;
+    let key: string | null;
+    try {
+      key =
+        tsCorrelationGroup({
+          enabled: true,
+          obs: observation,
+          scope: input.tsCorrelationScope,
+        })?.key ?? null;
+    } catch {
+      return Number.POSITIVE_INFINITY;
+    }
+    if (key == null) continue;
+    if (typeof key !== 'string' || key.length === 0) return Number.POSITIVE_INFINITY;
+    groupSizes.set(key, (groupSizes.get(key) ?? 0) + 1);
+  }
+  let offDiagonal = 0;
+  groupSizes.forEach((size) => {
+    offDiagonal += (size * (size - 1)) / 2;
+  });
+  offDiagonal += (input.is2D ? 1 : 3) * gpsBaselines + 3 * gnssBaselines + input.constraintCount;
+  return (equationCount + 2 * offDiagonal) / (equationCount * equationCount);
+};
+
+/**
+ * Pre-assembly routing decision for the correction loop: sparse assembly
+ * with omitDenseP only when the kill switch allows it, the robust
+ * Huber loop is off (its inner reweighting stays on the legacy dense
+ * path), and the density upper bound is inside the measured crossover.
+ * Deterministic in its inputs; any doubt routes dense.
+ */
+export const shouldAssembleStructuredWeights = (input: {
+  equationCount: number;
+  densityUB: number;
+  robustMode?: string;
+  structuredWeightTransfer?: boolean;
+}): boolean => {
+  if (input.structuredWeightTransfer === false) return false;
+  if (input.robustMode === 'huber') return false;
+  return structuredWeightTransferEligible(input.equationCount, input.densityUB);
+};
 
 /**
  * Materializes structured weights and compares every entry against the

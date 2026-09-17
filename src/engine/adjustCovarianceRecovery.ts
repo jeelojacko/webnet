@@ -23,7 +23,7 @@ import {
 import type { SelectedCovarianceStore } from './selectedCovarianceStore';
 import { recordSelectedCovarianceCall, recordSelectedCovarianceFallback } from './experimentalSparseDiagnostics';
 import { detailedNow, type DetailedSolveProfiler } from './adjustDetailedSolveProfile';
-import { accumulateNormalFromStructuredWeights, structuredWeightTransferEligible } from './structuredWeightOracle';
+import { accumulateNormalFromStructuredWeights, estimateStructuredWeightDensityUB, shouldAssembleStructuredWeights, structuredWeightDensity, structuredWeightTransferEligible } from './structuredWeightOracle';
 import { recordStructuredFallback } from './structuredWeightTelemetry';
 import { copyMatrix, type QxxReuseProbe } from './qxxReuseEvidence';
 import type {
@@ -131,6 +131,15 @@ interface RecoverFinalNormalCovarianceOptions {
    * structured candidate with fail-closed dense fallback.
    */
   structuredWeightTransfer?: boolean;
+  /**
+   * Phase 16B hybrid-policy inputs for the recovery pre-assembly density
+   * estimate (raw pieces; the estimator applies the same pure TS grouping
+   * the weight writer uses). All optional: absent pieces fail closed to
+   * the legacy dense path. Threaded from engine state in adjust.ts.
+   */
+  tsCorrelationEnabled?: boolean;
+  tsCorrelationRho?: number;
+  tsCorrelationScope?: 'set' | 'setup';
   /** Observed station pairs feeding the selected-mode query plan. */
   connectedPairs?: readonly CovariancePair[];
   /** REL/PTOL-requested pairs feeding the selected-mode query plan. */
@@ -373,13 +382,26 @@ const recoverDenseCovariance = (
   const profiler = options.detailedSolveProfiler;
   let assemblyStartedAt = profiler ? detailedNow() : 0;
   // Phase 16B structured candidate: identical assembly through the sparse
-  // writer, N accumulated in dense-identical row-major order. Dense fallback
-  // below the measured crossover (allocation trivial, finalize dominates)
-  // or on any doubt (disabled switch, missing/unsupported weights) with no
-  // log/output change.
+  // writer, N accumulated in dense-identical row-major order. The hybrid
+  // policy admits only systems inside the measured crossover (m gate plus
+  // pre-assembly density upper bound, exact writer-metadata gate after
+  // assembly); anything else — disabled switch, dense shapes, missing or
+  // unsupported weights — falls back to dense with no log/output change.
+  const recoveryDensityUB = estimateStructuredWeightDensityUB({
+    equationCount: covarianceObsEquationCount,
+    observations: covarianceObservations,
+    tsCorrelationEnabled: options.tsCorrelationEnabled === true,
+    tsCorrelationRho: options.tsCorrelationRho ?? 0,
+    tsCorrelationScope: options.tsCorrelationScope,
+    is2D: options.is2D === true,
+    constraintCount: options.constraints.length,
+  });
   if (
-    options.structuredWeightTransfer !== false &&
-    structuredWeightTransferEligible(covarianceObsEquationCount)
+    shouldAssembleStructuredWeights({
+      equationCount: covarianceObsEquationCount,
+      densityUB: recoveryDensityUB,
+      structuredWeightTransfer: options.structuredWeightTransfer,
+    })
   ) {
     try {
       const structured = assembleAdjustmentEquations(
@@ -393,6 +415,14 @@ const recoverDenseCovariance = (
       );
       const structuredWeights = structured.structuredWeights;
       if (!structuredWeights) throw new Error('Structured weights unavailable.');
+      if (
+        !structuredWeightTransferEligible(
+          structuredWeights.size,
+          structuredWeightDensity(structuredWeights),
+        )
+      ) {
+        throw new Error('Structured weights exceed the transfer density cap; using dense weights.');
+      }
       const assemblyMs = profiler ? detailedNow() - assemblyStartedAt : 0;
       const accumulateStartedAt = profiler ? detailedNow() : 0;
       const { normal } = accumulateNormalFromStructuredWeights(

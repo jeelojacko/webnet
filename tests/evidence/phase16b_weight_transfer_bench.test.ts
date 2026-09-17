@@ -1,22 +1,25 @@
 /**
- * Phase 16B-A weight-transfer benchmarks (EVIDENCE tier, manual-only).
+ * Phase 16B weight-transfer benchmarks (EVIDENCE tier, manual-only).
  *
  * Measures construction + assembly (dense vs structured-omit, the actual
- * production candidate) across the oracle families at scale, plus the
- * ts-setup-32 dense extreme (density ~= 1.0) and an m ~= 2000 stress.
- * Reports wall time and transfer telemetry (dense-P allocations/bytes vs
- * structured builds/nnz) per case.
+ * production candidate) across the oracle families at scale, plus dense
+ * extremes (ts-setup-32 at m=32, ts-setup-128 at m=128, both density ~= 1.0)
+ * and an m ~= 2000 stress. Reports wall time and transfer telemetry
+ * (dense-P allocations/bytes vs structured builds/nnz) per case.
  *
- * Gate: the ROUTED outcome (structured where eligible, dense fallback
- * below the measured crossover) must NOT regress >5% vs pure dense on any
+ * Gate: the ROUTED outcome (structured where the hybrid policy admits,
+ * dense fallback otherwise) must NOT regress >5% vs pure dense on any
  * case. The raw structured-omit column is reported for transparency: it
- * loses on the dense extreme, which is why that shape stays dense.
+ * loses on dense shapes, which is why those stay dense.
  */
 import { describe, expect, it } from 'vitest';
 
 import { assembleAdjustmentEquations } from '../../src/engine/adjustmentEquationAssembly';
 import type { AdjustmentEquationAssemblyOptions } from '../../src/engine/adjustmentEquationAssemblyTypes';
-import { structuredWeightTransferEligible } from '../../src/engine/structuredWeightOracle';
+import {
+  structuredWeightDensity,
+  structuredWeightTransferEligible,
+} from '../../src/engine/structuredWeightOracle';
 import {
   resetStructuredWeightTelemetry,
   snapshotStructuredWeightTelemetry,
@@ -49,6 +52,7 @@ const STRUCTURED_OPTIONS: AdjustmentEquationAssemblyOptions = {
 interface BenchRow {
   case: string;
   m: number;
+  density: number;
   denseMs: number;
   structuredMs: number;
   routedMs: number;
@@ -80,7 +84,22 @@ const timeAssembly = (
 const benchCase = (network: BuiltNetwork): BenchRow => {
   const dense = timeAssembly(network, DENSE_OPTIONS);
   const structured = timeAssembly(network, STRUCTURED_OPTIONS);
-  const fallback = !structuredWeightTransferEligible(network.numObsEquations);
+  // Shipped hybrid routing: the m gate plus the exact density gate on
+  // writer metadata. Production decides pre-assembly through the UB
+  // estimator, which is exact on these builders (proven in
+  // phase16b_iteration_structured), so the post-hoc density here matches
+  // the shipped accumulation routing.
+  const probe = assembleAdjustmentEquations(
+    network.deps,
+    network.observations,
+    network.constraints,
+    network.numObsEquations,
+    network.numParams,
+    undefined,
+    STRUCTURED_OPTIONS,
+  );
+  const density = structuredWeightDensity(probe.structuredWeights!);
+  const fallback = !structuredWeightTransferEligible(network.numObsEquations, density);
   const routed = fallback ? dense : structured;
   expect(dense.telemetry.densePAllocations).toBe(RUNS + 1);
   expect(structured.telemetry.densePAllocations).toBe(0);
@@ -91,6 +110,7 @@ const benchCase = (network: BuiltNetwork): BenchRow => {
   return {
     case: network.id,
     m: network.numObsEquations,
+    density: round4(density),
     denseMs: round4(dense.ms),
     structuredMs: round4(structured.ms),
     routedMs: round4(routed.ms),
@@ -110,13 +130,14 @@ describe('phase 16B weight transfer benchmarks', () => {
       buildTsDirections('ts-set-8x8', 8, 8),
       buildTsDirections('ts-set-16x8', 16, 8),
       buildTsSetupScope('ts-setup-32', 4, 8),
+      buildTsSetupScope('ts-setup-128', 16, 8),
       buildChain2D('chain-1000', 1000),
     ];
     const rows = networks.map(benchCase);
     console.log(`\n16B transfer bench (median of ${RUNS}, ms):`);
     for (const row of rows) {
       console.log(
-        `${row.case} m=${row.m} dense=${row.denseMs} structured=${row.structuredMs} ` +
+        `${row.case} m=${row.m} density=${row.density} dense=${row.denseMs} structured=${row.structuredMs} ` +
           `routed=${row.routedMs} speedup=${row.routedSpeedup}x ` +
           `fallback=${row.fallback} denseBytes=${row.denseBytes} nnz=${row.structuredNnz}`,
       );
@@ -126,6 +147,18 @@ describe('phase 16B weight transfer benchmarks', () => {
     expect(denseExtreme).toBeDefined();
     expect(denseExtreme!.fallback).toBe(true);
     expect(denseExtreme!.structuredMs).toBeGreaterThan(denseExtreme!.denseMs);
+    // Dense shape at scale (m >= crossover, density ~= 1.0): the density
+    // gate — not the m gate — keeps it dense.
+    const denseAtScale = rows.find((row) => row.case === 'ts-setup-128');
+    expect(denseAtScale).toBeDefined();
+    expect(denseAtScale!.m).toBe(128);
+    expect(denseAtScale!.density).toBeGreaterThan(0.5);
+    expect(denseAtScale!.fallback).toBe(true);
+    expect(denseAtScale!.structuredMs).toBeGreaterThan(denseAtScale!.denseMs);
+    // Correlated TS sets above the density cap stay dense even at m >= 128.
+    const denseTsSet = rows.find((row) => row.case === 'ts-set-16x8');
+    expect(denseTsSet).toBeDefined();
+    expect(denseTsSet!.fallback).toBe(true);
     // Sub-crossover TS sets also stay dense.
     const smallTs = rows.find((row) => row.case === 'ts-set-8x8');
     expect(smallTs).toBeDefined();

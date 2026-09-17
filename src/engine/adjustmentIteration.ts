@@ -11,8 +11,14 @@ import type { StationMap } from '../types';
 import { buildSparseSolveInput, buildSparseSolveInputWithPackedWeights, packSparseDesignRows, packUpperTriangleWeights } from './sparseEquationPacking';
 import { detailedNow } from './adjustDetailedSolveProfile';
 import { estimateSparseNormalCondition } from './sparseNormalCondition';
-import { structuredQuadraticForm, structuredWeightsToPackedUpper } from './sparseWeightRepresentation';
+import { structuredQuadraticForm, structuredWeightsToDense, structuredWeightsToPackedUpper } from './sparseWeightRepresentation';
 import type { StructuredSymmetricWeights } from './sparseWeightRepresentation';
+import {
+  accumulateNormalFromStructuredWeights,
+  structuredWeightDensity,
+  structuredWeightTransferEligible,
+} from './structuredWeightOracle';
+import { recordDenseMaterialization, recordStructuredFallback } from './structuredWeightTelemetry';
 import { runHuberWeightLoop } from './adjustmentHuberLoop';
 import type {
   EquationRowInfo,
@@ -135,6 +141,39 @@ export const solveAdjustmentIteration = (
     correction = normalSolution.correction;
     qxx = normalSolution.qxx;
   };
+  const solveWithStructuredWeights = (weights: StructuredSymmetricWeights): void => {
+    // Post-assembly exact gate on writer metadata (O(1), never builds a
+    // dense P to decide). A breach means dense shapes slipped past the
+    // pre-assembly estimate, so materialize one dense P and stay
+    // bit-identical to legacy; the oracle throw path below covers
+    // non-canonical triplets the same way. Either fallback is recorded.
+    if (!structuredWeightTransferEligible(weights.size, structuredWeightDensity(weights))) {
+      recordStructuredFallback();
+      recordDenseMaterialization(weights.size);
+      solveWithDenseWeights(structuredWeightsToDense(weights));
+      return;
+    }
+    try {
+      const accumulateStartedAt = sink ? detailedNow() : 0;
+      const { normal: N, rhs: U } = accumulateNormalFromStructuredWeights(
+        sparseRows,
+        L,
+        weights,
+        numParams,
+      );
+      if (sink) sink.accumulateMs += detailedNow() - accumulateStartedAt;
+      if (shouldEstimateCondition) dependencies.recordConditionEstimate(dependencies.estimateCondition(N));
+      const factorStartedAt = sink ? detailedNow() : 0;
+      const normalSolution = dependencies.solveNormalEquations(N, U, { recoverCovariance: false });
+      if (sink) sink.factorSolveMs += detailedNow() - factorStartedAt;
+      correction = normalSolution.correction;
+      qxx = normalSolution.qxx;
+    } catch {
+      recordStructuredFallback();
+      recordDenseMaterialization(weights.size);
+      solveWithDenseWeights(structuredWeightsToDense(weights));
+    }
+  };
   const solveCorrection = (weights?: number[][]): void => {
     // Explicit length: omitDenseP yields undefined (never a truthy empty matrix).
     if (weights?.length) {
@@ -151,6 +190,14 @@ export const solveAdjustmentIteration = (
       correction = sparseResult.correction;
       qxx = undefined;
       recordFirstIterationSparseCondition(sparseResult.conditionEstimate, packedWeights);
+      return;
+    }
+    // Phase 16B structured-TS path: sparse assembly with omitDenseP and no
+    // native solver. The native branch above keeps priority, so native and
+    // robust-Huber-structured routes are untouched; robust Huber on the TS
+    // path never reaches here (the loop assembles dense weights for it).
+    if (structuredWeights) {
+      solveWithStructuredWeights(structuredWeights);
       return;
     }
     solveWithDenseWeights(requireDenseWeights());
