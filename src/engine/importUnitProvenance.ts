@@ -88,11 +88,14 @@ export const UNKNOWN_UNIT_IMPORTER_IDS: ReadonlySet<string> = new Set([
   'terrestrial-csv',
 ]);
 
-/** Importer IDs whose formats declare units in-band (honored, not assumed). */
+/** Importer IDs whose formats declare units in-band (honored, not assumed).
+ * NOTE: there is no LandXML entry here on purpose — the bounded LandXML
+ * preview (buildLandXmlImportPreview) takes CAD/COGO geometry only and never
+ * produces an ImportedDataset, so claiming source-declared provenance for it
+ * would be dead/misleading code. */
 export const SOURCE_DECLARED_IMPORTER_IDS: ReadonlySet<string> = new Set([
   'native-dat', // .UNITS directive, parsed at the core boundary
   'gnss-bl', // originalUnits carried by the GNSS network import
-  'landxml', // Metric/Imperial linearUnit attribute
 ]);
 
 export const unknownLegacyUnits = (): SourceUnits => ({ linear: 'm', origin: 'unknown-legacy' });

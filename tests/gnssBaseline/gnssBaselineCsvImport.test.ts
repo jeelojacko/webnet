@@ -74,6 +74,14 @@ describe('gnss delimited importer', () => {
     expect(result.network!.baselines[0]!.sessionId).toBe('2026-101');
   });
 
+  it('treats an explicit operator confirmation as user-confirmed (unblocked)', () => {
+    const { stations } = controlStations();
+    const result = importGnssBaselineDelimited(COV_CSV, stations!, { ...csvOptions, unitsConfirmed: true });
+    expect(result.network!.sourceUnits).toMatchObject({ linear: 'm', origin: 'user-confirmed' });
+    expect(result.network!.needsUnitConfirmation).toBe(false);
+    expect(result.diagnostics.map((diagnostic) => diagnostic.code)).not.toContain('GNSS_UNIT_UNKNOWN');
+  });
+
   it('imports sigma/correlation CSV to equivalent covariance', () => {
     const { stations } = controlStations();
     const covResult = importGnssBaselineDelimited(COV_CSV, stations!, { ...csvOptions });

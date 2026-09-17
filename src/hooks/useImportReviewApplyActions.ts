@@ -356,22 +356,47 @@ export const useImportReviewApplyActions = ({ importReviewState, setImportReview
     const target = importReviewState.sources.find((source) => source.key === _sourceKey);
     if (!target) return;
     const angleMode = importReviewState.importAngleMode;
+    const sourceName = target.sourceName;
+    const blockWithMessage = (message: string): void => {
+      setImportReviewState((prev) =>
+        prev ? { ...prev, resolutionValidationMessage: message } : prev,
+      );
+    };
     void (async () => {
+      // Legacy staged snapshots carry no retained raw text, so there is
+      // nothing to rescale. Never label feet-as-metres user-confirmed:
+      // fail closed and require the operator to re-select the file.
+      if (target.rawText === undefined) {
+        blockWithMessage(
+          `Unit confirmation for ${sourceName} needs the original file text, ` +
+          'which this staged session no longer retains (legacy snapshot). ' +
+          'Re-select the file to confirm units; commit stays blocked.',
+        );
+        return;
+      }
       let confirmed = confirmDatasetUnits(target.dataset, _unit);
-      if (target.rawText !== undefined) {
-        try {
-          const { importExternalInput } = await import('../engine/importers');
-          const reparsed = importExternalInput(
-            target.rawText,
-            target.sourceName,
-            angleMode != null ? { angleMode } : {},
+      try {
+        const { importExternalInput } = await import('../engine/importers');
+        const reparsed = importExternalInput(
+          target.rawText,
+          target.sourceName,
+          angleMode != null ? { angleMode } : {},
+        );
+        if (reparsed.detected && reparsed.dataset) {
+          confirmed = rescaleDatasetFromAssumedMeters(reparsed.dataset, _unit);
+        } else {
+          blockWithMessage(
+            `Unit confirmation for ${sourceName} could not reparse the retained ` +
+            'file text; commit stays blocked. Re-select the file or cancel.',
           );
-          if (reparsed.detected && reparsed.dataset) {
-            confirmed = rescaleDatasetFromAssumedMeters(reparsed.dataset, _unit);
-          }
-        } catch {
           return;
         }
+      } catch {
+        blockWithMessage(
+          `Unit confirmation for ${sourceName} failed while reparsing the ` +
+          'retained file text; commit stays blocked. Re-select the file or cancel.',
+        );
+        return;
       }
       const nextSources = importReviewState.sources.map((source) =>
         source.key === _sourceKey ? { ...source, dataset: confirmed } : source,

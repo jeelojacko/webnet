@@ -185,6 +185,16 @@ describe('csv contract', () => {
     expect(dataset.trace.some((entry) => entry.sourceCode === 'HEIGHT_MISSING')).toBe(false);
   });
 
+  it('warns HEIGHT_MISSING on present-but-non-numeric elevation instead of going 2D silently', () => {
+    const dataset = parseTerrestrialCoordinateCsv('ID,Northing,Easting,Elevation\nA,100,200,abc', { units: 'm' }, 'bad-elev.csv')!;
+    expect(dataset.controlStations[0]!.heightM).toBeUndefined();
+    expect(
+      dataset.trace.some(
+        (entry) => entry.sourceCode === 'HEIGHT_MISSING' && entry.level === 'warning',
+      ),
+    ).toBe(true);
+  });
+
   it('surfaces the interpreted column mapping in the review model', () => {
     const dataset = parseTerrestrialCoordinateCsv(
       'Point Name,Northing,Easting,Elevation\nA,100,200,10',

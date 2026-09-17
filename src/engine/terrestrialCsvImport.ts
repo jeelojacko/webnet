@@ -257,15 +257,16 @@ export const parseTerrestrialCoordinateCsv = (
     }
     const stationId = sanitizeStationId(rawId);
     const split = splitImportedCodeDescription(cell(codeCol) || undefined, cell(descCol) || undefined, sourceLine);
-    // Phase 17C: absent elevation stays absent (2D). Never invent 0 silently.
+    // Phase 17C: absent (or present-but-non-numeric) elevation stays absent
+    // (2D) with a HEIGHT_MISSING warning. Never invent 0 silently.
     const elevRaw = elevCol != null ? cell(elevCol) : '';
     const elevParsed = elevRaw ? parseFiniteNumber(elevRaw) : undefined;
-    if (elevCol == null || !elevRaw) {
+    if (elevCol == null || !elevRaw || elevParsed == null) {
       trace.push({
         level: 'warning',
         sourceLine,
         sourceCode: 'HEIGHT_MISSING',
-        message: `Point ${stationId} has no elevation; imported as 2D (HEIGHT_MISSING).`,
+        message: `Point ${stationId} has no usable elevation; imported as 2D (HEIGHT_MISSING).`,
       });
     }
     const candidate: ImportedControlStationRecord = {
