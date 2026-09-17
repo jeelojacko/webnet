@@ -1,11 +1,12 @@
 import React, { useMemo, useState } from 'react';
-import { createStableRuntimeId } from '../../engine/id';
 import type { DraftDocument } from '../../engine/cad/cadDraftTypes';
-import type { CadLayer, CadProject } from '../../engine/cad/cadTypes';
+import type { CadProject } from '../../engine/cad/cadTypes';
+import { resolveCurrentCadLayerId } from '../../engine/cad/cadLayers';
 import type { FieldToFinishCadPayload } from '../../engine/fieldToFinish/cadGeneration';
 import type { FeatureCodeCatalog } from '../../engine/fieldToFinish/featureCatalog';
 import type { SuccessfulAdjustmentRunInfo } from '../../hooks/useAdjustmentOutcomeApplication';
 import { LayerPanel } from './LayerPanel';
+import type { LayerManagerCommand } from './LayerPanel.types';
 import { SurveyCadFieldToFinishPanel } from './SurveyCadFieldToFinishPanel';
 import { SheetWorkspace } from './SheetWorkspace';
 import { TitleBlockTemplateEditor } from './TitleBlockTemplateEditor';
@@ -15,7 +16,10 @@ type DraftingTab = 'SHEETS' | 'LAYERS' | 'TITLE_BLOCKS' | 'FIELD_TO_FINISH';
 interface SurveyCadDraftingPanelProps {
   project: CadProject;
   draft: DraftDocument | undefined;
-  onProjectLayersChange: (_layers: CadLayer[]) => void;
+  /** Undoable layer-table mutations (LAYER_* transactions, never replace). */
+  onLayerCommand: (_command: LayerManagerCommand) => void;
+  /** Guarded set-current (must exist/ON/thawed). */
+  onSetCurrentLayer: (_layerId: string) => void;
   onDraftChange: (_draft: DraftDocument) => void;
   onClose: () => void;
   onCommitFieldToFinishPayload?: (_payload: FieldToFinishCadPayload) => void;
@@ -29,7 +33,8 @@ interface SurveyCadDraftingPanelProps {
 export const SurveyCadDraftingPanel = ({
   project,
   draft,
-  onProjectLayersChange,
+  onLayerCommand,
+  onSetCurrentLayer,
   onDraftChange,
   onClose,
   onCommitFieldToFinishPayload,
@@ -40,15 +45,9 @@ export const SurveyCadDraftingPanel = ({
   const [tab, setTab] = useState<DraftingTab>('SHEETS');
   const entityCounts = useMemo(() => {
     const counts: Record<string, number> = {};
-    project.entities.forEach((entity) => {
-      counts[entity.layerId] = (counts[entity.layerId] ?? 0) + 1;
-    });
+    for (const entity of project.entities) counts[entity.layerId] = (counts[entity.layerId] ?? 0) + 1;
     return counts;
   }, [project.entities]);
-
-  const update = (next: CadLayer[]): void => {
-    onProjectLayersChange(next);
-  };
 
   return (
     <section
@@ -128,42 +127,11 @@ export const SurveyCadDraftingPanel = ({
       ) : (
         <LayerPanel
           layers={project.layers}
+          currentLayerId={resolveCurrentCadLayerId(project)}
+          lineTypes={project.styleLibrary.lineTypes}
           entityCounts={entityCounts}
-          onCreate={(name) =>
-            update([
-              ...project.layers,
-              {
-                id: createStableRuntimeId('cad-layer'),
-                name,
-                color: '#ffffff',
-                visible: true,
-                locked: false,
-                role: 'planning',
-              },
-            ])
-          }
-          onRename={(layerId, name) =>
-            update(project.layers.map((layer) => (layer.id === layerId ? { ...layer, name } : layer)))
-          }
-          onToggleVisibility={(layerId, visible) =>
-            update(
-              project.layers.map((layer) => (layer.id === layerId ? { ...layer, visible } : layer)),
-            )
-          }
-          onToggleLocked={(layerId, locked) =>
-            update(
-              project.layers.map((layer) => (layer.id === layerId ? { ...layer, locked } : layer)),
-            )
-          }
-          onTogglePrintable={(layerId, printable) =>
-            update(
-              project.layers.map((layer) => (layer.id === layerId ? { ...layer, printable } : layer)),
-            )
-          }
-          onDelete={(layerId) => {
-            if ((entityCounts[layerId] ?? 0) > 0) return;
-            update(project.layers.filter((layer) => layer.id !== layerId));
-          }}
+          onLayerCommand={onLayerCommand}
+          onSetCurrent={onSetCurrentLayer}
         />
       )}
     </section>

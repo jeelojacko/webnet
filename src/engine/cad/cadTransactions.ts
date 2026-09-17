@@ -3,6 +3,8 @@ import {
   createCadSelectionState,
   selectAllCadEntities,
 } from './cadSelection';
+import { checkCadEntityEditable } from './cadAppearance';
+import { resolveCurrentCadLayerId } from './cadLayers';
 import { buildCadCogoEntityMetadata } from './cadCogoTypes';
 import {
   compactManualPointEntities,
@@ -100,13 +102,23 @@ export type {
 } from './cadTransactions.types';
 import type {
   CadEntity,
-  CadEntityId,
   CadLayer,
-  CadLineEntity,
   CadProject,
   CadSurveyPointEntity,
 } from './cadTypes';
 import { createStableRuntimeId } from '../id';
+import {
+  commitLayerProject,
+  isLayerNameTaken,
+  layerColorCommand,
+  layerDescriptionCommand,
+  layerFrozenCommand,
+  layerLinetypeCommand,
+  layerLineweightCommand,
+  layerSetCurrentCommand,
+  layerTransparencyCommand,
+  withLayer,
+} from './cadTransactionsLayerCommands';
 
 const createIdleCommandState = (): CadCommandState => ({
   key: 'IDLE',
@@ -168,6 +180,14 @@ const eraseCommand: CadCommandDefinition<{ key: 'ERASE' }> = {
   execute: (snapshot) => {
     const selectedEntities = getExpandedSelectedEntities(snapshot);
     if (selectedEntities.length === 0) return null;
+    // Atomic reject: any locked/hidden source blocks the whole erase (LAYER_LOCKED).
+    if (
+      selectedEntities.some(
+        (entity) => !checkCadEntityEditable(snapshot.project, entity).editable,
+      )
+    ) {
+      return null;
+    }
     const removedEntityIds = selectedEntities.map((entity) => entity.id);
     const removedEntityIdSet = new Set(removedEntityIds);
     const nextProject = replaceCadProjectEntities(
@@ -312,8 +332,7 @@ const lineCommand: CadCommandDefinition<{
     const lineEntity: CadEntity = {
       id: createStableRuntimeId('cad-line'),
       type: 'line',
-      layerId: 'observation-lines',
-      styleId: 'style-observation-line',
+      layerId: resolveCurrentCadLayerId(snapshot.project),
       visible: true,
       locked: false,
       fromStationId: command.start.label,
@@ -365,27 +384,11 @@ const draftOnlyCommand = (
   }),
 });
 
-const commitLayerProject = (
-  key: CadCommandKey,
-  snapshot: CadWorkspaceSnapshot,
-  nextProject: CadProject,
-  label: string,
-): CadCommandExecutionResult => ({
-  nextSnapshot: {
-    project: nextProject,
-    selection: createCadSelectionState(nextProject, snapshot.selection.selectedEntityIds),
-  },
-  commandState: { key, phase: 'committed', prompt: `${label} committed.` },
-  transactionLabel: label,
-  addedEntityIds: [],
-  removedEntityIds: [],
-});
-
 const layerCreateCommand: CadCommandDefinition<Extract<CadCommand, { key: 'LAYER_CREATE' }>> = {
   key: 'LAYER_CREATE',
   execute: (snapshot, command) => {
     const name = command.name.trim();
-    if (!name) return null;
+    if (!name || isLayerNameTaken(snapshot.project, name)) return null;
     const layer: CadLayer = {
       id: createStableRuntimeId('cad-layer'),
       name,
@@ -404,7 +407,7 @@ const layerRenameCommand: CadCommandDefinition<Extract<CadCommand, { key: 'LAYER
   key: 'LAYER_RENAME',
   execute: (snapshot, command) => {
     const name = command.name.trim();
-    if (!name) return null;
+    if (!name || isLayerNameTaken(snapshot.project, name, command.layerId)) return null;
     const nextProject = withLayer(snapshot.project, command.layerId, { name });
     if (!nextProject) return null;
     return commitLayerProject('LAYER_RENAME', snapshot, nextProject, `LAYER_RENAME (${name})`);
@@ -446,6 +449,18 @@ const layerMoveObjectsCommand: CadCommandDefinition<Extract<CadCommand, { key: '
     if (command.fromLayerId === command.toLayerId) return null;
     const moved = snapshot.project.entities.filter((entity) => entity.layerId === command.fromLayerId);
     if (moved.length === 0) return null;
+    // Locked target layer rejects (creation-on-locked); any locked/hidden
+    // moved source rejects the whole move (LAYER_LOCKED).
+    if (
+      snapshot.project.layers.find((entry) => entry.id === command.toLayerId)?.locked === true
+    ) {
+      return null;
+    }
+    if (
+      moved.some((entity) => !checkCadEntityEditable(snapshot.project, entity).editable)
+    ) {
+      return null;
+    }
     const nextProject = replaceCadProjectEntities(
       snapshot.project,
       snapshot.project.entities.map((entity) =>
@@ -468,19 +483,6 @@ const layerDeleteCommand: CadCommandDefinition<Extract<CadCommand, { key: 'LAYER
     };
     return commitLayerProject('LAYER_DELETE', snapshot, nextProject, `LAYER_DELETE (${command.layerId})`);
   },
-};
-
-const withLayer = (
-  project: CadProject,
-  layerId: string,
-  patch: Partial<CadLayer>,
-): CadProject | null => {
-  const layer = project.layers.find((entry) => entry.id === layerId);
-  if (!layer) return null;
-  return {
-    ...project,
-    layers: project.layers.map((entry) => (entry.id === layerId ? { ...entry, ...patch } : entry)),
-  };
 };
 
 export const CAD_COMMAND_REGISTRY: Record<CadCommandKey, CadCommandDefinition<CadCommand>> = {
@@ -532,6 +534,13 @@ export const CAD_COMMAND_REGISTRY: Record<CadCommandKey, CadCommandDefinition<Ca
   LAYER_VISIBILITY: layerVisibilityCommand as CadCommandDefinition<CadCommand>,
   LAYER_LOCKED: layerLockedCommand as CadCommandDefinition<CadCommand>,
   LAYER_PRINTABLE: layerPrintableCommand as CadCommandDefinition<CadCommand>,
+  LAYER_COLOR: layerColorCommand as CadCommandDefinition<CadCommand>,
+  LAYER_LINETYPE: layerLinetypeCommand as CadCommandDefinition<CadCommand>,
+  LAYER_LINEWEIGHT: layerLineweightCommand as CadCommandDefinition<CadCommand>,
+  LAYER_TRANSPARENCY: layerTransparencyCommand as CadCommandDefinition<CadCommand>,
+  LAYER_FROZEN: layerFrozenCommand as CadCommandDefinition<CadCommand>,
+  LAYER_DESCRIPTION: layerDescriptionCommand as CadCommandDefinition<CadCommand>,
+  LAYER_SET_CURRENT: layerSetCurrentCommand as CadCommandDefinition<CadCommand>,
   LAYER_MOVE_OBJECTS: layerMoveObjectsCommand as CadCommandDefinition<CadCommand>,
   LAYER_DELETE: layerDeleteCommand as CadCommandDefinition<CadCommand>,
   F2F_GENERATE: f2fGenerateCommand as CadCommandDefinition<CadCommand>,

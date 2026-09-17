@@ -5,6 +5,7 @@ import type {
   CadEntityPropertyEditField,
   CadPropertiesPanelState,
 } from '../../engine/cad/cadProperties';
+import type { CadPropertiesEditOutcome } from '../../hooks/surveyCad/surveyCadPropertiesEdit';
 import SurveyCadFloatingPanelShell from './SurveyCadFloatingPanelShell';
 
 interface SurveyCadPropertiesPanelProps {
@@ -24,7 +25,7 @@ interface SurveyCadPropertiesPanelProps {
     _entityId: CadEntityId,
     _field: CadEntityPropertyEditField,
     _value: string,
-  ) => boolean;
+  ) => CadPropertiesEditOutcome;
 }
 
 const SurveyCadPropertiesPanel: React.FC<SurveyCadPropertiesPanelProps> = ({
@@ -49,6 +50,7 @@ const SurveyCadPropertiesPanel: React.FC<SurveyCadPropertiesPanelProps> = ({
     panelState.mode === 'multi' ? panelState.defaultEntityId : null,
   );
   const [draftValues, setDraftValues] = useState<Record<string, string>>({});
+  const [editMessage, setEditMessage] = useState<string | null>(null);
 
   useEffect(() => {
     if (panelState.mode !== 'multi') {
@@ -59,6 +61,9 @@ const SurveyCadPropertiesPanel: React.FC<SurveyCadPropertiesPanelProps> = ({
       setSelectedEntityId(panelState.defaultEntityId);
     }
     setDraftValues({});
+  }, [panelState]);
+  useEffect(() => {
+    setEditMessage(null);
   }, [panelState]);
 
   const activeGroup = useMemo(() => {
@@ -263,12 +268,20 @@ const SurveyCadPropertiesPanel: React.FC<SurveyCadPropertiesPanelProps> = ({
                         }
                         if (event.key !== 'Enter') return;
                         event.preventDefault();
-                        const applied = onEditField(
+                        const outcome = onEditField(
                           activeEntity.entityId,
                           editableField,
                           draftValues[row.key] ?? row.value,
                         );
-                        if (!applied) return;
+                        if (!outcome.applied) {
+                          setEditMessage(
+                            outcome.reason === 'LAYER_LOCKED'
+                              ? 'Edit rejected: source layer is locked (LAYER_LOCKED).'
+                              : 'Edit rejected: invalid value.',
+                          );
+                          return;
+                        }
+                        setEditMessage(null);
                         setDraftValues((current) => {
                           if (!(row.key in current)) return current;
                           const nextValues = { ...current };
@@ -286,6 +299,7 @@ const SurveyCadPropertiesPanel: React.FC<SurveyCadPropertiesPanelProps> = ({
             </React.Fragment>
           ))}
         </div>
+        {editMessage ? <p role="status">{editMessage}</p> : null}
       </div>
     </SurveyCadFloatingPanelShell>
   );

@@ -43,6 +43,8 @@ interface Ctx {
   ops: string[];
   pageHpt: number;
   warnings: GlyphSubstitutionWarning[];
+  /** ExtGState resource name for a translucent opacity, or null when opaque. */
+  gsNameOf: (_opacity: number | undefined) => string | null;
 }
 
 const toPt = (mm: number): number => mm * PT_PER_MM;
@@ -142,6 +144,16 @@ const emitText = (ctx: Ctx, item: Extract<ExportItem, { kind: 'text' }>): void =
 };
 
 const emitItem = (ctx: Ctx, item: ExportItem): void => {
+  // Translucent items (entity/layer transparency) ride in an ExtGState
+  // (`/GSn gs`): q…Q isolates the constant-alpha change so later opaque
+  // items need no reset. Opaque items emit exactly as before.
+  const gs = ctx.gsNameOf(item.opacity);
+  if (gs) ctx.ops.push(`q /${gs} gs`);
+  emitItemInner(ctx, item);
+  if (gs) ctx.ops.push('Q');
+};
+
+const emitItemInner = (ctx: Ctx, item: ExportItem): void => {
   switch (item.kind) {
     case 'line':
       emitLine(ctx, item.x1, item.y1, item.x2, item.y2, item.widthMm, item.stroke);
@@ -169,8 +181,11 @@ const emitItem = (ctx: Ctx, item: ExportItem): void => {
 const clipRectOp = (ctx: Ctx, clip: { xMm: number; yMm: number; widthMm: number; heightMm: number }): string =>
   `${fmt(toPt(clip.xMm))} ${fmt(flipY(clip.yMm + clip.heightMm, ctx))} ${fmt(toPt(clip.widthMm))} ${fmt(toPt(clip.heightMm))} re W n`;
 
-const buildPageContent = (scene: ExportSheetScene): { content: string; warnings: GlyphSubstitutionWarning[] } => {
-  const ctx: Ctx = { ops: [], pageHpt: toPt(scene.heightMm), warnings: [] };
+const buildPageContent = (
+  scene: ExportSheetScene,
+  gsNameOf: (_opacity: number | undefined) => string | null,
+): { content: string; warnings: GlyphSubstitutionWarning[] } => {
+  const ctx: Ctx = { ops: [], pageHpt: toPt(scene.heightMm), warnings: [], gsNameOf };
   // Clipped items are wrapped in a PDF clipping path (q … re W n … Q) so
   // the PDF honors the same clip rects the SVG enforces via clipPath.
   // Unclipped items (frames, title block, paper extras) emit directly.
@@ -198,32 +213,59 @@ export const exportScenesToPdfWithWarnings = (
   scenes: ExportSheetScene[],
 ): { bytes: Uint8Array; warnings: GlyphSubstitutionWarning[] } => {
   if (scenes.length === 0) throw new Error('export: at least one sheet is required');
+  // Document-level ExtGState table: one entry per distinct translucent
+  // opacity across all scenes (sorted, deterministic names GS1…GSn).
+  const opacitySet = new Set<number>();
+  scenes.forEach((scene) => {
+    scene.items.forEach((item) => {
+      if (item.opacity != null && item.opacity < 1) opacitySet.add(item.opacity);
+    });
+  });
+  const opacities = [...opacitySet].sort((a, b) => a - b);
+  const gsNameOf = (opacity: number | undefined): string | null => {
+    if (opacity == null || opacity >= 1) return null;
+    const index = opacities.indexOf(opacity);
+    return index < 0 ? null : `GS${index + 1}`;
+  };
   const objects: string[] = [];
   const pageIds: number[] = [];
   // Object numbering: 1 catalog, 2 pages, then per scene (page, content),
-  // then one shared Helvetica font object.
+  // then one shared Helvetica font object, then one ExtGState per opacity.
   let nextId = 3;
   const contents: string[] = [];
   const warnings: GlyphSubstitutionWarning[] = [];
   const pageSizes: Array<{ w: number; h: number }> = [];
   scenes.forEach((scene) => {
     pageIds.push(nextId);
-    const page = buildPageContent(scene);
+    const page = buildPageContent(scene, gsNameOf);
     contents.push(page.content);
     warnings.push(...page.warnings);
     pageSizes.push({ w: toPt(scene.widthMm), h: toPt(scene.heightMm) });
     nextId += 2;
   });
   const fontId = nextId;
+  nextId += 1;
+  const gsIds = opacities.map(() => {
+    const id = nextId;
+    nextId += 1;
+    return id;
+  });
+  const gsResource = gsIds.length > 0
+    ? `/ExtGState<<${gsIds.map((id, index) => `/GS${index + 1} ${id} 0 R`).join('')}>>`
+    : '';
   pageIds.forEach((pageId, index) => {
     const size = pageSizes[index] as { w: number; h: number };
     objects.push(
-      `${pageId} 0 obj<</Type/Page/Parent 2 0 R/MediaBox[0 0 ${fmt(size.w)} ${fmt(size.h)}]/Resources<</Font<</F1 ${fontId} 0 R>>>>/Contents ${pageId + 1} 0 R>>endobj`,
+      `${pageId} 0 obj<</Type/Page/Parent 2 0 R/MediaBox[0 0 ${fmt(size.w)} ${fmt(size.h)}]/Resources<</Font<</F1 ${fontId} 0 R>>${gsResource}>>/Contents ${pageId + 1} 0 R>>endobj`,
     );
     const stream = contents[index] as string;
     objects.push(`${pageId + 1} 0 obj<</Length ${stream.length}>>stream\n${stream}endstream\nendobj`);
   });
   objects.push(`${fontId} 0 obj<</Type/Font/Subtype/Type1/BaseFont/Helvetica/Encoding/WinAnsiEncoding>>endobj`);
+  opacities.forEach((opacity, index) => {
+    const alpha = fmt(Math.max(0, opacity));
+    objects.push(`${gsIds[index]} 0 obj<</Type/ExtGState/CA ${alpha}/ca ${alpha}>>endobj`);
+  });
 
   const header = '%PDF-1.4\n';
   const catalog = '1 0 obj<</Type/Catalog/Pages 2 0 R>>endobj';

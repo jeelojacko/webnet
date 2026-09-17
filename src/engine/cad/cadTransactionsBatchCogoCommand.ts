@@ -10,6 +10,7 @@ import {
   appendCadProjectEntities,
 } from './cadProjectState';
 import { createCadSelectionState } from './cadSelection';
+import { resolveCurrentCadLayerId } from './cadLayers';
 import type { CadCommandDefinition } from './cadTransactions.types';
 import type { CadArcEntity, CadEntity, CadLineEntity } from './cadTypes';
 import { createArcSupportEntities } from './cadTransactionsLinkedEntities';
@@ -89,8 +90,7 @@ export const batchCogoCommand: CadCommandDefinition<{
         const lineEntity: CadLineEntity = {
           id: createStableRuntimeId('cad-batch-cogo-line'),
           type: 'line',
-          layerId: 'observation-lines',
-          styleId: 'style-observation-line',
+          layerId: resolveCurrentCadLayerId(workingProject),
           visible: true,
           locked: false,
           fromStationId: fromPointEntityResult.pointEntity.stationId,
@@ -121,8 +121,7 @@ export const batchCogoCommand: CadCommandDefinition<{
       const arcEntity: CadArcEntity = {
         id: createStableRuntimeId('cad-batch-cogo-arc'),
         type: 'arc',
-        layerId: 'observation-lines',
-        styleId: 'style-observation-line',
+        layerId: resolveCurrentCadLayerId(workingProject),
         visible: true,
         locked: false,
         centerX: operation.definition.center.x,

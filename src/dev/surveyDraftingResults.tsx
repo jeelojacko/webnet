@@ -52,7 +52,14 @@ export const SurveyDraftingResults = ({
           }}
         />
       </label>
-      <LayerPanel layers={doc.project.layers} entityCounts={entityCounts} />
+      <LayerPanel
+        layers={doc.project.layers}
+        currentLayerId={doc.project.currentLayerId ?? 'general'}
+        lineTypes={doc.project.styleLibrary.lineTypes}
+        entityCounts={entityCounts}
+        onLayerCommand={() => {}}
+        onSetCurrent={() => {}}
+      />
       <SheetWorkspace
         project={doc.project}
         draft={draft}

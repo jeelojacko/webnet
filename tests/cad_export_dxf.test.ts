@@ -215,18 +215,18 @@ describe('R12 dxf hardening', () => {
     expect(bluePoint[0]?.values.get('62')?.[0]).toBe('5');
   });
 
-  it('emits LTYPE records incl. dash-short and warns on lineweight/unknown linetype', () => {
+  it('emits LTYPE records incl. dashed and warns on lineweight/unknown linetype', () => {
     const project = buildHardeningProject();
     const ltypes = tableRecords(serializeDxfModel(buildDxfExportModel({ project })), 'LTYPE');
     const names = ltypes.map((record) => record.get('2')?.[0]);
     expect(names).toContain('Continuous');
-    expect(names).toContain('DASHSHORT');
-    const dashed = ltypes.find((record) => record.get('2')?.[0] === 'DASHSHORT');
+    expect(names).toContain('DASHED');
+    const dashed = ltypes.find((record) => record.get('2')?.[0] === 'DASHED');
     expect(Number((dashed?.get('73') ?? ['0'])[0])).toBeGreaterThan(0);
-    // Error-ellipse polyline inherits dash-short from its layer record.
+    // Error-ellipse polyline inherits dashed from its layer record.
     const dxf = serializeDxfModel(buildDxfExportModel({ project }));
     const ellipseLayer = tableRecords(dxf, 'LAYER').find((record) => record.get('2')?.[0] === 'error-ellipses');
-    expect(ellipseLayer?.get('6')?.[0]).toBe('DASHSHORT');
+    expect(ellipseLayer?.get('6')?.[0]).toBe('DASHED');
 
     const result = serializeDxfModelWithResult(buildDxfExportModel({ project }));
     expect(result.warnings.some((w) => w.message.includes('lineweight'))).toBe(true);
@@ -367,10 +367,11 @@ describe('R2000 dxf hardening', () => {
     expect(blue.length).toBe(1);
     expect(blue[0]?.values.get('62')?.[0]).toBe('5');
     expect(blue[0]?.values.get('420')?.[0]).toBe('255');
-    // Full LTYPE table for referenced types.
+    // Full LTYPE table for referenced types (dashed is the ellipse default;
+    // dash-short survives only as a deprecated catalog alias).
     const names = tableRecords(dxf, 'LTYPE').map((record) => record.get('2')?.[0]);
     expect(names).toContain('Continuous');
-    expect(names).toContain('DASHSHORT');
+    expect(names).toContain('DASHED');
     expect(names).toContain('ByLayer');
     // Alignment + ellipse + parcel all present in model space.
     expect(ofType(entities, 'LINE').length).toBeGreaterThanOrEqual(2);

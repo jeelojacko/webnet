@@ -17,6 +17,10 @@ const anchorOf = (anchor: 'start' | 'middle' | 'end' | undefined): string => ` t
 
 // Color attrs emit only when the item carries a resolved color, so
 // hand-built scenes without color serialize exactly as before.
+// Opacity (from entity/layer transparency) emits only when translucent.
+const opacityAttr = (item: ExportItem): string =>
+  item.opacity != null && item.opacity < 1 ? ` opacity="${fmt(Math.max(0, item.opacity))}"` : '';
+
 const strokeAttrs = (item: ExportItem): string => {
   let out = '';
   if (item.stroke != null) out += ` stroke="${escapeXml(item.stroke)}"`;
@@ -30,25 +34,25 @@ const strokeAttrs = (item: ExportItem): string => {
 const serializeItem = (item: ExportItem): string => {
   switch (item.kind) {
     case 'line':
-      return `<line x1="${fmt(item.x1)}" y1="${fmt(item.y1)}" x2="${fmt(item.x2)}" y2="${fmt(item.y2)}"${strokeAttrs(item)}${item.clipId ? ` clip-path="url(#${item.clipId})"` : ''}/>`;
+      return `<line x1="${fmt(item.x1)}" y1="${fmt(item.y1)}" x2="${fmt(item.x2)}" y2="${fmt(item.y2)}"${strokeAttrs(item)}${opacityAttr(item)}${item.clipId ? ` clip-path="url(#${item.clipId})"` : ''}/>`;
     case 'polyline': {
       const points = item.points.map((p) => `${fmt(p.x)},${fmt(p.y)}`).join(' ');
       const tag = item.close ? 'polygon' : 'polyline';
-      return `<${tag} points="${points}" fill="${item.fill ?? 'none'}"${strokeAttrs(item)}${item.clipId ? ` clip-path="url(#${item.clipId})"` : ''}/>`;
+      return `<${tag} points="${points}" fill="${item.fill ?? 'none'}"${strokeAttrs(item)}${opacityAttr(item)}${item.clipId ? ` clip-path="url(#${item.clipId})"` : ''}/>`;
     }
     case 'rect':
-      return `<rect x="${fmt(item.x)}" y="${fmt(item.y)}" width="${fmt(item.width)}" height="${fmt(item.height)}" fill="${item.fill ?? 'none'}"${strokeAttrs(item)}${item.clipId ? ` clip-path="url(#${item.clipId})"` : ''}/>`;
+      return `<rect x="${fmt(item.x)}" y="${fmt(item.y)}" width="${fmt(item.width)}" height="${fmt(item.height)}" fill="${item.fill ?? 'none'}"${strokeAttrs(item)}${opacityAttr(item)}${item.clipId ? ` clip-path="url(#${item.clipId})"` : ''}/>`;
     case 'circle':
-      return `<circle cx="${fmt(item.cx)}" cy="${fmt(item.cy)}" r="${fmt(item.r)}" fill="${item.fill ?? 'none'}"${strokeAttrs(item)}${item.clipId ? ` clip-path="url(#${item.clipId})"` : ''}/>`;
+      return `<circle cx="${fmt(item.cx)}" cy="${fmt(item.cy)}" r="${fmt(item.r)}" fill="${item.fill ?? 'none'}"${strokeAttrs(item)}${opacityAttr(item)}${item.clipId ? ` clip-path="url(#${item.clipId})"` : ''}/>`;
     case 'ellipse':
-      return `<ellipse cx="${fmt(item.cx)}" cy="${fmt(item.cy)}" rx="${fmt(item.rx)}" ry="${fmt(item.ry)}" transform="rotate(${fmt(item.rotationDeg)} ${fmt(item.cx)} ${fmt(item.cy)})" fill="none"${strokeAttrs(item)}${item.clipId ? ` clip-path="url(#${item.clipId})"` : ''}/>`;
+      return `<ellipse cx="${fmt(item.cx)}" cy="${fmt(item.cy)}" rx="${fmt(item.rx)}" ry="${fmt(item.ry)}" transform="rotate(${fmt(item.rotationDeg)} ${fmt(item.cx)} ${fmt(item.cy)})" fill="none"${strokeAttrs(item)}${opacityAttr(item)}${item.clipId ? ` clip-path="url(#${item.clipId})"` : ''}/>`;
     case 'arc':
-      return `<path d="M ${fmt(item.cx + item.r * Math.cos((item.startDeg * Math.PI) / 180))} ${fmt(item.cy - item.r * Math.sin((item.startDeg * Math.PI) / 180))} A ${fmt(item.r)} ${fmt(item.r)} 0 0 0 ${fmt(item.cx + item.r * Math.cos((item.endDeg * Math.PI) / 180))} ${fmt(item.cy - item.r * Math.sin((item.endDeg * Math.PI) / 180))}" fill="none"${strokeAttrs(item)}${item.clipId ? ` clip-path="url(#${item.clipId})"` : ''}/>`;
+      return `<path d="M ${fmt(item.cx + item.r * Math.cos((item.startDeg * Math.PI) / 180))} ${fmt(item.cy - item.r * Math.sin((item.startDeg * Math.PI) / 180))} A ${fmt(item.r)} ${fmt(item.r)} 0 0 0 ${fmt(item.cx + item.r * Math.cos((item.endDeg * Math.PI) / 180))} ${fmt(item.cy - item.r * Math.sin((item.endDeg * Math.PI) / 180))}" fill="none"${strokeAttrs(item)}${opacityAttr(item)}${item.clipId ? ` clip-path="url(#${item.clipId})"` : ''}/>`;
     case 'text': {
       const rotation = item.rotationDeg ? ` transform="rotate(${fmt(item.rotationDeg)} ${fmt(item.x)} ${fmt(item.y)})"` : '';
       const clip = item.clipId ? ` clip-path="url(#${item.clipId})"` : '';
       const fill = item.stroke != null ? ` fill="${escapeXml(item.stroke)}"` : '';
-      return `<text x="${fmt(item.x)}" y="${fmt(item.y)}" font-size="${fmt(item.heightMm)}"${anchorOf(item.anchor)}${fill}${rotation}${clip}>${escapeXml(item.text)}</text>`;
+      return `<text x="${fmt(item.x)}" y="${fmt(item.y)}" font-size="${fmt(item.heightMm)}"${anchorOf(item.anchor)}${fill}${opacityAttr(item)}${rotation}${clip}>${escapeXml(item.text)}</text>`;
     }
   }
 };

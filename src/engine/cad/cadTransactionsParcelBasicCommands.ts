@@ -8,6 +8,7 @@ import {
 import { buildCadCogoEntityMetadata } from './cadCogoTypes';
 import { getCadEntityDisplayLabel } from './cadEntityNames';
 import { createCadSelectionState } from './cadSelection';
+import { resolveCurrentCadLayerId } from './cadLayers';
 import { nextParcelName } from './cadTransactionsEntityFactories';
 import {
   appendCogoComputation,
@@ -67,8 +68,7 @@ export const parcelCreateCommand: CadCommandDefinition<{
     const parcelEntity: CadParcelEntity = {
       id: createStableRuntimeId('cad-parcel'),
       type: 'parcel',
-      layerId: 'parcels',
-      styleId: 'style-parcel',
+      layerId: resolveCurrentCadLayerId(snapshot.project),
       visible: true,
       locked: false,
       vertices: parcelSource.vertices.map((vertex) => ({ x: vertex.x, y: vertex.y })),

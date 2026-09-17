@@ -9,7 +9,7 @@ import type {
   CadProject,
   SurveyCadPersistedState,
 } from './cadTypes';
-import { DEFAULT_CAD_LAYERS } from './cadLayers';
+import { DEFAULT_CAD_LAYERS, backfillCadLayerList, backfillCadProjectStandards } from './cadLayers';
 import { DEFAULT_CAD_STYLE_LIBRARY } from './cadStyles';
 import type { UnitsMode } from '../../types';
 
@@ -52,6 +52,7 @@ export const createBlankCadProject = ({
   entities: [],
   cogoComputations: [],
   bounds: null,
+  currentLayerId: 'general',
 });
 
 export const createBlankCadDrawingDocument = ({
@@ -157,7 +158,7 @@ export const migrateSurveyCadStateToDrawing = ({
   units?: UnitsMode;
 }): CadDrawingDocument => {
   const nowIso = new Date().toISOString();
-  const project = cloneSurveyCadPersistedState(state).project;
+  const project = backfillCadProjectStandards(cloneSurveyCadPersistedState(state).project);
   return {
     kind: 'webnet-cad-drawing',
     schemaVersion: 2,
@@ -194,7 +195,13 @@ const sanitizeCadDrawingDocument = (value: unknown): CadDrawingDocument | undefi
     return undefined;
   }
   try {
-    return cloneCadDrawingDocument(value as unknown as CadDrawingDocument);
+    const cloned = cloneCadDrawingDocument(value as unknown as CadDrawingDocument);
+    // Load-time standards backfill: idempotent, no legacy visual change.
+    const project = backfillCadProjectStandards(cloned.project);
+    const draft = cloned.draft
+      ? { ...cloned.draft, layers: backfillCadLayerList(cloned.draft.layers) }
+      : cloned.draft;
+    return { ...cloned, project, draft };
   } catch {
     return undefined;
   }

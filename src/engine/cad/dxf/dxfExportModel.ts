@@ -1,6 +1,6 @@
-import type { CadProject } from '../cadTypes';
+import type { CadEntity, CadProject } from '../cadTypes';
 import type { ModelLabelPlacement } from '../cadExportScene';
-import { entityStyle } from '../cadRendererStyle';
+import { DEFAULT_RESOLVED_LINEWEIGHT_MM, resolveCadEntityAppearance } from '../cadAppearance';
 import {
   emptyExportResult,
   finalizeExportResult,
@@ -33,6 +33,8 @@ interface DxfEntryStyle {
   linetypeId?: string;
   /** Lineweight in mm; absent = BYLAYER. */
   lineweightMm?: number;
+  /** Individually hidden entity (group 60); absent/false = visible. */
+  invisible?: boolean;
   /** Source entity id for warning attribution. */
   sourceId?: string;
 }
@@ -50,6 +52,8 @@ export interface DxfExportModel {
   layerLinetypes?: Record<string, string>;
   /** Layer lineweights in mm. Absent = BYLAYER (R12 warns, R2000 emits). */
   layerLineweights?: Record<string, number>;
+  /** Layer state flags for OFF (negative-ACI 62) / frozen+locked (70 bits). */
+  layerFlags?: Record<string, { off: boolean; frozen: boolean; locked: boolean }>;
   /** Linetype ids actually referenced (layers + entities), sorted. */
   usedLinetypes?: string[];
 }
@@ -106,6 +110,7 @@ export const buildDxfExportModelWithResult = (args: BuildDxfModelArgs): ExportRe
     layerColors: {},
     layerLinetypes: {},
     layerLineweights: {},
+    layerFlags: {},
     usedLinetypes: [],
   });
   const model = result.output;
@@ -127,25 +132,42 @@ export const buildDxfExportModelWithResult = (args: BuildDxfModelArgs): ExportRe
       if (layer?.lineweightMm != null && Number.isFinite(layer.lineweightMm)) {
         model.layerLineweights![name] = layer.lineweightMm;
       }
+      model.layerFlags![name] = {
+        off: layer?.visible === false,
+        frozen: layer?.frozen === true,
+        locked: layer?.locked === true,
+      };
     }
     return name;
   };
-  // Shared-resolver precedence (style → layer → default), matching screen.
-  const entryStyle = (entity: { styleId?: string; layerId: string; id: string }): DxfEntryStyle => {
-    const style = entityStyle(args.project, entity as never);
+  // Shared-resolver precedence (explicit > style > layer > default),
+  // matching screen and plot. Resolving through resolveCadEntityAppearance
+  // (not entityStyle) closes the entryStyle gap: legacy style.strokeWidth
+  // reaches DXF 370 instead of silently exporting BYLAYER.
+  const entryStyle = (entity: CadEntity): DxfEntryStyle => {
+    const layer = args.project.layers.find((entry) => entry.id === entity.layerId);
+    const resolved = resolveCadEntityAppearance({
+      entity,
+      layer: layer ?? null,
+      styleLibrary: args.project.styleLibrary,
+    });
     const layerHex = model.layerColors![registerLayer(entity.layerId)] as string;
-    const hex = resolveColor({ style: style?.color, layer: layerHex });
-    const linetypeId = style?.lineTypeId ?? model.layerLinetypes![entity.layerId] ?? 'continuous';
-    usedLinetypes.add(linetypeId);
-    const out: DxfEntryStyle = { sourceId: entity.id };
-    if (hex !== layerHex) out.colorHex = hex;
     const layerLinetype = model.layerLinetypes![entity.layerId] ?? 'continuous';
-    if (linetypeId !== layerLinetype) out.linetypeId = linetypeId;
+    const layerWeight = layer?.lineweightMm ?? DEFAULT_RESOLVED_LINEWEIGHT_MM;
+    usedLinetypes.add(resolved.lineTypeId);
+    const out: DxfEntryStyle = { sourceId: entity.id };
+    if (resolved.color !== layerHex) out.colorHex = resolved.color;
+    if (resolved.lineTypeId !== layerLinetype) out.linetypeId = resolved.lineTypeId;
+    if (resolved.lineweightMm !== layerWeight) out.lineweightMm = resolved.lineweightMm;
+    if (entity.visible === false) out.invisible = true;
     return out;
   };
   const sorted = [...args.project.entities].sort((a, b) => (a.id < b.id ? -1 : a.id > b.id ? 1 : 0));
   sorted.forEach((entity) => {
-    if (entity.visible === false) return;
+    // DXF retain policy (spec §6): every entity rides, including OFF /
+    // frozen / non-printable layers and individually hidden entities —
+    // layer state travels in the layer record (OFF = negative 62,
+    // frozen/locked = 70 bits), entity.hidden travels as group 60.
     switch (entity.type) {
       case 'survey-point': {
         if (!finitePair(entity.x, entity.y)) {

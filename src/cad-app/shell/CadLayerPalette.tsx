@@ -8,10 +8,12 @@ interface CadLayerPaletteProps {
 }
 
 /**
- * Phase 18B — dockable layer manager. Columns are the honest supported
- * subset (name, color, visible, locked, printable, entity count). There is
- * no current-layer/active-layer concept in the engine (gap note below,
- * 18C candidate). Visibility toggles hide entities in the viewport.
+ * Phase 18C — dockable Layer Properties Manager. Full column set (status,
+ * current, name, on, freeze, lock, plot, color, linetype, lineweight,
+ * transparency, description, object count) backed by the project-owned
+ * current-layer model; every mutation routes through an undoable LAYER_*
+ * transaction. On/Freeze reach export now; viewport filtering rides the
+ * scene-consumer filter path (renderer wave).
  */
 export const CadLayerPalette: React.FC<CadLayerPaletteProps> = ({ snapshot, actions }) => {
   if (!snapshot) return <p className="cad-shell-empty">No drawing loaded.</p>;
@@ -19,23 +21,18 @@ export const CadLayerPalette: React.FC<CadLayerPaletteProps> = ({ snapshot, acti
     <div className="cad-shell-layers" data-cad-layers>
       <LayerPanel
         layers={snapshot.layers}
+        currentLayerId={snapshot.currentLayerId}
+        lineTypes={snapshot.lineTypes}
         entityCounts={snapshot.layerEntityCounts}
-        visibilityRequestOnly
-        onToggleVisibility={
-          actions ? (layerId, visible) => actions.setLayerPatch(layerId, { visible }) : undefined
-        }
-        onToggleLocked={actions ? (layerId, locked) => actions.setLayerPatch(layerId, { locked }) : undefined}
-        onTogglePrintable={
-          actions ? (layerId, printable) => actions.setLayerPatch(layerId, { printable }) : undefined
-        }
-        onCreate={actions ? (name) => actions.createLayer(name) : undefined}
-        onRename={actions ? (layerId, name) => actions.setLayerPatch(layerId, { name }) : undefined}
-        onDelete={actions ? (layerId) => actions.deleteLayer(layerId) : undefined}
+        onLayerCommand={actions ? (command) => void actions.runLayerCommand(command) : () => {}}
+        onSetCurrent={actions ? (layerId) => void actions.setCurrentLayer(layerId) : () => {}}
       />
       <p className="cad-shell-gap-note">
-        No active layer yet — new entities use their default layer. Hiding a layer does not hide its
-        entities in the viewport yet — 18C. Populated layers cannot be deleted; move objects off
-        first. A current-layer model arrives with the engine change (18C).
+        New entities take the current layer (★) with ByLayer appearance. Hiding
+        (On) or freezing a layer hides its entities in the viewport and
+        excludes them from plot output; locked layers stay selectable but
+        reject edits. Populated layers, the General layer, and the current
+        layer cannot be deleted — move objects off (or switch current) first.
       </p>
     </div>
   );

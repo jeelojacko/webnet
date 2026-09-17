@@ -120,9 +120,9 @@ export const trueColorDxf420 = (hex: string): number => {
   return r * 65536 + g * 256 + b;
 };
 
-// Bounded linetype catalog: the only dash the model can reference is
-// dash-short, so the DXF side needs exactly two records. Unknown ids fall
-// back to Continuous AND warn at the call site — never silently solidify.
+// Linetype catalog: every model-library id needs a DXF record. Unknown ids
+// fall back to Continuous AND warn at the call site — never silently
+// solidify. `dash-short` is a deprecated alias for `dashed` (kept, not deleted).
 export interface DxfLinetypeDef {
   /** DXF symbol name (no spaces; readers match case-insensitively). */
   name: string;
@@ -132,6 +132,13 @@ export interface DxfLinetypeDef {
 
 export const DXF_LINETYPE_CATALOG: Record<string, DxfLinetypeDef> = {
   continuous: { name: 'Continuous', pattern: [] },
+  dashed: { name: 'DASHED', pattern: [0.5, -0.25] },
+  hidden: { name: 'HIDDEN', pattern: [0.25, -0.125] },
+  center: { name: 'CENTER', pattern: [1.25, -0.25, 0.25, -0.25] },
+  center2: { name: 'CENTER2', pattern: [0.75, -0.15, 0.2, -0.15] },
+  'dash-dot': { name: 'DASHDOT', pattern: [1.0, -0.2, 0.0, -0.2] },
+  dotted: { name: 'DOT', pattern: [0.0, -0.25] },
+  phantom: { name: 'PHANTOM', pattern: [1.25, -0.25, 0.0, -0.25, 0.0, -0.25] },
   'dash-short': { name: 'DASHSHORT', pattern: [0.5, -0.25] },
 };
 

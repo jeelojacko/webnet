@@ -138,15 +138,31 @@ const PropertyRow: React.FC<{
   actions: CadShellActions | null;
 }> = ({ row, entityIds, varies, actions }) => {
   const [draft, setDraft] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
   const entityScope = entityIds.join(',');
-  useEffect(() => setDraft(null), [row.value, entityScope]);
+  useEffect(() => {
+    setDraft(null);
+    setError(null);
+  }, [row.value, entityScope]);
   const commit = (): void => {
     if (draft == null || !row.editableField || !actions) return;
     let ok = true;
+    let reason: string | null = null;
     for (const entityId of entityIds) {
-      ok = actions.editField(entityId, row.editableField, draft) && ok;
+      const outcome = actions.editField(entityId, row.editableField, draft);
+      ok = outcome.applied && ok;
+      if (!outcome.applied && reason == null) reason = outcome.reason ?? 'INVALID_VALUE';
     }
-    if (ok) setDraft(null);
+    if (ok) {
+      setDraft(null);
+      setError(null);
+    } else {
+      setError(
+        reason === 'LAYER_LOCKED'
+          ? 'Rejected: source layer is locked (LAYER_LOCKED).'
+          : 'Rejected: invalid value.',
+      );
+    }
   };
   if (!row.editableField || !actions) {
     return (
@@ -173,6 +189,7 @@ const PropertyRow: React.FC<{
             if (draft != null) commit();
           }}
         />
+        {error ? <span role="status">{error}</span> : null}
       </dd>
     </div>
   );

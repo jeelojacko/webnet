@@ -9,7 +9,14 @@ import type { DraftPrecisionProfile } from './cadDraftTypes';
 
 const DEFAULT_LINE_TYPES: CadLineType[] = [
   { id: 'continuous', name: 'Continuous', dashPattern: [] },
-  { id: 'dash-short', name: 'Dash Short', dashPattern: [6, 4] },
+  { id: 'dashed', name: 'Dashed', dashPattern: [6, 4] },
+  { id: 'hidden', name: 'Hidden', dashPattern: [3, 2] },
+  { id: 'center', name: 'Center', dashPattern: [12, 3, 2, 3] },
+  { id: 'center2', name: 'Center 2', dashPattern: [8, 2, 1, 2] },
+  { id: 'dash-dot', name: 'Dash Dot', dashPattern: [10, 2, 1, 2] },
+  { id: 'dotted', name: 'Dotted', dashPattern: [1, 2] },
+  { id: 'phantom', name: 'Phantom', dashPattern: [12, 2, 1, 2, 1, 2] },
+  { id: 'dash-short', name: 'Dash Short (deprecated, use Dashed)', dashPattern: [6, 4] },
 ];
 
 const DEFAULT_TEXT_STYLES: CadTextStyle[] = [
@@ -60,7 +67,7 @@ const DEFAULT_STYLES: CadStyle[] = [
     name: 'Error Ellipse',
     color: '#f472b6',
     strokeWidth: 1.1,
-    lineTypeId: 'dash-short',
+    lineTypeId: 'dashed',
   },
   {
     id: 'style-label',

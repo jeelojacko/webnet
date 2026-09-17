@@ -1,4 +1,5 @@
 import { getCadEntityEditableName } from './cadEntityNames';
+import { resolveCurrentCadLayerId } from './cadLayers';
 import type { CadEntity, CadProject, CadSurveyPointEntity, CadTextEntity } from './cadTypes';
 
 export const nextManualStationId = (project: CadProject): string => {
@@ -107,8 +108,10 @@ export const createManualPointEntities = (
   const point: CadSurveyPointEntity = {
     id: `pt:${stationId}`,
     type: 'survey-point',
-    layerId: 'points',
-    styleId: 'style-point',
+    // Manual points land on the current layer (fallback `general`); the
+    // anchored text label stays on `labels` (domain-required special).
+    // Both are pure ByLayer: no legacy style stamp (spec §10/§34).
+    layerId: resolveCurrentCadLayerId(project),
     visible: true,
     locked: false,
     stationId,
@@ -133,7 +136,6 @@ export const createManualPointEntities = (
       id: `label:${stationId}`,
       type: 'text',
       layerId: 'labels',
-      styleId: 'style-label',
       visible: true,
       locked: false,
       x,

@@ -1,4 +1,6 @@
+import { checkCadEntityEditable } from '../../engine/cad/cadAppearance';
 import { runCadCommand, type CadHistoryState } from '../../engine/cad/cadUndoRedo';
+import { getExpandedSelectedEntities } from '../../engine/cad/cadTransactionsSelection';
 import type {
   CadArcEntity,
   CadLineEntity,
@@ -34,13 +36,38 @@ export const handleSurveyCadEditPointPick = ({
     }
     const startPoint = current.startPoint;
     const transformKey: 'MOVE' | 'COPY' = current.key;
-    applyHistoryUpdate((existing) =>
-      runCadCommand(existing, {
+    let committed = false;
+    applyHistoryUpdate((existing) => {
+      const next = runCadCommand(existing, {
         key: transformKey,
         deltaX: point.x - startPoint.x,
         deltaY: point.y - startPoint.y,
-      }),
-    );
+      });
+      committed = next !== existing;
+      return next;
+    });
+    if (!committed) {
+      // Surface the central gate's verdict (spec §6): a rejected transform
+      // previously ended the session silently. Keep the session so the
+      // message stays in the prompt until the operator acknowledges it.
+      const blocker = getExpandedSelectedEntities(history.present).find(
+        (entity) => !checkCadEntityEditable(history.present.project, entity).editable,
+      );
+      const reason = blocker
+        ? checkCadEntityEditable(history.present.project, blocker).reason
+        : null;
+      replaceSession({
+        ...current,
+        inputValue: '',
+        resultText:
+          reason === 'LAYER_LOCKED'
+            ? `${transformKey} blocked: selection is locked (LAYER_LOCKED). Unlock the layer and try again.`
+            : reason === 'ENTITY_HIDDEN'
+              ? `${transformKey} blocked: selection is hidden (ENTITY_HIDDEN). Show or thaw the layer and try again.`
+              : `${transformKey} ignored: pick two different points with entities selected.`
+      });
+      return true;
+    }
     replaceSession(null);
     return true;
   }

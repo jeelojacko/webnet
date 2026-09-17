@@ -3,6 +3,7 @@ import { buildCadCogoEntityMetadata } from './cadCogoTypes';
 import { cadDistance } from './cadGeometry';
 import { appendCadProjectEntities } from './cadProjectState';
 import { createCadSelectionState } from './cadSelection';
+import { resolveCurrentCadLayerId } from './cadLayers';
 import type { CadCogoReportRow } from './cadCogoTypes';
 import type { CadCommandDefinition } from './cadTransactions.types';
 import type { CadEntity, CadPolylineEntity, CadSurveyPointEntity } from './cadTypes';
@@ -129,9 +130,8 @@ export const traverseCommand: CadCommandDefinition<{
       const lineEntity: CadEntity = {
         id: createStableRuntimeId('cad-traverse-sideshot'),
         type: 'line',
-        layerId: 'observation-lines',
-        styleId: 'style-observation-line',
-        visible: true,
+        layerId: resolveCurrentCadLayerId(snapshot.project),
+          visible: true,
         locked: false,
         fromStationId: sideshot.occupyLabel,
         toStationId: pointEntity.stationId,
@@ -159,8 +159,7 @@ export const traverseCommand: CadCommandDefinition<{
     const polylineEntity: CadPolylineEntity = {
       id: createStableRuntimeId('cad-traverse'),
       type: 'polyline',
-      layerId: 'observation-lines',
-      styleId: 'style-observation-line',
+      layerId: resolveCurrentCadLayerId(snapshot.project),
       visible: true,
       locked: false,
       vertices: vertices.map((vertex) => ({ x: vertex.x, y: vertex.y })),

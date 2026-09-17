@@ -1,4 +1,5 @@
 import { createCadSelectionState } from './cadSelection';
+import { checkCadEntityEditable } from './cadAppearance';
 import { getCadEntityDisplayLabel } from './cadEntityNames';
 import { stationIdExists } from './cadTransactionsEntityFactories';
 import {
@@ -9,7 +10,7 @@ import {
 import { withEntityMetadataName } from './cadTransactionsMetadata';
 import { replaceCadProjectEntities } from './cadProjectState';
 import type { CadCommandDefinition } from './cadTransactions.types';
-import type { CadEntity, CadEntityId, CadProject } from './cadTypes';
+import type { CadEntity, CadEntityAppearance, CadEntityId, CadLayerId, CadProject } from './cadTypes';
 const replaceEntityInProject = (
   project: CadProject,
   entityId: CadEntityId,
@@ -29,12 +30,63 @@ export const editEntityCommand: CadCommandDefinition<{
     | { kind: 'point-y'; value: number }
     | { kind: 'point-z'; value: number | null }
     | { kind: 'line-end'; toX: number; toY: number }
-    | { kind: 'polyline-vertex'; vertexIndex: number; x: number; y: number };
+    | { kind: 'polyline-vertex'; vertexIndex: number; x: number; y: number }
+    | { kind: 'entity-layer'; layerId: CadLayerId }
+    | { kind: 'entity-appearance'; patch: CadEntityAppearance };
 }> = {
   key: 'EDIT_ENTITY',
   execute: (snapshot, command) => {
     const targetEntity = snapshot.project.entities.find((entity) => entity.id === command.entityId);
     if (!targetEntity) return null;
+
+    // Central editability gate (spec §6): locked/hidden source rejects ALL
+    // edit kinds (geometry + appearance + layer-move) with stable codes.
+    if (!checkCadEntityEditable(snapshot.project, targetEntity).editable) return null;
+    if (command.edit.kind === 'entity-layer' || command.edit.kind === 'entity-appearance') {
+      if (command.edit.kind === 'entity-layer') {
+        const targetLayerId = command.edit.layerId;
+        if (targetLayerId === targetEntity.layerId) return null;
+        if (!snapshot.project.layers.some((layer) => layer.id === targetLayerId)) return null;
+        const nextProject = replaceEntityInProject(snapshot.project, targetEntity.id, (entity) => ({
+          ...entity,
+          layerId: targetLayerId,
+        }));
+        return {
+          nextSnapshot: {
+            project: nextProject,
+            selection: createCadSelectionState(nextProject, [targetEntity.id]),
+          },
+          commandState: {
+            key: 'EDIT_ENTITY',
+            phase: 'committed',
+            prompt: `EDIT_ENTITY committed for ${getCadEntityDisplayLabel(targetEntity)}.`,
+          },
+          transactionLabel: `EDIT_ENTITY (${getCadEntityDisplayLabel(targetEntity)})`,
+          addedEntityIds: [],
+          removedEntityIds: [],
+        };
+      }
+      if (command.edit.kind !== 'entity-appearance') return null;
+      const appearancePatch = command.edit.patch;
+      const nextProject = replaceEntityInProject(snapshot.project, targetEntity.id, (entity) => ({
+        ...entity,
+        appearance: { ...entity.appearance, ...appearancePatch },
+      }));
+      return {
+        nextSnapshot: {
+          project: nextProject,
+          selection: createCadSelectionState(nextProject, [targetEntity.id]),
+        },
+        commandState: {
+          key: 'EDIT_ENTITY',
+          phase: 'committed',
+          prompt: `EDIT_ENTITY committed for ${getCadEntityDisplayLabel(targetEntity)}.`,
+        },
+        transactionLabel: `EDIT_ENTITY (${getCadEntityDisplayLabel(targetEntity)})`,
+        addedEntityIds: [],
+        removedEntityIds: [],
+      };
+    }
 
     if (command.edit.kind === 'entity-name') {
       const nextName = command.edit.value.trim();

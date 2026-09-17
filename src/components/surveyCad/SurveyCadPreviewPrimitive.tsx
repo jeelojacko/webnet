@@ -1,7 +1,29 @@
 import React from 'react';
 import type { CadDisplayPrimitive } from '../../engine/cad/cadTypes';
+import { toScreenDash } from '../../engine/cad/cadViewportAppearance';
 import { arcPathFromPrimitive, textPrimitiveScreenBox } from './SurveyCadPreview.geometry';
 import type { ProjectPoint } from './SurveyCadPreview.types';
+
+/**
+ * Viewport dash: explicit screen-space `strokeDasharray` (transient previews)
+ * wins; otherwise the scene's drawing-unit pattern converts at render scale
+ * so the scene stays zoom-independent and pan/zoom never jitter the phase.
+ */
+const screenDashOf = (
+  primitive: CadDisplayPrimitive,
+  scale: number,
+): { dasharray: string | undefined; dashoffset: number | undefined } => {
+  if (primitive.strokeDasharray != null) {
+    return { dasharray: primitive.strokeDasharray, dashoffset: undefined };
+  }
+  if (primitive.kind === 'point' || primitive.kind === 'text') {
+    return { dasharray: undefined, dashoffset: undefined };
+  }
+  if (primitive.dashPatternUnits == null) return { dasharray: undefined, dashoffset: undefined };
+  const screen = toScreenDash(primitive.dashPatternUnits, scale, primitive.dashOffsetUnits ?? 0);
+  if (!screen) return { dasharray: undefined, dashoffset: undefined };
+  return { dasharray: screen.dasharray, dashoffset: screen.dashoffset };
+};
 
 type RenderPrimitiveOptions = {
   primitive: CadDisplayPrimitive;
@@ -54,6 +76,7 @@ export const renderPrimitive = ({
     className: 'cursor-pointer',
   };
 
+  const { dasharray: screenDasharray, dashoffset: screenDashoffset } = screenDashOf(primitive, scale);
   switch (primitive.kind) {
     case 'line': {
       const start = project(primitive.points[0].x, primitive.points[0].y);
@@ -84,7 +107,8 @@ export const renderPrimitive = ({
             stroke={isSelected ? '#fbbf24' : primitive.stroke}
             strokeWidth={isSelected ? primitive.strokeWidth + 1.1 : primitive.strokeWidth}
             opacity={entityOpacityOverrides[primitive.sourceEntityId] ?? primitive.opacity ?? 0.92}
-            strokeDasharray={primitive.strokeDasharray}
+            strokeDasharray={screenDasharray}
+            strokeDashoffset={screenDashoffset}
             pointerEvents="stroke"
           />
         </g>
@@ -114,7 +138,8 @@ export const renderPrimitive = ({
             stroke={isSelected ? '#fbbf24' : primitive.stroke}
             strokeWidth={isSelected ? primitive.strokeWidth + 1.1 : primitive.strokeWidth}
             opacity={entityOpacityOverrides[primitive.sourceEntityId] ?? primitive.opacity ?? 0.92}
-            strokeDasharray={primitive.strokeDasharray}
+            strokeDasharray={screenDasharray}
+            strokeDashoffset={screenDashoffset}
             pointerEvents="stroke"
           />
         </g>
@@ -225,7 +250,8 @@ export const renderPrimitive = ({
             stroke={isSelected ? '#fbbf24' : primitive.stroke}
             strokeWidth={isSelected ? primitive.strokeWidth + 0.8 : primitive.strokeWidth}
             opacity={entityOpacityOverrides[primitive.sourceEntityId] ?? primitive.opacity ?? 0.88}
-            strokeDasharray={primitive.strokeDasharray}
+            strokeDasharray={screenDasharray}
+            strokeDashoffset={screenDashoffset}
             pointerEvents="stroke"
           />
         </g>

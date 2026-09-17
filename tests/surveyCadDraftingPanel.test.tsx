@@ -41,7 +41,8 @@ describe('SurveyCadDraftingPanel production wiring', () => {
         <SurveyCadDraftingPanel
           project={project}
           draft={draft}
-          onProjectLayersChange={() => {}}
+          onLayerCommand={() => {}}
+          onSetCurrentLayer={() => {}}
           onDraftChange={onDraftChange}
           onClose={() => {}}
         />,

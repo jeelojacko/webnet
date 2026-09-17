@@ -42,6 +42,8 @@ const stubSnapshot = (overrides: Partial<CadWorkspaceSnapshot> = {}): CadWorkspa
       { id: 'l2', name: 'Parcels', color: '#ff0000', visible: false, locked: true, role: 'parcels' },
     ] as CadLayer[],
     layerEntityCounts: { l1: 2, l2: 1 },
+    currentLayerId: 'l1',
+    lineTypes: [{ id: 'continuous', name: 'Continuous', dashPattern: [] }],
     sheets: [{ id: 's1', name: 'A-101' }] as DraftSheet[],
     properties: null,
     activeCommandKey: null,
@@ -67,10 +69,10 @@ const stubActions = (): CadShellActions => ({
   clearSelection: vi.fn(),
   eraseSelection: vi.fn(),
   selectEntities: vi.fn(),
-  editField: vi.fn(() => true),
-  setLayerPatch: vi.fn(),
-  createLayer: vi.fn(),
-  deleteLayer: vi.fn(),
+  editField: vi.fn(() => ({ applied: true })),
+  runLayerCommand: vi.fn(() => true),
+  setCurrentLayer: vi.fn(() => true),
+  openLayerManager: vi.fn(),
   setSnapPreference: vi.fn(),
   newDrawing: vi.fn(),
   openDrawingFile: vi.fn(),
@@ -248,18 +250,20 @@ describe('cad shell panels', () => {
     await cleanup(container, root);
   });
 
-  it('Layer palette toggles visibility and carries the active-layer gap note', async () => {
+  it('Layer manager routes visibility through LAYER_* transactions and notes real behavior', async () => {
     const actions = stubActions();
     const { container, root } = await render(
       <CadLayerPalette snapshot={stubSnapshot()} actions={actions} />,
     );
     expect(container.querySelector('[data-cad-layers]')).not.toBeNull();
-    expect(container.textContent).toContain('No active layer yet');
-    expect(container.textContent).toContain('does not hide its entities in the viewport yet');
-    const hide = container.querySelector('[aria-label^="Request hiding layer Points"]');
-    expect(hide).not.toBeNull();
-    await click(hide);
-    expect(actions.setLayerPatch).toHaveBeenCalledWith('l1', { visible: false });
+    expect(container.textContent).toContain('current layer');
+    expect(container.textContent).toContain('ByLayer');
+    const toggle = container.querySelector('[aria-label="Toggle on/off for layer Points"]') as HTMLInputElement;
+    expect(toggle).not.toBeNull();
+    await act(async () => {
+      toggle.click();
+    });
+    expect(actions.runLayerCommand).toHaveBeenCalledWith({ key: 'LAYER_VISIBILITY', layerId: 'l1', visible: false });
     await cleanup(container, root);
   });
 
@@ -309,7 +313,14 @@ describe('cad shell panels', () => {
     const link: CadShellLink = createCadShellLink();
     link.actions = stubActions();
     const { container, root } = await render(
-      <CadStatusBar link={link} snapshot={stubSnapshot()} dirty activeLayout="MODEL" />,
+      <CadStatusBar
+        link={link}
+        snapshot={stubSnapshot()}
+        dirty
+        activeLayout="MODEL"
+        lineweightDisplay={false}
+        onToggleLineweightDisplay={() => {}}
+      />,
     );
     expect(container.querySelector('[data-survey-cad-entity-count]')?.textContent).toContain('3 entities');
     expect(container.textContent).toContain('MODEL');

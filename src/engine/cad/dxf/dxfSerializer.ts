@@ -25,8 +25,25 @@ const fmt = (value: number): string => {
 
 const pair = (code: number, value: string): string => `${code}\n${value}`;
 
-const layerAci = (model: DxfExportModel, layer: string): number =>
-  nearestAci(model.layerColors?.[layer] ?? '#ffffff');
+const layerAci = (model: DxfExportModel, layer: string): number => {
+  const aci = nearestAci(model.layerColors?.[layer] ?? '#ffffff');
+  // OFF layers ride as negative ACI (standard DXF off-state); readers
+  // show the layer but hide its entities. Frozen/locked ride in 70 bits.
+  return model.layerFlags?.[layer]?.off === true ? -aci : aci;
+};
+
+/** Standard LAYER 70 bits: 1 = frozen, 4 = locked. */
+const layerFlags70 = (model: DxfExportModel, layer: string): string => {
+  const flags = model.layerFlags?.[layer];
+  let bits = 0;
+  if (flags?.frozen === true) bits |= 1;
+  if (flags?.locked === true) bits |= 4;
+  return String(bits);
+};
+
+/** Individually hidden entities ride as group 60 (standard invisible flag). */
+const invisibleOf = (invisible: boolean | undefined): string[] =>
+  invisible === true ? [pair(60, '1')] : [];
 
 const layerLinetype = (model: DxfExportModel, layer: string): string =>
   dxfLinetypeName(model.layerLinetypes?.[layer] ?? 'continuous');
@@ -96,7 +113,7 @@ export const serializeDxfModelWithResult = (model: DxfExportModel): ExportResult
   out.push(pair(0, 'ENDTAB'));
   out.push(pair(0, 'TABLE'), pair(2, 'LAYER'), pair(70, String(model.layers.length)));
   model.layers.forEach((layer) => {
-    out.push(pair(0, 'LAYER'), pair(2, layer), pair(70, '0'), pair(62, String(layerAci(model, layer))), pair(6, layerLinetype(model, layer)));
+    out.push(pair(0, 'LAYER'), pair(2, layer), pair(70, layerFlags70(model, layer)), pair(62, String(layerAci(model, layer))), pair(6, layerLinetype(model, layer)));
   });
   out.push(pair(0, 'ENDTAB'), pair(0, 'ENDSEC'));
   out.push(pair(0, 'SECTION'), pair(2, 'ENTITIES'));
@@ -109,31 +126,31 @@ export const serializeDxfModelWithResult = (model: DxfExportModel): ExportResult
     return name == null ? [] : [pair(6, name)];
   };
   model.points.forEach((point) => {
-    out.push(pair(0, 'POINT'), pair(8, point.layer), ...colorOf(point.layer, point.colorHex), ...linetypeOf(point.layer, point.linetypeId), pair(10, fmt(point.at.x)), pair(20, fmt(point.at.y)), pair(30, '0'));
+    out.push(pair(0, 'POINT'), pair(8, point.layer), ...colorOf(point.layer, point.colorHex), ...linetypeOf(point.layer, point.linetypeId), ...invisibleOf(point.invisible), pair(10, fmt(point.at.x)), pair(20, fmt(point.at.y)), pair(30, '0'));
   });
   model.lines.forEach((line) => {
     out.push(
-      pair(0, 'LINE'), pair(8, line.layer), ...colorOf(line.layer, line.colorHex), ...linetypeOf(line.layer, line.linetypeId),
+      pair(0, 'LINE'), pair(8, line.layer), ...colorOf(line.layer, line.colorHex), ...linetypeOf(line.layer, line.linetypeId), ...invisibleOf(line.invisible),
       pair(10, fmt(line.from.x)), pair(20, fmt(line.from.y)), pair(30, '0'),
       pair(11, fmt(line.to.x)), pair(21, fmt(line.to.y)), pair(31, '0'),
     );
   });
   model.polylines.forEach((polyline) => {
-    out.push(pair(0, 'LWPOLYLINE'), pair(8, polyline.layer), ...colorOf(polyline.layer, polyline.colorHex), ...linetypeOf(polyline.layer, polyline.linetypeId), pair(90, String(polyline.vertices.length)), pair(70, polyline.closed ? '1' : '0'));
+    out.push(pair(0, 'LWPOLYLINE'), pair(8, polyline.layer), ...colorOf(polyline.layer, polyline.colorHex), ...linetypeOf(polyline.layer, polyline.linetypeId), ...invisibleOf(polyline.invisible), pair(90, String(polyline.vertices.length)), pair(70, polyline.closed ? '1' : '0'));
     polyline.vertices.forEach((vertex) => {
       out.push(pair(10, fmt(vertex.x)), pair(20, fmt(vertex.y)));
     });
   });
   model.arcs.forEach((arc) => {
     out.push(
-      pair(0, 'ARC'), pair(8, arc.layer), ...colorOf(arc.layer, arc.colorHex), ...linetypeOf(arc.layer, arc.linetypeId),
+      pair(0, 'ARC'), pair(8, arc.layer), ...colorOf(arc.layer, arc.colorHex), ...linetypeOf(arc.layer, arc.linetypeId), ...invisibleOf(arc.invisible),
       pair(10, fmt(arc.center.x)), pair(20, fmt(arc.center.y)), pair(30, '0'),
       pair(40, fmt(arc.radius)), pair(50, fmt(arc.startDeg)), pair(51, fmt(arc.endDeg)),
     );
   });
   model.texts.forEach((entry) => {
     out.push(
-      pair(0, 'TEXT'), pair(8, entry.layer), ...colorOf(entry.layer, entry.colorHex), ...linetypeOf(entry.layer, entry.linetypeId),
+      pair(0, 'TEXT'), pair(8, entry.layer), ...colorOf(entry.layer, entry.colorHex), ...linetypeOf(entry.layer, entry.linetypeId), ...invisibleOf(entry.invisible),
       pair(10, fmt(entry.at.x)), pair(20, fmt(entry.at.y)), pair(30, '0'),
       pair(40, fmt(entry.height)), pair(1, entry.text),
     );

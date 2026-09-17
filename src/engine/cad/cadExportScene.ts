@@ -1,5 +1,6 @@
 import { buildCadDisplayScene } from './cadRenderer';
 import type { CadDisplayPrimitive } from './cadDisplayTypes';
+import { resolveCadEntityAppearance } from './cadAppearance';
 import { BROKEN_REFERENCE_TEXT } from './cadLabelEngine';
 import { resolveEffectiveColor } from './resolveEffectiveColor';
 import { finalizeExportResult, type ExportResult, type ExportWarning, type ExportWarningCode } from './exportResult';
@@ -31,6 +32,8 @@ export interface ExportBase {
   sourceEntityId?: string;
   /** Resolved line weight in mm (from the source style or fallback). */
   widthMm?: number;
+  /** Resolved opacity 0..1 (from entity/layer transparency); absent = opaque. */
+  opacity?: number;
 }
 
 export type ExportItem =
@@ -135,20 +138,39 @@ const arcToPolyline = (
   });
 };
 
+// Paper-mm dash from a viewport-only drawing-unit pattern: the pattern
+// already includes linetypeScale, so only the viewport model→paper factor
+// (1000 / scaleDenominator, the same k as modelToPaperPoint) applies.
+// Continuous patterns (absent/empty) stay dash-free, byte-identical.
+const dashPatternToPaperMm = (pattern: number[] | undefined, unitsToPaperMm: number): string | undefined => {
+  if (pattern == null || pattern.length === 0) return undefined;
+  if (!Number.isFinite(unitsToPaperMm) || unitsToPaperMm <= 0) return undefined;
+  const parts = pattern.map((entry) => Math.round(entry * unitsToPaperMm * 1000) / 1000);
+  if (parts.some((entry) => !Number.isFinite(entry) || entry < 0)) return undefined;
+  return parts.join(' ');
+};
+
 // Color flows from the display primitive (screen-resolved: style override →
 // style → layer → default) into every export item, so SVG/PDF match the
-// screen. strokeWidth maps to widthMm; dash passes through when present.
+// screen. strokeWidth maps to widthMm; dash passes through when present,
+// else falls back to the viewport dash pattern scaled to paper mm.
 const primitiveToPaper = (
   primitive: CadDisplayPrimitive,
   toPaper: (_x: number, _y: number) => { xMm: number; yMm: number },
   clipId: string,
   rotationDeg = 0,
+  unitsToPaperMm: number,
 ): ExportItem[] => {
   const layer = primitive.layerId;
   const sourceEntityId = primitive.sourceEntityId;
   const stroke = primitive.stroke;
-  const dash = primitive.strokeDasharray;
-  const paint = { stroke, ...(dash ? { dash } : {}), sourceEntityId };
+  const dash = primitive.strokeDasharray ?? dashPatternToPaperMm(primitive.dashPatternUnits, unitsToPaperMm);
+  const paint = {
+    stroke,
+    ...(dash ? { dash } : {}),
+    ...(primitive.opacity != null ? { opacity: primitive.opacity } : {}),
+    sourceEntityId,
+  };
   const widthOf = (width: number | undefined): { widthMm?: number } =>
     width != null ? { widthMm: width } : {};
   switch (primitive.kind) {
@@ -420,6 +442,33 @@ export interface BuildSceneArgs {
   paperExtras?: ExportItem[];
 }
 
+// Exporters consume the authoritative resolver (spec §5): primitive colors
+// and widths arrive legacy-resolved (style → layer), so items whose source
+// entity carries explicit 18C appearance intent are corrected here to the
+// resolved values — idempotent once the renderer resolves them too.
+// Transparency (new in 18C, never renderer-resolved before) always applies.
+const correctPlotAppearance = (item: ExportItem, project: CadProject): ExportItem => {
+  if (item.sourceEntityId == null) return item;
+  const entity = project.entities.find((entry) => entry.id === item.sourceEntityId);
+  if (!entity) return item;
+  const layer = project.layers.find((entry) => entry.id === entity.layerId) ?? null;
+  const resolved = resolveCadEntityAppearance({ entity, layer, styleLibrary: project.styleLibrary });
+  let next = item;
+  if (entity.appearance?.color != null && next.stroke !== resolved.color) {
+    next = { ...next, stroke: resolved.color };
+    if (next.kind === 'circle' && next.fill != null && next.fill !== 'none') {
+      next = { ...next, fill: resolved.color };
+    }
+  }
+  if (entity.appearance?.lineweightMm != null && next.kind !== 'text' && 'widthMm' in next && next.widthMm !== resolved.lineweightMm) {
+    next = { ...next, widthMm: resolved.lineweightMm };
+  }
+  if (resolved.transparency > 0 && next.opacity == null) {
+    next = { ...next, opacity: Math.round((1 - resolved.transparency) * 1000) / 1000 };
+  }
+  return next;
+};
+
 // Paper-space items that carry no resolved color (labels, frames, title
 // block, caller paper extras) inherit their layer color through the shared
 // resolver, so every scene item reaches SVG/PDF with an explicit stroke.
@@ -451,12 +500,19 @@ export const buildExportSheetSceneWithResult = (args: BuildSceneArgs): ExportRes
   const sorted = [...display.primitives].sort((a, b) => (a.id < b.id ? -1 : a.id > b.id ? 1 : 0));
 
   // Layers govern output: visible=false hides (a viewport visible=true
-  // override re-shows for that viewport), but printable=false is
+  // override re-shows for that viewport), frozen hides through the same
+  // filter path as OFF (spec §6; the drawing-standard difference is
+  // persistence, not current viewport result), but printable=false is
   // unconditional — excluded from SVG + PDF regardless of overrides.
   const layerFlagged = (layerId: string, flag: 'visible' | 'printable'): boolean => {
-    const inProject = args.project.layers.find((layer) => layer.id === layerId);
-    const inDraft = args.draft.layers.find((layer) => layer.id === layerId);
-    return [inProject, inDraft].some((layer) => layer != null && layer[flag] === false);
+    const layers = [
+      args.project.layers.find((layer) => layer.id === layerId),
+      args.draft.layers.find((layer) => layer.id === layerId),
+    ];
+    if (flag === 'visible') {
+      return layers.some((layer) => layer != null && (layer.visible === false || layer.frozen === true));
+    }
+    return layers.some((layer) => layer != null && layer.printable === false);
   };
   const layerColorOf = (layerId: string): string | undefined =>
     args.project.layers.find((layer) => layer.id === layerId)?.color ??
@@ -510,7 +566,7 @@ export const buildExportSheetSceneWithResult = (args: BuildSceneArgs): ExportRes
       .filter((primitive) => !isHidden(primitive.layerId))
       .forEach((primitive) => {
         try {
-          const produced = primitiveToPaper(primitive, toPaper, clipId, plan.rotationDeg);
+          const produced = primitiveToPaper(primitive, toPaper, clipId, plan.rotationDeg, 1000 / plan.scaleDenominator);
           if (produced.length === 0) {
             omittedEntityIds.push(primitive.sourceEntityId);
             warnings.push({ code: 'SKIPPED_ENTITY', message: `skipped entity ${primitive.sourceEntityId} (no export geometry)`, entityId: primitive.sourceEntityId });
@@ -588,7 +644,7 @@ export const buildExportSheetSceneWithResult = (args: BuildSceneArgs): ExportRes
     warnings.push({ code: 'SKIPPED_ENTITY', message: `skipped entity ${entity.id} (no export geometry)`, entityId: entity.id });
   });
 
-  const painted = items.map((item) => backfillItemColor(item, layerColorOf));
+  const painted = items.map((item) => backfillItemColor(correctPlotAppearance(item, args.project), layerColorOf));
   return finalizeExportResult({
     output: { sheetId: sheet.id, sheetName: sheet.name, widthMm: sheet.widthMm, heightMm: sheet.heightMm, clips, items: painted },
     warnings,

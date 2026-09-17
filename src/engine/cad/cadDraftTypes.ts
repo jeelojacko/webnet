@@ -481,12 +481,22 @@ export const sanitizeDraftDocument = (
             locked: entry.locked === true,
             role: isCadLayerRole(entry.role) ? entry.role : 'planning',
           };
-          if (typeof entry.lineTypeId === 'string') layer.lineTypeId = entry.lineTypeId;
+          if (typeof entry.lineTypeId === 'string') {
+            layer.lineTypeId = entry.lineTypeId === 'dash-short' ? 'dashed' : entry.lineTypeId;
+          }
           if (typeof entry.defaultStyleId === 'string') layer.defaultStyleId = entry.defaultStyleId;
           if (typeof entry.printable === 'boolean') layer.printable = entry.printable;
           if (typeof entry.lineweightMm === 'number' && Number.isFinite(entry.lineweightMm)) {
             layer.lineweightMm = entry.lineweightMm;
           }
+          if (typeof entry.frozen === 'boolean') layer.frozen = entry.frozen;
+          if (
+            typeof entry.transparency === 'number' &&
+            Number.isFinite(entry.transparency)
+          ) {
+            layer.transparency = Math.min(1, Math.max(0, entry.transparency));
+          }
+          if (typeof entry.description === 'string') layer.description = entry.description;
           return [layer];
         })
       : layers.map((layer) => ({ ...layer })),

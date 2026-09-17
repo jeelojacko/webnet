@@ -1,5 +1,6 @@
 import { createStableRuntimeId } from '../id';
 import { createCadSelectionState } from './cadSelection';
+import { resolveCurrentCadLayerId } from './cadLayers';
 import { nextEntityName } from './cadTransactionsEntityFactories';
 import {
   appendCadProjectEntities,
@@ -23,8 +24,7 @@ export const polylineCommand: CadCommandDefinition<{
     const polylineEntity: CadPolylineEntity = {
       id: createStableRuntimeId('cad-polyline'),
       type: 'polyline',
-      layerId: 'observation-lines',
-      styleId: 'style-observation-line',
+      layerId: resolveCurrentCadLayerId(snapshot.project),
       visible: true,
       locked: false,
       vertices: vertices.map((vertex) => ({ x: vertex.x, y: vertex.y })),
