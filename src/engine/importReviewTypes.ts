@@ -7,6 +7,27 @@ import type {
 import type { CoordMode, FaceNormalizationMode } from '../types';
 
 export type ImportReviewItemKind = 'control' | 'observation' | 'comment';
+
+/** Phase 17C — import warning codes. Unknown units / exact dups BLOCK until resolved. */
+export type ImportWarningCode =
+  | 'UNIT_UNKNOWN'
+  | 'UNIT_USER_CONFIRMATION_REQUIRED'
+  | 'SOURCE_ALREADY_IMPORTED'
+  | 'SOURCE_REVISION_DETECTED'
+  | 'STATION_DEFINITION_CONFLICT'
+  | 'HEIGHT_MISSING'
+  | 'DELETED_RECORD_SKIPPED'
+  | 'PROVENANCE_PARTIAL'
+  | 'ADJUSTED_POINTS_OUTPUT_ONLY';
+
+export type ImportWarningSeverity = 'INFO' | 'WARNING' | 'BLOCKING';
+
+export interface ImportWarning {
+  code: ImportWarningCode;
+  severity: ImportWarningSeverity;
+  message: string;
+  sourceKey?: string;
+}
 export type ImportReviewGroupKind = 'control' | 'setup' | 'resection' | 'gps';
 export type ImportReviewOutputPreset =
   | 'clean-webnet'

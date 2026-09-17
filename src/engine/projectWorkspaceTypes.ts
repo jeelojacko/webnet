@@ -7,6 +7,7 @@ import type {
 } from '../types';
 import type { PersistedSavedRunSnapshot } from '../appStateTypes';
 import type { SurveyCadPersistedState } from './cad/cadTypes';
+import type { SourceUnits } from './importUnitProvenance';
 
 export type ProjectStorageBackend = 'opfs' | 'indexeddb';
 export type ProjectSourceFileKind = 'dat' | 'control' | 'gnss' | 'notes' | 'report' | 'other';
@@ -42,6 +43,12 @@ export interface ProjectManifestFileEntry {
   createdAt?: string;
   updatedAt?: string;
   modifiedAt?: string;
+  /** Phase 17C — unit provenance. Absent means legacy (treat as unknown, never block). */
+  sourceUnits?: SourceUnits;
+  /** Deterministic fingerprint of the file content at last import. */
+  contentFingerprint?: string;
+  /** Stable identity key; defaults to the entry id when absent. */
+  sourceKey?: string;
 }
 
 export interface ProjectManifestWorkspaceState {
@@ -112,4 +119,8 @@ export interface ProjectRunFile {
   name: string;
   order: number;
   content: string;
+  /** Phase 17C — carried through save/reopen so reimports are recognized. */
+  sourceUnits?: SourceUnits;
+  contentFingerprint?: string;
+  sourceKey?: string;
 }

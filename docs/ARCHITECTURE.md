@@ -308,6 +308,7 @@ If an external file is imported, the importer registry normalizes the source int
 - reconciling conflicts with current editor content
 - comparing multiple import sources
 - committing grouped WebNet text back into the editor
+- unit provenance tracking (`src/engine/importUnitProvenance.ts`: canonical units, exact factors, confirmation gating) and source identity/fingerprinting (`src/engine/importSourceIdentity.ts`: FNV-1a content hash, duplicate/revision classification, atomic replace, station-definition conflicts, adjusted-points output guard)
 
 ### 3. Parse stage
 

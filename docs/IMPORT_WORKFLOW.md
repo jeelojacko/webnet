@@ -226,6 +226,19 @@ This persistence includes:
 - compare and reconciliation state
 - source metadata needed to continue the review session
 
+## Unit provenance, identity, and reimport integrity (Phase 17C)
+Canonical internal units are metres + radians; conversion happens exactly once at the parse boundary and serialized text truthfully carries `.UNITS M`.
+
+Unit provenance (`src/engine/importUnitProvenance.ts`): every `ImportedDataset` carries optional `sourceUnits: { linear, origin }` with origin `source-declared | format-defined | user-confirmed | unknown-legacy`. Source-declared today: native `.UNITS` (core parser), GNSS BL `originalUnits`, LandXML Metric/Imperial. Everything else in the registry (RW5/TDS, JobXML, FieldGenius, DBX, survey-report, OPUS, GVX, GNSS CSV, terrestrial CSV without explicit units) is `unknown-legacy` and BLOCKS commit until the user confirms — never silently metre. Terrestrial CSV requires explicit units; the registry default path sets `needsUnitConfirmation` (BLOCKING). The F2F panel passes explicit metres (its UI states metres), so it counts as user-confirmed. Sigma/height/HI/HT scale with f, covariance with f^2, angular sigma never. Confirmation labels provenance only — raw source text is retained so unit changes recompute without ft->m->ft drift.
+
+CSV contract: absent elevation imports as 2D (`heightM` undefined) with a `HEIGHT_MISSING` WARNING — never silent 0; explicit 0 stays 0 with no warning. The interpreted column mapping (`canonical -> header`) rides the dataset and staged-source summary. Adjusted-points exports (`P,N,E,Z,D` header family) are output-only: `guardAgainstAdjustedPointsCsv` fails closed with `ADJUSTED_POINTS_OUTPUT_ONLY` instead of misparsing. Metre export bytes are unchanged.
+
+Source identity (`src/engine/importSourceIdentity.ts`): identity is `{ sourceId, importerId, originalFilename, contentFingerprint }` (FNV-1a over newline-normalized text), persisted on manifest entries and run files so save/reopen recognizes reimports. Exact duplicate -> BLOCKING `SOURCE_ALREADY_IMPORTED` (Cancel default / Replace / Add-as-new). Revised content under the same id, or same filename+type with different bytes, -> `SOURCE_REVISION_DETECTED` (Replace explicit / Add-as-new / Cancel; never auto-replace by filename). Replace is atomic: the revision validates fully before the original is touched. Remove deletes only that `sourceId`'s records. Staging never mutates the project; cancel leaves zero changes; commit changes run input so Phase 17B staleness follows automatically. Stage-only (picker open) does not invalidate FRESH.
+
+Station conflicts: identical ID+coords merge safely; differing coords for the same ID is BLOCKING `STATION_DEFINITION_CONFLICT` (no silent last-wins for fixed definitions). Repeated identical observations are legitimate and never deduped by value. JobXML `Deleted=true` records are excluded from adjustment with an INFO `DELETED_RECORD_SKIPPED` count. Record identity (`sourceId` + source line/code) survives staging into commit.
+
+Warning codes (`ImportWarningCode` in `src/engine/importReviewTypes.ts`): `UNIT_UNKNOWN`, `UNIT_USER_CONFIRMATION_REQUIRED`, `SOURCE_ALREADY_IMPORTED`, `SOURCE_REVISION_DETECTED`, `STATION_DEFINITION_CONFLICT`, `HEIGHT_MISSING`, `DELETED_RECORD_SKIPPED`, `PROVENANCE_PARTIAL`, `ADJUSTED_POINTS_OUTPUT_ONLY` with `INFO | WARNING | BLOCKING` severity. Staged-source summaries (`buildStagedSourceSummary`) show filename, format, units + unit source, record counts, warnings, column mapping, and revision relation; commit stays disabled while any BLOCKING warning is unresolved.
+
 ## Validation guidance
 When changing import behavior, prefer focused coverage for:
 - importer detection

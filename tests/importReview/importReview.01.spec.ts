@@ -33,7 +33,9 @@ describe('import review workflow', () => {
       'Setup 1 (BS 1000)',
     ]);
     expect(reviewModel.items).toHaveLength(10);
-    expect(reviewModel.warnings).toHaveLength(0);
+    // Phase 17C: JobXML declares no units, so the review carries one UNIT_UNKNOWN warning.
+    expect(reviewModel.warnings).toHaveLength(1);
+    expect(reviewModel.warnings[0]?.sourceCode).toBe('UNIT_UNKNOWN');
     expect(reviewModel.errors).toHaveLength(0);
     expect(reviewModel.groups.some((group) => group.kind === 'resection')).toBe(false);
     expect(

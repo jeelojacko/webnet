@@ -2,7 +2,9 @@ import type {
   ImportedControlStationRecord,
   ImportedDataset,
   ImportedObservationRecord,
+  ImportedTraceEntry,
 } from './importers';
+import { describeSourceUnits, needsUnitConfirmation } from './importUnitProvenance';
 import type {
   ImportReviewGroup,
   ImportReviewItem,
@@ -164,6 +166,47 @@ const makeObservationItem = (
     targetId: observation.toId,
   };
 };
+
+export const STAGED_SOURCE_SUMMARY_VERSION = 1;
+
+export interface StagedSourceSummary {
+  sourceKey?: string;
+  sourceName?: string;
+  importerId: string;
+  formatLabel: string;
+  /** Human-readable units, e.g. `ft (declared by source)`. */
+  unitsLabel: string;
+  /** True when commit must stay disabled until the user confirms units. */
+  unitConfirmationRequired: boolean;
+  controlCount: number;
+  observationCount: number;
+  warningCount: number;
+  errorCount: number;
+  /** Interpreted CSV column mapping (`canonical -> header`), when applicable. */
+  columnMapping?: Record<string, string>;
+  /** Relation to already-staged sources (`Possible revision of X`). */
+  relationNote?: string;
+  warnings: ImportedTraceEntry[];
+}
+
+export const buildStagedSourceSummary = (
+  dataset: ImportedDataset,
+  options: { sourceKey?: string; sourceName?: string; relationNote?: string } = {},
+): StagedSourceSummary => ({
+  sourceKey: options.sourceKey,
+  sourceName: options.sourceName,
+  importerId: dataset.importerId,
+  formatLabel: dataset.formatLabel,
+  unitsLabel: describeSourceUnits(dataset.sourceUnits),
+  unitConfirmationRequired: needsUnitConfirmation(dataset),
+  controlCount: dataset.controlStations.length,
+  observationCount: dataset.observations.length,
+  warningCount: dataset.trace.filter((entry) => entry.level === 'warning').length,
+  errorCount: dataset.trace.filter((entry) => entry.level === 'error').length,
+  columnMapping: dataset.columnMapping ? { ...dataset.columnMapping } : undefined,
+  relationNote: options.relationNote,
+  warnings: dataset.trace.filter((entry) => entry.level === 'warning'),
+});
 
 export const buildImportReviewModel = (dataset: ImportedDataset): ImportReviewModel => {
   const groups: ImportReviewGroup[] = [];

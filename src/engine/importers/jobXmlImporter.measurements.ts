@@ -62,6 +62,7 @@ export const convertJobXmlMeasurements = ({
   let currentRound: number | undefined;
   let roundEventCursor = 0;
   let runningObservationOrder = 0;
+  let deletedSkipped = 0;
 
   measurementBlocks.forEach(({ block, index }) => {
     while (roundEventCursor < roundEvents.length && roundEvents[roundEventCursor]!.index < index) {
@@ -73,7 +74,11 @@ export const convertJobXmlMeasurements = ({
 
     const sourceLine = resolveSourceLine(index);
     const isDeleted = /<Deleted>\s*true\s*<\/Deleted>/i.test(block);
-    if (isDeleted) return;
+    // Phase 17C: deleted records are excluded from adjustment but counted (INFO).
+    if (isDeleted) {
+      deletedSkipped += 1;
+      return;
+    }
 
     const rawName = extractXmlText(block, ['Name', 'PointName', 'PointNumber', 'PointID']);
     const fallbackTargetId = rawName ? sanitizeStationId(rawName) : undefined;
@@ -321,4 +326,13 @@ export const convertJobXmlMeasurements = ({
       zenithDeg,
     });
   });
+  if (deletedSkipped > 0) {
+    trace.push({
+      level: 'info',
+      sourceCode: 'DELETED_RECORD_SKIPPED',
+      message:
+        `Skipped ${deletedSkipped} deleted record${deletedSkipped === 1 ? '' : 's'} ` +
+        `(Deleted=true; excluded from adjustment, DELETED_RECORD_SKIPPED).`,
+    });
+  }
 };
