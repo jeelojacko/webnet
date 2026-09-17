@@ -11,6 +11,8 @@ export interface LayerPanelProps {
   onToggleLocked?: (_layerId: string, _locked: boolean) => void;
   onTogglePrintable?: (_layerId: string, _printable: boolean) => void;
   onDelete?: (_layerId: string) => void;
+  /** Request-hide wording: the flag reaches export, not the viewport (18C). */
+  visibilityRequestOnly?: boolean;
 }
 
 export const LayerPanel = ({
@@ -22,6 +24,7 @@ export const LayerPanel = ({
   onToggleLocked,
   onTogglePrintable,
   onDelete,
+  visibilityRequestOnly = false,
 }: LayerPanelProps): React.JSX.Element => {
   const [newName, setNewName] = useState('');
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -99,11 +102,17 @@ export const LayerPanel = ({
               <span aria-label={`${count} objects on ${layer.name}`}>{` (${count})`}</span>
               <button
                 type="button"
-                aria-label={layer.visible ? `Hide layer ${layer.name}` : `Show layer ${layer.name}`}
+                aria-label={
+                  layer.visible
+                    ? visibilityRequestOnly
+                      ? `Request hiding layer ${layer.name} (export only; viewport unchanged)`
+                      : `Hide layer ${layer.name}`
+                    : `Show layer ${layer.name}`
+                }
                 aria-pressed={layer.visible}
                 onClick={() => onToggleVisibility?.(layer.id, !layer.visible)}
               >
-                {layer.visible ? 'Hide' : 'Show'}
+                {layer.visible ? (visibilityRequestOnly ? 'Request hide' : 'Hide') : 'Show'}
               </button>
               <button
                 type="button"

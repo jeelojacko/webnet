@@ -345,6 +345,7 @@ export const useSurveyCadWorkspace = (
     isGripEditing: activeGripHandle != null,
     activeSnap,
     nearbySnaps,
+    pointerWorldPoint,
     snapConstructionContext,
     snapPreferences,
     historyDepth: history.undoStack.length,

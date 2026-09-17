@@ -30,6 +30,11 @@ import type { ResultDependencyIdentity } from '../engine/resultIntegrity';
 import type { AdjustmentSourceSnapshot } from '../cad-app/cadSourceBridge';
 import { importSnapshotIntoCadDrawing } from '../cad-app/cadSnapshotImport';
 import type { CadDrawingLifecycleEvent } from '../cad-app/cadAppTypes';
+import type { CadShellLink } from '../cad-app/shell/cadShellLink';
+import type { ActiveCommandKey } from '../hooks/surveyCad/useSurveyCadCommandTypes';
+import type { CadShellActions, CadWorkspaceSnapshot } from '../cad-app/shell/cadShellTypes';
+import { getCadEntityDisplayLabel } from '../engine/cad/cadEntityNames';
+import { createStableRuntimeId } from '../engine/id';
 import {
   summarizeDrawingDependency,
   type CadDependencyReasonCode,
@@ -90,6 +95,14 @@ interface SurveyCadWorkspaceProps {
    * Defaults false (fail-closed).
    */
   canFeedDraftingFromResult?: boolean;
+  /**
+   * Phase 18B shell seam. When set, the workspace publishes snapshots to the
+   * shell link and registers dispatch actions on it. With shellChrome the
+   * workspace also hides its own file-action strip + command toolbar so the
+   * shell owns the chrome (viewport + interaction surface only).
+   */
+  shellLink?: CadShellLink | null;
+  shellChrome?: boolean;
 }
 
 /** Phase 17E: first reason code in words for the dependency status chip. */
@@ -144,6 +157,8 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
   onDrawingLifecycle,
   canFeedDraftingFromResult = false,
   resultDependencyIdentity = null,
+  shellLink = null,
+  shellChrome = false,
 }) => {
   const cloneBounds = (bounds: CadBounds | null): CadBounds | null =>
     bounds
@@ -506,6 +521,210 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
     replaceActiveDrawing(nextDrawing, 'Imported adjusted points.');
   };
 
+  // Phase 18B shell seam: registry key -> existing workspace starter.
+  // Every entry routes to a live starter; absent starters report false.
+  const shellStarters: Record<ActiveCommandKey, (() => void) | undefined> = {
+    POINT: cadWorkspace.startPointCommand,
+    COGO_POINT: cadWorkspace.startCogoPointCommand,
+    LINE: cadWorkspace.startLineCommand,
+    PLINE: cadWorkspace.startPolylineCommand,
+    TRAVERSE: cadWorkspace.startTraverseCommand,
+    ARC_3PT: cadWorkspace.startArc3PointCommand,
+    ARC_SCE: cadWorkspace.startArcStartCenterEndCommand,
+    ARC_CSE: cadWorkspace.startArcCenterStartEndCommand,
+    ARC_SCA: cadWorkspace.startArcStartCenterAngleCommand,
+    ARC_CSA: cadWorkspace.startArcCenterStartAngleCommand,
+    ARC_SCL: cadWorkspace.startArcStartCenterChordCommand,
+    ARC_CSL: cadWorkspace.startArcCenterStartChordCommand,
+    ARC_SEA: cadWorkspace.startArcStartEndAngleCommand,
+    ARC_SED: cadWorkspace.startArcStartEndDirectionCommand,
+    ARC_SER: cadWorkspace.startArcStartEndRadiusCommand,
+    CONTINUE_CURVE: cadWorkspace.startContinueCurveCommand,
+    TANGENT_CURVE: cadWorkspace.startTangentCurveCommand,
+    INVERSE: cadWorkspace.startInverseCommand,
+    MULTI_INVERSE: cadWorkspace.startMultiInverseCommand,
+    AREA: cadWorkspace.startAreaCommand,
+    BEARING_REPORT: cadWorkspace.startBearingReportCommand,
+    DISTANCE_REPORT: cadWorkspace.startDistanceReportCommand,
+    TURNED_POINT: cadWorkspace.startTurnedPointCommand,
+    DEFLECT_POINT: cadWorkspace.startDeflectionPointCommand,
+    POINT_ALONG_LINE: cadWorkspace.startPointAlongLineCommand,
+    EXTEND_LINE: cadWorkspace.startExtendLineCommand,
+    OFFSET_POINT: cadWorkspace.startOffsetPointCommand,
+    ALIGNMENT_OFFSET_CREATE: cadWorkspace.startAlignmentOffsetCreateCommand,
+    ALIGNMENT_STATION_EQUATION: cadWorkspace.startAlignmentStationEquationCommand,
+    ALIGNMENT_OFFSET_POINT: cadWorkspace.startAlignmentOffsetPointCommand,
+    ALIGNMENT_INTERVAL_POINTS: cadWorkspace.startAlignmentIntervalPointsCommand,
+    CURVE_SOLVER: cadWorkspace.startCurveSolverCommand,
+    RADIAL_BEARING: cadWorkspace.startRadialBearingCommand,
+    POINT_ON_CURVE: cadWorkspace.startPointOnCurveCommand,
+    SUBDIVIDE_CURVE: cadWorkspace.startSubdivideCurveCommand,
+    OFFSET_CURVE: cadWorkspace.startOffsetCurveCommand,
+    PI_CURVE: cadWorkspace.startPiCurveCommand,
+    CHORD_BEARING_CURVE: cadWorkspace.startChordBearingCurveCommand,
+    REVERSE_CURVE: cadWorkspace.startReverseCurveCommand,
+    COMPOUND_CURVE: cadWorkspace.startCompoundCurveCommand,
+    BEARING_BEARING_INTX: cadWorkspace.startBearingBearingIntersectionCommand,
+    BEARING_DISTANCE_INTX: cadWorkspace.startBearingDistanceIntersectionCommand,
+    DISTANCE_DISTANCE_INTX: cadWorkspace.startDistanceDistanceIntersectionCommand,
+    LINE_CIRCLE_INTX: cadWorkspace.startLineCircleIntersectionCommand,
+    PERP_INTX: cadWorkspace.startPerpendicularIntersectionCommand,
+    OFFSET_INTX: cadWorkspace.startOffsetIntersectionCommand,
+    SKEW_INTX: cadWorkspace.startSkewIntersectionCommand,
+    BATCH_COGO: cadWorkspace.startBatchCogoCommand,
+    PARCEL_SPLIT_BEARING: cadWorkspace.startParcelSplitBearingCommand,
+    PARCEL_SPLIT_AREA: cadWorkspace.startParcelSplitAreaCommand,
+    MOVE: cadWorkspace.startMoveCommand,
+    COPY: cadWorkspace.startCopyCommand,
+    EXTEND: cadWorkspace.startExtendCommand,
+    TRIM: cadWorkspace.startTrimCommand,
+    FILLET: cadWorkspace.startFilletCommand,
+    PASTE: copiedEntityIds.length > 0 ? () => startPasteFromClipboard(copiedEntityIds) : undefined,
+  };
+  const shellAvailableCommands = useMemo(
+    () =>
+      (Object.keys(shellStarters) as ActiveCommandKey[]).filter(
+        (key) => typeof shellStarters[key] === 'function',
+      ),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [copiedEntityIds.length, activeDrawing.drawingId],
+  );
+
+  const shellSnapshot: CadWorkspaceSnapshot | null = useMemo(() => {
+    if (!shellLink) return null;
+    const enabledSnaps = Object.entries(cadWorkspace.snapPreferences)
+      .filter(([, enabled]) => enabled)
+      .map(([kind]) => kind);
+    const layerEntityCounts: Record<string, number> = {};
+    for (const entity of activeProject.entities) {
+      layerEntityCounts[entity.layerId] = (layerEntityCounts[entity.layerId] ?? 0) + 1;
+    }
+    return {
+      drawingId: activeDrawing.drawingId,
+      drawingName: activeDrawing.name,
+      units,
+      entityCount: activeProject.entities.length,
+      selectionCount,
+      selectedEntityIds,
+      selectionPreview: selectedEntities
+        .slice(0, 200)
+        .map((entity) => ({ id: entity.id, type: entity.type, label: getCadEntityDisplayLabel(entity) })),
+      layers: activeProject.layers,
+      layerEntityCounts,
+      sheets: activeDrawing.draft?.sheets ?? [],
+      properties: propertiesPanelState,
+      activeCommandKey,
+      commandPrompt: statusText,
+      commandInputValue: cadWorkspace.commandInputValue,
+      canUndo: cadWorkspace.canUndo,
+      canRedo: cadWorkspace.canRedo,
+      historyDepth: cadWorkspace.historyDepth,
+      redoDepth: cadWorkspace.redoDepth,
+      snapPreferences: cadWorkspace.snapPreferences,
+      snapStatusText: enabledSnaps.length > 0 ? `SNAP: ${enabledSnaps.join(', ')}` : 'OSNAP off',
+      stationCount: stationIds.size,
+      dependencyStatus: dependencySummary.status,
+      availableCommands: shellAvailableCommands,
+    };
+  }, [
+    shellLink, activeDrawing, activeProject, selectionCount, selectedEntityIds, selectedEntities,
+    propertiesPanelState, activeCommandKey, statusText, cadWorkspace, stationIds, dependencySummary, units,
+    shellAvailableCommands,
+  ]);
+
+  useEffect(() => {
+    if (shellLink && shellSnapshot) shellLink.publish(shellSnapshot);
+  }, [shellLink, shellSnapshot]);
+
+  useEffect(() => {
+    if (!shellLink) return;
+    const snap = cadWorkspace.activeSnap;
+    const raw = cadWorkspace.pointerWorldPoint;
+    shellLink.publishCursor(
+      snap
+        ? { x: snap.x, y: snap.y, label: snap.label }
+        : raw
+          ? { x: raw.x, y: raw.y, label: `${raw.x.toFixed(3)},${raw.y.toFixed(3)}` }
+          : null,
+    );
+  }, [shellLink, cadWorkspace.activeSnap, cadWorkspace.pointerWorldPoint]);
+
+  useEffect(() => {
+    if (!shellLink) return;
+    const actions: CadShellActions = {
+      startCommand: (key) => {
+        const starter = shellStarters[key];
+        if (typeof starter !== 'function') return false;
+        starter();
+        return true;
+      },
+      undo,
+      redo,
+      selectAll: () => cadWorkspace.selectAll(),
+      clearSelection,
+      eraseSelection,
+      selectEntities: (entityIds, append) => cadWorkspace.selectEntities(entityIds, append),
+      editField: (entityId, field, value) => cadWorkspace.editPropertiesField(entityId, field, value),
+      setLayerPatch: (layerId, patch) => {
+        replaceActiveDrawing(
+          { ...activeDrawing, project: { ...activeDrawing.project, layers: activeDrawing.project.layers.map((layer) => (layer.id === layerId ? { ...layer, ...patch } : layer)) } },
+          'Updated CAD layers.',
+        );
+      },
+      createLayer: (name) => {
+        const trimmed = name.trim();
+        if (!trimmed) return;
+        replaceActiveDrawing(
+          {
+            ...activeDrawing,
+            project: {
+              ...activeDrawing.project,
+              layers: [
+                ...activeDrawing.project.layers,
+                {
+                  id: createStableRuntimeId('cad-layer'),
+                  name: trimmed,
+                  color: '#ffffff',
+                  visible: true,
+                  locked: false,
+                  printable: true,
+                  role: 'planning',
+                },
+              ],
+            },
+          },
+          'Updated CAD layers.',
+        );
+      },
+      deleteLayer: (layerId) => {
+        // Populated-layer guard mirrors LAYER_DELETE (move objects off first).
+        if (activeDrawing.project.entities.some((entity) => entity.layerId === layerId)) return;
+        replaceActiveDrawing(
+          {
+            ...activeDrawing,
+            project: {
+              ...activeDrawing.project,
+              layers: activeDrawing.project.layers.filter((layer) => layer.id !== layerId),
+            },
+          },
+          'Updated CAD layers.',
+        );
+      },
+      setSnapPreference: (kind, enabled) => cadWorkspace.setSnapPreference(kind, enabled),
+      newDrawing: () => handleNewDrawing(),
+      openDrawingFile: () => fileInputRef.current?.click(),
+      saveDrawing: () => void handleSaveDrawing(),
+      toggleDraftingPanel: () => setDraftingPanelOpen((current) => !current),
+      toggleExportCenter: () => setExportCenterOpen((current) => !current),
+      cancelCommand: () => handleEscapeKey(),
+      confirmCommandInput: () => handleEnterKey(),
+    };
+    shellLink.actions = actions;
+    return () => {
+      if (shellLink.actions === actions) shellLink.actions = null;
+    };
+  });
+
   useSurveyCadWorkspaceKeyboard({
     activeCommandKey,
     appendCommandInputValue,
@@ -540,6 +759,7 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
         data-survey-cad-open-drawing-input
       />
       <div className="relative h-full min-h-0 bg-slate-950">
+        {shellChrome ? null : (
         <div className="absolute left-3 right-3 top-1 z-40 flex items-center justify-between gap-2 px-2 text-[11px] text-slate-300">
           <div className="min-w-0 truncate" data-survey-cad-drawing-title>
             {activeDrawing.name}
@@ -586,6 +806,7 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
             ) : null}
           </div>
         </div>
+        )}
         {fileStatusText ? (
           <div className="absolute left-5 top-9 z-40 max-w-xl truncate text-[11px] text-slate-400" data-survey-cad-file-status>
             {fileStatusText}
@@ -601,6 +822,7 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
             ? ` — ${dependencyCause}.`
             : ` — ${dependencyCause}.${dependencyAction ? ` ${dependencyAction}.` : ''}`}
         </div>
+        {shellChrome ? null : (
         <SurveyCadCommandToolbar
           workspace={cadWorkspace}
           canSplitParcelBySlideOrSwing={parcelLayoutWorkflow.canSplitParcelBySlideOrSwing}
@@ -609,6 +831,7 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
           onSplitParcelBySwing={parcelLayoutWorkflow.splitParcelBySwing}
           onToggleParcelLayoutPanel={floatingPanels.toggleParcelLayoutPanel}
         />
+        )}
         {draftingPanelOpen ? (
           <SurveyCadDraftingPanel
             project={activeProject}

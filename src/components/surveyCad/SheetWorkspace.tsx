@@ -145,6 +145,8 @@ export interface SheetWorkspaceProps {
   project: CadProject;
   draft: DraftDocument;
   activeSheetId?: string;
+  /** Phase 18B: shell layout tabs open directly in sheet view. */
+  initialView?: WorkspaceView;
   titleBlocks?: TitleBlockInstance[];
   projectName?: string;
   crsLabel?: string;
@@ -154,11 +156,12 @@ export const SheetWorkspace = ({
   project,
   draft,
   activeSheetId,
+  initialView = 'MODEL',
   titleBlocks = [],
   projectName = 'Survey Plan',
   crsLabel = '',
 }: SheetWorkspaceProps): React.JSX.Element => {
-  const [view, setView] = useState<WorkspaceView>('MODEL');
+  const [view, setView] = useState<WorkspaceView>(initialView);
   const [sheetId, setSheetId] = useState<string | undefined>(activeSheetId ?? draft.sheets[0]?.id);
   const scene = useMemo(() => buildCadDisplayScene(project), [project]);
   const sheet = draft.sheets.find((entry) => entry.id === sheetId) ?? draft.sheets[0];
