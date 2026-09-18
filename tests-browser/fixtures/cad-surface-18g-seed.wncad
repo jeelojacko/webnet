@@ -1,0 +1,1298 @@
+{
+  "kind": "webnet-cad-drawing",
+  "schemaVersion": 2,
+  "drawingId": "cad-drawing-3439e23b-4681-48a3-a214-de3a355fa6b3",
+  "name": "18G Surface QA Seed",
+  "createdAt": "2026-09-18T12:03:36.288Z",
+  "updatedAt": "2026-09-18T12:03:36.288Z",
+  "units": "m",
+  "project": {
+    "version": 2,
+    "id": "cad-project-5bb48fcd-0f5e-4760-a4cf-258da865e53e",
+    "name": "18G Surface QA Seed",
+    "metadata": {
+      "source": "parsed-input",
+      "runMode": "unknown",
+      "units": "m",
+      "stationCount": 0,
+      "observationCount": 0,
+      "adjustedStationCount": 0
+    },
+    "layers": [
+      {
+        "id": "control-points",
+        "name": "Control Points",
+        "color": "#f59e0b",
+        "defaultStyleId": "style-control-point",
+        "visible": true,
+        "locked": false,
+        "printable": true,
+        "lineweightMm": 0.25,
+        "role": "control-points"
+      },
+      {
+        "id": "points",
+        "name": "Survey Points",
+        "color": "#38bdf8",
+        "defaultStyleId": "style-point",
+        "visible": true,
+        "locked": false,
+        "printable": true,
+        "lineweightMm": 0.25,
+        "role": "points"
+      },
+      {
+        "id": "observation-lines",
+        "name": "Observation Lines",
+        "color": "#22c55e",
+        "defaultStyleId": "style-observation-line",
+        "visible": true,
+        "locked": false,
+        "printable": true,
+        "lineweightMm": 0.25,
+        "role": "observation-lines"
+      },
+      {
+        "id": "error-ellipses",
+        "name": "Error Ellipses",
+        "color": "#f472b6",
+        "lineTypeId": "dashed",
+        "defaultStyleId": "style-error-ellipse",
+        "visible": true,
+        "locked": false,
+        "printable": true,
+        "lineweightMm": 0.25,
+        "role": "error-ellipses"
+      },
+      {
+        "id": "labels",
+        "name": "Labels",
+        "color": "#e2e8f0",
+        "defaultStyleId": "style-label",
+        "visible": true,
+        "locked": false,
+        "printable": true,
+        "lineweightMm": 0.25,
+        "role": "labels"
+      },
+      {
+        "id": "parcels",
+        "name": "Parcels",
+        "color": "#f59e0b",
+        "defaultStyleId": "style-parcel",
+        "visible": true,
+        "locked": false,
+        "printable": true,
+        "lineweightMm": 0.25,
+        "role": "parcels"
+      },
+      {
+        "id": "general",
+        "name": "General",
+        "color": "#e2e8f0",
+        "visible": true,
+        "locked": false,
+        "frozen": false,
+        "transparency": 0,
+        "description": "",
+        "printable": true,
+        "lineTypeId": "continuous",
+        "role": "planning"
+      }
+    ],
+    "styleLibrary": {
+      "lineTypes": [
+        {
+          "id": "continuous",
+          "name": "Continuous",
+          "dashPattern": []
+        },
+        {
+          "id": "dashed",
+          "name": "Dashed",
+          "dashPattern": [
+            6,
+            4
+          ]
+        },
+        {
+          "id": "hidden",
+          "name": "Hidden",
+          "dashPattern": [
+            3,
+            2
+          ]
+        },
+        {
+          "id": "center",
+          "name": "Center",
+          "dashPattern": [
+            12,
+            3,
+            2,
+            3
+          ]
+        },
+        {
+          "id": "center2",
+          "name": "Center 2",
+          "dashPattern": [
+            8,
+            2,
+            1,
+            2
+          ]
+        },
+        {
+          "id": "dash-dot",
+          "name": "Dash Dot",
+          "dashPattern": [
+            10,
+            2,
+            1,
+            2
+          ]
+        },
+        {
+          "id": "dotted",
+          "name": "Dotted",
+          "dashPattern": [
+            1,
+            2
+          ]
+        },
+        {
+          "id": "phantom",
+          "name": "Phantom",
+          "dashPattern": [
+            12,
+            2,
+            1,
+            2,
+            1,
+            2
+          ]
+        },
+        {
+          "id": "dash-short",
+          "name": "Dash Short (deprecated, use Dashed)",
+          "dashPattern": [
+            6,
+            4
+          ]
+        }
+      ],
+      "textStyles": [
+        {
+          "id": "label-default",
+          "name": "Label Default",
+          "fontFamily": "ui-monospace, SFMono-Regular, Menlo, Consolas, monospace",
+          "fontSize": 11
+        }
+      ],
+      "pointSymbols": [
+        {
+          "id": "point-free",
+          "name": "Free Point",
+          "radius": 1.8
+        },
+        {
+          "id": "point-control",
+          "name": "Control Point",
+          "radius": 2.4
+        },
+        {
+          "id": "point-f2f-circle",
+          "name": "F2F Circle",
+          "radius": 1.8,
+          "shape": "circle"
+        },
+        {
+          "id": "point-f2f-square",
+          "name": "F2F Square",
+          "radius": 1.8,
+          "shape": "square"
+        },
+        {
+          "id": "point-f2f-triangle",
+          "name": "F2F Triangle",
+          "radius": 2,
+          "shape": "triangle"
+        },
+        {
+          "id": "point-f2f-cross",
+          "name": "F2F Cross",
+          "radius": 2,
+          "shape": "cross"
+        },
+        {
+          "id": "point-f2f-x",
+          "name": "F2F X",
+          "radius": 2,
+          "shape": "x"
+        },
+        {
+          "id": "point-f2f-dot",
+          "name": "F2F Dot",
+          "radius": 1.2,
+          "shape": "dot"
+        }
+      ],
+      "styles": [
+        {
+          "id": "style-control-point",
+          "name": "Control Point",
+          "color": "#f59e0b",
+          "strokeWidth": 1.2,
+          "pointSymbolId": "point-control"
+        },
+        {
+          "id": "style-point",
+          "name": "Survey Point",
+          "color": "#38bdf8",
+          "strokeWidth": 1.2,
+          "pointSymbolId": "point-free"
+        },
+        {
+          "id": "style-observation-line",
+          "name": "Observation Line",
+          "color": "#22c55e",
+          "strokeWidth": 1.25,
+          "lineTypeId": "continuous"
+        },
+        {
+          "id": "style-error-ellipse",
+          "name": "Error Ellipse",
+          "color": "#f472b6",
+          "strokeWidth": 1.1,
+          "lineTypeId": "dashed"
+        },
+        {
+          "id": "style-label",
+          "name": "Label",
+          "color": "#e2e8f0",
+          "textStyleId": "label-default"
+        },
+        {
+          "id": "style-parcel",
+          "name": "Parcel",
+          "color": "#f59e0b",
+          "strokeWidth": 1.5,
+          "lineTypeId": "continuous"
+        }
+      ]
+    },
+    "pointStyles": [
+      {
+        "id": "point-style-standard",
+        "name": "Standard",
+        "markerSymbolId": "point-free",
+        "displayMarker": true
+      },
+      {
+        "id": "point-style-survey",
+        "name": "Survey Point",
+        "markerSymbolId": "point-free",
+        "displayMarker": true
+      },
+      {
+        "id": "point-style-control",
+        "name": "Control Point",
+        "markerSymbolId": "point-control",
+        "displayMarker": true
+      },
+      {
+        "id": "point-style-monument",
+        "name": "Monument",
+        "markerSymbolId": "point-f2f-square",
+        "displayMarker": true
+      },
+      {
+        "id": "point-style-boundary",
+        "name": "Boundary Corner",
+        "markerSymbolId": "point-f2f-triangle",
+        "displayMarker": true
+      },
+      {
+        "id": "point-style-topo",
+        "name": "Topo",
+        "markerSymbolId": "point-f2f-dot",
+        "displayMarker": true
+      },
+      {
+        "id": "point-style-tree",
+        "name": "Tree",
+        "markerSymbolId": "point-f2f-cross",
+        "displayMarker": true
+      },
+      {
+        "id": "point-style-utility",
+        "name": "Utility",
+        "markerSymbolId": "point-f2f-x",
+        "displayMarker": true
+      },
+      {
+        "id": "point-style-no-display",
+        "name": "No Display",
+        "markerSymbolId": "point-free",
+        "displayMarker": false,
+        "description": "Hides the marker; label and layer visibility are unaffected."
+      }
+    ],
+    "labelStyles": [
+      {
+        "id": "point-label-none",
+        "name": "No Label",
+        "components": {},
+        "componentOrder": [],
+        "separator": " ",
+        "elevationDecimals": 3,
+        "textStyleId": "label-default",
+        "offsetX": 0,
+        "offsetY": 0,
+        "visible": false,
+        "description": "Hides the label; point and layer visibility are unaffected."
+      },
+      {
+        "id": "point-label-point-number",
+        "name": "Point Number",
+        "components": {
+          "pointNumber": true
+        },
+        "componentOrder": [
+          "pointNumber"
+        ],
+        "separator": " ",
+        "elevationDecimals": 3,
+        "textStyleId": "label-default",
+        "offsetX": 0,
+        "offsetY": 0,
+        "visible": true
+      },
+      {
+        "id": "point-label-point-number-elevation",
+        "name": "Point Number + Elevation",
+        "components": {
+          "pointNumber": true,
+          "elevation": true
+        },
+        "componentOrder": [
+          "pointNumber",
+          "elevation"
+        ],
+        "separator": " ",
+        "elevationDecimals": 3,
+        "textStyleId": "label-default",
+        "offsetX": 0,
+        "offsetY": 0,
+        "visible": true
+      },
+      {
+        "id": "point-label-point-number-description",
+        "name": "Point Number + Description",
+        "components": {
+          "pointNumber": true,
+          "description": true
+        },
+        "componentOrder": [
+          "pointNumber",
+          "description"
+        ],
+        "separator": " ",
+        "elevationDecimals": 3,
+        "textStyleId": "label-default",
+        "offsetX": 0,
+        "offsetY": 0,
+        "visible": true
+      },
+      {
+        "id": "point-label-description",
+        "name": "Description",
+        "components": {
+          "description": true
+        },
+        "componentOrder": [
+          "description"
+        ],
+        "separator": " ",
+        "elevationDecimals": 3,
+        "textStyleId": "label-default",
+        "offsetX": 0,
+        "offsetY": 0,
+        "visible": true
+      },
+      {
+        "id": "point-label-elevation",
+        "name": "Elevation",
+        "components": {
+          "elevation": true
+        },
+        "componentOrder": [
+          "elevation"
+        ],
+        "separator": " ",
+        "elevationDecimals": 3,
+        "textStyleId": "label-default",
+        "offsetX": 0,
+        "offsetY": 0,
+        "visible": true
+      },
+      {
+        "id": "point-label-point-number-description-elevation",
+        "name": "Point Number + Description + Elevation",
+        "components": {
+          "pointNumber": true,
+          "description": true,
+          "elevation": true
+        },
+        "componentOrder": [
+          "pointNumber",
+          "description",
+          "elevation"
+        ],
+        "separator": " ",
+        "elevationDecimals": 3,
+        "textStyleId": "label-default",
+        "offsetX": 0,
+        "offsetY": 0,
+        "visible": true
+      },
+      {
+        "id": "point-label-f2f-full",
+        "name": "F2F Full",
+        "components": {
+          "pointNumber": true,
+          "description": true,
+          "featureCode": true,
+          "elevation": true
+        },
+        "componentOrder": [
+          "pointNumber",
+          "description",
+          "featureCode",
+          "elevation"
+        ],
+        "separator": " ",
+        "elevationDecimals": 3,
+        "textStyleId": "label-default",
+        "offsetX": 0,
+        "offsetY": 0,
+        "visible": true,
+        "description": "Reproduces the legacy F2F label text (order, separator, elevation format)."
+      }
+    ],
+    "entities": [
+      {
+        "id": "qa-pt-P00",
+        "type": "survey-point",
+        "layerId": "general",
+        "visible": true,
+        "locked": false,
+        "stationId": "P00",
+        "x": 0,
+        "y": 0,
+        "z": 100,
+        "pointClass": "free",
+        "source": "parsed-input"
+      },
+      {
+        "id": "qa-pt-P01",
+        "type": "survey-point",
+        "layerId": "general",
+        "visible": true,
+        "locked": false,
+        "stationId": "P01",
+        "x": 10,
+        "y": 0,
+        "z": 101,
+        "pointClass": "free",
+        "source": "parsed-input"
+      },
+      {
+        "id": "qa-pt-P02",
+        "type": "survey-point",
+        "layerId": "general",
+        "visible": true,
+        "locked": false,
+        "stationId": "P02",
+        "x": 20,
+        "y": 0,
+        "z": 102,
+        "pointClass": "free",
+        "source": "parsed-input"
+      },
+      {
+        "id": "qa-pt-P03",
+        "type": "survey-point",
+        "layerId": "general",
+        "visible": true,
+        "locked": false,
+        "stationId": "P03",
+        "x": 30,
+        "y": 0,
+        "z": 103,
+        "pointClass": "free",
+        "source": "parsed-input"
+      },
+      {
+        "id": "qa-pt-P04",
+        "type": "survey-point",
+        "layerId": "general",
+        "visible": true,
+        "locked": false,
+        "stationId": "P04",
+        "x": 40,
+        "y": 0,
+        "z": 104,
+        "pointClass": "free",
+        "source": "parsed-input"
+      },
+      {
+        "id": "qa-pt-P05",
+        "type": "survey-point",
+        "layerId": "general",
+        "visible": true,
+        "locked": false,
+        "stationId": "P05",
+        "x": 50,
+        "y": 0,
+        "z": 105,
+        "pointClass": "free",
+        "source": "parsed-input"
+      },
+      {
+        "id": "qa-pt-P10",
+        "type": "survey-point",
+        "layerId": "general",
+        "visible": true,
+        "locked": false,
+        "stationId": "P10",
+        "x": 0,
+        "y": 10,
+        "z": 100.5,
+        "pointClass": "free",
+        "source": "parsed-input"
+      },
+      {
+        "id": "qa-pt-P11",
+        "type": "survey-point",
+        "layerId": "general",
+        "visible": true,
+        "locked": false,
+        "stationId": "P11",
+        "x": 10,
+        "y": 10,
+        "z": 101.5,
+        "pointClass": "free",
+        "source": "parsed-input"
+      },
+      {
+        "id": "qa-pt-P12",
+        "type": "survey-point",
+        "layerId": "general",
+        "visible": true,
+        "locked": false,
+        "stationId": "P12",
+        "x": 20,
+        "y": 10,
+        "z": 102.5,
+        "pointClass": "free",
+        "source": "parsed-input"
+      },
+      {
+        "id": "qa-pt-P13",
+        "type": "survey-point",
+        "layerId": "general",
+        "visible": true,
+        "locked": false,
+        "stationId": "P13",
+        "x": 30,
+        "y": 10,
+        "z": 103.5,
+        "pointClass": "free",
+        "source": "parsed-input"
+      },
+      {
+        "id": "qa-pt-P14",
+        "type": "survey-point",
+        "layerId": "general",
+        "visible": true,
+        "locked": false,
+        "stationId": "P14",
+        "x": 40,
+        "y": 10,
+        "z": 104.5,
+        "pointClass": "free",
+        "source": "parsed-input"
+      },
+      {
+        "id": "qa-pt-P15",
+        "type": "survey-point",
+        "layerId": "general",
+        "visible": true,
+        "locked": false,
+        "stationId": "P15",
+        "x": 50,
+        "y": 10,
+        "z": 105.5,
+        "pointClass": "free",
+        "source": "parsed-input"
+      },
+      {
+        "id": "qa-pt-P20",
+        "type": "survey-point",
+        "layerId": "general",
+        "visible": true,
+        "locked": false,
+        "stationId": "P20",
+        "x": 0,
+        "y": 20,
+        "z": 101,
+        "pointClass": "free",
+        "source": "parsed-input"
+      },
+      {
+        "id": "qa-pt-P21",
+        "type": "survey-point",
+        "layerId": "general",
+        "visible": true,
+        "locked": false,
+        "stationId": "P21",
+        "x": 10,
+        "y": 20,
+        "z": 102,
+        "pointClass": "free",
+        "source": "parsed-input"
+      },
+      {
+        "id": "qa-pt-P22",
+        "type": "survey-point",
+        "layerId": "general",
+        "visible": true,
+        "locked": false,
+        "stationId": "P22",
+        "x": 20,
+        "y": 20,
+        "z": 103,
+        "pointClass": "free",
+        "source": "parsed-input"
+      },
+      {
+        "id": "qa-pt-P23",
+        "type": "survey-point",
+        "layerId": "general",
+        "visible": true,
+        "locked": false,
+        "stationId": "P23",
+        "x": 30,
+        "y": 20,
+        "z": 104,
+        "pointClass": "free",
+        "source": "parsed-input"
+      },
+      {
+        "id": "qa-pt-P24",
+        "type": "survey-point",
+        "layerId": "general",
+        "visible": true,
+        "locked": false,
+        "stationId": "P24",
+        "x": 40,
+        "y": 20,
+        "z": 105,
+        "pointClass": "free",
+        "source": "parsed-input"
+      },
+      {
+        "id": "qa-pt-P25",
+        "type": "survey-point",
+        "layerId": "general",
+        "visible": true,
+        "locked": false,
+        "stationId": "P25",
+        "x": 50,
+        "y": 20,
+        "z": 106,
+        "pointClass": "free",
+        "source": "parsed-input"
+      },
+      {
+        "id": "qa-pt-P30",
+        "type": "survey-point",
+        "layerId": "general",
+        "visible": true,
+        "locked": false,
+        "stationId": "P30",
+        "x": 0,
+        "y": 30,
+        "z": 101.5,
+        "pointClass": "free",
+        "source": "parsed-input"
+      },
+      {
+        "id": "qa-pt-P31",
+        "type": "survey-point",
+        "layerId": "general",
+        "visible": true,
+        "locked": false,
+        "stationId": "P31",
+        "x": 10,
+        "y": 30,
+        "z": 102.5,
+        "pointClass": "free",
+        "source": "parsed-input"
+      },
+      {
+        "id": "qa-pt-P32",
+        "type": "survey-point",
+        "layerId": "general",
+        "visible": true,
+        "locked": false,
+        "stationId": "P32",
+        "x": 20,
+        "y": 30,
+        "z": 103.5,
+        "pointClass": "free",
+        "source": "parsed-input"
+      },
+      {
+        "id": "qa-pt-P33",
+        "type": "survey-point",
+        "layerId": "general",
+        "visible": true,
+        "locked": false,
+        "stationId": "P33",
+        "x": 30,
+        "y": 30,
+        "z": 104.5,
+        "pointClass": "free",
+        "source": "parsed-input"
+      },
+      {
+        "id": "qa-pt-P34",
+        "type": "survey-point",
+        "layerId": "general",
+        "visible": true,
+        "locked": false,
+        "stationId": "P34",
+        "x": 40,
+        "y": 30,
+        "z": 105.5,
+        "pointClass": "free",
+        "source": "parsed-input"
+      },
+      {
+        "id": "qa-pt-P35",
+        "type": "survey-point",
+        "layerId": "general",
+        "visible": true,
+        "locked": false,
+        "stationId": "P35",
+        "x": 50,
+        "y": 30,
+        "z": 106.5,
+        "pointClass": "free",
+        "source": "parsed-input"
+      },
+      {
+        "id": "qa-pt-P40",
+        "type": "survey-point",
+        "layerId": "general",
+        "visible": true,
+        "locked": false,
+        "stationId": "P40",
+        "x": 0,
+        "y": 40,
+        "z": 102,
+        "pointClass": "free",
+        "source": "parsed-input"
+      },
+      {
+        "id": "qa-pt-P41",
+        "type": "survey-point",
+        "layerId": "general",
+        "visible": true,
+        "locked": false,
+        "stationId": "P41",
+        "x": 10,
+        "y": 40,
+        "z": 103,
+        "pointClass": "free",
+        "source": "parsed-input"
+      },
+      {
+        "id": "qa-pt-P42",
+        "type": "survey-point",
+        "layerId": "general",
+        "visible": true,
+        "locked": false,
+        "stationId": "P42",
+        "x": 20,
+        "y": 40,
+        "z": 104,
+        "pointClass": "free",
+        "source": "parsed-input"
+      },
+      {
+        "id": "qa-pt-P43",
+        "type": "survey-point",
+        "layerId": "general",
+        "visible": true,
+        "locked": false,
+        "stationId": "P43",
+        "x": 30,
+        "y": 40,
+        "z": 105,
+        "pointClass": "free",
+        "source": "parsed-input"
+      },
+      {
+        "id": "qa-pt-P44",
+        "type": "survey-point",
+        "layerId": "general",
+        "visible": true,
+        "locked": false,
+        "stationId": "P44",
+        "x": 40,
+        "y": 40,
+        "z": 106,
+        "pointClass": "free",
+        "source": "parsed-input"
+      },
+      {
+        "id": "qa-pt-P45",
+        "type": "survey-point",
+        "layerId": "general",
+        "visible": true,
+        "locked": false,
+        "stationId": "P45",
+        "x": 50,
+        "y": 40,
+        "z": 107,
+        "pointClass": "free",
+        "source": "parsed-input"
+      },
+      {
+        "id": "qa-ring-outer",
+        "type": "polyline",
+        "layerId": "general",
+        "visible": true,
+        "locked": false,
+        "vertices": [
+          {
+            "x": 5,
+            "y": 5
+          },
+          {
+            "x": 45,
+            "y": 5
+          },
+          {
+            "x": 45,
+            "y": 35
+          },
+          {
+            "x": 5,
+            "y": 35
+          },
+          {
+            "x": 5,
+            "y": 5
+          }
+        ],
+        "vertexLabels": [
+          "",
+          "",
+          "",
+          "",
+          ""
+        ],
+        "closed": true
+      },
+      {
+        "id": "qa-ring-void",
+        "type": "polyline",
+        "layerId": "general",
+        "visible": true,
+        "locked": false,
+        "vertices": [
+          {
+            "x": 20,
+            "y": 15
+          },
+          {
+            "x": 30,
+            "y": 15
+          },
+          {
+            "x": 30,
+            "y": 25
+          },
+          {
+            "x": 20,
+            "y": 25
+          },
+          {
+            "x": 20,
+            "y": 15
+          }
+        ],
+        "vertexLabels": [
+          "",
+          "",
+          "",
+          "",
+          ""
+        ],
+        "closed": true
+      }
+    ],
+    "cogoComputations": [],
+    "bounds": null,
+    "currentLayerId": "general",
+    "pointGroups": [
+      {
+        "id": "g-all",
+        "name": "All QA",
+        "query": {},
+        "priority": 0
+      },
+      {
+        "id": "g-high",
+        "name": "High QA",
+        "query": {
+          "elevationMin": 102
+        },
+        "priority": 1
+      }
+    ],
+    "fieldToFinishCatalog": {
+      "id": "starter-survey",
+      "name": "WebNet Starter Survey Catalog",
+      "version": "1",
+      "definitions": [
+        {
+          "id": "control",
+          "code": "CONTROL",
+          "description": "Control station",
+          "layer": "F2F-CONTROL",
+          "pointBehavior": "point",
+          "lineworkBehavior": {
+            "enabled": false,
+            "implicitContinuation": false
+          }
+        },
+        {
+          "id": "mon",
+          "code": "MON",
+          "description": "Survey monument",
+          "layer": "F2F-MONUMENT",
+          "pointBehavior": "point",
+          "lineworkBehavior": {
+            "enabled": false,
+            "implicitContinuation": false
+          }
+        },
+        {
+          "id": "ip",
+          "code": "IP",
+          "description": "Iron pin",
+          "layer": "F2F-MONUMENT",
+          "pointBehavior": "point",
+          "lineworkBehavior": {
+            "enabled": false,
+            "implicitContinuation": false
+          }
+        },
+        {
+          "id": "ep",
+          "code": "EP",
+          "description": "Edge of pavement",
+          "layer": "F2F-EDGE",
+          "pointBehavior": "point",
+          "lineworkBehavior": {
+            "enabled": true,
+            "implicitContinuation": false
+          },
+          "defaultAttributes": {
+            "surface": "asphalt"
+          }
+        },
+        {
+          "id": "cl",
+          "code": "CL",
+          "description": "Centerline",
+          "layer": "F2F-CENTERLINE",
+          "pointBehavior": "none",
+          "lineworkBehavior": {
+            "enabled": true,
+            "implicitContinuation": true
+          }
+        },
+        {
+          "id": "top",
+          "code": "TOP",
+          "description": "Topographic shot",
+          "layer": "F2F-TOPO",
+          "pointBehavior": "point",
+          "lineworkBehavior": {
+            "enabled": false,
+            "implicitContinuation": false
+          }
+        },
+        {
+          "id": "toe",
+          "code": "TOE",
+          "description": "Toe of slope",
+          "layer": "F2F-TOPO",
+          "pointBehavior": "point",
+          "lineworkBehavior": {
+            "enabled": true,
+            "implicitContinuation": false
+          }
+        },
+        {
+          "id": "bldg",
+          "code": "BLDG",
+          "description": "Building footprint",
+          "layer": "F2F-BUILDING",
+          "pointBehavior": "point",
+          "lineworkBehavior": {
+            "enabled": true,
+            "implicitContinuation": false
+          }
+        },
+        {
+          "id": "tree",
+          "code": "TREE",
+          "description": "Tree",
+          "layer": "F2F-TREE",
+          "pointBehavior": "point",
+          "lineworkBehavior": {
+            "enabled": false,
+            "implicitContinuation": false
+          },
+          "defaultAttributes": {
+            "species": "unknown"
+          }
+        },
+        {
+          "id": "up",
+          "code": "UP",
+          "description": "Utility pole",
+          "layer": "F2F-UTILITY",
+          "pointBehavior": "point",
+          "lineworkBehavior": {
+            "enabled": false,
+            "implicitContinuation": false
+          }
+        },
+        {
+          "id": "mh",
+          "code": "MH",
+          "description": "Manhole",
+          "layer": "F2F-UTILITY",
+          "pointBehavior": "point",
+          "lineworkBehavior": {
+            "enabled": false,
+            "implicitContinuation": false
+          }
+        }
+      ],
+      "aliases": [
+        {
+          "alias": "EOP",
+          "targetCode": "EP"
+        }
+      ]
+    },
+    "fieldToFinishSettings": {},
+    "surfaces": [
+      {
+        "id": "qa-surf-constraints",
+        "name": "QA Constraints",
+        "definition": {
+          "pointSource": {
+            "kind": "point-group",
+            "pointGroupIds": [
+              "g-all"
+            ]
+          },
+          "breaklines": [
+            {
+              "id": "qa-bl-mid",
+              "source": {
+                "kind": "point-chain",
+                "pointEntityIds": [
+                  "qa-pt-P11",
+                  "qa-pt-P12",
+                  "qa-pt-P13",
+                  "qa-pt-P14"
+                ]
+              },
+              "type": "standard",
+              "name": "mid-row"
+            }
+          ],
+          "boundaries": [
+            {
+              "type": "outer",
+              "sourceEntityId": "qa-ring-outer"
+            },
+            {
+              "type": "void",
+              "sourceEntityId": "qa-ring-void"
+            }
+          ]
+        },
+        "cachedRevision": null
+      }
+    ],
+    "surfaceStyles": [
+      {
+        "id": "surface-style-triangles",
+        "name": "Triangles",
+        "showTriangles": true
+      },
+      {
+        "id": "surface-style-triangles-points",
+        "name": "Triangles+Points",
+        "showTriangles": true,
+        "showPoints": true
+      },
+      {
+        "id": "surface-style-boundary",
+        "name": "Boundary",
+        "showBoundary": true
+      },
+      {
+        "id": "surface-style-none",
+        "name": "No Display"
+      }
+    ]
+  },
+  "showParcelLabels": true,
+  "imports": [],
+  "draft": {
+    "version": 1,
+    "modelSpaceProjectId": "cad-project-5bb48fcd-0f5e-4760-a4cf-258da865e53e",
+    "layers": [
+      {
+        "id": "control-points",
+        "name": "Control Points",
+        "color": "#f59e0b",
+        "visible": true,
+        "locked": false,
+        "role": "control-points",
+        "defaultStyleId": "style-control-point",
+        "printable": true,
+        "lineweightMm": 0.25
+      },
+      {
+        "id": "points",
+        "name": "Survey Points",
+        "color": "#38bdf8",
+        "visible": true,
+        "locked": false,
+        "role": "points",
+        "defaultStyleId": "style-point",
+        "printable": true,
+        "lineweightMm": 0.25
+      },
+      {
+        "id": "observation-lines",
+        "name": "Observation Lines",
+        "color": "#22c55e",
+        "visible": true,
+        "locked": false,
+        "role": "observation-lines",
+        "defaultStyleId": "style-observation-line",
+        "printable": true,
+        "lineweightMm": 0.25
+      },
+      {
+        "id": "error-ellipses",
+        "name": "Error Ellipses",
+        "color": "#f472b6",
+        "visible": true,
+        "locked": false,
+        "role": "error-ellipses",
+        "lineTypeId": "dashed",
+        "defaultStyleId": "style-error-ellipse",
+        "printable": true,
+        "lineweightMm": 0.25
+      },
+      {
+        "id": "labels",
+        "name": "Labels",
+        "color": "#e2e8f0",
+        "visible": true,
+        "locked": false,
+        "role": "labels",
+        "defaultStyleId": "style-label",
+        "printable": true,
+        "lineweightMm": 0.25
+      },
+      {
+        "id": "parcels",
+        "name": "Parcels",
+        "color": "#f59e0b",
+        "visible": true,
+        "locked": false,
+        "role": "parcels",
+        "defaultStyleId": "style-parcel",
+        "printable": true,
+        "lineweightMm": 0.25
+      },
+      {
+        "id": "general",
+        "name": "General",
+        "color": "#e2e8f0",
+        "visible": true,
+        "locked": false,
+        "role": "planning",
+        "lineTypeId": "continuous",
+        "printable": true,
+        "frozen": false,
+        "transparency": 0,
+        "description": ""
+      }
+    ],
+    "annotationStyles": {
+      "textStyles": [
+        {
+          "id": "draft-text-style-7efbb017-6189-49a9-bf27-3645164129c5",
+          "name": "Normal",
+          "paperHeightMm": 3.5,
+          "fontFamily": "ui-monospace, SFMono-Regular, Menlo, Consolas, monospace",
+          "alignment": "left"
+        }
+      ],
+      "lineStyles": [
+        {
+          "id": "draft-line-style-5fbf76aa-b9bf-4391-9ed5-4fdd64b7b91d",
+          "name": "Normal",
+          "lineweightMm": 0.25,
+          "lineTypeId": "continuous"
+        }
+      ],
+      "labelStyles": []
+    },
+    "precision": {
+      "bearingDecimals": 0,
+      "distanceDecimals": 3,
+      "areaDecimals": 1,
+      "coordinateDecimals": 3,
+      "unitsMode": "m"
+    },
+    "sheets": [],
+    "titleBlockDefinitions": [],
+    "tables": [],
+    "tableFragments": [],
+    "labels": [],
+    "metadata": {
+      "createdAt": "2026-09-18T12:03:36.289Z",
+      "updatedAt": "2026-09-18T12:03:36.289Z"
+    }
+  }
+}

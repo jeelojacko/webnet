@@ -157,6 +157,9 @@ describe('CAD surface transactions + worker', () => {
       points: [],
       triangles: [],
       stats: emptyStats(),
+      grid: { minX: 0, minY: 0, cellSize: 1, cells: new Map() },
+      adjacency: [],
+      edgeKinds: [],
     });
     handler.handleMessage({
       type: 'build',
@@ -254,7 +257,7 @@ describe('CAD surface transactions + worker', () => {
   it('keeps scoped caches independent across documents', () => {
     const first = createCadSurfaceCache('doc-a');
     const second = createCadSurfaceCache('doc-b');
-    first.set('s1', 'rev-1', { revision: 'rev-1', points: [], triangles: [], stats: emptyStats() });
+    first.set('s1', 'rev-1', { revision: 'rev-1', points: [], triangles: [], stats: emptyStats(), grid: { minX: 0, minY: 0, cellSize: 1, cells: new Map() }, adjacency: [], edgeKinds: [] });
     expect(second.get('s1', 'rev-1')).toBeUndefined();
     first.invalidate('s1');
     expect(first.get('s1', 'rev-1')).toBeUndefined();

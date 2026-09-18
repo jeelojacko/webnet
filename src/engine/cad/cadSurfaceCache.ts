@@ -1,5 +1,6 @@
 import { computeCadSurfaceSourceRevision } from './cadSurfaces';
-import type { CadSurfaceBuildResult } from './cadSurfaces';
+import type { CadSurfaceBuildResult, CadSurfaceGrid } from './cadSurfaces';
+import type { TinAdjacency, TinEdgeKinds } from './tin/tinTypes';
 import type { CadProject } from './cadTypes';
 
 /**
@@ -19,6 +20,11 @@ export interface CachedSurfaceMesh {
   points: CadSurfaceBuildResult['points'];
   triangles: CadSurfaceBuildResult['triangles'];
   stats: CadSurfaceBuildResult['stats'];
+  /** Query index over retained triangles (session-only, never persisted). */
+  grid: CadSurfaceGrid;
+  /** Derived topology seam for 18H (session-only, never persisted). */
+  adjacency: TinAdjacency[];
+  edgeKinds: TinEdgeKinds[];
 }
 
 export interface CadSurfaceCache {
@@ -64,7 +70,7 @@ export const applySurfaceBuildSuccess = (
   cache: CadSurfaceCache,
   surfaceId: string,
   revision: string,
-  result: Pick<CadSurfaceBuildResult, 'outcome' | 'points' | 'triangles' | 'stats'>,
+  result: Pick<CadSurfaceBuildResult, 'outcome' | 'points' | 'triangles' | 'stats' | 'grid' | 'adjacency' | 'edgeKinds'>,
 ): CadProject => {
   const surface = findSurface(project, surfaceId);
   if (!surface) return project;
@@ -75,6 +81,14 @@ export const applySurfaceBuildSuccess = (
     points: result.points.map((point) => ({ ...point })),
     triangles: result.triangles.map((tri) => [tri[0], tri[1], tri[2]] as [number, number, number]),
     stats: { ...result.stats },
+    grid: {
+      minX: result.grid.minX,
+      minY: result.grid.minY,
+      cellSize: result.grid.cellSize,
+      cells: new Map([...result.grid.cells].map(([key, list]) => [key, [...list]] as [string, number[]])),
+    },
+    adjacency: result.adjacency.map((row) => [row[0], row[1], row[2]] as TinAdjacency),
+    edgeKinds: result.edgeKinds.map((row) => [row[0], row[1], row[2]] as TinEdgeKinds),
   });
   return {
     ...project,

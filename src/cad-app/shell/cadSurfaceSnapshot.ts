@@ -4,6 +4,7 @@ import {
   resolveSurfaceDisplayStatus,
   resolveSurfaceLayerId,
   surfaceContentRevision,
+  surfaceStatusText,
   type SurfaceStatusText,
 } from '../../engine/cad/cadSurfaceView';
 import { backfillCadSurfaceStyles } from '../../engine/cad/cadSurfaceStyles';
@@ -52,6 +53,11 @@ export interface CadSurfaceStatsSummary {
 export interface CadSurfaceRow {
   id: string;
   name: string;
+  /** Production rebuild route. The build service sends every rebuild
+   * through the surface worker (BUILDING status is the live proof); the
+   * bounded sync fallback announces itself in the completion notice, so
+   * this stays 'worker' without dev-only window hooks. */
+  buildPath: 'worker';
   layerId: string;
   layerName: string;
   layerLocked: boolean;
@@ -149,6 +155,14 @@ export const buildCadSurfaceSnapshot = (
   options?: {
     revisionIndex?: ReadonlyMap<string, readonly string[]>;
     lastInquiry?: CadSurfaceInquiry | null;
+    /** Session BUILDING set (pending worker requests, never persisted). */
+    buildingSurfaceIds?: ReadonlySet<string>;
+    /**
+     * Session failure diagnostics by surface id (worker transport
+     * failures only; applied solely when the revision still matches —
+     * a source edit expires them, never CURRENT).
+     */
+    sessionDiagnostics?: ReadonlyMap<string, { revision: string; error: string }>;
   },
 ): CadSurfaceSnapshot => {
   const layers = new Map(project.layers.map((layer) => [layer.id, layer]));
@@ -176,6 +190,23 @@ export const buildCadSurfaceSnapshot = (
     }
     const displayStatus = resolveSurfaceDisplayStatus(project, surface, fresh != null, meshStale);
     const stale = meshStale || displayStatus.stale;
+    // Session overlays (never persisted): BUILDING while a worker request
+    // is pending; FAILED with the bounded session diagnostic when the
+    // transport failed for the current revision. Broken references stay
+    // definition truth under both overlays.
+    let status = displayStatus.status;
+    let diagnostic: string | null = surface.buildDiagnostic ?? null;
+    if (displayStatus.status !== 'BROKEN_REFERENCE') {
+      if (options?.buildingSurfaceIds?.has(surface.id)) {
+        status = 'BUILDING';
+      } else {
+        const sessionFailure = options?.sessionDiagnostics?.get(surface.id);
+        if (sessionFailure && sessionFailure.revision === revision) {
+          status = 'FAILED';
+          diagnostic = sessionFailure.error;
+        }
+      }
+    }
     const layerId = resolveSurfaceLayerId(surface, project);
     const layer = layers.get(layerId);
     const source = surface.definition.pointSource;
@@ -189,17 +220,18 @@ export const buildCadSurfaceSnapshot = (
     return {
       id: surface.id,
       name: surface.name,
+      buildPath: 'worker',
       layerId,
       layerName: layer?.name ?? layerId,
       layerLocked: layer?.locked === true,
       styleId: surface.styleId ?? null,
       styleName: (surface.styleId != null ? styles.get(surface.styleId) : undefined) ?? 'Default',
-      status: displayStatus.status,
-      statusText: displayStatus.statusText,
+      status,
+      statusText: surfaceStatusText(status),
       stale,
       revision,
       cachedRevision: surface.cachedRevision ?? null,
-      diagnostic: surface.buildDiagnostic ?? null,
+      diagnostic,
       stats: mesh ? meshStats(mesh, stale) : null,
       definition: {
         pointSourceKind: source.kind,

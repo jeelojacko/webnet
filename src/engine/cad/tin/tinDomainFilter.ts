@@ -1,49 +1,40 @@
-import type { TinPoint, TinTriangle } from './tinTypes';
+import type { TinEdgeKindCode, TinPoint, TinTriangle } from './tinTypes';
 import { triangleArea2 } from './tinPredicates';
+import { classifyTinDomain } from './tinTopology';
 
 export interface TinDomainFilterInput {
   points: TinPoint[];
   triangles: TinTriangle[];
-  /** Local-frame outer rings (keep centroid-inside-every-outer). */
+  /** Local-frame outer rings (retain inside-every-outer). */
   outers: Array<Array<{ x: number; y: number }>>;
-  /** Local-frame void rings (drop centroid-inside-any-void). */
+  /** Local-frame void rings (drop inside-any-void). */
   voids: Array<Array<{ x: number; y: number }>>;
+  /** Constrained-edge kinds by `min>max` edge key (breakline/outer/void). */
+  constrained: ReadonlyMap<string, TinEdgeKindCode>;
   maxEdgeLength?: number;
 }
 
-const pointInRing = (x: number, y: number, ring: Array<{ x: number; y: number }>): boolean => {
-  let inside = false;
-  for (let i = 0, j = ring.length - 1; i < ring.length; j = i, i += 1) {
-    const xi = ring[i].x;
-    const yi = ring[i].y;
-    const xj = ring[j].x;
-    const yj = ring[j].y;
-    if (yi === yj && y === yi && x >= Math.min(xi, xj) && x <= Math.max(xi, xj)) return true;
-    if (yi !== yj && ((yi > y) !== (yj > y))) {
-      const xCross = xi + ((xj - xi) * (y - yi)) / (yj - yi);
-      if (xCross === x) return true;
-      if (x < xCross) inside = !inside;
-    }
-  }
-  return inside;
-};
-
 /**
- * Domain filter: outer/void clip on triangle centroids, optional post-build
- * max-edge drop, planimetric area. Pure + deterministic.
+ * Domain filter: constraint-aware flood fill from exterior across
+ * unconstrained edges (outer/void edges stop the flood, voids seeded
+ * independently), then the optional post-build max-edge drop, then
+ * planimetric area = sum of retained triangles. Pure + deterministic.
+ *
+ * Exactness argument: boundary rings are enforced mesh edges by the time
+ * this runs (recovered in tinBuild), so no triangle straddles a boundary
+ * and centroid seeding is exact — see
+ * docs/evidence/phase18g-surface-domain-classification.md §3.
  */
 export const filterTinDomain = (input: TinDomainFilterInput): {
   triangles: TinTriangle[];
   planimetricArea: number;
 } => {
-  const { points, outers, voids, maxEdgeLength } = input;
-  let triangles = input.triangles.filter((tri) => {
-    const cx = (points[tri.a].u + points[tri.b].u + points[tri.c].u) / 3;
-    const cy = (points[tri.a].v + points[tri.b].v + points[tri.c].v) / 3;
-    if (!outers.every((ring) => pointInRing(cx, cy, ring))) return false;
-    if (voids.some((ring) => pointInRing(cx, cy, ring))) return false;
-    return true;
+  const { points, outers, voids, constrained, maxEdgeLength } = input;
+  const retained = classifyTinDomain(points, input.triangles, constrained, {
+    outers,
+    voids,
   });
+  let triangles = input.triangles.filter((_, index) => retained[index]);
   if (maxEdgeLength != null) {
     triangles = triangles.filter((tri) => {
       const lens = [

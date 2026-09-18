@@ -48,7 +48,8 @@ import {
 } from '../cad-app/shell/cadSurfaceSnapshot';
 import { CadSurfaceManager } from '../cad-app/shell/CadSurfaceManager';
 import { createCadSurfaceCache } from '../engine/cad/cadSurfaceCache';
-import { buildCadSurface, computeCadSurfaceSourceRevision } from '../engine/cad/cadSurfaces';
+import { SurfaceWorkerClient } from '../workers/surfaceWorkerClient';
+import { SurfaceBuildService } from '../workers/surfaceBuildService';
 import {
   describeSelectedBoundaryEntity,
   describeSelectedBreaklineEntity,
@@ -336,6 +337,61 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
   const surfaceRevisionIndex = useMemo(
     () => new Map(Object.entries(surfaceMeshSessions)),
     [surfaceMeshSessions],
+  );
+  // Phase 18G — production builds run through the surface build service
+  // (one worker per drawing session; async completion populates the
+  // session mesh cache). Refs mirror render state so late worker
+  // completions always guard against the live project/drawing.
+  const activeProjectForBuildsRef = useRef(cadProject);
+  activeProjectForBuildsRef.current = cadProject;
+  const drawingIdForBuildsRef = useRef(activeDrawing.drawingId);
+  drawingIdForBuildsRef.current = activeDrawing.drawingId;
+  const surfaceMeshSessionsForBuildsRef = useRef(surfaceMeshSessions);
+  surfaceMeshSessionsForBuildsRef.current = surfaceMeshSessions;
+  const [surfaceBuildVersion, setSurfaceBuildVersion] = useState(0);
+  const surfaceBuildService = useMemo(
+    () =>
+      new SurfaceBuildService({
+        drawingId: activeDrawing.drawingId,
+        getProject: () => activeProjectForBuildsRef.current,
+        getDrawingId: () => drawingIdForBuildsRef.current,
+        cache: surfaceCache,
+        createTransport: () => {
+          try {
+            if (typeof Worker === 'undefined') return null;
+            return new SurfaceWorkerClient(
+              new Worker(new URL('../workers/surfaceWorker.ts', import.meta.url), {
+                type: 'module',
+              }),
+            );
+          } catch {
+            return null;
+          }
+        },
+        getBuiltRevisions: (surfaceId) => surfaceMeshSessionsForBuildsRef.current[surfaceId] ?? [],
+        // Bounded index: current + ≤1 previous stale revision per surface.
+        recordRevision: (surfaceId, revision) =>
+          setSurfaceMeshSessions((previous) => ({
+            ...previous,
+            [surfaceId]: [...(previous[surfaceId] ?? []), revision].slice(-2),
+          })),
+        notify: (message) => setFileStatusText(message),
+        onStateChange: () => setSurfaceBuildVersion((version) => version + 1),
+      }),
+    [activeDrawing.drawingId, surfaceCache],
+  );
+  useEffect(() => () => surfaceBuildService.dispose(), [surfaceBuildService]);
+  // Snapshot inputs refresh only when the service reports a state change
+  // (pending/diagnostic transitions), not on every render.
+  const surfaceBuildInputs = useMemo(
+    () => ({
+      // Version tag: refreshes snapshot inputs whenever the service reports
+      // a state change (pending/diagnostic transitions), not on every render.
+      buildVersion: surfaceBuildVersion,
+      buildingSurfaceIds: surfaceBuildService.buildingSurfaceIds(),
+      sessionDiagnostics: surfaceBuildService.sessionDiagnostics(),
+    }),
+    [surfaceBuildService, surfaceBuildVersion],
   );
   const cadWorkspace = useSurveyCadWorkspace(
     cadProject,
@@ -694,6 +750,8 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
       surface: buildCadSurfaceSnapshot(activeProject, surfaceCache, selectedSurfaceId, {
         revisionIndex: surfaceRevisionIndex,
         lastInquiry: lastSurfaceInquiry,
+        buildingSurfaceIds: surfaceBuildInputs.buildingSurfaceIds,
+        sessionDiagnostics: surfaceBuildInputs.sessionDiagnostics,
       }),
       availableCommands: shellAvailableCommands,
     };
@@ -701,6 +759,7 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
     shellLink, activeDrawing, activeProject, activeCatalog, catalogStatus, selectionCount, selectedEntityIds, selectedEntities,
     propertiesPanelState, activeCommandKey, statusText, cadWorkspace, stationIds, dependencySummary, units,
     shellAvailableCommands, surfaceCache, surfaceRevisionIndex, selectedSurfaceId, lastSurfaceInquiry,
+    surfaceBuildInputs,
   ]);
 
   useEffect(() => {
@@ -721,62 +780,16 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
   }, [shellLink, cadWorkspace.activeSnap, cadWorkspace.pointerWorldPoint]);
 
   /**
-   * Phase 18F — synchronous session rebuild (pure engine build into the
-   * session mesh cache). Never history, never dirty: the mesh is derived
-   * data and the status re-derives CURRENT from the cache hit.
-   * ponytail: main-thread build; move to surfaceWorker when a TIN
-   * profile demands it (protocol + cache guards already exist).
+   * Phase 18G — production rebuild through the build service (single
+   * worker per drawing session). Returns the immediate acknowledgement;
+   * the human-readable build result lands in the file status on
+   * completion. Never history, never dirty: the mesh is derived data and
+   * the status re-derives CURRENT from the cache hit.
    */
-  const runSurfaceBuild = (surfaceId: string): string => {
-    const surface = activeProject.surfaces?.find((entry) => entry.id === surfaceId);
-    if (!surface) return 'Surface not found.';
-    const revision = computeCadSurfaceSourceRevision(activeProject, surface);
-    if (surfaceCache.get(surfaceId, revision)) {
-      return `“${surface.name}” is already current.`;
-    }
-    let result;
-    try {
-      result = buildCadSurface(activeProject, surface);
-    } catch (error) {
-      return `“${surface.name}” rebuild failed: ${error instanceof Error ? error.message : 'unknown error'}.`;
-    }
-    if (result.outcome !== 'ok') {
-      const detail = result.reasonCodes.length > 0 ? `: ${result.reasonCodes.join(', ')}` : '.';
-      return result.outcome === 'insufficient'
-        ? `“${surface.name}” has insufficient data${detail}`
-        : `“${surface.name}” build blocked${detail}`;
-    }
-    surfaceCache.set(surfaceId, revision, {
-      revision,
-      points: result.points.map((point) => ({ ...point })),
-      triangles: result.triangles.map((tri) => [tri[0], tri[1], tri[2]] as [number, number, number]),
-      stats: { ...result.stats },
-    });
-    setSurfaceMeshSessions((previous) => ({
-      ...previous,
-      [surfaceId]: [...(previous[surfaceId] ?? []), revision],
-    }));
-    return `“${surface.name}” rebuilt: ${result.stats.triangleCount} triangles from ${result.stats.usedPointCount} points.`;
-  };
+  const runSurfaceBuild = (surfaceId: string): string =>
+    surfaceBuildService.rebuildSurface(surfaceId);
 
-  const rebuildAllSurfaces = (): string => {
-    const surfaces = activeProject.surfaces ?? [];
-    if (surfaces.length === 0) return 'No surfaces to rebuild.';
-    let rebuilt = 0;
-    let current = 0;
-    let blocked = 0;
-    for (const surface of surfaces) {
-      const revision = computeCadSurfaceSourceRevision(activeProject, surface);
-      if (surfaceCache.get(surface.id, revision)) {
-        current += 1;
-        continue;
-      }
-      runSurfaceBuild(surface.id);
-      if (surfaceCache.get(surface.id, revision)) rebuilt += 1;
-      else blocked += 1;
-    }
-    return `Rebuilt ${rebuilt}, already current ${current}, ${blocked} not built.`;
-  };
+  const rebuildAllSurfaces = (): string => surfaceBuildService.rebuildAllSurfaces();
 
   // Phase 18F — drop session meshes for deleted surfaces (meshes never
   // persist; the revision index doubles as the known-id set).

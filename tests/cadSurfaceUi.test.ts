@@ -78,6 +78,9 @@ const quadFixture = () => {
     points: built.points,
     triangles: built.triangles,
     stats: built.stats,
+    grid: built.grid,
+    adjacency: built.adjacency,
+    edgeKinds: built.edgeKinds,
   });
   return { project, surface, cache, revision: built.revision };
 };

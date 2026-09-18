@@ -1,6 +1,6 @@
 import type { CachedSurfaceMesh, CadSurfaceCache } from './cadSurfaceCache';
 import type { CadSurfaceDisplayLayer } from './cadDisplayTypes';
-import { computeCadSurfaceSourceRevision, deriveSurfaceStatus } from './cadSurfaces';
+import { computeCadSurfaceSourceRevision, deriveSurfaceStatus, getSurfaceElevationAt } from './cadSurfaces';
 import { backfillCadSurfaceStyles } from './cadSurfaceStyles';
 import { resolveSurfaceLayerId as resolveDefaultSurfaceLayerId } from './cadSurfaceTypes';
 import type { CadProject, CadSurface, CadSurfaceStatus } from './cadTypes';
@@ -170,13 +170,44 @@ export const surfaceContentRevision = (
 ): string => computeCadSurfaceSourceRevision(project, surface);
 
 /**
- * Elevation at a plan point from a cached mesh via full-scan barycentric
- * interpolation. Null when outside every triangle (caller reports
- * "No surface elevation at point"). No geometry is created.
- * ponytail: full O(n) scan; reuse the engine grid index when inquiry
- * on huge TINs shows up in a profile.
+ * Elevation at a plan point from a cached mesh via the engine grid index
+ * (cell lookup + full-scan fallback on cell miss). Null when outside every
+ * triangle (caller reports "No surface elevation at point"). No geometry
+ * is created.
+ *
+ * Edge policy (deterministic, pinned by tests/cad_surface_domain.test.ts):
+ * interior shared edges are continuous (either triangle gives the same
+ * value); outer-boundary queries are inclusive of the surface (finite);
+ * void-boundary queries are inclusive of the surface (finite, continuous
+ * with the retained neighbor) while void interiors are null.
  */
 export const queryMeshElevation = (
+  mesh: CachedSurfaceMesh,
+  x: number,
+  y: number,
+): number | null => {
+  if (mesh.grid?.cells) {
+    return getSurfaceElevationAt(
+      {
+        outcome: 'ok',
+        revision: mesh.revision,
+        reasonCodes: [],
+        points: mesh.points,
+        triangles: mesh.triangles,
+        adjacency: mesh.adjacency ?? [],
+        edgeKinds: mesh.edgeKinds ?? [],
+        stats: mesh.stats,
+        grid: mesh.grid,
+      },
+      x,
+      y,
+    );
+  }
+  return queryMeshElevationFullScan(mesh, x, y);
+};
+
+/** Legacy O(n) full scan (grid-absent meshes only; normally unreachable). */
+export const queryMeshElevationFullScan = (
   mesh: CachedSurfaceMesh,
   x: number,
   y: number,

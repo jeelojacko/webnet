@@ -1,4 +1,5 @@
 import { buildCadSurface, type CadSurfaceBuildResult } from '../engine/cad/cadSurfaces';
+import type { TinAdjacency, TinEdgeKinds } from '../engine/cad/tin/tinTypes';
 import type { SurfaceBuildRequest } from '../engine/cad/cadSurfaceTypes';
 import type {
   CadProject,
@@ -30,6 +31,9 @@ export interface SurfaceWorkerMesh {
   points: CadSurfaceBuildResult['points'];
   triangles: CadSurfaceBuildResult['triangles'];
   stats: CadSurfaceBuildResult['stats'];
+  grid: CadSurfaceBuildResult['grid'];
+  adjacency: TinAdjacency[];
+  edgeKinds: TinEdgeKinds[];
 }
 
 export type SurfaceWorkerRequestMessage =
@@ -132,6 +136,9 @@ export const buildSurfaceMeshFromRequest = (
     points: result.points,
     triangles: result.triangles,
     stats: result.stats,
+    grid: result.grid,
+    adjacency: result.adjacency,
+    edgeKinds: result.edgeKinds,
   };
 };
 
