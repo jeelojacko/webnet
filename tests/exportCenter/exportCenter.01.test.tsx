@@ -106,7 +106,10 @@ describe('ExportCenterPanel', () => {
     container.remove();
   });
 
-  it('keeps scene approximations approximated (not omitted) in SVG/PDF previews', async () => {
+  // Phase 18D: square symbols export as honest closed polylines in
+  // SVG/PDF (the writer represents all six shapes), so no
+  // POINT_SYMBOL_APPROXIMATED warning fires there — only DXF still warns.
+  it('exports honest point shapes without approximation warnings in SVG/PDF previews', async () => {
     const drawing = drawingWithSheets('Approx Project', ['S1']);
     const point = drawing.project.entities.find((entity) => entity.type === 'survey-point');
     expect(point).not.toBeUndefined();
@@ -142,16 +145,15 @@ describe('ExportCenterPanel', () => {
       const outcome = buildExportCenterPreview(patched, { format });
       expect(outcome.ok).toBe(true);
       if (outcome.ok) {
-        // The merge preserves exported ids, so the hardened finalizer no
-        // longer converts valid approximations into omissions.
-        expect(outcome.preview.approximatedEntityIds, format).toContain(point?.id as string);
+        // Honest geometry: never omitted, never approximated.
+        expect(outcome.preview.approximatedEntityIds, format).not.toContain(point?.id as string);
         expect(outcome.preview.omittedEntityIds, format).not.toContain(point?.id as string);
         expect(
           outcome.preview.warnings.some(
             (warning) => warning.code === 'POINT_SYMBOL_APPROXIMATED' && warning.entityId === point?.id,
           ),
           format,
-        ).toBe(true);
+        ).toBe(false);
       }
     }
   });

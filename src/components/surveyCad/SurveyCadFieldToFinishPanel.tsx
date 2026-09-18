@@ -186,7 +186,15 @@ export const SurveyCadFieldToFinishPanel: React.FC<FieldToFinishPanelProps> = ({
         ))}
       </div>
       {tab === 'CATALOG' ? (
-        <SurveyCadFeatureCatalogEditor catalog={catalog} onCatalogChange={setCatalog} />
+        <SurveyCadFeatureCatalogEditor
+          catalog={catalog}
+          onCatalogChange={setCatalog}
+          drawing={{
+            pointSymbols: project.styleLibrary.pointSymbols,
+            pointStyles: project.pointStyles ?? [],
+            labelStyles: project.labelStyles ?? [],
+          }}
+        />
       ) : null}
       {tab === 'REVIEW' ? (
         <div className="grid gap-2" data-f2f-review>

@@ -24,6 +24,55 @@ export type CadSidePanelId = 'toolspace' | 'properties' | 'layers';
 
 export type CadToolspaceTab = 'prospector' | 'survey' | 'settings';
 
+/** Phase 18D — survey manager/dialog targets (ribbon + toolspace entry points). */
+export type SurveyManagerKind =
+  | 'points'
+  | 'point-groups'
+  | 'point-styles'
+  | 'point-label-styles'
+  | 'f2f';
+
+/**
+ * Phase 18D — per-point display facts precomputed in the workspace (resolver
+ * + names + source lines), so Toolspace/Properties stay dumb renderers.
+ * `table` is capped for the point table; `selected` always covers the full
+ * survey-point selection for Properties batch edits.
+ */
+export interface CadSurveyPointDisplayInfo {
+  entityId: string;
+  stationId: string;
+  x: number;
+  y: number;
+  z?: number;
+  description?: string;
+  featureCode?: string;
+  layerId: string;
+  pointClass: string;
+  source: string;
+  basePointStyleName: string;
+  pointStyleOverrideId: string | null;
+  pointStyleOverrideName: string | null;
+  effectivePointStyleName: string;
+  pointStyleSourceText: string;
+  baseLabelStyleName: string;
+  pointLabelStyleOverrideId: string | null;
+  labelStyleOverrideName: string | null;
+  effectiveLabelStyleName: string;
+  labelStyleSourceText: string;
+  matchingGroupNames: string[];
+}
+
+export interface CadSurveySnapshot {
+  pointCount: number;
+  allPointIds: string[];
+  groups: Array<{ id: string; name: string; memberCount: number; priority: number }>;
+  pointStyles: Array<{ id: string; name: string }>;
+  labelStyles: Array<{ id: string; name: string }>;
+  table: CadSurveyPointDisplayInfo[];
+  tableTruncated: boolean;
+  selected: CadSurveyPointDisplayInfo[];
+}
+
 export type CadActiveLayout = 'MODEL' | { sheetId: string };
 
 /**
@@ -81,6 +130,8 @@ export interface CadWorkspaceSnapshot {
   snapStatusText: string;
   stationCount: number;
   dependencyStatus: string;
+  /** Phase 18D — survey points/groups/styles summary; null when no workspace. */
+  survey: CadSurveySnapshot | null;
   /** UI command keys with a live starter in the mounted workspace. */
   availableCommands: string[];
 }
@@ -113,6 +164,17 @@ export interface CadShellActions {
   ) => import('../../hooks/surveyCad/surveyCadPropertiesEdit').CadPropertiesEditOutcome;
   /** Route one undoable layer-table mutation (LAYER_* family). */
   runLayerCommand: (_command: CadCommand) => boolean;
+  /** Route one undoable survey-display mutation (SURVEY_* family). */
+  runSurveyCommand: (_command: CadCommand) => boolean;
+  /**
+   * Open a survey manager dialog (point-groups preselects a group), or
+   * focus the Toolspace survey tab (points). F2F opens the drafting panel.
+   */
+  openSurveyManager: (_kind: SurveyManagerKind, _selectedId?: string) => void;
+  /** Select every survey point in the drawing. */
+  selectAllSurveyPoints: () => void;
+  /** Select the survey points matching one group (engine-side membership). */
+  selectSurveyGroupPoints: (_groupId: string) => void;
   /** Guarded set-current (must exist/ON/thawed); false + no-op when blocked. */
   setCurrentLayer: (_layerId: string) => boolean;
   /** Show + focus the Layer Properties Manager. */

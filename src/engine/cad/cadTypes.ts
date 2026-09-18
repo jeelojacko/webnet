@@ -112,6 +112,117 @@ export interface CadStyle {
   lineTypeId?: CadLineTypeId;
 }
 
+export type CadPointStyleId = string;
+export type CadPointLabelStyleId = string;
+export type CadPointGroupId = string;
+
+/**
+ * Phase 18D point-group query. DISPLAY/ORGANIZATION ONLY: matching never
+ * duplicates geometry and never mutates coordinates. Wildcards `*` (any run)
+ * and `?` (exactly one char) are supported ONLY in descriptionPattern and
+ * featureCodePattern, matched case-INSENSITIVELY. Regex/bracket syntax is
+ * not supported: any pattern containing `[`, `]` or `\` is malformed and
+ * fails closed (matches nothing; see validatePointGroupQuery). Entity-id
+ * lists match exactly (case-sensitive); excludePointIds always wins over
+ * includePointIds and query constraints.
+ */
+export interface CadPointGroupQuery {
+  /** Entity ids (point.id) explicitly included (OR with query constraints). */
+  includePointIds?: string[];
+  /** Entity ids always excluded; wins over include and query. */
+  excludePointIds?: string[];
+  descriptionPattern?: string;
+  featureCodePattern?: string;
+  pointClass?: 'control' | 'free' | 'unknown';
+  layerId?: string;
+  source?: 'adjustment-result' | 'parsed-input';
+  elevationMin?: number;
+  elevationMax?: number;
+}
+
+/**
+ * Phase 18D point group: a named, ordered query rule carrying optional
+ * per-property style overrides. Overrides are display-only references;
+ * unknown style ids fall back deterministically at resolve time.
+ */
+export interface CadPointGroup {
+  id: CadPointGroupId;
+  name: string;
+  query: CadPointGroupQuery;
+  pointStyleOverrideId?: CadPointStyleId;
+  pointLabelStyleOverrideId?: CadPointLabelStyleId;
+  /** Lower = higher precedence; list order is the tiebreak. */
+  priority: number;
+  description?: string;
+}
+
+export type CadPointLabelComponent = 'pointNumber' | 'description' | 'elevation' | 'featureCode';
+
+/**
+ * Phase 18D: point label content/layout ONLY (which components, order,
+ * separator, elevation decimals, placement offset, visibility). Color/font
+ * stay with the label's own layer/style; no annotation scale yet (future).
+ */
+export interface CadPointLabelStyle {
+  id: CadPointLabelStyleId;
+  name: string;
+  components: {
+    pointNumber?: boolean;
+    description?: boolean;
+    elevation?: boolean;
+    featureCode?: boolean;
+    prefix?: string;
+    suffix?: string;
+  };
+  componentOrder: CadPointLabelComponent[];
+  separator: string;
+  /** Elevation decimals, 0-4. Drawing units; never the global precision. */
+  elevationDecimals: number;
+  textStyleId: CadTextStyleId;
+  /** Base placement offset in drawing units (point + offset). */
+  offsetX: number;
+  offsetY: number;
+  rotationDeg?: number;
+  /** False = label not drawn (point/layer visibility unaffected). */
+  visible: boolean;
+  description?: string;
+}
+
+/**
+ * Phase 18D: associative binding on a text label. x/y/text remain compat
+ * snapshots; the binding is the associative source of truth. offsetOverride
+ * WINS over the style offset (not additive); the label keeps its own layer
+ * (no visibility coupling to the point).
+ */
+export interface CadPointLabelBinding {
+  pointEntityId: CadEntityId;
+  labelStyleId: CadPointLabelStyleId;
+  offsetOverride?: { dx: number; dy: number };
+  rotationOverrideDeg?: number;
+  content: { mode: 'derived' } | { mode: 'manual'; text: string };
+}
+
+/**
+ * Phase 18D: marker presentation ONLY (symbol + scale + rotation + visibility).
+ * Color/layer/coordinate ownership stays with the 18C resolver (authoritative
+ * for color/transparency/visibility). Radius semantics: markerScale multiplies
+ * the referenced symbol radius in drawing units (NOT paper mm; the SVG/PDF
+ * paper-mm gap is a known-future item, see phase18d-point-style-notes.md).
+ */
+export interface CadPointStyle {
+  id: CadPointStyleId;
+  name: string;
+  /** Ref into styleLibrary.pointSymbols. */
+  markerSymbolId: CadPointSymbolId;
+  /** Multiplier on the symbol radius (drawing units). Default 1. */
+  markerScale?: number;
+  /** Marker rotation in degrees. Default 0. */
+  rotationDeg?: number;
+  /** False = marker not drawn (label/layer visibility unaffected). */
+  displayMarker: boolean;
+  description?: string;
+}
+
 export interface CadStyleLibrary {
   lineTypes: CadLineType[];
   textStyles: CadTextStyle[];
@@ -130,6 +241,14 @@ export interface CadSurveyPointEntity extends CadBaseEntity {
   description?: string;
   featureCode?: string;
   errorEllipse?: StationErrorEllipse;
+  /** Phase 18D BASE point style (marker presentation). Undefined = drawing default. */
+  pointStyleId?: CadPointStyleId;
+  /** Phase 18D MANUAL override (undefined = By Default). Never stores resolved output. */
+  pointStyleOverrideId?: CadPointStyleId;
+  /** Phase 18D BASE label style (content/layout). Undefined = drawing default. */
+  pointLabelStyleId?: CadPointLabelStyleId;
+  /** Phase 18D MANUAL label override (undefined = By Default). Never stores resolved output. */
+  pointLabelStyleOverrideId?: CadPointLabelStyleId;
 }
 
 export interface CadLineEntity extends CadBaseEntity {
@@ -213,6 +332,8 @@ export interface CadTextEntity extends CadBaseEntity {
   y: number;
   text: string;
   anchorEntityId?: CadEntityId;
+  /** Phase 18D associative label binding. Absent = free (legacy baked) text. */
+  pointLabel?: CadPointLabelBinding;
 }
 
 export interface CadErrorEllipseEntity extends CadBaseEntity {
@@ -254,6 +375,16 @@ export interface CadProject {
   metadata: CadProjectMetadata;
   layers: CadLayer[];
   styleLibrary: CadStyleLibrary;
+  /** Phase 18D: drawing-owned point styles (marker presentation). Optional so
+   * legacy files stay schema-compatible; load paths backfill defaults. */
+  pointStyles?: CadPointStyle[];
+  /** Phase 18D: drawing-owned point label styles (content/layout). Optional
+   * so legacy files stay schema-compatible; load paths backfill defaults. */
+  labelStyles?: CadPointLabelStyle[];
+  /** Phase 18D: drawing-owned point groups (display/organization rules).
+   * Optional so legacy files stay schema-compatible; load paths backfill
+   * the two seed groups. Array order is the priority tiebreak. */
+  pointGroups?: CadPointGroup[];
   entities: CadEntity[];
   cogoComputations: CadCogoComputation[];
   bounds: CadBounds | null;

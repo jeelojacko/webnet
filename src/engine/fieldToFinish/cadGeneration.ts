@@ -26,6 +26,12 @@ import { linkOfPayload, type LinkOfPayloadSource } from './linkedSync';
 import { stampAdjustmentDependency } from '../cad/cadAdjustmentDependency';
 import type { ResultDependencyIdentity } from '../resultIntegrity';
 import { formatDraftCoordinate } from '../cad/cadLabelEngine';
+import {
+  DEFAULT_CAD_POINT_LABEL_STYLE_ID,
+  F2F_FULL_LABEL_STYLE_ID,
+  buildPointLabelContent,
+} from '../cad/cadPointLabelStyles';
+import { DEFAULT_CAD_POINT_STYLE_ID } from '../cad/cadPointStyles';
 import { replaceCadProjectEntities } from '../cad/cadProjectState';
 import { createCadSelectionState } from '../cad/cadSelection';
 import type { CadCommandDefinition } from '../cad/cadTransactions.types';
@@ -33,6 +39,7 @@ import type {
   CadEntity,
   CadLayer,
   CadLineEntity,
+  CadPointLabelStyle,
   CadPolylineEntity,
   CadProject,
   CadStyle,
@@ -322,7 +329,12 @@ const selectPrimary = (resolved: ResolvedCode[]): ResolvedCode | undefined =>
 const layerIdFor = (name: string): string =>
   name === F2F_UNMAPPED_LAYER_NAME ? F2F_UNMAPPED_LAYER_ID : `f2f-layer-${slug(name)}`;
 
-const buildLabelText = (
+/**
+ * @deprecated Legacy-compat reference only (formatter comparison for
+ * label migration). New labels use the single formatter
+ * buildPointLabelContent — do not fork logic here.
+ */
+export const buildLabelText = (
   point: FieldToFinishCadPoint,
   primaryCode: string | undefined,
   options: FieldToFinishLabelOptions,
@@ -353,6 +365,53 @@ const buildProvenance = (
   generationRunId: args.generationRunId,
   state: 'GENERATED',
 });
+
+/**
+ * Phase 18D BASE point-style chain: definition.pointStyleId (resolves in
+ * drawing.pointStyles) → compat style derived from definition.pointSymbolId
+ * (first pointStyle sharing the symbol; legacy point-free fallback when the
+ * symbol itself is unknown) → drawing default. Never creates styles;
+ * undefined = empty table, downstream drawing-default. The MANUAL
+ * pointStyleOverrideId is never written here — group overrides win later via
+ * the display resolver (downstream, no code here).
+ */
+const resolveBasePointStyleId = (
+  definition: FeatureDefinition | undefined,
+  project: CadProject,
+): string | undefined => {
+  const table = project.pointStyles ?? [];
+  if (definition?.pointStyleId && table.some((style) => style.id === definition.pointStyleId)) {
+    return definition.pointStyleId;
+  }
+  if (definition?.pointSymbolId) {
+    const compat = table.find((style) => style.markerSymbolId === definition.pointSymbolId)
+      ?? table.find((style) => style.markerSymbolId === 'point-free');
+    if (compat) return compat.id;
+  }
+  return table.some((style) => style.id === DEFAULT_CAD_POINT_STYLE_ID)
+    ? DEFAULT_CAD_POINT_STYLE_ID
+    : table[0]?.id;
+};
+
+/**
+ * Phase 18D BASE label-style chain: definition.labelStyleId (resolves in
+ * drawing.labelStyles) → F2F Full compat style (reproduces the legacy text
+ * exactly) → drawing default. Never suppresses: unknown codes still get a
+ * visible label via this fallback.
+ */
+const resolveBaseLabelStyle = (
+  definition: FeatureDefinition | undefined,
+  project: CadProject,
+): CadPointLabelStyle | undefined => {
+  const table = project.labelStyles ?? [];
+  if (definition?.labelStyleId) {
+    const hit = table.find((style) => style.id === definition.labelStyleId);
+    if (hit) return hit;
+  }
+  return table.find((style) => style.id === F2F_FULL_LABEL_STYLE_ID)
+    ?? table.find((style) => style.id === DEFAULT_CAD_POINT_LABEL_STYLE_ID)
+    ?? table[0];
+};
 
 export const buildFieldToFinishPayload = (
   project: CadProject,
@@ -454,6 +513,11 @@ export const buildFieldToFinishPayload = (
     const layerDef = primary?.definition ?? resolved.find((item) => item.definition !== undefined)?.definition;
     const layer = ensureLayer(layerDef?.layer ?? F2F_UNMAPPED_LAYER_NAME);
     const styleId = resolveStyleId(layerDef, layer);
+    // Style/label assignment follows the PRIMARY definition (first
+    // point-role match wins); unknown codes fall back deterministically.
+    const primaryDef = primary?.definition ?? layerDef;
+    const basePointStyleId = resolveBasePointStyleId(primaryDef, project);
+    const baseLabelStyle = resolveBaseLabelStyle(primaryDef, project);
     const primaryCode = primary ? canonicalizeCode(primary.entry.code) : undefined;
     const featureCodes = [...new Set(resolved.map((item) => canonicalizeCode(item.entry.code)).filter((code) => code))].sort();
     const activeDefinitionId = resolved.find((item) => item.definition === layerDef)?.definitionId;
@@ -472,6 +536,10 @@ export const buildFieldToFinishPayload = (
           ...existing,
           description: point.description ?? existing.description,
           ...(primaryCode ? { featureCode: primaryCode } : {}),
+          // Regen follows catalog style changes on the BASE refs only;
+          // manual overrides are separate fields and are never written here.
+          ...(basePointStyleId !== undefined ? { pointStyleId: basePointStyleId } : {}),
+          ...(baseLabelStyle !== undefined ? { pointLabelStyleId: baseLabelStyle.id } : {}),
           metadata: { ...(existing.metadata ?? {}), featureCodes, provenance },
         });
         updatedEntityIds.push(pointId);
@@ -490,6 +558,9 @@ export const buildFieldToFinishPayload = (
         ...(point.z !== undefined ? { z: point.z } : {}),
         pointClass: 'free',
         source: project.metadata.source,
+        // BASE refs only — manual override fields are never set from generation.
+        ...(basePointStyleId !== undefined ? { pointStyleId: basePointStyleId } : {}),
+        ...(baseLabelStyle !== undefined ? { pointLabelStyleId: baseLabelStyle.id } : {}),
         ...(point.description ? { description: point.description } : {}),
         ...(primaryCode ? { featureCode: primaryCode } : {}),
         metadata: { featureCodes, provenance },
@@ -505,7 +576,22 @@ export const buildFieldToFinishPayload = (
       const labelLayer = project.layers.find((entry) => entry.name === 'Labels')?.id
         ?? project.layers.find((entry) => entry.id === 'labels')?.id
         ?? layer.id;
-      const text = buildLabelText(point, primaryCode, labelOptions);
+      const labelStyleId = baseLabelStyle?.id ?? DEFAULT_CAD_POINT_LABEL_STYLE_ID;
+      // SINGLE formatter for new/derived label text. No label-style table
+      // (legacy drawing) falls back to the legacy reference text.
+      const text = baseLabelStyle
+        ? buildPointLabelContent(
+          {
+            stationId: point.stationId,
+            x: point.x,
+            y: point.y,
+            ...(point.z !== undefined ? { z: point.z } : {}),
+            ...(point.description ? { description: point.description } : {}),
+            ...(primaryCode ? { featureCode: primaryCode } : {}),
+          },
+          baseLabelStyle,
+        )
+        : buildLabelText(point, primaryCode, labelOptions);
       const labelProvenance: FieldToFinishProvenance = { ...provenance, sourceRecordId: `${provenance.sourceRecordId ?? point.stationId}:label` };
       if (existingLabel?.type === 'text') {
         const state = getFieldToFinishState(existingLabel);
@@ -514,12 +600,31 @@ export const buildFieldToFinishPayload = (
             warnings.push({ code: 'F2F_MANUAL', pointId: point.stationId, message: 'Manual label kept; auto text skipped.' });
           }
         } else {
-          upsertEntities.push({
-            ...existingLabel,
-            text,
-            anchorEntityId: pointId,
-            metadata: { ...(existingLabel.metadata ?? {}), stationId: point.stationId, featureCodes, provenance: labelProvenance },
-          });
+          const binding = existingLabel.pointLabel;
+          if (binding?.content.mode === 'manual') {
+            // Manual content + placement survive regen; only the base
+            // style ref follows the catalog.
+            upsertEntities.push({
+              ...existingLabel,
+              anchorEntityId: pointId,
+              pointLabel: { ...binding, labelStyleId },
+              metadata: { ...(existingLabel.metadata ?? {}), stationId: point.stationId, featureCodes, provenance: labelProvenance },
+            });
+          } else {
+            upsertEntities.push({
+              ...existingLabel,
+              text,
+              anchorEntityId: pointId,
+              pointLabel: {
+                pointEntityId: pointId,
+                labelStyleId,
+                content: { mode: 'derived' },
+                ...(binding?.offsetOverride ? { offsetOverride: binding.offsetOverride } : {}),
+                ...(binding?.rotationOverrideDeg !== undefined ? { rotationOverrideDeg: binding.rotationOverrideDeg } : {}),
+              },
+              metadata: { ...(existingLabel.metadata ?? {}), stationId: point.stationId, featureCodes, provenance: labelProvenance },
+            });
+          }
           updatedEntityIds.push(labelId);
         }
       } else if (!existingLabel) {
@@ -534,6 +639,7 @@ export const buildFieldToFinishPayload = (
           y: point.y,
           text,
           anchorEntityId: pointId,
+          pointLabel: { pointEntityId: pointId, labelStyleId, content: { mode: 'derived' } },
           metadata: { stationId: point.stationId, featureCodes, provenance: labelProvenance },
         };
         upsertEntities.push(label);
@@ -559,6 +665,12 @@ export const buildFieldToFinishPayload = (
   labelUpserts.sort((a, b) => (a.id < b.id ? -1 : a.id > b.id ? 1 : 0));
   const occupied = new Set<string>();
   for (const label of labelUpserts) {
+    // Manual content keeps its placed snapshot; still occupies the cell so
+    // derived labels deconflict around it.
+    if (label.pointLabel?.content.mode === 'manual') {
+      occupied.add(`${label.x.toFixed(3)},${label.y.toFixed(3)}`);
+      continue;
+    }
     const base = label.anchorEntityId ? coordsByStation.get(label.anchorEntityId.replace(/^pt:/, '')) : undefined;
     if (base) {
       label.x = base.x;

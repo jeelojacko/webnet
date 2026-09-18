@@ -151,13 +151,16 @@ describe('cad export color fidelity + result contract', () => {
       draft: fixture.draft, sheetId: fixture.sheetId, project: fixture.project, modelLabels: fixture.modelLabels,
     });
     expect(result.omittedEntityIds).toContain('poly-degenerate');
-    expect(result.approximatedEntityIds).toContain('pt-P1');
+    // Phase 18D: the square symbol on pt-P1 exports as an honest closed
+    // polyline (writer represents all shapes), so it is neither approximated
+    // nor warned — only DXF still warns POINT_SYMBOL_APPROXIMATED.
+    expect(result.approximatedEntityIds).not.toContain('pt-P1');
     expect(result.exportedEntityIds).toContain('line-L1');
     expect(result.exportedEntityIds).not.toContain('poly-degenerate');
     const warningCodes = (id: string): string[] =>
       result.warnings.filter((warning) => warning.entityId === id).map((warning) => warning.code);
     expect(warningCodes('poly-degenerate')).toContain('SKIPPED_ENTITY');
-    expect(warningCodes('pt-P1')).toContain('POINT_SYMBOL_APPROXIMATED');
+    expect(warningCodes('pt-P1')).toEqual([]);
     for (const id of [...result.omittedEntityIds, ...result.approximatedEntityIds]) {
       expect(result.warnings.some((warning) => warning.entityId === id)).toBe(true);
     }

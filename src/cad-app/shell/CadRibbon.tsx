@@ -6,7 +6,7 @@ import {
   type CadShellCommandDef,
 } from './cadCommandRegistry';
 import { CadLayersGroup } from './CadLayersGroup';
-import type { CadShellActions, CadWorkspaceSnapshot } from './cadShellTypes';
+import type { CadShellActions, CadWorkspaceSnapshot, SurveyManagerKind } from './cadShellTypes';
 
 interface CadRibbonProps {
   snapshot: CadWorkspaceSnapshot | null;
@@ -15,7 +15,7 @@ interface CadRibbonProps {
   onToggleCollapsed: () => void;
 }
 
-const RIBBON_TABS = ['Home', 'Output'] as const;
+const RIBBON_TABS = ['Home', 'Survey', 'Output'] as const;
 type RibbonTab = (typeof RIBBON_TABS)[number];
 
 const ribbonTooltip = (def: CadShellCommandDef): string => {
@@ -45,7 +45,9 @@ export const CadRibbon: React.FC<CadRibbonProps> = ({ snapshot, actions, collaps
   const groups =
     tab === 'Home'
       ? (['Draw', 'Modify', 'Parcel', 'Edit'] as const)
-      : (['File'] as const);
+      : tab === 'Survey'
+        ? ([] as const)
+        : (['File'] as const);
   return (
     <div className="cad-shell-ribbon" data-cad-ribbon>
       <div className="cad-shell-ribbon-tabs" role="tablist" aria-label="Ribbon tabs">
@@ -67,6 +69,7 @@ export const CadRibbon: React.FC<CadRibbonProps> = ({ snapshot, actions, collaps
       </div>
       <div className="cad-shell-ribbon-groups">
         {tab === 'Home' ? <CadLayersGroup snapshot={snapshot} actions={actions} /> : null}
+        {tab === 'Survey' ? <CadSurveyGroup snapshot={snapshot} actions={actions} /> : null}
         {groups.map((group) => (
           <div key={group} className="cad-shell-ribbon-group" aria-label={group}>
             <span className="cad-shell-ribbon-group-label">{group}</span>
@@ -87,6 +90,44 @@ export const CadRibbon: React.FC<CadRibbonProps> = ({ snapshot, actions, collaps
               ))}
             </div>
           </div>
+        ))}
+      </div>
+    </div>
+  );
+};
+
+/**
+ * Phase 18D — Survey tab: five entry points, each focusing the Toolspace
+ * node or opening the matching manager. No new command groups.
+ */
+const CadSurveyGroup: React.FC<{
+  snapshot: CadWorkspaceSnapshot | null;
+  actions: CadShellActions | null;
+}> = ({ snapshot, actions }) => {
+  const buttons: Array<{ kind: SurveyManagerKind; label: string; hint: string }> = [
+    { kind: 'points', label: 'Points', hint: 'Focus the Toolspace Survey points.' },
+    { kind: 'point-groups', label: 'Point Groups', hint: 'Open the Point Group manager.' },
+    { kind: 'point-styles', label: 'Point Styles', hint: 'Open the Point Style manager.' },
+    { kind: 'point-label-styles', label: 'Point Label Styles', hint: 'Open the Point Label Style manager.' },
+    { kind: 'f2f', label: 'Field to Finish', hint: 'Open field-to-finish.' },
+  ];
+  return (
+    <div className="cad-shell-ribbon-group" aria-label="Survey">
+      <span className="cad-shell-ribbon-group-label">Survey</span>
+      <div className="cad-shell-ribbon-buttons">
+        {buttons.map((entry) => (
+          <button
+            key={entry.kind}
+            type="button"
+            title={entry.hint}
+            aria-label={entry.label}
+            disabled={!snapshot || !actions}
+            className="cad-shell-ribbon-button"
+            onClick={() => actions?.openSurveyManager(entry.kind)}
+            data-cad-survey={entry.kind}
+          >
+            {entry.label}
+          </button>
         ))}
       </div>
     </div>

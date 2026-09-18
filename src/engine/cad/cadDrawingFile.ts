@@ -11,6 +11,9 @@ import type {
 } from './cadTypes';
 import { DEFAULT_CAD_LAYERS, backfillCadLayerList, backfillCadProjectStandards } from './cadLayers';
 import { DEFAULT_CAD_STYLE_LIBRARY } from './cadStyles';
+import { backfillCadPointLabelStyles, cloneCadPointLabelStyles } from './cadPointLabelStyles';
+import { backfillCadPointGroups, cloneCadPointGroups, migrateLegacyPointGroups } from './cadPointGroups';
+import { backfillCadPointStyles, cloneCadPointStyles, migrateLegacySurveyPointStyles } from './cadPointStyles';
 import type { UnitsMode } from '../../types';
 
 export const CAD_DRAWING_FILE_EXTENSION = '.wncad';
@@ -49,10 +52,15 @@ export const createBlankCadProject = ({
     pointSymbols: DEFAULT_CAD_STYLE_LIBRARY.pointSymbols.map((entry) => ({ ...entry })),
     styles: DEFAULT_CAD_STYLE_LIBRARY.styles.map((entry) => ({ ...entry })),
   },
+  pointStyles: backfillCadPointStyles(undefined),
+  labelStyles: backfillCadPointLabelStyles(undefined),
   entities: [],
   cogoComputations: [],
   bounds: null,
   currentLayerId: 'general',
+  // Trailing: matches the clone/migrate canonical position (JSON.stringify
+  // project signatures are key-order-sensitive).
+  pointGroups: backfillCadPointGroups(undefined),
 });
 
 export const createBlankCadDrawingDocument = ({
@@ -121,9 +129,15 @@ export const cloneCadDrawingDocument = (
 export const migrateV1ToV2 = (document: CadDrawingDocument): CadDrawingDocument => {
   if (document.schemaVersion === 2) return cloneCadDrawingDocument(document);
   const migrated = cloneCadDrawingDocument(document);
+  const migratedProject = migrateLegacyPointGroups(migrateLegacySurveyPointStyles(migrated.project));
   return {
     ...migrated,
     schemaVersion: 2,
+    project: {
+      ...migratedProject,
+      labelStyles: cloneCadPointLabelStyles(backfillCadPointLabelStyles(migratedProject.labelStyles)),
+      pointGroups: cloneCadPointGroups(backfillCadPointGroups(migratedProject.pointGroups)),
+    },
     draft:
       document.draft != null
         ? cloneDraftDocument(document.draft)
@@ -158,7 +172,13 @@ export const migrateSurveyCadStateToDrawing = ({
   units?: UnitsMode;
 }): CadDrawingDocument => {
   const nowIso = new Date().toISOString();
-  const project = backfillCadProjectStandards(cloneSurveyCadPersistedState(state).project);
+  const sanitized = migrateLegacyPointGroups(migrateLegacySurveyPointStyles(cloneSurveyCadPersistedState(state).project));
+  const project = backfillCadProjectStandards({
+    ...sanitized,
+    pointStyles: cloneCadPointStyles(backfillCadPointStyles(sanitized.pointStyles)),
+    labelStyles: cloneCadPointLabelStyles(backfillCadPointLabelStyles(sanitized.labelStyles)),
+    pointGroups: cloneCadPointGroups(backfillCadPointGroups(sanitized.pointGroups)),
+  });
   return {
     kind: 'webnet-cad-drawing',
     schemaVersion: 2,
@@ -196,8 +216,16 @@ const sanitizeCadDrawingDocument = (value: unknown): CadDrawingDocument | undefi
   }
   try {
     const cloned = cloneCadDrawingDocument(value as unknown as CadDrawingDocument);
-    // Load-time standards backfill: idempotent, no legacy visual change.
-    const project = backfillCadProjectStandards(cloned.project);
+    // Load-time migration: seed point styles + compat base refs (idempotent,
+    // no marker size/color change) plus appearance-neutral point groups,
+    // then standards backfill.
+    const migrated = migrateLegacyPointGroups(migrateLegacySurveyPointStyles(cloned.project));
+    const project = backfillCadProjectStandards({
+      ...migrated,
+      pointStyles: cloneCadPointStyles(backfillCadPointStyles(migrated.pointStyles)),
+      labelStyles: cloneCadPointLabelStyles(backfillCadPointLabelStyles(migrated.labelStyles)),
+      pointGroups: cloneCadPointGroups(backfillCadPointGroups(migrated.pointGroups)),
+    });
     const draft = cloned.draft
       ? { ...cloned.draft, layers: backfillCadLayerList(cloned.draft.layers) }
       : cloned.draft;

@@ -63,6 +63,11 @@ import {
 } from './cadTransactionsModifyCommands';
 import { getExpandedSelectedEntities } from './cadTransactionsSelection';
 import { f2fGenerateCommand } from '../fieldToFinish/cadGeneration';
+import {
+  surveyGroupTableCommand,
+  surveyPointOverrideCommand,
+  surveyStyleTableCommand,
+} from './cadTransactionsSurveyDisplay';
 export {
   applyCadGripEdit,
   buildCadGripHandles,
@@ -544,6 +549,9 @@ export const CAD_COMMAND_REGISTRY: Record<CadCommandKey, CadCommandDefinition<Ca
   LAYER_MOVE_OBJECTS: layerMoveObjectsCommand as CadCommandDefinition<CadCommand>,
   LAYER_DELETE: layerDeleteCommand as CadCommandDefinition<CadCommand>,
   F2F_GENERATE: f2fGenerateCommand as CadCommandDefinition<CadCommand>,
+  SURVEY_POINT_OVERRIDE: surveyPointOverrideCommand as CadCommandDefinition<CadCommand>,
+  SURVEY_STYLE_TABLE: surveyStyleTableCommand as CadCommandDefinition<CadCommand>,
+  SURVEY_GROUP_TABLE: surveyGroupTableCommand as CadCommandDefinition<CadCommand>,
 };
 
 export const createCadIdleCommandState = createIdleCommandState;

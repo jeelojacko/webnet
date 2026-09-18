@@ -10,6 +10,9 @@ import type {
   SurveyCadPersistedState,
 } from './cadTypes';
 import { backfillCadProjectStandards } from './cadLayers';
+import { backfillCadPointLabelStyles, cloneCadPointLabelStyles } from './cadPointLabelStyles';
+import { backfillCadPointGroups, cloneCadPointGroups, migrateLegacyPointGroups } from './cadPointGroups';
+import { backfillCadPointStyles, cloneCadPointStyles, migrateLegacySurveyPointStyles } from './cadPointStyles';
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === 'object' && value != null && !Array.isArray(value);
@@ -65,13 +68,29 @@ export const cloneCadEntity = (entity: CadEntity): CadEntity => {
         metadata: cloneMetadata(entity.metadata),
       };
     case 'line':
-    case 'text':
     case 'error-ellipse':
     case 'arc':
       return {
         ...entity,
         appearance: cloneAppearance(entity.appearance),
         metadata: cloneMetadata(entity.metadata),
+      };
+    case 'text':
+      return {
+        ...entity,
+        appearance: cloneAppearance(entity.appearance),
+        metadata: cloneMetadata(entity.metadata),
+        ...(entity.pointLabel != null
+          ? {
+              pointLabel: {
+                ...entity.pointLabel,
+                ...(entity.pointLabel.offsetOverride != null
+                  ? { offsetOverride: { ...entity.pointLabel.offsetOverride } }
+                  : {}),
+                content: { ...entity.pointLabel.content },
+              },
+            }
+          : {}),
       };
     case 'alignment':
       return {
@@ -125,11 +144,17 @@ export const cloneCadProject = (project: CadProject): CadProject => ({
   },
   layers: project.layers.map(cloneLayer),
   styleLibrary: cloneStyleLibrary(project.styleLibrary),
+  ...(project.pointStyles != null ? { pointStyles: cloneCadPointStyles(project.pointStyles) } : {}),
+  ...(project.labelStyles != null ? { labelStyles: cloneCadPointLabelStyles(project.labelStyles) } : {}),
   entities: project.entities.map(cloneCadEntity),
   cogoComputations: (project.cogoComputations ?? []).map((computation) => cloneJsonValue(computation)),
   bounds: cloneBounds(project.bounds),
   ...(project.currentLayerId != null ? { currentLayerId: project.currentLayerId } : {}),
   ...(project.linetypeScale != null ? { linetypeScale: project.linetypeScale } : {}),
+  // Trailing (like the migrate path, which appends a missing table last):
+  // JSON.stringify project signatures are key-order-sensitive, so clone
+  // must not move the table or the persistence sync guard never settles.
+  ...(project.pointGroups != null ? { pointGroups: cloneCadPointGroups(project.pointGroups) } : {}),
 });
 
 const cloneParcelLayoutSettings = (
@@ -192,7 +217,18 @@ export const sanitizeSurveyCadPersistedState = (
   try {
     const cloned = cloneSurveyCadPersistedState(value as unknown as SurveyCadPersistedState);
     // Load-time standards backfill: idempotent, no legacy visual change.
-    return { ...cloned, project: backfillCadProjectStandards(cloned.project) };
+    // Point-style migration seeds defaults + compat base refs (same marker);
+    // point-group migration seeds the appearance-neutral All/Control groups.
+    const migrated = migrateLegacyPointGroups(migrateLegacySurveyPointStyles(cloned.project));
+    return {
+      ...cloned,
+      project: backfillCadProjectStandards({
+        ...migrated,
+        pointStyles: cloneCadPointStyles(backfillCadPointStyles(migrated.pointStyles)),
+        labelStyles: cloneCadPointLabelStyles(backfillCadPointLabelStyles(migrated.labelStyles)),
+        pointGroups: cloneCadPointGroups(backfillCadPointGroups(migrated.pointGroups)),
+      }),
+    };
   } catch {
     return undefined;
   }

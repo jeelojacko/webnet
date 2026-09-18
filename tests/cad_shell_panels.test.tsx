@@ -71,6 +71,10 @@ const stubActions = (): CadShellActions => ({
   selectEntities: vi.fn(),
   editField: vi.fn(() => ({ applied: true })),
   runLayerCommand: vi.fn(() => true),
+  runSurveyCommand: vi.fn(() => true),
+  openSurveyManager: vi.fn(),
+  selectAllSurveyPoints: vi.fn(),
+  selectSurveyGroupPoints: vi.fn(),
   setCurrentLayer: vi.fn(() => true),
   openLayerManager: vi.fn(),
   setSnapPreference: vi.fn(),
@@ -166,7 +170,7 @@ describe('cad shell panels', () => {
     const { container, root } = await render(
       <CadToolspace snapshot={stubSnapshot()} actions={stubActions()} tab="survey" onTabChange={() => {}} />,
     );
-    expect(container.textContent).toContain('No adjustment source imported');
+    expect(container.textContent).toContain('No survey points in the drawing');
     await cleanup(container, root);
   });
 
@@ -421,6 +425,178 @@ describe('cad shell panels', () => {
     expect(onClose).toHaveBeenCalled();
     await click(container.querySelector('[aria-label="Move Layers"]'));
     expect(onMove).toHaveBeenCalled();
+    await cleanup(container, root);
+  });
+});
+
+describe('phase 18D survey UI', () => {
+  const row = (overrides: Record<string, unknown> = {}) => ({
+    entityId: 'pt:1',
+    stationId: '1',
+    x: 10,
+    y: 20,
+    z: 100,
+    description: 'Tree',
+    featureCode: 'VEG',
+    layerId: 'l1',
+    pointClass: 'free',
+    source: 'parsed-input',
+    basePointStyleName: 'Survey Point',
+    pointStyleOverrideId: 'ps-ctrl',
+    pointStyleOverrideName: 'Control',
+    effectivePointStyleName: 'Control',
+    pointStyleSourceText: 'Manual override',
+    baseLabelStyleName: 'Point Number',
+    pointLabelStyleOverrideId: null,
+    labelStyleOverrideName: null,
+    effectiveLabelStyleName: 'Point Number',
+    labelStyleSourceText: 'Drawing default',
+    matchingGroupNames: ['All Points'],
+    ...overrides,
+  });
+  const surveyStub = (): CadWorkspaceSnapshot['survey'] => ({
+    pointCount: 2,
+    allPointIds: ['pt:1', 'pt:2'],
+    groups: [
+      { id: 'point-group-all', name: 'All Points', memberCount: 2, priority: 0 },
+      { id: 'g-ctrl', name: 'Control', memberCount: 1, priority: 1 },
+    ],
+    pointStyles: [
+      { id: 'ps-std', name: 'Standard' },
+      { id: 'ps-ctrl', name: 'Control' },
+    ],
+    labelStyles: [{ id: 'ls-num', name: 'Point Number' }],
+    table: [row(), row({ entityId: 'pt:2', stationId: '2', pointStyleOverrideId: null, pointStyleOverrideName: null, effectivePointStyleName: 'Survey Point', pointStyleSourceText: 'Base style', matchingGroupNames: ['All Points', 'Control'] })],
+    tableTruncated: false,
+    selected: [row()],
+  });
+  const setSelectValue = async (select: HTMLSelectElement, value: string): Promise<void> => {
+    await act(async () => {
+      Object.getOwnPropertyDescriptor(HTMLSelectElement.prototype, 'value')?.set?.call(select, value);
+      select.dispatchEvent(new Event('change', { bubbles: true }));
+    });
+  };
+
+  it('Survey tab shows Points, groups with counts, and a clickable table', async () => {
+    const actions = stubActions();
+    const { container, root } = await render(
+      <CadToolspace snapshot={stubSnapshot({ survey: surveyStub() })} actions={actions} tab="survey" onTabChange={() => {}} />,
+    );
+    expect(container.textContent).toContain('Points (2)');
+    expect(container.textContent).toContain('All Points');
+    const table = container.querySelector('[data-cad-point-table]');
+    expect(table).not.toBeNull();
+    expect(table?.querySelectorAll('tbody tr')).toHaveLength(2);
+    await click(table?.querySelector('tbody tr') ?? null);
+    expect(actions.selectEntities).toHaveBeenCalledWith(['pt:1']);
+    await cleanup(container, root);
+  });
+
+  it('Survey group right-click offers Select Points', async () => {
+    const actions = stubActions();
+    const { container, root } = await render(
+      <CadToolspace snapshot={stubSnapshot({ survey: surveyStub() })} actions={actions} tab="survey" onTabChange={() => {}} />,
+    );
+    const groupRow = [...container.querySelectorAll('.cad-shell-tree-row')].find((entry) =>
+      entry.textContent?.includes('Control'),
+    );
+    await act(async () => {
+      groupRow?.dispatchEvent(new MouseEvent('contextmenu', { bubbles: true, clientX: 10, clientY: 10 }));
+    });
+    const menu = container.querySelector('[data-cad-survey-menu]');
+    expect(menu).not.toBeNull();
+    const selectItem = [...(menu?.querySelectorAll('[role="menuitem"]') ?? [])].find((entry) =>
+      entry.textContent?.includes('Select Points'),
+    );
+    await click(selectItem ?? null);
+    expect(actions.selectSurveyGroupPoints).toHaveBeenCalledWith('g-ctrl');
+    await cleanup(container, root);
+  });
+
+  it('Settings tab lists style tables and opens managers', async () => {
+    const actions = stubActions();
+    const { container, root } = await render(
+      <CadToolspace snapshot={stubSnapshot({ survey: surveyStub() })} actions={actions} tab="settings" onTabChange={() => {}} />,
+    );
+    expect(container.textContent).toContain('Point Styles (2)');
+    expect(container.textContent).toContain('Point Label Styles (1)');
+    const styleButton = [...container.querySelectorAll('.cad-shell-tree-node')].find((entry) =>
+      entry.textContent === 'Control',
+    );
+    await click(styleButton ?? null);
+    expect(actions.openSurveyManager).toHaveBeenCalledWith('point-styles', 'ps-ctrl');
+    await cleanup(container, root);
+  });
+
+  it('Properties shows survey sections with effective source lines', async () => {
+    const actions = stubActions();
+    const snapshot = stubSnapshot({
+      selectionCount: 1,
+      selectedEntityIds: ['pt:1'],
+      properties: {
+        mode: 'single',
+        entity: {
+          entityId: 'pt:1',
+          entityType: 'survey-point',
+          entityTypeLabel: 'Point',
+          entityLabel: 'Point 1',
+          properties: [{ key: 'name', label: 'Name', value: '1' }],
+        },
+      },
+      survey: surveyStub(),
+    });
+    const { container, root } = await render(<CadPropertiesPalette snapshot={snapshot} actions={actions} />);
+    expect(container.querySelector('[data-cad-survey-point]')).not.toBeNull();
+    expect(container.textContent).toContain('Effective: Control — Source: Manual override');
+    expect(container.textContent).toContain('All Points');
+    const overrideSelect = container.querySelector(
+      '[data-cad-survey-point] select[aria-label="Point Style Override"]',
+    ) as HTMLSelectElement;
+    expect(overrideSelect?.value).toBe('ps-ctrl');
+    await setSelectValue(overrideSelect, '');
+    expect(actions.runSurveyCommand).toHaveBeenCalledWith({
+      key: 'SURVEY_POINT_OVERRIDE',
+      entityIds: ['pt:1'],
+      pointStyleOverrideId: null,
+    });
+    await cleanup(container, root);
+  });
+
+  it('Properties multi-select shows VARIES and batch-clears', async () => {
+    const actions = stubActions();
+    const survey = surveyStub()!;
+    survey.selected = [row(), row({ entityId: 'pt:2', pointStyleOverrideId: null })];
+    const snapshot = stubSnapshot({
+      selectionCount: 2,
+      selectedEntityIds: ['pt:1', 'pt:2'],
+      properties: {
+        mode: 'multi',
+        groups: [
+          {
+            typeKey: 'survey-point',
+            typeLabel: 'Survey Points',
+            entities: [
+              { entityId: 'pt:1', entityType: 'survey-point', entityTypeLabel: 'Point', entityLabel: 'Point 1', properties: [] },
+              { entityId: 'pt:2', entityType: 'survey-point', entityTypeLabel: 'Point', entityLabel: 'Point 2', properties: [] },
+            ],
+          },
+        ],
+        defaultTypeKey: 'survey-point',
+        defaultEntityId: 'pt:1',
+      },
+      survey,
+    });
+    const { container, root } = await render(<CadPropertiesPalette snapshot={snapshot} actions={actions} />);
+    const batch = container.querySelector('[data-cad-properties="survey-batch"]');
+    expect(batch).not.toBeNull();
+    expect(batch?.textContent).toContain('*VARIES*');
+    const overrideSelect = batch?.querySelector('select[aria-label="Point Style Override"]') as HTMLSelectElement;
+    await setSelectValue(overrideSelect, 'ps-ctrl');
+    expect(actions.runSurveyCommand).toHaveBeenCalledWith({
+      key: 'SURVEY_POINT_OVERRIDE',
+      entityIds: ['pt:1', 'pt:2'],
+      pointStyleOverrideId: 'ps-ctrl',
+    });
     await cleanup(container, root);
   });
 });

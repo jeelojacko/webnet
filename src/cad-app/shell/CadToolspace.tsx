@@ -56,7 +56,7 @@ export const CadToolspace: React.FC<CadToolspaceProps> = ({ snapshot, actions, t
       ))}
     </div>
     {tab === 'prospector' ? <ProspectorTab snapshot={snapshot} actions={actions} /> : null}
-    {tab === 'survey' ? <SurveyTab snapshot={snapshot} /> : null}
+    {tab === 'survey' ? <SurveyTab snapshot={snapshot} actions={actions} /> : null}
     {tab === 'settings' ? <SettingsTab snapshot={snapshot} actions={actions} /> : null}
   </div>
 );
@@ -118,22 +118,229 @@ const ProspectorTab: React.FC<{ snapshot: CadWorkspaceSnapshot | null; actions: 
   );
 };
 
-const SurveyTab: React.FC<{ snapshot: CadWorkspaceSnapshot | null }> = ({ snapshot }) => {
+type SurveyMenuTarget =
+  | { kind: 'points' }
+  | { kind: 'group'; id: string; name: string };
+
+/**
+ * Phase 18D — Survey tab: real Points node (count + basic table) and the
+ * Point Groups tree with live membership counts. Right-click drives group
+ * management through the existing SURVEY_* undo path. No Zoom to Points:
+ * the workspace has no fit-extents helper, so the item is omitted.
+ */
+const SurveyTab: React.FC<{ snapshot: CadWorkspaceSnapshot | null; actions: CadShellActions | null }> = ({
+  snapshot,
+  actions,
+}) => {
+  const [menu, setMenu] = React.useState<{ x: number; y: number; target: SurveyMenuTarget } | null>(null);
+  React.useEffect(() => {
+    if (!menu) return;
+    const close = (): void => setMenu(null);
+    document.addEventListener('pointerdown', close);
+    return () => document.removeEventListener('pointerdown', close);
+  }, [menu]);
   if (!snapshot) return <p className="cad-shell-empty">No drawing loaded.</p>;
-  if (snapshot.stationCount === 0) {
-    return (
-      <p className="cad-shell-empty">
-        No adjustment source imported. Use File → Sheets &amp; Layers → field-to-finish, or import adjusted points,
-        to bring survey stations into the drawing.
-      </p>
-    );
-  }
+  const survey = snapshot.survey;
+  const closeMenu = (): void => setMenu(null);
+  const runGroup = (groupId: string, direction: 'up' | 'down'): void => {
+    actions?.runSurveyCommand({ key: 'SURVEY_GROUP_TABLE', op: 'move', groupId, direction });
+    closeMenu();
+  };
+  const deleteGroup = (groupId: string): void => {
+    actions?.runSurveyCommand({ key: 'SURVEY_GROUP_TABLE', op: 'delete', groupId });
+    closeMenu();
+  };
   return (
     <div className="cad-shell-tree">
-      <TreeGroup label={`Adjusted stations (${snapshot.stationCount})`}>
-        <div className="cad-shell-tree-row">{snapshot.stationCount} stations linked from the adjustment source.</div>
-        <div className="cad-shell-tree-row cad-shell-empty">Dependency: {snapshot.dependencyStatus}.</div>
-      </TreeGroup>
+      {snapshot.stationCount > 0 ? (
+        <TreeGroup label={`Adjusted stations (${snapshot.stationCount})`}>
+          <div className="cad-shell-tree-row">{snapshot.stationCount} stations linked from the adjustment source.</div>
+          <div className="cad-shell-tree-row cad-shell-empty">Dependency: {snapshot.dependencyStatus}.</div>
+        </TreeGroup>
+      ) : null}
+      {!survey || survey.pointCount === 0 ? (
+        <p className="cad-shell-empty">
+          No survey points in the drawing. Use File → Sheets &amp; Layers → field-to-finish, or import adjusted
+          points, to bring survey stations into the drawing.
+        </p>
+      ) : null}
+      {survey && survey.pointCount > 0 ? (
+        <>
+          <TreeGroup label={`Points (${survey.pointCount})`}>
+            <div
+              className="cad-shell-tree-row"
+              onContextMenu={(event) => {
+                event.preventDefault();
+                setMenu({ x: event.clientX, y: event.clientY, target: { kind: 'points' } });
+              }}
+            >
+              {survey.pointCount} survey points (right-click: Select All).
+            </div>
+            <details className="cad-shell-tree-group">
+              <summary>Point table{survey.tableTruncated ? ` (first ${survey.table.length})` : ''}</summary>
+              <SurveyPointTable snapshot={snapshot} actions={actions} />
+            </details>
+          </TreeGroup>
+          <TreeGroup label={`Point Groups (${survey.groups.length})`}>
+            {[...survey.groups]
+              .sort((a, b) => a.priority - b.priority)
+              .map((group) => (
+                <div
+                  key={group.id}
+                  className="cad-shell-tree-row"
+                  title={`${group.name} — ${group.memberCount} matching points`}
+                  onContextMenu={(event) => {
+                    event.preventDefault();
+                    setMenu({ x: event.clientX, y: event.clientY, target: { kind: 'group', id: group.id, name: group.name } });
+                  }}
+                >
+                  {group.name}
+                  <span className="cad-shell-count">{group.memberCount}</span>
+                </div>
+              ))}
+            <button
+              type="button"
+              className="cad-shell-tree-node"
+              onClick={() => actions?.openSurveyManager('point-groups')}
+            >
+              + New Point Group
+            </button>
+          </TreeGroup>
+        </>
+      ) : null}
+      {menu ? (
+        <div role="menu" className="cad-shell-menu" style={{ left: menu.x, top: menu.y, position: 'fixed' }} data-cad-survey-menu>
+          {menu.target.kind === 'points' ? (
+            <button
+              type="button"
+              role="menuitem"
+              className="cad-shell-menu-item"
+              onClick={() => {
+                actions?.selectAllSurveyPoints();
+                closeMenu();
+              }}
+            >
+              <span>Select All</span>
+            </button>
+          ) : (
+            <>
+              <button
+                type="button"
+                role="menuitem"
+                className="cad-shell-menu-item"
+                onClick={() => {
+                  actions?.openSurveyManager('point-groups', menu.target.kind === 'group' ? menu.target.id : undefined);
+                  closeMenu();
+                }}
+              >
+                <span>Properties</span>
+              </button>
+              <button
+                type="button"
+                role="menuitem"
+                className="cad-shell-menu-item"
+                onClick={() => {
+                  if (menu.target.kind === 'group') actions?.selectSurveyGroupPoints(menu.target.id);
+                  closeMenu();
+                }}
+              >
+                <span>Select Points</span>
+              </button>
+              <button
+                type="button"
+                role="menuitem"
+                className="cad-shell-menu-item"
+                onClick={() => menu.target.kind === 'group' && runGroup(menu.target.id, 'up')}
+              >
+                <span>Move Up</span>
+              </button>
+              <button
+                type="button"
+                role="menuitem"
+                className="cad-shell-menu-item"
+                onClick={() => menu.target.kind === 'group' && runGroup(menu.target.id, 'down')}
+              >
+                <span>Move Down</span>
+              </button>
+              <button
+                type="button"
+                role="menuitem"
+                className="cad-shell-menu-item"
+                onClick={() => {
+                  actions?.openSurveyManager('point-groups', menu.target.kind === 'group' ? menu.target.id : undefined);
+                  closeMenu();
+                }}
+              >
+                <span>Rename</span>
+              </button>
+              <button
+                type="button"
+                role="menuitem"
+                className="cad-shell-menu-item"
+                onClick={() => menu.target.kind === 'group' && deleteGroup(menu.target.id)}
+              >
+                <span>Delete</span>
+              </button>
+            </>
+          )}
+        </div>
+      ) : null}
+    </div>
+  );
+};
+
+/** Basic point table: row click selects the viewport point; no editing, no virtualization. */
+const SurveyPointTable: React.FC<{ snapshot: CadWorkspaceSnapshot; actions: CadShellActions | null }> = ({
+  snapshot,
+  actions,
+}) => {
+  const survey = snapshot.survey;
+  if (!survey) return null;
+  const selectedIds = new Set(snapshot.selectedEntityIds);
+  const layerNames = new Map(snapshot.layers.map((layer) => [layer.id, layer.name]));
+  return (
+    <div className="cad-shell-table-wrap">
+      <table className="cad-shell-table" data-cad-point-table>
+        <thead>
+          <tr>
+            <th>Point</th>
+            <th>Easting</th>
+            <th>Northing</th>
+            <th>Elevation</th>
+            <th>Description</th>
+            <th>Feature Code</th>
+            <th>Layer</th>
+            <th>Point Style</th>
+            <th>Label Style</th>
+            <th>Point Groups</th>
+          </tr>
+        </thead>
+        <tbody>
+          {survey.table.map((row) => (
+            <tr
+              key={row.entityId}
+              data-selected={selectedIds.has(row.entityId) ? 'true' : undefined}
+              onClick={() => actions?.selectEntities([row.entityId])}
+            >
+              <td>{row.stationId}</td>
+              <td>{row.x.toFixed(3)}</td>
+              <td>{row.y.toFixed(3)}</td>
+              <td>{row.z == null ? '--' : row.z.toFixed(3)}</td>
+              <td>{row.description ?? ''}</td>
+              <td>{row.featureCode ?? ''}</td>
+              <td>{layerNames.get(row.layerId) ?? row.layerId}</td>
+              <td>{row.effectivePointStyleName}</td>
+              <td>{row.effectiveLabelStyleName}</td>
+              <td>{row.matchingGroupNames.join(', ')}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+      {survey.tableTruncated ? (
+        <div className="cad-shell-tree-row cad-shell-empty">
+          Showing first {survey.table.length} of {survey.pointCount} points.
+        </div>
+      ) : null}
     </div>
   );
 };
@@ -211,6 +418,36 @@ const SettingsTab: React.FC<{ snapshot: CadWorkspaceSnapshot | null; actions: Ca
         })}
         {snapshot.lineTypes.length === 0 ? <div className="cad-shell-tree-row cad-shell-empty">No linetypes.</div> : null}
       </TreeGroup>
+      {snapshot.survey ? (
+        <>
+          <TreeGroup label={`Point Styles (${snapshot.survey.pointStyles.length})`}>
+            {snapshot.survey.pointStyles.map((style) => (
+              <button
+                key={style.id}
+                type="button"
+                className="cad-shell-tree-node"
+                title={`${style.name} — open the Point Style manager`}
+                onClick={() => actions?.openSurveyManager('point-styles', style.id)}
+              >
+                {style.name}
+              </button>
+            ))}
+          </TreeGroup>
+          <TreeGroup label={`Point Label Styles (${snapshot.survey.labelStyles.length})`}>
+            {snapshot.survey.labelStyles.map((style) => (
+              <button
+                key={style.id}
+                type="button"
+                className="cad-shell-tree-node"
+                title={`${style.name} — open the Point Label Style manager`}
+                onClick={() => actions?.openSurveyManager('point-label-styles', style.id)}
+              >
+                {style.name}
+              </button>
+            ))}
+          </TreeGroup>
+        </>
+      ) : null}
       <TreeGroup label="Drawing">
         <div className="cad-shell-tree-row">Units: {snapshot.units}</div>
       </TreeGroup>

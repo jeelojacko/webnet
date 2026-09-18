@@ -27,6 +27,11 @@ export interface CadShellLink {
   /** Set by the workspace; null until the workspace mounts. */
   actions: CadShellActions | null;
   /**
+   * Phase 18D — set by the shell; survey ribbon buttons focus the
+   * Toolspace tab through it (workspace cannot reach shell layout).
+   */
+  requestToolspaceTab: ((_tab: import('./cadShellTypes').CadToolspaceTab) => void) | null;
+  /**
    * Phase 18C — set by the shell; the workspace LAYER command (typed text,
    * ribbon, manager) focuses the Layer Properties Manager through it.
    */
@@ -74,7 +79,8 @@ const snapshotsEqual = (a: CadWorkspaceSnapshot | null, b: CadWorkspaceSnapshot 
     a.sheets.every((sheet, index) => sheet.id === b.sheets[index]?.id && sheet.name === b.sheets[index]?.name) &&
     prefsEqual(a.snapPreferences, b.snapPreferences) &&
     previewsEqual(a.selectionPreview, b.selectionPreview) &&
-    propertiesEqual(a.properties, b.properties)
+    propertiesEqual(a.properties, b.properties) &&
+    JSON.stringify(a.survey) === JSON.stringify(b.survey)
   );
 };
 
@@ -154,6 +160,7 @@ export const createCadShellLink = (): CadShellLink => {
     },
     actions: null,
     requestLayerManager: null,
+    requestToolspaceTab: null,
   };
 };
 

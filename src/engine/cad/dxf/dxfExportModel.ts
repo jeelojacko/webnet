@@ -8,6 +8,7 @@ import {
   type ExportWarning,
 } from '../exportResult';
 import { resolveEffectiveColor as resolveColor } from '../resolveEffectiveColor';
+import { materializeBoundPointLabel } from '../cadPointLabelStyles';
 
 // Adapter boundary: the drafting/document core never becomes DXF-shaped.
 // This model is the only DXF-aware shape, built fresh per export and thrown
@@ -255,15 +256,33 @@ export const buildDxfExportModelWithResult = (args: BuildDxfModelArgs): ExportRe
         });
         result.exportedEntityIds.push(entity.id);
         break;
-      case 'text':
+      case 'text': {
         if (!finitePair(entity.x, entity.y)) {
           warn({ code: 'SKIPPED_ENTITY', message: `text ${entity.id} has non-finite coordinates`, entityId: entity.id });
           result.omittedEntityIds.push(entity.id);
           break;
         }
-        model.texts.push({ layer: registerLayer(entity.layerId), at: { x: entity.x, y: entity.y }, height: 2.5, text: entity.text, ...entryStyle(entity) });
+        // Bound labels export materialized content at the materialized
+        // position (unresolvable bindings fall back to baked snapshots, see
+        // the orphan policy in cadPointLabelStyles). A No Label style hides
+        // the text intentionally: the entity stays exported, no warning.
+        // Points keep the POINT+TEXT approximation with its warning below.
+        const bound = materializeBoundPointLabel(entity, args.project);
+        if (bound != null && !bound.visible) {
+          registerLayer(entity.layerId);
+          result.exportedEntityIds.push(entity.id);
+          break;
+        }
+        model.texts.push({
+          layer: registerLayer(entity.layerId),
+          at: bound != null ? { x: bound.x, y: bound.y } : { x: entity.x, y: entity.y },
+          height: 2.5,
+          text: bound != null ? bound.text : entity.text,
+          ...entryStyle(entity),
+        });
         result.exportedEntityIds.push(entity.id);
         break;
+      }
       case 'alignment': {
         // §36: the wrapper is never dropped silently — each line/arc
         // element rides as its own primitive (attributed to the wrapper id

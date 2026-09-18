@@ -35,6 +35,13 @@ const stubActions = (): CadShellActions & { calls: string[] } => {
       return true;
     },
     openLayerManager: () => void calls.push('layers'),
+    runSurveyCommand: (command) => {
+      calls.push(`survey-cmd:${command.key}`);
+      return true;
+    },
+    openSurveyManager: (kind) => void calls.push(`survey:${kind}`),
+    selectAllSurveyPoints: () => void calls.push('survey-select-all'),
+    selectSurveyGroupPoints: (groupId) => void calls.push(`survey-group:${groupId}`),
     setSnapPreference: (kind) => void calls.push(`snap:${kind}`),
     newDrawing: () => void calls.push('new'),
     openDrawingFile: () => void calls.push('open'),

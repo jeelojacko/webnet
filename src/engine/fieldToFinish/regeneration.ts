@@ -12,6 +12,7 @@
  */
 import { runCadCommand, type CadHistoryState } from '../cad/cadUndoRedo';
 import { replaceCadProjectEntities } from '../cad/cadProjectState';
+import { migrateLegacyLabelToBinding } from '../cad/cadPointLabelStyles';
 import type { CadCommand } from '../cad/cadTransactions.types';
 import type { CadEntity, CadProject, CadSurveyPointEntity } from '../cad/cadTypes';
 import type { ImportedControlStationRecord } from '../importers';
@@ -223,7 +224,21 @@ export const applyFieldToFinishRegen = (
     project,
     { ...built.payload, removeEntityIds },
   );
-  return { ...preview, project: withPayload, removedEntityIds: removeEntityIds };
+  // Phase 18D: provenance-gated legacy migration, regen only (never on
+  // open). Labels the builder already bound are skipped; MANUAL_OVERRIDE /
+  // DETACHED labels are manual work and stay untouched.
+  const byId = new Map(withPayload.entities.map((entity) => [entity.id, entity]));
+  const entities = withPayload.entities.map((entity) => {
+    if (entity.type !== 'text' || entity.pointLabel != null) return entity;
+    if (getFieldToFinishState(entity) !== 'GENERATED') return entity;
+    const anchor = entity.anchorEntityId ? byId.get(entity.anchorEntityId) : undefined;
+    if (anchor?.type !== 'survey-point') return entity;
+    return migrateLegacyLabelToBinding(entity, anchor) ?? entity;
+  });
+  const migrated: CadProject = entities.every((entity, index) => entity === withPayload.entities[index])
+    ? withPayload
+    : replaceCadProjectEntities(withPayload, entities);
+  return { ...preview, project: migrated, removedEntityIds: removeEntityIds };
 };
 
 
