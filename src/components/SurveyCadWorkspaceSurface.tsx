@@ -46,6 +46,11 @@ interface SurveyCadWorkspaceSurfaceProps {
   >;
   onToggleParcelLabels: () => void;
   cloneBounds: (_bounds: CadBounds | null) => CadBounds | null;
+  // Phase 18F — surface inquiry pick + selection (all optional).
+  surfacePickActive?: boolean;
+  onSurfacePickPoint?: (_worldPoint: { x: number; y: number }) => void;
+  selectedSurfaceId?: string | null;
+  onSurfaceClick?: (_surfaceId: string) => void;
 }
 
 const SurveyCadWorkspaceSurface = ({
@@ -67,6 +72,10 @@ const SurveyCadWorkspaceSurface = ({
   onParcelLayoutAutoPreviewStateChange,
   onToggleParcelLabels,
   cloneBounds,
+  surfacePickActive = false,
+  onSurfacePickPoint,
+  selectedSurfaceId = null,
+  onSurfaceClick,
 }: SurveyCadWorkspaceSurfaceProps) => {
   const {
     activeBatchCogoDraft,
@@ -285,6 +294,10 @@ const SurveyCadWorkspaceSurface = ({
         onCancelGripEdit={workspace.cancelGripEdit}
         onConsumeInteractionPoint={workspace.consumeInteractionPoint}
         onPointerWorldPointChange={workspace.updatePointerWorldPoint}
+        surfacePickActive={surfacePickActive}
+        onSurfacePickPoint={onSurfacePickPoint}
+        selectedSurfaceId={selectedSurfaceId}
+        onSurfaceClick={onSurfaceClick}
         onToggleParcelLabels={onToggleParcelLabels}
         onCommandHoverTargetChange={workspace.setCommandHoverTarget}
         onSnapPreferenceChange={workspace.setSnapPreference}

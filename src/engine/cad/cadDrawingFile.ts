@@ -14,6 +14,8 @@ import { DEFAULT_CAD_STYLE_LIBRARY } from './cadStyles';
 import { backfillCadPointLabelStyles, cloneCadPointLabelStyles } from './cadPointLabelStyles';
 import { backfillCadPointGroups, cloneCadPointGroups, migrateLegacyPointGroups } from './cadPointGroups';
 import { backfillCadPointStyles, cloneCadPointStyles, migrateLegacySurveyPointStyles } from './cadPointStyles';
+import { backfillCadSurfaceStyles, cloneCadSurfaceStyles } from './cadSurfaceStyles';
+import { backfillCadSurfaces, clearSurfaceBuildCacheOnLoad, cloneCadSurfaces } from './cadSurfaceTypes';
 import { backfillDrawingCatalog } from '../fieldToFinish/drawingCatalog';
 import { cloneFeatureCatalog } from '../fieldToFinish/featureCatalog';
 import { STARTER_CATALOG } from '../fieldToFinish/starterCatalog';
@@ -67,6 +69,10 @@ export const createBlankCadProject = ({
   // Phase 18E: new drawings own a starter-catalog clone + empty settings.
   fieldToFinishCatalog: cloneFeatureCatalog(STARTER_CATALOG),
   fieldToFinishSettings: {},
+  // Phase 18F: no surfaces yet; seed surface display styles (trailing:
+  // project signatures are key-order-sensitive JSON.stringify).
+  surfaces: [],
+  surfaceStyles: backfillCadSurfaceStyles(undefined),
 });
 
 export const createBlankCadDrawingDocument = ({
@@ -179,12 +185,20 @@ export const migrateSurveyCadStateToDrawing = ({
 }): CadDrawingDocument => {
   const nowIso = new Date().toISOString();
   const sanitized = migrateLegacyPointGroups(migrateLegacySurveyPointStyles(cloneSurveyCadPersistedState(state).project));
-  const project = backfillDrawingCatalog(backfillCadProjectStandards({
+  const withStandards = backfillDrawingCatalog(backfillCadProjectStandards({
     ...sanitized,
     pointStyles: cloneCadPointStyles(backfillCadPointStyles(sanitized.pointStyles)),
     labelStyles: cloneCadPointLabelStyles(backfillCadPointLabelStyles(sanitized.labelStyles)),
     pointGroups: cloneCadPointGroups(backfillCadPointGroups(sanitized.pointGroups)),
   }));
+  // Key-order rule (persistence sync guard is JSON.stringify-sensitive):
+  // surfaces/styles append AFTER the catalog backfill, matching
+  // cloneCadProject's trailing position, or signatures never settle.
+  const project = {
+    ...withStandards,
+    surfaces: cloneCadSurfaces(backfillCadSurfaces(withStandards.surfaces)),
+    surfaceStyles: cloneCadSurfaceStyles(backfillCadSurfaceStyles(withStandards.surfaceStyles)),
+  };
   return {
     kind: 'webnet-cad-drawing',
     schemaVersion: 2,
@@ -228,12 +242,21 @@ const sanitizeCadDrawingDocument = (value: unknown): CadDrawingDocument | undefi
     // drawings with no F2F history; F2F-bearing legacy files stay
     // MISSING_LEGACY (field undefined) until the operator resolves them.
     const migrated = migrateLegacyPointGroups(migrateLegacySurveyPointStyles(cloned.project));
-    const project = backfillDrawingCatalog(backfillCadProjectStandards({
+    const withStandards = backfillDrawingCatalog(backfillCadProjectStandards({
       ...migrated,
       pointStyles: cloneCadPointStyles(backfillCadPointStyles(migrated.pointStyles)),
       labelStyles: cloneCadPointLabelStyles(backfillCadPointLabelStyles(migrated.labelStyles)),
       pointGroups: cloneCadPointGroups(backfillCadPointGroups(migrated.pointGroups)),
     }));
+    // 18F additive (still schema v2): legacy drawings get empty surfaces +
+    // seed styles; meshes never persist so any stored cached revision is
+    // dropped (reopen derives UNBUILT, never false CURRENT). Trailing
+    // position matches cloneCadProject (signature key-order-sensitive).
+    const project = {
+      ...withStandards,
+      surfaces: backfillCadSurfaces(withStandards.surfaces).map(clearSurfaceBuildCacheOnLoad),
+      surfaceStyles: cloneCadSurfaceStyles(backfillCadSurfaceStyles(withStandards.surfaceStyles)),
+    };
     const draft = cloned.draft
       ? { ...cloned.draft, layers: backfillCadLayerList(cloned.draft.layers) }
       : cloned.draft;

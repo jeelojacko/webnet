@@ -13,6 +13,8 @@ import { backfillCadProjectStandards } from './cadLayers';
 import { backfillCadPointLabelStyles, cloneCadPointLabelStyles } from './cadPointLabelStyles';
 import { backfillCadPointGroups, cloneCadPointGroups, migrateLegacyPointGroups } from './cadPointGroups';
 import { backfillCadPointStyles, cloneCadPointStyles, migrateLegacySurveyPointStyles } from './cadPointStyles';
+import { backfillCadSurfaceStyles, cloneCadSurfaceStyles } from './cadSurfaceStyles';
+import { backfillCadSurfaces, clearSurfaceBuildCacheOnLoad, cloneCadSurfaces } from './cadSurfaceTypes';
 import { cloneFieldToFinishSettings } from '../fieldToFinish/catalogIo';
 import { backfillDrawingCatalog } from '../fieldToFinish/drawingCatalog';
 import { cloneFeatureCatalog } from '../fieldToFinish/featureCatalog';
@@ -161,6 +163,11 @@ export const cloneCadProject = (project: CadProject): CadProject => ({
   // Phase 18E: drawing-owned F2F catalog + settings, same trailing rule.
   ...(project.fieldToFinishCatalog != null ? { fieldToFinishCatalog: cloneFeatureCatalog(project.fieldToFinishCatalog) } : {}),
   ...(project.fieldToFinishSettings != null ? { fieldToFinishSettings: cloneFieldToFinishSettings(project.fieldToFinishSettings) } : {}),
+  // Phase 18F: drawing-owned TIN surfaces + styles, same trailing rule.
+  // Surfaces clone through the surface contract (legacy single-group
+  // sources normalize to the canonical list; meshes never persist).
+  ...(project.surfaces != null ? { surfaces: cloneCadSurfaces(project.surfaces) } : {}),
+  ...(project.surfaceStyles != null ? { surfaceStyles: project.surfaceStyles.map((style) => ({ ...style })) } : {}),
 });
 
 const cloneParcelLayoutSettings = (
@@ -228,14 +235,21 @@ export const sanitizeSurveyCadPersistedState = (
     // 18E: catalog backfill seeds starter (no F2F history) or preserves
     // MISSING_LEGACY (F2F content, no catalog) — never invents authority.
     const migrated = migrateLegacyPointGroups(migrateLegacySurveyPointStyles(cloned.project));
+    const withStandards = backfillDrawingCatalog(backfillCadProjectStandards({
+      ...migrated,
+      pointStyles: cloneCadPointStyles(backfillCadPointStyles(migrated.pointStyles)),
+      labelStyles: cloneCadPointLabelStyles(backfillCadPointLabelStyles(migrated.labelStyles)),
+      pointGroups: cloneCadPointGroups(backfillCadPointGroups(migrated.pointGroups)),
+    }));
     return {
       ...cloned,
-      project: backfillDrawingCatalog(backfillCadProjectStandards({
-        ...migrated,
-        pointStyles: cloneCadPointStyles(backfillCadPointStyles(migrated.pointStyles)),
-        labelStyles: cloneCadPointLabelStyles(backfillCadPointLabelStyles(migrated.labelStyles)),
-        pointGroups: cloneCadPointGroups(backfillCadPointGroups(migrated.pointGroups)),
-      })),
+      // Trailing surfaces/styles position matches cloneCadProject
+      // (persistence signatures are key-order-sensitive).
+      project: {
+        ...withStandards,
+        surfaces: backfillCadSurfaces(withStandards.surfaces).map(clearSurfaceBuildCacheOnLoad),
+        surfaceStyles: cloneCadSurfaceStyles(backfillCadSurfaceStyles(withStandards.surfaceStyles)),
+      },
     };
   } catch {
     return undefined;

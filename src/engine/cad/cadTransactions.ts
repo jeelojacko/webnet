@@ -68,6 +68,7 @@ import {
   surveyPointOverrideCommand,
   surveyStyleTableCommand,
 } from './cadTransactionsSurveyDisplay';
+import { surfaceCommandDefinitions } from './cadTransactionsSurfaceCommands';
 export {
   applyCadGripEdit,
   buildCadGripHandles,
@@ -552,6 +553,23 @@ export const CAD_COMMAND_REGISTRY: Record<CadCommandKey, CadCommandDefinition<Ca
   SURVEY_POINT_OVERRIDE: surveyPointOverrideCommand as CadCommandDefinition<CadCommand>,
   SURVEY_STYLE_TABLE: surveyStyleTableCommand as CadCommandDefinition<CadCommand>,
   SURVEY_GROUP_TABLE: surveyGroupTableCommand as CadCommandDefinition<CadCommand>,
+  SURFACE_CREATE: surfaceCommandDefinitions.SURFACE_CREATE as CadCommandDefinition<CadCommand>,
+  SURFACE_DELETE: surfaceCommandDefinitions.SURFACE_DELETE as CadCommandDefinition<CadCommand>,
+  SURFACE_RENAME: surfaceCommandDefinitions.SURFACE_RENAME as CadCommandDefinition<CadCommand>,
+  SURFACE_SET_LAYER_STYLE: surfaceCommandDefinitions.SURFACE_SET_LAYER_STYLE as CadCommandDefinition<CadCommand>,
+  SURFACE_ADD_POINT_GROUP: surfaceCommandDefinitions.SURFACE_ADD_POINT_GROUP as CadCommandDefinition<CadCommand>,
+  SURFACE_REMOVE_POINT_GROUP: surfaceCommandDefinitions.SURFACE_REMOVE_POINT_GROUP as CadCommandDefinition<CadCommand>,
+  SURFACE_ADD_POINTS: surfaceCommandDefinitions.SURFACE_ADD_POINTS as CadCommandDefinition<CadCommand>,
+  SURFACE_REMOVE_SOURCE: surfaceCommandDefinitions.SURFACE_REMOVE_SOURCE as CadCommandDefinition<CadCommand>,
+  SURFACE_ADD_BREAKLINE: surfaceCommandDefinitions.SURFACE_ADD_BREAKLINE as CadCommandDefinition<CadCommand>,
+  SURFACE_REMOVE_BREAKLINE: surfaceCommandDefinitions.SURFACE_REMOVE_BREAKLINE as CadCommandDefinition<CadCommand>,
+  SURFACE_ADD_BOUNDARY: surfaceCommandDefinitions.SURFACE_ADD_BOUNDARY as CadCommandDefinition<CadCommand>,
+  SURFACE_REMOVE_BOUNDARY: surfaceCommandDefinitions.SURFACE_REMOVE_BOUNDARY as CadCommandDefinition<CadCommand>,
+  SURFACE_STYLE_CREATE: surfaceCommandDefinitions.SURFACE_STYLE_CREATE as CadCommandDefinition<CadCommand>,
+  SURFACE_STYLE_DUPLICATE: surfaceCommandDefinitions.SURFACE_STYLE_DUPLICATE as CadCommandDefinition<CadCommand>,
+  SURFACE_STYLE_RENAME: surfaceCommandDefinitions.SURFACE_STYLE_RENAME as CadCommandDefinition<CadCommand>,
+  SURFACE_STYLE_UPDATE: surfaceCommandDefinitions.SURFACE_STYLE_UPDATE as CadCommandDefinition<CadCommand>,
+  SURFACE_STYLE_DELETE: surfaceCommandDefinitions.SURFACE_STYLE_DELETE as CadCommandDefinition<CadCommand>,
 };
 
 export const createCadIdleCommandState = createIdleCommandState;

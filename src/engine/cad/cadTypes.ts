@@ -78,6 +78,7 @@ export interface CadLayer {
     | 'error-ellipses'
     | 'labels'
     | 'parcels'
+    | 'surfaces'
     | 'planning';
 }
 
@@ -400,6 +401,15 @@ export interface CadProject {
    * Optional; load paths backfill {}. Never part of the catalog revision.
    */
   fieldToFinishSettings?: FieldToFinishSettings;
+  /**
+   * Phase 18F: drawing-owned TIN surfaces (model only; no triangle entities).
+   * Optional so legacy files open; load paths leave absent as absent.
+   * Trailing: clone keeps this last — project signatures are
+   * key-order-sensitive JSON.stringify.
+   */
+  surfaces?: CadSurface[];
+  /** Phase 18F: drawing-owned surface display styles (display only). */
+  surfaceStyles?: CadSurfaceStyle[];
   entities: CadEntity[];
   cogoComputations: CadCogoComputation[];
   bounds: CadBounds | null;
@@ -573,4 +583,85 @@ export interface MlightcadSpikeScene {
   layers: MlightcadSpikeLayer[];
   entities: MlightcadSpikeEntity[];
   extents: CadBounds | null;
+}
+
+/** Phase 18F: TIN surface model (engine only; never triangle entities). */
+
+export type CadSurfacePointSource =
+  /* Multi-group: canonical list is pointGroupIds (added order); pointGroupId
+     is the legacy single-source shape, migrated on load. */
+  | { kind: 'point-group'; pointGroupIds?: string[]; pointGroupId?: string }
+  | { kind: 'points'; pointEntityIds: CadEntityId[] };
+
+/** Canonical group ids for a surface point source (legacy -> one-element list). */
+export const surfacePointGroupIds = (source: CadSurfacePointSource): string[] => {
+  if (source.kind !== 'point-group') return [];
+  if (source.pointGroupIds != null) return [...source.pointGroupIds];
+  return source.pointGroupId != null ? [source.pointGroupId] : [];
+};
+
+export type CadSurfaceBreaklineSource =
+  | { kind: 'point-chain'; pointEntityIds: CadEntityId[] }
+  | { kind: 'entity'; entityId: CadEntityId };
+
+export interface CadSurfaceBreakline {
+  id: string;
+  source: CadSurfaceBreaklineSource;
+  /** Only 'standard' in 18F; future types (proximity/wall) are out of scope. */
+  type: 'standard';
+  name?: string;
+}
+
+export interface CadSurfaceBoundary {
+  type: 'outer' | 'void';
+  sourceEntityId: CadEntityId;
+}
+
+export interface CadSurfaceBuildOptions {
+  /** Post-build filter: drop triangles with any edge longer than this (drawing units). */
+  maxEdgeLength?: number;
+}
+
+export interface CadSurfaceDefinition {
+  pointSource: CadSurfacePointSource;
+  breaklines?: CadSurfaceBreakline[];
+  boundaries?: CadSurfaceBoundary[];
+  buildOptions?: CadSurfaceBuildOptions;
+}
+
+export type CadSurfaceStatus =
+  | 'UNBUILT'
+  | 'CURRENT'
+  | 'NEEDS_REBUILD'
+  | 'BUILDING'
+  | 'FAILED'
+  | 'BROKEN_REFERENCE'
+  | 'INSUFFICIENT_DATA';
+
+export interface CadSurface {
+  id: string;
+  name: string;
+  definition: CadSurfaceDefinition;
+  styleId?: string;
+  /** Geometry-only revision of the last successful build; absent = never built. */
+  cachedRevision?: string | null;
+  /** Display/lock layer; absent = ByLayer-default (visible, unlocked). */
+  layerId?: CadLayerId;
+  /** Last worker/transport failure; derived status stays authoritative. */
+  buildDiagnostic?: string;
+}
+
+/** Phase 18F: surface display styling ONLY (never affects geometry/revision). */
+export interface CadSurfaceStyle {
+  id: string;
+  name: string;
+  color?: string;
+  /** 0 (opaque) .. 1 (fully transparent). Default 0. */
+  opacity?: number;
+  showTriangles?: boolean;
+  showContours?: boolean;
+  /** Display-only extras for the seed styles (never affect geometry). */
+  showPoints?: boolean;
+  showBoundary?: boolean;
+  description?: string;
 }

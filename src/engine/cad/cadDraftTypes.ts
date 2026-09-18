@@ -219,6 +219,7 @@ const CAD_LAYER_ROLES = new Set([
   'error-ellipses',
   'labels',
   'parcels',
+  'surfaces',
   'planning',
 ]);
 

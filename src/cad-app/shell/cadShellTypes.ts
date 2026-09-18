@@ -11,6 +11,8 @@ import type {
   CadPropertiesPanelState,
 } from '../../engine/cad/cadProperties';
 import type { CadCommand } from '../../engine/cad/cadTransactions.types';
+import type { BreaklineEntityPreview, BoundarySourcePreview } from '../../engine/cad/cadSurfaceView';
+import type { CadSurfaceSnapshot } from './cadSurfaceSnapshot';
 import type { ActiveCommandKey } from '../../hooks/surveyCad/useSurveyCadCommandTypes';
 import type { DraftSheet } from '../../engine/cad/cadDraftTypes';
 
@@ -30,7 +32,8 @@ export type SurveyManagerKind =
   | 'point-groups'
   | 'point-styles'
   | 'point-label-styles'
-  | 'f2f';
+  | 'f2f'
+  | 'surfaces';
 
 /**
  * Phase 18D — per-point display facts precomputed in the workspace (resolver
@@ -153,6 +156,8 @@ export interface CadWorkspaceSnapshot {
   dependencyStatus: string;
   /** Phase 18D — survey points/groups/styles summary; null when no workspace. */
   survey: CadSurveySnapshot | null;
+  /** Phase 18F — TIN surfaces (definitions + session mesh status). */
+  surface: CadSurfaceSnapshot | null;
   /** Phase 18E — F2F catalog + provenance summary (derived, no duplicate state). */
   f2f: CadF2FSnapshot | null;
   /** UI command keys with a live starter in the mounted workspace. */
@@ -189,6 +194,33 @@ export interface CadShellActions {
   runLayerCommand: (_command: CadCommand) => boolean;
   /** Route one undoable survey-display mutation (SURVEY_* family). */
   runSurveyCommand: (_command: CadCommand) => boolean;
+  /** Phase 18F — select a surface (Toolspace/manager/viewport converge here). */
+  selectSurface: (_surfaceId: string | null) => void;
+  /**
+   * Phase 18F — arm a one-shot viewport pick for surface inquiry
+   * (null disarms). The picked world point resolves to E/N/elevation text.
+   */
+  startSurfacePick: (_surfaceId: string | null) => void;
+  /** Phase 18F — E/N inputs resolve to elevation display text (pure read). */
+  querySurfaceElevation: (_surfaceId: string, _x: number, _y: number) => string | null;
+  /**
+   * Phase 18F — synchronous session rebuild of one surface (pure engine
+   * build into the session mesh cache; never history, never dirty).
+   * Returns display text for the command/history seam.
+   */
+  rebuildSurface: (_surfaceId: string) => string;
+  /** Phase 18F — rebuild every surface needing it; display text summary. */
+  rebuildAllSurfaces: () => string;
+  /**
+   * Phase 18F — preview the single selected chainable entity as breakline
+   * source (Z gate + F2F provenance); null when selection is unusable.
+   */
+  describeBreaklineSource: (_allowF2F: boolean) => BreaklineEntityPreview | null;
+  /**
+   * Phase 18F — preview the single selected ring entity as a boundary
+   * source (closed-ness validated in the editor); null when unusable.
+   */
+  describeBoundarySource: () => BoundarySourcePreview | null;
   /**
    * Open a survey manager dialog (point-groups preselects a group), or
    * focus the Toolspace survey tab (points). F2F opens the drafting panel.

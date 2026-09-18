@@ -7,7 +7,8 @@ export type CadShellCommandCategory =
   | 'Measure'
   | 'Parcel'
   | 'Edit'
-  | 'File';
+  | 'File'
+  | 'Surface';
 
 /**
  * Phase 18B — the ONE shell command definition map. Menu, ribbon, command
@@ -118,6 +119,14 @@ export const CAD_SHELL_COMMANDS: CadShellCommandDef[] = [
   action('SHELL_SHEETS_LAYERS', 'Sheets & Layers', 'File', 'Open sheets, layers, and field-to-finish.'),
   // Phase 18C — Layer Properties Manager (current-layer dropdown lives in the ribbon Layers group).
   action('LAYER', 'Layers', 'Edit', 'Open the Layer Properties Manager.', undefined),
+  // Phase 18F — surface commands (definition edits are undoable SURFACE_*
+  // transactions; rebuild runs the session mesh builder; inquiry opens the
+  // manager inquiry section). No contour/volume commands in 18F.
+  action('SURFACE', 'Surface', 'Surface', 'Open the surface manager.'),
+  action('SURFACEMANAGER', 'Surface Manager', 'Surface', 'Open the surface manager.'),
+  action('SURFCREATE', 'Create Surface', 'Surface', 'Create a surface (auto name, current layer).'),
+  action('SURFREBUILD', 'Rebuild Surfaces', 'Surface', 'Rebuild every surface needing it.'),
+  action('SURFELEV', 'Surface Elevation', 'Surface', 'Query surface elevation (manager inquiry).'),
 ];
 
 const COMMAND_BY_KEY = new Map<string, CadShellCommandDef>(
@@ -221,6 +230,22 @@ export const executeShellCommand = (
       return true;
     case 'LAYER':
       actions.openLayerManager();
+      return true;
+    case 'SURFACE':
+    case 'SURFACEMANAGER':
+      actions.openSurveyManager('surfaces');
+      return true;
+    case 'SURFCREATE':
+      try {
+        return actions.runSurveyCommand({ key: 'SURFACE_CREATE' });
+      } catch {
+        return false;
+      }
+    case 'SURFREBUILD':
+      actions.rebuildAllSurfaces();
+      return true;
+    case 'SURFELEV':
+      actions.openSurveyManager('surfaces');
       return true;
     default:
       return false;

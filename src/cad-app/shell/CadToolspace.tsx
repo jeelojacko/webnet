@@ -208,6 +208,7 @@ const SurveyTab: React.FC<{ snapshot: CadWorkspaceSnapshot | null; actions: CadS
           </TreeGroup>
         </>
       ) : null}
+      <SurfacesNode snapshot={snapshot} actions={actions} />
       <F2FNode snapshot={snapshot} actions={actions} />
       {menu ? (
         <div role="menu" className="cad-shell-menu" style={{ left: menu.x, top: menu.y, position: 'fixed' }} data-cad-survey-menu>
@@ -463,6 +464,127 @@ const TreeGroup: React.FC<{ label: string; children: React.ReactNode }> = ({ lab
   </details>
 );
 
+
+/**
+ * Phase 18F — Surfaces tree: Surfaces > surface > Definition +
+ * Statistics. Status renders as TEXT (never a color-only badge).
+ * Clicking a surface selects it (Toolspace/manager/viewport converge);
+ * right-click offers Rebuild / Manager / Delete through the undo path.
+ */
+const SurfacesNode: React.FC<{ snapshot: CadWorkspaceSnapshot | null; actions: CadShellActions | null }> = ({
+  snapshot,
+  actions,
+}) => {
+  const [menu, setMenu] = React.useState<{ x: number; y: number; surfaceId: string; surfaceName: string } | null>(null);
+  React.useEffect(() => {
+    if (!menu) return;
+    const close = (): void => setMenu(null);
+    document.addEventListener('pointerdown', close);
+    return () => document.removeEventListener('pointerdown', close);
+  }, [menu]);
+  const surface = snapshot?.surface;
+  if (!snapshot || !surface) return null;
+  const closeMenu = (): void => setMenu(null);
+  return (
+    <TreeGroup label={`Surfaces (${surface.surfaces.length})`}>
+      {surface.surfaces.map((row) => {
+        const selected = surface.selectedSurfaceId === row.id;
+        return (
+          <details
+            key={row.id}
+            className="cad-shell-tree-group"
+            data-cad-surface={row.id}
+            data-cad-surface-status={row.status}
+          >
+            <summary
+              className="cad-shell-tree-node"
+              data-selected={selected ? 'true' : undefined}
+              title={`${row.name} — ${row.statusText}`}
+              onClick={() => actions?.selectSurface(row.id)}
+              onContextMenu={(event) => {
+                event.preventDefault();
+                setMenu({ x: event.clientX, y: event.clientY, surfaceId: row.id, surfaceName: row.name });
+              }}
+            >
+              {row.name}
+              <span className="cad-shell-count">{row.statusText}</span>
+            </summary>
+            <div className="cad-shell-tree-children">
+              <div className="cad-shell-tree-row" title="Definition counts">
+                Definition: {row.definition.pointSourceKind === 'point-group'
+                  ? `Point Groups (${row.definition.pointGroupIds.length}): ${row.definition.pointGroupNames.join(', ') || '—'}`
+                  : `${row.definition.pointCount} points`}
+                {' · '}breaklines {row.definition.breaklineCount}
+                {' · '}outer {row.definition.outerBoundaryCount} void {row.definition.voidBoundaryCount}
+              </div>
+              <div className="cad-shell-tree-row" title="Build statistics">
+                {row.stats
+                  ? `Stats: ${row.stats.vertices}v ${row.stats.triangles}t Z ${row.stats.minZ?.toFixed(3) ?? '—'}…${row.stats.maxZ?.toFixed(3) ?? '—'}${row.stats.stale ? ' (stale)' : ''}`
+                  : 'Statistics: no mesh — rebuild.'}
+              </div>
+              {row.brokenIds.length > 0 ? (
+                <div className="cad-shell-tree-row" title={row.brokenNames.join(', ')}>
+                  Broken: {row.brokenNames.join(', ')}
+                </div>
+              ) : null}
+            </div>
+          </details>
+        );
+      })}
+      {surface.surfaces.length === 0 ? (
+        <div className="cad-shell-tree-row cad-shell-empty">No surfaces — ribbon Surface → Create.</div>
+      ) : null}
+      <button
+        type="button"
+        className="cad-shell-tree-node"
+        onClick={() => actions?.openSurveyManager('surfaces')}
+      >
+        + New Surface
+      </button>
+      {menu ? (
+        <div role="menu" className="cad-shell-menu" style={{ left: menu.x, top: menu.y, position: 'fixed' }} data-cad-surface-menu>
+          <button
+            type="button"
+            role="menuitem"
+            className="cad-shell-menu-item"
+            onClick={() => {
+              actions?.selectSurface(menu.surfaceId);
+              actions?.openSurveyManager('surfaces', menu.surfaceId);
+              closeMenu();
+            }}
+          >
+            <span>Properties</span>
+          </button>
+          <button
+            type="button"
+            role="menuitem"
+            className="cad-shell-menu-item"
+            onClick={() => {
+              actions?.selectSurface(menu.surfaceId);
+              actions?.rebuildSurface(menu.surfaceId);
+              closeMenu();
+            }}
+          >
+            <span>Rebuild</span>
+          </button>
+          <button
+            type="button"
+            role="menuitem"
+            className="cad-shell-menu-item"
+            onClick={() => {
+              if (window.confirm(`Delete surface “${menu.surfaceName}”? Definition only; undoable.`)) {
+                actions?.runSurveyCommand({ key: 'SURFACE_DELETE', surfaceId: menu.surfaceId });
+              }
+              closeMenu();
+            }}
+          >
+            <span>Delete</span>
+          </button>
+        </div>
+      ) : null}
+    </TreeGroup>
+  );
+};
 
 /**
  * Phase 18E — F2F node. Children focus manager sections in the drafting
