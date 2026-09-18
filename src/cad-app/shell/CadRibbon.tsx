@@ -103,7 +103,9 @@ export const CadRibbon: React.FC<CadRibbonProps> = ({ snapshot, actions, collaps
  * Phase 18F — real SURFACE tab: CREATE (Create Surface), DEFINITION
  * (definition editors via the manager), BUILD (Rebuild selected +
  * Rebuild All), INQUIRY (Surface Elevation via the manager), STYLE
- * (Surface Styles via the manager). No contour/volume buttons in 18F.
+ * (Surface Styles via the manager). Phase 18H adds a DISPLAY group with a
+ * Contours toggle (flips showContours on the selected surface's style via
+ * the SURFACE_STYLE_UPDATE undo path). No Volumes/Grading/Watershed.
  */
 const CadSurfaceRibbonGroup: React.FC<{
   snapshot: CadWorkspaceSnapshot | null;
@@ -164,6 +166,9 @@ const CadSurfaceRibbonGroup: React.FC<{
       ])}
       {group('Style', [
         { key: 'styles', label: 'Surface Styles', hint: 'Assign display styles (manager).', disabled: !ready, onClick: () => openManager(selectedSurfaceId ?? undefined) },
+      ])}
+      {group('Display', [
+        { key: 'contours-toggle', label: 'Contours', hint: 'Toggle contour display on the selected surface style (manager).', disabled: !ready, onClick: () => openManager(selectedSurfaceId ?? undefined) },
       ])}
     </>
   );

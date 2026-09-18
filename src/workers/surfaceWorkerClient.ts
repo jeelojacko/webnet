@@ -1,5 +1,7 @@
 import type { SurfaceBuildRequest } from '../engine/cad/cadSurfaceTypes';
+import type { CadSurfaceContourSet } from '../engine/cad/surfaceContours/contourTypes';
 import type {
+  SurfaceContourRequest,
   SurfaceWorkerResponseMessage,
 } from './surfaceWorkerHandler';
 import type { SurfaceWorkerMesh } from './surfaceWorkerHandler';
@@ -29,6 +31,12 @@ export interface PendingSurfaceBuild {
   cancel: () => void;
 }
 
+export interface PendingSurfaceContours {
+  requestId: string;
+  done: Promise<CadSurfaceContourSet | null>;
+  cancel: () => void;
+}
+
 /** Minimal worker surface the client drives (real Worker satisfies this). */
 export interface SurfaceWorkerPort {
   postMessage: (_message: unknown) => void;
@@ -44,7 +52,7 @@ export interface SurfaceBuildTransport {
   dispose: () => void;
 }
 
-const TERMINAL_TYPES = new Set(['success', 'failure', 'cancelled']);
+const TERMINAL_TYPES = new Set(['success', 'failure', 'cancelled', 'contour-success', 'contour-failure']);
 const OK_OUTCOMES = new Set(['ok', 'insufficient', 'blocked']);
 
 type TerminalSurfaceWorkerMessage = Exclude<SurfaceWorkerResponseMessage, { type: 'progress' }>;
@@ -58,6 +66,25 @@ const isResponseMessage = (value: unknown): value is TerminalSurfaceWorkerMessag
     typeof message['requestId'] === 'string'
   );
 };
+
+const isWellFormedContourSet = (value: unknown): value is CadSurfaceContourSet => {
+  if (typeof value !== 'object' || value === null) return false;
+  const set = value as Record<string, unknown>;
+  const stats = set['stats'] as Record<string, unknown> | null | undefined;
+  return (
+    typeof set['surfaceId'] === 'string' &&
+    typeof set['surfaceRevision'] === 'string' &&
+    typeof set['styleRevision'] === 'string' &&
+    Array.isArray(set['minorPaths']) &&
+    Array.isArray(set['majorPaths']) &&
+    typeof stats === 'object' &&
+    stats !== null &&
+    stats !== undefined &&
+    typeof stats['segmentCount'] === 'number'
+  );
+};
+
+export const SURFACE_CONTOUR_MALFORMED = 'Malformed surface contour worker response.';
 
 const isWellFormedMesh = (value: unknown): value is SurfaceWorkerMesh => {
   if (typeof value !== 'object' || value === null) return false;
@@ -86,11 +113,23 @@ export class SurfaceWorkerClient implements SurfaceBuildTransport {
       settled: boolean;
     }
   >();
+  private readonly pendingContours = new Map<
+    string,
+    {
+      resolve: (_set: CadSurfaceContourSet | null) => void;
+      reject: (_error: Error) => void;
+      settled: boolean;
+    }
+  >();
   private nextRequestId = 0;
   private dead = false;
   private readonly handleMessage = (event: unknown): void => {
     const data = (event as { data?: unknown })?.data;
     if (!isResponseMessage(data)) return;
+    if (data.type === 'contour-success' || data.type === 'contour-failure') {
+      this.handleContourMessage(data);
+      return;
+    }
     const entry = this.pending.get(data.requestId);
     if (!entry || entry.settled) return;
     if (data.type === 'cancelled') {
@@ -105,6 +144,7 @@ export class SurfaceWorkerClient implements SurfaceBuildTransport {
       entry.reject(new Error(data.error || 'Surface build failed.'));
       return;
     }
+    if (data.type !== 'success') return;
     if (!isWellFormedMesh(data.result)) {
       entry.settled = true;
       this.pending.delete(data.requestId);
@@ -113,6 +153,28 @@ export class SurfaceWorkerClient implements SurfaceBuildTransport {
     }
     entry.settled = true;
     this.pending.delete(data.requestId);
+    entry.resolve(data.result);
+  };
+  /** Phase 18H: contour terminal messages settle contour pendings only (cancel → null, malformed → reject). */
+  private readonly handleContourMessage = (
+    data: Extract<TerminalSurfaceWorkerMessage, { type: 'contour-success' | 'contour-failure' }>,
+  ): void => {
+    const entry = this.pendingContours.get(data.requestId);
+    if (!entry || entry.settled) return;
+    if (data.type === 'contour-failure') {
+      entry.settled = true;
+      this.pendingContours.delete(data.requestId);
+      entry.reject(new Error(data.error || 'Surface contour derivation failed.'));
+      return;
+    }
+    if (!isWellFormedContourSet(data.result)) {
+      entry.settled = true;
+      this.pendingContours.delete(data.requestId);
+      entry.reject(new Error(SURFACE_CONTOUR_MALFORMED));
+      return;
+    }
+    entry.settled = true;
+    this.pendingContours.delete(data.requestId);
     entry.resolve(data.result);
   };
   private readonly handleFatal = (): void => {
@@ -150,7 +212,49 @@ export class SurfaceWorkerClient implements SurfaceBuildTransport {
     };
   }
 
+  /**
+   * Phase 18H contour derivation. Payload uses structured clone of
+   * compact arrays — the client never detaches main-thread buffers.
+   * Cancel → null; malformed → reject; failure → reject.
+   */
+  deriveContours(request: SurfaceContourRequest): PendingSurfaceContours {
+    this.nextRequestId += 1;
+    const requestId = `creq-${this.nextRequestId}`;
+    let entry!: {
+      resolve: (_s: CadSurfaceContourSet | null) => void;
+      reject: (_e: Error) => void;
+      settled: boolean;
+    };
+    const done = new Promise<CadSurfaceContourSet | null>((resolve, reject) => {
+      entry = { resolve, reject, settled: false };
+    });
+    this.pendingContours.set(requestId, entry);
+    try {
+      this.port.postMessage({ type: 'contours', requestId, request });
+    } catch (error) {
+      this.pendingContours.delete(requestId);
+      entry.reject(error instanceof Error ? error : new Error(String(error)));
+    }
+    return {
+      requestId,
+      done,
+      cancel: () => this.cancel(requestId),
+    };
+  }
+
   cancel(requestId: string): void {
+    const contourEntry = this.pendingContours.get(requestId);
+    if (contourEntry && !contourEntry.settled) {
+      contourEntry.settled = true;
+      this.pendingContours.delete(requestId);
+      try {
+        this.port.postMessage({ type: 'cancel', requestId });
+      } catch {
+        // Local settle already applied; a dead port fails closed via dispose.
+      }
+      contourEntry.resolve(null);
+      return;
+    }
     const entry = this.pending.get(requestId);
     if (!entry || entry.settled) return;
     entry.settled = true;
@@ -179,6 +283,13 @@ export class SurfaceWorkerClient implements SurfaceBuildTransport {
       }
       this.pending.delete(requestId);
     }
+    for (const [requestId, entry] of this.pendingContours) {
+      if (!entry.settled) {
+        entry.settled = true;
+        entry.resolve(null);
+      }
+      this.pendingContours.delete(requestId);
+    }
     try {
       this.port.terminate();
     } catch {
@@ -189,6 +300,13 @@ export class SurfaceWorkerClient implements SurfaceBuildTransport {
   private failAll(error: Error): void {
     if (this.dead) return;
     this.dead = true;
+    for (const [requestId, entry] of this.pendingContours) {
+      if (!entry.settled) {
+        entry.settled = true;
+        entry.reject(error);
+      }
+      this.pendingContours.delete(requestId);
+    }
     for (const [requestId, entry] of this.pending) {
       if (!entry.settled) {
         entry.settled = true;

@@ -665,7 +665,21 @@ export type CadCommand =
       styleId: string;
       patch: Pick<
         CadSurfaceStyle,
-        'color' | 'opacity' | 'showTriangles' | 'showContours' | 'showPoints' | 'showBoundary'
+        | 'color'
+        | 'opacity'
+        | 'showTriangles'
+        | 'showContours'
+        | 'showPoints'
+        | 'showBoundary'
+        | 'minorContourInterval'
+        | 'majorContourEvery'
+        | 'contourBaseElevation'
+        | 'minorContour'
+        | 'majorContour'
+        | 'showContourLabels'
+        | 'labelMajorOnly'
+        | 'contourLabelSpacing'
+        | 'contourLabelPrecision'
       > & { description?: string | null };
     }
   | {

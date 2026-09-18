@@ -26,7 +26,7 @@ import type { LineweightDisplayMode } from './cadViewportAppearance';
 import { displayedStrokeWidthPx, opacityFromTransparency } from './cadViewportAppearance';
 import { strokeWidth, surveyPointMarker, textFontSize } from './cadRendererStyle';
 import type { CadSurfaceCache } from './cadSurfaceCache';
-import { buildSurfaceDisplayLayers } from './cadSurfaceView';
+import { buildSurfaceDisplayLayers, type SurfaceContourDisplayInput } from './cadSurfaceView';
 import { materializeBoundPointLabel } from './cadPointLabelStyles';
 
 export interface BuildCadDisplaySceneOptions {
@@ -43,6 +43,15 @@ export interface BuildCadDisplaySceneOptions {
    */
   surfaceCache?: CadSurfaceCache;
   surfaceRevisionIndex?: ReadonlyMap<string, readonly string[]>;
+  /**
+   * Phase 18H — per-surface cached contour sets for display attach.
+   * Absent = no contour display. Export scenes never pass it (surfaces
+   * stay model-only deliverables; DXF contour export stays excluded).
+   * NEXT INTERCHANGE STEP (not implemented): optional DXF LWPOLYLINE
+   * contour export derived from the cached contour sets at export time —
+   * keep excluded until a consumer contract pins layer/level mapping.
+   */
+  surfaceContours?: (_surfaceId: string) => SurfaceContourDisplayInput | null | undefined;
 }
 
 interface SceneRenderContext {
@@ -570,7 +579,7 @@ export const buildCadDisplayScene = (
     // (not absent) when no surface is built so consumers skip uniformly.
     // Null cache (export scene, sheet viewports) = definition-only.
     surfaceLayers: options?.surfaceCache
-      ? buildSurfaceDisplayLayers(project, options.surfaceCache, options.surfaceRevisionIndex)
+      ? buildSurfaceDisplayLayers(project, options.surfaceCache, options.surfaceRevisionIndex, options.surfaceContours)
       : [],
   };
 };

@@ -44,12 +44,23 @@ import { buildCadSurveySnapshot } from '../cad-app/shell/cadSurveySnapshot';
 import {
   buildCadSurfaceSnapshot,
   querySurfaceElevationText,
+  querySurfaceSlopeText,
   type CadSurfaceInquiry,
 } from '../cad-app/shell/cadSurfaceSnapshot';
 import { CadSurfaceManager } from '../cad-app/shell/CadSurfaceManager';
 import { createCadSurfaceCache } from '../engine/cad/cadSurfaceCache';
+import { createCadSurfaceContourCache } from '../engine/cad/surfaceContourCache';
 import { SurfaceWorkerClient } from '../workers/surfaceWorkerClient';
 import { SurfaceBuildService } from '../workers/surfaceBuildService';
+import { SurfaceContourService } from '../workers/surfaceContourService';
+import { computeCadSurfaceSourceRevision } from '../engine/cad/cadSurfaces';
+import { backfillCadSurfaceStyles } from '../engine/cad/cadSurfaceStyles';
+import { contourLevelSpecFromStyle } from '../engine/cad/cadSurfaceContourView';
+import {
+  computeContourGeometryRevision,
+  toContourGeometrySpec,
+} from '../engine/cad/surfaceContours/contourStyleRevision';
+import type { SurfaceContourDisplayInput } from '../engine/cad/cadSurfaceView';
 import {
   describeSelectedBoundaryEntity,
   describeSelectedBreaklineEntity,
@@ -327,7 +338,7 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
   const [surveyManager, setSurveyManager] = useState<{ kind: SurveyManagerKind; selectedId?: string } | null>(null);
   // Phase 18F — surface UI state (all session-only; meshes never persist).
   const [selectedSurfaceId, setSelectedSurfaceId] = useState<string | null>(null);
-  const [surfacePick, setSurfacePick] = useState<{ surfaceId: string } | null>(null);
+  const [surfacePick, setSurfacePick] = useState<{ surfaceId: string; mode: 'elevation' | 'slope' } | null>(null);
   const [lastSurfaceInquiry, setLastSurfaceInquiry] = useState<CadSurfaceInquiry | null>(null);
   const [surfaceMeshSessions, setSurfaceMeshSessions] = useState<Record<string, string[]>>({});
   const surfaceCache = useMemo(
@@ -394,6 +405,104 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
     }),
     [surfaceBuildService, surfaceBuildVersion],
   );
+  // Phase 18H — contour derivation control plane (one per drawing
+  // session, mirrors SurfaceBuildService ownership). Derivations consume
+  // the cached TIN (never rebuild it) and populate the session contour
+  // cache; late results from an old interval/mesh/drawing never replace
+  // the current set (latest-wins per surface, owned by the service).
+  const contourCache = useMemo(
+    () => createCadSurfaceContourCache(activeDrawing.drawingId),
+    [activeDrawing.drawingId],
+  );
+  const [contourVersion, setContourVersion] = useState(0);
+  const contourService = useMemo(
+    () =>
+      new SurfaceContourService({
+        drawingId: activeDrawing.drawingId,
+        getProject: () => activeProjectForBuildsRef.current,
+        getDrawingId: () => drawingIdForBuildsRef.current,
+        tinCache: surfaceCache,
+        contourCache,
+        createTransport: () => {
+          try {
+            if (typeof Worker === 'undefined') return null;
+            return new SurfaceWorkerClient(
+              new Worker(new URL('../workers/surfaceWorker.ts', import.meta.url), {
+                type: 'module',
+              }),
+            );
+          } catch {
+            return null;
+          }
+        },
+        shouldAutoDerive: (surfaceId) => {
+          const project = activeProjectForBuildsRef.current;
+          const surface = (project.surfaces ?? []).find((entry) => entry.id === surfaceId);
+          if (!surface) return false;
+          const style = backfillCadSurfaceStyles(project.surfaceStyles).find(
+            (entry) => entry.id === surface.styleId,
+          );
+          return style != null && contourLevelSpecFromStyle(style) != null;
+        },
+        notify: (message) => setFileStatusText(message),
+        onStateChange: () => setContourVersion((version) => version + 1),
+      }),
+    [activeDrawing.drawingId, surfaceCache, contourCache],
+  );
+  useEffect(() => () => contourService.dispose(), [contourService]);
+  // Auto-derive: every surface whose style enables contours and whose
+  // parent TIN is CURRENT gets a cached set for the style's geometry
+  // revision. Guarded (cached/pending/current-TIN checks) so the effect
+  // converges instead of re-requesting. Fires on project edits (style or
+  // definition), TIN completions (build version), and contour state
+  // changes (completion/diagnostic). Never touches the TIN.
+  useEffect(() => {
+    const project = activeProjectForBuildsRef.current;
+    for (const surface of project.surfaces ?? []) {
+      const style = backfillCadSurfaceStyles(project.surfaceStyles).find(
+        (entry) => entry.id === surface.styleId,
+      );
+      if (!style) continue;
+      const spec = contourLevelSpecFromStyle(style);
+      if (!spec) continue;
+      // Session CURRENT = fresh TIN cache hit (cachedRevision is never
+      // written in-session; see resolveSurfaceDisplayStatus).
+      const revision = computeCadSurfaceSourceRevision(project, surface);
+      if (!surfaceCache.get(surface.id, revision)) continue;
+      const geometryRevision = computeContourGeometryRevision(toContourGeometrySpec(spec));
+      if (contourCache.get(surface.id, revision, geometryRevision)) continue;
+      if (contourService.buildingContourIds().has(surface.id)) continue;
+      contourService.requestContours(surface.id, spec);
+    }
+  });
+  // Scene input: current-geometry set when the TIN is fresh, newest
+  // retained set as stale display otherwise (mirrors the stale-mesh
+  // contract). Null = no contour display (definition-only, legacy style,
+  // or nothing derived yet). Version tag re-renders on derivation state
+  // changes.
+  const surfaceContourInputs = useMemo(() => {
+    const getContours = (surfaceId: string): SurfaceContourDisplayInput | null => {
+      const project = activeProjectForBuildsRef.current;
+      const surface = (project.surfaces ?? []).find((entry) => entry.id === surfaceId);
+      if (!surface) return null;
+      const style = backfillCadSurfaceStyles(project.surfaceStyles).find(
+        (entry) => entry.id === surface.styleId,
+      );
+      if (!style) return null;
+      const spec = contourLevelSpecFromStyle(style);
+      if (!spec) return null;
+      const revision = computeCadSurfaceSourceRevision(project, surface);
+      if (surfaceCache.get(surfaceId, revision)) {
+        const geometryRevision = computeContourGeometryRevision(toContourGeometrySpec(spec));
+        const set = contourCache.get(surfaceId, revision, geometryRevision);
+        return set ? { set } : null;
+      }
+      const retained = contourCache.retained(surfaceId);
+      const stale = retained.length > 0 ? retained[retained.length - 1]! : undefined;
+      return stale ? { set: stale } : null;
+    };
+    return { version: contourVersion, getContours };
+  }, [contourVersion, surfaceCache, contourCache]);
   const cadWorkspace = useSurveyCadWorkspace(
     cadProject,
     activeDrawing.drawingId,
@@ -405,6 +514,7 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
     lineweightDisplay,
     surfaceCache,
     surfaceRevisionIndex,
+    surfaceContourInputs,
   );
   const {
     cadProject: activeProject,
@@ -794,7 +904,9 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
   const rebuildAllSurfaces = (): string => surfaceBuildService.rebuildAllSurfaces();
 
   // Phase 18F — drop session meshes for deleted surfaces (meshes never
-  // persist; the revision index doubles as the known-id set).
+  // persist; the revision index doubles as the known-id set). Phase 18H:
+  // contour sets drop with the definition (service cancels in-flight
+  // derivations first so late arrivals never re-apply).
   useEffect(() => {
     const live = new Set((activeProject.surfaces ?? []).map((entry) => entry.id));
     setSurfaceMeshSessions((previous) => {
@@ -805,11 +917,12 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
         else {
           changed = true;
           surfaceCache.invalidate(id);
+          contourService.handleSurfaceDeleted(id);
         }
       }
       return changed ? kept : previous;
     });
-  }, [activeProject.surfaces, surfaceCache]);
+  }, [activeProject.surfaces, surfaceCache, contourService]);
 
   // Phase 18B shell seam (+18F surface actions): shared by the shell link
   // and workspace-local consumers (surface manager) alike.
@@ -830,10 +943,18 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
       runLayerCommand: (command) => cadWorkspace.runLayerCommand(command),
       runSurveyCommand: (command) => cadWorkspace.runLayerCommand(command),
       selectSurface: (surfaceId) => setSelectedSurfaceId(surfaceId),
-      startSurfacePick: (surfaceId) =>
-        setSurfacePick(surfaceId == null ? null : { surfaceId }),
+      startSurfacePick: (surfaceId, mode) =>
+        setSurfacePick(surfaceId == null ? null : { surfaceId, mode: mode ?? 'elevation' }),
       querySurfaceElevation: (surfaceId, x, y) => {
         const text = querySurfaceElevationText(activeProject, surfaceCache, surfaceId, x, y);
+        if (text != null) {
+          const surface = activeProject.surfaces?.find((entry) => entry.id === surfaceId);
+          setLastSurfaceInquiry({ surfaceId, surfaceName: surface?.name ?? surfaceId, x, y, text });
+        }
+        return text;
+      },
+      querySurfaceSlope: (surfaceId, x, y) => {
+        const text = querySurfaceSlopeText(activeProject, surfaceCache, surfaceId, x, y);
         if (text != null) {
           const surface = activeProject.surfaces?.find((entry) => entry.id === surfaceId);
           setLastSurfaceInquiry({ surfaceId, surfaceName: surface?.name ?? surfaceId, x, y, text });
@@ -1125,13 +1246,21 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
           surfacePickActive={surfacePick != null}
           onSurfacePickPoint={(worldPoint) => {
             if (!surfacePick) return;
-            const text = querySurfaceElevationText(
-              activeProject,
-              surfaceCache,
-              surfacePick.surfaceId,
-              worldPoint.x,
-              worldPoint.y,
-            );
+            const text = surfacePick.mode === 'slope'
+              ? querySurfaceSlopeText(
+                activeProject,
+                surfaceCache,
+                surfacePick.surfaceId,
+                worldPoint.x,
+                worldPoint.y,
+              )
+              : querySurfaceElevationText(
+                activeProject,
+                surfaceCache,
+                surfacePick.surfaceId,
+                worldPoint.x,
+                worldPoint.y,
+              );
             if (text != null) {
               const surface = activeProject.surfaces?.find((entry) => entry.id === surfacePick.surfaceId);
               setLastSurfaceInquiry({

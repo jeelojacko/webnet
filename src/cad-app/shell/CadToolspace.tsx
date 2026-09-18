@@ -466,6 +466,32 @@ const TreeGroup: React.FC<{ label: string; children: React.ReactNode }> = ({ lab
 
 
 /**
+ * Phase 18H — Contours child per surface: style intervals only.
+ * Never a per-polyline listing (aggregated display model).
+ */
+const SurfaceContoursRow: React.FC<{
+  snapshot: CadWorkspaceSnapshot;
+  rowId: string;
+  styleId: string | null;
+}> = ({ snapshot, rowId, styleId }) => {
+  const style = styleId != null
+    ? snapshot.surface?.styles.find((entry) => entry.id === styleId) ?? null
+    : null;
+  const text = !style || !style.showContours
+    ? 'Contours: off'
+    : `Contours: minor ${style.minorContourInterval ?? '—'} major every ${style.majorContourEvery ?? '—'}`;
+  return (
+    <div
+      className="cad-shell-tree-row"
+      title="Contour display (style intervals; derivation status lives in the manager)"
+      data-cad-surface-contours={rowId}
+    >
+      {text}
+    </div>
+  );
+};
+
+/**
  * Phase 18F — Surfaces tree: Surfaces > surface > Definition +
  * Statistics. Status renders as TEXT (never a color-only badge).
  * Clicking a surface selects it (Toolspace/manager/viewport converge);
@@ -528,6 +554,7 @@ const SurfacesNode: React.FC<{ snapshot: CadWorkspaceSnapshot | null; actions: C
                   Broken: {row.brokenNames.join(', ')}
                 </div>
               ) : null}
+              <SurfaceContoursRow snapshot={snapshot} rowId={row.id} styleId={row.styleId} />
             </div>
           </details>
         );

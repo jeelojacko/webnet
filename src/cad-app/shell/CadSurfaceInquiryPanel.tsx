@@ -26,6 +26,7 @@ export const CadSurfaceInquiryPanel: React.FC<InquiryProps> = ({
   const surface = snapshot.surface!;
   const [east, setEast] = React.useState('');
   const [north, setNorth] = React.useState('');
+  const [mode, setMode] = React.useState<'elevation' | 'slope'>('elevation');
   const [answer, setAnswer] = React.useState<string | null>(null);
   const lastForRow = surface.lastInquiry?.surfaceId === row.id ? surface.lastInquiry : null;
 
@@ -36,13 +37,29 @@ export const CadSurfaceInquiryPanel: React.FC<InquiryProps> = ({
       setAnswer('Enter numeric E and N first.');
       return;
     }
-    const text = actions.querySurfaceElevation(row.id, x, y);
+    const text = mode === 'slope'
+      ? actions.querySurfaceSlope(row.id, x, y)
+      : actions.querySurfaceElevation(row.id, x, y);
     setAnswer(text ?? 'Surface not found.');
   };
 
   return (
     <div className="grid gap-2 rounded border border-slate-700 p-2">
       <h3 className="text-[11px] font-semibold text-slate-200">Inquiry — {row.name}</h3>
+      <div className="flex gap-1" role="radiogroup" aria-label="Inquiry mode">
+        {(['elevation', 'slope'] as const).map((entry) => (
+          <button
+            key={entry}
+            type="button"
+            role="radio"
+            aria-checked={mode === entry}
+            className={buttonClass}
+            onClick={() => { setMode(entry); setAnswer(null); }}
+          >
+            {entry === 'elevation' ? 'Elevation' : 'Slope/Aspect'}
+          </button>
+        ))}
+      </div>
       <div className="grid grid-cols-[1fr_1fr_auto] items-end gap-2">
         <Field label="Easting">
           <input
@@ -72,7 +89,7 @@ export const CadSurfaceInquiryPanel: React.FC<InquiryProps> = ({
             Cancel Pick
           </button>
         ) : (
-          <button type="button" className={buttonClass} onClick={() => actions.startSurfacePick(row.id)}>
+          <button type="button" className={buttonClass} onClick={() => actions.startSurfacePick(row.id, mode)}>
             Pick in Viewport
           </button>
         )}

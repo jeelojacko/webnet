@@ -67,6 +67,11 @@ const emptyStats = (): CadSurfaceBuildStats => ({
   maxX: null,
   maxY: null,
   planimetricArea: 0,
+  surface3DArea: 0,
+  meanElevation: null,
+  minFaceSlopeRatio: null,
+  maxFaceSlopeRatio: null,
+  meanFaceSlopeRatio: null,
 });
 
 const flush = async (rounds = 5): Promise<void> => {

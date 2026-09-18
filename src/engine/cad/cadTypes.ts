@@ -651,6 +651,14 @@ export interface CadSurface {
   buildDiagnostic?: string;
 }
 
+/** Phase 18H: per-kind contour line appearance (display only, never geometry). */
+export interface CadContourAppearance {
+  color?: string;
+  lineweight?: number;
+  /** 0 (opaque) .. 1 (fully transparent). Default 0. */
+  opacity?: number;
+}
+
 /** Phase 18F: surface display styling ONLY (never affects geometry/revision). */
 export interface CadSurfaceStyle {
   id: string;
@@ -664,4 +672,22 @@ export interface CadSurfaceStyle {
   showPoints?: boolean;
   showBoundary?: boolean;
   description?: string;
+  /**
+   * Phase 18H contour display intent. Major model is major-every-N minor
+   * levels (NOT an explicit major interval): a level with index k is major
+   * when k is a multiple of majorContourEvery (mirrors computeContourLevels).
+   * Absent on legacy styles = no contour display (display-time default).
+   */
+  minorContourInterval?: number;
+  majorContourEvery?: number;
+  contourBaseElevation?: number;
+  minorContour?: CadContourAppearance;
+  majorContour?: CadContourAppearance;
+  showContourLabels?: boolean;
+  /** Default true: label major contours only. */
+  labelMajorOnly?: boolean;
+  /** Along-path label spacing in drawing units. */
+  contourLabelSpacing?: number;
+  /** Decimals for label text (elevation in drawing units, no suffix). */
+  contourLabelPrecision?: number;
 }

@@ -200,9 +200,11 @@ export interface CadShellActions {
    * Phase 18F — arm a one-shot viewport pick for surface inquiry
    * (null disarms). The picked world point resolves to E/N/elevation text.
    */
-  startSurfacePick: (_surfaceId: string | null) => void;
+  startSurfacePick: (_surfaceId: string | null, _mode?: 'elevation' | 'slope') => void;
   /** Phase 18F — E/N inputs resolve to elevation display text (pure read). */
   querySurfaceElevation: (_surfaceId: string, _x: number, _y: number) => string | null;
+  /** Phase 18H — E/N inputs resolve to slope/aspect display text (pure read). */
+  querySurfaceSlope: (_surfaceId: string, _x: number, _y: number) => string | null;
   /**
    * Phase 18F — synchronous session rebuild of one surface (pure engine
    * build into the session mesh cache; never history, never dirty).

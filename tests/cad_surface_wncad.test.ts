@@ -219,7 +219,15 @@ describe('CAD surface WNCAD persistence', () => {
     expect(parsed.ok).toBe(true);
     if (!parsed.ok) return;
     expect(parsed.drawing.project.surfaces).toEqual([]);
-    expect(backfillCadSurfaceStyles(parsed.drawing.project.surfaceStyles)).toHaveLength(4);
+    const seeds = backfillCadSurfaceStyles(parsed.drawing.project.surfaceStyles);
+    expect(seeds).toHaveLength(6);
+    // Phase 18H: the original four seed appearances are unchanged.
+    expect(seeds.slice(0, 4).map((style) => style.name)).toEqual([
+      'Triangles',
+      'Triangles+Points',
+      'Boundary',
+      'No Display',
+    ]);
     expect(parsed.drawing.schemaVersion).toBe(2);
   });
 
@@ -321,13 +329,15 @@ describe('CAD surface WNCAD persistence', () => {
     expect(Object.keys(cloneCadProject(reopened))).toEqual(Object.keys(reopened));
   });
 
-  it('seeds the four default surface styles', () => {
+  it('seeds the default surface styles (four legacy + two contour)', () => {
     const styles = backfillCadSurfaceStyles(undefined);
     expect(styles.map((style) => style.name)).toEqual([
       'Triangles',
       'Triangles+Points',
       'Boundary',
       'No Display',
+      'Contours',
+      'Contours + Triangles',
     ]);
   });
 });

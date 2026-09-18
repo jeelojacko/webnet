@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState, type Dispatch, type 
 import { cadIntersectLineLikeEntities } from '../../engine/cad/cadCogo';
 import { cloneCadDrawingDocument } from '../../engine/cad/cadDrawingFile';
 import { buildMlightcadSpikeScene } from '../../engine/cad/cadMlightcadAdapter';
+import type { SurfaceContourDisplayInput } from '../../engine/cad/cadSurfaceView';
 import { checkCadEntityEditable } from '../../engine/cad/cadAppearance';
 import { buildCadDisplayScene } from '../../engine/cad/cadRenderer';
 import type { CadSurfaceCache } from '../../engine/cad/cadSurfaceCache';
@@ -64,6 +65,13 @@ export const useSurveyCadWorkspace = (
   // absent = definition-only surface display, e.g. sheet viewports).
   surfaceCache?: CadSurfaceCache,
   surfaceRevisionIndex?: ReadonlyMap<string, readonly string[]>,
+  // Phase 18H: session contour sets (optional; absent = no contour
+  // display). Version tag re-renders the scene on derivation state
+  // changes; getter resolves the display input per surface.
+  surfaceContourInputs?: {
+    version: number;
+    getContours: (_surfaceId: string) => SurfaceContourDisplayInput | null;
+  },
 ): UseSurveyCadWorkspaceResult => {
   const { history, historyRef, applyHistoryUpdate: applyHistoryUpdateBase } = useSurveyCadWorkspaceHistory(
     baseProject,
@@ -110,9 +118,15 @@ export const useSurveyCadWorkspace = (
         buildCadDisplayScene(cadProject, {
           lineweightDisplay,
           ...(surfaceCache ? { surfaceCache, ...(surfaceRevisionIndex ? { surfaceRevisionIndex } : {}) } : {}),
+          ...(surfaceContourInputs
+            ? {
+                surfaceContours: (surfaceId: string) =>
+                  surfaceContourInputs.getContours(surfaceId) ?? undefined,
+              }
+            : {}),
         }),
       ),
-    [cadProject, lineweightDisplay, surfaceCache, surfaceRevisionIndex],
+    [cadProject, lineweightDisplay, surfaceCache, surfaceRevisionIndex, surfaceContourInputs],
   );
   // Retire selection of newly hidden ids so grips never float on invisible geometry.
   useEffect(() => {

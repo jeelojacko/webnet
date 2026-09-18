@@ -75,6 +75,7 @@ const stubActions = (): CadShellActions => ({
   selectSurface: vi.fn(),
   startSurfacePick: vi.fn(),
   querySurfaceElevation: vi.fn(() => null),
+  querySurfaceSlope: vi.fn(() => null),
   rebuildSurface: vi.fn(() => ''),
   rebuildAllSurfaces: vi.fn(() => ''),
   describeBreaklineSource: vi.fn(() => null),
