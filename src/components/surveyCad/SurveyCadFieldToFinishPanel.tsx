@@ -140,7 +140,10 @@ export const SurveyCadFieldToFinishPanel: React.FC<FieldToFinishPanelProps> = ({
     if (next) setStep(next);
   }, [f2fSection]);
 
-  const controlTokenAliases = fieldToFinishSettings?.controlTokenAliases ?? {};
+  const controlTokenAliases = useMemo(
+    () => fieldToFinishSettings?.controlTokenAliases ?? {},
+    [fieldToFinishSettings],
+  );
   const missingLegacy = catalogStatus === 'MISSING_LEGACY' || catalogHasLegacyContent;
   const generated = useMemo(() => summarizeGeneratedFeatures(project), [project]);
   const legacyTrace = useMemo(
