@@ -44,6 +44,7 @@ import { buildCadSurveySnapshot } from '../cad-app/shell/cadSurveySnapshot';
 import {
   buildCadSurfaceSnapshot,
   querySurfaceElevationText,
+  querySurfaceSlopeText,
   type CadSurfaceInquiry,
 } from '../cad-app/shell/cadSurfaceSnapshot';
 import { CadSurfaceManager } from '../cad-app/shell/CadSurfaceManager';
@@ -327,7 +328,7 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
   const [surveyManager, setSurveyManager] = useState<{ kind: SurveyManagerKind; selectedId?: string } | null>(null);
   // Phase 18F — surface UI state (all session-only; meshes never persist).
   const [selectedSurfaceId, setSelectedSurfaceId] = useState<string | null>(null);
-  const [surfacePick, setSurfacePick] = useState<{ surfaceId: string } | null>(null);
+  const [surfacePick, setSurfacePick] = useState<{ surfaceId: string; mode: 'elevation' | 'slope' } | null>(null);
   const [lastSurfaceInquiry, setLastSurfaceInquiry] = useState<CadSurfaceInquiry | null>(null);
   const [surfaceMeshSessions, setSurfaceMeshSessions] = useState<Record<string, string[]>>({});
   const surfaceCache = useMemo(
@@ -830,10 +831,18 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
       runLayerCommand: (command) => cadWorkspace.runLayerCommand(command),
       runSurveyCommand: (command) => cadWorkspace.runLayerCommand(command),
       selectSurface: (surfaceId) => setSelectedSurfaceId(surfaceId),
-      startSurfacePick: (surfaceId) =>
-        setSurfacePick(surfaceId == null ? null : { surfaceId }),
+      startSurfacePick: (surfaceId, mode) =>
+        setSurfacePick(surfaceId == null ? null : { surfaceId, mode: mode ?? 'elevation' }),
       querySurfaceElevation: (surfaceId, x, y) => {
         const text = querySurfaceElevationText(activeProject, surfaceCache, surfaceId, x, y);
+        if (text != null) {
+          const surface = activeProject.surfaces?.find((entry) => entry.id === surfaceId);
+          setLastSurfaceInquiry({ surfaceId, surfaceName: surface?.name ?? surfaceId, x, y, text });
+        }
+        return text;
+      },
+      querySurfaceSlope: (surfaceId, x, y) => {
+        const text = querySurfaceSlopeText(activeProject, surfaceCache, surfaceId, x, y);
         if (text != null) {
           const surface = activeProject.surfaces?.find((entry) => entry.id === surfaceId);
           setLastSurfaceInquiry({ surfaceId, surfaceName: surface?.name ?? surfaceId, x, y, text });
@@ -1125,13 +1134,21 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
           surfacePickActive={surfacePick != null}
           onSurfacePickPoint={(worldPoint) => {
             if (!surfacePick) return;
-            const text = querySurfaceElevationText(
-              activeProject,
-              surfaceCache,
-              surfacePick.surfaceId,
-              worldPoint.x,
-              worldPoint.y,
-            );
+            const text = surfacePick.mode === 'slope'
+              ? querySurfaceSlopeText(
+                activeProject,
+                surfaceCache,
+                surfacePick.surfaceId,
+                worldPoint.x,
+                worldPoint.y,
+              )
+              : querySurfaceElevationText(
+                activeProject,
+                surfaceCache,
+                surfacePick.surfaceId,
+                worldPoint.x,
+                worldPoint.y,
+              );
             if (text != null) {
               const surface = activeProject.surfaces?.find((entry) => entry.id === surfacePick.surfaceId);
               setLastSurfaceInquiry({

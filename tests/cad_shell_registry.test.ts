@@ -45,6 +45,10 @@ const stubActions = (): CadShellActions & { calls: string[] } => {
       calls.push(`surface-elev:${id}`);
       return null;
     },
+    querySurfaceSlope: (id) => {
+      calls.push(`surface-slope:${id}`);
+      return null;
+    },
     rebuildSurface: (id) => {
       calls.push(`surface-rebuild:${id}`);
       return '';

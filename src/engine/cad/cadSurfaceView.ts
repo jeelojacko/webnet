@@ -9,6 +9,7 @@ import {
 } from './cadSurfaceContourView';
 import type { CadSurfaceContourSet } from './surfaceContours/contourTypes';
 import { computeCadSurfaceSourceRevision, deriveSurfaceStatus, getSurfaceElevationAt } from './cadSurfaces';
+import { querySurfaceSlopeAt, type SurfaceSlopeResult } from './surfaceAnalysis';
 import { backfillCadSurfaceStyles } from './cadSurfaceStyles';
 import { resolveSurfaceLayerId as resolveDefaultSurfaceLayerId } from './cadSurfaceTypes';
 import type { CadProject, CadSurface, CadSurfaceStatus } from './cadTypes';
@@ -213,6 +214,18 @@ export const queryMeshElevation = (
   }
   return queryMeshElevationFullScan(mesh, x, y);
 };
+
+/**
+ * Structured slope/aspect inquiry over a cached mesh (full scan over
+ * retained triangles; inquiry is rare so no grid dependency). Fail-closed:
+ * null outside the mesh/voids (never a stale value). See surfaceAnalysis
+ * for the edge/vertex disclosure policy.
+ */
+export const queryMeshSlope = (
+  mesh: CachedSurfaceMesh,
+  x: number,
+  y: number,
+): SurfaceSlopeResult | null => querySurfaceSlopeAt(mesh.points, mesh.triangles, x, y);
 
 /** Legacy O(n) full scan (grid-absent meshes only; normally unreachable). */
 export const queryMeshElevationFullScan = (

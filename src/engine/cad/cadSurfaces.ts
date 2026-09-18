@@ -9,6 +9,7 @@ import type { TinAdjacency, TinEdgeKinds } from './tin/tinTypes';
 import { ccwSign } from './tin/tinPredicates';
 import { collectSources, computeCadSurfaceSourceRevision } from './cadSurfaceRevision';
 import { buildSurfaceGrid } from './cadSurfaceInterpolation';
+import { computeSurfaceFaceStats } from './surfaceAnalysis';
 
 export { computeCadSurfaceSourceRevision } from './cadSurfaceRevision';
 export { buildSurfaceGrid, getSurfaceElevationAt } from './cadSurfaceInterpolation';
@@ -66,6 +67,16 @@ export interface CadSurfaceBuildStats {
   maxX: number | null;
   maxY: number | null;
   planimetricArea: number;
+  /** Sum of 3D face areas (≥ planimetric; display Planimetric vs 3D distinctly). */
+  surface3DArea: number;
+  /** Planimetric-area-weighted mean elevation (exact for piecewise-linear TINs). */
+  meanElevation: number | null;
+  /** Per-face slope ratios (rise/run); mean is area-weighted over RATIOS —
+   * report mean% as 100×mean and mean angle as atan(mean), since
+   * mean(angle) ≠ angle(mean). Pin: arithmetic-mean-of-vertices is NOT used. */
+  minFaceSlopeRatio: number | null;
+  maxFaceSlopeRatio: number | null;
+  meanFaceSlopeRatio: number | null;
 }
 
 export interface CadSurfaceBuildResult {
@@ -104,6 +115,11 @@ const emptyStats = (): CadSurfaceBuildStats => ({
   maxX: null,
   maxY: null,
   planimetricArea: 0,
+  surface3DArea: 0,
+  meanElevation: null,
+  minFaceSlopeRatio: null,
+  maxFaceSlopeRatio: null,
+  meanFaceSlopeRatio: null,
 });
 
 const isCollinearWorld = (points: CadSurfaceSourcePoint[]): boolean => {
@@ -254,6 +270,9 @@ export const buildCadSurface = (project: CadProject, surface: CadSurface): CadSu
       maxX,
       maxY,
       planimetricArea: tin.planimetricArea,
+      // Single-pass face stats over the retained mesh (worker path
+      // inherits them via result.stats) — never recomputed on render.
+      ...computeSurfaceFaceStats(finalPoints, tin.triangles),
     },
     grid: buildSurfaceGrid(finalPoints, tin.triangles),
   };

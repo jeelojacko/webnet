@@ -47,6 +47,9 @@ export interface BuildCadDisplaySceneOptions {
    * Phase 18H — per-surface cached contour sets for display attach.
    * Absent = no contour display. Export scenes never pass it (surfaces
    * stay model-only deliverables; DXF contour export stays excluded).
+   * NEXT INTERCHANGE STEP (not implemented): optional DXF LWPOLYLINE
+   * contour export derived from the cached contour sets at export time —
+   * keep excluded until a consumer contract pins layer/level mapping.
    */
   surfaceContours?: (_surfaceId: string) => SurfaceContourDisplayInput | null | undefined;
 }

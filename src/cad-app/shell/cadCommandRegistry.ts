@@ -127,6 +127,7 @@ export const CAD_SHELL_COMMANDS: CadShellCommandDef[] = [
   action('SURFCREATE', 'Create Surface', 'Surface', 'Create a surface (auto name, current layer).'),
   action('SURFREBUILD', 'Rebuild Surfaces', 'Surface', 'Rebuild every surface needing it.'),
   action('SURFELEV', 'Surface Elevation', 'Surface', 'Query surface elevation (manager inquiry).'),
+  action('SURFSLOPE', 'Surface Slope', 'Surface', 'Query surface slope/aspect (manager inquiry).'),
   action('SURFCONTOURS', 'Surface Contours', 'Surface', 'Edit contour display style (manager contours section).'),
 ];
 
@@ -246,6 +247,7 @@ export const executeShellCommand = (
       actions.rebuildAllSurfaces();
       return true;
     case 'SURFELEV':
+    case 'SURFSLOPE':
     case 'SURFCONTOURS':
       actions.openSurveyManager('surfaces');
       return true;

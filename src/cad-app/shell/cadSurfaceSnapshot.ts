@@ -1,6 +1,7 @@
 import type { CachedSurfaceMesh, CadSurfaceCache } from '../../engine/cad/cadSurfaceCache';
 import {
   queryMeshElevation,
+  queryMeshSlope,
   resolveSurfaceDisplayStatus,
   resolveSurfaceLayerId,
   surfaceContentRevision,
@@ -8,6 +9,7 @@ import {
   type SurfaceStatusText,
 } from '../../engine/cad/cadSurfaceView';
 import { backfillCadSurfaceStyles } from '../../engine/cad/cadSurfaceStyles';
+import { formatSurfaceSlopeAnswer } from '../../engine/cad/surfaceAnalysis';
 import { contourLevelSpecFromStyle } from '../../engine/cad/cadSurfaceContourView';
 import { surfacePointGroupIds } from '../../engine/cad/cadTypes';
 import type { CadProject, CadSurfaceStatus } from '../../engine/cad/cadTypes';
@@ -46,7 +48,18 @@ export interface CadSurfaceStatsSummary {
   triangles: number;
   minZ: number | null;
   maxZ: number | null;
+  /** Planimetric (XY) area — paired distinctly with area3D below. */
   area: number;
+  /** Sum of 3D face areas (≥ planimetric). */
+  area3D: number;
+  /** Planimetric-area-weighted mean elevation. */
+  meanElevation: number | null;
+  /** Face-slope percents (100×ratio); mean is 100× the area-weighted mean RATIO. */
+  minSlopePercent: number | null;
+  meanSlopePercent: number | null;
+  maxSlopePercent: number | null;
+  /** atan of the area-weighted mean ratio (mean(angle) ≠ angle(mean)). */
+  meanSlopeAngleDeg: number | null;
   skippedMissingZ: number;
   stale: boolean;
 }
@@ -154,6 +167,21 @@ export const querySurfaceElevationText = (
   return formatSurfaceElevationAnswer(surface.name, x, y, queryMeshElevation(mesh, x, y), true);
 };
 
+/** Structured slope/aspect inquiry (parallel to elevation; no string parsing). */
+export const querySurfaceSlopeText = (
+  project: CadProject,
+  cache: CadSurfaceCache,
+  surfaceId: string,
+  x: number,
+  y: number,
+): string | null => {
+  const surface = (project.surfaces ?? []).find((entry) => entry.id === surfaceId);
+  if (!surface) return null;
+  const mesh = cache.get(surfaceId, surfaceContentRevision(project, surface));
+  if (!mesh) return formatSurfaceSlopeAnswer(surface.name, x, y, null, false);
+  return formatSurfaceSlopeAnswer(surface.name, x, y, queryMeshSlope(mesh, x, y), true);
+};
+
 const meshStats = (mesh: CachedSurfaceMesh, stale: boolean): CadSurfaceStatsSummary => ({
   points: mesh.stats.usedPointCount,
   vertices: mesh.points.length,
@@ -161,6 +189,15 @@ const meshStats = (mesh: CachedSurfaceMesh, stale: boolean): CadSurfaceStatsSumm
   minZ: mesh.stats.minZ,
   maxZ: mesh.stats.maxZ,
   area: mesh.stats.planimetricArea,
+  area3D: mesh.stats.surface3DArea,
+  meanElevation: mesh.stats.meanElevation,
+  minSlopePercent: mesh.stats.minFaceSlopeRatio != null ? 100 * mesh.stats.minFaceSlopeRatio : null,
+  meanSlopePercent: mesh.stats.meanFaceSlopeRatio != null ? 100 * mesh.stats.meanFaceSlopeRatio : null,
+  maxSlopePercent: mesh.stats.maxFaceSlopeRatio != null ? 100 * mesh.stats.maxFaceSlopeRatio : null,
+  meanSlopeAngleDeg:
+    mesh.stats.meanFaceSlopeRatio != null
+      ? (Math.atan(mesh.stats.meanFaceSlopeRatio) * 180) / Math.PI
+      : null,
   skippedMissingZ: mesh.stats.skippedMissingZCount,
   stale,
 });
