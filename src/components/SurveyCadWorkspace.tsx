@@ -943,7 +943,9 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
         {exportCenterOpen ? (
           <ExportCenterPanel
             drawing={activeDrawing}
-            catalog={activeCatalog}
+            // MISSING_LEGACY drawings have no embedded catalog: export no
+            // catalog rather than presenting the starter fallback as theirs.
+            catalog={catalogHasLegacyContent ? null : activeCatalog}
             resultIdentity={resultDependencyIdentity}
             stationIds={stationIds}
             f2fLinkStatus={f2fLinkStatus}
