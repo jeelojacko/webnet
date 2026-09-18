@@ -195,6 +195,21 @@ describe('surface snapshot', () => {
     const text = querySurfaceElevationText(project, createCadSurfaceCache('empty'), surface.id, 5, 5)!;
     expect(text).toContain('no current mesh');
   });
+
+  it('reports the actual production route: worker normally, sync-fallback only on revision match', () => {
+    const { project, surface, cache } = quadFixture();
+    const revision = computeCadSurfaceSourceRevision(project, surface);
+    const workerRow = buildCadSurfaceSnapshot(project, cache, surface.id, {}).surfaces[0]!;
+    expect(workerRow.buildPath).toBe('worker');
+    const fallbackRow = buildCadSurfaceSnapshot(project, cache, surface.id, {
+      syncFallbackRevisions: new Map([[surface.id, revision]]),
+    }).surfaces[0]!;
+    expect(fallbackRow.buildPath).toBe('sync-fallback');
+    const staleRow = buildCadSurfaceSnapshot(project, cache, surface.id, {
+      syncFallbackRevisions: new Map([[surface.id, 'srev1:deadbeef']]),
+    }).surfaces[0]!;
+    expect(staleRow.buildPath).toBe('worker');
+  });
 });
 
 // ---------------------------------------------------------------------------

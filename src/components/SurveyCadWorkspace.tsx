@@ -390,6 +390,7 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
       buildVersion: surfaceBuildVersion,
       buildingSurfaceIds: surfaceBuildService.buildingSurfaceIds(),
       sessionDiagnostics: surfaceBuildService.sessionDiagnostics(),
+      syncFallbackRevisions: surfaceBuildService.syncFallbackRevisions(),
     }),
     [surfaceBuildService, surfaceBuildVersion],
   );
@@ -752,6 +753,7 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
         lastInquiry: lastSurfaceInquiry,
         buildingSurfaceIds: surfaceBuildInputs.buildingSurfaceIds,
         sessionDiagnostics: surfaceBuildInputs.sessionDiagnostics,
+        syncFallbackRevisions: surfaceBuildInputs.syncFallbackRevisions,
       }),
       availableCommands: shellAvailableCommands,
     };

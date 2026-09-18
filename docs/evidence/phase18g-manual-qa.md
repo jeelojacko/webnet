@@ -3,8 +3,8 @@
 Automated cover: `tests-browser/cad-surface-18g.spec.ts` (18G-A core flow,
 18G-B worker protocol, 18G-C substantial-surface responsiveness), all green
 on Chromium. The steps below are the human pass — feel against the 18F
-baseline, at three resolutions. Do NOT commit PNGs (local-only,
-`docs/evidence/phase18g/`, same convention as 18C).
+baseline, at three resolutions. Screenshots are committed under
+`docs/evidence/phase18g/` as review evidence (18D-qa precedent).
 
 ## Setup
 
@@ -47,7 +47,7 @@ baseline, at three resolutions. Do NOT commit PNGs (local-only,
       rebuild ≈1.5 s, pan/zoom stays usable, vertex nodes capped
       (no per-vertex clutter).
 
-## Screenshot list (local-only)
+## Screenshot list (committed review evidence)
 
 `18g-A-current.png`, `18g-A-inquiry.png`, `18g-A-constraints.png`,
 `18g-A-needs-rebuild.png`, `18g-A-layer-off.png`, `18g-A-layer-on.png`,

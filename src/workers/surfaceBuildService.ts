@@ -85,6 +85,8 @@ export class SurfaceBuildService {
   private queueActive = false;
   private tally = { rebuilt: 0, current: 0, blocked: 0 };
   private disposed = false;
+  /** surfaceId -> revision last built via the sync fallback (route seam). */
+  private readonly fallbackRoutes = new Map<string, string>();
 
   constructor(deps: SurfaceBuildServiceDeps) {
     this.deps = deps;
@@ -99,6 +101,11 @@ export class SurfaceBuildService {
   /** Session failure diagnostics for the snapshot seam (revision-scoped). */
   sessionDiagnostics(): ReadonlyMap<string, SurfaceBuildSessionDiagnostic> {
     return new Map(this.diagnostics);
+  }
+
+  /** Revisions whose CURRENT mesh came from the sync fallback, by surface. */
+  syncFallbackRevisions(): ReadonlyMap<string, string> {
+    return new Map(this.fallbackRoutes);
   }
 
   rebuildSurface(surfaceId: string): string {
@@ -164,6 +171,7 @@ export class SurfaceBuildService {
       this.pending.delete(surfaceId);
     }
     this.diagnostics.clear();
+    this.fallbackRoutes.clear();
     try {
       this.transport?.dispose();
     } catch {
@@ -306,6 +314,8 @@ export class SurfaceBuildService {
       edgeKinds: result.edgeKinds,
     });
     this.diagnostics.delete(surfaceId);
+    this.fallbackRoutes.set(surfaceId, result.revision);
+    this.deps.onStateChange();
     const message = `“${name}” rebuilt: ${result.stats.triangleCount} triangles from ${result.stats.usedPointCount} points. (sync fallback — worker unavailable)`;
     if (queued) this.tally.rebuilt += 1;
     else this.deps.notify(message);
@@ -388,6 +398,7 @@ export class SurfaceBuildService {
     }
     this.storeMeshBounded(surfaceId, entry.revision);
     this.deps.recordRevision(surfaceId, entry.revision);
+    this.fallbackRoutes.delete(surfaceId);
     this.diagnostics.delete(surfaceId);
     this.deps.onStateChange();
     const message = `“${surface.name}” rebuilt: ${result.stats.triangleCount} triangles from ${result.stats.usedPointCount} points.`;

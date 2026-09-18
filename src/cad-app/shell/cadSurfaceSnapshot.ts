@@ -53,11 +53,12 @@ export interface CadSurfaceStatsSummary {
 export interface CadSurfaceRow {
   id: string;
   name: string;
-  /** Production rebuild route. The build service sends every rebuild
-   * through the surface worker (BUILDING status is the live proof); the
-   * bounded sync fallback announces itself in the completion notice, so
-   * this stays 'worker' without dev-only window hooks. */
-  buildPath: 'worker';
+  /** Production rebuild route. 'worker' is the production path (BUILDING
+   * status is the live proof); 'sync-fallback' marks a CURRENT mesh built
+   * by the bounded sync fallback while the worker was unavailable (the
+   * completion notice says so too). Matched by revision, so a source edit
+   * expires the marker. */
+  buildPath: 'worker' | 'sync-fallback';
   layerId: string;
   layerName: string;
   layerLocked: boolean;
@@ -163,6 +164,8 @@ export const buildCadSurfaceSnapshot = (
      * a source edit expires them, never CURRENT).
      */
     sessionDiagnostics?: ReadonlyMap<string, { revision: string; error: string }>;
+    /** Revisions whose CURRENT mesh came from the sync fallback, by surface. */
+    syncFallbackRevisions?: ReadonlyMap<string, string>;
   },
 ): CadSurfaceSnapshot => {
   const layers = new Map(project.layers.map((layer) => [layer.id, layer]));
@@ -220,7 +223,10 @@ export const buildCadSurfaceSnapshot = (
     return {
       id: surface.id,
       name: surface.name,
-      buildPath: 'worker',
+      buildPath:
+        options?.syncFallbackRevisions?.get(surface.id) === revision
+          ? 'sync-fallback'
+          : 'worker',
       layerId,
       layerName: layer?.name ?? layerId,
       layerLocked: layer?.locked === true,

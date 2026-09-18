@@ -490,3 +490,36 @@ describe('SurfaceBuildService', () => {
     expect(h.cache.get('s1', h.revisions.get('s1')![0]!)).toBeDefined();
   });
 });
+
+describe('SurfaceBuildService sync-fallback route tracking', () => {
+  it('marks fallback-built revisions, clears the marker on a worker rebuild, expires on edit, clears on dispose', async () => {
+    let transport: StubTransport | null = null;
+    const h = createHarness({ createTransport: () => transport });
+    h.service.rebuildSurface('s1');
+    const surface = h.project().surfaces![0]!;
+    const revision = computeCadSurfaceSourceRevision(h.project(), surface);
+    expect(h.service.syncFallbackRevisions().get('s1')).toBe(revision);
+    // Worker recovers: source edit + worker rebuild clears the marker.
+    transport = h.stub;
+    const extra = point('pt-5', 'E', 5, 5, 13);
+    h.setProject({
+      ...h.project(),
+      entities: [...h.project().entities, extra],
+      surfaces: [{
+        ...h.project().surfaces![0]!,
+        definition: {
+          pointSource: { kind: 'points', pointEntityIds: ['pt-1', 'pt-2', 'pt-3', 'pt-4', 'pt-5'] },
+        },
+      }],
+    });
+    h.service.rebuildSurface('s1');
+    const build = h.stub.builds[h.stub.builds.length - 1]!;
+    build.resolve(h.meshFor('s1'));
+    await h.flush();
+    expect(h.service.syncFallbackRevisions().has('s1')).toBe(false);
+    const next = h.project().surfaces![0]!;
+    expect(computeCadSurfaceSourceRevision(h.project(), next)).not.toBe(revision);
+    h.service.dispose();
+    expect(h.service.syncFallbackRevisions().size).toBe(0);
+  });
+});
