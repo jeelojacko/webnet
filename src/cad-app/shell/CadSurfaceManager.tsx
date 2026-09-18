@@ -2,6 +2,7 @@ import React from 'react';
 import type { CadShellActions, CadWorkspaceSnapshot } from './cadShellTypes';
 import { trySurfaceCommand, type CadSurfaceRow } from './cadSurfaceSnapshot';
 import { CadSurfaceDefinitionEditor } from './CadSurfaceDefinitionEditor';
+import { CadSurfaceStyleEditor } from './CadSurfaceStyleEditor';
 import { CadSurfaceInquiryPanel } from './CadSurfaceInquiryPanel';
 import { Field, ManagerShell } from '../../components/surveyCad/surveyManagerShared.tsx';
 import { buttonClass, inputClass } from '../../components/surveyCad/surveyManagerShared';
@@ -237,6 +238,28 @@ const SelectedSurface: React.FC<{
           </select>
         </Field>
       </div>
+      <CadSurfaceStyleEditor
+        style={surface.styles.find((entry) => entry.id === row.styleId) ?? {
+          id: row.styleId ?? '',
+          name: row.styleName,
+          showContours: false,
+          minorContourInterval: null,
+          majorContourEvery: null,
+          contourBaseElevation: null,
+          minorColor: null,
+          majorColor: null,
+          showContourLabels: true,
+          labelMajorOnly: true,
+          contourLabelSpacing: null,
+          contourLabelPrecision: null,
+        }}
+        runUpdate={(patch) => trySurfaceCommand(actions.runSurveyCommand, {
+          key: 'SURFACE_STYLE_UPDATE',
+          styleId: row.styleId ?? '',
+          patch: patch as never,
+        })}
+        notify={setNotice}
+      />
       <dl className="grid grid-cols-[auto_1fr] gap-x-2 text-[11px]">
         <dt className="text-slate-400">Status</dt>
         <dd>{row.statusText}{row.stale ? ' — showing last mesh' : ''}</dd>

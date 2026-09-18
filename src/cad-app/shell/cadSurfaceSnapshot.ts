@@ -8,6 +8,7 @@ import {
   type SurfaceStatusText,
 } from '../../engine/cad/cadSurfaceView';
 import { backfillCadSurfaceStyles } from '../../engine/cad/cadSurfaceStyles';
+import { contourLevelSpecFromStyle } from '../../engine/cad/cadSurfaceContourView';
 import { surfacePointGroupIds } from '../../engine/cad/cadTypes';
 import type { CadProject, CadSurfaceStatus } from '../../engine/cad/cadTypes';
 
@@ -84,10 +85,25 @@ export interface CadSurfaceInquiry {
   text: string;
 }
 
+export interface CadSurfaceStyleSummary {
+  id: string;
+  name: string;
+  showContours: boolean;
+  minorContourInterval: number | null;
+  majorContourEvery: number | null;
+  contourBaseElevation: number | null;
+  minorColor: string | null;
+  majorColor: string | null;
+  showContourLabels: boolean;
+  labelMajorOnly: boolean;
+  contourLabelSpacing: number | null;
+  contourLabelPrecision: number | null;
+}
+
 export interface CadSurfaceSnapshot {
   surfaces: CadSurfaceRow[];
   selectedSurfaceId: string | null;
-  styles: Array<{ id: string; name: string }>;
+  styles: CadSurfaceStyleSummary[];
   lastInquiry: CadSurfaceInquiry | null;
 }
 
@@ -269,7 +285,20 @@ export const buildCadSurfaceSnapshot = (
     selectedSurfaceId: selectedSurfaceId != null && surfaces.some((entry) => entry.id === selectedSurfaceId)
       ? selectedSurfaceId
       : null,
-    styles: backfillCadSurfaceStyles(project.surfaceStyles).map((style) => ({ id: style.id, name: style.name })),
+    styles: backfillCadSurfaceStyles(project.surfaceStyles).map((style) => ({
+      id: style.id,
+      name: style.name,
+      showContours: style.showContours === true && contourLevelSpecFromStyle(style) != null,
+      minorContourInterval: style.minorContourInterval ?? null,
+      majorContourEvery: style.majorContourEvery ?? null,
+      contourBaseElevation: style.contourBaseElevation ?? null,
+      minorColor: style.minorContour?.color ?? null,
+      majorColor: style.majorContour?.color ?? null,
+      showContourLabels: style.showContourLabels ?? true,
+      labelMajorOnly: style.labelMajorOnly ?? true,
+      contourLabelSpacing: style.contourLabelSpacing ?? null,
+      contourLabelPrecision: style.contourLabelPrecision ?? null,
+    })),
     lastInquiry: options?.lastInquiry ?? null,
   };
 };

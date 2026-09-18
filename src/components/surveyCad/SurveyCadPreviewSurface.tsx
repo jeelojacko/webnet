@@ -50,6 +50,7 @@ export const renderSurfaceLayers = ({
           key={`surface:${layer.surfaceId}`}
           data-surface-layer={layer.surfaceId}
           data-surface-stale={layer.stale ? 'true' : undefined}
+          data-surface-contours={layer.showContours ? 'true' : undefined}
           className={pickActive ? 'cursor-crosshair' : 'cursor-pointer'}
           onClick={(event) => {
             event.stopPropagation();
@@ -76,6 +77,46 @@ export const renderSurfaceLayers = ({
               opacity={Math.min(1, layer.opacity + 0.1)}
               pointerEvents="stroke"
             />
+          ) : null}
+          {layer.showContours ? (
+            <g pointerEvents="none">
+              {layer.minorContoursD ? (
+                <path
+                  d={toScreenD(layer.minorContoursD, project)}
+                  fill="none"
+                  stroke={layer.minorContourStroke ?? stroke}
+                  strokeWidth={1}
+                  opacity={layer.opacity}
+                />
+              ) : null}
+              {layer.majorContoursD ? (
+                <path
+                  d={toScreenD(layer.majorContoursD, project)}
+                  fill="none"
+                  stroke={layer.majorContourStroke ?? stroke}
+                  strokeWidth={2}
+                  opacity={Math.min(1, layer.opacity + 0.1)}
+                />
+              ) : null}
+              {(layer.contourLabels ?? []).map((label, index) => {
+                const point = project(label.x, label.y);
+                return (
+                  <text
+                    key={`surface:${layer.surfaceId}:cl:${index + 1}`}
+                    x={point.x}
+                    y={point.y}
+                    fill={label.kind === 'major' ? (layer.majorContourStroke ?? stroke) : (layer.minorContourStroke ?? stroke)}
+                    fontSize={10}
+                    textAnchor="middle"
+                    dominantBaseline="middle"
+                    transform={`rotate(${label.rotationDeg} ${point.x} ${point.y})`}
+                    pointerEvents="none"
+                  >
+                    {label.text}
+                  </text>
+                );
+              })}
+            </g>
           ) : null}
           {layer.showVertices && layer.vertices.length > 0 ? (
             <g fill={stroke} opacity={layer.opacity} pointerEvents="none">

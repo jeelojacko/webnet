@@ -86,6 +86,16 @@ export interface CadDisplayScene {
   surfaceLayers?: CadSurfaceDisplayLayer[];
 }
 
+/** Phase 18H — one derived contour label (viewport-ready, display only). */
+export interface CadSurfaceContourLabel {
+  elevation: number;
+  x: number;
+  y: number;
+  rotationDeg: number;
+  kind: 'minor' | 'major';
+  text: string;
+}
+
 /** Phase 18F — one viewport-ready bucket per built surface. */
 export interface CadSurfaceDisplayLayer {
   surfaceId: string;
@@ -106,4 +116,18 @@ export interface CadSurfaceDisplayLayer {
   verticesTruncated: boolean;
   vertexCount: number;
   bounds: { minX: number; minY: number; maxX: number; maxY: number } | null;
+  /**
+   * Phase 18H — derived contours. AGGREGATED: one path string per kind
+   * (never per-segment nodes). Empty/absent when the style hides contours
+   * or no cached set matches; OFF/FROZEN layers drop the whole layer
+   * (see filterCadDisplaySceneForViewport) without recompute.
+   */
+  showContours?: boolean;
+  minorContoursD?: string;
+  majorContoursD?: string;
+  minorContourStroke?: string;
+  majorContourStroke?: string;
+  contourLabels?: CadSurfaceContourLabel[];
+  /** True when labels were capped for display (geometry stays complete). */
+  contourLabelsTruncated?: boolean;
 }

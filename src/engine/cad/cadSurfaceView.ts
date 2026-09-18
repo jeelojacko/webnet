@@ -1,5 +1,13 @@
 import type { CachedSurfaceMesh, CadSurfaceCache } from './cadSurfaceCache';
 import type { CadSurfaceDisplayLayer } from './cadDisplayTypes';
+import {
+  contourPathsToPathD,
+  cullContourLabels,
+  deriveContourLabels,
+  resolveContourDisplay,
+  type ContourLabelViewport,
+} from './cadSurfaceContourView';
+import type { CadSurfaceContourSet } from './surfaceContours/contourTypes';
 import { computeCadSurfaceSourceRevision, deriveSurfaceStatus, getSurfaceElevationAt } from './cadSurfaces';
 import { backfillCadSurfaceStyles } from './cadSurfaceStyles';
 import { resolveSurfaceLayerId as resolveDefaultSurfaceLayerId } from './cadSurfaceTypes';
@@ -282,6 +290,7 @@ export interface CadSurfaceDisplayOptions {
   showTriangles: boolean;
   showVertices: boolean;
   showBoundary: boolean;
+  showContours: boolean;
   stroke: string;
   opacity: number;
 }
@@ -297,6 +306,7 @@ export const resolveSurfaceDisplayOptions = (
     showTriangles: style?.showTriangles ?? true,
     showVertices: style?.showPoints ?? false,
     showBoundary: style?.showBoundary ?? true,
+    showContours: resolveContourDisplay(style, style?.color ?? '#38bdf8') != null,
     stroke: style?.color ?? '#38bdf8',
     opacity: style?.opacity != null ? 1 - style.opacity : 0.85,
   };
@@ -310,17 +320,28 @@ export const resolveSurfaceLayerId = (surface: CadSurface, project: CadProject):
   return resolveDefaultSurfaceLayerId(project, surface.layerId);
 };
 
+/** Optional derived-contour input for the display layer (session cache lookup by the caller). */
+export interface SurfaceContourDisplayInput {
+  set: CadSurfaceContourSet;
+  /** Viewport culling for labels only (geometry always complete). Null = no culling. */
+  labelViewport?: ContourLabelViewport | null;
+}
+
 /**
  * One display layer per surface with a fresh OR stale session mesh; null
  * when no mesh exists (definition-only). `revisionIndex` remembers which
  * revisions were built this session so an older mesh still shows stale
  * after a definition edit (meshes never persist, so this is session-only).
+ * Contours attach only when the style enables them AND the caller supplies
+ * a cached set (no derivation here); layer OFF/FROZEN hides the whole
+ * layer downstream without recompute.
  */
 export const buildSurfaceDisplayLayer = (
   surface: CadSurface,
   project: CadProject,
   cache: CadSurfaceCache,
   revisionIndex?: ReadonlyMap<string, readonly string[]>,
+  contours?: SurfaceContourDisplayInput | null,
 ): CadSurfaceDisplayLayer | null => {
   const revision = surfaceContentRevision(project, surface);
   const fresh = cache.get(surface.id, revision);
@@ -352,6 +373,21 @@ export const buildSurfaceDisplayLayer = (
     if (vertex.y > maxY) maxY = vertex.y;
   }
   const vertices = display.showVertices ? mesh.points.slice(0, SURFACE_DISPLAY_VERTEX_CAP) : [];
+  const style = backfillCadSurfaceStyles(project.surfaceStyles).find(
+    (entry) => entry.id === surface.styleId,
+  );
+  const contourDisplay = resolveContourDisplay(style, display.stroke);
+  const contourSet = contourDisplay && contours ? contours.set : null;
+  const contourLabels = contourDisplay && contourSet && contourDisplay.showLabels
+    ? cullContourLabels(
+      deriveContourLabels(contourSet, {
+        spacing: contourDisplay.labelSpacing,
+        precision: contourDisplay.labelPrecision,
+        majorOnly: contourDisplay.labelMajorOnly,
+      }),
+      contours?.labelViewport ?? null,
+    )
+    : null;
   return {
     surfaceId: surface.id,
     surfaceName: surface.name,
@@ -369,6 +405,13 @@ export const buildSurfaceDisplayLayer = (
     verticesTruncated: mesh.points.length > SURFACE_DISPLAY_VERTEX_CAP,
     vertexCount: mesh.points.length,
     bounds: { minX, minY, maxX, maxY },
+    showContours: contourDisplay != null && contourSet != null,
+    minorContoursD: contourSet ? contourPathsToPathD(contourSet.minorPaths) : '',
+    majorContoursD: contourSet ? contourPathsToPathD(contourSet.majorPaths) : '',
+    minorContourStroke: contourDisplay?.minorStroke,
+    majorContourStroke: contourDisplay?.majorStroke,
+    contourLabels: contourLabels?.visible ?? [],
+    contourLabelsTruncated: contourLabels?.truncated ?? false,
   };
 };
 
@@ -377,10 +420,17 @@ export const buildSurfaceDisplayLayers = (
   project: CadProject,
   cache: CadSurfaceCache,
   revisionIndex?: ReadonlyMap<string, readonly string[]>,
+  contours?: (_surfaceId: string) => SurfaceContourDisplayInput | null | undefined,
 ): CadSurfaceDisplayLayer[] => {
   const layers: CadSurfaceDisplayLayer[] = [];
   for (const surface of project.surfaces ?? []) {
-    const layer = buildSurfaceDisplayLayer(surface, project, cache, revisionIndex);
+    const layer = buildSurfaceDisplayLayer(
+      surface,
+      project,
+      cache,
+      revisionIndex,
+      contours?.(surface.id) ?? null,
+    );
     if (layer) layers.push(layer);
   }
   return layers;
