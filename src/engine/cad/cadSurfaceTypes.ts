@@ -128,6 +128,12 @@ export interface SurfaceBuildRequest {
   surfaceId: string;
   /** Opaque content revision (srev1:...) the result must still match. */
   revision: string;
+  /**
+   * Owning drawing id (control-plane ownership for cross-drawing
+   * isolation; never set by buildSurfaceBuildRequest, never read by the
+   * worker — the service stamps it on send and checks it on completion).
+   */
+  drawingId?: string;
   /** All survey-point entities (compact); worker rebuilds lookup indexes. */
   points: SurfacePointSnapshot[];
   /** Referenced breakline/boundary entities only (full entity objects). */

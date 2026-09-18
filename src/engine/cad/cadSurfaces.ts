@@ -5,6 +5,7 @@ import type {
   CadSurfaceStatus,
 } from './cadTypes';
 import { buildConstrainedTin } from './tin/tinBuild';
+import type { TinAdjacency, TinEdgeKinds } from './tin/tinTypes';
 import { ccwSign } from './tin/tinPredicates';
 import { collectSources, computeCadSurfaceSourceRevision } from './cadSurfaceRevision';
 import { buildSurfaceGrid } from './cadSurfaceInterpolation';
@@ -71,10 +72,14 @@ export interface CadSurfaceBuildResult {
   outcome: 'ok' | 'insufficient' | 'blocked';
   revision: string;
   reasonCodes: CadSurfaceReasonCode[];
-  /** Resolved vertices in canonical order (world coords, + Steiner tail). */
+  /** Resolved vertices in canonical order (world coords, + boundary/synthetic tail + Steiner tail). */
   points: CadSurfaceSourcePoint[];
   /** CCW index triples into points. */
   triangles: Array<[number, number, number]>;
+  /** Neighbor opposite vertex 0/1/2, -1 exterior (aligned with triangles). */
+  adjacency: TinAdjacency[];
+  /** Constrained-edge flags opposite vertex 0/1/2 (derived only, never persisted). */
+  edgeKinds: TinEdgeKinds[];
   stats: CadSurfaceBuildStats;
   /** Uniform-grid query index (opaque; engine-local). */
   grid: CadSurfaceGrid;
@@ -103,8 +108,12 @@ const emptyStats = (): CadSurfaceBuildStats => ({
 
 const isCollinearWorld = (points: CadSurfaceSourcePoint[]): boolean => {
   if (points.length < 3) return false;
-  const minX = Math.min(...points.map((p) => p.x));
-  const minY = Math.min(...points.map((p) => p.y));
+  let minX = Infinity;
+  let minY = Infinity;
+  for (const p of points) {
+    if (p.x < minX) minX = p.x;
+    if (p.y < minY) minY = p.y;
+  }
   const local = points.map((p) => ({ u: p.x - minX, v: p.y - minY, z: p.z }));
   const a = local[0];
   const b = local.find((p) => p.u !== a.u || p.v !== a.v);
@@ -126,6 +135,8 @@ export const buildCadSurface = (project: CadProject, surface: CadSurface): CadSu
     reasonCodes,
     points: [],
     triangles: [],
+    adjacency: [],
+    edgeKinds: [],
     stats: {
       ...emptyStats(),
       resolvedPointCount: collected.points.length,
@@ -184,13 +195,24 @@ export const buildCadSurface = (project: CadProject, surface: CadSurface): CadSu
     outers: collected.outers,
     voids: collected.voids,
     maxEdgeLength: collected.buildOptions.maxEdgeLength,
+    surfaceId: surface.id,
   });
   if (!tin.ok) return fail('blocked', ['SURFACE_TRIANGULATION_FAILED']);
 
+  const boundaryCount = tin.syntheticIds.length;
   const finalPoints: CadSurfaceSourcePoint[] = ordered.map((p) => ({ ...p }));
-  for (let i = ordered.length; i < tin.points.length; i += 1) {
+  for (let i = 0; i < boundaryCount; i += 1) {
+    const at = ordered.length + i;
     finalPoints.push({
-      entityId: `steiner:${surface.id}:${i - ordered.length}`,
+      entityId: tin.syntheticIds[i],
+      x: tin.points[at].x,
+      y: tin.points[at].y,
+      z: tin.points[at].z,
+    });
+  }
+  for (let i = ordered.length + boundaryCount; i < tin.points.length; i += 1) {
+    finalPoints.push({
+      entityId: `steiner:${surface.id}:${i - ordered.length - boundaryCount}`,
       x: tin.points[i].x,
       y: tin.points[i].y,
       z: tin.points[i].z,
@@ -218,6 +240,8 @@ export const buildCadSurface = (project: CadProject, surface: CadSurface): CadSu
     reasonCodes: warnings,
     points: finalPoints,
     triangles: tin.triangles,
+    adjacency: tin.adjacency,
+    edgeKinds: tin.edgeKinds,
     stats: {
       resolvedPointCount: collected.points.length,
       usedPointCount: finalPoints.length,

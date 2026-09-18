@@ -495,6 +495,7 @@ const SurfacesNode: React.FC<{ snapshot: CadWorkspaceSnapshot | null; actions: C
             className="cad-shell-tree-group"
             data-cad-surface={row.id}
             data-cad-surface-status={row.status}
+            data-surface-build-path={row.buildPath}
           >
             <summary
               className="cad-shell-tree-node"

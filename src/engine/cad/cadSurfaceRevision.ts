@@ -8,6 +8,8 @@ import type {
 import { surfacePointGroupIds } from './cadTypes';
 import { evaluatePointGroupMembership } from './cadPointGroups';
 import { dedupeTinPoints } from './tin/tinDedupe';
+import { pointInRing } from './tin/tinPredicates';
+import { validateRingRelations } from './tin/tinBoundaries';
 import type { CadSurfaceReasonCode, CadSurfaceSourcePoint } from './cadSurfaces';
 
 export interface CollectedSources {
@@ -84,23 +86,6 @@ const dedupeRing = (ring: Array<{ x: number; y: number }>): Array<{ x: number; y
     if (first.x === last.x && first.y === last.y) out.pop();
   }
   return out;
-};
-
-const pointInRing = (x: number, y: number, ring: Array<{ x: number; y: number }>): boolean => {
-  let inside = false;
-  for (let i = 0, j = ring.length - 1; i < ring.length; j = i, i += 1) {
-    const xi = ring[i].x;
-    const yi = ring[i].y;
-    const xj = ring[j].x;
-    const yj = ring[j].y;
-    if (yi === yj && y === yi && x >= Math.min(xi, xj) && x <= Math.max(xi, xj)) return true;
-    if (yi !== yj && ((yi > y) !== (yj > y))) {
-      const xCross = xi + ((xj - xi) * (y - yi)) / (yj - yi);
-      if (xCross === x) return true;
-      if (x < xCross) inside = !inside;
-    }
-  }
-  return inside;
 };
 
 /**
@@ -265,6 +250,20 @@ export const collectSources = (project: CadProject, surface: CadSurface): Collec
     }
     if (boundary.type === 'outer') collected.outers.push(distinct);
     else collected.voids.push(distinct);
+  }
+  if (!collected.boundaryError) {
+    const breaklineChains = collected.breaklines.map((chain) =>
+      chain.map((index) => ({
+        x: collected.points[index].x,
+        y: collected.points[index].y,
+      })),
+    );
+    const problem = validateRingRelations(collected.outers, collected.voids, breaklineChains);
+    if (problem === 'outer-invalid') collected.boundaryError = 'SURFACE_BOUNDARY_INVALID';
+    else if (problem === 'void-invalid') collected.boundaryError = 'SURFACE_VOID_INVALID';
+    else if (problem === 'breakline-crossing') {
+      collected.breaklineError = 'SURFACE_BREAKLINES_INTERSECT_WITHOUT_VERTEX';
+    }
   }
   if (!collected.boundaryError) {
     for (const ring of collected.voids) {

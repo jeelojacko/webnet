@@ -30,13 +30,25 @@ export interface TinBaseResult {
  */
 export const buildTinBase = (input: TinBaseInput[]): TinBaseResult => {
   if (input.length === 0) return { points: [], triangles: [], originX: 0, originY: 0 };
-  const originX = Math.floor(Math.min(...input.map((p) => p.x)));
-  const originY = Math.floor(Math.min(...input.map((p) => p.y)));
+  let minX = Infinity;
+  let minY = Infinity;
+  for (const p of input) {
+    if (p.x < minX) minX = p.x;
+    if (p.y < minY) minY = p.y;
+  }
+  const originX = Math.floor(minX);
+  const originY = Math.floor(minY);
   const points: TinPoint[] = input.map((p) => ({ u: p.x - originX, v: p.y - originY, z: p.z }));
   if (input.length < 3) return { points, triangles: [], originX, originY };
 
   const delaunay = Delaunator.from(points, (p) => p.u, (p) => p.v);
-  const scale = Math.max(1, ...points.flatMap((p) => [Math.abs(p.u), Math.abs(p.v)]));
+  let scale = 1;
+  for (const p of points) {
+    const au = Math.abs(p.u);
+    const av = Math.abs(p.v);
+    if (au > scale) scale = au;
+    if (av > scale) scale = av;
+  }
   const zeroEps = 1e-12 * scale * scale;
   const triangles: TinTriangle[] = [];
   for (let i = 0; i + 2 < delaunay.triangles.length; i += 3) {
