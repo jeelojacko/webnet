@@ -248,11 +248,10 @@ describe('phase 18D point groups', () => {
     expect(buildCadProjectSignature(cloneCadProject(reparsed.drawing.project))).toBe(
       buildCadProjectSignature(reparsed.drawing.project),
     );
-    expect(Object.keys(reparsed.drawing.project).at(-1)).toBe('surfaceStyles');
+    expect(Object.keys(reparsed.drawing.project).at(-1)).toBe('volumeSurfaceStyles');
     // 18E appended drawing-owned F2F catalog + settings trailing (after
-    // pointGroups); 18F appends drawing-owned surfaces + surfaceStyles
-    // trailing after those (surfaces repoint owned by the UI worker — update
-    // here if that repoint changes the trailing order). The invariant is
+    // pointGroups); 18F appended surfaces + surfaceStyles; 18I appends
+    // volume relationships + styles trailing after those. The invariant is
     // clone/parse stability, asserted above.
   });
 

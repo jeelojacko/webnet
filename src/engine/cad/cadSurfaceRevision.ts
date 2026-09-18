@@ -35,7 +35,8 @@ export const canonicalNum = (value: number): string => {
   return String(value);
 };
 
-const fnv1a = (text: string): string => {
+/** Shared 32-bit FNV-1a hex helper (canonical content revisions). */
+export const fnv1a = (text: string): string => {
   let hash = 0x811c9dc5;
   for (let index = 0; index < text.length; index += 1) {
     hash ^= text.charCodeAt(index);

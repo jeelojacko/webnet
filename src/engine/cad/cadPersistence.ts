@@ -14,6 +14,12 @@ import { backfillCadPointLabelStyles, cloneCadPointLabelStyles } from './cadPoin
 import { backfillCadPointGroups, cloneCadPointGroups, migrateLegacyPointGroups } from './cadPointGroups';
 import { backfillCadPointStyles, cloneCadPointStyles, migrateLegacySurveyPointStyles } from './cadPointStyles';
 import { backfillCadSurfaceStyles, cloneCadSurfaceStyles } from './cadSurfaceStyles';
+import {
+  backfillVolumeSurfaceStyles,
+  backfillVolumeSurfaces,
+  cloneCadVolumeSurfaceStyles,
+  cloneCadVolumeSurfaces,
+} from './cadVolumeSurfaces';
 import { backfillCadSurfaces, clearSurfaceBuildCacheOnLoad, cloneCadSurfaces } from './cadSurfaceTypes';
 import { cloneFieldToFinishSettings } from '../fieldToFinish/catalogIo';
 import { backfillDrawingCatalog } from '../fieldToFinish/drawingCatalog';
@@ -168,6 +174,13 @@ export const cloneCadProject = (project: CadProject): CadProject => ({
   // sources normalize to the canonical list; meshes never persist).
   ...(project.surfaces != null ? { surfaces: cloneCadSurfaces(project.surfaces) } : {}),
   ...(project.surfaceStyles != null ? { surfaceStyles: project.surfaceStyles.map((style) => ({ ...style })) } : {}),
+  // Phase 18I: volume relationships + styles stay trailing (key-order rule).
+  ...(project.volumeSurfaces != null
+    ? { volumeSurfaces: cloneCadVolumeSurfaces(project.volumeSurfaces) }
+    : {}),
+  ...(project.volumeSurfaceStyles != null
+    ? { volumeSurfaceStyles: cloneCadVolumeSurfaceStyles(project.volumeSurfaceStyles) }
+    : {}),
 });
 
 const cloneParcelLayoutSettings = (
@@ -249,6 +262,10 @@ export const sanitizeSurveyCadPersistedState = (
         ...withStandards,
         surfaces: backfillCadSurfaces(withStandards.surfaces).map(clearSurfaceBuildCacheOnLoad),
         surfaceStyles: cloneCadSurfaceStyles(backfillCadSurfaceStyles(withStandards.surfaceStyles)),
+        volumeSurfaces: cloneCadVolumeSurfaces(backfillVolumeSurfaces(withStandards.volumeSurfaces)),
+        volumeSurfaceStyles: cloneCadVolumeSurfaceStyles(
+          backfillVolumeSurfaceStyles(withStandards.volumeSurfaceStyles),
+        ),
       },
     };
   } catch {

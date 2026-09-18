@@ -69,6 +69,7 @@ import {
   surveyStyleTableCommand,
 } from './cadTransactionsSurveyDisplay';
 import { surfaceCommandDefinitions } from './cadTransactionsSurfaceCommands';
+import { volumeCommandDefinitions } from './cadTransactionsVolumeCommands';
 export {
   applyCadGripEdit,
   buildCadGripHandles,
@@ -570,6 +571,15 @@ export const CAD_COMMAND_REGISTRY: Record<CadCommandKey, CadCommandDefinition<Ca
   SURFACE_STYLE_RENAME: surfaceCommandDefinitions.SURFACE_STYLE_RENAME as CadCommandDefinition<CadCommand>,
   SURFACE_STYLE_UPDATE: surfaceCommandDefinitions.SURFACE_STYLE_UPDATE as CadCommandDefinition<CadCommand>,
   SURFACE_STYLE_DELETE: surfaceCommandDefinitions.SURFACE_STYLE_DELETE as CadCommandDefinition<CadCommand>,
+  VOLUME_SURFACE_CREATE: volumeCommandDefinitions.VOLUME_SURFACE_CREATE as CadCommandDefinition<CadCommand>,
+  VOLUME_SURFACE_DELETE: volumeCommandDefinitions.VOLUME_SURFACE_DELETE as CadCommandDefinition<CadCommand>,
+  VOLUME_SURFACE_UPDATE_SOURCES: volumeCommandDefinitions.VOLUME_SURFACE_UPDATE_SOURCES as CadCommandDefinition<CadCommand>,
+  VOLUME_SURFACE_SET_LAYER_STYLE: volumeCommandDefinitions.VOLUME_SURFACE_SET_LAYER_STYLE as CadCommandDefinition<CadCommand>,
+  VOLUME_STYLE_CREATE: volumeCommandDefinitions.VOLUME_STYLE_CREATE as CadCommandDefinition<CadCommand>,
+  VOLUME_STYLE_DUPLICATE: volumeCommandDefinitions.VOLUME_STYLE_DUPLICATE as CadCommandDefinition<CadCommand>,
+  VOLUME_STYLE_RENAME: volumeCommandDefinitions.VOLUME_STYLE_RENAME as CadCommandDefinition<CadCommand>,
+  VOLUME_STYLE_UPDATE: volumeCommandDefinitions.VOLUME_STYLE_UPDATE as CadCommandDefinition<CadCommand>,
+  VOLUME_STYLE_DELETE: volumeCommandDefinitions.VOLUME_STYLE_DELETE as CadCommandDefinition<CadCommand>,
 };
 
 export const createCadIdleCommandState = createIdleCommandState;
