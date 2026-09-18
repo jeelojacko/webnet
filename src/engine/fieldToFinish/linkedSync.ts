@@ -15,6 +15,7 @@
  */
 import type { CadEntity, CadProject } from '../cad/cadTypes';
 import type { FieldToFinishCadPayload, FieldToFinishProvenance } from './cadGeneration';
+import { computeFeatureCatalogRevision } from './catalogRevision';
 import type { FeatureCodeCatalog } from './featureCatalog';
 
 /** Local F2F-entity check (mirrors isFieldToFinishEntity without the import cycle). */
@@ -40,7 +41,12 @@ export type FieldToFinishSyncStatus =
 export interface FieldToFinishLink {
   generationRunId: string;
   catalogId: string;
-  /** Catalog revision (catalog.version at generation time). */
+  /**
+   * Phase 18E content revision (computeFeatureCatalogRevision output at
+   * generation time). Legacy links carry the old catalog.version string —
+   * they compare unequal against any derived hash (fail-closed stale),
+   * never false CURRENT.
+   */
   catalogRevision: string;
   sourceKind: FieldToFinishSourceKind;
   /**
@@ -144,6 +150,10 @@ const sameSet = (a: readonly string[], b: readonly string[]): boolean => {
  * Staleness classifier. Precedence: UNLINKED > MISSING_SOURCE >
  * MANUAL_CONFLICT > CATALOG_CHANGED > SOURCE_TOPOLOGY_CHANGED >
  * FEATURE_METADATA_CHANGED > COORDINATES_CHANGED > CURRENT.
+ * CATALOG_CHANGED is DERIVED: callers pass the current drawing-catalog
+ * revision (drawingCatalogRevision) as snapshot.catalogRevision, so an
+ * undo that restores the exact catalog content returns CURRENT with no
+ * one-way latch.
  */
 export const computeSyncStatus = (
   link: FieldToFinishLink | undefined,
@@ -172,20 +182,17 @@ export const computeSyncStatus = (
 };
 
 /**
- * Classify a workspace catalog edit against the linked generation: a
- * version change is CATALOG_CHANGED; definition/alias edits with the
- * version untouched are FEATURE_METADATA_CHANGED (they alter feature
- * matching without bumping the revision). Identical content → null.
- * Pure: the caller decides whether/how to stamp.
+ * Classify a drawing catalog edit against the linked generation.
+ * Revision-based (18E): semantic content differs → CATALOG_CHANGED;
+ * identical content (including version-only edits, which never enter the
+ * revision) → null. Pure: the caller decides whether/how to stamp.
  */
 export const classifyCatalogChange = (
   prev: FeatureCodeCatalog,
   next: FeatureCodeCatalog,
 ): 'CATALOG_CHANGED' | 'FEATURE_METADATA_CHANGED' | null => {
   if (prev === next) return null;
-  if (prev.version !== next.version) return 'CATALOG_CHANGED';
-  if (JSON.stringify(prev.definitions) !== JSON.stringify(next.definitions)) return 'FEATURE_METADATA_CHANGED';
-  if (JSON.stringify(prev.aliases) !== JSON.stringify(next.aliases)) return 'FEATURE_METADATA_CHANGED';
+  if (computeFeatureCatalogRevision(prev) !== computeFeatureCatalogRevision(next)) return 'CATALOG_CHANGED';
   return null;
 };
 
@@ -306,7 +313,9 @@ export const linkOfPayload = (
   return buildFieldToFinishLink({
     generationRunId: first.generationRunId ?? 'unknown',
     catalogId: first.catalogId ?? 'unknown',
-    catalogRevision: first.catalogVersion ?? '',
+    // 18E content revision; legacy provenance without it falls back to the
+    // display version (compares stale fail-closed against derived hashes).
+    catalogRevision: first.catalogRevision ?? first.catalogVersion ?? '',
     ...(source.sourceKind !== undefined ? { sourceKind: source.sourceKind } : {}),
     ...(source.inputFingerprint !== undefined ? { inputFingerprint: source.inputFingerprint } : {}),
     ...(source.settingsFingerprint !== undefined ? { settingsFingerprint: source.settingsFingerprint } : {}),

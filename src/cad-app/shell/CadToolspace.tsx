@@ -208,6 +208,7 @@ const SurveyTab: React.FC<{ snapshot: CadWorkspaceSnapshot | null; actions: CadS
           </TreeGroup>
         </>
       ) : null}
+      <F2FNode snapshot={snapshot} actions={actions} />
       {menu ? (
         <div role="menu" className="cad-shell-menu" style={{ left: menu.x, top: menu.y, position: 'fixed' }} data-cad-survey-menu>
           {menu.target.kind === 'points' ? (
@@ -462,3 +463,42 @@ const TreeGroup: React.FC<{ label: string; children: React.ReactNode }> = ({ lab
   </details>
 );
 
+
+/**
+ * Phase 18E — F2F node. Children focus manager sections in the drafting
+ * panel (no duplicate state; snapshot is derived per publish).
+ */
+const F2FNode: React.FC<{ snapshot: CadWorkspaceSnapshot | null; actions: CadShellActions | null }> = ({
+  snapshot,
+  actions,
+}) => {
+  const f2f = snapshot?.f2f;
+  if (!snapshot || !f2f) return null;
+  const focus = (section: string): void => actions?.openSurveyManager('f2f', section);
+  const rows: Array<{ section: string; label: string; detail: string }> = [
+    { section: 'catalog', label: 'Active Catalog', detail: `${f2f.catalogName} v${f2f.catalogVersion} · rev ${f2f.catalogRevision}${f2f.catalogState === 'READY' ? '' : ' · MISSING LEGACY'}` },
+    { section: 'codes', label: 'Feature Codes', detail: `${f2f.definitionCount} definitions` },
+    { section: 'aliases', label: 'Aliases', detail: `${f2f.aliasCount} aliases` },
+    { section: 'review', label: 'Import Review', detail: 'load + match + map' },
+    { section: 'generated', label: 'Generated Features', detail: `${f2f.generatedPoints} pts · ${f2f.generatedLabels} lbl · ${f2f.generatedLinework} lw · ${f2f.overrides} ovr · ${f2f.detached} det` },
+    { section: 'unmapped', label: 'Unmapped Codes', detail: `${f2f.unmapped} unmapped` },
+    { section: 'link', label: 'Link Status', detail: f2f.linkStatus },
+  ];
+  return (
+    <TreeGroup label="Field to Finish">
+      {rows.map((row) => (
+        <button
+          key={row.section}
+          type="button"
+          className="cad-shell-tree-node"
+          title={row.detail}
+          onClick={() => focus(row.section)}
+          data-cad-f2f-node={row.section}
+        >
+          {row.label}
+          <span className="cad-shell-count">{row.detail}</span>
+        </button>
+      ))}
+    </TreeGroup>
+  );
+};

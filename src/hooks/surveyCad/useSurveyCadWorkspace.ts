@@ -44,6 +44,9 @@ import type { CadEntityId } from '../../engine/cad/cadTypes';
 import { createCadSelectionState } from '../../engine/cad/cadSelection';
 import { runFieldToFinishCommand } from '../../engine/fieldToFinish/regeneration';
 import type { FieldToFinishCadPayload } from '../../engine/fieldToFinish/cadGeneration';
+import type { FeatureCodeCatalog } from '../../engine/fieldToFinish/featureCatalog';
+import type { FieldToFinishSettings } from '../../engine/fieldToFinish/catalogIo';
+import { stampCatalogStaleStatus } from '../../engine/fieldToFinish/linkedSync';
 
 export const useSurveyCadWorkspace = (
   baseProject: CadProject,
@@ -439,6 +442,29 @@ export const useSurveyCadWorkspace = (
     },
     commitFieldToFinishPayload: (payload: FieldToFinishCadPayload) => {
       applyHistoryUpdate((current) => runFieldToFinishCommand(current, payload));
+    },
+    // Phase 18E — drawing-owned catalog/settings edits as ONE undoable
+    // full-replace transaction through history (which also propagates to the
+    // parent document, so later commands never clobber the edit).
+    replaceFieldToFinishCatalog: (
+      catalog: FeatureCodeCatalog,
+      change: 'CATALOG_CHANGED' | 'FEATURE_METADATA_CHANGED' | null,
+    ) => {
+      applyHistoryUpdate((current) => {
+        const withCatalog = { ...current.present.project, fieldToFinishCatalog: catalog };
+        const stamped = change ? stampCatalogStaleStatus(withCatalog, change) : withCatalog;
+        if (stamped === current.present.project) return current;
+        return { ...current, present: { ...current.present, project: stamped } };
+      });
+    },
+    updateFieldToFinishSettings: (settings: FieldToFinishSettings) => {
+      applyHistoryUpdate((current) => ({
+        ...current,
+        present: {
+          ...current.present,
+          project: { ...current.present.project, fieldToFinishSettings: settings },
+        },
+      }));
     },
     startPointCommand: commandState.startPointCommand,
     startCogoPointCommand: commandState.startCogoPointCommand,

@@ -19,6 +19,7 @@
  */
 import { buildCodeIndex, canonicalizeCode, matchCodeToken } from './codeMatching';
 import { resolveControlToken, type ControlTokenAliasProfile } from './catalogIo';
+import { computeFeatureCatalogRevision } from './catalogRevision';
 import type { FeatureCodeCatalog, FeatureDefinition } from './featureCatalog';
 import { FieldLineworkControl, type ParsedFeatureCode } from './featureMetadata';
 import { generateLinework, type CodedPointInput } from './linework';
@@ -61,7 +62,10 @@ export interface FieldToFinishProvenance {
   sourceStationId?: string;
   featureDefinitionId?: string;
   catalogId?: string;
+  /** Legacy display string (catalog.version at generation time). */
   catalogVersion?: string;
+  /** Phase 18E content revision (computeFeatureCatalogRevision at generation time). */
+  catalogRevision?: string;
   generationRunId?: string;
   state: FieldToFinishEntityState;
 }
@@ -362,6 +366,7 @@ const buildProvenance = (
   ...(definitionId ? { featureDefinitionId: definitionId } : {}),
   catalogId: args.catalog.id,
   catalogVersion: args.catalog.version,
+  catalogRevision: computeFeatureCatalogRevision(args.catalog),
   generationRunId: args.generationRunId,
   state: 'GENERATED',
 });
@@ -717,6 +722,7 @@ export const buildFieldToFinishPayload = (
       generatedBy: FIELD_TO_FINISH_GENERATOR,
       catalogId: args.catalog.id,
       catalogVersion: args.catalog.version,
+      catalogRevision: computeFeatureCatalogRevision(args.catalog),
       generationRunId: args.generationRunId,
       ...(chain.definitionId ? { featureDefinitionId: chain.definitionId } : {}),
       state: 'GENERATED',

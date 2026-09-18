@@ -99,6 +99,8 @@ export const CadRibbon: React.FC<CadRibbonProps> = ({ snapshot, actions, collaps
 /**
  * Phase 18D — Survey tab: five entry points, each focusing the Toolspace
  * node or opening the matching manager. No new command groups.
+ * Phase 18E — F2F group: six compact entries routing through the command
+ * registry section focus (catalog/codes/review/regen/import/export).
  */
 const CadSurveyGroup: React.FC<{
   snapshot: CadWorkspaceSnapshot | null;
@@ -111,7 +113,16 @@ const CadSurveyGroup: React.FC<{
     { kind: 'point-label-styles', label: 'Point Label Styles', hint: 'Open the Point Label Style manager.' },
     { kind: 'f2f', label: 'Field to Finish', hint: 'Open field-to-finish.' },
   ];
+  const f2f: Array<{ section: string; label: string; hint: string }> = [
+    { section: 'catalog', label: 'Field to Finish', hint: 'Open field-to-finish catalog.' },
+    { section: 'codes', label: 'Feature Codes', hint: 'Open the feature-code manager.' },
+    { section: 'review', label: 'Import/Review', hint: 'Open the F2F import review.' },
+    { section: 'regen', label: 'Regenerate', hint: 'Open regeneration preview.' },
+    { section: 'import', label: 'Catalog Import', hint: 'Open catalog file import.' },
+    { section: 'export', label: 'Catalog Export', hint: 'Open catalog file export.' },
+  ];
   return (
+    <>
     <div className="cad-shell-ribbon-group" aria-label="Survey">
       <span className="cad-shell-ribbon-group-label">Survey</span>
       <div className="cad-shell-ribbon-buttons">
@@ -131,5 +142,25 @@ const CadSurveyGroup: React.FC<{
         ))}
       </div>
     </div>
+    <div className="cad-shell-ribbon-group" aria-label="Field to Finish">
+      <span className="cad-shell-ribbon-group-label">Field to Finish</span>
+      <div className="cad-shell-ribbon-buttons">
+        {f2f.map((entry) => (
+          <button
+            key={entry.section}
+            type="button"
+            title={entry.hint}
+            aria-label={entry.label}
+            disabled={!snapshot || !actions}
+            className="cad-shell-ribbon-button"
+            onClick={() => actions?.openSurveyManager('f2f', entry.section)}
+            data-cad-f2f={entry.section}
+          >
+            {entry.label}
+          </button>
+        ))}
+      </div>
+    </div>
+    </>
   );
 };

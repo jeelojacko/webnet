@@ -73,6 +73,27 @@ export interface CadSurveySnapshot {
   selected: CadSurveyPointDisplayInfo[];
 }
 
+/**
+ * Phase 18E — F2F derived summary for Toolspace/ribbon. Computed from the
+ * drawing-owned catalog + entity provenance on every publish; the shell
+ * holds no F2F state of its own.
+ */
+export interface CadF2FSnapshot {
+  catalogName: string;
+  catalogVersion: string;
+  catalogRevision: string;
+  definitionCount: number;
+  aliasCount: number;
+  catalogState: 'READY' | 'MISSING_LEGACY';
+  generatedPoints: number;
+  generatedLabels: number;
+  generatedLinework: number;
+  overrides: number;
+  detached: number;
+  unmapped: number;
+  linkStatus: string;
+}
+
 export type CadActiveLayout = 'MODEL' | { sheetId: string };
 
 /**
@@ -132,6 +153,8 @@ export interface CadWorkspaceSnapshot {
   dependencyStatus: string;
   /** Phase 18D — survey points/groups/styles summary; null when no workspace. */
   survey: CadSurveySnapshot | null;
+  /** Phase 18E — F2F catalog + provenance summary (derived, no duplicate state). */
+  f2f: CadF2FSnapshot | null;
   /** UI command keys with a live starter in the mounted workspace. */
   availableCommands: string[];
 }

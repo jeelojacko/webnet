@@ -201,6 +201,11 @@ export interface UseSurveyCadWorkspaceResult {
   redoDepth: number;
   replaceCadProject: (_project: CadProject, _statusText?: string) => void;
   commitFieldToFinishPayload: (_payload: FieldToFinishCadPayload) => void;
+  replaceFieldToFinishCatalog: (
+    _catalog: import('../../engine/fieldToFinish/featureCatalog').FeatureCodeCatalog,
+    _change: 'CATALOG_CHANGED' | 'FEATURE_METADATA_CHANGED' | null,
+  ) => void;
+  updateFieldToFinishSettings: (_settings: import('../../engine/fieldToFinish/catalogIo').FieldToFinishSettings) => void;
   startPointCommand: () => void;
   startCogoPointCommand: () => void;
   startLineCommand: () => void;

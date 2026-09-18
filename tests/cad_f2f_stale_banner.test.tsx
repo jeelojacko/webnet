@@ -73,13 +73,13 @@ describe('f2f stale link banner', () => {
       expect(banner?.getAttribute('data-f2f-link-status')).toBe('SOURCE_TOPOLOGY_CHANGED');
       expect(banner?.textContent).toContain('SOURCE_TOPOLOGY_CHANGED');
       expect(banner?.textContent).toContain('nothing is applied automatically');
-      // Explicit preview-required action jumps to the review tab (no regen).
+      // Explicit preview-required action jumps to the Preview step (no regen).
       const review = element.querySelector('button[data-f2f-link-review]');
       expect(review).not.toBeNull();
       await act(async () => {
         review?.dispatchEvent(new MouseEvent('click', { bubbles: true }));
       });
-      expect(element.querySelector('[data-f2f-review]')).not.toBeNull();
+      expect(element.querySelector('[data-f2f-regen]')).not.toBeNull();
       expect(onCommit).not.toHaveBeenCalled();
       expect(JSON.stringify(project.entities)).toBe(before);
     } finally {

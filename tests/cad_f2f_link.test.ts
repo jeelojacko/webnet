@@ -1,3 +1,4 @@
+import { computeFeatureCatalogRevision } from '../src/engine/fieldToFinish/catalogRevision';
 import { describe, expect, it } from 'vitest';
 
 import {
@@ -40,6 +41,8 @@ const catalog: FeatureCodeCatalog = {
   aliases: [],
 };
 
+const revision = computeFeatureCatalogRevision(catalog);
+
 const pt = (stationId: string, x: number, y: number, order: number): FieldToFinishCadPoint => ({
   stationId, x, y, sourceOrder: order,
   sourceLine: order,
@@ -64,7 +67,7 @@ describe('cad f2f link', () => {
     expect(link).toBeDefined();
     expect(link?.generationRunId).toBe('run-1');
     expect(link?.catalogId).toBe('test-catalog');
-    expect(link?.catalogRevision).toBe('3');
+    expect(link?.catalogRevision).toBe(revision);
     expect(link?.stationIds).toEqual(['P1', 'P2', 'P3']);
     expect(link?.status).toBe('CURRENT');
     expect(getFieldToFinishSyncStatus(project)).toBe('CURRENT');
@@ -78,7 +81,7 @@ describe('cad f2f link', () => {
     const link = buildFieldToFinishLink({
       generationRunId: 'run-1',
       catalogId: 'test-catalog',
-      catalogRevision: '3',
+      catalogRevision: revision,
       sourceKind: 'adjustment',
       inputFingerprint: 'in-1',
       settingsFingerprint: 'set-1',
@@ -97,7 +100,7 @@ describe('cad f2f link', () => {
     expect(parsed.drawing.project.metadata.fieldToFinishLink).toEqual(link);
     expect(getFieldToFinishSyncStatus(parsed.drawing.project, {
       sourceRevision: buildSourceRevision({ inputFingerprint: 'in-1', settingsFingerprint: 'set-1' }),
-      catalogRevision: '3',
+      catalogRevision: revision,
       stationIds: ['P1', 'P2', 'P3'],
     })).toBe('CURRENT');
   });
@@ -112,7 +115,7 @@ describe('cad f2f link', () => {
     const link = buildFieldToFinishLink({
       generationRunId: 'run-1',
       catalogId: 'test-catalog',
-      catalogRevision: '3',
+      catalogRevision: revision,
       sourceKind: 'adjustment',
       inputFingerprint: 'in-1',
       settingsFingerprint: 'set-1',
@@ -123,7 +126,7 @@ describe('cad f2f link', () => {
     });
     const base = {
       sourceRevision: buildSourceRevision({ inputFingerprint: 'in-1', settingsFingerprint: 'set-1' }),
-      catalogRevision: '3',
+      catalogRevision: revision,
       stationIds: ['P1', 'P2', 'P3'],
       sourceRecordIds: ['1', '2', '3'],
     };
@@ -178,7 +181,7 @@ describe('cad f2f link', () => {
     // Raw source-record snapshot: sourceLine ids only, no `<record>:label`.
     expect(link?.sourceRecordIds).toEqual(['1', '2', '3']);
     expect(getFieldToFinishSyncStatus(project, {
-      catalogRevision: '3',
+      catalogRevision: revision,
       stationIds: ['P1', 'P2', 'P3'],
       sourceRecordIds: ['1', '2', '3'],
     })).toBe('CURRENT');
@@ -188,7 +191,7 @@ describe('cad f2f link', () => {
     const link = buildFieldToFinishLink({
       generationRunId: 'run-1',
       catalogId: 'test-catalog',
-      catalogRevision: '3',
+      catalogRevision: revision,
       sourceKind: 'adjustment',
       inputFingerprint: 'in-1',
       settingsFingerprint: 'set-1',
@@ -204,7 +207,7 @@ describe('cad f2f link', () => {
     // ['1','2'] is a real drift, ['P1','P1','P2'] vs ['P1','P2'] is not.
     const base = {
       sourceRevision: buildSourceRevision({ inputFingerprint: 'in-1', settingsFingerprint: 'set-1' }),
-      catalogRevision: '3',
+      catalogRevision: revision,
       stationIds: ['P1', 'P1', 'P2'],
       sourceRecordIds: ['1', '2', '2'],
     };
@@ -213,18 +216,20 @@ describe('cad f2f link', () => {
     expect(computeSyncStatus(link, { ...base, stationIds: ['P1', 'P2', 'P3'] })).toBe('SOURCE_TOPOLOGY_CHANGED');
   });
 
-  it('classifies catalog edits without regenerating', () => {
+  it('classifies catalog edits by content revision, not version string', () => {
+    // Version-only edits never enter the revision: no staleness.
     const editedVersion = { ...catalog, version: '4' };
-    expect(classifyCatalogChange(catalog, editedVersion)).toBe('CATALOG_CHANGED');
+    expect(classifyCatalogChange(catalog, editedVersion)).toBeNull();
+    // Semantic edits dirty the link regardless of the version string.
     const editedDefs = {
       ...catalog,
       definitions: catalog.definitions.map((def) =>
         def.id === 'ep' ? { ...def, layer: 'RD-EP2' } : def,
       ),
     };
-    expect(classifyCatalogChange(catalog, editedDefs)).toBe('FEATURE_METADATA_CHANGED');
+    expect(classifyCatalogChange(catalog, editedDefs)).toBe('CATALOG_CHANGED');
     const editedAliases = { ...catalog, aliases: [{ alias: 'E', targetCode: 'EP' }] };
-    expect(classifyCatalogChange(catalog, editedAliases)).toBe('FEATURE_METADATA_CHANGED');
+    expect(classifyCatalogChange(catalog, editedAliases)).toBe('CATALOG_CHANGED');
     expect(classifyCatalogChange(catalog, catalog)).toBeNull();
     expect(classifyCatalogChange(catalog, { ...catalog })).toBeNull();
   });

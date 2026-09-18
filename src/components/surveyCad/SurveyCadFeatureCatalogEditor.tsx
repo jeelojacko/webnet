@@ -1,26 +1,46 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
+import { canonicalizeCode } from '../../engine/fieldToFinish/codeMatching';
 import type {
   FeatureCodeCatalog,
   FeatureDefinition,
 } from '../../engine/fieldToFinish/featureCatalog';
 import { validateCatalog } from '../../engine/fieldToFinish/catalogIo';
+import { computeFeatureCatalogRevision } from '../../engine/fieldToFinish/catalogRevision';
+import {
+  AliasSection,
+  CatalogHeader,
+} from './FeatureCatalogManager.aliases';
+import {
+  CatalogDefinitionEditor,
+  type CatalogEditorDrawing,
+} from './FeatureCatalogManager.editor';
+import {
+  CatalogTable,
+  type CatalogSortKey,
+} from './FeatureCatalogManager.table';
+
+export type { CatalogEditorDrawing };
 
 interface CatalogEditorProps {
   catalog: FeatureCodeCatalog;
   onCatalogChange: (_catalog: FeatureCodeCatalog) => void;
-  /**
-   * Phase 18D: drawing style tables for dropdowns. Absent (component
-   * lacks project context) = free-text inputs + unresolved-style warning.
-   */
-  drawing?: {
-    pointSymbols: ReadonlyArray<{ id: string; name?: string }>;
-    pointStyles: ReadonlyArray<{ id: string; name?: string }>;
-    labelStyles: ReadonlyArray<{ id: string; name?: string }>;
-  };
+  /** Drawing tables for dropdowns + missing-ref warnings. Absent = legacy contexts (free text). */
+  drawing?: CatalogEditorDrawing;
+  /** Link status chip for the header (CURRENT / CATALOG_CHANGED / …). */
+  linkStatus?: string;
+  /** True when showing the starter fallback (edits adopt into the drawing). */
+  isFallback?: boolean;
+  /** GENERATED-entity reference counts by definition id (delete warning). */
+  referenceCounts?: Record<string, number>;
+  /** Prefill for the "Create Definition from Code" flow (review step). */
+  createPrefill?: { code: string; description?: string; layer?: string } | null;
+  onCreateConsumed?: () => void;
+  /** Toolspace/ribbon focus target (feature-codes | aliases). Session-only. */
+  focusSection?: string | null;
 }
 
 const emptyDefinition = (code: string): FeatureDefinition => ({
-  id: `def-${code.toLowerCase().replace(/[^a-z0-9]+/g, '-') || 'new'}`,
+  id: `def-${code.toLowerCase().replace(/[^a-z0-9]+/g, '-') || 'new'}-${Date.now().toString(36)}`,
   code: code.toUpperCase() || 'NEW',
   description: '',
   layer: `F2F-${code.toUpperCase() || 'NEW'}`,
@@ -28,28 +48,65 @@ const emptyDefinition = (code: string): FeatureDefinition => ({
   lineworkBehavior: { enabled: false, implicitContinuation: false },
 });
 
-const StylePreview: React.FC<{ definition: FeatureDefinition }> = ({ definition }) => (
-  <span
-    className="inline-flex items-center gap-1 rounded border border-slate-700 px-1.5 py-0.5"
-    title={`Layer ${definition.layer} · symbol ${definition.pointSymbolId ?? 'default'} · linework ${definition.lineworkBehavior.enabled ? 'on' : 'off'}`}
-    data-f2f-style-preview={definition.id}
-  >
-    <span aria-hidden>◆</span>
-    <span aria-hidden style={{ color: '#38bdf8' }}>━━━</span>
-    <span className="italic">Abc</span>
-  </span>
-);
-
+/**
+ * Phase 18E — professional feature-code manager (drawing-owned catalog).
+ * Stable id ≠ editable code: rename the code freely; duplicate canonical
+ * codes are blocked via validateCatalog (first wins at generation). Delete
+ * warns how many generated entities reference the definition but never
+ * deletes geometry. Sort/search are view-only — generation always uses the
+ * first point-role match in SOURCE code order.
+ */
 export const SurveyCadFeatureCatalogEditor: React.FC<CatalogEditorProps> = ({
   catalog,
   onCatalogChange,
   drawing,
+  linkStatus = 'UNLINKED',
+  isFallback = false,
+  referenceCounts = {},
+  createPrefill = null,
+  onCreateConsumed,
+  focusSection = null,
 }) => {
   const [selectedId, setSelectedId] = useState<string | null>(
     catalog.definitions[0]?.id ?? null,
   );
+  const [search, setSearch] = useState('');
+  const [sortKey, setSortKey] = useState<CatalogSortKey>('code');
+  const [notice, setNotice] = useState('');
   const selected = catalog.definitions.find((entry) => entry.id === selectedId) ?? null;
   const issues = validateCatalog(catalog);
+  const revision = computeFeatureCatalogRevision(catalog);
+
+  useEffect(() => {
+    if (!selected && catalog.definitions[0]) setSelectedId(catalog.definitions[0].id);
+  }, [catalog.definitions, selected]);
+
+  // Review-step handoff: prefill a new definition from an unmapped code.
+  useEffect(() => {
+    if (!createPrefill) return;
+    const code = createPrefill.code.trim().toUpperCase();
+    if (!code) {
+      onCreateConsumed?.();
+      return;
+    }
+    if (catalog.definitions.some((def) => canonicalizeCode(def.code) === canonicalizeCode(code))) {
+      setNotice(`Code “${code}” already exists — selected instead of duplicating.`);
+      const hit = catalog.definitions.find((def) => canonicalizeCode(def.code) === canonicalizeCode(code));
+      if (hit) setSelectedId(hit.id);
+      onCreateConsumed?.();
+      return;
+    }
+    const next = {
+      ...emptyDefinition(code),
+      ...(createPrefill.description ? { description: createPrefill.description } : {}),
+      ...(createPrefill.layer ? { layer: createPrefill.layer } : {}),
+    };
+    onCatalogChange({ ...catalog, definitions: [...catalog.definitions, next] });
+    setSelectedId(next.id);
+    setNotice(`Created definition “${code}” — confirm the layer and styles, then re-run review.`);
+    onCreateConsumed?.();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [createPrefill]);
 
   const patchDefinition = (id: string, patch: Partial<FeatureDefinition>): void => {
     onCatalogChange({
@@ -70,16 +127,28 @@ export const SurveyCadFeatureCatalogEditor: React.FC<CatalogEditorProps> = ({
     if (!selected) return;
     const copy: FeatureDefinition = {
       ...selected,
-      id: `${selected.id}-copy`,
+      id: `${selected.id}-copy-${Date.now().toString(36)}`,
       code: `${selected.code}_COPY`,
       lineworkBehavior: { ...selected.lineworkBehavior },
+      ...(selected.defaultAttributes ? { defaultAttributes: { ...selected.defaultAttributes } } : {}),
     };
+    // Duplicate canonical codes are blocked: appending “_COPY” keeps the copy
+    // unique; if it still collides (user copied twice), validateCatalog flags
+    // it and generation lets the first win — no silent fork.
     onCatalogChange({ ...catalog, definitions: [...catalog.definitions, copy] });
     setSelectedId(copy.id);
   };
 
   const deleteSelected = (): void => {
     if (!selected) return;
+    const refs = referenceCounts[selected.id] ?? 0;
+    if (refs > 0) {
+      const ok = window.confirm(
+        `${refs} generated entit${refs === 1 ? 'y references' : 'ies reference'} “${selected.code}”. ` +
+          'Delete the definition only — geometry is never deleted. Continue?',
+      );
+      if (!ok) return;
+    }
     onCatalogChange({
       ...catalog,
       definitions: catalog.definitions.filter((entry) => entry.id !== selected.id),
@@ -88,21 +157,48 @@ export const SurveyCadFeatureCatalogEditor: React.FC<CatalogEditorProps> = ({
   };
 
   return (
-    <div className="grid gap-2" data-f2f-catalog-editor>
+    <div className="grid gap-2" data-f2f-catalog-editor data-f2f-focus={focusSection ?? ''}>
+      <CatalogHeader
+        catalog={catalog}
+        revision={revision}
+        linkStatus={linkStatus}
+        isFallback={isFallback}
+        onHeaderChange={(name, version) => onCatalogChange({ ...catalog, name, version })}
+      />
       <div className="flex flex-wrap items-center gap-1">
         <button type="button" className="rounded border border-slate-600 px-2 py-1 hover:bg-slate-800" onClick={addDefinition} data-f2f-catalog-add>
-          Add
+          New
         </button>
         <button type="button" className="rounded border border-slate-600 px-2 py-1 hover:bg-slate-800 disabled:opacity-40" onClick={duplicateSelected} disabled={!selected} data-f2f-catalog-duplicate>
           Duplicate
         </button>
-        <button type="button" className="rounded border border-slate-600 px-2 py-1 hover:bg-slate-800 disabled:opacity-40" onClick={deleteSelected} disabled={!selected} data-f2f-catalog-delete>
+        <button
+          type="button"
+          className="rounded border border-slate-600 px-2 py-1 hover:bg-slate-800 disabled:opacity-40"
+          onClick={() => {
+            if (!selected) return;
+            const nextCode = window.prompt('Rename code (stable id unchanged):', selected.code);
+            if (nextCode?.trim()) patchDefinition(selected.id, { code: nextCode.trim().toUpperCase() });
+          }}
+          disabled={!selected}
+          data-f2f-catalog-rename
+        >
+          Rename
+        </button>
+        <button
+          type="button"
+          className="rounded border border-red-800 px-2 py-1 hover:bg-red-950 disabled:opacity-40"
+          onClick={deleteSelected}
+          disabled={!selected}
+          title={selected && (referenceCounts[selected.id] ?? 0) > 0
+            ? `${referenceCounts[selected.id]} generated entities reference this definition (geometry kept)`
+            : 'Delete definition (geometry kept)'}
+          data-f2f-catalog-delete
+        >
           Delete
         </button>
-        <span className="text-[11px] text-slate-400">
-          {catalog.name} v{catalog.version} · {catalog.definitions.length} definitions
-        </span>
       </div>
+      {notice ? <p className="text-[11px] text-sky-300" data-f2f-catalog-notice>{notice}</p> : null}
       {issues.length > 0 ? (
         <ul className="grid gap-0.5 text-[11px] text-amber-300" data-f2f-catalog-issues>
           {issues.map((issue, index) => (
@@ -110,282 +206,51 @@ export const SurveyCadFeatureCatalogEditor: React.FC<CatalogEditorProps> = ({
           ))}
         </ul>
       ) : null}
-      <div className="grid max-h-48 gap-0.5 overflow-auto" data-f2f-catalog-list>
-        {catalog.definitions.map((entry) => (
-          <button
-            key={entry.id}
-            type="button"
-            aria-pressed={entry.id === selectedId}
-            className={`flex items-center justify-between gap-2 rounded border px-2 py-1 text-left text-[12px] hover:bg-slate-800 ${entry.id === selectedId ? 'border-sky-500' : 'border-slate-700'}`}
-            onClick={() => setSelectedId(entry.id)}
-            data-f2f-catalog-row={entry.id}
-          >
-            <span>
-              <span className="font-mono font-semibold">{entry.code}</span>
-              <span className="pl-2 text-slate-400">{entry.description || entry.layer}</span>
-            </span>
-            <StylePreview definition={entry} />
-          </button>
-        ))}
-      </div>
-      {selected ? (
-        <div className="grid grid-cols-[auto,1fr] items-center gap-x-2 gap-y-1 text-[12px]" data-f2f-catalog-form>
-          <label htmlFor="f2f-def-code">Feature Code</label>
-          <input
-            id="f2f-def-code"
-            className="rounded border border-slate-700 bg-slate-900 px-1.5 py-0.5 font-mono"
-            value={selected.code}
-            onChange={(event) => patchDefinition(selected.id, { code: event.target.value.toUpperCase() })}
-          />
-          <label htmlFor="f2f-def-desc">Definition</label>
-          <input
-            id="f2f-def-desc"
-            className="rounded border border-slate-700 bg-slate-900 px-1.5 py-0.5"
-            value={selected.description}
-            onChange={(event) => patchDefinition(selected.id, { description: event.target.value })}
-          />
-          <label htmlFor="f2f-def-layer">Layer</label>
-          <input
-            id="f2f-def-layer"
-            className="rounded border border-slate-700 bg-slate-900 px-1.5 py-0.5 font-mono"
-            value={selected.layer}
-            onChange={(event) => patchDefinition(selected.id, { layer: event.target.value })}
-          />
-          <label htmlFor="f2f-def-symbol">Point symbol</label>
-          {drawing ? (
-            <select
-              id="f2f-def-symbol"
-              className="rounded border border-slate-700 bg-slate-900 px-1.5 py-0.5 font-mono"
-              value={selected.pointSymbolId ?? ''}
-              onChange={(event) =>
-                patchDefinition(selected.id, { pointSymbolId: event.target.value || undefined })
-              }
-            >
-              <option value="">(drawing default)</option>
-              {drawing.pointSymbols.map((symbol) => (
-                <option key={symbol.id} value={symbol.id}>{symbol.name ?? symbol.id}</option>
-              ))}
-            </select>
-          ) : (
-            <input
-              id="f2f-def-symbol"
-              className="rounded border border-slate-700 bg-slate-900 px-1.5 py-0.5 font-mono"
-              value={selected.pointSymbolId ?? ''}
-              placeholder="default"
-              onChange={(event) =>
-                patchDefinition(selected.id, { pointSymbolId: event.target.value || undefined })
-              }
-            />
-          )}
-          <label htmlFor="f2f-def-point-style">Point style</label>
-          {drawing ? (
-            <span className="grid gap-0.5">
-              <select
-                id="f2f-def-point-style"
-                className="rounded border border-slate-700 bg-slate-900 px-1.5 py-0.5 font-mono"
-                value={selected.pointStyleId ?? ''}
-                onChange={(event) =>
-                  patchDefinition(selected.id, { pointStyleId: event.target.value || undefined })
+      <div className="grid gap-2 md:grid-cols-[minmax(0,5fr)_minmax(0,7fr)]" data-f2f-manager-columns>
+        <CatalogTable
+          definitions={catalog.definitions}
+          selectedId={selectedId}
+          search={search}
+          sortKey={sortKey}
+          onSearchChange={setSearch}
+          onSortChange={setSortKey}
+          onSelect={setSelectedId}
+        />
+        <div data-f2f-manager-editor>
+          {selected ? (
+            <CatalogDefinitionEditor
+              definition={selected}
+              drawing={drawing}
+              onPatch={(patch) => patchDefinition(selected.id, patch)}
+              onRenameId={(nextId) => {
+                if (catalog.definitions.some((entry) => entry.id === nextId && entry.id !== selected.id)) {
+                  setNotice(`Id “${nextId}” already exists — pick a unique stable id.`);
+                  return;
                 }
-              >
-                <option value="">(drawing default)</option>
-                {drawing.pointStyles.map((style) => (
-                  <option key={style.id} value={style.id}>{style.name ?? style.id}</option>
-                ))}
-              </select>
-              {selected.pointStyleId && !drawing.pointStyles.some((style) => style.id === selected.pointStyleId) ? (
-                <span className="text-[11px] text-amber-300">Unknown point style “{selected.pointStyleId}”; drawing default applies.</span>
-              ) : null}
-            </span>
-          ) : (
-            <span className="grid gap-0.5">
-              <input
-                id="f2f-def-point-style"
-                className="rounded border border-slate-700 bg-slate-900 px-1.5 py-0.5 font-mono"
-                value={selected.pointStyleId ?? ''}
-                placeholder="default"
-                onChange={(event) =>
-                  patchDefinition(selected.id, { pointStyleId: event.target.value || undefined })
-                }
-              />
-              {selected.pointStyleId ? (
-                <span className="text-[11px] text-amber-300">Drawing styles unavailable — “{selected.pointStyleId}” cannot be validated; unknown ids fall back to the drawing default.</span>
-              ) : null}
-            </span>
-          )}
-          <label htmlFor="f2f-def-label-style">Label style</label>
-          {drawing ? (
-            <span className="grid gap-0.5">
-              <select
-                id="f2f-def-label-style"
-                className="rounded border border-slate-700 bg-slate-900 px-1.5 py-0.5 font-mono"
-                value={selected.labelStyleId ?? ''}
-                onChange={(event) =>
-                  patchDefinition(selected.id, { labelStyleId: event.target.value || undefined })
-                }
-              >
-                <option value="">(F2F Full compat)</option>
-                {drawing.labelStyles.map((style) => (
-                  <option key={style.id} value={style.id}>{style.name ?? style.id}</option>
-                ))}
-              </select>
-              {selected.labelStyleId && !drawing.labelStyles.some((style) => style.id === selected.labelStyleId) ? (
-                <span className="text-[11px] text-amber-300">Unknown label style “{selected.labelStyleId}”; F2F Full compat applies.</span>
-              ) : null}
-            </span>
-          ) : (
-            <span className="grid gap-0.5">
-              <input
-                id="f2f-def-label-style"
-                className="rounded border border-slate-700 bg-slate-900 px-1.5 py-0.5 font-mono"
-                value={selected.labelStyleId ?? ''}
-                placeholder="default"
-                onChange={(event) =>
-                  patchDefinition(selected.id, { labelStyleId: event.target.value || undefined })
-                }
-              />
-              {selected.labelStyleId ? (
-                <span className="text-[11px] text-amber-300">Drawing styles unavailable — “{selected.labelStyleId}” cannot be validated; unknown ids fall back to F2F Full compat.</span>
-              ) : null}
-            </span>
-          )}
-          <span>Point / line style</span>
-          <span className="flex items-center gap-2">
-            <select
-              aria-label="Point style"
-              className="rounded border border-slate-700 bg-slate-900 px-1.5 py-0.5"
-              value={selected.pointBehavior}
-              onChange={(event) =>
-                patchDefinition(selected.id, {
-                  pointBehavior: event.target.value === 'none' ? 'none' : 'point',
-                })
-              }
-            >
-              <option value="point">Create point</option>
-              <option value="none">No point</option>
-            </select>
-            <input
-              aria-label="Line style"
-              className="w-full rounded border border-slate-700 bg-slate-900 px-1.5 py-0.5 font-mono"
-              value={selected.styleId ?? ''}
-              placeholder="line style (default)"
-              onChange={(event) =>
-                patchDefinition(selected.id, { styleId: event.target.value || undefined })
-              }
-            />
-          </span>
-          <span>Generated Linework</span>
-          <span className="flex items-center gap-2">
-            <label className="flex items-center gap-1">
-              <input
-                type="checkbox"
-                checked={selected.lineworkBehavior.enabled}
-                onChange={(event) =>
-                  patchDefinition(selected.id, {
-                    lineworkBehavior: { ...selected.lineworkBehavior, enabled: event.target.checked },
-                  })
-                }
-              />
-              enabled
-            </label>
-            <label className="flex items-center gap-1">
-              <input
-                type="checkbox"
-                checked={selected.lineworkBehavior.implicitContinuation}
-                onChange={(event) =>
-                  patchDefinition(selected.id, {
-                    lineworkBehavior: {
-                      ...selected.lineworkBehavior,
-                      implicitContinuation: event.target.checked,
-                    },
-                  })
-                }
-              />
-              implicit continuation
-            </label>
-          </span>
-          <label htmlFor="f2f-def-rename">Rename (id)</label>
-          <input
-            id="f2f-def-rename"
-            className="rounded border border-slate-700 bg-slate-900 px-1.5 py-0.5 font-mono"
-            value={selected.id}
-            onChange={(event) => {
-              const nextId = event.target.value.trim() || selected.id;
-              onCatalogChange({
-                ...catalog,
-                definitions: catalog.definitions.map((entry) =>
-                  entry.id === selected.id ? { ...entry, id: nextId } : entry,
-                ),
-              });
-              setSelectedId(nextId);
-            }}
-          />
-        </div>
-      ) : (
-        <p className="text-[12px] text-slate-400">Select a Feature Code to edit.</p>
-      )}
-      <div className="grid gap-1 text-[12px]" data-f2f-catalog-aliases>
-        <span className="font-semibold">Aliases (alias → Feature Code)</span>
-        {catalog.aliases.map((alias, index) => (
-          <span key={`${alias.alias}-${index}`} className="flex items-center gap-1 font-mono">
-            <span>{alias.alias} → {alias.targetCode}</span>
-            <button
-              type="button"
-              className="rounded border border-slate-700 px-1 hover:bg-slate-800"
-              onClick={() =>
                 onCatalogChange({
                   ...catalog,
-                  aliases: catalog.aliases.filter((_, keep) => keep !== index),
-                })
-              }
-              aria-label={`Remove alias ${alias.alias}`}
-            >
-              ×
-            </button>
-          </span>
-        ))}
-        <AliasAdder
-          onAdd={(alias, targetCode) =>
-            onCatalogChange({ ...catalog, aliases: [...catalog.aliases, { alias, targetCode }] })
+                  definitions: catalog.definitions.map((entry) =>
+                    entry.id === selected.id ? { ...entry, id: nextId } : entry,
+                  ),
+                });
+                setSelectedId(nextId);
+              }}
+            />
+          ) : (
+            <p className="text-[12px] text-slate-400">Select a feature code to edit.</p>
+          )}
+        </div>
+      </div>
+      <div data-f2f-manager-aliases={focusSection === 'aliases' ? 'focused' : ''}>
+        <AliasSection
+          catalog={catalog}
+          onAdd={(alias) => onCatalogChange({ ...catalog, aliases: [...catalog.aliases, alias] })}
+          onRemove={(index) => onCatalogChange({ ...catalog, aliases: catalog.aliases.filter((_, keep) => keep !== index) })}
+          onEdit={(index, alias) =>
+            onCatalogChange({ ...catalog, aliases: catalog.aliases.map((entry, at) => (at === index ? alias : entry)) })
           }
         />
       </div>
     </div>
-  );
-};
-
-const AliasAdder: React.FC<{ onAdd: (_alias: string, _target: string) => void }> = ({ onAdd }) => {
-  const [alias, setAlias] = useState('');
-  const [target, setTarget] = useState('');
-  return (
-    <span className="flex items-center gap-1">
-      <input
-        aria-label="Alias"
-        className="w-24 rounded border border-slate-700 bg-slate-900 px-1.5 py-0.5 font-mono"
-        value={alias}
-        placeholder="EP"
-        onChange={(event) => setAlias(event.target.value.toUpperCase())}
-      />
-      <span>→</span>
-      <input
-        aria-label="Target code"
-        className="w-28 rounded border border-slate-700 bg-slate-900 px-1.5 py-0.5 font-mono"
-        value={target}
-        placeholder="EDGE"
-        onChange={(event) => setTarget(event.target.value.toUpperCase())}
-      />
-      <button
-        type="button"
-        className="rounded border border-slate-600 px-2 py-0.5 hover:bg-slate-800 disabled:opacity-40"
-        disabled={!alias.trim() || !target.trim()}
-        onClick={() => {
-          onAdd(alias.trim(), target.trim());
-          setAlias('');
-          setTarget('');
-        }}
-      >
-        Add alias
-      </button>
-    </span>
   );
 };

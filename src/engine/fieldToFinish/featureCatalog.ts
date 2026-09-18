@@ -38,8 +38,27 @@ export interface FeatureCodeCatalog {
   aliases: CodeAlias[];
 }
 
+/**
+ * Phase 18E attribute-merge audit: generation does NOT merge catalog
+ * defaultAttributes onto entities today. The only attributes stamped at
+ * generation time are source-record facts (featureCodes, provenance). A
+ * future merge must define catalog-defaults-vs-record precedence
+ * explicitly — no precedence is invented here.
+ */
+
 export const findDefinition = (
   catalog: FeatureCodeCatalog,
   definitionId: string,
 ): FeatureDefinition | undefined =>
   catalog.definitions.find((def) => def.id === definitionId);
+
+/** Deep clone: catalogs are drawing-owned mutable state, never shared. */
+export const cloneFeatureCatalog = (catalog: FeatureCodeCatalog): FeatureCodeCatalog => ({
+  ...catalog,
+  definitions: catalog.definitions.map((def) => ({
+    ...def,
+    lineworkBehavior: { ...def.lineworkBehavior },
+    ...(def.defaultAttributes ? { defaultAttributes: { ...def.defaultAttributes } } : {}),
+  })),
+  aliases: catalog.aliases.map((alias) => ({ ...alias })),
+});

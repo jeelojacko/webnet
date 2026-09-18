@@ -13,6 +13,26 @@ import type { FeatureCodeCatalog, FeatureDefinition } from './featureCatalog';
 
 export const CATALOG_SCHEMA_VERSION = 1;
 
+/**
+ * Phase 18E drawing-owned F2F settings. Home is CadProject
+ * (`fieldToFinishSettings`), cloned/backfilled like the catalog. Kept OUT
+ * of the catalog JSON (no catalog schema bump) — control-token aliases are
+ * drawing preferences, not catalog semantic content, and never enter the
+ * catalog revision hash.
+ */
+export interface FieldToFinishSettings {
+  controlTokenAliases?: ControlTokenAliasProfile;
+}
+
+export const cloneFieldToFinishSettings = (
+  settings: FieldToFinishSettings | undefined,
+): FieldToFinishSettings | undefined =>
+  settings === undefined
+    ? undefined
+    : settings.controlTokenAliases === undefined
+      ? { ...settings }
+      : { ...settings, controlTokenAliases: { ...settings.controlTokenAliases } };
+
 export type ControlTokenAliasProfile = Record<string, string>;
 
 const CANONICAL_CONTROLS = new Set<string>(Object.values(FieldLineworkControl));
@@ -53,12 +73,27 @@ const validateDefinition = (def: FeatureDefinition, issues: CatalogValidationIss
   }
 };
 
-/** Validate catalog; duplicate canonical codes are errors (first wins). */
+/**
+ * Validate catalog. Errors: missing id/code/layer, duplicate definition
+ * ids, duplicate canonical codes (first wins), alias missing
+ * alias/targetCode, duplicate canonical aliases, aliases shadowing a
+ * definition code, aliases targeting an unknown definition code.
+ * Unresolved drawing style refs are NOT checked here — they stay WARNINGS
+ * via validateCatalogStyleReferences, never import-blocking errors.
+ */
 export const validateCatalog = (catalog: FeatureCodeCatalog): CatalogValidationIssue[] => {
   const issues: CatalogValidationIssue[] = [];
+  const seenIds = new Set<string>();
   const seen = new Map<string, string>();
   for (const def of catalog.definitions) {
     validateDefinition(def, issues);
+    if (def.id.trim()) {
+      if (seenIds.has(def.id)) {
+        issues.push({ severity: 'error', message: `Duplicate definition id "${def.id}".` });
+      } else {
+        seenIds.add(def.id);
+      }
+    }
     const key = canonicalizeCode(def.code);
     const prior = seen.get(key);
     if (prior !== undefined) {
@@ -67,9 +102,24 @@ export const validateCatalog = (catalog: FeatureCodeCatalog): CatalogValidationI
       seen.set(key, def.id);
     }
   }
+  const definitionCodes = new Set(seen.keys());
+  const seenAliases = new Set<string>();
   for (const alias of catalog.aliases) {
     if (!alias.alias.trim() || !alias.targetCode.trim()) {
       issues.push({ severity: 'error', message: 'Alias missing alias/targetCode.' });
+      continue;
+    }
+    const key = canonicalizeCode(alias.alias);
+    if (seenAliases.has(key)) {
+      issues.push({ severity: 'error', message: `Duplicate alias "${alias.alias}".` });
+    } else {
+      seenAliases.add(key);
+    }
+    if (definitionCodes.has(key)) {
+      issues.push({ severity: 'error', message: `Alias "${alias.alias}" shadows a definition code; definitions win.` });
+    }
+    if (!definitionCodes.has(canonicalizeCode(alias.targetCode))) {
+      issues.push({ severity: 'error', message: `Alias "${alias.alias}" targets unknown code "${alias.targetCode}".` });
     }
   }
   return issues;

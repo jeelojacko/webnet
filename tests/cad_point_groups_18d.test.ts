@@ -248,7 +248,9 @@ describe('phase 18D point groups', () => {
     expect(buildCadProjectSignature(cloneCadProject(reparsed.drawing.project))).toBe(
       buildCadProjectSignature(reparsed.drawing.project),
     );
-    expect(Object.keys(reparsed.drawing.project).at(-1)).toBe('pointGroups');
+    expect(Object.keys(reparsed.drawing.project).at(-1)).toBe('fieldToFinishSettings');
+    // 18E appended drawing-owned F2F catalog + settings trailing (after
+    // pointGroups); the invariant is clone/parse stability, asserted above.
   });
 
   it('resolves 10k points x 50 groups in reasonable time', () => {

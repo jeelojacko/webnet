@@ -16,7 +16,6 @@ import {
 } from '../engine/browserFileIo';
 import {
   buildCadDrawingFileName,
-  cloneCadDrawingDocument,
   createBlankCadDrawingDocument,
   MAX_CAD_DRAWING_TEXT_BYTES,
   migrateSurveyCadStateToDrawing,
@@ -25,7 +24,13 @@ import {
 } from '../engine/cad/cadDrawingFile';
 import { importAdjustedPointsIntoCadDrawing } from '../engine/cad/cadAdjustedPointsImport';
 import type { FeatureCodeCatalog } from '../engine/fieldToFinish/featureCatalog';
-import { classifyCatalogChange, stampCatalogStaleStatus } from '../engine/fieldToFinish/linkedSync';
+import { cloneFeatureCatalog } from '../engine/fieldToFinish/featureCatalog';
+import { STARTER_CATALOG } from '../engine/fieldToFinish/starterCatalog';
+import {
+  getDrawingCatalogStatus,
+  hasFieldToFinishContent,
+} from '../engine/fieldToFinish/drawingCatalog';
+import { classifyCatalogChange } from '../engine/fieldToFinish/linkedSync';
 import { noteUiTabReady } from '../hooks/useUiPerfMonitor';
 import type { SuccessfulAdjustmentRunInfo } from '../hooks/useAdjustmentOutcomeApplication';
 import type { ResultDependencyIdentity } from '../engine/resultIntegrity';
@@ -36,6 +41,7 @@ import type { CadShellLink } from '../cad-app/shell/cadShellLink';
 import type { ActiveCommandKey } from '../hooks/surveyCad/useSurveyCadCommandTypes';
 import type { CadShellActions, CadWorkspaceSnapshot, SurveyManagerKind } from '../cad-app/shell/cadShellTypes';
 import { buildCadSurveySnapshot } from '../cad-app/shell/cadSurveySnapshot';
+import { buildCadF2FSnapshot } from './surveyCad/f2fGeneratedSummary';
 import { getCadEntityDisplayLabel } from '../engine/cad/cadEntityNames';
 import { resolveCurrentCadLayerId } from '../engine/cad/cadLayers';
 import { validateSetCurrent } from './surveyCad/LayerPanel.guards';
@@ -55,7 +61,6 @@ import { SurveyCadDraftingPanel, type SurveyCadDraftingTab } from './surveyCad/S
 import { SurveyPointGroupManager } from './surveyCad/SurveyPointGroupManager';
 import { SurveyPointLabelStyleManager } from './surveyCad/SurveyPointLabelStyleManager';
 import { SurveyPointStyleManager } from './surveyCad/SurveyPointStyleManager';
-import { cloneSampleCatalog } from './surveyCad/cloneSampleCatalog';
 import { ExportCenterPanel } from './surveyCad/ExportCenterPanel';
 import SurveyCadWorkspaceSurface from './SurveyCadWorkspaceSurface';
 import { useSurveyCadCommandDisplay } from './useSurveyCadCommandDisplay';
@@ -301,40 +306,12 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
   const [reverseDirectionModifier, setReverseDirectionModifier] = useState(false);
   const [draftingPanelOpen, setDraftingPanelOpen] = useState(false);
   const [draftingInitialTab, setDraftingInitialTab] = useState<SurveyCadDraftingTab>('SHEETS');
+  // Phase 18E — Toolspace/ribbon focus target inside the F2F panel
+  // (catalog section / review step / regen / import / export). Session-only.
+  const [f2fSection, setF2fSection] = useState<string | null>(null);
   const [exportCenterOpen, setExportCenterOpen] = useState(false);
   // Phase 18D — survey style/group manager dialog (one at a time).
   const [surveyManager, setSurveyManager] = useState<{ kind: SurveyManagerKind; selectedId?: string } | null>(null);
-  // Workspace-owned active feature catalog: the F2F panel edits it and the
-  // Export Center catalog tab exports exactly this object.
-  const [featureCatalog, setFeatureCatalog] = useState(cloneSampleCatalog);
-  const featureCatalogRef = useRef(featureCatalog);
-  // Catalog edits mark a linked project stale (no regeneration): the edit
-  // is the only moment the UI knows the generation inputs changed, and the
-  // rerun subscriber cannot see workspace catalog state. Stamping is
-  // idempotent; the workspace adopts the stamped document as its history
-  // baseline like any other external document update.
-  const handleFeatureCatalogChange = (next: FeatureCodeCatalog) => {
-    const change = classifyCatalogChange(featureCatalogRef.current, next);
-    featureCatalogRef.current = next;
-    setFeatureCatalog(next);
-    // NOTE: intentionally not via linkedRerunSync (which pulls cadLabelEngine
-    // into this graph and trips the cadCogoParcel* star-export cycle —
-    // cadCogoParcelGeometry * cadCogoParcelDiagnostics *
-    // cadCogoParcelLineworkDiagnostics resolve undefined when entered from
-    // that side). stampCatalogStaleStatus + clone stay on cycle-free edges.
-    if (change) {
-      emitDrawingChange((current) => {
-        if (!current || !current.project.metadata.fieldToFinishLink) return current;
-        const stamped = stampCatalogStaleStatus(current.project, change);
-        if (stamped === current.project) return current;
-        return cloneCadDrawingDocument({
-          ...current,
-          updatedAt: new Date().toISOString(),
-          project: stamped,
-        });
-      });
-    }
-  };
   const cadWorkspace = useSurveyCadWorkspace(
     cadProject,
     activeDrawing.drawingId,
@@ -378,6 +355,48 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
     undo,
     redo,
   } = cadWorkspace;
+  // Phase 18E — drawing-owned active feature catalog, derived from the
+  // HISTORY project (same source the F2F panel renders), never workspace
+  // React state. Absent catalog + no F2F content = starter clone as a
+  // panel-local fallback (never written silently — edits adopt it into the
+  // project). Absent catalog + F2F content = MISSING_LEGACY: surfaced,
+  // never silent SAMPLE.
+  const starterFallback = useMemo(() => cloneFeatureCatalog(STARTER_CATALOG), []);
+  const activeCatalog: FeatureCodeCatalog = activeProject.fieldToFinishCatalog ?? starterFallback;
+  const catalogIsFallback = activeProject.fieldToFinishCatalog === undefined;
+  const catalogStatus = getDrawingCatalogStatus(activeProject);
+  const catalogHasLegacyContent = catalogIsFallback && hasFieldToFinishContent(activeProject);
+  const featureCatalogRef = useRef<FeatureCodeCatalog>(activeCatalog);
+  useEffect(() => {
+    featureCatalogRef.current = activeCatalog;
+  }, [activeCatalog]);
+  // Per-definition GENERATED reference counts (from project provenance) for
+  // the manager's delete warning. Geometry is never deleted with a definition.
+  const f2fReferenceCounts = useMemo(() => {
+    const counts: Record<string, number> = {};
+    for (const entity of activeProject.entities) {
+      const provenance = (entity.metadata as Record<string, unknown> | undefined)?.['provenance'] as
+        | Record<string, unknown>
+        | undefined;
+      if (provenance?.['generatedBy'] !== 'FIELD_TO_FINISH') continue;
+      const defId = provenance?.['featureDefinitionId'];
+      if (typeof defId === 'string' && defId) counts[defId] = (counts[defId] ?? 0) + 1;
+    }
+    return counts;
+  }, [activeProject.entities]);
+  // Catalog edits are PROJECT mutations through history (one
+  // full-catalog-replace transaction, undoable, propagated to the parent
+  // document), not workspace useState. Adopting a fallback writes the
+  // starter clone into the project so the drawing owns it from here on.
+  const handleFeatureCatalogChange = (next: FeatureCodeCatalog) => {
+    const change = classifyCatalogChange(featureCatalogRef.current, next);
+    featureCatalogRef.current = next;
+    cadWorkspace.replaceFieldToFinishCatalog(next, change);
+  };
+  // Drawing-owned F2F control-token aliases (vendor-neutral Token→Canonical).
+  const handleFieldToFinishSettingsChange = (settings: { controlTokenAliases?: Record<string, string> }) => {
+    cadWorkspace.updateFieldToFinishSettings({ ...settings });
+  };
   const copiedEntityIdsRef = useRef<string[]>([]);
   const parcelLayoutHydrationKeyRef = useRef<string | null>(null);
   useEffect(() => {
@@ -644,10 +663,11 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
       stationCount: stationIds.size,
       dependencyStatus: dependencySummary.status,
       survey: buildCadSurveySnapshot(activeProject, selectedEntityIds),
+      f2f: buildCadF2FSnapshot(activeProject, activeCatalog, catalogStatus),
       availableCommands: shellAvailableCommands,
     };
   }, [
-    shellLink, activeDrawing, activeProject, selectionCount, selectedEntityIds, selectedEntities,
+    shellLink, activeDrawing, activeProject, activeCatalog, catalogStatus, selectionCount, selectedEntityIds, selectedEntities,
     propertiesPanelState, activeCommandKey, statusText, cadWorkspace, stationIds, dependencySummary, units,
     shellAvailableCommands,
   ]);
@@ -694,6 +714,7 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
         }
         if (kind === 'f2f') {
           setDraftingInitialTab('FIELD_TO_FINISH');
+          setF2fSection(selectedId ?? null);
           setDraftingPanelOpen(true);
           return;
         }
@@ -857,15 +878,22 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
             }}
             onClose={() => setDraftingPanelOpen(false)}
             onCommitFieldToFinishPayload={cadWorkspace.commitFieldToFinishPayload}
-            catalog={featureCatalog}
+            catalog={activeCatalog}
             onCatalogChange={handleFeatureCatalogChange}
+            catalogStatus={catalogStatus}
+            catalogIsFallback={catalogIsFallback}
+            catalogHasLegacyContent={catalogHasLegacyContent}
+            referenceCounts={f2fReferenceCounts}
+            fieldToFinishSettings={activeProject.fieldToFinishSettings}
+            onFieldToFinishSettingsChange={handleFieldToFinishSettingsChange}
+            f2fSection={f2fSection}
             adjustmentSource={adjustmentSource}
           />
         ) : null}
         {surveyManager?.kind === 'point-styles' ? (
           <SurveyPointStyleManager
             project={activeProject}
-            catalog={featureCatalog}
+            catalog={activeCatalog}
             onSurveyCommand={(command) => cadWorkspace.runLayerCommand(command)}
             onCatalogRewire={(table, fromId, toId) => {
               handleFeatureCatalogChange({
@@ -886,7 +914,7 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
         {surveyManager?.kind === 'point-label-styles' ? (
           <SurveyPointLabelStyleManager
             project={activeProject}
-            catalog={featureCatalog}
+            catalog={activeCatalog}
             onSurveyCommand={(command) => cadWorkspace.runLayerCommand(command)}
             onCatalogRewire={(table, fromId, toId) => {
               handleFeatureCatalogChange({
@@ -915,7 +943,9 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
         {exportCenterOpen ? (
           <ExportCenterPanel
             drawing={activeDrawing}
-            catalog={featureCatalog}
+            // MISSING_LEGACY drawings have no embedded catalog: export no
+            // catalog rather than presenting the starter fallback as theirs.
+            catalog={catalogHasLegacyContent ? null : activeCatalog}
             resultIdentity={resultDependencyIdentity}
             stationIds={stationIds}
             f2fLinkStatus={f2fLinkStatus}
