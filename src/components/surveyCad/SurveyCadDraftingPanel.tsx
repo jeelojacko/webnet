@@ -27,6 +27,13 @@ interface SurveyCadDraftingPanelProps {
   /** Workspace-owned active catalog, shared with the Export Center. */
   catalog?: FeatureCodeCatalog;
   onCatalogChange?: (_catalog: FeatureCodeCatalog) => void;
+  catalogStatus?: 'READY' | 'MISSING_LEGACY';
+  catalogIsFallback?: boolean;
+  catalogHasLegacyContent?: boolean;
+  referenceCounts?: Record<string, number>;
+  fieldToFinishSettings?: { controlTokenAliases?: Record<string, string> };
+  onFieldToFinishSettingsChange?: (_settings: { controlTokenAliases?: Record<string, string> }) => void;
+  f2fSection?: string | null;
   /** Latest successful production run; enables the explicit adjustment-linked commit. */
   adjustmentSource?: SuccessfulAdjustmentRunInfo | null;
 }
@@ -42,6 +49,13 @@ export const SurveyCadDraftingPanel = ({
   onCommitFieldToFinishPayload,
   catalog,
   onCatalogChange,
+  catalogStatus = 'READY',
+  catalogIsFallback = false,
+  catalogHasLegacyContent = false,
+  referenceCounts = {},
+  fieldToFinishSettings,
+  onFieldToFinishSettingsChange,
+  f2fSection = null,
   adjustmentSource = null,
 }: SurveyCadDraftingPanelProps): React.JSX.Element => {
   const [tab, setTab] = useState<SurveyCadDraftingTab>(initialTab);
@@ -120,7 +134,7 @@ export const SurveyCadDraftingPanel = ({
         )
       ) : tab === 'FIELD_TO_FINISH' ? (
         onCommitFieldToFinishPayload ? (
-          <SurveyCadFieldToFinishPanel project={project} onCommitPayload={onCommitFieldToFinishPayload} catalog={catalog} onCatalogChange={onCatalogChange} adjustmentSource={adjustmentSource} />
+          <SurveyCadFieldToFinishPanel project={project} onCommitPayload={onCommitFieldToFinishPayload} catalog={catalog} onCatalogChange={onCatalogChange} adjustmentSource={adjustmentSource} catalogStatus={catalogStatus} catalogIsFallback={catalogIsFallback} catalogHasLegacyContent={catalogHasLegacyContent} referenceCounts={referenceCounts} fieldToFinishSettings={fieldToFinishSettings} onFieldToFinishSettingsChange={onFieldToFinishSettingsChange} f2fSection={f2fSection} />
         ) : (
           <p className="text-[12px] text-slate-400">
             Field-to-Finish commit is unavailable in this context.

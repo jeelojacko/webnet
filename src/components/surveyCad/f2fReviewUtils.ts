@@ -1,4 +1,4 @@
-import { resolveControlToken } from '../../engine/fieldToFinish/catalogIo';
+import { resolveControlToken, type ControlTokenAliasProfile } from '../../engine/fieldToFinish/catalogIo';
 import { buildCodeIndex, matchCodeToken } from '../../engine/fieldToFinish/codeMatching';
 import type { FeatureCodeCatalog } from '../../engine/fieldToFinish/featureCatalog';
 import type { FieldLineworkControl } from '../../engine/fieldToFinish/featureMetadata';
@@ -35,6 +35,7 @@ const splitRawTokens = (raw: string | undefined): string[] =>
 export const findInvalidControlTokens = (
   rawCodeText: string | undefined,
   catalog: FeatureCodeCatalog,
+  aliases: ControlTokenAliasProfile = {},
 ): string[] => {
   const index = buildCodeIndex(catalog.definitions, catalog.aliases);
   return splitRawTokens(rawCodeText).filter((token) => {
@@ -43,7 +44,7 @@ export const findInvalidControlTokens = (
       const base = token.replace(/\d+$/, '');
       if (matchCodeToken(base, index) !== undefined) return false;
     }
-    if (resolveControlToken(token, {}) !== undefined) return false;
+    if (resolveControlToken(token, aliases) !== undefined) return false;
     return true;
   });
 };
@@ -66,6 +67,7 @@ const normalizeReviewEntry = (
   givenInstance: string | undefined,
   givenControls: readonly FieldLineworkControl[] | undefined,
   index: ReadonlyMap<string, string>,
+  aliases: ControlTokenAliasProfile = {},
 ): NormalizedReviewCode[] => {
   if (givenControls !== undefined || givenInstance !== undefined) {
     return [{
@@ -85,7 +87,7 @@ const normalizeReviewEntry = (
       parsed.push({ code: split[1], ...(split[2] ? { instance: split[2] } : {}), controls: [] });
       continue;
     }
-    const control = resolveControlToken(segment, {});
+    const control = resolveControlToken(segment, aliases);
     const current = parsed[parsed.length - 1];
     if (control !== undefined && current !== undefined) {
       current.controls.push(control);
@@ -99,23 +101,25 @@ const normalizeReviewEntry = (
 const normalizedCodesOf = (
   point: FieldToFinishCadPoint,
   index: ReadonlyMap<string, string>,
+  aliases: ControlTokenAliasProfile = {},
 ): NormalizedReviewCode[] =>
-  point.codes.flatMap((entry) => normalizeReviewEntry(entry.code, entry.instance, entry.controls, index));
+  point.codes.flatMap((entry) => normalizeReviewEntry(entry.code, entry.instance, entry.controls, index, aliases));
 
 export const buildF2FReviewRows = (
   points: readonly FieldToFinishCadPoint[],
   catalog: FeatureCodeCatalog,
+  aliases: ControlTokenAliasProfile = {},
 ): F2FReviewRow[] => {
   const index = buildCodeIndex(catalog.definitions, catalog.aliases);
   return points.map((point) => {
-    const normalized = normalizedCodesOf(point, index);
+    const normalized = normalizedCodesOf(point, index, aliases);
     const codes = normalized.map((entry) => entry.code);
     const matched = codes.some(
       (code) =>
         matchCodeToken(code, index) !== undefined ||
         (/^[^\d\s]+\d+$/.test(code) && matchCodeToken(code.replace(/\d+$/, ''), index) !== undefined),
     );
-    const invalid = findInvalidControlTokens(point.rawCodeText, catalog);
+    const invalid = findInvalidControlTokens(point.rawCodeText, catalog, aliases);
     const warnings: string[] = [];
     if (codes.length > 0 && !matched) warnings.push('Unmapped Code');
     if (invalid.length > 0) warnings.push(`Invalid control: ${invalid.join(', ')}`);
@@ -136,8 +140,9 @@ export const buildF2FReviewRows = (
 export const summarizeF2FReview = (
   points: readonly FieldToFinishCadPoint[],
   catalog: FeatureCodeCatalog,
+  aliases: ControlTokenAliasProfile = {},
 ): F2FReviewSummary => {
-  const rows = buildF2FReviewRows(points, catalog);
+  const rows = buildF2FReviewRows(points, catalog, aliases);
   const index = buildCodeIndex(catalog.definitions, catalog.aliases);
   const linework = generateLinework(
     points.map((point) => ({
@@ -146,7 +151,7 @@ export const summarizeF2FReview = (
       ...(point.sourceLine !== undefined ? { sourceLine: point.sourceLine } : {}),
       feature: {
         rawCodeText: point.rawCodeText,
-        codes: normalizedCodesOf(point, index).map((code) => ({
+        codes: normalizedCodesOf(point, index, aliases).map((code) => ({
           code: code.code,
           rawCode: code.code,
           role: 'both' as const,

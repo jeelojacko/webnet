@@ -71,7 +71,7 @@ const renderPanel = async (
       />,
     );
   });
-  await clickByText(element, 'tab', 'Import review');
+  await clickByText(element, 'tab', 'Load/Review');
   await act(async () => {
     const area = element.querySelector(
       'textarea[aria-label="Coded point CSV"]',
@@ -83,7 +83,7 @@ const renderPanel = async (
     element.querySelector('button[data-f2f-import-run]')
       ?.dispatchEvent(new MouseEvent('click', { bubbles: true }));
   });
-  await clickByText(element, 'tab', 'Preview & commit');
+  await clickByText(element, 'tab', 'Commit');
   return { element, payloads, cleanup: () => { root.unmount(); element.remove(); } };
 };
 
