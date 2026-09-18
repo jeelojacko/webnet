@@ -1,6 +1,7 @@
 /** @vitest-environment jsdom */
 
 import React, { act } from 'react';
+import { computeFeatureCatalogRevision } from '../src/engine/fieldToFinish/catalogRevision';
 import { createRoot } from 'react-dom/client';
 import { describe, expect, it, vi } from 'vitest';
 
@@ -43,6 +44,8 @@ const catalog: FeatureCodeCatalog = {
   ],
   aliases: [],
 };
+
+const revision = computeFeatureCatalogRevision(catalog);
 
 const code = (codeText: string, controls?: FieldLineworkControl[]): FieldToFinishCadPoint['codes'] =>
   [{ code: codeText, ...(controls ? { controls } : {}) }];
@@ -158,7 +161,7 @@ describe('cad f2f linked rerun sync', () => {
       result,
       inputFingerprint: 'in-2',
       settingsFingerprint: 'set-2',
-      catalogRevision: '3',
+      catalogRevision: revision,
       sourceRecordIds: linkRecords,
     });
 
@@ -193,7 +196,7 @@ describe('cad f2f linked rerun sync', () => {
       result: baseResult(),
       inputFingerprint: 'in-1',
       settingsFingerprint: 'set-1',
-      catalogRevision: '3',
+      catalogRevision: revision,
       sourceRecordIds: linkRecords,
     });
     expect(first.changed).toBe(false);
@@ -205,7 +208,7 @@ describe('cad f2f linked rerun sync', () => {
       result: baseResult(),
       inputFingerprint: 'in-1',
       settingsFingerprint: 'set-1',
-      catalogRevision: '3',
+      catalogRevision: revision,
       sourceRecordIds: linkRecords,
     });
     expect(second.project).toBe(first.project);
@@ -225,7 +228,7 @@ describe('cad f2f linked rerun sync', () => {
       inputFingerprint: 'in-1',
       settingsFingerprint: 'set-1',
       resultFingerprint: 'fnv1a:result-1',
-      catalogRevision: '3',
+      catalogRevision: revision,
       sourceRecordIds: linkRecords,
     });
     expect(outcome.changed).toBe(false);
@@ -244,7 +247,7 @@ describe('cad f2f linked rerun sync', () => {
       inputFingerprint: 'in-1',
       settingsFingerprint: 'set-1',
       resultFingerprint: 'fnv1a:result-1',
-      catalogRevision: '3',
+      catalogRevision: revision,
       sourceRecordIds: linkRecords,
     });
     expect(preserved.status).toBe('CATALOG_CHANGED');
@@ -307,7 +310,7 @@ describe('cad f2f linked rerun sync', () => {
       result: baseResult({ P5: station(6, 7, 12.5) }),
       inputFingerprint: 'in-2',
       settingsFingerprint: 'set-2',
-      catalogRevision: '3',
+      catalogRevision: revision,
       sourceRecordIds: project.metadata.fieldToFinishLink?.sourceRecordIds ?? [],
     });
     expect(outcome.updated).toEqual(['P5']);
@@ -331,7 +334,7 @@ describe('cad f2f linked rerun sync', () => {
       result,
       inputFingerprint: 'in-2',
       settingsFingerprint: 'set-2',
-      catalogRevision: '3',
+      catalogRevision: revision,
       sourceRecordIds: project.metadata.fieldToFinishLink?.sourceRecordIds ?? [],
     });
     expect(outcome.status).toBe('CURRENT');
@@ -350,7 +353,7 @@ describe('cad f2f linked rerun sync', () => {
       result: baseResult({ P1: station(1, 1, 10), P2: station(99, 99, 11) }),
       inputFingerprint: 'in-2',
       settingsFingerprint: 'set-2',
-      catalogRevision: '3',
+      catalogRevision: revision,
       sourceRecordIds: project.metadata.fieldToFinishLink?.sourceRecordIds ?? [],
     });
     expect(outcome.status).toBe('MANUAL_CONFLICT');
@@ -368,7 +371,7 @@ describe('cad f2f linked rerun sync', () => {
       result: baseResult({ P5: station(50, 50, 12.5) }),
       inputFingerprint: 'in-2',
       settingsFingerprint: 'set-2',
-      catalogRevision: '3',
+      catalogRevision: revision,
       sourceRecordIds: project.metadata.fieldToFinishLink?.sourceRecordIds ?? [],
     });
     expect(outcome.status).toBe('CURRENT');
@@ -383,7 +386,7 @@ describe('cad f2f linked rerun sync', () => {
       result,
       inputFingerprint: 'in-2',
       settingsFingerprint: 'set-2',
-      catalogRevision: '3',
+      catalogRevision: revision,
       sourceRecordIds: project.metadata.fieldToFinishLink?.sourceRecordIds ?? [],
     });
     expect(outcome.status).toBe('MISSING_SOURCE');
@@ -416,7 +419,7 @@ describe('cad f2f linked rerun sync', () => {
       result: baseResult({ P9: station(1, 2, 3) }),
       inputFingerprint: 'in-2',
       settingsFingerprint: 'set-2',
-      catalogRevision: '3',
+      catalogRevision: revision,
       sourceRecordIds: linkRecords,
     });
     expect(added.status).toBe('SOURCE_TOPOLOGY_CHANGED');
@@ -435,7 +438,7 @@ describe('cad f2f linked rerun sync', () => {
       result: baseResult(),
       inputFingerprint: 'in-2',
       settingsFingerprint: 'set-2',
-      catalogRevision: '3',
+      catalogRevision: revision,
       sourceRecordIds: [...linkRecords, 'extra-record'],
     });
     expect(metadataChanged.status).toBe('FEATURE_METADATA_CHANGED');
@@ -456,7 +459,7 @@ describe('cad f2f linked rerun sync', () => {
       result: baseResult({ P2: station(12, 3, 15) }),
       inputFingerprint: 'in-2',
       settingsFingerprint: 'set-2',
-      catalogRevision: '3',
+      catalogRevision: revision,
       sourceRecordIds: stale.metadata.fieldToFinishLink?.sourceRecordIds ?? [],
     });
     expect(moved.changed).toBe(true);
@@ -474,7 +477,7 @@ describe('cad f2f linked rerun sync', () => {
       result: baseResult({ P2: station(12, 3, 15) }),
       inputFingerprint: 'in-2',
       settingsFingerprint: 'set-2',
-      catalogRevision: '3',
+      catalogRevision: revision,
       sourceRecordIds: masked.metadata.fieldToFinishLink?.sourceRecordIds ?? [],
     });
     expect(conflicted.status).toBe('MANUAL_CONFLICT');
@@ -520,7 +523,7 @@ describe('cad f2f linked rerun sync', () => {
       result: baseResult(),
       inputFingerprint: 'in-1',
       settingsFingerprint: 'set-2',
-      catalogRevision: '3',
+      catalogRevision: revision,
       sourceRecordIds: project.metadata.fieldToFinishLink?.sourceRecordIds ?? [],
     });
     expect(outcome.status).toBe('CURRENT');

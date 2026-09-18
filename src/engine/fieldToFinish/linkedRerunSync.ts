@@ -150,7 +150,7 @@ export interface AdjustmentRerunSyncInput {
   settingsFingerprint?: string;
   /** Authoritative revision for the link; preferred over the legacy input:settings composite. */
   resultFingerprint?: string;
-  /** Current catalog version; mismatch vs link stamps CATALOG_CHANGED. */
+  /** Current catalog content revision (drawingCatalogRevision); mismatch vs link stamps CATALOG_CHANGED. */
   catalogRevision?: string;
   /** Current feature source-record ids; mismatch stamps FEATURE_METADATA_CHANGED. */
   sourceRecordIds?: readonly string[];

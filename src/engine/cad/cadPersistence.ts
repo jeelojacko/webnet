@@ -13,6 +13,9 @@ import { backfillCadProjectStandards } from './cadLayers';
 import { backfillCadPointLabelStyles, cloneCadPointLabelStyles } from './cadPointLabelStyles';
 import { backfillCadPointGroups, cloneCadPointGroups, migrateLegacyPointGroups } from './cadPointGroups';
 import { backfillCadPointStyles, cloneCadPointStyles, migrateLegacySurveyPointStyles } from './cadPointStyles';
+import { cloneFieldToFinishSettings } from '../fieldToFinish/catalogIo';
+import { backfillDrawingCatalog } from '../fieldToFinish/drawingCatalog';
+import { cloneFeatureCatalog } from '../fieldToFinish/featureCatalog';
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === 'object' && value != null && !Array.isArray(value);
@@ -155,6 +158,9 @@ export const cloneCadProject = (project: CadProject): CadProject => ({
   // JSON.stringify project signatures are key-order-sensitive, so clone
   // must not move the table or the persistence sync guard never settles.
   ...(project.pointGroups != null ? { pointGroups: cloneCadPointGroups(project.pointGroups) } : {}),
+  // Phase 18E: drawing-owned F2F catalog + settings, same trailing rule.
+  ...(project.fieldToFinishCatalog != null ? { fieldToFinishCatalog: cloneFeatureCatalog(project.fieldToFinishCatalog) } : {}),
+  ...(project.fieldToFinishSettings != null ? { fieldToFinishSettings: cloneFieldToFinishSettings(project.fieldToFinishSettings) } : {}),
 });
 
 const cloneParcelLayoutSettings = (
@@ -219,15 +225,17 @@ export const sanitizeSurveyCadPersistedState = (
     // Load-time standards backfill: idempotent, no legacy visual change.
     // Point-style migration seeds defaults + compat base refs (same marker);
     // point-group migration seeds the appearance-neutral All/Control groups.
+    // 18E: catalog backfill seeds starter (no F2F history) or preserves
+    // MISSING_LEGACY (F2F content, no catalog) — never invents authority.
     const migrated = migrateLegacyPointGroups(migrateLegacySurveyPointStyles(cloned.project));
     return {
       ...cloned,
-      project: backfillCadProjectStandards({
+      project: backfillDrawingCatalog(backfillCadProjectStandards({
         ...migrated,
         pointStyles: cloneCadPointStyles(backfillCadPointStyles(migrated.pointStyles)),
         labelStyles: cloneCadPointLabelStyles(backfillCadPointLabelStyles(migrated.labelStyles)),
         pointGroups: cloneCadPointGroups(backfillCadPointGroups(migrated.pointGroups)),
-      }),
+      })),
     };
   } catch {
     return undefined;

@@ -1,4 +1,6 @@
 import type { ParseOptions, StationErrorEllipse, StationId, UnitsMode } from '../../types';
+import type { FieldToFinishSettings } from '../fieldToFinish/catalogIo';
+import type { FeatureCodeCatalog } from '../fieldToFinish/featureCatalog';
 import type { FieldToFinishLink } from '../fieldToFinish/linkedSync';
 import type { CadCogoComputation } from './cadCogoTypes';
 import type { CadDisplayPoint } from './cadDisplayTypes';
@@ -385,6 +387,19 @@ export interface CadProject {
    * Optional so legacy files stay schema-compatible; load paths backfill
    * the two seed groups. Array order is the priority tiebreak. */
   pointGroups?: CadPointGroup[];
+  /**
+   * Phase 18E: drawing-owned F2F feature catalog (authoritative; workspace
+   * state never persists). Optional so legacy files open; load paths seed
+   * the starter catalog, or leave MISSING_LEGACY when F2F content exists
+   * without a catalog. Trailing: clone/migrate keep this last — project
+   * signatures are key-order-sensitive JSON.stringify.
+   */
+  fieldToFinishCatalog?: FeatureCodeCatalog;
+  /**
+   * Phase 18E: drawing-owned F2F settings (control-token aliases).
+   * Optional; load paths backfill {}. Never part of the catalog revision.
+   */
+  fieldToFinishSettings?: FieldToFinishSettings;
   entities: CadEntity[];
   cogoComputations: CadCogoComputation[];
   bounds: CadBounds | null;
