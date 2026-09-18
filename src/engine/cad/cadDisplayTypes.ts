@@ -84,6 +84,12 @@ export interface CadDisplayScene {
    * Export scenes ignore this field (surfaces are model-only deliverables).
    */
   surfaceLayers?: CadSurfaceDisplayLayer[];
+  /**
+   * Phase 18I — derived TIN-to-TIN volume layers (one aggregated CUT path
+   * + one FILL path per CURRENT volume, from cached display regions —
+   * never CAD entities). Export scenes ignore this field.
+   */
+  volumeLayers?: import('./cadVolumeView').CadVolumeDisplayLayer[];
 }
 
 /** Phase 18H — one derived contour label (viewport-ready, display only). */

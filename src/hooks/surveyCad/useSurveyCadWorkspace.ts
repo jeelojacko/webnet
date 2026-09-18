@@ -72,6 +72,13 @@ export const useSurveyCadWorkspace = (
     version: number;
     getContours: (_surfaceId: string) => SurfaceContourDisplayInput | null;
   },
+  // Phase 18I: session volume cache (+ TIN cache for CURRENT gating).
+  // Absent = no volume display. Version tag re-renders on volume state changes.
+  surfaceVolumeInputs?: {
+    version: number;
+    tinCache: CadSurfaceCache;
+    volumeCache: import('../../engine/cad/surfaceVolumeCache').CadSurfaceVolumeCache;
+  },
 ): UseSurveyCadWorkspaceResult => {
   const { history, historyRef, applyHistoryUpdate: applyHistoryUpdateBase } = useSurveyCadWorkspaceHistory(
     baseProject,
@@ -124,9 +131,17 @@ export const useSurveyCadWorkspace = (
                   surfaceContourInputs.getContours(surfaceId) ?? undefined,
               }
             : {}),
+          ...(surfaceVolumeInputs
+            ? {
+                surfaceVolume: {
+                  tinCache: surfaceVolumeInputs.tinCache,
+                  volumeCache: surfaceVolumeInputs.volumeCache,
+                },
+              }
+            : {}),
         }),
       ),
-    [cadProject, lineweightDisplay, surfaceCache, surfaceRevisionIndex, surfaceContourInputs],
+    [cadProject, lineweightDisplay, surfaceCache, surfaceRevisionIndex, surfaceContourInputs, surfaceVolumeInputs],
   );
   // Retire selection of newly hidden ids so grips never float on invisible geometry.
   useEffect(() => {

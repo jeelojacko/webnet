@@ -40,6 +40,17 @@ const stubActions = (): CadShellActions & { calls: string[] } => {
       return true;
     },
     selectSurface: (id) => void calls.push(`surface-select:${id}`),
+    selectVolume: (id) => void calls.push(`volume-select:${id}`),
+    requestVolume: (id) => {
+      calls.push(`volume-calc:${id}`);
+      return '';
+    },
+    startVolumePick: (id) => void calls.push(`volume-pick:${id}`),
+    queryVolumeDifference: (id) => {
+      calls.push(`volume-diff:${id}`);
+      return null;
+    },
+    calculateSelectedVolume: () => void calls.push('volume-calc-selected'),
     startSurfacePick: (id) => void calls.push(`surface-pick:${id}`),
     querySurfaceElevation: (id) => {
       calls.push(`surface-elev:${id}`);

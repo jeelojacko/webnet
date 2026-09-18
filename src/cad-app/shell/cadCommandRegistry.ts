@@ -121,7 +121,8 @@ export const CAD_SHELL_COMMANDS: CadShellCommandDef[] = [
   action('LAYER', 'Layers', 'Edit', 'Open the Layer Properties Manager.', undefined),
   // Phase 18F — surface commands (definition edits are undoable SURFACE_*
   // transactions; rebuild runs the session mesh builder; inquiry opens the
-  // manager inquiry section). No contour/volume commands in 18F.
+  // manager inquiry section). Phase 18H added contour display; phase 18I
+  // adds volume commands (manager Calculate/report paths, manual only).
   action('SURFACE', 'Surface', 'Surface', 'Open the surface manager.'),
   action('SURFACEMANAGER', 'Surface Manager', 'Surface', 'Open the surface manager.'),
   action('SURFCREATE', 'Create Surface', 'Surface', 'Create a surface (auto name, current layer).'),
@@ -129,6 +130,13 @@ export const CAD_SHELL_COMMANDS: CadShellCommandDef[] = [
   action('SURFELEV', 'Surface Elevation', 'Surface', 'Query surface elevation (manager inquiry).'),
   action('SURFSLOPE', 'Surface Slope', 'Surface', 'Query surface slope/aspect (manager inquiry).'),
   action('SURFCONTOURS', 'Surface Contours', 'Surface', 'Edit contour display style (manager contours section).'),
+  // Phase 18I — volume commands (all route through the surface manager;
+  // Calculate runs the session volume service for the selected volume,
+  // never auto-started, LOCK-gated by the volume transaction path).
+  action('SURFVOLUME', 'Create Volume', 'Surface', 'Create a TIN-to-TIN volume surface (manager).'),
+  action('SURFVOLCALC', 'Calculate Volume', 'Surface', 'Calculate volumes for the selected volume (both sources must be Current).'),
+  action('SURFDIFF', 'Surface Difference', 'Surface', 'Query base/comparison elevations + CUT/FILL verdict (manager).'),
+  action('SURFVOLREPORT', 'Volume Report', 'Surface', 'Download the Volume Summary CSV (Current volumes only, manager).'),
 ];
 
 const COMMAND_BY_KEY = new Map<string, CadShellCommandDef>(
@@ -250,6 +258,14 @@ export const executeShellCommand = (
     case 'SURFSLOPE':
     case 'SURFCONTOURS':
       actions.openSurveyManager('surfaces');
+      return true;
+    case 'SURFVOLUME':
+    case 'SURFDIFF':
+    case 'SURFVOLREPORT':
+      actions.openSurveyManager('surfaces');
+      return true;
+    case 'SURFVOLCALC':
+      actions.calculateSelectedVolume();
       return true;
     default:
       return false;

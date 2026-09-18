@@ -4,6 +4,7 @@ import { trySurfaceCommand, type CadSurfaceRow } from './cadSurfaceSnapshot';
 import { CadSurfaceDefinitionEditor } from './CadSurfaceDefinitionEditor';
 import { CadSurfaceStyleEditor } from './CadSurfaceStyleEditor';
 import { CadSurfaceInquiryPanel } from './CadSurfaceInquiryPanel';
+import { CadVolumeSection } from './CadVolumeManager';
 import { Field, ManagerShell } from '../../components/surveyCad/surveyManagerShared.tsx';
 import { buttonClass, inputClass } from '../../components/surveyCad/surveyManagerShared';
 
@@ -12,6 +13,8 @@ interface CadSurfaceManagerProps {
   actions: CadShellActions;
   initialSelectedId?: string;
   pickArmedFor: string | null;
+  volumePickArmedFor?: string | null;
+  volumePickAnswer?: { volumeId: string; text: string } | null;
   onClose: () => void;
 }
 
@@ -27,6 +30,8 @@ export const CadSurfaceManager: React.FC<CadSurfaceManagerProps> = ({
   actions,
   initialSelectedId,
   pickArmedFor,
+  volumePickArmedFor = null,
+  volumePickAnswer = null,
   onClose,
 }) => {
   const surface = snapshot.surface;
@@ -150,6 +155,12 @@ export const CadSurfaceManager: React.FC<CadSurfaceManagerProps> = ({
           pickArmedFor={pickArmedFor}
         />
       ) : null}
+      <CadVolumeSection
+        snapshot={snapshot}
+        actions={actions}
+        volumePickArmedFor={volumePickArmedFor}
+        volumePickAnswer={volumePickAnswer}
+      />
     </ManagerShell>
   );
 };

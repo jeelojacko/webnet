@@ -2,6 +2,7 @@ import React from 'react';
 import type { CadSnapKind } from '../../engine/cad/cadTypes';
 import type { CadShellActions, CadWorkspaceSnapshot } from './cadShellTypes';
 import type { CadToolspaceTab } from './cadShellTypes';
+import { VolumesNode } from './CadVolumeToolspace';
 
 interface CadToolspaceProps {
   snapshot: CadWorkspaceSnapshot | null;
@@ -209,6 +210,7 @@ const SurveyTab: React.FC<{ snapshot: CadWorkspaceSnapshot | null; actions: CadS
         </>
       ) : null}
       <SurfacesNode snapshot={snapshot} actions={actions} />
+      <VolumesNode snapshot={snapshot} actions={actions} />
       <F2FNode snapshot={snapshot} actions={actions} />
       {menu ? (
         <div role="menu" className="cad-shell-menu" style={{ left: menu.x, top: menu.y, position: 'fixed' }} data-cad-survey-menu>

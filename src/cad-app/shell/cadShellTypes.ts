@@ -13,6 +13,7 @@ import type {
 import type { CadCommand } from '../../engine/cad/cadTransactions.types';
 import type { BreaklineEntityPreview, BoundarySourcePreview } from '../../engine/cad/cadSurfaceView';
 import type { CadSurfaceSnapshot } from './cadSurfaceSnapshot';
+import type { CadVolumeSnapshot } from './cadVolumeSnapshot';
 import type { ActiveCommandKey } from '../../hooks/surveyCad/useSurveyCadCommandTypes';
 import type { DraftSheet } from '../../engine/cad/cadDraftTypes';
 
@@ -158,6 +159,8 @@ export interface CadWorkspaceSnapshot {
   survey: CadSurveySnapshot | null;
   /** Phase 18F — TIN surfaces (definitions + session mesh status). */
   surface: CadSurfaceSnapshot | null;
+  /** Phase 18I — TIN-to-TIN volume relationships (derived status + quantities). */
+  volume: CadVolumeSnapshot | null;
   /** Phase 18E — F2F catalog + provenance summary (derived, no duplicate state). */
   f2f: CadF2FSnapshot | null;
   /** UI command keys with a live starter in the mounted workspace. */
@@ -196,6 +199,24 @@ export interface CadShellActions {
   runSurveyCommand: (_command: CadCommand) => boolean;
   /** Phase 18F — select a surface (Toolspace/manager/viewport converge here). */
   selectSurface: (_surfaceId: string | null) => void;
+  /** Phase 18I — select a volume surface (Toolspace/manager converge here). */
+  selectVolume: (_volumeId: string | null) => void;
+  /**
+   * Phase 18I — manual volume calculation through the session volume
+   * service (explicit Calculate/Recalculate only; never auto-started).
+   * Returns display text for the command/history seam.
+   */
+  requestVolume: (_volumeId: string) => string;
+  /**
+   * Phase 18I — arm a one-shot viewport pick for difference inquiry
+   * (null disarms). The picked world point resolves to base/comparison
+   * elevations + CUT/FILL verdict text.
+   */
+  startVolumePick: (_volumeId: string | null) => void;
+  /** Phase 18I — E/N inputs resolve to difference display text (pure read). */
+  queryVolumeDifference: (_volumeId: string, _x: number, _y: number) => string | null;
+  /** Phase 18I — manual Calculate for the selected volume (ribbon/registry path). */
+  calculateSelectedVolume: () => void;
   /**
    * Phase 18F — arm a one-shot viewport pick for surface inquiry
    * (null disarms). The picked world point resolves to E/N/elevation text.

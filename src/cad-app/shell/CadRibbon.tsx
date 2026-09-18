@@ -105,13 +105,19 @@ export const CadRibbon: React.FC<CadRibbonProps> = ({ snapshot, actions, collaps
  * Rebuild All), INQUIRY (Surface Elevation via the manager), STYLE
  * (Surface Styles via the manager). Phase 18H adds a DISPLAY group with a
  * Contours toggle (flips showContours on the selected surface's style via
- * the SURFACE_STYLE_UPDATE undo path). No Volumes/Grading/Watershed.
+ * the SURFACE_STYLE_UPDATE undo path). Phase 18I adds a VOLUME group
+ * (Create Volume, Calculate, Difference Inquiry, Volume Report) backed by
+ * the session SurfaceVolumeService; manual Calculate only. No Grading/Watershed.
  */
 const CadSurfaceRibbonGroup: React.FC<{
   snapshot: CadWorkspaceSnapshot | null;
   actions: CadShellActions | null;
 }> = ({ snapshot, actions }) => {
   const selectedSurfaceId = snapshot?.surface?.selectedSurfaceId ?? null;
+  // Manual Calculate gating mirrors the manager button: both source TINs Current.
+  const canCalculateVolume = snapshot?.volume?.volumes.some(
+    (row) => row.id === snapshot.volume?.selectedVolumeId && row.calculable,
+  ) === true;
   const create = (): void => {
     try {
       actions?.runSurveyCommand({ key: 'SURFACE_CREATE' });
@@ -169,6 +175,12 @@ const CadSurfaceRibbonGroup: React.FC<{
       ])}
       {group('Display', [
         { key: 'contours-toggle', label: 'Contours', hint: 'Toggle contour display on the selected surface style (manager).', disabled: !ready, onClick: () => openManager(selectedSurfaceId ?? undefined) },
+      ])}
+      {group('Volume', [
+        { key: 'create-volume', label: 'Create Volume', hint: 'Create a TIN-to-TIN volume surface (manager).', disabled: !ready, onClick: () => openManager(selectedSurfaceId ?? undefined) },
+        { key: 'calculate-volume', label: 'Calculate', hint: 'Calculate volumes for the selected volume surface (both sources must be Current).', disabled: !ready || !canCalculateVolume, onClick: () => actions?.calculateSelectedVolume() },
+        { key: 'difference-inquiry', label: 'Difference Inquiry', hint: 'Query base/comparison elevations + CUT/FILL verdict (manager).', disabled: !ready, onClick: () => openManager(selectedSurfaceId ?? undefined) },
+        { key: 'volume-report', label: 'Volume Report', hint: 'Download the Volume Summary CSV (Current volumes only, manager).', disabled: !ready, onClick: () => openManager(selectedSurfaceId ?? undefined) },
       ])}
     </>
   );
