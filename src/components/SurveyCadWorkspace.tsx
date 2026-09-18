@@ -41,6 +41,18 @@ import type { CadShellLink } from '../cad-app/shell/cadShellLink';
 import type { ActiveCommandKey } from '../hooks/surveyCad/useSurveyCadCommandTypes';
 import type { CadShellActions, CadWorkspaceSnapshot, SurveyManagerKind } from '../cad-app/shell/cadShellTypes';
 import { buildCadSurveySnapshot } from '../cad-app/shell/cadSurveySnapshot';
+import {
+  buildCadSurfaceSnapshot,
+  querySurfaceElevationText,
+  type CadSurfaceInquiry,
+} from '../cad-app/shell/cadSurfaceSnapshot';
+import { CadSurfaceManager } from '../cad-app/shell/CadSurfaceManager';
+import { createCadSurfaceCache } from '../engine/cad/cadSurfaceCache';
+import { buildCadSurface, computeCadSurfaceSourceRevision } from '../engine/cad/cadSurfaces';
+import {
+  describeSelectedBoundaryEntity,
+  describeSelectedBreaklineEntity,
+} from '../engine/cad/cadSurfaceView';
 import { buildCadF2FSnapshot } from './surveyCad/f2fGeneratedSummary';
 import { getCadEntityDisplayLabel } from '../engine/cad/cadEntityNames';
 import { resolveCurrentCadLayerId } from '../engine/cad/cadLayers';
@@ -312,6 +324,19 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
   const [exportCenterOpen, setExportCenterOpen] = useState(false);
   // Phase 18D — survey style/group manager dialog (one at a time).
   const [surveyManager, setSurveyManager] = useState<{ kind: SurveyManagerKind; selectedId?: string } | null>(null);
+  // Phase 18F — surface UI state (all session-only; meshes never persist).
+  const [selectedSurfaceId, setSelectedSurfaceId] = useState<string | null>(null);
+  const [surfacePick, setSurfacePick] = useState<{ surfaceId: string } | null>(null);
+  const [lastSurfaceInquiry, setLastSurfaceInquiry] = useState<CadSurfaceInquiry | null>(null);
+  const [surfaceMeshSessions, setSurfaceMeshSessions] = useState<Record<string, string[]>>({});
+  const surfaceCache = useMemo(
+    () => createCadSurfaceCache(activeDrawing.drawingId),
+    [activeDrawing.drawingId],
+  );
+  const surfaceRevisionIndex = useMemo(
+    () => new Map(Object.entries(surfaceMeshSessions)),
+    [surfaceMeshSessions],
+  );
   const cadWorkspace = useSurveyCadWorkspace(
     cadProject,
     activeDrawing.drawingId,
@@ -321,6 +346,8 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
     showParcelLabels,
     reverseDirectionModifier,
     lineweightDisplay,
+    surfaceCache,
+    surfaceRevisionIndex,
   );
   const {
     cadProject: activeProject,
@@ -664,12 +691,16 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
       dependencyStatus: dependencySummary.status,
       survey: buildCadSurveySnapshot(activeProject, selectedEntityIds),
       f2f: buildCadF2FSnapshot(activeProject, activeCatalog, catalogStatus),
+      surface: buildCadSurfaceSnapshot(activeProject, surfaceCache, selectedSurfaceId, {
+        revisionIndex: surfaceRevisionIndex,
+        lastInquiry: lastSurfaceInquiry,
+      }),
       availableCommands: shellAvailableCommands,
     };
   }, [
     shellLink, activeDrawing, activeProject, activeCatalog, catalogStatus, selectionCount, selectedEntityIds, selectedEntities,
     propertiesPanelState, activeCommandKey, statusText, cadWorkspace, stationIds, dependencySummary, units,
-    shellAvailableCommands,
+    shellAvailableCommands, surfaceCache, surfaceRevisionIndex, selectedSurfaceId, lastSurfaceInquiry,
   ]);
 
   useEffect(() => {
@@ -689,9 +720,85 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
     );
   }, [shellLink, cadWorkspace.activeSnap, cadWorkspace.pointerWorldPoint]);
 
+  /**
+   * Phase 18F — synchronous session rebuild (pure engine build into the
+   * session mesh cache). Never history, never dirty: the mesh is derived
+   * data and the status re-derives CURRENT from the cache hit.
+   * ponytail: main-thread build; move to surfaceWorker when a TIN
+   * profile demands it (protocol + cache guards already exist).
+   */
+  const runSurfaceBuild = (surfaceId: string): string => {
+    const surface = activeProject.surfaces?.find((entry) => entry.id === surfaceId);
+    if (!surface) return 'Surface not found.';
+    const revision = computeCadSurfaceSourceRevision(activeProject, surface);
+    if (surfaceCache.get(surfaceId, revision)) {
+      return `“${surface.name}” is already current.`;
+    }
+    let result;
+    try {
+      result = buildCadSurface(activeProject, surface);
+    } catch (error) {
+      return `“${surface.name}” rebuild failed: ${error instanceof Error ? error.message : 'unknown error'}.`;
+    }
+    if (result.outcome !== 'ok') {
+      const detail = result.reasonCodes.length > 0 ? `: ${result.reasonCodes.join(', ')}` : '.';
+      return result.outcome === 'insufficient'
+        ? `“${surface.name}” has insufficient data${detail}`
+        : `“${surface.name}” build blocked${detail}`;
+    }
+    surfaceCache.set(surfaceId, revision, {
+      revision,
+      points: result.points.map((point) => ({ ...point })),
+      triangles: result.triangles.map((tri) => [tri[0], tri[1], tri[2]] as [number, number, number]),
+      stats: { ...result.stats },
+    });
+    setSurfaceMeshSessions((previous) => ({
+      ...previous,
+      [surfaceId]: [...(previous[surfaceId] ?? []), revision],
+    }));
+    return `“${surface.name}” rebuilt: ${result.stats.triangleCount} triangles from ${result.stats.usedPointCount} points.`;
+  };
+
+  const rebuildAllSurfaces = (): string => {
+    const surfaces = activeProject.surfaces ?? [];
+    if (surfaces.length === 0) return 'No surfaces to rebuild.';
+    let rebuilt = 0;
+    let current = 0;
+    let blocked = 0;
+    for (const surface of surfaces) {
+      const revision = computeCadSurfaceSourceRevision(activeProject, surface);
+      if (surfaceCache.get(surface.id, revision)) {
+        current += 1;
+        continue;
+      }
+      runSurfaceBuild(surface.id);
+      if (surfaceCache.get(surface.id, revision)) rebuilt += 1;
+      else blocked += 1;
+    }
+    return `Rebuilt ${rebuilt}, already current ${current}, ${blocked} not built.`;
+  };
+
+  // Phase 18F — drop session meshes for deleted surfaces (meshes never
+  // persist; the revision index doubles as the known-id set).
   useEffect(() => {
-    if (!shellLink) return;
-    const actions: CadShellActions = {
+    const live = new Set((activeProject.surfaces ?? []).map((entry) => entry.id));
+    setSurfaceMeshSessions((previous) => {
+      const kept: Record<string, string[]> = {};
+      let changed = false;
+      for (const [id, revisions] of Object.entries(previous)) {
+        if (live.has(id)) kept[id] = revisions;
+        else {
+          changed = true;
+          surfaceCache.invalidate(id);
+        }
+      }
+      return changed ? kept : previous;
+    });
+  }, [activeProject.surfaces, surfaceCache]);
+
+  // Phase 18B shell seam (+18F surface actions): shared by the shell link
+  // and workspace-local consumers (surface manager) alike.
+  const shellActions: CadShellActions = {
       startCommand: (key) => {
         const starter = shellStarters[key];
         if (typeof starter !== 'function') return false;
@@ -707,9 +814,26 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
       editField: (entityId, field, value) => cadWorkspace.editPropertiesField(entityId, field, value),
       runLayerCommand: (command) => cadWorkspace.runLayerCommand(command),
       runSurveyCommand: (command) => cadWorkspace.runLayerCommand(command),
+      selectSurface: (surfaceId) => setSelectedSurfaceId(surfaceId),
+      startSurfacePick: (surfaceId) =>
+        setSurfacePick(surfaceId == null ? null : { surfaceId }),
+      querySurfaceElevation: (surfaceId, x, y) => {
+        const text = querySurfaceElevationText(activeProject, surfaceCache, surfaceId, x, y);
+        if (text != null) {
+          const surface = activeProject.surfaces?.find((entry) => entry.id === surfaceId);
+          setLastSurfaceInquiry({ surfaceId, surfaceName: surface?.name ?? surfaceId, x, y, text });
+        }
+        return text;
+      },
+      rebuildSurface: (surfaceId) => runSurfaceBuild(surfaceId),
+      rebuildAllSurfaces: () => rebuildAllSurfaces(),
+      describeBreaklineSource: (allowF2F) =>
+        describeSelectedBreaklineEntity(activeProject, selectedEntityIds, { allowF2F }),
+      describeBoundarySource: () =>
+        describeSelectedBoundaryEntity(activeProject, selectedEntityIds),
       openSurveyManager: (kind, selectedId) => {
         if (kind === 'points') {
-          shellLink.requestToolspaceTab?.('survey');
+          shellLink?.requestToolspaceTab?.('survey');
           return;
         }
         if (kind === 'f2f') {
@@ -740,7 +864,7 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
         if (validateSetCurrent(activeProject.layers, layerId) != null) return false;
         return cadWorkspace.runLayerCommand({ key: 'LAYER_SET_CURRENT', layerId });
       },
-      openLayerManager: () => shellLink.requestLayerManager?.(),
+      openLayerManager: () => shellLink?.requestLayerManager?.(),
       setSnapPreference: (kind, enabled) => cadWorkspace.setSnapPreference(kind, enabled),
       newDrawing: () => handleNewDrawing(),
       openDrawingFile: () => fileInputRef.current?.click(),
@@ -750,9 +874,11 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
       cancelCommand: () => handleEscapeKey(),
       confirmCommandInput: () => handleEnterKey(),
     };
-    shellLink.actions = actions;
+  useEffect(() => {
+    if (!shellLink) return;
+    shellLink.actions = shellActions;
     return () => {
-      if (shellLink.actions === actions) shellLink.actions = null;
+      if (shellLink.actions === shellActions) shellLink.actions = null;
     };
   });
 
@@ -940,6 +1066,15 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
             onClose={() => setSurveyManager(null)}
           />
         ) : null}
+        {surveyManager?.kind === 'surfaces' && shellSnapshot ? (
+          <CadSurfaceManager
+            snapshot={shellSnapshot}
+            actions={shellActions}
+            initialSelectedId={surveyManager.selectedId}
+            pickArmedFor={surfacePick?.surfaceId ?? null}
+            onClose={() => setSurveyManager(null)}
+          />
+        ) : null}
         {exportCenterOpen ? (
           <ExportCenterPanel
             drawing={activeDrawing}
@@ -972,6 +1107,30 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
           onParcelLayoutAutoPreviewStateChange={setParcelLayoutAutoPreviewState}
           onToggleParcelLabels={() => setShowParcelLabels((current) => !current)}
           cloneBounds={cloneBounds}
+          surfacePickActive={surfacePick != null}
+          onSurfacePickPoint={(worldPoint) => {
+            if (!surfacePick) return;
+            const text = querySurfaceElevationText(
+              activeProject,
+              surfaceCache,
+              surfacePick.surfaceId,
+              worldPoint.x,
+              worldPoint.y,
+            );
+            if (text != null) {
+              const surface = activeProject.surfaces?.find((entry) => entry.id === surfacePick.surfaceId);
+              setLastSurfaceInquiry({
+                surfaceId: surfacePick.surfaceId,
+                surfaceName: surface?.name ?? surfacePick.surfaceId,
+                x: worldPoint.x,
+                y: worldPoint.y,
+                text,
+              });
+            }
+            setSurfacePick(null);
+          }}
+          selectedSurfaceId={selectedSurfaceId}
+          onSurfaceClick={(surfaceId) => setSelectedSurfaceId(surfaceId)}
         />
       </div>
     </div>

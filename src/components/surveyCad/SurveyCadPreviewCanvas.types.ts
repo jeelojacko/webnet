@@ -28,6 +28,12 @@ export type SurveyCadPreviewCanvasProps = {
   commandActive: boolean;
   commandEntityOpacityOverrides: Readonly<Record<string, number>>;
   commandPointInputActive: boolean;
+  /** Phase 18F — one-shot inquiry pick (background clicks resolve here). */
+  surfacePickActive?: boolean;
+  onSurfacePickPoint?: (_worldPoint: { x: number; y: number }) => void;
+  /** Phase 18F — surface selection (entity selection untouched). */
+  selectedSurfaceId?: string | null;
+  onSurfaceClick?: (_surfaceId: string) => void;
   consumeLatchedOrActiveSnap: (_extendMode?: boolean) => boolean;
   didDrag: boolean;
   dragState: DragState;

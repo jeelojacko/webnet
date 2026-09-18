@@ -15,7 +15,7 @@ interface CadRibbonProps {
   onToggleCollapsed: () => void;
 }
 
-const RIBBON_TABS = ['Home', 'Survey', 'Output'] as const;
+const RIBBON_TABS = ['Home', 'Survey', 'Surface', 'Output'] as const;
 type RibbonTab = (typeof RIBBON_TABS)[number];
 
 const ribbonTooltip = (def: CadShellCommandDef): string => {
@@ -47,7 +47,9 @@ export const CadRibbon: React.FC<CadRibbonProps> = ({ snapshot, actions, collaps
       ? (['Draw', 'Modify', 'Parcel', 'Edit'] as const)
       : tab === 'Survey'
         ? ([] as const)
-        : (['File'] as const);
+        : tab === 'Surface'
+          ? ([] as const)
+          : (['File'] as const);
   return (
     <div className="cad-shell-ribbon" data-cad-ribbon>
       <div className="cad-shell-ribbon-tabs" role="tablist" aria-label="Ribbon tabs">
@@ -70,6 +72,7 @@ export const CadRibbon: React.FC<CadRibbonProps> = ({ snapshot, actions, collaps
       <div className="cad-shell-ribbon-groups">
         {tab === 'Home' ? <CadLayersGroup snapshot={snapshot} actions={actions} /> : null}
         {tab === 'Survey' ? <CadSurveyGroup snapshot={snapshot} actions={actions} /> : null}
+        {tab === 'Surface' ? <CadSurfaceRibbonGroup snapshot={snapshot} actions={actions} /> : null}
         {groups.map((group) => (
           <div key={group} className="cad-shell-ribbon-group" aria-label={group}>
             <span className="cad-shell-ribbon-group-label">{group}</span>
@@ -93,6 +96,76 @@ export const CadRibbon: React.FC<CadRibbonProps> = ({ snapshot, actions, collaps
         ))}
       </div>
     </div>
+  );
+};
+
+/**
+ * Phase 18F — real SURFACE tab: CREATE (Create Surface), DEFINITION
+ * (definition editors via the manager), BUILD (Rebuild selected +
+ * Rebuild All), INQUIRY (Surface Elevation via the manager), STYLE
+ * (Surface Styles via the manager). No contour/volume buttons in 18F.
+ */
+const CadSurfaceRibbonGroup: React.FC<{
+  snapshot: CadWorkspaceSnapshot | null;
+  actions: CadShellActions | null;
+}> = ({ snapshot, actions }) => {
+  const selectedSurfaceId = snapshot?.surface?.selectedSurfaceId ?? null;
+  const create = (): void => {
+    try {
+      actions?.runSurveyCommand({ key: 'SURFACE_CREATE' });
+    } catch {
+      // Missing executor: registry path reports unavailable; no fake.
+    }
+  };
+  const openManager = (surfaceId?: string): void =>
+    actions?.openSurveyManager('surfaces', surfaceId);
+  const group = (
+    label: string,
+    buttons: Array<{ key: string; label: string; hint: string; disabled: boolean; onClick: () => void }>
+  ): React.ReactNode => (
+    <div className="cad-shell-ribbon-group" aria-label={label}>
+      <span className="cad-shell-ribbon-group-label">{label}</span>
+      <div className="cad-shell-ribbon-buttons">
+        {buttons.map((entry) => (
+          <button
+            key={entry.key}
+            type="button"
+            title={entry.hint}
+            aria-label={entry.label}
+            disabled={entry.disabled}
+            className="cad-shell-ribbon-button"
+            onClick={entry.onClick}
+            data-cad-surface={entry.key}
+          >
+            {entry.label}
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+  const ready = snapshot != null && actions != null;
+  return (
+    <>
+      {group('Create', [
+        { key: 'create', label: 'Create Surface', hint: 'Create a surface (auto name, current layer, UNBUILT).', disabled: !ready, onClick: create },
+      ])}
+      {group('Definition', [
+        { key: 'point-group', label: 'Add Point Group', hint: 'Attach a point group (manager).', disabled: !ready, onClick: () => openManager(selectedSurfaceId ?? undefined) },
+        { key: 'points', label: 'Add Points', hint: 'Add selected XYZ points (manager).', disabled: !ready, onClick: () => openManager(selectedSurfaceId ?? undefined) },
+        { key: 'breakline', label: 'Add Breakline', hint: 'Add a breakline from a point chain or entity (manager).', disabled: !ready, onClick: () => openManager(selectedSurfaceId ?? undefined) },
+        { key: 'boundary', label: 'Add Boundary', hint: 'Add an outer/void boundary (manager).', disabled: !ready, onClick: () => openManager(selectedSurfaceId ?? undefined) },
+      ])}
+      {group('Build', [
+        { key: 'rebuild', label: 'Rebuild', hint: 'Rebuild the selected surface.', disabled: !selectedSurfaceId || !actions, onClick: () => { if (selectedSurfaceId) actions?.rebuildSurface(selectedSurfaceId); } },
+        { key: 'rebuild-all', label: 'Rebuild All', hint: 'Rebuild every surface needing it.', disabled: !ready, onClick: () => actions?.rebuildAllSurfaces() },
+      ])}
+      {group('Inquiry', [
+        { key: 'elevation', label: 'Surface Elevation', hint: 'Query E/N/elevation (manager).', disabled: !ready, onClick: () => openManager(selectedSurfaceId ?? undefined) },
+      ])}
+      {group('Style', [
+        { key: 'styles', label: 'Surface Styles', hint: 'Assign display styles (manager).', disabled: !ready, onClick: () => openManager(selectedSurfaceId ?? undefined) },
+      ])}
+    </>
   );
 };
 

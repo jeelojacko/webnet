@@ -80,6 +80,16 @@ export interface SurveyCadPreviewProps {
   onCommandInputEscape: () => void;
   onEmptyBackgroundDoubleClick?: () => void;
   onZoomExtents: () => void;
+  /**
+   * Phase 18F — surface inquiry pick + surface selection. All optional;
+   * surface layers ride `scene.surfaceLayers` (no scene-type change).
+   * Viewport picks map back to the surface object; CadEntity selection
+   * is never touched by surface clicks.
+   */
+  surfacePickActive?: boolean;
+  onSurfacePickPoint?: (_worldPoint: { x: number; y: number }) => void;
+  selectedSurfaceId?: string | null;
+  onSurfaceClick?: (_surfaceId: string) => void;
 }
 
 export type ScreenBox = {

@@ -1,6 +1,7 @@
 import type { CadSelectionState } from './cadSelection';
 import type { FieldToFinishCadPayload } from '../fieldToFinish/cadGeneration';
 import type { CadBatchCogoDraft } from './cadBatchCogo';
+
 import type {
   CadEntityAppearance,
   CadEntityId,
@@ -15,6 +16,9 @@ import type {
   CadPointStyle,
   CadPointStyleId,
   CadProject,
+  CadSurfaceBoundary,
+  CadSurfaceDefinition,
+  CadSurfaceStyle,
 } from './cadTypes';
 
 export type CadCommandKey =
@@ -75,7 +79,24 @@ export type CadCommandKey =
   | 'F2F_GENERATE'
   | 'SURVEY_POINT_OVERRIDE'
   | 'SURVEY_STYLE_TABLE'
-  | 'SURVEY_GROUP_TABLE';
+  | 'SURVEY_GROUP_TABLE'
+  | 'SURFACE_CREATE'
+  | 'SURFACE_DELETE'
+  | 'SURFACE_RENAME'
+  | 'SURFACE_SET_LAYER_STYLE'
+  | 'SURFACE_ADD_POINT_GROUP'
+  | 'SURFACE_REMOVE_POINT_GROUP'
+  | 'SURFACE_ADD_POINTS'
+  | 'SURFACE_REMOVE_SOURCE'
+  | 'SURFACE_ADD_BREAKLINE'
+  | 'SURFACE_REMOVE_BREAKLINE'
+  | 'SURFACE_ADD_BOUNDARY'
+  | 'SURFACE_REMOVE_BOUNDARY'
+  | 'SURFACE_STYLE_CREATE'
+  | 'SURFACE_STYLE_DUPLICATE'
+  | 'SURFACE_STYLE_RENAME'
+  | 'SURFACE_STYLE_UPDATE'
+  | 'SURFACE_STYLE_DELETE';
 export type CadCommandPhase = 'idle' | 'committed';
 
 export interface CadCommandState {
@@ -374,6 +395,7 @@ export type CadCommand =
         | 'error-ellipses'
         | 'labels'
         | 'parcels'
+        | 'surfaces'
         | 'planning';
     }
   | {
@@ -556,6 +578,101 @@ export type CadCommand =
       key: 'SURVEY_GROUP_TABLE';
       op: 'delete';
       groupId: CadPointGroupId;
+    }
+  | {
+      key: 'SURFACE_CREATE';
+      name?: string;
+      layerId?: CadLayerId;
+      styleId?: string;
+      pointSource?: CadSurfaceDefinition['pointSource'];
+      buildOptions?: CadSurfaceDefinition['buildOptions'];
+    }
+  | {
+      key: 'SURFACE_DELETE';
+      surfaceId: string;
+    }
+  | {
+      key: 'SURFACE_RENAME';
+      surfaceId: string;
+      name: string;
+    }
+  | {
+      key: 'SURFACE_SET_LAYER_STYLE';
+      surfaceId: string;
+      layerId?: CadLayerId;
+      /** Undefined = leave, null = clear, id = set (must exist). */
+      styleId?: string | null;
+    }
+  | {
+      key: 'SURFACE_ADD_POINT_GROUP';
+      surfaceId: string;
+      pointGroupId: string;
+    }
+  | {
+      key: 'SURFACE_REMOVE_POINT_GROUP';
+      surfaceId: string;
+      pointGroupId: string;
+    }
+  | {
+      key: 'SURFACE_ADD_POINTS';
+      surfaceId: string;
+      pointIds: string[];
+    }
+  | {
+      key: 'SURFACE_REMOVE_SOURCE';
+      surfaceId: string;
+    }
+  | {
+      key: 'SURFACE_ADD_BREAKLINE';
+      surfaceId: string;
+      pointIds: string[];
+      name?: string;
+    }
+  | {
+      key: 'SURFACE_REMOVE_BREAKLINE';
+      surfaceId: string;
+      breaklineId: string;
+    }
+  | {
+      key: 'SURFACE_ADD_BOUNDARY';
+      surfaceId: string;
+      kind: CadSurfaceBoundary['type'];
+      sourceEntityId: CadEntityId;
+    }
+  | {
+      key: 'SURFACE_REMOVE_BOUNDARY';
+      surfaceId: string;
+      kind: CadSurfaceBoundary['type'];
+      sourceEntityId?: CadEntityId;
+    }
+  | {
+      key: 'SURFACE_STYLE_CREATE';
+      style: CadSurfaceStyle;
+    }
+  | {
+      key: 'SURFACE_STYLE_DUPLICATE';
+      styleId: string;
+      newId: string;
+      name: string;
+    }
+  | {
+      key: 'SURFACE_STYLE_RENAME';
+      styleId: string;
+      name: string;
+    }
+  | {
+      key: 'SURFACE_STYLE_UPDATE';
+      styleId: string;
+      patch: Pick<
+        CadSurfaceStyle,
+        'color' | 'opacity' | 'showTriangles' | 'showContours' | 'showPoints' | 'showBoundary'
+      > & { description?: string | null };
+    }
+  | {
+      key: 'SURFACE_STYLE_DELETE';
+      styleId: string;
+      /** Required when surfaces reference the style; refs rewire to it. */
+      replacementId?: string;
     };
 
 export interface CadTransaction {

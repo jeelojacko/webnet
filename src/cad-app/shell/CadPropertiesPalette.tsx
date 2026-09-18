@@ -24,10 +24,14 @@ const rowKey = (row: CadEntityPropertyRow): string => row.key;
  */
 export const CadPropertiesPalette: React.FC<CadPropertiesPaletteProps> = ({ snapshot, actions }) => {
   if (!snapshot) return <p className="cad-shell-empty">No drawing loaded.</p>;
+  const selectedSurface = snapshot.surface?.surfaces.find(
+    (entry) => entry.id === snapshot.surface?.selectedSurfaceId,
+  ) ?? null;
   if (!snapshot.properties || snapshot.selectionCount === 0) {
     return (
       <div className="cad-shell-props" data-cad-properties="none">
         <h3>No selection</h3>
+        {selectedSurface ? <SurfacePropertiesBlock row={selectedSurface} actions={actions} /> : null}
         <dl>
           <div><dt>Drawing</dt><dd>{snapshot.drawingName}</dd></div>
           <div><dt>Units</dt><dd>{snapshot.units}</dd></div>
@@ -46,6 +50,7 @@ export const CadPropertiesPalette: React.FC<CadPropertiesPaletteProps> = ({ snap
     return (
       <div className="cad-shell-props" data-cad-properties="single">
         <h3>{panel.entity.entityLabel}</h3>
+        {selectedSurface ? <SurfacePropertiesBlock row={selectedSurface} actions={actions} /> : null}
         <PropertyRows
           rows={panel.entity.properties}
           entityId={panel.entity.entityId}
@@ -59,6 +64,11 @@ export const CadPropertiesPalette: React.FC<CadPropertiesPaletteProps> = ({ snap
   }
   return (
     <>
+      {selectedSurface ? (
+        <div className="cad-shell-props" data-cad-properties="surface">
+          <SurfacePropertiesBlock row={selectedSurface} actions={actions} />
+        </div>
+      ) : null}
       <MultiProperties groups={panel.groups} defaultTypeKey={panel.defaultTypeKey} actions={actions} />
       {snapshot.survey && snapshot.survey.selected.length > 1 ? (
         <SurveyPointBatch survey={snapshot.survey} actions={actions} />
@@ -66,6 +76,57 @@ export const CadPropertiesPalette: React.FC<CadPropertiesPaletteProps> = ({ snap
     </>
   );
 };
+
+/**
+ * Phase 18F — SURFACE + STATISTICS + DEFINITION sections for the selected
+ * surface. Counts and status only; mesh data is never dumped here.
+ */
+const SurfacePropertiesBlock: React.FC<{
+  row: import('./cadSurfaceSnapshot').CadSurfaceRow;
+  actions: CadShellActions | null;
+}> = ({ row, actions }) => (
+  <div className="cad-shell-props-group" data-cad-surface-properties={row.id}>
+    <h4>Surface</h4>
+    <dl>
+      <div><dt>Name</dt><dd>{row.name}</dd></div>
+      <div><dt>Layer</dt><dd>{row.layerName}</dd></div>
+      <div><dt>Style</dt><dd>{row.styleName}</dd></div>
+      <div><dt>Status</dt><dd>{row.statusText}{row.stale ? ' (stale mesh)' : ''}</dd></div>
+      {row.diagnostic ? <div><dt>Diagnostic</dt><dd>{row.diagnostic}</dd></div> : null}
+      {row.brokenIds.length > 0 ? <div><dt>Broken refs</dt><dd>{row.brokenNames.join(', ')}</dd></div> : null}
+    </dl>
+    <h4>Statistics</h4>
+    <dl>
+      {row.stats ? (
+        <>
+          <div><dt>Points</dt><dd>{row.stats.points}</dd></div>
+          <div><dt>Vertices</dt><dd>{row.stats.vertices}</dd></div>
+          <div><dt>Triangles</dt><dd>{row.stats.triangles}</dd></div>
+          <div><dt>Min Z</dt><dd>{row.stats.minZ?.toFixed(3) ?? '—'}</dd></div>
+          <div><dt>Max Z</dt><dd>{row.stats.maxZ?.toFixed(3) ?? '—'}</dd></div>
+          <div><dt>Area</dt><dd>{row.stats.area.toFixed(3)} m²</dd></div>
+        </>
+      ) : (
+        <div><dt>Mesh</dt><dd>No mesh — rebuild.</dd></div>
+      )}
+    </dl>
+    <h4>Definition</h4>
+    <dl>
+      <div><dt>Source</dt><dd>{row.definition.pointSourceKind === 'point-group'
+        ? `Group ${row.definition.pointGroupName}`
+        : `${row.definition.pointCount} points`}</dd></div>
+      <div><dt>Breaklines</dt><dd>{row.definition.breaklineCount}</dd></div>
+      <div><dt>Boundaries</dt><dd>outer {row.definition.outerBoundaryCount} void {row.definition.voidBoundaryCount}</dd></div>
+    </dl>
+    <button
+      type="button"
+      className="cad-shell-tree-node"
+      onClick={() => actions?.openSurveyManager('surfaces', row.id)}
+    >
+      Open Surface Manager
+    </button>
+  </div>
+);
 
 const MultiProperties: React.FC<{
   groups: CadPropertiesTypeGroup[];

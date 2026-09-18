@@ -104,6 +104,7 @@ export const filterCadDisplaySceneForViewport = (
   const entities = new Map(project.entities.map((entity) => [entity.id, entity]));
   return {
     bounds: scene.bounds,
+    surfaceLayers: (scene.surfaceLayers ?? []).filter((layer) => !isLayerHidden(project, layer.layerId)),
     primitives: scene.primitives.filter((primitive) => {
       const entity = entities.get(primitive.sourceEntityId);
       if (!entity) return true;

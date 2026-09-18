@@ -248,9 +248,12 @@ describe('phase 18D point groups', () => {
     expect(buildCadProjectSignature(cloneCadProject(reparsed.drawing.project))).toBe(
       buildCadProjectSignature(reparsed.drawing.project),
     );
-    expect(Object.keys(reparsed.drawing.project).at(-1)).toBe('fieldToFinishSettings');
+    expect(Object.keys(reparsed.drawing.project).at(-1)).toBe('surfaceStyles');
     // 18E appended drawing-owned F2F catalog + settings trailing (after
-    // pointGroups); the invariant is clone/parse stability, asserted above.
+    // pointGroups); 18F appends drawing-owned surfaces + surfaceStyles
+    // trailing after those (surfaces repoint owned by the UI worker — update
+    // here if that repoint changes the trailing order). The invariant is
+    // clone/parse stability, asserted above.
   });
 
   it('resolves 10k points x 50 groups in reasonable time', () => {

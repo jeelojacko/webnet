@@ -76,4 +76,34 @@ export type CadDisplayPrimitive =
 export interface CadDisplayScene {
   bounds: CadBounds | null;
   primitives: CadDisplayPrimitive[];
+  /**
+   * Phase 18F — derived TIN surface layers, passed ALONGSIDE the entity
+   * primitives (never as CadLineEntity rows: one node per triangle would
+   * collapse the SVG viewport on large TINs). Each layer buckets one
+   * surface into at most three SVG nodes (triangles/boundary/vertices).
+   * Export scenes ignore this field (surfaces are model-only deliverables).
+   */
+  surfaceLayers?: CadSurfaceDisplayLayer[];
+}
+
+/** Phase 18F — one viewport-ready bucket per built surface. */
+export interface CadSurfaceDisplayLayer {
+  surfaceId: string;
+  surfaceName: string;
+  layerId: string;
+  /** Stale (NEEDS_REBUILD/FAILED/BROKEN_REFERENCE): dashed + STALE badge. */
+  stale: boolean;
+  statusText: string;
+  stroke: string;
+  opacity: number;
+  showTriangles: boolean;
+  showVertices: boolean;
+  showBoundary: boolean;
+  /** Multi-segment path data in drawing units (empty when toggled off). */
+  trianglesD: string;
+  boundaryD: string;
+  vertices: Array<{ x: number; y: number }>;
+  verticesTruncated: boolean;
+  vertexCount: number;
+  bounds: { minX: number; minY: number; maxX: number; maxY: number } | null;
 }

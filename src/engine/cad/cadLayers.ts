@@ -8,6 +8,24 @@ const DEFAULT_STYLE_IDS = Object.fromEntries(
 /** Protected default layer: new generic entities belong here (ByLayer). */
 export const GENERAL_CAD_LAYER_ID: CadLayerId = 'general';
 
+/** Conventional layer id for TIN surfaces (created on demand, never auto-seeded). */
+export const SURFACES_CAD_LAYER_ID: CadLayerId = 'surfaces';
+
+/** Conventional surfaces layer (role `surfaces`); opt-in via UI, not backfilled. */
+export const createSurfacesCadLayer = (): CadLayer => ({
+  id: SURFACES_CAD_LAYER_ID,
+  name: 'Surfaces',
+  color: '#a78bfa',
+  visible: true,
+  locked: false,
+  frozen: false,
+  transparency: 0,
+  description: '',
+  printable: true,
+  lineTypeId: 'continuous',
+  role: 'surfaces',
+});
+
 /** Deprecated linetype alias; remapped to `dashed` on load, never deleted. */
 export const DEPRECATED_DASH_SHORT_LINETYPE_ID: CadLineTypeId = 'dash-short';
 

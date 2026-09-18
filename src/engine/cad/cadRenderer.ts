@@ -25,6 +25,8 @@ import { resolveCadEntityAppearance } from './cadAppearance';
 import type { LineweightDisplayMode } from './cadViewportAppearance';
 import { displayedStrokeWidthPx, opacityFromTransparency } from './cadViewportAppearance';
 import { strokeWidth, surveyPointMarker, textFontSize } from './cadRendererStyle';
+import type { CadSurfaceCache } from './cadSurfaceCache';
+import { buildSurfaceDisplayLayers } from './cadSurfaceView';
 import { materializeBoundPointLabel } from './cadPointLabelStyles';
 
 export interface BuildCadDisplaySceneOptions {
@@ -34,6 +36,13 @@ export interface BuildCadDisplaySceneOptions {
    * look exactly; `scaled` maps the resolved lineweight with clamping.
    */
   lineweightDisplay?: LineweightDisplayMode;
+  /**
+   * Phase 18F — session mesh cache + per-surface built-revision index.
+   * Absent = definition-only (no surface layers); the export scene never
+   * passes it, so DXF/SVG/PDF output is unchanged by surfaces.
+   */
+  surfaceCache?: CadSurfaceCache;
+  surfaceRevisionIndex?: ReadonlyMap<string, readonly string[]>;
 }
 
 interface SceneRenderContext {
@@ -557,5 +566,11 @@ export const buildCadDisplayScene = (
     primitives: project.entities
       .filter((entity) => entity.visible)
       .flatMap((entity) => toPrimitives(project, ctx, entity)),
+    // Phase 18F — derived TIN layers alongside entity primitives. Empty
+    // (not absent) when no surface is built so consumers skip uniformly.
+    // Null cache (export scene, sheet viewports) = definition-only.
+    surfaceLayers: options?.surfaceCache
+      ? buildSurfaceDisplayLayers(project, options.surfaceCache, options.surfaceRevisionIndex)
+      : [],
   };
 };

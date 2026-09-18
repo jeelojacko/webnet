@@ -39,6 +39,28 @@ const stubActions = (): CadShellActions & { calls: string[] } => {
       calls.push(`survey-cmd:${command.key}`);
       return true;
     },
+    selectSurface: (id) => void calls.push(`surface-select:${id}`),
+    startSurfacePick: (id) => void calls.push(`surface-pick:${id}`),
+    querySurfaceElevation: (id) => {
+      calls.push(`surface-elev:${id}`);
+      return null;
+    },
+    rebuildSurface: (id) => {
+      calls.push(`surface-rebuild:${id}`);
+      return '';
+    },
+    rebuildAllSurfaces: () => {
+      calls.push('surface-rebuild-all');
+      return '';
+    },
+    describeBreaklineSource: () => {
+      calls.push('surface-breakline');
+      return null;
+    },
+    describeBoundarySource: () => {
+      calls.push('surface-boundary');
+      return null;
+    },
     openSurveyManager: (kind) => void calls.push(`survey:${kind}`),
     selectAllSurveyPoints: () => void calls.push('survey-select-all'),
     selectSurveyGroupPoints: (groupId) => void calls.push(`survey-group:${groupId}`),

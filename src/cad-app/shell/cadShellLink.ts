@@ -80,7 +80,8 @@ const snapshotsEqual = (a: CadWorkspaceSnapshot | null, b: CadWorkspaceSnapshot 
     prefsEqual(a.snapPreferences, b.snapPreferences) &&
     previewsEqual(a.selectionPreview, b.selectionPreview) &&
     propertiesEqual(a.properties, b.properties) &&
-    JSON.stringify(a.survey) === JSON.stringify(b.survey)
+    JSON.stringify(a.survey) === JSON.stringify(b.survey) &&
+    JSON.stringify(a.surface) === JSON.stringify(b.surface)
   );
 };
 

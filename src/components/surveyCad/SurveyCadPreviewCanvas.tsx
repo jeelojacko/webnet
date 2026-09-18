@@ -19,6 +19,7 @@ import {
   TransientPreviewLayer,
 } from './SurveyCadPreviewLayers';
 import { renderPrimitive } from './SurveyCadPreviewPrimitive';
+import { renderSurfaceLayers } from './SurveyCadPreviewSurface';
 
 const SurveyCadPreviewCanvas: React.FC<SurveyCadPreviewCanvasProps> = ({
   activeGripDragIdRef,
@@ -46,6 +47,8 @@ const SurveyCadPreviewCanvas: React.FC<SurveyCadPreviewCanvasProps> = ({
   onPrimitiveClickIntercept,
   onSelectEntities,
   onSelectEntity,
+  onSurfaceClick,
+  onSurfacePickPoint,
   onStartGripEdit,
   onViewportChange,
   onZoomExtents,
@@ -55,7 +58,9 @@ const SurveyCadPreviewCanvas: React.FC<SurveyCadPreviewCanvasProps> = ({
   scene,
   screenPointFromMouseEvent,
   selectedEntityIds,
+  selectedSurfaceId = null,
   selectionBox,
+  surfacePickActive = false,
   setArmedSnap,
   setDidDrag,
   setDragState,
@@ -126,6 +131,13 @@ const SurveyCadPreviewCanvas: React.FC<SurveyCadPreviewCanvasProps> = ({
     className="h-full w-full bg-slate-950 select-none"
     data-survey-cad-preview
     onClick={(event) => {
+      if (surfacePickActive) {
+        if (didDrag || event.target !== event.currentTarget) return;
+        const screenPoint = screenPointFromMouseEvent(event);
+        if (!screenPoint) return;
+        onSurfacePickPoint?.(unproject(screenPoint.viewX, screenPoint.viewY));
+        return;
+      }
       if (!commandPointInputActive || didDrag || event.target !== event.currentTarget) return;
       if (consumeLatchedOrActiveSnap(event.shiftKey)) return;
       const screenPoint = screenPointFromMouseEvent(event);
@@ -300,6 +312,13 @@ const SurveyCadPreviewCanvas: React.FC<SurveyCadPreviewCanvasProps> = ({
       fill="#020617"
       data-survey-cad-background="true"
       onClick={(event) => {
+        if (surfacePickActive) {
+          if (didDrag) return;
+          const screenPoint = screenPointFromMouseEvent(event);
+          if (!screenPoint) return;
+          onSurfacePickPoint?.(unproject(screenPoint.viewX, screenPoint.viewY));
+          return;
+        }
         if (!commandPointInputActive || didDrag) return;
         if (consumeLatchedOrActiveSnap(event.shiftKey)) return;
         const screenPoint = screenPointFromMouseEvent(event);
@@ -340,6 +359,16 @@ const SurveyCadPreviewCanvas: React.FC<SurveyCadPreviewCanvasProps> = ({
         project={project}
         scale={scale}
       />
+      {scene.surfaceLayers && scene.surfaceLayers.length > 0
+        ? renderSurfaceLayers({
+          layers: scene.surfaceLayers,
+          selectedSurfaceId,
+          project,
+          scale,
+          pickActive: surfacePickActive,
+          onSurfaceClick: (surfaceId) => onSurfaceClick?.(surfaceId),
+        })
+        : null}
       <GripHandleLayer
         gripHandles={gripHandles}
         activeGripHandleId={activeGripHandleId}

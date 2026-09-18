@@ -4,6 +4,7 @@ import { cloneCadDrawingDocument } from '../../engine/cad/cadDrawingFile';
 import { buildMlightcadSpikeScene } from '../../engine/cad/cadMlightcadAdapter';
 import { checkCadEntityEditable } from '../../engine/cad/cadAppearance';
 import { buildCadDisplayScene } from '../../engine/cad/cadRenderer';
+import type { CadSurfaceCache } from '../../engine/cad/cadSurfaceCache';
 import type { LineweightDisplayMode } from '../../engine/cad/cadViewportAppearance';
 import {
   filterCadDisplaySceneForViewport,
@@ -59,6 +60,10 @@ export const useSurveyCadWorkspace = (
   // Phase 18C LWT: workspace-only display preference (never dirties the
   // drawing or the stored mm value).
   lineweightDisplay: LineweightDisplayMode = 'thin',
+  // Phase 18F: session mesh cache + built-revision index (both optional;
+  // absent = definition-only surface display, e.g. sheet viewports).
+  surfaceCache?: CadSurfaceCache,
+  surfaceRevisionIndex?: ReadonlyMap<string, readonly string[]>,
 ): UseSurveyCadWorkspaceResult => {
   const { history, historyRef, applyHistoryUpdate: applyHistoryUpdateBase } = useSurveyCadWorkspaceHistory(
     baseProject,
@@ -102,9 +107,12 @@ export const useSurveyCadWorkspace = (
     () =>
       filterCadDisplaySceneForViewport(
         cadProject,
-        buildCadDisplayScene(cadProject, { lineweightDisplay }),
+        buildCadDisplayScene(cadProject, {
+          lineweightDisplay,
+          ...(surfaceCache ? { surfaceCache, ...(surfaceRevisionIndex ? { surfaceRevisionIndex } : {}) } : {}),
+        }),
       ),
-    [cadProject, lineweightDisplay],
+    [cadProject, lineweightDisplay, surfaceCache, surfaceRevisionIndex],
   );
   // Retire selection of newly hidden ids so grips never float on invisible geometry.
   useEffect(() => {
