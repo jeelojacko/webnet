@@ -50,7 +50,7 @@ export const CadSurfaceStyleEditor: React.FC<{
       notify('Contours rejected — interval > 0, major-every a positive integer, base numeric.');
       return;
     }
-    const ok = runUpdate({ minorContourInterval, majorEvery: Math.trunc(majorEvery), contourBaseElevation });
+    const ok = runUpdate({ minorContourInterval, majorContourEvery: Math.trunc(majorEvery), contourBaseElevation });
     notify(ok ? 'Contour geometry updated — re-deriving (TIN untouched).' : 'Contours rejected — see status/locks.');
   };
   // Appearance-only: reuses cached contour geometry (same geometryRevision).

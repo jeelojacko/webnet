@@ -383,9 +383,19 @@ describe('contour service ownership', () => {
 
   it('gates stale meshes: TIN not CURRENT blocks with SURFACE_CONTOUR_STALE_TIN', () => {
     const h = serviceHarness();
+    // Session staleness = definition changed after the build: the content
+    // revision moves, so the cached mesh is no longer a fresh hit.
+    // (cachedRevision is never written in-session, so nulling it alone
+    // must NOT block — CURRENT is the fresh cache hit.)
     h.setProject({
       ...h.project(),
-      surfaces: h.project().surfaces!.map((entry) => ({ ...entry, cachedRevision: null })),
+      surfaces: h.project().surfaces!.map((entry) => ({
+        ...entry,
+        definition: {
+          ...entry.definition,
+          pointSource: { kind: 'points' as const, pointEntityIds: ['p1'] },
+        },
+      })),
     });
     const message = h.service.requestContours('s1', SPEC_A);
     expect(message).toContain('not CURRENT');

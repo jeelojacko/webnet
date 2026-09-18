@@ -105,8 +105,11 @@ export class SurfaceContourService {
     const surface = findSurface(project, surfaceId);
     if (!surface) return { status: 'NOT_REQUESTED', stale: false };
     const revision = computeCadSurfaceSourceRevision(project, surface);
-    const tinCurrent =
-      surface.cachedRevision === revision && this.deps.tinCache.get(surfaceId, revision) != null;
+    // Session truth (mirrors resolveSurfaceDisplayStatus): a cache hit
+    // for the current content revision IS a current TIN. cachedRevision
+    // is never written in-session (meshes never persist), so requiring
+    // it would block every derivation in the real app.
+    const tinCurrent = this.deps.tinCache.get(surfaceId, revision) != null;
     const cacheHit =
       this.deps.contourCache.get(surfaceId, revision, geometryRevision) != null;
     const retained = this.deps.contourCache.retained(surfaceId);
@@ -130,7 +133,7 @@ export class SurfaceContourService {
       return `Contours for “${surface.name}” are already current.`;
     }
     const mesh = this.deps.tinCache.get(surfaceId, revision);
-    if (surface.cachedRevision !== revision || !mesh) {
+    if (!mesh) {
       const error = SURFACE_CONTOUR_STALE_TIN_DIAGNOSTIC;
       this.diagnostics.set(surfaceId, { revision, geometryRevision, error: truncateDiagnostic(error) });
       this.deps.onStateChange();
