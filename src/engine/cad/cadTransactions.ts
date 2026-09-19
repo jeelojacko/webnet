@@ -603,6 +603,7 @@ export const CAD_COMMAND_REGISTRY: Record<CadCommandKey, CadCommandDefinition<Ca
   SECTION_SOURCE_ADD: sectionCommandDefinitions.SECTION_SOURCE_ADD as CadCommandDefinition<CadCommand>,
   SECTION_SOURCE_REMOVE: sectionCommandDefinitions.SECTION_SOURCE_REMOVE as CadCommandDefinition<CadCommand>,
   SECTION_SOURCE_SET_STYLE: sectionCommandDefinitions.SECTION_SOURCE_SET_STYLE as CadCommandDefinition<CadCommand>,
+  SECTION_AREA_COMPARISON: sectionCommandDefinitions.SECTION_AREA_COMPARISON as CadCommandDefinition<CadCommand>,
   SECTION_STYLE_CREATE: sectionCommandDefinitions.SECTION_STYLE_CREATE as CadCommandDefinition<CadCommand>,
   SECTION_STYLE_RENAME: sectionCommandDefinitions.SECTION_STYLE_RENAME as CadCommandDefinition<CadCommand>,
   SECTION_STYLE_UPDATE: sectionCommandDefinitions.SECTION_STYLE_UPDATE as CadCommandDefinition<CadCommand>,

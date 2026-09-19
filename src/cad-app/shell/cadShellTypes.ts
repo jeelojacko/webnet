@@ -15,6 +15,7 @@ import type { BreaklineEntityPreview, BoundarySourcePreview } from '../../engine
 import type { CadSurfaceSnapshot } from './cadSurfaceSnapshot';
 import type { CadVolumeSnapshot } from './cadVolumeSnapshot';
 import type { CadProfileSnapshot } from './cadProfileSnapshot';
+import type { CadSectionSnapshot } from './cadSectionSnapshot';
 import type { ActiveCommandKey } from '../../hooks/surveyCad/useSurveyCadCommandTypes';
 import type { DraftSheet } from '../../engine/cad/cadDraftTypes';
 
@@ -36,7 +37,8 @@ export type SurveyManagerKind =
   | 'point-label-styles'
   | 'f2f'
   | 'surfaces'
-  | 'profiles';
+  | 'profiles'
+  | 'sections';
 
 /**
  * Phase 18D — per-point display facts precomputed in the workspace (resolver
@@ -165,6 +167,8 @@ export interface CadWorkspaceSnapshot {
   volume: CadVolumeSnapshot | null;
   /** Phase 18J — surface profiles + profile views (derived status + stats). */
   profile: CadProfileSnapshot | null;
+  /** Phase 18K — sample-line groups + section views (derived status + areas). */
+  section: CadSectionSnapshot | null;
   /** Phase 18E — F2F catalog + provenance summary (derived, no duplicate state). */
   f2f: CadF2FSnapshot | null;
   /** UI command keys with a live starter in the mounted workspace. */
@@ -218,6 +222,24 @@ export interface CadShellActions {
    * read; ambiguous equation gaps answer honestly, never guessed).
    */
   queryProfileElevation: (_profileId: string, _displayStation: number) => string;
+  /** Phase 18K — select a sample-line group (Toolspace/manager/viewport converge). */
+  selectSampleLineGroup: (_groupId: string | null) => void;
+  /** Phase 18K — select one sample line within its group. */
+  selectSampleLine: (_groupId: string | null, _lineId: string | null) => void;
+  /** Phase 18K — manual session rebuild of one group (never auto-started). */
+  rebuildSections: (_groupId: string) => string;
+  /** Phase 18K — manual session rebuild of one line x every source. */
+  rebuildSectionLine: (_groupId: string, _lineId: string) => string;
+  /** Phase 18K — batch-create section views for a group (single vertical stack). */
+  createSectionViews: (_groupId: string) => void;
+  /** Phase 18K — select a section view (viewport click / Toolspace converge). */
+  selectSectionView: (_viewId: string | null) => void;
+  /**
+   * Phase 18K — line + surface + signed offset (+left) resolves to
+   * displayed-station/offset/E/N/elevation text (pure read; gaps and
+   * outside-coverage answer honestly, never guessed).
+   */
+  querySectionElevation: (_groupId: string, _lineId: string, _surfaceId: string, _offset: number) => string;
   /**
    * Phase 18I — manual volume calculation through the session volume
    * service (explicit Calculate/Recalculate only; never auto-started).

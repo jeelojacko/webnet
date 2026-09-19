@@ -155,6 +155,7 @@ export type CadCommandKey =
   | 'SECTION_SOURCE_ADD'
   | 'SECTION_SOURCE_REMOVE'
   | 'SECTION_SOURCE_SET_STYLE'
+  | 'SECTION_AREA_COMPARISON'
   | 'SECTION_STYLE_CREATE'
   | 'SECTION_STYLE_RENAME'
   | 'SECTION_STYLE_UPDATE'
@@ -948,6 +949,13 @@ export type CadCommand =
       surfaceId: string;
       /** Undefined is rejected; null clears. */
       sectionStyleId: string | null;
+    }
+  | {
+      key: 'SECTION_AREA_COMPARISON';
+      groupId: string;
+      /** Both present = set pair; otherwise clear. */
+      baseSurfaceId?: string;
+      comparisonSurfaceId?: string;
     }
   | {
       key: 'SECTION_STYLE_CREATE';

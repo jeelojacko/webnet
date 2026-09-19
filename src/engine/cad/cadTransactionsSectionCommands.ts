@@ -18,6 +18,7 @@ import {
   renameCadSectionStyle,
   resolveSectionLayerId,
   resolveSectionRawStation,
+  setCadSampleLineGroupAreaComparison,
   setCadSectionSourceStyle,
   updateCadSampleLine,
   updateCadSectionStyle,
@@ -297,6 +298,25 @@ const sectionSourceSetStyleCommand: CadCommandDefinition<SectionSourceSetStyleCo
   },
 };
 
+type SectionAreaComparisonCommand = Extract<CadCommand, { key: 'SECTION_AREA_COMPARISON' }>;
+
+const sectionAreaComparisonCommand: CadCommandDefinition<SectionAreaComparisonCommand> = {
+  key: 'SECTION_AREA_COMPARISON',
+  execute: (snapshot, command) => {
+    const pair =
+      command.baseSurfaceId != null && command.comparisonSurfaceId != null
+        ? { baseSurfaceId: command.baseSurfaceId, comparisonSurfaceId: command.comparisonSurfaceId }
+        : null;
+    return editGroup(
+      snapshot,
+      'SECTION_AREA_COMPARISON',
+      command.groupId,
+      'SECTION_AREA_COMPARISON',
+      (group) => setCadSampleLineGroupAreaComparison(group, pair),
+    );
+  },
+};
+
 type SectionStyleCreateCommand = Extract<CadCommand, { key: 'SECTION_STYLE_CREATE' }>;
 type SectionStyleRenameCommand = Extract<CadCommand, { key: 'SECTION_STYLE_RENAME' }>;
 type SectionStyleUpdateCommand = Extract<CadCommand, { key: 'SECTION_STYLE_UPDATE' }>;
@@ -469,6 +489,7 @@ export const sectionCommandDefinitions = {
   SECTION_SOURCE_ADD: sectionSourceAddCommand,
   SECTION_SOURCE_REMOVE: sectionSourceRemoveCommand,
   SECTION_SOURCE_SET_STYLE: sectionSourceSetStyleCommand,
+  SECTION_AREA_COMPARISON: sectionAreaComparisonCommand,
   SECTION_STYLE_CREATE: sectionStyleCreateCommand,
   SECTION_STYLE_RENAME: sectionStyleRenameCommand,
   SECTION_STYLE_UPDATE: sectionStyleUpdateCommand,
