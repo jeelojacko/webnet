@@ -43,13 +43,13 @@ export const SampleLineSection: React.FC<{
   const [notice, setNotice] = React.useState<string | null>(null);
   const [createName, setCreateName] = React.useState('');
   const [createAlignment, setCreateAlignment] = React.useState('');
-  if (!section || !surface) return null;
   const selected: CadSampleLineGroupRow | null =
-    section.groups.find((entry) => entry.id === section.selectedGroupId) ?? section.groups[0] ?? null;
+    section?.groups.find((entry) => entry.id === section?.selectedGroupId) ?? section?.groups[0] ?? null;
   React.useEffect(() => {
-    if (selected && selected.id !== section.selectedGroupId) actions.selectSampleLineGroup(selected.id);
+    if (section && selected && selected.id !== section.selectedGroupId) actions.selectSampleLineGroup(selected.id);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selected?.id]);
+  if (!section || !surface) return null;
 
   const create = (): void => {
     if (!createAlignment) {

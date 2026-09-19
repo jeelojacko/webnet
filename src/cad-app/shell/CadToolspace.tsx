@@ -4,6 +4,7 @@ import type { CadShellActions, CadWorkspaceSnapshot } from './cadShellTypes';
 import type { CadToolspaceTab } from './cadShellTypes';
 import { VolumesNode } from './CadVolumeToolspace';
 import { SurfaceProfilesNode, ProfileViewsNode } from './CadProfileToolspace';
+import { SampleLineGroupsNode, SectionViewsNode, SectionStylesNode } from './CadSampleLineToolspace';
 
 interface CadToolspaceProps {
   snapshot: CadWorkspaceSnapshot | null;
@@ -214,6 +215,8 @@ const SurveyTab: React.FC<{ snapshot: CadWorkspaceSnapshot | null; actions: CadS
       <VolumesNode snapshot={snapshot} actions={actions} />
       {snapshot ? <SurfaceProfilesNode snapshot={snapshot} actions={actions} /> : null}
       {snapshot ? <ProfileViewsNode snapshot={snapshot} actions={actions} /> : null}
+      {snapshot ? <SampleLineGroupsNode snapshot={snapshot} actions={actions} /> : null}
+      {snapshot ? <SectionViewsNode snapshot={snapshot} actions={actions} /> : null}
       <F2FNode snapshot={snapshot} actions={actions} />
       {menu ? (
         <div role="menu" className="cad-shell-menu" style={{ left: menu.x, top: menu.y, position: 'fixed' }} data-cad-survey-menu>
@@ -455,6 +458,7 @@ const SettingsTab: React.FC<{ snapshot: CadWorkspaceSnapshot | null; actions: Ca
           </TreeGroup>
         </>
       ) : null}
+      {snapshot ? <SectionStylesNode snapshot={snapshot} actions={actions} /> : null}
       <TreeGroup label="Drawing">
         <div className="cad-shell-tree-row">Units: {snapshot.units}</div>
       </TreeGroup>

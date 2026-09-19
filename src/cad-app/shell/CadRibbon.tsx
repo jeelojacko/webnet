@@ -188,6 +188,13 @@ const CadSurfaceRibbonGroup: React.FC<{
         { key: 'profile-view', label: 'Create Profile View', hint: 'Create a profile view from the selected profile.', disabled: !ready, onClick: () => actions?.createProfileView() },
         { key: 'profile-elevation', label: 'Profile Elevation', hint: 'Query profile elevation at a station (manager).', disabled: !ready, onClick: () => actions?.openSurveyManager('profiles') },
       ])}
+      {group('Sections', [
+        { key: 'sample-lines', label: 'Sample Lines', hint: 'Open the sample-line manager.', disabled: !ready, onClick: () => actions?.openSurveyManager('sections') },
+        { key: 'sample-line-add', label: 'Add Sample Line', hint: 'Add a sample line at a station (manager).', disabled: !ready, onClick: () => actions?.openSurveyManager('sections') },
+        { key: 'sample-line-interval', label: 'By Interval', hint: 'Generate sample lines by raw interval (manager).', disabled: !ready, onClick: () => actions?.openSurveyManager('sections') },
+        { key: 'section-rebuild', label: 'Rebuild Sections', hint: 'Rebuild sections for the selected group (manual).', disabled: !ready, onClick: () => { const id = snapshot?.section?.selectedGroupId; if (id) actions?.rebuildSections(id); } },
+        { key: 'section-views', label: 'Create Section Views', hint: 'Batch-create section views, one vertical stack (manager).', disabled: !ready, onClick: () => { const id = snapshot?.section?.selectedGroupId; if (id) actions?.createSectionViews(id); else actions?.openSurveyManager('sections'); } },
+      ])}
     </>
   );
 };

@@ -52,6 +52,22 @@ const stubActions = (): CadShellActions & { calls: string[] } => {
       calls.push(`profile-elev:${id}`);
       return '';
     },
+    selectSampleLineGroup: (id) => void calls.push(`sample-group-select:${id}`),
+    selectSampleLine: (groupId, lineId) => void calls.push(`sample-line-select:${groupId}:${lineId}`),
+    rebuildSections: (id) => {
+      calls.push(`section-rebuild:${id}`);
+      return '';
+    },
+    rebuildSectionLine: (groupId, lineId) => {
+      calls.push(`section-line-rebuild:${groupId}:${lineId}`);
+      return '';
+    },
+    createSectionViews: (id) => void calls.push(`section-views-create:${id}`),
+    selectSectionView: (id) => void calls.push(`section-view-select:${id}`),
+    querySectionElevation: (groupId, lineId) => {
+      calls.push(`section-elev:${groupId}:${lineId}`);
+      return '';
+    },
     requestVolume: (id) => {
       calls.push(`volume-calc:${id}`);
       return '';

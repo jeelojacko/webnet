@@ -146,6 +146,14 @@ export const CAD_SHELL_COMMANDS: CadShellCommandDef[] = [
   action('PROFILEELEV', 'Profile Elevation', 'Surface', 'Query profile elevation at a station (manager).'),
   action('PROFILEREBUILD', 'Rebuild Profile', 'Surface', 'Rebuild the selected surface profile (manual).'),
   action('PROFILESTYLE', 'Profile Styles', 'Surface', 'Edit profile display styles (manager).'),
+  // Phase 18K — section commands (all route through the sample-line
+  // manager; Rebuild runs the session section service for the selected
+  // group, never auto-started).
+  action('SAMPLELINES', 'Sample Lines', 'Surface', 'Open the sample-line manager.'),
+  action('SAMPLELINE', 'Add Sample Line', 'Surface', 'Add a sample line at a station (manager).'),
+  action('SECTIONREBUILD', 'Rebuild Sections', 'Surface', 'Rebuild sections for the selected group (manual).'),
+  action('SECTIONVIEW', 'Create Section Views', 'Surface', 'Batch-create section views for the selected group.'),
+  action('SECTIONELEV', 'Section Elevation', 'Surface', 'Query section elevation at an offset (manager).'),
 ];
 
 const COMMAND_BY_KEY = new Map<string, CadShellCommandDef>(
@@ -286,6 +294,13 @@ export const executeShellCommand = (
       return true;
     case 'PROFILEVIEW':
       actions.createProfileView();
+      return true;
+    case 'SAMPLELINES':
+    case 'SAMPLELINE':
+    case 'SECTIONELEV':
+    case 'SECTIONVIEW':
+    case 'SECTIONREBUILD':
+      actions.openSurveyManager('sections');
       return true;
     default:
       return false;

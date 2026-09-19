@@ -1853,6 +1853,13 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
           onSurfaceClick={(surfaceId) => setSelectedSurfaceId(surfaceId)}
           selectedProfileViewId={selectedProfileViewId}
           onProfileViewClick={(viewId) => setSelectedProfileViewId(viewId)}
+          selectedSampleLineId={selectedSampleLineId}
+          onSampleLineClick={(groupId, lineId) => {
+            setSelectedSampleLineGroupId(groupId);
+            setSelectedSampleLineId(lineId);
+          }}
+          selectedSectionViewId={selectedSectionViewId}
+          onSectionViewClick={(viewId) => setSelectedSectionViewId(viewId)}
         />
       </div>
     </div>

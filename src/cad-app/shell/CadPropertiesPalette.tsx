@@ -6,6 +6,7 @@ import type {
   CadSurveySnapshot,
   CadWorkspaceSnapshot,
 } from './cadShellTypes';
+import { SampleLinePropertiesBlock, SectionViewPropertiesBlock } from './CadSectionProperties';
 
 interface CadPropertiesPaletteProps {
   snapshot: CadWorkspaceSnapshot | null;
@@ -37,12 +38,36 @@ export const CadPropertiesPalette: React.FC<CadPropertiesPaletteProps> = ({ snap
       {selectedProfile ? <ProfilePropertiesBlock row={selectedProfile} actions={actions} /> : null}
     </>
   );
+  const selectedSectionGroup = snapshot.section?.groups.find(
+    (entry) => entry.id === snapshot.section?.selectedGroupId,
+  ) ?? null;
+  const selectedSampleLine = selectedSectionGroup?.lines.find(
+    (entry) => entry.id === snapshot.section?.selectedLineId,
+  ) ?? null;
+  const selectedSectionView = snapshot.section?.views.find(
+    (entry) => entry.id === snapshot.section?.selectedViewId,
+  ) ?? null;
+  const sectionBlocks = (
+    <>
+      {selectedSectionView ? <SectionViewPropertiesBlock row={selectedSectionView} /> : null}
+      {selectedSampleLine && selectedSectionGroup ? (
+        <SampleLinePropertiesBlock
+          row={selectedSampleLine}
+          groupId={selectedSectionGroup.id}
+          groupName={selectedSectionGroup.name}
+          alignmentName={selectedSectionGroup.alignmentName}
+          actions={actions}
+        />
+      ) : null}
+    </>
+  );
   if (!snapshot.properties || snapshot.selectionCount === 0) {
     return (
       <div className="cad-shell-props" data-cad-properties="none">
         <h3>No selection</h3>
         {selectedSurface ? <SurfacePropertiesBlock row={selectedSurface} actions={actions} /> : null}
         {profileBlocks}
+        {sectionBlocks}
         <dl>
           <div><dt>Drawing</dt><dd>{snapshot.drawingName}</dd></div>
           <div><dt>Units</dt><dd>{snapshot.units}</dd></div>
@@ -63,6 +88,7 @@ export const CadPropertiesPalette: React.FC<CadPropertiesPaletteProps> = ({ snap
         <h3>{panel.entity.entityLabel}</h3>
         {selectedSurface ? <SurfacePropertiesBlock row={selectedSurface} actions={actions} /> : null}
         {profileBlocks}
+        {sectionBlocks}
         <PropertyRows
           rows={panel.entity.properties}
           entityId={panel.entity.entityId}
@@ -82,6 +108,7 @@ export const CadPropertiesPalette: React.FC<CadPropertiesPaletteProps> = ({ snap
         </div>
       ) : null}
       {profileBlocks}
+      {sectionBlocks}
       <MultiProperties groups={panel.groups} defaultTypeKey={panel.defaultTypeKey} actions={actions} />
       {snapshot.survey && snapshot.survey.selected.length > 1 ? (
         <SurveyPointBatch survey={snapshot.survey} actions={actions} />
