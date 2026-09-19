@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { createCadHistoryState, type CadHistoryState } from '../../engine/cad/cadUndoRedo';
-import { buildCadProjectSignature } from '../../engine/cad/cadProjectState';
+import { buildStableCadProjectSignature } from '../../engine/cad/cadProjectState';
 import type { CadProject } from '../../engine/cad/cadTypes';
 
 export const useSurveyCadWorkspaceHistory = (
@@ -47,11 +47,15 @@ export const useSurveyCadWorkspaceHistory = (
   // External updates cannot push history entries — history is
   // workspace-local — so the baseline resets (consistent with
   // replaceCadProject); re-running the source re-derives the same state.
+  // Order-insensitive comparison: the drawing sync clones the project
+  // (key order normalizes, e.g. imported-TIN surface definitions), which
+  // is not an external update — a plain stringify comparison would wipe
+  // the just-committed transaction and disable undo/redo.
   // Signature-guarded: the workspace's own persistence writes compare
   // equal, so no update loop is possible.
   useEffect(() => {
     if (resetKeyRef.current !== resetKey) return;
-    if (buildCadProjectSignature(history.present.project) === buildCadProjectSignature(baseProject)) return;
+    if (buildStableCadProjectSignature(history.present.project) === buildStableCadProjectSignature(baseProject)) return;
     replaceHistory(
       createCadHistoryState(
         baseProject,

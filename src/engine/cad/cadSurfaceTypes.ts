@@ -184,21 +184,27 @@ export const buildSurfaceBuildRequest = (
   const groupIds =
     pointSource.kind === 'point-group' ? [...new Set(surfacePointGroupIds(pointSource))].sort() : [];
   const byGroupId = new Map((project.pointGroups ?? []).map((entry) => [entry.id, entry]));
+  // Phase 18M: imported TINs rebuild from their own stored topology — the
+  // engine never reads survey points on that path, so the whole-project
+  // point snapshot is pure transfer/memory overhead. Omit it (zero-risk).
+  const importedOnly = surface.definition.sourceKind === 'imported-tin';
   return {
     surfaceId: surface.id,
     revision,
-    points: surveyPointsOf(project).map((point) => ({
-      id: point.id,
-      stationId: point.stationId,
-      x: point.x,
-      y: point.y,
-      z: point.z ?? null,
-      pointClass: point.pointClass,
-      source: point.source,
-      layerId: point.layerId,
-      ...(point.description != null ? { description: point.description } : {}),
-      ...(point.featureCode != null ? { featureCode: point.featureCode } : {}),
-    })),
+    points: importedOnly
+      ? []
+      : surveyPointsOf(project).map((point) => ({
+          id: point.id,
+          stationId: point.stationId,
+          x: point.x,
+          y: point.y,
+          z: point.z ?? null,
+          pointClass: point.pointClass,
+          source: point.source,
+          layerId: point.layerId,
+          ...(point.description != null ? { description: point.description } : {}),
+          ...(point.featureCode != null ? { featureCode: point.featureCode } : {}),
+        })),
     extraEntities: project.entities.filter((entity) => wantedIds.has(entity.id)),
     pointGroups: groupIds.map((id) => byGroupId.get(id)).filter((entry) => entry != null),
     definition: cloneCadSurfaceDefinition(surface.definition),

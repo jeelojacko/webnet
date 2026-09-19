@@ -22,6 +22,12 @@ export interface LandXmlCommitSelection {
   readonly surfaceNames?: readonly string[];
 }
 
+export interface LandXmlCommitOptions {
+  /** Skip synchronous mesh materialization (production path schedules builds
+   *  via SurfaceBuildService instead). Default false preserves sync behavior. */
+  readonly deferMeshBuild?: boolean;
+}
+
 export interface LandXmlCommitReport {
   readonly committed: boolean;
   readonly error?: string;
@@ -31,6 +37,8 @@ export interface LandXmlCommitReport {
   readonly duplicatesSkipped: number;
   /** Added display names that needed deconfliction ("Name (2)"). */
   readonly renamed: readonly string[];
+  /** IDs of newly committed imported-TIN surfaces (empty when none). */
+  readonly importedSurfaceIds: readonly string[];
   readonly meshesBuilt: number;
   readonly meshErrors: readonly string[];
   readonly excludedUnsupported: number;
@@ -51,6 +59,7 @@ const failReport = (
   surfacesAdded: 0,
   duplicatesSkipped: 0,
   renamed: [],
+  importedSurfaceIds: [],
   meshesBuilt: 0,
   meshErrors: [],
   excludedUnsupported,
@@ -68,6 +77,7 @@ export const commitLandXmlImport = (
   preview: LandXmlImportPreview,
   fileName: string,
   selection: LandXmlCommitSelection = {},
+  options: LandXmlCommitOptions = {},
 ): { state: CadHistoryState; report: LandXmlCommitReport } => {
   const pickPoints = selection.pointIds != null ? new Set(selection.pointIds) : null;
   const pickAlignments = selection.alignmentNames != null ? new Set(selection.alignmentNames) : null;
@@ -175,10 +185,17 @@ export const commitLandXmlImport = (
 
   // Materialize imported meshes into the session cache (same seam the
   // worker path uses — revision match makes them CURRENT; the mesh itself
-  // never enters history or persistence).
+  // never enters history or persistence). Deferred when the caller schedules
+  // builds asynchronously (production path for large TINs): the transaction
+  // still commits atomically and importedSurfaceIds identifies the pending
+  // surfaces.
   let project = next.present.project;
   let meshesBuilt = 0;
   const meshErrors: string[] = [];
+  const importedSurfaceIds = (project.surfaces ?? [])
+    .filter((surface) => !beforeSurfaceIds.has(surface.id) && surface.definition.sourceKind === 'imported-tin')
+    .map((surface) => surface.id);
+  if (!options.deferMeshBuild) {
   for (const surface of project.surfaces ?? []) {
     if (beforeSurfaceIds.has(surface.id) || surface.definition.sourceKind !== 'imported-tin') continue;
     const revision = computeCadSurfaceSourceRevision(project, surface);
@@ -189,6 +206,7 @@ export const commitLandXmlImport = (
     }
     project = applySurfaceBuildSuccess(project, cache, surface.id, revision, result);
     meshesBuilt += 1;
+  }
   }
 
   const addedNames: string[] = [];
@@ -215,6 +233,7 @@ export const commitLandXmlImport = (
       surfacesAdded,
       duplicatesSkipped: Math.max(0, requested - pointsAdded - alignmentsAdded - surfacesAdded),
       renamed: addedNames,
+      importedSurfaceIds,
       meshesBuilt,
       meshErrors,
       excludedUnsupported,

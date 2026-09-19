@@ -77,6 +77,10 @@ export interface LandXmlUnsupportedCounts {
   readonly alignmentsBlocked: number;
   readonly profilesUnsupported: number;
   readonly crossSectsUnsupported: number;
+  /** Top-level civil elements counted but never imported (no models). */
+  readonly roadwaysUnsupported: number;
+  readonly pipeNetworksUnsupported: number;
+  readonly volumesUnsupported: number;
 }
 
 export interface LandXmlImportPreview {
@@ -305,6 +309,21 @@ export const buildLandXmlImportPreview = (
     });
   });
 
+  // Roadways / PipeNetworks / Volume elements: counted as UNSUPPORTED, never
+  // imported (no roadway/pipe/volume models exist). Name-based top-level scan.
+  const roadwaysUnsupported = findRoots(root, 'Roadway').length;
+  const pipeNetworksUnsupported = findRoots(root, 'PipeNetwork').length;
+  const volumesUnsupported = findRoots(root, 'Volume').length;
+  if (roadwaysUnsupported > 0) {
+    warnings.push(`${roadwaysUnsupported} Roadway element(s) not imported (LANDXML_ROADWAY_IMPORT_UNSUPPORTED).`);
+  }
+  if (pipeNetworksUnsupported > 0) {
+    warnings.push(`${pipeNetworksUnsupported} PipeNetwork element(s) not imported (LANDXML_PIPE_NETWORK_IMPORT_UNSUPPORTED).`);
+  }
+  if (volumesUnsupported > 0) {
+    warnings.push(`${volumesUnsupported} Volume element(s) not imported (LANDXML_VOLUME_IMPORT_UNSUPPORTED).`);
+  }
+
   return {
     points,
     lines,
@@ -326,6 +345,9 @@ export const buildLandXmlImportPreview = (
       alignmentsBlocked,
       profilesUnsupported,
       crossSectsUnsupported,
+      roadwaysUnsupported,
+      pipeNetworksUnsupported,
+      volumesUnsupported,
     },
     warnings,
     duplicates,

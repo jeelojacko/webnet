@@ -15,6 +15,7 @@ import {
   readBrowserFileAsText,
   saveBrowserTextFile,
 } from '../engine/browserFileIo';
+import { buildLandXmlImportPreview } from '../engine/landxmlImport';
 import {
   buildCadDrawingFileName,
   createBlankCadDrawingDocument,
@@ -117,6 +118,15 @@ import { SurveyPointGroupManager } from './surveyCad/SurveyPointGroupManager';
 import { SurveyPointLabelStyleManager } from './surveyCad/SurveyPointLabelStyleManager';
 import { SurveyPointStyleManager } from './surveyCad/SurveyPointStyleManager';
 import { ExportCenterPanel } from './surveyCad/ExportCenterPanel';
+import { LandXmlImportReviewModal } from './landXmlImportReview/LandXmlImportReviewModal';
+import { createLandXmlImportReviewSelection } from './landXmlImportReview/landXmlImportReview.selection';
+import { readLandXmlDocumentVersion } from './landXmlImportReview/landXmlImportReview.format';
+import { commitAndScheduleLandXmlImport } from '../hooks/surveyCad/surveyCadLandxmlImportBuild';
+import type {
+  LandXmlImportCommitPayload,
+  LandXmlImportReviewSelection,
+  LandXmlImportStagedState,
+} from './landXmlImportReview/landXmlImportReview.types';
 import SurveyCadWorkspaceSurface from './SurveyCadWorkspaceSurface';
 import { useSurveyCadCommandDisplay } from './useSurveyCadCommandDisplay';
 import { useSurveyCadFloatingPanels } from './useSurveyCadFloatingPanels';
@@ -341,6 +351,15 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
     ? null
     : DEPENDENCY_ACTION_HINT[dependencySummary.reasons[0] ?? 'CAD_OWNER_CONFLICT'];
   const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const landXmlImportInputRef = useRef<HTMLInputElement | null>(null);
+  // Phase 18M — staged LandXML preview bound to one drawing (UI-only).
+  const [stagedLandXmlImport, setStagedLandXmlImport] = useState<LandXmlImportStagedState | null>(null);
+  // Phase 18M — imported surfaces awaiting schedule/settlement. The build
+  // service reads the drawing-project ref, so scheduling waits one render
+  // (effect) for the committed project to be visible. `watched` drives the
+  // workspace-level materialization-failure notice.
+  const [pendingImportedSurfaceIds, setPendingImportedSurfaceIds] = useState<readonly string[]>([]);
+  const importedSurfaceIdsRef = useRef<Set<string>>(new Set());
   const [fileStatusText, setFileStatusText] = useState('');
   const [viewport, setViewport] = useState({ zoom: 1, panX: 0, panY: 0 });
   const [viewBounds, setViewBounds] = useState<CadBounds | null>(() => cloneBounds(cadProject.bounds));
@@ -1023,6 +1042,106 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
     }
   };
 
+  // Phase 18M — LandXML production import: read text, build a preview, stage
+  // the review. Cancel = no change; malformed = visible error, no change.
+  const handleLandXmlImportChange = async (event: ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    event.target.value = '';
+    if (!file) return;
+    try {
+      const rawText = await readBrowserFileAsText(file);
+      // Re-read the live drawing id: a drawing switch during the async read
+      // must not bind a staged preview to the wrong drawing.
+      const drawingId = drawingIdForBuildsRef.current;
+      if (drawingId !== activeDrawing.drawingId) {
+        setFileStatusText('LandXML import cancelled — the active drawing changed while reading the file.');
+        return;
+      }
+      const preview = buildLandXmlImportPreview(rawText, { fileName: file.name });
+      setStagedLandXmlImport({
+        drawingId,
+        fileName: file.name,
+        version: readLandXmlDocumentVersion(rawText),
+        preview,
+        selection: createLandXmlImportReviewSelection(preview),
+      });
+      setFileStatusText(`LandXML import review: ${file.name}.`);
+    } catch (error) {
+      setStagedLandXmlImport(null);
+      setFileStatusText(
+        `LandXML import failed: ${error instanceof Error ? error.message : String(error)}`,
+      );
+    }
+  };
+
+  const handleLandXmlSelectionChange = (selection: LandXmlImportReviewSelection) => {
+    setStagedLandXmlImport((current) => (current == null ? null : { ...current, selection }));
+  };
+
+  // Phase 18M — LandXML production import: commit through ONE deferred
+  // history transaction, then schedule imported TIN builds through the
+  // shared SurfaceBuildService serial queue (never a worker per surface).
+  const handleLandXmlImportSelected = (payload: LandXmlImportCommitPayload) => {
+    const outcome = commitAndScheduleLandXmlImport(
+      {
+        getDrawingId: () => activeDrawing.drawingId,
+        runDeferredCommit: (stagedPayload) =>
+          cadWorkspace.runLandXmlImport(
+            stagedPayload.preview,
+            stagedPayload.fileName,
+            stagedPayload.commitSelection,
+          ),
+        scheduleSurfaces: (surfaceIds) => setPendingImportedSurfaceIds(surfaceIds),
+        notify: (message) => setFileStatusText(message),
+      },
+      payload,
+    );
+    if (outcome.committed) {
+      for (const surfaceId of outcome.scheduledSurfaceIds) {
+        importedSurfaceIdsRef.current.add(surfaceId);
+      }
+    }
+    // Memory hygiene: raw XML/preview-derived refs never outlive the commit.
+    setStagedLandXmlImport(null);
+  };
+
+  // Schedule only after the committed project is visible to the service.
+  useEffect(() => {
+    if (pendingImportedSurfaceIds.length === 0) return;
+    surfaceBuildService.scheduleSurfaces(pendingImportedSurfaceIds);
+    setPendingImportedSurfaceIds([]);
+  }, [pendingImportedSurfaceIds, surfaceBuildService]);
+
+  // Imported surfaces that fail materialization get the explicit
+  // "Imported, but surface materialization failed" notice once; the
+  // authoritative definition stays (FAILED + diagnostic + Rebuild).
+  useEffect(() => {
+    const watched = importedSurfaceIdsRef.current;
+    if (watched.size === 0) return;
+    const diagnostics = surfaceBuildService.sessionDiagnostics();
+    const building = surfaceBuildService.buildingSurfaceIds();
+    for (const surfaceId of [...watched]) {
+      const diagnostic = diagnostics.get(surfaceId);
+      if (diagnostic) {
+        watched.delete(surfaceId);
+        const surface = activeProject.surfaces?.find((entry) => entry.id === surfaceId);
+        setFileStatusText(
+          `Imported, but surface materialization failed: “${surface?.name ?? 'surface'}” — ${diagnostic.error}. Rebuild from the Surface Manager.`,
+        );
+      } else if (!building.has(surfaceId)) {
+        watched.delete(surfaceId);
+      }
+    }
+  }, [surfaceBuildVersion, surfaceBuildService, activeProject.surfaces]);
+
+  // Staged preview is bound to one drawing: switching drawings releases it
+  // (cancel/close likewise; nothing is ever mutated by staging).
+  useEffect(() => {
+    setStagedLandXmlImport(null);
+    importedSurfaceIdsRef.current.clear();
+    setPendingImportedSurfaceIds([]);
+  }, [activeDrawing.drawingId]);
+
   const hasAdjustmentSource = adjustmentSnapshot != null || (result != null && canFeedDraftingFromResult && resultDependencyIdentity != null);
   const handleImportAdjustedPoints = () => {
     // Phase 18A: explicit bridge snapshot first (standalone CAD has no live result).
@@ -1571,6 +1690,7 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
       setSnapPreference: (kind, enabled) => cadWorkspace.setSnapPreference(kind, enabled),
       newDrawing: () => handleNewDrawing(),
       openDrawingFile: () => fileInputRef.current?.click(),
+      requestLandXmlImport: () => landXmlImportInputRef.current?.click(),
       saveDrawing: () => void handleSaveDrawing(),
       toggleDraftingPanel: () => setDraftingPanelOpen((current) => !current),
       toggleExportCenter: () => setExportCenterOpen((current) => !current),
@@ -1617,6 +1737,14 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
         className="hidden"
         onChange={handleOpenDrawingChange}
         data-survey-cad-open-drawing-input
+      />
+      <input
+        ref={landXmlImportInputRef}
+        type="file"
+        accept=".xml"
+        className="hidden"
+        onChange={handleLandXmlImportChange}
+        data-landxml-import-input
       />
       <div className="relative h-full min-h-0 bg-slate-950">
         {shellChrome ? null : (
@@ -1805,6 +1933,14 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
             f2fLinkStatus={f2fLinkStatus}
             f2fLinkSourceKind={f2fLinkSourceKind}
             onClose={() => setExportCenterOpen(false)}
+          />
+        ) : null}
+        {stagedLandXmlImport ? (
+          <LandXmlImportReviewModal
+            staged={stagedLandXmlImport}
+            onChangeSelection={handleLandXmlSelectionChange}
+            onCancel={() => setStagedLandXmlImport(null)}
+            onImportSelected={handleLandXmlImportSelected}
           />
         ) : null}
         <SurveyCadWorkspaceSurface

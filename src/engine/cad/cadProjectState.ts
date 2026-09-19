@@ -117,3 +117,29 @@ export const appendCadProjectCogoComputation = (
 
 export const buildCadProjectSignature = (project: CadProject): string =>
   JSON.stringify(project);
+
+/**
+ * Key-order-insensitive project signature for history-adoption checks.
+ *
+ * Clone helpers (e.g. `cloneCadSurfaceDefinition`) rebuild objects with a
+ * fixed key order, so a drawing synced through `cloneCadDrawingDocument`
+ * is semantically identical but `JSON.stringify`-different from the
+ * history-side project. Comparing canonical signatures keeps the
+ * external-adopt effect from mistaking that normalization for an external
+ * update and wiping the undo stack. Value changes still differ.
+ */
+const canonicalizeSignatureValue = (value: unknown): unknown => {
+  if (Array.isArray(value)) return value.map(canonicalizeSignatureValue);
+  if (value !== null && typeof value === 'object') {
+    const source = value as Record<string, unknown>;
+    const canonical: Record<string, unknown> = {};
+    for (const key of Object.keys(source).sort()) {
+      canonical[key] = canonicalizeSignatureValue(source[key]);
+    }
+    return canonical;
+  }
+  return value;
+};
+
+export const buildStableCadProjectSignature = (project: CadProject): string =>
+  JSON.stringify(canonicalizeSignatureValue(project));

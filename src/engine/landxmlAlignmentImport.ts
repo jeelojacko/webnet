@@ -238,14 +238,19 @@ const parseAlignment = (
       const endAngle = Math.atan2(end.y - center.y, end.x - center.x) * DEG;
       // Deflection measured in the travel direction (rot): ccw takes
       // norm(end-start), cw takes norm(start-end) — the short way, not 360 minus it.
-      let delta = rotRaw === 'ccw' ? norm360(endAngle - startAngle) : norm360(startAngle - endAngle);
+      const delta = rotRaw === 'ccw' ? norm360(endAngle - startAngle) : norm360(startAngle - endAngle);
       if (delta <= 1e-12) {
-        // Same radial direction: a closed Start==End loop is a full circle,
-        // anything else is a zero-deflection degenerate.
-        if (Math.hypot(end.x - start.x, end.y - start.y) > 1e-9) {
-          return blocked(name, 'LANDXML_ALIGNMENT_GEOMETRY_BLOCKED', [`${what} Curve has zero deflection.`]);
-        }
-        delta = 360;
+        // Same radial direction: a closed Start==End loop would be a full
+        // circle, but a ±360° sweep has no independent fixture or roundtrip
+        // evidence through stationing/display (length, point-at-station,
+        // STA PT) — BLOCK explicitly rather than emit an unverified loop.
+        // Anything else is a zero-deflection degenerate.
+        const closed = Math.hypot(end.x - start.x, end.y - start.y) <= 1e-9;
+        return blocked(name, 'LANDXML_ALIGNMENT_GEOMETRY_BLOCKED', [
+          closed
+            ? `${what} Curve is a full circle (Start == End) — full-circle curves are not supported; split into two or more arcs.`
+            : `${what} Curve has zero deflection.`,
+        ]);
       }
       const startDeg = norm360(startAngle);
       // Sweep sign carries rot: cadSignedSweepDeg supports ±360 (arcs >180° exact).

@@ -80,7 +80,8 @@ reads/writes Surfaces, ProfSurf, CrossSects, or StaEquation.
 | Station equations | `staInternal` → rawStation, `staAhead` → aheadStation, `staBack` → backStation |
 | Profile stations | Raw chainage (internal, equations at alignment level); gaps via multiple PntList2D |
 | Section offsets | Negate WebNet left-positive to LandXML right-positive; `sta` in file linear units |
-| GRID / Spiral / design profile / Roadways / PipeNetworks | Explicit UNSUPPORTED dispositions, no approximation |
+| GRID / Spiral / design profile | Explicit UNSUPPORTED dispositions, no approximation |
+| Roadways / PipeNetworks / Volume | Counted as UNSUPPORTED (`roadwaysUnsupported` / `pipeNetworksUnsupported` / `volumesUnsupported` + warnings), never imported — no models |
 
 ## NOT_VERIFIED (inference only, must not be depended on)
 
