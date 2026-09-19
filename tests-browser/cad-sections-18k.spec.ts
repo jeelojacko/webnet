@@ -23,6 +23,7 @@ import * as path from 'node:path';
 import { ribbonTab } from './cad-profile-18j-helpers';
 import {
   EXISTING_ID,
+  PROPOSED_ID,
   SHOT_DIR,
   addSampleLineAtStation,
   addSampleLinesByInterval,
@@ -53,10 +54,12 @@ import {
 
 async function setupBuiltGroup(page: import('@playwright/test').Page): Promise<{ groupId: string }> {
   await rebuildAllSurfaces(page);
-  await expect.poll(
-    () => page.locator(`[data-cad-toolspace] [data-cad-surface="${EXISTING_ID}"]`).getAttribute('data-cad-surface-status'),
-    { timeout: 60000 },
-  ).toBe('CURRENT');
+  for (const surfaceId of [EXISTING_ID, PROPOSED_ID]) {
+    await expect.poll(
+      () => page.locator(`[data-cad-toolspace] [data-cad-surface="${surfaceId}"]`).getAttribute('data-cad-surface-status'),
+      { timeout: 60000 },
+    ).toBe('CURRENT');
+  }
   await openSectionManager(page);
   const groupId = await createSectionGroup(page, 'K-Corridor');
   await selectSectionGroup(page, groupId);
@@ -100,11 +103,11 @@ test('18K-A: group/sources/add/interval/rebuild CURRENT/supersede/views/shading/
   const manager = sectionManagerScope(page);
   await manager.locator(`[data-sample-line-table] [data-cad-sample-line="${lineIds[1]}"]`).click();
   await manager.getByRole('button', { name: 'Rebuild Line', exact: true }).click();
-  await expect.poll(() => sampleLineStatus(page, lineIds[1]!), { timeout: 60000 }).toContain('Current');
+  await expect.poll(() => sampleLineStatus(page, lineIds[1]!), { timeout: 60000 }).toBe('Current / Current');
   await rebuildSections(page);
-  await expect.poll(() => sampleLineStatus(page, lineIds[1]!), { timeout: 60000 }).toContain('Current');
-  // Outside-TIN line derives NO_COVERAGE honestly (never forced CURRENT).
-  await expect.poll(() => sampleLineStatus(page, lineIds[3]!), { timeout: 60000 }).toContain('No Coverage');
+  await expect.poll(() => sampleLineStatus(page, lineIds[1]!), { timeout: 60000 }).toBe('Current / Current');
+  // Past-the-end line derives OUT_OF_RANGE honestly (never forced CURRENT).
+  await expect.poll(() => sampleLineStatus(page, lineIds[3]!), { timeout: 60000 }).toBe('Out Of Range / Out Of Range');
   await page.screenshot({ path: `${SHOT_DIR}/18k-A-sections-current.png` });
 
   // Batch Create Section Views: one view per line, single vertical stack.
@@ -167,7 +170,7 @@ test('18K-B: equation label/XY + edit chains + layer OFF + save/reopen', async (
   await expect.poll(() => sectionLineIds(page)).toHaveLength(2);
   const lineIds = await sectionLineIds(page);
   await rebuildSections(page);
-  await expect.poll(() => sampleLineStatus(page, lineIds[0]!), { timeout: 60000 }).toContain('Current');
+  await expect.poll(() => sampleLineStatus(page, lineIds[0]!), { timeout: 60000 }).toBe('Current / Current');
   await createSectionViews(page);
   await expect.poll(() => page.locator('[data-section-view-layer]').count()).toBe(2);
 
@@ -198,7 +201,7 @@ test('18K-B: equation label/XY + edit chains + layer OFF + save/reopen', async (
   await expect.poll(() => planLineAfter.locator('..').locator('text').first().textContent()).not.toBe(labelBefore);
   expect(await planLineAfter.locator('..').locator('text').first().textContent()).toContain('0+37');
   // Still CURRENT: equations relabel, they never invalidate extraction.
-  await expect.poll(() => sampleLineStatus(page, lineIds[0]!)).toContain('Current');
+  await expect.poll(() => sampleLineStatus(page, lineIds[0]!)).toBe('Current / Current');
   await expect.poll(() => page.locator('[data-section-view-layer]').count()).toBe(2);
   await page.screenshot({ path: `${SHOT_DIR}/18k-B-equation.png` });
   fs.rmSync(path.dirname(equationPath), { recursive: true, force: true });
@@ -211,17 +214,19 @@ test('18K-B: equation label/XY + edit chains + layer OFF + save/reopen', async (
   await canvasClick(page, 0.3, 0.5);
   await canvasClick(page, 0.35, 0.55);
   await cancelCommand(page);
-  await expect.poll(() => sampleLineStatus(page, lineIds[0]!)).not.toContain('Current');
+  await expect.poll(() => sampleLineStatus(page, lineIds[0]!)).not.toBe('Current / Current');
   // Rebuild chain: surfaces CURRENT, sections CURRENT again.
   await rebuildAllSurfaces(page);
-  await expect.poll(
-    () => page.locator(`[data-cad-toolspace] [data-cad-surface="${EXISTING_ID}"]`).getAttribute('data-cad-surface-status'),
-    { timeout: 60000 },
-  ).toBe('CURRENT');
+  for (const surfaceId of [EXISTING_ID, PROPOSED_ID]) {
+    await expect.poll(
+      () => page.locator(`[data-cad-toolspace] [data-cad-surface="${surfaceId}"]`).getAttribute('data-cad-surface-status'),
+      { timeout: 60000 },
+    ).toBe('CURRENT');
+  }
   await openSectionManager(page);
   await selectSectionGroup(page, groupId);
   await rebuildSections(page);
-  await expect.poll(() => sampleLineStatus(page, lineIds[0]!), { timeout: 60000 }).toContain('Current');
+  await expect.poll(() => sampleLineStatus(page, lineIds[0]!), { timeout: 60000 }).toBe('Current / Current');
 
   // Surface-only edit path: MOVE once more, surface NEEDS_REBUILD first.
   await ribbonTab(page, 'Home').click();
@@ -235,13 +240,15 @@ test('18K-B: equation label/XY + edit chains + layer OFF + save/reopen', async (
   ).toBe('NEEDS_REBUILD');
   await expect.poll(() => sampleLineStatus(page, lineIds[0]!)).toContain('Source Not Current');
   await rebuildAllSurfaces(page);
-  await expect.poll(
-    () => page.locator(`[data-cad-toolspace] [data-cad-surface="${EXISTING_ID}"]`).getAttribute('data-cad-surface-status'),
-    { timeout: 60000 },
-  ).toBe('CURRENT');
+  for (const surfaceId of [EXISTING_ID, PROPOSED_ID]) {
+    await expect.poll(
+      () => page.locator(`[data-cad-toolspace] [data-cad-surface="${surfaceId}"]`).getAttribute('data-cad-surface-status'),
+      { timeout: 60000 },
+    ).toBe('CURRENT');
+  }
   await expect.poll(() => sampleLineStatus(page, lineIds[0]!)).not.toContain('Source Not Current');
   await rebuildSections(page);
-  await expect.poll(() => sampleLineStatus(page, lineIds[0]!), { timeout: 60000 }).toContain('Current');
+  await expect.poll(() => sampleLineStatus(page, lineIds[0]!), { timeout: 60000 }).toBe('Current / Current');
 
   // Layer OFF hides plan + views with no rebuild; ON restores from cache.
   await collapseFloatingPanel(page);
@@ -251,7 +258,7 @@ test('18K-B: equation label/XY + edit chains + layer OFF + save/reopen', async (
   await layers.locator('input[aria-label="Toggle on/off for layer General"]').uncheck();
   await expect(page.locator('[data-section-view-layer]')).toHaveCount(0);
   await expect(page.locator('[data-sample-line]').first()).toHaveCount(0);
-  await expect.poll(() => sampleLineStatus(page, lineIds[0]!)).toContain('Current');
+  await expect.poll(() => sampleLineStatus(page, lineIds[0]!)).toBe('Current / Current');
   await page.screenshot({ path: `${SHOT_DIR}/18k-B-layer-off.png` });
   await layers.locator('input[aria-label="Toggle on/off for layer General"]').check();
   await expect.poll(() => page.locator('[data-section-view-layer]').count()).toBe(2);
@@ -271,12 +278,14 @@ test('18K-B: equation label/XY + edit chains + layer OFF + save/reopen', async (
   await expect.poll(() => sampleLineStatus(page, lineIds[0]!)).toBe('Unbuilt / Unbuilt');
   await expect(page.locator('[data-section-view-layer]')).toHaveCount(0);
   await rebuildAllSurfaces(page);
-  await expect.poll(
-    () => page.locator(`[data-cad-toolspace] [data-cad-surface="${EXISTING_ID}"]`).getAttribute('data-cad-surface-status'),
-    { timeout: 60000 },
-  ).toBe('CURRENT');
+  for (const surfaceId of [EXISTING_ID, PROPOSED_ID]) {
+    await expect.poll(
+      () => page.locator(`[data-cad-toolspace] [data-cad-surface="${surfaceId}"]`).getAttribute('data-cad-surface-status'),
+      { timeout: 60000 },
+    ).toBe('CURRENT');
+  }
   await rebuildSections(page);
-  await expect.poll(() => sampleLineStatus(page, lineIds[0]!), { timeout: 60000 }).toContain('Current');
+  await expect.poll(() => sampleLineStatus(page, lineIds[0]!), { timeout: 60000 }).toBe('Current / Current');
   await expect.poll(() => page.locator('[data-section-view-layer]').count()).toBe(2);
   fs.rmSync(path.dirname(reopenPath), { recursive: true, force: true });
   fs.rmSync(path.dirname(drawingPath), { recursive: true, force: true });

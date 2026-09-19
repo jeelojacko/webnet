@@ -25,6 +25,15 @@ interface CadSampleLineManagerProps {
  * add/remove/style-assign, base/comparison pickers). No giant cards:
  * compact rows, details in the selected-line panel. Every mutation is an
  * undoable SAMPLE or SECTION command (Rebuild is a session service call).
+ *
+ * Sample-line STYLE decision (deliberate, do not "fix" by adding
+ * per-line styles): sample lines are centerline DEFINITIONS, not styled
+ * CAD entities — plan rendering uses fixed cyan/amber selection colors.
+ * Trace styling lives one level up, per source surface: each group source
+ * carries sectionStyleId into the deterministic seeded sectionStyles
+ * table (Standard fallback when unassigned; "None" hides that trace).
+ * One style table shared by manager, toolspace, views, and display
+ * adapters — no parallel per-line/per-view style stores.
  */
 export const CadSampleLineManager: React.FC<CadSampleLineManagerProps> = ({ snapshot, actions, onClose }) => {
   return (

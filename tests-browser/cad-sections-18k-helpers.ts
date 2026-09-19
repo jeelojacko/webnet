@@ -76,10 +76,13 @@ export function makeSectionDrawing(): string {
     kind: 'points',
     pointEntityIds: clones.map((entry) => entry.id),
   };
-  // Proposed skips the void: full rect coverage, cleaner overlay math.
+  // Proposed skips the void and the mid-row breakline (it references the
+  // original points): full rect coverage on the pure +2 plane, so the
+  // overlay math stays exact and deterministic.
   (proposed['definition'] as Record<string, unknown>)['boundaries'] = [
     { type: 'outer', sourceEntityId: 'qa-ring-outer' },
   ];
+  delete (proposed['definition'] as Record<string, unknown>)['breaklines'];
   seed.project.surfaces = [existing, proposed];
   seed.project.entities = [
     ...seed.project.entities,

@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { createBlankCadDrawingDocument } from '../src/engine/cad/cadDrawingFile';
 import { computeCadSurfaceSourceRevision } from '../src/engine/cad/cadSurfaces';
 import { computeCadSampleLineRevision } from '../src/engine/cad/cadSectionRevision';
+import { seedCadSectionStyles } from '../src/engine/cad/cadSectionTypes';
 import { filterCadDisplaySceneForViewport } from '../src/engine/cad/cadViewportAppearance';
 import {
   buildSampleLineDisplayLayers,
@@ -179,6 +180,23 @@ describe('18K section UI: plan display layers', () => {
     });
     expect(restored.sampleLineLayers).toHaveLength(1);
   });
+
+  it('layer FROZEN hides plan lines like OFF does', () => {
+    const project = baseProject();
+    const layers = buildSampleLineDisplayLayers(project);
+    const frozen = {
+      ...project,
+      layers: project.layers.map((entry) =>
+        entry.id === 'general' ? { ...entry, frozen: true } : entry,
+      ),
+    };
+    const scene = filterCadDisplaySceneForViewport(frozen, {
+      bounds: null,
+      primitives: [],
+      sampleLineLayers: layers,
+    });
+    expect(scene.sampleLineLayers).toHaveLength(0);
+  });
 });
 
 describe('18K section UI: section-view display', () => {
@@ -222,6 +240,33 @@ describe('18K section UI: section-view display', () => {
     expect(rightTick.x).toBeGreaterThan(100);
     expect(view.centerlineD).toContain('M100 ');
     expect(view.title).toBe('CL — STA 0+02.000');
+  });
+
+  it('per-source section styles color traces; "None" hides a trace', () => {
+    const styled = viewProject();
+    const styles = seedCadSectionStyles();
+    styled.sectionStyles = styles;
+    styled.sampleLineGroups = [
+      {
+        ...styled.sampleLineGroups![0]!,
+        surfaceSources: [
+          { surfaceId: 'surf-1', sectionStyleId: styles[0]!.id },
+          { surfaceId: 'surf-2', sectionStyleId: 'section-style-none' },
+        ],
+      },
+    ];
+    const cache = createCadSectionCache('draw-1');
+    const link = styled.sampleLineGroups![0]!.sampleLines[0]!;
+    cache.set('line-1', 'surf-1', flatResult(styled, 'grp-1', 'line-1', 'surf-1', link.rawStation, 5, [[-5, 5]]));
+    cache.set('line-1', 'surf-2', flatResult(styled, 'grp-1', 'line-1', 'surf-2', link.rawStation, 7, [[-5, 5]]));
+    const layers = buildSectionViewDisplayLayers(styled, cache);
+    const view = layers[0]!;
+    // Styled trace takes the style color; the "None" trace is dropped
+    // (no path, no legend entry) — style decision, not a render bug.
+    expect(view.tracePaths).toHaveLength(1);
+    expect(view.tracePaths[0]!.surfaceId).toBe('surf-1');
+    expect(view.tracePaths[0]!.color).toBe(styles[0]!.color);
+    expect(view.legend).toHaveLength(1);
   });
 
   it('leaves gaps empty and stops shading at gap edges', () => {
