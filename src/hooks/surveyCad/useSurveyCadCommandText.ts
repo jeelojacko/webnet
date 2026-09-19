@@ -271,6 +271,31 @@ export const promptForSession = (session: CommandSession | null, fallbackStatus:
     case 'PASTE':
       return session.resultText ??
         `PASTE active. Clipboard base ${session.startPoint.label} captured. Click the insertion point or enter \`x,y\`, \`@azimuth,distance\`, or \`N45-00-00E,100\`, then press Enter.`;
+    case 'MTEXT':
+      return session.resultText ??
+        (session.point
+          ? `MTEXT active. Insertion captured. Type a line and press Enter (repeat for more lines), then Esc to commit${session.lines.length > 0 ? ` (${session.lines.length} line${session.lines.length === 1 ? '' : 's'}).` : '.'}`
+          : 'MTEXT active. Click the insertion point.');
+    case 'LEADER':
+      return session.resultText ??
+        (session.arrowPoint
+          ? 'LEADER active. Arrow point captured. Type the note and press Enter, then Esc to commit.'
+          : 'LEADER active. Click the arrow point.');
+    case 'DIM':
+    case 'DIMLINEAR':
+      return session.resultText ?? 'DIMLINEAR active. Click two definition points, then the dimension-line point.';
+    case 'DIMALIGNED':
+      return session.resultText ?? 'DIMALIGNED active. Click two definition points, then the dimension-line point.';
+    case 'DIMANGULAR':
+      return session.resultText ?? 'DIMANGULAR active. Click the vertex, two ray points, then the dimension-line point.';
+    case 'DIMRADIUS':
+      return session.resultText ?? 'DIMRADIUS active. Click on the arc, then the dimension-line point.';
+    case 'DIMDIAMETER':
+      return session.resultText ?? 'DIMDIAMETER active. Click on the arc, then the dimension-line point.';
+    case 'BDLABEL':
+      return session.resultText ?? 'BDLABEL active. Click a line to label, then Esc to commit.';
+    case 'CURVELABEL':
+      return session.resultText ?? 'CURVELABEL active. Click an arc to label.';
   }
 };
 

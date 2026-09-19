@@ -430,6 +430,51 @@ const buildEntityProperties = (project: CadProject, entity: CadEntity): CadEntit
         row('theta', 'Theta', numeric(entity.thetaDeg, 4)),
       );
       return rows;
+    case 'mtext':
+      rows.push(
+        row('name', 'Name', getCadEntityEditableName(entity) || getCadEntityDisplayLabel(entity), { kind: 'entity-name' }),
+        row('text', 'Text', entity.text),
+        row('insertion-e', 'Insertion E', numeric(entity.x)),
+        row('insertion-n', 'Insertion N', numeric(entity.y)),
+        row('text-style', 'Text style', entity.textStyleId),
+        row('rotation', 'Rotation', numeric(entity.rotationDeg, 4)),
+      );
+      return rows;
+    case 'leader':
+      rows.push(
+        row('name', 'Name', getCadEntityEditableName(entity) || getCadEntityDisplayLabel(entity), { kind: 'entity-name' }),
+        row('text', 'Text', entity.text),
+        row('leader-style', 'Leader style', entity.leaderStyleId),
+        row('vertices', 'Vertices', String(entity.vertices.length)),
+      );
+      return rows;
+    case 'dimension':
+      rows.push(
+        row('name', 'Name', getCadEntityEditableName(entity) || getCadEntityDisplayLabel(entity), { kind: 'entity-name' }),
+        row('dimension-kind', 'Kind', entity.dimensionKind),
+        row('dimension-style', 'Dimension style', entity.dimensionStyleId),
+        row('dim-line-e', 'Dim line E', numeric(entity.dimLinePoint.x)),
+        row('dim-line-n', 'Dim line N', numeric(entity.dimLinePoint.y)),
+      );
+      return rows;
+    case 'bearing-label':
+      rows.push(
+        row('name', 'Name', getCadEntityEditableName(entity) || getCadEntityDisplayLabel(entity), { kind: 'entity-name' }),
+        row('source-entity', 'Source entity', resolveSourceEntityLabel(project, entity.sourceEntityId)),
+        row('label-style', 'Label style', entity.labelStyleId),
+        row('offset-e', 'Offset E', numeric(entity.offset.x)),
+        row('offset-n', 'Offset N', numeric(entity.offset.y)),
+      );
+      return rows;
+    case 'curve-label':
+      rows.push(
+        row('name', 'Name', getCadEntityEditableName(entity) || getCadEntityDisplayLabel(entity), { kind: 'entity-name' }),
+        row('source-entity', 'Source entity', resolveSourceEntityLabel(project, entity.sourceEntityId)),
+        row('label-style', 'Label style', entity.labelStyleId),
+        row('offset-e', 'Offset E', numeric(entity.offset.x)),
+        row('offset-n', 'Offset N', numeric(entity.offset.y)),
+      );
+      return rows;
     case 'block-reference':
       rows.push(
         row('name', 'Name', getCadEntityEditableName(entity) || getCadEntityDisplayLabel(entity), { kind: 'entity-name' }),

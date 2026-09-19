@@ -165,5 +165,17 @@ export const buildSnapConstructionContext = (
             ? { active: true, basePoint: { x: session.piPoint.x, y: session.piPoint.y } }
             : inactiveConstructionContext()
         : inactiveConstructionContext();
+    // Phase 18O annotation picks need no construction scope (fixed anchors).
+    case 'MTEXT':
+    case 'LEADER':
+    case 'DIM':
+    case 'DIMLINEAR':
+    case 'DIMALIGNED':
+    case 'DIMANGULAR':
+    case 'DIMRADIUS':
+    case 'DIMDIAMETER':
+    case 'BDLABEL':
+    case 'CURVELABEL':
+      return inactiveConstructionContext();
   }
 };

@@ -6,6 +6,7 @@ import {
   type CadShellCommandDef,
 } from './cadCommandRegistry';
 import { CadLayersGroup } from './CadLayersGroup';
+import { CadAnnotateRibbonGroups } from '../annotation/CadAnnotateRibbonGroups';
 import type { CadShellActions, CadWorkspaceSnapshot, SurveyManagerKind } from './cadShellTypes';
 
 interface CadRibbonProps {
@@ -15,7 +16,7 @@ interface CadRibbonProps {
   onToggleCollapsed: () => void;
 }
 
-const RIBBON_TABS = ['Home', 'Survey', 'Surface', 'Output'] as const;
+const RIBBON_TABS = ['Home', 'Annotate', 'Survey', 'Surface', 'Output'] as const;
 type RibbonTab = (typeof RIBBON_TABS)[number];
 
 const ribbonTooltip = (def: CadShellCommandDef): string => {
@@ -45,11 +46,13 @@ export const CadRibbon: React.FC<CadRibbonProps> = ({ snapshot, actions, collaps
   const groups =
     tab === 'Home'
       ? (['Draw', 'Modify', 'Parcel', 'Edit'] as const)
-      : tab === 'Survey'
+      : tab === 'Annotate'
         ? ([] as const)
-        : tab === 'Surface'
+        : tab === 'Survey'
           ? ([] as const)
-          : (['File'] as const);
+          : tab === 'Surface'
+            ? ([] as const)
+            : (['File'] as const);
   return (
     <div className="cad-shell-ribbon" data-cad-ribbon>
       <div className="cad-shell-ribbon-tabs" role="tablist" aria-label="Ribbon tabs">
@@ -72,6 +75,7 @@ export const CadRibbon: React.FC<CadRibbonProps> = ({ snapshot, actions, collaps
       <div className="cad-shell-ribbon-groups">
         {tab === 'Home' ? <CadLayersGroup snapshot={snapshot} actions={actions} /> : null}
         {tab === 'Home' ? <CadBlocksRibbonGroup snapshot={snapshot} actions={actions} /> : null}
+        {tab === 'Annotate' ? <CadAnnotateRibbonGroups snapshot={snapshot} actions={actions} /> : null}
         {tab === 'Survey' ? <CadSurveyGroup snapshot={snapshot} actions={actions} /> : null}
         {tab === 'Surface' ? <CadSurfaceRibbonGroup snapshot={snapshot} actions={actions} /> : null}
         {groups.map((group) => (

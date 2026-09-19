@@ -283,6 +283,19 @@ export const useSurveyCadCommandStarters = ({
       targetPoint: null,
     });
   },
+  // Phase 18O annotation creation sessions (fixed anchors; text via input).
+  startMTextCommand: () => beginSession({ key: 'MTEXT', inputValue: '', point: null, lines: [] }),
+  startLeaderCommand: () => beginSession({ key: 'LEADER', inputValue: '', arrowPoint: null, lines: [] }),
+  startDimCommand: () => beginSession({ key: 'DIM', inputValue: '', points: [] }),
+  startDimLinearCommand: () => beginSession({ key: 'DIMLINEAR', inputValue: '', points: [] }),
+  startDimAlignedCommand: () => beginSession({ key: 'DIMALIGNED', inputValue: '', points: [] }),
+  startDimAngularCommand: () => beginSession({ key: 'DIMANGULAR', inputValue: '', points: [] }),
+  startDimRadiusCommand: () => beginSession({ key: 'DIMRADIUS', inputValue: '', points: [] }),
+  startDimDiameterCommand: () => beginSession({ key: 'DIMDIAMETER', inputValue: '', points: [] }),
+  startBearingLabelCommand: () =>
+    beginSession({ key: 'BDLABEL', inputValue: '', points: [], sourceEntityId: null }),
+  startCurveLabelCommand: () =>
+    beginSession({ key: 'CURVELABEL', inputValue: '', points: [], sourceEntityId: null }),
   startMoveCommand: () => {
     if (selectionCount === 0) return;
     beginSession({ key: 'MOVE', inputValue: '', startPoint: null });

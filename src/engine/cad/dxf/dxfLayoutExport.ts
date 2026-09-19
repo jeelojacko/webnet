@@ -126,7 +126,11 @@ const paperPaint = (ctx: PaperContext, layer: string, stroke: string | undefined
   return [pair(62, String(nearestAci(eff))), pair(420, String(trueColorDxf420(eff)))];
 }
 
-const emitPaperText = (
+// Annotation multiline paper text rides as one TEXT row per line (TEXT group 1
+// cannot carry raw newlines); single-line items stay byte-identical.
+const PAPER_TEXT_LINE_SPACING = 1.2;
+
+const emitPaperTextRow = (
   ctx: PaperContext,
   layer: string,
   x: number,
@@ -147,6 +151,22 @@ const emitPaperText = (
   // Scene rotation is clockwise-as-seen (SVG rotate direction); DXF group 50
   // is CCW in a y-up frame, so the same visual is the negated angle.
   if (normDeg(rotationSceneDeg) !== 0) ctx.out.push(pair(50, fmt(normDeg(-rotationSceneDeg))));
+};
+
+const emitPaperText = (
+  ctx: PaperContext,
+  layer: string,
+  x: number,
+  yScene: number,
+  height: number,
+  text: string,
+  rotationSceneDeg = 0,
+  stroke?: string,
+): void => {
+  const rows = text.split(/\r\n|\r|\n/);
+  rows.forEach((line, index) => {
+    emitPaperTextRow(ctx, layer, x, yScene + index * height * PAPER_TEXT_LINE_SPACING, height, line, rotationSceneDeg, stroke);
+  });
 };
 
 const emitPaperPolyline = (ctx: PaperContext, layer: string, points: Array<{ x: number; y: number }>, closed: boolean, stroke?: string): void => {

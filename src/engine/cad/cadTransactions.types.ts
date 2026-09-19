@@ -2,12 +2,15 @@ import type { CadSelectionState } from './cadSelection';
 import type { FieldToFinishCadPayload } from '../fieldToFinish/cadGeneration';
 import type { CadBatchCogoDraft } from './cadBatchCogo';
 
+import type { CadAnnotationAnchor } from './annotation/cadAnnotationAnchors';
 import type {
   CadAlignmentElement,
+  CadDimensionKind,
   CadEntityAppearance,
   CadEntityId,
   CadLayerId,
   CadGripHandleKind,
+  CadMTextAttachment,
   CadParcelLayoutSettings,
   CadPointGroup,
   CadPointGroupId,
@@ -23,6 +26,7 @@ import type {
   CadSurfaceDefinition,
   CadSurfaceStyle,
   CadProfileStyle,
+  CadTextStyleId,
   CadVolumeSurfaceStyle,
   ImportedTinPayload,
 } from './cadTypes';
@@ -182,7 +186,18 @@ export type CadCommandKey =
   | 'BLOCK_REDEFINE'
   | 'BLOCK_RENAME'
   | 'BLOCK_DUPLICATE'
-  | 'BLOCK_DELETE';
+  | 'BLOCK_DELETE'
+  | 'CREATE_MTEXT'
+  | 'CREATE_LEADER'
+  | 'CREATE_DIMENSION'
+  | 'CREATE_BEARING_LABEL'
+  | 'CREATE_CURVE_LABEL'
+  | 'UPDATE_DIMENSION_PLACEMENT'
+  | 'REATTACH_ANNOTATION'
+  | 'SET_TEXT_OVERRIDE'
+  | 'CLEAR_TEXT_OVERRIDE'
+  | 'SET_ANNOTATION_SCALE'
+  | 'ANNOTATION_COMMIT';
 export type CadCommandPhase = 'idle' | 'committed';
 
 export interface CadCommandState {
@@ -1097,6 +1112,82 @@ export type CadCommand =
       definitionId: string;
       force?: boolean;
       deleteRefs?: boolean;
+    }
+  | {
+      key: 'CREATE_MTEXT';
+      x: number;
+      y: number;
+      text: string;
+      textStyleId?: CadTextStyleId;
+      rotationDeg?: number;
+      attachment?: CadMTextAttachment;
+    }
+  | {
+      key: 'CREATE_LEADER';
+      arrowAnchor: CadAnnotationAnchor;
+      vertices: { x: number; y: number }[];
+      text: string;
+      leaderStyleId?: string;
+      textStyleId?: CadTextStyleId;
+      textAttachment?: CadMTextAttachment;
+    }
+  | {
+      key: 'CREATE_DIMENSION';
+      dimensionKind: CadDimensionKind;
+      anchors: CadAnnotationAnchor[];
+      orientation?: 'horizontal' | 'vertical' | 'aligned';
+      dimLinePoint: { x: number; y: number };
+      textPoint?: { x: number; y: number };
+      dimensionStyleId?: string;
+      textOverride?: string;
+    }
+  | {
+      key: 'CREATE_BEARING_LABEL';
+      sourceEntityId: CadEntityId;
+      labelStyleId?: string;
+      offset?: { x: number; y: number };
+      side?: 'left' | 'right' | 'auto';
+      manualTextOverride?: string;
+    }
+  | {
+      key: 'CREATE_CURVE_LABEL';
+      sourceEntityId: CadEntityId;
+      labelStyleId?: string;
+      offset?: { x: number; y: number };
+      manualTextOverride?: string;
+    }
+  | {
+      key: 'UPDATE_DIMENSION_PLACEMENT';
+      entityId: CadEntityId;
+      dimLinePoint?: { x: number; y: number };
+      textPoint?: { x: number; y: number } | null;
+    }
+  | {
+      key: 'REATTACH_ANNOTATION';
+      entityId: CadEntityId;
+      slot: 'leader-arrow' | 'dimension-anchor' | 'dimension-def-point-1' | 'dimension-def-point-2';
+      index?: number;
+      /** Omitted = convert the slot to a frozen point at its resolved position. */
+      anchor?: CadAnnotationAnchor;
+    }
+  | {
+      key: 'SET_TEXT_OVERRIDE';
+      entityId: CadEntityId;
+      text: string;
+    }
+  | {
+      key: 'CLEAR_TEXT_OVERRIDE';
+      entityId: CadEntityId;
+    }
+  | {
+      key: 'SET_ANNOTATION_SCALE';
+      scaleDenominator: number;
+    }
+  | {
+      key: 'ANNOTATION_COMMIT';
+      /** Validated project from the annotation UI op applier (hook-owned). */
+      project: CadProject;
+      label: string;
     };
 
 export interface CadTransaction {

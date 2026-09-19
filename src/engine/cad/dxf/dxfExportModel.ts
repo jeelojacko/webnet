@@ -25,6 +25,7 @@ export type {
 } from './dxfBlockExport';
 import { findBlockDefinition, normalizeBlockScales } from '../cadBlocks';
 import { surveyPointMarker } from '../cadRendererStyle';
+import { deriveAnnotationPrimitives } from './dxfAnnotationExport';
 
 // Adapter boundary: the drafting/document core never becomes DXF-shaped.
 // This model is the only DXF-aware shape, built fresh per export and thrown
@@ -460,6 +461,36 @@ export const buildDxfExportModelWithResult = (args: BuildDxfModelArgs): ExportRe
           ...entryStyle(entity),
         });
         result.exportedEntityIds.push(entity.id);
+        break;
+      }
+      case 'mtext':
+      case 'leader':
+      case 'dimension':
+      case 'bearing-label':
+      case 'curve-label': {
+        // Phase 18O: derived LINE/TEXT primitives + tessellated arrowheads.
+        // APPROXIMATED (never a native annotation entity), and never a silent
+        // drop: an underivable entity is omitted with its warning. See the
+        // annotation export block above for the mlightcad round-trip rationale.
+        const derivation = deriveAnnotationPrimitives(entity, args.project);
+        const count = derivation.primitives.lines.length + derivation.primitives.texts.length;
+        if (!derivation.ok || count === 0) {
+          warn({ code: 'SKIPPED_ENTITY', message: `${entity.type} ${entity.id} has no derivable annotation geometry`, entityId: entity.id });
+          result.omittedEntityIds.push(entity.id);
+          break;
+        }
+        const annotationStyle = entryStyle(entity);
+        const layer = registerLayer(entity.layerId);
+        derivation.primitives.lines.forEach((line) => {
+          model.lines.push({ layer, from: line.from, to: line.to, ...annotationStyle });
+        });
+        derivation.primitives.texts.forEach((text) => {
+          model.texts.push({ layer, at: text.at, height: text.height, text: text.text, ...annotationStyle });
+        });
+        derivation.warnings.forEach(warn);
+        result.exportedEntityIds.push(entity.id);
+        result.approximatedEntityIds.push(entity.id);
+        warn({ code: 'SKIPPED_ENTITY', message: `${entity.type} ${entity.id} approximated as derived LINE/TEXT primitives (no round-trip-safe native DXF annotation)`, entityId: entity.id });
         break;
       }
       default:

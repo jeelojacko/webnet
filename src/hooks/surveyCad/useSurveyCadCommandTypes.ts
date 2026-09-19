@@ -88,6 +88,16 @@ export type ActiveCommandKey =
   | 'OFFSET_INTX'
   | 'SKEW_INTX'
   | 'BATCH_COGO'
+  | 'MTEXT'
+  | 'LEADER'
+  | 'DIM'
+  | 'DIMLINEAR'
+  | 'DIMALIGNED'
+  | 'DIMANGULAR'
+  | 'DIMRADIUS'
+  | 'DIMDIAMETER'
+  | 'BDLABEL'
+  | 'CURVELABEL'
   | 'PARCEL_SPLIT_BEARING'
   | 'PARCEL_SPLIT_AREA'
   | 'MOVE'
@@ -322,5 +332,34 @@ export type CommandSession =
       piPoint: CommandPoint | null;
       backTangentPoint: CommandPoint | null;
       aheadTangentPoint: CommandPoint | null;
+      resultText?: string;
+    }
+  // Phase 18O annotation creation sessions (fixed anchors; see
+  // useSurveyCadAnnotationSessions for the pick/commit flows).
+  | {
+      key: 'MTEXT';
+      inputValue: string;
+      point: CommandPoint | null;
+      lines: string[];
+      resultText?: string;
+    }
+  | {
+      key: 'LEADER';
+      inputValue: string;
+      arrowPoint: CommandPoint | null;
+      lines: string[];
+      resultText?: string;
+    }
+  | {
+      key: 'DIM' | 'DIMLINEAR' | 'DIMALIGNED' | 'DIMANGULAR' | 'DIMRADIUS' | 'DIMDIAMETER';
+      inputValue: string;
+      points: CommandPoint[];
+      resultText?: string;
+    }
+  | {
+      key: 'BDLABEL' | 'CURVELABEL';
+      inputValue: string;
+      points: CommandPoint[];
+      sourceEntityId: string | null;
       resultText?: string;
     };

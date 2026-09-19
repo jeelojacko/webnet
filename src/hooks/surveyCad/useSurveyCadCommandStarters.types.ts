@@ -65,6 +65,16 @@ export interface SurveyCadCommandStarters {
   startPerpendicularIntersectionCommand: () => void;
   startOffsetIntersectionCommand: () => void;
   startSkewIntersectionCommand: () => void;
+  startMTextCommand: () => void;
+  startLeaderCommand: () => void;
+  startDimCommand: () => void;
+  startDimLinearCommand: () => void;
+  startDimAlignedCommand: () => void;
+  startDimAngularCommand: () => void;
+  startDimRadiusCommand: () => void;
+  startDimDiameterCommand: () => void;
+  startBearingLabelCommand: () => void;
+  startCurveLabelCommand: () => void;
   startMoveCommand: () => void;
   startCopyCommand: () => void;
   startExtendCommand: () => void;

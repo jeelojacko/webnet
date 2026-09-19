@@ -7,6 +7,7 @@ import type {
   HandleSurveyCadConsumePointOptions,
   ReplaceSession,
 } from './useSurveyCadConsumePoint.types';
+import { handleAnnotationPointPick } from './useSurveyCadAnnotationSessions';
 import { handleSurveyCadEditPointPick } from './useSurveyCadEditPointPick';
 import { handleSurveyCadParcelSplitPointPick } from './useSurveyCadParcelSplitPointPick';
 import {
@@ -170,6 +171,18 @@ export const handleSurveyCadConsumePoint = (
   options: HandleSurveyCadConsumePointOptions,
 ): void => {
   const { applyHistoryUpdate, current, point, replaceSession } = options;
+  // Phase 18O annotation creation picks (fixed anchors; eager dimension/label commits).
+  if (
+    handleAnnotationPointPick({
+      current,
+      point,
+      project: options.history.present.project,
+      applyHistoryUpdate,
+      replaceSession,
+    })
+  ) {
+    return;
+  }
   if (current.key === 'POINT') {
     applyHistoryUpdate((existing) =>
       runCadCommand(existing, {

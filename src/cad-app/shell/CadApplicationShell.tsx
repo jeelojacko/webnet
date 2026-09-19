@@ -14,12 +14,13 @@ import { CadCommandDock } from './CadCommandDock';
 import { CadStatusBar } from './CadStatusBar';
 import { CadDrawingTabs, CadModelLayoutTabs } from './CadDrawingTabs';
 import { CadBlockManager } from '../blocks/CadBlockManager';
+import { CadAnnotationManager } from '../annotation/CadAnnotationManager';
 import {
   executeShellCommand,
   resolveShellCommandText,
   type CadShellCommandDef,
 } from './cadCommandRegistry';
-import type { CadSidePanelId } from './cadShellTypes';
+import type { CadAnnotationManagerTab, CadSidePanelId } from './cadShellTypes';
 import './cadShell.css';
 
 interface CadApplicationShellProps {
@@ -52,6 +53,7 @@ export const CadApplicationShell: React.FC<CadApplicationShellProps> = ({ contro
   const snapshot = useCadShellSnapshot(link);
   const [showStart, setShowStart] = useState(false);
   const [blockManager, setBlockManager] = useState<{ tab: 'blocks' | 'symbols' | 'insert' } | null>(null);
+  const [annotationManager, setAnnotationManager] = useState<{ tab?: CadAnnotationManagerTab } | null>(null);
   const [contextMenu, setContextMenu] = useState<{ x: number; y: number } | null>(null);
 
   const {
@@ -89,10 +91,13 @@ export const CadApplicationShell: React.FC<CadApplicationShellProps> = ({ contro
     };
     // Phase 18N — registry BLOCK/INSERT/BLOCKS entries open the manager.
     link.requestBlockManager = (tab) => setBlockManager({ tab: tab ?? 'blocks' });
+    // Phase 18O — annotation style commands open the Annotation Styles manager.
+    link.requestAnnotationManager = (tab) => setAnnotationManager({ tab });
     return () => {
       link.requestLayerManager = null;
       link.requestToolspaceTab = null;
       link.requestBlockManager = null;
+      link.requestAnnotationManager = null;
     };
   }, [link, layout]);
 
@@ -303,6 +308,18 @@ export const CadApplicationShell: React.FC<CadApplicationShellProps> = ({ contro
             cancelInsertPick: () => link.actions?.cancelInsertPick?.(),
           }}
           onClose={() => setBlockManager(null)}
+        />
+      ) : null}
+      {annotationManager && snapshot?.annotation ? (
+        <CadAnnotationManager
+          annotation={snapshot.annotation}
+          initialTab={annotationManager.tab}
+          runOp={(op) =>
+            link.actions?.runAnnotationOp?.(op) ?? {
+              applied: false,
+              reason: 'Annotation commands unavailable in this workspace.',
+            }}
+          onClose={() => setAnnotationManager(null)}
         />
       ) : null}
     </div>

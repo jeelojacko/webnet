@@ -64,6 +64,11 @@ export const CAD_ENTITY_TYPE_LABELS: Record<CadEntity['type'], string> = {
   arc: 'Arcs',
   alignment: 'Alignments',
   text: 'Text',
+  mtext: 'MText',
+  leader: 'Leader',
+  dimension: 'Dimension',
+  'bearing-label': 'Bearing Label',
+  'curve-label': 'Curve Label',
   'error-ellipse': 'Error Ellipses',
   'block-reference': 'Block References',
 };
@@ -77,6 +82,11 @@ export const CAD_ENTITY_TYPE_SINGULAR_LABELS: Record<CadEntity['type'], string> 
   arc: 'Arc',
   alignment: 'Alignment',
   text: 'Text',
+  mtext: 'MText',
+  leader: 'Leader',
+  dimension: 'Dimension',
+  'bearing-label': 'Bearing Label',
+  'curve-label': 'Curve Label',
   'error-ellipse': 'Error Ellipse',
   'block-reference': 'Block Reference',
 };

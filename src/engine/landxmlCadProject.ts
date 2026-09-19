@@ -323,6 +323,25 @@ const convertEntities = (project: CadProject, acc: ProjectLandXmlAccum): void =>
       case 'error-ellipse':
         acc.ellipseIds.push(entity.id);
         break;
+      // Phase 18O annotation: LandXML 1.2 carries no annotation/document
+      // presentation entities, so every kind is NOT_APPLICABLE and omitted
+      // with an explicit warning (never a silent drop). The 9 matrix kinds
+      // are mtext, leader, the 5 dimension kinds, bearing-label, curve-label.
+      case 'mtext':
+        accumSkipped(acc, entity.id, `mtext ${entity.id} has no LandXML representation (NOT_APPLICABLE)`);
+        break;
+      case 'leader':
+        accumSkipped(acc, entity.id, `leader ${entity.id} has no LandXML representation (NOT_APPLICABLE)`);
+        break;
+      case 'dimension':
+        accumSkipped(acc, entity.id, `dimension ${entity.id} (${entity.dimensionKind}) has no LandXML representation (NOT_APPLICABLE)`);
+        break;
+      case 'bearing-label':
+        accumSkipped(acc, entity.id, `bearing-label ${entity.id} has no LandXML representation (NOT_APPLICABLE)`);
+        break;
+      case 'curve-label':
+        accumSkipped(acc, entity.id, `curve-label ${entity.id} has no LandXML representation (NOT_APPLICABLE)`);
+        break;
       default:
         accumSkipped(acc, (entity as { id: string }).id, `entity ${(entity as { id: string }).id} has unsupported type ${(entity as { type: string }).type}`);
         break;

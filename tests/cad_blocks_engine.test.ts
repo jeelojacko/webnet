@@ -327,7 +327,9 @@ describe('18N block entity wiring', () => {
   it('cloneCadProject deep-clones definitions trailing for key-order signatures', () => {
     const project = { ...createBlankCadProject({ name: 'Blocks', units: 'm' }), blockDefinitions: [lShapeDefinition()] };
     const cloned = cloneCadProject(project);
-    expect(Object.keys(cloned).at(-1)).toBe('blockDefinitions');
+    // 18O appends the annotation tables + settings after the block library;
+    // clone must keep that trailing order (key-order-sensitive signatures).
+    expect(Object.keys(cloned).at(-1)).toBe('annotationSettings');
     expect(cloned.blockDefinitions?.[0]).not.toBe(project.blockDefinitions?.[0]);
     expect(cloned.blockDefinitions?.[0].entities[0]).not.toBe(project.blockDefinitions?.[0].entities[0]);
     expect(cloned.blockDefinitions).toEqual(project.blockDefinitions);

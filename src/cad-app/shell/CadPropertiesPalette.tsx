@@ -7,6 +7,8 @@ import type {
   CadWorkspaceSnapshot,
 } from './cadShellTypes';
 import { SampleLinePropertiesBlock, SectionViewPropertiesBlock } from './CadSectionProperties';
+import { CadAnnotationProperties } from '../annotation/CadAnnotationProperties';
+import type { CadAnnotationOpResult, CadAnnotationUiOp } from './cadShellTypes';
 
 interface CadPropertiesPaletteProps {
   snapshot: CadWorkspaceSnapshot | null;
@@ -83,6 +85,9 @@ export const CadPropertiesPalette: React.FC<CadPropertiesPaletteProps> = ({ snap
     const surveyInfo =
       snapshot.survey?.selected.find((info) => info.entityId === panel.entity.entityId) ??
       (snapshot.survey?.selected.length === 1 ? snapshot.survey.selected[0] : undefined);
+    const annotationSnapshot = snapshot.annotation ?? null;
+    const annotationInfo =
+      annotationSnapshot?.selected.find((info) => info.entityId === panel.entity.entityId) ?? null;
     return (
       <div className="cad-shell-props" data-cad-properties="single">
         <h3>{panel.entity.entityLabel}</h3>
@@ -94,6 +99,18 @@ export const CadPropertiesPalette: React.FC<CadPropertiesPaletteProps> = ({ snap
           entityId={panel.entity.entityId}
           actions={actions}
         />
+        {annotationSnapshot && annotationInfo ? (
+          <CadAnnotationProperties
+            info={annotationInfo}
+            annotation={annotationSnapshot}
+            layers={snapshot.layers}
+            runOp={(_op: CadAnnotationUiOp): CadAnnotationOpResult =>
+              actions?.runAnnotationOp?.(_op) ?? {
+                applied: false,
+                reason: 'Annotation edits unavailable in this workspace.',
+              }}
+          />
+        ) : null}
         {surveyInfo && snapshot.survey ? (
           <SurveyPointDisplay info={surveyInfo} survey={snapshot.survey} actions={actions} />
         ) : null}

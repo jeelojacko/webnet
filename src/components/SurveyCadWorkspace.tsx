@@ -1235,6 +1235,16 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
     BATCH_COGO: cadWorkspace.startBatchCogoCommand,
     PARCEL_SPLIT_BEARING: cadWorkspace.startParcelSplitBearingCommand,
     PARCEL_SPLIT_AREA: cadWorkspace.startParcelSplitAreaCommand,
+    MTEXT: cadWorkspace.startMTextCommand,
+    LEADER: cadWorkspace.startLeaderCommand,
+    DIM: cadWorkspace.startDimCommand,
+    DIMLINEAR: cadWorkspace.startDimLinearCommand,
+    DIMALIGNED: cadWorkspace.startDimAlignedCommand,
+    DIMANGULAR: cadWorkspace.startDimAngularCommand,
+    DIMRADIUS: cadWorkspace.startDimRadiusCommand,
+    DIMDIAMETER: cadWorkspace.startDimDiameterCommand,
+    BDLABEL: cadWorkspace.startBearingLabelCommand,
+    CURVELABEL: cadWorkspace.startCurveLabelCommand,
     MOVE: cadWorkspace.startMoveCommand,
     COPY: cadWorkspace.startCopyCommand,
     EXTEND: cadWorkspace.startExtendCommand,
@@ -1289,6 +1299,7 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
       dependencyStatus: dependencySummary.status,
       survey: buildCadSurveySnapshot(activeProject, selectedEntityIds),
       blocks: buildCadBlockSnapshot(activeProject, selectedEntityIds, blockInsertPick),
+      annotation: cadWorkspace.annotationSnapshot,
       f2f: buildCadF2FSnapshot(activeProject, activeCatalog, catalogStatus),
       surface: buildCadSurfaceSnapshot(activeProject, surfaceCache, selectedSurfaceId, {
         revisionIndex: surfaceRevisionIndex,
@@ -1716,6 +1727,8 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
       },
       openLayerManager: () => shellLink?.requestLayerManager?.(),
       openBlockManager: (tab) => shellLink?.requestBlockManager?.(tab),
+      openAnnotationManager: (tab) => shellLink?.requestAnnotationManager?.(tab),
+      runAnnotationOp: (op) => cadWorkspace.runAnnotationOp(op),
       runBlockOp: (op) => cadWorkspace.runBlockOp(op),
       ensureBlockSymbols: () => cadWorkspace.ensureBlockSymbols(),
       armInsertPick: (definitionId, scale, rotationDeg, repeat) =>
@@ -1744,6 +1757,11 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
       toggleExportCenter: () => setExportCenterOpen((current) => !current),
       cancelCommand: () => handleEscapeKey(),
       confirmCommandInput: () => handleEnterKey(),
+      // Phase 18O — dock text entry for the live session (MTEXT/LEADER).
+      submitSessionText: (text) => {
+        cadWorkspace.setCommandInputValue(text);
+        handleEnterKey();
+      },
     };
   useEffect(() => {
     if (!shellLink) return;

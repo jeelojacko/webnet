@@ -191,5 +191,22 @@ export const helpTextForSession = (session: CommandSession | null): string => {
         : 'FILLET picks: click two lines, polylines, or arcs near the corner to round. The current radius stays active for repeated corners until Enter, Esc, or empty-space double-click ends the tool.';
     case 'PASTE':
       return 'PASTE insertion point: click in the model space or type `x,y`, `LABEL=x,y`, `@azimuth,distance`, or bearing-distance from the clipboard base point.';
+    case 'MTEXT':
+      return 'MTEXT: click the insertion point, then type each line in the command input (Enter per line). Esc commits.';
+    case 'LEADER':
+      return 'LEADER: click the arrow point, then type the note in the command input. Esc commits.';
+    case 'DIM':
+    case 'DIMLINEAR':
+    case 'DIMALIGNED':
+      return 'Dimension picks: click two definition points, then the dimension-line point.';
+    case 'DIMANGULAR':
+      return 'Angular dimension picks: click the vertex, two ray points, then the dimension-line point.';
+    case 'DIMRADIUS':
+    case 'DIMDIAMETER':
+      return 'Radial dimension picks: click on the arc, then the dimension-line point.';
+    case 'BDLABEL':
+      return 'BDLABEL: click a line to label (Esc commits).';
+    case 'CURVELABEL':
+      return 'CURVELABEL: click an arc to label.';
   }
 };

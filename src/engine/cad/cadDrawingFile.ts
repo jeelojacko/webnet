@@ -1,14 +1,21 @@
 import { createStableRuntimeId } from '../id';
 import { buildCadBounds } from './cadProjectState';
-import { cloneCadProject, cloneSurveyCadPersistedState, sanitizeSurveyCadPersistedState } from './cadPersistence';
+import { cloneCadEntity, cloneCadProject, cloneSurveyCadPersistedState, sanitizeSurveyCadPersistedState } from './cadPersistence';
 import { cloneDraftDocument, createBlankDraftDocument, sanitizeDraftDocument } from './cadDraftTypes';
 import type {
+  CadBlockChild,
   CadDrawingDocument,
   CadDrawingImportRecord,
+  CadEntity,
   CadParcelLayoutUiState,
   CadProject,
   SurveyCadPersistedState,
 } from './cadTypes';
+import { ANNOTATION_ARROWHEAD_SEEDS } from './annotation/cadAnnotationArrowheads';
+import {
+  backfillCadAnnotationTables,
+  sanitizeAnnotationTables,
+} from './annotation/cadAnnotationPersistence';
 import { DEFAULT_CAD_LAYERS, backfillCadLayerList, backfillCadProjectStandards } from './cadLayers';
 import { DEFAULT_CAD_STYLE_LIBRARY } from './cadStyles';
 import { backfillCadPointLabelStyles, cloneCadPointLabelStyles } from './cadPointLabelStyles';
@@ -52,6 +59,15 @@ export const MAX_CAD_DRAWING_TEXT_BYTES = 10 * 1024 * 1024;
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === 'object' && value != null && !Array.isArray(value);
 
+const cloneArrowheadSeedDefinitions = (): CadProject['blockDefinitions'] =>
+  ANNOTATION_ARROWHEAD_SEEDS.map((definition) => ({
+    ...definition,
+    basePoint: { ...definition.basePoint },
+    entities: definition.entities.map(
+      (child) => cloneCadEntity(child as CadEntity) as CadBlockChild,
+    ),
+  }));
+
 export const createBlankCadProject = ({
   id = createStableRuntimeId('cad-project'),
   name,
@@ -60,58 +76,63 @@ export const createBlankCadProject = ({
   id?: string;
   name: string;
   units: UnitsMode;
-}): CadProject => ({
-  version: 2,
-  id,
-  name,
-  metadata: {
-    source: 'parsed-input',
-    runMode: 'unknown',
-    units,
-    stationCount: 0,
-    observationCount: 0,
-    adjustedStationCount: 0,
-  },
-  layers: DEFAULT_CAD_LAYERS.map((layer) => ({ ...layer })),
-  styleLibrary: {
-    lineTypes: DEFAULT_CAD_STYLE_LIBRARY.lineTypes.map((entry) => ({
-      ...entry,
-      dashPattern: [...entry.dashPattern],
-    })),
-    textStyles: DEFAULT_CAD_STYLE_LIBRARY.textStyles.map((entry) => ({ ...entry })),
-    pointSymbols: DEFAULT_CAD_STYLE_LIBRARY.pointSymbols.map((entry) => ({ ...entry })),
-    styles: DEFAULT_CAD_STYLE_LIBRARY.styles.map((entry) => ({ ...entry })),
-  },
-  pointStyles: backfillCadPointStyles(undefined),
-  labelStyles: backfillCadPointLabelStyles(undefined),
-  entities: [],
-  cogoComputations: [],
-  bounds: null,
-  currentLayerId: 'general',
-  // Trailing: matches the clone/migrate canonical position (JSON.stringify
-  // project signatures are key-order-sensitive).
-  pointGroups: backfillCadPointGroups(undefined),
-  // Phase 18E: new drawings own a starter-catalog clone + empty settings.
-  fieldToFinishCatalog: cloneFeatureCatalog(STARTER_CATALOG),
-  fieldToFinishSettings: {},
-  // Phase 18F: no surfaces yet; seed surface display styles (trailing:
-  // project signatures are key-order-sensitive JSON.stringify).
-  surfaces: [],
-  surfaceStyles: backfillCadSurfaceStyles(undefined),
-  // Phase 18I: no volumes yet; seed volume display styles (trailing).
-  volumeSurfaces: [],
-  volumeSurfaceStyles: backfillVolumeSurfaceStyles(undefined),
-  // Phase 18J: no profiles yet; seed profile display styles (trailing).
-  surfaceProfiles: [],
-  profileViews: [],
-  profileStyles: backfillCadProfileStyles(undefined),
-  // Phase 18K: no sample-line groups/views yet; seed section styles (trailing).
-  sampleLineGroups: [],
-  sectionStyles: backfillCadSectionStyles(undefined),
-  sectionViews: [],
-  // Phase 18N: empty block library (trailing: key-order rule).
-  blockDefinitions: [],
-});
+}): CadProject => {
+  const project: CadProject = {
+    version: 2,
+    id,
+    name,
+    metadata: {
+      source: 'parsed-input',
+      runMode: 'unknown',
+      units,
+      stationCount: 0,
+      observationCount: 0,
+      adjustedStationCount: 0,
+    },
+    layers: DEFAULT_CAD_LAYERS.map((layer) => ({ ...layer })),
+    styleLibrary: {
+      lineTypes: DEFAULT_CAD_STYLE_LIBRARY.lineTypes.map((entry) => ({
+        ...entry,
+        dashPattern: [...entry.dashPattern],
+      })),
+      textStyles: DEFAULT_CAD_STYLE_LIBRARY.textStyles.map((entry) => ({ ...entry })),
+      pointSymbols: DEFAULT_CAD_STYLE_LIBRARY.pointSymbols.map((entry) => ({ ...entry })),
+      styles: DEFAULT_CAD_STYLE_LIBRARY.styles.map((entry) => ({ ...entry })),
+    },
+    pointStyles: backfillCadPointStyles(undefined),
+    labelStyles: backfillCadPointLabelStyles(undefined),
+    entities: [],
+    cogoComputations: [],
+    bounds: null,
+    currentLayerId: 'general',
+    // Trailing: matches the clone/migrate canonical position (JSON.stringify
+    // project signatures are key-order-sensitive).
+    pointGroups: backfillCadPointGroups(undefined),
+    // Phase 18E: new drawings own a starter-catalog clone + empty settings.
+    fieldToFinishCatalog: cloneFeatureCatalog(STARTER_CATALOG),
+    fieldToFinishSettings: {},
+    // Phase 18F: no surfaces yet; seed surface display styles (trailing:
+    // project signatures are key-order-sensitive JSON.stringify).
+    surfaces: [],
+    surfaceStyles: backfillCadSurfaceStyles(undefined),
+    // Phase 18I: no volumes yet; seed volume display styles (trailing).
+    volumeSurfaces: [],
+    volumeSurfaceStyles: backfillVolumeSurfaceStyles(undefined),
+    // Phase 18J: no profiles yet; seed profile display styles (trailing).
+    surfaceProfiles: [],
+    profileViews: [],
+    profileStyles: backfillCadProfileStyles(undefined),
+    // Phase 18K: no sample-line groups/views yet; seed section styles (trailing).
+    sampleLineGroups: [],
+    sectionStyles: backfillCadSectionStyles(undefined),
+    sectionViews: [],
+    // Phase 18N: empty user block library (trailing: key-order rule). The 4-base
+    // annotation arrowhead library is seeded by `createBlankCadDrawingDocument`
+    // so the bare project primitive stays block-free for block-library tests.
+    blockDefinitions: [],
+  };
+  return backfillCadAnnotationTables(project);
+};
 
 export const createBlankCadDrawingDocument = ({
   name = `Drawing ${new Date().toISOString().slice(0, 10)}`,
@@ -121,7 +142,14 @@ export const createBlankCadDrawingDocument = ({
   units: UnitsMode;
 }): CadDrawingDocument => {
   const nowIso = new Date().toISOString();
-  const project = createBlankCadProject({ name, units });
+  const baseProject = createBlankCadProject({ name, units });
+  // Phase 18O: fresh drawings own the annotation arrowhead block seeds so the
+  // seeded dimension/leader styles resolve on first draw. User blocks are
+  // never written here; key order is preserved (blockDefinitions already last).
+  const project: CadProject = {
+    ...baseProject,
+    blockDefinitions: cloneArrowheadSeedDefinitions(),
+  };
   return {
     kind: 'webnet-cad-drawing',
     schemaVersion: 2,
@@ -235,7 +263,9 @@ export const migrateSurveyCadStateToDrawing = ({
   // Phase 18N: legacy imports own no blocks — backfill the empty library
   // and drop dangling refs (never fail the open). Trailing like the rest.
   const sanitizedBlocks = sanitizeCadBlockReferences(withStandards);
-  const project = {
+  // Phase 18O: same trailing backfill/sanitize as the .wncad open path so a
+  // legacy survey sidecar lands with a usable annotation library.
+  const { project } = sanitizeAnnotationTables({
     ...withStandards,
     entities: sanitizedBlocks.project.entities,
     ...(sanitizedBlocks.project.pointStyles != null
@@ -258,7 +288,7 @@ export const migrateSurveyCadStateToDrawing = ({
     sectionStyles: cloneCadSectionStyles(backfillCadSectionStyles(withStandards.sectionStyles)),
     sectionViews: cloneCadSectionViews(backfillCadSectionViews(withStandards.sectionViews)),
     blockDefinitions: sanitizedBlocks.project.blockDefinitions,
-  };
+  });
   return {
     kind: 'webnet-cad-drawing',
     schemaVersion: 2,
@@ -317,7 +347,10 @@ const sanitizeCadDrawingDocument = (value: unknown): CadDrawingDocument | undefi
     // 18N (same rule): legacy drawings get an empty block library;
     // dangling refs are dropped, never left dangling.
     const sanitizedBlocks = sanitizeCadBlockReferences(withStandards);
-    const project = {
+    // Phase 18O: backfill + sanitize the professional annotation slice last
+    // (trailing tables; key-order rule). Missing tables seed the documented
+    // defaults; broken refs stay broken (never re-bound, never fail the open).
+    const { project } = sanitizeAnnotationTables({
       ...withStandards,
       entities: sanitizedBlocks.project.entities,
       ...(sanitizedBlocks.project.pointStyles != null
@@ -340,7 +373,7 @@ const sanitizeCadDrawingDocument = (value: unknown): CadDrawingDocument | undefi
       sectionStyles: cloneCadSectionStyles(backfillCadSectionStyles(withStandards.sectionStyles)),
       sectionViews: cloneCadSectionViews(backfillCadSectionViews(withStandards.sectionViews)),
       blockDefinitions: sanitizedBlocks.project.blockDefinitions,
-    };
+    });
     const draft = cloned.draft
       ? { ...cloned.draft, layers: backfillCadLayerList(cloned.draft.layers) }
       : cloned.draft;

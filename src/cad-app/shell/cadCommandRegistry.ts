@@ -3,6 +3,7 @@ import type { CadShellActions, CadWorkspaceSnapshot } from './cadShellTypes';
 
 export type CadShellCommandCategory =
   | 'Draw'
+  | 'Annotate'
   | 'Modify'
   | 'Measure'
   | 'Parcel'
@@ -44,6 +45,18 @@ const action = (
   shortcut?: string,
   aliases: string[] = [],
 ): CadShellCommandDef => ({ key, label, aliases, category, hint, shortcut, kind: 'action' });
+
+/**
+ * Phase 18O annotation session commands. The engine command keys ship with
+ * this batch; the workspace starters land with the annotation UI, so these
+ * entries stay disabled until `availableCommands` reports the matching key.
+ */
+const annotation = (
+  key: string,
+  label: string,
+  hint: string,
+  aliases: string[] = [],
+): CadShellCommandDef => ({ key, label, aliases, category: 'Annotate', hint, kind: 'session' });
 
 export const CAD_SHELL_COMMANDS: CadShellCommandDef[] = [
   // Draw
@@ -174,6 +187,22 @@ export const CAD_SHELL_COMMANDS: CadShellCommandDef[] = [
   action('SECTIONREBUILD', 'Rebuild Sections', 'Surface', 'Rebuild sections for the selected group (manual).'),
   action('SECTIONVIEW', 'Create Section Views', 'Surface', 'Batch-create section views for the selected group.'),
   action('SECTIONELEV', 'Section Elevation', 'Surface', 'Query section elevation at an offset (manager).'),
+  // Phase 18O annotation commands (skills share the CREATE_*/SET_* engine keys;
+  // TEXT aliases MText, MLEADER is an honest single-leader alias of Leader).
+  annotation('MTEXT', 'Multiline Text', 'Create multiline text.', ['TEXT', 'MT']),
+  annotation('LEADER', 'Leader', 'Create a leader with an arrowhead.', ['MLEADER', 'LE']),
+  annotation('DIM', 'Dimension', 'Create a dimension.'),
+  annotation('DIMLINEAR', 'Linear Dimension', 'Create a linear dimension.', ['DLI']),
+  annotation('DIMALIGNED', 'Aligned Dimension', 'Create an aligned dimension.', ['DAL']),
+  annotation('DIMANGULAR', 'Angular Dimension', 'Create an angular dimension.', ['DAN']),
+  annotation('DIMRADIUS', 'Radius Dimension', 'Create a radius dimension.', ['DRA']),
+  annotation('DIMDIAMETER', 'Diameter Dimension', 'Create a diameter dimension.', ['DDI']),
+  annotation('BDLABEL', 'Bearing/Distance Label', 'Create a bearing/distance label.', ['BD']),
+  annotation('CURVELABEL', 'Curve Label', 'Create a curve label.', ['CL']),
+  annotation('TEXTSTYLE', 'Text Styles', 'Edit annotation text styles.', ['STYLE']),
+  annotation('DIMSTYLE', 'Dimension Styles', 'Edit dimension styles.'),
+  annotation('LEADERSTYLE', 'Leader Styles', 'Edit leader styles.'),
+  annotation('SURVEYLABELSTYLE', 'Survey Label Styles', 'Edit bearing and curve label styles.', ['SLS']),
 ];
 
 const COMMAND_BY_KEY = new Map<string, CadShellCommandDef>(

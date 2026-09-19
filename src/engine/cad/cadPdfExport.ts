@@ -108,7 +108,16 @@ const emitArc = (ctx: Ctx, cx: number, cy: number, r: number, startDeg: number, 
   emitSegments(ctx, points, false, widthMm, stroke);
 };
 
-const emitText = (ctx: Ctx, item: Extract<ExportItem, { kind: 'text' }>): void => {
+/** Embedded-newline vertical step (fraction of text height). */
+const TEXT_LINE_SPACING = 1.2;
+
+const emitTextRow = (
+  ctx: Ctx,
+  item: Extract<ExportItem, { kind: 'text' }>,
+  text: string,
+  x: number,
+  y: number,
+): void => {
   const sizePt = Math.max(1, toPt(item.heightMm));
   // Anchor offset uses an average Helvetica advance (~0.55em/char); exact
   // centering is a viewer-side concern, presence and position are exact.
@@ -119,15 +128,15 @@ const emitText = (ctx: Ctx, item: Extract<ExportItem, { kind: 'text' }>): void =
   const a = (rotationDeg * Math.PI) / 180;
   const cos = Math.cos(a);
   const sin = Math.sin(a);
-  const approxWidthMm = item.text.length * item.heightMm * 0.5;
+  const approxWidthMm = text.length * item.heightMm * 0.5;
   const along = item.anchor === 'middle' ? approxWidthMm / 2 : item.anchor === 'end' ? approxWidthMm : 0;
-  const e = fmt(toPt(item.x - along * cos));
-  const f = fmt(flipY(item.y - along * sin, ctx));
+  const e = fmt(toPt(x - along * cos));
+  const f = fmt(flipY(y - along * sin, ctx));
   // Survey glyphs outside WinAnsi (primes, Δ, …) get deterministic
   // substitutions; each one is collected as a GLYPH_SUBSTITUTION warning
   // so the replacement is explicit, never silent.
-  const { text: safeText, substitutions } = sanitizePdfText(item.text);
-  ctx.warnings.push(...substitutionWarnings(item.text, substitutions));
+  const { text: safeText, substitutions } = sanitizePdfText(text);
+  ctx.warnings.push(...substitutionWarnings(text, substitutions));
   // safeText is WinAnsi by construction, so encodePdfText's octal escapes
   // cover every non-ASCII byte it can contain.
   const encoded = encodePdfText(safeText);
@@ -141,6 +150,19 @@ const emitText = (ctx: Ctx, item: Extract<ExportItem, { kind: 'text' }>): void =
   ctx.ops.push(
     `BT /F1 ${fmt(sizePt)} Tf ${fmt(cos)} ${fmt(-sin)} ${fmt(sin)} ${fmt(cos)} ${e} ${f} Tm ${encoded} Tj ET`,
   );
+};
+
+const emitText = (ctx: Ctx, item: Extract<ExportItem, { kind: 'text' }>): void => {
+  // One text op per line so multiline annotation text never collapses into a
+  // single space-joined row; single-line items stay byte-identical.
+  const rows = item.text.split(/\r\n|\r|\n/);
+  if (rows.length <= 1) {
+    emitTextRow(ctx, item, item.text, item.x, item.y);
+    return;
+  }
+  rows.forEach((line, index) => {
+    emitTextRow(ctx, item, line, item.x, item.y + index * TEXT_LINE_SPACING * item.heightMm);
+  });
 };
 
 const emitItem = (ctx: Ctx, item: ExportItem): void => {

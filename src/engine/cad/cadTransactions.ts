@@ -50,9 +50,12 @@ import {
 } from './cadTransactionsCurveCommands';
 import { editEntityCommand } from './cadTransactionsEditCommands';
 import {
-  copyCommand,
+  annotationAwareCopyCommand,
+  annotationAwarePasteCommand,
+} from './cadTransactionsAnnotationCopyCommands';
+import { annotationCommandDefinitions } from './cadTransactionsAnnotationCommands';
+import {
   moveCommand,
-  pasteCommand,
 } from './cadTransactionsClipboardCommands';
 import {
   extendCommand,
@@ -524,10 +527,10 @@ export const CAD_COMMAND_REGISTRY: Record<CadCommandKey, CadCommandDefinition<Ca
   PARCEL_LAYOUT_AUTO: parcelLayoutAutoCommand as CadCommandDefinition<CadCommand>,
   EDIT_ENTITY: editEntityCommand as CadCommandDefinition<CadCommand>,
   MOVE: moveCommand as CadCommandDefinition<CadCommand>,
-  COPY: copyCommand as CadCommandDefinition<CadCommand>,
+  COPY: annotationAwareCopyCommand as CadCommandDefinition<CadCommand>,
   EXTEND: extendCommand as CadCommandDefinition<CadCommand>,
   FILLET: filletCommand as CadCommandDefinition<CadCommand>,
-  PASTE: pasteCommand as CadCommandDefinition<CadCommand>,
+  PASTE: annotationAwarePasteCommand as CadCommandDefinition<CadCommand>,
   TRIM: trimCommand as CadCommandDefinition<CadCommand>,
   INTERSECT_POINT: intersectPointCommand as CadCommandDefinition<CadCommand>,
   GRIP_EDIT: gripEditCommand as CadCommandDefinition<CadCommand>,
@@ -623,6 +626,17 @@ export const CAD_COMMAND_REGISTRY: Record<CadCommandKey, CadCommandDefinition<Ca
   BLOCK_RENAME: blockCommandDefinitions.BLOCK_RENAME as CadCommandDefinition<CadCommand>,
   BLOCK_DUPLICATE: blockCommandDefinitions.BLOCK_DUPLICATE as CadCommandDefinition<CadCommand>,
   BLOCK_DELETE: blockCommandDefinitions.BLOCK_DELETE as CadCommandDefinition<CadCommand>,
+  ANNOTATION_COMMIT: annotationCommandDefinitions.ANNOTATION_COMMIT as CadCommandDefinition<CadCommand>,
+  CREATE_MTEXT: annotationCommandDefinitions.CREATE_MTEXT as CadCommandDefinition<CadCommand>,
+  CREATE_LEADER: annotationCommandDefinitions.CREATE_LEADER as CadCommandDefinition<CadCommand>,
+  CREATE_DIMENSION: annotationCommandDefinitions.CREATE_DIMENSION as CadCommandDefinition<CadCommand>,
+  CREATE_BEARING_LABEL: annotationCommandDefinitions.CREATE_BEARING_LABEL as CadCommandDefinition<CadCommand>,
+  CREATE_CURVE_LABEL: annotationCommandDefinitions.CREATE_CURVE_LABEL as CadCommandDefinition<CadCommand>,
+  UPDATE_DIMENSION_PLACEMENT: annotationCommandDefinitions.UPDATE_DIMENSION_PLACEMENT as CadCommandDefinition<CadCommand>,
+  REATTACH_ANNOTATION: annotationCommandDefinitions.REATTACH_ANNOTATION as CadCommandDefinition<CadCommand>,
+  SET_TEXT_OVERRIDE: annotationCommandDefinitions.SET_TEXT_OVERRIDE as CadCommandDefinition<CadCommand>,
+  CLEAR_TEXT_OVERRIDE: annotationCommandDefinitions.CLEAR_TEXT_OVERRIDE as CadCommandDefinition<CadCommand>,
+  SET_ANNOTATION_SCALE: annotationCommandDefinitions.SET_ANNOTATION_SCALE as CadCommandDefinition<CadCommand>,
 };
 
 export const createCadIdleCommandState = createIdleCommandState;
