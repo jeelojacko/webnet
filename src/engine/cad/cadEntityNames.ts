@@ -98,6 +98,8 @@ export const getCadEntityDisplayLabel = (entity: CadEntity): string => {
       return entity.stationId;
     case 'text':
       return entity.text;
+    case 'block-reference':
+      return readNonOpaqueEntityId(entity) ?? 'Block';
   }
 };
 

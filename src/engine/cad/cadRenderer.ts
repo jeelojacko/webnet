@@ -567,6 +567,9 @@ const toPrimitives = (
         strokeWidth: style.widthPx(),
       }];
     }
+    case 'block-reference':
+      // 18N engine slice: no renderer yet (later slice expands via cadBlocks).
+      return [];
   }
 };
 

@@ -77,6 +77,12 @@ export const translateEntity = (entity: CadEntity, deltaX: number, deltaY: numbe
         centerX: entity.centerX + deltaX,
         centerY: entity.centerY + deltaY,
       };
+    case 'block-reference':
+      return {
+        ...entity,
+        x: entity.x + deltaX,
+        y: entity.y + deltaY,
+      };
   }
 };
 
@@ -305,6 +311,16 @@ export const buildCadGripHandles = (entity: CadEntity): CadGripHandle[] => {
         },
       ];
     }
+    case 'block-reference':
+      return [
+        {
+          id: `${entity.id}:insertion`,
+          entityId: entity.id,
+          kind: 'insertion',
+          x: entity.x,
+          y: entity.y,
+        },
+      ];
     default:
       return [];
   }

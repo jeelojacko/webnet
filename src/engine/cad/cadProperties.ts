@@ -428,6 +428,17 @@ const buildEntityProperties = (project: CadProject, entity: CadEntity): CadEntit
         row('theta', 'Theta', numeric(entity.thetaDeg, 4)),
       );
       return rows;
+    case 'block-reference':
+      rows.push(
+        row('name', 'Name', getCadEntityEditableName(entity) || getCadEntityDisplayLabel(entity), { kind: 'entity-name' }),
+        row('block-definition', 'Block', entity.blockDefinitionId),
+        row('insertion-e', 'Insertion E', numeric(entity.x)),
+        row('insertion-n', 'Insertion N', numeric(entity.y)),
+        row('rotation', 'Rotation', numeric(entity.rotationDeg, 4)),
+        row('scale-x', 'Scale X', numeric(entity.scaleX, 4)),
+        row('scale-y', 'Scale Y', numeric(entity.scaleY, 4)),
+      );
+      return rows;
   }
 };
 

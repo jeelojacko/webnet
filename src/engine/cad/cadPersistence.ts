@@ -1,4 +1,5 @@
 import type {
+  CadBlockChild,
   CadBounds,
   CadDisplayPoint,
   CadEntity,
@@ -97,6 +98,7 @@ export const cloneCadEntity = (entity: CadEntity): CadEntity => {
     case 'line':
     case 'error-ellipse':
     case 'arc':
+    case 'block-reference':
       return {
         ...entity,
         appearance: cloneAppearance(entity.appearance),
@@ -213,6 +215,19 @@ export const cloneCadProject = (project: CadProject): CadProject => ({
     ? { sectionStyles: cloneCadSectionStyles(project.sectionStyles) }
     : {}),
   ...(project.sectionViews != null ? { sectionViews: cloneCadSectionViews(project.sectionViews) } : {}),
+  // Phase 18N: block definitions stay trailing (key-order rule). Children
+  // reuse the entity clone (block-local ids preserved, never remapped).
+  ...(project.blockDefinitions != null
+    ? {
+        blockDefinitions: project.blockDefinitions.map((definition) => ({
+          ...definition,
+          basePoint: { ...definition.basePoint },
+          entities: definition.entities.map(
+            (child) => cloneCadEntity(child as CadEntity) as CadBlockChild,
+          ),
+        })),
+      }
+    : {}),
 });
 
 const cloneParcelLayoutSettings = (

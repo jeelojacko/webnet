@@ -134,6 +134,23 @@ const toMlightcadEntity = (entity: CadEntity): MlightcadSpikeEntity => {
           nativeType: entity.type,
         },
       };
+    case 'block-reference':
+      // Spike adapter only: insertion marker until a native block path exists.
+      return {
+        objectId: entity.id,
+        type: 'AcDbPoint',
+        layer: entity.layerId,
+        visible: entity.visible,
+        geometry: {
+          x: entity.x,
+          y: entity.y,
+          z: 0,
+        },
+        metadata: {
+          nativeEntityId: entity.id,
+          nativeType: entity.type,
+        },
+      };
   }
 };
 
