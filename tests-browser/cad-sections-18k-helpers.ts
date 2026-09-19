@@ -27,6 +27,7 @@ export {
   showSurveyTab,
 } from './cad-profile-18j-helpers';
 import { ribbonTab } from './cad-profile-18j-helpers';
+import { collapseFloatingPanel as collapsePanel } from './cad-profile-18j-helpers';
 
 export const SHOT_DIR = 'docs/evidence/phase18k';
 export const SEED = 'tests-browser/fixtures/cad-surface-18g-seed.wncad';
@@ -172,6 +173,34 @@ export async function rebuildSections(page: Page): Promise<void> {
 
 export async function createSectionViews(page: Page): Promise<void> {
   await sectionManagerScope(page).getByRole('button', { name: 'Create Section Views', exact: true }).click();
+}
+
+export async function sectionViewIds(page: Page): Promise<string[]> {
+  return sectionManagerScope(page).locator('[data-cad-section-views-section] [data-cad-section-view]').evaluateAll((elements) =>
+    elements.map((element) => element.getAttribute('data-cad-section-view') ?? ''));
+}
+
+export async function selectSectionView(page: Page, id: string): Promise<void> {
+  await sectionManagerScope(page).locator(`[data-cad-section-views-section] [data-cad-section-view="${id}"]`).click();
+}
+
+export async function viewLayerBox(page: Page, index = 0) {
+  return page.locator('[data-section-view-layer]').nth(index).evaluate((element) => {
+    const box = (element as SVGGraphicsElement).getBBox();
+    return { x: box.x, y: box.y, width: box.width, height: box.height };
+  });
+}
+
+export async function showPropertiesPanel(page: Page): Promise<void> {
+  await collapsePanel(page);
+  if (await page.locator('[data-cad-properties]').isVisible().catch(() => false)) return;
+  await page.getByRole('button', { name: 'View', exact: true }).click();
+  const item = page.locator('[role="menu"][aria-label="View"] [role="menuitem"]', { hasText: 'Properties:' });
+  if (((await item.textContent()) ?? '').includes('Hidden')) {
+    await item.click();
+  }
+  await page.keyboard.press('Escape');
+  await expect(page.locator('[data-cad-properties]')).toBeVisible({ timeout: 10000 });
 }
 
 export function toolspaceSampleLine(page: Page, id: string) {
