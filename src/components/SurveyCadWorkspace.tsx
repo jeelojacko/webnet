@@ -47,12 +47,19 @@ import {
   querySurfaceSlopeText,
   type CadSurfaceInquiry,
 } from '../cad-app/shell/cadSurfaceSnapshot';
+import {
+  buildCadVolumeSnapshot,
+  formatVolumeDifferenceAnswer,
+  queryVolumeDifference,
+} from '../cad-app/shell/cadVolumeSnapshot';
 import { CadSurfaceManager } from '../cad-app/shell/CadSurfaceManager';
 import { createCadSurfaceCache } from '../engine/cad/cadSurfaceCache';
 import { createCadSurfaceContourCache } from '../engine/cad/surfaceContourCache';
 import { SurfaceWorkerClient } from '../workers/surfaceWorkerClient';
 import { SurfaceBuildService } from '../workers/surfaceBuildService';
 import { SurfaceContourService } from '../workers/surfaceContourService';
+import { SurfaceVolumeService } from '../workers/surfaceVolumeService';
+import { createCadSurfaceVolumeCache } from '../engine/cad/surfaceVolumeCache';
 import { computeCadSurfaceSourceRevision } from '../engine/cad/cadSurfaces';
 import { backfillCadSurfaceStyles } from '../engine/cad/cadSurfaceStyles';
 import { contourLevelSpecFromStyle } from '../engine/cad/cadSurfaceContourView';
@@ -336,6 +343,15 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
   const [exportCenterOpen, setExportCenterOpen] = useState(false);
   // Phase 18D — survey style/group manager dialog (one at a time).
   const [surveyManager, setSurveyManager] = useState<{ kind: SurveyManagerKind; selectedId?: string } | null>(null);
+  // Phase 18I — volume UI state (all session-only; results never persist).
+  const [selectedVolumeId, setSelectedVolumeId] = useState<string | null>(null);
+  const [volumePick, setVolumePick] = useState<{ volumeId: string } | null>(null);
+  const [volumePickAnswer, setVolumePickAnswer] = useState<{ volumeId: string; text: string } | null>(null);
+  const [volumeVersion, setVolumeVersion] = useState(0);
+  const volumeCache = useMemo(
+    () => createCadSurfaceVolumeCache(activeDrawing.drawingId),
+    [activeDrawing.drawingId],
+  );
   // Phase 18F — surface UI state (all session-only; meshes never persist).
   const [selectedSurfaceId, setSelectedSurfaceId] = useState<string | null>(null);
   const [surfacePick, setSurfacePick] = useState<{ surfaceId: string; mode: 'elevation' | 'slope' } | null>(null);
@@ -503,6 +519,65 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
     };
     return { version: contourVersion, getContours };
   }, [contourVersion, surfaceCache, contourCache]);
+  // Phase 18I — volume derivation control plane (one per drawing
+  // session, mirrors SurfaceBuildService ownership). Manual calculation
+  // only: source rebuilds never auto-start volume work; notifyMeshBuilt
+  // cancels in-flight work for affected volumes and lets status derive
+  // stale from the revision. No-Display styles request quantity-only
+  // (includeDisplay false, decided inside the service).
+  const volumeService = useMemo(
+    () =>
+      new SurfaceVolumeService({
+        drawingId: activeDrawing.drawingId,
+        getProject: () => activeProjectForBuildsRef.current,
+        getDrawingId: () => drawingIdForBuildsRef.current,
+        tinCache: surfaceCache,
+        volumeCache,
+        createTransport: () => {
+          try {
+            if (typeof Worker === 'undefined') return null;
+            return new SurfaceWorkerClient(
+              new Worker(new URL('../workers/surfaceWorker.ts', import.meta.url), {
+                type: 'module',
+              }),
+            );
+          } catch {
+            return null;
+          }
+        },
+        notify: (message) => setFileStatusText(message),
+        onStateChange: () => setVolumeVersion((version) => version + 1),
+      }),
+    [activeDrawing.drawingId, surfaceCache, volumeCache],
+  );
+  useEffect(() => () => volumeService.dispose(), [volumeService]);
+  // Source-rebuild hookup: only a NEW mesh revision for a surface
+  // cancels in-flight volume work (their revision moved). A ref diff
+  // guards it — notifying on every render would supersede work that was
+  // just requested. Status itself re-derives from revisions every publish.
+  const notifiedMeshRevisionsRef = useRef<Record<string, string[]>>({});
+  useEffect(() => {
+    const previous = notifiedMeshRevisionsRef.current;
+    for (const [surfaceId, revisions] of Object.entries(surfaceMeshSessions)) {
+      const seen = previous[surfaceId] ?? [];
+      if (revisions.length !== seen.length || revisions.some((entry, index) => entry !== seen[index])) {
+        volumeService.notifyMeshBuilt(surfaceId);
+      }
+    }
+    notifiedMeshRevisionsRef.current = surfaceMeshSessions;
+  }, [surfaceMeshSessions, volumeService]);
+  // Scene + snapshot inputs refresh only when the service reports a
+  // state change (pending/diagnostic transitions), not on every render.
+  const surfaceVolumeInputs = useMemo(
+    () => ({
+      version: volumeVersion,
+      tinCache: surfaceCache,
+      volumeCache,
+      buildingVolumeIds: volumeService.buildingVolumeIds(),
+      sessionDiagnostics: volumeService.volumeDiagnostics(),
+    }),
+    [volumeService, volumeVersion, surfaceCache, volumeCache],
+  );
   const cadWorkspace = useSurveyCadWorkspace(
     cadProject,
     activeDrawing.drawingId,
@@ -515,6 +590,7 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
     surfaceCache,
     surfaceRevisionIndex,
     surfaceContourInputs,
+    surfaceVolumeInputs,
   );
   const {
     cadProject: activeProject,
@@ -865,13 +941,17 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
         sessionDiagnostics: surfaceBuildInputs.sessionDiagnostics,
         syncFallbackRevisions: surfaceBuildInputs.syncFallbackRevisions,
       }),
+      volume: buildCadVolumeSnapshot(activeProject, surfaceCache, volumeCache, selectedVolumeId, {
+        buildingVolumeIds: surfaceVolumeInputs.buildingVolumeIds,
+        sessionDiagnostics: surfaceVolumeInputs.sessionDiagnostics,
+      }),
       availableCommands: shellAvailableCommands,
     };
   }, [
     shellLink, activeDrawing, activeProject, activeCatalog, catalogStatus, selectionCount, selectedEntityIds, selectedEntities,
     propertiesPanelState, activeCommandKey, statusText, cadWorkspace, stationIds, dependencySummary, units,
     shellAvailableCommands, surfaceCache, surfaceRevisionIndex, selectedSurfaceId, lastSurfaceInquiry,
-    surfaceBuildInputs,
+    surfaceBuildInputs, volumeCache, selectedVolumeId, surfaceVolumeInputs,
   ]);
 
   useEffect(() => {
@@ -902,6 +982,27 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
     surfaceBuildService.rebuildSurface(surfaceId);
 
   const rebuildAllSurfaces = (): string => surfaceBuildService.rebuildAllSurfaces();
+
+  // Phase 18I — drop session results for deleted volumes (results never
+  // persist; the service cancels in-flight work first so late arrivals
+  // never re-apply). Converges: unknown ids are simply absent.
+  const knownVolumeIdsRef = useRef<Set<string>>(new Set());
+  useEffect(() => {
+    const live = new Set((activeProject.volumeSurfaces ?? []).map((entry) => entry.id));
+    for (const id of knownVolumeIdsRef.current) {
+      if (!live.has(id)) volumeService.handleVolumeDeleted(id);
+    }
+    knownVolumeIdsRef.current = live;
+    if (selectedVolumeId != null && !live.has(selectedVolumeId)) setSelectedVolumeId(null);
+  }, [activeProject.volumeSurfaces, volumeService, selectedVolumeId]);
+
+  // Phase 18I — difference inquiry text (live source inquiry; pure read).
+  const describeVolumeDifference = (volumeId: string, x: number, y: number): string | null => {
+    const volume = activeProject.volumeSurfaces?.find((entry) => entry.id === volumeId);
+    const name = volume?.name ?? volumeId;
+    const result = queryVolumeDifference(activeProject, surfaceCache, volumeId, x, y);
+    return formatVolumeDifferenceAnswer(result, name, x, y);
+  };
 
   // Phase 18F — drop session meshes for deleted surfaces (meshes never
   // persist; the revision index doubles as the known-id set). Phase 18H:
@@ -943,8 +1044,22 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
       runLayerCommand: (command) => cadWorkspace.runLayerCommand(command),
       runSurveyCommand: (command) => cadWorkspace.runLayerCommand(command),
       selectSurface: (surfaceId) => setSelectedSurfaceId(surfaceId),
-      startSurfacePick: (surfaceId, mode) =>
-        setSurfacePick(surfaceId == null ? null : { surfaceId, mode: mode ?? 'elevation' }),
+      selectVolume: (volumeId) => setSelectedVolumeId(volumeId),
+      requestVolume: (volumeId) => volumeService.requestVolume(volumeId),
+      calculateSelectedVolume: () => {
+        if (selectedVolumeId == null) return 'No volume surface selected.';
+        const message = volumeService.requestVolume(selectedVolumeId);
+        setFileStatusText(message);
+      },
+      startVolumePick: (volumeId) => {
+        setSurfacePick(null);
+        setVolumePick(volumeId == null ? null : { volumeId });
+      },
+      queryVolumeDifference: (volumeId, x, y) => describeVolumeDifference(volumeId, x, y),
+      startSurfacePick: (surfaceId, mode) => {
+        setVolumePick(null);
+        setSurfacePick(surfaceId == null ? null : { surfaceId, mode: mode ?? 'elevation' });
+      },
       querySurfaceElevation: (surfaceId, x, y) => {
         const text = querySurfaceElevationText(activeProject, surfaceCache, surfaceId, x, y);
         if (text != null) {
@@ -1208,6 +1323,8 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
             actions={shellActions}
             initialSelectedId={surveyManager.selectedId}
             pickArmedFor={surfacePick?.surfaceId ?? null}
+            volumePickArmedFor={volumePick?.volumeId ?? null}
+            volumePickAnswer={volumePickAnswer}
             onClose={() => setSurveyManager(null)}
           />
         ) : null}
@@ -1243,8 +1360,16 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
           onParcelLayoutAutoPreviewStateChange={setParcelLayoutAutoPreviewState}
           onToggleParcelLabels={() => setShowParcelLabels((current) => !current)}
           cloneBounds={cloneBounds}
-          surfacePickActive={surfacePick != null}
+          surfacePickActive={surfacePick != null || volumePick != null}
           onSurfacePickPoint={(worldPoint) => {
+            if (volumePick) {
+              const text = describeVolumeDifference(volumePick.volumeId, worldPoint.x, worldPoint.y);
+              if (text != null) {
+                setVolumePickAnswer({ volumeId: volumePick.volumeId, text });
+              }
+              setVolumePick(null);
+              return;
+            }
             if (!surfacePick) return;
             const text = surfacePick.mode === 'slope'
               ? querySurfaceSlopeText(

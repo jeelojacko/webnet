@@ -20,7 +20,18 @@ import type {
   CadProject,
   CadSurface,
   CadSurveyPointEntity,
+  CadVolumeResult,
 } from '../engine/cad/cadTypes';
+import {
+  computeVolumeQuantities,
+  toCadVolumeResult,
+} from './surfaceVolumeEngine';
+import type {
+  SurfaceVolumeComputeInput,
+  VolumeComputeOptions,
+  VolumeMesh,
+  VolumeResult,
+} from './surfaceVolumeEngine';
 
 /**
  * Phase 18F surface build worker.
@@ -54,6 +65,7 @@ export interface SurfaceWorkerMesh {
 export type SurfaceWorkerRequestMessage =
   | { type: 'build'; requestId: string; request: SurfaceBuildRequest }
   | { type: 'contours'; requestId: string; request: SurfaceContourRequest }
+  | { type: 'volume'; requestId: string; request: SurfaceVolumeRequest }
   | { type: 'cancel'; requestId: string };
 
 export type SurfaceWorkerResponseMessage =
@@ -94,6 +106,20 @@ export type SurfaceWorkerResponseMessage =
       revision: string;
       geometryRevision: string;
       error: string;
+    }
+  | {
+      type: 'volume-success';
+      requestId: string;
+      volumeSurfaceId: string;
+      volumeRevision: string;
+      result: CadVolumeResult;
+    }
+  | {
+      type: 'volume-failure';
+      requestId: string;
+      volumeSurfaceId: string;
+      volumeRevision: string;
+      error: string;
     };
 
 export type SurfaceWorkerBuilderFn = (
@@ -120,10 +146,33 @@ export type SurfaceContourExtractorFn = (
   _args: ExtractSurfaceContoursArgs,
 ) => CadSurfaceContourSet | Promise<CadSurfaceContourSet>;
 
+/**
+ * Phase 18I volume computation request: base + comparison TIN meshes in the
+ * established compact worker shape, plus a display flag (No Display styles
+ * request quantities only; quantities stay bitwise identical either way).
+ */
+export interface SurfaceVolumeRequest {
+  volumeSurfaceId: string;
+  /** `vrev1:` relationship revision the result must still match. */
+  volumeRevision: string;
+  drawingId?: string;
+  base: { surfaceId: string; mesh: VolumeMesh };
+  comparison: { surfaceId: string; mesh: VolumeMesh };
+  includeDisplay: boolean;
+}
+
+export type SurfaceVolumeEngineFn = (
+  _base: VolumeMesh,
+  _comparison: VolumeMesh,
+  _options: VolumeComputeOptions,
+) => VolumeResult | Promise<VolumeResult>;
+
 export interface SurfaceWorkerHandlerDeps {
   loadBuilder: () => Promise<SurfaceWorkerBuilderFn>;
   /** Phase 18H: extractor override (tests inject fakes; default is the engine sibling's). */
   loadContourExtractor?: () => Promise<SurfaceContourExtractorFn>;
+  /** Phase 18I: volume engine override (tests inject fakes; default is the engine sibling's). */
+  loadVolumeEngine?: () => Promise<SurfaceVolumeEngineFn>;
   postMessage: (_message: SurfaceWorkerResponseMessage) => void;
   defer?: (_callback: () => void) => void;
 }
@@ -202,9 +251,12 @@ export const createSurfaceWorkerHandler = (
   const cancelledRequestIds = new Set<string>();
   const latestRevisionBySurface = new Map<string, string>();
   const latestContourBySurface = new Map<string, string>();
+  const latestVolumeBySurface = new Map<string, string>();
   const defer = deps.defer ?? ((callback) => setTimeout(callback, 0));
   const loadContourExtractor =
     deps.loadContourExtractor ?? (() => Promise.resolve(extractSurfaceContours));
+  const loadVolumeEngine =
+    deps.loadVolumeEngine ?? (() => Promise.resolve(computeVolumeQuantities));
 
   const handleBuild = (requestId: string, request: SurfaceBuildRequest): void => {
     latestRevisionBySurface.set(request.surfaceId, request.revision);
@@ -392,6 +444,53 @@ export const createSurfaceWorkerHandler = (
     });
   };
 
+  /** Phase 18I: latest-wins key per volume = volumeSurfaceId@volumeRevision. */
+  const volumeRequestKey = (request: SurfaceVolumeRequest): string =>
+    `${request.volumeSurfaceId}@${request.volumeRevision}`;
+
+  const handleVolume = (requestId: string, request: SurfaceVolumeRequest): void => {
+    latestVolumeBySurface.set(request.volumeSurfaceId, volumeRequestKey(request));
+    defer(() => {
+      if (cancelledRequestIds.has(requestId)) return;
+      const options: VolumeComputeOptions = { includeDisplay: request.includeDisplay };
+      const computeInput: SurfaceVolumeComputeInput = {
+        baseSurfaceId: request.base.surfaceId,
+        comparisonSurfaceId: request.comparison.surfaceId,
+        revision: request.volumeRevision,
+        base: request.base.mesh,
+        comparison: request.comparison.mesh,
+        includeDisplay: request.includeDisplay,
+      };
+      void loadVolumeEngine()
+        .then((compute) => compute(request.base.mesh, request.comparison.mesh, options))
+        .then((result) => {
+          if (cancelledRequestIds.has(requestId)) return;
+          if (latestVolumeBySurface.get(request.volumeSurfaceId) !== volumeRequestKey(request)) return;
+          deps.postMessage({
+            type: 'volume-success',
+            requestId,
+            volumeSurfaceId: request.volumeSurfaceId,
+            volumeRevision: request.volumeRevision,
+            result: toCadVolumeResult(computeInput, result),
+          });
+        })
+        .catch((computeError) => {
+          if (cancelledRequestIds.has(requestId)) return;
+          if (latestVolumeBySurface.get(request.volumeSurfaceId) !== volumeRequestKey(request)) return;
+          deps.postMessage({
+            type: 'volume-failure',
+            requestId,
+            volumeSurfaceId: request.volumeSurfaceId,
+            volumeRevision: request.volumeRevision,
+            error: computeError instanceof Error ? computeError.message : String(computeError),
+          });
+        })
+        .finally(() => {
+          cancelledRequestIds.delete(requestId);
+        });
+    });
+  };
+
   return {
     handleMessage: (message: SurfaceWorkerRequestMessage): void => {
       if (!message) return;
@@ -406,11 +505,15 @@ export const createSurfaceWorkerHandler = (
       if (message.type === 'contours') {
         handleContours(message.requestId, message.request);
       }
+      if (message.type === 'volume') {
+        handleVolume(message.requestId, message.request);
+      }
     },
     resetForTests: (): void => {
       cancelledRequestIds.clear();
       latestRevisionBySurface.clear();
       latestContourBySurface.clear();
+      latestVolumeBySurface.clear();
     },
   };
 };

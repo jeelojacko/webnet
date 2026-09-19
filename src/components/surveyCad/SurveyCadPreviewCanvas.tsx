@@ -19,7 +19,7 @@ import {
   TransientPreviewLayer,
 } from './SurveyCadPreviewLayers';
 import { renderPrimitive } from './SurveyCadPreviewPrimitive';
-import { renderSurfaceLayers } from './SurveyCadPreviewSurface';
+import { renderSurfaceLayers, renderVolumeLayers } from './SurveyCadPreviewSurface';
 
 const SurveyCadPreviewCanvas: React.FC<SurveyCadPreviewCanvasProps> = ({
   activeGripDragIdRef,
@@ -368,6 +368,9 @@ const SurveyCadPreviewCanvas: React.FC<SurveyCadPreviewCanvasProps> = ({
           pickActive: surfacePickActive,
           onSurfaceClick: (surfaceId) => onSurfaceClick?.(surfaceId),
         })
+        : null}
+      {scene.volumeLayers && scene.volumeLayers.length > 0
+        ? renderVolumeLayers({ layers: scene.volumeLayers, project })
         : null}
       <GripHandleLayer
         gripHandles={gripHandles}

@@ -27,6 +27,8 @@ import { displayedStrokeWidthPx, opacityFromTransparency } from './cadViewportAp
 import { strokeWidth, surveyPointMarker, textFontSize } from './cadRendererStyle';
 import type { CadSurfaceCache } from './cadSurfaceCache';
 import { buildSurfaceDisplayLayers, type SurfaceContourDisplayInput } from './cadSurfaceView';
+import { buildVolumeDisplayLayers } from './cadVolumeView';
+import type { CadSurfaceVolumeCache } from './surfaceVolumeCache';
 import { materializeBoundPointLabel } from './cadPointLabelStyles';
 
 export interface BuildCadDisplaySceneOptions {
@@ -52,6 +54,11 @@ export interface BuildCadDisplaySceneOptions {
    * keep excluded until a consumer contract pins layer/level mapping.
    */
   surfaceContours?: (_surfaceId: string) => SurfaceContourDisplayInput | null | undefined;
+  /**
+   * Phase 18I — session volume cache (+ TIN cache for CURRENT gating).
+   * Absent = no volume display. Export scenes never pass it.
+   */
+  surfaceVolume?: { tinCache: import('./cadSurfaceCache').CadSurfaceCache; volumeCache: CadSurfaceVolumeCache };
 }
 
 interface SceneRenderContext {
@@ -580,6 +587,10 @@ export const buildCadDisplayScene = (
     // Null cache (export scene, sheet viewports) = definition-only.
     surfaceLayers: options?.surfaceCache
       ? buildSurfaceDisplayLayers(project, options.surfaceCache, options.surfaceRevisionIndex, options.surfaceContours)
+      : [],
+    // Phase 18I — derived volume CUT/FILL paths alongside TIN layers.
+    volumeLayers: options?.surfaceVolume
+      ? buildVolumeDisplayLayers(project, options.surfaceVolume.tinCache, options.surfaceVolume.volumeCache)
       : [],
   };
 };

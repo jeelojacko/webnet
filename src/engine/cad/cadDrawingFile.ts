@@ -15,6 +15,12 @@ import { backfillCadPointLabelStyles, cloneCadPointLabelStyles } from './cadPoin
 import { backfillCadPointGroups, cloneCadPointGroups, migrateLegacyPointGroups } from './cadPointGroups';
 import { backfillCadPointStyles, cloneCadPointStyles, migrateLegacySurveyPointStyles } from './cadPointStyles';
 import { backfillCadSurfaceStyles, cloneCadSurfaceStyles } from './cadSurfaceStyles';
+import {
+  backfillVolumeSurfaceStyles,
+  backfillVolumeSurfaces,
+  cloneCadVolumeSurfaceStyles,
+  cloneCadVolumeSurfaces,
+} from './cadVolumeSurfaces';
 import { backfillCadSurfaces, clearSurfaceBuildCacheOnLoad, cloneCadSurfaces } from './cadSurfaceTypes';
 import { backfillDrawingCatalog } from '../fieldToFinish/drawingCatalog';
 import { cloneFeatureCatalog } from '../fieldToFinish/featureCatalog';
@@ -73,6 +79,9 @@ export const createBlankCadProject = ({
   // project signatures are key-order-sensitive JSON.stringify).
   surfaces: [],
   surfaceStyles: backfillCadSurfaceStyles(undefined),
+  // Phase 18I: no volumes yet; seed volume display styles (trailing).
+  volumeSurfaces: [],
+  volumeSurfaceStyles: backfillVolumeSurfaceStyles(undefined),
 });
 
 export const createBlankCadDrawingDocument = ({
@@ -198,6 +207,10 @@ export const migrateSurveyCadStateToDrawing = ({
     ...withStandards,
     surfaces: cloneCadSurfaces(backfillCadSurfaces(withStandards.surfaces)),
     surfaceStyles: cloneCadSurfaceStyles(backfillCadSurfaceStyles(withStandards.surfaceStyles)),
+    volumeSurfaces: cloneCadVolumeSurfaces(backfillVolumeSurfaces(withStandards.volumeSurfaces)),
+    volumeSurfaceStyles: cloneCadVolumeSurfaceStyles(
+      backfillVolumeSurfaceStyles(withStandards.volumeSurfaceStyles),
+    ),
   };
   return {
     kind: 'webnet-cad-drawing',
@@ -256,6 +269,10 @@ const sanitizeCadDrawingDocument = (value: unknown): CadDrawingDocument | undefi
       ...withStandards,
       surfaces: backfillCadSurfaces(withStandards.surfaces).map(clearSurfaceBuildCacheOnLoad),
       surfaceStyles: cloneCadSurfaceStyles(backfillCadSurfaceStyles(withStandards.surfaceStyles)),
+      volumeSurfaces: cloneCadVolumeSurfaces(backfillVolumeSurfaces(withStandards.volumeSurfaces)),
+      volumeSurfaceStyles: cloneCadVolumeSurfaceStyles(
+        backfillVolumeSurfaceStyles(withStandards.volumeSurfaceStyles),
+      ),
     };
     const draft = cloned.draft
       ? { ...cloned.draft, layers: backfillCadLayerList(cloned.draft.layers) }

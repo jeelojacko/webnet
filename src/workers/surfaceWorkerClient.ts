@@ -1,7 +1,9 @@
 import type { SurfaceBuildRequest } from '../engine/cad/cadSurfaceTypes';
 import type { CadSurfaceContourSet } from '../engine/cad/surfaceContours/contourTypes';
+import type { CadVolumeResult } from '../engine/cad/cadTypes';
 import type {
   SurfaceContourRequest,
+  SurfaceVolumeRequest,
   SurfaceWorkerResponseMessage,
 } from './surfaceWorkerHandler';
 import type { SurfaceWorkerMesh } from './surfaceWorkerHandler';
@@ -24,6 +26,8 @@ export type { SurfaceWorkerMesh };
 
 export const SURFACE_BUILD_UNAVAILABLE = 'Surface worker unavailable.';
 export const SURFACE_BUILD_MALFORMED = 'Malformed surface worker response.';
+export const SURFACE_VOLUME_MALFORMED = 'Malformed surface volume worker response.';
+export const SURFACE_VOLUME_UNAVAILABLE = 'Surface volume worker unavailable.';
 
 export interface PendingSurfaceBuild {
   requestId: string;
@@ -34,6 +38,12 @@ export interface PendingSurfaceBuild {
 export interface PendingSurfaceContours {
   requestId: string;
   done: Promise<CadSurfaceContourSet | null>;
+  cancel: () => void;
+}
+
+export interface PendingSurfaceVolume {
+  requestId: string;
+  done: Promise<CadVolumeResult | null>;
   cancel: () => void;
 }
 
@@ -52,7 +62,15 @@ export interface SurfaceBuildTransport {
   dispose: () => void;
 }
 
-const TERMINAL_TYPES = new Set(['success', 'failure', 'cancelled', 'contour-success', 'contour-failure']);
+const TERMINAL_TYPES = new Set([
+  'success',
+  'failure',
+  'cancelled',
+  'contour-success',
+  'contour-failure',
+  'volume-success',
+  'volume-failure',
+]);
 const OK_OUTCOMES = new Set(['ok', 'insufficient', 'blocked']);
 
 type TerminalSurfaceWorkerMessage = Exclude<SurfaceWorkerResponseMessage, { type: 'progress' }>;
@@ -85,6 +103,22 @@ const isWellFormedContourSet = (value: unknown): value is CadSurfaceContourSet =
 };
 
 export const SURFACE_CONTOUR_MALFORMED = 'Malformed surface contour worker response.';
+
+const isWellFormedVolumeResult = (value: unknown): value is CadVolumeResult => {
+  if (typeof value !== 'object' || value === null) return false;
+  const result = value as Record<string, unknown>;
+  return (
+    typeof result['baseSurfaceId'] === 'string' &&
+    typeof result['comparisonSurfaceId'] === 'string' &&
+    typeof result['revision'] === 'string' &&
+    typeof result['overlapArea'] === 'number' &&
+    typeof result['cutVolume'] === 'number' &&
+    typeof result['fillVolume'] === 'number' &&
+    typeof result['netVolume'] === 'number' &&
+    typeof result['stats'] === 'object' &&
+    result['stats'] !== null
+  );
+};
 
 const isWellFormedMesh = (value: unknown): value is SurfaceWorkerMesh => {
   if (typeof value !== 'object' || value === null) return false;
@@ -121,6 +155,14 @@ export class SurfaceWorkerClient implements SurfaceBuildTransport {
       settled: boolean;
     }
   >();
+  private readonly pendingVolumes = new Map<
+    string,
+    {
+      resolve: (_result: CadVolumeResult | null) => void;
+      reject: (_error: Error) => void;
+      settled: boolean;
+    }
+  >();
   private nextRequestId = 0;
   private dead = false;
   private readonly handleMessage = (event: unknown): void => {
@@ -128,6 +170,10 @@ export class SurfaceWorkerClient implements SurfaceBuildTransport {
     if (!isResponseMessage(data)) return;
     if (data.type === 'contour-success' || data.type === 'contour-failure') {
       this.handleContourMessage(data);
+      return;
+    }
+    if (data.type === 'volume-success' || data.type === 'volume-failure') {
+      this.handleVolumeMessage(data);
       return;
     }
     const entry = this.pending.get(data.requestId);
@@ -175,6 +221,28 @@ export class SurfaceWorkerClient implements SurfaceBuildTransport {
     }
     entry.settled = true;
     this.pendingContours.delete(data.requestId);
+    entry.resolve(data.result);
+  };
+  /** Phase 18I: volume terminal messages settle volume pendings only (malformed → reject). */
+  private readonly handleVolumeMessage = (
+    data: Extract<TerminalSurfaceWorkerMessage, { type: 'volume-success' | 'volume-failure' }>,
+  ): void => {
+    const entry = this.pendingVolumes.get(data.requestId);
+    if (!entry || entry.settled) return;
+    if (data.type === 'volume-failure') {
+      entry.settled = true;
+      this.pendingVolumes.delete(data.requestId);
+      entry.reject(new Error(data.error || 'Surface volume computation failed.'));
+      return;
+    }
+    if (!isWellFormedVolumeResult(data.result)) {
+      entry.settled = true;
+      this.pendingVolumes.delete(data.requestId);
+      entry.reject(new Error(SURFACE_VOLUME_MALFORMED));
+      return;
+    }
+    entry.settled = true;
+    this.pendingVolumes.delete(data.requestId);
     entry.resolve(data.result);
   };
   private readonly handleFatal = (): void => {
@@ -242,7 +310,49 @@ export class SurfaceWorkerClient implements SurfaceBuildTransport {
     };
   }
 
+  /**
+   * Phase 18I volume computation. Latest-wins ownership is the service's;
+   * the client only settles one pending per requestId. Cancel → null;
+   * malformed → reject; failure → reject.
+   */
+  deriveVolume(request: SurfaceVolumeRequest): PendingSurfaceVolume {
+    this.nextRequestId += 1;
+    const requestId = `vreq-${this.nextRequestId}`;
+    let entry!: {
+      resolve: (_result: CadVolumeResult | null) => void;
+      reject: (_e: Error) => void;
+      settled: boolean;
+    };
+    const done = new Promise<CadVolumeResult | null>((resolve, reject) => {
+      entry = { resolve, reject, settled: false };
+    });
+    this.pendingVolumes.set(requestId, entry);
+    try {
+      this.port.postMessage({ type: 'volume', requestId, request });
+    } catch (error) {
+      this.pendingVolumes.delete(requestId);
+      entry.reject(error instanceof Error ? error : new Error(String(error)));
+    }
+    return {
+      requestId,
+      done,
+      cancel: () => this.cancel(requestId),
+    };
+  }
+
   cancel(requestId: string): void {
+    const volumeEntry = this.pendingVolumes.get(requestId);
+    if (volumeEntry && !volumeEntry.settled) {
+      volumeEntry.settled = true;
+      this.pendingVolumes.delete(requestId);
+      try {
+        this.port.postMessage({ type: 'cancel', requestId });
+      } catch {
+        // Local settle already applied; a dead port fails closed via dispose.
+      }
+      volumeEntry.resolve(null);
+      return;
+    }
     const contourEntry = this.pendingContours.get(requestId);
     if (contourEntry && !contourEntry.settled) {
       contourEntry.settled = true;
@@ -290,6 +400,13 @@ export class SurfaceWorkerClient implements SurfaceBuildTransport {
       }
       this.pendingContours.delete(requestId);
     }
+    for (const [requestId, entry] of this.pendingVolumes) {
+      if (!entry.settled) {
+        entry.settled = true;
+        entry.resolve(null);
+      }
+      this.pendingVolumes.delete(requestId);
+    }
     try {
       this.port.terminate();
     } catch {
@@ -300,6 +417,13 @@ export class SurfaceWorkerClient implements SurfaceBuildTransport {
   private failAll(error: Error): void {
     if (this.dead) return;
     this.dead = true;
+    for (const [requestId, entry] of this.pendingVolumes) {
+      if (!entry.settled) {
+        entry.settled = true;
+        entry.reject(error);
+      }
+      this.pendingVolumes.delete(requestId);
+    }
     for (const [requestId, entry] of this.pendingContours) {
       if (!entry.settled) {
         entry.settled = true;

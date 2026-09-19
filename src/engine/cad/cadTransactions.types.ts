@@ -19,7 +19,9 @@ import type {
   CadSurfaceBoundary,
   CadSurfaceDefinition,
   CadSurfaceStyle,
+  CadVolumeSurfaceStyle,
 } from './cadTypes';
+import type { CadVolumeSurfaceStylePatch } from './cadVolumeSurfaces';
 
 export type CadCommandKey =
   | 'SELECT_ALL'
@@ -96,7 +98,16 @@ export type CadCommandKey =
   | 'SURFACE_STYLE_DUPLICATE'
   | 'SURFACE_STYLE_RENAME'
   | 'SURFACE_STYLE_UPDATE'
-  | 'SURFACE_STYLE_DELETE';
+  | 'SURFACE_STYLE_DELETE'
+  | 'VOLUME_SURFACE_CREATE'
+  | 'VOLUME_SURFACE_DELETE'
+  | 'VOLUME_SURFACE_UPDATE_SOURCES'
+  | 'VOLUME_SURFACE_SET_LAYER_STYLE'
+  | 'VOLUME_STYLE_CREATE'
+  | 'VOLUME_STYLE_DUPLICATE'
+  | 'VOLUME_STYLE_RENAME'
+  | 'VOLUME_STYLE_UPDATE'
+  | 'VOLUME_STYLE_DELETE';
 export type CadCommandPhase = 'idle' | 'committed';
 
 export interface CadCommandState {
@@ -686,6 +697,57 @@ export type CadCommand =
       key: 'SURFACE_STYLE_DELETE';
       styleId: string;
       /** Required when surfaces reference the style; refs rewire to it. */
+      replacementId?: string;
+    }
+  | {
+      key: 'VOLUME_SURFACE_CREATE';
+      name?: string;
+      layerId?: CadLayerId;
+      styleId?: string;
+      baseSurfaceId: string;
+      comparisonSurfaceId: string;
+    }
+  | {
+      key: 'VOLUME_SURFACE_DELETE';
+      volumeSurfaceId: string;
+    }
+  | {
+      key: 'VOLUME_SURFACE_UPDATE_SOURCES';
+      volumeSurfaceId: string;
+      baseSurfaceId: string;
+      comparisonSurfaceId: string;
+    }
+  | {
+      key: 'VOLUME_SURFACE_SET_LAYER_STYLE';
+      volumeSurfaceId: string;
+      layerId?: CadLayerId;
+      /** Undefined = leave, null = clear, id = set (must exist). */
+      styleId?: string | null;
+    }
+  | {
+      key: 'VOLUME_STYLE_CREATE';
+      style: CadVolumeSurfaceStyle;
+    }
+  | {
+      key: 'VOLUME_STYLE_DUPLICATE';
+      styleId: string;
+      newId: string;
+      name: string;
+    }
+  | {
+      key: 'VOLUME_STYLE_RENAME';
+      styleId: string;
+      name: string;
+    }
+  | {
+      key: 'VOLUME_STYLE_UPDATE';
+      styleId: string;
+      patch: CadVolumeSurfaceStylePatch;
+    }
+  | {
+      key: 'VOLUME_STYLE_DELETE';
+      styleId: string;
+      /** Required when volumes reference the style; refs rewire to it. */
       replacementId?: string;
     };
 

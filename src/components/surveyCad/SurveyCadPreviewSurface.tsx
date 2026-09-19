@@ -1,5 +1,6 @@
 import React from 'react';
 import type { CadSurfaceDisplayLayer } from '../../engine/cad/cadDisplayTypes';
+import type { CadVolumeDisplayLayer } from '../../engine/cad/cadVolumeView';
 import type { ProjectPoint } from './SurveyCadPreview.types';
 
 interface RenderSurfaceLayersOptions {
@@ -148,5 +149,50 @@ export const renderSurfaceLayers = ({
         </g>
       );
     })}
+  </>
+);
+
+/**
+ * Phase 18I — derived volume CUT/FILL regions. One aggregated path per
+ * kind (never CAD entities, never per-polygon nodes); No-Display styles
+ * produce no layer at all (quantity-only). OFF/FROZEN layers are dropped
+ * by the viewport filter before this render.
+ */
+export const renderVolumeLayers = ({
+  layers,
+  project,
+}: {
+  layers: readonly CadVolumeDisplayLayer[];
+  project: ProjectPoint;
+}): React.ReactNode => (
+  <>
+    {layers.map((layer) => (
+      <g
+        key={`volume:${layer.volumeId}`}
+        data-volume-layer={layer.volumeId}
+        pointerEvents="none"
+      >
+        {layer.showCut && layer.cutD ? (
+          <path
+            d={toScreenD(layer.cutD, project)}
+            fill={layer.cutStroke}
+            fillOpacity={layer.opacity}
+            stroke={layer.cutStroke}
+            strokeWidth={1}
+            data-volume-kind="cut"
+          />
+        ) : null}
+        {layer.showFill && layer.fillD ? (
+          <path
+            d={toScreenD(layer.fillD, project)}
+            fill={layer.fillStroke}
+            fillOpacity={layer.opacity}
+            stroke={layer.fillStroke}
+            strokeWidth={1}
+            data-volume-kind="fill"
+          />
+        ) : null}
+      </g>
+    ))}
   </>
 );
