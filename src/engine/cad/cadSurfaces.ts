@@ -4,6 +4,8 @@ import type {
   CadSurface,
   CadSurfaceStatus,
 } from './cadTypes';
+import { isImportedTinDefinition } from './cadTypes';
+import { materializeImportedTin } from './cadImportedTin';
 import { buildConstrainedTin } from './tin/tinBuild';
 import type { TinAdjacency, TinEdgeKinds } from './tin/tinTypes';
 import { ccwSign } from './tin/tinPredicates';
@@ -139,8 +141,76 @@ const isCollinearWorld = (points: CadSurfaceSourcePoint[]): boolean => {
   return local.every((p) => Math.abs(ccwSign(a, b, p)) <= eps * base);
 };
 
+const meshBounds = (
+  points: CadSurfaceSourcePoint[],
+  triangles: ReadonlyArray<readonly [number, number, number]>,
+): Pick<CadSurfaceBuildStats, 'minZ' | 'maxZ' | 'minX' | 'minY' | 'maxX' | 'maxY' | 'planimetricArea'> => {
+  let minZ = Infinity;
+  let maxZ = -Infinity;
+  let minX = Infinity;
+  let minY = Infinity;
+  let maxX = -Infinity;
+  let maxY = -Infinity;
+  for (const p of points) {
+    minZ = Math.min(minZ, p.z);
+    maxZ = Math.max(maxZ, p.z);
+    minX = Math.min(minX, p.x);
+    minY = Math.min(minY, p.y);
+    maxX = Math.max(maxX, p.x);
+    maxY = Math.max(maxY, p.y);
+  }
+  let planimetricArea = 0;
+  for (const tri of triangles) {
+    const a = points[tri[0]]!;
+    const b = points[tri[1]]!;
+    const c = points[tri[2]]!;
+    planimetricArea += Math.abs((b.x - a.x) * (c.y - a.y) - (c.x - a.x) * (b.y - a.y)) / 2;
+  }
+  return { minZ, maxZ, minX, minY, maxX, maxY, planimetricArea };
+};
+
 export const buildCadSurface = (project: CadProject, surface: CadSurface): CadSurfaceBuildResult => {
   const revision = computeCadSurfaceSourceRevision(project, surface);
+  // Phase 18L: imported topology materializes WITHOUT Delaunay — every
+  // file face is retained exactly once; invalid payloads block, never partial.
+  if (isImportedTinDefinition(surface.definition) && surface.definition.importedTin) {
+    const mesh = materializeImportedTin(surface.id, surface.definition.importedTin);
+    if (!mesh) {
+      return {
+        outcome: 'blocked',
+        revision,
+        reasonCodes: ['SURFACE_TRIANGULATION_FAILED'],
+        points: [],
+        triangles: [],
+        adjacency: [],
+        edgeKinds: [],
+        stats: {
+          ...emptyStats(),
+          resolvedPointCount: surface.definition.importedTin.vertices.length / 3,
+        },
+        grid: buildSurfaceGrid([], []),
+      };
+    }
+    const bounds = meshBounds(mesh.points, mesh.triangles);
+    return {
+      outcome: 'ok',
+      revision,
+      reasonCodes: [],
+      points: mesh.points,
+      triangles: mesh.triangles,
+      adjacency: mesh.adjacency,
+      edgeKinds: mesh.edgeKinds,
+      stats: {
+        resolvedPointCount: mesh.points.length,
+        usedPointCount: mesh.points.length,
+        skippedMissingZCount: 0,
+        triangleCount: mesh.triangles.length,
+        ...bounds,
+        ...mesh.stats,
+      },
+      grid: mesh.grid,
+    };
+  }
   const collected = collectSources(project, surface);
   const fail = (
     outcome: 'insufficient' | 'blocked',
@@ -327,6 +397,15 @@ export const deriveSurfaceStatus = (
   options?: { building?: boolean },
 ): CadSurfaceStatus => {
   if (options?.building) return 'BUILDING';
+  // Phase 18L: imported surfaces never derive entity-driven failure modes;
+  // validity is the stored payload, freshness is the cached revision.
+  if (isImportedTinDefinition(surface.definition)) {
+    if (!surface.definition.importedTin) return 'FAILED';
+    if (surface.cachedRevision == null) return 'UNBUILT';
+    return computeCadSurfaceSourceRevision(project, surface) === surface.cachedRevision
+      ? 'CURRENT'
+      : 'NEEDS_REBUILD';
+  }
   const collected = collectSources(project, surface);
   if (collected.brokenRefs.length > 0) return 'BROKEN_REFERENCE';
   if (collected.points.length < 3) return 'INSUFFICIENT_DATA';

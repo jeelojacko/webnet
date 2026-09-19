@@ -33,6 +33,15 @@ export const CadSurfaceDefinitionEditor: React.FC<DefinitionEditorProps> = ({
   const commit = (label: string, ok: boolean): void =>
     setNotice(ok ? `${label} done.` : `${label} rejected — see status/locks.`);
   const definition = row.definition;
+  // Phase 18L: imported TINs carry explicit file topology — no
+  // point-group/breakline edit controls (would corrupt the import).
+  if (definition.sourceKind === 'imported-tin') {
+    return (
+      <p className="text-[11px] text-slate-400">
+        Imported surface — definition edits are disabled to preserve the source topology.
+      </p>
+    );
+  }
 
   const selectedPoints = survey?.selected.filter((info) => info.entityId) ?? [];
   const withZ = selectedPoints.filter((info) => info.z != null && Number.isFinite(info.z));

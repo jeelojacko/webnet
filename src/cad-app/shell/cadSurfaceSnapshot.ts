@@ -27,6 +27,9 @@ import type { CadProject, CadSurfaceStatus } from '../../engine/cad/cadTypes';
 
 export interface CadSurfaceDefinitionSummary {
   pointSourceKind: 'point-group' | 'points';
+  /** Phase 18L: 'imported-tin' hides point-group/breakline edit controls. */
+  sourceKind: 'native' | 'imported-tin';
+  importedSourceText: string | null;
   pointGroupId: string | null;
   pointGroupName: string | null;
   /** All attached groups in definition order (multi-group, phase 18F fix-up). */
@@ -294,6 +297,13 @@ export const buildCadSurfaceSnapshot = (
       stats: mesh ? meshStats(mesh, stale) : null,
       definition: {
         pointSourceKind: source.kind,
+        sourceKind: surface.definition.sourceKind === 'imported-tin' ? 'imported-tin' : 'native',
+        importedSourceText: surface.definition.sourceKind === 'imported-tin' && surface.definition.importedTin
+          ? `Imported LandXML TIN — ${surface.definition.importedTin.vertices.length / 3} vertices, ` +
+            `${surface.definition.importedTin.faces.length / 3} faces ` +
+            `(file: ${surface.definition.importedTin.provenance.fileName}, ` +
+            `surface: ${surface.definition.importedTin.provenance.surfaceName})`
+          : null,
         pointGroupId: source.kind === 'point-group' ? (attachedIds[0] ?? null) : null,
         pointGroupName: source.kind === 'point-group'
           ? (attachedNames[0] ?? (attachedIds[0] ?? null))

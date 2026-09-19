@@ -653,12 +653,44 @@ export interface CadSurfaceBuildOptions {
   maxEdgeLength?: number;
 }
 
+export interface ImportedTinProvenance {
+  format: 'LandXML';
+  fileName: string;
+  surfaceName: string;
+  sourceId?: string;
+}
+
+/**
+ * Phase 18L additive imported-TIN payload. Compact number arrays:
+ * vertices = [x0,y0,z0, x1,y1,z1, ...] (metres, E/N/Z), faces = [a0,b0,c0, ...]
+ * (CCW index triples). The mesh NEVER persists — reopen rebuilds it from
+ * these arrays via buildCadSurface (no Delaunay, no source XML needed).
+ */
+export interface ImportedTinPayload {
+  vertices: number[];
+  faces: number[];
+  provenance: ImportedTinProvenance;
+}
+
 export interface CadSurfaceDefinition {
   pointSource: CadSurfacePointSource;
   breaklines?: CadSurfaceBreakline[];
   boundaries?: CadSurfaceBoundary[];
   buildOptions?: CadSurfaceBuildOptions;
+  /**
+   * Phase 18L: absent/'native' = entity-derived TIN (18F model); 'imported-tin'
+   * = explicit imported topology (importedTin required). Additive — legacy
+   * drawings load as native, migration is idempotent.
+   */
+  sourceKind?: 'native' | 'imported-tin';
+  importedTin?: ImportedTinPayload;
 }
+
+/** True only for validated imported-TIN definitions (never for native). */
+export const isImportedTinDefinition = (
+  definition: Pick<CadSurfaceDefinition, 'sourceKind' | 'importedTin'> | undefined,
+): boolean =>
+  definition?.sourceKind === 'imported-tin' && definition.importedTin != null;
 
 export type CadSurfaceStatus =
   | 'UNBUILT'

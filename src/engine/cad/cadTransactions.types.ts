@@ -3,6 +3,7 @@ import type { FieldToFinishCadPayload } from '../fieldToFinish/cadGeneration';
 import type { CadBatchCogoDraft } from './cadBatchCogo';
 
 import type {
+  CadAlignmentElement,
   CadEntityAppearance,
   CadEntityId,
   CadLayerId,
@@ -17,11 +18,13 @@ import type {
   CadPointStyleId,
   CadProject,
   CadSectionStyle,
+  CadStationEquation,
   CadSurfaceBoundary,
   CadSurfaceDefinition,
   CadSurfaceStyle,
   CadProfileStyle,
   CadVolumeSurfaceStyle,
+  ImportedTinPayload,
 } from './cadTypes';
 import type { CadVolumeSurfaceStylePatch } from './cadVolumeSurfaces';
 import type { CadProfileStylePatch } from './cadProfileTypes';
@@ -121,6 +124,7 @@ export type CadCommandKey =
   | 'SURFACE_ADD_BOUNDARY'
   | 'SURFACE_REMOVE_BOUNDARY'
   | 'SURFACE_STYLE_CREATE'
+  | 'LANDXML_IMPORT'
   | 'SURFACE_STYLE_DUPLICATE'
   | 'SURFACE_STYLE_RENAME'
   | 'SURFACE_STYLE_UPDATE'
@@ -999,6 +1003,26 @@ export type CadCommand =
       key: 'SECTION_VIEW_UPDATE';
       viewId: string;
       patch: CadSectionViewPatch;
+    }
+  | {
+      key: 'LANDXML_IMPORT';
+      fileName: string;
+      inputHash: string;
+      points: Array<{
+        stationId: string;
+        x: number;
+        y: number;
+        z: number;
+        description?: string;
+        featureCode?: string;
+      }>;
+      alignments: Array<{
+        name: string;
+        elements: CadAlignmentElement[];
+        startStation: number;
+        stationEquations: CadStationEquation[];
+      }>;
+      surfaces: Array<{ name: string; payload: ImportedTinPayload }>;
     }
   | {
       key: 'SECTION_VIEW_DELETE';

@@ -5,8 +5,9 @@ import type {
   CadSurface,
   CadSurveyPointEntity,
 } from './cadTypes';
-import { surfacePointGroupIds } from './cadTypes';
+import { isImportedTinDefinition, surfacePointGroupIds } from './cadTypes';
 import { fnv1a } from './cadRevisionHash';
+import { importedTinRevision } from './cadImportedTin';
 
 export { fnv1a };
 import { evaluatePointGroupMembership } from './cadPointGroups';
@@ -89,6 +90,33 @@ const dedupeRing = (ring: Array<{ x: number; y: number }>): Array<{ x: number; y
  * invented), boundary rings + void validation. Pure + deterministic.
  */
 export const collectSources = (project: CadProject, surface: CadSurface): CollectedSources => {
+  // Phase 18L: imported TINs resolve straight from the stored topology —
+  // no entity refs, no breaklines/boundaries, no dedupe (validated at import).
+  if (isImportedTinDefinition(surface.definition) && surface.definition.importedTin) {
+    const payload = surface.definition.importedTin;
+    const points: CadSurfaceSourcePoint[] = [];
+    for (let i = 0; i + 2 < payload.vertices.length; i += 3) {
+      const x = payload.vertices[i] as number;
+      const y = payload.vertices[i + 1] as number;
+      const z = payload.vertices[i + 2] as number;
+      if (Number.isFinite(x) && Number.isFinite(y) && Number.isFinite(z)) {
+        points.push({ entityId: `${surface.id}:v${i / 3}`, x, y, z });
+      }
+    }
+    return {
+      brokenRefs: [],
+      points,
+      groupIds: [],
+      skippedMissingZ: 0,
+      duplicateConflict: false,
+      breaklines: [],
+      breaklineError: null,
+      outers: [],
+      voids: [],
+      boundaryError: null,
+      buildOptions: {},
+    };
+  }
   const points = surveyPointsOf(project);
   const byEntityId = new Map(points.map((point) => [point.id, point]));
   const byStationId = new Map<string, CadSurveyPointEntity>();
@@ -285,6 +313,10 @@ export const collectSources = (project: CadProject, surface: CadSurface): Collec
  * Display styling (styleId/layerId) is excluded by construction.
  */
 export const computeCadSurfaceSourceRevision = (project: CadProject, surface: CadSurface): string => {
+  // Phase 18L: imported revision covers stored topology + provenance only.
+  if (isImportedTinDefinition(surface.definition) && surface.definition.importedTin) {
+    return importedTinRevision(surface.id, surface.definition.importedTin);
+  }
   const collected = collectSources(project, surface);
   const parts: string[] = [];
   const ordered = [...collected.points].sort((a, b) =>

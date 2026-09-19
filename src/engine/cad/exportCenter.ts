@@ -13,6 +13,8 @@ import { serializeExportSceneToSvgWithResult } from './cadSvgSerializer';
 import { exportScenesToPdfWithResult } from './cadPdfExport';
 import { buildDxfLayoutTextWithResult, buildDxfModelSpaceTextWithResult } from './dxf/dxfLayoutExport';
 import { buildLandXmlProjectExportWithResult } from '../landxmlCad';
+import type { CadLandXmlCivilSources } from '../landxmlCivilSource';
+import { buildLandXmlClassSummary, type ExportCenterClassSummary } from './landxmlExportSummary';
 import {
   buildCadDrawingFileName,
   serializeCadDrawingFile,
@@ -68,6 +70,8 @@ export interface ExportCenterPreview {
   /** Shown when real warnings are unavailable for this row. */
   warningsPending: boolean;
   notice?: string;
+  /** Phase 18L per-class LandXML dispositions (nothing silently omitted). */
+  classSummary?: readonly ExportCenterClassSummary[];
   payload: string | Uint8Array;
 }
 
@@ -369,14 +373,22 @@ const describeDxfR2000 = (drawing: CadDrawingDocument): ExportCenterOutcome => {
   };
 };
 
-const describeLandxml = (drawing: CadDrawingDocument): ExportCenterOutcome => {
+const describeLandxml = (
+  drawing: CadDrawingDocument,
+  civilSources?: CadLandXmlCivilSources,
+): ExportCenterOutcome => {
   // Production CAD→LandXML adapter with per-entity disposition: every
   // project entity is exported XOR omitted, approximated ⊆ exported —
-  // no silent drops, no warningsPending.
-  const result = buildLandXmlProjectExportWithResult(drawing.project, {
-    units: drawing.units === 'ft' ? 'ft' : 'm',
-    projectName: drawing.project.name,
-  });
+  // no silent drops, no warningsPending. Civil sources (runtime caches) are
+  // optional: absent = surfaces/profiles/sections are blocked with reason.
+  const result = buildLandXmlProjectExportWithResult(
+    drawing.project,
+    {
+      units: drawing.units === 'ft' ? 'ft' : 'm',
+      projectName: drawing.project.name,
+    },
+    civilSources,
+  );
   if (result.exportedEntityIds.length === 0) {
     return { ok: false, message: 'No exportable geometry. Import or draw points first.' };
   }
@@ -394,6 +406,7 @@ const describeLandxml = (drawing: CadDrawingDocument): ExportCenterOutcome => {
       omittedEntityIds: result.omittedEntityIds,
       approximatedEntityIds: result.approximatedEntityIds,
       warningsPending: false,
+      classSummary: buildLandXmlClassSummary(drawing.project, result),
       payload: result.output,
     },
   };
@@ -404,6 +417,7 @@ export const buildExportCenterPreview = (
   drawing: CadDrawingDocument,
   selection: ExportCenterSelection,
   depOpts?: ExportDependencyOptions,
+  civilSources?: CadLandXmlCivilSources,
 ): ExportCenterOutcome => {
   try {
     const gate = depOpts !== undefined
@@ -420,7 +434,7 @@ export const buildExportCenterPreview = (
       case 'dxf-r2000':
         return describeDxfR2000(drawing);
       case 'landxml':
-        return describeLandxml(drawing);
+        return describeLandxml(drawing, civilSources);
       case 'wncad':
         return {
           ok: true,
