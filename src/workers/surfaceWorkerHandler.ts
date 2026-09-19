@@ -40,6 +40,16 @@ import type {
   VolumeMesh,
   VolumeResult,
 } from './surfaceVolumeEngine';
+import type {
+  CadSurfaceSectionResult,
+  ExtractSurfaceSectionInput,
+  SurfaceSectionExtractorFn,
+} from '../engine/cad/cadSectionTypes';
+import {
+  extractSampleLine,
+  resolveSampleFrame,
+  resolveTangentAtRawStation,
+} from '../engine/cad/sections';
 
 /**
  * Phase 18F surface build worker.
@@ -75,6 +85,7 @@ export type SurfaceWorkerRequestMessage =
   | { type: 'contours'; requestId: string; request: SurfaceContourRequest }
   | { type: 'volume'; requestId: string; request: SurfaceVolumeRequest }
   | { type: 'profile'; requestId: string; request: SurfaceProfileRequest }
+  | { type: 'sections'; requestId: string; request: SurfaceSectionsRequest }
   | { type: 'cancel'; requestId: string };
 
 export type SurfaceWorkerResponseMessage =
@@ -142,6 +153,20 @@ export type SurfaceWorkerResponseMessage =
       requestId: string;
       profileId: string;
       profileRevision: string;
+      error: string;
+    }
+  | {
+      type: 'sections-success';
+      requestId: string;
+      groupId: string;
+      groupRevision: string;
+      results: CadSurfaceSectionResult[];
+    }
+  | {
+      type: 'sections-failure';
+      requestId: string;
+      groupId: string;
+      groupRevision: string;
       error: string;
     };
 
@@ -212,6 +237,42 @@ export type SurfaceProfileExtractorFn = (
   _input: ExtractSurfaceProfileInput,
 ) => CadSurfaceProfileResult | Promise<CadSurfaceProfileResult>;
 
+/**
+ * Phase 18K section derivation request. GO-level batching: each source mesh
+ * is sent ONCE as a flat-array snapshot, plus an array of sample-line
+ * geometries; the worker materialises each mesh once and extracts many
+ * sections per request (never one request per line).
+ */
+export interface SurfaceSectionsSourceMesh {
+  surfaceId: string;
+  /** Source surface `srev1` the mesh was built from. */
+  surfaceRevision: string;
+  mesh: { points: number[]; triangles: number[]; grid: CadSurfaceGrid };
+}
+
+export interface SurfaceSectionsLineInput {
+  lineId: string;
+  /** Per-line content revision the result must still match. */
+  lineRevision: string;
+  rawStation: number;
+  leftWidth: number;
+  rightWidth: number;
+  skewDeg: number;
+}
+
+export interface SurfaceSectionsRequest {
+  groupId: string;
+  /** `secg1:` group revision the batch must still match. */
+  groupRevision: string;
+  drawingId?: string;
+  alignmentElements: CadAlignmentElement[];
+  startStation: number;
+  /** Display labels only; excluded from the section revision. */
+  stationEquations?: CadStationEquation[];
+  sources: SurfaceSectionsSourceMesh[];
+  lines: SurfaceSectionsLineInput[];
+}
+
 export interface SurfaceWorkerHandlerDeps {
   loadBuilder: () => Promise<SurfaceWorkerBuilderFn>;
   /** Phase 18H: extractor override (tests inject fakes; default is the engine sibling's). */
@@ -220,6 +281,11 @@ export interface SurfaceWorkerHandlerDeps {
   loadVolumeEngine?: () => Promise<SurfaceVolumeEngineFn>;
   /** Phase 18J: profile extractor override (tests inject fakes; default is the engine sibling's). */
   loadProfileExtractor?: () => Promise<SurfaceProfileExtractorFn>;
+  /**
+   * Phase 18K: section extractor (engine sections slice). Tests inject fakes;
+   * production defaults to a clear seam error until the engine slice lands.
+   */
+  loadSectionExtractor?: () => Promise<SurfaceSectionExtractorFn>;
   postMessage: (_message: SurfaceWorkerResponseMessage) => void;
   defer?: (_callback: () => void) => void;
 }
@@ -292,6 +358,47 @@ export const buildSurfaceMeshFromRequest = (
   };
 };
 
+/**
+ * Default section extractor: resolves the exact raw-station tangent + skewed
+ * sample frame from the alignment and walks the TIN once (engine section
+ * slice). Fail-closed: geometry errors raise a stable SECTION_* diagnostic.
+ */
+const defaultSectionExtractor: SurfaceSectionExtractorFn = (input) => {
+  const tangent = resolveTangentAtRawStation(
+    input.alignmentElements,
+    input.startStation,
+    input.rawStation,
+  );
+  if (!tangent.ok) throw new Error(`SECTION_${tangent.code}`);
+  const frame = resolveSampleFrame(tangent.value.tangent, input.skewDeg);
+  if (!frame.ok) throw new Error(`SECTION_${frame.code}`);
+  const extracted = extractSampleLine({
+    mesh: { points: input.mesh.points, triangles: input.mesh.triangles, grid: input.mesh.grid },
+    center: tangent.value.point,
+    direction: frame.value.d,
+    leftWidth: input.leftWidth,
+    rightWidth: input.rightWidth,
+    rawStation: input.rawStation,
+    lineId: input.lineId,
+  });
+  if (!extracted.ok) throw new Error(`SECTION_${extracted.code}`);
+  const section = extracted.section;
+  return {
+    groupId: input.groupId,
+    lineId: input.lineId,
+    surfaceId: input.surfaceId,
+    revision: input.revision,
+    surfaceRevision: input.surfaceRevision,
+    rawStation: input.rawStation,
+    segments: section.segments,
+    minElevation: section.minElevation,
+    maxElevation: section.maxElevation,
+    coveredWidth: section.coveredWidth,
+    gapWidth: section.gapWidth,
+    diagnostics: section.diagnostics,
+  };
+};
+
 export const createSurfaceWorkerHandler = (
   deps: SurfaceWorkerHandlerDeps,
 ): SurfaceWorkerHandler => {
@@ -300,6 +407,7 @@ export const createSurfaceWorkerHandler = (
   const latestContourBySurface = new Map<string, string>();
   const latestVolumeBySurface = new Map<string, string>();
   const latestProfileByProfile = new Map<string, string>();
+  const latestSectionsByGroup = new Map<string, string>();
   const defer = deps.defer ?? ((callback) => setTimeout(callback, 0));
   const loadContourExtractor =
     deps.loadContourExtractor ?? (() => Promise.resolve(extractSurfaceContours));
@@ -307,6 +415,8 @@ export const createSurfaceWorkerHandler = (
     deps.loadVolumeEngine ?? (() => Promise.resolve(computeVolumeQuantities));
   const loadProfileExtractor =
     deps.loadProfileExtractor ?? (() => Promise.resolve(extractSurfaceProfile));
+  const loadSectionExtractor =
+    deps.loadSectionExtractor ?? (() => Promise.resolve(defaultSectionExtractor));
 
   const handleBuild = (requestId: string, request: SurfaceBuildRequest): void => {
     latestRevisionBySurface.set(request.surfaceId, request.revision);
@@ -601,6 +711,95 @@ export const createSurfaceWorkerHandler = (
     });
   };
 
+  /** Phase 18K: latest-wins key per group = groupId@groupRevision. */
+  const sectionsRequestKey = (request: SurfaceSectionsRequest): string =>
+    `${request.groupId}@${request.groupRevision}`;
+
+  const parseSectionMesh = (
+    flat: SurfaceSectionsSourceMesh['mesh'],
+  ): ExtractSurfaceSectionInput['mesh'] => {
+    const points: Array<{ x: number; y: number; z: number }> = [];
+    for (let index = 0; index + 2 < flat.points.length + 1; index += 3) {
+      points.push({ x: flat.points[index]!, y: flat.points[index + 1]!, z: flat.points[index + 2]! });
+    }
+    const triangles: Array<[number, number, number]> = [];
+    for (let index = 0; index + 2 < flat.triangles.length + 1; index += 3) {
+      triangles.push([flat.triangles[index]!, flat.triangles[index + 1]!, flat.triangles[index + 2]!]);
+    }
+    return { points, triangles, grid: flat.grid };
+  };
+
+  /**
+   * Phase 18K batched sections: materialise each source mesh ONCE, then
+   * extract every (line x source) pair from the same mesh objects. One
+   * request/response per group batch keeps structured-clone cost O(mesh).
+   */
+  const handleSections = (requestId: string, request: SurfaceSectionsRequest): void => {
+    latestSectionsByGroup.set(request.groupId, sectionsRequestKey(request));
+    defer(() => {
+      if (cancelledRequestIds.has(requestId)) return;
+      // Materialise once (never per line).
+      const materialized = request.sources.map((source) => ({
+        surfaceId: source.surfaceId,
+        surfaceRevision: source.surfaceRevision,
+        mesh: parseSectionMesh(source.mesh),
+      }));
+      void loadSectionExtractor()
+        .then(async (extract) => {
+          const results: CadSurfaceSectionResult[] = [];
+          for (const line of request.lines) {
+            for (const source of materialized) {
+              const input: ExtractSurfaceSectionInput = {
+                groupId: request.groupId,
+                groupRevision: request.groupRevision,
+                lineId: line.lineId,
+                revision: line.lineRevision,
+                surfaceId: source.surfaceId,
+                surfaceRevision: source.surfaceRevision,
+                alignmentElements: request.alignmentElements,
+                startStation: request.startStation,
+                ...(request.stationEquations != null
+                  ? { stationEquations: request.stationEquations }
+                  : {}),
+                rawStation: line.rawStation,
+                leftWidth: line.leftWidth,
+                rightWidth: line.rightWidth,
+                skewDeg: line.skewDeg,
+                mesh: source.mesh,
+              };
+              results.push(await extract(input));
+            }
+          }
+          return results;
+        })
+        .then((results) => {
+          if (cancelledRequestIds.has(requestId)) return;
+          if (latestSectionsByGroup.get(request.groupId) !== sectionsRequestKey(request)) return;
+          deps.postMessage({
+            type: 'sections-success',
+            requestId,
+            groupId: request.groupId,
+            groupRevision: request.groupRevision,
+            results,
+          });
+        })
+        .catch((extractError) => {
+          if (cancelledRequestIds.has(requestId)) return;
+          if (latestSectionsByGroup.get(request.groupId) !== sectionsRequestKey(request)) return;
+          deps.postMessage({
+            type: 'sections-failure',
+            requestId,
+            groupId: request.groupId,
+            groupRevision: request.groupRevision,
+            error: extractError instanceof Error ? extractError.message : String(extractError),
+          });
+        })
+        .finally(() => {
+          cancelledRequestIds.delete(requestId);
+        });
+    });
+  };
+
   return {
     handleMessage: (message: SurfaceWorkerRequestMessage): void => {
       if (!message) return;
@@ -621,6 +820,9 @@ export const createSurfaceWorkerHandler = (
       if (message.type === 'profile') {
         handleProfile(message.requestId, message.request);
       }
+      if (message.type === 'sections') {
+        handleSections(message.requestId, message.request);
+      }
     },
     resetForTests: (): void => {
       cancelledRequestIds.clear();
@@ -628,6 +830,7 @@ export const createSurfaceWorkerHandler = (
       latestContourBySurface.clear();
       latestVolumeBySurface.clear();
       latestProfileByProfile.clear();
+      latestSectionsByGroup.clear();
     },
   };
 };

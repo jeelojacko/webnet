@@ -5,6 +5,7 @@ import type {
   CadBounds,
   CadDrawingDocument,
   CadParcelLayoutUiState,
+  CadSampleLineGroup,
   CadSurveyPointEntity,
   SurveyCadPersistedState,
 } from '../engine/cad/cadTypes';
@@ -55,10 +56,22 @@ import {
 import { buildCadProfileSnapshot, formatProfileElevationAnswer } from '../cad-app/shell/cadProfileSnapshot';
 import { CadSurfaceManager } from '../cad-app/shell/CadSurfaceManager';
 import { CadProfileManager } from '../cad-app/shell/CadProfileManager';
+import { CadSampleLineManager } from '../cad-app/shell/CadSampleLineManager';
+import {
+  buildCadSectionSnapshot,
+  estimateSectionViewFrame,
+  formatSectionElevationAnswer,
+  layoutSectionViewStack,
+  querySectionElevationAtOffset,
+} from '../cad-app/shell/cadSectionSnapshot';
 import { buildProfileViewDisplayLayers } from '../engine/cad/cadProfileView';
+import {
+  buildSampleLineDisplayLayers,
+  buildSectionViewDisplayLayers,
+} from '../engine/cad/cadSectionView';
 import { filterCadDisplaySceneForViewport } from '../engine/cad/cadViewportAppearance';
 import { resolveProfileStationInput, queryProfileElevationAt } from '../engine/cad/profiles/profileInquiry';
-import { formatCadStation } from '../engine/cad/cadAlignmentStationing';
+import { cadAlignmentRawStationToDisplayStation, formatCadStation } from '../engine/cad/cadAlignmentStationing';
 import { createCadSurfaceCache } from '../engine/cad/cadSurfaceCache';
 import { createCadSurfaceContourCache } from '../engine/cad/surfaceContourCache';
 import { SurfaceWorkerClient } from '../workers/surfaceWorkerClient';
@@ -66,7 +79,9 @@ import { SurfaceBuildService } from '../workers/surfaceBuildService';
 import { SurfaceContourService } from '../workers/surfaceContourService';
 import { SurfaceVolumeService } from '../workers/surfaceVolumeService';
 import { SurfaceProfileService } from '../workers/surfaceProfileService';
+import { SurfaceSectionService } from '../workers/surfaceSectionService';
 import { createCadProfileCache } from '../engine/cad/profileCache';
+import { createCadSectionCache } from '../engine/cad/sectionCache';
 import { createCadSurfaceVolumeCache } from '../engine/cad/surfaceVolumeCache';
 import { computeCadSurfaceSourceRevision } from '../engine/cad/cadSurfaces';
 import { backfillCadSurfaceStyles } from '../engine/cad/cadSurfaceStyles';
@@ -357,6 +372,10 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
   // Phase 18J — profile UI state (session-only; samples never persist).
   const [selectedProfileId, setSelectedProfileId] = useState<string | null>(null);
   const [selectedProfileViewId, setSelectedProfileViewId] = useState<string | null>(null);
+  // Phase 18K — section UI state (session-only; sections never persist).
+  const [selectedSampleLineGroupId, setSelectedSampleLineGroupId] = useState<string | null>(null);
+  const [selectedSampleLineId, setSelectedSampleLineId] = useState<string | null>(null);
+  const [selectedSectionViewId, setSelectedSectionViewId] = useState<string | null>(null);
   const [volumePick, setVolumePick] = useState<{ volumeId: string } | null>(null);
   const [volumePickAnswer, setVolumePickAnswer] = useState<{ volumeId: string; text: string } | null>(null);
   const [volumeVersion, setVolumeVersion] = useState(0);
@@ -643,6 +662,79 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
     }),
     [profileService, profileVersion, surfaceCache, profileCache],
   );
+  // Phase 18K — section derivation control plane (one per drawing
+  // session, mirrors the profile service). Manual derivation only:
+  // source rebuilds and alignment edits never auto-start section work;
+  // the notify hooks cancel in-flight batches for affected groups and
+  // status re-derives from the revision. Results never persist.
+  const sectionCache = useMemo(
+    () => createCadSectionCache(activeDrawing.drawingId),
+    [activeDrawing.drawingId],
+  );
+  const [sectionVersion, setSectionVersion] = useState(0);
+  const sectionService = useMemo(
+    () =>
+      new SurfaceSectionService({
+        drawingId: activeDrawing.drawingId,
+        getProject: () => activeProjectForBuildsRef.current,
+        getDrawingId: () => drawingIdForBuildsRef.current,
+        tinCache: surfaceCache,
+        sectionCache,
+        createTransport: () => {
+          try {
+            if (typeof Worker === 'undefined') return null;
+            return new SurfaceWorkerClient(
+              new Worker(new URL('../workers/surfaceWorker.ts', import.meta.url), {
+                type: 'module',
+              }),
+            );
+          } catch {
+            return null;
+          }
+        },
+        notify: (message) => setFileStatusText(message),
+        onStateChange: () => setSectionVersion((version) => version + 1),
+      }),
+    [activeDrawing.drawingId, surfaceCache, sectionCache],
+  );
+  useEffect(() => () => sectionService.dispose(), [sectionService]);
+  // Source-rebuild + alignment-edit hookups share the profile diff refs'
+  // shape: only NEW mesh revisions / CHANGED alignment digests notify.
+  // A ref diff guards both — notifying on every render would supersede
+  // work that was just requested.
+  const notifiedSectionMeshRevisionsRef = useRef<Record<string, string[]>>({});
+  useEffect(() => {
+    const previous = notifiedSectionMeshRevisionsRef.current;
+    for (const [surfaceId, revisions] of Object.entries(surfaceMeshSessions)) {
+      const seen = previous[surfaceId] ?? [];
+      if (revisions.length !== seen.length || revisions.some((entry, index) => entry !== seen[index])) {
+        sectionService.notifyMeshBuilt(surfaceId);
+      }
+    }
+    notifiedSectionMeshRevisionsRef.current = surfaceMeshSessions;
+  }, [surfaceMeshSessions, sectionService]);
+  const notifiedSectionAlignmentDigestsRef = useRef<Record<string, string>>({});
+  useEffect(() => {
+    const previous = notifiedSectionAlignmentDigestsRef.current;
+    const next: Record<string, string> = {};
+    for (const entity of cadProject.entities) {
+      if (entity.type !== 'alignment') continue;
+      const digest = JSON.stringify(entity);
+      next[entity.id] = digest;
+      if (previous[entity.id] != null && previous[entity.id] !== digest) {
+        sectionService.notifyAlignmentChanged(entity.id);
+      }
+    }
+    notifiedSectionAlignmentDigestsRef.current = next;
+  }, [cadProject, sectionService]);
+  const surfaceSectionInputs = useMemo(
+    () => ({
+      version: sectionVersion,
+      sectionCache,
+      buildingGroupIds: sectionService.buildingGroupIds(),
+    }),
+    [sectionService, sectionVersion, sectionCache],
+  );
   // Source-rebuild hookup: only a NEW mesh revision for a surface
   // cancels in-flight volume work (their revision moved). A ref diff
   // guards it — notifying on every render would supersede work that was
@@ -805,6 +897,28 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
         profileViewLayers,
       }),
     [activeProject, displaySceneWithParcelLabelToggle, profileViewLayers],
+  );
+  // Phase 18K — derived sample-line plan + section-view display layers.
+  // OFF/FROZEN hiding is engine-owned (same visible/!frozen contract as
+  // profiles); activeProject is the dep (new identity per transaction).
+  const sampleLineLayers = useMemo(() => {
+    void surfaceSectionInputs.version;
+    return buildSampleLineDisplayLayers(activeProject);
+  }, [activeProject, surfaceSectionInputs]);
+  const sectionViewLayers = useMemo(() => {
+    // Version bump is the only reliable "results changed" trigger: the
+    // cache is mutated in place by the service.
+    void surfaceSectionInputs.version;
+    return buildSectionViewDisplayLayers(activeProject, sectionCache);
+  }, [activeProject, sectionCache, surfaceSectionInputs]);
+  const displaySceneWithSections = useMemo(
+    () =>
+      filterCadDisplaySceneForViewport(activeProject, {
+        ...displaySceneWithProfiles,
+        sampleLineLayers,
+        sectionViewLayers,
+      }),
+    [activeProject, displaySceneWithProfiles, sampleLineLayers, sectionViewLayers],
   );
   const reportedComputationEntities = useMemo(
     () =>
@@ -1068,6 +1182,17 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
           sessionDiagnostics: surfaceProfileInputs.sessionDiagnostics,
         },
       ),
+      section: buildCadSectionSnapshot(
+        activeProject,
+        {
+          sectionCache,
+          statusOf: (groupId, lineId, surfaceId) => sectionService.statusOf(groupId, lineId, surfaceId),
+          buildingGroupIds: surfaceSectionInputs.buildingGroupIds,
+        },
+        selectedSampleLineGroupId,
+        selectedSampleLineId,
+        selectedSectionViewId,
+      ),
       availableCommands: shellAvailableCommands,
     };
   }, [
@@ -1076,6 +1201,8 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
     shellAvailableCommands, surfaceCache, surfaceRevisionIndex, selectedSurfaceId, lastSurfaceInquiry,
     surfaceBuildInputs, volumeCache, selectedVolumeId, surfaceVolumeInputs,
     profileCache, surfaceProfileInputs, selectedProfileId, selectedProfileViewId,
+    sectionCache, sectionService, surfaceSectionInputs,
+    selectedSampleLineGroupId, selectedSampleLineId, selectedSectionViewId,
   ]);
 
   useEffect(() => {
@@ -1140,6 +1267,57 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
     knownProfileIdsRef.current = live;
     if (selectedProfileId != null && !live.has(selectedProfileId)) setSelectedProfileId(null);
   }, [activeProject.surfaceProfiles, profileService, selectedProfileId]);
+
+  // Phase 18K — drop session sections for deleted groups (results never
+  // persist; the service cancels in-flight work first). Source surface
+  // meshes are untouched.
+  const knownSectionGroupIdsRef = useRef<Set<string>>(new Set());
+  useEffect(() => {
+    const live = new Set((activeProject.sampleLineGroups ?? []).map((entry) => entry.id));
+    for (const id of knownSectionGroupIdsRef.current) {
+      if (!live.has(id)) sectionService.handleGroupDeleted(id);
+    }
+    knownSectionGroupIdsRef.current = live;
+    if (selectedSampleLineGroupId != null && !live.has(selectedSampleLineGroupId)) {
+      setSelectedSampleLineGroupId(null);
+      setSelectedSampleLineId(null);
+    }
+  }, [activeProject.sampleLineGroups, sectionService, selectedSampleLineGroupId]);
+
+  // Phase 18K — Section Elevation at Offset (live interpolation inquiry).
+  // Signed offset (+left/−right) resolves to the displayed station +
+  // E/N + interpolated elevation; gaps and outside-coverage answer
+  // honestly (never guessed). Null group/line/surface/result = block.
+  const describeSectionElevation = (
+    groupId: string,
+    lineId: string,
+    surfaceId: string,
+    offset: number,
+  ): string => {
+    const group = (activeProject.sampleLineGroups ?? []).find((entry) => entry.id === groupId);
+    const line = group?.sampleLines.find((entry) => entry.id === lineId) ?? null;
+    const surface = (activeProject.surfaces ?? []).find((entry) => entry.id === surfaceId);
+    const alignment = activeProject.entities.find((entry) => entry.id === group?.alignmentEntityId);
+    const viewName = line?.manualName ?? group?.name ?? lineId;
+    if (!group || !line || !surface || !alignment || alignment.type !== 'alignment') {
+      return formatSectionElevationAnswer(viewName, '—', offset, null, false);
+    }
+    const displayed = formatCadStation(
+      cadAlignmentRawStationToDisplayStation(alignment, line.rawStation) ?? line.rawStation,
+    );
+    const hit = querySectionElevationAtOffset(
+      activeProject,
+      sectionCache,
+      groupId,
+      lineId,
+      surfaceId,
+      offset,
+    );
+    if (!hit) {
+      return formatSectionElevationAnswer(viewName, displayed, offset, null, true);
+    }
+    return formatSectionElevationAnswer(viewName, displayed, offset, hit, true);
+  };
 
   // Phase 18J — Profile Elevation at Station (live interpolation inquiry).
   // Display station resolves to raw chainage through the shared stationing
@@ -1241,6 +1419,84 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
       selectProfileView: (viewId) => setSelectedProfileViewId(viewId),
       queryProfileElevation: (profileId, displayStation) =>
         describeProfileElevation(profileId, displayStation),
+      selectSampleLineGroup: (groupId) => {
+        setSelectedSampleLineGroupId(groupId);
+        if (groupId == null) setSelectedSampleLineId(null);
+      },
+      selectSampleLine: (groupId, lineId) => {
+        if (groupId != null) setSelectedSampleLineGroupId(groupId);
+        setSelectedSampleLineId(lineId);
+      },
+      rebuildSections: (groupId) => sectionService.requestGroup(groupId),
+      rebuildSectionLine: (groupId, lineId) => sectionService.requestLine(groupId, lineId),
+      createSectionViews: (groupId) => {
+        const group = (activeProject.sampleLineGroups ?? []).find((entry) => entry.id === groupId);
+        if (!group) {
+          setFileStatusText('Select a sample-line group first.');
+          return 'Select a sample-line group first.';
+        }
+        const existing = (activeProject.sectionViews ?? []).filter(
+          (entry) => entry.sampleLineGroupId === groupId,
+        );
+        const builtLineIds = new Set(existing.map((entry) => entry.sampleLineId));
+        const missing = group.sampleLines.filter((entry) => !builtLineIds.has(entry.id));
+        if (missing.length === 0) {
+          setFileStatusText(`Section views for “${group.name}” already exist.`);
+          return `Section views for “${group.name}” already exist.`;
+        }
+        // Deterministic single vertical stack below one insertion origin:
+        // origin sits under the lowest existing frame (estimated heights),
+        // then each frame steps down by height + gap — never overlapping
+        // by construction. Placements persist via undoable transactions.
+        const gap = 20;
+        const groupById = new Map((activeProject.sampleLineGroups ?? []).map((entry) => [entry.id, entry]));
+        const estimatedHeight = (ownerGroup: CadSampleLineGroup, lineId: string, ve = 1): number =>
+          estimateSectionViewFrame(activeProject, sectionCache, ownerGroup, lineId, ve, 60).height + 20;
+        // Layout clears EVERY existing section view, not just this group's:
+        // a new group stacks below the current lowest frame so cross-group
+        // frames never overlap.
+        const allViews = activeProject.sectionViews ?? [];
+        const lowest = allViews.length > 0
+          ? Math.min(...allViews.map((entry) => entry.insertionY))
+          : 0;
+        const frames = missing.map((line) => ({
+          lineId: line.id,
+          width: line.leftWidth + line.rightWidth,
+          height: estimatedHeight(group, line.id),
+        }));
+        const clearance = allViews.length > 0
+          ? Math.max(
+              ...allViews.map((view) => {
+                const owner = groupById.get(view.sampleLineGroupId);
+                return owner
+                  ? estimatedHeight(owner, view.sampleLineId, view.verticalExaggeration)
+                  : gap * 4;
+              }),
+              ...frames.map((frame) => frame.height),
+            ) + gap
+          : 0;
+        const placements = layoutSectionViewStack(0, lowest - clearance, frames, gap);
+        let created = 0;
+        for (const placement of placements) {
+          const ok = cadWorkspace.runLayerCommand({
+            key: 'SECTION_VIEW_CREATE',
+            sampleLineGroupId: groupId,
+            sampleLineId: placement.lineId,
+            insertionX: placement.insertionX,
+            insertionY: placement.insertionY,
+          });
+          if (ok) created += 1;
+        }
+        const message =
+          created === placements.length
+            ? `Created ${created} section views for “${group.name}”.`
+            : `Created ${created} of ${placements.length} section views — see status/locks.`;
+        setFileStatusText(message);
+        return message;
+      },
+      selectSectionView: (viewId) => setSelectedSectionViewId(viewId),
+      querySectionElevation: (groupId, lineId, surfaceId, offset) =>
+        describeSectionElevation(groupId, lineId, surfaceId, offset),
       requestVolume: (volumeId) => volumeService.requestVolume(volumeId),
       calculateSelectedVolume: () => {
         if (selectedVolumeId == null) return 'No volume surface selected.';
@@ -1531,6 +1787,13 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
             onClose={() => setSurveyManager(null)}
           />
         ) : null}
+        {surveyManager?.kind === 'sections' && shellSnapshot ? (
+          <CadSampleLineManager
+            snapshot={shellSnapshot}
+            actions={shellActions}
+            onClose={() => setSurveyManager(null)}
+          />
+        ) : null}
         {exportCenterOpen ? (
           <ExportCenterPanel
             drawing={activeDrawing}
@@ -1550,7 +1813,7 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
           parcelLayoutWorkflow={parcelLayoutWorkflow}
           traverseDraftPanelState={traverseDraftPanelState}
           commandDisplay={commandDisplay}
-          displayScene={displaySceneWithProfiles}
+          displayScene={displaySceneWithSections}
           reportedComputationEntities={reportedComputationEntities}
           parcelLayoutState={parcelLayoutState}
           parcelLayoutFrontageSegmentSelectionActive={parcelLayoutFrontageSegmentSelectionActive}
@@ -1605,6 +1868,13 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
           onSurfaceClick={(surfaceId) => setSelectedSurfaceId(surfaceId)}
           selectedProfileViewId={selectedProfileViewId}
           onProfileViewClick={(viewId) => setSelectedProfileViewId(viewId)}
+          selectedSampleLineId={selectedSampleLineId}
+          onSampleLineClick={(groupId, lineId) => {
+            setSelectedSampleLineGroupId(groupId);
+            setSelectedSampleLineId(lineId);
+          }}
+          selectedSectionViewId={selectedSectionViewId}
+          onSectionViewClick={(viewId) => setSelectedSectionViewId(viewId)}
         />
       </div>
     </div>

@@ -29,6 +29,14 @@ import {
   cloneCadProfileViews,
   cloneCadSurfaceProfiles,
 } from './cadProfileTypes';
+import {
+  backfillCadSampleLineGroups,
+  backfillCadSectionStyles,
+  backfillCadSectionViews,
+  cloneCadSampleLineGroups,
+  cloneCadSectionStyles,
+  cloneCadSectionViews,
+} from './cadSectionTypes';
 import { cloneFieldToFinishSettings } from '../fieldToFinish/catalogIo';
 import { backfillDrawingCatalog } from '../fieldToFinish/drawingCatalog';
 import { cloneFeatureCatalog } from '../fieldToFinish/featureCatalog';
@@ -197,6 +205,14 @@ export const cloneCadProject = (project: CadProject): CadProject => ({
   ...(project.profileStyles != null
     ? { profileStyles: cloneCadProfileStyles(project.profileStyles) }
     : {}),
+  // Phase 18K: sample-line groups/styles/views stay trailing (key-order rule).
+  ...(project.sampleLineGroups != null
+    ? { sampleLineGroups: cloneCadSampleLineGroups(project.sampleLineGroups) }
+    : {}),
+  ...(project.sectionStyles != null
+    ? { sectionStyles: cloneCadSectionStyles(project.sectionStyles) }
+    : {}),
+  ...(project.sectionViews != null ? { sectionViews: cloneCadSectionViews(project.sectionViews) } : {}),
 });
 
 const cloneParcelLayoutSettings = (
@@ -285,6 +301,11 @@ export const sanitizeSurveyCadPersistedState = (
         surfaceProfiles: cloneCadSurfaceProfiles(backfillSurfaceProfiles(withStandards.surfaceProfiles)),
         profileViews: cloneCadProfileViews(backfillProfileViews(withStandards.profileViews)),
         profileStyles: cloneCadProfileStyles(backfillCadProfileStyles(withStandards.profileStyles)),
+        sampleLineGroups: cloneCadSampleLineGroups(
+          backfillCadSampleLineGroups(withStandards.sampleLineGroups),
+        ),
+        sectionStyles: cloneCadSectionStyles(backfillCadSectionStyles(withStandards.sectionStyles)),
+        sectionViews: cloneCadSectionViews(backfillCadSectionViews(withStandards.sectionViews)),
       },
     };
   } catch {

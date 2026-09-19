@@ -37,6 +37,15 @@ export type SurveyCadPreviewCanvasProps = {
   /** Phase 18J — profile-view selection (entity selection untouched). */
   selectedProfileViewId?: string | null;
   onProfileViewClick?: (_viewId: string) => void;
+  /**
+   * Phase 18K — sample-line + section-view selection. Plan clicks map
+   * back to the line resource, view clicks to the view object; CadEntity
+   * selection is never touched by either.
+   */
+  selectedSampleLineId?: string | null;
+  onSampleLineClick?: (_groupId: string, _lineId: string) => void;
+  selectedSectionViewId?: string | null;
+  onSectionViewClick?: (_viewId: string) => void;
   consumeLatchedOrActiveSnap: (_extendMode?: boolean) => boolean;
   didDrag: boolean;
   dragState: DragState;

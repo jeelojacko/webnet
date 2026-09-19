@@ -21,6 +21,7 @@ import {
 import { renderPrimitive } from './SurveyCadPreviewPrimitive';
 import { renderSurfaceLayers, renderVolumeLayers } from './SurveyCadPreviewSurface';
 import { renderProfileViewLayers } from './SurveyCadPreviewProfiles';
+import { renderSampleLineLayers, renderSectionViewLayers } from './SurveyCadPreviewSections';
 
 const SurveyCadPreviewCanvas: React.FC<SurveyCadPreviewCanvasProps> = ({
   activeGripDragIdRef,
@@ -52,6 +53,10 @@ const SurveyCadPreviewCanvas: React.FC<SurveyCadPreviewCanvasProps> = ({
   onSurfacePickPoint,
   onProfileViewClick,
   selectedProfileViewId = null,
+  onSampleLineClick,
+  selectedSampleLineId = null,
+  onSectionViewClick,
+  selectedSectionViewId = null,
   onStartGripEdit,
   onViewportChange,
   onZoomExtents,
@@ -382,6 +387,24 @@ const SurveyCadPreviewCanvas: React.FC<SurveyCadPreviewCanvasProps> = ({
           project,
           pickActive: false,
           onProfileViewClick: (viewId) => onProfileViewClick?.(viewId),
+        })
+        : null}
+      {scene.sampleLineLayers && scene.sampleLineLayers.length > 0
+        ? renderSampleLineLayers({
+          layers: scene.sampleLineLayers,
+          selectedLineId: selectedSampleLineId,
+          project,
+          pickActive: commandPointInputActive,
+          onSampleLineClick: (groupId, lineId) => onSampleLineClick?.(groupId, lineId),
+        })
+        : null}
+      {scene.sectionViewLayers && scene.sectionViewLayers.length > 0
+        ? renderSectionViewLayers({
+          layers: scene.sectionViewLayers,
+          selectedViewId: selectedSectionViewId,
+          project,
+          pickActive: commandPointInputActive,
+          onSectionViewClick: (viewId) => onSectionViewClick?.(viewId),
         })
         : null}
       <GripHandleLayer

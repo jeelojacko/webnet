@@ -31,6 +31,15 @@ import {
   cloneCadProfileViews,
   cloneCadSurfaceProfiles,
 } from './cadProfileTypes';
+import {
+  backfillCadSampleLineGroups,
+  backfillCadSectionStyles,
+  backfillCadSectionViews,
+  clearSectionCacheOnLoad,
+  cloneCadSampleLineGroups,
+  cloneCadSectionStyles,
+  cloneCadSectionViews,
+} from './cadSectionTypes';
 import { backfillDrawingCatalog } from '../fieldToFinish/drawingCatalog';
 import { cloneFeatureCatalog } from '../fieldToFinish/featureCatalog';
 import { STARTER_CATALOG } from '../fieldToFinish/starterCatalog';
@@ -95,6 +104,10 @@ export const createBlankCadProject = ({
   surfaceProfiles: [],
   profileViews: [],
   profileStyles: backfillCadProfileStyles(undefined),
+  // Phase 18K: no sample-line groups/views yet; seed section styles (trailing).
+  sampleLineGroups: [],
+  sectionStyles: backfillCadSectionStyles(undefined),
+  sectionViews: [],
 });
 
 export const createBlankCadDrawingDocument = ({
@@ -229,6 +242,11 @@ export const migrateSurveyCadStateToDrawing = ({
     ).map(clearProfileCacheOnLoad),
     profileViews: cloneCadProfileViews(backfillProfileViews(withStandards.profileViews)),
     profileStyles: cloneCadProfileStyles(backfillCadProfileStyles(withStandards.profileStyles)),
+    sampleLineGroups: cloneCadSampleLineGroups(
+      backfillCadSampleLineGroups(withStandards.sampleLineGroups),
+    ).map(clearSectionCacheOnLoad),
+    sectionStyles: cloneCadSectionStyles(backfillCadSectionStyles(withStandards.sectionStyles)),
+    sectionViews: cloneCadSectionViews(backfillCadSectionViews(withStandards.sectionViews)),
   };
   return {
     kind: 'webnet-cad-drawing',
@@ -296,6 +314,11 @@ const sanitizeCadDrawingDocument = (value: unknown): CadDrawingDocument | undefi
       ).map(clearProfileCacheOnLoad),
       profileViews: cloneCadProfileViews(backfillProfileViews(withStandards.profileViews)),
       profileStyles: cloneCadProfileStyles(backfillCadProfileStyles(withStandards.profileStyles)),
+      sampleLineGroups: cloneCadSampleLineGroups(
+        backfillCadSampleLineGroups(withStandards.sampleLineGroups),
+      ).map(clearSectionCacheOnLoad),
+      sectionStyles: cloneCadSectionStyles(backfillCadSectionStyles(withStandards.sectionStyles)),
+      sectionViews: cloneCadSectionViews(backfillCadSectionViews(withStandards.sectionViews)),
     };
     const draft = cloned.draft
       ? { ...cloned.draft, layers: backfillCadLayerList(cloned.draft.layers) }

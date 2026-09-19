@@ -96,6 +96,18 @@ export interface CadDisplayScene {
    * Export scenes ignore this field.
    */
   profileViewLayers?: import('./cadProfileView').CadProfileViewDisplayLayer[];
+  /**
+   * Phase 18K — derived sample-line plan layers (one aggregated entry per
+   * group; centerline + tick + label per line — never CAD entities).
+   * Export scenes ignore this field.
+   */
+  sampleLineLayers?: import('./cadSectionView').CadSampleLineDisplayLayer[];
+  /**
+   * Phase 18K — derived section-view layers (grid + traces + shading per
+   * view, from cached CURRENT results — never CAD entities).
+   * Export scenes ignore this field.
+   */
+  sectionViewLayers?: import('./cadSectionView').CadSectionViewDisplayLayer[];
 }
 
 /** Phase 18H — one derived contour label (viewport-ready, display only). */
