@@ -1,9 +1,10 @@
 /**
- * Phase 13C §§31-48 — bounded LandXML 1.2 subset importer.
+ * Phase 13C §§31-48 — bounded LandXML 1.2 subset importer, Phase 18L civil upgrade.
  *
  * CAD/COGO geometry intake only (CgPoints, lines, circular curves, parcel
- * rings, alignment tangents+curves). NEVER observations: nothing here enters
- * the least-squares adjustment; caller wires results into CAD entities.
+ * rings, TIN surfaces, horizontal alignments). NEVER observations: nothing
+ * here enters the least-squares adjustment; the commit helper wires results
+ * into CAD entities atomically.
  *
  * Security: parses via parseXmlDocument (bounds, no DTD/DOCTYPE/ENTITY, no
  * XXE, 5 predefined entities only). All failures are bounded
@@ -15,18 +16,19 @@
  *
  * Units: LandXML linearUnit "foot" is the INTERNATIONAL foot (0.3048 m
  * exactly); "USSurveyFoot" (1200/3937 m) is accepted explicitly. Unknown
- * units fail closed. CRS is retained as an opaque metadata string and NEVER
- * auto-transformed; unknown CRS is "UNKNOWN".
+ * units fail closed BEFORE any geometry commit. CRS is retained as an opaque
+ * metadata string and NEVER auto-transformed; unknown CRS is "UNKNOWN".
  */
 
 import { parseXmlDocument, type GvxXmlNode } from './gnssGvxXml';
+import { LandXmlImportError, parseLandXmlNE } from './landxmlCoords';
+import { parseLandXmlSurfaces, type LandXmlImportedSurface } from './landxmlSurfaceImport';
+import { parseLandXmlAlignments, type LandXmlImportedAlignment } from './landxmlAlignmentImport';
+import { parsePlanParcelCoordGeom } from './landxmlPlanFeatures';
+import type { LandXmlImportCurve, LandXmlImportLine } from './landxmlPlanFeatures';
 
-export class LandXmlImportError extends Error {
-  constructor(message: string) {
-    super(`LandXML import: ${message}`);
-    this.name = 'LandXmlImportError';
-  }
-}
+export { LandXmlImportError };
+export type { LandXmlImportedSurface, LandXmlImportedAlignment, LandXmlImportCurve, LandXmlImportLine };
 
 /** Linear-unit factors to metres. "foot" = international foot by document. */
 const UNIT_TO_METRES: Record<string, { factor: number; canonical: string }> = {
@@ -58,29 +60,10 @@ export interface LandXmlImportPoint {
   readonly provenance: LandXmlProvenance;
 }
 
-export interface LandXmlImportLine {
-  readonly from: string;
-  readonly to: string;
-}
-
-export interface LandXmlImportCurve {
-  readonly start: string;
-  readonly end: string;
-  /** Radius, metres, always positive. */
-  readonly radiusM: number;
-  readonly rot: 'cw' | 'ccw';
-}
-
 export interface LandXmlImportParcel {
   readonly name: string;
   /** Geometric ring only — no legal/area inference. */
   readonly ring: readonly string[];
-}
-
-export interface LandXmlImportAlignment {
-  readonly name: string;
-  readonly lines: readonly LandXmlImportLine[];
-  readonly curves: readonly LandXmlImportCurve[];
 }
 
 export interface LandXmlUnsupportedCounts {
@@ -88,6 +71,12 @@ export interface LandXmlUnsupportedCounts {
   readonly parcelsSkipped: number;
   readonly alignmentsSkipped: number;
   readonly curveDefsSkipped: number;
+  readonly surfacesUnsupported: number;
+  readonly surfacesBlocked: number;
+  readonly alignmentsUnsupported: number;
+  readonly alignmentsBlocked: number;
+  readonly profilesUnsupported: number;
+  readonly crossSectsUnsupported: number;
 }
 
 export interface LandXmlImportPreview {
@@ -95,9 +84,14 @@ export interface LandXmlImportPreview {
   readonly lines: readonly LandXmlImportLine[];
   readonly curves: readonly LandXmlImportCurve[];
   readonly parcels: readonly LandXmlImportParcel[];
-  readonly alignments: readonly LandXmlImportAlignment[];
+  /** Native-geometry alignments (Line + circular Curve; spirals block the whole alignment). */
+  readonly alignments: readonly LandXmlImportedAlignment[];
+  /** Explicit TIN topology (Pnts/Faces preserved, never re-triangulated). */
+  readonly surfaces: readonly LandXmlImportedSurface[];
   readonly units: LandXmlImportUnits;
   readonly crs: string;
+  /** FNV-1a hash of the source text — stable generated IDs derive from it. */
+  readonly inputHash: string;
   readonly unsupported: LandXmlUnsupportedCounts;
   readonly warnings: readonly string[];
   readonly duplicates: readonly string[];
@@ -145,94 +139,11 @@ const hashText = (text: string): string => {
   return `fnv1a-${(hash >>> 0).toString(16).padStart(8, '0')}`;
 };
 
-const parseFiniteTriple = (raw: string, what: string): [number, number, number] => {
-  const parts = raw.trim().split(/\s+/);
-  if (parts.length < 2) fail(`${what} needs at least N E values, got ${JSON.stringify(raw.slice(0, 60))}.`);
-  const nums = parts.slice(0, 3).map((part) => Number(part));
-  if (nums.some((v) => !Number.isFinite(v))) {
-    fail(`${what} has non-finite coordinates ${JSON.stringify(raw.slice(0, 60))}.`);
-  }
-  return [nums[0] as number, nums[1] as number, (nums[2] ?? 0) as number];
-};
-
-/** Resolve a CoordGeom endpoint: pntRef only (inline geometry is out of subset). */
-const resolveEndPoint = (
-  el: GvxXmlNode | undefined,
-  pointIds: Set<string>,
-  what: string,
-): string => {
-  if (!el) fail(`${what} is missing Start/End.`);
-  const ref = (el as GvxXmlNode).attrs.pntRef;
-  if (!ref) fail(`${what} endpoints must use pntRef (inline geometry is not in the subset).`);
-  if (!pointIds.has(ref)) fail(`${what} references unknown point ${JSON.stringify(ref)}.`);
-  return ref;
-};
-
-interface MutableUnsupported {
-  spirals: number;
-  parcelsSkipped: number;
-  alignmentsSkipped: number;
-  curveDefsSkipped: number;
-}
-
-interface CoordGeomResult {
-  lines: LandXmlImportLine[];
-  curves: LandXmlImportCurve[];
-  unsupported: MutableUnsupported;
-  warnings: string[];
-}
-
-const parseCoordGeom = (
-  geom: GvxXmlNode,
-  pointIds: Set<string>,
-  what: string,
-): CoordGeomResult => {
-  const lines: LandXmlImportLine[] = [];
-  const curves: LandXmlImportCurve[] = [];
-  const warnings: string[] = [];
-  const unsupported: MutableUnsupported = {
-    spirals: 0,
-    parcelsSkipped: 0,
-    alignmentsSkipped: 0,
-    curveDefsSkipped: 0,
-  };
-  geom.children.forEach((child) => {
-    const kind = localName(child.name);
-    if (kind === 'Line') {
-      const from = resolveEndPoint(firstChild(child, 'Start'), pointIds, `${what} Line Start`);
-      const to = resolveEndPoint(firstChild(child, 'End'), pointIds, `${what} Line End`);
-      lines.push({ from, to });
-    } else if (kind === 'Curve') {
-      const radius = Number(child.attrs.radius ?? Number.NaN);
-      // No new curve math: reuse the stored radius verbatim (linear units).
-      if (!Number.isFinite(radius) || radius <= 0) {
-        unsupported.curveDefsSkipped += 1;
-        warnings.push(`${what} Curve skipped: invalid radius ${JSON.stringify(child.attrs.radius ?? '')}.`);
-        return;
-      }
-      const rotRaw = (child.attrs.rot ?? 'ccw').toLowerCase();
-      if (rotRaw !== 'cw' && rotRaw !== 'ccw') {
-        unsupported.curveDefsSkipped += 1;
-        warnings.push(`${what} Curve skipped: invalid rot ${JSON.stringify(child.attrs.rot ?? '')}.`);
-        return;
-      }
-      const from = resolveEndPoint(firstChild(child, 'Start'), pointIds, `${what} Curve Start`);
-      const to = resolveEndPoint(firstChild(child, 'End'), pointIds, `${what} Curve End`);
-      curves.push({ start: from, end: to, radiusM: radius, rot: rotRaw });
-    } else if (kind === 'Spiral') {
-      unsupported.spirals += 1;
-      warnings.push(`${what} Spiral skipped: spirals are outside the subset (lines + circular curves only).`);
-    } else {
-      warnings.push(`${what} skipped unsupported element <${kind}>.`);
-    }
-  });
-  return { lines, curves, unsupported, warnings };
-};
-
 /**
  * Build a user-confirm preview of a LandXML 1.2 document. Throws
- * LandXmlImportError on malformed input; spirals and other out-of-subset
- * geometry produce warnings + unsupported counts, never silent drops.
+ * LandXmlImportError on malformed input. Out-of-subset geometry produces
+ * WARNING/UNSUPPORTED/BLOCKED dispositions with stable reason codes —
+ * never silent drops, never geometry mutation (commit is a separate step).
  */
 export const buildLandXmlImportPreview = (
   text: string,
@@ -252,7 +163,7 @@ export const buildLandXmlImportPreview = (
   const version = (root.attrs.version ?? '').trim();
   if (!version.startsWith('1.2')) fail(`unsupported version ${JSON.stringify(version)} (subset requires LandXML 1.2).`);
 
-  // Units: explicit linearUnit only; unknown fails closed.
+  // Units: explicit linearUnit only; unknown BLOCKS before any geometry commit.
   const unitsEl = firstChild(root, 'Units');
   const metricEl = unitsEl ? firstChild(unitsEl, 'Metric') : undefined;
   const imperialEl = unitsEl ? firstChild(unitsEl, 'Imperial') : undefined;
@@ -272,10 +183,11 @@ export const buildLandXmlImportPreview = (
   const duplicates: string[] = [];
   const inputHash = hashText(text);
 
-  // CgPoints: LandXML order is NORTHING EASTING [elevation].
+  // CgPoints via the shared N/E parser: first value is NORTHING (y).
   const cgPointEls = findRoots(root, 'CgPoint');
   const points: LandXmlImportPoint[] = [];
   const pointIds = new Set<string>();
+  const pointCoords = new Map<string, { x: number; y: number }>();
   const seen = new Map<string, number>();
   cgPointEls.forEach((el) => {
     const origId = (el.attrs.name ?? el.attrs.oID ?? el.attrs.id ?? '').trim();
@@ -289,49 +201,41 @@ export const buildLandXmlImportPreview = (
       warnings.push(`duplicate point ID ${JSON.stringify(origId)} renamed to ${JSON.stringify(id)}.`);
     }
     seen.set(origId, prior + 1);
-    const [northing, easting, elev] = parseFiniteTriple(el.text, `CgPoint ${JSON.stringify(origId)}`);
+    const [northing, easting, elev] = parseLandXmlNE(el.text, `CgPoint ${JSON.stringify(origId)}`);
+    const x = easting * toMetres;
+    const y = northing * toMetres;
     points.push({
       id,
-      x: easting * toMetres,
-      y: northing * toMetres,
+      x,
+      y,
       z: elev * toMetres,
       desc: el.attrs.desc?.trim() ? el.attrs.desc : undefined,
       code: el.attrs.code?.trim() ? el.attrs.code : undefined,
       provenance: { source: 'LANDXML', file: fileName, inputHash, origId },
     });
     pointIds.add(id);
+    pointCoords.set(id, { x, y });
   });
 
-  const mergeUnsupported = (
-    target: MutableUnsupported,
-    extra: MutableUnsupported,
-  ): MutableUnsupported => ({
-    spirals: target.spirals + extra.spirals,
-    parcelsSkipped: target.parcelsSkipped + extra.parcelsSkipped,
-    alignmentsSkipped: target.alignmentsSkipped + extra.alignmentsSkipped,
-    curveDefsSkipped: target.curveDefsSkipped + extra.curveDefsSkipped,
-  });
-  let unsupported: MutableUnsupported = {
-    spirals: 0,
-    parcelsSkipped: 0,
-    alignmentsSkipped: 0,
-    curveDefsSkipped: 0,
-  };
+  let spirals = 0;
+  let parcelsSkipped = 0;
+  let curveDefsSkipped = 0;
 
-  // PlanFeatures lines/curves (observation-free geometry).
+  // PlanFeatures lines/curves (observation-free geometry, pntRef subset).
   const lines: LandXmlImportLine[] = [];
   const curves: LandXmlImportCurve[] = [];
   findRoots(root, 'PlanFeature').forEach((feature, idx) => {
     const geom = firstChild(feature, 'CoordGeom');
     if (!geom) return;
     const what = `PlanFeature ${JSON.stringify(feature.attrs.name ?? `#${idx + 1}`)}`;
-    const parsed = parseCoordGeom(geom, pointIds, what);
+    const parsed = parsePlanParcelCoordGeom(geom, pointIds, what);
     // Scale curve radii from document linear units to metres.
     parsed.curves.forEach((curve) => {
       curves.push({ ...curve, radiusM: curve.radiusM * toMetres });
     });
     parsed.lines.forEach((line) => lines.push(line));
-    unsupported = mergeUnsupported(unsupported, parsed.unsupported);
+    spirals += parsed.unsupported.spirals;
+    curveDefsSkipped += parsed.unsupported.curveDefsSkipped;
     warnings.push(...parsed.warnings);
   });
 
@@ -341,12 +245,12 @@ export const buildLandXmlImportPreview = (
     const name = (parcelEl.attrs.name ?? `PARCEL-${idx + 1}`).trim();
     const geom = firstChild(parcelEl, 'CoordGeom');
     if (!geom) {
-      unsupported = { ...unsupported, parcelsSkipped: unsupported.parcelsSkipped + 1 };
+      parcelsSkipped += 1;
       warnings.push(`Parcel ${JSON.stringify(name)} skipped: no CoordGeom (geometric data only).`);
       return;
     }
     const what = `Parcel ${JSON.stringify(name)}`;
-    const parsed = parseCoordGeom(geom, pointIds, what);
+    const parsed = parsePlanParcelCoordGeom(geom, pointIds, what);
     const ring: string[] = [];
     parsed.lines.forEach((line) => {
       if (ring.length === 0) ring.push(line.from);
@@ -359,30 +263,71 @@ export const buildLandXmlImportPreview = (
         ring.push(curve.end);
       });
     }
-    unsupported = mergeUnsupported(unsupported, parsed.unsupported);
+    spirals += parsed.unsupported.spirals;
+    curveDefsSkipped += parsed.unsupported.curveDefsSkipped;
     warnings.push(...parsed.warnings);
     parcels.push({ name, ring });
   });
 
-  // Alignments: horizontal lines + circular curves only; spirals warn+skip.
-  const alignments: LandXmlImportAlignment[] = [];
-  findRoots(root, 'Alignment').forEach((alEl, idx) => {
-    const name = (alEl.attrs.name ?? `ALIGN-${idx + 1}`).trim();
-    const geom = firstChild(alEl, 'CoordGeom');
-    if (!geom) {
-      unsupported = { ...unsupported, alignmentsSkipped: unsupported.alignmentsSkipped + 1 };
-      warnings.push(`Alignment ${JSON.stringify(name)} skipped: no CoordGeom.`);
-      return;
+  // Alignments: native Line + circular-Curve geometry (inline or pntRef),
+  // staStart + StaEquations. A Spiral (or any other unsupported element)
+  // blocks its whole alignment — UNSUPPORTED, no truncation.
+  const alignments = parseLandXmlAlignments(root, (ref) => pointCoords.get(ref), toMetres);
+  let alignmentsUnsupported = 0;
+  let alignmentsBlocked = 0;
+  alignments.forEach((alignment) => {
+    warnings.push(...alignment.warnings);
+    if (alignment.disposition === 'UNSUPPORTED') {
+      alignmentsUnsupported += 1;
+      if (alignment.reasonCode === 'LANDXML_ALIGNMENT_SPIRAL_UNSUPPORTED') spirals += 1;
+    } else if (alignment.disposition === 'BLOCKED') {
+      alignmentsBlocked += 1;
     }
-    const parsed = parseCoordGeom(geom, pointIds, `Alignment ${JSON.stringify(name)}`);
-    unsupported = mergeUnsupported(unsupported, parsed.unsupported);
-    warnings.push(...parsed.warnings);
-    alignments.push({
-      name,
-      lines: parsed.lines,
-      curves: parsed.curves.map((curve) => ({ ...curve, radiusM: curve.radiusM * toMetres })),
+  });
+
+  // TIN surfaces: explicit Pnts/Faces topology preserved verbatim (metres).
+  const surfaces = parseLandXmlSurfaces(root, toMetres, fileName);
+  let surfacesUnsupported = 0;
+  let surfacesBlocked = 0;
+  surfaces.forEach((surface) => {
+    warnings.push(...surface.warnings);
+    if (surface.disposition === 'UNSUPPORTED') surfacesUnsupported += 1;
+    else if (surface.disposition === 'BLOCKED') surfacesBlocked += 1;
+  });
+
+  // Sampled/design profiles + cross-sections: counted, never imported.
+  let profilesUnsupported = 0;
+  let crossSectsUnsupported = 0;
+  alignments.forEach((alignment) => {
+    alignment.profiles.forEach((profile) => {
+      if (profile.kind === 'profile') profilesUnsupported += 1;
+      else crossSectsUnsupported += 1;
     });
   });
 
-  return { points, lines, curves, parcels, alignments, units, crs, unsupported, warnings, duplicates };
+  return {
+    points,
+    lines,
+    curves,
+    parcels,
+    alignments,
+    surfaces,
+    units,
+    crs,
+    inputHash,
+    unsupported: {
+      spirals,
+      parcelsSkipped,
+      alignmentsSkipped: alignmentsUnsupported + alignmentsBlocked,
+      curveDefsSkipped,
+      surfacesUnsupported,
+      surfacesBlocked,
+      alignmentsUnsupported,
+      alignmentsBlocked,
+      profilesUnsupported,
+      crossSectsUnsupported,
+    },
+    warnings,
+    duplicates,
+  };
 };

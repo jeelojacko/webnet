@@ -274,6 +274,8 @@ const SelectedSurface: React.FC<{
       <dl className="grid grid-cols-[auto_1fr] gap-x-2 text-[11px]">
         <dt className="text-slate-400">Status</dt>
         <dd>{row.statusText}{row.stale ? ' — showing last mesh' : ''}</dd>
+        <dt className="text-slate-400">Source</dt>
+        <dd>{row.definition.importedSourceText ?? 'Native TIN (survey points)'}</dd>
         <dt className="text-slate-400">Revision</dt>
         <dd title={row.revision}>{row.cachedRevision ? `built ${row.revision.slice(0, 12)}…` : 'never built'}</dd>
         {row.stats ? (

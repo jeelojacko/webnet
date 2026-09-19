@@ -69,6 +69,7 @@ import {
   surveyStyleTableCommand,
 } from './cadTransactionsSurveyDisplay';
 import { surfaceCommandDefinitions } from './cadTransactionsSurfaceCommands';
+import { landxmlImportCommand } from './cadTransactionsLandxmlImport';
 import { volumeCommandDefinitions } from './cadTransactionsVolumeCommands';
 import { profileCommandDefinitions } from './cadTransactionsProfileCommands';
 import { sectionCommandDefinitions } from './cadTransactionsSectionCommands';
@@ -573,6 +574,7 @@ export const CAD_COMMAND_REGISTRY: Record<CadCommandKey, CadCommandDefinition<Ca
   SURFACE_STYLE_RENAME: surfaceCommandDefinitions.SURFACE_STYLE_RENAME as CadCommandDefinition<CadCommand>,
   SURFACE_STYLE_UPDATE: surfaceCommandDefinitions.SURFACE_STYLE_UPDATE as CadCommandDefinition<CadCommand>,
   SURFACE_STYLE_DELETE: surfaceCommandDefinitions.SURFACE_STYLE_DELETE as CadCommandDefinition<CadCommand>,
+  LANDXML_IMPORT: landxmlImportCommand as CadCommandDefinition<CadCommand>,
   VOLUME_SURFACE_CREATE: volumeCommandDefinitions.VOLUME_SURFACE_CREATE as CadCommandDefinition<CadCommand>,
   VOLUME_SURFACE_DELETE: volumeCommandDefinitions.VOLUME_SURFACE_DELETE as CadCommandDefinition<CadCommand>,
   VOLUME_SURFACE_UPDATE_SOURCES: volumeCommandDefinitions.VOLUME_SURFACE_UPDATE_SOURCES as CadCommandDefinition<CadCommand>,

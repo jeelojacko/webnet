@@ -21,6 +21,16 @@ import { surfacePointGroupIds } from './cadTypes';
  */
 
 export const cloneCadSurfaceDefinition = (definition: CadSurfaceDefinition): CadSurfaceDefinition => ({
+  ...(definition.sourceKind != null ? { sourceKind: definition.sourceKind } : {}),
+  ...(definition.importedTin != null
+    ? {
+        importedTin: {
+          vertices: [...definition.importedTin.vertices],
+          faces: [...definition.importedTin.faces],
+          provenance: { ...definition.importedTin.provenance },
+        },
+      }
+    : {}),
   pointSource:
     definition.pointSource.kind === 'points'
       ? { kind: 'points', pointEntityIds: [...definition.pointSource.pointEntityIds] }

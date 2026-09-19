@@ -78,14 +78,15 @@ describe('LandXML interchange', () => {
     expect(preview.crs).toBe('UNKNOWN');
   });
 
-  it('imports alignment lines+curves, warns and skips spirals, retains CRS metadata', () => {
+  it('blocks a spiral alignment whole (UNSUPPORTED, no truncation) and retains CRS metadata', () => {
     const preview = buildLandXmlImportPreview(CARLSON_STYLE);
     expect(preview.alignments).toHaveLength(1);
-    expect(preview.alignments[0]?.lines).toEqual([{ from: '10', to: '11' }]);
-    expect(preview.alignments[0]?.curves).toHaveLength(1);
-    expect(preview.alignments[0]?.curves[0]?.radiusM ?? 0).toBeCloseTo(500 * 0.3048, 9);
+    expect(preview.alignments[0]?.disposition).toBe('UNSUPPORTED');
+    expect(preview.alignments[0]?.reasonCode).toBe('LANDXML_ALIGNMENT_SPIRAL_UNSUPPORTED');
+    expect(preview.alignments[0]?.elements).toHaveLength(0);
     expect(preview.unsupported.spirals).toBe(1);
-    expect(preview.warnings.some((w) => w.includes('Spiral skipped'))).toBe(true);
+    expect(preview.unsupported.alignmentsUnsupported).toBe(1);
+    expect(preview.warnings.some((w) => w.includes('Spiral'))).toBe(true);
     expect(preview.crs).toBe('NAD83 / Test');
   });
 
@@ -203,8 +204,14 @@ describe('LandXML interchange', () => {
     expect(back.parcels[0]?.ring).toEqual(['P1', 'P2', 'P3', 'P1']);
     expect(back.parcels[1]?.ring).toEqual(['P1', 'P3', 'P4', 'P1']);
     expect(back.alignments.map((a) => a.name)).toEqual(['CL-1', 'CL-2']);
-    expect(back.alignments[0]?.lines).toEqual([{ from: 'P1', to: 'P2' }]);
-    expect(back.alignments[1]?.lines).toEqual([{ from: 'P3', to: 'P4' }]);
+    expect(back.alignments[0]?.disposition).toBe('IMPORTABLE');
+    expect(back.alignments[0]?.elements).toHaveLength(1);
+    expect(back.alignments[0]?.elements[0]).toMatchObject({
+      kind: 'line', start: { x: 0, y: 0 }, end: { x: 10, y: 0 },
+    });
+    expect(back.alignments[1]?.elements[0]).toMatchObject({
+      kind: 'line', start: { x: 10, y: 10 }, end: { x: 0, y: 10 },
+    });
   });
 
   it('rejects CAD export with broken refs or invalid curves (no partial XML)', () => {
