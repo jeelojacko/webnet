@@ -2,9 +2,11 @@ import type { SurfaceBuildRequest } from '../engine/cad/cadSurfaceTypes';
 import type { CadSurfaceContourSet } from '../engine/cad/surfaceContours/contourTypes';
 import type { CadVolumeResult } from '../engine/cad/cadTypes';
 import type { CadSurfaceProfileResult } from '../engine/cad/profiles/profileExtraction';
+import type { CadSurfaceSectionResult } from '../engine/cad/cadSectionTypes';
 import type {
   SurfaceContourRequest,
   SurfaceProfileRequest,
+  SurfaceSectionsRequest,
   SurfaceVolumeRequest,
   SurfaceWorkerResponseMessage,
 } from './surfaceWorkerHandler';
@@ -32,6 +34,8 @@ export const SURFACE_VOLUME_MALFORMED = 'Malformed surface volume worker respons
 export const SURFACE_VOLUME_UNAVAILABLE = 'Surface volume worker unavailable.';
 export const SURFACE_PROFILE_MALFORMED = 'Malformed surface profile worker response.';
 export const SURFACE_PROFILE_UNAVAILABLE = 'Surface profile worker unavailable.';
+export const SURFACE_SECTIONS_MALFORMED = 'Malformed surface sections worker response.';
+export const SURFACE_SECTIONS_UNAVAILABLE = 'Surface sections worker unavailable.';
 
 export interface PendingSurfaceBuild {
   requestId: string;
@@ -54,6 +58,12 @@ export interface PendingSurfaceVolume {
 export interface PendingSurfaceProfile {
   requestId: string;
   done: Promise<CadSurfaceProfileResult | null>;
+  cancel: () => void;
+}
+
+export interface PendingSurfaceSections {
+  requestId: string;
+  done: Promise<CadSurfaceSectionResult[] | null>;
   cancel: () => void;
 }
 
@@ -82,6 +92,8 @@ const TERMINAL_TYPES = new Set([
   'volume-failure',
   'profile-success',
   'profile-failure',
+  'sections-success',
+  'sections-failure',
 ]);
 const OK_OUTCOMES = new Set(['ok', 'insufficient', 'blocked']);
 
@@ -144,6 +156,21 @@ const isWellFormedProfileResult = (value: unknown): value is CadSurfaceProfileRe
   );
 };
 
+const isWellFormedSectionResult = (value: unknown): value is CadSurfaceSectionResult => {
+  if (typeof value !== 'object' || value === null) return false;
+  const result = value as Record<string, unknown>;
+  return (
+    typeof result['groupId'] === 'string' &&
+    typeof result['lineId'] === 'string' &&
+    typeof result['surfaceId'] === 'string' &&
+    typeof result['revision'] === 'string' &&
+    typeof result['surfaceRevision'] === 'string' &&
+    Array.isArray(result['segments']) &&
+    typeof result['coveredWidth'] === 'number' &&
+    typeof result['gapWidth'] === 'number'
+  );
+};
+
 const isWellFormedMesh = (value: unknown): value is SurfaceWorkerMesh => {
   if (typeof value !== 'object' || value === null) return false;
   const mesh = value as Record<string, unknown>;
@@ -195,6 +222,14 @@ export class SurfaceWorkerClient implements SurfaceBuildTransport {
       settled: boolean;
     }
   >();
+  private readonly pendingSections = new Map<
+    string,
+    {
+      resolve: (_result: CadSurfaceSectionResult[] | null) => void;
+      reject: (_error: Error) => void;
+      settled: boolean;
+    }
+  >();
   private nextRequestId = 0;
   private dead = false;
   private readonly handleMessage = (event: unknown): void => {
@@ -210,6 +245,10 @@ export class SurfaceWorkerClient implements SurfaceBuildTransport {
     }
     if (data.type === 'profile-success' || data.type === 'profile-failure') {
       this.handleProfileMessage(data);
+      return;
+    }
+    if (data.type === 'sections-success' || data.type === 'sections-failure') {
+      this.handleSectionsMessage(data);
       return;
     }
     const entry = this.pending.get(data.requestId);
@@ -302,6 +341,28 @@ export class SurfaceWorkerClient implements SurfaceBuildTransport {
     entry.settled = true;
     this.pendingProfiles.delete(data.requestId);
     entry.resolve(data.result);
+  };
+  /** Phase 18K: batched section terminal messages settle section pendings only. */
+  private readonly handleSectionsMessage = (
+    data: Extract<TerminalSurfaceWorkerMessage, { type: 'sections-success' | 'sections-failure' }>,
+  ): void => {
+    const entry = this.pendingSections.get(data.requestId);
+    if (!entry || entry.settled) return;
+    if (data.type === 'sections-failure') {
+      entry.settled = true;
+      this.pendingSections.delete(data.requestId);
+      entry.reject(new Error(data.error || 'Surface section derivation failed.'));
+      return;
+    }
+    if (!Array.isArray(data.results) || !data.results.every(isWellFormedSectionResult)) {
+      entry.settled = true;
+      this.pendingSections.delete(data.requestId);
+      entry.reject(new Error(SURFACE_SECTIONS_MALFORMED));
+      return;
+    }
+    entry.settled = true;
+    this.pendingSections.delete(data.requestId);
+    entry.resolve(data.results);
   };
   private readonly handleFatal = (): void => {
     this.failAll(new Error(SURFACE_BUILD_UNAVAILABLE));
@@ -428,7 +489,49 @@ export class SurfaceWorkerClient implements SurfaceBuildTransport {
     };
   }
 
+  /**
+   * Phase 18K batched sections. Latest-wins ownership is the service's; the
+   * client settles one pending per requestId. Cancel -> null; malformed ->
+   * reject; failure -> reject.
+   */
+  deriveSections(request: SurfaceSectionsRequest): PendingSurfaceSections {
+    this.nextRequestId += 1;
+    const requestId = `sreq2-${this.nextRequestId}`;
+    let entry!: {
+      resolve: (_result: CadSurfaceSectionResult[] | null) => void;
+      reject: (_e: Error) => void;
+      settled: boolean;
+    };
+    const done = new Promise<CadSurfaceSectionResult[] | null>((resolve, reject) => {
+      entry = { resolve, reject, settled: false };
+    });
+    this.pendingSections.set(requestId, entry);
+    try {
+      this.port.postMessage({ type: 'sections', requestId, request });
+    } catch (error) {
+      this.pendingSections.delete(requestId);
+      entry.reject(error instanceof Error ? error : new Error(String(error)));
+    }
+    return {
+      requestId,
+      done,
+      cancel: () => this.cancel(requestId),
+    };
+  }
+
   cancel(requestId: string): void {
+    const sectionEntry = this.pendingSections.get(requestId);
+    if (sectionEntry && !sectionEntry.settled) {
+      sectionEntry.settled = true;
+      this.pendingSections.delete(requestId);
+      try {
+        this.port.postMessage({ type: 'cancel', requestId });
+      } catch {
+        // Local settle already applied; a dead port fails closed via dispose.
+      }
+      sectionEntry.resolve(null);
+      return;
+    }
     const profileEntry = this.pendingProfiles.get(requestId);
     if (profileEntry && !profileEntry.settled) {
       profileEntry.settled = true;
@@ -514,6 +617,13 @@ export class SurfaceWorkerClient implements SurfaceBuildTransport {
       }
       this.pendingProfiles.delete(requestId);
     }
+    for (const [requestId, entry] of this.pendingSections) {
+      if (!entry.settled) {
+        entry.settled = true;
+        entry.resolve(null);
+      }
+      this.pendingSections.delete(requestId);
+    }
     try {
       this.port.terminate();
     } catch {
@@ -524,6 +634,13 @@ export class SurfaceWorkerClient implements SurfaceBuildTransport {
   private failAll(error: Error): void {
     if (this.dead) return;
     this.dead = true;
+    for (const [requestId, entry] of this.pendingSections) {
+      if (!entry.settled) {
+        entry.settled = true;
+        entry.reject(error);
+      }
+      this.pendingSections.delete(requestId);
+    }
     for (const [requestId, entry] of this.pendingProfiles) {
       if (!entry.settled) {
         entry.settled = true;

@@ -16,6 +16,7 @@ import type {
   CadPointStyle,
   CadPointStyleId,
   CadProject,
+  CadSectionStyle,
   CadSurfaceBoundary,
   CadSurfaceDefinition,
   CadSurfaceStyle,
@@ -24,6 +25,11 @@ import type {
 } from './cadTypes';
 import type { CadVolumeSurfaceStylePatch } from './cadVolumeSurfaces';
 import type { CadProfileStylePatch } from './cadProfileTypes';
+import type {
+  CadSampleLinePatch,
+  CadSectionStylePatch,
+  CadSectionViewPatch,
+} from './cadSectionTypes';
 
 /**
  * Phase 18J display-only view patch. Only presentation fields (scale,
@@ -138,7 +144,24 @@ export type CadCommandKey =
   | 'PROFILE_STYLE_DUPLICATE'
   | 'PROFILE_STYLE_RENAME'
   | 'PROFILE_STYLE_UPDATE'
-  | 'PROFILE_STYLE_DELETE';
+  | 'PROFILE_STYLE_DELETE'
+  | 'SAMPLE_GROUP_CREATE'
+  | 'SAMPLE_GROUP_RENAME'
+  | 'SAMPLE_GROUP_DELETE'
+  | 'SAMPLE_LINE_ADD'
+  | 'SAMPLE_LINE_ADD_INTERVAL'
+  | 'SAMPLE_LINE_UPDATE'
+  | 'SAMPLE_LINE_DELETE'
+  | 'SECTION_SOURCE_ADD'
+  | 'SECTION_SOURCE_REMOVE'
+  | 'SECTION_SOURCE_SET_STYLE'
+  | 'SECTION_STYLE_CREATE'
+  | 'SECTION_STYLE_RENAME'
+  | 'SECTION_STYLE_UPDATE'
+  | 'SECTION_STYLE_DELETE'
+  | 'SECTION_VIEW_CREATE'
+  | 'SECTION_VIEW_UPDATE'
+  | 'SECTION_VIEW_DELETE';
 export type CadCommandPhase = 'idle' | 'committed';
 
 export interface CadCommandState {
@@ -859,6 +882,119 @@ export type CadCommand =
       styleId: string;
       /** Required when profiles or views reference the style; refs rewire to it. */
       replacementId?: string;
+    }
+  | {
+      key: 'SAMPLE_GROUP_CREATE';
+      name?: string;
+      alignmentEntityId: string;
+      layerId?: CadLayerId;
+    }
+  | {
+      key: 'SAMPLE_GROUP_RENAME';
+      groupId: string;
+      name: string;
+    }
+  | {
+      key: 'SAMPLE_GROUP_DELETE';
+      groupId: string;
+    }
+  | {
+      key: 'SAMPLE_LINE_ADD';
+      groupId: string;
+      /** Raw chainage; ignored when stationText is supplied. */
+      rawStation?: number;
+      /** Display station text (`1+234.500`) parsed then mapped to raw. */
+      stationText?: string;
+      leftWidth: number;
+      rightWidth: number;
+      skewDeg?: number;
+      manualName?: string;
+    }
+  | {
+      key: 'SAMPLE_LINE_ADD_INTERVAL';
+      groupId: string;
+      rawStart: number;
+      rawEnd: number;
+      interval: number;
+      leftWidth: number;
+      rightWidth: number;
+      skewDeg?: number;
+    }
+  | {
+      key: 'SAMPLE_LINE_UPDATE';
+      groupId: string;
+      lineId: string;
+      patch: CadSampleLinePatch;
+    }
+  | {
+      key: 'SAMPLE_LINE_DELETE';
+      groupId: string;
+      lineId: string;
+    }
+  | {
+      key: 'SECTION_SOURCE_ADD';
+      groupId: string;
+      surfaceId: string;
+      sectionStyleId?: string;
+    }
+  | {
+      key: 'SECTION_SOURCE_REMOVE';
+      groupId: string;
+      surfaceId: string;
+    }
+  | {
+      key: 'SECTION_SOURCE_SET_STYLE';
+      groupId: string;
+      surfaceId: string;
+      /** Undefined is rejected; null clears. */
+      sectionStyleId: string | null;
+    }
+  | {
+      key: 'SECTION_STYLE_CREATE';
+      style: CadSectionStyle;
+    }
+  | {
+      key: 'SECTION_STYLE_RENAME';
+      styleId: string;
+      name: string;
+    }
+  | {
+      key: 'SECTION_STYLE_UPDATE';
+      styleId: string;
+      patch: CadSectionStylePatch;
+    }
+  | {
+      key: 'SECTION_STYLE_DELETE';
+      styleId: string;
+      /** Required when groups or views reference the style; refs rewire to it. */
+      replacementId?: string;
+    }
+  | {
+      key: 'SECTION_VIEW_CREATE';
+      sampleLineGroupId: string;
+      sampleLineId: string;
+      name?: string;
+      sourceSurfaceIds?: string[];
+      insertionX?: number;
+      insertionY?: number;
+      horizontalScale?: number;
+      verticalExaggeration?: number;
+      datumMode?: 'auto' | 'explicit';
+      datumElevation?: number;
+      offsetGridInterval?: number;
+      elevationGridInterval?: number;
+      showCutFill?: boolean;
+      styleId?: string;
+      layerId?: CadLayerId;
+    }
+  | {
+      key: 'SECTION_VIEW_UPDATE';
+      viewId: string;
+      patch: CadSectionViewPatch;
+    }
+  | {
+      key: 'SECTION_VIEW_DELETE';
+      viewId: string;
     };
 
 export interface CadTransaction {

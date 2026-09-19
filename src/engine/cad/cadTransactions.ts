@@ -71,6 +71,7 @@ import {
 import { surfaceCommandDefinitions } from './cadTransactionsSurfaceCommands';
 import { volumeCommandDefinitions } from './cadTransactionsVolumeCommands';
 import { profileCommandDefinitions } from './cadTransactionsProfileCommands';
+import { sectionCommandDefinitions } from './cadTransactionsSectionCommands';
 export {
   applyCadGripEdit,
   buildCadGripHandles,
@@ -592,6 +593,23 @@ export const CAD_COMMAND_REGISTRY: Record<CadCommandKey, CadCommandDefinition<Ca
   PROFILE_STYLE_RENAME: profileCommandDefinitions.PROFILE_STYLE_RENAME as CadCommandDefinition<CadCommand>,
   PROFILE_STYLE_UPDATE: profileCommandDefinitions.PROFILE_STYLE_UPDATE as CadCommandDefinition<CadCommand>,
   PROFILE_STYLE_DELETE: profileCommandDefinitions.PROFILE_STYLE_DELETE as CadCommandDefinition<CadCommand>,
+  SAMPLE_GROUP_CREATE: sectionCommandDefinitions.SAMPLE_GROUP_CREATE as CadCommandDefinition<CadCommand>,
+  SAMPLE_GROUP_RENAME: sectionCommandDefinitions.SAMPLE_GROUP_RENAME as CadCommandDefinition<CadCommand>,
+  SAMPLE_GROUP_DELETE: sectionCommandDefinitions.SAMPLE_GROUP_DELETE as CadCommandDefinition<CadCommand>,
+  SAMPLE_LINE_ADD: sectionCommandDefinitions.SAMPLE_LINE_ADD as CadCommandDefinition<CadCommand>,
+  SAMPLE_LINE_ADD_INTERVAL: sectionCommandDefinitions.SAMPLE_LINE_ADD_INTERVAL as CadCommandDefinition<CadCommand>,
+  SAMPLE_LINE_UPDATE: sectionCommandDefinitions.SAMPLE_LINE_UPDATE as CadCommandDefinition<CadCommand>,
+  SAMPLE_LINE_DELETE: sectionCommandDefinitions.SAMPLE_LINE_DELETE as CadCommandDefinition<CadCommand>,
+  SECTION_SOURCE_ADD: sectionCommandDefinitions.SECTION_SOURCE_ADD as CadCommandDefinition<CadCommand>,
+  SECTION_SOURCE_REMOVE: sectionCommandDefinitions.SECTION_SOURCE_REMOVE as CadCommandDefinition<CadCommand>,
+  SECTION_SOURCE_SET_STYLE: sectionCommandDefinitions.SECTION_SOURCE_SET_STYLE as CadCommandDefinition<CadCommand>,
+  SECTION_STYLE_CREATE: sectionCommandDefinitions.SECTION_STYLE_CREATE as CadCommandDefinition<CadCommand>,
+  SECTION_STYLE_RENAME: sectionCommandDefinitions.SECTION_STYLE_RENAME as CadCommandDefinition<CadCommand>,
+  SECTION_STYLE_UPDATE: sectionCommandDefinitions.SECTION_STYLE_UPDATE as CadCommandDefinition<CadCommand>,
+  SECTION_STYLE_DELETE: sectionCommandDefinitions.SECTION_STYLE_DELETE as CadCommandDefinition<CadCommand>,
+  SECTION_VIEW_CREATE: sectionCommandDefinitions.SECTION_VIEW_CREATE as CadCommandDefinition<CadCommand>,
+  SECTION_VIEW_UPDATE: sectionCommandDefinitions.SECTION_VIEW_UPDATE as CadCommandDefinition<CadCommand>,
+  SECTION_VIEW_DELETE: sectionCommandDefinitions.SECTION_VIEW_DELETE as CadCommandDefinition<CadCommand>,
 };
 
 export const createCadIdleCommandState = createIdleCommandState;

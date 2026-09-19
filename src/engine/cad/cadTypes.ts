@@ -430,6 +430,17 @@ export interface CadProject {
   profileViews?: CadProfileView[];
   /** Phase 18J: drawing-owned profile display styles (display only). */
   profileStyles?: CadProfileStyle[];
+  /**
+   * Phase 18K: drawing-owned sample-line groups (one alignment each; sample
+   * line definitions only — extracted sections/revisions/statuses never
+   * persist). Trailing: clone/migrate keep section tables last — project
+   * signatures are key-order-sensitive JSON.stringify.
+   */
+  sampleLineGroups?: CadSampleLineGroup[];
+  /** Phase 18K: drawing-owned section display styles (display only). */
+  sectionStyles?: CadSectionStyle[];
+  /** Phase 18K: drawing-owned section view presentation objects. */
+  sectionViews?: CadSectionView[];
   entities: CadEntity[];
   cogoComputations: CadCogoComputation[];
   bounds: CadBounds | null;
@@ -858,3 +869,92 @@ export type SurfaceProfileStatus =
   | 'BROKEN_REFERENCE'
   | 'SOURCE_NOT_CURRENT'
   | 'NO_OVERLAP';
+
+// ---------------------------------------------------------------------------
+// Phase 18K sample lines / cross sections
+// ---------------------------------------------------------------------------
+
+/** One surface a sample-line group extracts from (+ optional display style). */
+export interface CadSectionSurfaceSource {
+  surfaceId: string;
+  sectionStyleId?: string;
+}
+
+/**
+ * Phase 18K: one straight sample line across an alignment. Stored by RAW
+ * chainage (geometry truth) plus widths and skew — display station text is
+ * presentation only and NEVER the identity. Skew is degrees clockwise from
+ * the alignment-perpendicular (0 = square to the alignment).
+ */
+export interface CadSampleLine {
+  id: string;
+  /** Operator override; absent = derived station label. */
+  manualName?: string;
+  rawStation: number;
+  leftWidth: number;
+  rightWidth: number;
+  skewDeg: number;
+}
+
+/**
+ * Phase 18K: a drawing-owned sample-line group bound to exactly ONE
+ * alignment. Holds source surfaces + ordered sample lines only — no TIN
+ * data, no extracted sections, no revisions, no statuses.
+ */
+export interface CadSampleLineGroup {
+  id: string;
+  name: string;
+  alignmentEntityId: CadEntityId;
+  surfaceSources: CadSectionSurfaceSource[];
+  sampleLines: CadSampleLine[];
+  layerId?: CadLayerId;
+  /** Optional pairwise cut/fill area comparison (base vs comparison surface). */
+  areaComparison?: { baseSurfaceId: string; comparisonSurfaceId: string };
+}
+
+/** Phase 18K: section display styling ONLY (never affects geometry/revision). */
+export interface CadSectionStyle {
+  id: string;
+  name: string;
+  color: string;
+  lineweight: number;
+  /** 0 (opaque) .. 1 (fully transparent). Default 0. */
+  opacity: number;
+  showVertices?: boolean;
+}
+
+/**
+ * Phase 18K: section view presentation object (one sample line per view).
+ * Unlike CadProfileView this carries an explicit layerId so OFF/FROZEN/LOCK
+ * apply per view without a rebuild. Derived display geometry never persists.
+ */
+export interface CadSectionView {
+  id: string;
+  name: string;
+  sampleLineGroupId: string;
+  sampleLineId: string;
+  sourceSurfaceIds: string[];
+  insertionX: number;
+  insertionY: number;
+  horizontalScale: number;
+  verticalExaggeration: number;
+  datumMode: 'auto' | 'explicit';
+  datumElevation?: number;
+  offsetGridInterval?: number;
+  elevationGridInterval?: number;
+  showCutFill?: boolean;
+  styleId?: string;
+  layerId?: CadLayerId;
+}
+
+/** Phase 18K: derived section status per sample-line x source (never persisted). */
+export type CadSectionStatus =
+  | 'UNBUILT'
+  | 'CURRENT'
+  | 'NEEDS_REBUILD'
+  | 'BUILDING'
+  | 'FAILED'
+  | 'BROKEN_REFERENCE'
+  | 'SOURCE_NOT_CURRENT'
+  | 'OUT_OF_RANGE'
+  | 'NO_COVERAGE';

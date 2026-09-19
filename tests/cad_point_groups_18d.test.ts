@@ -248,11 +248,12 @@ describe('phase 18D point groups', () => {
     expect(buildCadProjectSignature(cloneCadProject(reparsed.drawing.project))).toBe(
       buildCadProjectSignature(reparsed.drawing.project),
     );
-    expect(Object.keys(reparsed.drawing.project).at(-1)).toBe('profileStyles');
+    expect(Object.keys(reparsed.drawing.project).at(-1)).toBe('sectionViews');
     // 18E appended drawing-owned F2F catalog + settings trailing (after
     // pointGroups); 18F appended surfaces + surfaceStyles; 18I appends
     // volume relationships + styles trailing after those; 18J appends
-    // profile definitions + views + styles trailing after those.
+    // profile definitions + views + styles; 18K appends sample-line groups +
+    // section styles + section views trailing after those.
     // The invariant is clone/parse stability, asserted above.
   });
 
