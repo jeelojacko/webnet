@@ -162,6 +162,52 @@ describe('profile transactions', () => {
     expect(history.present.project.profileViews![0]!.id).toBe(viewId);
   });
 
+  it('PROFILE_VIEW_UPDATE is display-only, undoable, and LOCK-gated', () => {
+    let history = createCadHistoryState(baseProject());
+    history = runCadCommand(history, {
+      key: 'PROFILE_CREATE',
+      alignmentEntityId: 'align-1',
+      surfaceId: 'surf-1',
+    });
+    history = runCadCommand(history, {
+      key: 'PROFILE_VIEW_CREATE',
+      name: 'Sheet',
+      alignmentEntityId: 'align-1',
+      profileIds: [profileIdOf(history.present.project)],
+    });
+    const viewId = history.present.project.profileViews![0]!.id;
+    history = runCadCommand(history, {
+      key: 'PROFILE_VIEW_UPDATE',
+      viewId,
+      patch: { horizontalScale: 2, verticalExaggeration: 5, datumMode: 'auto', datumStep: 2 },
+    });
+    expect(history.present.project.profileViews![0]).toMatchObject({
+      horizontalScale: 2,
+      verticalExaggeration: 5,
+      datumStep: 2,
+    });
+    // Definition untouched: members/alignment identical (no revision impact).
+    expect(history.present.project.profileViews![0]!.profileIds).toHaveLength(1);
+    history = undoCadHistory(history);
+    expect(history.present.project.profileViews![0]).toMatchObject({
+      horizontalScale: 1,
+      verticalExaggeration: 1,
+    });
+    const before = history;
+    history = runCadCommand(history, {
+      key: 'PROFILE_VIEW_UPDATE',
+      viewId,
+      patch: { horizontalScale: 0 },
+    });
+    expect(history).toBe(before);
+    history = runCadCommand(history, {
+      key: 'PROFILE_VIEW_UPDATE',
+      viewId,
+      patch: { datumMode: 'explicit' },
+    });
+    expect(history).toBe(before);
+  });
+
   it('PROFILE_STYLE CRUD is refcount-guarded', () => {
     let history = createCadHistoryState(baseProject());
     history = runCadCommand(history, {

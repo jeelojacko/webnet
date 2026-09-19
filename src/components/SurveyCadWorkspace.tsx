@@ -56,7 +56,7 @@ import { buildCadProfileSnapshot, formatProfileElevationAnswer } from '../cad-ap
 import { CadSurfaceManager } from '../cad-app/shell/CadSurfaceManager';
 import { CadProfileManager } from '../cad-app/shell/CadProfileManager';
 import { buildProfileViewDisplayLayers } from '../engine/cad/cadProfileView';
-import { isProfileDisplayVisible } from '../engine/cad/cadProfileTypes';
+import { filterCadDisplaySceneForViewport } from '../engine/cad/cadViewportAppearance';
 import { resolveProfileStationInput, queryProfileElevationAt } from '../engine/cad/profiles/profileInquiry';
 import { formatCadStation } from '../engine/cad/cadAlignmentStationing';
 import { createCadSurfaceCache } from '../engine/cad/cadSurfaceCache';
@@ -786,25 +786,25 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
         },
     [displayScene, showParcelLabels],
   );
-  // Phase 18J — derived profile-view display layers. Views on OFF/FROZEN
-  // layers are dropped here using the engine visibility contract (the
-  // viewport filter is engine-owned and does not yet walk profileViewLayers).
+  // Phase 18J — derived profile-view display layers. OFF/FROZEN hiding
+  // is engine-owned: layers attach unfiltered and the viewport filter
+  // drops them under the same visible/!frozen contract as surfaces/volumes.
+  // activeProject is the dep (new identity per transaction): a ref read
+  // alone never resubscribes, so view create/delete left stale [] behind.
   const profileViewLayers = useMemo(() => {
     // surfaceProfileInputs.version is the republish signal: the cache is
     // mutated in place by the service, so a version bump is the only
     // reliable "results changed" trigger for this memo.
     void surfaceProfileInputs.version;
-    const layers = buildProfileViewDisplayLayers(activeProjectForBuildsRef.current, profileCache);
-    return layers.filter((layer) =>
-      isProfileDisplayVisible(activeProjectForBuildsRef.current, {
-        alignmentEntityId: layer.viewId,
-        layerId: layer.layerId,
-      }),
-    );
-  }, [activeProjectForBuildsRef, profileCache, surfaceProfileInputs]);
+    return buildProfileViewDisplayLayers(activeProject, profileCache);
+  }, [activeProject, profileCache, surfaceProfileInputs]);
   const displaySceneWithProfiles = useMemo(
-    () => ({ ...displaySceneWithParcelLabelToggle, profileViewLayers }),
-    [displaySceneWithParcelLabelToggle, profileViewLayers],
+    () =>
+      filterCadDisplaySceneForViewport(activeProject, {
+        ...displaySceneWithParcelLabelToggle,
+        profileViewLayers,
+      }),
+    [activeProject, displaySceneWithParcelLabelToggle, profileViewLayers],
   );
   const reportedComputationEntities = useMemo(
     () =>

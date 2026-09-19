@@ -14,7 +14,6 @@ import type {
   CadSurfaceProfile,
   SurfaceProfileStatus,
 } from '../../engine/cad/cadTypes';
-import type { CadCommand } from '../../engine/cad/cadTransactions.types';
 
 /**
  * Phase 18J UI — profile snapshot for Toolspace/manager/Properties.
@@ -25,17 +24,15 @@ import type { CadCommand } from '../../engine/cad/cadTransactions.types';
  */
 
 /**
- * UI-owned command keys. The persist worker owns the actual transaction
- * implementations; until they land `trySurfaceCommand` rejects every one
- * (honest, no silent partial write). Kept here so both sides share one
- * literal and drift is caught by a compile/test, never by memory.
+ * UI-owned command keys. Both sides share one literal so drift is caught
+ * by a compile/test, never by memory. Every key exists in the CadCommand
+ * union; Apply dispatches a real undoable transaction.
  */
 export const CAD_PROFILE_COMMANDS = {
   create: 'PROFILE_CREATE',
   delete: 'PROFILE_DELETE',
   viewCreate: 'PROFILE_VIEW_CREATE',
   viewDelete: 'PROFILE_VIEW_DELETE',
-  /** ponytail blocker: no PROFILE_VIEW_UPDATE in the CadCommand union yet. */
   viewUpdate: 'PROFILE_VIEW_UPDATE',
   styleCreate: 'PROFILE_STYLE_CREATE',
   styleRename: 'PROFILE_STYLE_RENAME',
@@ -43,19 +40,6 @@ export const CAD_PROFILE_COMMANDS = {
   styleDelete: 'PROFILE_STYLE_DELETE',
   styleUpdate: 'PROFILE_STYLE_UPDATE',
 } as const;
-
-/**
- * ponytail: `PROFILE_VIEW_UPDATE` is the ONE profile command the persist
- * worker has not defined (view settings scale/datum/grid are display-only
- * and need a transaction). This documented cast keeps the UI ready; the
- * runtime path routes through `trySurfaceCommand`, which rejects the
- * unknown key honestly (no partial write). Delete the cast when the union
- * gains the key.
- */
-export const profileCommand = (command: {
-  key: string;
-  [key: string]: unknown;
-}): CadCommand => command as unknown as CadCommand;
 
 export type ProfileStatusText =
   | 'Current'

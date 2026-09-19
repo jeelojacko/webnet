@@ -64,6 +64,9 @@ export const buildProfileViewDisplayLayers = (
   profileCache: CadProfileCache | null,
   options?: ProfileViewDisplayOptions,
 ): CadProfileViewDisplayLayer[] => {
+  // Restriction (deliberate): CadProfileView carries no layerId — every
+  // view resolves via resolveProfileLayerId (current layer) at build time.
+  // Per-view layer binding is deferred; see resolveProfileLayerId.
   if (!profileCache) return [];
   const maxLabels = options?.maxLabels ?? MAX_LABELS_DEFAULT;
   const styles = backfillCadProfileStyles(project.profileStyles);

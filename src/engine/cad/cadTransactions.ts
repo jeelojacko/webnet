@@ -585,6 +585,7 @@ export const CAD_COMMAND_REGISTRY: Record<CadCommandKey, CadCommandDefinition<Ca
   PROFILE_REBUILD: profileCommandDefinitions.PROFILE_REBUILD as CadCommandDefinition<CadCommand>,
   PROFILE_DELETE: profileCommandDefinitions.PROFILE_DELETE as CadCommandDefinition<CadCommand>,
   PROFILE_VIEW_CREATE: profileCommandDefinitions.PROFILE_VIEW_CREATE as CadCommandDefinition<CadCommand>,
+  PROFILE_VIEW_UPDATE: profileCommandDefinitions.PROFILE_VIEW_UPDATE as CadCommandDefinition<CadCommand>,
   PROFILE_VIEW_DELETE: profileCommandDefinitions.PROFILE_VIEW_DELETE as CadCommandDefinition<CadCommand>,
   PROFILE_STYLE_CREATE: profileCommandDefinitions.PROFILE_STYLE_CREATE as CadCommandDefinition<CadCommand>,
   PROFILE_STYLE_DUPLICATE: profileCommandDefinitions.PROFILE_STYLE_DUPLICATE as CadCommandDefinition<CadCommand>,

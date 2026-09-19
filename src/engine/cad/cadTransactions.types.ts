@@ -25,6 +25,24 @@ import type {
 import type { CadVolumeSurfaceStylePatch } from './cadVolumeSurfaces';
 import type { CadProfileStylePatch } from './cadProfileTypes';
 
+/**
+ * Phase 18J display-only view patch. Only presentation fields (scale,
+ * datum, grid intervals, style, name) — never profileIds/alignment, so
+ * applying it cannot alter any profile extraction revision.
+ */
+export interface CadProfileViewUpdatePatch {
+  horizontalScale?: number;
+  verticalExaggeration?: number;
+  datumMode?: 'auto' | 'explicit';
+  datumElevation?: number;
+  datumStep?: number;
+  majorStationInterval?: number;
+  minorStationInterval?: number;
+  elevationGridInterval?: number;
+  styleId?: string | null;
+  name?: string;
+}
+
 export type CadCommandKey =
   | 'SELECT_ALL'
   | 'CLEAR_SELECTION'
@@ -114,6 +132,7 @@ export type CadCommandKey =
   | 'PROFILE_REBUILD'
   | 'PROFILE_DELETE'
   | 'PROFILE_VIEW_CREATE'
+  | 'PROFILE_VIEW_UPDATE'
   | 'PROFILE_VIEW_DELETE'
   | 'PROFILE_STYLE_CREATE'
   | 'PROFILE_STYLE_DUPLICATE'
@@ -805,6 +824,11 @@ export type CadCommand =
       minorStationInterval?: number;
       elevationGridInterval?: number;
       styleId?: string;
+    }
+  | {
+      key: 'PROFILE_VIEW_UPDATE';
+      viewId: string;
+      patch: CadProfileViewUpdatePatch;
     }
   | {
       key: 'PROFILE_VIEW_DELETE';

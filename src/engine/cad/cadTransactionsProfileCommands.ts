@@ -8,6 +8,7 @@ import {
   updateCadProfileStyle,
 } from './cadProfileTypes';
 import { commitLayerProject } from './cadTransactionsLayerCommands';
+import { resolveProfileLayerId } from './cadProfileTypes';
 import type {
   CadCommand,
   CadCommandDefinition,
@@ -232,6 +233,88 @@ const profileViewCreateCommand: CadCommandDefinition<ProfileViewCreateCommand> =
   },
 };
 
+type ProfileViewUpdateCommand = Extract<CadCommand, { key: 'PROFILE_VIEW_UPDATE' }>;
+
+/**
+ * Display-only view update: scale/datum/grid/style/name. LOCK-gated via
+ * the resolved profile display layer; undoable via commitLayerProject.
+ * Never touches profileIds/alignmentEntityId, so no profile extraction
+ * revision changes (statuses stay CURRENT across an Apply).
+ */
+const profileViewUpdateCommand: CadCommandDefinition<ProfileViewUpdateCommand> = {
+  key: 'PROFILE_VIEW_UPDATE',
+  execute: (snapshot, command) => {
+    const views = snapshot.project.profileViews ?? [];
+    const view = views.find((entry) => entry.id === command.viewId);
+    if (!view) return null;
+    const layerId = resolveProfileLayerId(snapshot.project);
+    if (snapshot.project.layers.find((entry) => entry.id === layerId)?.locked === true) return null;
+    const patch = command.patch;
+    const next: CadProfileView = { ...view };
+    let changed = false;
+    if (patch.horizontalScale !== undefined) {
+      if (!(patch.horizontalScale > 0)) return null;
+      if (patch.horizontalScale !== view.horizontalScale) {
+        next.horizontalScale = patch.horizontalScale;
+        changed = true;
+      }
+    }
+    if (patch.verticalExaggeration !== undefined) {
+      if (!(patch.verticalExaggeration > 0)) return null;
+      if (patch.verticalExaggeration !== view.verticalExaggeration) {
+        next.verticalExaggeration = patch.verticalExaggeration;
+        changed = true;
+      }
+    }
+    if (patch.datumMode !== undefined && patch.datumMode !== view.datumMode) {
+      next.datumMode = patch.datumMode;
+      changed = true;
+    }
+    if (patch.datumElevation !== undefined) {
+      if (patch.datumElevation == null) {
+        if (view.datumElevation != null) {
+          delete next.datumElevation;
+          changed = true;
+        }
+      } else if (patch.datumElevation !== view.datumElevation) {
+        next.datumElevation = patch.datumElevation;
+        changed = true;
+      }
+    }
+    if (next.datumMode === 'explicit' && next.datumElevation == null) return null;
+    for (const field of ['datumStep', 'majorStationInterval', 'minorStationInterval', 'elevationGridInterval'] as const) {
+      const value = patch[field];
+      if (value !== undefined && value !== view[field]) {
+        next[field] = value;
+        changed = true;
+      }
+    }
+    if (patch.styleId !== undefined) {
+      const styleId = patch.styleId ?? undefined;
+      if (styleId !== view.styleId) {
+        if (styleId != null && !styleExists(snapshot.project, styleId)) return null;
+        if (styleId == null) delete next.styleId;
+        else next.styleId = styleId;
+        changed = true;
+      }
+    }
+    if (patch.name !== undefined) {
+      const name = patch.name.trim();
+      if (name === '') return null;
+      if (views.some((entry) => entry.id !== view.id && entry.name === name)) return null;
+      if (name !== view.name) {
+        next.name = name;
+        changed = true;
+      }
+    }
+    if (!changed) return null;
+    return commitLayerProject('PROFILE_VIEW_UPDATE', snapshot, {
+      ...snapshot.project,
+      profileViews: views.map((entry) => (entry.id === command.viewId ? next : entry)),
+    }, `PROFILE_VIEW_UPDATE (${view.name})`);
+  },
+};
+
 type ProfileViewDeleteCommand = Extract<CadCommand, { key: 'PROFILE_VIEW_DELETE' }>;
 
 const profileViewDeleteCommand: CadCommandDefinition<ProfileViewDeleteCommand> = {
@@ -334,6 +417,7 @@ export const profileCommandDefinitions = {
   PROFILE_REBUILD: profileRebuildCommand,
   PROFILE_DELETE: profileDeleteCommand,
   PROFILE_VIEW_CREATE: profileViewCreateCommand,
+  PROFILE_VIEW_UPDATE: profileViewUpdateCommand,
   PROFILE_VIEW_DELETE: profileViewDeleteCommand,
   PROFILE_STYLE_CREATE: profileStyleCreateCommand,
   PROFILE_STYLE_DUPLICATE: profileStyleDuplicateCommand,

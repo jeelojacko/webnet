@@ -2,7 +2,7 @@ import React from 'react';
 import type { CadProfileViewRow } from './cadProfileSnapshot';
 import type { CadShellActions, CadWorkspaceSnapshot } from './cadShellTypes';
 import { trySurfaceCommand } from './cadSurfaceSnapshot';
-import { CAD_PROFILE_COMMANDS, profileCommand, resolveProfileDatum } from './cadProfileSnapshot';
+import { CAD_PROFILE_COMMANDS, resolveProfileDatum } from './cadProfileSnapshot';
 import { Field } from '../../components/surveyCad/surveyManagerShared.tsx';
 import { buttonClass, inputClass } from '../../components/surveyCad/surveyManagerShared';
 
@@ -64,11 +64,11 @@ export const CadProfileViewSettings: React.FC<{
       setNotice('Profile view rejected — explicit datum requires a numeric elevation.');
       return;
     }
-    const ok = trySurfaceCommand(actions.runSurveyCommand, profileCommand({
+    const ok = trySurfaceCommand(actions.runSurveyCommand, {
       key: CAD_PROFILE_COMMANDS.viewUpdate,
       viewId: view.id,
       patch: { ...numbers, datumMode },
-    }));
+    });
     setNotice(ok ? 'Profile view settings updated (display only).' : 'Profile view settings rejected — see status/locks.');
   };
   return (
