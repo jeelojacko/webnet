@@ -129,8 +129,16 @@ export const CAD_SHELL_COMMANDS: CadShellCommandDef[] = [
     undefined,
     ['LANDXMLIMPORT'],
   ),
+  // Phase 18N — block commands. BLOCK/INSERT open the Block Manager
+  // (BLOCK needs a selection for New-from-selection; INSERT arms the
+  // pick-point loop); EXPLODE runs on the current selection; BLOCKS
+  // opens the manager (typed BLOCKS, aliases mirror command-UI style).
+  action('BLOCK', 'Block', 'Draw', 'Create a block from the current selection (Block Manager).', undefined, ['B']),
+  action('INSERT', 'Insert', 'Draw', 'Insert a block reference (pick point, repeat on, Esc ends).', undefined, ['I']),
+  action('EXPLODE', 'Explode', 'Modify', 'Explode selected block references into plain entities.', undefined, ['X']),
   // Phase 18C — Layer Properties Manager (current-layer dropdown lives in the ribbon Layers group).
   action('LAYER', 'Layers', 'Edit', 'Open the Layer Properties Manager.', undefined),
+  action('BLOCKS', 'Block Manager', 'Edit', 'Open the Block Manager (definitions, survey symbols, insert).'),
   // Phase 18F — surface commands (definition edits are undoable SURFACE_*
   // transactions; rebuild runs the session mesh builder; inquiry opens the
   // manager inquiry section). Phase 18H added contour display; phase 18I
@@ -222,6 +230,8 @@ export const isShellCommandAvailable = (
         return snapshot.canRedo;
       case 'SHELL_ERASE':
         return snapshot.selectionCount > 0;
+      case 'EXPLODE':
+        return snapshot.selectionCount > 0;
       case 'SHELL_IMPORT_LANDXML':
         // Live workspace present (guard above) — the file picker is always available.
         return true;
@@ -276,6 +286,18 @@ export const executeShellCommand = (
     case 'LAYER':
       actions.openLayerManager();
       return true;
+    case 'BLOCK':
+      actions.openBlockManager?.('blocks');
+      return actions.openBlockManager != null;
+    case 'INSERT':
+      actions.openBlockManager?.('insert');
+      return actions.openBlockManager != null;
+    case 'BLOCKS':
+      actions.openBlockManager?.('blocks');
+      return actions.openBlockManager != null;
+    case 'EXPLODE':
+      actions.explodeSelectedBlocks?.();
+      return actions.explodeSelectedBlocks != null;
     case 'SURFACE':
     case 'SURFACEMANAGER':
       actions.openSurveyManager('surfaces');

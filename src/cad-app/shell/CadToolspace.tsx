@@ -459,10 +459,53 @@ const SettingsTab: React.FC<{ snapshot: CadWorkspaceSnapshot | null; actions: Ca
         </>
       ) : null}
       {snapshot ? <SectionStylesNode snapshot={snapshot} actions={actions} /> : null}
+      <BlocksNode snapshot={snapshot} actions={actions} />
       <TreeGroup label="Drawing">
         <div className="cad-shell-tree-row">Units: {snapshot.units}</div>
       </TreeGroup>
     </div>
+  );
+};
+
+/**
+ * Phase 18N — Blocks node (definitions only, never references).
+ * Clicking a definition opens the Block Manager; the manager owns all
+ * mutations. Empty state points at Survey Symbols (lazy-seed gate).
+ */
+const BlocksNode: React.FC<{ snapshot: CadWorkspaceSnapshot | null; actions: CadShellActions | null }> = ({
+  snapshot,
+  actions,
+}) => {
+  if (!snapshot) return null;
+  const blocks = snapshot.blocks;
+  const definitions = [...(blocks?.definitions ?? [])].sort((a, b) => a.name.localeCompare(b.name));
+  return (
+    <TreeGroup label={`Blocks (${definitions.length})`}>
+      {definitions.map((definition) => (
+        <button
+          key={definition.id}
+          type="button"
+          className="cad-shell-tree-node"
+          title={`${definition.name} — ${definition.entities.length} entities, ${blocks?.referenceCounts[definition.id] ?? 0} references. Open the Block Manager.`}
+          onClick={() => actions?.openBlockManager?.('blocks')}
+          data-cad-toolspace-block={definition.id}
+        >
+          {definition.name}
+          <span className="cad-shell-count">{blocks?.referenceCounts[definition.id] ?? 0}</span>
+        </button>
+      ))}
+      {definitions.length === 0 ? (
+        <div className="cad-shell-tree-row cad-shell-empty">No blocks — open the Block Manager or Survey Symbols.</div>
+      ) : null}
+      <button
+        type="button"
+        className="cad-shell-tree-node"
+        onClick={() => actions?.openBlockManager?.('symbols')}
+        data-cad-toolspace-symbols="true"
+      >
+        Survey Symbols…
+      </button>
+    </TreeGroup>
   );
 };
 

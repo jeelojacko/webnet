@@ -167,6 +167,12 @@ const SurveyCadPreviewCanvas: React.FC<SurveyCadPreviewCanvasProps> = ({
     onMouseDown={(event) => {
       const screenPoint = screenPointFromMouseEvent(event);
       if (!screenPoint) return;
+      // A press starts a fresh gesture: a drag sets didDrag on move, and
+      // the flag now survives mouseup so the release click (which fires
+      // after mouseup) is still suppressed — previously the mouseup reset
+      // raced the click and leaked release-clicks into pick/command input
+      // (e.g. a grip drag ending on empty canvas inserted a stray block).
+      setDidDrag(false);
       if (event.button === 1) {
         event.preventDefault();
         const now = event.timeStamp;
@@ -308,7 +314,6 @@ const SurveyCadPreviewCanvas: React.FC<SurveyCadPreviewCanvasProps> = ({
       if (!commandPointInputActive) {
         setArmedSnap(null);
       }
-      setDidDrag(false);
       setDragState({ kind: 'none' });
     }}
   >

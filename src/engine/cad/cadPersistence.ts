@@ -1,4 +1,5 @@
 import type {
+  CadBlockChild,
   CadBounds,
   CadDisplayPoint,
   CadEntity,
@@ -40,6 +41,7 @@ import {
 import { cloneFieldToFinishSettings } from '../fieldToFinish/catalogIo';
 import { backfillDrawingCatalog } from '../fieldToFinish/drawingCatalog';
 import { cloneFeatureCatalog } from '../fieldToFinish/featureCatalog';
+import { sanitizeCadBlockReferences } from './cadBlockPersistence';
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === 'object' && value != null && !Array.isArray(value);
@@ -97,6 +99,7 @@ export const cloneCadEntity = (entity: CadEntity): CadEntity => {
     case 'line':
     case 'error-ellipse':
     case 'arc':
+    case 'block-reference':
       return {
         ...entity,
         appearance: cloneAppearance(entity.appearance),
@@ -213,6 +216,19 @@ export const cloneCadProject = (project: CadProject): CadProject => ({
     ? { sectionStyles: cloneCadSectionStyles(project.sectionStyles) }
     : {}),
   ...(project.sectionViews != null ? { sectionViews: cloneCadSectionViews(project.sectionViews) } : {}),
+  // Phase 18N: block definitions stay trailing (key-order rule). Children
+  // reuse the entity clone (block-local ids preserved, never remapped).
+  ...(project.blockDefinitions != null
+    ? {
+        blockDefinitions: project.blockDefinitions.map((definition) => ({
+          ...definition,
+          basePoint: { ...definition.basePoint },
+          entities: definition.entities.map(
+            (child) => cloneCadEntity(child as CadEntity) as CadBlockChild,
+          ),
+        })),
+      }
+    : {}),
 });
 
 const cloneParcelLayoutSettings = (
@@ -286,12 +302,18 @@ export const sanitizeSurveyCadPersistedState = (
       labelStyles: cloneCadPointLabelStyles(backfillCadPointLabelStyles(migrated.labelStyles)),
       pointGroups: cloneCadPointGroups(backfillCadPointGroups(migrated.pointGroups)),
     }));
+    const sanitizedBlocks = sanitizeCadBlockReferences(withStandards);
     return {
       ...cloned,
       // Trailing surfaces/styles position matches cloneCadProject
-      // (persistence signatures are key-order-sensitive).
+      // (persistence signatures are key-order-sensitive). 18N: same
+      // trailing rule for the block library; dangling refs dropped.
       project: {
         ...withStandards,
+        entities: sanitizedBlocks.project.entities,
+        ...(sanitizedBlocks.project.pointStyles != null
+          ? { pointStyles: sanitizedBlocks.project.pointStyles }
+          : {}),
         surfaces: backfillCadSurfaces(withStandards.surfaces).map(clearSurfaceBuildCacheOnLoad),
         surfaceStyles: cloneCadSurfaceStyles(backfillCadSurfaceStyles(withStandards.surfaceStyles)),
         volumeSurfaces: cloneCadVolumeSurfaces(backfillVolumeSurfaces(withStandards.volumeSurfaces)),
@@ -306,6 +328,7 @@ export const sanitizeSurveyCadPersistedState = (
         ),
         sectionStyles: cloneCadSectionStyles(backfillCadSectionStyles(withStandards.sectionStyles)),
         sectionViews: cloneCadSectionViews(backfillCadSectionViews(withStandards.sectionViews)),
+        blockDefinitions: sanitizedBlocks.project.blockDefinitions,
       },
     };
   } catch {

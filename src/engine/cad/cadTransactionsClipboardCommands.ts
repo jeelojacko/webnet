@@ -201,6 +201,19 @@ const buildCopiedEntities = (
           },
         });
         break;
+      case 'block-reference':
+        copiedEntities.push({
+          ...entity,
+          id: createStableRuntimeId('cad-block-reference'),
+          x: entity.x + deltaX,
+          y: entity.y + deltaY,
+          metadata: {
+            ...entity.metadata,
+            createdBy: 'COPY',
+            manual: true,
+          },
+        });
+        break;
       default:
         break;
     }

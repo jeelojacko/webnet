@@ -8,23 +8,19 @@ import {
   cadPointOnCircle,
   cadProjectPointOntoInfiniteLine,
   cadTangentPointsFromExternalPointToArc,
-  type CadWorldPoint,
 } from './cadGeometry';
 import { getCadEntitySubpartDisplayLabel } from './cadEntityNames';
 import type {
   CadArcEntity,
-  CadEntity,
   CadLineEntity,
   CadParcelEntity,
   CadPolygonEntity,
   CadPolylineEntity,
-  CadProject,
   CadSnapCandidate,
-  CadSnapConstructionContext,
-  CadSnapKind,
 } from './cadTypes';
 import { arcRefFromEntity, entitySegments } from './cadSpatialEntityRefs';
-import type { CadArcRef, CadSegmentRef } from './cadSpatialIndexTypes';
+import { buildBlockReferenceSnapCandidates, type CadSpatialEntityCandidateContext } from './cadSpatialBlockSnaps';
+import type { CadArcRef } from './cadSpatialIndexTypes';
 import { buildCandidate } from './cadSpatialSnapCandidates';
 import {
   buildExtensionCandidate,
@@ -34,19 +30,7 @@ import {
   segmentPathObstructed,
 } from './cadSpatialConstruction';
 
-interface CadSpatialEntityCandidateContext {
-  project: CadProject;
-  visibleEntities: CadEntity[];
-  segments: CadSegmentRef[];
-  worldPoint: CadWorldPoint;
-  allowed: Set<CadSnapKind>;
-  constructionContext: CadSnapConstructionContext;
-  basePoint: CadWorldPoint | null;
-  hasPerpendicularStartSeed: boolean;
-  parallelScope: Set<string> | null;
-  extensionScope: Set<string> | null;
-  requireExplicitScope: boolean;
-}
+export type { CadSpatialEntityCandidateContext } from './cadSpatialBlockSnaps';
 
 const buildSegmentEntitySnapCandidates = (
   context: CadSpatialEntityCandidateContext,
@@ -327,6 +311,9 @@ export const buildCadSpatialEntitySnapCandidates = (
 
   context.visibleEntities.forEach((entity) => {
     switch (entity.type) {
+      case 'block-reference':
+        candidates.push(...buildBlockReferenceSnapCandidates(context, entity));
+        break;
       case 'survey-point':
         if (context.allowed.has('point-node')) {
           candidates.push(

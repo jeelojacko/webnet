@@ -1,6 +1,7 @@
 import { cadIsAngleOnArcSweep } from './cadGeometry';
+import { blockReferenceBounds, findBlockDefinition } from './cadBlocks';
 import type { CadCogoComputation } from './cadCogoTypes';
-import type { CadBounds, CadEntity, CadProject } from './cadTypes';
+import type { CadBlockDefinition, CadBounds, CadEntity, CadProject } from './cadTypes';
 
 const arcEndPoints = ({
   centerX,
@@ -30,7 +31,10 @@ const arcEndPoints = ({
   });
 };
 
-export const buildCadBounds = (entities: CadEntity[]): CadBounds | null => {
+export const buildCadBounds = (
+  entities: CadEntity[],
+  blockDefinitions?: readonly CadBlockDefinition[],
+): CadBounds | null => {
   let minX = Number.POSITIVE_INFINITY;
   let minY = Number.POSITIVE_INFINITY;
   let maxX = Number.NEGATIVE_INFINITY;
@@ -81,6 +85,28 @@ export const buildCadBounds = (entities: CadEntity[]): CadBounds | null => {
         includePoint(entity.centerX - entity.semiMajor, entity.centerY - entity.semiMajor);
         includePoint(entity.centerX + entity.semiMajor, entity.centerY + entity.semiMajor);
         break;
+      case 'block-reference': {
+        // Single source: world-space expansion bounds; unknown definitions
+        // (or bad scales) fall back to the insertion point, never crash.
+        const definition = blockDefinitions
+          ? findBlockDefinition(blockDefinitions, entity.blockDefinitionId)
+          : undefined;
+        let world: CadBounds | null = null;
+        if (definition) {
+          try {
+            world = blockReferenceBounds(definition, entity);
+          } catch {
+            world = null;
+          }
+        }
+        if (world) {
+          includePoint(world.minX, world.minY);
+          includePoint(world.maxX, world.maxY);
+        } else {
+          includePoint(entity.x, entity.y);
+        }
+        break;
+      }
       default:
         break;
     }
@@ -99,7 +125,7 @@ export const replaceCadProjectEntities = (
 ): CadProject => ({
   ...project,
   entities,
-  bounds: buildCadBounds(entities),
+  bounds: buildCadBounds(entities, project.blockDefinitions),
 });
 
 export const appendCadProjectEntities = (

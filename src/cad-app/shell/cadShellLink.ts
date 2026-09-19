@@ -36,6 +36,11 @@ export interface CadShellLink {
    * ribbon, manager) focuses the Layer Properties Manager through it.
    */
   requestLayerManager: (() => void) | null;
+  /**
+   * Phase 18N — set by the shell; registry BLOCK/BLOCKS entries and the
+   * workspace insert flow open the Block Manager through it.
+   */
+  requestBlockManager: ((_tab?: 'blocks' | 'symbols' | 'insert') => void) | null;
 }
 
 const countsEqual = (
@@ -84,7 +89,8 @@ const snapshotsEqual = (a: CadWorkspaceSnapshot | null, b: CadWorkspaceSnapshot 
     JSON.stringify(a.surface) === JSON.stringify(b.surface) &&
     JSON.stringify(a.volume) === JSON.stringify(b.volume) &&
     JSON.stringify(a.profile) === JSON.stringify(b.profile) &&
-    JSON.stringify(a.section) === JSON.stringify(b.section)
+    JSON.stringify(a.section) === JSON.stringify(b.section) &&
+    JSON.stringify(a.blocks) === JSON.stringify(b.blocks)
   );
 };
 
@@ -165,6 +171,7 @@ export const createCadShellLink = (): CadShellLink => {
     actions: null,
     requestLayerManager: null,
     requestToolspaceTab: null,
+    requestBlockManager: null,
   };
 };
 

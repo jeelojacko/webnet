@@ -7,6 +7,7 @@ import { backfillCadPointStyles } from '../../engine/cad/cadPointStyles';
 import type { CadPointStyle, CadPointSymbolShape, CadProject } from '../../engine/cad/cadTypes';
 import type { FeatureCodeCatalog } from '../../engine/fieldToFinish/featureCatalog';
 import { Field, ManagerShell, PointMarkerPreview } from './surveyManagerShared.tsx';
+import { BlockGeometryPreview } from '../../cad-app/blocks/cadBlockPreview';
 import { buttonClass, inputClass, nextCopyName } from './surveyManagerShared';
 
 interface SurveyPointStyleManagerProps {
@@ -161,6 +162,15 @@ export const SurveyPointStyleManager: React.FC<SurveyPointStyleManagerProps> = (
   const set = (patch: Partial<CadPointStyle>): void =>
     setDraft((current) => ({ ...(current ?? {}), ...patch }));
 
+  // Phase 18N — block-marker picker. markerBlockDefinitionId wins over the
+  // legacy symbol when set (engine validation); clearing restores symbol
+  // rendering. Seeding stays in the Block Manager (hint below).
+  const blockDefinitions = useMemo(() => [...(project.blockDefinitions ?? [])].sort((a, b) =>
+    a.name.localeCompare(b.name)), [project.blockDefinitions]);
+  const markerBlock = active?.markerBlockDefinitionId
+    ? blockDefinitions.find((entry) => entry.id === active.markerBlockDefinitionId) ?? null
+    : null;
+
   return (
     <ManagerShell label="Point style manager" title="Point Styles" onClose={onClose}>
       <div className="grid gap-2">
@@ -205,13 +215,17 @@ export const SurveyPointStyleManager: React.FC<SurveyPointStyleManagerProps> = (
           {active ? (
             <div className="grid content-start gap-1.5">
               <div className="flex items-center gap-2">
-                <PointMarkerPreview
-                  shape={symbolOf(active.markerSymbolId).shape}
-                  radius={symbolOf(active.markerSymbolId).radius}
-                  scale={active.markerScale}
-                  rotationDeg={active.rotationDeg}
-                  displayMarker={active.displayMarker}
-                />
+                {markerBlock ? (
+                  <BlockGeometryPreview definition={markerBlock} sizePx={40} label={`Marker preview of ${markerBlock.name}`} />
+                ) : (
+                  <PointMarkerPreview
+                    shape={symbolOf(active.markerSymbolId).shape}
+                    radius={symbolOf(active.markerSymbolId).radius}
+                    scale={active.markerScale}
+                    rotationDeg={active.rotationDeg}
+                    displayMarker={active.displayMarker}
+                  />
+                )}
                 <span className="text-[11px] text-slate-400">
                   {refs!.points + refs!.groups > 0
                     ? `Used by ${refs!.points} point(s), ${refs!.groups} group(s)${refs!.catalogDefinitions > 0 ? `, ${refs!.catalogDefinitions} catalog def(s)` : ''}`
@@ -236,6 +250,27 @@ export const SurveyPointStyleManager: React.FC<SurveyPointStyleManagerProps> = (
                   ))}
                 </select>
               </Field>
+              <Field label="Block marker (optional)">
+                <select
+                  className={inputClass}
+                  aria-label="Block marker"
+                  value={active.markerBlockDefinitionId ?? ''}
+                  onChange={(event) => set({
+                    markerBlockDefinitionId: event.target.value === '' ? undefined : event.target.value,
+                  })}
+                >
+                  <option value="">Legacy symbol (no block)</option>
+                  {blockDefinitions.map((entry) => (
+                    <option key={entry.id} value={entry.id}>{entry.name}</option>
+                  ))}
+                </select>
+              </Field>
+              {active.markerBlockDefinitionId && !markerBlock ? (
+                <span className="text-[11px] text-amber-200">Unknown block — pick a definition or clear to restore the symbol.</span>
+              ) : null}
+              {blockDefinitions.length === 0 ? (
+                <span className="text-[11px] text-slate-400">No blocks yet — open the Block Manager → Survey Symbols to seed the library.</span>
+              ) : null}
               <div className="grid grid-cols-2 gap-1.5">
                 <Field label="Scale">
                   <input

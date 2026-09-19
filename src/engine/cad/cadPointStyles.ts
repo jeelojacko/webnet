@@ -88,3 +88,36 @@ export const migrateLegacySurveyPointStyles = (project: CadProject): CadProject 
 export const basePointStyleIdForClass = (
   pointClass: CadSurveyPointEntity['pointClass'],
 ): string => (pointClass === 'control' ? 'point-style-control' : 'point-style-survey');
+
+export type CadPointStyleDiagnosticCode = 'CAD_POINT_STYLE_UNKNOWN_BLOCK';
+
+export interface CadPointStyleDiagnostic {
+  code: CadPointStyleDiagnosticCode;
+  message: string;
+}
+
+/**
+ * Phase 18N: marker-source validation. markerBlockDefinitionId and a
+ * non-legacy markerSymbolId are mutually exclusive (the symbol stays only
+ * as the legacy fallback when no block is set). Unknown block refs fail
+ * closed — callers sanitize (drop the ref) or reject, never render dangling.
+ */
+export const validateCadPointStyle = (
+  style: CadPointStyle,
+  blockDefinitionIds: ReadonlySet<string> | readonly string[] = [],
+): CadPointStyleDiagnostic[] => {
+  const issues: CadPointStyleDiagnostic[] = [];
+  const known: ReadonlySet<string>
+    = typeof (blockDefinitionIds as ReadonlySet<string>).has === 'function'
+      ? (blockDefinitionIds as ReadonlySet<string>)
+      : new Set(blockDefinitionIds as readonly string[]);
+  if (style.markerBlockDefinitionId != null) {
+    if (!known.has(style.markerBlockDefinitionId)) {
+      issues.push({
+        code: 'CAD_POINT_STYLE_UNKNOWN_BLOCK',
+        message: `Point style "${style.id}" references unknown block "${style.markerBlockDefinitionId}".`,
+      });
+    }
+  }
+  return issues;
+};

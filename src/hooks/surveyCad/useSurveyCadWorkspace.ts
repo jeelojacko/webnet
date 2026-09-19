@@ -14,6 +14,7 @@ import {
 import type { CadCogoComputation } from '../../engine/cad/cadCogoTypes';
 import type { CadCommand } from '../../engine/cad/cadTransactions.types';
 import { runCadCommand } from '../../engine/cad/cadUndoRedo';
+import { commitBlockUiOp } from '../../cad-app/blocks/cadBlockUiCommands';
 import {
   commitLandXmlImport,
   type LandXmlCommitReport,
@@ -249,7 +250,7 @@ export const useSurveyCadWorkspace = (
     () => {
       if (
         selectedEntities.length !== 1 ||
-        !['line', 'polyline', 'polygon', 'parcel', 'arc'].includes(selectedEntities[0]!.type)
+        !['line', 'polyline', 'polygon', 'parcel', 'arc', 'block-reference'].includes(selectedEntities[0]!.type)
       ) {
         return null;
       }
@@ -489,6 +490,34 @@ export const useSurveyCadWorkspace = (
     redoDepth: history.redoStack.length,
     runLayerCommand,
     runLandXmlImport,
+    /**
+     * Phase 18N — one block table/reference op as an undoable history
+     * entry (interim seam: commitBlockUiOp mirrors runCadCommand
+     * bookkeeping until real BLOCK_* transactions land).
+     */
+    runBlockOp: (op: import('../../cad-app/blocks/cadBlockUiCommands').CadBlockUiOp): {
+      applied: boolean;
+      reason?: string;
+    } => {
+      let outcome: { applied: boolean; reason?: string } = { applied: false };
+      applyHistoryUpdate((current) => {
+        const next = commitBlockUiOp(current, op);
+        outcome = { applied: next.state !== current, reason: next.reason };
+        return next.state;
+      });
+      return outcome;
+    },
+    /** Phase 18N — lazy-seed gate; returns definitions added. */
+    ensureBlockSymbols: (): number => {
+      let added = 0;
+      applyHistoryUpdate((current) => {
+        const before = current.present.project.blockDefinitions?.length ?? 0;
+        const next = commitBlockUiOp(current, { kind: 'seed-symbols' });
+        added = (next.project.blockDefinitions?.length ?? 0) - before;
+        return next.state;
+      });
+      return added;
+    },
     replaceCadProject: (project: CadProject, statusText = 'Drawing updated.') => {
       applyHistoryUpdate((current) => ({
         ...current,

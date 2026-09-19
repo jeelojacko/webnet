@@ -77,6 +77,12 @@ export const translateEntity = (entity: CadEntity, deltaX: number, deltaY: numbe
         centerX: entity.centerX + deltaX,
         centerY: entity.centerY + deltaY,
       };
+    case 'block-reference':
+      return {
+        ...entity,
+        x: entity.x + deltaX,
+        y: entity.y + deltaY,
+      };
   }
 };
 
@@ -229,6 +235,11 @@ const updateEntityFromGrip = (
         return updateArcEndpointFromGrip(entity, gripKind, point);
       }
       return null;
+    case 'block-reference':
+      // Phase 18N UI slice: the insertion grip drags the whole reference.
+      // Rotation/scale stay Properties-only (no grip affordance).
+      if (gripKind !== 'insertion') return null;
+      return { ...entity, x: point.x, y: point.y };
     default:
       return null;
   }
@@ -305,6 +316,16 @@ export const buildCadGripHandles = (entity: CadEntity): CadGripHandle[] => {
         },
       ];
     }
+    case 'block-reference':
+      return [
+        {
+          id: `${entity.id}:insertion`,
+          entityId: entity.id,
+          kind: 'insertion',
+          x: entity.x,
+          y: entity.y,
+        },
+      ];
     default:
       return [];
   }

@@ -15,6 +15,7 @@ import type {
 import { entityIntersectsBounds, expandBounds } from './cadSpatialBounds';
 import { buildCadSpatialEntitySnapCandidates } from './cadSpatialEntityCandidates';
 import { arcRefFromEntity, entitySegments } from './cadSpatialEntityRefs';
+import { expandBlockReference, findBlockDefinition } from './cadBlocks';
 import type { CadSpatialIndex } from './cadSpatialIndexTypes';
 import {
   buildApparentIntersectionCandidates,
@@ -85,6 +86,28 @@ export const buildCadSpatialIndex = (project: CadProject): CadSpatialIndex => {
     const arcs = visibleEntities
       .filter((entity): entity is CadArcEntity => entity.type === 'arc')
       .map((entity) => arcRefFromEntity(project, entity));
+    // Phase 18N: nearby refs only (visibleEntities is already bounds-culled
+    // above). World-space children ride under the reference id so
+    // intersection/extension/perpendicular scopes work through instances.
+    visibleEntities.forEach((entity) => {
+      if (entity.type !== 'block-reference') return;
+      const definition = findBlockDefinition(project.blockDefinitions, entity.blockDefinitionId);
+      if (!definition) return;
+      let children;
+      try {
+        children = expandBlockReference(definition, entity);
+      } catch {
+        return;
+      }
+      children.forEach((child) => {
+        if (child.type === 'line' || child.type === 'polyline' || child.type === 'polygon') {
+          segments.push(...entitySegments({ ...child, id: entity.id }));
+        } else if (child.type === 'arc') {
+          const ref = arcRefFromEntity(project, { ...child, id: entity.id });
+          arcs.push({ ...ref, sourceEntityId: entity.id });
+        }
+      });
+    });
     const basePoint = constructionContext.active ? constructionContext.basePoint : null;
     const scopeSeedSegmentId = constructionContext.scopeSeedSegmentId ?? null;
     const scopeSeedSegment = scopeSeedSegmentId

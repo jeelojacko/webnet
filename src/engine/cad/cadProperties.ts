@@ -74,7 +74,9 @@ const transparencyLabel = (transparency: number | undefined): string =>
 /**
  * Phase 18C — Layer (editable = move) + Color/Linetype/Lineweight/
  * Transparency as ByLayer-or-explicit, effective value as secondary text.
- * No ByBlock option: no block model exists (spec §12, deferred).
+ * No ByBlock option: entity appearance intent stays ByLayer-or-explicit
+ * (blockDefinitions exist as of 18N, but ByBlock intent is still deferred
+ * per spec §12).
  */
 const appendAppearanceRows = (rows: CadEntityPropertyRow[], project: CadProject, entity: CadEntity): void => {
   const layer = project.layers.find((entry) => entry.id === entity.layerId);
@@ -426,6 +428,17 @@ const buildEntityProperties = (project: CadProject, entity: CadEntity): CadEntit
         row('semi-major', 'Semi-major', numeric(entity.semiMajor)),
         row('semi-minor', 'Semi-minor', numeric(entity.semiMinor)),
         row('theta', 'Theta', numeric(entity.thetaDeg, 4)),
+      );
+      return rows;
+    case 'block-reference':
+      rows.push(
+        row('name', 'Name', getCadEntityEditableName(entity) || getCadEntityDisplayLabel(entity), { kind: 'entity-name' }),
+        row('block-definition', 'Block', entity.blockDefinitionId),
+        row('insertion-e', 'Insertion E', numeric(entity.x), { kind: 'block-insertion-x' }),
+        row('insertion-n', 'Insertion N', numeric(entity.y), { kind: 'block-insertion-y' }),
+        row('rotation', 'Rotation', numeric(entity.rotationDeg, 4), { kind: 'block-rotation' }),
+        row('scale-x', 'Scale X', numeric(entity.scaleX, 4), { kind: 'block-scale-x' }),
+        row('scale-y', 'Scale Y', numeric(entity.scaleY, 4), { kind: 'block-scale-y' }),
       );
       return rows;
   }

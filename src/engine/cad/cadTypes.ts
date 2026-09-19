@@ -217,6 +217,14 @@ export interface CadPointStyle {
   name: string;
   /** Ref into styleLibrary.pointSymbols. */
   markerSymbolId: CadPointSymbolId;
+  /**
+   * Phase 18N: block marker ref (into project.blockDefinitions). Mutually
+   * exclusive with markerSymbolId via validateCadPointStyle — when set (and
+   * known) the marker renders the block at the point (scale =
+   * markerScale, rotation = rotationDeg); markerSymbolId stays as the
+   * legacy fallback. Absent on legacy styles = unchanged rendering.
+   */
+  markerBlockDefinitionId?: string;
   /** Multiplier on the symbol radius (drawing units). Default 1. */
   markerScale?: number;
   /** Marker rotation in degrees. Default 0. */
@@ -349,6 +357,44 @@ export interface CadErrorEllipseEntity extends CadBaseEntity {
   thetaDeg: number;
 }
 
+/**
+ * Phase 18N: reusable block child shapes. Existing entity interfaces are
+ * reused verbatim; inside a block definition ids are block-local
+ * (namespaced to the definition) and MUST NOT collide with top-level
+ * entity ids. Text children MUST NOT carry a pointLabel binding.
+ */
+export type CadBlockChild =
+  | CadLineEntity
+  | CadPolylineEntity
+  | CadArcEntity
+  | CadPolygonEntity
+  | CadTextEntity;
+
+/** Phase 18N: named reusable geometry library entry (block-local space). */
+export interface CadBlockDefinition {
+  id: string;
+  name: string;
+  basePoint: { x: number; y: number };
+  entities: CadBlockChild[];
+  description?: string;
+}
+
+/**
+ * Phase 18N: block instance. rotationDeg follows the geometry convention
+ * (degrees CCW from +X, y-up); scaleX/scaleY must be finite and > 0.
+ */
+export interface CadBlockReferenceEntity extends CadBaseEntity {
+  type: 'block-reference';
+  blockDefinitionId: string;
+  x: number;
+  y: number;
+  rotationDeg: number;
+  scaleX: number;
+  scaleY: number;
+}
+
+export type CadBlockChildType = CadBlockChild['type'];
+
 export type CadEntity =
   | CadSurveyPointEntity
   | CadLineEntity
@@ -358,7 +404,8 @@ export type CadEntity =
   | CadPolygonEntity
   | CadParcelEntity
   | CadTextEntity
-  | CadErrorEllipseEntity;
+  | CadErrorEllipseEntity
+  | CadBlockReferenceEntity;
 
 export interface CadProjectMetadata {
   source: 'adjustment-result' | 'parsed-input';
@@ -441,6 +488,12 @@ export interface CadProject {
   sectionStyles?: CadSectionStyle[];
   /** Phase 18K: drawing-owned section view presentation objects. */
   sectionViews?: CadSectionView[];
+  /**
+   * Phase 18N: drawing-owned block definitions (reusable symbol library).
+   * Optional trailing table (additive, schema 2); clone keeps this last —
+   * project signatures are key-order-sensitive JSON.stringify.
+   */
+  blockDefinitions?: CadBlockDefinition[];
   entities: CadEntity[];
   cogoComputations: CadCogoComputation[];
   bounds: CadBounds | null;
@@ -533,7 +586,8 @@ export type CadGripHandleKind =
   | 'vertex'
   | 'arc-start'
   | 'arc-end'
-  | 'arc-radius';
+  | 'arc-radius'
+  | 'insertion';
 
 export interface CadGripHandle {
   id: string;

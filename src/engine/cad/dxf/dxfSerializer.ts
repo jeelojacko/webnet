@@ -1,4 +1,5 @@
 import type { DxfExportModel } from './dxfExportModel';
+import { isDxfNativeBlockName } from './dxfBlockExport';
 import { dxfLinetypeName, DXF_LINETYPE_CATALOG, isKnownDxfLinetype, nearestAci } from './dxfColorMap';
 import { emptyExportResult, finalizeExportResult, type ExportResult } from '../exportResult';
 
@@ -116,6 +117,51 @@ export const serializeDxfModelWithResult = (model: DxfExportModel): ExportResult
     out.push(pair(0, 'LAYER'), pair(2, layer), pair(70, layerFlags70(model, layer)), pair(62, String(layerAci(model, layer))), pair(6, layerLinetype(model, layer)));
   });
   out.push(pair(0, 'ENDTAB'), pair(0, 'ENDSEC'));
+  // Phase 18N R12 policy: native BLOCK/ENDBLK + INSERT when the block name
+  // is natively safe (the model builder sanitizes, so this is the norm).
+  // A hand-built model with an unsafe name omits + warns fail-closed —
+  // never faked, never silently exploded into wrong coordinates.
+  const nativeBlocks = (model.blocks ?? []).filter((block) => {
+    if (isDxfNativeBlockName(block.name)) return true;
+    result.warnings.push({ code: 'SKIPPED_ENTITY', message: `block ${JSON.stringify(block.name)} has an unsafe R12 name and was omitted` });
+    return false;
+  });
+  const nativeBlockNames = new Set(nativeBlocks.map((block) => block.name));
+  if (nativeBlocks.length > 0) {
+    out.push(pair(0, 'SECTION'), pair(2, 'BLOCKS'));
+    nativeBlocks.forEach((block) => {
+      out.push(pair(0, 'BLOCK'), pair(8, '0'), pair(2, block.name), pair(70, '0'), pair(10, '0'), pair(20, '0'), pair(30, '0'));
+      block.lines.forEach((line) => {
+        out.push(
+          pair(0, 'LINE'), pair(8, line.layer),
+          pair(10, fmt(line.from.x)), pair(20, fmt(line.from.y)), pair(30, '0'),
+          pair(11, fmt(line.to.x)), pair(21, fmt(line.to.y)), pair(31, '0'),
+        );
+      });
+      block.polylines.forEach((polyline) => {
+        out.push(pair(0, 'LWPOLYLINE'), pair(8, polyline.layer), pair(90, String(polyline.vertices.length)), pair(70, polyline.closed ? '1' : '0'));
+        polyline.vertices.forEach((vertex) => {
+          out.push(pair(10, fmt(vertex.x)), pair(20, fmt(vertex.y)));
+        });
+      });
+      block.arcs.forEach((arc) => {
+        out.push(
+          pair(0, 'ARC'), pair(8, arc.layer),
+          pair(10, fmt(arc.center.x)), pair(20, fmt(arc.center.y)), pair(30, '0'),
+          pair(40, fmt(arc.radius)), pair(50, fmt(arc.startDeg)), pair(51, fmt(arc.endDeg)),
+        );
+      });
+      block.texts.forEach((entry) => {
+        out.push(
+          pair(0, 'TEXT'), pair(8, entry.layer),
+          pair(10, fmt(entry.at.x)), pair(20, fmt(entry.at.y)), pair(30, '0'),
+          pair(40, fmt(entry.height)), pair(1, entry.text),
+        );
+      });
+      out.push(pair(0, 'ENDBLK'), pair(8, '0'));
+    });
+    out.push(pair(0, 'ENDSEC'));
+  }
   out.push(pair(0, 'SECTION'), pair(2, 'ENTITIES'));
   const colorOf = (layer: string, colorHex: string | undefined): string[] => {
     const aci = entityAci(model, layer, colorHex);
@@ -153,6 +199,21 @@ export const serializeDxfModelWithResult = (model: DxfExportModel): ExportResult
       pair(0, 'TEXT'), pair(8, entry.layer), ...colorOf(entry.layer, entry.colorHex), ...linetypeOf(entry.layer, entry.linetypeId), ...invisibleOf(entry.invisible),
       pair(10, fmt(entry.at.x)), pair(20, fmt(entry.at.y)), pair(30, '0'),
       pair(40, fmt(entry.height)), pair(1, entry.text),
+    );
+  });
+  // Native INSERTs (R12 supports BLOCKS + INSERT with 41/42/43 scales and
+  // 50 rotation). Inserts whose block was omitted above stay omitted + warn.
+  (model.inserts ?? []).forEach((insert) => {
+    if (!nativeBlockNames.has(insert.blockName)) {
+      result.warnings.push({ code: 'SKIPPED_ENTITY', message: `INSERT of omitted block ${JSON.stringify(insert.blockName)} skipped` });
+      return;
+    }
+    out.push(
+      pair(0, 'INSERT'), pair(8, insert.layer), ...colorOf(insert.layer, insert.colorHex), ...linetypeOf(insert.layer, insert.linetypeId), ...invisibleOf(insert.invisible),
+      pair(2, insert.blockName),
+      pair(10, fmt(insert.at.x)), pair(20, fmt(insert.at.y)), pair(30, '0'),
+      pair(41, fmt(insert.scaleX)), pair(42, fmt(insert.scaleY)), pair(43, '1'),
+      pair(50, fmt(insert.rotationDeg)),
     );
   });
   out.push(pair(0, 'ENDSEC'), pair(0, 'EOF'));

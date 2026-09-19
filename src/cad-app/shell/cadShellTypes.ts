@@ -1,4 +1,5 @@
 import type {
+  CadBlockDefinition,
   CadEntity,
   CadEntityId,
   CadLayer,
@@ -18,6 +19,19 @@ import type { CadProfileSnapshot } from './cadProfileSnapshot';
 import type { CadSectionSnapshot } from './cadSectionSnapshot';
 import type { ActiveCommandKey } from '../../hooks/surveyCad/useSurveyCadCommandTypes';
 import type { DraftSheet } from '../../engine/cad/cadDraftTypes';
+
+/**
+ * Phase 18N — block table summary for the Block Manager, Toolspace Blocks
+ * node, and insert flows. Full definitions ride along (tables are small);
+ * counts are precomputed so shell renderers stay dumb.
+ */
+export interface CadBlockSnapshot {
+  definitions: CadBlockDefinition[];
+  referenceCounts: Record<string, number>;
+  markerUseCounts: Record<string, number>;
+  selectedBlockReferenceIds: string[];
+  insertPick: { definitionId: string; scale: number; rotationDeg: number; repeat: boolean } | null;
+}
 
 export type { ActiveCommandKey };
 
@@ -171,6 +185,8 @@ export interface CadWorkspaceSnapshot {
   section: CadSectionSnapshot | null;
   /** Phase 18E — F2F catalog + provenance summary (derived, no duplicate state). */
   f2f: CadF2FSnapshot | null;
+  /** Phase 18N — block definitions + reference/marker counts + insert-pick state. */
+  blocks: CadBlockSnapshot | null;
   /** UI command keys with a live starter in the mounted workspace. */
   availableCommands: string[];
 }
@@ -288,6 +304,27 @@ export interface CadShellActions {
    * focus the Toolspace survey tab (points). F2F opens the drafting panel.
    */
   openSurveyManager: (_kind: SurveyManagerKind, _selectedId?: string) => void;
+  /**
+   * Phase 18N — open the Block Manager (optional tab focus). Absent =
+   * manager unavailable (embedded workspace without shell chrome).
+   */
+  openBlockManager?: (_tab?: 'blocks' | 'symbols' | 'insert') => void;
+  /** Phase 18N — commit one block table/reference op (undoable). */
+  runBlockOp?: (_op: import('../blocks/cadBlockUiCommands').CadBlockUiOp) => {
+    applied: boolean;
+    reason?: string;
+  };
+  /** Phase 18N — lazy-seed gate; returns definitions added (0 = already present). */
+  ensureBlockSymbols?: () => number;
+  /** Phase 18N — arm a one-shot viewport pick for INSERT (Esc cancels). */
+  armInsertPick?: (_definitionId: string, _scale: number, _rotationDeg: number, _repeat: boolean) => void;
+  /** Phase 18N — disarm the INSERT pick. */
+  cancelInsertPick?: () => void;
+  /**
+   * Phase 18N — explode the currently selected block references.
+   * Returns the number exploded (0 + alert when nothing eligible).
+   */
+  explodeSelectedBlocks?: () => number;
   /** Select every survey point in the drawing. */
   selectAllSurveyPoints: () => void;
   /** Select the survey points matching one group (engine-side membership). */

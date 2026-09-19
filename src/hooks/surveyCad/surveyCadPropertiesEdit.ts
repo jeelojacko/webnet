@@ -7,6 +7,7 @@ import {
 import type { CadEntityPropertyEditField } from '../../engine/cad/cadProperties';
 import { cadParseBearingDegrees, cadPointFromAzimuthDistance } from '../../engine/cad/cadGeometry';
 import { runCadCommand, type CadHistoryState } from '../../engine/cad/cadUndoRedo';
+import { commitBlockUiOp } from '../../cad-app/blocks/cadBlockUiCommands';
 import type { CadEntityId, CadProject } from '../../engine/cad/cadTypes';
 
 /** Stable rejection code for locked-source edits (Phase 18C spec §6). */
@@ -188,6 +189,42 @@ const runSurveyCadPropertiesEdit = ({
     return true;
   }
   if (
+    targetEntity.type === 'block-reference' &&
+    (field.kind === 'block-insertion-x' ||
+      field.kind === 'block-insertion-y' ||
+      field.kind === 'block-rotation' ||
+      field.kind === 'block-scale-x' ||
+      field.kind === 'block-scale-y')
+  ) {
+    // Phase 18N: rotation/scale/position edit through the block UI seam
+    // (undoable BLOCK_EDIT); locked sources reject at the adapter gate.
+    const numericValue = Number.parseFloat(trimmedValue);
+    if (!Number.isFinite(numericValue)) return false;
+    if (
+      (field.kind === 'block-scale-x' || field.kind === 'block-scale-y') &&
+      numericValue <= 0
+    ) {
+      return false;
+    }
+    const patch =
+      field.kind === 'block-insertion-x'
+        ? { x: numericValue }
+        : field.kind === 'block-insertion-y'
+          ? { y: numericValue }
+          : field.kind === 'block-rotation'
+            ? { rotationDeg: numericValue }
+            : field.kind === 'block-scale-x'
+              ? { scaleX: numericValue }
+              : { scaleY: numericValue };
+    let applied = false;
+    updateHistory((current) => {
+      const next = commitBlockUiOp(current, { kind: 'set-transform', entityId, ...patch });
+      applied = next.state !== current;
+      return next.state;
+    });
+    return applied;
+  }
+  if (
     field.kind === 'entity-layer' ||
     field.kind === 'entity-color' ||
     field.kind === 'entity-linetype' ||
@@ -209,7 +246,8 @@ type AppearanceField =
 /**
  * Phase 18C appearance edits: Layer move + ByLayer-or-explicit intent.
  * Undoable via EDIT_ENTITY; locked sources reject (false, LAYER_LOCKED
- * reason via describeCadEditBlock). No ByBlock: no block model exists.
+ * reason via describeCadEditBlock). No ByBlock: blockDefinitions exist as of
+ * 18N, but ByBlock intent stays deferred.
  */
 const editSurveyCadAppearanceField = ({
   entityId,

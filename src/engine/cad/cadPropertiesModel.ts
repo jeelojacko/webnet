@@ -22,7 +22,12 @@ export type CadEntityPropertyEditField =
   | { kind: 'entity-color' }
   | { kind: 'entity-linetype' }
   | { kind: 'entity-lineweight' }
-  | { kind: 'entity-transparency' };
+  | { kind: 'entity-transparency' }
+  | { kind: 'block-insertion-x' }
+  | { kind: 'block-insertion-y' }
+  | { kind: 'block-rotation' }
+  | { kind: 'block-scale-x' }
+  | { kind: 'block-scale-y' };
 
 export interface CadPropertiesEntityView {
   entityId: CadEntityId;
@@ -60,6 +65,7 @@ export const CAD_ENTITY_TYPE_LABELS: Record<CadEntity['type'], string> = {
   alignment: 'Alignments',
   text: 'Text',
   'error-ellipse': 'Error Ellipses',
+  'block-reference': 'Block References',
 };
 
 export const CAD_ENTITY_TYPE_SINGULAR_LABELS: Record<CadEntity['type'], string> = {
@@ -72,6 +78,7 @@ export const CAD_ENTITY_TYPE_SINGULAR_LABELS: Record<CadEntity['type'], string> 
   alignment: 'Alignment',
   text: 'Text',
   'error-ellipse': 'Error Ellipse',
+  'block-reference': 'Block Reference',
 };
 
 export const layerLabel = (layers: readonly CadLayer[], layerId: string): string =>

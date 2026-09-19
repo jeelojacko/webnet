@@ -43,6 +43,8 @@ import type { CadShellLink } from '../cad-app/shell/cadShellLink';
 import type { ActiveCommandKey } from '../hooks/surveyCad/useSurveyCadCommandTypes';
 import type { CadShellActions, CadWorkspaceSnapshot, SurveyManagerKind } from '../cad-app/shell/cadShellTypes';
 import { buildCadSurveySnapshot } from '../cad-app/shell/cadSurveySnapshot';
+import { buildCadBlockSnapshot } from '../cad-app/shell/cadBlockSnapshot';
+import { withBlockHoverTitles } from '../cad-app/blocks/cadBlockOverlay';
 import {
   buildCadSurfaceSnapshot,
   querySurfaceElevationText,
@@ -405,6 +407,12 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
   // Phase 18F — surface UI state (all session-only; meshes never persist).
   const [selectedSurfaceId, setSelectedSurfaceId] = useState<string | null>(null);
   const [surfacePick, setSurfacePick] = useState<{ surfaceId: string; mode: 'elevation' | 'slope' } | null>(null);
+  const [blockInsertPick, setBlockInsertPick] = useState<{
+    definitionId: string;
+    scale: number;
+    rotationDeg: number;
+    repeat: boolean;
+  } | null>(null);
   const [lastSurfaceInquiry, setLastSurfaceInquiry] = useState<CadSurfaceInquiry | null>(null);
   const [surfaceMeshSessions, setSurfaceMeshSessions] = useState<Record<string, string[]>>({});
   const surfaceCache = useMemo(
@@ -930,14 +938,16 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
     void surfaceSectionInputs.version;
     return buildSectionViewDisplayLayers(activeProject, sectionCache);
   }, [activeProject, sectionCache, surfaceSectionInputs]);
-  const displaySceneWithSections = useMemo(
-    () =>
-      filterCadDisplaySceneForViewport(activeProject, {
-        ...displaySceneWithProfiles,
-        sampleLineLayers,
-        sectionViewLayers,
-      }),
-    [activeProject, displaySceneWithProfiles, sampleLineLayers, sectionViewLayers],
+  const displaySceneWithSections = useMemo(() =>
+    filterCadDisplaySceneForViewport(activeProject, {
+      ...displaySceneWithProfiles,
+      // Phase 18N — refs render natively (persist slice); tag the
+      // expansion primitives with hover titles only.
+      primitives: withBlockHoverTitles(activeProject, displaySceneWithProfiles.primitives),
+      sampleLineLayers,
+      sectionViewLayers,
+    }),
+  [activeProject, displaySceneWithProfiles, sampleLineLayers, sectionViewLayers],
   );
   const reportedComputationEntities = useMemo(
     () =>
@@ -1278,6 +1288,7 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
       stationCount: stationIds.size,
       dependencyStatus: dependencySummary.status,
       survey: buildCadSurveySnapshot(activeProject, selectedEntityIds),
+      blocks: buildCadBlockSnapshot(activeProject, selectedEntityIds, blockInsertPick),
       f2f: buildCadF2FSnapshot(activeProject, activeCatalog, catalogStatus),
       surface: buildCadSurfaceSnapshot(activeProject, surfaceCache, selectedSurfaceId, {
         revisionIndex: surfaceRevisionIndex,
@@ -1322,11 +1333,28 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
     profileCache, surfaceProfileInputs, selectedProfileId, selectedProfileViewId,
     sectionCache, sectionService, surfaceSectionInputs,
     selectedSampleLineGroupId, selectedSampleLineId, selectedSectionViewId,
+    blockInsertPick,
   ]);
 
   useEffect(() => {
     if (shellLink && shellSnapshot) shellLink.publish(shellSnapshot);
   }, [shellLink, shellSnapshot]);
+
+  // Phase 18N — Esc ends the INSERT pick loop (capture: runs before the
+  // command dock input consumes it; typing targets keep their own Esc).
+  useEffect(() => {
+    if (!blockInsertPick) return;
+    const onKeyDown = (event: KeyboardEvent): void => {
+      if (event.key !== 'Escape') return;
+      const target = event.target as HTMLElement | null;
+      if (target && (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.tagName === 'SELECT')) {
+        return;
+      }
+      setBlockInsertPick(null);
+    };
+    document.addEventListener('keydown', onKeyDown, true);
+    return () => document.removeEventListener('keydown', onKeyDown, true);
+  }, [blockInsertPick]);
 
   useEffect(() => {
     if (!shellLink) return;
@@ -1687,6 +1715,26 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
         return cadWorkspace.runLayerCommand({ key: 'LAYER_SET_CURRENT', layerId });
       },
       openLayerManager: () => shellLink?.requestLayerManager?.(),
+      openBlockManager: (tab) => shellLink?.requestBlockManager?.(tab),
+      runBlockOp: (op) => cadWorkspace.runBlockOp(op),
+      ensureBlockSymbols: () => cadWorkspace.ensureBlockSymbols(),
+      armInsertPick: (definitionId, scale, rotationDeg, repeat) =>
+        setBlockInsertPick({ definitionId, scale, rotationDeg, repeat }),
+      cancelInsertPick: () => setBlockInsertPick(null),
+      explodeSelectedBlocks: () => {
+        const refs = activeProject.entities.filter(
+          (entity) => entity.type === 'block-reference' && selectedEntityIds.includes(entity.id),
+        );
+        if (refs.length === 0) {
+          window.alert('Select one or more block references first.');
+          return 0;
+        }
+        let exploded = 0;
+        refs.forEach((entity) => {
+          if (cadWorkspace.runBlockOp({ kind: 'explode', entityId: entity.id }).applied) exploded += 1;
+        });
+        return exploded;
+      },
       setSnapPreference: (kind, enabled) => cadWorkspace.setSnapPreference(kind, enabled),
       newDrawing: () => handleNewDrawing(),
       openDrawingFile: () => fileInputRef.current?.click(),
@@ -1962,8 +2010,23 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
           onParcelLayoutAutoPreviewStateChange={setParcelLayoutAutoPreviewState}
           onToggleParcelLabels={() => setShowParcelLabels((current) => !current)}
           cloneBounds={cloneBounds}
-          surfacePickActive={surfacePick != null || volumePick != null}
+          surfacePickActive={surfacePick != null || volumePick != null || blockInsertPick != null}
           onSurfacePickPoint={(worldPoint) => {
+            if (blockInsertPick) {
+              const outcome = cadWorkspace.runBlockOp({
+                kind: 'insert',
+                definitionId: blockInsertPick.definitionId,
+                x: worldPoint.x,
+                y: worldPoint.y,
+                rotationDeg: blockInsertPick.rotationDeg,
+                scale: blockInsertPick.scale,
+              });
+              // Repeat loop: stay armed for the next point; a rejected
+              // insert also stays armed (user adjusts scale/rotation).
+              // Esc (or Cancel) ends the loop.
+              if (outcome.applied && !blockInsertPick.repeat) setBlockInsertPick(null);
+              return;
+            }
             if (volumePick) {
               const text = describeVolumeDifference(volumePick.volumeId, worldPoint.x, worldPoint.y);
               if (text != null) {

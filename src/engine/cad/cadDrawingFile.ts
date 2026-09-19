@@ -42,6 +42,7 @@ import {
 } from './cadSectionTypes';
 import { backfillDrawingCatalog } from '../fieldToFinish/drawingCatalog';
 import { cloneFeatureCatalog } from '../fieldToFinish/featureCatalog';
+import { sanitizeCadBlockReferences } from './cadBlockPersistence';
 import { STARTER_CATALOG } from '../fieldToFinish/starterCatalog';
 import type { UnitsMode } from '../../types';
 
@@ -108,6 +109,8 @@ export const createBlankCadProject = ({
   sampleLineGroups: [],
   sectionStyles: backfillCadSectionStyles(undefined),
   sectionViews: [],
+  // Phase 18N: empty block library (trailing: key-order rule).
+  blockDefinitions: [],
 });
 
 export const createBlankCadDrawingDocument = ({
@@ -229,8 +232,15 @@ export const migrateSurveyCadStateToDrawing = ({
   // Key-order rule (persistence sync guard is JSON.stringify-sensitive):
   // surfaces/styles append AFTER the catalog backfill, matching
   // cloneCadProject's trailing position, or signatures never settle.
+  // Phase 18N: legacy imports own no blocks — backfill the empty library
+  // and drop dangling refs (never fail the open). Trailing like the rest.
+  const sanitizedBlocks = sanitizeCadBlockReferences(withStandards);
   const project = {
     ...withStandards,
+    entities: sanitizedBlocks.project.entities,
+    ...(sanitizedBlocks.project.pointStyles != null
+      ? { pointStyles: sanitizedBlocks.project.pointStyles }
+      : {}),
     surfaces: cloneCadSurfaces(backfillCadSurfaces(withStandards.surfaces)),
     surfaceStyles: cloneCadSurfaceStyles(backfillCadSurfaceStyles(withStandards.surfaceStyles)),
     volumeSurfaces: cloneCadVolumeSurfaces(backfillVolumeSurfaces(withStandards.volumeSurfaces)),
@@ -247,6 +257,7 @@ export const migrateSurveyCadStateToDrawing = ({
     ).map(clearSectionCacheOnLoad),
     sectionStyles: cloneCadSectionStyles(backfillCadSectionStyles(withStandards.sectionStyles)),
     sectionViews: cloneCadSectionViews(backfillCadSectionViews(withStandards.sectionViews)),
+    blockDefinitions: sanitizedBlocks.project.blockDefinitions,
   };
   return {
     kind: 'webnet-cad-drawing',
@@ -260,6 +271,8 @@ export const migrateSurveyCadStateToDrawing = ({
       ...project,
       name,
       bounds: project.bounds ?? buildCadBounds(project.entities),
+      // Phase 18N: legacy imports own no blocks (trailing: key-order rule).
+      blockDefinitions: [],
     },
     parcelLayout: cloneParcelLayout(state.parcelLayout),
     showParcelLabels: state.showParcelLabels ?? true,
@@ -301,8 +314,15 @@ const sanitizeCadDrawingDocument = (value: unknown): CadDrawingDocument | undefi
     // seed styles; meshes never persist so any stored cached revision is
     // dropped (reopen derives UNBUILT, never false CURRENT). Trailing
     // position matches cloneCadProject (signature key-order-sensitive).
+    // 18N (same rule): legacy drawings get an empty block library;
+    // dangling refs are dropped, never left dangling.
+    const sanitizedBlocks = sanitizeCadBlockReferences(withStandards);
     const project = {
       ...withStandards,
+      entities: sanitizedBlocks.project.entities,
+      ...(sanitizedBlocks.project.pointStyles != null
+        ? { pointStyles: sanitizedBlocks.project.pointStyles }
+        : {}),
       surfaces: backfillCadSurfaces(withStandards.surfaces).map(clearSurfaceBuildCacheOnLoad),
       surfaceStyles: cloneCadSurfaceStyles(backfillCadSurfaceStyles(withStandards.surfaceStyles)),
       volumeSurfaces: cloneCadVolumeSurfaces(backfillVolumeSurfaces(withStandards.volumeSurfaces)),
@@ -319,6 +339,7 @@ const sanitizeCadDrawingDocument = (value: unknown): CadDrawingDocument | undefi
       ).map(clearSectionCacheOnLoad),
       sectionStyles: cloneCadSectionStyles(backfillCadSectionStyles(withStandards.sectionStyles)),
       sectionViews: cloneCadSectionViews(backfillCadSectionViews(withStandards.sectionViews)),
+      blockDefinitions: sanitizedBlocks.project.blockDefinitions,
     };
     const draft = cloned.draft
       ? { ...cloned.draft, layers: backfillCadLayerList(cloned.draft.layers) }

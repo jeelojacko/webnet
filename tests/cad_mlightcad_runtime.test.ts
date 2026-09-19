@@ -139,6 +139,8 @@ const appendRuntimeEntity = (
         Math.PI * 2,
       );
       break;
+    case 'block-reference':
+      throw new Error('block-reference is not supported by the mlightcad test harness');
   }
 
   runtimeEntity.objectId = entity.id;
