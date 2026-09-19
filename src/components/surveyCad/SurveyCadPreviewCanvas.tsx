@@ -394,7 +394,7 @@ const SurveyCadPreviewCanvas: React.FC<SurveyCadPreviewCanvasProps> = ({
           layers: scene.sampleLineLayers,
           selectedLineId: selectedSampleLineId,
           project,
-          pickActive: false,
+          pickActive: commandPointInputActive,
           onSampleLineClick: (groupId, lineId) => onSampleLineClick?.(groupId, lineId),
         })
         : null}
@@ -403,7 +403,7 @@ const SurveyCadPreviewCanvas: React.FC<SurveyCadPreviewCanvasProps> = ({
           layers: scene.sectionViewLayers,
           selectedViewId: selectedSectionViewId,
           project,
-          pickActive: false,
+          pickActive: commandPointInputActive,
           onSectionViewClick: (viewId) => onSectionViewClick?.(viewId),
         })
         : null}

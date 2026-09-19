@@ -28,7 +28,11 @@ export const renderSampleLineLayers = ({
 }): React.ReactNode => (
   <>
     {layers.map((layer) => (
-      <g key={`sample-group:${layer.groupId}`} data-sample-group-layer={layer.groupId}>
+      <g
+        key={`sample-group:${layer.groupId}`}
+        data-sample-group-layer={layer.groupId}
+        pointerEvents={pickActive ? 'none' : undefined}
+      >
         {layer.lines.map((line) => {
           if (!line.d) return null;
           const selected = line.lineId === selectedLineId;
@@ -46,7 +50,7 @@ export const renderSampleLineLayers = ({
                   event.stopPropagation();
                   onSampleLineClick(layer.groupId, line.lineId);
                 }}
-                pointerEvents="stroke"
+                pointerEvents={pickActive ? 'none' : 'stroke'}
               />
               {line.tickD ? (
                 <path
@@ -100,6 +104,7 @@ export const renderSectionViewLayers = ({
           data-section-view-layer={layer.viewId}
           data-section-view-stale={layer.stale ? 'true' : undefined}
           className={pickActive ? 'cursor-crosshair' : 'cursor-pointer'}
+          pointerEvents={pickActive ? 'none' : undefined}
           onClick={(event) => {
             event.stopPropagation();
             onSectionViewClick(layer.viewId);
@@ -151,7 +156,7 @@ export const renderSectionViewLayers = ({
               stroke={selected ? '#fbbf24' : entry.color}
               strokeWidth={selected ? 2.4 : 1.6}
               data-section-view-path={entry.surfaceId}
-              pointerEvents="stroke"
+              pointerEvents={pickActive ? 'none' : 'stroke'}
             />
           ))}
           {layer.offsetTicks.map((tick, index) => {
