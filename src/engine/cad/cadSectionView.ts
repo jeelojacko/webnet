@@ -45,6 +45,8 @@ export interface CadSampleLinePlanLine {
   tickD: string;
   labelX: number;
   labelY: number;
+  /** False when the label budget is exhausted (geometry still renders). */
+  labelShown: boolean;
   centerX: number;
   centerY: number;
   /** True when raw sits inside an equation gap: label honest, no geometry. */
@@ -130,6 +132,7 @@ export const buildSampleLineDisplayLayers = (
           tickD: '',
           labelX: 0,
           labelY: 0,
+          labelShown: false,
           centerX: 0,
           centerY: 0,
           ambiguousLabel: alignment != null && display == null,
@@ -146,6 +149,7 @@ export const buildSampleLineDisplayLayers = (
           tickD: '',
           labelX: 0,
           labelY: 0,
+          labelShown: false,
           centerX: 0,
           centerY: 0,
           ambiguousLabel: false,
@@ -181,8 +185,9 @@ export const buildSampleLineDisplayLayers = (
         d: `M${left.x} ${left.y}L${right.x} ${right.y}`,
         tickD,
         // Labels are budget-capped for hundreds of lines; geometry never is.
-        labelX: showLabel ? placed.center.x : 0,
-        labelY: showLabel ? placed.center.y : 0,
+        labelX: placed.center.x,
+        labelY: placed.center.y,
+        labelShown: showLabel,
         centerX: placed.center.x,
         centerY: placed.center.y,
         ambiguousLabel: false,

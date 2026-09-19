@@ -57,7 +57,7 @@ export const renderSampleLineLayers = ({
                   pointerEvents="none"
                 />
               ) : null}
-              {line.label && line.labelX !== 0 && line.labelY !== 0 ? (
+              {line.labelShown ? (
                 <text
                   x={labelPoint.x}
                   y={labelPoint.y}
