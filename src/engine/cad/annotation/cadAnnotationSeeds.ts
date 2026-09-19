@@ -13,11 +13,11 @@ export const seedProfessionalTextStyles = (): CadTextStyle[] => [
 ];
 
 export const seedDimensionStyles = (): CadDimensionStyle[] => [
-  { id: 'std-500', name: 'Standard-500', textStyleId: 'std-model-2_5', arrowBlockDefinitionId: 'arrow-closed', arrowSize: 2.5, arrowSizeMode: 'model', textGap: 1, extensionOffset: 1, extensionOvershoot: 1, decimalPrecision: 3 },
+  { id: 'std-500', name: 'Standard-500', textStyleId: 'std-model-2_5', arrowBlockDefinitionId: 'webnet-annotation-arrowhead-closed-arrow', arrowSize: 2.5, arrowSizeMode: 'model', textGap: 1, extensionOffset: 1, extensionOvershoot: 1, decimalPrecision: 3 },
 ];
 
 export const seedLeaderStyles = (): CadLeaderStyle[] => [
-  { id: 'std-leader', name: 'Standard-Leader', textStyleId: 'std-model-2_5', arrowBlockDefinitionId: 'arrow-closed', arrowSize: 2.5, arrowSizeMode: 'model', landingLength: 5, textGap: 1 },
+  { id: 'std-leader', name: 'Standard-Leader', textStyleId: 'std-model-2_5', arrowBlockDefinitionId: 'webnet-annotation-arrowhead-closed-arrow', arrowSize: 2.5, arrowSizeMode: 'model', landingLength: 5, textGap: 1 },
 ];
 
 export const seedBearingLabelStyles = (): CadBearingLabelStyle[] => [

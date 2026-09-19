@@ -311,6 +311,23 @@ describe('cad annotation persistence (18O)', () => {
       'webnet-annotation-arrowhead-architectural-tick',
     ]);
   });
+
+  it('fresh blank drawing default dimension + leader styles resolve to seeded arrowhead blocks', () => {
+    const project = createBlankCadDrawingDocument({ name: 'Fresh', units: 'm' }).project;
+    const library = new Set((project.blockDefinitions ?? []).map((definition) => definition.id));
+    for (const style of project.dimensionStyles ?? []) {
+      expect(library.has(style.arrowBlockDefinitionId)).toBe(true);
+    }
+    for (const style of project.leaderStyles ?? []) {
+      expect(library.has(style.arrowBlockDefinitionId)).toBe(true);
+    }
+    expect(project.dimensionStyles?.[0]?.arrowBlockDefinitionId).toBe(
+      'webnet-annotation-arrowhead-closed-arrow',
+    );
+    expect(project.leaderStyles?.[0]?.arrowBlockDefinitionId).toBe(
+      'webnet-annotation-arrowhead-closed-arrow',
+    );
+  });
 });
 
 describe('cad annotation sanitize (18O)', () => {
