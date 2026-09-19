@@ -70,6 +70,7 @@ export const SampleLineGroupsNode: React.FC<{
                             key={line.id}
                             className="cad-shell-tree-row"
                             data-cad-sample-line={line.id}
+                            data-cad-sample-line-status={worst}
                             data-selected={lineSelected ? 'true' : undefined}
                             title={`${line.name} — L ${line.leftWidth} R ${line.rightWidth} skew ${line.skewDeg} — ${worst}`}
                           >
