@@ -69,6 +69,7 @@ import {
   surveyStyleTableCommand,
 } from './cadTransactionsSurveyDisplay';
 import { surfaceCommandDefinitions } from './cadTransactionsSurfaceCommands';
+import { blockCommandDefinitions } from './cadTransactionsBlockCommands';
 import { landxmlImportCommand } from './cadTransactionsLandxmlImport';
 import { volumeCommandDefinitions } from './cadTransactionsVolumeCommands';
 import { profileCommandDefinitions } from './cadTransactionsProfileCommands';
@@ -613,6 +614,15 @@ export const CAD_COMMAND_REGISTRY: Record<CadCommandKey, CadCommandDefinition<Ca
   SECTION_VIEW_CREATE: sectionCommandDefinitions.SECTION_VIEW_CREATE as CadCommandDefinition<CadCommand>,
   SECTION_VIEW_UPDATE: sectionCommandDefinitions.SECTION_VIEW_UPDATE as CadCommandDefinition<CadCommand>,
   SECTION_VIEW_DELETE: sectionCommandDefinitions.SECTION_VIEW_DELETE as CadCommandDefinition<CadCommand>,
+  BLOCK_SEED: blockCommandDefinitions.BLOCK_SEED as CadCommandDefinition<CadCommand>,
+  BLOCK_EDIT: blockCommandDefinitions.BLOCK_EDIT as CadCommandDefinition<CadCommand>,
+  BLOCK_CREATE: blockCommandDefinitions.BLOCK_CREATE as CadCommandDefinition<CadCommand>,
+  BLOCK_INSERT: blockCommandDefinitions.BLOCK_INSERT as CadCommandDefinition<CadCommand>,
+  BLOCK_EXPLODE: blockCommandDefinitions.BLOCK_EXPLODE as CadCommandDefinition<CadCommand>,
+  BLOCK_REDEFINE: blockCommandDefinitions.BLOCK_REDEFINE as CadCommandDefinition<CadCommand>,
+  BLOCK_RENAME: blockCommandDefinitions.BLOCK_RENAME as CadCommandDefinition<CadCommand>,
+  BLOCK_DUPLICATE: blockCommandDefinitions.BLOCK_DUPLICATE as CadCommandDefinition<CadCommand>,
+  BLOCK_DELETE: blockCommandDefinitions.BLOCK_DELETE as CadCommandDefinition<CadCommand>,
 };
 
 export const createCadIdleCommandState = createIdleCommandState;

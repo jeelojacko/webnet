@@ -25,6 +25,7 @@ import { resolveCadEntityAppearance } from './cadAppearance';
 import type { LineweightDisplayMode } from './cadViewportAppearance';
 import { displayedStrokeWidthPx, opacityFromTransparency } from './cadViewportAppearance';
 import { strokeWidth, surveyPointMarker, textFontSize } from './cadRendererStyle';
+import { expandedBlockPrimitives } from './cadRendererBlocks';
 import type { CadSurfaceCache } from './cadSurfaceCache';
 import { buildSurfaceDisplayLayers, type SurfaceContourDisplayInput } from './cadSurfaceView';
 import { buildVolumeDisplayLayers } from './cadVolumeView';
@@ -413,6 +414,21 @@ const toPrimitives = (
       // No Display style: no marker primitive. The entity still exists and
       // stays selectable via Toolspace; only the marker is omitted.
       if (marker.hidden) return [];
+      // Phase 18N block-backed marker: expand the definition at the point
+      // (style scale/rotation); unknown definitions fall back to symbol.
+      if (marker.blockDefinitionId != null) {
+        const scale = marker.markerScale ?? 1;
+        const expanded = expandedBlockPrimitives(
+          project,
+          ctx,
+          marker.blockDefinitionId,
+          { x: entity.x, y: entity.y, rotationDeg: marker.rotationDeg ?? 0, scaleX: scale, scaleY: scale },
+          entity,
+          `primitive:${entity.id}:marker`,
+          (child) => toPrimitives(project, ctx, child),
+        );
+        if (expanded != null) return expanded;
+      }
       return [{
         kind: 'point',
         id: `primitive:${entity.id}`,
@@ -568,8 +584,18 @@ const toPrimitives = (
       }];
     }
     case 'block-reference':
-      // 18N engine slice: no renderer yet (later slice expands via cadBlocks).
-      return [];
+      // Phase 18N: expand to world-space children (single source with
+      // snap/bounds/export). Dangling refs render nothing (load sanitize
+      // drops them; this is the belt-and-suspenders fallback).
+      return expandedBlockPrimitives(
+        project,
+        ctx,
+        entity.blockDefinitionId,
+        { x: entity.x, y: entity.y, rotationDeg: entity.rotationDeg, scaleX: entity.scaleX, scaleY: entity.scaleY },
+        entity,
+        `primitive:${entity.id}`,
+        (child) => toPrimitives(project, ctx, child),
+      ) ?? [];
   }
 };
 

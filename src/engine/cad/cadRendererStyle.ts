@@ -30,6 +30,17 @@ export interface SurveyPointMarker {
   shape: CadPointSymbolShape | undefined;
   /** True only for the No Display style: emit NO point primitive. */
   hidden: boolean;
+  /**
+   * Phase 18N: block marker path. Set only when the effective style names
+   * a KNOWN block definition — the renderer expands it at the point
+   * (scale = markerScale, rotation = rotationDeg) instead of the symbol
+   * shape. Unknown refs fall back to the symbol path (never dangling).
+   */
+  blockDefinitionId?: string;
+  /** Multiplier applied to the block expansion (style markerScale). */
+  markerScale?: number;
+  /** CCW degrees applied to the block expansion (style rotationDeg). */
+  rotationDeg?: number;
 }
 
 /**
@@ -65,6 +76,29 @@ export const surveyPointMarker = (
     return { radius: pointRadius(project, entity), shape, hidden: false };
   }
   if (!style.displayMarker) return { radius: 0, shape: undefined, hidden: true };
+  // Phase 18N block marker path: known definition wins; the symbol stays
+  // as the radius/shape fallback underneath. F2F flows through this same
+  // resolver (resolveSurveyPointDisplay → effective style id), so catalog
+  // styles need no parallel mapping — survey points stay
+  // CadSurveyPointEntity, never converted to inserts.
+  const markerScale = style.markerScale ?? 1;
+  const rotationDeg = style.rotationDeg ?? 0;
+  if (
+    style.markerBlockDefinitionId != null &&
+    (project.blockDefinitions ?? []).some((definition) => definition.id === style.markerBlockDefinitionId)
+  ) {
+    const symbol = project.styleLibrary.pointSymbols.find(
+      (entry) => entry.id === style.markerSymbolId,
+    );
+    return {
+      radius: (symbol?.radius ?? fallbackRadius) * markerScale,
+      shape: symbol?.shape,
+      hidden: false,
+      blockDefinitionId: style.markerBlockDefinitionId,
+      markerScale,
+      rotationDeg,
+    };
+  }
   const symbol = project.styleLibrary.pointSymbols.find(
     (entry) => entry.id === style.markerSymbolId,
   );

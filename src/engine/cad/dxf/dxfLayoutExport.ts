@@ -252,6 +252,7 @@ const modelBounds = (model: DxfExportModel): { minX: number; minY: number; maxX:
     push(arc.center.x + arc.radius, arc.center.y + arc.radius);
   });
   model.texts.forEach((entry) => push(entry.at.x, entry.at.y));
+  (model.inserts ?? []).forEach((insert) => push(insert.at.x, insert.at.y));
   if (xs.length === 0) return { minX: 0, minY: 0, maxX: 1000, maxY: 1000 };
   return {
     minX: Math.min(...xs),
@@ -343,6 +344,10 @@ const buildDxfLayoutInner = (args: BuildDxfLayoutArgs): DxfLayoutInner => {
   const paperRecords = args.draft.sheets.map((_, index) =>
     ({ handle: takeHandle(), name: index === 0 ? '*Paper_Space' : `*Paper_Space${index - 1}` }));
   const titleRecords = layoutNames.map((name) => ({ handle: takeHandle(), name: `TB_${name}` }));
+  // Phase 18N: one BLOCK_RECORD per native model-space block (R2000
+  // model-space block table; handles stay deterministic — no-block
+  // drawings take no handles here, so existing goldens are untouched).
+  const modelBlockRecords = (model.blocks ?? []).map((block) => ({ handle: takeHandle(), name: block.name }));
   const rootDict = takeHandle();
   const layoutDict = takeHandle();
   const modelLayout = takeHandle();
@@ -350,7 +355,7 @@ const buildDxfLayoutInner = (args: BuildDxfLayoutArgs): DxfLayoutInner => {
 
   const blockBegin = new Map<string, string>();
   const blockEnd = new Map<string, string>();
-  [...paperRecords, ...titleRecords].forEach((record) => {
+  [...paperRecords, ...titleRecords, ...modelBlockRecords].forEach((record) => {
     blockBegin.set(record.handle, takeHandle());
     blockEnd.set(record.handle, takeHandle());
   });
@@ -446,6 +451,21 @@ const buildDxfLayoutInner = (args: BuildDxfLayoutArgs): DxfLayoutInner => {
       pair(100, 'AcDbText'),
       pair(10, fmt(entry.at.x)), pair(20, fmt(entry.at.y)), pair(30, '0'),
       pair(40, fmt(entry.height)), pair(1, cleanText(entry.text)), pair(7, 'Standard'),
+    ]);
+  });
+  // Phase 18N: native model-space INSERTs (R2000 carries 41/42/43 scales
+  // + 50 rotation; every referenced block gets a BLOCK_RECORD below).
+  (model.inserts ?? []).forEach((insert) => {
+    emitModelEntity([
+      pair(0, 'INSERT'), pair(5, takeHandle()), pair(330, modelOwner),
+      pair(100, 'AcDbEntity'), pair(8, insert.layer),
+      ...modelPaint(insert.layer, insert.colorHex, insert.linetypeId, insert.lineweightMm),
+      ...invisible60(insert.invisible),
+      pair(100, 'AcDbInsert'),
+      pair(2, insert.blockName),
+      pair(10, fmt(insert.at.x)), pair(20, fmt(insert.at.y)), pair(30, '0'),
+      pair(41, fmt(insert.scaleX)), pair(42, fmt(insert.scaleY)), pair(43, '1'),
+      pair(50, fmt(normDeg(insert.rotationDeg))),
     ]);
   });
   const modelEntities = out.splice(0, out.length);
@@ -631,7 +651,7 @@ const buildDxfLayoutInner = (args: BuildDxfLayoutArgs): DxfLayoutInner => {
     pair(2, 'Standard'), pair(70, '0'),
     pair(0, 'ENDTAB'),
     pair(0, 'TABLE'), pair(2, 'BLOCK_RECORD'), pair(5, blockRecordTable), pair(330, '0'),
-    pair(100, 'AcDbSymbolTable'), pair(70, String(2 + paperRecords.length + titleRecords.length)),
+    pair(100, 'AcDbSymbolTable'), pair(70, String(2 + paperRecords.length + titleRecords.length + modelBlockRecords.length)),
     pair(0, 'BLOCK_RECORD'), pair(5, modelSpaceRecord), pair(330, blockRecordTable),
     pair(100, 'AcDbSymbolTableRecord'), pair(100, 'AcDbBlockTableRecord'),
     pair(2, '*Model_Space'), pair(70, '0'), pair(280, '1'), pair(281, '0'), pair(340, modelLayout),
@@ -645,6 +665,13 @@ const buildDxfLayoutInner = (args: BuildDxfLayoutArgs): DxfLayoutInner => {
     );
   });
   titleRecords.forEach((record) => {
+    dxf.push(
+      pair(0, 'BLOCK_RECORD'), pair(5, record.handle), pair(330, blockRecordTable),
+      pair(100, 'AcDbSymbolTableRecord'), pair(100, 'AcDbBlockTableRecord'),
+      pair(2, record.name), pair(70, '0'), pair(280, '1'), pair(281, '0'),
+    );
+  });
+  modelBlockRecords.forEach((record) => {
     dxf.push(
       pair(0, 'BLOCK_RECORD'), pair(5, record.handle), pair(330, blockRecordTable),
       pair(100, 'AcDbSymbolTableRecord'), pair(100, 'AcDbBlockTableRecord'),
@@ -682,6 +709,50 @@ const buildDxfLayoutInner = (args: BuildDxfLayoutArgs): DxfLayoutInner => {
       titleBodies[titleIndex] as string[],
     );
     titleIndex += 1;
+  });
+  // Phase 18N: model-space block bodies (base-shifted children, BYLAYER).
+  (model.blocks ?? []).forEach((block, blockIndex) => {
+    const record = modelBlockRecords[blockIndex] as { handle: string; name: string };
+    const body: string[] = [];
+    block.lines.forEach((line) => {
+      body.push(
+        pair(0, 'LINE'), pair(5, takeHandle()), pair(330, record.handle),
+        pair(100, 'AcDbEntity'), pair(8, line.layer),
+        pair(100, 'AcDbLine'),
+        pair(10, fmt(line.from.x)), pair(20, fmt(line.from.y)), pair(30, '0'),
+        pair(11, fmt(line.to.x)), pair(21, fmt(line.to.y)), pair(31, '0'),
+      );
+    });
+    block.polylines.forEach((polyline) => {
+      body.push(
+        pair(0, 'LWPOLYLINE'), pair(5, takeHandle()), pair(330, record.handle),
+        pair(100, 'AcDbEntity'), pair(8, polyline.layer),
+        pair(100, 'AcDbPolyline'),
+        pair(90, String(polyline.vertices.length)), pair(70, polyline.closed ? '1' : '0'),
+      );
+      polyline.vertices.forEach((vertex) => {
+        body.push(pair(10, fmt(vertex.x)), pair(20, fmt(vertex.y)));
+      });
+    });
+    block.arcs.forEach((arc) => {
+      body.push(
+        pair(0, 'ARC'), pair(5, takeHandle()), pair(330, record.handle),
+        pair(100, 'AcDbEntity'), pair(8, arc.layer),
+        pair(100, 'AcDbArc'),
+        pair(10, fmt(arc.center.x)), pair(20, fmt(arc.center.y)), pair(30, '0'),
+        pair(40, fmt(arc.radius)), pair(50, fmt(arc.startDeg)), pair(51, fmt(arc.endDeg)),
+      );
+    });
+    block.texts.forEach((entry) => {
+      body.push(
+        pair(0, 'TEXT'), pair(5, takeHandle()), pair(330, record.handle),
+        pair(100, 'AcDbEntity'), pair(8, entry.layer),
+        pair(100, 'AcDbText'),
+        pair(10, fmt(entry.at.x)), pair(20, fmt(entry.at.y)), pair(30, '0'),
+        pair(40, fmt(entry.height)), pair(1, cleanText(entry.text)), pair(7, 'Standard'),
+      );
+    });
+    emitBlock(record.name, record.handle, body);
   });
   dxf.push(pair(0, 'ENDSEC'));
 

@@ -41,6 +41,7 @@ import {
 import { cloneFieldToFinishSettings } from '../fieldToFinish/catalogIo';
 import { backfillDrawingCatalog } from '../fieldToFinish/drawingCatalog';
 import { cloneFeatureCatalog } from '../fieldToFinish/featureCatalog';
+import { sanitizeCadBlockReferences } from './cadBlockPersistence';
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === 'object' && value != null && !Array.isArray(value);
@@ -301,12 +302,18 @@ export const sanitizeSurveyCadPersistedState = (
       labelStyles: cloneCadPointLabelStyles(backfillCadPointLabelStyles(migrated.labelStyles)),
       pointGroups: cloneCadPointGroups(backfillCadPointGroups(migrated.pointGroups)),
     }));
+    const sanitizedBlocks = sanitizeCadBlockReferences(withStandards);
     return {
       ...cloned,
       // Trailing surfaces/styles position matches cloneCadProject
-      // (persistence signatures are key-order-sensitive).
+      // (persistence signatures are key-order-sensitive). 18N: same
+      // trailing rule for the block library; dangling refs dropped.
       project: {
         ...withStandards,
+        entities: sanitizedBlocks.project.entities,
+        ...(sanitizedBlocks.project.pointStyles != null
+          ? { pointStyles: sanitizedBlocks.project.pointStyles }
+          : {}),
         surfaces: backfillCadSurfaces(withStandards.surfaces).map(clearSurfaceBuildCacheOnLoad),
         surfaceStyles: cloneCadSurfaceStyles(backfillCadSurfaceStyles(withStandards.surfaceStyles)),
         volumeSurfaces: cloneCadVolumeSurfaces(backfillVolumeSurfaces(withStandards.volumeSurfaces)),
@@ -321,6 +328,7 @@ export const sanitizeSurveyCadPersistedState = (
         ),
         sectionStyles: cloneCadSectionStyles(backfillCadSectionStyles(withStandards.sectionStyles)),
         sectionViews: cloneCadSectionViews(backfillCadSectionViews(withStandards.sectionViews)),
+        blockDefinitions: sanitizedBlocks.project.blockDefinitions,
       },
     };
   } catch {

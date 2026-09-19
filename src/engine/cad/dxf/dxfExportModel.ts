@@ -9,6 +9,22 @@ import {
 } from '../exportResult';
 import { resolveEffectiveColor as resolveColor } from '../resolveEffectiveColor';
 import { materializeBoundPointLabel } from '../cadPointLabelStyles';
+import {
+  blockReferenceInsert,
+  buildDxfBlockTable,
+  collectReferencedBlockIds,
+} from './dxfBlockExport';
+import type { DxfBlockEntry, DxfInsert } from './dxfBlockExport';
+export type {
+  DxfBlockChildArc,
+  DxfBlockChildLine,
+  DxfBlockChildPolyline,
+  DxfBlockChildText,
+  DxfBlockEntry,
+  DxfInsert,
+} from './dxfBlockExport';
+import { findBlockDefinition, normalizeBlockScales } from '../cadBlocks';
+import { surveyPointMarker } from '../cadRendererStyle';
 
 // Adapter boundary: the drafting/document core never becomes DXF-shaped.
 // This model is the only DXF-aware shape, built fresh per export and thrown
@@ -40,6 +56,8 @@ interface DxfEntryStyle {
   sourceId?: string;
 }
 
+export type DxfInsertStyled = DxfInsert & DxfEntryStyle;
+
 export interface DxfExportModel {
   layers: string[];
   points: Array<{ layer: string; at: DxfPoint } & DxfEntryStyle>;
@@ -47,6 +65,16 @@ export interface DxfExportModel {
   polylines: Array<{ layer: string; vertices: DxfPoint[]; closed: boolean } & DxfEntryStyle>;
   arcs: Array<{ layer: string; center: DxfPoint; radius: number; startDeg: number; endDeg: number } & DxfEntryStyle>;
   texts: Array<{ layer: string; at: DxfPoint; height: number; text: string } & DxfEntryStyle>;
+  /**
+   * Phase 18N native block table (referenced definitions only). Children
+   * ride base-shifted (stored minus definition.basePoint) with BLOCK base
+   * (0,0), so INSERT world = insert + R·S·local matches the engine
+   * transform exactly. Children are BYLAYER (layer only): instance-level
+   * INSERT carries the reference's explicit style.
+   */
+  blocks?: DxfBlockEntry[];
+  /** Native INSERTs: block references + block-backed point markers. */
+  inserts?: DxfInsertStyled[];
   /** Effective layer hex colors (shared-resolver output). Absent = default. */
   layerColors?: Record<string, string>;
   /** Effective layer linetype ids. Absent = continuous. */
@@ -108,6 +136,8 @@ export const buildDxfExportModelWithResult = (args: BuildDxfModelArgs): ExportRe
     polylines: [],
     arcs: [],
     texts: [],
+    blocks: [],
+    inserts: [],
     layerColors: {},
     layerLinetypes: {},
     layerLineweights: {},
@@ -164,6 +194,16 @@ export const buildDxfExportModelWithResult = (args: BuildDxfModelArgs): ExportRe
     return out;
   };
   const sorted = [...args.project.entities].sort((a, b) => (a.id < b.id ? -1 : a.id > b.id ? 1 : 0));
+  // Phase 18N native block table (dxfBlockExport.ts): referenced
+  // definitions only, DXF-sanitized + deduped, so serializers stay native.
+  const blockTable = buildDxfBlockTable({
+    project: args.project,
+    referencedIds: collectReferencedBlockIds(args.project, sorted),
+    registerLayer,
+    warn,
+  });
+  (model.blocks ??= []).push(...blockTable.blocks);
+  const blockNameById = blockTable.names;
   sorted.forEach((entity) => {
     // DXF retain policy (spec §6): every entity rides, including OFF /
     // frozen / non-printable layers and individually hidden entities —
@@ -176,14 +216,39 @@ export const buildDxfExportModelWithResult = (args: BuildDxfModelArgs): ExportRe
           result.omittedEntityIds.push(entity.id);
           break;
         }
+        // Phase 18N: block-backed markers ride as native INSERT (exact —
+        // no POINT_SYMBOL_APPROXIMATED warning); the station label TEXT
+        // rides alongside exactly as before.
+        const marker = surveyPointMarker(args.project, entity);
+        const markerBlockName = marker.blockDefinitionId != null
+          ? blockNameById.get(marker.blockDefinitionId)
+          : undefined;
+        if (marker.blockDefinitionId != null && markerBlockName != null) {
+          const scale = marker.markerScale ?? 1;
+          (model.inserts ??= []).push({
+            ...blockReferenceInsert(
+              registerLayer(entity.layerId),
+              markerBlockName,
+              marker.blockDefinitionId,
+              { x: entity.x, y: entity.y },
+              marker.rotationDeg ?? 0,
+              scale,
+              scale,
+            ),
+            ...entryStyle(entity),
+          });
+        } else {
         // Bounded symbol policy (§§33,34): every point rides as POINT (+ its
         // station label as TEXT, as before) regardless of its display
         // symbol — no block library. The approximation is always warned.
         model.points.push({ layer: registerLayer(entity.layerId), at: { x: entity.x, y: entity.y }, ...entryStyle(entity) });
+        }
         model.texts.push({ layer: registerLayer(entity.layerId), at: { x: entity.x, y: entity.y }, height: 1, text: String(entity.stationId), ...entryStyle(entity) });
         result.exportedEntityIds.push(entity.id);
-        result.approximatedEntityIds.push(entity.id);
-        warn({ code: 'POINT_SYMBOL_APPROXIMATED', message: `survey-point ${entity.id} symbol approximated as POINT+TEXT`, entityId: entity.id });
+        if (markerBlockName == null) {
+          result.approximatedEntityIds.push(entity.id);
+          warn({ code: 'POINT_SYMBOL_APPROXIMATED', message: `survey-point ${entity.id} symbol approximated as POINT+TEXT`, entityId: entity.id });
+        }
         break;
       }
       case 'line':
@@ -365,6 +430,36 @@ export const buildDxfExportModelWithResult = (args: BuildDxfModelArgs): ExportRe
         // No ELLIPSE_APPROXIMATED code in the frozen union — SKIPPED_ENTITY
         // carries the message; the id list marks the approximation.
         warn({ code: 'SKIPPED_ENTITY', message: `error-ellipse ${entity.id} approximated as ${ELLIPSE_SEGMENTS}-gon polyline (DXF has no confidence-ellipse entity)`, entityId: entity.id });
+        break;
+      }
+      case 'block-reference': {
+        // Phase 18N native INSERT (exact — never approximated). Dangling
+        // refs and bad scales omit + warn (fail-closed; load sanitize
+        // normally prevents both).
+        const definition = findBlockDefinition(args.project.blockDefinitions, entity.blockDefinitionId);
+        if (!definition || blockNameById.get(entity.blockDefinitionId) == null) {
+          warn({ code: 'SKIPPED_ENTITY', message: `block-reference ${entity.id} points at unknown definition ${entity.blockDefinitionId}`, entityId: entity.id });
+          result.omittedEntityIds.push(entity.id);
+          break;
+        }
+        if (normalizeBlockScales(entity.scaleX, entity.scaleY) != null || !finitePair(entity.x, entity.y) || !finiteAngle(entity.rotationDeg)) {
+          warn({ code: 'SKIPPED_ENTITY', message: `block-reference ${entity.id} has an invalid transform`, entityId: entity.id });
+          result.omittedEntityIds.push(entity.id);
+          break;
+        }
+        (model.inserts ??= []).push({
+          ...blockReferenceInsert(
+            registerLayer(entity.layerId),
+            blockNameById.get(entity.blockDefinitionId) as string,
+            entity.blockDefinitionId,
+            { x: entity.x, y: entity.y },
+            entity.rotationDeg,
+            entity.scaleX,
+            entity.scaleY,
+          ),
+          ...entryStyle(entity),
+        });
+        result.exportedEntityIds.push(entity.id);
         break;
       }
       default:

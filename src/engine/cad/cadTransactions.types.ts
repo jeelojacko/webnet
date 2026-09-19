@@ -93,6 +93,15 @@ export type CadCommandKey =
   | 'VIEWPORT_SCALE'
   | 'VIEWPORT_ROTATE'
   | 'TITLE_BLOCK_EDIT'
+  | 'BLOCK_SEED'
+  | 'BLOCK_CREATE'
+  | 'BLOCK_DUPLICATE'
+  | 'BLOCK_RENAME'
+  | 'BLOCK_REDEFINE'
+  | 'BLOCK_DELETE'
+  | 'BLOCK_INSERT'
+  | 'BLOCK_EXPLODE'
+  | 'BLOCK_EDIT'
   | 'LAYER_CREATE'
   | 'LAYER_RENAME'
   | 'LAYER_VISIBILITY'
@@ -166,7 +175,14 @@ export type CadCommandKey =
   | 'SECTION_STYLE_DELETE'
   | 'SECTION_VIEW_CREATE'
   | 'SECTION_VIEW_UPDATE'
-  | 'SECTION_VIEW_DELETE';
+  | 'SECTION_VIEW_DELETE'
+  | 'BLOCK_CREATE'
+  | 'BLOCK_INSERT'
+  | 'BLOCK_EXPLODE'
+  | 'BLOCK_REDEFINE'
+  | 'BLOCK_RENAME'
+  | 'BLOCK_DUPLICATE'
+  | 'BLOCK_DELETE';
 export type CadCommandPhase = 'idle' | 'committed';
 
 export interface CadCommandState {
@@ -453,6 +469,18 @@ export type CadCommand =
       sheetId: string;
       definitionId: string;
       values: Record<string, string>;
+    }
+  | {
+      key: 'BLOCK_SEED';
+    }
+  | {
+      key: 'BLOCK_EDIT';
+      referenceId: CadEntityId;
+      x?: number;
+      y?: number;
+      rotationDeg?: number;
+      scaleX?: number;
+      scaleY?: number;
     }
   | {
       key: 'LAYER_CREATE';
@@ -1027,6 +1055,48 @@ export type CadCommand =
   | {
       key: 'SECTION_VIEW_DELETE';
       viewId: string;
+    }
+  | {
+      key: 'BLOCK_CREATE';
+      name: string;
+      sourceEntityIds: CadEntityId[];
+      basePoint?: { x: number; y: number };
+      description?: string;
+    }
+  | {
+      key: 'BLOCK_INSERT';
+      definitionId: string;
+      x: number;
+      y: number;
+      rotationDeg?: number;
+      scaleX?: number;
+      scaleY?: number;
+      layerId?: CadLayerId;
+    }
+  | {
+      key: 'BLOCK_EXPLODE';
+      referenceId: CadEntityId;
+    }
+  | {
+      key: 'BLOCK_REDEFINE';
+      definitionId: string;
+      sourceEntityIds: CadEntityId[];
+    }
+  | {
+      key: 'BLOCK_RENAME';
+      definitionId: string;
+      name: string;
+    }
+  | {
+      key: 'BLOCK_DUPLICATE';
+      definitionId: string;
+      name: string;
+    }
+  | {
+      key: 'BLOCK_DELETE';
+      definitionId: string;
+      force?: boolean;
+      deleteRefs?: boolean;
     };
 
 export interface CadTransaction {

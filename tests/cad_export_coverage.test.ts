@@ -11,6 +11,7 @@ import { createBlankCadProject } from '../src/engine/cad/cadDrawingFile';
 import {
   buildDxfExportModelWithResult,
 } from '../src/engine/cad/dxf/dxfExportModel';
+import { serializeDxfModel } from '../src/engine/cad/dxf/dxfSerializer';
 import { buildDxfLayoutText } from '../src/engine/cad/dxf/dxfLayoutExport';
 import {
   buildExportSheetSceneWithResult,
@@ -34,6 +35,20 @@ const buildCoverageProject = (): CadProject => {
   const project = createBlankCadProject({ name: 'Coverage matrix', units: 'm' });
   project.layers = [{ id: LAYER, name: 'Coverage', color: '#123456', visible: true, locked: false, role: 'planning' }];
   const base = { layerId: LAYER, visible: true, locked: false } as const;
+  // Phase 18N: one reusable definition (name needs DXF sanitizing) + one
+  // live reference + one block-backed point style/marker.
+  project.blockDefinitions = [{
+    id: 'cov-def',
+    name: 'Cover Block',
+    basePoint: { x: 5000, y: 1000 },
+    entities: [
+      { ...base, id: 'cov-child', type: 'line', fromStationId: 'CP1', toStationId: 'CP2', fromX: 5000, fromY: 1000, toX: 5020, toY: 1010, sourceObservationIds: [] },
+    ],
+  }];
+  project.pointStyles = [
+    ...(project.pointStyles ?? []),
+    { id: 'cov-block-style', name: 'Cover block marker', markerSymbolId: 'point-free', markerBlockDefinitionId: 'cov-def', displayMarker: true },
+  ];
   const entities: CadEntity[] = [
     { ...base, id: 'cov-pt', type: 'survey-point', stationId: 'CP1', x: 5000, y: 1000, pointClass: 'control', source: 'parsed-input', description: 'cover point' },
     { ...base, id: 'cov-pt2', type: 'survey-point', stationId: 'CP2', x: 5020, y: 1010, pointClass: 'free', source: 'parsed-input' },
@@ -45,11 +60,13 @@ const buildCoverageProject = (): CadProject => {
     { ...base, id: 'cov-parcel', type: 'parcel', vertices: [{ x: 5000, y: 1000 }, { x: 5020, y: 1000 }, { x: 5020, y: 1020 }, { x: 5000, y: 1020 }], vertexLabels: ['CP1', 'CP2', 'V4', 'V5'], parcelName: 'LOT 1', areaSquareMeters: 400 },
     { ...base, id: 'cov-text', type: 'text', x: 5005, y: 1005, text: 'cover note' },
     { ...base, id: 'cov-ellipse', type: 'error-ellipse', stationId: 'CP1', centerX: 5000, centerY: 1000, semiMajor: 0.05, semiMinor: 0.02, thetaDeg: 30 },
+    { ...base, id: 'cov-blockref', type: 'block-reference', blockDefinitionId: 'cov-def', x: 5030, y: 1020, rotationDeg: 30, scaleX: 2, scaleY: 2 },
+    { ...base, id: 'cov-ptblock', type: 'survey-point', stationId: 'CPB', x: 5040, y: 1030, pointClass: 'free', source: 'parsed-input', pointStyleId: 'cov-block-style' },
   ];
   return { ...project, entities };
 };
 
-const ENTITY_IDS = ['cov-pt', 'cov-pt2', 'cov-line', 'cov-poly', 'cov-arc', 'cov-align', 'cov-polygon', 'cov-parcel', 'cov-text', 'cov-ellipse'];
+const ENTITY_IDS = ['cov-pt', 'cov-pt2', 'cov-line', 'cov-poly', 'cov-arc', 'cov-align', 'cov-polygon', 'cov-parcel', 'cov-text', 'cov-ellipse', 'cov-blockref', 'cov-ptblock'];
 
 const buildDraftWithObjects = (project: CadProject) => {
   let draft = createBlankDraftDocument({ projectId: project.id, layers: project.layers });
@@ -119,6 +136,9 @@ describe('cad export coverage matrix (§22)', () => {
       'cov-pt': 'FULL', 'cov-pt2': 'FULL', 'cov-line': 'FULL', 'cov-poly': 'FULL',
       'cov-arc': 'FULL', 'cov-align': 'FULL', 'cov-polygon': 'FULL',
       'cov-parcel': 'FULL', 'cov-text': 'FULL', 'cov-ellipse': 'FULL',
+      // Phase 18N: refs + block markers expand to primitives (no second
+      // export implementation — the scene renderer is the single source).
+      'cov-blockref': 'FULL', 'cov-ptblock': 'FULL',
     };
     for (const [id, cell] of Object.entries(matrix)) {
       expect(cell).toBe('FULL');
@@ -147,6 +167,9 @@ describe('cad export coverage matrix (§22)', () => {
       'cov-poly': 'FULL', 'cov-arc': 'FULL', 'cov-align': 'APPROXIMATED',
       'cov-polygon': 'APPROXIMATED', 'cov-parcel': 'APPROXIMATED',
       'cov-text': 'FULL', 'cov-ellipse': 'APPROXIMATED',
+      // Phase 18N: native BLOCK/INSERT (sanitized name) + native marker
+      // INSERT — exact, never approximated, never omitted.
+      'cov-blockref': 'FULL', 'cov-ptblock': 'FULL',
     };
     for (const [id, cell] of Object.entries(matrix)) {
       if (cell === 'FULL') {
@@ -161,6 +184,11 @@ describe('cad export coverage matrix (§22)', () => {
     assertPartition(ENTITY_IDS, model.exportedEntityIds, model.omittedEntityIds, model.approximatedEntityIds);
     // Every approximated id also appears in exported (approximation ≠ drop).
     for (const id of model.approximatedEntityIds) expect(model.exportedEntityIds).toContain(id);
+    // Phase 18N: native R12 BLOCK/ENDBLK + INSERT under the sanitized name.
+    const r12Text = serializeDxfModel(model.output);
+    expect(r12Text).toContain('Cover_Block');
+    expect(r12Text).toContain('INSERT');
+    expect(r12Text).not.toContain('Cover Block');
   });
 
   it('covers model + paper in DXF R2000 with zero silent drops', () => {
@@ -176,6 +204,9 @@ describe('cad export coverage matrix (§22)', () => {
     expect(laid.dxf).toContain('Cover');
     // Paper deliverables are NOT_APPLICABLE to R12 model space but FULL in R2000 layouts.
     expect(laid.warnings.filter((warning) => warning.code === 'UNSUPPORTED_SHEET_OBJECT')).toHaveLength(0);
+    // Phase 18N: model-space block table + native INSERTs ride the layout.
+    expect(laid.dxf).toContain('Cover_Block');
+    expect(laid.dxf).toContain('INSERT');
   });
 
   it('classifies every entity for LandXML with zero silent drops', () => {
@@ -185,6 +216,9 @@ describe('cad export coverage matrix (§22)', () => {
       'cov-pt': 'FULL', 'cov-pt2': 'FULL', 'cov-line': 'FULL', 'cov-poly': 'FULL',
       'cov-arc': 'APPROXIMATED', 'cov-align': 'FULL', 'cov-polygon': 'APPROXIMATED',
       'cov-parcel': 'APPROXIMATED', 'cov-text': 'UNSUPPORTED_WITH_WARNING', 'cov-ellipse': 'NOT_APPLICABLE',
+      // Phase 18N: LandXML is presentation-blind — refs omit + warn, while
+      // block-styled points still export their CgPoint (marker irrelevant).
+      'cov-blockref': 'UNSUPPORTED_WITH_WARNING', 'cov-ptblock': 'FULL',
     };
     for (const [id, cell] of Object.entries(matrix)) {
       if (cell === 'FULL') {

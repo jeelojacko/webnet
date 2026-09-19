@@ -20,12 +20,25 @@ import { cadIsAngleOnArcSweep, cadNormalizeAngleDeg } from './cadGeometry';
 import type {
   CadBlockChild,
   CadBlockDefinition,
-  CadBlockReferenceEntity,
   CadBounds,
   CadEntityAppearance,
 } from './cadTypes';
 
 export const MAX_BLOCK_EXPANSION_DEPTH = 4;
+
+/**
+ * Minimal placement for expansion: anything with an insertion point,
+ * rotation, and scales (a real CadBlockReferenceEntity or a synthesized
+ * marker placement). Widened additively so renderers/exporters expand
+ * without minting fake entities.
+ */
+export interface BlockPlacement {
+  x: number;
+  y: number;
+  rotationDeg: number;
+  scaleX: number;
+  scaleY: number;
+}
 
 export type CadBlockDiagnosticCode =
   | 'CAD_BLOCK_EMPTY_NAME'
@@ -110,7 +123,7 @@ export const validateBlockDefinition = (
   return issues;
 };
 
-const requireValidScales = (reference: CadBlockReferenceEntity): void => {
+const requireValidScales = (reference: BlockPlacement): void => {
   const issue = normalizeBlockScales(reference.scaleX, reference.scaleY);
   if (issue) throw new Error(`${issue.code}: ${issue.message}`);
 };
@@ -124,7 +137,7 @@ export interface CadWorldPoint {
 export const transformBlockPointToWorld = (
   point: CadWorldPoint,
   definition: CadBlockDefinition,
-  reference: CadBlockReferenceEntity,
+  reference: BlockPlacement,
 ): CadWorldPoint => {
   const radians = (reference.rotationDeg * Math.PI) / 180;
   const scaledX = (point.x - definition.basePoint.x) * reference.scaleX;
@@ -141,7 +154,7 @@ export const transformBlockPointToWorld = (
 export const transformBlockChildToWorld = (
   child: CadBlockChild,
   definition: CadBlockDefinition,
-  reference: CadBlockReferenceEntity,
+  reference: BlockPlacement,
 ): CadBlockChild => {
   requireValidScales(reference);
   switch (child.type) {
@@ -201,7 +214,7 @@ export const detectBlockCycle = (
 /** Pure: expand every child of a reference to world space. */
 export const expandBlockReference = (
   definition: CadBlockDefinition,
-  reference: CadBlockReferenceEntity,
+  reference: BlockPlacement,
   visited: ReadonlySet<string> = new Set(),
   depth = 0,
 ): CadBlockChild[] => {
@@ -214,7 +227,7 @@ export const expandBlockReference = (
 /** Shared expansion seam: visit each world-space child in definition order. */
 export const visitCadBlockGeometry = (
   definition: CadBlockDefinition,
-  reference: CadBlockReferenceEntity,
+  reference: BlockPlacement,
   visitor: (_child: CadBlockChild, _index: number) => void,
 ): void => {
   expandBlockReference(definition, reference).forEach((child, index) => visitor(child, index));
@@ -281,7 +294,7 @@ export const blockDefinitionBounds = (definition: CadBlockDefinition): CadBounds
  */
 export const blockReferenceBounds = (
   definition: CadBlockDefinition,
-  reference: CadBlockReferenceEntity,
+  reference: BlockPlacement,
 ): CadBounds | null => unionBounds(expandBlockReference(definition, reference).flatMap(childPoints));
 
 export interface ResolvedBlockReferenceAppearance {
@@ -311,3 +324,10 @@ export const resolveBlockChildAppearance = (
   if (transparency != null) resolved.transparency = transparency;
   return resolved;
 };
+
+/** Definition lookup by id (linear; tables are small). */
+export const findBlockDefinition = (
+  definitions: readonly CadBlockDefinition[] | undefined,
+  definitionId: string,
+): CadBlockDefinition | undefined =>
+  definitions?.find((definition) => definition.id === definitionId);

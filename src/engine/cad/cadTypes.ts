@@ -217,6 +217,14 @@ export interface CadPointStyle {
   name: string;
   /** Ref into styleLibrary.pointSymbols. */
   markerSymbolId: CadPointSymbolId;
+  /**
+   * Phase 18N: block marker ref (into project.blockDefinitions). Mutually
+   * exclusive with markerSymbolId via validateCadPointStyle — when set (and
+   * known) the marker renders the block at the point (scale =
+   * markerScale, rotation = rotationDeg); markerSymbolId stays as the
+   * legacy fallback. Absent on legacy styles = unchanged rendering.
+   */
+  markerBlockDefinitionId?: string;
   /** Multiplier on the symbol radius (drawing units). Default 1. */
   markerScale?: number;
   /** Marker rotation in degrees. Default 0. */

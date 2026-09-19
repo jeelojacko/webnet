@@ -2,6 +2,7 @@ import type { CadBounds, CadProject } from './cadTypes';
 import type { CadWorldPoint } from './cadGeometry';
 import type { CadArcRef } from './cadSpatialIndexTypes';
 import { arcRefFromEntity } from './cadSpatialEntityRefs';
+import { blockReferenceBounds, findBlockDefinition } from './cadBlocks';
 
 export const expandBounds = (bounds: CadBounds, padding: number): CadBounds => ({
   minX: bounds.minX - padding,
@@ -72,6 +73,21 @@ export const entityIntersectsBounds = (
         entity.centerY + entity.semiMajor < bounds.minY ||
         entity.centerY - entity.semiMajor > bounds.maxY
       );
+    case 'block-reference': {
+      // Single source: world-space bounds of the expanded instance.
+      // Unknown definitions fall back to the insertion point (world
+      // coords only — block-local geometry never leaks into queries).
+      const definition = findBlockDefinition(project.blockDefinitions, entity.blockDefinitionId);
+      if (!definition) return pointInsideBounds({ x: entity.x, y: entity.y }, bounds);
+      let world: CadBounds | null;
+      try {
+        world = blockReferenceBounds(definition, entity);
+      } catch {
+        return pointInsideBounds({ x: entity.x, y: entity.y }, bounds);
+      }
+      if (!world) return pointInsideBounds({ x: entity.x, y: entity.y }, bounds);
+      return !(world.maxX < bounds.minX || world.minX > bounds.maxX || world.maxY < bounds.minY || world.minY > bounds.maxY);
+    }
     default:
       return true;
   }
