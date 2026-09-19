@@ -14,6 +14,12 @@ import {
 import type { CadCogoComputation } from '../../engine/cad/cadCogoTypes';
 import type { CadCommand } from '../../engine/cad/cadTransactions.types';
 import { runCadCommand } from '../../engine/cad/cadUndoRedo';
+import {
+  commitLandXmlImport,
+  type LandXmlCommitReport,
+  type LandXmlCommitSelection,
+} from '../../engine/cad/cadLandxmlCommit';
+import type { LandXmlImportPreview } from '../../engine/landxmlImport';
 import { editSurveyCadPropertiesField } from './surveyCadPropertiesEdit';
 import { useSurveyCadSnapping, type CadSnapPreferences } from './useSurveyCadSnapping';
 import { useSurveyCadSelectionDerivations } from './useSurveyCadSelectionDerivations';
@@ -209,6 +215,27 @@ export const useSurveyCadWorkspace = (
       return next;
     });
     return applied;
+  };
+  /**
+   * Phase 18M — route ONE staged LandXML preview through the atomic
+   * deferred commit (single LANDXML_IMPORT transaction; the caller
+   * schedules imported surfaces on the shared build queue). All-duplicate
+   * payloads return an uncommitted report without touching history/dirty.
+   */
+  const runLandXmlImport = (
+    preview: LandXmlImportPreview,
+    fileName: string,
+    selection: LandXmlCommitSelection,
+  ): LandXmlCommitReport | null => {
+    if (!surfaceCache) return null;
+    const current = historyRef.current;
+    const result = commitLandXmlImport(current, surfaceCache, preview, fileName, selection, {
+      deferMeshBuild: true,
+    });
+    if (result.state !== current) {
+      applyHistoryUpdate(() => result.state);
+    }
+    return result.report;
   };
   const [activeGripHandle, setActiveGripHandle] = useState<CadGripHandle | null>(null);
   const selectionActions = useSurveyCadSelectionActions({
@@ -461,6 +488,7 @@ export const useSurveyCadWorkspace = (
     historyDepth: history.undoStack.length,
     redoDepth: history.redoStack.length,
     runLayerCommand,
+    runLandXmlImport,
     replaceCadProject: (project: CadProject, statusText = 'Drawing updated.') => {
       applyHistoryUpdate((current) => ({
         ...current,

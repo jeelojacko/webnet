@@ -8,7 +8,7 @@ import {
   type CadSurfaceBuildResult,
 } from '../engine/cad/cadSurfaces';
 import { buildSurfaceBuildRequest } from '../engine/cad/cadSurfaceTypes';
-import type { CadProject } from '../engine/cad/cadTypes';
+import type { CadProject, CadSurface } from '../engine/cad/cadTypes';
 import type { TinAdjacency, TinEdgeKinds } from '../engine/cad/tin/tinTypes';
 import {
   SURFACE_BUILD_UNAVAILABLE,
@@ -82,7 +82,12 @@ export class SurfaceBuildService {
   private readonly pending = new Map<string, PendingEntry>();
   private readonly diagnostics = new Map<string, SurfaceBuildSessionDiagnostic>();
   private readonly queue: string[] = [];
+  /** Ids queued but not yet started: reported BUILDING immediately (18M). */
+  private readonly queuedIds = new Set<string>();
   private queueActive = false;
+  /** One serial-queue drain's settlement count decides the final summary. */
+  private draining = false;
+  private queueSettled = 0;
   private tally = { rebuilt: 0, current: 0, blocked: 0 };
   private disposed = false;
   /** surfaceId -> revision last built via the sync fallback (route seam). */
@@ -95,7 +100,7 @@ export class SurfaceBuildService {
 
   /** Session BUILDING set for the snapshot seam (drawing-scoped). */
   buildingSurfaceIds(): ReadonlySet<string> {
-    return new Set(this.pending.keys());
+    return new Set([...this.pending.keys(), ...this.queuedIds]);
   }
 
   /** Session failure diagnostics for the snapshot seam (revision-scoped). */
@@ -121,7 +126,7 @@ export class SurfaceBuildService {
     const request = buildSurfaceBuildRequest(project, surfaceId, revision);
     if (!request) return 'Surface not found.';
     const transport = this.transportFor();
-    if (!transport) return this.syncFallback(surfaceId, surface.name, request.points.length, false);
+    if (!transport) return this.syncFallback(surfaceId, surface.name, this.fallbackBudget(surface, request), false);
     this.supersede(surfaceId);
     const pendingBuild = transport.build({ ...request, drawingId: this.drawingId });
     this.pending.set(surfaceId, {
@@ -138,12 +143,41 @@ export class SurfaceBuildService {
     return `“${surface.name}” building…`;
   }
 
+  /**
+   * Phase 18M — enqueue explicit surfaces (freshly imported TINs) on the
+   * existing single-worker serial queue. Never cancels or supersedes an
+   * in-flight build (import-while-building coexists); queued ids report
+   * BUILDING immediately and settle to CURRENT (cache) or FAILED
+   * (diagnostic) when their turn completes. Unknown, already-current, or
+   * duplicate ids are ignored.
+   */
+  scheduleSurfaces(surfaceIds: readonly string[]): void {
+    if (this.disposed) return;
+    const project = this.deps.getProject();
+    let added = false;
+    for (const surfaceId of surfaceIds) {
+      if (this.pending.has(surfaceId) || this.queuedIds.has(surfaceId)) continue;
+      const surface = findSurface(project, surfaceId);
+      if (!surface) continue;
+      if (this.deps.cache.get(surfaceId, computeCadSurfaceSourceRevision(project, surface))) continue;
+      this.queue.push(surfaceId);
+      this.queuedIds.add(surfaceId);
+      added = true;
+    }
+    if (!added) return;
+    this.queueActive = true;
+    this.pumpQueue();
+  }
+
   rebuildAllSurfaces(): string {
     if (this.disposed) return 'No surfaces to rebuild.';
     const project = this.deps.getProject();
     const surfaces = project.surfaces ?? [];
     if (surfaces.length === 0) return 'No surfaces to rebuild.';
     this.queue.length = 0;
+    this.queuedIds.clear();
+    this.draining = false;
+    this.queueSettled = 0;
     this.tally = { rebuilt: 0, current: 0, blocked: 0 };
     for (const surface of surfaces) {
       const revision = computeCadSurfaceSourceRevision(project, surface);
@@ -158,14 +192,27 @@ export class SurfaceBuildService {
   }
 
   cancelSurface(surfaceId: string): void {
+    const wasQueuedInFlight = this.pending.get(surfaceId)?.queued === true;
     this.supersede(surfaceId);
+    const queueIndex = this.queue.indexOf(surfaceId);
+    if (queueIndex >= 0) {
+      this.queue.splice(queueIndex, 1);
+      this.queuedIds.delete(surfaceId);
+      this.deps.onStateChange();
+      this.pumpQueue();
+    } else if (wasQueuedInFlight) {
+      this.pumpQueue();
+    }
   }
 
   dispose(): void {
     if (this.disposed) return;
     this.disposed = true;
     this.queue.length = 0;
+    this.queuedIds.clear();
     this.queueActive = false;
+    this.draining = false;
+    this.queueSettled = 0;
     for (const [surfaceId, entry] of this.pending) {
       this.transport?.cancel(entry.requestId);
       this.pending.delete(surfaceId);
@@ -221,36 +268,55 @@ export class SurfaceBuildService {
     this.deps.onStateChange();
   }
 
+  /** True while one of the serial-queue builds is still in flight. */
+  private hasQueuedBuildInFlight(): boolean {
+    for (const entry of this.pending.values()) {
+      if (entry.queued) return true;
+    }
+    return false;
+  }
+
   private pumpQueue(): void {
-    if (!this.queueActive || this.disposed) return;
+    if (!this.queueActive || this.disposed || this.hasQueuedBuildInFlight()) return;
+    if (!this.draining) {
+      this.draining = true;
+      this.queueSettled = 0;
+    }
     const nextId = this.queue.shift();
     if (nextId == null) {
       this.queueActive = false;
-      this.deps.notify(this.summary());
+      this.draining = false;
+      // Superseded/deleted builds settle with no result: never a
+      // misleading "Rebuilt 0" summary (18M).
+      if (this.queueSettled > 0) this.deps.notify(this.summary());
       return;
     }
+    this.queuedIds.delete(nextId);
     const project = this.deps.getProject();
     const surface = findSurface(project, nextId);
     if (!surface) {
       this.tally.blocked += 1;
+      this.queueSettled += 1;
       this.pumpQueue();
       return;
     }
     const revision = computeCadSurfaceSourceRevision(project, surface);
     if (this.deps.cache.get(nextId, revision)) {
       this.tally.current += 1;
+      this.queueSettled += 1;
       this.pumpQueue();
       return;
     }
     const request = buildSurfaceBuildRequest(project, nextId, revision);
     if (!request) {
       this.tally.blocked += 1;
+      this.queueSettled += 1;
       this.pumpQueue();
       return;
     }
     const transport = this.transportFor();
     if (!transport) {
-      this.syncFallback(nextId, surface.name, request.points.length, true);
+      this.syncFallback(nextId, surface.name, this.fallbackBudget(surface, request), true);
       this.pumpQueue();
       return;
     }
@@ -269,6 +335,19 @@ export class SurfaceBuildService {
     );
   }
 
+  /**
+   * Sync-fallback budget unit: native surfaces measure resolved survey
+   * points; imported TINs carry their own topology, so the main-thread cost
+   * tracks imported vertex count (the survey-point snapshot is not read on
+   * that path).
+   */
+  private fallbackBudget(surface: CadSurface, request: { points: readonly unknown[] }): number {
+    if (surface.definition.sourceKind === 'imported-tin' && surface.definition.importedTin) {
+      return surface.definition.importedTin.vertices.length / 3;
+    }
+    return request.points.length;
+  }
+
   private syncFallback(surfaceId: string, name: string, pointCount: number, queued: boolean): string {
     if (pointCount > SYNC_FALLBACK_POINT_LIMIT) {
       const error =
@@ -279,8 +358,10 @@ export class SurfaceBuildService {
       this.diagnostics.set(surfaceId, { revision, error: truncateDiagnostic(error) });
       this.deps.onStateChange();
       const message = `“${name}” build blocked: worker unavailable and the surface exceeds the ${SYNC_FALLBACK_POINT_LIMIT}-point sync fallback limit.`;
-      if (queued) this.tally.blocked += 1;
-      else this.deps.notify(message);
+      if (queued) {
+        this.tally.blocked += 1;
+        this.queueSettled += 1;
+      } else this.deps.notify(message);
       return message;
     }
     let result: CadSurfaceBuildResult;
@@ -289,8 +370,10 @@ export class SurfaceBuildService {
       result = (this.deps.syncBuild ?? defaultSyncBuild)(project, surfaceId);
     } catch (error) {
       const message = `“${name}” rebuild failed: ${error instanceof Error ? error.message : 'unknown error'}. (sync fallback — worker unavailable)`;
-      if (queued) this.tally.blocked += 1;
-      else this.deps.notify(message);
+      if (queued) {
+        this.tally.blocked += 1;
+        this.queueSettled += 1;
+      } else this.deps.notify(message);
       return message;
     }
     if (result.outcome !== 'ok') {
@@ -298,8 +381,10 @@ export class SurfaceBuildService {
       const message = result.outcome === 'insufficient'
         ? `“${name}” has insufficient data${detail} (sync fallback — worker unavailable)`
         : `“${name}” build blocked${detail} (sync fallback — worker unavailable)`;
-      if (queued) this.tally.blocked += 1;
-      else this.deps.notify(message);
+      if (queued) {
+        this.tally.blocked += 1;
+        this.queueSettled += 1;
+      } else this.deps.notify(message);
       return message;
     }
     this.storeMesh(surfaceId, result.revision, {
@@ -317,8 +402,10 @@ export class SurfaceBuildService {
     this.fallbackRoutes.set(surfaceId, result.revision);
     this.deps.onStateChange();
     const message = `“${name}” rebuilt: ${result.stats.triangleCount} triangles from ${result.stats.usedPointCount} points. (sync fallback — worker unavailable)`;
-    if (queued) this.tally.rebuilt += 1;
-    else this.deps.notify(message);
+    if (queued) {
+      this.tally.rebuilt += 1;
+      this.queueSettled += 1;
+    } else this.deps.notify(message);
     return message;
   }
 
@@ -359,6 +446,7 @@ export class SurfaceBuildService {
       const message = `“${surface.name}” rebuild failed: ${raw}.`;
       if (entry.queued) {
         this.tally.blocked += 1;
+        this.queueSettled += 1;
         this.pumpQueue();
       } else {
         this.deps.notify(message);
@@ -382,6 +470,7 @@ export class SurfaceBuildService {
       this.deps.onStateChange();
       if (entry.queued) {
         this.tally.blocked += 1;
+        this.queueSettled += 1;
         this.pumpQueue();
       } else {
         this.deps.notify(message);
@@ -404,6 +493,7 @@ export class SurfaceBuildService {
     const message = `“${surface.name}” rebuilt: ${result.stats.triangleCount} triangles from ${result.stats.usedPointCount} points.`;
     if (entry.queued) {
       this.tally.rebuilt += 1;
+      this.queueSettled += 1;
       this.pumpQueue();
     } else {
       this.deps.notify(message);

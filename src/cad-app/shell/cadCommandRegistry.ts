@@ -42,7 +42,8 @@ const action = (
   category: CadShellCommandCategory,
   hint: string,
   shortcut?: string,
-): CadShellCommandDef => ({ key, label, aliases: [], category, hint, shortcut, kind: 'action' });
+  aliases: string[] = [],
+): CadShellCommandDef => ({ key, label, aliases, category, hint, shortcut, kind: 'action' });
 
 export const CAD_SHELL_COMMANDS: CadShellCommandDef[] = [
   // Draw
@@ -117,6 +118,17 @@ export const CAD_SHELL_COMMANDS: CadShellCommandDef[] = [
   action('SHELL_SAVE', 'Save Drawing', 'File', 'Save the drawing (WNCAD).', 'Ctrl+S'),
   action('SHELL_EXPORT_CENTER', 'Export Center', 'File', 'Open export and deliverables.'),
   action('SHELL_SHEETS_LAYERS', 'Sheets & Layers', 'File', 'Open sheets, layers, and field-to-finish.'),
+  // Phase 18M — LandXML production import entry point (review staged in the
+  // workspace; worker 3 owns commit + imported-TIN scheduling). One flat File
+  // item; typed LANDXMLIMPORT resolves to the same definition.
+  action(
+    'SHELL_IMPORT_LANDXML',
+    'Import LandXML',
+    'File',
+    'Import LandXML points, alignments, and TIN surfaces.',
+    undefined,
+    ['LANDXMLIMPORT'],
+  ),
   // Phase 18C — Layer Properties Manager (current-layer dropdown lives in the ribbon Layers group).
   action('LAYER', 'Layers', 'Edit', 'Open the Layer Properties Manager.', undefined),
   // Phase 18F — surface commands (definition edits are undoable SURFACE_*
@@ -210,6 +222,9 @@ export const isShellCommandAvailable = (
         return snapshot.canRedo;
       case 'SHELL_ERASE':
         return snapshot.selectionCount > 0;
+      case 'SHELL_IMPORT_LANDXML':
+        // Live workspace present (guard above) — the file picker is always available.
+        return true;
       default:
         return true;
     }
@@ -254,6 +269,9 @@ export const executeShellCommand = (
       return true;
     case 'SHELL_SHEETS_LAYERS':
       actions.toggleDraftingPanel();
+      return true;
+    case 'SHELL_IMPORT_LANDXML':
+      actions.requestLandXmlImport();
       return true;
     case 'LAYER':
       actions.openLayerManager();

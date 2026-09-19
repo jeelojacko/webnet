@@ -300,6 +300,12 @@ export interface CadShellActions {
   newDrawing: () => void;
   openDrawingFile: () => void;
   saveDrawing: () => void;
+  /**
+   * Phase 18M — open the LandXML import file picker. The workspace parses the
+   * picked file into a staged preview; nothing commits until worker 3 wires
+   * `commitLandXmlImport` + imported-TIN scheduling behind the review panel.
+   */
+  requestLandXmlImport: () => void;
   toggleDraftingPanel: () => void;
   toggleExportCenter: () => void;
   cancelCommand: () => void;

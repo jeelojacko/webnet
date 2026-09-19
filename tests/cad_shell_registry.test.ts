@@ -112,6 +112,7 @@ const stubActions = (): CadShellActions & { calls: string[] } => {
     setSnapPreference: (kind) => void calls.push(`snap:${kind}`),
     newDrawing: () => void calls.push('new'),
     openDrawingFile: () => void calls.push('open'),
+    requestLandXmlImport: () => void calls.push('landxml-import'),
     saveDrawing: () => void calls.push('save'),
     toggleDraftingPanel: () => void calls.push('drafting'),
     toggleExportCenter: () => void calls.push('export'),
@@ -216,6 +217,18 @@ describe('cad shell command registry', () => {
     expect(resolveShellCommandText('layer')?.key).toBe('LAYER');
     expect(executeShellCommand(resolveShellCommandText('LAYER')!, actions)).toBe(true);
     expect(actions.calls).toContain('layers');
+  });
+
+  it('routes SHELL_IMPORT_LANDXML (and the LANDXMLIMPORT alias) to the picker action', () => {
+    const actions = stubActions();
+    const byKey = resolveShellCommandText('SHELL_IMPORT_LANDXML')!;
+    const byAlias = resolveShellCommandText('landxmlimport')!;
+    expect(byKey.key).toBe('SHELL_IMPORT_LANDXML');
+    expect(byAlias.key).toBe('SHELL_IMPORT_LANDXML');
+    expect(byKey.category).toBe('File');
+    expect(executeShellCommand(byKey, actions)).toBe(true);
+    expect(actions.calls).toContain('landxml-import');
+    expect(isShellCommandAvailable(byKey, baseSnapshot(), actions)).toBe(true);
   });
 
   it('returns false without actions or for unknown pseudo-keys', () => {

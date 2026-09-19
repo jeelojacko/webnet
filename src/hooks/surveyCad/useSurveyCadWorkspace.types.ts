@@ -309,6 +309,16 @@ export interface UseSurveyCadWorkspaceResult {
   ) => import('./surveyCadPropertiesEdit').CadPropertiesEditOutcome;
   /** Dispatch one undoable command (LAYER_* family); false when rejected. */
   runLayerCommand: (_command: import('../../engine/cad/cadTransactions.types').CadCommand) => boolean;
+  /**
+   * Phase 18M — commit a staged LandXML preview through ONE deferred
+   * LANDXML_IMPORT transaction (meshes scheduled asynchronously). Returns
+   * null when the surface cache/history seam is unavailable.
+   */
+  runLandXmlImport: (
+    _preview: import('../../engine/landxmlImport').LandXmlImportPreview,
+    _fileName: string,
+    _selection: import('../../engine/cad/cadLandxmlCommit').LandXmlCommitSelection,
+  ) => import('../../engine/cad/cadLandxmlCommit').LandXmlCommitReport | null;
   replaceTraverseDraftLeg: (_legIndex: number, _inputValue: string) => boolean;
   appendTraverseDraftPoint: (_inputValue: string) => boolean;
   insertTraverseDraftLeg: (_legIndex: number, _inputValue: string) => boolean;

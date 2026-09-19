@@ -1,0 +1,129 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Phase 18M — hand-authored external-style LandXML 1.2 production corpus.
+  NOT exporter output. Metric, explicit CRS metadata, five CgPoints,
+  one line+arc alignment (non-zero staStart + station equation), one
+  explicit TIN surface (6x5 grid, 30 P / 40 F), and one unsupported
+  spiral alignment that must refuse import without truncation.
+
+  Coordinates are LandXML N-E order (northing easting elevation) in metres.
+  Surface plane: z = 99.4 + 0.8*eastCol + 0.25*northRow over a 40 m x 25 m
+  cell grid, deliberately covering the alignment extent for contours and
+  surface profiles.
+-->
+<LandXML xmlns="http://www.landxml.org/schema/LandXML-1.2" version="1.2" date="2026-09-19" time="12:00:00">
+  <Units>
+    <Metric areaUnit="squareMeter" linearUnit="meter" volumeUnit="cubicMeter" temperatureUnit="celsius" pressureUnit="HPA" />
+  </Units>
+  <CoordinateSystem name="EPSG:26920" desc="NAD83 / UTM zone 20N" epsgCode="26920" />
+  <CgPoints>
+    <CgPoint name="1001" desc="BM 18M-1" code="BM">5432000.000 500000.000 100.000</CgPoint>
+    <CgPoint name="1002" desc="alignment start" code="CL">5432000.000 500100.000 102.000</CgPoint>
+    <CgPoint name="1003" desc="curve end" code="CL">5432050.000 500150.000 103.000</CgPoint>
+    <CgPoint name="1004" desc="surface control" code="TOPO">5432030.000 500060.000 101.500</CgPoint>
+    <CgPoint name="1005" desc="surface control" code="TOPO">5431980.000 500180.000 103.400</CgPoint>
+  </CgPoints>
+  <Surfaces>
+    <Surface name="Existing Ground" desc="18M production TIN">
+      <Definition surfType="TIN">
+        <Pnts>
+          <P id="1">5431980.000 499980.000 99.400</P>
+          <P id="2">5431980.000 500020.000 100.200</P>
+          <P id="3">5431980.000 500060.000 101.000</P>
+          <P id="4">5431980.000 500100.000 101.800</P>
+          <P id="5">5431980.000 500140.000 102.600</P>
+          <P id="6">5431980.000 500180.000 103.400</P>
+          <P id="7">5432005.000 499980.000 99.650</P>
+          <P id="8">5432005.000 500020.000 100.450</P>
+          <P id="9">5432005.000 500060.000 101.250</P>
+          <P id="10">5432005.000 500100.000 102.050</P>
+          <P id="11">5432005.000 500140.000 102.850</P>
+          <P id="12">5432005.000 500180.000 103.650</P>
+          <P id="13">5432030.000 499980.000 99.900</P>
+          <P id="14">5432030.000 500020.000 100.700</P>
+          <P id="15">5432030.000 500060.000 101.500</P>
+          <P id="16">5432030.000 500100.000 102.300</P>
+          <P id="17">5432030.000 500140.000 103.100</P>
+          <P id="18">5432030.000 500180.000 103.900</P>
+          <P id="19">5432055.000 499980.000 100.150</P>
+          <P id="20">5432055.000 500020.000 100.950</P>
+          <P id="21">5432055.000 500060.000 101.750</P>
+          <P id="22">5432055.000 500100.000 102.550</P>
+          <P id="23">5432055.000 500140.000 103.350</P>
+          <P id="24">5432055.000 500180.000 104.150</P>
+          <P id="25">5432080.000 499980.000 100.400</P>
+          <P id="26">5432080.000 500020.000 101.200</P>
+          <P id="27">5432080.000 500060.000 102.000</P>
+          <P id="28">5432080.000 500100.000 102.800</P>
+          <P id="29">5432080.000 500140.000 103.600</P>
+          <P id="30">5432080.000 500180.000 104.400</P>
+        </Pnts>
+        <Faces>
+          <F>1 2 8</F>
+          <F>1 8 7</F>
+          <F>2 3 9</F>
+          <F>2 9 8</F>
+          <F>3 4 10</F>
+          <F>3 10 9</F>
+          <F>4 5 11</F>
+          <F>4 11 10</F>
+          <F>5 6 12</F>
+          <F>5 12 11</F>
+          <F>7 8 14</F>
+          <F>7 14 13</F>
+          <F>8 9 15</F>
+          <F>8 15 14</F>
+          <F>9 10 16</F>
+          <F>9 16 15</F>
+          <F>10 11 17</F>
+          <F>10 17 16</F>
+          <F>11 12 18</F>
+          <F>11 18 17</F>
+          <F>13 14 20</F>
+          <F>13 20 19</F>
+          <F>14 15 21</F>
+          <F>14 21 20</F>
+          <F>15 16 22</F>
+          <F>15 22 21</F>
+          <F>16 17 23</F>
+          <F>16 23 22</F>
+          <F>17 18 24</F>
+          <F>17 24 23</F>
+          <F>19 20 26</F>
+          <F>19 26 25</F>
+          <F>20 21 27</F>
+          <F>20 27 26</F>
+          <F>21 22 28</F>
+          <F>21 28 27</F>
+          <F>22 23 29</F>
+          <F>22 29 28</F>
+          <F>23 24 30</F>
+          <F>23 30 29</F>
+        </Faces>
+      </Definition>
+    </Surface>
+  </Surfaces>
+  <Alignments>
+    <Alignment name="CL-18M" length="178.540" staStart="1000.000">
+      <CoordGeom>
+        <Line>
+          <Start pntRef="1001">5432000.000 500000.000 100.000</Start>
+          <End>5432000.000 500100.000 102.000</End>
+        </Line>
+        <Curve rot="ccw" radius="50.000">
+          <Start>5432000.000 500100.000 102.000</Start>
+          <Center>5432050.000 500100.000 102.000</Center>
+          <End>5432050.000 500150.000 103.000</End>
+        </Curve>
+      </CoordGeom>
+      <StaEquation staInternal="1040.000" staAhead="2040.000" staBack="1040.000" />
+    </Alignment>
+    <Alignment name="CL-SPIRAL-UNSUPPORTED" length="30.000" staStart="0.000">
+      <CoordGeom>
+        <Spiral length="30.000" radiusEnd="100.000" radiusStart="0.000" rot="ccw">
+          <Start>5432000.000 500000.000 100.000</Start>
+        </Spiral>
+      </CoordGeom>
+    </Alignment>
+  </Alignments>
+</LandXML>

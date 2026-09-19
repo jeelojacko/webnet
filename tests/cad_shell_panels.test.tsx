@@ -105,6 +105,7 @@ const stubActions = (): CadShellActions => ({
   setSnapPreference: vi.fn(),
   newDrawing: vi.fn(),
   openDrawingFile: vi.fn(),
+  requestLandXmlImport: vi.fn(),
   saveDrawing: vi.fn(),
   toggleDraftingPanel: vi.fn(),
   toggleExportCenter: vi.fn(),

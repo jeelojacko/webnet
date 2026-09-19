@@ -528,3 +528,152 @@ describe('SurfaceBuildService sync-fallback route tracking', () => {
     expect(h.service.syncFallbackRevisions().size).toBe(0);
   });
 });
+
+describe('SurfaceBuildService imported-surface scheduling (Phase 18M)', () => {
+  const importedProject = (extraSurveyPoints: number): CadProject => {
+    const drawing = createBlankCadDrawingDocument({ name: 'Imported', units: 'm' });
+    const filler = Array.from({ length: extraSurveyPoints }, (_, index) =>
+      point(`fill-${index}`, `F${index}`, index % 50, Math.floor(index / 50), 0),
+    );
+    return {
+      ...drawing.project,
+      entities: [...filler, point('pt-a', 'A', 0, 0, 10)],
+      surfaces: [
+        {
+          id: 'imp',
+          name: 'EG',
+          definition: {
+            sourceKind: 'imported-tin',
+            pointSource: { kind: 'points', pointEntityIds: [] },
+            importedTin: {
+              vertices: [0, 0, 10, 10, 0, 11, 10, 10, 12, 0, 10, 13],
+              faces: [0, 1, 2, 0, 2, 3],
+              provenance: { format: 'LandXML', fileName: 'eg.xml', surfaceName: 'EG' },
+            },
+          },
+          cachedRevision: null,
+        },
+      ],
+    };
+  };
+
+  const importedHarness = (project: CadProject, createTransport: () => SurfaceBuildTransport | null) => {
+    const cache = createCadSurfaceCache('imported');
+    const notices: string[] = [];
+    const revisions = new Map<string, string[]>();
+    const service = new SurfaceBuildService({
+      drawingId: 'drawing-a',
+      getProject: () => project,
+      getDrawingId: () => 'drawing-a',
+      cache,
+      createTransport,
+      getBuiltRevisions: (surfaceId) => revisions.get(surfaceId) ?? [],
+      recordRevision: (surfaceId, revision) => {
+        revisions.set(surfaceId, [...(revisions.get(surfaceId) ?? []), revision].slice(-2));
+      },
+      notify: (message) => notices.push(message),
+      onStateChange: () => undefined,
+    });
+    return { service, cache, notices, project };
+  };
+
+  it('marks every scheduled surface BUILDING immediately and builds serially, CURRENT on completion', async () => {
+    const h = createHarness({ surfaceIds: ['s1', 's2'] });
+    h.service.scheduleSurfaces(['s1', 's2']);
+    expect(h.service.buildingSurfaceIds().has('s1')).toBe(true);
+    expect(h.service.buildingSurfaceIds().has('s2')).toBe(true);
+    // Bounded: only one queued build is in flight.
+    expect(h.stub.builds).toHaveLength(1);
+    h.stub.builds[0]!.resolve(h.meshFor('s1'));
+    await h.flush();
+    expect(h.stub.builds).toHaveLength(2);
+    expect(h.service.buildingSurfaceIds().has('s1')).toBe(false);
+    h.stub.builds[1]!.resolve(h.meshFor('s2'));
+    await h.flush();
+    expect(h.service.buildingSurfaceIds().size).toBe(0);
+    for (const surfaceId of ['s1', 's2']) {
+      const surface = h.project().surfaces!.find((entry) => entry.id === surfaceId)!;
+      expect(
+        h.cache.get(surfaceId, computeCadSurfaceSourceRevision(h.project(), surface)),
+      ).toBeDefined();
+    }
+  });
+
+  it('import-while-building: a second schedule coexists without cancelling the in-flight build', async () => {
+    const h = createHarness({ surfaceIds: ['s1', 's2'] });
+    h.service.scheduleSurfaces(['s1']);
+    const firstRequestId = h.stub.builds[0]!.requestId;
+    h.service.scheduleSurfaces(['s2']);
+    // The running build is untouched; s2 waits its turn.
+    expect(h.stub.builds).toHaveLength(1);
+    expect(h.stub.builds[0]!.requestId).toBe(firstRequestId);
+    expect(h.service.buildingSurfaceIds().has('s2')).toBe(true);
+    h.stub.builds[0]!.resolve(h.meshFor('s1'));
+    await h.flush();
+    expect(h.stub.builds).toHaveLength(2);
+    h.stub.builds[1]!.resolve(h.meshFor('s2'));
+    await h.flush();
+    expect(h.service.buildingSurfaceIds().size).toBe(0);
+  });
+
+  it('undo-during-build: a surface deleted before completion is discarded (no resurrection, no ghost cache)', async () => {
+    const h = createHarness();
+    h.service.scheduleSurfaces(['s1']);
+    const mesh = h.meshFor('s1');
+    const revision = h.stub.builds[0]!.request.revision;
+    h.setProject({ ...h.project(), surfaces: [] });
+    h.stub.builds[0]!.resolve(mesh);
+    await h.flush();
+    expect(h.cache.get('s1', revision)).toBeUndefined();
+    expect(h.notices).toEqual([]);
+    expect(h.service.buildingSurfaceIds().size).toBe(0);
+  });
+
+  it('drawing-switch: a late imported-surface result never enters the other drawing', async () => {
+    const h = createHarness();
+    h.service.scheduleSurfaces(['s1']);
+    h.setDrawingId('drawing-b');
+    h.stub.builds[0]!.resolve(h.meshFor('s1'));
+    await h.flush();
+    const surface = h.project().surfaces![0]!;
+    expect(h.cache.get('s1', computeCadSurfaceSourceRevision(h.project(), surface))).toBeUndefined();
+    expect(h.notices).toEqual([]);
+  });
+
+  it('ignores unknown, duplicate, and already-current ids', async () => {
+    const h = createHarness({ surfaceIds: ['s1'] });
+    const surface = h.project().surfaces![0]!;
+    const revision = computeCadSurfaceSourceRevision(h.project(), surface);
+    h.cache.set('s1', revision, {
+      revision,
+      points: [],
+      triangles: [],
+      stats: emptyStats(),
+      ...emptyExtras(),
+    });
+    h.service.scheduleSurfaces(['missing', 's1']);
+    expect(h.service.buildingSurfaceIds().size).toBe(0);
+    expect(h.stub.builds).toHaveLength(0);
+  });
+
+  it('sync-fallback budget for an imported TIN tracks imported vertices, not survey points', () => {
+    const project = importedProject(2000);
+    const h = importedHarness(project, () => null);
+    h.service.scheduleSurfaces(['imp']);
+    const surface = project.surfaces![0]!;
+    const revision = computeCadSurfaceSourceRevision(project, surface);
+    // 2000 survey points would exceed the 1000-point limit; 4 imported
+    // vertices do not, so the disclosed sync build runs.
+    expect(h.cache.get('imp', revision)).toBeDefined();
+    expect(h.service.sessionDiagnostics().has('imp')).toBe(false);
+    expect(h.service.syncFallbackRevisions().get('imp')).toBe(revision);
+  });
+
+  it('imported TIN build request omits the whole-project survey-point snapshot', () => {
+    const project = importedProject(25);
+    const surface = project.surfaces![0]!;
+    const revision = computeCadSurfaceSourceRevision(project, surface);
+    const request = buildSurfaceBuildRequest(project, 'imp', revision)!;
+    expect(request.points).toEqual([]);
+  });
+});
