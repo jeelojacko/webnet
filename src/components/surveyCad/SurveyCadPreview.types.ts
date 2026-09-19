@@ -90,6 +90,13 @@ export interface SurveyCadPreviewProps {
   onSurfacePickPoint?: (_worldPoint: { x: number; y: number }) => void;
   selectedSurfaceId?: string | null;
   onSurfaceClick?: (_surfaceId: string) => void;
+  /**
+   * Phase 18J — profile-view selection. Profile layers ride
+   * `scene.profileViewLayers` (no scene-type change); viewport clicks map
+   * back to the view object and never touch CadEntity selection.
+   */
+  selectedProfileViewId?: string | null;
+  onProfileViewClick?: (_viewId: string) => void;
 }
 
 export type ScreenBox = {

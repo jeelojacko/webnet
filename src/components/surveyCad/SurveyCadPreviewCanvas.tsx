@@ -20,6 +20,7 @@ import {
 } from './SurveyCadPreviewLayers';
 import { renderPrimitive } from './SurveyCadPreviewPrimitive';
 import { renderSurfaceLayers, renderVolumeLayers } from './SurveyCadPreviewSurface';
+import { renderProfileViewLayers } from './SurveyCadPreviewProfiles';
 
 const SurveyCadPreviewCanvas: React.FC<SurveyCadPreviewCanvasProps> = ({
   activeGripDragIdRef,
@@ -49,6 +50,8 @@ const SurveyCadPreviewCanvas: React.FC<SurveyCadPreviewCanvasProps> = ({
   onSelectEntity,
   onSurfaceClick,
   onSurfacePickPoint,
+  onProfileViewClick,
+  selectedProfileViewId = null,
   onStartGripEdit,
   onViewportChange,
   onZoomExtents,
@@ -371,6 +374,15 @@ const SurveyCadPreviewCanvas: React.FC<SurveyCadPreviewCanvasProps> = ({
         : null}
       {scene.volumeLayers && scene.volumeLayers.length > 0
         ? renderVolumeLayers({ layers: scene.volumeLayers, project })
+        : null}
+      {scene.profileViewLayers && scene.profileViewLayers.length > 0
+        ? renderProfileViewLayers({
+          layers: scene.profileViewLayers,
+          selectedViewId: selectedProfileViewId,
+          project,
+          pickActive: false,
+          onProfileViewClick: (viewId) => onProfileViewClick?.(viewId),
+        })
         : null}
       <GripHandleLayer
         gripHandles={gripHandles}

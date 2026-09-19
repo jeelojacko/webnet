@@ -19,9 +19,11 @@ import type {
   CadSurfaceBoundary,
   CadSurfaceDefinition,
   CadSurfaceStyle,
+  CadProfileStyle,
   CadVolumeSurfaceStyle,
 } from './cadTypes';
 import type { CadVolumeSurfaceStylePatch } from './cadVolumeSurfaces';
+import type { CadProfileStylePatch } from './cadProfileTypes';
 
 export type CadCommandKey =
   | 'SELECT_ALL'
@@ -107,7 +109,17 @@ export type CadCommandKey =
   | 'VOLUME_STYLE_DUPLICATE'
   | 'VOLUME_STYLE_RENAME'
   | 'VOLUME_STYLE_UPDATE'
-  | 'VOLUME_STYLE_DELETE';
+  | 'VOLUME_STYLE_DELETE'
+  | 'PROFILE_CREATE'
+  | 'PROFILE_REBUILD'
+  | 'PROFILE_DELETE'
+  | 'PROFILE_VIEW_CREATE'
+  | 'PROFILE_VIEW_DELETE'
+  | 'PROFILE_STYLE_CREATE'
+  | 'PROFILE_STYLE_DUPLICATE'
+  | 'PROFILE_STYLE_RENAME'
+  | 'PROFILE_STYLE_UPDATE'
+  | 'PROFILE_STYLE_DELETE';
 export type CadCommandPhase = 'idle' | 'committed';
 
 export interface CadCommandState {
@@ -748,6 +760,80 @@ export type CadCommand =
       key: 'VOLUME_STYLE_DELETE';
       styleId: string;
       /** Required when volumes reference the style; refs rewire to it. */
+      replacementId?: string;
+    }
+  | {
+      key: 'PROFILE_CREATE';
+      name?: string;
+      /** Accepted for forward compatibility; profiles carry no layer binding (ignored). */
+      layerId?: CadLayerId;
+      styleId?: string;
+      alignmentEntityId: string;
+      surfaceId: string;
+      description?: string;
+    }
+  | {
+      key: 'PROFILE_REBUILD';
+      profileId: string;
+      name?: string;
+      /** Undefined = leave, null = clear, id = set (must exist). */
+      styleId?: string | null;
+      alignmentEntityId?: string;
+      surfaceId?: string;
+      /** Undefined = leave, null = clear, text = set. */
+      description?: string | null;
+    }
+  | {
+      key: 'PROFILE_DELETE';
+      profileId: string;
+    }
+  | {
+      key: 'PROFILE_VIEW_CREATE';
+      name?: string;
+      alignmentEntityId: string;
+      profileIds?: string[];
+      insertionX?: number;
+      insertionY?: number;
+      width?: number;
+      height?: number;
+      horizontalScale?: number;
+      verticalExaggeration?: number;
+      datumElevation?: number;
+      datumMode?: 'auto' | 'explicit';
+      datumStep?: number;
+      majorStationInterval?: number;
+      minorStationInterval?: number;
+      elevationGridInterval?: number;
+      styleId?: string;
+    }
+  | {
+      key: 'PROFILE_VIEW_DELETE';
+      viewId: string;
+    }
+  | {
+      key: 'PROFILE_STYLE_CREATE';
+      style: CadProfileStyle;
+    }
+  | {
+      key: 'PROFILE_STYLE_DUPLICATE';
+      styleId: string;
+      newId: string;
+      name: string;
+    }
+  | {
+      key: 'PROFILE_STYLE_RENAME';
+      styleId: string;
+      name: string;
+    }
+  | {
+      key: 'PROFILE_STYLE_UPDATE';
+      styleId: string;
+      patch: CadProfileStylePatch;
+    }
+  | {
+      key: 'PROFILE_STYLE_DELETE';
+      styleId: string;
+      /** Required when profiles or views reference the style; refs rewire to it. */
       replacementId?: string;
     };
 

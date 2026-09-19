@@ -70,6 +70,7 @@ import {
 } from './cadTransactionsSurveyDisplay';
 import { surfaceCommandDefinitions } from './cadTransactionsSurfaceCommands';
 import { volumeCommandDefinitions } from './cadTransactionsVolumeCommands';
+import { profileCommandDefinitions } from './cadTransactionsProfileCommands';
 export {
   applyCadGripEdit,
   buildCadGripHandles,
@@ -580,6 +581,16 @@ export const CAD_COMMAND_REGISTRY: Record<CadCommandKey, CadCommandDefinition<Ca
   VOLUME_STYLE_RENAME: volumeCommandDefinitions.VOLUME_STYLE_RENAME as CadCommandDefinition<CadCommand>,
   VOLUME_STYLE_UPDATE: volumeCommandDefinitions.VOLUME_STYLE_UPDATE as CadCommandDefinition<CadCommand>,
   VOLUME_STYLE_DELETE: volumeCommandDefinitions.VOLUME_STYLE_DELETE as CadCommandDefinition<CadCommand>,
+  PROFILE_CREATE: profileCommandDefinitions.PROFILE_CREATE as CadCommandDefinition<CadCommand>,
+  PROFILE_REBUILD: profileCommandDefinitions.PROFILE_REBUILD as CadCommandDefinition<CadCommand>,
+  PROFILE_DELETE: profileCommandDefinitions.PROFILE_DELETE as CadCommandDefinition<CadCommand>,
+  PROFILE_VIEW_CREATE: profileCommandDefinitions.PROFILE_VIEW_CREATE as CadCommandDefinition<CadCommand>,
+  PROFILE_VIEW_DELETE: profileCommandDefinitions.PROFILE_VIEW_DELETE as CadCommandDefinition<CadCommand>,
+  PROFILE_STYLE_CREATE: profileCommandDefinitions.PROFILE_STYLE_CREATE as CadCommandDefinition<CadCommand>,
+  PROFILE_STYLE_DUPLICATE: profileCommandDefinitions.PROFILE_STYLE_DUPLICATE as CadCommandDefinition<CadCommand>,
+  PROFILE_STYLE_RENAME: profileCommandDefinitions.PROFILE_STYLE_RENAME as CadCommandDefinition<CadCommand>,
+  PROFILE_STYLE_UPDATE: profileCommandDefinitions.PROFILE_STYLE_UPDATE as CadCommandDefinition<CadCommand>,
+  PROFILE_STYLE_DELETE: profileCommandDefinitions.PROFILE_STYLE_DELETE as CadCommandDefinition<CadCommand>,
 };
 
 export const createCadIdleCommandState = createIdleCommandState;

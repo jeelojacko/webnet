@@ -14,6 +14,7 @@ import type { CadCommand } from '../../engine/cad/cadTransactions.types';
 import type { BreaklineEntityPreview, BoundarySourcePreview } from '../../engine/cad/cadSurfaceView';
 import type { CadSurfaceSnapshot } from './cadSurfaceSnapshot';
 import type { CadVolumeSnapshot } from './cadVolumeSnapshot';
+import type { CadProfileSnapshot } from './cadProfileSnapshot';
 import type { ActiveCommandKey } from '../../hooks/surveyCad/useSurveyCadCommandTypes';
 import type { DraftSheet } from '../../engine/cad/cadDraftTypes';
 
@@ -34,7 +35,8 @@ export type SurveyManagerKind =
   | 'point-styles'
   | 'point-label-styles'
   | 'f2f'
-  | 'surfaces';
+  | 'surfaces'
+  | 'profiles';
 
 /**
  * Phase 18D — per-point display facts precomputed in the workspace (resolver
@@ -161,6 +163,8 @@ export interface CadWorkspaceSnapshot {
   surface: CadSurfaceSnapshot | null;
   /** Phase 18I — TIN-to-TIN volume relationships (derived status + quantities). */
   volume: CadVolumeSnapshot | null;
+  /** Phase 18J — surface profiles + profile views (derived status + stats). */
+  profile: CadProfileSnapshot | null;
   /** Phase 18E — F2F catalog + provenance summary (derived, no duplicate state). */
   f2f: CadF2FSnapshot | null;
   /** UI command keys with a live starter in the mounted workspace. */
@@ -201,6 +205,19 @@ export interface CadShellActions {
   selectSurface: (_surfaceId: string | null) => void;
   /** Phase 18I — select a volume surface (Toolspace/manager converge here). */
   selectVolume: (_volumeId: string | null) => void;
+  /** Phase 18J — select a surface profile (Toolspace/manager/viewport converge). */
+  selectProfile: (_profileId: string | null) => void;
+  /** Phase 18J — manual session rebuild of one profile (never auto-started). */
+  rebuildProfile: (_profileId: string) => string;
+  /** Phase 18J — create a profile view from the current profile selection. */
+  createProfileView: (_profileId?: string) => void;
+  /** Phase 18J — select a profile view (viewport click / Toolspace converge). */
+  selectProfileView: (_viewId: string | null) => void;
+  /**
+   * Phase 18J — display-station input resolves to E/N/elevation text (pure
+   * read; ambiguous equation gaps answer honestly, never guessed).
+   */
+  queryProfileElevation: (_profileId: string, _displayStation: number) => string;
   /**
    * Phase 18I — manual volume calculation through the session volume
    * service (explicit Calculate/Recalculate only; never auto-started).

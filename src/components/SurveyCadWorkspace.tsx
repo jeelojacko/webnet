@@ -52,13 +52,21 @@ import {
   formatVolumeDifferenceAnswer,
   queryVolumeDifference,
 } from '../cad-app/shell/cadVolumeSnapshot';
+import { buildCadProfileSnapshot, formatProfileElevationAnswer } from '../cad-app/shell/cadProfileSnapshot';
 import { CadSurfaceManager } from '../cad-app/shell/CadSurfaceManager';
+import { CadProfileManager } from '../cad-app/shell/CadProfileManager';
+import { buildProfileViewDisplayLayers } from '../engine/cad/cadProfileView';
+import { isProfileDisplayVisible } from '../engine/cad/cadProfileTypes';
+import { resolveProfileStationInput, queryProfileElevationAt } from '../engine/cad/profiles/profileInquiry';
+import { formatCadStation } from '../engine/cad/cadAlignmentStationing';
 import { createCadSurfaceCache } from '../engine/cad/cadSurfaceCache';
 import { createCadSurfaceContourCache } from '../engine/cad/surfaceContourCache';
 import { SurfaceWorkerClient } from '../workers/surfaceWorkerClient';
 import { SurfaceBuildService } from '../workers/surfaceBuildService';
 import { SurfaceContourService } from '../workers/surfaceContourService';
 import { SurfaceVolumeService } from '../workers/surfaceVolumeService';
+import { SurfaceProfileService } from '../workers/surfaceProfileService';
+import { createCadProfileCache } from '../engine/cad/profileCache';
 import { createCadSurfaceVolumeCache } from '../engine/cad/surfaceVolumeCache';
 import { computeCadSurfaceSourceRevision } from '../engine/cad/cadSurfaces';
 import { backfillCadSurfaceStyles } from '../engine/cad/cadSurfaceStyles';
@@ -72,6 +80,7 @@ import {
   describeSelectedBoundaryEntity,
   describeSelectedBreaklineEntity,
 } from '../engine/cad/cadSurfaceView';
+import { surfaceContentRevision } from '../engine/cad/cadSurfaceView';
 import { buildCadF2FSnapshot } from './surveyCad/f2fGeneratedSummary';
 import { getCadEntityDisplayLabel } from '../engine/cad/cadEntityNames';
 import { resolveCurrentCadLayerId } from '../engine/cad/cadLayers';
@@ -345,6 +354,9 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
   const [surveyManager, setSurveyManager] = useState<{ kind: SurveyManagerKind; selectedId?: string } | null>(null);
   // Phase 18I — volume UI state (all session-only; results never persist).
   const [selectedVolumeId, setSelectedVolumeId] = useState<string | null>(null);
+  // Phase 18J — profile UI state (session-only; samples never persist).
+  const [selectedProfileId, setSelectedProfileId] = useState<string | null>(null);
+  const [selectedProfileViewId, setSelectedProfileViewId] = useState<string | null>(null);
   const [volumePick, setVolumePick] = useState<{ volumeId: string } | null>(null);
   const [volumePickAnswer, setVolumePickAnswer] = useState<{ volumeId: string; text: string } | null>(null);
   const [volumeVersion, setVolumeVersion] = useState(0);
@@ -551,6 +563,86 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
     [activeDrawing.drawingId, surfaceCache, volumeCache],
   );
   useEffect(() => () => volumeService.dispose(), [volumeService]);
+  // Phase 18J — profile derivation control plane (one per drawing
+  // session, mirrors SurfaceVolumeService ownership). Manual derivation
+  // only: source rebuilds and alignment edits never auto-start profile
+  // work; the notify hooks cancel in-flight work for affected profiles
+  // and status re-derives from the revision. Results never persist.
+  const profileCache = useMemo(
+    () => createCadProfileCache(activeDrawing.drawingId),
+    [activeDrawing.drawingId],
+  );
+  const [profileVersion, setProfileVersion] = useState(0);
+  const profileService = useMemo(
+    () =>
+      new SurfaceProfileService({
+        drawingId: activeDrawing.drawingId,
+        getProject: () => activeProjectForBuildsRef.current,
+        getDrawingId: () => drawingIdForBuildsRef.current,
+        tinCache: surfaceCache,
+        profileCache,
+        createTransport: () => {
+          try {
+            if (typeof Worker === 'undefined') return null;
+            return new SurfaceWorkerClient(
+              new Worker(new URL('../workers/surfaceWorker.ts', import.meta.url), {
+                type: 'module',
+              }),
+            );
+          } catch {
+            return null;
+          }
+        },
+        notify: (message) => setFileStatusText(message),
+        onStateChange: () => setProfileVersion((version) => version + 1),
+      }),
+    [activeDrawing.drawingId, surfaceCache, profileCache],
+  );
+  useEffect(() => () => profileService.dispose(), [profileService]);
+  // Source-rebuild hookup: only a NEW mesh revision for a surface
+  // cancels in-flight profile work (their revision moved). A ref diff
+  // guards it — notifying on every render would supersede work that was
+  // just requested. Status itself re-derives from revisions every publish.
+  const notifiedProfileMeshRevisionsRef = useRef<Record<string, string[]>>({});
+  useEffect(() => {
+    const previous = notifiedProfileMeshRevisionsRef.current;
+    for (const [surfaceId, revisions] of Object.entries(surfaceMeshSessions)) {
+      const seen = previous[surfaceId] ?? [];
+      if (revisions.length !== seen.length || revisions.some((entry, index) => entry !== seen[index])) {
+        profileService.notifyMeshBuilt(surfaceId);
+      }
+    }
+    notifiedProfileMeshRevisionsRef.current = surfaceMeshSessions;
+  }, [surfaceMeshSessions, profileService]);
+  // Alignment-edit hookup: only a CHANGED alignment entity cancels
+  // in-flight work for bound profiles (revision guard keeps stale
+  // results from CURRENT). Digest diff — not a per-render notify.
+  const notifiedAlignmentDigestsRef = useRef<Record<string, string>>({});
+  useEffect(() => {
+    const previous = notifiedAlignmentDigestsRef.current;
+    const next: Record<string, string> = {};
+    for (const entity of cadProject.entities) {
+      if (entity.type !== 'alignment') continue;
+      const digest = JSON.stringify(entity);
+      next[entity.id] = digest;
+      if (previous[entity.id] != null && previous[entity.id] !== digest) {
+        profileService.notifyAlignmentChanged(entity.id);
+      }
+    }
+    notifiedAlignmentDigestsRef.current = next;
+  }, [cadProject, profileService]);
+  // Scene + snapshot inputs refresh only when the service reports a
+  // state change (pending/diagnostic transitions), not on every render.
+  const surfaceProfileInputs = useMemo(
+    () => ({
+      version: profileVersion,
+      tinCache: surfaceCache,
+      profileCache,
+      buildingProfileIds: profileService.buildingProfileIds(),
+      sessionDiagnostics: profileService.profileDiagnostics(),
+    }),
+    [profileService, profileVersion, surfaceCache, profileCache],
+  );
   // Source-rebuild hookup: only a NEW mesh revision for a surface
   // cancels in-flight volume work (their revision moved). A ref diff
   // guards it — notifying on every render would supersede work that was
@@ -693,6 +785,26 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
             ),
         },
     [displayScene, showParcelLabels],
+  );
+  // Phase 18J — derived profile-view display layers. Views on OFF/FROZEN
+  // layers are dropped here using the engine visibility contract (the
+  // viewport filter is engine-owned and does not yet walk profileViewLayers).
+  const profileViewLayers = useMemo(() => {
+    // surfaceProfileInputs.version is the republish signal: the cache is
+    // mutated in place by the service, so a version bump is the only
+    // reliable "results changed" trigger for this memo.
+    void surfaceProfileInputs.version;
+    const layers = buildProfileViewDisplayLayers(activeProjectForBuildsRef.current, profileCache);
+    return layers.filter((layer) =>
+      isProfileDisplayVisible(activeProjectForBuildsRef.current, {
+        alignmentEntityId: layer.viewId,
+        layerId: layer.layerId,
+      }),
+    );
+  }, [activeProjectForBuildsRef, profileCache, surfaceProfileInputs]);
+  const displaySceneWithProfiles = useMemo(
+    () => ({ ...displaySceneWithParcelLabelToggle, profileViewLayers }),
+    [displaySceneWithParcelLabelToggle, profileViewLayers],
   );
   const reportedComputationEntities = useMemo(
     () =>
@@ -945,6 +1057,17 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
         buildingVolumeIds: surfaceVolumeInputs.buildingVolumeIds,
         sessionDiagnostics: surfaceVolumeInputs.sessionDiagnostics,
       }),
+      profile: buildCadProfileSnapshot(
+        activeProject,
+        surfaceCache,
+        profileCache,
+        selectedProfileId,
+        selectedProfileViewId,
+        {
+          buildingProfileIds: surfaceProfileInputs.buildingProfileIds,
+          sessionDiagnostics: surfaceProfileInputs.sessionDiagnostics,
+        },
+      ),
       availableCommands: shellAvailableCommands,
     };
   }, [
@@ -952,6 +1075,7 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
     propertiesPanelState, activeCommandKey, statusText, cadWorkspace, stationIds, dependencySummary, units,
     shellAvailableCommands, surfaceCache, surfaceRevisionIndex, selectedSurfaceId, lastSurfaceInquiry,
     surfaceBuildInputs, volumeCache, selectedVolumeId, surfaceVolumeInputs,
+    profileCache, surfaceProfileInputs, selectedProfileId, selectedProfileViewId,
   ]);
 
   useEffect(() => {
@@ -1004,6 +1128,58 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
     return formatVolumeDifferenceAnswer(result, name, x, y);
   };
 
+  // Phase 18J — drop session samples for deleted profiles (results never
+  // persist; the service cancels in-flight work first). Source surface
+  // meshes are untouched.
+  const knownProfileIdsRef = useRef<Set<string>>(new Set());
+  useEffect(() => {
+    const live = new Set((activeProject.surfaceProfiles ?? []).map((entry) => entry.id));
+    for (const id of knownProfileIdsRef.current) {
+      if (!live.has(id)) profileService.handleProfileDeleted(id);
+    }
+    knownProfileIdsRef.current = live;
+    if (selectedProfileId != null && !live.has(selectedProfileId)) setSelectedProfileId(null);
+  }, [activeProject.surfaceProfiles, profileService, selectedProfileId]);
+
+  // Phase 18J — Profile Elevation at Station (live interpolation inquiry).
+  // Display station resolves to raw chainage through the shared stationing
+  // semantics; an ambiguous equation gap or unstationed input is surfaced
+  // honestly (never guessed). Null alignment/surface/mesh = honest block.
+  const describeProfileElevation = (profileId: string, displayStation: number): string => {
+    const profile = (activeProject.surfaceProfiles ?? []).find((entry) => entry.id === profileId);
+    if (!profile) return 'Profile not found.';
+    const alignment = activeProject.entities.find((entry) => entry.id === profile.alignmentEntityId);
+    const surface = (activeProject.surfaces ?? []).find((entry) => entry.id === profile.surfaceId);
+    if (!alignment || alignment.type !== 'alignment' || !surface) {
+      return formatProfileElevationAnswer(profile.name, profile.alignmentEntityId, '—', NaN, null, false);
+    }
+    const displayed = formatCadStation(displayStation);
+    const mesh = surfaceCache.get(surface.id, surfaceContentRevision(activeProject, surface));
+    if (!mesh) {
+      return formatProfileElevationAnswer(profile.name, alignment.name, displayed, NaN, null, false);
+    }
+    const raw = resolveProfileStationInput(
+      { elements: alignment.elements, startStation: alignment.startStation, stationEquations: alignment.stationEquations },
+      displayStation,
+    );
+    if (raw == null) {
+      return `Station ${displayed} is ambiguous inside a station equation (or unstationed) on “${profile.name}” — no guess.`;
+    }
+    const answer = queryProfileElevationAt(
+      {
+        alignmentElements: alignment.elements,
+        startStation: alignment.startStation,
+        stationEquations: alignment.stationEquations,
+        mesh: { points: mesh.points, triangles: mesh.triangles, grid: mesh.grid, adjacency: mesh.adjacency, edgeKinds: mesh.edgeKinds },
+      },
+      raw,
+    );
+    if ('gap' in answer) {
+      return `No surface profile elevation at station ${displayed} on “${profile.name}”.`;
+    }
+    return formatProfileElevationAnswer(profile.name, alignment.name, displayed, raw, answer, true);
+  };
+
   // Phase 18F — drop session meshes for deleted surfaces (meshes never
   // persist; the revision index doubles as the known-id set). Phase 18H:
   // contour sets drop with the definition (service cancels in-flight
@@ -1045,6 +1221,26 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
       runSurveyCommand: (command) => cadWorkspace.runLayerCommand(command),
       selectSurface: (surfaceId) => setSelectedSurfaceId(surfaceId),
       selectVolume: (volumeId) => setSelectedVolumeId(volumeId),
+      selectProfile: (profileId) => setSelectedProfileId(profileId),
+      rebuildProfile: (profileId) => profileService.requestProfile(profileId),
+      createProfileView: (profileId) => {
+        const target = (activeProject.surfaceProfiles ?? []).find(
+          (entry) => entry.id === (profileId ?? selectedProfileId),
+        );
+        if (!target) {
+          setFileStatusText('Select a surface profile first.');
+          return;
+        }
+        const ok = cadWorkspace.runLayerCommand({
+          key: 'PROFILE_VIEW_CREATE',
+          alignmentEntityId: target.alignmentEntityId,
+          profileIds: [target.id],
+        });
+        setFileStatusText(ok ? 'Profile view created.' : 'Profile view rejected — see status/locks.');
+      },
+      selectProfileView: (viewId) => setSelectedProfileViewId(viewId),
+      queryProfileElevation: (profileId, displayStation) =>
+        describeProfileElevation(profileId, displayStation),
       requestVolume: (volumeId) => volumeService.requestVolume(volumeId),
       calculateSelectedVolume: () => {
         if (selectedVolumeId == null) return 'No volume surface selected.';
@@ -1328,6 +1524,13 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
             onClose={() => setSurveyManager(null)}
           />
         ) : null}
+        {surveyManager?.kind === 'profiles' && shellSnapshot ? (
+          <CadProfileManager
+            snapshot={shellSnapshot}
+            actions={shellActions}
+            onClose={() => setSurveyManager(null)}
+          />
+        ) : null}
         {exportCenterOpen ? (
           <ExportCenterPanel
             drawing={activeDrawing}
@@ -1347,7 +1550,7 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
           parcelLayoutWorkflow={parcelLayoutWorkflow}
           traverseDraftPanelState={traverseDraftPanelState}
           commandDisplay={commandDisplay}
-          displayScene={displaySceneWithParcelLabelToggle}
+          displayScene={displaySceneWithProfiles}
           reportedComputationEntities={reportedComputationEntities}
           parcelLayoutState={parcelLayoutState}
           parcelLayoutFrontageSegmentSelectionActive={parcelLayoutFrontageSegmentSelectionActive}
@@ -1400,6 +1603,8 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
           }}
           selectedSurfaceId={selectedSurfaceId}
           onSurfaceClick={(surfaceId) => setSelectedSurfaceId(surfaceId)}
+          selectedProfileViewId={selectedProfileViewId}
+          onProfileViewClick={(viewId) => setSelectedProfileViewId(viewId)}
         />
       </div>
     </div>

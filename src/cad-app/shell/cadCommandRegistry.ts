@@ -137,6 +137,15 @@ export const CAD_SHELL_COMMANDS: CadShellCommandDef[] = [
   action('SURFVOLCALC', 'Calculate Volume', 'Surface', 'Calculate volumes for the selected volume (both sources must be Current).'),
   action('SURFDIFF', 'Surface Difference', 'Surface', 'Query base/comparison elevations + CUT/FILL verdict (manager).'),
   action('SURFVOLREPORT', 'Volume Report', 'Surface', 'Download the Volume Summary CSV (Current volumes only, manager).'),
+  // Phase 18J — profile commands (all route through the profile manager;
+  // Rebuild runs the session profile service for the selected profile).
+  action('PROFILE', 'Profile', 'Surface', 'Open the surface profile manager.'),
+  action('PROFILEMANAGER', 'Profile Manager', 'Surface', 'Open the surface profile manager.'),
+  action('PROFILECREATE', 'Create Surface Profile', 'Surface', 'Create a surface profile from an alignment + surface (manager).'),
+  action('PROFILEVIEW', 'Create Profile View', 'Surface', 'Create a profile view from the selected profile.'),
+  action('PROFILEELEV', 'Profile Elevation', 'Surface', 'Query profile elevation at a station (manager).'),
+  action('PROFILEREBUILD', 'Rebuild Profile', 'Surface', 'Rebuild the selected surface profile (manual).'),
+  action('PROFILESTYLE', 'Profile Styles', 'Surface', 'Edit profile display styles (manager).'),
 ];
 
 const COMMAND_BY_KEY = new Map<string, CadShellCommandDef>(
@@ -266,6 +275,17 @@ export const executeShellCommand = (
       return true;
     case 'SURFVOLCALC':
       actions.calculateSelectedVolume();
+      return true;
+    case 'PROFILE':
+    case 'PROFILEMANAGER':
+    case 'PROFILECREATE':
+    case 'PROFILEELEV':
+    case 'PROFILESTYLE':
+    case 'PROFILEREBUILD':
+      actions.openSurveyManager('profiles');
+      return true;
+    case 'PROFILEVIEW':
+      actions.createProfileView();
       return true;
     default:
       return false;

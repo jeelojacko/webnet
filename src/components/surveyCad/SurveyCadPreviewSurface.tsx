@@ -12,7 +12,7 @@ interface RenderSurfaceLayersOptions {
   onSurfaceClick: (_surfaceId: string) => void;
 }
 
-const toScreenD = (
+export const toScreenD = (
   d: string,
   project: ProjectPoint,
 ): string => {

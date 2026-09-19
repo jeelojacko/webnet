@@ -34,6 +34,9 @@ export type SurveyCadPreviewCanvasProps = {
   /** Phase 18F — surface selection (entity selection untouched). */
   selectedSurfaceId?: string | null;
   onSurfaceClick?: (_surfaceId: string) => void;
+  /** Phase 18J — profile-view selection (entity selection untouched). */
+  selectedProfileViewId?: string | null;
+  onProfileViewClick?: (_viewId: string) => void;
   consumeLatchedOrActiveSnap: (_extendMode?: boolean) => boolean;
   didDrag: boolean;
   dragState: DragState;
