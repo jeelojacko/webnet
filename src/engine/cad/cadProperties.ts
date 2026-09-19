@@ -432,11 +432,11 @@ const buildEntityProperties = (project: CadProject, entity: CadEntity): CadEntit
       rows.push(
         row('name', 'Name', getCadEntityEditableName(entity) || getCadEntityDisplayLabel(entity), { kind: 'entity-name' }),
         row('block-definition', 'Block', entity.blockDefinitionId),
-        row('insertion-e', 'Insertion E', numeric(entity.x)),
-        row('insertion-n', 'Insertion N', numeric(entity.y)),
-        row('rotation', 'Rotation', numeric(entity.rotationDeg, 4)),
-        row('scale-x', 'Scale X', numeric(entity.scaleX, 4)),
-        row('scale-y', 'Scale Y', numeric(entity.scaleY, 4)),
+        row('insertion-e', 'Insertion E', numeric(entity.x), { kind: 'block-insertion-x' }),
+        row('insertion-n', 'Insertion N', numeric(entity.y), { kind: 'block-insertion-y' }),
+        row('rotation', 'Rotation', numeric(entity.rotationDeg, 4), { kind: 'block-rotation' }),
+        row('scale-x', 'Scale X', numeric(entity.scaleX, 4), { kind: 'block-scale-x' }),
+        row('scale-y', 'Scale Y', numeric(entity.scaleY, 4), { kind: 'block-scale-y' }),
       );
       return rows;
   }

@@ -22,7 +22,12 @@ export type CadEntityPropertyEditField =
   | { kind: 'entity-color' }
   | { kind: 'entity-linetype' }
   | { kind: 'entity-lineweight' }
-  | { kind: 'entity-transparency' };
+  | { kind: 'entity-transparency' }
+  | { kind: 'block-insertion-x' }
+  | { kind: 'block-insertion-y' }
+  | { kind: 'block-rotation' }
+  | { kind: 'block-scale-x' }
+  | { kind: 'block-scale-y' };
 
 export interface CadPropertiesEntityView {
   entityId: CadEntityId;

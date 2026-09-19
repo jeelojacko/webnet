@@ -71,6 +71,7 @@ export const CadRibbon: React.FC<CadRibbonProps> = ({ snapshot, actions, collaps
       </div>
       <div className="cad-shell-ribbon-groups">
         {tab === 'Home' ? <CadLayersGroup snapshot={snapshot} actions={actions} /> : null}
+        {tab === 'Home' ? <CadBlocksRibbonGroup snapshot={snapshot} actions={actions} /> : null}
         {tab === 'Survey' ? <CadSurveyGroup snapshot={snapshot} actions={actions} /> : null}
         {tab === 'Surface' ? <CadSurfaceRibbonGroup snapshot={snapshot} actions={actions} /> : null}
         {groups.map((group) => (
@@ -93,6 +94,46 @@ export const CadRibbon: React.FC<CadRibbonProps> = ({ snapshot, actions, collaps
               ))}
             </div>
           </div>
+        ))}
+      </div>
+    </div>
+  );
+};
+
+/**
+ * Phase 18N — compact BLOCKS group on Home: Insert (insert tab),
+ * Create (definitions tab), Manager, Explode (selection). Same actions as
+ * the command registry; no duplicate wiring.
+ */
+const CadBlocksRibbonGroup: React.FC<{
+  snapshot: CadWorkspaceSnapshot | null;
+  actions: CadShellActions | null;
+}> = ({ snapshot, actions }) => {
+  const ready = snapshot != null && actions?.openBlockManager != null;
+  const explodeReady = ready && (snapshot?.selectionCount ?? 0) > 0 && actions?.explodeSelectedBlocks != null;
+  const buttons: Array<{ key: string; label: string; hint: string; disabled: boolean; onClick: () => void }> = [
+    { key: 'insert', label: 'Insert', hint: 'Insert a block reference (Block Manager insert tab).', disabled: !ready, onClick: () => actions?.openBlockManager?.('insert') },
+    { key: 'create', label: 'Create', hint: 'Create a block from the current selection.', disabled: !ready, onClick: () => actions?.openBlockManager?.('blocks') },
+    { key: 'manager', label: 'Manager', hint: 'Open the Block Manager (definitions, survey symbols).', disabled: !ready, onClick: () => actions?.openBlockManager?.('blocks') },
+    { key: 'explode', label: 'Explode', hint: 'Explode selected block references into plain entities.', disabled: !explodeReady, onClick: () => actions?.explodeSelectedBlocks?.() },
+  ];
+  return (
+    <div className="cad-shell-ribbon-group" aria-label="Blocks">
+      <span className="cad-shell-ribbon-group-label">Blocks</span>
+      <div className="cad-shell-ribbon-buttons">
+        {buttons.map((entry) => (
+          <button
+            key={entry.key}
+            type="button"
+            title={entry.hint}
+            aria-label={entry.label}
+            disabled={entry.disabled}
+            className="cad-shell-ribbon-button"
+            onClick={entry.onClick}
+            data-cad-blocks={entry.key}
+          >
+            {entry.label}
+          </button>
         ))}
       </div>
     </div>
@@ -243,6 +284,17 @@ const CadSurveyGroup: React.FC<{
             {entry.label}
           </button>
         ))}
+        <button
+          type="button"
+          title="Open the survey symbol library (Block Manager symbols view)"
+          aria-label="Survey Symbols"
+          disabled={!snapshot || !actions?.openBlockManager}
+          className="cad-shell-ribbon-button"
+          onClick={() => actions?.openBlockManager?.('symbols')}
+          data-cad-survey-symbols="true"
+        >
+          Survey Symbols
+        </button>
       </div>
     </div>
     <div className="cad-shell-ribbon-group" aria-label="Field to Finish">

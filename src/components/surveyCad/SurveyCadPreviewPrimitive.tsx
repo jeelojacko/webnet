@@ -81,12 +81,14 @@ export const renderPrimitive = ({
   };
 
   const { dasharray: screenDasharray, dashoffset: screenDashoffset } = screenDashOf(primitive, scale);
+  const hoverTitle = primitive.hoverTitle ? <title>{primitive.hoverTitle}</title> : null;
   switch (primitive.kind) {
     case 'line': {
       const start = project(primitive.points[0].x, primitive.points[0].y);
       const end = project(primitive.points[1].x, primitive.points[1].y);
       return (
         <g key={primitive.id}>
+          {hoverTitle}
           <line
             {...commonProps}
             data-survey-cad-hit-target="true"
@@ -122,6 +124,7 @@ export const renderPrimitive = ({
       const path = arcPathFromPrimitive(primitive, project, scale);
       return (
         <g key={primitive.id}>
+          {hoverTitle}
           <path
             {...commonProps}
             data-survey-cad-hit-target="true"
@@ -168,6 +171,7 @@ export const renderPrimitive = ({
       });
       return (
         <g key={primitive.id}>
+          {hoverTitle}
           <circle
             {...commonProps}
             data-survey-cad-hit-target="true"
@@ -236,6 +240,7 @@ export const renderPrimitive = ({
           : undefined;
       return (
         <g key={primitive.id}>
+          {hoverTitle}
           <rect
             {...commonProps}
             data-survey-cad-hit-target="true"
@@ -277,6 +282,7 @@ export const renderPrimitive = ({
       const center = project(primitive.center.x, primitive.center.y);
       return (
         <g key={primitive.id}>
+          {hoverTitle}
           <ellipse
             {...commonProps}
             cx={center.x}

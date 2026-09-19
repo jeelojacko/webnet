@@ -13,6 +13,7 @@ import { CadLayerPalette } from './CadLayerPalette';
 import { CadCommandDock } from './CadCommandDock';
 import { CadStatusBar } from './CadStatusBar';
 import { CadDrawingTabs, CadModelLayoutTabs } from './CadDrawingTabs';
+import { CadBlockManager } from '../blocks/CadBlockManager';
 import {
   executeShellCommand,
   resolveShellCommandText,
@@ -50,6 +51,7 @@ export const CadApplicationShell: React.FC<CadApplicationShellProps> = ({ contro
   const layout = useCadShellLayout();
   const snapshot = useCadShellSnapshot(link);
   const [showStart, setShowStart] = useState(false);
+  const [blockManager, setBlockManager] = useState<{ tab: 'blocks' | 'symbols' | 'insert' } | null>(null);
   const [contextMenu, setContextMenu] = useState<{ x: number; y: number } | null>(null);
 
   const {
@@ -85,9 +87,12 @@ export const CadApplicationShell: React.FC<CadApplicationShellProps> = ({ contro
       }
       layout.setToolspaceTab(tab);
     };
+    // Phase 18N — registry BLOCK/INSERT/BLOCKS entries open the manager.
+    link.requestBlockManager = (tab) => setBlockManager({ tab: tab ?? 'blocks' });
     return () => {
       link.requestLayerManager = null;
       link.requestToolspaceTab = null;
+      link.requestBlockManager = null;
     };
   }, [link, layout]);
 
@@ -278,6 +283,28 @@ export const CadApplicationShell: React.FC<CadApplicationShellProps> = ({ contro
         lineweightDisplay={layout.layout.lineweightDisplay}
         onToggleLineweightDisplay={layout.setLineweightDisplay}
       />
+      {blockManager && snapshot?.blocks ? (
+        <CadBlockManager
+          blocks={snapshot.blocks}
+          selectedEntityIds={snapshot.selectedEntityIds}
+          initialTab={blockManager.tab}
+          actions={{
+            runBlockOp: (op) =>
+              link.actions?.runBlockOp?.(op) ?? { applied: false, reason: 'Block commands unavailable.' },
+            ensureSymbols: () => link.actions?.ensureBlockSymbols?.() ?? 0,
+            selectEntities: (ids) => link.actions?.selectEntities(ids),
+            armInsertPick: (definitionId, scale, rotationDeg, repeat) => {
+              link.actions?.armInsertPick?.(definitionId, scale, rotationDeg, repeat);
+              setBlockManager(null);
+            },
+            insertPickArmed: snapshot.blocks.insertPick != null
+              ? { definitionId: snapshot.blocks.insertPick.definitionId }
+              : null,
+            cancelInsertPick: () => link.actions?.cancelInsertPick?.(),
+          }}
+          onClose={() => setBlockManager(null)}
+        />
+      ) : null}
     </div>
   );
 };

@@ -10,6 +10,9 @@ export interface CadDisplayPrimitiveBase {
   layerId: string;
   sourceEntityId: CadEntityId;
   sourceSegmentId?: string;
+  /** Viewport-only hover text (native SVG title). Phase 18N sets
+   *  `Block: <name>` on block-expansion overlay primitives. */
+  hoverTitle?: string;
   stroke: string;
   fill?: string;
   opacity?: number;

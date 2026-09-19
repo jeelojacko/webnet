@@ -235,6 +235,11 @@ const updateEntityFromGrip = (
         return updateArcEndpointFromGrip(entity, gripKind, point);
       }
       return null;
+    case 'block-reference':
+      // Phase 18N UI slice: the insertion grip drags the whole reference.
+      // Rotation/scale stay Properties-only (no grip affordance).
+      if (gripKind !== 'insertion') return null;
+      return { ...entity, x: point.x, y: point.y };
     default:
       return null;
   }

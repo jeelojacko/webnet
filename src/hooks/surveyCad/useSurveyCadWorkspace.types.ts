@@ -309,6 +309,13 @@ export interface UseSurveyCadWorkspaceResult {
   ) => import('./surveyCadPropertiesEdit').CadPropertiesEditOutcome;
   /** Dispatch one undoable command (LAYER_* family); false when rejected. */
   runLayerCommand: (_command: import('../../engine/cad/cadTransactions.types').CadCommand) => boolean;
+  /** Phase 18N — one block table/reference op (undoable); interim seam until BLOCK_* transactions land. */
+  runBlockOp: (_op: import('../../cad-app/blocks/cadBlockUiCommands').CadBlockUiOp) => {
+    applied: boolean;
+    reason?: string;
+  };
+  /** Phase 18N — lazy-seed gate; returns definitions added. */
+  ensureBlockSymbols: () => number;
   /**
    * Phase 18M — commit a staged LandXML preview through ONE deferred
    * LANDXML_IMPORT transaction (meshes scheduled asynchronously). Returns
