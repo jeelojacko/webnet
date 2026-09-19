@@ -5,6 +5,7 @@ import type {
   CadBounds,
   CadDrawingDocument,
   CadParcelLayoutUiState,
+  CadSampleLineGroup,
   CadSurveyPointEntity,
   SurveyCadPersistedState,
 } from '../engine/cad/cadTypes';
@@ -1448,19 +1449,32 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
         // then each frame steps down by height + gap — never overlapping
         // by construction. Placements persist via undoable transactions.
         const gap = 20;
-        const estimatedHeight = (lineId: string): number =>
-          estimateSectionViewFrame(activeProject, sectionCache, group, lineId, 1, 60).height + 20;
-        const lowest = existing.length > 0
-          ? Math.min(...existing.map((entry) => entry.insertionY))
-          : 0;
-        const clearance = existing.length > 0
-          ? Math.max(...existing.map((entry) => estimatedHeight(entry.sampleLineId))) + gap
+        const groupById = new Map((activeProject.sampleLineGroups ?? []).map((entry) => [entry.id, entry]));
+        const estimatedHeight = (ownerGroup: CadSampleLineGroup, lineId: string, ve = 1): number =>
+          estimateSectionViewFrame(activeProject, sectionCache, ownerGroup, lineId, ve, 60).height + 20;
+        // Layout clears EVERY existing section view, not just this group's:
+        // a new group stacks below the current lowest frame so cross-group
+        // frames never overlap.
+        const allViews = activeProject.sectionViews ?? [];
+        const lowest = allViews.length > 0
+          ? Math.min(...allViews.map((entry) => entry.insertionY))
           : 0;
         const frames = missing.map((line) => ({
           lineId: line.id,
           width: line.leftWidth + line.rightWidth,
-          height: estimatedHeight(line.id),
+          height: estimatedHeight(group, line.id),
         }));
+        const clearance = allViews.length > 0
+          ? Math.max(
+              ...allViews.map((view) => {
+                const owner = groupById.get(view.sampleLineGroupId);
+                return owner
+                  ? estimatedHeight(owner, view.sampleLineId, view.verticalExaggeration)
+                  : gap * 4;
+              }),
+              ...frames.map((frame) => frame.height),
+            ) + gap
+          : 0;
         const placements = layoutSectionViewStack(0, lowest - clearance, frames, gap);
         let created = 0;
         for (const placement of placements) {

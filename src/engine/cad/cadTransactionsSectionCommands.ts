@@ -82,6 +82,11 @@ const editGroup = (
   const groups = snapshot.project.sampleLineGroups ?? [];
   const group = groups.find((entry) => entry.id === groupId);
   if (!group) return null;
+  // LOCK blocks every sample-line/group-content edit at the transaction
+  // boundary (same contract as profile-view updates).
+  if (snapshot.project.layers.find((entry) => entry.id === group.layerId)?.locked === true) {
+    return null;
+  }
   const next = mutate(group);
   if (!next) return null;
   return replaceGroup(
@@ -420,7 +425,9 @@ const sectionViewCreateCommand: CadCommandDefinition<SectionViewCreateCommand> =
       ...(command.elevationGridInterval != null
         ? { elevationGridInterval: command.elevationGridInterval }
         : {}),
-      ...(command.showCutFill != null ? { showCutFill: command.showCutFill } : {}),
+      // Cut/fill shading defaults ON for a new view (the settings panel
+      // toggles it off explicitly); the pair must still exist to render.
+      showCutFill: command.showCutFill ?? true,
       ...(command.styleId != null ? { styleId: command.styleId } : {}),
       layerId: resolveSectionLayerId(snapshot.project, command.layerId),
     };

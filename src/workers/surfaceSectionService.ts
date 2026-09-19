@@ -214,6 +214,14 @@ export class SurfaceSectionService {
     if (group.surfaceSources.length === 0) {
       return `Section derivation blocked: “${group.name}” has no source surfaces.`;
     }
+    // Out-of-range lines can never extract (engine rejects them); sending one
+    // would fail the whole batch. Their status derives OUT_OF_RANGE from the
+    // alignment extent alone, so they are excluded from the request and its
+    // pending pairs — never treated as a derivation failure.
+    const requestableLines = lines.filter((line) => !isSectionLineOutOfRange(alignment, line));
+    if (requestableLines.length === 0) {
+      return `No in-range sample lines to build for “${group.name}”.`;
+    }
     const surfaceRevisions: Record<string, string | null> = {};
     const sources: SurfaceSectionsSourceMesh[] = [];
     for (const source of group.surfaceSources) {
@@ -238,7 +246,7 @@ export class SurfaceSectionService {
       alignmentViewOf(alignment),
       surfaceRevisions,
     );
-    const lineInputs: SurfaceSectionsLineInput[] = lines.map((line) => ({
+    const lineInputs: SurfaceSectionsLineInput[] = requestableLines.map((line) => ({
       lineId: line.id,
       lineRevision: computeCadSampleLineRevision(
         line,
@@ -251,7 +259,7 @@ export class SurfaceSectionService {
       skewDeg: line.skewDeg,
     }));
     const revisionOfLine = new Map(lineInputs.map((entry) => [entry.lineId, entry.lineRevision]));
-    const allCached = lines.every((line) =>
+    const allCached = requestableLines.every((line) =>
       group.surfaceSources.every(
         (source) =>
           this.deps.sectionCache.get(
@@ -264,7 +272,7 @@ export class SurfaceSectionService {
     if (allCached) return `Sections for “${group.name}” are already current.`;
     const transport = this.transportFor();
     if (!transport) {
-      for (const line of lines) {
+      for (const line of requestableLines) {
         for (const source of group.surfaceSources) {
           this.diagnostics.set(pairKey(line.id, source.surfaceId), {
             revision: groupRevision,
@@ -288,7 +296,7 @@ export class SurfaceSectionService {
       sources,
       lines: lineInputs,
     });
-    const pairKeys = lines.flatMap((line) =>
+    const pairKeys = requestableLines.flatMap((line) =>
       group.surfaceSources.map((source) => pairKey(line.id, source.surfaceId)),
     );
     for (const key of pairKeys) this.buildingPairs.add(key);
