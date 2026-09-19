@@ -1,3 +1,5 @@
+import type { CadAnnotationAnchor } from './annotation/cadAnnotationAnchors';
+import type { CadAnnotationSettings } from './annotation/cadAnnotationSettings';
 import type { ParseOptions, StationErrorEllipse, StationId, UnitsMode } from '../../types';
 import type { FieldToFinishSettings } from '../fieldToFinish/catalogIo';
 import type { FeatureCodeCatalog } from '../fieldToFinish/featureCatalog';
@@ -88,11 +90,21 @@ export interface CadLineType {
   dashPattern: number[];
 }
 
+export type CadTextHeightMode = 'legacy-screen' | 'model' | 'paper';
+
 export interface CadTextStyle {
   id: CadTextStyleId;
   name: string;
   fontFamily: string;
   fontSize: number;
+  /** Phase 18O professional text fields (all optional; absent = legacy). */
+  heightMode?: CadTextHeightMode;
+  modelHeight?: number;
+  paperHeightMm?: number;
+  widthFactor?: number;
+  lineSpacingFactor?: number;
+  fontWeight?: 'normal' | 'bold';
+  fontStyle?: 'normal' | 'italic';
 }
 
 export type CadPointSymbolShape = 'circle' | 'square' | 'triangle' | 'cross' | 'x' | 'dot';
@@ -395,6 +407,116 @@ export interface CadBlockReferenceEntity extends CadBaseEntity {
 
 export type CadBlockChildType = CadBlockChild['type'];
 
+// ---------------------------------------------------------------------------
+// Phase 18O professional annotation entities + style tables (all additive)
+// ---------------------------------------------------------------------------
+
+/** 9-point mtext attachment. */
+export type CadMTextAttachment =
+  | 'top-left' | 'top-center' | 'top-right'
+  | 'middle-left' | 'middle-center' | 'middle-right'
+  | 'bottom-left' | 'bottom-center' | 'bottom-right';
+
+export interface CadMTextEntity extends CadBaseEntity {
+  type: 'mtext';
+  x: number;
+  y: number;
+  text: string;
+  textStyleId: CadTextStyleId;
+  rotationDeg: number;
+  attachment: CadMTextAttachment;
+}
+
+export interface CadLeaderEntity extends CadBaseEntity {
+  type: 'leader';
+  arrowAnchor: CadAnnotationAnchor;
+  vertices: { x: number; y: number }[];
+  text: string;
+  leaderStyleId: string;
+  textStyleId?: CadTextStyleId;
+  textAttachment?: CadMTextAttachment;
+}
+
+export type CadDimensionKind = 'linear' | 'aligned' | 'angular' | 'radius' | 'diameter';
+
+export interface CadDimensionEntity extends CadBaseEntity {
+  type: 'dimension';
+  dimensionKind: CadDimensionKind;
+  anchors: CadAnnotationAnchor[];
+  /** Definition-point pair for linear/aligned (anchor pair). */
+  defPoint1?: CadAnnotationAnchor;
+  defPoint2?: CadAnnotationAnchor;
+  orientation?: 'horizontal' | 'vertical' | 'aligned';
+  dimLinePoint: { x: number; y: number };
+  textPoint?: { x: number; y: number };
+  dimensionStyleId: string;
+  textOverride?: string;
+}
+
+export interface CadBearingDistanceLabelEntity extends CadBaseEntity {
+  type: 'bearing-label';
+  sourceEntityId: CadEntityId;
+  labelStyleId: string;
+  offset: { x: number; y: number };
+  side?: 'left' | 'right' | 'auto';
+  manualTextOverride?: string;
+}
+
+export interface CadCurveLabelEntity extends CadBaseEntity {
+  type: 'curve-label';
+  sourceEntityId: CadEntityId;
+  labelStyleId: string;
+  offset: { x: number; y: number };
+  manualTextOverride?: string;
+}
+
+export interface CadDimensionStyle {
+  id: string;
+  name: string;
+  textStyleId: CadTextStyleId;
+  arrowBlockDefinitionId: string;
+  arrowSize: number;
+  arrowSizeMode?: 'model' | 'paper';
+  textGap: number;
+  extensionOffset: number;
+  extensionOvershoot: number;
+  decimalPrecision: number;
+  prefix?: string;
+  suffix?: string;
+}
+
+export interface CadLeaderStyle {
+  id: string;
+  name: string;
+  textStyleId: CadTextStyleId;
+  arrowBlockDefinitionId: string;
+  arrowSize: number;
+  arrowSizeMode?: 'model' | 'paper';
+  landingLength: number;
+  textGap: number;
+}
+
+export interface CadBearingLabelStyle {
+  id: string;
+  name: string;
+  textStyleId: CadTextStyleId;
+  content: 'bearing' | 'distance' | 'bearing-distance' | 'distance-bearing';
+  separator: 'newline' | 'space' | 'slash';
+  offset: { x: number; y: number };
+  decimalPrecision: number;
+}
+
+export type CadCurveLabelField = 'radius' | 'delta' | 'length' | 'chord';
+
+export interface CadCurveLabelStyle {
+  id: string;
+  name: string;
+  textStyleId: CadTextStyleId;
+  fields: CadCurveLabelField[];
+  offset: { x: number; y: number };
+  decimalPrecision: number;
+}
+
 export type CadEntity =
   | CadSurveyPointEntity
   | CadLineEntity
@@ -405,7 +527,12 @@ export type CadEntity =
   | CadParcelEntity
   | CadTextEntity
   | CadErrorEllipseEntity
-  | CadBlockReferenceEntity;
+  | CadBlockReferenceEntity
+  | CadMTextEntity
+  | CadLeaderEntity
+  | CadDimensionEntity
+  | CadBearingDistanceLabelEntity
+  | CadCurveLabelEntity;
 
 export interface CadProjectMetadata {
   source: 'adjustment-result' | 'parsed-input';
@@ -494,6 +621,16 @@ export interface CadProject {
    * project signatures are key-order-sensitive JSON.stringify.
    */
   blockDefinitions?: CadBlockDefinition[];
+  /** Phase 18O professional dimension styles (display only). Trailing table. */
+  dimensionStyles?: CadDimensionStyle[];
+  /** Phase 18O professional leader styles (display only). Trailing table. */
+  leaderStyles?: CadLeaderStyle[];
+  /** Phase 18O bearing/distance label styles (display only). Trailing table. */
+  bearingLabelStyles?: CadBearingLabelStyle[];
+  /** Phase 18O curve label styles (display only). Trailing table. */
+  curveLabelStyles?: CadCurveLabelStyle[];
+  /** Phase 18O annotation scale settings. Trailing (key-order-sensitive signatures). */
+  annotationSettings?: CadAnnotationSettings;
   entities: CadEntity[];
   cogoComputations: CadCogoComputation[];
   bounds: CadBounds | null;

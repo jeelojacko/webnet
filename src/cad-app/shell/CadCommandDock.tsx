@@ -52,6 +52,11 @@ export const CadCommandDock: React.FC<CadCommandDockProps> = ({ link, snapshot, 
     if (def && actions) {
       const started = executeShellCommand(def, actions);
       setCompleted(started ? `Started ${def.label}.` : `${def.label} is unavailable right now.`);
+    } else if (snapshot?.activeCommandKey && actions?.submitSessionText) {
+      // Phase 18O — text that is not a command belongs to the active
+      // session (MTEXT/LEADER lines, numeric inputs). History untouched.
+      actions.submitSessionText(entry);
+      setCompleted(null);
     } else {
       setCompleted(`Unknown command “${entry}”.`);
     }

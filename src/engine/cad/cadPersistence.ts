@@ -100,9 +100,42 @@ export const cloneCadEntity = (entity: CadEntity): CadEntity => {
     case 'error-ellipse':
     case 'arc':
     case 'block-reference':
+    case 'curve-label':
       return {
         ...entity,
         appearance: cloneAppearance(entity.appearance),
+        metadata: cloneMetadata(entity.metadata),
+      };
+    case 'mtext':
+      return {
+        ...entity,
+        appearance: cloneAppearance(entity.appearance),
+        metadata: cloneMetadata(entity.metadata),
+      };
+    case 'bearing-label':
+      return {
+        ...entity,
+        appearance: cloneAppearance(entity.appearance),
+        offset: { ...entity.offset },
+        metadata: cloneMetadata(entity.metadata),
+      };
+    case 'leader':
+      return {
+        ...entity,
+        appearance: cloneAppearance(entity.appearance),
+        arrowAnchor: cloneJsonValue(entity.arrowAnchor),
+        vertices: entity.vertices.map(clonePoint),
+        metadata: cloneMetadata(entity.metadata),
+      };
+    case 'dimension':
+      return {
+        ...entity,
+        appearance: cloneAppearance(entity.appearance),
+        anchors: entity.anchors.map((anchor) => cloneJsonValue(anchor)),
+        ...(entity.defPoint1 != null ? { defPoint1: cloneJsonValue(entity.defPoint1) } : {}),
+        ...(entity.defPoint2 != null ? { defPoint2: cloneJsonValue(entity.defPoint2) } : {}),
+        dimLinePoint: { ...entity.dimLinePoint },
+        ...(entity.textPoint != null ? { textPoint: { ...entity.textPoint } } : {}),
         metadata: cloneMetadata(entity.metadata),
       };
     case 'text':
@@ -228,6 +261,22 @@ export const cloneCadProject = (project: CadProject): CadProject => ({
           ),
         })),
       }
+    : {}),
+  // Phase 18O: professional annotation tables + settings stay trailing.
+  ...(project.dimensionStyles != null
+    ? { dimensionStyles: project.dimensionStyles.map((style) => ({ ...style })) }
+    : {}),
+  ...(project.leaderStyles != null
+    ? { leaderStyles: project.leaderStyles.map((style) => ({ ...style })) }
+    : {}),
+  ...(project.bearingLabelStyles != null
+    ? { bearingLabelStyles: project.bearingLabelStyles.map((style) => ({ ...style, offset: { ...style.offset } })) }
+    : {}),
+  ...(project.curveLabelStyles != null
+    ? { curveLabelStyles: project.curveLabelStyles.map((style) => ({ ...style, fields: [...style.fields], offset: { ...style.offset } })) }
+    : {}),
+  ...(project.annotationSettings != null
+    ? { annotationSettings: { ...project.annotationSettings } }
     : {}),
 });
 

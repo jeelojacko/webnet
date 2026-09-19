@@ -31,6 +31,12 @@ import { useSurveyCadWorkspaceCommandController } from './useSurveyCadWorkspaceC
 import { useSurveyCadWorkspaceHistory } from './useSurveyCadWorkspaceHistory';
 import { useSurveyCadWorkspacePersistence } from './useSurveyCadWorkspacePersistence';
 import { useSurveyCadWorkspacePreviews } from './useSurveyCadWorkspacePreviews';
+import { buildCadAnnotationSnapshot } from './surveyCadAnnotationSnapshot';
+import { applyCadAnnotationUiOp, buildLeaderAnchorCommand } from './surveyCadAnnotationOps';
+import type {
+  CadAnnotationOpResult,
+  CadAnnotationUiOp,
+} from '../../cad-app/annotation/cadAnnotationUiTypes';
 import type { CommandHoverTarget, UseSurveyCadWorkspaceResult } from './useSurveyCadWorkspace.types';
 import type {
   CadAlignmentEntity,
@@ -237,6 +243,43 @@ export const useSurveyCadWorkspace = (
       applyHistoryUpdate(() => result.state);
     }
     return result.report;
+  };
+  // Phase 18O annotation seam: live style/selected snapshot + one undoable
+  // op entry per mutation (creates run through the command sessions).
+  const annotationSnapshot = useMemo(
+    () => buildCadAnnotationSnapshot(cadProject, selection.selectedEntityIds),
+    [cadProject, selection.selectedEntityIds],
+  );
+  const runAnnotationOp = (op: CadAnnotationUiOp): CadAnnotationOpResult => {
+    let outcome: CadAnnotationOpResult = { applied: false };
+    applyHistoryUpdate((current) => {
+      if (op.kind === 'leader-reattach' || op.kind === 'leader-convert-fixed') {
+        const built = buildLeaderAnchorCommand(
+          current.present.project,
+          op.entityId,
+          op.kind === 'leader-reattach' ? 'reattach' : 'fixed',
+        );
+        if ('reason' in built) {
+          outcome = { applied: false, reason: built.reason };
+          return current;
+        }
+        const next = runCadCommand(current, built.command);
+        outcome = next !== current ? { applied: true } : { applied: false, reason: 'REJECTED' };
+        return next;
+      }
+      const applied = applyCadAnnotationUiOp(current.present.project, op);
+      if (!applied.applied) {
+        outcome = { applied: false, reason: applied.reason };
+        return current;
+      }
+      outcome = { applied: true };
+      return runCadCommand(current, {
+        key: 'ANNOTATION_COMMIT',
+        project: applied.project,
+        label: `ANNOTATION (${op.kind})`,
+      });
+    });
+    return outcome;
   };
   const [activeGripHandle, setActiveGripHandle] = useState<CadGripHandle | null>(null);
   const selectionActions = useSurveyCadSelectionActions({
@@ -566,6 +609,18 @@ export const useSurveyCadWorkspace = (
     startPolylineCommand: commandState.startPolylineCommand,
     startTraverseCommand: commandState.startTraverseCommand,
     startBatchCogoCommand: commandState.startBatchCogoCommand,
+    startMTextCommand: commandState.startMTextCommand,
+    startLeaderCommand: commandState.startLeaderCommand,
+    startDimCommand: commandState.startDimCommand,
+    startDimLinearCommand: commandState.startDimLinearCommand,
+    startDimAlignedCommand: commandState.startDimAlignedCommand,
+    startDimAngularCommand: commandState.startDimAngularCommand,
+    startDimRadiusCommand: commandState.startDimRadiusCommand,
+    startDimDiameterCommand: commandState.startDimDiameterCommand,
+    startBearingLabelCommand: commandState.startBearingLabelCommand,
+    startCurveLabelCommand: commandState.startCurveLabelCommand,
+    annotationSnapshot,
+    runAnnotationOp,
     startParcelSplitBearingCommand: commandState.startParcelSplitBearingCommand,
     startParcelSplitAreaCommand: commandState.startParcelSplitAreaCommand,
     startArc3PointCommand: commandState.startArc3PointCommand,

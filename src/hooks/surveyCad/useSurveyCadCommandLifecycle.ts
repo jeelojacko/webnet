@@ -1,5 +1,9 @@
 import type { MutableRefObject } from 'react';
 import { runCadCommand, type CadHistoryState } from '../../engine/cad/cadUndoRedo';
+import {
+  commitAnnotationSession,
+  handleAnnotationEnterKey,
+} from './useSurveyCadAnnotationSessions';
 import type { CommandSession } from './useSurveyCadCommandTypes';
 import { recalculateTraverseSideshotPoint } from './useSurveyCadCommandSession';
 
@@ -119,6 +123,11 @@ export const useSurveyCadCommandLifecycle = ({
 
   const handleEnterKey = () => {
     if (!session) return;
+    // Phase 18O: MTEXT/LEADER lines append per Enter; empty Enter commits.
+    // The live ref (not render-scope state): dock text entry sets the input
+    // and submits synchronously, before any re-render lands.
+    const live = sessionRef.current;
+    if (live && handleAnnotationEnterKey({ session: live, applyHistoryUpdate, replaceSession })) return;
     if (session.key === 'TRIM' || session.key === 'EXTEND') {
       replaceSession(null);
       return;
@@ -161,6 +170,11 @@ export const useSurveyCadCommandLifecycle = ({
   };
 
   const handleEscapeKey = () => {
+    // Phase 18O: text/label sessions commit when complete, else cancel.
+    const current = sessionRef.current;
+    if (current && commitAnnotationSession({ session: current, applyHistoryUpdate, replaceSession })) {
+      return;
+    }
     replaceSession(null);
   };
 

@@ -112,6 +112,16 @@ export interface UseSurveyCadWorkspaceResult {
     | 'PLINE'
     | 'TRAVERSE'
     | 'BATCH_COGO'
+    | 'MTEXT'
+    | 'LEADER'
+    | 'DIM'
+    | 'DIMLINEAR'
+    | 'DIMALIGNED'
+    | 'DIMANGULAR'
+    | 'DIMRADIUS'
+    | 'DIMDIAMETER'
+    | 'BDLABEL'
+    | 'CURVELABEL'
     | 'ARC_3PT'
     | 'ARC_SCE'
     | 'ARC_CSE'
@@ -212,6 +222,22 @@ export interface UseSurveyCadWorkspaceResult {
   startPolylineCommand: () => void;
   startTraverseCommand: () => void;
   startBatchCogoCommand: () => void;
+  startMTextCommand: () => void;
+  startLeaderCommand: () => void;
+  startDimCommand: () => void;
+  startDimLinearCommand: () => void;
+  startDimAlignedCommand: () => void;
+  startDimAngularCommand: () => void;
+  startDimRadiusCommand: () => void;
+  startDimDiameterCommand: () => void;
+  startBearingLabelCommand: () => void;
+  startCurveLabelCommand: () => void;
+  /** Live annotation snapshot for the shell (styles + selected detail). */
+  annotationSnapshot: import('../../cad-app/annotation/cadAnnotationUiTypes').CadAnnotationSnapshot;
+  /** Commit one annotation UI op as an undoable history entry. */
+  runAnnotationOp: (
+    _op: import('../../cad-app/annotation/cadAnnotationUiTypes').CadAnnotationUiOp,
+  ) => import('../../cad-app/annotation/cadAnnotationUiTypes').CadAnnotationOpResult;
   startParcelSplitBearingCommand: () => void;
   startParcelSplitAreaCommand: () => void;
   startArc3PointCommand: () => void;

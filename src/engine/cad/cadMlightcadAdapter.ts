@@ -134,6 +134,73 @@ const toMlightcadEntity = (entity: CadEntity): MlightcadSpikeEntity => {
           nativeType: entity.type,
         },
       };
+    case 'mtext':
+      return {
+        objectId: entity.id,
+        type: 'AcDbText',
+        layer: entity.layerId,
+        visible: entity.visible,
+        geometry: {
+          position: { x: entity.x, y: entity.y, z: 0 },
+          text: entity.text,
+        },
+        metadata: {
+          nativeEntityId: entity.id,
+          nativeType: entity.type,
+        },
+      };
+    case 'leader': {
+      const tail = entity.vertices.at(-1) ?? { x: 0, y: 0 };
+      return {
+        objectId: entity.id,
+        type: 'AcDbText',
+        layer: entity.layerId,
+        visible: entity.visible,
+        geometry: {
+          position: { x: tail.x, y: tail.y, z: 0 },
+          text: entity.text,
+        },
+        metadata: {
+          nativeEntityId: entity.id,
+          nativeType: entity.type,
+        },
+      };
+    }
+    case 'dimension': {
+      const label = entity.textPoint ?? entity.dimLinePoint;
+      return {
+        objectId: entity.id,
+        type: 'AcDbText',
+        layer: entity.layerId,
+        visible: entity.visible,
+        geometry: {
+          position: { x: label.x, y: label.y, z: 0 },
+          text: entity.textOverride ?? entity.dimensionKind,
+        },
+        metadata: {
+          nativeEntityId: entity.id,
+          nativeType: entity.type,
+        },
+      };
+    }
+    case 'bearing-label':
+    case 'curve-label':
+      // Spike adapter only: label insertion marker until a native label path exists.
+      return {
+        objectId: entity.id,
+        type: 'AcDbPoint',
+        layer: entity.layerId,
+        visible: entity.visible,
+        geometry: {
+          x: entity.offset.x,
+          y: entity.offset.y,
+          z: 0,
+        },
+        metadata: {
+          nativeEntityId: entity.id,
+          nativeType: entity.type,
+        },
+      };
     case 'block-reference':
       // Spike adapter only: insertion marker until a native block path exists.
       return {

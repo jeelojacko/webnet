@@ -77,12 +77,35 @@ export const translateEntity = (entity: CadEntity, deltaX: number, deltaY: numbe
         centerX: entity.centerX + deltaX,
         centerY: entity.centerY + deltaY,
       };
+    case 'mtext':
     case 'block-reference':
       return {
         ...entity,
         x: entity.x + deltaX,
         y: entity.y + deltaY,
       };
+    case 'leader':
+      // Vertices move; the arrow anchor stays bound to the source entity.
+      return {
+        ...entity,
+        vertices: entity.vertices.map((vertex) => ({
+          x: vertex.x + deltaX,
+          y: vertex.y + deltaY,
+        })),
+      };
+    case 'dimension':
+      // Dim-line/text points move; source anchors stay bound to the model.
+      return {
+        ...entity,
+        dimLinePoint: { x: entity.dimLinePoint.x + deltaX, y: entity.dimLinePoint.y + deltaY },
+        ...(entity.textPoint != null
+          ? { textPoint: { x: entity.textPoint.x + deltaX, y: entity.textPoint.y + deltaY } }
+          : {}),
+      };
+    case 'bearing-label':
+    case 'curve-label':
+      // Offset is relative to the source entity, so a move is a no-op.
+      return entity;
   }
 };
 

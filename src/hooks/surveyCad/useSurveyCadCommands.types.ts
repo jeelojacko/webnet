@@ -77,6 +77,16 @@ export interface UseSurveyCadCommandsResult {
   startPolylineCommand: () => void;
   startTraverseCommand: () => void;
   startBatchCogoCommand: () => void;
+  startMTextCommand: () => void;
+  startLeaderCommand: () => void;
+  startDimCommand: () => void;
+  startDimLinearCommand: () => void;
+  startDimAlignedCommand: () => void;
+  startDimAngularCommand: () => void;
+  startDimRadiusCommand: () => void;
+  startDimDiameterCommand: () => void;
+  startBearingLabelCommand: () => void;
+  startCurveLabelCommand: () => void;
   startParcelSplitBearingCommand: () => void;
   startParcelSplitAreaCommand: () => void;
   startArc3PointCommand: () => void;

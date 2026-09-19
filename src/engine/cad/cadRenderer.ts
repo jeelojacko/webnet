@@ -1,9 +1,15 @@
 import type {
+  CadBearingDistanceLabelEntity,
+  CadCurveLabelEntity,
+  CadDimensionEntity,
+  CadDimensionStyle,
   CadDisplayPrimitive,
   CadDisplayScene,
   CadAlignmentEntity,
   CadAlignmentElement,
   CadEntity,
+  CadLeaderEntity,
+  CadMTextEntity,
   CadPolylineEntity,
   CadProject,
 } from './cadTypes';
@@ -31,6 +37,27 @@ import { buildSurfaceDisplayLayers, type SurfaceContourDisplayInput } from './ca
 import { buildVolumeDisplayLayers } from './cadVolumeView';
 import type { CadSurfaceVolumeCache } from './surfaceVolumeCache';
 import { materializeBoundPointLabel } from './cadPointLabelStyles';
+import {
+  resolveCadAnnotationAnchor,
+  type CadAnnotationAnchor,
+} from './annotation/cadAnnotationAnchors';
+import { arrowheadTransform } from './annotation/cadAnnotationArrowheads';
+import {
+  paperHeightMmToModelMeters,
+  resolveAnnotationScaleDenominator,
+} from './annotation/cadAnnotationSettings';
+import { resolveCadAnnotationTextMetrics } from './annotation/cadAnnotationTextMetrics';
+import {
+  deriveCadDimensionGeometry,
+  type CadDimensionGeometry,
+  type CadDimensionGeometryInput,
+} from './annotation/cadDimensionGeometry';
+import {
+  bearingLabelPlacement,
+  deriveBearingDistanceLabel,
+  deriveCurveLabel,
+} from './annotation/cadSurveyLabels';
+import { cadCounterClockwiseDeltaDeg } from './cadGeometry';
 
 export interface BuildCadDisplaySceneOptions {
   /**
@@ -402,6 +429,572 @@ const withOpacity = (
 ): { opacity?: number } =>
   style.opacity != null ? { opacity: style.opacity } : {};
 
+// ---------------------------------------------------------------------------
+// Phase 18O annotation derivation (display only; never persisted).
+// Every derived primitive carries sourceEntityId = owning annotation id and
+// rides the host layerId, so derived geometry is never independently
+// selectable. Broken references fall back to the persisted point with a
+// BROKEN marker text primitive.
+// ---------------------------------------------------------------------------
+
+/** Style-resolved model text height (meters) + line spacing; legacy fallback. */
+const annotationTextFont = (
+  project: CadProject,
+  entity: CadEntity,
+  textStyleId: string | undefined,
+): { fontSize: number; lineSpacingFactor: number } => {
+  const fallback = { fontSize: textFontSize(project, entity, 11), lineSpacingFactor: 1 };
+  const textStyle =
+    textStyleId != null
+      ? project.styleLibrary.textStyles.find((entry) => entry.id === textStyleId)
+      : undefined;
+  if (!textStyle) return fallback;
+  const metrics = resolveCadAnnotationTextMetrics({
+    fontFamily: textStyle.fontFamily,
+    fontSize: textStyle.fontSize,
+    heightMode: textStyle.heightMode,
+    modelHeight: textStyle.modelHeight,
+    paperHeightMm: textStyle.paperHeightMm,
+    widthFactor: textStyle.widthFactor,
+    lineSpacingFactor: textStyle.lineSpacingFactor,
+    fontWeight: textStyle.fontWeight === 'bold' ? 700 : 400,
+    fontStyle: textStyle.fontStyle,
+    annotationScaleDenominator: resolveAnnotationScaleDenominator(project.annotationSettings),
+    unitsMode: project.metadata.units,
+  });
+  return { fontSize: metrics.modelHeight, lineSpacingFactor: metrics.lineSpacingFactor };
+};
+
+/** Arrow size in model meters (paper mode scales through annotation settings). */
+const annotationArrowSize = (
+  project: CadProject,
+  size: number,
+  mode?: 'model' | 'paper',
+): number => {
+  if (mode === 'paper') {
+    const model = paperHeightMmToModelMeters(
+      size,
+      resolveAnnotationScaleDenominator(project.annotationSettings),
+      project.metadata.units,
+    );
+    if (Number.isFinite(model) && model > 0) return model;
+  }
+  return size;
+};
+
+const brokenAnnotationPrimitive = (
+  project: CadProject,
+  ctx: SceneRenderContext,
+  entity: CadEntity,
+  point: { x: number; y: number },
+): CadDisplayPrimitive => {
+  const style = entityScreenStyle(project, ctx, entity, 1.2);
+  return {
+    kind: 'text',
+    id: `primitive:${entity.id}:broken`,
+    layerId: entity.layerId,
+    sourceEntityId: entity.id,
+    stroke: style.stroke,
+    ...withOpacity(style),
+    point,
+    text: 'BROKEN',
+    fontSize: textFontSize(project, entity, 11),
+    textAnchor: 'middle',
+  };
+};
+
+/**
+ * Arrowhead via the existing block-reference expansion path (host layer +
+ * host source id, never independently selectable). Plain shaft-stub line
+ * fallback when the block definition is missing.
+ */
+const arrowheadPrimitives = (
+  project: CadProject,
+  ctx: SceneRenderContext,
+  entity: CadEntity,
+  style: EntityScreenStyle,
+  blockDefinitionId: string,
+  x: number,
+  y: number,
+  directionDeg: number,
+  size: number,
+  suffix: string,
+): CadDisplayPrimitive[] => {
+  if (!(size > 0)) return [];
+  let transform;
+  try {
+    transform = arrowheadTransform({ x, y, directionDeg, size });
+  } catch {
+    return [];
+  }
+  const expanded = expandedBlockPrimitives(
+    project,
+    ctx,
+    blockDefinitionId,
+    {
+      x: transform.x,
+      y: transform.y,
+      rotationDeg: transform.rotationDeg,
+      scaleX: transform.scaleX,
+      scaleY: transform.scaleY,
+    },
+    entity,
+    `primitive:${entity.id}:${suffix}`,
+    (child) => toPrimitives(project, ctx, child),
+  );
+  if (expanded) return expanded;
+  const radians = (transform.rotationDeg * Math.PI) / 180;
+  const tail = { x: x - Math.cos(radians) * size, y: y - Math.sin(radians) * size };
+  return [{
+    kind: 'line',
+    id: `primitive:${entity.id}:${suffix}`,
+    layerId: entity.layerId,
+    sourceEntityId: entity.id,
+    stroke: style.stroke,
+    ...withOpacity(style),
+    ...withDash(style),
+    points: [{ x, y }, tail],
+    strokeWidth: style.widthPx(),
+  }];
+};
+
+const mtextAttachmentAnchor = (attachment: CadMTextEntity['attachment']): 'start' | 'middle' | 'end' =>
+  attachment.endsWith('right') ? 'end' : attachment.endsWith('center') ? 'middle' : 'start';
+
+const buildMTextPrimitives = (
+  project: CadProject,
+  ctx: SceneRenderContext,
+  entity: CadMTextEntity,
+): CadDisplayPrimitive[] => {
+  const style = entityScreenStyle(project, ctx, entity, 1.2);
+  const font = annotationTextFont(project, entity, entity.textStyleId);
+  const lines = entity.text.split('\n');
+  const radians = (entity.rotationDeg * Math.PI) / 180;
+  const up = { x: -Math.sin(radians), y: Math.cos(radians) };
+  const lineHeight = font.fontSize * font.lineSpacingFactor;
+  const totalHeight = lineHeight * lines.length;
+  const topShift = entity.attachment.startsWith('middle')
+    ? (totalHeight - lineHeight) / 2
+    : entity.attachment.startsWith('bottom')
+      ? totalHeight - lineHeight
+      : 0;
+  const anchor = mtextAttachmentAnchor(entity.attachment);
+  return lines.map((lineText, index) => {
+    const shift = topShift - index * lineHeight;
+    return {
+      kind: 'text' as const,
+      id: `primitive:${entity.id}:${index + 1}`,
+      layerId: entity.layerId,
+      sourceEntityId: entity.id,
+      stroke: style.stroke,
+      ...withOpacity(style),
+      point: { x: entity.x + up.x * shift, y: entity.y + up.y * shift },
+      text: lineText,
+      fontSize: font.fontSize,
+      ...(entity.rotationDeg !== 0 ? { rotationDeg: entity.rotationDeg } : {}),
+      textAnchor: anchor,
+    };
+  });
+};
+
+const buildLeaderPrimitives = (
+  project: CadProject,
+  ctx: SceneRenderContext,
+  entity: CadLeaderEntity,
+): CadDisplayPrimitive[] => {
+  const style = entityScreenStyle(project, ctx, entity, 1.2);
+  const resolution = resolveCadAnnotationAnchor(entity.arrowAnchor, project);
+  if (!resolution.ok) {
+    return [brokenAnnotationPrimitive(
+      project,
+      ctx,
+      entity,
+      { x: resolution.fallbackX, y: resolution.fallbackY },
+    )];
+  }
+  const arrowPoint = { x: resolution.x, y: resolution.y };
+  const through = [arrowPoint, ...entity.vertices];
+  const primitives: CadDisplayPrimitive[] = through.slice(0, -1).map((vertex, index) => {
+    const next = through[index + 1]!;
+    return {
+      kind: 'line' as const,
+      id: `primitive:${entity.id}:${index + 1}`,
+      layerId: entity.layerId,
+      sourceEntityId: entity.id,
+      sourceSegmentId: `${entity.id}#${index}`,
+      stroke: style.stroke,
+      ...withOpacity(style),
+      ...withDash(style),
+      points: [vertex, next] as [{ x: number; y: number }, { x: number; y: number }],
+      strokeWidth: style.widthPx(),
+    };
+  });
+  const leaderStyle = project.leaderStyles?.find((entry) => entry.id === entity.leaderStyleId);
+  const last = through.at(-1) ?? arrowPoint;
+  if (!leaderStyle) {
+    primitives.push({
+      kind: 'text',
+      id: `primitive:${entity.id}:text`,
+      layerId: entity.layerId,
+      sourceEntityId: entity.id,
+      stroke: style.stroke,
+      ...withOpacity(style),
+      point: last,
+      text: entity.text,
+      fontSize: textFontSize(project, entity, 11),
+      textAnchor: 'start',
+    });
+    return primitives;
+  }
+  const arrival = through[1] ?? { x: arrowPoint.x + 1, y: arrowPoint.y };
+  const arrowDirDeg =
+    (Math.atan2(arrowPoint.y - arrival.y, arrowPoint.x - arrival.x) * 180) / Math.PI;
+  primitives.push(...arrowheadPrimitives(
+    project,
+    ctx,
+    entity,
+    style,
+    leaderStyle.arrowBlockDefinitionId,
+    arrowPoint.x,
+    arrowPoint.y,
+    arrowDirDeg,
+    annotationArrowSize(project, leaderStyle.arrowSize, leaderStyle.arrowSizeMode),
+    'arrow',
+  ));
+  const before = through.length >= 2 ? through[through.length - 2]! : { x: last.x - 1, y: last.y };
+  const dx = last.x - before.x;
+  const dy = last.y - before.y;
+  const length = Math.hypot(dx, dy);
+  const dir = length > 1e-12 ? { x: dx / length, y: dy / length } : { x: 1, y: 0 };
+  const landingEnd = {
+    x: last.x + dir.x * leaderStyle.landingLength,
+    y: last.y + dir.y * leaderStyle.landingLength,
+  };
+  if (leaderStyle.landingLength > 0) {
+    primitives.push({
+      kind: 'line',
+      id: `primitive:${entity.id}:landing`,
+      layerId: entity.layerId,
+      sourceEntityId: entity.id,
+      stroke: style.stroke,
+      ...withOpacity(style),
+      ...withDash(style),
+      points: [last, landingEnd],
+      strokeWidth: style.widthPx(),
+    });
+  }
+  const font = annotationTextFont(project, entity, entity.textStyleId ?? leaderStyle.textStyleId);
+  primitives.push({
+    kind: 'text',
+    id: `primitive:${entity.id}:text`,
+    layerId: entity.layerId,
+    sourceEntityId: entity.id,
+    stroke: style.stroke,
+    ...withOpacity(style),
+    point: {
+      x: landingEnd.x + dir.x * leaderStyle.textGap,
+      y: landingEnd.y + dir.y * leaderStyle.textGap,
+    },
+    text: entity.text,
+    fontSize: font.fontSize,
+    textAnchor: 'start',
+  });
+  return primitives;
+};
+
+interface ResolvedDimensionAnchors {
+  p1: { x: number; y: number };
+  p2: { x: number; y: number };
+  vertex?: { x: number; y: number };
+  ray1Point?: { x: number; y: number };
+  ray2Point?: { x: number; y: number };
+  center?: { x: number; y: number };
+  radius?: number;
+  arcPoint?: { x: number; y: number };
+}
+
+const resolveDimensionAnchors = (
+  project: CadProject,
+  entity: CadDimensionEntity,
+): ResolvedDimensionAnchors | null => {
+  const resolveOne = (anchor: CadAnnotationAnchor): { x: number; y: number } | null => {
+    const resolution = resolveCadAnnotationAnchor(anchor, project);
+    return resolution.ok ? { x: resolution.x, y: resolution.y } : null;
+  };
+  switch (entity.dimensionKind) {
+    case 'linear':
+    case 'aligned': {
+      const raw1 = entity.defPoint1 ?? entity.anchors[0];
+      const raw2 = entity.defPoint2 ?? entity.anchors[1];
+      if (!raw1 || !raw2) return null;
+      const p1 = resolveOne(raw1);
+      const p2 = resolveOne(raw2);
+      return p1 && p2 ? { p1, p2 } : null;
+    }
+    case 'angular': {
+      if (entity.anchors.length >= 3) {
+        const vertex = resolveOne(entity.anchors[0]!);
+        const ray1Point = resolveOne(entity.anchors[1]!);
+        const ray2Point = resolveOne(entity.anchors[2]!);
+        if (!vertex || !ray1Point || !ray2Point) return null;
+        return { p1: ray1Point, p2: ray2Point, vertex, ray1Point, ray2Point };
+      }
+      if (entity.anchors.length >= 2) {
+        const p1 = resolveOne(entity.anchors[0]!);
+        const p2 = resolveOne(entity.anchors[1]!);
+        return p1 && p2 ? { p1, p2 } : null;
+      }
+      return null;
+    }
+    case 'radius':
+    case 'diameter': {
+      const rawCenter = entity.anchors[0];
+      const rawArc = entity.anchors[1];
+      if (!rawCenter || !rawArc) return null;
+      const center = resolveOne(rawCenter);
+      const arcPoint = resolveOne(rawArc);
+      if (!center || !arcPoint) return null;
+      return {
+        p1: center,
+        p2: arcPoint,
+        center,
+        arcPoint,
+        radius: Math.hypot(arcPoint.x - center.x, arcPoint.y - center.y),
+      };
+    }
+  }
+};
+
+export interface ResolvedDimensionDerivation {
+  style: CadDimensionStyle;
+  geometry: CadDimensionGeometry;
+  textHeight: number;
+  arrowSize: number;
+}
+
+/**
+ * Shared dimension derivation (renderer + spatial bounds stay on one source
+ * of truth). Null when the style is unknown or a required anchor is broken.
+ */
+export const resolveDimensionDerivation = (
+  project: CadProject,
+  entity: CadDimensionEntity,
+): ResolvedDimensionDerivation | null => {
+  const style = project.dimensionStyles?.find((entry) => entry.id === entity.dimensionStyleId);
+  if (!style) return null;
+  const resolved = resolveDimensionAnchors(project, entity);
+  if (!resolved) return null;
+  const textHeight = annotationTextFont(project, entity, style.textStyleId).fontSize;
+  const arrowSize = annotationArrowSize(project, style.arrowSize, style.arrowSizeMode);
+  const kind: CadDimensionGeometryInput['kind'] =
+    entity.dimensionKind === 'linear'
+      ? entity.orientation === 'horizontal'
+        ? 'linear-horizontal'
+        : entity.orientation === 'vertical'
+          ? 'linear-vertical'
+          : 'aligned'
+      : entity.dimensionKind;
+  const geometry = deriveCadDimensionGeometry({
+    kind,
+    p1: resolved.p1,
+    p2: resolved.p2,
+    ...(resolved.vertex ? { vertex: resolved.vertex } : {}),
+    ...(resolved.ray1Point && resolved.ray2Point
+      ? { ray1Point: resolved.ray1Point, ray2Point: resolved.ray2Point }
+      : {}),
+    ...(resolved.center && resolved.arcPoint
+      ? { center: resolved.center, radius: resolved.radius, arcPoint: resolved.arcPoint }
+      : {}),
+    dimLinePoint: entity.dimLinePoint,
+    textGap: style.textGap,
+    arrowSize,
+    extensionOffset: style.extensionOffset,
+    extensionOvershoot: style.extensionOvershoot,
+    textHeight,
+    decimalPrecision: style.decimalPrecision,
+    ...(style.prefix ? { prefix: style.prefix } : {}),
+    ...(style.suffix ? { suffix: style.suffix } : {}),
+  });
+  return { style, geometry, textHeight, arrowSize };
+};
+
+const buildDimensionPrimitives = (
+  project: CadProject,
+  ctx: SceneRenderContext,
+  entity: CadDimensionEntity,
+): CadDisplayPrimitive[] => {
+  const style = entityScreenStyle(project, ctx, entity, 1.2);
+  const fallbackPoint = entity.textPoint ?? entity.dimLinePoint;
+  const lineFallback = (): CadDisplayPrimitive[] => [
+    {
+      kind: 'line',
+      id: `primitive:${entity.id}`,
+      layerId: entity.layerId,
+      sourceEntityId: entity.id,
+      stroke: style.stroke,
+      ...withOpacity(style),
+      ...withDash(style),
+      points: [entity.dimLinePoint, fallbackPoint],
+      strokeWidth: style.widthPx(),
+    },
+    {
+      kind: 'text',
+      id: `primitive:${entity.id}:text`,
+      layerId: entity.layerId,
+      sourceEntityId: entity.id,
+      stroke: style.stroke,
+      ...withOpacity(style),
+      point: fallbackPoint,
+      text: entity.textOverride ?? 'Dimension',
+      fontSize: textFontSize(project, entity, 11),
+      textAnchor: 'middle',
+    },
+  ];
+  const derived = resolveDimensionDerivation(project, entity);
+  if (!derived) {
+    const anchors = resolveDimensionAnchors(project, entity);
+    if (!anchors) return [brokenAnnotationPrimitive(project, ctx, entity, fallbackPoint)];
+    return lineFallback();
+  }
+  const { geometry } = derived;
+  return [
+    ...geometry.extensionSegments.map((segment, index): CadDisplayPrimitive => ({
+      kind: 'line',
+      id: `primitive:${entity.id}:ext:${index + 1}`,
+      layerId: entity.layerId,
+      sourceEntityId: entity.id,
+      stroke: style.stroke,
+      ...withOpacity(style),
+      ...withDash(style),
+      points: [segment.from, segment.to],
+      strokeWidth: style.widthPx(),
+    })),
+    ...geometry.dimensionSegments.map((segment, index): CadDisplayPrimitive => ({
+      kind: 'line',
+      id: `primitive:${entity.id}:dim:${index + 1}`,
+      layerId: entity.layerId,
+      sourceEntityId: entity.id,
+      stroke: style.stroke,
+      ...withOpacity(style),
+      ...withDash(style),
+      points: [segment.from, segment.to],
+      strokeWidth: style.widthPx(),
+    })),
+    ...geometry.arrowTransforms.flatMap((arrow, index) =>
+      arrowheadPrimitives(
+        project,
+        ctx,
+        entity,
+        style,
+        derived.style.arrowBlockDefinitionId,
+        arrow.x,
+        arrow.y,
+        arrow.rotationDeg,
+        arrow.size,
+        `arrow:${index + 1}`,
+      ),
+    ),
+    {
+      kind: 'text',
+      id: `primitive:${entity.id}:text`,
+      layerId: entity.layerId,
+      sourceEntityId: entity.id,
+      stroke: style.stroke,
+      ...withOpacity(style),
+      point: geometry.textPosition,
+      text: entity.textOverride ?? geometry.formattedText,
+      fontSize: derived.textHeight,
+      ...(geometry.textRotationDeg !== 0 ? { rotationDeg: geometry.textRotationDeg } : {}),
+      textAnchor: 'middle',
+    },
+  ];
+};
+
+const buildBearingLabelPrimitives = (
+  project: CadProject,
+  ctx: SceneRenderContext,
+  entity: CadBearingDistanceLabelEntity,
+): CadDisplayPrimitive[] => {
+  const style = entityScreenStyle(project, ctx, entity, 1.2);
+  const source = project.entities.find((candidate) => candidate.id === entity.sourceEntityId);
+  if (source?.type !== 'line') {
+    return [brokenAnnotationPrimitive(project, ctx, entity, entity.offset)];
+  }
+  const labelStyle = project.bearingLabelStyles?.find((entry) => entry.id === entity.labelStyleId);
+  const from = { x: source.fromX, y: source.fromY };
+  const to = { x: source.toX, y: source.toY };
+  const label = deriveBearingDistanceLabel({
+    from,
+    to,
+    content: labelStyle?.content ?? 'bearing-distance',
+    separator: labelStyle?.separator === 'space' ? ' ' : labelStyle?.separator === 'slash' ? '/' : '\n',
+    distancePrecision: labelStyle?.decimalPrecision ?? 3,
+    ...(entity.manualTextOverride !== undefined
+      ? { manualTextOverride: entity.manualTextOverride }
+      : {}),
+  });
+  const offsetMagnitude = labelStyle ? Math.hypot(labelStyle.offset.x, labelStyle.offset.y) : 0;
+  const placement = bearingLabelPlacement(from, to, offsetMagnitude, entity.side === 'right' ? 'right' : 'left');
+  const font = annotationTextFont(project, entity, labelStyle?.textStyleId);
+  return [{
+    kind: 'text',
+    id: `primitive:${entity.id}`,
+    layerId: entity.layerId,
+    sourceEntityId: entity.id,
+    stroke: style.stroke,
+    ...withOpacity(style),
+    point: { x: placement.x + entity.offset.x, y: placement.y + entity.offset.y },
+    text: label.text,
+    fontSize: font.fontSize,
+    ...(placement.rotationDeg !== 0 ? { rotationDeg: placement.rotationDeg } : {}),
+    textAnchor: 'middle',
+  }];
+};
+
+const buildCurveLabelPrimitives = (
+  project: CadProject,
+  ctx: SceneRenderContext,
+  entity: CadCurveLabelEntity,
+): CadDisplayPrimitive[] => {
+  const style = entityScreenStyle(project, ctx, entity, 1.2);
+  const source = project.entities.find((candidate) => candidate.id === entity.sourceEntityId);
+  const labelStyle = project.curveLabelStyles?.find((entry) => entry.id === entity.labelStyleId);
+  if (source?.type !== 'arc') {
+    return [brokenAnnotationPrimitive(project, ctx, entity, entity.offset)];
+  }
+  const label = deriveCurveLabel({
+    center: { x: source.centerX, y: source.centerY },
+    radius: source.radius,
+    startAngleDeg: source.startAngleDeg,
+    endAngleDeg: source.endAngleDeg,
+    fields: labelStyle?.fields ?? ['radius', 'delta', 'length'],
+    decimalPrecision: labelStyle?.decimalPrecision ?? 3,
+    ...(entity.manualTextOverride !== undefined
+      ? { manualTextOverride: entity.manualTextOverride }
+      : {}),
+  });
+  if (!label) return [brokenAnnotationPrimitive(project, ctx, entity, entity.offset)];
+  const styleOffset = labelStyle?.offset ?? { x: 0, y: 0 };
+  const sweep = cadCounterClockwiseDeltaDeg(source.startAngleDeg, source.endAngleDeg);
+  const midAngleRad = ((source.startAngleDeg + sweep / 2) * Math.PI) / 180;
+  const font = annotationTextFont(project, entity, labelStyle?.textStyleId);
+  return [{
+    kind: 'text',
+    id: `primitive:${entity.id}`,
+    layerId: entity.layerId,
+    sourceEntityId: entity.id,
+    stroke: style.stroke,
+    ...withOpacity(style),
+    point: {
+      x: source.centerX + Math.cos(midAngleRad) * source.radius + styleOffset.x + entity.offset.x,
+      y: source.centerY + Math.sin(midAngleRad) * source.radius + styleOffset.y + entity.offset.y,
+    },
+    text: label.text,
+    fontSize: font.fontSize,
+    textAnchor: 'middle',
+  }];
+};
+
 const toPrimitives = (
   project: CadProject,
   ctx: SceneRenderContext,
@@ -583,6 +1176,16 @@ const toPrimitives = (
         strokeWidth: style.widthPx(),
       }];
     }
+    case 'mtext':
+      return buildMTextPrimitives(project, ctx, entity);
+    case 'leader':
+      return buildLeaderPrimitives(project, ctx, entity);
+    case 'dimension':
+      return buildDimensionPrimitives(project, ctx, entity);
+    case 'bearing-label':
+      return buildBearingLabelPrimitives(project, ctx, entity);
+    case 'curve-label':
+      return buildCurveLabelPrimitives(project, ctx, entity);
     case 'block-reference':
       // Phase 18N: expand to world-space children (single source with
       // snap/bounds/export). Dangling refs render nothing (load sanitize

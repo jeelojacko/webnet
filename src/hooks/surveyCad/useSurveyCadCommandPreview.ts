@@ -371,5 +371,35 @@ export const buildCommandPreview = ({
             primitives: session.draft.previewPrimitives,
           }
         : null;
+    case 'MTEXT':
+    case 'LEADER':
+    case 'DIM':
+    case 'DIMLINEAR':
+    case 'DIMALIGNED':
+    case 'DIMANGULAR':
+    case 'DIMRADIUS':
+    case 'DIMDIAMETER':
+    case 'BDLABEL':
+    case 'CURVELABEL': {
+      if (!previewPoint) return null;
+      const anchored =
+        session.key === 'MTEXT'
+          ? session.point
+          : session.key === 'LEADER'
+            ? session.arrowPoint
+            : session.points.length > 0
+              ? session.points[session.points.length - 1]
+              : null;
+      if (!anchored) {
+        return { kind: 'point', point: { x: previewPoint.x, y: previewPoint.y } };
+      }
+      return {
+        kind: 'line',
+        points: [
+          { x: anchored.x, y: anchored.y },
+          { x: previewPoint.x, y: previewPoint.y },
+        ],
+      };
+    }
   }
 };

@@ -98,6 +98,16 @@ export const getCadEntityDisplayLabel = (entity: CadEntity): string => {
       return entity.stationId;
     case 'text':
       return entity.text;
+    case 'mtext':
+      return entity.text;
+    case 'leader':
+      return entity.text;
+    case 'dimension':
+      return readNonOpaqueEntityId(entity) ?? 'Dimension';
+    case 'bearing-label':
+      return readNonOpaqueEntityId(entity) ?? 'Bearing Label';
+    case 'curve-label':
+      return readNonOpaqueEntityId(entity) ?? 'Curve Label';
     case 'block-reference':
       return readNonOpaqueEntityId(entity) ?? 'Block';
   }

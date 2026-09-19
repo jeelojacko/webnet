@@ -12,6 +12,18 @@ import type {
   CadPropertiesPanelState,
 } from '../../engine/cad/cadProperties';
 import type { CadCommand } from '../../engine/cad/cadTransactions.types';
+import type {
+  CadAnnotationManagerTab,
+  CadAnnotationOpResult,
+  CadAnnotationSnapshot,
+  CadAnnotationUiOp,
+} from '../annotation/cadAnnotationUiTypes';
+export type {
+  CadAnnotationManagerTab,
+  CadAnnotationOpResult,
+  CadAnnotationSnapshot,
+  CadAnnotationUiOp,
+} from '../annotation/cadAnnotationUiTypes';
 import type { BreaklineEntityPreview, BoundarySourcePreview } from '../../engine/cad/cadSurfaceView';
 import type { CadSurfaceSnapshot } from './cadSurfaceSnapshot';
 import type { CadVolumeSnapshot } from './cadVolumeSnapshot';
@@ -187,6 +199,12 @@ export interface CadWorkspaceSnapshot {
   f2f: CadF2FSnapshot | null;
   /** Phase 18N — block definitions + reference/marker counts + insert-pick state. */
   blocks: CadBlockSnapshot | null;
+  /**
+   * Phase 18O — annotation style tables + selected annotation entity detail.
+   * Optional: a workspace without annotation wiring leaves it undefined and
+   * the shell renders disabled controls (never fake data).
+   */
+  annotation?: CadAnnotationSnapshot | null;
   /** UI command keys with a live starter in the mounted workspace. */
   availableCommands: string[];
 }
@@ -325,6 +343,16 @@ export interface CadShellActions {
    * Returns the number exploded (0 + alert when nothing eligible).
    */
   explodeSelectedBlocks?: () => number;
+  /**
+   * Phase 18O — open the Annotation Styles manager (optional tab focus).
+   * Absent = manager unavailable (embedded workspace without shell chrome).
+   */
+  openAnnotationManager?: (_tab?: CadAnnotationManagerTab) => void;
+  /**
+   * Phase 18O — commit one annotation style/entity op (one undo entry).
+   * `reason` is surfaced verbatim by the managers when applied is false.
+   */
+  runAnnotationOp?: (_op: CadAnnotationUiOp) => CadAnnotationOpResult;
   /** Select every survey point in the drawing. */
   selectAllSurveyPoints: () => void;
   /** Select the survey points matching one group (engine-side membership). */
@@ -343,6 +371,8 @@ export interface CadShellActions {
    * `commitLandXmlImport` + imported-TIN scheduling behind the review panel.
    */
   requestLandXmlImport: () => void;
+  /** Phase 18O — forward dock text to the active command session (MTEXT/LEADER lines). */
+  submitSessionText?: (_text: string) => void;
   toggleDraftingPanel: () => void;
   toggleExportCenter: () => void;
   cancelCommand: () => void;

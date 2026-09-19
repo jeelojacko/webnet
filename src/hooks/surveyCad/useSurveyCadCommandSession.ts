@@ -139,5 +139,21 @@ export const sessionExpectsPointPick = (session: CommandSession | null): boolean
     case 'OFFSET_POINT':
     case 'BATCH_COGO':
       return false;
+    case 'MTEXT':
+      return session.point == null;
+    case 'LEADER':
+      return session.arrowPoint == null;
+    case 'DIM':
+    case 'DIMLINEAR':
+    case 'DIMALIGNED':
+      return session.points.length < 3;
+    case 'DIMANGULAR':
+      return session.points.length < 4;
+    case 'DIMRADIUS':
+    case 'DIMDIAMETER':
+      return session.points.length < 2;
+    case 'BDLABEL':
+    case 'CURVELABEL':
+      return session.sourceEntityId == null;
   }
 };

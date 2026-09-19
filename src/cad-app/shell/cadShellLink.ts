@@ -41,6 +41,11 @@ export interface CadShellLink {
    * workspace insert flow open the Block Manager through it.
    */
   requestBlockManager: ((_tab?: 'blocks' | 'symbols' | 'insert') => void) | null;
+  /**
+   * Phase 18O — set by the shell; registry annotation style entries and the
+   * Toolspace Settings nodes open the Annotation Styles manager through it.
+   */
+  requestAnnotationManager: ((_tab?: import('../annotation/cadAnnotationUiTypes').CadAnnotationManagerTab) => void) | null;
 }
 
 const countsEqual = (
@@ -90,7 +95,8 @@ const snapshotsEqual = (a: CadWorkspaceSnapshot | null, b: CadWorkspaceSnapshot 
     JSON.stringify(a.volume) === JSON.stringify(b.volume) &&
     JSON.stringify(a.profile) === JSON.stringify(b.profile) &&
     JSON.stringify(a.section) === JSON.stringify(b.section) &&
-    JSON.stringify(a.blocks) === JSON.stringify(b.blocks)
+    JSON.stringify(a.blocks) === JSON.stringify(b.blocks) &&
+    JSON.stringify(a.annotation) === JSON.stringify(b.annotation)
   );
 };
 
@@ -172,6 +178,7 @@ export const createCadShellLink = (): CadShellLink => {
     requestLayerManager: null,
     requestToolspaceTab: null,
     requestBlockManager: null,
+    requestAnnotationManager: null,
   };
 };
 

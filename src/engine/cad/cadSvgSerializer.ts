@@ -15,6 +15,9 @@ const escapeXml = (text: string): string =>
 
 const anchorOf = (anchor: 'start' | 'middle' | 'end' | undefined): string => ` text-anchor="${anchor ?? 'start'}"`;
 
+/** Embedded-newline vertical step (fraction of text height). */
+const TEXT_LINE_SPACING = 1.2;
+
 // Color attrs emit only when the item carries a resolved color, so
 // hand-built scenes without color serialize exactly as before.
 // Opacity (from entity/layer transparency) emits only when translucent.
@@ -49,10 +52,20 @@ const serializeItem = (item: ExportItem): string => {
     case 'arc':
       return `<path d="M ${fmt(item.cx + item.r * Math.cos((item.startDeg * Math.PI) / 180))} ${fmt(item.cy - item.r * Math.sin((item.startDeg * Math.PI) / 180))} A ${fmt(item.r)} ${fmt(item.r)} 0 0 0 ${fmt(item.cx + item.r * Math.cos((item.endDeg * Math.PI) / 180))} ${fmt(item.cy - item.r * Math.sin((item.endDeg * Math.PI) / 180))}" fill="none"${strokeAttrs(item)}${opacityAttr(item)}${item.clipId ? ` clip-path="url(#${item.clipId})"` : ''}/>`;
     case 'text': {
-      const rotation = item.rotationDeg ? ` transform="rotate(${fmt(item.rotationDeg)} ${fmt(item.x)} ${fmt(item.y)})"` : '';
       const clip = item.clipId ? ` clip-path="url(#${item.clipId})"` : '';
       const fill = item.stroke != null ? ` fill="${escapeXml(item.stroke)}"` : '';
-      return `<text x="${fmt(item.x)}" y="${fmt(item.y)}" font-size="${fmt(item.heightMm)}"${anchorOf(item.anchor)}${fill}${opacityAttr(item)}${rotation}${clip}>${escapeXml(item.text)}</text>`;
+      // One <text> per line; single-line items stay byte-identical. Annotation
+      // mtext/survey-label rows arrive as embedded newlines when the scene
+      // hands them over whole; vertical step follows the text height.
+      const row = (line: string, y: number): string => {
+        const rotation = item.rotationDeg
+          ? ` transform="rotate(${fmt(item.rotationDeg)} ${fmt(item.x)} ${fmt(y)})"`
+          : '';
+        return `<text x="${fmt(item.x)}" y="${fmt(y)}" font-size="${fmt(item.heightMm)}"${anchorOf(item.anchor)}${fill}${opacityAttr(item)}${rotation}${clip}>${escapeXml(line)}</text>`;
+      };
+      const rows = item.text.split(/\r\n|\r|\n/);
+      if (rows.length <= 1) return row(item.text, item.y);
+      return rows.map((line, index) => row(line, item.y + index * TEXT_LINE_SPACING * item.heightMm)).join('\n');
     }
   }
 };

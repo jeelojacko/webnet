@@ -5,6 +5,7 @@ import type { CadToolspaceTab } from './cadShellTypes';
 import { VolumesNode } from './CadVolumeToolspace';
 import { SurfaceProfilesNode, ProfileViewsNode } from './CadProfileToolspace';
 import { SampleLineGroupsNode, SectionViewsNode, SectionStylesNode } from './CadSampleLineToolspace';
+import { CadAnnotationToolspaceNodes } from '../annotation/CadAnnotationToolspace';
 
 interface CadToolspaceProps {
   snapshot: CadWorkspaceSnapshot | null;
@@ -460,6 +461,7 @@ const SettingsTab: React.FC<{ snapshot: CadWorkspaceSnapshot | null; actions: Ca
       ) : null}
       {snapshot ? <SectionStylesNode snapshot={snapshot} actions={actions} /> : null}
       <BlocksNode snapshot={snapshot} actions={actions} />
+      <CadAnnotationToolspaceNodes snapshot={snapshot} actions={actions} />
       <TreeGroup label="Drawing">
         <div className="cad-shell-tree-row">Units: {snapshot.units}</div>
       </TreeGroup>
