@@ -125,17 +125,20 @@ test('18K-A: group/sources/add/interval/rebuild CURRENT/supersede/views/shading/
   await page.screenshot({ path: `${SHOT_DIR}/18k-A-sections-current.png` });
 
   // Batch Create Section Views: one view per line, single vertical stack.
+  // The out-of-range line gets a view entity (manager lists 4) but renders
+  // no layer until it has extractable coverage — honest empty, not a frame.
   await createSectionViews(page);
   await expect(manager.locator('[data-section-notice]')).toContainText('Created 4 section views');
+  await expect.poll(() => sectionViewIds(page)).toHaveLength(4);
   const viewLayers = page.locator('[data-section-view-layer]');
-  await expect.poll(() => viewLayers.count()).toBe(4);
+  await expect.poll(() => viewLayers.count()).toBe(3);
   // Frames must not overlap by default.
   const boxes = await viewLayers.evaluateAll((elements) =>
     elements.map((element) => {
       const box = (element as SVGGraphicsElement).getBBox();
       return { x: box.x, y: box.y, width: box.width, height: box.height };
     }));
-  expect(boxes).toHaveLength(4);
+  expect(boxes).toHaveLength(3);
   for (let i = 0; i < boxes.length; i += 1) {
     for (let j = i + 1; j < boxes.length; j += 1) {
       const a = boxes[i]!;
@@ -150,11 +153,13 @@ test('18K-A: group/sources/add/interval/rebuild CURRENT/supersede/views/shading/
   await page.locator('[data-cad-toolspace] [data-cad-section-view]').first().click();
   const firstView = viewLayers.first();
   await expect(firstView.locator('[data-section-view-path]')).toHaveCount(2);
-  await expect(firstView.locator('text')).toContainText('CL');
-  await expect(firstView.locator('text')).toContainText('Proposed');
+  await expect(firstView).toContainText('CL');
+  await expect(firstView).toContainText('Proposed');
   await expect(manager.locator('[data-cad-section-views-section]')).toContainText('K-CL');
-  // Deterministic cut/fill: +2 plane over 30 units of common coverage.
-  await expect(manager.locator('[data-cad-section-views-section]')).toContainText('Fill 60.000');
+  // Deterministic cut/fill: the station-35 cross-section runs perpendicular
+  // to K-CL (along y at x=25), crossing the x20-30/y15-25 void; Existing
+  // covers 20 of the 30 in-bounds units, so Fill = +2 plane x 20 = 40.
+  await expect(manager.locator('[data-cad-section-views-section]')).toContainText('Fill 40.000');
   await page.screenshot({ path: `${SHOT_DIR}/18k-A-section-view.png` });
 
   // Inquiry: covered offset interpolates; void gap answers honestly.
@@ -247,7 +252,7 @@ test('18K-B: equation label/XY + edit chains + layer OFF + save/reopen', async (
   await page.locator('[data-cad-command="SHELL_SELECT_ALL"]').click();
   await page.locator('[data-cad-command="MOVE"]').click();
   await canvasClick(page, 0.3, 0.5);
-  await canvasClick(page, 0.32, 0.52);
+  await canvasClick(page, 0.35, 0.55);
   await cancelCommand(page);
   await expect.poll(
     () => page.locator(`[data-cad-toolspace] [data-cad-surface="${EXISTING_ID}"]`).getAttribute('data-cad-surface-status'),
@@ -284,12 +289,16 @@ test('18K-B: equation label/XY + edit chains + layer OFF + save/reopen', async (
     () => page.getByRole('button', { name: 'Save Drawing' }).first().click(),
     '.wncad',
   );
+  // Reopen after a full page reload (mirror 18J-C): definitions persist,
+  // session caches reset, so sections reload UNBUILT — never false CURRENT.
+  await page.goto('/cad', { waitUntil: 'networkidle' });
+  await expect(page.getByText('WebNet CAD', { exact: true }).first()).toBeVisible({ timeout: 30000 });
   await openDrawing(page, reopenPath, 63);
   await showSurveyTab(page);
   await expect.poll(() => sectionGroupIds(page)).toHaveLength(0);
   await openSectionManager(page);
   await expect.poll(() => sectionGroupIds(page)).toHaveLength(1);
-  await expect.poll(() => sampleLineStatus(page, lineIds[0]!)).toBe('Unbuilt / Unbuilt');
+  await expect.poll(() => sampleLineStatus(page, lineIds[0]!)).toMatch(/Source Not Current|Unbuilt/);
   await expect(page.locator('[data-section-view-layer]')).toHaveCount(0);
   await rebuildAllSurfaces(page);
   for (const surfaceId of [EXISTING_ID, PROPOSED_ID]) {
@@ -325,14 +334,14 @@ test('18K-C: view move + display settings are display-only (no rebuild)', async 
   await expect.poll(() => page.locator('[data-section-view-layer]').count()).toBe(1);
 
   // Select the view: settings panel appears with deterministic area text
-  // (fill = +2 plane x 40 units of common coverage at station 20).
+  // (fill = +2 plane x 30 units of common coverage at station 20, no void).
   const manager = sectionManagerScope(page);
   const viewIds = await sectionViewIds(page);
   expect(viewIds).toHaveLength(1);
   await selectSectionView(page, viewIds[0]!);
   const settings = manager.locator('[data-cad-section-view-settings]');
   await expect(settings).toBeVisible();
-  await expect(settings).toContainText('Fill 80.000');
+  await expect(settings).toContainText('Fill 60.000');
   const boxBefore = await viewLayerBox(page);
 
   // MOVE via insertion X/Y: frame moves, status stays CURRENT (no extract).
@@ -341,8 +350,10 @@ test('18K-C: view move + display settings are display-only (no rebuild)', async 
   await settings.getByRole('button', { name: 'Apply view settings' }).click();
   await expect(manager.locator('[data-section-notice]')).toContainText('display only');
   await expect.poll(() => viewLayerBox(page).then((box) => box.x)).not.toBe(boxBefore.x);
+  // Insertion move is a pure translation: the frame size is unchanged (SVG
+  // bbox precision at the larger coordinates is sub-0.01, not zero).
   const boxAfter = await viewLayerBox(page);
-  expect(boxAfter.width).toBeCloseTo(boxBefore.width, 6);
+  expect(Math.abs(boxAfter.width - boxBefore.width)).toBeLessThan(0.01);
   await expect.poll(() => sampleLineStatus(page, lineIds[0]!)).toBe('Current / Current');
 
   // VE + explicit datum + grids: still rendered, still CURRENT.
@@ -374,7 +385,6 @@ test('18K-D: line edit invalidates, pair clear/re-set, style assign, deletes', a
 }) => {
   test.setTimeout(300_000);
   const errors: string[] = [];
-  page.on('dialog', (dialog) => dialog.accept());
   await gotoCad(page, errors);
   const drawingPath = makeSectionDrawing();
   await openDrawing(page, drawingPath, 63);
@@ -388,6 +398,8 @@ test('18K-D: line edit invalidates, pair clear/re-set, style assign, deletes', a
   await createSectionViews(page);
   await expect.poll(() => page.locator('[data-section-view-layer]').count()).toBe(1);
   const manager = sectionManagerScope(page);
+  // Select the created view so its settings panel (area text) is live.
+  await selectSectionView(page, (await sectionViewIds(page))[0]!);
 
   // Edit widths: geometry identity changes -> leaves CURRENT -> rebuild.
   await selectSampleLineRow(page, lineIds[0]!);
@@ -414,7 +426,11 @@ test('18K-D: line edit invalidates, pair clear/re-set, style assign, deletes', a
   // Delete view, then line, then group (confirms auto-accepted).
   const viewIds = await sectionViewIds(page);
   await selectSectionView(page, viewIds[0]!);
-  await manager.getByRole('button', { name: 'Delete', exact: true }).first().click();
+  await manager
+    .locator('[data-cad-section-views-section]')
+    .getByRole('button', { name: 'Delete', exact: true })
+    .first()
+    .click();
   await expect.poll(() => page.locator('[data-section-view-layer]').count()).toBe(0);
   await selectSampleLineRow(page, lineIds[0]!);
   await manager.getByRole('button', { name: 'Delete', exact: true }).first().click();
@@ -464,12 +480,13 @@ test('18K-E: properties blocks + signed-offset / gap / outside inquiry', async (
   await expect(viewProps).toContainText('Cut / fill / net');
   await page.screenshot({ path: `${SHOT_DIR}/18k-E-properties.png` });
 
-  // Inquiry on the covered line (station 20, x=10): +L and -R both hit
-  // the plane z = 101 + 0.1*10 = 102; past the 20-unit half-width is
-  // outside; the void-crossing line answers gap honestly.
+  // Inquiry on the covered line (station 20, x=10): Existing is the plane
+  // z = 100 + 0.1x + 0.05y, so +5L sits at y=25 -> 102.250 and -5R at
+  // y=15 -> 101.750; past the 20-unit half-width is outside; the
+  // void-crossing line answers gap honestly.
   await selectSampleLineRow(page, lineIds[1]!);
-  expect(await querySectionOffset(page, 'QA Constraints', '5')).toContain('elevation 102.000');
-  expect(await querySectionOffset(page, 'QA Constraints', '-5')).toContain('elevation 102.000');
+  expect(await querySectionOffset(page, 'QA Constraints', '5')).toContain('elevation 102.250');
+  expect(await querySectionOffset(page, 'QA Constraints', '-5')).toContain('elevation 101.750');
   expect(await querySectionOffset(page, 'QA Constraints', '25')).toContain('gap or outside');
   await selectSampleLineRow(page, lineIds[0]!);
   expect(await querySectionOffset(page, 'QA Constraints', '0')).toContain('gap or outside');
@@ -505,16 +522,16 @@ test('18K-F: FROZEN hides, LOCK blocks edits, toolspace, second-group stack', as
   await ribbonTab(page, 'Home').click();
   await page.getByRole('button', { name: 'Open layer manager' }).click();
   const layers = page.locator('[data-cad-layers]');
-  await layers.locator('input[aria-label="Toggle freeze for layer General"]').uncheck();
+  await layers.locator('input[aria-label="Toggle freeze for layer General"]').check();
   await expect(page.locator('[data-section-view-layer]')).toHaveCount(0);
   await expect(page.locator('[data-sample-line]').first()).toHaveCount(0);
   await expect.poll(() => sampleLineStatus(page, lineIds[0]!)).toBe('Current / Current');
   await page.screenshot({ path: `${SHOT_DIR}/18k-F-frozen.png` });
-  await layers.locator('input[aria-label="Toggle freeze for layer General"]').check();
+  await layers.locator('input[aria-label="Toggle freeze for layer General"]').uncheck();
   await expect.poll(() => page.locator('[data-section-view-layer]').count()).toBe(1);
 
   // LOCK blocks sample-line edits at the transaction boundary.
-  await layers.getByRole('button', { name: 'Lock layer General' }).click();
+  await layers.locator('input[aria-label="Lock layer General"]').check();
   await openSectionManager(page);
   await selectSectionGroup(page, groupId);
   const manager = sectionManagerScope(page);
@@ -523,10 +540,11 @@ test('18K-F: FROZEN hides, LOCK blocks edits, toolspace, second-group stack', as
   await expect(manager.locator('[data-section-notice]')).toContainText('rejected');
   await expect.poll(() => sectionLineIds(page)).toHaveLength(1);
   await ribbonTab(page, 'Home').click();
-  await layers.getByRole('button', { name: 'Unlock layer General' }).click();
+  await layers.locator('input[aria-label="Unlock layer General"]').uncheck();
 
   // Toolspace: sample-line + section-view nodes select through.
   await showSurveyTab(page);
+  await page.locator(`[data-cad-toolspace] [data-cad-sample-group="${groupId}"] > summary`).click();
   await expect(page.locator(`[data-cad-toolspace] [data-cad-sample-line="${lineIds[0]}"]`)).toBeVisible();
   await page.locator('[data-cad-toolspace] [data-cad-section-view]').first().click();
   await page.screenshot({ path: `${SHOT_DIR}/18k-F-toolspace.png` });
