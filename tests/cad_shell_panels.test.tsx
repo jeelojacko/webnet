@@ -625,3 +625,27 @@ describe('phase 18D survey UI', () => {
     await cleanup(container, root);
   });
 });
+
+describe('shell snapshot publish gate', () => {
+  it('publishes when only the section subtree changes (rebuild statuses/views)', () => {
+    const link = createCadShellLink();
+    let notifications = 0;
+    link.subscribe(() => {
+      notifications += 1;
+    });
+    const base = stubSnapshot();
+    link.publish(base);
+    expect(notifications).toBe(1);
+    // Identical content: swallowed (no notification storm).
+    link.publish(stubSnapshot());
+    expect(notifications).toBe(1);
+    // Section-only change (e.g. UNBUILT -> CURRENT after a batch, or a new
+    // view row): MUST notify, or the toolspace/manager/view layers go stale.
+    // Regression: the 18K section subtree was missing from snapshotsEqual,
+    // so pure derivation updates never reached the shell.
+    link.publish(stubSnapshot({ section: { groups: [], views: [], marker: 'current' } as unknown as CadWorkspaceSnapshot['section'] }));
+    expect(notifications).toBe(2);
+    link.publish(stubSnapshot({ section: { groups: [], views: [], marker: 'rebuilt' } as unknown as CadWorkspaceSnapshot['section'] }));
+    expect(notifications).toBe(3);
+  });
+});
