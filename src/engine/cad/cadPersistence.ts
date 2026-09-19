@@ -21,6 +21,14 @@ import {
   cloneCadVolumeSurfaces,
 } from './cadVolumeSurfaces';
 import { backfillCadSurfaces, clearSurfaceBuildCacheOnLoad, cloneCadSurfaces } from './cadSurfaceTypes';
+import {
+  backfillCadProfileStyles,
+  backfillProfileViews,
+  backfillSurfaceProfiles,
+  cloneCadProfileStyles,
+  cloneCadProfileViews,
+  cloneCadSurfaceProfiles,
+} from './cadProfileTypes';
 import { cloneFieldToFinishSettings } from '../fieldToFinish/catalogIo';
 import { backfillDrawingCatalog } from '../fieldToFinish/drawingCatalog';
 import { cloneFeatureCatalog } from '../fieldToFinish/featureCatalog';
@@ -181,6 +189,14 @@ export const cloneCadProject = (project: CadProject): CadProject => ({
   ...(project.volumeSurfaceStyles != null
     ? { volumeSurfaceStyles: cloneCadVolumeSurfaceStyles(project.volumeSurfaceStyles) }
     : {}),
+  // Phase 18J: profile definitions/views/styles stay trailing (key-order rule).
+  ...(project.surfaceProfiles != null
+    ? { surfaceProfiles: cloneCadSurfaceProfiles(project.surfaceProfiles) }
+    : {}),
+  ...(project.profileViews != null ? { profileViews: cloneCadProfileViews(project.profileViews) } : {}),
+  ...(project.profileStyles != null
+    ? { profileStyles: cloneCadProfileStyles(project.profileStyles) }
+    : {}),
 });
 
 const cloneParcelLayoutSettings = (
@@ -266,6 +282,9 @@ export const sanitizeSurveyCadPersistedState = (
         volumeSurfaceStyles: cloneCadVolumeSurfaceStyles(
           backfillVolumeSurfaceStyles(withStandards.volumeSurfaceStyles),
         ),
+        surfaceProfiles: cloneCadSurfaceProfiles(backfillSurfaceProfiles(withStandards.surfaceProfiles)),
+        profileViews: cloneCadProfileViews(backfillProfileViews(withStandards.profileViews)),
+        profileStyles: cloneCadProfileStyles(backfillCadProfileStyles(withStandards.profileStyles)),
       },
     };
   } catch {

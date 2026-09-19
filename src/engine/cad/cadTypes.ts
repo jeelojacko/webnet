@@ -419,6 +419,17 @@ export interface CadProject {
   volumeSurfaces?: CadVolumeSurface[];
   /** Phase 18I: drawing-owned volume display styles (display only). */
   volumeSurfaceStyles?: CadVolumeSurfaceStyle[];
+  /**
+   * Phase 18J: drawing-owned surface-profile definitions (alignment +
+   * surface refs only; samples/revisions/statuses never persist).
+   * Trailing: clone/migrate keep profile tables last — project signatures
+   * are key-order-sensitive JSON.stringify.
+   */
+  surfaceProfiles?: CadSurfaceProfile[];
+  /** Phase 18J: drawing-owned profile view presentation objects. */
+  profileViews?: CadProfileView[];
+  /** Phase 18J: drawing-owned profile display styles (display only). */
+  profileStyles?: CadProfileStyle[];
   entities: CadEntity[];
   cogoComputations: CadCogoComputation[];
   bounds: CadBounds | null;
@@ -786,3 +797,64 @@ export interface CadVolumeResult {
   displayRegions?: CadVolumeDisplayRegion[];
   stats: CadVolumeStats;
 }
+
+/**
+ * Phase 18J: surface profile definition. Holds ONLY the alignment + surface
+ * refs plus display binding; samples, revisions, and statuses are always
+ * derived and never serialized.
+ */
+export interface CadSurfaceProfile {
+  id: string;
+  name: string;
+  alignmentEntityId: CadEntityId;
+  surfaceId: string;
+  styleId?: string;
+  description?: string;
+}
+
+/** Phase 18J: profile display styling ONLY (never affects geometry/revision). */
+export interface CadProfileStyle {
+  id: string;
+  name: string;
+  color: string;
+  lineweight: number;
+  /** 0 (opaque) .. 1 (fully transparent). Default 0. */
+  opacity: number;
+  showVertices?: boolean;
+}
+
+/**
+ * Phase 18J: profile view presentation object (insertion XY, scales, datum,
+ * grid intervals) — NOT thousands of CadEntity primitives. Derived display
+ * geometry is session-only and never persisted.
+ */
+export interface CadProfileView {
+  id: string;
+  name: string;
+  alignmentEntityId: CadEntityId;
+  profileIds: string[];
+  insertionX: number;
+  insertionY: number;
+  width?: number;
+  height?: number;
+  horizontalScale: number;
+  verticalExaggeration: number;
+  datumElevation?: number;
+  datumMode: 'auto' | 'explicit';
+  datumStep?: number;
+  majorStationInterval?: number;
+  minorStationInterval?: number;
+  elevationGridInterval?: number;
+  styleId?: string;
+}
+
+/** Phase 18J: derived profile status (never persisted; never a trusted flag). */
+export type SurfaceProfileStatus =
+  | 'UNBUILT'
+  | 'CURRENT'
+  | 'NEEDS_REBUILD'
+  | 'BUILDING'
+  | 'FAILED'
+  | 'BROKEN_REFERENCE'
+  | 'SOURCE_NOT_CURRENT'
+  | 'NO_OVERLAP';
