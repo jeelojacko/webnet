@@ -26,7 +26,8 @@ import type {
  * live here so extraction stays an orchestrator.
  */
 
-const PLANE_AGREEMENT_EPS = 1e-9;
+/** Shared with cross-section extraction: planes agreeing within this stay one segment. */
+export const PLANE_AGREEMENT_EPS = 1e-9;
 /** Raw-station dedup epsilon (relative): shared-edge double reports merge. */
 const RAW_EPS_REL = 1e-9;
 const MAX_ARC_DEPTH = 12;
@@ -100,12 +101,15 @@ export const pointOnElement = (
   );
 };
 
-interface LineEvent {
+/** Straight-TIN event shared by the profile walker and cross-section extraction. */
+export interface TinAlongSegmentEvent {
   t: number;
   vertex: boolean;
 }
 
-const lineEvents = (
+type LineEvent = TinAlongSegmentEvent;
+
+export const extractTinAlongSegment = (
   mesh: ProfileExtractionMesh,
   p0: { x: number; y: number },
   p1: { x: number; y: number },
@@ -153,6 +157,8 @@ const lineEvents = (
   }
   return deduped;
 };
+
+const lineEvents = extractTinAlongSegment;
 
 export const walkLine = (
   walker: Walker,
