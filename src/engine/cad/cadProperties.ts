@@ -74,7 +74,9 @@ const transparencyLabel = (transparency: number | undefined): string =>
 /**
  * Phase 18C — Layer (editable = move) + Color/Linetype/Lineweight/
  * Transparency as ByLayer-or-explicit, effective value as secondary text.
- * No ByBlock option: no block model exists (spec §12, deferred).
+ * No ByBlock option: entity appearance intent stays ByLayer-or-explicit
+ * (blockDefinitions exist as of 18N, but ByBlock intent is still deferred
+ * per spec §12).
  */
 const appendAppearanceRows = (rows: CadEntityPropertyRow[], project: CadProject, entity: CadEntity): void => {
   const layer = project.layers.find((entry) => entry.id === entity.layerId);

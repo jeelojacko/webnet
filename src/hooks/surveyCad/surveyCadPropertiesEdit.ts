@@ -246,7 +246,8 @@ type AppearanceField =
 /**
  * Phase 18C appearance edits: Layer move + ByLayer-or-explicit intent.
  * Undoable via EDIT_ENTITY; locked sources reject (false, LAYER_LOCKED
- * reason via describeCadEditBlock). No ByBlock: no block model exists.
+ * reason via describeCadEditBlock). No ByBlock: blockDefinitions exist as of
+ * 18N, but ByBlock intent stays deferred.
  */
 const editSurveyCadAppearanceField = ({
   entityId,

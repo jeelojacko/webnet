@@ -107,6 +107,42 @@ describe('block UI adapter', () => {
     expect(deleted.project.blockDefinitions).toHaveLength(1);
   });
 
+  it('redefines geometry without moving the base point (engine semantic)', () => {
+    let project = withLine(createBlankCadProject({ name: 'test', units: 'm' }));
+    const created = applyBlockUiOp(project, { kind: 'create', name: 'Sym', fromEntityIds: ['e1'] });
+    expect(created.applied).toBe(true);
+    project = {
+      ...created.project,
+      entities: [...created.project.entities, line('e2', 100, 200, 110, 210)],
+    };
+    const defId = project.blockDefinitions![0]!.id;
+    expect(project.blockDefinitions![0]!.basePoint).toEqual({ x: 10, y: 20 });
+    const inserted = applyBlockUiOp(project, { kind: 'insert', definitionId: defId, x: 1, y: 2 });
+    expect(inserted.applied).toBe(true);
+    project = inserted.project;
+    const refId = inserted.addedEntityIds[0]!;
+
+    const redefined = applyBlockUiOp(project, { kind: 'redefine', definitionId: defId, fromEntityIds: ['e2'] });
+    expect(redefined.applied).toBe(true);
+    const afterDef = findBlockDefinition(redefined.project.blockDefinitions, defId)!;
+    // Engine BLOCK_REDEFINE semantic: geometry swap only, basePoint stays.
+    expect(afterDef.basePoint).toEqual({ x: 10, y: 20 });
+    const ref = redefined.project.entities.find((entity) => entity.id === refId);
+    expect(ref?.type).toBe('block-reference');
+    if (ref?.type !== 'block-reference') throw new Error('missing block reference');
+    const world = expandBlockReference(afterDef, {
+      x: ref.x,
+      y: ref.y,
+      rotationDeg: 0,
+      scaleX: 1,
+      scaleY: 1,
+    });
+    expect(world).toHaveLength(1);
+    // world = insert + (local − basePoint): a base reset to the replacement
+    // min-corner (100, 200) would have shifted this to (1, 2)/(11, 12).
+    expect(world[0]).toMatchObject({ type: 'line', fromX: 91, fromY: 182, toX: 101, toY: 192 });
+  });
+
   it('rejects empty selections, bad scales, and non-finite inserts', () => {
     const project = withLine(createBlankCadProject({ name: 'test', units: 'm' }));
     expect(applyBlockUiOp(project, { kind: 'create', name: 'X', fromEntityIds: [] }).applied).toBe(false);

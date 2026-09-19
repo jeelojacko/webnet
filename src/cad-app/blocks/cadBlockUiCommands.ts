@@ -195,13 +195,13 @@ export const applyBlockUiOp = (project: CadProject, op: CadBlockUiOp): CadBlockU
         .map((id) => project.entities.find((entity) => entity.id === id))
         .filter((entity): entity is CadEntity => entity != null);
       if (sources.length === 0) return fail(project, 'BLOCK_REDEFINE', 'Select replacement linework first.');
-      const base = selectionBasePoint(sources);
-      if (!base) return fail(project, 'BLOCK_REDEFINE', 'Selection has no geometry to capture.');
       const { children } = collectChildren(project, op.fromEntityIds);
       if (children.length === 0) {
         return fail(project, 'BLOCK_REDEFINE', 'Only lines, polylines, arcs, polygons, and free text can form a block.');
       }
-      const next: CadBlockDefinition = { ...target, basePoint: base, entities: children };
+      // Geometry swap only (engine BLOCK_REDEFINE semantic): basePoint
+      // stays so live references keep their world geometry.
+      const next: CadBlockDefinition = { ...target, entities: children };
       const issues = validateBlockDefinition(next, siblingNames(project, op.definitionId));
       if (issues.length > 0) return fail(project, 'BLOCK_REDEFINE', issues[0]!.message);
       return {

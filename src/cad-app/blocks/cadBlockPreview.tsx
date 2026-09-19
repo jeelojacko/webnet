@@ -1,7 +1,9 @@
 // Phase 18N UI slice — one block-geometry preview renderer for manager
 // previews, point-style marker previews, and Toolspace rows. Previews
-// expand through `expandBlockReference` — the same helper the native
-// viewport renderer uses — so previews and viewport can never disagree.
+// iterate definition children locally in definition space (childSegments +
+// fit-to-bounds viewBox; no reference transform is applied) rather than
+// going through `expandBlockReference` like the native viewport renderer,
+// so previews show raw definition geometry, never placed world geometry.
 // Curves render as sampled polylines (no sweep-flag edge cases).
 // Monochrome: stroke inherits context color (ByLayer-friendly).
 
