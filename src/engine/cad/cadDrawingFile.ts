@@ -35,6 +35,7 @@ import {
   backfillCadSampleLineGroups,
   backfillCadSectionStyles,
   backfillCadSectionViews,
+  clearSectionCacheOnLoad,
   cloneCadSampleLineGroups,
   cloneCadSectionStyles,
   cloneCadSectionViews,
@@ -243,7 +244,7 @@ export const migrateSurveyCadStateToDrawing = ({
     profileStyles: cloneCadProfileStyles(backfillCadProfileStyles(withStandards.profileStyles)),
     sampleLineGroups: cloneCadSampleLineGroups(
       backfillCadSampleLineGroups(withStandards.sampleLineGroups),
-    ),
+    ).map(clearSectionCacheOnLoad),
     sectionStyles: cloneCadSectionStyles(backfillCadSectionStyles(withStandards.sectionStyles)),
     sectionViews: cloneCadSectionViews(backfillCadSectionViews(withStandards.sectionViews)),
   };
@@ -315,7 +316,7 @@ const sanitizeCadDrawingDocument = (value: unknown): CadDrawingDocument | undefi
       profileStyles: cloneCadProfileStyles(backfillCadProfileStyles(withStandards.profileStyles)),
       sampleLineGroups: cloneCadSampleLineGroups(
         backfillCadSampleLineGroups(withStandards.sampleLineGroups),
-      ),
+      ).map(clearSectionCacheOnLoad),
       sectionStyles: cloneCadSectionStyles(backfillCadSectionStyles(withStandards.sectionStyles)),
       sectionViews: cloneCadSectionViews(backfillCadSectionViews(withStandards.sectionViews)),
     };
