@@ -83,7 +83,7 @@ const stubActions = (): CadShellActions => ({
   selectSampleLine: vi.fn(),
   rebuildSections: vi.fn(() => ''),
   rebuildSectionLine: vi.fn(() => ''),
-  createSectionViews: vi.fn(),
+  createSectionViews: vi.fn(() => ''),
   selectSectionView: vi.fn(),
   querySectionElevation: vi.fn(() => ''),
   requestVolume: vi.fn(() => ''),

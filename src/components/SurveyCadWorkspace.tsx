@@ -1432,7 +1432,7 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
         const group = (activeProject.sampleLineGroups ?? []).find((entry) => entry.id === groupId);
         if (!group) {
           setFileStatusText('Select a sample-line group first.');
-          return;
+          return 'Select a sample-line group first.';
         }
         const existing = (activeProject.sectionViews ?? []).filter(
           (entry) => entry.sampleLineGroupId === groupId,
@@ -1441,7 +1441,7 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
         const missing = group.sampleLines.filter((entry) => !builtLineIds.has(entry.id));
         if (missing.length === 0) {
           setFileStatusText(`Section views for “${group.name}” already exist.`);
-          return;
+          return `Section views for “${group.name}” already exist.`;
         }
         // Deterministic single vertical stack below one insertion origin:
         // origin sits under the lowest existing frame (estimated heights),
@@ -1473,11 +1473,12 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
           });
           if (ok) created += 1;
         }
-        setFileStatusText(
+        const message =
           created === placements.length
             ? `Created ${created} section views for “${group.name}”.`
-            : `Created ${created} of ${placements.length} section views — see status/locks.`,
-        );
+            : `Created ${created} of ${placements.length} section views — see status/locks.`;
+        setFileStatusText(message);
+        return message;
       },
       selectSectionView: (viewId) => setSelectedSectionViewId(viewId),
       querySectionElevation: (groupId, lineId, surfaceId, offset) =>

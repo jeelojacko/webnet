@@ -231,7 +231,7 @@ export interface CadShellActions {
   /** Phase 18K — manual session rebuild of one line x every source. */
   rebuildSectionLine: (_groupId: string, _lineId: string) => string;
   /** Phase 18K — batch-create section views for a group (single vertical stack). */
-  createSectionViews: (_groupId: string) => void;
+  createSectionViews: (_groupId: string) => string;
   /** Phase 18K — select a section view (viewport click / Toolspace converge). */
   selectSectionView: (_viewId: string | null) => void;
   /**

@@ -323,7 +323,7 @@ const SelectedGroup: React.FC<{
         <button type="button" className={buttonClass} onClick={() => setNotice(actions.rebuildSections(row.id))}>
           Rebuild Sections
         </button>
-        <button type="button" className={buttonClass} onClick={() => actions.createSectionViews(row.id)}>
+        <button type="button" className={buttonClass} onClick={() => setNotice(actions.createSectionViews(row.id))}>
           Create Section Views
         </button>
         <button type="button" className={buttonClass} onClick={removeGroup}>Delete Group</button>

@@ -62,7 +62,10 @@ const stubActions = (): CadShellActions & { calls: string[] } => {
       calls.push(`section-line-rebuild:${groupId}:${lineId}`);
       return '';
     },
-    createSectionViews: (id) => void calls.push(`section-views-create:${id}`),
+    createSectionViews: (id) => {
+      calls.push(`section-views-create:${id}`);
+      return '';
+    },
     selectSectionView: (id) => void calls.push(`section-view-select:${id}`),
     querySectionElevation: (groupId, lineId) => {
       calls.push(`section-elev:${groupId}:${lineId}`);
