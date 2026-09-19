@@ -7,6 +7,7 @@ import {
 } from './cadProfileSnapshot';
 import { trySurfaceCommand } from './cadSurfaceSnapshot';
 import { CadProfileViewSettings } from './CadProfileViewSettings';
+import { CadProfileInquiryPanel } from './CadProfileInquiryPanel';
 import { CadProfileStyleEditor } from './CadProfileStyleEditor';
 import { saveBrowserTextFile } from '../../engine/browserFileIo';
 import { Field, ManagerShell } from '../../components/surveyCad/surveyManagerShared.tsx';
@@ -250,6 +251,7 @@ const SelectedProfile: React.FC<{
         </button>
         <button type="button" className={buttonClass} onClick={onDelete}>Delete</button>
       </div>
+      <CadProfileInquiryPanel snapshot={snapshot} actions={actions} profileId={row.id} />
     </div>
   );
 };
