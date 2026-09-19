@@ -248,11 +248,12 @@ describe('phase 18D point groups', () => {
     expect(buildCadProjectSignature(cloneCadProject(reparsed.drawing.project))).toBe(
       buildCadProjectSignature(reparsed.drawing.project),
     );
-    expect(Object.keys(reparsed.drawing.project).at(-1)).toBe('volumeSurfaceStyles');
+    expect(Object.keys(reparsed.drawing.project).at(-1)).toBe('profileStyles');
     // 18E appended drawing-owned F2F catalog + settings trailing (after
     // pointGroups); 18F appended surfaces + surfaceStyles; 18I appends
-    // volume relationships + styles trailing after those. The invariant is
-    // clone/parse stability, asserted above.
+    // volume relationships + styles trailing after those; 18J appends
+    // profile definitions + views + styles trailing after those.
+    // The invariant is clone/parse stability, asserted above.
   });
 
   it('resolves 10k points x 50 groups in reasonable time', () => {

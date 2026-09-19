@@ -41,6 +41,17 @@ const stubActions = (): CadShellActions & { calls: string[] } => {
     },
     selectSurface: (id) => void calls.push(`surface-select:${id}`),
     selectVolume: (id) => void calls.push(`volume-select:${id}`),
+    selectProfile: (id) => void calls.push(`profile-select:${id}`),
+    rebuildProfile: (id) => {
+      calls.push(`profile-rebuild:${id}`);
+      return '';
+    },
+    createProfileView: (id) => void calls.push(`profile-view-create:${id}`),
+    selectProfileView: (id) => void calls.push(`profile-view-select:${id}`),
+    queryProfileElevation: (id) => {
+      calls.push(`profile-elev:${id}`);
+      return '';
+    },
     requestVolume: (id) => {
       calls.push(`volume-calc:${id}`);
       return '';

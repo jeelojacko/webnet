@@ -3,6 +3,7 @@ import type { CadSnapKind } from '../../engine/cad/cadTypes';
 import type { CadShellActions, CadWorkspaceSnapshot } from './cadShellTypes';
 import type { CadToolspaceTab } from './cadShellTypes';
 import { VolumesNode } from './CadVolumeToolspace';
+import { SurfaceProfilesNode, ProfileViewsNode } from './CadProfileToolspace';
 
 interface CadToolspaceProps {
   snapshot: CadWorkspaceSnapshot | null;
@@ -211,6 +212,8 @@ const SurveyTab: React.FC<{ snapshot: CadWorkspaceSnapshot | null; actions: CadS
       ) : null}
       <SurfacesNode snapshot={snapshot} actions={actions} />
       <VolumesNode snapshot={snapshot} actions={actions} />
+      {snapshot ? <SurfaceProfilesNode snapshot={snapshot} actions={actions} /> : null}
+      {snapshot ? <ProfileViewsNode snapshot={snapshot} actions={actions} /> : null}
       <F2FNode snapshot={snapshot} actions={actions} />
       {menu ? (
         <div role="menu" className="cad-shell-menu" style={{ left: menu.x, top: menu.y, position: 'fixed' }} data-cad-survey-menu>

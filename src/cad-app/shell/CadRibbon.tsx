@@ -182,6 +182,12 @@ const CadSurfaceRibbonGroup: React.FC<{
         { key: 'difference-inquiry', label: 'Difference Inquiry', hint: 'Query base/comparison elevations + CUT/FILL verdict (manager).', disabled: !ready, onClick: () => openManager(selectedSurfaceId ?? undefined) },
         { key: 'volume-report', label: 'Volume Report', hint: 'Download the Volume Summary CSV (Current volumes only, manager).', disabled: !ready, onClick: () => openManager(selectedSurfaceId ?? undefined) },
       ])}
+      {group('Profile', [
+        { key: 'profile-create', label: 'Create Surface Profile', hint: 'Create a profile from an alignment + surface (manager).', disabled: !ready, onClick: () => actions?.openSurveyManager('profiles') },
+        { key: 'profile-manager', label: 'Profile Manager', hint: 'Open the surface profile manager.', disabled: !ready, onClick: () => actions?.openSurveyManager('profiles') },
+        { key: 'profile-view', label: 'Create Profile View', hint: 'Create a profile view from the selected profile.', disabled: !ready, onClick: () => actions?.createProfileView() },
+        { key: 'profile-elevation', label: 'Profile Elevation', hint: 'Query profile elevation at a station (manager).', disabled: !ready, onClick: () => actions?.openSurveyManager('profiles') },
+      ])}
     </>
   );
 };

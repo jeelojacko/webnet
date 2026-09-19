@@ -27,11 +27,22 @@ export const CadPropertiesPalette: React.FC<CadPropertiesPaletteProps> = ({ snap
   const selectedSurface = snapshot.surface?.surfaces.find(
     (entry) => entry.id === snapshot.surface?.selectedSurfaceId,
   ) ?? null;
+  const selectedProfile =
+    snapshot.profile?.profiles.find((entry) => entry.id === snapshot.profile?.selectedProfileId) ?? null;
+  const selectedProfileView =
+    snapshot.profile?.views.find((entry) => entry.id === snapshot.profile?.selectedViewId) ?? null;
+  const profileBlocks = (
+    <>
+      {selectedProfileView ? <ProfileViewPropertiesBlock row={selectedProfileView} /> : null}
+      {selectedProfile ? <ProfilePropertiesBlock row={selectedProfile} actions={actions} /> : null}
+    </>
+  );
   if (!snapshot.properties || snapshot.selectionCount === 0) {
     return (
       <div className="cad-shell-props" data-cad-properties="none">
         <h3>No selection</h3>
         {selectedSurface ? <SurfacePropertiesBlock row={selectedSurface} actions={actions} /> : null}
+        {profileBlocks}
         <dl>
           <div><dt>Drawing</dt><dd>{snapshot.drawingName}</dd></div>
           <div><dt>Units</dt><dd>{snapshot.units}</dd></div>
@@ -51,6 +62,7 @@ export const CadPropertiesPalette: React.FC<CadPropertiesPaletteProps> = ({ snap
       <div className="cad-shell-props" data-cad-properties="single">
         <h3>{panel.entity.entityLabel}</h3>
         {selectedSurface ? <SurfacePropertiesBlock row={selectedSurface} actions={actions} /> : null}
+        {profileBlocks}
         <PropertyRows
           rows={panel.entity.properties}
           entityId={panel.entity.entityId}
@@ -69,6 +81,7 @@ export const CadPropertiesPalette: React.FC<CadPropertiesPaletteProps> = ({ snap
           <SurfacePropertiesBlock row={selectedSurface} actions={actions} />
         </div>
       ) : null}
+      {profileBlocks}
       <MultiProperties groups={panel.groups} defaultTypeKey={panel.defaultTypeKey} actions={actions} />
       {snapshot.survey && snapshot.survey.selected.length > 1 ? (
         <SurveyPointBatch survey={snapshot.survey} actions={actions} />
@@ -125,6 +138,57 @@ const SurfacePropertiesBlock: React.FC<{
     >
       Open Surface Manager
     </button>
+  </div>
+);
+
+/**
+ * Phase 18J — PROFILE section for the selected profile: source refs, status,
+ * and min/max/covered statistics. No sample dump.
+ */
+const ProfilePropertiesBlock: React.FC<{
+  row: import('./cadProfileSnapshot').CadProfileRow;
+  actions: CadShellActions | null;
+}> = ({ row, actions }) => (
+  <div className="cad-shell-props-group" data-cad-profile-properties={row.id}>
+    <h4>Surface Profile</h4>
+    <dl>
+      <div><dt>Name</dt><dd>{row.name}</dd></div>
+      <div><dt>Alignment</dt><dd>{row.alignmentName}</dd></div>
+      <div><dt>Surface</dt><dd>{row.surfaceName}</dd></div>
+      <div><dt>Status</dt><dd>{row.statusText}{row.stale ? ' (stale samples)' : ''}</dd></div>
+      <div><dt>Min / max Z</dt><dd>{row.stats?.minElevation?.toFixed(3) ?? '—'} / {row.stats?.maxElevation?.toFixed(3) ?? '—'}</dd></div>
+      <div><dt>Covered / gap</dt><dd>{row.stats ? `${row.stats.coveredLength.toFixed(3)} / ${row.stats.gapLength.toFixed(3)}` : '—'}</dd></div>
+      {row.diagnostic ? <div><dt>Diagnostic</dt><dd>{row.diagnostic}</dd></div> : null}
+    </dl>
+    <button
+      type="button"
+      className="cad-shell-tree-node"
+      onClick={() => actions?.openSurveyManager('profiles', row.id)}
+    >
+      Open Profile Manager
+    </button>
+  </div>
+);
+
+/**
+ * Phase 18J — PROFILE VIEW section for the selected view: alignment,
+ * member profiles, scale, exaggeration, datum, and grid intervals.
+ */
+const ProfileViewPropertiesBlock: React.FC<{
+  row: import('./cadProfileSnapshot').CadProfileViewRow;
+}> = ({ row }) => (
+  <div className="cad-shell-props-group" data-cad-profile-view-properties={row.id}>
+    <h4>Profile View</h4>
+    <dl>
+      <div><dt>Name</dt><dd>{row.name}</dd></div>
+      <div><dt>Alignment</dt><dd>{row.alignmentName}</dd></div>
+      <div><dt>Profiles</dt><dd>{row.profileNames.join(', ') || '—'}</dd></div>
+      <div><dt>Horizontal scale</dt><dd>1:{row.horizontalScale}</dd></div>
+      <div><dt>Vertical exaggeration</dt><dd>{row.verticalExaggeration}:1</dd></div>
+      <div><dt>Datum</dt><dd>{row.datumMode === 'explicit' ? (row.datumElevation?.toFixed(3) ?? '—') : `Auto (step ${row.datumStep})`}</dd></div>
+      <div><dt>Grid intervals</dt><dd>major {row.majorStationInterval} · minor {row.minorStationInterval} · elev {row.elevationGridInterval}</dd></div>
+      {row.validationError ? <div><dt>Invalid</dt><dd>{row.validationError}</dd></div> : null}
+    </dl>
   </div>
 );
 

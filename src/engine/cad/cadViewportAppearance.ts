@@ -106,6 +106,11 @@ export const filterCadDisplaySceneForViewport = (
     bounds: scene.bounds,
     surfaceLayers: (scene.surfaceLayers ?? []).filter((layer) => !isLayerHidden(project, layer.layerId)),
     volumeLayers: (scene.volumeLayers ?? []).filter((layer) => !isLayerHidden(project, layer.layerId)),
+    // Phase 18J: profile views ride the same OFF/frozen contract — layer
+    // OFF hides the view with no rebuild, ON restores it from cache.
+    profileViewLayers: (scene.profileViewLayers ?? []).filter(
+      (layer) => !isLayerHidden(project, layer.layerId),
+    ),
     primitives: scene.primitives.filter((primitive) => {
       const entity = entities.get(primitive.sourceEntityId);
       if (!entity) return true;

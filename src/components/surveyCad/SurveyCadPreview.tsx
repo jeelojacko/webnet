@@ -68,6 +68,8 @@ const SurveyCadPreview: React.FC<SurveyCadPreviewProps> = ({
   onSurfacePickPoint,
   selectedSurfaceId = null,
   onSurfaceClick,
+  selectedProfileViewId = null,
+  onProfileViewClick,
 }) => {
   const { baseScale, normalized, project, scale, unproject } = useProjector(viewBounds, viewport);
   const visibleWorldBounds = useMemo(() => visibleWorldBoundsFromViewport(unproject), [unproject]);
@@ -286,6 +288,7 @@ const SurveyCadPreview: React.FC<SurveyCadPreviewProps> = ({
         onPointerWorldPointChange={onPointerWorldPointChange}
         onSurfacePickPoint={onSurfacePickPoint}
         onSurfaceClick={onSurfaceClick}
+        onProfileViewClick={onProfileViewClick}
         onPrimitiveClickIntercept={onPrimitiveClickIntercept}
         onSelectEntities={onSelectEntities}
         onSelectEntity={onSelectEntity}
@@ -299,6 +302,7 @@ const SurveyCadPreview: React.FC<SurveyCadPreviewProps> = ({
         screenPointFromMouseEvent={screenPointFromMouseEvent}
         selectedEntityIds={selectedEntityIds}
         selectedSurfaceId={selectedSurfaceId}
+        selectedProfileViewId={selectedProfileViewId}
         selectionBox={selectionBox}
         surfacePickActive={surfacePickActive}
         setArmedSnap={setArmedSnap}

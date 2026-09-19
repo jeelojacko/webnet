@@ -90,6 +90,12 @@ export interface CadDisplayScene {
    * never CAD entities). Export scenes ignore this field.
    */
   volumeLayers?: import('./cadVolumeView').CadVolumeDisplayLayer[];
+  /**
+   * Phase 18J — derived profile-view layers (aggregated SVG paths per
+   * profile view, from cached CURRENT results — never CAD entities).
+   * Export scenes ignore this field.
+   */
+  profileViewLayers?: import('./cadProfileView').CadProfileViewDisplayLayer[];
 }
 
 /** Phase 18H — one derived contour label (viewport-ready, display only). */

@@ -21,11 +21,19 @@ import type {
   CadSurface,
   CadSurveyPointEntity,
   CadVolumeResult,
+  CadAlignmentElement,
+  CadStationEquation,
 } from '../engine/cad/cadTypes';
 import {
   computeVolumeQuantities,
   toCadVolumeResult,
 } from './surfaceVolumeEngine';
+import {
+  extractSurfaceProfile,
+  type ExtractSurfaceProfileInput,
+} from '../engine/cad/profiles/profileExtraction';
+import type { CadSurfaceProfileResult } from '../engine/cad/profiles/profileExtraction';
+import type { CadSurfaceGrid } from '../engine/cad/cadSurfaces';
 import type {
   SurfaceVolumeComputeInput,
   VolumeComputeOptions,
@@ -66,6 +74,7 @@ export type SurfaceWorkerRequestMessage =
   | { type: 'build'; requestId: string; request: SurfaceBuildRequest }
   | { type: 'contours'; requestId: string; request: SurfaceContourRequest }
   | { type: 'volume'; requestId: string; request: SurfaceVolumeRequest }
+  | { type: 'profile'; requestId: string; request: SurfaceProfileRequest }
   | { type: 'cancel'; requestId: string };
 
 export type SurfaceWorkerResponseMessage =
@@ -120,6 +129,20 @@ export type SurfaceWorkerResponseMessage =
       volumeSurfaceId: string;
       volumeRevision: string;
       error: string;
+    }
+  | {
+      type: 'profile-success';
+      requestId: string;
+      profileId: string;
+      profileRevision: string;
+      result: CadSurfaceProfileResult;
+    }
+  | {
+      type: 'profile-failure';
+      requestId: string;
+      profileId: string;
+      profileRevision: string;
+      error: string;
     };
 
 export type SurfaceWorkerBuilderFn = (
@@ -167,12 +190,36 @@ export type SurfaceVolumeEngineFn = (
   _options: VolumeComputeOptions,
 ) => VolumeResult | Promise<VolumeResult>;
 
+/**
+ * Phase 18J profile derivation request: compact alignment geometry +
+ * equations + surface mesh snapshot in the established flat-array worker
+ * shape — never the whole project.
+ */
+export interface SurfaceProfileRequest {
+  profileId: string;
+  /** `prev1:` profile revision the result must still match. */
+  profileRevision: string;
+  drawingId?: string;
+  /** Source surface `srev1` the mesh was built from. */
+  surfaceRevision: string;
+  alignmentElements: CadAlignmentElement[];
+  startStation: number;
+  stationEquations?: CadStationEquation[];
+  mesh: { points: number[]; triangles: number[]; grid: CadSurfaceGrid };
+}
+
+export type SurfaceProfileExtractorFn = (
+  _input: ExtractSurfaceProfileInput,
+) => CadSurfaceProfileResult | Promise<CadSurfaceProfileResult>;
+
 export interface SurfaceWorkerHandlerDeps {
   loadBuilder: () => Promise<SurfaceWorkerBuilderFn>;
   /** Phase 18H: extractor override (tests inject fakes; default is the engine sibling's). */
   loadContourExtractor?: () => Promise<SurfaceContourExtractorFn>;
   /** Phase 18I: volume engine override (tests inject fakes; default is the engine sibling's). */
   loadVolumeEngine?: () => Promise<SurfaceVolumeEngineFn>;
+  /** Phase 18J: profile extractor override (tests inject fakes; default is the engine sibling's). */
+  loadProfileExtractor?: () => Promise<SurfaceProfileExtractorFn>;
   postMessage: (_message: SurfaceWorkerResponseMessage) => void;
   defer?: (_callback: () => void) => void;
 }
@@ -252,11 +299,14 @@ export const createSurfaceWorkerHandler = (
   const latestRevisionBySurface = new Map<string, string>();
   const latestContourBySurface = new Map<string, string>();
   const latestVolumeBySurface = new Map<string, string>();
+  const latestProfileByProfile = new Map<string, string>();
   const defer = deps.defer ?? ((callback) => setTimeout(callback, 0));
   const loadContourExtractor =
     deps.loadContourExtractor ?? (() => Promise.resolve(extractSurfaceContours));
   const loadVolumeEngine =
     deps.loadVolumeEngine ?? (() => Promise.resolve(computeVolumeQuantities));
+  const loadProfileExtractor =
+    deps.loadProfileExtractor ?? (() => Promise.resolve(extractSurfaceProfile));
 
   const handleBuild = (requestId: string, request: SurfaceBuildRequest): void => {
     latestRevisionBySurface.set(request.surfaceId, request.revision);
@@ -491,6 +541,66 @@ export const createSurfaceWorkerHandler = (
     });
   };
 
+  /** Phase 18J: latest-wins key per profile = profileId@profileRevision. */
+  const profileRequestKey = (request: SurfaceProfileRequest): string =>
+    `${request.profileId}@${request.profileRevision}`;
+
+  const handleProfile = (requestId: string, request: SurfaceProfileRequest): void => {
+    latestProfileByProfile.set(request.profileId, profileRequestKey(request));
+    defer(() => {
+      if (cancelledRequestIds.has(requestId)) return;
+      const flatPoints = request.mesh.points;
+      const flatTriangles = request.mesh.triangles;
+      const points: Array<{ x: number; y: number; z: number }> = [];
+      for (let index = 0; index + 2 < flatPoints.length + 1; index += 3) {
+        points.push({
+          x: flatPoints[index]!,
+          y: flatPoints[index + 1]!,
+          z: flatPoints[index + 2]!,
+        });
+      }
+      const triangles: Array<[number, number, number]> = [];
+      for (let index = 0; index + 2 < flatTriangles.length + 1; index += 3) {
+        triangles.push([flatTriangles[index]!, flatTriangles[index + 1]!, flatTriangles[index + 2]!]);
+      }
+      const input: ExtractSurfaceProfileInput = {
+        profileId: request.profileId,
+        revision: request.profileRevision,
+        alignmentElements: request.alignmentElements,
+        startStation: request.startStation,
+        ...(request.stationEquations != null ? { stationEquations: request.stationEquations } : {}),
+        mesh: { points, triangles, grid: request.mesh.grid },
+      };
+      void loadProfileExtractor()
+        .then((extract) => extract(input))
+        .then((result) => {
+          if (cancelledRequestIds.has(requestId)) return;
+          if (latestProfileByProfile.get(request.profileId) !== profileRequestKey(request)) return;
+          deps.postMessage({
+            type: 'profile-success',
+            requestId,
+            profileId: request.profileId,
+            profileRevision: request.profileRevision,
+            result,
+          });
+        })
+        .catch((extractError) => {
+          if (cancelledRequestIds.has(requestId)) return;
+          if (latestProfileByProfile.get(request.profileId) !== profileRequestKey(request)) return;
+          deps.postMessage({
+            type: 'profile-failure',
+            requestId,
+            profileId: request.profileId,
+            profileRevision: request.profileRevision,
+            error: extractError instanceof Error ? extractError.message : String(extractError),
+          });
+        })
+        .finally(() => {
+          cancelledRequestIds.delete(requestId);
+        });
+    });
+  };
+
   return {
     handleMessage: (message: SurfaceWorkerRequestMessage): void => {
       if (!message) return;
@@ -508,12 +618,16 @@ export const createSurfaceWorkerHandler = (
       if (message.type === 'volume') {
         handleVolume(message.requestId, message.request);
       }
+      if (message.type === 'profile') {
+        handleProfile(message.requestId, message.request);
+      }
     },
     resetForTests: (): void => {
       cancelledRequestIds.clear();
       latestRevisionBySurface.clear();
       latestContourBySurface.clear();
       latestVolumeBySurface.clear();
+      latestProfileByProfile.clear();
     },
   };
 };

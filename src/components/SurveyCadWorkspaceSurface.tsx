@@ -51,6 +51,9 @@ interface SurveyCadWorkspaceSurfaceProps {
   onSurfacePickPoint?: (_worldPoint: { x: number; y: number }) => void;
   selectedSurfaceId?: string | null;
   onSurfaceClick?: (_surfaceId: string) => void;
+  // Phase 18J — profile-view selection (all optional).
+  selectedProfileViewId?: string | null;
+  onProfileViewClick?: (_viewId: string) => void;
 }
 
 const SurveyCadWorkspaceSurface = ({
@@ -76,6 +79,8 @@ const SurveyCadWorkspaceSurface = ({
   onSurfacePickPoint,
   selectedSurfaceId = null,
   onSurfaceClick,
+  selectedProfileViewId = null,
+  onProfileViewClick,
 }: SurveyCadWorkspaceSurfaceProps) => {
   const {
     activeBatchCogoDraft,
@@ -298,6 +303,8 @@ const SurveyCadWorkspaceSurface = ({
         onSurfacePickPoint={onSurfacePickPoint}
         selectedSurfaceId={selectedSurfaceId}
         onSurfaceClick={onSurfaceClick}
+        selectedProfileViewId={selectedProfileViewId}
+        onProfileViewClick={onProfileViewClick}
         onToggleParcelLabels={onToggleParcelLabels}
         onCommandHoverTargetChange={workspace.setCommandHoverTarget}
         onSnapPreferenceChange={workspace.setSnapPreference}

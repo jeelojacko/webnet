@@ -22,6 +22,15 @@ import {
   cloneCadVolumeSurfaces,
 } from './cadVolumeSurfaces';
 import { backfillCadSurfaces, clearSurfaceBuildCacheOnLoad, cloneCadSurfaces } from './cadSurfaceTypes';
+import {
+  backfillCadProfileStyles,
+  backfillProfileViews,
+  backfillSurfaceProfiles,
+  clearProfileCacheOnLoad,
+  cloneCadProfileStyles,
+  cloneCadProfileViews,
+  cloneCadSurfaceProfiles,
+} from './cadProfileTypes';
 import { backfillDrawingCatalog } from '../fieldToFinish/drawingCatalog';
 import { cloneFeatureCatalog } from '../fieldToFinish/featureCatalog';
 import { STARTER_CATALOG } from '../fieldToFinish/starterCatalog';
@@ -82,6 +91,10 @@ export const createBlankCadProject = ({
   // Phase 18I: no volumes yet; seed volume display styles (trailing).
   volumeSurfaces: [],
   volumeSurfaceStyles: backfillVolumeSurfaceStyles(undefined),
+  // Phase 18J: no profiles yet; seed profile display styles (trailing).
+  surfaceProfiles: [],
+  profileViews: [],
+  profileStyles: backfillCadProfileStyles(undefined),
 });
 
 export const createBlankCadDrawingDocument = ({
@@ -211,6 +224,11 @@ export const migrateSurveyCadStateToDrawing = ({
     volumeSurfaceStyles: cloneCadVolumeSurfaceStyles(
       backfillVolumeSurfaceStyles(withStandards.volumeSurfaceStyles),
     ),
+    surfaceProfiles: cloneCadSurfaceProfiles(
+      backfillSurfaceProfiles(withStandards.surfaceProfiles),
+    ).map(clearProfileCacheOnLoad),
+    profileViews: cloneCadProfileViews(backfillProfileViews(withStandards.profileViews)),
+    profileStyles: cloneCadProfileStyles(backfillCadProfileStyles(withStandards.profileStyles)),
   };
   return {
     kind: 'webnet-cad-drawing',
@@ -273,6 +291,11 @@ const sanitizeCadDrawingDocument = (value: unknown): CadDrawingDocument | undefi
       volumeSurfaceStyles: cloneCadVolumeSurfaceStyles(
         backfillVolumeSurfaceStyles(withStandards.volumeSurfaceStyles),
       ),
+      surfaceProfiles: cloneCadSurfaceProfiles(
+        backfillSurfaceProfiles(withStandards.surfaceProfiles),
+      ).map(clearProfileCacheOnLoad),
+      profileViews: cloneCadProfileViews(backfillProfileViews(withStandards.profileViews)),
+      profileStyles: cloneCadProfileStyles(backfillCadProfileStyles(withStandards.profileStyles)),
     };
     const draft = cloned.draft
       ? { ...cloned.draft, layers: backfillCadLayerList(cloned.draft.layers) }
