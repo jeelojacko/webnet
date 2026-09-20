@@ -23,7 +23,7 @@ export type {
   DxfBlockEntry,
   DxfInsert,
 } from './dxfBlockExport';
-import { findBlockDefinition, normalizeBlockScales } from '../cadBlocks';
+import { expandBlockReference, findBlockDefinition, normalizeBlockScales } from '../cadBlocks';
 import { surveyPointMarker } from '../cadRendererStyle';
 import { deriveAnnotationPrimitives } from './dxfAnnotationExport';
 
@@ -457,9 +457,31 @@ export const buildDxfExportModelWithResult = (args: BuildDxfModelArgs): ExportRe
             entity.rotationDeg,
             entity.scaleX,
             entity.scaleY,
+            entity.mirrored,
           ),
           ...entryStyle(entity),
         });
+        // Phase 18Q: a mirrored INSERT's TEXT children would render
+        // mirrored in a DXF reader, so they ride as world-space TEXT
+        // (readable glyphs) alongside the native INSERT. Geometry children
+        // stay in the BLOCK — no definition duplication, never unmirrored.
+        if (entity.mirrored === true) {
+          try {
+            const meanScale = (entity.scaleX + entity.scaleY) / 2;
+            for (const child of expandBlockReference(definition, entity)) {
+              if (child.type !== 'text') continue;
+              model.texts.push({
+                layer: registerLayer(child.layerId),
+                at: { x: child.x, y: child.y },
+                height: 2.5 * meanScale,
+                text: child.text,
+                ...entryStyle(entity),
+              });
+            }
+          } catch {
+            // Expansion already validated above; belt-and-suspenders no-op.
+          }
+        }
         result.exportedEntityIds.push(entity.id);
         break;
       }

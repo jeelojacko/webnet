@@ -251,6 +251,50 @@ export const promptForSession = (session: CommandSession | null, fallbackStatus:
         (session.startPoint
           ? `COPY active. Base point ${session.startPoint.label} captured. Click the target point or enter \`@azimuth,distance\` / bearing-distance, then press Enter.`
           : 'COPY active. Click or enter the base point for the current selection.');
+    case 'ROTATE':
+      return session.resultText ??
+        (!session.basePoint
+          ? 'ROTATE active. Click or enter the base point for the current selection.'
+          : !session.refPoint
+            ? `ROTATE active. Base ${session.basePoint.label} captured. Type the angle in degrees (positive = counter-clockwise) and press Enter, or click a reference point.`
+            : `ROTATE active. Base ${session.basePoint.label} and reference ${session.refPoint.label} captured. Click the new direction, or type the angle in degrees and press Enter.`);
+    case 'SCALE':
+      return session.resultText ??
+        (session.basePoint
+          ? `SCALE active. Base ${session.basePoint.label} captured. Type a positive scale factor and press Enter.`
+          : 'SCALE active. Click or enter the base point for the current selection.');
+    case 'MIRROR':
+      return session.resultText ??
+        (!session.firstPoint
+          ? 'MIRROR active. Click or enter the first mirror-axis point.'
+          : !session.secondPoint
+            ? `MIRROR active. First axis point ${session.firstPoint.label} captured. Click or enter the second axis point.`
+            : 'MIRROR active. Axis captured. Erase source objects? [Yes/No] <No>.');
+    case 'ALIGN2D':
+      return session.resultText ??
+        (!session.source1
+          ? 'ALIGN2D active. Click or enter the first source point.'
+          : !session.source2
+            ? `ALIGN2D active. First source ${session.source1.label} captured. Click or enter the second source point.`
+            : !session.target1
+              ? 'ALIGN2D active. Source pair captured. Click or enter the first target point.'
+              : !session.target2
+                ? `ALIGN2D active. First target ${session.target1.label} captured. Click or enter the second target point.`
+                : 'ALIGN2D active. Points captured. Scale objects based on alignment points? [Yes/No] <No>.');
+    case 'HELMERT2D':
+      return session.resultText ??
+        (session.pendingSource
+          ? `HELMERT2D ${session.mode} active. Source ${session.pendingSource.label} captured (${session.pairs.length} pair${session.pairs.length === 1 ? '' : 's'}). Click or enter the target point, or type \`sx,sy,tx,ty\` to add a pair.`
+          : session.pairs.length < 2
+            ? `HELMERT2D ${session.mode} active. Click or enter source ${session.pairs.length + 1}, then its target (need ${2 - session.pairs.length} more pair${2 - session.pairs.length === 1 ? '' : 's'} to preview).`
+            : `HELMERT2D ${session.mode} active. ${session.pairs.length} pairs; live preview with solved fit. Add more pairs, type \`APPLY\` to commit, or use the panel.`);
+    case 'GRIDGROUND':
+      return session.resultText ??
+        (!session.origin
+          ? 'GRIDGROUND active. Click or enter the origin E/N (scale center).'
+          : session.combinedScaleFactor == null
+            ? `GRIDGROUND ${session.direction === 'GRID_TO_GROUND' ? 'Grid->Ground' : 'Ground->Grid'} active. Origin ${session.origin.label} captured. Type the combined scale factor and press Enter.`
+            : `GRIDGROUND ${session.direction === 'GRID_TO_GROUND' ? 'Grid->Ground' : 'Ground->Grid'} active. Factor ${session.combinedScaleFactor} captured. Type \`APPLY\` to commit, or use the panel.`);
     case 'EXTEND':
       return session.resultText ??
         (session.firstTargetEntityId == null

@@ -20,6 +20,16 @@ export type CommandPoint = CadNamedPoint & {
 
 export type TraverseDraftMode = 'open' | 'closed' | 'point-to-point';
 
+/** Phase 18Q HELMERT2D session state: explicit control pairs only (no name-matching). */
+export type HelmertSessionMode = 'RIGID' | 'SIMILARITY';
+
+export interface HelmertSessionPair {
+  source: CommandPoint;
+  target: CommandPoint;
+}
+
+export type GridGroundSessionDirection = 'GRID_TO_GROUND' | 'GROUND_TO_GRID';
+
 export interface TraverseSideshotDraft {
   occupyLabel: string;
   backsightLabel: string;
@@ -102,6 +112,12 @@ export type ActiveCommandKey =
   | 'PARCEL_SPLIT_AREA'
   | 'MOVE'
   | 'COPY'
+  | 'ROTATE'
+  | 'SCALE'
+  | 'MIRROR'
+  | 'ALIGN2D'
+  | 'HELMERT2D'
+  | 'GRIDGROUND'
   | 'EXTEND'
   | 'TRIM'
   | 'FILLET'
@@ -117,6 +133,53 @@ export type CommandSession =
       key: 'COGO_POINT' | 'LINE' | 'INVERSE' | 'MOVE' | 'COPY';
       inputValue: string;
       startPoint: CommandPoint | null;
+      resultText?: string;
+    }
+  | {
+      key: 'ROTATE';
+      inputValue: string;
+      basePoint: CommandPoint | null;
+      refPoint: CommandPoint | null;
+      resultText?: string;
+    }
+  | {
+      key: 'SCALE';
+      inputValue: string;
+      basePoint: CommandPoint | null;
+      resultText?: string;
+    }
+  | {
+      key: 'MIRROR';
+      inputValue: string;
+      firstPoint: CommandPoint | null;
+      secondPoint: CommandPoint | null;
+      eraseSource: boolean | null;
+      resultText?: string;
+    }
+  | {
+      key: 'ALIGN2D';
+      inputValue: string;
+      source1: CommandPoint | null;
+      source2: CommandPoint | null;
+      target1: CommandPoint | null;
+      target2: CommandPoint | null;
+      scaleToFit: boolean | null;
+      resultText?: string;
+    }
+  | {
+      key: 'HELMERT2D';
+      inputValue: string;
+      mode: HelmertSessionMode;
+      pairs: HelmertSessionPair[];
+      pendingSource: CommandPoint | null;
+      resultText?: string;
+    }
+  | {
+      key: 'GRIDGROUND';
+      inputValue: string;
+      origin: CommandPoint | null;
+      combinedScaleFactor: number | null;
+      direction: GridGroundSessionDirection;
       resultText?: string;
     }
   | {

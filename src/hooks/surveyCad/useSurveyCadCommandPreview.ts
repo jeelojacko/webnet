@@ -7,6 +7,17 @@ import {
   cadParseBearingDegrees,
   cadPointFromAzimuthDistance,
 } from '../../engine/cad/cadGeometry';
+import {
+  deriveAlign2DTransform,
+  gridGroundTransform,
+  solveHelmert2D,
+} from '../../engine/cad/cadHelmert2D';
+import {
+  reflectionAboutLine,
+  rotationAbout,
+  uniformScaleAbout,
+  type CadTransform2D,
+} from '../../engine/cad/cadTransform2D';
 import type { CadDisplayPrimitive } from '../../engine/cad/cadTypes';
 import type { CommandSession } from './useSurveyCadCommandTypes';
 import {
@@ -41,6 +52,13 @@ export type CadCommandPreviewState =
       deltaX: number;
       deltaY: number;
       sourceEntityIds?: string[];
+    }
+  | {
+      kind: 'transform-selection';
+      transform: CadTransform2D;
+      sourceEntityIds?: string[];
+      /** True when the preview shows copies: originals stay full opacity. */
+      copyMode?: boolean;
     }
   | {
       kind: 'primitives';
@@ -364,6 +382,151 @@ export const buildCommandPreview = ({
         deltaY: previewPoint.y - session.startPoint.y,
         sourceEntityIds: session.sourceEntityIds,
       };
+    case 'ROTATE': {
+      if (!session.basePoint) {
+        return previewPoint
+          ? { kind: 'point', point: { x: previewPoint.x, y: previewPoint.y } }
+          : null;
+      }
+      const typedAngle = Number(session.inputValue.trim());
+      if (session.inputValue.trim().length > 0 && Number.isFinite(typedAngle)) {
+        return {
+          kind: 'transform-selection',
+          transform: rotationAbout(session.basePoint.x, session.basePoint.y, typedAngle),
+        };
+      }
+      if (session.refPoint && previewPoint) {
+        const refAngle = Math.atan2(
+          session.refPoint.y - session.basePoint.y,
+          session.refPoint.x - session.basePoint.x,
+        );
+        const hoverAngle = Math.atan2(
+          previewPoint.y - session.basePoint.y,
+          previewPoint.x - session.basePoint.x,
+        );
+        return {
+          kind: 'transform-selection',
+          transform: rotationAbout(
+            session.basePoint.x,
+            session.basePoint.y,
+            ((hoverAngle - refAngle) * 180) / Math.PI,
+          ),
+        };
+      }
+      if (previewPoint) {
+        return {
+          kind: 'line',
+          points: [
+            { x: session.basePoint.x, y: session.basePoint.y },
+            { x: previewPoint.x, y: previewPoint.y },
+          ],
+        };
+      }
+      return null;
+    }
+    case 'SCALE': {
+      if (!session.basePoint) {
+        return previewPoint
+          ? { kind: 'point', point: { x: previewPoint.x, y: previewPoint.y } }
+          : null;
+      }
+      const typedFactor = Number(session.inputValue.trim());
+      if (session.inputValue.trim().length > 0 && Number.isFinite(typedFactor) && typedFactor > 0) {
+        return {
+          kind: 'transform-selection',
+          transform: uniformScaleAbout(session.basePoint.x, session.basePoint.y, typedFactor),
+        };
+      }
+      if (previewPoint) {
+        return {
+          kind: 'line',
+          points: [
+            { x: session.basePoint.x, y: session.basePoint.y },
+            { x: previewPoint.x, y: previewPoint.y },
+          ],
+        };
+      }
+      return null;
+    }
+    case 'MIRROR': {
+      const axisEnd = session.secondPoint ?? previewPoint;
+      if (session.firstPoint && axisEnd) {
+        const axis = reflectionAboutLine(
+          { x: session.firstPoint.x, y: session.firstPoint.y },
+          { x: axisEnd.x, y: axisEnd.y },
+        );
+        if (axis) {
+          return {
+            kind: 'transform-selection',
+            transform: axis,
+            copyMode: session.eraseSource !== true,
+          };
+        }
+      }
+      if (previewPoint && !session.firstPoint) {
+        return { kind: 'point', point: { x: previewPoint.x, y: previewPoint.y } };
+      }
+      return session.firstPoint
+        ? { kind: 'point', point: { x: session.firstPoint.x, y: session.firstPoint.y } }
+        : null;
+    }
+    case 'ALIGN2D': {
+      const target2 = session.target2 ?? previewPoint;
+      if (session.source1 && session.source2 && session.target1 && target2) {
+        const derived = deriveAlign2DTransform(
+          { e: session.source1.x, n: session.source1.y },
+          { e: session.source2.x, n: session.source2.y },
+          { e: session.target1.x, n: session.target1.y },
+          { e: target2.x, n: target2.y },
+          session.scaleToFit === true,
+        );
+        if (derived.ok) {
+          return { kind: 'transform-selection', transform: derived.transform };
+        }
+        return null;
+      }
+      return previewPoint
+        ? { kind: 'point', point: { x: previewPoint.x, y: previewPoint.y } }
+        : null;
+    }
+    case 'HELMERT2D': {
+      // Solved transform ghosts live once 2+ explicit pairs exist; the fit
+      // report (residuals/RMS) renders in the panel simultaneously while
+      // authoritative geometry stays untouched until Apply commits.
+      if (session.pairs.length >= 2) {
+        const solved = solveHelmert2D(
+          session.pairs.map((pair) => ({
+            sourceE: pair.source.x,
+            sourceN: pair.source.y,
+            targetE: pair.target.x,
+            targetN: pair.target.y,
+          })),
+          session.mode,
+        );
+        if (solved.ok) {
+          return { kind: 'transform-selection', transform: solved.transform };
+        }
+      }
+      return previewPoint
+        ? { kind: 'point', point: { x: previewPoint.x, y: previewPoint.y } }
+        : null;
+    }
+    case 'GRIDGROUND': {
+      if (session.origin && session.combinedScaleFactor != null) {
+        const derived = gridGroundTransform(
+          session.origin.x,
+          session.origin.y,
+          session.combinedScaleFactor,
+          session.direction,
+        );
+        if (derived.ok) {
+          return { kind: 'transform-selection', transform: derived.transform };
+        }
+      }
+      return previewPoint
+        ? { kind: 'point', point: { x: previewPoint.x, y: previewPoint.y } }
+        : null;
+    }
     case 'BATCH_COGO':
       return session.draft.previewPrimitives.length > 0
         ? {

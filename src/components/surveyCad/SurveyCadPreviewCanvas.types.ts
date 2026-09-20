@@ -19,6 +19,22 @@ export type ScreenPointFromMouseEvent = (
 
 type PreviewAccent = { stroke: string; fill: string; text: string } | null;
 
+/**
+ * Phase 18Q — background-click routing. An active transform (or any command
+ * capturing points) wins over surface/volume/block-insert pick loops, so a
+ * MOVE/ROTATE click never leaks into the BLOCK_INSERT repeat loop and
+ * inserts a stray block reference. Entity-body clicks already route to the
+ * command first via onEntityClick; this covers the background paths.
+ */
+export const resolveBackgroundClickTarget = (options: {
+  commandPointInputActive: boolean;
+  surfacePickActive: boolean;
+}): 'command' | 'surface' | 'none' => {
+  if (options.commandPointInputActive) return 'command';
+  if (options.surfacePickActive) return 'surface';
+  return 'none';
+};
+
 export type SurveyCadPreviewCanvasProps = {
   activeGripDragIdRef: React.MutableRefObject<string | null>;
   activeGripHandleId: string | null;

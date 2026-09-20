@@ -1,8 +1,14 @@
 // Phase 18N block definition / reference core (engine only).
 //
-// Transform order (normative): world = insert + R(rotationDeg CCW) * S(scaleX,scaleY) * (local - basePoint).
+// Transform order (normative): world = insert + R(rotationDeg CCW) * S(scaleX,scaleY) * M * (local - basePoint),
+// where M = diag(-1,1) when the placement is mirrored, else identity.
+// Reflection happens in block-local coordinates BEFORE rotation.
 // rotationDeg follows the geometry convention (degrees CCW from +X, y-up).
-// Arc rotation adds the reference delta to both sweep angles, normalized to [0,360).
+// Arc rotation adds the reference delta to both sweep angles, normalized to [0,360);
+// under mirror the sweep is additionally reversed: start' = norm(rot + 180 - end),
+// end' = norm(rot + 180 - start) (the 180° compensates the local x-flip).
+// Text children keep readable glyphs: only the anchor goes through the
+// mirrored transform; glyph orientation is never mirrored (no MIRRTEXT).
 //
 // Appearance contract: child explicit > reference explicit > reference layer.
 // Callers first resolve the reference (explicit-over-layer, e.g. via
@@ -38,6 +44,8 @@ export interface BlockPlacement {
   rotationDeg: number;
   scaleX: number;
   scaleY: number;
+  /** Phase 18Q: reflect across the block-local Y axis before scale+rotation. Absent = false. */
+  mirrored?: boolean;
 }
 
 export type CadBlockDiagnosticCode =
@@ -140,7 +148,9 @@ export const transformBlockPointToWorld = (
   reference: BlockPlacement,
 ): CadWorldPoint => {
   const radians = (reference.rotationDeg * Math.PI) / 180;
-  const scaledX = (point.x - definition.basePoint.x) * reference.scaleX;
+  // Phase 18Q: mirror in block-local coordinates (before scale+rotation).
+  const localX = reference.mirrored === true ? -(point.x - definition.basePoint.x) : point.x - definition.basePoint.x;
+  const scaledX = localX * reference.scaleX;
   const scaledY = (point.y - definition.basePoint.y) * reference.scaleY;
   const cos = Math.cos(radians);
   const sin = Math.sin(radians);
@@ -176,16 +186,26 @@ export const transformBlockChildToWorld = (
         reference,
       );
       const meanScale = (reference.scaleX + reference.scaleY) / 2;
+      // Phase 18Q: mirror reverses the sweep (start/end swap around the
+      // local x-flip); rotation then applies to both angles as usual.
+      const startAngleDeg = reference.mirrored === true
+        ? cadNormalizeAngleDeg(reference.rotationDeg + 180 - child.endAngleDeg)
+        : cadNormalizeAngleDeg(child.startAngleDeg + reference.rotationDeg);
+      const endAngleDeg = reference.mirrored === true
+        ? cadNormalizeAngleDeg(reference.rotationDeg + 180 - child.startAngleDeg)
+        : cadNormalizeAngleDeg(child.endAngleDeg + reference.rotationDeg);
       return {
         ...child,
         centerX: center.x,
         centerY: center.y,
         radius: child.radius * meanScale,
-        startAngleDeg: cadNormalizeAngleDeg(child.startAngleDeg + reference.rotationDeg),
-        endAngleDeg: cadNormalizeAngleDeg(child.endAngleDeg + reference.rotationDeg),
+        startAngleDeg,
+        endAngleDeg,
       };
     }
     case 'text': {
+      // Phase 18Q readable-text policy: only the anchor goes through the
+      // (possibly mirrored) transform; the glyph itself is never mirrored.
       const anchor = transformBlockPointToWorld({ x: child.x, y: child.y }, definition, reference);
       return { ...child, x: anchor.x, y: anchor.y };
     }

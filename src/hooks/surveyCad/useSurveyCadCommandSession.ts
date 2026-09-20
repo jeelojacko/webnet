@@ -83,6 +83,11 @@ export const sessionExpectsPointPick = (session: CommandSession | null): boolean
     case 'DISTANCE_REPORT':
     case 'MOVE':
     case 'COPY':
+    case 'ROTATE':
+    case 'SCALE':
+    case 'MIRROR':
+    case 'ALIGN2D':
+    case 'HELMERT2D':
     case 'EXTEND':
     case 'TRIM':
     case 'FILLET':
@@ -155,5 +160,7 @@ export const sessionExpectsPointPick = (session: CommandSession | null): boolean
     case 'BDLABEL':
     case 'CURVELABEL':
       return session.sourceEntityId == null;
+    case 'GRIDGROUND':
+      return session.origin == null;
   }
 };

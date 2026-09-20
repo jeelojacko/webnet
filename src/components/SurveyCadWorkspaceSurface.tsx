@@ -6,6 +6,7 @@ import SurveyCadCogoPanel from './surveyCad/SurveyCadCogoPanel';
 import SurveyCadParcelLayoutPanel from './surveyCad/SurveyCadParcelLayoutPanel';
 import SurveyCadPreview from './surveyCad/SurveyCadPreview';
 import SurveyCadPropertiesPanel from './surveyCad/SurveyCadPropertiesPanel';
+import SurveyCadTransformPanel from './surveyCad/SurveyCadTransformPanel';
 import SurveyCadTraverseDraftPanel from './surveyCad/SurveyCadTraverseDraftPanel';
 import type { useSurveyCadCommandDisplay } from './useSurveyCadCommandDisplay';
 import type { useSurveyCadFloatingPanels } from './useSurveyCadFloatingPanels';
@@ -114,7 +115,9 @@ const SurveyCadWorkspaceSurface = ({
     propertiesPanelState != null ||
     reportedComputation != null ||
     activeBatchCogoDraft != null ||
-    workspace.activeTraverseDraft != null;
+    workspace.activeTraverseDraft != null ||
+    workspace.helmertPanelState != null ||
+    workspace.gridGroundPanelState != null;
 
   return (
     <div className="h-full">
@@ -141,6 +144,15 @@ const SurveyCadWorkspaceSurface = ({
           computation={reportedComputation}
           createdEntities={reportedComputationEntities}
           sourceLabel="latest"
+        />
+      ) : null}
+      {workspace.helmertPanelState || workspace.gridGroundPanelState ? (
+        <SurveyCadTransformPanel
+          helmert={workspace.helmertPanelState}
+          gridGround={workspace.gridGroundPanelState}
+          onSubmitPanelText={workspace.submitTransformPanelText}
+          onSetGridGroundOrigin={workspace.setGridGroundPanelOrigin}
+          onCancel={workspace.cancelActiveCommand}
         />
       ) : null}
       {parcelLayoutState.open ? (

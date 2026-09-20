@@ -47,6 +47,8 @@ export interface DxfInsert {
   rotationDeg: number;
   scaleX: number;
   scaleY: number;
+  /** Phase 18Q: mirrored INSERT (group 41 carries -scaleX; TEXT children ride world-space). */
+  mirrored?: boolean;
 }
 
 export interface DxfBlockWarning {
@@ -176,4 +178,14 @@ export const blockReferenceInsert = (
   rotationDeg: number,
   scaleX: number,
   scaleY: number,
-): DxfInsert => ({ layer, blockName, definitionId, at, rotationDeg, scaleX, scaleY });
+  mirrored?: boolean,
+): DxfInsert => ({
+  layer,
+  blockName,
+  definitionId,
+  at,
+  rotationDeg,
+  scaleX,
+  scaleY,
+  ...(mirrored === true ? { mirrored: true as const } : {}),
+});

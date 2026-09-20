@@ -3,6 +3,9 @@ import type { FieldToFinishCadPayload } from '../fieldToFinish/cadGeneration';
 import type { CadBatchCogoDraft } from './cadBatchCogo';
 
 import type { CadAnnotationAnchor } from './annotation/cadAnnotationAnchors';
+import type { HelmertControlPair, HelmertMode } from './cadHelmert2D';
+
+export type GridGroundDirection = 'GRID_TO_GROUND' | 'GROUND_TO_GRID';
 import type {
   CadAlignmentElement,
   CadDimensionKind,
@@ -84,6 +87,12 @@ export type CadCommandKey =
   | 'PARCEL_LAYOUT_AUTO'
   | 'MOVE'
   | 'COPY'
+  | 'ROTATE'
+  | 'SCALE'
+  | 'MIRROR'
+  | 'ALIGN2D'
+  | 'HELMERT2D'
+  | 'GRIDGROUND'
   | 'EXTEND'
   | 'FILLET'
   | 'PASTE'
@@ -393,6 +402,44 @@ export type CadCommand =
       deltaY: number;
     }
   | {
+      key: 'ROTATE';
+      baseX: number;
+      baseY: number;
+      angleDeg: number;
+    }
+  | {
+      key: 'SCALE';
+      baseX: number;
+      baseY: number;
+      factor: number;
+    }
+  | {
+      key: 'MIRROR';
+      p1: { x: number; y: number };
+      p2: { x: number; y: number };
+      eraseSource: boolean;
+    }
+  | {
+      key: 'ALIGN2D';
+      source1: { x: number; y: number };
+      source2: { x: number; y: number };
+      target1: { x: number; y: number };
+      target2: { x: number; y: number };
+      scaleToFit: boolean;
+    }
+  | {
+      key: 'HELMERT2D';
+      pairs: HelmertControlPair[];
+      mode: HelmertMode;
+    }
+  | {
+      key: 'GRIDGROUND';
+      originE: number;
+      originN: number;
+      combinedScaleFactor: number;
+      direction: GridGroundDirection;
+    }
+  | {
       key: 'EXTEND';
       boundaryEntityIds: CadEntityId[];
       targetEntityId: CadEntityId;
@@ -497,6 +544,7 @@ export type CadCommand =
       rotationDeg?: number;
       scaleX?: number;
       scaleY?: number;
+      mirrored?: boolean;
     }
   | {
       key: 'LAYER_CREATE';
@@ -1087,6 +1135,7 @@ export type CadCommand =
       rotationDeg?: number;
       scaleX?: number;
       scaleY?: number;
+      mirrored?: boolean;
       layerId?: CadLayerId;
     }
   | {

@@ -125,11 +125,12 @@ export const useSurveyCadCommandLifecycle = ({
   };
 
   const handleEnterKey = () => {
+    // Live ref (not render-scope state): dock text entry sets the input and
+    // submits synchronously, before any re-render lands.
+    const live = sessionRef.current;
+    const session = live ?? null;
     if (!session) return;
     // Phase 18O: MTEXT/LEADER lines append per Enter; empty Enter commits.
-    // The live ref (not render-scope state): dock text entry sets the input
-    // and submits synchronously, before any re-render lands.
-    const live = sessionRef.current;
     if (live && handleAnnotationEnterKey({ session: live, project, applyHistoryUpdate, replaceSession })) return;
     if (session.key === 'TRIM' || session.key === 'EXTEND') {
       replaceSession(null);
@@ -168,7 +169,26 @@ export const useSurveyCadCommandLifecycle = ({
     if (session.key === 'PARCEL_SPLIT_AREA' && session.inputValue.trim().length === 0) {
       return;
     }
-    if (session.inputValue.trim().length === 0) return;
+    // Phase 18Q: MIRROR/ALIGN2D Yes/No answers accept empty input as the
+    // documented default (No) once all picks are captured; without this the
+    // empty default could never commit (the generic empty-input no-op below).
+    if (session.inputValue.trim().length === 0) {
+      if (session.key === 'MIRROR' && session.firstPoint && session.secondPoint) {
+        submitSessionInput();
+        return;
+      }
+      if (
+        session.key === 'ALIGN2D' &&
+        session.source1 &&
+        session.source2 &&
+        session.target1 &&
+        session.target2
+      ) {
+        submitSessionInput();
+        return;
+      }
+      return;
+    }
     submitSessionInput();
   };
 

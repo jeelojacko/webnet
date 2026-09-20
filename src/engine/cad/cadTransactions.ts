@@ -58,6 +58,14 @@ import {
   moveCommand,
 } from './cadTransactionsClipboardCommands';
 import {
+  align2DCommand,
+  gridGroundCommand,
+  helmert2DCommand,
+  mirrorCommand,
+  rotateCommand,
+  scaleCommand,
+} from './cadTransactionsTransformCommands';
+import {
   extendCommand,
   filletCommand,
   gripEditCommand,
@@ -528,6 +536,12 @@ export const CAD_COMMAND_REGISTRY: Record<CadCommandKey, CadCommandDefinition<Ca
   EDIT_ENTITY: editEntityCommand as CadCommandDefinition<CadCommand>,
   MOVE: moveCommand as CadCommandDefinition<CadCommand>,
   COPY: annotationAwareCopyCommand as CadCommandDefinition<CadCommand>,
+  ROTATE: rotateCommand as CadCommandDefinition<CadCommand>,
+  SCALE: scaleCommand as CadCommandDefinition<CadCommand>,
+  MIRROR: mirrorCommand as CadCommandDefinition<CadCommand>,
+  ALIGN2D: align2DCommand as CadCommandDefinition<CadCommand>,
+  HELMERT2D: helmert2DCommand as CadCommandDefinition<CadCommand>,
+  GRIDGROUND: gridGroundCommand as CadCommandDefinition<CadCommand>,
   EXTEND: extendCommand as CadCommandDefinition<CadCommand>,
   FILLET: filletCommand as CadCommandDefinition<CadCommand>,
   PASTE: annotationAwarePasteCommand as CadCommandDefinition<CadCommand>,

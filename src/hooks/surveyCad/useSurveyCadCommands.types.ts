@@ -20,6 +20,10 @@ import type {
   ActiveBatchCogoDraftView,
   ActiveTraverseDraftView,
 } from './useSurveyCadCommandDrafts';
+import type {
+  GridGroundPanelState,
+  HelmertPanelState,
+} from './useSurveyCadTransformPanel';
 
 export interface UseSurveyCadCommandsArgs {
   activeSnap: CadSnapCandidate | null;
@@ -133,6 +137,16 @@ export interface UseSurveyCadCommandsResult {
   startSkewIntersectionCommand: () => void;
   startMoveCommand: () => void;
   startCopyCommand: () => void;
+  startRotateCommand: () => void;
+  startScaleCommand: () => void;
+  startMirrorCommand: () => void;
+  startAlign2DCommand: () => void;
+  startHelmert2DCommand: () => void;
+  startGridGroundCommand: () => void;
+  helmertPanelState: HelmertPanelState | null;
+  gridGroundPanelState: GridGroundPanelState | null;
+  submitTransformPanelText: (_text: string) => void;
+  setGridGroundPanelOrigin: (_x: number, _y: number) => void;
   startExtendCommand: () => void;
   startTrimCommand: () => void;
   startFilletCommand: () => void;
