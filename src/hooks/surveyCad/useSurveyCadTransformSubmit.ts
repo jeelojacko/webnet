@@ -13,6 +13,15 @@ import {
 import { classifyTransform, type CadTransform2D } from '../../engine/cad/cadTransform2D';
 import { preflightCadSelectionTransform } from '../../engine/cad/cadTransformApply';
 import { runCadCommand, type CadHistoryState } from '../../engine/cad/cadUndoRedo';
+import {
+  applyCadProjectTransform,
+  type ProjectTransformRequest,
+} from '../../engine/cad/cadProjectTransform';
+import {
+  buildProjectTransformReport,
+  PROJECT_COORDINATE_TRANSFORM_TOOL_KEY,
+} from '../../engine/cad/cadProjectTransformReport';
+import type { SurveyCadReportPublisher } from './useSurveyCadCommandReports';
 import { getExpandedSelectedEntities } from '../../engine/cad/cadTransactionsSelection';
 import type { CommandSession } from './useSurveyCadCommandTypes';
 
@@ -24,6 +33,7 @@ interface HandleSurveyCadTransformSubmitOptions {
   history: CadHistoryState;
   replaceSession: ReplaceSession;
   session: CommandSession;
+  publishReport?: SurveyCadReportPublisher;
 }
 
 const blockedReasonText = (history: CadHistoryState, commandKey: string): string | null => {
@@ -497,6 +507,204 @@ const handleGridGroundSubmit = ({
   return true;
 };
 
+const projectTransformPairs = (
+  session: Extract<CommandSession, { key: 'PROJECTTRANSFORM' }>,
+): HelmertControlPair[] =>
+  session.pairs.map((pair) => ({
+    sourceE: pair.source.x,
+    sourceN: pair.source.y,
+    targetE: pair.target.x,
+    targetN: pair.target.y,
+  }));
+
+const projectTransformRequest = (
+  session: Extract<CommandSession, { key: 'PROJECTTRANSFORM' }>,
+): ProjectTransformRequest | null => {
+  if (session.projectMode === 'HELMERT') {
+    return { kind: 'HELMERT_2D', mode: session.helmertMode, pairs: projectTransformPairs(session) };
+  }
+  if (!session.origin || session.combinedScaleFactor == null) return null;
+  return {
+    kind: 'GRID_GROUND',
+    originE: session.origin.x,
+    originN: session.origin.y,
+    combinedScaleFactor: session.combinedScaleFactor,
+    direction: session.direction,
+  };
+};
+
+const handleProjectTransformSubmit = ({
+  applyHistoryUpdate,
+  history,
+  publishReport,
+  replaceSession,
+  session,
+}: HandleSurveyCadTransformSubmitOptions): boolean => {
+  if (session.key !== 'PROJECTTRANSFORM') return false;
+  const raw = session.inputValue.trim();
+  if (raw.length === 0) return false;
+  const upper = raw.toUpperCase().replace(/\s+/g, ' ');
+  const compact = upper.replace(/[^A-Z0-9]/g, '');
+  if (compact === 'HELMERT' || compact === 'MODEHELMERT') {
+    replaceSession({ ...session, projectMode: 'HELMERT', inputValue: '', resultText: undefined });
+    return true;
+  }
+  if (compact === 'GRIDGROUND' || compact === 'MODEGRIDGROUND') {
+    replaceSession({ ...session, projectMode: 'GRID_GROUND', inputValue: '', resultText: undefined });
+    return true;
+  }
+  if (upper === 'RIGID' || upper === 'MODE RIGID') {
+    replaceSession({ ...session, helmertMode: 'RIGID', inputValue: '', resultText: undefined });
+    return true;
+  }
+  if (upper === 'SIMILARITY' || upper === 'MODE SIMILARITY') {
+    replaceSession({ ...session, helmertMode: 'SIMILARITY', inputValue: '', resultText: undefined });
+    return true;
+  }
+  if (compact === 'GRIDTOGROUND') {
+    replaceSession({ ...session, direction: 'GRID_TO_GROUND', inputValue: '', resultText: undefined });
+    return true;
+  }
+  if (compact === 'GROUNDTOGRID') {
+    replaceSession({ ...session, direction: 'GROUND_TO_GRID', inputValue: '', resultText: undefined });
+    return true;
+  }
+  if (upper === 'CLEAR') {
+    replaceSession({ ...session, pairs: [], pendingSource: null, inputValue: '', resultText: undefined });
+    return true;
+  }
+  if (upper === 'REMOVE LAST') {
+    if (session.pairs.length === 0) {
+      replaceSession({ ...session, inputValue: '', resultText: 'PROJECTTRANSFORM has no pairs to remove.' });
+      return true;
+    }
+    replaceSession({ ...session, pairs: session.pairs.slice(0, -1), inputValue: '', resultText: undefined });
+    return true;
+  }
+  const removeMatch = /^REMOVE\s+(\d+)$/.exec(upper);
+  if (removeMatch) {
+    const index = Number(removeMatch[1]) - 1;
+    if (!Number.isInteger(index) || index < 0 || index >= session.pairs.length) {
+      replaceSession({
+        ...session,
+        inputValue: '',
+        resultText: `PROJECTTRANSFORM REMOVE invalid: enter 1-${session.pairs.length}, REMOVE LAST, or CLEAR.`,
+      });
+      return true;
+    }
+    replaceSession({
+      ...session,
+      pairs: session.pairs.filter((_, pairIndex) => pairIndex !== index),
+      inputValue: '',
+      resultText: undefined,
+    });
+    return true;
+  }
+  if (upper === 'PREVIEW') {
+    const request = projectTransformRequest(session);
+    if (!request) {
+      replaceSession({ ...session, inputValue: '', resultText: 'PROJECTTRANSFORM preview needs a complete request.' });
+      return true;
+    }
+    if (request.kind === 'HELMERT_2D') {
+      const solved = solveHelmert2D(request.pairs, request.mode);
+      replaceSession({
+        ...session,
+        inputValue: '',
+        resultText: solved.ok
+          ? `PROJECTTRANSFORM Helmert ${request.mode} fit: rot ${solved.rotationDeg.toFixed(4)} deg, scale ${solved.scale.toFixed(9)}, RMS ${solved.rmsResidual.toFixed(4)}, max ${solved.maxResidual.toFixed(4)} (${request.pairs.length} pairs, whole drawing).`
+          : solved.reason,
+      });
+      return true;
+    }
+    const derived = gridGroundTransform(
+      request.originE,
+      request.originN,
+      request.combinedScaleFactor,
+      request.direction,
+    );
+    replaceSession({
+      ...session,
+      inputValue: '',
+      resultText: derived.ok
+        ? `PROJECTTRANSFORM preview: ${derived.formula}, effective ${derived.effectiveFactor.toFixed(12)} (whole drawing).`
+        : derived.reason,
+    });
+    return true;
+  }
+  if (upper === 'APPLY') {
+    const request = projectTransformRequest(session);
+    if (!request) {
+      replaceSession({
+        ...session,
+        inputValue: '',
+        resultText:
+          session.projectMode === 'HELMERT'
+            ? 'PROJECTTRANSFORM Helmert needs 2+ control pairs before APPLY.'
+            : 'PROJECTTRANSFORM Grid/Ground needs an origin and a positive CSF before APPLY.',
+      });
+      return true;
+    }
+    const pre = applyCadProjectTransform(history.present.project, request);
+    if (!pre.ok) {
+      replaceSession({ ...session, inputValue: '', resultText: pre.reason });
+      return true;
+    }
+    const committed = commitTransform(applyHistoryUpdate, { key: 'PROJECTTRANSFORM', request });
+    if (!committed) {
+      replaceSession({
+        ...session,
+        inputValue: '',
+        resultText: 'PROJECTTRANSFORM ignored: nothing to transform.',
+      });
+      return true;
+    }
+    if (publishReport) {
+      const report = buildProjectTransformReport(pre.outcome);
+      publishReport(
+        PROJECT_COORDINATE_TRANSFORM_TOOL_KEY,
+        report.title,
+        report.summary,
+        report.rows,
+      );
+    }
+    replaceSession(null);
+    return true;
+  }
+  if (session.projectMode === 'HELMERT') {
+    const typedPair = parseHelmertPairInput(raw);
+    if (typedPair) {
+      const pairIndex = session.pairs.length + 1;
+      replaceSession({
+        ...session,
+        pairs: [
+          ...session.pairs,
+          {
+            source: { x: typedPair.sourceE, y: typedPair.sourceN, label: `PS${pairIndex}` },
+            target: { x: typedPair.targetE, y: typedPair.targetN, label: `PT${pairIndex}` },
+          },
+        ],
+        inputValue: '',
+        resultText: undefined,
+      });
+      return true;
+    }
+    return false;
+  }
+  const factor = Number(raw);
+  if (!Number.isFinite(factor)) return false;
+  if (!(factor > 0)) {
+    replaceSession({
+      ...session,
+      inputValue: '',
+      resultText: `PROJECTTRANSFORM CSF invalid (${raw}): enter a positive finite number.`,
+    });
+    return true;
+  }
+  replaceSession({ ...session, combinedScaleFactor: factor, inputValue: '', resultText: undefined });
+  return true;
+};
+
 export const handleSurveyCadTransformSubmit = (
   options: HandleSurveyCadTransformSubmitOptions,
 ): boolean =>
@@ -505,4 +713,5 @@ export const handleSurveyCadTransformSubmit = (
   handleMirrorSubmit(options) ||
   handleAlign2DSubmit(options) ||
   handleHelmert2DSubmit(options) ||
-  handleGridGroundSubmit(options);
+  handleGridGroundSubmit(options) ||
+  handleProjectTransformSubmit(options);

@@ -19,6 +19,7 @@ import type {
   GridGroundPanelState,
   HelmertPanelState,
 } from './useSurveyCadTransformPanel';
+import type { ProjectTransformPanelState } from './useSurveyCadProjectTransformPanel';
 import type { FieldToFinishCadPayload } from '../../engine/fieldToFinish/cadGeneration';
 
 export interface CommandHoverTarget {
@@ -178,6 +179,7 @@ export interface UseSurveyCadWorkspaceResult {
     | 'ALIGN2D'
     | 'HELMERT2D'
     | 'GRIDGROUND'
+    | 'PROJECTTRANSFORM'
     | 'EXTEND'
     | 'TRIM'
     | 'FILLET'
@@ -300,10 +302,13 @@ export interface UseSurveyCadWorkspaceResult {
   startAlign2DCommand: () => void;
   startHelmert2DCommand: () => void;
   startGridGroundCommand: () => void;
+  startProjectTransformCommand: () => void;
   helmertPanelState: HelmertPanelState | null;
   gridGroundPanelState: GridGroundPanelState | null;
+  projectTransformPanelState: ProjectTransformPanelState | null;
   submitTransformPanelText: (_text: string) => void;
   setGridGroundPanelOrigin: (_x: number, _y: number) => void;
+  setProjectTransformOrigin: (_x: number, _y: number) => void;
   startExtendCommand: () => void;
   startTrimCommand: () => void;
   startFilletCommand: () => void;

@@ -118,6 +118,7 @@ export type ActiveCommandKey =
   | 'ALIGN2D'
   | 'HELMERT2D'
   | 'GRIDGROUND'
+  | 'PROJECTTRANSFORM'
   | 'EXTEND'
   | 'TRIM'
   | 'FILLET'
@@ -177,6 +178,18 @@ export type CommandSession =
   | {
       key: 'GRIDGROUND';
       inputValue: string;
+      origin: CommandPoint | null;
+      combinedScaleFactor: number | null;
+      direction: GridGroundSessionDirection;
+      resultText?: string;
+    }
+  | {
+      key: 'PROJECTTRANSFORM';
+      inputValue: string;
+      projectMode: 'HELMERT' | 'GRID_GROUND';
+      helmertMode: HelmertSessionMode;
+      pairs: HelmertSessionPair[];
+      pendingSource: CommandPoint | null;
       origin: CommandPoint | null;
       combinedScaleFactor: number | null;
       direction: GridGroundSessionDirection;

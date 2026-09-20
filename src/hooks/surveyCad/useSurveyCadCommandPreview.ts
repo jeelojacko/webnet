@@ -59,6 +59,8 @@ export type CadCommandPreviewState =
       sourceEntityIds?: string[];
       /** True when the preview shows copies: originals stay full opacity. */
       copyMode?: boolean;
+      /** Whole-drawing ghost: bounded primitive count (PROJECTTRANSFORM). */
+      wholeDrawing?: boolean;
     }
   | {
       kind: 'primitives';
@@ -69,12 +71,15 @@ interface BuildCommandPreviewOptions {
   session: CommandSession | null;
   previewPoint: { x: number; y: number; label: string } | null;
   reverseDirectionModifier: boolean;
+  /** Whole-drawing ghost targets (PROJECTTRANSFORM scope). */
+  projectEntityIds?: string[];
 }
 
 export const buildCommandPreview = ({
   session,
   previewPoint,
   reverseDirectionModifier,
+  projectEntityIds,
 }: BuildCommandPreviewOptions): CadCommandPreviewState | null => {
   if (!session) return null;
   switch (session.key) {
@@ -522,6 +527,43 @@ export const buildCommandPreview = ({
         if (derived.ok) {
           return { kind: 'transform-selection', transform: derived.transform };
         }
+      }
+      return previewPoint
+        ? { kind: 'point', point: { x: previewPoint.x, y: previewPoint.y } }
+        : null;
+    }
+    case 'PROJECTTRANSFORM': {
+      // Whole-drawing ghost: same transformed primitive derivation as 18Q but
+      // scoped to every entity id. TIN rendering is a separate display path,
+      // so this never walks 100k TIN vertices.
+      const solved =
+        session.projectMode === 'HELMERT'
+          ? session.pairs.length >= 2
+            ? solveHelmert2D(
+                session.pairs.map((pair) => ({
+                  sourceE: pair.source.x,
+                  sourceN: pair.source.y,
+                  targetE: pair.target.x,
+                  targetN: pair.target.y,
+                })),
+                session.helmertMode,
+              )
+            : null
+          : session.origin && session.combinedScaleFactor != null
+            ? gridGroundTransform(
+                session.origin.x,
+                session.origin.y,
+                session.combinedScaleFactor,
+                session.direction,
+              )
+            : null;
+      if (solved?.ok) {
+        return {
+          kind: 'transform-selection',
+          transform: solved.transform,
+          sourceEntityIds: projectEntityIds,
+          wholeDrawing: true,
+        };
       }
       return previewPoint
         ? { kind: 'point', point: { x: previewPoint.x, y: previewPoint.y } }

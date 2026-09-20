@@ -295,6 +295,17 @@ export const promptForSession = (session: CommandSession | null, fallbackStatus:
           : session.combinedScaleFactor == null
             ? `GRIDGROUND ${session.direction === 'GRID_TO_GROUND' ? 'Grid->Ground' : 'Ground->Grid'} active. Origin ${session.origin.label} captured. Type the combined scale factor and press Enter.`
             : `GRIDGROUND ${session.direction === 'GRID_TO_GROUND' ? 'Grid->Ground' : 'Ground->Grid'} active. Factor ${session.combinedScaleFactor} captured. Type \`APPLY\` to commit, or use the panel.`);
+    case 'PROJECTTRANSFORM':
+      return session.resultText ??
+        (session.projectMode === 'HELMERT'
+          ? session.pendingSource
+            ? `PROJECTTRANSFORM Helmert ${session.helmertMode} (whole drawing). Source ${session.pendingSource.label} captured (${session.pairs.length} pairs). Pick or type its target.`
+            : `PROJECTTRANSFORM Helmert ${session.helmertMode} (whole drawing). Add ${2 - session.pairs.length > 0 ? '2+' : 'more'} control pairs, then \`APPLY\` or use the panel.`
+          : !session.origin
+            ? 'PROJECTTRANSFORM Grid/Ground (whole drawing). Click or enter the origin E/N (scale center).'
+            : session.combinedScaleFactor == null
+              ? `PROJECTTRANSFORM ${session.direction === 'GRID_TO_GROUND' ? 'Grid->Ground' : 'Ground->Grid'} (whole drawing). Origin ${session.origin.label} captured. Type the CSF.`
+              : `PROJECTTRANSFORM ${session.direction === 'GRID_TO_GROUND' ? 'Grid->Ground' : 'Ground->Grid'} (whole drawing). CSF ${session.combinedScaleFactor} captured. Type \`APPLY\` to commit.`);
     case 'EXTEND':
       return session.resultText ??
         (session.firstTargetEntityId == null

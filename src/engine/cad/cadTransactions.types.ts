@@ -4,6 +4,7 @@ import type { CadBatchCogoDraft } from './cadBatchCogo';
 
 import type { CadAnnotationAnchor } from './annotation/cadAnnotationAnchors';
 import type { HelmertControlPair, HelmertMode } from './cadHelmert2D';
+import type { ProjectTransformRequest } from './cadProjectTransform';
 
 export type GridGroundDirection = 'GRID_TO_GROUND' | 'GROUND_TO_GRID';
 import type {
@@ -93,6 +94,7 @@ export type CadCommandKey =
   | 'ALIGN2D'
   | 'HELMERT2D'
   | 'GRIDGROUND'
+  | 'PROJECTTRANSFORM'
   | 'EXTEND'
   | 'FILLET'
   | 'PASTE'
@@ -438,6 +440,10 @@ export type CadCommand =
       originN: number;
       combinedScaleFactor: number;
       direction: GridGroundDirection;
+    }
+  | {
+      key: 'PROJECTTRANSFORM';
+      request: ProjectTransformRequest;
     }
   | {
       key: 'EXTEND';

@@ -86,10 +86,21 @@ const transformAnchorPoint = (
 const normalizeRotationDeg = (rotationDeg: number): number =>
   cadNormalizeAngleDeg(rotationDeg);
 
+export interface TransformCadEntityGeometryOptions {
+  /**
+   * Phase 18R project scope: allow scaled similarity on alignments.
+   * Geometry scales normally; the caller owns station propagation
+   * (startStation carried, raw chainage scaled about start, jumps kept).
+   * Default false preserves the 18Q BLOCKED contract.
+   */
+  allowAlignmentScale?: boolean;
+}
+
 export const transformCadEntityGeometry = (
   entity: CadEntity,
   transform: CadTransform2D,
   classification: CadTransformClassification,
+  options?: TransformCadEntityGeometryOptions,
 ): TransformCadEntityGeometryResult => {
   switch (entity.type) {
     case 'survey-point': {
@@ -162,10 +173,12 @@ export const transformCadEntityGeometry = (
     case 'alignment': {
       // Stationing (startStation, equations, raw chainage) is a dependency of
       // the alignment, not geometry: rigid motion preserves every element
-      // length, so it is carried unchanged. Any scale dependency is BLOCKED.
+      // length, so it is carried unchanged. Any scale dependency is BLOCKED
+      // unless the caller propagates stationing (18R project scope).
       if (
         classification.kind === 'GENERAL_AFFINE' ||
-        Math.abs(classification.scale - 1) > ALIGNMENT_TOLERANCE
+        (!options?.allowAlignmentScale &&
+          Math.abs(classification.scale - 1) > ALIGNMENT_TOLERANCE)
       ) {
         return { ok: false, reason: 'CAD_TRANSFORM_ALIGNMENT_SCALE_DEPENDENCY' };
       }
