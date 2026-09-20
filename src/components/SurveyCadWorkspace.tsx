@@ -75,6 +75,7 @@ import {
 import { filterCadDisplaySceneForViewport } from '../engine/cad/cadViewportAppearance';
 import { resolveProfileStationInput, queryProfileElevationAt } from '../engine/cad/profiles/profileInquiry';
 import { cadAlignmentRawStationToDisplayStation, formatCadStation } from '../engine/cad/cadAlignmentStationing';
+import { useSurveyCadSurfaceEditSessions } from '../hooks/surveyCad/useSurveyCadSurfaceEditSessions';
 import { createCadSurfaceCache } from '../engine/cad/cadSurfaceCache';
 import { createCadSurfaceContourCache } from '../engine/cad/surfaceContourCache';
 import { SurfaceWorkerClient } from '../workers/surfaceWorkerClient';
@@ -1399,6 +1400,50 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
 
   const rebuildAllSurfaces = (): string => surfaceBuildService.rebuildAllSurfaces();
 
+  // Phase 18S — TIN-topology edit sessions (swap/add-line/delete-line pick
+  // loops over the CURRENT mesh). Picks stage + preview only; Enter commits
+  // one undoable SURFACE_ADD_EDIT against the fresh revision and queues a
+  // worker rebuild; Esc ends the loop. Overlay primitives append AFTER the
+  // viewport filter so they render even when the style hides triangles.
+  const surfaceEditSessions = useSurveyCadSurfaceEditSessions({
+    project: activeProject,
+    cache: surfaceCache,
+    selectedSurfaceId,
+    buildingSurfaceIds: surfaceBuildInputs.buildingSurfaceIds,
+    runCommand: (command) => cadWorkspace.runLayerCommand(command),
+    rebuildSurface: (surfaceId) => runSurfaceBuild(surfaceId),
+    notify: (message) => setFileStatusText(message),
+  });
+
+  // Phase 18S — Esc ends the TIN edit loop; Enter commits the staged edit
+  // (capture, before dock input; typing targets keep their own keys).
+  useEffect(() => {
+    if (!surfaceEditSessions.session) return;
+    const onKeyDown = (event: KeyboardEvent): void => {
+      if (event.key !== 'Escape' && event.key !== 'Enter') return;
+      const target = event.target as HTMLElement | null;
+      if (target && (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.tagName === 'SELECT')) {
+        return;
+      }
+      if (event.key === 'Escape') {
+        surfaceEditSessions.cancel();
+        setFileStatusText('Surface edit session ended.');
+      } else if (surfaceEditSessions.handleEnter()) {
+        event.preventDefault();
+      }
+    };
+    document.addEventListener('keydown', onKeyDown, true);
+    return () => document.removeEventListener('keydown', onKeyDown, true);
+  }, [surfaceEditSessions]);
+  // Phase 18S overlay: staged current/proposed/affected edges appended
+  // post-filter so they render even when the style hides triangles.
+  const displaySceneWithSurfaceEdits = surfaceEditSessions.previewPrimitives.length === 0
+    ? displaySceneWithSections
+    : {
+      ...displaySceneWithSections,
+      primitives: [...displaySceneWithSections.primitives, ...surfaceEditSessions.previewPrimitives],
+    };
+
   // Phase 18I — drop session results for deleted volumes (results never
   // persist; the service cancels in-flight work first so late arrivals
   // never re-apply). Converges: unknown ids are simply absent.
@@ -1695,6 +1740,8 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
       },
       rebuildSurface: (surfaceId) => runSurfaceBuild(surfaceId),
       rebuildAllSurfaces: () => rebuildAllSurfaces(),
+      startSurfaceEditSession: (mode) => surfaceEditSessions.start(mode),
+      cancelSurfaceEditSession: () => surfaceEditSessions.cancel(),
       describeBreaklineSource: (allowF2F) =>
         describeSelectedBreaklineEntity(activeProject, selectedEntityIds, { allowF2F }),
       describeBoundarySource: () =>
@@ -2022,7 +2069,7 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
           parcelLayoutWorkflow={parcelLayoutWorkflow}
           traverseDraftPanelState={traverseDraftPanelState}
           commandDisplay={commandDisplay}
-          displayScene={displaySceneWithSections}
+          displayScene={displaySceneWithSurfaceEdits}
           reportedComputationEntities={reportedComputationEntities}
           parcelLayoutState={parcelLayoutState}
           parcelLayoutFrontageSegmentSelectionActive={parcelLayoutFrontageSegmentSelectionActive}
@@ -2035,9 +2082,12 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
           onParcelLayoutAutoPreviewStateChange={setParcelLayoutAutoPreviewState}
           onToggleParcelLabels={() => setShowParcelLabels((current) => !current)}
           cloneBounds={cloneBounds}
-          surfacePickActive={surfacePick != null || volumePick != null || blockInsertPick != null}
+          surfacePickActive={surfacePick != null || volumePick != null || blockInsertPick != null || surfaceEditSessions.session != null}
           onSurfacePickPoint={(worldPoint) => {
-            if (blockInsertPick) {
+            if (surfaceEditSessions.session) {
+              surfaceEditSessions.handlePick(worldPoint);
+              return;
+            }            if (blockInsertPick) {
               const outcome = cadWorkspace.runBlockOp({
                 kind: 'insert',
                 definitionId: blockInsertPick.definitionId,
