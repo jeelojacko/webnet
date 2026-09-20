@@ -11,6 +11,7 @@ import {
   intersectsSelectionBox,
   primitiveBounds,
 } from './SurveyCadPreview.geometry';
+import { resolveBackgroundClickTarget } from './SurveyCadPreviewCanvas.types';
 import type { SurveyCadPreviewCanvasProps } from './SurveyCadPreviewCanvas.types';
 import {
   GripHandleLayer,
@@ -139,14 +140,15 @@ const SurveyCadPreviewCanvas: React.FC<SurveyCadPreviewCanvasProps> = ({
     className="h-full w-full bg-slate-950 select-none"
     data-survey-cad-preview
     onClick={(event) => {
-      if (surfacePickActive) {
+      const backgroundTarget = resolveBackgroundClickTarget({ commandPointInputActive, surfacePickActive });
+      if (backgroundTarget === 'surface') {
         if (didDrag || event.target !== event.currentTarget) return;
         const screenPoint = screenPointFromMouseEvent(event);
         if (!screenPoint) return;
         onSurfacePickPoint?.(unproject(screenPoint.viewX, screenPoint.viewY));
         return;
       }
-      if (!commandPointInputActive || didDrag || event.target !== event.currentTarget) return;
+      if (backgroundTarget !== 'command' || didDrag || event.target !== event.currentTarget) return;
       if (consumeLatchedOrActiveSnap(event.shiftKey)) return;
       const screenPoint = screenPointFromMouseEvent(event);
       if (!screenPoint) return;
@@ -325,14 +327,15 @@ const SurveyCadPreviewCanvas: React.FC<SurveyCadPreviewCanvasProps> = ({
       fill="#020617"
       data-survey-cad-background="true"
       onClick={(event) => {
-        if (surfacePickActive) {
+        const backgroundTarget = resolveBackgroundClickTarget({ commandPointInputActive, surfacePickActive });
+        if (backgroundTarget === 'surface') {
           if (didDrag) return;
           const screenPoint = screenPointFromMouseEvent(event);
           if (!screenPoint) return;
           onSurfacePickPoint?.(unproject(screenPoint.viewX, screenPoint.viewY));
           return;
         }
-        if (!commandPointInputActive || didDrag) return;
+        if (backgroundTarget !== 'command' || didDrag) return;
         if (consumeLatchedOrActiveSnap(event.shiftKey)) return;
         const screenPoint = screenPointFromMouseEvent(event);
         if (!screenPoint) return;

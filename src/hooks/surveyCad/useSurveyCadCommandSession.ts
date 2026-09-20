@@ -83,6 +83,10 @@ export const sessionExpectsPointPick = (session: CommandSession | null): boolean
     case 'DISTANCE_REPORT':
     case 'MOVE':
     case 'COPY':
+    case 'ROTATE':
+    case 'SCALE':
+    case 'MIRROR':
+    case 'ALIGN2D':
     case 'EXTEND':
     case 'TRIM':
     case 'FILLET':

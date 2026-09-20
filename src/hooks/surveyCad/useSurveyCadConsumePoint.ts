@@ -9,6 +9,7 @@ import type {
 } from './useSurveyCadConsumePoint.types';
 import { handleAnnotationPointPick } from './useSurveyCadAnnotationSessions';
 import { handleSurveyCadEditPointPick } from './useSurveyCadEditPointPick';
+import { handleSurveyCadTransformPointPick } from './useSurveyCadTransformPointPick';
 import { handleSurveyCadParcelSplitPointPick } from './useSurveyCadParcelSplitPointPick';
 import {
   handleInversePointPick,
@@ -236,6 +237,13 @@ export const handleSurveyCadConsumePoint = (
     handleIntersectionPointPick(current, point, replaceSession) ||
     handlePerpendicularPointPick(options) ||
     handlePolylineOrTraversePointPick(options) ||
+    handleSurveyCadTransformPointPick({
+      applyHistoryUpdate: options.applyHistoryUpdate,
+      current: options.current,
+      history: options.history,
+      point: options.point,
+      replaceSession: options.replaceSession,
+    }) ||
     handleSurveyCadArcPointPick(options) ||
     handleLinePointPick(options) ||
     handleSurveyCadEditPointPick(options) ||

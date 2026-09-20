@@ -168,6 +168,10 @@ export interface UseSurveyCadWorkspaceResult {
     | 'PARCEL_SPLIT_AREA'
     | 'MOVE'
     | 'COPY'
+    | 'ROTATE'
+    | 'SCALE'
+    | 'MIRROR'
+    | 'ALIGN2D'
     | 'EXTEND'
     | 'TRIM'
     | 'FILLET'
@@ -284,6 +288,10 @@ export interface UseSurveyCadWorkspaceResult {
   startSkewIntersectionCommand: () => void;
   startMoveCommand: () => void;
   startCopyCommand: () => void;
+  startRotateCommand: () => void;
+  startScaleCommand: () => void;
+  startMirrorCommand: () => void;
+  startAlign2DCommand: () => void;
   startExtendCommand: () => void;
   startTrimCommand: () => void;
   startFilletCommand: () => void;

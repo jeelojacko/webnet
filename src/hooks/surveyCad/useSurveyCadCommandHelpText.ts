@@ -177,6 +177,22 @@ export const helpTextForSession = (session: CommandSession | null): string => {
       return session.startPoint
         ? 'COPY target point: `x,y`, `LABEL=x,y`, `@azimuth,distance`, or bearing-distance from the base point.'
         : 'COPY base point: click in the model space or type `x,y` / `LABEL=x,y`.';
+    case 'ROTATE':
+      return session.basePoint
+        ? 'ROTATE angle: type degrees (positive = counter-clockwise), or click a reference point then the new direction. Zero angles are ignored.'
+        : 'ROTATE base point: click in the model space or type `x,y` / `LABEL=x,y`.';
+    case 'SCALE':
+      return session.basePoint
+        ? 'SCALE factor: type a positive finite number. Use MIRROR for reversal.'
+        : 'SCALE base point: click in the model space or type `x,y` / `LABEL=x,y`.';
+    case 'MIRROR':
+      return session.secondPoint
+        ? 'MIRROR erase answer: type `Yes` to mirror in place or `No` (default, empty input) to keep the originals and select the mirrored copies.'
+        : 'MIRROR axis points: click in the model space or type `x,y` / `LABEL=x,y` for each end of the mirror line.';
+    case 'ALIGN2D':
+      return session.target2
+        ? 'ALIGN2D scale answer: type `Yes` to scale to fit or `No` (default, empty input) for rigid translate-plus-rotate.'
+        : 'ALIGN2D points: click or type `x,y` / `LABEL=x,y` for source 1, source 2, target 1, then target 2.';
     case 'EXTEND':
       return session.firstTargetEntityId == null
         ? 'EXT input: click the line, polyline, or arc you want to extend.'

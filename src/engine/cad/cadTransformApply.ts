@@ -37,7 +37,7 @@ import {
 import { expandSelectedEntityIds } from './cadTransactionsSelection';
 import type { CadAnnotationAnchor } from './annotation/cadAnnotationAnchors';
 import type { CadHistoryState } from './cadUndoRedo';
-import type { CadTransaction, CadWorkspaceSnapshot } from './cadTransactions.types';
+import type { CadCommandKey, CadTransaction, CadWorkspaceSnapshot } from './cadTransactions.types';
 import type { CadEntity, CadEntityId, CadProject } from './cadTypes';
 
 export interface CadTransformPreflightOptions {
@@ -354,13 +354,15 @@ export const applyCadSelectionTransform = (
 
 /**
  * Push an applied transform as exactly ONE undo entry. Shaped like the
- * `runCadCommand` transaction (same id/sequence/selection bookkeeping);
- * commandKey reuses EDIT_ENTITY until this seam is promoted to a dedicated
- * registered command key by the UI slice.
+ * `runCadCommand` transaction (same id/sequence/selection bookkeeping)
+ * under the caller's dedicated registered command key (ROTATE / SCALE /
+ * MIRROR / ALIGN2D); the EDIT_ENTITY default preserves the pre-promotion
+ * seam for older callers.
  */
 export const commitCadSelectionTransform = (
   state: CadHistoryState,
   applied: Extract<ApplyCadSelectionTransformResult, { ok: true }>,
+  commandKey: CadCommandKey = 'EDIT_ENTITY',
 ): CadHistoryState => {
   const before = state.present;
   const after: CadWorkspaceSnapshot = {
@@ -370,7 +372,7 @@ export const commitCadSelectionTransform = (
   const transaction: CadTransaction = {
     id: `cad-tx-${state.nextSequence}`,
     sequence: state.nextSequence,
-    commandKey: 'EDIT_ENTITY',
+    commandKey,
     label: applied.transactionLabel,
     beforeSelectionIds: before.selection.selectedEntityIds,
     afterSelectionIds: after.selection.selectedEntityIds,
@@ -383,7 +385,7 @@ export const commitCadSelectionTransform = (
     redoStack: [],
     nextSequence: state.nextSequence + 1,
     commandState: {
-      key: 'EDIT_ENTITY',
+      key: commandKey,
       phase: 'committed',
       prompt: `${applied.transactionLabel} committed.`,
     },

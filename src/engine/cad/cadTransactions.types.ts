@@ -84,6 +84,10 @@ export type CadCommandKey =
   | 'PARCEL_LAYOUT_AUTO'
   | 'MOVE'
   | 'COPY'
+  | 'ROTATE'
+  | 'SCALE'
+  | 'MIRROR'
+  | 'ALIGN2D'
   | 'EXTEND'
   | 'FILLET'
   | 'PASTE'
@@ -391,6 +395,32 @@ export type CadCommand =
       key: 'COPY';
       deltaX: number;
       deltaY: number;
+    }
+  | {
+      key: 'ROTATE';
+      baseX: number;
+      baseY: number;
+      angleDeg: number;
+    }
+  | {
+      key: 'SCALE';
+      baseX: number;
+      baseY: number;
+      factor: number;
+    }
+  | {
+      key: 'MIRROR';
+      p1: { x: number; y: number };
+      p2: { x: number; y: number };
+      eraseSource: boolean;
+    }
+  | {
+      key: 'ALIGN2D';
+      source1: { x: number; y: number };
+      source2: { x: number; y: number };
+      target1: { x: number; y: number };
+      target2: { x: number; y: number };
+      scaleToFit: boolean;
     }
   | {
       key: 'EXTEND';

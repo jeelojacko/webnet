@@ -123,6 +123,10 @@ export const buildSnapConstructionContext = (
           };
     case 'MOVE':
     case 'COPY':
+    case 'ROTATE':
+    case 'SCALE':
+    case 'MIRROR':
+    case 'ALIGN2D':
     case 'EXTEND':
     case 'TRIM':
     case 'FILLET':

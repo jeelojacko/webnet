@@ -300,6 +300,22 @@ export const useSurveyCadCommandStarters = ({
     if (selectionCount === 0) return;
     beginSession({ key: 'MOVE', inputValue: '', startPoint: null });
   },
+  startRotateCommand: () => {
+    if (selectionCount === 0) return;
+    beginSession({ key: 'ROTATE', inputValue: '', basePoint: null, refPoint: null });
+  },
+  startScaleCommand: () => {
+    if (selectionCount === 0) return;
+    beginSession({ key: 'SCALE', inputValue: '', basePoint: null });
+  },
+  startMirrorCommand: () => {
+    if (selectionCount === 0) return;
+    beginSession({ key: 'MIRROR', inputValue: '', firstPoint: null, secondPoint: null, eraseSource: null });
+  },
+  startAlign2DCommand: () => {
+    if (selectionCount === 0) return;
+    beginSession({ key: 'ALIGN2D', inputValue: '', source1: null, source2: null, target1: null, target2: null, scaleToFit: null });
+  },
   startCopyCommand: () => {
     if (selectionCount === 0) return;
     beginSession({ key: 'COPY', inputValue: '', startPoint: null });

@@ -2,6 +2,10 @@ import { useEffect, useMemo, type Dispatch, type SetStateAction } from 'react';
 import { buildCadBounds } from '../../engine/cad/cadProjectState';
 import { buildCadDisplayScene } from '../../engine/cad/cadRenderer';
 import {
+  buildTransformedPreviewPrimitives,
+  transformPreviewDimmedEntityIds,
+} from '../../engine/cad/cadTransformPreview';
+import {
   applyCadGripEdit,
   buildCadExtendPreview,
   buildCadFilletPreview,
@@ -122,6 +126,15 @@ export const useSurveyCadWorkspacePreviews = ({
     }
     if (commandPreview.kind === 'primitives') {
       return commandPreview.primitives;
+    }
+    if (commandPreview.kind === 'transform-selection') {
+      const previewSourceEntityIds = commandPreview.sourceEntityIds ?? selectedEntityIds;
+      return buildTransformedPreviewPrimitives(
+        displayPrimitives,
+        previewSourceEntityIds,
+        commandPreview.transform,
+        { stroke: previewStroke, opacity: 0.6 },
+      );
     }
     const previewSourceEntityIds =
       commandPreview.kind === 'translate-selection'
@@ -262,8 +275,24 @@ export const useSurveyCadWorkspacePreviews = ({
       bounds: buildCadBounds(filletPreview.previewEntities),
     }).primitives;
   }, [cadProject, filletPreview]);
+  const transformDimmedEntityIds = useMemo(
+    () =>
+      transformPreviewDimmedEntityIds(
+        commandPreview?.kind === 'translate-selection' || commandPreview?.kind === 'transform-selection'
+          ? {
+              kind: commandPreview.kind,
+              sourceEntityIds: commandPreview.sourceEntityIds,
+              copyMode: commandPreview.kind === 'transform-selection' ? commandPreview.copyMode : undefined,
+            }
+          : null,
+        activeCommandKey,
+        selectedEntityIds,
+      ),
+    [activeCommandKey, commandPreview, selectedEntityIds],
+  );
   const commandEntityOpacityOverrides = useMemo<Record<string, number>>(
     () => ({
+      ...Object.fromEntries(transformDimmedEntityIds.map((entityId) => [entityId, 0.25])),
       ...(trimPreview ? { [trimPreview.targetEntityId]: 0.22 } : {}),
       ...(extendPreview
         ? {
@@ -278,7 +307,7 @@ export const useSurveyCadWorkspacePreviews = ({
           }
         : {}),
     }),
-    [extendPreview, filletPreview, trimPreview],
+    [extendPreview, filletPreview, transformDimmedEntityIds, trimPreview],
   );
   const gripHandles = useMemo(
     () =>

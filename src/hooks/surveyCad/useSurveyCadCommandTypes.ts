@@ -102,6 +102,10 @@ export type ActiveCommandKey =
   | 'PARCEL_SPLIT_AREA'
   | 'MOVE'
   | 'COPY'
+  | 'ROTATE'
+  | 'SCALE'
+  | 'MIRROR'
+  | 'ALIGN2D'
   | 'EXTEND'
   | 'TRIM'
   | 'FILLET'
@@ -117,6 +121,37 @@ export type CommandSession =
       key: 'COGO_POINT' | 'LINE' | 'INVERSE' | 'MOVE' | 'COPY';
       inputValue: string;
       startPoint: CommandPoint | null;
+      resultText?: string;
+    }
+  | {
+      key: 'ROTATE';
+      inputValue: string;
+      basePoint: CommandPoint | null;
+      refPoint: CommandPoint | null;
+      resultText?: string;
+    }
+  | {
+      key: 'SCALE';
+      inputValue: string;
+      basePoint: CommandPoint | null;
+      resultText?: string;
+    }
+  | {
+      key: 'MIRROR';
+      inputValue: string;
+      firstPoint: CommandPoint | null;
+      secondPoint: CommandPoint | null;
+      eraseSource: boolean | null;
+      resultText?: string;
+    }
+  | {
+      key: 'ALIGN2D';
+      inputValue: string;
+      source1: CommandPoint | null;
+      source2: CommandPoint | null;
+      target1: CommandPoint | null;
+      target2: CommandPoint | null;
+      scaleToFit: boolean | null;
       resultText?: string;
     }
   | {

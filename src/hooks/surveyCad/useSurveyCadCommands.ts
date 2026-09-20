@@ -32,6 +32,7 @@ import { createBatchCogoDraftBuilder } from './useSurveyCadBatchCogoDraft';
 import { buildSurveyCadCommandAvailability } from './useSurveyCadCommandAvailability';
 import { handleSurveyCadCurveSubmit } from './useSurveyCadCurveSubmit';
 import { handleSurveyCadIntersectionSubmit } from './useSurveyCadIntersectionSubmit';
+import { handleSurveyCadTransformSubmit } from './useSurveyCadTransformSubmit';
 import { handleSurveyCadTypedSubmit } from './useSurveyCadTypedSubmit';
 import { handleSurveyCadConsumePoint } from './useSurveyCadConsumePoint';
 import { handleSurveyCadDefaultSubmit } from './useSurveyCadDefaultSubmit';
@@ -199,6 +200,16 @@ export const useSurveyCadCommands = ({
         applyHistoryUpdate,
         consumePoint,
         publishReport,
+        replaceSession,
+        session,
+      })
+    ) {
+      return;
+    }
+    if (
+      handleSurveyCadTransformSubmit({
+        applyHistoryUpdate,
+        history,
         replaceSession,
         session,
       })

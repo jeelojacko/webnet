@@ -77,6 +77,10 @@ export interface SurveyCadCommandStarters {
   startCurveLabelCommand: () => void;
   startMoveCommand: () => void;
   startCopyCommand: () => void;
+  startRotateCommand: () => void;
+  startScaleCommand: () => void;
+  startMirrorCommand: () => void;
+  startAlign2DCommand: () => void;
   startExtendCommand: () => void;
   startTrimCommand: () => void;
   startFilletCommand: () => void;
