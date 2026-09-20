@@ -1,4 +1,5 @@
 import type { CadSelectionState } from './cadSelection';
+import type { DraftDocument } from './cadDraftTypes';
 import type { FieldToFinishCadPayload } from '../fieldToFinish/cadGeneration';
 import type { CadBatchCogoDraft } from './cadBatchCogo';
 
@@ -1260,6 +1261,12 @@ export interface CadTransaction {
 export interface CadWorkspaceSnapshot {
   project: CadProject;
   selection: CadSelectionState;
+  /**
+   * Phase 18R.1: optional DraftDocument channel. Sticky across commands
+   * (executeCadCommand carries it forward); PROJECTTRANSFORM is the only
+   * command that rewrites it, atomically with the project in one undo entry.
+   */
+  draft?: DraftDocument;
 }
 
 export interface CadCommandExecutionResult {

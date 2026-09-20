@@ -1,6 +1,7 @@
 import type { CadTraverseAdjustmentMethod } from '../../engine/cad/cadCogo';
 import { buildCadCogoComputation } from '../../engine/cad/cadCogoTypes';
 import type { CadHistoryState } from '../../engine/cad/cadUndoRedo';
+import type { DraftDocument } from '../../engine/cad/cadDraftTypes';
 import type {
   CadAlignmentEntity,
   CadArcEntity,
@@ -41,6 +42,8 @@ export interface UseSurveyCadCommandsArgs {
   selectedStartPointForBatchCogo: CommandPoint | null;
   reverseDirectionModifier: boolean;
   applyHistoryUpdate: (_updater: (_history: CadHistoryState) => CadHistoryState) => void;
+  /** Phase 18R.1: live drawing draft, seeded into PROJECTTRANSFORM commits. */
+  activeDraft?: DraftDocument;
   onReportComputation?: (
     _computation: ReturnType<typeof buildCadCogoComputation> | null,
   ) => void;

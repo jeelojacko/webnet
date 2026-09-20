@@ -51,6 +51,7 @@ export type { UseSurveyCadCommandsArgs, UseSurveyCadCommandsResult } from './use
 
 export const useSurveyCadCommands = ({
   activeSnap,
+  activeDraft,
   previewPoint,
   history,
   selectionCount,
@@ -148,6 +149,7 @@ export const useSurveyCadCommands = ({
       return;
     }
     const handled = handleSurveyCadTransformSubmit({
+      activeDraft,
       applyHistoryUpdate,
       history,
       replaceSession,
@@ -294,6 +296,7 @@ export const useSurveyCadCommands = ({
     }
     if (
       handleSurveyCadTransformSubmit({
+        activeDraft,
         applyHistoryUpdate,
         history,
         publishReport,

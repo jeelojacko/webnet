@@ -660,4 +660,14 @@ export const createCadIdleCommandState = createIdleCommandState;
 export const executeCadCommand = (
   snapshot: CadWorkspaceSnapshot,
   command: CadCommand,
-): CadCommandExecutionResult | null => CAD_COMMAND_REGISTRY[command.key].execute(snapshot, command);
+): CadCommandExecutionResult | null => {
+  const result = CAD_COMMAND_REGISTRY[command.key].execute(snapshot, command);
+  if (!result) return null;
+  // Phase 18R.1: keep a snapshot-carried draft sticky across commands that
+  // do not rewrite it (reference passthrough, so workspace propagation can
+  // tell "changed" from "carried"). Only PROJECTTRANSFORM sets a new one.
+  if (result.nextSnapshot.draft === undefined && snapshot.draft !== undefined) {
+    return { ...result, nextSnapshot: { ...result.nextSnapshot, draft: snapshot.draft } };
+  }
+  return result;
+};

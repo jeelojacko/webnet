@@ -13,8 +13,9 @@
 
 import { cadNormalizeAngleDeg } from './cadGeometry';
 import { dependencyOf, ownerOfCadEntity } from './cadAdjustmentDependency';
+import { validateImportedTinPayload } from './cadImportedTin';
 import type { HelmertControlPair, HelmertResidual } from './cadHelmert2D';
-import { buildCadBounds } from './cadProjectState';
+import { buildCadProjectAuthoritativeBounds } from './cadProjectAuthoritativeBounds';
 import { transformCadEntityGeometry } from './cadTransformGeometry';
 import {
   applyPoint,
@@ -111,6 +112,31 @@ export type ApplyCadProjectCoordinateTransformResult =
   | { ok: false; reason: string };
 
 const fail = (reason: string): ApplyCadProjectCoordinateTransformResult => ({ ok: false, reason });
+
+export const PROJECT_TRANSFORM_IMPORTED_TIN_INVALID =
+  'CAD_PROJECT_TRANSFORM_IMPORTED_TIN_INVALID';
+
+/**
+ * Fail-closed preflight for every imported-TIN surface, run before any other
+ * work. Reuses the 18L validator verbatim; a missing payload on an
+ * `imported-tin` surface is invalid by definition. Reason carries the surface
+ * id + validator reason only (never the raw payload).
+ */
+const preflightImportedTins = (project: CadProject): string | null => {
+  for (const surface of project.surfaces ?? []) {
+    const definition = surface.definition;
+    if (definition.sourceKind !== 'imported-tin') continue;
+    const payload = definition.importedTin;
+    if (!payload) {
+      return `${PROJECT_TRANSFORM_IMPORTED_TIN_INVALID}:${surface.id}: imported TIN definition missing.`;
+    }
+    const reason = validateImportedTinPayload(payload);
+    if (reason != null) {
+      return `${PROJECT_TRANSFORM_IMPORTED_TIN_INVALID}:${surface.id}: ${reason}`;
+    }
+  }
+  return null;
+};
 
 const isFiniteNumber = (value: unknown): value is number =>
   typeof value === 'number' && Number.isFinite(value);
@@ -244,18 +270,29 @@ const transformSurface = (
   surface: CadSurface,
   transform: CadTransform2D,
   scale: number,
-  warnings: string[],
-): { surface: CadSurface; tinVertices: number } => {
+): { ok: true; surface: CadSurface; tinVertices: number } | { ok: false; reason: string } => {
   const definition = cloneCadSurfaceDefinition(surface.definition);
   let tinVertices = 0;
-  if (definition.sourceKind === 'imported-tin' && definition.importedTin) {
-    const vertices = transformImportedTinVertices(definition.importedTin.vertices, transform);
-    if (!vertices) {
-      warnings.push(`Surface ${surface.id}: malformed imported-TIN vertex array; left unchanged.`);
-    } else {
-      definition.importedTin = { ...definition.importedTin, vertices };
-      tinVertices = vertices.length / 3;
+  // Fail-closed backstop: preflight already rejected every invalid payload, so
+  // this can only trigger if the surface mutated between the two reads. Never
+  // warn-and-continue (that produced a mixed-frame result).
+  if (definition.sourceKind === 'imported-tin') {
+    const payload = definition.importedTin;
+    if (!payload) {
+      return {
+        ok: false,
+        reason: `${PROJECT_TRANSFORM_IMPORTED_TIN_INVALID}:${surface.id}: imported TIN definition missing.`,
+      };
     }
+    const vertices = transformImportedTinVertices(payload.vertices, transform);
+    if (!vertices) {
+      return {
+        ok: false,
+        reason: `${PROJECT_TRANSFORM_IMPORTED_TIN_INVALID}:${surface.id}: malformed imported-TIN vertex array.`,
+      };
+    }
+    definition.importedTin = { ...payload, vertices };
+    tinVertices = vertices.length / 3;
   }
   const maxEdge = definition.buildOptions?.maxEdgeLength;
   if (isFiniteNumber(maxEdge)) {
@@ -265,6 +302,7 @@ const transformSurface = (
   // retire any cached mesh/contours AND discard late old-frame worker
   // results (existing latest-wins revision ownership). Never persist caches.
   return {
+    ok: true,
     surface: { ...surface, definition, cachedRevision: null, buildDiagnostic: undefined },
     tinVertices,
   };
@@ -403,6 +441,11 @@ export const applyCadProjectCoordinateTransform = (
   transform: CadTransform2D,
   options: CadProjectTransformOptions = {},
 ): ApplyCadProjectCoordinateTransformResult => {
+  // Imported-TIN integrity gate FIRST: any malformed payload blocks the whole
+  // operation with zero mutation (no computation, no draft, no cache/invalid
+  // state changes).
+  const tinPreflight = preflightImportedTins(project);
+  if (tinPreflight != null) return fail(tinPreflight);
   const gate = gateProjectTransform(transform);
   if (!gate.ok) return fail(gate.reason);
   const { classification } = gate;
@@ -455,12 +498,14 @@ export const applyCadProjectCoordinateTransform = (
 
   let surfaceCount = 0;
   let tinVertexCount = 0;
-  const surfaces = (project.surfaces ?? []).map((surface) => {
-    const result = transformSurface(surface, transform, scale, warnings);
+  const surfaces: CadSurface[] = [];
+  for (const surface of project.surfaces ?? []) {
+    const result = transformSurface(surface, transform, scale);
+    if (!result.ok) return fail(result.reason);
     surfaceCount += 1;
     tinVertexCount += result.tinVertices;
-    return result.surface;
-  });
+    surfaces.push(result.surface);
+  }
 
   const sample = transformSampleGroups(
     project.sampleLineGroups,
@@ -545,7 +590,7 @@ export const applyCadProjectCoordinateTransform = (
     options.mode ?? (rigid ? 'SIMILARITY_RIGID' : 'SIMILARITY'),
   );
 
-  const next: CadProject = {
+  const transformedProject = {
     ...project,
     entities,
     surfaces,
@@ -554,7 +599,12 @@ export const applyCadProjectCoordinateTransform = (
     sampleLineGroups: sample.groups,
     sectionViews,
     cogoComputations: [...(project.cogoComputations ?? []), computation],
-    bounds: buildCadBounds(entities, project.blockDefinitions),
+  };
+  // Bounds come from the fully assembled TRANSFORMED state so imported-TIN
+  // extents (not entity-backed) are included; old bounds are never transformed.
+  const next: CadProject = {
+    ...transformedProject,
+    bounds: buildCadProjectAuthoritativeBounds(transformedProject),
   };
   // Styles, block definitions, point groups, and F2F catalog/settings pass
   // through by spread above — presentation and library space never move.
