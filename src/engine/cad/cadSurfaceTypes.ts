@@ -50,6 +50,16 @@ export const cloneCadSurfaceDefinition = (definition: CadSurfaceDefinition): Cad
     ? { boundaries: definition.boundaries.map((entry) => ({ ...entry })) }
     : {}),
   ...(definition.buildOptions != null ? { buildOptions: { ...definition.buildOptions } } : {}),
+  // Phase 18S: ordered edit stack (array order authoritative — never sorted).
+  ...(definition.edits != null
+    ? {
+        edits: definition.edits.map((edit) =>
+          edit.kind === 'swap-edge' || edit.kind === 'delete-line'
+            ? { ...edit, edge: { a: { ...edit.edge.a }, b: { ...edit.edge.b } } }
+            : { ...edit, from: { ...edit.from }, to: { ...edit.to } },
+        ),
+      }
+    : {}),
 });
 
 export const cloneCadSurface = (surface: CadSurface): CadSurface => ({
@@ -63,7 +73,8 @@ export const cloneCadSurfaces = (surfaces: CadSurface[] | undefined): CadSurface
 /**
  * Load-time backfill: legacy drawings (field absent) open with no surfaces;
  * legacy single-group sources ({ pointGroupId }) migrate to the one-element
- * canonical list. Additive — no schema bump.
+ * canonical list. Phase 18S additive: absent `edits` stays undefined and
+ * behaves exactly as before (no replay). No schema bump.
  */
 export const backfillCadSurfaces = (surfaces: CadSurface[] | undefined): CadSurface[] =>
   cloneCadSurfaces(surfaces);

@@ -315,7 +315,7 @@ export const collectSources = (project: CadProject, surface: CadSurface): Collec
 export const computeCadSurfaceSourceRevision = (project: CadProject, surface: CadSurface): string => {
   // Phase 18L: imported revision covers stored topology + provenance only.
   if (isImportedTinDefinition(surface.definition) && surface.definition.importedTin) {
-    return importedTinRevision(surface.id, surface.definition.importedTin);
+    return importedTinRevision(surface.id, surface.definition.importedTin, surface.definition.edits);
   }
   const collected = collectSources(project, surface);
   const parts: string[] = [];
@@ -352,5 +352,18 @@ export const computeCadSurfaceSourceRevision = (project: CadProject, surface: Ca
   parts.push(`void:${collected.voids.map(ringText).join('|')}`);
   parts.push(`opt:maxEdgeLength=${collected.buildOptions.maxEdgeLength ?? 'none'}`);
   parts.push(`broken:${[...collected.brokenRefs].sort().join(',')}`);
+  // Phase 18S: kind + enabled + refs + order (human description excluded —
+  // no description field exists on the edit model).
+  parts.push(
+    `edits:${(surface.definition.edits ?? [])
+      .map((edit) => {
+        const refs =
+          edit.kind === 'add-line'
+            ? `${edit.from.key}>${edit.to.key}`
+            : `${edit.edge.a.key}>${edit.edge.b.key}`;
+        return `${edit.kind}:${edit.id}:${edit.enabled === false ? 'off' : 'on'}:${refs}`;
+      })
+      .join('|')}`,
+  );
   return `srev1:${fnv1a(parts.join('#'))}`;
 };

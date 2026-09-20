@@ -218,3 +218,24 @@ covering the edits.
    stored on the definition therefore travels WITH the transform (cloned),
    while imported-vertex edits apply pre-transform coordinates and must be
    expressed in entity-id / stored-vertex terms to survive.
+
+## 5. Engine-slice decisions (2026-09-20)
+
+- Insertion point is exactly the §3 recommendation: `replaySurfaceEdits`
+  (single chokepoint in `cadSurfaces.ts`) with two call legs — imported
+  (after `materializeImportedTin`, before bounds/stats/grid) and native
+  (after the synthetic tail, before the bounds scan). The imported leg
+  recomputes face stats + grid from the same deterministic functions instead
+  of reusing the pre-edit derivations (identical output when edits absent).
+- Applicator split for the ≤400-line rule: `cadSurfaceEdits.ts` (status
+  model + swap/delete + sequential driver), `cadSurfaceEditMesh.ts`
+  (mutable triangle table + canonical edge map + stable-identity
+  resolution), `cadSurfaceEditAddLine.ts` (crossed-FREE-region walk + ear
+  clipping; the Delaunay recovery kernel was not factorable for replay).
+- Sign convention: `robust-predicates` `orient2d` is positive for
+  math-CLOCKWISE (see `tinPredicates.ccwSign`); all winding enforcement uses
+  `orient2d < 0` = CCW. Straddle/convexity/crossing tests are
+  sign-agnostic and unaffected.
+- Oracle note: cocircular XY quads (e.g. perfect squares) have an
+  implementation-defined Delaunay diagonal that can flip under rotation, so
+  similarity-parity oracles use a non-cocircular quad.
