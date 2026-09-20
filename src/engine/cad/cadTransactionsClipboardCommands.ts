@@ -29,7 +29,7 @@ import type {
   CadTextEntity,
 } from './cadTypes';
 import { createStableRuntimeId } from '../id';
-const buildCopiedEntities = (
+export const buildCopiedEntities = (
   project: CadProject,
   selectedEntities: CadEntity[],
   deltaX: number,
