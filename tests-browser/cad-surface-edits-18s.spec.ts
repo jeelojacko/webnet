@@ -153,6 +153,7 @@ test('18S-A: imported edit stack renders readable rows, rebuilds, and survives s
   // Toolspace: Definition → Edits child rows, readable V<i> refs, no UUIDs.
   const node = toolspaceSurface(page, IMPORTED_ID);
   await expect(node).toBeVisible();
+  await node.locator('summary').first().click();
   await expect(node.locator('[data-cad-surface-edits-node]')).toBeVisible();
   const rows = node.locator('[data-cad-surface-edit]');
   await expect(rows).toHaveCount(2);
