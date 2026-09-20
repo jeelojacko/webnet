@@ -140,6 +140,8 @@ const blockInsertCommand: CadCommandDefinition<InsertCommand> = {
       rotationDeg: command.rotationDeg ?? 0,
       scaleX,
       scaleY,
+      // Phase 18Q: additive mirror flag (absent = false; never inferred from scales).
+      ...(command.mirrored === true ? { mirrored: true as const } : {}),
     };
     if (!snapshot.project.layers.some((layer) => layer.id === reference.layerId)) return null;
     const nextProject = replaceCadProjectEntities(snapshot.project, [
@@ -365,6 +367,11 @@ const blockEditCommand: CadCommandDefinition<EditCommand> = {
       if (issue) return null;
       if (command.scaleX != null) next.scaleX = command.scaleX;
       if (command.scaleY != null) next.scaleY = command.scaleY;
+    }
+    // Phase 18Q: mirror flag is explicit (true/false); absent leaves it untouched.
+    if (command.mirrored != null) {
+      if (command.mirrored) next.mirrored = true;
+      else delete next.mirrored;
     }
     const definition = findBlockDefinition(snapshot.project.blockDefinitions, next.blockDefinitionId);
     if (!definition) return null;
