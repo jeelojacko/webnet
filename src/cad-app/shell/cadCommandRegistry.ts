@@ -85,6 +85,8 @@ export const CAD_SHELL_COMMANDS: CadShellCommandDef[] = [
   session('SCALE', 'Scale', 'Modify', 'Scale selected entities about a base point.', ['SC']),
   session('MIRROR', 'Mirror', 'Modify', 'Mirror selected entities across an axis.', ['MI']),
   session('ALIGN2D', 'Align 2D', 'Modify', 'Align selected entities from two source points to two target points.'),
+  session('HELMERT2D', 'Helmert 2D', 'Modify', 'Least-squares Helmert fit from explicit control pairs (2+).', ['HELMERT']),
+  session('GRIDGROUND', 'Grid/Ground', 'Modify', 'Uniform grid/ground scale about an origin by a combined factor.'),
   session('EXTEND', 'Extend', 'Modify', 'Extend to a boundary.', ['EX']),
   session('TRIM', 'Trim', 'Modify', 'Trim at a cutting edge.', ['TR']),
   session('FILLET', 'Fillet', 'Modify', 'Round two lines with an arc.'),

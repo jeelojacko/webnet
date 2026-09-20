@@ -11,7 +11,11 @@
 // reversal; SCALE rejects 0/negative/non-finite with a readable UI reason).
 
 import { createCadSelectionState } from './cadSelection';
-import { deriveAlign2DTransform } from './cadHelmert2D';
+import {
+  deriveAlign2DTransform,
+  gridGroundTransform,
+  solveHelmert2D,
+} from './cadHelmert2D';
 import {
   applyCadSelectionTransform,
   type ApplyCadSelectionTransformResult,
@@ -117,6 +121,57 @@ export const mirrorCommand: CadCommandDefinition<{
     );
     if (!applied.ok) return null;
     return commitApplied(snapshot, applied, 'MIRROR');
+  },
+};
+
+export const helmert2DCommand: CadCommandDefinition<{
+  key: 'HELMERT2D';
+  pairs: { sourceE: number; sourceN: number; targetE: number; targetN: number }[];
+  mode: 'RIGID' | 'SIMILARITY';
+}> = {
+  key: 'HELMERT2D',
+  execute: (snapshot, command) => {
+    // Pre-solve so degeneracy fails closed with zero mutation; the UI
+    // session surfaces the solver reason verbatim before reaching here.
+    // Equal weights, no outlier removal: every explicit pair counts fully.
+    const solved = solveHelmert2D(command.pairs, command.mode);
+    if (!solved.ok) return null;
+    const applied = applyCadSelectionTransform(
+      snapshot.project,
+      snapshot.selection.selectedEntityIds,
+      solved.transform,
+      { label: `HELMERT2D (${cohortSize(snapshot.project, snapshot.selection.selectedEntityIds)})` },
+    );
+    if (!applied.ok) return null;
+    return commitApplied(snapshot, applied, 'HELMERT2D');
+  },
+};
+
+export const gridGroundCommand: CadCommandDefinition<{
+  key: 'GRIDGROUND';
+  originE: number;
+  originN: number;
+  combinedScaleFactor: number;
+  direction: 'GRID_TO_GROUND' | 'GROUND_TO_GRID';
+}> = {
+  key: 'GRIDGROUND',
+  execute: (snapshot, command) => {
+    if (!Number.isFinite(command.originE) || !Number.isFinite(command.originN)) return null;
+    const derived = gridGroundTransform(
+      command.originE,
+      command.originN,
+      command.combinedScaleFactor,
+      command.direction,
+    );
+    if (!derived.ok) return null;
+    const applied = applyCadSelectionTransform(
+      snapshot.project,
+      snapshot.selection.selectedEntityIds,
+      derived.transform,
+      { label: `GRIDGROUND (${cohortSize(snapshot.project, snapshot.selection.selectedEntityIds)})` },
+    );
+    if (!applied.ok) return null;
+    return commitApplied(snapshot, applied, 'GRIDGROUND');
   },
 };
 

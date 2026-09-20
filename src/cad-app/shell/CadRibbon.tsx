@@ -261,6 +261,13 @@ const CadSurveyGroup: React.FC<{
     { kind: 'point-label-styles', label: 'Point Label Styles', hint: 'Open the Point Label Style manager.' },
     { kind: 'f2f', label: 'Field to Finish', hint: 'Open field-to-finish.' },
   ];
+  const transform: Array<{ key: 'HELMERT2D' | 'GRIDGROUND'; label: string; hint: string }> = [
+    { key: 'HELMERT2D', label: 'Helmert 2D', hint: 'Least-squares Helmert fit from explicit control pairs (Modify).' },
+    { key: 'GRIDGROUND', label: 'Grid/Ground', hint: 'Uniform grid/ground scale about an origin (Modify).' },
+  ];
+  const runTransform = (key: 'HELMERT2D' | 'GRIDGROUND'): void => {
+    actions?.startCommand(key);
+  };
   const f2f: Array<{ section: string; label: string; hint: string }> = [
     { section: 'catalog', label: 'Field to Finish', hint: 'Open field-to-finish catalog.' },
     { section: 'codes', label: 'Feature Codes', hint: 'Open the feature-code manager.' },
@@ -299,6 +306,25 @@ const CadSurveyGroup: React.FC<{
         >
           Survey Symbols
         </button>
+      </div>
+    </div>
+    <div className="cad-shell-ribbon-group" aria-label="Transform">
+      <span className="cad-shell-ribbon-group-label">Transform</span>
+      <div className="cad-shell-ribbon-buttons">
+        {transform.map((entry) => (
+          <button
+            key={entry.key}
+            type="button"
+            title={entry.hint}
+            aria-label={entry.label}
+            disabled={!snapshot || !actions || !(snapshot.availableCommands.includes(entry.key))}
+            className="cad-shell-ribbon-button"
+            onClick={() => runTransform(entry.key)}
+            data-cad-transform={entry.key}
+          >
+            {entry.label}
+          </button>
+        ))}
       </div>
     </div>
     <div className="cad-shell-ribbon-group" aria-label="Field to Finish">

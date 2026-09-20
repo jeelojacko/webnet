@@ -15,6 +15,10 @@ import type {
   MlightcadSpikeScene,
 } from '../../engine/cad/cadTypes';
 import type { CadSnapPreferences } from './useSurveyCadSnapping';
+import type {
+  GridGroundPanelState,
+  HelmertPanelState,
+} from './useSurveyCadTransformPanel';
 import type { FieldToFinishCadPayload } from '../../engine/fieldToFinish/cadGeneration';
 
 export interface CommandHoverTarget {
@@ -172,6 +176,8 @@ export interface UseSurveyCadWorkspaceResult {
     | 'SCALE'
     | 'MIRROR'
     | 'ALIGN2D'
+    | 'HELMERT2D'
+    | 'GRIDGROUND'
     | 'EXTEND'
     | 'TRIM'
     | 'FILLET'
@@ -292,6 +298,12 @@ export interface UseSurveyCadWorkspaceResult {
   startScaleCommand: () => void;
   startMirrorCommand: () => void;
   startAlign2DCommand: () => void;
+  startHelmert2DCommand: () => void;
+  startGridGroundCommand: () => void;
+  helmertPanelState: HelmertPanelState | null;
+  gridGroundPanelState: GridGroundPanelState | null;
+  submitTransformPanelText: (_text: string) => void;
+  setGridGroundPanelOrigin: (_x: number, _y: number) => void;
   startExtendCommand: () => void;
   startTrimCommand: () => void;
   startFilletCommand: () => void;

@@ -1251,6 +1251,8 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
     SCALE: cadWorkspace.startScaleCommand,
     MIRROR: cadWorkspace.startMirrorCommand,
     ALIGN2D: cadWorkspace.startAlign2DCommand,
+    HELMERT2D: cadWorkspace.startHelmert2DCommand,
+    GRIDGROUND: cadWorkspace.startGridGroundCommand,
     EXTEND: cadWorkspace.startExtendCommand,
     TRIM: cadWorkspace.startTrimCommand,
     FILLET: cadWorkspace.startFilletCommand,

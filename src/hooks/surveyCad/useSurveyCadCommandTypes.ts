@@ -20,6 +20,16 @@ export type CommandPoint = CadNamedPoint & {
 
 export type TraverseDraftMode = 'open' | 'closed' | 'point-to-point';
 
+/** Phase 18Q HELMERT2D session state: explicit control pairs only (no name-matching). */
+export type HelmertSessionMode = 'RIGID' | 'SIMILARITY';
+
+export interface HelmertSessionPair {
+  source: CommandPoint;
+  target: CommandPoint;
+}
+
+export type GridGroundSessionDirection = 'GRID_TO_GROUND' | 'GROUND_TO_GRID';
+
 export interface TraverseSideshotDraft {
   occupyLabel: string;
   backsightLabel: string;
@@ -106,6 +116,8 @@ export type ActiveCommandKey =
   | 'SCALE'
   | 'MIRROR'
   | 'ALIGN2D'
+  | 'HELMERT2D'
+  | 'GRIDGROUND'
   | 'EXTEND'
   | 'TRIM'
   | 'FILLET'
@@ -152,6 +164,22 @@ export type CommandSession =
       target1: CommandPoint | null;
       target2: CommandPoint | null;
       scaleToFit: boolean | null;
+      resultText?: string;
+    }
+  | {
+      key: 'HELMERT2D';
+      inputValue: string;
+      mode: HelmertSessionMode;
+      pairs: HelmertSessionPair[];
+      pendingSource: CommandPoint | null;
+      resultText?: string;
+    }
+  | {
+      key: 'GRIDGROUND';
+      inputValue: string;
+      origin: CommandPoint | null;
+      combinedScaleFactor: number | null;
+      direction: GridGroundSessionDirection;
       resultText?: string;
     }
   | {

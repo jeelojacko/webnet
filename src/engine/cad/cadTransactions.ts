@@ -59,6 +59,8 @@ import {
 } from './cadTransactionsClipboardCommands';
 import {
   align2DCommand,
+  gridGroundCommand,
+  helmert2DCommand,
   mirrorCommand,
   rotateCommand,
   scaleCommand,
@@ -538,6 +540,8 @@ export const CAD_COMMAND_REGISTRY: Record<CadCommandKey, CadCommandDefinition<Ca
   SCALE: scaleCommand as CadCommandDefinition<CadCommand>,
   MIRROR: mirrorCommand as CadCommandDefinition<CadCommand>,
   ALIGN2D: align2DCommand as CadCommandDefinition<CadCommand>,
+  HELMERT2D: helmert2DCommand as CadCommandDefinition<CadCommand>,
+  GRIDGROUND: gridGroundCommand as CadCommandDefinition<CadCommand>,
   EXTEND: extendCommand as CadCommandDefinition<CadCommand>,
   FILLET: filletCommand as CadCommandDefinition<CadCommand>,
   PASTE: annotationAwarePasteCommand as CadCommandDefinition<CadCommand>,

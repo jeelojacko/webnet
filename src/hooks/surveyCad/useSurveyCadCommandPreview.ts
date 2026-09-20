@@ -7,7 +7,11 @@ import {
   cadParseBearingDegrees,
   cadPointFromAzimuthDistance,
 } from '../../engine/cad/cadGeometry';
-import { deriveAlign2DTransform } from '../../engine/cad/cadHelmert2D';
+import {
+  deriveAlign2DTransform,
+  gridGroundTransform,
+  solveHelmert2D,
+} from '../../engine/cad/cadHelmert2D';
 import {
   reflectionAboutLine,
   rotationAbout,
@@ -480,6 +484,44 @@ export const buildCommandPreview = ({
           return { kind: 'transform-selection', transform: derived.transform };
         }
         return null;
+      }
+      return previewPoint
+        ? { kind: 'point', point: { x: previewPoint.x, y: previewPoint.y } }
+        : null;
+    }
+    case 'HELMERT2D': {
+      // Solved transform ghosts live once 2+ explicit pairs exist; the fit
+      // report (residuals/RMS) renders in the panel simultaneously while
+      // authoritative geometry stays untouched until Apply commits.
+      if (session.pairs.length >= 2) {
+        const solved = solveHelmert2D(
+          session.pairs.map((pair) => ({
+            sourceE: pair.source.x,
+            sourceN: pair.source.y,
+            targetE: pair.target.x,
+            targetN: pair.target.y,
+          })),
+          session.mode,
+        );
+        if (solved.ok) {
+          return { kind: 'transform-selection', transform: solved.transform };
+        }
+      }
+      return previewPoint
+        ? { kind: 'point', point: { x: previewPoint.x, y: previewPoint.y } }
+        : null;
+    }
+    case 'GRIDGROUND': {
+      if (session.origin && session.combinedScaleFactor != null) {
+        const derived = gridGroundTransform(
+          session.origin.x,
+          session.origin.y,
+          session.combinedScaleFactor,
+          session.direction,
+        );
+        if (derived.ok) {
+          return { kind: 'transform-selection', transform: derived.transform };
+        }
       }
       return previewPoint
         ? { kind: 'point', point: { x: previewPoint.x, y: previewPoint.y } }

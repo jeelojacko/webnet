@@ -193,6 +193,14 @@ export const helpTextForSession = (session: CommandSession | null): string => {
       return session.target2
         ? 'ALIGN2D scale answer: type `Yes` to scale to fit or `No` (default, empty input) for rigid translate-plus-rotate.'
         : 'ALIGN2D points: click or type `x,y` / `LABEL=x,y` for source 1, source 2, target 1, then target 2.';
+    case 'HELMERT2D':
+      return session.pendingSource
+        ? 'HELMERT2D target: click or type `x,y` / `LABEL=x,y`, or type `sx,sy,tx,ty` for a full pair. Equal weights, no outlier removal.'
+        : 'HELMERT2D source: click or type `x,y` / `LABEL=x,y`. Type `MODE RIGID|SIMILARITY`, `REMOVE n`, or `APPLY` (2+ pairs).';
+    case 'GRIDGROUND':
+      return session.origin == null
+        ? 'GRIDGROUND origin: click or type `x,y` / `LABEL=x,y` for the scale center.'
+        : 'GRIDGROUND factor: type the positive combined scale factor. Type `GRIDTOGROUND` / `GROUNDTOGRID` to flip direction, `APPLY` to commit.';
     case 'EXTEND':
       return session.firstTargetEntityId == null
         ? 'EXT input: click the line, polyline, or arc you want to extend.'

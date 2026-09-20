@@ -127,6 +127,8 @@ export const buildSnapConstructionContext = (
     case 'SCALE':
     case 'MIRROR':
     case 'ALIGN2D':
+    case 'HELMERT2D':
+    case 'GRIDGROUND':
     case 'EXTEND':
     case 'TRIM':
     case 'FILLET':

@@ -316,6 +316,14 @@ export const useSurveyCadCommandStarters = ({
     if (selectionCount === 0) return;
     beginSession({ key: 'ALIGN2D', inputValue: '', source1: null, source2: null, target1: null, target2: null, scaleToFit: null });
   },
+  startHelmert2DCommand: () => {
+    if (selectionCount === 0) return;
+    beginSession({ key: 'HELMERT2D', inputValue: '', mode: 'SIMILARITY', pairs: [], pendingSource: null });
+  },
+  startGridGroundCommand: () => {
+    if (selectionCount === 0) return;
+    beginSession({ key: 'GRIDGROUND', inputValue: '', origin: null, combinedScaleFactor: null, direction: 'GRID_TO_GROUND' });
+  },
   startCopyCommand: () => {
     if (selectionCount === 0) return;
     beginSession({ key: 'COPY', inputValue: '', startPoint: null });

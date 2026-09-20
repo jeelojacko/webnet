@@ -33,6 +33,10 @@ import { buildSurveyCadCommandAvailability } from './useSurveyCadCommandAvailabi
 import { handleSurveyCadCurveSubmit } from './useSurveyCadCurveSubmit';
 import { handleSurveyCadIntersectionSubmit } from './useSurveyCadIntersectionSubmit';
 import { handleSurveyCadTransformSubmit } from './useSurveyCadTransformSubmit';
+import {
+  buildGridGroundPanelState,
+  buildHelmertPanelState,
+} from './useSurveyCadTransformPanel';
 import { handleSurveyCadTypedSubmit } from './useSurveyCadTypedSubmit';
 import { handleSurveyCadConsumePoint } from './useSurveyCadConsumePoint';
 import { handleSurveyCadDefaultSubmit } from './useSurveyCadDefaultSubmit';
@@ -118,6 +122,44 @@ export const useSurveyCadCommands = ({
     () => buildCommandPreview({ session, previewPoint, reverseDirectionModifier }),
     [previewPoint, reverseDirectionModifier, session],
   );
+  // Phase 18Q HELMERT2D / GRIDGROUND compact panel: derived from the live
+  // session; buttons route through the typed-submit path so panel and
+  // command line share one code path.
+  const helmertPanelState = useMemo(() => buildHelmertPanelState(session), [session]);
+  const gridGroundPanelState = useMemo(() => buildGridGroundPanelState(session), [session]);
+  const submitTransformPanelText = (text: string): void => {
+    const live = sessionRef.current;
+    if (!live || (live.key !== 'HELMERT2D' && live.key !== 'GRIDGROUND')) return;
+    const handled = handleSurveyCadTransformSubmit({
+      applyHistoryUpdate,
+      history,
+      replaceSession,
+      session: { ...live, inputValue: text },
+    });
+    if (!handled && text.trim().length > 0) {
+      const current = sessionRef.current;
+      if (!current || (current.key !== 'HELMERT2D' && current.key !== 'GRIDGROUND')) return;
+      replaceSession({
+        ...current,
+        inputValue: '',
+        resultText:
+          current.key === 'HELMERT2D'
+            ? 'HELMERT2D pair invalid: enter `sx,sy,tx,ty` with finite numbers, or pick points in the viewport.'
+            : 'GRIDGROUND input invalid: type a positive factor, `GRIDTOGROUND` / `GROUNDTOGRID`, or `APPLY`.',
+      });
+    }
+  };
+  const setGridGroundPanelOrigin = (x: number, y: number): void => {
+    const live = sessionRef.current;
+    if (!live || live.key !== 'GRIDGROUND') return;
+    if (!Number.isFinite(x) || !Number.isFinite(y)) return;
+    replaceSession({
+      ...live,
+      origin: { x, y, label: 'origin' },
+      inputValue: '',
+      resultText: undefined,
+    });
+  };
   const commandAvailability = useMemo(
     () =>
       buildSurveyCadCommandAvailability({
@@ -171,7 +213,13 @@ export const useSurveyCadCommands = ({
   };
 
   const submitSessionInput = () => {
-    if (!session) return;
+    // Live ref (not render-scope state): dock text entry sets the input and
+    // submits synchronously, before any re-render lands. Reading the stale
+    // closure here drops dock-typed numbers/answers (ROTATE angle, MIRROR
+    // Yes/No, HELMERT APPLY) on the floor.
+    const live = sessionRef.current;
+    if (!live) return;
+    const session = live;
     if (
       handleSurveyCadTypedSubmit({
         applyHistoryUpdate,
@@ -265,6 +313,10 @@ export const useSurveyCadCommands = ({
   });
 
   return {
+    helmertPanelState,
+    gridGroundPanelState,
+    submitTransformPanelText,
+    setGridGroundPanelOrigin,
     activeCommandKey: session?.key ?? null,
     commandInputValue: session?.inputValue ?? '',
     commandPrompt: statusPrompt,

@@ -3,6 +3,9 @@ import type { FieldToFinishCadPayload } from '../fieldToFinish/cadGeneration';
 import type { CadBatchCogoDraft } from './cadBatchCogo';
 
 import type { CadAnnotationAnchor } from './annotation/cadAnnotationAnchors';
+import type { HelmertControlPair, HelmertMode } from './cadHelmert2D';
+
+export type GridGroundDirection = 'GRID_TO_GROUND' | 'GROUND_TO_GRID';
 import type {
   CadAlignmentElement,
   CadDimensionKind,
@@ -88,6 +91,8 @@ export type CadCommandKey =
   | 'SCALE'
   | 'MIRROR'
   | 'ALIGN2D'
+  | 'HELMERT2D'
+  | 'GRIDGROUND'
   | 'EXTEND'
   | 'FILLET'
   | 'PASTE'
@@ -421,6 +426,18 @@ export type CadCommand =
       target1: { x: number; y: number };
       target2: { x: number; y: number };
       scaleToFit: boolean;
+    }
+  | {
+      key: 'HELMERT2D';
+      pairs: HelmertControlPair[];
+      mode: HelmertMode;
+    }
+  | {
+      key: 'GRIDGROUND';
+      originE: number;
+      originN: number;
+      combinedScaleFactor: number;
+      direction: GridGroundDirection;
     }
   | {
       key: 'EXTEND';
