@@ -12,7 +12,7 @@ import { backfillCadSurfaceStyles } from '../../engine/cad/cadSurfaceStyles';
 import { formatSurfaceSlopeAnswer } from '../../engine/cad/surfaceAnalysis';
 import { contourLevelSpecFromStyle } from '../../engine/cad/cadSurfaceContourView';
 import { surfacePointGroupIds } from '../../engine/cad/cadTypes';
-import type { CadProject, CadSurfaceStatus } from '../../engine/cad/cadTypes';
+import type { CadProject, CadSurface, CadSurfaceEdit, CadSurfaceStatus } from '../../engine/cad/cadTypes';
 
 /**
  * Phase 18F UI — surface snapshot for Toolspace/Properties/manager.
@@ -44,6 +44,112 @@ export interface CadSurfaceDefinitionSummary {
   voidBoundaryCount: number;
   maxEdgeLength: number | null;
 }
+
+/**
+ * Phase 18S — one TIN edit-stack row for the Toolspace/manager/properties.
+ * Status is a display derivation (build state + reference liveness); it is
+ * never persisted and never a stored field on the edit model.
+ */
+export type CadSurfaceEditDisplayStatus =
+  | 'applied'
+  | 'disabled'
+  | 'broken-reference'
+  | 'not-applicable'
+  | 'blocked-constraint';
+
+export interface CadSurfaceEditSummary {
+  id: string;
+  kind: CadSurfaceEdit['kind'];
+  typeLabel: string;
+  enabled: boolean;
+  /** Readable vertex/edge refs, e.g. "P104 – P117" or "V42 – V57". */
+  refsLabel: string;
+  /** Full row text, e.g. "Swap Edge P104 – P117". */
+  description: string;
+  status: CadSurfaceEditDisplayStatus;
+  reason: string | null;
+}
+
+export const cadSurfaceEditStatusText = (status: CadSurfaceEditDisplayStatus): string => {
+  if (status === 'blocked-constraint') return 'blocked (constraint)';
+  if (status === 'not-applicable') return 'not applied';
+  return status;
+};
+
+const EDIT_TYPE_LABEL: Record<CadSurfaceEdit['kind'], string> = {
+  'swap-edge': 'Swap Edge',
+  'add-line': 'Add Line',
+  'delete-line': 'Delete Line',
+};
+
+const shortPointLabel = (stationId: string): string =>
+  /^[A-Za-z]/.test(stationId) ? stationId : `P${stationId}`;
+
+const editRefKeys = (edit: CadSurfaceEdit): [string, string] =>
+  edit.kind === 'add-line' ? [edit.from.key, edit.to.key] : [edit.edge.a.key, edit.edge.b.key];
+
+/** Map a stable ref key to a readable label; never emit the raw key/UUID. */
+const resolveEditRef = (
+  key: string,
+  pointLabels: ReadonlyMap<string, string>,
+  importedVertexCount: number | null,
+): { label: string; broken: boolean } => {
+  if (key.startsWith('source:')) {
+    const label = pointLabels.get(key.slice('source:'.length));
+    return label != null ? { label, broken: false } : { label: 'unresolved', broken: true };
+  }
+  if (key.startsWith('imported:')) {
+    const parts = key.split(':');
+    const index = Number(parts[parts.length - 1]);
+    if (!Number.isInteger(index) || index < 0 || (importedVertexCount != null && index >= importedVertexCount)) {
+      return { label: 'unresolved', broken: true };
+    }
+    return { label: `V${index}`, broken: false };
+  }
+  return { label: 'unresolved', broken: true };
+};
+
+/**
+ * Phase 18S — derive the readable edit rows for one surface. Order is the
+ * authoritative definition order (never sorted). `meshPresent` means a
+ * retained mesh exists (fresh or stale), so the last replay applied.
+ */
+export const deriveCadSurfaceEditSummaries = (
+  surface: CadSurface,
+  pointLabels: ReadonlyMap<string, string>,
+  meshPresent: boolean,
+): CadSurfaceEditSummary[] => {
+  const edits = surface.definition.edits ?? [];
+  const importedVertexCount =
+    surface.definition.sourceKind === 'imported-tin' && surface.definition.importedTin
+      ? surface.definition.importedTin.vertices.length / 3
+      : null;
+  return edits.map((edit) => {
+    const [keyA, keyB] = editRefKeys(edit);
+    const a = resolveEditRef(keyA, pointLabels, importedVertexCount);
+    const b = resolveEditRef(keyB, pointLabels, importedVertexCount);
+    const broken = a.broken || b.broken;
+    const status: CadSurfaceEditDisplayStatus =
+      edit.enabled === false
+        ? 'disabled'
+        : broken
+          ? 'broken-reference'
+          : meshPresent
+            ? 'applied'
+            : 'not-applicable';
+    const typeLabel = EDIT_TYPE_LABEL[edit.kind];
+    return {
+      id: edit.id,
+      kind: edit.kind,
+      typeLabel,
+      enabled: edit.enabled !== false,
+      refsLabel: `${a.label} – ${b.label}`,
+      description: `${typeLabel} ${a.label} – ${b.label}`,
+      status,
+      reason: broken ? 'SURFACE_EDIT_VERTEX_MISSING' : null,
+    };
+  });
+};
 
 export interface CadSurfaceStatsSummary {
   points: number;
@@ -89,6 +195,11 @@ export interface CadSurfaceRow {
   diagnostic: string | null;
   stats: CadSurfaceStatsSummary | null;
   definition: CadSurfaceDefinitionSummary;
+  /** Phase 18S — ordered edit stack (readable refs + derived status). */
+  edits: CadSurfaceEditSummary[];
+  editCount: number;
+  enabledEditCount: number;
+  brokenEditCount: number;
   brokenIds: string[];
   brokenNames: string[];
 }
@@ -229,6 +340,13 @@ export const buildCadSurfaceSnapshot = (
   const entityLabels = new Map(
     project.entities.map((entity) => [entity.id, entity.type] as const),
   );
+  // Phase 18S — stable native ref labels: source:<entityId> resolves to the
+  // survey point's short station label (never the raw entity id).
+  const pointLabels = new Map(
+    project.entities
+      .filter((entity): entity is Extract<typeof entity, { type: 'survey-point' }> => entity.type === 'survey-point')
+      .map((entity) => [entity.id, shortPointLabel(entity.stationId)] as const),
+  );
   const groupNames = new Map((project.pointGroups ?? []).map((group) => [group.id, group.name]));
   const revisionIndex = options?.revisionIndex;
   const surfaces: CadSurfaceRow[] = (project.surfaces ?? []).map((surface) => {
@@ -276,6 +394,7 @@ export const buildCadSurfaceSnapshot = (
       sourceEntityId: entry.sourceEntityId,
       sourceLabel: entityLabels.get(entry.sourceEntityId) ?? entry.sourceEntityId,
     }));
+    const edits = deriveCadSurfaceEditSummaries(surface, pointLabels, mesh != null);
     return {
       id: surface.id,
       name: surface.name,
@@ -323,6 +442,10 @@ export const buildCadSurfaceSnapshot = (
         voidBoundaryCount: boundaries.filter((entry) => entry.kind === 'void').length,
         maxEdgeLength: surface.definition.buildOptions?.maxEdgeLength ?? null,
       },
+      edits,
+      editCount: edits.length,
+      enabledEditCount: edits.filter((edit) => edit.enabled).length,
+      brokenEditCount: edits.filter((edit) => edit.status === 'broken-reference').length,
       brokenIds: displayStatus.brokenIds,
       brokenNames: displayStatus.brokenNames,
     };

@@ -35,11 +35,22 @@ export const CadSurfaceDefinitionEditor: React.FC<DefinitionEditorProps> = ({
   const definition = row.definition;
   // Phase 18L: imported TINs carry explicit file topology — no
   // point-group/breakline edit controls (would corrupt the import).
+  // Phase 18S: TIN topology edits (swap/add/delete) ARE allowed and are
+  // surfaced by the manager's EDITS table below this summary.
+  const editSummary = (
+    <p className="text-[11px] text-slate-400" data-cad-definition-edits={row.id}>
+      Edits: {row.editCount} ({row.enabledEditCount} enabled{row.brokenEditCount > 0 ? `, ${row.brokenEditCount} broken` : ''})
+      {row.editCount > 0 ? ' — order/enable/delete in the TIN Edits table below.' : ' — none yet.'}
+    </p>
+  );
   if (definition.sourceKind === 'imported-tin') {
     return (
-      <p className="text-[11px] text-slate-400">
-        Imported surface — definition edits are disabled to preserve the source topology.
-      </p>
+      <div className="grid gap-1 rounded border border-slate-700 p-2">
+        <p className="text-[11px] text-slate-400">
+          Imported surface — source definition edits are disabled to preserve the file topology.
+        </p>
+        {editSummary}
+      </div>
     );
   }
 
@@ -72,6 +83,7 @@ export const CadSurfaceDefinitionEditor: React.FC<DefinitionEditorProps> = ({
   return (
     <div className="grid gap-2 rounded border border-slate-700 p-2">
       <h3 className="text-[11px] font-semibold text-slate-200">Definition</h3>
+      {editSummary}
       <p className="text-[11px] text-slate-400">
         Source: {definition.pointSourceKind === 'point-group'
           ? `Point Groups (${definition.pointGroupIds.length}): ${definition.pointGroupNames.map((name) => `"${name}"`).join(', ') || '—'}`

@@ -6,6 +6,7 @@ import { VolumesNode } from './CadVolumeToolspace';
 import { SurfaceProfilesNode, ProfileViewsNode } from './CadProfileToolspace';
 import { SampleLineGroupsNode, SectionViewsNode, SectionStylesNode } from './CadSampleLineToolspace';
 import { CadAnnotationToolspaceNodes } from '../annotation/CadAnnotationToolspace';
+import { cadSurfaceEditStatusText, type CadSurfaceRow } from './cadSurfaceSnapshot';
 
 interface CadToolspaceProps {
   snapshot: CadWorkspaceSnapshot | null;
@@ -520,6 +521,57 @@ const TreeGroup: React.FC<{ label: string; children: React.ReactNode }> = ({ lab
 
 
 /**
+ * Phase 18S — Definition child node (native counts or imported LandXML TIN)
+ * with an Edits child listing the ordered stack: "1 Swap Edge P104 – P117".
+ * Refs are readable labels (native station short labels, imported V<i>);
+ * raw entity ids/UUIDs are never shown.
+ */
+const SurfaceDefinitionTree: React.FC<{ row: CadSurfaceRow }> = ({ row }) => {
+  const def = row.definition;
+  const source = def.sourceKind === 'imported-tin'
+    ? (def.importedSourceText ?? 'Imported LandXML TIN')
+    : def.pointSourceKind === 'point-group'
+      ? `Point Groups (${def.pointGroupIds.length}): ${def.pointGroupNames.join(', ') || '—'}`
+      : `${def.pointCount} points`;
+  return (
+    <details className="cad-shell-tree-group" open data-cad-surface-definition={row.id}>
+      <summary>Definition</summary>
+      <div className="cad-shell-tree-children">
+        <div className="cad-shell-tree-row" title="Definition counts">
+          {source}
+          {' · '}breaklines {def.breaklineCount}
+          {' · '}outer {def.outerBoundaryCount} void {def.voidBoundaryCount}
+        </div>
+        <details
+          className="cad-shell-tree-group"
+          open={row.editCount > 0}
+          data-cad-surface-edits-node={row.id}
+        >
+          <summary>Edits ({row.editCount})</summary>
+          <div className="cad-shell-tree-children">
+            {row.editCount === 0 ? (
+              <div className="cad-shell-tree-row cad-shell-empty">No TIN edits.</div>
+            ) : (
+              row.edits.map((edit, index) => (
+                <div
+                  key={edit.id}
+                  className="cad-shell-tree-row"
+                  data-cad-surface-edit={edit.id}
+                  title={`${edit.description} — ${cadSurfaceEditStatusText(edit.status)}`}
+                >
+                  {index + 1} {edit.description}
+                  <span className="cad-shell-count">{cadSurfaceEditStatusText(edit.status)}</span>
+                </div>
+              ))
+            )}
+          </div>
+        </details>
+      </div>
+    </details>
+  );
+};
+
+/**
  * Phase 18H — Contours child per surface: style intervals only.
  * Never a per-polyline listing (aggregated display model).
  */
@@ -591,13 +643,7 @@ const SurfacesNode: React.FC<{ snapshot: CadWorkspaceSnapshot | null; actions: C
               <span className="cad-shell-count">{row.statusText}</span>
             </summary>
             <div className="cad-shell-tree-children">
-              <div className="cad-shell-tree-row" title="Definition counts">
-                Definition: {row.definition.pointSourceKind === 'point-group'
-                  ? `Point Groups (${row.definition.pointGroupIds.length}): ${row.definition.pointGroupNames.join(', ') || '—'}`
-                  : `${row.definition.pointCount} points`}
-                {' · '}breaklines {row.definition.breaklineCount}
-                {' · '}outer {row.definition.outerBoundaryCount} void {row.definition.voidBoundaryCount}
-              </div>
+              <SurfaceDefinitionTree row={row} />
               <div className="cad-shell-tree-row" title="Build statistics">
                 {row.stats
                   ? `Stats: ${row.stats.vertices}v ${row.stats.triangles}t Z ${row.stats.minZ?.toFixed(3) ?? '—'}…${row.stats.maxZ?.toFixed(3) ?? '—'}${row.stats.stale ? ' (stale)' : ''}`
