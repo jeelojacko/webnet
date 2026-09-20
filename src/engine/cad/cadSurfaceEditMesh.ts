@@ -86,7 +86,11 @@ export const ccwEditTri = (pts: CadSurfaceEditMeshPoint[], a: number, b: number,
   return o < 0 ? [a, b, c] : [a, c, b];
 };
 
-export const sortedEditTriIds = (state: EditMeshState): number[] => [...state.tris.keys()].sort((x, y) => x - y);
+export const sortedEditTriIds = (state: EditMeshState): number[] =>
+  // Insertion order is already ascending: the table starts as 0..N-1 and
+  // every insert uses monotonic nextTri++ (ids are never reused), so no
+  // sort is needed. Kept as a helper so callers read in deterministic order.
+  [...state.tris.keys()];
 
 /** Rebuild the canonical edge map from the active table (deterministic tri-id order). */
 export const refreshEditEdges = (state: EditMeshState): void => {
@@ -111,3 +115,37 @@ export const refreshEditEdges = (state: EditMeshState): void => {
 
 export const kindOfEditEdge = (state: EditMeshState, key: string): TinEdgeKindCode =>
   state.edgeKind.get(key) ?? TIN_EDGE_FREE;
+
+const triEdgeKeys = (tri: EditTri): [string, string, string] => [
+  tinEdgeKey(tri[0], tri[1]),
+  tinEdgeKey(tri[1], tri[2]),
+  tinEdgeKey(tri[2], tri[0]),
+];
+
+/**
+ * Incremental edge-map maintenance. New triangle ids are monotonic
+ * (nextTri++), so appending keeps every adjacency list in ascending order —
+ * identical to a full rebuild + sort, without the O(triangles) rescan.
+ */
+export const indexEditTri = (state: EditMeshState, id: number, tri: EditTri): void => {
+  for (const key of triEdgeKeys(tri)) {
+    const list = state.edgeMap.get(key);
+    if (list) list.push(id);
+    else state.edgeMap.set(key, [id]);
+    if (!state.edgeKind.has(key)) state.edgeKind.set(key, TIN_EDGE_FREE);
+  }
+};
+
+/** Remove one triangle's edges; drop map/kind entries with no remaining triangle. */
+export const unindexEditTri = (state: EditMeshState, id: number, tri: EditTri): void => {
+  for (const key of triEdgeKeys(tri)) {
+    const list = state.edgeMap.get(key);
+    if (!list) continue;
+    const at = list.indexOf(id);
+    if (at >= 0) list.splice(at, 1);
+    if (list.length === 0) {
+      state.edgeMap.delete(key);
+      state.edgeKind.delete(key);
+    }
+  }
+};

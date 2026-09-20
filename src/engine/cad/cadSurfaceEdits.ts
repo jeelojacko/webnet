@@ -7,6 +7,7 @@ import {
   EditHalt,
   editOrient,
   editStraddles,
+  indexEditTri,
   kindOfEditEdge,
   refreshEditEdges,
   resolveEditVertex,
@@ -14,6 +15,7 @@ import {
   type CadSurfaceEditMeshPoint,
   type EditMeshState,
   type EditTri,
+  unindexEditTri,
 } from './cadSurfaceEditMesh';
 
 export type { CadSurfaceEditMeshPoint };
@@ -139,9 +141,16 @@ const applySwap = (state: EditMeshState, source: ReadonlyMap<string, TinEdgeKind
   }
   state.tris.delete(adj[0]);
   state.tris.delete(adj[1]);
-  state.tris.set(state.nextTri++, ccwEditTri(state.pts, p, q, a));
-  state.tris.set(state.nextTri++, ccwEditTri(state.pts, p, q, b));
-  refreshEditEdges(state);
+  unindexEditTri(state, adj[0], t1);
+  unindexEditTri(state, adj[1], t2);
+  const n1 = ccwEditTri(state.pts, p, q, a);
+  const n2 = ccwEditTri(state.pts, p, q, b);
+  const id1 = state.nextTri++;
+  const id2 = state.nextTri++;
+  state.tris.set(id1, n1);
+  state.tris.set(id2, n2);
+  indexEditTri(state, id1, n1);
+  indexEditTri(state, id2, n2);
 };
 
 const applyDelete = (state: EditMeshState, a: number, b: number): void => {
@@ -153,8 +162,11 @@ const applyDelete = (state: EditMeshState, a: number, b: number): void => {
   if (kindOfEditEdge(state, key) !== TIN_EDGE_FREE) throw new EditHalt('SURFACE_EDIT_BLOCKED_CONSTRAINT');
   // Boundary edge (1 adjacent): exterior retreats. Interior (2 adjacent):
   // both removed (hole). The opposite diagonal is never inserted.
-  for (const id of adj) state.tris.delete(id);
-  refreshEditEdges(state);
+  for (const id of [...adj]) {
+    const tri = state.tris.get(id);
+    state.tris.delete(id);
+    if (tri) unindexEditTri(state, id, tri);
+  }
 };
 
 /**

@@ -4,9 +4,10 @@ import {
   ccwEditTri,
   editOrient,
   editStraddles,
+  indexEditTri,
   kindOfEditEdge,
-  refreshEditEdges,
   sortedEditTriIds,
+  unindexEditTri,
   EditHalt,
   type CadSurfaceEditMeshPoint,
   type EditMeshState,
@@ -181,11 +182,18 @@ export const applyAddLine = (state: EditMeshState, f: number, t: number): void =
   const cut = loop.indexOf(t);
   const chainA = loop.slice(0, cut + 1);
   const chainB = [...loop.slice(cut), f];
-  for (const id of crossed) state.tris.delete(id);
+  for (const id of crossed) {
+    const tri = state.tris.get(id) as EditTri;
+    state.tris.delete(id);
+    unindexEditTri(state, id, tri);
+  }
   for (const poly of [chainA, chainB]) {
     if (poly.length < 2) throw new EditHalt('SURFACE_EDIT_NOT_APPLICABLE');
     if (poly.length === 2) continue;
-    for (const tri of earClip(pts, poly)) state.tris.set(state.nextTri++, tri);
+    for (const tri of earClip(pts, poly)) {
+      const id = state.nextTri++;
+      state.tris.set(id, tri);
+      indexEditTri(state, id, tri);
+    }
   }
-  refreshEditEdges(state);
 };
