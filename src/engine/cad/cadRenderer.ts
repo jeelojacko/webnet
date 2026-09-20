@@ -57,7 +57,16 @@ import {
   deriveBearingDistanceLabel,
   deriveCurveLabel,
 } from './annotation/cadSurveyLabels';
-import { cadCounterClockwiseDeltaDeg } from './cadGeometry';
+import {
+  attachmentRowOffsets,
+  attachmentTextAnchor,
+  attachmentVertical,
+  curveLabelPlacement,
+  leaderTextReferencePoint,
+  normalizeTextAttachment,
+  sumOffsets,
+} from './annotation/cadAnnotationPlacement';
+import { buildCadProjectLookup, type CadProjectLookup } from './cadProjectLookup';
 
 export interface BuildCadDisplaySceneOptions {
   /**
@@ -87,10 +96,18 @@ export interface BuildCadDisplaySceneOptions {
    * Absent = no volume display. Export scenes never pass it.
    */
   surfaceVolume?: { tinCache: import('./cadSurfaceCache').CadSurfaceCache; volumeCache: CadSurfaceVolumeCache };
+  /**
+   * Phase 18P — pre-built project index. Absent = the scene builds one for
+   * this pass. Callers that already resolved a lookup (sheet export) pass
+   * theirs to avoid a second O(n) build.
+   */
+  lookup?: CadProjectLookup;
 }
 
 interface SceneRenderContext {
-  layerById: Map<string, CadProject['layers'][number]>;
+  lookup: CadProjectLookup;
+  /** Same map as `lookup.layerById`; kept so block expansion reuses the index. */
+  layerById: CadProjectLookup['layerById'];
   linetypeScale: number;
   lineweightDisplay: LineweightDisplayMode;
 }
@@ -98,11 +115,15 @@ interface SceneRenderContext {
 const sceneRenderContext = (
   project: CadProject,
   options?: BuildCadDisplaySceneOptions,
-): SceneRenderContext => ({
-  layerById: new Map(project.layers.map((layer) => [layer.id, layer])),
-  linetypeScale: project.linetypeScale ?? 1,
-  lineweightDisplay: options?.lineweightDisplay ?? 'thin',
-});
+): SceneRenderContext => {
+  const lookup = options?.lookup ?? buildCadProjectLookup(project);
+  return {
+    lookup,
+    layerById: lookup.layerById,
+    linetypeScale: project.linetypeScale ?? 1,
+    lineweightDisplay: options?.lineweightDisplay ?? 'thin',
+  };
+};
 
 interface EntityScreenStyle {
   stroke: string;
@@ -113,11 +134,11 @@ interface EntityScreenStyle {
 
 /** Synthesized-label color: the SOURCE entity's resolved color (trap #5) —
  *  explicit override → style → layer → default — never the labels layer. */
-const sourceLabelStroke = (project: CadProject, entity: CadEntity): string =>
+const sourceLabelStroke = (ctx: SceneRenderContext, entity: CadEntity): string =>
   resolveCadEntityAppearance({
     entity,
-    layer: project.layers.find((layer) => layer.id === entity.layerId) ?? null,
-    styleLibrary: project.styleLibrary,
+    layer: ctx.lookup.layerById.get(entity.layerId) ?? null,
+    styleById: ctx.lookup.styleById,
   }).color;
 
 /** Authoritative entity styling: every geometry primitive resolves color,
@@ -132,15 +153,13 @@ const entityScreenStyle = (
 ): EntityScreenStyle => {
   const resolved = resolveCadEntityAppearance({
     entity,
-    layer: ctx.layerById.get(entity.layerId),
-    styleLibrary: project.styleLibrary,
+    layer: ctx.lookup.layerById.get(entity.layerId),
+    styleById: ctx.lookup.styleById,
   });
-  const pattern = project.styleLibrary.lineTypes.find(
-    (lineType) => lineType.id === resolved.lineTypeId,
-  )?.dashPattern;
+  const pattern = ctx.lookup.lineTypeById.get(resolved.lineTypeId)?.dashPattern;
   // Legacy exact px (style.strokeWidth ?? per-type fallback): thin mode must
   // reproduce today's rendering pixel-for-pixel, including custom styles.
-  const legacyPx = strokeWidth(project, entity, legacyFallbackPx);
+  const legacyPx = strokeWidth(project, entity, legacyFallbackPx, ctx.lookup);
   return {
     stroke: resolved.color,
     opacity: opacityFromTransparency(resolved.transparency),
@@ -228,11 +247,12 @@ const normalizeArcSweepAngles = (
 
 const buildTraverseLabelPrimitives = (
   project: CadProject,
+  ctx: SceneRenderContext,
   entity: CadPolylineEntity,
 ): CadDisplayPrimitive[] => {
   if (entity.metadata?.createdBy !== 'TRAVERSE') return [];
-  const stroke = sourceLabelStroke(project, entity);
-  const fontSize = textFontSize(project, entity, 11);
+  const stroke = sourceLabelStroke(ctx, entity);
+  const fontSize = textFontSize(project, entity, 11, ctx.lookup);
   return polylineSegments(entity).flatMap((segment) => {
     const inverse = buildCadInverseSummary(segment.start, segment.end);
     const dx = segment.end.x - segment.start.x;
@@ -285,6 +305,7 @@ const buildTraverseLabelPrimitives = (
 
 const buildParcelLabelPrimitive = (
   project: CadProject,
+  ctx: SceneRenderContext,
   entity: Extract<CadEntity, { type: 'parcel' }>,
 ): CadDisplayPrimitive[] => {
   if (entity.areaSquareMeters == null || entity.perimeterMeters == null || entity.vertices.length < 3) {
@@ -297,16 +318,17 @@ const buildParcelLabelPrimitive = (
     id: `primitive:${entity.id}:parcel-label`,
     layerId: 'labels',
     sourceEntityId: entity.id,
-    stroke: sourceLabelStroke(project, entity),
+    stroke: sourceLabelStroke(ctx, entity),
     point: metrics.centroid,
     text: `${entity.areaSquareMeters.toFixed(3)} m²\n${entity.perimeterMeters.toFixed(3)} m`,
-    fontSize: textFontSize(project, entity, 11),
+    fontSize: textFontSize(project, entity, 11, ctx.lookup),
     textAnchor: 'middle',
   }];
 };
 
 const buildArcLabelPrimitive = (
   project: CadProject,
+  ctx: SceneRenderContext,
   entity: Extract<CadEntity, { type: 'arc' }>,
 ): CadDisplayPrimitive[] => {
   const { startAngleDeg, signedSweepDeg, sweepDeg } = normalizeArcSweepAngles(
@@ -324,13 +346,13 @@ const buildArcLabelPrimitive = (
     id: `primitive:${entity.id}:curve-label`,
     layerId: 'labels',
     sourceEntityId: entity.id,
-    stroke: sourceLabelStroke(project, entity),
+    stroke: sourceLabelStroke(ctx, entity),
     point: {
       x: entity.centerX + Math.cos(midAngleRad) * labelRadius,
       y: entity.centerY + Math.sin(midAngleRad) * labelRadius,
     },
     text: `${formatCadSweepDms(sweepDeg)}\nR ${entity.radius.toFixed(3)} m\nL ${arcLength.toFixed(3)} m`,
-    fontSize: textFontSize(project, entity, 11),
+    fontSize: textFontSize(project, entity, 11, ctx.lookup),
     rotationDeg,
     textAnchor: 'middle',
   }];
@@ -338,6 +360,7 @@ const buildArcLabelPrimitive = (
 
 const buildAlignmentLabelPrimitive = (
   project: CadProject,
+  ctx: SceneRenderContext,
   entity: CadAlignmentEntity,
 ): CadDisplayPrimitive[] => {
   const totalLength = cadAlignmentLength(entity);
@@ -361,10 +384,10 @@ const buildAlignmentLabelPrimitive = (
     id: `primitive:${entity.id}:alignment-label`,
     layerId: 'labels',
     sourceEntityId: entity.id,
-    stroke: sourceLabelStroke(project, entity),
+    stroke: sourceLabelStroke(ctx, entity),
     point: midpoint.point,
     text: `${entity.name}\nSTA ${formatCadStation(entity.startStation)} - ${formatCadStation(endStation)}`,
-    fontSize: textFontSize(project, entity, 11),
+    fontSize: textFontSize(project, entity, 11, ctx.lookup),
     rotationDeg,
     textAnchor: 'middle',
   }];
@@ -389,6 +412,7 @@ const buildAlignmentLabelRotation = (
 
 const buildAlignmentStationEquationLabelPrimitives = (
   project: CadProject,
+  ctx: SceneRenderContext,
   entity: CadAlignmentEntity,
 ): CadDisplayPrimitive[] => {
   if (!Array.isArray(entity.stationEquations) || entity.stationEquations.length === 0) {
@@ -406,10 +430,10 @@ const buildAlignmentStationEquationLabelPrimitives = (
       id: `primitive:${entity.id}:station-equation-label:${index + 1}`,
       layerId: 'labels',
       sourceEntityId: entity.id,
-      stroke: sourceLabelStroke(project, entity),
+      stroke: sourceLabelStroke(ctx, entity),
       point: marker.point,
       text: `EQ ${formatCadStation(equation.backStation)} = ${formatCadStation(equation.aheadStation)}`,
-      fontSize: textFontSize(project, entity, 10),
+      fontSize: textFontSize(project, entity, 10, ctx.lookup),
       rotationDeg,
       textAnchor: 'middle' as const,
     }];
@@ -442,11 +466,14 @@ const annotationTextFont = (
   project: CadProject,
   entity: CadEntity,
   textStyleId: string | undefined,
+  lookup?: CadProjectLookup,
 ): { fontSize: number; lineSpacingFactor: number } => {
-  const fallback = { fontSize: textFontSize(project, entity, 11), lineSpacingFactor: 1 };
+  const fallback = { fontSize: textFontSize(project, entity, 11, lookup), lineSpacingFactor: 1 };
   const textStyle =
     textStyleId != null
-      ? project.styleLibrary.textStyles.find((entry) => entry.id === textStyleId)
+      ? lookup
+        ? lookup.textStyleById.get(textStyleId)
+        : project.styleLibrary.textStyles.find((entry) => entry.id === textStyleId)
       : undefined;
   if (!textStyle) return fallback;
   const metrics = resolveCadAnnotationTextMetrics({
@@ -498,7 +525,7 @@ const brokenAnnotationPrimitive = (
     ...withOpacity(style),
     point,
     text: 'BROKEN',
-    fontSize: textFontSize(project, entity, 11),
+    fontSize: textFontSize(project, entity, 11, ctx.lookup),
     textAnchor: 'middle',
   };
 };
@@ -567,7 +594,7 @@ const buildMTextPrimitives = (
   entity: CadMTextEntity,
 ): CadDisplayPrimitive[] => {
   const style = entityScreenStyle(project, ctx, entity, 1.2);
-  const font = annotationTextFont(project, entity, entity.textStyleId);
+  const font = annotationTextFont(project, entity, entity.textStyleId, ctx.lookup);
   const lines = entity.text.split('\n');
   const radians = (entity.rotationDeg * Math.PI) / 180;
   const up = { x: -Math.sin(radians), y: Math.cos(radians) };
@@ -595,6 +622,35 @@ const buildMTextPrimitives = (
       textAnchor: anchor,
     };
   });
+};
+
+const leaderTextPrimitives = (
+  entity: CadLeaderEntity,
+  style: EntityScreenStyle,
+  reference: { x: number; y: number },
+  text: string,
+  font: { fontSize: number; lineSpacingFactor: number },
+): CadDisplayPrimitive[] => {
+  const attachment = normalizeTextAttachment(entity.textAttachment);
+  const anchor = attachmentTextAnchor(attachment);
+  const offsets = attachmentRowOffsets(
+    attachmentVertical(attachment),
+    text.split('\n').length,
+    font.fontSize,
+    font.lineSpacingFactor,
+  );
+  return text.split('\n').map((lineText, index) => ({
+    kind: 'text' as const,
+    id: index === 0 ? `primitive:${entity.id}:text` : `primitive:${entity.id}:text:${index + 1}`,
+    layerId: entity.layerId,
+    sourceEntityId: entity.id,
+    stroke: style.stroke,
+    ...withOpacity(style),
+    point: { x: reference.x, y: reference.y + offsets[index]! },
+    text: lineText,
+    fontSize: font.fontSize,
+    textAnchor: anchor,
+  }));
 };
 
 const buildLeaderPrimitives = (
@@ -629,21 +685,16 @@ const buildLeaderPrimitives = (
       strokeWidth: style.widthPx(),
     };
   });
-  const leaderStyle = project.leaderStyles?.find((entry) => entry.id === entity.leaderStyleId);
+  const leaderStyle = ctx.lookup.leaderStyleById.get(entity.leaderStyleId);
   const last = through.at(-1) ?? arrowPoint;
   if (!leaderStyle) {
-    primitives.push({
-      kind: 'text',
-      id: `primitive:${entity.id}:text`,
-      layerId: entity.layerId,
-      sourceEntityId: entity.id,
-      stroke: style.stroke,
-      ...withOpacity(style),
-      point: last,
-      text: entity.text,
-      fontSize: textFontSize(project, entity, 11),
-      textAnchor: 'start',
-    });
+    primitives.push(...leaderTextPrimitives(
+      entity,
+      style,
+      last,
+      entity.text,
+      { fontSize: textFontSize(project, entity, 11, ctx.lookup), lineSpacingFactor: 1.2 },
+    ));
     return primitives;
   }
   const arrival = through[1] ?? { x: arrowPoint.x + 1, y: arrowPoint.y };
@@ -683,22 +734,19 @@ const buildLeaderPrimitives = (
       strokeWidth: style.widthPx(),
     });
   }
-  const font = annotationTextFont(project, entity, entity.textStyleId ?? leaderStyle.textStyleId);
-  primitives.push({
-    kind: 'text',
-    id: `primitive:${entity.id}:text`,
-    layerId: entity.layerId,
-    sourceEntityId: entity.id,
-    stroke: style.stroke,
-    ...withOpacity(style),
-    point: {
-      x: landingEnd.x + dir.x * leaderStyle.textGap,
-      y: landingEnd.y + dir.y * leaderStyle.textGap,
-    },
-    text: entity.text,
-    fontSize: font.fontSize,
-    textAnchor: 'start',
-  });
+  const font = annotationTextFont(
+    project,
+    entity,
+    entity.textStyleId ?? leaderStyle.textStyleId,
+    ctx.lookup,
+  );
+  primitives.push(...leaderTextPrimitives(
+    entity,
+    style,
+    leaderTextReferencePoint(landingEnd, dir, leaderStyle.textGap),
+    entity.text,
+    font,
+  ));
   return primitives;
 };
 
@@ -716,9 +764,10 @@ interface ResolvedDimensionAnchors {
 const resolveDimensionAnchors = (
   project: CadProject,
   entity: CadDimensionEntity,
+  lookup?: CadProjectLookup,
 ): ResolvedDimensionAnchors | null => {
   const resolveOne = (anchor: CadAnnotationAnchor): { x: number; y: number } | null => {
-    const resolution = resolveCadAnnotationAnchor(anchor, project);
+    const resolution = resolveCadAnnotationAnchor(anchor, project, lookup);
     return resolution.ok ? { x: resolution.x, y: resolution.y } : null;
   };
   switch (entity.dimensionKind) {
@@ -750,17 +799,54 @@ const resolveDimensionAnchors = (
     case 'diameter': {
       const rawCenter = entity.anchors[0];
       const rawArc = entity.anchors[1];
-      if (!rawCenter || !rawArc) return null;
-      const center = resolveOne(rawCenter);
-      const arcPoint = resolveOne(rawArc);
-      if (!center || !arcPoint) return null;
-      return {
-        p1: center,
-        p2: arcPoint,
-        center,
-        arcPoint,
-        radius: Math.hypot(arcPoint.x - center.x, arcPoint.y - center.y),
-      };
+      if (rawCenter && rawArc) {
+        const center = resolveOne(rawCenter);
+        const arcPoint = resolveOne(rawArc);
+        if (!center || !arcPoint) return null;
+        return {
+          p1: center,
+          p2: arcPoint,
+          center,
+          arcPoint,
+          radius: Math.hypot(arcPoint.x - center.x, arcPoint.y - center.y),
+        };
+      }
+      // Phase 18P: production DIMRADIUS/DIMDIAMETER commits ONE defining
+      // anchor (the arc pick; the second pick is the dim-line point). When
+      // that anchor is an arc-point ref, derive center + radius live from
+      // the arc entity so radius edits re-measure instead of rendering
+      // BROKEN. A lone fixed anchor still resolves null (no association).
+      if (rawCenter && !rawArc && rawCenter.kind === 'arc-point') {
+        const source = lookup
+          ? lookup.entityById.get(rawCenter.entityId)
+          : project.entities.find((candidate) => candidate.id === rawCenter.entityId);
+        if (!source || source.type !== 'arc') return null;
+        const center = { x: source.centerX, y: source.centerY };
+        const anchorPoint = resolveOne(rawCenter);
+        if (!anchorPoint) return null;
+        let arcPoint: { x: number; y: number };
+        if (rawCenter.point === 'center') {
+          const dx = entity.dimLinePoint.x - center.x;
+          const dy = entity.dimLinePoint.y - center.y;
+          const length = Math.hypot(dx, dy);
+          const direction =
+            length > 1e-12 ? { x: dx / length, y: dy / length } : { x: 1, y: 0 };
+          arcPoint = {
+            x: center.x + direction.x * source.radius,
+            y: center.y + direction.y * source.radius,
+          };
+        } else {
+          arcPoint = anchorPoint;
+        }
+        return {
+          p1: center,
+          p2: arcPoint,
+          center,
+          arcPoint,
+          radius: source.radius,
+        };
+      }
+      return null;
     }
   }
 };
@@ -779,12 +865,15 @@ export interface ResolvedDimensionDerivation {
 export const resolveDimensionDerivation = (
   project: CadProject,
   entity: CadDimensionEntity,
+  lookup?: CadProjectLookup,
 ): ResolvedDimensionDerivation | null => {
-  const style = project.dimensionStyles?.find((entry) => entry.id === entity.dimensionStyleId);
+  const style = lookup
+    ? lookup.dimensionStyleById.get(entity.dimensionStyleId)
+    : project.dimensionStyles?.find((entry) => entry.id === entity.dimensionStyleId);
   if (!style) return null;
-  const resolved = resolveDimensionAnchors(project, entity);
+  const resolved = resolveDimensionAnchors(project, entity, lookup);
   if (!resolved) return null;
-  const textHeight = annotationTextFont(project, entity, style.textStyleId).fontSize;
+  const textHeight = annotationTextFont(project, entity, style.textStyleId, lookup).fontSize;
   const arrowSize = annotationArrowSize(project, style.arrowSize, style.arrowSizeMode);
   const kind: CadDimensionGeometryInput['kind'] =
     entity.dimensionKind === 'linear'
@@ -806,6 +895,7 @@ export const resolveDimensionDerivation = (
       ? { center: resolved.center, radius: resolved.radius, arcPoint: resolved.arcPoint }
       : {}),
     dimLinePoint: entity.dimLinePoint,
+    ...(entity.textPoint != null ? { textPoint: entity.textPoint } : {}),
     textGap: style.textGap,
     arrowSize,
     extensionOffset: style.extensionOffset,
@@ -846,13 +936,13 @@ const buildDimensionPrimitives = (
       ...withOpacity(style),
       point: fallbackPoint,
       text: entity.textOverride ?? 'Dimension',
-      fontSize: textFontSize(project, entity, 11),
+      fontSize: textFontSize(project, entity, 11, ctx.lookup),
       textAnchor: 'middle',
     },
   ];
-  const derived = resolveDimensionDerivation(project, entity);
+  const derived: ResolvedDimensionDerivation | null = resolveDimensionDerivation(project, entity, ctx.lookup);
   if (!derived) {
-    const anchors = resolveDimensionAnchors(project, entity);
+    const anchors = resolveDimensionAnchors(project, entity, ctx.lookup);
     if (!anchors) return [brokenAnnotationPrimitive(project, ctx, entity, fallbackPoint)];
     return lineFallback();
   }
@@ -916,11 +1006,11 @@ const buildBearingLabelPrimitives = (
   entity: CadBearingDistanceLabelEntity,
 ): CadDisplayPrimitive[] => {
   const style = entityScreenStyle(project, ctx, entity, 1.2);
-  const source = project.entities.find((candidate) => candidate.id === entity.sourceEntityId);
+  const source = ctx.lookup.entityById.get(entity.sourceEntityId);
   if (source?.type !== 'line') {
     return [brokenAnnotationPrimitive(project, ctx, entity, entity.offset)];
   }
-  const labelStyle = project.bearingLabelStyles?.find((entry) => entry.id === entity.labelStyleId);
+  const labelStyle = ctx.lookup.bearingLabelStyleById.get(entity.labelStyleId);
   const from = { x: source.fromX, y: source.fromY };
   const to = { x: source.toX, y: source.toY };
   const label = deriveBearingDistanceLabel({
@@ -935,7 +1025,7 @@ const buildBearingLabelPrimitives = (
   });
   const offsetMagnitude = labelStyle ? Math.hypot(labelStyle.offset.x, labelStyle.offset.y) : 0;
   const placement = bearingLabelPlacement(from, to, offsetMagnitude, entity.side === 'right' ? 'right' : 'left');
-  const font = annotationTextFont(project, entity, labelStyle?.textStyleId);
+  const font = annotationTextFont(project, entity, labelStyle?.textStyleId, ctx.lookup);
   return [{
     kind: 'text',
     id: `primitive:${entity.id}`,
@@ -957,8 +1047,8 @@ const buildCurveLabelPrimitives = (
   entity: CadCurveLabelEntity,
 ): CadDisplayPrimitive[] => {
   const style = entityScreenStyle(project, ctx, entity, 1.2);
-  const source = project.entities.find((candidate) => candidate.id === entity.sourceEntityId);
-  const labelStyle = project.curveLabelStyles?.find((entry) => entry.id === entity.labelStyleId);
+  const source = ctx.lookup.entityById.get(entity.sourceEntityId);
+  const labelStyle = ctx.lookup.curveLabelStyleById.get(entity.labelStyleId);
   if (source?.type !== 'arc') {
     return [brokenAnnotationPrimitive(project, ctx, entity, entity.offset)];
   }
@@ -974,10 +1064,15 @@ const buildCurveLabelPrimitives = (
       : {}),
   });
   if (!label) return [brokenAnnotationPrimitive(project, ctx, entity, entity.offset)];
-  const styleOffset = labelStyle?.offset ?? { x: 0, y: 0 };
-  const sweep = cadCounterClockwiseDeltaDeg(source.startAngleDeg, source.endAngleDeg);
-  const midAngleRad = ((source.startAngleDeg + sweep / 2) * Math.PI) / 180;
-  const font = annotationTextFont(project, entity, labelStyle?.textStyleId);
+  const placement = curveLabelPlacement({
+    center: { x: source.centerX, y: source.centerY },
+    radius: source.radius,
+    startAngleDeg: source.startAngleDeg,
+    endAngleDeg: source.endAngleDeg,
+    offset: sumOffsets(labelStyle?.offset, entity.offset),
+  });
+  if (!placement) return [brokenAnnotationPrimitive(project, ctx, entity, entity.offset)];
+  const font = annotationTextFont(project, entity, labelStyle?.textStyleId, ctx.lookup);
   return [{
     kind: 'text',
     id: `primitive:${entity.id}`,
@@ -985,12 +1080,10 @@ const buildCurveLabelPrimitives = (
     sourceEntityId: entity.id,
     stroke: style.stroke,
     ...withOpacity(style),
-    point: {
-      x: source.centerX + Math.cos(midAngleRad) * source.radius + styleOffset.x + entity.offset.x,
-      y: source.centerY + Math.sin(midAngleRad) * source.radius + styleOffset.y + entity.offset.y,
-    },
+    point: { x: placement.x, y: placement.y },
     text: label.text,
     fontSize: font.fontSize,
+    ...(placement.rotationDeg !== 0 ? { rotationDeg: placement.rotationDeg } : {}),
     textAnchor: 'middle',
   }];
 };
@@ -1003,7 +1096,7 @@ const toPrimitives = (
   switch (entity.type) {
     case 'survey-point': {
       const style = entityScreenStyle(project, ctx, entity, 1.2);
-      const marker = surveyPointMarker(project, entity);
+      const marker = surveyPointMarker(project, entity, ctx.lookup);
       // No Display style: no marker primitive. The entity still exists and
       // stays selectable via Toolspace; only the marker is omitted.
       if (marker.hidden) return [];
@@ -1058,14 +1151,14 @@ const toPrimitives = (
     case 'polyline':
       return [
         ...buildVertexPrimitives(project, ctx, entity),
-        ...buildTraverseLabelPrimitives(project, entity),
+        ...buildTraverseLabelPrimitives(project, ctx, entity),
       ];
     case 'polygon':
       return buildVertexPrimitives(project, ctx, entity);
     case 'parcel':
       return [
         ...buildVertexPrimitives(project, ctx, entity),
-        ...buildParcelLabelPrimitive(project, entity),
+        ...buildParcelLabelPrimitive(project, ctx, entity),
       ];
     case 'arc': {
       const style = entityScreenStyle(project, ctx, entity, 1.25);
@@ -1084,7 +1177,7 @@ const toPrimitives = (
           endAngleDeg: entity.endAngleDeg,
           strokeWidth: style.widthPx(),
         },
-        ...buildArcLabelPrimitive(project, entity),
+        ...buildArcLabelPrimitive(project, ctx, entity),
       ];
     }
     case 'alignment': {
@@ -1121,15 +1214,15 @@ const toPrimitives = (
             strokeWidth: style.widthPx(),
           }];
         }),
-        ...buildAlignmentLabelPrimitive(project, entity),
-        ...buildAlignmentStationEquationLabelPrimitives(project, entity),
+        ...buildAlignmentLabelPrimitive(project, ctx, entity),
+        ...buildAlignmentStationEquationLabelPrimitives(project, ctx, entity),
       ];
     }
     case 'text': {
       const style = entityScreenStyle(project, ctx, entity, 1.2);
       // Associative label: materialized text/position/rotation; a No Label
       // style emits nothing. Unresolvable bindings fall back to baked.
-      const bound = materializeBoundPointLabel(entity, project);
+      const bound = materializeBoundPointLabel(entity, project, ctx.lookup);
       if (bound != null) {
         if (!bound.visible) return [];
         return [{
@@ -1141,7 +1234,7 @@ const toPrimitives = (
           ...withOpacity(style),
           point: { x: bound.x, y: bound.y },
           text: bound.text,
-          fontSize: textFontSize(project, entity, 11),
+          fontSize: textFontSize(project, entity, 11, ctx.lookup),
           ...(bound.rotationDeg !== 0 ? { rotationDeg: bound.rotationDeg } : {}),
           textAnchor: 'start',
         }];
@@ -1155,7 +1248,7 @@ const toPrimitives = (
         ...withOpacity(style),
         point: { x: entity.x, y: entity.y },
         text: entity.text,
-        fontSize: textFontSize(project, entity, 11),
+        fontSize: textFontSize(project, entity, 11, ctx.lookup),
         textAnchor: 'start',
       }];
     }

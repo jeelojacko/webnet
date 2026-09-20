@@ -1,26 +1,43 @@
 import type { CadEntity, CadPointSymbolShape, CadProject, CadStyle } from './cadTypes';
+import type { CadProjectLookup } from './cadProjectLookup';
 import { resolveSurveyPointDisplay } from './cadPointGroups';
 import { DEFAULT_CAD_POINT_STYLE_ID } from './cadPointStyles';
 import { DEFAULT_CAD_POINT_LABEL_STYLE_ID } from './cadPointLabelStyles';
 
-export const layerColor = (project: CadProject, layerId: string): string =>
-  project.layers.find((layer) => layer.id === layerId)?.color ?? '#94a3b8';
+export const layerColor = (
+  project: CadProject,
+  layerId: string,
+  lookup?: CadProjectLookup,
+): string =>
+  (lookup ? lookup.layerById.get(layerId) : project.layers.find((layer) => layer.id === layerId))?.color ??
+  '#94a3b8';
 
-export const entityStyle = (project: CadProject, entity: CadEntity): CadStyle | null =>
-  entity.styleId != null
-    ? project.styleLibrary.styles.find((style) => style.id === entity.styleId) ?? null
-    : null;
+export const entityStyle = (
+  project: CadProject,
+  entity: CadEntity,
+  lookup?: CadProjectLookup,
+): CadStyle | null => {
+  if (entity.styleId == null) return null;
+  const style = lookup
+    ? lookup.styleById.get(entity.styleId)
+    : project.styleLibrary.styles.find((style) => style.id === entity.styleId);
+  return style ?? null;
+};
 
-export const pointRadius = (project: CadProject, entity: CadEntity): number => {
+export const pointRadius = (
+  project: CadProject,
+  entity: CadEntity,
+  lookup?: CadProjectLookup,
+): number => {
   if (entity.type !== 'survey-point') return 1.8;
-  const style = entityStyle(project, entity);
+  const style = entityStyle(project, entity, lookup);
   if (!style?.pointSymbolId) {
     return entity.pointClass === 'control' ? 2.4 : 1.8;
   }
-  return (
-    project.styleLibrary.pointSymbols.find((symbol) => symbol.id === style.pointSymbolId)?.radius ??
-    (entity.pointClass === 'control' ? 2.4 : 1.8)
-  );
+  const symbol = lookup
+    ? lookup.pointSymbolById.get(style.pointSymbolId)
+    : project.styleLibrary.pointSymbols.find((symbol) => symbol.id === style.pointSymbolId);
+  return symbol?.radius ?? (entity.pointClass === 'control' ? 2.4 : 1.8);
 };
 
 export interface SurveyPointMarker {
@@ -53,6 +70,7 @@ export interface SurveyPointMarker {
 export const surveyPointMarker = (
   project: CadProject,
   entity: CadEntity,
+  lookup?: CadProjectLookup,
 ): SurveyPointMarker => {
   const fallbackRadius =
     entity.type === 'survey-point' && entity.pointClass === 'control' ? 2.4 : 1.8;
@@ -65,15 +83,17 @@ export const surveyPointMarker = (
     defaultPointStyleId: DEFAULT_CAD_POINT_STYLE_ID,
     defaultLabelStyleId: DEFAULT_CAD_POINT_LABEL_STYLE_ID,
   });
-  const style = (project.pointStyles ?? []).find(
-    (entry) => entry.id === display.effectivePointStyleId,
-  );
+  const style = lookup
+    ? lookup.pointStyleById.get(display.effectivePointStyleId)
+    : (project.pointStyles ?? []).find((entry) => entry.id === display.effectivePointStyleId);
   if (style == null) {
-    const legacy = entityStyle(project, entity);
-    const shape = project.styleLibrary.pointSymbols.find(
-      (symbol) => symbol.id === legacy?.pointSymbolId,
-    )?.shape;
-    return { radius: pointRadius(project, entity), shape, hidden: false };
+    const legacy = entityStyle(project, entity, lookup);
+    const legacySymbol = lookup
+      ? legacy?.pointSymbolId != null
+        ? lookup.pointSymbolById.get(legacy.pointSymbolId)
+        : undefined
+      : project.styleLibrary.pointSymbols.find((symbol) => symbol.id === legacy?.pointSymbolId);
+    return { radius: pointRadius(project, entity, lookup), shape: legacySymbol?.shape, hidden: false };
   }
   if (!style.displayMarker) return { radius: 0, shape: undefined, hidden: true };
   // Phase 18N block marker path: known definition wins; the symbol stays
@@ -83,40 +103,52 @@ export const surveyPointMarker = (
   // CadSurveyPointEntity, never converted to inserts.
   const markerScale = style.markerScale ?? 1;
   const rotationDeg = style.rotationDeg ?? 0;
-  if (
+  const markerSymbol = lookup
+    ? style.markerSymbolId != null
+      ? lookup.pointSymbolById.get(style.markerSymbolId)
+      : undefined
+    : project.styleLibrary.pointSymbols.find((entry) => entry.id === style.markerSymbolId);
+  const knownMarkerBlock =
     style.markerBlockDefinitionId != null &&
-    (project.blockDefinitions ?? []).some((definition) => definition.id === style.markerBlockDefinitionId)
-  ) {
-    const symbol = project.styleLibrary.pointSymbols.find(
-      (entry) => entry.id === style.markerSymbolId,
-    );
+    (lookup
+      ? lookup.blockDefinitionById.has(style.markerBlockDefinitionId)
+      : (project.blockDefinitions ?? []).some(
+          (definition) => definition.id === style.markerBlockDefinitionId,
+        ));
+  if (knownMarkerBlock) {
     return {
-      radius: (symbol?.radius ?? fallbackRadius) * markerScale,
-      shape: symbol?.shape,
+      radius: (markerSymbol?.radius ?? fallbackRadius) * markerScale,
+      shape: markerSymbol?.shape,
       hidden: false,
       blockDefinitionId: style.markerBlockDefinitionId,
       markerScale,
       rotationDeg,
     };
   }
-  const symbol = project.styleLibrary.pointSymbols.find(
-    (entry) => entry.id === style.markerSymbolId,
-  );
   return {
-    radius: (symbol?.radius ?? fallbackRadius) * (style.markerScale ?? 1),
-    shape: symbol?.shape,
+    radius: (markerSymbol?.radius ?? fallbackRadius) * (style.markerScale ?? 1),
+    shape: markerSymbol?.shape,
     hidden: false,
   };
 };
 
-export const strokeWidth = (project: CadProject, entity: CadEntity, fallback: number): number =>
-  entityStyle(project, entity)?.strokeWidth ?? fallback;
+export const strokeWidth = (
+  project: CadProject,
+  entity: CadEntity,
+  fallback: number,
+  lookup?: CadProjectLookup,
+): number => entityStyle(project, entity, lookup)?.strokeWidth ?? fallback;
 
-export const textFontSize = (project: CadProject, entity: CadEntity, fallback: number): number => {
-  const style = entityStyle(project, entity);
+export const textFontSize = (
+  project: CadProject,
+  entity: CadEntity,
+  fallback: number,
+  lookup?: CadProjectLookup,
+): number => {
+  const style = entityStyle(project, entity, lookup);
   if (!style?.textStyleId) return fallback;
-  return (
-    project.styleLibrary.textStyles.find((textStyle) => textStyle.id === style.textStyleId)?.fontSize ??
-    fallback
-  );
+  const textStyle = lookup
+    ? lookup.textStyleById.get(style.textStyleId)
+    : project.styleLibrary.textStyles.find((textStyle) => textStyle.id === style.textStyleId);
+  return textStyle?.fontSize ?? fallback;
 };

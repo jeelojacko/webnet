@@ -199,6 +199,7 @@ export const serializeDxfModelWithResult = (model: DxfExportModel): ExportResult
       pair(0, 'TEXT'), pair(8, entry.layer), ...colorOf(entry.layer, entry.colorHex), ...linetypeOf(entry.layer, entry.linetypeId), ...invisibleOf(entry.invisible),
       pair(10, fmt(entry.at.x)), pair(20, fmt(entry.at.y)), pair(30, '0'),
       pair(40, fmt(entry.height)), pair(1, entry.text),
+      ...(entry.rotationDeg != null && entry.rotationDeg !== 0 ? [pair(50, fmt(entry.rotationDeg))] : []),
     );
   });
   // Native INSERTs (R12 supports BLOCKS + INSERT with 41/42/43 scales and

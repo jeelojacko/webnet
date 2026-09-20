@@ -1,13 +1,14 @@
 // Phase 18O — annotation creation sessions (pick flows + text capture).
 //
-// Minimal honest slice: every pick commits a FIXED anchor at the picked
-// point; associative snap upgrade (survey-point / line-endpoint / arc /
-// block-insertion anchors) is a documented follow-up. Dimensions commit
+// Phase 18P: picks go through cadAnnotationAnchorFromCommandPoint, so
+// snapped picks commit associative anchors (survey-point / line-endpoint /
+// arc-point / block-insertion) with the picked point as fallback; everything
+// else commits a FIXED anchor. Dimensions commit
 // eagerly on the final pick (LINE-style); MTEXT / LEADER / labels commit on
 // Escape or on empty-Enter once they hold enough data.
 
 import { runCadCommand, type CadHistoryState } from '../../engine/cad/cadUndoRedo';
-import type { CadAnnotationAnchor } from '../../engine/cad/annotation/cadAnnotationAnchors';
+import { cadAnnotationAnchorFromCommandPoint } from '../../engine/cad/annotation/cadAnnotationAnchorFromCommandPoint';
 import type { CadArcEntity, CadProject } from '../../engine/cad/cadTypes';
 import type { CommandPoint, CommandSession } from './useSurveyCadCommandTypes';
 import type { ApplyHistoryUpdate, ReplaceSession } from './useSurveyCadConsumePoint.types';
@@ -31,12 +32,6 @@ const ANNOTATION_KEYS: ReadonlySet<string> = new Set<string>([
 
 export const isAnnotationSessionKey = (key: string): key is AnnotationSessionKey =>
   ANNOTATION_KEYS.has(key);
-
-const fixedAnchor = (point: CommandPoint): CadAnnotationAnchor => ({
-  kind: 'fixed',
-  x: point.x,
-  y: point.y,
-});
 
 const pointToSegmentDistance = (
   point: CommandPoint,
@@ -89,10 +84,21 @@ const commit = (
 const commitDimension = (
   current: Extract<CommandSession, { key: 'DIM' | 'DIMLINEAR' | 'DIMALIGNED' | 'DIMANGULAR' | 'DIMRADIUS' | 'DIMDIAMETER' }>,
   points: CommandPoint[],
+  project: CadProject,
   applyHistoryUpdate: ApplyHistoryUpdate,
   replaceSession: ReplaceSession,
 ): void => {
-  const anchors = points.slice(0, -1).map(fixedAnchor);
+  // Phase 18P: every defining pick goes through the anchor factory, so all
+  // six dimension kinds share the one associative seam.
+  // DIMRADIUS/DIMDIAMETER audit: CadDimensionEntity carries no arc-ref
+  // field — the engine persists only the anchor array (one defining anchor
+  // for radius/diameter). Arc association is therefore reachable exactly
+  // when the defining pick snaps to the arc center/start/end (the factory
+  // returns an arc-point anchor); a circumference pick (nearest /
+  // arc-midpoint / quadrant) stays fixed because no "point-on-arc" anchor
+  // kind exists. Adding one would require resolver + renderer support and
+  // is intentionally out of scope here.
+  const anchors = points.slice(0, -1).map((point) => cadAnnotationAnchorFromCommandPoint(project, point));
   const dimLinePoint = { x: points[points.length - 1]!.x, y: points[points.length - 1]!.y };
   const dimensionKind =
     current.key === 'DIMANGULAR'
@@ -151,7 +157,7 @@ export const handleAnnotationPointPick = ({
         current.key === 'DIMANGULAR' ? 4 : current.key === 'DIMRADIUS' || current.key === 'DIMDIAMETER' ? 2 : 3;
       const points = [...current.points, point];
       if (points.length >= needed) {
-        commitDimension(current, points, applyHistoryUpdate, replaceSession);
+        commitDimension(current, points, project, applyHistoryUpdate, replaceSession);
       } else {
         replaceSession({ ...current, points, inputValue: '', resultText: undefined });
       }
@@ -199,10 +205,12 @@ export const handleAnnotationPointPick = ({
  */
 export const handleAnnotationEnterKey = ({
   session,
+  project,
   applyHistoryUpdate,
   replaceSession,
 }: {
   session: CommandSession | null;
+  project: CadProject;
   applyHistoryUpdate: ApplyHistoryUpdate;
   replaceSession: ReplaceSession;
 }): boolean => {
@@ -213,7 +221,7 @@ export const handleAnnotationEnterKey = ({
     return true;
   }
   if (session.lines.length > 0) {
-    commitAnnotationSession({ session, applyHistoryUpdate, replaceSession });
+    commitAnnotationSession({ session, project, applyHistoryUpdate, replaceSession });
     return true;
   }
   return false;
@@ -225,10 +233,12 @@ export const handleAnnotationEnterKey = ({
  */
 export const commitAnnotationSession = ({
   session,
+  project,
   applyHistoryUpdate,
   replaceSession,
 }: {
   session: CommandSession;
+  project: CadProject;
   applyHistoryUpdate: ApplyHistoryUpdate;
   replaceSession: ReplaceSession;
 }): boolean => {
@@ -252,7 +262,7 @@ export const commitAnnotationSession = ({
         const arrow = { x: session.arrowPoint.x, y: session.arrowPoint.y };
         commit(applyHistoryUpdate, {
           key: 'CREATE_LEADER',
-          arrowAnchor: fixedAnchor(session.arrowPoint),
+          arrowAnchor: cadAnnotationAnchorFromCommandPoint(project, session.arrowPoint),
           vertices: [arrow, { x: arrow.x + 5, y: arrow.y }],
           text: session.lines.join('\n'),
         });

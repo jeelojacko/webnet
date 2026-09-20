@@ -387,7 +387,7 @@ const buildEntityProperties = (project: CadProject, entity: CadEntity): CadEntit
         row('name', 'Name', getCadEntityEditableName(entity) || getCadEntityDisplayLabel(entity), { kind: 'entity-name' }),
         row('center-e', 'Center E', numeric(entity.centerX)),
         row('center-n', 'Center N', numeric(entity.centerY)),
-        row('radius', 'Radius', numeric(entity.radius)),
+        row('radius', 'Radius', numeric(entity.radius), { kind: 'arc-radius' }),
         row('start-angle', 'Start angle', numeric(entity.startAngleDeg, 4)),
         row('end-angle', 'End angle', numeric(entity.endAngleDeg, 4)),
         row('delta-sweep', 'Delta / sweep', formatCadSweepDms(sweepDeg)),

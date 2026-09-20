@@ -14,6 +14,7 @@ export type CadEntityPropertyEditField =
   | { kind: 'point-z' }
   | { kind: 'line-length' }
   | { kind: 'line-azimuth' }
+  | { kind: 'arc-radius' }
   | { kind: 'polyline-vertex-x'; vertexIndex: number }
   | { kind: 'polyline-vertex-y'; vertexIndex: number }
   | { kind: 'polyline-segment-length'; segmentIndex: number }

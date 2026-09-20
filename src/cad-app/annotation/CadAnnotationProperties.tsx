@@ -155,6 +155,15 @@ const LeaderProperties: React.FC<{
         options={annotation.textStyles.map((style) => ({ id: style.id, name: style.name }))}
         onCommit={(textStyleId) => patch({ textStyleId: textStyleId.length > 0 ? textStyleId : null })}
       />
+      <StyleSelectField
+        label="Text attachment"
+        value={info.textAttachment ?? ''}
+        allowEmpty="(Leader style default)"
+        options={ATTACHMENTS}
+        onCommit={(textAttachment) =>
+          patch({ textAttachment: textAttachment.length > 0 ? textAttachment : null })
+        }
+      />
       <div className="cad-shell-dialog-row">
         <button
           type="button"
@@ -186,6 +195,9 @@ const DimensionProperties: React.FC<{
   const patch = (value: Record<string, unknown>): void => {
     runOp({ kind: 'dimension-update', entityId: info.entityId, patch: value as never });
   };
+  // Manual position wins; the automatic fit is shown until the first commit
+  // so the fields always start where the drawing actually renders the text.
+  const effectiveText = info.textPoint ?? info.autoTextPoint;
   return (
     <AnnotationShell testId="dimension" title="Dimension">
       <dl>
@@ -196,6 +208,7 @@ const DimensionProperties: React.FC<{
         <div><dt>Status</dt><dd>{info.broken ? 'Broken reference' : 'OK'}</dd></div>
         <div><dt>Source</dt><dd>{info.sourceText}</dd></div>
         <div><dt>Placement</dt><dd>{info.placement}</dd></div>
+        <div data-cad-dimension-text-mode><dt>Text</dt><dd>{info.textPoint != null ? 'Manual' : 'Automatic fit'}</dd></div>
       </dl>
       <StyleSelectField
         label="Dimension style"
@@ -215,6 +228,28 @@ const DimensionProperties: React.FC<{
         placeholder="(measurement)"
         onCommit={(textOverride) => patch({ textOverride: textOverride.length > 0 ? textOverride : null })}
       />
+      <div className="cad-shell-dialog-row" role="group" aria-label="Text position">
+        <StyleNumberField
+          label="Text E"
+          value={effectiveText.x}
+          onCommit={(x) => patch({ textPoint: { x, y: effectiveText.y } })}
+        />
+        <StyleNumberField
+          label="Text N"
+          value={effectiveText.y}
+          onCommit={(y) => patch({ textPoint: { x: effectiveText.x, y } })}
+        />
+      </div>
+      <div className="cad-shell-dialog-row">
+        <button
+          type="button"
+          title="Return the text to the automatic inside/outside fit"
+          data-cad-dimension-auto-text
+          onClick={() => patch({ textPoint: null })}
+        >
+          Auto text placement
+        </button>
+      </div>
     </AnnotationShell>
   );
 };

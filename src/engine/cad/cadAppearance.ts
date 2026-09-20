@@ -32,15 +32,20 @@ export const clampTransparency = (value: number): number =>
 const lookupStyle = (
   entity: CadEntity,
   styleLibrary: CadStyleLibrary | null | undefined,
-): CadStyle | undefined =>
-  entity.styleId != null
-    ? styleLibrary?.styles.find((style) => style.id === entity.styleId)
-    : undefined;
+  styleById: ReadonlyMap<string, CadStyle> | undefined,
+): CadStyle | undefined => {
+  if (entity.styleId == null) return undefined;
+  return styleById
+    ? styleById.get(entity.styleId)
+    : styleLibrary?.styles.find((style) => style.id === entity.styleId);
+};
 
 export interface ResolveCadEntityAppearanceArgs {
   entity: CadEntity;
   layer?: CadLayer | null;
   styleLibrary?: CadStyleLibrary | null;
+  /** Optional pre-built `styleLibrary.styles` index (Phase 18P O(1) path). */
+  styleById?: ReadonlyMap<string, CadStyle>;
 }
 
 /** Stable rejection code for locked-source mutations (spec §6). */
@@ -92,8 +97,9 @@ export const resolveCadEntityAppearance = ({
   entity,
   layer,
   styleLibrary,
+  styleById,
 }: ResolveCadEntityAppearanceArgs): ResolvedCadEntityAppearance => {
-  const style = lookupStyle(entity, styleLibrary);
+  const style = lookupStyle(entity, styleLibrary, styleById);
   const explicit = entity.appearance;
   // Lineweight precedence differs from color: explicit > layer >
   // legacy style.strokeWidth > Default (spec §4).

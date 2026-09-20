@@ -439,6 +439,7 @@ export type CadCommand =
         | { kind: 'point-y'; value: number }
         | { kind: 'point-z'; value: number | null }
         | { kind: 'line-end'; toX: number; toY: number }
+        | { kind: 'arc-radius'; value: number }
         | { kind: 'polyline-vertex'; vertexIndex: number; x: number; y: number }
         | { kind: 'entity-layer'; layerId: CadLayerId }
         | { kind: 'entity-appearance'; patch: CadEntityAppearance };

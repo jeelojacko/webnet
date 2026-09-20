@@ -471,6 +471,7 @@ const buildDxfLayoutInner = (args: BuildDxfLayoutArgs): DxfLayoutInner => {
       pair(100, 'AcDbText'),
       pair(10, fmt(entry.at.x)), pair(20, fmt(entry.at.y)), pair(30, '0'),
       pair(40, fmt(entry.height)), pair(1, cleanText(entry.text)), pair(7, 'Standard'),
+      ...(entry.rotationDeg != null && entry.rotationDeg !== 0 ? [pair(50, fmt(entry.rotationDeg))] : []),
     ]);
   });
   // Phase 18N: native model-space INSERTs (R2000 carries 41/42/43 scales

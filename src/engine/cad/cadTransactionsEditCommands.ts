@@ -30,6 +30,7 @@ export const editEntityCommand: CadCommandDefinition<{
     | { kind: 'point-y'; value: number }
     | { kind: 'point-z'; value: number | null }
     | { kind: 'line-end'; toX: number; toY: number }
+    | { kind: 'arc-radius'; value: number }
     | { kind: 'polyline-vertex'; vertexIndex: number; x: number; y: number }
     | { kind: 'entity-layer'; layerId: CadLayerId }
     | { kind: 'entity-appearance'; patch: CadEntityAppearance };
@@ -178,6 +179,30 @@ export const editEntityCommand: CadCommandDefinition<{
         toX: edit.toX,
         toY: edit.toY,
       };
+      const nextProjectBase = replaceEntityInProject(snapshot.project, targetEntity.id, (_entity) =>
+        updatedEntity,
+      );
+      const nextProject = syncEditedEntityDependencies(nextProjectBase, targetEntity, updatedEntity);
+      return {
+        nextSnapshot: {
+          project: nextProject,
+          selection: createCadSelectionState(nextProject, [targetEntity.id]),
+        },
+        commandState: {
+          key: 'EDIT_ENTITY',
+          phase: 'committed',
+          prompt: `EDIT_ENTITY committed for ${getCadEntityDisplayLabel(targetEntity)}.`,
+        },
+        transactionLabel: `EDIT_ENTITY (${getCadEntityDisplayLabel(targetEntity)})`,
+        addedEntityIds: [],
+        removedEntityIds: [],
+      };
+    }
+
+    if (targetEntity.type === 'arc' && command.edit.kind === 'arc-radius') {
+      const value = command.edit.value;
+      if (!Number.isFinite(value) || value <= 0) return null;
+      const updatedEntity: CadEntity = { ...targetEntity, radius: value };
       const nextProjectBase = replaceEntityInProject(snapshot.project, targetEntity.id, (_entity) =>
         updatedEntity,
       );

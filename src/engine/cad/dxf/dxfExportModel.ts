@@ -65,7 +65,7 @@ export interface DxfExportModel {
   lines: Array<{ layer: string; from: DxfPoint; to: DxfPoint } & DxfEntryStyle>;
   polylines: Array<{ layer: string; vertices: DxfPoint[]; closed: boolean } & DxfEntryStyle>;
   arcs: Array<{ layer: string; center: DxfPoint; radius: number; startDeg: number; endDeg: number } & DxfEntryStyle>;
-  texts: Array<{ layer: string; at: DxfPoint; height: number; text: string } & DxfEntryStyle>;
+  texts: Array<{ layer: string; at: DxfPoint; height: number; text: string; rotationDeg?: number } & DxfEntryStyle>;
   /**
    * Phase 18N native block table (referenced definitions only). Children
    * ride base-shifted (stored minus definition.basePoint) with BLOCK base
@@ -485,7 +485,14 @@ export const buildDxfExportModelWithResult = (args: BuildDxfModelArgs): ExportRe
           model.lines.push({ layer, from: line.from, to: line.to, ...annotationStyle });
         });
         derivation.primitives.texts.forEach((text) => {
-          model.texts.push({ layer, at: text.at, height: text.height, text: text.text, ...annotationStyle });
+          model.texts.push({
+            layer,
+            at: text.at,
+            height: text.height,
+            text: text.text,
+            ...(text.rotationDeg != null ? { rotationDeg: text.rotationDeg } : {}),
+            ...annotationStyle,
+          });
         });
         derivation.warnings.forEach(warn);
         result.exportedEntityIds.push(entity.id);

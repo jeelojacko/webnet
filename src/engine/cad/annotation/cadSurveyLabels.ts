@@ -17,8 +17,8 @@
  * flip the dimension/traverse/contour labels apply.
  */
 import {
-  cadCounterClockwiseDeltaDeg,
   cadMidpoint,
+  cadSignedSweepDeg,
   type CadWorldPoint,
 } from '../cadGeometry';
 import { buildCadInverseSummary, formatCadBearing, formatCadSweepDms } from '../cadCogoSummaries';
@@ -182,7 +182,8 @@ const formatCurveField = (
 
 /**
  * Derive curve annotation content from center/radius/start/end angles. The
- * delta is the forward CCW sweep and metrics come exclusively from
+ * delta is the arc's forward sweep magnitude (signed, so CW and CCW arcs
+ * both report their true delta) and metrics come exclusively from
  * `cadBuildCurveMetricsSummaryFromRadiusDelta`; returns `null` when that
  * helper rejects the inputs (non-positive radius, delta outside (0, 180)).
  */
@@ -190,7 +191,7 @@ export const deriveCurveLabel = (input: CadCurveLabelInput): CadCurveLabel | nul
   const { radius, startAngleDeg, endAngleDeg, fields, decimalPrecision, manualTextOverride } = input;
   const metrics = cadBuildCurveMetricsSummaryFromRadiusDelta(
     radius,
-    cadCounterClockwiseDeltaDeg(startAngleDeg, endAngleDeg),
+    Math.abs(cadSignedSweepDeg(startAngleDeg, endAngleDeg)),
   );
   if (metrics === null) return null;
   const lines = fields.map((field) => formatCurveField(field, metrics, decimalPrecision));

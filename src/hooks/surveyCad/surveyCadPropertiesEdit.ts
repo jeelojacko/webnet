@@ -138,6 +138,18 @@ const runSurveyCadPropertiesEdit = ({
     );
     return true;
   }
+  if (targetEntity.type === 'arc' && field.kind === 'arc-radius') {
+    const numericValue = Number.parseFloat(trimmedValue);
+    if (!Number.isFinite(numericValue) || numericValue <= 0) return false;
+    updateHistory((current) =>
+      runCadCommand(current, {
+        key: 'EDIT_ENTITY',
+        entityId,
+        edit: { kind: 'arc-radius', value: numericValue },
+      }),
+    );
+    return true;
+  }
   if (
     targetEntity.type === 'polyline' &&
     (field.kind === 'polyline-vertex-x' ||

@@ -21,8 +21,13 @@ import { ANNOTATION_ARROWHEAD_SEEDS } from '../annotation/cadAnnotationArrowhead
 import { resolveAnnotationScaleDenominator } from '../annotation/cadAnnotationSettings';
 import { resolveCadAnnotationTextMetrics } from '../annotation/cadAnnotationTextMetrics';
 import { deriveCadDimensionGeometry, type CadDimensionGeometryInput } from '../annotation/cadDimensionGeometry';
+import {
+  curveLabelPlacement,
+  leaderTextReferencePoint,
+  normalizeTextAttachment,
+  sumOffsets,
+} from '../annotation/cadAnnotationPlacement';
 import { deriveBearingDistanceLabel, deriveCurveLabel } from '../annotation/cadSurveyLabels';
-import { cadCounterClockwiseDeltaDeg } from '../cadGeometry';
 import { expandBlockReference, findBlockDefinition } from '../cadBlocks';
 
 export interface DxfAnnotationPoint {
@@ -32,7 +37,7 @@ export interface DxfAnnotationPoint {
 
 export interface DxfAnnotationPrimitives {
   lines: Array<{ from: DxfAnnotationPoint; to: DxfAnnotationPoint }>;
-  texts: Array<{ at: DxfAnnotationPoint; height: number; text: string }>;
+  texts: Array<{ at: DxfAnnotationPoint; height: number; text: string; rotationDeg?: number }>;
 }
 
 export interface DxfAnnotationDerivation {
@@ -91,6 +96,7 @@ const pushAnnotationTextRows = (
   metrics: { height: number; lineSpacing: number },
   text: string,
   attachment: CadMTextAttachment = 'top-left',
+  rotationDeg?: number,
 ): void => {
   const rows = text.split(/\r\n|\r|\n/);
   const step = metrics.height * metrics.lineSpacing;
@@ -102,7 +108,12 @@ const pushAnnotationTextRows = (
     if (row.length === 0) return;
     const width = row.length * ANNOTATION_TEXT_WIDTH_FACTOR * metrics.height;
     const offset = horizontal === 'center' ? -width / 2 : horizontal === 'right' ? -width : 0;
-    primitives.texts.push({ at: { x: x + offset, y: firstY - index * step }, height: metrics.height, text: row });
+    primitives.texts.push({
+      at: { x: x + offset, y: firstY - index * step },
+      height: metrics.height,
+      text: row,
+      ...(rotationDeg != null && rotationDeg !== 0 ? { rotationDeg } : {}),
+    });
   });
 };
 
@@ -197,21 +208,40 @@ const deriveLeaderAnnotation = (
   const vertices = entity.vertices.filter((vertex) => finitePair(vertex.x, vertex.y));
   if (vertices.length === 0) return { primitives, warnings, ok: false };
   const path = [start, ...vertices];
+  const last = vertices[vertices.length - 1] as DxfAnnotationPoint;
+  const before = (path[path.length - 2] ?? start) as DxfAnnotationPoint;
+  const dx = last.x - before.x;
+  const dy = last.y - before.y;
+  const length = Math.hypot(dx, dy);
+  const dir = length > 1e-12 ? { x: dx / length, y: dy / length } : { x: 1, y: 0 };
+  const landingLength = style?.landingLength ?? 5;
+  const landingEnd = { x: last.x + dir.x * landingLength, y: last.y + dir.y * landingLength };
   for (let index = 0; index + 1 < path.length; index += 1) {
     const from = path[index] as DxfAnnotationPoint;
     const to = path[index + 1] as DxfAnnotationPoint;
     if (from.x === to.x && from.y === to.y) continue;
     primitives.lines.push({ from, to });
   }
-  const tip = vertices[0] as DxfAnnotationPoint;
-  const direction = (Math.atan2(tip.y - start.y, tip.x - start.x) * 180) / Math.PI;
-  if (Number.isFinite(direction)) {
+  if (landingLength > 0) {
+    primitives.lines.push({ from: last, to: landingEnd });
+  }
+  const arrival = (path[1] ?? last) as DxfAnnotationPoint;
+  const arrowDirection = (Math.atan2(start.y - arrival.y, start.x - arrival.x) * 180) / Math.PI;
+  if (Number.isFinite(arrowDirection)) {
     pushAnnotationArrow(primitives, project, style?.arrowBlockDefinitionId, {
-      x: start.x, y: start.y, rotationDeg: direction, size: style?.arrowSize ?? 2.5,
+      x: start.x, y: start.y, rotationDeg: arrowDirection, size: style?.arrowSize ?? 2.5,
     });
   }
   const metrics = annotationTextMetrics(project, entity.textStyleId ?? style?.textStyleId);
-  pushAnnotationTextRows(primitives, tip.x, tip.y, metrics, entity.text, entity.textAttachment ?? 'middle-left');
+  const reference = leaderTextReferencePoint(landingEnd, dir, style?.textGap ?? 1);
+  pushAnnotationTextRows(
+    primitives,
+    reference.x,
+    reference.y,
+    metrics,
+    entity.text,
+    normalizeTextAttachment(entity.textAttachment),
+  );
   return { primitives, warnings, ok: primitives.lines.length + primitives.texts.length > 0 };
 };
 
@@ -224,18 +254,26 @@ const deriveDimensionAnnotation = (
   const style = project.dimensionStyles?.find((entry) => entry.id === entity.dimensionStyleId);
   const p1Anchor = entity.defPoint1 ?? entity.anchors[0];
   const p2Anchor = entity.defPoint2 ?? entity.anchors[1];
-  if (p1Anchor == null || p2Anchor == null || !finitePair(entity.dimLinePoint.x, entity.dimLinePoint.y)) {
+  const kind = dimensionGeometryKind(entity);
+  // Phase 18P: production radius/diameter commits one defining anchor (the
+  // arc pick); the second pick is the dim-line point. Every other kind
+  // still requires both anchors.
+  const singleRadialAnchor =
+    (kind === 'radius' || kind === 'diameter') && p2Anchor == null && p1Anchor?.kind === 'arc-point'
+      ? p1Anchor
+      : null;
+  if (p1Anchor == null || (singleRadialAnchor == null && p2Anchor == null) || !finitePair(entity.dimLinePoint.x, entity.dimLinePoint.y)) {
     return { primitives, warnings, ok: false };
   }
-  const kind = dimensionGeometryKind(entity);
   const p1 = resolveAnnotationPoint(p1Anchor, project, entity.id, warnings);
-  const p2 = resolveAnnotationPoint(p2Anchor, project, entity.id, warnings);
+  const p2 = p2Anchor != null ? resolveAnnotationPoint(p2Anchor, project, entity.id, warnings) : p1;
   const metrics = annotationTextMetrics(project, style?.textStyleId);
   const common = {
     kind,
     p1,
     p2,
     dimLinePoint: { ...entity.dimLinePoint },
+    ...(entity.textPoint != null ? { textPoint: { ...entity.textPoint } } : {}),
     textGap: style?.textGap ?? 1,
     arrowSize: style?.arrowSize ?? 2.5,
     extensionOffset: style?.extensionOffset ?? 1,
@@ -250,7 +288,29 @@ const deriveDimensionAnnotation = (
     const ray2Anchor = entity.anchors[2];
     input = { ...common, vertex: p1, ray1Point: p2, ray2Point: ray2Anchor != null ? resolveAnnotationPoint(ray2Anchor, project, entity.id, warnings) : p2 };
   } else if (kind === 'radius' || kind === 'diameter') {
-    input = { ...common, center: p1, radius: Math.hypot(p2.x - p1.x, p2.y - p1.y), arcPoint: p2 };
+    if (singleRadialAnchor != null) {
+      // Lone arc-point anchor: center + radius read live from the arc
+      // entity (same derivation as the viewport renderer), so radius edits
+      // re-measure in DXF too instead of dropping the dimension silently.
+      const source = project.entities.find(
+        (candidate) => candidate.id === singleRadialAnchor.entityId,
+      );
+      if (source == null || source.type !== 'arc') return { primitives, warnings, ok: false };
+      const center = { x: source.centerX, y: source.centerY };
+      let arcPoint: { x: number; y: number };
+      if (singleRadialAnchor.point === 'center') {
+        const dx = entity.dimLinePoint.x - center.x;
+        const dy = entity.dimLinePoint.y - center.y;
+        const length = Math.hypot(dx, dy);
+        const direction = length > 1e-12 ? { x: dx / length, y: dy / length } : { x: 1, y: 0 };
+        arcPoint = { x: center.x + direction.x * source.radius, y: center.y + direction.y * source.radius };
+      } else {
+        arcPoint = p1;
+      }
+      input = { ...common, p1: center, center, radius: source.radius, arcPoint };
+    } else {
+      input = { ...common, center: p1, radius: Math.hypot(p2.x - p1.x, p2.y - p1.y), arcPoint: p2 };
+    }
   }
   const geometry = deriveCadDimensionGeometry(input);
   geometry.extensionSegments.forEach((segment) => primitives.lines.push({ from: segment.from, to: segment.to }));
@@ -258,7 +318,15 @@ const deriveDimensionAnnotation = (
   geometry.arrowTransforms.forEach((arrow) => {
     pushAnnotationArrow(primitives, project, style?.arrowBlockDefinitionId, arrow);
   });
-  pushAnnotationTextRows(primitives, geometry.textPosition.x, geometry.textPosition.y, metrics, entity.textOverride ?? geometry.formattedText, 'middle-center');
+  pushAnnotationTextRows(
+    primitives,
+    geometry.textPosition.x,
+    geometry.textPosition.y,
+    metrics,
+    entity.textOverride ?? geometry.formattedText,
+    'middle-center',
+    geometry.textRotationDeg,
+  );
   return { primitives, warnings, ok: primitives.lines.length + primitives.texts.length > 0 };
 };
 
@@ -309,11 +377,23 @@ const deriveCurveLabelAnnotation = (
     ...(entity.manualTextOverride != null ? { manualTextOverride: entity.manualTextOverride } : {}),
   });
   if (label == null) return { primitives, warnings: [], ok: false };
-  const midAngle = ((source.startAngleDeg + cadCounterClockwiseDeltaDeg(source.startAngleDeg, source.endAngleDeg) / 2) * Math.PI) / 180;
-  const x = source.centerX + Math.cos(midAngle) * source.radius + entity.offset.x;
-  const y = source.centerY + Math.sin(midAngle) * source.radius + entity.offset.y;
-  if (!finitePair(x, y)) return { primitives, warnings: [], ok: false };
-  pushAnnotationTextRows(primitives, x, y, annotationTextMetrics(project, style?.textStyleId), label.text, 'middle-center');
+  const placement = curveLabelPlacement({
+    center: { x: source.centerX, y: source.centerY },
+    radius: source.radius,
+    startAngleDeg: source.startAngleDeg,
+    endAngleDeg: source.endAngleDeg,
+    offset: sumOffsets(style?.offset, entity.offset),
+  });
+  if (placement == null || !finitePair(placement.x, placement.y)) return { primitives, warnings: [], ok: false };
+  pushAnnotationTextRows(
+    primitives,
+    placement.x,
+    placement.y,
+    annotationTextMetrics(project, style?.textStyleId),
+    label.text,
+    'middle-center',
+    placement.rotationDeg,
+  );
   return { primitives, warnings: [], ok: primitives.texts.length > 0 };
 };
 

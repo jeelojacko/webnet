@@ -115,6 +115,7 @@ const leader = (id: string): CadLeaderEntity => ({
   ],
   text: 'SEE PLAN',
   leaderStyleId: 'std-leader',
+  textAttachment: 'top-left',
 });
 
 const alignedDimension = (id: string): CadDimensionEntity => ({
@@ -142,6 +143,7 @@ const alignedDimension = (id: string): CadDimensionEntity => ({
   },
   orientation: 'aligned',
   dimLinePoint: { x: 5, y: -2 },
+  textPoint: { x: 4, y: -6 },
   dimensionStyleId: 'std-500',
 });
 
@@ -215,6 +217,23 @@ describe('cad annotation persistence (18O)', () => {
     expect(reopened.bearingLabelStyles).toEqual(seedBearingLabelStyles());
     expect(reopened.curveLabelStyles).toEqual(seedCurveLabelStyles());
     expect(reopened.annotationSettings).toEqual({ scaleDenominator: 250 });
+  });
+
+  it('preserves manual leader attachment + dimension textPoint across save/reopen', () => {
+    const reopened = roundTrip(fixtureProject());
+    const reopenedLeader = reopened.entities.find(
+      (entity): entity is CadLeaderEntity => entity.id === 'LD1',
+    )!;
+    expect(reopenedLeader.textAttachment).toBe('top-left');
+    const dimension = reopened.entities.find(
+      (entity): entity is CadDimensionEntity => entity.id === 'DIM1',
+    )!;
+    expect(dimension.textPoint).toEqual({ x: 4, y: -6 });
+    // Old 18O rows without the optional fields stay absent (additive only).
+    const radius = reopened.entities.find(
+      (entity): entity is CadDimensionEntity => entity.id === 'DIM2',
+    )!;
+    expect(radius.textPoint).toBeUndefined();
   });
 
   it('reopen resolves every associative anchor against its surviving source', () => {

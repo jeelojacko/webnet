@@ -227,6 +227,7 @@ export const useSurveyCadCommands = ({
   });
   const commandLifecycle = useSurveyCadCommandLifecycle({
     applyHistoryUpdate,
+    project: history.present.project,
     replaceSession,
     session,
     sessionRef,

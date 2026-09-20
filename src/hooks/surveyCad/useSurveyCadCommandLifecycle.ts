@@ -5,6 +5,7 @@ import {
   handleAnnotationEnterKey,
 } from './useSurveyCadAnnotationSessions';
 import type { CommandSession } from './useSurveyCadCommandTypes';
+import type { CadProject } from '../../engine/cad/cadTypes';
 import { recalculateTraverseSideshotPoint } from './useSurveyCadCommandSession';
 
 type ReplaceSession = (_nextSession: CommandSession | null) => void;
@@ -12,6 +13,7 @@ type ApplyHistoryUpdate = (_updater: (_history: CadHistoryState) => CadHistorySt
 
 interface UseSurveyCadCommandLifecycleOptions {
   applyHistoryUpdate: ApplyHistoryUpdate;
+  project: CadProject;
   replaceSession: ReplaceSession;
   session: CommandSession | null;
   sessionRef: MutableRefObject<CommandSession | null>;
@@ -33,6 +35,7 @@ const commandPointsMatch = (
 
 export const useSurveyCadCommandLifecycle = ({
   applyHistoryUpdate,
+  project,
   replaceSession,
   session,
   sessionRef,
@@ -127,7 +130,7 @@ export const useSurveyCadCommandLifecycle = ({
     // The live ref (not render-scope state): dock text entry sets the input
     // and submits synchronously, before any re-render lands.
     const live = sessionRef.current;
-    if (live && handleAnnotationEnterKey({ session: live, applyHistoryUpdate, replaceSession })) return;
+    if (live && handleAnnotationEnterKey({ session: live, project, applyHistoryUpdate, replaceSession })) return;
     if (session.key === 'TRIM' || session.key === 'EXTEND') {
       replaceSession(null);
       return;
@@ -172,7 +175,7 @@ export const useSurveyCadCommandLifecycle = ({
   const handleEscapeKey = () => {
     // Phase 18O: text/label sessions commit when complete, else cancel.
     const current = sessionRef.current;
-    if (current && commitAnnotationSession({ session: current, applyHistoryUpdate, replaceSession })) {
+    if (current && commitAnnotationSession({ session: current, project, applyHistoryUpdate, replaceSession })) {
       return;
     }
     replaceSession(null);
