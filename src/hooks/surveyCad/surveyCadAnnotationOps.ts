@@ -439,6 +439,9 @@ const leaderUpdate = (
   if (patch.textStyleId !== undefined && patch.textStyleId !== null && !findTextStyle(project, patch.textStyleId)) {
     return fail(project, 'STYLE_NOT_FOUND');
   }
+  if (patch.textAttachment != null && !ATTACHMENTS.includes(patch.textAttachment)) {
+    return fail(project, 'INVALID_VALUE');
+  }
   if (patch.layerId != null && patch.layerId !== found.entity.layerId) {
     const blocked = checkLayerMove(project, patch.layerId);
     if (blocked) return fail(project, blocked);
@@ -447,9 +450,16 @@ const leaderUpdate = (
     ...found.entity,
     ...(patch.text !== undefined ? { text: patch.text } : {}),
     ...(patch.leaderStyleId !== undefined ? { leaderStyleId: patch.leaderStyleId } : {}),
-    ...(patch.textStyleId !== undefined ? { textStyleId: patch.textStyleId ?? undefined } : {}),
     ...(patch.layerId !== undefined ? { layerId: patch.layerId } : {}),
   };
+  if (patch.textStyleId !== undefined) {
+    if (patch.textStyleId === null) delete next.textStyleId;
+    else next.textStyleId = patch.textStyleId;
+  }
+  if (patch.textAttachment !== undefined) {
+    if (patch.textAttachment === null) delete next.textAttachment;
+    else next.textAttachment = patch.textAttachment;
+  }
   // Landing length rescales the last (landing) segment along its direction.
   if (patch.landingLength !== undefined) {
     if (!(patch.landingLength > 0) || !Number.isFinite(patch.landingLength)) {
@@ -494,6 +504,16 @@ const dimensionUpdate = (
   if (patch.textOverride !== undefined) {
     if (patch.textOverride === null) delete next.textOverride;
     else next.textOverride = patch.textOverride;
+  }
+  if (patch.textPoint !== undefined) {
+    if (patch.textPoint === null) {
+      delete next.textPoint;
+    } else {
+      if (!Number.isFinite(patch.textPoint.x) || !Number.isFinite(patch.textPoint.y)) {
+        return fail(project, 'INVALID_VALUE');
+      }
+      next.textPoint = { x: patch.textPoint.x, y: patch.textPoint.y };
+    }
   }
   return ok(replaceEntity(project, next));
 };

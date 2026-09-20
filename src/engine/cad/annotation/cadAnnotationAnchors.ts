@@ -14,6 +14,7 @@
  * fallback point. Broken references stay broken until explicitly repaired.
  */
 import { cadArcEndPoint, cadArcStartPoint } from '../cadGeometryArcPrimitives';
+import type { CadProjectLookup } from '../cadProjectLookup';
 import type { CadEntity, CadEntityId, CadProject } from '../cadTypes';
 
 export interface CadAnnotationFixedAnchor {
@@ -111,9 +112,12 @@ function resolveEntityAnchor(
 export function resolveCadAnnotationAnchor(
   anchor: CadAnnotationAnchor,
   project: CadProject,
+  lookup?: CadProjectLookup,
 ): CadAnnotationAnchorResolution {
   if (anchor.kind === 'fixed') return { ok: true, x: anchor.x, y: anchor.y };
-  const entity = project.entities.find((candidate) => candidate.id === anchor.entityId);
+  const entity = lookup
+    ? lookup.entityById.get(anchor.entityId)
+    : project.entities.find((candidate) => candidate.id === anchor.entityId);
   if (entity === undefined) return brokenResolution(anchor);
   const point = resolveEntityAnchor(anchor, entity);
   return point === null ? brokenResolution(anchor) : { ok: true, x: point.x, y: point.y };

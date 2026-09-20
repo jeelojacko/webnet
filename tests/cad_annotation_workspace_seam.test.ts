@@ -96,6 +96,70 @@ describe('18o annotation workspace seam', () => {
     ).toBe('DUPLICATE_NAME');
   });
 
+  it('commits leader textAttachment and dimension textPoint edits (set + clear)', () => {
+    const project = backfillCadAnnotationTables(createBlankCadProject({ name: 'seam', units: 'm' }));
+    let history = createCadHistoryState(project);
+    history = runCadCommand(history, {
+      key: 'CREATE_LEADER',
+      arrowAnchor: { kind: 'fixed', x: 0, y: 0 },
+      vertices: [{ x: 5, y: 5 }],
+      text: 'NOTE',
+    });
+    history = runCadCommand(history, {
+      key: 'CREATE_DIMENSION',
+      dimensionKind: 'aligned',
+      anchors: [{ kind: 'fixed', x: 0, y: 0 }, { kind: 'fixed', x: 3, y: 4 }],
+      dimLinePoint: { x: 0, y: 5 },
+    });
+    const leaderId = history.present.project.entities.find((entity) => entity.type === 'leader')!.id;
+    const dimensionId = history.present.project.entities.find(
+      (entity) => entity.type === 'dimension',
+    )!.id;
+
+    const withAttachment = applyCadAnnotationUiOp(history.present.project, {
+      kind: 'leader-update',
+      entityId: leaderId,
+      patch: { textAttachment: 'top-right' },
+    });
+    expect(withAttachment.applied).toBe(true);
+    expect(
+      withAttachment.project.entities.find((entity) => entity.id === leaderId),
+    ).toMatchObject({ textAttachment: 'top-right' });
+    expect(
+      applyCadAnnotationUiOp(withAttachment.project, {
+        kind: 'leader-update',
+        entityId: leaderId,
+        patch: { textAttachment: null },
+      }).project.entities.find((entity) => entity.id === leaderId),
+    ).not.toHaveProperty('textAttachment');
+
+    const withText = applyCadAnnotationUiOp(history.present.project, {
+      kind: 'dimension-update',
+      entityId: dimensionId,
+      patch: { textPoint: { x: 7, y: 8 } },
+    });
+    expect(withText.applied).toBe(true);
+    expect(
+      withText.project.entities.find((entity) => entity.id === dimensionId),
+    ).toMatchObject({ textPoint: { x: 7, y: 8 } });
+    const cleared = applyCadAnnotationUiOp(withText.project, {
+      kind: 'dimension-update',
+      entityId: dimensionId,
+      patch: { textPoint: null },
+    });
+    expect(cleared.applied).toBe(true);
+    expect(
+      cleared.project.entities.find((entity) => entity.id === dimensionId),
+    ).not.toHaveProperty('textPoint');
+    expect(
+      applyCadAnnotationUiOp(history.present.project, {
+        kind: 'dimension-update',
+        entityId: dimensionId,
+        patch: { textPoint: { x: Number.NaN, y: 0 } },
+      }).reason,
+    ).toBe('INVALID_VALUE');
+  });
+
   it('rejects entity edits on locked layers with LAYER_LOCKED', () => {
     let project = backfillCadAnnotationTables(createBlankCadProject({ name: 'seam', units: 'm' }));
     const history = createCadHistoryState(project);
@@ -134,7 +198,7 @@ describe('18o annotation workspace seam', () => {
       replaceSession,
     });
     active = active && { ...active, lines: ['LINE ONE', 'LINE TWO'] };
-    expect(commitAnnotationSession({ session: active!, applyHistoryUpdate, replaceSession })).toBe(true);
+    expect(commitAnnotationSession({ session: active!, project: current.present.project, applyHistoryUpdate, replaceSession })).toBe(true);
     expect(active).toBeNull();
     const created = current.present.project.entities.find((entity) => entity.type === 'mtext');
     expect(created).toMatchObject({ x: 4, y: 5, text: 'LINE ONE\nLINE TWO' });

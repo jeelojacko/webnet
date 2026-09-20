@@ -169,13 +169,13 @@ const mtextInfo: CadAnnotationSelectionInfo = {
 
 const leaderInfo: CadAnnotationSelectionInfo = {
   kind: 'leader', entityId: 'e2', layerId: 'ann', layerName: 'Annotation', text: 'NOTE', leaderStyleId: 'l1',
-  textStyleId: 's1', targetStatus: 'broken', targetLabel: 'Line A', vertices: [{ x: 0, y: 0 }, { x: 5, y: 5 }],
+  textStyleId: 's1', textAttachment: null, targetStatus: 'broken', targetLabel: 'Line A', vertices: [{ x: 0, y: 0 }, { x: 5, y: 5 }],
 };
 
 const dimensionInfo: CadAnnotationSelectionInfo = {
   kind: 'dimension', entityId: 'e3', layerId: 'ann', layerName: 'Annotation', dimensionKind: 'linear',
   dimensionStyleId: 'd1', measuredText: '12.345', displayedText: '12.345', textOverride: null,
-  placement: 'horizontal @ 0,0', sourceText: 'Line A endpoints', broken: false,
+  placement: 'horizontal @ 0,0', sourceText: 'Line A endpoints', textPoint: null, autoTextPoint: { x: 6, y: 6 }, broken: false,
 };
 
 const bearingInfo: CadAnnotationSelectionInfo = {

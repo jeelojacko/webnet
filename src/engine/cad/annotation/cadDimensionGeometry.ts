@@ -373,14 +373,24 @@ export function deriveCadDimensionGeometry(
   const measurement = finiteOr(drawing.measurement, 0);
   const formattedText = formatMeasurement(input, measurement, resolvePrecision(input.decimalPrecision));
   const textWidth = formattedText.length * TEXT_WIDTH_FACTOR * textHeight;
+  const manualText =
+    input.textPoint != null && Number.isFinite(input.textPoint.x) && Number.isFinite(input.textPoint.y)
+      ? { x: input.textPoint.x, y: input.textPoint.y }
+      : null;
   const fitsInside = drawing.spanLength >= textWidth + 2 * arrowSize + 2 * textGap;
-  const textSide: CadDimensionTextSide = fitsInside ? 'inside' : 'outside';
-  const textPosition = resolveTextPosition(drawing, textSide, textGap, textWidth);
-  const arrowTransforms = buildArrows(drawing, fitsInside, arrowSize);
+  // Manual text placement suppresses the automatic inside/outside fit entirely.
+  const textSide: CadDimensionTextSide = manualText ? 'manual' : fitsInside ? 'inside' : 'outside';
+  const textPosition =
+    manualText ?? resolveTextPosition(drawing, fitsInside ? 'inside' : 'outside', textGap, textWidth);
+  const arrowTransforms = buildArrows(drawing, manualText ? true : fitsInside, arrowSize);
   const boundsPoints: CadDimensionGeometryPoint[] = [
     ...drawing.extensionSegments.flatMap((segment) => [segment.from, segment.to]),
     ...drawing.dimensionSegments.flatMap((segment) => [segment.from, segment.to]),
-    ...arrowTransforms.map((arrow) => ({ x: arrow.x, y: arrow.y })),
+    // Arrowheads extend by their size from the tip; include the head body.
+    ...arrowTransforms.flatMap((arrow) => [
+      { x: arrow.x - arrow.size, y: arrow.y - arrow.size },
+      { x: arrow.x + arrow.size, y: arrow.y + arrow.size },
+    ]),
     textPosition,
   ];
 

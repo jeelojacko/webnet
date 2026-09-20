@@ -3,6 +3,7 @@ import type { CadWorldPoint } from './cadGeometry';
 import type { CadArcRef } from './cadSpatialIndexTypes';
 import { arcRefFromEntity } from './cadSpatialEntityRefs';
 import { blockReferenceBounds, findBlockDefinition } from './cadBlocks';
+import { buildCadProjectLookup, type CadProjectLookup } from './cadProjectLookup';
 import { resolveCadAnnotationAnchor } from './annotation/cadAnnotationAnchors';
 import {
   resolveAnnotationScaleDenominator,
@@ -13,7 +14,14 @@ import {
   deriveBearingDistanceLabel,
   deriveCurveLabel,
 } from './annotation/cadSurveyLabels';
-import { cadCounterClockwiseDeltaDeg } from './cadGeometry';
+import {
+  attachmentTextAnchor,
+  attachmentVertical,
+  curveLabelPlacement,
+  leaderTextReferencePoint,
+  normalizeTextAttachment,
+  sumOffsets,
+} from './annotation/cadAnnotationPlacement';
 import { resolveDimensionDerivation } from './cadRenderer';
 
 export const expandBounds = (bounds: CadBounds, padding: number): CadBounds => ({
@@ -57,11 +65,14 @@ export const arcIntersectsBounds = (arc: CadArcRef, bounds: CadBounds): boolean 
 const annotationBoundTextHeight = (
   project: CadProject,
   textStyleId: string | undefined,
+  lookup?: CadProjectLookup,
 ): number => {
   const fallback = 2.5;
   const textStyle =
     textStyleId != null
-      ? project.styleLibrary.textStyles.find((entry) => entry.id === textStyleId)
+      ? lookup
+        ? lookup.textStyleById.get(textStyleId)
+        : project.styleLibrary.textStyles.find((entry) => entry.id === textStyleId)
       : undefined;
   if (!textStyle) return fallback;
   const height = resolveCadAnnotationTextMetrics({
@@ -127,7 +138,12 @@ export const entityIntersectsBounds = (
   project: CadProject,
   entity: CadProject['entities'][number],
   bounds: CadBounds,
+  lookup?: CadProjectLookup,
 ): boolean => {
+  // One lookup per top-level call when the caller did not hoist one. Callers
+  // that scan many entities (spatial index, export) pass a shared lookup so
+  // source/style resolution stays O(1) instead of O(entities) per entity.
+  const lk = lookup ?? buildCadProjectLookup(project);
   switch (entity.type) {
     case 'survey-point':
       return pointInsideBounds({ x: entity.x, y: entity.y }, bounds);
@@ -165,7 +181,9 @@ export const entityIntersectsBounds = (
       // Single source: world-space bounds of the expanded instance.
       // Unknown definitions fall back to the insertion point (world
       // coords only — block-local geometry never leaks into queries).
-      const definition = findBlockDefinition(project.blockDefinitions, entity.blockDefinitionId);
+      const definition =
+        lk.blockDefinitionById.get(entity.blockDefinitionId) ??
+        (lookup ? undefined : findBlockDefinition(project.blockDefinitions, entity.blockDefinitionId));
       if (!definition) return pointInsideBounds({ x: entity.x, y: entity.y }, bounds);
       let world: CadBounds | null;
       try {
@@ -177,7 +195,7 @@ export const entityIntersectsBounds = (
       return !(world.maxX < bounds.minX || world.minX > bounds.maxX || world.maxY < bounds.minY || world.minY > bounds.maxY);
     }
     case 'mtext': {
-      const height = annotationBoundTextHeight(project, entity.textStyleId);
+      const height = annotationBoundTextHeight(project, entity.textStyleId, lk);
       const horizontal = entity.attachment.endsWith('right')
         ? 'end' as const
         : entity.attachment.endsWith('center')
@@ -201,27 +219,53 @@ export const entityIntersectsBounds = (
       );
     }
     case 'leader': {
-      const resolution = resolveCadAnnotationAnchor(entity.arrowAnchor, project);
+      const resolution = resolveCadAnnotationAnchor(entity.arrowAnchor, project, lk);
       if (!resolution.ok) {
         return pointInsideBounds({ x: resolution.fallbackX, y: resolution.fallbackY }, bounds);
       }
+      const leaderStyle = lk.leaderStyleById.get(entity.leaderStyleId);
       const height = annotationBoundTextHeight(
         project,
-        entity.textStyleId ??
-          project.leaderStyles?.find((entry) => entry.id === entity.leaderStyleId)?.textStyleId,
+        entity.textStyleId ?? leaderStyle?.textStyleId,
+        lk,
       );
-      const through = [{ x: resolution.x, y: resolution.y }, ...entity.vertices];
-      const last = through.at(-1) ?? { x: resolution.x, y: resolution.y };
+      const arrowPoint = { x: resolution.x, y: resolution.y };
+      const through = [arrowPoint, ...entity.vertices];
+      const last = through.at(-1) ?? arrowPoint;
+      const before = through.length >= 2 ? through[through.length - 2]! : { x: last.x - 1, y: last.y };
+      const dx = last.x - before.x;
+      const dy = last.y - before.y;
+      const length = Math.hypot(dx, dy);
+      const dir = length > 1e-12 ? { x: dx / length, y: dy / length } : { x: 1, y: 0 };
+      const landingLength = leaderStyle?.landingLength ?? 0;
+      const landingEnd = {
+        x: last.x + dir.x * landingLength,
+        y: last.y + dir.y * landingLength,
+      };
+      const reference = leaderTextReferencePoint(landingEnd, dir, leaderStyle?.textGap ?? 0);
+      const attachment = normalizeTextAttachment(entity.textAttachment);
+      // Arrowhead body extends by its size from the tip; pad conservatively.
+      const arrowSize = Math.max(0, leaderStyle?.arrowSize ?? 2.5);
       return pointsIntersectBounds(
         [
           ...through,
-          ...multilineBlockCorners(last, entity.text, height, 0, 'start', 'top'),
+          landingEnd,
+          { x: arrowPoint.x - arrowSize, y: arrowPoint.y - arrowSize },
+          { x: arrowPoint.x + arrowSize, y: arrowPoint.y + arrowSize },
+          ...multilineBlockCorners(
+            reference,
+            entity.text,
+            height,
+            0,
+            attachmentTextAnchor(attachment),
+            attachmentVertical(attachment),
+          ),
         ],
         bounds,
       );
     }
     case 'dimension': {
-      const derived = resolveDimensionDerivation(project, entity);
+      const derived = resolveDimensionDerivation(project, entity, lk);
       if (!derived) {
         const fallback = entity.textPoint ?? entity.dimLinePoint;
         return pointInsideBounds(fallback, bounds);
@@ -235,9 +279,9 @@ export const entityIntersectsBounds = (
       );
     }
     case 'bearing-label': {
-      const source = project.entities.find((candidate) => candidate.id === entity.sourceEntityId);
+      const source = lk.entityById.get(entity.sourceEntityId);
       if (source?.type !== 'line') return pointInsideBounds(entity.offset, bounds);
-      const labelStyle = project.bearingLabelStyles?.find((entry) => entry.id === entity.labelStyleId);
+      const labelStyle = lk.bearingLabelStyleById.get(entity.labelStyleId);
       const from = { x: source.fromX, y: source.fromY };
       const to = { x: source.toX, y: source.toY };
       const label = deriveBearingDistanceLabel({
@@ -258,7 +302,7 @@ export const entityIntersectsBounds = (
         multilineBlockCorners(
           { x: placement.x + entity.offset.x, y: placement.y + entity.offset.y },
           entity.manualTextOverride ?? label.text,
-          annotationBoundTextHeight(project, labelStyle?.textStyleId),
+          annotationBoundTextHeight(project, labelStyle?.textStyleId, lk),
           placement.rotationDeg,
           'middle',
           'middle',
@@ -267,8 +311,8 @@ export const entityIntersectsBounds = (
       );
     }
     case 'curve-label': {
-      const source = project.entities.find((candidate) => candidate.id === entity.sourceEntityId);
-      const labelStyle = project.curveLabelStyles?.find((entry) => entry.id === entity.labelStyleId);
+      const source = lk.entityById.get(entity.sourceEntityId);
+      const labelStyle = lk.curveLabelStyleById.get(entity.labelStyleId);
       if (source?.type !== 'arc') return pointInsideBounds(entity.offset, bounds);
       const label = deriveCurveLabel({
         center: { x: source.centerX, y: source.centerY },
@@ -279,18 +323,20 @@ export const entityIntersectsBounds = (
         decimalPrecision: labelStyle?.decimalPrecision ?? 3,
       });
       if (!label) return pointInsideBounds(entity.offset, bounds);
-      const styleOffset = labelStyle?.offset ?? { x: 0, y: 0 };
-      const sweep = cadCounterClockwiseDeltaDeg(source.startAngleDeg, source.endAngleDeg);
-      const midAngleRad = ((source.startAngleDeg + sweep / 2) * Math.PI) / 180;
+      const placement = curveLabelPlacement({
+        center: { x: source.centerX, y: source.centerY },
+        radius: source.radius,
+        startAngleDeg: source.startAngleDeg,
+        endAngleDeg: source.endAngleDeg,
+        offset: sumOffsets(labelStyle?.offset, entity.offset),
+      });
+      if (!placement) return pointInsideBounds(entity.offset, bounds);
       return pointsIntersectBounds(
         multilineBlockCorners(
-          {
-            x: source.centerX + Math.cos(midAngleRad) * source.radius + styleOffset.x + entity.offset.x,
-            y: source.centerY + Math.sin(midAngleRad) * source.radius + styleOffset.y + entity.offset.y,
-          },
+          { x: placement.x, y: placement.y },
           entity.manualTextOverride ?? label.text,
-          annotationBoundTextHeight(project, labelStyle?.textStyleId),
-          0,
+          annotationBoundTextHeight(project, labelStyle?.textStyleId, lk),
+          placement.rotationDeg,
           'middle',
           'middle',
         ),

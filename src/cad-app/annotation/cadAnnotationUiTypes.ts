@@ -75,6 +75,8 @@ export interface CadLeaderSelectionInfo {
   text: string;
   leaderStyleId: string;
   textStyleId: string | null;
+  /** Leader text attachment; null = inherit the leader-style default. */
+  textAttachment: CadMTextAttachment | null;
   targetStatus: 'attached' | 'broken' | 'fixed';
   targetLabel: string;
   vertices: Array<{ x: number; y: number }>;
@@ -94,6 +96,10 @@ export interface CadDimensionSelectionInfo {
   textOverride: string | null;
   placement: string;
   sourceText: string;
+  /** Manual text location (absolute model coordinates); null = automatic fit. */
+  textPoint: { x: number; y: number } | null;
+  /** Where the automatic fit would place the text (read-only reference). */
+  autoTextPoint: { x: number; y: number };
   broken: boolean;
 }
 
@@ -194,8 +200,8 @@ export type CadAnnotationUiOp =
   | { kind: 'curve-label-style-update'; styleId: string; patch: CadCurveLabelStylePatch }
   // Entity edits from Properties (MText/Leader/Dimension/survey labels).
   | { kind: 'mtext-update'; entityId: string; patch: Partial<Pick<CadMTextSelectionInfo, 'text' | 'rotationDeg' | 'attachment' | 'textStyleId' | 'x' | 'y'>> & { layerId?: string } }
-  | { kind: 'leader-update'; entityId: string; patch: Partial<Pick<CadLeaderSelectionInfo, 'text' | 'leaderStyleId' | 'textStyleId'>> & { layerId?: string; landingLength?: number } }
-  | { kind: 'dimension-update'; entityId: string; patch: Partial<Pick<CadDimensionSelectionInfo, 'dimensionStyleId' | 'textOverride'>> & { layerId?: string } }
+  | { kind: 'leader-update'; entityId: string; patch: Partial<Pick<CadLeaderSelectionInfo, 'text' | 'leaderStyleId' | 'textStyleId' | 'textAttachment'>> & { layerId?: string; landingLength?: number } }
+  | { kind: 'dimension-update'; entityId: string; patch: Partial<Pick<CadDimensionSelectionInfo, 'dimensionStyleId' | 'textOverride' | 'textPoint'>> & { layerId?: string } }
   | { kind: 'survey-label-update'; entityId: string; patch: Partial<Pick<CadSurveyLabelSelectionInfo, 'labelStyleId' | 'manualTextOverride'>> & { layerId?: string; offset?: { x: number; y: number } } }
   /** Re-resolve the leader arrow anchor against the current drawing. */
   | { kind: 'leader-reattach'; entityId: string }

@@ -17,6 +17,7 @@ import { performance } from 'node:perf_hooks';
 import { describe, expect, it } from 'vitest';
 import { buildCadDisplayScene } from '../../cadRenderer';
 import { entityIntersectsBounds } from '../../cadSpatialBounds';
+import { buildCadProjectLookup } from '../../cadProjectLookup';
 import { buildCadSpatialIndex } from '../../cadSpatialIndex';
 import { buildExportSheetSceneWithResult } from '../../cadExportScene';
 import { serializeExportSceneToSvg } from '../../cadSvgSerializer';
@@ -204,9 +205,12 @@ const measureMixed = (size: number): MixedRow => {
   const scene = measure(() => buildCadDisplayScene(project), runs);
   const primitives = scene.value.primitives;
   const bounds = project.bounds!;
+  // Production threading: the bounds scan shares one derived lookup per pass
+  // (mirrors cadSpatialIndex), so per-entity source/style reads stay O(1).
+  const lookup = buildCadProjectLookup(project);
   const boundsScanMs = measure(() => {
     let hits = 0;
-    for (const entity of project.entities) if (entityIntersectsBounds(project, entity, bounds)) hits += 1;
+    for (const entity of project.entities) if (entityIntersectsBounds(project, entity, bounds, lookup)) hits += 1;
     return hits;
   }, runs).ms;
   const snapQueryMs = measure(

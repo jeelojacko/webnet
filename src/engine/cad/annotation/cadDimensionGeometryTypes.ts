@@ -31,6 +31,12 @@ export interface CadDimensionGeometryInput {
   arcPoint?: CadDimensionGeometryPoint;
   /** Point the dimension line passes through. */
   dimLinePoint: CadDimensionGeometryPoint;
+  /**
+   * Manual text location in absolute model coordinates. When present the
+   * measurement still comes from the definition geometry, but the text is
+   * placed exactly here and the automatic inside/outside fit is skipped.
+   */
+  textPoint?: CadDimensionGeometryPoint;
   textGap: number;
   arrowSize: number;
   extensionOffset: number;
@@ -62,7 +68,7 @@ export interface CadDimensionGeometryBounds {
   maxY: number;
 }
 
-export type CadDimensionTextSide = 'inside' | 'outside';
+export type CadDimensionTextSide = 'inside' | 'outside' | 'manual';
 
 export interface CadDimensionGeometry {
   /** Kind-specific measured value: model length, interior angle (deg), or radius. */

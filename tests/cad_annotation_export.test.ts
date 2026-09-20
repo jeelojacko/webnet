@@ -7,6 +7,7 @@
 // unsupported-with-warning. Zero silent drops is the contract under test.
 import { describe, expect, it } from 'vitest';
 import { buildDxfModelSpaceTextWithResult, buildDxfLayoutTextWithResult } from '../src/engine/cad/dxf/dxfLayoutExport';
+import { deriveAnnotationPrimitives } from '../src/engine/cad/dxf/dxfAnnotationExport';
 import { buildExportSheetSceneWithResult } from '../src/engine/cad/cadExportScene';
 import { serializeExportSceneToSvgWithResult } from '../src/engine/cad/cadSvgSerializer';
 import { exportScenesToPdfWithResult } from '../src/engine/cad/cadPdfExport';
@@ -19,7 +20,7 @@ import {
   seedProfessionalTextStyles,
 } from '../src/engine/cad/annotation/cadAnnotationSeeds';
 import type { CadAnnotationAnchor } from '../src/engine/cad/annotation/cadAnnotationAnchors';
-import type { CadBlockDefinition, CadEntity, CadProject } from '../src/engine/cad/cadTypes';
+import type { CadBlockDefinition, CadEntity, CadMTextAttachment, CadProject } from '../src/engine/cad/cadTypes';
 import { buildSmallParcelFixture } from './fixtures/draftSmallParcel';
 
 const fixed = (x: number, y: number): CadAnnotationAnchor => ({ kind: 'fixed', x, y });
@@ -210,6 +211,47 @@ describe('Phase 18O annotation export disposition matrix', () => {
     expect(result.output.dxf).toContain('LINE ONE');
   });
 
+  it('DXF: leader textAttachment drives the derived TEXT rows and curve rotation rides TEXT group data', () => {
+    const project = buildProject();
+    const leaderRows = (attachment: CadMTextAttachment) => {
+      const entity: Extract<CadEntity, { type: 'leader' }> = {
+        type: 'leader', id: 'ld-att', layerId: 'parcels', visible: true, locked: false,
+        arrowAnchor: fixed(0, 0), vertices: [{ x: 10, y: 0 }], text: 'A\nB',
+        leaderStyleId: 'std-leader', textAttachment: attachment,
+      };
+      return deriveAnnotationPrimitives(entity, project).primitives.texts;
+    };
+    const middleLeft = leaderRows('middle-left');
+    expect(middleLeft.map((row) => row.text)).toEqual(['A', 'B']);
+    expect(middleLeft[0]!.at.x).toBeCloseTo(16, 6);
+    expect(middleLeft[0]!.at.y).toBeCloseTo(1.25, 6);
+    expect(middleLeft[1]!.at.y).toBeCloseTo(-1.25, 6);
+    const top = leaderRows('top-left');
+    expect(top[0]!.at.y).toBeCloseTo(0, 6);
+    expect(top[1]!.at.y).toBeCloseTo(-2.5, 6);
+    const bottom = leaderRows('bottom-left');
+    expect(bottom[0]!.at.y).toBeCloseTo(2.5, 6);
+    expect(bottom[1]!.at.y).toBeCloseTo(0, 6);
+    const middleRight = leaderRows('middle-right');
+    expect(middleRight[0]!.at.x).toBeCloseTo(16 - 1.5, 6);
+
+    const curve = project.entities.find(
+      (entity): entity is Extract<CadEntity, { type: 'curve-label' }> => entity.id === 'ann-curve',
+    )!;
+    const curveText = deriveAnnotationPrimitives(curve, project).primitives.texts;
+    expect(curveText).toHaveLength(3);
+    for (const row of curveText) expect(row.rotationDeg).toBe(-45);
+    const placementX = 10 + 5 * Math.cos(Math.PI / 4);
+    const placementY = 10 + 5 * Math.sin(Math.PI / 4);
+    const height = 2.5;
+    for (const row of curveText) {
+      // middle-center anchor: DXF is left-aligned, so recover the center.
+      expect(row.at.x + (row.text.length * 0.6 * height) / 2).toBeCloseTo(placementX, 6);
+    }
+    const ys = curveText.map((row) => row.at.y);
+    expect((Math.min(...ys) + Math.max(...ys)) / 2).toBeCloseTo(placementY, 6);
+  });
+
   it('LandXML: every annotation kind is NOT_APPLICABLE with an explicit warning', () => {
     const result = buildLandXmlProjectExportWithResult(project, { units: 'm' });
     ANNOTATION_IDS.forEach((id) => {
@@ -217,6 +259,27 @@ describe('Phase 18O annotation export disposition matrix', () => {
       expect(result.exportedEntityIds, `${id} not exported`).not.toContain(id);
       expect(warningsFor(result.warnings, id).join(' '), `${id} warned`).toMatch(/NOT_APPLICABLE/);
     });
+  });
+
+  it('SVG/PDF: rotated label text carries rotationDeg (viewport parity)', () => {
+    const scene = buildExportSheetSceneWithResult({
+      draft: fixture.draft, sheetId: fixture.sheetId, project, modelLabels: fixture.modelLabels,
+    });
+    // Phase 18P: the curve label on the 0-90° arc renders rotated (-45°);
+    // the scene must forward it so SVG/PDF match the viewport + DXF.
+    const rotated = scene.output.items.filter(
+      (item): item is Extract<typeof item, { kind: 'text' }> =>
+        item.kind === 'text' && (item.rotationDeg ?? 0) !== 0,
+    );
+    expect(rotated.length).toBeGreaterThan(0);
+    expect(rotated.some((item) => item.rotationDeg === -45)).toBe(true);
+    const svg = serializeExportSceneToSvgWithResult(scene.output);
+    expect(svg.output).toContain('transform="rotate(-45');
+    const pdf = exportScenesToPdfWithResult([scene.output]);
+    expect(pdf.exportedEntityIds).toContain('ann-curve');
+    const pdfText = new TextDecoder().decode(pdf.output);
+    // Rotated text rides a Tm matrix, never the plain Td path.
+    expect(pdfText).toContain('Tm');
   });
 
   it('zero silent drops: every annotation id is classified by every format', () => {

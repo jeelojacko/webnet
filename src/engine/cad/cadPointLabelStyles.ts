@@ -4,6 +4,7 @@ import type {
   CadSurveyPointEntity,
   CadTextEntity,
 } from './cadTypes';
+import type { CadProjectLookup } from './cadProjectLookup';
 
 /**
  * Phase 18D point-label-style defaults. Content/layout only; every entry
@@ -241,16 +242,17 @@ export const materializePointLabel = (
 export const materializeBoundPointLabel = (
   label: CadTextEntity,
   project: CadProject,
+  lookup?: CadProjectLookup,
 ): MaterializedPointLabel | null => {
   const binding = label.pointLabel;
   if (binding == null) return null;
-  const point = project.entities.find(
-    (entry): entry is CadSurveyPointEntity =>
-      entry.type === 'survey-point' && entry.id === binding.pointEntityId,
-  );
-  const labelStyle = (project.labelStyles ?? []).find(
-    (entry) => entry.id === binding.labelStyleId,
-  );
+  const bound = lookup
+    ? lookup.entityById.get(binding.pointEntityId)
+    : project.entities.find((entry) => entry.id === binding.pointEntityId);
+  const point = bound?.type === 'survey-point' ? bound : undefined;
+  const labelStyle = lookup
+    ? lookup.pointLabelStyleById.get(binding.labelStyleId)
+    : (project.labelStyles ?? []).find((entry) => entry.id === binding.labelStyleId);
   if (point == null || labelStyle == null) return null;
   return materializePointLabel(
     label,

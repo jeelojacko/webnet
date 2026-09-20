@@ -6,6 +6,7 @@ import {
   type BlockPlacement,
 } from './cadBlocks';
 import type { CadDisplayPrimitive } from './cadDisplayTypes';
+import type { CadProjectLookup } from './cadProjectLookup';
 import type { CadEntity, CadLayer, CadProject } from './cadTypes';
 
 /**
@@ -19,7 +20,9 @@ import type { CadEntity, CadLayer, CadProject } from './cadTypes';
  */
 
 export interface BlockPrimitiveContext {
-  layerById: Map<string, CadLayer>;
+  layerById: ReadonlyMap<string, CadLayer>;
+  /** Phase 18P optional project index — absent callers keep the linear scan. */
+  lookup?: CadProjectLookup;
 }
 
 const BLOCK_CHILD_TYPES = new Set(['line', 'polyline', 'arc', 'polygon', 'text']);
@@ -33,7 +36,9 @@ export const expandedBlockPrimitives = (
   idPrefix: string,
   toPrimitives: (_entity: CadEntity) => CadDisplayPrimitive[],
 ): CadDisplayPrimitive[] | null => {
-  const definition = findBlockDefinition(project.blockDefinitions, definitionId);
+  const definition = ctx.lookup
+    ? ctx.lookup.blockDefinitionById.get(definitionId)
+    : findBlockDefinition(project.blockDefinitions, definitionId);
   if (!definition) return null;
   let children;
   try {
@@ -45,6 +50,7 @@ export const expandedBlockPrimitives = (
     entity: host,
     layer: ctx.layerById.get(host.layerId),
     styleLibrary: project.styleLibrary,
+    ...(ctx.lookup ? { styleById: ctx.lookup.styleById } : {}),
   });
   const out: CadDisplayPrimitive[] = [];
   children.forEach((child, index) => {

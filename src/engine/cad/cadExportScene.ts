@@ -3,7 +3,8 @@ import type { CadDisplayPrimitive } from './cadDisplayTypes';
 import { describePointSymbolShape } from './cadPointSymbolShape';
 import { surveyPointMarker } from './cadRendererStyle';
 import { materializeBoundPointLabel } from './cadPointLabelStyles';
-import { resolveCadEntityAppearance } from './cadAppearance';
+import { resolveCadEntityAppearance, type ResolvedCadEntityAppearance } from './cadAppearance';
+import { buildCadProjectLookup, type CadProjectLookup } from './cadProjectLookup';
 import { BROKEN_REFERENCE_TEXT } from './cadLabelEngine';
 import { resolveEffectiveColor } from './resolveEffectiveColor';
 import { finalizeExportResult, type ExportResult, type ExportWarning, type ExportWarningCode } from './exportResult';
@@ -12,7 +13,7 @@ export type { ExportResult, ExportWarning, ExportWarningCode };
 import type { DraftSheet, DraftDocument } from './cadDraftTypes';
 import { expandSheetTokens, asPlanViewport, buildSheetTokenContext } from './cadSheets';
 import { buildTableFragmentItems } from './cadExportTables';
-import type { CadProject } from './cadTypes';
+import type { CadEntity, CadProject } from './cadTypes';
 
 export interface ExportClip {
   id: string;
@@ -245,6 +246,10 @@ const primitiveToPaper = (
           text: primitive.text,
           heightMm: Math.max(0.5, primitive.fontSize * 0.35),
           anchor: primitive.textAnchor,
+          // Phase 18P: forward viewport text rotation (curve/bearing/dim
+          // labels) so SVG/PDF match the screen. Absent/zero stays absent
+          // so non-rotated fixtures serialize byte-identically.
+          ...(primitive.rotationDeg ? { rotationDeg: primitive.rotationDeg } : {}),
           ...paint,
         },
       ];
@@ -478,12 +483,45 @@ export interface BuildSceneArgs {
 // entity carries explicit 18C appearance intent are corrected here to the
 // resolved values — idempotent once the renderer resolves them too.
 // Transparency (new in 18C, never renderer-resolved before) always applies.
-const correctPlotAppearance = (item: ExportItem, project: CadProject): ExportItem => {
+//
+// Phase 18P: source entity/layer/style resolution goes through the lookup
+// (O(1)) and the resolved triple is memoized per sourceEntityId so a source
+// that produced many items (dimensions, leaders, block children) resolves
+// once per export pass.
+type SourceAppearance = { entity: CadEntity; resolved: ResolvedCadEntityAppearance };
+
+const resolveSourceAppearance = (
+  entityId: string,
+  lookup: CadProjectLookup,
+  memo: Map<string, SourceAppearance | null>,
+): SourceAppearance | null => {
+  const cached = memo.get(entityId);
+  if (cached !== undefined) return cached;
+  const entity = lookup.entityById.get(entityId);
+  const value =
+    entity != null
+      ? {
+          entity,
+          resolved: resolveCadEntityAppearance({
+            entity,
+            layer: lookup.layerById.get(entity.layerId) ?? null,
+            styleById: lookup.styleById,
+          }),
+        }
+      : null;
+  memo.set(entityId, value);
+  return value;
+};
+
+const correctPlotAppearance = (
+  item: ExportItem,
+  lookup: CadProjectLookup,
+  memo: Map<string, SourceAppearance | null>,
+): ExportItem => {
   if (item.sourceEntityId == null) return item;
-  const entity = project.entities.find((entry) => entry.id === item.sourceEntityId);
-  if (!entity) return item;
-  const layer = project.layers.find((entry) => entry.id === entity.layerId) ?? null;
-  const resolved = resolveCadEntityAppearance({ entity, layer, styleLibrary: project.styleLibrary });
+  const source = resolveSourceAppearance(item.sourceEntityId, lookup, memo);
+  if (!source) return item;
+  const { entity, resolved } = source;
   let next = item;
   if (entity.appearance?.color != null && next.stroke !== resolved.color) {
     next = { ...next, stroke: resolved.color };
@@ -522,12 +560,24 @@ export const buildExportSheetSceneWithResult = (args: BuildSceneArgs): ExportRes
   const warnings: ExportWarning[] = [];
   const exportedEntityIds: string[] = [];
   const omittedEntityIds: string[] = [];
+  const omittedEntityIdSet = new Set<string>();
+  const recordOmitted = (entityId: string, message: string): void => {
+    omittedEntityIds.push(entityId);
+    omittedEntityIdSet.add(entityId);
+    warnings.push({ code: 'SKIPPED_ENTITY', message, entityId });
+  };
   const approximatedEntityIds: string[] = [];
   const sheet = args.draft.sheets.find((entry) => entry.id === args.sheetId);
   if (!sheet) throw new Error(`export: sheet ${args.sheetId} not found`);
   const clips: ExportClip[] = [];
   const items: ExportItem[] = [];
-  const display = buildCadDisplayScene(args.project);
+  // Phase 18P: one derived project index + one draft-layer index for the
+  // whole export pass; the corrected appearance triple is memoized per
+  // sourceEntityId below.
+  const lookup = buildCadProjectLookup(args.project);
+  const draftLayerById = new Map(args.draft.layers.map((layer) => [layer.id, layer]));
+  const sourceAppearanceMemo = new Map<string, SourceAppearance | null>();
+  const display = buildCadDisplayScene(args.project, { lookup });
   const sorted = [...display.primitives].sort((a, b) => (a.id < b.id ? -1 : a.id > b.id ? 1 : 0));
 
   // Layers govern output: visible=false hides (a viewport visible=true
@@ -536,18 +586,21 @@ export const buildExportSheetSceneWithResult = (args: BuildSceneArgs): ExportRes
   // persistence, not current viewport result), but printable=false is
   // unconditional — excluded from SVG + PDF regardless of overrides.
   const layerFlagged = (layerId: string, flag: 'visible' | 'printable'): boolean => {
-    const layers = [
-      args.project.layers.find((layer) => layer.id === layerId),
-      args.draft.layers.find((layer) => layer.id === layerId),
-    ];
+    const projectLayer = lookup.layerById.get(layerId);
+    const draftLayer = draftLayerById.get(layerId);
     if (flag === 'visible') {
-      return layers.some((layer) => layer != null && (layer.visible === false || layer.frozen === true));
+      return (
+        (projectLayer != null && (projectLayer.visible === false || projectLayer.frozen === true)) ||
+        (draftLayer != null && (draftLayer.visible === false || draftLayer.frozen === true))
+      );
     }
-    return layers.some((layer) => layer != null && layer.printable === false);
+    return (
+      (projectLayer != null && projectLayer.printable === false) ||
+      (draftLayer != null && draftLayer.printable === false)
+    );
   };
   const layerColorOf = (layerId: string): string | undefined =>
-    args.project.layers.find((layer) => layer.id === layerId)?.color ??
-    args.draft.layers.find((layer) => layer.id === layerId)?.color;
+    lookup.layerById.get(layerId)?.color ?? draftLayerById.get(layerId)?.color;
   const persistedLabels: ModelLabelPlacement[] = draftLabelsToPlacements(args.draft.labels);
   const effectiveLabels = args.modelLabels ?? persistedLabels;
   sheet.viewports.forEach((viewport) => {
@@ -585,15 +638,13 @@ export const buildExportSheetSceneWithResult = (args: BuildSceneArgs): ExportRes
         try {
           const produced = primitiveToPaper(primitive, toPaper, clipId, plan.rotationDeg, 1000 / plan.scaleDenominator);
           if (produced.length === 0) {
-            omittedEntityIds.push(primitive.sourceEntityId);
-            warnings.push({ code: 'SKIPPED_ENTITY', message: `skipped entity ${primitive.sourceEntityId} (no export geometry)`, entityId: primitive.sourceEntityId });
+            recordOmitted(primitive.sourceEntityId, `skipped entity ${primitive.sourceEntityId} (no export geometry)`);
             return;
           }
           items.push(...produced);
           exportedEntityIds.push(primitive.sourceEntityId);
         } catch {
-          omittedEntityIds.push(primitive.sourceEntityId);
-          warnings.push({ code: 'SKIPPED_ENTITY', message: `skipped entity ${primitive.sourceEntityId}`, entityId: primitive.sourceEntityId });
+          recordOmitted(primitive.sourceEntityId, `skipped entity ${primitive.sourceEntityId}`);
         }
       });
     items.push({ kind: 'rect', layer: 'paper-frame', x: plan.paperXmm, y: plan.paperYmm, width: plan.paperWidthMm, height: plan.paperHeightMm });
@@ -648,9 +699,9 @@ export const buildExportSheetSceneWithResult = (args: BuildSceneArgs): ExportRes
   // a No Display point style or No Label label style is an explicit style
   // choice, not degenerate geometry: those entities are excluded here.
   const intentionallyUnplotted = (entityId: string): boolean => {
-    const entity = args.project.entities.find((entry) => entry.id === entityId);
-    if (entity?.type === 'survey-point') return surveyPointMarker(args.project, entity).hidden;
-    if (entity?.type === 'text') return materializeBoundPointLabel(entity, args.project)?.visible === false;
+    const entity = lookup.entityById.get(entityId);
+    if (entity?.type === 'survey-point') return surveyPointMarker(args.project, entity, lookup).hidden;
+    if (entity?.type === 'text') return materializeBoundPointLabel(entity, args.project, lookup)?.visible === false;
     return false;
   };
   const primitiveCounts = new Map<string, number>();
@@ -660,14 +711,18 @@ export const buildExportSheetSceneWithResult = (args: BuildSceneArgs): ExportRes
   args.project.entities.forEach((entity) => {
     if (!entity.visible) return;
     if ((primitiveCounts.get(entity.id) ?? 0) > 0) return;
-    if (omittedEntityIds.includes(entity.id)) return;
+    if (omittedEntityIdSet.has(entity.id)) return;
     if (layerFlagged(entity.layerId, 'visible') || layerFlagged(entity.layerId, 'printable')) return;
     if (intentionallyUnplotted(entity.id)) return;
-    omittedEntityIds.push(entity.id);
-    warnings.push({ code: 'SKIPPED_ENTITY', message: `skipped entity ${entity.id} (no export geometry)`, entityId: entity.id });
+    recordOmitted(entity.id, `skipped entity ${entity.id} (no export geometry)`);
   });
 
-  const painted = items.map((item) => backfillItemColor(correctPlotAppearance(item, args.project), layerColorOf));
+  const painted = items.map((item) =>
+    backfillItemColor(
+      correctPlotAppearance(item, lookup, sourceAppearanceMemo),
+      layerColorOf,
+    ),
+  );
   return finalizeExportResult({
     output: { sheetId: sheet.id, sheetName: sheet.name, widthMm: sheet.widthMm, heightMm: sheet.heightMm, clips, items: painted },
     warnings,

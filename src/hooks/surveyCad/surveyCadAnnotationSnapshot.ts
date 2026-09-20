@@ -71,6 +71,7 @@ const buildLeaderInfo = (project: CadProject, entity: CadLeaderEntity): CadAnnot
     text: entity.text,
     leaderStyleId: entity.leaderStyleId,
     textStyleId: entity.textStyleId ?? null,
+    textAttachment: entity.textAttachment ?? null,
     targetStatus: entity.arrowAnchor.kind === 'fixed' ? 'fixed' : resolved.ok ? 'attached' : 'broken',
     targetLabel: anchorSourceLabel(project, entity),
     vertices: entity.vertices.map((vertex) => ({ x: vertex.x, y: vertex.y })),
@@ -92,6 +93,8 @@ const buildDimensionInfo = (project: CadProject, entity: CadDimensionEntity): Ca
     textOverride: entity.textOverride ?? null,
     placement: `${entity.orientation ?? entity.dimensionKind} @ ${entity.dimLinePoint.x.toFixed(3)},${entity.dimLinePoint.y.toFixed(3)}`,
     sourceText: anchorSourceLabel(project, entity),
+    textPoint: entity.textPoint != null ? { x: entity.textPoint.x, y: entity.textPoint.y } : null,
+    autoTextPoint: derivation?.geometry.textPosition ?? { ...entity.dimLinePoint },
     broken: derivation == null,
   };
 };
