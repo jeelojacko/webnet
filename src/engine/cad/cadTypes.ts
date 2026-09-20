@@ -394,6 +394,11 @@ export interface CadBlockDefinition {
 /**
  * Phase 18N: block instance. rotationDeg follows the geometry convention
  * (degrees CCW from +X, y-up); scaleX/scaleY must be finite and > 0.
+ * Phase 18Q: optional `mirrored` flag (absent = false). Reflection lives
+ * ONLY in this flag — scale signs never encode mirroring and nonpositive
+ * scales are still rejected. When true, child geometry is reflected
+ * across the block-local Y axis (M = diag(-1,1)) BEFORE scale+rotation;
+ * text glyphs stay readable (anchor transforms, glyphs never mirrored).
  */
 export interface CadBlockReferenceEntity extends CadBaseEntity {
   type: 'block-reference';
@@ -403,6 +408,7 @@ export interface CadBlockReferenceEntity extends CadBaseEntity {
   rotationDeg: number;
   scaleX: number;
   scaleY: number;
+  mirrored?: boolean;
 }
 
 export type CadBlockChildType = CadBlockChild['type'];

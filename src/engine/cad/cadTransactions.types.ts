@@ -497,6 +497,7 @@ export type CadCommand =
       rotationDeg?: number;
       scaleX?: number;
       scaleY?: number;
+      mirrored?: boolean;
     }
   | {
       key: 'LAYER_CREATE';
@@ -1087,6 +1088,7 @@ export type CadCommand =
       rotationDeg?: number;
       scaleX?: number;
       scaleY?: number;
+      mirrored?: boolean;
       layerId?: CadLayerId;
     }
   | {

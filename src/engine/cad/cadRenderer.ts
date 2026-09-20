@@ -1287,7 +1287,7 @@ const toPrimitives = (
         project,
         ctx,
         entity.blockDefinitionId,
-        { x: entity.x, y: entity.y, rotationDeg: entity.rotationDeg, scaleX: entity.scaleX, scaleY: entity.scaleY },
+        { x: entity.x, y: entity.y, rotationDeg: entity.rotationDeg, scaleX: entity.scaleX, scaleY: entity.scaleY, ...(entity.mirrored === true ? { mirrored: true as const } : {}) },
         entity,
         `primitive:${entity.id}`,
         (child) => toPrimitives(project, ctx, child),

@@ -16,7 +16,10 @@ import type { CadEntity, CadLayer, CadProject } from './cadTypes';
  * point layer) so the existing OFF/FROZEN view filter hides the whole
  * instance while locked stays visible. sourceEntityId is always the host
  * id, so clicks on a child select the reference/point. Unknown child
- * shapes are skipped (never crash the scene).
+ * shapes are skipped (never crash the scene). Phase 18Q: the placement
+ * carries the reference's `mirrored` flag through the single expansion
+ * seam, so text children keep readable glyphs (anchor mirrors, glyphs
+ * don't — the text primitive below is emitted unrotated).
  */
 
 export interface BlockPrimitiveContext {

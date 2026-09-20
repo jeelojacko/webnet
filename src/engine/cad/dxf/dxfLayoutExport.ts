@@ -485,7 +485,8 @@ const buildDxfLayoutInner = (args: BuildDxfLayoutArgs): DxfLayoutInner => {
       pair(100, 'AcDbInsert'),
       pair(2, insert.blockName),
       pair(10, fmt(insert.at.x)), pair(20, fmt(insert.at.y)), pair(30, '0'),
-      pair(41, fmt(insert.scaleX)), pair(42, fmt(insert.scaleY)), pair(43, '1'),
+      // Phase 18Q: mirror rides as signed group 41 (native DXF reflection).
+      pair(41, fmt(insert.mirrored === true ? -insert.scaleX : insert.scaleX)), pair(42, fmt(insert.scaleY)), pair(43, '1'),
       pair(50, fmt(normDeg(insert.rotationDeg))),
     ]);
   });
