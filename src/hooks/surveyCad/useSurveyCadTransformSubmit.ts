@@ -22,6 +22,7 @@ import {
   PROJECT_COORDINATE_TRANSFORM_TOOL_KEY,
 } from '../../engine/cad/cadProjectTransformReport';
 import type { SurveyCadReportPublisher } from './useSurveyCadCommandReports';
+import type { DraftDocument } from '../../engine/cad/cadDraftTypes';
 import { getExpandedSelectedEntities } from '../../engine/cad/cadTransactionsSelection';
 import type { CommandSession } from './useSurveyCadCommandTypes';
 
@@ -34,6 +35,13 @@ interface HandleSurveyCadTransformSubmitOptions {
   replaceSession: ReplaceSession;
   session: CommandSession;
   publishReport?: SurveyCadReportPublisher;
+  /**
+   * Phase 18R.1: live drawing draft. Seeded into the history snapshot
+   * inside the same updater as the PROJECTTRANSFORM commit, so the
+   * before-snapshot carries the pre-transform draft and one undo entry
+   * rolls back project + draft together.
+   */
+  activeDraft?: DraftDocument;
 }
 
 const blockedReasonText = (history: CadHistoryState, commandKey: string): string | null => {
@@ -535,6 +543,7 @@ const projectTransformRequest = (
 
 const handleProjectTransformSubmit = ({
   applyHistoryUpdate,
+  activeDraft,
   history,
   publishReport,
   replaceSession,
@@ -650,7 +659,18 @@ const handleProjectTransformSubmit = ({
       replaceSession({ ...session, inputValue: '', resultText: pre.reason });
       return true;
     }
-    const committed = commitTransform(applyHistoryUpdate, { key: 'PROJECTTRANSFORM', request });
+    // Phase 18R.1: seed the live draft into the snapshot and commit in ONE
+    // updater — still exactly one runCadCommand / one undo entry.
+    let committed = false;
+    applyHistoryUpdate((existing) => {
+      const seeded =
+        activeDraft && existing.present.draft !== activeDraft
+          ? { ...existing, present: { ...existing.present, draft: activeDraft } }
+          : existing;
+      const next = runCadCommand(seeded, { key: 'PROJECTTRANSFORM', request });
+      committed = next !== seeded;
+      return next;
+    });
     if (!committed) {
       replaceSession({
         ...session,

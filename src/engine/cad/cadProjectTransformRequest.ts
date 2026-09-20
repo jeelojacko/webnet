@@ -18,6 +18,7 @@ import {
   type ProjectTransformAffectedCounts,
 } from './cadProjectTransform';
 import type { CadProject } from './cadTypes';
+import type { DraftDocument } from './cadDraftTypes';
 
 export type { ProjectTransformAffectedCounts };
 
@@ -60,7 +61,7 @@ export type ProjectTransformOutcome =
     });
 
 export type ApplyCadProjectTransformResult =
-  | { ok: true; project: CadProject; outcome: ProjectTransformOutcome }
+  | { ok: true; project: CadProject; draft?: DraftDocument; outcome: ProjectTransformOutcome }
   | { ok: false; reason: string };
 
 /** Pre-transform affected counts for panel preview (pure, no mutation). */
@@ -100,6 +101,7 @@ const stationPolicyFor = (rigid: boolean): string =>
 export const applyCadProjectTransform = (
   project: CadProject,
   request: ProjectTransformRequest,
+  options: { draft?: DraftDocument } = {},
 ): ApplyCadProjectTransformResult => {
   if (request.kind === 'HELMERT_2D') {
     const solved = solveHelmert2D(request.pairs, request.mode);
@@ -112,12 +114,14 @@ export const applyCadProjectTransform = (
       residuals: solved.residuals,
       rmsResidual: solved.rmsResidual,
       maxResidual: solved.maxResidual,
+      ...(options.draft ? { draft: options.draft } : {}),
     });
     if (!applied.ok) return applied;
     const scalePpm = (applied.scale - 1) * 1e6;
     return {
       ok: true,
       project: applied.project,
+      ...(applied.draft ? { draft: applied.draft } : {}),
       outcome: {
         kind: 'HELMERT_2D',
         helmertMode: request.mode,
@@ -149,11 +153,13 @@ export const applyCadProjectTransform = (
     combinedScaleFactor: request.combinedScaleFactor,
     originE: request.originE,
     originN: request.originN,
+    ...(options.draft ? { draft: options.draft } : {}),
   });
   if (!applied.ok) return applied;
   return {
     ok: true,
     project: applied.project,
+    ...(applied.draft ? { draft: applied.draft } : {}),
     outcome: {
       kind: 'GRID_GROUND',
       direction: request.direction,

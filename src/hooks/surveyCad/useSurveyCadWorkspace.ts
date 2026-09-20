@@ -105,18 +105,39 @@ export const useSurveyCadWorkspace = (
       ) => import('../../engine/cad/cadUndoRedo').CadHistoryState,
     ) => {
       let nextProject: CadProject | null = null;
+      // Phase 18R.1: reference-change detection — a PROJECTTRANSFORM commit
+      // swaps the draft reference (D0→D1); sticky carry-forward across other
+      // commands keeps the reference, so those never touch drawing.draft.
+      // Undo/redo restore the before/after reference, staying atomic.
+      let nextDraft: import('../../engine/cad/cadDraftTypes').DraftDocument | null = null;
+      let draftChanged = false;
       applyHistoryUpdateBase((current) => {
         const next = updater(current);
         nextProject = next.present.project;
+        if (next.present.draft !== current.present.draft) {
+          nextDraft = next.present.draft ?? null;
+          draftChanged = true;
+        }
         return next;
       });
       if (!nextProject) return;
+      const propagatedDraft = draftChanged ? nextDraft : undefined;
       onProjectChange((current) => {
         if (!current || current.drawingId !== drawing.drawingId) return current;
+        if (propagatedDraft === undefined) {
+          return cloneCadDrawingDocument({
+            ...current,
+            updatedAt: new Date().toISOString(),
+            project: nextProject!,
+            parcelLayout: parcelLayoutState,
+            showParcelLabels,
+          });
+        }
         return cloneCadDrawingDocument({
           ...current,
           updatedAt: new Date().toISOString(),
           project: nextProject!,
+          ...(propagatedDraft ? { draft: propagatedDraft } : {}),
           parcelLayout: parcelLayoutState,
           showParcelLabels,
         });
@@ -332,6 +353,7 @@ export const useSurveyCadWorkspace = (
   );
   const commandState = useSurveyCadWorkspaceCommandController({
     activeSnap,
+    activeDraft: drawing.draft,
     previewPoint,
     history,
     selectionCount: selection.selectedEntityIds.length,

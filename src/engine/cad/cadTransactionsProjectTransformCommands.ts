@@ -20,7 +20,19 @@ const commitProjectTransform = (
   snapshot: CadWorkspaceSnapshot,
   request: ProjectTransformRequest,
 ): CadCommandExecutionResult | null => {
-  const applied = applyCadProjectTransform(snapshot.project, request);
+  // Phase 18R.1 Finding A: the PROJECTTRANSFORM transaction owns project +
+  // draft atomically. The draft rides the snapshot channel (optional field,
+  // so CAD history is untouched and every other command keeps working); the
+  // kernel maps viewport model-centers + label anchors through the same
+  // CadTransform2D. One runCadCommand = one undo entry covering both, so no
+  // PROJECTTRANSFORM+VIEWPORT_MOVE+LABEL_MOVE split. Rejected alternative:
+  // reusing the draft-only SHEET_*/VIEWPORT_* seam would need 2+ history
+  // entries and could never undo atomically; the separate cadSheets draft
+  // history (runDraftSheetCommand) stays unused by production (zero src/
+  // consumers) and is left alone.
+  const applied = applyCadProjectTransform(snapshot.project, request, {
+    ...(snapshot.draft ? { draft: snapshot.draft } : {}),
+  });
   if (!applied.ok) return null;
   const label =
     applied.outcome.kind === 'HELMERT_2D'
@@ -37,6 +49,9 @@ const commitProjectTransform = (
         applied.project,
         snapshot.selection.selectedEntityIds,
       ),
+      // Atomic draft: transformed draft commits in the SAME undo entry.
+      // Absent when the snapshot carried no draft (legacy/blank drawings).
+      ...(applied.draft ? { draft: applied.draft } : {}),
     },
     commandState: { key: 'PROJECTTRANSFORM', phase: 'committed', prompt: `${label} committed.` },
     transactionLabel: label,
