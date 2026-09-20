@@ -22,6 +22,8 @@ export interface TransformPreviewStyle {
   stroke?: string;
   opacity?: number;
   idPrefix?: string;
+  /** Bounds the ghost for whole-drawing previews (never a 100k-primitive SVG). */
+  maxPrimitives?: number;
 }
 
 export const buildTransformedPreviewPrimitives = (
@@ -38,7 +40,9 @@ export const buildTransformedPreviewPrimitives = (
   const scale = classification?.scale ?? 1;
   const rotationDeg = classification?.rotationDeg ?? 0;
   const reflected = (classification?.determinantSign ?? 1) < 0;
-  const primitives = displayPrimitives.filter((primitive) => wanted.has(primitive.sourceEntityId));
+  const primitives = displayPrimitives
+    .filter((primitive) => wanted.has(primitive.sourceEntityId))
+    .slice(0, style.maxPrimitives ?? Number.POSITIVE_INFINITY);
   return primitives.map((primitive, index) => {
     const id = `${idPrefix}:${index + 1}`;
     switch (primitive.kind) {

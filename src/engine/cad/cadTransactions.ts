@@ -65,6 +65,7 @@ import {
   rotateCommand,
   scaleCommand,
 } from './cadTransactionsTransformCommands';
+import { projectTransformCommand } from './cadTransactionsProjectTransformCommands';
 import {
   extendCommand,
   filletCommand,
@@ -542,6 +543,7 @@ export const CAD_COMMAND_REGISTRY: Record<CadCommandKey, CadCommandDefinition<Ca
   ALIGN2D: align2DCommand as CadCommandDefinition<CadCommand>,
   HELMERT2D: helmert2DCommand as CadCommandDefinition<CadCommand>,
   GRIDGROUND: gridGroundCommand as CadCommandDefinition<CadCommand>,
+  PROJECTTRANSFORM: projectTransformCommand as CadCommandDefinition<CadCommand>,
   EXTEND: extendCommand as CadCommandDefinition<CadCommand>,
   FILLET: filletCommand as CadCommandDefinition<CadCommand>,
   PASTE: annotationAwarePasteCommand as CadCommandDefinition<CadCommand>,

@@ -1,0 +1,1397 @@
+{
+  "kind": "webnet-cad-drawing",
+  "schemaVersion": 2,
+  "drawingId": "cad-drawing-b392a55d-c15c-4095-9366-cce25d458863",
+  "name": "Project Transform QA",
+  "createdAt": "2026-09-20T12:03:53.876Z",
+  "updatedAt": "2026-09-20T12:03:53.876Z",
+  "units": "m",
+  "project": {
+    "version": 2,
+    "id": "cad-project-fa38f2ad-8235-414a-bc2f-588f3ce6b577",
+    "name": "Project Transform QA",
+    "metadata": {
+      "source": "parsed-input",
+      "runMode": "unknown",
+      "units": "m",
+      "stationCount": 0,
+      "observationCount": 0,
+      "adjustedStationCount": 0
+    },
+    "layers": [
+      {
+        "id": "control-points",
+        "name": "Control Points",
+        "color": "#f59e0b",
+        "defaultStyleId": "style-control-point",
+        "visible": true,
+        "locked": false,
+        "printable": true,
+        "lineweightMm": 0.25,
+        "role": "control-points"
+      },
+      {
+        "id": "points",
+        "name": "Survey Points",
+        "color": "#38bdf8",
+        "defaultStyleId": "style-point",
+        "visible": true,
+        "locked": false,
+        "printable": true,
+        "lineweightMm": 0.25,
+        "role": "points"
+      },
+      {
+        "id": "observation-lines",
+        "name": "Observation Lines",
+        "color": "#22c55e",
+        "defaultStyleId": "style-observation-line",
+        "visible": true,
+        "locked": false,
+        "printable": true,
+        "lineweightMm": 0.25,
+        "role": "observation-lines"
+      },
+      {
+        "id": "error-ellipses",
+        "name": "Error Ellipses",
+        "color": "#f472b6",
+        "lineTypeId": "dashed",
+        "defaultStyleId": "style-error-ellipse",
+        "visible": true,
+        "locked": false,
+        "printable": true,
+        "lineweightMm": 0.25,
+        "role": "error-ellipses"
+      },
+      {
+        "id": "labels",
+        "name": "Labels",
+        "color": "#e2e8f0",
+        "defaultStyleId": "style-label",
+        "visible": true,
+        "locked": false,
+        "printable": true,
+        "lineweightMm": 0.25,
+        "role": "labels"
+      },
+      {
+        "id": "parcels",
+        "name": "Parcels",
+        "color": "#f59e0b",
+        "defaultStyleId": "style-parcel",
+        "visible": true,
+        "locked": false,
+        "printable": true,
+        "lineweightMm": 0.25,
+        "role": "parcels"
+      },
+      {
+        "id": "general",
+        "name": "General",
+        "color": "#e2e8f0",
+        "visible": true,
+        "locked": false,
+        "frozen": false,
+        "transparency": 0,
+        "description": "",
+        "printable": true,
+        "lineTypeId": "continuous",
+        "role": "planning"
+      }
+    ],
+    "styleLibrary": {
+      "lineTypes": [
+        {
+          "id": "continuous",
+          "name": "Continuous",
+          "dashPattern": []
+        },
+        {
+          "id": "dashed",
+          "name": "Dashed",
+          "dashPattern": [
+            6,
+            4
+          ]
+        },
+        {
+          "id": "hidden",
+          "name": "Hidden",
+          "dashPattern": [
+            3,
+            2
+          ]
+        },
+        {
+          "id": "center",
+          "name": "Center",
+          "dashPattern": [
+            12,
+            3,
+            2,
+            3
+          ]
+        },
+        {
+          "id": "center2",
+          "name": "Center 2",
+          "dashPattern": [
+            8,
+            2,
+            1,
+            2
+          ]
+        },
+        {
+          "id": "dash-dot",
+          "name": "Dash Dot",
+          "dashPattern": [
+            10,
+            2,
+            1,
+            2
+          ]
+        },
+        {
+          "id": "dotted",
+          "name": "Dotted",
+          "dashPattern": [
+            1,
+            2
+          ]
+        },
+        {
+          "id": "phantom",
+          "name": "Phantom",
+          "dashPattern": [
+            12,
+            2,
+            1,
+            2,
+            1,
+            2
+          ]
+        },
+        {
+          "id": "dash-short",
+          "name": "Dash Short (deprecated, use Dashed)",
+          "dashPattern": [
+            6,
+            4
+          ]
+        }
+      ],
+      "textStyles": [
+        {
+          "id": "label-default",
+          "name": "Label Default",
+          "fontFamily": "ui-monospace, SFMono-Regular, Menlo, Consolas, monospace",
+          "fontSize": 11
+        },
+        {
+          "id": "std-model-2_5",
+          "name": "Standard-Model-2.5",
+          "fontFamily": "Arial",
+          "fontSize": 2.5,
+          "heightMode": "model",
+          "modelHeight": 2.5,
+          "widthFactor": 1,
+          "lineSpacingFactor": 1
+        },
+        {
+          "id": "paper-2_5mm",
+          "name": "Paper-2.5mm",
+          "fontFamily": "Arial",
+          "fontSize": 2.5,
+          "heightMode": "paper",
+          "paperHeightMm": 2.5,
+          "widthFactor": 1,
+          "lineSpacingFactor": 1
+        }
+      ],
+      "pointSymbols": [
+        {
+          "id": "point-free",
+          "name": "Free Point",
+          "radius": 1.8
+        },
+        {
+          "id": "point-control",
+          "name": "Control Point",
+          "radius": 2.4
+        },
+        {
+          "id": "point-f2f-circle",
+          "name": "F2F Circle",
+          "radius": 1.8,
+          "shape": "circle"
+        },
+        {
+          "id": "point-f2f-square",
+          "name": "F2F Square",
+          "radius": 1.8,
+          "shape": "square"
+        },
+        {
+          "id": "point-f2f-triangle",
+          "name": "F2F Triangle",
+          "radius": 2,
+          "shape": "triangle"
+        },
+        {
+          "id": "point-f2f-cross",
+          "name": "F2F Cross",
+          "radius": 2,
+          "shape": "cross"
+        },
+        {
+          "id": "point-f2f-x",
+          "name": "F2F X",
+          "radius": 2,
+          "shape": "x"
+        },
+        {
+          "id": "point-f2f-dot",
+          "name": "F2F Dot",
+          "radius": 1.2,
+          "shape": "dot"
+        }
+      ],
+      "styles": [
+        {
+          "id": "style-control-point",
+          "name": "Control Point",
+          "color": "#f59e0b",
+          "strokeWidth": 1.2,
+          "pointSymbolId": "point-control"
+        },
+        {
+          "id": "style-point",
+          "name": "Survey Point",
+          "color": "#38bdf8",
+          "strokeWidth": 1.2,
+          "pointSymbolId": "point-free"
+        },
+        {
+          "id": "style-observation-line",
+          "name": "Observation Line",
+          "color": "#22c55e",
+          "strokeWidth": 1.25,
+          "lineTypeId": "continuous"
+        },
+        {
+          "id": "style-error-ellipse",
+          "name": "Error Ellipse",
+          "color": "#f472b6",
+          "strokeWidth": 1.1,
+          "lineTypeId": "dashed"
+        },
+        {
+          "id": "style-label",
+          "name": "Label",
+          "color": "#e2e8f0",
+          "textStyleId": "label-default"
+        },
+        {
+          "id": "style-parcel",
+          "name": "Parcel",
+          "color": "#f59e0b",
+          "strokeWidth": 1.5,
+          "lineTypeId": "continuous"
+        }
+      ]
+    },
+    "pointStyles": [
+      {
+        "id": "point-style-standard",
+        "name": "Standard",
+        "markerSymbolId": "point-free",
+        "displayMarker": true
+      },
+      {
+        "id": "point-style-survey",
+        "name": "Survey Point",
+        "markerSymbolId": "point-free",
+        "displayMarker": true
+      },
+      {
+        "id": "point-style-control",
+        "name": "Control Point",
+        "markerSymbolId": "point-control",
+        "displayMarker": true
+      },
+      {
+        "id": "point-style-monument",
+        "name": "Monument",
+        "markerSymbolId": "point-f2f-square",
+        "displayMarker": true
+      },
+      {
+        "id": "point-style-boundary",
+        "name": "Boundary Corner",
+        "markerSymbolId": "point-f2f-triangle",
+        "displayMarker": true
+      },
+      {
+        "id": "point-style-topo",
+        "name": "Topo",
+        "markerSymbolId": "point-f2f-dot",
+        "displayMarker": true
+      },
+      {
+        "id": "point-style-tree",
+        "name": "Tree",
+        "markerSymbolId": "point-f2f-cross",
+        "displayMarker": true
+      },
+      {
+        "id": "point-style-utility",
+        "name": "Utility",
+        "markerSymbolId": "point-f2f-x",
+        "displayMarker": true
+      },
+      {
+        "id": "point-style-no-display",
+        "name": "No Display",
+        "markerSymbolId": "point-free",
+        "displayMarker": false,
+        "description": "Hides the marker; label and layer visibility are unaffected."
+      }
+    ],
+    "labelStyles": [
+      {
+        "id": "point-label-none",
+        "name": "No Label",
+        "components": {},
+        "componentOrder": [],
+        "separator": " ",
+        "elevationDecimals": 3,
+        "textStyleId": "label-default",
+        "offsetX": 0,
+        "offsetY": 0,
+        "visible": false,
+        "description": "Hides the label; point and layer visibility are unaffected."
+      },
+      {
+        "id": "point-label-point-number",
+        "name": "Point Number",
+        "components": {
+          "pointNumber": true
+        },
+        "componentOrder": [
+          "pointNumber"
+        ],
+        "separator": " ",
+        "elevationDecimals": 3,
+        "textStyleId": "label-default",
+        "offsetX": 0,
+        "offsetY": 0,
+        "visible": true
+      },
+      {
+        "id": "point-label-point-number-elevation",
+        "name": "Point Number + Elevation",
+        "components": {
+          "pointNumber": true,
+          "elevation": true
+        },
+        "componentOrder": [
+          "pointNumber",
+          "elevation"
+        ],
+        "separator": " ",
+        "elevationDecimals": 3,
+        "textStyleId": "label-default",
+        "offsetX": 0,
+        "offsetY": 0,
+        "visible": true
+      },
+      {
+        "id": "point-label-point-number-description",
+        "name": "Point Number + Description",
+        "components": {
+          "pointNumber": true,
+          "description": true
+        },
+        "componentOrder": [
+          "pointNumber",
+          "description"
+        ],
+        "separator": " ",
+        "elevationDecimals": 3,
+        "textStyleId": "label-default",
+        "offsetX": 0,
+        "offsetY": 0,
+        "visible": true
+      },
+      {
+        "id": "point-label-description",
+        "name": "Description",
+        "components": {
+          "description": true
+        },
+        "componentOrder": [
+          "description"
+        ],
+        "separator": " ",
+        "elevationDecimals": 3,
+        "textStyleId": "label-default",
+        "offsetX": 0,
+        "offsetY": 0,
+        "visible": true
+      },
+      {
+        "id": "point-label-elevation",
+        "name": "Elevation",
+        "components": {
+          "elevation": true
+        },
+        "componentOrder": [
+          "elevation"
+        ],
+        "separator": " ",
+        "elevationDecimals": 3,
+        "textStyleId": "label-default",
+        "offsetX": 0,
+        "offsetY": 0,
+        "visible": true
+      },
+      {
+        "id": "point-label-point-number-description-elevation",
+        "name": "Point Number + Description + Elevation",
+        "components": {
+          "pointNumber": true,
+          "description": true,
+          "elevation": true
+        },
+        "componentOrder": [
+          "pointNumber",
+          "description",
+          "elevation"
+        ],
+        "separator": " ",
+        "elevationDecimals": 3,
+        "textStyleId": "label-default",
+        "offsetX": 0,
+        "offsetY": 0,
+        "visible": true
+      },
+      {
+        "id": "point-label-f2f-full",
+        "name": "F2F Full",
+        "components": {
+          "pointNumber": true,
+          "description": true,
+          "featureCode": true,
+          "elevation": true
+        },
+        "componentOrder": [
+          "pointNumber",
+          "description",
+          "featureCode",
+          "elevation"
+        ],
+        "separator": " ",
+        "elevationDecimals": 3,
+        "textStyleId": "label-default",
+        "offsetX": 0,
+        "offsetY": 0,
+        "visible": true,
+        "description": "Reproduces the legacy F2F label text (order, separator, elevation format)."
+      }
+    ],
+    "entities": [
+      {
+        "layerId": "general",
+        "visible": true,
+        "locked": false,
+        "id": "pt:A",
+        "type": "survey-point",
+        "stationId": "A",
+        "x": 10,
+        "y": 20,
+        "z": 5,
+        "pointClass": "free",
+        "source": "parsed-input"
+      },
+      {
+        "layerId": "general",
+        "visible": true,
+        "locked": false,
+        "id": "pt:B",
+        "type": "survey-point",
+        "stationId": "B",
+        "x": 110,
+        "y": -40,
+        "z": 6,
+        "pointClass": "free",
+        "source": "parsed-input"
+      },
+      {
+        "layerId": "general",
+        "visible": true,
+        "locked": false,
+        "id": "l1",
+        "type": "line",
+        "fromStationId": "A",
+        "toStationId": "B",
+        "fromX": 10,
+        "fromY": 20,
+        "toX": 110,
+        "toY": -40,
+        "sourceObservationIds": []
+      },
+      {
+        "layerId": "general",
+        "visible": true,
+        "locked": false,
+        "id": "a1",
+        "type": "arc",
+        "centerX": 50,
+        "centerY": 10,
+        "radius": 25,
+        "startAngleDeg": 0,
+        "endAngleDeg": 90
+      },
+      {
+        "layerId": "general",
+        "visible": true,
+        "locked": false,
+        "id": "al1",
+        "type": "alignment",
+        "name": "AL-1",
+        "startStation": 1000,
+        "stationEquations": [
+          {
+            "backStation": 1100,
+            "aheadStation": 1120,
+            "rawStation": 1100
+          }
+        ],
+        "elements": [
+          {
+            "kind": "line",
+            "start": {
+              "x": 0,
+              "y": 0
+            },
+            "end": {
+              "x": 100,
+              "y": 0
+            }
+          },
+          {
+            "kind": "arc",
+            "center": {
+              "x": 100,
+              "y": 25
+            },
+            "radius": 25,
+            "startAngleDeg": -90,
+            "endAngleDeg": 0
+          }
+        ]
+      },
+      {
+        "layerId": "general",
+        "visible": true,
+        "locked": false,
+        "id": "p1",
+        "type": "parcel",
+        "parcelName": "LOT-1",
+        "vertices": [
+          {
+            "x": 0,
+            "y": 0
+          },
+          {
+            "x": 40,
+            "y": 0
+          },
+          {
+            "x": 40,
+            "y": 40
+          },
+          {
+            "x": 0,
+            "y": 40
+          }
+        ],
+        "vertexLabels": []
+      },
+      {
+        "layerId": "general",
+        "visible": true,
+        "locked": false,
+        "id": "m1",
+        "type": "mtext",
+        "x": 7,
+        "y": 8,
+        "text": "QA NOTE",
+        "textStyleId": "style-standard",
+        "rotationDeg": 0,
+        "attachment": "middle-center"
+      }
+    ],
+    "cogoComputations": [],
+    "bounds": null,
+    "currentLayerId": "general",
+    "pointGroups": [
+      {
+        "id": "point-group-all",
+        "name": "All Points",
+        "query": {},
+        "priority": 0,
+        "description": "Organizational default: matches every survey point, no style overrides."
+      },
+      {
+        "id": "point-group-control",
+        "name": "Control Points",
+        "query": {
+          "pointClass": "control"
+        },
+        "priority": 1,
+        "description": "Organizational default: all control-class points, no style overrides."
+      }
+    ],
+    "fieldToFinishCatalog": {
+      "id": "starter-survey",
+      "name": "WebNet Starter Survey Catalog",
+      "version": "1",
+      "definitions": [
+        {
+          "id": "control",
+          "code": "CONTROL",
+          "description": "Control station",
+          "layer": "F2F-CONTROL",
+          "pointBehavior": "point",
+          "lineworkBehavior": {
+            "enabled": false,
+            "implicitContinuation": false
+          }
+        },
+        {
+          "id": "mon",
+          "code": "MON",
+          "description": "Survey monument",
+          "layer": "F2F-MONUMENT",
+          "pointBehavior": "point",
+          "lineworkBehavior": {
+            "enabled": false,
+            "implicitContinuation": false
+          }
+        },
+        {
+          "id": "ip",
+          "code": "IP",
+          "description": "Iron pin",
+          "layer": "F2F-MONUMENT",
+          "pointBehavior": "point",
+          "lineworkBehavior": {
+            "enabled": false,
+            "implicitContinuation": false
+          }
+        },
+        {
+          "id": "ep",
+          "code": "EP",
+          "description": "Edge of pavement",
+          "layer": "F2F-EDGE",
+          "pointBehavior": "point",
+          "lineworkBehavior": {
+            "enabled": true,
+            "implicitContinuation": false
+          },
+          "defaultAttributes": {
+            "surface": "asphalt"
+          }
+        },
+        {
+          "id": "cl",
+          "code": "CL",
+          "description": "Centerline",
+          "layer": "F2F-CENTERLINE",
+          "pointBehavior": "none",
+          "lineworkBehavior": {
+            "enabled": true,
+            "implicitContinuation": true
+          }
+        },
+        {
+          "id": "top",
+          "code": "TOP",
+          "description": "Topographic shot",
+          "layer": "F2F-TOPO",
+          "pointBehavior": "point",
+          "lineworkBehavior": {
+            "enabled": false,
+            "implicitContinuation": false
+          }
+        },
+        {
+          "id": "toe",
+          "code": "TOE",
+          "description": "Toe of slope",
+          "layer": "F2F-TOPO",
+          "pointBehavior": "point",
+          "lineworkBehavior": {
+            "enabled": true,
+            "implicitContinuation": false
+          }
+        },
+        {
+          "id": "bldg",
+          "code": "BLDG",
+          "description": "Building footprint",
+          "layer": "F2F-BUILDING",
+          "pointBehavior": "point",
+          "lineworkBehavior": {
+            "enabled": true,
+            "implicitContinuation": false
+          }
+        },
+        {
+          "id": "tree",
+          "code": "TREE",
+          "description": "Tree",
+          "layer": "F2F-TREE",
+          "pointBehavior": "point",
+          "lineworkBehavior": {
+            "enabled": false,
+            "implicitContinuation": false
+          },
+          "defaultAttributes": {
+            "species": "unknown"
+          }
+        },
+        {
+          "id": "up",
+          "code": "UP",
+          "description": "Utility pole",
+          "layer": "F2F-UTILITY",
+          "pointBehavior": "point",
+          "lineworkBehavior": {
+            "enabled": false,
+            "implicitContinuation": false
+          }
+        },
+        {
+          "id": "mh",
+          "code": "MH",
+          "description": "Manhole",
+          "layer": "F2F-UTILITY",
+          "pointBehavior": "point",
+          "lineworkBehavior": {
+            "enabled": false,
+            "implicitContinuation": false
+          }
+        }
+      ],
+      "aliases": [
+        {
+          "alias": "EOP",
+          "targetCode": "EP"
+        }
+      ]
+    },
+    "fieldToFinishSettings": {},
+    "surfaces": [
+      {
+        "id": "surf-native",
+        "name": "Native Ground",
+        "definition": {
+          "pointSource": {
+            "kind": "points",
+            "pointEntityIds": [
+              "pt:A",
+              "pt:B"
+            ]
+          }
+        }
+      },
+      {
+        "id": "surf-imported",
+        "name": "Imported TIN",
+        "definition": {
+          "sourceKind": "imported-tin",
+          "importedTin": {
+            "vertices": [
+              0,
+              0,
+              1,
+              30,
+              0,
+              2,
+              30,
+              40,
+              3,
+              0,
+              40,
+              4
+            ],
+            "faces": [
+              0,
+              1,
+              2,
+              0,
+              2,
+              3
+            ],
+            "provenance": {
+              "format": "LandXML",
+              "fileName": "qa.xml",
+              "surfaceName": "Imported TIN"
+            }
+          },
+          "pointSource": {
+            "kind": "points",
+            "pointEntityIds": []
+          }
+        }
+      }
+    ],
+    "surfaceStyles": [
+      {
+        "id": "surface-style-triangles",
+        "name": "Triangles",
+        "showTriangles": true
+      },
+      {
+        "id": "surface-style-triangles-points",
+        "name": "Triangles+Points",
+        "showTriangles": true,
+        "showPoints": true
+      },
+      {
+        "id": "surface-style-boundary",
+        "name": "Boundary",
+        "showBoundary": true
+      },
+      {
+        "id": "surface-style-none",
+        "name": "No Display"
+      },
+      {
+        "id": "surface-style-contours",
+        "name": "Contours",
+        "showContours": true,
+        "minorContourInterval": 1,
+        "majorContourEvery": 5,
+        "contourBaseElevation": 0,
+        "showContourLabels": true,
+        "labelMajorOnly": true,
+        "contourLabelSpacing": 40,
+        "contourLabelPrecision": 1
+      },
+      {
+        "id": "surface-style-contours-triangles",
+        "name": "Contours + Triangles",
+        "showContours": true,
+        "minorContourInterval": 1,
+        "majorContourEvery": 5,
+        "contourBaseElevation": 0,
+        "showContourLabels": true,
+        "labelMajorOnly": true,
+        "contourLabelSpacing": 40,
+        "contourLabelPrecision": 1,
+        "showTriangles": true
+      }
+    ],
+    "volumeSurfaces": [
+      {
+        "id": "vol-1",
+        "name": "VOL-1",
+        "baseSurfaceId": "surf-native",
+        "comparisonSurfaceId": "surf-imported"
+      }
+    ],
+    "volumeSurfaceStyles": [
+      {
+        "id": "volume-style-cut-fill",
+        "name": "Cut/Fill",
+        "showCut": true,
+        "showFill": true,
+        "cutColor": "#d64545",
+        "fillColor": "#3d7dd6",
+        "opacity": 0.5
+      },
+      {
+        "id": "volume-style-cut-only",
+        "name": "Cut Only",
+        "showCut": true,
+        "showFill": false,
+        "cutColor": "#d64545",
+        "fillColor": "#3d7dd6",
+        "opacity": 0.5
+      },
+      {
+        "id": "volume-style-fill-only",
+        "name": "Fill Only",
+        "showCut": false,
+        "showFill": true,
+        "cutColor": "#d64545",
+        "fillColor": "#3d7dd6",
+        "opacity": 0.5
+      },
+      {
+        "id": "volume-style-none",
+        "name": "No Display",
+        "showCut": false,
+        "showFill": false,
+        "cutColor": "#d64545",
+        "fillColor": "#3d7dd6",
+        "opacity": 0
+      }
+    ],
+    "surfaceProfiles": [
+      {
+        "id": "prof-1",
+        "name": "PROF-1",
+        "alignmentEntityId": "al1",
+        "surfaceId": "surf-native"
+      }
+    ],
+    "profileViews": [
+      {
+        "id": "pv-1",
+        "name": "PV-1",
+        "alignmentEntityId": "al1",
+        "profileIds": [
+          "prof-1"
+        ],
+        "insertionX": 200,
+        "insertionY": 200,
+        "horizontalScale": 1,
+        "verticalExaggeration": 1,
+        "datumMode": "auto"
+      }
+    ],
+    "profileStyles": [
+      {
+        "id": "profile-style-standard",
+        "name": "Standard",
+        "color": "#1f6feb",
+        "lineweight": 0.5,
+        "opacity": 0,
+        "showVertices": false
+      }
+    ],
+    "sampleLineGroups": [
+      {
+        "id": "g1",
+        "name": "SLG-1",
+        "alignmentEntityId": "al1",
+        "surfaceSources": [
+          {
+            "surfaceId": "surf-native"
+          }
+        ],
+        "sampleLines": [
+          {
+            "id": "s1",
+            "rawStation": 1050,
+            "leftWidth": 20,
+            "rightWidth": 10,
+            "skewDeg": 0
+          }
+        ]
+      }
+    ],
+    "sectionStyles": [
+      {
+        "id": "section-style-existing",
+        "name": "Existing Ground",
+        "color": "#8a8f98",
+        "lineweight": 0.5,
+        "opacity": 0
+      },
+      {
+        "id": "section-style-proposed",
+        "name": "Proposed",
+        "color": "#1f6feb",
+        "lineweight": 0.6,
+        "opacity": 0
+      },
+      {
+        "id": "section-style-secondary",
+        "name": "Secondary",
+        "color": "#d29922",
+        "lineweight": 0.4,
+        "opacity": 0
+      },
+      {
+        "id": "section-style-none",
+        "name": "No Display",
+        "color": "#8a8f98",
+        "lineweight": 0.25,
+        "opacity": 0
+      }
+    ],
+    "sectionViews": [
+      {
+        "id": "sv-1",
+        "name": "SV-1",
+        "sampleLineGroupId": "g1",
+        "sampleLineId": "s1",
+        "sourceSurfaceIds": [
+          "surf-native"
+        ],
+        "insertionX": 300,
+        "insertionY": 300,
+        "horizontalScale": 1,
+        "verticalExaggeration": 1,
+        "datumMode": "auto"
+      }
+    ],
+    "blockDefinitions": [
+      {
+        "id": "webnet-annotation-arrowhead-closed-arrow",
+        "name": "Closed Arrow",
+        "basePoint": {
+          "x": 0,
+          "y": 0
+        },
+        "description": "Filled triangular arrowhead: tip (0,0), base at x = -1.",
+        "entities": [
+          {
+            "id": "closed-arrow-body",
+            "type": "polygon",
+            "layerId": "0",
+            "visible": true,
+            "locked": false,
+            "vertices": [
+              {
+                "x": 0,
+                "y": 0
+              },
+              {
+                "x": -1,
+                "y": 0.25
+              },
+              {
+                "x": -1,
+                "y": -0.25
+              }
+            ],
+            "vertexLabels": [
+              "",
+              "",
+              ""
+            ]
+          }
+        ]
+      },
+      {
+        "id": "webnet-annotation-arrowhead-open-arrow",
+        "name": "Open Arrow",
+        "basePoint": {
+          "x": 0,
+          "y": 0
+        },
+        "description": "Open arrowhead: two barbs from the tip (0,0) to x = -1.",
+        "entities": [
+          {
+            "id": "open-arrow-barb-up",
+            "type": "line",
+            "layerId": "0",
+            "visible": true,
+            "locked": false,
+            "fromStationId": "",
+            "toStationId": "",
+            "fromX": 0,
+            "fromY": 0,
+            "toX": -1,
+            "toY": 0.25,
+            "sourceObservationIds": []
+          },
+          {
+            "id": "open-arrow-barb-down",
+            "type": "line",
+            "layerId": "0",
+            "visible": true,
+            "locked": false,
+            "fromStationId": "",
+            "toStationId": "",
+            "fromX": 0,
+            "fromY": 0,
+            "toX": -1,
+            "toY": -0.25,
+            "sourceObservationIds": []
+          }
+        ]
+      },
+      {
+        "id": "webnet-annotation-arrowhead-dot",
+        "name": "Dot",
+        "basePoint": {
+          "x": 0,
+          "y": 0
+        },
+        "description": "Filled octagonal dot, radius 0.25, tangent to the tip at (0,0).",
+        "entities": [
+          {
+            "id": "dot-body",
+            "type": "polygon",
+            "layerId": "0",
+            "visible": true,
+            "locked": false,
+            "vertices": [
+              {
+                "x": 0,
+                "y": 0
+              },
+              {
+                "x": -0.073223,
+                "y": 0.176777
+              },
+              {
+                "x": -0.25,
+                "y": 0.25
+              },
+              {
+                "x": -0.426777,
+                "y": 0.176777
+              },
+              {
+                "x": -0.5,
+                "y": 0
+              },
+              {
+                "x": -0.426777,
+                "y": -0.176777
+              },
+              {
+                "x": -0.25,
+                "y": -0.25
+              },
+              {
+                "x": -0.073223,
+                "y": -0.176777
+              }
+            ],
+            "vertexLabels": [
+              "",
+              "",
+              "",
+              "",
+              "",
+              "",
+              "",
+              ""
+            ]
+          }
+        ]
+      },
+      {
+        "id": "webnet-annotation-arrowhead-architectural-tick",
+        "name": "Architectural Tick",
+        "basePoint": {
+          "x": 0,
+          "y": 0
+        },
+        "description": "Single 45-degree slash; one endpoint is the tip at (0,0).",
+        "entities": [
+          {
+            "id": "architectural-tick-slash",
+            "type": "line",
+            "layerId": "0",
+            "visible": true,
+            "locked": false,
+            "fromStationId": "",
+            "toStationId": "",
+            "fromX": 0,
+            "fromY": 0,
+            "toX": -0.5,
+            "toY": 0.5,
+            "sourceObservationIds": []
+          }
+        ]
+      }
+    ],
+    "dimensionStyles": [
+      {
+        "id": "std-500",
+        "name": "Standard-500",
+        "textStyleId": "std-model-2_5",
+        "arrowBlockDefinitionId": "webnet-annotation-arrowhead-closed-arrow",
+        "arrowSize": 2.5,
+        "arrowSizeMode": "model",
+        "textGap": 1,
+        "extensionOffset": 1,
+        "extensionOvershoot": 1,
+        "decimalPrecision": 3
+      }
+    ],
+    "leaderStyles": [
+      {
+        "id": "std-leader",
+        "name": "Standard-Leader",
+        "textStyleId": "std-model-2_5",
+        "arrowBlockDefinitionId": "webnet-annotation-arrowhead-closed-arrow",
+        "arrowSize": 2.5,
+        "arrowSizeMode": "model",
+        "landingLength": 5,
+        "textGap": 1
+      }
+    ],
+    "bearingLabelStyles": [
+      {
+        "id": "bearing-default",
+        "name": "Bearing-Distance-Default",
+        "textStyleId": "std-model-2_5",
+        "content": "bearing-distance",
+        "separator": "newline",
+        "offset": {
+          "x": 0,
+          "y": 0
+        },
+        "decimalPrecision": 3
+      }
+    ],
+    "curveLabelStyles": [
+      {
+        "id": "curve-default",
+        "name": "Curve-Default",
+        "textStyleId": "std-model-2_5",
+        "fields": [
+          "radius",
+          "delta",
+          "length"
+        ],
+        "offset": {
+          "x": 0,
+          "y": 0
+        },
+        "decimalPrecision": 3
+      }
+    ],
+    "annotationSettings": {
+      "scaleDenominator": 500
+    }
+  },
+  "showParcelLabels": true,
+  "imports": [],
+  "draft": {
+    "version": 1,
+    "modelSpaceProjectId": "cad-project-fa38f2ad-8235-414a-bc2f-588f3ce6b577",
+    "layers": [
+      {
+        "id": "control-points",
+        "name": "Control Points",
+        "color": "#f59e0b",
+        "visible": true,
+        "locked": false,
+        "role": "control-points",
+        "defaultStyleId": "style-control-point",
+        "printable": true,
+        "lineweightMm": 0.25
+      },
+      {
+        "id": "points",
+        "name": "Survey Points",
+        "color": "#38bdf8",
+        "visible": true,
+        "locked": false,
+        "role": "points",
+        "defaultStyleId": "style-point",
+        "printable": true,
+        "lineweightMm": 0.25
+      },
+      {
+        "id": "observation-lines",
+        "name": "Observation Lines",
+        "color": "#22c55e",
+        "visible": true,
+        "locked": false,
+        "role": "observation-lines",
+        "defaultStyleId": "style-observation-line",
+        "printable": true,
+        "lineweightMm": 0.25
+      },
+      {
+        "id": "error-ellipses",
+        "name": "Error Ellipses",
+        "color": "#f472b6",
+        "visible": true,
+        "locked": false,
+        "role": "error-ellipses",
+        "lineTypeId": "dashed",
+        "defaultStyleId": "style-error-ellipse",
+        "printable": true,
+        "lineweightMm": 0.25
+      },
+      {
+        "id": "labels",
+        "name": "Labels",
+        "color": "#e2e8f0",
+        "visible": true,
+        "locked": false,
+        "role": "labels",
+        "defaultStyleId": "style-label",
+        "printable": true,
+        "lineweightMm": 0.25
+      },
+      {
+        "id": "parcels",
+        "name": "Parcels",
+        "color": "#f59e0b",
+        "visible": true,
+        "locked": false,
+        "role": "parcels",
+        "defaultStyleId": "style-parcel",
+        "printable": true,
+        "lineweightMm": 0.25
+      },
+      {
+        "id": "general",
+        "name": "General",
+        "color": "#e2e8f0",
+        "visible": true,
+        "locked": false,
+        "role": "planning",
+        "lineTypeId": "continuous",
+        "printable": true,
+        "frozen": false,
+        "transparency": 0,
+        "description": ""
+      }
+    ],
+    "annotationStyles": {
+      "textStyles": [
+        {
+          "id": "draft-text-style-ef985b33-3b8d-4b4f-82d3-1403c0bdfc74",
+          "name": "Normal",
+          "paperHeightMm": 3.5,
+          "fontFamily": "ui-monospace, SFMono-Regular, Menlo, Consolas, monospace",
+          "alignment": "left"
+        }
+      ],
+      "lineStyles": [
+        {
+          "id": "draft-line-style-832087f3-45fa-4ba1-a093-2fbee053b2cc",
+          "name": "Normal",
+          "lineweightMm": 0.25,
+          "lineTypeId": "continuous"
+        }
+      ],
+      "labelStyles": []
+    },
+    "precision": {
+      "bearingDecimals": 0,
+      "distanceDecimals": 3,
+      "areaDecimals": 1,
+      "coordinateDecimals": 3,
+      "unitsMode": "m"
+    },
+    "sheets": [],
+    "titleBlockDefinitions": [],
+    "tables": [],
+    "tableFragments": [],
+    "labels": [],
+    "metadata": {
+      "createdAt": "2026-09-20T12:03:53.877Z",
+      "updatedAt": "2026-09-20T12:03:53.877Z"
+    }
+  }
+}

@@ -324,6 +324,20 @@ export const useSurveyCadCommandStarters = ({
     if (selectionCount === 0) return;
     beginSession({ key: 'GRIDGROUND', inputValue: '', origin: null, combinedScaleFactor: null, direction: 'GRID_TO_GROUND' });
   },
+  // Whole-drawing scope: no selection required.
+  startProjectTransformCommand: () => {
+    beginSession({
+      key: 'PROJECTTRANSFORM',
+      inputValue: '',
+      projectMode: 'HELMERT',
+      helmertMode: 'SIMILARITY',
+      pairs: [],
+      pendingSource: null,
+      origin: null,
+      combinedScaleFactor: null,
+      direction: 'GRID_TO_GROUND',
+    });
+  },
   startCopyCommand: () => {
     if (selectionCount === 0) return;
     beginSession({ key: 'COPY', inputValue: '', startPoint: null });

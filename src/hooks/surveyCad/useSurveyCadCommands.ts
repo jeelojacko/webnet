@@ -37,6 +37,7 @@ import {
   buildGridGroundPanelState,
   buildHelmertPanelState,
 } from './useSurveyCadTransformPanel';
+import { buildProjectTransformPanelState } from './useSurveyCadProjectTransformPanel';
 import { handleSurveyCadTypedSubmit } from './useSurveyCadTypedSubmit';
 import { handleSurveyCadConsumePoint } from './useSurveyCadConsumePoint';
 import { handleSurveyCadDefaultSubmit } from './useSurveyCadDefaultSubmit';
@@ -119,39 +120,76 @@ export const useSurveyCadCommands = ({
   const commandExpectsPointPick = useMemo(() => sessionExpectsPointPick(session), [session]);
   const snapConstructionContext = useMemo(() => buildSnapConstructionContext(session), [session]);
   const commandPreview = useMemo(
-    () => buildCommandPreview({ session, previewPoint, reverseDirectionModifier }),
-    [previewPoint, reverseDirectionModifier, session],
+    () =>
+      buildCommandPreview({
+        session,
+        previewPoint,
+        reverseDirectionModifier,
+        projectEntityIds: history.present.project.entities.map((entity) => entity.id),
+      }),
+    [history.present.project.entities, previewPoint, reverseDirectionModifier, session],
   );
   // Phase 18Q HELMERT2D / GRIDGROUND compact panel: derived from the live
   // session; buttons route through the typed-submit path so panel and
   // command line share one code path.
   const helmertPanelState = useMemo(() => buildHelmertPanelState(session), [session]);
   const gridGroundPanelState = useMemo(() => buildGridGroundPanelState(session), [session]);
+  // Phase 18R whole-drawing project transform panel (Helmert + Grid/Ground).
+  const projectTransformPanelState = useMemo(
+    () => buildProjectTransformPanelState(session, history.present.project),
+    [history.present.project, session],
+  );
   const submitTransformPanelText = (text: string): void => {
     const live = sessionRef.current;
-    if (!live || (live.key !== 'HELMERT2D' && live.key !== 'GRIDGROUND')) return;
+    if (
+      !live ||
+      (live.key !== 'HELMERT2D' && live.key !== 'GRIDGROUND' && live.key !== 'PROJECTTRANSFORM')
+    ) {
+      return;
+    }
     const handled = handleSurveyCadTransformSubmit({
       applyHistoryUpdate,
       history,
       replaceSession,
       session: { ...live, inputValue: text },
+      publishReport,
     });
     if (!handled && text.trim().length > 0) {
       const current = sessionRef.current;
-      if (!current || (current.key !== 'HELMERT2D' && current.key !== 'GRIDGROUND')) return;
+      if (
+        !current ||
+        (current.key !== 'HELMERT2D' &&
+          current.key !== 'GRIDGROUND' &&
+          current.key !== 'PROJECTTRANSFORM')
+      ) {
+        return;
+      }
       replaceSession({
         ...current,
         inputValue: '',
         resultText:
           current.key === 'HELMERT2D'
             ? 'HELMERT2D pair invalid: enter `sx,sy,tx,ty` with finite numbers, or pick points in the viewport.'
-            : 'GRIDGROUND input invalid: type a positive factor, `GRIDTOGROUND` / `GROUNDTOGRID`, or `APPLY`.',
+            : current.key === 'GRIDGROUND'
+              ? 'GRIDGROUND input invalid: type a positive factor, `GRIDTOGROUND` / `GROUNDTOGRID`, or `APPLY`.'
+              : 'PROJECTTRANSFORM input invalid: enter `sx,sy,tx,ty`, a positive factor, `MODE`, `GRIDTOGROUND`/`GROUNDTOGRID`, or `APPLY`.',
       });
     }
   };
   const setGridGroundPanelOrigin = (x: number, y: number): void => {
     const live = sessionRef.current;
     if (!live || live.key !== 'GRIDGROUND') return;
+    if (!Number.isFinite(x) || !Number.isFinite(y)) return;
+    replaceSession({
+      ...live,
+      origin: { x, y, label: 'origin' },
+      inputValue: '',
+      resultText: undefined,
+    });
+  };
+  const setProjectTransformOrigin = (x: number, y: number): void => {
+    const live = sessionRef.current;
+    if (!live || live.key !== 'PROJECTTRANSFORM') return;
     if (!Number.isFinite(x) || !Number.isFinite(y)) return;
     replaceSession({
       ...live,
@@ -258,6 +296,7 @@ export const useSurveyCadCommands = ({
       handleSurveyCadTransformSubmit({
         applyHistoryUpdate,
         history,
+        publishReport,
         replaceSession,
         session,
       })
@@ -315,8 +354,10 @@ export const useSurveyCadCommands = ({
   return {
     helmertPanelState,
     gridGroundPanelState,
+    projectTransformPanelState,
     submitTransformPanelText,
     setGridGroundPanelOrigin,
+    setProjectTransformOrigin,
     activeCommandKey: session?.key ?? null,
     commandInputValue: session?.inputValue ?? '',
     commandPrompt: statusPrompt,

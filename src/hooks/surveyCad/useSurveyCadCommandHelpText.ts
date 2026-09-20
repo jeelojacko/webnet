@@ -201,6 +201,14 @@ export const helpTextForSession = (session: CommandSession | null): string => {
       return session.origin == null
         ? 'GRIDGROUND origin: click or type `x,y` / `LABEL=x,y` for the scale center.'
         : 'GRIDGROUND factor: type the positive combined scale factor. Type `GRIDTOGROUND` / `GROUNDTOGRID` to flip direction, `APPLY` to commit.';
+    case 'PROJECTTRANSFORM':
+      return session.projectMode === 'HELMERT'
+        ? session.pendingSource
+          ? 'PROJECTTRANSFORM Helmert target: click or type `x,y`, or `sx,sy,tx,ty`. Whole-drawing scope; equal weights, no outlier removal.'
+          : 'PROJECTTRANSFORM Helmert source: click or type `x,y`. Type `MODE RIGID|SIMILARITY`, `REMOVE n`, or `APPLY` (2+ pairs). Whole-drawing scope.'
+        : session.origin == null
+          ? 'PROJECTTRANSFORM Grid/Ground origin: click or type `x,y` for the scale center. Whole-drawing scope.'
+          : 'PROJECTTRANSFORM factor: type the positive CSF. `GRIDTOGROUND` / `GROUNDTOGRID` flips direction, `APPLY` commits.';
     case 'EXTEND':
       return session.firstTargetEntityId == null
         ? 'EXT input: click the line, polyline, or arc you want to extend.'

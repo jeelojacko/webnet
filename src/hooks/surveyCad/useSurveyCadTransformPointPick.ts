@@ -234,10 +234,40 @@ const handleGridGroundPick = (options: TransformPointPickOptions): boolean => {
   return true;
 };
 
+const handleProjectTransformPick = (options: TransformPointPickOptions): boolean => {
+  const { current, point, replaceSession } = options;
+  if (current.key !== 'PROJECTTRANSFORM') return false;
+  if (current.projectMode === 'HELMERT') {
+    if (!current.pendingSource) {
+      replaceSession({ ...current, pendingSource: point, inputValue: '', resultText: undefined });
+      return true;
+    }
+    replaceSession({
+      ...current,
+      pairs: [...current.pairs, { source: current.pendingSource, target: point }],
+      pendingSource: null,
+      inputValue: '',
+      resultText: undefined,
+    });
+    return true;
+  }
+  if (!current.origin) {
+    replaceSession({ ...current, origin: point, inputValue: '', resultText: undefined });
+    return true;
+  }
+  replaceSession({
+    ...current,
+    inputValue: '',
+    resultText: 'PROJECTTRANSFORM origin captured. Type a positive combined scale factor and press Enter.',
+  });
+  return true;
+};
+
 export const handleSurveyCadTransformPointPick = (options: TransformPointPickOptions): boolean =>
   handleRotatePick(options) ||
   handleScalePick(options) ||
   handleMirrorPick(options) ||
   handleAlign2DPick(options) ||
   handleHelmert2DPick(options) ||
-  handleGridGroundPick(options);
+  handleGridGroundPick(options) ||
+  handleProjectTransformPick(options);

@@ -133,7 +133,12 @@ export const useSurveyCadWorkspacePreviews = ({
         displayPrimitives,
         previewSourceEntityIds,
         commandPreview.transform,
-        { stroke: previewStroke, opacity: 0.6 },
+        {
+          stroke: previewStroke,
+          opacity: 0.6,
+          // Whole-drawing ghost stays bounded: representative geometry only.
+          maxPrimitives: commandPreview.wholeDrawing ? 4000 : undefined,
+        },
       );
     }
     const previewSourceEntityIds =

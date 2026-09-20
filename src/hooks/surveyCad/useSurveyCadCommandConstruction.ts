@@ -129,6 +129,7 @@ export const buildSnapConstructionContext = (
     case 'ALIGN2D':
     case 'HELMERT2D':
     case 'GRIDGROUND':
+    case 'PROJECTTRANSFORM':
     case 'EXTEND':
     case 'TRIM':
     case 'FILLET':

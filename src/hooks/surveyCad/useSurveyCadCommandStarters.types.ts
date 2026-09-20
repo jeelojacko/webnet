@@ -83,6 +83,7 @@ export interface SurveyCadCommandStarters {
   startAlign2DCommand: () => void;
   startHelmert2DCommand: () => void;
   startGridGroundCommand: () => void;
+  startProjectTransformCommand: () => void;
   startExtendCommand: () => void;
   startTrimCommand: () => void;
   startFilletCommand: () => void;

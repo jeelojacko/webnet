@@ -162,5 +162,7 @@ export const sessionExpectsPointPick = (session: CommandSession | null): boolean
       return session.sourceEntityId == null;
     case 'GRIDGROUND':
       return session.origin == null;
+    case 'PROJECTTRANSFORM':
+      return session.projectMode === 'HELMERT' ? true : session.origin == null;
   }
 };
