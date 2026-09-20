@@ -178,7 +178,7 @@ export const CAD_SHELL_COMMANDS: CadShellCommandDef[] = [
   // mesh; each commit is one undoable SURFACE_*_EDIT + worker rebuild).
   // SURFEDITS opens the edit history (manager surfaces section).
   action('SURFSWAPEDGE', 'Swap Edge', 'Surface', 'Swap a TIN edge diagonal (repeat picks, Enter/Esc ends).', undefined, ['SWAPEDGE']),
-  action('SURFADDLINE', 'Add Breakline', 'Surface', 'Add a forced TIN line between two vertices (repeat, Enter/Esc ends).', undefined, ['ADDTINLINE']),
+  action('SURFADDLINE', 'Add TIN Line', 'Surface', 'Add a forced TIN line between two vertices (repeat, Enter/Esc ends).', undefined, ['ADDTINLINE']),
   action('SURFDELETELINE', 'Delete Line', 'Surface', 'Delete a TIN edge (repeat picks, Enter/Esc ends).', undefined, ['DELTINLINE']),
   action('SURFEDITS', 'Edit History', 'Surface', 'Open the TIN edit history (surfaces manager).'),
   action('SURFSLOPE', 'Surface Slope', 'Surface', 'Query surface slope/aspect (manager inquiry).'),
