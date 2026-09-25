@@ -28,6 +28,14 @@ import {
   computeVolumeQuantities,
   toCadVolumeResult,
 } from './surfaceVolumeEngine';
+import type { CadAnalysisMetric } from '../engine/cad/cadAnalysisTypes';
+import {
+  isAnalysisEngineResultEmpty,
+  type CachedAnalysisEngineResult,
+} from '../engine/cad/surfaceAnalysisCache';
+import { analyzeElevationBands } from '../engine/cad/surfaceAnalysis/elevationBands';
+import { analyzeSlopeBands } from '../engine/cad/surfaceAnalysis/slopeBands';
+import { computeDepthBands } from '../engine/cad/surfaceAnalysis/depthBands';
 import {
   extractSurfaceProfile,
   type ExtractSurfaceProfileInput,
@@ -86,6 +94,7 @@ export type SurfaceWorkerRequestMessage =
   | { type: 'volume'; requestId: string; request: SurfaceVolumeRequest }
   | { type: 'profile'; requestId: string; request: SurfaceProfileRequest }
   | { type: 'sections'; requestId: string; request: SurfaceSectionsRequest }
+  | { type: 'analysis'; requestId: string; request: SurfaceAnalysisRequest }
   | { type: 'cancel'; requestId: string };
 
 export type SurfaceWorkerResponseMessage =
@@ -167,6 +176,20 @@ export type SurfaceWorkerResponseMessage =
       requestId: string;
       groupId: string;
       groupRevision: string;
+      error: string;
+    }
+  | {
+      type: 'analysis-success';
+      requestId: string;
+      analysisId: string;
+      geometryRevision: string;
+      result: SurfaceAnalysisResultPayload;
+    }
+  | {
+      type: 'analysis-failure';
+      requestId: string;
+      analysisId: string;
+      geometryRevision: string;
       error: string;
     };
 
@@ -273,6 +296,44 @@ export interface SurfaceSectionsRequest {
   lines: SurfaceSectionsLineInput[];
 }
 
+/**
+ * Phase 18U analysis computation request: compact flat-array mesh snapshots
+ * (never CadProject/React). One source mesh for surface metrics, or a
+ * base + comparison pair for signed-depth; plus the ordered band edges
+ * and the `arev1:` geometry revision the result must still match.
+ */
+export interface SurfaceAnalysisMeshSnapshot {
+  points: number[];
+  triangles: number[];
+}
+
+export interface SurfaceAnalysisRequest {
+  analysisId: string;
+  /** `arev1:` geometry revision the result must still match. */
+  geometryRevision: string;
+  metric: CadAnalysisMetric;
+  sourceKind: 'surface' | 'volume';
+  bands: Array<{ id: string; lower: number; upper: number }>;
+  surfaceMesh?: SurfaceAnalysisMeshSnapshot;
+  baseMesh?: SurfaceAnalysisMeshSnapshot;
+  comparisonMesh?: SurfaceAnalysisMeshSnapshot;
+  includeDisplay: boolean;
+  drawingId?: string;
+}
+
+/** Session result payload: per-band quantities + regions (or quantities-only). */
+export interface SurfaceAnalysisResultPayload {
+  analysisId: string;
+  revision: string;
+  metric: CadAnalysisMetric;
+  empty: boolean;
+  result: CachedAnalysisEngineResult;
+}
+
+export type SurfaceAnalysisEngineFn = (
+  _request: SurfaceAnalysisRequest,
+) => CachedAnalysisEngineResult | Promise<CachedAnalysisEngineResult>;
+
 export interface SurfaceWorkerHandlerDeps {
   loadBuilder: () => Promise<SurfaceWorkerBuilderFn>;
   /** Phase 18H: extractor override (tests inject fakes; default is the engine sibling's). */
@@ -286,6 +347,8 @@ export interface SurfaceWorkerHandlerDeps {
    * production defaults to a clear seam error until the engine slice lands.
    */
   loadSectionExtractor?: () => Promise<SurfaceSectionExtractorFn>;
+  /** Phase 18U: analysis engine override (tests inject fakes; default runs the band engines). */
+  loadAnalysisFn?: () => Promise<SurfaceAnalysisEngineFn>;
   postMessage: (_message: SurfaceWorkerResponseMessage) => void;
   defer?: (_callback: () => void) => void;
 }
@@ -399,6 +462,52 @@ const defaultSectionExtractor: SurfaceSectionExtractorFn = (input) => {
   };
 };
 
+/**
+ * Phase 18U default analysis engine: routes the request metric to the
+ * matching pure band engine. Flat XYZ snapshots de-interleave into the
+ * per-axis mesh shape; quantities are identical with/without display.
+ */
+export const runSurfaceAnalysisFromRequest: SurfaceAnalysisEngineFn = (
+  request: SurfaceAnalysisRequest,
+): CachedAnalysisEngineResult => {
+  const bands = request.bands.map((band) => ({ id: band.id, lower: band.lower, upper: band.upper }));
+  if (request.metric === 'signed-depth') {
+    if (!request.baseMesh || !request.comparisonMesh) {
+      throw new Error('ANALYSIS_MISSING_MESH: signed-depth needs base + comparison meshes.');
+    }
+    return {
+      kind: 'depth',
+      result: computeDepthBands(
+        { points: request.baseMesh.points, triangles: request.baseMesh.triangles },
+        { points: request.comparisonMesh.points, triangles: request.comparisonMesh.triangles },
+        bands,
+        { includeDisplay: request.includeDisplay },
+      ),
+    };
+  }
+  if (!request.surfaceMesh) throw new Error('ANALYSIS_MISSING_MESH: surface metric needs a surface mesh.');
+  const flat = request.surfaceMesh.points;
+  const xs: number[] = [];
+  const ys: number[] = [];
+  const zs: number[] = [];
+  for (let index = 0; index + 2 < flat.length; index += 3) {
+    xs.push(flat[index]!);
+    ys.push(flat[index + 1]!);
+    zs.push(flat[index + 2]!);
+  }
+  const mesh = { xs, ys, zs, tris: request.surfaceMesh.triangles };
+  if (request.metric === 'elevation') {
+    return {
+      kind: 'elevation',
+      result: analyzeElevationBands(mesh, bands, { includeDisplay: request.includeDisplay }),
+    };
+  }
+  return {
+    kind: 'slope',
+    result: analyzeSlopeBands(mesh, bands, request.metric),
+  };
+};
+
 export const createSurfaceWorkerHandler = (
   deps: SurfaceWorkerHandlerDeps,
 ): SurfaceWorkerHandler => {
@@ -408,6 +517,7 @@ export const createSurfaceWorkerHandler = (
   const latestVolumeBySurface = new Map<string, string>();
   const latestProfileByProfile = new Map<string, string>();
   const latestSectionsByGroup = new Map<string, string>();
+  const latestAnalysisByKey = new Map<string, string>();
   const defer = deps.defer ?? ((callback) => setTimeout(callback, 0));
   const loadContourExtractor =
     deps.loadContourExtractor ?? (() => Promise.resolve(extractSurfaceContours));
@@ -417,6 +527,8 @@ export const createSurfaceWorkerHandler = (
     deps.loadProfileExtractor ?? (() => Promise.resolve(extractSurfaceProfile));
   const loadSectionExtractor =
     deps.loadSectionExtractor ?? (() => Promise.resolve(defaultSectionExtractor));
+  const loadAnalysisFn =
+    deps.loadAnalysisFn ?? (() => Promise.resolve(runSurfaceAnalysisFromRequest));
 
   const handleBuild = (requestId: string, request: SurfaceBuildRequest): void => {
     latestRevisionBySurface.set(request.surfaceId, request.revision);
@@ -800,6 +912,51 @@ export const createSurfaceWorkerHandler = (
     });
   };
 
+  /** Phase 18U: latest-wins key per analysis = analysisId@geometryRevision. */
+  const analysisRequestKey = (request: SurfaceAnalysisRequest): string =>
+    `${request.analysisId}@${request.geometryRevision}`;
+
+  const handleAnalysis = (requestId: string, request: SurfaceAnalysisRequest): void => {
+    latestAnalysisByKey.set(request.analysisId, analysisRequestKey(request));
+    defer(() => {
+      if (cancelledRequestIds.has(requestId)) return;
+      void loadAnalysisFn()
+        .then((run) => run(request))
+        .then((result) => {
+          if (cancelledRequestIds.has(requestId)) return;
+          if (latestAnalysisByKey.get(request.analysisId) !== analysisRequestKey(request)) return;
+          const payload: SurfaceAnalysisResultPayload = {
+            analysisId: request.analysisId,
+            revision: request.geometryRevision,
+            metric: request.metric,
+            empty: isAnalysisEngineResultEmpty(result),
+            result,
+          };
+          deps.postMessage({
+            type: 'analysis-success',
+            requestId,
+            analysisId: request.analysisId,
+            geometryRevision: request.geometryRevision,
+            result: payload,
+          });
+        })
+        .catch((computeError) => {
+          if (cancelledRequestIds.has(requestId)) return;
+          if (latestAnalysisByKey.get(request.analysisId) !== analysisRequestKey(request)) return;
+          deps.postMessage({
+            type: 'analysis-failure',
+            requestId,
+            analysisId: request.analysisId,
+            geometryRevision: request.geometryRevision,
+            error: computeError instanceof Error ? computeError.message : String(computeError),
+          });
+        })
+        .finally(() => {
+          cancelledRequestIds.delete(requestId);
+        });
+    });
+  };
+
   return {
     handleMessage: (message: SurfaceWorkerRequestMessage): void => {
       if (!message) return;
@@ -823,6 +980,9 @@ export const createSurfaceWorkerHandler = (
       if (message.type === 'sections') {
         handleSections(message.requestId, message.request);
       }
+      if (message.type === 'analysis') {
+        handleAnalysis(message.requestId, message.request);
+      }
     },
     resetForTests: (): void => {
       cancelledRequestIds.clear();
@@ -831,6 +991,7 @@ export const createSurfaceWorkerHandler = (
       latestVolumeBySurface.clear();
       latestProfileByProfile.clear();
       latestSectionsByGroup.clear();
+      latestAnalysisByKey.clear();
     },
   };
 };
