@@ -320,6 +320,8 @@ at render time, so a stale result can never be baked into a legend.
 | `src/engine/cad/cadPersistence.ts` | Clone + load backfill (trailing order) |
 | `src/engine/cad/cadDrawingFile.ts` | Blank/open/migrate backfill (trailing order) |
 | `src/engine/cad/cadProjectTransform.ts` | Legend insertion XY move |
+| `src/engine/cad/surfaceAnalysis/scalarClip.ts` (slice B) | Shared numeric band validator that `cadAnalysisMaps` delegates to |
+| `src/engine/cad/surfaceAnalysis/rangeGenerator.ts` (slice B) | Equal-width range generator; imports the model's band cap/default |
 
 Untouched by design: `CadSurfaceStyle`, `CadVolumeSurfaceStyle`, 18I
 `zeroDelta`/`integratePolygon`, and the 18H plane/slope helpers.
@@ -335,6 +337,13 @@ reason code: `ANALYSIS_BANDS_EMPTY`, `ANALYSIS_BANDS_TOO_MANY`,
 are legal. Generated bands share exact edge values, so touching holds without
 tolerance games.
 
-Note: the repo has no shared scalar-clip/band validator (`scalarClip.ts` does not
-exist on this baseline), so `cadAnalysisMaps.ts` owns the thin re-check centrally
-— UI/worker slices import it rather than re-implementing.
+Note: the 18U engine slice (slice B) provides
+`src/engine/cad/surfaceAnalysis/scalarClip.ts` (`validateAnalysisBands`, the
+numeric array/type/finite/`lower < upper`/overlap core) and
+`rangeGenerator.ts` (`generateEqualRanges`, `MAX_ANALYSIS_BANDS` re-export).
+`cadAnalysisMaps.ts` DELEGATES the numeric core to the scalarClip validator and
+adds only the display-layer checks (cap, duplicate ids, color, label) plus
+stable reason codes; `generateAnalysisBands` delegates range math to
+`generateEqualRanges`. The single constant home is `cadAnalysisTypes.ts`
+(`MAX_ANALYSIS_BANDS`, `DEFAULT_ANALYSIS_BAND_COUNT`); the engine generator
+imports them from there, so the two slices cannot drift.

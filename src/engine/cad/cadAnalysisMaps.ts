@@ -6,15 +6,18 @@ import {
   type CadAnalysisMap,
   type CadAnalysisSource,
 } from './cadAnalysisTypes';
+import { validateAnalysisBands as validateSharedAnalysisBands } from './surfaceAnalysis/scalarClip';
+import { generateEqualRanges } from './surfaceAnalysis/rangeGenerator';
 
 /**
  * Phase 18U analysis-map CRUD + validation (pure, no I/O, no geometry).
  *
- * Validation is shared: `validateAnalysisBands` is the single band-order
- * contract used by create/update/persistence. NOTE: the 18H/18I numeric
- * helpers do not expose a band validator (no `scalarClip.ts` exists in this
- * repo baseline), so this module owns the thin re-check — keep it the single
- * home rather than re-implementing it in UI/worker slices.
+ * Validation is shared: the numeric core (array/type/finite/`lower < upper`/
+ * overlap) is delegated to the 18U engine validator
+ * `surfaceAnalysis/scalarClip.validateAnalysisBands` — one rule, no drift.
+ * This module adds the DISPLAY-layer checks the engine does not need (band
+ * cap, duplicate ids, color, label) and maps the shared errors onto stable
+ * reason codes for UI/persistence callers.
  */
 
 const isFiniteNumber = (value: unknown): value is number =>
@@ -23,39 +26,36 @@ const isFiniteNumber = (value: unknown): value is number =>
 const isNonEmptyString = (value: unknown): value is string =>
   typeof value === 'string' && value.trim() !== '';
 
-/** Relative tolerance for the overlap test so exact touching stays legal. */
-const overlapTolerance = (value: number): number => 1e-12 * Math.max(1, Math.abs(value));
-
 /**
  * Returns null when valid, else a stable reason code.
  * Rules: 1..MAX_ANALYSIS_BANDS, unique non-empty ids, finite edges with
  * `lower < upper`, non-empty colors, and NO overlap. Exact touching
  * (`next.lower === prev.upper`) and gaps are allowed by design.
+ *
+ * Numeric membership/overlap is the shared engine rule (scalarClip); the
+ * shared errors are classified here into the stable codes below.
  */
 export const validateAnalysisBands = (bands: readonly CadAnalysisBand[]): string | null => {
   if (!Array.isArray(bands) || bands.length === 0) return 'ANALYSIS_BANDS_EMPTY';
   if (bands.length > MAX_ANALYSIS_BANDS) return 'ANALYSIS_BANDS_TOO_MANY';
   const ids = new Set<string>();
   for (const band of bands) {
-    if (!band || !isNonEmptyString(band.id)) return 'ANALYSIS_BAND_ID';
-    if (ids.has(band.id)) return 'ANALYSIS_BAND_ID_DUPLICATE';
-    ids.add(band.id);
-    if (!isFiniteNumber(band.lower) || !isFiniteNumber(band.upper)) {
-      return 'ANALYSIS_BAND_NON_FINITE';
-    }
-    if (band.lower >= band.upper) return 'ANALYSIS_BAND_RANGE';
+    if (ids.has(band?.id)) return 'ANALYSIS_BAND_ID_DUPLICATE';
+    ids.add(band?.id);
     if (!isNonEmptyString(band.color)) return 'ANALYSIS_BAND_COLOR';
     if (band.label !== undefined && typeof band.label !== 'string') return 'ANALYSIS_BAND_LABEL';
   }
-  const sorted = [...bands].sort((a, b) => a.lower - b.lower);
-  for (let index = 1; index < sorted.length; index += 1) {
-    const previous = sorted[index - 1]!;
-    const next = sorted[index]!;
-    if (next.lower < previous.upper - overlapTolerance(previous.upper)) {
-      return 'ANALYSIS_BAND_OVERLAP';
-    }
-  }
-  return null;
+  const shared = validateSharedAnalysisBands(bands);
+  return shared.ok ? null : sharedErrorCode(shared.errors);
+};
+
+const sharedErrorCode = (errors: readonly string[]): string => {
+  const joined = errors.join('\n');
+  if (joined.includes('overlap')) return 'ANALYSIS_BAND_OVERLAP';
+  if (joined.includes('finite')) return 'ANALYSIS_BAND_NON_FINITE';
+  if (joined.includes('lower must be < upper')) return 'ANALYSIS_BAND_RANGE';
+  if (joined.includes('id must be a non-empty string')) return 'ANALYSIS_BAND_ID';
+  return 'ANALYSIS_BAND_INVALID';
 };
 
 export const isAnalysisSourceValid = (source: CadAnalysisSource | undefined): boolean => {
@@ -297,10 +297,11 @@ export interface GeneratedAnalysisBands {
 }
 
 /**
- * Even banding between `min` and `max` with seed palette colors. Bands share
- * their edge values exactly (band i upper === band i+1 lower), so the
- * validation "touching is legal" contract holds without tolerance games.
- * Colors are display-only and cycle when numBands > palette length.
+ * Even banding between `min` and `max` with seed palette colors. Range math is
+ * delegated to the shared 18U engine generator `generateEqualRanges` (band i
+ * upper === band i+1 lower exactly), so the validator's touching-is-legal rule
+ * holds without tolerance games. Colors are display-only and cycle when
+ * numBands > palette length.
  */
 export const generateAnalysisBands = (
   numBands: number,
@@ -313,17 +314,15 @@ export const generateAnalysisBands = (
   if (!isFiniteNumber(min) || !isFiniteNumber(max) || min >= max) {
     return { error: 'ANALYSIS_BAND_RANGE' };
   }
-  const step = (max - min) / numBands;
-  const thresholds = Array.from({ length: numBands + 1 }, (_, index) =>
-    index === numBands ? max : min + index * step,
-  );
+  const ranges = generateEqualRanges(min, max, numBands);
   const offset = Math.abs(Math.trunc(paletteSeed)) % ANALYSIS_BAND_PALETTE.length;
-  const bands: CadAnalysisBand[] = thresholds.slice(0, numBands).map((lower, index) => ({
-    id: `band-${index + 1}`,
-    lower,
-    upper: thresholds[index + 1]!,
+  const bands: CadAnalysisBand[] = ranges.map((range, index) => ({
+    id: range.id,
+    lower: range.lower,
+    upper: range.upper,
     color: ANALYSIS_BAND_PALETTE[(offset + index) % ANALYSIS_BAND_PALETTE.length]!,
   }));
+  const thresholds = [ranges[0]!.lower, ...ranges.map((range) => range.upper)];
   return { bands, thresholds };
 };
 
