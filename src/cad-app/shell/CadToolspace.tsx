@@ -3,6 +3,7 @@ import type { CadSnapKind } from '../../engine/cad/cadTypes';
 import type { CadShellActions, CadWorkspaceSnapshot } from './cadShellTypes';
 import type { CadToolspaceTab } from './cadShellTypes';
 import { VolumesNode } from './CadVolumeToolspace';
+import { SurfaceAnalysesNode } from './CadAnalysisToolspace';
 import { SurfaceProfilesNode, ProfileViewsNode } from './CadProfileToolspace';
 import { SampleLineGroupsNode, SectionViewsNode, SectionStylesNode } from './CadSampleLineToolspace';
 import { CadAnnotationToolspaceNodes } from '../annotation/CadAnnotationToolspace';
@@ -656,6 +657,7 @@ const SurfacesNode: React.FC<{ snapshot: CadWorkspaceSnapshot | null; actions: C
                 </div>
               ) : null}
               <SurfaceContoursRow snapshot={snapshot} rowId={row.id} styleId={row.styleId} />
+              <SurfaceAnalysesNode snapshot={snapshot} actions={actions} surfaceId={row.id} />
             </div>
           </details>
         );

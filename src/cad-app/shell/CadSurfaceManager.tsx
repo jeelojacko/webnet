@@ -6,6 +6,7 @@ import { CadSurfaceDefinitionEditor } from './CadSurfaceDefinitionEditor';
 import { CadSurfaceStyleEditor } from './CadSurfaceStyleEditor';
 import { CadSurfaceInquiryPanel } from './CadSurfaceInquiryPanel';
 import { CadVolumeSection } from './CadVolumeManager';
+import { CadAnalysisSection } from './CadAnalysisManager';
 import { Field, ManagerShell } from '../../components/surveyCad/surveyManagerShared.tsx';
 import { buttonClass, inputClass } from '../../components/surveyCad/surveyManagerShared';
 
@@ -16,6 +17,8 @@ interface CadSurfaceManagerProps {
   pickArmedFor: string | null;
   volumePickArmedFor?: string | null;
   volumePickAnswer?: { volumeId: string; text: string } | null;
+  analysisPickArmedFor?: string | null;
+  analysisPickAnswer?: { analysisId: string; text: string } | null;
   onClose: () => void;
 }
 
@@ -37,6 +40,8 @@ export const CadSurfaceManager: React.FC<CadSurfaceManagerProps> = ({
   pickArmedFor,
   volumePickArmedFor = null,
   volumePickAnswer = null,
+  analysisPickArmedFor = null,
+  analysisPickAnswer = null,
   onClose,
 }) => {
   const surface = snapshot.surface;
@@ -165,6 +170,12 @@ export const CadSurfaceManager: React.FC<CadSurfaceManagerProps> = ({
         actions={actions}
         volumePickArmedFor={volumePickArmedFor}
         volumePickAnswer={volumePickAnswer}
+      />
+      <CadAnalysisSection
+        snapshot={snapshot}
+        actions={actions}
+        analysisPickArmedFor={analysisPickArmedFor}
+        analysisPickAnswer={analysisPickAnswer}
       />
     </ManagerShell>
   );

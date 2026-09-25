@@ -1,5 +1,6 @@
 import React from 'react';
 import type { CadShellActions, CadWorkspaceSnapshot } from './cadShellTypes';
+import { VolumeAnalysesNode } from './CadAnalysisToolspace';
 
 /**
  * Phase 18I — volume rows under Surfaces in the Toolspace Survey tab.
@@ -46,6 +47,7 @@ export const VolumesNode: React.FC<{
                       ? `Stats (STALE): cut ${row.staleQuantities.cutVolume.toFixed(1)} fill ${row.staleQuantities.fillVolume.toFixed(1)} net ${row.staleQuantities.netVolume.toFixed(1)}`
                       : 'Statistics: no quantities — calculate.'}
                 </div>
+                <VolumeAnalysesNode snapshot={snapshot} actions={actions} volumeId={row.id} />
               </div>
             </details>
           );

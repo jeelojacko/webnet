@@ -94,6 +94,13 @@ export interface CadDisplayScene {
    */
   volumeLayers?: import('./cadVolumeView').CadVolumeDisplayLayer[];
   /**
+   * Phase 18U — derived analysis band fills + legend presentations. Rendered
+   * BEFORE the surface/volume passes so band fills stay under contours/edges
+   * (display-only; never CAD entities, never exported geometry).
+   */
+  analysisLayers?: import('./cadAnalysisDisplayView').CadAnalysisDisplayLayer[];
+  analysisLegendLayers?: import('./cadAnalysisDisplayView').AnalysisLegendGeometry[];
+  /**
    * Phase 18J — derived profile-view layers (aggregated SVG paths per
    * profile view, from cached CURRENT results — never CAD entities).
    * Export scenes ignore this field.

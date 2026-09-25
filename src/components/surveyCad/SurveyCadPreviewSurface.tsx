@@ -1,6 +1,10 @@
 import React from 'react';
 import type { CadSurfaceDisplayLayer } from '../../engine/cad/cadDisplayTypes';
 import type { CadVolumeDisplayLayer } from '../../engine/cad/cadVolumeView';
+import type {
+  CadAnalysisDisplayLayer,
+  AnalysisLegendGeometry,
+} from '../../engine/cad/cadAnalysisDisplayView';
 import type { ProjectPoint } from './SurveyCadPreview.types';
 
 interface RenderSurfaceLayersOptions {
@@ -146,6 +150,83 @@ export const renderSurfaceLayers = ({
               {`STALE — ${layer.statusText}`}
             </text>
           ) : null}
+        </g>
+      );
+    })}
+  </>
+);
+
+/**
+ * Phase 18U — derived analysis band fills + legends. Analysis fills render
+ * UNDER the surface/contour passes (rendered before them), one aggregated
+ * path per band (never per triangle); `showBoundaries` adds outlines;
+ * legends draw their frame/title/swatch rows from the CURRENT cached result.
+ */
+export const renderAnalysisLayers = ({
+  layers,
+  legendLayers,
+  project,
+}: {
+  layers: readonly CadAnalysisDisplayLayer[];
+  legendLayers: readonly AnalysisLegendGeometry[];
+  project: ProjectPoint;
+}): React.ReactNode => (
+  <>
+    {layers.map((layer) => (
+      <g key={`analysis:${layer.analysisId}`} data-analysis-layer={layer.analysisId} pointerEvents="none">
+        {layer.bands.map((band) =>
+          band.d === '' ? null : (
+            <path
+              key={band.bandId}
+              d={toScreenD(band.d, project)}
+              fill={band.color}
+              fillOpacity={layer.opacity}
+              stroke="none"
+              data-analysis-band={band.bandId}
+              data-analysis-regions={band.regionCount}
+            />
+          ),
+        )}
+        {layer.boundariesD !== '' ? (
+          <path
+            d={toScreenD(layer.boundariesD, project)}
+            fill="none"
+            stroke="#111827"
+            strokeWidth={0.6}
+            data-analysis-boundaries={layer.analysisId}
+          />
+        ) : null}
+      </g>
+    ))}
+    {legendLayers.map((legend) => {
+      const title = project(legend.frame.x, legend.frame.y + legend.titleHeight * 1.2);
+      return (
+        <g
+          key={`analysis-legend:${legend.legendId}`}
+          data-analysis-legend-layer={legend.legendId}
+          data-analysis-legend-ranges-only={legend.rangesOnly ? 'true' : undefined}
+          pointerEvents="none"
+        >
+          <text x={title.x} y={title.y} fill="#e2e8f0" fontSize={11} data-analysis-legend-title={legend.legendId}>
+            {legend.title}
+          </text>
+          {legend.rows.map((row, index) => {
+            const rowPoint = project(row.x, row.y + legend.titleHeight * 0.8);
+            return (
+              <React.Fragment key={`${legend.legendId}:${row.bandId}:${index}`}>
+                <rect
+                  x={rowPoint.x}
+                  y={rowPoint.y - legend.rowHeight * 0.7}
+                  width={legend.swatchWidth}
+                  height={legend.rowHeight * 0.7}
+                  fill={row.color}
+                />
+                <text x={rowPoint.x + legend.swatchWidth + 3} y={rowPoint.y} fill="#cbd5e1" fontSize={10}>
+                  {[row.rangeText, row.quantityText].filter((part) => part !== '').join(' · ')}
+                </text>
+              </React.Fragment>
+            );
+          })}
         </g>
       );
     })}

@@ -153,6 +153,9 @@ const CadBlocksRibbonGroup: React.FC<{
  * the SURFACE_STYLE_UPDATE undo path). Phase 18I adds a VOLUME group
  * (Create Volume, Calculate, Difference Inquiry, Volume Report) backed by
  * the session SurfaceVolumeService; manual Calculate only. No Grading/Watershed.
+ * Phase 18U adds an ANALYSIS group (Elevation/Slope/Manager/Inquiry),
+ * a VOLUME Depth entry, and an Analysis Legend group; all route through the
+ * surface manager palette and the shared command registry.
  */
 const CadSurfaceRibbonGroup: React.FC<{
   snapshot: CadWorkspaceSnapshot | null;
@@ -237,11 +240,21 @@ const CadSurfaceRibbonGroup: React.FC<{
       {group('Display', [
         { key: 'contours-toggle', label: 'Contours', hint: 'Toggle contour display on the selected surface style (manager).', disabled: !ready, onClick: () => openManager(selectedSurfaceId ?? undefined) },
       ])}
+      {group('Analysis', [
+        { key: 'new-elevation', label: 'Elevation', hint: 'Create an elevation-band analysis on the selected surface (5 equal bands).', disabled: !ready, onClick: () => actions?.createAnalysis?.('elevation') },
+        { key: 'new-slope', label: 'Slope', hint: 'Create a slope-band analysis on the selected surface (5 equal bands).', disabled: !ready, onClick: () => actions?.createAnalysis?.('slope-percent') },
+        { key: 'manager', label: 'Manager', hint: 'Open the analysis manager (rows, ranges, calculate, delete).', disabled: !ready, onClick: () => openManager(selectedSurfaceId ?? undefined) },
+        { key: 'inquiry', label: 'Inquiry', hint: 'Query the exact metric + band at a plan point (manager inquiry).', disabled: !ready, onClick: () => openManager(selectedSurfaceId ?? undefined) },
+      ])}
       {group('Volume', [
         { key: 'create-volume', label: 'Create Volume', hint: 'Create a TIN-to-TIN volume surface (manager).', disabled: !ready, onClick: () => openManager(selectedSurfaceId ?? undefined) },
+        { key: 'depth', label: 'Depth', hint: 'Create a signed-depth analysis on the selected volume surface.', disabled: !ready, onClick: () => actions?.createAnalysis?.('signed-depth') },
         { key: 'calculate-volume', label: 'Calculate', hint: 'Calculate volumes for the selected volume surface (both sources must be Current).', disabled: !ready || !canCalculateVolume, onClick: () => actions?.calculateSelectedVolume() },
         { key: 'difference-inquiry', label: 'Difference Inquiry', hint: 'Query base/comparison elevations + CUT/FILL verdict (manager).', disabled: !ready, onClick: () => openManager(selectedSurfaceId ?? undefined) },
         { key: 'volume-report', label: 'Volume Report', hint: 'Download the Volume Summary CSV (Current volumes only, manager).', disabled: !ready, onClick: () => openManager(selectedSurfaceId ?? undefined) },
+      ])}
+      {group('Analysis Legend', [
+        { key: 'create-legend', label: 'Create Legend', hint: 'Create a legend for the selected analysis (manager creates it at the insertion point).', disabled: !ready, onClick: () => openManager(selectedSurfaceId ?? undefined) },
       ])}
       {group('Profile', [
         { key: 'profile-create', label: 'Create Surface Profile', hint: 'Create a profile from an alignment + surface (manager).', disabled: !ready, onClick: () => actions?.openSurveyManager('profiles') },

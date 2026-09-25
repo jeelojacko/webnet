@@ -106,6 +106,18 @@ export const filterCadDisplaySceneForViewport = (
     bounds: scene.bounds,
     surfaceLayers: (scene.surfaceLayers ?? []).filter((layer) => !isLayerHidden(project, layer.layerId)),
     volumeLayers: (scene.volumeLayers ?? []).filter((layer) => !isLayerHidden(project, layer.layerId)),
+    // Phase 18U: analysis fills + legends ride the same OFF/frozen contract —
+    // layer OFF hides with no recalculation, ON restores from cache.
+    analysisLayers: (scene.analysisLayers ?? []).filter(
+      (layer) => !isLayerHidden(project, layer.layerId),
+    ),
+    analysisLegendLayers: (scene.analysisLegendLayers ?? []).filter((legend) => {
+      const def = (project.analysisLegends ?? []).find((entry) => entry.id === legend.legendId);
+      const map = def
+        ? (project.analysisMaps ?? []).find((entry) => entry.id === def.analysisId)
+        : undefined;
+      return !isLayerHidden(project, map?.layerId ?? 'general');
+    }),
     // Phase 18J: profile views ride the same OFF/frozen contract — layer
     // OFF hides the view with no rebuild, ON restores it from cache.
     profileViewLayers: (scene.profileViewLayers ?? []).filter(

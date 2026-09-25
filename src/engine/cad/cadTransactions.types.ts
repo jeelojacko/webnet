@@ -37,6 +37,9 @@ import type {
   ImportedTinPayload,
 } from './cadTypes';
 import type { CadVolumeSurfaceStylePatch } from './cadVolumeSurfaces';
+import type { CadAnalysisAppearancePatch } from './cadAnalysisMaps';
+import type { CadAnalysisLegendPatch } from './cadAnalysisLegends';
+import type { CadAnalysisBand, CadAnalysisLegend, CadAnalysisSource } from './cadAnalysisTypes';
 import type { CadProfileStylePatch } from './cadProfileTypes';
 import type {
   CadSampleLinePatch,
@@ -164,6 +167,14 @@ export type CadCommandKey =
   | 'VOLUME_SURFACE_UPDATE_SOURCES'
   | 'VOLUME_SURFACE_SET_LAYER_STYLE'
   | 'VOLUME_STYLE_CREATE'
+  | 'ANALYSIS_MAP_CREATE'
+  | 'ANALYSIS_MAP_UPDATE_BANDS'
+  | 'ANALYSIS_MAP_UPDATE_APPEARANCE'
+  | 'ANALYSIS_MAP_DELETE'
+  | 'ANALYSIS_LEGEND_CREATE'
+  | 'ANALYSIS_LEGEND_UPDATE'
+  | 'ANALYSIS_LEGEND_MOVE'
+  | 'ANALYSIS_LEGEND_DELETE'
   | 'VOLUME_STYLE_DUPLICATE'
   | 'VOLUME_STYLE_RENAME'
   | 'VOLUME_STYLE_UPDATE'
@@ -1285,6 +1296,53 @@ export type CadCommand =
       /** Validated project from the annotation UI op applier (hook-owned). */
       project: CadProject;
       label: string;
+    }
+  // Phase 18U — analysis maps + legends (definitions only; derived band
+  // quantities are session-only and never dirty the drawing).
+  | {
+      key: 'ANALYSIS_MAP_CREATE';
+      name?: string;
+      source: CadAnalysisSource;
+      bands: CadAnalysisBand[];
+      layerId?: CadLayerId;
+      opacity?: number;
+      description?: string;
+    }
+  | {
+      key: 'ANALYSIS_MAP_UPDATE_BANDS';
+      analysisId: string;
+      bands?: CadAnalysisBand[];
+      source?: CadAnalysisSource;
+    }
+  | {
+      key: 'ANALYSIS_MAP_UPDATE_APPEARANCE';
+      analysisId: string;
+      patch: CadAnalysisAppearancePatch;
+    }
+  | {
+      key: 'ANALYSIS_MAP_DELETE';
+      analysisId: string;
+      /** True removes the map + every referencing legend atomically. */
+      deleteLegendsToo?: boolean;
+    }
+  | {
+      key: 'ANALYSIS_LEGEND_CREATE';
+      legend: CadAnalysisLegend;
+    }
+  | {
+      key: 'ANALYSIS_LEGEND_UPDATE';
+      legendId: string;
+      patch: CadAnalysisLegendPatch;
+    }
+  | {
+      key: 'ANALYSIS_LEGEND_MOVE';
+      legendId: string;
+      x: number;
+      y: number;
+    }
+  | {
+      key: 'ANALYSIS_LEGEND_DELETE';
+      legendId: string;
     };
 
 export interface CadTransaction {
