@@ -17,13 +17,15 @@ import {
 } from '../src/cad-app/shell/cadAnalysisAdapters';
 import {
   buildCadAnalysisSnapshot,
-  buildAnalysisSummaryCsv,
-  buildAnalysisSummaryFilename,
   prepareNewAnalysis,
   analysisSourceRange,
   formatAnalysisNumber,
   type CadAnalysisSnapshot,
 } from '../src/cad-app/shell/cadAnalysisSnapshot';
+import {
+  buildAnalysisSummaryCsv,
+  buildAnalysisSummaryFilename,
+} from '../src/cad-app/shell/cadAnalysisReport';
 import {
   analysisRangeGaps,
   describeAnalysisRangeError,

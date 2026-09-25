@@ -3,11 +3,8 @@ import { createStableRuntimeId } from '../../engine/id';
 import type { CadAnalysisMap } from '../../engine/cad/cadAnalysisTypes';
 import type { CadShellActions, CadWorkspaceSnapshot } from './cadShellTypes';
 import { saveBrowserTextFile } from '../../engine/browserFileIo';
-import {
-  buildAnalysisSummaryCsv,
-  buildAnalysisSummaryFilename,
-  formatAnalysisNumber,
-} from './cadAnalysisSnapshot';
+import { formatAnalysisNumber } from './cadAnalysisSnapshot';
+import { buildAnalysisSummaryCsv, buildAnalysisSummaryFilename } from './cadAnalysisReport';
 import { CadAnalysisRangeEditor } from './CadAnalysisRangeEditor';
 import { CadAnalysisInquiryPanel } from './CadAnalysisInquiryPanel';
 import { Field, ManagerShell } from '../../components/surveyCad/surveyManagerShared.tsx';
