@@ -226,7 +226,6 @@ export const useSurveyCadSurfacePointEditSessions = (deps: Deps) => {
       return true;
     }
     return false;
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [session]);
 
   const handleEnter = useCallback((): boolean => {
