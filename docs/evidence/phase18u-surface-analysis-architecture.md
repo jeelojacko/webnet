@@ -347,3 +347,31 @@ stable reason codes; `generateAnalysisBands` delegates range math to
 `generateEqualRanges`. The single constant home is `cadAnalysisTypes.ts`
 (`MAX_ANALYSIS_BANDS`, `DEFAULT_ANALYSIS_BAND_COUNT`); the engine generator
 imports them from there, so the two slices cannot drift.
+
+## 15. Export slice (F)
+
+The export follows the same "one canonical representation" discipline as the
+screen renderer, but consumes raw model-XY region rings (not path strings) so
+the viewport projection stays exact:
+
+| File | Responsibility |
+|---|---|
+| `src/engine/cad/cadAnalysisExportScene.ts` | `CadAnalysisExportInput` (map + status + per-band rings + legend rows); sheet-space builder (fills/boundaries/legend) and DXF model-space builder (closed-polyline boundaries + legend); disposition constants `ANALYSIS_SHEET_DISPOSITION = 'FULL'`, `ANALYSIS_DXF_FILL_DISPOSITION = 'APPROXIMATED_WITH_WARNING'`, `ANALYSIS_LANDXML_DISPOSITION = 'NOT_APPLICABLE'` |
+| `src/engine/cad/cadAnalysisExportRegions.ts` | Engine result → `AnalysisExportBandRegions`: elevation/depth reuse the cached display regions; slope reclassifies whole faces through the shared `planeGradient`/`slopeRatioOf`/`classifyAnalysisValue`; `analysisRegionsFromFlatRings` accepts the session cache's flat world-frame rings |
+| `src/engine/cad/cadExportScene.ts` | Threads `analysis` through `BuildSceneArgs`; fills render under model linework, legend with it; layer OFF/FROZEN/non-printable filtering applies |
+| `src/engine/cad/cadPdfExport.ts` | Polyline non-zero fill support (`f`) with optional stroke on top |
+| `src/engine/cad/dxf/dxfExportModel.ts` + `dxfLayoutExport.ts` | `analysis` on `BuildDxfModelArgs`/`BuildDxfLayoutArgs`; R12 + R2000 share one model-space path |
+| `src/engine/landxmlCadProject.ts` | One explicit `NOT_APPLICABLE` warning per analysis map; entity/TIN/volume behavior unchanged |
+| `src/engine/cad/exportCenter.ts` | Optional 5th `analysis` argument threaded to SVG/PDF/R12/R2000 previews |
+
+CURRENT-only gate: only `status === 'CURRENT'` with at least one non-empty ring
+emits geometry; any other status emits no geometry and a withheld warning.
+Analysis maps are drawing resources, not entities, so the entity disposition
+lists (`exportedEntityIds`/`omittedEntityIds`/`approximatedEntityIds`) are
+untouched — disposition travels in the warnings.
+
+Note: the canonical screen builders (`cadAnalysisView.ts` +
+`cadAnalysisLegendView.ts`) may not have landed when this slice was written;
+the export adapters above are the bounded local bridge. If a canonical
+region adapter lands, `cadAnalysisExportRegions.ts` is the only file to
+repoint.

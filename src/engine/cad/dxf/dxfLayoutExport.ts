@@ -10,6 +10,7 @@ import {
   type ModelLabelPlacement,
 } from '../cadExportScene';
 import { buildDxfExportModelWithResult, type BuildDxfModelArgs, type DxfExportModel } from './dxfExportModel';
+import type { CadAnalysisExportInput } from '../cadAnalysisExportScene';
 import {
   DXF_LINETYPE_CATALOG,
   dxfLinetypeName,
@@ -58,6 +59,8 @@ export interface BuildDxfLayoutArgs {
   modelLabels?: ModelLabelPlacement[];
   /** Shared paper extras (north arrow, scale bar) in scene mm, top-left origin. */
   paperExtras?: ExportItem[];
+  /** Phase 18U analysis boundaries + legend, forwarded to the model-space builder. */
+  analysis?: CadAnalysisExportInput;
 }
 
 export interface DxfLayoutWarning {
@@ -311,7 +314,7 @@ const buildDxfLayoutInner = (args: BuildDxfLayoutArgs): DxfLayoutInner => {
     return handle;
   };
 
-  const modelResult = buildDxfExportModelWithResult({ project: args.project, modelLabels: args.modelLabels });
+  const modelResult = buildDxfExportModelWithResult({ project: args.project, modelLabels: args.modelLabels, analysis: args.analysis });
   const model = modelResult.output;
   const paperLayers = new Set<string>();
   const takenNames = new Set<string>(['model']);

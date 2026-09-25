@@ -1,6 +1,9 @@
 import type { CadAnnotationAnchor } from './annotation/cadAnnotationAnchors';
 import type { CadAnnotationSettings } from './annotation/cadAnnotationSettings';
-import type { CadAnalysisLegend, CadAnalysisMap } from './cadAnalysisTypes';
+import type { CadAnalysisLegend, CadAnalysisMap, CadAnalysisStatus } from './cadAnalysisTypes';
+// Phase 18U: re-export the analysis tables so project-level consumers can
+// import them from the same module as the rest of the CadProject surface.
+export type { CadAnalysisLegend, CadAnalysisMap, CadAnalysisStatus };
 import type { ParseOptions, StationErrorEllipse, StationId, UnitsMode } from '../../types';
 import type { FieldToFinishSettings } from '../fieldToFinish/catalogIo';
 import type { FeatureCodeCatalog } from '../fieldToFinish/featureCatalog';

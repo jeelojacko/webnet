@@ -26,6 +26,7 @@ export type {
 import { expandBlockReference, findBlockDefinition, normalizeBlockScales } from '../cadBlocks';
 import { surveyPointMarker } from '../cadRendererStyle';
 import { deriveAnnotationPrimitives } from './dxfAnnotationExport';
+import { buildAnalysisModelItems, type CadAnalysisExportInput } from '../cadAnalysisExportScene';
 
 // Adapter boundary: the drafting/document core never becomes DXF-shaped.
 // This model is the only DXF-aware shape, built fresh per export and thrown
@@ -91,6 +92,12 @@ export interface DxfExportModel {
 export interface BuildDxfModelArgs {
   project: CadProject;
   modelLabels?: ModelLabelPlacement[];
+  /**
+   * Phase 18U: CURRENT analysis-map boundaries + legend (DXF has no analysis
+   * fill/hatch subsystem here, so fills are APPROXIMATED_WITH_WARNING and
+   * every current layer warns; stale maps emit nothing). Absent = legacy.
+   */
+  analysis?: CadAnalysisExportInput;
 }
 
 const layerOf = (layerId: string): string => layerId;
@@ -536,6 +543,30 @@ export const buildDxfExportModelWithResult = (args: BuildDxfModelArgs): ExportRe
     }
     model.texts.push({ layer: registerLayer(label.layerId ?? 'labels'), at: { x: label.xModel, y: label.yModel }, height: 2.5, text: label.text });
   });
+  // Phase 18U analysis geometry: one closed-polyline boundary per band region
+  // plus the legend outlines/rows in model space. No fill subsystem on this
+  // branch, so the builder emits APPROXIMATED_WITH_WARNING per current map.
+  const analysis = buildAnalysisModelItems(args.analysis);
+  analysis.polylines.forEach((polyline) => {
+    if (polyline.vertices.length < 2 || !finiteVertices(polyline.vertices)) return;
+    model.polylines.push({
+      layer: registerLayer(polyline.layer),
+      vertices: polyline.vertices.map((vertex) => ({ x: vertex.x, y: vertex.y })),
+      closed: polyline.closed,
+      ...(polyline.colorHex != null ? { colorHex: polyline.colorHex } : {}),
+    });
+  });
+  analysis.texts.forEach((entry) => {
+    if (!finitePair(entry.at.x, entry.at.y)) return;
+    model.texts.push({
+      layer: registerLayer(entry.layer),
+      at: { x: entry.at.x, y: entry.at.y },
+      height: entry.height,
+      text: entry.text,
+      ...(entry.colorHex != null ? { colorHex: entry.colorHex } : {}),
+    });
+  });
+  analysis.warnings.forEach(warn);
   model.layers.sort();
   model.usedLinetypes = [...usedLinetypes].sort();
   return finalizeExportResult(result);

@@ -12,7 +12,7 @@ import {
   buildDxfExportModelWithResult,
 } from '../src/engine/cad/dxf/dxfExportModel';
 import { serializeDxfModel } from '../src/engine/cad/dxf/dxfSerializer';
-import { buildDxfLayoutText } from '../src/engine/cad/dxf/dxfLayoutExport';
+import { buildDxfLayoutText, buildDxfLayoutTextWithResult } from '../src/engine/cad/dxf/dxfLayoutExport';
 import {
   buildExportSheetSceneWithResult,
   buildNorthArrowItems,
@@ -21,6 +21,13 @@ import {
 } from '../src/engine/cad/cadExportScene';
 import { serializeExportSceneToSvgWithResult } from '../src/engine/cad/cadSvgSerializer';
 import { exportScenesToPdfWithResult } from '../src/engine/cad/cadPdfExport';
+import {
+  ANALYSIS_DXF_FILL_DISPOSITION,
+  ANALYSIS_LANDXML_DISPOSITION,
+  type CadAnalysisExportInput,
+  type CadAnalysisExportLayer,
+  type CadAnalysisExportLegend,
+} from '../src/engine/cad/cadAnalysisExportScene';
 import { createBlankDraftDocument } from '../src/engine/cad/cadDraftTypes';
 import { addSheetToDraft, addViewportToSheet, createPlanSheet } from '../src/engine/cad/cadSheets';
 import { createTitleBlockTemplate } from '../src/engine/cad/cadSheets';
@@ -28,6 +35,50 @@ import type { CadEntity, CadProject } from '../src/engine/cad/cadTypes';
 import { buildLandXmlProjectExportWithResult } from '../src/engine/landxmlCad';
 
 type Cell = 'FULL' | 'APPROXIMATED' | 'NOT_APPLICABLE' | 'UNSUPPORTED_WITH_WARNING';
+
+const ANALYSIS_LAYER = 'analysis-cov';
+
+const analysisRing = (x0: number, x1: number): { points: Array<{ x: number; y: number }> } => ({
+  points: [
+    { x: x0, y: 1000 },
+    { x: x1, y: 1000 },
+    { x: x1, y: 1010 },
+    { x: x0, y: 1010 },
+  ],
+});
+
+/** Elevation + slope (surface) and depth (volume) maps with derived regions. */
+const buildAnalysisCoverage = (): CadAnalysisExportInput => {
+  const layerOf = (
+    id: string,
+    name: string,
+    source: CadAnalysisExportLayer['map']['source'],
+    color: string,
+    x0: number,
+  ): CadAnalysisExportLayer => ({
+    map: {
+      id,
+      name,
+      source,
+      bands: [{ id: `${id}-b1`, lower: 0, upper: 1, color }],
+      layerId: ANALYSIS_LAYER,
+      opacity: 0.5,
+      showBoundaries: true,
+    },
+    status: 'CURRENT',
+    regions: [{ bandId: `${id}-b1`, rings: [analysisRing(x0, x0 + 5)] }],
+  });
+  const elevation = layerOf('amap-elev', 'Elevation', { kind: 'surface', surfaceId: 'surf-1', metric: 'elevation' }, '#2f6fd0', 0);
+  const slope = layerOf('amap-slope', 'Slope', { kind: 'surface', surfaceId: 'surf-1', metric: 'slope-percent' }, '#3fa66a', 5);
+  const depth = layerOf('amap-depth', 'Depth', { kind: 'volume', volumeSurfaceId: 'vol-1', metric: 'signed-depth' }, '#c85a3f', 10);
+  const legend: CadAnalysisExportLegend = {
+    legend: { id: 'leg-cov', analysisId: 'amap-elev', insertionX: 0, insertionY: 1020, title: 'Coverage legend', swatchWidth: 4, rowHeight: 4, showRange: true, showArea: true },
+    map: elevation.map,
+    status: 'CURRENT',
+    rows: [{ bandId: 'amap-elev-b1', rangeText: '0 - 1', areaText: '25 m²' }],
+  };
+  return { layers: [elevation, slope, depth], legends: [legend] };
+};
 
 const LAYER = 'cov-layer';
 
@@ -270,6 +321,40 @@ describe('cad export coverage matrix (§22)', () => {
     expect(result.output).toContain('600.000000 500.000000');
     expect(result.output).toContain('800.000000 700.000000');
     assertPartition(['dup-a', 'dup-b', 'dup-c', 'dup-line'], result.exportedEntityIds, result.omittedEntityIds, result.approximatedEntityIds);
+  });
+
+  it('classifies analysis maps (Elevation/Slope/Depth/Legend) across every format', () => {
+    const project = buildCoverageProject();
+    const { draft, sheetId } = buildDraftWithObjects(project);
+    const analysis = buildAnalysisCoverage();
+    const scene = buildExportSheetSceneWithResult({ draft, sheetId, project, analysis });
+    const svg = serializeExportSceneToSvgWithResult(scene.output);
+    const pdf = exportScenesToPdfWithResult([scene.output]);
+    const pdfText = new TextDecoder().decode(pdf.output);
+    // SVG/PDF: FULL — per-band fill with the band color plus the legend.
+    const colors: Record<string, Cell> = { '#2f6fd0': 'FULL', '#3fa66a': 'FULL', '#c85a3f': 'FULL' };
+    for (const color of Object.keys(colors)) {
+      expect(colors[color]).toBe('FULL');
+      expect(svg.output, `${color} fill in SVG`).toContain(color);
+      expect(scene.output.items.some((item) => item.kind === 'polyline' && item.fill === color)).toBe(true);
+    }
+    expect(svg.output).toContain('Coverage legend');
+    expect(pdfText).toContain('Coverage legend');
+    // DXF R12/R2000: APPROXIMATED_WITH_WARNING — closed-polyline boundaries.
+    const model = buildDxfExportModelWithResult({ project, analysis });
+    expect(serializeDxfModel(model.output)).toContain(ANALYSIS_LAYER);
+    expect(model.warnings.some((warning) => warning.message.includes(ANALYSIS_DXF_FILL_DISPOSITION))).toBe(true);
+    const laid = buildDxfLayoutTextWithResult({ project, draft, analysis });
+    expect(laid.output.dxf).toContain(ANALYSIS_LAYER);
+    expect(laid.warnings.some((warning) => warning.message.includes(ANALYSIS_DXF_FILL_DISPOSITION))).toBe(true);
+    // LandXML: NOT_APPLICABLE — explicit warning, no analysis geometry.
+    const maps = (analysis.layers ?? []).map((layer) => layer.map);
+    const xml = buildLandXmlProjectExportWithResult(
+      { ...project, analysisMaps: maps },
+      { units: 'm', projectName: 'Coverage' },
+    );
+    expect(xml.warnings.some((warning) => warning.message.includes(ANALYSIS_LANDXML_DISPOSITION))).toBe(true);
+    for (const map of maps) expect(xml.output).not.toContain(map.id);
   });
 
   it('documents paper drafting objects as NOT_APPLICABLE outside sheet formats', () => {
