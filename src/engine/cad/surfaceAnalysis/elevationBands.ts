@@ -121,6 +121,10 @@ export const analyzeElevationBands = (
     for (let b = 0; b < bands.length; b += 1) {
       const band = bands[b]!;
       if (triMax < band.lower || triMin > band.upper) continue;
+      // Half-open [lower, upper): a triangle sitting exactly on a shared edge
+      // belongs to the upper band (the last band keeps the overall max), so a
+      // flat pad on an edge is never integrated twice.
+      if (b < bands.length - 1 && triMin >= band.upper) continue;
       const clipped = clipScalarPolygon(
         [
           { x: x0, y: y0, value: z0 },

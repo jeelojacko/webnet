@@ -203,6 +203,11 @@ const classifyPair = (
   for (let i = 0; i < bands.length; i += 1) {
     const band = bands[i]!;
     if (polyMax < band.lower || polyMin > band.upper) continue;
+    // Half-open [lower, upper), matching classifyAnalysisValue: a fragment
+    // sitting exactly on a shared edge belongs to the upper band (the last
+    // band keeps the overall max), so a constant-delta overlap on an edge is
+    // never fan-integrated twice.
+    if (i < bands.length - 1 && polyMin >= band.upper) continue;
     clipBandPolygon(tagged, band, origin, acc[i]!, includeDisplay);
   }
 };

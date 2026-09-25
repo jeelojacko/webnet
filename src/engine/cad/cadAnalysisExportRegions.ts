@@ -1,9 +1,9 @@
 /**
  * Phase 18U export slice F — engine results → export regions.
  *
- * The canonical view builders have not landed on this branch, so this is the
- * bounded bridge from the 18U engine results to the export geometry shape
- * (`AnalysisExportBandRegions`). It reuses the shared band helpers
+ * Bounded bridge from the 18U engine results to the export geometry shape
+ * (`AnalysisExportBandRegions`), feeding the session-cache adapter in
+ * `cadAnalysisExportInput.ts` (`src/cad-app/shell`). It reuses the shared band helpers
  * (`classifyAnalysisValue`, `planeGradient`/`slopeRatioOf`,
  * `metricValueOfRatio`) — no band math is re-derived here.
  *

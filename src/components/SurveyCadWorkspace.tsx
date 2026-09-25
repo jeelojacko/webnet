@@ -63,6 +63,7 @@ import {
   prepareNewAnalysis,
 } from '../cad-app/shell/cadAnalysisSnapshot';
 import { createCadAnalysisControlPlane, queryAnalysisAt } from '../cad-app/shell/cadAnalysisAdapters';
+import { buildAnalysisExportInput } from '../cad-app/shell/cadAnalysisExportInput';
 import { buildAnalysisSceneLayers } from '../engine/cad/cadAnalysisDisplayView';
 import { buildCadProfileSnapshot, formatProfileElevationAnswer } from '../cad-app/shell/cadProfileSnapshot';
 import { CadSurfaceManager } from '../cad-app/shell/CadSurfaceManager';
@@ -889,8 +890,12 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
     redo,
   } = cadWorkspace;
   // Phase 18U — analysis rows + legend rows (derived once per publish).
+  // surfaceMeshSessions is a dep (not just an effect trigger): a source
+  // rebuild mutates the mesh cache in place, so without it the rows would
+  // keep reporting SOURCE_NOT_CURRENT instead of re-deriving NEEDS_RECALC.
   const analysisSnapshot = useMemo(() => {
     void analysisVersion;
+    void surfaceMeshSessions;
     return buildCadAnalysisSnapshot(
       activeProject,
       surfaceCache,
@@ -905,9 +910,23 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
     volumeCache,
     analysisPlane,
     analysisVersion,
+    surfaceMeshSessions,
     selectedAnalysisId,
     selectedAnalysisLegendId,
   ]);
+  // Phase 18U — Export Center input from the CURRENT cached results (fills +
+  // legends through the canonical export scene; absent = legacy scene).
+  const analysisExportInput = useMemo(() => {
+    void analysisVersion;
+    void surfaceMeshSessions;
+    return buildAnalysisExportInput(
+      activeProject,
+      analysisSnapshot,
+      surfaceCache,
+      analysisPlane.cache,
+      units,
+    );
+  }, [activeProject, analysisSnapshot, surfaceCache, analysisPlane, analysisVersion, surfaceMeshSessions, units]);
   // Phase 18U — band fills + legend geometry from the CURRENT cached results.
   // Colors/opacity come from the live definition, so a recolor or opacity edit
   // repaints from cache (the `arev1:` revision excludes appearance).
@@ -915,11 +934,12 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
     // The analysis cache is mutated in place by the control plane, so the
     // version bump is the only reliable "results changed" trigger.
     void analysisVersion;
+    void surfaceMeshSessions;
     return buildAnalysisSceneLayers(activeProject, surfaceCache, analysisPlane.cache, {
         area: analysisAreaUnit(units),
       volume: analysisVolumeUnit(units),
     });
-  }, [activeProject, surfaceCache, analysisPlane, analysisVersion, units]);
+  }, [activeProject, surfaceCache, analysisPlane, analysisVersion, surfaceMeshSessions, units]);
   // Phase 18E — drawing-owned active feature catalog, derived from the
   // HISTORY project (same source the F2F panel renders), never workspace
   // React state. Absent catalog + no F2F content = starter clone as a
@@ -2256,6 +2276,7 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
             stationIds={stationIds}
             f2fLinkStatus={f2fLinkStatus}
             f2fLinkSourceKind={f2fLinkSourceKind}
+            analysis={analysisExportInput}
             onClose={() => setExportCenterOpen(false)}
           />
         ) : null}

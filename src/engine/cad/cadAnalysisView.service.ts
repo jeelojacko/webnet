@@ -10,9 +10,10 @@ import { planeGradient, slopeRatioOf } from './surfaceAnalysis';
 import type { CadProject } from './cadTypes';
 
 /**
- * Phase 18U UI — analysis display adapter (UI-owned, pure). REFERENCE-ONLY
- * (`.service` suffix): the sibling display slice owns the wired scene module
- * (`cadAnalysisDisplayView`); QA unifies this builder with that module.
+ * Phase 18U UI — analysis display adapter (UI-owned, pure). CANONICAL
+ * (`.service` suffix): this is the wired builder — the scene module
+ * (`cadAnalysisDisplayView`) is a thin facade that re-exports this builder
+ * and unifies it with the legend builder into one scene call.
  *
  * One aggregated SVG path per band (never per-triangle nodes), built from
  * cached DERIVED regions (never CAD entities, never re-triangulation).

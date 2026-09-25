@@ -1,9 +1,10 @@
 /**
  * Phase 18U export slice F — analysis-map / legend → export geometry.
  *
- * The canonical screen builders (`cadAnalysisView.ts` / `cadAnalysisLegendView.ts`)
- * have NOT landed on this branch, so this module is the bounded local adapter:
- * it consumes a `CadAnalysisMap` plus already-derived per-band result regions
+ * The canonical screen builders (`cadAnalysisView.service.ts` /
+ * `cadAnalysisLegendView.service.ts`) derive regions from the session cache;
+ * this module is the bounded export adapter: it consumes a `CadAnalysisMap`
+ * plus already-derived per-band result regions
  * (aggregated rings in model XY) and turns them into sheet (SVG/PDF) and
  * model-space (DXF) primitives. No band math lives here — regions come from
  * `cadAnalysisExportRegions.ts`, which delegates to the 18U engine helpers.

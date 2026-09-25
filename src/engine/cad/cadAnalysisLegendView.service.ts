@@ -3,9 +3,9 @@ import type { CachedAnalysisResult } from './surfaceAnalysisCache';
 import type { CadProject, CadTextStyle } from './cadTypes';
 
 /**
- * Phase 18U UI — analysis legend geometry (UI-owned, pure). REFERENCE-ONLY
- * (`.service` suffix): the sibling display slice owns the wired legend module;
- * QA unifies this builder with that module.
+ * Phase 18U UI — analysis legend geometry (UI-owned, pure). CANONICAL
+ * (`.service` suffix): this is the wired builder — the scene module
+ * (`cadAnalysisDisplayView`) consumes it directly for legend layers.
  *
  * A legend is a VIEW over an analysis map + its cached CURRENT result:
  * frame, title, swatch rows. Nothing derived is stored. Text metrics come
