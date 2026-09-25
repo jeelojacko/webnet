@@ -27,6 +27,12 @@ export const describeEditForRevision = (edit: CadSurfaceEdit): string => {
     case 'delete-point':
     case 'set-elevation':
       return `${edit.kind}:${edit.id}:${flag}:${edit.vertex.key}`;
+    case 'set-elevation-many':
+      return `${edit.kind}:${edit.id}:${flag}:${[...edit.vertices.map((ref) => ref.key)].sort().join('>')}@${canonicalNum(edit.z)}`;
+    case 'raise-lower-points':
+      return `${edit.kind}:${edit.id}:${flag}:${[...edit.vertices.map((ref) => ref.key)].sort().join('>')}@${canonicalNum(edit.deltaZ)}`;
+    case 'move-points':
+      return `${edit.kind}:${edit.id}:${flag}:${[...edit.vertices.map((ref) => ref.key)].sort().join('>')}@${canonicalNum(edit.deltaX)},${canonicalNum(edit.deltaY)}`;
     case 'move-point':
       return `${edit.kind}:${edit.id}:${flag}:${edit.vertex.key}@${canonicalNum(edit.x)},${canonicalNum(edit.y)}`;
     case 'raise-lower-surface':

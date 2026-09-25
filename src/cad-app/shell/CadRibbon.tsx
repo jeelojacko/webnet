@@ -164,6 +164,12 @@ const CadSurfaceRibbonGroup: React.FC<{
   const selectedSurfaceId = snapshot?.surface?.selectedSurfaceId ?? null;
   const selectedSurface = snapshot?.surface?.surfaces.find((row) => row.id === selectedSurfaceId) ?? null;
   const canEditTin = selectedSurface?.status === 'CURRENT';
+  // Phase 18V — session point selection drives the bulk-edit enablement.
+  const selectionCount = snapshot?.surface?.selection.count ?? 0;
+  const canBulk = canEditTin && selectionCount > 0;
+  const selectPoints = (mode: 'window' | 'polygon' | 'all' | 'clear' | 'invert'): void => {
+    actions?.selectSurfacePoints?.(mode);
+  };
   const startEdit = (mode: 'swap' | 'add-line' | 'delete-line' | 'add-point' | 'delete-point' | 'move-point' | 'set-elevation' | 'raise-lower'): void => {
     actions?.startSurfaceEditSession?.(mode);
   };
@@ -220,6 +226,13 @@ const CadSurfaceRibbonGroup: React.FC<{
         { key: 'rebuild', label: 'Rebuild', hint: 'Rebuild the selected surface.', disabled: !selectedSurfaceId || !actions, onClick: () => { if (selectedSurfaceId) actions?.rebuildSurface(selectedSurfaceId); } },
         { key: 'rebuild-all', label: 'Rebuild All', hint: 'Rebuild every surface needing it.', disabled: !ready, onClick: () => actions?.rebuildAllSurfaces() },
       ])}
+      {group('Select Points', [
+        { key: 'select-window', label: 'Window', hint: 'Select points inside an inclusive rectangle (needs a Current surface).', disabled: !actions?.selectSurfacePoints || !canEditTin, onClick: () => selectPoints('window') },
+        { key: 'select-polygon', label: 'Polygon', hint: 'Select points inside a point-chain polygon (self-intersection blocks).', disabled: !actions?.selectSurfacePoints || !canEditTin, onClick: () => selectPoints('polygon') },
+        { key: 'select-all', label: 'All', hint: 'Select every stable editable surface vertex (synthetic excluded).', disabled: !actions?.selectSurfacePoints || !canEditTin, onClick: () => selectPoints('all') },
+        { key: 'select-invert', label: 'Invert', hint: 'Invert the current point selection.', disabled: !actions?.selectSurfacePoints || !canEditTin, onClick: () => selectPoints('invert') },
+        { key: 'select-clear', label: 'Clear', hint: 'Clear the point selection.', disabled: !actions?.selectSurfacePoints, onClick: () => selectPoints('clear') },
+      ])}
       {group('Edit', [
         { key: 'swap', label: 'Swap Edge', hint: 'Swap the diagonal of two adjacent FREE triangles (needs a Current surface + selected edge).', disabled: !actions?.startSurfaceEditSession || !canEditTin, onClick: () => startEdit('swap') },
         { key: 'add-line', label: 'Add TIN Line', hint: 'Force a TIN line between two mesh vertices (needs a Current surface).', disabled: !actions?.startSurfaceEditSession || !canEditTin, onClick: () => startEdit('add-line') },
@@ -229,6 +242,9 @@ const CadSurfaceRibbonGroup: React.FC<{
         { key: 'move-point', label: 'Move Point', hint: 'Surface-only: move a vertex in XY, Z unchanged (survey data unchanged).', disabled: !actions?.startSurfaceEditSession || !canEditTin, onClick: () => startEdit('move-point') },
         { key: 'set-elevation', label: 'Set Elevation', hint: 'Surface-only elevation override on one vertex (survey data unchanged).', disabled: !actions?.startSurfaceEditSession || !canEditTin, onClick: () => startEdit('set-elevation') },
         { key: 'raise-lower', label: 'Raise/Lower', hint: 'Surface-only: shift every vertex by a delta (survey data unchanged).', disabled: !actions?.startSurfaceEditSession || !canEditTin, onClick: () => startEdit('raise-lower') },
+        { key: 'bulk-set-z', label: 'Set Selected Z', hint: 'Surface-only: set the Z of SELECTED points only in one undoable edit.', disabled: !actions?.startSurfaceBulkEditSession || !canBulk, onClick: () => actions?.startSurfaceBulkEditSession?.('set-elevation') },
+        { key: 'bulk-raise-lower', label: 'Raise/Lower Selected', hint: 'Surface-only: Raise/Lower SELECTED points only (never the entire surface).', disabled: !actions?.startSurfaceBulkEditSession || !canBulk, onClick: () => actions?.startSurfaceBulkEditSession?.('raise-lower') },
+        { key: 'bulk-move', label: 'Move Selected', hint: 'Surface-only: move SELECTED points by a base+destination displacement.', disabled: !actions?.startSurfaceBulkEditSession || !canBulk, onClick: () => actions?.startSurfaceBulkEditSession?.('move') },
         { key: 'history', label: 'Edit History', hint: 'Open the TIN edit history list.', disabled: !ready, onClick: () => openManager(selectedSurfaceId ?? undefined) },
       ])}
       {group('Inquiry', [

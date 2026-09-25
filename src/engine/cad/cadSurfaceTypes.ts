@@ -67,6 +67,10 @@ export const cloneCadSurfaceDefinition = (definition: CadSurfaceDefinition): Cad
             case 'delete-point':
             case 'set-elevation':
               return { ...edit, vertex: { ...edit.vertex } };
+            case 'set-elevation-many':
+            case 'raise-lower-points':
+            case 'move-points':
+              return { ...edit, vertices: edit.vertices.map((ref) => ({ ...ref })) };
             case 'move-point':
               return { ...edit, vertex: { ...edit.vertex } };
           }

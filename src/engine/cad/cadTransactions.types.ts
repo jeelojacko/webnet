@@ -841,7 +841,10 @@ export type CadCommand =
         | Omit<Extract<CadSurfaceEdit, { kind: 'delete-point' }>, 'id'>
         | Omit<Extract<CadSurfaceEdit, { kind: 'move-point' }>, 'id'>
         | Omit<Extract<CadSurfaceEdit, { kind: 'set-elevation' }>, 'id'>
-        | Omit<Extract<CadSurfaceEdit, { kind: 'raise-lower-surface' }>, 'id'>;
+        | Omit<Extract<CadSurfaceEdit, { kind: 'raise-lower-surface' }>, 'id'>
+        | Omit<Extract<CadSurfaceEdit, { kind: 'set-elevation-many' }>, 'id'>
+        | Omit<Extract<CadSurfaceEdit, { kind: 'raise-lower-points' }>, 'id'>
+        | Omit<Extract<CadSurfaceEdit, { kind: 'move-points' }>, 'id'>;
       /** Current source revision; stale picks reject (never apply blindly). */
       expectedRevision: string;
     }

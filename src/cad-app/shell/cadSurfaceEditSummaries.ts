@@ -33,6 +33,8 @@ export interface CadSurfaceEditSummary {
   valueLabel: string | null;
   /** Full row text, e.g. "Swap Edge P104 – P117". */
   description: string;
+  /** Phase 18V — readable labels of every ref a bulk row consumes ([] otherwise). */
+  refLabels: string[];
   status: CadSurfaceEditDisplayStatus;
   reason: string | null;
 }
@@ -52,6 +54,9 @@ const EDIT_TYPE_LABEL: Record<CadSurfaceEdit['kind'], string> = {
   'move-point': 'Move Point',
   'set-elevation': 'Set Elevation',
   'raise-lower-surface': 'Raise/Lower',
+  'set-elevation-many': 'Set Elevation (bulk)',
+  'raise-lower-points': 'Raise/Lower (selected)',
+  'move-points': 'Move Points',
 };
 
 export const shortPointLabel = (stationId: string): string =>
@@ -141,6 +146,7 @@ export const deriveCadSurfaceEditSummaries = (
     let targetLabel = `${a.label} – ${b.label}`;
     let valueLabel: string | null = null;
     let description = `${typeLabel} ${a.label} – ${b.label}`;
+    let refLabels: string[] = [];
     if (edit.kind === 'add-point') {
       targetLabel = `(${num(edit.x)}, ${num(edit.y)})`;
       valueLabel = num(edit.z);
@@ -159,6 +165,21 @@ export const deriveCadSurfaceEditSummaries = (
       targetLabel = 'all vertices';
       valueLabel = `${edit.deltaZ >= 0 ? '+' : ''}${num(edit.deltaZ)}`;
       description = `${typeLabel} ${valueLabel}`;
+    } else if (edit.kind === 'set-elevation-many' || edit.kind === 'raise-lower-points' || edit.kind === 'move-points') {
+      // Phase 18V bulk rows: count-based target; value carries Z/ΔZ/ΔXY.
+      const count = edit.vertices.length;
+      refLabels = edit.vertices.map((vertex) => ref(vertex.key).label);
+      targetLabel = `${count} vertices`;
+      if (edit.kind === 'set-elevation-many') {
+        valueLabel = num(edit.z);
+        description = `${typeLabel} ${targetLabel} → ${num(edit.z)}`;
+      } else if (edit.kind === 'raise-lower-points') {
+        valueLabel = `${edit.deltaZ >= 0 ? '+' : ''}${num(edit.deltaZ)}`;
+        description = `${typeLabel} ${targetLabel} ${valueLabel}`;
+      } else {
+        valueLabel = `(${num(edit.deltaX)}, ${num(edit.deltaY)})`;
+        description = `${typeLabel} ${targetLabel} Δ${valueLabel}`;
+      }
     }
     return {
       id: edit.id,
@@ -169,6 +190,7 @@ export const deriveCadSurfaceEditSummaries = (
       targetLabel,
       valueLabel,
       description,
+      refLabels,
       status,
       reason: broken ? 'SURFACE_EDIT_VERTEX_MISSING' : null,
     };

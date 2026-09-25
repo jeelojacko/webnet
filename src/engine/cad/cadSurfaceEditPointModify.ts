@@ -2,6 +2,11 @@ import { orient2d } from 'robust-predicates';
 import { TIN_EDGE_FREE } from './tin/tinTypes';
 import { tinEdgeKey } from './tin/tinTopology';
 import { earClip } from './cadSurfaceEditAddLine';
+import { ensureEditEdgeSpatialIndex } from './cadEditEdgeSpatialIndex';
+import {
+  ensureEditPointLocationIndex,
+  removeEditPointLocation,
+} from './cadEditPointLocationIndex';
 import {
   ccwEditTri,
   EditHalt,
@@ -48,10 +53,10 @@ const incidentEdges = (state: EditMeshState, v: number): Array<[number, number]>
   return out;
 };
 
-const hasBoundaryEdge = (state: EditMeshState, v: number): boolean =>
+export const hasBoundaryEdge = (state: EditMeshState, v: number): boolean =>
   incidentEdges(state, v).some(([u, w]) => (state.edgeMap.get(tinEdgeKey(u, w)) ?? []).length < 2);
 
-const hasConstrainedEdge = (state: EditMeshState, v: number): boolean =>
+export const hasConstrainedEdge = (state: EditMeshState, v: number): boolean =>
   incidentEdges(state, v).some(([u, w]) => kindOfEditEdge(state, tinEdgeKey(u, w)) !== TIN_EDGE_FREE);
 
 /** Distinct active neighbors of v (exact, no tolerance). */
@@ -108,6 +113,7 @@ export const applyDeletePoint = (state: EditMeshState, v: number): void => {
     unindexEditTri(state, id, tri);
   }
   state.active[v] = false;
+  removeEditPointLocation(state, v);
   for (const tri of earClip(state.pts, ring)) {
     const [a, b, c] = tri;
     if (a === v || b === v || c === v) throw new EditHalt('SURFACE_EDIT_DELETE_POINT_CAVITY_INVALID');
@@ -119,7 +125,7 @@ export const applyDeletePoint = (state: EditMeshState, v: number): void => {
 };
 
 /** Strict proper crossing (exact, no epsilon): nonzero opposite signs both ways. */
-const properlyCrosses = (
+export const properlyCrosses = (
   ax: number, ay: number, bx: number, by: number,
   cx: number, cy: number, dx: number, dy: number,
 ): boolean => {
@@ -136,16 +142,20 @@ export const applyMovePoint = (state: EditMeshState, v: number, x: number, y: nu
   if (!Number.isFinite(x) || !Number.isFinite(y)) throw new EditHalt('SURFACE_EDIT_MOVE_POINT_INVALID_STAR');
   if (hasBoundaryEdge(state, v)) throw new EditHalt('SURFACE_EDIT_MOVE_POINT_BOUNDARY');
   if (hasConstrainedEdge(state, v)) throw new EditHalt('SURFACE_EDIT_MOVE_POINT_CONSTRAINED');
-  for (let i = 0; i < state.pts.length; i += 1) {
-    if (i !== v && state.active[i] && state.pts[i].x === x && state.pts[i].y === y) {
-      throw new EditHalt('SURFACE_EDIT_MOVE_POINT_INVALID_STAR');
-    }
+  // Phase 18V: exact active-point location map (O(1)) replaces the
+  // O(points) coincidence scan — same block answer, no tolerance.
+  const coincident = ensureEditPointLocationIndex(state).find(x, y);
+  if (coincident >= 0 && coincident !== v) {
+    throw new EditHalt('SURFACE_EDIT_MOVE_POINT_INVALID_STAR');
   }
   const ring = state.vertTris.get(v);
   if (!ring || ring.size === 0) throw new EditHalt('SURFACE_EDIT_MOVE_POINT_INVALID_STAR');
   const vertex = state.pts[v];
   const oldX = vertex.x;
   const oldY = vertex.y;
+  // Phase 18V: build/attach the spatial index BEFORE any coordinate
+  // mutation, so a failed (reverted) move never leaves stale bboxes behind.
+  const candidateIndex = ensureEditEdgeSpatialIndex(state);
   vertex.x = x;
   vertex.y = y;
   try {
@@ -164,19 +174,29 @@ export const applyMovePoint = (state: EditMeshState, v: number, x: number, y: nu
     // No proper crossings between moved edges and unrelated mesh edges.
     // Only edges touching v are skipped (they move with it); shared
     // endpoints elsewhere yield a zero orient, never a proper crossing.
+    //
+    // Phase 18V: candidate discovery only. The dynamic edge spatial index
+    // replaces the global per-triangle scan with a segment-bbox query (a
+    // guaranteed superset); properlyCrosses remains the exact authority and
+    // the skip rule is byte-for-byte the legacy one. The index is built
+    // lazily on the first move of a replay and updated after success.
     for (const w of neighborsOf(state, v)) {
       const pw = state.pts[w];
-      for (const [, tri] of state.tris) {
-        for (const [u1, u2] of [[tri[0], tri[1]], [tri[1], tri[2]], [tri[2], tri[0]]] as const) {
-          if (u1 === v || u2 === v) continue;
-          const p1 = state.pts[u1];
-          const p2 = state.pts[u2];
-          if (properlyCrosses(x, y, pw.x, pw.y, p1.x, p1.y, p2.x, p2.y)) {
-            throw new EditHalt('SURFACE_EDIT_MOVE_POINT_INTERSECTION');
-          }
+      const minX = Math.min(x, pw.x);
+      const maxX = Math.max(x, pw.x);
+      const minY = Math.min(y, pw.y);
+      const maxY = Math.max(y, pw.y);
+      for (const rec of candidateIndex.queryCandidates(minX, minY, maxX, maxY)) {
+        if (rec.u === v || rec.v === v) continue;
+        const p1 = state.pts[rec.u];
+        const p2 = state.pts[rec.v];
+        if (properlyCrosses(x, y, pw.x, pw.y, p1.x, p1.y, p2.x, p2.y)) {
+          throw new EditHalt('SURFACE_EDIT_MOVE_POINT_INTERSECTION');
         }
       }
     }
+    // Success: re-box every incident edge from the moved coordinates.
+    candidateIndex.updateVertexEdges(v);
   } catch (error) {
     vertex.x = oldX;
     vertex.y = oldY;

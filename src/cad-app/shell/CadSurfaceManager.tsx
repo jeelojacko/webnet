@@ -2,6 +2,7 @@ import React from 'react';
 import type { CadShellActions, CadWorkspaceSnapshot } from './cadShellTypes';
 import { trySurfaceCommand, type CadSurfaceRow } from './cadSurfaceSnapshot';
 import { CadSurfaceEditTable } from './CadSurfaceEditTable';
+import { CadSurfaceSelectionSection } from './CadSurfaceSelectionSection';
 import { CadSurfaceDefinitionEditor } from './CadSurfaceDefinitionEditor';
 import { CadSurfaceStyleEditor } from './CadSurfaceStyleEditor';
 import { CadSurfaceInquiryPanel } from './CadSurfaceInquiryPanel';
@@ -333,6 +334,7 @@ const SelectedSurface: React.FC<{
         </button>
       </div>
       <CadSurfaceDefinitionEditor snapshot={snapshot} actions={actions} row={row} setNotice={setNotice} />
+      <CadSurfaceSelectionSection snapshot={snapshot} actions={actions} surfaceId={row.id} canEditTin={row.status === 'CURRENT'} />
       <CadSurfaceEditTable row={row} actions={actions} setNotice={setNotice} />
       <CadSurfaceInquiryPanel snapshot={snapshot} actions={actions} row={row} pickArmedFor={pickArmedFor} />
     </div>

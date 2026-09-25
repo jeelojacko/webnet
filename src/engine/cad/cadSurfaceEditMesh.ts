@@ -10,7 +10,9 @@ import type { CadSurfaceEditReason } from './cadSurfaceEdits';
  * (cadSurfaceEditAddLine.ts). Phase 18T: the state also owns MUTABLE
  * points (cloned from the baseline — the baseline source objects and any
  * ImportedTinPayload are never mutated) plus an active flag per vertex
- * and a vertex->active-triangle-ids index.
+ * and a vertex->active-triangle-ids index. Phase 18V: the state may carry
+ * optional edge-transition hooks maintained for the dynamic edge spatial
+ * index (see cadEditEdgeSpatialIndex.ts).
  */
 
 export interface CadSurfaceEditMeshPoint {
@@ -21,6 +23,17 @@ export interface CadSurfaceEditMeshPoint {
 }
 
 export type EditTri = [number, number, number];
+
+/**
+ * Phase 18V: optional incremental hooks for the edge spatial index
+ * (`cadEditEdgeSpatialIndex.ts`). They follow `edgeMap` REFCOUNT transitions,
+ * not triangle callbacks: 0→1 fires `added`, 1→2 is a no-op, 2→1 keeps the
+ * record (shared interior edge survives), 1→0 fires `removed`.
+ */
+export interface EditEdgeTransitionHooks {
+  added(_key: string): void;
+  removed(_key: string): void;
+}
 
 export interface EditMeshState {
   /** Owning surface id (scopes `edit:<surfaceId>:<editId>` keys). */
@@ -38,6 +51,12 @@ export interface EditMeshState {
   vertTris: Map<number, Set<number>>;
   /** Index-keyed user-added line edges (FREE, non-source; split-carryover). */
   userLines: Set<string>;
+  /**
+   * Attached edge-spatial-index hooks (absent = no index). Also the index's
+   * attachment marker: a full topology rebuild detaches it so the next lazy
+   * ensure rebuilds from scratch.
+   */
+  edgeHooks?: EditEdgeTransitionHooks;
 }
 
 /** Internal halt carrying the failure reason; the applicator maps it to CadSurfaceEditFailure. */
@@ -142,6 +161,10 @@ export const refreshEditEdges = (state: EditMeshState): void => {
   for (const key of map.keys()) {
     if (!state.edgeKind.has(key)) state.edgeKind.set(key, TIN_EDGE_FREE);
   }
+  // A full rebuild replaces edgeMap wholesale, so an attached incremental
+  // index would silently miss every transition. Detach it; the next lazy
+  // ensureEditEdgeSpatialIndex rebuilds from this edgeMap.
+  state.edgeHooks = undefined;
 };
 
 export const kindOfEditEdge = (state: EditMeshState, key: string): TinEdgeKindCode =>
@@ -162,8 +185,14 @@ const triEdgeKeys = (tri: EditTri): [string, string, string] => [
 export const indexEditTri = (state: EditMeshState, id: number, tri: EditTri): void => {
   for (const key of triEdgeKeys(tri)) {
     const list = state.edgeMap.get(key);
-    if (list) list.push(id);
-    else state.edgeMap.set(key, [id]);
+    if (list) {
+      const wasEmpty = list.length === 0;
+      list.push(id);
+      if (wasEmpty) state.edgeHooks?.added(key);
+    } else {
+      state.edgeMap.set(key, [id]);
+      state.edgeHooks?.added(key);
+    }
     if (!state.edgeKind.has(key)) state.edgeKind.set(key, TIN_EDGE_FREE);
   }
   for (const v of tri) {
@@ -183,6 +212,7 @@ export const unindexEditTri = (state: EditMeshState, id: number, tri: EditTri): 
     if (list.length === 0) {
       state.edgeMap.delete(key);
       state.edgeKind.delete(key);
+      state.edgeHooks?.removed(key);
     }
   }
   for (const v of tri) {
