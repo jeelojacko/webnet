@@ -50,14 +50,27 @@ export const cloneCadSurfaceDefinition = (definition: CadSurfaceDefinition): Cad
     ? { boundaries: definition.boundaries.map((entry) => ({ ...entry })) }
     : {}),
   ...(definition.buildOptions != null ? { buildOptions: { ...definition.buildOptions } } : {}),
-  // Phase 18S: ordered edit stack (array order authoritative — never sorted).
+  // Phase 18S + 18T: ordered edit stack (array order authoritative — never
+  // sorted). Explicit per-kind deep clone (no JSON stringify).
   ...(definition.edits != null
     ? {
-        edits: definition.edits.map((edit) =>
-          edit.kind === 'swap-edge' || edit.kind === 'delete-line'
-            ? { ...edit, edge: { a: { ...edit.edge.a }, b: { ...edit.edge.b } } }
-            : { ...edit, from: { ...edit.from }, to: { ...edit.to } },
-        ),
+        edits: definition.edits.map((edit) => {
+          switch (edit.kind) {
+            case 'swap-edge':
+            case 'delete-line':
+              return { ...edit, edge: { a: { ...edit.edge.a }, b: { ...edit.edge.b } } };
+            case 'add-line':
+              return { ...edit, from: { ...edit.from }, to: { ...edit.to } };
+            case 'add-point':
+            case 'raise-lower-surface':
+              return { ...edit };
+            case 'delete-point':
+            case 'set-elevation':
+              return { ...edit, vertex: { ...edit.vertex } };
+            case 'move-point':
+              return { ...edit, vertex: { ...edit.vertex } };
+          }
+        }),
       }
     : {}),
 });

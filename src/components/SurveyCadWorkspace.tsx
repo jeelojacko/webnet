@@ -76,6 +76,7 @@ import { filterCadDisplaySceneForViewport } from '../engine/cad/cadViewportAppea
 import { resolveProfileStationInput, queryProfileElevationAt } from '../engine/cad/profiles/profileInquiry';
 import { cadAlignmentRawStationToDisplayStation, formatCadStation } from '../engine/cad/cadAlignmentStationing';
 import { useSurveyCadSurfaceEditSessions } from '../hooks/surveyCad/useSurveyCadSurfaceEditSessions';
+import { useSurveyCadSurfacePointEditSessions } from '../hooks/surveyCad/useSurveyCadSurfacePointEditSessions';
 import { createCadSurfaceCache } from '../engine/cad/cadSurfaceCache';
 import { createCadSurfaceContourCache } from '../engine/cad/surfaceContourCache';
 import { SurfaceWorkerClient } from '../workers/surfaceWorkerClient';
@@ -117,6 +118,7 @@ import {
 import { useSurveyCadWorkspace } from '../hooks/surveyCad/useSurveyCadWorkspace';
 import SurveyCadCommandToolbar from './surveyCad/SurveyCadCommandToolbar';
 import { SurveyCadDraftingPanel, type SurveyCadDraftingTab } from './surveyCad/SurveyCadDraftingPanel';
+import { SurfacePointEditEntryForm } from './surveyCad/SurfacePointEditEntryForm';
 import { SurveyPointGroupManager } from './surveyCad/SurveyPointGroupManager';
 import { SurveyPointLabelStyleManager } from './surveyCad/SurveyPointLabelStyleManager';
 import { SurveyPointStyleManager } from './surveyCad/SurveyPointStyleManager';
@@ -1415,10 +1417,24 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
     notify: (message) => setFileStatusText(message),
   });
 
+  // Phase 18T — surface-local point/elevation sessions (same CURRENT-mesh
+  // gate + one-transaction commit pattern as 18S; numeric Z values arrive
+  // via the command dock, Enter commits, Esc ends). Overlay primitives
+  // append AFTER the viewport filter alongside the 18S overlays.
+  const surfacePointEditSessions = useSurveyCadSurfacePointEditSessions({
+    project: activeProject,
+    cache: surfaceCache,
+    selectedSurfaceId,
+    buildingSurfaceIds: surfaceBuildInputs.buildingSurfaceIds,
+    runCommand: (command) => cadWorkspace.runLayerCommand(command),
+    rebuildSurface: (surfaceId) => runSurfaceBuild(surfaceId),
+    notify: (message) => setFileStatusText(message),
+  });
+
   // Phase 18S — Esc ends the TIN edit loop; Enter commits the staged edit
   // (capture, before dock input; typing targets keep their own keys).
   useEffect(() => {
-    if (!surfaceEditSessions.session) return;
+    if (!surfaceEditSessions.session && !surfacePointEditSessions.session) return;
     const onKeyDown = (event: KeyboardEvent): void => {
       if (event.key !== 'Escape' && event.key !== 'Enter') return;
       const target = event.target as HTMLElement | null;
@@ -1427,21 +1443,28 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
       }
       if (event.key === 'Escape') {
         surfaceEditSessions.cancel();
+        surfacePointEditSessions.cancel();
         setFileStatusText('Surface edit session ended.');
+      } else if (surfacePointEditSessions.session) {
+        if (surfacePointEditSessions.handleEnter()) event.preventDefault();
       } else if (surfaceEditSessions.handleEnter()) {
         event.preventDefault();
       }
     };
     document.addEventListener('keydown', onKeyDown, true);
     return () => document.removeEventListener('keydown', onKeyDown, true);
-  }, [surfaceEditSessions]);
+  }, [surfaceEditSessions, surfacePointEditSessions]);
   // Phase 18S overlay: staged current/proposed/affected edges appended
   // post-filter so they render even when the style hides triangles.
-  const displaySceneWithSurfaceEdits = surfaceEditSessions.previewPrimitives.length === 0
+  const surfaceEditOverlayPrimitives = [
+    ...surfaceEditSessions.previewPrimitives,
+    ...surfacePointEditSessions.previewPrimitives,
+  ];
+  const displaySceneWithSurfaceEdits = surfaceEditOverlayPrimitives.length === 0
     ? displaySceneWithSections
     : {
       ...displaySceneWithSections,
-      primitives: [...displaySceneWithSections.primitives, ...surfaceEditSessions.previewPrimitives],
+      primitives: [...displaySceneWithSections.primitives, ...surfaceEditOverlayPrimitives],
     };
 
   // Phase 18I — drop session results for deleted volumes (results never
@@ -1740,8 +1763,19 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
       },
       rebuildSurface: (surfaceId) => runSurfaceBuild(surfaceId),
       rebuildAllSurfaces: () => rebuildAllSurfaces(),
-      startSurfaceEditSession: (mode) => surfaceEditSessions.start(mode),
-      cancelSurfaceEditSession: () => surfaceEditSessions.cancel(),
+      startSurfaceEditSession: (mode) => {
+        // 18S and 18T sessions never overlap: starting one ends the other.
+        if (mode === 'swap' || mode === 'add-line' || mode === 'delete-line') {
+          surfacePointEditSessions.cancel();
+          return surfaceEditSessions.start(mode);
+        }
+        surfaceEditSessions.cancel();
+        return surfacePointEditSessions.start(mode);
+      },
+      cancelSurfaceEditSession: () => {
+        surfaceEditSessions.cancel();
+        surfacePointEditSessions.cancel();
+      },
       describeBreaklineSource: (allowF2F) =>
         describeSelectedBreaklineEntity(activeProject, selectedEntityIds, { allowF2F }),
       describeBoundarySource: () =>
@@ -1810,9 +1844,16 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
       toggleDraftingPanel: () => setDraftingPanelOpen((current) => !current),
       toggleExportCenter: () => setExportCenterOpen((current) => !current),
       cancelCommand: () => handleEscapeKey(),
-      confirmCommandInput: () => handleEnterKey(),
+      confirmCommandInput: () => {
+        // Phase 18T — dock Enter with empty text commits a fully-staged
+        // point edit (value already typed); otherwise the active command.
+        if (!surfacePointEditSessions.handleEnter()) handleEnterKey();
+      },
       // Phase 18O — dock text entry for the live session (MTEXT/LEADER).
       submitSessionText: (text) => {
+        // Phase 18T — a point session awaiting a number consumes dock
+        // text first (Elevation / delta); anything else keeps the 18O path.
+        if (surfacePointEditSessions.session && surfacePointEditSessions.submitValueText(text)) return;
         cadWorkspace.setCommandInputValue(text);
         handleEnterKey();
       },
@@ -2063,6 +2104,15 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
             onImportSelected={handleLandXmlImportSelected}
           />
         ) : null}
+        {surfacePointEditSessions.session ? (
+        <SurfacePointEditEntryForm
+          session={surfacePointEditSessions.session}
+          onStageXy={(point) => surfacePointEditSessions.handlePick(point)}
+          onStageValue={(text) => surfacePointEditSessions.submitValueText(text)}
+          onCommit={() => surfacePointEditSessions.handleEnter()}
+          onCancel={() => surfacePointEditSessions.cancel()}
+        />
+      ) : null}
         <SurveyCadWorkspaceSurface
           workspace={cadWorkspace}
           floatingPanels={floatingPanels}
@@ -2082,8 +2132,12 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
           onParcelLayoutAutoPreviewStateChange={setParcelLayoutAutoPreviewState}
           onToggleParcelLabels={() => setShowParcelLabels((current) => !current)}
           cloneBounds={cloneBounds}
-          surfacePickActive={surfacePick != null || volumePick != null || blockInsertPick != null || surfaceEditSessions.session != null}
+          surfacePickActive={surfacePick != null || volumePick != null || blockInsertPick != null || surfaceEditSessions.session != null || surfacePointEditSessions.session != null}
           onSurfacePickPoint={(worldPoint) => {
+            if (surfacePointEditSessions.session) {
+              surfacePointEditSessions.handlePick(worldPoint);
+              return;
+            }
             if (surfaceEditSessions.session) {
               surfaceEditSessions.handlePick(worldPoint);
               return;

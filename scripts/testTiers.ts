@@ -81,6 +81,7 @@ export const EVIDENCE_TESTS = [
   'tests/evidence/phase16b_full_parity.test.ts',
   'tests/evidence/tbcParityTooling.test.ts',
   'tests/evidence/gnssMultifileScalingEvidence.test.ts',
+  'tests/evidence/phase18t_point_edit_perf.test.ts',
 ] as const;
 
 /** Fast automatic release-certification gate (committed-report verdict). */

@@ -72,6 +72,22 @@ interface UseSurfaceEditSessionsDeps {
 
 export const SURFACE_EDIT_STALE_MESH_MESSAGE = 'Rebuild the surface before editing TIN topology.';
 
+/**
+ * Schedule the post-commit worker rebuild. History commits publish on the
+ * next render while the build service reads the project through a ref, so
+ * the request must wait until the commit has landed — a synchronous call
+ * would read the pre-commit revision (a cache hit) and queue nothing,
+ * stranding the surface at NEEDS_REBUILD.
+ */
+export const queueSessionSurfaceRebuild = (
+  rebuildSurface: (_surfaceId: string) => string,
+  surfaceId: string,
+): void => {
+  setTimeout(() => {
+    rebuildSurface(surfaceId);
+  }, 0);
+};
+
 type MeshPoint = { entityId: string; x: number; y: number };
 
 const surfaceKeyOf = (sourceKind: 'native' | 'imported-tin', pointId: string): string => {
@@ -311,7 +327,7 @@ export const useSurveyCadSurfaceEditSessions = (deps: UseSurfaceEditSessionsDeps
       setSession({ ...session, staged: null });
       return true;
     }
-    deps.rebuildSurface(session.surfaceId);
+    queueSessionSurfaceRebuild(deps.rebuildSurface, session.surfaceId);
     setSession({ ...session, firstVertex: null, staged: null });
     deps.notify(`Edit committed on “${session.surfaceName}” — rebuilding; pick again or Esc to end.`);
     return true;

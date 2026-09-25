@@ -161,7 +161,7 @@ const CadSurfaceRibbonGroup: React.FC<{
   const selectedSurfaceId = snapshot?.surface?.selectedSurfaceId ?? null;
   const selectedSurface = snapshot?.surface?.surfaces.find((row) => row.id === selectedSurfaceId) ?? null;
   const canEditTin = selectedSurface?.status === 'CURRENT';
-  const startEdit = (mode: 'swap' | 'add-line' | 'delete-line'): void => {
+  const startEdit = (mode: 'swap' | 'add-line' | 'delete-line' | 'add-point' | 'delete-point' | 'move-point' | 'set-elevation' | 'raise-lower'): void => {
     actions?.startSurfaceEditSession?.(mode);
   };
   // Manual Calculate gating mirrors the manager button: both source TINs Current.
@@ -221,6 +221,11 @@ const CadSurfaceRibbonGroup: React.FC<{
         { key: 'swap', label: 'Swap Edge', hint: 'Swap the diagonal of two adjacent FREE triangles (needs a Current surface + selected edge).', disabled: !actions?.startSurfaceEditSession || !canEditTin, onClick: () => startEdit('swap') },
         { key: 'add-line', label: 'Add TIN Line', hint: 'Force a TIN line between two mesh vertices (needs a Current surface).', disabled: !actions?.startSurfaceEditSession || !canEditTin, onClick: () => startEdit('add-line') },
         { key: 'delete-line', label: 'Delete TIN Line', hint: 'Delete a FREE TIN edge (boundary retreats, or an interior hole).', disabled: !actions?.startSurfaceEditSession || !canEditTin, onClick: () => startEdit('delete-line') },
+        { key: 'add-point', label: 'Add Point', hint: 'Surface-only: add a point inside the CURRENT surface (survey data unchanged).', disabled: !actions?.startSurfaceEditSession || !canEditTin, onClick: () => startEdit('add-point') },
+        { key: 'delete-point', label: 'Delete Point', hint: 'Surface-only: delete an interior vertex (survey data unchanged).', disabled: !actions?.startSurfaceEditSession || !canEditTin, onClick: () => startEdit('delete-point') },
+        { key: 'move-point', label: 'Move Point', hint: 'Surface-only: move a vertex in XY, Z unchanged (survey data unchanged).', disabled: !actions?.startSurfaceEditSession || !canEditTin, onClick: () => startEdit('move-point') },
+        { key: 'set-elevation', label: 'Set Elevation', hint: 'Surface-only elevation override on one vertex (survey data unchanged).', disabled: !actions?.startSurfaceEditSession || !canEditTin, onClick: () => startEdit('set-elevation') },
+        { key: 'raise-lower', label: 'Raise/Lower', hint: 'Surface-only: shift every vertex by a delta (survey data unchanged).', disabled: !actions?.startSurfaceEditSession || !canEditTin, onClick: () => startEdit('raise-lower') },
         { key: 'history', label: 'Edit History', hint: 'Open the TIN edit history list.', disabled: !ready, onClick: () => openManager(selectedSurfaceId ?? undefined) },
       ])}
       {group('Inquiry', [

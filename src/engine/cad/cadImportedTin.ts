@@ -1,5 +1,6 @@
 import { buildSurfaceGrid } from './cadSurfaceInterpolation';
 import { computeSurfaceFaceStats } from './surfaceAnalysis';
+import { describeEditForRevision } from './cadSurfaceEditDescribe';
 import { fnv1a } from './cadRevisionHash';
 import { buildTinTopology } from './tin/tinTopology';
 import type { CadSurfaceGrid, CadSurfaceSourcePoint } from './cadSurfaces';
@@ -74,13 +75,7 @@ export const importedTinRevision = (
     `v:${payload.vertices.join(',')}`,
     `f:${payload.faces.join(',')}`,
     `prov:${payload.provenance.format}|${payload.provenance.fileName}|${payload.provenance.surfaceName}|${payload.provenance.sourceId ?? ''}`,
-    `edits:${(edits ?? [])
-      .map((edit) => {
-        const refs =
-          edit.kind === 'add-line' ? `${edit.from.key}>${edit.to.key}` : `${edit.edge.a.key}>${edit.edge.b.key}`;
-        return `${edit.kind}:${edit.id}:${edit.enabled === false ? 'off' : 'on'}:${refs}`;
-      })
-      .join('|')}`,
+    `edits:${(edits ?? []).map(describeEditForRevision).join('|')}`,
   ];
   return `srev1:imported:${fnv1a(parts.join('#'))}`;
 };

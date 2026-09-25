@@ -375,10 +375,12 @@ export interface CadShellActions {
   submitSessionText?: (_text: string) => void;
   /**
    * Phase 18S — arm a TIN-topology edit session for the selected surface
-   * (swap/add-line/delete-line pick loops; Esc cancels). False + no-op
-   * when no editable CURRENT surface is selected. Absent = unavailable.
+   * (swap/add-line/delete-line pick loops; Esc cancels). Phase 18T adds
+   * point/elevation modes (add-point/delete-point/move-point/set-elevation/
+   * raise-lower). False + no-op when no editable CURRENT surface is
+   * selected. Absent = unavailable.
    */
-  startSurfaceEditSession?: (_mode: 'swap' | 'add-line' | 'delete-line') => boolean;
+  startSurfaceEditSession?: (_mode: 'swap' | 'add-line' | 'delete-line' | 'add-point' | 'delete-point' | 'move-point' | 'set-elevation' | 'raise-lower') => boolean;
   /** Phase 18S — disarm the active TIN edit session (Esc path). */
   cancelSurfaceEditSession?: () => void;
   toggleDraftingPanel: () => void;

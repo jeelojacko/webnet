@@ -57,6 +57,12 @@ export const CadCommandDock: React.FC<CadCommandDockProps> = ({ link, snapshot, 
       // session (MTEXT/LEADER lines, numeric inputs). History untouched.
       actions.submitSessionText(entry);
       setCompleted(null);
+    } else if (actions?.submitSessionText && entry.trim().length > 0 && Number.isFinite(Number(entry))) {
+      // Phase 18T — a bare number with no annotation session is a
+      // candidate surface-edit value (Elevation / delta); the workspace
+      // consumes it only when a point session is staged, else no-op.
+      actions.submitSessionText(entry);
+      setCompleted(null);
     } else {
       setCompleted(`Unknown command “${entry}”.`);
     }

@@ -29,8 +29,11 @@ const triEdges = (tri: EditTri): Array<readonly [number, number]> => [
   [tri[2], tri[0]],
 ];
 
-/** Ear-clip a simple CCW-or-CW polygon (exact predicates, deterministic first-ear order). */
-const earClip = (pts: CadSurfaceEditMeshPoint[], polygon: number[]): EditTri[] => {
+/**
+ * Ear-clip a simple CCW-or-CW polygon (exact predicates, deterministic
+ * first-ear order). Shared with the delete-point cavity retriangulation.
+ */
+export const earClip = (pts: CadSurfaceEditMeshPoint[], polygon: number[]): EditTri[] => {
   let area2 = 0;
   for (let i = 0; i < polygon.length; i += 1) {
     const a = pts[polygon[i]];
@@ -196,4 +199,7 @@ export const applyAddLine = (state: EditMeshState, f: number, t: number): void =
       indexEditTri(state, id, tri);
     }
   }
+  // Phase 18T: user-added lines stay non-source constraints (FREE kind +
+  // replay-local record so a later add-point splits both halves with it).
+  state.userLines.add(tinEdgeKey(f, t));
 };

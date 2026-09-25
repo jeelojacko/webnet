@@ -58,13 +58,18 @@ export interface SurfaceEditPickBlocked {
 export const isSurfaceEditSyntheticId = (id: string): boolean =>
   id.startsWith('boundary:') || id.startsWith('steiner:');
 
-/** Inverse of resolveEditVertex: mesh point id -> stable vertex ref, or null when synthetic. */
+/**
+ * Inverse of resolveEditVertex: mesh point id -> stable vertex ref, or null
+ * when synthetic. Phase 18T: edit-created `edit:<surfaceId>:<editId>` ids
+ * round-trip deterministically (pointId already encodes the edit: key).
+ */
 export const surfaceEditRefOfPointId = (
   sourceKind: 'native' | 'imported-tin',
   surfaceId: string,
   pointId: string,
 ): SurfaceEditVertexRef | null => {
   if (isSurfaceEditSyntheticId(pointId)) return null;
+  if (pointId.startsWith('edit:')) return { key: pointId };
   if (sourceKind === 'imported-tin') {
     const match = /^(.*):v(\d+)$/.exec(pointId);
     if (match) return { key: `imported:${match[1]}:${match[2]}` };

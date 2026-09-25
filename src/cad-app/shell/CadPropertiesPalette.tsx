@@ -175,10 +175,13 @@ const SurfacePropertiesBlock: React.FC<{
       <div><dt>Breaklines</dt><dd>{row.definition.breaklineCount}</dd></div>
       <div><dt>Boundaries</dt><dd>outer {row.definition.outerBoundaryCount} void {row.definition.voidBoundaryCount}</dd></div>
     </dl>
-    {/* Phase 18S — edit-stack counts only; the full table lives in the manager. */}
+    {/* Phase 18S — edit-stack counts only; the full table lives in the manager. Phase 18T adds Topology/Point/Elevation groups. */}
     <h4>Edits</h4>
     <dl data-cad-surface-edit-summary={row.id}>
       <div><dt>Edit count</dt><dd>{row.editCount}</dd></div>
+      <div><dt>Topology edits</dt><dd>{row.topologyEditCount}</dd></div>
+      <div><dt>Point edits</dt><dd>{row.pointEditCount}</dd></div>
+      <div><dt>Elevation edits</dt><dd>{row.elevationEditCount}</dd></div>
       <div><dt>Enabled edits</dt><dd>{row.enabledEditCount}</dd></div>
       <div><dt>Broken edits</dt><dd className={row.brokenEditCount > 0 ? 'text-amber-200' : undefined}>{row.brokenEditCount}</dd></div>
     </dl>
