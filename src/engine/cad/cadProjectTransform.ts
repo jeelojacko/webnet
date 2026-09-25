@@ -36,6 +36,7 @@ import type {
   CadSurface,
 } from './cadTypes';
 import { cloneCadSurfaceDefinition } from './cadSurfaceTypes';
+import { transformCadSurfaceEdits } from './cadSurfaceEditTransform';
 import { cloneCadProfileViews, cloneCadSurfaceProfiles } from './cadProfileTypes';
 import {
   cloneCadSampleLineGroups,
@@ -272,6 +273,11 @@ const transformSurface = (
   scale: number,
 ): { ok: true; surface: CadSurface; tinVertices: number } | { ok: false; reason: string } => {
   const definition = cloneCadSurfaceDefinition(surface.definition);
+  // 18T: coordinate-bearing edits move with the frame exactly once; refs/Z/
+  // deltaZ stay fixed (18R is XY-only, no vertical scaling).
+  if (definition.edits != null) {
+    definition.edits = transformCadSurfaceEdits(definition.edits, transform);
+  }
   let tinVertices = 0;
   // Fail-closed backstop: preflight already rejected every invalid payload, so
   // this can only trigger if the surface mutated between the two reads. Never

@@ -10,6 +10,7 @@ import { fnv1a } from './cadRevisionHash';
 import { importedTinRevision } from './cadImportedTin';
 
 export { fnv1a };
+import { describeEditForRevision } from './cadSurfaceEditDescribe';
 import { evaluatePointGroupMembership } from './cadPointGroups';
 import { dedupeTinPoints } from './tin/tinDedupe';
 import { pointInRing } from './tin/tinPredicates';
@@ -352,18 +353,9 @@ export const computeCadSurfaceSourceRevision = (project: CadProject, surface: Ca
   parts.push(`void:${collected.voids.map(ringText).join('|')}`);
   parts.push(`opt:maxEdgeLength=${collected.buildOptions.maxEdgeLength ?? 'none'}`);
   parts.push(`broken:${[...collected.brokenRefs].sort().join(',')}`);
-  // Phase 18S: kind + enabled + refs + order (human description excluded —
-  // no description field exists on the edit model).
-  parts.push(
-    `edits:${(surface.definition.edits ?? [])
-      .map((edit) => {
-        const refs =
-          edit.kind === 'add-line'
-            ? `${edit.from.key}>${edit.to.key}`
-            : `${edit.edge.a.key}>${edit.edge.b.key}`;
-        return `${edit.kind}:${edit.id}:${edit.enabled === false ? 'off' : 'on'}:${refs}`;
-      })
-      .join('|')}`,
-  );
+  // Phase 18S + 18T: kind + id + coords/refs/deltaZ + order + enabled
+  // (single serializer; human descriptions excluded — none exist on the
+  // edit model — and style fields are excluded by construction).
+  parts.push(`edits:${(surface.definition.edits ?? []).map(describeEditForRevision).join('|')}`);
   return `srev1:${fnv1a(parts.join('#'))}`;
 };
