@@ -42,6 +42,7 @@ import {
   cloneCadSampleLineGroups,
   cloneCadSectionViews,
 } from './cadSectionTypes';
+import { transformAnalysisLegendInsertion } from './cadAnalysisLegends';
 
 export const PROJECT_COORDINATE_TRANSFORM_TOOL_KEY = 'PROJECT_COORDINATE_TRANSFORM';
 
@@ -600,6 +601,16 @@ export const applyCadProjectCoordinateTransform = (
     ...project,
     entities,
     surfaces,
+    // Phase 18U: legend insertion points are XY geometry and move with the
+    // frame. Analysis thresholds/results are NOT carried here: a band set is
+    // metric-space truth on the map, so it is untouched by a frame change.
+    ...(project.analysisLegends != null
+      ? {
+          analysisLegends: project.analysisLegends.map((legend) =>
+            transformAnalysisLegendInsertion(legend, transform),
+          ),
+        }
+      : {}),
     surfaceProfiles: cloneCadSurfaceProfiles(project.surfaceProfiles),
     profileViews,
     sampleLineGroups: sample.groups,
