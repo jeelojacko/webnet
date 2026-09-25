@@ -825,7 +825,12 @@ export type CadCommand =
       /** Edit body without id (a stable drawing-owned id is generated). */
       edit: Omit<Extract<CadSurfaceEdit, { kind: 'swap-edge' }>, 'id'>
         | Omit<Extract<CadSurfaceEdit, { kind: 'add-line' }>, 'id'>
-        | Omit<Extract<CadSurfaceEdit, { kind: 'delete-line' }>, 'id'>;
+        | Omit<Extract<CadSurfaceEdit, { kind: 'delete-line' }>, 'id'>
+        | Omit<Extract<CadSurfaceEdit, { kind: 'add-point' }>, 'id'>
+        | Omit<Extract<CadSurfaceEdit, { kind: 'delete-point' }>, 'id'>
+        | Omit<Extract<CadSurfaceEdit, { kind: 'move-point' }>, 'id'>
+        | Omit<Extract<CadSurfaceEdit, { kind: 'set-elevation' }>, 'id'>
+        | Omit<Extract<CadSurfaceEdit, { kind: 'raise-lower-surface' }>, 'id'>;
       /** Current source revision; stale picks reject (never apply blindly). */
       expectedRevision: string;
     }

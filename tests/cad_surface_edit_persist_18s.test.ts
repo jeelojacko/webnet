@@ -26,7 +26,7 @@ import { applyCadSurfaceEdits, CadSurfaceEditFailure, type CadSurfaceEditBaselin
 import { applyCadProjectCoordinateTransform } from '../src/engine/cad/cadProjectTransform';
 import { uniformScaleAbout, rotationAbout } from '../src/engine/cad/cadTransform2D';
 import { buildLandXmlProjectExportWithResult } from '../src/engine/landxmlCad';
-import { deriveCadSurfaceEditSummaries } from '../src/cad-app/shell/cadSurfaceSnapshot';
+import { deriveCadSurfaceEditSummaries } from '../src/cad-app/shell/cadSurfaceEditSummaries';
 import type { TinEdgeKinds } from '../src/engine/cad/tin/tinTypes';
 import { parseSurfaces } from './landxmlCivilTestSupport';
 import type {

@@ -6,7 +6,8 @@ import { VolumesNode } from './CadVolumeToolspace';
 import { SurfaceProfilesNode, ProfileViewsNode } from './CadProfileToolspace';
 import { SampleLineGroupsNode, SectionViewsNode, SectionStylesNode } from './CadSampleLineToolspace';
 import { CadAnnotationToolspaceNodes } from '../annotation/CadAnnotationToolspace';
-import { cadSurfaceEditStatusText, type CadSurfaceRow } from './cadSurfaceSnapshot';
+import { type CadSurfaceRow } from './cadSurfaceSnapshot';
+import { cadSurfaceEditStatusText } from './cadSurfaceEditSummaries';
 
 interface CadToolspaceProps {
   snapshot: CadWorkspaceSnapshot | null;

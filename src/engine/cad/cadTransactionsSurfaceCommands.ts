@@ -441,6 +441,9 @@ const validEditRef = (ref: unknown): ref is { key: string } =>
   typeof ref === 'object' && ref != null && typeof (ref as { key: unknown }).key === 'string' &&
   (ref as { key: string }).key.length > 0;
 
+const finiteNum = (value: unknown): value is number =>
+  typeof value === 'number' && Number.isFinite(value);
+
 /** Validate an id-less edit draft; null = reject (fail-closed, never partial). */
 const buildSurfaceEdit = (id: string, draft: AddEditCommand['edit']): CadSurfaceEdit | null => {
   if (draft.kind === 'swap-edge' || draft.kind === 'delete-line') {
@@ -460,6 +463,56 @@ const buildSurfaceEdit = (id: string, draft: AddEditCommand['edit']): CadSurface
       ...(draft.enabled === false ? { enabled: false as const } : {}),
       from: { key: draft.from.key },
       to: { key: draft.to.key },
+    };
+  }
+  if (draft.kind === 'add-point') {
+    if (!finiteNum(draft.x) || !finiteNum(draft.y) || !finiteNum(draft.z)) return null;
+    return {
+      id,
+      kind: 'add-point',
+      ...(draft.enabled === false ? { enabled: false as const } : {}),
+      x: draft.x,
+      y: draft.y,
+      z: draft.z,
+    };
+  }
+  if (draft.kind === 'delete-point') {
+    if (!validEditRef(draft.vertex)) return null;
+    return {
+      id,
+      kind: 'delete-point' as const,
+      ...(draft.enabled === false ? { enabled: false as const } : {}),
+      vertex: { key: draft.vertex.key },
+    };
+  }
+  if (draft.kind === 'set-elevation') {
+    if (!validEditRef(draft.vertex) || !finiteNum(draft.z)) return null;
+    return {
+      id,
+      kind: 'set-elevation' as const,
+      ...(draft.enabled === false ? { enabled: false as const } : {}),
+      vertex: { key: draft.vertex.key },
+      z: draft.z,
+    };
+  }
+  if (draft.kind === 'move-point') {
+    if (!validEditRef(draft.vertex) || !finiteNum(draft.x) || !finiteNum(draft.y)) return null;
+    return {
+      id,
+      kind: 'move-point',
+      ...(draft.enabled === false ? { enabled: false as const } : {}),
+      vertex: { key: draft.vertex.key },
+      x: draft.x,
+      y: draft.y,
+    };
+  }
+  if (draft.kind === 'raise-lower-surface') {
+    if (!finiteNum(draft.deltaZ)) return null;
+    return {
+      id,
+      kind: 'raise-lower-surface',
+      ...(draft.enabled === false ? { enabled: false as const } : {}),
+      deltaZ: draft.deltaZ,
     };
   }
   return null;

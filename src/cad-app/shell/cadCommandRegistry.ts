@@ -180,6 +180,14 @@ export const CAD_SHELL_COMMANDS: CadShellCommandDef[] = [
   action('SURFSWAPEDGE', 'Swap Edge', 'Surface', 'Swap a TIN edge diagonal (repeat picks, Enter/Esc ends).', undefined, ['SWAPEDGE']),
   action('SURFADDLINE', 'Add TIN Line', 'Surface', 'Add a forced TIN line between two vertices (repeat, Enter/Esc ends).', undefined, ['ADDTINLINE']),
   action('SURFDELETELINE', 'Delete Line', 'Surface', 'Delete a TIN edge (repeat picks, Enter/Esc ends).', undefined, ['DELTINLINE']),
+  // Phase 18T — surface-local point/elevation edits (pick loops over the
+  // CURRENT mesh; each commit is one undoable SURFACE_ADD_EDIT + worker
+  // rebuild; Surface-only, survey data never changes).
+  action('SURFADDPOINT', 'Add Point', 'Surface', 'Add a surface-only point inside the CURRENT surface (pick XY, type Elevation, Enter commits).', undefined, ['ADDSURFPOINT']),
+  action('SURFDELETEPOINT', 'Delete Point', 'Surface', 'Delete a surface-only interior vertex (pick, Enter commits; boundary/constrained block).', undefined, ['DELETESURFPOINT']),
+  action('SURFMOVEPOINT', 'Move Point', 'Surface', 'Move a surface-only vertex in XY, Z unchanged (pick vertex + target, Enter commits).', undefined, ['MOVESURFPOINT']),
+  action('SURFSETELEV', 'Set Elevation', 'Surface', 'Surface-only elevation override on one vertex (pick, type elevation, Enter commits).', undefined, ['SETELEVSURF']),
+  action('SURFRAISELOWER', 'Raise/Lower Surface', 'Surface', 'Shift every surface-only vertex by a delta (type delta, Enter twice confirms).', undefined, ['RAISELOWERSURF']),
   action('SURFEDITS', 'Edit History', 'Surface', 'Open the TIN edit history (surfaces manager).'),
   action('SURFSLOPE', 'Surface Slope', 'Surface', 'Query surface slope/aspect (manager inquiry).'),
   action('SURFCONTOURS', 'Surface Contours', 'Surface', 'Edit contour display style (manager contours section).'),
@@ -371,6 +379,16 @@ export const executeShellCommand = (
       return actions.startSurfaceEditSession?.('add-line') ?? false;
     case 'SURFDELETELINE':
       return actions.startSurfaceEditSession?.('delete-line') ?? false;
+    case 'SURFADDPOINT':
+      return actions.startSurfaceEditSession?.('add-point') ?? false;
+    case 'SURFDELETEPOINT':
+      return actions.startSurfaceEditSession?.('delete-point') ?? false;
+    case 'SURFMOVEPOINT':
+      return actions.startSurfaceEditSession?.('move-point') ?? false;
+    case 'SURFSETELEV':
+      return actions.startSurfaceEditSession?.('set-elevation') ?? false;
+    case 'SURFRAISELOWER':
+      return actions.startSurfaceEditSession?.('raise-lower') ?? false;
     case 'SURFEDITS':
       actions.openSurveyManager('surfaces');
       return true;

@@ -1,7 +1,7 @@
 import React from 'react';
 import type { CadShellActions, CadWorkspaceSnapshot } from './cadShellTypes';
-import { cadSurfaceEditStatusText, trySurfaceCommand, type CadSurfaceEditSummary, type CadSurfaceRow } from './cadSurfaceSnapshot';
-import type { CadCommand } from '../../engine/cad/cadTransactions.types';
+import { trySurfaceCommand, type CadSurfaceRow } from './cadSurfaceSnapshot';
+import { CadSurfaceEditTable } from './CadSurfaceEditTable';
 import { CadSurfaceDefinitionEditor } from './CadSurfaceDefinitionEditor';
 import { CadSurfaceStyleEditor } from './CadSurfaceStyleEditor';
 import { CadSurfaceInquiryPanel } from './CadSurfaceInquiryPanel';
@@ -25,108 +25,9 @@ interface CadSurfaceManagerProps {
  * Every mutation is a real undoable SURFACE_* command; a rejection shows an
  * inline notice instead of failing silently. Delete asks for confirm and
  * removes the definition only (session meshes drop with it).
- * Phase 18S adds the ordered EDITS table under the definition editor.
+ * Phase 18S adds the ordered EDITS table (CadSurfaceEditTable) under the
+ * definition editor.
  */
-const EDIT_BUTTON = 'rounded border border-slate-600 px-1.5 py-0.5 text-[10px] text-slate-200 hover:bg-slate-700 disabled:opacity-40';
-
-type SurfaceEditCommand =
-  | Extract<CadCommand, { key: 'SURFACE_MOVE_EDIT' }>
-  | Extract<CadCommand, { key: 'SURFACE_SET_EDIT_ENABLED' }>
-  | Extract<CadCommand, { key: 'SURFACE_DELETE_EDIT' }>;
-
-/**
- * Phase 18S — EDITS table (definition order, never sorted). Actions map to
- * the one-undo-entry SURFACE_*_EDIT commands with the row's source revision
- * as the stale guard; statuses are derived display text, never persisted.
- */
-const CadSurfaceEditTable: React.FC<{
-  row: CadSurfaceRow;
-  actions: CadShellActions;
-  setNotice: (_notice: string) => void;
-}> = ({ row, actions, setNotice }) => {
-  const run = (command: SurfaceEditCommand): boolean =>
-    trySurfaceCommand(actions.runSurveyCommand, command);
-  const commit = (label: string, ok: boolean): void =>
-    setNotice(ok ? `${label} done.` : `${label} rejected — stale revision or locked layer; re-pick and retry.`);
-  const broken = row.edits.filter((edit) => edit.status === 'broken-reference');
-  return (
-    <div className="grid gap-1 rounded border border-slate-700 p-2" data-cad-surface-edits={row.id}>
-      <h3 className="text-[11px] font-semibold text-slate-200">TIN Edits ({row.editCount})</h3>
-      {row.editCount === 0 ? (
-        <p className="text-[11px] text-slate-400">No TIN edits — use Surface ribbon → Edit (Swap Edge / Add TIN Line / Delete TIN Line).</p>
-      ) : (
-        <table className="w-full text-left text-[11px]">
-          <thead className="text-slate-400">
-            <tr>
-              <th className="pr-1">#</th>
-              <th className="pr-1">Type</th>
-              <th className="pr-1">Vertices/Edge</th>
-              <th className="pr-1">Enabled</th>
-              <th className="pr-1">Status</th>
-              <th className="pr-1">Description</th>
-              <th className="pr-1">Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {row.edits.map((edit, index) => (
-              <EditRow
-                key={edit.id}
-                edit={edit}
-                index={index}
-                last={index === row.edits.length - 1}
-                run={run}
-                commit={commit}
-                row={row}
-              />
-            ))}
-          </tbody>
-        </table>
-      )}
-      {broken.length > 0 ? (
-        <p className="text-[11px] text-amber-200" role="status" data-cad-edit-diagnostic>
-          {broken
-            .map((edit) => `Edit ${edit.id}: ${edit.reason ?? 'SURFACE_EDIT_VERTEX_MISSING'}`)
-            .join(' · ')}
-        </p>
-      ) : null}
-    </div>
-  );
-};
-
-const EditRow: React.FC<{
-  edit: CadSurfaceEditSummary;
-  index: number;
-  last: boolean;
-  run: (_command: SurfaceEditCommand) => boolean;
-  commit: (_label: string, _ok: boolean) => void;
-  row: CadSurfaceRow;
-}> = ({ edit, index, last, run, commit, row }) => {
-  const base = { surfaceId: row.id, editId: edit.id, expectedRevision: row.revision };
-  return (
-    <tr className="border-t border-slate-800" data-cad-surface-edit={edit.id}>
-      <td className="pr-1 text-slate-400">{index + 1}</td>
-      <td className="pr-1">{edit.typeLabel}</td>
-      <td className="pr-1 text-slate-300">{edit.refsLabel}</td>
-      <td className="pr-1">{edit.enabled ? 'Yes' : 'No'}</td>
-      <td className={`pr-1 ${edit.status === 'broken-reference' ? 'text-amber-200' : 'text-slate-300'}`} title={edit.reason ?? undefined}>
-        {cadSurfaceEditStatusText(edit.status)}
-      </td>
-      <td className="pr-1 text-slate-400">{edit.description}</td>
-      <td className="whitespace-nowrap pr-1">
-        <button type="button" className={EDIT_BUTTON} data-cad-edit-action="up" disabled={index === 0}
-          onClick={() => commit('Move up', run({ key: 'SURFACE_MOVE_EDIT', ...base, direction: 'up' }))}>↑</button>
-        <button type="button" className={`${EDIT_BUTTON} ml-1`} data-cad-edit-action="down" disabled={last}
-          onClick={() => commit('Move down', run({ key: 'SURFACE_MOVE_EDIT', ...base, direction: 'down' }))}>↓</button>
-        <button type="button" className={`${EDIT_BUTTON} ml-1`} data-cad-edit-action="toggle"
-          onClick={() => commit(edit.enabled ? 'Disable' : 'Enable', run({ key: 'SURFACE_SET_EDIT_ENABLED', ...base, enabled: !edit.enabled }))}>
-          {edit.enabled ? 'Disable' : 'Enable'}
-        </button>
-        <button type="button" className={`${EDIT_BUTTON} ml-1`} data-cad-edit-action="delete"
-          onClick={() => { if (window.confirm(`Delete TIN edit “${edit.description}”? Undoable.`)) commit('Delete edit', run({ key: 'SURFACE_DELETE_EDIT', ...base })); }}>Delete</button>
-      </td>
-    </tr>
-  );
-};
 
 /** Phase 18F surface manager palette; Phase 18S adds the EDITS table. */
 export const CadSurfaceManager: React.FC<CadSurfaceManagerProps> = ({
