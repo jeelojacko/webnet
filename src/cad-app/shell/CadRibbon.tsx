@@ -159,6 +159,11 @@ const CadSurfaceRibbonGroup: React.FC<{
   actions: CadShellActions | null;
 }> = ({ snapshot, actions }) => {
   const selectedSurfaceId = snapshot?.surface?.selectedSurfaceId ?? null;
+  const selectedSurface = snapshot?.surface?.surfaces.find((row) => row.id === selectedSurfaceId) ?? null;
+  const canEditTin = selectedSurface?.status === 'CURRENT';
+  const startEdit = (mode: 'swap' | 'add-line' | 'delete-line'): void => {
+    actions?.startSurfaceEditSession?.(mode);
+  };
   // Manual Calculate gating mirrors the manager button: both source TINs Current.
   const canCalculateVolume = snapshot?.volume?.volumes.some(
     (row) => row.id === snapshot.volume?.selectedVolumeId && row.calculable,
@@ -211,6 +216,12 @@ const CadSurfaceRibbonGroup: React.FC<{
       {group('Build', [
         { key: 'rebuild', label: 'Rebuild', hint: 'Rebuild the selected surface.', disabled: !selectedSurfaceId || !actions, onClick: () => { if (selectedSurfaceId) actions?.rebuildSurface(selectedSurfaceId); } },
         { key: 'rebuild-all', label: 'Rebuild All', hint: 'Rebuild every surface needing it.', disabled: !ready, onClick: () => actions?.rebuildAllSurfaces() },
+      ])}
+      {group('Edit', [
+        { key: 'swap', label: 'Swap Edge', hint: 'Swap the diagonal of two adjacent FREE triangles (needs a Current surface + selected edge).', disabled: !actions?.startSurfaceEditSession || !canEditTin, onClick: () => startEdit('swap') },
+        { key: 'add-line', label: 'Add TIN Line', hint: 'Force a TIN line between two mesh vertices (needs a Current surface).', disabled: !actions?.startSurfaceEditSession || !canEditTin, onClick: () => startEdit('add-line') },
+        { key: 'delete-line', label: 'Delete TIN Line', hint: 'Delete a FREE TIN edge (boundary retreats, or an interior hole).', disabled: !actions?.startSurfaceEditSession || !canEditTin, onClick: () => startEdit('delete-line') },
+        { key: 'history', label: 'Edit History', hint: 'Open the TIN edit history list.', disabled: !ready, onClick: () => openManager(selectedSurfaceId ?? undefined) },
       ])}
       {group('Inquiry', [
         { key: 'elevation', label: 'Surface Elevation', hint: 'Query E/N/elevation (manager).', disabled: !ready, onClick: () => openManager(selectedSurfaceId ?? undefined) },

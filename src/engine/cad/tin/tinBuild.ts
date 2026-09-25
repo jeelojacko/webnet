@@ -41,6 +41,13 @@ export interface TinBuildSuccess {
   adjacency: TinAdjacency[];
   /** Constrained-edge flags opposite vertex 0/1/2 (aligned with triangles). */
   edgeKinds: TinEdgeKinds[];
+  /**
+   * Phase 18S additive: source-constraint kinds by canonical index edge key
+   * (max-kind priority, same map consumed by buildTinTopology above), so
+   * post-replay topology re-derivation preserves outer/void/breakline
+   * flags. No other pipeline behavior changes.
+   */
+  constrained: Map<string, TinEdgeKindCode>;
   planimetricArea: number;
   steinerCount: number;
 }
@@ -203,6 +210,7 @@ export const buildConstrainedTin = (input: TinBuildInput): TinBuildSuccess | { o
       triangles,
       adjacency: topology.adjacency,
       edgeKinds: topology.edgeKinds,
+      constrained,
       planimetricArea: filtered.planimetricArea,
       steinerCount: points.length - input.points.length - boundaryCount,
     };

@@ -373,6 +373,14 @@ export interface CadShellActions {
   requestLandXmlImport: () => void;
   /** Phase 18O — forward dock text to the active command session (MTEXT/LEADER lines). */
   submitSessionText?: (_text: string) => void;
+  /**
+   * Phase 18S — arm a TIN-topology edit session for the selected surface
+   * (swap/add-line/delete-line pick loops; Esc cancels). False + no-op
+   * when no editable CURRENT surface is selected. Absent = unavailable.
+   */
+  startSurfaceEditSession?: (_mode: 'swap' | 'add-line' | 'delete-line') => boolean;
+  /** Phase 18S — disarm the active TIN edit session (Esc path). */
+  cancelSurfaceEditSession?: () => void;
   toggleDraftingPanel: () => void;
   toggleExportCenter: () => void;
   cancelCommand: () => void;

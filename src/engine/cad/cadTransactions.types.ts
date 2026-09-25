@@ -29,6 +29,7 @@ import type {
   CadStationEquation,
   CadSurfaceBoundary,
   CadSurfaceDefinition,
+  CadSurfaceEdit,
   CadSurfaceStyle,
   CadProfileStyle,
   CadTextStyleId,
@@ -148,6 +149,10 @@ export type CadCommandKey =
   | 'SURFACE_REMOVE_BREAKLINE'
   | 'SURFACE_ADD_BOUNDARY'
   | 'SURFACE_REMOVE_BOUNDARY'
+  | 'SURFACE_ADD_EDIT'
+  | 'SURFACE_DELETE_EDIT'
+  | 'SURFACE_MOVE_EDIT'
+  | 'SURFACE_SET_EDIT_ENABLED'
   | 'SURFACE_STYLE_CREATE'
   | 'LANDXML_IMPORT'
   | 'SURFACE_STYLE_DUPLICATE'
@@ -813,6 +818,36 @@ export type CadCommand =
       surfaceId: string;
       kind: CadSurfaceBoundary['type'];
       sourceEntityId?: CadEntityId;
+    }
+  | {
+      key: 'SURFACE_ADD_EDIT';
+      surfaceId: string;
+      /** Edit body without id (a stable drawing-owned id is generated). */
+      edit: Omit<Extract<CadSurfaceEdit, { kind: 'swap-edge' }>, 'id'>
+        | Omit<Extract<CadSurfaceEdit, { kind: 'add-line' }>, 'id'>
+        | Omit<Extract<CadSurfaceEdit, { kind: 'delete-line' }>, 'id'>;
+      /** Current source revision; stale picks reject (never apply blindly). */
+      expectedRevision: string;
+    }
+  | {
+      key: 'SURFACE_DELETE_EDIT';
+      surfaceId: string;
+      editId: string;
+      expectedRevision: string;
+    }
+  | {
+      key: 'SURFACE_MOVE_EDIT';
+      surfaceId: string;
+      editId: string;
+      direction: 'up' | 'down';
+      expectedRevision: string;
+    }
+  | {
+      key: 'SURFACE_SET_EDIT_ENABLED';
+      surfaceId: string;
+      editId: string;
+      enabled: boolean;
+      expectedRevision: string;
     }
   | {
       key: 'SURFACE_STYLE_CREATE';

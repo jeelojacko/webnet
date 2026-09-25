@@ -3,7 +3,7 @@ import { computeSurfaceFaceStats } from './surfaceAnalysis';
 import { fnv1a } from './cadRevisionHash';
 import { buildTinTopology } from './tin/tinTopology';
 import type { CadSurfaceGrid, CadSurfaceSourcePoint } from './cadSurfaces';
-import type { ImportedTinPayload } from './cadTypes';
+import type { CadSurfaceEdit, ImportedTinPayload } from './cadTypes';
 import type { TinAdjacency, TinEdgeKinds } from './tin/tinTypes';
 
 /**
@@ -63,13 +63,24 @@ export const validateImportedTinPayload = (payload: ImportedTinPayload): string 
   return null;
 };
 
-/** Content revision: vertices + faces + provenance (never entity state). */
-export const importedTinRevision = (surfaceId: string, payload: ImportedTinPayload): string => {
+/** Content revision: vertices + faces + provenance (never entity state). Phase 18S adds the edit stack. */
+export const importedTinRevision = (
+  surfaceId: string,
+  payload: ImportedTinPayload,
+  edits?: CadSurfaceEdit[],
+): string => {
   const parts = [
     `id:${surfaceId}`,
     `v:${payload.vertices.join(',')}`,
     `f:${payload.faces.join(',')}`,
     `prov:${payload.provenance.format}|${payload.provenance.fileName}|${payload.provenance.surfaceName}|${payload.provenance.sourceId ?? ''}`,
+    `edits:${(edits ?? [])
+      .map((edit) => {
+        const refs =
+          edit.kind === 'add-line' ? `${edit.from.key}>${edit.to.key}` : `${edit.edge.a.key}>${edit.edge.b.key}`;
+        return `${edit.kind}:${edit.id}:${edit.enabled === false ? 'off' : 'on'}:${refs}`;
+      })
+      .join('|')}`,
   ];
   return `srev1:imported:${fnv1a(parts.join('#'))}`;
 };

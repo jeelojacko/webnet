@@ -2,12 +2,14 @@ import type {
   CadEntityId,
   CadProject,
   CadSurface,
+  CadSurfaceDefinition,
   CadSurfaceStatus,
 } from './cadTypes';
 import { isImportedTinDefinition } from './cadTypes';
 import { materializeImportedTin } from './cadImportedTin';
+import { applyCadSurfaceEdits, CadSurfaceEditFailure } from './cadSurfaceEdits';
 import { buildConstrainedTin } from './tin/tinBuild';
-import type { TinAdjacency, TinEdgeKinds } from './tin/tinTypes';
+import type { TinAdjacency, TinEdgeKindCode, TinEdgeKinds } from './tin/tinTypes';
 import { ccwSign } from './tin/tinPredicates';
 import { collectSources, computeCadSurfaceSourceRevision } from './cadSurfaceRevision';
 import { buildSurfaceGrid } from './cadSurfaceInterpolation';
@@ -96,6 +98,12 @@ export interface CadSurfaceBuildResult {
   stats: CadSurfaceBuildStats;
   /** Uniform-grid query index (opaque; engine-local). */
   grid: CadSurfaceGrid;
+  /**
+   * Phase 18S additive: set only when an enabled surface edit fails replay
+   * (outcome 'blocked' with SURFACE_TRIANGULATION_FAILED; the stale prior
+   * mesh is retained per cache policy since non-ok results cache nothing).
+   */
+  editFailure?: { editId: string; reason: string };
 }
 
 export interface CadSurfaceGrid {
@@ -169,6 +177,53 @@ const meshBounds = (
   return { minZ, maxZ, minX, minY, maxX, maxY, planimetricArea };
 };
 
+/**
+ * Phase 18S single edit-replay chokepoint: worker
+ * (`src/workers/surfaceWorkerHandler.ts`), sync fallback
+ * (`src/workers/surfaceBuildService.ts`), and direct engine callers all route
+ * through buildCadSurface, so these two call legs (imported above, native
+ * below) cover every path. Replay sits AFTER authoritative source/topology
+ * exists and BEFORE grid/stats/cache; the revision already covers the edits.
+ * Absent/empty stacks return the baseline mesh untouched.
+ */
+export const replaySurfaceEdits = (
+  edits: CadSurfaceDefinition['edits'],
+  mesh: {
+    points: CadSurfaceSourcePoint[];
+    triangles: ReadonlyArray<readonly [number, number, number]>;
+    adjacency: TinAdjacency[];
+    edgeKinds: TinEdgeKinds[];
+    constrained: ReadonlyMap<string, TinEdgeKindCode>;
+  },
+):
+  | { triangles: Array<[number, number, number]>; adjacency: TinAdjacency[]; edgeKinds: TinEdgeKinds[] }
+  | { failure: { editId: string; reason: string } } => {
+  if (edits == null || edits.length === 0) {
+    return {
+      triangles: mesh.triangles.map((t): [number, number, number] => [t[0], t[1], t[2]]),
+      adjacency: mesh.adjacency.map((a): TinAdjacency => [a[0], a[1], a[2]]),
+      edgeKinds: mesh.edgeKinds.map((k): TinEdgeKinds => [k[0], k[1], k[2]]),
+    };
+  }
+  try {
+    const replayed = applyCadSurfaceEdits(
+      {
+        points: mesh.points.map((p) => ({ id: p.entityId, x: p.x, y: p.y, z: p.z })),
+        triangles: mesh.triangles,
+        edgeKinds: mesh.edgeKinds,
+        constrainedKindMap: mesh.constrained,
+      },
+      edits,
+    );
+    return { triangles: replayed.triangles, adjacency: replayed.adjacency, edgeKinds: replayed.edgeKinds };
+  } catch (error) {
+    if (error instanceof CadSurfaceEditFailure) {
+      return { failure: { editId: error.editId, reason: error.reason } };
+    }
+    throw error;
+  }
+};
+
 export const buildCadSurface = (project: CadProject, surface: CadSurface): CadSurfaceBuildResult => {
   const revision = computeCadSurfaceSourceRevision(project, surface);
   // Phase 18L: imported topology materializes WITHOUT Delaunay — every
@@ -191,24 +246,50 @@ export const buildCadSurface = (project: CadProject, surface: CadSurface): CadSu
         grid: buildSurfaceGrid([], []),
       };
     }
-    const bounds = meshBounds(mesh.points, mesh.triangles);
+    // Phase 18S: single edit-replay chokepoint (imported leg) — replays the
+    // ordered edit stack over the materialized mesh BEFORE bounds/stats/grid.
+    const replayed = replaySurfaceEdits(surface.definition.edits, {
+      points: mesh.points,
+      triangles: mesh.triangles,
+      adjacency: mesh.adjacency,
+      edgeKinds: mesh.edgeKinds,
+      constrained: new Map(),
+    });
+    if ('failure' in replayed) {
+      return {
+        outcome: 'blocked',
+        revision,
+        reasonCodes: ['SURFACE_TRIANGULATION_FAILED'],
+        points: [],
+        triangles: [],
+        adjacency: [],
+        edgeKinds: [],
+        stats: {
+          ...emptyStats(),
+          resolvedPointCount: mesh.points.length,
+        },
+        grid: buildSurfaceGrid([], []),
+        editFailure: replayed.failure,
+      };
+    }
+    const bounds = meshBounds(mesh.points, replayed.triangles);
     return {
       outcome: 'ok',
       revision,
       reasonCodes: [],
       points: mesh.points,
-      triangles: mesh.triangles,
-      adjacency: mesh.adjacency,
-      edgeKinds: mesh.edgeKinds,
+      triangles: replayed.triangles,
+      adjacency: replayed.adjacency,
+      edgeKinds: replayed.edgeKinds,
       stats: {
         resolvedPointCount: mesh.points.length,
         usedPointCount: mesh.points.length,
         skippedMissingZCount: 0,
-        triangleCount: mesh.triangles.length,
+        triangleCount: replayed.triangles.length,
         ...bounds,
-        ...mesh.stats,
+        ...computeSurfaceFaceStats(mesh.points, replayed.triangles),
       },
-      grid: mesh.grid,
+      grid: buildSurfaceGrid(mesh.points, replayed.triangles),
     };
   }
   const collected = collectSources(project, surface);
@@ -305,6 +386,21 @@ export const buildCadSurface = (project: CadProject, surface: CadSurface): CadSu
     });
   }
 
+  // Phase 18S: single edit-replay chokepoint (native leg) — replays the
+  // ordered edit stack after the synthetic tail, before bounds/stats/grid.
+  const replayed = replaySurfaceEdits(surface.definition.edits, {
+    points: finalPoints,
+    triangles: tin.triangles,
+    adjacency: tin.adjacency,
+    edgeKinds: tin.edgeKinds,
+    constrained: tin.constrained,
+  });
+  if ('failure' in replayed) {
+    const blocked = fail('blocked', ['SURFACE_TRIANGULATION_FAILED']);
+    blocked.editFailure = replayed.failure;
+    return blocked;
+  }
+
   let minZ = Infinity;
   let maxZ = -Infinity;
   let minX = Infinity;
@@ -325,26 +421,26 @@ export const buildCadSurface = (project: CadProject, surface: CadSurface): CadSu
     revision,
     reasonCodes: warnings,
     points: finalPoints,
-    triangles: tin.triangles,
-    adjacency: tin.adjacency,
-    edgeKinds: tin.edgeKinds,
+    triangles: replayed.triangles,
+    adjacency: replayed.adjacency,
+    edgeKinds: replayed.edgeKinds,
     stats: {
       resolvedPointCount: collected.points.length,
       usedPointCount: finalPoints.length,
       skippedMissingZCount: collected.skippedMissingZ,
-      triangleCount: tin.triangles.length,
+      triangleCount: replayed.triangles.length,
       minZ,
       maxZ,
       minX,
       minY,
       maxX,
       maxY,
-      planimetricArea: tin.planimetricArea,
+      planimetricArea: meshBounds(finalPoints, replayed.triangles).planimetricArea,
       // Single-pass face stats over the retained mesh (worker path
       // inherits them via result.stats) — never recomputed on render.
-      ...computeSurfaceFaceStats(finalPoints, tin.triangles),
+      ...computeSurfaceFaceStats(finalPoints, replayed.triangles),
     },
-    grid: buildSurfaceGrid(finalPoints, tin.triangles),
+    grid: buildSurfaceGrid(finalPoints, replayed.triangles),
   };
 };
 

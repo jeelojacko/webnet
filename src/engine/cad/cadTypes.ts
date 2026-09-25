@@ -875,6 +875,11 @@ export interface CadSurfaceDefinition {
   boundaries?: CadSurfaceBoundary[];
   buildOptions?: CadSurfaceBuildOptions;
   /**
+   * Phase 18S: ordered TIN edit stack (array order authoritative, no
+   * canonical sort). Absent = no edits (legacy behavior). Additive.
+   */
+  edits?: CadSurfaceEdit[];
+  /**
    * Phase 18L: absent/'native' = entity-derived TIN (18F model); 'imported-tin'
    * = explicit imported topology (importedTin required). Additive — legacy
    * drawings load as native, migration is idempotent.
@@ -888,6 +893,54 @@ export const isImportedTinDefinition = (
   definition: Pick<CadSurfaceDefinition, 'sourceKind' | 'importedTin'> | undefined,
 ): boolean =>
   definition?.sourceKind === 'imported-tin' && definition.importedTin != null;
+
+/**
+ * Phase 18S TIN edit stack (ENGINE ONLY — no UI/manager/toolspace).
+ *
+ * Vertex refs address STABLE identities only: native `source:<entityId>`
+ * (survey-point entity id) and imported `imported:<surfaceId>:<vertexIndex>`
+ * (positional index i/3 into ImportedTinPayload.vertices). Boundary
+ * (`boundary:…`) and Steiner (`steiner:…`) vertices are NOT addressable.
+ * Edge endpoints are canonicalized (sorted key order) for identity.
+ */
+export interface CadSurfaceVertexRef {
+  key: string;
+}
+
+export interface CadSurfaceEdgeRef {
+  a: CadSurfaceVertexRef;
+  b: CadSurfaceVertexRef;
+}
+
+export interface CadSurfaceSwapEdgeEdit {
+  id: string;
+  kind: 'swap-edge';
+  /** Absent = TRUE. */
+  enabled?: boolean;
+  edge: CadSurfaceEdgeRef;
+}
+
+export interface CadSurfaceAddLineEdit {
+  id: string;
+  kind: 'add-line';
+  /** Absent = TRUE. */
+  enabled?: boolean;
+  from: CadSurfaceVertexRef;
+  to: CadSurfaceVertexRef;
+}
+
+export interface CadSurfaceDeleteLineEdit {
+  id: string;
+  kind: 'delete-line';
+  /** Absent = TRUE. */
+  enabled?: boolean;
+  edge: CadSurfaceEdgeRef;
+}
+
+export type CadSurfaceEdit =
+  | CadSurfaceSwapEdgeEdit
+  | CadSurfaceAddLineEdit
+  | CadSurfaceDeleteLineEdit;
 
 export type CadSurfaceStatus =
   | 'UNBUILT'

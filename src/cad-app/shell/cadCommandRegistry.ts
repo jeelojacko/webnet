@@ -174,6 +174,13 @@ export const CAD_SHELL_COMMANDS: CadShellCommandDef[] = [
   action('SURFCREATE', 'Create Surface', 'Surface', 'Create a surface (auto name, current layer).'),
   action('SURFREBUILD', 'Rebuild Surfaces', 'Surface', 'Rebuild every surface needing it.'),
   action('SURFELEV', 'Surface Elevation', 'Surface', 'Query surface elevation (manager inquiry).'),
+  // Phase 18S — TIN-topology edit sessions (pick loops over the CURRENT
+  // mesh; each commit is one undoable SURFACE_*_EDIT + worker rebuild).
+  // SURFEDITS opens the edit history (manager surfaces section).
+  action('SURFSWAPEDGE', 'Swap Edge', 'Surface', 'Swap a TIN edge diagonal (repeat picks, Enter/Esc ends).', undefined, ['SWAPEDGE']),
+  action('SURFADDLINE', 'Add TIN Line', 'Surface', 'Add a forced TIN line between two vertices (repeat, Enter/Esc ends).', undefined, ['ADDTINLINE']),
+  action('SURFDELETELINE', 'Delete Line', 'Surface', 'Delete a TIN edge (repeat picks, Enter/Esc ends).', undefined, ['DELTINLINE']),
+  action('SURFEDITS', 'Edit History', 'Surface', 'Open the TIN edit history (surfaces manager).'),
   action('SURFSLOPE', 'Surface Slope', 'Surface', 'Query surface slope/aspect (manager inquiry).'),
   action('SURFCONTOURS', 'Surface Contours', 'Surface', 'Edit contour display style (manager contours section).'),
   // Phase 18I — volume commands (all route through the surface manager;
@@ -356,6 +363,15 @@ export const executeShellCommand = (
     case 'SURFELEV':
     case 'SURFSLOPE':
     case 'SURFCONTOURS':
+      actions.openSurveyManager('surfaces');
+      return true;
+    case 'SURFSWAPEDGE':
+      return actions.startSurfaceEditSession?.('swap') ?? false;
+    case 'SURFADDLINE':
+      return actions.startSurfaceEditSession?.('add-line') ?? false;
+    case 'SURFDELETELINE':
+      return actions.startSurfaceEditSession?.('delete-line') ?? false;
+    case 'SURFEDITS':
       actions.openSurveyManager('surfaces');
       return true;
     case 'SURFVOLUME':
