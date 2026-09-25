@@ -1,5 +1,9 @@
 import type { CadAnnotationAnchor } from './annotation/cadAnnotationAnchors';
 import type { CadAnnotationSettings } from './annotation/cadAnnotationSettings';
+import type { CadAnalysisLegend, CadAnalysisMap, CadAnalysisStatus } from './cadAnalysisTypes';
+// Phase 18U: re-export the analysis tables so project-level consumers can
+// import them from the same module as the rest of the CadProject surface.
+export type { CadAnalysisLegend, CadAnalysisMap, CadAnalysisStatus };
 import type { ParseOptions, StationErrorEllipse, StationId, UnitsMode } from '../../types';
 import type { FieldToFinishSettings } from '../fieldToFinish/catalogIo';
 import type { FeatureCodeCatalog } from '../fieldToFinish/featureCatalog';
@@ -637,6 +641,15 @@ export interface CadProject {
   curveLabelStyles?: CadCurveLabelStyle[];
   /** Phase 18O annotation scale settings. Trailing (key-order-sensitive signatures). */
   annotationSettings?: CadAnnotationSettings;
+  /**
+   * Phase 18U drawing-owned analysis maps (band definitions only; measured
+   * areas/percentages/volumes and derived fills never persist).
+   * Trailing: clone/migrate keep analysis tables last — project signatures
+   * are key-order-sensitive JSON.stringify.
+   */
+  analysisMaps?: CadAnalysisMap[];
+  /** Phase 18U drawing-owned analysis legends (presentation only). */
+  analysisLegends?: CadAnalysisLegend[];
   entities: CadEntity[];
   cogoComputations: CadCogoComputation[];
   bounds: CadBounds | null;

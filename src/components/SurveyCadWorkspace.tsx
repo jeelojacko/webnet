@@ -56,6 +56,15 @@ import {
   formatVolumeDifferenceAnswer,
   queryVolumeDifference,
 } from '../cad-app/shell/cadVolumeSnapshot';
+import {
+  analysisAreaUnit,
+  analysisVolumeUnit,
+  buildCadAnalysisSnapshot,
+  prepareNewAnalysis,
+} from '../cad-app/shell/cadAnalysisSnapshot';
+import { createCadAnalysisControlPlane, queryAnalysisAt } from '../cad-app/shell/cadAnalysisAdapters';
+import { buildAnalysisExportInput } from '../cad-app/shell/cadAnalysisExportInput';
+import { buildAnalysisSceneLayers } from '../engine/cad/cadAnalysisDisplayView';
 import { buildCadProfileSnapshot, formatProfileElevationAnswer } from '../cad-app/shell/cadProfileSnapshot';
 import { CadSurfaceManager } from '../cad-app/shell/CadSurfaceManager';
 import { CadProfileManager } from '../cad-app/shell/CadProfileManager';
@@ -403,6 +412,12 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
   const [volumePick, setVolumePick] = useState<{ volumeId: string } | null>(null);
   const [volumePickAnswer, setVolumePickAnswer] = useState<{ volumeId: string; text: string } | null>(null);
   const [volumeVersion, setVolumeVersion] = useState(0);
+  // Phase 18U — analysis UI state (session-only; band results never persist).
+  const [selectedAnalysisId, setSelectedAnalysisId] = useState<string | null>(null);
+  const [selectedAnalysisLegendId, setSelectedAnalysisLegendId] = useState<string | null>(null);
+  const [analysisPick, setAnalysisPick] = useState<{ analysisId: string } | null>(null);
+  const [analysisPickAnswer, setAnalysisPickAnswer] = useState<{ analysisId: string; text: string } | null>(null);
+  const [analysisVersion, setAnalysisVersion] = useState(0);
   const volumeCache = useMemo(
     () => createCadSurfaceVolumeCache(activeDrawing.drawingId),
     [activeDrawing.drawingId],
@@ -612,6 +627,38 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
     [activeDrawing.drawingId, surfaceCache, volumeCache],
   );
   useEffect(() => () => volumeService.dispose(), [volumeService]);
+  // Phase 18U — analysis control plane (one per drawing session). Session
+  // results are keyed by `arev1:` (source revision + band thresholds), so a
+  // source rebuild or threshold edit re-derives NEEDS_RECALC/SOURCE_NOT_CURRENT
+  // automatically while color/label/opacity edits never invalidate a result.
+  // Calculate is explicit only.
+  const analysisPlane = useMemo(
+    () =>
+      createCadAnalysisControlPlane({
+        drawingId: activeDrawing.drawingId,
+        getProject: () => activeProjectForBuildsRef.current,
+        getDrawingId: () => drawingIdForBuildsRef.current,
+        tinCache: surfaceCache,
+        // Worker-backed when available; the control plane falls back to the
+        // shared band engines (same cache shape) when workers are unavailable.
+        createTransport: () => {
+          try {
+            if (typeof Worker === 'undefined') return null;
+            return new SurfaceWorkerClient(
+              new Worker(new URL('../workers/surfaceWorker.ts', import.meta.url), {
+                type: 'module',
+              }),
+            );
+          } catch {
+            return null;
+          }
+        },
+        notify: (message) => setFileStatusText(message),
+        onStateChange: () => setAnalysisVersion((version) => version + 1),
+      }),
+    [activeDrawing.drawingId, surfaceCache],
+  );
+  useEffect(() => () => analysisPlane.dispose(), [analysisPlane]);
   // Phase 18J — profile derivation control plane (one per drawing
   // session, mirrors SurfaceVolumeService ownership). Manual derivation
   // only: source rebuilds and alignment edits never auto-start profile
@@ -776,10 +823,13 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
       const seen = previous[surfaceId] ?? [];
       if (revisions.length !== seen.length || revisions.some((entry, index) => entry !== seen[index])) {
         volumeService.notifyMeshBuilt(surfaceId);
+        // Phase 18U — analysis results are revision-keyed too, so a source
+        // rebuild retires in-flight analysis work (status re-derives stale).
+        analysisPlane.notifySourceRebuilt(surfaceId);
       }
     }
     notifiedMeshRevisionsRef.current = surfaceMeshSessions;
-  }, [surfaceMeshSessions, volumeService]);
+  }, [surfaceMeshSessions, volumeService, analysisPlane]);
   // Scene + snapshot inputs refresh only when the service reports a
   // state change (pending/diagnostic transitions), not on every render.
   const surfaceVolumeInputs = useMemo(
@@ -839,6 +889,57 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
     undo,
     redo,
   } = cadWorkspace;
+  // Phase 18U — analysis rows + legend rows (derived once per publish).
+  // surfaceMeshSessions is a dep (not just an effect trigger): a source
+  // rebuild mutates the mesh cache in place, so without it the rows would
+  // keep reporting SOURCE_NOT_CURRENT instead of re-deriving NEEDS_RECALC.
+  const analysisSnapshot = useMemo(() => {
+    void analysisVersion;
+    void surfaceMeshSessions;
+    return buildCadAnalysisSnapshot(
+      activeProject,
+      surfaceCache,
+      volumeCache,
+      analysisPlane.cache,
+      selectedAnalysisId,
+      selectedAnalysisLegendId,
+    );
+  }, [
+    activeProject,
+    surfaceCache,
+    volumeCache,
+    analysisPlane,
+    analysisVersion,
+    surfaceMeshSessions,
+    selectedAnalysisId,
+    selectedAnalysisLegendId,
+  ]);
+  // Phase 18U — Export Center input from the CURRENT cached results (fills +
+  // legends through the canonical export scene; absent = legacy scene).
+  const analysisExportInput = useMemo(() => {
+    void analysisVersion;
+    void surfaceMeshSessions;
+    return buildAnalysisExportInput(
+      activeProject,
+      analysisSnapshot,
+      surfaceCache,
+      analysisPlane.cache,
+      units,
+    );
+  }, [activeProject, analysisSnapshot, surfaceCache, analysisPlane, analysisVersion, surfaceMeshSessions, units]);
+  // Phase 18U — band fills + legend geometry from the CURRENT cached results.
+  // Colors/opacity come from the live definition, so a recolor or opacity edit
+  // repaints from cache (the `arev1:` revision excludes appearance).
+  const analysisDisplay = useMemo(() => {
+    // The analysis cache is mutated in place by the control plane, so the
+    // version bump is the only reliable "results changed" trigger.
+    void analysisVersion;
+    void surfaceMeshSessions;
+    return buildAnalysisSceneLayers(activeProject, surfaceCache, analysisPlane.cache, {
+        area: analysisAreaUnit(units),
+      volume: analysisVolumeUnit(units),
+    });
+  }, [activeProject, surfaceCache, analysisPlane, analysisVersion, surfaceMeshSessions, units]);
   // Phase 18E — drawing-owned active feature catalog, derived from the
   // HISTORY project (same source the F2F panel renders), never workspace
   // React state. Absent catalog + no F2F content = starter clone as a
@@ -949,8 +1050,12 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
       primitives: withBlockHoverTitles(activeProject, displaySceneWithProfiles.primitives),
       sampleLineLayers,
       sectionViewLayers,
+      // Phase 18U — band fills render UNDER the surface/volume passes and
+      // legend rows read the CURRENT cached result at render time.
+      analysisLayers: analysisDisplay.layers,
+      analysisLegendLayers: analysisDisplay.legendLayers,
     }),
-  [activeProject, displaySceneWithProfiles, sampleLineLayers, sectionViewLayers],
+  [activeProject, displaySceneWithProfiles, sampleLineLayers, sectionViewLayers, analysisDisplay],
   );
   const reportedComputationEntities = useMemo(
     () =>
@@ -1322,6 +1427,7 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
         buildingVolumeIds: surfaceVolumeInputs.buildingVolumeIds,
         sessionDiagnostics: surfaceVolumeInputs.sessionDiagnostics,
       }),
+      analysis: analysisSnapshot,
       profile: buildCadProfileSnapshot(
         activeProject,
         surfaceCache,
@@ -1350,7 +1456,7 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
     shellLink, activeDrawing, activeProject, activeCatalog, catalogStatus, selectionCount, selectedEntityIds, selectedEntities,
     propertiesPanelState, activeCommandKey, statusText, cadWorkspace, stationIds, dependencySummary, units,
     shellAvailableCommands, surfaceCache, surfaceRevisionIndex, selectedSurfaceId, lastSurfaceInquiry,
-    surfaceBuildInputs, volumeCache, selectedVolumeId, surfaceVolumeInputs,
+    surfaceBuildInputs, volumeCache, selectedVolumeId, surfaceVolumeInputs, analysisSnapshot,
     profileCache, surfaceProfileInputs, selectedProfileId, selectedProfileViewId,
     sectionCache, sectionService, surfaceSectionInputs,
     selectedSampleLineGroupId, selectedSampleLineId, selectedSectionViewId,
@@ -1467,6 +1573,25 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
       primitives: [...displaySceneWithSections.primitives, ...surfaceEditOverlayPrimitives],
     };
 
+  // Phase 18U — drop session results for deleted maps (results never
+  // persist; the control plane invalidates the cache). Legends referencing a
+  // deleted map derive BROKEN_REFERENCE, so they are legal to keep.
+  const knownAnalysisIdsRef = useRef<Set<string>>(new Set());
+  useEffect(() => {
+    const live = new Set((activeProject.analysisMaps ?? []).map((entry) => entry.id));
+    for (const id of knownAnalysisIdsRef.current) {
+      if (!live.has(id)) analysisPlane.handleAnalysisDeleted(id);
+    }
+    knownAnalysisIdsRef.current = live;
+    if (selectedAnalysisId != null && !live.has(selectedAnalysisId)) setSelectedAnalysisId(null);
+  }, [activeProject.analysisMaps, analysisPlane, selectedAnalysisId]);
+  useEffect(() => {
+    const live = new Set((activeProject.analysisLegends ?? []).map((entry) => entry.id));
+    if (selectedAnalysisLegendId != null && !live.has(selectedAnalysisLegendId)) {
+      setSelectedAnalysisLegendId(null);
+    }
+  }, [activeProject.analysisLegends, selectedAnalysisLegendId]);
+
   // Phase 18I — drop session results for deleted volumes (results never
   // persist; the service cancels in-flight work first so late arrivals
   // never re-apply). Converges: unknown ids are simply absent.
@@ -1479,6 +1604,25 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
     knownVolumeIdsRef.current = live;
     if (selectedVolumeId != null && !live.has(selectedVolumeId)) setSelectedVolumeId(null);
   }, [activeProject.volumeSurfaces, volumeService, selectedVolumeId]);
+
+  // Phase 18U — analysis inquiry text (direct source geometry; pure read).
+  const describeAnalysisAt = (analysisId: string, x: number, y: number): string | null => {
+    const map = (activeProject.analysisMaps ?? []).find((entry) => entry.id === analysisId);
+    const row = analysisSnapshot.analyses.find((entry) => entry.id === analysisId) ?? null;
+    if (!map || !row) return null;
+    const inquiry = queryAnalysisAt(activeProject, surfaceCache, map, x, y);
+    if (inquiry == null) {
+      return `“${row.name}” has no ${row.typeLabel} at (${x.toFixed(3)}, ${y.toFixed(3)}) — outside the source domain.`;
+    }
+    const bandText = inquiry.band ? inquiry.band.label : 'UNCLASSIFIED (no band covers this value)';
+    const valueText =
+      inquiry.metric === 'elevation'
+        ? `elevation ${inquiry.elevation.toFixed(3)} ${row.metricUnit}`
+        : inquiry.metric === 'signed-depth'
+          ? `Δ ${inquiry.delta.toFixed(3)} ${row.metricUnit} ${inquiry.side}`
+          : `slope ${inquiry.percent.toFixed(2)}% (${inquiry.degrees.toFixed(2)}°)`;
+    return `“${row.name}” E ${x.toFixed(3)} N ${y.toFixed(3)} ${valueText} — band ${bandText}.`;
+  };
 
   // Phase 18I — difference inquiry text (live source inquiry; pure read).
   const describeVolumeDifference = (volumeId: string, x: number, y: number): string | null => {
@@ -1741,6 +1885,43 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
         setVolumePick(volumeId == null ? null : { volumeId });
       },
       queryVolumeDifference: (volumeId, x, y) => describeVolumeDifference(volumeId, x, y),
+      selectAnalysis: (analysisId) => setSelectedAnalysisId(analysisId),
+      selectAnalysisLegend: (legendId) => setSelectedAnalysisLegendId(legendId),
+      createAnalysis: (kind) => {
+        const plan = prepareNewAnalysis(
+          activeProject,
+          surfaceCache,
+          kind,
+          shellSnapshot?.surface?.selectedSurfaceId ?? null,
+          shellSnapshot?.volume?.selectedVolumeId ?? null,
+        );
+        if ('error' in plan) return `Create analysis blocked — ${plan.error}.`;
+        const ok = cadWorkspace.runLayerCommand({
+          key: 'ANALYSIS_MAP_CREATE',
+          name: plan.name,
+          source: plan.source,
+          bands: plan.bands,
+          layerId: resolveCurrentCadLayerId(activeProject),
+        });
+        return ok
+          ? `Analysis “${plan.name}” created — Calculate to measure bands.`
+          : 'Create rejected — check the source, name, and layer lock.';
+      },
+      requestAnalysis: (analysisId) => analysisPlane.requestCalculate(analysisId),
+      calculateSelectedAnalysis: () => {
+        if (selectedAnalysisId == null) {
+          setFileStatusText('No analysis map selected.');
+          return;
+        }
+        setFileStatusText(analysisPlane.requestCalculate(selectedAnalysisId));
+      },
+      startAnalysisPick: (analysisId) => {
+        setSurfacePick(null);
+        setVolumePick(null);
+        setAnalysisPickAnswer(null);
+        setAnalysisPick(analysisId == null ? null : { analysisId });
+      },
+      queryAnalysis: (analysisId, x, y) => describeAnalysisAt(analysisId, x, y),
       startSurfacePick: (surfaceId, mode) => {
         setVolumePick(null);
         setSurfacePick(surfaceId == null ? null : { surfaceId, mode: mode ?? 'elevation' });
@@ -2066,6 +2247,8 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
             pickArmedFor={surfacePick?.surfaceId ?? null}
             volumePickArmedFor={volumePick?.volumeId ?? null}
             volumePickAnswer={volumePickAnswer}
+            analysisPickArmedFor={analysisPick?.analysisId ?? null}
+            analysisPickAnswer={analysisPickAnswer}
             onClose={() => setSurveyManager(null)}
           />
         ) : null}
@@ -2093,6 +2276,7 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
             stationIds={stationIds}
             f2fLinkStatus={f2fLinkStatus}
             f2fLinkSourceKind={f2fLinkSourceKind}
+            analysis={analysisExportInput}
             onClose={() => setExportCenterOpen(false)}
           />
         ) : null}
@@ -2132,7 +2316,7 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
           onParcelLayoutAutoPreviewStateChange={setParcelLayoutAutoPreviewState}
           onToggleParcelLabels={() => setShowParcelLabels((current) => !current)}
           cloneBounds={cloneBounds}
-          surfacePickActive={surfacePick != null || volumePick != null || blockInsertPick != null || surfaceEditSessions.session != null || surfacePointEditSessions.session != null}
+          surfacePickActive={surfacePick != null || volumePick != null || analysisPick != null || blockInsertPick != null || surfaceEditSessions.session != null || surfacePointEditSessions.session != null}
           onSurfacePickPoint={(worldPoint) => {
             if (surfacePointEditSessions.session) {
               surfacePointEditSessions.handlePick(worldPoint);
@@ -2154,6 +2338,14 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
               // insert also stays armed (user adjusts scale/rotation).
               // Esc (or Cancel) ends the loop.
               if (outcome.applied && !blockInsertPick.repeat) setBlockInsertPick(null);
+              return;
+            }
+            if (analysisPick) {
+              const text = describeAnalysisAt(analysisPick.analysisId, worldPoint.x, worldPoint.y);
+              if (text != null) {
+                setAnalysisPickAnswer({ analysisId: analysisPick.analysisId, text });
+              }
+              setAnalysisPick(null);
               return;
             }
             if (volumePick) {

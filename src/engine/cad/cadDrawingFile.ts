@@ -50,6 +50,8 @@ import {
 import { backfillDrawingCatalog } from '../fieldToFinish/drawingCatalog';
 import { cloneFeatureCatalog } from '../fieldToFinish/featureCatalog';
 import { sanitizeCadBlockReferences } from './cadBlockPersistence';
+import { backfillAnalysisMaps, clearAnalysisCacheOnLoad, cloneCadAnalysisMaps } from './cadAnalysisMaps';
+import { backfillAnalysisLegends, cloneCadAnalysisLegends } from './cadAnalysisLegends';
 import { STARTER_CATALOG } from '../fieldToFinish/starterCatalog';
 import type { UnitsMode } from '../../types';
 
@@ -131,7 +133,14 @@ export const createBlankCadProject = ({
     // so the bare project primitive stays block-free for block-library tests.
     blockDefinitions: [],
   };
-  return backfillCadAnnotationTables(project);
+  const withAnnotations = backfillCadAnnotationTables(project);
+  // Phase 18U: analysis definitions (and no results) trail the annotation
+  // tables — project signatures are key-order-sensitive JSON.stringify.
+  return {
+    ...withAnnotations,
+    analysisMaps: backfillAnalysisMaps(undefined),
+    analysisLegends: backfillAnalysisLegends(undefined),
+  };
 };
 
 export const createBlankCadDrawingDocument = ({
@@ -289,6 +298,15 @@ export const migrateSurveyCadStateToDrawing = ({
     sectionViews: cloneCadSectionViews(backfillCadSectionViews(withStandards.sectionViews)),
     blockDefinitions: sanitizedBlocks.project.blockDefinitions,
   });
+  // Phase 18U: analysis definitions trail the annotation tables. Any stored
+  // results are dropped on load (results are session-only, never trusted).
+  const projectWithAnalysis: CadProject = {
+    ...project,
+    analysisMaps: cloneCadAnalysisMaps(backfillAnalysisMaps(project.analysisMaps)).map(
+      clearAnalysisCacheOnLoad,
+    ),
+    analysisLegends: cloneCadAnalysisLegends(backfillAnalysisLegends(project.analysisLegends)),
+  };
   return {
     kind: 'webnet-cad-drawing',
     schemaVersion: 2,
@@ -298,9 +316,9 @@ export const migrateSurveyCadStateToDrawing = ({
     updatedAt: nowIso,
     units,
     project: {
-      ...project,
+      ...projectWithAnalysis,
       name,
-      bounds: project.bounds ?? buildCadBounds(project.entities),
+      bounds: projectWithAnalysis.bounds ?? buildCadBounds(projectWithAnalysis.entities),
       // Phase 18N: legacy imports own no blocks (trailing: key-order rule).
       blockDefinitions: [],
     },
@@ -374,10 +392,19 @@ const sanitizeCadDrawingDocument = (value: unknown): CadDrawingDocument | undefi
       sectionViews: cloneCadSectionViews(backfillCadSectionViews(withStandards.sectionViews)),
       blockDefinitions: sanitizedBlocks.project.blockDefinitions,
     });
+    // Phase 18U: analysis definitions trail the annotation tables; stored
+    // results are never trusted (session-only), so clear on load.
+    const projectWithAnalysis: CadProject = {
+      ...project,
+      analysisMaps: cloneCadAnalysisMaps(backfillAnalysisMaps(project.analysisMaps)).map(
+        clearAnalysisCacheOnLoad,
+      ),
+      analysisLegends: cloneCadAnalysisLegends(backfillAnalysisLegends(project.analysisLegends)),
+    };
     const draft = cloned.draft
       ? { ...cloned.draft, layers: backfillCadLayerList(cloned.draft.layers) }
       : cloned.draft;
-    return { ...cloned, project, draft };
+    return { ...cloned, project: projectWithAnalysis, draft };
   } catch {
     return undefined;
   }

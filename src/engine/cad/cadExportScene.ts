@@ -13,6 +13,7 @@ export type { ExportResult, ExportWarning, ExportWarningCode };
 import type { DraftSheet, DraftDocument } from './cadDraftTypes';
 import { expandSheetTokens, asPlanViewport, buildSheetTokenContext } from './cadSheets';
 import { buildTableFragmentItems } from './cadExportTables';
+import { buildAnalysisSheetItems, type CadAnalysisExportInput } from './cadAnalysisExportScene';
 import type { CadEntity, CadProject } from './cadTypes';
 
 export interface ExportClip {
@@ -469,6 +470,24 @@ export const buildTitleBlockItems = (
   return { items, unknownTokens };
 };
 
+// Layer visibility/printable filtering also applies to analysis maps: a map
+// whose owning layer is hidden or non-printable contributes no fills/legend,
+// without changing its derived status. Filters both layers and legends so the
+// builder never re-emits geometry for a hidden layer.
+const filterAnalysisInput = (
+  input: CadAnalysisExportInput | undefined,
+  isVisible: (_layerId: string) => boolean,
+): CadAnalysisExportInput | undefined => {
+  if (!input) return undefined;
+  const mapLayer = (map: { layerId?: string }, fallback: string): string => map.layerId ?? fallback;
+  return {
+    layers: (input.layers ?? []).filter((layer) => isVisible(mapLayer(layer.map, 'analysis'))),
+    legends: (input.legends ?? []).filter((entry) =>
+      isVisible(mapLayer(entry.map ?? {}, 'analysis-legend')),
+    ),
+  };
+};
+
 export interface BuildSceneArgs {
   draft: DraftDocument;
   sheetId: string;
@@ -476,6 +495,12 @@ export interface BuildSceneArgs {
   modelLabels?: ModelLabelPlacement[];
   paperTexts?: PaperTextPlacement[];
   paperExtras?: ExportItem[];
+  /**
+   * Phase 18U: CURRENT analysis-map fills/boundaries + legends, projected
+   * through the same viewport transform as the model geometry. Session-only
+   * derived regions; absent = legacy scene unchanged.
+   */
+  analysis?: CadAnalysisExportInput;
 }
 
 // Exporters consume the authoritative resolver (spec §5): primitive colors
@@ -632,6 +657,16 @@ export const buildExportSheetSceneWithResult = (args: BuildSceneArgs): ExportRes
       layerFlagged(layerId, 'printable');
     const toPaper = (x: number, y: number): { xMm: number; yMm: number } =>
       modelToPaperPoint(x, y, plan, plan.rotationDeg);
+    // Analysis fills sit BENEATH the model linework/annotations (volume-view
+    // precedent); the legend rides above it. CURRENT-only gate + dispositions
+    // live in the shared builder, so every sheet format agrees.
+    const analysisItems = buildAnalysisSheetItems(
+      filterAnalysisInput(args.analysis, (layerId) => !isHidden(layerId)),
+      toPaper,
+      clipId,
+    );
+    items.push(...analysisItems.items);
+    analysisItems.warnings.forEach((warning) => warnings.push(warning));
     sorted
       .filter((primitive) => !isHidden(primitive.layerId))
       .forEach((primitive) => {

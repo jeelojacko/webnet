@@ -9,6 +9,7 @@ import {
   buildExportSheetSceneWithResult,
   type ExportSheetScene,
 } from './cadExportScene';
+import type { CadAnalysisExportInput } from './cadAnalysisExportScene';
 import { serializeExportSceneToSvgWithResult } from './cadSvgSerializer';
 import { exportScenesToPdfWithResult } from './cadPdfExport';
 import { buildDxfLayoutTextWithResult, buildDxfModelSpaceTextWithResult } from './dxf/dxfLayoutExport';
@@ -246,12 +247,12 @@ type SceneDisposition = DispositionLists;
 
 type SceneBuild = { ok: true; scenes: ExportSheetScene[]; merged: SceneDisposition } | { ok: false; message: string };
 
-const buildSceneResults = (drawing: CadDrawingDocument, sheetIds: string[]): SceneBuild => {
+const buildSceneResults = (drawing: CadDrawingDocument, sheetIds: string[], analysis?: CadAnalysisExportInput): SceneBuild => {
   const draft = drawing.draft;
   if (!draft) return { ok: false, message: 'No draft yet. Sheets live on the draft document.' };
   try {
     const sceneResults = sheetIds.map((sheetId) =>
-      buildExportSheetSceneWithResult({ draft, sheetId, project: drawing.project }),
+      buildExportSheetSceneWithResult({ draft, sheetId, project: drawing.project, analysis }),
     );
     return {
       ok: true,
@@ -263,11 +264,11 @@ const buildSceneResults = (drawing: CadDrawingDocument, sheetIds: string[]): Sce
   }
 };
 
-const describeSvg = (drawing: CadDrawingDocument, selection: ExportCenterSelection): ExportCenterOutcome => {
+const describeSvg = (drawing: CadDrawingDocument, selection: ExportCenterSelection, analysis?: CadAnalysisExportInput): ExportCenterOutcome => {
   const resolved = resolveSheets(drawing, selection);
   if (!resolved.ok) return resolved;
   const sheets = resolved.sheets as { id: string; name: string }[];
-  const built = buildSceneResults(drawing, [sheets[0]?.id as string]);
+  const built = buildSceneResults(drawing, [sheets[0]?.id as string], analysis);
   if (!built.ok) return built;
   const serialized = serializeExportSceneToSvgWithResult(built.scenes[0] as ExportSheetScene);
   const merged = mergeWarnings([built.merged, serialized]);
@@ -291,12 +292,12 @@ const describeSvg = (drawing: CadDrawingDocument, selection: ExportCenterSelecti
   };
 };
 
-const describePdf = (drawing: CadDrawingDocument, selection: ExportCenterSelection): ExportCenterOutcome => {
+const describePdf = (drawing: CadDrawingDocument, selection: ExportCenterSelection, analysis?: CadAnalysisExportInput): ExportCenterOutcome => {
   const scope = selection.pdfScope ?? 'current';
   const resolved = resolveSheets(drawing, { ...selection, pdfScope: scope });
   if (!resolved.ok) return resolved;
   const sheets = resolved.sheets as { id: string; name: string }[];
-  const built = buildSceneResults(drawing, sheets.map((sheet) => sheet.id));
+  const built = buildSceneResults(drawing, sheets.map((sheet) => sheet.id), analysis);
   if (!built.ok) return built;
   const serialized = exportScenesToPdfWithResult(built.scenes);
   const merged = mergeWarnings([built.merged, serialized]);
@@ -320,14 +321,14 @@ const describePdf = (drawing: CadDrawingDocument, selection: ExportCenterSelecti
   };
 };
 
-const describeDxfR12 = (drawing: CadDrawingDocument): ExportCenterOutcome => {
+const describeDxfR12 = (drawing: CadDrawingDocument, analysis?: CadAnalysisExportInput): ExportCenterOutcome => {
   if (drawing.project.entities.length === 0) {
     return { ok: false, message: 'No model geometry to export. Import or draw entities first.' };
   }
   // Result-aware path: model + serializer warnings (unknown linetypes,
   // R12 lineweights) surface pre-download; the payload is the downloaded
   // bytes exactly.
-  const result = buildDxfModelSpaceTextWithResult({ project: drawing.project });
+  const result = buildDxfModelSpaceTextWithResult({ project: drawing.project, analysis });
   return {
     ok: true,
     preview: {
@@ -347,13 +348,13 @@ const describeDxfR12 = (drawing: CadDrawingDocument): ExportCenterOutcome => {
   };
 };
 
-const describeDxfR2000 = (drawing: CadDrawingDocument): ExportCenterOutcome => {
+const describeDxfR2000 = (drawing: CadDrawingDocument, analysis?: CadAnalysisExportInput): ExportCenterOutcome => {
   if (!drawing.draft || drawing.draft.sheets.length === 0) {
     return { ok: false, message: 'No sheets yet. Create a sheet before exporting layouts.' };
   }
   // WithResult path: model warnings/dispositions plus mapped paper
   // warnings surface pre-download; the payload is the downloaded bytes.
-  const result = buildDxfLayoutTextWithResult({ project: drawing.project, draft: drawing.draft });
+  const result = buildDxfLayoutTextWithResult({ project: drawing.project, draft: drawing.draft, analysis });
   return {
     ok: true,
     preview: {
@@ -418,6 +419,7 @@ export const buildExportCenterPreview = (
   selection: ExportCenterSelection,
   depOpts?: ExportDependencyOptions,
   civilSources?: CadLandXmlCivilSources,
+  analysis?: CadAnalysisExportInput,
 ): ExportCenterOutcome => {
   try {
     const gate = depOpts !== undefined
@@ -426,13 +428,13 @@ export const buildExportCenterPreview = (
     if (gate) return gate;
     switch (selection.format) {
       case 'svg':
-        return describeSvg(drawing, selection);
+        return describeSvg(drawing, selection, analysis);
       case 'pdf':
-        return describePdf(drawing, selection);
+        return describePdf(drawing, selection, analysis);
       case 'dxf-r12':
-        return describeDxfR12(drawing);
+        return describeDxfR12(drawing, analysis);
       case 'dxf-r2000':
-        return describeDxfR2000(drawing);
+        return describeDxfR2000(drawing, analysis);
       case 'landxml':
         return describeLandxml(drawing, civilSources);
       case 'wncad':

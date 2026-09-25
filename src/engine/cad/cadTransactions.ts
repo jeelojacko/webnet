@@ -84,6 +84,7 @@ import { surfaceCommandDefinitions } from './cadTransactionsSurfaceCommands';
 import { blockCommandDefinitions } from './cadTransactionsBlockCommands';
 import { landxmlImportCommand } from './cadTransactionsLandxmlImport';
 import { volumeCommandDefinitions } from './cadTransactionsVolumeCommands';
+import { analysisCommandDefinitions } from './cadTransactionsAnalysisCommands';
 import { profileCommandDefinitions } from './cadTransactionsProfileCommands';
 import { sectionCommandDefinitions } from './cadTransactionsSectionCommands';
 export {
@@ -608,6 +609,14 @@ export const CAD_COMMAND_REGISTRY: Record<CadCommandKey, CadCommandDefinition<Ca
   VOLUME_STYLE_RENAME: volumeCommandDefinitions.VOLUME_STYLE_RENAME as CadCommandDefinition<CadCommand>,
   VOLUME_STYLE_UPDATE: volumeCommandDefinitions.VOLUME_STYLE_UPDATE as CadCommandDefinition<CadCommand>,
   VOLUME_STYLE_DELETE: volumeCommandDefinitions.VOLUME_STYLE_DELETE as CadCommandDefinition<CadCommand>,
+  ANALYSIS_MAP_CREATE: analysisCommandDefinitions.ANALYSIS_MAP_CREATE as CadCommandDefinition<CadCommand>,
+  ANALYSIS_MAP_UPDATE_BANDS: analysisCommandDefinitions.ANALYSIS_MAP_UPDATE_BANDS as CadCommandDefinition<CadCommand>,
+  ANALYSIS_MAP_UPDATE_APPEARANCE: analysisCommandDefinitions.ANALYSIS_MAP_UPDATE_APPEARANCE as CadCommandDefinition<CadCommand>,
+  ANALYSIS_MAP_DELETE: analysisCommandDefinitions.ANALYSIS_MAP_DELETE as CadCommandDefinition<CadCommand>,
+  ANALYSIS_LEGEND_CREATE: analysisCommandDefinitions.ANALYSIS_LEGEND_CREATE as CadCommandDefinition<CadCommand>,
+  ANALYSIS_LEGEND_UPDATE: analysisCommandDefinitions.ANALYSIS_LEGEND_UPDATE as CadCommandDefinition<CadCommand>,
+  ANALYSIS_LEGEND_MOVE: analysisCommandDefinitions.ANALYSIS_LEGEND_MOVE as CadCommandDefinition<CadCommand>,
+  ANALYSIS_LEGEND_DELETE: analysisCommandDefinitions.ANALYSIS_LEGEND_DELETE as CadCommandDefinition<CadCommand>,
   PROFILE_CREATE: profileCommandDefinitions.PROFILE_CREATE as CadCommandDefinition<CadCommand>,
   PROFILE_REBUILD: profileCommandDefinitions.PROFILE_REBUILD as CadCommandDefinition<CadCommand>,
   PROFILE_DELETE: profileCommandDefinitions.PROFILE_DELETE as CadCommandDefinition<CadCommand>,

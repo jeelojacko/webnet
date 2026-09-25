@@ -66,11 +66,20 @@ const emitLine = (ctx: Ctx, x1: number, y1: number, x2: number, y2: number, widt
   );
 };
 
-const emitSegments = (ctx: Ctx, points: Array<{ x: number; y: number }>, close: boolean, widthMm?: number, stroke?: string): void => {
+const emitSegments = (ctx: Ctx, points: Array<{ x: number; y: number }>, close: boolean, widthMm?: number, stroke?: string, fill?: string): void => {
   if (points.length < 2) return;
-  if (stroke != null) ctx.ops.push(`${rgbOp(stroke)} RG`);
   const path = points.map((p, i) => `${fmt(toPt(p.x))} ${fmt(flipY(p.y, ctx))} ${i === 0 ? 'm' : 'l'}`).join(' ');
-  ctx.ops.push(`${strokeWidth(widthMm)} ${path}${close ? ' h' : ''} S`);
+  const closep = close ? ' h' : '';
+  // Phase 18U: filled polygons (analysis band rings) use the non-zero fill
+  // operator; an optional stroke rides on top so boundaries stay legible.
+  // Items without a fill keep the legacy stroke-only byte path.
+  if (fill != null) {
+    ctx.ops.push(`${rgbOp(fill)} rg ${path}${closep} f`);
+    if (stroke != null) ctx.ops.push(`${rgbOp(stroke)} RG ${strokeWidth(widthMm)} ${path}${closep} S`);
+    return;
+  }
+  if (stroke != null) ctx.ops.push(`${rgbOp(stroke)} RG`);
+  ctx.ops.push(`${strokeWidth(widthMm)} ${path}${closep} S`);
 };
 
 const emitRect = (ctx: Ctx, x: number, y: number, width: number, height: number, fill?: string, stroke?: string): void => {
@@ -181,7 +190,7 @@ const emitItemInner = (ctx: Ctx, item: ExportItem): void => {
       emitLine(ctx, item.x1, item.y1, item.x2, item.y2, item.widthMm, item.stroke);
       return;
     case 'polyline':
-      emitSegments(ctx, item.points, item.close, item.widthMm, item.stroke);
+      emitSegments(ctx, item.points, item.close, item.widthMm, item.stroke, item.fill);
       return;
     case 'rect':
       emitRect(ctx, item.x, item.y, item.width, item.height, item.fill, item.stroke);

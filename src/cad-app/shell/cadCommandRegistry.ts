@@ -198,6 +198,15 @@ export const CAD_SHELL_COMMANDS: CadShellCommandDef[] = [
   action('SURFVOLCALC', 'Calculate Volume', 'Surface', 'Calculate volumes for the selected volume (both sources must be Current).'),
   action('SURFDIFF', 'Surface Difference', 'Surface', 'Query base/comparison elevations + CUT/FILL verdict (manager).'),
   action('SURFVOLREPORT', 'Volume Report', 'Surface', 'Download the Volume Summary CSV (Current volumes only, manager).'),
+  // Phase 18U — analysis maps + legends. Every entry routes through the
+  // surface manager's ANALYSIS section; the shell paths share this registry
+  // (ribbon ANALYSIS/VOLUME groups + Analysis Legend on the SURFACE tab).
+  action('SURFELEVANALYSIS', 'New Elevation Analysis', 'Surface', 'Create an elevation-band analysis on the selected surface (5 equal bands).', undefined, ['ELEVANALYSIS']),
+  action('SURFSLOPEANALYSIS', 'New Slope Analysis', 'Surface', 'Create a slope-band analysis on the selected surface (5 equal bands).', undefined, ['SLOPEANALYSIS']),
+  action('VOLUMEDEPTHANALYSIS', 'New Depth Analysis', 'Surface', 'Create a signed-depth analysis on the selected volume surface.', undefined, ['DEPTHANALYSIS']),
+  action('SURFANALYSIS', 'Analysis Manager', 'Surface', 'Open the analysis manager (rows, ranges, calculate, delete).', undefined, ['ANALYSISMANAGER']),
+  action('SURFANALYSISINQUIRY', 'Analysis Inquiry', 'Surface', 'Query the exact metric + band at a plan point (manager inquiry).', undefined, ['ANALYSISINQUIRY']),
+  action('SURFANALYSISLEGEND', 'Analysis Legend', 'Surface', 'Create a legend for the selected analysis (rows read from the map at render time).', undefined, ['ANALYSISLEGEND']),
   // Phase 18J — profile commands (all route through the profile manager;
   // Rebuild runs the session profile service for the selected profile).
   action('PROFILE', 'Profile', 'Surface', 'Open the surface profile manager.'),
@@ -399,6 +408,17 @@ export const executeShellCommand = (
       return true;
     case 'SURFVOLCALC':
       actions.calculateSelectedVolume();
+      return true;
+    case 'SURFELEVANALYSIS':
+      return actions.createAnalysis?.('elevation') != null;
+    case 'SURFSLOPEANALYSIS':
+      return actions.createAnalysis?.('slope-percent') != null;
+    case 'VOLUMEDEPTHANALYSIS':
+      return actions.createAnalysis?.('signed-depth') != null;
+    case 'SURFANALYSIS':
+    case 'SURFANALYSISINQUIRY':
+    case 'SURFANALYSISLEGEND':
+      actions.openSurveyManager('surfaces');
       return true;
     case 'PROFILE':
     case 'PROFILEMANAGER':

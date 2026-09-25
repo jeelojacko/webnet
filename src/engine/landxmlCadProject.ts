@@ -19,6 +19,7 @@ import {
   type CadLandXmlCivilSources,
 } from './landxmlCivilSource';
 import { finalizeExportResult, type ExportResult, type ExportWarning } from './cad/exportResult';
+import { ANALYSIS_LANDXML_DISPOSITION } from './cad/cadAnalysisExportScene';
 import type {
   CadLandXmlAlignment,
   CadLandXmlCurve,
@@ -365,6 +366,16 @@ export const buildLandXmlProjectExportWithResult = (
 ): CadLandXmlProjectExportResult => {
   const acc = newProjectAccum();
   convertEntities(project, acc);
+  // Phase 18U: analysis maps are presentation/derived geometry (band fills +
+  // legends) with no LandXML 1.2 representation. They are NOT_APPLICABLE:
+  // explicit per-map warnings, no geometry, while the underlying CURRENT TIN
+  // and volume behavior is untouched. Never a silent drop, never faked.
+  (project.analysisMaps ?? []).forEach((map) => {
+    acc.warnings.push({
+      code: 'SKIPPED_ENTITY',
+      message: `analysis map ${map.id} (${map.name}) has no LandXML representation (${ANALYSIS_LANDXML_DISPOSITION})`,
+    });
+  });
 
   const exportedAlignmentIds = new Set(
     acc.alignments.map((alignment) => alignment.sourceEntityId).filter((id): id is string => id != null),

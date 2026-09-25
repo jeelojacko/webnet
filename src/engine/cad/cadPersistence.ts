@@ -42,6 +42,8 @@ import { cloneFieldToFinishSettings } from '../fieldToFinish/catalogIo';
 import { backfillDrawingCatalog } from '../fieldToFinish/drawingCatalog';
 import { cloneFeatureCatalog } from '../fieldToFinish/featureCatalog';
 import { sanitizeCadBlockReferences } from './cadBlockPersistence';
+import { backfillAnalysisMaps, cloneCadAnalysisMaps } from './cadAnalysisMaps';
+import { backfillAnalysisLegends, cloneCadAnalysisLegends } from './cadAnalysisLegends';
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === 'object' && value != null && !Array.isArray(value);
@@ -278,6 +280,15 @@ export const cloneCadProject = (project: CadProject): CadProject => ({
   ...(project.annotationSettings != null
     ? { annotationSettings: { ...project.annotationSettings } }
     : {}),
+  // Phase 18U: analysis definitions stay trailing (key-order rule). Results
+  // (band areas/percentages/volumes, derived fills) are session-only and
+  // never cloned or serialized.
+  ...(project.analysisMaps != null
+    ? { analysisMaps: cloneCadAnalysisMaps(project.analysisMaps) }
+    : {}),
+  ...(project.analysisLegends != null
+    ? { analysisLegends: cloneCadAnalysisLegends(project.analysisLegends) }
+    : {}),
 });
 
 const cloneParcelLayoutSettings = (
@@ -378,6 +389,11 @@ export const sanitizeSurveyCadPersistedState = (
         sectionStyles: cloneCadSectionStyles(backfillCadSectionStyles(withStandards.sectionStyles)),
         sectionViews: cloneCadSectionViews(backfillCadSectionViews(withStandards.sectionViews)),
         blockDefinitions: sanitizedBlocks.project.blockDefinitions,
+        // Phase 18U: definitions only; legacy files open with empty tables.
+        analysisMaps: cloneCadAnalysisMaps(backfillAnalysisMaps(withStandards.analysisMaps)),
+        analysisLegends: cloneCadAnalysisLegends(
+          backfillAnalysisLegends(withStandards.analysisLegends),
+        ),
       },
     };
   } catch {
