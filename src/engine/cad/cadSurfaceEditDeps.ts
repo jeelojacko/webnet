@@ -39,7 +39,9 @@ export const consumedEditKeysOf = (edit: CadSurfaceEdit): string[] => {
         ? [edit.from.key, edit.to.key]
         : edit.kind === 'delete-point' || edit.kind === 'move-point' || edit.kind === 'set-elevation'
           ? [edit.vertex.key]
-          : [];
+          : edit.kind === 'set-elevation-many' || edit.kind === 'raise-lower-points' || edit.kind === 'move-points'
+            ? edit.vertices.map((vertex) => vertex.key)
+            : [];
   return keys.filter((key) => key.startsWith('edit:'));
 };
 

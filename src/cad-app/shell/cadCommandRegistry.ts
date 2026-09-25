@@ -189,6 +189,13 @@ export const CAD_SHELL_COMMANDS: CadShellCommandDef[] = [
   action('SURFSETELEV', 'Set Elevation', 'Surface', 'Surface-only elevation override on one vertex (pick, type elevation, Enter commits).', undefined, ['SETELEVSURF']),
   action('SURFRAISELOWER', 'Raise/Lower Surface', 'Surface', 'Shift every surface-only vertex by a delta (type delta, Enter twice confirms).', undefined, ['RAISELOWERSURF']),
   action('SURFEDITS', 'Edit History', 'Surface', 'Open the TIN edit history (surfaces manager).'),
+  // Phase 18V — region/point selection + bulk edits (session-UI only; each
+  // bulk action commits ONE undoable SURFACE_ADD_EDIT against a fresh
+  // revision, zero refs ⇒ no edit/undo entry).
+  action('SURFSELECTPOINTS', 'Select Points', 'Surface', 'Select surface points by window/polygon/All/Clear (synthetic vertices excluded).'),
+  action('SURFSETELEVMULTI', 'Set Selected Z', 'Surface', 'Set the elevation of every selected point in one undoable edit.'),
+  action('SURFRAISELOWERSELECTED', 'Raise/Lower Selected', 'Surface', 'Shift every selected point by a ΔZ in one undoable edit.'),
+  action('SURFMOVEPOINTS', 'Move Selected', 'Surface', 'Move every selected point by a base+destination displacement in one undoable edit.'),
   action('SURFSLOPE', 'Surface Slope', 'Surface', 'Query surface slope/aspect (manager inquiry).'),
   action('SURFCONTOURS', 'Surface Contours', 'Surface', 'Edit contour display style (manager contours section).'),
   // Phase 18I — volume commands (all route through the surface manager;
@@ -398,6 +405,14 @@ export const executeShellCommand = (
       return actions.startSurfaceEditSession?.('set-elevation') ?? false;
     case 'SURFRAISELOWER':
       return actions.startSurfaceEditSession?.('raise-lower') ?? false;
+    case 'SURFSELECTPOINTS':
+      return actions.selectSurfacePoints?.('window') ?? false;
+    case 'SURFSETELEVMULTI':
+      return actions.startSurfaceBulkEditSession?.('set-elevation') ?? false;
+    case 'SURFRAISELOWERSELECTED':
+      return actions.startSurfaceBulkEditSession?.('raise-lower') ?? false;
+    case 'SURFMOVEPOINTS':
+      return actions.startSurfaceBulkEditSession?.('move') ?? false;
     case 'SURFEDITS':
       actions.openSurveyManager('surfaces');
       return true;

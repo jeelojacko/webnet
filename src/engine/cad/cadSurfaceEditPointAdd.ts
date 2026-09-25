@@ -13,6 +13,7 @@ import {
   type EditMeshState,
   type EditTri,
 } from './cadSurfaceEditMesh';
+import { ensureEditPointLocationIndex, insertEditPointLocation } from './cadEditPointLocationIndex';
 
 /**
  * Phase 18T add-point kernel (ENGINE ONLY): insert a surface-local point.
@@ -34,15 +35,12 @@ const orientXy = (
 const pointOf = (state: EditMeshState, index: number): { x: number; y: number } =>
   state.pts[index] as { x: number; y: number };
 
-/** Exact-XY coincidence with any ACTIVE vertex (2.5D — Z is irrelevant). */
-const findCoincident = (state: EditMeshState, x: number, y: number): number => {
-  for (let i = 0; i < state.pts.length; i += 1) {
-    if (!state.active[i]) continue;
-    const p = state.pts[i];
-    if (p.x === x && p.y === y) return i;
-  }
-  return -1;
-};
+/**
+ * Exact-XY coincidence with any ACTIVE vertex (2.5D — Z is irrelevant).
+ * Phase 18V: O(1) via the lazy exact location map (was an O(points) scan).
+ */
+const findCoincident = (state: EditMeshState, x: number, y: number): number =>
+  ensureEditPointLocationIndex(state).find(x, y);
 
 interface LocatedInside { where: 'inside'; tri: number; }
 interface LocatedEdge { where: 'edge'; e1: number; e2: number; adj: number[]; }
@@ -122,6 +120,7 @@ export const applyAddPoint = (
   if (!found) throw new EditHalt('SURFACE_EDIT_POINT_OUTSIDE_DOMAIN');
   if (found.where === 'inside') {
     const p = appendEditPoint(state, { id, x, y, z });
+    insertEditPointLocation(state, p);
     splitInside(state, found.tri, state.tris.get(found.tri) as EditTri, p);
     return p;
   }
@@ -130,6 +129,7 @@ export const applyAddPoint = (
   if (kindOfEditEdge(state, key) !== TIN_EDGE_FREE) throw new EditHalt('SURFACE_EDIT_BLOCKED_CONSTRAINT');
   const carriedUserLine = state.userLines.has(key);
   const p = appendEditPoint(state, { id, x, y, z });
+  insertEditPointLocation(state, p);
   for (const triId of [...found.adj]) {
     const tri = state.tris.get(triId);
     if (!tri) throw new EditHalt('SURFACE_EDIT_NOT_APPLICABLE');

@@ -1007,6 +1007,47 @@ export interface CadSurfaceRaiseLowerEdit {
   deltaZ: number;
 }
 
+/**
+ * Phase 18V bulk/region surface edits (ENGINE ONLY — no UI).
+ *
+ * One operator commit = one row: the persisted edit stores the canonical
+ * (lexicographic, deduped) stable ref array only — never a selection
+ * polygon. Bulk raise/lower-selected is distinct from whole-surface
+ * `raise-lower-surface` (which keeps affecting synthetic). Refs resolve via
+ * the same resolveEditVertex; a missing ref fails the whole build closed.
+ */
+export interface CadSurfaceSetElevationsEdit {
+  id: string;
+  kind: 'set-elevation-many';
+  /** Absent = TRUE. */
+  enabled?: boolean;
+  /** Canonical lexicographic order, deduped. Empty = no edit. */
+  vertices: CadSurfaceVertexRef[];
+  z: number;
+}
+
+export interface CadSurfaceRaiseLowerVerticesEdit {
+  id: string;
+  kind: 'raise-lower-points';
+  /** Absent = TRUE. */
+  enabled?: boolean;
+  /** Canonical lexicographic order, deduped. Empty = no edit. */
+  vertices: CadSurfaceVertexRef[];
+  deltaZ: number;
+}
+
+export interface CadSurfaceMoveVerticesEdit {
+  id: string;
+  kind: 'move-points';
+  /** Absent = TRUE. */
+  enabled?: boolean;
+  /** Canonical lexicographic order, deduped. Empty = no edit. */
+  vertices: CadSurfaceVertexRef[];
+  /** Displacement vector applied simultaneously from each ref's replay-position XY. */
+  deltaX: number;
+  deltaY: number;
+}
+
 export type CadSurfaceEdit =
   | CadSurfaceSwapEdgeEdit
   | CadSurfaceAddLineEdit
@@ -1015,7 +1056,10 @@ export type CadSurfaceEdit =
   | CadSurfaceDeletePointEdit
   | CadSurfaceMovePointEdit
   | CadSurfaceSetElevationEdit
-  | CadSurfaceRaiseLowerEdit;
+  | CadSurfaceRaiseLowerEdit
+  | CadSurfaceSetElevationsEdit
+  | CadSurfaceRaiseLowerVerticesEdit
+  | CadSurfaceMoveVerticesEdit;
 
 export type CadSurfaceStatus =
   | 'UNBUILT'

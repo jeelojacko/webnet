@@ -31,6 +31,11 @@ import type { CadAnalysisSnapshot } from './cadAnalysisSnapshot';
 import type { CadProfileSnapshot } from './cadProfileSnapshot';
 import type { CadSectionSnapshot } from './cadSectionSnapshot';
 import type { ActiveCommandKey } from '../../hooks/surveyCad/useSurveyCadCommandTypes';
+import type {
+  SurfaceBulkEditMode,
+  SurfaceSelectionMode,
+  SurfaceSelectionSourceFilter,
+} from '../../hooks/surveyCad/surfaceBulkSelectionUtils';
 import type { DraftSheet } from '../../engine/cad/cadDraftTypes';
 
 /**
@@ -407,6 +412,17 @@ export interface CadShellActions {
   startSurfaceEditSession?: (_mode: 'swap' | 'add-line' | 'delete-line' | 'add-point' | 'delete-point' | 'move-point' | 'set-elevation' | 'raise-lower') => boolean;
   /** Phase 18S — disarm the active TIN edit session (Esc path). */
   cancelSurfaceEditSession?: () => void;
+  /**
+   * Phase 18V — resolve a window/polygon/All/Clear point selection on the
+   * selected surface against the current final mesh (synthetic excluded).
+   */
+  selectSurfacePoints?: (_mode: SurfaceSelectionMode) => boolean;
+  /** Phase 18V — apply/drop the source-kind filter on the current point selection. */
+  setSurfacePointSelectionFilter?: (_filter: SurfaceSelectionSourceFilter) => void;
+  /** Phase 18V — clear the session point selection. */
+  clearSurfacePointSelection?: () => void;
+  /** Phase 18V — arm SURFSETELEVMULTI / SURFRAISELOWERSELECTED / SURFMOVEPOINTS. */
+  startSurfaceBulkEditSession?: (_mode: SurfaceBulkEditMode) => boolean;
   toggleDraftingPanel: () => void;
   toggleExportCenter: () => void;
   cancelCommand: () => void;

@@ -2,6 +2,7 @@ import type { CadSurfaceEdit } from './cadTypes';
 import { TIN_EDGE_FREE, type TinAdjacency, type TinEdgeKindCode, type TinEdgeKinds } from './tin/tinTypes';
 import { buildTinTopology, tinEdgeKey } from './tin/tinTopology';
 import { applyAddLine } from './cadSurfaceEditAddLine';
+import { applySetElevationsMany, applyRaiseLowerPoints, applyMovePointsVertices } from './cadSurfaceEditBulk';
 import { applyAddPoint } from './cadSurfaceEditPointAdd';
 import { applyDeletePoint, applyMovePoint, applyRaiseLower, applySetElevation } from './cadSurfaceEditPointModify';
 import {
@@ -268,6 +269,15 @@ export const applyCadSurfaceEdits = (
           break;
         case 'set-elevation':
           applySetElevation(state, resolveEditVertex(state, edit.vertex.key), edit.z);
+          break;
+        case 'set-elevation-many':
+          applySetElevationsMany(state, edit.vertices, edit.z);
+          break;
+        case 'raise-lower-points':
+          applyRaiseLowerPoints(state, edit.vertices, edit.deltaZ);
+          break;
+        case 'move-points':
+          applyMovePointsVertices(state, edit.vertices, edit.deltaX, edit.deltaY);
           break;
         case 'raise-lower-surface':
           applyRaiseLower(state, edit.deltaZ);

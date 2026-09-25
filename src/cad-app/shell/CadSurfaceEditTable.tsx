@@ -68,6 +68,7 @@ export const CadSurfaceEditTable: React.FC<{
   const commit = (label: string, ok: boolean): void =>
     setNotice(ok ? `${label} done.` : `${label} rejected — stale revision or locked layer; re-pick and retry.`);
   const broken = row.edits.filter((edit) => edit.status === 'broken-reference');
+  const [expandedId, setExpandedId] = React.useState<string | null>(null);
   const deps = React.useMemo(
     () => inspectSurfaceEditDependencies(row.id, row.editStack),
     [row.id, row.editStack],
@@ -94,16 +95,20 @@ export const CadSurfaceEditTable: React.FC<{
           </thead>
           <tbody>
             {row.edits.map((edit, index) => (
-              <EditRow
-                key={edit.id}
-                edit={edit}
-                index={index}
-                last={index === row.edits.length - 1}
-                run={run}
-                commit={commit}
-                setNotice={setNotice}
-                row={row}
-              />
+              <React.Fragment key={edit.id}>
+                <EditRow
+                  edit={edit}
+                  index={index}
+                  last={index === row.edits.length - 1}
+                  run={run}
+                  commit={commit}
+                  setNotice={setNotice}
+                  row={row}
+                  expanded={expandedId === edit.id}
+                  onToggle={() => setExpandedId((current) => (current === edit.id ? null : edit.id))}
+                />
+                {expandedId === edit.id ? <EditDetailRow edit={edit} /> : null}
+              </React.Fragment>
             ))}
           </tbody>
         </table>
@@ -139,7 +144,9 @@ const EditRow: React.FC<{
   commit: (_label: string, _ok: boolean) => void;
   setNotice: (_notice: string) => void;
   row: CadSurfaceRow;
-}> = ({ edit, index, last, run, commit, setNotice, row }) => {
+  expanded: boolean;
+  onToggle: () => void;
+}> = ({ edit, index, last, run, commit, setNotice, row, expanded, onToggle }) => {
   const base = { surfaceId: row.id, editId: edit.id, expectedRevision: row.revision };
   const move = (direction: 'up' | 'down'): void => {
     const other = direction === 'up' ? index - 1 : index + 1;
@@ -188,7 +195,9 @@ const EditRow: React.FC<{
       </td>
       <td className="pr-1 text-slate-400">{edit.description}</td>
       <td className="whitespace-nowrap pr-1">
-        <button type="button" className={EDIT_BUTTON} data-cad-edit-action="up" disabled={index === 0}
+        <button type="button" className={EDIT_BUTTON} data-cad-edit-action="details"
+          aria-expanded={expanded} onClick={onToggle}>{expanded ? '▾' : '▸'}</button>
+        <button type="button" className={`${EDIT_BUTTON} ml-1`} data-cad-edit-action="up" disabled={index === 0}
           title={strandedUp ?? undefined} onClick={() => move('up')}>↑</button>
         <button type="button" className={`${EDIT_BUTTON} ml-1`} data-cad-edit-action="down" disabled={last}
           title={strandedDown ?? undefined} onClick={() => move('down')}>↓</button>
@@ -198,6 +207,26 @@ const EditRow: React.FC<{
         </button>
         <button type="button" className={`${EDIT_BUTTON} ml-1`} data-cad-edit-action="delete"
           onClick={remove}>Delete</button>
+      </td>
+    </tr>
+  );
+};
+
+/** Phase 18V — expandable per-row detail (Type/Enabled/Count/Value + label list). */
+const EditDetailRow: React.FC<{ edit: CadSurfaceEditSummary }> = ({ edit }) => {
+  const count = edit.refLabels.length > 0 ? edit.refLabels.length : 1;
+  const labels = edit.refLabels.length > 0 ? edit.refLabels.join(', ') : edit.targetLabel;
+  return (
+    <tr className="bg-slate-900/60 text-[11px] text-slate-300" data-cad-surface-edit-detail={edit.id}>
+      <td colSpan={8} className="px-2 py-1">
+        <span className="text-slate-400">Type</span> {edit.typeLabel}
+        <span className="mx-2 text-slate-600">|</span>
+        <span className="text-slate-400">Enabled</span> {edit.enabled ? 'Yes' : 'No'}
+        <span className="mx-2 text-slate-600">|</span>
+        <span className="text-slate-400">Count</span> {count}
+        <span className="mx-2 text-slate-600">|</span>
+        <span className="text-slate-400">Value</span> {edit.valueLabel ?? '—'}
+        <div className="mt-0.5 text-slate-400">Labels: {labels}</div>
       </td>
     </tr>
   );

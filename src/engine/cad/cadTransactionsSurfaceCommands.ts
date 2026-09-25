@@ -1,4 +1,5 @@
 import { createStableRuntimeId } from '../id';
+import { canonicalizeBulkVertexRefs } from './cadSurfaceEditBulk';
 import { surfacePointGroupIds } from './cadTypes';
 import { backfillCadSurfaceStyles, createCadSurfaceStyle, deleteCadSurfaceStyle, duplicateCadSurfaceStyle, renameCadSurfaceStyle, updateCadSurfaceStyle } from './cadSurfaceStyles';
 import { isSurfaceLayerLocked, resolveSurfaceLayerId } from './cadSurfaceTypes';
@@ -513,6 +514,49 @@ const buildSurfaceEdit = (id: string, draft: AddEditCommand['edit']): CadSurface
       kind: 'raise-lower-surface',
       ...(draft.enabled === false ? { enabled: false as const } : {}),
       deltaZ: draft.deltaZ,
+    };
+  }
+  if (draft.kind === 'set-elevation-many') {
+    if (!finiteNum(draft.z)) return null;
+    const incoming: unknown = draft.vertices;
+    if (!Array.isArray(incoming) || incoming.length === 0) return null;
+    const raw = incoming.filter(validEditRef);
+    if (raw.length !== incoming.length) return null;
+    return {
+      id,
+      kind: 'set-elevation-many' as const,
+      ...(draft.enabled === false ? { enabled: false as const } : {}),
+      vertices: canonicalizeBulkVertexRefs(raw),
+      z: draft.z,
+    };
+  }
+  if (draft.kind === 'raise-lower-points') {
+    if (!finiteNum(draft.deltaZ)) return null;
+    const incoming: unknown = draft.vertices;
+    if (!Array.isArray(incoming) || incoming.length === 0) return null;
+    const raw = incoming.filter(validEditRef);
+    if (raw.length !== incoming.length) return null;
+    return {
+      id,
+      kind: 'raise-lower-points' as const,
+      ...(draft.enabled === false ? { enabled: false as const } : {}),
+      vertices: canonicalizeBulkVertexRefs(raw),
+      deltaZ: draft.deltaZ,
+    };
+  }
+  if (draft.kind === 'move-points') {
+    if (!finiteNum(draft.deltaX) || !finiteNum(draft.deltaY)) return null;
+    const incoming: unknown = draft.vertices;
+    if (!Array.isArray(incoming) || incoming.length === 0) return null;
+    const raw = incoming.filter(validEditRef);
+    if (raw.length !== incoming.length) return null;
+    return {
+      id,
+      kind: 'move-points' as const,
+      ...(draft.enabled === false ? { enabled: false as const } : {}),
+      vertices: canonicalizeBulkVertexRefs(raw),
+      deltaX: draft.deltaX,
+      deltaY: draft.deltaY,
     };
   }
   return null;

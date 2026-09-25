@@ -18,6 +18,7 @@ import {
   shortPointLabel,
   type CadSurfaceEditSummary,
 } from './cadSurfaceEditSummaries';
+import type { SurfaceSelectionSourceFilter } from '../../hooks/surveyCad/surfaceBulkSelectionUtils';
 
 /**
  * Phase 18F UI — surface snapshot for Toolspace/Properties/manager.
@@ -140,7 +141,28 @@ export interface CadSurfaceSnapshot {
   selectedSurfaceId: string | null;
   styles: CadSurfaceStyleSummary[];
   lastInquiry: CadSurfaceInquiry | null;
+  /** Phase 18V — session point-selection summary (never persisted). */
+  selection: CadSurfaceSelectionSummary;
 }
+
+/** Phase 18V — session/UI-only selected-point summary for the ribbon/manager. */
+export interface CadSurfaceSelectionSummary {
+  surfaceId: string | null;
+  /** Effective selected refs after the source filter. */
+  count: number;
+  /** Non-addressable boundary/Steiner vertices in the current final mesh. */
+  syntheticExcluded: number;
+  stale: boolean;
+  filter: SurfaceSelectionSourceFilter;
+}
+
+export const EMPTY_SURFACE_SELECTION: CadSurfaceSelectionSummary = {
+  surfaceId: null,
+  count: 0,
+  syntheticExcluded: 0,
+  stale: false,
+  filter: 'all',
+};
 
 /** Missing-registry guard: false when the executor rejects or is absent. */
 export const trySurfaceCommand = (
@@ -241,6 +263,8 @@ export const buildCadSurfaceSnapshot = (
     sessionDiagnostics?: ReadonlyMap<string, { revision: string; error: string }>;
     /** Revisions whose CURRENT mesh came from the sync fallback, by surface. */
     syncFallbackRevisions?: ReadonlyMap<string, string>;
+    /** Phase 18V — session point selection (UI-only; never persisted). */
+    selection?: CadSurfaceSelectionSummary;
   },
 ): CadSurfaceSnapshot => {
   const layers = new Map(project.layers.map((layer) => [layer.id, layer]));
@@ -382,5 +406,6 @@ export const buildCadSurfaceSnapshot = (
       contourLabelPrecision: style.contourLabelPrecision ?? null,
     })),
     lastInquiry: options?.lastInquiry ?? null,
+    selection: options?.selection ?? EMPTY_SURFACE_SELECTION,
   };
 };
