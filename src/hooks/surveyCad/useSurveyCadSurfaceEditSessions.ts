@@ -220,7 +220,7 @@ export const useSurveyCadSurfaceEditSessions = (deps: UseSurfaceEditSessionsDeps
       return;
     }
     const sourceKind: 'native' | 'imported-tin' =
-      live.surface.definition.sourceKind === 'imported-tin' ? 'imported-tin' : 'native';
+      live.surface.definition.sourceKind === 'native' ? 'native' : 'imported-tin';
     const input = {
       surfaceId: live.surface.id,
       sourceKind,

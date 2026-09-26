@@ -7,7 +7,7 @@ import type {
   CadSurfaceDefinition,
   CadSurveyPointEntity,
 } from './cadTypes';
-import { surfacePointGroupIds } from './cadTypes';
+import { isExplicitTopologyDefinition, surfacePointGroupIds } from './cadTypes';
 
 /**
  * Phase 18F persistence helpers (consume the engine-owned surface model in
@@ -212,10 +212,11 @@ export const buildSurfaceBuildRequest = (
   const groupIds =
     pointSource.kind === 'point-group' ? [...new Set(surfacePointGroupIds(pointSource))].sort() : [];
   const byGroupId = new Map((project.pointGroups ?? []).map((entry) => [entry.id, entry]));
-  // Phase 18M: imported TINs rebuild from their own stored topology — the
-  // engine never reads survey points on that path, so the whole-project
-  // point snapshot is pure transfer/memory overhead. Omit it (zero-risk).
-  const importedOnly = surface.definition.sourceKind === 'imported-tin';
+  // Phase 18M: explicit-topology TINs (imported or baked) rebuild from
+  // their own stored topology — the engine never reads survey points on
+  // that path, so the whole-project point snapshot is pure transfer/memory
+  // overhead. Omit it (zero-risk).
+  const importedOnly = isExplicitTopologyDefinition(surface.definition);
   return {
     surfaceId: surface.id,
     revision,

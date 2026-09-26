@@ -27,7 +27,7 @@ import type {
   CadSurface,
   CadSurfaceBoundary,
 } from './cadTypes';
-import { isImportedTinDefinition } from './cadTypes';
+import { isNativeSurfaceDefinition } from './cadTypes';
 
 /**
  * Phase 18W — boundary source transactions (extracted verbatim from
@@ -101,7 +101,9 @@ const boundarySourceSurface = (
   const surface = (snapshot.project.surfaces ?? []).find((entry) => entry.id === surfaceId);
   if (!surface) return null;
   if (isSurfaceLayerLocked(snapshot.project, surface)) return null;
-  if (isImportedTinDefinition(surface.definition)) return null;
+  // Phase 18X: positive capability — explicit-topology definitions (imported
+  // or baked) never accept boundary-source mutations.
+  if (!isNativeSurfaceDefinition(surface.definition)) return null;
   return surface;
 };
 

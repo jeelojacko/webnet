@@ -53,7 +53,7 @@ interface SelectionStore {
 }
 
 const kindOf = (surface: { definition: { sourceKind?: string } }): 'native' | 'imported-tin' =>
-  surface.definition.sourceKind === 'imported-tin' ? 'imported-tin' : 'native';
+  surface.definition.sourceKind === 'native' ? 'native' : 'imported-tin';
 
 export const useSurveyCadSurfaceBulkSelection = (deps: Deps) => {
   const [store, setStore] = useState<SelectionStore | null>(null);

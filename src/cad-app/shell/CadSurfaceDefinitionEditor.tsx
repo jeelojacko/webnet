@@ -40,12 +40,16 @@ export const CadSurfaceDefinitionEditor: React.FC<DefinitionEditorProps> = ({
       {row.editCount > 0 ? ' — order/enable/delete in the TIN Edits table below.' : ' — none yet.'}
     </p>
   );
-  if (definition.sourceKind === 'imported-tin') {
+  if (definition.sourceKind === 'imported-tin' || definition.sourceKind === 'explicit-tin') {
+    // Phase 18L imported TINs and Phase 18X baked explicit TINs both carry
+    // explicit stored topology — native point-group/points/breakline/boundary
+    // source edits would corrupt it. TIN topology edits stay in the EDITS table.
+    const message = definition.sourceKind === 'explicit-tin'
+      ? 'Baked explicit topology — native source-definition controls are unavailable.'
+      : 'Imported surface — source definition edits are disabled to preserve the file topology.';
     return (
       <div className="grid gap-1 rounded border border-slate-700 p-2">
-        <p className="text-[11px] text-slate-400">
-          Imported surface — source definition edits are disabled to preserve the file topology.
-        </p>
+        <p className="text-[11px] text-slate-400">{message}</p>
         {editSummary}
       </div>
     );

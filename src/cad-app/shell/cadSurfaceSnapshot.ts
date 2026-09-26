@@ -12,7 +12,8 @@ import { backfillCadSurfaceStyles } from '../../engine/cad/cadSurfaceStyles';
 import { formatSurfaceSlopeAnswer } from '../../engine/cad/surfaceAnalysis';
 import { contourLevelSpecFromStyle } from '../../engine/cad/cadSurfaceContourView';
 import { surfacePointGroupIds } from '../../engine/cad/cadTypes';
-import type { CadProject, CadSurfaceEdit, CadSurfaceStatus } from '../../engine/cad/cadTypes';
+import type { CadProject, CadSurfaceEdit, CadSurfaceStatus, CadExplicitTinProvenance } from '../../engine/cad/cadTypes';
+import { tinProvenanceKind } from '../../engine/cad/cadImportedTin';
 import {
   deriveCadSurfaceEditSummaries,
   shortPointLabel,
@@ -33,9 +34,19 @@ import type { SurfaceSelectionSourceFilter } from '../../hooks/surveyCad/surface
 
 export interface CadSurfaceDefinitionSummary {
   pointSourceKind: 'point-group' | 'points';
-  /** Phase 18L: 'imported-tin' hides point-group/breakline edit controls. */
-  sourceKind: 'native' | 'imported-tin';
+  /**
+   * Phase 18L: 'imported-tin' hides point-group/breakline/boundary edit
+   * controls. Phase 18X adds 'explicit-tin' (baked) with the same disabled
+   * native-source controls. The engine discriminant lands in a separate
+   * slice; this shell reads it through a widened local view.
+   */
+  sourceKind: 'native' | 'imported-tin' | 'explicit-tin';
+  /** Phase 18L/18X source text (imported byte-identical; baked = "Baked Explicit TIN …"). */
   importedSourceText: string | null;
+  /** Phase 18X — baked origin surface name (null for native/imported). */
+  bakedFrom: string | null;
+  /** Phase 18X — source revision captured at bake time (null unless baked). */
+  sourceRevision: string | null;
   pointGroupId: string | null;
   pointGroupName: string | null;
   /** All attached groups in definition order (multi-group, phase 18F fix-up). */
@@ -162,6 +173,87 @@ export const EMPTY_SURFACE_SELECTION: CadSurfaceSelectionSummary = {
   syntheticExcluded: 0,
   stale: false,
   filter: 'all',
+};
+
+/**
+ * Phase 18X — read-tolerance provenance view (the engine's
+ * `CadExplicitTinProvenance` union is authoritative; this view lets the
+ * presentation read optional fields without narrowing). `kind` is optional on
+ * read: legacy files without it but with format:'LandXML' render as imported.
+ * Baked detection delegates to the engine `tinProvenanceKind` helper.
+ */
+export interface CadExplicitTinProvenanceView {
+  kind?: 'landxml-import' | 'webnet-bake';
+  format?: string;
+  fileName?: string;
+  surfaceName?: string;
+  sourceId?: string;
+  sourceSurfaceId?: string;
+  sourceSurfaceName?: string;
+  sourceRevision?: string;
+  sourceSourceKind?: string;
+}
+
+/** Phase 18X — short revision for display (first 12 chars, matching the manager). */
+export const shortSurfaceRevision = (revision: string): string => revision.slice(0, 12);
+
+/** True when a payload's provenance describes a Webnet bake (never LandXML). */
+export const isBakedTinProvenance = (provenance: CadExplicitTinProvenanceView): boolean =>
+  tinProvenanceKind(provenance as CadExplicitTinProvenance) === 'webnet-bake';
+
+/** Phase 18X — presentation summary of an explicit/baked TIN payload. */
+export interface ExplicitTinSourceSummary {
+  text: string;
+  bakedFrom: string | null;
+  sourceRevision: string | null;
+}
+
+/**
+ * Phase 18X — source text for an explicit-TIN definition. Baked surfaces get
+ * the baked variant; a legacy LandXML-shaped payload keeps the imported
+ * wording byte-for-byte. Never reads `fileName` for baked.
+ */
+export const summarizeExplicitTinSource = (
+  vertices: number,
+  faces: number,
+  provenance: CadExplicitTinProvenanceView,
+): ExplicitTinSourceSummary => {
+  const vertexCount = vertices / 3;
+  const faceCount = faces / 3;
+  if (!isBakedTinProvenance(provenance)) {
+    return {
+      text:
+        `Imported LandXML TIN — ${vertexCount} vertices, ${faceCount} faces ` +
+        `(file: ${provenance.fileName ?? ''}, surface: ${provenance.surfaceName ?? ''})`,
+      bakedFrom: null,
+      sourceRevision: null,
+    };
+  }
+  // Prefer the §4 `kind:'webnet-bake'` fields; fall back to the widened-format shape.
+  const bakedFrom = provenance.sourceSurfaceName ?? provenance.surfaceName ?? null;
+  const sourceRevision = provenance.sourceRevision ?? null;
+  const origin = bakedFrom != null
+    ? ` (baked from ${bakedFrom}${sourceRevision != null ? `, rev ${shortSurfaceRevision(sourceRevision)}` : ''})`
+    : '';
+  return {
+    text: `Baked Explicit TIN — ${vertexCount} vertices, ${faceCount} faces${origin}`,
+    bakedFrom,
+    sourceRevision,
+  };
+};
+
+/**
+ * Phase 18X — compact bake enablement. Native/imported CURRENT surfaces allow
+ * Baked Copy + Bake In Place; a baked surface always allows copy and allows
+ * in-place only when post-bake edits exist (nothing to fold in otherwise).
+ */
+export const surfaceBakeCapability = (
+  row: Pick<CadSurfaceRow, 'status' | 'definition' | 'editCount'>,
+): { copy: boolean; inPlace: boolean } => {
+  if (row.status !== 'CURRENT') return { copy: false, inPlace: false };
+  return row.definition.sourceKind === 'explicit-tin'
+    ? { copy: true, inPlace: row.editCount > 0 }
+    : { copy: true, inPlace: true };
 };
 
 /** Missing-registry guard: false when the executor rejects or is absent. */
@@ -326,6 +418,25 @@ export const buildCadSurfaceSnapshot = (
       sourceEntityId: entry.sourceEntityId,
       sourceLabel: entityLabels.get(entry.sourceEntityId) ?? entry.sourceEntityId,
     }));
+    // Phase 18X — explicit-TIN classification via the engine union + the
+    // shared provenance-kind helper; `explicit-tin` with a LandXML-shaped
+    // payload normalizes back to the imported variant (never a bake lie).
+    const declaredSourceKind = surface.definition.sourceKind ?? 'native';
+    const payload = surface.definition.importedTin;
+    const bakedPayload = payload != null && isBakedTinProvenance(payload.provenance);
+    const sourceKind: 'native' | 'imported-tin' | 'explicit-tin' =
+      declaredSourceKind === 'imported-tin' || declaredSourceKind === 'explicit-tin'
+        ? (bakedPayload ? 'explicit-tin' : 'imported-tin')
+        : 'native';
+    let importedSourceText: string | null = null;
+    let bakedFrom: string | null = null;
+    let sourceRevision: string | null = null;
+    if (sourceKind !== 'native' && payload != null) {
+      const explicit = summarizeExplicitTinSource(payload.vertices.length, payload.faces.length, payload.provenance);
+      importedSourceText = explicit.text;
+      bakedFrom = explicit.bakedFrom;
+      sourceRevision = explicit.sourceRevision;
+    }
     const edits = deriveCadSurfaceEditSummaries(surface, pointLabels, mesh != null);
     return {
       id: surface.id,
@@ -348,13 +459,10 @@ export const buildCadSurfaceSnapshot = (
       stats: mesh ? meshStats(mesh, stale) : null,
       definition: {
         pointSourceKind: source.kind,
-        sourceKind: surface.definition.sourceKind === 'imported-tin' ? 'imported-tin' : 'native',
-        importedSourceText: surface.definition.sourceKind === 'imported-tin' && surface.definition.importedTin
-          ? `Imported LandXML TIN — ${surface.definition.importedTin.vertices.length / 3} vertices, ` +
-            `${surface.definition.importedTin.faces.length / 3} faces ` +
-            `(file: ${surface.definition.importedTin.provenance.fileName}, ` +
-            `surface: ${surface.definition.importedTin.provenance.surfaceName})`
-          : null,
+        sourceKind,
+        importedSourceText,
+        bakedFrom,
+        sourceRevision,
         pointGroupId: source.kind === 'point-group' ? (attachedIds[0] ?? null) : null,
         pointGroupName: source.kind === 'point-group'
           ? (attachedNames[0] ?? (attachedIds[0] ?? null))

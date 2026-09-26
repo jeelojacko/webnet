@@ -130,14 +130,19 @@ const exportSurface = (
   surfaces: CadLandXmlSurface[],
   sources: CadLandXmlCivilSources | undefined,
 ): void => {
-  const revision = surface.cachedRevision;
+  const sourceRevision = computeCadSurfaceSourceRevision(project, surface);
+  // Session CURRENT is a fresh cache hit at the *current* source revision —
+  // the project never persists `cachedRevision` (rebuilds stay out of
+  // history), so the persisted derivation alone reads UNBUILT in-session.
+  // Fall back to the persisted-revision derivation for reopen-style exports.
+  const sessionMesh = sources?.surfaceCache?.get(surface.id, sourceRevision);
   const status = deriveSurfaceStatus(project, surface);
-  if (status !== 'CURRENT' || revision == null) {
+  if (status !== 'CURRENT' && sessionMesh == null) {
     block(collector, 'surface', surface.id, surface.name, 'LANDXML_SURFACE_NOT_CURRENT',
       `surface ${JSON.stringify(surface.name)} derives ${status}; rebuild before export`);
     return;
   }
-  const mesh = sources?.surfaceCache?.get(surface.id, revision);
+  const mesh = sessionMesh ?? sources?.surfaceCache?.get(surface.id, surface.cachedRevision ?? sourceRevision);
   if (!mesh) {
     block(collector, 'surface', surface.id, surface.name, 'LANDXML_SURFACE_MESH_UNAVAILABLE',
       `surface ${JSON.stringify(surface.name)} is CURRENT but no runtime mesh is available in this export context`,

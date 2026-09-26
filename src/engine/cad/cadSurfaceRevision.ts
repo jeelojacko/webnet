@@ -5,7 +5,7 @@ import type {
   CadSurface,
   CadSurveyPointEntity,
 } from './cadTypes';
-import { isImportedTinDefinition, surfacePointGroupIds } from './cadTypes';
+import { isExplicitTopologyDefinition, surfacePointGroupIds } from './cadTypes';
 import { fnv1a } from './cadRevisionHash';
 import { importedTinRevision } from './cadImportedTin';
 
@@ -95,7 +95,8 @@ export const dedupeRing = (ring: Array<{ x: number; y: number }>): Array<{ x: nu
 export const collectSources = (project: CadProject, surface: CadSurface): CollectedSources => {
   // Phase 18L: imported TINs resolve straight from the stored topology —
   // no entity refs, no breaklines/boundaries, no dedupe (validated at import).
-  if (isImportedTinDefinition(surface.definition) && surface.definition.importedTin) {
+  // Phase 18X: baked explicit TINs share this leg via the explicit predicate.
+  if (isExplicitTopologyDefinition(surface.definition) && surface.definition.importedTin) {
     const payload = surface.definition.importedTin;
     const points: CadSurfaceSourcePoint[] = [];
     for (let i = 0; i + 2 < payload.vertices.length; i += 3) {
@@ -317,7 +318,8 @@ export const collectSources = (project: CadProject, surface: CadSurface): Collec
  */
 export const computeCadSurfaceSourceRevision = (project: CadProject, surface: CadSurface): string => {
   // Phase 18L: imported revision covers stored topology + provenance only.
-  if (isImportedTinDefinition(surface.definition) && surface.definition.importedTin) {
+  // Phase 18X: baked explicit TINs share the frozen `srev1:imported:` prefix.
+  if (isExplicitTopologyDefinition(surface.definition) && surface.definition.importedTin) {
     return importedTinRevision(surface.id, surface.definition.importedTin, surface.definition.edits);
   }
   const collected = collectSources(project, surface);

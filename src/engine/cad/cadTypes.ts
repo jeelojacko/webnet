@@ -863,12 +863,64 @@ export interface CadSurfaceBuildOptions {
   maxEdgeLength?: number;
 }
 
-export interface ImportedTinProvenance {
+/**
+ * Phase 18L LandXML provenance. `kind` is optional on read — legacy
+ * payloads omit it and normalize to 'landxml-import' (format 'LandXML').
+ * LandXML construction sites keep writing this shape with no `kind`, so
+ * revision inputs stay byte-identical.
+ */
+export interface LandxmlTinProvenance {
+  kind?: 'landxml-import';
   format: 'LandXML';
   fileName: string;
   surfaceName: string;
   sourceId?: string;
 }
+
+/**
+ * Phase 18X bake provenance. Bakes ALWAYS write this shape — never
+ * format:'LandXML'. fileName/surfaceName/sourceId are read-tolerance only
+ * (optional so shared readers keep compiling); bake writers omit them.
+ */
+export interface WebnetBakeTinProvenance {
+  kind: 'webnet-bake';
+  sourceSurfaceId: string;
+  sourceSurfaceName: string;
+  sourceRevision: string;
+  sourceSourceKind?: string;
+  fileName?: string;
+  surfaceName?: string;
+  sourceId?: string;
+}
+
+/**
+ * Read alias only: early `format:'explicit'` payloads (if encountered)
+ * normalize to baked. Never written — writers emit kind:'webnet-bake'.
+ */
+export interface ExplicitFormatTinProvenance {
+  kind?: 'webnet-bake';
+  format: 'explicit';
+  fileName: string;
+  surfaceName: string;
+  sourceId?: string;
+  sourceSurfaceId?: string;
+  sourceSurfaceName?: string;
+  sourceRevision?: string;
+  sourceSourceKind?: string;
+}
+
+/**
+ * Phase 18X discriminated explicit-TIN provenance (read-tolerant,
+ * write-strict). Every member carries fileName/surfaceName (required or
+ * optional) so shared readers compile without narrowing.
+ */
+export type CadExplicitTinProvenance =
+  | LandxmlTinProvenance
+  | WebnetBakeTinProvenance
+  | ExplicitFormatTinProvenance;
+
+/** Legacy alias (read path); new code prefers CadExplicitTinProvenance. */
+export type ImportedTinProvenance = CadExplicitTinProvenance;
 
 /**
  * Phase 18L additive imported-TIN payload. Compact number arrays:
@@ -881,6 +933,12 @@ export interface ImportedTinPayload {
   faces: number[];
   provenance: ImportedTinProvenance;
 }
+
+/**
+ * Phase 18X: baked explicit-TIN payloads reuse the 18L stored-topology
+ * shape verbatim (no new persisted key). Alias only — no rename.
+ */
+export type ExplicitTinPayload = ImportedTinPayload;
 
 export interface CadSurfaceDefinition {
   pointSource: CadSurfacePointSource;
@@ -896,16 +954,42 @@ export interface CadSurfaceDefinition {
    * Phase 18L: absent/'native' = entity-derived TIN (18F model); 'imported-tin'
    * = explicit imported topology (importedTin required). Additive — legacy
    * drawings load as native, migration is idempotent.
+   * Phase 18X: 'explicit-tin' = baked explicit topology (same importedTin
+   * payload shape, provenance format 'explicit'). No new persisted key.
    */
-  sourceKind?: 'native' | 'imported-tin';
+  sourceKind?: 'native' | 'imported-tin' | 'explicit-tin';
   importedTin?: ImportedTinPayload;
 }
 
-/** True only for validated imported-TIN definitions (never for native). */
-export const isImportedTinDefinition = (
+/**
+ * Phase 18X fail-closed explicit-topology predicate: any non-native
+ * definition carrying a stored payload takes the explicit leg (covers both
+ * 'imported-tin' and 'explicit-tin'). Unknown future kinds with a payload
+ * also route here — never silently misclassified as native.
+ */
+export const isExplicitTopologyDefinition = (
   definition: Pick<CadSurfaceDefinition, 'sourceKind' | 'importedTin'> | undefined,
 ): boolean =>
-  definition?.sourceKind === 'imported-tin' && definition.importedTin != null;
+  definition?.importedTin != null && definition.sourceKind !== 'native';
+
+/** Capability alias (pure): definition carries baked/imported stored topology. */
+export const isExplicitSurfaceDefinition = isExplicitTopologyDefinition;
+
+/**
+ * Phase 18X pure capability: true for entity-derived definitions (absent or
+ * 'native'). Native source-definition mutations are allowed only here;
+ * every explicit-topology kind is rejected by a single helper.
+ */
+export const isNativeSurfaceDefinition = (
+  definition: Pick<CadSurfaceDefinition, 'sourceKind' | 'importedTin'> | undefined,
+): boolean =>
+  definition == null || definition.sourceKind == null || definition.sourceKind === 'native';
+
+/**
+ * Deprecated 18X alias of {@link isExplicitTopologyDefinition} (kept one
+ * phase so 18L call sites keep compiling; migrate to the explicit predicate).
+ */
+export const isImportedTinDefinition = isExplicitTopologyDefinition;
 
 /**
  * Phase 18S TIN edit stack (ENGINE ONLY — no UI/manager/toolspace).

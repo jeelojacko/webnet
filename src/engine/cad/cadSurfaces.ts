@@ -5,7 +5,7 @@ import type {
   CadSurfaceDefinition,
   CadSurfaceStatus,
 } from './cadTypes';
-import { isImportedTinDefinition } from './cadTypes';
+import { isExplicitTopologyDefinition } from './cadTypes';
 import { materializeImportedTin } from './cadImportedTin';
 import { applyCadSurfaceEdits, CadSurfaceEditFailure } from './cadSurfaceEdits';
 import { buildConstrainedTin } from './tin/tinBuild';
@@ -241,7 +241,7 @@ export const buildCadSurface = (project: CadProject, surface: CadSurface): CadSu
   const revision = computeCadSurfaceSourceRevision(project, surface);
   // Phase 18L: imported topology materializes WITHOUT Delaunay — every
   // file face is retained exactly once; invalid payloads block, never partial.
-  if (isImportedTinDefinition(surface.definition) && surface.definition.importedTin) {
+  if (isExplicitTopologyDefinition(surface.definition) && surface.definition.importedTin) {
     const mesh = materializeImportedTin(surface.id, surface.definition.importedTin);
     if (!mesh) {
       return {
@@ -510,7 +510,7 @@ export const deriveSurfaceStatus = (
   if (options?.building) return 'BUILDING';
   // Phase 18L: imported surfaces never derive entity-driven failure modes;
   // validity is the stored payload, freshness is the cached revision.
-  if (isImportedTinDefinition(surface.definition)) {
+  if (isExplicitTopologyDefinition(surface.definition)) {
     if (!surface.definition.importedTin) return 'FAILED';
     if (surface.cachedRevision == null) return 'UNBUILT';
     return computeCadSurfaceSourceRevision(project, surface) === surface.cachedRevision

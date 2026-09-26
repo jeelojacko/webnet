@@ -4,7 +4,7 @@ import { describeEditForRevision } from './cadSurfaceEditDescribe';
 import { fnv1a } from './cadRevisionHash';
 import { buildTinTopology } from './tin/tinTopology';
 import type { CadSurfaceGrid, CadSurfaceSourcePoint } from './cadSurfaces';
-import type { CadSurfaceEdit, ImportedTinPayload } from './cadTypes';
+import type { CadSurfaceEdit, CadExplicitTinProvenance, ImportedTinPayload, WebnetBakeTinProvenance } from './cadTypes';
 import type { TinAdjacency, TinEdgeKinds } from './tin/tinTypes';
 
 /**
@@ -28,7 +28,7 @@ export interface MaterializedImportedTin {
 }
 
 /** Fail-closed payload check (re-run on reopen — no trust in stored arrays). */
-export const validateImportedTinPayload = (payload: ImportedTinPayload): string | null => {
+export const validateExplicitTinPayload = (payload: ImportedTinPayload): string | null => {
   const { vertices, faces } = payload;
   if (!Array.isArray(vertices) || vertices.length % 3 !== 0 || vertices.length < 9) {
     return 'imported TIN needs ≥3 [x,y,z] vertices.';
@@ -64,6 +64,77 @@ export const validateImportedTinPayload = (payload: ImportedTinPayload): string 
   return null;
 };
 
+/**
+ * Phase 18L validator preserved verbatim (no weakened rules): delegates to
+ * the shared explicit-topology seam so both kinds validate identically.
+ */
+export const validateImportedTinPayload = (payload: ImportedTinPayload): string | null =>
+  validateExplicitTinPayload(payload);
+
+/** Phase 18X provenance kind: legacy (kind omitted + format 'LandXML') reads as landxml-import. */
+export const tinProvenanceKind = (
+  provenance: CadExplicitTinProvenance,
+): 'landxml-import' | 'webnet-bake' =>
+  provenance.kind === 'webnet-bake' || provenance.format === 'explicit'
+    ? 'webnet-bake'
+    : 'landxml-import';
+
+/** Canonical normalized provenance (read-tolerant in, strict out). */
+export const normalizeTinProvenance = (
+  provenance: CadExplicitTinProvenance,
+):
+  | { kind: 'landxml-import'; format: 'LandXML'; fileName: string; surfaceName: string; sourceId?: string }
+  | { kind: 'webnet-bake'; sourceSurfaceId: string; sourceSurfaceName: string; sourceRevision: string; sourceSourceKind?: string } => {
+  if (tinProvenanceKind(provenance) === 'webnet-bake') {
+    const baked = provenance as WebnetBakeTinProvenance & { format?: string };
+    return {
+      kind: 'webnet-bake',
+      sourceSurfaceId: baked.sourceSurfaceId ?? baked.sourceId ?? '',
+      sourceSurfaceName: baked.sourceSurfaceName ?? baked.surfaceName ?? '',
+      sourceRevision: baked.sourceRevision ?? '',
+      ...(baked.sourceSourceKind != null ? { sourceSourceKind: baked.sourceSourceKind } : {}),
+    };
+  }
+  const landxml = provenance as Extract<CadExplicitTinProvenance, { format: 'LandXML' }>;
+  return {
+    kind: 'landxml-import',
+    format: 'LandXML',
+    fileName: landxml.fileName,
+    surfaceName: landxml.surfaceName,
+    ...(landxml.sourceId != null ? { sourceId: landxml.sourceId } : {}),
+  };
+};
+
+/**
+ * Phase 18X bake-provenance builder (owned by 18x-bake transactions):
+ * always the strict kind:'webnet-bake' shape, never format:'LandXML'.
+ */
+export const makeWebnetBakeProvenance = (options: {
+  sourceSurfaceId: string;
+  sourceSurfaceName: string;
+  sourceRevision: string;
+  sourceSourceKind?: string;
+}): WebnetBakeTinProvenance => ({
+  kind: 'webnet-bake',
+  sourceSurfaceId: options.sourceSurfaceId,
+  sourceSurfaceName: options.sourceSurfaceName,
+  sourceRevision: options.sourceRevision,
+  ...(options.sourceSourceKind != null ? { sourceSourceKind: options.sourceSourceKind } : {}),
+});
+
+/**
+ * Provenance revision part: LandXML serializes the legacy
+ * `format|fileName|surfaceName|sourceId` (byte-identical inputs — LandXML
+ * construction sites write no `kind`); baked serializes its own namespace.
+ * The `srev1:imported:` prefix stays frozen for both.
+ */
+export const tinProvenanceRevisionPart = (provenance: CadExplicitTinProvenance): string => {
+  const normalized = normalizeTinProvenance(provenance);
+  return normalized.kind === 'webnet-bake'
+    ? `webnet-bake|${normalized.sourceSurfaceId}|${normalized.sourceSurfaceName}|${normalized.sourceRevision}|${normalized.sourceSourceKind ?? ''}`
+    : `${normalized.format}|${normalized.fileName}|${normalized.surfaceName}|${normalized.sourceId ?? ''}`;
+};
+
 /** Content revision: vertices + faces + provenance (never entity state). Phase 18S adds the edit stack. */
 export const importedTinRevision = (
   surfaceId: string,
@@ -74,7 +145,7 @@ export const importedTinRevision = (
     `id:${surfaceId}`,
     `v:${payload.vertices.join(',')}`,
     `f:${payload.faces.join(',')}`,
-    `prov:${payload.provenance.format}|${payload.provenance.fileName}|${payload.provenance.surfaceName}|${payload.provenance.sourceId ?? ''}`,
+    `prov:${tinProvenanceRevisionPart(payload.provenance)}`,
     `edits:${(edits ?? []).map(describeEditForRevision).join('|')}`,
   ];
   return `srev1:imported:${fnv1a(parts.join('#'))}`;
@@ -85,11 +156,11 @@ export const importedTinRevision = (
  * maps to blocked/FAILED — never a partial mesh). No Delaunay, no hull:
  * every imported face is retained exactly once.
  */
-export const materializeImportedTin = (
+export const materializeExplicitTin = (
   surfaceId: string,
   payload: ImportedTinPayload,
 ): (MaterializedImportedTin & { stats: ReturnType<typeof computeSurfaceFaceStats> }) | null => {
-  if (validateImportedTinPayload(payload) != null) return null;
+  if (validateExplicitTinPayload(payload) != null) return null;
   const points: CadSurfaceSourcePoint[] = [];
   for (let i = 0; i < payload.vertices.length; i += 3) {
     points.push({
@@ -119,3 +190,21 @@ export const materializeImportedTin = (
     stats: computeSurfaceFaceStats(points, triangles),
   };
 };
+
+/**
+ * Phase 18L materializer preserved verbatim: delegates to the shared
+ * explicit-topology seam (1:1 vertices/faces, no Delaunay, no hull).
+ */
+export const materializeImportedTin = (
+  surfaceId: string,
+  payload: ImportedTinPayload,
+): (MaterializedImportedTin & { stats: ReturnType<typeof computeSurfaceFaceStats> }) | null =>
+  materializeExplicitTin(surfaceId, payload);
+
+/**
+ * Phase 18X deterministic explicit-topology digest: canonical exact-double
+ * XYZ + face-index hash (FNV-1a). Provenance excluded — same mesh baked
+ * from any source digests identically.
+ */
+export const explicitTinTopologyDigest = (payload: ImportedTinPayload): string =>
+  `etin1:${fnv1a(`v:${payload.vertices.join(',')}#f:${payload.faces.join(',')}`)}`;

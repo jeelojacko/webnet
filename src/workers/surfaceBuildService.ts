@@ -8,7 +8,7 @@ import {
   type CadSurfaceBuildResult,
 } from '../engine/cad/cadSurfaces';
 import { buildSurfaceBuildRequest } from '../engine/cad/cadSurfaceTypes';
-import type { CadProject, CadSurface } from '../engine/cad/cadTypes';
+import { isExplicitTopologyDefinition, type CadProject, type CadSurface } from '../engine/cad/cadTypes';
 import type { TinAdjacency, TinEdgeKinds } from '../engine/cad/tin/tinTypes';
 import {
   SURFACE_BUILD_UNAVAILABLE,
@@ -337,12 +337,12 @@ export class SurfaceBuildService {
 
   /**
    * Sync-fallback budget unit: native surfaces measure resolved survey
-   * points; imported TINs carry their own topology, so the main-thread cost
-   * tracks imported vertex count (the survey-point snapshot is not read on
-   * that path).
+   * points; explicit-topology TINs (imported or baked) carry their own
+   * topology, so the main-thread cost tracks stored vertex count (the
+   * survey-point snapshot is not read on that path).
    */
   private fallbackBudget(surface: CadSurface, request: { points: readonly unknown[] }): number {
-    if (surface.definition.sourceKind === 'imported-tin' && surface.definition.importedTin) {
+    if (isExplicitTopologyDefinition(surface.definition) && surface.definition.importedTin) {
       return surface.definition.importedTin.vertices.length / 3;
     }
     return request.points.length;

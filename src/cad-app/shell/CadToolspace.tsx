@@ -530,8 +530,10 @@ const TreeGroup: React.FC<{ label: string; children: React.ReactNode }> = ({ lab
  */
 const SurfaceDefinitionTree: React.FC<{ row: CadSurfaceRow }> = ({ row }) => {
   const def = row.definition;
-  const source = def.sourceKind === 'imported-tin'
-    ? (def.importedSourceText ?? 'Imported LandXML TIN')
+  // Phase 18X — imported ('imported-tin') and baked ('explicit-tin') both carry
+  // explicit stored topology; the snapshot supplies the per-kind source text.
+  const source = def.sourceKind !== 'native'
+    ? (def.importedSourceText ?? (def.sourceKind === 'explicit-tin' ? 'Baked Explicit TIN' : 'Imported LandXML TIN'))
     : def.pointSourceKind === 'point-group'
       ? `Point Groups (${def.pointGroupIds.length}): ${def.pointGroupNames.join(', ') || '—'}`
       : `${def.pointCount} points`;

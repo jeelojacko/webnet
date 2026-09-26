@@ -90,7 +90,7 @@ export const useSurveyCadSurfacePointEditSessions = (deps: Deps) => {
     const name = `“${session.surfaceName}”`;
     const numbers = editNumbers(live.surface.definition.edits ?? []);
     const sourceKind: 'native' | 'imported-tin' =
-      live.surface.definition.sourceKind === 'imported-tin' ? 'imported-tin' : 'native';
+      live.surface.definition.sourceKind === 'native' ? 'native' : 'imported-tin';
     if (session.mode === 'add-point') {
       const coincident = live.mesh.points.some((point) => point.x === worldPoint.x && point.y === worldPoint.y);
       if (coincident) {

@@ -18,6 +18,7 @@ import {
   type ProjectTransformAffectedCounts,
 } from './cadProjectTransform';
 import type { CadProject } from './cadTypes';
+import { isExplicitTopologyDefinition } from './cadTypes';
 import type { DraftDocument } from './cadDraftTypes';
 
 export type { ProjectTransformAffectedCounts };
@@ -79,7 +80,7 @@ export const projectTransformAffectedCounts = (
   let tinVertices = 0;
   for (const surface of project.surfaces ?? []) {
     const payload = surface.definition.importedTin;
-    if (surface.definition.sourceKind === 'imported-tin' && payload && payload.vertices.length % 3 === 0) {
+    if (isExplicitTopologyDefinition(surface.definition) && payload && payload.vertices.length % 3 === 0) {
       tinVertices += payload.vertices.length / 3;
     }
   }
