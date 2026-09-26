@@ -256,14 +256,9 @@ export const buildCadSurveyTableRowsForParcel = (
   if (!parcel) return [];
   if (kind === 'parcel-summary') return [createCadSurveyTableRow({ kind: 'parcel', parcelId })];
   if (kind !== 'parcel-course') return [];
-  const report = cadBuildParcelReportSummary({
-    parcelName: parcel.parcelName,
-    vertices: parcel.vertices,
-    vertexLabels: parcel.vertexLabels,
-  });
-  if (!report) return [];
-  return report.courses.map((_, courseIndex) =>
-    createCadSurveyTableRow({ kind: 'parcel-course', parcelId, courseId: String(courseIndex) }),
+  // Stable course identity: rows bind parcelId + courseId, never raw index (§130).
+  return resolveCadParcelCourses(parcel).map((course) =>
+    createCadSurveyTableRow({ kind: 'parcel-course', parcelId, courseId: course.courseId }),
   );
 };
 
@@ -443,9 +438,9 @@ const resolveParcelCourseRow = (
     return missingRow(entity, row, index, `Parcel ${parcelId}`);
   }
   const courses = resolveCadParcelCourses(parcel);
-  const course =
-    courses.find((entry) => entry.courseId === courseId) ??
-    courses.find((entry) => entry.index === Number.parseInt(courseId, 10));
+  // Exact stable-ID match only. No raw-index fallback: after a topology change
+  // an old courseId must surface BROKEN_REFERENCE, never silently rebind (§130).
+  const course = courses.find((entry) => entry.courseId === courseId);
   if (!course) return missingRow(entity, row, index, parcel.parcelName);
   return resolvedRow(entity, row, index, `${course.fromLabel}–${course.toLabel}`, [
     { key: 'from', label: 'From', value: course.fromLabel },
