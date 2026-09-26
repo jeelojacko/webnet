@@ -64,6 +64,10 @@ export interface DraftSheetViewport {
   paperHeightMm: number;
   /** Viewport-only clockwise rotation (deg); model coordinates untouched. */
   rotationDeg: number;
+  /** When true the viewport cannot be moved, resized, or rescaled in the sheet workspace (default unlocked). */
+  locked?: boolean;
+  /** When true the viewport frame itself plots/exports (default false: frame is a screen-only guide). */
+  plotFrame?: boolean;
   clipXmm?: number;
   clipYmm?: number;
   clipWidthMm?: number;
@@ -108,12 +112,33 @@ export interface DraftDocumentLabel {
 
 export interface DraftSheetObject {
   id: string;
+  /** First-class kinds (all carried on this open `kind` string):
+   * - `'north-arrow'`: `{ viewportId, paperXmm, paperYmm, sizeMm, rotationOffsetDeg?, styleId? }`
+   * - `'scale-bar'`: `{ viewportId, paperXmm, paperYmm, divisions, modelPerDivision, showScaleText? }`
+   *   (`modelPerDivision` is in DRAWING units, not necessarily metres.)
+   * - `'plan-note'`: multiline paper-space text `{ paperXmm, paperYmm, text, rotationDeg?, styleId? }`
+   * Unknown kinds are preserved verbatim through clone/sanitize round-trips.
+   */
   kind: string;
   layerId: string;
   paperXmm: number;
   paperYmm: number;
   text?: string;
   rotationDeg?: number;
+  /** Owning viewport for `north-arrow` / `scale-bar` objects. */
+  viewportId?: string;
+  /** Arrow height (`north-arrow`) in paper-mm. */
+  sizeMm?: number;
+  /** Extra clockwise offset (`north-arrow`) in degrees. */
+  rotationOffsetDeg?: number;
+  /** Style reference (`north-arrow` / `plan-note`). */
+  styleId?: string;
+  /** Division count (`scale-bar`). */
+  divisions?: number;
+  /** Model length per division (`scale-bar`), in DRAWING units. */
+  modelPerDivision?: number;
+  /** Whether to render the scale ratio text (`scale-bar`). */
+  showScaleText?: boolean;
 }
 
 export interface DraftSheet {
@@ -125,6 +150,10 @@ export interface DraftSheet {
   margins: DraftSheetMargins;
   viewports: DraftSheetViewport[];
   titleBlockId?: string;
+  /** Per-sheet title-block instance values (DRAWN_BY, CHECKED_BY, CLIENT,
+   * LOCATION, ...). Static template geometry stays shared; these values
+   * override the drawing-global token context for this sheet only. */
+  titleBlockFields?: Record<string, string>;
   sheetObjects: DraftSheetObject[];
 }
 
@@ -187,6 +216,55 @@ export interface DraftTableFragment {
   paperYmm: number;
 }
 
+export interface DraftTemplateViewportLayout {
+  name: string;
+  paperXmm: number;
+  paperYmm: number;
+  paperWidthMm: number;
+  paperHeightMm: number;
+  scaleDenominator: number;
+}
+
+export interface DraftTemplateNorthArrow {
+  viewportIndex: number;
+  paperXmm: number;
+  paperYmm: number;
+  sizeMm: number;
+}
+
+export interface DraftTemplateScaleBar {
+  viewportIndex: number;
+  paperXmm: number;
+  paperYmm: number;
+  divisions: number;
+  /** Model length per division, in DRAWING units. */
+  modelPerDivision: number;
+}
+
+export interface DraftTemplateNote {
+  text: string;
+  paperXmm: number;
+  paperYmm: number;
+}
+
+/** Sheet template: a drawing-owned snapshot recipe. `createSheetFromTemplate`
+ * deep-copies the layout into a new sheet with fresh stable ids; model
+ * references stay references (coordinates/ids are copied values, never
+ * aliased objects). Jurisdiction-neutral names only. */
+export interface DraftSheetTemplate {
+  id: string;
+  name: string;
+  widthMm: number;
+  heightMm: number;
+  orientation: DraftSheetOrientation;
+  margins: DraftSheetMargins;
+  viewportLayouts: DraftTemplateViewportLayout[];
+  titleBlockDefinitionId?: string;
+  northArrows?: DraftTemplateNorthArrow[];
+  scaleBars?: DraftTemplateScaleBar[];
+  notes?: DraftTemplateNote[];
+}
+
 export interface DraftDocumentMetadata {
   createdAt: string;
   updatedAt: string;
@@ -207,6 +285,9 @@ export interface DraftDocument {
   tables: DraftLogicalTable[];
   tableFragments: DraftTableFragment[];
   metadata: DraftDocumentMetadata;
+  /** Drawing-owned sheet templates (additive; version stays 1). Seeded only
+   * for new drawings; existing drafts are never backfilled on sanitize. */
+  templates?: DraftSheetTemplate[];
 }
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
@@ -253,6 +334,64 @@ export const createBlankDraftAnnotationStyles = (): DraftAnnotationStyles => ({
   labelStyles: [],
 });
 
+/** Neutral seeded templates for NEW drawings only. Never injected into
+ * existing drafts by sanitize; never rewritten once stored. */
+export const createDefaultSheetTemplates = (): DraftSheetTemplate[] => [
+  {
+    id: 'sheet-template-blank',
+    name: 'Blank',
+    widthMm: 297,
+    heightMm: 210,
+    orientation: 'landscape',
+    margins: { topMm: 10, bottomMm: 10, leftMm: 10, rightMm: 10 },
+    viewportLayouts: [],
+  },
+  {
+    id: 'sheet-template-single-viewport',
+    name: 'Single Viewport',
+    widthMm: 420,
+    heightMm: 297,
+    orientation: 'landscape',
+    margins: { topMm: 10, bottomMm: 10, leftMm: 10, rightMm: 10 },
+    viewportLayouts: [
+      {
+        name: 'Viewport',
+        paperXmm: 10,
+        paperYmm: 10,
+        paperWidthMm: 400,
+        paperHeightMm: 277,
+        scaleDenominator: 500,
+      },
+    ],
+    northArrows: [{ viewportIndex: 0, paperXmm: 392, paperYmm: 22, sizeMm: 12 }],
+    scaleBars: [{ viewportIndex: 0, paperXmm: 18, paperYmm: 265, divisions: 4, modelPerDivision: 10 }],
+  },
+  {
+    id: 'sheet-template-survey-plan',
+    name: 'Survey Plan',
+    widthMm: 594,
+    heightMm: 420,
+    orientation: 'landscape',
+    margins: { topMm: 10, bottomMm: 15, leftMm: 10, rightMm: 10 },
+    viewportLayouts: [
+      {
+        name: 'Plan',
+        paperXmm: 10,
+        paperYmm: 10,
+        paperWidthMm: 574,
+        paperHeightMm: 395,
+        scaleDenominator: 500,
+      },
+    ],
+    northArrows: [{ viewportIndex: 0, paperXmm: 566, paperYmm: 22, sizeMm: 12 }],
+    scaleBars: [{ viewportIndex: 0, paperXmm: 18, paperYmm: 388, divisions: 4, modelPerDivision: 10 }],
+    notes: [
+      { text: 'Grid north.', paperXmm: 18, paperYmm: 372 },
+      { text: 'Distances in drawing units.', paperXmm: 18, paperYmm: 378 },
+    ],
+  },
+];
+
 export const createBlankDraftDocument = ({
   projectId,
   layers = [],
@@ -274,6 +413,8 @@ export const createBlankDraftDocument = ({
     tables: [],
     tableFragments: [],
     metadata: { createdAt: nowIso, updatedAt: nowIso },
+    // Seeded for new drawings only; sanitize never backfills these.
+    templates: createDefaultSheetTemplates(),
   };
 };
 
@@ -315,6 +456,7 @@ export const cloneDraftDocument = (draft: DraftDocument): DraftDocument => ({
       ...viewport,
       ...(viewport.layerOverrides ? { layerOverrides: { ...viewport.layerOverrides } } : {}),
     })),
+    ...(sheet.titleBlockFields ? { titleBlockFields: { ...sheet.titleBlockFields } } : {}),
     sheetObjects: sheet.sheetObjects.map((object) => ({ ...object })),
   })),
   labels: draft.labels.map((label) => ({
@@ -338,6 +480,18 @@ export const cloneDraftDocument = (draft: DraftDocument): DraftDocument => ({
     rowRange: { ...fragment.rowRange },
   })),
   metadata: { ...draft.metadata },
+  ...(draft.templates
+    ? {
+        templates: draft.templates.map((template) => ({
+          ...template,
+          margins: { ...template.margins },
+          viewportLayouts: template.viewportLayouts.map((layout) => ({ ...layout })),
+          ...(template.northArrows ? { northArrows: template.northArrows.map((entry) => ({ ...entry })) } : {}),
+          ...(template.scaleBars ? { scaleBars: template.scaleBars.map((entry) => ({ ...entry })) } : {}),
+          ...(template.notes ? { notes: template.notes.map((entry) => ({ ...entry })) } : {}),
+        })),
+      }
+    : {}),
 });
 
 const sanitizeTextStyle = (value: unknown): DraftPaperTextStyle | undefined => {
@@ -419,6 +573,9 @@ const sanitizeSheet = (value: unknown): DraftSheet | undefined => {
             paperHeightMm: asFinite(entry.paperHeightMm, 100),
             rotationDeg: asFinite(entry.rotationDeg, 0),
           };
+          // Defaults: unlocked (absent) and non-plotting frame (absent).
+          if (entry.locked === true) viewport.locked = true;
+          if (entry.plotFrame === true) viewport.plotFrame = true;
           const clip = isRecord(entry.clip) ? entry.clip : entry;
           if (typeof clip.clipXmm === 'number' && Number.isFinite(clip.clipXmm)) viewport.clipXmm = clip.clipXmm;
           if (typeof clip.clipYmm === 'number' && Number.isFinite(clip.clipYmm)) viewport.clipYmm = clip.clipYmm;
@@ -434,6 +591,16 @@ const sanitizeSheet = (value: unknown): DraftSheet | undefined => {
         })
       : [],
     titleBlockId: typeof value.titleBlockId === 'string' ? value.titleBlockId : undefined,
+    ...(isRecord(value.titleBlockFields)
+      ? {
+          titleBlockFields: Object.fromEntries(
+            Object.entries(value.titleBlockFields).filter(
+              (entry): entry is [string, string] =>
+                typeof entry[0] === 'string' && typeof entry[1] === 'string',
+            ),
+          ),
+        }
+      : {}),
     sheetObjects: Array.isArray(value.sheetObjects)
       ? value.sheetObjects.flatMap((entry): DraftSheetObject[] => {
           if (!isRecord(entry) || typeof entry.layerId !== 'string') return [];
@@ -447,6 +614,26 @@ const sanitizeSheet = (value: unknown): DraftSheet | undefined => {
           if (typeof entry.text === 'string') object.text = entry.text;
           if (typeof entry.rotationDeg === 'number' && Number.isFinite(entry.rotationDeg)) {
             object.rotationDeg = entry.rotationDeg;
+          }
+          if (typeof entry.viewportId === 'string') object.viewportId = entry.viewportId;
+          if (typeof entry.sizeMm === 'number' && Number.isFinite(entry.sizeMm)) object.sizeMm = entry.sizeMm;
+          if (typeof entry.rotationOffsetDeg === 'number' && Number.isFinite(entry.rotationOffsetDeg)) {
+            object.rotationOffsetDeg = entry.rotationOffsetDeg;
+          }
+          if (typeof entry.styleId === 'string') object.styleId = entry.styleId;
+          if (typeof entry.divisions === 'number' && Number.isFinite(entry.divisions)) {
+            object.divisions = Math.max(1, Math.floor(entry.divisions));
+          }
+          if (typeof entry.modelPerDivision === 'number' && Number.isFinite(entry.modelPerDivision)) {
+            object.modelPerDivision = entry.modelPerDivision;
+          }
+          if (typeof entry.showScaleText === 'boolean') object.showScaleText = entry.showScaleText;
+          // Unknown kinds (and unknown scalar extras) survive verbatim.
+          for (const [key, val] of Object.entries(entry)) {
+            if (key in object || key === 'id' || key === 'kind' || key === 'layerId') continue;
+            if (typeof val === 'string' || typeof val === 'number' || typeof val === 'boolean') {
+              (object as unknown as Record<string, unknown>)[key] = val;
+            }
           }
           return [object];
         })
@@ -668,6 +855,76 @@ export const sanitizeDraftDocument = (
           return [label];
         })
       : [],
+    // Templates are drawing-owned and never backfilled: absent stays absent.
+    ...(Array.isArray((value as Record<string, unknown>).templates)
+      ? {
+          templates: ((value as Record<string, unknown>).templates as unknown[]).flatMap(
+            (entry): DraftSheetTemplate[] => {
+              if (!isRecord(entry)) return [];
+              const templateMargins = isRecord(entry.margins) ? entry.margins : {};
+              const template: DraftSheetTemplate = {
+                id: stableId(entry.id, 'sheet-template'),
+                name: asString(entry.name, 'Unnamed template'),
+                widthMm: asFinite(entry.widthMm, 297),
+                heightMm: asFinite(entry.heightMm, 210),
+                orientation: entry.orientation === 'portrait' ? 'portrait' : 'landscape',
+                margins: {
+                  topMm: asFinite(templateMargins.topMm, 10),
+                  bottomMm: asFinite(templateMargins.bottomMm, 10),
+                  leftMm: asFinite(templateMargins.leftMm, 10),
+                  rightMm: asFinite(templateMargins.rightMm, 10),
+                },
+                viewportLayouts: Array.isArray(entry.viewportLayouts)
+                  ? entry.viewportLayouts.flatMap((layout): DraftTemplateViewportLayout[] => {
+                      if (!isRecord(layout)) return [];
+                      return [{
+                        name: asString(layout.name, 'Viewport'),
+                        paperXmm: asFinite(layout.paperXmm, 10),
+                        paperYmm: asFinite(layout.paperYmm, 10),
+                        paperWidthMm: asFinite(layout.paperWidthMm, 100),
+                        paperHeightMm: asFinite(layout.paperHeightMm, 100),
+                        scaleDenominator: asFinite(layout.scaleDenominator, 500),
+                      }];
+                    })
+                  : [],
+              };
+              if (typeof entry.titleBlockDefinitionId === 'string') {
+                template.titleBlockDefinitionId = entry.titleBlockDefinitionId;
+              }
+              if (Array.isArray(entry.northArrows)) {
+                template.northArrows = entry.northArrows.flatMap((raw): DraftTemplateNorthArrow[] => {
+                  if (!isRecord(raw)) return [];
+                  return [{
+                    viewportIndex: Math.max(0, Math.floor(asFinite(raw.viewportIndex, 0))),
+                    paperXmm: asFinite(raw.paperXmm, 0),
+                    paperYmm: asFinite(raw.paperYmm, 0),
+                    sizeMm: asFinite(raw.sizeMm, 12),
+                  }];
+                });
+              }
+              if (Array.isArray(entry.scaleBars)) {
+                template.scaleBars = entry.scaleBars.flatMap((raw): DraftTemplateScaleBar[] => {
+                  if (!isRecord(raw)) return [];
+                  return [{
+                    viewportIndex: Math.max(0, Math.floor(asFinite(raw.viewportIndex, 0))),
+                    paperXmm: asFinite(raw.paperXmm, 0),
+                    paperYmm: asFinite(raw.paperYmm, 0),
+                    divisions: Math.max(1, Math.floor(asFinite(raw.divisions, 4))),
+                    modelPerDivision: asFinite(raw.modelPerDivision, 1),
+                  }];
+                });
+              }
+              if (Array.isArray(entry.notes)) {
+                template.notes = entry.notes.flatMap((raw): DraftTemplateNote[] => {
+                  if (!isRecord(raw) || typeof raw.text !== 'string') return [];
+                  return [{ text: raw.text, paperXmm: asFinite(raw.paperXmm, 0), paperYmm: asFinite(raw.paperYmm, 0) }];
+                });
+              }
+              return [template];
+            },
+          ),
+        }
+      : {}),
     metadata: {
       createdAt: asString(metadata.createdAt, new Date().toISOString()),
       updatedAt: asString(metadata.updatedAt, new Date().toISOString()),

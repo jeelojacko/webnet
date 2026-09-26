@@ -76,6 +76,76 @@ export const createPlanSheet = ({ name, sizeId = 'ISO A4', orientation = 'landsc
   return createDraftSheet({ name, widthMm: portrait ? narrow : wide, heightMm: portrait ? wide : narrow, orientation });
 };
 
+// Sheet templates: SNAPSHOT semantics. The template layout is deep-copied
+// into a new sheet with fresh stable ids for the sheet, viewports, and
+// paper objects; model references stay references (plain values, never
+// aliased). Later template edits never touch sheets created earlier.
+// Returns undefined when the template id is unknown (fail-closed).
+export const createSheetFromTemplate = (
+  draft: DraftDocument,
+  templateId: string,
+  name: string,
+): DraftDocument | undefined => {
+  const template = draft.templates?.find((entry) => entry.id === templateId);
+  if (!template) return undefined;
+  const viewportIds = template.viewportLayouts.map(() => createStableRuntimeId('draft-viewport'));
+  const viewportIdAt = (index: number): string | undefined =>
+    viewportIds[index] ?? viewportIds[0];
+  const viewports: DraftSheetViewport[] = template.viewportLayouts.map((layout, index) => ({
+    id: viewportIds[index] as string,
+    name: layout.name,
+    modelCenterX: 0,
+    modelCenterY: 0,
+    scaleDenominator: layout.scaleDenominator,
+    paperXmm: layout.paperXmm,
+    paperYmm: layout.paperYmm,
+    paperWidthMm: layout.paperWidthMm,
+    paperHeightMm: layout.paperHeightMm,
+    rotationDeg: 0,
+  }));
+  const sheetObjects: DraftSheet['sheetObjects'] = [
+    ...(template.northArrows ?? []).map((placement) => ({
+      id: createStableRuntimeId('draft-sheet-object'),
+      kind: 'north-arrow',
+      layerId: 'labels',
+      paperXmm: placement.paperXmm,
+      paperYmm: placement.paperYmm,
+      sizeMm: placement.sizeMm,
+      ...(viewportIdAt(placement.viewportIndex) ? { viewportId: viewportIdAt(placement.viewportIndex) as string } : {}),
+    })),
+    ...(template.scaleBars ?? []).map((placement) => ({
+      id: createStableRuntimeId('draft-sheet-object'),
+      kind: 'scale-bar',
+      layerId: 'labels',
+      paperXmm: placement.paperXmm,
+      paperYmm: placement.paperYmm,
+      divisions: placement.divisions,
+      modelPerDivision: placement.modelPerDivision,
+      ...(viewportIdAt(placement.viewportIndex) ? { viewportId: viewportIdAt(placement.viewportIndex) as string } : {}),
+    })),
+    ...(template.notes ?? []).map((note) => ({
+      id: createStableRuntimeId('draft-sheet-object'),
+      kind: 'plan-note',
+      layerId: 'labels',
+      paperXmm: note.paperXmm,
+      paperYmm: note.paperYmm,
+      text: note.text,
+    })),
+  ];
+  const sheet: DraftSheet = {
+    id: createStableRuntimeId('draft-sheet'),
+    name,
+    widthMm: template.widthMm,
+    heightMm: template.heightMm,
+    orientation: template.orientation,
+    margins: { ...template.margins },
+    viewports,
+    ...(template.titleBlockDefinitionId ? { titleBlockId: template.titleBlockDefinitionId } : {}),
+    sheetObjects,
+  };
+  return { ...draft, sheets: [...draft.sheets, sheet] };
+};
+
 export const addSheetToDraft = (draft: DraftDocument, sheet: DraftSheet): DraftDocument => ({
   ...draft, sheets: [...draft.sheets, sheet],
 });
@@ -88,7 +158,13 @@ export const duplicateSheetInDraft = (draft: DraftDocument, sheetId: string): Dr
   if (!sheet) return draft;
   const copy: DraftSheet = {
     ...sheet, id: createStableRuntimeId('draft-sheet'), name: `${sheet.name} copy`, margins: { ...sheet.margins },
-    viewports: sheet.viewports.map((viewport) => ({ ...viewport, id: createStableRuntimeId('draft-viewport') })),
+    viewports: sheet.viewports.map((viewport) => ({
+      ...viewport,
+      id: createStableRuntimeId('draft-viewport'),
+      ...(viewport.layerOverrides ? { layerOverrides: { ...viewport.layerOverrides } } : {}),
+    })),
+    // Fresh ids for paper objects; model references stay references (values, never aliased).
+    ...(sheet.titleBlockFields ? { titleBlockFields: { ...sheet.titleBlockFields } } : {}),
     sheetObjects: sheet.sheetObjects.map((object) => ({ ...object, id: createStableRuntimeId('draft-sheet-object') })),
   };
   return { ...draft, sheets: [...draft.sheets, copy] };
@@ -221,10 +297,31 @@ export const setTitleBlockField = (instance: TitleBlockInstance, field: string, 
   ...instance, values: { ...instance.values, [field]: value },
 });
 
+// Scale-bar paper math in DRAWING units: modelPerDivision is stored in the
+// drawing's own units (metres or feet), never assumed metres. Paper length
+// of one division = modelPerDivision * mmPerUnit / denominator.
+export const MM_PER_DRAWING_UNIT = { m: 1000, ft: MM_PER_INCH * 12 } as const;
+
+export const scaleBarDivisionPaperMm = ({ modelPerDivision, scaleDenominator, unitsMode = 'm' }: {
+  modelPerDivision: number; scaleDenominator: number; unitsMode?: 'm' | 'ft';
+}): number => (modelPerDivision * MM_PER_DRAWING_UNIT[unitsMode]) / scaleDenominator;
+
+export const scaleBarTotalPaperMm = ({ divisions, modelPerDivision, scaleDenominator, unitsMode = 'm' }: {
+  divisions: number; modelPerDivision: number; scaleDenominator: number; unitsMode?: 'm' | 'ft';
+}): number =>
+  divisions * scaleBarDivisionPaperMm({ modelPerDivision, scaleDenominator, unitsMode });
+
 // Shared token context so preview, SVG, PDF, and layout-DXF expand the same
-// text from the same paper-mm numerics. SCALE lists viewport scales.
+// text from the same paper-mm numerics. SCALE policy: always the list form
+// ("1:500, 1:1000"); never invent VARIES — multi-scale sheets list every
+// viewport denominator in sheet order.
 export const buildSheetTokenContext = (args: {
-  sheet: { name: string; viewports: readonly { scaleDenominator: number }[] };
+  sheet: {
+    name: string;
+    viewports: readonly { scaleDenominator: number }[];
+    /** Per-sheet instance values win over the drawing-global args below. */
+    titleBlockFields?: Record<string, string>;
+  };
   sheetNumber: number;
   projectName?: string;
   projectNumber?: string;
@@ -235,18 +332,39 @@ export const buildSheetTokenContext = (args: {
   client?: string;
   location?: string;
 }): SheetTokenContext => ({
-  PROJECT_NAME: args.projectName ?? '',
-  PROJECT_NUMBER: args.projectNumber ?? '',
+  PROJECT_NAME: args.sheet.titleBlockFields?.PROJECT_NAME ?? args.projectName ?? '',
+  PROJECT_NUMBER: args.sheet.titleBlockFields?.PROJECT_NUMBER ?? args.projectNumber ?? '',
   SHEET_NAME: args.sheet.name,
   SHEET_NUMBER: `${args.sheetNumber}`,
   SCALE: args.sheet.viewports.map((viewport) => `1:${viewport.scaleDenominator}`).join(', '),
-  CRS: args.crs ?? '',
-  DATE: args.date ?? new Date().toISOString().slice(0, 10),
-  DRAWN_BY: args.drawnBy ?? '',
-  CHECKED_BY: args.checkedBy ?? '',
-  CLIENT: args.client ?? '',
-  LOCATION: args.location ?? '',
+  CRS: args.sheet.titleBlockFields?.CRS ?? args.crs ?? '',
+  DATE: args.sheet.titleBlockFields?.DATE ?? args.date ?? new Date().toISOString().slice(0, 10),
+  DRAWN_BY: args.sheet.titleBlockFields?.DRAWN_BY ?? args.drawnBy ?? '',
+  CHECKED_BY: args.sheet.titleBlockFields?.CHECKED_BY ?? args.checkedBy ?? '',
+  CLIENT: args.sheet.titleBlockFields?.CLIENT ?? args.client ?? '',
+  LOCATION: args.sheet.titleBlockFields?.LOCATION ?? args.location ?? '',
 });
+
+// Per-sheet title-block instance values: stored on the sheet, so shared
+// template geometry stays shared while DRAWN_BY/CLIENT/... vary per sheet.
+export const setSheetTitleBlockField = (
+  draft: DraftDocument,
+  sheetId: string,
+  field: string,
+  value: string,
+): DraftDocument =>
+  withSheet(draft, sheetId, (sheet) => ({
+    ...sheet,
+    titleBlockFields: { ...(sheet.titleBlockFields ?? {}), [field]: value },
+  }));
+
+export const clearSheetTitleBlockField = (draft: DraftDocument, sheetId: string, field: string): DraftDocument =>
+  withSheet(draft, sheetId, (sheet) => {
+    if (!sheet.titleBlockFields) return sheet;
+    const rest = { ...sheet.titleBlockFields };
+    delete rest[field];
+    return { ...sheet, ...(Object.keys(rest).length > 0 ? { titleBlockFields: rest } : { titleBlockFields: undefined }) };
+  });
 
 // Template management (pure; run inside runDraftSheetCommand for undo/redo).
 export const createTitleBlockTemplate = (name: string): import('./cadDraftTypes').DraftTitleBlockDefinition => ({
@@ -351,3 +469,31 @@ export const redoDraftSheetHistory = (state: DraftSheetHistoryState): DraftSheet
   if (!next) return state;
   return { draft: next, past: [...state.past, cloneDraftDocument(state.draft)], future: rest };
 };
+
+// Production sheet CRUD: each is exactly one Draft history transaction via
+// runDraftSheetCommand. Shell wiring (Round 3) calls these; the engine
+// stays UI-free.
+export const renameSheetCommand = (
+  state: DraftSheetHistoryState,
+  sheetId: string,
+  name: string,
+): DraftSheetHistoryState =>
+  runDraftSheetCommand(state, (draft) => renameSheetInDraft(draft, sheetId, name));
+
+export const duplicateSheetCommand = (
+  state: DraftSheetHistoryState,
+  sheetId: string,
+): DraftSheetHistoryState =>
+  runDraftSheetCommand(state, (draft) => duplicateSheetInDraft(draft, sheetId));
+
+export const deleteSheetCommand = (
+  state: DraftSheetHistoryState,
+  sheetId: string,
+): DraftSheetHistoryState =>
+  runDraftSheetCommand(state, (draft) => deleteSheetFromDraft(draft, sheetId));
+
+export const reorderSheetsCommand = (
+  state: DraftSheetHistoryState,
+  orderIds: string[],
+): DraftSheetHistoryState =>
+  runDraftSheetCommand(state, (draft) => reorderSheetsInDraft(draft, orderIds));
