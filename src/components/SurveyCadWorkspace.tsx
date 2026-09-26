@@ -100,6 +100,14 @@ import { createCadProfileCache } from '../engine/cad/profileCache';
 import { createCadSectionCache } from '../engine/cad/sectionCache';
 import { createCadSurfaceVolumeCache } from '../engine/cad/surfaceVolumeCache';
 import { computeCadSurfaceSourceRevision } from '../engine/cad/cadSurfaces';
+import { composeSurfaceMeshes } from '../engine/cad/surfaceCompose';
+import {
+  buildComposeCopyCommand,
+  buildComposePasteCommand,
+  toComposePreview,
+  type CadSurfaceComposeMode,
+} from '../cad-app/shell/cadSurfaceCompose';
+import { SurfaceComposeService } from '../workers/surfaceComposeService';
 import { backfillCadSurfaceStyles } from '../engine/cad/cadSurfaceStyles';
 import { contourLevelSpecFromStyle } from '../engine/cad/cadSurfaceContourView';
 import {
@@ -901,6 +909,75 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
     undo,
     redo,
   } = cadWorkspace;
+  // Phase 18Y — exact two-surface composition control plane (one per drawing
+  // session). The worker computes the topology off-thread; the UI-owned
+  // `applyCompose` seam dispatches the payload-carrying SURFCOMPOSE /
+  // SURFCOMPOSEPASTE transaction (the service never mutates history).
+  const pendingComposeModeRef = useRef(new Map<string, CadSurfaceComposeMode>());
+  const composeService = useMemo(
+    () =>
+      new SurfaceComposeService({
+        drawingId: activeDrawing.drawingId,
+        getProject: () => activeProjectForBuildsRef.current,
+        getDrawingId: () => drawingIdForBuildsRef.current,
+        tinCache: surfaceCache,
+        createTransport: () => {
+          try {
+            if (typeof Worker === 'undefined') return null;
+            return new SurfaceWorkerClient(
+              new Worker(new URL('../workers/surfaceWorker.ts', import.meta.url), {
+                type: 'module',
+              }),
+            );
+          } catch {
+            return null;
+          }
+        },
+        notify: (message) => setFileStatusText(message),
+        onStateChange: () => {},
+        applyCompose: (computed) => {
+          const project = activeProjectForBuildsRef.current;
+          const base = (project.surfaces ?? []).find((entry) => entry.id === computed.baseSurfaceId);
+          const overlay = (project.surfaces ?? []).find((entry) => entry.id === computed.overlaySurfaceId);
+          if (!base || !overlay) return;
+          const key = `${computed.baseSurfaceId}|${computed.overlaySurfaceId}`;
+          const mode = pendingComposeModeRef.current.get(key) ?? 'copy';
+          pendingComposeModeRef.current.delete(key);
+          const payload = { vertices: computed.vertices, faces: computed.faces };
+          const command = mode === 'paste'
+            ? buildComposePasteCommand({
+                id: base.id,
+                name: base.name,
+                revision: computeCadSurfaceSourceRevision(project, base),
+                current: true,
+              }, {
+                id: overlay.id,
+                name: overlay.name,
+                revision: computeCadSurfaceSourceRevision(project, overlay),
+                current: true,
+              }, payload)
+            : buildComposeCopyCommand({
+                id: base.id,
+                name: base.name,
+                revision: computeCadSurfaceSourceRevision(project, base),
+                current: true,
+              }, {
+                id: overlay.id,
+                name: overlay.name,
+                revision: computeCadSurfaceSourceRevision(project, overlay),
+                current: true,
+              }, payload);
+          const ok = cadWorkspace.runLayerCommand(command);
+          setFileStatusText(ok
+            ? (mode === 'paste'
+              ? `Pasted “${overlay.name}” into “${base.name}”.`
+              : `Composite copy created from “${base.name}” + “${overlay.name}”.`)
+            : 'Compose rejected — a source revision moved or the target layer is locked.');
+        },
+      }),
+    [activeDrawing.drawingId, surfaceCache, cadWorkspace],
+  );
+  useEffect(() => () => composeService.dispose(), [composeService]);
   // Phase 18U — analysis rows + legend rows (derived once per publish).
   // surfaceMeshSessions is a dep (not just an effect trigger): a source
   // rebuild mutates the mesh cache in place, so without it the rows would
@@ -1835,6 +1912,48 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
       editField: (entityId, field, value) => cadWorkspace.editPropertiesField(entityId, field, value),
       runLayerCommand: (command) => cadWorkspace.runLayerCommand(command),
       runSurveyCommand: (command) => cadWorkspace.runLayerCommand(command),
+      // Phase 18Y — deterministic pre-commit composition of two CURRENT
+      // session meshes; the dialog commits the returned payload through
+      // SURFCOMPOSE / SURFCOMPOSEPASTE (revision-gated at commit).
+      // ponytail: synchronous main-thread engine call; route through the
+      // surfaceComposeService worker if large-mesh UI stalls matter.
+      requestSurfaceCompose: (spec) => {
+        pendingComposeModeRef.current.set(`${spec.baseSurfaceId}|${spec.overlaySurfaceId}`, spec.mode);
+        return composeService.requestCompose({
+          baseSurfaceId: spec.baseSurfaceId,
+          overlaySurfaceId: spec.overlaySurfaceId,
+          policy: { id: spec.policyId },
+        });
+      },
+      previewSurfaceCompose: (baseSurfaceId, overlaySurfaceId) => {
+        if (baseSurfaceId === overlaySurfaceId) return null;
+        const base = (activeProject.surfaces ?? []).find((entry) => entry.id === baseSurfaceId);
+        const overlay = (activeProject.surfaces ?? []).find((entry) => entry.id === overlaySurfaceId);
+        if (!base || !overlay) return null;
+        const baseRevision = computeCadSurfaceSourceRevision(activeProject, base);
+        const overlayRevision = computeCadSurfaceSourceRevision(activeProject, overlay);
+        const baseMesh = surfaceCache.get(base.id, baseRevision);
+        const overlayMesh = surfaceCache.get(overlay.id, overlayRevision);
+        if (!baseMesh || !overlayMesh) return null;
+        return toComposePreview(composeSurfaceMeshes(
+          {
+            surfaceId: base.id,
+            surfaceName: base.name,
+            revision: baseRevision,
+            points: baseMesh.points,
+            triangles: baseMesh.triangles,
+            adjacency: baseMesh.adjacency,
+          },
+          {
+            surfaceId: overlay.id,
+            surfaceName: overlay.name,
+            revision: overlayRevision,
+            points: overlayMesh.points,
+            triangles: overlayMesh.triangles,
+            adjacency: overlayMesh.adjacency,
+          },
+        ));
+      },
       selectSurface: (surfaceId) => setSelectedSurfaceId(surfaceId),
       selectVolume: (volumeId) => setSelectedVolumeId(volumeId),
       selectProfile: (profileId) => setSelectedProfileId(profileId),

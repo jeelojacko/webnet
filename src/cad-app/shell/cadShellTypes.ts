@@ -479,6 +479,28 @@ export interface CadShellActions {
   clearSurfacePointSelection?: () => void;
   /** Phase 18V — arm SURFSETELEVMULTI / SURFRAISELOWERSELECTED / SURFMOVEPOINTS. */
   startSurfaceBulkEditSession?: (_mode: SurfaceBulkEditMode) => boolean;
+  /**
+   * Phase 18Y — deterministic pre-commit composition of two CURRENT session
+   * meshes. Returns the composed payload + diagnostics, or null when either
+   * mesh is unavailable. Never mutates history; the caller commits the
+   * payload through SURFCOMPOSE / SURFCOMPOSEPASTE.
+   */
+  previewSurfaceCompose?: (
+    _baseSurfaceId: string,
+    _overlaySurfaceId: string,
+  ) => import('./cadSurfaceCompose').CadSurfaceComposePreview | null;
+  /**
+   * Phase 18Y — worker-backed composition. The session `SurfaceComposeService`
+   * computes the topology off-thread and dispatches SURFCOMPOSE /
+   * SURFCOMPOSEPASTE through the UI-owned `applyCompose` seam. Returns the
+   * user-facing status text (never mutates history itself).
+   */
+  requestSurfaceCompose?: (_spec: {
+    mode: import('./cadSurfaceCompose').CadSurfaceComposeMode;
+    baseSurfaceId: string;
+    overlaySurfaceId: string;
+    policyId: string;
+  }) => string;
   toggleDraftingPanel: () => void;
   toggleExportCenter: () => void;
   cancelCommand: () => void;

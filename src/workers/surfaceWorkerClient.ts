@@ -6,6 +6,8 @@ import type { CadSurfaceSectionResult } from '../engine/cad/cadSectionTypes';
 import type {
   SurfaceAnalysisRequest,
   SurfaceAnalysisResultPayload,
+  SurfaceComposeRequest,
+  SurfaceComposeResultPayload,
   SurfaceContourRequest,
   SurfaceProfileRequest,
   SurfaceSectionsRequest,
@@ -40,6 +42,8 @@ export const SURFACE_SECTIONS_MALFORMED = 'Malformed surface sections worker res
 export const SURFACE_SECTIONS_UNAVAILABLE = 'Surface sections worker unavailable.';
 export const SURFACE_ANALYSIS_MALFORMED = 'Malformed surface analysis worker response.';
 export const SURFACE_ANALYSIS_UNAVAILABLE = 'Surface analysis worker unavailable.';
+export const SURFACE_COMPOSE_MALFORMED = 'Malformed surface compose worker response.';
+export const SURFACE_COMPOSE_UNAVAILABLE = 'Surface compose worker unavailable.';
 
 export interface PendingSurfaceBuild {
   requestId: string;
@@ -77,6 +81,12 @@ export interface PendingSurfaceAnalysis {
   cancel: () => void;
 }
 
+export interface PendingSurfaceCompose {
+  requestId: string;
+  done: Promise<SurfaceComposeResultPayload | null>;
+  cancel: () => void;
+}
+
 /** Minimal worker surface the client drives (real Worker satisfies this). */
 export interface SurfaceWorkerPort {
   postMessage: (_message: unknown) => void;
@@ -106,6 +116,8 @@ const TERMINAL_TYPES = new Set([
   'sections-failure',
   'analysis-success',
   'analysis-failure',
+  'compose-success',
+  'compose-failure',
 ]);
 const OK_OUTCOMES = new Set(['ok', 'insufficient', 'blocked']);
 
@@ -197,6 +209,22 @@ const isWellFormedAnalysisResult = (value: unknown): value is SurfaceAnalysisRes
   return typeof inner['result'] === 'object' && inner['result'] !== null;
 };
 
+const isWellFormedComposeResult = (value: unknown): value is SurfaceComposeResultPayload => {
+  if (typeof value !== 'object' || value === null) return false;
+  const result = value as Record<string, unknown>;
+  const diagnostics = result['diagnostics'] as Record<string, unknown> | null | undefined;
+  return (
+    Array.isArray(result['vertices']) &&
+    Array.isArray(result['faces']) &&
+    (result['vertices'] as unknown[]).every((entry) => typeof entry === 'number') &&
+    (result['faces'] as unknown[]).every((entry) => typeof entry === 'number') &&
+    typeof diagnostics === 'object' &&
+    diagnostics !== null &&
+    typeof diagnostics['resultArea'] === 'number' &&
+    typeof diagnostics['outputTriangleCount'] === 'number'
+  );
+};
+
 const isWellFormedMesh = (value: unknown): value is SurfaceWorkerMesh => {
   if (typeof value !== 'object' || value === null) return false;
   const mesh = value as Record<string, unknown>;
@@ -264,6 +292,14 @@ export class SurfaceWorkerClient implements SurfaceBuildTransport {
       settled: boolean;
     }
   >();
+  private readonly pendingComposes = new Map<
+    string,
+    {
+      resolve: (_result: SurfaceComposeResultPayload | null) => void;
+      reject: (_error: Error) => void;
+      settled: boolean;
+    }
+  >();
   private nextRequestId = 0;
   private dead = false;
   private readonly handleMessage = (event: unknown): void => {
@@ -287,6 +323,10 @@ export class SurfaceWorkerClient implements SurfaceBuildTransport {
     }
     if (data.type === 'analysis-success' || data.type === 'analysis-failure') {
       this.handleAnalysisMessage(data);
+      return;
+    }
+    if (data.type === 'compose-success' || data.type === 'compose-failure') {
+      this.handleComposeMessage(data);
       return;
     }
     const entry = this.pending.get(data.requestId);
@@ -422,6 +462,28 @@ export class SurfaceWorkerClient implements SurfaceBuildTransport {
     }
     entry.settled = true;
     this.pendingAnalysis.delete(data.requestId);
+    entry.resolve(data.result);
+  };
+  /** Phase 18Y: compose terminal messages settle compose pendings only. */
+  private readonly handleComposeMessage = (
+    data: Extract<TerminalSurfaceWorkerMessage, { type: 'compose-success' | 'compose-failure' }>,
+  ): void => {
+    const entry = this.pendingComposes.get(data.requestId);
+    if (!entry || entry.settled) return;
+    if (data.type === 'compose-failure') {
+      entry.settled = true;
+      this.pendingComposes.delete(data.requestId);
+      entry.reject(new Error(data.error || 'Surface composition failed.'));
+      return;
+    }
+    if (!isWellFormedComposeResult(data.result)) {
+      entry.settled = true;
+      this.pendingComposes.delete(data.requestId);
+      entry.reject(new Error(SURFACE_COMPOSE_MALFORMED));
+      return;
+    }
+    entry.settled = true;
+    this.pendingComposes.delete(data.requestId);
     entry.resolve(data.result);
   };
   private readonly handleFatal = (): void => {
@@ -609,7 +671,49 @@ export class SurfaceWorkerClient implements SurfaceBuildTransport {
     };
   }
 
+  /**
+   * Phase 18Y exact two-surface composition. Request ids use the `kreq-`
+   * prefix so compose arrivals are attributable; latest-wins ownership is
+   * the service's. Cancel -> null; malformed -> reject; failure -> reject.
+   */
+  deriveCompose(request: SurfaceComposeRequest): PendingSurfaceCompose {
+    this.nextRequestId += 1;
+    const requestId = `kreq-${this.nextRequestId}`;
+    let entry!: {
+      resolve: (_result: SurfaceComposeResultPayload | null) => void;
+      reject: (_e: Error) => void;
+      settled: boolean;
+    };
+    const done = new Promise<SurfaceComposeResultPayload | null>((resolve, reject) => {
+      entry = { resolve, reject, settled: false };
+    });
+    this.pendingComposes.set(requestId, entry);
+    try {
+      this.port.postMessage({ type: 'compose', requestId, request });
+    } catch (error) {
+      this.pendingComposes.delete(requestId);
+      entry.reject(error instanceof Error ? error : new Error(String(error)));
+    }
+    return {
+      requestId,
+      done,
+      cancel: () => this.cancel(requestId),
+    };
+  }
+
   cancel(requestId: string): void {
+    const composeEntry = this.pendingComposes.get(requestId);
+    if (composeEntry && !composeEntry.settled) {
+      composeEntry.settled = true;
+      this.pendingComposes.delete(requestId);
+      try {
+        this.port.postMessage({ type: 'cancel', requestId });
+      } catch {
+        // Local settle already applied; a dead port fails closed via dispose.
+      }
+      composeEntry.resolve(null);
+      return;
+    }
     const analysisEntry = this.pendingAnalysis.get(requestId);
     if (analysisEntry && !analysisEntry.settled) {
       analysisEntry.settled = true;
@@ -733,6 +837,13 @@ export class SurfaceWorkerClient implements SurfaceBuildTransport {
       }
       this.pendingAnalysis.delete(requestId);
     }
+    for (const [requestId, entry] of this.pendingComposes) {
+      if (!entry.settled) {
+        entry.settled = true;
+        entry.resolve(null);
+      }
+      this.pendingComposes.delete(requestId);
+    }
     try {
       this.port.terminate();
     } catch {
@@ -749,6 +860,13 @@ export class SurfaceWorkerClient implements SurfaceBuildTransport {
         entry.reject(error);
       }
       this.pendingAnalysis.delete(requestId);
+    }
+    for (const [requestId, entry] of this.pendingComposes) {
+      if (!entry.settled) {
+        entry.settled = true;
+        entry.reject(error);
+      }
+      this.pendingComposes.delete(requestId);
     }
     for (const [requestId, entry] of this.pendingSections) {
       if (!entry.settled) {

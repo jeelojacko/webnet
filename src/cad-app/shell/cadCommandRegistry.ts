@@ -1,6 +1,7 @@
 import type { ActiveCommandKey } from '../../hooks/surveyCad/useSurveyCadCommandTypes';
 import type { CadShellActions, CadWorkspaceSnapshot } from './cadShellTypes';
-import { requestDefinitionFocus } from './CadSurfaceDefinitionParts';
+import { requestDefinitionFocus, requestSurfaceComposeFocus } from './CadSurfaceDefinitionParts';
+import { surfaceComposeCapability } from './cadSurfaceCompose';
 
 /**
  * Phase 18W — the acting surface for definition commands: the selected
@@ -301,6 +302,11 @@ export const CAD_SHELL_COMMANDS: CadShellCommandDef[] = [
   // one undo entry; Bake is in-place, Bake to Copy makes "<Source> - Baked".
   action('SURFBAKE', 'Bake Surface', 'Surface', 'Freeze the current mesh into an explicit TIN on this surface: clears sources/breaklines/boundaries/edits, geometry preserved, Undo restores.', undefined, ['BAKE']),
   action('SURFBAKECOPY', 'Bake to Copy', 'Surface', 'Freeze the current mesh into a new explicit TIN copy ("<Source> - Baked"). Source unchanged.', undefined, ['BAKECOPY']),
+  // Phase 18Y — exact two-surface composition (sibling of the 18X bake
+  // group; needs two CURRENT surfaces and opens the manager Compose dialog).
+  action('SURFCOMPOSE', 'Compose Surface', 'Surface', 'Compose two surfaces into one explicit TIN (manager): composite copy or paste the overlay into the target in place.', undefined, ['COMPOSE']),
+  action('SURFCOMPOSECOPY', 'Compose to Copy', 'Surface', 'Create a new explicit-TIN surface from a Base + Overlay (manager dialog; neither source changes).'),
+  action('SURFPASTE', 'Paste Into Surface', 'Surface', 'Paste an Overlay into a Target in place (manager dialog; target definition replaced, source unchanged).', undefined, ['SURFCOMPOSEPASTE']),
   // Phase 18I — volume commands (all route through the surface manager;
   // Calculate runs the session volume service for the selected volume,
   // never auto-started, LOCK-gated by the volume transaction path).
@@ -420,6 +426,12 @@ export const isShellCommandAvailable = (
           : null;
         return row?.status === 'CURRENT';
       }
+      case 'SURFCOMPOSE':
+        // Dialog opener: always available with a live workspace.
+        return true;
+      case 'SURFCOMPOSECOPY':
+      case 'SURFPASTE':
+        return surfaceComposeCapability(snapshot.surface?.surfaces ?? []).canCompose;
       default:
         return true;
     }
@@ -512,6 +524,13 @@ export const executeShellCommand = (
       return focusSurfaceDefinition(actions, snapshot, 'boundaries', resolveBoundaryFocus(snapshot));
     case 'SURFBOUNDARYMAKEINDEPENDENT':
       return makeBoundaryIndependent(actions, snapshot);
+    case 'SURFCOMPOSE':
+    case 'SURFCOMPOSECOPY':
+    case 'SURFPASTE': {
+      requestSurfaceComposeFocus(def.key === 'SURFPASTE' ? 'paste' : 'copy');
+      actions.openSurveyManager('surfaces', resolveDefinitionSurfaceId(snapshot) ?? undefined);
+      return true;
+    }
     case 'SURFBAKE':
     case 'SURFBAKECOPY': {
       const surfaceId = resolveDefinitionSurfaceId(snapshot);

@@ -910,6 +910,29 @@ export interface ExplicitFormatTinProvenance {
 }
 
 /**
+ * Phase 18Y compose provenance. Composition ALWAYS writes this shape.
+ * fileName/surfaceName/sourceId are read-tolerance only (optional so
+ * shared readers keep compiling); compose writers omit them. policy is
+ * fixed to 'overlay-coverage-wins' (the only supported ownership rule).
+ * resultDigest is the explicitTinTopologyDigest of the composed payload
+ * (empty until the payload is built).
+ */
+export interface WebnetComposeTinProvenance {
+  kind: 'webnet-compose';
+  baseSurfaceId: string;
+  baseSurfaceName: string;
+  baseRevision: string;
+  overlaySurfaceId: string;
+  overlaySurfaceName: string;
+  overlayRevision: string;
+  policy: 'overlay-coverage-wins';
+  resultDigest?: string;
+  fileName?: string;
+  surfaceName?: string;
+  sourceId?: string;
+}
+
+/**
  * Phase 18X discriminated explicit-TIN provenance (read-tolerant,
  * write-strict). Every member carries fileName/surfaceName (required or
  * optional) so shared readers compile without narrowing.
@@ -917,6 +940,7 @@ export interface ExplicitFormatTinProvenance {
 export type CadExplicitTinProvenance =
   | LandxmlTinProvenance
   | WebnetBakeTinProvenance
+  | WebnetComposeTinProvenance
   | ExplicitFormatTinProvenance;
 
 /** Legacy alias (read path); new code prefers CadExplicitTinProvenance. */

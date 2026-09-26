@@ -9,6 +9,7 @@ import { CadLayersGroup } from './CadLayersGroup';
 import { CadAnnotateRibbonGroups } from '../annotation/CadAnnotateRibbonGroups';
 import type { CadShellActions, CadWorkspaceSnapshot, SurveyManagerKind } from './cadShellTypes';
 import { surfaceBakeCapability, trySurfaceCommand } from './cadSurfaceSnapshot';
+import { surfaceComposeCapability } from './cadSurfaceCompose';
 import { confirmSurfaceBakeInPlace } from './cadSurfaceBakePrompt';
 
 interface CadRibbonProps {
@@ -193,6 +194,8 @@ const CadSurfaceRibbonGroup: React.FC<{
   // source mutations).
   const hasExplicitTopology = selectedSurface != null && selectedSurface.definition.sourceKind !== 'native';
   const bake = selectedSurface != null ? surfaceBakeCapability(selectedSurface) : { copy: false, inPlace: false };
+  // Phase 18Y — composition needs two CURRENT surfaces (sources never stale).
+  const compose = surfaceComposeCapability(snapshot?.surface?.surfaces ?? []);
   const bakeCommand = (key: 'SURFBAKE' | 'SURFBAKECOPY'): void => {
     if (!selectedSurface || !actions) return;
     if (key === 'SURFBAKE' && !confirmSurfaceBakeInPlace(selectedSurface)) return;
@@ -259,6 +262,20 @@ const CadSurfaceRibbonGroup: React.FC<{
           hint: 'Replace the definition with a snapshot of the current mesh (clears edits; one undo step).',
           disabled: !ready || !bake.inPlace,
           onClick: () => bakeCommand('SURFBAKE'),
+        },
+        {
+          key: 'compose',
+          label: 'Compose',
+          hint: 'Compose the selected surface (Base) with another CURRENT surface (Overlay) into one explicit TIN — composite copy or paste in place (manager dialog).',
+          disabled: !ready || !compose.canCompose,
+          onClick: () => runDefinitionCommand('SURFCOMPOSECOPY'),
+        },
+        {
+          key: 'paste',
+          label: 'Paste',
+          hint: 'Paste an Overlay surface into the selected Target in place (manager dialog; target definition replaced, source unchanged).',
+          disabled: !ready || !compose.canCompose,
+          onClick: () => runDefinitionCommand('SURFPASTE'),
         },
       ])}
       {group('Build', [
