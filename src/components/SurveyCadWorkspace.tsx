@@ -112,6 +112,15 @@ import {
   describeSelectedBreaklineEntity,
 } from '../engine/cad/cadSurfaceView';
 import { surfaceContentRevision } from '../engine/cad/cadSurfaceView';
+import { breaklineEntityRefs } from '../engine/cad/cadSurfaceRevision';
+import {
+  countSurfaceDefinitionReferencesToEntity,
+  surfaceDefinitionReferenceCount,
+} from '../engine/cad/cadSurfaceDefinitionReferences';
+import {
+  validateBoundaryVertexEdit,
+  validateSurfaceBoundaryCandidate,
+} from '../engine/cad/cadBoundaryCandidateValidation';
 import { buildCadF2FSnapshot } from './surveyCad/f2fGeneratedSummary';
 import { getCadEntityDisplayLabel } from '../engine/cad/cadEntityNames';
 import { resolveCurrentCadLayerId } from '../engine/cad/cadLayers';
@@ -2026,6 +2035,67 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
         describeSelectedBreaklineEntity(activeProject, selectedEntityIds, { allowF2F }),
       describeBoundarySource: () =>
         describeSelectedBoundaryEntity(activeProject, selectedEntityIds),
+      // Phase 18W — read-only definition detail (membership/vertices/shared
+      // uses resolve here where the project is live; the shell never sees it).
+      describeBreaklineChain: (surfaceId, breaklineId) => {
+        const surface = (activeProject.surfaces ?? []).find((entry) => entry.id === surfaceId);
+        const breakline = surface?.definition.breaklines?.find((entry) => entry.id === breaklineId);
+        if (!surface || !breakline) return null;
+        const chainSource = breakline.source;
+        if (chainSource.kind === 'point-chain') {
+          return {
+            sourceKind: chainSource.kind,
+            memberIds: [...chainSource.pointEntityIds],
+            sourceEntityId: null,
+            sourceLabel: null,
+          };
+        }
+        const entity = activeProject.entities.find((entry) => entry.id === chainSource.entityId);
+        return {
+          sourceKind: 'entity' as const,
+          memberIds: entity ? breaklineEntityRefs(entity) : [],
+          sourceEntityId: chainSource.entityId,
+          sourceLabel: entity ? getCadEntityDisplayLabel(entity) : chainSource.entityId,
+        };
+      },
+      describeSurveyPointCoords: (refs) =>
+        refs.map((ref) => {
+          const direct = activeProject.entities.find(
+            (entry) => entry.type === 'survey-point' && entry.id === ref,
+          );
+          const point = direct ?? activeProject.entities.find(
+            (entry) => entry.type === 'survey-point' && entry.stationId === ref,
+          );
+          return point != null && point.type === 'survey-point'
+            ? { ref, entityId: point.id, stationId: point.stationId, x: point.x, y: point.y, z: point.z ?? null }
+            : { ref, entityId: null, stationId: ref, x: NaN, y: NaN, z: null };
+        }),
+      describeBoundarySourceDetail: (sourceEntityId) => {
+        const entity = activeProject.entities.find((entry) => entry.id === sourceEntityId);
+        if (!entity || (entity.type !== 'polyline' && entity.type !== 'polygon' && entity.type !== 'parcel')) {
+          return null;
+        }
+        const refs = countSurfaceDefinitionReferencesToEntity(activeProject, sourceEntityId);
+        const surfaceIds = [
+          ...refs.boundaryUses.map((use) => use.surfaceId),
+          ...refs.breaklineUses.map((use) => use.surfaceId),
+        ].filter((id, index, all) => all.indexOf(id) === index);
+        return {
+          entityType: entity.type,
+          label: getCadEntityDisplayLabel(entity),
+          isParcel: entity.type === 'parcel',
+          vertices: entity.vertices.map((vertex) => ({ x: vertex.x, y: vertex.y })),
+          sharedUses: surfaceDefinitionReferenceCount(refs),
+          sharedSurfaceIds: surfaceIds,
+        };
+      },
+      preflightBoundaryVertexEdit: (surfaceId, sourceEntityId, vertices) =>
+        validateBoundaryVertexEdit(activeProject, surfaceId, sourceEntityId, vertices),
+      preflightBoundaryCandidate: (surfaceId, kind, ring) => {
+        const surface = (activeProject.surfaces ?? []).find((entry) => entry.id === surfaceId);
+        if (!surface) return 'SURFACE_REFERENCE_MISSING';
+        return validateSurfaceBoundaryCandidate(activeProject, surface, kind, [...ring]);
+      },
       openSurveyManager: (kind, selectedId) => {
         if (kind === 'points') {
           shellLink?.requestToolspaceTab?.('survey');

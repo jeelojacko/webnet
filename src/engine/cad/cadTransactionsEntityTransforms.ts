@@ -1,4 +1,5 @@
 import { cadBuildParcelClosureSummary } from './cadCogo';
+import { validateBoundaryEntityVertexEdit } from './cadBoundaryCandidateValidation';
 import {
   cadAngleDegFromCenter,
   cadArcMidpoint,
@@ -367,6 +368,14 @@ export const applyCadGripEdit = (
     command.vertexIndex,
   );
   if (!updatedEntity) return null;
+  // Phase 18W: vertex grips on a boundary source must keep a valid ring.
+  if (
+    command.gripKind === 'vertex' &&
+    (updatedEntity.type === 'polyline' || updatedEntity.type === 'polygon') &&
+    validateBoundaryEntityVertexEdit(project, entity.id, updatedEntity.vertices)
+  ) {
+    return null;
+  }
   const nextProject = replaceCadProjectEntities(
     project,
     project.entities.map((candidate) => (candidate.id === entity.id ? updatedEntity : candidate)),

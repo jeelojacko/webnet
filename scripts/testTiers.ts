@@ -83,6 +83,7 @@ export const EVIDENCE_TESTS = [
   'tests/evidence/gnssMultifileScalingEvidence.test.ts',
   'tests/evidence/phase18t_point_edit_perf.test.ts',
   'tests/evidence/phase18v_bulk_perf.test.ts',
+  'tests/evidence/phase18w_definition_perf.test.ts',
 ] as const;
 
 /** Fast automatic release-certification gate (committed-report verdict). */

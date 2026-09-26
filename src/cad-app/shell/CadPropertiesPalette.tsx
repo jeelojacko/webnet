@@ -18,6 +18,22 @@ interface CadPropertiesPaletteProps {
 
 const rowKey = (row: CadEntityPropertyRow): string => row.key;
 
+/** Phase 18W — selected-row source info: breakline source kinds + boundary sources. */
+const surfaceSourceInfo = (row: {
+  definition: {
+    breaklines: Array<{ kind: string }>;
+    boundaries: Array<{ kind: 'outer' | 'void'; sourceLabel: string }>;
+  };
+}): string => {
+  const chains = row.definition.breaklines.filter((entry) => entry.kind === 'point-chain').length;
+  const entities = row.definition.breaklines.length - chains;
+  const parts = [`${chains} chain`, `${entities} entity`];
+  for (const entry of row.definition.boundaries) {
+    parts.push(`${entry.kind}: ${entry.sourceLabel}`);
+  }
+  return parts.join(' · ');
+};
+
 /**
  * Phase 18B — dockable Properties palette.
  * - No selection: drawing summary (name, units, entities, layers, dependency).
@@ -189,7 +205,9 @@ const SurfacePropertiesBlock: React.FC<{
         ? `Group ${row.definition.pointGroupName}`
         : `${row.definition.pointCount} points`}</dd></div>
       <div><dt>Breaklines</dt><dd>{row.definition.breaklineCount}</dd></div>
-      <div><dt>Boundaries</dt><dd>outer {row.definition.outerBoundaryCount} void {row.definition.voidBoundaryCount}</dd></div>
+      <div><dt>Outer</dt><dd>{row.definition.outerBoundaryCount > 0 ? 'yes' : 'no'}</dd></div>
+      <div><dt>Void</dt><dd>{row.definition.voidBoundaryCount}</dd></div>
+      <div><dt>Source info</dt><dd>{surfaceSourceInfo(row)}</dd></div>
     </dl>
     {/* Phase 18S — edit-stack counts only; the full table lives in the manager. Phase 18T adds Topology/Point/Elevation groups. */}
     <h4>Edits</h4>

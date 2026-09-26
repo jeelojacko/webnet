@@ -50,7 +50,7 @@ const resolveRefId = (
 const entityById = (project: CadProject, id: CadEntityId): CadEntity | undefined =>
   project.entities.find((entity) => entity.id === id);
 
-const breaklineEntityRefs = (entity: CadEntity): string[] => {
+export const breaklineEntityRefs = (entity: CadEntity): string[] => {
   const metadata = (entity.metadata ?? {}) as Record<string, unknown>;
   const fromMetadata = Array.isArray(metadata['sourcePointIds'])
     ? (metadata['sourcePointIds'] as unknown[]).filter(
@@ -64,14 +64,16 @@ const breaklineEntityRefs = (entity: CadEntity): string[] => {
   return fromMetadata;
 };
 
-const boundaryRingOf = (entity: CadEntity): Array<{ x: number; y: number }> | null => {
+/** Entity ring XY (Z ignored); non-ring entity types resolve to null. */
+export const boundaryRingOf = (entity: CadEntity): Array<{ x: number; y: number }> | null => {
   if (entity.type === 'polyline' || entity.type === 'polygon' || entity.type === 'parcel') {
     return entity.vertices.map((vertex) => ({ x: vertex.x, y: vertex.y }));
   }
   return null;
 };
 
-const dedupeRing = (ring: Array<{ x: number; y: number }>): Array<{ x: number; y: number }> => {
+/** Collapse consecutive duplicate XY and drop a closing duplicate. */
+export const dedupeRing = (ring: Array<{ x: number; y: number }>): Array<{ x: number; y: number }> => {
   const out: Array<{ x: number; y: number }> = [];
   for (const point of ring) {
     const last = out[out.length - 1];

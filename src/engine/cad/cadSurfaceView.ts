@@ -88,6 +88,14 @@ export const findSurfaceBrokenRefs = (
       .filter((entity) => entity.type === 'survey-point')
       .map((entity) => [entity.id, entity.stationId] as const),
   );
+  // Phase 18W: chain refs may be station ids (entity-backed conversion keeps
+  // raw refs); collection resolves both, so the health check must too —
+  // otherwise a buildable chain reads BROKEN_REFERENCE in Toolspace.
+  const stationIds = new Set(
+    project.entities
+      .filter((entity) => entity.type === 'survey-point')
+      .map((entity) => entity.stationId),
+  );
   const source = surface.definition.pointSource;
   if (source.kind === 'point-group') {
     for (const id of surfacePointGroupIds(source)) {
@@ -102,7 +110,7 @@ export const findSurfaceBrokenRefs = (
     const source = breakline.source;
     if (source.kind === 'point-chain') {
       for (const id of source.pointEntityIds) {
-        if (!pointIds.has(id)) push(`point:${id}`, stationOf.get(id) ?? id);
+        if (!pointIds.has(id) && !stationIds.has(id)) push(`point:${id}`, stationOf.get(id) ?? id);
       }
     } else if (!project.entities.some((entity) => entity.id === source.entityId)) {
       push(`breakline:${source.entityId}`, breakline.name ?? source.entityId);

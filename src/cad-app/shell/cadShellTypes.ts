@@ -347,6 +347,62 @@ export interface CadShellActions {
    */
   describeBoundarySource: () => BoundarySourcePreview | null;
   /**
+   * Phase 18W — breakline chain detail for the manager (membership only;
+   * coordinates resolve via describeSurveyPointCoords). Null when the
+   * surface/breakline is unknown. Entity-backed memberIds are the resolved
+   * refs (may include unresolvable entries, shown BROKEN, never invented).
+   */
+  describeBreaklineChain?: (_surfaceId: string, _breaklineId: string) => {
+    sourceKind: 'point-chain' | 'entity';
+    memberIds: string[];
+    sourceEntityId: string | null;
+    sourceLabel: string | null;
+  } | null;
+  /**
+   * Phase 18W — resolve refs to live Survey Point coordinates (entity id,
+   * then station id, mirroring collection). Misses carry nulls and read
+   * BROKEN_REFERENCE in the UI; Z is never invented.
+   */
+  describeSurveyPointCoords?: (_refs: readonly string[]) => Array<{
+    ref: string;
+    entityId: string | null;
+    stationId: string;
+    x: number;
+    y: number;
+    z: number | null;
+  }>;
+  /**
+   * Phase 18W — boundary source detail (entity type, XY vertices, parcel
+   * flag, cross-surface shared uses). Null when the entity is unknown.
+   */
+  describeBoundarySourceDetail?: (_sourceEntityId: string) => {
+    entityType: string;
+    label: string;
+    isParcel: boolean;
+    vertices: Array<{ x: number; y: number }>;
+    sharedUses: number;
+    sharedSurfaceIds: string[];
+  } | null;
+  /**
+   * Phase 18W — preflight a boundary vertex-edit candidate through the
+   * engine seam (null = clean). Parcel-backed sources return
+   * PARCEL_REFERENCE_ONLY; the UI never commits those.
+   */
+  preflightBoundaryVertexEdit?: (
+    _surfaceId: string,
+    _sourceEntityId: string,
+    _vertices: ReadonlyArray<{ x: number; y: number }>,
+  ) => string | null;
+  /**
+   * Phase 18W — preflight a create/attach boundary candidate ring
+   * (null = clean). The commit stays one SURFACE_CREATE_BOUNDARY_SOURCE.
+   */
+  preflightBoundaryCandidate?: (
+    _surfaceId: string,
+    _kind: 'outer' | 'void',
+    _ring: ReadonlyArray<{ x: number; y: number }>,
+  ) => string | null;
+  /**
    * Open a survey manager dialog (point-groups preselects a group), or
    * focus the Toolspace survey tab (points). F2F opens the drafting panel.
    */

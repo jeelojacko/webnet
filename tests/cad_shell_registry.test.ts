@@ -6,6 +6,7 @@ import {
   isShellCommandAvailable,
   resolveShellCommandText,
 } from '../src/cad-app/shell/cadCommandRegistry';
+import { consumeDefinitionFocus } from '../src/cad-app/shell/CadSurfaceDefinitionParts';
 import type { CadShellActions, CadWorkspaceSnapshot } from '../src/cad-app/shell/cadShellTypes';
 
 const stubActions = (): CadShellActions & { calls: string[] } => {
@@ -255,5 +256,81 @@ describe('cad shell command registry', () => {
     expect(isShellCommandAvailable(resolveShellCommandText('POINT')!, snapshot, actions)).toBe(false);
     expect(isShellCommandAvailable(undo, snapshot, null)).toBe(false);
     expect(isShellCommandAvailable(undo, null, actions)).toBe(false);
+  });
+});
+
+describe('phase 18W boundary/breakline shell commands', () => {
+  const surfaceSnapshot = (rows: Array<{
+    id: string;
+    breaklines?: Array<{ id: string; kind: string }>;
+    boundaries?: Array<{ kind: 'outer' | 'void'; sourceEntityId: string }>;
+  }>, selectedSurfaceId: string | null = null): CadWorkspaceSnapshot['surface'] =>
+    ({
+      surfaces: rows.map((entry) => ({
+        id: entry.id,
+        definition: {
+          breaklines: (entry.breaklines ?? []).map((breakline) => ({
+            id: breakline.id,
+            name: breakline.id,
+            kind: breakline.kind,
+          })),
+          boundaries: (entry.boundaries ?? []).map((boundary) => ({
+            kind: boundary.kind,
+            sourceEntityId: boundary.sourceEntityId,
+            sourceLabel: boundary.sourceEntityId,
+          })),
+        },
+      })),
+      selectedSurfaceId,
+    }) as unknown as CadWorkspaceSnapshot['surface'];
+
+  it('registers all five commands with the create alias', () => {
+    const keys = new Set(CAD_SHELL_COMMANDS.map((def) => def.key));
+    for (const key of ['SURFBREAKLINE', 'SURFBREAKLINEEDIT', 'SURFBOUNDARY', 'SURFBOUNDARYEDIT', 'SURFBOUNDARYMAKEINDEPENDENT']) {
+      expect(keys.has(key)).toBe(true);
+    }
+    expect(resolveShellCommandText('SURFBOUNDARYCREATE')?.key).toBe('SURFBOUNDARY');
+    expect(resolveShellCommandText('surfboundary')?.key).toBe('SURFBOUNDARY');
+  });
+
+  it('SURFBREAKLINE focuses breakline creation on the acting surface', () => {
+    const actions = stubActions();
+    const snapshot = baseSnapshot({
+      surface: surfaceSnapshot([{ id: 's1' }], 's1'),
+      selectedEntityIds: [],
+    });
+    expect(executeShellCommand(resolveShellCommandText('SURFBREAKLINE')!, actions, snapshot)).toBe(true);
+    expect(actions.calls).toContain('survey:surfaces');
+    expect(consumeDefinitionFocus()).toEqual({ surfaceId: 's1', section: 'breaklines', targetId: '__create' });
+  });
+
+  it('SURFBOUNDARY focuses ring creation; SURFBOUNDARYEDIT focuses the selected source', () => {
+    const actions = stubActions();
+    const snapshot = baseSnapshot({
+      surface: surfaceSnapshot([{ id: 's1', boundaries: [{ kind: 'outer', sourceEntityId: 'e1' }] }], 's1'),
+      selectedEntityIds: ['e1'],
+    });
+    expect(executeShellCommand(resolveShellCommandText('SURFBOUNDARY')!, actions, snapshot)).toBe(true);
+    expect(consumeDefinitionFocus()).toEqual({ surfaceId: 's1', section: 'boundaries', targetId: '__create' });
+    expect(executeShellCommand(resolveShellCommandText('SURFBOUNDARYEDIT')!, actions, snapshot)).toBe(true);
+    expect(consumeDefinitionFocus()).toEqual({ surfaceId: 's1', section: 'boundaries', targetId: 'e1' });
+  });
+
+  it('SURFBOUNDARYMAKEINDEPENDENT commits directly when unambiguous', () => {
+    const actions = stubActions();
+    const snapshot = baseSnapshot({
+      surface: surfaceSnapshot([{ id: 's1', boundaries: [{ kind: 'void', sourceEntityId: 'e9' }] }], 's1'),
+      selectedEntityIds: [],
+    });
+    expect(executeShellCommand(resolveShellCommandText('SURFBOUNDARYMAKEINDEPENDENT')!, actions, snapshot)).toBe(true);
+    expect(actions.calls).toContain('survey-cmd:SURFACE_MAKE_BOUNDARY_INDEPENDENT');
+  });
+
+  it('ambiguous targets fall back to opening the manager', () => {
+    const actions = stubActions();
+    const snapshot = baseSnapshot({ surface: surfaceSnapshot([]) });
+    expect(executeShellCommand(resolveShellCommandText('SURFBREAKLINEEDIT')!, actions, snapshot)).toBe(true);
+    expect(actions.calls).toContain('survey:surfaces');
+    expect(consumeDefinitionFocus()).toBeNull();
   });
 });

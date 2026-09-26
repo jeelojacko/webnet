@@ -546,6 +546,51 @@ const SurfaceDefinitionTree: React.FC<{ row: CadSurfaceRow }> = ({ row }) => {
         </div>
         <details
           className="cad-shell-tree-group"
+          data-cad-surface-breaklines-node={row.id}
+        >
+          <summary>Breaklines ({def.breaklineCount})</summary>
+          <div className="cad-shell-tree-children">
+            {def.breaklineCount === 0 ? (
+              <div className="cad-shell-tree-row cad-shell-empty">No breaklines.</div>
+            ) : (
+              def.breaklines.map((entry) => (
+                <div
+                  key={entry.id}
+                  className="cad-shell-tree-row"
+                  data-cad-surface-breakline={entry.id}
+                  title={entry.kind === 'point-chain' ? 'Point chain' : 'Entity-backed'}
+                >
+                  {entry.name}
+                  <span className="cad-shell-count">{entry.kind === 'point-chain' ? 'chain' : 'entity'}</span>
+                </div>
+              ))
+            )}
+          </div>
+        </details>
+        <details
+          className="cad-shell-tree-group"
+          data-cad-surface-boundaries-node={row.id}
+        >
+          <summary>Boundaries (outer {def.outerBoundaryCount} void {def.voidBoundaryCount})</summary>
+          <div className="cad-shell-tree-children">
+            {def.boundaries.length === 0 ? (
+              <div className="cad-shell-tree-row cad-shell-empty">No boundaries.</div>
+            ) : (
+              def.boundaries.map((entry, index) => (
+                <div
+                  key={`${entry.kind}:${entry.sourceEntityId}:${index}`}
+                  className="cad-shell-tree-row"
+                  data-cad-surface-boundary={entry.sourceEntityId}
+                  title={entry.sourceEntityId}
+                >
+                  {entry.kind === 'outer' ? 'Outer' : 'Void'}: {entry.sourceLabel}
+                </div>
+              ))
+            )}
+          </div>
+        </details>
+        <details
+          className="cad-shell-tree-group"
           open={row.editCount > 0}
           data-cad-surface-edits-node={row.id}
         >
