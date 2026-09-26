@@ -127,6 +127,13 @@ export interface UseSurveyCadWorkspaceResult {
     | 'DIMDIAMETER'
     | 'BDLABEL'
     | 'CURVELABEL'
+    | 'LINETABLE'
+    | 'CURVETABLE'
+    | 'PARCELTABLE'
+    | 'POINTTABLE'
+    | 'PARCELREPORT'
+    | 'PARCELDESC'
+    | 'SURVEYTABLE'
     | 'ARC_3PT'
     | 'ARC_SCE'
     | 'ARC_CSE'
@@ -231,6 +238,12 @@ export interface UseSurveyCadWorkspaceResult {
   startPointCommand: () => void;
   startCogoPointCommand: () => void;
   startLineCommand: () => void;
+  startLineTableCommand: () => void;
+  startCurveTableCommand: () => void;
+  startParcelTableCommand: () => void;
+  startPointTableCommand: () => void;
+  startParcelReportCommand: () => void;
+  startParcelDescCommand: () => void;
   startPolylineCommand: () => void;
   startTraverseCommand: () => void;
   startBatchCogoCommand: () => void;

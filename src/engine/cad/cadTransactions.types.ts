@@ -2,6 +2,12 @@ import type { CadSelectionState } from './cadSelection';
 import type { DraftDocument } from './cadDraftTypes';
 import type { FieldToFinishCadPayload } from '../fieldToFinish/cadGeneration';
 import type { CadBatchCogoDraft } from './cadBatchCogo';
+import type {
+  CadParcelTableCreatePayload,
+  CadSurveyTableCreatePayload,
+  CadSurveyTableEdit,
+  CadSurveyTableStyleCommandPayload,
+} from './cadSurveyTables';
 
 import type { CadAnnotationAnchor } from './annotation/cadAnnotationAnchors';
 import type { HelmertControlPair, HelmertMode } from './cadHelmert2D';
@@ -91,6 +97,14 @@ export type CadCommandKey =
   | 'PARCEL_SPLIT_SLIDE'
   | 'PARCEL_SPLIT_SWING'
   | 'PARCEL_LAYOUT_AUTO'
+  | 'LINETABLE'
+  | 'CURVETABLE'
+  | 'PARCELTABLE'
+  | 'POINTTABLE'
+  | 'PARCELREPORT'
+  | 'PARCELDESC'
+  | 'TABLESTYLE'
+  | 'SURVEYTABLE_EDIT'
   | 'MOVE'
   | 'COPY'
   | 'ROTATE'
@@ -422,6 +436,18 @@ export type CadCommand =
       frontageParcelSegmentIds?: string[] | null;
       tool: 'slide' | 'swing';
       settings: CadParcelLayoutSettings;
+    }
+  | ({ key: 'LINETABLE' } & CadSurveyTableCreatePayload)
+  | ({ key: 'CURVETABLE' } & CadSurveyTableCreatePayload)
+  | ({ key: 'PARCELTABLE' } & CadSurveyTableCreatePayload)
+  | ({ key: 'POINTTABLE' } & CadSurveyTableCreatePayload)
+  | ({ key: 'PARCELREPORT' } & CadParcelTableCreatePayload)
+  | ({ key: 'PARCELDESC' } & CadParcelTableCreatePayload)
+  | ({ key: 'TABLESTYLE' } & CadSurveyTableStyleCommandPayload)
+  | {
+      key: 'SURVEYTABLE_EDIT';
+      tableEntityId: CadEntityId;
+      edit: CadSurveyTableEdit;
     }
   | {
       key: 'MOVE';

@@ -42,6 +42,7 @@ import { cloneFieldToFinishSettings } from '../fieldToFinish/catalogIo';
 import { backfillDrawingCatalog } from '../fieldToFinish/drawingCatalog';
 import { cloneFeatureCatalog } from '../fieldToFinish/featureCatalog';
 import { sanitizeCadBlockReferences } from './cadBlockPersistence';
+import { ensureParcelCourseIds } from './cadParcelCourses';
 import { backfillAnalysisMaps, cloneCadAnalysisMaps } from './cadAnalysisMaps';
 import { backfillAnalysisLegends, cloneCadAnalysisLegends } from './cadAnalysisLegends';
 
@@ -176,6 +177,21 @@ export const cloneCadEntity = (entity: CadEntity): CadEntity => {
         stationEquations: entity.stationEquations?.map((equation) => ({ ...equation })),
         metadata: cloneMetadata(entity.metadata),
       };
+    case 'survey-table':
+      return {
+        ...entity,
+        appearance: cloneAppearance(entity.appearance),
+        rows: entity.rows.map((row) => ({
+          ...row,
+          source: { ...row.source },
+          ...(row.tagOffset != null ? { tagOffset: { ...row.tagOffset } } : {}),
+        })),
+        ...(entity.tagSettings != null ? { tagSettings: { ...entity.tagSettings } } : {}),
+        ...(entity.columnOverrides != null
+          ? { columnOverrides: entity.columnOverrides.map((override) => ({ ...override })) }
+          : {}),
+        metadata: cloneMetadata(entity.metadata),
+      };
     case 'polyline':
     case 'polygon':
     case 'parcel':
@@ -184,6 +200,11 @@ export const cloneCadEntity = (entity: CadEntity): CadEntity => {
         appearance: cloneAppearance(entity.appearance),
         vertices: entity.vertices.map(clonePoint),
         vertexLabels: [...entity.vertexLabels],
+        // Phase 19A: parcel course ids clone as values; absent stays absent
+        // so legacy shape is preserved and load paths own the backfill.
+        ...(entity.type === 'parcel' && entity.courseIds != null
+          ? { courseIds: [...entity.courseIds] }
+          : {}),
         metadata: cloneMetadata(entity.metadata),
       };
   }
@@ -289,6 +310,13 @@ export const cloneCadProject = (project: CadProject): CadProject => ({
   ...(project.analysisLegends != null
     ? { analysisLegends: cloneCadAnalysisLegends(project.analysisLegends) }
     : {}),
+  // Phase 19A: survey table styles stay trailing (key-order rule).
+  ...(project.surveyTableStyles != null
+    ? { surveyTableStyles: project.surveyTableStyles.map((style) => ({ ...style })) }
+    : {}),
+  ...(project.currentSurveyTableStyleId != null
+    ? { currentSurveyTableStyleId: project.currentSurveyTableStyleId }
+    : {}),
 });
 
 const cloneParcelLayoutSettings = (
@@ -363,6 +391,11 @@ export const sanitizeSurveyCadPersistedState = (
       pointGroups: cloneCadPointGroups(backfillCadPointGroups(migrated.pointGroups)),
     }));
     const sanitizedBlocks = sanitizeCadBlockReferences(withStandards);
+    // Phase 19A: deterministic course-id backfill for legacy parcels (no
+    // randomness; save persists them so reopen agrees). Trailing key.
+    const entitiesWithCourses = sanitizedBlocks.project.entities.map((entity) =>
+      entity.type === 'parcel' ? ensureParcelCourseIds(entity) : entity,
+    );
     return {
       ...cloned,
       // Trailing surfaces/styles position matches cloneCadProject
@@ -370,7 +403,7 @@ export const sanitizeSurveyCadPersistedState = (
       // trailing rule for the block library; dangling refs dropped.
       project: {
         ...withStandards,
-        entities: sanitizedBlocks.project.entities,
+        entities: entitiesWithCourses,
         ...(sanitizedBlocks.project.pointStyles != null
           ? { pointStyles: sanitizedBlocks.project.pointStyles }
           : {}),

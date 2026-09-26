@@ -253,6 +253,20 @@ export const transformCadEntityGeometry = (
         },
       };
     }
+    case 'survey-table': {
+      // Phase 19A: ordinary entity under PROJECTTRANSFORM — insertion point
+      // transforms, rotation composes; refs/ids/options are never rewritten.
+      const insertion = applyPoint(transform, { x: entity.x, y: entity.y });
+      return {
+        ok: true,
+        entity: {
+          ...entity,
+          x: insertion.x,
+          y: insertion.y,
+          rotationDeg: normalizeRotationDeg(entity.rotationDeg + classification.rotationDeg),
+        },
+      };
+    }
     case 'mtext': {
       const next = applyPoint(transform, { x: entity.x, y: entity.y });
       // Insertion + rotation compose; Text Style height is never touched.

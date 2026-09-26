@@ -89,6 +89,16 @@ import { volumeCommandDefinitions } from './cadTransactionsVolumeCommands';
 import { analysisCommandDefinitions } from './cadTransactionsAnalysisCommands';
 import { profileCommandDefinitions } from './cadTransactionsProfileCommands';
 import { sectionCommandDefinitions } from './cadTransactionsSectionCommands';
+import {
+  curveTableCommand,
+  lineTableCommand,
+  parcelDescCommand,
+  parcelReportCommand,
+  parcelTableCommand,
+  pointTableCommand,
+  surveyTableEditCommand,
+  tableStyleCommand,
+} from './cadTransactionsSurveyTable';
 export {
   applyCadGripEdit,
   buildCadGripHandles,
@@ -537,6 +547,14 @@ export const CAD_COMMAND_REGISTRY: Record<CadCommandKey, CadCommandDefinition<Ca
   PARCEL_SPLIT_SLIDE: parcelSplitSlideCommand as CadCommandDefinition<CadCommand>,
   PARCEL_SPLIT_SWING: parcelSplitSwingCommand as CadCommandDefinition<CadCommand>,
   PARCEL_LAYOUT_AUTO: parcelLayoutAutoCommand as CadCommandDefinition<CadCommand>,
+  LINETABLE: lineTableCommand as CadCommandDefinition<CadCommand>,
+  CURVETABLE: curveTableCommand as CadCommandDefinition<CadCommand>,
+  PARCELTABLE: parcelTableCommand as CadCommandDefinition<CadCommand>,
+  POINTTABLE: pointTableCommand as CadCommandDefinition<CadCommand>,
+  PARCELREPORT: parcelReportCommand as CadCommandDefinition<CadCommand>,
+  PARCELDESC: parcelDescCommand as CadCommandDefinition<CadCommand>,
+  TABLESTYLE: tableStyleCommand as CadCommandDefinition<CadCommand>,
+  SURVEYTABLE_EDIT: surveyTableEditCommand as CadCommandDefinition<CadCommand>,
   EDIT_ENTITY: editEntityCommand as CadCommandDefinition<CadCommand>,
   MOVE: moveCommand as CadCommandDefinition<CadCommand>,
   COPY: annotationAwareCopyCommand as CadCommandDefinition<CadCommand>,

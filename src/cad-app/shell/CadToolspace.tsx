@@ -7,6 +7,11 @@ import { SurfaceAnalysesNode } from './CadAnalysisToolspace';
 import { SurfaceProfilesNode, ProfileViewsNode } from './CadProfileToolspace';
 import { SampleLineGroupsNode, SectionViewsNode, SectionStylesNode } from './CadSampleLineToolspace';
 import { CadAnnotationToolspaceNodes } from '../annotation/CadAnnotationToolspace';
+import {
+  ParcelSurveyTablesNode,
+  SurveyTableStylesNode,
+  SurveyTablesNode,
+} from './CadSurveyTableToolspace';
 import { composePolicyLabel, type CadSurfaceRow } from './cadSurfaceSnapshot';
 import { cadSurfaceEditStatusText } from './cadSurfaceEditSummaries';
 
@@ -217,6 +222,8 @@ const SurveyTab: React.FC<{ snapshot: CadWorkspaceSnapshot | null; actions: CadS
       ) : null}
       <SurfacesNode snapshot={snapshot} actions={actions} />
       <VolumesNode snapshot={snapshot} actions={actions} />
+      <ParcelSurveyTablesNode snapshot={snapshot} actions={actions} />
+      <SurveyTablesNode snapshot={snapshot} actions={actions} />
       {snapshot ? <SurfaceProfilesNode snapshot={snapshot} actions={actions} /> : null}
       {snapshot ? <ProfileViewsNode snapshot={snapshot} actions={actions} /> : null}
       {snapshot ? <SampleLineGroupsNode snapshot={snapshot} actions={actions} /> : null}
@@ -465,6 +472,7 @@ const SettingsTab: React.FC<{ snapshot: CadWorkspaceSnapshot | null; actions: Ca
       {snapshot ? <SectionStylesNode snapshot={snapshot} actions={actions} /> : null}
       <BlocksNode snapshot={snapshot} actions={actions} />
       <CadAnnotationToolspaceNodes snapshot={snapshot} actions={actions} />
+      <SurveyTableStylesNode snapshot={snapshot} actions={actions} />
       <TreeGroup label="Drawing">
         <div className="cad-shell-tree-row">Units: {snapshot.units}</div>
       </TreeGroup>

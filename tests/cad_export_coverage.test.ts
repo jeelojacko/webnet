@@ -31,6 +31,12 @@ import {
 import { createBlankDraftDocument } from '../src/engine/cad/cadDraftTypes';
 import { addSheetToDraft, addViewportToSheet, createPlanSheet } from '../src/engine/cad/cadSheets';
 import { createTitleBlockTemplate } from '../src/engine/cad/cadSheets';
+import {
+  addCadSurveyTableToDraft,
+  deriveCadSurveyTableFromSource,
+  CAD_SURVEY_TABLE_DXF_DISPOSITION,
+  CAD_SURVEY_TABLE_LANDXML_DISPOSITION,
+} from '../src/engine/cad/cadSurveyExportTables';
 import type { CadEntity, CadProject } from '../src/engine/cad/cadTypes';
 import { buildLandXmlProjectExportWithResult } from '../src/engine/landxmlCad';
 
@@ -369,5 +375,62 @@ describe('cad export coverage matrix (§22)', () => {
     const svg = serializeExportSceneToSvgWithResult(scene.output).output;
     expect(svg).toContain('layer-paper-frame');
     expect(svg).toContain('Cover table');
+  });
+});
+
+describe('cad survey-plan table coverage (§19A)', () => {
+  const buildTables = (project: CadProject) => {
+    const parcel = {
+      layerId: LAYER,
+      visible: true,
+      locked: false,
+      id: 'tbl-parcel',
+      type: 'parcel' as const,
+      parcelName: 'LOT T1',
+      vertices: [{ x: 5000, y: 1000 }, { x: 5020, y: 1000 }, { x: 5020, y: 1020 }, { x: 5000, y: 1020 }],
+      vertexLabels: ['CP1', 'CP2', 'V4', 'V5'],
+    };
+    return [
+      deriveCadSurveyTableFromSource({ kind: 'line', legs: [{ lineId: 'L1', fromId: 'CP1', toId: 'CP2', from: { x: 5000, y: 1000 }, to: { x: 5020, y: 1010 } }] }, project),
+      deriveCadSurveyTableFromSource({ kind: 'curve', curves: [{ curveId: 'C1', radius: 100, deltaDeg: 90, anchor: { x: 5010, y: 1000 } }] }, project),
+      deriveCadSurveyTableFromSource({ kind: 'point', entries: [{ pointId: 'CP1', northing: 1000, easting: 5000, elevation: undefined }] }, project),
+      deriveCadSurveyTableFromSource({ kind: 'parcel-course', parcel }, project),
+      deriveCadSurveyTableFromSource({ kind: 'parcel-summary', parcels: [parcel] }, project),
+    ];
+  };
+
+  it('classifies all 5 table kinds + tags across every format', () => {
+    const project = buildCoverageProject();
+    const { draft, sheetId } = buildDraftWithObjects(project);
+    const tables = buildTables(project);
+    expect(tables.map((table) => table.kind)).toEqual(['line', 'curve', 'point', 'parcel-course', 'parcel-summary']);
+    // Tag anchors present for line/curve/parcel-course kinds.
+    expect(tables[0]!.tagAnchors.map((anchor) => anchor.tag)).toEqual(['L1']);
+    expect(tables[1]!.tagAnchors.map((anchor) => anchor.tag)).toEqual(['C1']);
+    expect(tables[3]!.tagAnchors.map((anchor) => anchor.tag)).toEqual(['L1', 'L2', 'L3', 'L4']);
+    // SVG/PDF: FULL — frame + headings + rows render natively.
+    const placed = addCadSurveyTableToDraft(draft, tables[0]!, { sheetId, paperXmm: 5, paperYmm: 170 });
+    const scene = buildExportSheetSceneWithResult({ draft: placed, sheetId, project });
+    const svg = serializeExportSceneToSvgWithResult(scene.output).output;
+    expect(svg).toContain('Line Table');
+    expect(svg).toContain('Bearing');
+    const pdfText = new TextDecoder().decode(exportScenesToPdfWithResult([scene.output]).output);
+    expect(pdfText).toContain('Line Table');
+    // DXF R12 + R2000: APPROXIMATED_WITH_WARNING (never a native TABLE).
+    const model = buildDxfExportModelWithResult({ project, surveyTables: tables });
+    const laid = buildDxfLayoutTextWithResult({ project, draft: placed, surveyTables: tables });
+    tables.forEach((table) => {
+      expect(model.exportedEntityIds).toContain(table.id);
+      expect(model.approximatedEntityIds).toContain(table.id);
+      expect(laid.exportedEntityIds).toContain(table.id);
+    });
+    expect(model.warnings.filter((warning) => warning.message.includes(CAD_SURVEY_TABLE_DXF_DISPOSITION))).toHaveLength(tables.length);
+    expect(laid.warnings.filter((warning) => warning.message.includes(CAD_SURVEY_TABLE_DXF_DISPOSITION))).toHaveLength(tables.length);
+    // LandXML: NOT_APPLICABLE — explicit per-table warning, no table geometry.
+    const xml = buildLandXmlProjectExportWithResult(project, { units: 'm', projectName: 'Coverage' }, undefined, tables);
+    tables.forEach((table) => {
+      expect(xml.warnings.some((warning) => warning.entityId === table.id && warning.message.includes(CAD_SURVEY_TABLE_LANDXML_DISPOSITION))).toBe(true);
+    });
+    expect(xml.output).not.toContain('Line Table');
   });
 });

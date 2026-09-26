@@ -63,6 +63,8 @@ export const useSurveyCadCommands = ({
   selectedParcelForBearingSplit,
   selectedParcelForAreaSplit,
   selectedStartPointForBatchCogo,
+  selectedEntityIds,
+  surveyPointEntityIdsInStationOrder,
   reverseDirectionModifier,
   applyHistoryUpdate,
   onReportComputation,
@@ -352,6 +354,8 @@ export const useSurveyCadCommands = ({
     selectedParcelForBearingSplit,
     selectedParcelForAreaSplit,
     selectionCount,
+    selectedEntityIds,
+    surveyPointEntityIdsInStationOrder,
   });
 
   return {

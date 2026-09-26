@@ -19,6 +19,11 @@ import {
 import { resolveCadEntityAppearance } from './cadAppearance';
 import { getCadEntityDisplayLabel, getCadEntityEditableName } from './cadEntityNames';
 import {
+  cadSurveyTableKindLabel,
+  defaultCadSurveyTablePrefix,
+  resolveCadSurveyTableStyle,
+} from './cadSurveyTables';
+import {
   CAD_ENTITY_TYPE_LABELS,
   CAD_ENTITY_TYPE_SINGULAR_LABELS,
   layerLabel,
@@ -377,6 +382,24 @@ const buildEntityProperties = (project: CadProject, entity: CadEntity): CadEntit
       );
       rows.push(...vertexRows(entity));
       return rows;
+    case 'survey-table': {
+      const style = resolveCadSurveyTableStyle(project, entity.tableStyleId);
+      rows.push(
+        row('name', 'Name', getCadEntityDisplayLabel(entity)),
+        row('table-title', 'Title', entity.title ?? ''),
+        row('table-kind', 'Kind', cadSurveyTableKindLabel(entity.tableKind)),
+        row('table-style', 'Style', style.name),
+        row('table-rows', 'Rows', `${entity.rows.length}`),
+        row('table-prefix', 'Prefix', entity.prefix ?? defaultCadSurveyTablePrefix(entity.tableKind)),
+        row('table-start', 'Start number', `${entity.startNumber ?? 1}`),
+        row('table-show-header', 'Show header', yesNo(entity.showHeader ?? true)),
+        row('table-show-title', 'Show title', yesNo(entity.showTitle ?? true)),
+        row('table-show-tags', 'Show tags', yesNo(entity.tagSettings?.showTags ?? false)),
+        row('table-insertion', 'Insertion', `${numeric(entity.x)}, ${numeric(entity.y)}`),
+        row('table-rotation', 'Rotation', numeric(entity.rotationDeg, 4)),
+      );
+      return rows;
+    }
     case 'arc': {
       const start = cadPointOnCircle({ x: entity.centerX, y: entity.centerY }, entity.radius, entity.startAngleDeg);
       const end = cadPointOnCircle({ x: entity.centerX, y: entity.centerY }, entity.radius, entity.endAngleDeg);

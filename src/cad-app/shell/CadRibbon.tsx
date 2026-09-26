@@ -447,6 +447,40 @@ const CadSurveyGroup: React.FC<{
         ))}
       </div>
     </div>
+    <div className="cad-shell-ribbon-group" aria-label="Tables">
+      <span className="cad-shell-ribbon-group-label">Tables</span>
+      <div className="cad-shell-ribbon-buttons">
+        {SURVEY_TABLE_RIBBON_KEYS.map((key) => {
+          const def = CAD_SHELL_COMMANDS.find((entry) => entry.key === key) ?? null;
+          return (
+            <button
+              key={key}
+              type="button"
+              title={def?.hint ?? key}
+              aria-label={def?.label ?? key}
+              disabled={def == null || !snapshot || !actions || !isShellCommandAvailable(def, snapshot, actions)}
+              className="cad-shell-ribbon-button"
+              onClick={() => {
+                if (def != null) executeShellCommand(def, actions, snapshot);
+              }}
+              data-cad-table-command={key}
+            >
+              {def?.label ?? key}
+            </button>
+          );
+        })}
+      </div>
+    </div>
     </>
   );
 };
+
+const SURVEY_TABLE_RIBBON_KEYS = [
+  'LINETABLE',
+  'CURVETABLE',
+  'PARCELTABLE',
+  'POINTTABLE',
+  'PARCELREPORT',
+  'PARCELDESC',
+  'TABLESTYLE',
+] as const;

@@ -89,6 +89,10 @@ export const buildCommandPreview = ({
         kind: 'point',
         point: { x: previewPoint.x, y: previewPoint.y },
       };
+    case 'SURVEYTABLE':
+      return previewPoint
+        ? { kind: 'point', point: { x: previewPoint.x, y: previewPoint.y } }
+        : null;
     case 'COGO_POINT':
     case 'LINE':
     case 'INVERSE':

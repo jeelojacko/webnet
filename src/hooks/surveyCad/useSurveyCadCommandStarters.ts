@@ -1,5 +1,4 @@
 import type {
-  CadAlignmentEntity,
   CadArcEntity,
 } from '../../engine/cad/cadTypes';
 import type { CommandSession } from './useSurveyCadCommandTypes';
@@ -41,6 +40,8 @@ export const useSurveyCadCommandStarters = ({
   selectedParcelForBearingSplit,
   selectedParcelForAreaSplit,
   selectionCount,
+  selectedEntityIds = [],
+  surveyPointEntityIdsInStationOrder = [],
 }: BuildSurveyCadCommandStartersOptions): SurveyCadCommandStarters => ({
   startPointCommand: () => beginSession({ key: 'POINT', inputValue: '' }),
   startCogoPointCommand: () =>
@@ -374,6 +375,76 @@ export const useSurveyCadCommandStarters = ({
       inputValue: '',
       startPoint: basePoint,
       sourceEntityIds,
+    });
+  },
+  startLineTableCommand: () => {
+    if (selectedEntityIds.length === 0) return;
+    beginSession({
+      key: 'SURVEYTABLE',
+      inputValue: '',
+      engineKey: 'LINETABLE',
+      tableKind: 'line',
+      sourceEntityIds: selectedEntityIds,
+      insertion: null,
+    });
+  },
+  startCurveTableCommand: () => {
+    if (selectedEntityIds.length === 0) return;
+    beginSession({
+      key: 'SURVEYTABLE',
+      inputValue: '',
+      engineKey: 'CURVETABLE',
+      tableKind: 'curve',
+      sourceEntityIds: selectedEntityIds,
+      insertion: null,
+    });
+  },
+  startParcelTableCommand: () => {
+    if (selectedEntityIds.length === 0) return;
+    beginSession({
+      key: 'SURVEYTABLE',
+      inputValue: '',
+      engineKey: 'PARCELTABLE',
+      tableKind: 'parcel-course',
+      sourceEntityIds: selectedEntityIds,
+      insertion: null,
+    });
+  },
+  startPointTableCommand: () => {
+    const sourceEntityIds =
+      selectedEntityIds.length > 0 ? selectedEntityIds : surveyPointEntityIdsInStationOrder;
+    if (sourceEntityIds.length === 0) return;
+    beginSession({
+      key: 'SURVEYTABLE',
+      inputValue: '',
+      engineKey: 'POINTTABLE',
+      tableKind: 'point',
+      sourceEntityIds,
+      insertion: null,
+    });
+  },
+  startParcelReportCommand: () => {
+    const parcelEntityId = selectedEntityIds[0];
+    if (parcelEntityId == null) return;
+    beginSession({
+      key: 'SURVEYTABLE',
+      inputValue: '',
+      engineKey: 'PARCELREPORT',
+      tableKind: 'parcel-summary',
+      sourceEntityIds: [parcelEntityId],
+      insertion: null,
+    });
+  },
+  startParcelDescCommand: () => {
+    const parcelEntityId = selectedEntityIds[0];
+    if (parcelEntityId == null) return;
+    beginSession({
+      key: 'SURVEYTABLE',
+      inputValue: '',
+      engineKey: 'PARCELDESC',
+      tableKind: 'parcel-course',
+      sourceEntityIds: [parcelEntityId],
+      insertion: null,
     });
   },
 });

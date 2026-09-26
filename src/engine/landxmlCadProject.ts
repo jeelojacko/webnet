@@ -20,6 +20,10 @@ import {
 } from './landxmlCivilSource';
 import { finalizeExportResult, type ExportResult, type ExportWarning } from './cad/exportResult';
 import { ANALYSIS_LANDXML_DISPOSITION } from './cad/cadAnalysisExportScene';
+import {
+  CAD_SURVEY_TABLE_LANDXML_DISPOSITION,
+  type CadSurveyTable,
+} from './cad/cadSurveyExportTables';
 import type {
   CadLandXmlAlignment,
   CadLandXmlCurve,
@@ -363,9 +367,20 @@ export const buildLandXmlProjectExportWithResult = (
   project: CadProject,
   settings: CadLandXmlSettings,
   civilSources?: CadLandXmlCivilSources,
+  surveyTables?: readonly CadSurveyTable[],
 ): CadLandXmlProjectExportResult => {
   const acc = newProjectAccum();
   convertEntities(project, acc);
+  // Phase 19A: survey tables are paper deliverables with no LandXML 1.2
+  // representation. NOT_APPLICABLE: explicit per-table warning, no geometry,
+  // while the underlying parcel/point contracts stay unchanged.
+  (surveyTables ?? []).forEach((table) => {
+    acc.warnings.push({
+      code: 'SKIPPED_ENTITY',
+      message: `survey table ${table.id} (${table.title}) ${CAD_SURVEY_TABLE_LANDXML_DISPOSITION}`,
+      entityId: table.id,
+    });
+  });
   // Phase 18U: analysis maps are presentation/derived geometry (band fills +
   // legends) with no LandXML 1.2 representation. They are NOT_APPLICABLE:
   // explicit per-map warnings, no geometry, while the underlying CURRENT TIN

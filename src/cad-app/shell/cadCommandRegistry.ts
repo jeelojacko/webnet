@@ -224,6 +224,11 @@ export const CAD_SHELL_COMMANDS: CadShellCommandDef[] = [
   // Parcel
   session('PARCEL_SPLIT_BEARING', 'Split by Bearing', 'Parcel', 'Split a parcel by bearing.'),
   session('PARCEL_SPLIT_AREA', 'Split by Area', 'Parcel', 'Split a parcel by target area.'),
+  // Phase 19A — parcel report/description tables (select a parcel, then pick
+  // the table insertion point; one CREATE transaction each).
+  session('PARCELTABLE', 'Parcel Table', 'Parcel', 'Create a parcel course table from the selected parcel.', ['PARCELCOURSETABLE']),
+  session('PARCELREPORT', 'Parcel Report', 'Parcel', 'Create a parcel summary report table from the selected parcel.', ['PARCELSUMMARYTABLE']),
+  session('PARCELDESC', 'Parcel Description', 'Parcel', 'Create a parcel description (course) table from the selected parcel.', ['PARCELDESCRIPTION']),
   // Edit chrome actions (no aliases; shortcuts mirror the workspace keyboard)
   action('SHELL_UNDO', 'Undo', 'Edit', 'Undo the last change.', 'Ctrl+Z'),
   action('SHELL_REDO', 'Redo', 'Edit', 'Redo the undone change.', 'Ctrl+Y'),
@@ -356,6 +361,11 @@ export const CAD_SHELL_COMMANDS: CadShellCommandDef[] = [
   annotation('DIMSTYLE', 'Dimension Styles', 'Edit dimension styles.'),
   annotation('LEADERSTYLE', 'Leader Styles', 'Edit leader styles.'),
   annotation('SURVEYLABELSTYLE', 'Survey Label Styles', 'Edit bearing and curve label styles.', ['SLS']),
+  // Phase 19A — TABLES group creation commands + style manager entry.
+  annotation('LINETABLE', 'Line Table', 'Create a line annotation table from the selected lines (pick insertion).', ['LT']),
+  annotation('CURVETABLE', 'Curve Table', 'Create a curve annotation table from the selected arcs (pick insertion).', ['CT']),
+  annotation('POINTTABLE', 'Point Table', 'Create a point table from the selection (else Station ID order).', ['PT']),
+  action('TABLESTYLE', 'Survey Table Styles', 'Annotate', 'Edit survey table styles (rows, padding, borders, text).', undefined, ['TABLESTYLES']),
 ];
 
 const COMMAND_BY_KEY = new Map<string, CadShellCommandDef>(
@@ -620,6 +630,10 @@ export const executeShellCommand = (
     case 'SECTIONVIEW':
     case 'SECTIONREBUILD':
       actions.openSurveyManager('sections');
+      return true;
+    case 'TABLESTYLE':
+      if (actions.openSurveyTableManager == null) return false;
+      actions.openSurveyTableManager();
       return true;
     default:
       return false;

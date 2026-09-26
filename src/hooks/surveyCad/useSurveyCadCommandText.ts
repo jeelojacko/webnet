@@ -351,6 +351,11 @@ export const promptForSession = (session: CommandSession | null, fallbackStatus:
       return session.resultText ?? 'BDLABEL active. Click a line to label, then Esc to commit.';
     case 'CURVELABEL':
       return session.resultText ?? 'CURVELABEL active. Click an arc to label.';
+    case 'SURVEYTABLE':
+      return session.resultText ??
+        (session.insertion
+          ? 'SURVEYTABLE insertion captured.'
+          : 'SURVEYTABLE active. Click the table insertion point.');
   }
 };
 

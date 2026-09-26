@@ -129,7 +129,18 @@ describe('18W WNCAD roundtrip', () => {
     const boundary = afterSurface.definition.boundaries![0]!;
     expect(boundary.type).toBe('outer');
     expect(boundary.sourceEntityId).not.toBe('parcel-1');
-    expect(JSON.stringify(reopened.entities.find((e) => e.id === 'parcel-1'))).toBe(parcelBefore);
+    // Phase 19A: reopen backfills deterministic course ids on legacy parcels;
+    // geometry is otherwise byte-identical (courseIds trails, as persisted).
+    const parcelBeforeWithCourses = JSON.stringify({
+      ...JSON.parse(parcelBefore),
+      courseIds: [
+        'parcel-course:parcel-1:0',
+        'parcel-course:parcel-1:1',
+        'parcel-course:parcel-1:2',
+        'parcel-course:parcel-1:3',
+      ],
+    });
+    expect(JSON.stringify(reopened.entities.find((e) => e.id === 'parcel-1'))).toBe(parcelBeforeWithCourses);
     const copy = reopened.entities.find((e) => e.id === boundary.sourceEntityId)!;
     expect(copy.type).toBe('polygon');
     // Equivalent rebuild across the roundtrip.

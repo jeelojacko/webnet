@@ -1,9 +1,9 @@
 import { useMemo } from 'react';
 import {
-  cadBuildParcelReportSummary,
   cadBuildParcelSourceDraft,
   isCadLineLikeEntity,
 } from '../../engine/cad/cadCogo';
+import { buildParcelCourseReportSummary } from '../../engine/cad/cadParcelCourses';
 import { cadBuildAlignmentDraft } from '../../engine/cad/cadAlignment';
 import { getSelectedCadEntities } from '../../engine/cad/cadSelection';
 import { buildCadPropertiesPanelState } from '../../engine/cad/cadProperties';
@@ -127,11 +127,9 @@ export const useSurveyCadSelectionDerivations = ({
   const selectedParcelReport = useMemo(() => {
     const selectedParcel = selectedEntities.find((entity) => entity.type === 'parcel');
     if (!selectedParcel || selectedParcel.type !== 'parcel') return null;
-    return cadBuildParcelReportSummary({
-      parcelName: selectedParcel.parcelName,
-      vertices: selectedParcel.vertices,
-      vertexLabels: selectedParcel.vertexLabels,
-    });
+    // Phase 19A: live course report derives from the authoritative course
+    // resolver (same values, stable course identity underneath).
+    return buildParcelCourseReportSummary(selectedParcel);
   }, [selectedEntities]);
   const propertiesPanelState = useMemo(
     () => buildCadPropertiesPanelState(cadProject, selectedEntities),

@@ -32,6 +32,18 @@ const ANNOTATE_RIBBON_GROUPS: AnnotateGroupSpec[] = [
     keys: ['DIM', 'DIMLINEAR', 'DIMALIGNED', 'DIMANGULAR', 'DIMRADIUS', 'DIMDIAMETER'],
   },
   { label: 'Survey Labels', keys: ['BDLABEL', 'CURVELABEL'] },
+  {
+    label: 'Tables',
+    keys: [
+      'LINETABLE',
+      'CURVETABLE',
+      'PARCELTABLE',
+      'POINTTABLE',
+      'PARCELREPORT',
+      'PARCELDESC',
+      'TABLESTYLE',
+    ],
+  },
   { label: 'Styles', keys: ['TEXTSTYLE', 'DIMSTYLE', 'LEADERSTYLE', 'SURVEYLABELSTYLE'] },
 ];
 

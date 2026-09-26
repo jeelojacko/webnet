@@ -168,6 +168,66 @@ const handlePolylineOrTraversePointPick = ({
   return true;
 };
 
+const handleSurveyTablePointPick = ({
+  applyHistoryUpdate,
+  current,
+  point,
+  replaceSession,
+}: Pick<
+  HandleSurveyCadConsumePointOptions,
+  'applyHistoryUpdate' | 'current' | 'point' | 'replaceSession'
+>): boolean => {
+  if (current.key !== 'SURVEYTABLE') return false;
+  const { engineKey, sourceEntityIds } = current;
+  applyHistoryUpdate((existing) => {
+    switch (engineKey) {
+      case 'LINETABLE':
+        return runCadCommand(existing, {
+          key: 'LINETABLE',
+          insertX: point.x,
+          insertY: point.y,
+          sourceEntityIds,
+        });
+      case 'CURVETABLE':
+        return runCadCommand(existing, {
+          key: 'CURVETABLE',
+          insertX: point.x,
+          insertY: point.y,
+          sourceEntityIds,
+        });
+      case 'PARCELTABLE':
+        return runCadCommand(existing, {
+          key: 'PARCELTABLE',
+          insertX: point.x,
+          insertY: point.y,
+          sourceEntityIds,
+        });
+      case 'POINTTABLE':
+        return runCadCommand(existing, {
+          key: 'POINTTABLE',
+          insertX: point.x,
+          insertY: point.y,
+          sourceEntityIds,
+        });
+      case 'PARCELREPORT':
+      case 'PARCELDESC': {
+        const parcelEntityId = sourceEntityIds[0];
+        if (parcelEntityId == null) return existing;
+        return runCadCommand(existing, {
+          key: engineKey,
+          parcelEntityId,
+          insertX: point.x,
+          insertY: point.y,
+        });
+      }
+      default:
+        return existing;
+    }
+  });
+  replaceSession(null);
+  return true;
+};
+
 export const handleSurveyCadConsumePoint = (
   options: HandleSurveyCadConsumePointOptions,
 ): void => {
@@ -248,6 +308,7 @@ export const handleSurveyCadConsumePoint = (
     handleLinePointPick(options) ||
     handleSurveyCadEditPointPick(options) ||
     handleSurveyCadParcelSplitPointPick({ current, point, replaceSession }) ||
+    handleSurveyTablePointPick({ applyHistoryUpdate, current, point, replaceSession }) ||
     handleInversePointPick(options)
   ) {
     return;

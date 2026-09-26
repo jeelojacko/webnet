@@ -19,6 +19,7 @@ import {
   serializeCadDrawingFile,
 } from '../src/engine/cad/cadDrawingFile';
 import { solveHelmert2D, type HelmertControlPair } from '../src/engine/cad/cadHelmert2D';
+import { buildParcelCourseIds } from '../src/engine/cad/cadParcelCourses';
 import { applyPoint } from '../src/engine/cad/cadTransform2D';
 import { applyCadSelectionTransform } from '../src/engine/cad/cadTransformApply';
 import {
@@ -306,6 +307,9 @@ describe('wncad round-trip after transforms (18Q)', () => {
         ...base, id: 'p1', type: 'parcel', parcelName: 'Lot 1',
         vertices: [{ x: 0, y: 0 }, { x: 10, y: 0 }, { x: 10, y: 10 }, { x: 0, y: 10 }],
         vertexLabels: ['A', 'B', 'C', 'D'],
+        // Phase 19A: parse backfills deterministic course ids; the fixture
+        // carries them so the reopened entity compares identical.
+        courseIds: buildParcelCourseIds('p1', 4),
       },
       {
         ...base, id: 'b1', type: 'block-reference', blockDefinitionId: 'blk',

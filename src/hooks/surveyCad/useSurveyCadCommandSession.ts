@@ -77,6 +77,7 @@ export const sessionExpectsPointPick = (session: CommandSession | null): boolean
   switch (session.key) {
     case 'POINT':
     case 'COGO_POINT':
+    case 'SURVEYTABLE':
     case 'LINE':
     case 'INVERSE':
     case 'BEARING_REPORT':

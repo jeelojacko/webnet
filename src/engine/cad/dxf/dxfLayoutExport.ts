@@ -57,8 +57,10 @@ export interface BuildDxfLayoutArgs {
   project: CadProject;
   draft: DraftDocument;
   modelLabels?: ModelLabelPlacement[];
-  /** Shared paper extras (north arrow, scale bar) in scene mm, top-left origin. */
+  /** Paper extras (north arrow, scale bar) in scene mm, top-left origin. */
   paperExtras?: ExportItem[];
+  /** Phase 19A: opt-in survey tables (model-space approximation, warned). */
+  surveyTables?: readonly import('../cadSurveyExportTables').CadSurveyTable[];
   /** Phase 18U analysis boundaries + legend, forwarded to the model-space builder. */
   analysis?: CadAnalysisExportInput;
 }
@@ -314,7 +316,7 @@ const buildDxfLayoutInner = (args: BuildDxfLayoutArgs): DxfLayoutInner => {
     return handle;
   };
 
-  const modelResult = buildDxfExportModelWithResult({ project: args.project, modelLabels: args.modelLabels, analysis: args.analysis });
+  const modelResult = buildDxfExportModelWithResult({ project: args.project, modelLabels: args.modelLabels, surveyTables: args.surveyTables, analysis: args.analysis });
   const model = modelResult.output;
   const paperLayers = new Set<string>();
   const takenNames = new Set<string>(['model']);

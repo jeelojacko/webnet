@@ -13,6 +13,7 @@ import type { CadAnalysisExportInput } from './cadAnalysisExportScene';
 import { serializeExportSceneToSvgWithResult } from './cadSvgSerializer';
 import { exportScenesToPdfWithResult } from './cadPdfExport';
 import { buildDxfLayoutTextWithResult, buildDxfModelSpaceTextWithResult } from './dxf/dxfLayoutExport';
+import { collectCadSurveyTablesForExport } from './cadSurveyExportTables';
 import { buildLandXmlProjectExportWithResult } from '../landxmlCad';
 import type { CadLandXmlCivilSources } from '../landxmlCivilSource';
 import { buildLandXmlClassSummary, type ExportCenterClassSummary } from './landxmlExportSummary';
@@ -328,7 +329,11 @@ const describeDxfR12 = (drawing: CadDrawingDocument, analysis?: CadAnalysisExpor
   // Result-aware path: model + serializer warnings (unknown linetypes,
   // R12 lineweights) surface pre-download; the payload is the downloaded
   // bytes exactly.
-  const result = buildDxfModelSpaceTextWithResult({ project: drawing.project, analysis });
+  const result = buildDxfModelSpaceTextWithResult({
+    project: drawing.project,
+    analysis,
+    surveyTables: collectCadSurveyTablesForExport(drawing.project),
+  });
   return {
     ok: true,
     preview: {
@@ -354,7 +359,12 @@ const describeDxfR2000 = (drawing: CadDrawingDocument, analysis?: CadAnalysisExp
   }
   // WithResult path: model warnings/dispositions plus mapped paper
   // warnings surface pre-download; the payload is the downloaded bytes.
-  const result = buildDxfLayoutTextWithResult({ project: drawing.project, draft: drawing.draft, analysis });
+  const result = buildDxfLayoutTextWithResult({
+    project: drawing.project,
+    draft: drawing.draft,
+    analysis,
+    surveyTables: collectCadSurveyTablesForExport(drawing.project),
+  });
   return {
     ok: true,
     preview: {
@@ -389,6 +399,7 @@ const describeLandxml = (
       projectName: drawing.project.name,
     },
     civilSources,
+    collectCadSurveyTablesForExport(drawing.project),
   );
   if (result.exportedEntityIds.length === 0) {
     return { ok: false, message: 'No exportable geometry. Import or draw points first.' };
