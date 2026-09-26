@@ -106,6 +106,16 @@ export const CadApplicationShell: React.FC<CadApplicationShellProps> = ({ contro
     sheetHist.commit(next, options);
   }, [sheetHist]);
 
+  // Round 3F — the model-space DraftingPanel edits draft-only data through
+  // the same shell-owned history, so model undo/redo survives and the edit
+  // is undoable on sheet tabs.
+  useEffect(() => {
+    link.requestDraftCommit = (next) => commitDraft(next);
+    return () => {
+      link.requestDraftCommit = null;
+    };
+  }, [link, commitDraft]);
+
   // Undo routing: model space → model history, sheet space → sheet history.
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent): void => {

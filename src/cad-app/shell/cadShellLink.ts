@@ -1,4 +1,5 @@
 import { useSyncExternalStore } from 'react';
+import type { DraftDocument } from '../../engine/cad/cadDraftTypes';
 import type {
   CadCursorPoint,
   CadShellActions,
@@ -51,6 +52,13 @@ export interface CadShellLink {
    * nodes open the survey table manager through it.
    */
   requestSurveyTableManager: (() => void) | null;
+  /**
+   * Phase 19B Round 3F — set by the shell so the workspace's draft-only
+   * editors (title-block templates, sheet objects) commit through the
+   * shell-owned Draft history instead of replaceCadProject, which wipes
+   * model undo/redo. Null when no shell is mounted (fallback path).
+   */
+  requestDraftCommit: ((_next: DraftDocument) => void) | null;
 }
 
 const countsEqual = (
@@ -186,6 +194,7 @@ export const createCadShellLink = (): CadShellLink => {
     requestBlockManager: null,
     requestAnnotationManager: null,
     requestSurveyTableManager: null,
+    requestDraftCommit: null,
   };
 };
 

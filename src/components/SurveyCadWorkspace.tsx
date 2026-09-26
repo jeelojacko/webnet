@@ -2450,6 +2450,16 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
               void cadWorkspace.runLayerCommand({ key: 'LAYER_SET_CURRENT', layerId });
             }}
             onDraftChange={(draft) => {
+              // Round 3F — draft-only edits are not model transactions. Route
+              // them through the shell-owned Draft history so the model
+              // undo/redo stacks survive (and the edit stays undoable on
+              // sheet tabs). Standalone/no-shell falls back to the legacy
+              // full-replace path.
+              if (shellLink?.requestDraftCommit) {
+                shellLink.requestDraftCommit(draft);
+                setFileStatusText('Updated title block template.');
+                return;
+              }
               replaceActiveDrawing({ ...activeDrawing, draft }, 'Updated title block template.');
             }}
             onClose={() => setDraftingPanelOpen(false)}

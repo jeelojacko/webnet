@@ -86,6 +86,7 @@ export const EVIDENCE_TESTS = [
   'tests/evidence/phase18w_definition_perf.test.ts',
   'tests/evidence/phase18y_compose_perf.test.ts',
   'tests/evidence/phase18z_compose_perf.test.ts',
+  'tests/evidence/phase19b_sheet_layout_performance.test.ts',
 ] as const;
 
 /** Fast automatic release-certification gate (committed-report verdict). */

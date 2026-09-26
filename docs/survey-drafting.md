@@ -19,6 +19,15 @@ only reads model geometry and never writes back to it.
   so large-grid coordinates (E ≈ 2.4M, N ≈ 7.4M) lose nothing to float
   cancellation in the sheet scene. DXF keeps full large-grid model
   coordinates (serialised to 3 decimals, i.e. mm).
+- **Model/Layout tabs** mirror this split (Phase 19B). The shell keeps one
+  active layout (`MODEL` or `{sheetId}`, session-only, never persisted) and
+  swaps the model workspace for the sheet workspace on a layout tab.
+  Model-space ribbon/menu/dock commands are gated off on layout tabs (the
+  paper context menu says so), and **Undo/Redo route by active space**:
+  MODEL → the model history, layout → the shell-owned Draft history
+  (`useDraftSheetHistory`). Draft-only edits — title-block templates,
+  sheet/viewport/paper-object properties, page setup — commit through the
+  Draft history and never clear or push onto the model undo/redo stacks.
 
 ## Labels: derivation, provenance, overrides
 
@@ -54,18 +63,33 @@ linked to the viewport denominator and are rotation-invariant (pure paper
 geometry). The sheet preview renders the same north-up frame as SVG/PDF;
 the viewport clip stays an axis-aligned paper rect under rotation.
 
+North arrows and scale bars are **explicit persisted paper objects**
+(Phase 19B): a `north-arrow` / `scale-bar` entry on the sheet, linked to
+its viewport, carries the paper position, size/divisions, and drawing-unit
+`modelPerDivision`. The same canonical builders feed the screen workspace
+and every export, so there is no preview-vs-export split. `modelPerDivision`
+is in the drawing's own units (metres or feet), never assumed metres.
+
 ## Title-block tokens
 
-Bounded token set: `{PROJECT_NAME}`, `{SHEET_NAME}`, `{SHEET_NUMBER}`,
-`{SCALE}`, `{CRS}`, `{DATE}`. Unknown tokens are kept literal and reported
-as `UNKNOWN_TOKEN` warnings. Multi-sheet order is the explicit sheet array
-order, which also sets PDF page order and sheet numbering.
+Bounded token set (11): `{PROJECT_NAME}`, `{PROJECT_NUMBER}`,
+`{SHEET_NAME}`, `{SHEET_NUMBER}`, `{SCALE}`, `{CRS}`, `{DATE}`,
+`{DRAWN_BY}`, `{CHECKED_BY}`, `{CLIENT}`, `{LOCATION}`. `{SCALE}` is the
+viewport list: one viewport renders `1:N`, multiple viewports render a
+deterministic comma-separated list (`1:500, 1:1000`) so multi-scale sheets
+are honest rather than ambiguous. Per-sheet instance values live on the
+sheet (`titleBlockFields`) and override the drawing-global context for that
+sheet only, so shared template geometry stays shared while `DRAWN_BY` /
+`CHECKED_BY` / `CLIENT` / `LOCATION` vary per sheet. Unknown tokens are
+kept literal and reported as `UNKNOWN_TOKEN` warnings. Multi-sheet order is
+the explicit sheet array order, which also sets PDF page order and sheet
+numbering.
 
 ## Export scope (SVG / PDF / DXF)
 
-- One canonical paper-space scene (`buildExportSheetScene`) feeds the
-  screen preview, the SVG serializer, and the PDF adapter, so the three
-  agree by construction. Curve fixtures pin this numerically across all
+- One canonical paper-space scene (`deriveSheetScene`) feeds the screen
+  preview, the SVG serializer, the PDF adapter, and the R2000 layout DXF,
+  so all four agree by construction. Curve fixtures pin this numerically across all
   three deliverables in `tests/cad_draft_integration.test.ts`.
 - **SVG** is the canonical paper deliverable (mm, viewport clips as
   `clipPath`). **PDF** is a hand-rolled vector adapter: page size equals
@@ -153,13 +177,43 @@ Labels carry placement state `AUTO`/`MANUAL` (legacy `AUTO_GENERATED`/`MANUAL_OV
   import stages as a single draft transaction. Pinned by
   `tests/cad_draft_polish_integration.test.ts` (11 tests).
 
+## 19B professional sheet/layout
+
+- **Canonical scene.** `deriveSheetScene` is the single geometry source for
+the screen, SVG, PDF, and R2000 layout DXF (§106); `cadSheetScene.ts` owns
+the paper-object/title builders it orchestrates over.
+- **Explicit deliverables.** North arrow, scale bar, and plan notes are
+persisted paper objects (`north-arrow` / `scale-bar` / `plan-note` on the
+sheet, `viewportId`-linked where relevant), edited through the Paper/Sheet
+properties panels and the sheet workspace. Grid-north only; the arrow angle
+is viewport rotation plus the object offset.
+- **Templates are snapshots.** A sheet template is a recipe;
+`createSheetFromTemplate` deep-copies it with fresh stable ids. Later
+template edits never change sheets created earlier, and templates carry no
+back-reference from sheets (deletion is plain recipe removal).
+- **Annotation scale is a single drawing-wide denominator (§39).** There is
+no per-viewport annotation scale and no annotative flag: a 1:A annotation in
+a 1:N viewport plots at `A/N` of its nominal paper size. This is the honest
+single-scale policy; multi-scale contexts are deferred rather than faked.
+- **Per-sheet title-block instance values** (`sheet.titleBlockFields`)
+persist with the sheet and override the drawing-global token context for
+that sheet only; shared template geometry is never duplicated.
+- **Export scope.** SVG/PDF render every sheet (all-sheet PDF in sheet
+order); layout DXF writes one named LAYOUT per sheet; R12 stays
+model-space-only and LandXML stays presentation-blind. Viewport frames plot
+only when `plotFrame` is not `false`.
+- **Save/reopen oracle.** 3 sheets with mixed scales/rotations, title
+blocks + instance fields, north arrows, scale bars, notes, and layer
+overrides round-trip exactly through `.wncad` with no drift and no false
+broken references (`tests/cad_draft_integration.test.ts`).
+
 ## Sample
 
 `public/examples/survey_plan_sample.wncad`: adjusted + COGO points, one
 parcel, one curve, anchored course/point/curve/area labels, one ISO A3
 sheet with a 1:500 viewport, a tokenised title block, and a plan note.
-North arrow, scale bar, and the coordinate table are derived at export
-time and pinned by the sample test.
+North arrow, scale bar, and the coordinate table are explicit sheet
+objects / derived items pinned by the sample test.
 
 ## Legal disclaimer
 
