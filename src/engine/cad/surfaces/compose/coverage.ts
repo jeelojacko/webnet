@@ -136,6 +136,35 @@ export const locateInMesh = (view: ComposeMeshView, x: number, y: number): Locat
   return scan(view.triangles.map((_, index) => index));
 };
 
+/**
+ * Cell-local locate for the compose hot path: exact source-vertex hit,
+ * then the query cell plus its 3x3 neighbours — never the whole-view
+ * fallback scan. Equivalent to locateInMesh: any triangle containing
+ * (x, y) within the weight tolerance has its bbox within ~1e-9 of the
+ * query, hence inside the 3x3 neighbourhood (cell size >> 1e-9); anything
+ * farther away cannot contain it. The lowest-index win is
+ * order-independent, so results match the full scan exactly.
+ */
+export const locateInMeshFast = (view: ComposeMeshView, x: number, y: number): LocatedPoint | null => {
+  const exact = view.vertexIndex.get(keyOf(x, y));
+  if (exact !== undefined) return { tri: -1, z: view.points[exact]!.z };
+  const cx = Math.floor((x - view.minX) / view.cellSize);
+  const cy = Math.floor((y - view.minY) / view.cellSize);
+  let best: LocatedPoint | null = null;
+  for (let ix = cx - 1; ix <= cx + 1; ix += 1) {
+    for (let iy = cy - 1; iy <= cy + 1; iy += 1) {
+      const list = view.cells.get(`${ix},${iy}`);
+      if (!list) continue;
+      for (const index of list) {
+        const z = triangleZAt(view, index, x, y);
+        if (z == null) continue;
+        if (best == null || index < best.tri) best = { tri: index, z };
+      }
+    }
+  }
+  return best;
+};
+
 /** Planimetric (XY) area of the retained domain. */
 export const meshPlanimetricArea = (view: ComposeMeshView): number => {
   let area = 0;
