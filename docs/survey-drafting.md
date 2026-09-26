@@ -1,4 +1,4 @@
-# Survey drafting + deliverables (Phase 13B + 13C polish)
+# Survey drafting + deliverables (Phase 13B + 13C polish + 19B professional sheets)
 
 Plan-production layer over the Survey CAD model: paper-space sheets with
 scaled viewports, derived labels and tables, and SVG/PDF/DXF deliverables.
@@ -212,8 +212,10 @@ broken references (`tests/cad_draft_integration.test.ts`).
 `public/examples/survey_plan_sample.wncad`: adjusted + COGO points, one
 parcel, one curve, anchored course/point/curve/area labels, one ISO A3
 sheet with a 1:500 viewport, a tokenised title block, and a plan note.
-North arrow, scale bar, and the coordinate table are explicit sheet
-objects / derived items pinned by the sample test.
+North arrow and scale bar are explicit paper objects a user adds from the
+Paper properties panel (Phase 19B); the coordinate table is derived at
+export time. The committed sample carries a tokenised title block and a
+plan note, and its deliverables are pinned by the sample test.
 
 ## Legal disclaimer
 
