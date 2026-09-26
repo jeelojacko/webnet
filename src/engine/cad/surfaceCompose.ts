@@ -34,7 +34,7 @@ import {
 } from './cadImportedTin';
 import type { WebnetComposeTinProvenance } from './cadTypes';
 import { zeroDelta } from './surfaces/volume/zero';
-import { createMeshView, locateInMesh, meshPlanimetricArea } from './surfaces/compose/coverage';
+import { createMeshView, locateInMeshFast, meshPlanimetricArea } from './surfaces/compose/coverage';
 import type { ComposeMeshPoint, ComposeMeshTriangle } from './surfaces/compose/coverage';
 import { buildComposePslg, extractBoundaryEdges } from './surfaces/compose/pslg';
 import { tryFullOverlayFastPath, tryStrictDisjointFastPath } from './surfaces/compose/composeFastPaths';
@@ -160,8 +160,8 @@ export const composeSurfaceMeshes = (
   const owners: Owner[] = built.triangles.map(([a, b, c]) => {
     const cx = (built.points[a]!.x + built.points[b]!.x + built.points[c]!.x) / 3;
     const cy = (built.points[a]!.y + built.points[b]!.y + built.points[c]!.y) / 3;
-    if (locateInMesh(overlayView, cx, cy) != null) return 'overlay';
-    if (locateInMesh(baseView, cx, cy) != null) return 'base';
+    if (locateInMeshFast(overlayView, cx, cy) != null) return 'overlay';
+    if (locateInMeshFast(baseView, cx, cy) != null) return 'base';
     return 'drop';
   });
 
@@ -174,8 +174,8 @@ export const composeSurfaceMeshes = (
   let maxSeamMismatch = 0;
   let worst = { x: 0, y: 0, baseZ: 0, overlayZ: 0 };
   const probe = (x: number, y: number): ComposeSeamMismatch | null => {
-    const zo = locateInMesh(overlayView, x, y);
-    const zb = locateInMesh(baseView, x, y);
+    const zo = locateInMeshFast(overlayView, x, y);
+    const zb = locateInMeshFast(baseView, x, y);
     if (!zo || !zb) return null;
     const raw = Math.abs(zo.z - zb.z);
     const d = raw <= zeroDelta(zb.z, zo.z) ? 0 : raw;
@@ -213,12 +213,12 @@ export const composeSurfaceMeshes = (
   const zOf: Array<number | null> = built.points.map(() => null);
   for (let i = 0; i < built.points.length; i += 1) {
     const p = built.points[i]!;
-    const zo = locateInMesh(overlayView, p.x, p.y);
+    const zo = locateInMeshFast(overlayView, p.x, p.y);
     if (zo) {
       zOf[i] = zo.z;
       continue;
     }
-    const zb = locateInMesh(baseView, p.x, p.y);
+    const zb = locateInMeshFast(baseView, p.x, p.y);
     zOf[i] = zb ? zb.z : null;
   }
   const usedBy: Array<'overlay' | 'base' | null> = built.points.map(() => null);
@@ -232,7 +232,7 @@ export const composeSurfaceMeshes = (
     const p = built.points[i]!;
     if (zOf[i] == null) return { ok: false, reason: 'SURFACE_COMPOSE_CONSTRAINT_FAILED' };
     if (usedBy[i] === 'base') {
-      const zb = locateInMesh(baseView, p.x, p.y);
+      const zb = locateInMeshFast(baseView, p.x, p.y);
       if (!zb) return { ok: false, reason: 'SURFACE_COMPOSE_CONSTRAINT_FAILED' };
       const raw = Math.abs(zOf[i]! - zb.z);
       if (raw > zeroDelta(zb.z, zOf[i]!)) {

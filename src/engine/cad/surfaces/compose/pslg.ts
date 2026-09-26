@@ -15,7 +15,7 @@
  * uniform-grid bbox index over overlay boundary edges.
  */
 import { orient2d } from 'robust-predicates';
-import { createMeshView, locateInMesh } from './coverage';
+import { createMeshView, locateInMeshFast } from './coverage';
 import type { ComposeMeshPoint, ComposeMeshTriangle } from './coverage';
 
 export interface PslgPoint {
@@ -264,7 +264,7 @@ export const buildComposePslg = (
   overlayBoundary: Array<[number, number]>,
 ): ComposePslg => {
   const overlayView = createMeshView(overlayPoints, overlayTriangles);
-  const covered = (x: number, y: number): boolean => locateInMesh(overlayView, x, y) != null;
+  const covered = (x: number, y: number): boolean => locateInMeshFast(overlayView, x, y) != null;
 
   const points: PslgPoint[] = [];
   const indexOf = new Map<string, number>();

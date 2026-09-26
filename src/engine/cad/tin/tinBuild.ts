@@ -99,6 +99,75 @@ const splitAtInteriorVertices = (
   return out;
 };
 
+/**
+ * Indexed twin of splitAtInteriorVertices: uniform-grid candidate lookup
+ * over points by segment bbox, then the same exact bbox guards and zero
+ * predicate. Output-identical (inner order is projection-sorted with an
+ * index tie-break replicating the stable sort of the legacy loop).
+ * Opt-in via useIndexedRecovery; the legacy path is the default.
+ */
+const splitAtInteriorVerticesIndexed = (
+  points: Array<{ x: number; y: number; z: number }>,
+  segments: KindedSegment[],
+): KindedSegment[] => {
+  if (points.length === 0 || segments.length === 0) return segments.map((s) => ({ ...s }));
+  let minX = Infinity;
+  let minY = Infinity;
+  let maxX = -Infinity;
+  let maxY = -Infinity;
+  for (const p of points) {
+    if (p.x < minX) minX = p.x;
+    if (p.y < minY) minY = p.y;
+    if (p.x > maxX) maxX = p.x;
+    if (p.y > maxY) maxY = p.y;
+  }
+  const span = Math.max(maxX - minX, maxY - minY, 1e-9);
+  const cell = Math.max(span / Math.sqrt(points.length), 1e-9);
+  const cells = new Map<string, number[]>();
+  points.forEach((p, i) => {
+    const key = `${Math.floor((p.x - minX) / cell)},${Math.floor((p.y - minY) / cell)}`;
+    const list = cells.get(key);
+    if (list) list.push(i);
+    else cells.set(key, [i]);
+  });
+  const out: KindedSegment[] = [];
+  for (const seg of segments) {
+    const a = points[seg.a];
+    const b = points[seg.b];
+    const x0 = Math.floor((Math.min(a.x, b.x) - minX) / cell);
+    const x1 = Math.floor((Math.max(a.x, b.x) - minX) / cell);
+    const y0 = Math.floor((Math.min(a.y, b.y) - minY) / cell);
+    const y1 = Math.floor((Math.max(a.y, b.y) - minY) / cell);
+    const inner: number[] = [];
+    for (let ix = x0; ix <= x1; ix += 1) {
+      for (let iy = y0; iy <= y1; iy += 1) {
+        const list = cells.get(`${ix},${iy}`);
+        if (!list) continue;
+        for (const i of list) {
+          if (i === seg.a || i === seg.b) continue;
+          const p = points[i];
+          if (p.x < Math.min(a.x, b.x) || p.x > Math.max(a.x, b.x)) continue;
+          if (p.y < Math.min(a.y, b.y) || p.y > Math.max(a.y, b.y)) continue;
+          if (orient2d(a.x, a.y, b.x, b.y, p.x, p.y) !== 0) continue;
+          inner.push(i);
+        }
+      }
+    }
+    inner.sort((i, j) => {
+      const ti = (points[i].x - a.x) * (b.x - a.x) + (points[i].y - a.y) * (b.y - a.y);
+      const tj = (points[j].x - a.x) * (b.x - a.x) + (points[j].y - a.y) * (b.y - a.y);
+      return ti !== tj ? ti - tj : i - j;
+    });
+    let prev = seg.a;
+    for (const at of inner) {
+      if (at !== prev) out.push({ a: prev, b: at, kind: seg.kind });
+      prev = at;
+    }
+    if (prev !== seg.b) out.push({ a: prev, b: seg.b, kind: seg.kind });
+  }
+  return out;
+};
+
 const codeOf = (kind: KindedSegment['kind']): TinEdgeKindCode =>
   kind === 'outer' ? TIN_EDGE_OUTER : kind === 'void' ? TIN_EDGE_VOID : TIN_EDGE_BREAKLINE;
 
@@ -126,7 +195,9 @@ export const buildConstrainedTin = (input: TinBuildInput): TinBuildSuccess | { o
       if (a !== b) segments.push({ a, b, kind: code });
     }
   }
-  segments = splitAtInteriorVertices(points, segments);
+  segments = input.useIndexedRecovery === true
+    ? splitAtInteriorVerticesIndexed(points, segments)
+    : splitAtInteriorVertices(points, segments);
   // Canonical segment order (input-permutation invariant): endpoint world
   // coords, kind rank breaking exact ties; overlap dedup keeps boundary wins.
   const keyOfPoint = (index: number): string => `${points[index].x},${points[index].y}`;
