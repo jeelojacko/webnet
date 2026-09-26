@@ -27,6 +27,12 @@ import { expandBlockReference, findBlockDefinition, normalizeBlockScales } from 
 import { surveyPointMarker } from '../cadRendererStyle';
 import { deriveAnnotationPrimitives } from './dxfAnnotationExport';
 import { buildAnalysisModelItems, type CadAnalysisExportInput } from '../cadAnalysisExportScene';
+import {
+  buildCadSurveyTableDxfItems,
+  CAD_SURVEY_TABLE_DXF_DISPOSITION,
+  CAD_SURVEY_TABLE_LAYER,
+  type CadSurveyTable,
+} from '../cadSurveyExportTables';
 
 // Adapter boundary: the drafting/document core never becomes DXF-shaped.
 // This model is the only DXF-aware shape, built fresh per export and thrown
@@ -92,6 +98,12 @@ export interface DxfExportModel {
 export interface BuildDxfModelArgs {
   project: CadProject;
   modelLabels?: ModelLabelPlacement[];
+  /**
+   * Phase 19A: opt-in survey tables rendered as derived LINE/LWPOLYLINE +
+   * TEXT in model space (mm-as-units). DXF has no native TABLE here, so each
+   * table is APPROXIMATED with an explicit warning. Absent = legacy bytes.
+   */
+  surveyTables?: readonly CadSurveyTable[];
   /**
    * Phase 18U: CURRENT analysis-map boundaries + legend (DXF has no analysis
    * fill/hatch subsystem here, so fills are APPROXIMATED_WITH_WARNING and
@@ -535,6 +547,28 @@ export const buildDxfExportModelWithResult = (args: BuildDxfModelArgs): ExportRe
         break;
     }
   });
+  if ((args.surveyTables ?? []).length > 0) {
+    const tableLayer = registerLayer(CAD_SURVEY_TABLE_LAYER);
+    const items = buildCadSurveyTableDxfItems(args.surveyTables as readonly CadSurveyTable[]);
+    items.lines.forEach((line) => {
+      model.lines.push({ layer: tableLayer, from: { ...line.from }, to: { ...line.to } });
+    });
+    items.polylines.forEach((polyline) => {
+      model.polylines.push({
+        layer: tableLayer,
+        vertices: polyline.vertices.map((vertex) => ({ ...vertex })),
+        closed: polyline.closed,
+      });
+    });
+    items.texts.forEach((entry) => {
+      model.texts.push({ layer: tableLayer, at: { ...entry.at }, height: entry.height, text: entry.text });
+    });
+    (args.surveyTables as readonly CadSurveyTable[]).forEach((table) => {
+      result.exportedEntityIds.push(table.id);
+      result.approximatedEntityIds.push(table.id);
+      warn({ code: 'SKIPPED_ENTITY', message: `${table.id} ${CAD_SURVEY_TABLE_DXF_DISPOSITION}`, entityId: table.id });
+    });
+  }
   (args.modelLabels ?? []).forEach((label) => {
     if (label.broken || label.text == null) return;
     if (!finitePair(label.xModel, label.yModel)) {
