@@ -9,8 +9,8 @@ import {
   cadBuildParcelReportSummary,
 } from './cadCogoParcelGeometrySummaries';
 import { resolveCadParcelCourses } from './cadParcelCourses';
-import { formatCadBearing } from './cadCogoSummaries';
-import { cadDistance, cadSignedSweepDeg } from './cadGeometry';
+import { buildCadInverseSummary } from './cadCogoSummaries';
+import { cadSignedSweepDeg } from './cadGeometry';
 import type {
   CadEntity,
   CadEntityId,
@@ -342,13 +342,13 @@ const resolveLineRow = (
   if (!line || line.type !== 'line') {
     return missingRow(entity, row, index, `Line ${entityId}`);
   }
-  const bearing = formatCadBearing(
-    (Math.atan2(line.toX - line.fromX, line.toY - line.fromY) * 180) / Math.PI,
-  );
-  const distance = cadDistance(
+  // Single inverse path (same helper as parcel courses/labels) — no local trig.
+  const inverse = buildCadInverseSummary(
     { x: line.fromX, y: line.fromY },
     { x: line.toX, y: line.toY },
   );
+  const bearing = inverse.bearing;
+  const distance = inverse.distance;
   return resolvedRow(entity, row, index, `${line.fromStationId}–${line.toStationId}`, [
     { key: 'from', label: 'From', value: line.fromStationId },
     { key: 'to', label: 'To', value: line.toStationId },
