@@ -442,11 +442,15 @@ const resolveParcelCourseRow = (
   // an old courseId must surface BROKEN_REFERENCE, never silently rebind (§130).
   const course = courses.find((entry) => entry.courseId === courseId);
   if (!course) return missingRow(entity, row, index, parcel.parcelName);
+  // Straight row shape: arc courses show truthful chord values (dedicated
+  // arc columns arrive in a later 19C round).
+  const bearing = course.kind === 'line' ? course.bearing : course.chordBearing;
+  const distanceMeters = course.kind === 'line' ? course.distanceMeters : course.chordLength;
   return resolvedRow(entity, row, index, `${course.fromLabel}–${course.toLabel}`, [
     { key: 'from', label: 'From', value: course.fromLabel },
     { key: 'to', label: 'To', value: course.toLabel },
-    { key: 'bearing', label: 'Bearing', value: course.bearing },
-    { key: 'distance', label: 'Distance', value: formatDistance(course.distanceMeters) },
+    { key: 'bearing', label: 'Bearing', value: bearing },
+    { key: 'distance', label: 'Distance', value: formatDistance(distanceMeters) },
   ]);
 };
 

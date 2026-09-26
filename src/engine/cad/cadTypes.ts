@@ -341,6 +341,16 @@ export interface CadPolygonEntity extends CadBaseEntity {
   vertexLabels: string[];
 }
 
+/**
+ * Phase 19C mixed line/arc parcel course geometry (endpoint-owned bulge).
+ * Signed CAD-standard bulge b = tan(sweepRad/4): sign carries left/right
+ * (positive = CCW = center-left), magnitude carries minor/major
+ * (|b| > 1 = major arc). Translation/rotation/uniform-scale leave it
+ * unchanged; reflection flips the sign; no stale center/radius (derived
+ * per course from endpoints + bulge by cadParcelArcGeometry).
+ */
+export type CadParcelCourseGeometry = { kind: 'line' } | { kind: 'arc'; bulge: number };
+
 export interface CadParcelEntity extends CadBaseEntity {
   type: 'parcel';
   vertices: CadDisplayPoint[];
@@ -353,6 +363,13 @@ export interface CadParcelEntity extends CadBaseEntity {
    * Absent/short on legacy drawings: load paths backfill deterministically.
    */
   courseIds?: string[];
+  /**
+   * Phase 19C mixed line/arc courses. Contract: when present,
+   * courseGeometry.length === vertices.length (entry [index] describes the
+   * course starting at vertices[index]). Absent = all-line legacy parcel
+   * (byte-compatible, no migration write; load backfill untouched).
+   */
+  courseGeometry?: CadParcelCourseGeometry[];
   areaSquareMeters?: number;
   perimeterMeters?: number;
   closureDeltaX?: number;

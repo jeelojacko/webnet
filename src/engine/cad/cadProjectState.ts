@@ -1,4 +1,6 @@
 import { cadIsAngleOnArcSweep } from './cadGeometry';
+import { parcelArcBoundsPoints } from './cadParcelArcGeometry';
+import type { CadParcelEntity } from './cadTypes';
 import { blockReferenceBounds, findBlockDefinition } from './cadBlocks';
 import type { CadCogoComputation } from './cadCogoTypes';
 import type { CadBlockDefinition, CadBounds, CadEntity, CadProject } from './cadTypes';
@@ -28,6 +30,28 @@ const arcEndPoints = ({
       x: centerX + Math.cos(radians) * radius,
       y: centerY + Math.sin(radians) * radius,
     };
+  });
+};
+
+/**
+ * Phase 19C: parcel arc extrema (quadrant points inside each arc course
+ * sweep). Straight parcels (absent/invalid geometry) keep the
+ * vertices-only path bit-identically; invalid arc entries contribute
+ * nothing here (resolver/closure fail safe separately).
+ */
+const includeParcelArcExtrema = (
+  parcel: CadParcelEntity,
+  includePoint: (_x: number, _y: number) => void,
+): void => {
+  const geometry = parcel.courseGeometry;
+  if (geometry == null || geometry.length !== parcel.vertices.length) return;
+  parcel.vertices.forEach((from, index) => {
+    const entry = geometry[index];
+    if (entry?.kind !== 'arc' || !Number.isFinite(entry.bulge)) return;
+    const to = parcel.vertices[(index + 1) % parcel.vertices.length]!;
+    parcelArcBoundsPoints(from, to, entry.bulge).forEach((point) =>
+      includePoint(point.x, point.y),
+    );
   });
 };
 
@@ -61,6 +85,7 @@ export const buildCadBounds = (
       case 'polygon':
       case 'parcel':
         entity.vertices.forEach((vertex) => includePoint(vertex.x, vertex.y));
+        if (entity.type === 'parcel') includeParcelArcExtrema(entity, includePoint);
         break;
       case 'arc':
         arcEndPoints(entity).forEach((point) => includePoint(point.x, point.y));

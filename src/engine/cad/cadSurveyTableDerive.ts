@@ -297,6 +297,16 @@ function resolveRowAnchor(project: CadProject, row: CadSurveyTableRow): RowAncho
         (entry) => entry.courseId === source.courseId,
       );
       if (!course) return undefined;
+      // Tag anchor: true arc midpoint (course.midpoint already is); normal
+      // is the radial for arcs, the chord left-normal for lines.
+      if (course.kind === 'arc') {
+        const radial = { x: course.midpoint.x - course.center.x, y: course.midpoint.y - course.center.y };
+        const length = Math.hypot(radial.x, radial.y);
+        return {
+          anchor: course.midpoint,
+          normal: length > 1e-12 ? { x: radial.x / length, y: radial.y / length } : { x: 0, y: 1 },
+        };
+      }
       return {
         anchor: course.midpoint,
         normal: { x: -course.directionY, y: course.directionX },

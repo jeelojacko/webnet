@@ -18,6 +18,7 @@ import {
 } from './cadCogoSummaries';
 import { cadBuildCurveMetricsSummaryFromRadiusDelta } from './cadCogoCurveMetrics';
 import { cadBuildParcelReportSummary } from './cadCogoParcelGeometrySummaries';
+import { describeParcelArcCourse } from './cadParcelArcGeometry';
 import {
   resolveCadParcelCourses as resolveCanonicalParcelCourses,
   type CadParcelCourse as CadCanonicalParcelCourse,
@@ -163,26 +164,25 @@ interface CurvedCourseMarker {
 }
 
 /**
- * A parcel entity is straight-edge by construction (no curve field on the
- * type). A future/sibling representation may attach `elements` carrying arc
- * segments; those are detected here and surfaced as `curve` markers so the
- * legal drafter can fail-closed instead of silently emitting a chord.
+ * Phase 19C: curve markers derive from the authoritative courseGeometry
+ * (arc entries with valid endpoint metrics). Straight parcels yield no
+ * markers — same as before. The legacy `elements` unsafe-cast is gone:
+ * curves exist only by explicit geometry, never by inference.
  */
 const curvedMarkersFor = (parcel: CadParcelEntity): Map<number, CurvedCourseMarker> => {
   const markers = new Map<number, CurvedCourseMarker>();
-  const elements = (parcel as unknown as { elements?: unknown[] }).elements;
-  if (!Array.isArray(elements)) return markers;
-  elements.forEach((element, index) => {
-    if (element == null || typeof element !== 'object') return;
-    const kind = (element as { kind?: unknown }).kind;
-    if (kind === 'arc') {
-      const radius = Number((element as { radius?: unknown }).radius);
-      const deltaDeg = Number((element as { deltaDeg?: unknown }).deltaDeg);
-      markers.set(index, {
-        radius: Number.isFinite(radius) ? radius : 0,
-        deltaDeg: Number.isFinite(deltaDeg) ? deltaDeg : 0,
-      });
-    }
+  const geometry = parcel.courseGeometry;
+  if (!Array.isArray(geometry) || geometry.length !== parcel.vertices.length) return markers;
+  geometry.forEach((entry, index) => {
+    if (entry?.kind !== 'arc' || !Number.isFinite(entry.bulge)) return;
+    const from = parcel.vertices[index];
+    const to = parcel.vertices[(index + 1) % parcel.vertices.length];
+    if (!from || !to) return;
+    const metrics = describeParcelArcCourse(from, to, entry.bulge);
+    markers.set(index, {
+      radius: metrics && Number.isFinite(metrics.radius) ? metrics.radius : 0,
+      deltaDeg: metrics && Number.isFinite(metrics.signedSweepDeg) ? Math.abs(metrics.signedSweepDeg) : 0,
+    });
   });
   return markers;
 };
@@ -193,20 +193,32 @@ export const parcelHasCurvedCourses = (parcel: CadParcelEntity): boolean =>
 const toSurveyCourse = (
   course: CadCanonicalParcelCourse,
   curve: CurvedCourseMarker | undefined,
-): CadSurveyParcelCourse => ({
-  courseId: course.courseId,
-  index: course.index,
-  fromVertex: { ...course.fromVertex },
-  toVertex: { ...course.toVertex },
-  fromLabel: course.fromLabel,
-  toLabel: course.toLabel,
-  bearing: course.bearing,
-  azimuth: course.azimuthDeg,
-  distance: course.distanceMeters,
-  midpoint: { ...course.midpoint },
-  direction: course.bearing,
-  ...(curve ? { curve } : {}),
-});
+): CadSurveyParcelCourse => {
+  // Straight export shape: arc courses contribute truthful chord values
+  // plus their curve marker (dedicated arc columns arrive in a later
+  // 19C round); legal description keeps failing closed on the marker.
+  const bearing = course.kind === 'line' ? course.bearing : course.chordBearing;
+  const azimuth = course.kind === 'line' ? course.azimuthDeg : course.chordAzimuthDeg;
+  const distance = course.kind === 'line' ? course.distanceMeters : course.chordLength;
+  const marker =
+    course.kind === 'arc'
+      ? { radius: course.radius, deltaDeg: course.deltaDeg }
+      : curve;
+  return {
+    courseId: course.courseId,
+    index: course.index,
+    fromVertex: { ...course.fromVertex },
+    toVertex: { ...course.toVertex },
+    fromLabel: course.fromLabel,
+    toLabel: course.toLabel,
+    bearing,
+    azimuth,
+    distance,
+    midpoint: { ...course.midpoint },
+    direction: bearing,
+    ...(marker ? { curve: marker } : {}),
+  };
+};
 
 /** Delegate to the canonical resolver (stable ids, authoritative math). */
 export const resolveCadParcelCourses = (parcel: CadParcelEntity): CadSurveyParcelCourse[] => {

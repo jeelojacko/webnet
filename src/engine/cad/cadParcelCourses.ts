@@ -9,25 +9,57 @@
 import { cadBuildParcelClosureSummary } from './cadCogoParcelGeometrySummaries';
 import { buildCadInverseSummary, formatCadNorthAzimuthDms } from './cadCogoMath';
 import { normalizeParcelVertexLabel } from './cadCogoParcelGeometryPrimitives';
+import {
+  describeParcelArcCourse,
+  parcelCourseCanonicalKind,
+  validateParcelCourseGeometry,
+} from './cadParcelArcGeometry';
 import type { CadParcelReportSummary } from './cadCogoParcelGeometryTypes';
 import type { CadDisplayPoint } from './cadDisplayTypes';
-import type { CadParcelEntity } from './cadTypes';
+import type { CadParcelCourseGeometry, CadParcelEntity } from './cadTypes';
 
-export interface CadParcelCourse {
+/** Shared course identity + endpoints (geometry kind never affects identity). */
+export interface CadParcelCourseBase {
   courseId: string;
   index: number;
   fromVertex: CadDisplayPoint;
   toVertex: CadDisplayPoint;
   fromLabel: string;
   toLabel: string;
+  /** Line courses: chord midpoint. Arc courses: TRUE curve midpoint. */
+  midpoint: CadDisplayPoint;
+}
+
+export interface CadParcelLineCourse extends CadParcelCourseBase {
+  kind: 'line';
   azimuthDeg: number;
   azimuthText: string;
   bearing: string;
   distanceMeters: number;
-  midpoint: CadDisplayPoint;
   directionX: number;
   directionY: number;
 }
+
+export interface CadParcelArcCourse extends CadParcelCourseBase {
+  kind: 'arc';
+  center: CadDisplayPoint;
+  radius: number;
+  /** Traversal-signed sweep: positive = CCW = left. */
+  signedSweepDeg: number;
+  deltaDeg: number;
+  direction: 'left' | 'right';
+  arcLength: number;
+  chordLength: number;
+  chordAzimuthDeg: number;
+  chordBearing: string;
+  startTangentAzimuthDeg: number;
+  startTangentBearing: string;
+  endTangentAzimuthDeg: number;
+  endTangentBearing: string;
+}
+
+/** Discriminated line/arc course. Legacy parcels resolve as all-line. */
+export type CadParcelCourse = CadParcelLineCourse | CadParcelArcCourse;
 
 /** Deterministic course id for the course starting at vertex `index`. */
 export const buildParcelCourseId = (parcelId: string, index: number): string =>
@@ -89,20 +121,60 @@ const buildParcelRing = (parcel: CadParcelEntity): RingEntry[] => {
  * Authoritative pure course resolver. Ring order preserved, no sorting.
  * Adjacent-duplicate sanitization + explicit-close handling mirror
  * cadBuildParcelReportSummary exactly, so derived bearings/distances match
- * the existing report values leg for leg.
+ * the existing report values leg for leg. Legacy parcels (absent geometry)
+ * resolve EXACTLY as before (all-line, same values); geometry kind never
+ * affects courseId. Invalid course geometry fails closed (no courses —
+ * never silent line conversion).
  */
 export const resolveCadParcelCourses = (parcel: CadParcelEntity): CadParcelCourse[] => {
   const ring = buildParcelRing(parcel);
   if (ring.length === 0) return [];
-  return ring.map((entry, index) => {
+  const geometry = parcel.courseGeometry;
+  if (geometry != null && !validateParcelCourseGeometry(parcel.vertices, geometry).ok) return [];
+  const courses: CadParcelCourse[] = [];
+  for (let index = 0; index < ring.length; index += 1) {
+    const entry = ring[index]!;
     const next = ring[(index + 1) % ring.length]!;
+    const courseId = parcel.courseIds?.[entry.rawIndex] ?? buildParcelCourseId(parcel.id, entry.rawIndex);
+    const fromVertex = { x: entry.vertex.x, y: entry.vertex.y };
+    const toVertex = { x: next.vertex.x, y: next.vertex.y };
+    if (parcelCourseCanonicalKind(geometry?.[entry.rawIndex]) === 'arc') {
+      const metrics = describeParcelArcCourse(entry.vertex, next.vertex, (geometry?.[entry.rawIndex] as { bulge: number }).bulge);
+      // Validated above, so metrics exist; fail closed if they ever don't.
+      if (!metrics) return [];
+      courses.push({
+        kind: 'arc',
+        courseId,
+        index,
+        fromVertex,
+        toVertex,
+        fromLabel: entry.label,
+        toLabel: next.label,
+        midpoint: { ...metrics.midpoint },
+        center: { ...metrics.center },
+        radius: metrics.radius,
+        signedSweepDeg: metrics.signedSweepDeg,
+        deltaDeg: metrics.deltaDeg,
+        direction: metrics.direction,
+        arcLength: metrics.arcLength,
+        chordLength: metrics.chordLength,
+        chordAzimuthDeg: metrics.chordAzimuthDeg,
+        chordBearing: metrics.chordBearing,
+        startTangentAzimuthDeg: metrics.startTangentAzimuthDeg,
+        startTangentBearing: metrics.startTangentBearing,
+        endTangentAzimuthDeg: metrics.endTangentAzimuthDeg,
+        endTangentBearing: metrics.endTangentBearing,
+      });
+      continue;
+    }
     const inverse = buildCadInverseSummary(entry.vertex, next.vertex);
     const distance = inverse.distance;
-    return {
-      courseId: parcel.courseIds?.[entry.rawIndex] ?? buildParcelCourseId(parcel.id, entry.rawIndex),
+    courses.push({
+      kind: 'line',
+      courseId,
       index,
-      fromVertex: { x: entry.vertex.x, y: entry.vertex.y },
-      toVertex: { x: next.vertex.x, y: next.vertex.y },
+      fromVertex,
+      toVertex,
       fromLabel: entry.label,
       toLabel: next.label,
       azimuthDeg: inverse.azimuthDeg,
@@ -115,8 +187,9 @@ export const resolveCadParcelCourses = (parcel: CadParcelEntity): CadParcelCours
       },
       directionX: distance > 1e-12 ? (next.vertex.x - entry.vertex.x) / distance : 0,
       directionY: distance > 1e-12 ? (next.vertex.y - entry.vertex.y) / distance : 0,
-    };
-  });
+    });
+  }
+  return courses;
 };
 
 /**
@@ -161,12 +234,26 @@ export const insertParcelCourseVertex = ({
   const retireAt = ring[courseIndex]!.rawIndex;
   courseIds.splice(retireAt, 1, newIdA);
   courseIds.splice(rawInsertAt, 0, newIdB);
-  const metrics = cadBuildParcelClosureSummary(vertices);
+  // Phase 19C: course geometry mirrors the id splices so the length
+  // contract holds. Line-course splits stay exact lines; splitting an arc
+  // course needs sub-arc math (deferred) and fails closed instead of
+  // silently straightening the arc.
+  let courseGeometry: CadParcelCourseGeometry[] | undefined;
+  if (ensured.courseGeometry != null) {
+    if (!validateParcelCourseGeometry(ensured.vertices, ensured.courseGeometry).ok) return null;
+    const splitEntry = ensured.courseGeometry[retireAt];
+    if (parcelCourseCanonicalKind(splitEntry) === 'arc') return null;
+    courseGeometry = [...ensured.courseGeometry];
+    courseGeometry.splice(retireAt, 1, { kind: 'line' });
+    courseGeometry.splice(rawInsertAt, 0, { kind: 'line' });
+  }
+  const metrics = cadBuildParcelClosureSummary(vertices, { courseGeometry });
   return {
     ...ensured,
     vertices,
     vertexLabels,
     courseIds,
+    ...(courseGeometry != null ? { courseGeometry } : {}),
     areaSquareMeters: metrics?.areaSquareMeters,
     perimeterMeters: metrics?.perimeterMeters,
     closureDeltaX: metrics?.closureDeltaX,
@@ -183,7 +270,9 @@ export const insertParcelCourseVertex = ({
 export const buildParcelCourseReportSummary = (
   parcel: CadParcelEntity,
 ): CadParcelReportSummary | null => {
-  const closure = cadBuildParcelClosureSummary(parcel.vertices);
+  const closure = cadBuildParcelClosureSummary(parcel.vertices, {
+    courseGeometry: parcel.courseGeometry,
+  });
   if (!closure) return null;
   const courses = resolveCadParcelCourses(parcel);
   if (courses.length < 3) return null;
@@ -191,13 +280,26 @@ export const buildParcelCourseReportSummary = (
     parcelName: parcel.parcelName,
     ...closure,
     courseCount: courses.length,
-    courses: courses.map((course) => ({
-      fromLabel: course.fromLabel,
-      toLabel: course.toLabel,
-      azimuthDeg: course.azimuthDeg,
-      azimuthText: course.azimuthText,
-      bearing: course.bearing,
-      distanceMeters: course.distanceMeters,
-    })),
+    // Straight report shape: arc courses contribute truthful chord values
+    // (dedicated curve columns arrive in a later 19C round).
+    courses: courses.map((course) =>
+      course.kind === 'line'
+        ? {
+            fromLabel: course.fromLabel,
+            toLabel: course.toLabel,
+            azimuthDeg: course.azimuthDeg,
+            azimuthText: course.azimuthText,
+            bearing: course.bearing,
+            distanceMeters: course.distanceMeters,
+          }
+        : {
+            fromLabel: course.fromLabel,
+            toLabel: course.toLabel,
+            azimuthDeg: course.chordAzimuthDeg,
+            azimuthText: formatCadNorthAzimuthDms(course.chordAzimuthDeg),
+            bearing: course.chordBearing,
+            distanceMeters: course.chordLength,
+          },
+    ),
   };
 };

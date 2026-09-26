@@ -204,7 +204,11 @@ describe('19A parcel legal description', () => {
 
   it('fails closed on curved courses instead of emitting a chord', () => {
     const parcel = squareParcel('CURVED', 0, 0, 100);
-    const curved = { ...parcel, elements: [{ kind: 'arc', radius: 50, deltaDeg: 90 }] } as CadParcelEntity;
+    // Phase 19C: curves exist only via explicit courseGeometry (bulge).
+    const curved: CadParcelEntity = {
+      ...parcel,
+      courseGeometry: [{ kind: 'arc', bulge: 0.5 }, { kind: 'line' }, { kind: 'line' }, { kind: 'line' }],
+    };
     const draft = buildCadParcelLegalDescription(curved);
     expect(draft.ok).toBe(false);
     if (draft.ok) return;
