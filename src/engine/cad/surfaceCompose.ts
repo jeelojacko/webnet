@@ -37,6 +37,7 @@ import { zeroDelta } from './surfaces/volume/zero';
 import { createMeshView, locateInMesh, meshPlanimetricArea } from './surfaces/compose/coverage';
 import type { ComposeMeshPoint, ComposeMeshTriangle } from './surfaces/compose/coverage';
 import { buildComposePslg, extractBoundaryEdges } from './surfaces/compose/pslg';
+import { tryFullOverlayFastPath, tryStrictDisjointFastPath } from './surfaces/compose/composeFastPaths';
 
 /** The only supported ownership rule (recorded verbatim in provenance). */
 export type ComposePolicy = 'overlay-coverage-wins';
@@ -130,6 +131,13 @@ export const composeSurfaceMeshes = (
   }
   const baseView = createMeshView(base.points, base.triangles);
   const overlayView = createMeshView(overlay.points, overlay.triangles);
+
+  // Exact closed-form shapes first: full overlay needs no retriangulation,
+  // strict disjoint no seam. Both fail closed to the normal pipeline.
+  const fullOverlay = tryFullOverlayFastPath(base, overlay, baseView, overlayView);
+  if (fullOverlay) return fullOverlay;
+  const strictDisjoint = tryStrictDisjointFastPath(base, overlay);
+  if (strictDisjoint) return strictDisjoint;
 
   const overlayAdj = toAdjacency(overlay.triangles, overlay.adjacency);
   const boundary = extractBoundaryEdges(overlay.triangles, overlayAdj);
