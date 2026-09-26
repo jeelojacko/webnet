@@ -459,7 +459,7 @@ export const buildCadSurface = (project: CadProject, surface: CadSurface): CadSu
   };
 };
 
-const breaklinesCross = (
+export const breaklinesCross = (
   ordered: CadSurfaceSourcePoint[],
   segments: Array<{ a: number; b: number }>,
 ): boolean => {

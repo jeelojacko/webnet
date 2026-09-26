@@ -150,8 +150,17 @@ export type CadCommandKey =
   | 'SURFACE_REMOVE_SOURCE'
   | 'SURFACE_ADD_BREAKLINE'
   | 'SURFACE_REMOVE_BREAKLINE'
+  | 'SURFACE_RENAME_BREAKLINE'
+  | 'SURFACE_BREAKLINE_INSERT_POINT'
+  | 'SURFACE_BREAKLINE_REMOVE_POINT'
+  | 'SURFACE_BREAKLINE_REVERSE'
+  | 'SURFACE_BREAKLINE_REPLACE_CHAIN'
+  | 'SURFACE_BREAKLINE_CONVERT_TO_POINT_CHAIN'
   | 'SURFACE_ADD_BOUNDARY'
   | 'SURFACE_REMOVE_BOUNDARY'
+  | 'SURFACE_CREATE_BOUNDARY_SOURCE'
+  | 'SURFACE_REPLACE_BOUNDARY_SOURCE'
+  | 'SURFACE_MAKE_BOUNDARY_INDEPENDENT'
   | 'SURFACE_ADD_EDIT'
   | 'SURFACE_DELETE_EDIT'
   | 'SURFACE_MOVE_EDIT'
@@ -511,6 +520,7 @@ export type CadCommand =
         | { kind: 'line-end'; toX: number; toY: number }
         | { kind: 'arc-radius'; value: number }
         | { kind: 'polyline-vertex'; vertexIndex: number; x: number; y: number }
+        | { kind: 'polyline-vertices'; vertices: Array<{ vertexIndex: number; x: number; y: number }> }
         | { kind: 'entity-layer'; layerId: CadLayerId }
         | { kind: 'entity-appearance'; patch: CadEntityAppearance };
     }
@@ -819,6 +829,42 @@ export type CadCommand =
       breaklineId: string;
     }
   | {
+      key: 'SURFACE_RENAME_BREAKLINE';
+      surfaceId: string;
+      breaklineId: string;
+      name: string;
+    }
+  | {
+      key: 'SURFACE_BREAKLINE_INSERT_POINT';
+      surfaceId: string;
+      breaklineId: string;
+      pointEntityId: CadEntityId;
+      insertIndex: number;
+    }
+  | {
+      key: 'SURFACE_BREAKLINE_REMOVE_POINT';
+      surfaceId: string;
+      breaklineId: string;
+      pointEntityId?: CadEntityId;
+      index?: number;
+    }
+  | {
+      key: 'SURFACE_BREAKLINE_REVERSE';
+      surfaceId: string;
+      breaklineId: string;
+    }
+  | {
+      key: 'SURFACE_BREAKLINE_REPLACE_CHAIN';
+      surfaceId: string;
+      breaklineId: string;
+      pointEntityIds: CadEntityId[];
+    }
+  | {
+      key: 'SURFACE_BREAKLINE_CONVERT_TO_POINT_CHAIN';
+      surfaceId: string;
+      breaklineId: string;
+    }
+  | {
       key: 'SURFACE_ADD_BOUNDARY';
       surfaceId: string;
       kind: CadSurfaceBoundary['type'];
@@ -828,6 +874,34 @@ export type CadCommand =
       key: 'SURFACE_REMOVE_BOUNDARY';
       surfaceId: string;
       kind: CadSurfaceBoundary['type'];
+      sourceEntityId?: CadEntityId;
+    }
+  | {
+      key: 'SURFACE_CREATE_BOUNDARY_SOURCE';
+      surfaceId: string;
+      kind: CadSurfaceBoundary['type'];
+      /** Candidate ring XY (Z is never accepted for a boundary). */
+      vertices: Array<{ x: number; y: number }>;
+      sourceLabel?: string;
+      /**
+       * Void-only: swap this void source for the created polygon in the
+       * SAME transaction (one history entry). Outer replacement needs no
+       * field — a new outer replaces by kind.
+       */
+      replaceVoidSourceEntityId?: CadEntityId;
+    }
+  | {
+      key: 'SURFACE_REPLACE_BOUNDARY_SOURCE';
+      surfaceId: string;
+      kind: CadSurfaceBoundary['type'];
+      /** New source; the old source entity stays in the drawing. */
+      sourceEntityId: CadEntityId;
+    }
+  | {
+      key: 'SURFACE_MAKE_BOUNDARY_INDEPENDENT';
+      surfaceId: string;
+      kind: CadSurfaceBoundary['type'];
+      /** Omit when the surface has exactly one boundary of `kind`. */
       sourceEntityId?: CadEntityId;
     }
   | {

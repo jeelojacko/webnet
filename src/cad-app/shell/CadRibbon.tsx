@@ -32,7 +32,7 @@ const ribbonTooltip = (def: CadShellCommandDef): string => {
 export const CadRibbon: React.FC<CadRibbonProps> = ({ snapshot, actions, collapsed, onToggleCollapsed }) => {
   const [tab, setTab] = useState<RibbonTab>('Home');
   const run = (def: CadShellCommandDef): void => {
-    executeShellCommand(def, actions);
+    executeShellCommand(def, actions, snapshot);
   };
   if (collapsed) {
     return (
@@ -186,6 +186,14 @@ const CadSurfaceRibbonGroup: React.FC<{
   };
   const openManager = (surfaceId?: string): void =>
     actions?.openSurveyManager('surfaces', surfaceId);
+  // Phase 18W — imported TINs keep topology editing disabled (manager shows
+  // the same disabled state; the engine rejects native source mutations).
+  const isImportedTin = selectedSurface?.definition.sourceKind === 'imported-tin';
+  const runDefinitionCommand = (key: string): void => {
+    const def = CAD_SHELL_COMMANDS.find((entry) => entry.key === key);
+    if (def) executeShellCommand(def, actions, snapshot);
+    else openManager(selectedSurfaceId ?? undefined);
+  };
   const group = (
     label: string,
     buttons: Array<{ key: string; label: string; hint: string; disabled: boolean; onClick: () => void }>
@@ -219,8 +227,8 @@ const CadSurfaceRibbonGroup: React.FC<{
       {group('Definition', [
         { key: 'point-group', label: 'Add Point Group', hint: 'Attach a point group (manager).', disabled: !ready, onClick: () => openManager(selectedSurfaceId ?? undefined) },
         { key: 'points', label: 'Add Points', hint: 'Add selected XYZ points (manager).', disabled: !ready, onClick: () => openManager(selectedSurfaceId ?? undefined) },
-        { key: 'breakline', label: 'Add Breakline', hint: 'Add a breakline from a point chain or entity (manager).', disabled: !ready, onClick: () => openManager(selectedSurfaceId ?? undefined) },
-        { key: 'boundary', label: 'Add Boundary', hint: 'Add an outer/void boundary (manager).', disabled: !ready, onClick: () => openManager(selectedSurfaceId ?? undefined) },
+        { key: 'breaklines', label: 'Breaklines', hint: 'Add/edit breakline chains (manager).', disabled: !ready || isImportedTin, onClick: () => runDefinitionCommand('SURFBREAKLINE') },
+        { key: 'boundaries', label: 'Boundaries', hint: 'Create/edit boundary rings (manager).', disabled: !ready || isImportedTin, onClick: () => runDefinitionCommand('SURFBOUNDARY') },
       ])}
       {group('Build', [
         { key: 'rebuild', label: 'Rebuild', hint: 'Rebuild the selected surface.', disabled: !selectedSurfaceId || !actions, onClick: () => { if (selectedSurfaceId) actions?.rebuildSurface(selectedSurfaceId); } },

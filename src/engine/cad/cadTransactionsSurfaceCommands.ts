@@ -1,17 +1,27 @@
 import { createStableRuntimeId } from '../id';
+import { breaklineChainSelfIntersects, validateBreaklineChainRefs } from './cadBreaklineChainValidation';
 import { canonicalizeBulkVertexRefs } from './cadSurfaceEditBulk';
+import { breaklineEntityRefs, collectSources } from './cadSurfaceRevision';
+import { isImportedTinDefinition } from './cadTypes';
 import { surfacePointGroupIds } from './cadTypes';
 import { backfillCadSurfaceStyles, createCadSurfaceStyle, deleteCadSurfaceStyle, duplicateCadSurfaceStyle, renameCadSurfaceStyle, updateCadSurfaceStyle } from './cadSurfaceStyles';
 import { isSurfaceLayerLocked, resolveSurfaceLayerId } from './cadSurfaceTypes';
 import { commitLayerProject } from './cadTransactionsLayerCommands';
+import { surfaceBoundaryCommandDefinitions } from './cadTransactionsSurfaceBoundaryCommands';
 import type {
   CadCommand,
   CadCommandDefinition,
   CadCommandExecutionResult,
   CadWorkspaceSnapshot,
 } from './cadTransactions.types';
-import type { CadProject, CadSurface, CadSurfaceEdit } from './cadTypes';
-import { computeCadSurfaceSourceRevision } from './cadSurfaces';
+import type {
+  CadProject,
+  CadSurface,
+  CadSurfaceBreakline,
+  CadSurfaceEdit,
+  CadSurveyPointEntity,
+} from './cadTypes';
+import { breaklinesCross, computeCadSurfaceSourceRevision } from './cadSurfaces';
 
 /**
  * Phase 18F surface transactions. Definition edits only (sources,
@@ -25,7 +35,7 @@ import { computeCadSurfaceSourceRevision } from './cadSurfaces';
 const nonEmptyName = (value: unknown): value is string =>
   typeof value === 'string' && value.trim().length > 0;
 
-const commitSurface = (
+export const commitSurface = (
   key: CadCommand['key'],
   snapshot: CadWorkspaceSnapshot,
   nextProject: CadProject,
@@ -33,8 +43,30 @@ const commitSurface = (
 ): CadCommandExecutionResult =>
   commitLayerProject(key, snapshot, nextProject, label);
 
+/**
+ * Native source-definition mutations: rejected on imported-TIN definitions
+ * (their topology is the stored payload, never entity refs). 18S/T/V
+ * final-mesh edits (SURFACE_*_EDIT) stay allowed — they are not listed here.
+ */
+const NATIVE_SOURCE_MUTATION_KEYS: ReadonlySet<CadCommand['key']> = new Set([
+  'SURFACE_ADD_POINT_GROUP',
+  'SURFACE_REMOVE_POINT_GROUP',
+  'SURFACE_ADD_POINTS',
+  'SURFACE_REMOVE_SOURCE',
+  'SURFACE_ADD_BREAKLINE',
+  'SURFACE_REMOVE_BREAKLINE',
+  'SURFACE_RENAME_BREAKLINE',
+  'SURFACE_BREAKLINE_INSERT_POINT',
+  'SURFACE_BREAKLINE_REMOVE_POINT',
+  'SURFACE_BREAKLINE_REVERSE',
+  'SURFACE_BREAKLINE_REPLACE_CHAIN',
+  'SURFACE_BREAKLINE_CONVERT_TO_POINT_CHAIN',
+  'SURFACE_ADD_BOUNDARY',
+  'SURFACE_REMOVE_BOUNDARY',
+]);
+
 /** Geometry edits clear the cached build; renames/binding leave it. */
-const editSurface = (
+export const editSurface = (
   snapshot: CadWorkspaceSnapshot,
   key: CadCommand['key'],
   surfaceId: string,
@@ -46,6 +78,9 @@ const editSurface = (
   const surface = surfaces.find((entry) => entry.id === surfaceId);
   if (!surface) return null;
   if (isSurfaceLayerLocked(snapshot.project, surface)) return null;
+  if (isImportedTinDefinition(surface.definition) && NATIVE_SOURCE_MUTATION_KEYS.has(key)) {
+    return null;
+  }
   const next = mutate({ ...surface });
   if (!next) return null;
   const touched: CadSurface =
@@ -307,50 +342,234 @@ const surfaceRemoveBreaklineCommand: CadCommandDefinition<RemoveBreaklineCommand
       }, true),
 };
 
-const RING_ENTITY_TYPES = new Set(['polyline', 'polygon', 'parcel']);
+// ---------------------------------------------------------------------------
+// Phase 18W: breakline source-definition transactions (point-chain edits)
+// ---------------------------------------------------------------------------
 
-type AddBoundaryCommand = Extract<CadCommand, { key: 'SURFACE_ADD_BOUNDARY' }>;
+/** Resolve chain refs exactly as source collection does (entity id, then station id). */
+const resolveChainCoords = (
+  project: CadProject,
+  refs: readonly string[],
+): Array<{ x: number; y: number; z: number }> | null => {
+  const byEntityId = new Map<string, CadSurveyPointEntity>();
+  for (const entity of project.entities) {
+    if (entity.type === 'survey-point') byEntityId.set(entity.id, entity);
+  }
+  const byStationId = new Map<string, CadSurveyPointEntity>();
+  for (const id of [...byEntityId.keys()].sort()) {
+    const point = byEntityId.get(id)!;
+    if (!byStationId.has(point.stationId)) byStationId.set(point.stationId, point);
+  }
+  const coords: Array<{ x: number; y: number; z: number }> = [];
+  for (const ref of refs) {
+    const point = byEntityId.get(ref) ?? byStationId.get(ref);
+    if (
+      !point || !Number.isFinite(point.x) || !Number.isFinite(point.y) ||
+      !Number.isFinite(point.z)
+    ) {
+      return null;
+    }
+    coords.push({ x: point.x, y: point.y, z: point.z as number });
+  }
+  return coords;
+};
 
-const surfaceAddBoundaryCommand: CadCommandDefinition<AddBoundaryCommand> = {
-  key: 'SURFACE_ADD_BOUNDARY',
-  execute: (snapshot, command) => {
-    const entity = snapshot.project.entities.find((entry) => entry.id === command.sourceEntityId);
-    if (!entity || !RING_ENTITY_TYPES.has(entity.type)) return null;
-    return editSurface(snapshot, 'SURFACE_ADD_BOUNDARY', command.surfaceId, 'SURFACE_ADD_BOUNDARY',
+/** Ref validity + finite-Z resolution + self-intersection (fail closed). */
+const resolveValidChain = (
+  project: CadProject,
+  ids: readonly string[],
+): Array<{ x: number; y: number; z: number }> | null => {
+  if (validateBreaklineChainRefs(ids) != null) return null;
+  const coords = resolveChainCoords(project, ids);
+  if (!coords || breaklineChainSelfIntersects(coords)) return null;
+  return coords;
+};
+
+/** Candidate preflight mirroring the engine contract: full collection + breaklinesCross gate. */
+const preflightBreaklineChains = (
+  project: CadProject,
+  surface: CadSurface,
+  breaklines: CadSurfaceBreakline[],
+): boolean => {
+  const collected = collectSources(project, {
+    ...surface,
+    definition: { ...surface.definition, breaklines },
+  });
+  if (collected.breaklineError || collected.boundaryError || collected.duplicateConflict) {
+    return false;
+  }
+  if (collected.brokenRefs.length > 0) return false;
+  const ordered = [...collected.points].sort((a, b) =>
+    a.x !== b.x ? a.x - b.x : a.y !== b.y ? a.y - b.y : a.z !== b.z ? a.z - b.z
+      : a.entityId < b.entityId ? -1 : 1);
+  const localIndex = new Map(ordered.map((point, index) => [point.entityId, index]));
+  const segments: Array<{ a: number; b: number }> = [];
+  for (const chain of collected.breaklines) {
+    const remapped: number[] = [];
+    for (const worldIndex of chain) {
+      const at = localIndex.get(collected.points[worldIndex]!.entityId);
+      if (at === undefined) return false;
+      if (remapped[remapped.length - 1] !== at) remapped.push(at);
+    }
+    for (let i = 0; i + 1 < remapped.length; i += 1) {
+      segments.push({ a: remapped[i]!, b: remapped[i + 1]! });
+    }
+  }
+  return !breaklinesCross(ordered, segments);
+};
+
+const withPointChain = (
+  breaklines: CadSurfaceBreakline[],
+  breaklineId: string,
+  pointEntityIds: string[],
+): CadSurfaceBreakline[] | null => {
+  if (!breaklines.some((entry) => entry.id === breaklineId)) return null;
+  return breaklines.map((entry) =>
+    entry.id !== breaklineId ? entry : {
+      ...entry,
+      source: { kind: 'point-chain' as const, pointEntityIds },
+    });
+};
+
+type RenameBreaklineCommand = Extract<CadCommand, { key: 'SURFACE_RENAME_BREAKLINE' }>;
+
+const surfaceRenameBreaklineCommand: CadCommandDefinition<RenameBreaklineCommand> = {
+  key: 'SURFACE_RENAME_BREAKLINE',
+  execute: (snapshot, command) =>
+    editSurface(snapshot, 'SURFACE_RENAME_BREAKLINE', command.surfaceId, 'SURFACE_RENAME_BREAKLINE',
       (surface) => {
-        const rest = (surface.definition.boundaries ?? []).filter(
-          (entry) => command.kind === 'outer' ? entry.type !== 'outer' : true,
-        );
+        const breaklines = surface.definition.breaklines ?? [];
+        if (!breaklines.some((entry) => entry.id === command.breaklineId)) return null;
+        // Display-only: names are excluded from the source revision by
+        // construction, so geometry=false never stales the surface.
+        const name = command.name?.trim() ?? '';
         return {
           ...surface,
           definition: {
             ...surface.definition,
-            boundaries: [...rest, { type: command.kind, sourceEntityId: command.sourceEntityId }],
+            breaklines: breaklines.map((entry) => {
+              if (entry.id !== command.breaklineId) return entry;
+              if (!name) {
+                const { name: _dropped, ...rest } = entry;
+                return rest;
+              }
+              return { ...entry, name };
+            }),
           },
         };
-      }, true);
-  },
+      }, false),
 };
 
-type RemoveBoundaryCommand = Extract<CadCommand, { key: 'SURFACE_REMOVE_BOUNDARY' }>;
+type InsertBreaklinePointCommand = Extract<CadCommand, { key: 'SURFACE_BREAKLINE_INSERT_POINT' }>;
 
-const surfaceRemoveBoundaryCommand: CadCommandDefinition<RemoveBoundaryCommand> = {
-  key: 'SURFACE_REMOVE_BOUNDARY',
+const surfaceBreaklineInsertPointCommand: CadCommandDefinition<InsertBreaklinePointCommand> = {
+  key: 'SURFACE_BREAKLINE_INSERT_POINT',
   execute: (snapshot, command) =>
-    editSurface(snapshot, 'SURFACE_REMOVE_BOUNDARY', command.surfaceId, 'SURFACE_REMOVE_BOUNDARY',
-      (surface) => {
-        const boundaries = surface.definition.boundaries ?? [];
-        const kept = boundaries.filter((entry) =>
-          entry.type !== command.kind ||
-          (command.sourceEntityId != null && entry.sourceEntityId !== command.sourceEntityId),
-        );
-        if (kept.length === boundaries.length) return null;
-        return {
-          ...surface,
-          definition: { ...surface.definition, boundaries: kept },
-        };
+    editSurface(snapshot, 'SURFACE_BREAKLINE_INSERT_POINT', command.surfaceId,
+      'SURFACE_BREAKLINE_INSERT_POINT', (surface) => {
+        const breaklines = surface.definition.breaklines ?? [];
+        const current = breaklines.find((entry) => entry.id === command.breaklineId);
+        if (!current || current.source.kind !== 'point-chain') return null;
+        if (!Number.isFinite(command.insertIndex)) return null;
+        if (!resolveChainCoords(snapshot.project, [command.pointEntityId])) return null;
+        const ids = [...current.source.pointEntityIds];
+        const at = Math.min(Math.max(Math.floor(command.insertIndex), 0), ids.length);
+        ids.splice(at, 0, command.pointEntityId);
+        if (!resolveValidChain(snapshot.project, ids)) return null;
+        const next = withPointChain(breaklines, command.breaklineId, ids);
+        if (!next || !preflightBreaklineChains(snapshot.project, surface, next)) return null;
+        return { ...surface, definition: { ...surface.definition, breaklines: next } };
       }, true),
 };
+
+type RemoveBreaklinePointCommand = Extract<CadCommand, { key: 'SURFACE_BREAKLINE_REMOVE_POINT' }>;
+
+const surfaceBreaklineRemovePointCommand: CadCommandDefinition<RemoveBreaklinePointCommand> = {
+  key: 'SURFACE_BREAKLINE_REMOVE_POINT',
+  execute: (snapshot, command) =>
+    editSurface(snapshot, 'SURFACE_BREAKLINE_REMOVE_POINT', command.surfaceId,
+      'SURFACE_BREAKLINE_REMOVE_POINT', (surface) => {
+        const breaklines = surface.definition.breaklines ?? [];
+        const current = breaklines.find((entry) => entry.id === command.breaklineId);
+        if (!current || current.source.kind !== 'point-chain') return null;
+        const ids = [...current.source.pointEntityIds];
+        let at = -1;
+        if (command.index != null) {
+          if (!Number.isInteger(command.index)) return null;
+          at = command.index;
+        } else if (command.pointEntityId != null) {
+          at = ids.indexOf(command.pointEntityId);
+        } else {
+          return null;
+        }
+        if (at < 0 || at >= ids.length) return null;
+        ids.splice(at, 1);
+        // No auto-delete: a sub-2 remainder blocks instead of removing the breakline.
+        if (ids.length < 2) return null;
+        const next = withPointChain(breaklines, command.breaklineId, ids);
+        if (!next) return null;
+        return { ...surface, definition: { ...surface.definition, breaklines: next } };
+      }, true),
+};
+
+type ReverseBreaklineCommand = Extract<CadCommand, { key: 'SURFACE_BREAKLINE_REVERSE' }>;
+
+const surfaceBreaklineReverseCommand: CadCommandDefinition<ReverseBreaklineCommand> = {
+  key: 'SURFACE_BREAKLINE_REVERSE',
+  execute: (snapshot, command) =>
+    editSurface(snapshot, 'SURFACE_BREAKLINE_REVERSE', command.surfaceId, 'SURFACE_BREAKLINE_REVERSE',
+      (surface) => {
+        const breaklines = surface.definition.breaklines ?? [];
+        const current = breaklines.find((entry) => entry.id === command.breaklineId);
+        if (!current || current.source.kind !== 'point-chain') return null;
+        // Same segments reversed: geometry equivalent, revision changes by construction.
+        const next = withPointChain(breaklines, command.breaklineId, [...current.source.pointEntityIds].reverse());
+        if (!next) return null;
+        return { ...surface, definition: { ...surface.definition, breaklines: next } };
+      }, true),
+};
+
+type ReplaceBreaklineChainCommand = Extract<CadCommand, { key: 'SURFACE_BREAKLINE_REPLACE_CHAIN' }>;
+
+const surfaceBreaklineReplaceChainCommand: CadCommandDefinition<ReplaceBreaklineChainCommand> = {
+  key: 'SURFACE_BREAKLINE_REPLACE_CHAIN',
+  execute: (snapshot, command) =>
+    editSurface(snapshot, 'SURFACE_BREAKLINE_REPLACE_CHAIN', command.surfaceId,
+      'SURFACE_BREAKLINE_REPLACE_CHAIN', (surface) => {
+        const breaklines = surface.definition.breaklines ?? [];
+        if (!breaklines.some((entry) => entry.id === command.breaklineId)) return null;
+        const ids = [...command.pointEntityIds];
+        if (!resolveValidChain(snapshot.project, ids)) return null;
+        // Id/name/type preserved via spread; the source becomes a point chain.
+        const next = withPointChain(breaklines, command.breaklineId, ids);
+        if (!next || !preflightBreaklineChains(snapshot.project, surface, next)) return null;
+        return { ...surface, definition: { ...surface.definition, breaklines: next } };
+      }, true),
+};
+
+type ConvertBreaklineCommand = Extract<CadCommand, { key: 'SURFACE_BREAKLINE_CONVERT_TO_POINT_CHAIN' }>;
+
+const surfaceBreaklineConvertCommand: CadCommandDefinition<ConvertBreaklineCommand> = {
+  key: 'SURFACE_BREAKLINE_CONVERT_TO_POINT_CHAIN',
+  execute: (snapshot, command) =>
+    editSurface(snapshot, 'SURFACE_BREAKLINE_CONVERT_TO_POINT_CHAIN', command.surfaceId,
+      'SURFACE_BREAKLINE_CONVERT_TO_POINT_CHAIN', (surface) => {
+        const breaklines = surface.definition.breaklines ?? [];
+        const current = breaklines.find((entry) => entry.id === command.breaklineId);
+        const source = current?.source;
+        if (!current || !source || source.kind !== 'entity') return null;
+        const entity = snapshot.project.entities.find((entry) => entry.id === source.entityId);
+        if (!entity) return null;
+        // Deterministic refs only (same resolution as collection); the CAD entity is untouched.
+        const refs = breaklineEntityRefs(entity);
+        const collapsed = refs.filter((ref, index) => index === 0 || ref !== refs[index - 1]);
+        if (!resolveValidChain(snapshot.project, collapsed)) return null;
+        const next = withPointChain(breaklines, command.breaklineId, collapsed);
+        if (!next || !preflightBreaklineChains(snapshot.project, surface, next)) return null;
+        return { ...surface, definition: { ...surface.definition, breaklines: next } };
+      }, true),
+};
+
 
 type StyleCreateCommand = Extract<CadCommand, { key: 'SURFACE_STYLE_CREATE' }>;
 type StyleDuplicateCommand = Extract<CadCommand, { key: 'SURFACE_STYLE_DUPLICATE' }>;
@@ -649,8 +868,13 @@ export const surfaceCommandDefinitions = {
   SURFACE_REMOVE_SOURCE: surfaceRemoveSourceCommand,
   SURFACE_ADD_BREAKLINE: surfaceAddBreaklineCommand,
   SURFACE_REMOVE_BREAKLINE: surfaceRemoveBreaklineCommand,
-  SURFACE_ADD_BOUNDARY: surfaceAddBoundaryCommand,
-  SURFACE_REMOVE_BOUNDARY: surfaceRemoveBoundaryCommand,
+  SURFACE_RENAME_BREAKLINE: surfaceRenameBreaklineCommand,
+  SURFACE_BREAKLINE_INSERT_POINT: surfaceBreaklineInsertPointCommand,
+  SURFACE_BREAKLINE_REMOVE_POINT: surfaceBreaklineRemovePointCommand,
+  SURFACE_BREAKLINE_REVERSE: surfaceBreaklineReverseCommand,
+  SURFACE_BREAKLINE_REPLACE_CHAIN: surfaceBreaklineReplaceChainCommand,
+  SURFACE_BREAKLINE_CONVERT_TO_POINT_CHAIN: surfaceBreaklineConvertCommand,
+  ...surfaceBoundaryCommandDefinitions,
   SURFACE_ADD_EDIT: surfaceAddEditCommand,
   SURFACE_DELETE_EDIT: surfaceDeleteEditCommand,
   SURFACE_MOVE_EDIT: surfaceMoveEditCommand,

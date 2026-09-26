@@ -1,5 +1,96 @@
 import type { ActiveCommandKey } from '../../hooks/surveyCad/useSurveyCadCommandTypes';
 import type { CadShellActions, CadWorkspaceSnapshot } from './cadShellTypes';
+import { requestDefinitionFocus } from './CadSurfaceDefinitionParts';
+
+/**
+ * Phase 18W — the acting surface for definition commands: the selected
+ * surface, else the only surface. Null = ambiguous, open the manager.
+ */
+const resolveDefinitionSurfaceId = (snapshot: CadWorkspaceSnapshot | null | undefined): string | null => {
+  const surfaces = snapshot?.surface?.surfaces ?? [];
+  const selected = snapshot?.surface?.selectedSurfaceId ?? null;
+  if (selected && surfaces.some((row) => row.id === selected)) return selected;
+  return surfaces.length === 1 ? surfaces[0]!.id : null;
+};
+
+const focusSurfaceDefinition = (
+  actions: CadShellActions,
+  snapshot: CadWorkspaceSnapshot | null | undefined,
+  section: 'breaklines' | 'boundaries',
+  targetId: string,
+): boolean => {
+  const surfaceId = resolveDefinitionSurfaceId(snapshot);
+  if (!surfaceId) {
+    actions.openSurveyManager('surfaces');
+    return true;
+  }
+  requestDefinitionFocus({ surfaceId, section, targetId });
+  actions.openSurveyManager('surfaces', surfaceId);
+  return true;
+};
+
+/** Breakline focus: single breakline, else the entity-backed one under selection. */
+const resolveBreaklineFocus = (
+  actions: CadShellActions,
+  snapshot: CadWorkspaceSnapshot | null | undefined,
+): string => {
+  const surfaceId = resolveDefinitionSurfaceId(snapshot);
+  if (!surfaceId) return '__section';
+  const row = snapshot?.surface?.surfaces.find((entry) => entry.id === surfaceId);
+  const breaklines = row?.definition.breaklines ?? [];
+  if (breaklines.length === 1) return breaklines[0]!.id;
+  const selected = new Set(snapshot?.selectedEntityIds ?? []);
+  for (const entry of breaklines) {
+    if (entry.kind !== 'entity') continue;
+    const detail = actions.describeBreaklineChain?.(surfaceId, entry.id);
+    if (detail?.sourceEntityId && selected.has(detail.sourceEntityId)) return entry.id;
+  }
+  return '__section';
+};
+
+/** Boundary focus: selected source entity, else the single boundary. */
+const resolveBoundaryFocus = (
+  snapshot: CadWorkspaceSnapshot | null | undefined,
+): string => {
+  const surfaceId = resolveDefinitionSurfaceId(snapshot);
+  if (!surfaceId) return '__section';
+  const row = snapshot?.surface?.surfaces.find((entry) => entry.id === surfaceId);
+  const boundaries = row?.definition.boundaries ?? [];
+  const selected = new Set(snapshot?.selectedEntityIds ?? []);
+  const matched = boundaries.find((entry) => selected.has(entry.sourceEntityId))
+    ?? (boundaries.length === 1 ? boundaries[0]! : null);
+  return matched ? matched.sourceEntityId : '__section';
+};
+
+/** Direct commit when unambiguous; otherwise focus the manager. */
+const makeBoundaryIndependent = (
+  actions: CadShellActions,
+  snapshot: CadWorkspaceSnapshot | null | undefined,
+): boolean => {
+  const surfaceId = resolveDefinitionSurfaceId(snapshot);
+  if (!surfaceId) {
+    actions.openSurveyManager('surfaces');
+    return true;
+  }
+  const row = snapshot?.surface?.surfaces.find((entry) => entry.id === surfaceId);
+  const boundaries = row?.definition.boundaries ?? [];
+  const selected = new Set(snapshot?.selectedEntityIds ?? []);
+  const matched = boundaries.find((entry) => selected.has(entry.sourceEntityId))
+    ?? (boundaries.length === 1 ? boundaries[0]! : null);
+  if (!matched) return focusSurfaceDefinition(actions, snapshot, 'boundaries', '__section');
+  const detail = actions.describeBoundarySourceDetail?.(matched.sourceEntityId);
+  if (detail && detail.sharedUses > 1 && !window.confirm(
+    `Boundary source shared by ${detail.sharedUses} surfaces. Make an independent copy for this surface?`,
+  )) {
+    return true;
+  }
+  return actions.runSurveyCommand({
+    key: 'SURFACE_MAKE_BOUNDARY_INDEPENDENT',
+    surfaceId,
+    kind: matched.kind,
+    sourceEntityId: matched.sourceEntityId,
+  });
+};
 
 export type CadShellCommandCategory =
   | 'Draw'
@@ -198,6 +289,13 @@ export const CAD_SHELL_COMMANDS: CadShellCommandDef[] = [
   action('SURFMOVEPOINTS', 'Move Selected', 'Surface', 'Move every selected point by a base+destination displacement in one undoable edit.'),
   action('SURFSLOPE', 'Surface Slope', 'Surface', 'Query surface slope/aspect (manager inquiry).'),
   action('SURFCONTOURS', 'Surface Contours', 'Surface', 'Edit contour display style (manager contours section).'),
+  // Phase 18W — boundary/breakline source editing (manager-first commands;
+  // the manager transaction and the command share one undoable engine op).
+  action('SURFBREAKLINE', 'Breakline', 'Surface', 'Add a breakline from 2+ survey points in order (manager).'),
+  action('SURFBREAKLINEEDIT', 'Edit Breakline', 'Surface', 'Edit a breakline chain (manager).'),
+  action('SURFBOUNDARY', 'Boundary', 'Surface', 'Create + attach a boundary ring (manager).', undefined, ['SURFBOUNDARYCREATE']),
+  action('SURFBOUNDARYEDIT', 'Edit Boundary', 'Surface', 'Edit boundary vertices (manager).'),
+  action('SURFBOUNDARYMAKEINDEPENDENT', 'Make Boundary Independent', 'Surface', 'Copy a boundary source for one surface (manager).'),
   // Phase 18I — volume commands (all route through the surface manager;
   // Calculate runs the session volume service for the selected volume,
   // never auto-started, LOCK-gated by the volume transaction path).
@@ -319,6 +417,7 @@ export const isShellCommandAvailable = (
 export const executeShellCommand = (
   def: CadShellCommandDef,
   actions: CadShellActions | null,
+  snapshot?: CadWorkspaceSnapshot | null,
 ): boolean => {
   if (!actions) return false;
   if (def.kind === 'session') return actions.startCommand(def.key as ActiveCommandKey);
@@ -389,6 +488,16 @@ export const executeShellCommand = (
     case 'SURFCONTOURS':
       actions.openSurveyManager('surfaces');
       return true;
+    case 'SURFBREAKLINE':
+      return focusSurfaceDefinition(actions, snapshot, 'breaklines', '__create');
+    case 'SURFBREAKLINEEDIT':
+      return focusSurfaceDefinition(actions, snapshot, 'breaklines', resolveBreaklineFocus(actions, snapshot));
+    case 'SURFBOUNDARY':
+      return focusSurfaceDefinition(actions, snapshot, 'boundaries', '__create');
+    case 'SURFBOUNDARYEDIT':
+      return focusSurfaceDefinition(actions, snapshot, 'boundaries', resolveBoundaryFocus(snapshot));
+    case 'SURFBOUNDARYMAKEINDEPENDENT':
+      return makeBoundaryIndependent(actions, snapshot);
     case 'SURFSWAPEDGE':
       return actions.startSurfaceEditSession?.('swap') ?? false;
     case 'SURFADDLINE':

@@ -1,9 +1,11 @@
 import React from 'react';
-import { validateBoundaryEntity } from '../../engine/cad/cadSurfaceView';
 import type { CadShellActions, CadWorkspaceSnapshot } from './cadShellTypes';
 import { trySurfaceCommand, type CadSurfaceRow } from './cadSurfaceSnapshot';
 import { Field } from '../../components/surveyCad/surveyManagerShared.tsx';
 import { buttonClass, inputClass } from '../../components/surveyCad/surveyManagerShared';
+import { CadSurfaceBreaklineSection } from './CadSurfaceBreaklineSection';
+import { CadSurfaceBoundarySection } from './CadSurfaceBoundarySection';
+import { makeSectionCommit } from './CadSurfaceDefinitionParts';
 
 interface DefinitionEditorProps {
   snapshot: CadWorkspaceSnapshot;
@@ -13,10 +15,9 @@ interface DefinitionEditorProps {
 }
 
 /**
- * Phase 18F — surface definition editor. Point source (multiple groups,
- * additive + per-group remove, or explicit points), breaklines (selected-point chain or selected entity
- * with a Z gate), boundaries (outer/void ring refs with pre-commit
- * validation + outer replace-confirm). Every remove is undoable and
+ * Phase 18W — surface definition editor shell. Point source (multiple
+ * groups, additive + per-group remove, or explicit points); breakline and
+ * boundary sections live in their own files. Every remove is undoable and
  * re-derives NEEDS_REBUILD while the stale mesh stays visible.
  */
 export const CadSurfaceDefinitionEditor: React.FC<DefinitionEditorProps> = ({
@@ -27,11 +28,7 @@ export const CadSurfaceDefinitionEditor: React.FC<DefinitionEditorProps> = ({
 }) => {
   const survey = snapshot.survey;
   const [groupPick, setGroupPick] = React.useState('');
-  const [breaklineName, setBreaklineName] = React.useState('');
-  const [allowF2F, setAllowF2F] = React.useState(false);
-  const [boundaryKind, setBoundaryKind] = React.useState<'outer' | 'void'>('outer');
-  const commit = (label: string, ok: boolean): void =>
-    setNotice(ok ? `${label} done.` : `${label} rejected — see status/locks.`);
+  const commit = makeSectionCommit(setNotice);
   const definition = row.definition;
   // Phase 18L: imported TINs carry explicit file topology — no
   // point-group/breakline edit controls (would corrupt the import).
@@ -57,28 +54,6 @@ export const CadSurfaceDefinitionEditor: React.FC<DefinitionEditorProps> = ({
   const selectedPoints = survey?.selected.filter((info) => info.entityId) ?? [];
   const withZ = selectedPoints.filter((info) => info.z != null && Number.isFinite(info.z));
   const skippedZ = selectedPoints.length - withZ.length;
-  const chainIds = snapshot.selectedEntityIds.filter((id) =>
-    selectedPoints.some((info) => info.entityId === id),
-  );
-
-  const breakPreview = actions.describeBreaklineSource(allowF2F);
-  const boundaryPreview = actions.describeBoundarySource();
-  const boundaryCheck = boundaryPreview
-    ? validateBoundaryEntity(boundaryPreview)
-    : null;
-
-  const addBoundary = (): void => {
-    if (!boundaryPreview || !boundaryCheck?.ok) return;
-    if (boundaryKind === 'outer' && definition.outerBoundaryCount > 0) {
-      if (!window.confirm('Replace the existing outer boundary?')) return;
-    }
-    commit('Add boundary', trySurfaceCommand(actions.runSurveyCommand, {
-      key: 'SURFACE_ADD_BOUNDARY',
-      surfaceId: row.id,
-      kind: boundaryKind,
-      sourceEntityId: boundaryPreview.entityId,
-    }));
-  };
 
   return (
     <div className="grid gap-2 rounded border border-slate-700 p-2">
@@ -166,131 +141,8 @@ export const CadSurfaceDefinitionEditor: React.FC<DefinitionEditorProps> = ({
           Remove Source
         </button>
       </div>
-      <div className="grid gap-1">
-        {definition.breaklines.map((entry) => (
-          <div key={entry.id} className="grid grid-cols-[1fr_auto] items-center gap-2 text-[11px]">
-            <span className="truncate text-slate-300">{entry.name} <span className="text-slate-500">({entry.kind})</span></span>
-            <button
-              type="button"
-              className={buttonClass}
-              onClick={() => commit('Remove breakline', trySurfaceCommand(actions.runSurveyCommand, {
-                key: 'SURFACE_REMOVE_BREAKLINE', surfaceId: row.id, breaklineId: entry.id,
-              }))}
-            >
-              Remove
-            </button>
-          </div>
-        ))}
-        <div className="grid grid-cols-[1fr_auto] items-end gap-2">
-          <Field label="Breakline name (optional)">
-            <input
-              aria-label="Breakline name"
-              className={inputClass}
-              value={breaklineName}
-              onChange={(event) => setBreaklineName(event.target.value)}
-            />
-          </Field>
-          <button
-            type="button"
-            className={buttonClass}
-            disabled={chainIds.length < 2}
-            title={chainIds.length < 2 ? 'Select 2+ survey points in chain order first' : `Chain: ${chainIds.length} points in selection order`}
-            onClick={() => {
-              commit('Add breakline', trySurfaceCommand(actions.runSurveyCommand, {
-                key: 'SURFACE_ADD_BREAKLINE',
-                surfaceId: row.id,
-                pointIds: chainIds,
-                ...(breaklineName.trim() ? { name: breaklineName.trim() } : {}),
-              }));
-              setBreaklineName('');
-            }}
-          >
-            Add Chain ({chainIds.length})
-          </button>
-        </div>
-        <div className="grid gap-1 rounded border border-slate-800 p-1.5">
-          <label className="flex items-center gap-2 text-[11px] text-slate-300">
-            <input
-              type="checkbox"
-              checked={allowF2F}
-              onChange={(event) => setAllowF2F(event.target.checked)}
-            />
-            Allow F2F linework (user-explicit; provenance read-only)
-          </label>
-          {breakPreview ? (
-            <p className="text-[11px] text-slate-400">
-              Entity {breakPreview.label}: {breakPreview.chain.vertexCount} vertices
-              {breakPreview.chain.ok
-                ? `, Z ${breakPreview.chain.minZ!.toFixed(3)}…${breakPreview.chain.maxZ!.toFixed(3)}`
-                : ` — BLOCKED (${breakPreview.chain.reason})`}
-            </p>
-          ) : (
-            <p className="text-[11px] text-slate-500">Select one line/polyline to preview it as a breakline.</p>
-          )}
-          <div>
-            <button
-              type="button"
-              className={buttonClass}
-              disabled={!breakPreview?.chain.ok}
-              onClick={() => {
-                if (!breakPreview) return;
-                commit('Add breakline', trySurfaceCommand(actions.runSurveyCommand, {
-                  key: 'SURFACE_ADD_BREAKLINE',
-                  surfaceId: row.id,
-                  pointIds: breakPreview.pointIds,
-                  ...(breaklineName.trim() ? { name: breaklineName.trim() } : {}),
-                }));
-                setBreaklineName('');
-              }}
-            >
-              Add From Entity
-            </button>
-          </div>
-        </div>
-      </div>
-      <div className="grid gap-1">
-        {definition.boundaries.map((entry, index) => (
-          <div key={`${entry.kind}:${entry.sourceEntityId}:${index}`} className="grid grid-cols-[1fr_auto] items-center gap-2 text-[11px]">
-            <span className="truncate text-slate-300">{entry.kind}: {entry.sourceLabel}</span>
-            <button
-              type="button"
-              className={buttonClass}
-              onClick={() => commit('Remove boundary', trySurfaceCommand(actions.runSurveyCommand, {
-                key: 'SURFACE_REMOVE_BOUNDARY',
-                surfaceId: row.id,
-                kind: entry.kind,
-                sourceEntityId: entry.sourceEntityId,
-              }))}
-            >
-              Remove
-            </button>
-          </div>
-        ))}
-        <div className="grid grid-cols-[1fr_auto_auto] items-end gap-2">
-          <p className="text-[11px] text-slate-400">
-            {boundaryPreview
-              ? `Selected ${boundaryPreview.label}: ${boundaryCheck?.ok ? 'valid ring' : `invalid (${boundaryCheck?.reason})`}`
-              : 'Select one polyline/polygon/parcel as boundary.'}
-          </p>
-          <select
-            aria-label="Boundary kind"
-            className={inputClass}
-            value={boundaryKind}
-            onChange={(event) => setBoundaryKind(event.target.value as 'outer' | 'void')}
-          >
-            <option value="outer">Outer</option>
-            <option value="void">Void</option>
-          </select>
-          <button
-            type="button"
-            className={buttonClass}
-            disabled={!boundaryCheck?.ok}
-            onClick={addBoundary}
-          >
-            Add Boundary
-          </button>
-        </div>
-      </div>
+      <CadSurfaceBreaklineSection snapshot={snapshot} actions={actions} row={row} setNotice={setNotice} />
+      <CadSurfaceBoundarySection snapshot={snapshot} actions={actions} row={row} setNotice={setNotice} />
     </div>
   );
 };

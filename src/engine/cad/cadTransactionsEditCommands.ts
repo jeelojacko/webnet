@@ -1,5 +1,6 @@
 import { createCadSelectionState } from './cadSelection';
 import { checkCadEntityEditable } from './cadAppearance';
+import { validateBoundaryEntityVertexEdit } from './cadBoundaryCandidateValidation';
 import { getCadEntityDisplayLabel } from './cadEntityNames';
 import { stationIdExists } from './cadTransactionsEntityFactories';
 import {
@@ -32,6 +33,7 @@ export const editEntityCommand: CadCommandDefinition<{
     | { kind: 'line-end'; toX: number; toY: number }
     | { kind: 'arc-radius'; value: number }
     | { kind: 'polyline-vertex'; vertexIndex: number; x: number; y: number }
+    | { kind: 'polyline-vertices'; vertices: Array<{ vertexIndex: number; x: number; y: number }> }
     | { kind: 'entity-layer'; layerId: CadLayerId }
     | { kind: 'entity-appearance'; patch: CadEntityAppearance };
 }> = {
@@ -223,16 +225,52 @@ export const editEntityCommand: CadCommandDefinition<{
       };
     }
 
-    if (targetEntity.type === 'polyline' && command.edit.kind === 'polyline-vertex') {
+    // Polygons share the polyline {x, y} vertex layout; created boundary sources are polygons.
+    const isRingEditable = targetEntity.type === 'polyline' || targetEntity.type === 'polygon';
+    if (isRingEditable && command.edit.kind === 'polyline-vertex') {
       const edit = command.edit;
       const vertex = targetEntity.vertices[edit.vertexIndex];
       if (!vertex) return null;
-      const updatedEntity: CadEntity = {
-        ...targetEntity,
-        vertices: targetEntity.vertices.map((entry, index) =>
-          index === edit.vertexIndex ? { x: edit.x, y: edit.y } : entry,
-        ),
+      const vertices = targetEntity.vertices.map((entry, index) =>
+        index === edit.vertexIndex ? { x: edit.x, y: edit.y } : entry,
+      );
+      // Phase 18W: a boundary source must stay a valid ring (fail closed).
+      if (validateBoundaryEntityVertexEdit(snapshot.project, targetEntity.id, vertices)) return null;
+      const updatedEntity: CadEntity = { ...targetEntity, vertices };
+      const nextProjectBase = replaceEntityInProject(snapshot.project, targetEntity.id, (_entity) => updatedEntity);
+      const nextProject = syncEditedEntityDependencies(nextProjectBase, targetEntity, updatedEntity);
+      return {
+        nextSnapshot: {
+          project: nextProject,
+          selection: createCadSelectionState(nextProject, [targetEntity.id]),
+        },
+        commandState: {
+          key: 'EDIT_ENTITY',
+          phase: 'committed',
+          prompt: `EDIT_ENTITY committed for ${getCadEntityDisplayLabel(targetEntity)}.`,
+        },
+        transactionLabel: `EDIT_ENTITY (${getCadEntityDisplayLabel(targetEntity)})`,
+        addedEntityIds: [],
+        removedEntityIds: [],
       };
+    }
+
+    // Phase 18W follow-up: same-vertex-count batch Apply in ONE history entry.
+    // Single-vertex branch above is untouched; this shares its gate + guard.
+    if (isRingEditable && command.edit.kind === 'polyline-vertices') {
+      const moves = command.edit.vertices;
+      if (!Array.isArray(moves) || moves.length === 0) return null;
+      const byIndex = new Map<number, { x: number; y: number }>();
+      for (const move of moves) {
+        if (!Number.isInteger(move.vertexIndex)) return null;
+        if (!Number.isFinite(move.x) || !Number.isFinite(move.y)) return null;
+        if (!targetEntity.vertices[move.vertexIndex]) return null;
+        byIndex.set(move.vertexIndex, { x: move.x, y: move.y });
+      }
+      const vertices = targetEntity.vertices.map((entry, index) => byIndex.get(index) ?? entry);
+      // Phase 18W: a boundary source must stay a valid ring (fail closed).
+      if (validateBoundaryEntityVertexEdit(snapshot.project, targetEntity.id, vertices)) return null;
+      const updatedEntity: CadEntity = { ...targetEntity, vertices };
       const nextProjectBase = replaceEntityInProject(snapshot.project, targetEntity.id, (_entity) => updatedEntity);
       const nextProject = syncEditedEntityDependencies(nextProjectBase, targetEntity, updatedEntity);
       return {
