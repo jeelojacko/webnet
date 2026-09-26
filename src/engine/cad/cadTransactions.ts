@@ -81,6 +81,7 @@ import {
   surveyStyleTableCommand,
 } from './cadTransactionsSurveyDisplay';
 import { surfaceCommandDefinitions } from './cadTransactionsSurfaceCommands';
+import { surfaceBakeCommandDefinitions } from './cadTransactionsSurfaceBakeCommands';
 import { blockCommandDefinitions } from './cadTransactionsBlockCommands';
 import { landxmlImportCommand } from './cadTransactionsLandxmlImport';
 import { volumeCommandDefinitions } from './cadTransactionsVolumeCommands';
@@ -608,6 +609,9 @@ export const CAD_COMMAND_REGISTRY: Record<CadCommandKey, CadCommandDefinition<Ca
   SURFACE_STYLE_RENAME: surfaceCommandDefinitions.SURFACE_STYLE_RENAME as CadCommandDefinition<CadCommand>,
   SURFACE_STYLE_UPDATE: surfaceCommandDefinitions.SURFACE_STYLE_UPDATE as CadCommandDefinition<CadCommand>,
   SURFACE_STYLE_DELETE: surfaceCommandDefinitions.SURFACE_STYLE_DELETE as CadCommandDefinition<CadCommand>,
+  // Phase 18X explicit bake — separate from the 18S TIN EDIT group.
+  SURFBAKE: surfaceBakeCommandDefinitions.SURFBAKE as CadCommandDefinition<CadCommand>,
+  SURFBAKECOPY: surfaceBakeCommandDefinitions.SURFBAKECOPY as CadCommandDefinition<CadCommand>,
   LANDXML_IMPORT: landxmlImportCommand as CadCommandDefinition<CadCommand>,
   VOLUME_SURFACE_CREATE: volumeCommandDefinitions.VOLUME_SURFACE_CREATE as CadCommandDefinition<CadCommand>,
   VOLUME_SURFACE_DELETE: volumeCommandDefinitions.VOLUME_SURFACE_DELETE as CadCommandDefinition<CadCommand>,

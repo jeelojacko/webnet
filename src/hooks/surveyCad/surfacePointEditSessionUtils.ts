@@ -158,9 +158,9 @@ export const baseZOf = (
   }
   if (key.startsWith('imported:')) {
     const index = Number(key.split(':').pop());
-    const verts = surface.definition.sourceKind === 'imported-tin'
-      ? surface.definition.importedTin?.vertices
-      : undefined;
+    const verts = surface.definition.sourceKind === 'native'
+      ? undefined
+      : surface.definition.importedTin?.vertices;
     return verts != null && Number.isInteger(index) ? (verts[index * 3 + 2] ?? null) : null;
   }
   if (key.startsWith('edit:')) {

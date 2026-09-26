@@ -2,7 +2,7 @@ import { createStableRuntimeId } from '../id';
 import { breaklineChainSelfIntersects, validateBreaklineChainRefs } from './cadBreaklineChainValidation';
 import { canonicalizeBulkVertexRefs } from './cadSurfaceEditBulk';
 import { breaklineEntityRefs, collectSources } from './cadSurfaceRevision';
-import { isImportedTinDefinition } from './cadTypes';
+import { isNativeSurfaceDefinition } from './cadTypes';
 import { surfacePointGroupIds } from './cadTypes';
 import { backfillCadSurfaceStyles, createCadSurfaceStyle, deleteCadSurfaceStyle, duplicateCadSurfaceStyle, renameCadSurfaceStyle, updateCadSurfaceStyle } from './cadSurfaceStyles';
 import { isSurfaceLayerLocked, resolveSurfaceLayerId } from './cadSurfaceTypes';
@@ -44,9 +44,11 @@ export const commitSurface = (
   commitLayerProject(key, snapshot, nextProject, label);
 
 /**
- * Native source-definition mutations: rejected on imported-TIN definitions
- * (their topology is the stored payload, never entity refs). 18S/T/V
- * final-mesh edits (SURFACE_*_EDIT) stay allowed — they are not listed here.
+ * Native source-definition mutations: rejected on explicit-topology
+ * definitions (imported or baked — topology is the stored payload, never
+ * entity refs). Positive capability check: only native definitions may
+ * mutate sources. 18S/T/V final-mesh edits (SURFACE_*_EDIT) stay allowed —
+ * they are not listed here.
  */
 const NATIVE_SOURCE_MUTATION_KEYS: ReadonlySet<CadCommand['key']> = new Set([
   'SURFACE_ADD_POINT_GROUP',
@@ -78,7 +80,7 @@ export const editSurface = (
   const surface = surfaces.find((entry) => entry.id === surfaceId);
   if (!surface) return null;
   if (isSurfaceLayerLocked(snapshot.project, surface)) return null;
-  if (isImportedTinDefinition(surface.definition) && NATIVE_SOURCE_MUTATION_KEYS.has(key)) {
+  if (!isNativeSurfaceDefinition(surface.definition) && NATIVE_SOURCE_MUTATION_KEYS.has(key)) {
     return null;
   }
   const next = mutate({ ...surface });

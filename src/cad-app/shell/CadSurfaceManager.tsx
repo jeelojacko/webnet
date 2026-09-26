@@ -1,6 +1,7 @@
 import React from 'react';
 import type { CadShellActions, CadWorkspaceSnapshot } from './cadShellTypes';
-import { trySurfaceCommand, type CadSurfaceRow } from './cadSurfaceSnapshot';
+import { trySurfaceCommand, surfaceBakeCapability, type CadSurfaceRow } from './cadSurfaceSnapshot';
+import { bakeCopyFraming, confirmSurfaceBakeInPlace } from './cadSurfaceBakePrompt';
 import { CadSurfaceEditTable } from './CadSurfaceEditTable';
 import { CadSurfaceSelectionSection } from './CadSurfaceSelectionSection';
 import { CadSurfaceDefinitionEditor } from './CadSurfaceDefinitionEditor';
@@ -193,11 +194,27 @@ const SelectedSurface: React.FC<{
   pickArmedFor: string | null;
 }> = ({ snapshot, actions, row, renameDraft, setRenameDraft, commit, setNotice, pickArmedFor }) => {
   const surface = snapshot.surface!;
+  const bake = surfaceBakeCapability(row);
   const remove = (): void => {
     if (!window.confirm(`Delete surface “${row.name}”? Definition only; undoable.`)) return;
     const ok = trySurfaceCommand(actions.runSurveyCommand, { key: 'SURFACE_DELETE', surfaceId: row.id });
     if (ok) actions.selectSurface(null);
     commit('Delete', ok);
+  };
+  const bakeCopy = (): void => {
+    const ok = trySurfaceCommand(actions.runSurveyCommand, {
+      key: 'SURFBAKECOPY', surfaceId: row.id, expectedRevision: row.revision,
+      sessionCurrent: row.status === 'CURRENT',
+    });
+    setNotice(ok ? bakeCopyFraming(row) : 'Baked Copy rejected \u2014 see status/locks.');
+  };
+  const bakeInPlace = (): void => {
+    if (!confirmSurfaceBakeInPlace(row)) return;
+    const ok = trySurfaceCommand(actions.runSurveyCommand, {
+      key: 'SURFBAKE', surfaceId: row.id, expectedRevision: row.revision,
+      sessionCurrent: row.status === 'CURRENT',
+    });
+    setNotice(ok ? `Bake In Place done \u2014 \u201c${row.name}\u201d is now an explicit TIN.` : 'Bake In Place rejected \u2014 see status/locks.');
   };
   return (
     <div className="grid gap-2 rounded border border-slate-700 p-2">
@@ -291,8 +308,25 @@ const SelectedSurface: React.FC<{
       <dl className="grid grid-cols-[auto_1fr] gap-x-2 text-[11px]">
         <dt className="text-slate-400">Status</dt>
         <dd>{row.statusText}{row.stale ? ' — showing last mesh' : ''}</dd>
-        <dt className="text-slate-400">Source</dt>
-        <dd>{row.definition.importedSourceText ?? 'Native TIN (survey points)'}</dd>
+        {row.definition.sourceKind === 'explicit-tin' ? (
+          <>
+            <dt className="text-slate-400">Source Type</dt>
+            <dd>Baked Explicit TIN</dd>
+            <dt className="text-slate-400">Baked From</dt>
+            <dd title={row.definition.bakedFrom ?? undefined}>{row.definition.bakedFrom ?? '—'}</dd>
+            <dt className="text-slate-400">Source Revision</dt>
+            <dd title={row.definition.sourceRevision ?? undefined}>
+              {row.definition.sourceRevision ? `${row.definition.sourceRevision.slice(0, 12)}…` : '—'}
+            </dd>
+            <dt className="text-slate-400">Post-bake Edits</dt>
+            <dd>{row.editCount}</dd>
+          </>
+        ) : (
+          <>
+            <dt className="text-slate-400">Source</dt>
+            <dd>{row.definition.importedSourceText ?? 'Native TIN (survey points)'}</dd>
+          </>
+        )}
         <dt className="text-slate-400">Revision</dt>
         <dd title={row.revision}>{row.cachedRevision ? `built ${row.revision.slice(0, 12)}…` : 'never built'}</dd>
         {row.stats ? (
@@ -328,6 +362,26 @@ const SelectedSurface: React.FC<{
           onClick={() => setNotice(actions.rebuildSurface(row.id))}
         >
           Rebuild
+        </button>
+        <button
+          type="button"
+          className={buttonClass}
+          disabled={!bake.copy}
+          title={bakeCopyFraming(row)}
+          onClick={bakeCopy}
+        >
+          Create Baked Copy
+        </button>
+        <button
+          type="button"
+          className={buttonClass}
+          disabled={!bake.inPlace}
+          title={bake.inPlace
+            ? 'Snapshot the current mesh into the definition (clears edits; one undo step).'
+            : 'Bake In Place needs post-bake edits to fold in.'}
+          onClick={bakeInPlace}
+        >
+          Bake In Place
         </button>
         <button type="button" className={buttonClass} onClick={remove}>
           Delete

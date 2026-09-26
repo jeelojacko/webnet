@@ -13,7 +13,7 @@
 
 import { cadNormalizeAngleDeg } from './cadGeometry';
 import { dependencyOf, ownerOfCadEntity } from './cadAdjustmentDependency';
-import { validateImportedTinPayload } from './cadImportedTin';
+import { validateExplicitTinPayload } from './cadImportedTin';
 import type { HelmertControlPair, HelmertResidual } from './cadHelmert2D';
 import { buildCadProjectAuthoritativeBounds } from './cadProjectAuthoritativeBounds';
 import { transformCadEntityGeometry } from './cadTransformGeometry';
@@ -36,6 +36,7 @@ import type {
   CadSurface,
 } from './cadTypes';
 import { cloneCadSurfaceDefinition } from './cadSurfaceTypes';
+import { isNativeSurfaceDefinition } from './cadTypes';
 import { transformCadSurfaceEdits } from './cadSurfaceEditTransform';
 import { cloneCadProfileViews, cloneCadSurfaceProfiles } from './cadProfileTypes';
 import {
@@ -119,20 +120,20 @@ export const PROJECT_TRANSFORM_IMPORTED_TIN_INVALID =
   'CAD_PROJECT_TRANSFORM_IMPORTED_TIN_INVALID';
 
 /**
- * Fail-closed preflight for every imported-TIN surface, run before any other
- * work. Reuses the 18L validator verbatim; a missing payload on an
- * `imported-tin` surface is invalid by definition. Reason carries the surface
+ * Fail-closed preflight for every explicit-topology surface, run before any
+ * other work. Reuses the 18L validator verbatim; a missing payload on a
+ * non-native definition is invalid by definition. Reason carries the surface
  * id + validator reason only (never the raw payload).
  */
 const preflightImportedTins = (project: CadProject): string | null => {
   for (const surface of project.surfaces ?? []) {
     const definition = surface.definition;
-    if (definition.sourceKind !== 'imported-tin') continue;
+    if (isNativeSurfaceDefinition(definition)) continue;
     const payload = definition.importedTin;
     if (!payload) {
       return `${PROJECT_TRANSFORM_IMPORTED_TIN_INVALID}:${surface.id}: imported TIN definition missing.`;
     }
-    const reason = validateImportedTinPayload(payload);
+    const reason = validateExplicitTinPayload(payload);
     if (reason != null) {
       return `${PROJECT_TRANSFORM_IMPORTED_TIN_INVALID}:${surface.id}: ${reason}`;
     }
@@ -283,7 +284,7 @@ const transformSurface = (
   // Fail-closed backstop: preflight already rejected every invalid payload, so
   // this can only trigger if the surface mutated between the two reads. Never
   // warn-and-continue (that produced a mixed-frame result).
-  if (definition.sourceKind === 'imported-tin') {
+  if (!isNativeSurfaceDefinition(definition)) {
     const payload = definition.importedTin;
     if (!payload) {
       return {

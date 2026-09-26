@@ -939,6 +939,12 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
       units,
     );
   }, [activeProject, analysisSnapshot, surfaceCache, analysisPlane, analysisVersion, surfaceMeshSessions, units]);
+  // Phase 18L/18X — runtime caches for LandXML TIN surface / profile / section
+  // export (session-only; never persisted).
+  const exportCivilSources = useMemo(
+    () => ({ surfaceCache, profileCache, sectionCache }),
+    [surfaceCache, profileCache, sectionCache],
+  );
   // Phase 18U — band fills + legend geometry from the CURRENT cached results.
   // Colors/opacity come from the live definition, so a recolor or opacity edit
   // repaints from cache (the `arev1:` revision excludes appearance).
@@ -2416,6 +2422,7 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
             f2fLinkStatus={f2fLinkStatus}
             f2fLinkSourceKind={f2fLinkSourceKind}
             analysis={analysisExportInput}
+            civilSources={exportCivilSources}
             onClose={() => setExportCenterOpen(false)}
           />
         ) : null}

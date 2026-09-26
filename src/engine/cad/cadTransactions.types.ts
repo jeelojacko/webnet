@@ -171,6 +171,8 @@ export type CadCommandKey =
   | 'SURFACE_STYLE_RENAME'
   | 'SURFACE_STYLE_UPDATE'
   | 'SURFACE_STYLE_DELETE'
+  | 'SURFBAKE'
+  | 'SURFBAKECOPY'
   | 'VOLUME_SURFACE_CREATE'
   | 'VOLUME_SURFACE_DELETE'
   | 'VOLUME_SURFACE_UPDATE_SOURCES'
@@ -984,6 +986,29 @@ export type CadCommand =
       styleId: string;
       /** Required when surfaces reference the style; refs rewire to it. */
       replacementId?: string;
+    }
+  | {
+      key: 'SURFBAKE';
+      surfaceId: string;
+      /** Current source revision; a stale value rejects the bake. */
+      expectedRevision: string;
+      /**
+       * Session-owned CURRENT assertion. The project never persists
+       * `cachedRevision` (rebuilds stay out of history), so the engine's
+       * persisted-revision derivation reads UNBUILT even when the session
+       * cache holds a fresh mesh. The UI sets this true only after
+       * `surfaceBakeCapability` derives session CURRENT; absent = fail-closed
+       * on the persisted-revision derivation.
+       */
+      sessionCurrent?: boolean;
+    }
+  | {
+      key: 'SURFBAKECOPY';
+      surfaceId: string;
+      /** Current source revision; a stale value rejects the bake. */
+      expectedRevision: string;
+      /** Session-owned CURRENT assertion (see SURFBAKE). */
+      sessionCurrent?: boolean;
     }
   | {
       key: 'VOLUME_SURFACE_CREATE';

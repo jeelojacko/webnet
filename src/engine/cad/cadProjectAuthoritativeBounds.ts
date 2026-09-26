@@ -7,13 +7,14 @@
 // Coverage contract:
 // - Entities: delegated to `buildCadBounds` (all native surface geometry is
 //   entity-derived, so native surfaces have no special path here).
-// - Imported TINs (sourceKind === 'imported-tin' with a validated payload):
+// - Explicit-topology TINs (imported or baked, via the explicit predicate
+//   with a validated payload):
 //   union each vertex XY; Z is ignored (2D bounds) and faces are irrelevant.
 // - Derived caches (mesh/contours/profiles/sections/volumes) are session-only
 //   and never authoritative, so they are intentionally excluded.
 
 import { buildCadBounds } from './cadProjectState';
-import { isImportedTinDefinition } from './cadTypes';
+import { isExplicitTopologyDefinition } from './cadTypes';
 import type { CadBounds, CadProject } from './cadTypes';
 
 export const buildCadProjectAuthoritativeBounds = (
@@ -26,7 +27,7 @@ export const buildCadProjectAuthoritativeBounds = (
   let maxY = entityBounds ? entityBounds.maxY : Number.NEGATIVE_INFINITY;
 
   for (const surface of project.surfaces ?? []) {
-    if (!isImportedTinDefinition(surface.definition)) continue;
+    if (!isExplicitTopologyDefinition(surface.definition)) continue;
     const { vertices } = surface.definition.importedTin!;
     // Malformed arrays (length % 3 !== 0) are left to the TIN validator; the
     // complete XYZ triples present are still safe to read here.

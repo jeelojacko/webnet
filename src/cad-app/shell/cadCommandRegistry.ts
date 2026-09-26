@@ -296,6 +296,11 @@ export const CAD_SHELL_COMMANDS: CadShellCommandDef[] = [
   action('SURFBOUNDARY', 'Boundary', 'Surface', 'Create + attach a boundary ring (manager).', undefined, ['SURFBOUNDARYCREATE']),
   action('SURFBOUNDARYEDIT', 'Edit Boundary', 'Surface', 'Edit boundary vertices (manager).'),
   action('SURFBOUNDARYMAKEINDEPENDENT', 'Make Boundary Independent', 'Surface', 'Copy a boundary source for one surface (manager).'),
+  // Phase 18X — explicit bake (SURFACE tab, SEPARATE from the TIN EDIT
+  // group). Requires a CURRENT surface + fresh revision, lock-blocked,
+  // one undo entry; Bake is in-place, Bake to Copy makes "<Source> - Baked".
+  action('SURFBAKE', 'Bake Surface', 'Surface', 'Freeze the current mesh into an explicit TIN on this surface: clears sources/breaklines/boundaries/edits, geometry preserved, Undo restores.', undefined, ['BAKE']),
+  action('SURFBAKECOPY', 'Bake to Copy', 'Surface', 'Freeze the current mesh into a new explicit TIN copy ("<Source> - Baked"). Source unchanged.', undefined, ['BAKECOPY']),
   // Phase 18I — volume commands (all route through the surface manager;
   // Calculate runs the session volume service for the selected volume,
   // never auto-started, LOCK-gated by the volume transaction path).
@@ -406,6 +411,15 @@ export const isShellCommandAvailable = (
       case 'SHELL_IMPORT_LANDXML':
         // Live workspace present (guard above) — the file picker is always available.
         return true;
+      case 'SURFBAKE':
+      case 'SURFBAKECOPY': {
+        // CURRENT only: BUILDING/UNBUILT/NEEDS_REBUILD/FAILED all disable.
+        const surfaceId = resolveDefinitionSurfaceId(snapshot);
+        const row = surfaceId
+          ? snapshot.surface?.surfaces.find((entry) => entry.id === surfaceId) ?? null
+          : null;
+        return row?.status === 'CURRENT';
+      }
       default:
         return true;
     }
@@ -498,6 +512,32 @@ export const executeShellCommand = (
       return focusSurfaceDefinition(actions, snapshot, 'boundaries', resolveBoundaryFocus(snapshot));
     case 'SURFBOUNDARYMAKEINDEPENDENT':
       return makeBoundaryIndependent(actions, snapshot);
+    case 'SURFBAKE':
+    case 'SURFBAKECOPY': {
+      const surfaceId = resolveDefinitionSurfaceId(snapshot);
+      const row = surfaceId
+        ? snapshot?.surface?.surfaces.find((entry) => entry.id === surfaceId) ?? null
+        : null;
+      if (!surfaceId || !row) {
+        actions.openSurveyManager('surfaces');
+        return true;
+      }
+      if (row.status !== 'CURRENT') {
+        actions.openSurveyManager('surfaces', surfaceId);
+        return true;
+      }
+      try {
+        return actions.runSurveyCommand({
+          key: def.key === 'SURFBAKE' ? 'SURFBAKE' : 'SURFBAKECOPY',
+          surfaceId,
+          expectedRevision: row.revision,
+          // Session TIN currency (the project never persists cachedRevision).
+          sessionCurrent: true,
+        });
+      } catch {
+        return false;
+      }
+    }
     case 'SURFSWAPEDGE':
       return actions.startSurfaceEditSession?.('swap') ?? false;
     case 'SURFADDLINE':

@@ -8,6 +8,8 @@ import {
 import { CadLayersGroup } from './CadLayersGroup';
 import { CadAnnotateRibbonGroups } from '../annotation/CadAnnotateRibbonGroups';
 import type { CadShellActions, CadWorkspaceSnapshot, SurveyManagerKind } from './cadShellTypes';
+import { surfaceBakeCapability, trySurfaceCommand } from './cadSurfaceSnapshot';
+import { confirmSurfaceBakeInPlace } from './cadSurfaceBakePrompt';
 
 interface CadRibbonProps {
   snapshot: CadWorkspaceSnapshot | null;
@@ -186,9 +188,22 @@ const CadSurfaceRibbonGroup: React.FC<{
   };
   const openManager = (surfaceId?: string): void =>
     actions?.openSurveyManager('surfaces', surfaceId);
-  // Phase 18W — imported TINs keep topology editing disabled (manager shows
-  // the same disabled state; the engine rejects native source mutations).
-  const isImportedTin = selectedSurface?.definition.sourceKind === 'imported-tin';
+  // Phase 18W/18X — imported and baked explicit TINs keep native source editing
+  // disabled (manager shows the same disabled state; the engine rejects native
+  // source mutations).
+  const hasExplicitTopology = selectedSurface != null && selectedSurface.definition.sourceKind !== 'native';
+  const bake = selectedSurface != null ? surfaceBakeCapability(selectedSurface) : { copy: false, inPlace: false };
+  const bakeCommand = (key: 'SURFBAKE' | 'SURFBAKECOPY'): void => {
+    if (!selectedSurface || !actions) return;
+    if (key === 'SURFBAKE' && !confirmSurfaceBakeInPlace(selectedSurface)) return;
+    trySurfaceCommand(actions.runSurveyCommand, {
+      key,
+      surfaceId: selectedSurface.id,
+      expectedRevision: selectedSurface.revision,
+      // Session TIN currency (the project never persists cachedRevision).
+      sessionCurrent: selectedSurface.status === 'CURRENT',
+    });
+  };
   const runDefinitionCommand = (key: string): void => {
     const def = CAD_SHELL_COMMANDS.find((entry) => entry.key === key);
     if (def) executeShellCommand(def, actions, snapshot);
@@ -227,8 +242,24 @@ const CadSurfaceRibbonGroup: React.FC<{
       {group('Definition', [
         { key: 'point-group', label: 'Add Point Group', hint: 'Attach a point group (manager).', disabled: !ready, onClick: () => openManager(selectedSurfaceId ?? undefined) },
         { key: 'points', label: 'Add Points', hint: 'Add selected XYZ points (manager).', disabled: !ready, onClick: () => openManager(selectedSurfaceId ?? undefined) },
-        { key: 'breaklines', label: 'Breaklines', hint: 'Add/edit breakline chains (manager).', disabled: !ready || isImportedTin, onClick: () => runDefinitionCommand('SURFBREAKLINE') },
-        { key: 'boundaries', label: 'Boundaries', hint: 'Create/edit boundary rings (manager).', disabled: !ready || isImportedTin, onClick: () => runDefinitionCommand('SURFBOUNDARY') },
+        { key: 'breaklines', label: 'Breaklines', hint: 'Add/edit breakline chains (manager).', disabled: !ready || hasExplicitTopology, onClick: () => runDefinitionCommand('SURFBREAKLINE') },
+        { key: 'boundaries', label: 'Boundaries', hint: 'Create/edit boundary rings (manager).', disabled: !ready || hasExplicitTopology, onClick: () => runDefinitionCommand('SURFBOUNDARY') },
+      ])}
+      {group('Definition Tools', [
+        {
+          key: 'bake-copy',
+          label: 'Bake Copy',
+          hint: 'Create a new explicit-TIN surface from the selected surface\u2019s current mesh (original untouched).',
+          disabled: !ready || !bake.copy,
+          onClick: () => bakeCommand('SURFBAKECOPY'),
+        },
+        {
+          key: 'bake-in-place',
+          label: 'Bake In Place',
+          hint: 'Replace the definition with a snapshot of the current mesh (clears edits; one undo step).',
+          disabled: !ready || !bake.inPlace,
+          onClick: () => bakeCommand('SURFBAKE'),
+        },
       ])}
       {group('Build', [
         { key: 'rebuild', label: 'Rebuild', hint: 'Rebuild the selected surface.', disabled: !selectedSurfaceId || !actions, onClick: () => { if (selectedSurfaceId) actions?.rebuildSurface(selectedSurfaceId); } },

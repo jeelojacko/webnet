@@ -82,7 +82,7 @@ const resolveEditRef = (
     const label = pointLabels.get(key.slice('source:'.length));
     return label != null ? { label, broken: false } : { label: 'unresolved', broken: true };
   }
-  if (key.startsWith('imported:')) {
+  if (key.startsWith('imported:') || key.startsWith('explicit:')) {
     const parts = key.split(':');
     const index = Number(parts[parts.length - 1]);
     if (!Number.isInteger(index) || index < 0 || (importedVertexCount != null && index >= importedVertexCount)) {
@@ -111,8 +111,11 @@ export const deriveCadSurfaceEditSummaries = (
   meshPresent: boolean,
 ): CadSurfaceEditSummary[] => {
   const edits = surface.definition.edits ?? [];
+  // Phase 18X — baked surfaces keep the `imported:`/`explicit:` positional
+  // vertex refs; both read as V<i>, never "Imported".
+  const sourceKind = surface.definition.sourceKind ?? 'native';
   const importedVertexCount =
-    surface.definition.sourceKind === 'imported-tin' && surface.definition.importedTin
+    (sourceKind === 'imported-tin' || sourceKind === 'explicit-tin') && surface.definition.importedTin
       ? surface.definition.importedTin.vertices.length / 3
       : null;
   // Display-only E-numbers for edit-created vertices (definition order

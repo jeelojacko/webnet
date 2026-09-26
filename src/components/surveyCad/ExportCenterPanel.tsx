@@ -12,6 +12,7 @@ import {
 } from '../../engine/browserFileIo';
 import type { CadDrawingDocument } from '../../engine/cad/cadTypes';
 import type { CadAnalysisExportInput } from '../../engine/cad/cadAnalysisExportScene';
+import type { CadLandXmlCivilSources } from '../../engine/landxmlCivilSource';
 import type { ResultDependencyIdentity } from '../../engine/resultIntegrity';
 import type { FeatureCodeCatalog } from '../../engine/fieldToFinish/featureCatalog';
 
@@ -40,6 +41,8 @@ interface ExportCenterPanelProps {
   f2fLinkSourceKind?: string;
   /** Phase 18U: session-cache analysis fills/legends; absent = legacy scene unchanged. */
   analysis?: CadAnalysisExportInput;
+  /** Phase 18L/18X: session caches for TIN surface / profile / section export. */
+  civilSources?: CadLandXmlCivilSources;
   onClose: () => void;
   saveTextFile?: (_name: string, _text: string, _picker: PickerType) => Promise<boolean>;
   saveBinaryFile?: (_name: string, _bytes: Uint8Array, _picker: PickerType) => Promise<boolean>;
@@ -73,6 +76,7 @@ export const ExportCenterPanel = ({
   f2fLinkStatus,
   f2fLinkSourceKind,
   analysis,
+  civilSources,
   onClose,
   saveTextFile = async (name, text, picker) => saveBrowserTextFile(name, text, [picker]),
   saveBinaryFile = async (name, bytes, picker) => saveBrowserBinaryFile(name, bytes, [picker]),
@@ -87,8 +91,8 @@ export const ExportCenterPanel = ({
     const depOpts = resultIdentity !== undefined || stationIds !== undefined || f2fLinkStatus !== undefined || f2fLinkSourceKind !== undefined
       ? { resultIdentity: resultIdentity ?? null, stationIds, f2fLinkStatus, f2fLinkSourceKind }
       : undefined;
-    return buildExportCenterPreview(drawing, { format, pdfScope, sheetId, catalog }, depOpts, undefined, analysis);
-  }, [drawing, format, pdfScope, sheetId, catalog, resultIdentity, stationIds, f2fLinkStatus, f2fLinkSourceKind, analysis]);
+    return buildExportCenterPreview(drawing, { format, pdfScope, sheetId, catalog }, depOpts, civilSources, analysis);
+  }, [drawing, format, pdfScope, sheetId, catalog, resultIdentity, stationIds, f2fLinkStatus, f2fLinkSourceKind, analysis, civilSources]);
   const preview = outcome.ok ? outcome.preview : null;
 
   const handleDownload = async (): Promise<void> => {
