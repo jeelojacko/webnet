@@ -2,6 +2,7 @@ import { createStableRuntimeId } from '../id';
 import { buildCadBounds } from './cadProjectState';
 import { cloneCadEntity, cloneCadProject, cloneSurveyCadPersistedState, sanitizeSurveyCadPersistedState } from './cadPersistence';
 import { cloneDraftDocument, createBlankDraftDocument, sanitizeDraftDocument } from './cadDraftTypes';
+import type { DraftDocument } from './cadDraftTypes';
 import type {
   CadBlockChild,
   CadDrawingDocument,
@@ -194,6 +195,39 @@ const cloneImportRecord = (record: CadDrawingImportRecord): CadDrawingImportReco
   ...record,
 });
 
+// Phase 19B §60 persistence: cadDraftTypes sanitize records only an explicit
+// `plotFrame: true`, so an explicit `plotFrame: false` (frame is a screen-only
+// guide) would be dropped and reopen as the legacy "frame on" value. Restore
+// the explicit false that sanitize left undefined. Absent/true round-trip
+// untouched, so this is a no-op for every already-handled field.
+const preserveCadDraftLayoutFields = (rawDraft: unknown, draft: DraftDocument): DraftDocument => {
+  if (!isRecord(rawDraft) || !Array.isArray(rawDraft.sheets)) return draft;
+  const rawSheetById = new Map<string, Record<string, unknown>>();
+  rawDraft.sheets.forEach((entry) => {
+    if (isRecord(entry) && typeof entry.id === 'string') rawSheetById.set(entry.id, entry);
+  });
+  return {
+    ...draft,
+    sheets: draft.sheets.map((sheet) => {
+      const rawSheet = rawSheetById.get(sheet.id);
+      if (!rawSheet || !Array.isArray(rawSheet.viewports)) return sheet;
+      const rawViewportById = new Map<string, Record<string, unknown>>();
+      rawSheet.viewports.forEach((entry) => {
+        if (isRecord(entry) && typeof entry.id === 'string') rawViewportById.set(entry.id, entry);
+      });
+      return {
+        ...sheet,
+        viewports: sheet.viewports.map((viewport) => {
+          const rawViewport = rawViewportById.get(viewport.id);
+          const existingPlotFrame = (viewport as { plotFrame?: boolean }).plotFrame;
+          if (!rawViewport || existingPlotFrame !== undefined || rawViewport.plotFrame !== false) return viewport;
+          return { ...viewport, plotFrame: false } as typeof viewport;
+        }),
+      };
+    }),
+  };
+};
+
 export const cloneCadDrawingDocument = (
   document: CadDrawingDocument,
 ): CadDrawingDocument => ({
@@ -208,12 +242,14 @@ export const cloneCadDrawingDocument = (
   parcelLayout: cloneParcelLayout(document.parcelLayout),
   showParcelLabels: document.showParcelLabels ?? true,
   imports: (document.imports ?? []).map(cloneImportRecord),
-  draft:
+  draft: preserveCadDraftLayoutFields(
+    document.draft,
     sanitizeDraftDocument(document.draft, document.project.id, document.project.layers) ??
-    createBlankDraftDocument({
-      projectId: document.project.id,
-      layers: document.project.layers,
-    }),
+      createBlankDraftDocument({
+        projectId: document.project.id,
+        layers: document.project.layers,
+      }),
+  ),
 });
 
 export const migrateV1ToV2 = (document: CadDrawingDocument): CadDrawingDocument => {

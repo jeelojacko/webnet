@@ -19,9 +19,6 @@
 <circle cx="165" cy="40" r="1.8" fill="#ffffff" stroke="#ffffff" clip-path="url(#viewport-viewport-small-parcel)"/>
 <circle cx="65" cy="40" r="1.8" fill="#ffffff" stroke="#ffffff" clip-path="url(#viewport-viewport-small-parcel)"/>
 </g>
-<g id="layer-paper-frame">
-<rect x="15" y="15" width="200" height="130" fill="none" stroke="#94a3b8"/>
-</g>
 <g id="layer-labels">
 <text x="115" y="120" font-size="2.5" text-anchor="middle" fill="#94a3b8" clip-path="url(#viewport-viewport-small-parcel)">N90-00-00.00E 50.000 m</text>
 <text x="165" y="80" font-size="2.5" text-anchor="middle" fill="#94a3b8" clip-path="url(#viewport-viewport-small-parcel)">N00-00-00.00E 40.000 m</text>

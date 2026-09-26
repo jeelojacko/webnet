@@ -10,8 +10,12 @@ import { resolveEffectiveColor } from './resolveEffectiveColor';
 import { finalizeExportResult, type ExportResult, type ExportWarning, type ExportWarningCode } from './exportResult';
 
 export type { ExportResult, ExportWarning, ExportWarningCode };
-import type { DraftSheet, DraftDocument } from './cadDraftTypes';
-import { expandSheetTokens, asPlanViewport, buildSheetTokenContext } from './cadSheets';
+import type { DraftDocument } from './cadDraftTypes';
+import {
+  asPlanViewport,
+  buildSheetTokenContext,
+  northArrowAngleDeg,
+} from './cadSheets';
 import { buildTableFragmentItems } from './cadExportTables';
 import { buildAnalysisSheetItems, type CadAnalysisExportInput } from './cadAnalysisExportScene';
 import type { CadEntity, CadProject } from './cadTypes';
@@ -356,119 +360,31 @@ export const buildPaperLabelItems = (
   return { items, brokenIds };
 };
 // these helpers so fixture, SVG, and PDF share one definition.
-// The arrow triangle rotates clockwise by rotationDeg about its base point so
-// it agrees with rotated viewport geometry; the scale bar is pure paper
-// geometry (no model coordinates), hence rotation-invariant by construction.
-// The viewport clip stays an axis-aligned paper rect under rotation — content
-// outside it is clipped, never reprojected.
-export const buildNorthArrowItems = (xMm: number, yMm: number, sizeMm: number, layer: string, rotationDeg = 0): ExportItem[] => {
-  const tip = { x: xMm, y: yMm - sizeMm };
-  const right = { x: xMm + sizeMm * 0.3, y: yMm };
-  const tail = { x: xMm, y: yMm + sizeMm * 0.25 };
-  const left = { x: xMm - sizeMm * 0.3, y: yMm };
-  const rotate = (point: { x: number; y: number }): { x: number; y: number } => {
-    if (rotationDeg === 0) return point;
-    const a = (rotationDeg * Math.PI) / 180;
-    const dx = point.x - xMm;
-    const dy = point.y - yMm;
-    return { x: xMm + dx * Math.cos(a) - dy * Math.sin(a), y: yMm + dx * Math.sin(a) + dy * Math.cos(a) };
-  };
-  return [
-    { kind: 'polyline', layer, points: [rotate(tip), rotate(right), rotate(tail), rotate(left)], close: true },
-    { kind: 'text', layer, x: xMm, y: yMm - sizeMm - 1.5, text: 'N (grid)', heightMm: 2.5, anchor: 'middle' },
-  ];
-};
-
-export const buildScaleBarItems = (
-  xMm: number,
-  yMm: number,
-  divisions: number,
-  divisionMm: number,
-  layer: string,
-): ExportItem[] =>
-  Array.from({ length: divisions }, (_, i) => ({
-    kind: 'rect' as const,
-    layer,
-    x: xMm + i * divisionMm,
-    y: yMm,
-    width: divisionMm,
-    height: 2,
-    fill: i % 2 === 0 ? '#000000' : '#ffffff',
-  }));
-
-// One renderer for preview, SVG, PDF, and layout-DXF: identical paper-mm
-// numerics everywhere. When the sheet references a visual template, its
-// elements render verbatim; otherwise the legacy bar renders.
-export const buildTitleBlockItems = (
-  sheet: DraftSheet,
-  layer: string,
-  template?: import('./cadDraftTypes').DraftTitleBlockDefinition,
-  tokenContext?: import('./cadSheets').SheetTokenContext,
-): { items: ExportItem[]; unknownTokens: string[] } => {
-  const items: ExportItem[] = [];
-  const unknownTokens: string[] = [];
-  const noteUnknown = (names: readonly string[]): void => {
-    names.forEach((token) => {
-      if (!unknownTokens.includes(token)) unknownTokens.push(token);
-    });
-  };
-  if (template?.elements && template.elements.length > 0) {
-    const ordered = [...template.elements].sort((a, b) => (a.id < b.id ? -1 : a.id > b.id ? 1 : 0));
-    ordered.forEach((element) => {
-      if (element.kind === 'rect') {
-        items.push({
-          kind: 'rect', layer,
-          x: element.xMm, y: element.yMm,
-          width: Math.max(0.1, element.widthMm ?? 10),
-          height: Math.max(0.1, element.heightMm ?? 5),
-        });
-        return;
-      }
-      if (element.kind === 'line') {
-        items.push({
-          kind: 'line', layer,
-          x1: element.xMm, y1: element.yMm,
-          x2: element.x2Mm ?? element.xMm, y2: element.y2Mm ?? element.yMm,
-          ...(element.lineweightMm != null ? { widthMm: element.lineweightMm } : {}),
-        });
-        return;
-      }
-      const raw = element.kind === 'token-text' ? (element.tokenTemplate ?? element.text ?? '') : (element.text ?? '');
-      const { text, unknownTokens: unknown } = expandSheetTokens(raw, tokenContext ?? {});
-      noteUnknown(unknown);
-      items.push({
-        kind: 'text', layer,
-        x: element.xMm, y: element.yMm, text,
-        heightMm: Math.max(0.5, element.fontSizeMm ?? 3),
-        anchor: element.alignment === 'center' ? 'middle' : element.alignment === 'right' ? 'end' : 'start',
-      });
-    });
-    return { items, unknownTokens };
-  }
-  const barH = 14;
-  const y = sheet.heightMm - sheet.margins.bottomMm - barH;
-  items.push({ kind: 'rect', layer, x: sheet.margins.leftMm, y, width: sheet.widthMm - sheet.margins.leftMm - sheet.margins.rightMm, height: barH });
-  const fields = [sheet.name, `${sheet.widthMm}x${sheet.heightMm}mm`];
-  sheet.sheetObjects.forEach((object) => {
-    if (typeof object.text !== 'string') return;
-    const { text, unknownTokens: unknown } = expandSheetTokens(object.text, { SHEET_NAME: sheet.name });
-    unknown.forEach((token) => {
-      if (!unknownTokens.includes(token)) unknownTokens.push(token);
-    });
-    items.push({ kind: 'text', layer: object.layerId, x: object.paperXmm, y: object.paperYmm, text, heightMm: 3 });
-  });
-  fields.forEach((field, index) => {
-    items.push({
-      kind: 'text',
-      layer,
-      x: sheet.margins.leftMm + 2 + index * 60,
-      y: y + barH / 2 + 1,
-      text: field,
-      heightMm: 3,
-    });
-  });
-  return { items, unknownTokens };
-};
+// Phase 19B Round 2C — canonical paper builders live in cadSheetScene.ts
+// (moved verbatim; this module re-exports them so scene/parity/DXF callers
+// are unaffected). deriveSheetScene stays here: it orchestrates the
+// model-projection and label/table builders owned by this module.
+import {
+  buildTitleBlockItems,
+  buildViewportPaperSymbols,
+  normalizedAngle,
+} from './cadSheetScene';
+import type { DerivedScaleBar, DerivedViewportScene } from './cadSheetScene';
+export {
+  buildNorthArrowItems,
+  buildScaleBarItems,
+  buildNorthArrowObjectItems,
+  buildScaleBarObjectItems,
+  buildTitleBlockItems,
+  buildViewportPaperSymbols,
+  linkedPaperObjectViewportId,
+} from './cadSheetScene';
+export type {
+  DerivedScaleBar,
+  DerivedViewportScene,
+  SheetPaperObjectFields,
+  ViewportPaperSymbols,
+} from './cadSheetScene';
 
 // Layer visibility/printable filtering also applies to analysis maps: a map
 // whose owning layer is hidden or non-printable contributes no fills/legend,
@@ -581,7 +497,15 @@ const backfillItemColor = (
 // Throws only when the sheet itself is missing (essential object). Broken
 // label refs and unknown tokens become warnings; the export still completes.
 // Full unified result: entity disposition lists included, no silent drops.
-export const buildExportSheetSceneWithResult = (args: BuildSceneArgs): ExportResult<ExportSheetScene> => {
+//
+// Z-order (§62), deterministic and identical for scene/SVG/PDF/layout-DXF:
+// viewport frame → projected model/analysis geometry → viewport-linked
+// annotations (labels, north arrow, scale bar) → paper notes/tables → title
+// block. Caller-supplied `paperExtras` stay last for backward compatibility
+// with the pre-19B scene contract.
+const deriveSheetSceneInternal = (
+  args: BuildSceneArgs,
+): ExportResult<ExportSheetScene> & { viewports: DerivedViewportScene[] } => {
   const warnings: ExportWarning[] = [];
   const exportedEntityIds: string[] = [];
   const omittedEntityIds: string[] = [];
@@ -596,6 +520,7 @@ export const buildExportSheetSceneWithResult = (args: BuildSceneArgs): ExportRes
   if (!sheet) throw new Error(`export: sheet ${args.sheetId} not found`);
   const clips: ExportClip[] = [];
   const items: ExportItem[] = [];
+  const derivedViewports: DerivedViewportScene[] = [];
   // Phase 18P: one derived project index + one draft-layer index for the
   // whole export pass; the corrected appearance triple is memoized per
   // sourceEntityId below.
@@ -626,6 +551,16 @@ export const buildExportSheetSceneWithResult = (args: BuildSceneArgs): ExportRes
   };
   const layerColorOf = (layerId: string): string | undefined =>
     lookup.layerById.get(layerId)?.color ?? draftLayerById.get(layerId)?.color;
+  // §61: paper objects resolve the drawing layer catalog; NO-PLOT (printable
+  // false) wins and frozen/OFF hide, but viewport layer overrides never apply
+  // to paper objects.
+  const paperLayerHidden = (layerId: string): boolean =>
+    layerFlagged(layerId, 'visible') || layerFlagged(layerId, 'printable');
+  const paperSymbols = buildViewportPaperSymbols({
+    sheet,
+    unitsMode: args.draft.precision.unitsMode,
+    isHidden: paperLayerHidden,
+  });
   const persistedLabels: ModelLabelPlacement[] = draftLabelsToPlacements(args.draft.labels);
   const effectiveLabels = args.modelLabels ?? persistedLabels;
   sheet.viewports.forEach((viewport) => {
@@ -682,7 +617,13 @@ export const buildExportSheetSceneWithResult = (args: BuildSceneArgs): ExportRes
           recordOmitted(primitive.sourceEntityId, `skipped entity ${primitive.sourceEntityId}`);
         }
       });
-    items.push({ kind: 'rect', layer: 'paper-frame', x: plan.paperXmm, y: plan.paperYmm, width: plan.paperWidthMm, height: plan.paperHeightMm });
+    // §60: the viewport border plots only when requested. Legacy viewports
+    // that predate `plotFrame` keep the historical always-on frame; an
+    // explicit `plotFrame: false` opts out.
+    const rawPlotFrame = (viewport as { plotFrame?: boolean }).plotFrame;
+    if (rawPlotFrame !== false) {
+      items.push({ kind: 'rect', layer: 'paper-frame', x: plan.paperXmm, y: plan.paperYmm, width: plan.paperWidthMm, height: plan.paperHeightMm });
+    }
     const toPaperForLabels = toPaper;
     const placed = buildPaperLabelItems(
       effectiveLabels.filter((label) => !isHidden(label.layerId ?? 'labels')),
@@ -694,7 +635,33 @@ export const buildExportSheetSceneWithResult = (args: BuildSceneArgs): ExportRes
       warnings.push({ code: 'BROKEN_REFERENCE', message: `label ${id} has a broken reference` });
     });
     items.push(...placed.items);
+    // §47-54: canonical north arrow / scale bar for this viewport, from the
+    // same explicit paper objects the layout DXF consumes.
+    items.push(...(paperSymbols.itemsByViewport.get(plan.id) ?? []));
+    derivedViewports.push({
+      viewportId: plan.id,
+      name: plan.name,
+      paperXmm: plan.paperXmm,
+      paperYmm: plan.paperYmm,
+      paperWidthMm: plan.paperWidthMm,
+      paperHeightMm: plan.paperHeightMm,
+      modelCenterX: plan.modelCenterX,
+      modelCenterY: plan.modelCenterY,
+      scaleDenominator: plan.scaleDenominator,
+      rotationDeg: plan.rotationDeg,
+      locked: (viewport as { locked?: boolean }).locked === true,
+      plotFrame: rawPlotFrame !== false,
+      northArrowAngleDeg:
+        paperSymbols.northArrowAngleByViewport.get(plan.id) ?? normalizedAngle(northArrowAngleDeg(plan.rotationDeg)),
+      hasNorthArrow: paperSymbols.northArrowAngleByViewport.has(plan.id),
+      ...(paperSymbols.scaleBarByViewport.get(plan.id) != null
+        ? { scaleBar: paperSymbols.scaleBarByViewport.get(plan.id) as DerivedScaleBar }
+        : {}),
+    });
   });
+  // §49: a paper object whose viewport link is missing stays visibly broken.
+  items.push(...paperSymbols.brokenItems);
+  paperSymbols.warnings.forEach((warning) => warnings.push(warning));
 
   const sheetIndex = args.draft.sheets.findIndex((entry) => entry.id === sheet.id);
   const template = sheet.titleBlockId
@@ -758,7 +725,7 @@ export const buildExportSheetSceneWithResult = (args: BuildSceneArgs): ExportRes
       layerColorOf,
     ),
   );
-  return finalizeExportResult({
+  const finalized = finalizeExportResult({
     output: { sheetId: sheet.id, sheetName: sheet.name, widthMm: sheet.widthMm, heightMm: sheet.heightMm, clips, items: painted },
     warnings,
     errors: [],
@@ -766,6 +733,39 @@ export const buildExportSheetSceneWithResult = (args: BuildSceneArgs): ExportRes
     omittedEntityIds,
     approximatedEntityIds,
   });
+  return { ...finalized, viewports: derivedViewports };
+};
+
+/** §106 canonical derived sheet scene: one geometry source for the screen,
+ *  SVG, PDF, and layout-DXF. Paper-mm items plus serializable viewport
+ *  descriptors (transform, lock, plot frame, north angle, scale bar). */
+export interface DerivedSheetScene {
+  sheetId: string;
+  sheetName: string;
+  widthMm: number;
+  heightMm: number;
+  scene: ExportSheetScene;
+  viewports: DerivedViewportScene[];
+  warnings: ExportWarning[];
+}
+
+export const deriveSheetScene = (args: BuildSceneArgs): DerivedSheetScene => {
+  const internal = deriveSheetSceneInternal(args);
+  return {
+    sheetId: internal.output.sheetId,
+    sheetName: internal.output.sheetName,
+    widthMm: internal.output.widthMm,
+    heightMm: internal.output.heightMm,
+    scene: internal.output,
+    viewports: internal.viewports,
+    warnings: internal.warnings,
+  };
+};
+
+export const buildExportSheetSceneWithResult = (args: BuildSceneArgs): ExportResult<ExportSheetScene> => {
+  const { output, warnings, errors, exportedEntityIds, omittedEntityIds, approximatedEntityIds } =
+    deriveSheetSceneInternal(args);
+  return { output, warnings, errors, exportedEntityIds, omittedEntityIds, approximatedEntityIds };
 };
 
 // Legacy shape: thin wrapper so the dev harness and existing callers keep

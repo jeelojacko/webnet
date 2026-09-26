@@ -10,6 +10,7 @@ import {
   editTitleBlockTemplateElements,
   expandSheetTokens,
   renameTitleBlockTemplate,
+  setSheetTitleBlockField,
   SHEET_TOKENS,
 } from '../../engine/cad/cadSheets';
 import { buildTitleBlockItems } from '../../engine/cad/cadExportScene';
@@ -19,7 +20,7 @@ import { buildTitleBlockItems } from '../../engine/cad/cadExportScene';
 // Definition-vs-instance: the definition is the reusable template (this
 // editor mutates definitions); a sheet references one definition via
 // sheet.titleBlockId. Editing a definition updates every sheet using it.
-// Per-sheet field values live on TitleBlockInstance, not here.
+// Per-sheet field values live on sheet.titleBlockFields, not here.
 // No scripting; image/logo primitives are out of scope (omitted: raster
 // placement needs binary asset management beyond this bounded editor).
 // Token set is bounded to SHEET_TOKENS; unknown tokens stay literal + warn.
@@ -32,6 +33,9 @@ export interface TitleBlockTemplateEditorProps {
 }
 
 const GRID_MM = 1;
+// Bounded per-sheet instance fields: values live on the sheet, so a shared
+// template is never destructively edited to vary a single sheet.
+const INSTANCE_FIELDS = ['DRAWN_BY', 'CHECKED_BY', 'CLIENT', 'LOCATION'] as const;
 const snap = (value: number, enabled: boolean): number =>
   enabled ? Math.round(value / GRID_MM) * GRID_MM : value;
 
@@ -230,6 +234,25 @@ export const TitleBlockTemplateEditor = ({
           )}
         </div>
       </div>
+      {preview?.sheet && template && (
+        <fieldset aria-label="Per-sheet title block fields" className="grid grid-cols-2 gap-1 rounded border border-slate-700 p-1">
+          <legend>{`Sheet instance fields — ${preview.sheet.name}`}</legend>
+          {INSTANCE_FIELDS.map((field) => (
+            <label key={field}>
+              {field}
+              <input
+                aria-label={`Instance field ${field}`}
+                type="text"
+                value={preview.sheet.titleBlockFields?.[field] ?? ''}
+                onChange={(event) => onDraftChange(setSheetTitleBlockField(draft, preview.sheet.id, field, event.target.value))}
+              />
+            </label>
+          ))}
+          <p className="col-span-2 text-[10px] opacity-70">
+            These values apply to this sheet only; the shared template geometry is never modified.
+          </p>
+        </fieldset>
+      )}
       <p className="text-[11px] opacity-70">
         {`Tokens: ${SHEET_TOKENS.map((t) => `{${t}}`).join(' ')} — unknown stay literal.`}
       </p>

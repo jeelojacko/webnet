@@ -1,4 +1,5 @@
 import { useSyncExternalStore } from 'react';
+import type { DraftDocument } from '../../engine/cad/cadDraftTypes';
 import type {
   CadCursorPoint,
   CadShellActions,
@@ -27,6 +28,16 @@ export interface CadShellLink {
   /** Set by the workspace; null until the workspace mounts. */
   actions: CadShellActions | null;
   /**
+   * Phase 19B QA — generation counter for the `actions` channel. Plain
+   * assignment never re-renders subscribers, so a remount that republishes
+   * an equal snapshot left the chrome reading a stale (nulled) actions
+   * object forever. The workspace bumps this on (un)register; chrome
+   * subscribes and re-reads `actions` on change.
+   */
+  getActionsVersion: () => number;
+  subscribeActions: (_listener: () => void) => () => void;
+  notifyActions: () => void;
+  /**
    * Phase 18D — set by the shell; survey ribbon buttons focus the
    * Toolspace tab through it (workspace cannot reach shell layout).
    */
@@ -51,6 +62,13 @@ export interface CadShellLink {
    * nodes open the survey table manager through it.
    */
   requestSurveyTableManager: (() => void) | null;
+  /**
+   * Phase 19B Round 3F — set by the shell so the workspace's draft-only
+   * editors (title-block templates, sheet objects) commit through the
+   * shell-owned Draft history instead of replaceCadProject, which wipes
+   * model undo/redo. Null when no shell is mounted (fallback path).
+   */
+  requestDraftCommit: ((_next: DraftDocument) => void) | null;
 }
 
 const countsEqual = (
@@ -152,8 +170,10 @@ const propertiesEqual = (
 export const createCadShellLink = (): CadShellLink => {
   let snapshot: CadWorkspaceSnapshot | null = null;
   let cursor: CadCursorPoint | null = null;
+  let actionsVersion = 0;
   const slowListeners = new Set<() => void>();
   const cursorListeners = new Set<() => void>();
+  const actionsListeners = new Set<() => void>();
   return {
     getSnapshot: () => snapshot,
     subscribe: (listener) => {
@@ -181,11 +201,23 @@ export const createCadShellLink = (): CadShellLink => {
       cursorListeners.forEach((listener) => listener());
     },
     actions: null,
+    getActionsVersion: () => actionsVersion,
+    subscribeActions: (listener) => {
+      actionsListeners.add(listener);
+      return () => {
+        actionsListeners.delete(listener);
+      };
+    },
+    notifyActions: () => {
+      actionsVersion += 1;
+      actionsListeners.forEach((listener) => listener());
+    },
     requestLayerManager: null,
     requestToolspaceTab: null,
     requestBlockManager: null,
     requestAnnotationManager: null,
     requestSurveyTableManager: null,
+    requestDraftCommit: null,
   };
 };
 
@@ -194,3 +226,6 @@ export const useCadShellSnapshot = (link: CadShellLink): CadWorkspaceSnapshot | 
 
 export const useCadShellCursor = (link: CadShellLink): CadCursorPoint | null =>
   useSyncExternalStore(link.subscribeCursor, link.getCursor, link.getCursor);
+
+export const useCadShellActionsVersion = (link: CadShellLink): number =>
+  useSyncExternalStore(link.subscribeActions, link.getActionsVersion, link.getActionsVersion);

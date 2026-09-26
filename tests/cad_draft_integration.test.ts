@@ -20,6 +20,7 @@ import {
   buildExportSheetScene,
   buildNorthArrowItems,
   buildScaleBarItems,
+  deriveSheetScene,
   type ModelLabelPlacement,
 } from '../src/engine/cad/cadExportScene';
 import { deriveCurveAutoText, deriveInverseAutoText } from '../src/engine/cad/cadLabelEngine';
@@ -33,13 +34,24 @@ import {
   addSheetToDraft,
   addViewportToSheet,
   asPlanViewport,
+  assignTitleBlockToSheet,
   buildScaleBar,
   createPlanSheet,
+  createTitleBlockTemplate,
+  editTitleBlockTemplateElements,
   modelToPaperMm,
   northArrowAngleDeg,
   rotateViewport,
+  setSheetTitleBlockField,
+  setViewportLayerOverride,
   setViewportScale,
 } from '../src/engine/cad/cadSheets';
+import {
+  addSheetObject,
+  defaultNorthArrowObject,
+  defaultPlanNoteObject,
+  defaultScaleBarObject,
+} from '../src/engine/cad/cadSheetObjects';
 import { serializeExportSceneToSvg } from '../src/engine/cad/cadSvgSerializer';
 import type { CadDrawingDocument, CadEntity, CadProject } from '../src/engine/cad/cadTypes';
 
@@ -300,5 +312,122 @@ describe('draft final integration', () => {
 
     expect(JSON.stringify(session)).toBe(before);
     expect(JSON.stringify(doc.project.entities)).toBe(entitiesBefore);
+  });
+
+  /**
+   * Phase 19B §82 save/reopen oracle: 3 sheets mixing scales/rotations,
+   * title-block template + per-sheet instance fields, north arrows, scale
+   * bars, plan notes, and viewport layer overrides. Save → reopen must be an
+   * exact draft round-trip with no drift and no false broken references from
+   * the canonical scene derivation.
+   */
+  it('§82 save/reopen oracle: 3 sheets with symbols, instance fields, and overrides', () => {
+    const project = buildCurveProject();
+    const template = createTitleBlockTemplate('Survey block');
+    let draft: DraftDocument = editTitleBlockTemplateElements(
+      { ...mustDraft(createBlankCadDrawingDocument({ name: 'Oracle 19B', units: 'm' })), titleBlockDefinitions: [template] },
+      template.id,
+      [
+        { id: 'tb-static', kind: 'static-text', xMm: 10, yMm: 10, text: 'ORACLE', fontSizeMm: 4 },
+        { id: 'tb-drawn', kind: 'token-text', xMm: 10, yMm: 16, tokenTemplate: 'DRAWN {DRAWN_BY}', fontSizeMm: 3 },
+        { id: 'tb-checked', kind: 'token-text', xMm: 10, yMm: 20, tokenTemplate: 'CHECKED {CHECKED_BY}', fontSizeMm: 3 },
+        { id: 'tb-client', kind: 'token-text', xMm: 10, yMm: 24, tokenTemplate: 'CLIENT {CLIENT}', fontSizeMm: 3 },
+        { id: 'tb-location', kind: 'token-text', xMm: 10, yMm: 28, tokenTemplate: 'LOCATION {LOCATION}', fontSizeMm: 3 },
+        { id: 'tb-frame', kind: 'rect', xMm: 8, yMm: 8, widthMm: 80, heightMm: 26 },
+      ],
+    );
+    const configurations = [
+      { name: 'Plan A', sizeId: 'ISO A4' as const, orientation: 'landscape' as const, den: 500, rotationDeg: 0, hiddenLayer: 'points' },
+      { name: 'Plan B', sizeId: 'ISO A3' as const, orientation: 'landscape' as const, den: 1000, rotationDeg: 30, hiddenLayer: 'parcels' },
+      { name: 'Plan C', sizeId: 'ISO A4' as const, orientation: 'portrait' as const, den: 250, rotationDeg: 315, hiddenLayer: 'points' },
+    ];
+    const sheetIds: string[] = [];
+    configurations.forEach((config, index) => {
+      draft = addSheetToDraft(
+        draft,
+        createPlanSheet({ name: config.name, sizeId: config.sizeId, orientation: config.orientation }),
+      );
+      const sheetId = draft.sheets[draft.sheets.length - 1]?.id as string;
+      sheetIds.push(sheetId);
+      draft = addViewportToSheet(draft, sheetId, {
+        name: `${config.name} V`,
+        modelCenterX: 50,
+        modelCenterY: 0,
+        scaleDenominator: config.den,
+        paperXmm: 15,
+        paperYmm: 15,
+        paperWidthMm: 180,
+        paperHeightMm: 120,
+        rotationDeg: config.rotationDeg,
+      });
+      const viewport = draft.sheets[draft.sheets.length - 1]?.viewports[0] as { id: string };
+      draft = assignTitleBlockToSheet(draft, sheetId, template.id);
+      draft = setSheetTitleBlockField(draft, sheetId, 'DRAWN_BY', `Drafter ${index + 1}`);
+      draft = setSheetTitleBlockField(draft, sheetId, 'CHECKED_BY', 'Checker');
+      draft = setSheetTitleBlockField(draft, sheetId, 'CLIENT', 'Oracle Client');
+      draft = setSheetTitleBlockField(draft, sheetId, 'LOCATION', `Site ${index + 1}`);
+      draft = addSheetObject(draft, sheetId, defaultNorthArrowObject(viewport as never));
+      draft = addSheetObject(draft, sheetId, defaultScaleBarObject(viewport as never));
+      draft = addSheetObject(draft, sheetId, defaultPlanNoteObject(viewport as never));
+      draft = setViewportLayerOverride(draft, sheetId, viewport.id, config.hiddenLayer, { visible: false });
+    });
+    const authoredDraftJson = JSON.stringify(draft);
+    const doc: CadDrawingDocument = { ...createBlankCadDrawingDocument({ name: 'Oracle 19B', units: 'm' }), project, draft };
+
+    const reopened = parseCadDrawingFile(serializeCadDrawingFile(doc));
+    expect(reopened.ok).toBe(true);
+    if (!reopened.ok || !reopened.drawing.draft) return;
+    const revived = reopened.drawing.draft;
+
+    // Exact draft round-trip (no value drift, ids stable). Key order is
+    // canonicalised by sanitize, so compare structurally, then pin the
+    // canonical re-serialization for determinism.
+    expect(revived).toEqual(draft);
+    // Save→reopen is idempotent: a second round-trip serializes identically.
+    const reopenedAgain = parseCadDrawingFile(serializeCadDrawingFile(reopened.drawing));
+    expect(reopenedAgain.ok).toBe(true);
+    if (reopenedAgain.ok) {
+      expect(JSON.stringify(reopenedAgain.drawing.draft)).toBe(JSON.stringify(revived));
+    }
+    expect(authoredDraftJson.length).toBeGreaterThan(0);
+    expect(revived.sheets.map((sheet) => sheet.name)).toEqual(['Plan A', 'Plan B', 'Plan C']);
+
+    configurations.forEach((config, index) => {
+      const sheet = revived.sheets[index]!;
+      const original = draft.sheets[index]!;
+      expect(sheet.id).toBe(original.id);
+      expect(sheet.viewports).toHaveLength(1);
+      expect(sheet.viewports[0]?.scaleDenominator).toBe(config.den);
+      expect(sheet.viewports[0]?.rotationDeg).toBe(config.rotationDeg);
+      expect(sheet.viewports[0]?.layerOverrides).toEqual({ [config.hiddenLayer]: { visible: false } });
+      expect(sheet.titleBlockId).toBe(template.id);
+      expect(sheet.titleBlockFields).toEqual({
+        DRAWN_BY: `Drafter ${index + 1}`,
+        CHECKED_BY: 'Checker',
+        CLIENT: 'Oracle Client',
+        LOCATION: `Site ${index + 1}`,
+      });
+      expect(sheet.sheetObjects.map((object) => object.kind).sort()).toEqual(['north-arrow', 'plan-note', 'scale-bar']);
+      // Symbol objects still link to their own viewport (no dangling viewportId).
+      sheet.sheetObjects.forEach((object) => {
+        if (object.kind === 'plan-note') expect(object.viewportId).toBeUndefined();
+        else expect(object.viewportId).toBe(sheet.viewports[0]?.id);
+      });
+
+      // Canonical scene derivation: no false broken refs, symbols render.
+      const derived = deriveSheetScene({ draft: revived, sheetId: sheet.id, project });
+      expect(derived.warnings).toEqual([]);
+      const layers = derived.scene.items.map((item) => item.layer);
+      expect(layers).toContain('labels');
+      const texts = derived.scene.items.filter((item) => item.kind === 'text').map((item) => item.text);
+      expect(texts).toContain('N (grid)');
+      expect(texts.some((text) => text.includes(`@ 1:${config.den}`))).toBe(true);
+      expect(texts).toContain(`DRAWN Drafter ${index + 1}`);
+      expect(texts).toContain('CLIENT Oracle Client');
+
+      // Determinism: a second derive of the reopened sheet is byte-identical.
+      const again = deriveSheetScene({ draft: revived, sheetId: sheet.id, project });
+      expect(JSON.stringify(again.scene)).toBe(JSON.stringify(derived.scene));
+    });
   });
 });
