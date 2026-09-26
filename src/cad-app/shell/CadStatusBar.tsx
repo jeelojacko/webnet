@@ -11,6 +11,8 @@ interface CadStatusBarProps {
   /** Phase 18C LWT: workspace-only display preference (never dirties the drawing). */
   lineweightDisplay: boolean;
   onToggleLineweightDisplay: (_enabled: boolean) => void;
+  /** Phase 19B — paper status from the sheet workspace (§71); never paper zoom. */
+  paperStatus?: string | null;
 }
 
 // Status-bar quick subset (6 common modes); Toolspace Settings lists all 14 CadSnapKind modes.
@@ -29,7 +31,7 @@ const SNAP_ORDER: CadSnapKind[] = [
  * units, Model/Layout indicator. Ortho/polar/grid omitted: no engine
  * support, and unsupported chrome is never faked.
  */
-export const CadStatusBar: React.FC<CadStatusBarProps> = ({ link, snapshot, dirty, activeLayout, lineweightDisplay, onToggleLineweightDisplay }) => {
+export const CadStatusBar: React.FC<CadStatusBarProps> = ({ link, snapshot, dirty, activeLayout, lineweightDisplay, onToggleLineweightDisplay, paperStatus }) => {
   const cursor = useCadShellCursor(link);
   const [snapOpen, setSnapOpen] = useState(false);
   const snapRef = useRef<HTMLDivElement>(null);
@@ -92,7 +94,7 @@ export const CadStatusBar: React.FC<CadStatusBarProps> = ({ link, snapshot, dirt
       >
         LWT {lineweightDisplay ? 'on' : 'off'}
       </button>
-      <span title="Active space">{layoutLabel}</span>
+      <span title="Active space">{paperStatus ?? layoutLabel}</span>
       <span title={dirty ? 'Unsaved changes' : 'No unsaved changes'}>{dirty ? '●' : '○'}</span>
     </footer>
   );

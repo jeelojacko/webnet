@@ -12,6 +12,8 @@ interface CadCommandDockProps {
   snapshot: CadWorkspaceSnapshot | null;
   heightPx: number;
   onResize: (_heightPx: number) => void;
+  /** Phase 19B — sheet-space gated actions override link.actions when set. */
+  actionsOverride?: CadShellActions | null;
 }
 
 /**
@@ -22,8 +24,8 @@ interface CadCommandDockProps {
  * ribbon, and context menu. While a command session is active the prompt
  * mirrors the workspace and Enter confirms via the workspace.
  */
-export const CadCommandDock: React.FC<CadCommandDockProps> = ({ link, snapshot, heightPx, onResize }) => {
-  const actions: CadShellActions | null = link.actions;
+export const CadCommandDock: React.FC<CadCommandDockProps> = ({ link, snapshot, heightPx, onResize, actionsOverride }) => {
+  const actions: CadShellActions | null = actionsOverride ?? link.actions;
   const [text, setText] = useState('');
   const [history, setHistory] = useState<string[]>([]);
   const [historyIndex, setHistoryIndex] = useState<number | null>(null);

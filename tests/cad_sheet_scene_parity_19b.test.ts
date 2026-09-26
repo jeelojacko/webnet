@@ -83,7 +83,10 @@ const buildSheet = (
   const sheet = next.sheets.find((entry) => entry.id === sheetId) as { viewports: Array<{ id: string; locked?: boolean; plotFrame?: boolean }> };
   const viewport = sheet.viewports[0] as { id: string; locked?: boolean; plotFrame?: boolean };
   if (options.locked !== undefined) viewport.locked = options.locked;
+  // §60: new viewports default to explicit plotFrame:false, so the legacy
+  // absent=frame contract needs an explicitly absent flag here.
   if (options.plotFrame !== undefined) viewport.plotFrame = options.plotFrame;
+  else delete viewport.plotFrame;
   return { draft: next, sheetId, viewportId: viewport.id };
 };
 

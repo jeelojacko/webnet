@@ -1,4 +1,5 @@
 import { useCallback, useState } from 'react';
+import { activeSpaceOf, type ActiveSpace } from '../../components/surveyCad/SheetWorkspace.types';
 import {
   CAD_SHELL_LAYOUT_STORAGE_KEY,
   type CadActiveLayout,
@@ -85,6 +86,8 @@ export interface CadShellLayoutController {
   resetWorkspace: () => void;
   activeLayout: CadActiveLayout;
   setActiveLayout: (_layout: CadActiveLayout) => void;
+  /** Phase 19B — active space routes commands/selection/undo (model vs sheet). */
+  activeSpace: ActiveSpace;
 }
 
 /**
@@ -153,5 +156,6 @@ export const useCadShellLayout = (): CadShellLayoutController => {
     resetWorkspace,
     activeLayout,
     setActiveLayout,
+    activeSpace: activeSpaceOf(activeLayout),
   };
 };

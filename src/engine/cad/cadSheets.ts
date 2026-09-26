@@ -102,6 +102,9 @@ export const createSheetFromTemplate = (
     paperWidthMm: layout.paperWidthMm,
     paperHeightMm: layout.paperHeightMm,
     rotationDeg: 0,
+    // §60: new viewports state the default explicitly (frame is a
+    // screen-only guide until the operator opts into plotting it).
+    plotFrame: false,
   }));
   const sheetObjects: DraftSheet['sheetObjects'] = [
     ...(template.northArrows ?? []).map((placement) => ({
@@ -192,6 +195,8 @@ export const addViewportToSheet = (draft: DraftDocument, sheetId: string,
       paperWidthMm: Math.max(10, sheet.widthMm - sheet.margins.leftMm - sheet.margins.rightMm),
       paperHeightMm: Math.max(10, sheet.heightMm - sheet.margins.topMm - sheet.margins.bottomMm),
       rotationDeg: 0,
+      // §60: explicit non-plotting frame default (legacy absent still plots).
+      plotFrame: false,
       ...viewport,
     } as DraftSheetViewport)],
   }));

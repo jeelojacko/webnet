@@ -81,6 +81,8 @@ export const buildSmallParcelFixture = (): SmallParcelFixture => {
   draft = addSheetToDraft(draft, createPlanSheet({ name: 'C1 - Parcel', sizeId: 'ISO A4', orientation: 'landscape' }));
   // Pinned ids: clip ids derive from the viewport id, so the byte-identical
   // SVG golden needs deterministic ids (runtime ids are random per build).
+  // §60: helper-built viewports default to explicit plotFrame:false, so the
+  // golden carries no paper-frame group (legacy absent still plots).
   const sheet = draft.sheets[0] as { id: string };
   sheet.id = 'sheet-small-parcel';
   const sheetId = sheet.id;
