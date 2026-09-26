@@ -227,3 +227,29 @@ and was previously hidden inside the combined `pslg` column.
    rebuilding `keyOf(x, y)` string keys and to reuse the ownership classification for Z.
 4. `legalizeTin` should not be optimized first (0.10 %). Component partitioning is justified by
    `disjoint`, not by partial-seam.
+
+---
+
+## 8. HEAD addendum (2026-09-26, commit `e996e2a3`) — superseded bottleneck
+
+This profile was captured against the frozen 18Y algorithm at `fd8b57c3` (profile commit) and the probe
+replica. It is a **historical/reference** profile: the ranked table in §5 (recovery 79.2 % of a 6 141 ms
+10k partial-seam) describes the *unoptimized* 18Y pipeline, **not** the current production path. The
+offending `findEdge` O(T) scan and per-flip crossing-map/allocation churn have since been replaced by
+`tinConstraintRecoveryIndexed` (`f6901174`), and the `pslg`/`splitAtInteriorVertices`/locate passes were
+indexed in `91058547`. Production now measures (HEAD `e996e2a3`, 10k partial-seam):
+
+| stage | HEAD ms | share |
+| --- | ---: | ---: |
+| view | 3.4 | 1.8 % |
+| boundary | 0.3 | 0.2 % |
+| pslg (clipping + interning, measured separately) | 44.2 | 23.9 % |
+| residual (indexed recovery + classify + seam + Z + canonicalization/digest) | 136.7 | 74.0 % |
+| **total** | **184.6** | 100 % |
+
+So the 10k partial-seam total fell from 6 141 ms (replica) / 6 021 ms (production) to **184.6 ms** — a ~33×
+reduction — and the original 79.2 % recovery share is no longer the decision driver. The recovery-indexing
+counter target (`findEdgeTriScans` 168 M at 10k) is retired: §5's ranking is retained as the rationale that
+justified the work, and the current stage split lives in
+`docs/evidence/phase18z-composition-performance.md` §2. `tinConstraintRecoveryIndexed.test.ts` (12/12 in-tree)
+is the recovery-contract regression; the parity corpus and downstream suites cover composition as a whole.
