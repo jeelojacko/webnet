@@ -82,6 +82,7 @@ import {
 } from './cadTransactionsSurveyDisplay';
 import { surfaceCommandDefinitions } from './cadTransactionsSurfaceCommands';
 import { surfaceBakeCommandDefinitions } from './cadTransactionsSurfaceBakeCommands';
+import { surfaceComposeCommandDefinitions } from './cadTransactionsSurfaceComposeCommands';
 import { blockCommandDefinitions } from './cadTransactionsBlockCommands';
 import { landxmlImportCommand } from './cadTransactionsLandxmlImport';
 import { volumeCommandDefinitions } from './cadTransactionsVolumeCommands';
@@ -612,6 +613,9 @@ export const CAD_COMMAND_REGISTRY: Record<CadCommandKey, CadCommandDefinition<Ca
   // Phase 18X explicit bake — separate from the 18S TIN EDIT group.
   SURFBAKE: surfaceBakeCommandDefinitions.SURFBAKE as CadCommandDefinition<CadCommand>,
   SURFBAKECOPY: surfaceBakeCommandDefinitions.SURFBAKECOPY as CadCommandDefinition<CadCommand>,
+  // Phase 18Y exact two-surface composition — sibling of the 18X bake group.
+  SURFCOMPOSE: surfaceComposeCommandDefinitions.SURFCOMPOSE as CadCommandDefinition<CadCommand>,
+  SURFCOMPOSEPASTE: surfaceComposeCommandDefinitions.SURFCOMPOSEPASTE as CadCommandDefinition<CadCommand>,
   LANDXML_IMPORT: landxmlImportCommand as CadCommandDefinition<CadCommand>,
   VOLUME_SURFACE_CREATE: volumeCommandDefinitions.VOLUME_SURFACE_CREATE as CadCommandDefinition<CadCommand>,
   VOLUME_SURFACE_DELETE: volumeCommandDefinitions.VOLUME_SURFACE_DELETE as CadCommandDefinition<CadCommand>,

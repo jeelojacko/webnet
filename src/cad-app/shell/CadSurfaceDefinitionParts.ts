@@ -32,3 +32,18 @@ export const consumeDefinitionFocus = (): DefinitionFocusRequest | null => {
   pendingDefinitionFocus = null;
   return request;
 };
+
+/** Phase 18Y — cross-command focus for the Compose Surface dialog. */
+export type SurfaceComposeFocusMode = 'copy' | 'paste';
+
+let pendingComposeFocus: SurfaceComposeFocusMode | null = null;
+
+export const requestSurfaceComposeFocus = (mode: SurfaceComposeFocusMode): void => {
+  pendingComposeFocus = mode;
+};
+
+export const consumeSurfaceComposeFocus = (): SurfaceComposeFocusMode | null => {
+  const mode = pendingComposeFocus;
+  pendingComposeFocus = null;
+  return mode;
+};

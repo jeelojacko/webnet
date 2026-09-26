@@ -45,6 +45,8 @@ export interface CadSurfaceDefinitionSummary {
   importedSourceText: string | null;
   /** Phase 18X — baked origin surface name (null for native/imported). */
   bakedFrom: string | null;
+  /** Phase 18Y — composite origin (Base/Overlay/policy); null unless composed. */
+  composed: CompositeTinSummary | null;
   /** Phase 18X — source revision captured at bake time (null unless baked). */
   sourceRevision: string | null;
   pointGroupId: string | null;
@@ -183,7 +185,7 @@ export const EMPTY_SURFACE_SELECTION: CadSurfaceSelectionSummary = {
  * Baked detection delegates to the engine `tinProvenanceKind` helper.
  */
 export interface CadExplicitTinProvenanceView {
-  kind?: 'landxml-import' | 'webnet-bake';
+  kind?: 'landxml-import' | 'webnet-bake' | 'webnet-compose';
   format?: string;
   fileName?: string;
   surfaceName?: string;
@@ -192,6 +194,23 @@ export interface CadExplicitTinProvenanceView {
   sourceSurfaceName?: string;
   sourceRevision?: string;
   sourceSourceKind?: string;
+  /** Phase 18Y — composite origin (Base + Overlay + ownership policy). */
+  baseSurfaceId?: string;
+  baseSurfaceName?: string;
+  baseRevision?: string;
+  overlaySurfaceId?: string;
+  overlaySurfaceName?: string;
+  overlayRevision?: string;
+  policy?: string;
+}
+
+/** Phase 18Y — display-only composite origin; storage stays `explicit-tin`. */
+export interface CompositeTinSummary {
+  baseSurfaceId: string;
+  baseSurfaceName: string;
+  overlaySurfaceId: string;
+  overlaySurfaceName: string;
+  policy: string;
 }
 
 /** Phase 18X — short revision for display (first 12 chars, matching the manager). */
@@ -201,11 +220,24 @@ export const shortSurfaceRevision = (revision: string): string => revision.slice
 export const isBakedTinProvenance = (provenance: CadExplicitTinProvenanceView): boolean =>
   tinProvenanceKind(provenance as CadExplicitTinProvenance) === 'webnet-bake';
 
+/** Phase 18Y — ownership-policy label (single policy today; no fake futures). */
+export const COMPOSE_POLICY_LABEL = 'Overlay Coverage Wins';
+
+/** Map a stored policy id to its display label (unknown ids render verbatim). */
+export const composePolicyLabel = (policy: string): string =>
+  policy === 'overlay-coverage-wins' ? COMPOSE_POLICY_LABEL : policy;
+
+/** True when a payload's provenance describes a two-surface composition. */
+export const isComposedTinProvenance = (provenance: CadExplicitTinProvenanceView): boolean =>
+  provenance.kind === 'webnet-compose';
+
 /** Phase 18X — presentation summary of an explicit/baked TIN payload. */
 export interface ExplicitTinSourceSummary {
   text: string;
   bakedFrom: string | null;
   sourceRevision: string | null;
+  /** Phase 18Y — composite origin; null for LandXML/baked payloads. */
+  composed: CompositeTinSummary | null;
 }
 
 /**
@@ -220,6 +252,24 @@ export const summarizeExplicitTinSource = (
 ): ExplicitTinSourceSummary => {
   const vertexCount = vertices / 3;
   const faceCount = faces / 3;
+  if (isComposedTinProvenance(provenance)) {
+    const baseName = provenance.baseSurfaceName ?? provenance.baseSurfaceId ?? '—';
+    const overlayName = provenance.overlaySurfaceName ?? provenance.overlaySurfaceId ?? '—';
+    return {
+      text:
+        `Composite Explicit TIN — ${vertexCount} vertices, ${faceCount} faces ` +
+        `(Base ${baseName} + Overlay ${overlayName})`,
+      bakedFrom: null,
+      sourceRevision: null,
+      composed: {
+        baseSurfaceId: provenance.baseSurfaceId ?? '',
+        baseSurfaceName: baseName,
+        overlaySurfaceId: provenance.overlaySurfaceId ?? '',
+        overlaySurfaceName: overlayName,
+        policy: provenance.policy ?? COMPOSE_POLICY_LABEL,
+      },
+    };
+  }
   if (!isBakedTinProvenance(provenance)) {
     return {
       text:
@@ -227,6 +277,7 @@ export const summarizeExplicitTinSource = (
         `(file: ${provenance.fileName ?? ''}, surface: ${provenance.surfaceName ?? ''})`,
       bakedFrom: null,
       sourceRevision: null,
+      composed: null,
     };
   }
   // Prefer the §4 `kind:'webnet-bake'` fields; fall back to the widened-format shape.
@@ -239,6 +290,7 @@ export const summarizeExplicitTinSource = (
     text: `Baked Explicit TIN — ${vertexCount} vertices, ${faceCount} faces${origin}`,
     bakedFrom,
     sourceRevision,
+    composed: null,
   };
 };
 
@@ -423,19 +475,25 @@ export const buildCadSurfaceSnapshot = (
     // payload normalizes back to the imported variant (never a bake lie).
     const declaredSourceKind = surface.definition.sourceKind ?? 'native';
     const payload = surface.definition.importedTin;
+    const provenanceView = payload?.provenance as CadExplicitTinProvenanceView | undefined;
+    const composedPayload = provenanceView != null && isComposedTinProvenance(provenanceView);
     const bakedPayload = payload != null && isBakedTinProvenance(payload.provenance);
+    // Composite/baked payloads are stored as `explicit-tin`; "Composite" is
+    // display-only (provenance kind), never a separate storage kind.
     const sourceKind: 'native' | 'imported-tin' | 'explicit-tin' =
       declaredSourceKind === 'imported-tin' || declaredSourceKind === 'explicit-tin'
-        ? (bakedPayload ? 'explicit-tin' : 'imported-tin')
+        ? (bakedPayload || composedPayload ? 'explicit-tin' : 'imported-tin')
         : 'native';
     let importedSourceText: string | null = null;
     let bakedFrom: string | null = null;
     let sourceRevision: string | null = null;
+    let composed: CompositeTinSummary | null = null;
     if (sourceKind !== 'native' && payload != null) {
       const explicit = summarizeExplicitTinSource(payload.vertices.length, payload.faces.length, payload.provenance);
       importedSourceText = explicit.text;
       bakedFrom = explicit.bakedFrom;
       sourceRevision = explicit.sourceRevision;
+      composed = explicit.composed;
     }
     const edits = deriveCadSurfaceEditSummaries(surface, pointLabels, mesh != null);
     return {
@@ -463,6 +521,7 @@ export const buildCadSurfaceSnapshot = (
         importedSourceText,
         bakedFrom,
         sourceRevision,
+        composed,
         pointGroupId: source.kind === 'point-group' ? (attachedIds[0] ?? null) : null,
         pointGroupName: source.kind === 'point-group'
           ? (attachedNames[0] ?? (attachedIds[0] ?? null))

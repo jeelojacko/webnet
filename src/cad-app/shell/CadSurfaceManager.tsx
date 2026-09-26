@@ -1,7 +1,10 @@
 import React from 'react';
 import type { CadShellActions, CadWorkspaceSnapshot } from './cadShellTypes';
-import { trySurfaceCommand, surfaceBakeCapability, type CadSurfaceRow } from './cadSurfaceSnapshot';
+import { trySurfaceCommand, surfaceBakeCapability, composePolicyLabel, type CadSurfaceRow } from './cadSurfaceSnapshot';
 import { bakeCopyFraming, confirmSurfaceBakeInPlace } from './cadSurfaceBakePrompt';
+import { surfaceComposeCapability, type CadSurfaceComposeMode } from './cadSurfaceCompose';
+import { consumeSurfaceComposeFocus } from './CadSurfaceDefinitionParts';
+import { CadSurfaceComposeDialog } from './CadSurfaceComposeDialog';
 import { CadSurfaceEditTable } from './CadSurfaceEditTable';
 import { CadSurfaceSelectionSection } from './CadSurfaceSelectionSection';
 import { CadSurfaceDefinitionEditor } from './CadSurfaceDefinitionEditor';
@@ -55,7 +58,14 @@ export const CadSurfaceManager: React.FC<CadSurfaceManagerProps> = ({
   const [createLayer, setCreateLayer] = React.useState<string>('');
   const [createStyle, setCreateStyle] = React.useState<string>('');
   const [renameDraft, setRenameDraft] = React.useState<string | null>(null);
+  const [composeMode, setComposeMode] = React.useState<CadSurfaceComposeMode | null>(null);
   const rows = React.useMemo(() => surface?.surfaces ?? [], [surface]);
+  const compose = surfaceComposeCapability(rows);
+  // Registry/ribbon Compose + Paste plant a focus request, consumed on mount.
+  React.useEffect(() => {
+    const mode = consumeSurfaceComposeFocus();
+    if (mode) setComposeMode(mode);
+  }, []);
   const selected: CadSurfaceRow | null =
     rows.find((entry) => entry.id === (surface?.selectedSurfaceId ?? localSelected)) ??
     rows.find((entry) => entry.id === localSelected) ??
@@ -125,8 +135,20 @@ export const CadSurfaceManager: React.FC<CadSurfaceManagerProps> = ({
             ))}
           </select>
         </Field>
-        <div className="flex items-end">
+        <div className="flex items-end gap-2">
           <button type="button" className={buttonClass} onClick={create}>Create Surface</button>
+          <button
+            type="button"
+            className={buttonClass}
+            data-cad-compose-open
+            disabled={!compose.canCompose}
+            title={compose.canCompose
+              ? 'Compose two CURRENT surfaces into one explicit TIN (copy or paste in place).'
+              : 'Two CURRENT surfaces are required.'}
+            onClick={() => setComposeMode('copy')}
+          >
+            Compose Surface…
+          </button>
         </div>
       </div>
       <ul className="mb-2 divide-y divide-slate-700 rounded border border-slate-700">
@@ -178,6 +200,15 @@ export const CadSurfaceManager: React.FC<CadSurfaceManagerProps> = ({
         actions={actions}
         analysisPickArmedFor={analysisPickArmedFor}
         analysisPickAnswer={analysisPickAnswer}
+      />
+      <CadSurfaceComposeDialog
+        open={composeMode != null}
+        mode={composeMode ?? 'copy'}
+        snapshot={snapshot}
+        actions={actions}
+        selectedRow={selected}
+        onModeChange={setComposeMode}
+        onClose={() => setComposeMode(null)}
       />
     </ManagerShell>
   );
@@ -309,6 +340,20 @@ const SelectedSurface: React.FC<{
         <dt className="text-slate-400">Status</dt>
         <dd>{row.statusText}{row.stale ? ' — showing last mesh' : ''}</dd>
         {row.definition.sourceKind === 'explicit-tin' ? (
+          row.definition.composed ? (
+            <>
+              <dt className="text-slate-400">Source Type</dt>
+              <dd>Composite Explicit TIN</dd>
+              <dt className="text-slate-400">Base</dt>
+              <dd>{row.definition.composed.baseSurfaceName}</dd>
+              <dt className="text-slate-400">Overlay</dt>
+              <dd>{row.definition.composed.overlaySurfaceName}</dd>
+              <dt className="text-slate-400">Policy</dt>
+              <dd>{composePolicyLabel(row.definition.composed.policy)}</dd>
+              <dt className="text-slate-400">Post-composite Edits</dt>
+              <dd>{row.editCount}</dd>
+            </>
+          ) : (
           <>
             <dt className="text-slate-400">Source Type</dt>
             <dd>Baked Explicit TIN</dd>
@@ -321,6 +366,7 @@ const SelectedSurface: React.FC<{
             <dt className="text-slate-400">Post-bake Edits</dt>
             <dd>{row.editCount}</dd>
           </>
+          )
         ) : (
           <>
             <dt className="text-slate-400">Source</dt>

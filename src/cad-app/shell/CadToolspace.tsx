@@ -7,7 +7,7 @@ import { SurfaceAnalysesNode } from './CadAnalysisToolspace';
 import { SurfaceProfilesNode, ProfileViewsNode } from './CadProfileToolspace';
 import { SampleLineGroupsNode, SectionViewsNode, SectionStylesNode } from './CadSampleLineToolspace';
 import { CadAnnotationToolspaceNodes } from '../annotation/CadAnnotationToolspace';
-import { type CadSurfaceRow } from './cadSurfaceSnapshot';
+import { composePolicyLabel, type CadSurfaceRow } from './cadSurfaceSnapshot';
 import { cadSurfaceEditStatusText } from './cadSurfaceEditSummaries';
 
 interface CadToolspaceProps {
@@ -546,6 +546,16 @@ const SurfaceDefinitionTree: React.FC<{ row: CadSurfaceRow }> = ({ row }) => {
           {' · '}breaklines {def.breaklineCount}
           {' · '}outer {def.outerBoundaryCount} void {def.voidBoundaryCount}
         </div>
+        {def.composed ? (
+          <div
+            className="cad-shell-tree-row"
+            data-cad-surface-composite={row.id}
+            title="Explicit composite provenance (Base + Overlay + ownership policy)"
+          >
+            Composite: Base {def.composed.baseSurfaceName} + Overlay {def.composed.overlaySurfaceName}
+            {' · '}{composePolicyLabel(def.composed.policy)}
+          </div>
+        ) : null}
         <details
           className="cad-shell-tree-group"
           data-cad-surface-breaklines-node={row.id}

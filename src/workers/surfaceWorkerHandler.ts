@@ -1,4 +1,11 @@
 import { buildCadSurface, type CadSurfaceBuildResult } from '../engine/cad/cadSurfaces';
+import {
+  composeSurfaceMeshes,
+  type ComposeDiagnostics,
+  type ComposePolicy,
+  type ComposeResult,
+  type ComposeSourceMesh,
+} from '../engine/cad/surfaceCompose';
 import { computeContourLevels } from '../engine/cad/surfaceContours/contourLevels';
 import {
   extractSurfaceContours,
@@ -95,6 +102,7 @@ export type SurfaceWorkerRequestMessage =
   | { type: 'profile'; requestId: string; request: SurfaceProfileRequest }
   | { type: 'sections'; requestId: string; request: SurfaceSectionsRequest }
   | { type: 'analysis'; requestId: string; request: SurfaceAnalysisRequest }
+  | { type: 'compose'; requestId: string; request: SurfaceComposeRequest }
   | { type: 'cancel'; requestId: string };
 
 export type SurfaceWorkerResponseMessage =
@@ -190,6 +198,24 @@ export type SurfaceWorkerResponseMessage =
       requestId: string;
       analysisId: string;
       geometryRevision: string;
+      error: string;
+    }
+  | {
+      type: 'compose-success';
+      requestId: string;
+      baseSurfaceId: string;
+      baseRevision: string;
+      overlaySurfaceId: string;
+      overlayRevision: string;
+      result: SurfaceComposeResultPayload;
+    }
+  | {
+      type: 'compose-failure';
+      requestId: string;
+      baseSurfaceId: string;
+      baseRevision: string;
+      overlaySurfaceId: string;
+      overlayRevision: string;
       error: string;
     };
 
@@ -334,6 +360,95 @@ export type SurfaceAnalysisEngineFn = (
   _request: SurfaceAnalysisRequest,
 ) => CachedAnalysisEngineResult | Promise<CachedAnalysisEngineResult>;
 
+/**
+ * Phase 18Y exact two-surface composition request. Each source carries its
+ * own compact flat-array mesh snapshot (structured-cloneable) plus the
+ * surface id/name and the `srev1` revision the result must still match;
+ * `policy` is the explicit ownership policy the engine records in
+ * provenance. The worker computes geometry ONLY — it never mutates history
+ * or surface definitions.
+ */
+export interface SurfaceComposeMeshSnapshot {
+  /** Flat [x,y,z,...] in the same shape as the volume/analysis snapshots. */
+  points: number[];
+  /** Flat CCW index triples. */
+  triangles: number[];
+}
+
+/** Explicit seam-ownership policy (composition never blends/ramps). */
+export interface SurfaceComposePolicy {
+  id: string;
+}
+
+export interface SurfaceComposeSourceSnapshot {
+  surfaceId: string;
+  surfaceName: string;
+  revision: string;
+  mesh: SurfaceComposeMeshSnapshot;
+}
+
+export interface SurfaceComposeRequest {
+  drawingId?: string;
+  base: SurfaceComposeSourceSnapshot;
+  overlay: SurfaceComposeSourceSnapshot;
+  policy: SurfaceComposePolicy;
+}
+
+/** Success payload: canonical explicit topology + engine diagnostics. */
+export interface SurfaceComposeResultPayload {
+  vertices: number[];
+  faces: number[];
+  diagnostics: ComposeDiagnostics;
+}
+
+/**
+ * Engine contract (owned by `engine/cad/surfaceCompose.ts`):
+ * `{ ok:true, vertices, faces, diagnostics, provenance, digest }` on
+ * success, or `{ ok:false, reason, ... }` fail-closed (e.g.
+ * SURFACE_COMPOSE_SEAM_Z_MISMATCH). The handler owns only the snapshot
+ * conversion; the engine result flows through verbatim.
+ */
+export type SurfaceComposeEngineResult = ComposeResult;
+
+export type SurfaceComposeEngineFn = (
+  _request: SurfaceComposeRequest,
+) => SurfaceComposeEngineResult | Promise<SurfaceComposeEngineResult>;
+
+/** Flat snapshot -> engine mesh shape (points as objects, triples as tuples). */
+const toComposeSourceMesh = (source: SurfaceComposeSourceSnapshot): ComposeSourceMesh => {
+  const points: Array<{ x: number; y: number; z: number }> = [];
+  for (let index = 0; index + 2 < source.mesh.points.length + 1; index += 3) {
+    points.push({
+      x: source.mesh.points[index]!,
+      y: source.mesh.points[index + 1]!,
+      z: source.mesh.points[index + 2]!,
+    });
+  }
+  const triangles: Array<[number, number, number]> = [];
+  for (let index = 0; index + 2 < source.mesh.triangles.length + 1; index += 3) {
+    triangles.push([
+      source.mesh.triangles[index]!,
+      source.mesh.triangles[index + 1]!,
+      source.mesh.triangles[index + 2]!,
+    ]);
+  }
+  return {
+    surfaceId: source.surfaceId,
+    surfaceName: source.surfaceName,
+    revision: source.revision,
+    points,
+    triangles,
+  };
+};
+
+/** Default compose engine: the pure exact `composeSurfaceMeshes` engine. */
+export const composeSurfaceFromRequest: SurfaceComposeEngineFn = (request) =>
+  composeSurfaceMeshes(
+    toComposeSourceMesh(request.base),
+    toComposeSourceMesh(request.overlay),
+    request.policy.id as ComposePolicy,
+  );
+
 export interface SurfaceWorkerHandlerDeps {
   loadBuilder: () => Promise<SurfaceWorkerBuilderFn>;
   /** Phase 18H: extractor override (tests inject fakes; default is the engine sibling's). */
@@ -349,6 +464,12 @@ export interface SurfaceWorkerHandlerDeps {
   loadSectionExtractor?: () => Promise<SurfaceSectionExtractorFn>;
   /** Phase 18U: analysis engine override (tests inject fakes; default runs the band engines). */
   loadAnalysisFn?: () => Promise<SurfaceAnalysisEngineFn>;
+  /**
+   * Phase 18Y: compose engine override. Tests inject fakes; production
+   * defaults to a fail-closed seam until the engine `composeSurfaceMeshes`
+   * module lands (surfaceCompose.ts).
+   */
+  loadComposeFn?: () => Promise<SurfaceComposeEngineFn>;
   postMessage: (_message: SurfaceWorkerResponseMessage) => void;
   defer?: (_callback: () => void) => void;
 }
@@ -518,6 +639,7 @@ export const createSurfaceWorkerHandler = (
   const latestProfileByProfile = new Map<string, string>();
   const latestSectionsByGroup = new Map<string, string>();
   const latestAnalysisByKey = new Map<string, string>();
+  const latestComposeByKey = new Map<string, string>();
   const defer = deps.defer ?? ((callback) => setTimeout(callback, 0));
   const loadContourExtractor =
     deps.loadContourExtractor ?? (() => Promise.resolve(extractSurfaceContours));
@@ -529,6 +651,7 @@ export const createSurfaceWorkerHandler = (
     deps.loadSectionExtractor ?? (() => Promise.resolve(defaultSectionExtractor));
   const loadAnalysisFn =
     deps.loadAnalysisFn ?? (() => Promise.resolve(runSurfaceAnalysisFromRequest));
+  const loadComposeFn = deps.loadComposeFn ?? (() => Promise.resolve(composeSurfaceFromRequest));
 
   const handleBuild = (requestId: string, request: SurfaceBuildRequest): void => {
     latestRevisionBySurface.set(request.surfaceId, request.revision);
@@ -957,6 +1080,76 @@ export const createSurfaceWorkerHandler = (
     });
   };
 
+  /**
+   * Phase 18Y composition: latest-wins key per (drawing, base, overlay,
+   * policy) so a newer request for the same pair supersedes a late result.
+   * The engine result is mapped to a compact explicit-topology payload; a
+   * fail-closed engine result becomes `compose-failure` (never a success).
+   */
+  const composeRequestKey = (request: SurfaceComposeRequest): string =>
+    `${request.drawingId ?? ''}|${request.base.surfaceId}|${request.overlay.surfaceId}|${request.policy.id}`;
+
+  const composeRevisionKey = (request: SurfaceComposeRequest): string =>
+    `${request.base.revision}|${request.overlay.revision}`;
+
+  const failCompose = (
+    requestId: string,
+    request: SurfaceComposeRequest,
+    error: string,
+  ): void => {
+    if (cancelledRequestIds.has(requestId)) return;
+    if (latestComposeByKey.get(composeRequestKey(request)) !== composeRevisionKey(request)) return;
+    deps.postMessage({
+      type: 'compose-failure',
+      requestId,
+      baseSurfaceId: request.base.surfaceId,
+      baseRevision: request.base.revision,
+      overlaySurfaceId: request.overlay.surfaceId,
+      overlayRevision: request.overlay.revision,
+      error,
+    });
+  };
+
+  const handleCompose = (requestId: string, request: SurfaceComposeRequest): void => {
+    latestComposeByKey.set(composeRequestKey(request), composeRevisionKey(request));
+    defer(() => {
+      if (cancelledRequestIds.has(requestId)) return;
+      void loadComposeFn()
+        .then((compose) => compose(request))
+        .then((result) => {
+          if (cancelledRequestIds.has(requestId)) return;
+          if (latestComposeByKey.get(composeRequestKey(request)) !== composeRevisionKey(request)) return;
+          if (!result.ok) {
+            failCompose(requestId, request, result.reason || 'Surface composition failed.');
+            return;
+          }
+          deps.postMessage({
+            type: 'compose-success',
+            requestId,
+            baseSurfaceId: request.base.surfaceId,
+            baseRevision: request.base.revision,
+            overlaySurfaceId: request.overlay.surfaceId,
+            overlayRevision: request.overlay.revision,
+            result: {
+              vertices: result.vertices,
+              faces: result.faces,
+              diagnostics: result.diagnostics,
+            },
+          });
+        })
+        .catch((composeError) => {
+          failCompose(
+            requestId,
+            request,
+            composeError instanceof Error ? composeError.message : String(composeError),
+          );
+        })
+        .finally(() => {
+          cancelledRequestIds.delete(requestId);
+        });
+    });
+  };
+
   return {
     handleMessage: (message: SurfaceWorkerRequestMessage): void => {
       if (!message) return;
@@ -983,6 +1176,9 @@ export const createSurfaceWorkerHandler = (
       if (message.type === 'analysis') {
         handleAnalysis(message.requestId, message.request);
       }
+      if (message.type === 'compose') {
+        handleCompose(message.requestId, message.request);
+      }
     },
     resetForTests: (): void => {
       cancelledRequestIds.clear();
@@ -992,6 +1188,7 @@ export const createSurfaceWorkerHandler = (
       latestProfileByProfile.clear();
       latestSectionsByGroup.clear();
       latestAnalysisByKey.clear();
+      latestComposeByKey.clear();
     },
   };
 };

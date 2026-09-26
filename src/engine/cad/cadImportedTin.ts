@@ -4,7 +4,7 @@ import { describeEditForRevision } from './cadSurfaceEditDescribe';
 import { fnv1a } from './cadRevisionHash';
 import { buildTinTopology } from './tin/tinTopology';
 import type { CadSurfaceGrid, CadSurfaceSourcePoint } from './cadSurfaces';
-import type { CadSurfaceEdit, CadExplicitTinProvenance, ImportedTinPayload, WebnetBakeTinProvenance } from './cadTypes';
+import type { CadSurfaceEdit, CadExplicitTinProvenance, ImportedTinPayload, WebnetBakeTinProvenance, WebnetComposeTinProvenance } from './cadTypes';
 import type { TinAdjacency, TinEdgeKinds } from './tin/tinTypes';
 
 /**
@@ -74,17 +74,34 @@ export const validateImportedTinPayload = (payload: ImportedTinPayload): string 
 /** Phase 18X provenance kind: legacy (kind omitted + format 'LandXML') reads as landxml-import. */
 export const tinProvenanceKind = (
   provenance: CadExplicitTinProvenance,
-): 'landxml-import' | 'webnet-bake' =>
-  provenance.kind === 'webnet-bake' || provenance.format === 'explicit'
+): 'landxml-import' | 'webnet-bake' | 'webnet-compose' => {
+  if (provenance.kind === 'webnet-compose') return 'webnet-compose';
+  return provenance.kind === 'webnet-bake' || provenance.format === 'explicit'
     ? 'webnet-bake'
     : 'landxml-import';
+}
 
 /** Canonical normalized provenance (read-tolerant in, strict out). */
 export const normalizeTinProvenance = (
   provenance: CadExplicitTinProvenance,
 ):
   | { kind: 'landxml-import'; format: 'LandXML'; fileName: string; surfaceName: string; sourceId?: string }
-  | { kind: 'webnet-bake'; sourceSurfaceId: string; sourceSurfaceName: string; sourceRevision: string; sourceSourceKind?: string } => {
+  | { kind: 'webnet-bake'; sourceSurfaceId: string; sourceSurfaceName: string; sourceRevision: string; sourceSourceKind?: string }
+  | { kind: 'webnet-compose'; baseSurfaceId: string; baseSurfaceName: string; baseRevision: string; overlaySurfaceId: string; overlaySurfaceName: string; overlayRevision: string; policy: 'overlay-coverage-wins'; resultDigest?: string } => {
+  if (tinProvenanceKind(provenance) === 'webnet-compose') {
+    const composed = provenance as WebnetComposeTinProvenance;
+    return {
+      kind: 'webnet-compose',
+      baseSurfaceId: composed.baseSurfaceId,
+      baseSurfaceName: composed.baseSurfaceName,
+      baseRevision: composed.baseRevision,
+      overlaySurfaceId: composed.overlaySurfaceId,
+      overlaySurfaceName: composed.overlaySurfaceName,
+      overlayRevision: composed.overlayRevision,
+      policy: 'overlay-coverage-wins',
+      ...(composed.resultDigest != null ? { resultDigest: composed.resultDigest } : {}),
+    };
+  }
   if (tinProvenanceKind(provenance) === 'webnet-bake') {
     const baked = provenance as WebnetBakeTinProvenance & { format?: string };
     return {
@@ -123,13 +140,42 @@ export const makeWebnetBakeProvenance = (options: {
 });
 
 /**
+ * Phase 18Y compose-provenance builder (owned by compose transactions):
+ * always the strict kind:'webnet-compose' shape. resultDigest fills in
+ * once the composed payload digest is known (revision part namespaces it).
+ */
+export const makeWebnetComposeProvenance = (options: {
+  baseSurfaceId: string;
+  baseSurfaceName: string;
+  baseRevision: string;
+  overlaySurfaceId: string;
+  overlaySurfaceName: string;
+  overlayRevision: string;
+  resultDigest?: string;
+}): WebnetComposeTinProvenance => ({
+  kind: 'webnet-compose',
+  baseSurfaceId: options.baseSurfaceId,
+  baseSurfaceName: options.baseSurfaceName,
+  baseRevision: options.baseRevision,
+  overlaySurfaceId: options.overlaySurfaceId,
+  overlaySurfaceName: options.overlaySurfaceName,
+  overlayRevision: options.overlayRevision,
+  policy: 'overlay-coverage-wins',
+  ...(options.resultDigest != null ? { resultDigest: options.resultDigest } : {}),
+});
+
+/**
  * Provenance revision part: LandXML serializes the legacy
  * `format|fileName|surfaceName|sourceId` (byte-identical inputs — LandXML
- * construction sites write no `kind`); baked serializes its own namespace.
- * The `srev1:imported:` prefix stays frozen for both.
+ * construction sites write no `kind`); baked serializes its own namespace;
+ * composed serializes `webnet-compose|baseId|baseRev|overlayId|overlayRev|digest`.
+ * The `srev1:imported:` prefix stays frozen for all kinds.
  */
 export const tinProvenanceRevisionPart = (provenance: CadExplicitTinProvenance): string => {
   const normalized = normalizeTinProvenance(provenance);
+  if (normalized.kind === 'webnet-compose') {
+    return `webnet-compose|${normalized.baseSurfaceId}|${normalized.baseRevision}|${normalized.overlaySurfaceId}|${normalized.overlayRevision}|${normalized.resultDigest ?? ''}`;
+  }
   return normalized.kind === 'webnet-bake'
     ? `webnet-bake|${normalized.sourceSurfaceId}|${normalized.sourceSurfaceName}|${normalized.sourceRevision}|${normalized.sourceSourceKind ?? ''}`
     : `${normalized.format}|${normalized.fileName}|${normalized.surfaceName}|${normalized.sourceId ?? ''}`;

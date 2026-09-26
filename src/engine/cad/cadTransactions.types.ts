@@ -173,6 +173,8 @@ export type CadCommandKey =
   | 'SURFACE_STYLE_DELETE'
   | 'SURFBAKE'
   | 'SURFBAKECOPY'
+  | 'SURFCOMPOSE'
+  | 'SURFCOMPOSEPASTE'
   | 'VOLUME_SURFACE_CREATE'
   | 'VOLUME_SURFACE_DELETE'
   | 'VOLUME_SURFACE_UPDATE_SOURCES'
@@ -1007,6 +1009,42 @@ export type CadCommand =
       surfaceId: string;
       /** Current source revision; a stale value rejects the bake. */
       expectedRevision: string;
+      /** Session-owned CURRENT assertion (see SURFBAKE). */
+      sessionCurrent?: boolean;
+    }
+  | {
+      key: 'SURFCOMPOSE';
+      /** Base (identity donor) surface id. */
+      baseSurfaceId: string;
+      /** Current base revision; a stale value rejects the compose. */
+      baseExpectedRevision: string;
+      /** Overlay surface id. Must differ from the base id. */
+      overlaySurfaceId: string;
+      /** Current overlay revision; a stale value rejects the compose. */
+      overlayExpectedRevision: string;
+      /** Composed topology from the worker: flat x,y,z + CCW index triples. */
+      vertices: number[];
+      faces: number[];
+      /** Ownership policy id recorded in provenance. */
+      policy: string;
+      /** Session-owned CURRENT assertion (see SURFBAKE). */
+      sessionCurrent?: boolean;
+    }
+  | {
+      key: 'SURFCOMPOSEPASTE';
+      /** Target surface (keeps identity, definition replaced). */
+      targetSurfaceId: string;
+      /** Current target revision; a stale value rejects the paste. */
+      targetExpectedRevision: string;
+      /** Source surface (contributes topology only). Must differ from the target id. */
+      sourceSurfaceId: string;
+      /** Current source revision; a stale value rejects the paste. */
+      sourceExpectedRevision: string;
+      /** Composed topology from the worker: flat x,y,z + CCW index triples. */
+      vertices: number[];
+      faces: number[];
+      /** Ownership policy id recorded in provenance. */
+      policy: string;
       /** Session-owned CURRENT assertion (see SURFBAKE). */
       sessionCurrent?: boolean;
     }
