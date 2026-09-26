@@ -4,6 +4,7 @@ import type { CadProject } from '../cadTypes';
 import {
   buildPaperLabelItems,
   buildTitleBlockItems,
+  buildViewportPaperSymbols,
   draftLabelsToPlacements,
   modelToPaperPoint,
   type ExportItem,
@@ -66,7 +67,7 @@ export interface BuildDxfLayoutArgs {
 }
 
 export interface DxfLayoutWarning {
-  code: 'UNKNOWN_TOKEN' | 'UNSUPPORTED_SHEET_OBJECT' | 'SKIPPED_PAPER_ITEM' | 'UNKNOWN_LINETYPE';
+  code: 'UNKNOWN_TOKEN' | 'UNSUPPORTED_SHEET_OBJECT' | 'SKIPPED_PAPER_ITEM' | 'UNKNOWN_LINETYPE' | 'BROKEN_REFERENCE';
   message: string;
 }
 
@@ -297,7 +298,7 @@ export interface DxfLayoutContent {
  *  UNKNOWN_LINETYPE ride as SKIPPED_ENTITY) preserving message text. */
 const toExportWarnings = (warnings: DxfLayoutWarning[]): ExportWarning[] =>
   warnings.map((warning) => ({
-    code: (warning.code === 'UNKNOWN_TOKEN' || warning.code === 'UNSUPPORTED_SHEET_OBJECT'
+    code: (warning.code === 'UNKNOWN_TOKEN' || warning.code === 'UNSUPPORTED_SHEET_OBJECT' || warning.code === 'BROKEN_REFERENCE'
       ? warning.code
       : 'SKIPPED_ENTITY') as ExportWarning['code'],
     message: warning.message,
@@ -539,6 +540,21 @@ const buildDxfLayoutInner = (args: BuildDxfLayoutArgs): DxfLayoutInner => {
     // Paper-space labels (document DXF subset): same per-viewport
     // resolution as SVG/PDF via buildPaperLabelItems; leaders ride along
     // as LINE items. Scene coords (top-left origin); emitPaperItem flips.
+    // §47-54: canonical north arrows / scale bars come from the SAME
+    // explicit paper objects the scene builder uses (no second geometry).
+    const paperLayerHidden = (layerId: string): boolean => {
+      const hidden = (layer: { visible?: boolean; frozen?: boolean; printable?: boolean } | undefined): boolean =>
+        layer != null && (layer.visible === false || layer.frozen === true || layer.printable === false);
+      return (
+        hidden(args.project.layers.find((entry) => entry.id === layerId)) ||
+        hidden(args.draft.layers.find((entry) => entry.id === layerId))
+      );
+    };
+    const symbols = buildViewportPaperSymbols({
+      sheet,
+      unitsMode: args.draft.precision.unitsMode,
+      isHidden: paperLayerHidden,
+    });
     {
       const effective = args.modelLabels ?? draftLabelsToPlacements(args.draft.labels);
       sheet.viewports.forEach((viewport) => {
@@ -546,8 +562,12 @@ const buildDxfLayoutInner = (args: BuildDxfLayoutArgs): DxfLayoutInner => {
           modelToPaperPoint(x, y, viewport, viewport.rotationDeg ?? 0);
         const placed = buildPaperLabelItems(effective, viewport.id, toPaper);
         placed.items.forEach((item) => emitPaperItem(ctx, item));
+        (symbols.itemsByViewport.get(viewport.id) ?? []).forEach((item) => emitPaperItem(ctx, item));
       });
     }
+    symbols.brokenItems.forEach((item) => emitPaperItem(ctx, item));
+    symbols.warnings.forEach((warning) =>
+      warnings.push({ code: warning.code as DxfLayoutWarning['code'], message: warning.message }));
     // Title block (rect outline, sheet fields, sheet-object texts) as
     // BLOCK+INSERT at the origin so paper coordinates stay absolute.
     const title = buildTitleBlockItems(sheet, 'title-block',
@@ -556,7 +576,9 @@ const buildDxfLayoutInner = (args: BuildDxfLayoutArgs): DxfLayoutInner => {
     title.unknownTokens.forEach((token) => {
       warnings.push({ code: 'UNKNOWN_TOKEN', message: `sheet ${sheet.name}: unknown sheet token {${token}}` });
     });
+    const consumedSymbolObjects = new Set(symbols.consumedObjectIds);
     sheet.sheetObjects.forEach((object) => {
+      if (consumedSymbolObjects.has(object.id)) return;
       if (typeof object.text !== 'string') {
         warnings.push({ code: 'UNSUPPORTED_SHEET_OBJECT', message: `sheet ${sheet.name}: object ${object.id} (${object.kind}) has no text and is not representable` });
       }
