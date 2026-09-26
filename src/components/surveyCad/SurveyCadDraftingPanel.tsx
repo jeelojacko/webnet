@@ -9,7 +9,7 @@ import { LayerPanel } from './LayerPanel';
 import type { LayerManagerCommand } from './LayerPanel.types';
 import { SurveyCadFieldToFinishPanel } from './SurveyCadFieldToFinishPanel';
 import { SheetWorkspace } from './SheetWorkspace';
-import { TitleBlockTemplateEditor } from './TitleBlockTemplateEditor';
+import { TitleBlockManagerDialog } from './TitleBlockManagerDialog';
 
 export type SurveyCadDraftingTab = 'SHEETS' | 'LAYERS' | 'TITLE_BLOCKS' | 'FIELD_TO_FINISH';
 
@@ -36,6 +36,8 @@ interface SurveyCadDraftingPanelProps {
   f2fSection?: string | null;
   /** Latest successful production run; enables the explicit adjustment-linked commit. */
   adjustmentSource?: SuccessfulAdjustmentRunInfo | null;
+  /** Shell-owned active sheet; title-block instance fields apply to it. */
+  activeSheetId?: string;
 }
 
 export const SurveyCadDraftingPanel = ({
@@ -57,6 +59,7 @@ export const SurveyCadDraftingPanel = ({
   onFieldToFinishSettingsChange,
   f2fSection = null,
   adjustmentSource = null,
+  activeSheetId,
 }: SurveyCadDraftingPanelProps): React.JSX.Element => {
   const [tab, setTab] = useState<SurveyCadDraftingTab>(initialTab);
   const entityCounts = useMemo(() => {
@@ -128,7 +131,7 @@ export const SurveyCadDraftingPanel = ({
         )
       ) : tab === 'TITLE_BLOCKS' ? (
         draft ? (
-          <TitleBlockTemplateEditor draft={draft} projectName={project.name} onDraftChange={onDraftChange} />
+          <TitleBlockManagerDialog draft={draft} projectName={project.name} activeSheetId={activeSheetId} onDraftChange={onDraftChange} onClose={onClose} />
         ) : (
           <p className="text-[12px] text-slate-400">No draft yet. Title blocks live on the draft document.</p>
         )

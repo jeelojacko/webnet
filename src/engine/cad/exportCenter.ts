@@ -245,7 +245,6 @@ const resolveSheets = (drawing: CadDrawingDocument, selection: ExportCenterSelec
 };
 
 type SceneDisposition = DispositionLists;
-
 type SceneBuild = { ok: true; scenes: ExportSheetScene[]; merged: SceneDisposition } | { ok: false; message: string };
 
 const buildSceneResults = (drawing: CadDrawingDocument, sheetIds: string[], analysis?: CadAnalysisExportInput): SceneBuild => {
@@ -259,6 +258,57 @@ const buildSceneResults = (drawing: CadDrawingDocument, sheetIds: string[], anal
       ok: true,
       scenes: sceneResults.map((result) => result.output),
       merged: mergeWarnings(sceneResults),
+    };
+  } catch (error) {
+    return { ok: false, message: error instanceof Error ? error.message : String(error) };
+  }
+};
+
+/**
+ * Plot preview (Phase 19B §§72–73): the exact ExportSheetScene that SVG/PDF
+ * serialize, with its ExportResult warnings surfaced BEFORE download. This is
+ * a consumer of the canonical builder — there is no separate preview
+ * renderer or scene derivation. Deterministic: same draft/sheet → same scene.
+ */
+export interface PlotPreviewScene {
+  sheetId: string;
+  sheetName: string;
+  widthMm: number;
+  heightMm: number;
+  scene: ExportSheetScene;
+  warnings: ExportWarning[];
+  omittedEntityIds: string[];
+  approximatedEntityIds: string[];
+}
+
+export type PlotPreviewSceneResult =
+  | { ok: true; preview: PlotPreviewScene }
+  | { ok: false; message: string };
+
+export const buildPlotPreviewScene = (
+  drawing: CadDrawingDocument,
+  sheetId: string,
+  analysis?: CadAnalysisExportInput,
+): PlotPreviewSceneResult => {
+  const draft = drawing.draft;
+  if (!draft) return { ok: false, message: 'No draft yet. Sheets live on the draft document.' };
+  if (!draft.sheets.some((sheet) => sheet.id === sheetId)) {
+    return { ok: false, message: 'Sheet not found.' };
+  }
+  try {
+    const result = buildExportSheetSceneWithResult({ draft, sheetId, project: drawing.project, analysis });
+    return {
+      ok: true,
+      preview: {
+        sheetId: result.output.sheetId,
+        sheetName: result.output.sheetName,
+        widthMm: result.output.widthMm,
+        heightMm: result.output.heightMm,
+        scene: result.output,
+        warnings: result.warnings,
+        omittedEntityIds: result.omittedEntityIds,
+        approximatedEntityIds: result.approximatedEntityIds,
+      },
     };
   } catch (error) {
     return { ok: false, message: error instanceof Error ? error.message : String(error) };

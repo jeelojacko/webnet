@@ -134,6 +134,9 @@ const buildDraftWithObjects = (project: CadProject) => {
   draft = addViewportToSheet(draft, sheetId, {
     name: 'Cover viewport', modelCenterX: 5010, modelCenterY: 1010,
     scaleDenominator: 500, paperXmm: 15, paperYmm: 15, paperWidthMm: 200, paperHeightMm: 130,
+    // §60: new viewports default to a non-plotting frame guide; this test
+    // asserts the paper-frame layer, so it opts the frame in explicitly.
+    plotFrame: true,
   });
   draft = {
     ...draft,
