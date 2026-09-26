@@ -20,7 +20,7 @@ import { buildTitleBlockItems } from '../../engine/cad/cadExportScene';
 // Definition-vs-instance: the definition is the reusable template (this
 // editor mutates definitions); a sheet references one definition via
 // sheet.titleBlockId. Editing a definition updates every sheet using it.
-// Per-sheet field values live on TitleBlockInstance, not here.
+// Per-sheet field values live on sheet.titleBlockFields, not here.
 // No scripting; image/logo primitives are out of scope (omitted: raster
 // placement needs binary asset management beyond this bounded editor).
 // Token set is bounded to SHEET_TOKENS; unknown tokens stay literal + warn.
