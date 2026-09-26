@@ -110,6 +110,8 @@ export const getCadEntityDisplayLabel = (entity: CadEntity): string => {
       return readNonOpaqueEntityId(entity) ?? 'Curve Label';
     case 'block-reference':
       return readNonOpaqueEntityId(entity) ?? 'Block';
+    case 'survey-table':
+      return entity.title ?? 'Survey Table';
   }
 };
 

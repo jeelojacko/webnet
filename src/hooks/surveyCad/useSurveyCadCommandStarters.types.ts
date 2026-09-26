@@ -88,6 +88,12 @@ export interface SurveyCadCommandStarters {
   startTrimCommand: () => void;
   startFilletCommand: () => void;
   startPasteCommand: (_sourceEntityIds: string[], _basePoint: CommandPoint) => void;
+  startLineTableCommand: () => void;
+  startCurveTableCommand: () => void;
+  startParcelTableCommand: () => void;
+  startPointTableCommand: () => void;
+  startParcelReportCommand: () => void;
+  startParcelDescCommand: () => void;
 }
 
 export interface BuildSurveyCadCommandStartersOptions {
@@ -101,4 +107,8 @@ export interface BuildSurveyCadCommandStartersOptions {
   selectedParcelForBearingSplit: CadParcelEntity | null;
   selectedParcelForAreaSplit: CadParcelEntity | null;
   selectionCount: number;
+  /** Current selection in pick order (survey-table source capture). */
+  selectedEntityIds?: string[];
+  /** Fallback POINTTABLE ordering when nothing is selected. */
+  surveyPointEntityIdsInStationOrder?: string[];
 }

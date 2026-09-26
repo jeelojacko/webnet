@@ -44,6 +44,8 @@ export const buildSnapConstructionContext = (
   switch (session.key) {
     case 'POINT':
       return inactiveConstructionContext();
+    case 'SURVEYTABLE':
+      return inactiveConstructionContext();
     case 'COGO_POINT':
     case 'LINE':
     case 'INVERSE':

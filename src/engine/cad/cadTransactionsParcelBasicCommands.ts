@@ -24,6 +24,7 @@ import type {
   CadPolylineEntity,
 } from './cadTypes';
 import { createStableRuntimeId } from '../id';
+import { buildParcelCourseIds } from './cadParcelCourses';
 export const parcelCreateCommand: CadCommandDefinition<{
   key: 'PARCEL_CREATE';
   sourceEntityIds: CadEntityId[];
@@ -65,8 +66,9 @@ export const parcelCreateCommand: CadCommandDefinition<{
         closureDistanceMeters: metrics.closureDistanceMeters,
       },
     });
+    const parcelId = createStableRuntimeId('cad-parcel');
     const parcelEntity: CadParcelEntity = {
-      id: createStableRuntimeId('cad-parcel'),
+      id: parcelId,
       type: 'parcel',
       layerId: resolveCurrentCadLayerId(snapshot.project),
       visible: true,
@@ -74,6 +76,7 @@ export const parcelCreateCommand: CadCommandDefinition<{
       vertices: parcelSource.vertices.map((vertex) => ({ x: vertex.x, y: vertex.y })),
       vertexLabels: [...parcelSource.vertexLabels],
       parcelName,
+      courseIds: buildParcelCourseIds(parcelId, parcelSource.vertices.length),
       areaSquareMeters: metrics.areaSquareMeters,
       perimeterMeters: metrics.perimeterMeters,
       closureDeltaX: metrics.closureDeltaX,
@@ -202,50 +205,42 @@ export const parcelSplitCommand: CadCommandDefinition<{
       },
     });
 
-    const createdParcels: CadParcelEntity[] = [
-      {
-        id: createStableRuntimeId('cad-parcel'),
+    const createdParcels: CadParcelEntity[] = (() => {
+      const firstId = createStableRuntimeId('cad-parcel');
+      const secondId = createStableRuntimeId('cad-parcel');
+      const buildChild = (
+        id: CadEntityId,
+        vertices: readonly { x: number; y: number }[],
+        labels: readonly string[],
+        name: string,
+        report: { areaSquareMeters: number; perimeterMeters: number; closureDeltaX: number; closureDeltaY: number; closureDistanceMeters: number },
+      ): CadParcelEntity => ({
+        id,
         type: 'parcel',
         layerId: parcelEntity.layerId,
         styleId: parcelEntity.styleId,
         visible: parcelEntity.visible,
         locked: parcelEntity.locked,
-        vertices: splitDraft.firstVertices.map((vertex) => ({ x: vertex.x, y: vertex.y })),
-        vertexLabels: [...splitDraft.firstVertexLabels],
-        parcelName: firstParcelName,
-        areaSquareMeters: firstReport.areaSquareMeters,
-        perimeterMeters: firstReport.perimeterMeters,
-        closureDeltaX: firstReport.closureDeltaX,
-        closureDeltaY: firstReport.closureDeltaY,
-        closureDistanceMeters: firstReport.closureDistanceMeters,
+        vertices: vertices.map((vertex) => ({ x: vertex.x, y: vertex.y })),
+        vertexLabels: [...labels],
+        parcelName: name,
+        courseIds: buildParcelCourseIds(id, vertices.length),
+        areaSquareMeters: report.areaSquareMeters,
+        perimeterMeters: report.perimeterMeters,
+        closureDeltaX: report.closureDeltaX,
+        closureDeltaY: report.closureDeltaY,
+        closureDistanceMeters: report.closureDistanceMeters,
         metadata: buildCadCogoEntityMetadata({
           createdBy: 'PARCEL_SPLIT',
           parentParcelId: parcelEntity.id,
           splitLineEntityId: splitLineEntity.id,
         }, provenance),
-      },
-      {
-        id: createStableRuntimeId('cad-parcel'),
-        type: 'parcel',
-        layerId: parcelEntity.layerId,
-        styleId: parcelEntity.styleId,
-        visible: parcelEntity.visible,
-        locked: parcelEntity.locked,
-        vertices: splitDraft.secondVertices.map((vertex) => ({ x: vertex.x, y: vertex.y })),
-        vertexLabels: [...splitDraft.secondVertexLabels],
-        parcelName: secondParcelName,
-        areaSquareMeters: secondReport.areaSquareMeters,
-        perimeterMeters: secondReport.perimeterMeters,
-        closureDeltaX: secondReport.closureDeltaX,
-        closureDeltaY: secondReport.closureDeltaY,
-        closureDistanceMeters: secondReport.closureDistanceMeters,
-        metadata: buildCadCogoEntityMetadata({
-          createdBy: 'PARCEL_SPLIT',
-          parentParcelId: parcelEntity.id,
-          splitLineEntityId: splitLineEntity.id,
-        }, provenance),
-      },
-    ];
+      });
+      return [
+        buildChild(firstId, splitDraft.firstVertices, splitDraft.firstVertexLabels, firstParcelName, firstReport),
+        buildChild(secondId, splitDraft.secondVertices, splitDraft.secondVertexLabels, secondParcelName, secondReport),
+      ];
+    })();
 
     const nextProjectBase = replaceCadProjectEntities(
       snapshot.project,

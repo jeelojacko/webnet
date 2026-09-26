@@ -147,6 +147,17 @@ export const useSurveyCadWorkspace = (
   );
   const cadProject = history.present.project;
   const selection = history.present.selection;
+  const surveyPointEntityIdsInStationOrder = useMemo(
+    () =>
+      cadProject.entities
+        .filter((entity): entity is Extract<typeof entity, { type: 'survey-point' }> => entity.type === 'survey-point')
+        .slice()
+        .sort((first, second) =>
+          first.stationId < second.stationId ? -1 : first.stationId > second.stationId ? 1 : 0,
+        )
+        .map((entity) => entity.id),
+    [cadProject.entities],
+  );
   const activeGripHandleRef = useRef<CadGripHandle | null>(null);
 
   // View-layer filter (spec §6): OFF/frozen-layer primitives hide at the
@@ -357,6 +368,8 @@ export const useSurveyCadWorkspace = (
     previewPoint,
     history,
     selectionCount: selection.selectedEntityIds.length,
+    selectedEntityIds: selection.selectedEntityIds,
+    surveyPointEntityIdsInStationOrder: surveyPointEntityIdsInStationOrder,
     selectedArcForContinue,
     selectedArcForCurveCogo: selectedArcForContinue,
     selectedLineForCoreCogo,
@@ -641,6 +654,12 @@ export const useSurveyCadWorkspace = (
     startDimDiameterCommand: commandState.startDimDiameterCommand,
     startBearingLabelCommand: commandState.startBearingLabelCommand,
     startCurveLabelCommand: commandState.startCurveLabelCommand,
+    startLineTableCommand: commandState.startLineTableCommand,
+    startCurveTableCommand: commandState.startCurveTableCommand,
+    startParcelTableCommand: commandState.startParcelTableCommand,
+    startPointTableCommand: commandState.startPointTableCommand,
+    startParcelReportCommand: commandState.startParcelReportCommand,
+    startParcelDescCommand: commandState.startParcelDescCommand,
     annotationSnapshot,
     runAnnotationOp,
     startParcelSplitBearingCommand: commandState.startParcelSplitBearingCommand,

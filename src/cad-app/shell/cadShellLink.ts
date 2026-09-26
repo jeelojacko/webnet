@@ -46,6 +46,11 @@ export interface CadShellLink {
    * Toolspace Settings nodes open the Annotation Styles manager through it.
    */
   requestAnnotationManager: ((_tab?: import('../annotation/cadAnnotationUiTypes').CadAnnotationManagerTab) => void) | null;
+  /**
+   * Phase 19A — set by the shell; registry TABLESTYLE and Toolspace style
+   * nodes open the survey table manager through it.
+   */
+  requestSurveyTableManager: (() => void) | null;
 }
 
 const countsEqual = (
@@ -180,6 +185,7 @@ export const createCadShellLink = (): CadShellLink => {
     requestToolspaceTab: null,
     requestBlockManager: null,
     requestAnnotationManager: null,
+    requestSurveyTableManager: null,
   };
 };
 

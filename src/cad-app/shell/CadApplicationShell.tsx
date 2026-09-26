@@ -15,6 +15,7 @@ import { CadStatusBar } from './CadStatusBar';
 import { CadDrawingTabs, CadModelLayoutTabs } from './CadDrawingTabs';
 import { CadBlockManager } from '../blocks/CadBlockManager';
 import { CadAnnotationManager } from '../annotation/CadAnnotationManager';
+import { CadSurveyTablePanel } from './CadSurveyTablePanel';
 import {
   executeShellCommand,
   resolveShellCommandText,
@@ -54,6 +55,7 @@ export const CadApplicationShell: React.FC<CadApplicationShellProps> = ({ contro
   const [showStart, setShowStart] = useState(false);
   const [blockManager, setBlockManager] = useState<{ tab: 'blocks' | 'symbols' | 'insert' } | null>(null);
   const [annotationManager, setAnnotationManager] = useState<{ tab?: CadAnnotationManagerTab } | null>(null);
+  const [surveyTableManagerOpen, setSurveyTableManagerOpen] = useState(false);
   const [contextMenu, setContextMenu] = useState<{ x: number; y: number } | null>(null);
 
   const {
@@ -93,11 +95,14 @@ export const CadApplicationShell: React.FC<CadApplicationShellProps> = ({ contro
     link.requestBlockManager = (tab) => setBlockManager({ tab: tab ?? 'blocks' });
     // Phase 18O — annotation style commands open the Annotation Styles manager.
     link.requestAnnotationManager = (tab) => setAnnotationManager({ tab });
+    // Phase 19A — survey table commands open the survey table manager.
+    link.requestSurveyTableManager = () => setSurveyTableManagerOpen(true);
     return () => {
       link.requestLayerManager = null;
       link.requestToolspaceTab = null;
       link.requestBlockManager = null;
       link.requestAnnotationManager = null;
+      link.requestSurveyTableManager = null;
     };
   }, [link, layout]);
 
@@ -321,6 +326,19 @@ export const CadApplicationShell: React.FC<CadApplicationShellProps> = ({ contro
             }}
           onClose={() => setAnnotationManager(null)}
         />
+      ) : null}
+      {surveyTableManagerOpen ? (
+        <div className="cad-survey-table-manager" data-cad-survey-table-manager>
+          <button
+            type="button"
+            className="cad-shell-ribbon-tab"
+            onClick={() => setSurveyTableManagerOpen(false)}
+            data-cad-survey-table-manager-close
+          >
+            Close
+          </button>
+          <CadSurveyTablePanel snapshot={snapshot} actions={link.actions} />
+        </div>
       ) : null}
     </div>
   );

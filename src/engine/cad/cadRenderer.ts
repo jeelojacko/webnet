@@ -31,6 +31,7 @@ import { resolveCadEntityAppearance } from './cadAppearance';
 import type { LineweightDisplayMode } from './cadViewportAppearance';
 import { displayedStrokeWidthPx, opacityFromTransparency } from './cadViewportAppearance';
 import { strokeWidth, surveyPointMarker, textFontSize } from './cadRendererStyle';
+import { buildCadSurveyTablePrimitives } from './cadSurveyTableRender';
 import { expandedBlockPrimitives } from './cadRendererBlocks';
 import type { CadSurfaceCache } from './cadSurfaceCache';
 import { buildSurfaceDisplayLayers, type SurfaceContourDisplayInput } from './cadSurfaceView';
@@ -1292,6 +1293,18 @@ const toPrimitives = (
         `primitive:${entity.id}`,
         (child) => toPrimitives(project, ctx, child),
       ) ?? [];
+    case 'survey-table': {
+      // Phase 19A: derived frame/grid/text primitives (bounded, never one
+      // entity per cell). Values/geometry are recomputed at read time.
+      const style = entityScreenStyle(project, ctx, entity, 1);
+      return buildCadSurveyTablePrimitives(entity, project, {
+        stroke: style.stroke,
+        strokeWidthPx: style.widthPx(),
+        fontSize: textFontSize(project, entity, 11, ctx.lookup),
+        tagFontSize: textFontSize(project, entity, 9, ctx.lookup),
+        ...(style.opacity != null ? { opacity: style.opacity } : {}),
+      });
+    }
   }
 };
 

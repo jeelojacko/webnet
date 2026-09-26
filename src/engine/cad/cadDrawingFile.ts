@@ -50,8 +50,10 @@ import {
 import { backfillDrawingCatalog } from '../fieldToFinish/drawingCatalog';
 import { cloneFeatureCatalog } from '../fieldToFinish/featureCatalog';
 import { sanitizeCadBlockReferences } from './cadBlockPersistence';
+import { ensureParcelCourseIds } from './cadParcelCourses';
 import { backfillAnalysisMaps, clearAnalysisCacheOnLoad, cloneCadAnalysisMaps } from './cadAnalysisMaps';
 import { backfillAnalysisLegends, cloneCadAnalysisLegends } from './cadAnalysisLegends';
+import { sanitizeCadSurveyTables } from './cadSurveyTablePersistence';
 import { STARTER_CATALOG } from '../fieldToFinish/starterCatalog';
 import type { UnitsMode } from '../../types';
 
@@ -136,11 +138,12 @@ export const createBlankCadProject = ({
   const withAnnotations = backfillCadAnnotationTables(project);
   // Phase 18U: analysis definitions (and no results) trail the annotation
   // tables — project signatures are key-order-sensitive JSON.stringify.
-  return {
+  // Phase 19A: survey table styles seed last (same trailing rule).
+  return sanitizeCadSurveyTables({
     ...withAnnotations,
     analysisMaps: backfillAnalysisMaps(undefined),
     analysisLegends: backfillAnalysisLegends(undefined),
-  };
+  });
 };
 
 export const createBlankCadDrawingDocument = ({
@@ -274,9 +277,13 @@ export const migrateSurveyCadStateToDrawing = ({
   const sanitizedBlocks = sanitizeCadBlockReferences(withStandards);
   // Phase 18O: same trailing backfill/sanitize as the .wncad open path so a
   // legacy survey sidecar lands with a usable annotation library.
+  // Phase 19A: legacy parcels gain deterministic course ids (persisted on save).
+  const entitiesWithCourses = sanitizedBlocks.project.entities.map((entity) =>
+    entity.type === 'parcel' ? ensureParcelCourseIds(entity) : entity,
+  );
   const { project } = sanitizeAnnotationTables({
     ...withStandards,
-    entities: sanitizedBlocks.project.entities,
+    entities: entitiesWithCourses,
     ...(sanitizedBlocks.project.pointStyles != null
       ? { pointStyles: sanitizedBlocks.project.pointStyles }
       : {}),
@@ -300,13 +307,13 @@ export const migrateSurveyCadStateToDrawing = ({
   });
   // Phase 18U: analysis definitions trail the annotation tables. Any stored
   // results are dropped on load (results are session-only, never trusted).
-  const projectWithAnalysis: CadProject = {
+  const projectWithAnalysis: CadProject = sanitizeCadSurveyTables({
     ...project,
     analysisMaps: cloneCadAnalysisMaps(backfillAnalysisMaps(project.analysisMaps)).map(
       clearAnalysisCacheOnLoad,
     ),
     analysisLegends: cloneCadAnalysisLegends(backfillAnalysisLegends(project.analysisLegends)),
-  };
+  });
   return {
     kind: 'webnet-cad-drawing',
     schemaVersion: 2,
@@ -365,12 +372,16 @@ const sanitizeCadDrawingDocument = (value: unknown): CadDrawingDocument | undefi
     // 18N (same rule): legacy drawings get an empty block library;
     // dangling refs are dropped, never left dangling.
     const sanitizedBlocks = sanitizeCadBlockReferences(withStandards);
+    // Phase 19A: deterministic course-id backfill for legacy parcels.
+    const entitiesWithCourses = sanitizedBlocks.project.entities.map((entity) =>
+      entity.type === 'parcel' ? ensureParcelCourseIds(entity) : entity,
+    );
     // Phase 18O: backfill + sanitize the professional annotation slice last
     // (trailing tables; key-order rule). Missing tables seed the documented
     // defaults; broken refs stay broken (never re-bound, never fail the open).
     const { project } = sanitizeAnnotationTables({
       ...withStandards,
-      entities: sanitizedBlocks.project.entities,
+      entities: entitiesWithCourses,
       ...(sanitizedBlocks.project.pointStyles != null
         ? { pointStyles: sanitizedBlocks.project.pointStyles }
         : {}),
@@ -394,13 +405,13 @@ const sanitizeCadDrawingDocument = (value: unknown): CadDrawingDocument | undefi
     });
     // Phase 18U: analysis definitions trail the annotation tables; stored
     // results are never trusted (session-only), so clear on load.
-    const projectWithAnalysis: CadProject = {
+    const projectWithAnalysis: CadProject = sanitizeCadSurveyTables({
       ...project,
       analysisMaps: cloneCadAnalysisMaps(backfillAnalysisMaps(project.analysisMaps)).map(
         clearAnalysisCacheOnLoad,
       ),
       analysisLegends: cloneCadAnalysisLegends(backfillAnalysisLegends(project.analysisLegends)),
-    };
+    });
     const draft = cloned.draft
       ? { ...cloned.draft, layers: backfillCadLayerList(cloned.draft.layers) }
       : cloned.draft;

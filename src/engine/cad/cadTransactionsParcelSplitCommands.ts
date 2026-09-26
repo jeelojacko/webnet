@@ -14,6 +14,7 @@ import { appendCadProjectEntities, replaceCadProjectEntities } from './cadProjec
 import type { CadCommandDefinition } from './cadTransactions.types';
 import type { CadEntityId, CadParcelEntity } from './cadTypes';
 import { createStableRuntimeId } from '../id';
+import { buildParcelCourseIds } from './cadParcelCourses';
 export const parcelSplitBearingCommand: CadCommandDefinition<{
   key: 'PARCEL_SPLIT_BEARING';
   parcelEntityId: CadEntityId;
@@ -91,9 +92,11 @@ export const parcelSplitBearingCommand: CadCommandDefinition<{
       },
     });
 
+    const firstChildId = createStableRuntimeId('cad-parcel');
+    const secondChildId = createStableRuntimeId('cad-parcel');
     const createdParcels: CadParcelEntity[] = [
       {
-        id: createStableRuntimeId('cad-parcel'),
+        id: firstChildId,
         type: 'parcel',
         layerId: parcelEntity.layerId,
         styleId: parcelEntity.styleId,
@@ -102,6 +105,7 @@ export const parcelSplitBearingCommand: CadCommandDefinition<{
         vertices: splitDraft.firstVertices.map((vertex) => ({ x: vertex.x, y: vertex.y })),
         vertexLabels: [...splitDraft.firstVertexLabels],
         parcelName: firstParcelName,
+        courseIds: buildParcelCourseIds(firstChildId, splitDraft.firstVertices.length),
         areaSquareMeters: firstReport.areaSquareMeters,
         perimeterMeters: firstReport.perimeterMeters,
         closureDeltaX: firstReport.closureDeltaX,
@@ -114,7 +118,7 @@ export const parcelSplitBearingCommand: CadCommandDefinition<{
         }, provenance),
       },
       {
-        id: createStableRuntimeId('cad-parcel'),
+        id: secondChildId,
         type: 'parcel',
         layerId: parcelEntity.layerId,
         styleId: parcelEntity.styleId,
@@ -123,6 +127,7 @@ export const parcelSplitBearingCommand: CadCommandDefinition<{
         vertices: splitDraft.secondVertices.map((vertex) => ({ x: vertex.x, y: vertex.y })),
         vertexLabels: [...splitDraft.secondVertexLabels],
         parcelName: secondParcelName,
+        courseIds: buildParcelCourseIds(secondChildId, splitDraft.secondVertices.length),
         areaSquareMeters: secondReport.areaSquareMeters,
         perimeterMeters: secondReport.perimeterMeters,
         closureDeltaX: secondReport.closureDeltaX,
@@ -253,9 +258,11 @@ export const parcelSplitAreaCommand: CadCommandDefinition<{
       },
     });
 
+    const firstAreaChildId = createStableRuntimeId('cad-parcel');
+    const secondAreaChildId = createStableRuntimeId('cad-parcel');
     const createdParcels: CadParcelEntity[] = [
       {
-        id: createStableRuntimeId('cad-parcel'),
+        id: firstAreaChildId,
         type: 'parcel',
         layerId: parcelEntity.layerId,
         styleId: parcelEntity.styleId,
@@ -264,6 +271,7 @@ export const parcelSplitAreaCommand: CadCommandDefinition<{
         vertices: splitDraft.firstVertices.map((vertex) => ({ x: vertex.x, y: vertex.y })),
         vertexLabels: [...splitDraft.firstVertexLabels],
         parcelName: firstParcelName,
+        courseIds: buildParcelCourseIds(firstAreaChildId, splitDraft.firstVertices.length),
         areaSquareMeters: firstReport.areaSquareMeters,
         perimeterMeters: firstReport.perimeterMeters,
         closureDeltaX: firstReport.closureDeltaX,
@@ -276,7 +284,7 @@ export const parcelSplitAreaCommand: CadCommandDefinition<{
         }, provenance),
       },
       {
-        id: createStableRuntimeId('cad-parcel'),
+        id: secondAreaChildId,
         type: 'parcel',
         layerId: parcelEntity.layerId,
         styleId: parcelEntity.styleId,
@@ -285,6 +293,7 @@ export const parcelSplitAreaCommand: CadCommandDefinition<{
         vertices: splitDraft.secondVertices.map((vertex) => ({ x: vertex.x, y: vertex.y })),
         vertexLabels: [...splitDraft.secondVertexLabels],
         parcelName: secondParcelName,
+        courseIds: buildParcelCourseIds(secondAreaChildId, splitDraft.secondVertices.length),
         areaSquareMeters: secondReport.areaSquareMeters,
         perimeterMeters: secondReport.perimeterMeters,
         closureDeltaX: secondReport.closureDeltaX,

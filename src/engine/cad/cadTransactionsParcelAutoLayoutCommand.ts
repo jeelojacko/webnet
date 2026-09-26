@@ -22,6 +22,7 @@ import {
 } from './cadTransactionsParcelLayoutReports';
 import { resolveParcelLayoutFrontageSource } from './cadTransactionsParcelLayoutFrontage';
 import { createStableRuntimeId } from '../id';
+import { buildParcelCourseIds } from './cadParcelCourses';
 
 export const parcelLayoutAutoCommand: CadCommandDefinition<{
   key: 'PARCEL_LAYOUT_AUTO';
@@ -97,8 +98,9 @@ export const parcelLayoutAutoCommand: CadCommandDefinition<{
         vertexLabels: generatedParcel.vertexLabels,
       });
       if (!report) return null;
+      const childId = createStableRuntimeId('cad-parcel');
       return {
-        id: createStableRuntimeId('cad-parcel'),
+        id: childId,
         type: 'parcel' as const,
         layerId: parcelEntity.layerId,
         styleId: parcelEntity.styleId,
@@ -107,6 +109,7 @@ export const parcelLayoutAutoCommand: CadCommandDefinition<{
         vertices: generatedParcel.vertices.map((vertex) => ({ x: vertex.x, y: vertex.y })),
         vertexLabels: [...generatedParcel.vertexLabels],
         parcelName,
+        courseIds: buildParcelCourseIds(childId, generatedParcel.vertices.length),
         areaSquareMeters: report.areaSquareMeters,
         perimeterMeters: report.perimeterMeters,
         closureDeltaX: report.closureDeltaX,

@@ -40,6 +40,10 @@ export interface UseSurveyCadCommandsArgs {
   selectedParcelForBearingSplit: CadParcelEntity | null;
   selectedParcelForAreaSplit: CadParcelEntity | null;
   selectedStartPointForBatchCogo: CommandPoint | null;
+  /** Current selection in pick order (survey-table row capture). */
+  selectedEntityIds?: string[];
+  /** Fallback POINTTABLE ordering when nothing is selected. */
+  surveyPointEntityIdsInStationOrder?: string[];
   reverseDirectionModifier: boolean;
   applyHistoryUpdate: (_updater: (_history: CadHistoryState) => CadHistoryState) => void;
   /** Phase 18R.1: live drawing draft, seeded into PROJECTTRANSFORM commits. */
@@ -158,6 +162,12 @@ export interface UseSurveyCadCommandsResult {
   startTrimCommand: () => void;
   startFilletCommand: () => void;
   startPasteCommand: (_sourceEntityIds: string[], _basePoint: CommandPoint) => void;
+  startLineTableCommand: () => void;
+  startCurveTableCommand: () => void;
+  startParcelTableCommand: () => void;
+  startPointTableCommand: () => void;
+  startParcelReportCommand: () => void;
+  startParcelDescCommand: () => void;
   cancelCommand: () => void;
   finishCommand: () => void;
   setCommandInputValue: (_value: string) => void;

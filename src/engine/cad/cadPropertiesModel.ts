@@ -72,6 +72,7 @@ export const CAD_ENTITY_TYPE_LABELS: Record<CadEntity['type'], string> = {
   'curve-label': 'Curve Label',
   'error-ellipse': 'Error Ellipses',
   'block-reference': 'Block References',
+  'survey-table': 'Survey Tables',
 };
 
 export const CAD_ENTITY_TYPE_SINGULAR_LABELS: Record<CadEntity['type'], string> = {
@@ -90,6 +91,7 @@ export const CAD_ENTITY_TYPE_SINGULAR_LABELS: Record<CadEntity['type'], string> 
   'curve-label': 'Curve Label',
   'error-ellipse': 'Error Ellipse',
   'block-reference': 'Block Reference',
+  'survey-table': 'Survey Table',
 };
 
 export const layerLabel = (layers: readonly CadLayer[], layerId: string): string =>

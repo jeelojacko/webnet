@@ -43,6 +43,7 @@ import type { CadShellLink } from '../cad-app/shell/cadShellLink';
 import type { ActiveCommandKey } from '../hooks/surveyCad/useSurveyCadCommandTypes';
 import type { CadShellActions, CadWorkspaceSnapshot, SurveyManagerKind } from '../cad-app/shell/cadShellTypes';
 import { buildCadSurveySnapshot } from '../cad-app/shell/cadSurveySnapshot';
+import { buildCadSurveyTableSnapshot } from '../cad-app/shell/cadSurveyTableSnapshot';
 import { buildCadBlockSnapshot } from '../cad-app/shell/cadBlockSnapshot';
 import { withBlockHoverTitles } from '../cad-app/blocks/cadBlockOverlay';
 import {
@@ -1438,6 +1439,13 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
     BATCH_COGO: cadWorkspace.startBatchCogoCommand,
     PARCEL_SPLIT_BEARING: cadWorkspace.startParcelSplitBearingCommand,
     PARCEL_SPLIT_AREA: cadWorkspace.startParcelSplitAreaCommand,
+    LINETABLE: cadWorkspace.startLineTableCommand,
+    CURVETABLE: cadWorkspace.startCurveTableCommand,
+    PARCELTABLE: cadWorkspace.startParcelTableCommand,
+    POINTTABLE: cadWorkspace.startPointTableCommand,
+    PARCELREPORT: cadWorkspace.startParcelReportCommand,
+    PARCELDESC: cadWorkspace.startParcelDescCommand,
+    SURVEYTABLE: undefined,
     MTEXT: cadWorkspace.startMTextCommand,
     LEADER: cadWorkspace.startLeaderCommand,
     DIM: cadWorkspace.startDimCommand,
@@ -1534,6 +1542,7 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
       stationCount: stationIds.size,
       dependencyStatus: dependencySummary.status,
       survey: buildCadSurveySnapshot(activeProject, selectedEntityIds),
+      surveyTable: buildCadSurveyTableSnapshot(activeProject, selectedEntityIds),
       blocks: buildCadBlockSnapshot(activeProject, selectedEntityIds, blockInsertPick),
       annotation: cadWorkspace.annotationSnapshot,
       f2f: buildCadF2FSnapshot(activeProject, activeCatalog, catalogStatus),
@@ -1902,6 +1911,10 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
         if (typeof starter !== 'function') return false;
         starter();
         return true;
+      },
+      openSurveyTableManager: () => {
+        if (shellLink?.requestSurveyTableManager == null) return;
+        shellLink.requestSurveyTableManager();
       },
       undo,
       redo,

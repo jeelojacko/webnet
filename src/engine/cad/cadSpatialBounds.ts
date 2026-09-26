@@ -23,6 +23,7 @@ import {
   sumOffsets,
 } from './annotation/cadAnnotationPlacement';
 import { resolveDimensionDerivation } from './cadRenderer';
+import { cadSurveyTableWorldBounds } from './cadSurveyTableDerive';
 
 export const expandBounds = (bounds: CadBounds, padding: number): CadBounds => ({
   minX: bounds.minX - padding,
@@ -312,8 +313,7 @@ export const entityIntersectsBounds = (
     }
     case 'curve-label': {
       const source = lk.entityById.get(entity.sourceEntityId);
-      const labelStyle = lk.curveLabelStyleById.get(entity.labelStyleId);
-      if (source?.type !== 'arc') return pointInsideBounds(entity.offset, bounds);
+      const labelStyle = lk.curveLabelStyleById.get(entity.labelStyleId);      if (source?.type !== 'arc') return pointInsideBounds(entity.offset, bounds);
       const label = deriveCurveLabel({
         center: { x: source.centerX, y: source.centerY },
         radius: source.radius,
@@ -341,6 +341,16 @@ export const entityIntersectsBounds = (
           'middle',
         ),
         bounds,
+      );
+    }
+    case 'survey-table': {
+      const world = cadSurveyTableWorldBounds(entity, project);
+      if (!world) return false;
+      return !(
+        world.maxX < bounds.minX ||
+        world.minX > bounds.maxX ||
+        world.maxY < bounds.minY ||
+        world.minY > bounds.maxY
       );
     }
     default:

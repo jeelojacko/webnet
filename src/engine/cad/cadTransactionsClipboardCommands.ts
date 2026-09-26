@@ -29,6 +29,7 @@ import type {
   CadTextEntity,
 } from './cadTypes';
 import { createStableRuntimeId } from '../id';
+import { buildParcelCourseIds } from './cadParcelCourses';
 export const buildCopiedEntities = (
   project: CadProject,
   selectedEntities: CadEntity[],
@@ -80,23 +81,30 @@ export const buildCopiedEntities = (
       }
       case 'polyline':
       case 'polygon':
-      case 'parcel':
+      case 'parcel': {
+        const copyId = createStableRuntimeId(
+          entity.type === 'polyline'
+            ? 'cad-polyline'
+            : entity.type === 'polygon'
+              ? 'cad-polygon'
+              : 'cad-parcel',
+        );
+        const movedVertices = entity.vertices.map((vertex) => ({
+          x: vertex.x + deltaX,
+          y: vertex.y + deltaY,
+        }));
         copiedEntities.push({
           ...entity,
-          id: createStableRuntimeId(
-            entity.type === 'polyline'
-              ? 'cad-polyline'
-              : entity.type === 'polygon'
-                ? 'cad-polygon'
-                : 'cad-parcel',
-          ),
-          vertices: entity.vertices.map((vertex) => ({
-            x: vertex.x + deltaX,
-            y: vertex.y + deltaY,
-          })),
+          id: copyId,
+          vertices: movedVertices,
           vertexLabels: entity.vertexLabels.map(
             (label) => copiedPointByStationId.get(label)?.stationId ?? label,
           ),
+          // Phase 19A: a copy is a new parcel identity — fresh deterministic
+          // course ids (never shared with the source).
+          ...(entity.type === 'parcel'
+            ? { courseIds: buildParcelCourseIds(copyId, movedVertices.length) }
+            : {}),
           metadata: {
             ...entity.metadata,
             createdBy: 'COPY',
@@ -104,6 +112,7 @@ export const buildCopiedEntities = (
           },
         });
         break;
+      }
       case 'arc':
         {
           const copiedArcSupport = copiedArcSupportBySourceId.get(entity.id);

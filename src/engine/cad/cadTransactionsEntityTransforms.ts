@@ -85,6 +85,14 @@ export const translateEntity = (entity: CadEntity, deltaX: number, deltaY: numbe
         x: entity.x + deltaX,
         y: entity.y + deltaY,
       };
+    case 'survey-table':
+      // Phase 19A: table MOVE is insertion x/y only (columns stay orthogonal
+      // to rotationDeg; refs/ids untouched).
+      return {
+        ...entity,
+        x: entity.x + deltaX,
+        y: entity.y + deltaY,
+      };
     case 'leader':
       // Vertices move; the arrow anchor stays bound to the source entity.
       return {

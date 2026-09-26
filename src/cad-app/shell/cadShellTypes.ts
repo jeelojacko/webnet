@@ -26,6 +26,7 @@ export type {
 } from '../annotation/cadAnnotationUiTypes';
 import type { BreaklineEntityPreview, BoundarySourcePreview } from '../../engine/cad/cadSurfaceView';
 import type { CadSurfaceSnapshot } from './cadSurfaceSnapshot';
+import type { CadSurveyTableSnapshot } from './cadSurveyTableSnapshot';
 import type { CadVolumeSnapshot } from './cadVolumeSnapshot';
 import type { CadAnalysisSnapshot } from './cadAnalysisSnapshot';
 import type { CadProfileSnapshot } from './cadProfileSnapshot';
@@ -217,6 +218,12 @@ export interface CadWorkspaceSnapshot {
    * the shell renders disabled controls (never fake data).
    */
   annotation?: CadAnnotationSnapshot | null;
+  /**
+   * Phase 19A — survey table rows/styles + selected table detail for the
+   * Toolspace and row editor. Optional: a workspace without survey-table
+   * wiring leaves it undefined and the shell renders disabled controls.
+   */
+  surveyTable?: CadSurveyTableSnapshot | null;
   /** UI command keys with a live starter in the mounted workspace. */
   availableCommands: string[];
 }
@@ -433,6 +440,12 @@ export interface CadShellActions {
    * Absent = manager unavailable (embedded workspace without shell chrome).
    */
   openAnnotationManager?: (_tab?: CadAnnotationManagerTab) => void;
+  /**
+   * Phase 19A — open the survey table manager (styles + selected table row
+   * editor). Absent = manager unavailable (embedded workspace without shell
+   * chrome).
+   */
+  openSurveyTableManager?: () => void;
   /**
    * Phase 18O — commit one annotation style/entity op (one undo entry).
    * `reason` is surfaced verbatim by the managers when applied is false.

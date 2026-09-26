@@ -240,5 +240,7 @@ export const helpTextForSession = (session: CommandSession | null): string => {
       return 'BDLABEL: click a line to label (Esc commits).';
     case 'CURVELABEL':
       return 'CURVELABEL: click an arc to label.';
+    case 'SURVEYTABLE':
+      return 'SURVEYTABLE: sources are captured from the current selection; click the insertion point to commit (one undoable transaction).';
   }
 };

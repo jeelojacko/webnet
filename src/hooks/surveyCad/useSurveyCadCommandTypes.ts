@@ -9,6 +9,7 @@ import type {
   CadArcEntity,
   CadParcelEntity,
   CadSnapKind,
+  CadSurveyTableKind,
 } from '../../engine/cad/cadTypes';
 
 export type CommandPoint = CadNamedPoint & {
@@ -108,6 +109,13 @@ export type ActiveCommandKey =
   | 'DIMDIAMETER'
   | 'BDLABEL'
   | 'CURVELABEL'
+  | 'LINETABLE'
+  | 'CURVETABLE'
+  | 'PARCELTABLE'
+  | 'POINTTABLE'
+  | 'PARCELREPORT'
+  | 'PARCELDESC'
+  | 'SURVEYTABLE'
   | 'PARCEL_SPLIT_BEARING'
   | 'PARCEL_SPLIT_AREA'
   | 'MOVE'
@@ -437,5 +445,18 @@ export type CommandSession =
       inputValue: string;
       points: CommandPoint[];
       sourceEntityId: string | null;
+      resultText?: string;
+    }
+  // Phase 19A survey table creation sessions (select sources → pick the
+  // insertion point → one CREATE transaction).
+  | {
+      key: 'SURVEYTABLE';
+      inputValue: string;
+      /** Engine create command this session commits (table kind derives from it). */
+      engineKey: 'LINETABLE' | 'CURVETABLE' | 'PARCELTABLE' | 'POINTTABLE' | 'PARCELREPORT' | 'PARCELDESC';
+      tableKind: CadSurveyTableKind;
+      sourceEntityIds: string[];
+      insertion: CommandPoint | null;
+      title?: string;
       resultText?: string;
     };

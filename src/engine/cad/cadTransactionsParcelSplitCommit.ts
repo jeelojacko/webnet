@@ -12,6 +12,7 @@ import type { CadCogoReportRow, CadCogoToolKey } from './cadCogoTypes';
 import type { CadCommandExecutionResult, CadWorkspaceSnapshot } from './cadTransactions.types';
 import type { CadEntityId, CadParcelEntity } from './cadTypes';
 import { createStableRuntimeId } from '../id';
+import { buildParcelCourseIds } from './cadParcelCourses';
 export const buildParcelSplitCommitResult = ({
   snapshot,
   parcelEntity,
@@ -87,9 +88,11 @@ export const buildParcelSplitCommitResult = ({
     parameters,
   });
 
+  const firstChildId = createStableRuntimeId('cad-parcel');
+  const secondChildId = createStableRuntimeId('cad-parcel');
   const createdParcels: CadParcelEntity[] = [
     {
-      id: createStableRuntimeId('cad-parcel'),
+      id: firstChildId,
       type: 'parcel',
       layerId: parcelEntity.layerId,
       styleId: parcelEntity.styleId,
@@ -98,6 +101,7 @@ export const buildParcelSplitCommitResult = ({
       vertices: splitDraft.firstVertices.map((vertex) => ({ x: vertex.x, y: vertex.y })),
       vertexLabels: [...splitDraft.firstVertexLabels],
       parcelName: firstParcelName,
+      courseIds: buildParcelCourseIds(firstChildId, splitDraft.firstVertices.length),
       areaSquareMeters: firstReport.areaSquareMeters,
       perimeterMeters: firstReport.perimeterMeters,
       closureDeltaX: firstReport.closureDeltaX,
@@ -106,7 +110,7 @@ export const buildParcelSplitCommitResult = ({
       metadata: buildCadCogoEntityMetadata(firstParcelMetadata, provenance),
     },
     {
-      id: createStableRuntimeId('cad-parcel'),
+      id: secondChildId,
       type: 'parcel',
       layerId: parcelEntity.layerId,
       styleId: parcelEntity.styleId,
@@ -115,6 +119,7 @@ export const buildParcelSplitCommitResult = ({
       vertices: splitDraft.secondVertices.map((vertex) => ({ x: vertex.x, y: vertex.y })),
       vertexLabels: [...splitDraft.secondVertexLabels],
       parcelName: secondParcelName,
+      courseIds: buildParcelCourseIds(secondChildId, splitDraft.secondVertices.length),
       areaSquareMeters: secondReport.areaSquareMeters,
       perimeterMeters: secondReport.perimeterMeters,
       closureDeltaX: secondReport.closureDeltaX,
