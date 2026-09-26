@@ -149,6 +149,7 @@ export const composeSurfaceMeshes = (
     outers: [],
     voids: [],
     surfaceId: 'compose',
+    useIndexedRecovery: true,
   });
   if (!built.ok) return { ok: false, reason: 'SURFACE_COMPOSE_CONSTRAINT_FAILED' };
 

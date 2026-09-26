@@ -14,6 +14,7 @@ import { orient2d } from 'robust-predicates';
 import { buildTinBase } from './tinBase';
 import { mergeBoundaryPoints } from './tinBoundaries';
 import { recoverConstrainedEdges } from './tinConstraintRecovery';
+import { recoverConstrainedEdgesIndexed } from './tinConstraintRecoveryIndexed';
 import { legalizeTin } from './tinLegalize';
 import { filterTinDomain } from './tinDomainFilter';
 import { buildTinTopology, tinEdgeKey } from './tinTopology';
@@ -28,6 +29,8 @@ export interface TinBuildInput {
   maxEdgeLength?: number;
   /** Owner surface id (synthetic boundary-vertex ids only). */
   surfaceId: string;
+  /** Opt-in indexed recovery (default false = legacy path, byte-identical). */
+  useIndexedRecovery?: boolean;
 }
 
 export interface TinBuildSuccess {
@@ -151,7 +154,8 @@ export const buildConstrainedTin = (input: TinBuildInput): TinBuildSuccess | { o
       x: x - base.originX,
       y: y - base.originY,
     });
-    const recovery = recoverConstrainedEdges(base.points, base.triangles, segments);
+    const recover = input.useIndexedRecovery === true ? recoverConstrainedEdgesIndexed : recoverConstrainedEdges;
+    const recovery = recover(base.points, base.triangles, segments);
     if (!recovery.ok) {
       if (recovery.steiner.length === 0) return { ok: false };
       const sp = recovery.steiner[0];
