@@ -82,7 +82,13 @@ export const CadModelLayoutTabs: React.FC<CadModelLayoutTabsProps> = ({ snapshot
   const [menu, setMenu] = useState<{ sheetId: string; x: number; y: number } | null>(null);
   useEffect(() => {
     if (!menu) return;
-    const close = (): void => setMenu(null);
+    // Phase 19B QA: a bare pointerdown closer unmounts the menu before the
+    // item's click handler runs (document bubble hits first), so menu-item
+    // clicks never dispatch. Pointerdowns inside the menu must not close it.
+    const close = (event: PointerEvent): void => {
+      if (event.target instanceof Element && event.target.closest('[data-cad-sheet-menu]')) return;
+      setMenu(null);
+    };
     document.addEventListener('pointerdown', close);
     return () => document.removeEventListener('pointerdown', close);
   }, [menu]);

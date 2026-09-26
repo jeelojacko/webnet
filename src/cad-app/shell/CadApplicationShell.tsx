@@ -1,8 +1,19 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import SurveyCadWorkspace from '../../components/SurveyCadWorkspace';
 import { SheetWorkspace } from '../../components/surveyCad/SheetWorkspace';
 import type { CadAppController } from '../useCadAppController';
-import { createCadShellLink, useCadShellSnapshot, type CadShellLink } from './cadShellLink';
+import {
+  buildCadDrawingFileName,
+  MAX_CAD_DRAWING_TEXT_BYTES,
+  parseCadDrawingFile,
+  serializeCadDrawingFile,
+} from '../../engine/cad/cadDrawingFile';
+import {
+  assertBrowserFileSize,
+  readBrowserFileAsText,
+  saveBrowserTextFile,
+} from '../../engine/browserFileIo';
+import { createCadShellLink, useCadShellActionsVersion, useCadShellSnapshot, type CadShellLink } from './cadShellLink';
 import { useCadShellLayout } from './useCadShellLayout';
 import { CadMenuBar } from './CadMenuBar';
 import { CadRibbon } from './CadRibbon';
@@ -42,6 +53,15 @@ interface CadApplicationShellProps {
   onBackToAdjustment: () => void;
 }
 
+const SHEET_FILE_TYPES = [
+  {
+    description: 'WebNet CAD Drawing',
+    accept: {
+      'application/json': ['.wncad', '.json'],
+    },
+  },
+];
+
 const PANEL_TITLES: Record<CadSidePanelId, string> = {
   toolspace: 'Toolspace',
   properties: 'Properties',
@@ -65,6 +85,9 @@ export const CadApplicationShell: React.FC<CadApplicationShellProps> = ({ contro
   const link: CadShellLink = useMemo(() => createCadShellLink(), []);
   const layout = useCadShellLayout();
   const snapshot = useCadShellSnapshot(link);
+  // Phase 19B QA — re-read link.actions whenever the workspace
+  // (un)registers it; assignment alone never re-renders chrome.
+  const actionsVersion = useCadShellActionsVersion(link);
   const [showStart, setShowStart] = useState(false);
   const [blockManager, setBlockManager] = useState<{ tab: 'blocks' | 'symbols' | 'insert' } | null>(null);
   const [annotationManager, setAnnotationManager] = useState<{ tab?: CadAnnotationManagerTab } | null>(null);
@@ -135,6 +158,31 @@ export const CadApplicationShell: React.FC<CadApplicationShellProps> = ({ contro
     return () => document.removeEventListener('keydown', onKeyDown);
   }, [link, layout.activeLayout, sheetHist]);
 
+  // Phase 19B QA — sheet-space file ops. The model workspace (owner of
+  // link.actions file handlers) is unmounted on layout tabs, so Save/Open
+  // route here through the live session drawing (model + draft) instead of
+  // a stale closure. Model-tab behavior is untouched.
+  const sheetOpenInputRef = useRef<HTMLInputElement>(null);
+  const handleSheetSave = useCallback(() => {
+    const fileName = buildCadDrawingFileName(session.drawing.name);
+    void saveBrowserTextFile(fileName, serializeCadDrawingFile(session.drawing), SHEET_FILE_TYPES).then((saved) => {
+      if (saved) applyLifecycleEvent('cad-saved', fileName);
+    });
+  }, [session.drawing, applyLifecycleEvent]);
+  const handleSheetOpenFile = useCallback(async (file: File | undefined) => {
+    if (!file) return;
+    try {
+      assertBrowserFileSize(file, MAX_CAD_DRAWING_TEXT_BYTES, `${file.name} CAD drawing`);
+      const parsed = parseCadDrawingFile(await readBrowserFileAsText(file));
+      if (!parsed.ok) return;
+      if (!requireCleanOrConfirm(`Replace the current drawing with ${file.name}`)) return;
+      applyDrawingChange(() => parsed.drawing);
+      applyLifecycleEvent('cad-opened', file.name);
+    } catch {
+      // Malformed/oversize files leave the session untouched.
+    }
+  }, [applyDrawingChange, applyLifecycleEvent, requireCleanOrConfirm]);
+
   // Chrome gating (§1.6): on sheet tabs the ribbon/menu/dock see no model
   // selection, no model commands, and sheet-routed undo/redo.
   const chromeSnapshot = useMemo(() => {
@@ -143,8 +191,17 @@ export const CadApplicationShell: React.FC<CadApplicationShellProps> = ({ contro
   }, [snapshot, sheetActive, sheetHist]);
   const chromeActions = useMemo(() => {
     if (!link.actions || !sheetActive) return link.actions;
-    return gateActionsForSheetSpace(link.actions, sheetHist.undo, sheetHist.redo);
-  }, [link.actions, sheetActive, sheetHist]);
+    const gated = gateActionsForSheetSpace(link.actions, sheetHist.undo, sheetHist.redo);
+    // File ops pass the gate but the model workspace that owns them is
+    // unmounted on layout tabs: rebind to the session-backed handlers so
+    // Save/Open keep working (covers the quick access + menu paths).
+    return {
+      ...gated,
+      saveDrawing: () => void handleSheetSave(),
+      openDrawingFile: () => sheetOpenInputRef.current?.click(),
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [link.actions, link, actionsVersion, sheetActive, sheetHist, handleSheetSave]);
 
   const handleAddSheet = useCallback(() => {
     const current = liveDraft;
@@ -296,7 +353,7 @@ export const CadApplicationShell: React.FC<CadApplicationShellProps> = ({ contro
           aria-label="Open Drawing"
           title="Open a WNCAD file"
           disabled={snapshot == null}
-          onClick={() => link.actions?.openDrawingFile()}
+          onClick={() => (sheetActive ? sheetOpenInputRef.current?.click() : link.actions?.openDrawingFile())}
         >
           Open
         </button>
@@ -305,7 +362,7 @@ export const CadApplicationShell: React.FC<CadApplicationShellProps> = ({ contro
           aria-label="Save Drawing"
           title="Save the drawing (WNCAD)"
           disabled={snapshot == null}
-          onClick={() => link.actions?.saveDrawing()}
+          onClick={() => (sheetActive ? void handleSheetSave() : link.actions?.saveDrawing())}
         >
           Save
         </button>
@@ -477,6 +534,20 @@ export const CadApplicationShell: React.FC<CadApplicationShellProps> = ({ contro
           <CadSurveyTablePanel snapshot={chromeSnapshot} actions={chromeActions} />
         </div>
       ) : null}
+      <input
+        ref={sheetOpenInputRef}
+        type="file"
+        accept=".wncad,.json,application/json"
+        className="hidden"
+        aria-hidden="true"
+        tabIndex={-1}
+        data-cad-shell-open-drawing-input
+        onChange={(event) => {
+          const file = event.target.files?.[0];
+          event.target.value = '';
+          void handleSheetOpenFile(file);
+        }}
+      />
       {pageSetupSheetId && liveDraft ? (
         <PageSetupDialog
           draft={liveDraft}

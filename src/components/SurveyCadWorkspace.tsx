@@ -2316,13 +2316,24 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
         handleEnterKey();
       },
     };
+  // Phase 19B QA — actions-channel subscription (see cadShellLink).
+  // Registration re-runs every render to keep handlers fresh but never
+  // notifies (assignment alone re-renders nobody). Notify fires only on
+  // mount/unmount transitions, otherwise cleanup-per-render would ping
+  // subscribers into an update loop.
   useEffect(() => {
     if (!shellLink) return;
     shellLink.actions = shellActions;
-    return () => {
-      if (shellLink.actions === shellActions) shellLink.actions = null;
-    };
   });
+  useEffect(() => {
+    if (!shellLink) return;
+    const link = shellLink;
+    link.notifyActions();
+    return () => {
+      link.actions = null;
+      link.notifyActions();
+    };
+  }, [shellLink]);
 
   useSurveyCadWorkspaceKeyboard({
     activeCommandKey,

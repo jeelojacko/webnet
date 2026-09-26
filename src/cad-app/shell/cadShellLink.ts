@@ -28,6 +28,16 @@ export interface CadShellLink {
   /** Set by the workspace; null until the workspace mounts. */
   actions: CadShellActions | null;
   /**
+   * Phase 19B QA — generation counter for the `actions` channel. Plain
+   * assignment never re-renders subscribers, so a remount that republishes
+   * an equal snapshot left the chrome reading a stale (nulled) actions
+   * object forever. The workspace bumps this on (un)register; chrome
+   * subscribes and re-reads `actions` on change.
+   */
+  getActionsVersion: () => number;
+  subscribeActions: (_listener: () => void) => () => void;
+  notifyActions: () => void;
+  /**
    * Phase 18D — set by the shell; survey ribbon buttons focus the
    * Toolspace tab through it (workspace cannot reach shell layout).
    */
@@ -160,8 +170,10 @@ const propertiesEqual = (
 export const createCadShellLink = (): CadShellLink => {
   let snapshot: CadWorkspaceSnapshot | null = null;
   let cursor: CadCursorPoint | null = null;
+  let actionsVersion = 0;
   const slowListeners = new Set<() => void>();
   const cursorListeners = new Set<() => void>();
+  const actionsListeners = new Set<() => void>();
   return {
     getSnapshot: () => snapshot,
     subscribe: (listener) => {
@@ -189,6 +201,17 @@ export const createCadShellLink = (): CadShellLink => {
       cursorListeners.forEach((listener) => listener());
     },
     actions: null,
+    getActionsVersion: () => actionsVersion,
+    subscribeActions: (listener) => {
+      actionsListeners.add(listener);
+      return () => {
+        actionsListeners.delete(listener);
+      };
+    },
+    notifyActions: () => {
+      actionsVersion += 1;
+      actionsListeners.forEach((listener) => listener());
+    },
     requestLayerManager: null,
     requestToolspaceTab: null,
     requestBlockManager: null,
@@ -203,3 +226,6 @@ export const useCadShellSnapshot = (link: CadShellLink): CadWorkspaceSnapshot | 
 
 export const useCadShellCursor = (link: CadShellLink): CadCursorPoint | null =>
   useSyncExternalStore(link.subscribeCursor, link.getCursor, link.getCursor);
+
+export const useCadShellActionsVersion = (link: CadShellLink): number =>
+  useSyncExternalStore(link.subscribeActions, link.getActionsVersion, link.getActionsVersion);
