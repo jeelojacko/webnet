@@ -6,9 +6,14 @@ import { createBlankCadProject } from '../src/engine/cad/cadDrawingFile';
 import { createBlankDraftDocument } from '../src/engine/cad/cadDraftTypes';
 import { addSheetToDraft, addViewportToSheet, createPlanSheet } from '../src/engine/cad/cadSheets';
 import type { CadEntity, CadParcelEntity, CadProject } from '../src/engine/cad/cadTypes';
+import type { CadSurveyTableEntity, CadLineEntity } from '../src/engine/cad/cadTypes';
+import { DEFAULT_CAD_SURVEY_TABLE_STYLE_ID } from '../src/engine/cad/cadSurveyTables';
+import { createBlankCadDrawingDocument } from '../src/engine/cad/cadDrawingFile';
+import { buildExportCenterPreview } from '../src/engine/cad/exportCenter';
 import {
   addCadSurveyTableToDraft,
   cadSurveyTableToCogoReportTable,
+  collectCadSurveyTablesForExport,
   deriveCadSurveyTableFromSource,
   formatCadSurveyTableCsv,
   resolveCadParcelCourses,
@@ -307,5 +312,75 @@ describe('19A survey table export dispositions', () => {
     expect(result.approximatedEntityIds).toContain('parcel-1');
     expect(result.output).toContain('LOT X');
     expect(result.output).toContain('P1');
+  });
+});
+
+describe('19A persisted table entities reach exporters (no silent omission)', () => {
+  let rowCounter = 0;
+  const lineEntity = (id: string, from: [number, number], to: [number, number]): CadLineEntity => ({
+    ...base,
+    id,
+    type: 'line',
+    fromStationId: `${id}-A`,
+    toStationId: `${id}-B`,
+    fromX: from[0],
+    fromY: from[1],
+    toX: to[0],
+    toY: to[1],
+    sourceObservationIds: [],
+  });
+  const lineTableEntity = (id: string, lineIds: string[]): CadSurveyTableEntity => ({
+    ...base,
+    id,
+    type: 'survey-table',
+    tableKind: 'line',
+    x: 500,
+    y: 400,
+    rotationDeg: 0,
+    tableStyleId: DEFAULT_CAD_SURVEY_TABLE_STYLE_ID,
+    rows: lineIds.map((entityId) => ({
+      id: `row-${(rowCounter += 1)}`,
+      source: { kind: 'line', entityId },
+    })),
+  });
+  const drawingWithTable = () => {
+    const drawing = createBlankCadDrawingDocument({ name: '19A export-center', units: 'm' });
+    const a = lineEntity('line-a', [0, 0], [3, 4]);
+    const b = lineEntity('line-b', [0, 0], [10, 0]);
+    const tableEntity = lineTableEntity('table-1', [a.id, b.id, 'line-gone']);
+    return {
+      ...drawing,
+      project: { ...drawing.project, entities: [a, b, tableEntity] },
+    };
+  };
+
+  it('adapter preserves operator order/codes and marks broken rows', () => {
+    const drawing = drawingWithTable();
+    const collected = collectCadSurveyTablesForExport(drawing.project);
+    expect(collected).toHaveLength(1);
+    const exported = collected[0]!;
+    expect(exported.columns[0]).toBe('Code');
+    expect(exported.rows.map((row) => row.cells[0])).toEqual(['L1', 'L2', 'L3']);
+    expect(exported.rows[0]!.cells[4]).toBe('5.000');
+    expect(exported.rows[2]!.status).toBe('EMPTY');
+    expect(exported.warnings.join(' ')).toMatch(/broken/i);
+  });
+
+  it('Export Center dxf-r12 approximates the table (never silently omits)', () => {
+    const preview = buildExportCenterPreview(drawingWithTable(), { format: 'dxf-r12' });
+    expect(preview.ok).toBe(true);
+    if (!preview.ok) return;
+    expect(preview.preview.approximatedEntityIds).toContain('table-1');
+    expect(preview.preview.omittedEntityIds).not.toContain('table-1');
+    expect(preview.preview.warnings.some((w) => w.message.includes(CAD_SURVEY_TABLE_DXF_DISPOSITION))).toBe(true);
+    expect(preview.preview.payload).toContain('L1');
+  });
+
+  it('Export Center landxml marks the table NOT_APPLICABLE (never silent)', () => {
+    const preview = buildExportCenterPreview(drawingWithTable(), { format: 'landxml' });
+    expect(preview.ok).toBe(true);
+    if (!preview.ok) return;
+    expect(preview.preview.warnings.some((w) => w.message.includes(CAD_SURVEY_TABLE_LANDXML_DISPOSITION))).toBe(true);
+    expect(preview.preview.payload).not.toContain('Line Table');
   });
 });

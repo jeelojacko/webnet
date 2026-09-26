@@ -542,6 +542,14 @@ export const buildDxfExportModelWithResult = (args: BuildDxfModelArgs): ExportRe
         break;
       }
       default:
+        if (entity.type === 'survey-table') {
+          // Phase 19A: table geometry rides via the surveyTables arg
+          // (derived LINE/LWPOLYLINE/TEXT below), so the entity itself
+          // contributes nothing here. Without the arg the table would be
+          // a silent drop — omit loudly instead.
+          const covered = (args.surveyTables ?? []).some((table) => table.id === entity.id);
+          if (covered) break;
+        }
         warn({ code: 'SKIPPED_ENTITY', message: `entity ${(entity as { id: string }).id} has unsupported type ${(entity as { type: string }).type}`, entityId: (entity as { id: string }).id });
         result.omittedEntityIds.push((entity as { id: string }).id);
         break;

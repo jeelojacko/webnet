@@ -23,7 +23,11 @@ import {
   type CadParcelCourse as CadCanonicalParcelCourse,
 } from './cadParcelCourses';
 import type { CadCogoReportTable } from './cadCogoTypes';
-import type { CadParcelEntity, CadProject } from './cadTypes';
+import type { CadParcelEntity, CadProject, CadSurveyTableEntity } from './cadTypes';
+import {
+  deriveCadSurveyTable,
+  type CadSurveyTableDerivation,
+} from './cadSurveyTableDerive';
 import {
   addLogicalTableToDraft,
   layoutContinuedFragments,
@@ -474,6 +478,50 @@ export const cadSurveyTableToCogoReportTable = (table: CadSurveyTable): CadCogoR
   columns: [...table.columns],
   rows: table.rows.map((row) => [...row.cells]),
 });
+
+/**
+ * Canonical entity derivation → export shape (§78: derived rows go through
+ * ONE adapter, no recalculation). Preserves operator row order, visible
+ * columns, custom codes, and broken-row marking; honors showTitle/Header
+ * only via headings — CSV always carries the resolved headings.
+ */
+export const cadSurveyTableDerivationToExportTable = (
+  derivation: CadSurveyTableDerivation,
+): CadSurveyTable => ({
+  id: derivation.tableId,
+  kind: derivation.kind,
+  title: derivation.title ?? derivation.tableId,
+  columns: derivation.columns.map((column) => column.label),
+  rows: derivation.rows.map((row) => ({
+    cells: [...row.cells],
+    status: row.status === 'ok' ? ('OK' as const) : ('EMPTY' as const),
+  })),
+  tagAnchors: derivation.tags.map((tag) => {
+    const source = derivation.rows[tag.rowIndex]?.source;
+    return {
+      tag: tag.code,
+      kind: source?.kind === 'arc' ? ('curve' as const) : ('line' as const),
+      point: { x: tag.x, y: tag.y },
+    };
+  }),
+  units: { ...TABLE_UNITS },
+  warnings:
+    derivation.status === 'EMPTY'
+      ? ['table has no rows']
+      : derivation.status === 'CURRENT'
+        ? []
+        : [`table status ${derivation.status}: one or more source references are broken`],
+});
+
+/**
+ * Every persisted survey-table entity → export shape via the canonical
+ * deriver. Export Center DXF/LandXML paths consume this so tables are
+ * APPROXIMATED / NOT_APPLICABLE explicitly — never silently dropped.
+ */
+export const collectCadSurveyTablesForExport = (project: CadProject): CadSurveyTable[] =>
+  project.entities
+    .filter((entity): entity is CadSurveyTableEntity => entity.type === 'survey-table')
+    .map((entity) => cadSurveyTableDerivationToExportTable(deriveCadSurveyTable(entity, project)));
 
 /**
  * Bridge into the persisted drawing-table model so the canonical scene
