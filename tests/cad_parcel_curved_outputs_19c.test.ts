@@ -15,6 +15,8 @@ import {
   resolveCadSurveyTableRow,
 } from '../src/engine/cad/cadSurveyTables';
 import { deriveCadSurveyTable } from '../src/engine/cad/cadSurveyTableDerive';
+import { describeParcelArcCourse } from '../src/engine/cad/cadParcelArcGeometry';
+import { deriveCurveLabel } from '../src/engine/cad/annotation/cadSurveyLabels';
 import {
   deriveCadSurveyTableFromSource,
   formatCadSurveyTableCsv,
@@ -248,6 +250,55 @@ describe('19C parcel course table (source-driven)', () => {
     expect(derivation.rows[4]!.status).toBe('missing');
     // Leading code cell is the visible row code; every value cell is '—'.
     expect(derivation.rows[4]!.cells.slice(1).every((cell) => cell === '—')).toBe(true);
+  });
+});
+
+describe('19C curve label / curve table numeric agreement', () => {
+  it('parcel arc metrics match the curve label and the Curve Table on a shared fixture', () => {
+    const parcel = mixedSquare();
+    const arcCourse = resolveCadParcelCourses(parcel)[1]!;
+    const geometry = parcel.courseGeometry?.[1];
+    if (arcCourse.curve == null || geometry?.kind !== 'arc') throw new Error('expected arc');
+    const metrics = describeParcelArcCourse(
+      arcCourse.fromVertex,
+      arcCourse.toVertex,
+      geometry.bulge,
+    );
+    if (metrics == null) throw new Error('expected metrics');
+    const label = deriveCurveLabel({
+      center: metrics.center,
+      radius: metrics.radius,
+      startAngleDeg: metrics.startAngleDeg,
+      endAngleDeg: metrics.endAngleDeg,
+      fields: ['radius', 'delta', 'length', 'chord'],
+      decimalPrecision: 3,
+    });
+    if (label == null) throw new Error('expected curve label');
+    expect(label.radius).toBeCloseTo(arcCourse.curve.radius, 9);
+    expect(label.deltaDeg).toBeCloseTo(arcCourse.curve.deltaDeg, 9);
+    expect(label.arcLength).toBeCloseTo(arcCourse.curve.arcLength, 9);
+    expect(label.chordLength).toBeCloseTo(arcCourse.curve.chordLength, 9);
+    // The Curve Table row agrees with the parcel arc row's shared values.
+    const curveTable = deriveCadSurveyTableFromSource(
+      {
+        kind: 'curve',
+        curves: [{ curveId: 'C1', radius: arcCourse.curve.radius, deltaDeg: arcCourse.curve.deltaDeg }],
+      },
+      projectWith(parcel),
+    );
+    const parcelTable = deriveCadSurveyTableFromSource(
+      { kind: 'parcel-course', parcel },
+      projectWith(parcel),
+    );
+    const parcelArcRow = parcelTable.rows[1]!.cells;
+    const [, , , arcLengthCell, chordCell] = curveTable.rows[0]!.cells;
+    expect(curveTable.rows[0]!.cells[1]).toBe(arcCourse.curve.radius.toFixed(3));
+    expect(arcLengthCell).toBe(arcCourse.curve.arcLength.toFixed(3));
+    expect(chordCell).toBe(arcCourse.curve.chordLength.toFixed(3));
+    expect(curveTable.rows[0]!.cells[2]).toBe(parcelArcRow[7]);
+    expect(curveTable.rows[0]!.cells[1]).toBe(parcelArcRow[6]);
+    expect(curveTable.rows[0]!.cells[3]).toBe(parcelArcRow[8]);
+    expect(curveTable.rows[0]!.cells[4]).toBe(parcelArcRow[9]);
   });
 });
 
