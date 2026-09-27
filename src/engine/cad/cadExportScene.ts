@@ -1,4 +1,5 @@
 import { buildCadDisplayScene } from './cadRenderer';
+import { cadSignedSweepDeg } from './cadGeometry';
 import type { CadDisplayPrimitive } from './cadDisplayTypes';
 import { describePointSymbolShape } from './cadPointSymbolShape';
 import { surveyPointMarker } from './cadRendererStyle';
@@ -138,9 +139,13 @@ const arcToPolyline = (
   startDeg: number,
   endDeg: number,
 ): Array<{ x: number; y: number }> => {
-  let sweep = endDeg - startDeg;
-  while (sweep <= 0) sweep += 360;
-  const steps = Math.max(8, Math.ceil((sweep / 360) * ARC_STEPS));
+  // Traversal-signed sweep: display arc primitives carry the parcel course
+  // traversal direction (CW courses arrive with endDeg < startDeg). A
+  // CCW-only normalization would tessellate the complementary major arc
+  // (e.g. -47° becomes +313°) — a full-circle ghost on sheets/exports.
+  const signedSweep = cadSignedSweepDeg(startDeg, endDeg);
+  const sweep = Math.abs(signedSweep) < 1e-9 ? 360 : signedSweep;
+  const steps = Math.max(8, Math.ceil((Math.abs(sweep) / 360) * ARC_STEPS));
   return Array.from({ length: steps + 1 }, (_, i) => {
     const a = ((startDeg + (sweep * i) / steps) * Math.PI) / 180;
     return { x: cx + r * Math.cos(a), y: cy + r * Math.sin(a) };

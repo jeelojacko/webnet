@@ -17,7 +17,6 @@ import { cadSignedSweepDeg } from './cadGeometry';
 import { cadBuildParcelClosureSummary } from './cadCogoParcelGeometrySummaries';
 import { parcelBulgeFromArcDefinition, parcelCourseCanonicalKind } from './cadParcelArcGeometry';
 import {
-  buildParcelCourseId,
   ensureParcelCourseIds,
   resolveCadParcelCourses,
 } from './cadParcelCourses';
@@ -44,11 +43,10 @@ interface LocatedCourse {
 const locateCourse = (parcel: CadParcelEntity, courseId: string): LocatedCourse | null => {
   const ensured = ensureParcelCourseIds(parcel);
   const courses = resolveCadParcelCourses(ensured);
-  const course = courses.find(
-    (candidate) =>
-      candidate.courseId === courseId ||
-      candidate.courseId === buildParcelCourseId(parcel.id, candidate.index),
-  );
+  // Exact id match only: the resolver already normalizes missing ids to
+  // derived values, so a positional fallback here would match every course
+  // and Array.find would always return index 0 for non-first lookups.
+  const course = courses.find((candidate) => candidate.courseId === courseId);
   if (!course) return null;
   const rawIndex = ensured.vertices.findIndex((vertex) => parcelPointsMatch(vertex, course.fromVertex));
   if (rawIndex < 0) return null;
