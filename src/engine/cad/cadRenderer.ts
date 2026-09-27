@@ -74,6 +74,7 @@ import {
   parcelCourseCanonicalKind,
   validateParcelCourseGeometry,
 } from './cadParcelArcGeometry';
+import { resolveCadFeatureLine } from './cadFeatureLines';
 
 export interface BuildCadDisplaySceneOptions {
   /**
@@ -99,6 +100,12 @@ export interface BuildCadDisplaySceneOptions {
    */
   surfaceContours?: (_surfaceId: string) => SurfaceContourDisplayInput | null | undefined;
   /**
+   * Phase 20A: presentation-only Z/grade labels for feature lines. Absent
+   * (default) = plan geometry only; SVG/PDF/export scenes opt in. Never
+   * geometry, never persisted.
+   */
+  featureLineLabels?: boolean;
+  /**
    * Phase 18I — session volume cache (+ TIN cache for CURRENT gating).
    * Absent = no volume display. Export scenes never pass it.
    */
@@ -117,6 +124,7 @@ interface SceneRenderContext {
   layerById: CadProjectLookup['layerById'];
   linetypeScale: number;
   lineweightDisplay: LineweightDisplayMode;
+  featureLineLabels: boolean;
 }
 
 const sceneRenderContext = (
@@ -129,6 +137,7 @@ const sceneRenderContext = (
     layerById: lookup.layerById,
     linetypeScale: project.linetypeScale ?? 1,
     lineweightDisplay: options?.lineweightDisplay ?? 'thin',
+    featureLineLabels: options?.featureLineLabels === true,
   };
 };
 
@@ -383,6 +392,117 @@ const buildParcelCoursePrimitives = (
         : {}),
       points: [vertex, next],
       strokeWidth: style.widthPx(),
+    });
+  });
+  return primitives;
+};
+
+/**
+ * Phase 20A feature-line plan projection: line courses emit line
+ * primitives, arc courses emit NATIVE arc primitives (same endpoint+bulge
+ * seam as parcels). Z is display-ignored (plan projection); unresolvable
+ * arcs fall back to chords display-only (the resolver fails closed
+ * elsewhere). Open lines run n-1 courses; closed lines wrap with n.
+ */
+const buildFeatureLinePrimitives = (
+  project: CadProject,
+  ctx: SceneRenderContext,
+  entity: Extract<CadEntity, { type: 'feature-line' }>,
+): CadDisplayPrimitive[] => {
+  const style = entityScreenStyle(project, ctx, entity, 1.25);
+  const closed = entity.closed === true;
+  const courseCount = closed ? entity.vertices.length : entity.vertices.length - 1;
+  if (courseCount < 1) return [];
+  const primitives: CadDisplayPrimitive[] = [];
+  for (let index = 0; index < courseCount; index += 1) {
+    const from = entity.vertices[index]!;
+    const to = entity.vertices[(index + 1) % entity.vertices.length]!;
+    const id = `primitive:${entity.id}:${index + 1}`;
+    const entry = entity.segmentGeometry?.[index];
+    if (entry?.kind === 'arc' && parcelCourseCanonicalKind(entry) === 'arc') {
+      const metrics = describeParcelArcCourse(from, to, entry.bulge);
+      if (metrics) {
+        primitives.push({
+          kind: 'arc',
+          id,
+          layerId: entity.layerId,
+          sourceEntityId: entity.id,
+          sourceSegmentId: `${entity.id}#${index}`,
+          stroke: style.stroke,
+          ...withOpacity(style),
+          ...withDash(style),
+          center: { ...metrics.center },
+          radius: metrics.radius,
+          startAngleDeg: metrics.startAngleDeg,
+          endAngleDeg: metrics.endAngleDeg,
+          strokeWidth: style.widthPx(),
+        });
+        continue;
+      }
+    }
+    primitives.push({
+      kind: 'line',
+      id,
+      layerId: entity.layerId,
+      sourceEntityId: entity.id,
+      sourceSegmentId: `${entity.id}#${index}`,
+      stroke: style.stroke,
+      ...withOpacity(style),
+      ...withDash(style),
+      points: [
+        { x: from.x, y: from.y },
+        { x: to.x, y: to.y },
+      ],
+      strokeWidth: style.widthPx(),
+    });
+  }
+  return primitives;
+};
+
+/**
+ * Phase 20A presentation labels: per-vertex Z and per-course grade percent,
+ * derived from the authoritative resolver. Text primitives only — never
+ * geometry, never persisted, and only emitted when the caller enables the
+ * option (SVG/PDF/export scenes opt in).
+ */
+const buildFeatureLineLabelPrimitives = (
+  project: CadProject,
+  ctx: SceneRenderContext,
+  entity: Extract<CadEntity, { type: 'feature-line' }>,
+): CadDisplayPrimitive[] => {
+  const resolved = resolveCadFeatureLine(entity);
+  if (!resolved) return [];
+  const stroke = sourceLabelStroke(ctx, entity);
+  const fontSize = textFontSize(project, entity, 10, ctx.lookup);
+  const primitives: CadDisplayPrimitive[] = [];
+  entity.vertices.forEach((vertex, index) => {
+    primitives.push({
+      kind: 'text',
+      id: `primitive:${entity.id}:z-label:${index}`,
+      layerId: 'labels',
+      sourceEntityId: entity.id,
+      stroke,
+      point: { x: vertex.x, y: vertex.y },
+      text: `Z ${vertex.z.toFixed(3)}`,
+      fontSize,
+      textAnchor: 'start',
+    });
+  });
+  resolved.courses.forEach((course) => {
+    const mid = course.midpoint ?? {
+      x: (course.from.x + course.to.x) / 2,
+      y: (course.from.y + course.to.y) / 2,
+    };
+    primitives.push({
+      kind: 'text',
+      id: `primitive:${entity.id}:grade-label:${course.index}`,
+      layerId: 'labels',
+      sourceEntityId: entity.id,
+      stroke,
+      point: { x: mid.x, y: mid.y },
+      text: `${course.gradePercent >= 0 ? '+' : ''}${course.gradePercent.toFixed(2)}%`,
+      fontSize,
+      textAnchor: 'middle',
     });
   });
   return primitives;
@@ -1271,6 +1391,11 @@ const toPrimitives = (
         ...buildParcelLabelPrimitive(project, ctx, entity),
       ];
     }
+    case 'feature-line':
+      return [
+        ...buildFeatureLinePrimitives(project, ctx, entity),
+        ...(ctx.featureLineLabels ? buildFeatureLineLabelPrimitives(project, ctx, entity) : []),
+      ];
     case 'arc': {
       const style = entityScreenStyle(project, ctx, entity, 1.25);
       return [

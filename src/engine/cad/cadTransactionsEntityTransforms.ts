@@ -8,9 +8,11 @@ import {
   cadProjectPointOntoCircle,
 } from './cadGeometry';
 import { replaceCadProjectEntities } from './cadProjectState';
+import { sanitizeFeatureLine } from './cadFeatureLines';
 import type { CadCommand } from './cadTransactions.types';
 import type {
   CadEntity,
+  CadFeatureLineEntity,
   CadGripHandle,
   CadGripHandleKind,
   CadParcelEntity,
@@ -41,6 +43,16 @@ export const translateEntity = (entity: CadEntity, deltaX: number, deltaY: numbe
       return {
         ...entity,
         vertices: entity.vertices.map((vertex) => ({
+          x: vertex.x + deltaX,
+          y: vertex.y + deltaY,
+        })),
+      };
+    case 'feature-line':
+      // Phase 20A: plan MOVE is XY-only — Z rides verbatim.
+      return {
+        ...entity,
+        vertices: entity.vertices.map((vertex) => ({
+          ...vertex,
           x: vertex.x + deltaX,
           y: vertex.y + deltaY,
         })),
@@ -252,6 +264,21 @@ const updateEntityFromGrip = (
           index === vertexIndex ? { x: point.x, y: point.y } : vertex,
         ),
       };
+    case 'feature-line': {
+      // Phase 20A: XY vertex grip only — Z rides verbatim and the stored
+      // endpoint-relative bulge is untouched (arc re-curves through the
+      // moved vertex, Phase 19C contract). Invalid geometry fails closed.
+      if (gripKind !== 'vertex' || vertexIndex == null || vertexIndex < 0 || vertexIndex >= entity.vertices.length) {
+        return null;
+      }
+      const moved: CadFeatureLineEntity = {
+        ...entity,
+        vertices: entity.vertices.map((vertex, index) =>
+          index === vertexIndex ? { ...vertex, x: point.x, y: point.y } : vertex,
+        ),
+      };
+      return sanitizeFeatureLine(moved).ok ? moved : null;
+    }
     case 'parcel':
       if (gripKind !== 'vertex' || vertexIndex == null || vertexIndex < 0 || vertexIndex >= entity.vertices.length) {
         return null;
@@ -307,6 +334,7 @@ export const buildCadGripHandles = (entity: CadEntity): CadGripHandle[] => {
     case 'polyline':
     case 'polygon':
     case 'parcel':
+    case 'feature-line':
       return entity.vertices.map((vertex, index) => ({
         id: `${entity.id}:vertex:${index}`,
         entityId: entity.id,

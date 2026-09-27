@@ -1,4 +1,4 @@
-import type { CadBounds, CadParcelEntity, CadProject } from './cadTypes';
+import type { CadBounds, CadFeatureLineEntity, CadParcelEntity, CadProject } from './cadTypes';
 import { parcelArcBoundsPoints } from './cadParcelArcGeometry';
 import type { CadWorldPoint } from './cadGeometry';
 import type { CadArcRef } from './cadSpatialIndexTypes';
@@ -85,6 +85,32 @@ const parcelArcIntersectsBounds = (parcel: CadParcelEntity, bounds: CadBounds): 
     });
     return !(maxX < bounds.minX || minX > bounds.maxX || maxY < bounds.minY || minY > bounds.maxY);
   });
+};
+
+/**
+ * Phase 20A feature-line bound selection: line courses use the chord
+ * segment path, arc courses use in-sweep quadrant extrema (same seam as
+ * parcels). Plan-only; Z never participates in box selection.
+ */
+const featureLineIntersectsBounds = (
+  entity: CadFeatureLineEntity,
+  bounds: CadBounds,
+): boolean => {
+  const closed = entity.closed === true;
+  const courseCount = closed ? entity.vertices.length : entity.vertices.length - 1;
+  if (courseCount < 1) return false;
+  for (let index = 0; index < courseCount; index += 1) {
+    const from = entity.vertices[index]!;
+    const to = entity.vertices[(index + 1) % entity.vertices.length]!;
+    const entry = entity.segmentGeometry?.[index];
+    if (entry?.kind === 'arc' && Number.isFinite(entry.bulge)) {
+      const points = parcelArcBoundsPoints(from, to, entry.bulge);
+      if (points.length > 0 && pointsIntersectBounds(points, bounds)) return true;
+      continue;
+    }
+    if (segmentIntersectsBounds(from, to, bounds)) return true;
+  }
+  return false;
 };
 
 // ---------------------------------------------------------------------------
@@ -201,6 +227,8 @@ export const entityIntersectsBounds = (
     }
     case 'arc':
       return arcIntersectsBounds(arcRefFromEntity(project, entity), bounds);
+    case 'feature-line':
+      return featureLineIntersectsBounds(entity, bounds);
     case 'text':
       return pointInsideBounds({ x: entity.x, y: entity.y }, bounds);
     case 'error-ellipse':

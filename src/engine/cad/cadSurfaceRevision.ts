@@ -1,8 +1,10 @@
 import type {
   CadEntity,
   CadEntityId,
+  CadFeatureLineEntity,
   CadProject,
   CadSurface,
+  CadSurfaceBuildOptions,
   CadSurveyPointEntity,
 } from './cadTypes';
 import { isExplicitTopologyDefinition, surfacePointGroupIds } from './cadTypes';
@@ -11,6 +13,7 @@ import { importedTinRevision } from './cadImportedTin';
 
 export { fnv1a };
 import { describeEditForRevision } from './cadSurfaceEditDescribe';
+import { getFeatureLinePointAtStation, resolveCadFeatureLine } from './cadFeatureLines';
 import { evaluatePointGroupMembership } from './cadPointGroups';
 import { dedupeTinPoints } from './tin/tinDedupe';
 import { pointInRing } from './tin/tinPredicates';
@@ -29,7 +32,7 @@ export interface CollectedSources {
   outers: Array<Array<{ x: number; y: number }>>;
   voids: Array<Array<{ x: number; y: number }>>;
   boundaryError: CadSurfaceReasonCode | null;
-  buildOptions: { maxEdgeLength?: number };
+  buildOptions: { maxEdgeLength?: number; breaklineChordTolerance?: number };
 }
 
 const surveyPointsOf = (project: CadProject): CadSurveyPointEntity[] =>
@@ -50,7 +53,158 @@ const resolveRefId = (
 const entityById = (project: CadProject, id: CadEntityId): CadEntity | undefined =>
   project.entities.find((entity) => entity.id === id);
 
+/**
+ * Phase 20A explicit Surface Breakline Chord Tolerance (metres): max plan
+ * deviation when linearizing feature-line arc courses into breakline
+ * segments. Conservative 0.001 default; absent/non-finite/non-positive
+ * reads as the default (same contract as maxEdgeLength); floored at 1e-6
+ * so a pathological tolerance cannot explode segment counts. Always
+ * resolved to an effective value so it joins the source revision.
+ */
+export const DEFAULT_SURFACE_BREAKLINE_CHORD_TOLERANCE = 0.001;
+const MIN_SURFACE_BREAKLINE_CHORD_TOLERANCE = 1e-6;
+
+export const resolveSurfaceBreaklineChordTolerance = (
+  buildOptions?: CadSurfaceBuildOptions,
+): number => {
+  const raw = buildOptions?.breaklineChordTolerance;
+  if (!Number.isFinite(raw) || (raw as number) <= 0) return DEFAULT_SURFACE_BREAKLINE_CHORD_TOLERANCE;
+  return Math.max(raw as number, MIN_SURFACE_BREAKLINE_CHORD_TOLERANCE);
+};
+
+/** Segment count so arc sagitta r*(1-cos(sweep/(2n))) stays within tolerance. */
+export const featureLineArcSubdivisions = (
+  radius: number,
+  sweepRad: number,
+  tolerance: number,
+): number => {
+  if (!Number.isFinite(radius) || !(radius > 0)) return 1;
+  if (!Number.isFinite(sweepRad) || !(sweepRad > 0)) return 1;
+  if (!Number.isFinite(tolerance) || !(tolerance > 0)) return 1;
+  // Whole-arc sagitta already within tolerance (or tolerance covers the
+  // diameter): a single chord suffices.
+  if (tolerance >= 2 * radius) return 1;
+  const halfStep = Math.acos(Math.min(1, Math.max(-1, 1 - tolerance / radius)));
+  if (!(halfStep > 0)) return 1;
+  return Math.max(1, Math.ceil(sweepRad / (2 * halfStep)));
+};
+
+interface OwnedBreaklineAppendCtx {
+  collected: CollectedSources;
+  resolved: CadSurfaceSourcePoint[];
+  indexOfEntity: Map<string, number>;
+  /** XY key -> index in `resolved` (O(1) shared-vertex reuse; a linear
+   *  findIndex here is quadratic in breakline vertex count). */
+  xyToIndex: Map<string, number>;
+}
+
+/**
+ * Append an owned-Z breakline vertex under the exact-XY policy: same XY +
+ * same Z reuses the existing point, same XY + different Z conflicts
+ * (SURFACE_DUPLICATE_XY_CONFLICT downstream), never Z=0. Returns the
+ * point index, or null when blocked (caller fail-closes the chain).
+ */
+const appendOwnedBreaklinePoint = (
+  ctx: OwnedBreaklineAppendCtx,
+  x: number,
+  y: number,
+  z: number,
+  entityId: string,
+): number | null => {
+  if (!Number.isFinite(x) || !Number.isFinite(y) || !Number.isFinite(z)) return null;
+  const known = ctx.indexOfEntity.get(entityId);
+  if (known !== undefined) return known;
+  const key = `${x},${y}`;
+  const priorIndex = ctx.xyToIndex.get(key);
+  if (priorIndex !== undefined) {
+    if (ctx.resolved[priorIndex]!.z !== z) {
+      ctx.collected.duplicateConflict = true;
+      return null;
+    }
+    return priorIndex;
+  }
+  const at = ctx.resolved.length;
+  ctx.resolved.push({ entityId, x, y, z });
+  ctx.indexOfEntity.set(entityId, at);
+  ctx.xyToIndex.set(key, at);
+  return at;
+};
+
+/**
+ * Phase 20A direct-Z leg: feature-line courses resolve to exact XYZ
+ * breakline segments consuming the line's OWN vertex Z (finite-Z required,
+ * fail-closed, never Z=0). Straight courses pass through exactly; arc
+ * courses linearize within the chord tolerance — every generated vertex
+ * sits on the exact arc with Z from exact station interpolation
+ * (getFeatureLinePointAtStation; reuse the course resolver only, never
+ * display tessellation). Derived at build time; nothing persists.
+ * Returns null when blocked (caller raises SURFACE_BREAKLINE_MISSING_Z).
+ */
+const collectFeatureLineBreakline = (
+  ctx: OwnedBreaklineAppendCtx,
+  entity: CadFeatureLineEntity,
+  chordTolerance: number,
+): number[] | null => {
+  const resolvedLine = resolveCadFeatureLine(entity);
+  if (!resolvedLine) return null;
+  const chain: number[] = [];
+  const push = (index: number | null): boolean => {
+    if (index == null) return false;
+    if (chain[chain.length - 1] !== index) chain.push(index);
+    return true;
+  };
+  for (const course of resolvedLine.courses) {
+    if (course.kind === 'arc' && course.radius != null && course.signedSweepDeg != null) {
+      const subdivisions = featureLineArcSubdivisions(
+        course.radius,
+        (Math.abs(course.signedSweepDeg) * Math.PI) / 180,
+        chordTolerance,
+      );
+      for (let step = 0; step <= subdivisions; step += 1) {
+        // Endpoints are exact (never circle-sampled): the breakline passes
+        // precisely through the feature-line vertices, so exact-XY reuse
+        // applies and no epsilon twin shadows a corner. Interior steps ride
+        // the exact arc with Z from exact station interpolation.
+        if (step === 0) {
+          if (!push(appendOwnedBreaklinePoint(ctx, course.from.x, course.from.y, course.from.z, `${entity.id}:c${course.index}:from`))) {
+            return null;
+          }
+          continue;
+        }
+        if (step === subdivisions) {
+          if (!push(appendOwnedBreaklinePoint(ctx, course.to.x, course.to.y, course.to.z, `${entity.id}:c${course.index}:to`))) {
+            return null;
+          }
+          continue;
+        }
+        // Interior station: (plan*step)/n can round 1 ulp above the end
+        // station and the station query fail-closes outside range — but
+        // interior steps never touch the boundary, so no clamp is needed.
+        const station = course.startStation + (course.planLength * step) / subdivisions;
+        const at = getFeatureLinePointAtStation(resolvedLine, station);
+        if (!at) return null;
+        if (!push(appendOwnedBreaklinePoint(ctx, at.x, at.y, at.z, `${entity.id}:arc${course.index}:${step}`))) {
+          return null;
+        }
+      }
+    } else {
+      if (!push(appendOwnedBreaklinePoint(ctx, course.from.x, course.from.y, course.from.z, `${entity.id}:c${course.index}:from`))) {
+        return null;
+      }
+      if (!push(appendOwnedBreaklinePoint(ctx, course.to.x, course.to.y, course.to.z, `${entity.id}:c${course.index}:to`))) {
+        return null;
+      }
+    }
+  }
+  return chain;
+};
+
 export const breaklineEntityRefs = (entity: CadEntity): string[] => {
+  // Phase 20A: a feature line owns its XYZ — it is never a bag of
+  // survey-point refs. The marker keeps chain-detail/convert callers honest
+  // (fail closed downstream); collectSources consumes feature lines via the
+  // dedicated direct-Z rule below, never via this ref list.
+  if (entity.type === 'feature-line') return [`feature-line:${entity.id}`];
   const metadata = (entity.metadata ?? {}) as Record<string, unknown>;
   const fromMetadata = Array.isArray(metadata['sourcePointIds'])
     ? (metadata['sourcePointIds'] as unknown[]).filter(
@@ -147,6 +301,10 @@ export const collectSources = (project: CadProject, surface: CadSurface): Collec
   if (Number.isFinite(maxEdgeLength) && (maxEdgeLength as number) > 0) {
     collected.buildOptions.maxEdgeLength = maxEdgeLength;
   }
+  // Phase 20A: effective chord tolerance always resolves (default 0.001)
+  // so tolerance changes join the source revision (NEEDS_REBUILD).
+  const chordTolerance = resolveSurfaceBreaklineChordTolerance(definition.buildOptions);
+  collected.buildOptions.breaklineChordTolerance = chordTolerance;
 
   // --- point source ----------------------------------------------------------
   let candidates: CadSurveyPointEntity[] = [];
@@ -197,7 +355,7 @@ export const collectSources = (project: CadProject, surface: CadSurface): Collec
     const station = byEntityId.get(point.entityId)?.stationId;
     if (station != null && !indexOfStation.has(station)) indexOfStation.set(station, index);
   }
-  const xyToZ = new Map(resolved.map((point) => [`${point.x},${point.y}`, point.z]));
+  const xyToIndex = new Map(resolved.map((point, index) => [`${point.x},${point.y}`, index]));
   for (const breakline of definition.breaklines ?? []) {
     let refs: string[] = [];
     if (breakline.source.kind === 'point-chain') {
@@ -208,6 +366,26 @@ export const collectSources = (project: CadProject, surface: CadSurface): Collec
         if (!collected.brokenRefs.includes(`breakline:${breakline.source.entityId}`)) {
           collected.brokenRefs.push(`breakline:${breakline.source.entityId}`);
         }
+        continue;
+      }
+      // Phase 20A direct-Z leg: a feature line contributes its OWN vertex
+      // Z (never a survey-point ref, never Z=0). Deleting it falls into
+      // the missing-entity branch above (BROKEN_REFERENCE downstream).
+      if (entity.type === 'feature-line') {
+        const chain = collectFeatureLineBreakline(
+          { collected, resolved, indexOfEntity, xyToIndex },
+          entity,
+          chordTolerance,
+        );
+        if (!chain) {
+          collected.breaklineError = 'SURFACE_BREAKLINE_MISSING_Z';
+          continue;
+        }
+        if (chain.length < 2) {
+          collected.breaklineError = 'SURFACE_BREAKLINE_INVALID';
+          continue;
+        }
+        collected.breaklines.push(chain);
         continue;
       }
       refs = breaklineEntityRefs(entity);
@@ -233,8 +411,9 @@ export const collectSources = (project: CadProject, surface: CadSurface): Collec
         break;
       }
       const z = fallback.z as number;
-      const prior = xyToZ.get(`${fallback.x},${fallback.y}`);
-      if (prior !== undefined && prior !== z) {
+      const key = `${fallback.x},${fallback.y}`;
+      const priorIndex = xyToIndex.get(key);
+      if (priorIndex !== undefined && resolved[priorIndex]!.z !== z) {
         collected.duplicateConflict = true;
         chainBlocked = true;
         break;
@@ -242,14 +421,13 @@ export const collectSources = (project: CadProject, surface: CadSurface): Collec
       const at = indexOfEntity.get(fallback.id);
       if (at !== undefined) {
         if (chain[chain.length - 1] !== at) chain.push(at);
-      } else if (prior !== undefined) {
-        const existing = resolved.findIndex((p) => p.x === fallback.x && p.y === fallback.y);
-        if (chain[chain.length - 1] !== existing) chain.push(existing);
+      } else if (priorIndex !== undefined) {
+        if (chain[chain.length - 1] !== priorIndex) chain.push(priorIndex);
       } else {
         const atNew = resolved.length;
         resolved.push({ entityId: fallback.id, x: fallback.x, y: fallback.y, z });
         indexOfEntity.set(fallback.id, atNew);
-        xyToZ.set(`${fallback.x},${fallback.y}`, z);
+        xyToIndex.set(key, atNew);
         chain.push(atNew);
       }
     }
@@ -355,7 +533,7 @@ export const computeCadSurfaceSourceRevision = (project: CadProject, surface: Ca
     ring.map((p) => `${canonicalNum(p.x)},${canonicalNum(p.y)}`).join('>');
   parts.push(`outer:${collected.outers.map(ringText).join('|')}`);
   parts.push(`void:${collected.voids.map(ringText).join('|')}`);
-  parts.push(`opt:maxEdgeLength=${collected.buildOptions.maxEdgeLength ?? 'none'}`);
+  parts.push(`opt:maxEdgeLength=${collected.buildOptions.maxEdgeLength ?? 'none'};breaklineChordTolerance=${collected.buildOptions.breaklineChordTolerance ?? 'none'}`);
   parts.push(`broken:${[...collected.brokenRefs].sort().join(',')}`);
   // Phase 18S + 18T: kind + id + coords/refs/deltaZ + order + enabled
   // (single serializer; human descriptions excluded — none exist on the

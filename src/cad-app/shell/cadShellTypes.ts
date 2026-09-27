@@ -232,6 +232,12 @@ export interface CadWorkspaceSnapshot {
    * hides (never fake data).
    */
   parcel?: CadParcelSnapshot | null;
+  /**
+   * Phase 20A — derived 3D feature-line rows (stations/grades/surface uses).
+   * Optional: a workspace without feature-line wiring hides the node (never
+   * fake data).
+   */
+  featureLine?: import('./cadFeatureLineSnapshot').CadFeatureLineSnapshot | null;
   /** UI command keys with a live starter in the mounted workspace. */
   availableCommands: string[];
 }
@@ -266,6 +272,12 @@ export interface CadShellActions {
   runLayerCommand: (_command: CadCommand) => boolean;
   /** Route one undoable survey-display mutation (SURVEY_* family). */
   runSurveyCommand: (_command: CadCommand) => boolean;
+  /**
+   * Phase 20A — route one undoable 3D feature-line mutation (FEATURELINE /
+   * FL* family). Optional: a shell without feature-line wiring hides the
+   * ribbon group (never fake buttons).
+   */
+  runFeatureLineCommand?: (_command: CadCommand) => boolean;
   /** Phase 18F — select a surface (Toolspace/manager/viewport converge here). */
   selectSurface: (_surfaceId: string | null) => void;
   /** Phase 18I — select a volume surface (Toolspace/manager converge here). */

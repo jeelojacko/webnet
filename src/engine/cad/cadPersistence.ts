@@ -12,6 +12,7 @@ import type {
   SurveyCadPersistedState,
 } from './cadTypes';
 import { validateParcelCourseGeometry } from './cadParcelArcGeometry';
+import { sanitizeFeatureLine } from './cadFeatureLines';
 import { backfillCadProjectStandards } from './cadLayers';
 import { backfillCadPointLabelStyles, cloneCadPointLabelStyles } from './cadPointLabelStyles';
 import { backfillCadPointGroups, cloneCadPointGroups, migrateLegacyPointGroups } from './cadPointGroups';
@@ -219,6 +220,24 @@ export const cloneCadEntity = (entity: CadEntity): CadEntity => {
         ...(entity.tagSettings != null ? { tagSettings: { ...entity.tagSettings } } : {}),
         ...(entity.columnOverrides != null
           ? { columnOverrides: entity.columnOverrides.map((override) => ({ ...override })) }
+          : {}),
+        metadata: cloneMetadata(entity.metadata),
+      };
+    case 'feature-line':
+      // Phase 20A: clone verbatim but fail closed on malformed input —
+      // <2 open/<3 closed, non-finite XYZ (never defaulted to 0), duplicate
+      // or missing stable ids, segmentGeometry length mismatch, bad bulge.
+      // Both load sanitizers try/catch this, so an invalid entity rejects
+      // the file instead of silently straightening a curve.
+      if (!sanitizeFeatureLine(entity).ok) {
+        throw new Error('feature-line geometry fails validation');
+      }
+      return {
+        ...entity,
+        appearance: cloneAppearance(entity.appearance),
+        vertices: entity.vertices.map((vertex) => ({ ...vertex })),
+        ...(entity.segmentGeometry != null
+          ? { segmentGeometry: entity.segmentGeometry.map((entry) => ({ ...entry })) }
           : {}),
         metadata: cloneMetadata(entity.metadata),
       };

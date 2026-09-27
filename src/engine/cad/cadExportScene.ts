@@ -422,6 +422,11 @@ export interface BuildSceneArgs {
    * derived regions; absent = legacy scene unchanged.
    */
   analysis?: CadAnalysisExportInput;
+  /**
+   * Phase 20A: presentation-only feature-line Z/grade labels (never
+   * geometry, never persisted). Absent = plan geometry only.
+   */
+  featureLineLabels?: boolean;
 }
 
 // Exporters consume the authoritative resolver (spec §5): primitive colors
@@ -532,7 +537,10 @@ const deriveSheetSceneInternal = (
   const lookup = buildCadProjectLookup(args.project);
   const draftLayerById = new Map(args.draft.layers.map((layer) => [layer.id, layer]));
   const sourceAppearanceMemo = new Map<string, SourceAppearance | null>();
-  const display = buildCadDisplayScene(args.project, { lookup });
+  const display = buildCadDisplayScene(args.project, {
+    lookup,
+    ...(args.featureLineLabels != null ? { featureLineLabels: args.featureLineLabels } : {}),
+  });
   const sorted = [...display.primitives].sort((a, b) => (a.id < b.id ? -1 : a.id > b.id ? 1 : 0));
 
   // Layers govern output: visible=false hides (a viewport visible=true

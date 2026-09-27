@@ -26,6 +26,7 @@ export type {
 import { expandBlockReference, findBlockDefinition, normalizeBlockScales } from '../cadBlocks';
 import { surveyPointMarker } from '../cadRendererStyle';
 import { resolveCadParcelCourses } from '../cadParcelCourses';
+import { tessellateCadFeatureLine } from '../cadFeatureLines';
 import { cadAngleDegFromCenter } from '../cadGeometry';
 import { deriveAnnotationPrimitives } from './dxfAnnotationExport';
 import { buildAnalysisModelItems, type CadAnalysisExportInput } from '../cadAnalysisExportScene';
@@ -53,6 +54,13 @@ export interface DxfPoint {
   y: number;
 }
 
+/** Phase 20A: true 3D vertex (DXF POLYLINE/VERTEX form, real group 30). */
+export interface DxfPoint3D {
+  x: number;
+  y: number;
+  z: number;
+}
+
 interface DxfEntryStyle {
   /** Effective hex color; absent = BYLAYER (inherit the layer record). */
   colorHex?: string;
@@ -73,6 +81,11 @@ export interface DxfExportModel {
   points: Array<{ layer: string; at: DxfPoint } & DxfEntryStyle>;
   lines: Array<{ layer: string; from: DxfPoint; to: DxfPoint } & DxfEntryStyle>;
   polylines: Array<{ layer: string; vertices: DxfPoint[]; closed: boolean } & DxfEntryStyle>;
+  /**
+   * Phase 20A classic 3D POLYLINE form (group 70 bit 8 + VERTEX group 30).
+   * LWPOLYLINE cannot carry Z, so 3D feature lines use this separate shape.
+   */
+  polylines3d?: Array<{ layer: string; vertices: DxfPoint3D[]; closed: boolean } & DxfEntryStyle>;
   arcs: Array<{ layer: string; center: DxfPoint; radius: number; startDeg: number; endDeg: number } & DxfEntryStyle>;
   texts: Array<{ layer: string; at: DxfPoint; height: number; text: string; rotationDeg?: number } & DxfEntryStyle>;
   /**
@@ -156,6 +169,7 @@ export const buildDxfExportModelWithResult = (args: BuildDxfModelArgs): ExportRe
     points: [],
     lines: [],
     polylines: [],
+    polylines3d: [],
     arcs: [],
     texts: [],
     blocks: [],
@@ -373,6 +387,34 @@ export const buildDxfExportModelWithResult = (args: BuildDxfModelArgs): ExportRe
         result.exportedEntityIds.push(entity.id);
         result.approximatedEntityIds.push(entity.id);
         warn({ code: 'SKIPPED_ENTITY', message: `${entity.type} ${entity.id} approximated as closed polyline (geometric only, no legal parcel meaning)`, entityId: entity.id });
+        break;
+      }
+      case 'feature-line': {
+        // Phase 20A: straight runs ride the true 3D POLYLINE form (real group
+        // 30, FULL). Plan arcs are tessellated with an explicit warning — a
+        // 3D POLYLINE cannot carry bulge, so a fake bulge or a silent chord
+        // would both be dishonest. Invalid lines are omitted + warned.
+        const resolved3d = tessellateCadFeatureLine(entity);
+        if (!resolved3d) {
+          warn({ code: 'SKIPPED_ENTITY', message: `feature-line ${entity.id} has invalid geometry (no derivable courses)`, entityId: entity.id });
+          result.omittedEntityIds.push(entity.id);
+          break;
+        }
+        (model.polylines3d ??= []).push({
+          layer: registerLayer(entity.layerId),
+          vertices: resolved3d.points.map((vertex) => ({ x: vertex.x, y: vertex.y, z: vertex.z })),
+          closed: resolved3d.closed,
+          ...entryStyle(entity),
+        });
+        result.exportedEntityIds.push(entity.id);
+        if (resolved3d.arcCount > 0) {
+          result.approximatedEntityIds.push(entity.id);
+          warn({
+            code: 'SKIPPED_ENTITY',
+            message: `feature-line ${entity.id} arc geometry approximated as a tessellated 3D polyline (DXF 3D POLYLINE has no arc/bulge semantics)`,
+            entityId: entity.id,
+          });
+        }
         break;
       }
       case 'arc':

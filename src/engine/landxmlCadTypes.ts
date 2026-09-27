@@ -34,11 +34,21 @@ export interface CadLandXmlCurve {
   readonly rot: 'cw' | 'ccw';
 }
 
+/**
+ * Phase 20A: an open/closed ordered 3D feature (LandXML `PlanFeature`).
+ * Lines carry real per-endpoint elevations through the referenced CgPoints;
+ * a closed feature repeats its first ref as the last ref.
+ */
+export interface CadLandXmlFeature {
+  readonly name: string;
+  readonly desc?: string;
+  readonly refs: readonly string[];
+}
+
 export interface CadLandXmlParcel {
   readonly name: string;
   /** Geometric ring (point IDs) only; closed (first===last). */
-  readonly ring: readonly string[];
-  /**
+  readonly ring: readonly string[];  /**
    * Phase 19C exact ordered boundary segments for curved parcels. Absent
    * (all-straight legacy) keeps the ring-as-<Line> output byte-identical.
    */
@@ -142,6 +152,12 @@ export interface CadLandXmlGeometry {
   readonly lines?: readonly CadLandXmlLine[];
   readonly curves?: readonly CadLandXmlCurve[];
   readonly parcels?: readonly CadLandXmlParcel[];
+  /**
+   * Phase 20A ordered 3D plan features (one `<PlanFeature>` each). Refs must
+   * be registered CgPoint ids carrying real elevations; the serializer
+   * chains consecutive refs as `<Line>` segments (exact 3D line geometry).
+   */
+  readonly features?: readonly CadLandXmlFeature[];
   readonly alignments?: readonly CadLandXmlAlignment[];
   /** Retained TIN surfaces (CURRENT only, provided by the civil adapter). */
   readonly surfaces?: readonly CadLandXmlSurface[];

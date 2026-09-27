@@ -27,6 +27,7 @@ import {
 import type {
   CadLandXmlAlignment,
   CadLandXmlCurve,
+  CadLandXmlFeature,
   CadLandXmlLine,
   CadLandXmlPoint,
   CadLandXmlSettings,
@@ -35,6 +36,7 @@ import type {
 } from './landxmlCadTypes';
 import type { CadAlignmentEntity, CadProject } from './cad/cadTypes';
 import { resolveCadParcelCourses } from './cad/cadParcelCourses';
+import { tessellateCadFeatureLine } from './cad/cadFeatureLines';
 import type { CadLandXmlParcel, CadLandXmlParcelSegment } from './landxmlCadTypes';
 
 export interface CadLandXmlProjectExportResult extends ExportResult<string> {
@@ -45,9 +47,10 @@ export interface CadLandXmlProjectExportResult extends ExportResult<string> {
 interface ProjectLandXmlAccum {
   points: CadLandXmlPoint[];
   /** Registered CgPoint coordinates by id (first registration wins). */
-  coords: Map<string, { x: number; y: number }>;
+  coords: Map<string, { x: number; y: number; z: number }>;
   lines: CadLandXmlLine[];
   parcels: CadLandXmlParcel[];
+  features: CadLandXmlFeature[];
   alignments: CadLandXmlAlignment[];
   surfaces: CadLandXmlSurface[];
   ellipseIds: string[];
@@ -62,6 +65,7 @@ const newProjectAccum = (): ProjectLandXmlAccum => ({
   coords: new Map(),
   lines: [],
   parcels: [],
+  features: [],
   alignments: [],
   surfaces: [],
   ellipseIds: [],
@@ -78,8 +82,8 @@ const registerPoint = (
   y: number,
   extra?: { z?: number; desc?: string; code?: string },
 ): void => {
-  acc.coords.set(id, { x, y });
   const z = extra?.z ?? 0;
+  acc.coords.set(id, { x, y, z });
   acc.points.push({ id, x, y, ...(z !== 0 ? { z } : {}), ...(extra?.desc ? { desc: extra.desc } : {}), ...(extra?.code ? { code: extra.code } : {}) });
 };
 
@@ -90,23 +94,32 @@ const registerPoint = (
  *  coordinates. (Survey points never use the suffix path — a conflicting
  *  duplicate station is omitted + warned instead, since the CgPoint name
  *  carries station identity.) */
-const claimRef = (acc: ProjectLandXmlAccum, baseId: string, x: number, y: number): string | null => {
+const claimRef = (
+  acc: ProjectLandXmlAccum,
+  baseId: string,
+  x: number,
+  y: number,
+  z?: number,
+): string | null => {
   if (!Number.isFinite(x) || !Number.isFinite(y)) return null;
   const known = acc.coords.get(baseId);
   if (!known) {
-    registerPoint(acc, baseId, x, y);
+    registerPoint(acc, baseId, x, y, z != null ? { z } : undefined);
     return baseId;
   }
-  if (known.x === x && known.y === y) return baseId;
+  // When an elevation is supplied (feature lines), a same-XY/different-Z
+  // claim must NOT silently inherit the other point's Z — mint a synthetic
+  // ref so every elevation survives exactly.
+  if (known.x === x && known.y === y && (z == null || known.z === z)) return baseId;
   let n = 2;
   while (true) {
     const id = `${baseId}~${n}`;
     const other = acc.coords.get(id);
     if (!other) {
-      registerPoint(acc, id, x, y);
+      registerPoint(acc, id, x, y, z != null ? { z } : undefined);
       return id;
     }
-    if (other.x === x && other.y === y) return id;
+    if (other.x === x && other.y === y && (z == null || other.z === z)) return id;
     n += 1;
   }
 };
@@ -250,6 +263,49 @@ const convertEntities = (project: CadProject, acc: ProjectLandXmlAccum): void =>
           for (let index = 0; index + 1 < refs.length; index += 1) {
             acc.lines.push({ from: refs[index] as string, to: refs[index + 1] as string });
           }
+          acc.exported.push(entity.id);
+        }
+        break;
+      }
+      case 'feature-line': {
+        // Phase 20A: LandXML `PlanFeature` with a CoordGeom chain of 3D
+        // Lines. Straight graded runs are EXACT (real per-endpoint Z on the
+        // registered CgPoints). A plan arc cannot be one planar `<Curve>`
+        // without hiding its vertical rise, so it is linearized into 3D
+        // points with an explicit approximation warning. Null resolver →
+        // omitted + warned (never Z defaulted).
+        const tessellated = tessellateCadFeatureLine(entity);
+        if (!tessellated) {
+          accumSkipped(acc, entity.id, `feature-line ${entity.id} has invalid geometry (no derivable courses)`);
+          break;
+        }
+        const featureRefs: string[] = [];
+        let unresolvable = false;
+        tessellated.points.forEach((point) => {
+          const ref = claimRef(acc, point.id, point.x, point.y, point.z);
+          if (ref == null) {
+            unresolvable = true;
+            return;
+          }
+          featureRefs.push(ref);
+        });
+        if (unresolvable || featureRefs.length < 2) {
+          accumSkipped(acc, entity.id, `feature-line ${entity.id} has unresolvable vertices`);
+          break;
+        }
+        if (tessellated.closed) featureRefs.push(featureRefs[0] as string);
+        acc.features.push({
+          name: entity.name ?? entity.id,
+          ...(entity.description ? { desc: entity.description } : {}),
+          refs: featureRefs,
+        });
+        if (tessellated.arcCount > 0) {
+          accumApproximated(
+            acc,
+            entity.id,
+            `feature-line ${entity.id} arc courses linearized into 3D plan-feature points (a planar LandXML Curve cannot carry a vertical rise)`,
+          );
+        } else {
           acc.exported.push(entity.id);
         }
         break;
@@ -443,6 +499,7 @@ export const buildLandXmlProjectExportWithResult = (
       points: acc.points,
       lines: acc.lines,
       parcels: acc.parcels,
+      features: acc.features,
       alignments: acc.alignments,
       surfaces: civil.surfaces,
       errorEllipseIds: acc.ellipseIds,

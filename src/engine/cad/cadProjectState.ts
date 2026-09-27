@@ -1,6 +1,7 @@
 import { cadIsAngleOnArcSweep } from './cadGeometry';
 import { parcelArcBoundsPoints } from './cadParcelArcGeometry';
-import type { CadParcelEntity } from './cadTypes';
+import { getFeatureLineCourseCount } from './cadFeatureLines';
+import type { CadFeatureLineEntity, CadParcelEntity } from './cadTypes';
 import { blockReferenceBounds, findBlockDefinition } from './cadBlocks';
 import type { CadCogoComputation } from './cadCogoTypes';
 import type { CadBlockDefinition, CadBounds, CadEntity, CadProject } from './cadTypes';
@@ -55,6 +56,25 @@ const includeParcelArcExtrema = (
   });
 };
 
+/** Phase 20A: exact XY bounds of a feature line incl arc-course extrema. */
+const includeFeatureLineArcExtrema = (
+  entity: CadFeatureLineEntity,
+  includePoint: (_x: number, _y: number) => void,
+): void => {
+  const geometry = entity.segmentGeometry;
+  const courseCount = getFeatureLineCourseCount(entity);
+  if (geometry == null || geometry.length !== courseCount) return;
+  for (let index = 0; index < courseCount; index += 1) {
+    const entry = geometry[index];
+    if (entry?.kind !== 'arc' || !Number.isFinite(entry.bulge)) continue;
+    const from = entity.vertices[index]!;
+    const to = entity.vertices[(index + 1) % entity.vertices.length]!;
+    parcelArcBoundsPoints(from, to, entry.bulge).forEach((point) =>
+      includePoint(point.x, point.y),
+    );
+  }
+};
+
 export const buildCadBounds = (
   entities: CadEntity[],
   blockDefinitions?: readonly CadBlockDefinition[],
@@ -86,6 +106,10 @@ export const buildCadBounds = (
       case 'parcel':
         entity.vertices.forEach((vertex) => includePoint(vertex.x, vertex.y));
         if (entity.type === 'parcel') includeParcelArcExtrema(entity, includePoint);
+        break;
+      case 'feature-line':
+        entity.vertices.forEach((vertex) => includePoint(vertex.x, vertex.y));
+        includeFeatureLineArcExtrema(entity, includePoint);
         break;
       case 'arc':
         arcEndPoints(entity).forEach((point) => includePoint(point.x, point.y));

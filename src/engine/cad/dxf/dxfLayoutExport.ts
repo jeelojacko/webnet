@@ -273,6 +273,7 @@ const modelBounds = (model: DxfExportModel): { minX: number; minY: number; maxX:
     push(line.to.x, line.to.y);
   });
   model.polylines.forEach((polyline) => polyline.vertices.forEach((vertex) => push(vertex.x, vertex.y)));
+  (model.polylines3d ?? []).forEach((polyline) => polyline.vertices.forEach((vertex) => push(vertex.x, vertex.y)));
   model.arcs.forEach((arc) => {
     push(arc.center.x - arc.radius, arc.center.y - arc.radius);
     push(arc.center.x + arc.radius, arc.center.y + arc.radius);
@@ -456,6 +457,30 @@ const buildDxfLayoutInner = (args: BuildDxfLayoutArgs): DxfLayoutInner => {
     polyline.vertices.forEach((vertex) => {
       emitModelEntity([pair(10, fmt(vertex.x)), pair(20, fmt(vertex.y))]);
     });
+  });
+  // Phase 20A: 3D POLYLINE/VERTEX (real 30) in R2000 model space too.
+  (model.polylines3d ?? []).forEach((polyline) => {
+    emitModelEntity([
+      pair(0, 'POLYLINE'), pair(5, takeHandle()), pair(330, modelOwner),
+      pair(100, 'AcDbEntity'), pair(8, polyline.layer),
+      ...modelPaint(polyline.layer, polyline.colorHex, polyline.linetypeId, polyline.lineweightMm),
+      ...invisible60(polyline.invisible),
+      pair(100, 'AcDb3dPolyline'),
+      pair(66, '1'), pair(10, '0'), pair(20, '0'), pair(30, '0'),
+      pair(70, String((polyline.closed ? 1 : 0) | 8)),
+    ]);
+    polyline.vertices.forEach((vertex) => {
+      emitModelEntity([
+        pair(0, 'VERTEX'), pair(5, takeHandle()), pair(330, modelOwner),
+        pair(100, 'AcDbEntity'), pair(8, polyline.layer),
+        pair(100, 'AcDbVertex'), pair(100, 'AcDb3dPolylineVertex'),
+        pair(10, fmt(vertex.x)), pair(20, fmt(vertex.y)), pair(30, fmt(vertex.z)), pair(70, '32'),
+      ]);
+    });
+    emitModelEntity([
+      pair(0, 'SEQEND'), pair(5, takeHandle()), pair(330, modelOwner),
+      pair(100, 'AcDbEntity'), pair(8, polyline.layer), pair(100, 'AcDbSequenceEnd'),
+    ]);
   });
   model.arcs.forEach((arc) => {
     emitModelEntity([

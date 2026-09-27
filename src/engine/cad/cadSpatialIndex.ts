@@ -6,6 +6,7 @@ import type {
   CadBlockReferenceEntity,
   CadBounds,
   CadEntity,
+  CadFeatureLineEntity,
   CadLineEntity,
   CadParcelEntity,
   CadPolygonEntity,
@@ -21,8 +22,9 @@ import {
   parcelCourseCanonicalKind,
   validateParcelCourseGeometry,
 } from './cadParcelArcGeometry';
+import { resolveCadFeatureLine } from './cadFeatureLines';
 import { buildCadSpatialEntitySnapCandidates } from './cadSpatialEntityCandidates';
-import { arcRefFromEntity, entitySegments } from './cadSpatialEntityRefs';
+import { arcRefFromEntity, entitySegments, featureLineCourseArcs, featureLineCourseSegments } from './cadSpatialEntityRefs';
 import { blockReferenceBounds, expandBlockReference } from './cadBlocks';
 import { buildCadProjectLookup } from './cadProjectLookup';
 import type { CadArcRef, CadSegmentRef, CadSpatialIndex } from './cadSpatialIndexTypes';
@@ -100,14 +102,21 @@ interface PreparedBlock {
   maxY: number;
 }
 
-type SnapEntity = CadLineEntity | CadPolylineEntity | CadPolygonEntity | CadParcelEntity | CadArcEntity;
+type SnapEntity =
+  | CadLineEntity
+  | CadPolylineEntity
+  | CadPolygonEntity
+  | CadParcelEntity
+  | CadArcEntity
+  | CadFeatureLineEntity;
 
 const isSnapGeometry = (entity: CadEntity): entity is SnapEntity =>
   entity.type === 'line' ||
   entity.type === 'polyline' ||
   entity.type === 'polygon' ||
   entity.type === 'parcel' ||
-  entity.type === 'arc';
+  entity.type === 'arc' ||
+  entity.type === 'feature-line';
 
 const segmentBounds = (ref: CadSegmentRef): PreparedSegment => ({
   ref,
@@ -131,6 +140,20 @@ const parcelArcExtraBoundsPoints = (entity: CadParcelEntity): CadWorldPoint[] =>
     const from = entity.vertices[index]!;
     const to = entity.vertices[(index + 1) % entity.vertices.length]!;
     return parcelArcBoundsPoints(from, to, entry.bulge);
+  });
+};
+
+/** Phase 20A: feature-line arc-course extrema for cursor-box culling. */
+const featureLineArcExtraBoundsPoints = (entity: CadFeatureLineEntity): CadWorldPoint[] => {
+  const resolved = resolveCadFeatureLine(entity);
+  if (!resolved) return [];
+  return resolved.courses.flatMap((course) => {
+    if (course.kind !== 'arc' || course.center == null) return [];
+    const entry = entity.segmentGeometry?.[course.index];
+    if (entry?.kind !== 'arc') return [];
+    // Arc center joins the box so center snaps are never culled by the
+    // tight in-sweep extrema (the center can sit outside the sweep).
+    return [{ x: course.center.x, y: course.center.y }, ...parcelArcBoundsPoints(course.from, course.to, entry.bulge)];
   });
 };
 
@@ -195,6 +218,37 @@ export const buildCadSpatialIndex = (project: CadProject): CadSpatialIndex => {
         preparedArcs.push(prepared);
         arcBySourceId.set(entity.id, ref);
         preparedEntities.push({ entity, ...prepared });
+      } else if (entity.type === 'feature-line') {
+        // Phase 20A: line courses join the segment set, arc courses the arc
+        // set (plan-only; Z is intentionally absent from snap math).
+        const refs = featureLineCourseSegments(entity);
+        let minX = Number.POSITIVE_INFINITY;
+        let minY = Number.POSITIVE_INFINITY;
+        let maxX = Number.NEGATIVE_INFINITY;
+        let maxY = Number.NEGATIVE_INFINITY;
+        for (const ref of refs) {
+          const prepared = segmentBounds(ref);
+          preparedSegments.push(prepared);
+          segmentById.set(ref.segmentId, ref);
+          minX = Math.min(minX, prepared.minX);
+          minY = Math.min(minY, prepared.minY);
+          maxX = Math.max(maxX, prepared.maxX);
+          maxY = Math.max(maxY, prepared.maxY);
+        }
+        for (const ref of featureLineCourseArcs(entity)) {
+          const prepared = arcBounds(ref);
+          preparedArcs.push(prepared);
+          arcBySourceId.set(ref.sourceEntityId, ref);
+        }
+        for (const point of featureLineArcExtraBoundsPoints(entity)) {
+          minX = Math.min(minX, point.x);
+          minY = Math.min(minY, point.y);
+          maxX = Math.max(maxX, point.x);
+          maxY = Math.max(maxY, point.y);
+        }
+        if (Number.isFinite(minX) && Number.isFinite(minY)) {
+          preparedEntities.push({ entity, minX, minY, maxX, maxY });
+        }
       } else {
         const refs = entitySegments(entity);
         let minX = Number.POSITIVE_INFINITY;
