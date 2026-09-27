@@ -8,6 +8,11 @@
 
 import { cadBuildParcelClosureSummary } from './cadCogoParcelGeometrySummaries';
 import {
+  mirrorParcelCourseGeometry,
+  parcelCourseCanonicalKind,
+  validateParcelCourseGeometry,
+} from './cadParcelArcGeometry';
+import {
   cadAngleDegFromCenter,
   cadNormalizeAngleDeg,
   cadPointOnCircle,
@@ -124,8 +129,28 @@ export const transformCadEntityGeometry = (
       };
     }
     case 'parcel': {
+      // Phase 19C: endpoint-owned bulge rides vertex transforms unchanged
+      // under translation/rotation/uniform-scale (sweep constant by
+      // construction — radius/center re-derive from the moved endpoints),
+      // flips sign under reflection (left<->right, magnitude kept), and
+      // BLOCKS under GENERAL_AFFINE (a circle would become an ellipse —
+      // fail closed with an explicit diagnostic, never silent deformation).
+      // Metrics recompute from the transformed vertices + carried geometry
+      // (exact curved closure); never carried, never chord-fallback.
+      const geometry = entity.courseGeometry;
+      const curved =
+        geometry != null &&
+        validateParcelCourseGeometry(entity.vertices, geometry).ok &&
+        geometry.some((entry) => parcelCourseCanonicalKind(entry) === 'arc');
+      if (classification.kind === 'GENERAL_AFFINE' && curved) {
+        return { ok: false, reason: 'CAD_TRANSFORM_PARCEL_NON_UNIFORM_CURVED_UNSUPPORTED' };
+      }
       const vertices = entity.vertices.map((vertex) => applyPoint(transform, vertex));
-      const summary = cadBuildParcelClosureSummary(vertices);
+      const carriedGeometry =
+        geometry != null && isReflection(classification)
+          ? mirrorParcelCourseGeometry(geometry)
+          : geometry;
+      const summary = cadBuildParcelClosureSummary(vertices, { courseGeometry: carriedGeometry });
       if (!summary) {
         return {
           ok: true,
@@ -147,6 +172,7 @@ export const transformCadEntityGeometry = (
         entity: {
           ...entity,
           vertices,
+          ...(carriedGeometry !== geometry ? { courseGeometry: carriedGeometry } : {}),
           areaSquareMeters: summary.areaSquareMeters,
           perimeterMeters: summary.perimeterMeters,
           closureDeltaX: summary.closureDeltaX,

@@ -7,10 +7,10 @@
 // §§68, 126-127). Area/perimeter come from the existing parcel helper; the
 // reverse bearing is the authoritative inverse, never string manipulation.
 import { cadMidpoint, type CadWorldPoint } from './cadGeometry';
-import { buildCadInverseSummary } from './cadCogoSummaries';
+import { buildCadInverseSummary, formatCadSweepDms } from './cadCogoSummaries';
 import { cadBuildParcelReportSummary } from './cadCogoParcelGeometrySummaries';
+import { checkParcelCourseTangency } from './cadParcelArcGeometry';
 import {
-  parcelHasCurvedCourses,
   resolveCadParcelCourses,
   type CadSurveyParcelCourse,
 } from './cadSurveyExportTables';
@@ -28,6 +28,11 @@ export interface CadParcelLegalDescriptionOptions {
   includeCoordinates?: boolean;
   /** Per-course manual call text keyed by courseId; replaces bearing+distance. */
   courseCallText?: Record<string, string>;
+  /**
+   * Opt in to proven tangency wording on arc calls. Omitted by default:
+   * the description never claims a tangency it has not checked.
+   */
+  includeTangency?: boolean;
 }
 
 export interface CadParcelLegalDescription {
@@ -65,6 +70,7 @@ export interface CadParcelLegalDescriptionMtextSnapshot {
 /** Authoritative reverse of one course: swap endpoints and re-invert. */
 export const reverseCadParcelCourse = (course: CadSurveyParcelCourse): CadSurveyParcelCourse => {
   const inverse = buildCadInverseSummary(course.toVertex, course.fromVertex);
+  const curve = course.curve;
   return {
     ...course,
     fromVertex: { ...course.toVertex },
@@ -74,8 +80,19 @@ export const reverseCadParcelCourse = (course: CadSurveyParcelCourse): CadSurvey
     bearing: inverse.bearing,
     azimuth: inverse.azimuthDeg,
     distance: inverse.distance,
-    midpoint: cadMidpoint(course.fromVertex, course.toVertex),
+    // The true arc midpoint is invariant under reversal; straight courses
+    // swap to the reversed chord midpoint.
+    midpoint: curve ? { ...course.midpoint } : cadMidpoint(course.fromVertex, course.toVertex),
     direction: inverse.bearing,
+    ...(curve
+      ? {
+          curve: {
+            ...curve,
+            chordBearing: inverse.bearing,
+            direction: curve.direction === 'left' ? 'right' : 'left',
+          },
+        }
+      : {}),
   };
 };
 
@@ -110,24 +127,51 @@ const coordinateSuffix = (
 const callLineFor = (
   course: CadSurveyParcelCourse,
   options: CadParcelLegalDescriptionOptions,
+  tangency: 'TANGENT' | 'NON_TANGENT' | undefined,
 ): string => {
   const manual = options.courseCallText?.[course.courseId];
   if (manual != null && manual.trim() !== '') {
     return `Thence ${manual.trim()};`;
   }
   const to = `${course.toLabel}${coordinateSuffix(course.toVertex, options.includeCoordinates === true)}`;
-  return `Thence ${course.bearing}, distance ${formatNumber(course.distance, 3)} m, to ${to};`;
+  const curve = course.curve;
+  if (curve == null) {
+    return `Thence ${course.bearing}, distance ${formatNumber(course.distance, 3)} m, to ${to};`;
+  }
+  const qualifier =
+    options.includeTangency === true && tangency != null ? ` (${tangency})` : '';
+  return `Thence a curve${qualifier} to the ${curve.direction}, radius ${formatNumber(curve.radius, 3)} m, delta ${formatCadSweepDms(curve.deltaDeg)}, arc length ${formatNumber(curve.arcLength, 3)} m, chord bearing ${curve.chordBearing}, chord distance ${formatNumber(curve.chordLength, 3)} m, to ${to};`;
 };
+
+/** Tangency status per "start" vertex of a (possibly reversed) course. */
+const buildTangencyByVertex = (
+  parcel: CadParcelEntity,
+  courses: readonly CadSurveyParcelCourse[],
+): Map<string, 'TANGENT' | 'NON_TANGENT'> => {
+  const reports = checkParcelCourseTangency(parcel.vertices, parcel.courseGeometry);
+  const byVertex = new Map<string, 'TANGENT' | 'NON_TANGENT'>();
+  courses.forEach((course) => {
+    const report = reports[course.index];
+    if (report == null) return;
+    byVertex.set(vertexKey(course.fromVertex), report.status);
+  });
+  return byVertex;
+};
+
+const vertexKey = (vertex: CadWorldPoint): string => `${vertex.x}|${vertex.y}`;
 
 const buildLines = (
   description: Omit<CadParcelLegalDescription, 'lines' | 'text'>,
   options: CadParcelLegalDescriptionOptions,
+  tangencyByVertex: Map<string, 'TANGENT' | 'NON_TANGENT'>,
 ): string[] => {
   const lines: string[] = [description.header, `Description of ${description.parcelName}`];
   lines.push(
     `Beginning at ${description.startLabel}${coordinateSuffix(description.startVertex, options.includeCoordinates === true)};`,
   );
-  description.courses.forEach((course) => lines.push(callLineFor(course, options)));
+  description.courses.forEach((course) =>
+    lines.push(callLineFor(course, options, tangencyByVertex.get(vertexKey(course.fromVertex)))),
+  );
   lines.push('returning to the point of beginning;');
   lines.push(`Containing ${description.areaText}.`);
   lines.push(description.footer);
@@ -142,16 +186,11 @@ export const buildCadParcelLegalDescription = (
   parcel: CadParcelEntity,
   options: CadParcelLegalDescriptionOptions = {},
 ): CadParcelLegalDescriptionResult => {
-  if (parcelHasCurvedCourses(parcel)) {
-    return {
-      ok: false,
-      message: `parcel ${parcel.parcelName || parcel.id} has curved courses; curved legal descriptions are not supported (deferred). Split the parcel into straight courses first.`,
-    };
-  }
   const report = cadBuildParcelReportSummary({
     parcelName: parcel.parcelName,
     vertices: parcel.vertices,
     vertexLabels: parcel.vertexLabels,
+    courseGeometry: parcel.courseGeometry,
   });
   if (!report) {
     return { ok: false, message: `parcel ${parcel.parcelName || parcel.id} has fewer than 3 finite vertices` };
@@ -160,6 +199,7 @@ export const buildCadParcelLegalDescription = (
   if (courses.length < 3) {
     return { ok: false, message: `parcel ${parcel.parcelName || parcel.id} resolves fewer than 3 courses` };
   }
+  const tangencyByVertex = buildTangencyByVertex(parcel, courses);
   const warnings: string[] = [];
   if (options.reverse) courses = reverseCadParcelCourses(courses);
   if (options.startCourseId != null) {
@@ -184,7 +224,7 @@ export const buildCadParcelLegalDescription = (
     footer: DRAFT_FOOTER,
     warnings,
   };
-  const lines = buildLines(partial, options);
+  const lines = buildLines(partial, options, tangencyByVertex);
   return { ok: true, description: { ...partial, lines, text: lines.join('\n') } };
 };
 

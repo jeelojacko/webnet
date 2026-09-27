@@ -121,8 +121,15 @@ export const translateEntity = (entity: CadEntity, deltaX: number, deltaY: numbe
 const cadCounterClockwiseDeltaDeg = (startAngleDeg: number, endAngleDeg: number): number =>
   cadNormalizeAngleDeg(endAngleDeg - startAngleDeg);
 
+// Phase 19C grip contract: endpoint grips move VERTICES only; the stored
+// endpoint-relative bulge is untouched, so sweep stays constant and
+// radius/center re-derive from the moved endpoints (no radius-preserving
+// silent behavior — the arc visibly re-curves through the dragged vertex).
+// Metrics recompute through the exact curved closure, never chord fallback.
 const rebuildParcelMetrics = (entity: CadParcelEntity): CadParcelEntity => {
-  const metrics = cadBuildParcelClosureSummary(entity.vertices);
+  const metrics = cadBuildParcelClosureSummary(entity.vertices, {
+    courseGeometry: entity.courseGeometry,
+  });
   if (!metrics) {
     return {
       ...entity,

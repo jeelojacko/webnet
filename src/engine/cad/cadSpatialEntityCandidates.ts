@@ -19,6 +19,11 @@ import type {
   CadSnapCandidate,
 } from './cadTypes';
 import { arcRefFromEntity, entitySegments } from './cadSpatialEntityRefs';
+import {
+  describeParcelArcCourse,
+  parcelCourseCanonicalKind,
+  validateParcelCourseGeometry,
+} from './cadParcelArcGeometry';
 import { buildBlockReferenceSnapCandidates, type CadSpatialEntityCandidateContext } from './cadSpatialBlockSnaps';
 import type { CadArcRef } from './cadSpatialIndexTypes';
 import { buildCandidate } from './cadSpatialSnapCandidates';
@@ -35,6 +40,7 @@ export type { CadSpatialEntityCandidateContext } from './cadSpatialBlockSnaps';
 const buildSegmentEntitySnapCandidates = (
   context: CadSpatialEntityCandidateContext,
   entity: CadLineEntity | CadPolylineEntity | CadPolygonEntity | CadParcelEntity,
+  restrictSegmentIds?: ReadonlySet<string>,
 ): CadSnapCandidate[] => {
   const {
     allowed,
@@ -50,6 +56,7 @@ const buildSegmentEntitySnapCandidates = (
   const candidates: CadSnapCandidate[] = [];
 
   entitySegments(entity).forEach((segment) => {
+    if (restrictSegmentIds && !restrictSegmentIds.has(segment.segmentId)) return;
     if (allowed.has('endpoint')) {
       candidates.push(
         buildCandidate(
@@ -169,7 +176,73 @@ const buildSegmentEntitySnapCandidates = (
   return candidates;
 };
 
-const buildArcEntitySnapCandidates = (
+/**
+ * Phase 19C parcel routing: line courses keep the exact chord-segment path
+ * above; arc courses expose the existing arc snap types (endpoint /
+ * arc-midpoint / center / quadrant / nearest) through the existing arc
+ * engine — no parcel-only snap math. Invalid or all-line geometry keeps
+ * the legacy chord path verbatim.
+ */
+const buildParcelSnapCandidates = (
+  context: CadSpatialEntityCandidateContext,
+  entity: CadParcelEntity,
+): CadSnapCandidate[] => {
+  const geometry = entity.courseGeometry;
+  if (geometry == null || geometry.length !== entity.vertices.length) {
+    return buildSegmentEntitySnapCandidates(context, entity);
+  }
+  if (!validateParcelCourseGeometry(entity.vertices, geometry).ok) {
+    return buildSegmentEntitySnapCandidates(context, entity);
+  }
+  const arcCourseIndexes = new Set<number>();
+  geometry.forEach((entry, index) => {
+    if (parcelCourseCanonicalKind(entry) === 'arc') arcCourseIndexes.add(index);
+  });
+  if (arcCourseIndexes.size === 0) return buildSegmentEntitySnapCandidates(context, entity);
+  const candidates: CadSnapCandidate[] = [];
+  const lineSegmentIds = new Set<string>();
+  entity.vertices.forEach((_, index) => {
+    if (!arcCourseIndexes.has(index)) lineSegmentIds.add(`${entity.id}#${index}`);
+  });
+  candidates.push(...buildSegmentEntitySnapCandidates(context, entity, lineSegmentIds));
+  arcCourseIndexes.forEach((index) => {
+    const entry = geometry[index];
+    if (entry?.kind !== 'arc') return;
+    const from = entity.vertices[index]!;
+    const to = entity.vertices[(index + 1) % entity.vertices.length]!;
+    const metrics = describeParcelArcCourse(from, to, entry.bulge);
+    if (!metrics) return;
+    // Pseudo arc entity: the arc candidate builder only reads entity.id
+    // for subpart labels; sweep/containment come from the ref below.
+    const pseudo: CadArcEntity = {
+      id: entity.id,
+      type: 'arc',
+      layerId: entity.layerId,
+      visible: true,
+      locked: false,
+      centerX: metrics.center.x,
+      centerY: metrics.center.y,
+      radius: metrics.radius,
+      startAngleDeg: metrics.startAngleDeg,
+      endAngleDeg: metrics.endAngleDeg,
+    };
+    candidates.push(
+      ...buildArcEntitySnapCandidates(context, pseudo, {
+        sourceEntityId: entity.id,
+        center: { ...metrics.center },
+        radius: metrics.radius,
+        startAngleDeg: metrics.startAngleDeg,
+        endAngleDeg: metrics.endAngleDeg,
+        startPoint: { ...from },
+        endPoint: { ...to },
+        label: `${entity.parcelName}#${index}`,
+      }),
+    );
+  });
+  return candidates;
+};
+
+export const buildArcEntitySnapCandidates = (
   context: CadSpatialEntityCandidateContext,
   entity: CadArcEntity,
   arc: CadArcRef,
@@ -330,8 +403,10 @@ export const buildCadSpatialEntitySnapCandidates = (
       case 'line':
       case 'polyline':
       case 'polygon':
-      case 'parcel':
         candidates.push(...buildSegmentEntitySnapCandidates(context, entity));
+        break;
+      case 'parcel':
+        candidates.push(...buildParcelSnapCandidates(context, entity));
         break;
       case 'arc':
         candidates.push(...buildArcEntitySnapCandidates(context, entity, arcRefFromEntity(context.project, entity)));

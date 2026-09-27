@@ -16,6 +16,11 @@ import type {
   CadSnapKind,
 } from './cadTypes';
 import { expandBounds } from './cadSpatialBounds';
+import {
+  parcelArcBoundsPoints,
+  parcelCourseCanonicalKind,
+  validateParcelCourseGeometry,
+} from './cadParcelArcGeometry';
 import { buildCadSpatialEntitySnapCandidates } from './cadSpatialEntityCandidates';
 import { arcRefFromEntity, entitySegments } from './cadSpatialEntityRefs';
 import { blockReferenceBounds, expandBlockReference } from './cadBlocks';
@@ -112,6 +117,23 @@ const segmentBounds = (ref: CadSegmentRef): PreparedSegment => ({
   maxY: Math.max(ref.start.y, ref.end.y),
 });
 
+/**
+ * Phase 19C: extra bound points for a parcel's arc courses (in-sweep
+ * quadrant extrema outside the chord box), reusing the single arc seam.
+ * Empty for legacy/all-line/invalid geometry (chord bounds rule there).
+ */
+const parcelArcExtraBoundsPoints = (entity: CadParcelEntity): CadWorldPoint[] => {
+  const geometry = entity.courseGeometry;
+  if (geometry == null || geometry.length !== entity.vertices.length) return [];
+  if (!validateParcelCourseGeometry(entity.vertices, geometry).ok) return [];
+  return geometry.flatMap((entry, index) => {
+    if (parcelCourseCanonicalKind(entry) !== 'arc' || entry?.kind !== 'arc') return [];
+    const from = entity.vertices[index]!;
+    const to = entity.vertices[(index + 1) % entity.vertices.length]!;
+    return parcelArcBoundsPoints(from, to, entry.bulge);
+  });
+};
+
 const arcBounds = (ref: CadArcRef): PreparedArc => ({
   ref,
   minX: ref.center.x - ref.radius,
@@ -187,6 +209,17 @@ export const buildCadSpatialIndex = (project: CadProject): CadSpatialIndex => {
           if (prepared.minY < minY) minY = prepared.minY;
           if (prepared.maxX > maxX) maxX = prepared.maxX;
           if (prepared.maxY > maxY) maxY = prepared.maxY;
+        }
+        if (entity.type === 'parcel') {
+          // Phase 19C: arc-course extrema join the entity bounds so
+          // cursor-box culling never hides a curved parcel whose bulge
+          // reaches outside its chords (segment boxes stay chord-based).
+          for (const point of parcelArcExtraBoundsPoints(entity)) {
+            if (point.x < minX) minX = point.x;
+            if (point.y < minY) minY = point.y;
+            if (point.x > maxX) maxX = point.x;
+            if (point.y > maxY) maxY = point.y;
+          }
         }
         if (refs.length > 0) preparedEntities.push({ entity, minX, minY, maxX, maxY });
       }

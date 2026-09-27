@@ -18,6 +18,7 @@ import {
 import { createCadSelectionState } from '../src/engine/cad/cadSelection';
 import { executeCadCommand } from '../src/engine/cad/cadTransactions';
 import type { CadLineEntity, CadParcelEntity } from '../src/engine/cad/cadTypes';
+import type { CadParcelLineCourse } from '../src/engine/cad/cadParcelCourses';
 
 const PARCEL_ID = 'parcel-19a-rect';
 
@@ -57,6 +58,16 @@ const snapshotWithParcel = (parcel: CadParcelEntity) => {
   };
 };
 
+/**
+ * Phase 19C: the resolver returns a line/arc union; these legacy parcels
+ * are all-line, so narrow once per test (values below are unchanged).
+ */
+const lineCourses = (parcel: CadParcelEntity): CadParcelLineCourse[] =>
+  resolveCadParcelCourses(parcel).map((course) => {
+    if (course.kind !== 'line') throw new Error('expected line course');
+    return course;
+  });
+
 const parcelOf = (snapshot: { project: { entities: unknown[] } }): CadParcelEntity => {
   const found = snapshot.project.entities.find(
     (entity): entity is CadParcelEntity =>
@@ -71,7 +82,7 @@ describe('parcel course identity 19A', () => {
   it('rectangle 100x50 oracle: 4 stable ids, bearings, distances, area, perimeter', () => {
     const parcel = buildRectParcel();
     expect(parcel.courseIds).toHaveLength(parcel.vertices.length);
-    const courses = resolveCadParcelCourses(parcel);
+    const courses = lineCourses(parcel);
     expect(courses).toHaveLength(4);
     expect(courses.map((course) => course.courseId)).toEqual([
       `parcel-course:${PARCEL_ID}:0`,
@@ -137,10 +148,10 @@ describe('parcel course identity 19A', () => {
     const moved = parcelOf(result.nextSnapshot);
     expect(moved.courseIds).toEqual(parcel.courseIds);
     expect(moved.vertices[0]).toEqual({ x: 10, y: -5 });
-    const courses = resolveCadParcelCourses(moved);
+    const courses = lineCourses(moved);
     expect(courses.map((course) => course.distanceMeters)).toEqual([100, 50, 100, 50]);
     expect(courses.map((course) => course.bearing)).toEqual(
-      resolveCadParcelCourses(parcel).map((course) => course.bearing),
+      lineCourses(parcel).map((course) => course.bearing),
     );
   });
 
@@ -155,7 +166,7 @@ describe('parcel course identity 19A', () => {
     if (!result) throw new Error('ROTATE failed');
     const rotated = parcelOf(result.nextSnapshot);
     expect(rotated.courseIds).toEqual(parcel.courseIds);
-    const courses = resolveCadParcelCourses(rotated);
+    const courses = lineCourses(rotated);
     expect(courses.map((course) => course.distanceMeters)).toEqual([100, 50, 100, 50]);
     // East leg becomes north, north becomes west, etc.
     expect(courses.map((course) => course.bearing)).toEqual([
@@ -177,7 +188,7 @@ describe('parcel course identity 19A', () => {
     if (!result) throw new Error('SCALE failed');
     const scaled = parcelOf(result.nextSnapshot);
     expect(scaled.courseIds).toEqual(parcel.courseIds);
-    const courses = resolveCadParcelCourses(scaled);
+    const courses = lineCourses(scaled);
     expect(courses.map((course) => course.distanceMeters)).toEqual([200, 100, 200, 100]);
     expect(scaled.areaSquareMeters).toBeCloseTo(20000, 6);
     expect(scaled.perimeterMeters).toBeCloseTo(600, 6);
@@ -202,7 +213,7 @@ describe('parcel course identity 19A', () => {
     expect(inserted.courseIds![2]).toBe(parcel.courseIds![1]);
     expect(inserted.courseIds![3]).toBe(parcel.courseIds![2]);
     expect(inserted.courseIds![4]).toBe(parcel.courseIds![3]);
-    const courses = resolveCadParcelCourses(inserted);
+    const courses = lineCourses(inserted);
     expect(courses).toHaveLength(5);
     expect(courses[0]!.distanceMeters).toBeCloseTo(50, 9);
     expect(courses[1]!.distanceMeters).toBeCloseTo(50, 9);

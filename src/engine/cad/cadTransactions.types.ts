@@ -96,6 +96,8 @@ export type CadCommandKey =
   | 'PARCEL_SPLIT_AREA'
   | 'PARCEL_SPLIT_SLIDE'
   | 'PARCEL_SPLIT_SWING'
+  | 'PARCELCOURSEARC'
+  | 'PARCELCOURSELINE'
   | 'PARCEL_LAYOUT_AUTO'
   | 'LINETABLE'
   | 'CURVETABLE'
@@ -428,6 +430,17 @@ export type CadCommand =
       minFrontageMeters: number;
       alternative: 'start' | 'end';
       settings: CadParcelLayoutSettings;
+    }
+  | {
+      key: 'PARCELCOURSEARC';
+      parcelEntityId: CadEntityId;
+      courseId: string;
+      arcEntityId: CadEntityId;
+    }
+  | {
+      key: 'PARCELCOURSELINE';
+      parcelEntityId: CadEntityId;
+      courseId: string;
     }
   | {
       key: 'PARCEL_LAYOUT_AUTO';

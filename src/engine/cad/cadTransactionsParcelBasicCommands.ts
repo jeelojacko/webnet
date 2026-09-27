@@ -18,8 +18,10 @@ import {
 import { appendCadProjectEntities, replaceCadProjectEntities } from './cadProjectState';
 import type { CadCommandDefinition } from './cadTransactions.types';
 import type {
+  CadArcEntity,
   CadEntityId,
   CadLineEntity,
+  CadParcelCourseGeometry,
   CadParcelEntity,
   CadPolylineEntity,
 } from './cadTypes';
@@ -32,8 +34,9 @@ export const parcelCreateCommand: CadCommandDefinition<{
   key: 'PARCEL_CREATE',
   execute: (snapshot, command) => {
     const sourceEntities = snapshot.project.entities.filter(
-      (entity): entity is CadLineEntity | CadPolylineEntity =>
-        command.sourceEntityIds.includes(entity.id) && (entity.type === 'line' || entity.type === 'polyline'),
+      (entity): entity is CadLineEntity | CadPolylineEntity | CadArcEntity =>
+        command.sourceEntityIds.includes(entity.id) &&
+        (entity.type === 'line' || entity.type === 'polyline' || entity.type === 'arc'),
     );
     const parcelSource = cadBuildParcelSourceDraft(sourceEntities);
     if (!parcelSource) return null;
@@ -41,12 +44,22 @@ export const parcelCreateCommand: CadCommandDefinition<{
       parcelSource.vertices.length > 0
         ? [...parcelSource.vertices, parcelSource.vertices[0]!]
         : parcelSource.vertices;
-    const metrics = cadBuildParcelClosureSummary(metricVertices);
+    const hasArcGeometry = parcelSource.courseGeometry?.some((entry) => entry.kind === 'arc') === true;
+    const curvedMetrics = hasArcGeometry
+      ? cadBuildParcelClosureSummary(parcelSource.vertices, {
+          courseGeometry: parcelSource.courseGeometry,
+        })
+      : null;
+    const metrics = hasArcGeometry ? curvedMetrics : cadBuildParcelClosureSummary(metricVertices);
     if (!metrics) return null;
+    const closureDeltaX = hasArcGeometry ? 0 : metrics.closureDeltaX;
+    const closureDeltaY = hasArcGeometry ? 0 : metrics.closureDeltaY;
+    const closureDistanceMeters = hasArcGeometry ? 0 : metrics.closureDistanceMeters;
     const parcelReport = cadBuildParcelReportSummary({
       parcelName: nextParcelName(snapshot.project),
       vertices: parcelSource.vertices,
       vertexLabels: parcelSource.vertexLabels,
+      ...(parcelSource.courseGeometry ? { courseGeometry: parcelSource.courseGeometry } : {}),
     });
     if (!parcelReport) return null;
     const parcelName = parcelReport.parcelName;
@@ -63,7 +76,7 @@ export const parcelCreateCommand: CadCommandDefinition<{
       parameters: {
         areaSquareMeters: metrics.areaSquareMeters,
         perimeterMeters: metrics.perimeterMeters,
-        closureDistanceMeters: metrics.closureDistanceMeters,
+        closureDistanceMeters,
       },
     });
     const parcelId = createStableRuntimeId('cad-parcel');
@@ -77,11 +90,14 @@ export const parcelCreateCommand: CadCommandDefinition<{
       vertexLabels: [...parcelSource.vertexLabels],
       parcelName,
       courseIds: buildParcelCourseIds(parcelId, parcelSource.vertices.length),
+      ...(parcelSource.courseGeometry
+        ? { courseGeometry: parcelSource.courseGeometry.map((entry) => ({ ...entry })) }
+        : {}),
       areaSquareMeters: metrics.areaSquareMeters,
       perimeterMeters: metrics.perimeterMeters,
-      closureDeltaX: metrics.closureDeltaX,
-      closureDeltaY: metrics.closureDeltaY,
-      closureDistanceMeters: metrics.closureDistanceMeters,
+      closureDeltaX,
+      closureDeltaY,
+      closureDistanceMeters,
       metadata: buildCadCogoEntityMetadata({
         createdBy: 'PARCEL_CREATE',
         manual: true,
@@ -102,7 +118,7 @@ export const parcelCreateCommand: CadCommandDefinition<{
         { label: 'Area (ac)', value: convertedArea.acres.toFixed(4), unit: 'ac' },
         { label: 'Area (ft2)', value: convertedArea.squareFeet.toFixed(3), unit: 'ft2' },
         { label: 'Perimeter', value: metrics.perimeterMeters.toFixed(3), unit: 'm' },
-        { label: 'Closure', value: metrics.closureDistanceMeters.toFixed(3), unit: 'm' },
+        { label: 'Closure', value: closureDistanceMeters.toFixed(3), unit: 'm' },
         ...parcelReport.courses.flatMap((course, index) => [
           {
             label: `Course ${index + 1}`,
@@ -177,11 +193,13 @@ export const parcelSplitCommand: CadCommandDefinition<{
       parcelName: firstParcelName,
       vertices: splitDraft.firstVertices,
       vertexLabels: splitDraft.firstVertexLabels,
+      ...(splitDraft.firstCourseGeometry ? { courseGeometry: splitDraft.firstCourseGeometry } : {}),
     });
     const secondReport = cadBuildParcelReportSummary({
       parcelName: secondParcelName,
       vertices: splitDraft.secondVertices,
       vertexLabels: splitDraft.secondVertexLabels,
+      ...(splitDraft.secondCourseGeometry ? { courseGeometry: splitDraft.secondCourseGeometry } : {}),
     });
     if (!firstReport || !secondReport) return null;
 
@@ -214,6 +232,7 @@ export const parcelSplitCommand: CadCommandDefinition<{
         labels: readonly string[],
         name: string,
         report: { areaSquareMeters: number; perimeterMeters: number; closureDeltaX: number; closureDeltaY: number; closureDistanceMeters: number },
+        courseGeometry: readonly CadParcelCourseGeometry[] | undefined,
       ): CadParcelEntity => ({
         id,
         type: 'parcel',
@@ -225,6 +244,7 @@ export const parcelSplitCommand: CadCommandDefinition<{
         vertexLabels: [...labels],
         parcelName: name,
         courseIds: buildParcelCourseIds(id, vertices.length),
+        ...(courseGeometry ? { courseGeometry: courseGeometry.map((entry) => ({ ...entry })) } : {}),
         areaSquareMeters: report.areaSquareMeters,
         perimeterMeters: report.perimeterMeters,
         closureDeltaX: report.closureDeltaX,
@@ -237,8 +257,8 @@ export const parcelSplitCommand: CadCommandDefinition<{
         }, provenance),
       });
       return [
-        buildChild(firstId, splitDraft.firstVertices, splitDraft.firstVertexLabels, firstParcelName, firstReport),
-        buildChild(secondId, splitDraft.secondVertices, splitDraft.secondVertexLabels, secondParcelName, secondReport),
+        buildChild(firstId, splitDraft.firstVertices, splitDraft.firstVertexLabels, firstParcelName, firstReport, splitDraft.firstCourseGeometry),
+        buildChild(secondId, splitDraft.secondVertices, splitDraft.secondVertexLabels, secondParcelName, secondReport, splitDraft.secondCourseGeometry),
       ];
     })();
 

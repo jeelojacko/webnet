@@ -202,13 +202,24 @@ describe('19A parcel legal description', () => {
     expect(bad.ok).toBe(false);
   });
 
-  it('fails closed on curved courses instead of emitting a chord', () => {
+  it('drafts curved courses with arc metrics instead of a chord', () => {
     const parcel = squareParcel('CURVED', 0, 0, 100);
-    const curved = { ...parcel, elements: [{ kind: 'arc', radius: 50, deltaDeg: 90 }] } as CadParcelEntity;
+    // Phase 19C: curves exist only via explicit courseGeometry (bulge).
+    const curved: CadParcelEntity = {
+      ...parcel,
+      courseGeometry: [{ kind: 'arc', bulge: -0.5 }, { kind: 'line' }, { kind: 'line' }, { kind: 'line' }],
+    };
     const draft = buildCadParcelLegalDescription(curved);
-    expect(draft.ok).toBe(false);
-    if (draft.ok) return;
-    expect(draft.message).toContain('deferred');
+    expect(draft.ok).toBe(true);
+    if (!draft.ok) return;
+    const arc = draft.description.courses[0]!;
+    expect(arc.curve).toBeDefined();
+    expect(draft.description.text).toContain('curve');
+    expect(draft.description.text).toContain('radius');
+    expect(draft.description.text).toContain('chord bearing');
+    // Curved area/perimeter come from the exact closure, not the chord ring.
+    expect(draft.description.areaSquareMeters).toBeLessThan(10000);
+    expect(draft.description.areaSquareMeters).toBeGreaterThan(0);
   });
 
   it('live preview updates on vertex change while static MTEXT stays frozen', () => {

@@ -36,9 +36,24 @@ export interface CadLandXmlCurve {
 
 export interface CadLandXmlParcel {
   readonly name: string;
-  /** Geometric ring (point IDs) only. */
+  /** Geometric ring (point IDs) only; closed (first===last). */
   readonly ring: readonly string[];
+  /**
+   * Phase 19C exact ordered boundary segments for curved parcels. Absent
+   * (all-straight legacy) keeps the ring-as-<Line> output byte-identical.
+   */
+  readonly segments?: readonly CadLandXmlParcelSegment[];
 }
+
+export type CadLandXmlParcelSegment =
+  | { readonly kind: 'line'; readonly from: string; readonly to: string }
+  | {
+      readonly kind: 'curve';
+      readonly start: string;
+      readonly end: string;
+      readonly radiusM: number;
+      readonly rot: 'cw' | 'ccw';
+    };
 
 /**
  * LandXML `StaEquation`. `staInternal` is the raw/internal equation location

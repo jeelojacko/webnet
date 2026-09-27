@@ -1,4 +1,5 @@
 export * from './cadCogoParcelGeometry';
+export * from './cadParcelContainment';
 export * from './cadCogoParcelSplit';
 export * from './cadCogoParcelFrontage';
 export * from './cadCogoParcelLocalGeometry';

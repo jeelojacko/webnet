@@ -157,12 +157,23 @@ export const buildLandXmlFromCadGeometry = (
         );
       }
       parcel.ring.forEach((ref) => requireRef(ref, `Parcel ${parcel.name}`));
-      lines.push(`    <Parcel name="${xmlEscape(parcel.name)}">`);
       const ringLines: CadLandXmlLine[] = [];
       for (let i = 0; i + 1 < parcel.ring.length; i += 1) {
         ringLines.push({ from: parcel.ring[i] as string, to: parcel.ring[i + 1] as string });
       }
-      coordGeomBlock(ringLines, [], '      ');
+      // Phase 19C: curved parcels carry exact line/arc segments (schema
+      // supports CoordGeom Curve inside Parcel) — never a silent chord.
+      const segments = parcel.segments;
+      const parcelLines = segments
+        ? segments.filter((segment) => segment.kind === 'line').map((segment) => ({ from: segment.from, to: segment.to }))
+        : ringLines;
+      const parcelCurves = segments
+        ? segments
+            .filter((segment) => segment.kind === 'curve')
+            .map((segment) => ({ start: segment.start, end: segment.end, radiusM: segment.radiusM, rot: segment.rot }))
+        : [];
+      lines.push(`    <Parcel name="${xmlEscape(parcel.name)}">`);
+      coordGeomBlock(parcelLines, parcelCurves, '      ');
       lines.push('    </Parcel>');
     });
     lines.push('  </Parcels>');

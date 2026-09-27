@@ -1,4 +1,5 @@
-import type { CadBounds, CadProject } from './cadTypes';
+import type { CadBounds, CadParcelEntity, CadProject } from './cadTypes';
+import { parcelArcBoundsPoints } from './cadParcelArcGeometry';
 import type { CadWorldPoint } from './cadGeometry';
 import type { CadArcRef } from './cadSpatialIndexTypes';
 import { arcRefFromEntity } from './cadSpatialEntityRefs';
@@ -54,6 +55,36 @@ export const arcIntersectsBounds = (arc: CadArcRef, bounds: CadBounds): boolean 
   const minY = arc.center.y - arc.radius;
   const maxY = arc.center.y + arc.radius;
   return !(maxX < bounds.minX || minX > bounds.maxX || maxY < bounds.minY || minY > bounds.maxY);
+};
+
+/**
+ * Phase 19C: true if any arc course's bound box (endpoints + in-sweep
+ * quadrant extrema) hits the query bounds. Line courses keep the chord
+ * segment path below; invalid arc entries fall back to it as well (box
+ * selection only — never authoritative geometry).
+ */
+const parcelArcIntersectsBounds = (parcel: CadParcelEntity, bounds: CadBounds): boolean => {
+  const geometry = parcel.courseGeometry;
+  if (geometry == null || geometry.length !== parcel.vertices.length) return false;
+  return parcel.vertices.some((from, index) => {
+    const entry = geometry[index];
+    if (entry?.kind !== 'arc' || !Number.isFinite(entry.bulge)) return false;
+    const to = parcel.vertices[(index + 1) % parcel.vertices.length];
+    if (!to) return false;
+    const points = parcelArcBoundsPoints(from, to, entry.bulge);
+    if (points.length === 0) return false;
+    let minX = Number.POSITIVE_INFINITY;
+    let minY = Number.POSITIVE_INFINITY;
+    let maxX = Number.NEGATIVE_INFINITY;
+    let maxY = Number.NEGATIVE_INFINITY;
+    points.forEach((point) => {
+      minX = Math.min(minX, point.x);
+      minY = Math.min(minY, point.y);
+      maxX = Math.max(maxX, point.x);
+      maxY = Math.max(maxY, point.y);
+    });
+    return !(maxX < bounds.minX || minX > bounds.maxX || maxY < bounds.minY || minY > bounds.maxY);
+  });
 };
 
 // ---------------------------------------------------------------------------
@@ -163,6 +194,7 @@ export const entityIntersectsBounds = (
           : [...entity.vertices, entity.vertices[0]].filter(
               (point): point is CadWorldPoint => point != null,
             );
+      if (entity.type === 'parcel' && parcelArcIntersectsBounds(entity, bounds)) return true;
       return points.slice(0, -1).some((point, index) =>
         segmentIntersectsBounds(point, points[index + 1]!, bounds),
       );

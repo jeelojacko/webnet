@@ -4,12 +4,14 @@ import type {
   CadDisplayPoint,
   CadEntity,
   CadLayer,
+  CadParcelCourseGeometry,
   CadParcelLayoutSettings,
   CadParcelLayoutUiState,
   CadProject,
   CadStyleLibrary,
   SurveyCadPersistedState,
 } from './cadTypes';
+import { validateParcelCourseGeometry } from './cadParcelArcGeometry';
 import { backfillCadProjectStandards } from './cadLayers';
 import { backfillCadPointLabelStyles, cloneCadPointLabelStyles } from './cadPointLabelStyles';
 import { backfillCadPointGroups, cloneCadPointGroups, migrateLegacyPointGroups } from './cadPointGroups';
@@ -53,6 +55,30 @@ const clonePoint = (point: CadDisplayPoint): CadDisplayPoint => ({
   x: point.x,
   y: point.y,
 });
+
+/**
+ * Phase 19C verbatim course-geometry clone. Entries copy as values;
+ * anything malformed (bad shape, non-finite bulge, length mismatch,
+ * degenerate arc per validateParcelCourseGeometry) throws so the
+ * sanitize wrappers load-reject instead of straightening curves.
+ */
+const cloneParcelCourseGeometry = (
+  parcel: Extract<CadEntity, { type: 'parcel' }>,
+): CadParcelCourseGeometry[] => {
+  const geometry = parcel.courseGeometry;
+  if (!Array.isArray(geometry)) throw new Error('parcel courseGeometry is not an array');
+  const cloned = geometry.map((entry) => {
+    if (entry?.kind === 'line') return { kind: 'line' } as const;
+    if (entry?.kind === 'arc' && Number.isFinite(entry.bulge)) {
+      return { kind: 'arc', bulge: entry.bulge } as const;
+    }
+    throw new Error('parcel courseGeometry entry is malformed');
+  });
+  if (!validateParcelCourseGeometry(parcel.vertices, cloned).ok) {
+    throw new Error('parcel courseGeometry fails validation');
+  }
+  return cloned;
+};
 
 const cloneJsonValue = <TValue>(value: TValue): TValue => {
   if (Array.isArray(value)) return value.map((entry) => cloneJsonValue(entry)) as TValue;
@@ -204,6 +230,13 @@ export const cloneCadEntity = (entity: CadEntity): CadEntity => {
         // so legacy shape is preserved and load paths own the backfill.
         ...(entity.type === 'parcel' && entity.courseIds != null
           ? { courseIds: [...entity.courseIds] }
+          : {}),
+        // Phase 19C: courseGeometry persists verbatim (additive v2).
+        // Malformed curve definitions throw so both sanitize paths
+        // (persisted-state + drawing-file, each try/catch) load-reject
+        // the file — never a silent line conversion.
+        ...(entity.type === 'parcel' && entity.courseGeometry != null
+          ? { courseGeometry: cloneParcelCourseGeometry(entity) }
           : {}),
         metadata: cloneMetadata(entity.metadata),
       };
