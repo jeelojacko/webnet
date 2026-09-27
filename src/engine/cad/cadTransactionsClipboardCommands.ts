@@ -105,6 +105,14 @@ export const buildCopiedEntities = (
           ...(entity.type === 'parcel'
             ? { courseIds: buildParcelCourseIds(copyId, movedVertices.length) }
             : {}),
+          // Phase 19C: the copy owns its geometry array (endpoint-relative
+          // bulge translates exactly — geometry equivalent, no source
+          // association, no shared mutable array with the source).
+          ...(entity.type === 'parcel' && entity.courseGeometry != null
+            ? {
+                courseGeometry: entity.courseGeometry.map((entry) => ({ ...entry })),
+              }
+            : {}),
           metadata: {
             ...entity.metadata,
             createdBy: 'COPY',

@@ -71,11 +71,13 @@ export const buildParcelSplitCommitResult = ({
     parcelName: firstParcelName,
     vertices: splitDraft.firstVertices,
     vertexLabels: splitDraft.firstVertexLabels,
+    ...(splitDraft.firstCourseGeometry ? { courseGeometry: splitDraft.firstCourseGeometry } : {}),
   });
   const secondReport = cadBuildParcelReportSummary({
     parcelName: secondParcelName,
     vertices: splitDraft.secondVertices,
     vertexLabels: splitDraft.secondVertexLabels,
+    ...(splitDraft.secondCourseGeometry ? { courseGeometry: splitDraft.secondCourseGeometry } : {}),
   });
   if (!firstReport || !secondReport) return null;
 
@@ -102,6 +104,9 @@ export const buildParcelSplitCommitResult = ({
       vertexLabels: [...splitDraft.firstVertexLabels],
       parcelName: firstParcelName,
       courseIds: buildParcelCourseIds(firstChildId, splitDraft.firstVertices.length),
+      ...(splitDraft.firstCourseGeometry
+        ? { courseGeometry: splitDraft.firstCourseGeometry.map((entry) => ({ ...entry })) }
+        : {}),
       areaSquareMeters: firstReport.areaSquareMeters,
       perimeterMeters: firstReport.perimeterMeters,
       closureDeltaX: firstReport.closureDeltaX,
@@ -120,6 +125,9 @@ export const buildParcelSplitCommitResult = ({
       vertexLabels: [...splitDraft.secondVertexLabels],
       parcelName: secondParcelName,
       courseIds: buildParcelCourseIds(secondChildId, splitDraft.secondVertices.length),
+      ...(splitDraft.secondCourseGeometry
+        ? { courseGeometry: splitDraft.secondCourseGeometry.map((entry) => ({ ...entry })) }
+        : {}),
       areaSquareMeters: secondReport.areaSquareMeters,
       perimeterMeters: secondReport.perimeterMeters,
       closureDeltaX: secondReport.closureDeltaX,

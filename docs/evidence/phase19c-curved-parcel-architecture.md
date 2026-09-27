@@ -113,6 +113,26 @@ Tables/reports: `cadSurveyTables.ts:416`, `cadSurveyExportTables.ts:323`,
   - `minFrontageMeters` means actual boundary length (line lengths + arc lengths) wherever
     a curved path is admitted.
 
+### Round 2B outcome (implemented 2026-09-26)
+
+- Curved **parent** boundaries are SUPPORTED in all five split modes (line, bearing,
+  area, slide, swing): exact line×line / line×arc intersections, course identity, and
+  exact child area/perimeter (shoelace chord term + traversal-signed circular-segment
+  term). Arc interior hits retire the parent course and mint exact sub-arcs; sweep and
+  arc-length sums are conserved.
+- Point-in-parcel is the analytic line/arc winding test (`cadParcelContainment.ts`).
+  Straight rings delegate bit-for-bit to `cadPointInPolygon` (differential-proved).
+- Curved **frontage source** (an arc entity used as the frontage) FAILS CLOSED for
+  slide/swing with the explicit `CURVED_FRONTAGE_UNSUPPORTED` code
+  (`resolveParcelSplitFrontageSource`) — never a chord substitute. Auto-layout keeps the
+  arc-length-stationed boundary path (`cadBuildParcelLayoutFrontagePath`).
+- Mixed Line+Arc chain creation is supported (deterministic traversal, no branches,
+  shared topology self-crossing validation, sweep preserved, sources untouched).
+- `PARCELCOURSEARC` adopts an existing arc onto a course (same `courseId`, exact bulge,
+  reversed-sweep handling, source untouched, mismatch blocks); `PARCELCOURSELINE` retires
+  an arc course to its chord (same endpoints/`courseId`, explicit warning, one undo).
+  `PARCELCOURSE3P` is deferred (no picked-point channel in this slice).
+
 ## 6. Point-in-parcel, rendering, bounds, hit-test, grips, snaps
 
 - Point-in-parcel: `cadPointInPolygon` only (split-area `:246`, side selection

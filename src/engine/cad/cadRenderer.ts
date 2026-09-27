@@ -68,6 +68,11 @@ import {
   sumOffsets,
 } from './annotation/cadAnnotationPlacement';
 import { buildCadProjectLookup, type CadProjectLookup } from './cadProjectLookup';
+import {
+  describeParcelArcCourse,
+  parcelCourseCanonicalKind,
+  validateParcelCourseGeometry,
+} from './cadParcelArcGeometry';
 
 export interface BuildCadDisplaySceneOptions {
   /**
@@ -304,6 +309,84 @@ const buildTraverseLabelPrimitives = (
   });
 };
 
+/**
+ * Phase 19C mixed line/arc parcel outline. Null unless the parcel carries
+ * VALID geometry with at least one true arc course (legacy and all-line
+ * parcels keep the byte-identical chord path). Arc courses emit NATIVE arc
+ * primitives — the outline authority is exact, so SVG/PDF export, the arc
+ * click-hit path, and box selection all consume true curves, never a hidden
+ * chord. Line courses emit the same line shape as buildVertexPrimitives
+ * with shared dash continuity. Raw vertex order (course i runs
+ * vertices[i] -> vertices[(i+1)%n]) matches the geometry addressing and the
+ * snap segment ids exactly.
+ */
+const buildParcelCoursePrimitives = (
+  project: CadProject,
+  ctx: SceneRenderContext,
+  entity: Extract<CadEntity, { type: 'parcel' }>,
+): CadDisplayPrimitive[] | null => {
+  const geometry = entity.courseGeometry;
+  if (geometry == null) return null;
+  if (!validateParcelCourseGeometry(entity.vertices, geometry).ok) return null;
+  const isArcCourse = geometry.map((entry) => parcelCourseCanonicalKind(entry) === 'arc');
+  if (!isArcCourse.some(Boolean)) return null;
+  const style = entityScreenStyle(project, ctx, entity, 1.5);
+  const points = [...entity.vertices, entity.vertices[0]].filter(
+    (point): point is { x: number; y: number } => point != null,
+  );
+  let accumulatedUnits = 0;
+  const primitives: CadDisplayPrimitive[] = [];
+  points.slice(0, -1).forEach((vertex, index) => {
+    const next = points[index + 1]!;
+    const offsetUnits = style.dashPatternUnits != null ? accumulatedUnits : undefined;
+    const id = `primitive:${entity.id}:${index + 1}`;
+    if (isArcCourse[index] === true) {
+      // Validated above, so metrics exist; chord fallback is display-only
+      // fail-safe (the resolver fails closed elsewhere) — never throws.
+      const metrics = describeParcelArcCourse(
+        vertex,
+        next,
+        (geometry[index] as { bulge: number }).bulge,
+      );
+      if (metrics) {
+        accumulatedUnits += metrics.arcLength * ctx.linetypeScale;
+        primitives.push({
+          kind: 'arc',
+          id,
+          layerId: entity.layerId,
+          sourceEntityId: entity.id,
+          sourceSegmentId: `${entity.id}#${index}`,
+          stroke: style.stroke,
+          ...withOpacity(style),
+          ...withDash(style, offsetUnits ?? 0),
+          center: { ...metrics.center },
+          radius: metrics.radius,
+          startAngleDeg: metrics.startAngleDeg,
+          endAngleDeg: metrics.endAngleDeg,
+          strokeWidth: style.widthPx(),
+        });
+        return;
+      }
+    }
+    accumulatedUnits += Math.hypot(next.x - vertex.x, next.y - vertex.y) * ctx.linetypeScale;
+    primitives.push({
+      kind: 'line',
+      id,
+      layerId: entity.layerId,
+      sourceEntityId: entity.id,
+      sourceSegmentId: `${entity.id}#${index}`,
+      stroke: style.stroke,
+      ...(style.opacity != null ? { opacity: style.opacity } : {}),
+      ...(style.dashPatternUnits != null
+        ? { dashPatternUnits: style.dashPatternUnits, dashOffsetUnits: offsetUnits ?? 0 }
+        : {}),
+      points: [vertex, next],
+      strokeWidth: style.widthPx(),
+    });
+  });
+  return primitives;
+};
+
 const buildParcelLabelPrimitive = (
   project: CadProject,
   ctx: SceneRenderContext,
@@ -312,7 +395,11 @@ const buildParcelLabelPrimitive = (
   if (entity.areaSquareMeters == null || entity.perimeterMeters == null || entity.vertices.length < 3) {
     return [];
   }
-  const metrics = cadBuildParcelClosureSummary(entity.vertices);
+  // Phase 19C: exact curved closure (area/perimeter label); the anchor stays
+  // the documented chord-polygon centroid from the closure summary.
+  const metrics = cadBuildParcelClosureSummary(entity.vertices, {
+    courseGeometry: entity.courseGeometry,
+  });
   if (!metrics) return [];
   return [{
     kind: 'text',
@@ -1156,11 +1243,15 @@ const toPrimitives = (
       ];
     case 'polygon':
       return buildVertexPrimitives(project, ctx, entity);
-    case 'parcel':
+    case 'parcel': {
+      // Phase 19C: curved parcels outline with native arc primitives;
+      // legacy/all-line parcels keep the byte-identical chord path.
+      const curved = buildParcelCoursePrimitives(project, ctx, entity);
       return [
-        ...buildVertexPrimitives(project, ctx, entity),
+        ...(curved ?? buildVertexPrimitives(project, ctx, entity)),
         ...buildParcelLabelPrimitive(project, ctx, entity),
       ];
+    }
     case 'arc': {
       const style = entityScreenStyle(project, ctx, entity, 1.25);
       return [

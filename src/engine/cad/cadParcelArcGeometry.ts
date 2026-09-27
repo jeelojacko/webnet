@@ -13,6 +13,7 @@ import {
   cadNormalizeAngleDeg,
   cadPointOnCircle,
   cadSegmentIntersection,
+  cadSignedSweepDeg,
   type CadWorldPoint,
 } from './cadGeometry';
 import { cadArcMidpoint } from './cadGeometryArcPrimitives';
@@ -75,6 +76,25 @@ export const CAD_PARCEL_ARC_FULL_CIRCLE_SWEEP_DEG = 360 - 1e-6;
  * kinked. Reports TANGENT/NON-TANGENT, never a visual guess.
  */
 export const CAD_PARCEL_ARC_TANGENT_TOLERANCE_DEG = 1e-6;
+
+/**
+ * Signed angular offset from `startAngleDeg`, carrying the traversal sign
+ * (positive = CCW). Shared by containment and split so arc sub-span math has
+ * ONE definition.
+ */
+export const parcelSweepOffsetDeg = (
+  startAngleDeg: number,
+  angleDeg: number,
+  signedSweepDeg: number,
+): number => {
+  const normalize360 = (value: number): number => {
+    const wrapped = value % 360;
+    return wrapped < 0 ? wrapped + 360 : wrapped;
+  };
+  return signedSweepDeg >= 0
+    ? normalize360(angleDeg - startAngleDeg)
+    : -normalize360(startAngleDeg - angleDeg);
+};
 
 /** Canonical kind: absent entry = line; sub-floor |bulge| = line. */
 export const parcelCourseCanonicalKind = (
@@ -160,6 +180,41 @@ export const describeParcelArcCourse = (
  * b = tan(sweepRad/4)). Null unless both endpoints ride the circle at
  * the stated radius and the sweep is a valid non-full-circle value.
  */
+/**
+ * Exact sub-arc geometry between two points that both ride the parent arc,
+ * preserving traversal sign (endpoints may be the parent endpoints or any
+ * on-arc split points). Null when either point is off-circle / degenerate.
+ * ONE sub-arc seam for split and swing kernels.
+ */
+export const parcelSubArcGeometry = (
+  arc: CadParcelArcMetrics,
+  from: CadWorldPoint,
+  to: CadWorldPoint,
+): CadParcelCourseGeometry | null => {
+  const fromOffset = parcelSweepOffsetDeg(
+    arc.startAngleDeg,
+    cadAngleDegFromCenter(arc.center, from),
+    arc.signedSweepDeg,
+  );
+  const toOffset = parcelSweepOffsetDeg(
+    arc.startAngleDeg,
+    cadAngleDegFromCenter(arc.center, to),
+    arc.signedSweepDeg,
+  );
+  const subSweepDeg = toOffset - fromOffset;
+  if (!(Math.abs(subSweepDeg) > 0) || Math.abs(subSweepDeg) >= CAD_PARCEL_ARC_FULL_CIRCLE_SWEEP_DEG) {
+    return null;
+  }
+  const bulge = parcelBulgeFromArcDefinition({
+    from,
+    to,
+    center: arc.center,
+    radius: arc.radius,
+    signedSweepDeg: subSweepDeg,
+  });
+  return bulge == null ? null : { kind: 'arc', bulge };
+};
+
 export const parcelBulgeFromArcDefinition = ({
   from,
   to,
@@ -305,16 +360,29 @@ export interface ParcelBoundaryTopologyIssue {
   message: string;
 }
 
-interface TopologyCourse {
+export interface CadParcelTopologyCourse {
   from: CadWorldPoint;
   to: CadWorldPoint;
   arc: CadParcelArcMetrics | null;
+  /** Raw vertex index in the caller's array (geometry entries address raw indices). */
+  rawIndex: number;
+  /** Canonical geometry for this course (line when absent/all-line). */
+  geometry: CadParcelCourseGeometry;
+  /** Ring position (0..n-1), always the array index in the returned list. */
+  position: number;
 }
 
-const buildTopologyCourses = (
+/**
+ * Authoritative ring + per-course topology seam: sanitizes the vertex ring
+ * (adjacent dups + explicit close, same rule as summaries/resolver) and
+ * resolves each course to line or arc metrics. Returns null on invalid
+ * geometry or fewer than 3 ring vertices (fail closed). Reused by boundary
+ * validation, containment, and the split kernels — ONE ring/math seam.
+ */
+export const buildParcelCourseTopology = (
   vertices: readonly CadWorldPoint[],
   courseGeometry: readonly CadParcelCourseGeometry[] | undefined,
-): TopologyCourse[] | null => {
+): CadParcelTopologyCourse[] | null => {
   const validation = validateParcelCourseGeometry(vertices, courseGeometry);
   if (!validation.ok) return null;
   if (vertices.length < 3) return null;
@@ -336,13 +404,20 @@ const buildTopologyCourses = (
   return ring.map((from, position) => {
     const to = ring[(position + 1) % ring.length]!;
     const entry = courseGeometry?.[rawIndex[position]!];
-    const arc =
-      parcelCourseCanonicalKind(entry) === 'arc' && entry?.kind === 'arc'
-        ? describeParcelArcCourse(from, to, entry.bulge)
-        : null;
-    return { from, to, arc };
+    const canonical = parcelCourseCanonicalKind(entry) === 'arc' && entry?.kind === 'arc' ? entry : null;
+    const arc = canonical ? describeParcelArcCourse(from, to, canonical.bulge) : null;
+    return {
+      from,
+      to,
+      arc,
+      rawIndex: rawIndex[position]!,
+      geometry: canonical ? { kind: 'arc', bulge: canonical.bulge } : { kind: 'line' },
+      position,
+    };
   });
 };
+
+const buildTopologyCourses = buildParcelCourseTopology;
 
 const isNearPoint = (point: CadWorldPoint, target: CadWorldPoint, tolerance: number): boolean =>
   Math.abs(point.x - target.x) <= tolerance && Math.abs(point.y - target.y) <= tolerance;
@@ -448,6 +523,74 @@ export const checkParcelCourseTangency = (
       status: deviationDeg <= CAD_PARCEL_ARC_TANGENT_TOLERANCE_DEG ? 'TANGENT' : 'NON_TANGENT',
     };
   });
+};
+
+/**
+ * Mirror (reflection) image of a course-geometry array: signed bulges flip
+ * (left<->right, magnitude kept), lines pass through. Endpoint-owned bulge
+ * needs no center/radius rewrite — the mirrored endpoints + flipped bulge
+ * re-derive the mirrored arc exactly via describeParcelArcCourse.
+ */
+export const mirrorParcelCourseGeometry = (
+  courseGeometry: readonly CadParcelCourseGeometry[],
+): CadParcelCourseGeometry[] =>
+  courseGeometry.map((entry) =>
+    entry.kind === 'arc' ? { kind: 'arc', bulge: -entry.bulge } : { kind: 'line' },
+  );
+
+export interface ParcelArcCourseSplit {
+  /** Exact sub-arc bulge for from -> point (same circle, same direction). */
+  bulgeBefore: number;
+  /** Exact sub-arc bulge for point -> to (same circle, same direction). */
+  bulgeAfter: number;
+  signedSweepBeforeDeg: number;
+  signedSweepAfterDeg: number;
+}
+
+/** Interior-split floor in degrees (machine-conditioning scale, NOT a survey
+ * tolerance): splits closer than this to an endpoint are degenerate. */
+const ARC_SPLIT_INTERIOR_FLOOR_DEG = 1e-9;
+
+/**
+ * Exact arc split at an ON-ARC point: both sub-arcs ride the same circle in
+ * the same direction, sweeps sum to the parent sweep (lengths sum exactly).
+ * Null unless the point rides the circle (radius-relative tolerance, same
+ * rule as parcelBulgeFromArcDefinition) inside the signed sweep and strictly
+ * interior to both endpoints. Never throws, never snaps an off-arc point.
+ */
+export const splitParcelArcCourse = (
+  from: CadWorldPoint,
+  to: CadWorldPoint,
+  bulge: number,
+  point: CadWorldPoint,
+): ParcelArcCourseSplit | null => {
+  const metrics = describeParcelArcCourse(from, to, bulge);
+  if (!metrics) return null;
+  if (!Number.isFinite(point.x) || !Number.isFinite(point.y)) return null;
+  const onCircleTolerance = Math.max(1e-9, metrics.radius * 1e-9);
+  if (Math.abs(cadDistance(metrics.center, point) - metrics.radius) > onCircleTolerance) return null;
+  const pointAngleDeg = cadAngleDegFromCenter(metrics.center, point);
+  if (!cadIsAngleOnArcSweep(pointAngleDeg, metrics.startAngleDeg, metrics.endAngleDeg)) return null;
+  const sweepBeforeDeg = cadSignedSweepDeg(metrics.startAngleDeg, pointAngleDeg);
+  // Same direction as the parent traversal (zero = exactly on an endpoint).
+  if (sweepBeforeDeg === 0 || Math.sign(sweepBeforeDeg) !== Math.sign(metrics.signedSweepDeg)) return null;
+  const sweepAfterDeg = metrics.signedSweepDeg - sweepBeforeDeg;
+  if (
+    Math.abs(sweepBeforeDeg) <= ARC_SPLIT_INTERIOR_FLOOR_DEG ||
+    Math.abs(sweepAfterDeg) <= ARC_SPLIT_INTERIOR_FLOOR_DEG ||
+    Math.abs(sweepAfterDeg) >= CAD_PARCEL_ARC_FULL_CIRCLE_SWEEP_DEG
+  ) {
+    return null;
+  }
+  const bulgeBefore = Math.tan(((sweepBeforeDeg * Math.PI) / 180) / 4);
+  const bulgeAfter = Math.tan(((sweepAfterDeg * Math.PI) / 180) / 4);
+  if (!Number.isFinite(bulgeBefore) || !Number.isFinite(bulgeAfter)) return null;
+  return {
+    bulgeBefore,
+    bulgeAfter,
+    signedSweepBeforeDeg: sweepBeforeDeg,
+    signedSweepAfterDeg: sweepAfterDeg,
+  };
 };
 
 // ---------------------------------------------------------------------------

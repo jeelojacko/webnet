@@ -10,7 +10,7 @@ import {
   buildParcelLayoutEvaluationReportRows,
 } from './cadTransactionsParcelLayoutReports';
 import { buildParcelSplitCommitResult } from './cadTransactionsParcelSplitCommit';
-import { resolveParcelLayoutFrontageSource } from './cadTransactionsParcelLayoutFrontage';
+import { resolveParcelSplitFrontageSource } from './cadTransactionsParcelLayoutFrontage';
 
 export const parcelSplitSlideCommand: CadCommandDefinition<{
   key: 'PARCEL_SPLIT_SLIDE';
@@ -28,13 +28,13 @@ export const parcelSplitSlideCommand: CadCommandDefinition<{
       (entity): entity is CadParcelEntity => entity.id === command.parcelEntityId && entity.type === 'parcel',
     );
     if (!parcelEntity) return null;
-    const resolvedFrontage = resolveParcelLayoutFrontageSource(
+    const resolvedFrontage = resolveParcelSplitFrontageSource(
       snapshot,
       parcelEntity,
       command.frontageEntityId,
       command.frontageParcelSegmentIds,
     );
-    if (!resolvedFrontage) return null;
+    if (!resolvedFrontage.ok) return null;
     const { frontageEntity, frontageReference, sourceEntityIds } = resolvedFrontage;
 
     const layoutDraft = cadBuildParcelSplitBySlideDraft(
@@ -119,13 +119,13 @@ export const parcelSplitSwingCommand: CadCommandDefinition<{
       (entity): entity is CadParcelEntity => entity.id === command.parcelEntityId && entity.type === 'parcel',
     );
     if (!parcelEntity) return null;
-    const resolvedFrontage = resolveParcelLayoutFrontageSource(
+    const resolvedFrontage = resolveParcelSplitFrontageSource(
       snapshot,
       parcelEntity,
       command.frontageEntityId,
       command.frontageParcelSegmentIds,
     );
-    if (!resolvedFrontage) return null;
+    if (!resolvedFrontage.ok) return null;
     const { frontageEntity, frontageReference, sourceEntityIds } = resolvedFrontage;
 
     const layoutDraft = cadBuildParcelSplitBySwingDraft(

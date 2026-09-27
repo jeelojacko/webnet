@@ -11,6 +11,7 @@ import {
   parcelPointKey,
   parcelPointsMatch,
 } from './cadCogoParcelGeometry';
+import { cadClassifyParcelBoundaryPoint } from './cadParcelContainment';
 
 export * from './cadCogoParcelLineworkDiagnostics';
 
@@ -90,9 +91,21 @@ export const cadBuildParcelOverlapDiagnostics = (
       const firstVertices = normalizeParcelPolygonVertices(firstParcel.vertices);
       const secondVertices = normalizeParcelPolygonVertices(secondParcel.vertices);
       if (firstVertices.length < 3 || secondVertices.length < 3) continue;
+      const insideFirst = (point: CadWorldPoint): boolean =>
+        cadClassifyParcelBoundaryPoint({
+          vertices: firstParcel.vertices,
+          courseGeometry: firstParcel.courseGeometry,
+          point,
+        }) !== 'outside';
+      const insideSecond = (point: CadWorldPoint): boolean =>
+        cadClassifyParcelBoundaryPoint({
+          vertices: secondParcel.vertices,
+          courseGeometry: secondParcel.courseGeometry,
+          point,
+        }) !== 'outside';
       const mayOverlap =
-        firstVertices.some((point) => cadPointInPolygon(point, secondVertices)) ||
-        secondVertices.some((point) => cadPointInPolygon(point, firstVertices)) ||
+        firstVertices.some((point) => insideSecond(point)) ||
+        secondVertices.some((point) => insideFirst(point)) ||
         firstVertices.some((start, index) => {
           const end = firstVertices[(index + 1) % firstVertices.length]!;
           return secondVertices.some((clipStart, clipIndex) => {

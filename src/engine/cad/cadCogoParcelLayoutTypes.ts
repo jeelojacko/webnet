@@ -1,5 +1,5 @@
 import type { CadWorldPoint } from './cadGeometry';
-import type { CadParcelLayoutSettings } from './cadTypes';
+import type { CadParcelCourseGeometry, CadParcelLayoutSettings } from './cadTypes';
 import type { CadParcelSplitDraft } from './cadCogoParcelSplit';
 import type { CadParcelLayoutFrontageReference } from './cadCogoParcelFrontage';
 
@@ -12,8 +12,10 @@ export interface CadParcelLayoutSplitDraft {
   childAreaSquareMeters: number;
   childVertices: CadWorldPoint[];
   childVertexLabels: string[];
+  childCourseGeometry?: CadParcelCourseGeometry[];
   remainderVertices: CadWorldPoint[];
   remainderVertexLabels: string[];
+  remainderCourseGeometry?: CadParcelCourseGeometry[];
 }
 
 export interface CadParcelLayoutConstraintEvaluation {

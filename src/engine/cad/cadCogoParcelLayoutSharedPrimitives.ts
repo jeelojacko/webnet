@@ -1,20 +1,27 @@
 import {
+  cadAngleDegFromCenter,
   cadAzimuthDeg,
   cadDistance,
+  cadIsAngleOnArcSweep,
   cadNormalizeAngleDeg,
   cadPointOnCircle,
   cadSignedSweepDeg,
   type CadWorldPoint,
 } from './cadGeometry';
-import type { CadLineEntity, CadParcelEntity } from './cadTypes';
+import type { CadLineEntity, CadParcelCourseGeometry, CadParcelEntity } from './cadTypes';
 import {
   cadBuildParcelClosureSummary,
-  cadPointInPolygon,
   cadPointOnSegment,
   cadPolygonSignedAreaDouble,
   normalizeParcelPolygonVertices,
   parcelPointsMatch,
 } from './cadCogoParcelGeometry';
+import { cadClassifyParcelBoundaryPoint } from './cadParcelContainment';
+import {
+  describeParcelArcCourse,
+  parcelCourseCanonicalKind,
+  parcelSubArcGeometry,
+} from './cadParcelArcGeometry';
 import type { CadParcelSplitDraft } from './cadCogoParcelSplit';
 import type { CadParcelLayoutFrontagePathArcSegment, CadParcelLayoutFrontagePath } from './cadCogoParcelLayoutPath';
 import type { CadParcelLayoutSplitAlternative, CadParcelLayoutSplitDraft } from './cadCogoParcelLayoutTypes';
@@ -34,6 +41,7 @@ export interface CadParcelSelectedSplitSide {
   vertices: CadWorldPoint[];
   labels: string[];
   areaSquareMeters: number;
+  courseGeometry?: CadParcelCourseGeometry[];
 }
 
 export * from './cadCogoParcelLayoutPath';
@@ -177,18 +185,33 @@ export const cadSelectParcelSplitSide = (
     {
       vertices: draft.firstVertices,
       labels: draft.firstVertexLabels,
-      areaSquareMeters: cadBuildParcelClosureSummary(draft.firstVertices)?.areaSquareMeters ?? 0,
+      courseGeometry: draft.firstCourseGeometry,
+      areaSquareMeters:
+        cadBuildParcelClosureSummary(
+          draft.firstVertices,
+          draft.firstCourseGeometry ? { courseGeometry: draft.firstCourseGeometry } : undefined,
+        )?.areaSquareMeters ?? 0,
     },
     {
       vertices: draft.secondVertices,
       labels: draft.secondVertexLabels,
-      areaSquareMeters: cadBuildParcelClosureSummary(draft.secondVertices)?.areaSquareMeters ?? 0,
+      courseGeometry: draft.secondCourseGeometry,
+      areaSquareMeters:
+        cadBuildParcelClosureSummary(
+          draft.secondVertices,
+          draft.secondCourseGeometry ? { courseGeometry: draft.secondCourseGeometry } : undefined,
+        )?.areaSquareMeters ?? 0,
     },
   ];
   return (
     candidates.find(
       (candidate) =>
-        candidate.areaSquareMeters > 1e-9 && cadPointInPolygon(samplePoint, candidate.vertices),
+        candidate.areaSquareMeters > 1e-9 &&
+        cadClassifyParcelBoundaryPoint({
+          vertices: candidate.vertices,
+          courseGeometry: candidate.courseGeometry,
+          point: samplePoint,
+        }) !== 'outside',
     ) ?? null
   );
 };
@@ -205,6 +228,7 @@ export const cadBuildParcelLayoutDraft = (
   childAreaSquareMeters: childSide.areaSquareMeters,
   childVertices: childSide.vertices.map((vertex) => ({ x: vertex.x, y: vertex.y })),
   childVertexLabels: [...childSide.labels],
+  ...(childSide.courseGeometry ? { childCourseGeometry: childSide.courseGeometry } : {}),
   remainderVertices:
     childSide.vertices === split.firstVertices
       ? split.secondVertices.map((vertex) => ({ x: vertex.x, y: vertex.y }))
@@ -213,7 +237,113 @@ export const cadBuildParcelLayoutDraft = (
     childSide.vertices === split.firstVertices
       ? [...split.secondVertexLabels]
       : [...split.firstVertexLabels],
+  ...((childSide.vertices === split.firstVertices ? split.secondCourseGeometry : split.firstCourseGeometry)
+    ? {
+        remainderCourseGeometry:
+          childSide.vertices === split.firstVertices
+            ? split.secondCourseGeometry
+            : split.firstCourseGeometry,
+      }
+    : {}),
 });
+
+const swingCourseGeometryOrLine = (
+  parcel: CadParcelEntity,
+  position: number,
+): CadParcelCourseGeometry => {
+  const entry = parcel.courseGeometry?.[position];
+  return parcelCourseCanonicalKind(entry) === 'arc' && entry?.kind === 'arc'
+    ? { kind: 'arc', bulge: entry.bulge }
+    : { kind: 'line' };
+};
+
+const reverseSwingCourseGeometry = (
+  entry: CadParcelCourseGeometry,
+): CadParcelCourseGeometry =>
+  entry.kind === 'arc' ? { kind: 'arc', bulge: -entry.bulge } : { kind: 'line' };
+
+const swingCourseArc = (
+  parcel: CadParcelEntity,
+  position: number,
+  from: CadWorldPoint,
+  to: CadWorldPoint,
+) => {
+  const entry = parcel.courseGeometry?.[position];
+  if (parcelCourseCanonicalKind(entry) !== 'arc' || entry?.kind !== 'arc') return null;
+  return describeParcelArcCourse(from, to, entry.bulge);
+};
+
+/**
+ * Exact child/remainder course geometry for a swing split: first course is
+ * the frontage (forward or reversed), the walk uses parent courses, the cut
+ * course is an exact partial sub-arc/line, and the closing cut is a straight
+ * line. Undefined when the parent is all-line (straight output unchanged).
+ */
+const buildSwingSplitGeometry = ({
+  parcel,
+  ring,
+  hingeIndex,
+  oppositeIndex,
+  cutEdgeIndex,
+  cutPoint,
+  childVertexCount,
+  remainderVertexCount,
+}: {
+  parcel: CadParcelEntity;
+  ring: readonly CadWorldPoint[];
+  hingeIndex: number;
+  oppositeIndex: number;
+  cutEdgeIndex: number;
+  cutPoint: CadWorldPoint;
+  childVertexCount: number;
+  remainderVertexCount: number;
+}): { childCourseGeometry: CadParcelCourseGeometry[]; remainderCourseGeometry: CadParcelCourseGeometry[] } | null => {
+  const courseCount = ring.length;
+  const hasArc = parcel.courseGeometry?.some(
+    (entry) => parcelCourseCanonicalKind(entry) === 'arc',
+  ) === true;
+  if (!hasArc) return null;
+  const cutArc = swingCourseArc(
+    parcel,
+    cutEdgeIndex,
+    ring[cutEdgeIndex]!,
+    ring[(cutEdgeIndex + 1) % courseCount]!,
+  );
+  const first =
+    oppositeIndex === (hingeIndex + 1) % courseCount
+      ? swingCourseGeometryOrLine(parcel, hingeIndex)
+      : hingeIndex === (oppositeIndex + 1) % courseCount
+        ? reverseSwingCourseGeometry(swingCourseGeometryOrLine(parcel, oppositeIndex))
+        : null;
+  if (first == null) return null;
+  const childCourseGeometry: CadParcelCourseGeometry[] = [first];
+  let cursor = oppositeIndex;
+  while (cursor !== cutEdgeIndex) {
+    childCourseGeometry.push(swingCourseGeometryOrLine(parcel, cursor));
+    cursor = (cursor + 1) % courseCount;
+  }
+  const childPartial = cutArc
+    ? parcelSubArcGeometry(cutArc, ring[cutEdgeIndex]!, cutPoint)
+    : { kind: 'line' as const };
+  if (!childPartial) return null;
+  childCourseGeometry.push(childPartial, { kind: 'line' });
+
+  const remainderPartial = cutArc
+    ? parcelSubArcGeometry(cutArc, cutPoint, ring[(cutEdgeIndex + 1) % courseCount]!)
+    : { kind: 'line' as const };
+  if (!remainderPartial) return null;
+  const remainderCourseGeometry: CadParcelCourseGeometry[] = [remainderPartial];
+  cursor = (cutEdgeIndex + 1) % courseCount;
+  while (cursor !== hingeIndex) {
+    remainderCourseGeometry.push(swingCourseGeometryOrLine(parcel, cursor));
+    cursor = (cursor + 1) % courseCount;
+  }
+  remainderCourseGeometry.push({ kind: 'line' });
+
+  if (childCourseGeometry.length !== childVertexCount) return null;
+  if (remainderCourseGeometry.length !== remainderVertexCount) return null;
+  return { childCourseGeometry, remainderCourseGeometry };
+};
 
 export const cadBuildParcelSwingSplitDraft = (
   parcel: CadParcelEntity,
@@ -232,7 +362,18 @@ export const cadBuildParcelSwingSplitDraft = (
     alternative === 'start' ? frontageEdge.endVertexIndex : frontageEdge.startVertexIndex;
   const cutEdgeStart = ring[cutEdgeIndex]!;
   const cutEdgeEnd = ring[(cutEdgeIndex + 1) % ring.length]!;
-  if (!cadPointOnSegment(cutPoint, cutEdgeStart, cutEdgeEnd)) return null;
+  const cutArc = swingCourseArc(parcel, cutEdgeIndex, cutEdgeStart, cutEdgeEnd);
+  if (cutArc) {
+    const radial = Math.abs(cadDistance(cutPoint, cutArc.center) - cutArc.radius);
+    const angleOnSweep = cadIsAngleOnArcSweep(
+      cadAngleDegFromCenter(cutArc.center, cutPoint),
+      cutArc.startAngleDeg,
+      cutArc.endAngleDeg,
+    );
+    if (!angleOnSweep || radial > Math.max(1e-6, cutArc.radius * 1e-9)) return null;
+  } else if (!cadPointOnSegment(cutPoint, cutEdgeStart, cutEdgeEnd)) {
+    return null;
+  }
   if (
     parcelPointsMatch(cutPoint, ring[hingeVertexIndex]!) ||
     parcelPointsMatch(cutPoint, cutEdgeStart) ||
@@ -266,8 +407,25 @@ export const cadBuildParcelSwingSplitDraft = (
     currentIndex = (currentIndex + 1) % ring.length;
   }
 
-  const childSummary = cadBuildParcelClosureSummary(childVertices);
-  const remainderSummary = cadBuildParcelClosureSummary(remainderVertices);
+  const swingGeometry = buildSwingSplitGeometry({
+    parcel,
+    ring,
+    hingeIndex: hingeVertexIndex,
+    oppositeIndex: oppositeFrontageVertexIndex,
+    cutEdgeIndex,
+    cutPoint,
+    childVertexCount: childVertices.length,
+    remainderVertexCount: remainderVertices.length,
+  });
+
+  const childSummary = cadBuildParcelClosureSummary(
+    childVertices,
+    swingGeometry ? { courseGeometry: swingGeometry.childCourseGeometry } : undefined,
+  );
+  const remainderSummary = cadBuildParcelClosureSummary(
+    remainderVertices,
+    swingGeometry ? { courseGeometry: swingGeometry.remainderCourseGeometry } : undefined,
+  );
   if (!childSummary || !remainderSummary) return null;
   if (childSummary.areaSquareMeters <= 1e-9 || remainderSummary.areaSquareMeters <= 1e-9) return null;
 
@@ -276,6 +434,12 @@ export const cadBuildParcelSwingSplitDraft = (
     firstVertexLabels: childLabels,
     secondVertices: remainderVertices,
     secondVertexLabels: remainderLabels,
+    ...(swingGeometry
+      ? {
+          firstCourseGeometry: swingGeometry.childCourseGeometry,
+          secondCourseGeometry: swingGeometry.remainderCourseGeometry,
+        }
+      : {}),
     splitStart: ring[hingeVertexIndex]!,
     splitEnd: cutPoint,
   };

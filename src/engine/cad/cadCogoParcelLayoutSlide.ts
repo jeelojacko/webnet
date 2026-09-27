@@ -157,7 +157,9 @@ export const cadBuildParcelSplitBySlideDraft = (
 ): CadParcelLayoutSplitDraft | null => {
   if (!Number.isFinite(targetAreaSquareMeters) || targetAreaSquareMeters <= 0) return null;
   if (!Number.isFinite(minFrontageMeters) || minFrontageMeters <= 0) return null;
-  const parcelSummary = cadBuildParcelClosureSummary(parcel.vertices);
+  const parcelSummary = cadBuildParcelClosureSummary(parcel.vertices, {
+    courseGeometry: parcel.courseGeometry,
+  });
   if (!parcelSummary || targetAreaSquareMeters >= parcelSummary.areaSquareMeters - 1e-6) return null;
   const frontageEdge = cadMatchFrontageLineToParcelEdge(parcel, frontageLine);
   if (!frontageEdge || frontageEdge.lengthMeters + 1e-9 < minFrontageMeters) return null;

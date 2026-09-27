@@ -45,7 +45,44 @@ export const SurveyCadParcelReportOverlay: React.FC<{
         <span>{selectedParcelReport.closureDeltaX.toFixed(3)} m</span>
         <span className="text-slate-400">Closure</span>
         <span>{selectedParcelReport.closureDistanceMeters.toFixed(3)} m</span>
+        {/* Phase 19C inquiry: course counts + per-course curve metrics. */}
+        {selectedParcelReport.lineCount != null && selectedParcelReport.arcCount != null && (
+          <>
+            <span className="text-slate-400">Courses</span>
+            <span>{selectedParcelReport.courseCount}</span>
+            <span className="text-slate-400">Line / Arc</span>
+            <span>{selectedParcelReport.lineCount} / {selectedParcelReport.arcCount}</span>
+          </>
+        )}
       </div>
+      {selectedParcelReport.curveDetails != null &&
+        selectedParcelReport.curveDetails.some((detail) => detail.kind === 'arc') && (
+        <>
+          <div className="pt-3 text-[10px] font-semibold uppercase tracking-[0.14em] text-slate-400">
+            Curves
+          </div>
+          <div className="pt-1">
+            {selectedParcelReport.curveDetails
+              .filter((detail) => detail.kind === 'arc')
+              .map((detail) => (
+                <div
+                  key={detail.courseId}
+                  className="grid grid-cols-[4.75rem_1fr_auto] gap-x-2 py-0.5 text-[11px] leading-4"
+                  data-survey-cad-parcel-curve
+                >
+                  <span className="text-slate-400">{detail.fromLabel}-{detail.toLabel}</span>
+                  <span>
+                    R {detail.radius?.toFixed(3)} m
+                    <span className="pl-2 text-[10px] text-slate-400">
+                      Δ {detail.deltaDeg?.toFixed(4)}° {detail.direction}
+                    </span>
+                  </span>
+                  <span>L {detail.arcLength?.toFixed(3)} m</span>
+                </div>
+              ))}
+          </div>
+        </>
+        )}
       <div className="pt-3 text-[10px] font-semibold uppercase tracking-[0.14em] text-slate-400">
         Courses
       </div>

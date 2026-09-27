@@ -121,7 +121,7 @@ export interface CadShellCommandDef {
 }
 
 const session = (
-  key: ActiveCommandKey,
+  key: string,
   label: string,
   category: CadShellCommandCategory,
   hint: string,
@@ -224,6 +224,8 @@ export const CAD_SHELL_COMMANDS: CadShellCommandDef[] = [
   // Parcel
   session('PARCEL_SPLIT_BEARING', 'Split by Bearing', 'Parcel', 'Split a parcel by bearing.'),
   session('PARCEL_SPLIT_AREA', 'Split by Area', 'Parcel', 'Split a parcel by target area.'),
+  session('PARCELCOURSEARC', 'Set Parcel Course Arc', 'Parcel', 'Adopt a selected arc onto a parcel course.'),
+  session('PARCELCOURSELINE', 'Straighten Parcel Course', 'Parcel', 'Retire a parcel arc course to its chord.'),
   // Phase 19A — parcel report/description tables (select a parcel, then pick
   // the table insertion point; one CREATE transaction each).
   session('PARCELTABLE', 'Parcel Table', 'Parcel', 'Create a parcel course table from the selected parcel.', ['PARCELCOURSETABLE']),

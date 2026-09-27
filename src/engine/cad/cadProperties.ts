@@ -37,6 +37,7 @@ import type {
   CadPropertiesPanelState,
   CadPropertiesTypeGroup,
 } from './cadPropertiesModel';
+import { resolveCadParcelCourses } from './cadParcelCourses';
 import type {
   CadAlignmentEntity,
   CadArcEntity,
@@ -249,6 +250,35 @@ const segmentRows = (entity: Extract<CadEntity, { type: 'polyline' | 'polygon' }
     ];
   });
 
+/**
+ * Phase 19C parcel inquiry: course counts + per-course curve metrics
+ * (radius/delta/arc length/chord/direction). Line courses need no row
+ * (vertices already listed); arc values are formatted metrics, never raw
+ * dumps. Empty when courses fail to resolve (fail closed, like the report).
+ */
+const parcelInquiryRows = (entity: Extract<CadEntity, { type: 'parcel' }>): CadEntityPropertyRow[] => {
+  const courses = resolveCadParcelCourses(entity);
+  if (courses.length === 0) return [];
+  const rows: CadEntityPropertyRow[] = [
+    row('course-count', 'Course count', String(courses.length)),
+    row('line-count', 'Line courses', String(courses.filter((course) => course.kind === 'line').length)),
+    row('arc-count', 'Arc courses', String(courses.filter((course) => course.kind === 'arc').length)),
+  ];
+  for (const course of courses) {
+    if (course.kind !== 'arc') continue;
+    rows.push(
+      row(
+        `curve:${course.courseId}`,
+        `${course.fromLabel}-${course.toLabel} curve`,
+        `R ${numeric(course.radius)} · Δ ${formatCadSweepDms(course.signedSweepDeg)} · ` +
+          `L ${numeric(course.arcLength)} · chord ${numeric(course.chordLength)} ` +
+          `${course.chordBearing} (${course.direction})`,
+      ),
+    );
+  }
+  return rows;
+};
+
 const vertexRows = (entity: Extract<CadEntity, { type: 'polyline' | 'polygon' | 'parcel' }>): CadEntityPropertyRow[] =>
   entity.vertices.flatMap((vertex, index) => {
     const label = entity.vertexLabels[index] ?? `V${index + 1}`;
@@ -380,6 +410,7 @@ const buildEntityProperties = (project: CadProject, entity: CadEntity): CadEntit
           entity.closureDistanceMeters == null ? '--' : numeric(entity.closureDistanceMeters),
         ),
       );
+      rows.push(...parcelInquiryRows(entity));
       rows.push(...vertexRows(entity));
       return rows;
     case 'survey-table': {

@@ -39,6 +39,10 @@ import {
   parcelSplitBearingCommand,
 } from './cadTransactionsParcelSplitCommands';
 import {
+  parcelCourseArcCommand,
+  parcelCourseLineCommand,
+} from './cadTransactionsParcelCourseCommands';
+import {
   batchCogoCommand,
   polylineCommand,
   traverseCommand,
@@ -546,6 +550,8 @@ export const CAD_COMMAND_REGISTRY: Record<CadCommandKey, CadCommandDefinition<Ca
   PARCEL_SPLIT_AREA: parcelSplitAreaCommand as CadCommandDefinition<CadCommand>,
   PARCEL_SPLIT_SLIDE: parcelSplitSlideCommand as CadCommandDefinition<CadCommand>,
   PARCEL_SPLIT_SWING: parcelSplitSwingCommand as CadCommandDefinition<CadCommand>,
+  PARCELCOURSEARC: parcelCourseArcCommand as CadCommandDefinition<CadCommand>,
+  PARCELCOURSELINE: parcelCourseLineCommand as CadCommandDefinition<CadCommand>,
   PARCEL_LAYOUT_AUTO: parcelLayoutAutoCommand as CadCommandDefinition<CadCommand>,
   LINETABLE: lineTableCommand as CadCommandDefinition<CadCommand>,
   CURVETABLE: curveTableCommand as CadCommandDefinition<CadCommand>,
