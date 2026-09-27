@@ -15,9 +15,9 @@
  *  scene + DXF model + LandXML project chokepoints.)
  *
  * The analytic/lifecycle letters are pinned on the landed engine + shell
- * seams this branch owns; UI flows that require the workspace group wiring
- * are gated on that seam so the suite stays green until it lands. Zero
- * page/console errors on the browser smoke.
+ * seams this branch owns; the browser letter pins the workspace group wiring
+ * (Home ribbon Grading Groups subgroup + CadGradingGroupManager), which is
+ * mounted in SurveyCadWorkspace. Zero page/console errors on the browser smoke.
  */
 import { expect, test, type Page } from '@playwright/test';
 import * as fs from 'node:fs';
@@ -615,8 +615,10 @@ test('R side-preview ghost wiring: selected unbuilt group contributes ghost arro
   expect(ghost).toBeDefined();
   expect(ghost!.ghostArrows.length).toBeGreaterThan(0);
   // Pre-calc miter seam ghosts exist at every interior joint (screen-only).
+  // Production call shape (cadGradingGroupDisplay.ts): per-course cross-slope
+  // g from the fixed criterion.
   const sources = resolveGroupInputs(project, groupId)!.memberSources;
-  expect(miterSeamGhosts(sources).length).toBeGreaterThan(0);
+  expect(miterSeamGhosts(sources, 'right', sources.map(() => -0.5)).length).toBeGreaterThan(0);
 });
 
 // ---------------------------------------------------------------------------
@@ -657,18 +659,12 @@ test.describe('browser smoke', () => {
     try {
       await openSurveyPlanDrawing(page, file);
       await homeTab(page);
-      const command = page.locator('[data-cad-grading-group-command]');
-      if ((await command.count()) === 0) {
-        test.skip(true, 'grading-group UI seam not wired in this workspace yet');
-        return;
-      }
-      await command.first().click();
+      // Grading Groups subgroup is mounted on the Home ribbon
+      // (CadRibbon -> CadGradingGroupRibbonGroup); GRADINGGROUP opens the
+      // manager palette directly (GRADEGROUP is the no-args create entry).
+      await page.locator('[data-cad-grading-group-command="GRADINGGROUP"]').click();
       const manager = page.locator('[data-cad-grading-group-table]');
-      const opened = await manager.waitFor({ state: 'visible', timeout: 4000 }).then(() => true).catch(() => false);
-      if (!opened) {
-        test.skip(true, 'grading-group manager not mounted in this workspace yet');
-        return;
-      }
+      await expect(manager).toBeVisible({ timeout: 15000 });
       await page.locator('[data-cad-grading-group-tab="inquiry"]').click();
       await expect(page.locator('[data-cad-grading-group-inquiry-report]')).toContainText('No CURRENT result');
     } finally {
