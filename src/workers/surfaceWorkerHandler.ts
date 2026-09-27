@@ -30,6 +30,11 @@ import type {
   ResolvedGradingSource,
 } from '../engine/cad/grading/gradingTypes';
 import type { CadGradingGroupResult } from '../engine/cad/grading/gradingGroupTypes';
+import {
+  computeGradingGroupFromSnapshots,
+  type GradingGroupComputeOutcome,
+  type GroupSolveInput,
+} from '../engine/cad/grading/gradingGroupCompute';
 import type { GradingComputeRequest, GradingTargetMeshSnapshot } from './surfaceGradingCompute';
 import { computeGradingFromSnapshots } from './surfaceGradingCompute';
 import type {
@@ -529,21 +534,32 @@ export type SurfaceGroupGradingRequest = GradingGroupComputeRequest;
 
 export type SurfaceGroupGradingEngineFn = (
   _request: SurfaceGroupGradingRequest,
-) => CadGradingGroupResult | Promise<CadGradingGroupResult>;
+) => GradingGroupComputeOutcome | Promise<GradingGroupComputeOutcome>;
 
-/**
- * Default group engine seam.
- *
- * TODO(Phase 20C group-kernel wave): `gradingGroupCompute.ts` (the batched
- * sector/clip/locus/mesh kernel) is authored by a parallel wave that had not
- * landed when this plumbing slice was built. Its specified entry point is
- * `computeGradingGroupFromSnapshots(input: GroupSolveInput)` where
- * `GroupSolveInput` IS `GradingGroupComputeRequest` above. Wire it here when
- * the file lands; until then the default fails closed so a missing kernel can
- * never post a fabricated group result. Tests inject `loadGroupGradingFn`.
- */
-export const computeGroupGradingResultFromRequest: SurfaceGroupGradingEngineFn = () => {
-  throw new Error('GRADING_GROUP_KERNEL_PENDING');
+/** Map the flat worker request onto the engine's `GroupSolveInput`. */
+export const toGroupSolveInput = (request: GradingGroupComputeRequest): GroupSolveInput => ({
+  groupId: request.groupId,
+  revision: request.revision,
+  members: request.memberSources,
+  side: request.side,
+  criterion: request.criterion,
+  maxSearchDistance: request.maxSearchDistance,
+  curveChordTolerance: request.curveChordTolerance,
+  closed: request.closed,
+  target: request.target,
+});
+
+/** Default group engine: the pure batched snapshot kernel. */
+export const computeGroupGradingResultFromRequest: SurfaceGroupGradingEngineFn = (request) =>
+  computeGradingGroupFromSnapshots(toGroupSolveInput(request));
+
+/** Human-readable group failure text (code + corner index + detail). */
+const groupFailureDetail = (
+  outcome: Extract<GradingGroupComputeOutcome, { ok: false }>,
+): string => {
+  const corner = outcome.cornerIndex === undefined ? '' : ` (corner ${outcome.cornerIndex})`;
+  const detail = outcome.detail === undefined ? '' : `: ${outcome.detail}`;
+  return `${outcome.code}${corner}${detail}`;
 };
 
 export interface SurfaceWorkerHandlerDeps {
@@ -1344,15 +1360,19 @@ export const createSurfaceWorkerHandler = (
       if (cancelledRequestIds.has(requestId)) return;
       void loadGroupGradingFn()
         .then((compute) => compute(request))
-        .then((result) => {
+        .then((outcome) => {
           if (cancelledRequestIds.has(requestId)) return;
           if (latestGroupGradingByKey.get(request.groupId) !== groupGradingRequestKey(request)) return;
+          if (!outcome.ok) {
+            failGroupGrading(requestId, request, groupFailureDetail(outcome));
+            return;
+          }
           deps.postMessage({
             type: 'group-success',
             requestId,
             groupId: request.groupId,
             groupRevision: request.revision,
-            result,
+            result: outcome.result,
           });
         })
         .catch((groupError) => {

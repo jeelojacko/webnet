@@ -2,17 +2,13 @@
  * Phase 20C Wave-2B — group worker/service/resolve plumbing oracles.
  *
  * Resolve chain checks (open, inserted-vertex break, closed loop, closed
- * self-intersection), the real worker protocol round-trip, service CURRENT
- * agreement, SOURCE_NOT_CURRENT gate, stale-revision discard, and request-key
- * ownership.
+ * self-intersection), the real worker protocol round-trip through the REAL
+ * engine kernel, service CURRENT agreement, SOURCE_NOT_CURRENT gate,
+ * stale-revision discard, and request-key ownership.
  *
- * STUB-BACKED: `src/engine/cad/grading/gradingGroupCompute.ts` (the batched
- * sector kernel) is authored by a parallel wave and was NOT present when this
- * plumbing slice landed. The worker/service round-trip tests therefore inject
- * `loadGroupGradingFn` / `deriveGroupGrading` stubs that return a well-formed
- * `CadGradingGroupResult` whose daylight vertices lie on the flat TIN. They
- * prove the PLUMBING (protocol, latest-wins, cache, agreement gate), not the
- * group compute math. Every stub-backed test is marked inline.
+ * Wave-2B.1: the group kernel (`gradingGroupCompute.ts`) has landed, so the
+ * worker/service tests run `computeGradingGroupFromSnapshots` end-to-end on a
+ * tiny flat TIN — no stubs.
  */
 import { describe, expect, it } from 'vitest';
 
@@ -20,6 +16,7 @@ import { createBlankCadDrawingDocument } from '../src/engine/cad/cadDrawingFile'
 import { createCadSurfaceCache } from '../src/engine/cad/cadSurfaceCache';
 import { buildCadSurface } from '../src/engine/cad/cadSurfaces';
 import { createCadGradingCache } from '../src/engine/cad/grading/gradingCache';
+import { computeGradingGroupFromSnapshots } from '../src/engine/cad/grading/gradingGroupCompute';
 import {
   resolveGroupInputs,
   resolveGroupInputsWithReason,
@@ -138,39 +135,6 @@ const flush = async (rounds = 5): Promise<void> => {
 };
 
 /** A well-formed group result whose daylight lies on the flat z=0 TIN. */
-const stubGroupResult = (
-  groupId: string,
-  revision: string,
-  memberCount = 2,
-  closed = false,
-): CadGradingGroupResult => ({
-  groupId,
-  revision,
-  accuracy: 'EXACT',
-  memberCount,
-  cornerCount: Math.max(0, memberCount - (closed ? 0 : 1)),
-  memberRegions: [],
-  corners: [],
-  daylightPoints: [0, 0, 0, 50, 0, 0, 50, 50, 0],
-  gradingMesh: { points: [], triangles: [] },
-  sourceLength: 100,
-  gradingPlanArea: 0,
-  grading3dArea: 0,
-  minProjectionDistance: 0,
-  maxProjectionDistance: 0,
-  meanProjectionDistance: 0,
-  cutSourceLength: 0,
-  fillSourceLength: 0,
-  tiedSourceLength: 0,
-  candidateTriangleCount: 0,
-  intersectionSegmentCount: 0,
-  multipleSolutionCount: 0,
-  diagnostics: [],
-});
-
-const stubFromRequest = (request: GradingGroupComputeRequest): CadGradingGroupResult =>
-  stubGroupResult(request.groupId, request.revision, request.memberSources.length, request.closed);
-
 const withCriterion = (
   project: CadProject,
   groupId: string,
@@ -237,6 +201,23 @@ const makeService = (
     onStateChange: () => undefined,
   });
 
+/** Real engine result for a request (throws on a fail-closed outcome). */
+const computeGroupResult = (request: GradingGroupComputeRequest): CadGradingGroupResult => {
+  const outcome = computeGradingGroupFromSnapshots({
+    groupId: request.groupId,
+    revision: request.revision,
+    members: request.memberSources,
+    side: request.side,
+    criterion: request.criterion,
+    maxSearchDistance: request.maxSearchDistance,
+    curveChordTolerance: request.curveChordTolerance,
+    closed: request.closed,
+    target: request.target,
+  });
+  if (!outcome.ok) throw new Error(`${outcome.code}${outcome.detail ? `: ${outcome.detail}` : ''}`);
+  return outcome.result;
+};
+
 const loopbackGroupTransport = (): SurfaceGradingTransport => ({
   alive: true,
   deriveGrading: () => {
@@ -244,7 +225,7 @@ const loopbackGroupTransport = (): SurfaceGradingTransport => ({
   },
   deriveGroupGrading: (request) => ({
     requestId: `lb-${request.groupId}`,
-    done: Promise.resolve(stubFromRequest(request)),
+    done: Promise.resolve(computeGroupResult(request)),
     cancel: () => undefined,
   }),
   cancel: () => undefined,
@@ -343,8 +324,7 @@ describe('grading group resolve', () => {
 });
 
 describe('grading group worker protocol', () => {
-  it('round-trips a group request through the REAL handler and posts group-success', async () => {
-    // [STUB-BACKED: gradingGroupCompute.ts absent → loadGroupGradingFn stub.]
+  it('round-trips a group request through the REAL handler and kernel', async () => {
     const { project, targetId, groupId } = openWorld();
     const inputs = resolveGroupInputs(project, groupId)!;
     const snap = flatSnapshot(project, targetId);
@@ -363,7 +343,6 @@ describe('grading group worker protocol', () => {
     const sent: SurfaceWorkerResponseMessage[] = [];
     const handler = createSurfaceWorkerHandler({
       loadBuilder: () => Promise.reject(new Error('unused')),
-      loadGroupGradingFn: () => Promise.resolve((incoming) => stubFromRequest(incoming)),
       postMessage: (message) => sent.push(message),
       defer: (callback) => callback(),
     });
@@ -380,17 +359,16 @@ describe('grading group worker protocol', () => {
     expect(success.groupRevision).toBe(inputs.revision);
     expect(success.result.memberCount).toBe(2);
     expect(success.result.cornerCount).toBe(1);
+    expect(success.result.daylightPoints.length).toBeGreaterThan(0);
   });
 
   it('latest-wins: a superseded group revision is not posted', async () => {
-    // [STUB-BACKED.]
     const { project, targetId, groupId } = openWorld();
     const inputs = resolveGroupInputs(project, groupId)!;
     const snap = flatSnapshot(project, targetId);
     const sent: SurfaceWorkerResponseMessage[] = [];
     const handler = createSurfaceWorkerHandler({
       loadBuilder: () => Promise.reject(new Error('unused')),
-      loadGroupGradingFn: () => Promise.resolve((incoming) => stubFromRequest(incoming)),
       postMessage: (message) => sent.push(message),
       defer: (callback) => callback(),
     });
@@ -423,21 +401,47 @@ describe('grading group worker protocol', () => {
   });
 });
 
+interface DeferredGroupRequest {
+  request: GradingGroupComputeRequest;
+  resolve: (_result: CadGradingGroupResult | null) => void;
+}
+
+const deferredGroupTransport = (): {
+  transport: SurfaceGradingTransport;
+  deferred: DeferredGroupRequest[];
+} => {
+  const deferred: DeferredGroupRequest[] = [];
+  const transport: SurfaceGradingTransport = {
+    alive: true,
+    deriveGrading: () => {
+      throw new Error('unused');
+    },
+    deriveGroupGrading: (request): PendingSurfaceGroupGrading => {
+      let resolve!: (_result: CadGradingGroupResult | null) => void;
+      const done = new Promise<CadGradingGroupResult | null>((res) => {
+        resolve = res;
+      });
+      deferred.push({ request, resolve });
+      return { requestId: `deferred-${deferred.length}`, done, cancel: () => undefined };
+    },
+    cancel: () => undefined,
+    dispose: () => undefined,
+  };
+  return { transport, deferred };
+};
+
 describe('grading group service', () => {
-  it('reaches CURRENT agreement via a loopback transport', async () => {
-    // [STUB-BACKED: compute fn is the stub daylight-on-TIN result.]
+  it('reaches CURRENT agreement end-to-end', async () => {
     const { project, targetId, groupId } = openWorld();
     const tinCache = createCadSurfaceCache('grp-current');
     setTin(tinCache, project, targetId);
-    const transport = loopbackGroupTransport();
-    const service = makeService('dgrp-current', () => project, tinCache, transport);
+    const service = makeService('dgrp-current', () => project, tinCache, loopbackGroupTransport());
     service.requestGroupGrading(groupId);
     await flush();
     expect(service.groupStatusOf(groupId).status).toBe('CURRENT');
   });
 
   it('gates SOURCE_NOT_CURRENT after the target TIN is lost', async () => {
-    // [STUB-BACKED.]
     const { project, targetId, groupId } = openWorld();
     const tinCache = createCadSurfaceCache('grp-stale-target');
     const inputs = setTin(tinCache, project, targetId);
@@ -450,84 +454,52 @@ describe('grading group service', () => {
     expect(service.requestGroupGrading(groupId)).toContain('SOURCE_NOT_CURRENT');
   });
 
-  it('discards a late result for a superseded revision', async () => {
-    // [STUB-BACKED.]
+  it('discards a late real result for a superseded revision', async () => {
     const { project, targetId, groupId } = openWorld();
     let current = project;
     const tinCache = createCadSurfaceCache('grp-rev');
     setTin(tinCache, project, targetId);
-    const resolvers: Array<(_result: CadGradingGroupResult | null) => void> = [];
-    const transport: SurfaceGradingTransport = {
-      alive: true,
-      deriveGrading: () => {
-        throw new Error('unused');
-      },
-      deriveGroupGrading: (): PendingSurfaceGroupGrading => {
-        let resolve!: (_result: CadGradingGroupResult | null) => void;
-        const done = new Promise<CadGradingGroupResult | null>((res) => {
-          resolve = res;
-        });
-        resolvers.push(resolve);
-        return { requestId: `deferred-${resolvers.length}`, done, cancel: () => undefined };
-      },
-      cancel: () => undefined,
-      dispose: () => undefined,
-    };
+    const { transport, deferred } = deferredGroupTransport();
     const service = makeService('dgrp-rev', () => current, tinCache, transport);
     service.requestGroupGrading(groupId);
     await flush(2);
     expect(service.buildingGroupIds().has(groupId)).toBe(true);
     // Move the group revision (criterion edit), then request again.
     current = withCriterion(current, groupId, { kind: 'fixed', gradeRatio: -0.25 });
-    const inputs2 = resolveGroupInputs(current, groupId)!;
     service.requestGroupGrading(groupId);
     await flush(2);
-    resolvers[0]!(stubGroupResult(groupId, 'ggrev1:stale'));
+    expect(deferred).toHaveLength(2);
+    // The stale first request resolves with a REAL result — still discarded.
+    deferred[0]!.resolve(computeGroupResult(deferred[0]!.request));
     await flush();
     expect(service.groupStatusOf(groupId).status).not.toBe('CURRENT');
-    resolvers[1]!(stubGroupResult(groupId, inputs2.revision));
+    deferred[1]!.resolve(computeGroupResult(deferred[1]!.request));
     await flush();
     expect(service.groupStatusOf(groupId).status).toBe('CURRENT');
   });
 
   it('discards a late result owned by a superseded request key', async () => {
-    // [STUB-BACKED.] Same revision: request ownership (requestId), not revision.
+    // Same revision: ownership is the requestId, not the revision.
     const { project, targetId, groupId } = openWorld();
     const tinCache = createCadSurfaceCache('grp-owner');
-    const inputs = setTin(tinCache, project, targetId);
-    const resolvers: Array<(_result: CadGradingGroupResult | null) => void> = [];
-    const transport: SurfaceGradingTransport = {
-      alive: true,
-      deriveGrading: () => {
-        throw new Error('unused');
-      },
-      deriveGroupGrading: (): PendingSurfaceGroupGrading => {
-        let resolve!: (_result: CadGradingGroupResult | null) => void;
-        const done = new Promise<CadGradingGroupResult | null>((res) => {
-          resolve = res;
-        });
-        resolvers.push(resolve);
-        return { requestId: `owner-${resolvers.length}`, done, cancel: () => undefined };
-      },
-      cancel: () => undefined,
-      dispose: () => undefined,
-    };
+    setTin(tinCache, project, targetId);
+    const { transport, deferred } = deferredGroupTransport();
     const service = makeService('dgrp-owner', () => project, tinCache, transport);
     service.requestGroupGrading(groupId);
     await flush(2);
     service.requestGroupGrading(groupId);
     await flush(2);
-    expect(resolvers).toHaveLength(2);
+    expect(deferred).toHaveLength(2);
     // Tampered late first result: must never reach the cache or FAILED.
     const tampered: CadGradingGroupResult = {
-      ...stubGroupResult(groupId, inputs.revision),
+      ...computeGroupResult(deferred[0]!.request),
       daylightPoints: [0, 0, 5, 50, 0, 5, 50, 50, 5],
     };
-    resolvers[0]!(tampered);
+    deferred[0]!.resolve(tampered);
     await flush();
     expect(service.groupStatusOf(groupId).status).not.toBe('CURRENT');
     expect(service.groupStatusOf(groupId).status).not.toBe('FAILED');
-    resolvers[1]!(stubGroupResult(groupId, inputs.revision));
+    deferred[1]!.resolve(computeGroupResult(deferred[1]!.request));
     await flush();
     expect(service.groupStatusOf(groupId).status).toBe('CURRENT');
   });
