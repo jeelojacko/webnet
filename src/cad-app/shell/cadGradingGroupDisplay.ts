@@ -14,11 +14,17 @@
  * these arrows ARE consumed: the workspace renders them through the group
  * scene layers for the selected uncalculated group.
  */
-import type { GradingAccuracy, GradingSide, ResolvedGradingSource } from '../../engine/cad/grading/gradingTypes';
+import type { GradingAccuracy, GradingCriterion, GradingSide, ResolvedGradingSource } from '../../engine/cad/grading/gradingTypes';
 import type {
   CadGradingGroupResult,
   GroupDiagnostic,
 } from '../../engine/cad/grading/gradingGroupTypes';
+import {
+  gradingPlaneGradient,
+  miterSeam,
+  selectMiterRay,
+} from '../../engine/cad/grading/gradingCornerMath';
+import { gradingSideNormal } from '../../engine/cad/grading/gradingCourseFrame';
 import {
   buildGradingGroupDisplayLayers,
   type CadGradingGroupDisplayLayer,
@@ -274,7 +280,7 @@ export const buildGroupGradingSceneLayers = (
         curveCornerApproximated: false,
         daylight: [],
         triangles: [],
-        seam: miterSeamGhosts(row.memberSources),
+        seam: groupGhostSeam(row.memberSources, row.definition.side, row.definition.criterion),
         ghostArrows: groupGhostArrows(row.memberSources, row.definition.side),
         failedMarkers: [],
       });
@@ -313,11 +319,67 @@ export const groupGhostArrows = (
 };
 
 /**
- * Pre-calc miter seam ghosts where cheap: short bisector segments at every
- * interior joint (pure plan geometry, no target query). Screen-only, never
+ * Pre-calc miter seam ghosts from the analytic plane-intersection seam.
+ *
+ * Per-course longitudinal grade comes from the source itself
+ * (`gs = (endZ - startZ) / length`); the caller supplies the per-course
+ * cross-slope `g` (exact pre-target for a `fixed` criterion). Each joint
+ * resolves through gradingPlaneGradient → miterSeam → selectMiterRay.
+ * Coincident/ambiguous/inverted joints emit NO ghost for that joint —
+ * honest omission; the post-calc overlay is truth. Screen-only, never
  * persisted.
  */
 export const miterSeamGhosts = (
+  sources: ReadonlyArray<ResolvedGradingSource>,
+  side: GradingSide,
+  crossSlopes: ReadonlyArray<number>,
+  length = 3,
+): Array<{ x: number; y: number }> => {
+  const seam: Array<{ x: number; y: number }> = [];
+  for (let index = 0; index + 1 < sources.length; index += 1) {
+    const a = sources[index]!;
+    const b = sources[index + 1]!;
+    const g1 = crossSlopes[index];
+    const g2 = crossSlopes[index + 1];
+    if (g1 === undefined || g2 === undefined) continue;
+    if (!Number.isFinite(g1) || !Number.isFinite(g2)) continue;
+    if (!(a.length > 0) || !(b.length > 0)) continue;
+    const gs1 = (a.endZ - a.startZ) / a.length;
+    const gs2 = (b.endZ - b.startZ) / b.length;
+    const plane1 = gradingPlaneGradient(a, side, g1, gs1);
+    const plane2 = gradingPlaneGradient(b, side, g2, gs2);
+    if (!plane1 || !plane2) continue;
+    const direction = miterSeam(plane1, plane2);
+    if (!direction || 'coincident' in direction) continue;
+    const n1 = sideNormalOf(a, side);
+    const n2 = sideNormalOf(b, side);
+    if (!n1 || !n2) continue;
+    const ray = selectMiterRay(direction, n1, n2);
+    if (!ray || 'ambiguous' in ray || 'inverted' in ray) continue;
+    seam.push({ x: b.startX, y: b.startY }, { x: b.startX + ray.mx * length, y: b.startY + ray.my * length });
+  }
+  return seam;
+};
+
+/** Unit grading-side normal of a resolved source, null when degenerate. */
+const sideNormalOf = (
+  source: ResolvedGradingSource,
+  side: GradingSide,
+): { nx: number; ny: number } | null => {
+  const dx = source.endX - source.startX;
+  const dy = source.endY - source.startY;
+  const len = Math.hypot(dx, dy);
+  if (!(len > 0) || !Number.isFinite(len)) return null;
+  return gradingSideNormal(dx / len, dy / len, side);
+};
+
+/**
+ * Directional corner preview for `cut-fill` groups, where the corner side
+ * (cut vs fill) is unknowable pre-target so no exact g exists. Pure plan
+ * angle bisector — exact only for equal-slope flat joints, never solved
+ * geometry. Screen-only, never persisted.
+ */
+export const indicativeCornerGhosts = (
   sources: ReadonlyArray<ResolvedGradingSource>,
   length = 3,
 ): Array<{ x: number; y: number }> => {
@@ -341,4 +403,21 @@ export const miterSeamGhosts = (
     seam.push({ x: b.startX, y: b.startY }, { x: b.startX + bx * length, y: b.startY + by * length });
   }
   return seam;
+};
+
+/**
+ * Pre-calc seam ghost for a group row: the exact analytic seam for `fixed`
+ * (exact g known pre-target), the directional bisector preview for
+ * `cut-fill` (corner side unknowable pre-target — never solved geometry).
+ */
+export const groupGhostSeam = (
+  sources: ReadonlyArray<ResolvedGradingSource>,
+  side: GradingSide,
+  criterion: GradingCriterion,
+  length = 3,
+): Array<{ x: number; y: number }> => {
+  if (criterion.kind === 'fixed' && Number.isFinite(criterion.gradeRatio)) {
+    return miterSeamGhosts(sources, side, sources.map(() => criterion.gradeRatio), length);
+  }
+  return indicativeCornerGhosts(sources, length);
 };

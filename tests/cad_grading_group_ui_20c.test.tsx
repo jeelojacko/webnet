@@ -26,6 +26,8 @@ import {
   buildGroupGradingDisplayPass,
   buildGroupGradingSceneLayers,
   groupGhostArrows,
+  groupGhostSeam,
+  indicativeCornerGhosts,
   miterSeamGhosts,
 } from '../src/cad-app/shell/cadGradingGroupDisplay';
 import { buildGradingGroupDisplayLayers } from '../src/engine/cad/cadGradingGroupView';
@@ -445,7 +447,25 @@ describe('group display pass', () => {
     expect(arrows[0]!.to.y).toBeLessThan(arrows[0]!.from.y);
     const left = groupGhostArrows(row.memberSources!, 'left', 5);
     expect(left[0]!.to.y).toBeGreaterThan(left[0]!.from.y);
-    expect(miterSeamGhosts(row.memberSources!).length).toBe(2);
+    expect(miterSeamGhosts(row.memberSources!, 'right', [-0.5, -0.5]).length).toBe(2);
+    // Exact pre-calc seam: flat equal-slope 90° joint resolves to the 45° miter ray.
+    const flat = miterSeamGhosts(row.memberSources!, 'right', [-0.5, -0.5], 3);
+    const flatDx = flat[1]!.x - flat[0]!.x;
+    const flatDy = flat[1]!.y - flat[0]!.y;
+    expect(flatDx / 3).toBeCloseTo(Math.SQRT1_2, 9);
+    expect(flatDy / 3).toBeCloseTo(-Math.SQRT1_2, 9);
+    // Coincident planes (collinear equal-slope joint) emit NO ghost.
+    const collinear: typeof row.memberSources = [
+      { startX: 0, startY: 0, endX: 100, endY: 0, startZ: 10, endZ: 10, length: 100, reoriented: false, isArc: false },
+      { startX: 100, startY: 0, endX: 200, endY: 0, startZ: 10, endZ: 10, length: 100, reoriented: false, isArc: false },
+    ];
+    expect(miterSeamGhosts(collinear!, 'right', [-0.5, -0.5]).length).toBe(0);
+    // Cut-fill groups (corner side unknowable pre-target) keep the honest bisector preview.
+    expect(indicativeCornerGhosts(row.memberSources!).length).toBe(2);
+    expect(groupGhostSeam(row.memberSources!, 'right', { kind: 'fixed', gradeRatio: -0.5 }).length).toBe(2);
+    expect(groupGhostSeam(
+      row.memberSources!, 'right', { kind: 'cut-fill', cutGradeRatio: 0.5, fillGradeRatio: -1 / 3 },
+    ).length).toBe(2);
     const layers = buildGroupGradingSceneLayers(snap);
     expect(layers).toHaveLength(1);
     expect(layers[0]!.kind).toBe('ghost');
@@ -454,6 +474,54 @@ describe('group display pass', () => {
   });
 });
 
+describe('group exact-ghost oracle', () => {
+  it('resolves a differing-longitudinal-grade joint to the plane-intersection ray', () => {
+    // Hand-derived: T1=(1,0) gs1=0, T2=(0,1) gs2=0.1, g=-0.5 both, side right.
+    // N1=(0,-1), N2=(1,0); grad1=(0,0.5), grad2=(-0.5,0.1);
+    // d=grad1-grad2=(0.5,0.4); M=(-0.4,0.5)/sqrt(0.41); +M fails N1, so the
+    // ray is -M=(0.4,-0.5)/sqrt(0.41).
+    const inv = 1 / Math.sqrt(0.41);
+    const sources = [
+      { startX: 0, startY: 0, endX: 10, endY: 0, startZ: 10, endZ: 10, length: 10, reoriented: false, isArc: false },
+      { startX: 10, startY: 0, endX: 10, endY: 10, startZ: 10, endZ: 11, length: 10, reoriented: false, isArc: false },
+    ] as const;
+    const ghost = miterSeamGhosts([...sources], 'right', [-0.5, -0.5], 3);
+    expect(ghost.length).toBe(2);
+    expect(ghost[0]).toEqual({ x: 10, y: 0 });
+    expect((ghost[1]!.x - 10) / 3).toBeCloseTo(0.4 * inv, 9);
+    expect((ghost[1]!.y - 0) / 3).toBeCloseTo(-0.5 * inv, 9);
+  });
+});
+
+describe('group manager inquiry mount', () => {
+  it('mounts the inquiry panel (shared report builder) in the inquiry tab', () => {
+    const { project, groupId, cache, result } = currentSetup();
+    const groups = buildCadGradingGroupSnapshot(project, cache, cacheOf([result]), groupId);
+    const snapshot = {
+      gradingGroups: groups,
+      featureLine: buildCadFeatureLineSnapshot(project, []),
+      surface: { surfaces: [{ id: 'tgt-ui-20c', name: 'Target', status: 'CURRENT' }] },
+    } as unknown as CadWorkspaceSnapshot;
+    const actions = { runGradingGroupCommand: () => true } as unknown as CadShellActions;
+    const host = document.createElement('div');
+    document.body.appendChild(host);
+    const root: Root = createRoot(host);
+    act(() => {
+      root.render(
+        <CadGradingGroupManager snapshot={snapshot} actions={actions} initialTab="inquiry" onClose={() => {}} />,
+      );
+    });
+    try {
+      // Panel owns the report: same builder text plus its CSV affordance.
+      expect(host.querySelector('[data-cad-grading-group-inquiry]')).not.toBeNull();
+      expect(host.querySelector('[data-cad-grading-group-inquiry-report]')?.textContent).toContain('Grading Group Inquiry');
+      expect(host.querySelector('[data-cad-grading-group-csv]')).not.toBeNull();
+    } finally {
+      act(() => { root.unmount(); });
+      host.remove();
+    }
+  });
+});
 describe('group extract/bake snapshot semantics', () => {
   it('extracts and bakes with one history entry each and snapshot restore on redo', () => {
     const { project, groupId, cache, result } = currentSetup();

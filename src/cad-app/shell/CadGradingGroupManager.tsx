@@ -27,8 +27,8 @@ import {
   type GradingSlopeDirection,
 } from './cadGradingShell';
 import type { CadGradingGroupRow } from './cadGradingGroupSnapshot';
-import { buildGroupInquiryReport } from './cadGradingGroupReport';
-import { groupGhostArrows } from './cadGradingGroupDisplay';
+import { CadGradingGroupInquiryPanel } from './CadGradingGroupInquiryPanel';
+import { groupGhostArrows, groupGhostSeam } from './cadGradingGroupDisplay';
 import { buttonClass, inputClass } from '../../components/surveyCad/surveyManagerShared';
 import { Field, ManagerShell } from '../../components/surveyCad/surveyManagerShared.tsx';
 
@@ -444,22 +444,25 @@ export const CadGradingGroupManager: React.FC<CadGradingGroupManagerProps> = ({
           />
           {selected.memberSources != null ? (
             <p className="mt-1 text-[11px] text-slate-400" data-cad-grading-group-ghost-note>
-              Viewport shows {groupGhostArrows(selected.memberSources, selected.definition.side).length} side-preview arrows until calculated.
+              Viewport shows {groupGhostArrows(selected.memberSources, selected.definition.side).length} side-preview arrows +{' '}
+              {groupGhostSeam(selected.memberSources, selected.definition.side, selected.definition.criterion).length / 2} seam previews until calculated.
             </p>
           ) : null}
         </>
       ) : null}
       {tab === 'inquiry' && selected ? (
-        <pre className="mt-2 whitespace-pre-wrap text-[11px]" data-cad-grading-group-inquiry-report>
-          {buildGroupInquiryReport(
-            selected.definition,
-            selected.sourceName,
-            selected.targetName,
-            selected.status,
-            selected.accuracy,
-            selected.currentResult,
-          )}
-        </pre>
+        <CadGradingGroupInquiryPanel
+          row={{
+            id: selected.id,
+            name: selected.name,
+            definition: selected.definition,
+            sourceName: selected.sourceName,
+            targetName: selected.targetName,
+            status: selected.status,
+            accuracy: selected.accuracy,
+            result: selected.currentResult,
+          }}
+        />
       ) : null}
     </ManagerShell>
   );
