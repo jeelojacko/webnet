@@ -312,7 +312,8 @@ export type CadCommandKey =
   | 'SURFPURPOSE'
   | 'DESIGNSURFACE'
   | 'DESIGNAPPLY'
-  | 'DESIGNVOLUME';
+  | 'DESIGNVOLUME'
+  | 'DESIGNPATCH';
 export type CadCommandPhase = 'idle' | 'committed';
 
 export interface CadCommandState {
@@ -1806,6 +1807,18 @@ export type CadCommand =
       name?: string;
       layerId?: CadLayerId;
       styleId?: string;
+    }
+  | {
+      key: 'DESIGNPATCH';
+      groupId: string;
+      /** Cached CURRENT result snapshot (never recomputed here). */
+      result: CadGradingGroupResult;
+      expectedRevision: string;
+      sessionCurrent?: boolean;
+      name?: string;
+      layerId?: CadLayerId;
+      /** Undefined = keep the group style; null = clear. */
+      styleId?: string | null;
     };
 
 export interface CadTransaction {

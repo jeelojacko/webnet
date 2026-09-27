@@ -108,6 +108,7 @@ import { profileCommandDefinitions } from './cadTransactionsProfileCommands';
 import { sectionCommandDefinitions } from './cadTransactionsSectionCommands';
 import { featureLineCommandDefinitions } from './cadTransactionsFeatureLineCommands';
 import { designSurfaceCommandDefinitions } from './cadTransactionsDesignSurfaceCommands';
+import { designPatchCommandDefinitions } from './cadTransactionsDesignPatchCommands';
 import { gradingCommandDefinitions } from './cadTransactionsGradingCommands';
 import { gradingGroupCommandDefinitions } from './cadTransactionsGradingGroupCommands';
 import {
@@ -772,6 +773,7 @@ export const CAD_COMMAND_REGISTRY: Record<CadCommandKey, CadCommandDefinition<Ca
   DESIGNSURFACE: designSurfaceCommandDefinitions.DESIGNSURFACE as CadCommandDefinition<CadCommand>,
   DESIGNAPPLY: designSurfaceCommandDefinitions.DESIGNAPPLY as CadCommandDefinition<CadCommand>,
   DESIGNVOLUME: designSurfaceCommandDefinitions.DESIGNVOLUME as CadCommandDefinition<CadCommand>,
+  DESIGNPATCH: designPatchCommandDefinitions.DESIGNPATCH as CadCommandDefinition<CadCommand>,
 };
 
 export const createCadIdleCommandState = createIdleCommandState;
