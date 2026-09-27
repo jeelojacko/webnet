@@ -73,7 +73,8 @@ export type SurveyManagerKind =
   | 'surfaces'
   | 'profiles'
   | 'sections'
-  | 'gradings';
+  | 'gradings'
+  | 'grading-groups';
 
 /**
  * Phase 18D — per-point display facts precomputed in the workspace (resolver
@@ -244,6 +245,11 @@ export interface CadWorkspaceSnapshot {
    * workspace without grading wiring hides the node (never fake data).
    */
   grading?: import('./cadGradingSnapshot').CadGradingSnapshot | null;
+  /**
+   * Phase 20C — derived grading-group rows + session result status. Optional:
+   * a workspace without group wiring hides the node (never fake data).
+   */
+  gradingGroups?: import('./cadGradingGroupSnapshot').CadGradingGroupSnapshot | null;
   /** UI command keys with a live starter in the mounted workspace. */
   availableCommands: string[];
 }
@@ -291,6 +297,8 @@ export interface CadShellActions {
   runGradingCommand?: (_command: import('./cadGradingShell').CadGradingShellCommand) => boolean;
   /** Phase 20B — select a grading (Toolspace/manager/properties converge). */
   selectGrading?: (_gradingId: string | null) => void;
+  /** Phase 20C — select a grading group (Toolspace/manager/properties converge). */
+  selectGradingGroup?: (_groupId: string | null) => void;
   /** Phase 20B — open the grading manager (optional tab/inquiry focus). */
   openGradingManager?: (_selectedId?: string, _tab?: 'definition' | 'inquiry') => void;
   /** Phase 20B — explicit Calculate for one grading (never auto-started). */

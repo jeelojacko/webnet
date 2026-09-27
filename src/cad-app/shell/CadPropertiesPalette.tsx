@@ -10,6 +10,7 @@ import { SampleLinePropertiesBlock, SectionViewPropertiesBlock } from './CadSect
 import { AnalysisLegendPropertiesBlock, AnalysisPropertiesBlock } from './CadAnalysisProperties';
 import { CadAnnotationProperties } from '../annotation/CadAnnotationProperties';
 import { GradingPropertiesBlock } from './CadGradingProperties';
+import { GradingGroupPropertiesBlock } from './CadGradingGroupProperties';
 import type { CadAnnotationOpResult, CadAnnotationUiOp } from './cadShellTypes';
 
 interface CadPropertiesPaletteProps {
@@ -95,11 +96,14 @@ export const CadPropertiesPalette: React.FC<CadPropertiesPaletteProps> = ({ snap
   if (!snapshot.properties || snapshot.selectionCount === 0) {
     const selectedGrading =
       snapshot.grading?.gradings.find((entry) => entry.id === snapshot.grading?.selectedGradingId) ?? null;
+    const selectedGradingGroup =
+      snapshot.gradingGroups?.groups.find((entry) => entry.id === snapshot.gradingGroups?.selectedGroupId) ?? null;
     return (
       <div className="cad-shell-props" data-cad-properties="none">
         <h3>No selection</h3>
         {selectedSurface ? <SurfacePropertiesBlock row={selectedSurface} actions={actions} /> : null}
         {selectedGrading ? <GradingPropertiesBlock row={selectedGrading} /> : null}
+        {selectedGradingGroup ? <GradingGroupPropertiesBlock row={selectedGradingGroup} /> : null}
         {profileBlocks}
         {sectionBlocks}
         {analysisBlocks}

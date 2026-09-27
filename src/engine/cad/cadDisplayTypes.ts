@@ -117,6 +117,13 @@ export interface CadDisplayScene {
    * Export scenes ignore this field.
    */
   gradingLayers?: import('./cadGradingView').CadGradingDisplayLayer[];
+  /**
+   * Phase 20C — derived grading-group layers (fill + daylight + seam per
+   * CURRENT group, ghost arrows for the selected uncalculated group,
+   * failed markers for FAILED groups — never CAD entities).
+   * Export scenes ignore this field.
+   */
+  groupGradingLayers?: import('./cadGradingGroupView').CadGradingGroupDisplayLayer[];
   sampleLineLayers?: import('./cadSectionView').CadSampleLineDisplayLayer[];
   /**
    * Phase 18K — derived section-view layers (grid + traces + shading per
