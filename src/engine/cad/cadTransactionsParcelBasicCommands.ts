@@ -27,6 +27,7 @@ import type {
 } from './cadTypes';
 import { createStableRuntimeId } from '../id';
 import { buildParcelCourseIds } from './cadParcelCourses';
+import { parcelSplitBlockReason } from './cadParcelSharedEdit';
 export const parcelCreateCommand: CadCommandDefinition<{
   key: 'PARCEL_CREATE';
   sourceEntityIds: CadEntityId[];
@@ -164,6 +165,9 @@ export const parcelSplitCommand: CadCommandDefinition<{
       (entity): entity is CadLineEntity => entity.id === command.splitLineEntityId && entity.type === 'line',
     );
     if (!parcelEntity || !splitLineEntity) return null;
+
+    // Phase 19D: splitting a linked parcel consumes its courses; block fail-closed.
+    if (parcelSplitBlockReason(snapshot.project, parcelEntity.id)) return null;
 
     const splitDraft = cadBuildParcelSplitByLineDraft(parcelEntity, splitLineEntity);
     if (!splitDraft) return null;

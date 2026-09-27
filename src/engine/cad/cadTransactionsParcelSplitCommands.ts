@@ -15,6 +15,7 @@ import type { CadCommandDefinition } from './cadTransactions.types';
 import type { CadEntityId, CadParcelEntity } from './cadTypes';
 import { createStableRuntimeId } from '../id';
 import { buildParcelCourseIds } from './cadParcelCourses';
+import { parcelSplitBlockReason } from './cadParcelSharedEdit';
 export const parcelSplitBearingCommand: CadCommandDefinition<{
   key: 'PARCEL_SPLIT_BEARING';
   parcelEntityId: CadEntityId;
@@ -29,6 +30,9 @@ export const parcelSplitBearingCommand: CadCommandDefinition<{
       (entity): entity is CadParcelEntity => entity.id === command.parcelEntityId && entity.type === 'parcel',
     );
     if (!parcelEntity) return null;
+
+    // Phase 19D: splitting a linked parcel consumes its courses; block fail-closed.
+    if (parcelSplitBlockReason(snapshot.project, parcelEntity.id)) return null;
 
     const splitDraft = cadBuildParcelSplitByBearingDraft(
       parcelEntity,
@@ -203,6 +207,9 @@ export const parcelSplitAreaCommand: CadCommandDefinition<{
       (entity): entity is CadParcelEntity => entity.id === command.parcelEntityId && entity.type === 'parcel',
     );
     if (!parcelEntity) return null;
+
+    // Phase 19D: splitting a linked parcel consumes its courses; block fail-closed.
+    if (parcelSplitBlockReason(snapshot.project, parcelEntity.id)) return null;
 
     const splitDraft = cadBuildParcelSplitByAreaDraft(
       parcelEntity,

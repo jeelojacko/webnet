@@ -256,6 +256,30 @@ export const useSurveyCadWorkspace = (
     return applied;
   };
   /**
+   * Phase 19D — Properties Shared Boundary row actions. Unlink dispatches the
+   * registered PARCELUNLINK command (single undo entry, geometry untouched).
+   * Edit Shared starts the interactive shared-edit session for the row link.
+   */
+  const runParcelLinkAction = (
+    action: import('../../engine/cad/cadProperties').CadEntityPropertyRowAction,
+  ): { applied: boolean; reason?: string } => {
+    if (action.kind === 'parcel-unlink') {
+      const applied = runLayerCommand({
+        key: 'PARCELUNLINK',
+        boundaryId: action.linkId,
+      });
+      return applied ? { applied: true } : { applied: false, reason: 'Unlink rejected (engine command unavailable).' };
+    }
+    if (action.kind === 'parcel-shared-edit') {
+      commandState.startParcelSharedEditCommand(action.linkId);
+      return { applied: true };
+    }
+    return {
+      applied: false,
+      reason: 'Unknown parcel link action.',
+    };
+  };
+  /**
    * Phase 18M — route ONE staged LandXML preview through the atomic
    * deferred commit (single LANDXML_IMPORT transaction; the caller
    * schedules imported surfaces on the shared build queue). All-duplicate
@@ -567,6 +591,7 @@ export const useSurveyCadWorkspace = (
     historyDepth: history.undoStack.length,
     redoDepth: history.redoStack.length,
     runLayerCommand,
+    runParcelLinkAction,
     runLandXmlImport,
     /**
      * Phase 18N — one block table/reference op as an undoable history
@@ -664,6 +689,13 @@ export const useSurveyCadWorkspace = (
     runAnnotationOp,
     startParcelSplitBearingCommand: commandState.startParcelSplitBearingCommand,
     startParcelSplitAreaCommand: commandState.startParcelSplitAreaCommand,
+    startParcelDesignateCommand: commandState.startParcelDesignateCommand,
+    startParcelNumberCommand: commandState.startParcelNumberCommand,
+    startParcelLinkCommand: commandState.startParcelLinkCommand,
+    startParcelUnlinkCommand: commandState.startParcelUnlinkCommand,
+    startParcelCheckCommand: commandState.startParcelCheckCommand,
+    startParcelScheduleCommand: commandState.startParcelScheduleCommand,
+    startParcelSharedEditCommand: commandState.startParcelSharedEditCommand,
     startArc3PointCommand: commandState.startArc3PointCommand,
     startArcStartCenterEndCommand: commandState.startArcStartCenterEndCommand,
     startArcCenterStartEndCommand: commandState.startArcCenterStartEndCommand,

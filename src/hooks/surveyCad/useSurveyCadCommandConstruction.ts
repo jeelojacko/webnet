@@ -175,7 +175,15 @@ export const buildSnapConstructionContext = (
             : inactiveConstructionContext()
         : inactiveConstructionContext();
     // Phase 18O annotation picks need no construction scope (fixed anchors).
+    // Phase 19D network sessions are typed-input only (no picks at all).
     case 'MTEXT':
+    case 'PARCELDESIGNATE':
+    case 'PARCELNUMBER':
+    case 'PARCELLINK':
+    case 'PARCELUNLINK':
+    case 'PARCELCHECK':
+    case 'PARCELSCHEDULE':
+    case 'PARCELSHAREDEDIT':
     case 'LEADER':
     case 'DIM':
     case 'DIMLINEAR':

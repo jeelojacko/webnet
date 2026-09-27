@@ -43,6 +43,19 @@ import {
   parcelCourseLineCommand,
 } from './cadTransactionsParcelCourseCommands';
 import {
+  parcelDesignateCommand,
+  parcelNumberCommand,
+} from './cadTransactionsParcelPlanCommands';
+import {
+  parcelLinkCommand,
+  parcelUnlinkCommand,
+} from './cadTransactionsParcelLinkCommands';
+import { deleteParcelsWithSharedLinks, parcelSharedEditCommand } from './cadParcelSharedEdit';
+import {
+  parcelCheckCommand,
+  parcelScheduleCommand,
+} from './cadTransactionsParcelNetworkCommands';
+import {
   batchCogoCommand,
   polylineCommand,
   traverseCommand,
@@ -229,11 +242,16 @@ const eraseCommand: CadCommandDefinition<{ key: 'ERASE' }> = {
       return null;
     }
     const removedEntityIds = selectedEntities.map((entity) => entity.id);
-    const removedEntityIdSet = new Set(removedEntityIds);
-    const nextProject = replaceCadProjectEntities(
-      snapshot.project,
-      snapshot.project.entities.filter((entity) => !removedEntityIdSet.has(entity.id)),
-    );
+    // Phase 19D: deleting a parcel also drops its Shared Boundary links
+    // atomically (neighbors untouched, geometry byte-identical); one ERASE =
+    // one undo entry, and undo restores parcels and links together.
+    const withLinks = deleteParcelsWithSharedLinks(snapshot.project, removedEntityIds, {
+      confirm: true,
+    });
+    if (!withLinks.ok) return null;
+    // deleteParcelsWithSharedLinks removes the parcels and their links
+    // together; neighbors keep byte-identical geometry.
+    const nextProject = withLinks.project;
     return {
       nextSnapshot: {
         project: nextProject,
@@ -559,6 +577,13 @@ export const CAD_COMMAND_REGISTRY: Record<CadCommandKey, CadCommandDefinition<Ca
   POINTTABLE: pointTableCommand as CadCommandDefinition<CadCommand>,
   PARCELREPORT: parcelReportCommand as CadCommandDefinition<CadCommand>,
   PARCELDESC: parcelDescCommand as CadCommandDefinition<CadCommand>,
+  PARCELDESIGNATE: parcelDesignateCommand as CadCommandDefinition<CadCommand>,
+  PARCELNUMBER: parcelNumberCommand as CadCommandDefinition<CadCommand>,
+  PARCELLINK: parcelLinkCommand as unknown as CadCommandDefinition<CadCommand>,
+  PARCELUNLINK: parcelUnlinkCommand as unknown as CadCommandDefinition<CadCommand>,
+  PARCELSHAREDEDIT: parcelSharedEditCommand as unknown as CadCommandDefinition<CadCommand>,
+  PARCELCHECK: parcelCheckCommand as CadCommandDefinition<CadCommand>,
+  PARCELSCHEDULE: parcelScheduleCommand as CadCommandDefinition<CadCommand>,
   TABLESTYLE: tableStyleCommand as CadCommandDefinition<CadCommand>,
   SURVEYTABLE_EDIT: surveyTableEditCommand as CadCommandDefinition<CadCommand>,
   EDIT_ENTITY: editEntityCommand as CadCommandDefinition<CadCommand>,

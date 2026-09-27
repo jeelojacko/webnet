@@ -90,6 +90,9 @@ export const ParcelSurveyTablesNode: React.FC<{
 }> = ({ snapshot, actions }) => {
   const selectedParcelId =
     snapshot?.selectedEntityIds.find((id) => id.startsWith('cad-parcel')) ?? null;
+  // Phase 19D — designation is the primary parcel identity when set; fall
+  // back to the parcel name + area. Plan Role is display metadata only.
+  const selectedParcelEntry = snapshot?.parcel?.selectedParcel ?? null;
   const tables = (snapshot?.surveyTable?.tables ?? []).filter(
     (table) => table.tableKind === 'parcel-course' || table.tableKind === 'parcel-summary',
   );
@@ -98,6 +101,15 @@ export const ParcelSurveyTablesNode: React.FC<{
   };
   return (
     <TreeGroup label="Parcels">
+      {selectedParcelEntry ? (
+        <div className="cad-shell-tree-row" data-cad-parcel-designation={selectedParcelEntry.id}>
+          {selectedParcelEntry.designation}
+          {selectedParcelEntry.parcelName && selectedParcelEntry.parcelName !== selectedParcelEntry.designation
+            ? ` / ${selectedParcelEntry.parcelName}`
+            : ''}
+          {` / ${selectedParcelEntry.areaSquareMeters.toFixed(3)} m²`}
+        </div>
+      ) : null}
       <div className="cad-shell-tree-row" data-cad-parcel-tables="courses">
         Courses
       </div>

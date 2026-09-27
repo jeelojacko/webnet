@@ -38,6 +38,7 @@ import {
   buildHelmertPanelState,
 } from './useSurveyCadTransformPanel';
 import { buildProjectTransformPanelState } from './useSurveyCadProjectTransformPanel';
+import { handleSurveyCadParcelNetworkSubmit } from './useSurveyCadParcelNetworkSubmit';
 import { handleSurveyCadTypedSubmit } from './useSurveyCadTypedSubmit';
 import { handleSurveyCadConsumePoint } from './useSurveyCadConsumePoint';
 import { handleSurveyCadDefaultSubmit } from './useSurveyCadDefaultSubmit';
@@ -76,6 +77,14 @@ export const useSurveyCadCommands = ({
     .map((entity) => entity.stationId);
   const [session, setSession] = useState<CommandSession | null>(null);
   const sessionRef = useRef<CommandSession | null>(session);
+  const selectedParcelEntityIds = useMemo(() => {
+    const parcelIds = new Set(
+      history.present.project.entities
+        .filter((entity) => entity.type === 'parcel')
+        .map((entity) => entity.id),
+    );
+    return (selectedEntityIds ?? []).filter((id) => parcelIds.has(id));
+  }, [history.present.project, selectedEntityIds]);
   const selectedLineCommandPoints = useMemo(
     () => buildSelectedLineCommandPoints(selectedLineForCoreCogo),
     [selectedLineForCoreCogo],
@@ -308,6 +317,17 @@ export const useSurveyCadCommands = ({
     ) {
       return;
     }
+    if (
+      handleSurveyCadParcelNetworkSubmit({
+        applyHistoryUpdate,
+        replaceSession,
+        session,
+        project: history.present.project,
+        selectedParcelEntityIds,
+      })
+    ) {
+      return;
+    }
     handleSurveyCadDefaultSubmit({
       applyHistoryUpdate,
       commitArcDefinition,
@@ -353,6 +373,7 @@ export const useSurveyCadCommands = ({
     selectedAlignmentForStationing,
     selectedParcelForBearingSplit,
     selectedParcelForAreaSplit,
+    selectedParcelEntityIds,
     selectionCount,
     selectedEntityIds,
     surveyPointEntityIdsInStationOrder,

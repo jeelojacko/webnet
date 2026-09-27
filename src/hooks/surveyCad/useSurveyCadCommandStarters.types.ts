@@ -23,6 +23,13 @@ export interface SurveyCadCommandStarters {
   startBatchCogoCommand: () => void;
   startParcelSplitBearingCommand: () => void;
   startParcelSplitAreaCommand: () => void;
+  startParcelDesignateCommand: () => void;
+  startParcelNumberCommand: () => void;
+  startParcelLinkCommand: () => void;
+  startParcelUnlinkCommand: () => void;
+  startParcelCheckCommand: () => void;
+  startParcelScheduleCommand: () => void;
+  startParcelSharedEditCommand: (_linkId?: string) => void;
   startArc3PointCommand: () => void;
   startArcStartCenterEndCommand: () => void;
   startArcCenterStartEndCommand: () => void;
@@ -106,6 +113,8 @@ export interface BuildSurveyCadCommandStartersOptions {
   selectedAlignmentForStationing: CadAlignmentEntity | null;
   selectedParcelForBearingSplit: CadParcelEntity | null;
   selectedParcelForAreaSplit: CadParcelEntity | null;
+  /** Parcel ids in pick order (19D network sessions capture these at start). */
+  selectedParcelEntityIds?: string[];
   selectionCount: number;
   /** Current selection in pick order (survey-table source capture). */
   selectedEntityIds?: string[];

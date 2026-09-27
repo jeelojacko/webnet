@@ -68,6 +68,7 @@ import {
   sumOffsets,
 } from './annotation/cadAnnotationPlacement';
 import { buildCadProjectLookup, type CadProjectLookup } from './cadProjectLookup';
+import { cadParcelPlanInfo, cadParcelPlanRole } from './cadParcelPlanInfo';
 import {
   describeParcelArcCourse,
   parcelCourseCanonicalKind,
@@ -401,6 +402,24 @@ const buildParcelLabelPrimitive = (
     courseGeometry: entity.courseGeometry,
   });
   if (!metrics) return [];
+  // Phase 19D: designation rides the EXISTING parcel label primitive (no new
+  // label framework). Legacy parcels (no planInfo) keep the byte-identical
+  // area/perimeter text. Plan Role is display metadata only and is appended
+  // as a short tag for overlay roles; presentation colors stay with the
+  // layer/style, never hard-coded per role.
+  const planInfo = cadParcelPlanInfo(entity);
+  const role = cadParcelPlanRole(entity);
+  const roleTag = role === 'lot' || role === 'remainder' ? null : role.toUpperCase();
+  const header = planInfo?.designation
+    ? roleTag
+      ? `${planInfo.designation} (${roleTag})`
+      : planInfo.designation
+    : null;
+  const text = [
+    ...(header ? [header] : []),
+    `${entity.areaSquareMeters.toFixed(3)} m²`,
+    `${entity.perimeterMeters.toFixed(3)} m`,
+  ].join('\n');
   return [{
     kind: 'text',
     id: `primitive:${entity.id}:parcel-label`,
@@ -408,7 +427,7 @@ const buildParcelLabelPrimitive = (
     sourceEntityId: entity.id,
     stroke: sourceLabelStroke(ctx, entity),
     point: metrics.centroid,
-    text: `${entity.areaSquareMeters.toFixed(3)} m²\n${entity.perimeterMeters.toFixed(3)} m`,
+    text,
     fontSize: textFontSize(project, entity, 11, ctx.lookup),
     textAnchor: 'middle',
   }];

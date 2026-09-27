@@ -3,6 +3,7 @@ import type { CadEntityId } from '../../engine/cad/cadTypes';
 import { cadConvertAreaSquareMeters, type CadParcelReportSummary } from '../../engine/cad/cadCogo';
 import type {
   CadEntityPropertyEditField,
+  CadEntityPropertyRowAction,
   CadPropertiesPanelState,
 } from '../../engine/cad/cadProperties';
 import type { CadPropertiesEditOutcome } from '../../hooks/surveyCad/surveyCadPropertiesEdit';
@@ -26,6 +27,11 @@ interface SurveyCadPropertiesPanelProps {
     _field: CadEntityPropertyEditField,
     _value: string,
   ) => CadPropertiesEditOutcome;
+  /**
+   * Phase 19D — row actions (Unlink / Edit Shared) dispatched from the parcel
+   * Shared Boundary rows. Optional: absent = actions render disabled.
+   */
+  onParcelRowAction?: (_action: CadEntityPropertyRowAction) => { applied: boolean; reason?: string };
 }
 
 const SurveyCadPropertiesPanel: React.FC<SurveyCadPropertiesPanelProps> = ({
@@ -42,6 +48,7 @@ const SurveyCadPropertiesPanel: React.FC<SurveyCadPropertiesPanelProps> = ({
   onStartDrag,
   onSelectEntity,
   onEditField,
+  onParcelRowAction,
 }) => {
   const [selectedTypeKey, setSelectedTypeKey] = useState<CadEntityId | null>(
     panelState.mode === 'multi' ? panelState.defaultTypeKey : null,
@@ -294,7 +301,29 @@ const SurveyCadPropertiesPanel: React.FC<SurveyCadPropertiesPanelProps> = ({
                   );
                 })()
               ) : (
-                <span>{row.value}</span>
+                <span className="cad-shell-properties-value">
+                  {row.value}
+                  {row.actions?.map((action) => (
+                    <button
+                      key={`${action.kind}:${action.linkId}`}
+                      type="button"
+                      className="cad-shell-tree-action"
+                      disabled={action.disabledReason != null}
+                      title={action.disabledReason ?? action.label}
+                      onClick={() => {
+                        const outcome = onParcelRowAction?.(action);
+                        setEditMessage(
+                          outcome && !outcome.applied
+                            ? (outcome.reason ?? 'Action not applied.')
+                            : null,
+                        );
+                      }}
+                      data-survey-cad-properties-action={`${action.kind}:${action.linkId}`}
+                    >
+                      {action.label}
+                    </button>
+                  ))}
+                </span>
               )}
             </React.Fragment>
           ))}

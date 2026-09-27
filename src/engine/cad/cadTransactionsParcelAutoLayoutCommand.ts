@@ -23,6 +23,7 @@ import {
 import { resolveParcelLayoutFrontageSource } from './cadTransactionsParcelLayoutFrontage';
 import { createStableRuntimeId } from '../id';
 import { buildParcelCourseIds } from './cadParcelCourses';
+import { parcelSplitBlockReason } from './cadParcelSharedEdit';
 
 export const parcelLayoutAutoCommand: CadCommandDefinition<{
   key: 'PARCEL_LAYOUT_AUTO';
@@ -38,6 +39,8 @@ export const parcelLayoutAutoCommand: CadCommandDefinition<{
       (entity): entity is CadParcelEntity => entity.id === command.parcelEntityId && entity.type === 'parcel',
     );
     if (!parcelEntity) return null;
+    // Phase 19D: auto layout consumes the parent parcel; block when linked.
+    if (parcelSplitBlockReason(snapshot.project, parcelEntity.id)) return null;
     const resolvedFrontage = resolveParcelLayoutFrontageSource(
       snapshot,
       parcelEntity,

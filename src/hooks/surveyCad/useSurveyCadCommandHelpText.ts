@@ -242,5 +242,19 @@ export const helpTextForSession = (session: CommandSession | null): string => {
       return 'CURVELABEL: click an arc to label.';
     case 'SURVEYTABLE':
       return 'SURVEYTABLE: sources are captured from the current selection; click the insertion point to commit (one undoable transaction).';
+    case 'PARCELDESIGNATE':
+      return 'PARCELDESIGNATE: parcels are captured from the selection; type `designation[; role][; description]` (Plan Role: lot, remainder, road, right-of-way, easement, other).';
+    case 'PARCELNUMBER':
+      return 'PARCELNUMBER: parcels are captured from the selection; type `[prefix][, start][, pad]`, empty for Lot 1, 2, …. Duplicate lot designations block.';
+    case 'PARCELLINK':
+      return 'PARCELLINK: select 2+ parcels, then press Enter to link every exactly-coincident course pair (refs only, geometry unchanged).';
+    case 'PARCELUNLINK':
+      return 'PARCELUNLINK: press Enter to list links on the selection, then type a number or ALL. Geometry is unchanged.';
+    case 'PARCELCHECK':
+      return 'PARCELCHECK: read-only plan-topology QA over the selection (or the whole plan when nothing is selected).';
+    case 'PARCELSCHEDULE':
+      return 'PARCELSCHEDULE: read-only live schedule over the selection (or the whole plan when nothing is selected).';
+    case 'PARCELSHAREDEDIT':
+      return 'PARCELSHAREDEDIT: edits both sides of one link atomically; `from x,y` / `to x,y` moves the shared endpoint, `line` straightens, `bulge <n>` sets the shared arc.';
   }
 };

@@ -204,16 +204,29 @@ export const insertParcelCourseVertex = ({
   courseIndex,
   point,
   label,
+  linkedCourseIds,
 }: {
   parcel: CadParcelEntity;
   courseIndex: number;
   point: CadDisplayPoint;
   label?: string;
+  /**
+   * Phase 19D shared-boundary guard: the linked course id set for this parcel
+   * (from `listLinkedCourseIds`). The retiring course id must not be in it, so
+   * a future wiring cannot orphan a link by inserting a vertex on it.
+   */
+  linkedCourseIds?: ReadonlySet<string>;
 }): CadParcelEntity | null => {
   const ring = buildParcelRing(parcel);
   if (ring.length === 0) return null;
   if (!ring[courseIndex]) return null;
   const ensured = ensureParcelCourseIds(parcel);
+  // Retire the old course id: it lives at the course's `from` raw index.
+  const retireAt = ring[courseIndex]!.rawIndex;
+  // Keep the literal in sync with cadParcelSharedEdit.PARCEL_SHARED_BOUNDARY_LINKED
+  // (importing it here would create a runtime import cycle).
+  const retiringId = ensured.courseIds?.[retireAt] ?? buildParcelCourseId(parcel.id, retireAt);
+  if (linkedCourseIds != null && linkedCourseIds.has(retiringId)) return null;
   const vertexCount = ensured.vertices.length;
   const isClosingLeg = courseIndex === ring.length - 1;
   // Raw insert position: before the course's `to` vertex, except the closing
@@ -231,8 +244,6 @@ export const insertParcelCourseVertex = ({
     label?.trim() ? label.trim() : normalizeParcelVertexLabel(undefined, rawInsertAt),
   );
   const courseIds = [...(ensured.courseIds ?? [])];
-  // Retire the old course id: it lives at the course's `from` raw index.
-  const retireAt = ring[courseIndex]!.rawIndex;
   courseIds.splice(retireAt, 1, newIdA);
   courseIds.splice(rawInsertAt, 0, newIdB);
   // Phase 19C: course geometry mirrors the id splices so the length
@@ -287,9 +298,16 @@ export type DeleteParcelCourseVertexResult =
 export const deleteParcelCourseVertex = ({
   parcel,
   vertexIndex,
+  linkedCourseIds,
 }: {
   parcel: CadParcelEntity;
   vertexIndex: number;
+  /**
+   * Phase 19D shared-boundary guard: the linked course id set for this parcel
+   * (from `listLinkedCourseIds`). Merging either adjacent course would retire
+   * its id, so a linked course blocks the delete.
+   */
+  linkedCourseIds?: ReadonlySet<string>;
 }): DeleteParcelCourseVertexResult => {
   const block = (reason: string): DeleteParcelCourseVertexResult => ({ ok: false, reason });
   const ring = buildParcelRing(parcel);
@@ -308,6 +326,20 @@ export const deleteParcelCourseVertex = ({
   const prevEntry = ring[prevPos]!;
   const removeEntry = ring[vertexIndex]!;
   const nextEntry = ring[(vertexIndex + 1) % ring.length]!;
+  if (linkedCourseIds != null && linkedCourseIds.size > 0) {
+    const prevId =
+      ensured.courseIds?.[prevEntry.rawIndex] ?? buildParcelCourseId(parcel.id, prevEntry.rawIndex);
+    const removeId =
+      ensured.courseIds?.[removeEntry.rawIndex] ?? buildParcelCourseId(parcel.id, removeEntry.rawIndex);
+    const retiring = [prevId, removeId].find((id) => linkedCourseIds.has(id));
+    if (retiring != null) {
+      // Keep the literal in sync with cadParcelSharedEdit.PARCEL_SHARED_BOUNDARY_LINKED.
+      return block(
+        'PARCEL_SHARED_BOUNDARY_LINKED: vertex delete would retire linked course ' +
+          `${retiring}; use Edit Shared Boundary or Unlink first.`,
+      );
+    }
+  }
   const prevKind = parcelCourseCanonicalKind(geometry?.[prevEntry.rawIndex]);
   const nextKind = parcelCourseCanonicalKind(geometry?.[removeEntry.rawIndex]);
   let merged: CadParcelCourseGeometry = { kind: 'line' };

@@ -328,9 +328,10 @@ describe('18N block entity wiring', () => {
     const project = { ...createBlankCadProject({ name: 'Blocks', units: 'm' }), blockDefinitions: [lShapeDefinition()] };
     const cloned = cloneCadProject(project);
     // 18O appends the annotation tables + settings after the block library;
-    // 18U appends the analysis tables after those. Clone must keep that
-    // trailing order (key-order-sensitive signatures).
-    expect(Object.keys(cloned).at(-1)).toBe('currentSurveyTableStyleId');
+    // 18U appends the analysis tables after those; 19D appends the shared
+    // parcel boundary relationships last. Clone must keep that trailing
+    // order (key-order-sensitive signatures).
+    expect(Object.keys(cloned).at(-1)).toBe('sharedParcelBoundaries');
     expect(cloned.blockDefinitions?.[0]).not.toBe(project.blockDefinitions?.[0]);
     expect(cloned.blockDefinitions?.[0].entities[0]).not.toBe(project.blockDefinitions?.[0].entities[0]);
     expect(cloned.blockDefinitions).toEqual(project.blockDefinitions);

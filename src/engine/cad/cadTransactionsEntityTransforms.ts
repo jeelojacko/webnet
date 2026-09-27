@@ -17,6 +17,7 @@ import type {
   CadProject,
 } from './cadTypes';
 import { syncEditedEntityDependencies } from './cadTransactionsLinkedEntities';
+import { parcelGripEditBlockReason } from './cadParcelSharedEdit';
 
 export const translateEntity = (entity: CadEntity, deltaX: number, deltaY: number): CadEntity => {
   switch (entity.type) {
@@ -376,6 +377,11 @@ export const applyCadGripEdit = (
 ): CadProject | null => {
   const entity = project.entities.find((candidate) => candidate.id === command.entityId && !candidate.locked);
   if (!entity) return null;
+  // Phase 19D: a vertex grip on either side of a Shared Boundary must go
+  // through PARCELSHAREDEDIT; block with zero mutation/history.
+  if (entity.type === 'parcel' && parcelGripEditBlockReason(project, entity, command.vertexIndex)) {
+    return null;
+  }
   const updatedEntity = updateEntityFromGrip(
     entity,
     command.gripKind,

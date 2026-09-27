@@ -178,6 +178,13 @@ export interface UseSurveyCadWorkspaceResult {
     | 'SKEW_INTX'
     | 'PARCEL_SPLIT_BEARING'
     | 'PARCEL_SPLIT_AREA'
+    | 'PARCELDESIGNATE'
+    | 'PARCELNUMBER'
+    | 'PARCELLINK'
+    | 'PARCELUNLINK'
+    | 'PARCELCHECK'
+    | 'PARCELSCHEDULE'
+    | 'PARCELSHAREDEDIT'
     | 'MOVE'
     | 'COPY'
     | 'ROTATE'
@@ -265,6 +272,13 @@ export interface UseSurveyCadWorkspaceResult {
   ) => import('../../cad-app/annotation/cadAnnotationUiTypes').CadAnnotationOpResult;
   startParcelSplitBearingCommand: () => void;
   startParcelSplitAreaCommand: () => void;
+  startParcelDesignateCommand: () => void;
+  startParcelNumberCommand: () => void;
+  startParcelLinkCommand: () => void;
+  startParcelUnlinkCommand: () => void;
+  startParcelCheckCommand: () => void;
+  startParcelScheduleCommand: () => void;
+  startParcelSharedEditCommand: (_linkId?: string) => void;
   startArc3PointCommand: () => void;
   startArcStartCenterEndCommand: () => void;
   startArcCenterStartEndCommand: () => void;
@@ -373,6 +387,14 @@ export interface UseSurveyCadWorkspaceResult {
   ) => import('./surveyCadPropertiesEdit').CadPropertiesEditOutcome;
   /** Dispatch one undoable command (LAYER_* family); false when rejected. */
   runLayerCommand: (_command: import('../../engine/cad/cadTransactions.types').CadCommand) => boolean;
+  /**
+   * Phase 19D — Properties Shared Boundary row action. Unlink dispatches
+   * PARCELUNLINK; Edit Shared returns a documented "session required"
+   * no-op until the interactive shared-edit session lands.
+   */
+  runParcelLinkAction: (
+    _action: import('../../engine/cad/cadProperties').CadEntityPropertyRowAction,
+  ) => { applied: boolean; reason?: string };
   /** Phase 18N — one block table/reference op (undoable); interim seam until BLOCK_* transactions land. */
   runBlockOp: (_op: import('../../cad-app/blocks/cadBlockUiCommands').CadBlockUiOp) => {
     applied: boolean;

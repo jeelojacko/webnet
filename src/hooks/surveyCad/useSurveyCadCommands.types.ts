@@ -101,6 +101,13 @@ export interface UseSurveyCadCommandsResult {
   startCurveLabelCommand: () => void;
   startParcelSplitBearingCommand: () => void;
   startParcelSplitAreaCommand: () => void;
+  startParcelDesignateCommand: () => void;
+  startParcelNumberCommand: () => void;
+  startParcelLinkCommand: () => void;
+  startParcelUnlinkCommand: () => void;
+  startParcelCheckCommand: () => void;
+  startParcelScheduleCommand: () => void;
+  startParcelSharedEditCommand: (_linkId?: string) => void;
   startArc3PointCommand: () => void;
   startArcStartCenterEndCommand: () => void;
   startArcCenterStartEndCommand: () => void;

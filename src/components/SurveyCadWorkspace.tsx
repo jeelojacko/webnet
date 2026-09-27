@@ -44,6 +44,7 @@ import type { ActiveCommandKey } from '../hooks/surveyCad/useSurveyCadCommandTyp
 import type { CadShellActions, CadWorkspaceSnapshot, SurveyManagerKind } from '../cad-app/shell/cadShellTypes';
 import { buildCadSurveySnapshot } from '../cad-app/shell/cadSurveySnapshot';
 import { buildCadSurveyTableSnapshot } from '../cad-app/shell/cadSurveyTableSnapshot';
+import { buildCadParcelSnapshot } from '../cad-app/shell/cadParcelSnapshot';
 import { buildCadBlockSnapshot } from '../cad-app/shell/cadBlockSnapshot';
 import { withBlockHoverTitles } from '../cad-app/blocks/cadBlockOverlay';
 import {
@@ -1439,6 +1440,13 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
     BATCH_COGO: cadWorkspace.startBatchCogoCommand,
     PARCEL_SPLIT_BEARING: cadWorkspace.startParcelSplitBearingCommand,
     PARCEL_SPLIT_AREA: cadWorkspace.startParcelSplitAreaCommand,
+    PARCELDESIGNATE: cadWorkspace.startParcelDesignateCommand,
+    PARCELNUMBER: cadWorkspace.startParcelNumberCommand,
+    PARCELLINK: cadWorkspace.startParcelLinkCommand,
+    PARCELUNLINK: cadWorkspace.startParcelUnlinkCommand,
+    PARCELCHECK: cadWorkspace.startParcelCheckCommand,
+    PARCELSCHEDULE: cadWorkspace.startParcelScheduleCommand,
+    PARCELSHAREDEDIT: () => cadWorkspace.startParcelSharedEditCommand(),
     LINETABLE: cadWorkspace.startLineTableCommand,
     CURVETABLE: cadWorkspace.startCurveTableCommand,
     PARCELTABLE: cadWorkspace.startParcelTableCommand,
@@ -1543,6 +1551,7 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
       dependencyStatus: dependencySummary.status,
       survey: buildCadSurveySnapshot(activeProject, selectedEntityIds),
       surveyTable: buildCadSurveyTableSnapshot(activeProject, selectedEntityIds),
+      parcel: buildCadParcelSnapshot(activeProject, selectedEntityIds),
       blocks: buildCadBlockSnapshot(activeProject, selectedEntityIds, blockInsertPick),
       annotation: cadWorkspace.annotationSnapshot,
       f2f: buildCadF2FSnapshot(activeProject, activeCatalog, catalogStatus),
@@ -1922,7 +1931,30 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
       clearSelection,
       eraseSelection,
       selectEntities: (entityIds, append) => cadWorkspace.selectEntities(entityIds, append),
+      // Phase 19D — Toolspace Parcel Network "Zoom": fit the viewport to one
+      // parcel's vertex bounds (same mechanism as Zoom Extents, scoped).
+      zoomToParcel: (parcelId) => {
+        const parcel = activeProject.entities.find(
+          (entity) => entity.id === parcelId && entity.type === 'parcel',
+        );
+        if (!parcel || parcel.type !== 'parcel' || parcel.vertices.length === 0) return;
+        const xs = parcel.vertices.map((vertex) => vertex.x);
+        const ys = parcel.vertices.map((vertex) => vertex.y);
+        const bounds = cloneBounds({
+          minX: Math.min(...xs),
+          minY: Math.min(...ys),
+          maxX: Math.max(...xs),
+          maxY: Math.max(...ys),
+        });
+        if (!bounds) return;
+        setViewBounds(bounds);
+        setViewport({ zoom: 1, panX: 0, panY: 0 });
+      },
       editField: (entityId, field, value) => cadWorkspace.editPropertiesField(entityId, field, value),
+      startParcelSharedEdit: (linkId) => {
+        cadWorkspace.startParcelSharedEditCommand(linkId);
+        return true;
+      },
       runLayerCommand: (command) => cadWorkspace.runLayerCommand(command),
       runSurveyCommand: (command) => cadWorkspace.runLayerCommand(command),
       // Phase 18Y — deterministic pre-commit composition of two CURRENT

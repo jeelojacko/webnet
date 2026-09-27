@@ -119,6 +119,12 @@ export const createDefaultCadSurveyTableStyle = (): CadSurveyTableStyle => ({
   description: 'Default survey table style.',
 });
 
+// 19D-PARCEL-FABRIC: 'parcel-schedule' table kind deferred. The pure-derive
+// schedule (cadParcelSchedule.ts) already satisfies associativity (rows keyed
+// by parcelId, live values, explicit order helpers); registering a new
+// CadSurveyTableKind would complicate the 19A resolve/derive/persistence
+// contract (labels, columns, row sources, BROKEN_REFERENCE). Revisit when a
+// persisted schedule table with explicit row order is required.
 export const CAD_SURVEY_TABLE_KIND_LABELS: Record<CadSurveyTableKind, string> = {
   line: 'Line',
   curve: 'Curve',

@@ -33,11 +33,24 @@ import {
 } from './cadPropertiesModel';
 import type {
   CadEntityPropertyRow,
+  CadEntityPropertyRowAction,
   CadPropertiesEntityView,
   CadPropertiesPanelState,
   CadPropertiesTypeGroup,
 } from './cadPropertiesModel';
 import { resolveCadParcelCourses } from './cadParcelCourses';
+import {
+  cadParcelPlanDesignation,
+  cadParcelPlanInfo,
+  cadParcelPlanRole,
+  type CadParcelPlanRole,
+} from './cadParcelPlanInfo';
+import {
+  deriveCadParcelSharedBoundaryStatus,
+  readCadParcelSharedBoundaries,
+  resolveCadParcelSharedBoundaryEnd,
+  resolveCadParcelSharedBoundaryGeometry,
+} from './cadParcelSharedBoundary';
 import type {
   CadAlignmentEntity,
   CadArcEntity,
@@ -48,6 +61,7 @@ import type {
 export type {
   CadEntityPropertyEditField,
   CadEntityPropertyRow,
+  CadEntityPropertyRowAction,
   CadPropertiesEntityView,
   CadPropertiesPanelState,
   CadPropertiesTypeGroup,
@@ -279,6 +293,68 @@ const parcelInquiryRows = (entity: Extract<CadEntity, { type: 'parcel' }>): CadE
   return rows;
 };
 
+/** Phase 19D — Plan Role is user-assigned display metadata, never legal. */
+const PARCEL_PLAN_ROLE_LABEL: Record<CadParcelPlanRole, string> = {
+  lot: 'Lot',
+  remainder: 'Remainder',
+  road: 'Road',
+  'right-of-way': 'Right-of-Way',
+  easement: 'Easement',
+  other: 'Other',
+};
+
+/**
+ * Phase 19D — Shared Boundary inquiry rows for one parcel: designation /
+ * course / status / length per link, with Edit Shared (session required) and
+ * Unlink actions. Refs resolve through the canonical shared-boundary seam;
+ * dangling refs read BROKEN_REFERENCE, never rebound.
+ */
+const parcelSharedBoundaryRows = (
+  project: CadProject,
+  entity: Extract<CadEntity, { type: 'parcel' }>,
+): CadEntityPropertyRow[] => {
+  const boundaries = readCadParcelSharedBoundaries(project).filter(
+    (boundary) => boundary.first.parcelId === entity.id || boundary.second.parcelId === entity.id,
+  );
+  const rows: CadEntityPropertyRow[] = [
+    row('linked-boundaries', 'Linked Boundaries', String(boundaries.length)),
+  ];
+  for (const boundary of boundaries) {
+    const ownIsFirst = boundary.first.parcelId === entity.id;
+    const otherEnd = ownIsFirst ? boundary.second : boundary.first;
+    const otherParcel = project.entities.find(
+      (candidate) => candidate.id === otherEnd.parcelId && candidate.type === 'parcel',
+    );
+    const otherDesignation =
+      otherParcel?.type === 'parcel' ? cadParcelPlanDesignation(otherParcel) : otherEnd.parcelId;
+    const otherResolved = resolveCadParcelSharedBoundaryEnd(project, otherEnd);
+    const otherCourse =
+      otherResolved != null
+        ? `${otherResolved.course.fromLabel}-${otherResolved.course.toLabel}`
+        : otherEnd.courseId;
+    const status = deriveCadParcelSharedBoundaryStatus(project, boundary);
+    const geometry = resolveCadParcelSharedBoundaryGeometry(project, boundary);
+    const actions: CadEntityPropertyRowAction[] = [
+      {
+        kind: 'parcel-shared-edit',
+        linkId: boundary.id,
+        label: 'Edit Shared',
+      },
+      { kind: 'parcel-unlink', linkId: boundary.id, label: 'Unlink' },
+    ];
+    rows.push(
+      row(`shared:${boundary.id}:with`, 'Shared With', `${otherDesignation} · ${otherCourse}`, undefined, actions),
+      row(`shared:${boundary.id}:status`, 'Shared Status', status),
+      row(
+        `shared:${boundary.id}:length`,
+        'Shared Length',
+        geometry == null ? '--' : numeric(geometry.lengthMeters),
+      ),
+    );
+  }
+  return rows;
+};
+
 const vertexRows = (entity: Extract<CadEntity, { type: 'polyline' | 'polygon' | 'parcel' }>): CadEntityPropertyRow[] =>
   entity.vertices.flatMap((vertex, index) => {
     const label = entity.vertexLabels[index] ?? `V${index + 1}`;
@@ -400,6 +476,13 @@ const buildEntityProperties = (project: CadProject, entity: CadEntity): CadEntit
       rows.push(
         row('name', 'Name', getCadEntityEditableName(entity), { kind: 'entity-name' }),
         row('parcel', 'Parcel', entity.parcelName),
+        row('plan-designation', 'Plan Designation', cadParcelPlanInfo(entity)?.designation ?? '--'),
+        row('plan-role', 'Plan Role', PARCEL_PLAN_ROLE_LABEL[cadParcelPlanRole(entity)]),
+      );
+      if (cadParcelPlanInfo(entity)?.description != null) {
+        rows.push(row('plan-description', 'Description', cadParcelPlanInfo(entity)!.description!));
+      }
+      rows.push(
         row('area', 'Area', entity.areaSquareMeters == null ? '--' : numeric(entity.areaSquareMeters)),
         row('perimeter', 'Perimeter', entity.perimeterMeters == null ? '--' : numeric(entity.perimeterMeters)),
         row('closure-de', 'Closure dE', entity.closureDeltaX == null ? '--' : numeric(entity.closureDeltaX)),
@@ -411,6 +494,7 @@ const buildEntityProperties = (project: CadProject, entity: CadEntity): CadEntit
         ),
       );
       rows.push(...parcelInquiryRows(entity));
+      rows.push(...parcelSharedBoundaryRows(project, entity));
       rows.push(...vertexRows(entity));
       return rows;
     case 'survey-table': {

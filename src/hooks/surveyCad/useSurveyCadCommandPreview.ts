@@ -93,6 +93,15 @@ export const buildCommandPreview = ({
       return previewPoint
         ? { kind: 'point', point: { x: previewPoint.x, y: previewPoint.y } }
         : null;
+    // Phase 19D network sessions are typed-input only (no spatial preview).
+    case 'PARCELDESIGNATE':
+    case 'PARCELNUMBER':
+    case 'PARCELLINK':
+    case 'PARCELUNLINK':
+    case 'PARCELCHECK':
+    case 'PARCELSCHEDULE':
+    case 'PARCELSHAREDEDIT':
+      return null;
     case 'COGO_POINT':
     case 'LINE':
     case 'INVERSE':

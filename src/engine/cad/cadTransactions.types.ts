@@ -46,6 +46,19 @@ import type { CadVolumeSurfaceStylePatch } from './cadVolumeSurfaces';
 import type { CadAnalysisAppearancePatch } from './cadAnalysisMaps';
 import type { CadAnalysisLegendPatch } from './cadAnalysisLegends';
 import type { CadAnalysisBand, CadAnalysisLegend, CadAnalysisSource } from './cadAnalysisTypes';
+import type {
+  ParcelDesignateCommand,
+  ParcelNumberCommand,
+} from './cadTransactionsParcelPlanCommands';
+import type {
+  ParcelLinkCommand,
+  ParcelUnlinkCommand,
+} from './cadTransactionsParcelLinkCommands';
+import type { ParcelSharedEditCommand } from './cadParcelSharedEdit';
+import type {
+  ParcelCheckCommand,
+  ParcelScheduleCommand,
+} from './cadTransactionsParcelNetworkCommands';
 import type { CadProfileStylePatch } from './cadProfileTypes';
 import type {
   CadSampleLinePatch,
@@ -105,6 +118,13 @@ export type CadCommandKey =
   | 'POINTTABLE'
   | 'PARCELREPORT'
   | 'PARCELDESC'
+  | 'PARCELDESIGNATE'
+  | 'PARCELNUMBER'
+  | 'PARCELLINK'
+  | 'PARCELUNLINK'
+  | 'PARCELSHAREDEDIT'
+  | 'PARCELCHECK'
+  | 'PARCELSCHEDULE'
   | 'TABLESTYLE'
   | 'SURVEYTABLE_EDIT'
   | 'MOVE'
@@ -456,6 +476,13 @@ export type CadCommand =
   | ({ key: 'POINTTABLE' } & CadSurveyTableCreatePayload)
   | ({ key: 'PARCELREPORT' } & CadParcelTableCreatePayload)
   | ({ key: 'PARCELDESC' } & CadParcelTableCreatePayload)
+  | ParcelDesignateCommand
+  | ParcelNumberCommand
+  | ParcelLinkCommand
+  | ParcelUnlinkCommand
+  | ParcelSharedEditCommand
+  | ParcelCheckCommand
+  | ParcelScheduleCommand
   | ({ key: 'TABLESTYLE' } & CadSurveyTableStyleCommandPayload)
   | {
       key: 'SURVEYTABLE_EDIT';

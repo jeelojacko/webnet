@@ -15,6 +15,7 @@ import {
   getExpandedSelectedEntities,
 } from './cadTransactionsSelection';
 import { translateEntity } from './cadTransactionsEntityTransforms';
+import { linkedComponentSelectionBlockReason } from './cadParcelSharedEdit';
 import {
   appendCadProjectEntities,
   replaceCadProjectEntities,
@@ -30,6 +31,7 @@ import type {
 } from './cadTypes';
 import { createStableRuntimeId } from '../id';
 import { buildParcelCourseIds } from './cadParcelCourses';
+import { planInfoForParcelCopy } from './cadParcelPlanDesignation';
 export const buildCopiedEntities = (
   project: CadProject,
   selectedEntities: CadEntity[],
@@ -112,6 +114,12 @@ export const buildCopiedEntities = (
             ? {
                 courseGeometry: entity.courseGeometry.map((entry) => ({ ...entry })),
               }
+            : {}),
+          // Phase 19D COPY policy (matrix row 7): the copy carries
+          // role/description but NEVER the designation (shadowed even when
+          // the source has designation-only planInfo).
+          ...(entity.type === 'parcel'
+            ? { planInfo: planInfoForParcelCopy(entity.planInfo) }
             : {}),
           metadata: {
             ...entity.metadata,
@@ -254,6 +262,15 @@ export const moveCommand: CadCommandDefinition<{
     if (Math.abs(command.deltaX) <= 1e-9 && Math.abs(command.deltaY) <= 1e-9) return null;
     const selectedEntities = getExpandedSelectedEntities(snapshot);
     if (selectedEntities.length === 0) return null;
+    // Phase 19D: a partially-selected linked parcel group must not move alone.
+    if (
+      linkedComponentSelectionBlockReason(
+        snapshot.project,
+        selectedEntities.map((entity) => entity.id),
+      )
+    ) {
+      return null;
+    }
     // Atomic reject: entity.locked never blocked move before — the central
     // gate now covers entity + layer locks (LAYER_LOCKED).
     if (
