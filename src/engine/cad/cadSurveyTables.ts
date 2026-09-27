@@ -9,7 +9,7 @@ import {
   cadBuildParcelReportSummary,
 } from './cadCogoParcelGeometrySummaries';
 import { resolveCadParcelCourses } from './cadParcelCourses';
-import { buildCadInverseSummary } from './cadCogoSummaries';
+import { buildCadInverseSummary, formatCadSweepDms } from './cadCogoSummaries';
 import { cadSignedSweepDeg } from './cadGeometry';
 import type {
   CadEntity,
@@ -164,6 +164,23 @@ export const cadSurveyTableColumns = (
   kind: CadSurveyTableKind,
 ): readonly CadSurveyTableResolvedColumn[] => COLUMNS_BY_KIND[kind];
 
+/**
+ * Phase 19C arc-course columns. Appended to a parcel-course table only when
+ * at least one resolved source course is an arc, so all-straight legacy
+ * tables keep their exact 19A headings/cells. For arc rows the base Bearing
+ * and Distance headings stay blank — chord truth lives under Chord / Chord
+ * Bearing, never under a line heading.
+ */
+export const CAD_SURVEY_PARCEL_COURSE_ARC_COLUMNS: readonly CadSurveyTableResolvedColumn[] = [
+  { key: 'type', label: 'Type' },
+  { key: 'radius', label: 'Radius (m)' },
+  { key: 'delta', label: 'Delta' },
+  { key: 'arc', label: 'Arc (m)' },
+  { key: 'chord', label: 'Chord (m)' },
+  { key: 'chordBearing', label: 'Chord Bearing' },
+  { key: 'direction', label: 'Direction' },
+];
+
 export const cadSurveyTableKindLabel = (kind: CadSurveyTableKind): string =>
   CAD_SURVEY_TABLE_KIND_LABELS[kind];
 
@@ -300,7 +317,7 @@ const missingRow = (
   code: resolveCadSurveyTableRowCode(entity, index),
   sourceLabel,
   status: 'missing',
-  values: cadSurveyTableColumns(entity.tableKind).map((column) => ({
+  values: [...cadSurveyTableColumns(entity.tableKind), ...(entity.tableKind === 'parcel-course' ? CAD_SURVEY_PARCEL_COURSE_ARC_COLUMNS : [])].map((column) => ({
     key: column.key,
     label: column.label,
     value: '—',
@@ -415,6 +432,7 @@ const resolveParcelSummaryRow = (
     parcelName: parcel.parcelName,
     vertices: parcel.vertices,
     vertexLabels: parcel.vertexLabels,
+    courseGeometry: parcel.courseGeometry,
   });
   if (!report) return missingRow(entity, row, index, parcel.parcelName);
   return resolvedRow(entity, row, index, report.parcelName, [
@@ -442,16 +460,32 @@ const resolveParcelCourseRow = (
   // an old courseId must surface BROKEN_REFERENCE, never silently rebind (§130).
   const course = courses.find((entry) => entry.courseId === courseId);
   if (!course) return missingRow(entity, row, index, parcel.parcelName);
-  // Straight row shape: arc courses show truthful chord values (dedicated
-  // arc columns arrive in a later 19C round).
-  const bearing = course.kind === 'line' ? course.bearing : course.chordBearing;
-  const distanceMeters = course.kind === 'line' ? course.distanceMeters : course.chordLength;
-  return resolvedRow(entity, row, index, `${course.fromLabel}–${course.toLabel}`, [
+  // Mixed row shape: line Bearing/Distance stay line truth; arc rows leave
+  // those blank and carry chord truth only under Chord / Chord Bearing.
+  const values: CadSurveyTableResolvedValue[] = [
     { key: 'from', label: 'From', value: course.fromLabel },
     { key: 'to', label: 'To', value: course.toLabel },
-    { key: 'bearing', label: 'Bearing', value: bearing },
-    { key: 'distance', label: 'Distance', value: formatDistance(distanceMeters) },
-  ]);
+  ];
+  if (course.kind === 'arc') {
+    values.push(
+      { key: 'bearing', label: 'Bearing', value: '' },
+      { key: 'distance', label: 'Distance', value: '' },
+      { key: 'type', label: 'Type', value: 'ARC' },
+      { key: 'radius', label: 'Radius', value: formatDistance(course.radius) },
+      { key: 'delta', label: 'Delta', value: formatCadSweepDms(course.deltaDeg) },
+      { key: 'arc', label: 'Arc', value: formatDistance(course.arcLength) },
+      { key: 'chord', label: 'Chord', value: formatDistance(course.chordLength) },
+      { key: 'chordBearing', label: 'Chord Bearing', value: course.chordBearing },
+      { key: 'direction', label: 'Direction', value: course.direction },
+    );
+  } else {
+    values.push(
+      { key: 'bearing', label: 'Bearing', value: course.bearing },
+      { key: 'distance', label: 'Distance', value: formatDistance(course.distanceMeters) },
+      { key: 'type', label: 'Type', value: 'LINE' },
+    );
+  }
+  return resolvedRow(entity, row, index, `${course.fromLabel}–${course.toLabel}`, values);
 };
 
 export const resolveCadSurveyTableRow = (

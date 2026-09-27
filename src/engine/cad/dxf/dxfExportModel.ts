@@ -25,6 +25,8 @@ export type {
 } from './dxfBlockExport';
 import { expandBlockReference, findBlockDefinition, normalizeBlockScales } from '../cadBlocks';
 import { surveyPointMarker } from '../cadRendererStyle';
+import { resolveCadParcelCourses } from '../cadParcelCourses';
+import { cadAngleDegFromCenter } from '../cadGeometry';
 import { deriveAnnotationPrimitives } from './dxfAnnotationExport';
 import { buildAnalysisModelItems, type CadAnalysisExportInput } from '../cadAnalysisExportScene';
 import {
@@ -300,14 +302,66 @@ export const buildDxfExportModelWithResult = (args: BuildDxfModelArgs): ExportRe
         result.exportedEntityIds.push(entity.id);
         break;
       }
-      case 'polygon':
-      case 'parcel': {
+      case 'polygon': {
         // §35: boundary geometry as a closed polyline (geometric only —
         // LandXML/DXF carry no legal parcel meaning). The closed-polyline
         // encoding is an APPROXIMATED representation: always warned.
         if (entity.vertices.length < 3 || !finiteVertices(entity.vertices)) {
           warn({ code: 'SKIPPED_ENTITY', message: `${entity.type} ${entity.id} has fewer than 3 finite vertices`, entityId: entity.id });
           result.omittedEntityIds.push(entity.id);
+          break;
+        }
+        model.polylines.push({
+          layer: registerLayer(entity.layerId),
+          vertices: entity.vertices.map((v) => ({ x: v.x, y: v.y })),
+          closed: true,
+          ...entryStyle(entity),
+        });
+        result.exportedEntityIds.push(entity.id);
+        result.approximatedEntityIds.push(entity.id);
+        warn({ code: 'SKIPPED_ENTITY', message: `${entity.type} ${entity.id} approximated as closed polyline (geometric only, no legal parcel meaning)`, entityId: entity.id });
+        break;
+      }
+      case 'parcel': {
+        // §35: boundary geometry only (no legal parcel meaning). A curved
+        // parcel exports exact native LINE + ARC primitives (R12-safe); the
+        // all-straight path stays the legacy closed LWPOLYLINE byte-for-byte.
+        if (entity.vertices.length < 3 || !finiteVertices(entity.vertices)) {
+          warn({ code: 'SKIPPED_ENTITY', message: `${entity.type} ${entity.id} has fewer than 3 finite vertices`, entityId: entity.id });
+          result.omittedEntityIds.push(entity.id);
+          break;
+        }
+        const curvedCourses = entity.courseGeometry != null ? resolveCadParcelCourses(entity) : [];
+        if (curvedCourses.some((course) => course.kind === 'arc')) {
+          curvedCourses.forEach((course) => {
+            if (course.kind === 'line') {
+              model.lines.push({
+                layer: registerLayer(entity.layerId),
+                from: { ...course.fromVertex },
+                to: { ...course.toVertex },
+                ...entryStyle(entity),
+              });
+              return;
+            }
+            // DXF ARC is CCW start→end; a CW course swaps the endpoints.
+            const startAngleDeg = cadAngleDegFromCenter(course.center, course.fromVertex);
+            const endAngleDeg = startAngleDeg + course.signedSweepDeg;
+            const [startDeg, endDeg] =
+              course.signedSweepDeg >= 0
+                ? [startAngleDeg, endAngleDeg]
+                : [endAngleDeg, startAngleDeg];
+            model.arcs.push({
+              layer: registerLayer(entity.layerId),
+              center: { ...course.center },
+              radius: course.radius,
+              startDeg,
+              endDeg,
+              ...entryStyle(entity),
+            });
+          });
+          result.exportedEntityIds.push(entity.id);
+          result.approximatedEntityIds.push(entity.id);
+          warn({ code: 'SKIPPED_ENTITY', message: `${entity.type} ${entity.id} approximated as line/arc primitives (geometric only, no legal parcel meaning)`, entityId: entity.id });
           break;
         }
         model.polylines.push({

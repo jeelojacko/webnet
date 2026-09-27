@@ -332,15 +332,17 @@ export const cadBuildParcelReportSummary = ({
     vertices,
   });
 
-  const courses = ring.map((vertex, index) => {
-    const nextVertex = ring[(index + 1) % ring.length]!;
-    const inverse = buildCadInverseSummary(vertex, nextVertex);
+  const indexedRing = buildIndexedParcelRing(vertices);
+  if (!indexedRing) return null;
+
+  const courses = indexedRing.map((course, index) => {
+    const inverse = buildCadInverseSummary(course.from, course.to);
     const fromLabel = normalizeParcelVertexLabel(ringLabels[index], index);
     const toLabel = normalizeParcelVertexLabel(
-      ringLabels[(index + 1) % ring.length],
-      (index + 1) % ring.length,
+      ringLabels[(index + 1) % indexedRing.length],
+      (index + 1) % indexedRing.length,
     );
-    return {
+    const base = {
       fromLabel,
       toLabel,
       azimuthDeg: inverse.azimuthDeg,
@@ -348,6 +350,28 @@ export const cadBuildParcelReportSummary = ({
       bearing: inverse.bearing,
       distanceMeters: inverse.distance,
     };
+    // Phase 19C: arc courses carry the arc truth alongside chord values.
+    const entry = courseGeometry?.[course.rawIndex];
+    if (parcelCourseCanonicalKind(entry) === 'arc' && entry?.kind === 'arc') {
+      const metrics = describeParcelArcCourse(course.from, course.to, entry.bulge);
+      if (metrics) {
+        return {
+          ...base,
+          kind: 'arc' as const,
+          azimuthDeg: metrics.chordAzimuthDeg,
+          azimuthText: formatCadNorthAzimuthDms(metrics.chordAzimuthDeg),
+          bearing: metrics.chordBearing,
+          distanceMeters: metrics.chordLength,
+          direction: metrics.direction,
+          radiusMeters: metrics.radius,
+          deltaDeg: metrics.deltaDeg,
+          arcLengthMeters: metrics.arcLength,
+          chordBearing: metrics.chordBearing,
+          chordLengthMeters: metrics.chordLength,
+        };
+      }
+    }
+    return base;
   });
 
   return {

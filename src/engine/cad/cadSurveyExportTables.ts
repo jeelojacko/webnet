@@ -15,10 +15,10 @@ import { cadMidpoint, type CadWorldPoint } from './cadGeometry';
 import {
   buildCadInverseSummary,
   formatCadNorthAzimuthDms,
+  formatCadSweepDms,
 } from './cadCogoSummaries';
 import { cadBuildCurveMetricsSummaryFromRadiusDelta } from './cadCogoCurveMetrics';
 import { cadBuildParcelReportSummary } from './cadCogoParcelGeometrySummaries';
-import { describeParcelArcCourse } from './cadParcelArcGeometry';
 import {
   resolveCadParcelCourses as resolveCanonicalParcelCourses,
   type CadParcelCourse as CadCanonicalParcelCourse,
@@ -141,6 +141,15 @@ const clipRows = (
 // Parcel course resolution (spec: resolveCadParcelCourses).
 // ---------------------------------------------------------------------------
 
+export interface CadSurveyParcelCourseCurve {
+  radius: number;
+  deltaDeg: number;
+  arcLength: number;
+  chordLength: number;
+  chordBearing: string;
+  direction: 'left' | 'right';
+}
+
 export interface CadSurveyParcelCourse {
   courseId: string;
   index: number;
@@ -154,56 +163,25 @@ export interface CadSurveyParcelCourse {
   midpoint: CadWorldPoint;
   /** Travel direction — the authoritative formatted bearing (no string math). */
   direction: string;
-  /** Present only for curved courses; 19A exports/legal reject these. */
-  curve?: { radius: number; deltaDeg: number };
-}
-
-interface CurvedCourseMarker {
-  radius: number;
-  deltaDeg: number;
+  /** Present only for curved courses; values come from the canonical resolver. */
+  curve?: CadSurveyParcelCourseCurve;
 }
 
 /**
- * Phase 19C: curve markers derive from the authoritative courseGeometry
- * (arc entries with valid endpoint metrics). Straight parcels yield no
- * markers — same as before. The legacy `elements` unsafe-cast is gone:
- * curves exist only by explicit geometry, never by inference.
+ * Phase 19C: curve data comes from the authoritative courseGeometry via the
+ * canonical resolver — straight parcels yield no curve marker, same as before.
+ * The legacy `elements` unsafe-cast is gone: curves exist only by explicit
+ * geometry, never by inference.
  */
-const curvedMarkersFor = (parcel: CadParcelEntity): Map<number, CurvedCourseMarker> => {
-  const markers = new Map<number, CurvedCourseMarker>();
-  const geometry = parcel.courseGeometry;
-  if (!Array.isArray(geometry) || geometry.length !== parcel.vertices.length) return markers;
-  geometry.forEach((entry, index) => {
-    if (entry?.kind !== 'arc' || !Number.isFinite(entry.bulge)) return;
-    const from = parcel.vertices[index];
-    const to = parcel.vertices[(index + 1) % parcel.vertices.length];
-    if (!from || !to) return;
-    const metrics = describeParcelArcCourse(from, to, entry.bulge);
-    markers.set(index, {
-      radius: metrics && Number.isFinite(metrics.radius) ? metrics.radius : 0,
-      deltaDeg: metrics && Number.isFinite(metrics.signedSweepDeg) ? Math.abs(metrics.signedSweepDeg) : 0,
-    });
-  });
-  return markers;
-};
-
 export const parcelHasCurvedCourses = (parcel: CadParcelEntity): boolean =>
-  curvedMarkersFor(parcel).size > 0;
+  resolveCanonicalParcelCourses(parcel).some((course) => course.kind === 'arc');
 
-const toSurveyCourse = (
-  course: CadCanonicalParcelCourse,
-  curve: CurvedCourseMarker | undefined,
-): CadSurveyParcelCourse => {
-  // Straight export shape: arc courses contribute truthful chord values
-  // plus their curve marker (dedicated arc columns arrive in a later
-  // 19C round); legal description keeps failing closed on the marker.
+const toSurveyCourse = (course: CadCanonicalParcelCourse): CadSurveyParcelCourse => {
+  // The base rows carry the chord truth for arcs (matching the pre-19C
+  // straight export shape); the curve block carries the full arc metrics.
   const bearing = course.kind === 'line' ? course.bearing : course.chordBearing;
   const azimuth = course.kind === 'line' ? course.azimuthDeg : course.chordAzimuthDeg;
   const distance = course.kind === 'line' ? course.distanceMeters : course.chordLength;
-  const marker =
-    course.kind === 'arc'
-      ? { radius: course.radius, deltaDeg: course.deltaDeg }
-      : curve;
   return {
     courseId: course.courseId,
     index: course.index,
@@ -216,17 +194,24 @@ const toSurveyCourse = (
     distance,
     midpoint: { ...course.midpoint },
     direction: bearing,
-    ...(marker ? { curve: marker } : {}),
+    ...(course.kind === 'arc'
+      ? {
+          curve: {
+            radius: course.radius,
+            deltaDeg: course.deltaDeg,
+            arcLength: course.arcLength,
+            chordLength: course.chordLength,
+            chordBearing: course.chordBearing,
+            direction: course.direction,
+          },
+        }
+      : {}),
   };
 };
 
 /** Delegate to the canonical resolver (stable ids, authoritative math). */
-export const resolveCadParcelCourses = (parcel: CadParcelEntity): CadSurveyParcelCourse[] => {
-  const curved = curvedMarkersFor(parcel);
-  return resolveCanonicalParcelCourses(parcel).map((course) =>
-    toSurveyCourse(course, curved.get(course.index)),
-  );
-};
+export const resolveCadParcelCourses = (parcel: CadParcelEntity): CadSurveyParcelCourse[] =>
+  resolveCanonicalParcelCourses(parcel).map((course) => toSurveyCourse(course));
 
 // ---------------------------------------------------------------------------
 // Derivation.
@@ -299,26 +284,79 @@ const deriveCurveTable = (
   return { rows: clipped.rows, clipped: clipped.clipped, tagAnchors };
 };
 
+/** Base (all-straight) parcel-course headings — byte-compatible with 19A. */
+const PARCEL_COURSE_BASE_COLUMNS = ['Course', 'From', 'To', 'Bearing', 'Distance (m)'];
+/** Mixed line/arc headings: arc rows never show chord under a line heading. */
+const PARCEL_COURSE_MIXED_COLUMNS = [
+  'Course',
+  'From',
+  'To',
+  'Bearing',
+  'Distance (m)',
+  'Type',
+  'Radius (m)',
+  'Delta',
+  'Arc (m)',
+  'Chord (m)',
+  'Chord Bearing',
+  'Direction',
+];
+
+const parcelCourseColumns = (hasCurves: boolean): string[] =>
+  hasCurves ? [...PARCEL_COURSE_MIXED_COLUMNS] : [...PARCEL_COURSE_BASE_COLUMNS];
+
+const parcelCourseLineCells = (course: CadSurveyParcelCourse, hasCurves: boolean): string[] =>
+  hasCurves
+    ? [
+        `C${course.index + 1}`,
+        course.fromLabel,
+        course.toLabel,
+        course.bearing,
+        formatDistanceCell(course.distance),
+        'LINE',
+        '',
+        '',
+        '',
+        '',
+        '',
+        '',
+      ]
+    : [`C${course.index + 1}`, course.fromLabel, course.toLabel, course.bearing, formatDistanceCell(course.distance)];
+
+const parcelCourseArcCells = (course: CadSurveyParcelCourse, curve: CadSurveyParcelCourseCurve): string[] => [
+  `C${course.index + 1}`,
+  course.fromLabel,
+  course.toLabel,
+  // Line headings never carry chord values for an arc course.
+  '',
+  '',
+  'ARC',
+  formatDistanceCell(curve.radius),
+  formatCadSweepDms(curve.deltaDeg),
+  formatDistanceCell(curve.arcLength),
+  formatDistanceCell(curve.chordLength),
+  curve.chordBearing,
+  curve.direction,
+];
+
 const deriveParcelCourseTable = (
   parcel: CadParcelEntity,
-): { rows: CadSurveyTableRow[]; tagAnchors: CadSurveyTagAnchor[] } => {
+): { rows: CadSurveyTableRow[]; tagAnchors: CadSurveyTagAnchor[]; columns: string[] } => {
   const courses = resolveCadParcelCourses(parcel);
+  const hasCurves = courses.some((course) => course.curve != null);
   const tagAnchors: CadSurveyTagAnchor[] = courses.map((course, index) => ({
     tag: `L${index + 1}`,
-    kind: 'line',
+    kind: course.curve ? 'curve' : 'line',
     point: course.midpoint,
   }));
-  const rows = courses.map((course) => ({
-    cells: [
-      `C${course.index + 1}`,
-      course.fromLabel,
-      course.toLabel,
-      course.bearing,
-      formatDistanceCell(course.distance),
-    ],
+  const rows: CadSurveyTableRow[] = courses.map((course) => ({
+    cells:
+      course.curve != null
+        ? parcelCourseArcCells(course, course.curve)
+        : parcelCourseLineCells(course, hasCurves),
     status: 'OK' as const,
   }));
-  return { rows, tagAnchors };
+  return { rows, tagAnchors, columns: parcelCourseColumns(hasCurves) };
 };
 
 const deriveParcelSummaryTable = (
@@ -334,6 +372,7 @@ const deriveParcelSummaryTable = (
       parcelName: parcel.parcelName,
       vertices: parcel.vertices,
       vertexLabels: parcel.vertexLabels,
+      courseGeometry: parcel.courseGeometry,
     });
     if (!report) {
       rows.push({ cells: [parcel.parcelName || parcel.id, '—', '—', '—'], status: 'EMPTY' });
@@ -407,6 +446,7 @@ export const deriveCadSurveyTableFromSource = (
 ): CadSurveyTable => {
   let rows: CadSurveyTableRow[] = [];
   let tagAnchors: CadSurveyTagAnchor[] = [];
+  let columns: string[] | null = null;
   let clipped = false;
   switch (source.kind) {
     case 'point': {
@@ -434,6 +474,7 @@ export const deriveCadSurveyTableFromSource = (
       const built = deriveParcelCourseTable(source.parcel);
       rows = built.rows;
       tagAnchors = built.tagAnchors;
+      columns = built.columns;
       break;
     }
     case 'parcel-summary': {
@@ -452,7 +493,7 @@ export const deriveCadSurveyTableFromSource = (
     id: tableIdFor(source),
     kind: source.kind,
     title: titleFor(source),
-    columns: columnsFor(source.kind),
+    columns: columns ?? columnsFor(source.kind),
     rows,
     tagAnchors,
     units: { ...TABLE_UNITS },

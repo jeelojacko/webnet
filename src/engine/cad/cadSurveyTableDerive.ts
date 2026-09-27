@@ -26,6 +26,7 @@ import type {
 } from './cadTypes';
 import {
   cadSurveyTableColumns,
+  CAD_SURVEY_PARCEL_COURSE_ARC_COLUMNS,
   defaultCadSurveyTablePrefix,
   resolveCadSurveyTableRows,
   resolveCadSurveyTableStyle,
@@ -141,14 +142,32 @@ export interface CadSurveyTableDerivation {
 
 export function resolveCadSurveyTableColumns(
   table: CadSurveyTableEntity,
+  project?: CadProject,
 ): CadSurveyTableColumn[] {
   const overrides = new Map<string, CadSurveyTableColumnOverride>();
   for (const override of table.columnOverrides ?? []) {
     if (override != null && typeof override.key === 'string') overrides.set(override.key, override);
   }
+  // Phase 19C: a parcel-course table grows Type/Radius/Delta/Arc/Chord/Chord
+  // Bearing/Direction only when a source course is an arc. All-straight
+  // tables keep their exact 19A headings.
+  const hasCurvedCourse =
+    table.tableKind === 'parcel-course' &&
+    project != null &&
+    table.rows.some((row) => {
+      const source = row.source;
+      if (source.kind !== 'parcel-course') return false;
+      const parcel = project.entities.find(
+        (entity) => entity.id === source.parcelId && entity.type === 'parcel',
+      );
+      return parcel?.type === 'parcel'
+        ? resolveCadParcelCourses(parcel).some((course) => course.kind === 'arc')
+        : false;
+    });
   const base: CadSurveyTableColumn[] = [
     { key: 'code', label: 'Code' },
     ...cadSurveyTableColumns(table.tableKind).map((column) => ({ ...column })),
+    ...(hasCurvedCourse ? CAD_SURVEY_PARCEL_COURSE_ARC_COLUMNS.map((column) => ({ ...column })) : []),
   ];
   return base
     .filter((column) => overrides.get(column.key)?.visible !== false)
@@ -437,7 +456,7 @@ export function deriveCadSurveyTable(
       : bodyText;
   const rowHeightModel = dimensionToModel(style.rowHeight, style.rowHeightMode, denominator, unitsMode);
   const cellPaddingModel = dimensionToModel(style.cellPadding, style.cellPaddingMode, denominator, unitsMode);
-  const columns = resolveCadSurveyTableColumns(table);
+  const columns = resolveCadSurveyTableColumns(table, project);
   const resolvedRows = resolveCadSurveyTableRows(project, table);
   const assignments = renumberCadSurveyTableCodes(table);
   const rows: CadSurveyTableDerivedRow[] = resolvedRows.map((resolved, index) => {

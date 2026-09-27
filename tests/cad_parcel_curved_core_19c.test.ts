@@ -383,8 +383,9 @@ describe('19C save/reopen round-trip', () => {
     expect(buildParcelCourseReportSummary(reopened)?.courseCount).toBe(
       snapshot.report?.courseCount,
     );
-    // Curved legal descriptions fail closed on both sides of the round-trip.
-    expect(snapshot.description.ok).toBe(false);
+    // Phase 19C Round 2C lifted the curved block: description is supported
+    // and stable across the round-trip.
+    expect(snapshot.description.ok).toBe(true);
     expect(buildCadParcelLegalDescription(reopened)).toEqual(snapshot.description);
   });
 
@@ -503,7 +504,7 @@ describe('19C validation corpus', () => {
     ).toBe(true);
   });
 
-  it('vertex insert on a line course preserves geometry; arc split fails closed', () => {
+  it('vertex insert on a line course preserves geometry; arc split needs an on-arc point', () => {
     const parcel = makeParcel(square, [line, arc(-0.5), line, arc(-0.5)]);
     const split = insertParcelCourseVertex({
       parcel,
@@ -516,9 +517,9 @@ describe('19C validation corpus', () => {
     expect(
       validateParcelCourseGeometry(split!.vertices, split!.courseGeometry).ok,
     ).toBe(true);
-    // Splitting an arc course needs sub-arc math: fail closed, never lines.
+    // A point off the arc fails closed (never straightened into lines).
     expect(
-      insertParcelCourseVertex({ parcel, courseIndex: 1, point: { x: 7.5, y: 5 } }),
+      insertParcelCourseVertex({ parcel, courseIndex: 1, point: { x: 10, y: 5 } }),
     ).toBeNull();
   });
 });

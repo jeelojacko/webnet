@@ -34,6 +34,8 @@ import type {
   CadLandXmlSurface,
 } from './landxmlCadTypes';
 import type { CadAlignmentEntity, CadProject } from './cad/cadTypes';
+import { resolveCadParcelCourses } from './cad/cadParcelCourses';
+import type { CadLandXmlParcel, CadLandXmlParcelSegment } from './landxmlCadTypes';
 
 export interface CadLandXmlProjectExportResult extends ExportResult<string> {
   /** Per-object civil dispositions (surfaces/profiles/sections). */
@@ -45,7 +47,7 @@ interface ProjectLandXmlAccum {
   /** Registered CgPoint coordinates by id (first registration wins). */
   coords: Map<string, { x: number; y: number }>;
   lines: CadLandXmlLine[];
-  parcels: { name: string; ring: string[] }[];
+  parcels: CadLandXmlParcel[];
   alignments: CadLandXmlAlignment[];
   surfaces: CadLandXmlSurface[];
   ellipseIds: string[];
@@ -159,6 +161,34 @@ const resolveStaEquations = (
   return { equations, invalid: false };
 };
 
+/**
+ * Phase 19C: exact ordered line/arc segments for a curved parcel. Returns
+ * undefined for all-straight parcels (legacy ring-as-lines output stays
+ * byte-identical) and for ring/index misalignment (never a silent chord).
+ */
+const buildParcelSegments = (
+  entity: Extract<CadProject['entities'][number], { type: 'parcel' }>,
+  refs: readonly string[],
+): CadLandXmlParcelSegment[] | undefined => {
+  if (entity.courseGeometry == null) return undefined;
+  const courses = resolveCadParcelCourses(entity);
+  if (!courses.some((course) => course.kind === 'arc')) return undefined;
+  if (courses.length !== refs.length && courses.length !== refs.length - 1) return undefined;
+  return courses.map((course) => {
+    const from = refs[course.index] as string;
+    const to = refs[(course.index + 1) % courses.length] as string;
+    return course.kind === 'line'
+      ? { kind: 'line' as const, from, to }
+      : {
+          kind: 'curve' as const,
+          start: from,
+          end: to,
+          radiusM: course.radius,
+          rot: course.signedSweepDeg >= 0 ? ('ccw' as const) : ('cw' as const),
+        };
+  });
+};
+
 const convertEntities = (project: CadProject, acc: ProjectLandXmlAccum): void => {
   const sorted = [...project.entities].sort((a, b) => (a.id < b.id ? -1 : a.id > b.id ? 1 : 0));
   sorted.forEach((entity) => {
@@ -235,7 +265,11 @@ const convertEntities = (project: CadProject, acc: ProjectLandXmlAccum): void =>
           accumSkipped(acc, entity.id, `${entity.type} ${entity.id} has unresolvable vertices`);
           break;
         }
-        acc.parcels.push({ name: entity.type === 'parcel' ? entity.parcelName : entity.id, ring: [...refs, refs[0] as string] });
+        const name = entity.type === 'parcel' ? entity.parcelName : entity.id;
+        const ring = [...refs, refs[0] as string];
+        const segments =
+          entity.type === 'parcel' ? buildParcelSegments(entity, refs) : undefined;
+        acc.parcels.push(segments ? { name, ring, segments } : { name, ring });
         accumApproximated(acc, entity.id, `${entity.type} ${entity.id} approximated as Parcel ring (geometric only, no legal parcel meaning)`);
         break;
       }
