@@ -185,7 +185,7 @@ export const EMPTY_SURFACE_SELECTION: CadSurfaceSelectionSummary = {
  * Baked detection delegates to the engine `tinProvenanceKind` helper.
  */
 export interface CadExplicitTinProvenanceView {
-  kind?: 'landxml-import' | 'webnet-bake' | 'webnet-compose' | 'webnet-grading-bake';
+  kind?: 'landxml-import' | 'webnet-bake' | 'webnet-compose' | 'webnet-grading-bake' | 'webnet-grading-group-bake';
   format?: string;
   fileName?: string;
   surfaceName?: string;
@@ -202,6 +202,10 @@ export interface CadExplicitTinProvenanceView {
   overlaySurfaceName?: string;
   overlayRevision?: string;
   policy?: string;
+  /** Phase 20C — grading-group bake origin (display renders the generic branch). */
+  groupId?: string;
+  groupName?: string;
+  groupRevision?: string;
 }
 
 /** Phase 18Y — display-only composite origin; storage stays `explicit-tin`. */

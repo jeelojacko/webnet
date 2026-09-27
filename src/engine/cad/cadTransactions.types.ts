@@ -12,6 +12,7 @@ import type {
 import type { CadAnnotationAnchor } from './annotation/cadAnnotationAnchors';
 import type { FeatureLineElevationMethod } from './cadFeatureLineCreate';
 import type { CadGradingResult, GradingCriterion, GradingSide } from './grading/gradingTypes';
+import type { CadGradingGroupResult, GradingGroupCourse } from './grading/gradingGroupTypes';
 import type { HelmertControlPair, HelmertMode } from './cadHelmert2D';
 import type { ProjectTransformRequest } from './cadProjectTransform';
 
@@ -296,7 +297,16 @@ export type CadCommandKey =
   | 'GRADING_EDIT_CRITERIA'
   | 'GRADING_REASSIGN_TARGET'
   | 'GRADINGEXTRACTDAYLIGHT'
-  | 'GRADINGBAKE';
+  | 'GRADINGBAKE'
+  | 'GROUP_CREATE'
+  | 'GROUP_DELETE'
+  | 'GROUP_EDIT_CRITERIA'
+  | 'GROUP_REASSIGN_TARGET'
+  | 'GROUP_EDIT_SPAN'
+  | 'GROUP_ADD_COURSE'
+  | 'GROUP_REMOVE_END_COURSE'
+  | 'GROUPEXTRACTDAYLIGHT'
+  | 'GROUPBAKE';
 export type CadCommandPhase = 'idle' | 'committed';
 
 export interface CadCommandState {
@@ -1685,6 +1695,69 @@ export type CadCommand =
       gradingId: string;
       /** Cached CURRENT result snapshot (never recomputed here). */
       result: CadGradingResult;
+      expectedRevision: string;
+      sessionCurrent?: boolean;
+    }
+  // Phase 20C — grading groups (single side only; definitions + snapshots).
+  | {
+      key: 'GROUP_CREATE';
+      name?: string;
+      sourceFeatureLineId: string;
+      sourceCourses: GradingGroupCourse[];
+      targetSurfaceId: string;
+      side: GradingSide;
+      criterion: GradingCriterion;
+      maxSearchDistance: number;
+      curveChordTolerance: number;
+      cornerMode?: 'miter';
+      closed?: boolean;
+      layerId?: CadLayerId;
+    }
+  | {
+      key: 'GROUP_DELETE';
+      groupId: string;
+    }
+  | {
+      key: 'GROUP_EDIT_CRITERIA';
+      groupId: string;
+      criterion?: GradingCriterion;
+      maxSearchDistance?: number;
+      curveChordTolerance?: number;
+    }
+  | {
+      key: 'GROUP_REASSIGN_TARGET';
+      groupId: string;
+      targetSurfaceId: string;
+    }
+  | {
+      key: 'GROUP_EDIT_SPAN';
+      groupId: string;
+      sourceCourses: GradingGroupCourse[];
+      closed?: boolean;
+    }
+  | {
+      key: 'GROUP_ADD_COURSE';
+      groupId: string;
+      course: GradingGroupCourse;
+    }
+  | {
+      key: 'GROUP_REMOVE_END_COURSE';
+      groupId: string;
+      which: 'first' | 'last';
+    }
+  | {
+      key: 'GROUPEXTRACTDAYLIGHT';
+      groupId: string;
+      /** Cached CURRENT result snapshot (never recomputed here). */
+      result: CadGradingGroupResult;
+      expectedRevision: string;
+      sessionCurrent?: boolean;
+    }
+  | {
+      key: 'GROUPBAKE';
+      groupId: string;
+      /** Cached CURRENT result snapshot (never recomputed here). */
+      result: CadGradingGroupResult;
       expectedRevision: string;
       sessionCurrent?: boolean;
     };

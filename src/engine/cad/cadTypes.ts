@@ -10,6 +10,7 @@ import type { FeatureCodeCatalog } from '../fieldToFinish/featureCatalog';
 import type { FieldToFinishLink } from '../fieldToFinish/linkedSync';
 import type { CadCogoComputation } from './cadCogoTypes';
 import type { CadGrading } from './grading/gradingTypes';
+import type { CadGradingGroup } from './grading/gradingGroupTypes';
 import type { CadDisplayPoint } from './cadDisplayTypes';
 import type { DraftDocument } from './cadDraftTypes';
 export type {
@@ -861,6 +862,13 @@ export interface CadProject {
    * Optional so legacy files open; load paths backfill []. Trailing key.
    */
   gradings?: CadGrading[];
+  /**
+   * Phase 20C: drawing-owned grading-group definitions (ordered course
+   * chain + shared criterion; derived daylight/mesh/corners/status never
+   * persist). Optional so legacy files open; load paths backfill [].
+   * Trails `gradings` (key-order rule).
+   */
+  gradingGroups?: CadGradingGroup[];
   entities: CadEntity[];
   cogoComputations: CadCogoComputation[];
   bounds: CadBounds | null;
@@ -1172,6 +1180,29 @@ export interface WebnetGradingBakeTinProvenance {
 }
 
 /**
+ * Phase 20C grading-group bake provenance. Bake ALWAYS writes this shape —
+ * never LandXML/compose/generic-bake/single-grading-bake. Informational
+ * snapshot (group id/name/revision, source FL id + `A>B` course refs,
+ * target id, side, accuracy, corner mode); the baked surface is fully
+ * independent post-bake (never auto-composed).
+ */
+export interface WebnetGradingGroupBakeTinProvenance {
+  kind: 'webnet-grading-group-bake';
+  groupId: string;
+  groupName: string;
+  groupRevision: string;
+  sourceFeatureLineId: string;
+  sourceCourseRefs: string[];
+  targetSurfaceId: string;
+  side: 'left' | 'right';
+  accuracy: 'EXACT' | 'CURVE_APPROXIMATED';
+  cornerMode: 'miter';
+  fileName?: string;
+  surfaceName?: string;
+  sourceId?: string;
+}
+
+/**
  * Phase 18X discriminated explicit-TIN provenance (read-tolerant,
  * write-strict). Every member carries fileName/surfaceName (required or
  * optional) so shared readers compile without narrowing.
@@ -1180,6 +1211,7 @@ export type CadExplicitTinProvenance =
   | LandxmlTinProvenance
   | WebnetBakeTinProvenance
   | WebnetGradingBakeTinProvenance
+  | WebnetGradingGroupBakeTinProvenance
   | WebnetComposeTinProvenance
   | ExplicitFormatTinProvenance;
 

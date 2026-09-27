@@ -108,6 +108,7 @@ import { profileCommandDefinitions } from './cadTransactionsProfileCommands';
 import { sectionCommandDefinitions } from './cadTransactionsSectionCommands';
 import { featureLineCommandDefinitions } from './cadTransactionsFeatureLineCommands';
 import { gradingCommandDefinitions } from './cadTransactionsGradingCommands';
+import { gradingGroupCommandDefinitions } from './cadTransactionsGradingGroupCommands';
 import {
   curveTableCommand,
   lineTableCommand,
@@ -755,6 +756,16 @@ export const CAD_COMMAND_REGISTRY: Record<CadCommandKey, CadCommandDefinition<Ca
   GRADING_REASSIGN_TARGET: gradingCommandDefinitions.GRADING_REASSIGN_TARGET as CadCommandDefinition<CadCommand>,
   GRADINGEXTRACTDAYLIGHT: gradingCommandDefinitions.GRADINGEXTRACTDAYLIGHT as CadCommandDefinition<CadCommand>,
   GRADINGBAKE: gradingCommandDefinitions.GRADINGBAKE as CadCommandDefinition<CadCommand>,
+  // Phase 20C — grading groups: definitions + snapshots (UI worker registers these).
+  GROUP_CREATE: gradingGroupCommandDefinitions.GROUP_CREATE as CadCommandDefinition<CadCommand>,
+  GROUP_DELETE: gradingGroupCommandDefinitions.GROUP_DELETE as CadCommandDefinition<CadCommand>,
+  GROUP_EDIT_CRITERIA: gradingGroupCommandDefinitions.GROUP_EDIT_CRITERIA as CadCommandDefinition<CadCommand>,
+  GROUP_REASSIGN_TARGET: gradingGroupCommandDefinitions.GROUP_REASSIGN_TARGET as CadCommandDefinition<CadCommand>,
+  GROUP_EDIT_SPAN: gradingGroupCommandDefinitions.GROUP_EDIT_SPAN as CadCommandDefinition<CadCommand>,
+  GROUP_ADD_COURSE: gradingGroupCommandDefinitions.GROUP_ADD_COURSE as CadCommandDefinition<CadCommand>,
+  GROUP_REMOVE_END_COURSE: gradingGroupCommandDefinitions.GROUP_REMOVE_END_COURSE as CadCommandDefinition<CadCommand>,
+  GROUPEXTRACTDAYLIGHT: gradingGroupCommandDefinitions.GROUPEXTRACTDAYLIGHT as CadCommandDefinition<CadCommand>,
+  GROUPBAKE: gradingGroupCommandDefinitions.GROUPBAKE as CadCommandDefinition<CadCommand>,
 };
 
 export const createCadIdleCommandState = createIdleCommandState;

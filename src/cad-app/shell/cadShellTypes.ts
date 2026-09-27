@@ -299,6 +299,19 @@ export interface CadShellActions {
   extractGradingDaylight?: (_gradingId: string) => string;
   /** Phase 20B — Bake the CURRENT grading mesh to an explicit TIN. */
   bakeGradingSurface?: (_gradingId: string) => string;
+  /**
+   * Phase 20C — route one grading-group definition command (GROUP_*,
+   * GROUPEXTRACTDAYLIGHT, GROUPBAKE). Absent = group UI hides.
+   */
+  runGradingGroupCommand?: (_command: import('./cadGradingGroupShell').CadGradingGroupShellCommand) => boolean;
+  /** Phase 20C — explicit group Calculate for one group (never auto-started). */
+  requestGroupGradingCalculate?: (_groupId: string) => string;
+  /** Phase 20C — Extract group Daylight snapshot (CURRENT only), one undo entry. */
+  extractGroupDaylight?: (_groupId: string) => string;
+  /** Phase 20C — Bake the CURRENT group mesh to an explicit TIN. */
+  bakeGroupSurface?: (_groupId: string) => string;
+  /** Phase 20C — open the grading-group manager (optional selection/tab). */
+  openGradingGroupManager?: (_selectedId?: string, _tab?: 'definition' | 'inquiry') => void;
   /** Phase 18F — select a surface (Toolspace/manager/viewport converge here). */
   selectSurface: (_surfaceId: string | null) => void;
   /** Phase 18I — select a volume surface (Toolspace/manager converge here). */

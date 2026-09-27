@@ -248,7 +248,7 @@ describe('phase 18D point groups', () => {
     expect(buildCadProjectSignature(cloneCadProject(reparsed.drawing.project))).toBe(
       buildCadProjectSignature(reparsed.drawing.project),
     );
-    expect(Object.keys(reparsed.drawing.project).at(-1)).toBe('gradings');
+    expect(Object.keys(reparsed.drawing.project).at(-1)).toBe('gradingGroups');
     // 18E appended drawing-owned F2F catalog + settings trailing (after
     // pointGroups); 18F appended surfaces + surfaceStyles; 18I appends
     // volume relationships + styles trailing after those; 18J appends
@@ -258,7 +258,8 @@ describe('phase 18D point groups', () => {
     // bearing/curve style tables + annotationSettings; 18U appends the
     // analysis maps + legends last; 19A appends the survey table styles +
     // current style id last; 19D appends the shared parcel boundary
-    // relationships after those; 20B appends the grading definitions last.
+    // relationships after those; 20B appends the grading definitions after
+    // those; 20C appends the grading-group definitions last.
     // The invariant is clone/parse stability, asserted above.
   });
 

@@ -55,6 +55,12 @@ import {
   sanitizeCadGradings,
   withoutGradingsKey,
 } from './grading/gradingPersistence';
+import {
+  backfillCadGradingGroups,
+  cloneCadGradingGroups,
+  sanitizeCadGradingGroups,
+  withoutGradingGroupsKey,
+} from './grading/gradingGroupPersistence';
 import { ensureParcelCourseIds } from './cadParcelCourses';
 import { backfillAnalysisMaps, cloneCadAnalysisMaps } from './cadAnalysisMaps';
 import { backfillAnalysisLegends, cloneCadAnalysisLegends } from './cadAnalysisLegends';
@@ -387,6 +393,9 @@ export const cloneCadProject = (project: CadProject): CadProject => ({
   // Phase 20B: drawing-owned grading definitions stay trailing
   // (key-order rule). Derived daylight/mesh/status never serialized.
   ...(project.gradings != null ? { gradings: cloneCadGradings(project.gradings) } : {}),
+  // Phase 20C: grading-group definitions trail `gradings` (key-order rule).
+  // Derived daylight/mesh/corners/status never serialized.
+  ...(project.gradingGroups != null ? { gradingGroups: cloneCadGradingGroups(project.gradingGroups) } : {}),
 });
 
 const cloneParcelLayoutSettings = (
@@ -480,8 +489,9 @@ export const sanitizeSurveyCadPersistedState = (
       // trailing rule for the block library; dangling refs dropped.
       // 20B: gradings re-appended last (withoutGradingsKey) so a
       // mid-order key can never strand ahead of sharedParcelBoundaries.
+      // 20C: gradingGroups re-appended after gradings (chained strip).
       project: {
-        ...withoutGradingsKey(withStandards),
+        ...withoutGradingGroupsKey(withoutGradingsKey(withStandards)),
         entities: entitiesWithCourses,
         ...(sanitizedBlocks.project.pointStyles != null
           ? { pointStyles: sanitizedBlocks.project.pointStyles }
@@ -512,6 +522,9 @@ export const sanitizeSurveyCadPersistedState = (
         // Phase 20B: grading definitions trail everything (key-order rule);
         // malformed entries drop fail-closed, derived results never persist.
         gradings: sanitizeCadGradings(backfillCadGradings(withStandards.gradings)),
+        // Phase 20C: group definitions trail gradings (key-order rule);
+        // malformed entries drop fail-closed, derived results never persist.
+        gradingGroups: sanitizeCadGradingGroups(backfillCadGradingGroups(withStandards.gradingGroups)),
       },
     };
   } catch {
