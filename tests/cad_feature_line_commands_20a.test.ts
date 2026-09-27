@@ -4,6 +4,7 @@ import { describe, expect, it } from 'vitest';
 import { createBlankCadDrawingDocument } from '../src/engine/cad/cadDrawingFile';
 import { buildCadSurface } from '../src/engine/cad/cadSurfaces';
 import { collectSources } from '../src/engine/cad/cadSurfaceRevision';
+import { buildCopiedEntities } from '../src/engine/cad/cadTransactionsClipboardCommands';
 import { createCadHistoryState, runCadCommand, undoCadHistory } from '../src/engine/cad/cadUndoRedo';
 import { resolveCadFeatureLine } from '../src/engine/cad/cadFeatureLines';
 import type {
@@ -387,6 +388,70 @@ describe('phase 20A feature-line commands', () => {
     const report = computations[0]!;
     expect(report.report.rows.some((row) => row.label === 'Grade' && row.value.startsWith('2'))).toBe(true);
     expect(report.report.rows.some((row) => row.label === 'Bearing')).toBe(true);
+  });
+
+  it('FLINSERTVERTEX rides the course exactly and stays undoable', () => {
+    const project = blankProject([point('pt-a', 'A', 0, 0, 100), point('pt-b', 'B', 100, 0, 102)]);
+    let history = runCadCommand(createCadHistoryState(project), {
+      key: 'FEATURELINE',
+      sourceEntityIds: ['pt-a', 'pt-b'],
+      sourceKind: 'survey-points',
+      elevation: { method: 'source' },
+    });
+    const fl = featureLine(history.present.project);
+    const before = resolveCadFeatureLine(fl)!;
+    history = runCadCommand(history, { key: 'FLINSERTVERTEX', entityId: fl.id, courseIndex: 0, station: 25 });
+    const after = featureLine(history.present.project);
+    expect(after.vertices).toHaveLength(3);
+    expect(after.vertices[1]!.x).toBeCloseTo(25, 9);
+    expect(after.vertices[1]!.z).toBeCloseTo(100.5, 9);
+    const resolved = resolveCadFeatureLine(after)!;
+    expect(resolved.planLength).toBeCloseTo(before.planLength, 9);
+    expect(resolved.length3D).toBeCloseTo(before.length3D, 9);
+    history = undoCadHistory(history);
+    expect(featureLine(history.present.project).vertices).toHaveLength(2);
+  });
+
+  it('FLDELETEVERTEX joins line+line and blocks ambiguous joins', () => {
+    const project = blankProject([
+      point('pt-a', 'A', 0, 0, 100),
+      point('pt-b', 'B', 50, 0, 101),
+      point('pt-c', 'C', 100, 0, 102),
+    ]);
+    let history = runCadCommand(createCadHistoryState(project), {
+      key: 'FEATURELINE',
+      sourceEntityIds: ['pt-a', 'pt-b', 'pt-c'],
+      sourceKind: 'survey-points',
+      elevation: { method: 'source' },
+    });
+    const fl = featureLine(history.present.project);
+    history = runCadCommand(history, { key: 'FLDELETEVERTEX', entityId: fl.id, vertexIndex: 1 });
+    expect(featureLine(history.present.project).vertices).toHaveLength(2);
+    // Out-of-range index fails closed (no history entry consumed as a mutation).
+    const before = JSON.stringify(history.present.project.entities);
+    history = runCadCommand(history, { key: 'FLDELETEVERTEX', entityId: fl.id, vertexIndex: 9 });
+    expect(JSON.stringify(history.present.project.entities)).toBe(before);
+  });
+
+  it('COPY carries the feature line with fresh vertex ids and unchanged Z', () => {
+    const project = blankProject([point('pt-a', 'A', 0, 0, 100), point('pt-b', 'B', 100, 0, 102)]);
+    const history = runCadCommand(createCadHistoryState(project), {
+      key: 'FEATURELINE',
+      sourceEntityIds: ['pt-a', 'pt-b'],
+      sourceKind: 'survey-points',
+      elevation: { method: 'source' },
+    });
+    const fl = featureLine(history.present.project);
+    const copied = buildCopiedEntities(history.present.project, [fl], 10, 5);
+    expect(copied).toHaveLength(1);
+    const copy = copied[0]!;
+    expect(copy.type).toBe('feature-line');
+    expect(copy.id).not.toBe(fl.id);
+    if (copy.type !== 'feature-line') throw new Error('expected feature-line copy');
+    expect(copy.vertices.map((vertex) => vertex.id)).not.toEqual(fl.vertices.map((vertex) => vertex.id));
+    expect(copy.vertices.map((vertex) => [vertex.x, vertex.y, vertex.z])).toEqual(
+      fl.vertices.map((vertex) => [vertex.x + 10, vertex.y + 5, vertex.z]),
+    );
   });
 
   it('SURFACE_ADD_FEATURE_LINE_BREAKLINE feeds the line Z into the surface build', () => {

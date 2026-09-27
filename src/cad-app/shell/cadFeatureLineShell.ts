@@ -18,6 +18,8 @@ export const FEATURE_LINE_SHELL_KEYS: ReadonlySet<string> = new Set([
   'FLINTERPOLATE',
   'FLSURFACEELEV',
   'FLINQUIRY',
+  'FLINSERTVERTEX',
+  'FLDELETEVERTEX',
   'SURFACE_ADDFEATURELINEBREAKLINE',
 ]);
 
@@ -28,6 +30,8 @@ const SELECTION_REQUIRED_KEYS: ReadonlySet<string> = new Set([
   'FLINTERPOLATE',
   'FLSURFACEELEV',
   'FLINQUIRY',
+  'FLINSERTVERTEX',
+  'FLDELETEVERTEX',
   'SURFACE_ADDFEATURELINEBREAKLINE',
 ]);
 
@@ -108,6 +112,18 @@ export const executeFeatureLineShellCommand = (
     }
     case 'FLINQUIRY':
       return runner({ key: 'FLINQUIRY', entityId });
+    case 'FLINSERTVERTEX': {
+      const courseIndex = promptNumber('Course index (0-based):', '0');
+      if (courseIndex == null || !Number.isInteger(courseIndex) || courseIndex < 0) return false;
+      const station = promptNumber('Station along the feature line (m):', '0');
+      if (station == null) return false;
+      return runner({ key: 'FLINSERTVERTEX', entityId, courseIndex, station });
+    }
+    case 'FLDELETEVERTEX': {
+      const vertexNumber = promptNumber('Vertex number to delete (1-based):', '2');
+      if (vertexNumber == null || !Number.isInteger(vertexNumber) || vertexNumber < 1) return false;
+      return runner({ key: 'FLDELETEVERTEX', entityId, vertexIndex: vertexNumber - 1 });
+    }
     case 'SURFACE_ADDFEATURELINEBREAKLINE': {
       const surfaceId = resolveFeatureLineSurfaceId(snapshot);
       return surfaceId == null

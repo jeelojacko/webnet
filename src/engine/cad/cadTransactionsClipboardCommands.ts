@@ -30,6 +30,7 @@ import type {
   CadTextEntity,
 } from './cadTypes';
 import { createStableRuntimeId } from '../id';
+import { copyFeatureLineEntity } from './cadFeatureLineEdits';
 import { buildParcelCourseIds } from './cadParcelCourses';
 import { planInfoForParcelCopy } from './cadParcelPlanDesignation';
 export const buildCopiedEntities = (
@@ -127,6 +128,13 @@ export const buildCopiedEntities = (
             manual: true,
           },
         });
+        break;
+      }
+      case 'feature-line': {
+        // Phase 20A COPY policy: new entity id + fresh vertex ids (never
+        // shared with the source), XY offset applied, Z unchanged, owned
+        // geometry clone, no dependent Surface references copied.
+        copiedEntities.push(copyFeatureLineEntity(entity, deltaX, deltaY));
         break;
       }
       case 'arc':

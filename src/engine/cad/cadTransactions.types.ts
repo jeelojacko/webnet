@@ -287,6 +287,8 @@ export type CadCommandKey =
   | 'FLSURFACEELEV'
   | 'FLREVERSE'
   | 'FLINQUIRY'
+  | 'FLINSERTVERTEX'
+  | 'FLDELETEVERTEX'
   | 'SURFACE_ADD_FEATURE_LINE_BREAKLINE';
 export type CadCommandPhase = 'idle' | 'committed';
 
@@ -1617,6 +1619,17 @@ export type CadCommand =
       entityId: CadEntityId;
       startStation?: number;
       endStation?: number;
+    }
+  | {
+      key: 'FLINSERTVERTEX';
+      entityId: CadEntityId;
+      courseIndex: number;
+      station: number;
+    }
+  | {
+      key: 'FLDELETEVERTEX';
+      entityId: CadEntityId;
+      vertexIndex: number;
     }
   | {
       key: 'SURFACE_ADD_FEATURE_LINE_BREAKLINE';

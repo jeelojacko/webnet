@@ -744,6 +744,8 @@ export const CAD_COMMAND_REGISTRY: Record<CadCommandKey, CadCommandDefinition<Ca
   FLSURFACEELEV: featureLineCommandDefinitions.FLSURFACEELEV as CadCommandDefinition<CadCommand>,
   FLREVERSE: featureLineCommandDefinitions.FLREVERSE as CadCommandDefinition<CadCommand>,
   FLINQUIRY: featureLineCommandDefinitions.FLINQUIRY as CadCommandDefinition<CadCommand>,
+  FLINSERTVERTEX: featureLineCommandDefinitions.FLINSERTVERTEX as CadCommandDefinition<CadCommand>,
+  FLDELETEVERTEX: featureLineCommandDefinitions.FLDELETEVERTEX as CadCommandDefinition<CadCommand>,
   SURFACE_ADD_FEATURE_LINE_BREAKLINE: featureLineCommandDefinitions.SURFACE_ADD_FEATURE_LINE_BREAKLINE as CadCommandDefinition<CadCommand>,
 };
 

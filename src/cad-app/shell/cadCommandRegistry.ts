@@ -436,6 +436,8 @@ export const CAD_SHELL_COMMANDS: CadShellCommandDef[] = [
   action('FLINTERPOLATE', 'Interpolate', 'Design', 'Fix the endpoints and interpolate intermediates by cumulative plan station.', undefined, ['FLINTERP']),
   action('FLSURFACEELEV', 'Set Vertices from Surface', 'Design', 'Set each vertex elevation from the CURRENT surface at its XY (vertex-only; off-surface vertices block the commit; no continuous drape).'),
   action('FLINQUIRY', 'Feature Line Inquiry', 'Design', 'Report start/end station, plan/3D length, ΔZ, grade, slope angle, bearing, and curve metrics for the selected feature line.', undefined, ['FLINQ']),
+  action('FLINSERTVERTEX', 'Insert Vertex', 'Design', 'Insert a vertex on the selected feature line at an entered course and station (rides the course exactly; ambiguous geometry fails closed).', undefined, ['FLINSERT']),
+  action('FLDELETEVERTEX', 'Delete Vertex', 'Design', 'Delete a vertex of the selected feature line (line+line joins straight; ambiguous arc joins blocked).', undefined, ['FLDELVERT']),
   action('SURFACE_ADDFEATURELINEBREAKLINE', 'Add Feature Line Breakline', 'Design', 'Add the selected feature line as an entity-backed surface breakline (its own vertex Z is consumed by the build).', undefined, ['SURFAFLBREAKLINE']),
 ];
 

@@ -10,6 +10,8 @@ import { resolveCurrentCadLayerId } from './cadLayers';
 import { buildCadSurface, getSurfaceElevationAt } from './cadSurfaces';
 import { isSurfaceLayerLocked } from './cadSurfaceTypes';
 import {
+  deleteFeatureLineVertex,
+  insertFeatureLineVertex,
   raiseLowerFeatureLine,
   interpolateFeatureLineSpan,
   reverseFeatureLine,
@@ -302,6 +304,40 @@ const reverseCommand: CadCommandDefinition<ReverseCommand> = {
   },
 };
 
+type InsertVertexCommand = Extract<CadCommand, { key: 'FLINSERTVERTEX' }>;
+
+const insertVertexCommand: CadCommandDefinition<InsertVertexCommand> = {
+  key: 'FLINSERTVERTEX',
+  execute: (snapshot, command) => {
+    const entity = findFeatureLine(snapshot.project, command.entityId);
+    if (!entity) return null;
+    return commitFeatureLineEdit(
+      'FLINSERTVERTEX',
+      snapshot,
+      insertFeatureLineVertex(entity, command.courseIndex, command.station),
+      `${labelOf(entity)} vertex inserted at station ${command.station}.`,
+    );
+  },
+};
+
+type DeleteVertexCommand = Extract<CadCommand, { key: 'FLDELETEVERTEX' }>;
+
+const deleteVertexCommand: CadCommandDefinition<DeleteVertexCommand> = {
+  key: 'FLDELETEVERTEX',
+  execute: (snapshot, command) => {
+    const entity = findFeatureLine(snapshot.project, command.entityId);
+    if (!entity) return null;
+    const vertexIndex = command.vertexIndex;
+    if (!Number.isInteger(vertexIndex) || vertexIndex < 0) return null;
+    return commitFeatureLineEdit(
+      'FLDELETEVERTEX',
+      snapshot,
+      deleteFeatureLineVertex(entity, vertexIndex),
+      `${labelOf(entity)} vertex deleted (ambiguous joins blocked).`,
+    );
+  },
+};
+
 // ---------------------------------------------------------------------------
 // Inquiry (read-only report)
 // ---------------------------------------------------------------------------
@@ -420,5 +456,7 @@ export const featureLineCommandDefinitions = {
   FLSURFACEELEV: surfaceElevCommand,
   FLREVERSE: reverseCommand,
   FLINQUIRY: inquiryCommand,
+  FLINSERTVERTEX: insertVertexCommand,
+  FLDELETEVERTEX: deleteVertexCommand,
   SURFACE_ADD_FEATURE_LINE_BREAKLINE: addFeatureLineBreaklineCommand,
 } as const;
