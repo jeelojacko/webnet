@@ -21,6 +21,7 @@ import {
 import { finalizeExportResult, type ExportResult, type ExportWarning } from './cad/exportResult';
 import { ANALYSIS_LANDXML_DISPOSITION } from './cad/cadAnalysisExportScene';
 import { GRADING_LANDXML_DISPOSITION } from './cad/cadGradingExportScene';
+import { GROUP_LANDXML_DISPOSITION } from './cad/cadGradingGroupExportScene';
 import type { CadGrading } from './cad/grading/gradingTypes';
 import {
   CAD_SURVEY_TABLE_LANDXML_DISPOSITION,
@@ -490,6 +491,15 @@ export const buildLandXmlProjectExportWithResult = (
     acc.warnings.push({
       code: 'SKIPPED_ENTITY',
       message: `grading ${grading.id} (${grading.name}) ${GRADING_LANDXML_DISPOSITION}: bake to a surface to export`,
+    });
+  });
+  // Phase 20C: grading-group definitions are live derived geometry too. The
+  // definition is NOT_APPLICABLE and its derived result is omitted as well;
+  // the supported path is Bake → Surface export. Explicit warning, no drop.
+  (project.gradingGroups ?? []).forEach((group) => {
+    acc.warnings.push({
+      code: 'SKIPPED_ENTITY',
+      message: `grading group ${group.id} (${group.name}) ${GROUP_LANDXML_DISPOSITION}: bake to a surface to export`,
     });
   });
 

@@ -20,6 +20,7 @@ import {
 import { buildTableFragmentItems } from './cadExportTables';
 import { buildAnalysisSheetItems, type CadAnalysisExportInput } from './cadAnalysisExportScene';
 import { buildGradingSheetItems, type CadGradingExportInput } from './cadGradingExportScene';
+import { buildGroupSheetItems, type CadGradingGroupExportInput } from './cadGradingGroupExportScene';
 import type { CadEntity, CadProject } from './cadTypes';
 
 export interface ExportClip {
@@ -430,6 +431,12 @@ export interface BuildSceneArgs {
    */
   grading?: CadGradingExportInput;
   /**
+   * Phase 20C: CURRENT grading-group triangle fill + merged daylight, with
+   * optional plot-intended corner seams. Session-only derived regions;
+   * absent = legacy scene unchanged.
+   */
+  gradingGroups?: CadGradingGroupExportInput;
+  /**
    * Phase 20A: presentation-only feature-line Z/grade labels (never
    * geometry, never persisted). Absent = plan geometry only.
    */
@@ -634,6 +641,19 @@ const deriveSheetSceneInternal = (
     const gradingItems = buildGradingSheetItems(gradingInput, toPaper, clipId);
     items.push(...gradingItems.items);
     gradingItems.warnings.forEach((warning) => warnings.push(warning));
+    // Phase 20C grading-group fills + merged daylight ride with the 20B
+    // grading fills beneath the model linework; the CURRENT-only gate +
+    // dispositions are shared.
+    const gradingGroupInput: CadGradingGroupExportInput | undefined = args.gradingGroups
+      ? {
+          layers: (args.gradingGroups.layers ?? []).filter((layer) =>
+            !isHidden(layer.group.layerId ?? 'grading-group'),
+          ),
+        }
+      : undefined;
+    const gradingGroupItems = buildGroupSheetItems(gradingGroupInput, toPaper, clipId);
+    items.push(...gradingGroupItems.items);
+    gradingGroupItems.warnings.forEach((warning) => warnings.push(warning));
     sorted
       .filter((primitive) => !isHidden(primitive.layerId))
       .forEach((primitive) => {

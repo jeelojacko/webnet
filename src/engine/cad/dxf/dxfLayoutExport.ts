@@ -66,6 +66,8 @@ export interface BuildDxfLayoutArgs {
   analysis?: CadAnalysisExportInput;
   /** Phase 20B grading daylight (3D POLYLINE) + mesh (3DFACE), forwarded. */
   grading?: import('../cadGradingExportScene').CadGradingExportInput;
+  /** Phase 20C grading-group merged daylight + mesh (+ corner seams), forwarded. */
+  gradingGroups?: import('../cadGradingGroupExportScene').CadGradingGroupExportInput;
 }
 
 export interface DxfLayoutWarning {
@@ -325,7 +327,7 @@ const buildDxfLayoutInner = (args: BuildDxfLayoutArgs): DxfLayoutInner => {
     return handle;
   };
 
-  const modelResult = buildDxfExportModelWithResult({ project: args.project, modelLabels: args.modelLabels, surveyTables: args.surveyTables, analysis: args.analysis, grading: args.grading });
+  const modelResult = buildDxfExportModelWithResult({ project: args.project, modelLabels: args.modelLabels, surveyTables: args.surveyTables, analysis: args.analysis, grading: args.grading, gradingGroups: args.gradingGroups });
   const model = modelResult.output;
   const paperLayers = new Set<string>();
   const takenNames = new Set<string>(['model']);
