@@ -52,6 +52,24 @@ const toMlightcadEntity = (entity: CadEntity): MlightcadSpikeEntity => {
           nativeType: entity.type,
         },
       };
+    case 'feature-line':
+      // Phase 20A: plan projection with TRUE elevations (the only adapter
+      // that already carries per-point Z).
+      return {
+        objectId: entity.id,
+        type: 'AcDbPolyline',
+        layer: entity.layerId,
+        visible: entity.visible,
+        geometry: {
+          vertices: entity.vertices.map((vertex) => ({ x: vertex.x, y: vertex.y, z: vertex.z })),
+          closed: entity.closed ?? false,
+          vertexLabels: entity.vertices.map((vertex) => vertex.id),
+        },
+        metadata: {
+          nativeEntityId: entity.id,
+          nativeType: entity.type,
+        },
+      };
     case 'arc':
       return {
         objectId: entity.id,

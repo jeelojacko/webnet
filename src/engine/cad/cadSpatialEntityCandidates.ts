@@ -10,8 +10,10 @@ import {
   cadTangentPointsFromExternalPointToArc,
 } from './cadGeometry';
 import { getCadEntitySubpartDisplayLabel } from './cadEntityNames';
+import { resolveCadFeatureLine } from './cadFeatureLines';
 import type {
   CadArcEntity,
+  CadFeatureLineEntity,
   CadLineEntity,
   CadParcelEntity,
   CadPolygonEntity,
@@ -39,7 +41,7 @@ export type { CadSpatialEntityCandidateContext } from './cadSpatialBlockSnaps';
 
 const buildSegmentEntitySnapCandidates = (
   context: CadSpatialEntityCandidateContext,
-  entity: CadLineEntity | CadPolylineEntity | CadPolygonEntity | CadParcelEntity,
+  entity: CadLineEntity | CadPolylineEntity | CadPolygonEntity | CadParcelEntity | CadFeatureLineEntity,
   restrictSegmentIds?: ReadonlySet<string>,
 ): CadSnapCandidate[] => {
   const {
@@ -242,6 +244,67 @@ const buildParcelSnapCandidates = (
   return candidates;
 };
 
+/**
+ * Phase 20A feature-line routing: line courses use the exact chord-segment
+ * path (endpoint/midpoint/nearest); arc courses expose the existing arc snap
+ * types (endpoint/arc-midpoint/center/quadrant/nearest) through the same
+ * engine — no feature-line-only snap math. Plan-only: Z is ambiguous at a
+ * plan intersection and is documented as such.
+ */
+const buildFeatureLineSnapCandidates = (
+  context: CadSpatialEntityCandidateContext,
+  entity: CadFeatureLineEntity,
+): CadSnapCandidate[] => {
+  const resolved = resolveCadFeatureLine(entity);
+  if (!resolved) return [];
+  const arcCourses = resolved.courses.filter(
+    (course) =>
+      course.kind === 'arc' &&
+      course.center != null &&
+      course.radius != null &&
+      course.startAngleDeg != null &&
+      course.signedSweepDeg != null,
+  );
+  if (arcCourses.length === 0) return buildSegmentEntitySnapCandidates(context, entity);
+  const candidates: CadSnapCandidate[] = [];
+  const arcIndexes = new Set(arcCourses.map((course) => course.index));
+  const lineSegmentIds = new Set(
+    resolved.courses
+      .filter((course) => !arcIndexes.has(course.index))
+      .map((course) => `${entity.id}#${course.index}`),
+  );
+  candidates.push(...buildSegmentEntitySnapCandidates(context, entity, lineSegmentIds));
+  arcCourses.forEach((course) => {
+    const startAngleDeg = course.startAngleDeg!;
+    const endAngleDeg = startAngleDeg + course.signedSweepDeg!;
+    const pseudo: CadArcEntity = {
+      id: entity.id,
+      type: 'arc',
+      layerId: entity.layerId,
+      visible: true,
+      locked: false,
+      centerX: course.center!.x,
+      centerY: course.center!.y,
+      radius: course.radius!,
+      startAngleDeg,
+      endAngleDeg,
+    };
+    candidates.push(
+      ...buildArcEntitySnapCandidates(context, pseudo, {
+        sourceEntityId: entity.id,
+        center: { ...course.center! },
+        radius: course.radius!,
+        startAngleDeg,
+        endAngleDeg,
+        startPoint: { x: course.from.x, y: course.from.y },
+        endPoint: { x: course.to.x, y: course.to.y },
+        label: `${entity.name ?? entity.id}#${course.index}`,
+      }),
+    );
+  });
+  return candidates;
+};
+
 export const buildArcEntitySnapCandidates = (
   context: CadSpatialEntityCandidateContext,
   entity: CadArcEntity,
@@ -407,6 +470,9 @@ export const buildCadSpatialEntitySnapCandidates = (
         break;
       case 'parcel':
         candidates.push(...buildParcelSnapCandidates(context, entity));
+        break;
+      case 'feature-line':
+        candidates.push(...buildFeatureLineSnapCandidates(context, entity));
         break;
       case 'arc':
         candidates.push(...buildArcEntitySnapCandidates(context, entity, arcRefFromEntity(context.project, entity)));

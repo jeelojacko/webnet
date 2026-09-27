@@ -139,11 +139,33 @@ export const buildLandXmlFromCadGeometry = (
 
   const planLines = geom.lines ?? [];
   const planCurves = geom.curves ?? [];
-  if (planLines.length > 0 || planCurves.length > 0) {
+  const planFeatureList = geom.features ?? [];
+  if (planLines.length > 0 || planCurves.length > 0 || planFeatureList.length > 0) {
     lines.push('  <PlanFeatures name="WebNet CAD">');
-    lines.push('    <PlanFeature name="CAD-GEOM" desc="cad-geometry">');
-    coordGeomBlock(planLines, planCurves, '      ');
-    lines.push('    </PlanFeature>');
+    if (planLines.length > 0 || planCurves.length > 0) {
+      lines.push('    <PlanFeature name="CAD-GEOM" desc="cad-geometry">');
+      coordGeomBlock(planLines, planCurves, '      ');
+      lines.push('    </PlanFeature>');
+    }
+    // Phase 20A: one PlanFeature per 3D feature line. Chained <Line>
+    // segments carry real per-endpoint elevations (never a Curve hiding a
+    // vertical rise); the adapter linearizes arcs before this boundary.
+    planFeatureList.forEach((feature) => {
+      if (feature.refs.length < 2) {
+        throw new Error(
+          `LandXML CAD export: feature ${JSON.stringify(feature.name)} needs at least 2 refs.`,
+        );
+      }
+      feature.refs.forEach((ref) => requireRef(ref, `Feature ${feature.name}`));
+      const featureLines: CadLandXmlLine[] = [];
+      for (let i = 0; i + 1 < feature.refs.length; i += 1) {
+        featureLines.push({ from: feature.refs[i] as string, to: feature.refs[i + 1] as string });
+      }
+      const desc = feature.desc != null ? ` desc="${xmlEscape(feature.desc)}"` : '';
+      lines.push(`    <PlanFeature name="${xmlEscape(feature.name)}"${desc}>`);
+      coordGeomBlock(featureLines, [], '      ');
+      lines.push('    </PlanFeature>');
+    });
     lines.push('  </PlanFeatures>');
   }
 

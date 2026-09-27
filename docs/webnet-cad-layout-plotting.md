@@ -90,9 +90,34 @@ warning).
 | text / label | FULL (PDF: `GLYPH_SUBSTITUTION` for non-WinAnsi) | FULL (TEXT) | FULL (TEXT) | NOT_APPLICABLE (warn-if-requested) |
 | alignment | FULL | APPROXIMATED (expands to line/arc primitives, per-element warnings) | APPROXIMATED (same) | FULL (line+curve alignment) |
 | error-ellipse | FULL | APPROXIMATED (faceted 36-gon polyline, warned) | APPROXIMATED (same) | NOT_APPLICABLE (warn-if-requested) |
+| feature-line (Phase 20A) | FULL (plan geometry; Z/grade labels presentation-only when enabled) | straight runs FULL (true 3-D `POLYLINE`/`VERTEX`, real group 30); arcs APPROXIMATED (bounded 3D tessellation, warned) | same as R12 | straight runs FULL (`PlanFeature` chained 3-D `<Line>`, real CgPoint z); arcs APPROXIMATED (linearized 3-D points, warned — never a `Curve` hiding a rise) |
 | broken-reference label | FULL + `BROKEN_REFERENCE` warning | FULL + warning | FULL + warning | NOT_APPLICABLE (warn-if-requested) |
 | non-finite / invalid geometry | UNSUPPORTED_WITH_WARNING (`SKIPPED_ENTITY`, omitted) | same | same | same |
 | paper-only sheet objects in model export | n/a | UNSUPPORTED_WITH_WARNING (model-space-only; paper excluded) | FULL (own LAYOUT) | n/a |
+
+### Feature-line 3-D dispositions (Phase 20A)
+
+`feature-line` carries ordered XYZ vertices plus optional per-course plan
+line/arc geometry (endpoint + signed bulge, same convention as parcels).
+All derived values (stations, grades, 3-D lengths, arc center/radius/sweep)
+resolve at read time through `resolveCadFeatureLine` — nothing derived is
+persisted in `.wncad`. The CSV report (`cadFeatureLineCsv.ts`, Export Center
+`csv` format) reuses that resolver: one `vertex` row per vertex
+(Station/Easting/Northing/Elevation/GradeAhead) and one `course` row per
+course (From/To/Type/Plan/3D/Grade%, plus arc Radius/Delta/ArcLen).
+Honesty rules:
+
+- Straight graded runs are exact in every 3-D-capable format (DXF group 30,
+  LandXML CgPoint elevation).
+- Plan arcs cannot ride DXF's 3-D `POLYLINE` (no bulge semantics) or a
+  single planar LandXML `Curve` without hiding the vertical rise, so they
+  are tessellated/linearized with an explicit warning. No silent chord, no
+  fake bulge, never Z defaulted to 0.
+- Invalid geometry (fewer than the required vertices, non-finite XYZ,
+  duplicate/missing stable ids, `segmentGeometry` length mismatch, bad
+  bulge) fails closed: `.wncad` load rejects it, exports omit + warn.
+- Z/grade labels are presentation-only (`featureLineLabels` render option,
+  enabled for SVG/PDF sheet exports); they never enter geometry.
 
 ### F2F-generated objects × format matrix (§23)
 
@@ -108,10 +133,11 @@ provenance); unmapped-source points export as ordinary points (their
 
 ## Export Center UI + scopes (§57)
 
-`src/engine/cad/exportCenter.ts` + `ExportCenterPanel.tsx`: seven formats
+`src/engine/cad/exportCenter.ts` + `ExportCenterPanel.tsx`: eight formats
 with fixed scopes — SVG (current sheet), PDF (current sheet or all
 sheets), DXF R12 (model space, survey coordinates), DXF R2000 (paper
-layouts, all sheets), LandXML (model/CAD geometry), `.wncad` (full
+layouts, all sheets), LandXML (model/CAD geometry), CSV (3D feature-line
+report — vertices + courses, resolver-backed), `.wncad` (full
 drawing), Feature Catalog JSON (active catalog). Filenames derive from
 the sanitized project stem (`sanitizeExportStem`). The panel shows a
 pre-download preview (format label, scope label, filename) plus the

@@ -10,6 +10,7 @@ import type {
 } from './cadSurveyTables';
 
 import type { CadAnnotationAnchor } from './annotation/cadAnnotationAnchors';
+import type { FeatureLineElevationMethod } from './cadFeatureLineCreate';
 import type { HelmertControlPair, HelmertMode } from './cadHelmert2D';
 import type { ProjectTransformRequest } from './cadProjectTransform';
 
@@ -274,7 +275,19 @@ export type CadCommandKey =
   | 'SET_TEXT_OVERRIDE'
   | 'CLEAR_TEXT_OVERRIDE'
   | 'SET_ANNOTATION_SCALE'
-  | 'ANNOTATION_COMMIT';
+  | 'ANNOTATION_COMMIT'
+  // Phase 20A — 3D feature lines.
+  | 'FEATURELINE'
+  | 'FEATURELINECREATE'
+  | 'FEATURELINEELEV'
+  | 'FLSETZ'
+  | 'FLRAISELOWER'
+  | 'FLGRADE'
+  | 'FLINTERPOLATE'
+  | 'FLSURFACEELEV'
+  | 'FLREVERSE'
+  | 'FLINQUIRY'
+  | 'SURFACE_ADD_FEATURE_LINE_BREAKLINE';
 export type CadCommandPhase = 'idle' | 'committed';
 
 export interface CadCommandState {
@@ -1549,6 +1562,67 @@ export type CadCommand =
   | {
       key: 'ANALYSIS_LEGEND_DELETE';
       legendId: string;
+    }
+  // Phase 20A — 3D feature lines (create + edit + report).
+  | {
+      key: 'FEATURELINE' | 'FEATURELINECREATE';
+      sourceEntityIds: CadEntityId[];
+      sourceKind: 'survey-points' | 'chain';
+      elevation: FeatureLineElevationMethod;
+      name?: string;
+      description?: string;
+      closed?: boolean;
+    }
+  | {
+      key: 'FEATURELINEELEV' | 'FLSETZ';
+      entityId: CadEntityId;
+      z: number;
+      vertexIds?: string[];
+    }
+  | {
+      key: 'FLRAISELOWER';
+      entityId: CadEntityId;
+      deltaZ: number;
+      vertexIds?: string[];
+    }
+  | {
+      key: 'FLGRADE';
+      entityId: CadEntityId;
+      startVertexId?: string;
+      endVertexId?: string;
+      startStation?: number;
+      endStation?: number;
+      gradePercent: number;
+      mode?: 'set-end-only' | 'grade-all-intermediates';
+    }
+  | {
+      key: 'FLINTERPOLATE';
+      entityId: CadEntityId;
+      startVertexId?: string;
+      endVertexId?: string;
+      startStation?: number;
+      endStation?: number;
+    }
+  | {
+      key: 'FLSURFACEELEV';
+      entityId: CadEntityId;
+      surfaceId: string;
+    }
+  | {
+      key: 'FLREVERSE';
+      entityId: CadEntityId;
+    }
+  | {
+      key: 'FLINQUIRY';
+      entityId: CadEntityId;
+      startStation?: number;
+      endStation?: number;
+    }
+  | {
+      key: 'SURFACE_ADD_FEATURE_LINE_BREAKLINE';
+      surfaceId: string;
+      entityId: CadEntityId;
+      name?: string;
     };
 
 export interface CadTransaction {

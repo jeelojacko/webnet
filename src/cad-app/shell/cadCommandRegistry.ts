@@ -1,4 +1,9 @@
 import type { ActiveCommandKey } from '../../hooks/surveyCad/useSurveyCadCommandTypes';
+import {
+  FEATURE_LINE_SHELL_KEYS,
+  executeFeatureLineShellCommand,
+  featureLineShellAvailable,
+} from './cadFeatureLineShell';
 import type { CadShellActions, CadWorkspaceSnapshot } from './cadShellTypes';
 import { requestDefinitionFocus, requestSurfaceComposeFocus } from './CadSurfaceDefinitionParts';
 import { surfaceComposeCapability } from './cadSurfaceCompose';
@@ -101,7 +106,8 @@ export type CadShellCommandCategory =
   | 'Parcel'
   | 'Edit'
   | 'File'
-  | 'Surface';
+  | 'Surface'
+  | 'Design';
 
 /**
  * Phase 18B — the ONE shell command definition map. Menu, ribbon, command
@@ -418,6 +424,19 @@ export const CAD_SHELL_COMMANDS: CadShellCommandDef[] = [
   annotation('CURVETABLE', 'Curve Table', 'Create a curve annotation table from the selected arcs (pick insertion).', ['CT']),
   annotation('POINTTABLE', 'Point Table', 'Create a point table from the selection (else Station ID order).', ['PT']),
   action('TABLESTYLE', 'Survey Table Styles', 'Annotate', 'Edit survey table styles (rows, padding, borders, text).', undefined, ['TABLESTYLES']),
+  // Phase 20A — 3D feature lines (bounded DESIGN/FEATURE LINE ribbon group).
+  // Every entry dispatches an undoable engine command through
+  // actions.runFeatureLineCommand; prompts supply the numeric input the
+  // ribbon cannot collect inline. Both faces of the surface method are
+  // vertex-only (no drape/tessellation).
+  action('FEATURELINECREATE', 'Create Feature Line', 'Design', 'Create a feature line from the current selection (ordered survey points snapshot, or a connected Line/Polyline/Arc chain copied exactly); prompts for a constant elevation.', undefined, ['FL']),
+  action('FLSETZ', 'Set Elevations', 'Design', 'Set every vertex of the selected feature line to one absolute elevation (Z only, XY unchanged).', undefined, ['FEATURELINEELEV']),
+  action('FLGRADE', 'Set Grade', 'Design', 'Grade the selected feature line over its full span (grade-all-intermediates, negative percent falls).'),
+  action('FLRAISELOWER', 'Raise/Lower', 'Design', 'Raise or lower every vertex of the selected feature line by a signed delta.'),
+  action('FLINTERPOLATE', 'Interpolate', 'Design', 'Fix the endpoints and interpolate intermediates by cumulative plan station.', undefined, ['FLINTERP']),
+  action('FLSURFACEELEV', 'Set Vertices from Surface', 'Design', 'Set each vertex elevation from the CURRENT surface at its XY (vertex-only; off-surface vertices block the commit; no continuous drape).'),
+  action('FLINQUIRY', 'Feature Line Inquiry', 'Design', 'Report start/end station, plan/3D length, ΔZ, grade, slope angle, bearing, and curve metrics for the selected feature line.', undefined, ['FLINQ']),
+  action('SURFACE_ADDFEATURELINEBREAKLINE', 'Add Feature Line Breakline', 'Design', 'Add the selected feature line as an entity-backed surface breakline (its own vertex Z is consumed by the build).', undefined, ['SURFAFLBREAKLINE']),
 ];
 
 const COMMAND_BY_KEY = new Map<string, CadShellCommandDef>(
@@ -467,6 +486,7 @@ export const isShellCommandAvailable = (
 ): boolean => {
   if (!snapshot || !actions) return false;
   if (def.kind === 'action') {
+    if (FEATURE_LINE_SHELL_KEYS.has(def.key)) return featureLineShellAvailable(def.key, snapshot);
     switch (def.key) {
       case 'SHELL_UNDO':
         return snapshot.canUndo;
@@ -509,6 +529,7 @@ export const executeShellCommand = (
 ): boolean => {
   if (!actions) return false;
   if (def.kind === 'session') return actions.startCommand(def.key as ActiveCommandKey);
+  if (FEATURE_LINE_SHELL_KEYS.has(def.key)) return executeFeatureLineShellCommand(def.key, actions, snapshot);
   switch (def.key) {
     case 'SHELL_UNDO':
       actions.undo();

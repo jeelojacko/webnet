@@ -102,6 +102,7 @@ export const serializeDxfModelWithResult = (model: DxfExportModel): ExportResult
     Object.keys(model.layerLineweights ?? {}).length > 0 ||
     model.lines.some((e) => e.lineweightMm != null) ||
     model.polylines.some((e) => e.lineweightMm != null) ||
+    (model.polylines3d ?? []).some((e) => e.lineweightMm != null) ||
     model.arcs.some((e) => e.lineweightMm != null);
   if (hasLineweights) {
     // R12 cannot carry group 370 — say so once instead of faking precision.
@@ -186,6 +187,23 @@ export const serializeDxfModelWithResult = (model: DxfExportModel): ExportResult
     polyline.vertices.forEach((vertex) => {
       out.push(pair(10, fmt(vertex.x)), pair(20, fmt(vertex.y)));
     });
+  });
+  // Phase 20A: true 3D POLYLINE + VERTEX records (real group 30). R12
+  // supports this classic form; group 70 bit 8 marks a 3D polyline and the
+  // closed bit rides alongside. LWPOLYLINE cannot carry Z, hence the
+  // separate emitter.
+  (model.polylines3d ?? []).forEach((polyline) => {
+    out.push(
+      pair(0, 'POLYLINE'), pair(8, polyline.layer), ...colorOf(polyline.layer, polyline.colorHex), ...linetypeOf(polyline.layer, polyline.linetypeId), ...invisibleOf(polyline.invisible),
+      pair(66, '1'), pair(10, '0'), pair(20, '0'), pair(30, '0'), pair(70, String((polyline.closed ? 1 : 0) | 8)),
+    );
+    polyline.vertices.forEach((vertex) => {
+      out.push(
+        pair(0, 'VERTEX'), pair(8, polyline.layer),
+        pair(10, fmt(vertex.x)), pair(20, fmt(vertex.y)), pair(30, fmt(vertex.z)), pair(70, '32'),
+      );
+    });
+    out.push(pair(0, 'SEQEND'), pair(8, polyline.layer));
   });
   model.arcs.forEach((arc) => {
     out.push(

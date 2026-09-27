@@ -15,6 +15,7 @@ import { exportScenesToPdfWithResult } from './cadPdfExport';
 import { buildDxfLayoutTextWithResult, buildDxfModelSpaceTextWithResult } from './dxf/dxfLayoutExport';
 import { collectCadSurveyTablesForExport } from './cadSurveyExportTables';
 import { buildLandXmlProjectExportWithResult } from '../landxmlCad';
+import { buildCadFeatureLineCsvReport } from './cadFeatureLineCsv';
 import type { CadLandXmlCivilSources } from '../landxmlCivilSource';
 import { buildLandXmlClassSummary, type ExportCenterClassSummary } from './landxmlExportSummary';
 import {
@@ -46,6 +47,7 @@ export type ExportCenterFormat =
   | 'dxf-r12'
   | 'dxf-r2000'
   | 'landxml'
+  | 'csv'
   | 'wncad'
   | 'catalog';
 
@@ -104,6 +106,7 @@ const COORDINATE_DELIVERABLES: ReadonlySet<ExportCenterFormat> = new Set([
   'dxf-r12',
   'dxf-r2000',
   'landxml',
+  'csv',
 ]);
 
 const blockedDeliverable = (format: ExportCenterFormat, reason: string, blockMessage: string): ExportCenterOutcome => ({
@@ -148,6 +151,7 @@ export const EXPORT_FORMAT_LABELS: Record<ExportCenterFormat, string> = {
   'dxf-r12': 'DXF R12 (model space)',
   'dxf-r2000': 'DXF R2000 (layouts)',
   landxml: 'LandXML (CAD geometry)',
+  csv: 'CSV (3D feature-line report)',
   wncad: '.wncad (drawing)',
   catalog: 'Feature Catalog JSON',
 };
@@ -158,6 +162,7 @@ export const EXPORT_SCOPE_LABELS: Record<ExportCenterFormat, string> = {
   'dxf-r12': 'Model space (survey coordinates)',
   'dxf-r2000': 'Paper layouts (all sheets)',
   landxml: 'Model / CAD geometry',
+  csv: 'Feature lines (vertices + courses)',
   wncad: 'Full drawing document',
   catalog: 'Active feature catalog',
 };
@@ -190,6 +195,8 @@ export const buildExportCenterFileName = (
       return `${stem}-layouts.dxf`;
     case 'landxml':
       return `${stem}.xml`;
+    case 'csv':
+      return `${stem}-feature-lines.csv`;
     case 'wncad':
       return buildCadDrawingFileName(projectName);
     case 'catalog':
@@ -252,7 +259,7 @@ const buildSceneResults = (drawing: CadDrawingDocument, sheetIds: string[], anal
   if (!draft) return { ok: false, message: 'No draft yet. Sheets live on the draft document.' };
   try {
     const sceneResults = sheetIds.map((sheetId) =>
-      buildExportSheetSceneWithResult({ draft, sheetId, project: drawing.project, analysis }),
+      buildExportSheetSceneWithResult({ draft, sheetId, project: drawing.project, analysis, featureLineLabels: true }),
     );
     return {
       ok: true,
@@ -474,6 +481,30 @@ const describeLandxml = (
   };
 };
 
+const describeCsv = (drawing: CadDrawingDocument): ExportCenterOutcome => {
+  // Phase 20A: feature-line report reusing the authoritative resolver. The
+  // report itself owns the no-silent-drop contract (invalid lines omitted +
+  // warned); the preview surfaces those dispositions before download.
+  const report = buildCadFeatureLineCsvReport(drawing.project);
+  return {
+    ok: true,
+    preview: {
+      format: 'csv',
+      formatLabel: EXPORT_FORMAT_LABELS.csv,
+      scopeLabel: `${EXPORT_SCOPE_LABELS.csv} (${report.exportedEntityIds.length} features, ${report.omittedEntityIds.length} omitted)`,
+      sheetNames: [],
+      filename: buildExportCenterFileName(drawing.project.name, 'csv'),
+      mimeType: 'text/csv',
+      isBinary: false,
+      warnings: report.warnings,
+      omittedEntityIds: report.omittedEntityIds,
+      approximatedEntityIds: report.approximatedEntityIds,
+      warningsPending: false,
+      payload: report.output,
+    },
+  };
+};
+
 /** Friendly failure mapping: serialization/support errors become messages, never stacks. */
 export const buildExportCenterPreview = (
   drawing: CadDrawingDocument,
@@ -498,6 +529,8 @@ export const buildExportCenterPreview = (
         return describeDxfR2000(drawing, analysis);
       case 'landxml':
         return describeLandxml(drawing, civilSources);
+      case 'csv':
+        return describeCsv(drawing);
       case 'wncad':
         return {
           ok: true,

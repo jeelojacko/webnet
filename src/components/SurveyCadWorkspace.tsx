@@ -45,6 +45,7 @@ import type { CadShellActions, CadWorkspaceSnapshot, SurveyManagerKind } from '.
 import { buildCadSurveySnapshot } from '../cad-app/shell/cadSurveySnapshot';
 import { buildCadSurveyTableSnapshot } from '../cad-app/shell/cadSurveyTableSnapshot';
 import { buildCadParcelSnapshot } from '../cad-app/shell/cadParcelSnapshot';
+import { buildCadFeatureLineSnapshot } from '../cad-app/shell/cadFeatureLineSnapshot';
 import { buildCadBlockSnapshot } from '../cad-app/shell/cadBlockSnapshot';
 import { withBlockHoverTitles } from '../cad-app/blocks/cadBlockOverlay';
 import {
@@ -1552,6 +1553,7 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
       survey: buildCadSurveySnapshot(activeProject, selectedEntityIds),
       surveyTable: buildCadSurveyTableSnapshot(activeProject, selectedEntityIds),
       parcel: buildCadParcelSnapshot(activeProject, selectedEntityIds),
+      featureLine: buildCadFeatureLineSnapshot(activeProject, selectedEntityIds),
       blocks: buildCadBlockSnapshot(activeProject, selectedEntityIds, blockInsertPick),
       annotation: cadWorkspace.annotationSnapshot,
       f2f: buildCadF2FSnapshot(activeProject, activeCatalog, catalogStatus),
@@ -1957,6 +1959,7 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
       },
       runLayerCommand: (command) => cadWorkspace.runLayerCommand(command),
       runSurveyCommand: (command) => cadWorkspace.runLayerCommand(command),
+      runFeatureLineCommand: (command) => cadWorkspace.runLayerCommand(command),
       // Phase 18Y — deterministic pre-commit composition of two CURRENT
       // session meshes; the dialog commits the returned payload through
       // SURFCOMPOSE / SURFCOMPOSEPASTE (revision-gated at commit).

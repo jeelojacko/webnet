@@ -342,6 +342,48 @@ export interface CadPolygonEntity extends CadBaseEntity {
 }
 
 /**
+ * Phase 20A first-class 3D feature-line vertex: plan position (metres) +
+ * owned elevation (metres, never defaulted — absent Z fails closed
+ * downstream, never 0). Ids follow
+ * `feature-vertex:<featureLineId>:<stableId>` (see cadFeatureLines).
+ */
+export interface CadFeatureLineVertex {
+  id: string;
+  x: number;
+  y: number;
+  z: number;
+}
+
+/**
+ * Phase 20A feature-line segment geometry: endpoint-owned, same signed
+ * CAD-standard bulge convention as CadParcelCourseGeometry
+ * (b = tan(sweepRad/4); positive = CCW = center-left; |b| > 1 = major
+ * arc). Entry [index] describes the course starting at vertices[index].
+ * Absent array = all-line (straight grade legs).
+ */
+export type CadFeatureLineSegmentGeometry = { kind: 'line' } | { kind: 'arc'; bulge: number };
+
+/**
+ * Phase 20A first-class 3D feature line: ordered XYZ vertices with
+ * optional per-course plan line/arc geometry. Stations derive at read
+ * time from cumulative horizontal (plan) length, station 0 at the first
+ * vertex; grades derive from dZ over plan length. ADDITIVE ONLY — no
+ * other entity changes, no migration of old entities.
+ */
+export interface CadFeatureLineEntity extends CadBaseEntity {
+  type: 'feature-line';
+  vertices: CadFeatureLineVertex[];
+  /**
+   * Contract: when present, segmentGeometry.length === course count
+   * (vertices.length - 1 open, vertices.length closed). Absent = all-line.
+   */
+  segmentGeometry?: CadFeatureLineSegmentGeometry[];
+  closed?: boolean;
+  name?: string;
+  description?: string;
+}
+
+/**
  * Phase 19C mixed line/arc parcel course geometry (endpoint-owned bulge).
  * Signed CAD-standard bulge b = tan(sweepRad/4): sign carries left/right
  * (positive = CCW = center-left), magnitude carries minor/major
@@ -689,7 +731,8 @@ export type CadEntity =
   | CadLeaderEntity
   | CadDimensionEntity
   | CadBearingDistanceLabelEntity
-  | CadCurveLabelEntity;
+  | CadCurveLabelEntity
+  | CadFeatureLineEntity;
 
 export interface CadProjectMetadata {
   source: 'adjustment-result' | 'parsed-input';
@@ -1022,6 +1065,13 @@ export interface CadSurfaceBoundary {
 export interface CadSurfaceBuildOptions {
   /** Post-build filter: drop triangles with any edge longer than this (drawing units). */
   maxEdgeLength?: number;
+  /**
+   * Phase 20A: max plan deviation (metres) when linearizing feature-line
+   * arc courses into breakline segments. Effective value is always finite
+   * and positive (absent/invalid reads as 0.001); it joins the source
+   * revision so a tolerance change rebuilds. Never touches TIN numerics.
+   */
+  breaklineChordTolerance?: number;
 }
 
 /**

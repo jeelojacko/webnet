@@ -16,7 +16,7 @@ import type { CadLandXmlCivilSources } from '../../engine/landxmlCivilSource';
 import type { ResultDependencyIdentity } from '../../engine/resultIntegrity';
 import type { FeatureCodeCatalog } from '../../engine/fieldToFinish/featureCatalog';
 
-const FORMATS: ExportCenterFormat[] = ['svg', 'pdf', 'dxf-r12', 'dxf-r2000', 'landxml', 'wncad', 'catalog'];
+const FORMATS: ExportCenterFormat[] = ['svg', 'pdf', 'dxf-r12', 'dxf-r2000', 'landxml', 'csv', 'wncad', 'catalog'];
 
 const PICKER_TYPES: Record<ExportCenterFormat, { description: string; accept: Record<string, string[]> }> = {
   svg: { description: 'SVG Files', accept: { 'image/svg+xml': ['.svg'] } },
@@ -24,6 +24,7 @@ const PICKER_TYPES: Record<ExportCenterFormat, { description: string; accept: Re
   'dxf-r12': { description: 'DXF Files', accept: { 'application/dxf': ['.dxf'] } },
   'dxf-r2000': { description: 'DXF Files', accept: { 'application/dxf': ['.dxf'] } },
   landxml: { description: 'LandXML Files', accept: { 'application/xml': ['.xml'] } },
+  csv: { description: 'CSV Files', accept: { 'text/csv': ['.csv'] } },
   wncad: { description: 'WebNet CAD Drawing', accept: { 'application/json': ['.wncad', '.json'] } },
   catalog: { description: 'JSON Files', accept: { 'application/json': ['.json'] } },
 };

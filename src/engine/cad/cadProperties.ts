@@ -18,6 +18,7 @@ import {
 } from './cadGeometry';
 import { resolveCadEntityAppearance } from './cadAppearance';
 import { getCadEntityDisplayLabel, getCadEntityEditableName } from './cadEntityNames';
+import { resolveCadFeatureLine } from './cadFeatureLines';
 import {
   cadSurveyTableKindLabel,
   defaultCadSurveyTablePrefix,
@@ -547,6 +548,35 @@ const buildEntityProperties = (project: CadProject, entity: CadEntity): CadEntit
         row('station-equations', 'Station equations', String(entity.stationEquations?.length ?? 0)),
       );
       return rows;
+    case 'feature-line': {
+      // Phase 20A: read-only summary rows (stations/grades derive at read
+      // time; invalid lines report '--', never defaulted values).
+      const resolved = resolveCadFeatureLine(entity);
+      const zs = entity.vertices.map((vertex) => vertex.z);
+      rows.push(
+        row('name', 'Name', entity.name ?? getCadEntityDisplayLabel(entity), { kind: 'entity-name' }),
+        row('vertices', 'Vertices', `${entity.vertices.length}`),
+        row('closed', 'Closed', yesNo(entity.closed ?? false)),
+        row('courses', 'Courses', resolved == null ? '--' : `${resolved.courses.length}`),
+        row('start-station', 'Start station', resolved == null ? '--' : formatCadStation(0)),
+        row('end-station', 'End station', resolved == null ? '--' : formatCadStation(resolved.planLength)),
+        row('plan-length', 'Plan length', resolved == null ? '--' : numeric(resolved.planLength)),
+        row('length-3d', '3D length', resolved == null ? '--' : numeric(resolved.length3D)),
+        row('min-z', 'Min Z', zs.length === 0 ? '--' : numeric(Math.min(...zs))),
+        row('max-z', 'Max Z', zs.length === 0 ? '--' : numeric(Math.max(...zs))),
+      );
+      if (entity.description) rows.push(row('description', 'Description', entity.description));
+      entity.vertices.forEach((vertex, index) => {
+        rows.push(
+          row(
+            `vertex-${index}`,
+            `V${index + 1}`,
+            `${numeric(vertex.x)}, ${numeric(vertex.y)}, ${numeric(vertex.z)}`,
+          ),
+        );
+      });
+      return rows;
+    }
     case 'text':
       rows.push(
         row('name', 'Name', getCadEntityEditableName(entity) || getCadEntityDisplayLabel(entity), { kind: 'entity-name' }),

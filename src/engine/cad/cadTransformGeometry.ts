@@ -235,6 +235,37 @@ export const transformCadEntityGeometry = (
       });
       return { ok: true, entity: { ...entity, elements } };
     }
+    case 'feature-line': {
+      // Phase 20A (mission §§69-74 pin): plan movement is XY-only, Z rides
+      // verbatim. MOVE/ROTATE leave bulges unchanged (re-derived from the
+      // moved endpoints); MIRROR flips bulge signs (reuse the parcel
+      // mirror — same endpoint-owned convention); uniform SCALE moves XY
+      // only so grades change honestly; non-uniform BLOCKS on curved
+      // lines (GENERAL_AFFINE precedent — never shear a circle or a grade).
+      const geometry = entity.segmentGeometry;
+      const curved =
+        geometry != null &&
+        geometry.some((entry) => parcelCourseCanonicalKind(entry) === 'arc');
+      if (classification.kind === 'GENERAL_AFFINE' && curved) {
+        return { ok: false, reason: 'CAD_TRANSFORM_FEATURE_LINE_NON_UNIFORM_CURVED_UNSUPPORTED' };
+      }
+      const vertices = entity.vertices.map((vertex) => {
+        const next = applyPoint(transform, { x: vertex.x, y: vertex.y });
+        return { ...vertex, x: next.x, y: next.y };
+      });
+      const carriedGeometry =
+        geometry != null && isReflection(classification)
+          ? mirrorParcelCourseGeometry(geometry).map((entry) => ({ ...entry }))
+          : geometry;
+      return {
+        ok: true,
+        entity: {
+          ...entity,
+          vertices,
+          ...(carriedGeometry !== geometry ? { segmentGeometry: carriedGeometry } : {}),
+        },
+      };
+    }
     case 'text': {
       const next = applyPoint(transform, { x: entity.x, y: entity.y });
       // Position only: legacy baked text has no live glyph transform, so

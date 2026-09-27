@@ -106,6 +106,7 @@ import { volumeCommandDefinitions } from './cadTransactionsVolumeCommands';
 import { analysisCommandDefinitions } from './cadTransactionsAnalysisCommands';
 import { profileCommandDefinitions } from './cadTransactionsProfileCommands';
 import { sectionCommandDefinitions } from './cadTransactionsSectionCommands';
+import { featureLineCommandDefinitions } from './cadTransactionsFeatureLineCommands';
 import {
   curveTableCommand,
   lineTableCommand,
@@ -732,6 +733,18 @@ export const CAD_COMMAND_REGISTRY: Record<CadCommandKey, CadCommandDefinition<Ca
   SET_TEXT_OVERRIDE: annotationCommandDefinitions.SET_TEXT_OVERRIDE as CadCommandDefinition<CadCommand>,
   CLEAR_TEXT_OVERRIDE: annotationCommandDefinitions.CLEAR_TEXT_OVERRIDE as CadCommandDefinition<CadCommand>,
   SET_ANNOTATION_SCALE: annotationCommandDefinitions.SET_ANNOTATION_SCALE as CadCommandDefinition<CadCommand>,
+  // Phase 20A — 3D feature lines.
+  FEATURELINE: featureLineCommandDefinitions.FEATURELINE as CadCommandDefinition<CadCommand>,
+  FEATURELINECREATE: featureLineCommandDefinitions.FEATURELINECREATE as CadCommandDefinition<CadCommand>,
+  FEATURELINEELEV: featureLineCommandDefinitions.FEATURELINEELEV as CadCommandDefinition<CadCommand>,
+  FLSETZ: featureLineCommandDefinitions.FLSETZ as CadCommandDefinition<CadCommand>,
+  FLRAISELOWER: featureLineCommandDefinitions.FLRAISELOWER as CadCommandDefinition<CadCommand>,
+  FLGRADE: featureLineCommandDefinitions.FLGRADE as CadCommandDefinition<CadCommand>,
+  FLINTERPOLATE: featureLineCommandDefinitions.FLINTERPOLATE as CadCommandDefinition<CadCommand>,
+  FLSURFACEELEV: featureLineCommandDefinitions.FLSURFACEELEV as CadCommandDefinition<CadCommand>,
+  FLREVERSE: featureLineCommandDefinitions.FLREVERSE as CadCommandDefinition<CadCommand>,
+  FLINQUIRY: featureLineCommandDefinitions.FLINQUIRY as CadCommandDefinition<CadCommand>,
+  SURFACE_ADD_FEATURE_LINE_BREAKLINE: featureLineCommandDefinitions.SURFACE_ADD_FEATURE_LINE_BREAKLINE as CadCommandDefinition<CadCommand>,
 };
 
 export const createCadIdleCommandState = createIdleCommandState;

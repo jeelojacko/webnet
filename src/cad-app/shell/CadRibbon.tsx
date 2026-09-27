@@ -7,6 +7,7 @@ import {
 } from './cadCommandRegistry';
 import { CadLayersGroup } from './CadLayersGroup';
 import { CadParcelNetworkRibbonGroup } from './CadParcelNetworkRibbonGroup';
+import { CadFeatureLineRibbonGroup } from './CadFeatureLineRibbonGroup';
 import { PARCEL_NETWORK_KEYS } from './cadParcelNetwork.constants';
 import { CadAnnotateRibbonGroups } from '../annotation/CadAnnotateRibbonGroups';
 import type { CadShellActions, CadWorkspaceSnapshot, SurveyManagerKind } from './cadShellTypes';
@@ -113,6 +114,7 @@ export const CadRibbon: React.FC<CadRibbonProps> = ({ snapshot, actions, collaps
             ) : null}
           </React.Fragment>
         ))}
+        {tab === 'Home' ? <CadFeatureLineRibbonGroup snapshot={snapshot} actions={actions} /> : null}
       </div>
     </div>
   );

@@ -1,7 +1,10 @@
 import { cadPointOnCircle, type CadWorldPoint } from './cadGeometry';
+import { CAD_PARCEL_BULGE_LINE_FLOOR } from './cadParcelArcGeometry';
+import { resolveCadFeatureLine } from './cadFeatureLines';
 import { getCadEntityDisplayLabel } from './cadEntityNames';
 import type {
   CadArcEntity,
+  CadFeatureLineEntity,
   CadLineEntity,
   CadParcelEntity,
   CadPolygonEntity,
@@ -43,9 +46,64 @@ export const vertexEntitySegments = (
 };
 
 export const entitySegments = (
-  entity: CadLineEntity | CadPolylineEntity | CadPolygonEntity | CadParcelEntity,
-): CadSegmentRef[] =>
-  entity.type === 'line' ? lineSegments(entity) : vertexEntitySegments(entity);
+  entity:
+    | CadLineEntity
+    | CadPolylineEntity
+    | CadPolygonEntity
+    | CadParcelEntity
+    | CadFeatureLineEntity,
+): CadSegmentRef[] => {
+  if (entity.type === 'line') return lineSegments(entity);
+  if (entity.type === 'feature-line') return featureLineCourseSegments(entity);
+  return vertexEntitySegments(entity);
+};
+
+/** Phase 20A: line-course segments of a feature line (arc courses are arcs). */
+export const featureLineCourseSegments = (entity: CadFeatureLineEntity): CadSegmentRef[] => {
+  const resolved = resolveCadFeatureLine(entity);
+  if (!resolved) return [];
+  return resolved.courses
+    .filter((course) => course.kind === 'line')
+    .map((course) => ({
+      segmentId: `${entity.id}#${course.index}`,
+      sourceEntityId: entity.id,
+      start: { x: course.from.x, y: course.from.y },
+      end: { x: course.to.x, y: course.to.y },
+      startLabel: `V${course.index + 1}`,
+      endLabel: `V${course.index + 2}`,
+      label: `V${course.index + 1}-V${course.index + 2}`,
+    }));
+};
+
+/** Phase 20A: arc-course refs of a feature line (reuse the resolver only). */
+export const featureLineCourseArcs = (entity: CadFeatureLineEntity): CadArcRef[] => {
+  const resolved = resolveCadFeatureLine(entity);
+  if (!resolved) return [];
+  return resolved.courses
+    .filter(
+      (course) =>
+        course.kind === 'arc' &&
+        course.center != null &&
+        course.radius != null &&
+        course.startAngleDeg != null &&
+        course.signedSweepDeg != null,
+    )
+    .map((course) => ({
+      sourceEntityId: entity.id,
+      center: { ...course.center! },
+      radius: course.radius!,
+      startAngleDeg: course.startAngleDeg!,
+      endAngleDeg: course.startAngleDeg! + course.signedSweepDeg!,
+      startPoint: { x: course.from.x, y: course.from.y },
+      endPoint: { x: course.to.x, y: course.to.y },
+      label: `${getCadEntityDisplayLabel(entity)}#${course.index}`,
+    }));
+};
+
+/** True when a course entry is a canonical arc (shared machine floor). */
+export const isFeatureLineArcCourse = (
+  entry: { kind: 'line' } | { kind: 'arc'; bulge: number } | undefined,
+): boolean => entry?.kind === 'arc' && Math.abs(entry.bulge) >= CAD_PARCEL_BULGE_LINE_FLOOR;
 
 export const arcRefFromEntity = (_project: CadProject, entity: CadArcEntity): CadArcRef => ({
   sourceEntityId: entity.id,
