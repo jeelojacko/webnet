@@ -58,6 +58,11 @@ import {
   sanitizeCadGradings,
   withoutGradingsKey,
 } from './grading/gradingPersistence';
+import {
+  backfillCadGradingGroups,
+  sanitizeCadGradingGroups,
+  withoutGradingGroupsKey,
+} from './grading/gradingGroupPersistence';
 import { backfillAnalysisMaps, clearAnalysisCacheOnLoad, cloneCadAnalysisMaps } from './cadAnalysisMaps';
 import { backfillAnalysisLegends, cloneCadAnalysisLegends } from './cadAnalysisLegends';
 import { sanitizeCadSurveyTables } from './cadSurveyTablePersistence';
@@ -153,7 +158,8 @@ export const createBlankCadProject = ({
   });
   // Phase 19D: new drawings own an empty shared-boundary collection (trailing).
   // Phase 20B: new drawings own an empty grading table (trailing).
-  return { ...withTables, sharedParcelBoundaries: [], gradings: [] };
+  // Phase 20C: new drawings own an empty grading-group table (trailing gradings).
+  return { ...withTables, sharedParcelBoundaries: [], gradings: [], gradingGroups: [] };
 };
 
 export const createBlankCadDrawingDocument = ({
@@ -371,7 +377,7 @@ export const migrateSurveyCadStateToDrawing = ({
     updatedAt: nowIso,
     units,
     project: {
-      ...withoutGradingsKey(projectWithAnalysis),
+      ...withoutGradingGroupsKey(withoutGradingsKey(projectWithAnalysis)),
       name,
       bounds: projectWithAnalysis.bounds ?? buildCadBounds(projectWithAnalysis.entities),
       // Phase 18N: legacy imports own no blocks (trailing: key-order rule).
@@ -381,6 +387,9 @@ export const migrateSurveyCadStateToDrawing = ({
       // Phase 20B: grading definitions trail everything (key-order rule);
       // legacy imports backfill [], derived results never persist.
       gradings: sanitizeCadGradings(backfillCadGradings(withStandards.gradings)),
+      // Phase 20C: group definitions trail gradings (key-order rule);
+      // legacy imports backfill [], derived results never persist.
+      gradingGroups: sanitizeCadGradingGroups(backfillCadGradingGroups(withStandards.gradingGroups)),
     },
     parcelLayout: cloneParcelLayout(state.parcelLayout),
     showParcelLabels: state.showParcelLabels ?? true,
@@ -469,10 +478,12 @@ const sanitizeCadDrawingDocument = (value: unknown): CadDrawingDocument | undefi
     // (trailing keys; unknown refs dropped, never rebound).
     // Phase 20B: grading definitions trail everything (key-order rule);
     // malformed entries drop fail-closed, derived results never persist.
+    // Phase 20C: group definitions trail gradings (same rule).
     const projectWithBoundaries: CadProject = {
-      ...withoutGradingsKey(projectWithAnalysis),
+      ...withoutGradingGroupsKey(withoutGradingsKey(projectWithAnalysis)),
       sharedParcelBoundaries: sanitizeCadParcelSharedBoundaries(projectWithAnalysis).boundaries,
       gradings: sanitizeCadGradings(backfillCadGradings(projectWithAnalysis.gradings)),
+      gradingGroups: sanitizeCadGradingGroups(backfillCadGradingGroups(projectWithAnalysis.gradingGroups)),
     };
     const draft = cloned.draft
       ? { ...cloned.draft, layers: backfillCadLayerList(cloned.draft.layers) }

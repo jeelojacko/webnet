@@ -102,6 +102,10 @@ import { SurfaceGradingService } from '../workers/surfaceGradingService';
 import { createCadGradingCache } from '../engine/cad/grading/gradingCache';
 import { buildCadGradingSnapshot } from '../cad-app/shell/cadGradingSnapshot';
 import { CadGradingManager } from '../cad-app/shell/CadGradingManager';
+import { createCadGradingGroupCache } from '../engine/cad/grading/gradingGroupCache';
+import { buildCadGradingGroupSnapshot } from '../cad-app/shell/cadGradingGroupSnapshot';
+import { buildGroupGradingSceneLayers } from '../cad-app/shell/cadGradingGroupDisplay';
+import { CadGradingGroupManager } from '../cad-app/shell/CadGradingGroupManager';
 import { SurfaceProfileService } from '../workers/surfaceProfileService';
 import { SurfaceSectionService } from '../workers/surfaceSectionService';
 import { createCadProfileCache } from '../engine/cad/profileCache';
@@ -458,6 +462,13 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
   const [selectedGradingId, setSelectedGradingId] = useState<string | null>(null);
   const [gradingManagerTab, setGradingManagerTab] = useState<'definition' | 'inquiry'>('definition');
   const [gradingVersion, setGradingVersion] = useState(0);
+  // Phase 20C — grading-group session state (definitions persist; results never do).
+  const groupCache = useMemo(
+    () => createCadGradingGroupCache(activeDrawing.drawingId),
+    [activeDrawing.drawingId],
+  );
+  const [selectedGroupId, setSelectedGroupId] = useState<string | null>(null);
+  const [groupManagerTab, setGroupManagerTab] = useState<'definition' | 'inquiry'>('definition');
   // Phase 18F — surface UI state (all session-only; meshes never persist).
   const [selectedSurfaceId, setSelectedSurfaceId] = useState<string | null>(null);
   const [surfacePick, setSurfacePick] = useState<{ surfaceId: string; mode: 'elevation' | 'slope' } | null>(null);
@@ -674,6 +685,7 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
         getDrawingId: () => drawingIdForBuildsRef.current,
         tinCache: surfaceCache,
         gradingCache,
+        groupCache,
         createTransport: () => {
           try {
             if (typeof Worker === 'undefined') return null;
@@ -689,7 +701,7 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
         notify: (message) => setFileStatusText(message),
         onStateChange: () => setGradingVersion((version) => version + 1),
       }),
-    [activeDrawing.drawingId, surfaceCache, gradingCache],
+    [activeDrawing.drawingId, surfaceCache, gradingCache, groupCache],
   );
   useEffect(() => () => gradingService.dispose(), [gradingService]);
   const gradingInputs = useMemo(
@@ -697,6 +709,16 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
       version: gradingVersion,
       buildingGradingIds: gradingService.buildingGradingIds(),
       sessionDiagnostics: gradingService.gradingDiagnostics(),
+    }),
+    [gradingService, gradingVersion],
+  );
+  // Phase 20C — group derivation inputs refresh on the same service state
+  // change (pending/diagnostic transitions), never auto-starting work.
+  const groupInputs = useMemo(
+    () => ({
+      version: gradingVersion,
+      buildingGroupIds: gradingService.buildingGroupIds(),
+      sessionDiagnostics: gradingService.groupGradingDiagnostics(),
     }),
     [gradingService, gradingVersion],
   );
@@ -1608,6 +1630,10 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
         buildingGradingIds: gradingInputs.buildingGradingIds,
         sessionDiagnostics: gradingInputs.sessionDiagnostics,
       }),
+      gradingGroups: buildCadGradingGroupSnapshot(activeProject, surfaceCache, groupCache, selectedGroupId, {
+        buildingGroupIds: groupInputs.buildingGroupIds,
+        sessionDiagnostics: groupInputs.sessionDiagnostics,
+      }),
       blocks: buildCadBlockSnapshot(activeProject, selectedEntityIds, blockInsertPick),
       annotation: cadWorkspace.annotationSnapshot,
       f2f: buildCadF2FSnapshot(activeProject, activeCatalog, catalogStatus),
@@ -1659,6 +1685,7 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
     selectedSampleLineGroupId, selectedSampleLineId, selectedSectionViewId,
     blockInsertPick,
     gradingCache, selectedGradingId, gradingInputs,
+    groupCache, selectedGroupId, groupInputs,
   ]);
 
   useEffect(() => {
@@ -1787,12 +1814,24 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
     () => buildGradingSceneLayers(shellSnapshot?.grading),
     [shellSnapshot],
   );
+  // Phase 20C — CURRENT group fills + daylight + seam, ghost side arrows
+  // for the selected uncalculated group, failed corner/course markers.
+  // OFF/FROZEN layers drop under the same contract; stale rows contribute
+  // no layer, so superseded geometry never renders as current.
+  const groupGradingDisplayLayers = useMemo(() => {
+    const failedErrors = new Map<string, string>();
+    for (const [groupId, diagnostic] of gradingService.groupGradingDiagnostics()) {
+      failedErrors.set(groupId, diagnostic.error);
+    }
+    return buildGroupGradingSceneLayers(shellSnapshot?.gradingGroups, { failedErrors });
+  }, [shellSnapshot, gradingService]);
   const displaySceneWithGrading = useMemo(
     () => filterCadDisplaySceneForViewport(activeProject, {
       ...displaySceneWithSections,
       gradingLayers: gradingDisplayLayers,
+      groupGradingLayers: groupGradingDisplayLayers,
     }),
-    [activeProject, displaySceneWithSections, gradingDisplayLayers],
+    [activeProject, displaySceneWithSections, gradingDisplayLayers, groupGradingDisplayLayers],
   );
   const displaySceneWithSurfaceEdits = surfaceEditOverlayPrimitives.length === 0
     ? displaySceneWithGrading
@@ -2064,6 +2103,46 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
         const ok = cadWorkspace.runLayerCommand({
           key: 'GRADINGBAKE',
           gradingId,
+          result: row.currentResult,
+          expectedRevision: row.revision,
+          sessionCurrent: true,
+        });
+        return ok ? `Baked “${row.name}” into an explicit-TIN surface.` : 'Bake rejected — needs a CURRENT nonzero result.';
+      },
+      // Phase 20C — group definition CRUD + Calculate/Extract/Bake. Calculate
+      // dispatches through the session grading service (explicit only);
+      // Extract/Bake pass the CURRENT cached result snapshot to the engine
+      // command (never recomputed in history).
+      runGradingGroupCommand: (command) => cadWorkspace.runLayerCommand(command),
+      selectGradingGroup: (groupId) => setSelectedGroupId(groupId),
+      openGradingGroupManager: (selectedId, tab) => {
+        if (selectedId != null) setSelectedGroupId(selectedId);
+        setGroupManagerTab(tab ?? 'definition');
+        setSurveyManager({ kind: 'grading-groups', selectedId });
+      },
+      requestGroupGradingCalculate: (groupId) => {
+        const message = gradingService.requestGroupGrading(groupId);
+        setGradingVersion((version) => version + 1);
+        return message;
+      },
+      extractGroupDaylight: (groupId) => {
+        const row = shellSnapshot?.gradingGroups?.groups.find((entry) => entry.id === groupId) ?? null;
+        if (!row?.currentResult || row.revision.length === 0) return 'Extract needs a CURRENT calculated result.';
+        const ok = cadWorkspace.runLayerCommand({
+          key: 'GROUPEXTRACTDAYLIGHT',
+          groupId,
+          result: row.currentResult,
+          expectedRevision: row.revision,
+          sessionCurrent: true,
+        });
+        return ok ? `Extracted “${row.name} - Daylight”.` : 'Extract rejected — needs a CURRENT result.';
+      },
+      bakeGroupSurface: (groupId) => {
+        const row = shellSnapshot?.gradingGroups?.groups.find((entry) => entry.id === groupId) ?? null;
+        if (!row?.currentResult || row.revision.length === 0) return 'Bake needs a CURRENT calculated result.';
+        const ok = cadWorkspace.runLayerCommand({
+          key: 'GROUPBAKE',
+          groupId,
           result: row.currentResult,
           expectedRevision: row.revision,
           sessionCurrent: true,
@@ -2715,6 +2794,15 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
             actions={shellActions}
             initialSelectedId={surveyManager.selectedId}
             initialTab={gradingManagerTab}
+            onClose={() => setSurveyManager(null)}
+          />
+        ) : null}
+        {surveyManager?.kind === 'grading-groups' && shellSnapshot ? (
+          <CadGradingGroupManager
+            snapshot={shellSnapshot}
+            actions={shellActions}
+            initialSelectedId={surveyManager.selectedId}
+            initialTab={groupManagerTab}
             onClose={() => setSurveyManager(null)}
           />
         ) : null}

@@ -130,6 +130,11 @@ export const filterCadDisplaySceneForViewport = (
     gradingLayers: (scene.gradingLayers ?? []).filter(
       (layer) => !isLayerHidden(project, layer.layerId),
     ),
+    // Phase 20C: grading-group fills + daylight + seam + ghosts ride the
+    // same OFF/frozen contract — layer OFF hides with no recalculation.
+    groupGradingLayers: (scene.groupGradingLayers ?? []).filter(
+      (layer) => !isLayerHidden(project, layer.layerId),
+    ),
     sampleLineLayers: (scene.sampleLineLayers ?? []).filter(
       (layer) => !isLayerHidden(project, layer.layerId),
     ),

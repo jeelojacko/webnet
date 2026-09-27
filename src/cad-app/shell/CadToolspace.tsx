@@ -15,6 +15,7 @@ import {
 import { ParcelNetworkNode, ParcelSchedulesNode } from './CadParcelToolspace';
 import { FeatureLinesNode } from './CadFeatureLineToolspace';
 import { GradingsNode } from './CadGradingToolspace';
+import { GradingGroupsNode } from './CadGradingGroupToolspace';
 import { composePolicyLabel, type CadSurfaceRow } from './cadSurfaceSnapshot';
 import { cadSurfaceEditStatusText } from './cadSurfaceEditSummaries';
 
@@ -230,6 +231,7 @@ const SurveyTab: React.FC<{ snapshot: CadWorkspaceSnapshot | null; actions: CadS
       <ParcelSchedulesNode snapshot={snapshot} actions={actions} />
       <FeatureLinesNode snapshot={snapshot} actions={actions} />
       <GradingsNode snapshot={snapshot} actions={actions} />
+      <GradingGroupsNode snapshot={snapshot} actions={actions} />
       <SurveyTablesNode snapshot={snapshot} actions={actions} />
       {snapshot ? <SurfaceProfilesNode snapshot={snapshot} actions={actions} /> : null}
       {snapshot ? <ProfileViewsNode snapshot={snapshot} actions={actions} /> : null}

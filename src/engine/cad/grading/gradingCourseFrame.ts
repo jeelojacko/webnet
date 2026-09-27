@@ -146,6 +146,54 @@ const orientArc = (
 };
 
 /**
+ * Phase 20C: structural mapping from a resolved Feature Line course (the
+ * `ResolvedFeatureLineCourse` shape) to the grading-course shape consumed by
+ * `resolveGradingSourceCourse`. Shared by the single-course and group
+ * resolve paths so the two cannot drift.
+ */
+export const toGradingCourseLikes = (
+  courses: ReadonlyArray<{
+    fromVertexId: string;
+    toVertexId: string;
+    from: { x: number; y: number; z: number };
+    to: { x: number; y: number; z: number };
+    planLength: number;
+    kind: 'line' | 'arc';
+    center?: { x: number; y: number };
+    radius?: number;
+    startAngleDeg?: number;
+    signedSweepDeg?: number;
+  }>,
+): GradingCourseLike[] =>
+  courses.map((course) => ({
+    fromVertexId: course.fromVertexId,
+    toVertexId: course.toVertexId,
+    startX: course.from.x,
+    startY: course.from.y,
+    endX: course.to.x,
+    endY: course.to.y,
+    startZ: course.from.z,
+    endZ: course.to.z,
+    planLength: course.planLength,
+    isArc: course.kind === 'arc',
+    ...(course.kind === 'arc' &&
+    course.center != null &&
+    course.radius != null &&
+    course.startAngleDeg != null &&
+    course.signedSweepDeg != null
+      ? {
+          arc: {
+            centerX: course.center.x,
+            centerY: course.center.y,
+            radius: course.radius,
+            startAngleDeg: course.startAngleDeg,
+            signedSweepDeg: course.signedSweepDeg,
+          },
+        }
+      : {}),
+  }));
+
+/**
  * Resolve the single course whose endpoints match {A,B} in either order,
  * oriented A->B (`reoriented: true` when stored B->A). Returns null when
  * the vertex pair is not adjacent (BROKEN_REFERENCE downstream): no match,

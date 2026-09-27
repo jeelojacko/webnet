@@ -13,6 +13,7 @@ import {
 import type { CadDrawingDocument } from '../../engine/cad/cadTypes';
 import type { CadAnalysisExportInput } from '../../engine/cad/cadAnalysisExportScene';
 import type { CadGradingExportInput } from '../../engine/cad/cadGradingExportScene';
+import type { CadGradingGroupExportInput } from '../../engine/cad/cadGradingGroupExportScene';
 import type { CadLandXmlCivilSources } from '../../engine/landxmlCivilSource';
 import type { ResultDependencyIdentity } from '../../engine/resultIntegrity';
 import type { FeatureCodeCatalog } from '../../engine/fieldToFinish/featureCatalog';
@@ -45,6 +46,8 @@ interface ExportCenterPanelProps {
   analysis?: CadAnalysisExportInput;
   /** Phase 20B: CURRENT grading daylight + fill; absent = legacy scene unchanged. */
   grading?: CadGradingExportInput;
+  /** Phase 20C: CURRENT grading-group fills + merged daylight + corner seams. */
+  gradingGroups?: CadGradingGroupExportInput;
   /** Phase 18L/18X: session caches for TIN surface / profile / section export. */
   civilSources?: CadLandXmlCivilSources;
   onClose: () => void;
@@ -81,6 +84,7 @@ export const ExportCenterPanel = ({
   f2fLinkSourceKind,
   analysis,
   grading,
+  gradingGroups,
   civilSources,
   onClose,
   saveTextFile = async (name, text, picker) => saveBrowserTextFile(name, text, [picker]),
@@ -96,8 +100,8 @@ export const ExportCenterPanel = ({
     const depOpts = resultIdentity !== undefined || stationIds !== undefined || f2fLinkStatus !== undefined || f2fLinkSourceKind !== undefined
       ? { resultIdentity: resultIdentity ?? null, stationIds, f2fLinkStatus, f2fLinkSourceKind }
       : undefined;
-    return buildExportCenterPreview(drawing, { format, pdfScope, sheetId, catalog }, depOpts, civilSources, analysis, grading);
-  }, [drawing, format, pdfScope, sheetId, catalog, resultIdentity, stationIds, f2fLinkStatus, f2fLinkSourceKind, analysis, grading, civilSources]);
+    return buildExportCenterPreview(drawing, { format, pdfScope, sheetId, catalog }, depOpts, civilSources, analysis, grading, gradingGroups);
+  }, [drawing, format, pdfScope, sheetId, catalog, resultIdentity, stationIds, f2fLinkStatus, f2fLinkSourceKind, analysis, grading, gradingGroups, civilSources]);
   const preview = outcome.ok ? outcome.preview : null;
 
   const handleDownload = async (): Promise<void> => {

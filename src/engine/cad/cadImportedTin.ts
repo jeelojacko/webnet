@@ -4,7 +4,7 @@ import { describeEditForRevision } from './cadSurfaceEditDescribe';
 import { fnv1a } from './cadRevisionHash';
 import { buildTinTopology } from './tin/tinTopology';
 import type { CadSurfaceGrid, CadSurfaceSourcePoint } from './cadSurfaces';
-import type { CadSurfaceEdit, CadExplicitTinProvenance, ImportedTinPayload, WebnetBakeTinProvenance, WebnetComposeTinProvenance, WebnetGradingBakeTinProvenance } from './cadTypes';
+import type { CadSurfaceEdit, CadExplicitTinProvenance, ImportedTinPayload, WebnetBakeTinProvenance, WebnetComposeTinProvenance, WebnetGradingBakeTinProvenance, WebnetGradingGroupBakeTinProvenance } from './cadTypes';
 import type { TinAdjacency, TinEdgeKinds } from './tin/tinTypes';
 
 /**
@@ -74,8 +74,9 @@ export const validateImportedTinPayload = (payload: ImportedTinPayload): string 
 /** Phase 18X provenance kind: legacy (kind omitted + format 'LandXML') reads as landxml-import. */
 export const tinProvenanceKind = (
   provenance: CadExplicitTinProvenance,
-): 'landxml-import' | 'webnet-bake' | 'webnet-grading-bake' | 'webnet-compose' => {
+): 'landxml-import' | 'webnet-bake' | 'webnet-grading-bake' | 'webnet-grading-group-bake' | 'webnet-compose' => {
   if (provenance.kind === 'webnet-compose') return 'webnet-compose';
+  if (provenance.kind === 'webnet-grading-group-bake') return 'webnet-grading-group-bake';
   if (provenance.kind === 'webnet-grading-bake') return 'webnet-grading-bake';
   return provenance.kind === 'webnet-bake' || provenance.format === 'explicit'
     ? 'webnet-bake'
@@ -89,6 +90,7 @@ export const normalizeTinProvenance = (
   | { kind: 'landxml-import'; format: 'LandXML'; fileName: string; surfaceName: string; sourceId?: string }
   | { kind: 'webnet-bake'; sourceSurfaceId: string; sourceSurfaceName: string; sourceRevision: string; sourceSourceKind?: string }
   | { kind: 'webnet-grading-bake'; gradingId: string; gradingName: string; gradingRevision: string; sourceFeatureLineId: string; sourceVertexAId: string; sourceVertexBId: string; targetSurfaceId: string; accuracy: 'EXACT' | 'CURVE_APPROXIMATED' }
+  | { kind: 'webnet-grading-group-bake'; groupId: string; groupName: string; groupRevision: string; sourceFeatureLineId: string; sourceCourseRefs: string[]; targetSurfaceId: string; side: 'left' | 'right'; accuracy: 'EXACT' | 'CURVE_APPROXIMATED'; cornerMode: 'miter' }
   | { kind: 'webnet-compose'; baseSurfaceId: string; baseSurfaceName: string; baseRevision: string; overlaySurfaceId: string; overlaySurfaceName: string; overlayRevision: string; policy: 'overlay-coverage-wins'; resultDigest?: string } => {
   if (tinProvenanceKind(provenance) === 'webnet-compose') {
     const composed = provenance as WebnetComposeTinProvenance;
@@ -102,6 +104,21 @@ export const normalizeTinProvenance = (
       overlayRevision: composed.overlayRevision,
       policy: 'overlay-coverage-wins',
       ...(composed.resultDigest != null ? { resultDigest: composed.resultDigest } : {}),
+    };
+  }
+  if (tinProvenanceKind(provenance) === 'webnet-grading-group-bake') {
+    const baked = provenance as WebnetGradingGroupBakeTinProvenance;
+    return {
+      kind: 'webnet-grading-group-bake',
+      groupId: baked.groupId,
+      groupName: baked.groupName,
+      groupRevision: baked.groupRevision,
+      sourceFeatureLineId: baked.sourceFeatureLineId,
+      sourceCourseRefs: [...baked.sourceCourseRefs],
+      targetSurfaceId: baked.targetSurfaceId,
+      side: baked.side,
+      accuracy: baked.accuracy,
+      cornerMode: baked.cornerMode,
     };
   }
   if (tinProvenanceKind(provenance) === 'webnet-grading-bake') {
@@ -191,6 +208,9 @@ export const tinProvenanceRevisionPart = (provenance: CadExplicitTinProvenance):
   const normalized = normalizeTinProvenance(provenance);
   if (normalized.kind === 'webnet-compose') {
     return `webnet-compose|${normalized.baseSurfaceId}|${normalized.baseRevision}|${normalized.overlaySurfaceId}|${normalized.overlayRevision}|${normalized.resultDigest ?? ''}`;
+  }
+  if (normalized.kind === 'webnet-grading-group-bake') {
+    return `webnet-grading-group-bake|${normalized.groupId}|${normalized.groupRevision}|${normalized.sourceFeatureLineId}|${normalized.targetSurfaceId}|${normalized.accuracy}`;
   }
   if (normalized.kind === 'webnet-grading-bake') {
     return `webnet-grading-bake|${normalized.gradingId}|${normalized.gradingRevision}|${normalized.sourceFeatureLineId}|${normalized.targetSurfaceId}|${normalized.accuracy}`;

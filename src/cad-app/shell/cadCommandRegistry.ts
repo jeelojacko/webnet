@@ -9,6 +9,11 @@ import {
   executeGradingShellCommand,
   gradingShellAvailable,
 } from './cadGradingShell';
+import {
+  GRADINGGROUP_SHELL_KEYS,
+  executeGradingGroupShellCommand,
+  gradingGroupShellAvailable,
+} from './cadGradingGroupShell';
 import type { CadShellActions, CadWorkspaceSnapshot } from './cadShellTypes';
 import { requestDefinitionFocus, requestSurfaceComposeFocus } from './CadSurfaceDefinitionParts';
 import { surfaceComposeCapability } from './cadSurfaceCompose';
@@ -454,6 +459,14 @@ export const CAD_SHELL_COMMANDS: CadShellCommandDef[] = [
   action('GRADINGINQUIRY', 'Grading Inquiry', 'Design', 'Open the grading inquiry report (CURRENT only; stale answers honestly).', undefined, ['GRADINGINQ']),
   action('GRADINGEXTRACTDAYLIGHT', 'Extract Daylight', 'Design', 'Create a snapshot feature line from the CURRENT daylight tie line (one undo entry; no live dependency).', undefined, ['EXTRACTDAYLIGHT']),
   action('GRADINGBAKE', 'Bake Grading Surface', 'Design', 'Freeze the CURRENT grading mesh into an explicit-TIN surface (nonzero area; one undo entry).'),
+  // Phase 20C — grading groups (bounded DESIGN group; explicit args only,
+  // the interactive pick-flow belongs to the UI wave). GG alias is collision-free.
+  action('GRADEGROUP', 'Grade Group', 'Design', 'Create a grading group from explicit courses against a CURRENT target surface (single side, shared criterion).', undefined, ['GG']),
+  action('GRADINGGROUP', 'Grading Group Manager', 'Design', 'Open the grading-group manager (rows, create, calculate, inquiry).'),
+  action('GRADINGGROUPCALC', 'Calculate Grading Group', 'Design', 'Build the selected grading-group result (explicit, never auto-started).'),
+  action('GRADINGGROUPINQUIRY', 'Grading Group Inquiry', 'Design', 'Open the grading-group inquiry report (CURRENT only; stale answers honestly).', undefined, ['GRADINGGROUPINQ']),
+  action('GRADINGGROUPEXTRACTDAYLIGHT', 'Extract Group Daylight', 'Design', 'Create a snapshot feature line from the CURRENT group daylight boundary (one undo entry; no live dependency).', undefined, ['GROUPEXTRACTDAYLIGHT']),
+  action('GRADINGGROUPBAKE', 'Bake Grading Group Surface', 'Design', 'Freeze the CURRENT group mesh into an explicit-TIN surface (nonzero area; one undo entry).'),
 ];
 
 const COMMAND_BY_KEY = new Map<string, CadShellCommandDef>(
@@ -507,6 +520,9 @@ export const isShellCommandAvailable = (
     if (GRADING_SHELL_KEYS.has(def.key)) {
       return actions.runGradingCommand != null && gradingShellAvailable(def.key, snapshot);
     }
+    if (GRADINGGROUP_SHELL_KEYS.has(def.key)) {
+      return actions.runGradingGroupCommand != null && gradingGroupShellAvailable(def.key, actions);
+    }
     switch (def.key) {
       case 'SHELL_UNDO':
         return snapshot.canUndo;
@@ -551,6 +567,7 @@ export const executeShellCommand = (
   if (def.kind === 'session') return actions.startCommand(def.key as ActiveCommandKey);
   if (FEATURE_LINE_SHELL_KEYS.has(def.key)) return executeFeatureLineShellCommand(def.key, actions, snapshot);
   if (GRADING_SHELL_KEYS.has(def.key)) return executeGradingShellCommand(def.key, actions, snapshot);
+  if (GRADINGGROUP_SHELL_KEYS.has(def.key)) return executeGradingGroupShellCommand(def.key, actions, snapshot);
   switch (def.key) {
     case 'SHELL_UNDO':
       actions.undo();

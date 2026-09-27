@@ -11,6 +11,7 @@ import {
 } from './cadExportScene';
 import type { CadAnalysisExportInput } from './cadAnalysisExportScene';
 import type { CadGradingExportInput } from './cadGradingExportScene';
+import type { CadGradingGroupExportInput } from './cadGradingGroupExportScene';
 import { serializeExportSceneToSvgWithResult } from './cadSvgSerializer';
 import { exportScenesToPdfWithResult } from './cadPdfExport';
 import { buildDxfLayoutTextWithResult, buildDxfModelSpaceTextWithResult } from './dxf/dxfLayoutExport';
@@ -260,12 +261,13 @@ const buildSceneResults = (
   sheetIds: string[],
   analysis?: CadAnalysisExportInput,
   grading?: CadGradingExportInput,
+  gradingGroups?: CadGradingGroupExportInput,
 ): SceneBuild => {
   const draft = drawing.draft;
   if (!draft) return { ok: false, message: 'No draft yet. Sheets live on the draft document.' };
   try {
     const sceneResults = sheetIds.map((sheetId) =>
-      buildExportSheetSceneWithResult({ draft, sheetId, project: drawing.project, analysis, grading, featureLineLabels: true }),
+      buildExportSheetSceneWithResult({ draft, sheetId, project: drawing.project, analysis, grading, gradingGroups, featureLineLabels: true }),
     );
     return {
       ok: true,
@@ -303,6 +305,7 @@ export const buildPlotPreviewScene = (
   sheetId: string,
   analysis?: CadAnalysisExportInput,
   grading?: CadGradingExportInput,
+  gradingGroups?: CadGradingGroupExportInput,
 ): PlotPreviewSceneResult => {
   const draft = drawing.draft;
   if (!draft) return { ok: false, message: 'No draft yet. Sheets live on the draft document.' };
@@ -310,7 +313,7 @@ export const buildPlotPreviewScene = (
     return { ok: false, message: 'Sheet not found.' };
   }
   try {
-    const result = buildExportSheetSceneWithResult({ draft, sheetId, project: drawing.project, analysis, grading });
+    const result = buildExportSheetSceneWithResult({ draft, sheetId, project: drawing.project, analysis, grading, gradingGroups });
     return {
       ok: true,
       preview: {
@@ -334,11 +337,12 @@ const describeSvg = (
   selection: ExportCenterSelection,
   analysis?: CadAnalysisExportInput,
   grading?: CadGradingExportInput,
+  gradingGroups?: CadGradingGroupExportInput,
 ): ExportCenterOutcome => {
   const resolved = resolveSheets(drawing, selection);
   if (!resolved.ok) return resolved;
   const sheets = resolved.sheets as { id: string; name: string }[];
-  const built = buildSceneResults(drawing, [sheets[0]?.id as string], analysis, grading);
+  const built = buildSceneResults(drawing, [sheets[0]?.id as string], analysis, grading, gradingGroups);
   if (!built.ok) return built;
   const serialized = serializeExportSceneToSvgWithResult(built.scenes[0] as ExportSheetScene);
   const merged = mergeWarnings([built.merged, serialized]);
@@ -367,12 +371,13 @@ const describePdf = (
   selection: ExportCenterSelection,
   analysis?: CadAnalysisExportInput,
   grading?: CadGradingExportInput,
+  gradingGroups?: CadGradingGroupExportInput,
 ): ExportCenterOutcome => {
   const scope = selection.pdfScope ?? 'current';
   const resolved = resolveSheets(drawing, { ...selection, pdfScope: scope });
   if (!resolved.ok) return resolved;
   const sheets = resolved.sheets as { id: string; name: string }[];
-  const built = buildSceneResults(drawing, sheets.map((sheet) => sheet.id), analysis, grading);
+  const built = buildSceneResults(drawing, sheets.map((sheet) => sheet.id), analysis, grading, gradingGroups);
   if (!built.ok) return built;
   const serialized = exportScenesToPdfWithResult(built.scenes);
   const merged = mergeWarnings([built.merged, serialized]);
@@ -400,6 +405,7 @@ const describeDxfR12 = (
   drawing: CadDrawingDocument,
   analysis?: CadAnalysisExportInput,
   grading?: CadGradingExportInput,
+  gradingGroups?: CadGradingGroupExportInput,
 ): ExportCenterOutcome => {
   if (drawing.project.entities.length === 0) {
     return { ok: false, message: 'No model geometry to export. Import or draw entities first.' };
@@ -411,6 +417,7 @@ const describeDxfR12 = (
     project: drawing.project,
     analysis,
     grading,
+    gradingGroups,
     surveyTables: collectCadSurveyTablesForExport(drawing.project),
   });
   return {
@@ -436,6 +443,7 @@ const describeDxfR2000 = (
   drawing: CadDrawingDocument,
   analysis?: CadAnalysisExportInput,
   grading?: CadGradingExportInput,
+  gradingGroups?: CadGradingGroupExportInput,
 ): ExportCenterOutcome => {
   if (!drawing.draft || drawing.draft.sheets.length === 0) {
     return { ok: false, message: 'No sheets yet. Create a sheet before exporting layouts.' };
@@ -447,6 +455,7 @@ const describeDxfR2000 = (
     draft: drawing.draft,
     analysis,
     grading,
+    gradingGroups,
     surveyTables: collectCadSurveyTablesForExport(drawing.project),
   });
   return {
@@ -540,6 +549,7 @@ export const buildExportCenterPreview = (
   civilSources?: CadLandXmlCivilSources,
   analysis?: CadAnalysisExportInput,
   grading?: CadGradingExportInput,
+  gradingGroups?: CadGradingGroupExportInput,
 ): ExportCenterOutcome => {
   try {
     const gate = depOpts !== undefined
@@ -548,13 +558,13 @@ export const buildExportCenterPreview = (
     if (gate) return gate;
     switch (selection.format) {
       case 'svg':
-        return describeSvg(drawing, selection, analysis, grading);
+        return describeSvg(drawing, selection, analysis, grading, gradingGroups);
       case 'pdf':
-        return describePdf(drawing, selection, analysis, grading);
+        return describePdf(drawing, selection, analysis, grading, gradingGroups);
       case 'dxf-r12':
-        return describeDxfR12(drawing, analysis, grading);
+        return describeDxfR12(drawing, analysis, grading, gradingGroups);
       case 'dxf-r2000':
-        return describeDxfR2000(drawing, analysis, grading);
+        return describeDxfR2000(drawing, analysis, grading, gradingGroups);
       case 'landxml':
         return describeLandxml(drawing, civilSources);
       case 'csv':

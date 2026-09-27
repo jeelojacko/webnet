@@ -32,6 +32,10 @@ import { deriveAnnotationPrimitives } from './dxfAnnotationExport';
 import { buildAnalysisModelItems, type CadAnalysisExportInput } from '../cadAnalysisExportScene';
 import { buildGradingModelItems, type CadGradingExportInput } from '../cadGradingExportScene';
 import {
+  buildGroupModelItems,
+  type CadGradingGroupExportInput,
+} from '../cadGradingGroupExportScene';
+import {
   buildCadSurveyTableDxfItems,
   CAD_SURVEY_TABLE_DXF_DISPOSITION,
   CAD_SURVEY_TABLE_LAYER,
@@ -136,6 +140,12 @@ export interface BuildDxfModelArgs {
    * (3DFACE). Stale/non-current emit nothing and warn.
    */
   grading?: CadGradingExportInput;
+  /**
+   * Phase 20C: CURRENT grading-group merged daylight (3D POLYLINE) + mesh
+   * (3DFACE), with optional plot-intended corner seams. Stale/non-current
+   * emit nothing and warn. Absent = legacy bytes.
+   */
+  gradingGroups?: CadGradingGroupExportInput;
 }
 
 const layerOf = (layerId: string): string => layerId;
@@ -739,6 +749,29 @@ export const buildDxfExportModelWithResult = (args: BuildDxfModelArgs): ExportRe
     });
   });
   grading.warnings.forEach(warn);
+  // Phase 20C grading-group geometry: merged daylight 3D POLYLINE + group
+  // mesh 3DFACE (+ optional plot-intended corner seams). No XDATA written.
+  const gradingGroups = buildGroupModelItems(args.gradingGroups);
+  gradingGroups.polylines3d.forEach((polyline) => {
+    if (polyline.vertices.length < 2 || !finiteVertices(polyline.vertices)) return;
+    (model.polylines3d ??= []).push({
+      layer: registerLayer(polyline.layer),
+      vertices: polyline.vertices.map((vertex) => ({ x: vertex.x, y: vertex.y, z: vertex.z })),
+      closed: polyline.closed,
+      ...(polyline.colorHex != null ? { colorHex: polyline.colorHex } : {}),
+    });
+  });
+  gradingGroups.faces3d.forEach((face) => {
+    if (!finiteVertices([face.a, face.b, face.c])) return;
+    (model.faces3d ??= []).push({
+      layer: registerLayer(face.layer),
+      a: { ...face.a },
+      b: { ...face.b },
+      c: { ...face.c },
+      ...(face.colorHex != null ? { colorHex: face.colorHex } : {}),
+    });
+  });
+  gradingGroups.warnings.forEach(warn);
   model.layers.sort();
   model.usedLinetypes = [...usedLinetypes].sort();
   return finalizeExportResult(result);

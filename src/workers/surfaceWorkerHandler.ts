@@ -24,7 +24,18 @@ import type {
 import type { TinAdjacency, TinEdgeKinds } from '../engine/cad/tin/tinTypes';
 import type { SurfaceBuildRequest } from '../engine/cad/cadSurfaceTypes';
 import type { CadGradingResult } from '../engine/cad/grading/gradingTypes';
-import type { GradingComputeRequest } from './surfaceGradingCompute';
+import type {
+  GradingCriterion,
+  GradingSide,
+  ResolvedGradingSource,
+} from '../engine/cad/grading/gradingTypes';
+import type { CadGradingGroupResult } from '../engine/cad/grading/gradingGroupTypes';
+import {
+  computeGradingGroupFromSnapshots,
+  type GradingGroupComputeOutcome,
+  type GroupSolveInput,
+} from '../engine/cad/grading/gradingGroupCompute';
+import type { GradingComputeRequest, GradingTargetMeshSnapshot } from './surfaceGradingCompute';
 import { computeGradingFromSnapshots } from './surfaceGradingCompute';
 import type {
   CadProject,
@@ -107,6 +118,7 @@ export type SurfaceWorkerRequestMessage =
   | { type: 'analysis'; requestId: string; request: SurfaceAnalysisRequest }
   | { type: 'compose'; requestId: string; request: SurfaceComposeRequest }
   | { type: 'grading'; requestId: string; request: SurfaceGradingRequest }
+  | { type: 'group-grading'; requestId: string; request: GradingGroupComputeRequest }
   | { type: 'cancel'; requestId: string };
 
 export type SurfaceWorkerResponseMessage =
@@ -234,6 +246,20 @@ export type SurfaceWorkerResponseMessage =
       requestId: string;
       gradingId: string;
       gradingRevision: string;
+      error: string;
+    }
+  | {
+      type: 'group-success';
+      requestId: string;
+      groupId: string;
+      groupRevision: string;
+      result: CadGradingGroupResult;
+    }
+  | {
+      type: 'group-failure';
+      requestId: string;
+      groupId: string;
+      groupRevision: string;
       error: string;
     };
 
@@ -484,6 +510,58 @@ export type SurfaceGradingEngineFn = (
 export const computeGradingResultFromRequest: SurfaceGradingEngineFn = (request) =>
   computeGradingFromSnapshots(request);
 
+/**
+ * Phase 20C Wave-2B group-grading request: FLAT snapshots only (group id,
+ * group revision ggrev1, an ordered A->B source per member, shared side/
+ * criterion/search/tolerance, closed flag, and the target TIN ONCE).
+ */
+export interface GradingGroupComputeRequest {
+  groupId: string;
+  /** `ggrev1:` content revision the result is calculated at. */
+  revision: string;
+  drawingId?: string;
+  /** Ordered resolved A->B member sources in group traversal order. */
+  memberSources: ResolvedGradingSource[];
+  side: GradingSide;
+  criterion: GradingCriterion;
+  maxSearchDistance: number;
+  curveChordTolerance: number;
+  closed: boolean;
+  target: GradingTargetMeshSnapshot;
+}
+
+export type SurfaceGroupGradingRequest = GradingGroupComputeRequest;
+
+export type SurfaceGroupGradingEngineFn = (
+  _request: SurfaceGroupGradingRequest,
+) => GradingGroupComputeOutcome | Promise<GradingGroupComputeOutcome>;
+
+/** Map the flat worker request onto the engine's `GroupSolveInput`. */
+export const toGroupSolveInput = (request: GradingGroupComputeRequest): GroupSolveInput => ({
+  groupId: request.groupId,
+  revision: request.revision,
+  members: request.memberSources,
+  side: request.side,
+  criterion: request.criterion,
+  maxSearchDistance: request.maxSearchDistance,
+  curveChordTolerance: request.curveChordTolerance,
+  closed: request.closed,
+  target: request.target,
+});
+
+/** Default group engine: the pure batched snapshot kernel. */
+export const computeGroupGradingResultFromRequest: SurfaceGroupGradingEngineFn = (request) =>
+  computeGradingGroupFromSnapshots(toGroupSolveInput(request));
+
+/** Human-readable group failure text (code + corner index + detail). */
+const groupFailureDetail = (
+  outcome: Extract<GradingGroupComputeOutcome, { ok: false }>,
+): string => {
+  const corner = outcome.cornerIndex === undefined ? '' : ` (corner ${outcome.cornerIndex})`;
+  const detail = outcome.detail === undefined ? '' : `: ${outcome.detail}`;
+  return `${outcome.code}${corner}${detail}`;
+};
+
 export interface SurfaceWorkerHandlerDeps {
   loadBuilder: () => Promise<SurfaceWorkerBuilderFn>;
   /** Phase 18H: extractor override (tests inject fakes; default is the engine sibling's). */
@@ -507,6 +585,8 @@ export interface SurfaceWorkerHandlerDeps {
   loadComposeFn?: () => Promise<SurfaceComposeEngineFn>;
   /** Phase 20B: grading engine override (tests inject fakes; default is the snapshot composer). */
   loadGradingFn?: () => Promise<SurfaceGradingEngineFn>;
+  /** Phase 20C: group grading engine override (tests inject fakes; see the default seam TODO). */
+  loadGroupGradingFn?: () => Promise<SurfaceGroupGradingEngineFn>;
   postMessage: (_message: SurfaceWorkerResponseMessage) => void;
   defer?: (_callback: () => void) => void;
 }
@@ -678,6 +758,7 @@ export const createSurfaceWorkerHandler = (
   const latestAnalysisByKey = new Map<string, string>();
   const latestComposeByKey = new Map<string, string>();
   const latestGradingByKey = new Map<string, string>();
+  const latestGroupGradingByKey = new Map<string, string>();
   const defer = deps.defer ?? ((callback) => setTimeout(callback, 0));
   const loadContourExtractor =
     deps.loadContourExtractor ?? (() => Promise.resolve(extractSurfaceContours));
@@ -691,6 +772,8 @@ export const createSurfaceWorkerHandler = (
     deps.loadAnalysisFn ?? (() => Promise.resolve(runSurfaceAnalysisFromRequest));
   const loadComposeFn = deps.loadComposeFn ?? (() => Promise.resolve(composeSurfaceFromRequest));
   const loadGradingFn = deps.loadGradingFn ?? (() => Promise.resolve(computeGradingResultFromRequest));
+  const loadGroupGradingFn =
+    deps.loadGroupGradingFn ?? (() => Promise.resolve(computeGroupGradingResultFromRequest));
 
   const handleBuild = (requestId: string, request: SurfaceBuildRequest): void => {
     latestRevisionBySurface.set(request.surfaceId, request.revision);
@@ -1247,6 +1330,64 @@ export const createSurfaceWorkerHandler = (
     });
   };
 
+  /**
+   * Phase 20C group grading: latest-wins per drawingId|groupId@ggrev so a
+   * newer Calculate supersedes a late result (never CURRENT). The worker
+   * computes geometry ONLY — never mutates history or definitions.
+   */
+  const groupGradingRequestKey = (request: GradingGroupComputeRequest): string =>
+    `${request.drawingId ?? ''}|${request.groupId}@${request.revision}`;
+
+  const failGroupGrading = (
+    requestId: string,
+    request: GradingGroupComputeRequest,
+    error: string,
+  ): void => {
+    if (cancelledRequestIds.has(requestId)) return;
+    if (latestGroupGradingByKey.get(request.groupId) !== groupGradingRequestKey(request)) return;
+    deps.postMessage({
+      type: 'group-failure',
+      requestId,
+      groupId: request.groupId,
+      groupRevision: request.revision,
+      error,
+    });
+  };
+
+  const handleGroupGrading = (requestId: string, request: GradingGroupComputeRequest): void => {
+    latestGroupGradingByKey.set(request.groupId, groupGradingRequestKey(request));
+    defer(() => {
+      if (cancelledRequestIds.has(requestId)) return;
+      void loadGroupGradingFn()
+        .then((compute) => compute(request))
+        .then((outcome) => {
+          if (cancelledRequestIds.has(requestId)) return;
+          if (latestGroupGradingByKey.get(request.groupId) !== groupGradingRequestKey(request)) return;
+          if (!outcome.ok) {
+            failGroupGrading(requestId, request, groupFailureDetail(outcome));
+            return;
+          }
+          deps.postMessage({
+            type: 'group-success',
+            requestId,
+            groupId: request.groupId,
+            groupRevision: request.revision,
+            result: outcome.result,
+          });
+        })
+        .catch((groupError) => {
+          failGroupGrading(
+            requestId,
+            request,
+            groupError instanceof Error ? groupError.message : String(groupError),
+          );
+        })
+        .finally(() => {
+          cancelledRequestIds.delete(requestId);
+        });
+    });
+  };
+
   return {
     handleMessage: (message: SurfaceWorkerRequestMessage): void => {
       if (!message) return;
@@ -1279,6 +1420,9 @@ export const createSurfaceWorkerHandler = (
       if (message.type === 'grading') {
         handleGrading(message.requestId, message.request);
       }
+      if (message.type === 'group-grading') {
+        handleGroupGrading(message.requestId, message.request);
+      }
     },
     resetForTests: (): void => {
       cancelledRequestIds.clear();
@@ -1290,6 +1434,7 @@ export const createSurfaceWorkerHandler = (
       latestAnalysisByKey.clear();
       latestComposeByKey.clear();
       latestGradingByKey.clear();
+      latestGroupGradingByKey.clear();
     },
   };
 };

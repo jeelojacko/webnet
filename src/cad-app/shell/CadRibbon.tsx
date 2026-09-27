@@ -9,6 +9,7 @@ import { CadLayersGroup } from './CadLayersGroup';
 import { CadParcelNetworkRibbonGroup } from './CadParcelNetworkRibbonGroup';
 import { CadFeatureLineRibbonGroup } from './CadFeatureLineRibbonGroup';
 import { CadGradingRibbonGroup } from './CadGradingRibbonGroup';
+import { CadGradingGroupRibbonGroup } from './CadGradingGroupRibbonGroup';
 import { PARCEL_NETWORK_KEYS } from './cadParcelNetwork.constants';
 import { CadAnnotateRibbonGroups } from '../annotation/CadAnnotateRibbonGroups';
 import type { CadShellActions, CadWorkspaceSnapshot, SurveyManagerKind } from './cadShellTypes';
@@ -117,6 +118,7 @@ export const CadRibbon: React.FC<CadRibbonProps> = ({ snapshot, actions, collaps
         ))}
         {tab === 'Home' ? <CadFeatureLineRibbonGroup snapshot={snapshot} actions={actions} /> : null}
         {tab === 'Home' ? <CadGradingRibbonGroup snapshot={snapshot} actions={actions} /> : null}
+        {tab === 'Home' ? <CadGradingGroupRibbonGroup snapshot={snapshot} actions={actions} /> : null}
       </div>
     </div>
   );
