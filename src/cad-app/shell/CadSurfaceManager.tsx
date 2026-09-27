@@ -6,6 +6,7 @@ import { surfaceComposeCapability, type CadSurfaceComposeMode } from './cadSurfa
 import { consumeSurfaceComposeFocus } from './CadSurfaceDefinitionParts';
 import { CadSurfaceComposeDialog } from './CadSurfaceComposeDialog';
 import { CadSurfaceEditTable } from './CadSurfaceEditTable';
+import { CadDesignWorkflowPanel } from './CadDesignWorkflowPanel';
 import { CadSurfaceSelectionSection } from './CadSurfaceSelectionSection';
 import { CadSurfaceDefinitionEditor } from './CadSurfaceDefinitionEditor';
 import { CadSurfaceStyleEditor } from './CadSurfaceStyleEditor';
@@ -164,7 +165,7 @@ export const CadSurfaceManager: React.FC<CadSurfaceManagerProps> = ({
               title={`${row.name} — ${row.statusText}`}
               aria-label={`Surface ${row.name}, ${row.statusText}`}
             >
-              <span className="truncate font-medium text-slate-100">{row.name}</span>
+              <span className="truncate font-medium text-slate-100">{row.name} [{row.purposeBadge}]</span>
               <span className="text-slate-400">{row.statusText}{row.stale ? ' (stale mesh)' : ''}</span>
               <span className="truncate text-slate-400">{row.styleName} · {row.layerName}</span>
               <span className="text-slate-400">
@@ -189,6 +190,7 @@ export const CadSurfaceManager: React.FC<CadSurfaceManagerProps> = ({
           pickArmedFor={pickArmedFor}
         />
       ) : null}
+      <CadDesignWorkflowPanel snapshot={snapshot} actions={actions} notify={setNotice} />
       <CadVolumeSection
         snapshot={snapshot}
         actions={actions}
@@ -359,6 +361,12 @@ const SelectedSurface: React.FC<{
             <dd>Baked Explicit TIN</dd>
             <dt className="text-slate-400">Baked From</dt>
             <dd title={row.definition.bakedFrom ?? undefined}>{row.definition.bakedFrom ?? '—'}</dd>
+            {row.definition.patchFrom ? (
+              <>
+                <dt className="text-slate-400">Design Patch From Group</dt>
+                <dd>{row.definition.patchFrom}</dd>
+              </>
+            ) : null}
             <dt className="text-slate-400">Source Revision</dt>
             <dd title={row.definition.sourceRevision ?? undefined}>
               {row.definition.sourceRevision ? `${row.definition.sourceRevision.slice(0, 12)}…` : '—'}

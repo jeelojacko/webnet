@@ -294,6 +294,34 @@ const CadSurfaceRibbonGroup: React.FC<{
           disabled: !ready || !compose.canCompose,
           onClick: () => runDefinitionCommand('SURFPASTE'),
         },
+        {
+          key: 'design-copy',
+          label: 'Create Design Copy',
+          hint: 'Copy the selected CURRENT surface into a new Design-role surface (manager Design Workflow).',
+          disabled: !ready || !bake.copy,
+          onClick: () => runDefinitionCommand('DESIGNSURFACE'),
+        },
+        {
+          key: 'build-patch',
+          label: 'Build Design Patch',
+          hint: 'Build a Design Patch from a CURRENT closed flat grading group (manager Design Workflow).',
+          disabled: !ready,
+          onClick: () => runDefinitionCommand('DESIGNPATCH'),
+        },
+        {
+          key: 'apply-patch',
+          label: 'Apply Patch',
+          hint: 'Apply a Design Patch onto a Design target in place (manager Design Workflow; Existing Ground targets stay blocked).',
+          disabled: !ready || !compose.canCompose,
+          onClick: () => runDefinitionCommand('DESIGNAPPLY'),
+        },
+        {
+          key: 'earthwork-volume',
+          label: 'Earthwork Volume',
+          hint: 'Track an Existing-Ground vs Design volume (manager Design Workflow; Calculate stays explicit).',
+          disabled: !ready,
+          onClick: () => runDefinitionCommand('DESIGNVOLUME'),
+        },
       ])}
       {group('Build', [
         { key: 'rebuild', label: 'Rebuild', hint: 'Rebuild the selected surface.', disabled: !selectedSurfaceId || !actions, onClick: () => { if (selectedSurfaceId) actions?.rebuildSurface(selectedSurfaceId); } },

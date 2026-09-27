@@ -16,7 +16,7 @@ import { ParcelNetworkNode, ParcelSchedulesNode } from './CadParcelToolspace';
 import { FeatureLinesNode } from './CadFeatureLineToolspace';
 import { GradingsNode } from './CadGradingToolspace';
 import { GradingGroupsNode } from './CadGradingGroupToolspace';
-import { composePolicyLabel, type CadSurfaceRow } from './cadSurfaceSnapshot';
+import { composePolicyLabel, surfacePurposeSuffix, type CadSurfaceRow } from './cadSurfaceSnapshot';
 import { cadSurfaceEditStatusText } from './cadSurfaceEditSummaries';
 
 interface CadToolspaceProps {
@@ -715,7 +715,7 @@ const SurfacesNode: React.FC<{ snapshot: CadWorkspaceSnapshot | null; actions: C
                 setMenu({ x: event.clientX, y: event.clientY, surfaceId: row.id, surfaceName: row.name });
               }}
             >
-              {row.name}
+              {row.name}{surfacePurposeSuffix(row.purpose) ? ` — ${surfacePurposeSuffix(row.purpose)}` : ''}
               <span className="cad-shell-count">{row.statusText}</span>
             </summary>
             <div className="cad-shell-tree-children">

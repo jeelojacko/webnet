@@ -380,6 +380,15 @@ export const CAD_SHELL_COMMANDS: CadShellCommandDef[] = [
   action('SURFCOMPOSE', 'Compose Surface', 'Surface', 'Compose two surfaces into one explicit TIN (manager): composite copy or paste the overlay into the target in place.', undefined, ['COMPOSE']),
   action('SURFCOMPOSECOPY', 'Compose to Copy', 'Surface', 'Create a new explicit-TIN surface from a Base + Overlay (manager dialog; neither source changes).'),
   action('SURFPASTE', 'Paste Into Surface', 'Surface', 'Paste an Overlay into a Target in place (manager dialog; target definition replaced, source unchanged).', undefined, ['SURFCOMPOSEPASTE']),
+  // Phase 20D — design workflow (manager-first routing like SURFBAKE/
+  // SURFCOMPOSE: the manager Design Workflow section owns the arguments;
+  // typed keys resolve here but never execute inline. No aliases: every
+  // short token collides with an existing alias family, so none is added.)
+  action('DESIGNSURFACE', 'Create Design Copy', 'Surface', 'Copy a CURRENT surface into a new Design-role surface (explicit TIN snapshot; source unchanged; manager workflow).'),
+  action('DESIGNPATCH', 'Build Design Patch', 'Surface', 'Build a Design Patch surface from a CURRENT closed flat grading group (pad interior + grading shell; manager workflow).'),
+  action('DESIGNAPPLY', 'Apply Patch', 'Surface', 'Apply a Design Patch onto a Design target in place (Existing Ground targets stay blocked; manager workflow).'),
+  action('DESIGNVOLUME', 'Earthwork Volume', 'Surface', 'Track an Existing-Ground vs Design volume (find-or-create; Calculate stays explicit; manager workflow).'),
+  action('SURFPURPOSE', 'Set Surface Purpose', 'Surface', 'Set the workflow role on a surface (Existing Ground / Design / Design Patch / Reference; metadata only; manager).'),
   // Phase 18I — volume commands (all route through the surface manager;
   // Calculate runs the session volume service for the selected volume,
   // never auto-started, LOCK-gated by the volume transaction path).
@@ -547,6 +556,13 @@ export const isShellCommandAvailable = (
       case 'SURFCOMPOSE':
         // Dialog opener: always available with a live workspace.
         return true;
+      case 'DESIGNSURFACE':
+      case 'DESIGNPATCH':
+      case 'DESIGNAPPLY':
+      case 'DESIGNVOLUME':
+      case 'SURFPURPOSE':
+        // Phase 20D — manager-first workflow openers: live workspace only.
+        return true;
       case 'SURFCOMPOSECOPY':
       case 'SURFPASTE':
         return surfaceComposeCapability(snapshot.surface?.surfaces ?? []).canCompose;
@@ -652,6 +668,15 @@ export const executeShellCommand = (
       actions.openSurveyManager('surfaces', resolveDefinitionSurfaceId(snapshot) ?? undefined);
       return true;
     }
+    case 'DESIGNSURFACE':
+    case 'DESIGNPATCH':
+    case 'DESIGNAPPLY':
+    case 'DESIGNVOLUME':
+    case 'SURFPURPOSE':
+      // Phase 20D — manager-first like SURFBAKE/SURFCOMPOSE: the Design
+      // Workflow section owns the arguments; never fake execution here.
+      actions.openSurveyManager('surfaces', resolveDefinitionSurfaceId(snapshot) ?? undefined);
+      return true;
     case 'SURFBAKE':
     case 'SURFBAKECOPY': {
       const surfaceId = resolveDefinitionSurfaceId(snapshot);
