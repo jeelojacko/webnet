@@ -69,7 +69,7 @@ const composeProvenanceOptions = (
  * function of provenance), so it namespaces the composition revision. Null =
  * reject (empty/non-triangulated result); inputs are never mutated.
  */
-const createComposedPayload = (
+export const createComposedPayload = (
   vertices: readonly number[],
   faces: readonly number[],
   base: CadSurface,
@@ -167,6 +167,9 @@ const surfaceComposeCopyCommand: CadCommandDefinition<ComposeCopyCommand> = {
       id: createStableRuntimeId('cad-surface'),
       name: uniqueComposedSurfaceName(snapshot.project, sources.base.name, sources.overlay.name),
       definition: bakedSurfaceDefinition(payload),
+      // Phase 20D: composite copies inherit the BASE purpose (absent stays
+      // absent) — the composite is base identity extended by the overlay.
+      ...(sources.base.purpose !== undefined ? { purpose: sources.base.purpose } : {}),
       ...(sources.base.styleId != null ? { styleId: sources.base.styleId } : {}),
       ...(sources.base.layerId != null ? { layerId: sources.base.layerId } : {}),
       cachedRevision: null,

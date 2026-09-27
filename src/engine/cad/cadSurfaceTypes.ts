@@ -5,6 +5,7 @@ import type {
   CadProject,
   CadSurface,
   CadSurfaceDefinition,
+  CadSurfacePurpose,
   CadSurveyPointEntity,
 } from './cadTypes';
 import { isExplicitTopologyDefinition, surfacePointGroupIds } from './cadTypes';
@@ -79,13 +80,63 @@ export const cloneCadSurfaceDefinition = (definition: CadSurfaceDefinition): Cad
     : {}),
 });
 
-export const cloneCadSurface = (surface: CadSurface): CadSurface => ({
-  ...surface,
-  definition: cloneCadSurfaceDefinition(surface.definition),
-});
+export const cloneCadSurface = (surface: CadSurface): CadSurface => {
+  const next: CadSurface = {
+    ...surface,
+    definition: cloneCadSurfaceDefinition(surface.definition),
+  };
+  if (surface.purpose === undefined) {
+    delete next.purpose;
+  } else {
+    next.purpose = sanitizeCadSurfacePurposeValue(surface.purpose) ?? 'other';
+  }
+  return next;
+};
 
 export const cloneCadSurfaces = (surfaces: CadSurface[] | undefined): CadSurface[] =>
   (surfaces ?? []).map(cloneCadSurface);
+
+/**
+ * Phase 20D purpose sanitizer (load/clone contract): absent stays absent
+ * (legacy neutral); a known role passes through; anything else (unknown
+ * string, wrong type) collapses to 'other' — never reinterpreted as
+ * existing-ground/design. Pure; callers needing a visible note use
+ * sanitizeCadSurfacePurposes for the warning list.
+ */
+export const sanitizeCadSurfacePurposeValue = (value: unknown): CadSurfacePurpose | undefined => {
+  if (value == null) return undefined;
+  if (
+    value === 'existing-ground' ||
+    value === 'design' ||
+    value === 'design-patch' ||
+    value === 'reference' ||
+    value === 'other'
+  ) {
+    return value;
+  }
+  return 'other';
+};
+
+/**
+ * Phase 20D load-time purpose sweep (sanitize convention: cleaned +
+ * warnings). Unknown purpose values sanitize to 'other' with one warning
+ * per surface; absent stays absent.
+ */
+export const sanitizeCadSurfacePurposes = (
+  surfaces: CadSurface[] | undefined,
+): { surfaces: CadSurface[]; warnings: string[] } => {
+  const warnings: string[] = [];
+  const cleaned = (surfaces ?? []).map((surface) => {
+    const next = cloneCadSurface(surface);
+    if (surface.purpose != null && next.purpose !== surface.purpose) {
+      warnings.push(
+        `Surface "${surface.name}" has an unknown purpose and was reset to 'other'.`,
+      );
+    }
+    return next;
+  });
+  return { surfaces: cleaned, warnings };
+};
 
 /**
  * Load-time backfill: legacy drawings (field absent) open with no surfaces;

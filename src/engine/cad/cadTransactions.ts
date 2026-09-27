@@ -107,6 +107,7 @@ import { analysisCommandDefinitions } from './cadTransactionsAnalysisCommands';
 import { profileCommandDefinitions } from './cadTransactionsProfileCommands';
 import { sectionCommandDefinitions } from './cadTransactionsSectionCommands';
 import { featureLineCommandDefinitions } from './cadTransactionsFeatureLineCommands';
+import { designSurfaceCommandDefinitions } from './cadTransactionsDesignSurfaceCommands';
 import { gradingCommandDefinitions } from './cadTransactionsGradingCommands';
 import { gradingGroupCommandDefinitions } from './cadTransactionsGradingGroupCommands';
 import {
@@ -766,6 +767,11 @@ export const CAD_COMMAND_REGISTRY: Record<CadCommandKey, CadCommandDefinition<Ca
   GROUP_REMOVE_END_COURSE: gradingGroupCommandDefinitions.GROUP_REMOVE_END_COURSE as CadCommandDefinition<CadCommand>,
   GROUPEXTRACTDAYLIGHT: gradingGroupCommandDefinitions.GROUPEXTRACTDAYLIGHT as CadCommandDefinition<CadCommand>,
   GROUPBAKE: gradingGroupCommandDefinitions.GROUPBAKE as CadCommandDefinition<CadCommand>,
+  // Phase 20D Wave-1A — design surface workflow (engine only).
+  SURFPURPOSE: designSurfaceCommandDefinitions.SURFPURPOSE as CadCommandDefinition<CadCommand>,
+  DESIGNSURFACE: designSurfaceCommandDefinitions.DESIGNSURFACE as CadCommandDefinition<CadCommand>,
+  DESIGNAPPLY: designSurfaceCommandDefinitions.DESIGNAPPLY as CadCommandDefinition<CadCommand>,
+  DESIGNVOLUME: designSurfaceCommandDefinitions.DESIGNVOLUME as CadCommandDefinition<CadCommand>,
 };
 
 export const createCadIdleCommandState = createIdleCommandState;

@@ -39,6 +39,7 @@ import type {
   CadSurfaceBoundary,
   CadSurfaceDefinition,
   CadSurfaceEdit,
+  CadSurfacePurpose,
   CadSurfaceStyle,
   CadProfileStyle,
   CadTextStyleId,
@@ -306,7 +307,12 @@ export type CadCommandKey =
   | 'GROUP_ADD_COURSE'
   | 'GROUP_REMOVE_END_COURSE'
   | 'GROUPEXTRACTDAYLIGHT'
-  | 'GROUPBAKE';
+  | 'GROUPBAKE'
+  // Phase 20D Wave-1A — design surface workflow (engine only).
+  | 'SURFPURPOSE'
+  | 'DESIGNSURFACE'
+  | 'DESIGNAPPLY'
+  | 'DESIGNVOLUME';
 export type CadCommandPhase = 'idle' | 'committed';
 
 export interface CadCommandState {
@@ -1760,6 +1766,46 @@ export type CadCommand =
       result: CadGradingGroupResult;
       expectedRevision: string;
       sessionCurrent?: boolean;
+    }
+  // Phase 20D Wave-1A — design surface workflow (engine only).
+  | {
+      key: 'SURFPURPOSE';
+      surfaceId: string;
+      /** Explicit role; null/undefined clears back to legacy neutral. */
+      purpose?: CadSurfacePurpose | null;
+    }
+  | {
+      key: 'DESIGNSURFACE';
+      sourceSurfaceId: string;
+      name: string;
+      /** Current source revision; a stale value rejects the copy. */
+      expectedRevision: string;
+      /** Session-owned CURRENT assertion (see SURFBAKE). */
+      sessionCurrent?: boolean;
+      layerId?: CadLayerId;
+      /** Undefined = keep the source style; null = clear. */
+      styleId?: string | null;
+    }
+  | {
+      key: 'DESIGNAPPLY';
+      /** Design target (keeps id/name/layer/style/purpose; never existing-ground). */
+      targetSurfaceId: string;
+      /** Current target revision; a stale value rejects the apply. */
+      targetExpectedRevision: string;
+      /** Patch source (contributes topology only; byte-identical). */
+      patchSurfaceId: string;
+      /** Current patch revision; a stale value rejects the apply. */
+      patchExpectedRevision: string;
+      /** Session-owned CURRENT assertion (see SURFBAKE). */
+      sessionCurrent?: boolean;
+    }
+  | {
+      key: 'DESIGNVOLUME';
+      baseSurfaceId: string;
+      comparisonSurfaceId: string;
+      name?: string;
+      layerId?: CadLayerId;
+      styleId?: string;
     };
 
 export interface CadTransaction {

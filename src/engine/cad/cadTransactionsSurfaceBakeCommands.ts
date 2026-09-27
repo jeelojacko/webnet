@@ -55,7 +55,7 @@ const uniqueBakedSurfaceName = (project: CadProject, sourceName: string): string
  * `cachedRevision`, so the persisted-revision derivation alone reads UNBUILT
  * in-session. The UI sets it from `surfaceBakeCapability`; absent = fail-closed.
  */
-const resolveBakePayload = (
+export const resolveBakePayload = (
   project: CadProject,
   surface: CadSurface,
   expectedRevision: string,
@@ -105,11 +105,14 @@ const surfaceBakeCopyCommand: CadCommandDefinition<BakeCopyCommand> = {
     const payload = resolveBakePayload(snapshot.project, surface, command.expectedRevision, command.sessionCurrent === true);
     if (!payload) return null;
     // Source stays byte-identical; the copy carries no edit stack and no
-    // dependent surfaces (new id referenced by nothing).
+    // dependent surfaces (new id referenced by nothing). Phase 20D: the
+    // copy preserves the source purpose (absent stays absent) — never
+    // reinterpreted, never defaulted to 'design' (that is DESIGNSURFACE).
     const copy: CadSurface = {
       id: createStableRuntimeId('cad-surface'),
       name: uniqueBakedSurfaceName(snapshot.project, surface.name),
       definition: bakedSurfaceDefinition(payload),
+      ...(surface.purpose !== undefined ? { purpose: surface.purpose } : {}),
       ...(surface.styleId != null ? { styleId: surface.styleId } : {}),
       ...(surface.layerId != null ? { layerId: surface.layerId } : {}),
       cachedRevision: null,
