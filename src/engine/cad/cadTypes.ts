@@ -1179,6 +1179,24 @@ export interface WebnetGradingBakeTinProvenance {
   sourceId?: string;
 }
 
+export interface WebnetGradingDesignPatchTinProvenance {
+  kind: 'webnet-grading-design-patch';
+  groupId: string;
+  groupName: string;
+  groupRevision: string;
+  sourceFeatureLineId: string;
+  sourceCourseRefs: string[];
+  targetSurfaceId: string;
+  targetSurfaceRevision: string;
+  accuracy: 'EXACT' | 'CURVE_APPROXIMATED';
+  cornerMode: 'miter';
+  includesInterior: true;
+  interiorPolicy: 'flat-source';
+  fileName?: string;
+  surfaceName?: string;
+  sourceId?: string;
+}
+
 /**
  * Phase 20C grading-group bake provenance. Bake ALWAYS writes this shape —
  * never LandXML/compose/generic-bake/single-grading-bake. Informational
@@ -1212,6 +1230,7 @@ export type CadExplicitTinProvenance =
   | WebnetBakeTinProvenance
   | WebnetGradingBakeTinProvenance
   | WebnetGradingGroupBakeTinProvenance
+  | WebnetGradingDesignPatchTinProvenance
   | WebnetComposeTinProvenance
   | ExplicitFormatTinProvenance;
 
@@ -1450,10 +1469,24 @@ export type CadSurfaceStatus =
   | 'BROKEN_REFERENCE'
   | 'INSUFFICIENT_DATA';
 
+export type CadSurfacePurpose =
+  | 'existing-ground'
+  | 'design'
+  | 'design-patch'
+  | 'reference'
+  | 'other';
+
 export interface CadSurface {
   id: string;
   name: string;
   definition: CadSurfaceDefinition;
+  /**
+   * Phase 20D workflow role (Existing Ground vs Design vs patch vs reference).
+   * Operator-authored metadata ONLY — never inferred, never geometry: excluded
+   * from the geometry revision by construction (revision hashes the definition).
+   * Absent = legacy neutral surface.
+   */
+  purpose?: CadSurfacePurpose;
   styleId?: string;
   /** Geometry-only revision of the last successful build; absent = never built. */
   cachedRevision?: string | null;

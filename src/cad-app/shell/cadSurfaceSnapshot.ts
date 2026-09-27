@@ -185,7 +185,7 @@ export const EMPTY_SURFACE_SELECTION: CadSurfaceSelectionSummary = {
  * Baked detection delegates to the engine `tinProvenanceKind` helper.
  */
 export interface CadExplicitTinProvenanceView {
-  kind?: 'landxml-import' | 'webnet-bake' | 'webnet-compose' | 'webnet-grading-bake' | 'webnet-grading-group-bake';
+  kind?: 'landxml-import' | 'webnet-bake' | 'webnet-compose' | 'webnet-grading-bake' | 'webnet-grading-group-bake' | 'webnet-grading-design-patch';
   format?: string;
   fileName?: string;
   surfaceName?: string;
@@ -272,6 +272,17 @@ export const summarizeExplicitTinSource = (
         overlaySurfaceName: overlayName,
         policy: provenance.policy ?? COMPOSE_POLICY_LABEL,
       },
+    };
+  }
+  if (provenance.kind === 'webnet-grading-design-patch') {
+    const groupName = provenance.groupName ?? provenance.groupId ?? '—';
+    return {
+      text:
+        `Design Patch Explicit TIN — ${vertexCount} vertices, ${faceCount} faces ` +
+        `(from grading group ${groupName}, pad interior + grading shell)`,
+      bakedFrom: null,
+      sourceRevision: null,
+      composed: null,
     };
   }
   if (!isBakedTinProvenance(provenance)) {
