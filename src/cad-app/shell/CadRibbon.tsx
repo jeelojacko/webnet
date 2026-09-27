@@ -6,6 +6,8 @@ import {
   type CadShellCommandDef,
 } from './cadCommandRegistry';
 import { CadLayersGroup } from './CadLayersGroup';
+import { CadParcelNetworkRibbonGroup } from './CadParcelNetworkRibbonGroup';
+import { PARCEL_NETWORK_KEYS } from './cadParcelNetwork.constants';
 import { CadAnnotateRibbonGroups } from '../annotation/CadAnnotateRibbonGroups';
 import type { CadShellActions, CadWorkspaceSnapshot, SurveyManagerKind } from './cadShellTypes';
 import { surfaceBakeCapability, trySurfaceCommand } from './cadSurfaceSnapshot';
@@ -82,25 +84,34 @@ export const CadRibbon: React.FC<CadRibbonProps> = ({ snapshot, actions, collaps
         {tab === 'Survey' ? <CadSurveyGroup snapshot={snapshot} actions={actions} /> : null}
         {tab === 'Surface' ? <CadSurfaceRibbonGroup snapshot={snapshot} actions={actions} /> : null}
         {groups.map((group) => (
-          <div key={group} className="cad-shell-ribbon-group" aria-label={group}>
-            <span className="cad-shell-ribbon-group-label">{group}</span>
-            <div className="cad-shell-ribbon-buttons">
-              {CAD_SHELL_COMMANDS.filter((def) => def.category === group).map((def) => (
-                <button
-                  key={def.key}
-                  type="button"
-                  title={ribbonTooltip(def)}
-                  aria-label={def.label}
-                  disabled={!isShellCommandAvailable(def, snapshot, actions)}
-                  className="cad-shell-ribbon-button"
-                  onClick={() => run(def)}
-                  data-cad-command={def.key}
-                >
-                  {def.label}
-                </button>
-              ))}
+          <React.Fragment key={group}>
+            <div className="cad-shell-ribbon-group" aria-label={group}>
+              <span className="cad-shell-ribbon-group-label">{group}</span>
+              <div className="cad-shell-ribbon-buttons">
+                {CAD_SHELL_COMMANDS.filter(
+                  (def) =>
+                    def.category === group &&
+                    !(group === 'Parcel' && PARCEL_NETWORK_KEYS.has(def.key)),
+                ).map((def) => (
+                  <button
+                    key={def.key}
+                    type="button"
+                    title={ribbonTooltip(def)}
+                    aria-label={def.label}
+                    disabled={!isShellCommandAvailable(def, snapshot, actions)}
+                    className="cad-shell-ribbon-button"
+                    onClick={() => run(def)}
+                    data-cad-command={def.key}
+                  >
+                    {def.label}
+                  </button>
+                ))}
+              </div>
             </div>
-          </div>
+            {tab === 'Home' && group === 'Parcel' ? (
+              <CadParcelNetworkRibbonGroup snapshot={snapshot} actions={actions} />
+            ) : null}
+          </React.Fragment>
         ))}
       </div>
     </div>

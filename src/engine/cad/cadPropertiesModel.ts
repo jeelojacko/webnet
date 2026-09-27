@@ -1,10 +1,19 @@
 import type { CadEntity, CadEntityId, CadLayer } from './cadTypes';
 
+export interface CadEntityPropertyRowAction {
+  kind: 'parcel-unlink' | 'parcel-shared-edit';
+  linkId: string;
+  label: string;
+  /** Present when the action cannot run yet (rendered disabled with reason). */
+  disabledReason?: string;
+}
+
 export interface CadEntityPropertyRow {
   key: string;
   label: string;
   value: string;
   editableField?: CadEntityPropertyEditField;
+  actions?: CadEntityPropertyRowAction[];
 }
 
 export type CadEntityPropertyEditField =
@@ -107,9 +116,11 @@ export const row = (
   label: string,
   value: string,
   editableField?: CadEntityPropertyEditField,
+  actions?: CadEntityPropertyRowAction[],
 ): CadEntityPropertyRow => ({
   key,
   label,
   value,
   editableField,
+  ...(actions != null && actions.length > 0 ? { actions } : {}),
 });

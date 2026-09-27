@@ -52,6 +52,7 @@ import { backfillDrawingCatalog } from '../fieldToFinish/drawingCatalog';
 import { cloneFeatureCatalog } from '../fieldToFinish/featureCatalog';
 import { sanitizeCadBlockReferences } from './cadBlockPersistence';
 import { ensureParcelCourseIds } from './cadParcelCourses';
+import { sanitizeCadParcelSharedBoundaries } from './cadParcelSharedBoundary';
 import { backfillAnalysisMaps, clearAnalysisCacheOnLoad, cloneCadAnalysisMaps } from './cadAnalysisMaps';
 import { backfillAnalysisLegends, cloneCadAnalysisLegends } from './cadAnalysisLegends';
 import { sanitizeCadSurveyTables } from './cadSurveyTablePersistence';
@@ -140,11 +141,13 @@ export const createBlankCadProject = ({
   // Phase 18U: analysis definitions (and no results) trail the annotation
   // tables — project signatures are key-order-sensitive JSON.stringify.
   // Phase 19A: survey table styles seed last (same trailing rule).
-  return sanitizeCadSurveyTables({
+  const withTables = sanitizeCadSurveyTables({
     ...withAnnotations,
     analysisMaps: backfillAnalysisMaps(undefined),
     analysisLegends: backfillAnalysisLegends(undefined),
   });
+  // Phase 19D: new drawings own an empty shared-boundary collection (trailing).
+  return { ...withTables, sharedParcelBoundaries: [] };
 };
 
 export const createBlankCadDrawingDocument = ({
@@ -350,6 +353,9 @@ export const migrateSurveyCadStateToDrawing = ({
     ),
     analysisLegends: cloneCadAnalysisLegends(backfillAnalysisLegends(project.analysisLegends)),
   });
+  // Phase 19D: sanitize the shared-boundary collection (unknown refs dropped
+  // with diagnostics, never rebound); legacy imports backfill [].
+  const sharedBoundaries = sanitizeCadParcelSharedBoundaries(projectWithAnalysis);
   return {
     kind: 'webnet-cad-drawing',
     schemaVersion: 2,
@@ -364,6 +370,8 @@ export const migrateSurveyCadStateToDrawing = ({
       bounds: projectWithAnalysis.bounds ?? buildCadBounds(projectWithAnalysis.entities),
       // Phase 18N: legacy imports own no blocks (trailing: key-order rule).
       blockDefinitions: [],
+      // Phase 19D: shared-boundary refs trail the analysis tables.
+      sharedParcelBoundaries: sharedBoundaries.boundaries,
     },
     parcelLayout: cloneParcelLayout(state.parcelLayout),
     showParcelLabels: state.showParcelLabels ?? true,
@@ -448,10 +456,16 @@ const sanitizeCadDrawingDocument = (value: unknown): CadDrawingDocument | undefi
       ),
       analysisLegends: cloneCadAnalysisLegends(backfillAnalysisLegends(project.analysisLegends)),
     });
+    // Phase 19D: sanitize + backfill the shared-boundary collection last
+    // (trailing keys; unknown refs dropped, never rebound).
+    const projectWithBoundaries: CadProject = {
+      ...projectWithAnalysis,
+      sharedParcelBoundaries: sanitizeCadParcelSharedBoundaries(projectWithAnalysis).boundaries,
+    };
     const draft = cloned.draft
       ? { ...cloned.draft, layers: backfillCadLayerList(cloned.draft.layers) }
       : cloned.draft;
-    return { ...cloned, project: projectWithAnalysis, draft };
+    return { ...cloned, project: projectWithBoundaries, draft };
   } catch {
     return undefined;
   }

@@ -231,6 +231,56 @@ export const CAD_SHELL_COMMANDS: CadShellCommandDef[] = [
   session('PARCELTABLE', 'Parcel Table', 'Parcel', 'Create a parcel course table from the selected parcel.', ['PARCELCOURSETABLE']),
   session('PARCELREPORT', 'Parcel Report', 'Parcel', 'Create a parcel summary report table from the selected parcel.', ['PARCELSUMMARYTABLE']),
   session('PARCELDESC', 'Parcel Description', 'Parcel', 'Create a parcel description (course) table from the selected parcel.', ['PARCELDESCRIPTION']),
+  // Phase 19D — plan designation + parcel network / shared boundary. These
+  // ride the same Home "Parcel" category but the ribbon surfaces them only
+  // through the bounded Network subgroup (see CadRibbon). "Plan Role" is
+  // user-assigned display metadata, never a legal conclusion.
+  session(
+    'PARCELDESIGNATE',
+    'Designate Parcels',
+    'Parcel',
+    'Set plan designation / plan role / description on selected parcels (metadata only).',
+    ['PARCELDESIG'],
+  ),
+  session(
+    'PARCELNUMBER',
+    'Number Parcels',
+    'Parcel',
+    'Bulk-assign deterministic plan designations to selected parcels.',
+    ['PARCELNUM'],
+  ),
+  session(
+    'PARCELLINK',
+    'Link Shared Boundary',
+    'Parcel',
+    'Link two coincident parcel courses as one shared boundary (refs only).',
+    ['PARCELSHAREBOUNDARY'],
+  ),
+  session(
+    'PARCELUNLINK',
+    'Unlink Shared Boundary',
+    'Parcel',
+    'Remove a shared-boundary link; parcel geometry is unchanged.',
+    ['PARCELSHAREUNLINK'],
+  ),
+  session(
+    'PARCELCHECK',
+    'Validate Parcel Network',
+    'Parcel',
+    'Plan-topology QA: overlaps, unlinked shared courses, broken links (never legal).',
+  ),
+  session(
+    'PARCELSCHEDULE',
+    'Parcel Schedule',
+    'Parcel',
+    'Derive the live parcel schedule (designation, role, area, courses).',
+  ),
+  session(
+    'PARCELSHAREDEDIT',
+    'Edit Shared Boundary',
+    'Parcel',
+    'Edit both sides of a shared boundary in one atomic transaction.',
+  ),
   // Edit chrome actions (no aliases; shortcuts mirror the workspace keyboard)
   action('SHELL_UNDO', 'Undo', 'Edit', 'Undo the last change.', 'Ctrl+Z'),
   action('SHELL_REDO', 'Redo', 'Edit', 'Redo the undone change.', 'Ctrl+Y'),

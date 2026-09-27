@@ -39,6 +39,7 @@ export const useSurveyCadCommandStarters = ({
   selectedAlignmentForStationing,
   selectedParcelForBearingSplit,
   selectedParcelForAreaSplit,
+  selectedParcelEntityIds = [],
   selectionCount,
   selectedEntityIds = [],
   surveyPointEntityIdsInStationOrder = [],
@@ -97,6 +98,31 @@ export const useSurveyCadCommandStarters = ({
       parcel: selectedParcelForAreaSplit,
       splitPoint: null,
     });
+  },
+  startParcelDesignateCommand: () => {
+    if (selectedParcelEntityIds.length === 0) return;
+    beginSession({ key: 'PARCELDESIGNATE', inputValue: '', parcelEntityIds: selectedParcelEntityIds });
+  },
+  startParcelNumberCommand: () => {
+    if (selectedParcelEntityIds.length === 0) return;
+    beginSession({ key: 'PARCELNUMBER', inputValue: '', parcelEntityIds: selectedParcelEntityIds });
+  },
+  startParcelLinkCommand: () => {
+    if (selectedParcelEntityIds.length < 2) return;
+    beginSession({ key: 'PARCELLINK', inputValue: '', parcelEntityIds: selectedParcelEntityIds });
+  },
+  startParcelUnlinkCommand: () => {
+    if (selectedParcelEntityIds.length === 0) return;
+    beginSession({ key: 'PARCELUNLINK', inputValue: '', parcelEntityIds: selectedParcelEntityIds });
+  },
+  startParcelCheckCommand: () => {
+    beginSession({ key: 'PARCELCHECK', inputValue: '', parcelEntityIds: selectedParcelEntityIds });
+  },
+  startParcelScheduleCommand: () => {
+    beginSession({ key: 'PARCELSCHEDULE', inputValue: '', parcelEntityIds: selectedParcelEntityIds });
+  },
+  startParcelSharedEditCommand: (linkId?: string) => {
+    beginSession({ key: 'PARCELSHAREDEDIT', inputValue: '', linkId: linkId ?? null });
   },
   startArc3PointCommand: () => beginSession({ key: 'ARC_3PT', inputValue: '', points: [] }),
   startArcStartCenterEndCommand: () => beginSession({ key: 'ARC_SCE', inputValue: '', points: [] }),

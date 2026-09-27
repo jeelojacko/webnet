@@ -25,6 +25,10 @@ import {
 } from './cadVolumeSurfaces';
 import { backfillCadSurfaces, clearSurfaceBuildCacheOnLoad, cloneCadSurfaces } from './cadSurfaceTypes';
 import {
+  cloneCadParcelSharedBoundaries,
+  sanitizeCadParcelSharedBoundaries,
+} from './cadParcelSharedBoundary';
+import {
   backfillCadProfileStyles,
   backfillProfileViews,
   backfillSurfaceProfiles,
@@ -350,6 +354,11 @@ export const cloneCadProject = (project: CadProject): CadProject => ({
   ...(project.currentSurveyTableStyleId != null
     ? { currentSurveyTableStyleId: project.currentSurveyTableStyleId }
     : {}),
+  // Phase 19D: drawing-owned shared parcel boundaries stay trailing
+  // (key-order rule). Refs only; derived status/geometry never serialized.
+  ...(project.sharedParcelBoundaries != null
+    ? { sharedParcelBoundaries: cloneCadParcelSharedBoundaries(project.sharedParcelBoundaries) }
+    : {}),
 });
 
 const cloneParcelLayoutSettings = (
@@ -429,6 +438,13 @@ export const sanitizeSurveyCadPersistedState = (
     const entitiesWithCourses = sanitizedBlocks.project.entities.map((entity) =>
       entity.type === 'parcel' ? ensureParcelCourseIds(entity) : entity,
     );
+    // Phase 19D: sanitize the shared-boundary collection against the course-id
+    // backfilled entities (unknown refs dropped with diagnostics, never
+    // rebound). Legacy files backfill [].
+    const sharedBoundaries = sanitizeCadParcelSharedBoundaries({
+      ...sanitizedBlocks.project,
+      entities: entitiesWithCourses,
+    });
     return {
       ...cloned,
       // Trailing surfaces/styles position matches cloneCadProject
@@ -460,6 +476,9 @@ export const sanitizeSurveyCadPersistedState = (
         analysisLegends: cloneCadAnalysisLegends(
           backfillAnalysisLegends(withStandards.analysisLegends),
         ),
+        // Phase 19D: shared-boundary refs trail the analysis tables (key-order
+        // rule); derived status/geometry is never persisted.
+        sharedParcelBoundaries: sharedBoundaries.boundaries,
       },
     };
   } catch {

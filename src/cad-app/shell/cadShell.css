@@ -156,6 +156,42 @@
   background: #141f38;
 }
 
+/* Phase 19D — bounded Parcel Network subgroup: primary + caret split. */
+.cad-shell-ribbon-split {
+  display: inline-flex;
+  position: relative;
+  align-items: stretch;
+}
+
+.cad-shell-ribbon-split > .cad-shell-ribbon-button {
+  border-top-right-radius: 0;
+  border-bottom-right-radius: 0;
+}
+
+.cad-shell-ribbon-split-caret {
+  border: 1px solid var(--cad-panel-edge);
+  border-left: none;
+  background: #141f38;
+  color: var(--cad-dim);
+  padding: 0 4px;
+  cursor: pointer;
+}
+
+.cad-shell-ribbon-split-menu {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  z-index: 30;
+  display: flex;
+  flex-direction: column;
+  min-width: 8rem;
+}
+
+.cad-shell-ribbon-button-secondary {
+  width: 100%;
+  text-align: left;
+}
+
 .cad-shell-main {
   display: flex;
   flex: 1;
@@ -276,6 +312,55 @@
 .cad-shell-count {
   margin-left: auto;
   color: var(--cad-dim);
+}
+
+/* Phase 19D — parcel network/schedule Toolspace rows. */
+.cad-shell-tree-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  padding: 2px 0 4px;
+}
+
+.cad-shell-tree-action {
+  border: 1px solid var(--cad-panel-edge);
+  background: #141f38;
+  color: var(--cad-text, inherit);
+  font-size: 10px;
+  padding: 1px 5px;
+  cursor: pointer;
+}
+
+.cad-shell-tree-action:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.cad-shell-section-label {
+  color: var(--cad-dim);
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.cad-shell-parcel-secondary {
+  color: var(--cad-dim);
+  flex-wrap: wrap;
+}
+
+.cad-shell-parcel-link-main {
+  flex: 1;
+  min-width: 0;
+}
+
+.cad-shell-parcel-schedule-head {
+  color: var(--cad-dim);
+  flex-wrap: wrap;
+}
+
+.cad-shell-parcel-schedule-cell {
+  min-width: 0;
+  flex: 1;
 }
 
 .cad-shell-layer-swatch {

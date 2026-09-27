@@ -356,6 +356,20 @@ export const promptForSession = (session: CommandSession | null, fallbackStatus:
         (session.insertion
           ? 'SURVEYTABLE insertion captured.'
           : 'SURVEYTABLE active. Click the table insertion point.');
+    case 'PARCELDESIGNATE':
+      return session.resultText ?? `PARCELDESIGNATE active. ${session.parcelEntityIds.length} parcel(s) selected. Type \`designation[; role][; description]\` and press Enter.`;
+    case 'PARCELNUMBER':
+      return session.resultText ?? `PARCELNUMBER active. ${session.parcelEntityIds.length} parcel(s) selected. Type \`[prefix][, start][, pad]\` (empty = Lot 1, 2, …) and press Enter.`;
+    case 'PARCELLINK':
+      return session.resultText ?? `PARCELLINK active. ${session.parcelEntityIds.length} parcel(s) selected. Press Enter to link coincident courses.`;
+    case 'PARCELUNLINK':
+      return session.resultText ?? `PARCELUNLINK active. Press Enter to list links on the selected parcels, then type 1–N or ALL.`;
+    case 'PARCELCHECK':
+      return session.resultText ?? 'PARCELCHECK active. Press Enter to run plan-topology QA (read-only).';
+    case 'PARCELSCHEDULE':
+      return session.resultText ?? 'PARCELSCHEDULE active. Press Enter to derive the live parcel schedule (read-only).';
+    case 'PARCELSHAREDEDIT':
+      return session.resultText ?? 'PARCELSHAREDEDIT active. Press Enter for usage, then type `from x,y`, `to x,y`, `line`, or `bulge <n>`.';
   }
 };
 

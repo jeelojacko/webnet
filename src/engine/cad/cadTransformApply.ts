@@ -25,6 +25,7 @@ import {
   type CadTransformClassification,
 } from './cadTransform2D';
 import { transformCadEntityGeometry } from './cadTransformGeometry';
+import { linkedComponentSelectionBlockReason } from './cadParcelSharedEdit';
 import {
   buildCopiedAnnotationEntities,
   isCadAnnotationEntity,
@@ -276,6 +277,15 @@ export const applyCadSelectionTransform = (
     transform,
   });
   if (!preflight.ok) return preflight;
+  // Phase 19D: in-place transforms must move a whole linked parcel group so the
+  // shared endpoints stay coincident; MIRROR_COPY clones start unlinked.
+  if (opts.copyMode !== 'MIRROR_COPY') {
+    const linkReason = linkedComponentSelectionBlockReason(
+      project,
+      preflight.entities.map((entity) => entity.id),
+    );
+    if (linkReason) return { ok: false, reason: linkReason };
+  }
   const cohort = resolveCohort(project, selectedIds);
   const transactionLabel = opts.label;
 

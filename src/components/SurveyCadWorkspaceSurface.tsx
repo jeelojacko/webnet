@@ -139,6 +139,7 @@ const SurveyCadWorkspaceSurface = ({
           onStartDrag={floatingPanels.startPropertiesPanelDrag}
           onSelectEntity={(entityId) => workspace.selectEntity(entityId)}
           onEditField={workspace.editPropertiesField}
+          onParcelRowAction={workspace.runParcelLinkAction}
         />
       ) : null}
       {reportedComputation ? (

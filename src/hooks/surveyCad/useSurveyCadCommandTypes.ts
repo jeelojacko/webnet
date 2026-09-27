@@ -118,6 +118,13 @@ export type ActiveCommandKey =
   | 'SURVEYTABLE'
   | 'PARCEL_SPLIT_BEARING'
   | 'PARCEL_SPLIT_AREA'
+  | 'PARCELDESIGNATE'
+  | 'PARCELNUMBER'
+  | 'PARCELLINK'
+  | 'PARCELUNLINK'
+  | 'PARCELCHECK'
+  | 'PARCELSCHEDULE'
+  | 'PARCELSHAREDEDIT'
   | 'MOVE'
   | 'COPY'
   | 'ROTATE'
@@ -226,6 +233,26 @@ export type CommandSession =
       inputValue: string;
       parcel: CadParcelEntity;
       splitPoint: CommandPoint | null;
+      resultText?: string;
+    }
+  // Phase 19D network sessions: parcels captured from the selection at
+  // start; typed params (or empty Enter) commit through runCadCommand.
+  | {
+      key:
+        | 'PARCELDESIGNATE'
+        | 'PARCELNUMBER'
+        | 'PARCELLINK'
+        | 'PARCELUNLINK'
+        | 'PARCELCHECK'
+        | 'PARCELSCHEDULE';
+      inputValue: string;
+      parcelEntityIds: string[];
+      resultText?: string;
+    }
+  | {
+      key: 'PARCELSHAREDEDIT';
+      inputValue: string;
+      linkId: string | null;
       resultText?: string;
     }
   | {

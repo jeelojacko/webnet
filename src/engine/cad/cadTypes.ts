@@ -351,6 +351,42 @@ export interface CadPolygonEntity extends CadBaseEntity {
  */
 export type CadParcelCourseGeometry = { kind: 'line' } | { kind: 'arc'; bulge: number };
 
+/**
+ * Phase 19D plan role: user-assigned DISPLAY metadata only ("Plan Role").
+ * NEVER infer legal meaning from this field. No owner/PID/deed/tenement
+ * fields live on the parcel entity.
+ */
+export type CadParcelPlanRole =
+  | 'lot'
+  | 'remainder'
+  | 'road'
+  | 'right-of-way'
+  | 'easement'
+  | 'other';
+
+/** Phase 19D plan designation: display metadata only, never legal meaning. */
+export interface CadParcelPlanInfo {
+  designation?: string;
+  role?: CadParcelPlanRole;
+  description?: string;
+}
+
+/** Phase 19D shared-boundary end: a ref to one parcel course (never geometry). */
+export interface CadParcelSharedBoundaryEnd {
+  parcelId: string;
+  courseId: string;
+}
+
+/**
+ * Phase 19D shared-boundary relationship: two parcel-course refs, nothing
+ * derived (lengths/geometry resolve at read time, never persisted).
+ */
+export interface CadParcelSharedBoundary {
+  id: string;
+  first: CadParcelSharedBoundaryEnd;
+  second: CadParcelSharedBoundaryEnd;
+}
+
 export interface CadParcelEntity extends CadBaseEntity {
   type: 'parcel';
   vertices: CadDisplayPoint[];
@@ -375,6 +411,8 @@ export interface CadParcelEntity extends CadBaseEntity {
   closureDeltaX?: number;
   closureDeltaY?: number;
   closureDistanceMeters?: number;
+  /** Phase 19D plan designation (display metadata only). Trailing key. */
+  planInfo?: CadParcelPlanInfo;
 }
 
 export interface CadTextEntity extends CadBaseEntity {
@@ -767,6 +805,12 @@ export interface CadProject {
   surveyTableStyles?: CadSurveyTableStyle[];
   /** Phase 19A current survey table style id (UI default; absent = first). */
   currentSurveyTableStyleId?: CadStyleId;
+  /**
+   * Phase 19D: drawing-owned parcel shared-boundary relationships (refs
+   * only; all geometry/lengths derived at resolve time). Optional so
+   * legacy files open; load paths backfill []. Trailing key.
+   */
+  sharedParcelBoundaries?: CadParcelSharedBoundary[];
   entities: CadEntity[];
   cogoComputations: CadCogoComputation[];
   bounds: CadBounds | null;

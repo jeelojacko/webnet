@@ -144,6 +144,13 @@ export const sessionExpectsPointPick = (session: CommandSession | null): boolean
     case 'EXTEND_LINE':
     case 'OFFSET_POINT':
     case 'BATCH_COGO':
+    case 'PARCELDESIGNATE':
+    case 'PARCELNUMBER':
+    case 'PARCELLINK':
+    case 'PARCELUNLINK':
+    case 'PARCELCHECK':
+    case 'PARCELSCHEDULE':
+    case 'PARCELSHAREDEDIT':
       return false;
     case 'MTEXT':
       return session.point == null;

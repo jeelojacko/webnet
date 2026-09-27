@@ -23,6 +23,7 @@ import {
 import { replaceCadProjectEntities } from './cadProjectState';
 import { createCadSelectionState } from './cadSelection';
 import { parcelPointsMatch } from './cadCogoParcelGeometryPrimitives';
+import { courseEditBlockReason } from './cadParcelSharedEdit';
 import type { CadCommandDefinition } from './cadTransactions.types';
 import type { CadArcEntity, CadEntityId, CadParcelCourseGeometry, CadParcelEntity } from './cadTypes';
 
@@ -89,6 +90,8 @@ export const parcelCourseArcCommand: CadCommandDefinition<{
       (entity): entity is CadArcEntity => entity.id === command.arcEntityId && entity.type === 'arc',
     );
     if (!parcel || !arc) return null;
+    // Phase 19D: a linked course converts through PARCELSHAREDEDIT, not here.
+    if (courseEditBlockReason(snapshot.project, parcel.id, command.courseId)) return null;
     const located = locateCourse(parcel, command.courseId);
     if (!located) return null;
 
@@ -141,6 +144,8 @@ export const parcelCourseLineCommand: CadCommandDefinition<{
   execute: (snapshot, command) => {
     const parcel = findParcel(snapshot, command.parcelEntityId);
     if (!parcel) return null;
+    // Phase 19D: a linked course converts through PARCELSHAREDEDIT, not here.
+    if (courseEditBlockReason(snapshot.project, parcel.id, command.courseId)) return null;
     const located = locateCourse(parcel, command.courseId);
     if (!located) return null;
     const entry = parcel.courseGeometry?.[located.rawIndex];

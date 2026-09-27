@@ -259,6 +259,40 @@ describe('cad shell command registry', () => {
   });
 });
 
+describe('phase 19D parcel network shell commands', () => {
+  const NETWORK_KEYS = [
+    'PARCELDESIGNATE',
+    'PARCELNUMBER',
+    'PARCELLINK',
+    'PARCELUNLINK',
+    'PARCELCHECK',
+    'PARCELSCHEDULE',
+    'PARCELSHAREDEDIT',
+  ] as const;
+
+  it('registers every network command as a Parcel session', () => {
+    const keys = new Set(CAD_SHELL_COMMANDS.map((def) => def.key));
+    for (const key of NETWORK_KEYS) {
+      const def = CAD_SHELL_COMMANDS.find((entry) => entry.key === key)!;
+      expect(keys.has(key)).toBe(true);
+      expect(def.category).toBe('Parcel');
+      expect(def.kind).toBe('session');
+      expect(def.hint.length).toBeGreaterThan(0);
+    }
+    expect(resolveShellCommandText('parceldesig')?.key).toBe('PARCELDESIGNATE');
+    expect(resolveShellCommandText('parcelschedule')?.key).toBe('PARCELSCHEDULE');
+  });
+
+  it('gates network sessions on availableCommands like other sessions', () => {
+    const actions = stubActions();
+    const def = CAD_SHELL_COMMANDS.find((entry) => entry.key === 'PARCELDESIGNATE')!;
+    expect(isShellCommandAvailable(def, baseSnapshot(), actions)).toBe(false);
+    expect(
+      isShellCommandAvailable(def, baseSnapshot({ availableCommands: ['PARCELDESIGNATE'] }), actions),
+    ).toBe(true);
+  });
+});
+
 describe('phase 18W boundary/breakline shell commands', () => {
   const surfaceSnapshot = (rows: Array<{
     id: string;

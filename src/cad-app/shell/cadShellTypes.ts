@@ -27,6 +27,7 @@ export type {
 import type { BreaklineEntityPreview, BoundarySourcePreview } from '../../engine/cad/cadSurfaceView';
 import type { CadSurfaceSnapshot } from './cadSurfaceSnapshot';
 import type { CadSurveyTableSnapshot } from './cadSurveyTableSnapshot';
+import type { CadParcelSnapshot } from './cadParcelSnapshot';
 import type { CadVolumeSnapshot } from './cadVolumeSnapshot';
 import type { CadAnalysisSnapshot } from './cadAnalysisSnapshot';
 import type { CadProfileSnapshot } from './cadProfileSnapshot';
@@ -224,6 +225,13 @@ export interface CadWorkspaceSnapshot {
    * wiring leaves it undefined and the shell renders disabled controls.
    */
   surveyTable?: CadSurveyTableSnapshot | null;
+  /**
+   * Phase 19D — derived parcel plan/network facts (designation/role,
+   * courses, shared-boundary links, adjacency, schedule). Optional: a
+   * workspace without parcel wiring leaves it undefined and the parcel UI
+   * hides (never fake data).
+   */
+  parcel?: CadParcelSnapshot | null;
   /** UI command keys with a live starter in the mounted workspace. */
   availableCommands: string[];
 }
@@ -451,6 +459,18 @@ export interface CadShellActions {
    * `reason` is surfaced verbatim by the managers when applied is false.
    */
   runAnnotationOp?: (_op: CadAnnotationUiOp) => CadAnnotationOpResult;
+  /**
+   * Phase 19D — zoom the viewport to one parcel's bounds (Toolspace Network
+   * "Zoom"). Optional: embedded workspaces without viewport state leave it
+   * absent and the control renders disabled.
+   */
+  zoomToParcel?: (_parcelId: string) => void;
+  /**
+   * Phase 19D — start the shared-boundary edit session for one link
+   * (Toolspace/Properties "Edit Shared"). Optional: embedded workspaces
+   * without the session leave it absent and the control renders disabled.
+   */
+  startParcelSharedEdit?: (_linkId: string) => boolean;
   /** Select every survey point in the drawing. */
   selectAllSurveyPoints: () => void;
   /** Select the survey points matching one group (engine-side membership). */

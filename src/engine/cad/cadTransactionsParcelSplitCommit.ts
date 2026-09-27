@@ -13,6 +13,7 @@ import type { CadCommandExecutionResult, CadWorkspaceSnapshot } from './cadTrans
 import type { CadEntityId, CadParcelEntity } from './cadTypes';
 import { createStableRuntimeId } from '../id';
 import { buildParcelCourseIds } from './cadParcelCourses';
+import { parcelSplitBlockReason } from './cadParcelSharedEdit';
 export const buildParcelSplitCommitResult = ({
   snapshot,
   parcelEntity,
@@ -46,6 +47,8 @@ export const buildParcelSplitCommitResult = ({
   firstParcelMetadata: Record<string, unknown>;
   secondParcelMetadata: Record<string, unknown>;
 }): CadCommandExecutionResult | null => {
+  // Phase 19D: splitting a linked parcel consumes its courses; block fail-closed.
+  if (parcelSplitBlockReason(snapshot.project, parcelEntity.id)) return null;
   const firstParcelName = nextParcelName(snapshot.project);
   const parcelSequenceProject = appendCadProjectEntities(snapshot.project, [
     {
