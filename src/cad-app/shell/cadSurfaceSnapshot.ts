@@ -185,7 +185,7 @@ export const EMPTY_SURFACE_SELECTION: CadSurfaceSelectionSummary = {
  * Baked detection delegates to the engine `tinProvenanceKind` helper.
  */
 export interface CadExplicitTinProvenanceView {
-  kind?: 'landxml-import' | 'webnet-bake' | 'webnet-compose';
+  kind?: 'landxml-import' | 'webnet-bake' | 'webnet-compose' | 'webnet-grading-bake';
   format?: string;
   fileName?: string;
   surfaceName?: string;

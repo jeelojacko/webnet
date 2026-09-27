@@ -67,6 +67,8 @@ import {
 } from '../cad-app/shell/cadAnalysisSnapshot';
 import { createCadAnalysisControlPlane, queryAnalysisAt } from '../cad-app/shell/cadAnalysisAdapters';
 import { buildAnalysisExportInput } from '../cad-app/shell/cadAnalysisExportInput';
+import { buildGradingExportInput } from '../cad-app/shell/cadGradingExportInput';
+import { buildGradingSceneLayers } from '../cad-app/shell/cadGradingDisplay';
 import { buildAnalysisSceneLayers } from '../engine/cad/cadAnalysisDisplayView';
 import { buildCadProfileSnapshot, formatProfileElevationAnswer } from '../cad-app/shell/cadProfileSnapshot';
 import { CadSurfaceManager } from '../cad-app/shell/CadSurfaceManager';
@@ -91,12 +93,15 @@ import { useSurveyCadSurfaceEditSessions } from '../hooks/surveyCad/useSurveyCad
 import { useSurveyCadSurfacePointEditSessions } from '../hooks/surveyCad/useSurveyCadSurfacePointEditSessions';
 import { useSurveyCadSurfaceBulkSelection } from '../hooks/surveyCad/useSurveyCadSurfaceBulkSelection';
 import { useSurveyCadSurfaceBulkEditSessions } from '../hooks/surveyCad/useSurveyCadSurfaceBulkEditSessions';
-import { createCadSurfaceCache } from '../engine/cad/cadSurfaceCache';
-import { createCadSurfaceContourCache } from '../engine/cad/surfaceContourCache';
+import { createCadSurfaceCache } from '../engine/cad/cadSurfaceCache';import { createCadSurfaceContourCache } from '../engine/cad/surfaceContourCache';
 import { SurfaceWorkerClient } from '../workers/surfaceWorkerClient';
 import { SurfaceBuildService } from '../workers/surfaceBuildService';
 import { SurfaceContourService } from '../workers/surfaceContourService';
 import { SurfaceVolumeService } from '../workers/surfaceVolumeService';
+import { SurfaceGradingService } from '../workers/surfaceGradingService';
+import { createCadGradingCache } from '../engine/cad/grading/gradingCache';
+import { buildCadGradingSnapshot } from '../cad-app/shell/cadGradingSnapshot';
+import { CadGradingManager } from '../cad-app/shell/CadGradingManager';
 import { SurfaceProfileService } from '../workers/surfaceProfileService';
 import { SurfaceSectionService } from '../workers/surfaceSectionService';
 import { createCadProfileCache } from '../engine/cad/profileCache';
@@ -445,6 +450,14 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
     () => createCadSurfaceVolumeCache(activeDrawing.drawingId),
     [activeDrawing.drawingId],
   );
+  // Phase 20B — grading session state (definitions persist; results never do).
+  const gradingCache = useMemo(
+    () => createCadGradingCache(activeDrawing.drawingId),
+    [activeDrawing.drawingId],
+  );
+  const [selectedGradingId, setSelectedGradingId] = useState<string | null>(null);
+  const [gradingManagerTab, setGradingManagerTab] = useState<'definition' | 'inquiry'>('definition');
+  const [gradingVersion, setGradingVersion] = useState(0);
   // Phase 18F — surface UI state (all session-only; meshes never persist).
   const [selectedSurfaceId, setSelectedSurfaceId] = useState<string | null>(null);
   const [surfacePick, setSurfacePick] = useState<{ surfaceId: string; mode: 'elevation' | 'slope' } | null>(null);
@@ -650,6 +663,43 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
     [activeDrawing.drawingId, surfaceCache, volumeCache],
   );
   useEffect(() => () => volumeService.dispose(), [volumeService]);
+  // Phase 20B — grading derivation control plane (one per drawing session).
+  // Calculate is explicit only; source/target rebuilds re-derive status from
+  // revisions and never auto-start work.
+  const gradingService = useMemo(
+    () =>
+      new SurfaceGradingService({
+        drawingId: activeDrawing.drawingId,
+        getProject: () => activeProjectForBuildsRef.current,
+        getDrawingId: () => drawingIdForBuildsRef.current,
+        tinCache: surfaceCache,
+        gradingCache,
+        createTransport: () => {
+          try {
+            if (typeof Worker === 'undefined') return null;
+            return new SurfaceWorkerClient(
+              new Worker(new URL('../workers/surfaceWorker.ts', import.meta.url), {
+                type: 'module',
+              }),
+            );
+          } catch {
+            return null;
+          }
+        },
+        notify: (message) => setFileStatusText(message),
+        onStateChange: () => setGradingVersion((version) => version + 1),
+      }),
+    [activeDrawing.drawingId, surfaceCache, gradingCache],
+  );
+  useEffect(() => () => gradingService.dispose(), [gradingService]);
+  const gradingInputs = useMemo(
+    () => ({
+      version: gradingVersion,
+      buildingGradingIds: gradingService.buildingGradingIds(),
+      sessionDiagnostics: gradingService.gradingDiagnostics(),
+    }),
+    [gradingService, gradingVersion],
+  );
   // Phase 18U — analysis control plane (one per drawing session). Session
   // results are keyed by `arev1:` (source revision + band thresholds), so a
   // source rebuild or threshold edit re-derives NEEDS_RECALC/SOURCE_NOT_CURRENT
@@ -1554,6 +1604,10 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
       surveyTable: buildCadSurveyTableSnapshot(activeProject, selectedEntityIds),
       parcel: buildCadParcelSnapshot(activeProject, selectedEntityIds),
       featureLine: buildCadFeatureLineSnapshot(activeProject, selectedEntityIds),
+      grading: buildCadGradingSnapshot(activeProject, surfaceCache, gradingCache, selectedGradingId, {
+        buildingGradingIds: gradingInputs.buildingGradingIds,
+        sessionDiagnostics: gradingInputs.sessionDiagnostics,
+      }),
       blocks: buildCadBlockSnapshot(activeProject, selectedEntityIds, blockInsertPick),
       annotation: cadWorkspace.annotationSnapshot,
       f2f: buildCadF2FSnapshot(activeProject, activeCatalog, catalogStatus),
@@ -1604,6 +1658,7 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
     sectionCache, sectionService, surfaceSectionInputs,
     selectedSampleLineGroupId, selectedSampleLineId, selectedSectionViewId,
     blockInsertPick,
+    gradingCache, selectedGradingId, gradingInputs,
   ]);
 
   useEffect(() => {
@@ -1724,11 +1779,26 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
     ...surfaceBulkSelection.previewPrimitives,
     ...surfaceBulkEditSessions.previewPrimitives,
   ];
-  const displaySceneWithSurfaceEdits = surfaceEditOverlayPrimitives.length === 0
-    ? displaySceneWithSections
-    : {
+  // Phase 20B — CURRENT grading fills + daylight from the shell snapshot
+  // (same freshness as the manager). OFF/FROZEN layers drop here under the
+  // same visible/!frozen contract as surfaces/volumes; stale/failed rows
+  // contribute no layer, so superseded geometry never renders as current.
+  const gradingDisplayLayers = useMemo(
+    () => buildGradingSceneLayers(shellSnapshot?.grading),
+    [shellSnapshot],
+  );
+  const displaySceneWithGrading = useMemo(
+    () => filterCadDisplaySceneForViewport(activeProject, {
       ...displaySceneWithSections,
-      primitives: [...displaySceneWithSections.primitives, ...surfaceEditOverlayPrimitives],
+      gradingLayers: gradingDisplayLayers,
+    }),
+    [activeProject, displaySceneWithSections, gradingDisplayLayers],
+  );
+  const displaySceneWithSurfaceEdits = surfaceEditOverlayPrimitives.length === 0
+    ? displaySceneWithGrading
+    : {
+      ...displaySceneWithGrading,
+      primitives: [...displaySceneWithGrading.primitives, ...surfaceEditOverlayPrimitives],
     };
 
   // Phase 18U — drop session results for deleted maps (results never
@@ -1960,6 +2030,46 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
       runLayerCommand: (command) => cadWorkspace.runLayerCommand(command),
       runSurveyCommand: (command) => cadWorkspace.runLayerCommand(command),
       runFeatureLineCommand: (command) => cadWorkspace.runLayerCommand(command),
+      // Phase 20B — grading definition CRUD + Calculate/Extract/Bake. Calculate
+      // dispatches through the session grading service (explicit only);
+      // Extract/Bake pass the CURRENT cached result snapshot to the engine
+      // command (never recomputed in history).
+      runGradingCommand: (command) => cadWorkspace.runLayerCommand(command),
+      selectGrading: (gradingId) => setSelectedGradingId(gradingId),
+      openGradingManager: (selectedId, tab) => {
+        if (selectedId != null) setSelectedGradingId(selectedId);
+        setGradingManagerTab(tab ?? 'definition');
+        setSurveyManager({ kind: 'gradings', selectedId });
+      },
+      requestGradingCalculate: (gradingId) => {
+        const message = gradingService.requestGrading(gradingId);
+        setGradingVersion((version) => version + 1);
+        return message;
+      },
+      extractGradingDaylight: (gradingId) => {
+        const row = shellSnapshot?.grading?.gradings.find((entry) => entry.id === gradingId) ?? null;
+        if (!row?.currentResult || row.revision.length === 0) return 'Extract needs a CURRENT calculated result.';
+        const ok = cadWorkspace.runLayerCommand({
+          key: 'GRADINGEXTRACTDAYLIGHT',
+          gradingId,
+          result: row.currentResult,
+          expectedRevision: row.revision,
+          sessionCurrent: true,
+        });
+        return ok ? `Extracted “${row.name} - Daylight”.` : 'Extract rejected — needs a CURRENT result.';
+      },
+      bakeGradingSurface: (gradingId) => {
+        const row = shellSnapshot?.grading?.gradings.find((entry) => entry.id === gradingId) ?? null;
+        if (!row?.currentResult || row.revision.length === 0) return 'Bake needs a CURRENT calculated result.';
+        const ok = cadWorkspace.runLayerCommand({
+          key: 'GRADINGBAKE',
+          gradingId,
+          result: row.currentResult,
+          expectedRevision: row.revision,
+          sessionCurrent: true,
+        });
+        return ok ? `Baked “${row.name}” into an explicit-TIN surface.` : 'Bake rejected — needs a CURRENT nonzero result.';
+      },
       // Phase 18Y — deterministic pre-commit composition of two CURRENT
       // session meshes; the dialog commits the returned payload through
       // SURFCOMPOSE / SURFCOMPOSEPASTE (revision-gated at commit).
@@ -2599,6 +2709,15 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
             onClose={() => setSurveyManager(null)}
           />
         ) : null}
+        {surveyManager?.kind === 'gradings' && shellSnapshot ? (
+          <CadGradingManager
+            snapshot={shellSnapshot}
+            actions={shellActions}
+            initialSelectedId={surveyManager.selectedId}
+            initialTab={gradingManagerTab}
+            onClose={() => setSurveyManager(null)}
+          />
+        ) : null}
         {exportCenterOpen ? (
           <ExportCenterPanel
             drawing={activeDrawing}
@@ -2610,6 +2729,7 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
             f2fLinkStatus={f2fLinkStatus}
             f2fLinkSourceKind={f2fLinkSourceKind}
             analysis={analysisExportInput}
+            grading={buildGradingExportInput(shellSnapshot?.grading)}
             civilSources={exportCivilSources}
             onClose={() => setExportCenterOpen(false)}
           />

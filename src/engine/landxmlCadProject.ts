@@ -20,6 +20,8 @@ import {
 } from './landxmlCivilSource';
 import { finalizeExportResult, type ExportResult, type ExportWarning } from './cad/exportResult';
 import { ANALYSIS_LANDXML_DISPOSITION } from './cad/cadAnalysisExportScene';
+import { GRADING_LANDXML_DISPOSITION } from './cad/cadGradingExportScene';
+import type { CadGrading } from './cad/grading/gradingTypes';
 import {
   CAD_SURVEY_TABLE_LANDXML_DISPOSITION,
   type CadSurveyTable,
@@ -479,6 +481,15 @@ export const buildLandXmlProjectExportWithResult = (
     acc.warnings.push({
       code: 'SKIPPED_ENTITY',
       message: `analysis map ${map.id} (${map.name}) has no LandXML representation (${ANALYSIS_LANDXML_DISPOSITION})`,
+    });
+  });
+  // Phase 20B: grading definitions are live derived geometry with no LandXML
+  // schema (the workflow is Bake → Surface export). NOT_APPLICABLE: explicit
+  // per-grading warning when the live geometry is omitted; never silent.
+  (((project as CadProject & { gradings?: CadGrading[] }).gradings) ?? []).forEach((grading) => {
+    acc.warnings.push({
+      code: 'SKIPPED_ENTITY',
+      message: `grading ${grading.id} (${grading.name}) ${GRADING_LANDXML_DISPOSITION}: bake to a surface to export`,
     });
   });
 

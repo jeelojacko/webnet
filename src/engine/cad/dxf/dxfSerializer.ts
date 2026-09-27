@@ -205,6 +205,17 @@ export const serializeDxfModelWithResult = (model: DxfExportModel): ExportResult
     });
     out.push(pair(0, 'SEQEND'), pair(8, polyline.layer));
   });
+  // Phase 20B 3DFACE triangles (daylight mesh). A triangle repeats its third
+  // corner in group 13/23/33 (DXF 3DFACE is always four corners).
+  (model.faces3d ?? []).forEach((face) => {
+    out.push(
+      pair(0, '3DFACE'), pair(8, face.layer), ...colorOf(face.layer, face.colorHex), ...linetypeOf(face.layer, face.linetypeId), ...invisibleOf(face.invisible),
+      pair(10, fmt(face.a.x)), pair(20, fmt(face.a.y)), pair(30, fmt(face.a.z)),
+      pair(11, fmt(face.b.x)), pair(21, fmt(face.b.y)), pair(31, fmt(face.b.z)),
+      pair(12, fmt(face.c.x)), pair(22, fmt(face.c.y)), pair(32, fmt(face.c.z)),
+      pair(13, fmt(face.c.x)), pair(23, fmt(face.c.y)), pair(33, fmt(face.c.z)),
+    );
+  });
   model.arcs.forEach((arc) => {
     out.push(
       pair(0, 'ARC'), pair(8, arc.layer), ...colorOf(arc.layer, arc.colorHex), ...linetypeOf(arc.layer, arc.linetypeId), ...invisibleOf(arc.invisible),

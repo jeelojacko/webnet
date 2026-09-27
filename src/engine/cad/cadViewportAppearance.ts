@@ -125,6 +125,11 @@ export const filterCadDisplaySceneForViewport = (
     ),
     // Phase 18K: sample lines + section views ride the same OFF/frozen
     // contract — layer OFF hides with no rebuild, ON restores from cache.
+    // Phase 20B: grading fills + daylight ride the same OFF/frozen
+    // contract — layer OFF hides with no recalculation, ON restores.
+    gradingLayers: (scene.gradingLayers ?? []).filter(
+      (layer) => !isLayerHidden(project, layer.layerId),
+    ),
     sampleLineLayers: (scene.sampleLineLayers ?? []).filter(
       (layer) => !isLayerHidden(project, layer.layerId),
     ),

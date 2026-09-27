@@ -1,5 +1,6 @@
 import React from 'react';
 import type { CadSurfaceDisplayLayer } from '../../engine/cad/cadDisplayTypes';
+import type { CadGradingDisplayLayer } from '../../engine/cad/cadGradingView';
 import type { CadVolumeDisplayLayer } from '../../engine/cad/cadVolumeView';
 import type {
   CadAnalysisDisplayLayer,
@@ -273,6 +274,67 @@ export const renderVolumeLayers = ({
             data-volume-kind="fill"
           />
         ) : null}
+      </g>
+    ))}
+  </>
+);
+
+/**
+ * Phase 20B — derived grading fills + daylight ties. One aggregated fill
+ * path + one tie polyline per CURRENT grading (never CAD entities);
+ * curve-approximated results carry an explicit text badge (never
+ * color-only). Stale/failed rows produce no layer upstream. OFF/FROZEN
+ * layers are dropped by the viewport filter before this render.
+ */
+export const renderGradingLayers = ({
+  layers,
+  project,
+}: {
+  layers: readonly CadGradingDisplayLayer[];
+  project: ProjectPoint;
+}): React.ReactNode => (
+  <>
+    {layers.map((layer) => (
+      <g
+        key={`grading:${layer.gradingId}`}
+        data-grading-layer={layer.gradingId}
+        data-grading-approximated={layer.curveApproximated ? 'true' : undefined}
+        pointerEvents="none"
+      >
+        {layer.trianglesD ? (
+          <path
+            d={toScreenD(layer.trianglesD, project)}
+            fill={layer.fillStroke}
+            fillOpacity={layer.opacity}
+            stroke={layer.fillStroke}
+            strokeWidth={1}
+            data-grading-kind="fill"
+          />
+        ) : null}
+        {layer.daylightD ? (
+          <path
+            d={toScreenD(layer.daylightD, project)}
+            fill="none"
+            stroke={layer.daylightStroke}
+            strokeWidth={1.6}
+            data-grading-kind="daylight"
+          />
+        ) : null}
+        {layer.curveApproximated && layer.badgeAnchor ? (() => {
+          const point = project(layer.badgeAnchor.x, layer.badgeAnchor.y);
+          return (
+            <text
+              x={point.x}
+              y={point.y - 6}
+              fill="#fbbf24"
+              fontSize={11}
+              textAnchor="start"
+              pointerEvents="none"
+            >
+              CURVE APPROXIMATED
+            </text>
+          );
+        })() : null}
       </g>
     ))}
   </>

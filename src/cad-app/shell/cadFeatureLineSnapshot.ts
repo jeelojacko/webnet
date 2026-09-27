@@ -9,6 +9,9 @@ export interface CadFeatureLineSnapshotCourse {
   station: number;
   elevation: number;
   gradePercent: number;
+  /** Phase 20B — stable endpoint vertex ids (grading course reference). */
+  fromVertexId: string;
+  toVertexId: string;
 }
 
 export interface CadFeatureLineSnapshotEntry {
@@ -61,6 +64,8 @@ const toEntry = (project: CadProject, entity: CadFeatureLineEntity): CadFeatureL
         station: course.startStation,
         elevation: course.from.z,
         gradePercent: course.gradePercent,
+        fromVertexId: course.fromVertexId,
+        toVertexId: course.toVertexId,
       })) ?? [],
   };
 };

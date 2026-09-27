@@ -4,6 +4,11 @@ import {
   executeFeatureLineShellCommand,
   featureLineShellAvailable,
 } from './cadFeatureLineShell';
+import {
+  GRADING_SHELL_KEYS,
+  executeGradingShellCommand,
+  gradingShellAvailable,
+} from './cadGradingShell';
 import type { CadShellActions, CadWorkspaceSnapshot } from './cadShellTypes';
 import { requestDefinitionFocus, requestSurfaceComposeFocus } from './CadSurfaceDefinitionParts';
 import { surfaceComposeCapability } from './cadSurfaceCompose';
@@ -439,6 +444,16 @@ export const CAD_SHELL_COMMANDS: CadShellCommandDef[] = [
   action('FLINSERTVERTEX', 'Insert Vertex', 'Design', 'Insert a vertex on the selected feature line at an entered course and station (rides the course exactly; ambiguous geometry fails closed).', undefined, ['FLINSERT']),
   action('FLDELETEVERTEX', 'Delete Vertex', 'Design', 'Delete a vertex of the selected feature line (line+line joins straight; ambiguous arc joins blocked).', undefined, ['FLDELVERT']),
   action('SURFACE_ADDFEATURELINEBREAKLINE', 'Add Feature Line Breakline', 'Design', 'Add the selected feature line as an entity-backed surface breakline (its own vertex Z is consumed by the build).', undefined, ['SURFAFLBREAKLINE']),
+  // Phase 20B — Grade-to-Surface / daylight grading (bounded DESIGN group).
+  // GRADETOSURFACE runs the selection-driven creation prompts
+  // (`actions.runGradingCommand`); the rest open the manager or fire the
+  // explicit Calculate / Extract / Bake actions. GTS alias is collision-free.
+  action('GRADETOSURFACE', 'Grade to Surface', 'Design', 'Grade a feature-line course to a CURRENT target surface (pick course, side, criterion, max distance, curve tolerance).', undefined, ['GTS']),
+  action('GRADING', 'Grading Manager', 'Design', 'Open the grading manager (rows, create, calculate, inquiry).'),
+  action('GRADINGCALC', 'Calculate Grading', 'Design', 'Build the selected grading result (both sources must be Current; explicit, never auto-started).'),
+  action('GRADINGINQUIRY', 'Grading Inquiry', 'Design', 'Open the grading inquiry report (CURRENT only; stale answers honestly).', undefined, ['GRADINGINQ']),
+  action('GRADINGEXTRACTDAYLIGHT', 'Extract Daylight', 'Design', 'Create a snapshot feature line from the CURRENT daylight tie line (one undo entry; no live dependency).', undefined, ['EXTRACTDAYLIGHT']),
+  action('GRADINGBAKE', 'Bake Grading Surface', 'Design', 'Freeze the CURRENT grading mesh into an explicit-TIN surface (nonzero area; one undo entry).'),
 ];
 
 const COMMAND_BY_KEY = new Map<string, CadShellCommandDef>(
@@ -489,6 +504,9 @@ export const isShellCommandAvailable = (
   if (!snapshot || !actions) return false;
   if (def.kind === 'action') {
     if (FEATURE_LINE_SHELL_KEYS.has(def.key)) return featureLineShellAvailable(def.key, snapshot);
+    if (GRADING_SHELL_KEYS.has(def.key)) {
+      return actions.runGradingCommand != null && gradingShellAvailable(def.key, snapshot);
+    }
     switch (def.key) {
       case 'SHELL_UNDO':
         return snapshot.canUndo;
@@ -532,6 +550,7 @@ export const executeShellCommand = (
   if (!actions) return false;
   if (def.kind === 'session') return actions.startCommand(def.key as ActiveCommandKey);
   if (FEATURE_LINE_SHELL_KEYS.has(def.key)) return executeFeatureLineShellCommand(def.key, actions, snapshot);
+  if (GRADING_SHELL_KEYS.has(def.key)) return executeGradingShellCommand(def.key, actions, snapshot);
   switch (def.key) {
     case 'SHELL_UNDO':
       actions.undo();

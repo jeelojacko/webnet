@@ -19,6 +19,7 @@ import {
 } from './cadSheets';
 import { buildTableFragmentItems } from './cadExportTables';
 import { buildAnalysisSheetItems, type CadAnalysisExportInput } from './cadAnalysisExportScene';
+import { buildGradingSheetItems, type CadGradingExportInput } from './cadGradingExportScene';
 import type { CadEntity, CadProject } from './cadTypes';
 
 export interface ExportClip {
@@ -423,6 +424,12 @@ export interface BuildSceneArgs {
    */
   analysis?: CadAnalysisExportInput;
   /**
+   * Phase 20B: CURRENT grading daylight + triangle fill, projected through
+   * the same viewport transform as the model geometry. Session-only derived
+   * regions; absent = legacy scene unchanged.
+   */
+  grading?: CadGradingExportInput;
+  /**
    * Phase 20A: presentation-only feature-line Z/grade labels (never
    * geometry, never persisted). Absent = plan geometry only.
    */
@@ -615,6 +622,18 @@ const deriveSheetSceneInternal = (
     );
     items.push(...analysisItems.items);
     analysisItems.warnings.forEach((warning) => warnings.push(warning));
+    // Phase 20B grading fills + daylight sit with the analysis fills beneath
+    // the model linework; the CURRENT-only gate + dispositions are shared.
+    const gradingInput: CadGradingExportInput | undefined = args.grading
+      ? {
+          layers: (args.grading.layers ?? []).filter((layer) =>
+            !isHidden(layer.grading.layerId ?? 'grading'),
+          ),
+        }
+      : undefined;
+    const gradingItems = buildGradingSheetItems(gradingInput, toPaper, clipId);
+    items.push(...gradingItems.items);
+    gradingItems.warnings.forEach((warning) => warnings.push(warning));
     sorted
       .filter((primitive) => !isHidden(primitive.layerId))
       .forEach((primitive) => {

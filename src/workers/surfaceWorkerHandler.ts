@@ -23,6 +23,9 @@ import type {
 } from '../engine/cad/surfaceContours/contourTypes';
 import type { TinAdjacency, TinEdgeKinds } from '../engine/cad/tin/tinTypes';
 import type { SurfaceBuildRequest } from '../engine/cad/cadSurfaceTypes';
+import type { CadGradingResult } from '../engine/cad/grading/gradingTypes';
+import type { GradingComputeRequest } from './surfaceGradingCompute';
+import { computeGradingFromSnapshots } from './surfaceGradingCompute';
 import type {
   CadProject,
   CadSurface,
@@ -103,6 +106,7 @@ export type SurfaceWorkerRequestMessage =
   | { type: 'sections'; requestId: string; request: SurfaceSectionsRequest }
   | { type: 'analysis'; requestId: string; request: SurfaceAnalysisRequest }
   | { type: 'compose'; requestId: string; request: SurfaceComposeRequest }
+  | { type: 'grading'; requestId: string; request: SurfaceGradingRequest }
   | { type: 'cancel'; requestId: string };
 
 export type SurfaceWorkerResponseMessage =
@@ -216,6 +220,20 @@ export type SurfaceWorkerResponseMessage =
       baseRevision: string;
       overlaySurfaceId: string;
       overlayRevision: string;
+      error: string;
+    }
+  | {
+      type: 'grading-success';
+      requestId: string;
+      gradingId: string;
+      gradingRevision: string;
+      result: CadGradingResult;
+    }
+  | {
+      type: 'grading-failure';
+      requestId: string;
+      gradingId: string;
+      gradingRevision: string;
       error: string;
     };
 
@@ -449,6 +467,23 @@ export const composeSurfaceFromRequest: SurfaceComposeEngineFn = (request) =>
     request.policy.id as ComposePolicy,
   );
 
+/**
+ * Phase 20B grade-to-surface request: FLAT snapshots only (grading id,
+ * revision grev, resolved source geometry numbers, target TIN flat
+ * numbers, criterion numbers, side, search/chord — no CadProject/React).
+ */
+export type SurfaceGradingRequest = GradingComputeRequest;
+
+export type SurfaceGradingEngineFn = (
+  _request: SurfaceGradingRequest,
+) =>
+  | ReturnType<typeof computeGradingFromSnapshots>
+  | Promise<ReturnType<typeof computeGradingFromSnapshots>>;
+
+/** Default grading engine: the pure snapshot composer above. */
+export const computeGradingResultFromRequest: SurfaceGradingEngineFn = (request) =>
+  computeGradingFromSnapshots(request);
+
 export interface SurfaceWorkerHandlerDeps {
   loadBuilder: () => Promise<SurfaceWorkerBuilderFn>;
   /** Phase 18H: extractor override (tests inject fakes; default is the engine sibling's). */
@@ -470,6 +505,8 @@ export interface SurfaceWorkerHandlerDeps {
    * module lands (surfaceCompose.ts).
    */
   loadComposeFn?: () => Promise<SurfaceComposeEngineFn>;
+  /** Phase 20B: grading engine override (tests inject fakes; default is the snapshot composer). */
+  loadGradingFn?: () => Promise<SurfaceGradingEngineFn>;
   postMessage: (_message: SurfaceWorkerResponseMessage) => void;
   defer?: (_callback: () => void) => void;
 }
@@ -640,6 +677,7 @@ export const createSurfaceWorkerHandler = (
   const latestSectionsByGroup = new Map<string, string>();
   const latestAnalysisByKey = new Map<string, string>();
   const latestComposeByKey = new Map<string, string>();
+  const latestGradingByKey = new Map<string, string>();
   const defer = deps.defer ?? ((callback) => setTimeout(callback, 0));
   const loadContourExtractor =
     deps.loadContourExtractor ?? (() => Promise.resolve(extractSurfaceContours));
@@ -652,6 +690,7 @@ export const createSurfaceWorkerHandler = (
   const loadAnalysisFn =
     deps.loadAnalysisFn ?? (() => Promise.resolve(runSurfaceAnalysisFromRequest));
   const loadComposeFn = deps.loadComposeFn ?? (() => Promise.resolve(composeSurfaceFromRequest));
+  const loadGradingFn = deps.loadGradingFn ?? (() => Promise.resolve(computeGradingResultFromRequest));
 
   const handleBuild = (requestId: string, request: SurfaceBuildRequest): void => {
     latestRevisionBySurface.set(request.surfaceId, request.revision);
@@ -1150,6 +1189,64 @@ export const createSurfaceWorkerHandler = (
     });
   };
 
+  /**
+   * Phase 20B grade-to-surface: latest-wins per gradingId@revision so a
+   * newer Calculate supersedes a late result (never CURRENT). The worker
+   * computes geometry ONLY — never mutates history or definitions.
+   */
+  const gradingRequestKey = (request: SurfaceGradingRequest): string =>
+    `${request.drawingId ?? ''}|${request.gradingId}@${request.revision}`;
+
+  const failGrading = (
+    requestId: string,
+    request: SurfaceGradingRequest,
+    error: string,
+  ): void => {
+    if (cancelledRequestIds.has(requestId)) return;
+    if (latestGradingByKey.get(request.gradingId) !== gradingRequestKey(request)) return;
+    deps.postMessage({
+      type: 'grading-failure',
+      requestId,
+      gradingId: request.gradingId,
+      gradingRevision: request.revision,
+      error,
+    });
+  };
+
+  const handleGrading = (requestId: string, request: SurfaceGradingRequest): void => {
+    latestGradingByKey.set(request.gradingId, gradingRequestKey(request));
+    defer(() => {
+      if (cancelledRequestIds.has(requestId)) return;
+      void loadGradingFn()
+        .then((compute) => compute(request))
+        .then((outcome) => {
+          if (cancelledRequestIds.has(requestId)) return;
+          if (latestGradingByKey.get(request.gradingId) !== gradingRequestKey(request)) return;
+          if (!outcome.ok) {
+            failGrading(requestId, request, outcome.detail ?? outcome.code);
+            return;
+          }
+          deps.postMessage({
+            type: 'grading-success',
+            requestId,
+            gradingId: request.gradingId,
+            gradingRevision: request.revision,
+            result: outcome.result,
+          });
+        })
+        .catch((gradingError) => {
+          failGrading(
+            requestId,
+            request,
+            gradingError instanceof Error ? gradingError.message : String(gradingError),
+          );
+        })
+        .finally(() => {
+          cancelledRequestIds.delete(requestId);
+        });
+    });
+  };
+
   return {
     handleMessage: (message: SurfaceWorkerRequestMessage): void => {
       if (!message) return;
@@ -1179,6 +1276,9 @@ export const createSurfaceWorkerHandler = (
       if (message.type === 'compose') {
         handleCompose(message.requestId, message.request);
       }
+      if (message.type === 'grading') {
+        handleGrading(message.requestId, message.request);
+      }
     },
     resetForTests: (): void => {
       cancelledRequestIds.clear();
@@ -1189,6 +1289,7 @@ export const createSurfaceWorkerHandler = (
       latestSectionsByGroup.clear();
       latestAnalysisByKey.clear();
       latestComposeByKey.clear();
+      latestGradingByKey.clear();
     },
   };
 };

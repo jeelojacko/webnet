@@ -111,6 +111,12 @@ export interface CadDisplayScene {
    * group; centerline + tick + label per line — never CAD entities).
    * Export scenes ignore this field.
    */
+  /**
+   * Phase 20B — derived grading layers (triangle fill + daylight tie per
+   * CURRENT grading, from cached results — never CAD entities).
+   * Export scenes ignore this field.
+   */
+  gradingLayers?: import('./cadGradingView').CadGradingDisplayLayer[];
   sampleLineLayers?: import('./cadSectionView').CadSampleLineDisplayLayer[];
   /**
    * Phase 18K — derived section-view layers (grid + traces + shading per
