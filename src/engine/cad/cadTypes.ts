@@ -9,6 +9,7 @@ import type { FieldToFinishSettings } from '../fieldToFinish/catalogIo';
 import type { FeatureCodeCatalog } from '../fieldToFinish/featureCatalog';
 import type { FieldToFinishLink } from '../fieldToFinish/linkedSync';
 import type { CadCogoComputation } from './cadCogoTypes';
+import type { CadGrading } from './grading/gradingTypes';
 import type { CadDisplayPoint } from './cadDisplayTypes';
 import type { DraftDocument } from './cadDraftTypes';
 export type {
@@ -854,6 +855,12 @@ export interface CadProject {
    * legacy files open; load paths backfill []. Trailing key.
    */
   sharedParcelBoundaries?: CadParcelSharedBoundary[];
+  /**
+   * Phase 20B: drawing-owned grade-to-surface definitions (definition
+   * refs + criterion only; derived daylight/mesh/status never persist).
+   * Optional so legacy files open; load paths backfill []. Trailing key.
+   */
+  gradings?: CadGrading[];
   entities: CadEntity[];
   cogoComputations: CadCogoComputation[];
   bounds: CadBounds | null;
@@ -1144,6 +1151,27 @@ export interface WebnetComposeTinProvenance {
 }
 
 /**
+ * Phase 20B grading-bake provenance. Bake ALWAYS writes this shape — never
+ * LandXML/compose/generic-bake. Informational snapshot (grading id/name/
+ * revision, source FL id + A/B vertex ids, target id, accuracy); the baked
+ * surface is fully independent post-bake (never auto-composed).
+ */
+export interface WebnetGradingBakeTinProvenance {
+  kind: 'webnet-grading-bake';
+  gradingId: string;
+  gradingName: string;
+  gradingRevision: string;
+  sourceFeatureLineId: string;
+  sourceVertexAId: string;
+  sourceVertexBId: string;
+  targetSurfaceId: string;
+  accuracy: 'EXACT' | 'CURVE_APPROXIMATED';
+  fileName?: string;
+  surfaceName?: string;
+  sourceId?: string;
+}
+
+/**
  * Phase 18X discriminated explicit-TIN provenance (read-tolerant,
  * write-strict). Every member carries fileName/surfaceName (required or
  * optional) so shared readers compile without narrowing.
@@ -1151,6 +1179,7 @@ export interface WebnetComposeTinProvenance {
 export type CadExplicitTinProvenance =
   | LandxmlTinProvenance
   | WebnetBakeTinProvenance
+  | WebnetGradingBakeTinProvenance
   | WebnetComposeTinProvenance
   | ExplicitFormatTinProvenance;
 

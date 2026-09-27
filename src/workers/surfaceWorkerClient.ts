@@ -1,6 +1,7 @@
 import type { SurfaceBuildRequest } from '../engine/cad/cadSurfaceTypes';
 import type { CadSurfaceContourSet } from '../engine/cad/surfaceContours/contourTypes';
 import type { CadVolumeResult } from '../engine/cad/cadTypes';
+import type { CadGradingResult } from '../engine/cad/grading/gradingTypes';
 import type { CadSurfaceProfileResult } from '../engine/cad/profiles/profileExtraction';
 import type { CadSurfaceSectionResult } from '../engine/cad/cadSectionTypes';
 import type {
@@ -9,6 +10,7 @@ import type {
   SurfaceComposeRequest,
   SurfaceComposeResultPayload,
   SurfaceContourRequest,
+  SurfaceGradingRequest,
   SurfaceProfileRequest,
   SurfaceSectionsRequest,
   SurfaceVolumeRequest,
@@ -44,6 +46,8 @@ export const SURFACE_ANALYSIS_MALFORMED = 'Malformed surface analysis worker res
 export const SURFACE_ANALYSIS_UNAVAILABLE = 'Surface analysis worker unavailable.';
 export const SURFACE_COMPOSE_MALFORMED = 'Malformed surface compose worker response.';
 export const SURFACE_COMPOSE_UNAVAILABLE = 'Surface compose worker unavailable.';
+export const SURFACE_GRADING_MALFORMED = 'Malformed surface grading worker response.';
+export const SURFACE_GRADING_UNAVAILABLE = 'Surface grading worker unavailable.';
 
 export interface PendingSurfaceBuild {
   requestId: string;
@@ -87,6 +91,12 @@ export interface PendingSurfaceCompose {
   cancel: () => void;
 }
 
+export interface PendingSurfaceGrading {
+  requestId: string;
+  done: Promise<CadGradingResult | null>;
+  cancel: () => void;
+}
+
 /** Minimal worker surface the client drives (real Worker satisfies this). */
 export interface SurfaceWorkerPort {
   postMessage: (_message: unknown) => void;
@@ -118,6 +128,8 @@ const TERMINAL_TYPES = new Set([
   'analysis-failure',
   'compose-success',
   'compose-failure',
+  'grading-success',
+  'grading-failure',
 ]);
 const OK_OUTCOMES = new Set(['ok', 'insufficient', 'blocked']);
 
@@ -225,6 +237,28 @@ const isWellFormedComposeResult = (value: unknown): value is SurfaceComposeResul
   );
 };
 
+const isWellFormedGradingResult = (value: unknown): value is CadGradingResult => {
+  if (typeof value !== 'object' || value === null) return false;
+  const result = value as Record<string, unknown>;
+  const mesh = result['gradingMesh'] as Record<string, unknown> | null | undefined;
+  return (
+    typeof result['gradingId'] === 'string' &&
+    typeof result['revision'] === 'string' &&
+    (result['accuracy'] === 'EXACT' || result['accuracy'] === 'CURVE_APPROXIMATED') &&
+    Array.isArray(result['regions']) &&
+    Array.isArray(result['daylightPoints']) &&
+    (result['daylightPoints'] as unknown[]).every((entry) => typeof entry === 'number') &&
+    typeof mesh === 'object' &&
+    mesh !== null &&
+    Array.isArray(mesh['points']) &&
+    Array.isArray(mesh['triangles']) &&
+    typeof result['sourceLength'] === 'number' &&
+    typeof result['gradingPlanArea'] === 'number' &&
+    typeof result['grading3dArea'] === 'number' &&
+    Array.isArray(result['diagnostics'])
+  );
+};
+
 const isWellFormedMesh = (value: unknown): value is SurfaceWorkerMesh => {
   if (typeof value !== 'object' || value === null) return false;
   const mesh = value as Record<string, unknown>;
@@ -300,6 +334,14 @@ export class SurfaceWorkerClient implements SurfaceBuildTransport {
       settled: boolean;
     }
   >();
+  private readonly pendingGradings = new Map<
+    string,
+    {
+      resolve: (_result: CadGradingResult | null) => void;
+      reject: (_error: Error) => void;
+      settled: boolean;
+    }
+  >();
   private nextRequestId = 0;
   private dead = false;
   private readonly handleMessage = (event: unknown): void => {
@@ -327,6 +369,10 @@ export class SurfaceWorkerClient implements SurfaceBuildTransport {
     }
     if (data.type === 'compose-success' || data.type === 'compose-failure') {
       this.handleComposeMessage(data);
+      return;
+    }
+    if (data.type === 'grading-success' || data.type === 'grading-failure') {
+      this.handleGradingMessage(data);
       return;
     }
     const entry = this.pending.get(data.requestId);
@@ -484,6 +530,28 @@ export class SurfaceWorkerClient implements SurfaceBuildTransport {
     }
     entry.settled = true;
     this.pendingComposes.delete(data.requestId);
+    entry.resolve(data.result);
+  };
+  /** Phase 20B: grading terminal messages settle grading pendings only. */
+  private readonly handleGradingMessage = (
+    data: Extract<TerminalSurfaceWorkerMessage, { type: 'grading-success' | 'grading-failure' }>,
+  ): void => {
+    const entry = this.pendingGradings.get(data.requestId);
+    if (!entry || entry.settled) return;
+    if (data.type === 'grading-failure') {
+      entry.settled = true;
+      this.pendingGradings.delete(data.requestId);
+      entry.reject(new Error(data.error || 'Surface grading computation failed.'));
+      return;
+    }
+    if (!isWellFormedGradingResult(data.result)) {
+      entry.settled = true;
+      this.pendingGradings.delete(data.requestId);
+      entry.reject(new Error(SURFACE_GRADING_MALFORMED));
+      return;
+    }
+    entry.settled = true;
+    this.pendingGradings.delete(data.requestId);
     entry.resolve(data.result);
   };
   private readonly handleFatal = (): void => {
@@ -701,7 +769,49 @@ export class SurfaceWorkerClient implements SurfaceBuildTransport {
     };
   }
 
+  /**
+   * Phase 20B grade-to-surface derivation. Request ids use the `greq-`
+   * prefix so grading arrivals are attributable; latest-wins ownership is
+   * the service's. Cancel -> null; malformed -> reject; failure -> reject.
+   */
+  deriveGrading(request: SurfaceGradingRequest): PendingSurfaceGrading {
+    this.nextRequestId += 1;
+    const requestId = `greq-${this.nextRequestId}`;
+    let entry!: {
+      resolve: (_result: CadGradingResult | null) => void;
+      reject: (_e: Error) => void;
+      settled: boolean;
+    };
+    const done = new Promise<CadGradingResult | null>((resolve, reject) => {
+      entry = { resolve, reject, settled: false };
+    });
+    this.pendingGradings.set(requestId, entry);
+    try {
+      this.port.postMessage({ type: 'grading', requestId, request });
+    } catch (error) {
+      this.pendingGradings.delete(requestId);
+      entry.reject(error instanceof Error ? error : new Error(String(error)));
+    }
+    return {
+      requestId,
+      done,
+      cancel: () => this.cancel(requestId),
+    };
+  }
+
   cancel(requestId: string): void {
+    const gradingEntry = this.pendingGradings.get(requestId);
+    if (gradingEntry && !gradingEntry.settled) {
+      gradingEntry.settled = true;
+      this.pendingGradings.delete(requestId);
+      try {
+        this.port.postMessage({ type: 'cancel', requestId });
+      } catch {
+        // Local settle already applied; a dead port fails closed via dispose.
+      }
+      gradingEntry.resolve(null);
+      return;
+    }
     const composeEntry = this.pendingComposes.get(requestId);
     if (composeEntry && !composeEntry.settled) {
       composeEntry.settled = true;
@@ -844,6 +954,13 @@ export class SurfaceWorkerClient implements SurfaceBuildTransport {
       }
       this.pendingComposes.delete(requestId);
     }
+    for (const [requestId, entry] of this.pendingGradings) {
+      if (!entry.settled) {
+        entry.settled = true;
+        entry.resolve(null);
+      }
+      this.pendingGradings.delete(requestId);
+    }
     try {
       this.port.terminate();
     } catch {
@@ -867,6 +984,13 @@ export class SurfaceWorkerClient implements SurfaceBuildTransport {
         entry.reject(error);
       }
       this.pendingComposes.delete(requestId);
+    }
+    for (const [requestId, entry] of this.pendingGradings) {
+      if (!entry.settled) {
+        entry.settled = true;
+        entry.reject(error);
+      }
+      this.pendingGradings.delete(requestId);
     }
     for (const [requestId, entry] of this.pendingSections) {
       if (!entry.settled) {

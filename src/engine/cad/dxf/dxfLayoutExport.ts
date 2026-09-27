@@ -64,6 +64,8 @@ export interface BuildDxfLayoutArgs {
   surveyTables?: readonly import('../cadSurveyExportTables').CadSurveyTable[];
   /** Phase 18U analysis boundaries + legend, forwarded to the model-space builder. */
   analysis?: CadAnalysisExportInput;
+  /** Phase 20B grading daylight (3D POLYLINE) + mesh (3DFACE), forwarded. */
+  grading?: import('../cadGradingExportScene').CadGradingExportInput;
 }
 
 export interface DxfLayoutWarning {
@@ -274,6 +276,11 @@ const modelBounds = (model: DxfExportModel): { minX: number; minY: number; maxX:
   });
   model.polylines.forEach((polyline) => polyline.vertices.forEach((vertex) => push(vertex.x, vertex.y)));
   (model.polylines3d ?? []).forEach((polyline) => polyline.vertices.forEach((vertex) => push(vertex.x, vertex.y)));
+  (model.faces3d ?? []).forEach((face) => {
+    push(face.a.x, face.a.y);
+    push(face.b.x, face.b.y);
+    push(face.c.x, face.c.y);
+  });
   model.arcs.forEach((arc) => {
     push(arc.center.x - arc.radius, arc.center.y - arc.radius);
     push(arc.center.x + arc.radius, arc.center.y + arc.radius);
@@ -318,7 +325,7 @@ const buildDxfLayoutInner = (args: BuildDxfLayoutArgs): DxfLayoutInner => {
     return handle;
   };
 
-  const modelResult = buildDxfExportModelWithResult({ project: args.project, modelLabels: args.modelLabels, surveyTables: args.surveyTables, analysis: args.analysis });
+  const modelResult = buildDxfExportModelWithResult({ project: args.project, modelLabels: args.modelLabels, surveyTables: args.surveyTables, analysis: args.analysis, grading: args.grading });
   const model = modelResult.output;
   const paperLayers = new Set<string>();
   const takenNames = new Set<string>(['model']);

@@ -107,6 +107,7 @@ import { analysisCommandDefinitions } from './cadTransactionsAnalysisCommands';
 import { profileCommandDefinitions } from './cadTransactionsProfileCommands';
 import { sectionCommandDefinitions } from './cadTransactionsSectionCommands';
 import { featureLineCommandDefinitions } from './cadTransactionsFeatureLineCommands';
+import { gradingCommandDefinitions } from './cadTransactionsGradingCommands';
 import {
   curveTableCommand,
   lineTableCommand,
@@ -747,6 +748,13 @@ export const CAD_COMMAND_REGISTRY: Record<CadCommandKey, CadCommandDefinition<Ca
   FLINSERTVERTEX: featureLineCommandDefinitions.FLINSERTVERTEX as CadCommandDefinition<CadCommand>,
   FLDELETEVERTEX: featureLineCommandDefinitions.FLDELETEVERTEX as CadCommandDefinition<CadCommand>,
   SURFACE_ADD_FEATURE_LINE_BREAKLINE: featureLineCommandDefinitions.SURFACE_ADD_FEATURE_LINE_BREAKLINE as CadCommandDefinition<CadCommand>,
+  // Phase 20B — grade-to-surface definitions + snapshots (UI worker registers these).
+  GRADING_CREATE: gradingCommandDefinitions.GRADING_CREATE as CadCommandDefinition<CadCommand>,
+  GRADING_DELETE: gradingCommandDefinitions.GRADING_DELETE as CadCommandDefinition<CadCommand>,
+  GRADING_EDIT_CRITERIA: gradingCommandDefinitions.GRADING_EDIT_CRITERIA as CadCommandDefinition<CadCommand>,
+  GRADING_REASSIGN_TARGET: gradingCommandDefinitions.GRADING_REASSIGN_TARGET as CadCommandDefinition<CadCommand>,
+  GRADINGEXTRACTDAYLIGHT: gradingCommandDefinitions.GRADINGEXTRACTDAYLIGHT as CadCommandDefinition<CadCommand>,
+  GRADINGBAKE: gradingCommandDefinitions.GRADINGBAKE as CadCommandDefinition<CadCommand>,
 };
 
 export const createCadIdleCommandState = createIdleCommandState;

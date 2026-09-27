@@ -20,7 +20,7 @@ import {
   TransientPreviewLayer,
 } from './SurveyCadPreviewLayers';
 import { renderPrimitive } from './SurveyCadPreviewPrimitive';
-import { renderSurfaceLayers, renderVolumeLayers, renderAnalysisLayers } from './SurveyCadPreviewSurface';
+import { renderSurfaceLayers, renderVolumeLayers, renderAnalysisLayers, renderGradingLayers } from './SurveyCadPreviewSurface';
 import { renderProfileViewLayers } from './SurveyCadPreviewProfiles';
 import { renderSampleLineLayers, renderSectionViewLayers } from './SurveyCadPreviewSections';
 
@@ -394,6 +394,9 @@ const SurveyCadPreviewCanvas: React.FC<SurveyCadPreviewCanvasProps> = ({
         : null}
       {scene.volumeLayers && scene.volumeLayers.length > 0
         ? renderVolumeLayers({ layers: scene.volumeLayers, project })
+        : null}
+      {scene.gradingLayers && scene.gradingLayers.length > 0
+        ? renderGradingLayers({ layers: scene.gradingLayers, project })
         : null}
       {scene.profileViewLayers && scene.profileViewLayers.length > 0
         ? renderProfileViewLayers({

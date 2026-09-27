@@ -49,6 +49,12 @@ import { cloneFieldToFinishSettings } from '../fieldToFinish/catalogIo';
 import { backfillDrawingCatalog } from '../fieldToFinish/drawingCatalog';
 import { cloneFeatureCatalog } from '../fieldToFinish/featureCatalog';
 import { sanitizeCadBlockReferences } from './cadBlockPersistence';
+import {
+  backfillCadGradings,
+  cloneCadGradings,
+  sanitizeCadGradings,
+  withoutGradingsKey,
+} from './grading/gradingPersistence';
 import { ensureParcelCourseIds } from './cadParcelCourses';
 import { backfillAnalysisMaps, cloneCadAnalysisMaps } from './cadAnalysisMaps';
 import { backfillAnalysisLegends, cloneCadAnalysisLegends } from './cadAnalysisLegends';
@@ -378,6 +384,9 @@ export const cloneCadProject = (project: CadProject): CadProject => ({
   ...(project.sharedParcelBoundaries != null
     ? { sharedParcelBoundaries: cloneCadParcelSharedBoundaries(project.sharedParcelBoundaries) }
     : {}),
+  // Phase 20B: drawing-owned grading definitions stay trailing
+  // (key-order rule). Derived daylight/mesh/status never serialized.
+  ...(project.gradings != null ? { gradings: cloneCadGradings(project.gradings) } : {}),
 });
 
 const cloneParcelLayoutSettings = (
@@ -469,8 +478,10 @@ export const sanitizeSurveyCadPersistedState = (
       // Trailing surfaces/styles position matches cloneCadProject
       // (persistence signatures are key-order-sensitive). 18N: same
       // trailing rule for the block library; dangling refs dropped.
+      // 20B: gradings re-appended last (withoutGradingsKey) so a
+      // mid-order key can never strand ahead of sharedParcelBoundaries.
       project: {
-        ...withStandards,
+        ...withoutGradingsKey(withStandards),
         entities: entitiesWithCourses,
         ...(sanitizedBlocks.project.pointStyles != null
           ? { pointStyles: sanitizedBlocks.project.pointStyles }
@@ -498,6 +509,9 @@ export const sanitizeSurveyCadPersistedState = (
         // Phase 19D: shared-boundary refs trail the analysis tables (key-order
         // rule); derived status/geometry is never persisted.
         sharedParcelBoundaries: sharedBoundaries.boundaries,
+        // Phase 20B: grading definitions trail everything (key-order rule);
+        // malformed entries drop fail-closed, derived results never persist.
+        gradings: sanitizeCadGradings(backfillCadGradings(withStandards.gradings)),
       },
     };
   } catch {

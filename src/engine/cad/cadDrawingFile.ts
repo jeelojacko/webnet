@@ -53,6 +53,11 @@ import { cloneFeatureCatalog } from '../fieldToFinish/featureCatalog';
 import { sanitizeCadBlockReferences } from './cadBlockPersistence';
 import { ensureParcelCourseIds } from './cadParcelCourses';
 import { sanitizeCadParcelSharedBoundaries } from './cadParcelSharedBoundary';
+import {
+  backfillCadGradings,
+  sanitizeCadGradings,
+  withoutGradingsKey,
+} from './grading/gradingPersistence';
 import { backfillAnalysisMaps, clearAnalysisCacheOnLoad, cloneCadAnalysisMaps } from './cadAnalysisMaps';
 import { backfillAnalysisLegends, cloneCadAnalysisLegends } from './cadAnalysisLegends';
 import { sanitizeCadSurveyTables } from './cadSurveyTablePersistence';
@@ -147,7 +152,8 @@ export const createBlankCadProject = ({
     analysisLegends: backfillAnalysisLegends(undefined),
   });
   // Phase 19D: new drawings own an empty shared-boundary collection (trailing).
-  return { ...withTables, sharedParcelBoundaries: [] };
+  // Phase 20B: new drawings own an empty grading table (trailing).
+  return { ...withTables, sharedParcelBoundaries: [], gradings: [] };
 };
 
 export const createBlankCadDrawingDocument = ({
@@ -365,13 +371,16 @@ export const migrateSurveyCadStateToDrawing = ({
     updatedAt: nowIso,
     units,
     project: {
-      ...projectWithAnalysis,
+      ...withoutGradingsKey(projectWithAnalysis),
       name,
       bounds: projectWithAnalysis.bounds ?? buildCadBounds(projectWithAnalysis.entities),
       // Phase 18N: legacy imports own no blocks (trailing: key-order rule).
       blockDefinitions: [],
       // Phase 19D: shared-boundary refs trail the analysis tables.
       sharedParcelBoundaries: sharedBoundaries.boundaries,
+      // Phase 20B: grading definitions trail everything (key-order rule);
+      // legacy imports backfill [], derived results never persist.
+      gradings: sanitizeCadGradings(backfillCadGradings(withStandards.gradings)),
     },
     parcelLayout: cloneParcelLayout(state.parcelLayout),
     showParcelLabels: state.showParcelLabels ?? true,
@@ -458,9 +467,12 @@ const sanitizeCadDrawingDocument = (value: unknown): CadDrawingDocument | undefi
     });
     // Phase 19D: sanitize + backfill the shared-boundary collection last
     // (trailing keys; unknown refs dropped, never rebound).
+    // Phase 20B: grading definitions trail everything (key-order rule);
+    // malformed entries drop fail-closed, derived results never persist.
     const projectWithBoundaries: CadProject = {
-      ...projectWithAnalysis,
+      ...withoutGradingsKey(projectWithAnalysis),
       sharedParcelBoundaries: sanitizeCadParcelSharedBoundaries(projectWithAnalysis).boundaries,
+      gradings: sanitizeCadGradings(backfillCadGradings(projectWithAnalysis.gradings)),
     };
     const draft = cloned.draft
       ? { ...cloned.draft, layers: backfillCadLayerList(cloned.draft.layers) }

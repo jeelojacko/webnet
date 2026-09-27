@@ -72,7 +72,8 @@ export type SurveyManagerKind =
   | 'f2f'
   | 'surfaces'
   | 'profiles'
-  | 'sections';
+  | 'sections'
+  | 'gradings';
 
 /**
  * Phase 18D — per-point display facts precomputed in the workspace (resolver
@@ -238,6 +239,11 @@ export interface CadWorkspaceSnapshot {
    * fake data).
    */
   featureLine?: import('./cadFeatureLineSnapshot').CadFeatureLineSnapshot | null;
+  /**
+   * Phase 20B — derived grading rows + session result status. Optional: a
+   * workspace without grading wiring hides the node (never fake data).
+   */
+  grading?: import('./cadGradingSnapshot').CadGradingSnapshot | null;
   /** UI command keys with a live starter in the mounted workspace. */
   availableCommands: string[];
 }
@@ -278,6 +284,21 @@ export interface CadShellActions {
    * ribbon group (never fake buttons).
    */
   runFeatureLineCommand?: (_command: CadCommand) => boolean;
+  /**
+   * Phase 20B — route one grading definition/worker command (GRADING_*,
+   * GRADINGEXTRACTDAYLIGHT, GRADINGBAKE). Absent = grading UI hides.
+   */
+  runGradingCommand?: (_command: import('./cadGradingShell').CadGradingShellCommand) => boolean;
+  /** Phase 20B — select a grading (Toolspace/manager/properties converge). */
+  selectGrading?: (_gradingId: string | null) => void;
+  /** Phase 20B — open the grading manager (optional tab/inquiry focus). */
+  openGradingManager?: (_selectedId?: string, _tab?: 'definition' | 'inquiry') => void;
+  /** Phase 20B — explicit Calculate for one grading (never auto-started). */
+  requestGradingCalculate?: (_gradingId: string) => string;
+  /** Phase 20B — Extract Daylight snapshot (CURRENT only), one undo entry. */
+  extractGradingDaylight?: (_gradingId: string) => string;
+  /** Phase 20B — Bake the CURRENT grading mesh to an explicit TIN. */
+  bakeGradingSurface?: (_gradingId: string) => string;
   /** Phase 18F — select a surface (Toolspace/manager/viewport converge here). */
   selectSurface: (_surfaceId: string | null) => void;
   /** Phase 18I — select a volume surface (Toolspace/manager converge here). */

@@ -119,6 +119,33 @@ Honesty rules:
 - Z/grade labels are presentation-only (`featureLineLabels` render option,
   enabled for SVG/PDF sheet exports); they never enter geometry.
 
+### Grading / daylight dispositions (Phase 20B)
+
+A `CadGrading` definition grades ONE feature-line course on ONE side toward a
+CURRENT target surface. Results are session-only (never persisted); the
+Export Center export gate is CURRENT-only. Disposition truth per format:
+
+| format | semantic definition | derived display | snapshot output |
+| --- | --- | --- | --- |
+| SVG / PDF | n/a | FULL — daylight tie line + triangle fill, projected through the viewport | n/a |
+| DXF R12 / R2000 | n/a | FULL — daylight as 3D POLYLINE, grading mesh as 3DFACE | n/a |
+| LandXML | NOT_APPLICABLE — no grading schema; explicit per-grading warning | n/a | n/a |
+| WNCAD | FULL — definition round-trips byte-exact, `UNBUILT` on reopen | n/a | n/a |
+
+Honesty rules:
+
+- Stale/failed/non-CURRENT gradings emit NO geometry and always warn
+  (`CURRENT-only`); a retained stale result is never exported as current.
+- Curve-approximated results export from chords with an explicit warning;
+  only straight sources are exact.
+- `GRADINGEXTRACTDAYLIGHT` snapshots the CURRENT tie line into an independent
+  feature line (no live dependency); `GRADINGBAKE` freezes the CURRENT mesh
+  into an explicit-TIN surface (`kind: 'webnet-grading-bake'`, informational
+  provenance). LandXML export is by definition avoided for the live grading:
+  Bake → Surface export.
+- The Tools/Manager CSV (`grading-<name>.csv`) is per-station
+  (Station/Source E-N-Z/Side/Classification/Tie Distance/Daylight E-N-Z).
+
 ### F2F-generated objects × format matrix (§23)
 
 F2F generates exactly three CAD kinds (`cadGeneration.ts`): `survey-point`

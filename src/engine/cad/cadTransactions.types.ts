@@ -11,6 +11,7 @@ import type {
 
 import type { CadAnnotationAnchor } from './annotation/cadAnnotationAnchors';
 import type { FeatureLineElevationMethod } from './cadFeatureLineCreate';
+import type { CadGradingResult, GradingCriterion, GradingSide } from './grading/gradingTypes';
 import type { HelmertControlPair, HelmertMode } from './cadHelmert2D';
 import type { ProjectTransformRequest } from './cadProjectTransform';
 
@@ -289,7 +290,13 @@ export type CadCommandKey =
   | 'FLINQUIRY'
   | 'FLINSERTVERTEX'
   | 'FLDELETEVERTEX'
-  | 'SURFACE_ADD_FEATURE_LINE_BREAKLINE';
+  | 'SURFACE_ADD_FEATURE_LINE_BREAKLINE'
+  | 'GRADING_CREATE'
+  | 'GRADING_DELETE'
+  | 'GRADING_EDIT_CRITERIA'
+  | 'GRADING_REASSIGN_TARGET'
+  | 'GRADINGEXTRACTDAYLIGHT'
+  | 'GRADINGBAKE';
 export type CadCommandPhase = 'idle' | 'committed';
 
 export interface CadCommandState {
@@ -1636,6 +1643,50 @@ export type CadCommand =
       surfaceId: string;
       entityId: CadEntityId;
       name?: string;
+    }
+  // Phase 20B — grade-to-surface definitions (results/meshes never in history).
+  | {
+      key: 'GRADING_CREATE';
+      name?: string;
+      sourceFeatureLineId: string;
+      vertexAId: string;
+      vertexBId: string;
+      targetSurfaceId: string;
+      side: GradingSide | 'both';
+      criterion: GradingCriterion;
+      maxSearchDistance: number;
+      curveChordTolerance: number;
+      layerId?: CadLayerId;
+    }
+  | {
+      key: 'GRADING_DELETE';
+      gradingId: string;
+    }
+  | {
+      key: 'GRADING_EDIT_CRITERIA';
+      gradingId: string;
+      criterion: GradingCriterion;
+    }
+  | {
+      key: 'GRADING_REASSIGN_TARGET';
+      gradingId: string;
+      targetSurfaceId: string;
+    }
+  | {
+      key: 'GRADINGEXTRACTDAYLIGHT';
+      gradingId: string;
+      /** Cached CURRENT result snapshot (never recomputed here). */
+      result: CadGradingResult;
+      expectedRevision: string;
+      sessionCurrent?: boolean;
+    }
+  | {
+      key: 'GRADINGBAKE';
+      gradingId: string;
+      /** Cached CURRENT result snapshot (never recomputed here). */
+      result: CadGradingResult;
+      expectedRevision: string;
+      sessionCurrent?: boolean;
     };
 
 export interface CadTransaction {

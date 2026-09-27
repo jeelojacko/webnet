@@ -30,6 +30,7 @@ import { tessellateCadFeatureLine } from '../cadFeatureLines';
 import { cadAngleDegFromCenter } from '../cadGeometry';
 import { deriveAnnotationPrimitives } from './dxfAnnotationExport';
 import { buildAnalysisModelItems, type CadAnalysisExportInput } from '../cadAnalysisExportScene';
+import { buildGradingModelItems, type CadGradingExportInput } from '../cadGradingExportScene';
 import {
   buildCadSurveyTableDxfItems,
   CAD_SURVEY_TABLE_DXF_DISPOSITION,
@@ -86,6 +87,11 @@ export interface DxfExportModel {
    * LWPOLYLINE cannot carry Z, so 3D feature lines use this separate shape.
    */
   polylines3d?: Array<{ layer: string; vertices: DxfPoint3D[]; closed: boolean } & DxfEntryStyle>;
+  /**
+   * Phase 20B 3DFACE triangles (R12 + R2000 both support 3DFACE). Used for
+   * the derived grading-surface mesh; a triangle repeats its third corner.
+   */
+  faces3d?: Array<{ layer: string; a: DxfPoint3D; b: DxfPoint3D; c: DxfPoint3D } & DxfEntryStyle>;
   arcs: Array<{ layer: string; center: DxfPoint; radius: number; startDeg: number; endDeg: number } & DxfEntryStyle>;
   texts: Array<{ layer: string; at: DxfPoint; height: number; text: string; rotationDeg?: number } & DxfEntryStyle>;
   /**
@@ -125,6 +131,11 @@ export interface BuildDxfModelArgs {
    * every current layer warns; stale maps emit nothing). Absent = legacy.
    */
   analysis?: CadAnalysisExportInput;
+  /**
+   * Phase 20B: CURRENT grading daylight (3D POLYLINE) + grading mesh
+   * (3DFACE). Stale/non-current emit nothing and warn.
+   */
+  grading?: CadGradingExportInput;
 }
 
 const layerOf = (layerId: string): string => layerId;
@@ -170,6 +181,7 @@ export const buildDxfExportModelWithResult = (args: BuildDxfModelArgs): ExportRe
     lines: [],
     polylines: [],
     polylines3d: [],
+    faces3d: [],
     arcs: [],
     texts: [],
     blocks: [],
@@ -705,6 +717,28 @@ export const buildDxfExportModelWithResult = (args: BuildDxfModelArgs): ExportRe
     });
   });
   analysis.warnings.forEach(warn);
+  // Phase 20B grading geometry: 3D POLYLINE daylight + 3DFACE grading mesh.
+  const grading = buildGradingModelItems(args.grading);
+  grading.polylines3d.forEach((polyline) => {
+    if (polyline.vertices.length < 2 || !finiteVertices(polyline.vertices)) return;
+    (model.polylines3d ??= []).push({
+      layer: registerLayer(polyline.layer),
+      vertices: polyline.vertices.map((vertex) => ({ x: vertex.x, y: vertex.y, z: vertex.z })),
+      closed: polyline.closed,
+      ...(polyline.colorHex != null ? { colorHex: polyline.colorHex } : {}),
+    });
+  });
+  grading.faces3d.forEach((face) => {
+    if (!finiteVertices([face.a, face.b, face.c])) return;
+    (model.faces3d ??= []).push({
+      layer: registerLayer(face.layer),
+      a: { ...face.a },
+      b: { ...face.b },
+      c: { ...face.c },
+      ...(face.colorHex != null ? { colorHex: face.colorHex } : {}),
+    });
+  });
+  grading.warnings.forEach(warn);
   model.layers.sort();
   model.usedLinetypes = [...usedLinetypes].sort();
   return finalizeExportResult(result);
