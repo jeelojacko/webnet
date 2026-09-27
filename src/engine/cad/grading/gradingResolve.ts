@@ -1,7 +1,7 @@
 import { computeCadSurfaceSourceRevision } from '../cadSurfaceRevision';
 import { resolveCadFeatureLine } from '../cadFeatureLines';
 import type { CadProject, CadSurface } from '../cadTypes';
-import { resolveGradingSourceCourse } from './gradingCourseFrame';
+import { resolveGradingSourceCourse, toGradingCourseLikes } from './gradingCourseFrame';
 import { buildGradingRevision } from './gradingRevision';
 import type { CadGrading, ResolvedGradingSource } from './gradingTypes';
 
@@ -42,33 +42,7 @@ export const resolveGradingInputs = (
   const resolvedFeatureLine = resolveCadFeatureLine(entity);
   if (!resolvedFeatureLine) return null;
   const resolvedSource = resolveGradingSourceCourse(
-    resolvedFeatureLine.courses.map((course) => ({
-      fromVertexId: course.fromVertexId,
-      toVertexId: course.toVertexId,
-      startX: course.from.x,
-      startY: course.from.y,
-      endX: course.to.x,
-      endY: course.to.y,
-      startZ: course.from.z,
-      endZ: course.to.z,
-      planLength: course.planLength,
-      isArc: course.kind === 'arc',
-      ...(course.kind === 'arc' &&
-      course.center != null &&
-      course.radius != null &&
-      course.startAngleDeg != null &&
-      course.signedSweepDeg != null
-        ? {
-            arc: {
-              centerX: course.center.x,
-              centerY: course.center.y,
-              radius: course.radius,
-              startAngleDeg: course.startAngleDeg,
-              signedSweepDeg: course.signedSweepDeg,
-            },
-          }
-        : {}),
-    })),
+    toGradingCourseLikes(resolvedFeatureLine.courses),
     grading.sourceCourse.vertexAId,
     grading.sourceCourse.vertexBId,
   );

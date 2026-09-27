@@ -2,6 +2,7 @@ import type { SurfaceBuildRequest } from '../engine/cad/cadSurfaceTypes';
 import type { CadSurfaceContourSet } from '../engine/cad/surfaceContours/contourTypes';
 import type { CadVolumeResult } from '../engine/cad/cadTypes';
 import type { CadGradingResult } from '../engine/cad/grading/gradingTypes';
+import type { CadGradingGroupResult } from '../engine/cad/grading/gradingGroupTypes';
 import type { CadSurfaceProfileResult } from '../engine/cad/profiles/profileExtraction';
 import type { CadSurfaceSectionResult } from '../engine/cad/cadSectionTypes';
 import type {
@@ -11,6 +12,7 @@ import type {
   SurfaceComposeResultPayload,
   SurfaceContourRequest,
   SurfaceGradingRequest,
+  GradingGroupComputeRequest,
   SurfaceProfileRequest,
   SurfaceSectionsRequest,
   SurfaceVolumeRequest,
@@ -48,6 +50,8 @@ export const SURFACE_COMPOSE_MALFORMED = 'Malformed surface compose worker respo
 export const SURFACE_COMPOSE_UNAVAILABLE = 'Surface compose worker unavailable.';
 export const SURFACE_GRADING_MALFORMED = 'Malformed surface grading worker response.';
 export const SURFACE_GRADING_UNAVAILABLE = 'Surface grading worker unavailable.';
+export const SURFACE_GROUP_GRADING_MALFORMED = 'Malformed surface grading-group worker response.';
+export const SURFACE_GROUP_GRADING_UNAVAILABLE = 'Surface grading-group worker unavailable.';
 
 export interface PendingSurfaceBuild {
   requestId: string;
@@ -97,6 +101,12 @@ export interface PendingSurfaceGrading {
   cancel: () => void;
 }
 
+export interface PendingSurfaceGroupGrading {
+  requestId: string;
+  done: Promise<CadGradingGroupResult | null>;
+  cancel: () => void;
+}
+
 /** Minimal worker surface the client drives (real Worker satisfies this). */
 export interface SurfaceWorkerPort {
   postMessage: (_message: unknown) => void;
@@ -130,6 +140,8 @@ const TERMINAL_TYPES = new Set([
   'compose-failure',
   'grading-success',
   'grading-failure',
+  'group-success',
+  'group-failure',
 ]);
 const OK_OUTCOMES = new Set(['ok', 'insufficient', 'blocked']);
 
@@ -259,6 +271,31 @@ const isWellFormedGradingResult = (value: unknown): value is CadGradingResult =>
   );
 };
 
+/** Phase 20C: group result well-formedness (same shape gate as the single path). */
+const isWellFormedGroupResult = (value: unknown): value is CadGradingGroupResult => {
+  if (typeof value !== 'object' || value === null) return false;
+  const result = value as Record<string, unknown>;
+  const mesh = result['gradingMesh'] as Record<string, unknown> | null | undefined;
+  return (
+    typeof result['groupId'] === 'string' &&
+    typeof result['revision'] === 'string' &&
+    (result['accuracy'] === 'EXACT' || result['accuracy'] === 'CURVE_APPROXIMATED') &&
+    typeof result['memberCount'] === 'number' &&
+    typeof result['cornerCount'] === 'number' &&
+    Array.isArray(result['memberRegions']) &&
+    Array.isArray(result['corners']) &&
+    Array.isArray(result['daylightPoints']) &&
+    (result['daylightPoints'] as unknown[]).every((entry) => typeof entry === 'number') &&
+    typeof mesh === 'object' &&
+    mesh !== null &&
+    Array.isArray(mesh['points']) &&
+    Array.isArray(mesh['triangles']) &&
+    typeof result['sourceLength'] === 'number' &&
+    typeof result['gradingPlanArea'] === 'number' &&
+    Array.isArray(result['diagnostics'])
+  );
+};
+
 const isWellFormedMesh = (value: unknown): value is SurfaceWorkerMesh => {
   if (typeof value !== 'object' || value === null) return false;
   const mesh = value as Record<string, unknown>;
@@ -342,6 +379,14 @@ export class SurfaceWorkerClient implements SurfaceBuildTransport {
       settled: boolean;
     }
   >();
+  private readonly pendingGroupGradings = new Map<
+    string,
+    {
+      resolve: (_result: CadGradingGroupResult | null) => void;
+      reject: (_error: Error) => void;
+      settled: boolean;
+    }
+  >();
   private nextRequestId = 0;
   private dead = false;
   private readonly handleMessage = (event: unknown): void => {
@@ -373,6 +418,10 @@ export class SurfaceWorkerClient implements SurfaceBuildTransport {
     }
     if (data.type === 'grading-success' || data.type === 'grading-failure') {
       this.handleGradingMessage(data);
+      return;
+    }
+    if (data.type === 'group-success' || data.type === 'group-failure') {
+      this.handleGroupGradingMessage(data);
       return;
     }
     const entry = this.pending.get(data.requestId);
@@ -552,6 +601,28 @@ export class SurfaceWorkerClient implements SurfaceBuildTransport {
     }
     entry.settled = true;
     this.pendingGradings.delete(data.requestId);
+    entry.resolve(data.result);
+  };
+  /** Phase 20C: group grading terminal messages settle group pendings only. */
+  private readonly handleGroupGradingMessage = (
+    data: Extract<TerminalSurfaceWorkerMessage, { type: 'group-success' | 'group-failure' }>,
+  ): void => {
+    const entry = this.pendingGroupGradings.get(data.requestId);
+    if (!entry || entry.settled) return;
+    if (data.type === 'group-failure') {
+      entry.settled = true;
+      this.pendingGroupGradings.delete(data.requestId);
+      entry.reject(new Error(data.error || 'Surface grading-group computation failed.'));
+      return;
+    }
+    if (!isWellFormedGroupResult(data.result)) {
+      entry.settled = true;
+      this.pendingGroupGradings.delete(data.requestId);
+      entry.reject(new Error(SURFACE_GROUP_GRADING_MALFORMED));
+      return;
+    }
+    entry.settled = true;
+    this.pendingGroupGradings.delete(data.requestId);
     entry.resolve(data.result);
   };
   private readonly handleFatal = (): void => {
@@ -799,7 +870,49 @@ export class SurfaceWorkerClient implements SurfaceBuildTransport {
     };
   }
 
+  /**
+   * Phase 20C group grade-to-surface derivation. Request ids use the `ggreq-`
+   * prefix so group arrivals are attributable; latest-wins ownership is the
+   * service's. Cancel -> null; malformed -> reject; failure -> reject.
+   */
+  deriveGroupGrading(request: GradingGroupComputeRequest): PendingSurfaceGroupGrading {
+    this.nextRequestId += 1;
+    const requestId = `ggreq-${this.nextRequestId}`;
+    let entry!: {
+      resolve: (_result: CadGradingGroupResult | null) => void;
+      reject: (_e: Error) => void;
+      settled: boolean;
+    };
+    const done = new Promise<CadGradingGroupResult | null>((resolve, reject) => {
+      entry = { resolve, reject, settled: false };
+    });
+    this.pendingGroupGradings.set(requestId, entry);
+    try {
+      this.port.postMessage({ type: 'group-grading', requestId, request });
+    } catch (error) {
+      this.pendingGroupGradings.delete(requestId);
+      entry.reject(error instanceof Error ? error : new Error(String(error)));
+    }
+    return {
+      requestId,
+      done,
+      cancel: () => this.cancel(requestId),
+    };
+  }
+
   cancel(requestId: string): void {
+    const groupGradingEntry = this.pendingGroupGradings.get(requestId);
+    if (groupGradingEntry && !groupGradingEntry.settled) {
+      groupGradingEntry.settled = true;
+      this.pendingGroupGradings.delete(requestId);
+      try {
+        this.port.postMessage({ type: 'cancel', requestId });
+      } catch {
+        // Local settle already applied; a dead port fails closed via dispose.
+      }
+      groupGradingEntry.resolve(null);
+      return;
+    }
     const gradingEntry = this.pendingGradings.get(requestId);
     if (gradingEntry && !gradingEntry.settled) {
       gradingEntry.settled = true;
@@ -961,6 +1074,13 @@ export class SurfaceWorkerClient implements SurfaceBuildTransport {
       }
       this.pendingGradings.delete(requestId);
     }
+    for (const [requestId, entry] of this.pendingGroupGradings) {
+      if (!entry.settled) {
+        entry.settled = true;
+        entry.resolve(null);
+      }
+      this.pendingGroupGradings.delete(requestId);
+    }
     try {
       this.port.terminate();
     } catch {
@@ -991,6 +1111,13 @@ export class SurfaceWorkerClient implements SurfaceBuildTransport {
         entry.reject(error);
       }
       this.pendingGradings.delete(requestId);
+    }
+    for (const [requestId, entry] of this.pendingGroupGradings) {
+      if (!entry.settled) {
+        entry.settled = true;
+        entry.reject(error);
+      }
+      this.pendingGroupGradings.delete(requestId);
     }
     for (const [requestId, entry] of this.pendingSections) {
       if (!entry.settled) {

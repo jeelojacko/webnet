@@ -135,6 +135,26 @@ const boundaryEquals = (
   Math.abs(a.z - b.z) <= zeroDelta(a.z, b.z);
 
 /**
+ * Daylight vertices vs the CURRENT target mesh (the shared half of the
+ * agreement gate). Returns null on agreement, else the reject reason.
+ */
+export const validateDaylightAgainstTarget = (
+  daylightPoints: number[],
+  targetMeshQuery: GradingTargetQuery,
+): string | null => {
+  if (daylightPoints.length % 3 !== 0) return 'GRADING_AGREEMENT_MALFORMED_DAYLIGHT';
+  for (let i = 0; i + 2 < daylightPoints.length; i += 3) {
+    const x = daylightPoints[i]!;
+    const y = daylightPoints[i + 1]!;
+    const z = daylightPoints[i + 2]!;
+    const zt = targetMeshQuery.elevationAt(x, y);
+    if (zt === null) return 'GRADING_AGREEMENT_DAYLIGHT_OFF_TARGET';
+    if (Math.abs(zt - z) > zeroDelta(zt, z)) return 'GRADING_AGREEMENT_DAYLIGHT_Z';
+  }
+  return null;
+};
+
+/**
  * GO-gate before a worker result becomes CURRENT: every daylight vertex
  * must agree with the CURRENT target mesh within the zeroDelta floor, and
  * the strip source boundary must equal the Feature Line at the same
@@ -152,13 +172,5 @@ export const validateGradingResultAgainstTarget = (
   if (!boundaryEquals(sourceCheck.last, sourceCheck.expectedLast)) {
     return 'GRADING_AGREEMENT_SOURCE_BOUNDARY';
   }
-  for (let i = 0; i + 2 < daylightPoints.length; i += 3) {
-    const x = daylightPoints[i]!;
-    const y = daylightPoints[i + 1]!;
-    const z = daylightPoints[i + 2]!;
-    const zt = targetMeshQuery.elevationAt(x, y);
-    if (zt === null) return 'GRADING_AGREEMENT_DAYLIGHT_OFF_TARGET';
-    if (Math.abs(zt - z) > zeroDelta(zt, z)) return 'GRADING_AGREEMENT_DAYLIGHT_Z';
-  }
-  return null;
+  return validateDaylightAgainstTarget(daylightPoints, targetMeshQuery);
 };
