@@ -121,7 +121,7 @@ Observations (all measured):
   (case C, 49 298 tris) costs only **+3.8%** over the smallest overlay (case A,
   1 568 tris). `preflight`/`commit` add only ~5–10% over the core (they pay one extra
   `buildCadSurface` of the target/patch plus the transaction).
-- Scaling is ~linear: 10k → 50k (5× triangles) ≈ 6.3× ms; 50k → 100k (2×) ≈ 2.2× ms.
+- Scaling is ~linear: 10k → 50k (5× triangles) ≈ 5.8–6.2× ms; 50k → 100k (2×) ≈ 2.1–2.3× ms.
 - Sequential D/E are ~2× a single step (two `composeSurfaceMeshes` calls), as expected;
   disjoint and overlapping behave the same.
 - These single-step 100k numbers (2.6–2.8 s) sit on the **same curve as the documented
