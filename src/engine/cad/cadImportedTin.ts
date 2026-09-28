@@ -92,7 +92,7 @@ export const normalizeTinProvenance = (
   | { kind: 'webnet-bake'; sourceSurfaceId: string; sourceSurfaceName: string; sourceRevision: string; sourceSourceKind?: string }
   | { kind: 'webnet-grading-bake'; gradingId: string; gradingName: string; gradingRevision: string; sourceFeatureLineId: string; sourceVertexAId: string; sourceVertexBId: string; targetSurfaceId: string; accuracy: 'EXACT' | 'CURVE_APPROXIMATED' }
   | { kind: 'webnet-grading-group-bake'; groupId: string; groupName: string; groupRevision: string; sourceFeatureLineId: string; sourceCourseRefs: string[]; targetSurfaceId: string; side: 'left' | 'right'; accuracy: 'EXACT' | 'CURVE_APPROXIMATED'; cornerMode: 'miter' }
-  | { kind: 'webnet-grading-design-patch'; groupId: string; groupName: string; groupRevision: string; sourceFeatureLineId: string; sourceCourseRefs: string[]; targetSurfaceId: string; targetSurfaceRevision: string; accuracy: 'EXACT' | 'CURVE_APPROXIMATED'; cornerMode: 'miter'; includesInterior: true; interiorPolicy: 'flat-source' }
+  | { kind: 'webnet-grading-design-patch'; groupId: string; groupName: string; groupRevision: string; sourceFeatureLineId: string; sourceCourseRefs: string[]; targetSurfaceId: string; targetSurfaceRevision: string; accuracy: 'EXACT' | 'CURVE_APPROXIMATED'; cornerMode: 'miter'; includesInterior: true; interiorPolicy: 'flat-source' | 'planar-source' }
   | { kind: 'webnet-compose'; baseSurfaceId: string; baseSurfaceName: string; baseRevision: string; overlaySurfaceId: string; overlaySurfaceName: string; overlayRevision: string; policy: 'overlay-coverage-wins'; resultDigest?: string } => {
   if (tinProvenanceKind(provenance) === 'webnet-compose') {
     const composed = provenance as WebnetComposeTinProvenance;
@@ -137,7 +137,7 @@ export const normalizeTinProvenance = (
       accuracy: patch.accuracy,
       cornerMode: patch.cornerMode,
       includesInterior: true as const,
-      interiorPolicy: 'flat-source' as const,
+      interiorPolicy: patch.interiorPolicy === 'planar-source' ? 'planar-source' : 'flat-source',
     };
   }
   if (tinProvenanceKind(provenance) === 'webnet-grading-bake') {

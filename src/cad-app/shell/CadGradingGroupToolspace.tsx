@@ -24,8 +24,15 @@ const DefinitionRow: React.FC<{ row: CadGradingGroupRow }> = ({ row }) => (
     <span> · {row.courseCount} courses{row.closed ? ' (closed)' : ''}</span>
     <span> · {row.side}</span>
     <span> · Target {row.targetName}</span>
-    <span> · {row.criterionText}</span>
     <span> · max {numeric(row.maxSearchDistance)} m</span>
+  </div>
+);
+
+/** Phase 20E: group default + override count (never per-override child nodes). */
+const CriteriaRow: React.FC<{ row: CadGradingGroupRow }> = ({ row }) => (
+  <div className="cad-shell-tree-row" data-cad-grading-group-criteria-summary={row.id}>
+    <span>Criteria: Default {row.criterionText}</span>
+    <span> · Overrides:{row.overrideCount}</span>
   </div>
 );
 
@@ -89,6 +96,7 @@ export const GradingGroupsNode: React.FC<{
             </summary>
             <div className="cad-shell-tree-children">
               <DefinitionRow row={row} />
+              <CriteriaRow row={row} />
               <ResultRow row={row} />
               <CornerRow row={row} />
             </div>

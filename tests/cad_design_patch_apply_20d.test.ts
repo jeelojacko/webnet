@@ -34,7 +34,7 @@ import {
 import {
   DESIGN_PATCH_GROUP_NOT_CURRENT,
   DESIGN_PATCH_MERGE_FAILED,
-  DESIGN_PATCH_NON_FLAT_INTERIOR_UNDEFINED,
+  DESIGN_PATCH_NON_PLANAR_INTERIOR_UNDEFINED,
   DESIGN_PATCH_NON_SIMPLE_RING,
   DESIGN_PATCH_NOT_CLOSED,
   DESIGN_PATCH_RING_MESH_MISMATCH,
@@ -543,7 +543,10 @@ describe('20D DESIGNPATCH gates', () => {
     const ring = designPatchSourceBoundaryPoints(withGroup, bowId);
     if (!ring.ok) throw new Error(`expected a derived ring, got ${ring.code}`);
     const { result: flatResult } = padWorld(-60, -60, 160, 160);
+    // Forge a snapshot that claims the bowtie revision but carries no captured
+    // boundary, so the re-derived (still self-crossing) ring is what blocks.
     const forged: CadGradingGroupResult = { ...flatResult, groupId: bowId, revision: bowRev };
+    delete forged.sourceBoundaryPoints;
     expect(resolveDesignPatch(withGroup, bowId, forged, bowRev, true))
       .toMatchObject({ ok: false, code: DESIGN_PATCH_NON_SIMPLE_RING });
     const history = createCadHistoryState(withGroup);
@@ -855,12 +858,14 @@ describe('20D (f) fail-closed pins', () => {
       expect(outcome.code).toBe('CORNER_NO_SOLUTION');
     }
     // With no CURRENT result, any DESIGNPATCH attempt is blocked. A snapshot
-    // claiming CURRENT at the genuine tilted revision trips the strict-===
-    // flat gate on the real (non-flat) ring before any mesh is read.
+    // claiming CURRENT at the genuine tilted revision (and carrying no
+    // captured boundary) re-derives the real non-coplanar ring, which the
+    // flat-OR-coplanar gate blocks before any mesh is read.
     const { result: flatResult } = padWorld(-60, -60, 160, 160);
     const forged: CadGradingGroupResult = { ...flatResult, groupId, revision: inputs.revision };
+    delete forged.sourceBoundaryPoints;
     expect(resolveDesignPatch(withGroup, groupId, forged, inputs.revision, true))
-      .toMatchObject({ ok: false, code: DESIGN_PATCH_NON_FLAT_INTERIOR_UNDEFINED });
+      .toMatchObject({ ok: false, code: DESIGN_PATCH_NON_PLANAR_INTERIOR_UNDEFINED });
     const history = createCadHistoryState(withGroup);
     expect(runCadCommand(history, {
       key: 'DESIGNPATCH',
@@ -913,10 +918,11 @@ describe('20D (f) fail-closed pins', () => {
 //
 // Structural finding (see header): 20C admits concave L-notches whose
 // shells pinch at the reflex vertex (daylight touches source -> the merge
-// demand for a strict two-boundary annulus fail-closes), and curved loops
-// whose trig-rounded ring joints can never exactly match mesh joints (the
-// exact-match verifier fail-closes). Both pins run the REAL calculate path
-// with genuine revisions — no forged snapshots here.
+// demand for a strict two-boundary annulus fail-closes). Phase 20E consumes
+// the captured source boundary (no re-linearization drift); the curved
+// fixture's four inward semicircles genuinely cross at (50,50), so the
+// captured ring is non-simple and blocks before any mesh read. Both pins run
+// the REAL calculate path with genuine revisions — no forged snapshots here.
 // ---------------------------------------------------------------------------
 
 describe('20D (g) concave and curved fail-closed pins', () => {
@@ -1066,11 +1072,12 @@ describe('20D (g) concave and curved fail-closed pins', () => {
     });
     if (!outcome.ok) throw new Error(`Curved calc failed: ${outcome.code}`);
     expect(outcome.result.accuracy).toBe('CURVE_APPROXIMATED');
-    // Arc joints linearize through trig (never bitwise-equal to the mesh
-    // joint copies), so the exact-match verifier fail-closes: zero mismatch
-    // is required, never approximated.
+    // Phase 20E capture removes the old re-linearization drift, exposing the
+    // fixture's real geometry: four inward semicircles on a square cross at
+    // (50,50), so the captured boundary is genuinely non-simple.
+    expect(outcome.result.sourceBoundaryPoints).toBeDefined();
     expect(resolveDesignPatch(withGroup, groupId, outcome.result, inputs.revision, true))
-      .toMatchObject({ ok: false, code: DESIGN_PATCH_RING_MESH_MISMATCH });
+      .toMatchObject({ ok: false, code: DESIGN_PATCH_NON_SIMPLE_RING });
     const history = createCadHistoryState(withGroup);
     expect(runCadCommand(history, {
       key: 'DESIGNPATCH',

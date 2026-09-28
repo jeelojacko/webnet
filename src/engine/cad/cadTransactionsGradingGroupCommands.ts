@@ -7,8 +7,11 @@ import {
   addCourseToOpenEnd,
   createGroupDefinition,
   editGroupCriteria,
+  editGroupSpan,
   reassignGroupTarget,
   removeEndCourse,
+  resetCourseCriteriaOverrides,
+  setCourseCriteriaOverrides,
   validateGroupChain,
 } from './grading/gradingGroupAuthoring';
 import { toGradingCourseLikes, resolveGradingSourceCourse } from './grading/gradingCourseFrame';
@@ -107,6 +110,7 @@ const groupCreateCommand: CadCommandDefinition<GroupCreateCommand> = {
       cornerMode: command.cornerMode ?? 'miter',
       ...(command.closed === true ? { closed: true as const } : {}),
       ...(command.layerId !== undefined ? { layerId: command.layerId } : {}),
+      ...(command.courseCriteria !== undefined ? { courseCriteria: command.courseCriteria } : {}),
     });
     if (!created.ok) return null;
     return commitLayerProject('GROUP_CREATE', snapshot, {
@@ -196,24 +200,14 @@ const groupEditSpanCommand: CadCommandDefinition<GroupEditSpanCommand> = {
     if (!chainResolvable(snapshot.project, group.sourceFeatureLineId, command.sourceCourses)) {
       return null;
     }
-    const rebuilt = createGroupDefinition({
-      id: group.id,
-      name: group.name,
-      sourceFeatureLineId: group.sourceFeatureLineId,
-      sourceCourses: command.sourceCourses,
-      targetSurfaceId: group.targetSurfaceId,
-      side: group.side,
-      criterion: group.criterion,
-      maxSearchDistance: group.maxSearchDistance,
-      curveChordTolerance: group.curveChordTolerance,
-      cornerMode: group.cornerMode,
-      ...(closed ? { closed: true as const } : {}),
-      ...(group.layerId !== undefined ? { layerId: group.layerId } : {}),
-      ...(group.styleId !== undefined ? { styleId: group.styleId } : {}),
-    });
-    if (!rebuilt.ok) return null;
-    return commitLayerProject('GROUP_EDIT_SPAN', snapshot, withGroup(snapshot.project, rebuilt.value),
-      `GROUP_EDIT_SPAN (${group.name})`);
+    const edited = editGroupSpan(group, command.sourceCourses, closed);
+    if (!edited.ok) return null;
+    // Orphan overrides (courses that left the span) drop with a history-label warning.
+    const dropped = edited.value.removedOverrides.length;
+    const label = dropped > 0
+      ? `GROUP_EDIT_SPAN (${group.name}, dropped ${dropped} orphan course-criterion override${dropped === 1 ? '' : 's'})`
+      : `GROUP_EDIT_SPAN (${group.name})`;
+    return commitLayerProject('GROUP_EDIT_SPAN', snapshot, withGroup(snapshot.project, edited.value.group), label);
   },
 };
 
@@ -245,6 +239,40 @@ const groupRemoveEndCourseCommand: CadCommandDefinition<GroupRemoveEndCourseComm
     if (!removed.ok) return null;
     return commitLayerProject('GROUP_REMOVE_END_COURSE', snapshot, withGroup(snapshot.project, removed.value),
       `GROUP_REMOVE_END_COURSE (${group.name})`);
+  },
+};
+
+type GroupSetCourseCriteriaCommand = Extract<CadCommand, { key: 'GROUP_SET_COURSE_CRITERIA' }>;
+
+/**
+ * Phase 20E: apply one criterion to every named course in ONE undo step
+ * (default edit + multi-select apply). Sparse: a value equal to the group
+ * default removes those records. Duplicate/orphan refs BLOCK (null).
+ */
+const groupSetCourseCriteriaCommand: CadCommandDefinition<GroupSetCourseCriteriaCommand> = {
+  key: 'GROUP_SET_COURSE_CRITERIA',
+  execute: (snapshot, command) => {
+    const group = findGroup(snapshot.project, command.groupId);
+    if (!group) return null;
+    const applied = setCourseCriteriaOverrides(group, command.courses, command.criterion);
+    if (!applied.ok) return null;
+    return commitLayerProject('GROUP_SET_COURSE_CRITERIA', snapshot, withGroup(snapshot.project, applied.value),
+      `GROUP_SET_COURSE_CRITERIA (${group.name})`);
+  },
+};
+
+type GroupResetCourseCriteriaCommand = Extract<CadCommand, { key: 'GROUP_RESET_COURSE_CRITERIA' }>;
+
+/** Phase 20E: drop override records on the named courses (one undo step). */
+const groupResetCourseCriteriaCommand: CadCommandDefinition<GroupResetCourseCriteriaCommand> = {
+  key: 'GROUP_RESET_COURSE_CRITERIA',
+  execute: (snapshot, command) => {
+    const group = findGroup(snapshot.project, command.groupId);
+    if (!group) return null;
+    const reset = resetCourseCriteriaOverrides(group, command.courses);
+    if (!reset.ok) return null;
+    return commitLayerProject('GROUP_RESET_COURSE_CRITERIA', snapshot, withGroup(snapshot.project, reset.value),
+      `GROUP_RESET_COURSE_CRITERIA (${group.name})`);
   },
 };
 
@@ -387,6 +415,8 @@ export const gradingGroupCommandDefinitions = {
   GROUP_EDIT_SPAN: groupEditSpanCommand,
   GROUP_ADD_COURSE: groupAddCourseCommand,
   GROUP_REMOVE_END_COURSE: groupRemoveEndCourseCommand,
+  GROUP_SET_COURSE_CRITERIA: groupSetCourseCriteriaCommand,
+  GROUP_RESET_COURSE_CRITERIA: groupResetCourseCriteriaCommand,
   GROUPEXTRACTDAYLIGHT: groupExtractCommand,
   GROUPBAKE: groupBakeCommand,
 } as const;

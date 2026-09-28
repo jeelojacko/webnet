@@ -1191,7 +1191,8 @@ export interface WebnetGradingDesignPatchTinProvenance {
   accuracy: 'EXACT' | 'CURVE_APPROXIMATED';
   cornerMode: 'miter';
   includesInterior: true;
-  interiorPolicy: 'flat-source';
+  /** Phase 20E: `flat-source` (bit-flat) or `planar-source` (exactly coplanar). */
+  interiorPolicy: 'flat-source' | 'planar-source';
   fileName?: string;
   surfaceName?: string;
   sourceId?: string;

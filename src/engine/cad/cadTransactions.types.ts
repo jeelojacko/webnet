@@ -12,7 +12,7 @@ import type {
 import type { CadAnnotationAnchor } from './annotation/cadAnnotationAnchors';
 import type { FeatureLineElevationMethod } from './cadFeatureLineCreate';
 import type { CadGradingResult, GradingCriterion, GradingSide } from './grading/gradingTypes';
-import type { CadGradingGroupResult, GradingGroupCourse } from './grading/gradingGroupTypes';
+import type { CadGradingGroupResult, GradingGroupCourse, GradingGroupCourseCriterionOverride } from './grading/gradingGroupTypes';
 import type { HelmertControlPair, HelmertMode } from './cadHelmert2D';
 import type { ProjectTransformRequest } from './cadProjectTransform';
 
@@ -306,6 +306,8 @@ export type CadCommandKey =
   | 'GROUP_EDIT_SPAN'
   | 'GROUP_ADD_COURSE'
   | 'GROUP_REMOVE_END_COURSE'
+  | 'GROUP_SET_COURSE_CRITERIA'
+  | 'GROUP_RESET_COURSE_CRITERIA'
   | 'GROUPEXTRACTDAYLIGHT'
   | 'GROUPBAKE'
   // Phase 20D Wave-1A — design surface workflow (engine only).
@@ -1719,6 +1721,8 @@ export type CadCommand =
       cornerMode?: 'miter';
       closed?: boolean;
       layerId?: CadLayerId;
+      /** Phase 20E sparse per-course overrides (validated on create). */
+      courseCriteria?: GradingGroupCourseCriterionOverride[];
     }
   | {
       key: 'GROUP_DELETE';
@@ -1751,6 +1755,18 @@ export type CadCommand =
       key: 'GROUP_REMOVE_END_COURSE';
       groupId: string;
       which: 'first' | 'last';
+    }
+  | {
+      key: 'GROUP_SET_COURSE_CRITERIA';
+      groupId: string;
+      /** One undo step applies `criterion` to every named course. */
+      courses: GradingGroupCourse[];
+      criterion: GradingCriterion;
+    }
+  | {
+      key: 'GROUP_RESET_COURSE_CRITERIA';
+      groupId: string;
+      courses: GradingGroupCourse[];
     }
   | {
       key: 'GROUPEXTRACTDAYLIGHT';

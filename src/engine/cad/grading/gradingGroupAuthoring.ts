@@ -12,7 +12,9 @@ import type {
   CadGradingGroup,
   GradingCornerMode,
   GradingGroupCourse,
+  GradingGroupCourseCriterionOverride,
 } from './gradingGroupTypes';
+import { criteriaEqual } from './gradingGroupCourseCriteria';
 import {
   validateGradingCriterion,
   type GradingAuthoringResult,
@@ -26,6 +28,8 @@ export interface CreateGroupInput {
   targetSurfaceId: string;
   side: GradingSide;
   criterion: GradingCriterion;
+  /** Phase 20E sparse overrides (validated: member refs, no duplicates). */
+  courseCriteria?: GradingGroupCourseCriterionOverride[];
   maxSearchDistance: number;
   curveChordTolerance: number;
   cornerMode: GradingCornerMode;
@@ -115,6 +119,26 @@ const scalarError = (
   return null;
 };
 
+/** Phase 20E: override refs must name real traversal courses, exactly once. */
+const overrideRefError = (
+  courses: GradingGroupCourse[],
+  courseCriteria: GradingGroupCourseCriterionOverride[] | undefined,
+): string | null => {
+  if (courseCriteria === undefined) return null;
+  const members = new Set(courses.flatMap((c) => [`${c.vertexAId}>${c.vertexBId}`, `${c.vertexBId}>${c.vertexAId}`]));
+  const seen = new Set<string>();
+  for (const entry of courseCriteria) {
+    const error = validateGradingCriterion(entry.criterion);
+    if (error) return error;
+    const key = `${entry.sourceCourse.vertexAId}>${entry.sourceCourse.vertexBId}`;
+    if (!members.has(key)) return 'courseCriteria references a course outside the group span';
+    const canon = [entry.sourceCourse.vertexAId, entry.sourceCourse.vertexBId].sort().join('>');
+    if (seen.has(canon)) return 'courseCriteria duplicates a course';
+    seen.add(canon);
+  }
+  return null;
+};
+
 const toGroup = (input: CreateGroupInput): CadGradingGroup => ({
   id: input.id,
   name: input.name,
@@ -123,6 +147,9 @@ const toGroup = (input: CreateGroupInput): CadGradingGroup => ({
   targetSurfaceId: input.targetSurfaceId,
   side: input.side,
   criterion: input.criterion,
+  ...(input.courseCriteria !== undefined
+    ? { courseCriteria: input.courseCriteria.map((entry) => ({ sourceCourse: { ...entry.sourceCourse }, criterion: { ...entry.criterion } })) }
+    : {}),
   maxSearchDistance: input.maxSearchDistance,
   curveChordTolerance: input.curveChordTolerance,
   cornerMode: input.cornerMode,
@@ -144,6 +171,8 @@ export const createGroupDefinition = (
   if (scalars) return fail(scalars);
   const chain = validateGroupChain(input.sourceCourses, input.closed === true);
   if (chain) return fail(chain);
+  const overrides = overrideRefError(input.sourceCourses, input.courseCriteria);
+  if (overrides) return fail(overrides);
   return { ok: true, value: toGroup(input) };
 };
 
@@ -155,6 +184,128 @@ export const editGroupCriteria = (
   const error = validateGradingCriterion(criterion);
   if (error) return fail(error);
   return { ok: true, value: { ...current, criterion } };
+};
+
+/**
+ * Phase 20E: set one criterion override on each named course (multi-select
+ * apply lands as ONE undo transaction at the command layer). sparse:
+ * a value equal to the group default REMOVES the record instead of
+ * storing a copy. Every ref must name a traversal course (either order).
+ */
+export const setCourseCriteriaOverrides = (
+  current: CadGradingGroup,
+  courses: GradingGroupCourse[],
+  criterion: GradingCriterion,
+): GradingAuthoringResult<CadGradingGroup> => {
+  const error = validateGradingCriterion(criterion);
+  if (error) return fail(error);
+  if (courses.length === 0) return fail('courses must contain at least one course');
+  const members = new Set(
+    current.sourceCourses.flatMap((c) => [`${c.vertexAId}>${c.vertexBId}`, `${c.vertexBId}>${c.vertexAId}`]),
+  );
+  const canonOf = (c: GradingGroupCourse): string => [c.vertexAId, c.vertexBId].sort().join('>');
+  const seen = new Set<string>();
+  for (const course of courses) {
+    if (course.vertexAId === course.vertexBId) return fail('course vertex ids must differ');
+    if (!members.has(`${course.vertexAId}>${course.vertexBId}`)) {
+      return fail('courseCriteria references a course outside the group span');
+    }
+    const canon = canonOf(course);
+    if (seen.has(canon)) return fail('courseCriteria duplicates a course');
+    seen.add(canon);
+  }
+  const resetToDefault = criteriaEqual(criterion, current.criterion);
+  const kept = (current.courseCriteria ?? []).filter((entry) => !seen.has(canonOf(entry.sourceCourse)));
+  const next: GradingGroupCourseCriterionOverride[] = resetToDefault
+    ? kept.map((entry) => ({ sourceCourse: { ...entry.sourceCourse }, criterion: { ...entry.criterion } }))
+    : [
+        ...kept.map((entry) => ({ sourceCourse: { ...entry.sourceCourse }, criterion: { ...entry.criterion } })),
+        ...courses.map((course) => ({
+          sourceCourse: { ...course },
+          criterion: { ...criterion } as GradingCriterion,
+        })),
+      ];
+  if (next.length === 0) {
+    const { courseCriteria: _dropped, ...rest } = current;
+    return { ok: true, value: rest };
+  }
+  return { ok: true, value: { ...current, courseCriteria: next } };
+};
+
+/** Phase 20E: drop the override records on the named courses (sparse reset). */
+export const resetCourseCriteriaOverrides = (
+  current: CadGradingGroup,
+  courses: GradingGroupCourse[],
+): GradingAuthoringResult<CadGradingGroup> => {
+  if (courses.length === 0) return fail('courses must contain at least one course');
+  const targets = new Set(
+    courses.map((c) => [c.vertexAId, c.vertexBId].sort().join('>')),
+  );
+  const kept = (current.courseCriteria ?? []).filter(
+    (entry) => !targets.has([entry.sourceCourse.vertexAId, entry.sourceCourse.vertexBId].sort().join('>')),
+  );
+  if (kept.length === (current.courseCriteria ?? []).length) return fail('no overrides on the named courses');
+  if (kept.length === 0) {
+    const { courseCriteria: _dropped, ...rest } = current;
+    return { ok: true, value: rest };
+  }
+  return { ok: true, value: { ...current, courseCriteria: kept } };
+};
+
+export interface EditGroupSpanResult {
+  group: CadGradingGroup;
+  /** Traversal refs whose override records were dropped by the span edit. */
+  removedOverrides: string[];
+}
+
+/**
+ * Phase 20E: replace the traversal span, dropping override records whose
+ * course left the span (insert splits mint fresh ids → BROKEN_REFERENCE
+ * with no migration; the caller warns on `removedOverrides`).
+ */
+export const editGroupSpan = (
+  current: CadGradingGroup,
+  sourceCourses: GradingGroupCourse[],
+  closed: boolean,
+): GradingAuthoringResult<EditGroupSpanResult> => {
+  const chain = validateGroupChain(sourceCourses, closed);
+  if (chain) return fail(chain);
+  const members = new Set(
+    sourceCourses.flatMap((c) => [`${c.vertexAId}>${c.vertexBId}`, `${c.vertexBId}>${c.vertexAId}`]),
+  );
+  const removedOverrides: string[] = [];
+  const kept = (current.courseCriteria ?? []).filter((entry) => {
+    const keep = members.has(`${entry.sourceCourse.vertexAId}>${entry.sourceCourse.vertexBId}`);
+    if (!keep) removedOverrides.push(`${entry.sourceCourse.vertexAId}>${entry.sourceCourse.vertexBId}`);
+    return keep;
+  });
+  const rebuilt = createGroupDefinition({
+    id: current.id,
+    name: current.name,
+    sourceFeatureLineId: current.sourceFeatureLineId,
+    sourceCourses,
+    targetSurfaceId: current.targetSurfaceId,
+    side: current.side,
+    criterion: current.criterion,
+    maxSearchDistance: current.maxSearchDistance,
+    curveChordTolerance: current.curveChordTolerance,
+    cornerMode: current.cornerMode,
+    ...(closed ? { closed: true as const } : {}),
+    ...(current.layerId !== undefined ? { layerId: current.layerId } : {}),
+    ...(current.styleId !== undefined ? { styleId: current.styleId } : {}),
+  });
+  if (!rebuilt.ok) return fail(rebuilt.error);
+  const group: CadGradingGroup =
+    kept.length === 0
+      ? rebuilt.value
+      : {
+          ...rebuilt.value,
+          courseCriteria: kept.map((entry) => ({
+            sourceCourse: { ...entry.sourceCourse },
+            criterion: { ...entry.criterion },
+          })),
+        };
+  return { ok: true, value: { group, removedOverrides } };
 };
 
 /** Point an existing group at a different target surface (copy). */

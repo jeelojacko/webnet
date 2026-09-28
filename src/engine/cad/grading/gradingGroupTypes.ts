@@ -28,6 +28,20 @@ export interface GradingGroupCourse {
   vertexBId: string;
 }
 
+/**
+ * Phase 20E Wave-1A — per-course criterion override (sparse, additive).
+ *
+ * `sourceCourse` references one persisted traversal course by its A->B
+ * vertex ids (either storage order matches at resolve); `criterion`
+ * replaces the group default for that course only. Absent entry = group
+ * default. Reset-to-default removes the record (never stores a copy of
+ * the default). No blends, no index keys, no station identity.
+ */
+export interface GradingGroupCourseCriterionOverride {
+  sourceCourse: GradingGroupCourse;
+  criterion: GradingCriterion;
+}
+
 /** Group-level definition (drawing-owned, definition only). */
 export interface CadGradingGroup {
   id: string;
@@ -39,6 +53,11 @@ export interface CadGradingGroup {
   /** Relative to the persisted traversal direction. */
   side: GradingSide;
   criterion: GradingCriterion;
+  /**
+   * Phase 20E sparse per-course overrides (absent/empty = every course
+   * uses `criterion`; legacy groups stay byte-identical).
+   */
+  courseCriteria?: GradingGroupCourseCriterionOverride[];
   maxSearchDistance: number;
   curveChordTolerance: number;
   cornerMode: GradingCornerMode;
@@ -128,6 +147,12 @@ export interface CadGradingGroupResult {
   corners: GroupCornerResult[];
   /** Merged daylight boundary as flat XYZ triplets. */
   daylightPoints: number[];
+  /**
+   * Phase 20E: exact source discretization the solver consumed (stitched
+   * member sourcePts in traversal order, closed). Session-only observation;
+   * never persisted, never feeds numerics.
+   */
+  sourceBoundaryPoints?: number[];
   gradingMesh: GradingMesh;
   sourceLength: number;
   gradingPlanArea: number;

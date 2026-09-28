@@ -67,6 +67,11 @@ export interface GroupSolveInput {
   members: ResolvedGradingSource[];
   side: GradingSide;
   criterion: GradingCriterion;
+  /**
+   * Phase 20E: effective criterion per member in traversal order
+   * (override or group default). Absent/short = legacy shared criterion.
+   */
+  memberCriteria?: GradingCriterion[];
   maxSearchDistance: number;
   curveChordTolerance: number;
   closed: boolean;
@@ -247,6 +252,9 @@ const crossGradeAtV = (
  */
 export const computeGradingGroupFromSnapshots = (input: GroupSolveInput): GradingGroupComputeOutcome => {
   const { groupId, revision, members, side, criterion, maxSearchDistance, curveChordTolerance, closed, target } = input;
+  /** Phase 20E: per-member effective criterion (sparse override or default). */
+  const criterionAt = (memberIndex: number): GradingCriterion =>
+    input.memberCriteria?.[memberIndex] ?? criterion;
   if (members.length < 1) return fail('MEMBER_NO_SOLUTION', undefined, 'GRADING_GROUP_EMPTY');
   if (closed && members.length < 3) return fail('MEMBER_NO_SOLUTION', undefined, 'GRADING_GROUP_CLOSED_TOO_SHORT');
   if (!(maxSearchDistance > 0) || !Number.isFinite(maxSearchDistance)) {
@@ -290,7 +298,7 @@ export const computeGradingGroupFromSnapshots = (input: GroupSolveInput): Gradin
     const chordSolves: StraightChordSolve[] = [];
     for (const chord of chords) {
       const out = solveStraightChord({
-        source: chord.source, side, criterion, maxSearchDistance,
+        source: chord.source, side, criterion: criterionAt(mi), maxSearchDistance,
         target, query, stationBase: chord.base, stationScale: chord.scale,
       });
       if (!out.ok) {
@@ -359,19 +367,26 @@ export const computeGradingGroupFromSnapshots = (input: GroupSolveInput): Gradin
     if (ztV === null) return fail('CORNER_TARGET_GAP', j, 'GRADING_CORNER_V_COVERAGE');
     const cutFill = cutFillSideAtCorner(ztV, vz);
     if (!cutFill) return fail('CORNER_TARGET_GAP', j, 'GRADING_CORNER_V_COVERAGE');
-    const gCross = crossGradeAtV(criterion, ztV - vz);
-    if (gCross === null) return fail('CORNER_NO_SOLUTION', j, 'GRADING_BAD_CRITERION');
-    const plane1 = cornerPlane(vx, vy, vz, incoming.tOut, side, gCross, incoming.gsOut);
-    const plane2 = cornerPlane(vx, vy, vz, outgoing.tIn, side, gCross, outgoing.gsOut);
+    const gCrossIn = crossGradeAtV(criterionAt(inIdx), ztV - vz);
+    const gCrossOut = crossGradeAtV(criterionAt(outIdx), ztV - vz);
+    if (gCrossIn === null || gCrossOut === null) {
+      return fail('CORNER_NO_SOLUTION', j, 'GRADING_BAD_CRITERION');
+    }
+    const plane1 = cornerPlane(vx, vy, vz, incoming.tOut, side, gCrossIn, incoming.gsOut);
+    const plane2 = cornerPlane(vx, vy, vz, outgoing.tIn, side, gCrossOut, outgoing.gsOut);
     if (!plane1 || !plane2) return fail('CORNER_INVERTED', j, 'GRADING_CORNER_PLANE');
     const seam = miterSeam(plane1, plane2);
     if (!seam) return fail('CORNER_INVERTED', j, 'GRADING_CORNER_SEAM');
     const classification = turn as GroupCornerClassification;
     if ('coincident' in seam) {
+      // §77 same-plane merge: coincident gradients share one plane, so the
+      // joint needs no patch even when the two criteria differ on paper.
       if (classification !== 'TANGENT') return fail('CORNER_COINCIDENT_PLANES', j);
       corners.push({ cornerIndex: j, vertexId: `joint:${j}`, classification, diagnostics: [] });
       continue;
     }
+    // §76: collinear courses on different planes have no miter wedge —
+    // fail closed rather than invent a seam.
     if (classification === 'TANGENT') return fail('CORNER_COINCIDENT_PLANES', j);
     const ray = selectMiterRay(seam, incoming.nOut, outgoing.nIn);
     if (!ray || 'inverted' in ray) return fail('CORNER_INVERTED', j, 'GRADING_CORNER_RAY');
@@ -533,6 +548,24 @@ export const computeGradingGroupFromSnapshots = (input: GroupSolveInput): Gradin
   const stats = groupMeshStats(merged, distances);
   const daylightFlat: number[] = [];
   for (const p of daylight) daylightFlat.push(p.x, p.y, p.z);
+  //
+  // Phase 20E §10: observe the exact source discretization the solver
+  // consumed (stitched member sourcePts in traversal order, each member
+  // dropping its final point, closed by the last member's final point).
+  // Pure export for Design Patch; no numeric input to anything above.
+  const sourceBoundaryPoints: number[] = [];
+  solved.forEach((s) => {
+    const pts = s.stitched.sourcePts;
+    for (let i = 0; i + 1 < pts.length; i += 1) {
+      const p = pts[i]!;
+      sourceBoundaryPoints.push(p.x, p.y, p.z);
+    }
+  });
+  const lastPts = solved[solved.length - 1]!.stitched.sourcePts;
+  if (lastPts.length > 0) {
+    const p = lastPts[lastPts.length - 1]!;
+    sourceBoundaryPoints.push(p.x, p.y, p.z);
+  }
   const result: CadGradingGroupResult = {
     groupId,
     revision,
@@ -542,6 +575,7 @@ export const computeGradingGroupFromSnapshots = (input: GroupSolveInput): Gradin
     memberRegions,
     corners,
     daylightPoints: daylightFlat,
+    sourceBoundaryPoints,
     gradingMesh: { points: merged.points, triangles: merged.triangles },
     sourceLength,
     gradingPlanArea: stats.planArea,

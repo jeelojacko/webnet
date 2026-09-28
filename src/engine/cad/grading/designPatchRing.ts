@@ -19,6 +19,7 @@ export type DesignPatchBlockCode =
   | 'DESIGN_PATCH_SOURCE_UNRESOLVED'
   | 'DESIGN_PATCH_NON_SIMPLE_RING'
   | 'DESIGN_PATCH_NON_FLAT_INTERIOR_UNDEFINED'
+  | 'DESIGN_PATCH_NON_PLANAR_INTERIOR_UNDEFINED'
   | 'DESIGN_PATCH_RING_MESH_MISMATCH'
   | 'DESIGN_PATCH_TRIANGULATION_FAILED'
   | 'DESIGN_PATCH_MERGE_FAILED';
@@ -105,6 +106,46 @@ export const deriveSourceRing = (
     for (const p of points) ring.push(p.x, p.y, p.z);
   }
   return { ok: true, ring };
+};
+
+/**
+ * Normalize a captured `sourceBoundaryPoints` array to the implicit-closure
+ * ring convention (no repeated closing vertex). Returns null when the capture
+ * is structurally unusable, so the caller fail-closes instead of drifting
+ * back to a re-linearized ring.
+ */
+const normalizeCapturedRing = (points: readonly number[]): number[] | null => {
+  if (!Array.isArray(points) || points.length % 3 !== 0 || points.length < 9) return null;
+  const ring = [...points];
+  const last = ring.length - 3;
+  if (ring[0] === ring[last] && ring[1] === ring[last + 1] && ring[2] === ring[last + 2]) {
+    ring.length = last;
+  }
+  return ring.length >= 9 ? ring : null;
+};
+
+/**
+ * Canonical closed source ring for a Design Patch. When the group compute
+ * captured its exact source discretization (`CadGradingGroupResult.
+ * sourceBoundaryPoints`), that capture IS the boundary authority: it reuses
+ * the exact vertices the solver interned, so arc joints cannot drift from
+ * the grading mesh. `deriveSourceRing` remains the legacy fallback/diagnostic
+ * for snapshots without a capture.
+ */
+export const resolveDesignPatchRing = (
+  group: CadGradingGroup,
+  featureLineEntity: CadFeatureLineEntity,
+  curveChordTolerance: number,
+  sourceBoundaryPoints?: readonly number[],
+): DesignPatchRing | DesignPatchFailure => {
+  if (sourceBoundaryPoints !== undefined) {
+    const captured = normalizeCapturedRing(sourceBoundaryPoints);
+    if (!captured) {
+      return designPatchBlock('DESIGN_PATCH_NON_SIMPLE_RING', 'captured source boundary is malformed');
+    }
+    return { ok: true, ring: captured };
+  }
+  return deriveSourceRing(group, featureLineEntity, curveChordTolerance);
 };
 
 // ---------------------------------------------------------------------------

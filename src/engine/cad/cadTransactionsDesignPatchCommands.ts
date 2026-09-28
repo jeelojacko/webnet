@@ -6,11 +6,10 @@ import { commitLayerProject } from './cadTransactionsLayerCommands';
 import type { CadCommand, CadCommandDefinition } from './cadTransactions.types';
 import type { CadProject, CadSurface, WebnetGradingDesignPatchTinProvenance } from './cadTypes';
 import {
-  buildPadInterior,
-  checkFlatRing,
-  deriveSourceRing,
   makeDesignPatchProvenance,
   mergePadWithGrading,
+  resolveDesignPatchInterior,
+  resolveDesignPatchRing,
   validateSourceRing,
   verifyRingAgainstMesh,
 } from './grading/designPatchBuild';
@@ -35,6 +34,7 @@ import type { CadGradingGroupResult } from './grading/gradingGroupTypes';
 export const DESIGN_PATCH_GROUP_NOT_CURRENT = 'DESIGN_PATCH_GROUP_NOT_CURRENT';
 export const DESIGN_PATCH_NOT_CLOSED = 'DESIGN_PATCH_NOT_CLOSED';
 export const DESIGN_PATCH_NON_FLAT_INTERIOR_UNDEFINED = 'DESIGN_PATCH_NON_FLAT_INTERIOR_UNDEFINED';
+export const DESIGN_PATCH_NON_PLANAR_INTERIOR_UNDEFINED = 'DESIGN_PATCH_NON_PLANAR_INTERIOR_UNDEFINED';
 export const DESIGN_PATCH_RING_MESH_MISMATCH = 'DESIGN_PATCH_RING_MESH_MISMATCH';
 export const DESIGN_PATCH_NON_SIMPLE_RING = 'DESIGN_PATCH_NON_SIMPLE_RING';
 export const DESIGN_PATCH_MERGE_FAILED = 'DESIGN_PATCH_MERGE_FAILED';
@@ -43,13 +43,15 @@ export type DesignPatchCommandBlockCode =
   | typeof DESIGN_PATCH_GROUP_NOT_CURRENT
   | typeof DESIGN_PATCH_NOT_CLOSED
   | typeof DESIGN_PATCH_NON_FLAT_INTERIOR_UNDEFINED
+  | typeof DESIGN_PATCH_NON_PLANAR_INTERIOR_UNDEFINED
   | typeof DESIGN_PATCH_RING_MESH_MISMATCH
   | typeof DESIGN_PATCH_NON_SIMPLE_RING
   | typeof DESIGN_PATCH_MERGE_FAILED;
 
 export interface DesignPatchResolved {
   ring: number[];
-  padZ: number;
+  /** Flat pad Z; null for a planar pad (plane coefficients are never kept). */
+  padZ: number | null;
   points: number[];
   triangles: number[];
   provenance: WebnetGradingDesignPatchTinProvenance;
@@ -63,13 +65,15 @@ const fail = (code: DesignPatchCommandBlockCode, detail?: string): DesignPatchRe
   detail === undefined ? { ok: false, code } : { ok: false, code, detail };
 
 /**
- * Session-only canonical source ring (never persisted): the group's source
- * boundary through the same discretization the group compute used. UI and
- * preflight read this instead of recomputing; no numeric output changes.
+ * Session-only canonical source ring (never persisted): the acting group's
+ * captured source discretization when the caller has the group result,
+ * otherwise the legacy re-derived ring. UI and preflight read this instead of
+ * recomputing; no numeric output changes.
  */
 export const designPatchSourceBoundaryPoints = (
   project: CadProject,
   groupId: string,
+  result?: { sourceBoundaryPoints?: readonly number[] },
 ): DesignPatchRing | DesignPatchFailure => {
   const inputs = resolveGroupInputs(project, groupId);
   if (!inputs) return designPatchBlock('DESIGN_PATCH_SOURCE_UNRESOLVED', 'group inputs do not resolve');
@@ -79,7 +83,9 @@ export const designPatchSourceBoundaryPoints = (
   if (!entity || entity.type !== 'feature-line') {
     return designPatchBlock('DESIGN_PATCH_SOURCE_UNRESOLVED', 'source feature line not found');
   }
-  return deriveSourceRing(inputs.group, entity, inputs.group.curveChordTolerance);
+  return resolveDesignPatchRing(
+    inputs.group, entity, inputs.group.curveChordTolerance, result?.sourceBoundaryPoints,
+  );
 };
 
 /** Pure gates + build: the command commits this, tests observe the codes. */
@@ -101,32 +107,32 @@ export const resolveDesignPatch = (
     return fail(DESIGN_PATCH_GROUP_NOT_CURRENT, 'result revision does not match the group');
   }
   if (inputs.group.closed !== true) return fail(DESIGN_PATCH_NOT_CLOSED, 'group is not closed');
-  const derived = designPatchSourceBoundaryPoints(project, groupId);
+  const derived = designPatchSourceBoundaryPoints(project, groupId, result);
   if (!derived.ok) return fail(DESIGN_PATCH_GROUP_NOT_CURRENT, derived.detail ?? derived.code);
   const ring = derived.ring;
   const valid = validateSourceRing(ring);
   if (!valid.ok) return fail(DESIGN_PATCH_NON_SIMPLE_RING, valid.detail);
-  const flat = checkFlatRing(ring);
-  if (!flat.ok) {
-    return flat.code === DESIGN_PATCH_NON_FLAT_INTERIOR_UNDEFINED
-      ? fail(DESIGN_PATCH_NON_FLAT_INTERIOR_UNDEFINED, flat.detail)
-      : fail(DESIGN_PATCH_NON_SIMPLE_RING, flat.detail);
+  // Flat-or-coplanar gate runs before the mesh read: a genuinely non-planar
+  // ring is blocked on its own terms, never masked by a mesh mismatch.
+  const interior = resolveDesignPatchInterior(ring);
+  if (!interior.ok) {
+    if (interior.code === DESIGN_PATCH_NON_FLAT_INTERIOR_UNDEFINED) {
+      return fail(DESIGN_PATCH_NON_FLAT_INTERIOR_UNDEFINED, interior.detail);
+    }
+    if (interior.code === DESIGN_PATCH_NON_PLANAR_INTERIOR_UNDEFINED) {
+      return fail(DESIGN_PATCH_NON_PLANAR_INTERIOR_UNDEFINED, interior.detail);
+    }
+    return fail(DESIGN_PATCH_NON_SIMPLE_RING, interior.detail);
   }
   const verified = verifyRingAgainstMesh(ring, result.gradingMesh);
   if (!verified.ok) return fail(DESIGN_PATCH_RING_MESH_MISMATCH, verified.detail);
-  const pad = buildPadInterior(ring, flat.padZ);
-  if (!pad.ok) {
-    return pad.code === DESIGN_PATCH_NON_SIMPLE_RING
-      ? fail(DESIGN_PATCH_NON_SIMPLE_RING, pad.detail)
-      : fail(DESIGN_PATCH_MERGE_FAILED, pad.detail);
-  }
-  const merged = mergePadWithGrading(pad.padPoints, pad.padTriangles, result.gradingMesh);
+  const merged = mergePadWithGrading(interior.pad.padPoints, interior.pad.padTriangles, result.gradingMesh);
   if (!merged.ok) return fail(DESIGN_PATCH_MERGE_FAILED, merged.detail);
   return {
     ok: true,
     value: {
       ring,
-      padZ: flat.padZ,
+      padZ: interior.padZ ?? null,
       points: merged.points,
       triangles: merged.triangles,
       provenance: makeDesignPatchProvenance({
@@ -140,6 +146,7 @@ export const resolveDesignPatch = (
         targetSurfaceId: inputs.target.id,
         targetSurfaceRevision: inputs.targetRevision,
         accuracy: result.accuracy,
+        interiorPolicy: interior.interiorPolicy,
       }),
     },
   };

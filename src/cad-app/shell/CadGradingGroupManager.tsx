@@ -28,6 +28,7 @@ import {
 } from './cadGradingShell';
 import type { CadGradingGroupRow } from './cadGradingGroupSnapshot';
 import { CadGradingGroupInquiryPanel } from './CadGradingGroupInquiryPanel';
+import { CadGradingGroupCriteriaPanel } from './CadGradingGroupCriteriaPanel';
 import { groupGhostArrows, groupGhostSeam } from './cadGradingGroupDisplay';
 import { buttonClass, inputClass } from '../../components/surveyCad/surveyManagerShared';
 import { Field, ManagerShell } from '../../components/surveyCad/surveyManagerShared.tsx';
@@ -36,8 +37,8 @@ interface CadGradingGroupManagerProps {
   snapshot: CadWorkspaceSnapshot;
   actions: CadShellActions;
   initialSelectedId?: string;
-  /** 'inquiry' focuses the report tab (GRADINGGROUPINQUIRY). */
-  initialTab?: 'definition' | 'inquiry';
+  /** 'inquiry' focuses the report tab, 'criteria' the course-criteria editor. */
+  initialTab?: 'definition' | 'criteria' | 'inquiry';
   onClose: () => void;
 }
 
@@ -240,7 +241,8 @@ const RowActions: React.FC<{
   surfaces: Array<{ id: string; name: string }>;
   onNotice: (_message: string) => void;
   onInquiry: () => void;
-}> = ({ row, snapshot, actions, surfaces, onNotice, onInquiry }) => (
+  onCriteria: () => void;
+}> = ({ row, snapshot, actions, surfaces, onNotice, onInquiry, onCriteria }) => (
   <div className="flex flex-wrap gap-1" data-cad-grading-group-actions={row.id}>
     <button
       type="button"
@@ -326,6 +328,9 @@ const RowActions: React.FC<{
     <button type="button" className={buttonClass} onClick={onInquiry} data-cad-grading-group-inquiry>
       Inquiry
     </button>
+    <button type="button" className={buttonClass} onClick={onCriteria} data-cad-grading-group-criteria-open>
+      Course Criteria
+    </button>
     <button
       type="button"
       className={buttonClass}
@@ -367,7 +372,7 @@ const GroupRowTable: React.FC<{
     <table className="w-full text-left text-[11px]">
       <thead className="text-slate-400">
         <tr>
-          <th>Name</th><th>Courses</th><th>Side</th><th>Target</th><th>Criterion</th>
+          <th>Name</th><th>Courses</th><th>Side</th><th>Target</th><th>Default Criterion</th>
           <th>Status</th><th>Max</th><th>Accuracy</th><th>Tie (min–max)</th><th>Area</th><th>Tri</th>
         </tr>
       </thead>
@@ -384,7 +389,7 @@ const GroupRowTable: React.FC<{
             <td>{row.courseCount}{row.closed ? ' (closed)' : ''}</td>
             <td>{row.side}</td>
             <td>{row.targetName}</td>
-            <td>{row.criterionText}</td>
+            <td>Default {row.criterionText} · Overrides:{row.overrideCount}</td>
             <td>{row.statusText}{row.stale ? ' (stale)' : ''}</td>
             <td>{row.maxSearchDistance.toFixed(2)}</td>
             <td>{row.accuracyText}{row.curveCornerApproximated ? ' (corner)' : ''}</td>
@@ -409,7 +414,7 @@ export const CadGradingGroupManager: React.FC<CadGradingGroupManagerProps> = ({
   const data = snapshot.gradingGroups;
   const rows = data?.groups ?? [];
   const [notice, setNotice] = React.useState<string | null>(null);
-  const [tab, setTab] = React.useState<'definition' | 'inquiry'>(initialTab);
+  const [tab, setTab] = React.useState<'definition' | 'criteria' | 'inquiry'>(initialTab);
   const selectedId = data?.selectedGroupId ?? initialSelectedId ?? null;
   const selected = rows.find((row) => row.id === selectedId) ?? rows[0] ?? null;
   if (data == null) {
@@ -424,6 +429,7 @@ export const CadGradingGroupManager: React.FC<CadGradingGroupManagerProps> = ({
       {notice ? <p role="status" data-cad-grading-group-notice className="mb-2 text-[11px] text-amber-200">{notice}</p> : null}
       <div className="mb-2 flex gap-1">
         <button type="button" className={buttonClass} data-cad-grading-group-tab="definition" onClick={() => setTab('definition')}>Definition</button>
+        <button type="button" className={buttonClass} data-cad-grading-group-tab="criteria" onClick={() => setTab('criteria')}>Course Criteria</button>
         <button type="button" className={buttonClass} data-cad-grading-group-tab="inquiry" onClick={() => setTab('inquiry')}>Inquiry</button>
       </div>
       <CreateForm snapshot={snapshot} actions={actions} onCreated={setNotice} />
@@ -441,6 +447,7 @@ export const CadGradingGroupManager: React.FC<CadGradingGroupManagerProps> = ({
             surfaces={(snapshot.surface?.surfaces ?? []).map((row) => ({ id: row.id, name: row.name }))}
             onNotice={setNotice}
             onInquiry={() => setTab('inquiry')}
+            onCriteria={() => setTab('criteria')}
           />
           {selected.memberSources != null ? (
             <p className="mt-1 text-[11px] text-slate-400" data-cad-grading-group-ghost-note>
@@ -449,6 +456,13 @@ export const CadGradingGroupManager: React.FC<CadGradingGroupManagerProps> = ({
             </p>
           ) : null}
         </>
+      ) : null}
+      {tab === 'criteria' && selected ? (
+        <CadGradingGroupCriteriaPanel
+          group={selected.definition}
+          run={(command) => run(actions, command)}
+          onNotice={setNotice}
+        />
       ) : null}
       {tab === 'inquiry' && selected ? (
         <CadGradingGroupInquiryPanel

@@ -67,6 +67,8 @@ export interface CadGradingGroupRow {
   targetName: string;
   side: string;
   criterionText: string;
+  /** Phase 20E: sparse per-course override count (0 = every course rides the default). */
+  overrideCount: number;
   status: GroupStatus;
   statusText: string;
   /** True when a retained result exists but is not the current revision. */
@@ -197,6 +199,7 @@ export const buildCadGradingGroupSnapshot = (
       targetName: target?.name ?? group.targetSurfaceId,
       side: gradingSideText(group.side),
       criterionText: formatGradingCriterion(group.criterion),
+      overrideCount: group.courseCriteria?.length ?? 0,
       status: effectiveStatus,
       statusText: gradingStatusText(effectiveStatus),
       stale,

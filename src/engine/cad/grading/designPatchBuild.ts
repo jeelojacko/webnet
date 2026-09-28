@@ -17,13 +17,15 @@ import { validateExplicitTinPayload } from '../cadImportedTin';
 import { earClip } from '../cadSurfaceEditAddLine';
 import { EditHalt, type CadSurfaceEditMeshPoint } from '../cadSurfaceEditMesh';
 import type { WebnetGradingDesignPatchTinProvenance } from '../cadTypes';
-import { designPatchBlock, ringCount, ringEdgeKey, ringVertexKey } from './designPatchRing';
+import { checkFlatRing, designPatchBlock, ringCount, ringEdgeKey, ringVertexKey, validateSourceRing } from './designPatchRing';
 import type { DesignPatchFailure } from './designPatchRing';
+import { deriveDesignPatchPlane } from './designPatchPlane';
 import type { GradingMesh } from './gradingTypes';
 
 export {
   checkFlatRing,
   deriveSourceRing,
+  resolveDesignPatchRing,
   validateSourceRing,
   verifyRingAgainstMesh,
 } from './designPatchRing';
@@ -32,6 +34,16 @@ export type {
   DesignPatchFailure,
   DesignPatchRing,
 } from './designPatchRing';
+export {
+  deriveDesignPatchPlane,
+  designPatchPlaneElevation,
+  designPatchPlaneSlope,
+} from './designPatchPlane';
+export type {
+  DesignPatchPlane,
+  DesignPatchPlaneKind,
+  DesignPatchPlaneSlope,
+} from './designPatchPlane';
 
 export interface DesignPatchPad {
   ok: true;
@@ -50,16 +62,27 @@ export interface DesignPatchMesh {
 // 5. Flat pad interior via the shared ear clipper
 // ---------------------------------------------------------------------------
 
-/** Ear-clip the ring at a single flat pad Z; no boundary subdivision. */
-export const buildPadInterior = (ring: readonly number[], padZ: number): DesignPatchPad | DesignPatchFailure => {
+/** Ear-clip the ring in plan; a flat pad uses `padZ`, a planar pad keeps the
+ * ORIGINAL boundary XYZ (no overwrite, no Steiner point). */
+export const buildPadInterior = (
+  ring: readonly number[],
+  padZ?: number,
+): DesignPatchPad | DesignPatchFailure => {
   if (!Array.isArray(ring) || ring.length % 3 !== 0 || ringCount(ring) < 3) {
     return designPatchBlock('DESIGN_PATCH_NON_SIMPLE_RING', 'ring needs >=3 XYZ vertices');
   }
-  if (!Number.isFinite(padZ)) return designPatchBlock('DESIGN_PATCH_TRIANGULATION_FAILED', 'non-finite pad Z');
+  if (padZ !== undefined && !Number.isFinite(padZ)) {
+    return designPatchBlock('DESIGN_PATCH_TRIANGULATION_FAILED', 'non-finite pad Z');
+  }
   const n = ringCount(ring);
   const pts: CadSurfaceEditMeshPoint[] = [];
   for (let i = 0; i < n; i += 1) {
-    pts.push({ id: `ring:${i}`, x: ring[i * 3]!, y: ring[i * 3 + 1]!, z: padZ });
+    pts.push({
+      id: `ring:${i}`,
+      x: ring[i * 3]!,
+      y: ring[i * 3 + 1]!,
+      z: padZ === undefined ? ring[i * 3 + 2]! : padZ,
+    });
   }
   try {
     const padTriangles = earClip(pts, pts.map((_, i) => i)).flat();
@@ -70,6 +93,45 @@ export const buildPadInterior = (ring: readonly number[], padZ: number): DesignP
     const detail = error instanceof EditHalt ? error.reason : 'earClip failed';
     return designPatchBlock('DESIGN_PATCH_TRIANGULATION_FAILED', detail);
   }
+};
+
+// ---------------------------------------------------------------------------
+// 5b. Flat-OR-coplanar interior gate (the Design Patch legal-interior proof)
+// ---------------------------------------------------------------------------
+
+export type DesignPatchInteriorPolicy = 'flat-source' | 'planar-source';
+
+export interface DesignPatchInterior {
+  ok: true;
+  kind: 'flat' | 'planar';
+  interiorPolicy: DesignPatchInteriorPolicy;
+  /** Present only for flat rings; the legacy byte-identical pad Z. */
+  padZ?: number;
+  pad: DesignPatchPad;
+}
+
+/**
+ * Legal interior = bit-flat ring (byte-identical legacy flat path) OR exactly
+ * coplanar ring (planar path, original XYZ). Non-coplanar rings fail closed
+ * with `DESIGN_PATCH_NON_PLANAR_INTERIOR_UNDEFINED`. Never averages, never
+ * least-squares, never tolerance-based "planar enough".
+ */
+export const resolveDesignPatchInterior = (
+  ring: readonly number[],
+): DesignPatchInterior | DesignPatchFailure => {
+  const valid = validateSourceRing(ring);
+  if (!valid.ok) return valid;
+  const flat = checkFlatRing(ring);
+  if (flat.ok) {
+    const pad = buildPadInterior(ring, flat.padZ);
+    if (!pad.ok) return pad;
+    return { ok: true, kind: 'flat', interiorPolicy: 'flat-source', padZ: flat.padZ, pad };
+  }
+  const plane = deriveDesignPatchPlane(ring);
+  if (!plane.ok) return plane;
+  const pad = buildPadInterior(ring);
+  if (!pad.ok) return pad;
+  return { ok: true, kind: plane.kind, interiorPolicy: 'planar-source', pad };
 };
 
 // ---------------------------------------------------------------------------
@@ -241,6 +303,7 @@ export interface DesignPatchProvenanceInput {
   targetSurfaceId: string;
   targetSurfaceRevision: string;
   accuracy: 'EXACT' | 'CURVE_APPROXIMATED';
+  interiorPolicy?: DesignPatchInteriorPolicy;
   fileName?: string;
   surfaceName?: string;
   sourceId?: string;
@@ -261,7 +324,7 @@ export const makeDesignPatchProvenance = (
   accuracy: input.accuracy,
   cornerMode: 'miter',
   includesInterior: true,
-  interiorPolicy: 'flat-source',
+  interiorPolicy: input.interiorPolicy ?? 'flat-source',
   ...(input.fileName != null ? { fileName: input.fileName } : {}),
   ...(input.surfaceName != null ? { surfaceName: input.surfaceName } : {}),
   ...(input.sourceId != null ? { sourceId: input.sourceId } : {}),
