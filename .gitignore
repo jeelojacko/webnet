@@ -75,3 +75,4 @@ benchmarks/baselines/sparse-runtime-latest.json
 benchmarks/baselines/sparse-runtime-latest.md
 benchmarks/baselines/sparse-large-latest.json
 benchmarks/baselines/sparse-large-latest.md
+/local-assets/
