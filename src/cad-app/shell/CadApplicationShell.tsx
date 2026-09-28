@@ -17,6 +17,8 @@ import { createCadShellLink, useCadShellActionsVersion, useCadShellSnapshot, typ
 import { useCadShellLayout } from './useCadShellLayout';
 import { CadMenuBar } from './CadMenuBar';
 import { CadRibbon } from './CadRibbon';
+import { CadRibbonIconButton } from './CadRibbonIconButton';
+import { useCadToolFamilyState } from './useCadToolFamilyState';
 import { CadDockPanel, CadPanelErrorBoundary } from './CadDockLayout';
 import { CadToolspace } from './CadToolspace';
 import { CadPropertiesPalette } from './CadPropertiesPalette';
@@ -106,6 +108,18 @@ export const CadApplicationShell: React.FC<CadApplicationShellProps> = ({ contro
     handleImportPendingSource,
     requireCleanOrConfirm,
   } = controller;
+  // Phase 21A Wave 2 — sticky ribbon tool-family faces. New/Open drawings
+  // reset via the lifecycle wrapper below; save, tab switches, selection,
+  // undo/redo, and collapse never touch family state (see
+  // useCadToolFamilyState: only 'cad-created'/'cad-opened' bump).
+  const toolFamilies = useCadToolFamilyState({ drawingId: snapshot?.drawingId ?? null });
+  const handleDrawingLifecycle = useCallback(
+    (event: 'cad-saved' | 'cad-opened' | 'cad-created', fileName: string | null) => {
+      applyLifecycleEvent(event, fileName);
+      toolFamilies.notifyDrawingLifecycle(event, fileName);
+    },
+    [applyLifecycleEvent, toolFamilies],
+  );
 
   useEffect(() => {
     document.title = `${session.drawing.name}${session.dirty ? '*' : ''} — WebNet CAD`;
@@ -339,38 +353,39 @@ export const CadApplicationShell: React.FC<CadApplicationShellProps> = ({ contro
         <button type="button" onClick={onBackToAdjustment} title="Back to the adjustment app">
           Back to Adjustment
         </button>
-        <button
-          type="button"
-          aria-label="New Drawing"
+        <CadRibbonIconButton
+          icon="file-new"
+          shortLabel="New"
+          label="New Drawing"
           title="New drawing"
           disabled={snapshot == null}
+          size="compact"
           onClick={() => link.actions?.newDrawing()}
-        >
-          New
-        </button>
-        <button
-          type="button"
-          aria-label="Open Drawing"
+        />
+        <CadRibbonIconButton
+          icon="file-open"
+          shortLabel="Open"
+          label="Open Drawing"
           title="Open a WNCAD file"
           disabled={snapshot == null}
+          size="compact"
           onClick={() => (sheetActive ? sheetOpenInputRef.current?.click() : link.actions?.openDrawingFile())}
-        >
-          Open
-        </button>
-        <button
-          type="button"
-          aria-label="Save Drawing"
+        />
+        <CadRibbonIconButton
+          icon="file-save"
+          shortLabel="Save"
+          label="Save Drawing"
           title="Save the drawing (WNCAD)"
           disabled={snapshot == null}
+          size="compact"
           onClick={() => (sheetActive ? void handleSheetSave() : link.actions?.saveDrawing())}
-        >
-          Save
-        </button>
+        />
       </div>
       <CadMenuBar snapshot={chromeSnapshot} actions={chromeActions} layout={layout} onBackToAdjustment={onBackToAdjustment} />
       <CadRibbon
         snapshot={chromeSnapshot}
         actions={chromeActions}
+        familyState={toolFamilies}
         collapsed={layout.layout.ribbonCollapsed}
         onToggleCollapsed={() => layout.setRibbonCollapsed(!layout.layout.ribbonCollapsed)}
       />
@@ -417,7 +432,7 @@ export const CadApplicationShell: React.FC<CadApplicationShellProps> = ({ contro
                   result={null}
                   drawing={session.drawing}
                   onDrawingChange={applyDrawingChange}
-                  onDrawingLifecycle={applyLifecycleEvent}
+                  onDrawingLifecycle={handleDrawingLifecycle}
                   adjustmentSnapshot={pendingSnapshot}
                   resultDependencyIdentity={latestRegistryEntry?.appliedRunIdentity ?? null}
                   shellLink={link}

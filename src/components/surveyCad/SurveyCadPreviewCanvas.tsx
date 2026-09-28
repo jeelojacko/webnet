@@ -137,7 +137,7 @@ const SurveyCadPreviewCanvas: React.FC<SurveyCadPreviewCanvasProps> = ({
   <svg
     ref={svgRef}
     viewBox={`0 0 ${SURVEY_CAD_PREVIEW_WIDTH} ${SURVEY_CAD_PREVIEW_HEIGHT}`}
-    className="h-full w-full bg-slate-950 select-none"
+    className="h-full w-full bg-[var(--cad-model-bg,#020617)] select-none"
     data-survey-cad-preview
     onClick={(event) => {
       const backgroundTarget = resolveBackgroundClickTarget({ commandPointInputActive, surfacePickActive });
@@ -230,16 +230,19 @@ const SurveyCadPreviewCanvas: React.FC<SurveyCadPreviewCanvasProps> = ({
         ) {
           setDidDrag(true);
         }
+        // One uniform client→view factor (same `sf` concept as
+        // screenPointFromClientPoint) so pan tracks the cursor under the
+        // SVG's implicit xMidYMid meet letterbox; separate width/height
+        // factors made horizontal and vertical pan rates diverge whenever
+        // the element aspect ratio differed from the 900x520 viewBox.
+        const clientToView = Math.min(
+          rect.width / SURVEY_CAD_PREVIEW_WIDTH,
+          rect.height / SURVEY_CAD_PREVIEW_HEIGHT,
+        );
         onViewportChange({
           ...viewport,
-          panX:
-            dragState.startPanX +
-            ((event.clientX - dragState.startClientX) / rect.width) *
-              SURVEY_CAD_PREVIEW_WIDTH,
-          panY:
-            dragState.startPanY +
-            ((event.clientY - dragState.startClientY) / rect.height) *
-              SURVEY_CAD_PREVIEW_HEIGHT,
+          panX: dragState.startPanX + (event.clientX - dragState.startClientX) / clientToView,
+          panY: dragState.startPanY + (event.clientY - dragState.startClientY) / clientToView,
         });
       } else if (dragState.kind === 'box') {
         if (
@@ -324,7 +327,7 @@ const SurveyCadPreviewCanvas: React.FC<SurveyCadPreviewCanvasProps> = ({
       y={0}
       width={SURVEY_CAD_PREVIEW_WIDTH}
       height={SURVEY_CAD_PREVIEW_HEIGHT}
-      fill="#020617"
+      fill="var(--cad-model-bg,#020617)"
       data-survey-cad-background="true"
       onClick={(event) => {
         const backgroundTarget = resolveBackgroundClickTarget({ commandPointInputActive, surfacePickActive });

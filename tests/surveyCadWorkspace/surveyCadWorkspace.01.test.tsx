@@ -33,9 +33,15 @@ describe('SurveyCadWorkspace', () => {
 
     expect(container.querySelector('[data-survey-cad-dedicated-page]')).not.toBeNull();
     expect(container.querySelector('[data-survey-cad-preview]')).not.toBeNull();
+    // Phase 21A viewport background unification: the preview shell no longer
+    // uses the themed bg-slate-950 class (which resolves to the slate-950
+    // theme band, #1d2021, differing from the drawing rect #020617). It now
+    // adopts the single --cad-model-bg token so the SVG letterbox bands, the
+    // SVG root, and the drawing rect all paint one colour. Pinned so the
+    // token stays wired to the CAD preview shell.
     expect(
       container.querySelector('[data-survey-cad-preview-shell]')?.getAttribute('class') ?? '',
-    ).toContain('bg-slate-950');
+    ).toContain('bg-[var(--cad-model-bg,#020617)]');
     expect(container.querySelector('[data-survey-cad-toolbar-overlay]')).not.toBeNull();
     expect(
       (container.querySelector('[data-survey-cad-preview]') as SVGElement | null)?.getAttribute('class') ?? '',

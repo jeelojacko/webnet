@@ -9,6 +9,7 @@ import type {
 import type { CadSnapPreferences } from '../../hooks/surveyCad/useSurveyCadSnapping';
 import type {
   CadEntityPropertyEditField,
+  CadEntityPropertyRowAction,
   CadPropertiesPanelState,
 } from '../../engine/cad/cadProperties';
 import type { CadCommand } from '../../engine/cad/cadTransactions.types';
@@ -281,6 +282,13 @@ export interface CadShellActions {
     _field: CadEntityPropertyEditField,
     _value: string,
   ) => import('../../hooks/surveyCad/surveyCadPropertiesEdit').CadPropertiesEditOutcome;
+  /**
+   * Phase 21A — dispatch one parcel shared-boundary Properties row action
+   * (Unlink / Edit Shared). Same channel as the legacy panel's
+   * onParcelRowAction → workspace.runParcelLinkAction. Optional: a shell
+   * without parcel wiring renders the buttons disabled (never fake dispatch).
+   */
+  runParcelLinkAction?: (_action: CadEntityPropertyRowAction) => { applied: boolean; reason?: string };
   /** Route one undoable layer-table mutation (LAYER_* family). */
   runLayerCommand: (_command: CadCommand) => boolean;
   /** Route one undoable survey-display mutation (SURVEY_* family). */
