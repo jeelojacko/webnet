@@ -182,7 +182,11 @@ describe('Phase 20A bounded Feature Line ribbon subgroup', () => {
     for (const key of FEATURE_LINE_KEYS) {
       expect(container.querySelector(`[data-cad-feature-line="${key}"]`), key).not.toBeNull();
     }
-    expect(container.textContent).toContain('Set Vertices from Surface');
+    // Phase 21B: icon-first faces keep short captions; the full label stays
+    // in the accessible name + tooltip.
+    const surfZ = container.querySelector('[data-cad-feature-line="FLSURFACEELEV"]') as HTMLButtonElement;
+    expect(surfZ.getAttribute('aria-label')).toBe('Set Vertices from Surface');
+    expect(surfZ.getAttribute('title')).toContain('Set Vertices from Surface');
     await act(async () => {
       (container.querySelector('[data-cad-feature-line="FLINQUIRY"]') as HTMLButtonElement).click();
     });

@@ -44,6 +44,17 @@ const RESOLUTIONS = [
   { width: 2560, height: 1440 },
 ] as const;
 
+/**
+ * Viewport height proved by the 21A baseline at each resolution. Asserting
+ * the drawing surface is not reduced pins the compact band's real purpose:
+ * the tightened ribbon gate must not steal viewport height.
+ */
+const BASELINE_VIEWPORT_H: Record<string, number> = {
+  '1366x768': 345,
+  '1920x1080': 657,
+  '2560x1440': 1017,
+};
+
 // ---------------------------------------------------------------------------
 // Boot / helpers
 // ---------------------------------------------------------------------------
@@ -154,15 +165,21 @@ async function assertSingleRibbonBand(page: Page): Promise<{ ribbon: number; gro
       clientH: groups.clientHeight,
       flexWrap: style.flexWrap,
       overflowX: style.overflowX,
+      overflowY: style.overflowY,
+      groupStripCount: document.querySelectorAll('[data-cad-ribbon] .cad-shell-ribbon-groups').length,
     };
   });
-  // Compact band: total ribbon (tabs + one content row) stays under 170px;
-  // the groups row itself under 110px with no vertical overflow (wrap would
-  // push scrollHeight well above clientHeight; horizontal scroll is the
-  // intended overflow path at narrow widths).
-  expect(rect.ribbonH).toBeLessThanOrEqual(170);
-  expect(rect.groupsH).toBeLessThanOrEqual(110);
-  expect(rect.scrollH).toBeLessThanOrEqual(rect.clientH + 2);
+  // Compact band: total ribbon (tabs + one content row) stays within the
+  // 128px CSS max-height contract plus 2px tolerance; the groups row stays
+  // under 104px with no vertical overflow (a wrap would push scrollHeight
+  // above clientHeight; horizontal scroll is the intended overflow path at
+  // narrow widths, vertical overflow is clipped). Exactly one strip = one band.
+  expect(rect.ribbonH).toBeLessThanOrEqual(130);
+  expect(rect.groupsH).toBeLessThanOrEqual(104);
+  expect(rect.scrollH).toBeLessThanOrEqual(rect.clientH + 1);
+  expect(rect.flexWrap).toBe('nowrap');
+  expect(rect.overflowY).toBe('hidden');
+  expect(rect.groupStripCount).toBe(1);
   return { ribbon: rect.ribbonH, groups: rect.groupsH };
 }
 
@@ -220,6 +237,8 @@ for (const resolution of RESOLUTIONS) {
       // -- A. no wrap, compact height -------------------------------------
       await assertSingleRibbonBand(page);
       const m0 = await measureShell(page);
+      // The band must not reduce the drawing viewport (baseline ±2px).
+      expect(Math.abs(m0.viewport - BASELINE_VIEWPORT_H[tag]!)).toBeLessThanOrEqual(2);
       const line0 = `HEIGHTS empty-Home @ ${tag}: ${fmtHeights(m0)}`;
       console.log(line0);
       testInfo.annotations.push({ type: 'shell-heights', description: line0 });
@@ -332,6 +351,9 @@ for (const resolution of RESOLUTIONS) {
       expect(propsText).toMatch(/polyline/i);
       expect(propsText.length).toBeGreaterThan(0);
       expect(await page.locator('[data-survey-cad-properties-panel]').count()).toBe(0);
+      // Shell mode mounts no legacy floating properties overlay, so the shared
+      // collapseFloatingPanel browser helper is a documented no-op here.
+      expect(await page.locator('button[title="Collapse panel body"]').count()).toBe(0);
       const mSel = await measureShell(page);
       testInfo.annotations.push({ type: 'shell-heights', description: `HEIGHTS selected+Properties @ ${tag}: ${fmtHeights(mSel)}` });
       testInfo.annotations.push({ type: 'properties-text', description: propsText.slice(0, 300) });

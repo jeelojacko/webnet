@@ -1,9 +1,14 @@
 // Curated CAD ribbon icons (Phase 21A Wave 1A).
 //
-// Stripped generic PNGs copied from the gitignored local asset tree
-// (local-assets/generated-cad-icons/dark/<size>/<SOURCE>.png) via
+// Stripped generic PNGs copied from the gitignored local asset tree via
 // `magick SRC -strip PNG32:DEST`. Per-icon source is noted below.
 // No Autodesk-derived art is referenced at runtime outside this folder.
+//
+// Phase 21A sources live under local-assets/generated-cad-icons/dark/<size>/.
+// Phase 21B Civil/survey sources live under local-assets/civil3d-icons/
+// png/dark/<size>/ — note the directory, not the `_16`/`_32` filename suffix,
+// is the real pixel_size (verified by directory per docs/evidence/
+// phase21b-icon-provenance.md).
 
 export type CadRibbonIconId =
   | 'draw-line'
@@ -55,7 +60,34 @@ export type CadRibbonIconId =
   | 'file-open'
   | 'file-save'
   | 'edit-undo'
-  | 'edit-redo';
+  | 'edit-redo'
+  // Phase 21B — Civil/survey wave (per-icon stripped copies; exact source
+  // paths and pixel_size evidence in docs/evidence/phase21b-icon-provenance.md).
+  | 'surface-create'
+  | 'surface-boundary'
+  | 'surface-breakline'
+  | 'surface-contours'
+  | 'surface-paste'
+  | 'surface-volume'
+  | 'surface-volume-report'
+  | 'surface-swap-edge'
+  | 'surface-line-add'
+  | 'surface-add-point'
+  | 'surface-style'
+  | 'feature-line-create'
+  | 'feature-line-elevation'
+  | 'feature-line-elev-from-surface'
+  | 'feature-line-raise-lower'
+  | 'feature-line-insert-vertex'
+  | 'grading-create'
+  | 'grading-group-create'
+  | 'parcel-props-edit'
+  | 'parcel-segments-edit'
+  | 'parcel-renumber-tags'
+  | 'survey-point-group'
+  | 'profile-view'
+  | 'section-view'
+  | 'landxml-import';
 
 export interface CadRibbonIconSources {
   src16: string;
@@ -123,4 +155,31 @@ export const CAD_RIBBON_ICONS: Record<CadRibbonIconId, CadRibbonIconSources> = {
   'file-save': { src16: new URL('./file-save-16.png', import.meta.url).href, src32: new URL('./file-save-32.png', import.meta.url).href },
   'edit-undo': { src16: new URL('./edit-undo-16.png', import.meta.url).href, src32: new URL('./edit-undo-32.png', import.meta.url).href },
   'edit-redo': { src16: new URL('./edit-redo-16.png', import.meta.url).href, src32: new URL('./edit-redo-32.png', import.meta.url).href },
+  // Phase 21B — Civil/survey ribbon icons. Source families (dark theme) are
+  // listed in the provenance doc; each id maps 1:1 to one truthful control.
+  'surface-create': { src16: new URL('./surface-create-16.png', import.meta.url).href, src32: new URL('./surface-create-32.png', import.meta.url).href },
+  'surface-boundary': { src16: new URL('./surface-boundary-16.png', import.meta.url).href, src32: new URL('./surface-boundary-32.png', import.meta.url).href },
+  'surface-breakline': { src16: new URL('./surface-breakline-16.png', import.meta.url).href, src32: new URL('./surface-breakline-32.png', import.meta.url).href },
+  'surface-contours': { src16: new URL('./surface-contours-16.png', import.meta.url).href, src32: new URL('./surface-contours-32.png', import.meta.url).href },
+  'surface-paste': { src16: new URL('./surface-paste-16.png', import.meta.url).href, src32: new URL('./surface-paste-32.png', import.meta.url).href },
+  'surface-volume': { src16: new URL('./surface-volume-16.png', import.meta.url).href, src32: new URL('./surface-volume-32.png', import.meta.url).href },
+  'surface-volume-report': { src16: new URL('./surface-volume-report-16.png', import.meta.url).href, src32: new URL('./surface-volume-report-32.png', import.meta.url).href },
+  'surface-swap-edge': { src16: new URL('./surface-swap-edge-16.png', import.meta.url).href, src32: new URL('./surface-swap-edge-32.png', import.meta.url).href },
+  'surface-line-add': { src16: new URL('./surface-line-add-16.png', import.meta.url).href, src32: new URL('./surface-line-add-32.png', import.meta.url).href },
+  'surface-add-point': { src16: new URL('./surface-add-point-16.png', import.meta.url).href, src32: new URL('./surface-add-point-32.png', import.meta.url).href },
+  'surface-style': { src16: new URL('./surface-style-16.png', import.meta.url).href, src32: new URL('./surface-style-32.png', import.meta.url).href },
+  'feature-line-create': { src16: new URL('./feature-line-create-16.png', import.meta.url).href, src32: new URL('./feature-line-create-32.png', import.meta.url).href },
+  'feature-line-elevation': { src16: new URL('./feature-line-elevation-16.png', import.meta.url).href, src32: new URL('./feature-line-elevation-32.png', import.meta.url).href },
+  'feature-line-elev-from-surface': { src16: new URL('./feature-line-elev-from-surface-16.png', import.meta.url).href, src32: new URL('./feature-line-elev-from-surface-32.png', import.meta.url).href },
+  'feature-line-raise-lower': { src16: new URL('./feature-line-raise-lower-16.png', import.meta.url).href, src32: new URL('./feature-line-raise-lower-32.png', import.meta.url).href },
+  'feature-line-insert-vertex': { src16: new URL('./feature-line-insert-vertex-16.png', import.meta.url).href, src32: new URL('./feature-line-insert-vertex-32.png', import.meta.url).href },
+  'grading-create': { src16: new URL('./grading-create-16.png', import.meta.url).href, src32: new URL('./grading-create-32.png', import.meta.url).href },
+  'grading-group-create': { src16: new URL('./grading-group-create-16.png', import.meta.url).href, src32: new URL('./grading-group-create-32.png', import.meta.url).href },
+  'parcel-props-edit': { src16: new URL('./parcel-props-edit-16.png', import.meta.url).href, src32: new URL('./parcel-props-edit-32.png', import.meta.url).href },
+  'parcel-segments-edit': { src16: new URL('./parcel-segments-edit-16.png', import.meta.url).href, src32: new URL('./parcel-segments-edit-32.png', import.meta.url).href },
+  'parcel-renumber-tags': { src16: new URL('./parcel-renumber-tags-16.png', import.meta.url).href, src32: new URL('./parcel-renumber-tags-32.png', import.meta.url).href },
+  'survey-point-group': { src16: new URL('./survey-point-group-16.png', import.meta.url).href, src32: new URL('./survey-point-group-32.png', import.meta.url).href },
+  'profile-view': { src16: new URL('./profile-view-16.png', import.meta.url).href, src32: new URL('./profile-view-32.png', import.meta.url).href },
+  'section-view': { src16: new URL('./section-view-16.png', import.meta.url).href, src32: new URL('./section-view-32.png', import.meta.url).href },
+  'landxml-import': { src16: new URL('./landxml-import-16.png', import.meta.url).href, src32: new URL('./landxml-import-32.png', import.meta.url).href },
 };

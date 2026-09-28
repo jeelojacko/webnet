@@ -16,7 +16,6 @@ import type { CadDrawingLifecycleEvent } from '../cadAppTypes';
 import {
   buildCadRibbonDefaultVariantMap,
   CAD_RIBBON_TOOL_FAMILIES,
-  findCadRibbonToolFamily,
   isCadRibbonVariantSelectable,
   resolveCadRibbonCurrentVariant,
   type CadRibbonToolFamily,
@@ -59,6 +58,10 @@ export const useCadToolFamilyState = (
   options: UseCadToolFamilyStateOptions,
 ): CadToolFamilyState => {
   const families = options.families ?? CAD_RIBBON_TOOL_FAMILIES;
+  const familyById = useMemo(
+    () => new Map<string, CadRibbonToolFamily>(families.map((family) => [family.id, family])),
+    [families],
+  );
   const defaults = useMemo(() => buildCadRibbonDefaultVariantMap(families), [families]);
   const [currentVariantByFamily, setCurrent] = useState<Record<string, string>>(defaults);
   const [generation, setGeneration] = useState(0);
@@ -74,30 +77,30 @@ export const useCadToolFamilyState = (
 
   const selectVariant = useCallback(
     (familyId: string, variantId: string): void => {
-      const family = findCadRibbonToolFamily(familyId);
+      const family = familyById.get(familyId) ?? null;
       if (family == null || !isCadRibbonVariantSelectable(family, variantId)) return;
       setCurrent((previous) =>
         previous[familyId] === variantId ? previous : { ...previous, [familyId]: variantId },
       );
     },
-    [],
+    [familyById],
   );
 
   const resolveVariant = useCallback(
     (familyId: string): CadRibbonToolVariant | null => {
-      const family = findCadRibbonToolFamily(familyId);
+      const family = familyById.get(familyId) ?? null;
       if (family == null) return null;
       return resolveCadRibbonCurrentVariant(family, currentVariantByFamily[familyId]);
     },
-    [currentVariantByFamily],
+    [currentVariantByFamily, familyById],
   );
 
   const isFamilyActive = useCallback(
     (familyId: string, activeCommandKey: string | null | undefined): boolean => {
-      const family = findCadRibbonToolFamily(familyId);
+      const family = familyById.get(familyId) ?? null;
       return family != null && isCadRibbonToolFamilyActive(family, activeCommandKey);
     },
-    [],
+    [familyById],
   );
 
   const resetToDefaults = useCallback((): void => {

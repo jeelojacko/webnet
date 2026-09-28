@@ -6,6 +6,9 @@
  * through the one shell registry (`actions.runGradingGroupCommand` / the
  * group action seam). Buttons render disabled without a live workspace
  * action (never fake success).
+ *
+ * Phase 21B: icon-first faces where a truthful Civil 3D asset was curated;
+ * full labels stay in tooltip/aria-label. Dispatch is unchanged.
  */
 import React from 'react';
 import {
@@ -14,6 +17,8 @@ import {
   isShellCommandAvailable,
   type CadShellCommandDef,
 } from './cadCommandRegistry';
+import { CadRibbonIconButton } from './CadRibbonIconButton';
+import type { CadRibbonIconId } from '../assets/icons/cadRibbonIcons';
 import type { CadShellActions, CadWorkspaceSnapshot } from './cadShellTypes';
 
 const GROUP_KEYS: readonly string[] = [
@@ -25,6 +30,20 @@ const GROUP_KEYS: readonly string[] = [
   'GRADINGGROUP',
 ];
 
+/** Curated Civil icons; omitted keys render a short text face. */
+const GROUP_ICONS: Partial<Record<string, CadRibbonIconId>> = {
+  GRADEGROUP: 'grading-group-create',
+};
+
+const GROUP_SHORT: Record<string, string> = {
+  GRADEGROUP: 'Create',
+  GRADINGGROUPCALC: 'Calc',
+  GRADINGGROUPINQUIRY: 'Inquiry',
+  GRADINGGROUPEXTRACTDAYLIGHT: 'Daylight',
+  GRADINGGROUPBAKE: 'Bake',
+  GRADINGGROUP: 'Manager',
+};
+
 const defFor = (key: string): CadShellCommandDef | null =>
   CAD_SHELL_COMMANDS.find((entry) => entry.key === key) ?? null;
 
@@ -35,28 +54,28 @@ export const CadGradingGroupRibbonGroup: React.FC<{
   if (actions?.runGradingGroupCommand == null) return null;
   return (
     <div className="cad-shell-ribbon-group" aria-label="Grading Groups">
-      <span className="cad-shell-ribbon-group-label">Grading Groups</span>
       <div className="cad-shell-ribbon-buttons">
-        {GROUP_KEYS.map((key) => {
+        {GROUP_KEYS.map((key, index) => {
           const def = defFor(key);
           if (def == null) return null;
           const available = isShellCommandAvailable(def, snapshot, actions);
           return (
-            <button
-              key={key}
-              type="button"
+            <CadRibbonIconButton
+              key={`${key}-${index}`}
+              className="cad-ribbon-tool"
+              icon={GROUP_ICONS[key]}
+              shortLabel={GROUP_SHORT[key] ?? def.label}
+              label={def.label}
               title={`${def.label} — ${def.hint}`}
-              aria-label={def.label}
               disabled={!available}
-              className="cad-shell-ribbon-button"
+              size="compact"
               onClick={() => executeShellCommand(def, actions, snapshot)}
-              data-cad-grading-group-command={key}
-            >
-              {def.label}
-            </button>
+              dataAttributes={{ 'data-cad-grading-group-command': key }}
+            />
           );
         })}
       </div>
+      <span className="cad-shell-ribbon-group-label">Grading Groups</span>
     </div>
   );
 };

@@ -1,8 +1,9 @@
 // Phase 21A Wave 2 — Survey tab: Survey entries, Transform, Field to
 // Finish, Tables. Same manager/registry routing as before, re-chromed into
-// the compact icon grid. No curated icons exist for the Toolspace-manager
-// entries or F2F sections, so those keep short text faces; the Tables group
-// is registry-dispatched with table icons where truthful.
+// the compact icon grid. Phase 21B added icons for the Survey points/point
+// groups entries; the remaining Toolspace-manager entries and F2F sections
+// keep short text faces; the Tables group is registry-dispatched with table
+// icons where truthful.
 import React from 'react';
 import {
   executeShellCommand,
@@ -10,12 +11,13 @@ import {
   CAD_SHELL_COMMANDS,
 } from './cadCommandRegistry';
 import { CadRibbonIconButton } from './CadRibbonIconButton';
+import type { CadRibbonIconId } from '../assets/icons/cadRibbonIcons';
 import type { CadShellActions, CadWorkspaceSnapshot, SurveyManagerKind } from './cadShellTypes';
-import { commandIconFor, RibbonGroup } from './CadRibbonShared';
+import { commandIconFor, shortLabelFor, RibbonGroup } from './CadRibbonShared';
 
-const SURVEY_ENTRIES: Array<{ kind: SurveyManagerKind; label: string; short: string; hint: string }> = [
-  { kind: 'points', label: 'Points', short: 'Points', hint: 'Focus the Toolspace Survey points.' },
-  { kind: 'point-groups', label: 'Point Groups', short: 'Groups', hint: 'Open the Point Group manager.' },
+const SURVEY_ENTRIES: Array<{ kind: SurveyManagerKind; label: string; short: string; icon?: CadRibbonIconId; hint: string }> = [
+  { kind: 'points', label: 'Points', short: 'Points', icon: 'draw-point', hint: 'Focus the Toolspace Survey points.' },
+  { kind: 'point-groups', label: 'Point Groups', short: 'Groups', icon: 'survey-point-group', hint: 'Open the Point Group manager.' },
   { kind: 'point-styles', label: 'Point Styles', short: 'Styles', hint: 'Open the Point Style manager.' },
   { kind: 'point-label-styles', label: 'Point Label Styles', short: 'Labels', hint: 'Open the Point Label Style manager.' },
   { kind: 'f2f', label: 'Field to Finish', short: 'F2F', hint: 'Open field-to-finish.' },
@@ -54,6 +56,7 @@ export const CadRibbonSurveyTab: React.FC<{
           <CadRibbonIconButton
             key={entry.kind}
             className="cad-ribbon-tool"
+            icon={entry.icon}
             shortLabel={entry.short}
             label={entry.label}
             title={`${entry.label} — ${entry.hint}`}
@@ -112,7 +115,7 @@ export const CadRibbonSurveyTab: React.FC<{
           const def = CAD_SHELL_COMMANDS.find((entry) => entry.key === key) ?? null;
           if (def == null) return null;
           const enabled = ready && isShellCommandAvailable(def, snapshot, actions);
-          const short = key === 'TABLESTYLE' ? 'Style' : key === 'PARCELREPORT' ? 'Report' : key === 'PARCELDESC' ? 'Desc' : key.replace('TABLE', '');
+          const short = shortLabelFor(def);
           return (
             <CadRibbonIconButton
               key={key}

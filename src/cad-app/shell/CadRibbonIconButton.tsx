@@ -34,6 +34,8 @@ export interface CadRibbonIconButtonProps {
   size?: CadRibbonIconButtonSize;
   /** Emitted as data-cad-command for dispatch-level test/automation hooks. */
   commandKey?: string;
+  /** Extra `data-*` hooks (e.g. bounded-subgroup selectors) spread onto the button. */
+  dataAttributes?: Record<string, string | undefined>;
   onClick?: () => void;
   className?: string;
 }
@@ -47,6 +49,7 @@ export const CadRibbonIconButton: React.FC<CadRibbonIconButtonProps> = ({
   active = false,
   size = 'large',
   commandKey,
+  dataAttributes,
   onClick,
   className,
 }) => {
@@ -68,6 +71,7 @@ export const CadRibbonIconButton: React.FC<CadRibbonIconButtonProps> = ({
       onClick={onClick}
       data-cad-command={commandKey}
       data-cad-ribbon-icon={icon}
+      {...dataAttributes}
     >
       {src != null ? (
         <img className="cad-ribbon-icon-button__img" src={src} alt="" aria-hidden="true" draggable={false} />

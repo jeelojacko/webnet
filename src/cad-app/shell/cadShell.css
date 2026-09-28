@@ -146,7 +146,12 @@
   gap: 8px;
   padding: 3px 8px 4px;
   overflow-x: auto;
-  overflow-y: auto;
+  /* Phase 21B — the strip is horizontally scrollable and vertically fixed:
+     content that would wrap is clipped instead of growing the band. Open
+     family flyouts paint position:fixed (see .cad-ribbon-flyout--fixed), so
+     the vertical clip never hides them; browser QA proved the menu still
+     paints, scrolls internally, and keeps keyboard/focus behavior. */
+  overflow-y: hidden;
   scrollbar-width: thin;
   flex: 1;
   min-height: 0;
@@ -313,7 +318,9 @@
    horizontal scroll container, and overflow clips in-place absolute menus —
    Wave-3 browser QA proved open flyouts were invisible (DOM present, zero
    painted pixels). No transformed/filtered ancestor exists between the
-   ribbon and the viewport, so fixed positioning escapes the clip. */
+   ribbon and the viewport, so fixed positioning escapes the clip.
+   max-width/max-height are mirrored in cadRibbonFlyout.constants.ts; the
+   anchor math caps the inline max-height to the viewport. */
 .cad-ribbon-tool--flyout,
 .cad-ribbon-flyout {
   position: absolute;
@@ -325,6 +332,11 @@
   min-width: 15rem;
   max-width: 22rem;
   max-height: 260px;
+  /* Phase 21B visual QA: a vertical menu must not grow a horizontal
+     scrollbar. Long row hints shrink and ellipsize inside the box instead
+     of widening it (Line flyout measured scrollWidth 458 > clientWidth 350
+     before this). */
+  overflow-x: hidden;
   overflow-y: auto;
   margin: 2px 0 0;
   padding: 3px;
@@ -394,6 +406,12 @@
   color: var(--cad-dim);
   font-size: 10px;
   margin-left: auto;
+  /* Shrink and ellipsize so the secondary hint never widens the flyout. */
+  flex: 0 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 /* Horizontal overflow access path marker (chevron hook for future use). */
