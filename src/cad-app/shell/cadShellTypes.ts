@@ -25,6 +25,7 @@ export type {
   CadAnnotationUiOp,
 } from '../annotation/cadAnnotationUiTypes';
 import type { BreaklineEntityPreview, BoundarySourcePreview } from '../../engine/cad/cadSurfaceView';
+import type { DesignApplyPreflight } from '../../engine/cad/cadTransactionsDesignSurfaceCommands';
 import type { CadSurfaceSnapshot } from './cadSurfaceSnapshot';
 import type { CadSurveyTableSnapshot } from './cadSurveyTableSnapshot';
 import type { CadParcelSnapshot } from './cadParcelSnapshot';
@@ -471,6 +472,18 @@ export interface CadShellActions {
     _kind: 'outer' | 'void',
     _ring: ReadonlyArray<{ x: number; y: number }>,
   ) => string | null;
+  /**
+   * Phase 20D — pure DESIGNAPPLY preflight through the engine seam
+   * (null = unavailable; the commit still validates). Absent = the panel
+   * shows selection/status only, never a guessed disposition.
+   */
+  preflightDesignApply?: (
+    _targetSurfaceId: string,
+    _targetExpectedRevision: string,
+    _patchSurfaceId: string,
+    _patchExpectedRevision: string,
+    _sessionCurrent: boolean,
+  ) => DesignApplyPreflight | null;
   /**
    * Open a survey manager dialog (point-groups preselects a group), or
    * focus the Toolspace survey tab (points). F2F opens the drafting panel.

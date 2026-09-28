@@ -47,6 +47,8 @@ export interface CadSurfaceDefinitionSummary {
   bakedFrom: string | null;
   /** Phase 18Y — composite origin (Base/Overlay/policy); null unless composed. */
   composed: CompositeTinSummary | null;
+  /** Phase 20D — design-patch group origin; null unless a patch payload. */
+  patchFrom: string | null;
   /** Phase 18X — source revision captured at bake time (null unless baked). */
   sourceRevision: string | null;
   pointGroupId: string | null;
@@ -91,6 +93,10 @@ export interface CadSurfaceStatsSummary {
 export interface CadSurfaceRow {
   id: string;
   name: string;
+  /** Phase 20D workflow role (absent = legacy neutral). */
+  purpose?: import('../../engine/cad/cadTypes').CadSurfacePurpose;
+  /** Phase 20D compact badge text: EG/DESIGN/PATCH/REF/—. */
+  purposeBadge: string;
   /** Production rebuild route. 'worker' is the production path (BUILDING
    * status is the live proof); 'sync-fallback' marks a CURRENT mesh built
    * by the bounded sync fallback while the worker was unavailable (the
@@ -185,7 +191,7 @@ export const EMPTY_SURFACE_SELECTION: CadSurfaceSelectionSummary = {
  * Baked detection delegates to the engine `tinProvenanceKind` helper.
  */
 export interface CadExplicitTinProvenanceView {
-  kind?: 'landxml-import' | 'webnet-bake' | 'webnet-compose' | 'webnet-grading-bake' | 'webnet-grading-group-bake';
+  kind?: 'landxml-import' | 'webnet-bake' | 'webnet-compose' | 'webnet-grading-bake' | 'webnet-grading-group-bake' | 'webnet-grading-design-patch';
   format?: string;
   fileName?: string;
   surfaceName?: string;
@@ -206,6 +212,8 @@ export interface CadExplicitTinProvenanceView {
   groupId?: string;
   groupName?: string;
   groupRevision?: string;
+  /** Phase 20D — design-patch group origin (reuse of the 20C branch shape). */
+  patchGroupName?: string | null;
 }
 
 /** Phase 18Y — display-only composite origin; storage stays `explicit-tin`. */
@@ -216,6 +224,32 @@ export interface CompositeTinSummary {
   overlaySurfaceName: string;
   policy: string;
 }
+
+/** Phase 20D — compact purpose badge (neutral wording, never approval claims). */
+export const surfacePurposeBadge = (
+  purpose: import('../../engine/cad/cadTypes').CadSurfacePurpose | undefined,
+): string => {
+  switch (purpose) {
+    case 'existing-ground': return 'EG';
+    case 'design': return 'DESIGN';
+    case 'design-patch': return 'PATCH';
+    case 'reference': return 'REF';
+    default: return '—';
+  }
+};
+
+/** Phase 20D — Toolspace suffix for the workflow role (compact, neutral). */
+export const surfacePurposeSuffix = (
+  purpose: import('../../engine/cad/cadTypes').CadSurfacePurpose | undefined,
+): string | null => {
+  switch (purpose) {
+    case 'existing-ground': return 'Existing Ground';
+    case 'design': return 'Design';
+    case 'design-patch': return 'Design Patch';
+    case 'reference': return 'Reference';
+    default: return null;
+  }
+};
 
 /** Phase 18X — short revision for display (first 12 chars, matching the manager). */
 export const shortSurfaceRevision = (revision: string): string => revision.slice(0, 12);
@@ -242,6 +276,8 @@ export interface ExplicitTinSourceSummary {
   sourceRevision: string | null;
   /** Phase 18Y — composite origin; null for LandXML/baked payloads. */
   composed: CompositeTinSummary | null;
+  /** Phase 20D — design-patch group origin; null unless a patch payload. */
+  patchFrom: string | null;
 }
 
 /**
@@ -265,6 +301,7 @@ export const summarizeExplicitTinSource = (
         `(Base ${baseName} + Overlay ${overlayName})`,
       bakedFrom: null,
       sourceRevision: null,
+      patchFrom: null,
       composed: {
         baseSurfaceId: provenance.baseSurfaceId ?? '',
         baseSurfaceName: baseName,
@@ -274,6 +311,18 @@ export const summarizeExplicitTinSource = (
       },
     };
   }
+  if (provenance.kind === 'webnet-grading-design-patch') {
+    const groupName = provenance.groupName ?? provenance.groupId ?? '—';
+    return {
+      text:
+        `Design Patch Explicit TIN — ${vertexCount} vertices, ${faceCount} faces ` +
+        `(from grading group ${groupName}, pad interior + grading shell)`,
+      bakedFrom: null,
+      sourceRevision: null,
+      patchFrom: provenance.groupName ?? provenance.groupId ?? null,
+      composed: null,
+    };
+  }
   if (!isBakedTinProvenance(provenance)) {
     return {
       text:
@@ -281,6 +330,7 @@ export const summarizeExplicitTinSource = (
         `(file: ${provenance.fileName ?? ''}, surface: ${provenance.surfaceName ?? ''})`,
       bakedFrom: null,
       sourceRevision: null,
+      patchFrom: null,
       composed: null,
     };
   }
@@ -294,6 +344,7 @@ export const summarizeExplicitTinSource = (
     text: `Baked Explicit TIN — ${vertexCount} vertices, ${faceCount} faces${origin}`,
     bakedFrom,
     sourceRevision,
+    patchFrom: null,
     composed: null,
   };
 };
@@ -481,8 +532,9 @@ export const buildCadSurfaceSnapshot = (
     const payload = surface.definition.importedTin;
     const provenanceView = payload?.provenance as CadExplicitTinProvenanceView | undefined;
     const composedPayload = provenanceView != null && isComposedTinProvenance(provenanceView);
-    const bakedPayload = payload != null && isBakedTinProvenance(payload.provenance);
-    // Composite/baked payloads are stored as `explicit-tin`; "Composite" is
+    const bakedPayload = payload != null && (isBakedTinProvenance(payload.provenance) ||
+      (provenanceView?.kind === 'webnet-grading-design-patch'));
+    // Composite/baked/patch payloads are stored as `explicit-tin`; "Composite" is
     // display-only (provenance kind), never a separate storage kind.
     const sourceKind: 'native' | 'imported-tin' | 'explicit-tin' =
       declaredSourceKind === 'imported-tin' || declaredSourceKind === 'explicit-tin'
@@ -492,17 +544,21 @@ export const buildCadSurfaceSnapshot = (
     let bakedFrom: string | null = null;
     let sourceRevision: string | null = null;
     let composed: CompositeTinSummary | null = null;
+    let patchFrom: string | null = null;
     if (sourceKind !== 'native' && payload != null) {
       const explicit = summarizeExplicitTinSource(payload.vertices.length, payload.faces.length, payload.provenance);
       importedSourceText = explicit.text;
       bakedFrom = explicit.bakedFrom;
       sourceRevision = explicit.sourceRevision;
       composed = explicit.composed;
+      patchFrom = explicit.patchFrom;
     }
     const edits = deriveCadSurfaceEditSummaries(surface, pointLabels, mesh != null);
     return {
       id: surface.id,
       name: surface.name,
+      purpose: surface.purpose,
+      purposeBadge: surfacePurposeBadge(surface.purpose),
       buildPath:
         options?.syncFallbackRevisions?.get(surface.id) === revision
           ? 'sync-fallback'
@@ -526,6 +582,7 @@ export const buildCadSurfaceSnapshot = (
         bakedFrom,
         sourceRevision,
         composed,
+        patchFrom,
         pointGroupId: source.kind === 'point-group' ? (attachedIds[0] ?? null) : null,
         pointGroupName: source.kind === 'point-group'
           ? (attachedNames[0] ?? (attachedIds[0] ?? null))

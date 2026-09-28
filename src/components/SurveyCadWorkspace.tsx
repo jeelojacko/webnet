@@ -141,6 +141,7 @@ import {
   validateBoundaryVertexEdit,
   validateSurfaceBoundaryCandidate,
 } from '../engine/cad/cadBoundaryCandidateValidation';
+import { preflightDesignApply } from '../engine/cad/cadTransactionsDesignSurfaceCommands';
 import { buildCadF2FSnapshot } from './surveyCad/f2fGeneratedSummary';
 import { getCadEntityDisplayLabel } from '../engine/cad/cadEntityNames';
 import { resolveCurrentCadLayerId } from '../engine/cad/cadLayers';
@@ -2457,6 +2458,13 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
         const surface = (activeProject.surfaces ?? []).find((entry) => entry.id === surfaceId);
         if (!surface) return 'SURFACE_REFERENCE_MISSING';
         return validateSurfaceBoundaryCandidate(activeProject, surface, kind, [...ring]);
+      },
+      preflightDesignApply: (targetId, targetRev, patchId, patchRev, sessionCurrent) => {
+        try {
+          return preflightDesignApply(activeProject, targetId, patchId, targetRev, patchRev, sessionCurrent);
+        } catch {
+          return null;
+        }
       },
       openSurveyManager: (kind, selectedId) => {
         if (kind === 'points') {

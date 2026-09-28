@@ -11,6 +11,11 @@ import { AnalysisLegendPropertiesBlock, AnalysisPropertiesBlock } from './CadAna
 import { CadAnnotationProperties } from '../annotation/CadAnnotationProperties';
 import { GradingPropertiesBlock } from './CadGradingProperties';
 import { GradingGroupPropertiesBlock } from './CadGradingGroupProperties';
+import { surfacePurposeSuffix } from './cadSurfaceSnapshot';
+
+/** Phase 20D — workflow role label (absent = legacy neutral, never inferred). */
+const surfacePurposeLabel = (purpose: import('./cadSurfaceSnapshot').CadSurfaceRow['purpose']): string =>
+  surfacePurposeSuffix(purpose) ?? '—';
 import type { CadAnnotationOpResult, CadAnnotationUiOp } from './cadShellTypes';
 
 interface CadPropertiesPaletteProps {
@@ -188,6 +193,7 @@ const SurfacePropertiesBlock: React.FC<{
       <div><dt>Layer</dt><dd>{row.layerName}</dd></div>
       <div><dt>Style</dt><dd>{row.styleName}</dd></div>
       <div><dt>Status</dt><dd>{row.statusText}{row.stale ? ' (stale mesh)' : ''}</dd></div>
+      <div><dt>Purpose</dt><dd>{surfacePurposeLabel(row.purpose)}</dd></div>
       {row.diagnostic ? <div><dt>Diagnostic</dt><dd>{row.diagnostic}</dd></div> : null}
       {row.brokenIds.length > 0 ? <div><dt>Broken refs</dt><dd>{row.brokenNames.join(', ')}</dd></div> : null}
     </dl>
@@ -215,6 +221,14 @@ const SurfacePropertiesBlock: React.FC<{
       <div><dt>Outer</dt><dd>{row.definition.outerBoundaryCount > 0 ? 'yes' : 'no'}</dd></div>
       <div><dt>Void</dt><dd>{row.definition.voidBoundaryCount}</dd></div>
       <div><dt>Source info</dt><dd>{surfaceSourceInfo(row)}</dd></div>
+      {row.definition.composed ? (
+        <>
+          <div><dt>Compose Base</dt><dd>{row.definition.composed.baseSurfaceName}</dd></div>
+          <div><dt>Compose Overlay</dt><dd>{row.definition.composed.overlaySurfaceName}</dd></div>
+        </>
+      ) : null}
+      {row.definition.bakedFrom ? <div><dt>Baked From</dt><dd>{row.definition.bakedFrom}</dd></div> : null}
+      {row.definition.patchFrom ? <div><dt>Design Patch From Group</dt><dd>{row.definition.patchFrom}</dd></div> : null}
     </dl>
     {/* Phase 18S — edit-stack counts only; the full table lives in the manager. Phase 18T adds Topology/Point/Elevation groups. */}
     <h4>Edits</h4>
