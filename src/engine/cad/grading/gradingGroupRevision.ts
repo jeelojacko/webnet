@@ -12,8 +12,9 @@
  */
 import { fnv1a } from '../cadRevisionHash';
 import { canonicalGradingNum } from './gradingRevision';
+import { canonicalCourseCriteria } from './gradingGroupCourseCriteria';
 import type { GradingCriterion, GradingSide, ResolvedGradingSource } from './gradingTypes';
-import type { GradingCornerMode } from './gradingGroupTypes';
+import type { GradingCornerMode, GradingGroupCourseCriterionOverride } from './gradingGroupTypes';
 
 export interface GroupRevisionCourse {
   vertexAId: string;
@@ -30,6 +31,8 @@ export interface GroupRevisionInput {
   targetRevision: string;
   side: GradingSide;
   criterion: GradingCriterion;
+  /** Phase 20E sparse overrides; absent/empty = legacy hash byte-identical. */
+  courseCriteria?: GradingGroupCourseCriterionOverride[];
   maxSearchDistance: number;
   curveChordTolerance: number;
   cornerMode: GradingCornerMode;
@@ -74,14 +77,36 @@ const sourceText = (src: ResolvedGradingSource): string => {
 const courseText = (course: GroupRevisionCourse, index: number): string =>
   `course${index}:${course.vertexAId}>${course.vertexBId}:${sourceText(course.resolvedSource)}`;
 
+/**
+ * Phase 20E: canonical sparse override text in traversal order. Empty when
+ * no effective overrides exist, so the legacy hash is byte-identical.
+ */
+const overrideText = (
+  criterion: GradingCriterion,
+  courses: GroupRevisionCourse[],
+  courseCriteria: GradingGroupCourseCriterionOverride[] | undefined,
+): string => {
+  if (!courseCriteria || courseCriteria.length === 0) return '';
+  const canonical = canonicalCourseCriteria({
+    criterion,
+    sourceCourses: courses.map((course) => ({ vertexAId: course.vertexAId, vertexBId: course.vertexBId })),
+    courseCriteria,
+  });
+  return canonical
+    .map((entry) => `override:${entry.sourceCourse.vertexAId}>${entry.sourceCourse.vertexBId}:${criterionText(entry.criterion)}`)
+    .join('#');
+};
+
 /** Deterministic `ggrev1:<fnv1a-hex>` over the canonical group content. */
 export const buildGroupRevision = (input: GroupRevisionInput): string => {
+  const overrides = overrideText(input.criterion, input.courses, input.courseCriteria);
   const parts = [
     `src:${input.sourceFeatureLineId}`,
     ...input.courses.map(courseText),
     `tgt:${input.targetSurfaceId}@${input.targetRevision}`,
     `side:${input.side}`,
     `crit:${criterionText(input.criterion)}`,
+    ...(overrides.length > 0 ? [overrides] : []),
     `search:${canonicalGradingNum(input.maxSearchDistance)}`,
     `chord:${canonicalGradingNum(input.curveChordTolerance)}`,
     `corner:${input.cornerMode}`,

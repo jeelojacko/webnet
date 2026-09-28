@@ -524,6 +524,8 @@ export interface GradingGroupComputeRequest {
   memberSources: ResolvedGradingSource[];
   side: GradingSide;
   criterion: GradingCriterion;
+  /** Phase 20E: effective criterion per member (worker solves verbatim). */
+  memberCriteria?: GradingCriterion[];
   maxSearchDistance: number;
   curveChordTolerance: number;
   closed: boolean;
@@ -543,6 +545,7 @@ export const toGroupSolveInput = (request: GradingGroupComputeRequest): GroupSol
   members: request.memberSources,
   side: request.side,
   criterion: request.criterion,
+  ...(request.memberCriteria !== undefined ? { memberCriteria: request.memberCriteria } : {}),
   maxSearchDistance: request.maxSearchDistance,
   curveChordTolerance: request.curveChordTolerance,
   closed: request.closed,

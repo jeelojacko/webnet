@@ -11,6 +11,7 @@ import type {
   GroupStatus,
 } from '../../engine/cad/grading/gradingGroupTypes';
 import type { GradingAccuracy } from '../../engine/cad/grading/gradingTypes';
+import { buildCourseMemberRows } from './cadGradingGroupCourseCriteria';
 import {
   formatGradingCriterion,
   gradingSideText,
@@ -84,6 +85,14 @@ export const buildGroupInquiryReport = (
     }
   } else {
     lines.push('Corners: none');
+  }
+  lines.push('Members:');
+  for (const row of buildCourseMemberRows(group, result)) {
+    lines.push(
+      `  ${row.course} ${row.from}→${row.to} · ${row.criterionSource} ${row.criterionType}` +
+        ` · fixed ${row.fixedGrade} · cut ${row.cutGrade} · fill ${row.fillGrade}` +
+        ` · ${row.classification} · source ${row.sourceLength} m · area ${row.gradingArea}`,
+    );
   }
   if (result.diagnostics.length > 0) {
     lines.push(
@@ -164,6 +173,25 @@ export const buildGroupCsv = (
         corner.tiePointXyz != null ? corner.tiePointXyz[1].toFixed(3) : '',
         corner.tiePointXyz != null ? corner.tiePointXyz[2].toFixed(3) : '',
         cornerDiagnosticsText(corner),
+      ].map(escapeCsv).join(','),
+    );
+  }
+  lines.push('');
+  lines.push('Course,From,To,Criterion Source,Criterion Type,Fixed Grade,Cut Grade,Fill Grade,Classification,Source Length,Grading Area');
+  for (const row of buildCourseMemberRows(group, result)) {
+    lines.push(
+      [
+        row.course,
+        row.from,
+        row.to,
+        row.criterionSource,
+        row.criterionType,
+        row.fixedGrade,
+        row.cutGrade,
+        row.fillGrade,
+        row.classification,
+        row.sourceLength,
+        row.gradingArea,
       ].map(escapeCsv).join(','),
     );
   }

@@ -469,7 +469,7 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
     [activeDrawing.drawingId],
   );
   const [selectedGroupId, setSelectedGroupId] = useState<string | null>(null);
-  const [groupManagerTab, setGroupManagerTab] = useState<'definition' | 'inquiry'>('definition');
+  const [groupManagerTab, setGroupManagerTab] = useState<'definition' | 'criteria' | 'inquiry'>('definition');
   // Phase 18F — surface UI state (all session-only; meshes never persist).
   const [selectedSurfaceId, setSelectedSurfaceId] = useState<string | null>(null);
   const [surfacePick, setSurfacePick] = useState<{ surfaceId: string; mode: 'elevation' | 'slope' } | null>(null);

@@ -28,6 +28,7 @@ export const GRADINGGROUP_SHELL_KEYS: ReadonlySet<string> = new Set([
   'GRADINGGROUP',
   'GRADINGGROUPCALC',
   'GRADINGGROUPINQUIRY',
+  'GRADINGGROUPCRITERIA',
   'GRADINGGROUPEXTRACTDAYLIGHT',
   'GRADINGGROUPBAKE',
 ]);
@@ -43,7 +44,9 @@ export type CadGradingGroupShellCommand = Extract<
       | 'GROUP_REASSIGN_TARGET'
       | 'GROUP_EDIT_SPAN'
       | 'GROUP_ADD_COURSE'
-      | 'GROUP_REMOVE_END_COURSE';
+      | 'GROUP_REMOVE_END_COURSE'
+      | 'GROUP_SET_COURSE_CRITERIA'
+      | 'GROUP_RESET_COURSE_CRITERIA';
   }
 >;
 
@@ -84,6 +87,8 @@ export const buildGroupCreateCommand = (
 export interface GradingGroupShellOptions {
   groupId?: string;
   create?: GroupCreateArgs;
+  /** Manager tab for the GRADINGGROUP-family openers (default 'definition'). */
+  tab?: 'definition' | 'criteria' | 'inquiry';
 }
 
 const selectedGroupId = (options: GradingGroupShellOptions | undefined): string | null =>
@@ -102,6 +107,8 @@ export const gradingGroupShellAvailable = (
     case 'GRADINGGROUPCALC':
       return actions.requestGroupGradingCalculate != null;
     case 'GRADINGGROUPINQUIRY':
+      return actions.openGradingGroupManager != null;
+    case 'GRADINGGROUPCRITERIA':
       return actions.openGradingGroupManager != null;
     case 'GRADINGGROUPEXTRACTDAYLIGHT':
       return actions.extractGroupDaylight != null;
@@ -133,6 +140,9 @@ export const executeGradingGroupShellCommand = (
     }
     case 'GRADINGGROUPINQUIRY':
       actions.openGradingGroupManager?.(options?.groupId, 'inquiry');
+      return actions.openGradingGroupManager != null;
+    case 'GRADINGGROUPCRITERIA':
+      actions.openGradingGroupManager?.(options?.groupId, options?.tab ?? 'criteria');
       return actions.openGradingGroupManager != null;
     case 'GRADINGGROUPEXTRACTDAYLIGHT': {
       const id = selectedGroupId(options);

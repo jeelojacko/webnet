@@ -766,6 +766,8 @@ export const CAD_COMMAND_REGISTRY: Record<CadCommandKey, CadCommandDefinition<Ca
   GROUP_EDIT_SPAN: gradingGroupCommandDefinitions.GROUP_EDIT_SPAN as CadCommandDefinition<CadCommand>,
   GROUP_ADD_COURSE: gradingGroupCommandDefinitions.GROUP_ADD_COURSE as CadCommandDefinition<CadCommand>,
   GROUP_REMOVE_END_COURSE: gradingGroupCommandDefinitions.GROUP_REMOVE_END_COURSE as CadCommandDefinition<CadCommand>,
+  GROUP_SET_COURSE_CRITERIA: gradingGroupCommandDefinitions.GROUP_SET_COURSE_CRITERIA as CadCommandDefinition<CadCommand>,
+  GROUP_RESET_COURSE_CRITERIA: gradingGroupCommandDefinitions.GROUP_RESET_COURSE_CRITERIA as CadCommandDefinition<CadCommand>,
   GROUPEXTRACTDAYLIGHT: gradingGroupCommandDefinitions.GROUPEXTRACTDAYLIGHT as CadCommandDefinition<CadCommand>,
   GROUPBAKE: gradingGroupCommandDefinitions.GROUPBAKE as CadCommandDefinition<CadCommand>,
   // Phase 20D Wave-1A — design surface workflow (engine only).

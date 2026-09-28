@@ -13,14 +13,17 @@ import { resolveCadFeatureLine } from '../cadFeatureLines';
 import { computeCadSurfaceSourceRevision } from '../cadSurfaceRevision';
 import type { CadProject, CadSurface } from '../cadTypes';
 import { resolveGradingSourceCourse, toGradingCourseLikes } from './gradingCourseFrame';
+import { resolveGroupMemberCriteria } from './gradingGroupCourseCriteria';
 import { buildGroupRevision, type GroupRevisionCourse } from './gradingGroupRevision';
 import type { CadGradingGroup } from './gradingGroupTypes';
-import type { ResolvedGradingSource } from './gradingTypes';
+import type { GradingCriterion, ResolvedGradingSource } from './gradingTypes';
 
 export interface ResolvedGroupInputs {
   group: CadGradingGroup;
   /** One resolved A->B source per group course, in traversal order. */
   memberSources: ResolvedGradingSource[];
+  /** Phase 20E: effective criterion per member (override or group default). */
+  memberCriteria: GradingCriterion[];
   target: CadSurface;
   targetRevision: string;
   revision: string;
@@ -183,6 +186,7 @@ export const resolveGroupInputsWithReason = (
     targetRevision,
     side: group.side,
     criterion: group.criterion,
+    courseCriteria: group.courseCriteria,
     maxSearchDistance: group.maxSearchDistance,
     curveChordTolerance: group.curveChordTolerance,
     cornerMode: group.cornerMode,
@@ -190,7 +194,7 @@ export const resolveGroupInputsWithReason = (
   });
   return {
     ok: true,
-    inputs: { group, memberSources, target, targetRevision, revision },
+    inputs: { group, memberSources, memberCriteria: resolveGroupMemberCriteria(group), target, targetRevision, revision },
   };
 };
 

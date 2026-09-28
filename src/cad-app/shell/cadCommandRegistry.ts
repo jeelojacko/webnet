@@ -474,6 +474,7 @@ export const CAD_SHELL_COMMANDS: CadShellCommandDef[] = [
   action('GRADINGGROUP', 'Grading Group Manager', 'Design', 'Open the grading-group manager (rows, create, calculate, inquiry).'),
   action('GRADINGGROUPCALC', 'Calculate Grading Group', 'Design', 'Build the selected grading-group result (explicit, never auto-started).'),
   action('GRADINGGROUPINQUIRY', 'Grading Group Inquiry', 'Design', 'Open the grading-group inquiry report (CURRENT only; stale answers honestly).', undefined, ['GRADINGGROUPINQ']),
+  action('GRADINGGROUPCRITERIA', 'Grading Group Criteria', 'Design', 'Edit per-course grading criteria for the selected group (manager criteria editor).', undefined, ['GGCRITERIA']),
   action('GRADINGGROUPEXTRACTDAYLIGHT', 'Extract Group Daylight', 'Design', 'Create a snapshot feature line from the CURRENT group daylight boundary (one undo entry; no live dependency).', undefined, ['GROUPEXTRACTDAYLIGHT']),
   action('GRADINGGROUPBAKE', 'Bake Grading Group Surface', 'Design', 'Freeze the CURRENT group mesh into an explicit-TIN surface (nonzero area; one undo entry).'),
 ];

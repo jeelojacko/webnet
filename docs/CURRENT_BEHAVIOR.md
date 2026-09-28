@@ -553,6 +553,14 @@ Current delivered performance architecture includes:
 - asynchronous worker-backed artifact generation for heavy export flows
 - the adjustment core now bypasses generic dense `AᵀP`/`AᵀPA` matrix products in its main solve and covariance/statistics paths, instead accumulating normal equations from sparse equation rows and using sparse row-matrix multiplies where `A*x` style products are still needed; this keeps parity behavior unchanged while materially improving the dense imported-project benchmark path
 
+## CAD grading and design behavior
+
+Current grading-group and design-patch behavior includes:
+
+- grading groups grade an ordered chain of feature-line courses against one target surface with one shared default criterion; per-course overrides are sparse records (absent entry = group default, reset removes the record), resolved override-wins otherwise default, with multi-select apply in one undo step and explicit set-group-default-plus-clear-overrides for apply-to-all (never a silent erase)
+- the group manager shows the default criterion plus the override count per row, with a Course Criteria editor (Course / From / To / Type / Effective Criterion / Default-or-Override) opened by `GRADINGGROUPCRITERIA` (`GGCRITERIA`); group inquiry and CSV carry a per-course member table (criterion source/type, fixed/cut/fill grades with dashes in irrelevant columns, classification, source length; grading area stays group-level)
+- Design Patch interiors are flat-source (bit-flat ring) or planar-source (exactly coplanar ring, no averaging or tolerance-based acceptance); non-planar interiors stay blocked, the workflow panel reports the interior as Flat / Planar (derived slope + downslope aspect, inquiry-only) / Undefined, and no plane coefficients are persisted
+
 ## CLI and batch behavior
 
 Current CLI support includes:

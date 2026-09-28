@@ -7,6 +7,8 @@ import {
   DESIGN_APPLY_RAW_SHELL_GUIDANCE,
 } from '../../engine/cad/cadTransactionsDesignSurfaceCommands';
 import { DESIGN_PATCH_NON_FLAT_INTERIOR_UNDEFINED } from '../../engine/cad/cadTransactionsDesignPatchCommands';
+import { DESIGN_PATCH_NON_PLANAR_INTERIOR_UNDEFINED } from '../../engine/cad/cadTransactionsDesignPatchCommands';
+import { designPatchInteriorText } from './cadDesignPatchInterior';
 import { buttonClass, inputClass } from '../../components/surveyCad/surveyManagerShared';
 
 /*
@@ -105,7 +107,7 @@ export const CadDesignWorkflowPanel: React.FC<CadDesignWorkflowPanelProps> = ({
     });
     notify(ok
       ? 'Design Patch built (pad interior + grading shell).'
-      : `Design Patch blocked — closed flat groups only (${DESIGN_PATCH_NON_FLAT_INTERIOR_UNDEFINED} covers non-flat interiors).`);
+      : `Design Patch blocked — closed groups with flat or planar interiors only (${DESIGN_PATCH_NON_FLAT_INTERIOR_UNDEFINED} / ${DESIGN_PATCH_NON_PLANAR_INTERIOR_UNDEFINED} cover other interiors).`);
   };
 
   const applyPatch = (): void => {
@@ -233,7 +235,7 @@ export const CadDesignWorkflowPanel: React.FC<CadDesignWorkflowPanelProps> = ({
         <button type="button" className={buttonClass} disabled={!eg || eg.status !== 'CURRENT'} title="Copy a CURRENT surface into a new Design-role surface." onClick={createCopy}>
           Create Design Copy
         </button>
-        <button type="button" className={buttonClass} disabled={!group || !group.currentResult} title="Build a Design Patch from the group's CURRENT result (closed flat groups only)." onClick={buildPatch}>
+        <button type="button" className={buttonClass} disabled={!group || !group.currentResult} title="Build a Design Patch from the group's CURRENT result (closed groups with flat or planar interiors)." onClick={buildPatch}>
           Build Design Patch
         </button>
         <button type="button" className={buttonClass} disabled={!design || !patch} title="Apply the patch onto the Design target in place." onClick={applyPatch}>
@@ -277,8 +279,10 @@ export const CadDesignWorkflowPanel: React.FC<CadDesignWorkflowPanelProps> = ({
           <dt className="text-slate-400">Source</dt><dd>{group.sourceName} · {group.courseCount} courses · {group.accuracyText}</dd>
           <dt className="text-slate-400">Areas</dt>
           <dd>{group.metrics ? `plan ${group.metrics.gradingPlanArea.toFixed(3)} m² · 3D ${group.metrics.grading3dArea.toFixed(3)} m²` : '— (Calculate the group first)'}</dd>
+          <dt className="text-slate-400">Interior</dt>
+          <dd>{designPatchInteriorText(group.currentResult?.sourceBoundaryPoints)}</dd>
           <dd className="col-span-2 text-slate-400">
-            Closed flat groups only — non-flat interiors are blocked ({DESIGN_PATCH_NON_FLAT_INTERIOR_UNDEFINED}).
+            Closed groups with flat or planar interiors — other interiors are blocked ({DESIGN_PATCH_NON_FLAT_INTERIOR_UNDEFINED} / {DESIGN_PATCH_NON_PLANAR_INTERIOR_UNDEFINED}).
           </dd>
         </dl>
       ) : null}

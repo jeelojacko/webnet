@@ -283,6 +283,7 @@ export class SurfaceGradingService {
       memberSources,
       side: group.side,
       criterion: group.criterion,
+      memberCriteria: inputs.memberCriteria,
       maxSearchDistance: group.maxSearchDistance,
       curveChordTolerance: group.curveChordTolerance,
       closed: group.closed === true,

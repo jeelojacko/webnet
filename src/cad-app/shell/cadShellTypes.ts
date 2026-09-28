@@ -320,7 +320,7 @@ export interface CadShellActions {
   /** Phase 20C — Bake the CURRENT group mesh to an explicit TIN. */
   bakeGroupSurface?: (_groupId: string) => string;
   /** Phase 20C — open the grading-group manager (optional selection/tab). */
-  openGradingGroupManager?: (_selectedId?: string, _tab?: 'definition' | 'inquiry') => void;
+  openGradingGroupManager?: (_selectedId?: string, _tab?: 'definition' | 'criteria' | 'inquiry') => void;
   /** Phase 18F — select a surface (Toolspace/manager/viewport converge here). */
   selectSurface: (_surfaceId: string | null) => void;
   /** Phase 18I — select a volume surface (Toolspace/manager converge here). */
