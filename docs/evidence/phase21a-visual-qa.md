@@ -33,7 +33,7 @@ drawing-tabs / layout-tabs / viewport / dock / statusbar; share = viewport ÷ wi
 | 2560x1440 | 41 | 25 | 26 | 93 | 120 | 29 | 29 | 1017 | 148 | 31 | 70.6% |
 
 Identical with a polyline selected + Properties open (selection never moves
-chrome). Ribbon total is a constant 120 px (tabs 26 + groups 93 + borders);
+chrome). Ribbon total renders a constant 120 px against a 128 px CSS max (tabs 26 + groups 93 + borders);
 the groups row asserts `scrollHeight <= clientHeight + 2` (no vertical wrap;
 excess width scrolls horizontally) at all three widths. Chrome is a fixed
 423 px; only the viewport grows with the window.

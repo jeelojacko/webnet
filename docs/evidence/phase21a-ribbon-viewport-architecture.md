@@ -58,7 +58,7 @@ file under ~200 lines after `CadRibbon.tsx` thinned 532 → 74.
 
 One compact band, `max-height: 128px`: tabs row (~26 px) + groups row
 (`flex nowrap`, 2-row column grid, caption bottom, `overflow-x: auto`).
-Measured constant 120 px at 1366/1920/2560. Groups never wrap
+Measured 120 px rendered against a 128 px max at 1366/1920/2560. Groups never wrap
 (`scrollHeight <= clientHeight + 2` asserted per tab); excess width scrolls
 horizontally — the access path, never vertical wrap, never clip without a
 path. Quick-access New/Open/Save use curated file icons; entries without a

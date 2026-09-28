@@ -191,11 +191,11 @@ export const CadApplicationShell: React.FC<CadApplicationShellProps> = ({ contro
       if (!parsed.ok) return;
       if (!requireCleanOrConfirm(`Replace the current drawing with ${file.name}`)) return;
       applyDrawingChange(() => parsed.drawing);
-      applyLifecycleEvent('cad-opened', file.name);
+      handleDrawingLifecycle('cad-opened', file.name);
     } catch {
       // Malformed/oversize files leave the session untouched.
     }
-  }, [applyDrawingChange, applyLifecycleEvent, requireCleanOrConfirm]);
+  }, [applyDrawingChange, handleDrawingLifecycle, requireCleanOrConfirm]);
 
   // Chrome gating (§1.6): on sheet tabs the ribbon/menu/dock see no model
   // selection, no model commands, and sheet-routed undo/redo.

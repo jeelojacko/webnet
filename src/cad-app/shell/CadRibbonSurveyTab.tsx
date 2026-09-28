@@ -85,10 +85,10 @@ export const CadRibbonSurveyTab: React.FC<{
               shortLabel={short}
               label={def.label}
               title={`${def.label} — ${def.hint}`}
-              disabled={!ready || !(snapshot?.availableCommands.includes(key) === true)}
+              disabled={!isShellCommandAvailable(def, snapshot, actions)}
               size="compact"
               commandKey={key}
-              onClick={() => actions?.startCommand(key as 'HELMERT2D' | 'GRIDGROUND')}
+              onClick={() => executeShellCommand(def, actions, snapshot)}
             />
           );
         })}
