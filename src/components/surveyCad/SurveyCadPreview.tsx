@@ -46,6 +46,7 @@ const SurveyCadPreview: React.FC<SurveyCadPreviewProps> = ({
   viewport,
   commandActive,
   commandPointInputActive,
+  shellChrome = false,
   onViewportChange,
   onPrimitiveClickIntercept,
   onSelectEntity,
@@ -266,7 +267,7 @@ const SurveyCadPreview: React.FC<SurveyCadPreviewProps> = ({
   };
 
   return (
-    <div className="relative h-full w-full bg-slate-950" data-survey-cad-preview-shell>
+    <div className="relative h-full w-full bg-[var(--cad-model-bg,#020617)]" data-survey-cad-preview-shell>
       <SurveyCadPreviewCanvas
         activeGripDragIdRef={activeGripDragIdRef}
         activeGripHandleId={activeGripHandleId}
@@ -329,6 +330,7 @@ const SurveyCadPreview: React.FC<SurveyCadPreviewProps> = ({
         commandInputEnabled={commandInputEnabled}
         commandModifierHint={commandModifierHint}
         constructionHint={constructionHint}
+        suppressCommandStatus={shellChrome}
       />
       <SurveyCadSnapBadge activeSnap={activeSnap} activeSnapAccent={activeSnapAccent} />
       <SurveyCadSnapControls
@@ -339,15 +341,17 @@ const SurveyCadPreview: React.FC<SurveyCadPreviewProps> = ({
         onToggleParcelLabels={onToggleParcelLabels}
         onSnapPreferenceChange={onSnapPreferenceChange}
       />
-      <SurveyCadCommandInputBar
-        commandInputRef={commandInputRef}
-        commandInputValue={commandInputValue}
-        commandInputPlaceholder={commandInputPlaceholder}
-        commandInputEnabled={commandInputEnabled}
-        onCommandInputChange={onCommandInputChange}
-        onCommandInputEnter={onCommandInputEnter}
-        onCommandInputEscape={onCommandInputEscape}
-      />
+      {shellChrome ? null : (
+        <SurveyCadCommandInputBar
+          commandInputRef={commandInputRef}
+          commandInputValue={commandInputValue}
+          commandInputPlaceholder={commandInputPlaceholder}
+          commandInputEnabled={commandInputEnabled}
+          onCommandInputChange={onCommandInputChange}
+          onCommandInputEnter={onCommandInputEnter}
+          onCommandInputEscape={onCommandInputEscape}
+        />
+      )}
       <SurveyCadParcelReportOverlay
         selectedParcelReport={selectedParcelReport}
         hasTopRightOverlay={hasTopRightOverlay}

@@ -35,6 +35,12 @@ export interface SurveyCadPreviewProps {
   viewport: SurveyCadViewport;
   commandActive: boolean;
   commandPointInputActive: boolean;
+  /**
+   * Phase 21A — shell owns the command line (CadCommandDock). Suppress the
+   * preview's own command input bar and the duplicate prompt echo; snap
+   * badge/menu, parcel-label toggle, modifier + construction hints stay.
+   */
+  shellChrome?: boolean;
   onViewportChange: (_viewport: SurveyCadViewport) => void;
   onPrimitiveClickIntercept?: (
     _entityId: string,

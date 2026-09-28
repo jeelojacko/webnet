@@ -11,12 +11,15 @@ export const SurveyCadCommandHelpOverlay: React.FC<{
   commandInputEnabled: boolean;
   commandModifierHint: string;
   constructionHint: string;
+  /** Phase 21A — shell mode: CadCommandDock owns the prompt echo; hide the duplicate status line only. */
+  suppressCommandStatus?: boolean;
 }> = ({
   commandStatusText,
   commandHelpText,
   commandInputEnabled,
   commandModifierHint,
   constructionHint,
+  suppressCommandStatus = false,
 }) => (
   <>
     <div
@@ -25,9 +28,11 @@ export const SurveyCadCommandHelpOverlay: React.FC<{
     >
       {commandStatusText ? (
         <>
-          <div className="pb-1 text-cyan-200" data-survey-cad-command-status>
-            {commandStatusText}
-          </div>
+          {suppressCommandStatus ? null : (
+            <div className="pb-1 text-cyan-200" data-survey-cad-command-status>
+              {commandStatusText}
+            </div>
+          )}
           {commandInputEnabled ? <div>{commandHelpText}</div> : null}
         </>
       ) : null}

@@ -339,6 +339,30 @@ describe('cad shell panels', () => {
     await cleanup(container, root);
   });
 
+  it('Command dock keeps ARC entry usable via completion + Enter', async () => {
+    const link = createCadShellLink();
+    link.actions = stubActions();
+    const { container, root } = await render(
+      <CadCommandDock
+        link={link}
+        snapshot={stubSnapshot({ availableCommands: ['ARC_3PT'] })}
+        heightPx={148}
+        onResize={() => {}}
+      />,
+    );
+    const input = container.querySelector('[data-cad-command-input]') as HTMLInputElement;
+    await act(async () => {
+      setInputValue(input, 'ARC');
+    });
+    expect(container.querySelector('.cad-shell-command-suggest')?.textContent).toContain('ARC_3PT');
+    await act(async () => {
+      setInputValue(input, 'ARC_3PT');
+    });
+    await keyDown(input, 'Enter');
+    expect(link.actions!.startCommand).toHaveBeenCalledWith('ARC_3PT');
+    await cleanup(container, root);
+  });
+
   it('Status bar shows counts, units, layout, and toggles real snap modes', async () => {
     const link: CadShellLink = createCadShellLink();
     link.actions = stubActions();
@@ -623,6 +647,107 @@ describe('phase 18D survey UI', () => {
       entityIds: ['pt:1', 'pt:2'],
       pointStyleOverrideId: 'ps-ctrl',
     });
+    await cleanup(container, root);
+  });
+});
+
+describe('phase 21A properties palette row actions', () => {
+  const parcelSnapshot = (properties: CadWorkspaceSnapshot['properties']): CadWorkspaceSnapshot =>
+    stubSnapshot({ selectionCount: 1, properties });
+
+  const sharedAction = { kind: 'parcel-shared-edit' as const, linkId: 'b1', label: 'Edit Shared' };
+  const unlinkAction = { kind: 'parcel-unlink' as const, linkId: 'b1', label: 'Unlink' };
+
+  it('renders Edit Shared / Unlink and dispatches through the parcel-link channel', async () => {
+    const runParcelLinkAction = vi.fn(() => ({ applied: true }));
+    const actions = { ...stubActions(), runParcelLinkAction };
+    const snapshot = parcelSnapshot({
+      mode: 'single',
+      entity: {
+        entityId: 'parcel:1',
+        entityType: 'parcel',
+        entityTypeLabel: 'Parcel',
+        entityLabel: 'Parcel Lot 1',
+        properties: [
+          { key: 'shared:b1:with', label: 'Shared With', value: 'Lot 2 · A-B', actions: [sharedAction, unlinkAction] },
+          { key: 'shared:b1:status', label: 'Shared Status', value: 'LINKED_ADJACENCY' },
+        ],
+      },
+    });
+    const { container, root } = await render(<CadPropertiesPalette snapshot={snapshot} actions={actions} />);
+    const editShared = container.querySelector(
+      '[data-cad-properties-action="parcel-shared-edit:b1"]',
+    ) as HTMLButtonElement | null;
+    const unlink = container.querySelector(
+      '[data-cad-properties-action="parcel-unlink:b1"]',
+    ) as HTMLButtonElement | null;
+    expect(editShared?.textContent).toContain('Edit Shared');
+    expect(unlink?.textContent).toContain('Unlink');
+    await click(editShared);
+    expect(runParcelLinkAction).toHaveBeenCalledWith(sharedAction);
+    await click(unlink);
+    expect(runParcelLinkAction).toHaveBeenCalledWith(unlinkAction);
+    await cleanup(container, root);
+  });
+
+  it('disables flagged actions and reports a rejected outcome', async () => {
+    const runParcelLinkAction = vi.fn(() => ({
+      applied: false,
+      reason: 'Unlink rejected (engine command unavailable).',
+    }));
+    const actions = { ...stubActions(), runParcelLinkAction };
+    const snapshot = parcelSnapshot({
+      mode: 'single',
+      entity: {
+        entityId: 'parcel:1',
+        entityType: 'parcel',
+        entityTypeLabel: 'Parcel',
+        entityLabel: 'Parcel Lot 1',
+        properties: [
+          {
+            key: 'shared:b1:with',
+            label: 'Shared With',
+            value: 'Lot 2 · A-B',
+            actions: [
+              unlinkAction,
+              { kind: 'parcel-shared-edit', linkId: 'b2', label: 'Edit Shared', disabledReason: 'Session unavailable.' },
+            ],
+          },
+        ],
+      },
+    });
+    const { container, root } = await render(<CadPropertiesPalette snapshot={snapshot} actions={actions} />);
+    const disabled = container.querySelector(
+      '[data-cad-properties-action="parcel-shared-edit:b2"]',
+    ) as HTMLButtonElement | null;
+    expect(disabled?.disabled).toBe(true);
+    expect(disabled?.title).toBe('Session unavailable.');
+    const unlink = container.querySelector(
+      '[data-cad-properties-action="parcel-unlink:b1"]',
+    ) as HTMLButtonElement | null;
+    await click(unlink);
+    expect(container.textContent).toContain('Unlink rejected (engine command unavailable).');
+    await cleanup(container, root);
+  });
+
+  it('renders actions disabled when the shell has no parcel-link dispatcher', async () => {
+    const snapshot = parcelSnapshot({
+      mode: 'single',
+      entity: {
+        entityId: 'parcel:1',
+        entityType: 'parcel',
+        entityTypeLabel: 'Parcel',
+        entityLabel: 'Parcel Lot 1',
+        properties: [
+          { key: 'shared:b1:with', label: 'Shared With', value: 'Lot 2 · A-B', actions: [sharedAction] },
+        ],
+      },
+    });
+    const { container, root } = await render(<CadPropertiesPalette snapshot={snapshot} actions={stubActions()} />);
+    const editShared = container.querySelector(
+      '[data-cad-properties-action="parcel-shared-edit:b1"]',
+    ) as HTMLButtonElement | null;
+    expect(editShared?.disabled).toBe(true);
     await cleanup(container, root);
   });
 });

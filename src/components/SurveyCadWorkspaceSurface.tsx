@@ -61,6 +61,14 @@ interface SurveyCadWorkspaceSurfaceProps {
   onSampleLineClick?: (_groupId: string, _lineId: string) => void;
   selectedSectionViewId?: string | null;
   onSectionViewClick?: (_viewId: string) => void;
+  /**
+   * Phase 21A — when true the shell owns the Properties UI (palette in the
+   * side dock) and the command line (CadCommandDock). The legacy floating
+   * SurveyCadPropertiesPanel is not mounted; the preview suppresses its
+   * duplicate prompt echo and its own command input bar. Default false keeps
+   * the standalone/embedded legacy workspace unchanged.
+   */
+  shellChrome?: boolean;
 }
 
 const SurveyCadWorkspaceSurface = ({
@@ -92,6 +100,7 @@ const SurveyCadWorkspaceSurface = ({
   onSampleLineClick,
   selectedSectionViewId = null,
   onSectionViewClick,
+  shellChrome = false,
 }: SurveyCadWorkspaceSurfaceProps) => {
   const {
     activeBatchCogoDraft,
@@ -124,7 +133,7 @@ const SurveyCadWorkspaceSurface = ({
   return (
     <div className="h-full">
       <PanelDragShield floatingPanels={floatingPanels} />
-      {propertiesPanelState ? (
+      {!shellChrome && propertiesPanelState ? (
         <SurveyCadPropertiesPanel
           panelState={propertiesPanelState}
           selectedParcelReport={selectedParcelReport}
@@ -342,6 +351,7 @@ const SurveyCadWorkspaceSurface = ({
         selectedSectionViewId={selectedSectionViewId}
         onSectionViewClick={onSectionViewClick}
         onToggleParcelLabels={onToggleParcelLabels}
+        shellChrome={shellChrome}
         onCommandHoverTargetChange={workspace.setCommandHoverTarget}
         onSnapPreferenceChange={workspace.setSnapPreference}
         onCommandInputChange={workspace.setCommandInputValue}

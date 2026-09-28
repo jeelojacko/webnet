@@ -1,6 +1,11 @@
 /* Phase 18B — CAD shell tokens. Scoped under .cad-shell; no global rewrite. */
 .cad-shell {
   --cad-bg: #0b1220;
+  /* Phase 21A — single model-viewport background token. The CAD drawing
+     surface (viewport wrapper, preview shell, SVG root, background rect)
+     must paint one colour so the SVG xMidYMid meet letterbox bands and the
+     drawing rect never disagree. Presentation only; no projection change. */
+  --cad-model-bg: #020617;
   --cad-panel: #111a2e;
   --cad-panel-edge: #233150;
   --cad-text: #dbe4f5;
@@ -100,9 +105,19 @@
   margin: 3px 0;
 }
 
+/* Phase 21A Wave 2 — one compact ribbon band: tabs (~27px) + content
+   (~95px incl. caption) stay within ~125px. Groups never wrap: the strip is
+   a single nowrap row and excess width scrolls horizontally (the access
+   path — never vertical wrap, never clip without a path). Open tool-family
+   flyouts paint position:fixed at a caret-computed anchor, so they escape
+   the strip's scroll clip (see .cad-ribbon-flyout--fixed). The
+   --cad-model-bg viewport rules below are untouched. */
 .cad-shell-ribbon {
   background: var(--cad-panel);
   border-bottom: 1px solid var(--cad-panel-edge);
+  max-height: 128px;
+  display: flex;
+  flex-direction: column;
 }
 
 .cad-shell-ribbon-collapsed {
@@ -115,6 +130,8 @@
   display: flex;
   gap: 2px;
   padding: 2px 6px 0;
+  min-height: 26px;
+  flex: none;
 }
 
 .cad-shell-ribbon-tab.active {
@@ -124,31 +141,47 @@
 
 .cad-shell-ribbon-groups {
   display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
-  padding: 4px 8px 6px;
+  flex-wrap: nowrap;
+  align-items: stretch;
+  gap: 8px;
+  padding: 3px 8px 4px;
+  overflow-x: auto;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  flex: 1;
+  min-height: 0;
 }
 
 .cad-shell-ribbon-group {
   display: flex;
   flex-direction: column;
+  flex: none;
   gap: 2px;
   border-right: 1px solid var(--cad-panel-edge);
-  padding-right: 10px;
+  padding-right: 8px;
+  min-width: 0;
 }
 
+/* Caption pins to the band bottom regardless of DOM order. */
 .cad-shell-ribbon-group-label {
+  order: 2;
   color: var(--cad-dim);
   font-size: 10px;
   text-transform: uppercase;
   letter-spacing: 0.08em;
+  white-space: nowrap;
+  line-height: 1.4;
 }
 
+/* Two-row column-flow icon grid: grows horizontally, never wraps. */
 .cad-shell-ribbon-buttons {
-  display: flex;
-  flex-wrap: wrap;
+  order: 1;
+  display: grid;
+  grid-auto-flow: column;
+  grid-template-rows: repeat(2, auto);
   gap: 2px;
-  max-width: 560px;
+  align-content: start;
+  justify-content: start;
 }
 
 .cad-shell-ribbon-button {
@@ -190,6 +223,183 @@
 .cad-shell-ribbon-button-secondary {
   width: 100%;
   text-align: left;
+}
+
+/* Phase 21A Wave 2 — icon-tool component classes. Compact tools fill one
+   grid cell (16px art + 1-2 word face); large tools (family primaries)
+   span both rows with 28px art. */
+.cad-ribbon-tool,
+.cad-ribbon-icon-button {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1px;
+  min-width: 34px;
+  max-width: 58px;
+  padding: 2px 3px;
+  border: 1px solid var(--cad-panel-edge);
+  border-radius: 3px;
+  background: #141f38;
+  line-height: 1.1;
+}
+
+.cad-ribbon-icon-button__img {
+  width: 16px;
+  height: 16px;
+  flex: none;
+}
+
+.cad-ribbon-icon-button__label {
+  font-size: 10px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 52px;
+}
+
+.cad-ribbon-icon-button.is-active {
+  border-color: var(--cad-accent);
+  background: #1b2742;
+}
+
+.cad-ribbon-tool--large,
+.cad-ribbon-icon-button--large {
+  grid-row: span 2;
+  min-width: 46px;
+  max-width: 72px;
+  min-height: 52px;
+}
+
+.cad-ribbon-icon-button--large .cad-ribbon-icon-button__img {
+  width: 28px;
+  height: 28px;
+}
+
+/* Joined split control: primary face + caret read as one control. */
+.cad-ribbon-tool--split,
+.cad-ribbon-split {
+  display: inline-flex;
+  position: relative;
+  align-items: stretch;
+  grid-row: span 2;
+}
+
+.cad-ribbon-tool--primary,
+.cad-ribbon-split__primary {
+  border-top-right-radius: 0;
+  border-bottom-right-radius: 0;
+}
+
+.cad-ribbon-tool--caret,
+.cad-ribbon-split__caret {
+  border: 1px solid var(--cad-panel-edge);
+  border-left: none;
+  border-radius: 0 3px 3px 0;
+  background: #141f38;
+  color: var(--cad-dim);
+  padding: 0 5px;
+  cursor: pointer;
+  font-size: 10px;
+}
+
+.cad-ribbon-tool--caret:hover:not(:disabled) {
+  background: #1b2742;
+}
+
+/* Family flyout: icon + full label + alias + hint per row.
+   The --fixed variant paints position:fixed at a caret-computed viewport
+   anchor (see CadRibbonSplitButton.openMenu): the ribbon groups strip is a
+   horizontal scroll container, and overflow clips in-place absolute menus —
+   Wave-3 browser QA proved open flyouts were invisible (DOM present, zero
+   painted pixels). No transformed/filtered ancestor exists between the
+   ribbon and the viewport, so fixed positioning escapes the clip. */
+.cad-ribbon-tool--flyout,
+.cad-ribbon-flyout {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  z-index: 60;
+  display: flex;
+  flex-direction: column;
+  min-width: 15rem;
+  max-width: 22rem;
+  max-height: 260px;
+  overflow-y: auto;
+  margin: 2px 0 0;
+  padding: 3px;
+  list-style: none;
+  background: var(--cad-panel);
+  border: 1px solid var(--cad-panel-edge);
+  border-radius: 4px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+}
+
+.cad-ribbon-flyout--fixed {
+  position: fixed;
+  top: 0;
+  left: 0;
+  margin: 0;
+}
+
+.cad-ribbon-flyout__separator {
+  border-top: 1px solid var(--cad-panel-edge);
+  margin: 3px 2px;
+}
+
+.cad-ribbon-tool--item,
+.cad-ribbon-flyout__item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  text-align: left;
+  padding: 3px 6px;
+  white-space: normal;
+}
+
+.cad-ribbon-flyout__item.is-current {
+  border-color: var(--cad-accent);
+}
+
+.cad-ribbon-flyout__item.is-disabled,
+.cad-ribbon-tool--planned {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.cad-ribbon-flyout__icon {
+  width: 16px;
+  flex: none;
+  text-align: center;
+}
+
+.cad-ribbon-flyout__icon img {
+  width: 16px;
+  height: 16px;
+  vertical-align: middle;
+}
+
+.cad-ribbon-flyout__label {
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.cad-ribbon-flyout__alias {
+  color: var(--cad-dim);
+  font-size: 10px;
+}
+
+.cad-ribbon-flyout__hint {
+  color: var(--cad-dim);
+  font-size: 10px;
+  margin-left: auto;
+}
+
+/* Horizontal overflow access path marker (chevron hook for future use). */
+.cad-ribbon-tool--overflow {
+  flex: none;
+  align-self: center;
 }
 
 .cad-shell-main {
@@ -254,6 +464,7 @@
   min-height: 0;
   position: relative;
   overflow: hidden;
+  background: var(--cad-model-bg, #020617);
 }
 
 .cad-shell-filetabs,

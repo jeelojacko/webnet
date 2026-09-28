@@ -1,5 +1,9 @@
 import React, { useEffect, useState } from 'react';
-import type { CadEntityPropertyRow, CadPropertiesTypeGroup } from '../../engine/cad/cadPropertiesModel';
+import type {
+  CadEntityPropertyRow,
+  CadEntityPropertyRowAction,
+  CadPropertiesTypeGroup,
+} from '../../engine/cad/cadPropertiesModel';
 import type {
   CadShellActions,
   CadSurveyPointDisplayInfo,
@@ -383,6 +387,39 @@ const MultiPropertyRow: React.FC<{
   <PropertyRow row={row} entityIds={entityIds} varies={varies} actions={actions} />
 );
 
+/**
+ * Phase 21A — parcel Shared Boundary row actions (Edit Shared / Unlink).
+ * Rendered for any row carrying `actions`; disabled when the row marks a
+ * disabledReason or when the shell has no dispatcher (never a silent no-op).
+ */
+const RowActionButtons: React.FC<{
+  rowActions: CadEntityPropertyRowAction[] | undefined;
+  onRun: ((_action: CadEntityPropertyRowAction) => { applied: boolean; reason?: string }) | undefined;
+  onMessage: (_message: string | null) => void;
+}> = ({ rowActions, onRun, onMessage }) => {
+  if (!rowActions || rowActions.length === 0) return null;
+  return (
+    <>
+      {rowActions.map((action) => (
+        <button
+          key={`${action.kind}:${action.linkId}`}
+          type="button"
+          className="cad-shell-tree-action"
+          disabled={action.disabledReason != null || onRun == null}
+          title={action.disabledReason ?? action.label}
+          onClick={() => {
+            const outcome = onRun?.(action);
+            onMessage(outcome && !outcome.applied ? (outcome.reason ?? 'Action not applied.') : null);
+          }}
+          data-cad-properties-action={`${action.kind}:${action.linkId}`}
+        >
+          {action.label}
+        </button>
+      ))}
+    </>
+  );
+};
+
 const PropertyRow: React.FC<{
   row: CadEntityPropertyRow;
   entityIds: string[];
@@ -391,10 +428,12 @@ const PropertyRow: React.FC<{
 }> = ({ row, entityIds, varies, actions }) => {
   const [draft, setDraft] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [actionMessage, setActionMessage] = useState<string | null>(null);
   const entityScope = entityIds.join(',');
   useEffect(() => {
     setDraft(null);
     setError(null);
+    setActionMessage(null);
   }, [row.value, entityScope]);
   const commit = (): void => {
     if (draft == null || !row.editableField || !actions) return;
@@ -420,7 +459,15 @@ const PropertyRow: React.FC<{
     return (
       <div>
         <dt>{row.label}</dt>
-        <dd>{varies ? '*VARIES*' : row.value}</dd>
+        <dd>
+          {varies ? '*VARIES*' : row.value}
+          <RowActionButtons
+            rowActions={row.actions}
+            onRun={actions?.runParcelLinkAction}
+            onMessage={setActionMessage}
+          />
+        </dd>
+        {actionMessage ? <dd role="status">{actionMessage}</dd> : null}
       </div>
     );
   }

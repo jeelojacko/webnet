@@ -2063,6 +2063,9 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
         setViewport({ zoom: 1, panX: 0, panY: 0 });
       },
       editField: (entityId, field, value) => cadWorkspace.editPropertiesField(entityId, field, value),
+      // Phase 21A — Properties palette Shared Boundary rows route through the
+      // same channel the legacy floating panel uses.
+      runParcelLinkAction: (action) => cadWorkspace.runParcelLinkAction(action),
       startParcelSharedEdit: (linkId) => {
         cadWorkspace.startParcelSharedEditCommand(linkId);
         return true;
@@ -2884,6 +2887,7 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
           onParcelLayoutAutoPreviewStateChange={setParcelLayoutAutoPreviewState}
           onToggleParcelLabels={() => setShowParcelLabels((current) => !current)}
           cloneBounds={cloneBounds}
+          shellChrome={shellChrome}
           surfacePickActive={surfacePick != null || volumePick != null || analysisPick != null || blockInsertPick != null || surfaceEditSessions.session != null || surfacePointEditSessions.session != null || surfaceBulkSelection.session != null || surfaceBulkEditSessions.session != null}
           onSurfacePickPoint={(worldPoint) => {
             if (surfacePointEditSessions.session) {
