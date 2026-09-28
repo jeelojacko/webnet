@@ -1,7 +1,8 @@
 // Phase 21A Wave 2 — Output tab: File deliverables as an icon grid.
-// New/Open/Save use curated file icons; Export Center, Sheets & Layers, and
-// Import LandXML keep short text faces (no truthful asset). Registry-only
-// dispatch, same definitions as the menu + quick-access paths.
+// New/Open/Save use curated file icons; Import LandXML uses a curated
+// LandXML icon (Phase 21B); Export Center and Sheets & Layers keep short text
+// faces (no truthful asset). Registry-only dispatch, same definitions as the
+// menu + quick-access paths.
 import React from 'react';
 import type { CadShellActions, CadWorkspaceSnapshot } from './cadShellTypes';
 import { RegistryIconRow, RibbonGroup } from './CadRibbonShared';

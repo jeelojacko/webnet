@@ -17,6 +17,13 @@ import {
 import { CadRibbonIconButton, type CadRibbonIconButtonSize } from './CadRibbonIconButton';
 import { CadRibbonFlyout } from './CadRibbonFlyout';
 import {
+  CAD_RIBBON_FLYOUT_CARET_GAP_PX,
+  CAD_RIBBON_FLYOUT_MAX_HEIGHT_PX,
+  CAD_RIBBON_FLYOUT_MAX_WIDTH_PX,
+  CAD_RIBBON_FLYOUT_VIEWPORT_MARGIN_PX,
+  type CadRibbonFlyoutAnchor,
+} from './cadRibbonFlyout.constants';
+import {
   resolveCadRibbonCurrentVariant,
   type CadRibbonToolFamily,
   type CadRibbonToolVariant,
@@ -51,7 +58,7 @@ export const CadRibbonSplitButton: React.FC<CadRibbonSplitButtonProps> = ({
   const [open, setOpen] = useState(false);
   // Viewport anchor for the open menu (fixed positioning escapes the ribbon
   // strip's scroll clip; recomputed on every open, cleared on close).
-  const [anchor, setAnchor] = useState<{ top: number; left: number } | null>(null);
+  const [anchor, setAnchor] = useState<CadRibbonFlyoutAnchor | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const caretRef = useRef<HTMLButtonElement>(null);
   const menuId = useId();
@@ -74,16 +81,29 @@ export const CadRibbonSplitButton: React.FC<CadRibbonSplitButtonProps> = ({
 
   const openMenu = (): void => {
     const rect = caretRef.current?.getBoundingClientRect();
-    if (rect) {
-      const top = rect.bottom + 2;
-      const maxLeft = Math.max(8, window.innerWidth - 368);
-      const left = Math.max(8, Math.min(rect.left, maxLeft));
-      // Short viewports: open upward rather than off-screen.
-      const fitsBelow = top + 268 <= window.innerHeight - 8;
-      setAnchor({ top: fitsBelow ? top : Math.max(8, rect.top - 268), left });
-    } else {
+    if (!rect) {
       setAnchor(null);
+      setOpen(true);
+      return;
     }
+    const margin = CAD_RIBBON_FLYOUT_VIEWPORT_MARGIN_PX;
+    const gap = CAD_RIBBON_FLYOUT_CARET_GAP_PX;
+    const spaceBelow = window.innerHeight - rect.bottom - gap - margin;
+    const spaceAbove = rect.top - gap - margin;
+    // Prefer whichever side has more room, then cap to the CSS max box so the
+    // menu is never taller than the contract and never off-viewport.
+    const openUp = spaceBelow < Math.min(CAD_RIBBON_FLYOUT_MAX_HEIGHT_PX, spaceAbove);
+    const maxHeight = Math.max(
+      1,
+      Math.min(CAD_RIBBON_FLYOUT_MAX_HEIGHT_PX, openUp ? spaceAbove : spaceBelow),
+    );
+    const top = openUp ? Math.max(margin, rect.top - gap - maxHeight) : rect.bottom + gap;
+    const maxLeft = Math.max(
+      margin,
+      window.innerWidth - CAD_RIBBON_FLYOUT_MAX_WIDTH_PX - margin,
+    );
+    const left = Math.max(margin, Math.min(rect.left, maxLeft));
+    setAnchor({ top, left, maxHeight });
     setOpen(true);
   };
 

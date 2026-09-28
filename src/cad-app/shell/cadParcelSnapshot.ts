@@ -11,8 +11,8 @@
  * never infers legal meaning and never colors roles (layer/style decides
  * presentation). Dangling link refs stay BROKEN, never rebound.
  */
-import { cadBuildParcelClosureSummary } from '../../engine/cad/cadCogoParcelGeometrySummaries';
-import { resolveCadParcelCourses } from '../../engine/cad/cadParcelCourses';
+import type { CadParcelReportSummary } from '../../engine/cad/cadCogoParcelGeometryTypes';
+import { buildParcelCourseReportSummary, resolveCadParcelCourses } from '../../engine/cad/cadParcelCourses';
 import {
   buildParcelNetwork,
   type CadParcelAdjacencyRelation,
@@ -76,6 +76,12 @@ export interface CadParcelSnapshotEntry {
   courseCount: number;
   lineCount: number;
   arcCount: number;
+  /**
+   * Phase 21B — authoritative live report (same resolver the legacy parcel
+   * report used). Null when the parcel fails to close/resolve. Carries the
+   * course table the shell Properties report block renders.
+   */
+  report: CadParcelReportSummary | null;
   linkedCount: number;
   links: CadParcelSnapshotLink[];
   neighbors: CadParcelSnapshotNeighbor[];
@@ -154,11 +160,9 @@ const buildEntry = (
   adjacency: ReadonlyMap<string, CadParcelNetworkAdjacency[]>,
   designationById: ReadonlyMap<string, string>,
 ): CadParcelSnapshotEntry => {
-  const closure = cadBuildParcelClosureSummary(parcel.vertices, {
-    courseGeometry: parcel.courseGeometry,
-  });
+  const report = buildParcelCourseReportSummary(parcel);
   const courses = resolveCadParcelCourses(parcel);
-  const arcCount = courses.filter((course) => course.kind === 'arc').length;
+  const arcCount = report?.arcCount ?? courses.filter((course) => course.kind === 'arc').length;
   const links = boundaryLinksForParcel(project, parcel.id, boundaries, designationById);
   const plan = cadParcelPlanInfo(parcel);
   const description = plan?.description ?? null;
@@ -169,12 +173,13 @@ const buildEntry = (
     role: cadParcelPlanRole(parcel),
     description,
     hasPlanInfo: plan != null,
-    status: closure ? 'OK' : 'MISSING',
-    areaSquareMeters: closure?.areaSquareMeters ?? 0,
-    perimeterMeters: closure?.perimeterMeters ?? 0,
-    courseCount: courses.length,
-    lineCount: courses.length - arcCount,
+    status: report ? 'OK' : 'MISSING',
+    areaSquareMeters: report?.areaSquareMeters ?? 0,
+    perimeterMeters: report?.perimeterMeters ?? 0,
+    courseCount: report?.courseCount ?? courses.length,
+    lineCount: report?.lineCount ?? courses.length - arcCount,
     arcCount,
+    report,
     linkedCount: links.filter((link) => link.status === 'CURRENT').length,
     links,
     neighbors: neighborsForParcel(adjacency.get(parcel.id), designationById),

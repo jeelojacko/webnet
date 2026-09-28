@@ -120,6 +120,11 @@ export async function rebuildAllSurfaces(page: Page): Promise<void> {
 }
 
 /** The floating properties overlay covers the dock while expanded. */
+/**
+ * LEGACY-ONLY: the floating workspace properties overlay only exists when the
+ * shell does not own the chrome. Shell-mode /cad tests mount no such overlay,
+ * so this is a guarded no-op there; keep it for legacy (non-shell) specs.
+ */
 export async function collapseFloatingPanel(page: Page): Promise<void> {
   const collapse = page.locator('button[title="Collapse panel body"]');
   if (await collapse.isVisible().catch(() => false)) {

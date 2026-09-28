@@ -9,6 +9,7 @@ import React, { useEffect, useRef } from 'react';
 import { CAD_RIBBON_ICONS } from '../assets/icons/cadRibbonIcons';
 import { resolveShellCommandText } from './cadCommandRegistry';
 import type { CadRibbonToolFamily, CadRibbonToolVariant } from './cadRibbonToolFamilies';
+import type { CadRibbonFlyoutAnchor } from './cadRibbonFlyout.constants';
 
 export interface CadRibbonFlyoutProps {
   family: CadRibbonToolFamily;
@@ -28,7 +29,7 @@ export interface CadRibbonFlyoutProps {
    * the Wave-3 browser QA proved open flyouts were invisible). Omitted in
    * unit harnesses, where the legacy in-place absolute menu applies.
    */
-  anchor?: { top: number; left: number } | null;
+  anchor?: CadRibbonFlyoutAnchor | null;
 }
 
 /** A row can run only when it has a real key and the workspace reports it available. */
@@ -109,7 +110,9 @@ export const CadRibbonFlyout: React.FC<CadRibbonFlyoutProps> = ({
       className={`cad-ribbon-flyout${anchor != null ? ' cad-ribbon-flyout--fixed' : ''}`}
       data-cad-ribbon-flyout={family.id}
       onKeyDown={onKeyDown}
-      {...(anchor != null ? { style: { top: anchor.top, left: anchor.left } } : {})}
+      {...(anchor != null
+        ? { style: { top: anchor.top, left: anchor.left, maxHeight: anchor.maxHeight } }
+        : {})}
     >
       {family.variants.map((variant, index) => {
         const runnable = canRunVariant(variant, isVariantAvailable);

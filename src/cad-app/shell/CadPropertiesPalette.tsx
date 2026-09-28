@@ -11,6 +11,7 @@ import type {
   CadWorkspaceSnapshot,
 } from './cadShellTypes';
 import { SampleLinePropertiesBlock, SectionViewPropertiesBlock } from './CadSectionProperties';
+import { CadParcelReportProperties } from './CadParcelReportProperties';
 import { AnalysisLegendPropertiesBlock, AnalysisPropertiesBlock } from './CadAnalysisProperties';
 import { CadAnnotationProperties } from '../annotation/CadAnnotationProperties';
 import { GradingPropertiesBlock } from './CadGradingProperties';
@@ -134,9 +135,16 @@ export const CadPropertiesPalette: React.FC<CadPropertiesPaletteProps> = ({ snap
     const annotationSnapshot = snapshot.annotation ?? null;
     const annotationInfo =
       annotationSnapshot?.selected.find((info) => info.entityId === panel.entity.entityId) ?? null;
+    // Phase 21B — parcel report block (single selection only), same
+    // authoritative report the legacy Properties panel / overlay rendered.
+    const parcelReport =
+      panel.entity.entityType === 'parcel'
+        ? snapshot.parcel?.parcels.find((entry) => entry.id === panel.entity.entityId)?.report ?? null
+        : null;
     return (
       <div className="cad-shell-props" data-cad-properties="single">
         <h3>{panel.entity.entityLabel}</h3>
+        {parcelReport ? <CadParcelReportProperties report={parcelReport} /> : null}
         {selectedSurface ? <SurfacePropertiesBlock row={selectedSurface} actions={actions} /> : null}
         {profileBlocks}
         {sectionBlocks}

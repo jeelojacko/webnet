@@ -6,6 +6,9 @@
  * runs the selection-driven creation prompts, the rest open the manager or
  * fire the explicit Calculate / Extract / Bake actions. Buttons render
  * disabled without a live workspace/action (never fake success).
+ *
+ * Phase 21B: icon-first faces where a truthful Civil 3D asset was curated;
+ * full labels stay in tooltip/aria-label. Dispatch is unchanged.
  */
 import React from 'react';
 import {
@@ -14,6 +17,8 @@ import {
   isShellCommandAvailable,
   type CadShellCommandDef,
 } from './cadCommandRegistry';
+import { CadRibbonIconButton } from './CadRibbonIconButton';
+import type { CadRibbonIconId } from '../assets/icons/cadRibbonIcons';
 import type { CadShellActions, CadWorkspaceSnapshot } from './cadShellTypes';
 
 const GRADING_KEYS: readonly string[] = [
@@ -25,6 +30,20 @@ const GRADING_KEYS: readonly string[] = [
   'GRADINGBAKE',
 ];
 
+/** Curated Civil icons; omitted keys render a short text face. */
+const GRADING_ICONS: Partial<Record<string, CadRibbonIconId>> = {
+  GRADETOSURFACE: 'grading-create',
+};
+
+const GRADING_SHORT: Record<string, string> = {
+  GRADETOSURFACE: 'Grade',
+  GRADING: 'Manager',
+  GRADINGCALC: 'Calc',
+  GRADINGINQUIRY: 'Inquiry',
+  GRADINGEXTRACTDAYLIGHT: 'Daylight',
+  GRADINGBAKE: 'Bake',
+};
+
 const defFor = (key: string): CadShellCommandDef | null =>
   CAD_SHELL_COMMANDS.find((entry) => entry.key === key) ?? null;
 
@@ -35,28 +54,28 @@ export const CadGradingRibbonGroup: React.FC<{
   if (actions?.runGradingCommand == null) return null;
   return (
     <div className="cad-shell-ribbon-group" aria-label="Grading">
-      <span className="cad-shell-ribbon-group-label">Grading</span>
       <div className="cad-shell-ribbon-buttons">
         {GRADING_KEYS.map((key) => {
           const def = defFor(key);
           if (def == null) return null;
           const available = isShellCommandAvailable(def, snapshot, actions);
           return (
-            <button
+            <CadRibbonIconButton
               key={key}
-              type="button"
+              className="cad-ribbon-tool"
+              icon={GRADING_ICONS[key]}
+              shortLabel={GRADING_SHORT[key] ?? def.label}
+              label={def.label}
               title={`${def.label} — ${def.hint}`}
-              aria-label={def.label}
               disabled={!available}
-              className="cad-shell-ribbon-button"
+              size="compact"
               onClick={() => executeShellCommand(def, actions, snapshot)}
-              data-cad-grading-command={key}
-            >
-              {def.label}
-            </button>
+              dataAttributes={{ 'data-cad-grading-command': key }}
+            />
           );
         })}
       </div>
+      <span className="cad-shell-ribbon-group-label">Grading</span>
     </div>
   );
 };

@@ -75,6 +75,11 @@ const COMMAND_ICONS: Partial<Record<string, CadRibbonIconId>> = {
   PARCELTABLE: 'table',
   POINTTABLE: 'table',
   TABLESTYLE: 'table-style',
+  PARCELCOURSEARC: 'parcel-segments-edit',
+  PARCELCOURSELINE: 'parcel-segments-edit',
+  PARCELREPORT: 'table',
+  PARCELDESC: 'table',
+  SHELL_IMPORT_LANDXML: 'landxml-import',
 };
 
 /** 1-2 word icon faces; full labels live in flyouts/tooltips/aria. */
