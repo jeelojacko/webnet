@@ -16,7 +16,7 @@ export const ManagerShell: React.FC<{
 }> = ({ label, title, onClose, children }) => (
   <section
     aria-label={label}
-    className="absolute right-3 top-16 z-40 max-h-[80%] w-[480px] overflow-auto rounded border border-slate-600 bg-slate-900 p-3 text-slate-100"
+    className="absolute right-3 top-16 z-40 max-h-[80%] w-[min(480px,calc(100vw-24px))] overflow-auto rounded border border-slate-600 bg-slate-900 p-3 text-slate-100"
   >
     <div className="mb-2 flex items-center justify-between gap-2">
       <h2 className="text-[12px] font-semibold">{title}</h2>
