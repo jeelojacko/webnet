@@ -55,7 +55,8 @@ Static: `npm run lint` exit 0 (0 errors, 2 pre-existing unused-disable warnings)
 ## Pixel-vs-assertion split
 
 All 16 flows assert legibility-adjacent DOM state (values, summaries, `disabled`, clipping rects),
-and all pass — yet the 20F.4 pixel review FAILED one carried PNG for field-level occlusion the
-assertions cannot see (dialog bottom behind the dock). Pixel review and DOM assertions are
+and all pass — yet the 20F.4 pixel review FAILED two carried PNGs for framing defects the
+assertions cannot see (1366 dialog bottom behind the dock; 1920 pre-recalc moment with the settled
+FAILED row out of frame). Pixel review and DOM assertions are
 complementary gates; neither subsumes the other. Failed-manager disabled styling is additionally
 low-contrast in pixels — the `disabled` DOM assertion remains the gate for that sub-requirement.

@@ -21,11 +21,15 @@
 cross-cutting claims "NO CLIPPING" and "Cut/Fill visible unclipped" for
 `1366-cutfill-defaults.png`. Those claims rested on objective DOM geometry (`geometry.json` box
 containment + spec assertions), not pixels. The 20F.4 full 33/33 pixel review
-(`docs/evidence/phase20f4-visual-qa.md`, source `/tmp/20f4-pixel-review.md`) finds that frame
+(`docs/evidence/phase20f4-visual-qa.md`, source `/tmp/20f4-pixel-review.md`) finally finds two frames
 **FAIL**: the create-form Criterion row and Cut/Fill ratio fields sit below the fold, occluded by
-the Model/command dock at 1366x768 — `2:1`/`3:1` not legible. DOM "unclipped" (manager box inside
+the Model/command dock at 1366x768 — `2:1`/`3:1` not legible (found in the first review); plus
+`1920-failed-manager.png`, which shows the pre-recalc criteria-override moment with the settled
+FAILED row out of frame — falsely PASSED in the first draft, caught in the independent-review fix
+round. DOM "unclipped" (manager box inside
 viewport) does not imply field-level pixel legibility when the form is internally scrolled.
-Resolution: recaptured as `docs/evidence/phase20f4/1366-cutfill-defaults.png` (32 carry forward).
+Resolution: recaptured as `docs/evidence/phase20f4/1366-cutfill-defaults.png` and
+`docs/evidence/phase20f4/1920-failed-manager.png` (31 carry forward + 2 replacements).
 
 ## Stale-doc findings (pre-merge docs, corrected in 20F.4)
 
@@ -34,15 +38,15 @@ Resolution: recaptured as `docs/evidence/phase20f4/1366-cutfill-defaults.png` (3
   Corrected by dated addendum in that file; full rerun recorded in `phase20f4-browser-qa.md`.
 - `phase20f3-visual-qa.md` Method section discloses "objective, not eyeballed" draft status.
   That disclosure is now history: the 20F.4 33/33 eyeballed review supersedes the draft verdicts
-  for pixel legibility (one FAIL, see above). Addendum appended at top; history not rewritten.
+  for pixel legibility (two FAILs, see above). Addendum appended at top; history not rewritten.
 - `1366-failed-manager.png` / `2560-failed-manager.png` recapture note inside the old visual-qa
   is accurate (post-`91b2e0c4` frames) and stands.
 
 ## Verdict
 
 **PRODUCT SOUND / DOCS INCOMPLETE-then-CLOSED**: grading-group shell, comparator contract, and
-all 16 Chromium flows pass on the final HEAD (16/16, zero errors); the single visual-qa FAIL is a
-framing defect in one evidence PNG, not a product defect — no `src/` change. Docs completed by the
-20F.4 set: `phase20f4-visual-qa.md` (33/33 + replacement), `phase20f4-browser-qa.md` (final-HEAD
-rerun), `phase20f4-independent-review.md` (placeholder, reviewer pending), and dated addenda on
+all 16 Chromium flows pass on the final HEAD (16/16, zero errors); the two visual-qa FAILs are
+framing defects in two evidence PNGs, not product defects — no `src/` change. Docs completed by the
+20F.4 set: `phase20f4-visual-qa.md` (31 carried + 2 replacements), `phase20f4-browser-qa.md` (final-HEAD
+rerun), `phase20f4-independent-review.md` (first review recorded, re-review pending), and dated addenda on
 both phase20f3 docs.
