@@ -1,5 +1,16 @@
 # Phase 20F.3 Visual QA — draft per-screenshot inspection
 
+## 20F.4 addendum (2026-09-29, objective-only history preserved below)
+
+- Pre-merge this file was a 2-frame vision pass + objective DOM geometry for the rest (see Method).
+- The 20F.4 full 33/33 eyeballed review (`docs/evidence/phase20f4-visual-qa.md`, from
+  `/tmp/20f4-pixel-review.md`) supersedes the draft verdicts for pixel legibility: **32 PASS,
+  1 FAIL** — `1366-cutfill-defaults.png` (Criterion row + Cut/Fill `2:1`/`3:1` occluded by the
+  Model/command dock; DOM "unclipped" did not imply field-level legibility).
+- Replacement: `docs/evidence/phase20f4/1366-cutfill-defaults.png` (1366x768, 145539 bytes,
+  sha256 `61271b8d…320660`) — Criterion Cut/Fill + Cut 2:1 + Fill 3:1 + valid summary fully
+  legible above the dock. The phase20f3 original is untouched. History below is unchanged.
+
 ## Method (read first)
 This harness had **no vision-capable model available** (the `oracle`/`scout`
 subagents do not accept image attachments). The per-screenshot inspection is
