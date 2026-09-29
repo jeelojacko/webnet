@@ -53,9 +53,16 @@ export const effectiveCourseCriterion = (
 export const courseCriterionSourceText = (group: CadGradingGroup, memberIndex: number): string =>
   isCourseCriterionOverride(group, memberIndex) ? 'Override' : 'Default';
 
-/** 'Fixed' | 'Cut/Fill' type tag (never a misleading grade in the wrong column). */
-export const courseCriterionTypeText = (criterion: GradingCriterion): string =>
-  criterion.kind === 'fixed' ? 'Fixed' : 'Cut/Fill';
+/**
+ * Truthful 4-way type tag (Phase 20F.1): surface criteria split into
+ * 'Surface Fixed' / 'Surface Cut/Fill'; analytic criteria label as
+ * 'Distance' / 'Elevation' (never a fake fixed/cut/fill tag).
+ */
+export const courseCriterionTypeText = (criterion: GradingCriterion): string => {
+  if (criterion.kind === 'fixed') return 'Surface Fixed';
+  if (criterion.kind === 'cut-fill') return 'Surface Cut/Fill';
+  return criterion.kind === 'distance' ? 'Distance' : 'Elevation';
+};
 
 /** Joined region classifications for one member ('—' when the member never solved). */
 export const memberClassificationText = (
@@ -100,6 +107,11 @@ export interface CourseMemberRow {
   cutGrade: string;
   /** Fill grade text, or '—' for fixed members. */
   fillGrade: string;
+  /**
+   * Analytic target text ('20.000 m' distance, '98.000 m' elevation),
+   * or '—' for surface members (no fake fixed/cut/fill values).
+   */
+  targetValue: string;
   classification: string;
   sourceLength: string;
   /** Always '—': grading area is group-level, never per-member. */
@@ -115,6 +127,13 @@ export const buildCourseMemberRows = (
     const fixed = criterion.kind === 'fixed' ? formatSignedGradePercent(criterion.gradeRatio) : '—';
     const cut = criterion.kind === 'cut-fill' ? formatSignedGradePercent(criterion.cutGradeRatio) : '—';
     const fill = criterion.kind === 'cut-fill' ? formatSignedGradePercent(criterion.fillGradeRatio) : '—';
+    // Analytic target: distance or target elevation only; surface rows keep '—'.
+    const targetValue =
+      criterion.kind === 'distance'
+        ? `${criterion.distance.toFixed(3)} m`
+        : criterion.kind === 'elevation'
+          ? `${criterion.targetElevation.toFixed(3)} m`
+          : '—';
     return {
       course: courseNumberLabel(index),
       from: shortVertexLabel(course.vertexAId),
@@ -124,6 +143,7 @@ export const buildCourseMemberRows = (
       fixedGrade: fixed,
       cutGrade: cut,
       fillGrade: fill,
+      targetValue,
       classification: memberClassificationText(result, index),
       sourceLength: memberSourceLengthText(result, index),
       gradingArea: '—',

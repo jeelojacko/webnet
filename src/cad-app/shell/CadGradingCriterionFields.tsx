@@ -29,6 +29,13 @@ export interface CadGradingCriterionFieldsProps {
   surfaceSlot?: React.ReactNode;
   /** Test attr prefix, e.g. `cad-grading` or `cad-grading-group`. */
   dataPrefix?: string;
+  /**
+   * Phase 20F.1: allowed termination methods. Defaults to all three.
+   * Pass a single method to lock the composer to one family (the Method
+   * selector collapses to a locked label — cross-family options are never
+   * offered). Used by the per-course criteria editor.
+   */
+  methods?: readonly GradingTerminationKind[];
 }
 
 const GradeFields: React.FC<{
@@ -105,23 +112,32 @@ export const CadGradingCriterionFields: React.FC<CadGradingCriterionFieldsProps>
   lengthUnit,
   surfaceSlot,
   dataPrefix = 'cad-grading',
+  methods = METHODS,
 }) => {
   const summary = summarizeGradingCriterionDraft(draft, lengthUnit);
+  const offered = METHODS.filter((method) => methods.includes(method));
+  const locked = offered.length === 1 ? offered[0]! : null;
   return (
     <>
-      <Field label="Method">
-        <select
-          aria-label="Grading method"
-          className={inputClass}
-          data-cad-grading-field={`${dataPrefix}-method`}
-          value={draft.method}
-          onChange={(e) => onChange({ ...draft, method: e.target.value as GradingTerminationKind })}
-        >
-          {METHODS.map((method) => (
-            <option key={method} value={method}>{gradingMethodLabel(method)}</option>
-          ))}
-        </select>
-      </Field>
+      {locked != null ? (
+        <p className="self-end text-[11px] text-slate-400" data-cad-grading-field={`${dataPrefix}-method-locked`}>
+          Method: {gradingMethodLabel(locked)} (locked to group family)
+        </p>
+      ) : (
+        <Field label="Method">
+          <select
+            aria-label="Grading method"
+            className={inputClass}
+            data-cad-grading-field={`${dataPrefix}-method`}
+            value={draft.method}
+            onChange={(e) => onChange({ ...draft, method: e.target.value as GradingTerminationKind })}
+          >
+            {offered.map((method) => (
+              <option key={method} value={method}>{gradingMethodLabel(method)}</option>
+            ))}
+          </select>
+        </Field>
+      )}
       {draft.method === 'surface' ? (
         <>
           {surfaceSlot}

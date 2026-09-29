@@ -223,13 +223,22 @@ const CreateForm: React.FC<{
 const EditCriteriaInline: React.FC<{
   row: CadGradingGroupRow;
   actions: CadShellActions;
+  currentSurfaces: Array<{ id: string; name: string }>;
   lengthUnit: string;
   onNotice: (_message: string) => void;
   onClose: () => void;
-}> = ({ row, actions, lengthUnit, onNotice, onClose }) => {
+}> = ({ row, actions, currentSurfaces, lengthUnit, onNotice, onClose }) => {
   const [draft, setDraft] = React.useState<GradingCriterionDraft>(() =>
     gradingCriterionDraftFromCriterion(row.definition.criterion),
   );
+  // Preserve the current target when it is still CURRENT; otherwise offer the
+  // first eligible one so an analytic -> Surface switch has a real target.
+  const [targetId, setTargetId] = React.useState(() =>
+    currentSurfaces.some((surface) => surface.id === row.targetSurfaceId)
+      ? row.targetSurfaceId
+      : currentSurfaces[0]?.id ?? '',
+  );
+  const surfaceBlocked = draft.method === 'surface' && currentSurfaces.length === 0;
   const apply = (): void => {
     const criterion: GradingCriterion | null = parseGradingCriterionDraft(draft);
     if (criterion == null) {
@@ -237,20 +246,45 @@ const EditCriteriaInline: React.FC<{
       return;
     }
     const needsSurface = gradingCriterionRequiresSurface(criterion);
-    run(actions, {
+    if (needsSurface && !currentSurfaces.some((surface) => surface.id === targetId)) {
+      onNotice('Criteria rejected — surface grading needs a CURRENT target.');
+      return;
+    }
+    // Kind switch + target commit in ONE undo entry. The engine is
+    // authoritative for the one-family-per-group guard: a rejected switch
+    // (e.g. Distance overrides -> Surface default) must stay open and never
+    // auto-delete overrides.
+    const ok = run(actions, {
       key: 'GROUP_EDIT_CRITERIA',
       groupId: row.id,
       criterion,
-      targetSurfaceId: needsSurface ? row.targetSurfaceId || null : null,
+      targetSurfaceId: needsSurface ? targetId : null,
     });
+    if (!ok) {
+      onNotice('Criteria rejected — one termination family per group; reset course overrides first.');
+      return;
+    }
     onNotice('Criteria updated — recalculate.');
     onClose();
   };
   return (
     <div className="mt-1 grid grid-cols-2 gap-2" data-cad-grading-group-edit-panel={row.id}>
-      <CadGradingCriterionFields draft={draft} onChange={setDraft} lengthUnit={lengthUnit} dataPrefix="cad-grading-group-edit" />
+      <CadGradingCriterionFields
+        draft={draft}
+        onChange={setDraft}
+        lengthUnit={lengthUnit}
+        dataPrefix="cad-grading-group-edit"
+        surfaceSlot={
+          <TargetSurfaceField currentSurfaces={currentSurfaces} targetId={targetId} onChange={setTargetId} />
+        }
+      />
+      {surfaceBlocked ? (
+        <div className="col-span-2 text-[11px] text-amber-300" data-cad-grading-group-edit-surface-blocked>
+          Surface grading needs a CURRENT target surface — none is eligible.
+        </div>
+      ) : null}
       <div className="col-span-2 flex gap-1">
-        <button type="button" className={buttonClass} onClick={apply} data-cad-grading-group-edit-apply>Apply Criteria</button>
+        <button type="button" className={buttonClass} onClick={apply} disabled={surfaceBlocked} data-cad-grading-group-edit-apply>Apply Criteria</button>
         <button type="button" className={buttonClass} onClick={onClose} data-cad-grading-group-edit-cancel>Cancel</button>
       </div>
     </div>
@@ -262,11 +296,12 @@ const RowActions: React.FC<{
   snapshot: CadWorkspaceSnapshot;
   actions: CadShellActions;
   surfaces: Array<{ id: string; name: string }>;
+  currentSurfaces: Array<{ id: string; name: string }>;
   lengthUnit: string;
   onNotice: (_message: string) => void;
   onInquiry: () => void;
   onCriteria: () => void;
-}> = ({ row, snapshot, actions, surfaces, lengthUnit, onNotice, onInquiry, onCriteria }) => {
+}> = ({ row, snapshot, actions, surfaces, currentSurfaces, lengthUnit, onNotice, onInquiry, onCriteria }) => {
   const [editing, setEditing] = React.useState(false);
   return (
     <div data-cad-grading-group-actions={row.id}>
@@ -331,8 +366,8 @@ const RowActions: React.FC<{
             className={inputClass}
             value={row.targetSurfaceId}
             onChange={(e) => {
-              run(actions, { key: 'GROUP_REASSIGN_TARGET', groupId: row.id, targetSurfaceId: e.target.value });
-              onNotice('Target reassigned — recalculate.');
+              const ok = run(actions, { key: 'GROUP_REASSIGN_TARGET', groupId: row.id, targetSurfaceId: e.target.value });
+              onNotice(ok ? 'Target reassigned — recalculate.' : 'Target reassignment rejected.');
             }}
             data-cad-grading-group-change-target
           >
@@ -372,8 +407,8 @@ const RowActions: React.FC<{
           type="button"
           className={buttonClass}
           onClick={() => {
-            run(actions, { key: 'GROUP_DELETE', groupId: row.id });
-            onNotice('Deleted — extracts/baked surfaces are independent and kept.');
+            const ok = run(actions, { key: 'GROUP_DELETE', groupId: row.id });
+            onNotice(ok ? 'Deleted — extracts/baked surfaces are independent and kept.' : 'Delete rejected.');
           }}
           data-cad-grading-group-delete
         >
@@ -384,6 +419,7 @@ const RowActions: React.FC<{
         <EditCriteriaInline
           row={row}
           actions={actions}
+          currentSurfaces={currentSurfaces}
           lengthUnit={lengthUnit}
           onNotice={onNotice}
           onClose={() => setEditing(false)}
@@ -399,14 +435,14 @@ const GroupRowTable: React.FC<{
   actions: CadShellActions;
 }> = ({ rows, selectedId, actions }) => (
   <div className="mb-3 overflow-auto" data-cad-grading-group-table>
-    <table className="w-full text-left text-[11px]">
-      <thead className="text-slate-400">
+    <table className="w-max min-w-full text-left text-[11px]">
+      <thead className="whitespace-nowrap text-slate-400">
         <tr>
-          <th>Name</th><th>Method</th><th>Courses</th><th>Side</th><th>Target</th><th>Default Criterion</th>
-          <th>Status</th><th>Max</th><th>Accuracy</th><th>Tie (min–max)</th><th>Area</th><th>Tri</th>
+          <th className="pr-2">Name</th><th className="pr-2">Method</th><th className="pr-2">Courses</th><th className="pr-2">Side</th><th className="pr-2">Target</th><th className="pr-2">Default Criterion</th>
+          <th className="pr-2">Status</th><th className="pr-2">Max</th><th className="pr-2">Accuracy</th><th className="pr-2">Tie (min–max)</th><th className="pr-2">Area</th><th>Tri</th>
         </tr>
       </thead>
-      <tbody>
+      <tbody className="whitespace-nowrap">
         {rows.map((row) => (
           <tr
             key={row.id}
@@ -416,17 +452,17 @@ const GroupRowTable: React.FC<{
             className={selectedId === row.id ? 'bg-slate-800' : ''}
             onClick={() => actions.selectGradingGroup?.(row.id)}
           >
-            <td>{row.name}</td>
-            <td>{row.method === 'surface' ? 'Surface' : row.method === 'distance' ? 'Distance' : 'Elevation'}</td>
-            <td>{row.courseCount}{row.closed ? ' (closed)' : ''}</td>
-            <td>{row.side}</td>
-            <td>{row.targetName}</td>
-            <td>Default {row.criterionText} · Overrides:{row.overrideCount}</td>
-            <td>{row.statusText}{row.stale ? ' (stale)' : ''}</td>
-            <td>{row.maxSearchDistance.toFixed(2)} {row.lengthUnit}</td>
-            <td>{row.accuracyText}{row.curveCornerApproximated ? ' (corner)' : ''}</td>
-            <td>{row.metrics ? `${row.metrics.minProjectionDistance.toFixed(2)}–${row.metrics.maxProjectionDistance.toFixed(2)} ${row.lengthUnit}` : '--'}</td>
-            <td>{row.metrics ? row.metrics.gradingPlanArea.toFixed(1) : '--'}</td>
+            <td className="pr-2">{row.name}</td>
+            <td className="pr-2">{row.method === 'surface' ? 'Surface' : row.method === 'distance' ? 'Distance' : 'Elevation'}</td>
+            <td className="pr-2">{row.courseCount}{row.closed ? ' (closed)' : ''}</td>
+            <td className="pr-2">{row.side}</td>
+            <td className="pr-2">{row.targetName}</td>
+            <td className="pr-2">Default {row.criterionText} · Overrides:{row.overrideCount}</td>
+            <td className="pr-2">{row.statusText}{row.stale ? ' (stale)' : ''}</td>
+            <td className="pr-2">{row.maxSearchDistance.toFixed(2)} {row.lengthUnit}</td>
+            <td className="pr-2">{row.accuracyText}{row.curveCornerApproximated ? ' (corner)' : ''}</td>
+            <td className="pr-2">{row.metrics ? `${row.metrics.minProjectionDistance.toFixed(2)}–${row.metrics.maxProjectionDistance.toFixed(2)} ${row.lengthUnit}` : '--'}</td>
+            <td className="pr-2">{row.metrics ? row.metrics.gradingPlanArea.toFixed(1) : '--'}</td>
             <td>{row.metrics ? row.metrics.triangleCount : '--'}</td>
           </tr>
         ))}
@@ -485,6 +521,9 @@ export const CadGradingGroupManager: React.FC<CadGradingGroupManagerProps> = ({
             snapshot={snapshot}
             actions={actions}
             surfaces={(snapshot.surface?.surfaces ?? []).map((row) => ({ id: row.id, name: row.name }))}
+            currentSurfaces={(snapshot.surface?.surfaces ?? [])
+              .filter((surface) => surface.status === 'CURRENT')
+              .map((surface) => ({ id: surface.id, name: surface.name }))}
             lengthUnit={lengthUnit}
             onNotice={setNotice}
             onInquiry={() => setTab('inquiry')}
@@ -503,6 +542,7 @@ export const CadGradingGroupManager: React.FC<CadGradingGroupManagerProps> = ({
           group={selected.definition}
           run={(command) => run(actions, command)}
           onNotice={setNotice}
+          lengthUnit={lengthUnit}
         />
       ) : null}
       {tab === 'inquiry' && selected ? (

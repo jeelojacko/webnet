@@ -1,7 +1,7 @@
 import { defineConfig } from 'vitest/config';
 
 import { EVIDENCE_TESTS } from './scripts/testTiers';
-import { webnetVitestBase } from './vitest.shared';
+import { webnetProjectRoot, webnetVitestBase } from './vitest.shared';
 
 /**
  * EVIDENCE tier: only the intentionally expensive long numerical campaigns
@@ -11,6 +11,7 @@ import { webnetVitestBase } from './vitest.shared';
  * artifact fails loudly — never a silent skip).
  */
 export default defineConfig({
+  root: webnetProjectRoot,
   test: {
     ...webnetVitestBase,
     include: [...EVIDENCE_TESTS],

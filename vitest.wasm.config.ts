@@ -1,7 +1,7 @@
 import { defineConfig } from 'vitest/config';
 
 import { WASM_INTEGRATION_TESTS } from './scripts/testTiers';
-import { webnetVitestBase } from './vitest.shared';
+import { webnetProjectRoot, webnetVitestBase } from './vitest.shared';
 
 /**
  * WASM tier: only the explicit real-WASM / worker / native integration
@@ -10,6 +10,7 @@ import { webnetVitestBase } from './vitest.shared';
  * loudly — never a silent skip).
  */
 export default defineConfig({
+  root: webnetProjectRoot,
   test: {
     ...webnetVitestBase,
     include: [...WASM_INTEGRATION_TESTS],

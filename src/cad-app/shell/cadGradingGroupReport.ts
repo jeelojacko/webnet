@@ -99,6 +99,7 @@ export const buildGroupInquiryReport = (
     lines.push(
       `  ${row.course} ${row.from}→${row.to} · ${row.criterionSource} ${row.criterionType}` +
         ` · fixed ${row.fixedGrade} · cut ${row.cutGrade} · fill ${row.fillGrade}` +
+        ` · target ${row.targetValue}` +
         ` · ${row.classification} · source ${row.sourceLength} m · area ${row.gradingArea}`,
     );
   }
@@ -188,7 +189,10 @@ export const buildGroupCsv = (
     );
   }
   lines.push('');
-  lines.push('Course,From,To,Criterion Source,Criterion Type,Fixed Grade,Cut Grade,Fill Grade,Classification,Source Length,Grading Area');
+  // Phase 20F.1: 'Target Value' column added after Fill Grade ('—' for
+  // surface members; '<d> m' distance / '<z> m' target elevation for
+  // analytic members). Documented here + docs/evidence/phase20f1-grading-ui-audit.md.
+  lines.push('Course,From,To,Criterion Source,Criterion Type,Fixed Grade,Cut Grade,Fill Grade,Target Value,Classification,Source Length,Grading Area');
   for (const row of buildCourseMemberRows(group, result)) {
     lines.push(
       [
@@ -200,6 +204,7 @@ export const buildGroupCsv = (
         row.fixedGrade,
         row.cutGrade,
         row.fillGrade,
+        row.targetValue,
         row.classification,
         row.sourceLength,
         row.gradingArea,
