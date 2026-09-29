@@ -331,6 +331,7 @@ const gradingBakeCommand: CadCommandDefinition<GradingBakeCommand> = {
         ...(targetKind === 'surface' ? { targetSurfaceId: inputs.target!.id } : {}),
         ...(criterion.kind === 'distance' ? { criterionDistance: criterion.distance } : {}),
         ...(criterion.kind === 'elevation' ? { targetElevation: criterion.targetElevation } : {}),
+        ...(criterion.kind === 'relative-elevation' ? { relativeElevation: criterion.relativeElevation } : {}),
         accuracy: result.accuracy,
       },
     };

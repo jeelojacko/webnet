@@ -12,6 +12,7 @@ import type { CadShellActions, CadWorkspaceSnapshot } from './cadShellTypes';
 import type { CadGradingGroupRow } from './cadGradingGroupSnapshot';
 import { gradingTargetSummary } from './cadGradingShell';
 import { gradingMethodLabel } from './cadGradingCriterionInput';
+import { relativeElevationDisplay } from './cadGradingDisplay';
 
 const TreeGroup: React.FC<{ label: string; children: React.ReactNode }> = ({ label, children }) => (
   <details className="cad-shell-tree-group" open>
@@ -20,16 +21,26 @@ const TreeGroup: React.FC<{ label: string; children: React.ReactNode }> = ({ lab
   </details>
 );
 
-const DefinitionRow: React.FC<{ row: CadGradingGroupRow }> = ({ row }) => (
-  <div className="cad-shell-tree-row" data-cad-grading-group-definition={row.id} data-cad-grading-group-method={row.method}>
-    <span>Method {gradingMethodLabel(row.method)}</span>
-    <span> · Source {row.sourceName}</span>
-    <span> · {row.courseCount} courses{row.closed ? ' (closed)' : ''}</span>
-    <span> · {row.side}</span>
-    <span> · {gradingTargetSummary(row.definition.criterion, row.targetName, row.lengthUnit)}</span>
-    <span> · max {numeric(row.maxSearchDistance)} {row.lengthUnit}</span>
-  </div>
-);
+const DefinitionRow: React.FC<{ row: CadGradingGroupRow }> = ({ row }) => {
+  const relative = relativeElevationDisplay(row.definition.criterion, row.lengthUnit);
+  return (
+    <div className="cad-shell-tree-row" data-cad-grading-group-definition={row.id} data-cad-grading-group-method={row.method}>
+      <span>Method {gradingMethodLabel(row.method)}</span>
+      <span> · Source {row.sourceName}</span>
+      <span> · {row.courseCount} courses{row.closed ? ' (closed)' : ''}</span>
+      <span> · {row.side}</span>
+      <span> · {gradingTargetSummary(row.definition.criterion, row.targetName, row.lengthUnit)}</span>
+      {relative ? (
+        <>
+          <span data-cad-grading-group-relative-grade> · Grade {relative.grade}</span>
+          <span data-cad-grading-group-relative-elevation> · Δ {relative.relativeElevation}</span>
+          <span data-cad-grading-group-relative-offset> · offset {relative.derivedOffset}</span>
+        </>
+      ) : null}
+      <span> · max {numeric(row.maxSearchDistance)} {row.lengthUnit}</span>
+    </div>
+  );
+};
 
 /** Phase 20E: group default + override count (never per-override child nodes). */
 const CriteriaRow: React.FC<{ row: CadGradingGroupRow }> = ({ row }) => (

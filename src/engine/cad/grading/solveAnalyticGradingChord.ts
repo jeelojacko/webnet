@@ -16,6 +16,7 @@ import {
   type StraightChordOutcome,
   type StraightChordSolve,
 } from './solveStraightChord';
+import { resolveAnalyticCriterionAt } from './gradingAnalyticCriterion';
 import type {
   GradingCriterion,
   GradingSide,
@@ -43,10 +44,6 @@ export type GradingChordInput = AnalyticChordInput & {
   target?: GradingTargetMeshSnapshot;
   query?: TargetQuery;
 };
-
-/** Machine-zero: exact zero only (never a survey tolerance). */
-const isMachineZero = (value: number): boolean =>
-  Math.abs(value) < Number.MIN_VALUE;
 
 interface AnalyticFrame {
   nx: number;
@@ -96,42 +93,26 @@ type AnalyticOffsetResult =
   | { ok: true; g: number; distances: [number, number] }
   | { ok: false; code: 'NO_SOLUTION' | 'MAX_DISTANCE_REACHED'; detail?: string };
 
-/** Closed-form offset per station: constant D, or linear (E−Zsrc)/g. */
+/**
+ * Closed-form offset per station through the shared analytic criterion
+ * helper: constant D (distance), linear (E−Zsrc)/g (elevation), or constant
+ * Δ/g (relative-elevation). Both endpoints are resolved independently so a
+ * sloping source keeps its per-station offset honest.
+ */
 const analyticOffsets = (
   criterion: GradingCriterion,
   source: GradingComputeSource,
   maxSearchDistance: number,
 ): AnalyticOffsetResult => {
-  if (criterion.kind === 'distance') {
-    if (!Number.isFinite(criterion.gradeRatio)) {
-      return { ok: false, code: 'NO_SOLUTION', detail: 'GRADING_BAD_CRITERION' };
-    }
-    const d = criterion.distance;
-    if (!Number.isFinite(d) || !(d > 0)) {
-      return { ok: false, code: 'NO_SOLUTION', detail: 'GRADING_BAD_CRITERION' };
-    }
-    if (d > maxSearchDistance) {
-      return { ok: false, code: 'MAX_DISTANCE_REACHED', detail: 'GRADING_DISTANCE_BEYOND_SEARCH' };
-    }
-    return { ok: true, g: criterion.gradeRatio, distances: [d, d] };
-  }
-  if (criterion.kind === 'elevation') {
-    const g = criterion.gradeRatio;
-    const e = criterion.targetElevation;
-    if (!Number.isFinite(g) || isMachineZero(g) || !Number.isFinite(e)) {
-      return { ok: false, code: 'NO_SOLUTION', detail: 'GRADING_BAD_CRITERION' };
-    }
-    const d0 = (e - source.startZ) / g;
-    const d1 = (e - source.endZ) / g;
-    if (!(d0 >= 0) || !(d1 >= 0)) {
-      return { ok: false, code: 'NO_SOLUTION', detail: 'GRADING_ELEVATION_WRONG_DIRECTION' };
-    }
-    if (d0 > maxSearchDistance || d1 > maxSearchDistance) {
-      return { ok: false, code: 'MAX_DISTANCE_REACHED', detail: 'GRADING_ELEVATION_BEYOND_SEARCH' };
-    }
-    return { ok: true, g, distances: [d0, d1] };
-  }
-  return { ok: false, code: 'NO_SOLUTION', detail: 'GRADING_BAD_CRITERION' };
+  const start = resolveAnalyticCriterionAt(criterion, source.startZ, maxSearchDistance);
+  if (!start.ok) return start;
+  const end = resolveAnalyticCriterionAt(criterion, source.endZ, maxSearchDistance);
+  if (!end.ok) return end;
+  return {
+    ok: true,
+    g: start.value.gradeRatio,
+    distances: [start.value.horizontalDistance, end.value.horizontalDistance],
+  };
 };
 
 /**

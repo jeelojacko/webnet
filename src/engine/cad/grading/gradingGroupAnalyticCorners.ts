@@ -5,7 +5,10 @@
  * corner is the analytic intersection of the two terminal limit lines:
  *   - distance  : offset of each course by its constant D along the grading
  *                 normal, with Z = Zsource + g·D;
- *   - elevation : each course's grading plane ∩ Z = E (constant Z line).
+ *   - elevation : each course's grading plane ∩ Z = E (constant Z line);
+ *   - relative-elevation: distance-line geometry with d = ΔZ/g and
+ *                 Z = Zsource + ΔZ (source-shifted limit, constant along
+ *                 straight and curved sources).
  *
  * The intersection is accepted only when it lies on both grading-side
  * half-planes and within the miter/search bound, and when the two lines
@@ -66,7 +69,8 @@ const finiteAll = (values: number[]): boolean => values.every((value) => Number.
 /**
  * Terminal limit line of one course at the joint. Distance: parallel offset
  * at constant D. Elevation: the constant-Z line where the course's plane
- * reaches E. Null for surface criteria or non-finite geometry.
+ * reaches E. Relative-elevation: distance-line geometry with d = ΔZ/g
+ * (source shifted by ΔZ). Null for surface criteria or non-finite geometry.
  */
 export const analyticTerminalLine = (
   vx: number,
@@ -104,6 +108,20 @@ export const analyticTerminalLine = (
       dx: t.nx - (gs / g) * n.nx,
       dy: t.ny - (gs / g) * n.ny,
       dz: 0,
+    };
+  }
+  if (criterion.kind === 'relative-elevation') {
+    const { gradeRatio: g, relativeElevation: dz } = criterion;
+    if (!Number.isFinite(g) || !Number.isFinite(dz) || g === 0 || dz === 0) return null;
+    const d = dz / g;
+    if (!Number.isFinite(d)) return null;
+    return {
+      ox: vx + n.nx * d,
+      oy: vy + n.ny * d,
+      oz: vz + dz,
+      dx: t.nx,
+      dy: t.ny,
+      dz: gs,
     };
   }
   return null;

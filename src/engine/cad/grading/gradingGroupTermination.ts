@@ -5,7 +5,8 @@
  * criterion (group default + sparse overrides):
  *   - `surface`  : grade-to-surface (fixed and/or cut-fill may mix freely);
  *   - `distance` : analytic constant horizontal grading limit;
- *   - `elevation`: analytic constant-Z grading limit.
+ *   - `elevation`: analytic constant-Z grading limit;
+ *   - `relative-elevation`: analytic limit following the source shifted by ΔZ.
  *
  * Mixing families inside one group has no honest closed-form kernel (surface
  * corners need a TIN tie while analytic corners intersect two limit lines),
@@ -26,6 +27,7 @@ const FAMILY_LABEL: Record<GroupTerminationFamily, string> = {
   surface: 'Surface',
   distance: 'Distance',
   elevation: 'Elevation',
+  'relative-elevation': 'Relative Elevation',
 };
 
 /** Termination family of one criterion (surface = legacy fixed/cut-fill). */
@@ -47,7 +49,7 @@ export const validateGroupTerminationCriteria = (
   for (const member of memberCriteria) families.add(groupTerminationFamily(member));
   if (families.size <= 1) return null;
   const names = [...families].map((family) => FAMILY_LABEL[family]).join(', ');
-  return `grading group mixes termination families (${names}); one group must use a single family (Surface, Distance, or Elevation)`;
+  return `grading group mixes termination families (${names}); one group must use a single family (Surface, Distance, Elevation, or Relative Elevation)`;
 };
 
 /** Convenience gate for a fully-built group definition (default + overrides). */

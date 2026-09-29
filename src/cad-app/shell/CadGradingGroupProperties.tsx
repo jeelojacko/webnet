@@ -17,11 +17,15 @@ import {
 } from './cadGradingGroupCourseCriteria';
 import { formatGradingCriterion, gradingTargetSummary } from './cadGradingShell';
 import { gradingMethodLabel } from './cadGradingCriterionInput';
+import { relativeElevationDisplay } from './cadGradingDisplay';
 
 export const GradingGroupPropertiesBlock: React.FC<{ row: CadGradingGroupRow }> = ({ row }) => {
   const [memberIndex, setMemberIndex] = React.useState(0);
   const clamped = Math.min(memberIndex, Math.max(0, row.definition.sourceCourses.length - 1));
   const course = row.definition.sourceCourses[clamped];
+  const relative = relativeElevationDisplay(row.definition.criterion, row.lengthUnit);
+  const memberCriterion = course ? effectiveCourseCriterion(row.definition, clamped) : null;
+  const memberRelative = memberCriterion ? relativeElevationDisplay(memberCriterion, row.lengthUnit) : null;
   return (
     <div data-cad-grading-group-properties={row.id} data-cad-grading-group-method={row.method}>
       <h3>Grading Group</h3>
@@ -33,6 +37,13 @@ export const GradingGroupPropertiesBlock: React.FC<{ row: CadGradingGroupRow }> 
         <div><dt>Side</dt><dd>{row.side}</dd></div>
         <div><dt>Target</dt><dd>{gradingTargetSummary(row.definition.criterion, row.targetName, row.lengthUnit)}</dd></div>
         <div><dt>Default Criterion</dt><dd>{row.criterionText}</dd></div>
+        {relative ? (
+          <>
+            <div><dt>Default Grade</dt><dd data-cad-grading-group-relative-grade>{relative.grade}</dd></div>
+            <div><dt>Default Relative Elevation</dt><dd data-cad-grading-group-relative-elevation>{relative.relativeElevation}</dd></div>
+            <div><dt>Derived horizontal offset</dt><dd data-cad-grading-group-relative-offset>{relative.derivedOffset}</dd></div>
+          </>
+        ) : null}
         <div><dt>Override Count</dt><dd>{row.overrideCount}</dd></div>
         <div><dt>Corner</dt><dd>{row.cornerMode}</dd></div>
         <div><dt>Max distance</dt><dd>{numeric(row.maxSearchDistance)} {row.lengthUnit}</dd></div>
@@ -59,6 +70,13 @@ export const GradingGroupPropertiesBlock: React.FC<{ row: CadGradingGroupRow }> 
               </dd>
             </div>
             <div><dt>Member Effective</dt><dd>{formatGradingCriterion(effectiveCourseCriterion(row.definition, clamped))}</dd></div>
+            {memberRelative ? (
+              <>
+                <div><dt>Member Effective Grade</dt><dd data-cad-grading-group-member-relative-grade>{memberRelative.grade}</dd></div>
+                <div><dt>Member Effective Relative Elevation</dt><dd data-cad-grading-group-member-relative-elevation>{memberRelative.relativeElevation}</dd></div>
+                <div><dt>Member Derived Offset</dt><dd data-cad-grading-group-member-relative-offset>{memberRelative.derivedOffset}</dd></div>
+              </>
+            ) : null}
             <div><dt>Member Source</dt><dd>{courseCriterionSourceText(row.definition, clamped)}</dd></div>
           </>
         ) : null}

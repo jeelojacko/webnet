@@ -11,6 +11,12 @@
  * Phase 20F (additive): `distance` and `elevation` criteria terminate
  * without a target surface (analytic solve, no TIN query). Fixed/cut-fill
  * semantics and bytes are unchanged.
+ *
+ * Phase 20G (additive): `relative-elevation` terminates without a target
+ * surface on a signed vertical offset from the source profile
+ * (`limitZ(u) = sourceZ(u) + relativeElevation`). The derived horizontal
+ * distance is `relativeElevation / gradeRatio`; the criterion stores the
+ * persisted vertical intent, never a converted distance.
  */
 
 export type GradingSide = 'left' | 'right';
@@ -19,10 +25,15 @@ export type GradingCriterion =
   | { kind: 'fixed'; gradeRatio: number }
   | { kind: 'cut-fill'; cutGradeRatio: number; fillGradeRatio: number }
   | { kind: 'distance'; gradeRatio: number; distance: number }
-  | { kind: 'elevation'; gradeRatio: number; targetElevation: number };
+  | { kind: 'elevation'; gradeRatio: number; targetElevation: number }
+  | { kind: 'relative-elevation'; gradeRatio: number; relativeElevation: number };
 
 /** Where a criterion terminates: on the target surface or analytically. */
-export type GradingTerminationKind = 'surface' | 'distance' | 'elevation';
+export type GradingTerminationKind =
+  | 'surface'
+  | 'distance'
+  | 'elevation'
+  | 'relative-elevation';
 
 /** Termination of one criterion (surface = legacy grade-to-surface solve). */
 export const gradingTerminationKind = (

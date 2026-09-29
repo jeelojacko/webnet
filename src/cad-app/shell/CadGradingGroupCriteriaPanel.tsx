@@ -69,6 +69,8 @@ const criterionKey = (criterion: GradingCriterion): string => {
       return `distance:${criterion.gradeRatio}:${criterion.distance}`;
     case 'elevation':
       return `elevation:${criterion.gradeRatio}:${criterion.targetElevation}`;
+    case 'relative-elevation':
+      return `relative-elevation:${criterion.gradeRatio}:${criterion.relativeElevation}`;
   }
 };
 

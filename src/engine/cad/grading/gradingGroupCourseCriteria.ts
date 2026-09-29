@@ -103,9 +103,10 @@ export const canonicalCourseCriteria = (
 };
 
 /**
- * Structural criterion equality (kind + ratios). Phase 20F: distance and
- * elevation compare their exact numeric inputs (no tolerance), so a
- * reset-to-default removes the override only when the inputs are identical.
+ * Structural criterion equality (kind + ratios). Phase 20F/20G: distance,
+ * elevation, and relative-elevation compare their exact numeric inputs
+ * (no tolerance), so a reset-to-default removes the override only when the
+ * inputs are identical.
  */
 export const criteriaEqual = (a: GradingCriterion, b: GradingCriterion): boolean => {
   if (a.kind !== b.kind) return false;
@@ -118,6 +119,9 @@ export const criteriaEqual = (a: GradingCriterion, b: GradingCriterion): boolean
   }
   if (a.kind === 'elevation' && b.kind === 'elevation') {
     return a.gradeRatio === b.gradeRatio && a.targetElevation === b.targetElevation;
+  }
+  if (a.kind === 'relative-elevation' && b.kind === 'relative-elevation') {
+    return a.gradeRatio === b.gradeRatio && a.relativeElevation === b.relativeElevation;
   }
   return false;
 };

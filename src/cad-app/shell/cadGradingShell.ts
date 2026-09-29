@@ -23,6 +23,7 @@ import {
   gradingBoundaryLabel,
   gradingBoundaryShortLabel,
 } from '../../engine/cad/grading/gradingTypes';
+import { constantAnalyticOffset } from '../../engine/cad/grading/gradingAnalyticCriterion';
 import type { CadCommand } from '../../engine/cad/cadTransactions.types';
 import type { CadShellActions, CadWorkspaceSnapshot } from './cadShellTypes';
 import type { CadGradingRow } from './cadGradingSnapshot';
@@ -32,6 +33,7 @@ export const GRADING_SHELL_KEYS: ReadonlySet<string> = new Set([
   'GRADETOSURFACE',
   'GRADETODISTANCE',
   'GRADETOELEVATION',
+  'GRADETORELATIVEELEVATION',
   'GRADING',
   'GRADINGCALC',
   'GRADINGINQUIRY',
@@ -89,16 +91,23 @@ const H_V_TEXT = (magnitude: number): string => {
 
 /** Normalized criterion summary. Cut/fill shows CUT (positive) then FILL. */
 export const formatGradingCriterion = (criterion: GradingCriterion): string => {
-  if (criterion.kind === 'fixed') {
-    return `Fixed ${formatSignedGradePercent(criterion.gradeRatio)} (${H_V_TEXT(Math.abs(criterion.gradeRatio))})`;
+  switch (criterion.kind) {
+    case 'fixed':
+      return `Fixed ${formatSignedGradePercent(criterion.gradeRatio)} (${H_V_TEXT(Math.abs(criterion.gradeRatio))})`;
+    case 'cut-fill':
+      return `Cut ${formatSignedGradePercent(criterion.cutGradeRatio)} / Fill ${formatSignedGradePercent(criterion.fillGradeRatio)}`;
+    case 'distance':
+      return `Grade ${formatSignedGradePercent(criterion.gradeRatio)} → Distance ${criterion.distance.toFixed(3)} m`;
+    case 'elevation':
+      return `Grade ${formatSignedGradePercent(criterion.gradeRatio)} → Elevation ${criterion.targetElevation.toFixed(3)} m`;
+    case 'relative-elevation': {
+      // Malformed criteria cannot be persisted (authoring + sanitizers gate
+      // them), but never invent a derived offset if one is somehow uncomputable.
+      const offset = constantAnalyticOffset(criterion);
+      const base = `Grade ${formatSignedGradePercent(criterion.gradeRatio)} → Relative Elevation ${criterion.relativeElevation.toFixed(3)} m`;
+      return offset == null ? `${base} (offset invalid)` : `${base} (offset ${offset.toFixed(3)} m)`;
+    }
   }
-  if (criterion.kind === 'cut-fill') {
-    return `Cut ${formatSignedGradePercent(criterion.cutGradeRatio)} / Fill ${formatSignedGradePercent(criterion.fillGradeRatio)}`;
-  }
-  if (criterion.kind === 'distance') {
-    return `Grade ${formatSignedGradePercent(criterion.gradeRatio)} → Distance ${criterion.distance.toFixed(3)} m`;
-  }
-  return `Grade ${formatSignedGradePercent(criterion.gradeRatio)} → Elevation ${criterion.targetElevation.toFixed(3)} m`;
 };
 
 /** Boundary label the Extract command produces for this criterion. */
@@ -127,12 +136,21 @@ export const gradingTargetSummary = (
   if (criterion.kind === 'elevation') {
     return `Target: Elevation ${criterion.targetElevation.toFixed(3)} ${lengthUnit} · grade ${formatSignedGradePercent(criterion.gradeRatio)}`;
   }
+  if (criterion.kind === 'relative-elevation') {
+    return `Target: Relative Elevation ${criterion.relativeElevation.toFixed(3)} ${lengthUnit} relative · grade ${formatSignedGradePercent(criterion.gradeRatio)}`;
+  }
   return `Target: ${targetName} · criterion ${formatGradingCriterion(criterion)}`;
 };
 
 /** Termination method for a grading-shell key that names one (else null). */
 export const gradingShellMethod = (key: string): GradingTerminationKind | null =>
-  key === 'GRADETODISTANCE' ? 'distance' : key === 'GRADETOELEVATION' ? 'elevation' : null;
+  key === 'GRADETODISTANCE'
+    ? 'distance'
+    : key === 'GRADETOELEVATION'
+      ? 'elevation'
+      : key === 'GRADETORELATIVEELEVATION'
+        ? 'relative-elevation'
+        : null;
 
 export const gradingSideText = (side: GradingSide): string =>
   side === 'left' ? 'Left' : 'Right';
@@ -203,7 +221,7 @@ export const gradingShellAvailable = (
   if (key === 'GRADETOSURFACE') {
     return selectedFeatureLine(snapshot) != null && resolveTargetSurfaceId(snapshot) != null;
   }
-  if (key === 'GRADETODISTANCE' || key === 'GRADETOELEVATION') {
+  if (key === 'GRADETODISTANCE' || key === 'GRADETOELEVATION' || key === 'GRADETORELATIVEELEVATION') {
     // Analytic termination never needs a target surface.
     return selectedFeatureLine(snapshot) != null;
   }
@@ -289,6 +307,9 @@ export const executeGradingShellCommand = (
       return actions.openGradingManager != null;
     case 'GRADETOELEVATION':
       actions.openGradingManager?.(undefined, 'definition', 'elevation');
+      return actions.openGradingManager != null;
+    case 'GRADETORELATIVEELEVATION':
+      actions.openGradingManager?.(undefined, 'definition', 'relative-elevation');
       return actions.openGradingManager != null;
     case 'GRADINGCALC': {
       const id = selectedGradingId(snapshot);

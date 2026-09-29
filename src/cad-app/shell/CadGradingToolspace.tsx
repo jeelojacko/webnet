@@ -11,6 +11,7 @@ import type { CadShellActions, CadWorkspaceSnapshot } from './cadShellTypes';
 import type { CadGradingRow } from './cadGradingSnapshot';
 import { gradingMethodLabel } from './cadGradingCriterionInput';
 import { gradingTargetSummary } from './cadGradingShell';
+import { relativeElevationDisplay } from './cadGradingDisplay';
 
 const TreeGroup: React.FC<{ label: string; children: React.ReactNode }> = ({ label, children }) => (
   <details className="cad-shell-tree-group" open>
@@ -19,15 +20,25 @@ const TreeGroup: React.FC<{ label: string; children: React.ReactNode }> = ({ lab
   </details>
 );
 
-const DefinitionRow: React.FC<{ row: CadGradingRow }> = ({ row }) => (
-  <div className="cad-shell-tree-row" data-cad-grading-definition={row.id} data-cad-grading-method={row.method}>
-    <span>Method {gradingMethodLabel(row.method)}</span>
-    <span> · Source {row.sourceName}</span>
-    <span> · {row.side}</span>
-    <span> · {gradingTargetSummary(row.definition.criterion, row.targetName, row.lengthUnit)}</span>
-    <span> · max {numeric(row.maxSearchDistance)} {row.lengthUnit}</span>
-  </div>
-);
+const DefinitionRow: React.FC<{ row: CadGradingRow }> = ({ row }) => {
+  const relative = relativeElevationDisplay(row.definition.criterion, row.lengthUnit);
+  return (
+    <div className="cad-shell-tree-row" data-cad-grading-definition={row.id} data-cad-grading-method={row.method}>
+      <span>Method {gradingMethodLabel(row.method)}</span>
+      <span> · Source {row.sourceName}</span>
+      <span> · {row.side}</span>
+      <span> · {gradingTargetSummary(row.definition.criterion, row.targetName, row.lengthUnit)}</span>
+      {relative ? (
+        <>
+          <span data-cad-grading-relative-grade> · Grade {relative.grade}</span>
+          <span data-cad-grading-relative-elevation> · Δ {relative.relativeElevation}</span>
+          <span data-cad-grading-relative-offset> · offset {relative.derivedOffset}</span>
+        </>
+      ) : null}
+      <span> · max {numeric(row.maxSearchDistance)} {row.lengthUnit}</span>
+    </div>
+  );
+};
 
 const ResultRow: React.FC<{ row: CadGradingRow }> = ({ row }) => {
   if (row.metrics == null) {

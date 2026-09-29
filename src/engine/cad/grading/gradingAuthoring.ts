@@ -65,6 +65,15 @@ export const validateGradingCriterion = (criterion: GradingCriterion): string | 
     if (!Number.isFinite(criterion.targetElevation)) return 'targetElevation must be finite';
     return null;
   }
+  if (criterion.kind === 'relative-elevation') {
+    if (!Number.isFinite(criterion.gradeRatio) || isMachineZero(criterion.gradeRatio)) {
+      return 'gradeRatio must be finite and nonzero';
+    }
+    if (!Number.isFinite(criterion.relativeElevation) || isMachineZero(criterion.relativeElevation)) {
+      return 'relativeElevation must be finite and nonzero';
+    }
+    return null;
+  }
   if (!Number.isFinite(criterion.cutGradeRatio) || !Number.isFinite(criterion.fillGradeRatio)) {
     return 'cut/fill grade ratios must be finite';
   }

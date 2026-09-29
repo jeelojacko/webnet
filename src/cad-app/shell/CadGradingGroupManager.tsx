@@ -32,6 +32,7 @@ import { gradingTargetSummary } from './cadGradingShell';
 import {
   defaultGradingCriterionDraft,
   gradingCriterionDraftFromCriterion,
+  gradingMethodLabel,
   parseGradingCriterionDraft,
   type GradingCriterionDraft,
 } from './cadGradingCriterionInput';
@@ -454,7 +455,7 @@ const GroupRowTable: React.FC<{
             onClick={() => actions.selectGradingGroup?.(row.id)}
           >
             <td className="pr-2">{row.name}</td>
-            <td className="pr-2">{row.method === 'surface' ? 'Surface' : row.method === 'distance' ? 'Distance' : 'Elevation'}</td>
+            <td className="pr-2">{gradingMethodLabel(row.method)}</td>
             <td className="pr-2">{row.courseCount}{row.closed ? ' (closed)' : ''}</td>
             <td className="pr-2">{row.side}</td>
             <td className="pr-2">{row.targetName}</td>

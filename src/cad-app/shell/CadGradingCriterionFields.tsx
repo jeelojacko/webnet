@@ -10,7 +10,7 @@ import { inputClass } from '../../components/surveyCad/surveyManagerShared';
 import { Field } from '../../components/surveyCad/surveyManagerShared.tsx';
 import type { GradingTerminationKind } from '../../engine/cad/grading/gradingTypes';
 import type { GradingCriterionDraft } from './cadGradingCriterionInput';
-import { gradingMethodLabel, summarizeGradingCriterionDraft } from './cadGradingCriterionInput';
+import { gradingDraftDiagnosis, gradingMethodLabel, summarizeGradingCriterionDraft } from './cadGradingCriterionInput';
 import {
   formatSignedGradePercent,
   parseHorizontalVerticalRatio,
@@ -19,7 +19,7 @@ import {
   type GradingSlopeDirection,
 } from './cadGradingShell';
 
-const METHODS: readonly GradingTerminationKind[] = ['surface', 'distance', 'elevation'];
+const METHODS: readonly GradingTerminationKind[] = ['surface', 'distance', 'elevation', 'relative-elevation'];
 
 export interface CadGradingCriterionFieldsProps {
   draft: GradingCriterionDraft;
@@ -121,6 +121,7 @@ export const CadGradingCriterionFields: React.FC<CadGradingCriterionFieldsProps>
   // display or emit a different criterion than the locked label claims.
   const active = locked != null && draft.method !== locked ? { ...draft, method: locked } : draft;
   const summary = summarizeGradingCriterionDraft(active, lengthUnit);
+  const diagnosis = gradingDraftDiagnosis(active);
   return (
     <>
       {locked != null ? (
@@ -175,7 +176,7 @@ export const CadGradingCriterionFields: React.FC<CadGradingCriterionFieldsProps>
                 onChange={(e) => onChange({ ...active, distance: e.target.value })}
               />
             </Field>
-          ) : (
+          ) : active.method === 'elevation' ? (
             <Field label={`Target elevation (${lengthUnit})`}>
               <input
                 aria-label="Target elevation"
@@ -185,12 +186,28 @@ export const CadGradingCriterionFields: React.FC<CadGradingCriterionFieldsProps>
                 onChange={(e) => onChange({ ...active, targetElevation: e.target.value })}
               />
             </Field>
+          ) : (
+            <Field label={`Relative elevation (${lengthUnit})`}>
+              <input
+                aria-label="Relative elevation"
+                className={inputClass}
+                data-cad-grading-field={`${dataPrefix}-relative-elevation`}
+                value={active.relativeElevation}
+                onChange={(e) => onChange({ ...active, relativeElevation: e.target.value })}
+              />
+              <span className="text-[11px] text-slate-400">Positive = above source; negative = below source.</span>
+            </Field>
           )}
         </>
       )}
       <div className="col-span-2 text-[11px] text-slate-300" data-cad-grading-criterion-summary>
         {summary == null ? 'Criterion: invalid' : `Criterion: ${summary}`}
       </div>
+      {diagnosis != null ? (
+        <div className="col-span-2 text-[11px] text-amber-300" data-cad-grading-diagnosis>
+          {diagnosis}
+        </div>
+      ) : null}
     </>
   );
 };

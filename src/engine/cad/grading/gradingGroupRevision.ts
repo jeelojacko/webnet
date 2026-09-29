@@ -55,7 +55,13 @@ const criterionText = (criterion: GradingCriterion): string => {
   if (criterion.kind === 'elevation') {
     return `elevation:${canonicalGradingNum(criterion.gradeRatio)}/${canonicalGradingNum(criterion.targetElevation)}`;
   }
-  return `fixed:${canonicalGradingNum(criterion.gradeRatio)}`;
+  if (criterion.kind === 'relative-elevation') {
+    return `relative-elevation:${canonicalGradingNum(criterion.gradeRatio)}/${canonicalGradingNum(criterion.relativeElevation)}`;
+  }
+  if (criterion.kind === 'fixed') {
+    return `fixed:${canonicalGradingNum(criterion.gradeRatio)}`;
+  }
+  return 'unknown';
 };
 
 // Straight and legacy arc sources hash exactly as before; arc circle params

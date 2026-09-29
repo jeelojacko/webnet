@@ -10,12 +10,14 @@ import React from 'react';
 import { numeric } from '../../engine/cad/cadPropertiesModel';
 import { gradingMethodLabel } from './cadGradingCriterionInput';
 import { gradingTargetSummary } from './cadGradingShell';
+import { relativeElevationDisplay } from './cadGradingDisplay';
 import type { CadGradingRow } from './cadGradingSnapshot';
 
 export const GradingPropertiesBlock: React.FC<{ row: CadGradingRow }> = ({ row }) => {
   const m = row.metrics;
   const lengthUnit = row.lengthUnit;
   const areaUnit = row.areaUnit;
+  const relative = relativeElevationDisplay(row.definition.criterion, lengthUnit);
   const sourceRelation = row.cutFillApplicable
     ? `cut ${numeric(m?.cutSourceLength)} · fill ${numeric(m?.fillSourceLength)} · tied ${numeric(m?.tiedSourceLength)} ${lengthUnit}`
     : '— (analytic)';
@@ -30,6 +32,13 @@ export const GradingPropertiesBlock: React.FC<{ row: CadGradingRow }> = ({ row }
         <div><dt>Side</dt><dd>{row.side}</dd></div>
         <div><dt>Target</dt><dd>{gradingTargetSummary(row.definition.criterion, row.targetName, lengthUnit)}</dd></div>
         <div><dt>Criterion</dt><dd>{row.criterionText}</dd></div>
+        {relative ? (
+          <>
+            <div><dt>Grade</dt><dd data-cad-grading-relative-grade>{relative.grade}</dd></div>
+            <div><dt>Relative elevation</dt><dd data-cad-grading-relative-elevation>{relative.relativeElevation}</dd></div>
+            <div><dt>Derived horizontal offset</dt><dd data-cad-grading-relative-offset>{relative.derivedOffset}</dd></div>
+          </>
+        ) : null}
         <div><dt>Max distance</dt><dd>{numeric(row.maxSearchDistance)} {lengthUnit}</dd></div>
         <div><dt>Curve tolerance</dt><dd>{numeric(row.curveChordTolerance)} {lengthUnit}</dd></div>
         <div><dt>Status</dt><dd data-cad-grading-status-reason>{row.statusText}{row.stale ? ' (stale result withheld)' : ''}{row.diagnostic ? ` — ${row.diagnostic}` : ''}</dd></div>

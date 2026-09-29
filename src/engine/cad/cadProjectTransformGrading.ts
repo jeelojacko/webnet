@@ -9,7 +9,9 @@
  *   - `curveChordTolerance`    (sagitta bound, a horizontal length)
  *   - `criterion.distance`     (Grade-to-Distance offset, horizontal)
  * Dimensionless/vertical quantities are invariant: `gradeRatio`,
- * `cutGradeRatio`/`fillGradeRatio`, `targetElevation`, `side`, and every Z.
+ * `cutGradeRatio`/`fillGradeRatio`, `targetElevation`, `relativeElevation`,
+ * `side`, and every Z. In particular `distance` scales (horizontal) while
+ * `relativeElevation` is vertical and never scales.
  *
  * Sparse overrides stay sparse ("no materialized defaults"): an absent
  * `courseCriteria` stays absent, and existing override records are mapped
@@ -36,7 +38,19 @@ export const scaleGradingCriterion = (
   if (criterion.kind === 'distance') {
     return { ...criterion, distance: criterion.distance * scale };
   }
-  return { ...criterion };
+  if (criterion.kind === 'relative-elevation') {
+    return { ...criterion };
+  }
+  if (criterion.kind === 'fixed') {
+    return { ...criterion };
+  }
+  if (criterion.kind === 'cut-fill') {
+    return { ...criterion };
+  }
+  if (criterion.kind === 'elevation') {
+    return { ...criterion };
+  }
+  return { ...(criterion as GradingCriterion) };
 };
 
 /** Scale a single grading definition by the uniform horizontal factor. */

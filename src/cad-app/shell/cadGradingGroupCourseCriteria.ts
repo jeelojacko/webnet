@@ -54,14 +54,24 @@ export const courseCriterionSourceText = (group: CadGradingGroup, memberIndex: n
   isCourseCriterionOverride(group, memberIndex) ? 'Override' : 'Default';
 
 /**
- * Truthful 4-way type tag (Phase 20F.1): surface criteria split into
+ * Truthful 5-way type tag (Phase 20F.1 / 20G): surface criteria split into
  * 'Surface Fixed' / 'Surface Cut/Fill'; analytic criteria label as
- * 'Distance' / 'Elevation' (never a fake fixed/cut/fill tag).
+ * 'Distance' / 'Elevation' / 'Relative Elevation' (never a fake
+ * fixed/cut/fill tag).
  */
 export const courseCriterionTypeText = (criterion: GradingCriterion): string => {
-  if (criterion.kind === 'fixed') return 'Surface Fixed';
-  if (criterion.kind === 'cut-fill') return 'Surface Cut/Fill';
-  return criterion.kind === 'distance' ? 'Distance' : 'Elevation';
+  switch (criterion.kind) {
+    case 'fixed':
+      return 'Surface Fixed';
+    case 'cut-fill':
+      return 'Surface Cut/Fill';
+    case 'distance':
+      return 'Distance';
+    case 'elevation':
+      return 'Elevation';
+    case 'relative-elevation':
+      return 'Relative Elevation';
+  }
 };
 
 /** Joined region classifications for one member ('—' when the member never solved). */
@@ -108,8 +118,9 @@ export interface CourseMemberRow {
   /** Fill grade text, or '—' for fixed members. */
   fillGrade: string;
   /**
-   * Analytic target text ('20.000 m' distance, '98.000 m' elevation),
-   * or '—' for surface members (no fake fixed/cut/fill values).
+   * Analytic target text ('20.000 m' distance, '98.000 m' elevation,
+   * '-10.000 m relative' relative-elevation), or '—' for surface members
+   * (no fake fixed/cut/fill values).
    */
   targetValue: string;
   classification: string;
@@ -133,7 +144,9 @@ export const buildCourseMemberRows = (
         ? `${criterion.distance.toFixed(3)} m`
         : criterion.kind === 'elevation'
           ? `${criterion.targetElevation.toFixed(3)} m`
-          : '—';
+          : criterion.kind === 'relative-elevation'
+            ? `${criterion.relativeElevation.toFixed(3)} m relative`
+            : '—';
     return {
       course: courseNumberLabel(index),
       from: shortVertexLabel(course.vertexAId),
