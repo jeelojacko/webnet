@@ -121,6 +121,11 @@ const snapshotsEqual = (a: CadWorkspaceSnapshot | null, b: CadWorkspaceSnapshot 
     JSON.stringify(a.section) === JSON.stringify(b.section) &&
     JSON.stringify(a.blocks) === JSON.stringify(b.blocks) &&
     JSON.stringify(a.annotation) === JSON.stringify(b.annotation) &&
+    JSON.stringify(a.f2f) === JSON.stringify(b.f2f) &&
+    JSON.stringify(a.surveyTable) === JSON.stringify(b.surveyTable) &&
+    JSON.stringify(a.parcel) === JSON.stringify(b.parcel) &&
+    JSON.stringify(a.grading) === JSON.stringify(b.grading) &&
+    JSON.stringify(a.gradingGroups) === JSON.stringify(b.gradingGroups) &&
     JSON.stringify(a.featureLine) === JSON.stringify(b.featureLine)
   );
 };

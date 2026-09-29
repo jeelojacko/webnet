@@ -37,7 +37,7 @@ export const GradingGroupPropertiesBlock: React.FC<{ row: CadGradingGroupRow }> 
         <div><dt>Corner</dt><dd>{row.cornerMode}</dd></div>
         <div><dt>Max distance</dt><dd>{numeric(row.maxSearchDistance)} {row.lengthUnit}</dd></div>
         <div><dt>Curve tolerance</dt><dd>{numeric(row.curveChordTolerance)} {row.lengthUnit}</dd></div>
-        <div><dt>Status</dt><dd>{row.statusText}{row.stale ? ' (stale result withheld)' : ''}</dd></div>
+        <div><dt>Status</dt><dd data-cad-grading-group-status-reason>{row.statusText}{row.stale ? ' (stale result withheld)' : ''}{row.diagnostic ? ` — ${row.diagnostic}` : ''}</dd></div>
         <div><dt>Accuracy</dt><dd>{row.accuracyText}{row.curveCornerApproximated ? ' (corner)' : ''}</dd></div>
         {course ? (
           <>

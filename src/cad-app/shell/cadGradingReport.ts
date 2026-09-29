@@ -155,6 +155,7 @@ export const buildGradingInquiryReport = (
   lines.push(gradingTargetSummary(grading.criterion, row.targetName, row.lengthUnit));
   lines.push(`Status: ${gradingStatusText(row.status)} · accuracy ${gradingAccuracyText(row.accuracy)}`);
   if (row.status !== 'CURRENT' || result == null || source == null) {
+    if (row.diagnostic) lines.push(`Failure: ${row.diagnostic}`);
     lines.push('No CURRENT result — calculate this grading before inquiry.');
     return lines.join('\n');
   }

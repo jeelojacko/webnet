@@ -707,6 +707,17 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
     [activeDrawing.drawingId, surfaceCache, gradingCache, groupCache],
   );
   useEffect(() => () => gradingService.dispose(), [gradingService]);
+  // Phase 20F.2 §§8-12 — pending-request reconciliation seam. Every actual
+  // definition/source edit (Feature Line geometry, criterion/override, span,
+  // target reassignment, delete, Project Transform, Grid/Ground project-level,
+  // undo/redo) moves the resolved `grev1:`/`ggrev1:` revision, so one bounded
+  // sweep retires in-flight work whose revision no longer matches. Keyed on the
+  // project reference — never per render — and idempotent: the service bumps
+  // `gradingVersion` only when the pending set actually changed, so this cannot
+  // loop. It cancels stale work; it never auto-starts Calculate.
+  useEffect(() => {
+    gradingService.reconcilePendingWithProject();
+  }, [cadProject, gradingService]);
   const gradingInputs = useMemo(
     () => ({
       version: gradingVersion,

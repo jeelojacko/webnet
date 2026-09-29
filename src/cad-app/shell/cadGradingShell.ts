@@ -152,7 +152,7 @@ const promptSlope = (
   const text = window.prompt(
     mode === 'percent'
       ? `${label} percent (magnitude, e.g. 2 for 2%):`
-      : `${label} run:rise as nH:1V (e.g. 2 for 2H:1V):`,
+      : `${label} run:rise as nH:1V (e.g. 2:1 for 2H:1V):`,
     defaultMagnitude,
   );
   if (text == null) return null;
@@ -240,8 +240,8 @@ const buildCreateCommand = (
   const inputMode: GradingInputMode = 'percent';
   let criterion: GradingCriterion;
   if (isCutFill) {
-    const cut = promptSlope('Cut', 'h-v', '2');
-    const fill = promptSlope('Fill', 'h-v', '3');
+    const cut = promptSlope('Cut', 'h-v', '2:1');
+    const fill = promptSlope('Fill', 'h-v', '3:1');
     if (!cut || !fill) return null;
     const cutRatio = resolveSignedGradeRatio('h-v', cut.magnitude, cut.direction);
     const fillRatio = resolveSignedGradeRatio('h-v', fill.magnitude, fill.direction);

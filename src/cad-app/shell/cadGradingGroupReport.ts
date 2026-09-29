@@ -50,6 +50,7 @@ export const buildGroupInquiryReport = (
   accuracy: GradingAccuracy | null,
   result: CadGradingGroupResult | null,
   lengthUnit = 'm',
+  diagnostic: string | null = null,
 ): string => {
   const lines: string[] = [];
   lines.push(`Grading Group Inquiry — ${group.name}`);
@@ -58,6 +59,7 @@ export const buildGroupInquiryReport = (
   lines.push(gradingTargetSummary(group.criterion, targetName, lengthUnit));
   lines.push(`Status: ${gradingStatusText(status)} · accuracy ${gradingAccuracyText(accuracy)}`);
   if (status !== 'CURRENT' || result == null) {
+    if (diagnostic) lines.push(`Failure: ${diagnostic}`);
     lines.push('No CURRENT result — calculate this grading group before inquiry.');
     return lines.join('\n');
   }

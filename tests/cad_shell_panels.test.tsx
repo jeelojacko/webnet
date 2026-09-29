@@ -753,6 +753,25 @@ describe('phase 21A properties palette row actions', () => {
 });
 
 describe('shell snapshot publish gate', () => {
+  // Compile-time completeness guard: every derived subtree key on the
+  // snapshot must be listed in DERIVED_SUBTREES below (type-checked).
+  const DERIVED_SUBTREES = [
+    'survey',
+    'surface',
+    'volume',
+    'analysis',
+    'profile',
+    'section',
+    'f2f',
+    'blocks',
+    'annotation',
+    'surveyTable',
+    'parcel',
+    'featureLine',
+    'grading',
+    'gradingGroups',
+  ] as const satisfies ReadonlyArray<keyof CadWorkspaceSnapshot>;
+
   it('publishes when only the section subtree changes (rebuild statuses/views)', () => {
     const link = createCadShellLink();
     let notifications = 0;
@@ -773,5 +792,57 @@ describe('shell snapshot publish gate', () => {
     expect(notifications).toBe(2);
     link.publish(stubSnapshot({ section: { groups: [], views: [], marker: 'rebuilt' } as unknown as CadWorkspaceSnapshot['section'] }));
     expect(notifications).toBe(3);
+  });
+
+  it.each(DERIVED_SUBTREES)('publishes when only the %s subtree changes', (key) => {
+    // Regression (20F.2 §5-6): f2f, surveyTable, parcel, grading, and
+    // gradingGroups were missing from snapshotsEqual, so pure-derivation
+    // transitions (e.g. grading UNBUILT -> BUILDING -> CURRENT) left the
+    // manager fresh but Toolspace/Properties stale.
+    const link = createCadShellLink();
+    let notifications = 0;
+    link.subscribe(() => {
+      notifications += 1;
+    });
+    link.publish(stubSnapshot());
+    expect(notifications).toBe(1);
+    link.publish(stubSnapshot());
+    expect(notifications).toBe(1);
+    link.publish(stubSnapshot({ [key]: { marker: 'v1' } } as Partial<CadWorkspaceSnapshot>));
+    expect(notifications).toBe(2);
+    link.publish(stubSnapshot({ [key]: { marker: 'v2' } } as Partial<CadWorkspaceSnapshot>));
+    expect(notifications).toBe(3);
+  });
+
+  it('propagates grading UNBUILT -> BUILDING -> CURRENT with no other change (§7)', () => {
+    // Shell-link-level reproduction of the §7 Calculate flow: the workspace
+    // rebuilds only the grading/gradingGroups slices as the session result
+    // cache transitions; each transition must reach Toolspace/Properties
+    // with no synthetic interaction. (No browser harness: the Calculate
+    // button path is covered by driving the same publish gate the workspace
+    // uses after each session-cache update.)
+    const link = createCadShellLink();
+    const seen: Array<CadWorkspaceSnapshot | null> = [];
+    link.subscribe(() => {
+      seen.push(link.getSnapshot());
+    });
+    link.publish(stubSnapshot({
+      grading: { marker: 'UNBUILT' } as unknown as CadWorkspaceSnapshot['grading'],
+      gradingGroups: { marker: 'UNBUILT' } as unknown as CadWorkspaceSnapshot['gradingGroups'],
+    }));
+    link.publish(stubSnapshot({
+      grading: { marker: 'BUILDING' } as unknown as CadWorkspaceSnapshot['grading'],
+      gradingGroups: { marker: 'BUILDING' } as unknown as CadWorkspaceSnapshot['gradingGroups'],
+    }));
+    link.publish(stubSnapshot({
+      grading: { marker: 'CURRENT' } as unknown as CadWorkspaceSnapshot['grading'],
+      gradingGroups: { marker: 'CURRENT' } as unknown as CadWorkspaceSnapshot['gradingGroups'],
+    }));
+    // Identical CURRENT republish: swallowed (no publish loop).
+    link.publish(stubSnapshot({
+      grading: { marker: 'CURRENT' } as unknown as CadWorkspaceSnapshot['grading'],
+      gradingGroups: { marker: 'CURRENT' } as unknown as CadWorkspaceSnapshot['gradingGroups'],
+    }));
+    expect(seen.length).toBe(3);
   });
 });

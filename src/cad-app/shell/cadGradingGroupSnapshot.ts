@@ -19,6 +19,8 @@ import type {
   GradingCornerMode,
   GroupStatus,
 } from '../../engine/cad/grading/gradingGroupTypes';
+import { deriveGroupStatus } from '../../engine/cad/grading/gradingGroupStatus';
+import { deriveFailedEffectiveStatus } from '../../engine/cad/grading/gradingStatus';
 import type {
   GradingAccuracy,
   GradingTerminationKind,
@@ -100,6 +102,8 @@ export interface CadGradingGroupRow {
   overrideCount: number;
   status: GroupStatus;
   statusText: string;
+  /** Bounded session failure reason, set only while status is FAILED. */
+  diagnostic: string | null;
   /** True when a retained result exists but is not the current revision. */
   stale: boolean;
   revision: string;
@@ -199,23 +203,16 @@ export const buildCadGradingGroupSnapshot = (
     const building = options?.buildingGroupIds?.has(group.id) === true;
     const lastRetained = retained.length > 0 ? retained[retained.length - 1]! : null;
     const effective = currentResult ?? lastRetained;
-    let status: GroupStatus;
-    if (inputs == null) {
-      status = 'BROKEN_REFERENCE';
-    } else if (building) {
-      status = 'BUILDING';
-    } else if (effective == null) {
-      status = 'UNBUILT';
-    } else if (!targetCurrent) {
-      status = 'SOURCE_NOT_CURRENT';
-    } else if (effective.revision !== revision) {
-      status = 'NEEDS_RECALC';
-    } else {
-      status = 'CURRENT';
-    }
+    const status = deriveGroupStatus({
+      brokenRef: inputs == null,
+      building,
+      hasResult: effective != null,
+      sourceCurrent: targetCurrent,
+      needsRecalc: effective != null && effective.revision !== revision,
+    });
     const failure = options?.sessionDiagnostics?.get(group.id) ?? null;
-    const effectiveStatus: GroupStatus =
-      status === 'UNBUILT' && failure != null && failure.revision === revision ? 'FAILED' : status;
+    const effectiveStatus = deriveFailedEffectiveStatus(status, failure, revision);
+    const diagnostic = effectiveStatus === 'FAILED' ? (failure?.error ?? null) : null;
     const staleMetrics = stale && lastRetained ? metricsOf(lastRetained) : null;
     const currentMetrics =
       effectiveStatus === 'CURRENT' && currentResult != null ? metricsOf(currentResult) : null;
@@ -248,6 +245,7 @@ export const buildCadGradingGroupSnapshot = (
       overrideCount: group.courseCriteria?.length ?? 0,
       status: effectiveStatus,
       statusText: gradingStatusText(effectiveStatus),
+      diagnostic,
       stale,
       revision,
       maxSearchDistance: group.maxSearchDistance,

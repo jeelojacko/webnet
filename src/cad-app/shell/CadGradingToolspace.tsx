@@ -85,6 +85,11 @@ export const GradingsNode: React.FC<{
             <div className="cad-shell-tree-children">
               <DefinitionRow row={row} />
               <ResultRow row={row} />
+              {row.diagnostic ? (
+                <div className="cad-shell-tree-row" data-cad-grading-diagnostic={row.id}>
+                  Failed — {row.diagnostic}
+                </div>
+              ) : null}
             </div>
           </details>
         );

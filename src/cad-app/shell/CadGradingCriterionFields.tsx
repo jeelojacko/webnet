@@ -114,9 +114,13 @@ export const CadGradingCriterionFields: React.FC<CadGradingCriterionFieldsProps>
   dataPrefix = 'cad-grading',
   methods = METHODS,
 }) => {
-  const summary = summarizeGradingCriterionDraft(draft, lengthUnit);
   const offered = METHODS.filter((method) => methods.includes(method));
   const locked = offered.length === 1 ? offered[0]! : null;
+  // Locked-family invariant: when locked to one family, the visible method and
+  // the parsed criterion are forced to it, so an incoming mismatch can never
+  // display or emit a different criterion than the locked label claims.
+  const active = locked != null && draft.method !== locked ? { ...draft, method: locked } : draft;
+  const summary = summarizeGradingCriterionDraft(active, lengthUnit);
   return (
     <>
       {locked != null ? (
@@ -129,8 +133,8 @@ export const CadGradingCriterionFields: React.FC<CadGradingCriterionFieldsProps>
             aria-label="Grading method"
             className={inputClass}
             data-cad-grading-field={`${dataPrefix}-method`}
-            value={draft.method}
-            onChange={(e) => onChange({ ...draft, method: e.target.value as GradingTerminationKind })}
+            value={active.method}
+            onChange={(e) => onChange({ ...active, method: e.target.value as GradingTerminationKind })}
           >
             {offered.map((method) => (
               <option key={method} value={method}>{gradingMethodLabel(method)}</option>
@@ -138,37 +142,37 @@ export const CadGradingCriterionFields: React.FC<CadGradingCriterionFieldsProps>
           </select>
         </Field>
       )}
-      {draft.method === 'surface' ? (
+      {active.method === 'surface' ? (
         <>
           {surfaceSlot}
           <Field label="Criterion">
             <select
               aria-label="Criterion kind"
               className={inputClass}
-              value={draft.surfaceMode}
-              onChange={(e) => onChange({ ...draft, surfaceMode: e.target.value as 'fixed' | 'cut-fill' })}
+              value={active.surfaceMode}
+              onChange={(e) => onChange({ ...active, surfaceMode: e.target.value as 'fixed' | 'cut-fill' })}
             >
               <option value="fixed">Fixed grade</option>
               <option value="cut-fill">Cut / Fill</option>
             </select>
           </Field>
-          {draft.surfaceMode === 'fixed' ? (
-            <GradeFields draft={draft} onChange={onChange} prefix={dataPrefix} />
+          {active.surfaceMode === 'fixed' ? (
+            <GradeFields draft={active} onChange={onChange} prefix={dataPrefix} />
           ) : (
-            <CutFillFields draft={draft} onChange={onChange} />
+            <CutFillFields draft={active} onChange={onChange} />
           )}
         </>
       ) : (
         <>
-          <GradeFields draft={draft} onChange={onChange} prefix={dataPrefix} />
-          {draft.method === 'distance' ? (
+          <GradeFields draft={active} onChange={onChange} prefix={dataPrefix} />
+          {active.method === 'distance' ? (
             <Field label={`Target distance (${lengthUnit})`}>
               <input
                 aria-label="Target distance"
                 className={inputClass}
                 data-cad-grading-field={`${dataPrefix}-distance`}
-                value={draft.distance}
-                onChange={(e) => onChange({ ...draft, distance: e.target.value })}
+                value={active.distance}
+                onChange={(e) => onChange({ ...active, distance: e.target.value })}
               />
             </Field>
           ) : (
@@ -177,8 +181,8 @@ export const CadGradingCriterionFields: React.FC<CadGradingCriterionFieldsProps>
                 aria-label="Target elevation"
                 className={inputClass}
                 data-cad-grading-field={`${dataPrefix}-elevation`}
-                value={draft.targetElevation}
-                onChange={(e) => onChange({ ...draft, targetElevation: e.target.value })}
+                value={active.targetElevation}
+                onChange={(e) => onChange({ ...active, targetElevation: e.target.value })}
               />
             </Field>
           )}
