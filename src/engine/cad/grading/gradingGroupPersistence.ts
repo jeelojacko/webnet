@@ -1,5 +1,6 @@
 import { createGroupDefinition } from './gradingGroupAuthoring';
 import { validateGradingCriterion } from './gradingAuthoring';
+import { validateGroupTermination } from './gradingGroupTermination';
 import type { CadGradingGroup } from './gradingGroupTypes';
 
 /**
@@ -104,7 +105,22 @@ export const sanitizeCadGradingGroupsDetailed = (
     if (built.ok) {
       const scrubbed = scrubCourseCriteria(built.value, candidate['courseCriteria']);
       dropped.push(...scrubbed.dropped);
-      kept.push(cloneCadGradingGroup(scrubbed.group));
+      // Phase 20F: fail the family gate at sanitize. A hand-mixed file would
+      // otherwise fail closed only at resolve; instead load the group on its
+      // default criterion and report each stripped override.
+      let group = scrubbed.group;
+      if (group.courseCriteria !== undefined && validateGroupTermination(group) !== null) {
+        for (const override of group.courseCriteria) {
+          dropped.push({
+            groupId: group.id,
+            ref: `${override.sourceCourse.vertexAId}>${override.sourceCourse.vertexBId}`,
+            reason: 'invalid-criterion',
+          });
+        }
+        const { courseCriteria: _stripped, ...rest } = group;
+        group = rest;
+      }
+      kept.push(cloneCadGradingGroup(group));
     }
   }
   return { groups: kept, dropped };

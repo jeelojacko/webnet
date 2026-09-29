@@ -144,6 +144,9 @@ export const buildGroupCsv = (
   result: CadGradingGroupResult,
 ): string => {
   const lines: string[] = [];
+  // Analytic terminations have no target relation: never emit fake-precise
+  // zeros (single-grading CSV uses the same '—' convention).
+  const relation = isTargetFreeCriterion(group.criterion) ? '—' : null;
   const summary: Array<[string, string]> = [
     ['Group', group.name],
     ['Source', group.sourceFeatureLineId],
@@ -161,9 +164,9 @@ export const buildGroupCsv = (
     ['Tie Mean', result.meanProjectionDistance.toFixed(3)],
     ['Plan Area', result.gradingPlanArea.toFixed(3)],
     ['3D Area', result.grading3dArea.toFixed(3)],
-    ['Cut Length', result.cutSourceLength.toFixed(3)],
-    ['Fill Length', result.fillSourceLength.toFixed(3)],
-    ['Tied Length', result.tiedSourceLength.toFixed(3)],
+    ['Cut Length', relation ?? result.cutSourceLength.toFixed(3)],
+    ['Fill Length', relation ?? result.fillSourceLength.toFixed(3)],
+    ['Tied Length', relation ?? result.tiedSourceLength.toFixed(3)],
   ];
   lines.push('Metric,Value');
   for (const [metric, value] of summary) {

@@ -115,7 +115,9 @@ export const parseGradingCriterionDraft = (
   if (draft.method === 'elevation') {
     const gradeRatio = signedGradeOf(draft);
     const targetElevation = Number(draft.targetElevation);
-    if (gradeRatio == null || !Number.isFinite(targetElevation)) return null;
+    // Mirror engine validateGradingCriterion: zero grade is rejected (any nonzero
+    // float64 has |g| >= Number.MIN_VALUE, so === 0 is the exact machine-zero gate).
+    if (gradeRatio == null || gradeRatio === 0 || !Number.isFinite(targetElevation)) return null;
     return { kind: 'elevation', gradeRatio, targetElevation };
   }
   if (draft.surfaceMode === 'cut-fill') {
