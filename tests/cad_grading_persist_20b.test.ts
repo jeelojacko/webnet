@@ -106,10 +106,10 @@ const calculateIntoCaches = (
   gradingCache: ReturnType<typeof createCadGradingCache>,
 ) => {
   const inputs = resolveGradingInputs(project, gradingId)!;
-  const built = buildCadSurface(project, inputs.target);
+  const built = buildCadSurface(project, inputs.target!);
   expect(built.outcome).toBe('ok');
   const mesh = {
-    revision: inputs.targetRevision,
+    revision: inputs.targetRevision!,
     points: built.points,
     triangles: built.triangles,
     stats: built.stats,
@@ -117,7 +117,7 @@ const calculateIntoCaches = (
     adjacency: built.adjacency,
     edgeKinds: built.edgeKinds,
   };
-  tinCache.set(inputs.target.id, inputs.targetRevision, mesh);
+  tinCache.set(inputs.target!.id, inputs.targetRevision!, mesh);
   const flat = (points: Array<{ x: number; y: number; z: number }>): number[] =>
     points.flatMap((p) => [p.x, p.y, p.z]);
   const outcome = computeGradingFromSnapshots({
@@ -346,9 +346,9 @@ describe('grading persistence', () => {
     });
     current = history.present.project;
     const inputs = resolveGradingInputs(current, gradingId)!;
-    const built = buildCadSurface(current, inputs.target);
-    tinCache.set(inputs.target.id, inputs.targetRevision, {
-      revision: inputs.targetRevision,
+    const built = buildCadSurface(current, inputs.target!);
+    tinCache.set(inputs.target!.id, inputs.targetRevision!, {
+      revision: inputs.targetRevision!,
       points: built.points,
       triangles: built.triangles,
       stats: built.stats,

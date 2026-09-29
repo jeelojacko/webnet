@@ -14,6 +14,7 @@ import {
   setCourseCriteriaOverrides,
   validateGroupChain,
 } from './grading/gradingGroupAuthoring';
+import { gradingCriterionRequiresSurface, gradingTerminationKind } from './grading/gradingTypes';
 import { toGradingCourseLikes, resolveGradingSourceCourse } from './grading/gradingCourseFrame';
 import { resolveGroupInputs } from './grading/gradingGroupResolve';
 import { appendCadProjectEntities } from './cadProjectState';
@@ -88,10 +89,12 @@ type GroupCreateCommand = Extract<CadCommand, { key: 'GROUP_CREATE' }>;
 const groupCreateCommand: CadCommandDefinition<GroupCreateCommand> = {
   key: 'GROUP_CREATE',
   execute: (snapshot, command) => {
-    const target = (snapshot.project.surfaces ?? []).find(
-      (entry) => entry.id === command.targetSurfaceId,
-    );
-    if (!target) return null;
+    // Surface-family criteria need a live target; analytic criteria omit it.
+    const requiresSurface = gradingCriterionRequiresSurface(command.criterion);
+    const target = requiresSurface
+      ? (snapshot.project.surfaces ?? []).find((entry) => entry.id === command.targetSurfaceId)
+      : undefined;
+    if (requiresSurface && !target) return null;
     if (!chainResolvable(snapshot.project, command.sourceFeatureLineId, command.sourceCourses)) {
       return null;
     }
@@ -102,7 +105,7 @@ const groupCreateCommand: CadCommandDefinition<GroupCreateCommand> = {
       name: baseName,
       sourceFeatureLineId: command.sourceFeatureLineId,
       sourceCourses: command.sourceCourses,
-      targetSurfaceId: command.targetSurfaceId,
+      ...(target ? { targetSurfaceId: target.id } : {}),
       side: command.side,
       criterion: command.criterion,
       maxSearchDistance: command.maxSearchDistance,
@@ -144,12 +147,31 @@ const groupEditCriteriaCommand: CadCommandDefinition<GroupEditCriteriaCommand> =
     if (!group) return null;
     if (
       command.criterion === undefined &&
+      command.targetSurfaceId === undefined &&
       command.maxSearchDistance === undefined &&
       command.curveChordTolerance === undefined
     ) {
       return null;
     }
     let next = group;
+    // Kind switch + target land in ONE history entry: reassign first so a
+    // switch back to a surface family has a target before the criterion edit.
+    const nextCriterion = command.criterion ?? group.criterion;
+    if (command.targetSurfaceId !== undefined) {
+      if (gradingCriterionRequiresSurface(nextCriterion)) {
+        if (command.targetSurfaceId === null) return null;
+        const exists = (snapshot.project.surfaces ?? []).some(
+          (entry) => entry.id === command.targetSurfaceId,
+        );
+        if (!exists) return null;
+        const reassigned = reassignGroupTarget(next, command.targetSurfaceId);
+        if (!reassigned.ok) return null;
+        next = reassigned.value;
+      } else if (command.targetSurfaceId !== null) {
+        // Analytic criteria never carry a target id.
+        return null;
+      }
+    }
     if (command.criterion !== undefined) {
       const edited = editGroupCriteria(next, command.criterion);
       if (!edited.ok) return null;
@@ -163,6 +185,7 @@ const groupEditCriteriaCommand: CadCommandDefinition<GroupEditCriteriaCommand> =
       if (!Number.isFinite(command.curveChordTolerance) || !(command.curveChordTolerance > 0)) return null;
       next = { ...next, curveChordTolerance: command.curveChordTolerance };
     }
+    if (next === group) return null;
     // Revision moves → NEEDS_RECALC derives; cached results keyed by ggrev go stale.
     return commitLayerProject('GROUP_EDIT_CRITERIA', snapshot, withGroup(snapshot.project, next),
       `GROUP_EDIT_CRITERIA (${group.name})`);
@@ -176,6 +199,8 @@ const groupReassignTargetCommand: CadCommandDefinition<GroupReassignTargetComman
   execute: (snapshot, command) => {
     const group = findGroup(snapshot.project, command.groupId);
     if (!group) return null;
+    // Analytic criteria have no live target; reassignment is surface-only.
+    if (!gradingCriterionRequiresSurface(group.criterion)) return null;
     const target = (snapshot.project.surfaces ?? []).find(
       (entry) => entry.id === command.targetSurfaceId,
     );
@@ -292,7 +317,7 @@ export const groupCalculateGate = (
   if (!inputs) {
     return { ok: false, message: `Group grading calculation blocked: group “${groupId}” has a broken source or target reference.` };
   }
-  if (!targetCurrent) {
+  if (!targetCurrent && inputs.target) {
     return {
       ok: false,
       message: `Group grading calculation blocked: target TIN for “${inputs.target.name}” is not CURRENT (SOURCE_NOT_CURRENT) — rebuild it first.`,
@@ -369,6 +394,9 @@ const groupBakeCommand: CadCommandDefinition<GroupBakeCommand> = {
       return null;
     }
     if (result.gradingMesh.triangles.length === 0) return null;
+    const criterion = inputs.group.criterion;
+    const targetKind = gradingTerminationKind(criterion);
+    if (targetKind === 'surface' && !inputs.target) return null;
     const canonical = canonicalizeBakedTin(result.gradingMesh.points, result.gradingMesh.triangles);
     const payload = {
       vertices: canonical.vertices,
@@ -382,7 +410,10 @@ const groupBakeCommand: CadCommandDefinition<GroupBakeCommand> = {
         sourceCourseRefs: inputs.group.sourceCourses.map(
           (course) => `${course.vertexAId}>${course.vertexBId}`,
         ),
-        targetSurfaceId: inputs.target.id,
+        targetKind,
+        ...(targetKind === 'surface' ? { targetSurfaceId: inputs.target!.id } : {}),
+        ...(criterion.kind === 'distance' ? { criterionDistance: criterion.distance } : {}),
+        ...(criterion.kind === 'elevation' ? { targetElevation: criterion.targetElevation } : {}),
         side: inputs.group.side,
         accuracy: result.accuracy,
         cornerMode: inputs.group.cornerMode,

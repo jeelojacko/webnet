@@ -20,7 +20,8 @@ import type { WebnetGradingDesignPatchTinProvenance } from '../cadTypes';
 import { checkFlatRing, designPatchBlock, ringCount, ringEdgeKey, ringVertexKey, validateSourceRing } from './designPatchRing';
 import type { DesignPatchFailure } from './designPatchRing';
 import { deriveDesignPatchPlane } from './designPatchPlane';
-import type { GradingMesh } from './gradingTypes';
+import { gradingTerminationKind } from './gradingTypes';
+import type { GradingCriterion, GradingMesh } from './gradingTypes';
 
 export {
   checkFlatRing,
@@ -300,8 +301,11 @@ export interface DesignPatchProvenanceInput {
   groupRevision: string;
   sourceFeatureLineId: string;
   sourceCourseRefs: string[];
-  targetSurfaceId: string;
-  targetSurfaceRevision: string;
+  /** Group default criterion: identifies the termination family + analytic inputs. */
+  criterion?: GradingCriterion;
+  /** Surface-family patches only (legacy files always carry these). */
+  targetSurfaceId?: string;
+  targetSurfaceRevision?: string;
   accuracy: 'EXACT' | 'CURVE_APPROXIMATED';
   interiorPolicy?: DesignPatchInteriorPolicy;
   fileName?: string;
@@ -312,20 +316,30 @@ export interface DesignPatchProvenanceInput {
 /** Exact informational snapshot; intentionally free of any legal wording. */
 export const makeDesignPatchProvenance = (
   input: DesignPatchProvenanceInput,
-): WebnetGradingDesignPatchTinProvenance => ({
-  kind: 'webnet-grading-design-patch',
-  groupId: input.groupId,
-  groupName: input.groupName,
-  groupRevision: input.groupRevision,
-  sourceFeatureLineId: input.sourceFeatureLineId,
-  sourceCourseRefs: [...input.sourceCourseRefs],
-  targetSurfaceId: input.targetSurfaceId,
-  targetSurfaceRevision: input.targetSurfaceRevision,
-  accuracy: input.accuracy,
-  cornerMode: 'miter',
-  includesInterior: true,
-  interiorPolicy: input.interiorPolicy ?? 'flat-source',
-  ...(input.fileName != null ? { fileName: input.fileName } : {}),
-  ...(input.surfaceName != null ? { surfaceName: input.surfaceName } : {}),
-  ...(input.sourceId != null ? { sourceId: input.sourceId } : {}),
-});
+): WebnetGradingDesignPatchTinProvenance => {
+  const kind = input.criterion === undefined ? undefined : gradingTerminationKind(input.criterion);
+  const analytic = kind === 'distance' || kind === 'elevation';
+  const criterion = input.criterion;
+  return {
+    kind: 'webnet-grading-design-patch',
+    groupId: input.groupId,
+    groupName: input.groupName,
+    groupRevision: input.groupRevision,
+    sourceFeatureLineId: input.sourceFeatureLineId,
+    sourceCourseRefs: [...input.sourceCourseRefs],
+    // Analytic patches record their own termination family; a dormant target
+    // id never leaks into the snapshot (surface keeps legacy bytes).
+    ...(analytic ? { targetKind: kind } : {}),
+    ...(input.targetSurfaceId != null ? { targetSurfaceId: input.targetSurfaceId } : {}),
+    ...(input.targetSurfaceRevision != null ? { targetSurfaceRevision: input.targetSurfaceRevision } : {}),
+    ...(criterion?.kind === 'distance' ? { criterionDistance: criterion.distance } : {}),
+    ...(criterion?.kind === 'elevation' ? { targetElevation: criterion.targetElevation } : {}),
+    accuracy: input.accuracy,
+    cornerMode: 'miter',
+    includesInterior: true,
+    interiorPolicy: input.interiorPolicy ?? 'flat-source',
+    ...(input.fileName != null ? { fileName: input.fileName } : {}),
+    ...(input.surfaceName != null ? { surfaceName: input.surfaceName } : {}),
+    ...(input.sourceId != null ? { sourceId: input.sourceId } : {}),
+  };
+};

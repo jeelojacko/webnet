@@ -8,6 +8,7 @@
  * resolve phase and is deliberately NOT performed here.
  */
 import type { GradingCriterion, GradingSide } from './gradingTypes';
+import { gradingCriterionRequiresSurface } from './gradingTypes';
 import type {
   CadGradingGroup,
   GradingCornerMode,
@@ -15,6 +16,7 @@ import type {
   GradingGroupCourseCriterionOverride,
 } from './gradingGroupTypes';
 import { criteriaEqual } from './gradingGroupCourseCriteria';
+import { validateGroupTerminationCriteria } from './gradingGroupTermination';
 import {
   validateGradingCriterion,
   type GradingAuthoringResult,
@@ -25,7 +27,8 @@ export interface CreateGroupInput {
   name: string;
   sourceFeatureLineId: string;
   sourceCourses: GradingGroupCourse[];
-  targetSurfaceId: string;
+  /** Required for surface criteria (fixed/cut-fill); omitted for analytic. */
+  targetSurfaceId?: string;
   side: GradingSide;
   criterion: GradingCriterion;
   /** Phase 20E sparse overrides (validated: member refs, no duplicates). */
@@ -98,14 +101,22 @@ export const validateGroupChain = (
 };
 
 const identityError = (
-  input: Pick<CreateGroupInput, 'id' | 'name' | 'sourceFeatureLineId' | 'targetSurfaceId' | 'side'>,
+  input: Pick<CreateGroupInput, 'id' | 'name' | 'sourceFeatureLineId' | 'side'>,
 ): string | null => {
   if (!nonEmpty(input.id)) return 'id must be non-empty';
   if (!nonEmpty(input.name)) return 'name must be non-empty';
   if (!nonEmpty(input.sourceFeatureLineId)) return 'sourceFeatureLineId must be non-empty';
-  if (!nonEmpty(input.targetSurfaceId)) return 'targetSurfaceId must be non-empty';
   return input.side === 'left' || input.side === 'right' ? null : 'side must be left or right';
 };
+
+/** Phase 20F: target surface is required only for surface-family criteria. */
+const targetRule = (
+  criterion: GradingCriterion,
+  targetSurfaceId: string | undefined,
+): string | null =>
+  gradingCriterionRequiresSurface(criterion) && !nonEmpty(targetSurfaceId)
+    ? 'targetSurfaceId must be non-empty for surface criteria'
+    : null;
 
 const scalarError = (
   input: Pick<CreateGroupInput, 'maxSearchDistance' | 'curveChordTolerance'>,
@@ -144,7 +155,11 @@ const toGroup = (input: CreateGroupInput): CadGradingGroup => ({
   name: input.name,
   sourceFeatureLineId: input.sourceFeatureLineId,
   sourceCourses: input.sourceCourses.map((course) => ({ ...course })),
-  targetSurfaceId: input.targetSurfaceId,
+  // Analytic criteria never carry a target id on new writes (dormancy by
+  // omission); a legacy surface group keeps its target verbatim.
+  ...(gradingCriterionRequiresSurface(input.criterion) && nonEmpty(input.targetSurfaceId)
+    ? { targetSurfaceId: input.targetSurfaceId }
+    : {}),
   side: input.side,
   criterion: input.criterion,
   ...(input.courseCriteria !== undefined
@@ -167,12 +182,19 @@ export const createGroupDefinition = (
   if (input.cornerMode !== 'miter') return fail('cornerMode must be miter');
   const criterion = validateGradingCriterion(input.criterion);
   if (criterion) return fail(criterion);
+  const target = targetRule(input.criterion, input.targetSurfaceId);
+  if (target) return fail(target);
   const scalars = scalarError(input);
   if (scalars) return fail(scalars);
   const chain = validateGroupChain(input.sourceCourses, input.closed === true);
   if (chain) return fail(chain);
   const overrides = overrideRefError(input.sourceCourses, input.courseCriteria);
   if (overrides) return fail(overrides);
+  const termination = validateGroupTerminationCriteria(
+    input.criterion,
+    (input.courseCriteria ?? []).map((entry) => entry.criterion),
+  );
+  if (termination) return fail(termination);
   return { ok: true, value: toGroup(input) };
 };
 
@@ -183,6 +205,19 @@ export const editGroupCriteria = (
 ): GradingAuthoringResult<CadGradingGroup> => {
   const error = validateGradingCriterion(criterion);
   if (error) return fail(error);
+  const termination = validateGroupTerminationCriteria(
+    criterion,
+    (current.courseCriteria ?? []).map((entry) => entry.criterion),
+  );
+  if (termination) return fail(termination);
+  if (gradingCriterionRequiresSurface(criterion) && !nonEmpty(current.targetSurfaceId)) {
+    return fail('targetSurfaceId must be non-empty for surface criteria');
+  }
+  if (!gradingCriterionRequiresSurface(criterion)) {
+    // Switching a group to analytic drops any dormant target id.
+    const { targetSurfaceId: _dormant, ...rest } = current;
+    return { ok: true, value: { ...rest, criterion } };
+  }
   return { ok: true, value: { ...current, criterion } };
 };
 
@@ -229,6 +264,11 @@ export const setCourseCriteriaOverrides = (
     const { courseCriteria: _dropped, ...rest } = current;
     return { ok: true, value: rest };
   }
+  const termination = validateGroupTerminationCriteria(
+    current.criterion,
+    next.map((entry) => entry.criterion),
+  );
+  if (termination) return fail(termination);
   return { ok: true, value: { ...current, courseCriteria: next } };
 };
 

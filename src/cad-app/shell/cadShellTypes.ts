@@ -309,7 +309,11 @@ export interface CadShellActions {
   /** Phase 20C — select a grading group (Toolspace/manager/properties converge). */
   selectGradingGroup?: (_groupId: string | null) => void;
   /** Phase 20B — open the grading manager (optional tab/inquiry focus). */
-  openGradingManager?: (_selectedId?: string, _tab?: 'definition' | 'inquiry') => void;
+  openGradingManager?: (
+    _selectedId?: string,
+    _tab?: 'definition' | 'inquiry',
+    _method?: import('../../engine/cad/grading/gradingTypes').GradingTerminationKind,
+  ) => void;
   /** Phase 20B — explicit Calculate for one grading (never auto-started). */
   requestGradingCalculate?: (_gradingId: string) => string;
   /** Phase 20B — Extract Daylight snapshot (CURRENT only), one undo entry. */

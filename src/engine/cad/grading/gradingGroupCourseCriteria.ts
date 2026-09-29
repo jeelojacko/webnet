@@ -102,12 +102,22 @@ export const canonicalCourseCriteria = (
   return out;
 };
 
-/** Structural criterion equality (kind + ratios). */
+/**
+ * Structural criterion equality (kind + ratios). Phase 20F: distance and
+ * elevation compare their exact numeric inputs (no tolerance), so a
+ * reset-to-default removes the override only when the inputs are identical.
+ */
 export const criteriaEqual = (a: GradingCriterion, b: GradingCriterion): boolean => {
   if (a.kind !== b.kind) return false;
   if (a.kind === 'fixed' && b.kind === 'fixed') return a.gradeRatio === b.gradeRatio;
   if (a.kind === 'cut-fill' && b.kind === 'cut-fill') {
     return a.cutGradeRatio === b.cutGradeRatio && a.fillGradeRatio === b.fillGradeRatio;
+  }
+  if (a.kind === 'distance' && b.kind === 'distance') {
+    return a.gradeRatio === b.gradeRatio && a.distance === b.distance;
+  }
+  if (a.kind === 'elevation' && b.kind === 'elevation') {
+    return a.gradeRatio === b.gradeRatio && a.targetElevation === b.targetElevation;
   }
   return false;
 };

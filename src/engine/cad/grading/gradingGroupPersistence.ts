@@ -13,8 +13,12 @@ import type { CadGradingGroup } from './gradingGroupTypes';
  */
 
 export const cloneCadGradingGroup = (group: CadGradingGroup): CadGradingGroup => ({
-  ...group,
+  id: group.id,
+  name: group.name,
+  sourceFeatureLineId: group.sourceFeatureLineId,
   sourceCourses: group.sourceCourses.map((course) => ({ ...course })),
+  ...(group.targetSurfaceId !== undefined ? { targetSurfaceId: group.targetSurfaceId } : {}),
+  side: group.side,
   criterion: { ...group.criterion },
   ...(group.courseCriteria !== undefined
     ? {
@@ -24,6 +28,12 @@ export const cloneCadGradingGroup = (group: CadGradingGroup): CadGradingGroup =>
         })),
       }
     : {}),
+  maxSearchDistance: group.maxSearchDistance,
+  curveChordTolerance: group.curveChordTolerance,
+  cornerMode: group.cornerMode,
+  ...(group.closed === true ? { closed: true as const } : {}),
+  ...(group.layerId !== undefined ? { layerId: group.layerId } : {}),
+  ...(group.styleId !== undefined ? { styleId: group.styleId } : {}),
 });
 
 export const cloneCadGradingGroups = (groups: CadGradingGroup[] | undefined): CadGradingGroup[] =>
@@ -79,7 +89,9 @@ export const sanitizeCadGradingGroupsDetailed = (
       name: candidate['name'] as string,
       sourceFeatureLineId: candidate['sourceFeatureLineId'] as string,
       sourceCourses: (candidate['sourceCourses'] ?? []) as CadGradingGroup['sourceCourses'],
-      targetSurfaceId: candidate['targetSurfaceId'] as string,
+      ...(typeof candidate['targetSurfaceId'] === 'string'
+        ? { targetSurfaceId: candidate['targetSurfaceId'] as string }
+        : {}),
       side: candidate['side'] as CadGradingGroup['side'],
       criterion: candidate['criterion'] as CadGradingGroup['criterion'],
       maxSearchDistance: candidate['maxSearchDistance'] as number,

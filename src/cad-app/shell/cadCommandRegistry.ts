@@ -463,6 +463,10 @@ export const CAD_SHELL_COMMANDS: CadShellCommandDef[] = [
   // (`actions.runGradingCommand`); the rest open the manager or fire the
   // explicit Calculate / Extract / Bake actions. GTS alias is collision-free.
   action('GRADETOSURFACE', 'Grade to Surface', 'Design', 'Grade a feature-line course to a CURRENT target surface (pick course, side, criterion, max distance, curve tolerance).', undefined, ['GTS']),
+  // Phase 20F — analytic termination: signed grade to a target distance or
+  // elevation. No target surface is ever requested. GTD/GTE collision-free.
+  action('GRADETODISTANCE', 'Grade to Distance', 'Design', 'Grade a feature-line course at a signed grade for a target horizontal distance (manager create form; no target surface).', undefined, ['GTD']),
+  action('GRADETOELEVATION', 'Grade to Elevation', 'Design', 'Grade a feature-line course at a signed grade to a target elevation (manager create form; no target surface).', undefined, ['GTE']),
   action('GRADING', 'Grading Manager', 'Design', 'Open the grading manager (rows, create, calculate, inquiry).'),
   action('GRADINGCALC', 'Calculate Grading', 'Design', 'Build the selected grading result (both sources must be Current; explicit, never auto-started).'),
   action('GRADINGINQUIRY', 'Grading Inquiry', 'Design', 'Open the grading inquiry report (CURRENT only; stale answers honestly).', undefined, ['GRADINGINQ']),

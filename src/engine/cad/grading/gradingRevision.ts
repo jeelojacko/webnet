@@ -16,8 +16,10 @@ export interface GradingRevisionInput {
   vertexAId: string;
   vertexBId: string;
   resolvedSource: ResolvedGradingSource;
-  targetSurfaceId: string;
-  targetRevision: string;
+  /** Omitted for target-free (analytic) criteria — hashes as `tgt:none`. */
+  targetSurfaceId?: string;
+  /** Omitted for target-free (analytic) criteria — hashes as `tgt:none`. */
+  targetRevision?: string;
   side: GradingSide;
   criterion: GradingCriterion;
   maxSearchDistance: number;
@@ -36,8 +38,20 @@ const criterionText = (criterion: GradingCriterion): string => {
   if (criterion.kind === 'cut-fill') {
     return `cut-fill:${canonicalGradingNum(criterion.cutGradeRatio)}/${canonicalGradingNum(criterion.fillGradeRatio)}`;
   }
+  if (criterion.kind === 'distance') {
+    return `distance:${canonicalGradingNum(criterion.gradeRatio)}/${canonicalGradingNum(criterion.distance)}`;
+  }
+  if (criterion.kind === 'elevation') {
+    return `elevation:${canonicalGradingNum(criterion.gradeRatio)}/${canonicalGradingNum(criterion.targetElevation)}`;
+  }
   return `fixed:${canonicalGradingNum(criterion.gradeRatio)}`;
 };
+
+/** Target leg: `tgt:none` when the criterion carries no target. */
+const targetText = (input: GradingRevisionInput): string =>
+  input.targetSurfaceId === undefined || input.targetRevision === undefined
+    ? 'tgt:none'
+    : `tgt:${input.targetSurfaceId}@${input.targetRevision}`;
 
 // Arc circle params join the revision when present (a bulge edit moves the
 // arc under identical endpoints, so it must move the revision). Straight and
@@ -71,7 +85,7 @@ export const buildGradingRevision = (input: GradingRevisionInput): string => {
     `src:${input.sourceFeatureLineId}`,
     `course:${input.vertexAId}>${input.vertexBId}`,
     `geom:${sourceText(input.resolvedSource)}`,
-    `tgt:${input.targetSurfaceId}@${input.targetRevision}`,
+    targetText(input),
     `side:${input.side}`,
     `crit:${criterionText(input.criterion)}`,
     `search:${canonicalGradingNum(input.maxSearchDistance)}`,

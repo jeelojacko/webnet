@@ -143,8 +143,9 @@ export const resolveDesignPatch = (
         sourceCourseRefs: inputs.group.sourceCourses.map(
           (course) => `${course.vertexAId}>${course.vertexBId}`,
         ),
-        targetSurfaceId: inputs.target.id,
-        targetSurfaceRevision: inputs.targetRevision,
+        criterion: inputs.group.criterion,
+        ...(inputs.target !== undefined ? { targetSurfaceId: inputs.target.id } : {}),
+        ...(inputs.targetRevision !== undefined ? { targetSurfaceRevision: inputs.targetRevision } : {}),
         accuracy: result.accuracy,
         interiorPolicy: interior.interiorPolicy,
       }),

@@ -21,14 +21,25 @@ import type {
 } from '../../engine/cad/grading/gradingGroupTypes';
 import type {
   GradingAccuracy,
+  GradingTerminationKind,
   ResolvedGradingSource,
+} from '../../engine/cad/grading/gradingTypes';
+import {
+  gradingBoundaryLabel,
+  gradingTerminationKind,
+  isTargetFreeCriterion,
 } from '../../engine/cad/grading/gradingTypes';
 import { resolveGroupInputs } from '../../engine/cad/grading/gradingGroupResolve';
 import {
   formatGradingCriterion,
   gradingSideText,
 } from './cadGradingShell';
-import { gradingAccuracyText, gradingStatusText } from './cadGradingSnapshot';
+import {
+  gradingAccuracyText,
+  gradingAreaUnit,
+  gradingLengthUnit,
+  gradingStatusText,
+} from './cadGradingSnapshot';
 
 /** Session group-result cache surface (the grading service owns the impl). */
 export interface CadGradingGroupResultCache {
@@ -46,6 +57,13 @@ export interface CadGradingGroupMetrics {
   grading3dArea: number;
   triangleCount: number;
   multipleSolutionCount: number;
+  /** Phase 20F: full metric set for Properties/Toolspace/Inquiry. */
+  sourceLength: number;
+  vertexCount: number;
+  cutSourceLength: number;
+  fillSourceLength: number;
+  tiedSourceLength: number;
+  diagnostics: string[];
 }
 
 export interface CadGradingGroupRow {
@@ -63,8 +81,19 @@ export interface CadGradingGroupRow {
   cornerMode: GradingCornerMode;
   /** Display layer; undefined = default grading layer. */
   layerId?: string;
+  /** Termination method across the group family (surface/distance/elevation). */
+  method: GradingTerminationKind;
+  /** True for distance/elevation families: no target surface. */
+  analytic: boolean;
+  /** Target surface id; empty string for analytic families. */
   targetSurfaceId: string;
+  /** Target name; em dash for analytic families (never a fake surface). */
   targetName: string;
+  /** Boundary label: 'Daylight' (surface) or 'Grading Limit' (analytic). */
+  boundaryLabel: string;
+  lengthUnit: string;
+  areaUnit: string;
+  cutFillApplicable: boolean;
   side: string;
   criterionText: string;
   /** Phase 20E: sparse per-course override count (0 = every course rides the default). */
@@ -108,9 +137,15 @@ const metricsOf = (result: CadGradingGroupResult): CadGradingGroupMetrics => ({
   grading3dArea: result.grading3dArea,
   triangleCount: result.gradingMesh.triangles.length / 3,
   multipleSolutionCount: result.multipleSolutionCount,
+  sourceLength: result.sourceLength,
+  vertexCount: Math.floor(result.daylightPoints.length / 3),
+  cutSourceLength: result.cutSourceLength,
+  fillSourceLength: result.fillSourceLength,
+  tiedSourceLength: result.tiedSourceLength,
+  diagnostics: result.diagnostics.map((entry) => entry.code),
 });
 
-const cornerSummaryOf = (result: CadGradingGroupResult): string[] => {
+const cornerSummaryOf = (result: CadGradingGroupResult, lengthUnit: string): string[] => {
   const lines: string[] = [];
   lines.push(
     `${result.memberCount} members · ${result.cornerCount} corners · ` +
@@ -121,7 +156,7 @@ const cornerSummaryOf = (result: CadGradingGroupResult): string[] => {
     const tie = corner.tiePointXyz != null
       ? `tie ${corner.tiePointXyz[0].toFixed(2)},${corner.tiePointXyz[1].toFixed(2)},${corner.tiePointXyz[2].toFixed(2)}`
       : 'tie —';
-    const miter = corner.miterExtent != null ? `miter ${corner.miterExtent.toFixed(3)} m` : 'miter —';
+    const miter = corner.miterExtent != null ? `miter ${corner.miterExtent.toFixed(3)} ${lengthUnit}` : 'miter —';
     const diag = corner.diagnostics.length > 0 ? ` · ${corner.diagnostics.join('/')}` : '';
     lines.push(`#${corner.cornerIndex} ${corner.classification} · ${miter} · ${tie}${diag}`);
   }
@@ -140,16 +175,21 @@ export const buildCadGradingGroupSnapshot = (
 ): CadGradingGroupSnapshot => {
   const groups = groupsOf(project);
   const surfaces = project.surfaces ?? [];
+  const lengthUnit = gradingLengthUnit(project.metadata?.units ?? 'm');
+  const areaUnit = gradingAreaUnit(project.metadata?.units ?? 'm');
   const featureLines = project.entities.filter(
     (entity): entity is CadFeatureLineEntity => entity.type === 'feature-line',
   );
   const rows: CadGradingGroupRow[] = groups.map((group) => {
     const entity = featureLines.find((entry) => entry.id === group.sourceFeatureLineId) ?? null;
-    const target: CadSurface | null =
-      surfaces.find((entry) => entry.id === group.targetSurfaceId) ?? null;
+    const analytic = isTargetFreeCriterion(group.criterion);
+    const target: CadSurface | null = analytic
+      ? null
+      : surfaces.find((entry) => entry.id === group.targetSurfaceId) ?? null;
     const inputs = resolveGroupInputs(project, group.id);
     const targetRevision = target ? surfaceContentRevision(project, target) : '';
-    const targetCurrent = target != null && surfaceCache?.get(target.id, targetRevision) != null;
+    const targetCurrent =
+      analytic || (target != null && surfaceCache?.get(target.id, targetRevision) != null);
     const revision = inputs?.revision ?? '';
     const currentResult = revision.length > 0
       ? groupCache?.get(group.id, revision) ?? null
@@ -195,8 +235,14 @@ export const buildCadGradingGroupSnapshot = (
       closed: group.closed === true,
       cornerMode: group.cornerMode,
       ...(group.layerId !== undefined ? { layerId: group.layerId } : {}),
-      targetSurfaceId: group.targetSurfaceId,
-      targetName: target?.name ?? group.targetSurfaceId,
+      method: gradingTerminationKind(group.criterion),
+      analytic,
+      targetSurfaceId: group.targetSurfaceId ?? '',
+      targetName: analytic ? '—' : target?.name ?? group.targetSurfaceId ?? '',
+      boundaryLabel: gradingBoundaryLabel(group.criterion),
+      lengthUnit,
+      areaUnit,
+      cutFillApplicable: !analytic,
       side: gradingSideText(group.side),
       criterionText: formatGradingCriterion(group.criterion),
       overrideCount: group.courseCriteria?.length ?? 0,
@@ -212,7 +258,7 @@ export const buildCadGradingGroupSnapshot = (
         (currentResult?.diagnostics.some((entry) => entry.code === 'CURVE_CORNER_APPROXIMATED') === true) ||
         (stale && (lastRetained?.diagnostics.some((entry) => entry.code === 'CURVE_CORNER_APPROXIMATED') === true)),
       metrics: currentMetrics ?? staleMetrics,
-      cornerSummary: summaryResult ? cornerSummaryOf(summaryResult) : [],
+      cornerSummary: summaryResult ? cornerSummaryOf(summaryResult, lengthUnit) : [],
       currentResult,
       calculable:
         effectiveStatus !== 'BUILDING' &&

@@ -6,9 +6,10 @@ import { validateExplicitTinPayload } from './cadImportedTin';
 import {
   createBothSidesGrading,
   createGradingDefinition,
-  editGradingCriteria,
+  editGradingCriteriaWithTarget,
   reassignGradingTarget,
 } from './grading/gradingAuthoring';
+import { gradingBoundaryLabel, gradingCriterionRequiresSurface, gradingTerminationKind } from './grading/gradingTypes';
 import { resolveGradingSourceCourse } from './grading/gradingCourseFrame';
 import { resolveGradingInputs } from './grading/gradingResolve';
 import { appendCadProjectEntities } from './cadProjectState';
@@ -93,10 +94,13 @@ type GradingCreateCommand = Extract<CadCommand, { key: 'GRADING_CREATE' }>;
 const gradingCreateCommand: CadCommandDefinition<GradingCreateCommand> = {
   key: 'GRADING_CREATE',
   execute: (snapshot, command) => {
-    const target = (snapshot.project.surfaces ?? []).find(
-      (entry) => entry.id === command.targetSurfaceId,
-    );
-    if (!target) return null;
+    // Surface-terminated criteria need a live target; distance/elevation are
+    // analytic and never carry a target id on new writes.
+    const requiresSurface = gradingCriterionRequiresSurface(command.criterion);
+    const target = requiresSurface
+      ? (snapshot.project.surfaces ?? []).find((entry) => entry.id === command.targetSurfaceId)
+      : undefined;
+    if (requiresSurface && !target) return null;
     if (!courseResolvable(snapshot.project, command.sourceFeatureLineId, command.vertexAId, command.vertexBId)) {
       return null;
     }
@@ -106,7 +110,7 @@ const gradingCreateCommand: CadCommandDefinition<GradingCreateCommand> = {
       sourceFeatureLineId: command.sourceFeatureLineId,
       vertexAId: command.vertexAId,
       vertexBId: command.vertexBId,
-      targetSurfaceId: command.targetSurfaceId,
+      ...(target ? { targetSurfaceId: target.id } : {}),
       criterion: command.criterion,
       maxSearchDistance: command.maxSearchDistance,
       curveChordTolerance: command.curveChordTolerance,
@@ -170,7 +174,14 @@ const gradingEditCriteriaCommand: CadCommandDefinition<GradingEditCriteriaComman
   execute: (snapshot, command) => {
     const grading = findGrading(snapshot.project, command.gradingId);
     if (!grading) return null;
-    const edited = editGradingCriteria(grading, command.criterion);
+    // Kind switch + target land in ONE history entry: a surface criterion must
+    // resolve to a live target, while an analytic criterion clears the id.
+    if (gradingCriterionRequiresSurface(command.criterion)) {
+      const nextTarget = command.targetSurfaceId ?? grading.targetSurfaceId;
+      if (!nextTarget) return null;
+      if (!(snapshot.project.surfaces ?? []).some((entry) => entry.id === nextTarget)) return null;
+    }
+    const edited = editGradingCriteriaWithTarget(grading, command.criterion, command.targetSurfaceId);
     if (!edited.ok) return null;
     // Revision moves → NEEDS_RECALC derives; cached results keyed by grev go stale.
     return commitLayerProject('GRADING_EDIT_CRITERIA', snapshot, {
@@ -189,6 +200,8 @@ const gradingReassignTargetCommand: CadCommandDefinition<GradingReassignTargetCo
   execute: (snapshot, command) => {
     const grading = findGrading(snapshot.project, command.gradingId);
     if (!grading) return null;
+    // Analytic criteria have no live target; reassignment is surface-only.
+    if (!gradingCriterionRequiresSurface(grading.criterion)) return null;
     const target = (snapshot.project.surfaces ?? []).find(
       (entry) => entry.id === command.targetSurfaceId,
     );
@@ -220,7 +233,7 @@ export const gradingCalculateGate = (
   if (!inputs) {
     return { ok: false, message: `Grading calculation blocked: grading “${gradingId}” has a broken source or target reference.` };
   }
-  if (!targetCurrent) {
+  if (!targetCurrent && inputs.target) {
     return {
       ok: false,
       message: `Grading calculation blocked: target TIN for “${inputs.target.name}” is not CURRENT (SOURCE_NOT_CURRENT) — rebuild it first.`,
@@ -258,7 +271,10 @@ const gradingExtractCommand: CadCommandDefinition<GradingExtractCommand> = {
     const entity = buildFeatureLineEntity(
       snapshot.project,
       { vertices, elevations, closed: false },
-      { name: `${inputs.grading.name} - Daylight`, createdBy: 'GRADINGEXTRACTDAYLIGHT' },
+      {
+        name: `${inputs.grading.name} - ${gradingBoundaryLabel(inputs.grading.criterion)}`,
+        createdBy: 'GRADINGEXTRACTDAYLIGHT',
+      },
     );
     if (!entity) return null;
     return commitLayerProject('GRADINGEXTRACTDAYLIGHT', snapshot,
@@ -296,6 +312,9 @@ const gradingBakeCommand: CadCommandDefinition<GradingBakeCommand> = {
     }
     // Bake blocked on ALREADY_TIED empty mesh (zero-area ties bake nothing).
     if (result.gradingMesh.triangles.length === 0) return null;
+    const criterion = inputs.grading.criterion;
+    const targetKind = gradingTerminationKind(criterion);
+    if (targetKind === 'surface' && !inputs.target) return null;
     const canonical = canonicalizeBakedTin(result.gradingMesh.points, result.gradingMesh.triangles);
     const payload = {
       vertices: canonical.vertices,
@@ -308,7 +327,10 @@ const gradingBakeCommand: CadCommandDefinition<GradingBakeCommand> = {
         sourceFeatureLineId: inputs.grading.sourceFeatureLineId,
         sourceVertexAId: inputs.grading.sourceCourse.vertexAId,
         sourceVertexBId: inputs.grading.sourceCourse.vertexBId,
-        targetSurfaceId: inputs.target.id,
+        targetKind,
+        ...(targetKind === 'surface' ? { targetSurfaceId: inputs.target!.id } : {}),
+        ...(criterion.kind === 'distance' ? { criterionDistance: criterion.distance } : {}),
+        ...(criterion.kind === 'elevation' ? { targetElevation: criterion.targetElevation } : {}),
         accuracy: result.accuracy,
       },
     };

@@ -9,12 +9,14 @@
  */
 import { linearizeGradingArc, type LinearizedGradingArc } from './gradingCurve';
 import {
+  assembleAnalyticGradingResult,
   assembleGradingResult,
 } from './gradingResultAssemble';
+import { solveGradingChord } from './solveAnalyticGradingChord';
 import {
-  solveStraightChord,
   type StraightChordSolve,
 } from './solveStraightChord';
+import { isTargetFreeCriterion } from './gradingTypes';
 import type {
   GradingComputeOutcome,
   GradingComputeSource,
@@ -45,8 +47,10 @@ export interface ArcSolveInput {
   criterion: GradingCriterion;
   maxSearchDistance: number;
   tolerance: number;
-  target: GradingTargetMeshSnapshot;
-  query: TargetQuery;
+  /** Absent for target-free (analytic) criteria; required otherwise. */
+  target?: GradingTargetMeshSnapshot;
+  /** Absent for target-free (analytic) criteria; required otherwise. */
+  query?: TargetQuery;
 }
 
 /** Seam equality under the zeroDelta floor (plan + elevation). */
@@ -156,13 +160,16 @@ type ChordStitchResult =
   | { ok: true; stitch: ArcStitch }
   | { ok: false; code: GradingDiagnosticCode; detail?: string };
 
-/** Run the exact straight-chord solve once per linearized chord. */
+/** Run the chord solve once per linearized chord (analytic when target-free). */
 const solveArcChords = (
   input: ArcSolveInput,
   linearized: LinearizedGradingArc,
   segArc: number,
 ): ChordStitchResult => {
   const { source, side, criterion, maxSearchDistance, target, query } = input;
+  if (!isTargetFreeCriterion(criterion) && (!target || !query)) {
+    return { ok: false, code: 'NO_SOLUTION', detail: 'GRADING_BAD_TARGET_MESH' };
+  }
   const stitch: ArcStitch = {
     regions: [],
     diagnostics: [],
@@ -182,13 +189,13 @@ const solveArcChords = (
     if (!chordSource) {
       return { ok: false, code: 'NO_SOLUTION', detail: 'GRADING_ARC_LINEARIZE' };
     }
-    const solved = solveStraightChord({
+    const solved = solveGradingChord({
       source: chordSource,
       side,
       criterion,
       maxSearchDistance,
-      target,
-      query,
+      ...(target !== undefined ? { target } : {}),
+      ...(query !== undefined ? { query } : {}),
       stationBase: k * segArc,
       stationScale: segArc / chordSource.length,
     });
@@ -209,6 +216,29 @@ export const solveArcGrading = (input: ArcSolveInput): GradingComputeOutcome => 
   const stitched = solveArcChords(input, setup.linearized, setup.segArc);
   if (!stitched.ok) return stitched;
   const stitch = stitched.stitch;
+  // Phase 20F: analytic criteria assemble without a target query —
+  // source/target relation lengths stay unavailable (never faked).
+  if (isTargetFreeCriterion(input.criterion)) {
+    return assembleAnalyticGradingResult({
+      gradingId: input.gradingId,
+      revision: input.revision,
+      sourceLength: input.source.length,
+      accuracy: 'CURVE_APPROXIMATED',
+      regions: stitch.regions,
+      diagnostics: stitch.diagnostics,
+      sourcePts: stitch.sourcePts,
+      daylightPts: stitch.daylightPts,
+      daylightFlat: stitch.daylightFlat,
+      distances: stitch.distances,
+      nodeStations: stitch.nodeStations,
+      candidateTriangleCount: stitch.candidateTriangleCount,
+      intersectionSegmentCount: stitch.intersectionSegmentCount,
+      multipleSolutionCount: stitch.multipleSolutionCount,
+    });
+  }
+  if (!input.target || !input.query) {
+    return { ok: false, code: 'NO_SOLUTION', detail: 'GRADING_BAD_TARGET_MESH' };
+  }
   return assembleGradingResult({
     gradingId: input.gradingId,
     revision: input.revision,

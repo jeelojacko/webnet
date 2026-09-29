@@ -49,7 +49,12 @@ export interface CadGradingGroup {
   sourceFeatureLineId: string;
   /** Ordered traversal: course[i].B == course[i+1].A (and last.B == first.A when closed). */
   sourceCourses: GradingGroupCourse[];
-  targetSurfaceId: string;
+  /**
+   * Required for surface-family groups (fixed/cut-fill); omitted for
+   * distance/elevation groups. A dormant legacy id is read-tolerant but
+   * never feeds revision/status/recalc for an analytic group.
+   */
+  targetSurfaceId?: string;
   /** Relative to the persisted traversal direction. */
   side: GradingSide;
   criterion: GradingCriterion;

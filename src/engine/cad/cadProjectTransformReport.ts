@@ -87,6 +87,8 @@ export const buildProjectTransformReport = (
     { label: 'Surfaces affected', value: String(outcome.affected.surfaces) },
     { label: 'Sample lines affected', value: String(outcome.affected.sampleLines) },
     { label: 'TIN vertices transformed', value: String(outcome.affected.tinVertices) },
+    { label: 'Gradings affected', value: String(outcome.affected.gradings) },
+    { label: 'Grading groups affected', value: String(outcome.affected.gradingGroups) },
     { label: 'Station policy', value: outcome.stationPolicy },
   );
 

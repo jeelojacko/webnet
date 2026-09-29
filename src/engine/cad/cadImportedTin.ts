@@ -84,15 +84,35 @@ export const tinProvenanceKind = (
     : 'landxml-import';
 }
 
+/** Phase 20F: termination family from provenance (legacy omits → surface). */
+const provenanceTargetKind = (provenance: {
+  targetKind?: 'surface' | 'distance' | 'elevation';
+}): 'surface' | 'distance' | 'elevation' =>
+  provenance.targetKind === 'distance' || provenance.targetKind === 'elevation'
+    ? provenance.targetKind
+    : 'surface';
+
+/** Canonical target leg for the revision hash (legacy surface bytes frozen). */
+const provenanceTargetLeg = (
+  targetKind: 'surface' | 'distance' | 'elevation',
+  surfaceId: string | undefined,
+  criterionDistance: number | undefined,
+  targetElevation: number | undefined,
+): string => {
+  if (targetKind === 'distance') return `distance:${criterionDistance ?? 'missing'}`;
+  if (targetKind === 'elevation') return `elevation:${targetElevation ?? 'missing'}`;
+  return surfaceId ?? '';
+};
+
 /** Canonical normalized provenance (read-tolerant in, strict out). */
 export const normalizeTinProvenance = (
   provenance: CadExplicitTinProvenance,
 ):
   | { kind: 'landxml-import'; format: 'LandXML'; fileName: string; surfaceName: string; sourceId?: string }
   | { kind: 'webnet-bake'; sourceSurfaceId: string; sourceSurfaceName: string; sourceRevision: string; sourceSourceKind?: string }
-  | { kind: 'webnet-grading-bake'; gradingId: string; gradingName: string; gradingRevision: string; sourceFeatureLineId: string; sourceVertexAId: string; sourceVertexBId: string; targetSurfaceId: string; accuracy: 'EXACT' | 'CURVE_APPROXIMATED' }
-  | { kind: 'webnet-grading-group-bake'; groupId: string; groupName: string; groupRevision: string; sourceFeatureLineId: string; sourceCourseRefs: string[]; targetSurfaceId: string; side: 'left' | 'right'; accuracy: 'EXACT' | 'CURVE_APPROXIMATED'; cornerMode: 'miter' }
-  | { kind: 'webnet-grading-design-patch'; groupId: string; groupName: string; groupRevision: string; sourceFeatureLineId: string; sourceCourseRefs: string[]; targetSurfaceId: string; targetSurfaceRevision: string; accuracy: 'EXACT' | 'CURVE_APPROXIMATED'; cornerMode: 'miter'; includesInterior: true; interiorPolicy: 'flat-source' | 'planar-source' }
+  | { kind: 'webnet-grading-bake'; gradingId: string; gradingName: string; gradingRevision: string; sourceFeatureLineId: string; sourceVertexAId: string; sourceVertexBId: string; targetKind: 'surface' | 'distance' | 'elevation'; targetSurfaceId?: string; criterionDistance?: number; targetElevation?: number; accuracy: 'EXACT' | 'CURVE_APPROXIMATED' }
+  | { kind: 'webnet-grading-group-bake'; groupId: string; groupName: string; groupRevision: string; sourceFeatureLineId: string; sourceCourseRefs: string[]; targetKind: 'surface' | 'distance' | 'elevation'; targetSurfaceId?: string; criterionDistance?: number; targetElevation?: number; side: 'left' | 'right'; accuracy: 'EXACT' | 'CURVE_APPROXIMATED'; cornerMode: 'miter' }
+  | { kind: 'webnet-grading-design-patch'; groupId: string; groupName: string; groupRevision: string; sourceFeatureLineId: string; sourceCourseRefs: string[]; targetKind: 'surface' | 'distance' | 'elevation'; targetSurfaceId?: string; targetSurfaceRevision?: string; criterionDistance?: number; targetElevation?: number; accuracy: 'EXACT' | 'CURVE_APPROXIMATED'; cornerMode: 'miter'; includesInterior: true; interiorPolicy: 'flat-source' | 'planar-source' }
   | { kind: 'webnet-compose'; baseSurfaceId: string; baseSurfaceName: string; baseRevision: string; overlaySurfaceId: string; overlaySurfaceName: string; overlayRevision: string; policy: 'overlay-coverage-wins'; resultDigest?: string } => {
   if (tinProvenanceKind(provenance) === 'webnet-compose') {
     const composed = provenance as WebnetComposeTinProvenance;
@@ -110,6 +130,7 @@ export const normalizeTinProvenance = (
   }
   if (tinProvenanceKind(provenance) === 'webnet-grading-group-bake') {
     const baked = provenance as WebnetGradingGroupBakeTinProvenance;
+    const targetKind = provenanceTargetKind(baked);
     return {
       kind: 'webnet-grading-group-bake',
       groupId: baked.groupId,
@@ -117,7 +138,16 @@ export const normalizeTinProvenance = (
       groupRevision: baked.groupRevision,
       sourceFeatureLineId: baked.sourceFeatureLineId,
       sourceCourseRefs: [...baked.sourceCourseRefs],
-      targetSurfaceId: baked.targetSurfaceId,
+      targetKind,
+      ...(targetKind === 'surface' && baked.targetSurfaceId != null
+        ? { targetSurfaceId: baked.targetSurfaceId }
+        : {}),
+      ...(targetKind === 'distance' && baked.criterionDistance != null
+        ? { criterionDistance: baked.criterionDistance }
+        : {}),
+      ...(targetKind === 'elevation' && baked.targetElevation != null
+        ? { targetElevation: baked.targetElevation }
+        : {}),
       side: baked.side,
       accuracy: baked.accuracy,
       cornerMode: baked.cornerMode,
@@ -125,6 +155,7 @@ export const normalizeTinProvenance = (
   }
   if (tinProvenanceKind(provenance) === 'webnet-grading-design-patch') {
     const patch = provenance as WebnetGradingDesignPatchTinProvenance;
+    const targetKind = provenanceTargetKind(patch);
     return {
       kind: 'webnet-grading-design-patch',
       groupId: patch.groupId,
@@ -132,8 +163,19 @@ export const normalizeTinProvenance = (
       groupRevision: patch.groupRevision,
       sourceFeatureLineId: patch.sourceFeatureLineId,
       sourceCourseRefs: [...patch.sourceCourseRefs],
-      targetSurfaceId: patch.targetSurfaceId,
-      targetSurfaceRevision: patch.targetSurfaceRevision,
+      targetKind,
+      ...(targetKind === 'surface' && patch.targetSurfaceId != null
+        ? { targetSurfaceId: patch.targetSurfaceId }
+        : {}),
+      ...(targetKind === 'surface' && patch.targetSurfaceRevision != null
+        ? { targetSurfaceRevision: patch.targetSurfaceRevision }
+        : {}),
+      ...(targetKind === 'distance' && patch.criterionDistance != null
+        ? { criterionDistance: patch.criterionDistance }
+        : {}),
+      ...(targetKind === 'elevation' && patch.targetElevation != null
+        ? { targetElevation: patch.targetElevation }
+        : {}),
       accuracy: patch.accuracy,
       cornerMode: patch.cornerMode,
       includesInterior: true as const,
@@ -142,6 +184,7 @@ export const normalizeTinProvenance = (
   }
   if (tinProvenanceKind(provenance) === 'webnet-grading-bake') {
     const baked = provenance as WebnetGradingBakeTinProvenance;
+    const targetKind = provenanceTargetKind(baked);
     return {
       kind: 'webnet-grading-bake',
       gradingId: baked.gradingId,
@@ -150,7 +193,16 @@ export const normalizeTinProvenance = (
       sourceFeatureLineId: baked.sourceFeatureLineId,
       sourceVertexAId: baked.sourceVertexAId,
       sourceVertexBId: baked.sourceVertexBId,
-      targetSurfaceId: baked.targetSurfaceId,
+      targetKind,
+      ...(targetKind === 'surface' && baked.targetSurfaceId != null
+        ? { targetSurfaceId: baked.targetSurfaceId }
+        : {}),
+      ...(targetKind === 'distance' && baked.criterionDistance != null
+        ? { criterionDistance: baked.criterionDistance }
+        : {}),
+      ...(targetKind === 'elevation' && baked.targetElevation != null
+        ? { targetElevation: baked.targetElevation }
+        : {}),
       accuracy: baked.accuracy,
     };
   }
@@ -229,13 +281,32 @@ export const tinProvenanceRevisionPart = (provenance: CadExplicitTinProvenance):
     return `webnet-compose|${normalized.baseSurfaceId}|${normalized.baseRevision}|${normalized.overlaySurfaceId}|${normalized.overlayRevision}|${normalized.resultDigest ?? ''}`;
   }
   if (normalized.kind === 'webnet-grading-group-bake') {
-    return `webnet-grading-group-bake|${normalized.groupId}|${normalized.groupRevision}|${normalized.sourceFeatureLineId}|${normalized.targetSurfaceId}|${normalized.accuracy}`;
+    const targetLeg = provenanceTargetLeg(
+      normalized.targetKind,
+      normalized.targetSurfaceId,
+      normalized.criterionDistance,
+      normalized.targetElevation,
+    );
+    return `webnet-grading-group-bake|${normalized.groupId}|${normalized.groupRevision}|${normalized.sourceFeatureLineId}|${targetLeg}|${normalized.accuracy}`;
   }
   if (normalized.kind === 'webnet-grading-bake') {
-    return `webnet-grading-bake|${normalized.gradingId}|${normalized.gradingRevision}|${normalized.sourceFeatureLineId}|${normalized.targetSurfaceId}|${normalized.accuracy}`;
+    const targetLeg = provenanceTargetLeg(
+      normalized.targetKind,
+      normalized.targetSurfaceId,
+      normalized.criterionDistance,
+      normalized.targetElevation,
+    );
+    return `webnet-grading-bake|${normalized.gradingId}|${normalized.gradingRevision}|${normalized.sourceFeatureLineId}|${targetLeg}|${normalized.accuracy}`;
   }
   if (normalized.kind === 'webnet-grading-design-patch') {
-    return `webnet-grading-design-patch|${normalized.groupId}|${normalized.groupRevision}|${normalized.sourceFeatureLineId}|${normalized.targetSurfaceId}|${normalized.targetSurfaceRevision}|${normalized.accuracy}|${normalized.interiorPolicy}`;
+    const targetLeg = provenanceTargetLeg(
+      normalized.targetKind,
+      normalized.targetSurfaceId,
+      normalized.criterionDistance,
+      normalized.targetElevation,
+    );
+    const targetRevisionLeg = normalized.targetKind === 'surface' ? normalized.targetSurfaceRevision ?? '' : '';
+    return `webnet-grading-design-patch|${normalized.groupId}|${normalized.groupRevision}|${normalized.sourceFeatureLineId}|${targetLeg}|${targetRevisionLeg}|${normalized.accuracy}|${normalized.interiorPolicy}`;
   }
   return normalized.kind === 'webnet-bake'
     ? `webnet-bake|${normalized.sourceSurfaceId}|${normalized.sourceSurfaceName}|${normalized.sourceRevision}|${normalized.sourceSourceKind ?? ''}`

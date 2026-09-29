@@ -45,7 +45,10 @@ import {
   type MergeTriangle,
 } from './gradingGroupMerge';
 import { buildTargetQuery, candidateTriangles } from './gradingTargetIndex';
+import { solveGradingChord } from './solveAnalyticGradingChord';
+import { solveAnalyticCorner } from './gradingGroupAnalyticCorners';
 import { solveStraightChord, type StraightChordSolve } from './solveStraightChord';
+import { isTargetFreeCriterion } from './gradingTypes';
 import type {
   GradingCriterion,
   GradingSide,
@@ -75,7 +78,8 @@ export interface GroupSolveInput {
   maxSearchDistance: number;
   curveChordTolerance: number;
   closed: boolean;
-  target: GradingTargetMeshSnapshot;
+  /** Target TIN snapshot; required for surface criteria, absent for analytic. */
+  target?: GradingTargetMeshSnapshot;
 }
 
 export type GradingGroupComputeOutcome =
@@ -239,6 +243,10 @@ const crossGradeAtV = (
   if (criterion.kind === 'fixed') {
     return Number.isFinite(criterion.gradeRatio) ? criterion.gradeRatio : null;
   }
+  // Phase 20F: corner miters stay surface-only; target-free criteria on a
+  // multi-course group fail closed at the corner (single-course analytic
+  // groups never reach the corner path).
+  if (criterion.kind !== 'cut-fill') return null;
   if (!Number.isFinite(criterion.cutGradeRatio) || !Number.isFinite(criterion.fillGradeRatio)) return null;
   const cls = classifySourceDelta(deltaAtV);
   return cls === 'CUT' ? criterion.cutGradeRatio : cls === 'FILL' ? criterion.fillGradeRatio : 0;
@@ -266,26 +274,32 @@ export const computeGradingGroupFromSnapshots = (input: GroupSolveInput): Gradin
       return fail('CORNER_INVERTED', j, 'GRADING_GROUP_CORNER_MISMATCH');
     }
   }
-  // ONE target index for every member and corner.
-  const query = buildTargetQuery(target);
-  if (!query) return fail('MEMBER_NO_SOLUTION', undefined, 'GRADING_BAD_TARGET_MESH');
-  let minX = Infinity;
-  let minY = Infinity;
-  let maxX = -Infinity;
-  let maxY = -Infinity;
-  for (const m of members) {
-    minX = Math.min(minX, m.startX, m.endX);
-    minY = Math.min(minY, m.startY, m.endY);
-    maxX = Math.max(maxX, m.startX, m.endX);
-    maxY = Math.max(maxY, m.startY, m.endY);
+  // Surface members share ONE target index; analytic families carry no target
+  // (single-family is enforced at authoring; this is defense in depth).
+  const needsSurface = members.some((_, mi) => !isTargetFreeCriterion(criterionAt(mi)));
+  const query = needsSurface ? buildTargetQuery(target!) : null;
+  if (needsSurface && !query) return fail('MEMBER_NO_SOLUTION', undefined, 'GRADING_BAD_TARGET_MESH');
+  let candidates: number[] = [];
+  if (needsSurface) {
+    let minX = Infinity;
+    let minY = Infinity;
+    let maxX = -Infinity;
+    let maxY = -Infinity;
+    for (const m of members) {
+      minX = Math.min(minX, m.startX, m.endX);
+      minY = Math.min(minY, m.startY, m.endY);
+      maxX = Math.max(maxX, m.startX, m.endX);
+      maxY = Math.max(maxY, m.startY, m.endY);
+    }
+    const built = candidateTriangles(target!, [
+      { x: minX - maxSearchDistance, y: minY - maxSearchDistance },
+      { x: maxX + maxSearchDistance, y: minY - maxSearchDistance },
+      { x: maxX + maxSearchDistance, y: maxY + maxSearchDistance },
+      { x: minX - maxSearchDistance, y: maxY + maxSearchDistance },
+    ]);
+    if (!built) return fail('MEMBER_NO_SOLUTION', undefined, 'GRADING_BAD_TARGET_MESH');
+    candidates = built;
   }
-  const candidates = candidateTriangles(target, [
-    { x: minX - maxSearchDistance, y: minY - maxSearchDistance },
-    { x: maxX + maxSearchDistance, y: minY - maxSearchDistance },
-    { x: maxX + maxSearchDistance, y: maxY + maxSearchDistance },
-    { x: minX - maxSearchDistance, y: maxY + maxSearchDistance },
-  ]);
-  if (!candidates) return fail('MEMBER_NO_SOLUTION', undefined, 'GRADING_BAD_TARGET_MESH');
 
   // Member strips: the exact standalone chord path, sharing one query.
   const solved: MemberSolve[] = [];
@@ -297,10 +311,19 @@ export const computeGradingGroupFromSnapshots = (input: GroupSolveInput): Gradin
     if (!chords) return fail('MEMBER_NO_SOLUTION', undefined, 'GRADING_ARC_LINEARIZE');
     const chordSolves: StraightChordSolve[] = [];
     for (const chord of chords) {
-      const out = solveStraightChord({
-        source: chord.source, side, criterion: criterionAt(mi), maxSearchDistance,
-        target, query, stationBase: chord.base, stationScale: chord.scale,
-      });
+      // Phase 20F: target-free members solve analytically; the dispatcher
+      // keeps the exact straight-chord path for surface criteria.
+      const out = isTargetFreeCriterion(criterionAt(mi))
+        ? solveGradingChord({
+          source: chord.source, side, criterion: criterionAt(mi), maxSearchDistance,
+          ...(target !== undefined ? { target } : {}),
+          ...(query !== null ? { query } : {}),
+          stationBase: chord.base, stationScale: chord.scale,
+        })
+        : solveStraightChord({
+          source: chord.source, side, criterion: criterionAt(mi), maxSearchDistance,
+          target: target!, query: query!, stationBase: chord.base, stationScale: chord.scale,
+        });
       if (!out.ok) {
         // Honest R1 path: strict-gate daylight failures fail the member closed.
         return fail(out.code === 'TARGET_GAP' ? 'MEMBER_TARGET_GAP' : 'MEMBER_NO_SOLUTION', undefined, out.detail);
@@ -363,7 +386,92 @@ export const computeGradingGroupFromSnapshots = (input: GroupSolveInput): Gradin
     const vz = vMember.endZ;
     const turn = classifyCorner(incoming.tOut, outgoing.tIn, side);
     if (!turn) return fail('CORNER_INVERTED', j, 'GRADING_CORNER_DEGENERATE');
-    const ztV = query.elevationAt(vx, vy);
+    // Phase 20F: analytic corners intersect the two terminal limit lines
+    // directly (no target query, no walls, no bridging, no interpolation).
+    if (isTargetFreeCriterion(criterionAt(inIdx)) || isTargetFreeCriterion(criterionAt(outIdx))) {
+      const analytic = solveAnalyticCorner({
+        vx, vy, vz,
+        inT: incoming.tOut, inN: incoming.nOut, inGs: incoming.gsOut,
+        outT: outgoing.tIn, outN: outgoing.nIn, outGs: outgoing.gsIn,
+        inCriterion: criterionAt(inIdx), outCriterion: criterionAt(outIdx),
+        maxSearchDistance,
+      });
+      if (!analytic.ok) return fail('CORNER_NO_SOLUTION', j, analytic.detail);
+      const classification = turn as GroupCornerClassification;
+      if (analytic.kind === 'coincident') {
+        corners.push({ cornerIndex: j, vertexId: `joint:${j}`, classification, diagnostics: [] });
+        continue;
+      }
+      const tie = analytic.tie;
+      const q1 = incoming.stitched.daylightPts[incoming.stitched.daylightPts.length - 1]!;
+      const q2 = outgoing.stitched.daylightPts[0]!;
+      let cornerRun: MergePoint[];
+      if (classification === 'GAP') {
+        // Outside turn: fan the corner wedge from V across the limit tie on
+        // the two exact grading planes (never a vertical wall).
+        const ring: MergePoint[] = [
+          { x: q1.x, y: q1.y, z: q1.z },
+          { x: tie.x, y: tie.y, z: tie.z },
+          { x: q2.x, y: q2.y, z: q2.z },
+        ];
+        const v: MergePoint = { x: vx, y: vy, z: vz };
+        for (let k = 0; k + 1 < ring.length; k += 1) {
+          const tri: MergeTriangle = { a: v, b: ring[k]!, c: ring[k + 1]! };
+          const area2 = (tri.b.x - tri.a.x) * (tri.c.y - tri.a.y) - (tri.c.x - tri.a.x) * (tri.b.y - tri.a.y);
+          if (Math.abs(area2) <= zeroDelta(area2, 0)) continue;
+          patchTris.push(tri);
+        }
+        cornerRun = ring;
+      } else {
+        // Inside turn: trim both member strips + limit polylines to the miter
+        // line V–tie so the overlap is tiled exactly once.
+        const span = Math.hypot(tie.x - vx, tie.y - vy);
+        if (!(span > 0)) return fail('CORNER_NO_SOLUTION', j, 'GRADING_ANALYTIC_CORNER_DEGENERATE');
+        const miterLine: SectorLine = { vx, vy, mx: (tie.x - vx) / span, my: (tie.y - vy) / span };
+        const midIn: SectorPoint = {
+          x: (members[inIdx]!.startX + vx) / 2,
+          y: (members[inIdx]!.startY + vy) / 2,
+        };
+        const midOut: SectorPoint = {
+          x: (vx + members[outIdx]!.endX) / 2,
+          y: (vy + members[outIdx]!.endY) / 2,
+        };
+        const trimTriangles = (tris: MergeTriangle[], keep: SectorPoint): MergeTriangle[] => {
+          const out: MergeTriangle[] = [];
+          for (const t of tris) out.push(...clipTriangleToHalfPlane(t, miterLine, keep));
+          return out;
+        };
+        memberTris[inIdx] = trimTriangles(memberTris[inIdx]!, midIn);
+        memberTris[outIdx] = trimTriangles(memberTris[outIdx]!, midOut);
+        memberDaylight[inIdx] = clipPolylineToHalfPlane(memberDaylight[inIdx]!, miterLine, midIn);
+        memberDaylight[outIdx] = clipPolylineToHalfPlane(memberDaylight[outIdx]!, miterLine, midOut);
+        if (memberDaylight[inIdx]!.length === 0 || memberDaylight[outIdx]!.length === 0) {
+          return fail('CORNER_NO_SOLUTION', j, 'GRADING_ANALYTIC_CORNER_TRIM');
+        }
+        cornerRun = [
+          memberDaylight[inIdx]![memberDaylight[inIdx]!.length - 1]!,
+          { x: tie.x, y: tie.y, z: tie.z },
+          memberDaylight[outIdx]![0]!,
+        ];
+      }
+      const cornerDaylightFlat: number[] = [];
+      for (const p of cornerRun) cornerDaylightFlat.push(p.x, p.y, p.z);
+      corners.push({
+        cornerIndex: j,
+        vertexId: `joint:${j}`,
+        classification,
+        miterRay: { mx: analytic.ray.mx, my: analytic.ray.my },
+        miterExtent: analytic.extent,
+        tiePointXyz: [tie.x, tie.y, tie.z],
+        daylightPoints: cornerDaylightFlat,
+        diagnostics: [],
+      });
+      const analyticIncomingRun = memberDaylight[inIdx]!;
+      const analyticJoint = joinDaylightRuns([analyticIncomingRun.slice(-1), cornerRun]);
+      memberDaylight[inIdx] = [...analyticIncomingRun.slice(0, -1), ...analyticJoint];
+      continue;
+    }
+    const ztV = query!.elevationAt(vx, vy);
     if (ztV === null) return fail('CORNER_TARGET_GAP', j, 'GRADING_CORNER_V_COVERAGE');
     const cutFill = cutFillSideAtCorner(ztV, vz);
     if (!cutFill) return fail('CORNER_TARGET_GAP', j, 'GRADING_CORNER_V_COVERAGE');
@@ -393,7 +501,7 @@ export const computeGradingGroupFromSnapshots = (input: GroupSolveInput): Gradin
     if ('ambiguous' in ray) return fail('CORNER_AMBIGUOUS', j, 'GRADING_CORNER_RAY');
     const tMax = miterExtent(ray, incoming.nOut, outgoing.nIn, maxSearchDistance);
     if (tMax === null) return fail('CORNER_MAX_DISTANCE', j, 'GRADING_CORNER_EXTENT');
-    const tie = solveMiterTie(target, candidates, query, plane1, vx, vy, ray.mx, ray.my, tMax);
+    const tie = solveMiterTie(target!, candidates, query!, plane1, vx, vy, ray.mx, ray.my, tMax);
     if (!tie.ok) return fail(tie.code, j, 'GRADING_CORNER_TIE');
     multipleSolutions += Math.max(0, tie.rootCount - 1);
     intersectionSegments += 1;
@@ -455,13 +563,13 @@ export const computeGradingGroupFromSnapshots = (input: GroupSolveInput): Gradin
     const wall1: SectorPoint = classification === 'GAP' ? tiePoint : midIn;
     const wall2: SectorPoint = classification === 'GAP' ? tiePoint : midOut;
     const path1 = solveSectorPath(
-      target, candidates, query, plane1,
+      target!, candidates, query!, plane1,
       sectorBounds(incoming.tOut, incoming.nOut, wall1, keepN1),
       from1, tie,
     );
     if (!path1.ok) return fail(path1.code, j, 'GRADING_CORNER_SECTOR');
     const path2 = solveSectorPath(
-      target, candidates, query, plane2,
+      target!, candidates, query!, plane2,
       sectorBounds(outgoing.tIn, outgoing.nIn, wall2, keepN2),
       from2, tie,
     );
@@ -538,10 +646,14 @@ export const computeGradingGroupFromSnapshots = (input: GroupSolveInput): Gradin
   solved.forEach((s, mi) => {
     sourceLength += members[mi]!.length;
     distances.push(...s.stitched.distances);
-    const split = splitMemberCutFill(s.stitched.sourcePts, s.nodeStations, query);
-    cutSourceLength += split.cut;
-    fillSourceLength += split.fill;
-    tiedSourceLength += split.tied;
+    // Phase 20F: source/target relation lengths are unavailable without a
+    // target solve — never faked from the analytic strip.
+    if (!isTargetFreeCriterion(criterionAt(mi))) {
+      const split = splitMemberCutFill(s.stitched.sourcePts, s.nodeStations, query!);
+      cutSourceLength += split.cut;
+      fillSourceLength += split.fill;
+      tiedSourceLength += split.tied;
+    }
     intersectionSegments += s.stitched.intersectionSegmentCount;
     multipleSolutions += s.stitched.multipleSolutionCount;
   });

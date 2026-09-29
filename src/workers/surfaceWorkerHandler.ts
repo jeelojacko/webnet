@@ -529,7 +529,8 @@ export interface GradingGroupComputeRequest {
   maxSearchDistance: number;
   curveChordTolerance: number;
   closed: boolean;
-  target: GradingTargetMeshSnapshot;
+  /** Target TIN ONCE for surface criteria; omitted for analytic families. */
+  target?: GradingTargetMeshSnapshot;
 }
 
 export type SurfaceGroupGradingRequest = GradingGroupComputeRequest;
@@ -549,7 +550,7 @@ export const toGroupSolveInput = (request: GradingGroupComputeRequest): GroupSol
   maxSearchDistance: request.maxSearchDistance,
   curveChordTolerance: request.curveChordTolerance,
   closed: request.closed,
-  target: request.target,
+  ...(request.target !== undefined ? { target: request.target } : {}),
 });
 
 /** Default group engine: the pure batched snapshot kernel. */

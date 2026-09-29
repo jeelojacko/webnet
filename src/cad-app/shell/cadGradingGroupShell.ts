@@ -55,7 +55,8 @@ export interface GroupCreateArgs {
   name?: string;
   sourceFeatureLineId: string;
   sourceCourses: GradingGroupCourse[];
-  targetSurfaceId: string;
+  /** Omitted for analytic (distance/elevation) families. */
+  targetSurfaceId?: string;
   side: GradingSide;
   criterion: GradingCriterion;
   maxSearchDistance: number;
@@ -73,7 +74,7 @@ export const buildGroupCreateCommand = (
   ...(args.name !== undefined ? { name: args.name } : {}),
   sourceFeatureLineId: args.sourceFeatureLineId,
   sourceCourses: args.sourceCourses.map((course) => ({ ...course })),
-  targetSurfaceId: args.targetSurfaceId,
+  ...(args.targetSurfaceId !== undefined ? { targetSurfaceId: args.targetSurfaceId } : {}),
   side: args.side,
   criterion: args.criterion,
   maxSearchDistance: args.maxSearchDistance,

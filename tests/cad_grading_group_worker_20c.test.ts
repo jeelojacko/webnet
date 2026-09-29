@@ -172,8 +172,8 @@ const setTin = (
 ) => {
   const inputs = resolveGroupInputs(project, groupsOf(project)[0]!.id)!;
   const snap = flatSnapshot(project, targetId);
-  tinCache.set(inputs.target.id, inputs.targetRevision, {
-    revision: inputs.targetRevision,
+  tinCache.set(inputs.target!.id, inputs.targetRevision!, {
+    revision: inputs.targetRevision!,
     points: snap.built.points,
     triangles: snap.built.triangles,
     stats: snap.built.stats,
@@ -242,7 +242,7 @@ describe('grading group resolve', () => {
     expect(inputs!.memberSources[0]!.length).toBeCloseTo(50, 9);
     expect(inputs!.memberSources[1]!.length).toBeCloseTo(50, 9);
     expect(inputs!.revision.startsWith('ggrev1:')).toBe(true);
-    expect(inputs!.targetRevision.startsWith('srev1:')).toBe(true);
+    expect(inputs!.targetRevision!.startsWith('srev1:')).toBe(true);
   });
 
   it('fails closed when an inserted vertex breaks chain adjacency', () => {
@@ -449,7 +449,7 @@ describe('grading group service', () => {
     service.requestGroupGrading(groupId);
     await flush();
     expect(service.groupStatusOf(groupId).status).toBe('CURRENT');
-    tinCache.invalidate(inputs.target.id);
+    tinCache.invalidate(inputs.target!.id);
     expect(service.groupStatusOf(groupId).status).toBe('SOURCE_NOT_CURRENT');
     expect(service.requestGroupGrading(groupId)).toContain('SOURCE_NOT_CURRENT');
   });

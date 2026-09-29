@@ -9,6 +9,8 @@ import React from 'react';
 import { numeric } from '../../engine/cad/cadPropertiesModel';
 import type { CadShellActions, CadWorkspaceSnapshot } from './cadShellTypes';
 import type { CadGradingRow } from './cadGradingSnapshot';
+import { gradingMethodLabel } from './cadGradingCriterionInput';
+import { gradingTargetSummary } from './cadGradingShell';
 
 const TreeGroup: React.FC<{ label: string; children: React.ReactNode }> = ({ label, children }) => (
   <details className="cad-shell-tree-group" open>
@@ -18,12 +20,12 @@ const TreeGroup: React.FC<{ label: string; children: React.ReactNode }> = ({ lab
 );
 
 const DefinitionRow: React.FC<{ row: CadGradingRow }> = ({ row }) => (
-  <div className="cad-shell-tree-row" data-cad-grading-definition={row.id}>
-    <span>Source {row.sourceName}</span>
+  <div className="cad-shell-tree-row" data-cad-grading-definition={row.id} data-cad-grading-method={row.method}>
+    <span>Method {gradingMethodLabel(row.method)}</span>
+    <span> · Source {row.sourceName}</span>
     <span> · {row.side}</span>
-    <span> · Target {row.targetName}</span>
-    <span> · {row.criterionText}</span>
-    <span> · max {numeric(row.maxSearchDistance)} m</span>
+    <span> · {gradingTargetSummary(row.definition.criterion, row.targetName, row.lengthUnit)}</span>
+    <span> · max {numeric(row.maxSearchDistance)} {row.lengthUnit}</span>
   </div>
 );
 
@@ -40,11 +42,17 @@ const ResultRow: React.FC<{ row: CadGradingRow }> = ({ row }) => {
     <div className="cad-shell-tree-row" data-cad-grading-result={row.id}>
       {row.stale ? 'Result (STALE): ' : 'Result: '}
       <span>{row.accuracyText}</span>
-      <span> · tie {numeric(m.minProjectionDistance)}–{numeric(m.maxProjectionDistance)} m</span>
-      <span> · mean {numeric(m.meanProjectionDistance)} m</span>
-      <span> · plan {numeric(m.gradingPlanArea)} m²</span>
-      <span> · 3D {numeric(m.grading3dArea)} m²</span>
+      <span> · source {numeric(m.sourceLength)} {row.lengthUnit}</span>
+      <span> · tie {numeric(m.minProjectionDistance)}–{numeric(m.maxProjectionDistance)} {row.lengthUnit}</span>
+      <span> · mean {numeric(m.meanProjectionDistance)} {row.lengthUnit}</span>
+      <span> · plan {numeric(m.gradingPlanArea)} {row.areaUnit}</span>
+      <span> · 3D {numeric(m.grading3dArea)} {row.areaUnit}</span>
+      <span> · {m.vertexCount} {row.boundaryLabel.toLowerCase()} verts</span>
       <span> · {m.triangleCount} tri</span>
+      <span data-cad-grading-cutfill>
+        {' '}· cut/fill/tied {row.cutFillApplicable ? `${numeric(m.cutSourceLength)}/${numeric(m.fillSourceLength)}/${numeric(m.tiedSourceLength)} ${row.lengthUnit}` : '— (analytic)'}
+      </span>
+      <span> · diagnostics {m.diagnostics.length > 0 ? m.diagnostics.join('/') : 'none'}</span>
     </div>
   );
 };

@@ -13,6 +13,7 @@
 import { fnv1a } from '../cadRevisionHash';
 import { canonicalGradingNum } from './gradingRevision';
 import { canonicalCourseCriteria } from './gradingGroupCourseCriteria';
+import { gradingCriterionRequiresSurface } from './gradingTypes';
 import type { GradingCriterion, GradingSide, ResolvedGradingSource } from './gradingTypes';
 import type { GradingCornerMode, GradingGroupCourseCriterionOverride } from './gradingGroupTypes';
 
@@ -27,8 +28,10 @@ export interface GroupRevisionInput {
   sourceFeatureLineId: string;
   /** Ordered traversal; order participates in the hash. */
   courses: GroupRevisionCourse[];
-  targetSurfaceId: string;
-  targetRevision: string;
+  /** Omitted for target-free (analytic) criteria — hashes as `tgt:none`. */
+  targetSurfaceId?: string;
+  /** Omitted for target-free (analytic) criteria — hashes as `tgt:none`. */
+  targetRevision?: string;
   side: GradingSide;
   criterion: GradingCriterion;
   /** Phase 20E sparse overrides; absent/empty = legacy hash byte-identical. */
@@ -44,6 +47,13 @@ const criterionText = (criterion: GradingCriterion): string => {
     const cut = canonicalGradingNum(criterion.cutGradeRatio);
     const fill = canonicalGradingNum(criterion.fillGradeRatio);
     return `cut-fill:${cut}/${fill}`;
+  }
+  // Phase 20F: additive branches only — fixed/cut-fill bytes unchanged.
+  if (criterion.kind === 'distance') {
+    return `distance:${canonicalGradingNum(criterion.gradeRatio)}/${canonicalGradingNum(criterion.distance)}`;
+  }
+  if (criterion.kind === 'elevation') {
+    return `elevation:${canonicalGradingNum(criterion.gradeRatio)}/${canonicalGradingNum(criterion.targetElevation)}`;
   }
   return `fixed:${canonicalGradingNum(criterion.gradeRatio)}`;
 };
@@ -100,10 +110,17 @@ const overrideText = (
 /** Deterministic `ggrev1:<fnv1a-hex>` over the canonical group content. */
 export const buildGroupRevision = (input: GroupRevisionInput): string => {
   const overrides = overrideText(input.criterion, input.courses, input.courseCriteria);
+  // Analytic (distance/elevation) groups carry no target: hash `tgt:none` so
+  // a dormant legacy id can never move the revision. Surface bytes unchanged.
+  const surfaceFamily = gradingCriterionRequiresSurface(input.criterion);
+  const targetText =
+    !surfaceFamily || input.targetSurfaceId === undefined || input.targetRevision === undefined
+      ? 'tgt:none'
+      : `tgt:${input.targetSurfaceId}@${input.targetRevision}`;
   const parts = [
     `src:${input.sourceFeatureLineId}`,
     ...input.courses.map(courseText),
-    `tgt:${input.targetSurfaceId}@${input.targetRevision}`,
+    targetText,
     `side:${input.side}`,
     `crit:${criterionText(input.criterion)}`,
     ...(overrides.length > 0 ? [overrides] : []),

@@ -23,6 +23,8 @@ import type { CadShellActions, CadWorkspaceSnapshot } from './cadShellTypes';
 
 const GRADING_KEYS: readonly string[] = [
   'GRADETOSURFACE',
+  'GRADETODISTANCE',
+  'GRADETOELEVATION',
   'GRADING',
   'GRADINGCALC',
   'GRADINGINQUIRY',
@@ -30,17 +32,22 @@ const GRADING_KEYS: readonly string[] = [
   'GRADINGBAKE',
 ];
 
-/** Curated Civil icons; omitted keys render a short text face. */
+/** Curated Civil icons; omitted keys render a short text face.
+ *  Phase 20F: no exact Civil 3D art exists for Grade to Distance/Elevation
+ *  termination, so those keep honest text faces rather than a misleading
+ *  reuse of the grade-create glyph (Phase 21B icon-provenance rule). */
 const GRADING_ICONS: Partial<Record<string, CadRibbonIconId>> = {
   GRADETOSURFACE: 'grading-create',
 };
 
 const GRADING_SHORT: Record<string, string> = {
-  GRADETOSURFACE: 'Grade',
+  GRADETOSURFACE: 'Surface',
+  GRADETODISTANCE: 'Distance',
+  GRADETOELEVATION: 'Elevation',
   GRADING: 'Manager',
   GRADINGCALC: 'Calc',
   GRADINGINQUIRY: 'Inquiry',
-  GRADINGEXTRACTDAYLIGHT: 'Daylight',
+  GRADINGEXTRACTDAYLIGHT: 'Extract',
   GRADINGBAKE: 'Bake',
 };
 

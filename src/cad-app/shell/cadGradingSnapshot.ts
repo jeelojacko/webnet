@@ -25,6 +25,7 @@ import type {
   CadGradingResult,
   GradingAccuracy,
   GradingStatus,
+  GradingTerminationKind,
   ResolvedGradingSource,
 } from '../../engine/cad/grading/gradingTypes';
 import {
@@ -34,6 +35,11 @@ import {
 import { resolveCadFeatureLine } from '../../engine/cad/cadFeatureLines';
 import { buildGradingRevision } from '../../engine/cad/grading/gradingRevision';
 import { deriveGradingStatus } from '../../engine/cad/grading/gradingStatus';
+import {
+  gradingBoundaryLabel,
+  gradingTerminationKind,
+  isTargetFreeCriterion,
+} from '../../engine/cad/grading/gradingTypes';
 import type { CadSurfaceCache } from '../../engine/cad/cadSurfaceCache';
 import { surfaceContentRevision } from '../../engine/cad/cadSurfaceView';
 import { gradingCriterionText, gradingSideText } from './cadGradingShell';
@@ -78,6 +84,15 @@ export interface CadGradingMetrics {
   grading3dArea: number;
   triangleCount: number;
   multipleSolutionCount: number;
+  /** Phase 20F: full metric set for Properties/Toolspace/Inquiry. */
+  sourceLength: number;
+  vertexCount: number;
+  candidateTriangleCount: number;
+  intersectionSegmentCount: number;
+  cutSourceLength: number;
+  fillSourceLength: number;
+  tiedSourceLength: number;
+  diagnostics: string[];
 }
 
 export interface CadGradingRow {
@@ -91,8 +106,22 @@ export interface CadGradingRow {
   sourceName: string;
   /** Display layer (export layer id); undefined = default grading layer. */
   layerId?: string;
+  /** Termination method: surface (target tie) vs distance/elevation (analytic). */
+  method: GradingTerminationKind;
+  /** True for distance/elevation: no target surface, boundary is a grading limit. */
+  analytic: boolean;
+  /** Target surface id; empty string for analytic termination. */
   targetSurfaceId: string;
+  /** Target name; em dash for analytic termination (never a fake surface). */
   targetName: string;
+  /** Extract/boundary label: 'Daylight' (surface) or 'Grading Limit' (analytic). */
+  boundaryLabel: string;
+  /** Drawing length unit label (m/ft) for distance-like values. */
+  lengthUnit: string;
+  /** Drawing area unit label (m²/ft²). */
+  areaUnit: string;
+  /** True when cut/fill/tied source-length metrics apply (surface only). */
+  cutFillApplicable: boolean;
   side: string;
   criterionText: string;
   status: GradingStatus;
@@ -128,6 +157,14 @@ const metricsOf = (result: CadGradingResult): CadGradingMetrics => ({
   grading3dArea: result.grading3dArea,
   triangleCount: result.gradingMesh.triangles.length / 3,
   multipleSolutionCount: result.multipleSolutionCount,
+  sourceLength: result.sourceLength,
+  vertexCount: Math.floor(result.daylightPoints.length / 3),
+  candidateTriangleCount: result.candidateTriangleCount,
+  intersectionSegmentCount: result.intersectionSegmentCount,
+  cutSourceLength: result.cutSourceLength,
+  fillSourceLength: result.fillSourceLength,
+  tiedSourceLength: result.tiedSourceLength,
+  diagnostics: result.diagnostics.map((entry) => entry.code),
 });
 
 const courseLikes = (entity: CadFeatureLineEntity): GradingCourseLike[] => {
@@ -165,6 +202,10 @@ const courseLikes = (entity: CadFeatureLineEntity): GradingCourseLike[] => {
 const surfaceOf = (surfaces: readonly CadSurface[], id: string): CadSurface | null =>
   surfaces.find((entry) => entry.id === id) ?? null;
 
+/** Drawing units → grading length/area labels (m/ft, m²/ft²). */
+export const gradingLengthUnit = (units: string): string => (units === 'ft' ? 'ft' : 'm');
+export const gradingAreaUnit = (units: string): string => (units === 'ft' ? 'ft²' : 'm²');
+
 export const buildCadGradingSnapshot = (
   project: CadProject,
   surfaceCache: CadSurfaceCache | null,
@@ -177,6 +218,8 @@ export const buildCadGradingSnapshot = (
 ): CadGradingSnapshot => {
   const gradings = projectGradings(project);
   const surfaces = project.surfaces ?? [];
+  const lengthUnit = gradingLengthUnit(project.metadata?.units ?? 'm');
+  const areaUnit = gradingAreaUnit(project.metadata?.units ?? 'm');
   const featureLines = project.entities.filter(
     (entity): entity is CadFeatureLineEntity => entity.type === 'feature-line',
   );
@@ -190,20 +233,21 @@ export const buildCadGradingSnapshot = (
           grading.sourceCourse.vertexBId,
         )
       : null;
-    const target = surfaceOf(surfaces, grading.targetSurfaceId);
-    const targetExists = target != null;
+    // Phase 20F: analytic criteria resolve without a target surface.
+    const analytic = isTargetFreeCriterion(grading.criterion);
+    const target = analytic ? null : surfaceOf(surfaces, grading.targetSurfaceId ?? '');
+    const targetExists = analytic || target != null;
     const targetRevision = target ? surfaceContentRevision(project, target) : '';
     const targetCurrent =
-      target != null && surfaceCache?.get(target.id, targetRevision) != null;
+      analytic || (target != null && surfaceCache?.get(target.id, targetRevision) != null);
     const revision =
-      resolvedSource != null && target != null
+      resolvedSource != null && (analytic || target != null)
         ? buildGradingRevision({
             sourceFeatureLineId: grading.sourceFeatureLineId,
             vertexAId: grading.sourceCourse.vertexAId,
             vertexBId: grading.sourceCourse.vertexBId,
             resolvedSource,
-            targetSurfaceId: grading.targetSurfaceId,
-            targetRevision,
+            ...(target ? { targetSurfaceId: grading.targetSurfaceId, targetRevision } : {}),
             side: grading.side,
             criterion: grading.criterion,
             maxSearchDistance: grading.maxSearchDistance,
@@ -241,8 +285,14 @@ export const buildCadGradingSnapshot = (
       sourceFeatureLineId: grading.sourceFeatureLineId,
       sourceName: entity?.name ?? grading.sourceFeatureLineId,
       ...(grading.layerId !== undefined ? { layerId: grading.layerId } : {}),
-      targetSurfaceId: grading.targetSurfaceId,
-      targetName: target?.name ?? grading.targetSurfaceId,
+      method: gradingTerminationKind(grading.criterion),
+      analytic,
+      targetSurfaceId: grading.targetSurfaceId ?? '',
+      targetName: analytic ? '—' : target?.name ?? grading.targetSurfaceId ?? '',
+      boundaryLabel: gradingBoundaryLabel(grading.criterion),
+      lengthUnit,
+      areaUnit,
+      cutFillApplicable: !analytic,
       side: gradingSideText(grading.side),
       criterionText: gradingCriterionText(grading),
       status: effectiveStatus,

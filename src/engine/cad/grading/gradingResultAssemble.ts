@@ -133,6 +133,88 @@ const tiedGradingResult = (
   };
 };
 
+/**
+ * Phase 20F — analytic result assembly (no target query).
+ *
+ * Plan/3D area and projection-distance stats are real (mesh + tieStats
+ * over the analytic polylines); source/target relation lengths are
+ * unavailable without a target, so they read 0/0/0 rather than a faked
+ * partition. Single FIXED region, zero candidate/intersection counts.
+ */
+export type AnalyticAssembledResultInput = Omit<AssembledResultInput, 'query'>;
+
+export const assembleAnalyticGradingResult = (
+  input: AnalyticAssembledResultInput,
+): GradingComputeOutcome => {
+  const {
+    gradingId,
+    revision,
+    sourceLength,
+    accuracy,
+    regions,
+    diagnostics,
+    sourcePts,
+    daylightPts,
+    daylightFlat,
+    distances,
+    candidateTriangleCount,
+    intersectionSegmentCount,
+    multipleSolutionCount,
+  } = input;
+  const mesh = buildGradingStripMesh(sourcePts, daylightPts);
+  const stats = tieStats(distances);
+  if (!mesh.ok) {
+    return {
+      ok: true,
+      result: {
+        gradingId,
+        revision,
+        accuracy,
+        regions,
+        daylightPoints: daylightFlat,
+        gradingMesh: { points: [], triangles: [] },
+        sourceLength,
+        gradingPlanArea: 0,
+        grading3dArea: 0,
+        minProjectionDistance: stats.min,
+        maxProjectionDistance: stats.max,
+        meanProjectionDistance: stats.mean,
+        cutSourceLength: 0,
+        fillSourceLength: 0,
+        tiedSourceLength: 0,
+        candidateTriangleCount,
+        intersectionSegmentCount,
+        multipleSolutionCount,
+        diagnostics: [{ code: 'ALREADY_TIED' }],
+      },
+    };
+  }
+  return {
+    ok: true,
+    result: {
+      gradingId,
+      revision,
+      accuracy,
+      regions,
+      daylightPoints: daylightFlat,
+      gradingMesh: { points: mesh.points, triangles: mesh.triangles },
+      sourceLength,
+      gradingPlanArea: meshPlanArea(mesh.points, mesh.triangles),
+      grading3dArea: mesh3dArea(mesh.points, mesh.triangles),
+      minProjectionDistance: stats.min,
+      maxProjectionDistance: stats.max,
+      meanProjectionDistance: stats.mean,
+      cutSourceLength: 0,
+      fillSourceLength: 0,
+      tiedSourceLength: 0,
+      candidateTriangleCount,
+      intersectionSegmentCount,
+      multipleSolutionCount,
+      diagnostics,
+    },
+  };
+};
+
 /** Strip mesh + areas + stats over stitched polylines (solver-independent). */
 export const assembleGradingResult = (input: AssembledResultInput): GradingComputeOutcome => {
   const {

@@ -7,13 +7,52 @@
  * - `CadGrading` is drawing-owned, persists definition ONLY (no derived geometry).
  * - One definition grades ONE physical Feature Line course on ONE side.
  * - Results (`CadGradingResult`) are session-only and never persisted.
+ *
+ * Phase 20F (additive): `distance` and `elevation` criteria terminate
+ * without a target surface (analytic solve, no TIN query). Fixed/cut-fill
+ * semantics and bytes are unchanged.
  */
 
 export type GradingSide = 'left' | 'right';
 
 export type GradingCriterion =
   | { kind: 'fixed'; gradeRatio: number }
-  | { kind: 'cut-fill'; cutGradeRatio: number; fillGradeRatio: number };
+  | { kind: 'cut-fill'; cutGradeRatio: number; fillGradeRatio: number }
+  | { kind: 'distance'; gradeRatio: number; distance: number }
+  | { kind: 'elevation'; gradeRatio: number; targetElevation: number };
+
+/** Where a criterion terminates: on the target surface or analytically. */
+export type GradingTerminationKind = 'surface' | 'distance' | 'elevation';
+
+/** Termination of one criterion (surface = legacy grade-to-surface solve). */
+export const gradingTerminationKind = (
+  criterion: GradingCriterion,
+): GradingTerminationKind =>
+  criterion.kind === 'fixed' || criterion.kind === 'cut-fill'
+    ? 'surface'
+    : criterion.kind;
+
+/** True when the criterion needs a target surface (legacy fixed/cut-fill). */
+export const gradingCriterionRequiresSurface = (
+  criterion: GradingCriterion,
+): boolean => gradingTerminationKind(criterion) === 'surface';
+
+/** True for distance/elevation: solved analytically, no target query. */
+export const isTargetFreeCriterion = (
+  criterion: GradingCriterion,
+): boolean => !gradingCriterionRequiresSurface(criterion);
+
+/** Boundary polyline label: target tie vs analytic grading limit. */
+export const gradingBoundaryLabel = (
+  criterion: GradingCriterion,
+): 'Daylight' | 'Grading Limit' =>
+  isTargetFreeCriterion(criterion) ? 'Grading Limit' : 'Daylight';
+
+/** Short form of {@link gradingBoundaryLabel} for compact UI slots. */
+export const gradingBoundaryShortLabel = (
+  criterion: GradingCriterion,
+): 'Daylight' | 'Limit' =>
+  isTargetFreeCriterion(criterion) ? 'Limit' : 'Daylight';
 
 export interface GradingSourceCourse {
   /** Stable Feature Line vertex id identifying physical course endpoint A. */
@@ -28,7 +67,12 @@ export interface CadGrading {
   name: string;
   sourceFeatureLineId: string;
   sourceCourse: GradingSourceCourse;
-  targetSurfaceId: string;
+  /**
+   * Target surface id — required in effect for surface-terminated criteria
+   * (fixed/cut-fill) and omitted for analytic distance/elevation. A retained
+   * id on an analytic definition is dormant: resolve/status ignore it.
+   */
+  targetSurfaceId?: string;
   side: GradingSide;
   criterion: GradingCriterion;
   /** Engineering search limit (horizontal model distance, > 0). NOT a tolerance. */

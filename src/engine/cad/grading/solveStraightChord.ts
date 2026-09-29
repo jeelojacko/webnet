@@ -106,10 +106,14 @@ const resolveStraightFrame = (
   if (criterion.kind === 'fixed') {
     if (!Number.isFinite(criterion.gradeRatio)) return { ok: false, code: 'NO_SOLUTION', detail: 'GRADING_BAD_CRITERION' };
     fixedG = criterion.gradeRatio;
-  } else {
+  } else if (criterion.kind === 'cut-fill') {
     if (!Number.isFinite(criterion.cutGradeRatio) || !Number.isFinite(criterion.fillGradeRatio)) {
       return { ok: false, code: 'NO_SOLUTION', detail: 'GRADING_BAD_CRITERION' };
     }
+  } else {
+    // Phase 20F: target-free criteria never reach the surface solver
+    // (the chord dispatcher routes them analytically); fail closed here.
+    return { ok: false, code: 'NO_SOLUTION', detail: 'GRADING_BAD_CRITERION' };
   }
   const tx = dx / len;
   const ty = dy / len;
@@ -170,15 +174,15 @@ const collectCutFillProbes = (
 /** Cut/fill station plan: coverage-gated zero-split spans. */
 const planCutFillSpans = (
   source: GradingComputeSource,
-  criterion: GradingCriterion,
+  criterion: Extract<GradingCriterion, { kind: 'cut-fill' }>,
   target: GradingTargetMeshSnapshot,
   candidates: number[],
   normal: PlanVector,
   atSource: SourcePointFn,
   query: TargetQuery,
 ): SpanPlanResult => {
-  const cutG = (criterion as Extract<GradingCriterion, { kind: 'cut-fill' }>).cutGradeRatio;
-  const fillG = (criterion as Extract<GradingCriterion, { kind: 'cut-fill' }>).fillGradeRatio;
+  const cutG = criterion.cutGradeRatio;
+  const fillG = criterion.fillGradeRatio;
   const { probes, deltas } = collectCutFillProbes(source, target, candidates, normal, atSource, query);
   if (!requireSourceCoverage(deltas)) {
     return { ok: false, code: 'TARGET_GAP', detail: 'GRADING_CUTFILL_SOURCE_COVERAGE' };
@@ -216,6 +220,10 @@ const planStationSpans = (
 ): SpanPlanResult => {
   if (fixedG !== null) {
     return { ok: true, spans: [{ u0: 0, u1: source.length, g: fixedG, region: 'FIXED' }] };
+  }
+  // The frame guard above admits only cut-fill past this point.
+  if (criterion.kind !== 'cut-fill') {
+    return { ok: false, code: 'NO_SOLUTION', detail: 'GRADING_BAD_CRITERION' };
   }
   return planCutFillSpans(source, criterion, target, candidates, normal, atSource, query);
 };

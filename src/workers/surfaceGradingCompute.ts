@@ -8,12 +8,16 @@
  * re-exported here so existing worker/test import sites keep working.
  */
 import { solveArcGrading } from '../engine/cad/grading/arcSolve';
-import { assembleGradingResult } from '../engine/cad/grading/gradingResultAssemble';
+import {
+  assembleAnalyticGradingResult,
+  assembleGradingResult,
+} from '../engine/cad/grading/gradingResultAssemble';
 import { buildTargetQuery } from '../engine/cad/grading/gradingTargetIndex';
+import { solveGradingChord } from '../engine/cad/grading/solveAnalyticGradingChord';
 import {
   finiteSource,
-  solveStraightChord,
 } from '../engine/cad/grading/solveStraightChord';
+import { isTargetFreeCriterion } from '../engine/cad/grading/gradingTypes';
 import type {
   GradingComputeOutcome,
   GradingComputeSource,
@@ -41,7 +45,8 @@ export interface GradingComputeRequest {
   criterion: GradingCriterion;
   maxSearchDistance: number;
   curveChordTolerance: number;
-  target: GradingTargetMeshSnapshot;
+  /** Omitted for target-free (analytic) criteria — never a fake TIN. */
+  target?: GradingTargetMeshSnapshot;
 }
 
 /**
@@ -61,6 +66,47 @@ export const computeGradingFromSnapshots = (
   if (!(maxSearchDistance > 0) || !Number.isFinite(maxSearchDistance)) {
     return { ok: false, code: 'NO_SOLUTION', detail: 'GRADING_BAD_SEARCH_DISTANCE' };
   }
+  // Phase 20F: analytic criteria never build a target query (no TIN).
+  if (isTargetFreeCriterion(criterion)) {
+    if (source.isArc && source.arc) {
+      return solveArcGrading({
+        gradingId: request.gradingId,
+        revision: request.revision,
+        source,
+        side,
+        criterion,
+        maxSearchDistance,
+        tolerance: request.curveChordTolerance,
+      });
+    }
+    const solved = solveGradingChord({
+      source,
+      side,
+      criterion,
+      maxSearchDistance,
+      stationBase: 0,
+      stationScale: 1,
+    });
+    if (!solved.ok) return solved;
+    const analytic = solved.solve;
+    return assembleAnalyticGradingResult({
+      gradingId: request.gradingId,
+      revision: request.revision,
+      sourceLength: source.length,
+      accuracy: source.isArc ? 'CURVE_APPROXIMATED' : 'EXACT',
+      regions: analytic.regions,
+      diagnostics: analytic.diagnostics,
+      sourcePts: analytic.sourcePts,
+      daylightPts: analytic.daylightPts,
+      daylightFlat: analytic.daylightFlat,
+      distances: analytic.distances,
+      nodeStations: analytic.nodeStations,
+      candidateTriangleCount: analytic.candidateTriangleCount,
+      intersectionSegmentCount: analytic.intersectionSegmentCount,
+      multipleSolutionCount: analytic.multipleSolutionCount,
+    });
+  }
+  if (!target) return { ok: false, code: 'NO_SOLUTION', detail: 'GRADING_BAD_TARGET_MESH' };
   const query = buildTargetQuery(target);
   if (!query) return { ok: false, code: 'NO_SOLUTION', detail: 'GRADING_BAD_TARGET_MESH' };
 
@@ -78,7 +124,7 @@ export const computeGradingFromSnapshots = (
     });
   }
 
-  const solved = solveStraightChord({
+  const solved = solveGradingChord({
     source,
     side,
     criterion,
@@ -155,6 +201,24 @@ export const validateDaylightAgainstTarget = (
 };
 
 /**
+ * Source-boundary half of the agreement gate (target-independent): the
+ * strip source boundary must equal the Feature Line at the same persisted
+ * stations. Analytic (target-free) results gate on this half only.
+ * Returns null on agreement, else the reject reason.
+ */
+export const validateGradingSourceBoundary = (
+  sourceCheck: GradingSourceBoundaryCheck,
+): string | null => {
+  if (!boundaryEquals(sourceCheck.first, sourceCheck.expectedFirst)) {
+    return 'GRADING_AGREEMENT_SOURCE_BOUNDARY';
+  }
+  if (!boundaryEquals(sourceCheck.last, sourceCheck.expectedLast)) {
+    return 'GRADING_AGREEMENT_SOURCE_BOUNDARY';
+  }
+  return null;
+};
+
+/**
  * GO-gate before a worker result becomes CURRENT: every daylight vertex
  * must agree with the CURRENT target mesh within the zeroDelta floor, and
  * the strip source boundary must equal the Feature Line at the same
@@ -166,11 +230,7 @@ export const validateGradingResultAgainstTarget = (
   sourceCheck: GradingSourceBoundaryCheck,
 ): string | null => {
   if (daylightPoints.length % 3 !== 0) return 'GRADING_AGREEMENT_MALFORMED_DAYLIGHT';
-  if (!boundaryEquals(sourceCheck.first, sourceCheck.expectedFirst)) {
-    return 'GRADING_AGREEMENT_SOURCE_BOUNDARY';
-  }
-  if (!boundaryEquals(sourceCheck.last, sourceCheck.expectedLast)) {
-    return 'GRADING_AGREEMENT_SOURCE_BOUNDARY';
-  }
+  const boundary = validateGradingSourceBoundary(sourceCheck);
+  if (boundary) return boundary;
   return validateDaylightAgainstTarget(daylightPoints, targetMeshQuery);
 };
