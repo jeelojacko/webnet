@@ -184,16 +184,16 @@ export const CadGradingGroupCriteriaPanel: React.FC<CadGradingGroupCriteriaPanel
         Group default: {formatGradingCriterion(group.criterion)} · Overrides: {overrideIndices.length}
       </p>
       <div className="mb-2 overflow-auto">
-        <table className="w-full text-left text-[11px]">
-          <thead className="text-slate-400">
-            <tr><th aria-label="Select">✓</th><th>Course</th><th>From</th><th>To</th><th>Type</th><th>Effective Criterion</th><th>Source</th><th>Action</th></tr>
+        <table className="w-max min-w-full text-left text-[11px]">
+          <thead className="whitespace-nowrap text-slate-400">
+            <tr><th aria-label="Select">✓</th><th className="pr-2">Course</th><th className="pr-2">From</th><th className="pr-2">To</th><th className="pr-2">Type</th><th className="pr-2">Effective Criterion</th><th className="pr-2">Source</th><th>Action</th></tr>
           </thead>
           <tbody>
             {group.sourceCourses.map((course, index) => {
               const effective = effectiveCourseCriterion(group, index);
               const override = isCourseCriterionOverride(group, index);
               return (
-                <tr key={`${course.vertexAId}>${course.vertexBId}`} data-cad-grading-group-criteria-row={index}>
+                <tr key={`${course.vertexAId}>${course.vertexBId}`} data-cad-grading-group-criteria-row={index} className="whitespace-nowrap">
                   <td>
                     <input
                       type="checkbox"
@@ -202,12 +202,12 @@ export const CadGradingGroupCriteriaPanel: React.FC<CadGradingGroupCriteriaPanel
                       onChange={() => toggle(index)}
                     />
                   </td>
-                  <td>{courseNumberLabel(index)}</td>
-                  <td>{shortVertexLabel(course.vertexAId)}</td>
-                  <td>{shortVertexLabel(course.vertexBId)}</td>
-                  <td>{courseCriterionTypeText(effective)}</td>
-                  <td>{formatGradingCriterion(effective)}</td>
-                  <td>{override ? 'Override' : 'Default'}</td>
+                  <td className="pr-2">{courseNumberLabel(index)}</td>
+                  <td className="pr-2">{shortVertexLabel(course.vertexAId)}</td>
+                  <td className="pr-2">{shortVertexLabel(course.vertexBId)}</td>
+                  <td className="pr-2">{courseCriterionTypeText(effective)}</td>
+                  <td className="pr-2">{formatGradingCriterion(effective)}</td>
+                  <td className="pr-2">{override ? 'Override' : 'Default'}</td>
                   <td>
                     <div className="flex gap-1">
                       <button type="button" className={buttonClass} onClick={() => applyTo([index])} data-cad-grading-group-criteria-override={index}>
