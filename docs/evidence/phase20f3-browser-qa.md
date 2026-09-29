@@ -1,9 +1,14 @@
 # Phase 20F.3 Browser QA — truthful grading-group shell commands from snapshot selection
 
 ## Environment
-- Branch `fix/phase20f3-grading-shell-evidence-closeout` @ `967a3967`
-  (implementation committed; this QA pass adds only the Playwright spec +
-  evidence, nothing product-side and nothing committed).
+- Branch `fix/phase20f3-grading-shell-evidence-closeout` @ `74bbf637`
+  (implementation + Chromium QA committed on the branch; the only uncommitted
+  delta is the Flow B failed-manager capture-step scroll fix, the two
+  recaptured `1366/2560-failed-manager.png` frames, and these doc sentences —
+  nothing product-side). Recapture reason: the first pair showed the
+  pre-failure criteria-override moment, not the settled FAILED state; the
+  rerun scrolls the manager's Status column and Extract/Bake actions into
+  frame after recalc settles to FAILED.
 - **Chromium 148.0.7778.96** (Playwright 1.60.0 bundled production build,
   headless). Measured at runtime, not copied from docs.
 - Production build: `npm run build` (clean, 11.16 s) →
@@ -94,7 +99,8 @@ grading-group command. Nothing was written over `docs/evidence/phase20f2/`.
   setup before asserting group Properties.
 
 ## Restrictions / notes
-- This is a QA/evidence pass; the spec and evidence are **not committed** in
-  this session (left in the working tree for orchestrator review).
+- The recapture delta (Flow B capture-step scroll fix, two `*-failed-manager`
+  PNGs, these doc sentences) is **uncommitted**, left in the working tree for
+  orchestrator review; everything else on the branch is committed.
 - Runtime was 24.9 s for 16 tests on this machine; per repo tier rules the
   browser suite is not part of the vitest agent/WASM/release partitions.

@@ -325,6 +325,15 @@ for (const viewport of VIEWPORTS) {
       await expect(page.locator('[data-cad-grading-group-extract]')).toBeDisabled();
       await expect(page.locator('[data-cad-grading-group-bake]')).toBeDisabled();
       await expect(groupRow(page, group)).not.toContainText('Current');
+      // Capture the FAILED state itself: the Status column sits off the 480px
+      // table's right edge (horizontal table scroller) and the row's disabled
+      // Extract/Bake live below the table in the manager's vertical scroller.
+      // Same scrollIntoViewIfNeeded technique as the toolspace-properties
+      // frame below, applied to the manager's own scrollers.
+      await groupRow(page, group).locator('td').nth(6).scrollIntoViewIfNeeded();
+      await page
+        .locator(`[data-cad-grading-group-actions="${group}"] [data-cad-grading-group-bake]`)
+        .scrollIntoViewIfNeeded();
       await shot(page, `${tag}-failed-manager`);
 
       // Toolspace diagnostic + Properties failure, scrolled into frame.

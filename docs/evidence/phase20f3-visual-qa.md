@@ -37,6 +37,19 @@ frame is a populated, non-blank UI with real content.
 Geometry column format: `ToolspaceStatuses · PropertiesStatus · ManagerBox ·
 RibbonGroupCommands(✓enabled / ✗disabled)`.
 
+Recapture note: `1366-failed-manager.png` and `2560-failed-manager.png` were
+recaptured after the Flow B capture step was fixed to scroll the manager's
+Status column and Extract/Bake actions into frame once recalc settles to
+FAILED (the first pair showed the pre-failure criteria-override moment). The
+`*-failed-toolspace-properties.png` siblings were already good and are
+untouched; `geometry.json` needed no change (the harness records box metrics,
+not scroll offsets, so the regenerated entries are identical). A vision pass
+was performed on these two frames only — both show `Failed (stale) —
+CORNER_NO_SOLUTION` with Extract/Bake visibly dimmed (disabled state also
+gated by spec assertions + ribbon gates) — and both fit legibly at their
+resolutions. The draft/objective-only disclosure above still stands for the
+remaining rows (ribbon/cutfill).
+
 | File | Resolution | Claim / state proven | Visible DOM at capture | Dimensions · non-blank | Verdict |
 |------|-----------|----------------------|------------------------|------------------------|---------|
 | `1366-live-building.png` | 1366x768 | Flow A — group mid-**BUILDING** after the single ribbon Calc click | TS `[BUILDING]` · props `Building` · mgr 480x276 · ribbon `GRADEGROUP✓ GGCALC✗ GGINQUIRY✓ GGEXTRACTD✗ GGBAKE✗ GG✓` | 1366x768 · mean 33 · uniq 3089 | PASS |
