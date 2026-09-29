@@ -34,7 +34,8 @@ Flows: A — exactly one `GRADINGGROUPCALC` click, observation-only after (row `
 `FAILED` / `CORNER_NO_SOLUTION` / `GRADING_ANALYTIC_CORNER_Z`, Extract/Bake disabled. C —
 no-selection all disabled; UNBUILT Calc-only; ribbon Calc builds exact group; Extract +1 feature
 line / Bake +1 TIN surface, each removed by one Undo. D — untouched defaults `2:1`/`3:1` valid;
-reopened `2H:1V`/`3H:1V` valid, unclipped. Shell §22 — ribbon 120px one band `nowrap`, no page
+reopened `2H:1V`/`3H:1V` valid (input-value DOM assertions — PNGs show rows/summary, not the
+literal edit-field values), layout-only unclipped check. Shell §22 — ribbon 120px one band `nowrap`, no page
 overflow at any width, 1 Properties + 1 command input, viewport 814×345 @1366 usable,
 Toolspace/manager internally scrollable.
 
@@ -47,8 +48,9 @@ Static: `npm run lint` exit 0 (0 errors, 2 pre-existing unused-disable warnings)
 ## Recapture inventory (this phase)
 
 - `docs/evidence/phase20f3/`: 33 PNGs + `geometry.json`, preserved byte-for-byte (not overwritten).
-- `docs/evidence/phase20f4/`: 1 PNG — `1366-cutfill-defaults.png` (the Step-3 recapture; see
-  `phase20f4-visual-qa.md` replacement section). No other recaptures required.
+- `docs/evidence/phase20f4/`: 2 PNGs — `1366-cutfill-defaults.png` (the Step-3 recapture; see
+  `phase20f4-visual-qa.md` replacement section) + `1920-failed-manager.png` (fix-round recapture
+  of the falsely-PASSED 1920 FAILED frame; same section). No other recaptures required.
 
 ## Pixel-vs-assertion split
 
