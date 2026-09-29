@@ -140,3 +140,29 @@ inspects status agreement only; the state contract it exercises is:
 - **Remaining restrictions**: Relative Elevation, transitions, mixed-family
   groups, walls, corridors, radial, warped pads, DEM, boolean repair,
   selection-scoped GRIDGROUND.
+
+---
+
+## Erratum — 2026-09-29 (Phase 20F.3 follow-up)
+
+Appended by the Phase 20F.3 browser QA pass (branch
+`fix/phase20f3-grading-shell-evidence-closeout` @ `967a3967`). Nothing above is
+altered; this only corrects/clarifies two claims.
+
+1. **Browser version correction.** The 20F.2 environment section recorded
+   "Chromium for Testing 151.0.7922.34". Re-measured at runtime on this machine,
+   Playwright 1.60.0's bundled headless Chromium reports **148.0.7778.96**
+   (`chromium.launch().version()`). Treat 148.0.7778.96 as the actual QA
+   browser; the 151.x figure in the 20F.2 body was not reproducible from this
+   install.
+2. **Ribbon Calc restriction superseded.** The 20F.2 note
+   "*ribbon `GRADINGGROUPCALC` / `GRADINGCALC` still require an explicit
+   groupId that the ribbon button does not pass, so Calculate is
+   manager-driven*" no longer holds at `967a3967`. Phase 20F.3 made the grading
+   group shell commands derive their target from the **snapshot selection**, so
+   the ribbon `GRADINGGROUPCALC` / `GRADINGGROUPINQUIRY` /
+   `GRADINGGROUPEXTRACTDAYLIGHT` / `GRADINGGROUPBAKE` buttons now enable and
+   act from the selected group. This is proven live in
+   `docs/evidence/phase20f3-browser-qa.md` (Flow A one-click ribbon Calc;
+   Flow C gates + Extract/Bake products) with fresh 3-resolution captures under
+   `docs/evidence/phase20f3/`. `docs/evidence/phase20f2/` itself is unchanged.
