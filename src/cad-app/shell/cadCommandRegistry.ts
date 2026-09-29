@@ -535,7 +535,9 @@ export const isShellCommandAvailable = (
       return actions.runGradingCommand != null && gradingShellAvailable(def.key, snapshot);
     }
     if (GRADINGGROUP_SHELL_KEYS.has(def.key)) {
-      return actions.runGradingGroupCommand != null && gradingGroupShellAvailable(def.key, actions);
+      // Phase 20F.3 — forward the snapshot so selection-driven group keys
+      // gate on the resolved selected row (never action-presence alone).
+      return actions.runGradingGroupCommand != null && gradingGroupShellAvailable(def.key, actions, snapshot);
     }
     switch (def.key) {
       case 'SHELL_UNDO':
@@ -588,7 +590,12 @@ export const executeShellCommand = (
   if (def.kind === 'session') return actions.startCommand(def.key as ActiveCommandKey);
   if (FEATURE_LINE_SHELL_KEYS.has(def.key)) return executeFeatureLineShellCommand(def.key, actions, snapshot);
   if (GRADING_SHELL_KEYS.has(def.key)) return executeGradingShellCommand(def.key, actions, snapshot);
-  if (GRADINGGROUP_SHELL_KEYS.has(def.key)) return executeGradingGroupShellCommand(def.key, actions, snapshot);
+  if (GRADINGGROUP_SHELL_KEYS.has(def.key)) {
+    // Phase 20F.3 — forward the snapshot (selection-driven dispatch).
+    // The registry path carries no explicit options: explicit group targeting
+    // belongs to direct adapter callers, which the adapter covers.
+    return executeGradingGroupShellCommand(def.key, actions, snapshot);
+  }
   switch (def.key) {
     case 'SHELL_UNDO':
       actions.undo();

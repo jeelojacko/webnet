@@ -61,7 +61,7 @@ import {
 } from './cad-survey-plan-19a-helpers';
 import { layoutTab, sheetGeometryCount } from './cad-sheet-layout-19b-helpers';
 
-const EVIDENCE_DIR = '/home/jacko/Code/webnet/docs/evidence/phase20c';
+const EVIDENCE_DIR = path.resolve(process.cwd(), 'docs/evidence/phase20c');
 const WRITE_EVIDENCE = process.env.WRITE_20C_EVIDENCE === '1';
 /** CAD-standard signed bulge for a 90° minor arc. */
 const ARC_BULGE = Math.tan(Math.PI / 8);

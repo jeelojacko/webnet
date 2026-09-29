@@ -504,13 +504,16 @@ describe('group shell + registry', () => {
       openGradingGroupManager: () => undefined,
     } as unknown as CadShellActions;
     expect(gradingGroupShellAvailable('GRADEGROUP', actions)).toBe(true);
-    expect(gradingGroupShellAvailable('GRADINGGROUPCALC', actions)).toBe(true);
+    // Phase 20F.3 — CALC gates on a resolved calculable row, never on
+    // action presence alone (snapshot-less ⇒ unavailable).
+    expect(gradingGroupShellAvailable('GRADINGGROUPCALC', actions)).toBe(false);
     expect(gradingGroupShellAvailable('NOPE', actions)).toBe(false);
     expect(gradingGroupShellAvailable('GRADEGROUP', null)).toBe(false);
     // CALC needs an explicit group id (no viewport picking).
     expect(executeGradingGroupShellCommand('GRADINGGROUPCALC', actions, null, { groupId: 'g1' })).toBe(true);
     expect(executeGradingGroupShellCommand('GRADINGGROUPCALC', actions, null)).toBe(false);
-    expect(executeGradingGroupShellCommand('GRADEGROUP', actions, null)).toBe(false);
+    // Phase 20F.3 — no-args GRADEGROUP opens the manager create workflow.
+    expect(executeGradingGroupShellCommand('GRADEGROUP', actions, null)).toBe(true);
     const { project, chainId, targetId } = projectWithWorld();
     const [a, b] = vertexIds(project, chainId);
     const built = buildGroupCreateCommand({

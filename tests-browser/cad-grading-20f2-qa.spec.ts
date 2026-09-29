@@ -41,7 +41,7 @@ import {
   writeSurveyPlanFixture,
 } from './cad-survey-plan-19a-helpers';
 
-const EVIDENCE = '/home/jacko/Code/webnet/docs/evidence/phase20f2';
+const EVIDENCE = path.resolve(process.cwd(), 'docs/evidence/phase20f2');
 fs.mkdirSync(EVIDENCE, { recursive: true });
 
 const VIEWPORTS = [

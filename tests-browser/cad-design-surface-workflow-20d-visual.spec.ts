@@ -58,7 +58,7 @@ import { SURFACE_STYLE_CONTOURS_ID } from '../src/engine/cad/cadSurfaceStyles';
 import { openSurveyPlanDrawing } from './cad-survey-plan-19a-helpers';
 import { layoutTab, sheetGeometryCount } from './cad-sheet-layout-19b-helpers';
 
-const EVIDENCE_DIR = '/home/jacko/Code/webnet/docs/evidence/phase20d';
+const EVIDENCE_DIR = path.resolve(process.cwd(), 'docs/evidence/phase20d');
 const WRITE_EVIDENCE = process.env.WRITE_20D_EVIDENCE === '1';
 
 const range = (a: number, b: number, s: number): number[] => {
