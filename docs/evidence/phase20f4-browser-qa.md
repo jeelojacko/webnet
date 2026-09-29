@@ -1,10 +1,10 @@
-# Phase 20F.4 Browser QA — final-HEAD production Chromium revalidation
+# Phase 20F.4 Browser QA — production Chromium revalidation (20F.4 + 20F.5)
 
 Source: `/tmp/20f4-browser-rerun.md` (Step 2B). No product source modified, no commits by that run.
 
-## Environment
+## Environment (historical 20F.4 run)
 
-- Branch `fix/phase20f4-visual-evidence-finalization`, HEAD `c444f0a7` (= `origin/main`, PR133 merge).
+- Branch `fix/phase20f4-visual-evidence-finalization`, HEAD `c444f0a7` (= `origin/main` at the time, PR133 merge).
 - Chromium **148.0.7778.96** (Playwright **1.60.0** bundled, headless). Measured at runtime.
 - Fresh `npm run build`: exit 0, **11.5 s** (vite "built in 11.13s) →
   `dist/assets/index-BFrZan0G.js` (1,763.32 kB, gzip 398.02 kB;
@@ -44,6 +44,25 @@ Focused unit tests (vitest 4.1.11, one combined run, 1.70 s): **116/116** across
 `cad_grading_group_ui_20c` (16), `cad_shell_snapshot_contract` (32), `cad_shell_panels` (39).
 Static: `npm run lint` exit 0 (0 errors, 2 pre-existing unused-disable warnings);
 `npm run typecheck` exit 0.
+
+## Fresh 20F.5 rerun on merged HEAD (preferred execution record)
+
+- Branch `fix/phase20f5-review-record-merge-state`, execution SHA `699e9ff9c76d05395e4c3d82514490da57cf363e`
+  (= live `origin/main`, PR #134 merge). No tracked files edited, no commit, evidence restored byte-for-byte.
+- Fresh `rm -rf dist && npm run build`: exit 0, built in **11.22 s** →
+  `dist/assets/index-BFrZan0G.js` (1,763.32 kB, gzip 398.02 kB;
+  sha256 `01fa028de567c7f7bb7acc2889b63242cc86f28b85c365cee093f4e631de8215`).
+  Served via `vite preview --host 127.0.0.1 --port 4174`; `/` and `/cad` HTTP 200, served entry
+  byte-identical to fresh `dist/` (no dev server).
+- `npx playwright test tests-browser/cad-grading-20f3-qa.spec.ts --reporter=list` →
+  **16 passed / 16**, exit 0, **25.1 s**. Zero page errors, zero console errors, zero unhandled
+  rejections. Playwright **1.60.0**, bundled Chromium **148.0.7778.96** (headless).
+- Static on the same tree: `npm run lint` exit 0 (0 errors, 2 pre-existing unused-disable warnings);
+  `npm run typecheck` exit 0.
+
+Both runs (historical `c444f0a7` + fresh `699e9ff9`) are recorded; the `699e9ff9` rerun above is the
+authoritative execution record for the merged state. Docs-only delta between the two SHAs, so no
+behavioral difference is expected — and the fresh rerun confirms it.
 
 ## Recapture inventory (this phase)
 

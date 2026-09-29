@@ -1,8 +1,8 @@
-# Phase 20F.4 Post-Merge Audit — live facts (2026-09-29)
+# Phase 20F.4 Post-Merge Audit — live facts (2026-09-29, updated 20F.5)
 
-## Merge state (fetch-verified this run)
+## Merge state (fetch-verified)
 
-- `origin/main` = `c444f0a79b34720f3592b67ddfc981215acedb48` (PR #133 merge).
+- `origin/main` = `699e9ff9c76d05395e4c3d82514490da57cf363e` (PR #134 merge, 2026-09-29T22:08:36Z).
 - PR #132 "Phase 20F.3: grading shell command and visual evidence close-out":
   base `d3be99fc96626b0b91d12795759790975bfa55ea` (= PR #131 merge),
   head `91b2e0c4530f52d50011ab53e9687ae84c0976df`, merge `8753478bd6ac83ce140cbd71abc1eaef7322352f`,
@@ -14,6 +14,10 @@
   (`fix/phase20f3-grading-shell-evidence-closeout`). `origin/main` therefore advanced
   `8753478b` → `c444f0a7` with a non-20F.3 change (AGENTS.md memory routing only, no product code).
   20F.4 baseline `c444f0a7` includes that drift; product behavior is unaffected.
+- PR #134 "Phase 20F.4: finalize grading visual evidence and merge-state documentation":
+  base `c444f0a7`, head `3c380dca29b3a423f0941ddd9fa56d4bf57b9733`, merge `699e9ff9`,
+  merged `2026-09-29T22:08:36Z`, state MERGED. CI on the PR head: run `36636317410` PASS
+  (8m30s). Scope: 10 files, zero `src/` (docs + 2 evidence PNGs only).
 
 ## Visual-gate contradiction
 
@@ -44,9 +48,9 @@ Resolution: recaptured as `docs/evidence/phase20f4/1366-cutfill-defaults.png` an
 
 ## Verdict
 
-**PRODUCT SOUND / DOCS INCOMPLETE-then-CLOSED**: grading-group shell, comparator contract, and
-all 16 Chromium flows pass on the final HEAD (16/16, zero errors); the two visual-qa FAILs are
-framing defects in two evidence PNGs, not product defects — no `src/` change. Docs completed by the
-20F.4 set: `phase20f4-visual-qa.md` (31 carried + 2 replacements), `phase20f4-browser-qa.md` (final-HEAD
-rerun), `phase20f4-independent-review.md` (first review recorded, re-review pending), and dated addenda on
-both phase20f3 docs.
+**PRODUCT SOUND / EVIDENCE RECORD CLOSED**: grading-group shell, comparator contract, and
+all 16 Chromium flows pass on the merged HEAD `699e9ff9` (fresh 20F.5 rerun: 16/16, zero
+errors; see `phase20f4-browser-qa.md`); the two visual-qa FAILs are framing defects in two
+evidence PNGs, not product defects — no `src/` change. The 20F.5 fresh re-review
+(`phase20f4-independent-review.md`) APPROVES: 35/35 examined = 33/33 states passing
+(31 carried originals + 2 replacements). Live `main` is `699e9ff9`; no re-review is pending.
