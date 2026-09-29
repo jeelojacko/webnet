@@ -1,5 +1,17 @@
 # Phase 20F.3 Browser QA — truthful grading-group shell commands from snapshot selection
 
+## Final-state correction (2026-09-29 — original Environment section below is history)
+
+- The `74bbf637` reference in the original Environment section was an intermediate commit, not the
+  merged head. PR #132 merged head `91b2e0c4` as merge `8753478b` (`2026-09-29T16:25:42Z`, CI PASS
+  run `36596624458`); the "uncommitted" recapture delta described below IS the merged head content.
+- Then PR #133 (AGENTS.md memory routing, `bca465d0`) advanced `origin/main` to `c444f0a7`; 20F.4
+  baseline = `c444f0a7` (no product-code drift).
+- Final-HEAD rerun (fresh build, 16/16, 25.0s, zero errors):
+  `docs/evidence/phase20f4-browser-qa.md`. Full pixel review + one recapture:
+  `docs/evidence/phase20f4-visual-qa.md`. Merge-state audit:
+  `docs/evidence/phase20f4-post-merge-audit.md`.
+
 ## Environment
 - Branch `fix/phase20f3-grading-shell-evidence-closeout` @ `74bbf637`
   (implementation + Chromium QA committed on the branch; the only uncommitted
