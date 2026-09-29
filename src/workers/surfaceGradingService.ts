@@ -14,8 +14,7 @@ import {
 import { deriveGroupStatus } from '../engine/cad/grading/gradingGroupStatus';
 import type { CadGradingGroupResult, GroupStatus } from '../engine/cad/grading/gradingGroupTypes';
 import { resolveGradingInputs, type ResolvedGradingInputs } from '../engine/cad/grading/gradingResolve';
-import { deriveGradingStatus } from '../engine/cad/grading/gradingStatus';
-import { gradingCriterionRequiresSurface } from '../engine/cad/grading/gradingTypes';
+import { deriveGradingStatus, deriveFailedEffectiveStatus } from '../engine/cad/grading/gradingStatus';
 import type { CadGradingResult, GradingStatus } from '../engine/cad/grading/gradingTypes';
 import {
   validateDaylightAgainstTarget,
@@ -150,21 +149,20 @@ export class SurfaceGradingService {
     // target/current mismatch then reads NEEDS_RECALC, never false UNBUILT.
     const effective = result ?? (retained.length > 0 ? retained[retained.length - 1]! : null);
     const building = this.pending.has(gradingId);
-    let status = deriveGradingStatus({
-      courseResolved: true,
-      targetCurrent: inputs.target === undefined || targetMesh != null,
-      targetExists: true,
-      sourceExists: true,
-      hasResult: effective != null,
-      resultRevision: effective?.revision ?? null,
-      currentRevision: inputs.revision,
-      building,
-    });
-    // FAILED is set only by the build path (never derived): a recorded
-    // worker/agreement failure with no current result reads FAILED.
-    if (!building && result == null && this.diagnostics.has(gradingId)) {
-      status = 'FAILED';
-    }
+    const status = deriveFailedEffectiveStatus(
+      deriveGradingStatus({
+        courseResolved: true,
+        targetCurrent: inputs.target === undefined || targetMesh != null,
+        targetExists: true,
+        sourceExists: true,
+        hasResult: effective != null,
+        resultRevision: effective?.revision ?? null,
+        currentRevision: inputs.revision,
+        building,
+      }),
+      this.diagnostics.get(gradingId),
+      inputs.revision,
+    );
     return { status, stale: retained.length > 0 && result == null };
   }
 
@@ -185,16 +183,17 @@ export class SurfaceGradingService {
     const result = this.groupCache.get(groupId, inputs.revision) ?? null;
     const effective = result ?? (retained.length > 0 ? retained[retained.length - 1]! : null);
     const building = this.pendingGroups.has(groupId);
-    let status = deriveGroupStatus({
-      brokenRef: false,
-      building,
-      hasResult: effective != null,
-      sourceCurrent: surfaceTarget ? targetMesh != null : true,
-      needsRecalc: effective != null && effective.revision !== inputs.revision,
-    });
-    if (!building && result == null && this.groupDiagnostics.has(groupId)) {
-      status = 'FAILED';
-    }
+    const status = deriveFailedEffectiveStatus(
+      deriveGroupStatus({
+        brokenRef: false,
+        building,
+        hasResult: effective != null,
+        sourceCurrent: surfaceTarget ? targetMesh != null : true,
+        needsRecalc: effective != null && effective.revision !== inputs.revision,
+      }),
+      this.groupDiagnostics.get(groupId),
+      inputs.revision,
+    );
     return { status, stale: retained.length > 0 && result == null };
   }
 
@@ -316,32 +315,76 @@ export class SurfaceGradingService {
   }
 
   /**
-   * Manual-calc default: a target rebuild never auto-starts grading work. It
-   * cancels in-flight work for affected gradings (their revision moved) and
-   * lets status derive NEEDS_RECALC/SOURCE_NOT_CURRENT from the revision.
+   * Phase 20F.2 §§8-12 — authoritative pending-request reconciliation seam.
+   *
+   * ONE bounded sweep over in-flight work: each standalone pending is
+   * re-resolved against the CURRENT project with `resolveGradingInputs`, and
+   * each group pending with `resolveGroupInputs`. A pending run survives only
+   * while the `grev1:`/`ggrev1:` revision it was requested for is
+   * byte-identical to what the definition resolves to now. A missing reference
+   * (deleted grading/group, broken source/target) or a moved revision
+   * (Feature Line geometry, course endpoints, criterion/override, span/search,
+   * target reassignment, Project Transform, Grid/Ground, undo/redo) retires
+   * the run.
+   *
+   * Never auto-calculates and never promotes/transforms a stale result: prior
+   * results stay in the grading caches as stale evidence and status re-derives
+   * NEEDS_RECALC/SOURCE_NOT_CURRENT/BROKEN_REFERENCE from the revision. Fires
+   * `onStateChange` only when the pending set actually changed, so a no-op
+   * sweep cannot loop or churn renders.
+   *
+   * The event-specific `notify*` hooks below delegate here so revision
+   * identity — never the event label — decides cancellation.
    */
-  notifyTargetBuilt(surfaceId: string): void {
+  reconcilePendingWithProject(): void {
     if (this.disposed) return;
     const project = this.deps.getProject();
-    for (const grading of project.gradings ?? []) {
-      // A dormant retained target id on an analytic grading is inert: only
-      // surface-terminated definitions respond to a target rebuild.
-      if (
-        gradingCriterionRequiresSurface(grading.criterion) &&
-        grading.targetSurfaceId === surfaceId
-      ) {
-        this.supersede(grading.id);
+    let changed = false;
+    for (const [gradingId, entry] of [...this.pending]) {
+      const inputs = resolveGradingInputs(project, gradingId);
+      if (!inputs || inputs.revision !== entry.revision) {
+        changed = this.dropPending(gradingId) || changed;
       }
     }
+    for (const [groupId, entry] of [...this.pendingGroups]) {
+      const inputs = resolveGroupInputs(project, groupId);
+      if (!inputs || inputs.revision !== entry.revision) {
+        changed = this.dropPendingGroup(groupId) || changed;
+      }
+    }
+    if (changed) this.deps.onStateChange();
   }
 
-  /** Source feature-line edits never auto-recalculate: cancel in-flight work. */
-  notifySourceChanged(featureLineId: string): void {
+  /**
+   * §11 target-rebuild policy. A rebuilt target TIN republishes immediately
+   * (`onStateChange`) so status re-derives CURRENT/SOURCE_NOT_CURRENT. The
+   * reconciliation sweep is revision-driven, so a rebuild of the SAME
+   * deterministic surface revision leaves in-flight work running and mints no
+   * new grading revision; cancellation happens only when the target actually
+   * moved (target reassignment, or a rebuild after the definition edit that
+   * moved `grev1:`). Analytic Distance/Elevation gradings carry no target
+   * (`tgt:none`) and are unaffected by surface cache rebuilds — a dormant
+   * retained target id on an analytic grading can never wake it. No
+   * auto-calculation.
+   */
+  notifyTargetBuilt(_surfaceId: string): void {
     if (this.disposed) return;
-    const project = this.deps.getProject();
-    for (const grading of project.gradings ?? []) {
-      if (grading.sourceFeatureLineId === featureLineId) this.supersede(grading.id);
-    }
+    this.reconcilePendingWithProject();
+    this.deps.onStateChange();
+  }
+
+  /**
+   * §12 source Feature-Line policy. A source edit moves the
+   * `grev1:`/`ggrev1:` revision, so staleness follows from the definition
+   * revision and the reconciliation sweep cancels affected in-flight work —
+   * standalone AND groups. It never auto-starts Calculate and never promotes
+   * the prior result. An edit to an unrelated Feature Line leaves every
+   * affected revision unchanged and cancels nothing; the `featureLineId`
+   * label is kept for diagnostics only, because revision identity decides.
+   */
+  notifySourceChanged(_featureLineId: string): void {
+    if (this.disposed) return;
+    this.reconcilePendingWithProject();
   }
 
   cancelGrading(gradingId: string): void {
@@ -408,27 +451,36 @@ export class SurfaceGradingService {
   }
 
   private supersede(gradingId: string): void {
+    if (this.dropPending(gradingId)) this.deps.onStateChange();
+  }
+
+  private supersedeGroup(groupId: string): void {
+    if (this.dropPendingGroup(groupId)) this.deps.onStateChange();
+  }
+
+  /** Drop a pending run (cancelling its transport); true when it existed. */
+  private dropPending(gradingId: string): boolean {
     const entry = this.pending.get(gradingId);
-    if (!entry) return;
+    if (!entry) return false;
     this.pending.delete(gradingId);
     try {
       this.transport?.cancel(entry.requestId);
     } catch {
       // Superseded computations settle silently regardless.
     }
-    this.deps.onStateChange();
+    return true;
   }
 
-  private supersedeGroup(groupId: string): void {
+  private dropPendingGroup(groupId: string): boolean {
     const entry = this.pendingGroups.get(groupId);
-    if (!entry) return;
+    if (!entry) return false;
     this.pendingGroups.delete(groupId);
     try {
       this.transport?.cancel(entry.requestId);
     } catch {
       // Superseded computations settle silently regardless.
     }
-    this.deps.onStateChange();
+    return true;
   }
 
   private complete(

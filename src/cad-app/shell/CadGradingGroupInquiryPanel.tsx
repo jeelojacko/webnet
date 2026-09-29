@@ -42,6 +42,8 @@ export interface CadGradingGroupInquiryRow {
   accuracy: GradingAccuracy | null;
   /** Result held by the cache at the CURRENT revision, else null. */
   result: CadGradingGroupResult | null;
+  /** Bounded session failure reason, set only while status is FAILED. */
+  diagnostic: string | null;
 }
 
 /** Solved station spans for one member ('—' when the member never solved). */
@@ -131,6 +133,8 @@ export const CadGradingGroupInquiryPanel: React.FC<{ row: CadGradingGroupInquiry
     row.status,
     row.accuracy,
     row.result,
+    'm',
+    row.diagnostic,
   );
   const download = (): void => {
     if (row.status !== 'CURRENT' || row.result == null) {

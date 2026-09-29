@@ -48,8 +48,8 @@ export const defaultGradingCriterionDraft = (
   inputMode: 'percent',
   magnitude: '2',
   direction: 'down',
-  cutMagnitude: '2',
-  fillMagnitude: '3',
+  cutMagnitude: '2:1',
+  fillMagnitude: '3:1',
   distance: '20',
   targetElevation: '0',
 });
@@ -58,7 +58,9 @@ const directionOf = (ratio: number): GradingSlopeDirection =>
   ratio < 0 ? 'down' : ratio > 0 ? 'up' : 'level';
 
 const ratioToMagnitudeText = (ratio: number): string => String(Math.abs(ratio) * 100);
-const ratioToRunText = (ratio: number): string => (ratio === 0 ? '0' : String(1 / Math.abs(ratio)));
+/** Ratio → explicit `nH:1V` run text (re-parsed back to the same semantic ratio). */
+const ratioToRunText = (ratio: number): string =>
+  ratio === 0 ? '0' : `${String(1 / Math.abs(ratio))}H:1V`;
 
 /** Existing criterion → editable draft (Edit Criteria / re-open). */
 export const gradingCriterionDraftFromCriterion = (

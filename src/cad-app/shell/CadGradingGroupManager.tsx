@@ -37,7 +37,7 @@ import {
 } from './cadGradingCriterionInput';
 import { CadGradingCriterionFields } from './CadGradingCriterionFields';
 import type { CadGradingGroupRow } from './cadGradingGroupSnapshot';
-import { gradingLengthUnit } from './cadGradingSnapshot';
+import { gradingDiagnosticCode, gradingLengthUnit } from './cadGradingSnapshot';
 import { CadGradingGroupInquiryPanel } from './CadGradingGroupInquiryPanel';
 import { CadGradingGroupCriteriaPanel } from './CadGradingGroupCriteriaPanel';
 import { groupGhostArrows, groupGhostSeam } from './cadGradingGroupDisplay';
@@ -299,9 +299,10 @@ const RowActions: React.FC<{
   currentSurfaces: Array<{ id: string; name: string }>;
   lengthUnit: string;
   onNotice: (_message: string) => void;
+  onCalculate: (_rowId: string) => void;
   onInquiry: () => void;
   onCriteria: () => void;
-}> = ({ row, snapshot, actions, surfaces, currentSurfaces, lengthUnit, onNotice, onInquiry, onCriteria }) => {
+}> = ({ row, snapshot, actions, surfaces, currentSurfaces, lengthUnit, onNotice, onCalculate, onInquiry, onCriteria }) => {
   const [editing, setEditing] = React.useState(false);
   return (
     <div data-cad-grading-group-actions={row.id}>
@@ -310,7 +311,7 @@ const RowActions: React.FC<{
           type="button"
           className={buttonClass}
           disabled={!row.calculable}
-          onClick={() => onNotice(actions.requestGroupGradingCalculate?.(row.id) ?? 'Calculate unavailable.')}
+          onClick={() => onCalculate(row.id)}
           data-cad-grading-group-calculate
         >
           Calculate
@@ -458,7 +459,7 @@ const GroupRowTable: React.FC<{
             <td className="pr-2">{row.side}</td>
             <td className="pr-2">{row.targetName}</td>
             <td className="pr-2">Default {row.criterionText} · Overrides:{row.overrideCount}</td>
-            <td className="pr-2">{row.statusText}{row.stale ? ' (stale)' : ''}</td>
+            <td className="pr-2">{row.statusText}{row.stale ? ' (stale)' : ''}{row.diagnostic ? ` — ${gradingDiagnosticCode(row.diagnostic) ?? row.diagnostic}` : ''}</td>
             <td className="pr-2">{row.maxSearchDistance.toFixed(2)} {row.lengthUnit}</td>
             <td className="pr-2">{row.accuracyText}{row.curveCornerApproximated ? ' (corner)' : ''}</td>
             <td className="pr-2">{row.metrics ? `${row.metrics.minProjectionDistance.toFixed(2)}–${row.metrics.maxProjectionDistance.toFixed(2)} ${row.lengthUnit}` : '--'}</td>
@@ -487,6 +488,45 @@ export const CadGradingGroupManager: React.FC<CadGradingGroupManagerProps> = ({
   const [tab, setTab] = React.useState<'definition' | 'criteria' | 'inquiry'>(initialTab);
   const selectedId = data?.selectedGroupId ?? initialSelectedId ?? null;
   const selected = rows.find((row) => row.id === selectedId) ?? rows[0] ?? null;
+  // Phase 20F.2 §22 — calc-notice follow-up, same contract as the grading
+  // manager: the click arms { id, revision, message } from the row (never by
+  // parsing the service string); the notice then follows the snapshot row
+  // (BUILDING keeps Computing, CURRENT success, FAILED + bounded reason,
+  // moved revision superseded) with zero synthetic interaction. No polling,
+  // no worker-state duplicate; a newer operator notice disarms silently.
+  const [pendingCalc, setPendingCalc] = React.useState<{ id: string; revision: string; message: string } | null>(null);
+  const handleCalculate = (rowId: string): void => {
+    const row = rows.find((entry) => entry.id === rowId) ?? null;
+    const message = actions.requestGroupGradingCalculate?.(rowId) ?? 'Calculate unavailable.';
+    setNotice(message);
+    setPendingCalc(
+      row != null && row.calculable && row.status !== 'CURRENT'
+        ? { id: row.id, revision: row.revision, message }
+        : null,
+    );
+  };
+  const pendingRow = pendingCalc != null ? rows.find((entry) => entry.id === pendingCalc.id) ?? null : null;
+  const pendingStatus = pendingRow?.status ?? null;
+  const pendingRevision = pendingRow?.revision ?? null;
+  React.useEffect(() => {
+    if (pendingCalc == null || pendingRow == null) return;
+    if (notice !== pendingCalc.message) {
+      setPendingCalc(null);
+      return;
+    }
+    if (pendingRevision !== pendingCalc.revision) {
+      setPendingCalc(null);
+      setNotice(`“${pendingRow.name}” changed while calculating — recalculate.`);
+    } else if (pendingStatus === 'CURRENT') {
+      setPendingCalc(null);
+      setNotice(`Calculated — “${pendingRow.name}” is CURRENT.`);
+    } else if (pendingStatus === 'FAILED') {
+      setPendingCalc(null);
+      setNotice(`Calculate failed — ${pendingRow.diagnostic ?? pendingRow.statusText}.`);
+    }
+    // BUILDING and other interim statuses keep the Computing notice.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pendingCalc, pendingStatus, pendingRevision]);
   if (data == null) {
     return (
       <ManagerShell label="Grading group manager" title="Grading Groups" onClose={onClose}>
@@ -517,6 +557,7 @@ export const CadGradingGroupManager: React.FC<CadGradingGroupManagerProps> = ({
       {selected ? (
         <>
           <RowActions
+            key={selected.id}
             row={selected}
             snapshot={snapshot}
             actions={actions}
@@ -526,6 +567,7 @@ export const CadGradingGroupManager: React.FC<CadGradingGroupManagerProps> = ({
               .map((surface) => ({ id: surface.id, name: surface.name }))}
             lengthUnit={lengthUnit}
             onNotice={setNotice}
+            onCalculate={handleCalculate}
             onInquiry={() => setTab('inquiry')}
             onCriteria={() => setTab('criteria')}
           />
@@ -556,6 +598,7 @@ export const CadGradingGroupManager: React.FC<CadGradingGroupManagerProps> = ({
             status: selected.status,
             accuracy: selected.accuracy,
             result: selected.currentResult,
+            diagnostic: selected.diagnostic,
           }}
         />
       ) : null}

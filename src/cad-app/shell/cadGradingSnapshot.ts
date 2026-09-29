@@ -34,7 +34,7 @@ import {
 } from '../../engine/cad/grading/gradingCourseFrame';
 import { resolveCadFeatureLine } from '../../engine/cad/cadFeatureLines';
 import { buildGradingRevision } from '../../engine/cad/grading/gradingRevision';
-import { deriveGradingStatus } from '../../engine/cad/grading/gradingStatus';
+import { deriveFailedEffectiveStatus, deriveGradingStatus } from '../../engine/cad/grading/gradingStatus';
 import {
   gradingBoundaryLabel,
   gradingTerminationKind,
@@ -74,6 +74,14 @@ export const gradingStatusText = (status: GradingStatus): string => {
 
 export const gradingAccuracyText = (accuracy: GradingAccuracy | null): string =>
   accuracy == null ? '--' : accuracy === 'CURVE_APPROXIMATED' ? 'Curve Approximated' : 'Exact';
+
+/**
+ * Compact stable failure code (first ALL_CAPS token), else null. Manager rows
+ * use this to keep a bounded reason in a table cell; detail panels show the
+ * full bounded diagnostic text.
+ */
+export const gradingDiagnosticCode = (error: string | null): string | null =>
+  error == null ? null : /[A-Z][A-Z0-9_]{3,}/.exec(error)?.[0] ?? null;
 
 /** Current-revision metrics shown only for a CURRENT row. */
 export interface CadGradingMetrics {
@@ -126,6 +134,8 @@ export interface CadGradingRow {
   criterionText: string;
   status: GradingStatus;
   statusText: string;
+  /** Bounded session failure reason, set only while status is FAILED. */
+  diagnostic: string | null;
   /** True when a retained result exists but is not the current revision. */
   stale: boolean;
   revision: string;
@@ -272,8 +282,8 @@ export const buildCadGradingSnapshot = (
       building,
     });
     const failure = options?.sessionDiagnostics?.get(grading.id) ?? null;
-    const effectiveStatus: GradingStatus =
-      status === 'UNBUILT' && failure != null && failure.revision === revision ? 'FAILED' : status;
+    const effectiveStatus = deriveFailedEffectiveStatus(status, failure, revision);
+    const diagnostic = effectiveStatus === 'FAILED' ? (failure?.error ?? null) : null;
     const currentMetrics =
       status === 'CURRENT' && currentResult != null ? metricsOf(currentResult) : null;
     const staleMetrics = stale ? (retained[retained.length - 1] ?? null) : null;
@@ -297,6 +307,7 @@ export const buildCadGradingSnapshot = (
       criterionText: gradingCriterionText(grading),
       status: effectiveStatus,
       statusText: gradingStatusText(effectiveStatus),
+      diagnostic,
       stale,
       revision,
       maxSearchDistance: grading.maxSearchDistance,

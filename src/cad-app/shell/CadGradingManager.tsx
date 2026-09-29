@@ -25,7 +25,7 @@ import {
   gradingTargetSummary,
 } from './cadGradingShell';
 import type { CadGradingRow } from './cadGradingSnapshot';
-import { gradingLengthUnit } from './cadGradingSnapshot';
+import { gradingDiagnosticCode, gradingLengthUnit } from './cadGradingSnapshot';
 import {
   defaultGradingCriterionDraft,
   gradingCriterionDraftFromCriterion,
@@ -276,7 +276,8 @@ const RowActions: React.FC<{
   currentSurfaces: Array<{ id: string; name: string }>;
   lengthUnit: string;
   onNotice: (_message: string) => void;
-}> = ({ row, actions, surfaces, currentSurfaces, lengthUnit, onNotice }) => {
+  onCalculate: (_rowId: string) => void;
+}> = ({ row, actions, surfaces, currentSurfaces, lengthUnit, onNotice, onCalculate }) => {
   const [editing, setEditing] = React.useState(false);
   return (
     <div data-cad-grading-actions={row.id}>
@@ -285,7 +286,7 @@ const RowActions: React.FC<{
           type="button"
           className={buttonClass}
           disabled={!row.calculable}
-          onClick={() => onNotice(actions.requestGradingCalculate?.(row.id) ?? 'Calculate unavailable.')}
+          onClick={() => onCalculate(row.id)}
           data-cad-grading-calculate
         >
           Calculate
@@ -394,7 +395,7 @@ const GradingRowTable: React.FC<{
             <td>{row.side}</td>
             <td>{row.targetName}</td>
             <td>{row.criterionText}</td>
-            <td>{row.statusText}{row.stale ? ' (stale)' : ''}</td>
+            <td>{row.statusText}{row.stale ? ' (stale)' : ''}{row.diagnostic ? ` — ${gradingDiagnosticCode(row.diagnostic) ?? row.diagnostic}` : ''}</td>
             <td>{row.maxSearchDistance.toFixed(2)} {row.lengthUnit}</td>
             <td>{row.accuracyText}</td>
             <td>{row.metrics ? `${row.metrics.minProjectionDistance.toFixed(2)}–${row.metrics.maxProjectionDistance.toFixed(2)} ${row.lengthUnit}` : '--'}</td>
@@ -423,6 +424,48 @@ export const CadGradingManager: React.FC<CadGradingManagerProps> = ({
   const [tab, setTab] = React.useState<'definition' | 'inquiry'>(initialTab);
   const selectedId = grading?.selectedGradingId ?? initialSelectedId ?? null;
   const selected = rows.find((row) => row.id === selectedId) ?? rows[0] ?? null;
+  // Phase 20F.2 §22 — calc-notice follow-up. The Calculate click arms a
+  // pending request (row id + revision + the exact message shown, decided
+  // from the row — never by parsing the service string). The notice then
+  // follows the row's snapshot status with zero synthetic interaction:
+  // BUILDING keeps Computing, CURRENT reports success, FAILED reports the
+  // bounded reason, a moved revision reports superseded. No polling and no
+  // worker-state duplicate — status truth stays in the snapshot row. A newer
+  // operator notice disarms the pending request so completion can never
+  // clobber it.
+  const [pendingCalc, setPendingCalc] = React.useState<{ id: string; revision: string; message: string } | null>(null);
+  const handleCalculate = (rowId: string): void => {
+    const row = rows.find((entry) => entry.id === rowId) ?? null;
+    const message = actions.requestGradingCalculate?.(rowId) ?? 'Calculate unavailable.';
+    setNotice(message);
+    setPendingCalc(
+      row != null && row.calculable && row.status !== 'CURRENT'
+        ? { id: row.id, revision: row.revision, message }
+        : null,
+    );
+  };
+  const pendingRow = pendingCalc != null ? rows.find((entry) => entry.id === pendingCalc.id) ?? null : null;
+  const pendingStatus = pendingRow?.status ?? null;
+  const pendingRevision = pendingRow?.revision ?? null;
+  React.useEffect(() => {
+    if (pendingCalc == null || pendingRow == null) return;
+    if (notice !== pendingCalc.message) {
+      setPendingCalc(null);
+      return;
+    }
+    if (pendingRevision !== pendingCalc.revision) {
+      setPendingCalc(null);
+      setNotice(`“${pendingRow.name}” changed while calculating — recalculate.`);
+    } else if (pendingStatus === 'CURRENT') {
+      setPendingCalc(null);
+      setNotice(`Calculated — “${pendingRow.name}” is CURRENT.`);
+    } else if (pendingStatus === 'FAILED') {
+      setPendingCalc(null);
+      setNotice(`Calculate failed — ${pendingRow.diagnostic ?? pendingRow.statusText}.`);
+    }
+    // BUILDING and other interim statuses keep the Computing notice.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pendingCalc, pendingStatus, pendingRevision]);
   if (grading == null) {
     return (
       <ManagerShell label="Grading manager" title="Gradings" onClose={onClose}>
@@ -451,6 +494,7 @@ export const CadGradingManager: React.FC<CadGradingManagerProps> = ({
       />
       {selected ? (
         <RowActions
+          key={selected.id}
           row={selected}
           actions={actions}
           surfaces={(snapshot.surface?.surfaces ?? []).map((row) => ({ id: row.id, name: row.name }))}
@@ -459,6 +503,7 @@ export const CadGradingManager: React.FC<CadGradingManagerProps> = ({
             .map((surface) => ({ id: surface.id, name: surface.name }))}
           lengthUnit={lengthUnit}
           onNotice={setNotice}
+          onCalculate={handleCalculate}
         />
       ) : null}
       {tab === 'inquiry' && selected ? (

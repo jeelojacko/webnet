@@ -108,6 +108,11 @@ export const GradingGroupsNode: React.FC<{
               <DefinitionRow row={row} />
               <CriteriaRow row={row} />
               <ResultRow row={row} />
+              {row.diagnostic ? (
+                <div className="cad-shell-tree-row" data-cad-grading-group-diagnostic={row.id}>
+                  Failed — {row.diagnostic}
+                </div>
+              ) : null}
               <CornerRow row={row} />
             </div>
           </details>

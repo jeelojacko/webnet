@@ -1,0 +1,3592 @@
+{
+  "1366-ribbon-flyout": {
+    "innerW": 1366,
+    "innerH": 768,
+    "docScrollW": 1366,
+    "docScrollH": 768,
+    "ribbon": {
+      "x": 0,
+      "y": 66,
+      "w": 1366,
+      "h": 120,
+      "scrollW": 1366,
+      "clientW": 1366,
+      "scrollH": 119,
+      "clientH": 119
+    },
+    "viewport": {
+      "x": 264,
+      "y": 215,
+      "w": 814,
+      "h": 345,
+      "scrollW": 814,
+      "clientW": 814,
+      "scrollH": 345,
+      "clientH": 345
+    },
+    "toolspace": {
+      "x": 8,
+      "y": 252,
+      "w": 247,
+      "h": 330,
+      "scrollW": 247,
+      "clientW": 247,
+      "scrollH": 330,
+      "clientH": 330
+    },
+    "properties": {
+      "x": 1086,
+      "y": 252,
+      "w": 271,
+      "h": 525,
+      "scrollW": 271,
+      "clientW": 271,
+      "scrollH": 525,
+      "clientH": 525
+    },
+    "commandInput": {
+      "x": 285,
+      "y": 614,
+      "w": 785,
+      "h": 26,
+      "scrollW": 783,
+      "clientW": 783,
+      "scrollH": 24,
+      "clientH": 24
+    },
+    "manager": null,
+    "criteria": null,
+    "toolspaceStatuses": [],
+    "managerRows": [],
+    "propertiesStatus": null
+  },
+  "1920-ribbon-flyout": {
+    "innerW": 1920,
+    "innerH": 1080,
+    "docScrollW": 1920,
+    "docScrollH": 1080,
+    "ribbon": {
+      "x": 0,
+      "y": 66,
+      "w": 1920,
+      "h": 120,
+      "scrollW": 1920,
+      "clientW": 1920,
+      "scrollH": 119,
+      "clientH": 119
+    },
+    "viewport": {
+      "x": 264,
+      "y": 215,
+      "w": 1368,
+      "h": 657,
+      "scrollW": 1368,
+      "clientW": 1368,
+      "scrollH": 657,
+      "clientH": 657
+    },
+    "toolspace": {
+      "x": 8,
+      "y": 252,
+      "w": 247,
+      "h": 330,
+      "scrollW": 247,
+      "clientW": 247,
+      "scrollH": 330,
+      "clientH": 330
+    },
+    "properties": {
+      "x": 1640,
+      "y": 252,
+      "w": 271,
+      "h": 525,
+      "scrollW": 271,
+      "clientW": 271,
+      "scrollH": 525,
+      "clientH": 525
+    },
+    "commandInput": {
+      "x": 285,
+      "y": 926,
+      "w": 1339,
+      "h": 26,
+      "scrollW": 1337,
+      "clientW": 1337,
+      "scrollH": 24,
+      "clientH": 24
+    },
+    "manager": null,
+    "criteria": null,
+    "toolspaceStatuses": [],
+    "managerRows": [],
+    "propertiesStatus": null
+  },
+  "2560-ribbon-flyout": {
+    "innerW": 2560,
+    "innerH": 1440,
+    "docScrollW": 2560,
+    "docScrollH": 1440,
+    "ribbon": {
+      "x": 0,
+      "y": 66,
+      "w": 2560,
+      "h": 120,
+      "scrollW": 2560,
+      "clientW": 2560,
+      "scrollH": 119,
+      "clientH": 119
+    },
+    "viewport": {
+      "x": 264,
+      "y": 215,
+      "w": 2008,
+      "h": 1017,
+      "scrollW": 2008,
+      "clientW": 2008,
+      "scrollH": 1017,
+      "clientH": 1017
+    },
+    "toolspace": {
+      "x": 8,
+      "y": 252,
+      "w": 247,
+      "h": 330,
+      "scrollW": 247,
+      "clientW": 247,
+      "scrollH": 330,
+      "clientH": 330
+    },
+    "properties": {
+      "x": 2280,
+      "y": 252,
+      "w": 271,
+      "h": 525,
+      "scrollW": 271,
+      "clientW": 271,
+      "scrollH": 525,
+      "clientH": 525
+    },
+    "commandInput": {
+      "x": 285,
+      "y": 1286,
+      "w": 1979,
+      "h": 26,
+      "scrollW": 1977,
+      "clientW": 1977,
+      "scrollH": 24,
+      "clientH": 24
+    },
+    "manager": null,
+    "criteria": null,
+    "toolspaceStatuses": [],
+    "managerRows": [],
+    "propertiesStatus": null
+  },
+  "1366-unbuilt": {
+    "innerW": 1366,
+    "innerH": 768,
+    "docScrollW": 1366,
+    "docScrollH": 768,
+    "ribbon": {
+      "x": 0,
+      "y": 66,
+      "w": 1366,
+      "h": 120,
+      "scrollW": 1366,
+      "clientW": 1366,
+      "scrollH": 119,
+      "clientH": 119
+    },
+    "viewport": {
+      "x": 264,
+      "y": 215,
+      "w": 814,
+      "h": 345,
+      "scrollW": 814,
+      "clientW": 814,
+      "scrollH": 345,
+      "clientH": 345
+    },
+    "toolspace": {
+      "x": 8,
+      "y": 252,
+      "w": 247,
+      "h": 2092,
+      "scrollW": 362,
+      "clientW": 247,
+      "scrollH": 2092,
+      "clientH": 2092
+    },
+    "properties": {
+      "x": 1086,
+      "y": 252,
+      "w": 271,
+      "h": 525,
+      "scrollW": 271,
+      "clientW": 271,
+      "scrollH": 525,
+      "clientH": 525
+    },
+    "commandInput": {
+      "x": 285,
+      "y": 614,
+      "w": 785,
+      "h": 26,
+      "scrollW": 783,
+      "clientW": 783,
+      "scrollH": 24,
+      "clientH": 24
+    },
+    "manager": {
+      "x": 586,
+      "y": 303,
+      "w": 480,
+      "h": 276,
+      "scrollW": 478,
+      "clientW": 478,
+      "scrollH": 693,
+      "clientH": 274
+    },
+    "criteria": null,
+    "toolspaceStatuses": [
+      "UNBUILT",
+      "UNBUILT",
+      "UNBUILT"
+    ],
+    "managerRows": [
+      "DistSyncDistance2Right—Default Grade -2.000% → Distance 20.000 m · Overrides:0Unbuilt200.0",
+      "SurfSyncSurface4 (closed)RightEGDefault Fixed -50.000% (0.500H:1V) · Overrides:0Unbuilt200",
+      "ElevSyncElevation2Right—Default Grade -2.000% → Elevation 9.800 m · Overrides:0Unbuilt200."
+    ],
+    "propertiesStatus": null
+  },
+  "1366-building": {
+    "innerW": 1366,
+    "innerH": 768,
+    "docScrollW": 1366,
+    "docScrollH": 768,
+    "ribbon": {
+      "x": 0,
+      "y": 66,
+      "w": 1366,
+      "h": 120,
+      "scrollW": 1366,
+      "clientW": 1366,
+      "scrollH": 119,
+      "clientH": 119
+    },
+    "viewport": {
+      "x": 264,
+      "y": 215,
+      "w": 814,
+      "h": 345,
+      "scrollW": 814,
+      "clientW": 814,
+      "scrollH": 345,
+      "clientH": 345
+    },
+    "toolspace": {
+      "x": 8,
+      "y": 252,
+      "w": 247,
+      "h": 2092,
+      "scrollW": 362,
+      "clientW": 247,
+      "scrollH": 2092,
+      "clientH": 2092
+    },
+    "properties": {
+      "x": 1086,
+      "y": 252,
+      "w": 271,
+      "h": 525,
+      "scrollW": 271,
+      "clientW": 271,
+      "scrollH": 525,
+      "clientH": 525
+    },
+    "commandInput": {
+      "x": 285,
+      "y": 614,
+      "w": 785,
+      "h": 26,
+      "scrollW": 783,
+      "clientW": 783,
+      "scrollH": 24,
+      "clientH": 24
+    },
+    "manager": {
+      "x": 586,
+      "y": 303,
+      "w": 480,
+      "h": 276,
+      "scrollW": 478,
+      "clientW": 478,
+      "scrollH": 717,
+      "clientH": 274
+    },
+    "criteria": null,
+    "toolspaceStatuses": [
+      "BUILDING",
+      "UNBUILT",
+      "UNBUILT"
+    ],
+    "managerRows": [
+      "DistSyncDistance2Right—Default Grade -2.000% → Distance 20.000 m · Overrides:0Building200.",
+      "SurfSyncSurface4 (closed)RightEGDefault Fixed -50.000% (0.500H:1V) · Overrides:0Unbuilt200",
+      "ElevSyncElevation2Right—Default Grade -2.000% → Elevation 9.800 m · Overrides:0Unbuilt200."
+    ],
+    "propertiesStatus": null
+  },
+  "1366-properties-current": {
+    "innerW": 1366,
+    "innerH": 768,
+    "docScrollW": 1366,
+    "docScrollH": 768,
+    "ribbon": {
+      "x": 0,
+      "y": 66,
+      "w": 1366,
+      "h": 120,
+      "scrollW": 1366,
+      "clientW": 1366,
+      "scrollH": 119,
+      "clientH": 119
+    },
+    "viewport": {
+      "x": 264,
+      "y": 215,
+      "w": 814,
+      "h": 345,
+      "scrollW": 814,
+      "clientW": 814,
+      "scrollH": 345,
+      "clientH": 345
+    },
+    "toolspace": {
+      "x": 8,
+      "y": 252,
+      "w": 247,
+      "h": 2176,
+      "scrollW": 594,
+      "clientW": 247,
+      "scrollH": 2176,
+      "clientH": 2176
+    },
+    "properties": {
+      "x": 1086,
+      "y": 252,
+      "w": 271,
+      "h": 821,
+      "scrollW": 271,
+      "clientW": 271,
+      "scrollH": 821,
+      "clientH": 821
+    },
+    "commandInput": {
+      "x": 285,
+      "y": 614,
+      "w": 785,
+      "h": 26,
+      "scrollW": 783,
+      "clientW": 783,
+      "scrollH": 24,
+      "clientH": 24
+    },
+    "manager": null,
+    "criteria": null,
+    "toolspaceStatuses": [
+      "CURRENT",
+      "UNBUILT",
+      "UNBUILT"
+    ],
+    "managerRows": [],
+    "propertiesStatus": "Current"
+  },
+  "1366-current-toolspace-sync": {
+    "innerW": 1366,
+    "innerH": 768,
+    "docScrollW": 1366,
+    "docScrollH": 768,
+    "ribbon": {
+      "x": 0,
+      "y": 66,
+      "w": 1366,
+      "h": 120,
+      "scrollW": 1366,
+      "clientW": 1366,
+      "scrollH": 119,
+      "clientH": 119
+    },
+    "viewport": {
+      "x": 264,
+      "y": 215,
+      "w": 814,
+      "h": 345,
+      "scrollW": 814,
+      "clientW": 814,
+      "scrollH": 345,
+      "clientH": 345
+    },
+    "toolspace": {
+      "x": 8,
+      "y": 252,
+      "w": 247,
+      "h": 2176,
+      "scrollW": 594,
+      "clientW": 247,
+      "scrollH": 2176,
+      "clientH": 2176
+    },
+    "properties": {
+      "x": 1086,
+      "y": 252,
+      "w": 271,
+      "h": 821,
+      "scrollW": 271,
+      "clientW": 271,
+      "scrollH": 821,
+      "clientH": 821
+    },
+    "commandInput": {
+      "x": 285,
+      "y": 614,
+      "w": 785,
+      "h": 26,
+      "scrollW": 783,
+      "clientW": 783,
+      "scrollH": 24,
+      "clientH": 24
+    },
+    "manager": {
+      "x": 586,
+      "y": 303,
+      "w": 480,
+      "h": 276,
+      "scrollW": 478,
+      "clientW": 478,
+      "scrollH": 693,
+      "clientH": 274
+    },
+    "criteria": null,
+    "toolspaceStatuses": [
+      "CURRENT",
+      "UNBUILT",
+      "UNBUILT"
+    ],
+    "managerRows": [
+      "DistSyncDistance2Right—Default Grade -2.000% → Distance 20.000 m · Overrides:0Current200.0",
+      "SurfSyncSurface4 (closed)RightEGDefault Fixed -50.000% (0.500H:1V) · Overrides:0Unbuilt200",
+      "ElevSyncElevation2Right—Default Grade -2.000% → Elevation 9.800 m · Overrides:0Unbuilt200."
+    ],
+    "propertiesStatus": "Current"
+  },
+  "1366-standalone-current": {
+    "innerW": 1366,
+    "innerH": 768,
+    "docScrollW": 1366,
+    "docScrollH": 768,
+    "ribbon": {
+      "x": 0,
+      "y": 66,
+      "w": 1366,
+      "h": 120,
+      "scrollW": 1366,
+      "clientW": 1366,
+      "scrollH": 119,
+      "clientH": 119
+    },
+    "viewport": {
+      "x": 264,
+      "y": 215,
+      "w": 814,
+      "h": 345,
+      "scrollW": 814,
+      "clientW": 814,
+      "scrollH": 345,
+      "clientH": 345
+    },
+    "toolspace": {
+      "x": 8,
+      "y": 252,
+      "w": 247,
+      "h": 2230,
+      "scrollW": 594,
+      "clientW": 247,
+      "scrollH": 2230,
+      "clientH": 2230
+    },
+    "properties": {
+      "x": 1086,
+      "y": 252,
+      "w": 271,
+      "h": 1299,
+      "scrollW": 271,
+      "clientW": 271,
+      "scrollH": 1299,
+      "clientH": 1299
+    },
+    "commandInput": {
+      "x": 285,
+      "y": 614,
+      "w": 785,
+      "h": 26,
+      "scrollW": 783,
+      "clientW": 783,
+      "scrollH": 24,
+      "clientH": 24
+    },
+    "manager": {
+      "x": 586,
+      "y": 303,
+      "w": 480,
+      "h": 276,
+      "scrollW": 478,
+      "clientW": 478,
+      "scrollH": 725,
+      "clientH": 274
+    },
+    "criteria": null,
+    "toolspaceStatuses": [
+      "CURRENT",
+      "UNBUILT",
+      "UNBUILT"
+    ],
+    "managerRows": [],
+    "propertiesStatus": "Current"
+  },
+  "1366-locked-family-editor": {
+    "innerW": 1366,
+    "innerH": 768,
+    "docScrollW": 1366,
+    "docScrollH": 768,
+    "ribbon": {
+      "x": 0,
+      "y": 66,
+      "w": 1366,
+      "h": 120,
+      "scrollW": 1366,
+      "clientW": 1366,
+      "scrollH": 119,
+      "clientH": 119
+    },
+    "viewport": {
+      "x": 264,
+      "y": 215,
+      "w": 814,
+      "h": 345,
+      "scrollW": 814,
+      "clientW": 814,
+      "scrollH": 345,
+      "clientH": 345
+    },
+    "toolspace": {
+      "x": 8,
+      "y": 252,
+      "w": 247,
+      "h": 2230,
+      "scrollW": 594,
+      "clientW": 247,
+      "scrollH": 2230,
+      "clientH": 2230
+    },
+    "properties": {
+      "x": 1086,
+      "y": 252,
+      "w": 271,
+      "h": 1299,
+      "scrollW": 271,
+      "clientW": 271,
+      "scrollH": 1299,
+      "clientH": 1299
+    },
+    "commandInput": {
+      "x": 285,
+      "y": 614,
+      "w": 785,
+      "h": 26,
+      "scrollW": 783,
+      "clientW": 783,
+      "scrollH": 24,
+      "clientH": 24
+    },
+    "manager": {
+      "x": 586,
+      "y": 285,
+      "w": 480,
+      "h": 276,
+      "scrollW": 478,
+      "clientW": 478,
+      "scrollH": 1066,
+      "clientH": 274
+    },
+    "criteria": {
+      "x": 599,
+      "y": 240.5,
+      "w": 454,
+      "h": 365.5,
+      "scrollW": 454,
+      "clientW": 454,
+      "scrollH": 366,
+      "clientH": 366
+    },
+    "toolspaceStatuses": [
+      "CURRENT",
+      "UNBUILT",
+      "UNBUILT"
+    ],
+    "managerRows": [
+      "DistSyncDistance2Right—Default Grade -2.000% → Distance 20.000 m · Overrides:0Current200.0",
+      "SurfSyncSurface4 (closed)RightEGDefault Fixed -50.000% (0.500H:1V) · Overrides:0Unbuilt200",
+      "ElevSyncElevation2Right—Default Grade -2.000% → Elevation 9.800 m · Overrides:0Unbuilt200."
+    ],
+    "propertiesStatus": "Current"
+  },
+  "1366-distance-elevation-control": {
+    "innerW": 1366,
+    "innerH": 768,
+    "docScrollW": 1366,
+    "docScrollH": 768,
+    "ribbon": {
+      "x": 0,
+      "y": 66,
+      "w": 1366,
+      "h": 120,
+      "scrollW": 1366,
+      "clientW": 1366,
+      "scrollH": 119,
+      "clientH": 119
+    },
+    "viewport": {
+      "x": 264,
+      "y": 215,
+      "w": 814,
+      "h": 345,
+      "scrollW": 814,
+      "clientW": 814,
+      "scrollH": 345,
+      "clientH": 345
+    },
+    "toolspace": {
+      "x": 8,
+      "y": 252,
+      "w": 247,
+      "h": 2230,
+      "scrollW": 594,
+      "clientW": 247,
+      "scrollH": 2230,
+      "clientH": 2230
+    },
+    "properties": {
+      "x": 1086,
+      "y": 252,
+      "w": 271,
+      "h": 1299,
+      "scrollW": 271,
+      "clientW": 271,
+      "scrollH": 1299,
+      "clientH": 1299
+    },
+    "commandInput": {
+      "x": 285,
+      "y": 614,
+      "w": 785,
+      "h": 26,
+      "scrollW": 783,
+      "clientW": 783,
+      "scrollH": 24,
+      "clientH": 24
+    },
+    "manager": {
+      "x": 586,
+      "y": 285,
+      "w": 480,
+      "h": 276,
+      "scrollW": 478,
+      "clientW": 478,
+      "scrollH": 1066,
+      "clientH": 274
+    },
+    "criteria": {
+      "x": 599,
+      "y": 240.5,
+      "w": 454,
+      "h": 365.5,
+      "scrollW": 454,
+      "clientW": 454,
+      "scrollH": 366,
+      "clientH": 366
+    },
+    "toolspaceStatuses": [
+      "CURRENT",
+      "UNBUILT",
+      "UNBUILT"
+    ],
+    "managerRows": [
+      "DistSyncDistance2Right—Default Grade -2.000% → Distance 20.000 m · Overrides:0Current200.0",
+      "SurfSyncSurface4 (closed)RightEGDefault Fixed -50.000% (0.500H:1V) · Overrides:0Unbuilt200",
+      "ElevSyncElevation2Right—Default Grade -2.000% → Elevation 9.800 m · Overrides:0Unbuilt200."
+    ],
+    "propertiesStatus": "Current"
+  },
+  "1366-elevation-control": {
+    "innerW": 1366,
+    "innerH": 768,
+    "docScrollW": 1366,
+    "docScrollH": 768,
+    "ribbon": {
+      "x": 0,
+      "y": 66,
+      "w": 1366,
+      "h": 120,
+      "scrollW": 1366,
+      "clientW": 1366,
+      "scrollH": 119,
+      "clientH": 119
+    },
+    "viewport": {
+      "x": 264,
+      "y": 215,
+      "w": 814,
+      "h": 345,
+      "scrollW": 814,
+      "clientW": 814,
+      "scrollH": 345,
+      "clientH": 345
+    },
+    "toolspace": {
+      "x": 8,
+      "y": 252,
+      "w": 247,
+      "h": 2230,
+      "scrollW": 594,
+      "clientW": 247,
+      "scrollH": 2230,
+      "clientH": 2230
+    },
+    "properties": {
+      "x": 1086,
+      "y": 252,
+      "w": 271,
+      "h": 1069,
+      "scrollW": 271,
+      "clientW": 271,
+      "scrollH": 1069,
+      "clientH": 1069
+    },
+    "commandInput": {
+      "x": 285,
+      "y": 614,
+      "w": 785,
+      "h": 26,
+      "scrollW": 783,
+      "clientW": 783,
+      "scrollH": 24,
+      "clientH": 24
+    },
+    "manager": {
+      "x": 586,
+      "y": 285,
+      "w": 480,
+      "h": 276,
+      "scrollW": 478,
+      "clientW": 478,
+      "scrollH": 1066,
+      "clientH": 274
+    },
+    "criteria": {
+      "x": 599,
+      "y": 524.5,
+      "w": 454,
+      "h": 365.5,
+      "scrollW": 454,
+      "clientW": 454,
+      "scrollH": 366,
+      "clientH": 366
+    },
+    "toolspaceStatuses": [
+      "CURRENT",
+      "UNBUILT",
+      "UNBUILT"
+    ],
+    "managerRows": [
+      "DistSyncDistance2Right—Default Grade -2.000% → Distance 20.000 m · Overrides:0Current200.0",
+      "SurfSyncSurface4 (closed)RightEGDefault Fixed -50.000% (0.500H:1V) · Overrides:0Unbuilt200",
+      "ElevSyncElevation2Right—Default Grade -2.000% → Elevation 9.800 m · Overrides:0Unbuilt200."
+    ],
+    "propertiesStatus": "Unbuilt"
+  },
+  "1366-surface-control": {
+    "innerW": 1366,
+    "innerH": 768,
+    "docScrollW": 1366,
+    "docScrollH": 768,
+    "ribbon": {
+      "x": 0,
+      "y": 66,
+      "w": 1366,
+      "h": 120,
+      "scrollW": 1366,
+      "clientW": 1366,
+      "scrollH": 119,
+      "clientH": 119
+    },
+    "viewport": {
+      "x": 264,
+      "y": 215,
+      "w": 814,
+      "h": 345,
+      "scrollW": 814,
+      "clientW": 814,
+      "scrollH": 345,
+      "clientH": 345
+    },
+    "toolspace": {
+      "x": 8,
+      "y": 252,
+      "w": 247,
+      "h": 1514,
+      "scrollW": 362,
+      "clientW": 247,
+      "scrollH": 1514,
+      "clientH": 1514
+    },
+    "properties": {
+      "x": 1086,
+      "y": 252,
+      "w": 271,
+      "h": 1150,
+      "scrollW": 271,
+      "clientW": 271,
+      "scrollH": 1150,
+      "clientH": 1150
+    },
+    "commandInput": {
+      "x": 285,
+      "y": 614,
+      "w": 785,
+      "h": 26,
+      "scrollW": 783,
+      "clientW": 783,
+      "scrollH": 24,
+      "clientH": 24
+    },
+    "manager": {
+      "x": 586,
+      "y": 303,
+      "w": 480,
+      "h": 276,
+      "scrollW": 478,
+      "clientW": 478,
+      "scrollH": 703,
+      "clientH": 274
+    },
+    "criteria": null,
+    "toolspaceStatuses": [],
+    "managerRows": [],
+    "propertiesStatus": null
+  },
+  "1920-unbuilt": {
+    "innerW": 1920,
+    "innerH": 1080,
+    "docScrollW": 1920,
+    "docScrollH": 1080,
+    "ribbon": {
+      "x": 0,
+      "y": 66,
+      "w": 1920,
+      "h": 120,
+      "scrollW": 1920,
+      "clientW": 1920,
+      "scrollH": 119,
+      "clientH": 119
+    },
+    "viewport": {
+      "x": 264,
+      "y": 215,
+      "w": 1368,
+      "h": 657,
+      "scrollW": 1368,
+      "clientW": 1368,
+      "scrollH": 657,
+      "clientH": 657
+    },
+    "toolspace": {
+      "x": 8,
+      "y": 252,
+      "w": 247,
+      "h": 2092,
+      "scrollW": 362,
+      "clientW": 247,
+      "scrollH": 2092,
+      "clientH": 2092
+    },
+    "properties": {
+      "x": 1640,
+      "y": 252,
+      "w": 271,
+      "h": 525,
+      "scrollW": 271,
+      "clientW": 271,
+      "scrollH": 525,
+      "clientH": 525
+    },
+    "commandInput": {
+      "x": 285,
+      "y": 926,
+      "w": 1339,
+      "h": 26,
+      "scrollW": 1337,
+      "clientW": 1337,
+      "scrollH": 24,
+      "clientH": 24
+    },
+    "manager": {
+      "x": 1140,
+      "y": 303,
+      "w": 480,
+      "h": 525.59375,
+      "scrollW": 478,
+      "clientW": 478,
+      "scrollH": 693,
+      "clientH": 524
+    },
+    "criteria": null,
+    "toolspaceStatuses": [
+      "UNBUILT",
+      "UNBUILT",
+      "UNBUILT"
+    ],
+    "managerRows": [
+      "DistSyncDistance2Right—Default Grade -2.000% → Distance 20.000 m · Overrides:0Unbuilt200.0",
+      "SurfSyncSurface4 (closed)RightEGDefault Fixed -50.000% (0.500H:1V) · Overrides:0Unbuilt200",
+      "ElevSyncElevation2Right—Default Grade -2.000% → Elevation 9.800 m · Overrides:0Unbuilt200."
+    ],
+    "propertiesStatus": null
+  },
+  "1920-building": {
+    "innerW": 1920,
+    "innerH": 1080,
+    "docScrollW": 1920,
+    "docScrollH": 1080,
+    "ribbon": {
+      "x": 0,
+      "y": 66,
+      "w": 1920,
+      "h": 120,
+      "scrollW": 1920,
+      "clientW": 1920,
+      "scrollH": 119,
+      "clientH": 119
+    },
+    "viewport": {
+      "x": 264,
+      "y": 215,
+      "w": 1368,
+      "h": 657,
+      "scrollW": 1368,
+      "clientW": 1368,
+      "scrollH": 657,
+      "clientH": 657
+    },
+    "toolspace": {
+      "x": 8,
+      "y": 252,
+      "w": 247,
+      "h": 2092,
+      "scrollW": 362,
+      "clientW": 247,
+      "scrollH": 2092,
+      "clientH": 2092
+    },
+    "properties": {
+      "x": 1640,
+      "y": 252,
+      "w": 271,
+      "h": 525,
+      "scrollW": 271,
+      "clientW": 271,
+      "scrollH": 525,
+      "clientH": 525
+    },
+    "commandInput": {
+      "x": 285,
+      "y": 926,
+      "w": 1339,
+      "h": 26,
+      "scrollW": 1337,
+      "clientW": 1337,
+      "scrollH": 24,
+      "clientH": 24
+    },
+    "manager": {
+      "x": 1140,
+      "y": 303,
+      "w": 480,
+      "h": 525.59375,
+      "scrollW": 478,
+      "clientW": 478,
+      "scrollH": 717,
+      "clientH": 524
+    },
+    "criteria": null,
+    "toolspaceStatuses": [
+      "BUILDING",
+      "UNBUILT",
+      "UNBUILT"
+    ],
+    "managerRows": [
+      "DistSyncDistance2Right—Default Grade -2.000% → Distance 20.000 m · Overrides:0Building200.",
+      "SurfSyncSurface4 (closed)RightEGDefault Fixed -50.000% (0.500H:1V) · Overrides:0Unbuilt200",
+      "ElevSyncElevation2Right—Default Grade -2.000% → Elevation 9.800 m · Overrides:0Unbuilt200."
+    ],
+    "propertiesStatus": null
+  },
+  "1920-properties-current": {
+    "innerW": 1920,
+    "innerH": 1080,
+    "docScrollW": 1920,
+    "docScrollH": 1080,
+    "ribbon": {
+      "x": 0,
+      "y": 66,
+      "w": 1920,
+      "h": 120,
+      "scrollW": 1920,
+      "clientW": 1920,
+      "scrollH": 119,
+      "clientH": 119
+    },
+    "viewport": {
+      "x": 264,
+      "y": 215,
+      "w": 1368,
+      "h": 657,
+      "scrollW": 1368,
+      "clientW": 1368,
+      "scrollH": 657,
+      "clientH": 657
+    },
+    "toolspace": {
+      "x": 8,
+      "y": 252,
+      "w": 247,
+      "h": 2176,
+      "scrollW": 594,
+      "clientW": 247,
+      "scrollH": 2176,
+      "clientH": 2176
+    },
+    "properties": {
+      "x": 1640,
+      "y": 252,
+      "w": 271,
+      "h": 821,
+      "scrollW": 271,
+      "clientW": 271,
+      "scrollH": 821,
+      "clientH": 821
+    },
+    "commandInput": {
+      "x": 285,
+      "y": 926,
+      "w": 1339,
+      "h": 26,
+      "scrollW": 1337,
+      "clientW": 1337,
+      "scrollH": 24,
+      "clientH": 24
+    },
+    "manager": null,
+    "criteria": null,
+    "toolspaceStatuses": [
+      "CURRENT",
+      "UNBUILT",
+      "UNBUILT"
+    ],
+    "managerRows": [],
+    "propertiesStatus": "Current"
+  },
+  "1920-current-toolspace-sync": {
+    "innerW": 1920,
+    "innerH": 1080,
+    "docScrollW": 1920,
+    "docScrollH": 1080,
+    "ribbon": {
+      "x": 0,
+      "y": 66,
+      "w": 1920,
+      "h": 120,
+      "scrollW": 1920,
+      "clientW": 1920,
+      "scrollH": 119,
+      "clientH": 119
+    },
+    "viewport": {
+      "x": 264,
+      "y": 215,
+      "w": 1368,
+      "h": 657,
+      "scrollW": 1368,
+      "clientW": 1368,
+      "scrollH": 657,
+      "clientH": 657
+    },
+    "toolspace": {
+      "x": 8,
+      "y": 252,
+      "w": 247,
+      "h": 2176,
+      "scrollW": 594,
+      "clientW": 247,
+      "scrollH": 2176,
+      "clientH": 2176
+    },
+    "properties": {
+      "x": 1640,
+      "y": 252,
+      "w": 271,
+      "h": 821,
+      "scrollW": 271,
+      "clientW": 271,
+      "scrollH": 821,
+      "clientH": 821
+    },
+    "commandInput": {
+      "x": 285,
+      "y": 926,
+      "w": 1339,
+      "h": 26,
+      "scrollW": 1337,
+      "clientW": 1337,
+      "scrollH": 24,
+      "clientH": 24
+    },
+    "manager": {
+      "x": 1140,
+      "y": 303,
+      "w": 480,
+      "h": 525.59375,
+      "scrollW": 478,
+      "clientW": 478,
+      "scrollH": 693,
+      "clientH": 524
+    },
+    "criteria": null,
+    "toolspaceStatuses": [
+      "CURRENT",
+      "UNBUILT",
+      "UNBUILT"
+    ],
+    "managerRows": [
+      "DistSyncDistance2Right—Default Grade -2.000% → Distance 20.000 m · Overrides:0Current200.0",
+      "SurfSyncSurface4 (closed)RightEGDefault Fixed -50.000% (0.500H:1V) · Overrides:0Unbuilt200",
+      "ElevSyncElevation2Right—Default Grade -2.000% → Elevation 9.800 m · Overrides:0Unbuilt200."
+    ],
+    "propertiesStatus": "Current"
+  },
+  "1920-standalone-current": {
+    "innerW": 1920,
+    "innerH": 1080,
+    "docScrollW": 1920,
+    "docScrollH": 1080,
+    "ribbon": {
+      "x": 0,
+      "y": 66,
+      "w": 1920,
+      "h": 120,
+      "scrollW": 1920,
+      "clientW": 1920,
+      "scrollH": 119,
+      "clientH": 119
+    },
+    "viewport": {
+      "x": 264,
+      "y": 215,
+      "w": 1368,
+      "h": 657,
+      "scrollW": 1368,
+      "clientW": 1368,
+      "scrollH": 657,
+      "clientH": 657
+    },
+    "toolspace": {
+      "x": 8,
+      "y": 252,
+      "w": 247,
+      "h": 2230,
+      "scrollW": 594,
+      "clientW": 247,
+      "scrollH": 2230,
+      "clientH": 2230
+    },
+    "properties": {
+      "x": 1640,
+      "y": 252,
+      "w": 271,
+      "h": 1299,
+      "scrollW": 271,
+      "clientW": 271,
+      "scrollH": 1299,
+      "clientH": 1299
+    },
+    "commandInput": {
+      "x": 285,
+      "y": 926,
+      "w": 1339,
+      "h": 26,
+      "scrollW": 1337,
+      "clientW": 1337,
+      "scrollH": 24,
+      "clientH": 24
+    },
+    "manager": {
+      "x": 1140,
+      "y": 303,
+      "w": 480,
+      "h": 525.59375,
+      "scrollW": 478,
+      "clientW": 478,
+      "scrollH": 725,
+      "clientH": 524
+    },
+    "criteria": null,
+    "toolspaceStatuses": [
+      "CURRENT",
+      "UNBUILT",
+      "UNBUILT"
+    ],
+    "managerRows": [],
+    "propertiesStatus": "Current"
+  },
+  "1920-locked-family-editor": {
+    "innerW": 1920,
+    "innerH": 1080,
+    "docScrollW": 1920,
+    "docScrollH": 1080,
+    "ribbon": {
+      "x": 0,
+      "y": 66,
+      "w": 1920,
+      "h": 120,
+      "scrollW": 1920,
+      "clientW": 1920,
+      "scrollH": 119,
+      "clientH": 119
+    },
+    "viewport": {
+      "x": 264,
+      "y": 215,
+      "w": 1368,
+      "h": 657,
+      "scrollW": 1368,
+      "clientW": 1368,
+      "scrollH": 657,
+      "clientH": 657
+    },
+    "toolspace": {
+      "x": 8,
+      "y": 252,
+      "w": 247,
+      "h": 2230,
+      "scrollW": 594,
+      "clientW": 247,
+      "scrollH": 2230,
+      "clientH": 2230
+    },
+    "properties": {
+      "x": 1640,
+      "y": 252,
+      "w": 271,
+      "h": 1299,
+      "scrollW": 271,
+      "clientW": 271,
+      "scrollH": 1299,
+      "clientH": 1299
+    },
+    "commandInput": {
+      "x": 285,
+      "y": 926,
+      "w": 1339,
+      "h": 26,
+      "scrollW": 1337,
+      "clientW": 1337,
+      "scrollH": 24,
+      "clientH": 24
+    },
+    "manager": {
+      "x": 1140,
+      "y": 303,
+      "w": 480,
+      "h": 525.59375,
+      "scrollW": 478,
+      "clientW": 478,
+      "scrollH": 1066,
+      "clientH": 524
+    },
+    "criteria": {
+      "x": 1153,
+      "y": 462.5,
+      "w": 454,
+      "h": 365.5,
+      "scrollW": 454,
+      "clientW": 454,
+      "scrollH": 366,
+      "clientH": 366
+    },
+    "toolspaceStatuses": [
+      "CURRENT",
+      "UNBUILT",
+      "UNBUILT"
+    ],
+    "managerRows": [
+      "DistSyncDistance2Right—Default Grade -2.000% → Distance 20.000 m · Overrides:0Current200.0",
+      "SurfSyncSurface4 (closed)RightEGDefault Fixed -50.000% (0.500H:1V) · Overrides:0Unbuilt200",
+      "ElevSyncElevation2Right—Default Grade -2.000% → Elevation 9.800 m · Overrides:0Unbuilt200."
+    ],
+    "propertiesStatus": "Current"
+  },
+  "1920-distance-elevation-control": {
+    "innerW": 1920,
+    "innerH": 1080,
+    "docScrollW": 1920,
+    "docScrollH": 1080,
+    "ribbon": {
+      "x": 0,
+      "y": 66,
+      "w": 1920,
+      "h": 120,
+      "scrollW": 1920,
+      "clientW": 1920,
+      "scrollH": 119,
+      "clientH": 119
+    },
+    "viewport": {
+      "x": 264,
+      "y": 215,
+      "w": 1368,
+      "h": 657,
+      "scrollW": 1368,
+      "clientW": 1368,
+      "scrollH": 657,
+      "clientH": 657
+    },
+    "toolspace": {
+      "x": 8,
+      "y": 252,
+      "w": 247,
+      "h": 2230,
+      "scrollW": 594,
+      "clientW": 247,
+      "scrollH": 2230,
+      "clientH": 2230
+    },
+    "properties": {
+      "x": 1640,
+      "y": 252,
+      "w": 271,
+      "h": 1299,
+      "scrollW": 271,
+      "clientW": 271,
+      "scrollH": 1299,
+      "clientH": 1299
+    },
+    "commandInput": {
+      "x": 285,
+      "y": 926,
+      "w": 1339,
+      "h": 26,
+      "scrollW": 1337,
+      "clientW": 1337,
+      "scrollH": 24,
+      "clientH": 24
+    },
+    "manager": {
+      "x": 1140,
+      "y": 303,
+      "w": 480,
+      "h": 525.59375,
+      "scrollW": 478,
+      "clientW": 478,
+      "scrollH": 1066,
+      "clientH": 524
+    },
+    "criteria": {
+      "x": 1153,
+      "y": 462.5,
+      "w": 454,
+      "h": 365.5,
+      "scrollW": 454,
+      "clientW": 454,
+      "scrollH": 366,
+      "clientH": 366
+    },
+    "toolspaceStatuses": [
+      "CURRENT",
+      "UNBUILT",
+      "UNBUILT"
+    ],
+    "managerRows": [
+      "DistSyncDistance2Right—Default Grade -2.000% → Distance 20.000 m · Overrides:0Current200.0",
+      "SurfSyncSurface4 (closed)RightEGDefault Fixed -50.000% (0.500H:1V) · Overrides:0Unbuilt200",
+      "ElevSyncElevation2Right—Default Grade -2.000% → Elevation 9.800 m · Overrides:0Unbuilt200."
+    ],
+    "propertiesStatus": "Current"
+  },
+  "1920-elevation-control": {
+    "innerW": 1920,
+    "innerH": 1080,
+    "docScrollW": 1920,
+    "docScrollH": 1080,
+    "ribbon": {
+      "x": 0,
+      "y": 66,
+      "w": 1920,
+      "h": 120,
+      "scrollW": 1920,
+      "clientW": 1920,
+      "scrollH": 119,
+      "clientH": 119
+    },
+    "viewport": {
+      "x": 264,
+      "y": 215,
+      "w": 1368,
+      "h": 657,
+      "scrollW": 1368,
+      "clientW": 1368,
+      "scrollH": 657,
+      "clientH": 657
+    },
+    "toolspace": {
+      "x": 8,
+      "y": 252,
+      "w": 247,
+      "h": 2230,
+      "scrollW": 594,
+      "clientW": 247,
+      "scrollH": 2230,
+      "clientH": 2230
+    },
+    "properties": {
+      "x": 1640,
+      "y": 252,
+      "w": 271,
+      "h": 1069,
+      "scrollW": 271,
+      "clientW": 271,
+      "scrollH": 1069,
+      "clientH": 1069
+    },
+    "commandInput": {
+      "x": 285,
+      "y": 926,
+      "w": 1339,
+      "h": 26,
+      "scrollW": 1337,
+      "clientW": 1337,
+      "scrollH": 24,
+      "clientH": 24
+    },
+    "manager": {
+      "x": 1140,
+      "y": 303,
+      "w": 480,
+      "h": 525.59375,
+      "scrollW": 478,
+      "clientW": 478,
+      "scrollH": 1066,
+      "clientH": 524
+    },
+    "criteria": {
+      "x": 1153,
+      "y": 462.5,
+      "w": 454,
+      "h": 365.5,
+      "scrollW": 454,
+      "clientW": 454,
+      "scrollH": 366,
+      "clientH": 366
+    },
+    "toolspaceStatuses": [
+      "CURRENT",
+      "UNBUILT",
+      "UNBUILT"
+    ],
+    "managerRows": [
+      "DistSyncDistance2Right—Default Grade -2.000% → Distance 20.000 m · Overrides:0Current200.0",
+      "SurfSyncSurface4 (closed)RightEGDefault Fixed -50.000% (0.500H:1V) · Overrides:0Unbuilt200",
+      "ElevSyncElevation2Right—Default Grade -2.000% → Elevation 9.800 m · Overrides:0Unbuilt200."
+    ],
+    "propertiesStatus": "Unbuilt"
+  },
+  "1920-surface-control": {
+    "innerW": 1920,
+    "innerH": 1080,
+    "docScrollW": 1920,
+    "docScrollH": 1080,
+    "ribbon": {
+      "x": 0,
+      "y": 66,
+      "w": 1920,
+      "h": 120,
+      "scrollW": 1920,
+      "clientW": 1920,
+      "scrollH": 119,
+      "clientH": 119
+    },
+    "viewport": {
+      "x": 264,
+      "y": 215,
+      "w": 1368,
+      "h": 657,
+      "scrollW": 1368,
+      "clientW": 1368,
+      "scrollH": 657,
+      "clientH": 657
+    },
+    "toolspace": {
+      "x": 8,
+      "y": 252,
+      "w": 247,
+      "h": 1514,
+      "scrollW": 362,
+      "clientW": 247,
+      "scrollH": 1514,
+      "clientH": 1514
+    },
+    "properties": {
+      "x": 1640,
+      "y": 252,
+      "w": 271,
+      "h": 1150,
+      "scrollW": 271,
+      "clientW": 271,
+      "scrollH": 1150,
+      "clientH": 1150
+    },
+    "commandInput": {
+      "x": 285,
+      "y": 926,
+      "w": 1339,
+      "h": 26,
+      "scrollW": 1337,
+      "clientW": 1337,
+      "scrollH": 24,
+      "clientH": 24
+    },
+    "manager": {
+      "x": 1140,
+      "y": 303,
+      "w": 480,
+      "h": 525.59375,
+      "scrollW": 478,
+      "clientW": 478,
+      "scrollH": 703,
+      "clientH": 524
+    },
+    "criteria": null,
+    "toolspaceStatuses": [],
+    "managerRows": [],
+    "propertiesStatus": null
+  },
+  "2560-unbuilt": {
+    "innerW": 2560,
+    "innerH": 1440,
+    "docScrollW": 2560,
+    "docScrollH": 1440,
+    "ribbon": {
+      "x": 0,
+      "y": 66,
+      "w": 2560,
+      "h": 120,
+      "scrollW": 2560,
+      "clientW": 2560,
+      "scrollH": 119,
+      "clientH": 119
+    },
+    "viewport": {
+      "x": 264,
+      "y": 215,
+      "w": 2008,
+      "h": 1017,
+      "scrollW": 2008,
+      "clientW": 2008,
+      "scrollH": 1017,
+      "clientH": 1017
+    },
+    "toolspace": {
+      "x": 8,
+      "y": 252,
+      "w": 247,
+      "h": 2092,
+      "scrollW": 362,
+      "clientW": 247,
+      "scrollH": 2092,
+      "clientH": 2092
+    },
+    "properties": {
+      "x": 2280,
+      "y": 252,
+      "w": 271,
+      "h": 525,
+      "scrollW": 271,
+      "clientW": 271,
+      "scrollH": 525,
+      "clientH": 525
+    },
+    "commandInput": {
+      "x": 285,
+      "y": 1286,
+      "w": 1979,
+      "h": 26,
+      "scrollW": 1977,
+      "clientW": 1977,
+      "scrollH": 24,
+      "clientH": 24
+    },
+    "manager": {
+      "x": 1780,
+      "y": 303,
+      "w": 480,
+      "h": 694.5,
+      "scrollW": 478,
+      "clientW": 478,
+      "scrollH": 693,
+      "clientH": 693
+    },
+    "criteria": null,
+    "toolspaceStatuses": [
+      "UNBUILT",
+      "UNBUILT",
+      "UNBUILT"
+    ],
+    "managerRows": [
+      "DistSyncDistance2Right—Default Grade -2.000% → Distance 20.000 m · Overrides:0Unbuilt200.0",
+      "SurfSyncSurface4 (closed)RightEGDefault Fixed -50.000% (0.500H:1V) · Overrides:0Unbuilt200",
+      "ElevSyncElevation2Right—Default Grade -2.000% → Elevation 9.800 m · Overrides:0Unbuilt200."
+    ],
+    "propertiesStatus": null
+  },
+  "2560-building": {
+    "innerW": 2560,
+    "innerH": 1440,
+    "docScrollW": 2560,
+    "docScrollH": 1440,
+    "ribbon": {
+      "x": 0,
+      "y": 66,
+      "w": 2560,
+      "h": 120,
+      "scrollW": 2560,
+      "clientW": 2560,
+      "scrollH": 119,
+      "clientH": 119
+    },
+    "viewport": {
+      "x": 264,
+      "y": 215,
+      "w": 2008,
+      "h": 1017,
+      "scrollW": 2008,
+      "clientW": 2008,
+      "scrollH": 1017,
+      "clientH": 1017
+    },
+    "toolspace": {
+      "x": 8,
+      "y": 252,
+      "w": 247,
+      "h": 2092,
+      "scrollW": 362,
+      "clientW": 247,
+      "scrollH": 2092,
+      "clientH": 2092
+    },
+    "properties": {
+      "x": 2280,
+      "y": 252,
+      "w": 271,
+      "h": 525,
+      "scrollW": 271,
+      "clientW": 271,
+      "scrollH": 525,
+      "clientH": 525
+    },
+    "commandInput": {
+      "x": 285,
+      "y": 1286,
+      "w": 1979,
+      "h": 26,
+      "scrollW": 1977,
+      "clientW": 1977,
+      "scrollH": 24,
+      "clientH": 24
+    },
+    "manager": {
+      "x": 1780,
+      "y": 303,
+      "w": 480,
+      "h": 719,
+      "scrollW": 478,
+      "clientW": 478,
+      "scrollH": 717,
+      "clientH": 717
+    },
+    "criteria": null,
+    "toolspaceStatuses": [
+      "BUILDING",
+      "UNBUILT",
+      "UNBUILT"
+    ],
+    "managerRows": [
+      "DistSyncDistance2Right—Default Grade -2.000% → Distance 20.000 m · Overrides:0Building200.",
+      "SurfSyncSurface4 (closed)RightEGDefault Fixed -50.000% (0.500H:1V) · Overrides:0Unbuilt200",
+      "ElevSyncElevation2Right—Default Grade -2.000% → Elevation 9.800 m · Overrides:0Unbuilt200."
+    ],
+    "propertiesStatus": null
+  },
+  "2560-properties-current": {
+    "innerW": 2560,
+    "innerH": 1440,
+    "docScrollW": 2560,
+    "docScrollH": 1440,
+    "ribbon": {
+      "x": 0,
+      "y": 66,
+      "w": 2560,
+      "h": 120,
+      "scrollW": 2560,
+      "clientW": 2560,
+      "scrollH": 119,
+      "clientH": 119
+    },
+    "viewport": {
+      "x": 264,
+      "y": 215,
+      "w": 2008,
+      "h": 1017,
+      "scrollW": 2008,
+      "clientW": 2008,
+      "scrollH": 1017,
+      "clientH": 1017
+    },
+    "toolspace": {
+      "x": 8,
+      "y": 252,
+      "w": 247,
+      "h": 2176,
+      "scrollW": 594,
+      "clientW": 247,
+      "scrollH": 2176,
+      "clientH": 2176
+    },
+    "properties": {
+      "x": 2280,
+      "y": 252,
+      "w": 271,
+      "h": 821,
+      "scrollW": 271,
+      "clientW": 271,
+      "scrollH": 821,
+      "clientH": 821
+    },
+    "commandInput": {
+      "x": 285,
+      "y": 1286,
+      "w": 1979,
+      "h": 26,
+      "scrollW": 1977,
+      "clientW": 1977,
+      "scrollH": 24,
+      "clientH": 24
+    },
+    "manager": null,
+    "criteria": null,
+    "toolspaceStatuses": [
+      "CURRENT",
+      "UNBUILT",
+      "UNBUILT"
+    ],
+    "managerRows": [],
+    "propertiesStatus": "Current"
+  },
+  "2560-current-toolspace-sync": {
+    "innerW": 2560,
+    "innerH": 1440,
+    "docScrollW": 2560,
+    "docScrollH": 1440,
+    "ribbon": {
+      "x": 0,
+      "y": 66,
+      "w": 2560,
+      "h": 120,
+      "scrollW": 2560,
+      "clientW": 2560,
+      "scrollH": 119,
+      "clientH": 119
+    },
+    "viewport": {
+      "x": 264,
+      "y": 215,
+      "w": 2008,
+      "h": 1017,
+      "scrollW": 2008,
+      "clientW": 2008,
+      "scrollH": 1017,
+      "clientH": 1017
+    },
+    "toolspace": {
+      "x": 8,
+      "y": 252,
+      "w": 247,
+      "h": 2176,
+      "scrollW": 594,
+      "clientW": 247,
+      "scrollH": 2176,
+      "clientH": 2176
+    },
+    "properties": {
+      "x": 2280,
+      "y": 252,
+      "w": 271,
+      "h": 821,
+      "scrollW": 271,
+      "clientW": 271,
+      "scrollH": 821,
+      "clientH": 821
+    },
+    "commandInput": {
+      "x": 285,
+      "y": 1286,
+      "w": 1979,
+      "h": 26,
+      "scrollW": 1977,
+      "clientW": 1977,
+      "scrollH": 24,
+      "clientH": 24
+    },
+    "manager": {
+      "x": 1780,
+      "y": 303,
+      "w": 480,
+      "h": 694.5,
+      "scrollW": 478,
+      "clientW": 478,
+      "scrollH": 693,
+      "clientH": 693
+    },
+    "criteria": null,
+    "toolspaceStatuses": [
+      "CURRENT",
+      "UNBUILT",
+      "UNBUILT"
+    ],
+    "managerRows": [
+      "DistSyncDistance2Right—Default Grade -2.000% → Distance 20.000 m · Overrides:0Current200.0",
+      "SurfSyncSurface4 (closed)RightEGDefault Fixed -50.000% (0.500H:1V) · Overrides:0Unbuilt200",
+      "ElevSyncElevation2Right—Default Grade -2.000% → Elevation 9.800 m · Overrides:0Unbuilt200."
+    ],
+    "propertiesStatus": "Current"
+  },
+  "2560-standalone-current": {
+    "innerW": 2560,
+    "innerH": 1440,
+    "docScrollW": 2560,
+    "docScrollH": 1440,
+    "ribbon": {
+      "x": 0,
+      "y": 66,
+      "w": 2560,
+      "h": 120,
+      "scrollW": 2560,
+      "clientW": 2560,
+      "scrollH": 119,
+      "clientH": 119
+    },
+    "viewport": {
+      "x": 264,
+      "y": 215,
+      "w": 2008,
+      "h": 1017,
+      "scrollW": 2008,
+      "clientW": 2008,
+      "scrollH": 1017,
+      "clientH": 1017
+    },
+    "toolspace": {
+      "x": 8,
+      "y": 252,
+      "w": 247,
+      "h": 2230,
+      "scrollW": 594,
+      "clientW": 247,
+      "scrollH": 2230,
+      "clientH": 2230
+    },
+    "properties": {
+      "x": 2280,
+      "y": 252,
+      "w": 271,
+      "h": 1299,
+      "scrollW": 271,
+      "clientW": 271,
+      "scrollH": 1299,
+      "clientH": 1299
+    },
+    "commandInput": {
+      "x": 285,
+      "y": 1286,
+      "w": 1979,
+      "h": 26,
+      "scrollW": 1977,
+      "clientW": 1977,
+      "scrollH": 24,
+      "clientH": 24
+    },
+    "manager": {
+      "x": 1780,
+      "y": 303,
+      "w": 480,
+      "h": 726.5,
+      "scrollW": 478,
+      "clientW": 478,
+      "scrollH": 725,
+      "clientH": 725
+    },
+    "criteria": null,
+    "toolspaceStatuses": [
+      "CURRENT",
+      "UNBUILT",
+      "UNBUILT"
+    ],
+    "managerRows": [],
+    "propertiesStatus": "Current"
+  },
+  "2560-locked-family-editor": {
+    "innerW": 2560,
+    "innerH": 1440,
+    "docScrollW": 2560,
+    "docScrollH": 1440,
+    "ribbon": {
+      "x": 0,
+      "y": 66,
+      "w": 2560,
+      "h": 120,
+      "scrollW": 2560,
+      "clientW": 2560,
+      "scrollH": 119,
+      "clientH": 119
+    },
+    "viewport": {
+      "x": 264,
+      "y": 215,
+      "w": 2008,
+      "h": 1017,
+      "scrollW": 2008,
+      "clientW": 2008,
+      "scrollH": 1017,
+      "clientH": 1017
+    },
+    "toolspace": {
+      "x": 8,
+      "y": 252,
+      "w": 247,
+      "h": 2230,
+      "scrollW": 594,
+      "clientW": 247,
+      "scrollH": 2230,
+      "clientH": 2230
+    },
+    "properties": {
+      "x": 2280,
+      "y": 252,
+      "w": 271,
+      "h": 1299,
+      "scrollW": 271,
+      "clientW": 271,
+      "scrollH": 1299,
+      "clientH": 1299
+    },
+    "commandInput": {
+      "x": 285,
+      "y": 1286,
+      "w": 1979,
+      "h": 26,
+      "scrollW": 1977,
+      "clientW": 1977,
+      "scrollH": 24,
+      "clientH": 24
+    },
+    "manager": {
+      "x": 1780,
+      "y": 303,
+      "w": 480,
+      "h": 813.59375,
+      "scrollW": 478,
+      "clientW": 478,
+      "scrollH": 1066,
+      "clientH": 812
+    },
+    "criteria": {
+      "x": 1793,
+      "y": 750.5,
+      "w": 454,
+      "h": 365.5,
+      "scrollW": 454,
+      "clientW": 454,
+      "scrollH": 366,
+      "clientH": 366
+    },
+    "toolspaceStatuses": [
+      "CURRENT",
+      "UNBUILT",
+      "UNBUILT"
+    ],
+    "managerRows": [
+      "DistSyncDistance2Right—Default Grade -2.000% → Distance 20.000 m · Overrides:0Current200.0",
+      "SurfSyncSurface4 (closed)RightEGDefault Fixed -50.000% (0.500H:1V) · Overrides:0Unbuilt200",
+      "ElevSyncElevation2Right—Default Grade -2.000% → Elevation 9.800 m · Overrides:0Unbuilt200."
+    ],
+    "propertiesStatus": "Current"
+  },
+  "2560-distance-elevation-control": {
+    "innerW": 2560,
+    "innerH": 1440,
+    "docScrollW": 2560,
+    "docScrollH": 1440,
+    "ribbon": {
+      "x": 0,
+      "y": 66,
+      "w": 2560,
+      "h": 120,
+      "scrollW": 2560,
+      "clientW": 2560,
+      "scrollH": 119,
+      "clientH": 119
+    },
+    "viewport": {
+      "x": 264,
+      "y": 215,
+      "w": 2008,
+      "h": 1017,
+      "scrollW": 2008,
+      "clientW": 2008,
+      "scrollH": 1017,
+      "clientH": 1017
+    },
+    "toolspace": {
+      "x": 8,
+      "y": 252,
+      "w": 247,
+      "h": 2230,
+      "scrollW": 594,
+      "clientW": 247,
+      "scrollH": 2230,
+      "clientH": 2230
+    },
+    "properties": {
+      "x": 2280,
+      "y": 252,
+      "w": 271,
+      "h": 1299,
+      "scrollW": 271,
+      "clientW": 271,
+      "scrollH": 1299,
+      "clientH": 1299
+    },
+    "commandInput": {
+      "x": 285,
+      "y": 1286,
+      "w": 1979,
+      "h": 26,
+      "scrollW": 1977,
+      "clientW": 1977,
+      "scrollH": 24,
+      "clientH": 24
+    },
+    "manager": {
+      "x": 1780,
+      "y": 303,
+      "w": 480,
+      "h": 813.59375,
+      "scrollW": 478,
+      "clientW": 478,
+      "scrollH": 1066,
+      "clientH": 812
+    },
+    "criteria": {
+      "x": 1793,
+      "y": 750.5,
+      "w": 454,
+      "h": 365.5,
+      "scrollW": 454,
+      "clientW": 454,
+      "scrollH": 366,
+      "clientH": 366
+    },
+    "toolspaceStatuses": [
+      "CURRENT",
+      "UNBUILT",
+      "UNBUILT"
+    ],
+    "managerRows": [
+      "DistSyncDistance2Right—Default Grade -2.000% → Distance 20.000 m · Overrides:0Current200.0",
+      "SurfSyncSurface4 (closed)RightEGDefault Fixed -50.000% (0.500H:1V) · Overrides:0Unbuilt200",
+      "ElevSyncElevation2Right—Default Grade -2.000% → Elevation 9.800 m · Overrides:0Unbuilt200."
+    ],
+    "propertiesStatus": "Current"
+  },
+  "2560-elevation-control": {
+    "innerW": 2560,
+    "innerH": 1440,
+    "docScrollW": 2560,
+    "docScrollH": 1440,
+    "ribbon": {
+      "x": 0,
+      "y": 66,
+      "w": 2560,
+      "h": 120,
+      "scrollW": 2560,
+      "clientW": 2560,
+      "scrollH": 119,
+      "clientH": 119
+    },
+    "viewport": {
+      "x": 264,
+      "y": 215,
+      "w": 2008,
+      "h": 1017,
+      "scrollW": 2008,
+      "clientW": 2008,
+      "scrollH": 1017,
+      "clientH": 1017
+    },
+    "toolspace": {
+      "x": 8,
+      "y": 252,
+      "w": 247,
+      "h": 2230,
+      "scrollW": 594,
+      "clientW": 247,
+      "scrollH": 2230,
+      "clientH": 2230
+    },
+    "properties": {
+      "x": 2280,
+      "y": 252,
+      "w": 271,
+      "h": 1069,
+      "scrollW": 271,
+      "clientW": 271,
+      "scrollH": 1069,
+      "clientH": 1069
+    },
+    "commandInput": {
+      "x": 285,
+      "y": 1286,
+      "w": 1979,
+      "h": 26,
+      "scrollW": 1977,
+      "clientW": 1977,
+      "scrollH": 24,
+      "clientH": 24
+    },
+    "manager": {
+      "x": 1780,
+      "y": 303,
+      "w": 480,
+      "h": 813.59375,
+      "scrollW": 478,
+      "clientW": 478,
+      "scrollH": 1066,
+      "clientH": 812
+    },
+    "criteria": {
+      "x": 1793,
+      "y": 750.5,
+      "w": 454,
+      "h": 365.5,
+      "scrollW": 454,
+      "clientW": 454,
+      "scrollH": 366,
+      "clientH": 366
+    },
+    "toolspaceStatuses": [
+      "CURRENT",
+      "UNBUILT",
+      "UNBUILT"
+    ],
+    "managerRows": [
+      "DistSyncDistance2Right—Default Grade -2.000% → Distance 20.000 m · Overrides:0Current200.0",
+      "SurfSyncSurface4 (closed)RightEGDefault Fixed -50.000% (0.500H:1V) · Overrides:0Unbuilt200",
+      "ElevSyncElevation2Right—Default Grade -2.000% → Elevation 9.800 m · Overrides:0Unbuilt200."
+    ],
+    "propertiesStatus": "Unbuilt"
+  },
+  "2560-surface-control": {
+    "innerW": 2560,
+    "innerH": 1440,
+    "docScrollW": 2560,
+    "docScrollH": 1440,
+    "ribbon": {
+      "x": 0,
+      "y": 66,
+      "w": 2560,
+      "h": 120,
+      "scrollW": 2560,
+      "clientW": 2560,
+      "scrollH": 119,
+      "clientH": 119
+    },
+    "viewport": {
+      "x": 264,
+      "y": 215,
+      "w": 2008,
+      "h": 1017,
+      "scrollW": 2008,
+      "clientW": 2008,
+      "scrollH": 1017,
+      "clientH": 1017
+    },
+    "toolspace": {
+      "x": 8,
+      "y": 252,
+      "w": 247,
+      "h": 1514,
+      "scrollW": 362,
+      "clientW": 247,
+      "scrollH": 1514,
+      "clientH": 1514
+    },
+    "properties": {
+      "x": 2280,
+      "y": 252,
+      "w": 271,
+      "h": 1150,
+      "scrollW": 271,
+      "clientW": 271,
+      "scrollH": 1150,
+      "clientH": 1150
+    },
+    "commandInput": {
+      "x": 285,
+      "y": 1286,
+      "w": 1979,
+      "h": 26,
+      "scrollW": 1977,
+      "clientW": 1977,
+      "scrollH": 24,
+      "clientH": 24
+    },
+    "manager": {
+      "x": 1780,
+      "y": 303,
+      "w": 480,
+      "h": 704.5,
+      "scrollW": 478,
+      "clientW": 478,
+      "scrollH": 703,
+      "clientH": 703
+    },
+    "criteria": null,
+    "toolspaceStatuses": [],
+    "managerRows": [],
+    "propertiesStatus": null
+  },
+  "1366-needs-recalc": {
+    "innerW": 1366,
+    "innerH": 768,
+    "docScrollW": 1366,
+    "docScrollH": 768,
+    "ribbon": {
+      "x": 0,
+      "y": 66,
+      "w": 1366,
+      "h": 120,
+      "scrollW": 1366,
+      "clientW": 1366,
+      "scrollH": 119,
+      "clientH": 119
+    },
+    "viewport": {
+      "x": 264,
+      "y": 215,
+      "w": 814,
+      "h": 345,
+      "scrollW": 814,
+      "clientW": 814,
+      "scrollH": 345,
+      "clientH": 345
+    },
+    "toolspace": {
+      "x": 8,
+      "y": 252,
+      "w": 247,
+      "h": 1738,
+      "scrollW": 622,
+      "clientW": 247,
+      "scrollH": 1738,
+      "clientH": 1738
+    },
+    "properties": {
+      "x": 1086,
+      "y": 252,
+      "w": 271,
+      "h": 525,
+      "scrollW": 271,
+      "clientW": 271,
+      "scrollH": 525,
+      "clientH": 525
+    },
+    "commandInput": {
+      "x": 285,
+      "y": 614,
+      "w": 785,
+      "h": 26,
+      "scrollW": 783,
+      "clientW": 783,
+      "scrollH": 24,
+      "clientH": 24
+    },
+    "manager": {
+      "x": 586,
+      "y": 285,
+      "w": 480,
+      "h": 276,
+      "scrollW": 478,
+      "clientW": 478,
+      "scrollH": 680,
+      "clientH": 274
+    },
+    "criteria": null,
+    "toolspaceStatuses": [
+      "NEEDS_RECALC"
+    ],
+    "managerRows": [
+      "PadFailDistance4 (closed)Right—Default Grade -50.000% → Distance 25.000 m · Overrides:1Nee"
+    ],
+    "propertiesStatus": null
+  },
+  "1366-failed-stale": {
+    "innerW": 1366,
+    "innerH": 768,
+    "docScrollW": 1366,
+    "docScrollH": 768,
+    "ribbon": {
+      "x": 0,
+      "y": 66,
+      "w": 1366,
+      "h": 120,
+      "scrollW": 1366,
+      "clientW": 1366,
+      "scrollH": 119,
+      "clientH": 119
+    },
+    "viewport": {
+      "x": 264,
+      "y": 215,
+      "w": 814,
+      "h": 345,
+      "scrollW": 814,
+      "clientW": 814,
+      "scrollH": 345,
+      "clientH": 345
+    },
+    "toolspace": {
+      "x": 8,
+      "y": 252,
+      "w": 247,
+      "h": 1796,
+      "scrollW": 622,
+      "clientW": 247,
+      "scrollH": 1796,
+      "clientH": 1796
+    },
+    "properties": {
+      "x": 1086,
+      "y": 252,
+      "w": 271,
+      "h": 525,
+      "scrollW": 271,
+      "clientW": 271,
+      "scrollH": 525,
+      "clientH": 525
+    },
+    "commandInput": {
+      "x": 285,
+      "y": 614,
+      "w": 785,
+      "h": 26,
+      "scrollW": 783,
+      "clientW": 783,
+      "scrollH": 24,
+      "clientH": 24
+    },
+    "manager": {
+      "x": 586,
+      "y": 285,
+      "w": 480,
+      "h": 276,
+      "scrollW": 478,
+      "clientW": 478,
+      "scrollH": 697,
+      "clientH": 274
+    },
+    "criteria": null,
+    "toolspaceStatuses": [
+      "FAILED"
+    ],
+    "managerRows": [
+      "PadFailDistance4 (closed)Right—Default Grade -50.000% → Distance 25.000 m · Overrides:1Fai"
+    ],
+    "propertiesStatus": null
+  },
+  "1366-diagnostic": {
+    "innerW": 1366,
+    "innerH": 768,
+    "docScrollW": 1366,
+    "docScrollH": 768,
+    "ribbon": {
+      "x": 0,
+      "y": 66,
+      "w": 1366,
+      "h": 120,
+      "scrollW": 1366,
+      "clientW": 1366,
+      "scrollH": 119,
+      "clientH": 119
+    },
+    "viewport": {
+      "x": 264,
+      "y": 215,
+      "w": 814,
+      "h": 345,
+      "scrollW": 814,
+      "clientW": 814,
+      "scrollH": 345,
+      "clientH": 345
+    },
+    "toolspace": {
+      "x": 8,
+      "y": 252,
+      "w": 247,
+      "h": 1796,
+      "scrollW": 622,
+      "clientW": 247,
+      "scrollH": 1796,
+      "clientH": 1796
+    },
+    "properties": {
+      "x": 1086,
+      "y": 252,
+      "w": 271,
+      "h": 525,
+      "scrollW": 271,
+      "clientW": 271,
+      "scrollH": 525,
+      "clientH": 525
+    },
+    "commandInput": {
+      "x": 285,
+      "y": 614,
+      "w": 785,
+      "h": 26,
+      "scrollW": 783,
+      "clientW": 783,
+      "scrollH": 24,
+      "clientH": 24
+    },
+    "manager": {
+      "x": 586,
+      "y": 285,
+      "w": 480,
+      "h": 276,
+      "scrollW": 478,
+      "clientW": 478,
+      "scrollH": 697,
+      "clientH": 274
+    },
+    "criteria": null,
+    "toolspaceStatuses": [
+      "FAILED"
+    ],
+    "managerRows": [
+      "PadFailDistance4 (closed)Right—Default Grade -50.000% → Distance 25.000 m · Overrides:1Fai"
+    ],
+    "propertiesStatus": null
+  },
+  "1920-needs-recalc": {
+    "innerW": 1920,
+    "innerH": 1080,
+    "docScrollW": 1920,
+    "docScrollH": 1080,
+    "ribbon": {
+      "x": 0,
+      "y": 66,
+      "w": 1920,
+      "h": 120,
+      "scrollW": 1920,
+      "clientW": 1920,
+      "scrollH": 119,
+      "clientH": 119
+    },
+    "viewport": {
+      "x": 264,
+      "y": 215,
+      "w": 1368,
+      "h": 657,
+      "scrollW": 1368,
+      "clientW": 1368,
+      "scrollH": 657,
+      "clientH": 657
+    },
+    "toolspace": {
+      "x": 8,
+      "y": 252,
+      "w": 247,
+      "h": 1738,
+      "scrollW": 622,
+      "clientW": 247,
+      "scrollH": 1738,
+      "clientH": 1738
+    },
+    "properties": {
+      "x": 1640,
+      "y": 252,
+      "w": 271,
+      "h": 525,
+      "scrollW": 271,
+      "clientW": 271,
+      "scrollH": 525,
+      "clientH": 525
+    },
+    "commandInput": {
+      "x": 285,
+      "y": 926,
+      "w": 1339,
+      "h": 26,
+      "scrollW": 1337,
+      "clientW": 1337,
+      "scrollH": 24,
+      "clientH": 24
+    },
+    "manager": {
+      "x": 1140,
+      "y": 303,
+      "w": 480,
+      "h": 525.59375,
+      "scrollW": 478,
+      "clientW": 478,
+      "scrollH": 680,
+      "clientH": 524
+    },
+    "criteria": null,
+    "toolspaceStatuses": [
+      "NEEDS_RECALC"
+    ],
+    "managerRows": [
+      "PadFailDistance4 (closed)Right—Default Grade -50.000% → Distance 25.000 m · Overrides:1Nee"
+    ],
+    "propertiesStatus": null
+  },
+  "1920-failed-stale": {
+    "innerW": 1920,
+    "innerH": 1080,
+    "docScrollW": 1920,
+    "docScrollH": 1080,
+    "ribbon": {
+      "x": 0,
+      "y": 66,
+      "w": 1920,
+      "h": 120,
+      "scrollW": 1920,
+      "clientW": 1920,
+      "scrollH": 119,
+      "clientH": 119
+    },
+    "viewport": {
+      "x": 264,
+      "y": 215,
+      "w": 1368,
+      "h": 657,
+      "scrollW": 1368,
+      "clientW": 1368,
+      "scrollH": 657,
+      "clientH": 657
+    },
+    "toolspace": {
+      "x": 8,
+      "y": 252,
+      "w": 247,
+      "h": 1796,
+      "scrollW": 622,
+      "clientW": 247,
+      "scrollH": 1796,
+      "clientH": 1796
+    },
+    "properties": {
+      "x": 1640,
+      "y": 252,
+      "w": 271,
+      "h": 525,
+      "scrollW": 271,
+      "clientW": 271,
+      "scrollH": 525,
+      "clientH": 525
+    },
+    "commandInput": {
+      "x": 285,
+      "y": 926,
+      "w": 1339,
+      "h": 26,
+      "scrollW": 1337,
+      "clientW": 1337,
+      "scrollH": 24,
+      "clientH": 24
+    },
+    "manager": {
+      "x": 1140,
+      "y": 303,
+      "w": 480,
+      "h": 525.59375,
+      "scrollW": 478,
+      "clientW": 478,
+      "scrollH": 697,
+      "clientH": 524
+    },
+    "criteria": null,
+    "toolspaceStatuses": [
+      "FAILED"
+    ],
+    "managerRows": [
+      "PadFailDistance4 (closed)Right—Default Grade -50.000% → Distance 25.000 m · Overrides:1Fai"
+    ],
+    "propertiesStatus": null
+  },
+  "1920-diagnostic": {
+    "innerW": 1920,
+    "innerH": 1080,
+    "docScrollW": 1920,
+    "docScrollH": 1080,
+    "ribbon": {
+      "x": 0,
+      "y": 66,
+      "w": 1920,
+      "h": 120,
+      "scrollW": 1920,
+      "clientW": 1920,
+      "scrollH": 119,
+      "clientH": 119
+    },
+    "viewport": {
+      "x": 264,
+      "y": 215,
+      "w": 1368,
+      "h": 657,
+      "scrollW": 1368,
+      "clientW": 1368,
+      "scrollH": 657,
+      "clientH": 657
+    },
+    "toolspace": {
+      "x": 8,
+      "y": 252,
+      "w": 247,
+      "h": 1796,
+      "scrollW": 622,
+      "clientW": 247,
+      "scrollH": 1796,
+      "clientH": 1796
+    },
+    "properties": {
+      "x": 1640,
+      "y": 252,
+      "w": 271,
+      "h": 525,
+      "scrollW": 271,
+      "clientW": 271,
+      "scrollH": 525,
+      "clientH": 525
+    },
+    "commandInput": {
+      "x": 285,
+      "y": 926,
+      "w": 1339,
+      "h": 26,
+      "scrollW": 1337,
+      "clientW": 1337,
+      "scrollH": 24,
+      "clientH": 24
+    },
+    "manager": {
+      "x": 1140,
+      "y": 303,
+      "w": 480,
+      "h": 525.59375,
+      "scrollW": 478,
+      "clientW": 478,
+      "scrollH": 697,
+      "clientH": 524
+    },
+    "criteria": null,
+    "toolspaceStatuses": [
+      "FAILED"
+    ],
+    "managerRows": [
+      "PadFailDistance4 (closed)Right—Default Grade -50.000% → Distance 25.000 m · Overrides:1Fai"
+    ],
+    "propertiesStatus": null
+  },
+  "2560-needs-recalc": {
+    "innerW": 2560,
+    "innerH": 1440,
+    "docScrollW": 2560,
+    "docScrollH": 1440,
+    "ribbon": {
+      "x": 0,
+      "y": 66,
+      "w": 2560,
+      "h": 120,
+      "scrollW": 2560,
+      "clientW": 2560,
+      "scrollH": 119,
+      "clientH": 119
+    },
+    "viewport": {
+      "x": 264,
+      "y": 215,
+      "w": 2008,
+      "h": 1017,
+      "scrollW": 2008,
+      "clientW": 2008,
+      "scrollH": 1017,
+      "clientH": 1017
+    },
+    "toolspace": {
+      "x": 8,
+      "y": 252,
+      "w": 247,
+      "h": 1738,
+      "scrollW": 622,
+      "clientW": 247,
+      "scrollH": 1738,
+      "clientH": 1738
+    },
+    "properties": {
+      "x": 2280,
+      "y": 252,
+      "w": 271,
+      "h": 525,
+      "scrollW": 271,
+      "clientW": 271,
+      "scrollH": 525,
+      "clientH": 525
+    },
+    "commandInput": {
+      "x": 285,
+      "y": 1286,
+      "w": 1979,
+      "h": 26,
+      "scrollW": 1977,
+      "clientW": 1977,
+      "scrollH": 24,
+      "clientH": 24
+    },
+    "manager": {
+      "x": 1780,
+      "y": 303,
+      "w": 480,
+      "h": 682,
+      "scrollW": 478,
+      "clientW": 478,
+      "scrollH": 680,
+      "clientH": 680
+    },
+    "criteria": null,
+    "toolspaceStatuses": [
+      "NEEDS_RECALC"
+    ],
+    "managerRows": [
+      "PadFailDistance4 (closed)Right—Default Grade -50.000% → Distance 25.000 m · Overrides:1Nee"
+    ],
+    "propertiesStatus": null
+  },
+  "2560-failed-stale": {
+    "innerW": 2560,
+    "innerH": 1440,
+    "docScrollW": 2560,
+    "docScrollH": 1440,
+    "ribbon": {
+      "x": 0,
+      "y": 66,
+      "w": 2560,
+      "h": 120,
+      "scrollW": 2560,
+      "clientW": 2560,
+      "scrollH": 119,
+      "clientH": 119
+    },
+    "viewport": {
+      "x": 264,
+      "y": 215,
+      "w": 2008,
+      "h": 1017,
+      "scrollW": 2008,
+      "clientW": 2008,
+      "scrollH": 1017,
+      "clientH": 1017
+    },
+    "toolspace": {
+      "x": 8,
+      "y": 252,
+      "w": 247,
+      "h": 1796,
+      "scrollW": 622,
+      "clientW": 247,
+      "scrollH": 1796,
+      "clientH": 1796
+    },
+    "properties": {
+      "x": 2280,
+      "y": 252,
+      "w": 271,
+      "h": 525,
+      "scrollW": 271,
+      "clientW": 271,
+      "scrollH": 525,
+      "clientH": 525
+    },
+    "commandInput": {
+      "x": 285,
+      "y": 1286,
+      "w": 1979,
+      "h": 26,
+      "scrollW": 1977,
+      "clientW": 1977,
+      "scrollH": 24,
+      "clientH": 24
+    },
+    "manager": {
+      "x": 1780,
+      "y": 303,
+      "w": 480,
+      "h": 698.5,
+      "scrollW": 478,
+      "clientW": 478,
+      "scrollH": 697,
+      "clientH": 697
+    },
+    "criteria": null,
+    "toolspaceStatuses": [
+      "FAILED"
+    ],
+    "managerRows": [
+      "PadFailDistance4 (closed)Right—Default Grade -50.000% → Distance 25.000 m · Overrides:1Fai"
+    ],
+    "propertiesStatus": null
+  },
+  "2560-diagnostic": {
+    "innerW": 2560,
+    "innerH": 1440,
+    "docScrollW": 2560,
+    "docScrollH": 1440,
+    "ribbon": {
+      "x": 0,
+      "y": 66,
+      "w": 2560,
+      "h": 120,
+      "scrollW": 2560,
+      "clientW": 2560,
+      "scrollH": 119,
+      "clientH": 119
+    },
+    "viewport": {
+      "x": 264,
+      "y": 215,
+      "w": 2008,
+      "h": 1017,
+      "scrollW": 2008,
+      "clientW": 2008,
+      "scrollH": 1017,
+      "clientH": 1017
+    },
+    "toolspace": {
+      "x": 8,
+      "y": 252,
+      "w": 247,
+      "h": 1796,
+      "scrollW": 622,
+      "clientW": 247,
+      "scrollH": 1796,
+      "clientH": 1796
+    },
+    "properties": {
+      "x": 2280,
+      "y": 252,
+      "w": 271,
+      "h": 525,
+      "scrollW": 271,
+      "clientW": 271,
+      "scrollH": 525,
+      "clientH": 525
+    },
+    "commandInput": {
+      "x": 285,
+      "y": 1286,
+      "w": 1979,
+      "h": 26,
+      "scrollW": 1977,
+      "clientW": 1977,
+      "scrollH": 24,
+      "clientH": 24
+    },
+    "manager": {
+      "x": 1780,
+      "y": 303,
+      "w": 480,
+      "h": 698.5,
+      "scrollW": 478,
+      "clientW": 478,
+      "scrollH": 697,
+      "clientH": 697
+    },
+    "criteria": null,
+    "toolspaceStatuses": [
+      "FAILED"
+    ],
+    "managerRows": [
+      "PadFailDistance4 (closed)Right—Default Grade -50.000% → Distance 25.000 m · Overrides:1Fai"
+    ],
+    "propertiesStatus": null
+  },
+  "1366-cutfill-default-valid": {
+    "innerW": 1366,
+    "innerH": 768,
+    "docScrollW": 1366,
+    "docScrollH": 768,
+    "ribbon": {
+      "x": 0,
+      "y": 66,
+      "w": 1366,
+      "h": 120,
+      "scrollW": 1366,
+      "clientW": 1366,
+      "scrollH": 119,
+      "clientH": 119
+    },
+    "viewport": {
+      "x": 264,
+      "y": 215,
+      "w": 814,
+      "h": 345,
+      "scrollW": 814,
+      "clientW": 814,
+      "scrollH": 345,
+      "clientH": 345
+    },
+    "toolspace": {
+      "x": 8,
+      "y": 252,
+      "w": 247,
+      "h": 1514,
+      "scrollW": 362,
+      "clientW": 247,
+      "scrollH": 1514,
+      "clientH": 1514
+    },
+    "properties": {
+      "x": 1086,
+      "y": 252,
+      "w": 271,
+      "h": 1150,
+      "scrollW": 271,
+      "clientW": 271,
+      "scrollH": 1150,
+      "clientH": 1150
+    },
+    "commandInput": {
+      "x": 285,
+      "y": 614,
+      "w": 785,
+      "h": 26,
+      "scrollW": 783,
+      "clientW": 783,
+      "scrollH": 24,
+      "clientH": 24
+    },
+    "manager": {
+      "x": 586,
+      "y": 303,
+      "w": 480,
+      "h": 276,
+      "scrollW": 478,
+      "clientW": 478,
+      "scrollH": 703,
+      "clientH": 274
+    },
+    "criteria": null,
+    "toolspaceStatuses": [],
+    "managerRows": [],
+    "propertiesStatus": null
+  },
+  "1366-cutfill-reopen-valid": {
+    "innerW": 1366,
+    "innerH": 768,
+    "docScrollW": 1366,
+    "docScrollH": 768,
+    "ribbon": {
+      "x": 0,
+      "y": 66,
+      "w": 1366,
+      "h": 120,
+      "scrollW": 1366,
+      "clientW": 1366,
+      "scrollH": 119,
+      "clientH": 119
+    },
+    "viewport": {
+      "x": 264,
+      "y": 215,
+      "w": 814,
+      "h": 345,
+      "scrollW": 814,
+      "clientW": 814,
+      "scrollH": 345,
+      "clientH": 345
+    },
+    "toolspace": {
+      "x": 8,
+      "y": 252,
+      "w": 247,
+      "h": 1694,
+      "scrollW": 362,
+      "clientW": 247,
+      "scrollH": 1694,
+      "clientH": 1694
+    },
+    "properties": {
+      "x": 1086,
+      "y": 252,
+      "w": 271,
+      "h": 1150,
+      "scrollW": 271,
+      "clientW": 271,
+      "scrollH": 1150,
+      "clientH": 1150
+    },
+    "commandInput": {
+      "x": 285,
+      "y": 614,
+      "w": 785,
+      "h": 26,
+      "scrollW": 783,
+      "clientW": 783,
+      "scrollH": 24,
+      "clientH": 24
+    },
+    "manager": {
+      "x": 586,
+      "y": 297,
+      "w": 480,
+      "h": 276,
+      "scrollW": 478,
+      "clientW": 478,
+      "scrollH": 984,
+      "clientH": 274
+    },
+    "criteria": null,
+    "toolspaceStatuses": [],
+    "managerRows": [],
+    "propertiesStatus": null
+  },
+  "1920-cutfill-default-valid": {
+    "innerW": 1920,
+    "innerH": 1080,
+    "docScrollW": 1920,
+    "docScrollH": 1080,
+    "ribbon": {
+      "x": 0,
+      "y": 66,
+      "w": 1920,
+      "h": 120,
+      "scrollW": 1920,
+      "clientW": 1920,
+      "scrollH": 119,
+      "clientH": 119
+    },
+    "viewport": {
+      "x": 264,
+      "y": 215,
+      "w": 1368,
+      "h": 657,
+      "scrollW": 1368,
+      "clientW": 1368,
+      "scrollH": 657,
+      "clientH": 657
+    },
+    "toolspace": {
+      "x": 8,
+      "y": 252,
+      "w": 247,
+      "h": 1514,
+      "scrollW": 362,
+      "clientW": 247,
+      "scrollH": 1514,
+      "clientH": 1514
+    },
+    "properties": {
+      "x": 1640,
+      "y": 252,
+      "w": 271,
+      "h": 1150,
+      "scrollW": 271,
+      "clientW": 271,
+      "scrollH": 1150,
+      "clientH": 1150
+    },
+    "commandInput": {
+      "x": 285,
+      "y": 926,
+      "w": 1339,
+      "h": 26,
+      "scrollW": 1337,
+      "clientW": 1337,
+      "scrollH": 24,
+      "clientH": 24
+    },
+    "manager": {
+      "x": 1140,
+      "y": 303,
+      "w": 480,
+      "h": 525.59375,
+      "scrollW": 478,
+      "clientW": 478,
+      "scrollH": 703,
+      "clientH": 524
+    },
+    "criteria": null,
+    "toolspaceStatuses": [],
+    "managerRows": [],
+    "propertiesStatus": null
+  },
+  "1920-cutfill-reopen-valid": {
+    "innerW": 1920,
+    "innerH": 1080,
+    "docScrollW": 1920,
+    "docScrollH": 1080,
+    "ribbon": {
+      "x": 0,
+      "y": 66,
+      "w": 1920,
+      "h": 120,
+      "scrollW": 1920,
+      "clientW": 1920,
+      "scrollH": 119,
+      "clientH": 119
+    },
+    "viewport": {
+      "x": 264,
+      "y": 215,
+      "w": 1368,
+      "h": 657,
+      "scrollW": 1368,
+      "clientW": 1368,
+      "scrollH": 657,
+      "clientH": 657
+    },
+    "toolspace": {
+      "x": 8,
+      "y": 252,
+      "w": 247,
+      "h": 1694,
+      "scrollW": 362,
+      "clientW": 247,
+      "scrollH": 1694,
+      "clientH": 1694
+    },
+    "properties": {
+      "x": 1640,
+      "y": 252,
+      "w": 271,
+      "h": 1150,
+      "scrollW": 271,
+      "clientW": 271,
+      "scrollH": 1150,
+      "clientH": 1150
+    },
+    "commandInput": {
+      "x": 285,
+      "y": 926,
+      "w": 1339,
+      "h": 26,
+      "scrollW": 1337,
+      "clientW": 1337,
+      "scrollH": 24,
+      "clientH": 24
+    },
+    "manager": {
+      "x": 1140,
+      "y": 303,
+      "w": 480,
+      "h": 525.59375,
+      "scrollW": 478,
+      "clientW": 478,
+      "scrollH": 984,
+      "clientH": 524
+    },
+    "criteria": null,
+    "toolspaceStatuses": [],
+    "managerRows": [],
+    "propertiesStatus": null
+  },
+  "2560-cutfill-default-valid": {
+    "innerW": 2560,
+    "innerH": 1440,
+    "docScrollW": 2560,
+    "docScrollH": 1440,
+    "ribbon": {
+      "x": 0,
+      "y": 66,
+      "w": 2560,
+      "h": 120,
+      "scrollW": 2560,
+      "clientW": 2560,
+      "scrollH": 119,
+      "clientH": 119
+    },
+    "viewport": {
+      "x": 264,
+      "y": 215,
+      "w": 2008,
+      "h": 1017,
+      "scrollW": 2008,
+      "clientW": 2008,
+      "scrollH": 1017,
+      "clientH": 1017
+    },
+    "toolspace": {
+      "x": 8,
+      "y": 252,
+      "w": 247,
+      "h": 1514,
+      "scrollW": 362,
+      "clientW": 247,
+      "scrollH": 1514,
+      "clientH": 1514
+    },
+    "properties": {
+      "x": 2280,
+      "y": 252,
+      "w": 271,
+      "h": 1150,
+      "scrollW": 271,
+      "clientW": 271,
+      "scrollH": 1150,
+      "clientH": 1150
+    },
+    "commandInput": {
+      "x": 285,
+      "y": 1286,
+      "w": 1979,
+      "h": 26,
+      "scrollW": 1977,
+      "clientW": 1977,
+      "scrollH": 24,
+      "clientH": 24
+    },
+    "manager": {
+      "x": 1780,
+      "y": 303,
+      "w": 480,
+      "h": 704.5,
+      "scrollW": 478,
+      "clientW": 478,
+      "scrollH": 703,
+      "clientH": 703
+    },
+    "criteria": null,
+    "toolspaceStatuses": [],
+    "managerRows": [],
+    "propertiesStatus": null
+  },
+  "2560-cutfill-reopen-valid": {
+    "innerW": 2560,
+    "innerH": 1440,
+    "docScrollW": 2560,
+    "docScrollH": 1440,
+    "ribbon": {
+      "x": 0,
+      "y": 66,
+      "w": 2560,
+      "h": 120,
+      "scrollW": 2560,
+      "clientW": 2560,
+      "scrollH": 119,
+      "clientH": 119
+    },
+    "viewport": {
+      "x": 264,
+      "y": 215,
+      "w": 2008,
+      "h": 1017,
+      "scrollW": 2008,
+      "clientW": 2008,
+      "scrollH": 1017,
+      "clientH": 1017
+    },
+    "toolspace": {
+      "x": 8,
+      "y": 252,
+      "w": 247,
+      "h": 1694,
+      "scrollW": 362,
+      "clientW": 247,
+      "scrollH": 1694,
+      "clientH": 1694
+    },
+    "properties": {
+      "x": 2280,
+      "y": 252,
+      "w": 271,
+      "h": 1150,
+      "scrollW": 271,
+      "clientW": 271,
+      "scrollH": 1150,
+      "clientH": 1150
+    },
+    "commandInput": {
+      "x": 285,
+      "y": 1286,
+      "w": 1979,
+      "h": 26,
+      "scrollW": 1977,
+      "clientW": 1977,
+      "scrollH": 24,
+      "clientH": 24
+    },
+    "manager": {
+      "x": 1780,
+      "y": 303,
+      "w": 480,
+      "h": 813.59375,
+      "scrollW": 478,
+      "clientW": 478,
+      "scrollH": 984,
+      "clientH": 812
+    },
+    "criteria": null,
+    "toolspaceStatuses": [],
+    "managerRows": [],
+    "propertiesStatus": null
+  },
+  "1366-editwhilebuilding-building": {
+    "innerW": 1366,
+    "innerH": 768,
+    "docScrollW": 1366,
+    "docScrollH": 768,
+    "ribbon": {
+      "x": 0,
+      "y": 66,
+      "w": 1366,
+      "h": 120,
+      "scrollW": 1366,
+      "clientW": 1366,
+      "scrollH": 119,
+      "clientH": 119
+    },
+    "viewport": {
+      "x": 264,
+      "y": 215,
+      "w": 814,
+      "h": 345,
+      "scrollW": 814,
+      "clientW": 814,
+      "scrollH": 345,
+      "clientH": 345
+    },
+    "toolspace": {
+      "x": 8,
+      "y": 252,
+      "w": 247,
+      "h": 1572,
+      "scrollW": 362,
+      "clientW": 247,
+      "scrollH": 1572,
+      "clientH": 1572
+    },
+    "properties": {
+      "x": 1086,
+      "y": 252,
+      "w": 271,
+      "h": 525,
+      "scrollW": 271,
+      "clientW": 271,
+      "scrollH": 525,
+      "clientH": 525
+    },
+    "commandInput": {
+      "x": 285,
+      "y": 614,
+      "w": 785,
+      "h": 26,
+      "scrollW": 783,
+      "clientW": 783,
+      "scrollH": 24,
+      "clientH": 24
+    },
+    "manager": {
+      "x": 586,
+      "y": 303,
+      "w": 480,
+      "h": 276,
+      "scrollW": 478,
+      "clientW": 478,
+      "scrollH": 680,
+      "clientH": 274
+    },
+    "criteria": null,
+    "toolspaceStatuses": [
+      "BUILDING"
+    ],
+    "managerRows": [
+      "DistEditDistance2Right—Default Grade -2.000% → Distance 20.000 m · Overrides:0Building200."
+    ],
+    "propertiesStatus": null
+  },
+  "1366-editwhilebuilding-retired": {
+    "innerW": 1366,
+    "innerH": 768,
+    "docScrollW": 1366,
+    "docScrollH": 768,
+    "ribbon": {
+      "x": 0,
+      "y": 66,
+      "w": 1366,
+      "h": 120,
+      "scrollW": 1366,
+      "clientW": 1366,
+      "scrollH": 119,
+      "clientH": 119
+    },
+    "viewport": {
+      "x": 264,
+      "y": 215,
+      "w": 814,
+      "h": 345,
+      "scrollW": 814,
+      "clientW": 814,
+      "scrollH": 345,
+      "clientH": 345
+    },
+    "toolspace": {
+      "x": 8,
+      "y": 252,
+      "w": 247,
+      "h": 1572,
+      "scrollW": 362,
+      "clientW": 247,
+      "scrollH": 1572,
+      "clientH": 1572
+    },
+    "properties": {
+      "x": 1086,
+      "y": 252,
+      "w": 271,
+      "h": 525,
+      "scrollW": 271,
+      "clientW": 271,
+      "scrollH": 525,
+      "clientH": 525
+    },
+    "commandInput": {
+      "x": 285,
+      "y": 614,
+      "w": 785,
+      "h": 26,
+      "scrollW": 783,
+      "clientW": 783,
+      "scrollH": 24,
+      "clientH": 24
+    },
+    "manager": {
+      "x": 586,
+      "y": 285,
+      "w": 480,
+      "h": 276,
+      "scrollW": 478,
+      "clientW": 478,
+      "scrollH": 680,
+      "clientH": 274
+    },
+    "criteria": null,
+    "toolspaceStatuses": [
+      "UNBUILT"
+    ],
+    "managerRows": [
+      "DistEditDistance2Right—Default Grade -2.000% → Distance 15.000 m · Overrides:0Unbuilt200.0"
+    ],
+    "propertiesStatus": null
+  },
+  "1366-f2f-surveyTable-parcel": {
+    "innerW": 1366,
+    "innerH": 768,
+    "docScrollW": 1366,
+    "docScrollH": 768,
+    "ribbon": {
+      "x": 0,
+      "y": 66,
+      "w": 1366,
+      "h": 120,
+      "scrollW": 1366,
+      "clientW": 1366,
+      "scrollH": 119,
+      "clientH": 119
+    },
+    "viewport": {
+      "x": 264,
+      "y": 215,
+      "w": 814,
+      "h": 345,
+      "scrollW": 814,
+      "clientW": 814,
+      "scrollH": 345,
+      "clientH": 345
+    },
+    "toolspace": {
+      "x": 8,
+      "y": -163,
+      "w": 247,
+      "h": 1468,
+      "scrollW": 362,
+      "clientW": 247,
+      "scrollH": 1468,
+      "clientH": 1468
+    },
+    "properties": {
+      "x": 1086,
+      "y": 252,
+      "w": 271,
+      "h": 498,
+      "scrollW": 271,
+      "clientW": 271,
+      "scrollH": 498,
+      "clientH": 498
+    },
+    "commandInput": {
+      "x": 285,
+      "y": 614,
+      "w": 785,
+      "h": 26,
+      "scrollW": 783,
+      "clientW": 783,
+      "scrollH": 24,
+      "clientH": 24
+    },
+    "manager": null,
+    "criteria": null,
+    "toolspaceStatuses": [],
+    "managerRows": [],
+    "propertiesStatus": null
+  }
+}

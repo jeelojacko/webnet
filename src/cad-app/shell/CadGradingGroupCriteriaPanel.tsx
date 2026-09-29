@@ -56,6 +56,22 @@ const clampToFamily = (
 ): GradingCriterionDraft =>
   draft.method === family ? draft : { ...draft, method: family };
 
+/** Canonical identity of a persisted default criterion, used to resync the
+ * composer on default/family changes (undo/redo, Set Group Default) WITHOUT
+ * resetting it on override-only edits that leave the default untouched. */
+const criterionKey = (criterion: GradingCriterion): string => {
+  switch (criterion.kind) {
+    case 'fixed':
+      return `fixed:${criterion.gradeRatio}`;
+    case 'cut-fill':
+      return `cut-fill:${criterion.cutGradeRatio}:${criterion.fillGradeRatio}`;
+    case 'distance':
+      return `distance:${criterion.gradeRatio}:${criterion.distance}`;
+    case 'elevation':
+      return `elevation:${criterion.gradeRatio}:${criterion.targetElevation}`;
+  }
+};
+
 const draftForFamily = (
   family: GradingTerminationKind,
   criterion: GradingCriterion,
@@ -69,16 +85,22 @@ export const CadGradingGroupCriteriaPanel: React.FC<CadGradingGroupCriteriaPanel
   lengthUnit = 'm',
 }) => {
   const family = gradingTerminationKind(group.criterion);
+  const defaultKey = `${family}:${criterionKey(group.criterion)}`;
   const [selected, setSelected] = React.useState<ReadonlySet<number>>(new Set());
   const [draft, setDraft] = React.useState<GradingCriterionDraft>(() =>
     draftForFamily(family, group.criterion),
   );
-  // A newly selected group starts the composer from its own default.
+  // A newly selected group starts with no ticks.
+  React.useEffect(() => {
+    setSelected(new Set());
+  }, [group.id]);
+  // Refresh the composer whenever the persisted default/family changes: a new
+  // group, undo/redo, a family switch, or Set Group Default. Override-only
+  // edits leave the default untouched, so active typing survives them.
   React.useEffect(() => {
     setDraft(draftForFamily(gradingTerminationKind(group.criterion), group.criterion));
-    setSelected(new Set());
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [group.id]);
+  }, [group.id, defaultKey]);
 
   const overrideIndices = React.useMemo(() => {
     const out: number[] = [];

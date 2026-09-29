@@ -32,7 +32,7 @@ export const GradingPropertiesBlock: React.FC<{ row: CadGradingRow }> = ({ row }
         <div><dt>Criterion</dt><dd>{row.criterionText}</dd></div>
         <div><dt>Max distance</dt><dd>{numeric(row.maxSearchDistance)} {lengthUnit}</dd></div>
         <div><dt>Curve tolerance</dt><dd>{numeric(row.curveChordTolerance)} {lengthUnit}</dd></div>
-        <div><dt>Status</dt><dd>{row.statusText}{row.stale ? ' (stale result withheld)' : ''}</dd></div>
+        <div><dt>Status</dt><dd data-cad-grading-status-reason>{row.statusText}{row.stale ? ' (stale result withheld)' : ''}{row.diagnostic ? ` — ${row.diagnostic}` : ''}</dd></div>
         <div><dt>Accuracy</dt><dd>{row.accuracyText}</dd></div>
         {m ? (
           <>
