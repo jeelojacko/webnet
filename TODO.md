@@ -2375,4 +2375,4 @@ Deferred after Phase 20F.2; none block the shipped grading workflow (all fail cl
 - [ ] DEM surfaces.
 - [ ] Boolean repair of imported/edited TINs.
 - [ ] Selection-scoped GRIDGROUND.
-- [ ] Partial `snapshotsEqual` gaps left in place: `selectionPreview.type`, `layers[].role`, `lineTypes` name/dash, `sheets` beyond id/name (display-staleness only, pre-existing).
+- [x] `snapshotsEqual` nested gaps closed in Phase 20F.3 via the exhaustive comparator contract (`src/cad-app/shell/cadShellSnapshotEqual.ts`): `selectionPreview.type`, `layers[].role` (+ all other CadLayer fields), `lineTypes` name + dashPattern, and `sheets` dims/orientation/margins/viewports/titleBlockId/titleBlockFields/sheetObjects. Key coverage is now compile-time exact (unknown/missing keys fail typecheck); regression coverage in `tests/cad_shell_snapshot_contract.test.ts`; perf evidence in `docs/evidence/phase20f3-performance.md`. No snapshot field is intentionally excluded.

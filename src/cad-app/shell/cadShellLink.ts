@@ -5,6 +5,7 @@ import type {
   CadShellActions,
   CadWorkspaceSnapshot,
 } from './cadShellTypes';
+import { cadWorkspaceSnapshotsEqual } from './cadShellSnapshotEqual';
 
 /**
  * Phase 18B — one-way bridge between SurveyCadWorkspace (publisher) and the
@@ -71,108 +72,6 @@ export interface CadShellLink {
   requestDraftCommit: ((_next: DraftDocument) => void) | null;
 }
 
-const countsEqual = (
-  a: CadWorkspaceSnapshot['layerEntityCounts'],
-  b: CadWorkspaceSnapshot['layerEntityCounts'],
-): boolean => {
-  const keysA = Object.keys(a);
-  const keysB = Object.keys(b);
-  return keysA.length === keysB.length && keysA.every((key) => a[key] === b[key]);
-};
-
-const snapshotsEqual = (a: CadWorkspaceSnapshot | null, b: CadWorkspaceSnapshot | null): boolean => {
-  if (a === b) return true;
-  if (!a || !b) return false;
-  return (
-    a.drawingId === b.drawingId &&
-    a.drawingName === b.drawingName &&
-    a.units === b.units &&
-    a.entityCount === b.entityCount &&
-    a.selectionCount === b.selectionCount &&
-    a.activeCommandKey === b.activeCommandKey &&
-    a.commandPrompt === b.commandPrompt &&
-    a.commandInputValue === b.commandInputValue &&
-    a.canUndo === b.canUndo &&
-    a.canRedo === b.canRedo &&
-    a.historyDepth === b.historyDepth &&
-    a.redoDepth === b.redoDepth &&
-    a.snapStatusText === b.snapStatusText &&
-    a.stationCount === b.stationCount &&
-    a.dependencyStatus === b.dependencyStatus &&
-    arraysEqual(a.availableCommands, b.availableCommands) &&
-    arraysEqual(a.selectedEntityIds, b.selectedEntityIds) &&
-    layersEqual(a.layers, b.layers) &&
-    countsEqual(a.layerEntityCounts, b.layerEntityCounts) &&
-    a.currentLayerId === b.currentLayerId &&
-    arraysEqual(
-      a.lineTypes.map((entry) => entry.id),
-      b.lineTypes.map((entry) => entry.id),
-    ) &&
-    a.sheets.length === b.sheets.length &&
-    a.sheets.every((sheet, index) => sheet.id === b.sheets[index]?.id && sheet.name === b.sheets[index]?.name) &&
-    prefsEqual(a.snapPreferences, b.snapPreferences) &&
-    previewsEqual(a.selectionPreview, b.selectionPreview) &&
-    propertiesEqual(a.properties, b.properties) &&
-    JSON.stringify(a.survey) === JSON.stringify(b.survey) &&
-    JSON.stringify(a.surface) === JSON.stringify(b.surface) &&
-    JSON.stringify(a.volume) === JSON.stringify(b.volume) &&
-    JSON.stringify(a.analysis) === JSON.stringify(b.analysis) &&
-    JSON.stringify(a.profile) === JSON.stringify(b.profile) &&
-    JSON.stringify(a.section) === JSON.stringify(b.section) &&
-    JSON.stringify(a.blocks) === JSON.stringify(b.blocks) &&
-    JSON.stringify(a.annotation) === JSON.stringify(b.annotation) &&
-    JSON.stringify(a.f2f) === JSON.stringify(b.f2f) &&
-    JSON.stringify(a.surveyTable) === JSON.stringify(b.surveyTable) &&
-    JSON.stringify(a.parcel) === JSON.stringify(b.parcel) &&
-    JSON.stringify(a.grading) === JSON.stringify(b.grading) &&
-    JSON.stringify(a.gradingGroups) === JSON.stringify(b.gradingGroups) &&
-    JSON.stringify(a.featureLine) === JSON.stringify(b.featureLine)
-  );
-};
-
-const arraysEqual = (a: readonly string[], b: readonly string[]): boolean =>
-  a.length === b.length && a.every((entry, index) => entry === b[index]);
-
-const layersEqual = (a: CadWorkspaceSnapshot['layers'], b: CadWorkspaceSnapshot['layers']): boolean =>
-  a.length === b.length &&
-  a.every((layer, index) => {
-    const other = b[index];
-    return (
-      other != null &&
-      layer.id === other.id &&
-      layer.name === other.name &&
-      layer.color === other.color &&
-      layer.visible === other.visible &&
-      layer.locked === other.locked &&
-      layer.frozen === other.frozen &&
-      layer.printable === other.printable &&
-      layer.lineTypeId === other.lineTypeId &&
-      layer.description === other.description &&
-      (layer.transparency ?? 0) === (other.transparency ?? 0) &&
-      layer.lineweightMm === other.lineweightMm
-    );
-  });
-
-const prefsEqual = (
-  a: CadWorkspaceSnapshot['snapPreferences'],
-  b: CadWorkspaceSnapshot['snapPreferences'],
-): boolean => {
-  const keys = Object.keys(a) as Array<keyof typeof a>;
-  return keys.length === Object.keys(b).length && keys.every((key) => a[key] === b[key]);
-};
-
-const previewsEqual = (
-  a: CadWorkspaceSnapshot['selectionPreview'],
-  b: CadWorkspaceSnapshot['selectionPreview'],
-): boolean =>
-  a.length === b.length &&
-  a.every((entry, index) => entry.id === b[index]?.id && entry.label === b[index]?.label);
-
-const propertiesEqual = (
-  a: CadWorkspaceSnapshot['properties'],
-  b: CadWorkspaceSnapshot['properties'],
-): boolean => JSON.stringify(a) === JSON.stringify(b);
-
 export const createCadShellLink = (): CadShellLink => {
   let snapshot: CadWorkspaceSnapshot | null = null;
   let cursor: CadCursorPoint | null = null;
@@ -189,7 +88,7 @@ export const createCadShellLink = (): CadShellLink => {
       };
     },
     publish: (next) => {
-      if (snapshotsEqual(snapshot, next)) return;
+      if (cadWorkspaceSnapshotsEqual(snapshot, next)) return;
       snapshot = next;
       slowListeners.forEach((listener) => listener());
     },

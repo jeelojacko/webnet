@@ -8,6 +8,7 @@ import type { CadLayer, CadSnapKind } from '../src/engine/cad/cadTypes';
 import type { DraftSheet } from '../src/engine/cad/cadDraftTypes';
 import type { CadShellActions, CadWorkspaceSnapshot } from '../src/cad-app/shell/cadShellTypes';
 import { createCadShellLink, type CadShellLink } from '../src/cad-app/shell/cadShellLink';
+import { SNAPSHOT_JSON_SUBTREE_KEYS } from '../src/cad-app/shell/cadShellSnapshotEqual';
 import { CadToolspace } from '../src/cad-app/shell/CadToolspace';
 import { CadPropertiesPalette } from '../src/cad-app/shell/CadPropertiesPalette';
 import { CadLayerPalette } from '../src/cad-app/shell/CadLayerPalette';
@@ -753,24 +754,11 @@ describe('phase 21A properties palette row actions', () => {
 });
 
 describe('shell snapshot publish gate', () => {
-  // Compile-time completeness guard: every derived subtree key on the
-  // snapshot must be listed in DERIVED_SUBTREES below (type-checked).
-  const DERIVED_SUBTREES = [
-    'survey',
-    'surface',
-    'volume',
-    'analysis',
-    'profile',
-    'section',
-    'f2f',
-    'blocks',
-    'annotation',
-    'surveyTable',
-    'parcel',
-    'featureLine',
-    'grading',
-    'gradingGroups',
-  ] as const satisfies ReadonlyArray<keyof CadWorkspaceSnapshot>;
+  // Authoritative subtree list comes from the comparator contract itself
+  // (src/cad-app/shell/cadShellSnapshotEqual.ts); there is no parallel list to
+  // drift. Compile-time exactness (every snapshot key covered exactly once,
+  // unknown keys rejected) lives in that module and in
+  // cad_shell_snapshot_contract.test.ts.
 
   it('publishes when only the section subtree changes (rebuild statuses/views)', () => {
     const link = createCadShellLink();
@@ -794,7 +782,7 @@ describe('shell snapshot publish gate', () => {
     expect(notifications).toBe(3);
   });
 
-  it.each(DERIVED_SUBTREES)('publishes when only the %s subtree changes', (key) => {
+  it.each(SNAPSHOT_JSON_SUBTREE_KEYS)('publishes when only the %s subtree changes', (key) => {
     // Regression (20F.2 §5-6): f2f, surveyTable, parcel, grading, and
     // gradingGroups were missing from snapshotsEqual, so pure-derivation
     // transitions (e.g. grading UNBUILT -> BUILDING -> CURRENT) left the

@@ -29,7 +29,7 @@ import { cadBuildParcelClosureSummary } from '../src/engine/cad/cadCogoParcelGeo
 import { buildParcelCourseIds, resolveCadParcelCourses } from '../src/engine/cad/cadParcelCourses';
 import type { CadParcelEntity, CadProject } from '../src/engine/cad/cadTypes';
 
-const EVIDENCE_DIR = '/home/jacko/Code/webnet/docs/evidence/phase21a';
+const EVIDENCE_DIR = path.resolve(process.cwd(), 'docs/evidence/phase21a');
 
 /**
  * Attach the sidecar-captured PNG for this view (see header note). The

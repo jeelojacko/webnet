@@ -44,7 +44,7 @@ import {
 } from './cad-survey-plan-19a-helpers';
 import { layoutTab, sheetGeometryCount } from './cad-sheet-layout-19b-helpers';
 
-const EVIDENCE_DIR = '/home/jacko/Code/webnet/docs/evidence/phase19c';
+const EVIDENCE_DIR = path.resolve(process.cwd(), 'docs/evidence/phase19c');
 const WRITE_EVIDENCE = process.env.WRITE_19C_EVIDENCE === '1';
 
 const line = (id: string, fx: number, fy: number, tx: number, ty: number): CadLineEntity => ({

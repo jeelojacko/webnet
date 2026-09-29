@@ -9,7 +9,7 @@ import {
   serializeCadDrawingFile,
 } from '../src/engine/cad/cadDrawingFile';
 
-const EVIDENCE = '/home/jacko/Code/webnet/docs/evidence/phase20f1/before';
+const EVIDENCE = path.resolve(process.cwd(), 'docs/evidence/phase20f1/before');
 fs.mkdirSync(EVIDENCE, { recursive: true });
 // Manual BEFORE baseline: only runs with WEBNET_BEFORE_BASE set to the 4c966e4d
 // worktree dev server (production build fails there: absent @tauri-apps/api;
