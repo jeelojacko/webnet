@@ -1,4 +1,7 @@
+import { fileURLToPath } from 'node:url';
 import { configDefaults } from 'vitest/config';
+
+export const webnetProjectRoot = fileURLToPath(new URL('.', import.meta.url));
 
 /**
  * Shared base for every WebNet Vitest tier config (full/agent/wasm/release).

@@ -1,7 +1,7 @@
 import { defineConfig } from 'vitest/config';
 
 import { RELEASE_TESTS } from './scripts/testTiers';
-import { webnetVitestBase } from './vitest.shared';
+import { webnetProjectRoot, webnetVitestBase } from './vitest.shared';
 
 /**
  * RELEASE tier: only the fast automatic release-certification gate from
@@ -11,6 +11,7 @@ import { webnetVitestBase } from './vitest.shared';
  * evidence tier instead.
  */
 export default defineConfig({
+  root: webnetProjectRoot,
   test: {
     ...webnetVitestBase,
     include: [...RELEASE_TESTS],

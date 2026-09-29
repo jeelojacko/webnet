@@ -5,11 +5,13 @@ import path from 'node:path';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
+const projectRoot = path.resolve(__dirname, '..');
 const vitestEntrypoint = path.resolve(__dirname, '..', 'node_modules', 'vitest', 'vitest.mjs');
 
 const child = spawn(process.execPath, [vitestEntrypoint, ...process.argv.slice(2)], {
   stdio: ['inherit', 'pipe', 'pipe'],
   env: process.env,
+  cwd: projectRoot,
 });
 
 child.stdout.on('data', (chunk) => {
