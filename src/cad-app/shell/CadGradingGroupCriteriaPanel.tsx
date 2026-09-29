@@ -1,60 +1,84 @@
 /**
  * Phase 20E Wave-2A — per-course criteria editor (SHELL/UI ONLY).
+ * Phase 20F.1 — override composer rides the shared criterion machinery
+ * (`gradingCriterionDraftFromCriterion` + `parseGradingCriterionDraft` +
+ * `<CadGradingCriterionFields>`, no local parser) and locks to the group
+ * termination family: Surface groups offer Fixed + Cut/Fill only, Distance
+ * groups Distance-only, Elevation groups Elevation-only. Cross-family
+ * options are never offered, so the engine single-family gate cannot trip
+ * from this UI.
  *
  * COURSE CRITERIA table (Course / From / To / Type / Effective Criterion /
  * Source) over the persisted traversal. Override and Reset ride one
  * transaction each (`GROUP_SET/RESET_COURSE_CRITERIA`); multi-select apply
- * is a single command (one undo). "Apply to All as Default" is explicit:
- * set-group-default PLUS clear-overrides as two labeled Undo steps — never
- * a silent erase. Changing the group default shows a live preview
+ * is a single command (one undo). Sparse semantics: a criterion equal to
+ * the group default removes the override record (`criteriaEqual`).
+ * "Apply to All as Default" is explicit: set-group-default PLUS
+ * clear-overrides as two labeled Undo steps — never a silent erase.
+ * Changing the group default shows a live preview
  * ("N courses will change; M overrides remain") before commit.
  */
 import React from 'react';
+import {
+  gradingTerminationKind,
+  type GradingTerminationKind,
+} from '../../engine/cad/grading/gradingTypes';
 import type { GradingCriterion } from '../../engine/cad/grading/gradingTypes';
 import type { CadGradingGroup } from '../../engine/cad/grading/gradingGroupTypes';
 import type { CadGradingGroupShellCommand } from './cadGradingGroupShell';
+import { CadGradingCriterionFields } from './CadGradingCriterionFields';
+import {
+  gradingCriterionDraftFromCriterion,
+  parseGradingCriterionDraft,
+  type GradingCriterionDraft,
+} from './cadGradingCriterionInput';
 import { formatGradingCriterion } from './cadGradingShell';
 import {
+  courseCriterionTypeText,
   courseNumberLabel,
   effectiveCourseCriterion,
   isCourseCriterionOverride,
   shortVertexLabel,
 } from './cadGradingGroupCourseCriteria';
-import { buttonClass, inputClass } from '../../components/surveyCad/surveyManagerShared';
+import { buttonClass } from '../../components/surveyCad/surveyManagerShared';
 
 interface CadGradingGroupCriteriaPanelProps {
   group: CadGradingGroup;
   run: (_command: CadGradingGroupShellCommand) => boolean;
   onNotice: (_message: string) => void;
+  lengthUnit?: string;
 }
 
-const parseCriterion = (
-  kind: 'fixed' | 'cut-fill',
-  fixedText: string,
-  cutText: string,
-  fillText: string,
-): GradingCriterion | null => {
-  if (kind === 'fixed') {
-    const percent = Number(fixedText.trim());
-    if (!Number.isFinite(percent)) return null;
-    return { kind: 'fixed', gradeRatio: percent / 100 };
-  }
-  const cut = Number(cutText.trim());
-  const fill = Number(fillText.trim());
-  if (!Number.isFinite(cut) || !Number.isFinite(fill) || cut < 0 || fill < 0) return null;
-  return { kind: 'cut-fill', cutGradeRatio: cut / 100, fillGradeRatio: -fill / 100 };
-};
+/** Clamp a draft back to the group family (the composer never leaves it). */
+const clampToFamily = (
+  family: GradingTerminationKind,
+  draft: GradingCriterionDraft,
+): GradingCriterionDraft =>
+  draft.method === family ? draft : { ...draft, method: family };
+
+const draftForFamily = (
+  family: GradingTerminationKind,
+  criterion: GradingCriterion,
+): GradingCriterionDraft =>
+  clampToFamily(family, gradingCriterionDraftFromCriterion(criterion));
 
 export const CadGradingGroupCriteriaPanel: React.FC<CadGradingGroupCriteriaPanelProps> = ({
   group,
   run,
   onNotice,
+  lengthUnit = 'm',
 }) => {
+  const family = gradingTerminationKind(group.criterion);
   const [selected, setSelected] = React.useState<ReadonlySet<number>>(new Set());
-  const [kind, setKind] = React.useState<'fixed' | 'cut-fill'>('fixed');
-  const [fixedText, setFixedText] = React.useState('-2');
-  const [cutText, setCutText] = React.useState('50');
-  const [fillText, setFillText] = React.useState('33.333');
+  const [draft, setDraft] = React.useState<GradingCriterionDraft>(() =>
+    draftForFamily(family, group.criterion),
+  );
+  // A newly selected group starts the composer from its own default.
+  React.useEffect(() => {
+    setDraft(draftForFamily(gradingTerminationKind(group.criterion), group.criterion));
+    setSelected(new Set());
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [group.id]);
 
   const overrideIndices = React.useMemo(() => {
     const out: number[] = [];
@@ -76,7 +100,7 @@ export const CadGradingGroupCriteriaPanel: React.FC<CadGradingGroupCriteriaPanel
   };
 
   const applyTo = (indices: number[]): void => {
-    const criterion = parseCriterion(kind, fixedText, cutText, fillText);
+    const criterion = parseGradingCriterionDraft(draft);
     if (!criterion) {
       onNotice('Override rejected — check the criterion values.');
       return;
@@ -93,7 +117,7 @@ export const CadGradingGroupCriteriaPanel: React.FC<CadGradingGroupCriteriaPanel
     });
     onNotice(ok
       ? `${indices.length} course${indices.length === 1 ? '' : 's'} overridden — recalculate. Undo reverts (one step).`
-      : 'Override rejected — refs must name group courses exactly once.');
+      : 'Override rejected — no changes applied (check course refs and termination family).');
   };
 
   const resetSelected = (): void => {
@@ -113,7 +137,7 @@ export const CadGradingGroupCriteriaPanel: React.FC<CadGradingGroupCriteriaPanel
   };
 
   const setDefault = (): void => {
-    const criterion = parseCriterion(kind, fixedText, cutText, fillText);
+    const criterion = parseGradingCriterionDraft(draft);
     if (!criterion) {
       onNotice('Default rejected — check the criterion values.');
       return;
@@ -121,11 +145,11 @@ export const CadGradingGroupCriteriaPanel: React.FC<CadGradingGroupCriteriaPanel
     const ok = run({ key: 'GROUP_EDIT_CRITERIA', groupId: group.id, criterion });
     onNotice(ok
       ? `Group default set — ${defaultFollowerCount} course${defaultFollowerCount === 1 ? '' : 's'} changed, ${overrideIndices.length} override${overrideIndices.length === 1 ? '' : 's'} kept. Undo reverts (one step).`
-      : 'Default rejected — check the criterion values.');
+      : 'Default rejected — no changes applied (check the criterion values).');
   };
 
   const applyAllAsDefault = (): void => {
-    const criterion = parseCriterion(kind, fixedText, cutText, fillText);
+    const criterion = parseGradingCriterionDraft(draft);
     if (!criterion) {
       onNotice('Apply-to-all rejected — check the criterion values.');
       return;
@@ -141,13 +165,17 @@ export const CadGradingGroupCriteriaPanel: React.FC<CadGradingGroupCriteriaPanel
       return;
     }
     if (overrideIndices.length > 0) {
-      run({
+      const cleared = run({
         key: 'GROUP_RESET_COURSE_CRITERIA',
         groupId: group.id,
         courses: overrideIndices.map((i) => ({ ...group.sourceCourses[i]! })),
       });
+      onNotice(cleared
+        ? 'Applied to all as default — overrides cleared. Two Undo steps restore (clear, then default).'
+        : 'Group default set, but clearing overrides failed — clear them manually. Two Undo steps restore.');
+      return;
     }
-    onNotice('Applied to all as default — overrides cleared. Two Undo steps restore (clear, then default).');
+    onNotice('Applied to all as default — no overrides to clear. One Undo step restores.');
   };
 
   return (
@@ -177,7 +205,7 @@ export const CadGradingGroupCriteriaPanel: React.FC<CadGradingGroupCriteriaPanel
                   <td>{courseNumberLabel(index)}</td>
                   <td>{shortVertexLabel(course.vertexAId)}</td>
                   <td>{shortVertexLabel(course.vertexBId)}</td>
-                  <td>{effective.kind === 'fixed' ? 'Fixed' : 'Cut/Fill'}</td>
+                  <td>{courseCriterionTypeText(effective)}</td>
                   <td>{formatGradingCriterion(effective)}</td>
                   <td>{override ? 'Override' : 'Default'}</td>
                   <td>
@@ -206,30 +234,13 @@ export const CadGradingGroupCriteriaPanel: React.FC<CadGradingGroupCriteriaPanel
         </table>
       </div>
       <div className="mb-2 grid grid-cols-2 gap-2" data-cad-grading-group-criteria-form>
-        <label className="grid gap-1 text-[11px] text-slate-300">
-          Criterion kind
-          <select aria-label="Override criterion kind" className={inputClass} value={kind} onChange={(e) => setKind(e.target.value as 'fixed' | 'cut-fill')}>
-            <option value="fixed">Fixed grade</option>
-            <option value="cut-fill">Cut / Fill</option>
-          </select>
-        </label>
-        {kind === 'fixed' ? (
-          <label className="grid gap-1 text-[11px] text-slate-300">
-            Fixed signed percent (negative falls)
-            <input aria-label="Override fixed percent" className={inputClass} value={fixedText} onChange={(e) => setFixedText(e.target.value)} />
-          </label>
-        ) : (
-          <>
-            <label className="grid gap-1 text-[11px] text-slate-300">
-              Cut percent magnitude
-              <input aria-label="Override cut percent" className={inputClass} value={cutText} onChange={(e) => setCutText(e.target.value)} />
-            </label>
-            <label className="grid gap-1 text-[11px] text-slate-300">
-              Fill percent magnitude
-              <input aria-label="Override fill percent" className={inputClass} value={fillText} onChange={(e) => setFillText(e.target.value)} />
-            </label>
-          </>
-        )}
+        <CadGradingCriterionFields
+          draft={draft}
+          onChange={(next) => setDraft(clampToFamily(family, next))}
+          lengthUnit={lengthUnit}
+          dataPrefix="cad-grading-group-criteria"
+          methods={[family]}
+        />
       </div>
       <div className="mb-2 flex flex-wrap gap-1">
         <button type="button" className={buttonClass} onClick={() => applyTo([...selected])} data-cad-grading-group-criteria-apply-selected>

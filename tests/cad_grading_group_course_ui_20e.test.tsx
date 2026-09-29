@@ -151,7 +151,7 @@ describe('criteria panel dispatch', () => {
       expect(rows[0]?.textContent).toContain('Default');
       expect(rows[1]?.textContent).toContain('Course 2');
       expect(rows[1]?.textContent).toContain('Override');
-      expect(rows[1]?.textContent).toContain('Cut/Fill');
+      expect(rows[1]?.textContent).toContain('Surface Cut/Fill');
       expect(host.querySelector('[data-cad-grading-group-criteria-default]')?.textContent).toContain('Overrides: 1');
     } finally {
       act(() => { root.unmount(); });
@@ -206,9 +206,9 @@ describe('member reporting', () => {
   it('lists per-course source/type/grades with dashes in irrelevant columns', () => {
     const report = buildGroupInquiryReport(mixedGroup(), 'FL', 'Target', 'CURRENT', 'EXACT', fakeResult());
     expect(report).toContain('Course 1');
-    expect(report).toContain('Default Fixed');
+    expect(report).toContain('Default Surface Fixed');
     expect(report).toContain('Course 2');
-    expect(report).toContain('Override Cut/Fill');
+    expect(report).toContain('Override Surface Cut/Fill');
     // Fixed member: cut/fill columns carry no misleading values.
     expect(report).toContain('fixed -2.000% · cut — · fill —');
     // Cut/fill member: fixed column carries no misleading value.
@@ -220,12 +220,12 @@ describe('member reporting', () => {
     const csv = buildGroupCsv(mixedGroup(), 'CURRENT', 'EXACT', fakeResult());
     const lines = csv.split('\n');
     const header = lines.findIndex((line) =>
-      line.startsWith('Course,From,To,Criterion Source,Criterion Type,Fixed Grade,Cut Grade,Fill Grade,Classification,Source Length,Grading Area'),
+      line.startsWith('Course,From,To,Criterion Source,Criterion Type,Fixed Grade,Cut Grade,Fill Grade,Target Value,Classification,Source Length,Grading Area'),
     );
     expect(header).toBeGreaterThan(-1);
     expect(lines[header + 1]).toContain('Course 1,');
-    expect(lines[header + 1]).toContain('Default,Fixed');
-    expect(lines[header + 2]).toContain('Override,Cut/Fill');
+    expect(lines[header + 1]).toContain('Default,Surface Fixed');
+    expect(lines[header + 2]).toContain('Override,Surface Cut/Fill');
     // Grading area is group-level: never a per-member value.
     expect(lines[header + 1]?.split(',').pop()).toBe('—');
     expect(lines[header + 3]).toContain('Course 3,');
