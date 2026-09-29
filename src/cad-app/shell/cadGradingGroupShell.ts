@@ -7,9 +7,13 @@
  * (the workspace translates it to an undoable engine command); Calculate /
  * Extract / Bake route to the explicit group service actions.
  *
- * No viewport picking here: creation takes explicit args (the interactive
- * pick-flow belongs to the UI wave). The no-args GRADEGROUP shell entry
- * answers false until the UI wave supplies a selection-driven form.
+ * Phase 20F.3 — selection truthfulness: every selection-driven key resolves
+ * its target through `resolveGradingGroupRow` (explicit options.groupId,
+ * else the snapshot selection, each verified against
+ * `snapshot.gradingGroups.groups`). No viewport picking here; creation takes
+ * explicit args (the interactive pick-flow belongs to the UI wave). The
+ * no-args GRADEGROUP shell entry opens the manager definition tab, which
+ * owns the existing creation workflow — there is exactly one creation UI.
  */
 import type {
   GradingCriterion,
@@ -21,6 +25,7 @@ import type {
 } from '../../engine/cad/grading/gradingGroupTypes';
 import type { CadCommand } from '../../engine/cad/cadTransactions.types';
 import type { CadShellActions, CadWorkspaceSnapshot } from './cadShellTypes';
+import type { CadGradingGroupRow } from './cadGradingGroupSnapshot';
 
 /** Shell keys this adapter owns (rendered by the bounded Group group). */
 export const GRADINGGROUP_SHELL_KEYS: ReadonlySet<string> = new Set([
@@ -95,26 +100,93 @@ export interface GradingGroupShellOptions {
 const selectedGroupId = (options: GradingGroupShellOptions | undefined): string | null =>
   options?.groupId ?? null;
 
+/**
+ * Phase 20F.3 resolver rule (single selection authority for this adapter).
+ *
+ * Precedence with a snapshot present: (a) a valid explicit
+ * `options.groupId` (resolves to a row in
+ * `snapshot.gradingGroups.groups`); (b) the snapshot selection
+ * (`snapshot.gradingGroups.selectedGroupId`) resolving to a row. Anything
+ * else fails closed (null): never the first row, never a feature-line or
+ * name guess, never a cached-manager fallback. An explicit id that names no
+ * row fails closed WITHOUT falling back to the selection (a mistyped id
+ * must not silently operate on another group).
+ *
+ * Snapshot-unavailable rule: rows cannot be verified, so CALC / EXTRACT /
+ * BAKE honour an explicit `options.groupId` as an unverified passthrough
+ * (direct programmatic callers + existing tests require it; the workspace
+ * service itself fail-closes on broken refs) and fail closed without one.
+ * Manager openers pass an explicit id through (the manager validates it
+ * against its own rows). Dumb chrome (ribbon/registry) always supplies a
+ * snapshot, so its gates are always row-verified.
+ */
+export const resolveGradingGroupRow = (
+  snapshot: CadWorkspaceSnapshot | null | undefined,
+  options?: GradingGroupShellOptions,
+): CadGradingGroupRow | null => {
+  const groups = snapshot?.gradingGroups?.groups ?? [];
+  const explicit = selectedGroupId(options);
+  if (explicit != null) {
+    // Snapshot present: verify. Snapshot absent: no rows to verify
+    // against (passthrough handled by the callers, not here).
+    return groups.find((entry) => entry.id === explicit) ?? null;
+  }
+  const selected = snapshot?.gradingGroups?.selectedGroupId ?? null;
+  if (selected == null) return null;
+  return groups.find((entry) => entry.id === selected) ?? null;
+};
+
+/** Explicit id for snapshot-less dispatch (no row verification possible). */
+const unverifiedGroupId = (
+  snapshot: CadWorkspaceSnapshot | null | undefined,
+  options?: GradingGroupShellOptions,
+): string | null =>
+  snapshot?.gradingGroups != null ? null : (selectedGroupId(options) ?? null);
+
 export const gradingGroupShellAvailable = (
   key: string,
   actions: CadShellActions | null,
+  snapshot?: CadWorkspaceSnapshot | null,
 ): boolean => {
   if (!actions) return false;
   switch (key) {
     case 'GRADEGROUP':
-      return actions.runGradingGroupCommand != null;
+      // No-options ribbon path opens the manager create/definition workflow.
+      return actions.openGradingGroupManager != null;
     case 'GRADINGGROUP':
+      // Manager opener: the definition tab (CreateForm + table) is a useful
+      // empty state, so no selection is required. Now opens with the
+      // resolved selected id when one exists.
       return actions.openGradingGroupManager != null;
-    case 'GRADINGGROUPCALC':
-      return actions.requestGroupGradingCalculate != null;
-    case 'GRADINGGROUPINQUIRY':
-      return actions.openGradingGroupManager != null;
-    case 'GRADINGGROUPCRITERIA':
-      return actions.openGradingGroupManager != null;
-    case 'GRADINGGROUPEXTRACTDAYLIGHT':
-      return actions.extractGroupDaylight != null;
-    case 'GRADINGGROUPBAKE':
-      return actions.bakeGroupSurface != null;
+    case 'GRADINGGROUPCALC': {
+      // Same calculable contract as the manager Calculate button
+      // (BUILDING / broken-ref / source-not-current disabled; UNBUILT /
+      // NEEDS_RECALC / FAILED retry when resolvable; already-CURRENT
+      // dispatches and the service answers "already current").
+      const row = resolveGradingGroupRow(snapshot);
+      return row != null && row.calculable && actions.requestGroupGradingCalculate != null;
+    }
+    case 'GRADINGGROUPINQUIRY': {
+      // The manager inquiry tab renders nothing without a selected group,
+      // so fail closed instead of opening a dead tab.
+      const row = resolveGradingGroupRow(snapshot);
+      return row != null && actions.openGradingGroupManager != null;
+    }
+    case 'GRADINGGROUPCRITERIA': {
+      // Same fail-closed rule as inquiry: never an arbitrary row.
+      const row = resolveGradingGroupRow(snapshot);
+      return row != null && actions.openGradingGroupManager != null;
+    }
+    case 'GRADINGGROUPEXTRACTDAYLIGHT': {
+      // Same exportable contract as the manager buttons: CURRENT +
+      // result only; stale FAILED / NEEDS_RECALC rows are unusable.
+      const row = resolveGradingGroupRow(snapshot);
+      return row != null && row.exportable && actions.extractGroupDaylight != null;
+    }
+    case 'GRADINGGROUPBAKE': {
+      const row = resolveGradingGroupRow(snapshot);
+      return row != null && row.exportable && actions.bakeGroupSurface != null;
+    }
     default:
       return false;
   }
@@ -123,35 +195,87 @@ export const gradingGroupShellAvailable = (
 export const executeGradingGroupShellCommand = (
   key: string,
   actions: CadShellActions | null,
-  _snapshot: CadWorkspaceSnapshot | null | undefined,
+  snapshot: CadWorkspaceSnapshot | null | undefined,
   options?: GradingGroupShellOptions,
 ): boolean => {
   if (!actions) return false;
   switch (key) {
     case 'GRADEGROUP': {
-      if (!actions.runGradingGroupCommand || !options?.create) return false;
-      return actions.runGradingGroupCommand(buildGroupCreateCommand(options.create));
-    }
-    case 'GRADINGGROUP':
-      actions.openGradingGroupManager?.(options?.groupId, undefined);
+      if (options?.create) {
+        if (!actions.runGradingGroupCommand) return false;
+        return actions.runGradingGroupCommand(buildGroupCreateCommand(options.create));
+      }
+      // No-args shell entry: route to the existing manager
+      // create/definition workflow (exactly one creation UI, never a
+      // second workflow, never a silent false on an enabled button).
+      actions.openGradingGroupManager?.(selectedGroupId(options) ?? undefined, undefined);
       return actions.openGradingGroupManager != null;
+    }
+    case 'GRADINGGROUP': {
+      const row = resolveGradingGroupRow(snapshot, options);
+      actions.openGradingGroupManager?.(
+        row?.id ?? selectedGroupId(options) ?? undefined,
+        undefined,
+      );
+      return actions.openGradingGroupManager != null;
+    }
     case 'GRADINGGROUPCALC': {
-      const id = selectedGroupId(options);
-      return id == null ? false : (actions.requestGroupGradingCalculate?.(id) ?? null) != null;
+      const row = resolveGradingGroupRow(snapshot, options);
+      if (row != null) {
+        // Resolve once; same calculable gate as availability (exact id,
+        // exactly one dispatch, true only when the action accepts).
+        if (!row.calculable) return false;
+        return (actions.requestGroupGradingCalculate?.(row.id) ?? null) != null;
+      }
+      const fallback = unverifiedGroupId(snapshot, options);
+      return fallback == null
+        ? false
+        : (actions.requestGroupGradingCalculate?.(fallback) ?? null) != null;
     }
-    case 'GRADINGGROUPINQUIRY':
-      actions.openGradingGroupManager?.(options?.groupId, 'inquiry');
+    case 'GRADINGGROUPINQUIRY': {
+      const row = resolveGradingGroupRow(snapshot, options);
+      if (row == null) {
+        // Snapshot-less explicit open (manager validates); with a snapshot
+        // but no resolvable selection, fail closed (dead tab otherwise).
+        if (unverifiedGroupId(snapshot, options) == null) return false;
+        actions.openGradingGroupManager?.(selectedGroupId(options) ?? undefined, 'inquiry');
+        return actions.openGradingGroupManager != null;
+      }
+      actions.openGradingGroupManager?.(row.id, 'inquiry');
       return actions.openGradingGroupManager != null;
-    case 'GRADINGGROUPCRITERIA':
-      actions.openGradingGroupManager?.(options?.groupId, options?.tab ?? 'criteria');
+    }
+    case 'GRADINGGROUPCRITERIA': {
+      const row = resolveGradingGroupRow(snapshot, options);
+      if (row == null) {
+        if (unverifiedGroupId(snapshot, options) == null) return false;
+        actions.openGradingGroupManager?.(
+          selectedGroupId(options) ?? undefined,
+          options?.tab ?? 'criteria',
+        );
+        return actions.openGradingGroupManager != null;
+      }
+      actions.openGradingGroupManager?.(row.id, options?.tab ?? 'criteria');
       return actions.openGradingGroupManager != null;
+    }
     case 'GRADINGGROUPEXTRACTDAYLIGHT': {
-      const id = selectedGroupId(options);
-      return id == null ? false : (actions.extractGroupDaylight?.(id) ?? null) != null;
+      const row = resolveGradingGroupRow(snapshot, options);
+      if (row != null) {
+        // CURRENT/exportable + revision gates; one undo step via the
+        // existing action (no direct project mutation here).
+        if (!row.exportable) return false;
+        return (actions.extractGroupDaylight?.(row.id) ?? null) != null;
+      }
+      const fallback = unverifiedGroupId(snapshot, options);
+      return fallback == null ? false : (actions.extractGroupDaylight?.(fallback) ?? null) != null;
     }
     case 'GRADINGGROUPBAKE': {
-      const id = selectedGroupId(options);
-      return id == null ? false : (actions.bakeGroupSurface?.(id) ?? null) != null;
+      const row = resolveGradingGroupRow(snapshot, options);
+      if (row != null) {
+        if (!row.exportable) return false;
+        return (actions.bakeGroupSurface?.(row.id) ?? null) != null;
+      }
+      const fallback = unverifiedGroupId(snapshot, options);
+      return fallback == null ? false : (actions.bakeGroupSurface?.(fallback) ?? null) != null;
     }
     default:
       return false;

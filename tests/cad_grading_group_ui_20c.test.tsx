@@ -272,12 +272,16 @@ describe('group ribbon + toolspace + properties', () => {
       bakeGroupSurface: () => 'ok',
     } as unknown as CadShellActions;
     expect(executeGradingGroupShellCommand('GRADINGGROUP', actions, null)).toBe(true);
+    // Phase 20F.3 — snapshot-less manager open stays general (undefined);
+    // no-args GRADEGROUP opens the manager create workflow instead of
+    // answering false on an enabled button.
     expect(opened).toEqual([undefined]);
-    // No-args GRADEGROUP answers false until the UI supplies explicit args.
-    expect(executeGradingGroupShellCommand('GRADEGROUP', actions, null)).toBe(false);
+    expect(executeGradingGroupShellCommand('GRADEGROUP', actions, null)).toBe(true);
     const def = CAD_SHELL_COMMANDS.find((entry) => entry.key === 'GRADINGGROUPCALC')!;
     expect(isShellCommandAvailable(def, null, actions)).toBe(false);
-    expect(executeShellCommand(def, actions, snapshotOf())).toBe(false);
+    // Phase 20F.3 — selection present + CURRENT/calculable ⇒ registry path dispatches.
+    expect(isShellCommandAvailable(def, snapshotOf(), actions)).toBe(true);
+    expect(executeShellCommand(def, actions, snapshotOf())).toBe(true);
   });
 
   it('renders ribbon entries and the Toolspace node with status text', () => {
