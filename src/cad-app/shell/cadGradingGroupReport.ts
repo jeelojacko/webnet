@@ -11,10 +11,13 @@ import type {
   GroupStatus,
 } from '../../engine/cad/grading/gradingGroupTypes';
 import type { GradingAccuracy } from '../../engine/cad/grading/gradingTypes';
+import { gradingBoundaryLabel, isTargetFreeCriterion } from '../../engine/cad/grading/gradingTypes';
 import { buildCourseMemberRows } from './cadGradingGroupCourseCriteria';
 import {
   formatGradingCriterion,
+  gradingCriterionBoundaryShort,
   gradingSideText,
+  gradingTargetSummary,
 } from './cadGradingShell';
 import {
   gradingAccuracyText,
@@ -46,12 +49,13 @@ export const buildGroupInquiryReport = (
   status: GroupStatus,
   accuracy: GradingAccuracy | null,
   result: CadGradingGroupResult | null,
+  lengthUnit = 'm',
 ): string => {
   const lines: string[] = [];
   lines.push(`Grading Group Inquiry — ${group.name}`);
   lines.push(`Source: ${sourceName} · ${group.closed === true ? 'closed' : 'open'} · side ${gradingSideText(group.side)}`);
   lines.push(`Courses: ${courseRefsText(group)}`);
-  lines.push(`Target: ${targetName} · criterion ${formatGradingCriterion(group.criterion)}`);
+  lines.push(gradingTargetSummary(group.criterion, targetName, lengthUnit));
   lines.push(`Status: ${gradingStatusText(status)} · accuracy ${gradingAccuracyText(accuracy)}`);
   if (status !== 'CURRENT' || result == null) {
     lines.push('No CURRENT result — calculate this grading group before inquiry.');
@@ -66,12 +70,16 @@ export const buildGroupInquiryReport = (
   lines.push(
     `Areas: plan ${result.gradingPlanArea.toFixed(3)} / 3D ${result.grading3dArea.toFixed(3)}`,
   );
-  lines.push(
-    `Source lengths: cut ${result.cutSourceLength.toFixed(3)} · fill ${result.fillSourceLength.toFixed(3)} · tied ${result.tiedSourceLength.toFixed(3)} m`,
-  );
+  if (isTargetFreeCriterion(group.criterion)) {
+    lines.push('Source lengths: cut — · fill — · tied — (analytic termination has no target relation)');
+  } else {
+    lines.push(
+      `Source lengths: cut ${result.cutSourceLength.toFixed(3)} · fill ${result.fillSourceLength.toFixed(3)} · tied ${result.tiedSourceLength.toFixed(3)} m`,
+    );
+  }
   const vertices = Math.floor(result.daylightPoints.length / 3);
   const triangles = Math.floor(result.gradingMesh.triangles.length / 3);
-  lines.push(`Daylight vertices: ${vertices} · mesh triangles: ${triangles}`);
+  lines.push(`${gradingBoundaryLabel(group.criterion)} vertices: ${vertices} · mesh triangles: ${triangles}`);
   lines.push(
     `Multiple-root events: ${result.multipleSolutionCount} · candidate triangles: ${result.candidateTriangleCount} · tie segments: ${result.intersectionSegmentCount}`,
   );
@@ -136,13 +144,16 @@ export const buildGroupCsv = (
   result: CadGradingGroupResult,
 ): string => {
   const lines: string[] = [];
+  // Analytic terminations have no target relation: never emit fake-precise
+  // zeros (single-grading CSV uses the same '—' convention).
+  const relation = isTargetFreeCriterion(group.criterion) ? '—' : null;
   const summary: Array<[string, string]> = [
     ['Group', group.name],
     ['Source', group.sourceFeatureLineId],
     ['Courses', courseRefsText(group)],
     ['Shape', group.closed === true ? 'closed' : 'open'],
     ['Side', gradingSideText(group.side)],
-    ['Target', group.targetSurfaceId],
+    ['Target', gradingTargetSummary(group.criterion, group.targetSurfaceId ?? '—').replace(/^Target: /, '')],
     ['Criterion', formatGradingCriterion(group.criterion)],
     ['Status', gradingStatusText(status)],
     ['Accuracy', gradingAccuracyText(accuracy)],
@@ -153,9 +164,9 @@ export const buildGroupCsv = (
     ['Tie Mean', result.meanProjectionDistance.toFixed(3)],
     ['Plan Area', result.gradingPlanArea.toFixed(3)],
     ['3D Area', result.grading3dArea.toFixed(3)],
-    ['Cut Length', result.cutSourceLength.toFixed(3)],
-    ['Fill Length', result.fillSourceLength.toFixed(3)],
-    ['Tied Length', result.tiedSourceLength.toFixed(3)],
+    ['Cut Length', relation ?? result.cutSourceLength.toFixed(3)],
+    ['Fill Length', relation ?? result.fillSourceLength.toFixed(3)],
+    ['Tied Length', relation ?? result.tiedSourceLength.toFixed(3)],
   ];
   lines.push('Metric,Value');
   for (const [metric, value] of summary) {
@@ -196,7 +207,7 @@ export const buildGroupCsv = (
     );
   }
   lines.push('');
-  lines.push('Station,Daylight E,Daylight N,Daylight Z');
+  lines.push('Station,' + `${gradingCriterionBoundaryShort(group.criterion)} E,${gradingCriterionBoundaryShort(group.criterion)} N,${gradingCriterionBoundaryShort(group.criterion)} Z`);
   const count = Math.floor(result.daylightPoints.length / 3);
   for (let index = 0; index < count; index += 1) {
     lines.push(

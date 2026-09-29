@@ -236,8 +236,8 @@ describe('grading worker path', () => {
     const gradingCache = createCadGradingCache('w88');
     const inputs = resolveGradingInputs(current, gradingId)!;
     const snap = flatSnapshot(current, targetId);
-    tinCache.set(inputs.target.id, inputs.targetRevision, {
-      revision: inputs.targetRevision,
+    tinCache.set(inputs.target!.id, inputs.targetRevision!, {
+      revision: inputs.targetRevision!,
       points: snap.built.points,
       triangles: snap.built.triangles,
       stats: snap.built.stats,
@@ -271,7 +271,7 @@ describe('grading worker path', () => {
     await flush();
     expect(service.statusOf(gradingId).status).toBe('CURRENT');
     // Target mesh lost (rebuild invalidated) → SOURCE_NOT_CURRENT, never CURRENT.
-    tinCache.invalidate(inputs.target.id);
+    tinCache.invalidate(inputs.target!.id);
     expect(service.statusOf(gradingId).status).toBe('SOURCE_NOT_CURRENT');
     const blocked = service.requestGrading(gradingId);
     expect(blocked).toContain('SOURCE_NOT_CURRENT');
@@ -285,9 +285,9 @@ describe('grading worker path', () => {
     const gradingCache = createCadGradingCache('w89');
     const gate = (proj: CadProject) => {
       const i = resolveGradingInputs(proj, gradingId)!;
-      const s = flatSnapshot(proj, i.target.id);
-      tinCache.set(i.target.id, i.targetRevision, {
-        revision: i.targetRevision,
+      const s = flatSnapshot(proj, i.target!.id);
+      tinCache.set(i.target!.id, i.targetRevision!, {
+        revision: i.targetRevision!,
         points: s.built.points,
         triangles: s.built.triangles,
         stats: s.built.stats,
@@ -345,7 +345,7 @@ describe('grading worker path', () => {
       criterion: { kind: 'fixed', gradeRatio: -0.5 },
       maxSearchDistance: 1000,
       curveChordTolerance: 0.01,
-      target: { points: flatSnapshot(current, inputs2.target.id).points, triangles: flatSnapshot(current, inputs2.target.id).triangles },
+      target: { points: flatSnapshot(current, inputs2.target!.id).points, triangles: flatSnapshot(current, inputs2.target!.id).triangles },
     });
     if (!stale.ok) throw new Error('stale compute failed');
     resolvers[0]!({ ...stale.result, revision: 'grev1:stale' });
@@ -361,7 +361,7 @@ describe('grading worker path', () => {
       criterion: inputs2.grading.criterion,
       maxSearchDistance: inputs2.grading.maxSearchDistance,
       curveChordTolerance: inputs2.grading.curveChordTolerance,
-      target: { points: flatSnapshot(current, inputs2.target.id).points, triangles: flatSnapshot(current, inputs2.target.id).triangles },
+      target: { points: flatSnapshot(current, inputs2.target!.id).points, triangles: flatSnapshot(current, inputs2.target!.id).triangles },
     });
     if (!fresh.ok) throw new Error('fresh compute failed');
     resolvers[1]!(fresh.result);
@@ -432,8 +432,8 @@ describe('grading worker path', () => {
     const gradingCache = createCadGradingCache('wagree');
     const inputs = resolveGradingInputs(current, gradingId)!;
     const snap = flatSnapshot(current, targetId);
-    tinCache.set(inputs.target.id, inputs.targetRevision, {
-      revision: inputs.targetRevision,
+    tinCache.set(inputs.target!.id, inputs.targetRevision!, {
+      revision: inputs.targetRevision!,
       points: snap.built.points,
       triangles: snap.built.triangles,
       stats: snap.built.stats,
@@ -525,8 +525,8 @@ describe('grading worker path', () => {
     const gradingCache = createCadGradingCache('w86');
     const inputs = resolveGradingInputs(current, gradingId)!;
     const snap = flatSnapshot(current, targetId);
-    tinCache.set(inputs.target.id, inputs.targetRevision, {
-      revision: inputs.targetRevision,
+    tinCache.set(inputs.target!.id, inputs.targetRevision!, {
+      revision: inputs.targetRevision!,
       points: snap.built.points,
       triangles: snap.built.triangles,
       stats: snap.built.stats,

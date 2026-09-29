@@ -16,6 +16,7 @@ import { resolveGradingSourceCourse, toGradingCourseLikes } from './gradingCours
 import { resolveGroupMemberCriteria } from './gradingGroupCourseCriteria';
 import { buildGroupRevision, type GroupRevisionCourse } from './gradingGroupRevision';
 import type { CadGradingGroup } from './gradingGroupTypes';
+import { gradingCriterionRequiresSurface } from './gradingTypes';
 import type { GradingCriterion, ResolvedGradingSource } from './gradingTypes';
 
 export interface ResolvedGroupInputs {
@@ -24,8 +25,9 @@ export interface ResolvedGroupInputs {
   memberSources: ResolvedGradingSource[];
   /** Phase 20E: effective criterion per member (override or group default). */
   memberCriteria: GradingCriterion[];
-  target: CadSurface;
-  targetRevision: string;
+  /** Present only for surface-family groups; undefined for analytic families. */
+  target?: CadSurface;
+  targetRevision?: string;
   revision: string;
 }
 
@@ -171,9 +173,23 @@ export const resolveGroupInputsWithReason = (
     const loop = validateClosedGroupLoop(memberSources);
     if (loop) return { ok: false, reason: loop };
   }
-  const target = findSurface(project, group.targetSurfaceId);
-  if (!target) return { ok: false, reason: 'group target surface not found' };
-  const targetRevision = computeCadSurfaceSourceRevision(project, target);
+  const memberCriteria = resolveGroupMemberCriteria(group);
+  // Phase 20F: analytic (distance/elevation) families need no target; a
+  // dormant legacy target id is ignored entirely (never BROKEN_REFERENCE).
+  // Surface families (fixed/cut-fill) still require a resolvable target.
+  const requiresSurface =
+    gradingCriterionRequiresSurface(group.criterion) ||
+    memberCriteria.some((entry) => gradingCriterionRequiresSurface(entry));
+  let target: CadSurface | undefined;
+  let targetRevision: string | undefined;
+  if (requiresSurface) {
+    if (group.targetSurfaceId === undefined) {
+      return { ok: false, reason: 'group target surface not found' };
+    }
+    target = findSurface(project, group.targetSurfaceId);
+    if (!target) return { ok: false, reason: 'group target surface not found' };
+    targetRevision = computeCadSurfaceSourceRevision(project, target);
+  }
   const coursesForRevision: GroupRevisionCourse[] = group.sourceCourses.map((course, index) => ({
     vertexAId: course.vertexAId,
     vertexBId: course.vertexBId,
@@ -182,8 +198,8 @@ export const resolveGroupInputsWithReason = (
   const revision = buildGroupRevision({
     sourceFeatureLineId: group.sourceFeatureLineId,
     courses: coursesForRevision,
-    targetSurfaceId: target.id,
-    targetRevision,
+    ...(target !== undefined ? { targetSurfaceId: target.id } : {}),
+    ...(targetRevision !== undefined ? { targetRevision } : {}),
     side: group.side,
     criterion: group.criterion,
     courseCriteria: group.courseCriteria,
@@ -194,7 +210,14 @@ export const resolveGroupInputsWithReason = (
   });
   return {
     ok: true,
-    inputs: { group, memberSources, memberCriteria: resolveGroupMemberCriteria(group), target, targetRevision, revision },
+    inputs: {
+      group,
+      memberSources,
+      memberCriteria,
+      ...(target !== undefined ? { target } : {}),
+      ...(targetRevision !== undefined ? { targetRevision } : {}),
+      revision,
+    },
   };
 };
 

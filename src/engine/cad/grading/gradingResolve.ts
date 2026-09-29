@@ -4,6 +4,7 @@ import type { CadProject, CadSurface } from '../cadTypes';
 import { resolveGradingSourceCourse, toGradingCourseLikes } from './gradingCourseFrame';
 import { buildGradingRevision } from './gradingRevision';
 import type { CadGrading, ResolvedGradingSource } from './gradingTypes';
+import { isTargetFreeCriterion } from './gradingTypes';
 
 /**
  * Phase 20B — engine-side grading input resolution (no worker dependency).
@@ -18,8 +19,10 @@ import type { CadGrading, ResolvedGradingSource } from './gradingTypes';
 export interface ResolvedGradingInputs {
   grading: CadGrading;
   resolvedSource: ResolvedGradingSource;
-  target: CadSurface;
-  targetRevision: string;
+  /** Undefined for target-free (analytic) criteria — never BROKEN_REFERENCE. */
+  target?: CadSurface;
+  /** Undefined for target-free (analytic) criteria. */
+  targetRevision?: string;
   revision: string;
 }
 
@@ -47,6 +50,22 @@ export const resolveGradingInputs = (
     grading.sourceCourse.vertexBId,
   );
   if (!resolvedSource) return null;
+  // Phase 20F: target-free criteria resolve without a target surface.
+  if (isTargetFreeCriterion(grading.criterion)) {
+    const revision = buildGradingRevision({
+      sourceFeatureLineId: grading.sourceFeatureLineId,
+      vertexAId: grading.sourceCourse.vertexAId,
+      vertexBId: grading.sourceCourse.vertexBId,
+      resolvedSource,
+      side: grading.side,
+      criterion: grading.criterion,
+      maxSearchDistance: grading.maxSearchDistance,
+      curveChordTolerance: grading.curveChordTolerance,
+    });
+    return { grading, resolvedSource, revision };
+  }
+  // Surface criteria without a target id are broken (fail-closed).
+  if (!grading.targetSurfaceId) return null;
   const target = findSurface(project, grading.targetSurfaceId);
   if (!target) return null;
   const targetRevision = computeCadSurfaceSourceRevision(project, target);

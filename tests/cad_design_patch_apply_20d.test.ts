@@ -186,7 +186,7 @@ const padWorld = (
   const groupId = withGroup.gradingGroups![0]!.id;
   const inputs = resolveGroupInputs(withGroup, groupId);
   if (!inputs) throw new Error('group inputs did not resolve');
-  const built = buildCadSurface(withGroup, inputs.target);
+  const built = buildCadSurface(withGroup, inputs.target!);
   if (built.outcome !== 'ok') throw new Error('target build failed');
   const outcome = computeGradingGroupFromSnapshots({
     groupId,
@@ -435,7 +435,7 @@ describe('20D DESIGNPATCH gates', () => {
     const openId = open.gradingGroups![0]!.id;
     const inputs = resolveGroupInputs(open, openId);
     if (!inputs) throw new Error('open group inputs broke');
-    const built = buildCadSurface(open, inputs.target);
+    const built = buildCadSurface(open, inputs.target!);
     if (built.outcome !== 'ok') throw new Error('target build failed');
     const outcome = computeGradingGroupFromSnapshots({
       groupId: openId,
@@ -695,7 +695,7 @@ const secondPad = (project: CadProject, targetId: string): PadWorld => {
   const groupId = withGroup.gradingGroups!.find((entry) => entry.name === 'Pad B')!.id;
   const inputs = resolveGroupInputs(withGroup, groupId);
   if (!inputs) throw new Error('Pad B inputs broke');
-  const built = buildCadSurface(withGroup, inputs.target);
+  const built = buildCadSurface(withGroup, inputs.target!);
   if (built.outcome !== 'ok') throw new Error('Pad B target build failed');
   const outcome = computeGradingGroupFromSnapshots({
     groupId,
@@ -837,7 +837,7 @@ describe('20D (f) fail-closed pins', () => {
     // The real calculate path fails closed (R1 flat-pad honesty gate).
     const inputs = resolveGroupInputs(withGroup, groupId);
     if (!inputs) throw new Error('tilted inputs broke');
-    const built = buildCadSurface(withGroup, inputs.target);
+    const built = buildCadSurface(withGroup, inputs.target!);
     if (built.outcome !== 'ok') throw new Error('tilted target build failed');
     const outcome = computeGradingGroupFromSnapshots({
       groupId,
@@ -972,7 +972,7 @@ describe('20D (g) concave and curved fail-closed pins', () => {
     const groupId = withGroup.gradingGroups![0]!.id;
     const inputs = resolveGroupInputs(withGroup, groupId);
     if (!inputs) throw new Error('Ell inputs broke');
-    const built = buildCadSurface(withGroup, inputs.target);
+    const built = buildCadSurface(withGroup, inputs.target!);
     if (built.outcome !== 'ok') throw new Error('Ell target build failed');
     const outcome = computeGradingGroupFromSnapshots({
       groupId,
@@ -1054,7 +1054,7 @@ describe('20D (g) concave and curved fail-closed pins', () => {
     const groupId = withGroup.gradingGroups![0]!.id;
     const inputs = resolveGroupInputs(withGroup, groupId);
     if (!inputs) throw new Error('Curved inputs broke');
-    const built = buildCadSurface(withGroup, inputs.target);
+    const built = buildCadSurface(withGroup, inputs.target!);
     if (built.outcome !== 'ok') throw new Error('Curved target build failed');
     const outcome = computeGradingGroupFromSnapshots({
       groupId,

@@ -462,6 +462,8 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
   );
   const [selectedGradingId, setSelectedGradingId] = useState<string | null>(null);
   const [gradingManagerTab, setGradingManagerTab] = useState<'definition' | 'inquiry'>('definition');
+  // Phase 20F — method preselect for GRADETODISTANCE/GRADETOELEVATION openers.
+  const [gradingManagerMethod, setGradingManagerMethod] = useState<'surface' | 'distance' | 'elevation'>('surface');
   const [gradingVersion, setGradingVersion] = useState(0);
   // Phase 20C — grading-group session state (definitions persist; results never do).
   const groupCache = useMemo(
@@ -2079,9 +2081,10 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
       // command (never recomputed in history).
       runGradingCommand: (command) => cadWorkspace.runLayerCommand(command),
       selectGrading: (gradingId) => setSelectedGradingId(gradingId),
-      openGradingManager: (selectedId, tab) => {
+      openGradingManager: (selectedId, tab, method) => {
         if (selectedId != null) setSelectedGradingId(selectedId);
         setGradingManagerTab(tab ?? 'definition');
+        setGradingManagerMethod(method ?? 'surface');
         setSurveyManager({ kind: 'gradings', selectedId });
       },
       requestGradingCalculate: (gradingId) => {
@@ -2099,7 +2102,7 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
           expectedRevision: row.revision,
           sessionCurrent: true,
         });
-        return ok ? `Extracted “${row.name} - Daylight”.` : 'Extract rejected — needs a CURRENT result.';
+        return ok ? `Extracted “${row.name} - ${row.boundaryLabel}”.` : 'Extract rejected — needs a CURRENT result.';
       },
       bakeGradingSurface: (gradingId) => {
         const row = shellSnapshot?.grading?.gradings.find((entry) => entry.id === gradingId) ?? null;
@@ -2139,7 +2142,7 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
           expectedRevision: row.revision,
           sessionCurrent: true,
         });
-        return ok ? `Extracted “${row.name} - Daylight”.` : 'Extract rejected — needs a CURRENT result.';
+        return ok ? `Extracted “${row.name} - ${row.boundaryLabel}”.` : 'Extract rejected — needs a CURRENT result.';
       },
       bakeGroupSurface: (groupId) => {
         const row = shellSnapshot?.gradingGroups?.groups.find((entry) => entry.id === groupId) ?? null;
@@ -2805,6 +2808,7 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
             actions={shellActions}
             initialSelectedId={surveyManager.selectedId}
             initialTab={gradingManagerTab}
+            initialMethod={gradingManagerMethod}
             onClose={() => setSurveyManager(null)}
           />
         ) : null}

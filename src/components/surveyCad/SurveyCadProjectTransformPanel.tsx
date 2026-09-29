@@ -28,7 +28,8 @@ const AffectedCounts: React.FC<{ state: ProjectTransformPanelState }> = ({ state
   <div className="border-t border-slate-800/80 px-3 py-1 text-[10px] text-slate-400" data-project-transform-counts>
     Entities {state.affected.entities} · points {state.affected.surveyPoints} · alignments{' '}
     {state.affected.alignments} · surfaces {state.affected.surfaces} · sample lines{' '}
-    {state.affected.sampleLines} · TIN vertices {state.affected.tinVertices}
+    {state.affected.sampleLines} · TIN vertices {state.affected.tinVertices} · gradings{' '}
+    {state.affected.gradings} · grading groups {state.affected.gradingGroups}
     <div data-project-transform-station-policy>Station policy: {state.stationPolicy}</div>
   </div>
 );

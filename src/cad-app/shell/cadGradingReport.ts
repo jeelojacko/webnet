@@ -10,7 +10,8 @@ import type {
   GradingRegionClassification,
   ResolvedGradingSource,
 } from '../../engine/cad/grading/gradingTypes';
-import { gradingCriterionText, gradingSideText } from './cadGradingShell';
+import { gradingSideText, gradingTargetSummary, gradingCriterionBoundaryShort } from './cadGradingShell';
+import { isTargetFreeCriterion } from '../../engine/cad/grading/gradingTypes';
 import { gradingAccuracyText, gradingStatusText, type CadGradingRow } from './cadGradingSnapshot';
 
 export type GradingCsvClassification = GradingRegionClassification | 'TIED';
@@ -110,9 +111,9 @@ export const buildGradingCsv = (
     'Side',
     'Classification',
     'Tie Distance',
-    'Daylight E',
-    'Daylight N',
-    'Daylight Z',
+    `${gradingCriterionBoundaryShort(grading.criterion)} E`,
+    `${gradingCriterionBoundaryShort(grading.criterion)} N`,
+    `${gradingCriterionBoundaryShort(grading.criterion)} Z`,
   ];
   const lines = [header.join(',')];
   for (const row of buildGradingCsvRows(grading, source, result)) {
@@ -151,7 +152,7 @@ export const buildGradingInquiryReport = (
     `Course: ${grading.sourceCourse.vertexAId} → ${grading.sourceCourse.vertexBId}` +
       (row.stationSpan ? ` · stations ${row.stationSpan[0].toFixed(3)}–${row.stationSpan[1].toFixed(3)} m` : ''),
   );
-  lines.push(`Target: ${row.targetName} · criterion ${gradingCriterionText(grading)}`);
+  lines.push(gradingTargetSummary(grading.criterion, row.targetName, row.lengthUnit));
   lines.push(`Status: ${gradingStatusText(row.status)} · accuracy ${gradingAccuracyText(row.accuracy)}`);
   if (row.status !== 'CURRENT' || result == null || source == null) {
     lines.push('No CURRENT result — calculate this grading before inquiry.');
@@ -166,12 +167,16 @@ export const buildGradingInquiryReport = (
   lines.push(
     `Areas: plan ${result.gradingPlanArea.toFixed(3)} / 3D ${result.grading3dArea.toFixed(3)}`,
   );
-  lines.push(
-    `Source lengths: cut ${result.cutSourceLength.toFixed(3)} · fill ${result.fillSourceLength.toFixed(3)} · tied ${result.tiedSourceLength.toFixed(3)} m`,
-  );
+  if (isTargetFreeCriterion(grading.criterion)) {
+    lines.push('Source lengths: cut — · fill — · tied — (analytic termination has no target relation)');
+  } else {
+    lines.push(
+      `Source lengths: cut ${result.cutSourceLength.toFixed(3)} · fill ${result.fillSourceLength.toFixed(3)} · tied ${result.tiedSourceLength.toFixed(3)} m`,
+    );
+  }
   const vertices = Math.floor(result.daylightPoints.length / 3);
   const triangles = Math.floor(result.gradingMesh.triangles.length / 3);
-  lines.push(`Daylight vertices: ${vertices} · mesh triangles: ${triangles}`);
+  lines.push(`${row.boundaryLabel} vertices: ${vertices} · mesh triangles: ${triangles}`);
   lines.push(
     `Multiple-root events: ${result.multipleSolutionCount} · candidate triangles: ${result.candidateTriangleCount} · tie segments: ${result.intersectionSegmentCount}`,
   );

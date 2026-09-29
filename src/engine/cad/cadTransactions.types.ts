@@ -1670,7 +1670,8 @@ export type CadCommand =
       sourceFeatureLineId: string;
       vertexAId: string;
       vertexBId: string;
-      targetSurfaceId: string;
+      /** Required for fixed/cut-fill; omitted for distance/elevation. */
+      targetSurfaceId?: string;
       side: GradingSide | 'both';
       criterion: GradingCriterion;
       maxSearchDistance: number;
@@ -1685,6 +1686,12 @@ export type CadCommand =
       key: 'GRADING_EDIT_CRITERIA';
       gradingId: string;
       criterion: GradingCriterion;
+      /**
+       * Phase 20F: kind-conditional target in the SAME undo entry. A non-empty
+       * id adds/replaces the target for a surface criterion; null clears it.
+       * Analytic criteria always clear the stored id.
+       */
+      targetSurfaceId?: string | null;
     }
   | {
       key: 'GRADING_REASSIGN_TARGET';
@@ -1713,7 +1720,8 @@ export type CadCommand =
       name?: string;
       sourceFeatureLineId: string;
       sourceCourses: GradingGroupCourse[];
-      targetSurfaceId: string;
+      /** Required for surface-family criteria; omitted for distance/elevation. */
+      targetSurfaceId?: string;
       side: GradingSide;
       criterion: GradingCriterion;
       maxSearchDistance: number;
@@ -1732,6 +1740,8 @@ export type CadCommand =
       key: 'GROUP_EDIT_CRITERIA';
       groupId: string;
       criterion?: GradingCriterion;
+      /** Phase 20F: kind-conditional target in the SAME undo entry (null clears). */
+      targetSurfaceId?: string | null;
       maxSearchDistance?: number;
       curveChordTolerance?: number;
     }

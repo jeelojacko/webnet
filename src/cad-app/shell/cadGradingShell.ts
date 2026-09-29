@@ -17,6 +17,11 @@ import type {
   CadGrading,
   GradingCriterion,
   GradingSide,
+  GradingTerminationKind,
+} from '../../engine/cad/grading/gradingTypes';
+import {
+  gradingBoundaryLabel,
+  gradingBoundaryShortLabel,
 } from '../../engine/cad/grading/gradingTypes';
 import type { CadCommand } from '../../engine/cad/cadTransactions.types';
 import type { CadShellActions, CadWorkspaceSnapshot } from './cadShellTypes';
@@ -25,6 +30,8 @@ import type { CadGradingRow } from './cadGradingSnapshot';
 /** Shell keys this adapter owns (rendered by the bounded Grading group). */
 export const GRADING_SHELL_KEYS: ReadonlySet<string> = new Set([
   'GRADETOSURFACE',
+  'GRADETODISTANCE',
+  'GRADETOELEVATION',
   'GRADING',
   'GRADINGCALC',
   'GRADINGINQUIRY',
@@ -85,8 +92,47 @@ export const formatGradingCriterion = (criterion: GradingCriterion): string => {
   if (criterion.kind === 'fixed') {
     return `Fixed ${formatSignedGradePercent(criterion.gradeRatio)} (${H_V_TEXT(Math.abs(criterion.gradeRatio))})`;
   }
-  return `Cut ${formatSignedGradePercent(criterion.cutGradeRatio)} / Fill ${formatSignedGradePercent(criterion.fillGradeRatio)}`;
+  if (criterion.kind === 'cut-fill') {
+    return `Cut ${formatSignedGradePercent(criterion.cutGradeRatio)} / Fill ${formatSignedGradePercent(criterion.fillGradeRatio)}`;
+  }
+  if (criterion.kind === 'distance') {
+    return `Grade ${formatSignedGradePercent(criterion.gradeRatio)} → Distance ${criterion.distance.toFixed(3)} m`;
+  }
+  return `Grade ${formatSignedGradePercent(criterion.gradeRatio)} → Elevation ${criterion.targetElevation.toFixed(3)} m`;
 };
+
+/** Boundary label the Extract command produces for this criterion. */
+export const gradingCriterionBoundaryLabel = (criterion: GradingCriterion): string =>
+  gradingBoundaryLabel(criterion);
+
+/** Short boundary label used in compact/label slots ('Daylight' | 'Limit'). */
+export const gradingCriterionBoundaryShort = (criterion: GradingCriterion): string =>
+  gradingBoundaryShortLabel(criterion);
+
+/**
+ * Truthful target summary for one criterion:
+ *   surface   → `Target: <name> · criterion <...>`
+ *   distance  → `Target: Distance <d> · grade <signed>`
+ *   elevation → `Target: Elevation <z> · grade <signed>`
+ * Analytic termination NEVER prints a target-surface name.
+ */
+export const gradingTargetSummary = (
+  criterion: GradingCriterion,
+  targetName: string,
+  lengthUnit = 'm',
+): string => {
+  if (criterion.kind === 'distance') {
+    return `Target: Distance ${criterion.distance.toFixed(3)} ${lengthUnit} · grade ${formatSignedGradePercent(criterion.gradeRatio)}`;
+  }
+  if (criterion.kind === 'elevation') {
+    return `Target: Elevation ${criterion.targetElevation.toFixed(3)} ${lengthUnit} · grade ${formatSignedGradePercent(criterion.gradeRatio)}`;
+  }
+  return `Target: ${targetName} · criterion ${formatGradingCriterion(criterion)}`;
+};
+
+/** Termination method for a grading-shell key that names one (else null). */
+export const gradingShellMethod = (key: string): GradingTerminationKind | null =>
+  key === 'GRADETODISTANCE' ? 'distance' : key === 'GRADETOELEVATION' ? 'elevation' : null;
 
 export const gradingSideText = (side: GradingSide): string =>
   side === 'left' ? 'Left' : 'Right';
@@ -156,6 +202,10 @@ export const gradingShellAvailable = (
 ): boolean => {
   if (key === 'GRADETOSURFACE') {
     return selectedFeatureLine(snapshot) != null && resolveTargetSurfaceId(snapshot) != null;
+  }
+  if (key === 'GRADETODISTANCE' || key === 'GRADETOELEVATION') {
+    // Analytic termination never needs a target surface.
+    return selectedFeatureLine(snapshot) != null;
   }
   if (key === 'GRADING' || key === 'GRADINGCALC' || key === 'GRADINGINQUIRY') {
     return (snapshot?.grading?.gradings.length ?? 0) > 0;
@@ -233,6 +283,12 @@ export const executeGradingShellCommand = (
     }
     case 'GRADING':
       actions.openGradingManager?.(snapshot?.grading?.selectedGradingId ?? undefined);
+      return actions.openGradingManager != null;
+    case 'GRADETODISTANCE':
+      actions.openGradingManager?.(undefined, 'definition', 'distance');
+      return actions.openGradingManager != null;
+    case 'GRADETOELEVATION':
+      actions.openGradingManager?.(undefined, 'definition', 'elevation');
       return actions.openGradingManager != null;
     case 'GRADINGCALC': {
       const id = selectedGradingId(snapshot);

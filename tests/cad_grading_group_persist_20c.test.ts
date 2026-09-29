@@ -149,7 +149,7 @@ const createGroup = (
 const calculateGroup = (project: CadProject, groupId: string): CadGradingGroupResult => {
   const inputs = resolveGroupInputs(project, groupId);
   if (!inputs) throw new Error('group inputs did not resolve');
-  const built = buildCadSurface(project, inputs.target);
+  const built = buildCadSurface(project, inputs.target!);
   expect(built.outcome).toBe('ok');
   if (built.outcome !== 'ok') throw new Error('target build failed');
   const flat = (points: Array<{ x: number; y: number; z: number }>): number[] =>

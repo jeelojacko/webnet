@@ -15,10 +15,12 @@ import { deriveGroupStatus } from '../engine/cad/grading/gradingGroupStatus';
 import type { CadGradingGroupResult, GroupStatus } from '../engine/cad/grading/gradingGroupTypes';
 import { resolveGradingInputs, type ResolvedGradingInputs } from '../engine/cad/grading/gradingResolve';
 import { deriveGradingStatus } from '../engine/cad/grading/gradingStatus';
+import { gradingCriterionRequiresSurface } from '../engine/cad/grading/gradingTypes';
 import type { CadGradingResult, GradingStatus } from '../engine/cad/grading/gradingTypes';
 import {
   validateDaylightAgainstTarget,
   validateGradingResultAgainstTarget,
+  validateGradingSourceBoundary,
   type GradingComputeSource,
   type GradingTargetQuery,
 } from './surfaceGradingCompute';
@@ -138,7 +140,10 @@ export class SurfaceGradingService {
     const project = this.deps.getProject();
     const inputs = resolveGradingInputs(project, gradingId);
     if (!inputs) return { status: 'BROKEN_REFERENCE', stale: false };
-    const targetMesh = this.deps.tinCache.get(inputs.target.id, inputs.targetRevision);
+    // Phase 20F: analytic gradings carry no target — always target-current.
+    const targetMesh = inputs.target
+      ? this.deps.tinCache.get(inputs.target.id, inputs.targetRevision!)
+      : undefined;
     const retained = this.deps.gradingCache.retained(gradingId);
     const result = this.deps.gradingCache.get(gradingId, inputs.revision) ?? null;
     // A retained stale result (another revision) proves a prior calculation:
@@ -147,7 +152,7 @@ export class SurfaceGradingService {
     const building = this.pending.has(gradingId);
     let status = deriveGradingStatus({
       courseResolved: true,
-      targetCurrent: targetMesh != null,
+      targetCurrent: inputs.target === undefined || targetMesh != null,
       targetExists: true,
       sourceExists: true,
       hasResult: effective != null,
@@ -170,7 +175,12 @@ export class SurfaceGradingService {
   groupStatusOf(groupId: string): { status: GroupStatus; stale: boolean } {
     const inputs = resolveGroupInputs(this.deps.getProject(), groupId);
     if (!inputs) return { status: 'BROKEN_REFERENCE', stale: false };
-    const targetMesh = this.deps.tinCache.get(inputs.target.id, inputs.targetRevision);
+    // Analytic families carry no target: target currency never gates them and
+    // a dormant legacy target id cannot drive SOURCE_NOT_CURRENT.
+    const surfaceTarget = inputs.target !== undefined && inputs.targetRevision !== undefined;
+    const targetMesh = surfaceTarget
+      ? this.deps.tinCache.get(inputs.target!.id, inputs.targetRevision!)
+      : null;
     const retained = this.groupCache.retained(groupId);
     const result = this.groupCache.get(groupId, inputs.revision) ?? null;
     const effective = result ?? (retained.length > 0 ? retained[retained.length - 1]! : null);
@@ -179,7 +189,7 @@ export class SurfaceGradingService {
       brokenRef: false,
       building,
       hasResult: effective != null,
-      sourceCurrent: targetMesh != null,
+      sourceCurrent: surfaceTarget ? targetMesh != null : true,
       needsRecalc: effective != null && effective.revision !== inputs.revision,
     });
     if (!building && result == null && this.groupDiagnostics.has(groupId)) {
@@ -201,8 +211,9 @@ export class SurfaceGradingService {
     const { grading, resolvedSource, target, targetRevision, revision } = inputs;
     // Target currency gates even the already-current shortcut: a lost
     // session mesh reads SOURCE_NOT_CURRENT, never false CURRENT.
-    const targetMesh = this.deps.tinCache.get(target.id, targetRevision);
-    if (!targetMesh) {
+    // Phase 20F: analytic gradings skip the mesh gate (no target).
+    const targetMesh = target ? this.deps.tinCache.get(target.id, targetRevision!) : undefined;
+    if (!targetMesh && target) {
       this.diagnostics.delete(gradingId);
       this.deps.onStateChange();
       return `Grading calculation blocked: target TIN for “${target.name}” is not CURRENT (SOURCE_NOT_CURRENT) — rebuild it first.`;
@@ -230,7 +241,7 @@ export class SurfaceGradingService {
       criterion: grading.criterion,
       maxSearchDistance: grading.maxSearchDistance,
       curveChordTolerance: grading.curveChordTolerance,
-      target: toTargetSnapshot(targetMesh.points, targetMesh.triangles),
+      ...(targetMesh ? { target: toTargetSnapshot(targetMesh.points, targetMesh.triangles) } : {}),
     });
     this.pending.set(gradingId, { requestId: pendingGrading.requestId, revision, resolvedSource });
     this.deps.onStateChange();
@@ -256,11 +267,14 @@ export class SurfaceGradingService {
       return `Group grading calculation blocked: group “${groupId}” has a broken source or target reference.`;
     }
     const { group, memberSources, target, targetRevision, revision } = inputs;
-    const targetMesh = this.deps.tinCache.get(target.id, targetRevision);
-    if (!targetMesh) {
+    const requiresSurface = target !== undefined && targetRevision !== undefined;
+    const targetMesh = requiresSurface
+      ? this.deps.tinCache.get(target!.id, targetRevision!)
+      : undefined;
+    if (requiresSurface && !targetMesh) {
       this.groupDiagnostics.delete(groupId);
       this.deps.onStateChange();
-      return `Group grading blocked: target TIN for “${target.name}” is not CURRENT (SOURCE_NOT_CURRENT) — rebuild it first.`;
+      return `Group grading blocked: target TIN for “${target!.name}” is not CURRENT (SOURCE_NOT_CURRENT) — rebuild it first.`;
     }
     if (this.groupCache.get(groupId, revision)) {
       return `Grading group “${group.name}” is already current.`;
@@ -287,7 +301,10 @@ export class SurfaceGradingService {
       maxSearchDistance: group.maxSearchDistance,
       curveChordTolerance: group.curveChordTolerance,
       closed: group.closed === true,
-      target: toTargetSnapshot(targetMesh.points, targetMesh.triangles),
+      // Analytic groups send no target snapshot; surface groups send it once.
+      ...(requiresSurface && targetMesh !== undefined
+        ? { target: toTargetSnapshot(targetMesh.points, targetMesh.triangles) }
+        : {}),
     });
     this.pendingGroups.set(groupId, { requestId: pending.requestId, revision });
     this.deps.onStateChange();
@@ -307,7 +324,14 @@ export class SurfaceGradingService {
     if (this.disposed) return;
     const project = this.deps.getProject();
     for (const grading of project.gradings ?? []) {
-      if (grading.targetSurfaceId === surfaceId) this.supersede(grading.id);
+      // A dormant retained target id on an analytic grading is inert: only
+      // surface-terminated definitions respond to a target rebuild.
+      if (
+        gradingCriterionRequiresSurface(grading.criterion) &&
+        grading.targetSurfaceId === surfaceId
+      ) {
+        this.supersede(grading.id);
+      }
     }
   }
 
@@ -461,8 +485,6 @@ export class SurfaceGradingService {
     entry: GradingPendingEntry,
     result: CadGradingResult,
   ): string | null {
-    const query = this.targetMeshQuery(inputs.target.id, inputs.targetRevision);
-    if (!query) return 'Grading agreement rejected: target TIN is not CURRENT.';
     const atSource = (u: number): { x: number; y: number; z: number } => {
       const src = entry.resolvedSource;
       const len = Math.hypot(src.endX - src.startX, src.endY - src.startY);
@@ -473,6 +495,18 @@ export class SurfaceGradingService {
         z: src.startZ + gs * u,
       };
     };
+    // Phase 20F: analytic results gate on the source boundary only.
+    if (!inputs.target || !inputs.targetRevision) {
+      if (result.daylightPoints.length % 3 !== 0) return 'GRADING_AGREEMENT_MALFORMED_DAYLIGHT';
+      return validateGradingSourceBoundary({
+        first: atSource(0),
+        last: atSource(entry.resolvedSource.length),
+        expectedFirst: { x: inputs.resolvedSource.startX, y: inputs.resolvedSource.startY, z: inputs.resolvedSource.startZ },
+        expectedLast: { x: inputs.resolvedSource.endX, y: inputs.resolvedSource.endY, z: inputs.resolvedSource.endZ },
+      });
+    }
+    const query = this.targetMeshQuery(inputs.target.id, inputs.targetRevision);
+    if (!query) return 'Grading agreement rejected: target TIN is not CURRENT.';
     return validateGradingResultAgainstTarget(result.daylightPoints, query, {
       first: atSource(0),
       last: atSource(entry.resolvedSource.length),
@@ -490,6 +524,9 @@ export class SurfaceGradingService {
     inputs: ResolvedGroupInputs,
     result: CadGradingGroupResult,
   ): string | null {
+    // Analytic (target-free) groups have no TIN agreement gate; their
+    // daylight/limit vertices are closed-form and verified in the kernel.
+    if (inputs.target === undefined || inputs.targetRevision === undefined) return null;
     const query = this.targetMeshQuery(inputs.target.id, inputs.targetRevision);
     if (!query) return 'Grading group agreement rejected: target TIN is not CURRENT.';
     return validateDaylightAgainstTarget(result.daylightPoints, query);

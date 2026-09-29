@@ -91,6 +91,8 @@ export const projectTransformAffectedCounts = (
     surfaces: (project.surfaces ?? []).length,
     sampleLines,
     tinVertices,
+    gradings: (project.gradings ?? []).length,
+    gradingGroups: (project.gradingGroups ?? []).length,
   };
 };
 

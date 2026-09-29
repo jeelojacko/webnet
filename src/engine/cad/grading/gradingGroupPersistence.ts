@@ -1,5 +1,6 @@
 import { createGroupDefinition } from './gradingGroupAuthoring';
 import { validateGradingCriterion } from './gradingAuthoring';
+import { validateGroupTermination } from './gradingGroupTermination';
 import type { CadGradingGroup } from './gradingGroupTypes';
 
 /**
@@ -13,8 +14,12 @@ import type { CadGradingGroup } from './gradingGroupTypes';
  */
 
 export const cloneCadGradingGroup = (group: CadGradingGroup): CadGradingGroup => ({
-  ...group,
+  id: group.id,
+  name: group.name,
+  sourceFeatureLineId: group.sourceFeatureLineId,
   sourceCourses: group.sourceCourses.map((course) => ({ ...course })),
+  ...(group.targetSurfaceId !== undefined ? { targetSurfaceId: group.targetSurfaceId } : {}),
+  side: group.side,
   criterion: { ...group.criterion },
   ...(group.courseCriteria !== undefined
     ? {
@@ -24,6 +29,12 @@ export const cloneCadGradingGroup = (group: CadGradingGroup): CadGradingGroup =>
         })),
       }
     : {}),
+  maxSearchDistance: group.maxSearchDistance,
+  curveChordTolerance: group.curveChordTolerance,
+  cornerMode: group.cornerMode,
+  ...(group.closed === true ? { closed: true as const } : {}),
+  ...(group.layerId !== undefined ? { layerId: group.layerId } : {}),
+  ...(group.styleId !== undefined ? { styleId: group.styleId } : {}),
 });
 
 export const cloneCadGradingGroups = (groups: CadGradingGroup[] | undefined): CadGradingGroup[] =>
@@ -79,7 +90,9 @@ export const sanitizeCadGradingGroupsDetailed = (
       name: candidate['name'] as string,
       sourceFeatureLineId: candidate['sourceFeatureLineId'] as string,
       sourceCourses: (candidate['sourceCourses'] ?? []) as CadGradingGroup['sourceCourses'],
-      targetSurfaceId: candidate['targetSurfaceId'] as string,
+      ...(typeof candidate['targetSurfaceId'] === 'string'
+        ? { targetSurfaceId: candidate['targetSurfaceId'] as string }
+        : {}),
       side: candidate['side'] as CadGradingGroup['side'],
       criterion: candidate['criterion'] as CadGradingGroup['criterion'],
       maxSearchDistance: candidate['maxSearchDistance'] as number,
@@ -92,7 +105,22 @@ export const sanitizeCadGradingGroupsDetailed = (
     if (built.ok) {
       const scrubbed = scrubCourseCriteria(built.value, candidate['courseCriteria']);
       dropped.push(...scrubbed.dropped);
-      kept.push(cloneCadGradingGroup(scrubbed.group));
+      // Phase 20F: fail the family gate at sanitize. A hand-mixed file would
+      // otherwise fail closed only at resolve; instead load the group on its
+      // default criterion and report each stripped override.
+      let group = scrubbed.group;
+      if (group.courseCriteria !== undefined && validateGroupTermination(group) !== null) {
+        for (const override of group.courseCriteria) {
+          dropped.push({
+            groupId: group.id,
+            ref: `${override.sourceCourse.vertexAId}>${override.sourceCourse.vertexBId}`,
+            reason: 'invalid-criterion',
+          });
+        }
+        const { courseCriteria: _stripped, ...rest } = group;
+        group = rest;
+      }
+      kept.push(cloneCadGradingGroup(group));
     }
   }
   return { groups: kept, dropped };

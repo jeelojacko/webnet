@@ -7,6 +7,7 @@
  * tolerance, distinct course endpoints. Both-Sides creates the Left+Right
  * pair atomically (both or error). No project mutation, no history.
  */
+import { gradingCriterionRequiresSurface } from './gradingTypes';
 import type { CadGrading, GradingCriterion, GradingSide } from './gradingTypes';
 
 export type GradingAuthoringError = string;
@@ -21,7 +22,8 @@ export interface CreateGradingInput {
   sourceFeatureLineId: string;
   vertexAId: string;
   vertexBId: string;
-  targetSurfaceId: string;
+  /** Required (in effect) for fixed/cut-fill; omitted for distance/elevation. */
+  targetSurfaceId?: string;
   side: GradingSide;
   criterion: GradingCriterion;
   maxSearchDistance: number;
@@ -40,10 +42,28 @@ const nonEmpty = (value: unknown): value is string =>
 
 const fail = <T>(error: string): GradingAuthoringResult<T> => ({ ok: false, error });
 
+/** Machine-zero for grade ratios: exact zero only (never a survey tolerance). */
+const isMachineZero = (value: number): boolean =>
+  Math.abs(value) < Number.MIN_VALUE;
+
 /** Shared criterion rule: fixed finite; cut>0 and fill<0. */
 export const validateGradingCriterion = (criterion: GradingCriterion): string | null => {
   if (criterion.kind === 'fixed') {
     return Number.isFinite(criterion.gradeRatio) ? null : 'gradeRatio must be finite';
+  }
+  if (criterion.kind === 'distance') {
+    if (!Number.isFinite(criterion.gradeRatio)) return 'gradeRatio must be finite';
+    if (!Number.isFinite(criterion.distance) || !(criterion.distance > 0)) {
+      return 'distance must be > 0';
+    }
+    return null;
+  }
+  if (criterion.kind === 'elevation') {
+    if (!Number.isFinite(criterion.gradeRatio) || isMachineZero(criterion.gradeRatio)) {
+      return 'gradeRatio must be finite and nonzero';
+    }
+    if (!Number.isFinite(criterion.targetElevation)) return 'targetElevation must be finite';
+    return null;
   }
   if (!Number.isFinite(criterion.cutGradeRatio) || !Number.isFinite(criterion.fillGradeRatio)) {
     return 'cut/fill grade ratios must be finite';
@@ -64,29 +84,40 @@ const validateScalars = (input: Pick<CreateGradingInput, 'maxSearchDistance' | '
   return null;
 };
 
-/** Shared identity rules: ids, name, target, distinct endpoints, side. */
+/**
+ * Shared identity rules: ids, name, target, distinct endpoints, side. The
+ * target is only REQUIRED for surface-terminated criteria; distance/elevation
+ * accept an absent/empty id (a retained id stays dormant).
+ */
 const validateIdentity = (
   input: Pick<
     CreateGradingInput,
     'sourceFeatureLineId' | 'vertexAId' | 'vertexBId' | 'targetSurfaceId' | 'side'
   >,
+  criterion: GradingCriterion,
 ): string | null => {
   if (!nonEmpty(input.sourceFeatureLineId)) return 'sourceFeatureLineId must be non-empty';
   if (!nonEmpty(input.vertexAId) || !nonEmpty(input.vertexBId)) {
     return 'course vertex ids must be non-empty';
   }
   if (input.vertexAId === input.vertexBId) return 'course vertex ids must differ';
-  if (!nonEmpty(input.targetSurfaceId)) return 'targetSurfaceId must be non-empty';
+  if (gradingCriterionRequiresSurface(criterion) && !nonEmpty(input.targetSurfaceId)) {
+    return 'targetSurfaceId must be non-empty for surface-terminated criteria';
+  }
   if (input.side !== 'left' && input.side !== 'right') return 'side must be left or right';
   return null;
 };
+
+/** Only a non-empty target id is written; absent/empty is omitted entirely. */
+const targetField = (targetSurfaceId: unknown): { targetSurfaceId?: string } =>
+  nonEmpty(targetSurfaceId) ? { targetSurfaceId } : {};
 
 const toGrading = (input: CreateGradingInput): CadGrading => ({
   id: input.id,
   name: input.name,
   sourceFeatureLineId: input.sourceFeatureLineId,
   sourceCourse: { vertexAId: input.vertexAId, vertexBId: input.vertexBId },
-  targetSurfaceId: input.targetSurfaceId,
+  ...targetField(input.targetSurfaceId),
   side: input.side,
   criterion: input.criterion,
   maxSearchDistance: input.maxSearchDistance,
@@ -101,7 +132,7 @@ export const createGradingDefinition = (
 ): GradingAuthoringResult<CadGrading> => {
   if (!nonEmpty(input.id)) return fail('id must be non-empty');
   if (!nonEmpty(input.name)) return fail('name must be non-empty');
-  const identity = validateIdentity(input);
+  const identity = validateIdentity(input, input.criterion);
   if (identity) return fail(identity);
   const criterionError = validateGradingCriterion(input.criterion);
   if (criterionError) return fail(criterionError);
@@ -118,6 +149,45 @@ export const editGradingCriteria = (
   const error = validateGradingCriterion(criterion);
   if (error) return fail(error);
   return { ok: true, value: { ...current, criterion } };
+};
+
+/**
+ * Phase 20F: apply a criterion AND its kind-conditional target in ONE step.
+ * A surface-terminated criterion keeps/needs a non-empty target (the passed
+ * id, else the retained one); an analytic criterion clears the stored id so a
+ * kind switch never leaves a live-looking target behind. Returns a copy.
+ */
+export const editGradingCriteriaWithTarget = (
+  current: CadGrading,
+  criterion: GradingCriterion,
+  targetSurfaceId?: string | null,
+): GradingAuthoringResult<CadGrading> => {
+  const error = validateGradingCriterion(criterion);
+  if (error) return fail(error);
+  const { targetSurfaceId: _dropped, ...rest } = current;
+  if (!gradingCriterionRequiresSurface(criterion)) {
+    return { ok: true, value: { ...rest, criterion } };
+  }
+  const nextTarget = nonEmpty(targetSurfaceId) ? targetSurfaceId : current.targetSurfaceId;
+  if (!nonEmpty(nextTarget)) {
+    return fail('targetSurfaceId must be non-empty for surface-terminated criteria');
+  }
+  return {
+    ok: true,
+    value: {
+      id: rest.id,
+      name: rest.name,
+      sourceFeatureLineId: rest.sourceFeatureLineId,
+      sourceCourse: { ...rest.sourceCourse },
+      targetSurfaceId: nextTarget,
+      side: rest.side,
+      criterion: { ...criterion },
+      maxSearchDistance: rest.maxSearchDistance,
+      curveChordTolerance: rest.curveChordTolerance,
+      ...(rest.layerId !== undefined ? { layerId: rest.layerId } : {}),
+      ...(rest.styleId !== undefined ? { styleId: rest.styleId } : {}),
+    },
+  };
 };
 
 /** Point an existing definition at a different target surface (copy). */
@@ -140,7 +210,7 @@ export const createBothSidesGrading = (
   if (!nonEmpty(input.rightId)) return fail('rightId must be non-empty');
   if (input.leftId === input.rightId) return fail('left/right ids must differ');
   if (!nonEmpty(input.name)) return fail('name must be non-empty');
-  const identity = validateIdentity({ ...input, side: 'left' });
+  const identity = validateIdentity({ ...input, side: 'left' }, input.criterion);
   if (identity) return fail(identity);
   const criterionError = validateGradingCriterion(input.criterion);
   if (criterionError) return fail(criterionError);

@@ -1,18 +1,30 @@
-import { createGradingDefinition } from './gradingAuthoring';
-import type { CadGrading } from './gradingTypes';
-
 /**
  * Phase 20B grading definition persistence (ENGINE ONLY — no UI).
  *
  * Definitions persist; derived daylight/mesh/status/results never do.
  * Additive + optional (still schema v2, no bump — same precedent as every
  * 18F–19D table): legacy files backfill [] and reopen UNBUILT.
+ *
+ * Phase 20F: distance/elevation criteria omit `targetSurfaceId` on writes; a
+ * retained stale id stays dormant. Clone preserves key order and never mints
+ * a placeholder id.
  */
 
+import { createGradingDefinition } from './gradingAuthoring';
+import type { CadGrading } from './gradingTypes';
+
 export const cloneCadGrading = (grading: CadGrading): CadGrading => ({
-  ...grading,
+  id: grading.id,
+  name: grading.name,
+  sourceFeatureLineId: grading.sourceFeatureLineId,
   sourceCourse: { ...grading.sourceCourse },
+  ...(grading.targetSurfaceId !== undefined ? { targetSurfaceId: grading.targetSurfaceId } : {}),
+  side: grading.side,
   criterion: { ...grading.criterion },
+  maxSearchDistance: grading.maxSearchDistance,
+  curveChordTolerance: grading.curveChordTolerance,
+  ...(grading.layerId !== undefined ? { layerId: grading.layerId } : {}),
+  ...(grading.styleId !== undefined ? { styleId: grading.styleId } : {}),
 });
 
 export const cloneCadGradings = (gradings: CadGrading[] | undefined): CadGrading[] =>
@@ -53,7 +65,9 @@ export const sanitizeCadGradings = (gradings: unknown): CadGrading[] => {
       sourceFeatureLineId: candidate['sourceFeatureLineId'] as string,
       vertexAId: course?.vertexAId as string,
       vertexBId: course?.vertexBId as string,
-      targetSurfaceId: candidate['targetSurfaceId'] as string,
+      ...(typeof candidate['targetSurfaceId'] === 'string'
+        ? { targetSurfaceId: candidate['targetSurfaceId'] as string }
+        : {}),
       side: candidate['side'] as CadGrading['side'],
       criterion: candidate['criterion'] as CadGrading['criterion'],
       maxSearchDistance: candidate['maxSearchDistance'] as number,

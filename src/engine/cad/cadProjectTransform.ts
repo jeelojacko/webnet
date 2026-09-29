@@ -38,6 +38,7 @@ import type {
 import { cloneCadSurfaceDefinition } from './cadSurfaceTypes';
 import { isNativeSurfaceDefinition } from './cadTypes';
 import { transformCadSurfaceEdits } from './cadSurfaceEditTransform';
+import { scaleCadGrading, scaleCadGradingGroup } from './cadProjectTransformGrading';
 import { cloneCadProfileViews, cloneCadSurfaceProfiles } from './cadProfileTypes';
 import {
   cloneCadSampleLineGroups,
@@ -83,11 +84,14 @@ export interface CadProjectTransformAffected {
   tinVertices: number;
   ownershipDetached: number;
   viewsMoved: number;
+  /** Phase 20F: grading definitions scaled (horizontal lengths only). */
+  gradings: number;
+  gradingGroups: number;
 }
 
 export type ProjectTransformAffectedCounts = Pick<
   CadProjectTransformAffected,
-  'entities' | 'surveyPoints' | 'alignments' | 'surfaces' | 'sampleLines' | 'tinVertices'
+  'entities' | 'surveyPoints' | 'alignments' | 'surfaces' | 'sampleLines' | 'tinVertices' | 'gradings' | 'gradingGroups'
 >;
 
 // Request-level API (solve + delegate) lives in cadProjectTransformRequest.ts;
@@ -523,6 +527,15 @@ export const applyCadProjectCoordinateTransform = (
     warnings,
   );
 
+  // Phase 20F: scale horizontal grading lengths with the frame. Uniform
+  // positive scale is guaranteed by `gateProjectTransform`, so this is exact
+  // for distance-terminated criteria and a no-op (x1) for rigid transforms;
+  // grade ratios, target elevations, side, and Z are invariant.
+  const gradings = (project.gradings ?? []).map((grading) => scaleCadGrading(grading, scale));
+  const gradingGroups = (project.gradingGroups ?? []).map((group) =>
+    scaleCadGradingGroup(group, scale),
+  );
+
   const profileViews = (project.profileViews ?? []).map((view) => {
     const at = applyPoint(transform, { x: view.insertionX, y: view.insertionY });
     return { ...cloneCadProfileViews([view])[0]!, insertionX: at.x, insertionY: at.y };
@@ -546,6 +559,8 @@ export const applyCadProjectCoordinateTransform = (
     tinVertices: tinVertexCount,
     ownershipDetached,
     viewsMoved: profileViews.length + sectionViews.length,
+    gradings: gradings.length,
+    gradingGroups: gradingGroups.length,
   };
   const scalePpm = (scale - 1) * 1e6;
   const auditInputs: Record<string, unknown> = {
@@ -617,6 +632,8 @@ export const applyCadProjectCoordinateTransform = (
     sampleLineGroups: sample.groups,
     sectionViews,
     cogoComputations: [...(project.cogoComputations ?? []), computation],
+    ...(project.gradings != null ? { gradings } : {}),
+    ...(project.gradingGroups != null ? { gradingGroups } : {}),
   };
   // Bounds come from the fully assembled TRANSFORMED state so imported-TIN
   // extents (not entity-backed) are included; old bounds are never transformed.
