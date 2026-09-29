@@ -1,4 +1,4 @@
-# Phase 20F.4 Independent Review — first review recorded (re-review pending)
+# Phase 20F.4 Independent Review — final APPROVE (first REQUEST CHANGES → fix round → 20F.5 fresh APPROVE)
 
 Brief: independent reviewer (`reviewer-visual-gate`) examined the 20F.4 close-out: single
 recaptured PNG (`docs/evidence/phase20f4/1366-cutfill-defaults.png`), the 33/33 pixel verdicts
