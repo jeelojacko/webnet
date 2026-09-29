@@ -1,6 +1,12 @@
 # Phase 20F.3 Visual QA — draft per-screenshot inspection
 
-## 20F.4 addendum (2026-09-29, objective-only history preserved below)
+## 20F.4 addendum (2026-09-29, objective-only history preserved below) — SUPERSEDED
+
+> **SUPERSEDED 2026-09-29 (Phase 20F.5):** the 20F.4 counts below (**32 PASS, 1 FAIL**) and the
+> single replacement are corrected to **31 PASS, 2 FAIL + two replacements** — independent review
+> caught a second framing FAIL (`phase20f3/1920-failed-manager.png`, pre-recalc moment, falsely
+> PASSED). See `docs/evidence/phase20f4-visual-qa.md` and
+> `docs/evidence/phase20f5-review-record-closeout.md`. History below preserved unchanged.
 
 - Pre-merge this file was a 2-frame vision pass + objective DOM geometry for the rest (see Method).
 - The 20F.4 full 33/33 eyeballed review (`docs/evidence/phase20f4-visual-qa.md`, from

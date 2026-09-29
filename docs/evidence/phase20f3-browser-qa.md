@@ -8,9 +8,10 @@
 - Then PR #133 (AGENTS.md memory routing, `bca465d0`) advanced `origin/main` to `c444f0a7`; 20F.4
   baseline = `c444f0a7` (no product-code drift).
 - Final-HEAD rerun (fresh build, 16/16, 25.0s, zero errors):
-  `docs/evidence/phase20f4-browser-qa.md`. Full pixel review + one recapture:
-  `docs/evidence/phase20f4-visual-qa.md`. Merge-state audit:
-  `docs/evidence/phase20f4-post-merge-audit.md`.
+  `docs/evidence/phase20f4-browser-qa.md`. Full pixel review + 20F.4 recaptures:
+  `docs/evidence/phase20f4-visual-qa.md` (SUPERSEDED 2026-09-29 by Phase 20F.5: two 20F.4
+  replacements, not one — 31 PASS/2 FAIL; see `phase20f5-review-record-closeout.md`).
+  Merge-state audit: `docs/evidence/phase20f4-post-merge-audit.md`.
 
 ## Environment
 - Branch `fix/phase20f3-grading-shell-evidence-closeout` @ `74bbf637`
