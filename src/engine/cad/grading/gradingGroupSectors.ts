@@ -139,7 +139,10 @@ const rayTriangleInterval = (
     const num = nx * (ax - ox) + ny * (ay - oy);
     const denom = nx * mx + ny * my;
     if (Math.abs(denom) <= zeroDelta(denom, 0)) {
-      if (num < -zeroDelta(num, 0)) return null;
+      // Parallel edge: the ray runs alongside the edge half-plane. Reject
+      // only when strictly outside (num > +eps, i.e. origin beyond the
+      // inward normal); grazing/inside (num <= +eps) stays eligible.
+      if (num > zeroDelta(num, 0)) return null;
       continue;
     }
     const t = num / denom;
