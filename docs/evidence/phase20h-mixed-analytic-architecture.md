@@ -1,8 +1,8 @@
 # Phase 20H — mixed-analytic grading-group architecture
 
-Status: engine + UI landed on `feat/cad-grading-mixed-analytic-groups`
-(baseline `d364174bbcd21b2b00cea047de861720159d023f`). Tests/evidence only on
-the worker branch.
+Status: MERGED. PR #137 — base `d364174bbcd21b2b00cea047de861720159d023f`, head `65fd5077965bb997eb6b67dbd8327c0146b90705`, merge `9dd28c94715daa3583c907224a04652d3ae99cc3`; final-head CI run 36701311878, merge-push CI run 36702391599. Phase 20H behavior (one derived termination domain per group) is the current production contract.
+
+The still-blocked surface+analytic mix is the subject of the Phase 20I evidence-only study: `docs/evidence/phase20i-surface-analytic-corner-architecture.md` (plus `...-validation.md`, `...-performance.md`, `...-decision.md`). Phase 20I changes no routing; the fail-closed behavior recorded in §4, §10 below is unchanged.
 
 ## 1. Termination KIND vs termination DOMAIN
 
