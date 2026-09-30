@@ -234,22 +234,48 @@ describe('(4) sparse per-course overrides', () => {
 // 5. Resolve + compute fail-closed gates
 // ---------------------------------------------------------------------------
 describe('(5) resolve + compute gates', () => {
-  it('compute rejects a surface+analytic mix before any partial solve', () => {
+  it('compute admits a surface+analytic mix as hybrid (20J), still fail-closed without a target', () => {
+    // Flat-90 grid: surface strips tie at d=20, analytic limits match it.
+    const xs: number[] = [];
+    for (let v = -60; v <= 160 + 1e-9; v += 20) xs.push(v);
+    const points: number[] = [];
+    const idx = (ix: number, iy: number): number => iy * xs.length + ix;
+    for (const y of xs) for (const x of xs) points.push(x, y, 0);
+    const triangles: number[] = [];
+    for (let ix = 0; ix + 1 < xs.length; ix += 1) {
+      for (let iy = 0; iy + 1 < xs.length; iy += 1) {
+        const a = idx(ix, iy);
+        const b = idx(ix + 1, iy);
+        const c = idx(ix + 1, iy + 1);
+        const d = idx(ix, iy + 1);
+        triangles.push(a, b, c, a, c, d);
+      }
+    }
+    const target = { points, triangles };
     for (const memberCriteria of [
       [FIXED, DIST(-0.5, 20)],
       [DIST(-0.5, 20), FIXED],
-      [CUTFILL, REL(-0.25, -10)],
+      [CUTFILL, REL(-0.5, -10)],
     ]) {
-      const out = computeGradingGroupFromSnapshots({
+      const admitted = computeGradingGroupFromSnapshots({
         groupId: 'gg', revision: 'r', members: square(), side: 'right',
         criterion: memberCriteria[0]!, memberCriteria,
         maxSearchDistance: 50, curveChordTolerance: 0.05, closed: true,
+        target,
       });
-      expect(out.ok).toBe(false);
-      if (out.ok) throw new Error('expected MEMBER_NO_SOLUTION');
-      expect(out.code).toBe('MEMBER_NO_SOLUTION');
-      expect(out.detail).toBe('GRADING_GROUP_MIXED_TERMINATION_DOMAIN');
+      expect(admitted.ok).toBe(true);
     }
+    // No target with a surface member: fail closed before any partial
+    // solve (never a crash, never a half-solved mesh).
+    const noTarget = computeGradingGroupFromSnapshots({
+      groupId: 'gg', revision: 'r', members: square(), side: 'right',
+      criterion: FIXED, memberCriteria: [FIXED, DIST(-0.5, 20)],
+      maxSearchDistance: 50, curveChordTolerance: 0.05, closed: true,
+    });
+    expect(noTarget.ok).toBe(false);
+    if (noTarget.ok) throw new Error('expected MEMBER_NO_SOLUTION');
+    expect(noTarget.code).toBe('MEMBER_NO_SOLUTION');
+    expect(noTarget.detail).toBe('GRADING_BAD_TARGET_MESH');
   });
 
   it('compute still solves an all-analytic mixed group (control)', () => {

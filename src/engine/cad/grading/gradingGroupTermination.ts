@@ -85,3 +85,32 @@ export const canonicalAnalyticKinds = (
 /** Convenience gate for a fully-built group definition (default + overrides). */
 export const validateGroupTermination = (group: CadGradingGroup): string | null =>
   validateGroupTerminationCriteria(group.criterion, resolveGroupMemberCriteria(group));
+
+/**
+ * Phase 20J Wave B — group termination MODE (single engine authority).
+ *
+ * Derived from the EFFECTIVE criteria (group default + per-member entries),
+ * never persisted: `surface` (fixed/cut-fill only), `analytic`
+ * (distance/elevation/relative-elevation only), or `hybrid` (mixed).
+ */
+export type GradingGroupTerminationMode = 'surface' | 'analytic' | 'hybrid';
+
+export const groupTerminationMode = (
+  criterion: GradingCriterion,
+  memberCriteria: readonly GradingCriterion[],
+): GradingGroupTerminationMode => {
+  const domains = new Set<GradingTerminationDomain>();
+  domains.add(gradingTerminationDomain(criterion));
+  for (const member of memberCriteria) domains.add(gradingTerminationDomain(member));
+  if (domains.size <= 1) return domains.has('surface') ? 'surface' : 'analytic';
+  return 'hybrid';
+};
+
+/**
+ * True when the effective criteria need a target surface: surface-only and
+ * hybrid groups query the TIN; all-analytic groups never do.
+ */
+export const groupTerminationRequiresTarget = (
+  criterion: GradingCriterion,
+  memberCriteria: readonly GradingCriterion[],
+): boolean => groupTerminationMode(criterion, memberCriteria) !== 'analytic';
