@@ -111,6 +111,8 @@ export interface CourseMemberRow {
   to: string;
   criterionSource: string;
   criterionType: string;
+  /** Normalized effective criterion text (one row, one honest value). */
+  effective: string;
   /** Fixed grade text, or '—' for cut/fill members. */
   fixedGrade: string;
   /** Cut grade text, or '—' for fixed members. */
@@ -119,8 +121,8 @@ export interface CourseMemberRow {
   fillGrade: string;
   /**
    * Analytic target text ('20.000 m' distance, '98.000 m' elevation,
-   * '-10.000 m relative' relative-elevation), or '—' for surface members
-   * (no fake fixed/cut/fill values).
+   * '-10.000 m relative' relative-elevation), or the shared target surface
+   * name for surface members (no fake fixed/cut/fill values).
    */
   targetValue: string;
   classification: string;
@@ -132,13 +134,16 @@ export interface CourseMemberRow {
 export const buildCourseMemberRows = (
   group: CadGradingGroup,
   result: CadGradingGroupResult | null,
+  targetName = '—',
 ): CourseMemberRow[] =>
   group.sourceCourses.map((course, index) => {
     const criterion = effectiveCourseCriterion(group, index);
     const fixed = criterion.kind === 'fixed' ? formatSignedGradePercent(criterion.gradeRatio) : '—';
     const cut = criterion.kind === 'cut-fill' ? formatSignedGradePercent(criterion.cutGradeRatio) : '—';
     const fill = criterion.kind === 'cut-fill' ? formatSignedGradePercent(criterion.fillGradeRatio) : '—';
-    // Analytic target: distance or target elevation only; surface rows keep '—'.
+    // Analytic target: distance or target elevation only; surface rows name
+    // the shared target surface (a singular target column could never carry
+    // one value for a hybrid group, so each row carries its own).
     const targetValue =
       criterion.kind === 'distance'
         ? `${criterion.distance.toFixed(3)} m`
@@ -146,13 +151,14 @@ export const buildCourseMemberRows = (
           ? `${criterion.targetElevation.toFixed(3)} m`
           : criterion.kind === 'relative-elevation'
             ? `${criterion.relativeElevation.toFixed(3)} m relative`
-            : '—';
+            : targetName;
     return {
       course: courseNumberLabel(index),
       from: shortVertexLabel(course.vertexAId),
       to: shortVertexLabel(course.vertexBId),
       criterionSource: courseCriterionSourceText(group, index),
       criterionType: courseCriterionTypeText(criterion),
+      effective: formatGradingCriterion(criterion),
       fixedGrade: fixed,
       cutGrade: cut,
       fillGrade: fill,

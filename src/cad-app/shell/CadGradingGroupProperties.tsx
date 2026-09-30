@@ -32,14 +32,14 @@ export const GradingGroupPropertiesBlock: React.FC<{ row: CadGradingGroupRow }> 
       <dl>
         <div><dt>Name</dt><dd>{row.name}</dd></div>
         <div><dt>Method</dt><dd data-cad-grading-group-properties-method>{row.methodSummary.label}</dd></div>
-        {row.methodSummary.mixedAnalytic ? (
+        {row.methodSummary.mixedAnalytic || row.methodSummary.hybrid ? (
           <div><dt>Methods</dt><dd data-cad-grading-group-properties-methods>{row.methodSummary.detail}</dd></div>
         ) : null}
-        <div><dt>Domain</dt><dd>{row.analytic ? 'Analytic' : 'Surface'}</dd></div>
+        <div><dt>Domain</dt><dd>{row.hybrid ? 'Hybrid' : row.analytic ? 'Analytic' : 'Surface'}</dd></div>
         <div><dt>Source</dt><dd>{row.sourceName}</dd></div>
         <div><dt>Courses</dt><dd>{row.courseCount}{row.closed ? ' (closed)' : ''} · {row.courseRefs}</dd></div>
         <div><dt>Side</dt><dd>{row.side}</dd></div>
-        <div><dt>Target</dt><dd>{row.methodSummary.mixedAnalytic ? 'Not applicable' : gradingTargetSummary(representativeGroupCriterion(row.definition), row.targetName, row.lengthUnit)}</dd></div>
+        <div><dt>Target</dt><dd>{row.hybrid ? `Target: ${row.targetName}` : row.methodSummary.mixedAnalytic ? 'Not applicable' : gradingTargetSummary(representativeGroupCriterion(row.definition), row.targetName, row.lengthUnit)}</dd></div>
         <div><dt>Default Criterion</dt><dd>{row.criterionText}</dd></div>
         {relative ? (
           <>

@@ -29,9 +29,10 @@ import type {
 import {
   gradingBoundaryLabel,
   gradingTerminationKind,
-  isTargetFreeCriterion,
 } from '../../engine/cad/grading/gradingTypes';
 import { resolveGroupInputs } from '../../engine/cad/grading/gradingGroupResolve';
+import { resolveGroupMemberCriteria } from '../../engine/cad/grading/gradingGroupCourseCriteria';
+import { groupTerminationMode } from '../../engine/cad/grading/gradingGroupTermination';
 import {
   formatGradingCriterion,
   gradingSideText,
@@ -84,17 +85,19 @@ export interface CadGradingGroupRow {
   cornerMode: GradingCornerMode;
   /** Display layer; undefined = default grading layer. */
   layerId?: string;
-  /** Termination method across the group family (surface/distance/elevation). */
+  /** Termination method of the stored group default (singular; see methodSummary for the group). */
   method: GradingTerminationKind;
   /** Domain-level method summary (`Mixed Analytic` when >1 analytic kind). */
   methodSummary: GroupMethodSummary;
-  /** True for distance/elevation families: no target surface. */
+  /** True for all-analytic families: no target surface. Hybrid and surface groups carry one. */
   analytic: boolean;
-  /** Target surface id; empty string for analytic families. */
+  /** True when surface + analytic courses mix (shared target still applies). */
+  hybrid: boolean;
+  /** Target surface id; empty string for all-analytic families. */
   targetSurfaceId: string;
-  /** Target name; em dash for analytic families (never a fake surface). */
+  /** Target name; em dash for all-analytic families (never a fake surface). */
   targetName: string;
-  /** Boundary label: 'Daylight' (surface) or 'Grading Limit' (analytic). */
+  /** Boundary label: 'Daylight' (surface), 'Grading Limit' (analytic), 'Grading Boundary' (hybrid). */
   boundaryLabel: string;
   lengthUnit: string;
   areaUnit: string;
@@ -189,7 +192,13 @@ export const buildCadGradingGroupSnapshot = (
   );
   const rows: CadGradingGroupRow[] = groups.map((group) => {
     const entity = featureLines.find((entry) => entry.id === group.sourceFeatureLineId) ?? null;
-    const analytic = isTargetFreeCriterion(group.criterion);
+    // Phase 20J Wave C2 — target need derives from the EFFECTIVE criteria:
+    // an analytic default with a Surface override is hybrid and still
+    // queries the TIN; only an all-analytic group is target-free.
+    const memberCriteria = resolveGroupMemberCriteria(group);
+    const mode = groupTerminationMode(group.criterion, memberCriteria);
+    const analytic = mode === 'analytic';
+    const hybrid = mode === 'hybrid';
     const target: CadSurface | null = analytic
       ? null
       : surfaces.find((entry) => entry.id === group.targetSurfaceId) ?? null;
@@ -238,12 +247,13 @@ export const buildCadGradingGroupSnapshot = (
       method: gradingTerminationKind(group.criterion),
       methodSummary: groupMethodSummary(group),
       analytic,
+      hybrid,
       targetSurfaceId: group.targetSurfaceId ?? '',
       targetName: analytic ? '—' : target?.name ?? group.targetSurfaceId ?? '',
-      boundaryLabel: gradingBoundaryLabel(group.criterion),
+      boundaryLabel: hybrid ? 'Grading Boundary' : gradingBoundaryLabel(group.criterion),
       lengthUnit,
       areaUnit,
-      cutFillApplicable: !analytic,
+      cutFillApplicable: mode !== 'analytic',
       side: gradingSideText(group.side),
       criterionText: formatGradingCriterion(group.criterion),
       overrideCount: group.courseCriteria?.length ?? 0,

@@ -25,16 +25,16 @@ const DefinitionRow: React.FC<{ row: CadGradingGroupRow }> = ({ row }) => {
   // Singular grade/Δ/offset spans describe the calculated result, never an
   // unused default; mixed groups leave them to the per-course table.
   const representative = representativeGroupCriterion(row.definition);
-  const relative = !row.methodSummary.mixedAnalytic
+  const relative = !row.methodSummary.mixedAnalytic && !row.methodSummary.hybrid
     ? relativeElevationDisplay(representative, row.lengthUnit)
     : null;
   return (
     <div className="cad-shell-tree-row" data-cad-grading-group-definition={row.id} data-cad-grading-group-method={row.methodSummary.label}>
-      <span>Method {row.methodSummary.label}{row.methodSummary.mixedAnalytic ? ` (${row.methodSummary.detail})` : ''}</span>
+      <span>Method {row.methodSummary.label}{row.methodSummary.mixedAnalytic || row.methodSummary.hybrid ? ` (${row.methodSummary.detail})` : ''}</span>
       <span> · Source {row.sourceName}</span>
       <span> · {row.courseCount} courses{row.closed ? ' (closed)' : ''}</span>
       <span> · {row.side}</span>
-      <span> · {row.methodSummary.mixedAnalytic ? 'Target: Not applicable' : gradingTargetSummary(representative, row.targetName, row.lengthUnit)}</span>
+      <span> · {row.methodSummary.hybrid ? `Target: ${row.targetName}` : row.methodSummary.mixedAnalytic ? 'Target: Not applicable' : gradingTargetSummary(representative, row.targetName, row.lengthUnit)}</span>
       {relative ? (
         <>
           <span data-cad-grading-group-relative-grade> · Grade {relative.grade}</span>

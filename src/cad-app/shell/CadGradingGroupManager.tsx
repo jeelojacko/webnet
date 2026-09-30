@@ -21,7 +21,7 @@ import type {
   GradingSide,
   GradingTerminationKind,
 } from '../../engine/cad/grading/gradingTypes';
-import { gradingCriterionRequiresSurface, gradingTerminationDomain } from '../../engine/cad/grading/gradingTypes';
+import { gradingCriterionRequiresSurface } from '../../engine/cad/grading/gradingTypes';
 import type { CadShellActions, CadWorkspaceSnapshot } from './cadShellTypes';
 import { proposeGroupSpan, type ClosedSpanMode } from './cadGradingGroupSpan';
 import {
@@ -41,9 +41,11 @@ import { gradingDiagnosticCode, gradingLengthUnit } from './cadGradingSnapshot';
 import { CadGradingGroupInquiryPanel } from './CadGradingGroupInquiryPanel';
 import { CadGradingGroupCriteriaPanel } from './CadGradingGroupCriteriaPanel';
 import { groupGhostArrows, groupGhostSeam } from './cadGradingGroupDisplay';
-import { representativeGroupCriterion } from './cadGradingGroupMethodSummary';
+import { representativeGroupCriterion, summarizeGroupMethods } from './cadGradingGroupMethodSummary';
+import { effectiveCourseCriterion, isCourseCriterionOverride } from './cadGradingGroupCourseCriteria';
 import { buttonClass, inputClass } from '../../components/surveyCad/surveyManagerShared';
 import { Field, ManagerShell } from '../../components/surveyCad/surveyManagerShared.tsx';
+import { HYBRID_CORNER_WARNING } from './cadGradingGroupMethodSummary';
 
 interface CadGradingGroupManagerProps {
   snapshot: CadWorkspaceSnapshot;
@@ -240,15 +242,31 @@ const EditCriteriaInline: React.FC<{
       : currentSurfaces[0]?.id ?? '',
   );
   const surfaceBlocked = draft.method === 'surface' && currentSurfaces.length === 0;
-  // Phase 20H: a surface<->analytic switch is a domain change. The engine
-  // same-domain gate rejects it while course overrides are still stored, so
-  // the switch requires explicit override clearing (two labeled Undo steps)
-  // — never a silent delete.
+  // Phase 20J Wave C2 — no domain lock: the default may switch among all
+  // five kinds (hybrid groups keep their overrides; nothing is silently
+  // deleted, one GROUP_EDIT_CRITERIA = one Undo step). The preview resolves
+  // the prospective EFFECTIVE set (draft default + kept overrides).
   const draftCriterion = parseGradingCriterionDraft(draft);
-  const draftDomain = draftCriterion ? gradingTerminationDomain(draftCriterion) : null;
-  const currentDomain = gradingTerminationDomain(row.definition.criterion);
-  const crossDomain = draftDomain != null && draftDomain !== currentDomain;
-  const clearingOverrides = crossDomain && row.overrideCount > 0;
+  const prospective = row.definition.sourceCourses.map((_course, index) =>
+    isCourseCriterionOverride(row.definition, index)
+      ? effectiveCourseCriterion(row.definition, index)
+      : (draftCriterion ?? row.definition.criterion),
+  );
+  const next = summarizeGroupMethods(
+    prospective.length > 0 ? prospective : [draftCriterion ?? row.definition.criterion],
+  );
+  const followers = row.definition.sourceCourses.length - row.overrideCount;
+  const clearsTarget =
+    draftCriterion != null && !next.requiresTarget && row.definition.targetSurfaceId != null;
+  const preview = draftCriterion == null
+    ? 'Next: invalid — check the criterion fields.'
+    : `Next: ${next.label}${next.mixedAnalytic || next.hybrid ? ` (${next.methodList})` : ''}` +
+      ` · Default affects ${followers} course${followers === 1 ? '' : 's'} · Overrides kept: ${row.overrideCount}` +
+      (next.requiresTarget
+        ? (currentSurfaces.some((surface) => surface.id === targetId)
+          ? ` · Target: ${currentSurfaces.find((surface) => surface.id === targetId)?.name ?? targetId}`
+          : ' · Target required — pick a CURRENT surface')
+        : (clearsTarget ? ' · Stored target cleared (target-free)' : ' · No target (target-free)'));
   const apply = (): void => {
     const criterion: GradingCriterion | null = draftCriterion;
     if (criterion == null) {
@@ -260,39 +278,25 @@ const EditCriteriaInline: React.FC<{
       onNotice('Criteria rejected — surface grading needs a CURRENT target.');
       return;
     }
-    // Domain switch with stored overrides: clear them first (explicit,
-    // separate Undo step), then edit the default. Reset-fail aborts before
-    // touching the default; there is no invalid intermediate state because
-    // the old default and the cleared override set share the old domain.
-    if (clearingOverrides) {
-      const confirmed = window.confirm(
-        `Switching the group domain (${currentDomain} → ${draftDomain}) clears ${row.overrideCount} course override${row.overrideCount === 1 ? '' : 's'}.` +
-        ' This commits two Undo steps (clear, then default). Proceed?',
-      );
-      if (!confirmed) return;
-      const cleared = run(actions, {
-        key: 'GROUP_RESET_COURSE_CRITERIA',
-        groupId: row.id,
-        courses: row.definition.sourceCourses.map((course) => ({ ...course })),
-      });
-      if (!cleared) {
-        onNotice('Criteria rejected — clearing overrides failed; no changes applied.');
-        return;
-      }
-    }
-    // Kind switch + target commit in ONE undo entry. The engine is
-    // authoritative for the one-domain-per-group guard.
-    const ok = run(actions, {
-      key: 'GROUP_EDIT_CRITERIA',
-      groupId: row.id,
-      criterion,
-      targetSurfaceId: needsSurface ? targetId : null,
-    });
+    // Kind switch + target attach/clear commit in ONE undo entry: a fully
+    // analytic result clears a STORED target id in the same transaction,
+    // while a group with no stored id omits the field (never a no-op
+    // clear, which the engine rejects).
+    const command: CadGradingGroupShellCommand = needsSurface
+      ? { key: 'GROUP_EDIT_CRITERIA', groupId: row.id, criterion, targetSurfaceId: targetId }
+      : row.definition.targetSurfaceId != null
+        ? { key: 'GROUP_EDIT_CRITERIA', groupId: row.id, criterion, targetSurfaceId: null }
+        : { key: 'GROUP_EDIT_CRITERIA', groupId: row.id, criterion };
+    const ok = run(actions, command);
     if (!ok) {
-      onNotice('Criteria rejected — check the termination domain and target.');
+      onNotice('Criteria rejected — check the criterion and target.');
       return;
     }
-    onNotice('Criteria updated — recalculate.');
+    onNotice(
+      clearsTarget
+        ? 'Criteria updated — now fully analytic (target-free); stored target cleared. Recalculate.'
+        : 'Criteria updated — recalculate.',
+    );
     onClose();
   };
   return (
@@ -311,10 +315,12 @@ const EditCriteriaInline: React.FC<{
           Surface grading needs a CURRENT target surface — none is eligible.
         </div>
       ) : null}
-      {clearingOverrides ? (
-        <div className="col-span-2 text-[11px] text-amber-300" data-cad-grading-group-edit-domain-clear>
-          Switching to {draftDomain} clears {row.overrideCount} course override
-          {row.overrideCount === 1 ? '' : 's'} (two Undo steps; overrides are never silently deleted).
+      <div className="col-span-2 text-[11px] text-slate-300" data-cad-grading-group-edit-preview>
+        {preview}
+      </div>
+      {next.hybrid ? (
+        <div className="col-span-2 text-[11px] text-amber-300" data-cad-grading-group-edit-hybrid-warning>
+          {HYBRID_CORNER_WARNING}
         </div>
       ) : null}
       <div className="col-span-2 flex gap-1">
@@ -476,7 +482,7 @@ const GroupRowTable: React.FC<{
       <thead className="whitespace-nowrap text-slate-400">
         <tr>
           <th className="pr-2">Name</th><th className="pr-2">Method</th><th className="pr-2">Courses</th><th className="pr-2">Side</th><th className="pr-2">Target</th><th className="pr-2">Default Criterion</th>
-          <th className="pr-2">Status</th><th className="pr-2">Max</th><th className="pr-2">Accuracy</th><th className="pr-2">Tie (min–max)</th><th className="pr-2">Area</th><th>Tri</th>
+          <th className="pr-2">Status</th><th className="pr-2">Max</th><th className="pr-2">Tol</th><th className="pr-2">Accuracy</th><th className="pr-2">Tie (min–max)</th><th className="pr-2">Area</th><th>Tri</th>
         </tr>
       </thead>
       <tbody className="whitespace-nowrap">
@@ -493,10 +499,11 @@ const GroupRowTable: React.FC<{
             <td className="pr-2">{row.methodSummary.label}</td>
             <td className="pr-2">{row.courseCount}{row.closed ? ' (closed)' : ''}</td>
             <td className="pr-2">{row.side}</td>
-            <td className="pr-2">{row.methodSummary.mixedAnalytic ? 'Not applicable' : row.targetName}</td>
+            <td className="pr-2">{row.methodSummary.requiresTarget ? row.targetName : 'Not applicable'}</td>
             <td className="pr-2">Default {row.criterionText} · Overrides:{row.overrideCount}</td>
             <td className="pr-2">{row.statusText}{row.stale ? ' (stale)' : ''}{row.diagnostic ? ` — ${gradingDiagnosticCode(row.diagnostic) ?? row.diagnostic}` : ''}</td>
             <td className="pr-2">{row.maxSearchDistance.toFixed(2)} {row.lengthUnit}</td>
+            <td className="pr-2">{row.curveChordTolerance.toFixed(3)} {row.lengthUnit}</td>
             <td className="pr-2">{row.accuracyText}{row.curveCornerApproximated ? ' (corner)' : ''}</td>
             <td className="pr-2">{row.metrics ? `${row.metrics.minProjectionDistance.toFixed(2)}–${row.metrics.maxProjectionDistance.toFixed(2)} ${row.lengthUnit}` : '--'}</td>
             <td className="pr-2">{row.metrics ? row.metrics.gradingPlanArea.toFixed(1) : '--'}</td>
@@ -621,6 +628,9 @@ export const CadGradingGroupManager: React.FC<CadGradingGroupManagerProps> = ({
           run={(command) => run(actions, command)}
           onNotice={setNotice}
           lengthUnit={lengthUnit}
+          currentSurfaces={(snapshot.surface?.surfaces ?? [])
+            .filter((surface) => surface.status === 'CURRENT')
+            .map((surface) => ({ id: surface.id, name: surface.name }))}
         />
       ) : null}
       {tab === 'inquiry' && selected ? (

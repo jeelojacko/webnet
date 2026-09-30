@@ -195,14 +195,14 @@ describe('(2) composer offers the analytic domain', () => {
     })).toBe('Criterion: invalid — grade and relative elevation point in opposite directions');
   });
 
-  it('the group criteria panel offers the analytic method select for a mixed domain', () => {
+  it('the group criteria panel offers all five kinds (no domain lock)', () => {
     const html = mount(
       <CadGradingGroupCriteriaPanel group={mixedGroup()} run={() => true} onNotice={() => {}} />,
     );
     const select = html.querySelector<HTMLSelectElement>('[data-cad-grading-field="cad-grading-group-criteria-method"]');
     expect(select).not.toBeNull();
     expect(Array.from(select!.options).map((option) => option.textContent)).toEqual([
-      'Distance', 'Elevation', 'Relative Elevation',
+      'Surface', 'Distance', 'Elevation', 'Relative Elevation',
     ]);
     expect(html.querySelector('[data-cad-grading-field="cad-grading-group-criteria-method-locked"]')).toBeNull();
   });
