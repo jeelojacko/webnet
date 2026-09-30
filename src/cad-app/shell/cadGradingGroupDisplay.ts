@@ -406,9 +406,11 @@ export const indicativeCornerGhosts = (
 };
 
 /**
- * Pre-calc seam ghost for a group row: the exact analytic seam for `fixed`
- * (exact g known pre-target), the directional bisector preview for
- * `cut-fill` (corner side unknowable pre-target — never solved geometry).
+ * Pre-calc seam ghost for a group row: the exact analytic seam for criteria
+ * that carry a constant pre-target cross-slope (`fixed`, and `relative-elevation`
+ * whose grading plane is the same fixed-cross-slope plane), the directional
+ * bisector preview for `cut-fill` (corner side unknowable pre-target — never
+ * solved geometry) and for `distance`/`elevation` (unchanged legacy preview).
  */
 export const groupGhostSeam = (
   sources: ReadonlyArray<ResolvedGradingSource>,
@@ -416,7 +418,10 @@ export const groupGhostSeam = (
   criterion: GradingCriterion,
   length = 3,
 ): Array<{ x: number; y: number }> => {
-  if (criterion.kind === 'fixed' && Number.isFinite(criterion.gradeRatio)) {
+  if (
+    (criterion.kind === 'fixed' || criterion.kind === 'relative-elevation') &&
+    Number.isFinite(criterion.gradeRatio)
+  ) {
     return miterSeamGhosts(sources, side, sources.map(() => criterion.gradeRatio), length);
   }
   return indicativeCornerGhosts(sources, length);

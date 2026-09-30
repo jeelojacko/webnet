@@ -318,7 +318,7 @@ export const makeDesignPatchProvenance = (
   input: DesignPatchProvenanceInput,
 ): WebnetGradingDesignPatchTinProvenance => {
   const kind = input.criterion === undefined ? undefined : gradingTerminationKind(input.criterion);
-  const analytic = kind === 'distance' || kind === 'elevation';
+  const analytic = kind === 'distance' || kind === 'elevation' || kind === 'relative-elevation';
   const criterion = input.criterion;
   return {
     kind: 'webnet-grading-design-patch',
@@ -330,10 +330,11 @@ export const makeDesignPatchProvenance = (
     // Analytic patches record their own termination family; a dormant target
     // id never leaks into the snapshot (surface keeps legacy bytes).
     ...(analytic ? { targetKind: kind } : {}),
-    ...(input.targetSurfaceId != null ? { targetSurfaceId: input.targetSurfaceId } : {}),
-    ...(input.targetSurfaceRevision != null ? { targetSurfaceRevision: input.targetSurfaceRevision } : {}),
+    ...(input.targetSurfaceId != null && !analytic ? { targetSurfaceId: input.targetSurfaceId } : {}),
+    ...(input.targetSurfaceRevision != null && !analytic ? { targetSurfaceRevision: input.targetSurfaceRevision } : {}),
     ...(criterion?.kind === 'distance' ? { criterionDistance: criterion.distance } : {}),
     ...(criterion?.kind === 'elevation' ? { targetElevation: criterion.targetElevation } : {}),
+    ...(criterion?.kind === 'relative-elevation' ? { relativeElevation: criterion.relativeElevation } : {}),
     accuracy: input.accuracy,
     cornerMode: 'miter',
     includesInterior: true,

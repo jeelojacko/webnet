@@ -29,6 +29,7 @@ import { gradingDiagnosticCode, gradingLengthUnit } from './cadGradingSnapshot';
 import {
   defaultGradingCriterionDraft,
   gradingCriterionDraftFromCriterion,
+  gradingMethodLabel,
   parseGradingCriterionDraft,
   type GradingCriterionDraft,
 } from './cadGradingCriterionInput';
@@ -390,7 +391,7 @@ const GradingRowTable: React.FC<{
             onClick={() => actions.selectGrading?.(row.id)}
           >
             <td>{row.name}</td>
-            <td>{row.method === 'surface' ? 'Surface' : row.method === 'distance' ? 'Distance' : 'Elevation'}</td>
+            <td>{gradingMethodLabel(row.method)}</td>
             <td>{row.sourceName}</td>
             <td>{row.side}</td>
             <td>{row.targetName}</td>

@@ -467,6 +467,7 @@ export const CAD_SHELL_COMMANDS: CadShellCommandDef[] = [
   // elevation. No target surface is ever requested. GTD/GTE collision-free.
   action('GRADETODISTANCE', 'Grade to Distance', 'Design', 'Grade a feature-line course at a signed grade for a target horizontal distance (manager create form; no target surface).', undefined, ['GTD']),
   action('GRADETOELEVATION', 'Grade to Elevation', 'Design', 'Grade a feature-line course at a signed grade to a target elevation (manager create form; no target surface).', undefined, ['GTE']),
+  action('GRADETORELATIVEELEVATION', 'Grade to Relative Elevation', 'Design', 'Grade a feature-line course at a signed grade to a signed relative elevation offset from the source profile (manager create form; no target surface).', undefined, ['GTRE']),
   action('GRADING', 'Grading Manager', 'Design', 'Open the grading manager (rows, create, calculate, inquiry).'),
   action('GRADINGCALC', 'Calculate Grading', 'Design', 'Build the selected grading result (both sources must be Current; explicit, never auto-started).'),
   action('GRADINGINQUIRY', 'Grading Inquiry', 'Design', 'Open the grading inquiry report (CURRENT only; stale answers honestly).', undefined, ['GRADINGINQ']),

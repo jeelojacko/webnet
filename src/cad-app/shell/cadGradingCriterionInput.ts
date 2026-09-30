@@ -12,10 +12,21 @@ import {
   type GradingCriterion,
   type GradingTerminationKind,
 } from '../../engine/cad/grading/gradingTypes';
+import { constantAnalyticOffset } from '../../engine/cad/grading/gradingAnalyticCriterion';
 
-/** Short Method label (Surface / Distance / Elevation). */
-export const gradingMethodLabel = (method: GradingTerminationKind): string =>
-  method === 'distance' ? 'Distance' : method === 'elevation' ? 'Elevation' : 'Surface';
+/** Short Method label (Surface / Distance / Elevation / Relative Elevation). */
+export const gradingMethodLabel = (method: GradingTerminationKind): string => {
+  switch (method) {
+    case 'surface':
+      return 'Surface';
+    case 'distance':
+      return 'Distance';
+    case 'elevation':
+      return 'Elevation';
+    case 'relative-elevation':
+      return 'Relative Elevation';
+  }
+};
 import {
   formatSignedGradePercent,
   parseHorizontalVerticalRatio,
@@ -38,6 +49,8 @@ export interface GradingCriterionDraft {
   distance: string;
   /** Elevation method: absolute target elevation text. */
   targetElevation: string;
+  /** Relative-elevation method: signed vertical offset from the source profile text. */
+  relativeElevation: string;
 }
 
 export const defaultGradingCriterionDraft = (
@@ -52,6 +65,7 @@ export const defaultGradingCriterionDraft = (
   fillMagnitude: '3:1',
   distance: '20',
   targetElevation: '0',
+  relativeElevation: '0',
 });
 
 const directionOf = (ratio: number): GradingSlopeDirection =>
@@ -92,12 +106,21 @@ export const gradingCriterionDraftFromCriterion = (
       distance: String(criterion.distance),
     };
   }
+  if (criterion.kind === 'elevation') {
+    return {
+      ...base,
+      method: 'elevation',
+      magnitude: ratioToMagnitudeText(criterion.gradeRatio),
+      direction: directionOf(criterion.gradeRatio),
+      targetElevation: String(criterion.targetElevation),
+    };
+  }
   return {
     ...base,
-    method: 'elevation',
+    method: 'relative-elevation',
     magnitude: ratioToMagnitudeText(criterion.gradeRatio),
     direction: directionOf(criterion.gradeRatio),
-    targetElevation: String(criterion.targetElevation),
+    relativeElevation: String(criterion.relativeElevation),
   };
 };
 
@@ -122,6 +145,21 @@ export const parseGradingCriterionDraft = (
     if (gradeRatio == null || gradeRatio === 0 || !Number.isFinite(targetElevation)) return null;
     return { kind: 'elevation', gradeRatio, targetElevation };
   }
+  if (draft.method === 'relative-elevation') {
+    const gradeRatio = signedGradeOf(draft);
+    const relativeElevation = Number(draft.relativeElevation);
+    // Same machine-nonzero grade gate as Elevation; Δ must be a finite nonzero
+    // offset and the derived d = Δ/g must be finite and strictly positive
+    // (opposite-sign grade/Δ is a wrong-direction request, never clamped).
+    if (
+      gradeRatio == null || gradeRatio === 0 ||
+      !Number.isFinite(relativeElevation) || relativeElevation === 0
+    ) return null;
+    const criterion: GradingCriterion = { kind: 'relative-elevation', gradeRatio, relativeElevation };
+    const offset = constantAnalyticOffset(criterion);
+    if (offset == null || !(offset > 0)) return null;
+    return criterion;
+  }
   if (draft.surfaceMode === 'cut-fill') {
     const cut = resolveSignedGradeRatio('h-v', parseHorizontalVerticalRatio(draft.cutMagnitude) ?? NaN, 'up');
     const fill = resolveSignedGradeRatio('h-v', parseHorizontalVerticalRatio(draft.fillMagnitude) ?? NaN, 'down');
@@ -145,8 +183,33 @@ export const summarizeGradingCriterionDraft = (
   if (criterion.kind === 'elevation') {
     return `Grade ${formatSignedGradePercent(criterion.gradeRatio)} → elev ${criterion.targetElevation.toFixed(3)} ${lengthUnit}`;
   }
+  if (criterion.kind === 'relative-elevation') {
+    const offset = constantAnalyticOffset(criterion);
+    if (offset == null) return null;
+    return `Grade ${formatSignedGradePercent(criterion.gradeRatio)} → relative elev ${criterion.relativeElevation.toFixed(3)} ${lengthUnit} · offset ${offset.toFixed(3)} ${lengthUnit}`;
+  }
   if (criterion.kind === 'cut-fill') {
     return `Cut ${formatSignedGradePercent(criterion.cutGradeRatio)} / Fill ${formatSignedGradePercent(criterion.fillGradeRatio)}`;
   }
   return `Fixed ${formatSignedGradePercent(criterion.gradeRatio)}`;
+};
+
+/**
+ * Inline diagnosis for a draft that parses to null for a *displayable* reason.
+ * Only one case carries actionable text: a relative-elevation draft whose
+ * grade and Δ point in opposite directions (derived offset `Δ/g <= 0`).
+ * Every other invalid draft returns null and the caller keeps the generic
+ * `Criterion: invalid` summary.
+ */
+export const gradingDraftDiagnosis = (draft: GradingCriterionDraft): string | null => {
+  if (draft.method !== 'relative-elevation') return null;
+  const gradeRatio = signedGradeOf(draft);
+  const relativeElevation = Number(draft.relativeElevation);
+  if (
+    gradeRatio == null || gradeRatio === 0 ||
+    !Number.isFinite(relativeElevation) || relativeElevation === 0
+  ) return null;
+  const offset = constantAnalyticOffset({ kind: 'relative-elevation', gradeRatio, relativeElevation });
+  if (offset == null || offset > 0) return null;
+  return 'Criterion: invalid — grade and relative elevation point in opposite directions';
 };

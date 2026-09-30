@@ -1172,14 +1172,16 @@ export interface WebnetGradingBakeTinProvenance {
   sourceFeatureLineId: string;
   sourceVertexAId: string;
   sourceVertexBId: string;
-  /** Phase 20F additive termination family; legacy files omit it (surface). */
-  targetKind?: 'surface' | 'distance' | 'elevation';
+  /** Phase 20F/20G additive termination family; legacy files omit it (surface). */
+  targetKind?: 'surface' | 'distance' | 'elevation' | 'relative-elevation';
   /** Surface-family bakes (legacy files always carry this). */
   targetSurfaceId?: string;
   /** Distance-family bakes: the criterion offset (never a derived limit point). */
   criterionDistance?: number;
   /** Elevation-family bakes: the criterion target elevation. */
   targetElevation?: number;
+  /** Phase 20G relative-elevation bakes: signed ΔZ from the source profile. */
+  relativeElevation?: number;
   accuracy: 'EXACT' | 'CURVE_APPROXIMATED';
   fileName?: string;
   surfaceName?: string;
@@ -1193,8 +1195,8 @@ export interface WebnetGradingDesignPatchTinProvenance {
   groupRevision: string;
   sourceFeatureLineId: string;
   sourceCourseRefs: string[];
-  /** Phase 20F additive termination family; legacy files omit it (surface). */
-  targetKind?: 'surface' | 'distance' | 'elevation';
+  /** Phase 20F/20G additive termination family; legacy files omit it (surface). */
+  targetKind?: 'surface' | 'distance' | 'elevation' | 'relative-elevation';
   /** Surface-family patches (legacy files always carry this). */
   targetSurfaceId?: string;
   targetSurfaceRevision?: string;
@@ -1202,6 +1204,8 @@ export interface WebnetGradingDesignPatchTinProvenance {
   criterionDistance?: number;
   /** Elevation-family patches: the criterion target elevation. */
   targetElevation?: number;
+  /** Phase 20G relative-elevation patches: signed ΔZ from the source profile. */
+  relativeElevation?: number;
   accuracy: 'EXACT' | 'CURVE_APPROXIMATED';
   cornerMode: 'miter';
   includesInterior: true;
@@ -1226,14 +1230,16 @@ export interface WebnetGradingGroupBakeTinProvenance {
   groupRevision: string;
   sourceFeatureLineId: string;
   sourceCourseRefs: string[];
-  /** Phase 20F additive termination family; legacy files omit it (surface). */
-  targetKind?: 'surface' | 'distance' | 'elevation';
+  /** Phase 20F/20G additive termination family; legacy files omit it (surface). */
+  targetKind?: 'surface' | 'distance' | 'elevation' | 'relative-elevation';
   /** Surface-family bakes (legacy files always carry this). */
   targetSurfaceId?: string;
   /** Distance-family bakes: the criterion offset (never a derived limit point). */
   criterionDistance?: number;
   /** Elevation-family bakes: the criterion target elevation. */
   targetElevation?: number;
+  /** Phase 20G relative-elevation bakes: signed ΔZ from the source profile. */
+  relativeElevation?: number;
   side: 'left' | 'right';
   accuracy: 'EXACT' | 'CURVE_APPROXIMATED';
   cornerMode: 'miter';

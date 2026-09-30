@@ -100,6 +100,7 @@ import { SurfaceContourService } from '../workers/surfaceContourService';
 import { SurfaceVolumeService } from '../workers/surfaceVolumeService';
 import { SurfaceGradingService } from '../workers/surfaceGradingService';
 import { createCadGradingCache } from '../engine/cad/grading/gradingCache';
+import type { GradingTerminationKind } from '../engine/cad/grading/gradingTypes';
 import { buildCadGradingSnapshot } from '../cad-app/shell/cadGradingSnapshot';
 import { CadGradingManager } from '../cad-app/shell/CadGradingManager';
 import { createCadGradingGroupCache } from '../engine/cad/grading/gradingGroupCache';
@@ -462,8 +463,9 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
   );
   const [selectedGradingId, setSelectedGradingId] = useState<string | null>(null);
   const [gradingManagerTab, setGradingManagerTab] = useState<'definition' | 'inquiry'>('definition');
-  // Phase 20F — method preselect for GRADETODISTANCE/GRADETOELEVATION openers.
-  const [gradingManagerMethod, setGradingManagerMethod] = useState<'surface' | 'distance' | 'elevation'>('surface');
+  // Phase 20F — method preselect for GRADETODISTANCE/GRADETOELEVATION/
+  // GRADETORELATIVEELEVATION openers.
+  const [gradingManagerMethod, setGradingManagerMethod] = useState<GradingTerminationKind>('surface');
   const [gradingVersion, setGradingVersion] = useState(0);
   // Phase 20C — grading-group session state (definitions persist; results never do).
   const groupCache = useMemo(

@@ -1,0 +1,1138 @@
+{
+  "1366-relative-create": {
+    "innerW": 1366,
+    "innerH": 768,
+    "docScrollW": 1366,
+    "docScrollH": 768,
+    "ribbon": {
+      "x": 0,
+      "y": 66,
+      "w": 1366,
+      "h": 120,
+      "scrollW": 1366,
+      "clientW": 1366,
+      "scrollH": 119,
+      "clientH": 119
+    },
+    "viewport": {
+      "x": 264,
+      "y": 215,
+      "w": 814,
+      "h": 345,
+      "scrollW": 814,
+      "clientW": 814,
+      "scrollH": 345,
+      "clientH": 345
+    },
+    "toolspace": {
+      "x": 8,
+      "y": -49,
+      "w": 247,
+      "h": 1392,
+      "scrollW": 362,
+      "clientW": 247,
+      "scrollH": 1392,
+      "clientH": 1392
+    },
+    "properties": {
+      "x": 1086,
+      "y": 252,
+      "w": 271,
+      "h": 502,
+      "scrollW": 271,
+      "clientW": 271,
+      "scrollH": 502,
+      "clientH": 502
+    },
+    "commandInput": {
+      "x": 285,
+      "y": 614,
+      "w": 785,
+      "h": 26,
+      "scrollW": 783,
+      "clientW": 783,
+      "scrollH": 24,
+      "clientH": 24
+    },
+    "manager": {
+      "x": 586,
+      "y": 285,
+      "w": 480,
+      "h": 276,
+      "scrollW": 478,
+      "clientW": 478,
+      "scrollH": 544,
+      "clientH": 274
+    },
+    "relativeButtons": [
+      {
+        "disabled": false
+      }
+    ]
+  },
+  "1366-relative-current": {
+    "innerW": 1366,
+    "innerH": 768,
+    "docScrollW": 1366,
+    "docScrollH": 768,
+    "ribbon": {
+      "x": 0,
+      "y": 66,
+      "w": 1366,
+      "h": 120,
+      "scrollW": 1366,
+      "clientW": 1366,
+      "scrollH": 119,
+      "clientH": 119
+    },
+    "viewport": {
+      "x": 264,
+      "y": 215,
+      "w": 814,
+      "h": 345,
+      "scrollW": 814,
+      "clientW": 814,
+      "scrollH": 345,
+      "clientH": 345
+    },
+    "toolspace": {
+      "x": 8,
+      "y": 252,
+      "w": 247,
+      "h": 1570,
+      "scrollW": 538,
+      "clientW": 247,
+      "scrollH": 1570,
+      "clientH": 1570
+    },
+    "properties": {
+      "x": 1086,
+      "y": 210,
+      "w": 271,
+      "h": 716,
+      "scrollW": 271,
+      "clientW": 271,
+      "scrollH": 716,
+      "clientH": 716
+    },
+    "commandInput": {
+      "x": 285,
+      "y": 614,
+      "w": 785,
+      "h": 26,
+      "scrollW": 783,
+      "clientW": 783,
+      "scrollH": 24,
+      "clientH": 24
+    },
+    "manager": {
+      "x": 586,
+      "y": 285,
+      "w": 480,
+      "h": 276,
+      "scrollW": 478,
+      "clientW": 478,
+      "scrollH": 799,
+      "clientH": 274
+    },
+    "relativeButtons": [
+      {
+        "disabled": true
+      }
+    ]
+  },
+  "1920-relative-create": {
+    "innerW": 1920,
+    "innerH": 1080,
+    "docScrollW": 1920,
+    "docScrollH": 1080,
+    "ribbon": {
+      "x": 0,
+      "y": 66,
+      "w": 1920,
+      "h": 120,
+      "scrollW": 1920,
+      "clientW": 1920,
+      "scrollH": 119,
+      "clientH": 119
+    },
+    "viewport": {
+      "x": 264,
+      "y": 215,
+      "w": 1368,
+      "h": 657,
+      "scrollW": 1368,
+      "clientW": 1368,
+      "scrollH": 657,
+      "clientH": 657
+    },
+    "toolspace": {
+      "x": 8,
+      "y": 252,
+      "w": 247,
+      "h": 1392,
+      "scrollW": 362,
+      "clientW": 247,
+      "scrollH": 1392,
+      "clientH": 1392
+    },
+    "properties": {
+      "x": 1640,
+      "y": 252,
+      "w": 271,
+      "h": 502,
+      "scrollW": 271,
+      "clientW": 271,
+      "scrollH": 502,
+      "clientH": 502
+    },
+    "commandInput": {
+      "x": 285,
+      "y": 926,
+      "w": 1339,
+      "h": 26,
+      "scrollW": 1337,
+      "clientW": 1337,
+      "scrollH": 24,
+      "clientH": 24
+    },
+    "manager": {
+      "x": 1140,
+      "y": 303,
+      "w": 480,
+      "h": 525.59375,
+      "scrollW": 478,
+      "clientW": 478,
+      "scrollH": 544,
+      "clientH": 524
+    },
+    "relativeButtons": [
+      {
+        "disabled": false
+      }
+    ]
+  },
+  "1920-relative-current": {
+    "innerW": 1920,
+    "innerH": 1080,
+    "docScrollW": 1920,
+    "docScrollH": 1080,
+    "ribbon": {
+      "x": 0,
+      "y": 66,
+      "w": 1920,
+      "h": 120,
+      "scrollW": 1920,
+      "clientW": 1920,
+      "scrollH": 119,
+      "clientH": 119
+    },
+    "viewport": {
+      "x": 264,
+      "y": 215,
+      "w": 1368,
+      "h": 657,
+      "scrollW": 1368,
+      "clientW": 1368,
+      "scrollH": 657,
+      "clientH": 657
+    },
+    "toolspace": {
+      "x": 8,
+      "y": 252,
+      "w": 247,
+      "h": 1570,
+      "scrollW": 538,
+      "clientW": 247,
+      "scrollH": 1570,
+      "clientH": 1570
+    },
+    "properties": {
+      "x": 1640,
+      "y": 252,
+      "w": 271,
+      "h": 716,
+      "scrollW": 271,
+      "clientW": 271,
+      "scrollH": 716,
+      "clientH": 716
+    },
+    "commandInput": {
+      "x": 285,
+      "y": 926,
+      "w": 1339,
+      "h": 26,
+      "scrollW": 1337,
+      "clientW": 1337,
+      "scrollH": 24,
+      "clientH": 24
+    },
+    "manager": {
+      "x": 1140,
+      "y": 303,
+      "w": 480,
+      "h": 525.59375,
+      "scrollW": 478,
+      "clientW": 478,
+      "scrollH": 799,
+      "clientH": 524
+    },
+    "relativeButtons": [
+      {
+        "disabled": true
+      }
+    ]
+  },
+  "2560-relative-create": {
+    "innerW": 2560,
+    "innerH": 1440,
+    "docScrollW": 2560,
+    "docScrollH": 1440,
+    "ribbon": {
+      "x": 0,
+      "y": 66,
+      "w": 2560,
+      "h": 120,
+      "scrollW": 2560,
+      "clientW": 2560,
+      "scrollH": 119,
+      "clientH": 119
+    },
+    "viewport": {
+      "x": 264,
+      "y": 215,
+      "w": 2008,
+      "h": 1017,
+      "scrollW": 2008,
+      "clientW": 2008,
+      "scrollH": 1017,
+      "clientH": 1017
+    },
+    "toolspace": {
+      "x": 8,
+      "y": 252,
+      "w": 247,
+      "h": 1392,
+      "scrollW": 362,
+      "clientW": 247,
+      "scrollH": 1392,
+      "clientH": 1392
+    },
+    "properties": {
+      "x": 2280,
+      "y": 252,
+      "w": 271,
+      "h": 502,
+      "scrollW": 271,
+      "clientW": 271,
+      "scrollH": 502,
+      "clientH": 502
+    },
+    "commandInput": {
+      "x": 285,
+      "y": 1286,
+      "w": 1979,
+      "h": 26,
+      "scrollW": 1977,
+      "clientW": 1977,
+      "scrollH": 24,
+      "clientH": 24
+    },
+    "manager": {
+      "x": 1780,
+      "y": 303,
+      "w": 480,
+      "h": 545.5,
+      "scrollW": 478,
+      "clientW": 478,
+      "scrollH": 544,
+      "clientH": 544
+    },
+    "relativeButtons": [
+      {
+        "disabled": false
+      }
+    ]
+  },
+  "2560-relative-current": {
+    "innerW": 2560,
+    "innerH": 1440,
+    "docScrollW": 2560,
+    "docScrollH": 1440,
+    "ribbon": {
+      "x": 0,
+      "y": 66,
+      "w": 2560,
+      "h": 120,
+      "scrollW": 2560,
+      "clientW": 2560,
+      "scrollH": 119,
+      "clientH": 119
+    },
+    "viewport": {
+      "x": 264,
+      "y": 215,
+      "w": 2008,
+      "h": 1017,
+      "scrollW": 2008,
+      "clientW": 2008,
+      "scrollH": 1017,
+      "clientH": 1017
+    },
+    "toolspace": {
+      "x": 8,
+      "y": 252,
+      "w": 247,
+      "h": 1570,
+      "scrollW": 538,
+      "clientW": 247,
+      "scrollH": 1570,
+      "clientH": 1570
+    },
+    "properties": {
+      "x": 2280,
+      "y": 252,
+      "w": 271,
+      "h": 716,
+      "scrollW": 271,
+      "clientW": 271,
+      "scrollH": 716,
+      "clientH": 716
+    },
+    "commandInput": {
+      "x": 285,
+      "y": 1286,
+      "w": 1979,
+      "h": 26,
+      "scrollW": 1977,
+      "clientW": 1977,
+      "scrollH": 24,
+      "clientH": 24
+    },
+    "manager": {
+      "x": 1780,
+      "y": 303,
+      "w": 480,
+      "h": 800.5,
+      "scrollW": 478,
+      "clientW": 478,
+      "scrollH": 799,
+      "clientH": 799
+    },
+    "relativeButtons": [
+      {
+        "disabled": true
+      }
+    ]
+  },
+  "1366-relative-vs-absolute": {
+    "innerW": 1366,
+    "innerH": 768,
+    "docScrollW": 1366,
+    "docScrollH": 768,
+    "ribbon": {
+      "x": 0,
+      "y": 66,
+      "w": 1366,
+      "h": 120,
+      "scrollW": 1366,
+      "clientW": 1366,
+      "scrollH": 119,
+      "clientH": 119
+    },
+    "viewport": {
+      "x": 264,
+      "y": 215,
+      "w": 814,
+      "h": 345,
+      "scrollW": 814,
+      "clientW": 814,
+      "scrollH": 345,
+      "clientH": 345
+    },
+    "toolspace": {
+      "x": 8,
+      "y": -49,
+      "w": 247,
+      "h": 1768,
+      "scrollW": 538,
+      "clientW": 247,
+      "scrollH": 1768,
+      "clientH": 1768
+    },
+    "properties": {
+      "x": 1086,
+      "y": 252,
+      "w": 271,
+      "h": 629,
+      "scrollW": 271,
+      "clientW": 271,
+      "scrollH": 629,
+      "clientH": 629
+    },
+    "commandInput": {
+      "x": 285,
+      "y": 614,
+      "w": 785,
+      "h": 26,
+      "scrollW": 783,
+      "clientW": 783,
+      "scrollH": 24,
+      "clientH": 24
+    },
+    "manager": {
+      "x": 586,
+      "y": 285,
+      "w": 480,
+      "h": 276,
+      "scrollW": 478,
+      "clientW": 478,
+      "scrollH": 804,
+      "clientH": 274
+    },
+    "relativeButtons": [
+      {
+        "disabled": true
+      }
+    ]
+  },
+  "1920-relative-vs-absolute": {
+    "innerW": 1920,
+    "innerH": 1080,
+    "docScrollW": 1920,
+    "docScrollH": 1080,
+    "ribbon": {
+      "x": 0,
+      "y": 66,
+      "w": 1920,
+      "h": 120,
+      "scrollW": 1920,
+      "clientW": 1920,
+      "scrollH": 119,
+      "clientH": 119
+    },
+    "viewport": {
+      "x": 264,
+      "y": 215,
+      "w": 1368,
+      "h": 657,
+      "scrollW": 1368,
+      "clientW": 1368,
+      "scrollH": 657,
+      "clientH": 657
+    },
+    "toolspace": {
+      "x": 8,
+      "y": 252,
+      "w": 247,
+      "h": 1768,
+      "scrollW": 538,
+      "clientW": 247,
+      "scrollH": 1768,
+      "clientH": 1768
+    },
+    "properties": {
+      "x": 1640,
+      "y": 252,
+      "w": 271,
+      "h": 629,
+      "scrollW": 271,
+      "clientW": 271,
+      "scrollH": 629,
+      "clientH": 629
+    },
+    "commandInput": {
+      "x": 285,
+      "y": 926,
+      "w": 1339,
+      "h": 26,
+      "scrollW": 1337,
+      "clientW": 1337,
+      "scrollH": 24,
+      "clientH": 24
+    },
+    "manager": {
+      "x": 1140,
+      "y": 303,
+      "w": 480,
+      "h": 525.59375,
+      "scrollW": 478,
+      "clientW": 478,
+      "scrollH": 804,
+      "clientH": 524
+    },
+    "relativeButtons": [
+      {
+        "disabled": true
+      }
+    ]
+  },
+  "2560-relative-vs-absolute": {
+    "innerW": 2560,
+    "innerH": 1440,
+    "docScrollW": 2560,
+    "docScrollH": 1440,
+    "ribbon": {
+      "x": 0,
+      "y": 66,
+      "w": 2560,
+      "h": 120,
+      "scrollW": 2560,
+      "clientW": 2560,
+      "scrollH": 119,
+      "clientH": 119
+    },
+    "viewport": {
+      "x": 264,
+      "y": 215,
+      "w": 2008,
+      "h": 1017,
+      "scrollW": 2008,
+      "clientW": 2008,
+      "scrollH": 1017,
+      "clientH": 1017
+    },
+    "toolspace": {
+      "x": 8,
+      "y": 252,
+      "w": 247,
+      "h": 1768,
+      "scrollW": 538,
+      "clientW": 247,
+      "scrollH": 1768,
+      "clientH": 1768
+    },
+    "properties": {
+      "x": 2280,
+      "y": 252,
+      "w": 271,
+      "h": 629,
+      "scrollW": 271,
+      "clientW": 271,
+      "scrollH": 629,
+      "clientH": 629
+    },
+    "commandInput": {
+      "x": 285,
+      "y": 1286,
+      "w": 1979,
+      "h": 26,
+      "scrollW": 1977,
+      "clientW": 1977,
+      "scrollH": 24,
+      "clientH": 24
+    },
+    "manager": {
+      "x": 1780,
+      "y": 303,
+      "w": 480,
+      "h": 805.5,
+      "scrollW": 478,
+      "clientW": 478,
+      "scrollH": 804,
+      "clientH": 804
+    },
+    "relativeButtons": [
+      {
+        "disabled": true
+      }
+    ]
+  },
+  "1366-relative-group": {
+    "innerW": 1366,
+    "innerH": 768,
+    "docScrollW": 1366,
+    "docScrollH": 768,
+    "ribbon": {
+      "x": 0,
+      "y": 66,
+      "w": 1366,
+      "h": 120,
+      "scrollW": 1366,
+      "clientW": 1366,
+      "scrollH": 119,
+      "clientH": 119
+    },
+    "viewport": {
+      "x": 264,
+      "y": 215,
+      "w": 814,
+      "h": 345,
+      "scrollW": 814,
+      "clientW": 814,
+      "scrollH": 345,
+      "clientH": 345
+    },
+    "toolspace": {
+      "x": 8,
+      "y": 252,
+      "w": 247,
+      "h": 330,
+      "scrollW": 247,
+      "clientW": 247,
+      "scrollH": 330,
+      "clientH": 330
+    },
+    "properties": {
+      "x": 1086,
+      "y": 252,
+      "w": 271,
+      "h": 548,
+      "scrollW": 271,
+      "clientW": 271,
+      "scrollH": 548,
+      "clientH": 548
+    },
+    "commandInput": {
+      "x": 285,
+      "y": 614,
+      "w": 785,
+      "h": 26,
+      "scrollW": 783,
+      "clientW": 783,
+      "scrollH": 24,
+      "clientH": 24
+    },
+    "manager": {
+      "x": 586,
+      "y": 285,
+      "w": 480,
+      "h": 276,
+      "scrollW": 478,
+      "clientW": 478,
+      "scrollH": 1600,
+      "clientH": 274
+    },
+    "relativeButtons": [
+      {
+        "disabled": false
+      }
+    ]
+  },
+  "1366-relative-group-areas": {
+    "innerW": 1366,
+    "innerH": 768,
+    "docScrollW": 1366,
+    "docScrollH": 768,
+    "ribbon": {
+      "x": 0,
+      "y": 66,
+      "w": 1366,
+      "h": 120,
+      "scrollW": 1366,
+      "clientW": 1366,
+      "scrollH": 119,
+      "clientH": 119
+    },
+    "viewport": {
+      "x": 264,
+      "y": 215,
+      "w": 814,
+      "h": 345,
+      "scrollW": 814,
+      "clientW": 814,
+      "scrollH": 345,
+      "clientH": 345
+    },
+    "toolspace": {
+      "x": 8,
+      "y": 252,
+      "w": 247,
+      "h": 330,
+      "scrollW": 247,
+      "clientW": 247,
+      "scrollH": 330,
+      "clientH": 330
+    },
+    "properties": {
+      "x": 1086,
+      "y": 252,
+      "w": 271,
+      "h": 548,
+      "scrollW": 271,
+      "clientW": 271,
+      "scrollH": 548,
+      "clientH": 548
+    },
+    "commandInput": {
+      "x": 285,
+      "y": 614,
+      "w": 785,
+      "h": 26,
+      "scrollW": 783,
+      "clientW": 783,
+      "scrollH": 24,
+      "clientH": 24
+    },
+    "manager": {
+      "x": 586,
+      "y": 279,
+      "w": 480,
+      "h": 276,
+      "scrollW": 478,
+      "clientW": 478,
+      "scrollH": 1600,
+      "clientH": 274
+    },
+    "relativeButtons": [
+      {
+        "disabled": false
+      }
+    ]
+  },
+  "1920-relative-group": {
+    "innerW": 1920,
+    "innerH": 1080,
+    "docScrollW": 1920,
+    "docScrollH": 1080,
+    "ribbon": {
+      "x": 0,
+      "y": 66,
+      "w": 1920,
+      "h": 120,
+      "scrollW": 1920,
+      "clientW": 1920,
+      "scrollH": 119,
+      "clientH": 119
+    },
+    "viewport": {
+      "x": 264,
+      "y": 215,
+      "w": 1368,
+      "h": 657,
+      "scrollW": 1368,
+      "clientW": 1368,
+      "scrollH": 657,
+      "clientH": 657
+    },
+    "toolspace": {
+      "x": 8,
+      "y": 252,
+      "w": 247,
+      "h": 330,
+      "scrollW": 247,
+      "clientW": 247,
+      "scrollH": 330,
+      "clientH": 330
+    },
+    "properties": {
+      "x": 1640,
+      "y": 252,
+      "w": 271,
+      "h": 548,
+      "scrollW": 271,
+      "clientW": 271,
+      "scrollH": 548,
+      "clientH": 548
+    },
+    "commandInput": {
+      "x": 285,
+      "y": 926,
+      "w": 1339,
+      "h": 26,
+      "scrollW": 1337,
+      "clientW": 1337,
+      "scrollH": 24,
+      "clientH": 24
+    },
+    "manager": {
+      "x": 1140,
+      "y": 303,
+      "w": 480,
+      "h": 525.59375,
+      "scrollW": 478,
+      "clientW": 478,
+      "scrollH": 1600,
+      "clientH": 524
+    },
+    "relativeButtons": [
+      {
+        "disabled": false
+      }
+    ]
+  },
+  "2560-relative-group": {
+    "innerW": 2560,
+    "innerH": 1440,
+    "docScrollW": 2560,
+    "docScrollH": 1440,
+    "ribbon": {
+      "x": 0,
+      "y": 66,
+      "w": 2560,
+      "h": 120,
+      "scrollW": 2560,
+      "clientW": 2560,
+      "scrollH": 119,
+      "clientH": 119
+    },
+    "viewport": {
+      "x": 264,
+      "y": 215,
+      "w": 2008,
+      "h": 1017,
+      "scrollW": 2008,
+      "clientW": 2008,
+      "scrollH": 1017,
+      "clientH": 1017
+    },
+    "toolspace": {
+      "x": 8,
+      "y": 252,
+      "w": 247,
+      "h": 330,
+      "scrollW": 247,
+      "clientW": 247,
+      "scrollH": 330,
+      "clientH": 330
+    },
+    "properties": {
+      "x": 2280,
+      "y": 252,
+      "w": 271,
+      "h": 548,
+      "scrollW": 271,
+      "clientW": 271,
+      "scrollH": 548,
+      "clientH": 548
+    },
+    "commandInput": {
+      "x": 285,
+      "y": 1286,
+      "w": 1979,
+      "h": 26,
+      "scrollW": 1977,
+      "clientW": 1977,
+      "scrollH": 24,
+      "clientH": 24
+    },
+    "manager": {
+      "x": 1780,
+      "y": 303,
+      "w": 480,
+      "h": 813.59375,
+      "scrollW": 478,
+      "clientW": 478,
+      "scrollH": 1600,
+      "clientH": 812
+    },
+    "relativeButtons": [
+      {
+        "disabled": false
+      }
+    ]
+  },
+  "1366-shell": {
+    "innerW": 1366,
+    "innerH": 768,
+    "docScrollW": 1366,
+    "docScrollH": 768,
+    "ribbon": {
+      "x": 0,
+      "y": 66,
+      "w": 1366,
+      "h": 120,
+      "scrollW": 1366,
+      "clientW": 1366,
+      "scrollH": 119,
+      "clientH": 119
+    },
+    "viewport": {
+      "x": 264,
+      "y": 215,
+      "w": 814,
+      "h": 345,
+      "scrollW": 814,
+      "clientW": 814,
+      "scrollH": 345,
+      "clientH": 345
+    },
+    "toolspace": {
+      "x": 8,
+      "y": -49,
+      "w": 247,
+      "h": 1392,
+      "scrollW": 362,
+      "clientW": 247,
+      "scrollH": 1392,
+      "clientH": 1392
+    },
+    "properties": {
+      "x": 1086,
+      "y": 252,
+      "w": 271,
+      "h": 502,
+      "scrollW": 271,
+      "clientW": 271,
+      "scrollH": 502,
+      "clientH": 502
+    },
+    "commandInput": {
+      "x": 285,
+      "y": 614,
+      "w": 785,
+      "h": 26,
+      "scrollW": 783,
+      "clientW": 783,
+      "scrollH": 24,
+      "clientH": 24
+    },
+    "manager": {
+      "x": 586,
+      "y": 303,
+      "w": 480,
+      "h": 276,
+      "scrollW": 478,
+      "clientW": 478,
+      "scrollH": 544,
+      "clientH": 274
+    },
+    "relativeButtons": [
+      {
+        "disabled": false
+      }
+    ]
+  },
+  "1920-shell": {
+    "innerW": 1920,
+    "innerH": 1080,
+    "docScrollW": 1920,
+    "docScrollH": 1080,
+    "ribbon": {
+      "x": 0,
+      "y": 66,
+      "w": 1920,
+      "h": 120,
+      "scrollW": 1920,
+      "clientW": 1920,
+      "scrollH": 119,
+      "clientH": 119
+    },
+    "viewport": {
+      "x": 264,
+      "y": 215,
+      "w": 1368,
+      "h": 657,
+      "scrollW": 1368,
+      "clientW": 1368,
+      "scrollH": 657,
+      "clientH": 657
+    },
+    "toolspace": {
+      "x": 8,
+      "y": 252,
+      "w": 247,
+      "h": 1392,
+      "scrollW": 362,
+      "clientW": 247,
+      "scrollH": 1392,
+      "clientH": 1392
+    },
+    "properties": {
+      "x": 1640,
+      "y": 252,
+      "w": 271,
+      "h": 502,
+      "scrollW": 271,
+      "clientW": 271,
+      "scrollH": 502,
+      "clientH": 502
+    },
+    "commandInput": {
+      "x": 285,
+      "y": 926,
+      "w": 1339,
+      "h": 26,
+      "scrollW": 1337,
+      "clientW": 1337,
+      "scrollH": 24,
+      "clientH": 24
+    },
+    "manager": {
+      "x": 1140,
+      "y": 303,
+      "w": 480,
+      "h": 525.59375,
+      "scrollW": 478,
+      "clientW": 478,
+      "scrollH": 544,
+      "clientH": 524
+    },
+    "relativeButtons": [
+      {
+        "disabled": false
+      }
+    ]
+  },
+  "2560-shell": {
+    "innerW": 2560,
+    "innerH": 1440,
+    "docScrollW": 2560,
+    "docScrollH": 1440,
+    "ribbon": {
+      "x": 0,
+      "y": 66,
+      "w": 2560,
+      "h": 120,
+      "scrollW": 2560,
+      "clientW": 2560,
+      "scrollH": 119,
+      "clientH": 119
+    },
+    "viewport": {
+      "x": 264,
+      "y": 215,
+      "w": 2008,
+      "h": 1017,
+      "scrollW": 2008,
+      "clientW": 2008,
+      "scrollH": 1017,
+      "clientH": 1017
+    },
+    "toolspace": {
+      "x": 8,
+      "y": 252,
+      "w": 247,
+      "h": 1392,
+      "scrollW": 362,
+      "clientW": 247,
+      "scrollH": 1392,
+      "clientH": 1392
+    },
+    "properties": {
+      "x": 2280,
+      "y": 252,
+      "w": 271,
+      "h": 502,
+      "scrollW": 271,
+      "clientW": 271,
+      "scrollH": 502,
+      "clientH": 502
+    },
+    "commandInput": {
+      "x": 285,
+      "y": 1286,
+      "w": 1979,
+      "h": 26,
+      "scrollW": 1977,
+      "clientW": 1977,
+      "scrollH": 24,
+      "clientH": 24
+    },
+    "manager": {
+      "x": 1780,
+      "y": 303,
+      "w": 480,
+      "h": 545.5,
+      "scrollW": 478,
+      "clientW": 478,
+      "scrollH": 544,
+      "clientH": 544
+    },
+    "relativeButtons": [
+      {
+        "disabled": false
+      }
+    ]
+  }
+}

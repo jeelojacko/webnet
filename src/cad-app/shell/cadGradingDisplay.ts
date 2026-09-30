@@ -9,11 +9,39 @@
  * `gradingGhostArrow` is the pre-commit creation preview: a short normal
  * arrow on the chosen side at no mutation.
  */
-import type { GradingSide } from '../../engine/cad/grading/gradingTypes';
+import type { GradingCriterion, GradingSide } from '../../engine/cad/grading/gradingTypes';
 import type { ResolvedGradingSource } from '../../engine/cad/grading/gradingTypes';
 import type { CadGradingResult, GradingAccuracy } from '../../engine/cad/grading/gradingTypes';
+import { constantAnalyticOffset } from '../../engine/cad/grading/gradingAnalyticCriterion';
 import { buildGradingDisplayLayers, type CadGradingDisplayLayer } from '../../engine/cad/cadGradingView';
+import { formatSignedGradePercent } from './cadGradingShell';
 import type { CadGradingRow, CadGradingSnapshot } from './cadGradingSnapshot';
+
+/**
+ * Relative-elevation display strings for a `relative-elevation` criterion, or
+ * null for every other family (callers render an explicit branch only there).
+ * Δ is always marked relative — never a bare absolute elevation.
+ */
+export interface RelativeElevationDisplay {
+  grade: string;
+  /** Signed Δ with drawing units, marked relative. */
+  relativeElevation: string;
+  /** Derived horizontal offset Δ/g with drawing units. */
+  derivedOffset: string;
+}
+
+export const relativeElevationDisplay = (
+  criterion: GradingCriterion,
+  lengthUnit: string,
+): RelativeElevationDisplay | null => {
+  if (criterion.kind !== 'relative-elevation') return null;
+  const offset = constantAnalyticOffset(criterion);
+  return {
+    grade: formatSignedGradePercent(criterion.gradeRatio),
+    relativeElevation: `${criterion.relativeElevation.toFixed(3)} ${lengthUnit} relative`,
+    derivedOffset: offset == null ? '--' : `${offset.toFixed(3)} ${lengthUnit}`,
+  };
+};
 
 export interface GradingPlanPoint {
   x: number;
