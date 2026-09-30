@@ -21,6 +21,7 @@ import { checkFlatRing, designPatchBlock, ringCount, ringEdgeKey, ringVertexKey,
 import type { DesignPatchFailure } from './designPatchRing';
 import { deriveDesignPatchPlane } from './designPatchPlane';
 import { gradingTerminationKind } from './gradingTypes';
+import { canonicalAnalyticKinds } from './gradingGroupTermination';
 import type { GradingCriterion, GradingMesh } from './gradingTypes';
 
 export {
@@ -303,6 +304,8 @@ export interface DesignPatchProvenanceInput {
   sourceCourseRefs: string[];
   /** Group default criterion: identifies the termination family + analytic inputs. */
   criterion?: GradingCriterion;
+  /** Phase 20H: effective per-member criteria for mixed-analytic detection. */
+  memberCriteria?: GradingCriterion[];
   /** Surface-family patches only (legacy files always carry these). */
   targetSurfaceId?: string;
   targetSurfaceRevision?: string;
@@ -318,7 +321,15 @@ export const makeDesignPatchProvenance = (
   input: DesignPatchProvenanceInput,
 ): WebnetGradingDesignPatchTinProvenance => {
   const kind = input.criterion === undefined ? undefined : gradingTerminationKind(input.criterion);
-  const analytic = kind === 'distance' || kind === 'elevation' || kind === 'relative-elevation';
+  // Phase 20H: the patch targetKind reflects ALL effective member criteria.
+  // A mixed-analytic group records `mixed-analytic` + canonical
+  // analyticKinds; homogeneous groups keep their exact legacy shape.
+  const analyticKinds = canonicalAnalyticKinds([
+    ...(input.criterion !== undefined ? [input.criterion] : []),
+    ...(input.memberCriteria ?? []),
+  ]);
+  const mixed = analyticKinds.length > 1;
+  const analytic = mixed || kind === 'distance' || kind === 'elevation' || kind === 'relative-elevation';
   const criterion = input.criterion;
   return {
     kind: 'webnet-grading-design-patch',
@@ -329,7 +340,8 @@ export const makeDesignPatchProvenance = (
     sourceCourseRefs: [...input.sourceCourseRefs],
     // Analytic patches record their own termination family; a dormant target
     // id never leaks into the snapshot (surface keeps legacy bytes).
-    ...(analytic ? { targetKind: kind } : {}),
+    ...(analytic && !mixed && kind !== undefined ? { targetKind: kind } : {}),
+    ...(mixed ? { targetKind: 'mixed-analytic' as const, analyticKinds } : {}),
     ...(input.targetSurfaceId != null && !analytic ? { targetSurfaceId: input.targetSurfaceId } : {}),
     ...(input.targetSurfaceRevision != null && !analytic ? { targetSurfaceRevision: input.targetSurfaceRevision } : {}),
     ...(criterion?.kind === 'distance' ? { criterionDistance: criterion.distance } : {}),

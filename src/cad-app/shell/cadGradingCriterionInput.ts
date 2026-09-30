@@ -10,9 +10,10 @@
 import {
   gradingTerminationKind,
   type GradingCriterion,
+  type GradingTerminationDomain,
   type GradingTerminationKind,
 } from '../../engine/cad/grading/gradingTypes';
-import { constantAnalyticOffset } from '../../engine/cad/grading/gradingAnalyticCriterion';
+import { constantAnalyticOffset, resolveRelativeElevationParams } from '../../engine/cad/grading/gradingAnalyticCriterion';
 
 /** Short Method label (Surface / Distance / Elevation / Relative Elevation). */
 export const gradingMethodLabel = (method: GradingTerminationKind): string => {
@@ -34,6 +35,30 @@ import {
   type GradingInputMode,
   type GradingSlopeDirection,
 } from './cadGradingShell';
+
+/**
+ * Phase 20H — domain locking for group composers. A group terminates in ONE
+ * engine domain: `surface` (fixed/cut-fill) or `analytic` (distance,
+ * elevation, relative-elevation). Analytic kinds mix freely within a group,
+ * so the composer offers the whole domain rather than a single exact kind
+ * (the legacy per-kind lock is replaced). Surface keeps its fixed/cut-fill
+ * selector, so it collapses to the single `surface` method.
+ */
+export const allowedMethodsForGroupDomain = (
+  domain: GradingTerminationDomain,
+): readonly GradingTerminationKind[] =>
+  domain === 'surface'
+    ? ['surface']
+    : ['distance', 'elevation', 'relative-elevation'];
+
+/** Never leave a stale draft method outside the offered set (fail to first). */
+export const clampToAllowedMethods = (
+  draft: GradingCriterionDraft,
+  methods: readonly GradingTerminationKind[],
+): GradingCriterionDraft => {
+  if (methods.length === 0 || methods.includes(draft.method)) return draft;
+  return { ...draft, method: methods[0]! };
+};
 
 export interface GradingCriterionDraft {
   method: GradingTerminationKind;
@@ -209,7 +234,8 @@ export const gradingDraftDiagnosis = (draft: GradingCriterionDraft): string | nu
     gradeRatio == null || gradeRatio === 0 ||
     !Number.isFinite(relativeElevation) || relativeElevation === 0
   ) return null;
-  const offset = constantAnalyticOffset({ kind: 'relative-elevation', gradeRatio, relativeElevation });
-  if (offset == null || offset > 0) return null;
+  // Shared engine authority: a failing finite/nonzero pair can only be a
+  // non-positive derived offset, i.e. grade and Δ pointing opposite ways.
+  if (resolveRelativeElevationParams(gradeRatio, relativeElevation).ok) return null;
   return 'Criterion: invalid — grade and relative elevation point in opposite directions';
 };

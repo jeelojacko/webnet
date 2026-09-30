@@ -15,6 +15,7 @@ import {
   validateGroupChain,
 } from './grading/gradingGroupAuthoring';
 import { gradingCriterionRequiresSurface, gradingTerminationKind } from './grading/gradingTypes';
+import { canonicalAnalyticKinds } from './grading/gradingGroupTermination';
 import { toGradingCourseLikes, resolveGradingSourceCourse } from './grading/gradingCourseFrame';
 import { resolveGroupInputs } from './grading/gradingGroupResolve';
 import { appendCadProjectEntities } from './cadProjectState';
@@ -395,7 +396,12 @@ const groupBakeCommand: CadCommandDefinition<GroupBakeCommand> = {
     }
     if (result.gradingMesh.triangles.length === 0) return null;
     const criterion = inputs.group.criterion;
-    const targetKind = gradingTerminationKind(criterion);
+    // Phase 20H: the bake targetKind reflects ALL effective member criteria.
+    // A mixed-analytic group bakes as `mixed-analytic` with its canonical
+    // analyticKinds; homogeneous groups keep their exact legacy shape.
+    const analyticKinds = canonicalAnalyticKinds([criterion, ...inputs.memberCriteria]);
+    const targetKind: 'surface' | 'distance' | 'elevation' | 'relative-elevation' | 'mixed-analytic' =
+      analyticKinds.length > 1 ? 'mixed-analytic' : gradingTerminationKind(criterion);
     if (targetKind === 'surface' && !inputs.target) return null;
     const canonical = canonicalizeBakedTin(result.gradingMesh.points, result.gradingMesh.triangles);
     const payload = {
@@ -411,6 +417,7 @@ const groupBakeCommand: CadCommandDefinition<GroupBakeCommand> = {
           (course) => `${course.vertexAId}>${course.vertexBId}`,
         ),
         targetKind,
+        ...(targetKind === 'mixed-analytic' ? { analyticKinds } : {}),
         ...(targetKind === 'surface' ? { targetSurfaceId: inputs.target!.id } : {}),
         ...(criterion.kind === 'distance' ? { criterionDistance: criterion.distance } : {}),
         ...(criterion.kind === 'elevation' ? { targetElevation: criterion.targetElevation } : {}),

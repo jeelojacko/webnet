@@ -1,0 +1,251 @@
+{
+  "1366-mixed-create": {
+    "innerW": 1366,
+    "innerH": 768,
+    "docScrollW": 1366,
+    "docScrollH": 768,
+    "ribbon": {
+      "x": 0,
+      "y": 66,
+      "w": 1366,
+      "h": 120,
+      "scrollW": 1366,
+      "clientW": 1366
+    },
+    "viewport": {
+      "x": 264,
+      "y": 215,
+      "w": 814,
+      "h": 345,
+      "scrollW": 814,
+      "clientW": 814
+    },
+    "manager": {
+      "x": 586,
+      "y": 303,
+      "w": 480,
+      "h": 276,
+      "scrollW": 478,
+      "clientW": 478
+    }
+  },
+  "1920-mixed-create": {
+    "innerW": 1920,
+    "innerH": 1080,
+    "docScrollW": 1920,
+    "docScrollH": 1080,
+    "ribbon": {
+      "x": 0,
+      "y": 66,
+      "w": 1920,
+      "h": 120,
+      "scrollW": 1920,
+      "clientW": 1920
+    },
+    "viewport": {
+      "x": 264,
+      "y": 215,
+      "w": 1368,
+      "h": 657,
+      "scrollW": 1368,
+      "clientW": 1368
+    },
+    "manager": {
+      "x": 1140,
+      "y": 303,
+      "w": 480,
+      "h": 525.59375,
+      "scrollW": 478,
+      "clientW": 478
+    }
+  },
+  "2560-mixed-create": {
+    "innerW": 2560,
+    "innerH": 1440,
+    "docScrollW": 2560,
+    "docScrollH": 1440,
+    "ribbon": {
+      "x": 0,
+      "y": 66,
+      "w": 2560,
+      "h": 120,
+      "scrollW": 2560,
+      "clientW": 2560
+    },
+    "viewport": {
+      "x": 264,
+      "y": 215,
+      "w": 2008,
+      "h": 1017,
+      "scrollW": 2008,
+      "clientW": 2008
+    },
+    "manager": {
+      "x": 1780,
+      "y": 303,
+      "w": 480,
+      "h": 813.59375,
+      "scrollW": 478,
+      "clientW": 478
+    }
+  },
+  "1366-mixed-current": {
+    "innerW": 1366,
+    "innerH": 768,
+    "docScrollW": 1366,
+    "docScrollH": 768,
+    "ribbon": {
+      "x": 0,
+      "y": 66,
+      "w": 1366,
+      "h": 120,
+      "scrollW": 1366,
+      "clientW": 1366
+    },
+    "viewport": {
+      "x": 264,
+      "y": 215,
+      "w": 814,
+      "h": 345,
+      "scrollW": 814,
+      "clientW": 814
+    },
+    "manager": {
+      "x": 586,
+      "y": 303,
+      "w": 480,
+      "h": 276,
+      "scrollW": 478,
+      "clientW": 478
+    }
+  },
+  "1366-mixed-inquiry": {
+    "innerW": 1366,
+    "innerH": 768,
+    "docScrollW": 1366,
+    "docScrollH": 768,
+    "ribbon": {
+      "x": 0,
+      "y": 66,
+      "w": 1366,
+      "h": 120,
+      "scrollW": 1366,
+      "clientW": 1366
+    },
+    "viewport": {
+      "x": 264,
+      "y": 215,
+      "w": 814,
+      "h": 345,
+      "scrollW": 814,
+      "clientW": 814
+    },
+    "manager": {
+      "x": 586,
+      "y": 303,
+      "w": 480,
+      "h": 276,
+      "scrollW": 478,
+      "clientW": 478
+    }
+  },
+  "1366-mixed-failed": {
+    "innerW": 1366,
+    "innerH": 768,
+    "docScrollW": 1366,
+    "docScrollH": 768,
+    "ribbon": {
+      "x": 0,
+      "y": 66,
+      "w": 1366,
+      "h": 120,
+      "scrollW": 1366,
+      "clientW": 1366
+    },
+    "viewport": {
+      "x": 264,
+      "y": 215,
+      "w": 814,
+      "h": 345,
+      "scrollW": 814,
+      "clientW": 814
+    },
+    "manager": {
+      "x": 586,
+      "y": 285,
+      "w": 480,
+      "h": 276,
+      "scrollW": 478,
+      "clientW": 478
+    }
+  },
+  "1366-mixed-group": {
+    "innerW": 1366,
+    "innerH": 768,
+    "docScrollW": 1366,
+    "docScrollH": 768,
+    "ribbon": {
+      "x": 0,
+      "y": 66,
+      "w": 1366,
+      "h": 120,
+      "scrollW": 1366,
+      "clientW": 1366
+    },
+    "viewport": {
+      "x": 264,
+      "y": 215,
+      "w": 814,
+      "h": 345,
+      "scrollW": 814,
+      "clientW": 814
+    },
+    "manager": null
+  },
+  "1920-mixed-group": {
+    "innerW": 1920,
+    "innerH": 1080,
+    "docScrollW": 1920,
+    "docScrollH": 1080,
+    "ribbon": {
+      "x": 0,
+      "y": 66,
+      "w": 1920,
+      "h": 120,
+      "scrollW": 1920,
+      "clientW": 1920
+    },
+    "viewport": {
+      "x": 264,
+      "y": 215,
+      "w": 1368,
+      "h": 657,
+      "scrollW": 1368,
+      "clientW": 1368
+    },
+    "manager": null
+  },
+  "2560-mixed-group": {
+    "innerW": 2560,
+    "innerH": 1440,
+    "docScrollW": 2560,
+    "docScrollH": 1440,
+    "ribbon": {
+      "x": 0,
+      "y": 66,
+      "w": 2560,
+      "h": 120,
+      "scrollW": 2560,
+      "clientW": 2560
+    },
+    "viewport": {
+      "x": 264,
+      "y": 215,
+      "w": 2008,
+      "h": 1017,
+      "scrollW": 2008,
+      "clientW": 2008
+    },
+    "manager": null
+  }
+}

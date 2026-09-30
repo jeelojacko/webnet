@@ -21,7 +21,7 @@ import type {
   GradingSide,
   GradingTerminationKind,
 } from '../../engine/cad/grading/gradingTypes';
-import { gradingCriterionRequiresSurface } from '../../engine/cad/grading/gradingTypes';
+import { gradingCriterionRequiresSurface, gradingTerminationDomain } from '../../engine/cad/grading/gradingTypes';
 import type { CadShellActions, CadWorkspaceSnapshot } from './cadShellTypes';
 import { proposeGroupSpan, type ClosedSpanMode } from './cadGradingGroupSpan';
 import {
@@ -32,7 +32,6 @@ import { gradingTargetSummary } from './cadGradingShell';
 import {
   defaultGradingCriterionDraft,
   gradingCriterionDraftFromCriterion,
-  gradingMethodLabel,
   parseGradingCriterionDraft,
   type GradingCriterionDraft,
 } from './cadGradingCriterionInput';
@@ -240,8 +239,17 @@ const EditCriteriaInline: React.FC<{
       : currentSurfaces[0]?.id ?? '',
   );
   const surfaceBlocked = draft.method === 'surface' && currentSurfaces.length === 0;
+  // Phase 20H: a surface<->analytic switch is a domain change. The engine
+  // same-domain gate rejects it while course overrides are still stored, so
+  // the switch requires explicit override clearing (two labeled Undo steps)
+  // — never a silent delete.
+  const draftCriterion = parseGradingCriterionDraft(draft);
+  const draftDomain = draftCriterion ? gradingTerminationDomain(draftCriterion) : null;
+  const currentDomain = gradingTerminationDomain(row.definition.criterion);
+  const crossDomain = draftDomain != null && draftDomain !== currentDomain;
+  const clearingOverrides = crossDomain && row.overrideCount > 0;
   const apply = (): void => {
-    const criterion: GradingCriterion | null = parseGradingCriterionDraft(draft);
+    const criterion: GradingCriterion | null = draftCriterion;
     if (criterion == null) {
       onNotice('Criteria rejected — check the criterion fields.');
       return;
@@ -251,10 +259,28 @@ const EditCriteriaInline: React.FC<{
       onNotice('Criteria rejected — surface grading needs a CURRENT target.');
       return;
     }
+    // Domain switch with stored overrides: clear them first (explicit,
+    // separate Undo step), then edit the default. Reset-fail aborts before
+    // touching the default; there is no invalid intermediate state because
+    // the old default and the cleared override set share the old domain.
+    if (clearingOverrides) {
+      const confirmed = window.confirm(
+        `Switching the group domain (${currentDomain} → ${draftDomain}) clears ${row.overrideCount} course override${row.overrideCount === 1 ? '' : 's'}.` +
+        ' This commits two Undo steps (clear, then default). Proceed?',
+      );
+      if (!confirmed) return;
+      const cleared = run(actions, {
+        key: 'GROUP_RESET_COURSE_CRITERIA',
+        groupId: row.id,
+        courses: row.definition.sourceCourses.map((course) => ({ ...course })),
+      });
+      if (!cleared) {
+        onNotice('Criteria rejected — clearing overrides failed; no changes applied.');
+        return;
+      }
+    }
     // Kind switch + target commit in ONE undo entry. The engine is
-    // authoritative for the one-family-per-group guard: a rejected switch
-    // (e.g. Distance overrides -> Surface default) must stay open and never
-    // auto-delete overrides.
+    // authoritative for the one-domain-per-group guard.
     const ok = run(actions, {
       key: 'GROUP_EDIT_CRITERIA',
       groupId: row.id,
@@ -262,7 +288,7 @@ const EditCriteriaInline: React.FC<{
       targetSurfaceId: needsSurface ? targetId : null,
     });
     if (!ok) {
-      onNotice('Criteria rejected — one termination family per group; reset course overrides first.');
+      onNotice('Criteria rejected — check the termination domain and target.');
       return;
     }
     onNotice('Criteria updated — recalculate.');
@@ -282,6 +308,12 @@ const EditCriteriaInline: React.FC<{
       {surfaceBlocked ? (
         <div className="col-span-2 text-[11px] text-amber-300" data-cad-grading-group-edit-surface-blocked>
           Surface grading needs a CURRENT target surface — none is eligible.
+        </div>
+      ) : null}
+      {clearingOverrides ? (
+        <div className="col-span-2 text-[11px] text-amber-300" data-cad-grading-group-edit-domain-clear>
+          Switching to {draftDomain} clears {row.overrideCount} course override
+          {row.overrideCount === 1 ? '' : 's'} (two Undo steps; overrides are never silently deleted).
         </div>
       ) : null}
       <div className="col-span-2 flex gap-1">
@@ -360,7 +392,9 @@ const RowActions: React.FC<{
         </button>
         {row.analytic ? (
           <span className="self-center text-[11px] text-slate-400" data-cad-grading-group-target-static>
-            {gradingTargetSummary(row.definition.criterion, row.targetName, lengthUnit)}
+            {row.methodSummary.mixedAnalytic
+              ? 'Target: Not applicable'
+              : gradingTargetSummary(row.definition.criterion, row.targetName, lengthUnit)}
           </span>
         ) : (
           <select
@@ -449,16 +483,16 @@ const GroupRowTable: React.FC<{
           <tr
             key={row.id}
             data-cad-grading-group-row={row.id}
-            data-cad-grading-group-row-method={row.method}
+            data-cad-grading-group-row-method={row.methodSummary.label}
             data-selected={selectedId === row.id ? 'true' : undefined}
             className={selectedId === row.id ? 'bg-slate-800' : ''}
             onClick={() => actions.selectGradingGroup?.(row.id)}
           >
             <td className="pr-2">{row.name}</td>
-            <td className="pr-2">{gradingMethodLabel(row.method)}</td>
+            <td className="pr-2">{row.methodSummary.label}</td>
             <td className="pr-2">{row.courseCount}{row.closed ? ' (closed)' : ''}</td>
             <td className="pr-2">{row.side}</td>
-            <td className="pr-2">{row.targetName}</td>
+            <td className="pr-2">{row.methodSummary.mixedAnalytic ? 'Not applicable' : row.targetName}</td>
             <td className="pr-2">Default {row.criterionText} · Overrides:{row.overrideCount}</td>
             <td className="pr-2">{row.statusText}{row.stale ? ' (stale)' : ''}{row.diagnostic ? ` — ${gradingDiagnosticCode(row.diagnostic) ?? row.diagnostic}` : ''}</td>
             <td className="pr-2">{row.maxSearchDistance.toFixed(2)} {row.lengthUnit}</td>

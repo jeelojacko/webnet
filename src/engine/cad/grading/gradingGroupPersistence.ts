@@ -1,5 +1,6 @@
 import { createGroupDefinition } from './gradingGroupAuthoring';
 import { validateGradingCriterion } from './gradingAuthoring';
+import { gradingTerminationDomain } from './gradingTypes';
 import { validateGroupTermination } from './gradingGroupTermination';
 import type { CadGradingGroup } from './gradingGroupTypes';
 
@@ -67,7 +68,7 @@ export const sanitizeCadGradingGroups = (groups: unknown): CadGradingGroup[] =>
 export interface CourseCriteriaDrop {
   groupId: string;
   ref: string;
-  reason: 'orphan' | 'duplicate' | 'invalid-criterion';
+  reason: 'orphan' | 'duplicate' | 'invalid-criterion' | 'incompatible-domain';
 }
 
 /**
@@ -105,20 +106,33 @@ export const sanitizeCadGradingGroupsDetailed = (
     if (built.ok) {
       const scrubbed = scrubCourseCriteria(built.value, candidate['courseCriteria']);
       dropped.push(...scrubbed.dropped);
-      // Phase 20F: fail the family gate at sanitize. A hand-mixed file would
-      // otherwise fail closed only at resolve; instead load the group on its
-      // default criterion and report each stripped override.
+      // Phase 20H: same-domain rule is enforced per override — an override
+      // whose domain differs from the group default is dropped on its own
+      // while valid siblings survive. Malformed defaults drop the group via
+      // the authoring constructor above; legacy valid groups pass through
+      // byte-for-byte.
       let group = scrubbed.group;
       if (group.courseCriteria !== undefined && validateGroupTermination(group) !== null) {
+        const defaultDomain = gradingTerminationDomain(group.criterion);
+        const keptOverrides: NonNullable<CadGradingGroup['courseCriteria']> = [];
         for (const override of group.courseCriteria) {
-          dropped.push({
-            groupId: group.id,
-            ref: `${override.sourceCourse.vertexAId}>${override.sourceCourse.vertexBId}`,
-            reason: 'invalid-criterion',
-          });
+          if (gradingTerminationDomain(override.criterion) !== defaultDomain) {
+            dropped.push({
+              groupId: group.id,
+              ref: `${override.sourceCourse.vertexAId}>${override.sourceCourse.vertexBId}`,
+              reason: 'incompatible-domain',
+            });
+          } else {
+            keptOverrides.push(override);
+          }
         }
-        const { courseCriteria: _stripped, ...rest } = group;
-        group = rest;
+        group =
+          keptOverrides.length === 0
+            ? ((): CadGradingGroup => {
+                const { courseCriteria: _stripped, ...rest } = group;
+                return rest;
+              })()
+            : { ...group, courseCriteria: keptOverrides };
       }
       kept.push(cloneCadGradingGroup(group));
     }

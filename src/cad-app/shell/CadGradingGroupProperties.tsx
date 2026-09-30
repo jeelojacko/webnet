@@ -16,7 +16,6 @@ import {
   shortVertexLabel,
 } from './cadGradingGroupCourseCriteria';
 import { formatGradingCriterion, gradingTargetSummary } from './cadGradingShell';
-import { gradingMethodLabel } from './cadGradingCriterionInput';
 import { relativeElevationDisplay } from './cadGradingDisplay';
 
 export const GradingGroupPropertiesBlock: React.FC<{ row: CadGradingGroupRow }> = ({ row }) => {
@@ -27,15 +26,19 @@ export const GradingGroupPropertiesBlock: React.FC<{ row: CadGradingGroupRow }> 
   const memberCriterion = course ? effectiveCourseCriterion(row.definition, clamped) : null;
   const memberRelative = memberCriterion ? relativeElevationDisplay(memberCriterion, row.lengthUnit) : null;
   return (
-    <div data-cad-grading-group-properties={row.id} data-cad-grading-group-method={row.method}>
+    <div data-cad-grading-group-properties={row.id} data-cad-grading-group-method={row.methodSummary.label}>
       <h3>Grading Group</h3>
       <dl>
         <div><dt>Name</dt><dd>{row.name}</dd></div>
-        <div><dt>Method</dt><dd data-cad-grading-group-properties-method>{gradingMethodLabel(row.method)}</dd></div>
+        <div><dt>Method</dt><dd data-cad-grading-group-properties-method>{row.methodSummary.label}</dd></div>
+        {row.methodSummary.mixedAnalytic ? (
+          <div><dt>Methods</dt><dd data-cad-grading-group-properties-methods>{row.methodSummary.detail}</dd></div>
+        ) : null}
+        <div><dt>Domain</dt><dd>{row.analytic ? 'Analytic' : 'Surface'}</dd></div>
         <div><dt>Source</dt><dd>{row.sourceName}</dd></div>
         <div><dt>Courses</dt><dd>{row.courseCount}{row.closed ? ' (closed)' : ''} · {row.courseRefs}</dd></div>
         <div><dt>Side</dt><dd>{row.side}</dd></div>
-        <div><dt>Target</dt><dd>{gradingTargetSummary(row.definition.criterion, row.targetName, row.lengthUnit)}</dd></div>
+        <div><dt>Target</dt><dd>{row.methodSummary.mixedAnalytic ? 'Not applicable' : gradingTargetSummary(row.definition.criterion, row.targetName, row.lengthUnit)}</dd></div>
         <div><dt>Default Criterion</dt><dd>{row.criterionText}</dd></div>
         {relative ? (
           <>

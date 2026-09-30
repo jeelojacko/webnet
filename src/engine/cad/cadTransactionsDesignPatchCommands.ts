@@ -144,6 +144,7 @@ export const resolveDesignPatch = (
           (course) => `${course.vertexAId}>${course.vertexBId}`,
         ),
         criterion: inputs.group.criterion,
+        memberCriteria: inputs.memberCriteria,
         ...(inputs.target !== undefined ? { targetSurfaceId: inputs.target.id } : {}),
         ...(inputs.targetRevision !== undefined ? { targetSurfaceRevision: inputs.targetRevision } : {}),
         accuracy: result.accuracy,

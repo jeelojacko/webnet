@@ -84,21 +84,13 @@ export const analyticTerminalLine = (
   maxSearchDistance: number = Number.MAX_VALUE,
 ): AnalyticTerminalLine | null => {
   if (!finiteAll([vx, vy, vz, t.nx, t.ny, n.nx, n.ny, gs])) return null;
-  if (criterion.kind === 'distance') {
-    const { gradeRatio: g, distance: d } = criterion;
-    if (!finiteAll([g, d])) return null;
-    return {
-      ox: vx + n.nx * d,
-      oy: vy + n.ny * d,
-      oz: vz + g * d,
-      dx: t.nx,
-      dy: t.ny,
-      dz: gs,
-    };
-  }
-  if (criterion.kind === 'elevation' || criterion.kind === 'relative-elevation') {
+  if (
+    criterion.kind === 'distance' ||
+    criterion.kind === 'elevation' ||
+    criterion.kind === 'relative-elevation'
+  ) {
     // Single closed-form authority: d and the limit elevation always come
-    // from the shared helper — no local (E−Zsrc)/g or Δ/g derivation.
+    // from the shared helper — no local D, (E−Zsrc)/g, or Δ/g derivation.
     // Direct callers without a bound get Number.MAX_VALUE (direction,
     // finiteness, and exact-limit gates still apply; over-search beyond a
     // real bound fails closed).
@@ -108,6 +100,16 @@ export const analyticTerminalLine = (
     const d = resolved.value.horizontalDistance;
     const oz = resolved.value.limitElevation;
     if (!Number.isFinite(d) || !Number.isFinite(oz)) return null;
+    if (criterion.kind === 'distance') {
+      return {
+        ox: vx + n.nx * d,
+        oy: vy + n.ny * d,
+        oz,
+        dx: t.nx,
+        dy: t.ny,
+        dz: gs,
+      };
+    }
     if (criterion.kind === 'elevation') {
       // Direction stays at constant Z: d(u) = (E − Zsrc(u))/g, so the XY
       // direction picks up the longitudinal grade divided by the cross grade.

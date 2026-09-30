@@ -3,10 +3,10 @@
  * Phase 20F.1 — override composer rides the shared criterion machinery
  * (`gradingCriterionDraftFromCriterion` + `parseGradingCriterionDraft` +
  * `<CadGradingCriterionFields>`, no local parser) and locks to the group
- * termination family: Surface groups offer Fixed + Cut/Fill only, Distance
- * groups Distance-only, Elevation groups Elevation-only. Cross-family
- * options are never offered, so the engine single-family gate cannot trip
- * from this UI.
+ * termination DOMAIN (Phase 20H): Surface groups offer Fixed + Cut/Fill only;
+ * analytic groups offer Distance + Elevation + Relative Elevation (the kinds
+ * mix freely within a group). Cross-domain options are never offered, so the
+ * engine single-domain gate cannot trip from this UI.
  *
  * COURSE CRITERIA table (Course / From / To / Type / Effective Criterion /
  * Source) over the persisted traversal. Override and Reset ride one
@@ -20,14 +20,16 @@
  */
 import React from 'react';
 import {
-  gradingTerminationKind,
-  type GradingTerminationKind,
+  gradingTerminationDomain,
+  type GradingTerminationDomain,
 } from '../../engine/cad/grading/gradingTypes';
 import type { GradingCriterion } from '../../engine/cad/grading/gradingTypes';
 import type { CadGradingGroup } from '../../engine/cad/grading/gradingGroupTypes';
 import type { CadGradingGroupShellCommand } from './cadGradingGroupShell';
 import { CadGradingCriterionFields } from './CadGradingCriterionFields';
 import {
+  allowedMethodsForGroupDomain,
+  clampToAllowedMethods,
   gradingCriterionDraftFromCriterion,
   parseGradingCriterionDraft,
   type GradingCriterionDraft,
@@ -49,15 +51,15 @@ interface CadGradingGroupCriteriaPanelProps {
   lengthUnit?: string;
 }
 
-/** Clamp a draft back to the group family (the composer never leaves it). */
-const clampToFamily = (
-  family: GradingTerminationKind,
+/** Clamp a draft into the group's termination domain (never a stale kind). */
+const clampToDomain = (
+  domain: GradingTerminationDomain,
   draft: GradingCriterionDraft,
 ): GradingCriterionDraft =>
-  draft.method === family ? draft : { ...draft, method: family };
+  clampToAllowedMethods(draft, allowedMethodsForGroupDomain(domain));
 
 /** Canonical identity of a persisted default criterion, used to resync the
- * composer on default/family changes (undo/redo, Set Group Default) WITHOUT
+ * composer on default/domain changes (undo/redo, Set Group Default) WITHOUT
  * resetting it on override-only edits that leave the default untouched. */
 const criterionKey = (criterion: GradingCriterion): string => {
   switch (criterion.kind) {
@@ -74,11 +76,11 @@ const criterionKey = (criterion: GradingCriterion): string => {
   }
 };
 
-const draftForFamily = (
-  family: GradingTerminationKind,
+const draftForDomain = (
+  domain: GradingTerminationDomain,
   criterion: GradingCriterion,
 ): GradingCriterionDraft =>
-  clampToFamily(family, gradingCriterionDraftFromCriterion(criterion));
+  clampToDomain(domain, gradingCriterionDraftFromCriterion(criterion));
 
 export const CadGradingGroupCriteriaPanel: React.FC<CadGradingGroupCriteriaPanelProps> = ({
   group,
@@ -86,21 +88,22 @@ export const CadGradingGroupCriteriaPanel: React.FC<CadGradingGroupCriteriaPanel
   onNotice,
   lengthUnit = 'm',
 }) => {
-  const family = gradingTerminationKind(group.criterion);
-  const defaultKey = `${family}:${criterionKey(group.criterion)}`;
+  const domain = gradingTerminationDomain(group.criterion);
+  const methods = allowedMethodsForGroupDomain(domain);
+  const defaultKey = criterionKey(group.criterion);
   const [selected, setSelected] = React.useState<ReadonlySet<number>>(new Set());
   const [draft, setDraft] = React.useState<GradingCriterionDraft>(() =>
-    draftForFamily(family, group.criterion),
+    draftForDomain(domain, group.criterion),
   );
   // A newly selected group starts with no ticks.
   React.useEffect(() => {
     setSelected(new Set());
   }, [group.id]);
-  // Refresh the composer whenever the persisted default/family changes: a new
-  // group, undo/redo, a family switch, or Set Group Default. Override-only
+  // Refresh the composer whenever the persisted default/domain changes: a new
+  // group, undo/redo, a domain switch, or Set Group Default. Override-only
   // edits leave the default untouched, so active typing survives them.
   React.useEffect(() => {
-    setDraft(draftForFamily(gradingTerminationKind(group.criterion), group.criterion));
+    setDraft(draftForDomain(gradingTerminationDomain(group.criterion), group.criterion));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [group.id, defaultKey]);
 
@@ -141,7 +144,7 @@ export const CadGradingGroupCriteriaPanel: React.FC<CadGradingGroupCriteriaPanel
     });
     onNotice(ok
       ? `${indices.length} course${indices.length === 1 ? '' : 's'} overridden — recalculate. Undo reverts (one step).`
-      : 'Override rejected — no changes applied (check course refs and termination family).');
+      : 'Override rejected — no changes applied (check course refs and termination domain).');
   };
 
   const resetSelected = (): void => {
@@ -260,10 +263,10 @@ export const CadGradingGroupCriteriaPanel: React.FC<CadGradingGroupCriteriaPanel
       <div className="mb-2 grid grid-cols-2 gap-2" data-cad-grading-group-criteria-form>
         <CadGradingCriterionFields
           draft={draft}
-          onChange={(next) => setDraft(clampToFamily(family, next))}
+          onChange={(next) => setDraft(clampToAllowedMethods(next, methods))}
           lengthUnit={lengthUnit}
           dataPrefix="cad-grading-group-criteria"
-          methods={[family]}
+          methods={methods}
         />
       </div>
       <div className="mb-2 flex flex-wrap gap-1">
