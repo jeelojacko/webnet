@@ -600,3 +600,33 @@ describe('phase20i closed square and production freeze', () => {
     }
   });
 });
+
+describe('phase20i joint-Z continuity (production exactXyz mirror)', () => {
+  it('analytic joint Z 101 vs vz 100 fails closed with SOURCE_JOINT_MISMATCH, no mesh', () => {
+    const got = resolveSurfaceAnalyticCorner({
+      ...primary(), analyticMember: M(0, 0, 101, 0, 60, 101), buildMesh: true,
+    });
+    expect(got.outcome).toBe('SOURCE_JOINT_MISMATCH');
+    expect(got.surfaceTie).toBeNull();
+    expect(got.analyticTie).toBeNull();
+    expect(got.mesh).toBeNull();
+  });
+
+  it('surface joint Z 101 vs vz 100 fails closed in reverse order, no mesh', () => {
+    const got = resolveSurfaceAnalyticCorner({
+      vx: 0, vy: 0, vz: 100,
+      surfaceMember: M(0, 0, 101, -60, 0, 101), surfaceIncoming: false,
+      analyticMember: AIN, analyticIncoming: true,
+      side: 'right', surfaceCriterion: FIXED(-0.5), analyticCriterion: REL(-0.25, -10),
+      maxSearchDistance: 100, target: T90, buildMesh: true,
+    });
+    expect(got.outcome).toBe('SOURCE_JOINT_MISMATCH');
+    expect(got.mesh).toBeNull();
+  });
+
+  it('equal-Z exact joint still ties (gate admits continuous sources)', () => {
+    const got = resolveSurfaceAnalyticCorner(primary());
+    expect(got.outcome).toBe('EXACT_COMMON_TIE');
+    expect(tieOf(got.analyticTie)).toEqual([40, -20, 90]);
+  });
+});

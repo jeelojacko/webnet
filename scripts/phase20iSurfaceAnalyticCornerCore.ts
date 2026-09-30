@@ -59,7 +59,8 @@ export type SurfaceAnalyticOutcome =
   | 'PLANE_DEGENERATE'
   | 'SEAM_DEGENERATE'
   | 'NON_FINITE_INPUT'
-  | 'MESH_PROTOTYPE_FAILED';
+  | 'MESH_PROTOTYPE_FAILED'
+  | 'SOURCE_JOINT_MISMATCH';
 
 export interface TiePoint {
   x: number;
@@ -220,6 +221,18 @@ export const resolveSurfaceAnalyticCorner = (
     : { x: input.analyticMember.startX, y: input.analyticMember.startY };
   if (!sameTol(sJoint.x, vx) || !sameTol(sJoint.y, vy) || !sameTol(aJoint.x, vx) || !sameTol(aJoint.y, vy)) {
     return done('PLANE_DEGENERATE', 'joint-mismatch');
+  }
+  // Joint-Z continuity (production mirror): production requires exact XYZ
+  // equality of the shared vertex (`exactXyz`, gradingGroupCompute.ts:99-100;
+  // gate :281-285). Study members are exact-typed literals, so mirror with
+  // `===` (not `zeroDelta`): both members' joint Z must equal each other
+  // and `vz`, checked BEFORE either plane is built. Otherwise both planes
+  // are constructed through the supplied `vz` and a discontinuous source
+  // joint still reports EXACT_COMMON_TIE on fabricated geometry.
+  const sJointZ = input.surfaceIncoming ? input.surfaceMember.endZ : input.surfaceMember.startZ;
+  const aJointZ = input.analyticIncoming ? input.analyticMember.endZ : input.analyticMember.startZ;
+  if (!(sJointZ === vz && aJointZ === vz && sJointZ === aJointZ)) {
+    return done('SOURCE_JOINT_MISMATCH', 'joint-z-mismatch');
   }
   const inFrame = input.surfaceIncoming ? sFrame : aFrame;
   const outFrame = input.surfaceIncoming ? aFrame : sFrame;

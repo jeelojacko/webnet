@@ -2,15 +2,15 @@
 
 Status: FILLED (evidence-only, zero `src/` change). Branch
 `research/phase20i-surface-analytic-corner-feasibility`, baseline
-`9dd28c94715daa3583c907224a04652d3ae99cc3` (= PR #137 merge), HEAD == baseline
-with an uncommitted evidence-only working tree.
+`9dd28c94715daa3583c907224a04652d3ae99cc3` (= PR #137 merge), HEAD
+`e3225546` (PR #138) with the reviewer-fix working tree on top.
 
 Numbers are produced by the core study
 (`scripts/phase20iSurfaceAnalyticCornerCore.ts`,
 `scripts/phase20iSurfaceAnalyticCornerStudy.ts`): corpus
-`docs/evidence/phase20i/corpus.json` (112 rows, 0 mismatches, sha256
-`3189d1cd038b5a76ae19afb1c294a97e7ff5dac5144874475b3c8f85c7d05b42`), plus the
-two focused test files (42 tests). Every number below is a script/test run,
+`docs/evidence/phase20i/corpus.json` (114 rows, 0 mismatches, sha256
+`b8de58ba0a6aed024bf3fe6285ef5ee28534ebb7ab34991ccb20ee7ac7d73cf9`), plus the
+two focused test files (47 tests). Every number below is a script/test run,
 not hand-entered. The production contract today is still fail-closed for a
 mixed group (`MEMBER_NO_SOLUTION` / `GRADING_GROUP_MIXED_TERMINATION_DOMAIN`).
 
@@ -31,12 +31,14 @@ Duration convention: `extent` is `|T* − V|` of the analytic tie; `xy gap` /
 | G | multi-root / branch (TIN edge graze) | deterministic nearest outward root, stable | 3 roots → `ROOT_POLICY_CONFLICT`; single transverse triangle 1 root exact |
 | H | GAP prototype (outside turn) | wedge fan; positive patch area | mesh valid, 2 tris, plan area 800, 3D 859.5241580617239 |
 | I | OVERLAP prototype (inside turn) | trim both strips to the miter line once | tie (−40,−20,90); valid tiled-once mesh (9 verts) |
-| J | closed square (4 hybrid joints) | mesh validates; plan area finite | 4 exact ties at 20√2 extent; controls agree; freeze fail-closed |
+| J | closed square (2 mixed + 2 analytic-analytic joints) | four tie coordinates agree; controls agree; freeze fail-closed | 4 exact ties at 20√2 extent; tie-checks only, no assembled closed-ring mesh |
 | K | triangulation variants (same plane) | identical `T*` across two triangulations | identical (40,−20,90), xy gaps ≤3.2e-14, z gap 0 |
 | L | arc ladder (mixed arc-adjacent) | `CURVE_APPROXIMATED`, `d` constant | monotone convergence, no branch jump |
 | M | large coords (`E≈2M / N≈7M`) | XY/Z offsets within `1e-6` | offset 0; outcome/topology unchanged |
 | N | determinism digests | identical repeats | corpus re-run sha256 identical; 15/15 → 1 digest |
-| O | corpus batch | zero crashes; outcome histogram | 112 rows, 0 mismatches (histogram below) |
+| O | corpus batch | zero crashes; outcome histogram | 114 rows, 0 mismatches (histogram below) |
+| P | source joint-Z discontinuity | fail closed `SOURCE_JOINT_MISMATCH`, no mesh | joint Z 100 vs 101 → `SOURCE_JOINT_MISMATCH` both orders; equal-Z still exact |
+| Q | disconnected V/tie target | tie recorded but mesh request fails closed | `EXACT_COMMON_TIE` unmeshed (Qs null); `buildMesh` → `MESH_PROTOTYPE_FAILED` |
 
 ## §A — exact fixed surface ↔ Distance
 
@@ -116,19 +118,28 @@ the clip. OVERLAP is recorded as a **valid** outcome, not a NO-GO.
 ## §J — closed square
 
 Four-member closed square (Z=10), criteria `[FIXED(−0.5), DIST(−0.5,20),
-ELEV(−0.5,0), REL(−0.5,−10)]`; one surface + one analytic member per corner
-by construction.
+ELEV(−0.5,0), REL(−0.5,−10)]`. Honest accounting: corners 0 and 3 are
+mixed surface↔analytic joints checked through the study core; corners 1
+and 2 are analytic↔analytic joints checked through `intersectAnalyticPair`
+(two existing terminal lines, no target). Each corner is an independent
+tie-coordinate check — the study does NOT assemble a closed-ring mesh, so
+no closed-mesh validation is claimed. What is proven: the four tie
+coordinates.
 
 - Four corners tie exactly at `(120,−20,0)`, `(120,120,0)`, `(−20,120,0)`,
   `(−20,−20,0)`; extent `28.284271247461902 = 20√2`.
 - Production controls agree: `control.all-surface`,
   `control.all-distance`, `control.mixed-analytic` all `ok` and return the
-  same corner ties; 43-file / 599-test grading suite passes.
+  same corner ties; 43-file / 604-test grading suite passes.
 - One off member (`D=24`): corner 0 → `TRANSITION_REQUIRED` (tie
   `(124,−24,−2)`, `xyGap=5.656854249492381=√32`, `zGap=2`, `mesh=null`),
   corner 1 → analytic-pair `z-disagree`. No partial mesh is emitted.
 - Freeze: a real surface+analytic mixed group fails
   `MEMBER_NO_SOLUTION` / `GRADING_GROUP_MIXED_TERMINATION_DOMAIN` (unchanged).
+- Tie-check vs mesh-check: the square proves tie coordinates, not a meshed
+  ring. Likewise the open two-course prototype (mesh test file) checks the
+  two member strips and the corner fan mesh separately — it does not merge
+  them into one combined topology, so no combined-mesh claim is made.
 - Design Patch: not implemented in this study; a hybrid ring would still have
   to pass the existing bit-flat / exactly-coplanar gate or stay BLOCKED.
 
@@ -165,7 +176,7 @@ V translated to `(2000000, 7000000)`, target/members shifted; exact case →
 ## §N — determinism
 
 - Corpus regeneration is byte-identical: sha256
-  `3189d1cd038b5a76ae19afb1c294a97e7ff5dac5144874475b3c8f85c7d05b42` on two
+  `b8de58ba0a6aed024bf3fe6285ef5ee28534ebb7ab34991ccb20ee7ac7d73cf9` on two
   consecutive runs.
 - Harness `--quick` deterministic repeats: B exact fixed/Relative and
   fixed/Distance each 15/15 → **1** unique digest `d7f04bdfd80a9537`.
@@ -173,7 +184,7 @@ V translated to `(2000000, 7000000)`, target/members shifted; exact case →
 
 ## §O — corpus batch
 
-`npx tsx scripts/phase20iSurfaceAnalyticCornerStudy.ts`: 112 rows, **0**
+`npx tsx scripts/phase20iSurfaceAnalyticCornerStudy.ts`: 114 rows, **0**
 mismatches. Outcome histogram (actual):
 
 | outcome | rows |
@@ -188,6 +199,7 @@ mismatches. Outcome histogram (actual):
 | `SIDE_REJECT` | 2 |
 | `MAX_EXTENT_REJECT` | 2 |
 | `SURFACE_NO_ROOT` | 1 |
+| `SOURCE_JOINT_MISMATCH` | 2 |
 | `ANALYTIC_SEAM_PARALLEL` | 1 |
 | `DEFENSE_IN_DEPTH` | 1 |
 | `CORNER_NO_SOLUTION` | 1 |
@@ -198,10 +210,50 @@ Failure/guard taxonomy (each exactly as expected): coincident →
 `PLANE_DEGENERATE`; seam-parallel → `ANALYTIC_SEAM_PARALLEL`; U-turn and
 same-travel collinear → `SIDE_REJECT`; early-root patch with far analytic tie
 → `MAX_EXTENT_REJECT` (both orders); non-finite grade/target and zero-length
-member → `NON_FINITE_INPUT` / `PLANE_DEGENERATE`. `record.behind-unreachable`:
+member → `NON_FINITE_INPUT` / `PLANE_DEGENERATE`. Joint-Z discontinuity
+(analytic joint Z 101 vs `vz` 100, both orders) → `SOURCE_JOINT_MISMATCH`
+with no ties and no mesh (see §P). `record.behind-unreachable`:
 192-config direction×order×criterion grid (`grid=192 behind=0`; 96
 `SIDE_REJECT` + 96 `EXACT_COMMON_TIE`), so `ANALYTIC_TIE_BEHIND_VERTEX` is
 unreachable for side-consistent inputs and stays defense-in-depth.
+
+## §P — source joint-Z continuity gate
+
+Reviewer-found fabrication: the core checked joint XY but not Z, then built
+both corner planes through the supplied `vz`. Analytic joint Z 101 vs `vz`
+100 still reported `EXACT_COMMON_TIE` with `Qa=(40,0,90)` while the real
+strip starts at 101 — a tie on geometry neither member owns. Production
+requires exact XYZ continuity (`exactXyz`,
+`gradingGroupCompute.ts:99-100`; gate `:281-285`), so the study now mirrors
+that rule as closely as its input shape permits: both members' joint Z must
+`===`-equal each other and `vz`, checked BEFORE either plane is built. `===`
+(not `zeroDelta`) is deliberate — the study inputs are exact-typed literals
+and production compares with `===`.
+
+- `fail.joint-z-analytic-off` + `fail.joint-z-analytic-off-reversed`
+  (corpus, both member orders): `SOURCE_JOINT_MISMATCH`
+  (`joint-z-mismatch`), no ties, no mesh.
+- Equal-Z exact fixtures still tie (`exact.*` unchanged, §A–§D).
+- Taxonomy note: `SOURCE_JOINT_MISMATCH` is evidence-only (the study
+  taxonomy is "at minimum", extension allowed); production enums untouched.
+- Consequence for the no-fabrication claim (§G5 in the decision record): it
+  holds only from this gate onward — pre-gate exact ties on Z-discontinuous
+  joints were fabricated and are now rejected.
+
+## §Q — an unmeshed `EXACT_COMMON_TIE` is not a buildable corner
+
+Exact tie classification alone does not prove a daylight path from the
+member endpoint to the tie. Thin seam-covering target (CCW triangle
+`V(0,0,95)`, `(40,−18,91)`, `(40,−22,89)`): covers V and the tie but neither
+the surface strip daylight (`y=−20`) nor the side-normal fallback ray
+(`x=0`), so `Qs` is null while both ties agree at `(40,−20,90)`.
+
+- Without mesh request: `EXACT_COMMON_TIE` with `qs=null`, `mesh=null` —
+  the classification is recorded, but nothing claims a corner was built.
+- With `buildMesh: true`: `MESH_PROTOTYPE_FAILED`, ties still recorded,
+  `mesh=null` (correctly fail-closed).
+- Rule: a mesh verdict requires the mesh prototype. An unmeshed
+  `EXACT_COMMON_TIE` must never be read as a buildable corner.
 
 ## Incidental findings (recorded, not fixed — `src/` untouched)
 

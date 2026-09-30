@@ -189,3 +189,36 @@ describe('phase20i open two-course group prototype', () => {
     }).mesh));
   });
 });
+
+describe('phase20i unmeshed exact tie is not a buildable corner', () => {
+  // Thin seam-covering triangle (CCW): covers V and the tie but neither the
+  // surface strip daylight (y=-20) nor the side-normal fallback ray (x=0),
+  // so Qs is null while both ties still agree.
+  const thinSeam: GradingTargetMeshSnapshot = {
+    points: [0, 0, 95, 40, -18, 91, 40, -22, 89],
+    triangles: [0, 2, 1],
+  };
+  const input = {
+    vx: 0, vy: 0, vz: 100,
+    surfaceMember: M(-60, 0, 100, 0, 0, 100), surfaceIncoming: true as const,
+    analyticMember: M(0, 0, 100, 0, 60, 100), analyticIncoming: false as const,
+    side: 'right' as const, surfaceCriterion: FIXED(-0.5),
+    analyticCriterion: REL(-0.25, -10), maxSearchDistance: 100, target: thinSeam,
+  };
+
+  it('records the tie classification without a mesh when Qs is unreachable', () => {
+    const got = resolveSurfaceAnalyticCorner(input);
+    expect(got.outcome).toBe('EXACT_COMMON_TIE');
+    expect(got.surfaceTie).toEqual({ x: 40, y: -20, z: 90 });
+    expect(got.analyticTie).toEqual({ x: 40, y: -20, z: 90 });
+    expect(got.qs).toBeNull();
+    expect(got.mesh).toBeNull();
+  });
+
+  it('a mesh request on the disconnected target fails closed MESH_PROTOTYPE_FAILED', () => {
+    const got = resolveSurfaceAnalyticCorner({ ...input, buildMesh: true });
+    expect(got.outcome).toBe('MESH_PROTOTYPE_FAILED');
+    expect(got.surfaceTie).toEqual({ x: 40, y: -20, z: 90 });
+    expect(got.mesh).toBeNull();
+  });
+});

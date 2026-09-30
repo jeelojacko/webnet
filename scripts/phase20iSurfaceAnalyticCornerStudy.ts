@@ -198,6 +198,21 @@ run('mismatch.target-92-reversed', {
   maxSearchDistance: 100, target: flatTin(92),
 }, 'TRANSITION_REQUIRED', 'analytic-incoming/surface-outgoing');
 
+// Joint-Z discontinuity: production `exactXyz` fails closed on any Z split,
+// so the study gates BEFORE plane construction (SOURCE_JOINT_MISMATCH).
+// Analytic joint Z 101 vs vz 100 previously built both planes through vz
+// and reported EXACT_COMMON_TIE on fabricated geometry (Qa held 90).
+run('fail.joint-z-analytic-off', {
+  ...exactInput(),
+  analyticMember: M(0, 0, 101, 0, 60, 101),
+}, 'SOURCE_JOINT_MISMATCH', 'surface-incoming/analytic-outgoing');
+run('fail.joint-z-analytic-off-reversed', {
+  vx: 0, vy: 0, vz: 100,
+  surfaceMember: M(0, 0, 101, -60, 0, 101), surfaceIncoming: false,
+  analyticMember: AIN, analyticIncoming: true,
+  side: 'right', surfaceCriterion: SURF, analyticCriterion: ANAL,
+  maxSearchDistance: 100, target: T90,
+}, 'SOURCE_JOINT_MISMATCH', 'analytic-incoming/surface-outgoing');
 // CUT exact (cut-fill, target above source) + FILL exact (cut-fill, target below).
 run('exact.cut', {
   ...exactInput(CUTFILL(0.5, 0.25), REL(0.25, 10), flatTin(110)),

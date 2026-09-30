@@ -245,6 +245,52 @@
       "digest": "07da33acafebda40"
     },
     {
+      "id": "fail.joint-z-analytic-off",
+      "order": "surface-incoming/analytic-outgoing",
+      "criteria": [
+        "{\"kind\":\"fixed\",\"gradeRatio\":-0.5}",
+        "{\"kind\":\"relative-elevation\",\"gradeRatio\":-0.25,\"relativeElevation\":-10}"
+      ],
+      "frames": "T=(1.0000,0.0000) N=(0.0000,-1.0000) gs=0.0000 | T=(0.0000,1.0000) N=(1.0000,0.0000) gs=0.0000",
+      "targetDigest": "c8cd232f775ce905",
+      "expected": "SOURCE_JOINT_MISMATCH",
+      "actual": "SOURCE_JOINT_MISMATCH",
+      "match": true,
+      "surfaceTie": null,
+      "analyticTie": null,
+      "xyGap": null,
+      "zGap": null,
+      "rootCount": 0,
+      "extent": null,
+      "meshValid": null,
+      "turn": null,
+      "detail": "joint-z-mismatch",
+      "digest": "7a7e8645fd135bd9"
+    },
+    {
+      "id": "fail.joint-z-analytic-off-reversed",
+      "order": "analytic-incoming/surface-outgoing",
+      "criteria": [
+        "{\"kind\":\"fixed\",\"gradeRatio\":-0.5}",
+        "{\"kind\":\"relative-elevation\",\"gradeRatio\":-0.25,\"relativeElevation\":-10}"
+      ],
+      "frames": "T=(-1.0000,0.0000) N=(0.0000,1.0000) gs=0.0000 | T=(0.0000,1.0000) N=(1.0000,0.0000) gs=0.0000",
+      "targetDigest": "c8cd232f775ce905",
+      "expected": "SOURCE_JOINT_MISMATCH",
+      "actual": "SOURCE_JOINT_MISMATCH",
+      "match": true,
+      "surfaceTie": null,
+      "analyticTie": null,
+      "xyGap": null,
+      "zGap": null,
+      "rootCount": 0,
+      "extent": null,
+      "meshValid": null,
+      "turn": null,
+      "detail": "joint-z-mismatch",
+      "digest": "39044c72192b3dde"
+    },
+    {
       "id": "exact.cut",
       "order": "surface-incoming/analytic-outgoing",
       "criteria": [
@@ -3307,8 +3353,8 @@
     }
   ],
   "summary": {
-    "total": 112,
-    "matched": 112,
+    "total": 114,
+    "matched": 114,
     "mismatched": []
   }
 }
