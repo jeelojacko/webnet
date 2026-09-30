@@ -1,8 +1,11 @@
 # Phase 20H — mixed-analytic grading groups: browser QA
 
-Status: **RUN — 9 passed / 0 failed.** Real Chromium against the fresh
-production bundle. One spec fix during the run (Flow C composer must select
-the `relative-elevation` method before filling its value field); reran green.
+Status: **RUN — 9 passed / 0 failed (fix round: 9/9 in 12.4 s).** Real
+Chromium against the fresh production bundle. Spec fixes during the runs:
+(1) Flow C composer must select the `relative-elevation` method before
+filling its value field; (2) dialog-internal scroll reveals before shots
+(criteria form, inquiry report, group row + status-column scroll-right).
+Reran green on the rebuilt bundle.
 
 ## Identifiers
 
@@ -15,7 +18,7 @@ the `relative-elevation` method before filling its value field); reran green.
 | Spec | `tests-browser/cad-grading-mixed-analytic-20h.spec.ts` |
 | Playwright | 1.60.0 (`@playwright/test`) |
 | Chromium | Google Chrome for Testing 151.0.7922.34 (`ms-playwright/chromium-1234`) |
-| Bundle | fresh production `npm run build` → `dist/assets/CadApp-DZF3wmsd.js` (sha256 `b71e82ce5dd8d314…`) served by `vite preview` on 127.0.0.1:4174 |
+| Bundle | fresh production `npm run build` → `dist/assets/CadApp-AE9RTDlr.js` (sha256 `50696e9b50350676…`) served by `vite preview` on 127.0.0.1:4174 |
 | Viewports | 1366×768, 1920×1080, 2560×1440 |
 | Screenshots | `docs/evidence/phase20h/` (≤10 new PNGs, no extras) |
 
@@ -50,8 +53,10 @@ npx playwright test tests-browser/cad-grading-mixed-analytic-20h.spec.ts --repor
 
 ## Result
 
-**9 passed / 0 failed in 12.3 s** (`npx playwright test
-tests-browser/cad-grading-mixed-analytic-20h.spec.ts --reporter=list`):
+**9 passed / 0 failed in 12.4 s** (`npx playwright test
+tests-browser/cad-grading-mixed-analytic-20h.spec.ts --reporter=list`,
+final fix-round run; initial run 9 passed / 0 failed in 12.3 s before the
+scroll-reveal recapture, Flow C method-select fix 8/9 → 9/9):
 
 | # | test | time |
 |---|---|---|
@@ -79,15 +84,15 @@ unhandled rejections in every test (asserted `errors` empty).
 
 | file | dims | sha12 |
 |---|---|---|
-| `1366-mixed-create.png` | 1366×768 | `2c7b8d895dad` |
-| `1366-mixed-current.png` | 1366×768 | `9ba9931645ea` |
-| `1366-mixed-failed.png` | 1366×768 | `f6b908276e50` |
-| `1366-mixed-group.png` | 1366×768 | `82c402eb02a4` |
-| `1366-mixed-inquiry.png` | 1366×768 | `a169639a1363` |
-| `1920-mixed-create.png` | 1920×1080 | `f4cb64eab4c2` |
-| `1920-mixed-group.png` | 1920×1080 | `3f2b9009884a` |
-| `2560-mixed-create.png` | 2560×1440 | `c622b51c5b01` |
-| `2560-mixed-group.png` | 2560×1440 | `b98de66c6663` |
+| `1366-mixed-create.png` | 1366×768 | `ff161849cc66` |
+| `1366-mixed-current.png` | 1366×768 | `2ccd9e63ba0f` |
+| `1366-mixed-failed.png` | 1366×768 | `5722cd965ba0` |
+| `1366-mixed-group.png` | 1366×768 | `257bf2e2af16` |
+| `1366-mixed-inquiry.png` | 1366×768 | `3637c64df1a3` |
+| `1920-mixed-create.png` | 1920×1080 | `c1bdfc630ad3` |
+| `1920-mixed-group.png` | 1920×1080 | `444b2cc59261` |
+| `2560-mixed-create.png` | 2560×1440 | `802878b0a434` |
+| `2560-mixed-group.png` | 2560×1440 | `4062e5004085` |
 
 Supplementary: `geometry.json` (viewport/ribbon/manager box audit).
 No Phase 20F/20G frames touched.

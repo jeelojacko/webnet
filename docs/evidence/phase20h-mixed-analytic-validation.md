@@ -111,5 +111,8 @@ to the same-domain contract (no numeric pins touched):
 
 ## Pending / gaps
 
-None for the engine/UI as landed. Browser + visual QA are placeholders that
-run after the production build (see `phase20h-browser-qa.md`).
+None. Browser QA ran 9/9 green on the production bundle with 9 bounded
+PNGs (see `phase20h-browser-qa.md`); visual review of every new frame is in
+`phase20h-visual-qa.md`. Independent reviewer verdict REQUEST CHANGES
+(2 majors: fully-overridden default in summary/provenance; visual-verdict
+overclaims) — both fixed, fix rounds rerun below.

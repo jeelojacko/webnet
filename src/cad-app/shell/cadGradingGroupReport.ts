@@ -13,7 +13,7 @@ import type {
 import type { GradingAccuracy } from '../../engine/cad/grading/gradingTypes';
 import { gradingBoundaryLabel, isTargetFreeCriterion } from '../../engine/cad/grading/gradingTypes';
 import { buildCourseMemberRows } from './cadGradingGroupCourseCriteria';
-import { groupMethodSummary } from './cadGradingGroupMethodSummary';
+import { groupMethodSummary, representativeGroupCriterion } from './cadGradingGroupMethodSummary';
 import {
   formatGradingCriterion,
   gradingCriterionBoundaryShort,
@@ -55,6 +55,9 @@ export const buildGroupInquiryReport = (
 ): string => {
   const lines: string[] = [];
   const methods = groupMethodSummary(group);
+  // Value-level rows describe the calculated result: the stored default
+  // while it rides at least one course, else the first effective criterion.
+  const representative = representativeGroupCriterion(group);
   lines.push(`Grading Group Inquiry — ${group.name}`);
   lines.push(`Source: ${sourceName} · ${group.closed === true ? 'closed' : 'open'} · side ${gradingSideText(group.side)}`);
   lines.push(`Courses: ${courseRefsText(group)}`);
@@ -64,7 +67,7 @@ export const buildGroupInquiryReport = (
   lines.push(
     methods.mixedAnalytic
       ? 'Target: Not applicable'
-      : gradingTargetSummary(group.criterion, targetName, lengthUnit),
+      : gradingTargetSummary(representative, targetName, lengthUnit),
   );
   lines.push(`Status: ${gradingStatusText(status)} · accuracy ${gradingAccuracyText(accuracy)}`);
   if (status !== 'CURRENT' || result == null) {
@@ -157,6 +160,7 @@ export const buildGroupCsv = (
 ): string => {
   const lines: string[] = [];
   const methods = groupMethodSummary(group);
+  const representative = representativeGroupCriterion(group);
   // Analytic terminations have no target relation: never emit fake-precise
   // zeros (single-grading CSV uses the same '—' convention).
   const relation = isTargetFreeCriterion(group.criterion) ? '—' : null;
@@ -170,8 +174,8 @@ export const buildGroupCsv = (
     ['Methods', methods.detail],
     ['Target', methods.mixedAnalytic
       ? 'Not applicable'
-      : gradingTargetSummary(group.criterion, group.targetSurfaceId ?? '—').replace(/^Target: /, '')],
-    ['Criterion', formatGradingCriterion(group.criterion)],
+      : gradingTargetSummary(representative, group.targetSurfaceId ?? '—').replace(/^Target: /, '')],
+    ['Criterion', formatGradingCriterion(representative)],
     ['Status', gradingStatusText(status)],
     ['Accuracy', gradingAccuracyText(accuracy)],
     ['Members', String(result.memberCount)],

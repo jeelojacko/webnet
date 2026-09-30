@@ -27,6 +27,10 @@ import {
   validateGroupTerminationDomainCriteria,
 } from '../src/engine/cad/grading/gradingGroupTermination';
 import { buildGroupRevision } from '../src/engine/cad/grading/gradingGroupRevision';
+import { resolveGroupInputs } from '../src/engine/cad/grading/gradingGroupResolve';
+import { createCadHistoryState, runCadCommand } from '../src/engine/cad/cadUndoRedo';
+import { groupMethodSummary } from '../src/cad-app/shell/cadGradingGroupMethodSummary';
+import { buildGroupCsv, buildGroupInquiryReport } from '../src/cad-app/shell/cadGradingGroupReport';
 import { validateGradingCriterion } from '../src/engine/cad/grading/gradingAuthoring';
 import { parseCadDrawingFile, serializeCadDrawingFile, createBlankCadDrawingDocument } from '../src/engine/cad/cadDrawingFile';
 import { normalizeTinProvenance, tinProvenanceRevisionPart } from '../src/engine/cad/cadImportedTin';
@@ -387,6 +391,118 @@ describe('(8) mixed-analytic provenance', () => {
     });
     expect((normalized as { targetKind?: string }).targetKind).toBe('surface');
     expect(normalized).not.toHaveProperty('analyticKinds');
+  });
+});
+
+// ---------------------------------------------------------------------------
+// 8b. A fully-overridden default names no effective method (reviewer major)
+// ---------------------------------------------------------------------------
+describe('(8b) fully-overridden default is invisible to summary + provenance', () => {
+  const overriddenGroup = (): CadGradingGroup => {
+    const courses: GradingGroupCourse[] = [
+      { vertexAId: 'v0', vertexBId: 'v1' }, { vertexAId: 'v1', vertexBId: 'v2' },
+      { vertexAId: 'v2', vertexBId: 'v3' }, { vertexAId: 'v3', vertexBId: 'v0' },
+    ];
+    const created = createGroupDefinition({
+      ...groupInput(DIST(-0.5, 20), courses.map((sourceCourse) => ({
+        sourceCourse, criterion: REL(-0.5, -10),
+      }))),
+      sourceFeatureLineId: 'fl-1',
+      sourceCourses: courses,
+    });
+    if (!created.ok) throw new Error(created.error);
+    return { ...created.value, id: 'gg-overridden' };
+  };
+
+  const overriddenProject = (): CadProject => ({
+    ...createBlankCadDrawingDocument({ name: '20h-overridden', units: 'm' }).project,
+    entities: [{
+      id: 'fl-1', type: 'feature-line', layerId: 'general', visible: true, locked: false, name: 'Pad FL',
+      vertices: [
+        { id: 'v0', x: 0, y: 0, z: 10 }, { id: 'v1', x: 100, y: 0, z: 10 },
+        { id: 'v2', x: 100, y: 100, z: 10 }, { id: 'v3', x: 0, y: 100, z: 10 },
+      ],
+      closed: true,
+    }],
+    gradingGroups: [overriddenGroup()],
+  });
+
+  it('groupMethodSummary reads only effective courses, not the stored default', () => {
+    const summary = groupMethodSummary(overriddenGroup());
+    expect(summary.label).toBe('Relative Elevation');
+    expect(summary.mixedAnalytic).toBe(false);
+    expect(summary.kinds).toEqual(['relative-elevation']);
+    expect(summary.detail).toBe('Relative Elevation');
+  });
+
+  it('design-patch provenance drops the unused Distance default', () => {
+    const provenance = makeDesignPatchProvenance({
+      groupId: 'gg-overridden', groupName: 'gg', groupRevision: 'ggrev1:x', sourceFeatureLineId: 'fl-1',
+      sourceCourseRefs: ['v0>v1', 'v1>v2', 'v2>v3', 'v3>v0'],
+      criterion: DIST(-0.5, 20),
+      memberCriteria: [REL(-0.5, -10), REL(-0.5, -10), REL(-0.5, -10), REL(-0.5, -10)],
+      accuracy: 'EXACT', interiorPolicy: 'flat-source',
+    });
+    expect(provenance.targetKind).toBe('relative-elevation');
+    expect(provenance).not.toHaveProperty('analyticKinds');
+    expect(provenance).toMatchObject({ relativeElevation: -10 });
+    expect(provenance).not.toHaveProperty('criterionDistance');
+  });
+
+  it('GROUPBAKE carries the effective Relative Elevation provenance end to end', () => {
+    const project = overriddenProject();
+    const inputs = resolveGroupInputs(project, 'gg-overridden');
+    if (!inputs) throw new Error('group inputs did not resolve');
+    const outcome = computeGradingGroupFromSnapshots({
+      groupId: 'gg-overridden', revision: inputs.revision,
+      members: inputs.memberSources, side: inputs.group.side,
+      criterion: inputs.group.criterion, memberCriteria: inputs.memberCriteria,
+      maxSearchDistance: inputs.group.maxSearchDistance,
+      curveChordTolerance: inputs.group.curveChordTolerance,
+      closed: inputs.group.closed ?? true,
+    });
+    if (!outcome.ok) throw new Error('overridden group did not solve');
+    const baked = runCadCommand(createCadHistoryState(project), {
+      key: 'GROUPBAKE', groupId: 'gg-overridden',
+      result: outcome.result, expectedRevision: inputs.revision, sessionCurrent: true,
+    });
+    const surface = baked.present.project.surfaces!.find((entry) => entry.name === 'gg - Baked')!;
+    const provenance = surface.definition.sourceKind === 'explicit-tin' &&
+      surface.definition.importedTin != null
+      ? surface.definition.importedTin.provenance
+      : null;
+    expect(provenance).toMatchObject({
+      kind: 'webnet-grading-group-bake',
+      groupId: 'gg-overridden',
+      targetKind: 'relative-elevation',
+      relativeElevation: -10,
+    });
+    expect(provenance).not.toHaveProperty('criterionDistance');
+    expect(provenance).not.toHaveProperty('analyticKinds');
+  });
+
+  it('inquiry and CSV value rows follow the representative criterion', () => {
+    const group = overriddenGroup();
+    const report = buildGroupInquiryReport(group, 'Pad FL', '—', 'CURRENT', 'EXACT', null);
+    expect(report).toContain('Termination: Relative Elevation');
+    expect(report).not.toContain('Mixed Analytic');
+  });
+
+  it('homogeneous CSV keeps the uniform Termination/Methods shape (intentional)', () => {
+    const created = createGroupDefinition({ ...groupInput(DIST(-0.5, 20)), sourceFeatureLineId: 'fl' });
+    if (!created.ok) throw new Error(created.error);
+    const outcome = computeGradingGroupFromSnapshots({
+      groupId: 'gg', revision: 'ggrev1:csv',
+      members: square(), side: 'right',
+      criterion: DIST(-0.5, 20),
+      memberCriteria: [DIST(-0.5, 20), DIST(-0.5, 20), DIST(-0.5, 20), DIST(-0.5, 20)],
+      maxSearchDistance: 50, curveChordTolerance: 0.05, closed: true,
+    });
+    if (!outcome.ok) throw new Error('homogeneous group did not solve');
+    const csv = buildGroupCsv(created.value, 'CURRENT', 'EXACT', outcome.result);
+    expect(csv).toContain('Termination,Distance');
+    expect(csv).toContain('Methods,Distance');
+    expect(csv).toContain('Criterion,Grade -50.000%');
   });
 });
 

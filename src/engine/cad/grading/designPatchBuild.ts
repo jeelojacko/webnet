@@ -21,6 +21,7 @@ import { checkFlatRing, designPatchBlock, ringCount, ringEdgeKey, ringVertexKey,
 import type { DesignPatchFailure } from './designPatchRing';
 import { deriveDesignPatchPlane } from './designPatchPlane';
 import { gradingTerminationKind } from './gradingTypes';
+import { criteriaEqual } from './gradingGroupCourseCriteria';
 import { canonicalAnalyticKinds } from './gradingGroupTermination';
 import type { GradingCriterion, GradingMesh } from './gradingTypes';
 
@@ -320,17 +321,22 @@ export interface DesignPatchProvenanceInput {
 export const makeDesignPatchProvenance = (
   input: DesignPatchProvenanceInput,
 ): WebnetGradingDesignPatchTinProvenance => {
-  const kind = input.criterion === undefined ? undefined : gradingTerminationKind(input.criterion);
-  // Phase 20H: the patch targetKind reflects ALL effective member criteria.
-  // A mixed-analytic group records `mixed-analytic` + canonical
-  // analyticKinds; homogeneous groups keep their exact legacy shape.
-  const analyticKinds = canonicalAnalyticKinds([
-    ...(input.criterion !== undefined ? [input.criterion] : []),
-    ...(input.memberCriteria ?? []),
-  ]);
+  // Phase 20H: the patch targetKind reflects the EFFECTIVE per-course
+  // criteria, never a fully-overridden default. Homogeneous groups keep
+  // their exact legacy shape because the default is effective there and
+  // `representative` resolves back to it.
+  const effective = (input.memberCriteria?.length ?? 0) > 0
+    ? input.memberCriteria!
+    : (input.criterion !== undefined ? [input.criterion] : []);
+  const analyticKinds = canonicalAnalyticKinds(effective);
   const mixed = analyticKinds.length > 1;
+  const kind = effective.length > 0 ? gradingTerminationKind(effective[0]!) : undefined;
   const analytic = mixed || kind === 'distance' || kind === 'elevation' || kind === 'relative-elevation';
-  const criterion = input.criterion;
+  const stored = input.criterion;
+  const criterion = stored !== undefined &&
+    effective.some((entry) => criteriaEqual(entry, stored))
+    ? stored
+    : effective[0];
   return {
     kind: 'webnet-grading-design-patch',
     groupId: input.groupId,
@@ -344,9 +350,9 @@ export const makeDesignPatchProvenance = (
     ...(mixed ? { targetKind: 'mixed-analytic' as const, analyticKinds } : {}),
     ...(input.targetSurfaceId != null && !analytic ? { targetSurfaceId: input.targetSurfaceId } : {}),
     ...(input.targetSurfaceRevision != null && !analytic ? { targetSurfaceRevision: input.targetSurfaceRevision } : {}),
-    ...(criterion?.kind === 'distance' ? { criterionDistance: criterion.distance } : {}),
-    ...(criterion?.kind === 'elevation' ? { targetElevation: criterion.targetElevation } : {}),
-    ...(criterion?.kind === 'relative-elevation' ? { relativeElevation: criterion.relativeElevation } : {}),
+    ...(criterion?.kind === 'distance' && !mixed ? { criterionDistance: criterion.distance } : {}),
+    ...(criterion?.kind === 'elevation' && !mixed ? { targetElevation: criterion.targetElevation } : {}),
+    ...(criterion?.kind === 'relative-elevation' && !mixed ? { relativeElevation: criterion.relativeElevation } : {}),
     accuracy: input.accuracy,
     cornerMode: 'miter',
     includesInterior: true,

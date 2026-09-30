@@ -102,6 +102,11 @@ test.afterAll(() => {
   fs.writeFileSync(`${EVIDENCE}/geometry.json`, JSON.stringify(geometry, null, 2));
 });
 
+const revealRowStatus = (page: Page): Promise<void> => page.evaluate(() => {
+  const table = document.querySelector('[data-cad-grading-group-table]');
+  if (table) table.scrollLeft = table.scrollWidth;
+});
+
 const shot = async (page: Page, name: string): Promise<void> => {
   geometry[name] = await page.evaluate(() => {
     const box = (sel: string): Record<string, number> | null => {
@@ -150,6 +155,7 @@ for (const viewport of VIEWPORTS) {
       // Course table labels each effective kind truthfully.
       await expect(panel.locator('[data-cad-grading-group-criteria-row="1"]')).toContainText('Relative Elevation');
       await expect(panel.locator('[data-cad-grading-group-criteria-row="2"]')).toContainText('Elevation');
+      await panel.locator('[data-cad-grading-group-criteria-form]').scrollIntoViewIfNeeded();
       await shot(page, `${tag}-mixed-create`);
     } finally {
       fs.rmSync(file, { force: true });
@@ -179,6 +185,7 @@ test('20H Flow B calculate + inquiry + CSV + extract/bake', async ({ page }) => 
     await expect(row).toContainText('Current', { timeout: 60000 });
     await expect(row).toContainText('20.00–20.00 m');
     await expect(row).toContainText('9600.0');
+    await revealRowStatus(page);
     await shot(page, '1366-mixed-current');
 
     // Inquiry carries the mixed termination + Not applicable target + areas.
@@ -190,6 +197,7 @@ test('20H Flow B calculate + inquiry + CSV + extract/bake', async ({ page }) => 
     await expect(report).toContainText('Target: Not applicable');
     await expect(report).toContainText('Areas: plan 9600.000');
     await expect(report).toContainText('miter 28.284 m');
+    await report.scrollIntoViewIfNeeded();
     await shot(page, '1366-mixed-inquiry');
 
     // CSV agrees.
@@ -268,6 +276,8 @@ test('20H Flow C incompatible-Z FAILED', async ({ page }) => {
     await page.locator('[data-cad-grading-group-calculate]').click();
     await expect(row).toContainText('Failed', { timeout: 60000 });
     expect((await row.textContent()) ?? '').toBe(diagnostic);
+    await row.scrollIntoViewIfNeeded();
+    await revealRowStatus(page);
     await shot(page, '1366-mixed-failed');
   } finally {
     fs.rmSync(file, { force: true });
