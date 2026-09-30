@@ -113,3 +113,24 @@ this study is buildable.
   `(50,+247.5)` / minor CCW (exact ties, still not buildable — vertex
   pinch). Documented in the architecture and validation
   docs and retained as a fail-closed corpus control.
+
+## Addendum 20K.1 — audit-correction regen (2026-09-30, Wave A1)
+
+Branch `fix/phase20k1-curved-grading-seam-topology`. The original §29 audit
+used a raw-float `o1 !== o2 && o3 !== o4` segment test; the corrected
+predicate (robust `-1/0/+1` orientations on the shared `zeroDelta` floor,
+collinear overlap/touch counting for non-adjacent pairs, adjacent-pair
+skip, closed-ring collinear sweep) is strictly stronger. Regen result:
+**39 rows, 0 mismatches — every original verdict stands as recorded above
+(erratum preserved, not rewritten); the only corpus delta is additive
+`detail` (open-group index-vs-geometric diagnostic) on previously
+detail-less open rows.**
+
+Open-group diagnostic (from corpus `detail`): `tol-25/10` strips report
+`edgeComponents=2`, no duplicates, no coincident sets, weld a no-op
+(`2 → 2`); finer-tolerance and corner rows report `edgeComponents=3` with
+0–3 zeroDelta-coincident sets and 0–2 degenerate-after-weld triangles, and
+the weld heals nothing except `corner.reversed` (`3 → 2`). The seam pinch
+is therefore geometric, not indexical. Verdicts unchanged:
+**NO_GO_TERMINAL_CHORD_ARC_PAIR** holds. No gate, no seam assembly, no
+`src/` change.

@@ -61,6 +61,28 @@ daylight endpoints do not coincide). Per the task rule *“exact tie without a
 buildable group ≠ GO”*, these rows are classified
 `EXACT_TIE_NOT_BUILDABLE`.
 
+**20K.1 correction (2026-09-30).** The audit `segmentsCross` used a raw
+`o1 !== o2 && o3 !== o4` float comparison; it now uses the robust
+`-1/0/+1` orientation predicate with the shared `zeroDelta` floor (same as
+production `gradingGroupMerge.ts`), plus explicit collinear-overlap /
+collinear-touch counting for non-adjacent pairs (adjacent daylight pairs
+sharing their expected endpoint are skipped by the caller and never
+count). Closed rings additionally sweep non-adjacent pairs including the
+closing edge, since quantized orientations alone miss all-zero collinear
+overlap. Regen: 39 rows, 0 mismatches — every prior verdict confirmed, so
+the correction is recorded here as an addendum, not a rewrite. Open rows
+now carry the index-vs-geometric diagnostic in `detail`:
+
+| row family | edgeComponents | exactDup | coincidentSets | nonSharedEdges | weldedEdgeComponents | weldedDegenerate |
+|---|---|---|---|---|---|---|
+| open.pair tol-25/10 (both models) | 2 | 0 | 0 | 0 | 2 | 0 |
+| open.pair tol-0.1/0.01, corner.* | 3 | 0 | 0–3 | 0 | 2–3 | 0–2 |
+
+The diagnostic-only weld does NOT heal the strips (welded components stay
+> 1 everywhere except `corner.reversed`, 3 → 2): the pinch is a genuine
+geometric gap/overlap at the arc chord seams, not mere index duplication.
+No seam assembly or auto-heal is added — diagnostic only.
+
 ## 4. §27 rounded square
 
 Four genuine arcs, criteria `[FIXED(−0.5), DIST(−0.5,20), FIXED(−0.5),
@@ -124,10 +146,16 @@ deterministic (`match=true` for both rows).
 10. `outerShellArea` (daylight-ring shoelace) recorded for closed groups;
     control equality where applicable.
 
-The audit self-check in the test rejects a synthetic overlapping mesh, and
-it fails every exact-tie group in the corpus (open daylight discontinuity
-and/or vertex pinch) while still recording the exact tie, area, and
-production-validator facts.
+The audit self-check (`tests/cad_grading_topology_audit_20k1.test.ts`,
+14 tests) covers 9 segment relations — transverse, separated nonparallel,
+separated parallel, shared endpoint (adjacent skipped / non-adjacent
+counts), collinear disjoint / touching / overlap, near-collinear shallow
+crossing, large-coordinate translated equivalent — plus the
+index-vs-geometric distinction (synthetic pinch, synthetic overlap, valid
+annular shell, valid open strip, legitimate tied split vs geometric-only
+seam) — and it fails every exact-tie group in the corpus (open daylight
+discontinuity and/or vertex pinch) while still recording the exact tie,
+area, and production-validator facts.
 
 ## 7. Corpus coverage
 

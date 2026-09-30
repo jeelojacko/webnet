@@ -595,9 +595,9 @@ const groupFingerprint = (
 
 // ---------------------------------------------------------------------------
 // The independent §29 topology audit lives in its own study module.
-import { auditMesh, shoelaceBoundary } from './phase20kHybridArcPairAudit';
-export { auditMesh, shoelaceBoundary };
-export type { TopologyAudit } from './phase20kHybridArcPairAudit';
+import { auditMesh, geometricDiagnostic, shoelaceBoundary } from './phase20kHybridArcPairAudit';
+export { auditMesh, geometricDiagnostic, shoelaceBoundary };
+export type { GeometricDiagnostic, TopologyAudit } from './phase20kHybridArcPairAudit';
 
 // §30 corpus.
 
@@ -657,6 +657,7 @@ const recordGroup = (
   }
   const audit = auditMesh(out.mesh, out.daylight, input.closed, out.planArea);
   const shell = input.closed ? shoelaceBoundary(out.daylight) : null;
+  // Open groups: index-vs-geometric seam picture (diagnostic-only, §20K.1).
   const complete = out.corners.length === jointCount && out.corners.length > 0;
   const actual = complete ? groupExpected : 'PARTIAL';
   const isExact = expected === groupExpected;
@@ -680,6 +681,7 @@ const recordGroup = (
     boundaryEdges: audit.boundaryEdges, components: audit.components,
     meshDigest: out.meshDigest,
     ...(input.closed && shell !== null ? { detail: `shoelace=${shell.toFixed(9)} edgeComponents=${audit.edgeComponents}` } : {}),
+    ...(!input.closed ? { detail: geometricDiagnostic(out.mesh).summary } : {}),
     digest: out.digest,
   }));
   return out;
