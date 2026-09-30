@@ -28,6 +28,17 @@ export type GradingCriterion =
   | { kind: 'elevation'; gradeRatio: number; targetElevation: number }
   | { kind: 'relative-elevation'; gradeRatio: number; relativeElevation: number };
 
+/** Where a criterion terminates in domain terms: surface vs analytic.
+ *  Surface = fixed/cut-fill (TIN tie); analytic = distance/elevation/
+ *  relative-elevation (closed-form limit, freely mixable in one group). */
+export type GradingTerminationDomain = 'surface' | 'analytic';
+
+/** Domain of one criterion (surface = legacy grade-to-surface solve). */
+export const gradingTerminationDomain = (
+  criterion: GradingCriterion,
+): GradingTerminationDomain =>
+  criterion.kind === 'fixed' || criterion.kind === 'cut-fill' ? 'surface' : 'analytic';
+
 /** Where a criterion terminates: on the target surface or analytically. */
 export type GradingTerminationKind =
   | 'surface'

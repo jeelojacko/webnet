@@ -646,14 +646,15 @@ describe('(M) Relative Elevation group overrides', () => {
     expect(out.detail).toBe('GRADING_ANALYTIC_CORNER_Z');
   });
 
-  it('mixed families fail closed at authoring', () => {
-    const mixed = validateGroupTerminationCriteria(REL(-0.5, -10), [
+  it('same-domain analytic mixes are accepted; surface mix fails closed', () => {
+    // Phase 20H: Distance/Elevation/Relative Elevation mix freely in one group.
+    expect(validateGroupTerminationCriteria(REL(-0.5, -10), [
       REL(-0.5, -10),
       { kind: 'distance', gradeRatio: -0.5, distance: 20 },
-    ]);
-    expect(mixed).not.toBeNull();
-    expect(mixed!).toContain('mixes termination families');
-    expect(mixed!).toContain('Relative Elevation');
+      { kind: 'elevation', gradeRatio: -0.5, targetElevation: 0 },
+    ])).toBeNull();
+    // Surface + analytic still fails closed.
+    expect(validateGroupTerminationCriteria(REL(-0.5, -10), [{ kind: 'fixed', gradeRatio: -0.5 }])).not.toBeNull();
     expect(validateGroupTerminationCriteria(REL(-0.5, -10), [REL(-0.5, -12), REL(0.5, 10)])).toBeNull();
   });
 });

@@ -15,6 +15,8 @@ import {
   validateGroupChain,
 } from './grading/gradingGroupAuthoring';
 import { gradingCriterionRequiresSurface, gradingTerminationKind } from './grading/gradingTypes';
+import { criteriaEqual } from './grading/gradingGroupCourseCriteria';
+import { canonicalAnalyticKinds } from './grading/gradingGroupTermination';
 import { toGradingCourseLikes, resolveGradingSourceCourse } from './grading/gradingCourseFrame';
 import { resolveGroupInputs } from './grading/gradingGroupResolve';
 import { appendCadProjectEntities } from './cadProjectState';
@@ -395,7 +397,21 @@ const groupBakeCommand: CadCommandDefinition<GroupBakeCommand> = {
     }
     if (result.gradingMesh.triangles.length === 0) return null;
     const criterion = inputs.group.criterion;
-    const targetKind = gradingTerminationKind(criterion);
+    // Phase 20H: the bake targetKind reflects the EFFECTIVE per-course
+    // criteria, never a fully-overridden default. Homogeneous groups keep
+    // their exact legacy shape because the default is effective there and
+    // `representative` resolves back to it.
+    const effective = inputs.memberCriteria.length > 0 ? inputs.memberCriteria : [criterion];
+    const analyticKinds = canonicalAnalyticKinds(effective);
+    const mixed = analyticKinds.length > 1;
+    const targetKind: 'surface' | 'distance' | 'elevation' | 'relative-elevation' | 'mixed-analytic' =
+      mixed ? 'mixed-analytic' : gradingTerminationKind(effective[0]!);
+    // Singular value fields describe the calculated result: the stored
+    // default while it is effective on at least one course, else the first
+    // effective criterion. Mixed groups carry no singular value by contract.
+    const representative = effective.some((entry) => criteriaEqual(entry, criterion))
+      ? criterion
+      : effective[0]!;
     if (targetKind === 'surface' && !inputs.target) return null;
     const canonical = canonicalizeBakedTin(result.gradingMesh.points, result.gradingMesh.triangles);
     const payload = {
@@ -411,10 +427,11 @@ const groupBakeCommand: CadCommandDefinition<GroupBakeCommand> = {
           (course) => `${course.vertexAId}>${course.vertexBId}`,
         ),
         targetKind,
+        ...(mixed ? { analyticKinds } : {}),
         ...(targetKind === 'surface' ? { targetSurfaceId: inputs.target!.id } : {}),
-        ...(criterion.kind === 'distance' ? { criterionDistance: criterion.distance } : {}),
-        ...(criterion.kind === 'elevation' ? { targetElevation: criterion.targetElevation } : {}),
-        ...(criterion.kind === 'relative-elevation' ? { relativeElevation: criterion.relativeElevation } : {}),
+        ...(!mixed && representative.kind === 'distance' ? { criterionDistance: representative.distance } : {}),
+        ...(!mixed && representative.kind === 'elevation' ? { targetElevation: representative.targetElevation } : {}),
+        ...(!mixed && representative.kind === 'relative-elevation' ? { relativeElevation: representative.relativeElevation } : {}),
         side: inputs.group.side,
         accuracy: result.accuracy,
         cornerMode: inputs.group.cornerMode,

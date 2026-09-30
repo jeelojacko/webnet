@@ -37,6 +37,23 @@ export type AnalyticCriterionOutcome =
   | { ok: false; code: 'NO_SOLUTION' | 'MAX_DISTANCE_REACHED'; detail: string };
 
 /**
+ * Single relative-elevation param authority: g finite + machine-nonzero,
+ * Δ finite + machine-nonzero, derived d = Δ/g finite + strictly positive.
+ * Shared by authoring validation, draft parsing, and resolution so the
+ * sign rule lives in exactly one place.
+ */
+export const resolveRelativeElevationParams = (
+  gradeRatio: number,
+  relativeElevation: number,
+): { ok: true; d: number } | { ok: false } => {
+  if (!Number.isFinite(gradeRatio) || isMachineZero(gradeRatio)) return { ok: false };
+  if (!Number.isFinite(relativeElevation) || isMachineZero(relativeElevation)) return { ok: false };
+  const d = relativeElevation / gradeRatio;
+  if (!Number.isFinite(d) || !(d > 0)) return { ok: false };
+  return { ok: true, d };
+};
+
+/**
  * Derived horizontal offset of a criterion when it is a constant-offset
  * family (distance stores it, relative-elevation derives Δ/g). Null for
  * criteria whose offset is not constant (elevation) or non-analytic.
@@ -47,11 +64,9 @@ export const constantAnalyticOffset = (
 ): number | null => {
   if (criterion.kind === 'distance') return criterion.distance;
   if (criterion.kind === 'relative-elevation') {
-    const g = criterion.gradeRatio;
-    const dz = criterion.relativeElevation;
-    if (!Number.isFinite(g) || isMachineZero(g) || !Number.isFinite(dz)) return null;
-    const d = dz / g;
-    return Number.isFinite(d) ? d : null;
+    const params = resolveRelativeElevationParams(criterion.gradeRatio, criterion.relativeElevation);
+    if (!params.ok) return null;
+    return params.d;
   }
   return null;
 };
@@ -78,7 +93,9 @@ const resolveDistance = (
   if (!Number.isFinite(g)) return bad('GRADING_BAD_CRITERION');
   if (!Number.isFinite(d) || !(d > 0)) return bad('GRADING_BAD_CRITERION');
   if (d > maxSearchDistance) return beyond('GRADING_DISTANCE_BEYOND_SEARCH');
-  return { ok: true, value: { kind: 'distance', gradeRatio: g, horizontalDistance: d, limitElevation: sourceZ + g * d } };
+  const limitElevation = sourceZ + g * d;
+  if (!Number.isFinite(limitElevation)) return bad('GRADING_BAD_CRITERION');
+  return { ok: true, value: { kind: 'distance', gradeRatio: g, horizontalDistance: d, limitElevation } };
 };
 
 const resolveElevation = (
@@ -104,15 +121,18 @@ const resolveRelativeElevation = (
 ): AnalyticCriterionOutcome => {
   const g = criterion.gradeRatio;
   const dz = criterion.relativeElevation;
-  // Δ is a signed vertical offset and must be machine-nonzero; the same
-  // finite/nonzero grade gate as absolute Elevation applies.
-  if (!Number.isFinite(g) || isMachineZero(g) || !Number.isFinite(dz) || isMachineZero(dz)) {
-    return bad('GRADING_BAD_CRITERION');
+  const params = resolveRelativeElevationParams(g, dz);
+  if (!params.ok) {
+    // Preserve the legacy split: non-finite/nonzero params are a bad
+    // criterion; a finite-but-non-positive d is a wrong-direction request.
+    if (!Number.isFinite(g) || isMachineZero(g) || !Number.isFinite(dz) || isMachineZero(dz)) {
+      return bad('GRADING_BAD_CRITERION');
+    }
+    const d = dz / g;
+    if (!Number.isFinite(d)) return bad('GRADING_BAD_CRITERION');
+    return bad('GRADING_RELATIVE_ELEVATION_WRONG_DIRECTION');
   }
-  const d = dz / g;
-  if (!Number.isFinite(d)) return bad('GRADING_BAD_CRITERION');
-  // Strictly positive: opposite-sign grade/Δ is a wrong-direction request.
-  if (!(d > 0)) return bad('GRADING_RELATIVE_ELEVATION_WRONG_DIRECTION');
+  const d = params.d;
   if (d > maxSearchDistance) return beyond('GRADING_RELATIVE_ELEVATION_BEYOND_SEARCH');
   const limitElevation = sourceZ + dz;
   if (!Number.isFinite(limitElevation)) return bad('GRADING_BAD_CRITERION');

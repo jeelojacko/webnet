@@ -11,8 +11,8 @@ import { numeric } from '../../engine/cad/cadPropertiesModel';
 import type { CadShellActions, CadWorkspaceSnapshot } from './cadShellTypes';
 import type { CadGradingGroupRow } from './cadGradingGroupSnapshot';
 import { gradingTargetSummary } from './cadGradingShell';
-import { gradingMethodLabel } from './cadGradingCriterionInput';
 import { relativeElevationDisplay } from './cadGradingDisplay';
+import { representativeGroupCriterion } from './cadGradingGroupMethodSummary';
 
 const TreeGroup: React.FC<{ label: string; children: React.ReactNode }> = ({ label, children }) => (
   <details className="cad-shell-tree-group" open>
@@ -22,14 +22,19 @@ const TreeGroup: React.FC<{ label: string; children: React.ReactNode }> = ({ lab
 );
 
 const DefinitionRow: React.FC<{ row: CadGradingGroupRow }> = ({ row }) => {
-  const relative = relativeElevationDisplay(row.definition.criterion, row.lengthUnit);
+  // Singular grade/Δ/offset spans describe the calculated result, never an
+  // unused default; mixed groups leave them to the per-course table.
+  const representative = representativeGroupCriterion(row.definition);
+  const relative = !row.methodSummary.mixedAnalytic
+    ? relativeElevationDisplay(representative, row.lengthUnit)
+    : null;
   return (
-    <div className="cad-shell-tree-row" data-cad-grading-group-definition={row.id} data-cad-grading-group-method={row.method}>
-      <span>Method {gradingMethodLabel(row.method)}</span>
+    <div className="cad-shell-tree-row" data-cad-grading-group-definition={row.id} data-cad-grading-group-method={row.methodSummary.label}>
+      <span>Method {row.methodSummary.label}{row.methodSummary.mixedAnalytic ? ` (${row.methodSummary.detail})` : ''}</span>
       <span> · Source {row.sourceName}</span>
       <span> · {row.courseCount} courses{row.closed ? ' (closed)' : ''}</span>
       <span> · {row.side}</span>
-      <span> · {gradingTargetSummary(row.definition.criterion, row.targetName, row.lengthUnit)}</span>
+      <span> · {row.methodSummary.mixedAnalytic ? 'Target: Not applicable' : gradingTargetSummary(representative, row.targetName, row.lengthUnit)}</span>
       {relative ? (
         <>
           <span data-cad-grading-group-relative-grade> · Grade {relative.grade}</span>

@@ -161,7 +161,7 @@ describe('(c) authoring — one termination family per group', () => {
       courseCriteria: [{ sourceCourse: { vertexAId: 'a', vertexBId: 'b' }, criterion: { kind: 'distance', gradeRatio: 0, distance: 20 } }],
     });
     expect(built.ok).toBe(false);
-    if (!built.ok) expect(built.error).toContain('termination families');
+    if (!built.ok) expect(built.error).toContain('termination');
   });
 
   it('rejects setting a distance override on a surface group', () => {

@@ -8,6 +8,7 @@
  * pair atomically (both or error). No project mutation, no history.
  */
 import { gradingCriterionRequiresSurface } from './gradingTypes';
+import { resolveRelativeElevationParams } from './gradingAnalyticCriterion';
 import type { CadGrading, GradingCriterion, GradingSide } from './gradingTypes';
 
 export type GradingAuthoringError = string;
@@ -69,8 +70,16 @@ export const validateGradingCriterion = (criterion: GradingCriterion): string | 
     if (!Number.isFinite(criterion.gradeRatio) || isMachineZero(criterion.gradeRatio)) {
       return 'gradeRatio must be finite and nonzero';
     }
-    if (!Number.isFinite(criterion.relativeElevation) || isMachineZero(criterion.relativeElevation)) {
+    if (
+      !Number.isFinite(criterion.relativeElevation) ||
+      isMachineZero(criterion.relativeElevation)
+    ) {
       return 'relativeElevation must be finite and nonzero';
+    }
+    if (
+      resolveRelativeElevationParams(criterion.gradeRatio, criterion.relativeElevation).ok !== true
+    ) {
+      return 'grade and relativeElevation point in opposite directions';
     }
     return null;
   }

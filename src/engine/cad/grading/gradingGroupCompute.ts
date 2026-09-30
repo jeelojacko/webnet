@@ -48,7 +48,7 @@ import { buildTargetQuery, candidateTriangles } from './gradingTargetIndex';
 import { solveGradingChord } from './solveAnalyticGradingChord';
 import { solveAnalyticCorner } from './gradingGroupAnalyticCorners';
 import { solveStraightChord, type StraightChordSolve } from './solveStraightChord';
-import { isTargetFreeCriterion } from './gradingTypes';
+import { gradingTerminationDomain, isTargetFreeCriterion } from './gradingTypes';
 import type {
   GradingCriterion,
   GradingSide,
@@ -268,6 +268,15 @@ export const computeGradingGroupFromSnapshots = (input: GroupSolveInput): Gradin
   if (!(maxSearchDistance > 0) || !Number.isFinite(maxSearchDistance)) {
     return fail('MEMBER_NO_SOLUTION', undefined, 'GRADING_BAD_SEARCH_DISTANCE');
   }
+  // Phase 20H: same-domain defense before any partial solve. A
+  // surface+analytic mix fails closed with MEMBER_NO_SOLUTION (never a
+  // half-solved mesh); the domain branch below replaces any per-side
+  // `||` check so every member/corner follows one termination domain.
+  const domains = new Set([gradingTerminationDomain(criterion)]);
+  for (let mi = 0; mi < members.length; mi += 1) domains.add(gradingTerminationDomain(criterionAt(mi)));
+  if (domains.size > 1) {
+    return fail('MEMBER_NO_SOLUTION', undefined, 'GRADING_GROUP_MIXED_TERMINATION_DOMAIN');
+  }
   const jointCount = closed ? members.length : members.length - 1;
   for (let j = 0; j < jointCount; j += 1) {
     if (!exactXyz(members[j]!, members[(j + 1) % members.length]!)) {
@@ -275,8 +284,8 @@ export const computeGradingGroupFromSnapshots = (input: GroupSolveInput): Gradin
     }
   }
   // Surface members share ONE target index; analytic families carry no target
-  // (single-family is enforced at authoring; this is defense in depth).
-  const needsSurface = members.some((_, mi) => !isTargetFreeCriterion(criterionAt(mi)));
+  // (same-domain is enforced above; this is the domain branch).
+  const needsSurface = domains.has('surface');
   const query = needsSurface ? buildTargetQuery(target!) : null;
   if (needsSurface && !query) return fail('MEMBER_NO_SOLUTION', undefined, 'GRADING_BAD_TARGET_MESH');
   let candidates: number[] = [];
@@ -386,9 +395,10 @@ export const computeGradingGroupFromSnapshots = (input: GroupSolveInput): Gradin
     const vz = vMember.endZ;
     const turn = classifyCorner(incoming.tOut, outgoing.tIn, side);
     if (!turn) return fail('CORNER_INVERTED', j, 'GRADING_CORNER_DEGENERATE');
-    // Phase 20F: analytic corners intersect the two terminal limit lines
-    // directly (no target query, no walls, no bridging, no interpolation).
-    if (isTargetFreeCriterion(criterionAt(inIdx)) || isTargetFreeCriterion(criterionAt(outIdx))) {
+    // Phase 20H: under the same-domain gate an all-analytic group routes
+    // EVERY joint through the analytic corner solver (no target query, no
+    // walls, no bridging, no interpolation).
+    if (!needsSurface) {
       const analytic = solveAnalyticCorner({
         vx, vy, vz,
         inT: incoming.tOut, inN: incoming.nOut, inGs: incoming.gsOut,

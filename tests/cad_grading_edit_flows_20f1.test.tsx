@@ -14,7 +14,7 @@
  */
 import { act, type ReactNode } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import type { CadFeatureLineEntity, CadProject, CadSurface } from '../src/engine/cad/cadTypes';
 import type { CadGrading, GradingCriterion } from '../src/engine/cad/grading/gradingTypes';
@@ -554,40 +554,27 @@ describe('Phase 20F.1 grading-group edit flows', () => {
 describe('Phase 20F.1 group family-switch guard', () => {
   const SPEC = adapter('cad-grading-group');
 
-  it('rejects Distance-with-overrides -> Surface, then succeeds after an explicit override reset', () => {
-    // A group may only use ONE termination family. Distance overrides keep the
-    // default glued to Distance; the engine rejects a switch to Surface until
-    // the operator resets those overrides explicitly (never auto-deleted).
+  it('a domain switch with overrides needs explicit confirmation and never silently deletes them', () => {
+    // A group may only use ONE termination domain. Phase 20H: analytic
+    // Distance/Elevation/Relative mixes freely; switching to Surface with
+    // stored overrides asks first, then clears them as a SEPARATE undo step
+    // (overrides are never silently deleted).
     const harness = mountGroupEngine(mixedFamilyGroup(), CURRENT_SURFACES);
     const panel = openEditPanel(harness.host, SPEC);
     setSelectIn(panel, SPEC.method, 'surface');
-    applyEdit(harness.host, SPEC);
 
-    expect(harness.commands.map((command) => command.key)).toEqual(['GROUP_EDIT_CRITERIA']);
-    const rejected = noticeText(harness.host, SPEC);
-    expect(rejected).toContain('rejected');
-    expect(rejected).not.toContain('updated');
-    expect(panelOf(harness.host, SPEC)).not.toBeNull();
-    // Engine rejection left the definition untouched: overrides survive.
+    // Cancel: nothing is emitted and the overrides survive verbatim.
+    const confirmSpy = vi.spyOn(window, 'confirm').mockReturnValue(false);
+    applyEdit(harness.host, SPEC);
+    expect(harness.commands).toHaveLength(0);
     expect(harness.project().gradingGroups?.[0]?.courseCriteria ?? []).toHaveLength(1);
     expect(harness.project().gradingGroups?.[0]?.criterion.kind).toBe('distance');
-
-    // Explicit override reset (the Course Criteria panel's one-undo action).
-    expect(
-      harness.run({
-        key: 'GROUP_RESET_COURSE_CRITERIA',
-        groupId: 'gg-1',
-        courses: GROUP_COURSES.map((course) => ({ ...course })),
-      }),
-    ).toBe(true);
-    expect(harness.project().gradingGroups?.[0]?.courseCriteria ?? []).toHaveLength(0);
-
-    harness.rerender();
     expect(panelOf(harness.host, SPEC)).not.toBeNull();
-    applyEdit(harness.host, SPEC);
 
+    // Confirm: the override reset commits first, then the default switch.
+    confirmSpy.mockReturnValue(true);
+    applyEdit(harness.host, SPEC);
     expect(harness.commands.map((command) => command.key)).toEqual([
-      'GROUP_EDIT_CRITERIA',
       'GROUP_RESET_COURSE_CRITERIA',
       'GROUP_EDIT_CRITERIA',
     ]);
@@ -596,5 +583,7 @@ describe('Phase 20F.1 group family-switch guard', () => {
     const saved = harness.project().gradingGroups?.[0];
     expect(saved?.criterion.kind).toBe('fixed');
     expect(saved?.targetSurfaceId).toBe('srf-a');
+    expect(saved?.courseCriteria ?? []).toHaveLength(0);
+    confirmSpy.mockRestore();
   });
 });

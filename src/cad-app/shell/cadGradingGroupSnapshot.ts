@@ -42,6 +42,7 @@ import {
   gradingLengthUnit,
   gradingStatusText,
 } from './cadGradingSnapshot';
+import { groupMethodSummary, type GroupMethodSummary } from './cadGradingGroupMethodSummary';
 
 /** Session group-result cache surface (the grading service owns the impl). */
 export interface CadGradingGroupResultCache {
@@ -85,6 +86,8 @@ export interface CadGradingGroupRow {
   layerId?: string;
   /** Termination method across the group family (surface/distance/elevation). */
   method: GradingTerminationKind;
+  /** Domain-level method summary (`Mixed Analytic` when >1 analytic kind). */
+  methodSummary: GroupMethodSummary;
   /** True for distance/elevation families: no target surface. */
   analytic: boolean;
   /** Target surface id; empty string for analytic families. */
@@ -233,6 +236,7 @@ export const buildCadGradingGroupSnapshot = (
       cornerMode: group.cornerMode,
       ...(group.layerId !== undefined ? { layerId: group.layerId } : {}),
       method: gradingTerminationKind(group.criterion),
+      methodSummary: groupMethodSummary(group),
       analytic,
       targetSurfaceId: group.targetSurfaceId ?? '',
       targetName: analytic ? '—' : target?.name ?? group.targetSurfaceId ?? '',

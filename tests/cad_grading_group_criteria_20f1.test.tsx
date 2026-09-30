@@ -1,7 +1,7 @@
 /** @vitest-environment jsdom */
 /**
- * Phase 20F.1 — per-course criteria editor closeout: family-locked override
- * composer, truthful 4-way Type labels, analytic target values in rows,
+ * Phase 20F.1 — per-course criteria editor closeout (Phase 20H: domain-locked
+ * composer), truthful 5-way Type labels, analytic target values in rows,
  * report text, and CSV.
  */
 import { act } from 'react';
@@ -121,7 +121,7 @@ const setInput = (el: HTMLInputElement, value: string): void => {
   });
 };
 
-describe('family-locked composer', () => {
+describe('domain-locked composer', () => {
   it('surface group offers Fixed + Cut/Fill only (no Distance/Elevation)', () => {
     const { host, root } = mount(surfaceGroup(), () => true);
     try {
@@ -139,12 +139,15 @@ describe('family-locked composer', () => {
     }
   });
 
-  it('distance group is Distance-only with editable grade + target distance', () => {
+  it('analytic group offers the whole analytic domain, with editable grade + target distance', () => {
     const { host, root } = mount(distanceGroup(), () => true);
     try {
-      const form = host.querySelector('[data-cad-grading-group-criteria-form]')?.textContent ?? '';
-      expect(form).toContain('Distance (locked to group family)');
-      expect(host.querySelector('[aria-label="Grading method"]')).toBeNull();
+      const method = host.querySelector('[aria-label="Grading method"]') as HTMLSelectElement | null;
+      expect(method).not.toBeNull();
+      expect([...(method?.options ?? [])].map((option) => option.value)).toEqual([
+        'distance', 'elevation', 'relative-elevation',
+      ]);
+      expect(method?.value).toBe('distance');
       expect(host.querySelector('[aria-label="Criterion kind"]')).toBeNull();
       const distance = host.querySelector('[aria-label="Target distance"]') as HTMLInputElement | null;
       expect(distance).not.toBeNull();
@@ -155,11 +158,11 @@ describe('family-locked composer', () => {
     }
   });
 
-  it('elevation group is Elevation-only with editable grade + target elevation', () => {
+  it('elevation group stays in the analytic domain with editable grade + target elevation', () => {
     const { host, root } = mount(elevationGroup(), () => true);
     try {
-      const form = host.querySelector('[data-cad-grading-group-criteria-form]')?.textContent ?? '';
-      expect(form).toContain('Elevation (locked to group family)');
+      const method = host.querySelector('[aria-label="Grading method"]') as HTMLSelectElement | null;
+      expect(method?.value).toBe('elevation');
       const elevation = host.querySelector('[aria-label="Target elevation"]') as HTMLInputElement | null;
       expect(elevation).not.toBeNull();
       expect(elevation?.value).toBe('98');

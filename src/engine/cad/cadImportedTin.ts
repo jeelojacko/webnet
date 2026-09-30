@@ -85,10 +85,13 @@ export const tinProvenanceKind = (
     : 'landxml-import';
 }
 
-/** Phase 20F/20G: termination family from provenance (legacy omits → surface). */
+/** Phase 20F/20G: termination family from provenance (legacy omits → surface).
+ *  Phase 20H: group-bake + design-patch provenances additionally accept
+ *  `mixed-analytic` (never a standalone single-grading bake). */
 const provenanceTargetKind = (provenance: {
-  targetKind?: 'surface' | 'distance' | 'elevation' | 'relative-elevation';
-}): 'surface' | 'distance' | 'elevation' | 'relative-elevation' => {
+  targetKind?: 'surface' | 'distance' | 'elevation' | 'relative-elevation' | 'mixed-analytic';
+}): 'surface' | 'distance' | 'elevation' | 'relative-elevation' | 'mixed-analytic' => {
+  if (provenance.targetKind === 'mixed-analytic') return 'mixed-analytic';
   if (
     provenance.targetKind === 'distance' ||
     provenance.targetKind === 'elevation' ||
@@ -100,14 +103,36 @@ const provenanceTargetKind = (provenance: {
   return 'surface';
 };
 
+/** Canonical analytic-kinds read: fixed distance → elevation →
+ *  relative-elevation order, unknown entries dropped (fail-closed read). */
+const canonicalAnalyticKindsRead = (
+  kinds: unknown,
+): Array<'distance' | 'elevation' | 'relative-elevation'> => {
+  const order: Array<'distance' | 'elevation' | 'relative-elevation'> = [
+    'distance',
+    'elevation',
+    'relative-elevation',
+  ];
+  const present = new Set(Array.isArray(kinds) ? kinds : []);
+  return order.filter((kind) => present.has(kind));
+};
+
+const canonicalAnalyticKindsLeg = (
+  kinds: Array<'distance' | 'elevation' | 'relative-elevation'> | undefined,
+): string => canonicalAnalyticKindsRead(kinds).join('+');
+
 /** Canonical target leg for the revision hash (legacy surface bytes frozen). */
 const provenanceTargetLeg = (
-  targetKind: 'surface' | 'distance' | 'elevation' | 'relative-elevation',
+  targetKind: 'surface' | 'distance' | 'elevation' | 'relative-elevation' | 'mixed-analytic',
   surfaceId: string | undefined,
   criterionDistance: number | undefined,
   targetElevation: number | undefined,
   relativeElevation: number | undefined,
+  analyticKinds?: Array<'distance' | 'elevation' | 'relative-elevation'>,
 ): string => {
+  if (targetKind === 'mixed-analytic') {
+    return `mixed-analytic:${canonicalAnalyticKindsLeg(analyticKinds)}`;
+  }
   if (targetKind === 'distance') return `distance:${criterionDistance ?? 'missing'}`;
   if (targetKind === 'elevation') return `elevation:${targetElevation ?? 'missing'}`;
   if (targetKind === 'relative-elevation') {
@@ -125,8 +150,8 @@ export const normalizeTinProvenance = (
   | { kind: 'landxml-import'; format: 'LandXML'; fileName: string; surfaceName: string; sourceId?: string }
   | { kind: 'webnet-bake'; sourceSurfaceId: string; sourceSurfaceName: string; sourceRevision: string; sourceSourceKind?: string }
   | { kind: 'webnet-grading-bake'; gradingId: string; gradingName: string; gradingRevision: string; sourceFeatureLineId: string; sourceVertexAId: string; sourceVertexBId: string; targetKind: 'surface' | 'distance' | 'elevation' | 'relative-elevation'; targetSurfaceId?: string; criterionDistance?: number; targetElevation?: number; relativeElevation?: number; accuracy: 'EXACT' | 'CURVE_APPROXIMATED' }
-  | { kind: 'webnet-grading-group-bake'; groupId: string; groupName: string; groupRevision: string; sourceFeatureLineId: string; sourceCourseRefs: string[]; targetKind: 'surface' | 'distance' | 'elevation' | 'relative-elevation'; targetSurfaceId?: string; criterionDistance?: number; targetElevation?: number; relativeElevation?: number; side: 'left' | 'right'; accuracy: 'EXACT' | 'CURVE_APPROXIMATED'; cornerMode: 'miter' }
-  | { kind: 'webnet-grading-design-patch'; groupId: string; groupName: string; groupRevision: string; sourceFeatureLineId: string; sourceCourseRefs: string[]; targetKind: 'surface' | 'distance' | 'elevation' | 'relative-elevation'; targetSurfaceId?: string; targetSurfaceRevision?: string; criterionDistance?: number; targetElevation?: number; relativeElevation?: number; accuracy: 'EXACT' | 'CURVE_APPROXIMATED'; cornerMode: 'miter'; includesInterior: true; interiorPolicy: 'flat-source' | 'planar-source' }
+  | { kind: 'webnet-grading-group-bake'; groupId: string; groupName: string; groupRevision: string; sourceFeatureLineId: string; sourceCourseRefs: string[]; targetKind: 'surface' | 'distance' | 'elevation' | 'relative-elevation' | 'mixed-analytic'; analyticKinds?: Array<'distance' | 'elevation' | 'relative-elevation'>; targetSurfaceId?: string; criterionDistance?: number; targetElevation?: number; relativeElevation?: number; side: 'left' | 'right'; accuracy: 'EXACT' | 'CURVE_APPROXIMATED'; cornerMode: 'miter' }
+  | { kind: 'webnet-grading-design-patch'; groupId: string; groupName: string; groupRevision: string; sourceFeatureLineId: string; sourceCourseRefs: string[]; targetKind: 'surface' | 'distance' | 'elevation' | 'relative-elevation' | 'mixed-analytic'; analyticKinds?: Array<'distance' | 'elevation' | 'relative-elevation'>; targetSurfaceId?: string; targetSurfaceRevision?: string; criterionDistance?: number; targetElevation?: number; relativeElevation?: number; accuracy: 'EXACT' | 'CURVE_APPROXIMATED'; cornerMode: 'miter'; includesInterior: true; interiorPolicy: 'flat-source' | 'planar-source' }
   | { kind: 'webnet-compose'; baseSurfaceId: string; baseSurfaceName: string; baseRevision: string; overlaySurfaceId: string; overlaySurfaceName: string; overlayRevision: string; policy: 'overlay-coverage-wins'; resultDigest?: string } => {
   if (tinProvenanceKind(provenance) === 'webnet-compose') {
     const composed = provenance as WebnetComposeTinProvenance;
@@ -153,6 +178,11 @@ export const normalizeTinProvenance = (
       sourceFeatureLineId: baked.sourceFeatureLineId,
       sourceCourseRefs: [...baked.sourceCourseRefs],
       targetKind,
+      // Phase 20H: mixed-analytic bakes carry their canonical analyticKinds;
+      // homogeneous shapes emit nothing here (legacy bytes unchanged).
+      ...(targetKind === 'mixed-analytic' && baked.analyticKinds !== undefined
+        ? { analyticKinds: canonicalAnalyticKindsRead(baked.analyticKinds) }
+        : {}),
       ...(targetKind === 'surface' && baked.targetSurfaceId != null
         ? { targetSurfaceId: baked.targetSurfaceId }
         : {}),
@@ -181,6 +211,9 @@ export const normalizeTinProvenance = (
       sourceFeatureLineId: patch.sourceFeatureLineId,
       sourceCourseRefs: [...patch.sourceCourseRefs],
       targetKind,
+      ...(targetKind === 'mixed-analytic' && patch.analyticKinds !== undefined
+        ? { analyticKinds: canonicalAnalyticKindsRead(patch.analyticKinds) }
+        : {}),
       ...(targetKind === 'surface' && patch.targetSurfaceId != null
         ? { targetSurfaceId: patch.targetSurfaceId }
         : {}),
@@ -204,7 +237,10 @@ export const normalizeTinProvenance = (
   }
   if (tinProvenanceKind(provenance) === 'webnet-grading-bake') {
     const baked = provenance as WebnetGradingBakeTinProvenance;
-    const targetKind = provenanceTargetKind(baked);
+    // Standalone bakes never carry `mixed-analytic` (group-only); a stray
+    // value reads as `surface` (fail-closed; never reinterpreted).
+    const rawKind = provenanceTargetKind(baked);
+    const targetKind = rawKind === 'mixed-analytic' ? 'surface' : rawKind;
     return {
       kind: 'webnet-grading-bake',
       gradingId: baked.gradingId,
@@ -310,6 +346,7 @@ export const tinProvenanceRevisionPart = (provenance: CadExplicitTinProvenance):
       normalized.criterionDistance,
       normalized.targetElevation,
       normalized.relativeElevation,
+      normalized.analyticKinds,
     );
     return `webnet-grading-group-bake|${normalized.groupId}|${normalized.groupRevision}|${normalized.sourceFeatureLineId}|${targetLeg}|${normalized.accuracy}`;
   }
@@ -330,6 +367,7 @@ export const tinProvenanceRevisionPart = (provenance: CadExplicitTinProvenance):
       normalized.criterionDistance,
       normalized.targetElevation,
       normalized.relativeElevation,
+      normalized.analyticKinds,
     );
     const targetRevisionLeg = normalized.targetKind === 'surface' ? normalized.targetSurfaceRevision ?? '' : '';
     return `webnet-grading-design-patch|${normalized.groupId}|${normalized.groupRevision}|${normalized.sourceFeatureLineId}|${targetLeg}|${targetRevisionLeg}|${normalized.accuracy}|${normalized.interiorPolicy}`;
