@@ -15,7 +15,8 @@
  * → undo/redo (3 viewports), B hybrid closed square Calculate + inquiry +
  * CSV (3 viewports, inquiry/CSV at 1366), C Extract + Bake + DesignPatch
  * with undo (1366), D Δ=−12 mismatch FAILED (3 viewports), E
- * save/reopen + last-Surface-removal target clear (1366), plus a
+ * save/reopen + last-Surface-removal target clear (1366), F surface-default
+ * → all-analytic override persistence + Calculate (1366), plus a
  * per-viewport shell regression folded into A/B/D.
  */
 import { expect, test, type Page } from '@playwright/test';
@@ -99,6 +100,21 @@ const analyticGroupOf = (squareId: string): CadGradingGroup => ({
   sourceCourses: squareCourses(squareId),
   side: 'right',
   criterion: { kind: 'distance', gradeRatio: -0.5, distance: 20 },
+  maxSearchDistance: 100,
+  curveChordTolerance: 0.01,
+  cornerMode: 'miter',
+  closed: true,
+});
+
+/** Surface-default seed (no overrides): the 20J1 persistence starting point for Flow F. */
+const surfaceDefaultGroupOf = (squareId: string, targetId: string): CadGradingGroup => ({
+  id: nextId('grp'),
+  name: 'SurfacePad',
+  sourceFeatureLineId: squareId,
+  sourceCourses: squareCourses(squareId),
+  targetSurfaceId: targetId,
+  side: 'right',
+  criterion: { kind: 'fixed', gradeRatio: -0.5 },
   maxSearchDistance: 100,
   curveChordTolerance: 0.01,
   cornerMode: 'miter',
@@ -559,6 +575,86 @@ test('20J Flow E hybrid persistence + target clear', async ({ page }) => {
     await undoOnce(page);
     if (!(await page.locator('[data-cad-grading-group-table]').isVisible())) await openGroupManager(page);
     await expect(groupRow(page)).toContainText('Flat');
+  } finally {
+    fs.rmSync(file, { force: true });
+  }
+  expect(errors).toEqual([]);
+});
+
+// ===========================================================================
+// Flow F — 20J1: surface-default → all-analytic overrides persist (1366)
+// ===========================================================================
+test('20J Flow F surface-default all-analytic persistence + Calculate', async ({ page }) => {
+  await page.setViewportSize({ width: 1366, height: 768 });
+  const errors: string[] = [];
+  await gotoCad(page, errors);
+  const { file } = writeWorld((squareId, tgt) => surfaceDefaultGroupOf(squareId, tgt));
+  try {
+    await openSurveyPlanDrawing(page, file);
+    await openGroupManager(page);
+    const row = groupRow(page);
+    await expect(row).toHaveAttribute('data-cad-grading-group-row-method', 'Surface', { timeout: 15000 });
+    await expect(row).toContainText('Flat');
+    await expect(row).toContainText('Unbuilt');
+
+    // Override every course analytically: 2× Distance, 1× Elevation, 1× Relative.
+    await page.locator('[data-cad-grading-group-tab="criteria"]').click();
+    const panel = page.locator('[data-cad-grading-group-criteria]');
+    await expect(panel).toBeVisible({ timeout: 10000 });
+    const select = panel.locator('[data-cad-grading-field="cad-grading-group-criteria-method"]');
+    await select.selectOption('distance');
+    await panel.locator('[data-cad-grading-group-criteria-override="0"]').click();
+    await expect(page.locator('[data-cad-grading-group-notice]')).toContainText('verrid', { timeout: 10000 });
+    await panel.locator('[data-cad-grading-group-criteria-override="1"]').click();
+    await expect(page.locator('[data-cad-grading-group-notice]')).toContainText('verrid', { timeout: 10000 });
+    await select.selectOption('elevation');
+    await panel.locator('[data-cad-grading-group-criteria-override="2"]').click();
+    await expect(page.locator('[data-cad-grading-group-notice]')).toContainText('verrid', { timeout: 10000 });
+    await select.selectOption('relative-elevation');
+    await panel.locator('[data-cad-grading-field="cad-grading-group-criteria-relative-elevation"]').fill('-10');
+    await panel.locator('[data-cad-grading-group-criteria-override="3"]').click();
+    await expect(page.locator('[data-cad-grading-group-notice]')).toContainText('verrid', { timeout: 10000 });
+
+    // Fully analytic: Mixed Analytic (never Hybrid), dormant target cleared.
+    await page.locator('[data-cad-grading-group-tab="definition"]').click();
+    await expect(row).toHaveAttribute('data-cad-grading-group-row-method', 'Mixed Analytic', { timeout: 15000 });
+    await expect(row).not.toContainText('Hybrid');
+    await expect(row).toContainText('Not applicable');
+    await expect(row).toContainText('Unbuilt');
+
+    // Save + reopen: the target-free all-analytic group must survive.
+    const downloadPromise = page.waitForEvent('download', { timeout: 30000 });
+    await page.getByRole('button', { name: 'Save Drawing' }).first().click();
+    const download = await downloadPromise;
+    const dir = await fs.promises.mkdtemp(path.join(os.tmpdir(), 'wn-20j1-save-'));
+    const savedPath = path.join(dir, 'drawing.wncad');
+    await download.saveAs(savedPath);
+    await openSurveyPlanDrawing(page, savedPath);
+    await openGroupManager(page);
+    const reopened = groupRow(page);
+    await expect(reopened).toHaveAttribute('data-cad-grading-group-row-method', 'Mixed Analytic', { timeout: 15000 });
+    await expect(reopened).not.toContainText('Hybrid');
+    await expect(reopened).toContainText('Not applicable');
+    await expect(reopened).toContainText('Unbuilt');
+    await page.locator('[data-cad-grading-group-tab="criteria"]').click();
+    const rePanel = page.locator('[data-cad-grading-group-criteria]');
+    for (const i of [0, 1, 2, 3]) {
+      await expect(rePanel.locator(`[data-cad-grading-group-criteria-row="${i}"]`)).toContainText('Override');
+    }
+    await expect(rePanel.locator('[data-cad-grading-group-criteria-row="0"]')).toContainText('Distance');
+    await expect(rePanel.locator('[data-cad-grading-group-criteria-row="1"]')).toContainText('Distance');
+    await expect(rePanel.locator('[data-cad-grading-group-criteria-row="2"]')).toContainText('Elevation');
+    await expect(rePanel.locator('[data-cad-grading-group-criteria-row="3"]')).toContainText('Relative');
+    await fs.promises.rm(dir, { recursive: true, force: true });
+
+    // Explicit Calculate → CURRENT, still target-free Mixed Analytic.
+    await page.locator('[data-cad-grading-group-tab="definition"]').click();
+    await reopened.click();
+    await expect(page.locator('[data-cad-grading-group-calculate]')).toBeEnabled({ timeout: 15000 });
+    await page.locator('[data-cad-grading-group-calculate]').click();
+    await expect(reopened).toContainText('Current', { timeout: 60000 });
+    await expect(reopened).toHaveAttribute('data-cad-grading-group-row-method', 'Mixed Analytic');
+    await expect(reopened).toContainText('Not applicable');
   } finally {
     fs.rmSync(file, { force: true });
   }

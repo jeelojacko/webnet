@@ -30,3 +30,15 @@ carries the Hybrid label and its metrics together; the label is also pinned by
 in-run `data-cad-grading-group-row-method` assertions on every flow. The inquiry
 header line sits above the fold; its text is pinned by in-run assertions plus the
 downloaded CSV.
+
+## Addendum — 2026-09-30 (Phase 20J merge + Phase 20J.1)
+
+- Original 12/12 PASS recorded above at HEAD `71eae6dd`; screenshots unchanged.
+- Final PR #139 head: `74629c40c7b017b2abb664bb7dbc152cc48d1ab1`; merge
+  `ffa89282c8e15e41ab959726b9ab3bc4415422aa` (base
+  `6842723c935ffdbe1461225f0ef97b7ccbceee52`). Final-head CI run 36749390984,
+  merge-push CI run 36750134664.
+- Phase 20J.1 (persistence + tie-tolerance, baseline `ffa89282`) is not
+  browser/visual in scope; no screenshots were recaptured or changed. Visual
+  regression result: TBD.
+- Phase 20J.1 correction PR/head: TBD.
