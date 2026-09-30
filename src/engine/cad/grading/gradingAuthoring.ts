@@ -126,7 +126,11 @@ const toGrading = (input: CreateGradingInput): CadGrading => ({
   name: input.name,
   sourceFeatureLineId: input.sourceFeatureLineId,
   sourceCourse: { vertexAId: input.vertexAId, vertexBId: input.vertexBId },
-  ...targetField(input.targetSurfaceId),
+  // No-id-written for relative-elevation fresh creates. All other kinds
+  // keep exact legacy semantics (surface keeps/needs the id, dormant ids
+  // on distance/elevation still persist); stored relative dormant ids are
+  // re-attached explicitly on the load path in `sanitizeCadGradings`.
+  ...(input.criterion.kind === 'relative-elevation' ? {} : targetField(input.targetSurfaceId)),
   side: input.side,
   criterion: input.criterion,
   maxSearchDistance: input.maxSearchDistance,

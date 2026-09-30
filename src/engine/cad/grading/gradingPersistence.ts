@@ -75,7 +75,22 @@ export const sanitizeCadGradings = (gradings: unknown): CadGrading[] => {
       ...(typeof candidate['layerId'] === 'string' ? { layerId: candidate['layerId'] } : {}),
       ...(typeof candidate['styleId'] === 'string' ? { styleId: candidate['styleId'] } : {}),
     });
-    if (built.ok) kept.push(cloneCadGrading(built.value));
+    if (built.ok) {
+      const value = built.value;
+      // Load preservation: a stored dormant target id on a relative-elevation
+      // definition round-trips verbatim (fresh creates never write one, and
+      // the id is never gated or rebound here).
+      if (
+        value.criterion.kind === 'relative-elevation' &&
+        typeof candidate['targetSurfaceId'] === 'string' &&
+        candidate['targetSurfaceId'].length > 0 &&
+        value.targetSurfaceId === undefined
+      ) {
+        kept.push(cloneCadGrading({ ...value, targetSurfaceId: candidate['targetSurfaceId'] }));
+      } else {
+        kept.push(cloneCadGrading(value));
+      }
+    }
   }
   return kept;
 };

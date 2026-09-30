@@ -33,7 +33,7 @@ therefore **identical to Grade-to-Distance**:
 
 - node v26.8.1; linux x64
 - quick mode: false
-- heap at start: 13.2 MB
+- heap at start: 11.0 MB
 
 > No timing gate exists anywhere in this harness; every figure is an actual run.
 > Relative Elevation reuses the Phase 20F analytic kernel, so its expected complexity is
@@ -44,9 +44,12 @@ therefore **identical to Grade-to-Distance**:
 
 | criterion | solve ms | plan area | verts | tris | projection d | digest |
 |---|---:|---:|---:|---:|---|---|
-| Relative Elevation (Δ=-10, g=-0.5) | 0.05 | 2000.000 | 4 | 2 | 20.000–20.000 | 1183c0dccc5edce6 |
+| Relative Elevation (Δ=-10, g=-0.5) | 0.06 | 2000.000 | 4 | 2 | 20.000–20.000 | 1183c0dccc5edce6 |
 | Distance (D=20, g=-0.5) | 0.03 | 2000.000 | 4 | 2 | 20.000–20.000 | 1183c0dccc5edce6 |
 | absolute Elevation (E=90, g=-0.5) | 0.02 | 2200.000 | 4 | 2 | 20.000–24.000 | 98f2b639caa05c53 |
+
+> Paired batched comparison (4000 solves x 3 interleaved runs, medians): Relative 1.88 µs/solve, Distance 1.85 µs/solve, ratio 1.021x (report only, no timing gate).
+> Single-solve medians above (0.06 vs 0.03 ms) are below the useful timer resolution and are not a meaningful ratio.
 
 > Relative and Distance share the identical closed-form path (d = Δ/g = 20), so their
 > costs and digests must match; absolute Elevation differs only by an extra division.
@@ -55,26 +58,26 @@ therefore **identical to Grade-to-Distance**:
 
 | chord tolerance | subdivisions | solve ms | accuracy | verts | tris | projection d |
 |---:|---:|---:|---|---:|---:|---|
-| 1 | 6 | 0.08 | CURVE_APPROXIMATED | 21 | 19 | 20.000 |
-| 0.1 | 18 | 0.17 | CURVE_APPROXIMATED | 56 | 53 | 20.000 |
-| 0.01 | 56 | 0.30 | CURVE_APPROXIMATED | 170 | 167 | 20.000 |
+| 1 | 6 | 0.07 | CURVE_APPROXIMATED | 21 | 19 | 20.000 |
+| 0.1 | 18 | 0.14 | CURVE_APPROXIMATED | 56 | 53 | 20.000 |
+| 0.01 | 56 | 0.35 | CURVE_APPROXIMATED | 170 | 167 | 20.000 |
 
 ## C. Open Relative Elevation groups (no corners)
 
 | courses | compute ms | us/course | verts | tris | corners | outcome |
 |---:|---:|---:|---:|---:|---:|---|
-| 4 | 0.13 | 33.052 | 16 | 13 | 3 | ok |
-| 20 | 0.47 | 23.562 | 77 | 69 | 19 | ok |
-| 100 | 2.01 | 20.094 | 357 | 349 | 99 | ok |
-| 1000 | 17.94 | 17.939 | 3507 | 3499 | 999 | ok |
+| 4 | 0.13 | 31.605 | 16 | 13 | 3 | ok |
+| 20 | 0.46 | 22.991 | 77 | 69 | 19 | ok |
+| 100 | 1.90 | 19.048 | 357 | 349 | 99 | ok |
+| 1000 | 15.40 | 15.400 | 3507 | 3499 | 999 | ok |
 
 ## D. Closed 100x100 pad (4 analytic miter corners)
 
 | criterion | solve ms | plan area | plan/src | verts | tris | corners | miter extent | outcome |
 |---|---:|---:|---:|---:|---:|---:|---|---|
-| Relative Elevation | 0.13 | 9600.000 | 0.960 | 16 | 16 | 4 | 28.284271 | ok |
+| Relative Elevation | 0.09 | 9600.000 | 0.960 | 16 | 16 | 4 | 28.284271 | ok |
 | Distance | 0.09 | 9600.000 | 0.960 | 16 | 16 | 4 | 28.284271 | ok |
-| absolute Elevation | 0.08 | 9600.000 | 0.960 | 16 | 16 | 4 | 28.284271 | ok |
+| absolute Elevation | 0.07 | 9600.000 | 0.960 | 16 | 16 | 4 | 28.284271 | ok |
 
 ## E. Deterministic repeats (byte-digest stability)
 
@@ -86,7 +89,7 @@ therefore **identical to Grade-to-Distance**:
 > One unique digest per case proves the solve is a pure function of its inputs.
 > Note: only the solver is timed above — fixture construction is outside the measured region.
 
-- heap at end: 28.1 MB
+- heap at end: 31.3 MB
 
 DONE (exit 0)
 ```
@@ -94,9 +97,14 @@ DONE (exit 0)
 ## Findings
 
 - **Relative vs Distance is the same work.** On the identical sloped source the
-  two produce **identical digests** (`1183c0dccc5edce6`) and effectively equal
-  solve times — confirming Relative Elevation is the existing analytic path with
-  a derived offset, not a second solver.
+  two produce **identical digests** (`1183c0dccc5edce6`). A single solve takes
+  ~0.03 ms, which is below the timer's useful resolution, so the per-solve ratio
+  is measured instead as a paired batch: **4000 solves × 3 interleaved runs**
+  gives Relative **1.88 µs/solve** vs Distance **1.85 µs/solve**, a ratio of
+  **1.021×**. That is measurement-level equality, confirming Relative Elevation
+  is the existing analytic path with a derived offset, not a second solver.
+  (The harness prints the single-solve medians too, and labels them as below
+  useful resolution so they are not mistaken for a ratio.)
 - **absolute Elevation differs only by an extra division.** Same order of cost,
   different geometry (`20.000–24.000` vs `20.000` projection, 2200 vs 2000 m²).
 - **Dominant stage for arcs is linearization, not the solve.** Solve time tracks

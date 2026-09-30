@@ -17,7 +17,8 @@ Test files:
 | `tests/cad_grading_relative_elevation_20g.test.ts` | 19 |
 | `tests/cad_grading_group_relative_elevation_20g.test.ts` | 19 |
 | `tests/cad_grading_relative_elevation_ui_20g.test.tsx` | 19 |
-| **Phase 20G total** | **80** |
+| `tests/cad_grading_relative_elevation_authority_20g.test.ts` | 12 |
+| **Phase 20G total** | **92** |
 
 ---
 
@@ -268,10 +269,44 @@ Relative Elevation revision on the real `resolveGradingInputs` path.
 | gate | result |
 |---|---|
 | pre-Phase-20G grading suites (31 files) | 388 tests, all pass |
-| post-Phase-20G grading suites (35 files) | **467 tests, all pass** |
+| post-Phase-20G grading suites (35 files) | **468 tests, all pass** (PR-head rerun) |
+| post-review-fix grading suites (36 files) | **480 tests, all pass** |
+| Phase 20G suites after the review fix round (5 files) | **92 tests, all pass** |
 | Phase 20F expected values updated | **none** |
 | legacy revision pins | 40/40 byte-identical |
 | old provenance revision legs | byte-identical |
 
 No numerical expected value from `src/engine/cad/grading/gradingTypes.ts`'s
 previous behaviour was changed to make a test pass.
+
+---
+
+## Independent review fix round
+
+An independent reviewer inspected PR #136 at head `a19af14c` and returned
+**REQUEST CHANGES / NO-GO** with six findings. All six were fixed and
+regression-covered in `tests/cad_grading_relative_elevation_authority_20g.test.ts`
+(12 tests); no reviewer-authored code change was needed.
+
+| # | severity | finding | fix |
+|---|---|---|---|
+| 1 | high | A non-finite limit sum was accepted as an `ok` result: `sourceZ = g = Δ = 1e308` yielded `Infinity` limit vertices and a `NaN` 3D area. | `resolveAnalyticCriterionAt` now checks `Number.isFinite(sourceZ + Δ)` and fails closed with `NO_SOLUTION` / `GRADING_BAD_CRITERION`. |
+| 2 | high | Finite source endpoints could overflow the derived longitudinal grade: end Z `1e308 → −1e308` produced `gs = −Infinity`, so a valid criterion emitted a mesh containing `NaN`/infinities. | `resolveAnalyticFrame` computes `gs` once and rejects a non-finite value with `NO_SOLUTION` / `GRADING_BAD_SOURCE` before any geometry is produced. |
+| 3 | medium | The corner solver held a second closed-form authority, independently computing `Δ/g` and `(E − Zsrc)/g`, which could drift from the chord diagnostics. | `analyticTerminalLine` now resolves both `elevation` and `relative-elevation` through `resolveAnalyticCriterionAt` and takes the search bound as a parameter; all existing corner gates (direction, finiteness, Z agreement, side half-planes, miter extent) are unchanged. Distance keeps its legacy construction byte-for-byte. |
+| 4 | medium | A fresh Relative Elevation authoring call could persist a passed `targetSurfaceId`, contradicting target-free authoring. | `toGrading` omits the target id for `relative-elevation` fresh creates; `sanitizeCadGradings` explicitly re-attaches a *stored* dormant id on the load path (never gated, never rebound). Legacy Distance/Elevation dormant-id create semantics are unchanged. |
+| 5 | low | The requested Relative-vs-Distance performance ratio was absent. | The harness now reports a paired batched ratio (4000 solves × 3 interleaved runs) and labels the sub-resolution single-solve medians as not meaningful. |
+| 6 | low | Documentation inventory inconsistencies: a delivered item still listed under "deferred", a stale 4-way label count, and a stale suite count. | `TODO.md` deferred list, `docs/CURRENT_BEHAVIOR.md` and this document corrected. |
+
+Additionally, the chord solve now writes the shared helper's exact signed-Δ
+limit (`Zlimit = Zsrc + Δ`) for `relative-elevation` instead of the
+algebraically equivalent `Zsrc + g·(Δ/g)`, which is more faithful to the
+published contract and removes a 1-ulp round-trip. Distance and absolute
+Elevation keep the legacy construction byte-for-byte, so all 40 legacy revision
+pins and every Phase 20F expected value remain unchanged.
+
+Post-fix validation: typecheck 0 errors, lint 0 errors, **36 grading files /
+480 tests pass**, **5 Phase 20G files / 92 tests pass**, WASM 74/74, parity
+25/25, build clean, portable-paths 5380/0, and the Chromium suite re-run green
+against a freshly built bundle (14/14, zero page/console/unhandled errors) with
+a pixel-diff proof that regenerated screenshots changed only in the seeded
+filename band.

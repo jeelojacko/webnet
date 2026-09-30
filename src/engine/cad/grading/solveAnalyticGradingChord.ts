@@ -76,6 +76,11 @@ const resolveAnalyticFrame = (
   }
   const normal = gradingSideNormal(dx / len, dy / len, side);
   if (!normal) return { ok: false, code: 'NO_SOLUTION', detail: 'GRADING_BAD_SIDE' };
+  // Finite endpoints can still overflow the derived longitudinal grade
+  // ((endZ - startZ)/length -> non-finite); reject fail-closed so no NaN
+  // or Infinite daylight/mesh value is ever produced downstream.
+  const gs = (source.endZ - source.startZ) / source.length;
+  if (!Number.isFinite(gs)) return { ok: false, code: 'NO_SOLUTION', detail: 'GRADING_BAD_SOURCE' };
   return {
     ok: true,
     frame: {
@@ -83,14 +88,14 @@ const resolveAnalyticFrame = (
       ny: normal.ny,
       tx: dx / len,
       ty: dy / len,
-      gs: (source.endZ - source.startZ) / source.length,
+      gs,
       len: source.length,
     },
   };
 };
 
 type AnalyticOffsetResult =
-  | { ok: true; g: number; distances: [number, number] }
+  | { ok: true; g: number; distances: [number, number]; limitZ: [number, number] }
   | { ok: false; code: 'NO_SOLUTION' | 'MAX_DISTANCE_REACHED'; detail?: string };
 
 /**
@@ -112,6 +117,7 @@ const analyticOffsets = (
     ok: true,
     g: start.value.gradeRatio,
     distances: [start.value.horizontalDistance, end.value.horizontalDistance],
+    limitZ: [start.value.limitElevation, end.value.limitElevation],
   };
 };
 
@@ -134,21 +140,29 @@ export const solveAnalyticGradingChord = (
   const stationScale = input.stationScale ?? 1;
   const solved = analyticOffsets(criterion, source, maxSearchDistance);
   if (!solved.ok) return solved;
-  const { g, distances } = solved;
+  const { g, distances, limitZ } = solved;
   const [d0, d1] = distances;
+  const [z0, z1] = limitZ;
   const atSource = (u: number): { x: number; y: number; z: number } => ({
     x: source.startX + tx * u,
     y: source.startY + ty * u,
     z: source.startZ + gs * u,
   });
-  const atDaylight = (u: number, d: number): { x: number; y: number; z: number } => {
+  const atDaylight = (u: number, d: number, z: number): { x: number; y: number; z: number } => {
     const s = atSource(u);
-    return { x: s.x + nx * d, y: s.y + ny * d, z: s.z + g * d };
+    // Relative-elevation carries the shared helper's exact signed-Δ limit
+    // (sourceZ + Δ); distance/elevation keep the legacy g·d construction
+    // byte-for-byte.
+    return {
+      x: s.x + nx * d,
+      y: s.y + ny * d,
+      z: criterion.kind === 'relative-elevation' ? z : s.z + g * d,
+    };
   };
   const p0 = atSource(0);
   const p1 = atSource(len);
-  const q0 = atDaylight(0, d0);
-  const q1 = atDaylight(len, d1);
+  const q0 = atDaylight(0, d0, z0);
+  const q1 = atDaylight(len, d1, z1);
   const mapStation = (u: number): number => stationBase + u * stationScale;
   const solve: StraightChordSolve = {
     regions: [{ classification: 'FIXED', stationSpan: [mapStation(0), mapStation(len)] }],

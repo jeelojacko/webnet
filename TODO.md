@@ -2369,7 +2369,6 @@ Do not lose these when resuming the grading roadmap. These are the explicit rema
 
 Deferred after Phase 20F.2; none block the shipped grading workflow (all fail closed rather than approximate):
 
-- [x] Relative Elevation grading criterion — DELIVERED Phase 20G (see the Phase 20G entry above). One constant signed vertical offset per criterion, persisted as `relative-elevation {gradeRatio, relativeElevation}`.
 - [ ] Grading transition workflows.
 - [ ] Mixed-family grading groups (different criteria in one group) — fails closed at authoring.
 - [ ] Retaining-wall workflows.

@@ -114,13 +114,15 @@ const resolveRelativeElevation = (
   // Strictly positive: opposite-sign grade/Δ is a wrong-direction request.
   if (!(d > 0)) return bad('GRADING_RELATIVE_ELEVATION_WRONG_DIRECTION');
   if (d > maxSearchDistance) return beyond('GRADING_RELATIVE_ELEVATION_BEYOND_SEARCH');
+  const limitElevation = sourceZ + dz;
+  if (!Number.isFinite(limitElevation)) return bad('GRADING_BAD_CRITERION');
   return {
     ok: true,
     value: {
       kind: 'relative-elevation',
       gradeRatio: g,
       horizontalDistance: d,
-      limitElevation: sourceZ + dz,
+      limitElevation,
     },
   };
 };

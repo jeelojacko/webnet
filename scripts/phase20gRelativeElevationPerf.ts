@@ -75,6 +75,7 @@ const straightMatrix = (): void => {
     ['Distance (D=20, g=-0.5)', DIST],
     ['absolute Elevation (E=90, g=-0.5)', ELEV],
   ];
+  const timings = new Map<string, number>();
   for (const [label, criterion] of rows) {
     const run = repMedian(repsFor(1), () =>
       computeGradingFromSnapshots({
@@ -90,7 +91,44 @@ const straightMatrix = (): void => {
         out.ok ? `${out.result.minProjectionDistance.toFixed(3)}–${out.result.maxProjectionDistance.toFixed(3)}` : '—'
       } | ${out.ok ? digest(out.result) : out.code} |`,
     );
+    timings.set(label, run.ms);
   }
+  const relMs = timings.get(rows[0]![0]);
+  const distMs = timings.get(rows[1]![0]);
+
+  // A single solve is ~0.03 ms, which is below the timer's useful resolution
+  // and makes a per-solve ratio noise-dominated. Re-measure as a paired batch
+  // of many identical solves so the ratio is a real measurement, not jitter.
+  const BATCH = QUICK ? 500 : 4000;
+  const batchUs = (criterion: GradingCriterion): number => {
+    const start = performance.now();
+    for (let i = 0; i < BATCH; i += 1) {
+      computeGradingFromSnapshots({
+        gradingId: 'g20g-batch', revision: 'grev1:perf-batch', source: src, side: 'right',
+        criterion, maxSearchDistance: 1000, curveChordTolerance: 0.01,
+      });
+    }
+    return ((performance.now() - start) * 1000) / BATCH;
+  };
+  // Interleave the two batches so a machine-level drift hits both equally.
+  const relBatch: number[] = [];
+  const distBatch: number[] = [];
+  for (let r = 0; r < 3; r += 1) {
+    relBatch.push(batchUs(REL));
+    distBatch.push(batchUs(DIST));
+  }
+  const relUs = median(relBatch);
+  const distUs = median(distBatch);
+  const ratio = distUs > 0 ? relUs / distUs : Number.NaN;
+  console.log(
+    `\n> Paired batched comparison (${BATCH} solves x 3 interleaved runs, medians): ` +
+    `Relative ${relUs.toFixed(2)} µs/solve, Distance ${distUs.toFixed(2)} µs/solve, ` +
+    `ratio ${Number.isFinite(ratio) ? ratio.toFixed(3) : 'n/a'}x (report only, no timing gate).`,
+  );
+  console.log(
+    `> Single-solve medians above (${fmt(relMs ?? Number.NaN)} vs ${fmt(distMs ?? Number.NaN)} ms) are ` +
+    'below the useful timer resolution and are not a meaningful ratio.',
+  );
   console.log('\n> Relative and Distance share the identical closed-form path (d = Δ/g = 20), so their');
   console.log('> costs and digests must match; absolute Elevation differs only by an extra division.');
 };

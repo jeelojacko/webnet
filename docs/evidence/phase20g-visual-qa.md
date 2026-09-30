@@ -65,6 +65,37 @@ needed because the evidence was already complete across the two frames.
 Round-2 verdict: **APPROVE WITH NOTES**. No image is now missing a claim that
 the inventory does not carry collectively.
 
+## Regeneration after the review fix round
+
+The independent review produced engine fixes (see the validation doc), so the
+production bundle changed and the browser suite was re-run against a freshly
+built bundle (`dist/assets/index-BnsEjWDS.js`, served by `vite preview`).
+**14/14 passed in 24.8 s with 0 page / 0 console / 0 unhandled errors**, and the
+shell-regression numbers were identical to the earlier run (`ribbonH: 120`,
+`bands: 1`, `groupsWrap: nowrap`, `groupsOverflowX: auto`,
+`docScrollW/H == innerW/H`, `propertiesCount: 1`, `commandInputCount: 1`,
+Toolspace visible, `gtreVisible: true`, `gtreEnabled: true`, viewports
+345 / 657 / 1017 px with the model present).
+
+All 13 PNGs were therefore regenerated. A pixel-level diff of every regenerated
+frame against the previously reviewed frame shows the change is confined to a
+single 8-pixel-tall band at the seeded-drawing filename in the Properties
+"Opened …" line (the temp `.wncad` name carries a per-run suffix):
+
+| frame | diff bounding box | pixels changed (>15/255) |
+|---|---|---:|
+| `1366-relative-create.png` | 403,261 – 486,269 | 0.031 % |
+| `1366-relative-current.png` | 403,261 – 486,269 | 0.031 % |
+| `1366-relative-vs-absolute.png` | 403,261 – 486,269 | 0.037 % |
+| `1366-relative-group.png` | 409,261 – 529,269 | 0.041 % |
+| `1366-relative-group-areas.png` | 409,255 – 529,263 | 0.041 % |
+| `1920-relative-*.png` (4) | y 279–287, x 403–492 | 0.015 – 0.019 % |
+| `2560-relative-*.png` (4) | y 279–287, x 403–492 | 0.008 – 0.010 % |
+
+No layout shift, no occlusion change, no label change, and no size change in any
+frame: the reviewed visual verdict carries over to the regenerated evidence, and
+the review-round engine fixes alter no valid-flow rendering.
+
 ## Cross-image checks
 
 - `Relative Elevation` is never rendered as plain `Elevation` anywhere. The

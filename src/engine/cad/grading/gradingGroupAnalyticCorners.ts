@@ -17,6 +17,7 @@
  * inconsistent corner fails closed.
  */
 import { zeroDelta } from '../surfaces/volume/zero';
+import { resolveAnalyticCriterionAt } from './gradingAnalyticCriterion';
 import { miterExtent } from './gradingCornerMath';
 import type { PlanVector } from './gradingCourseFrame';
 import type { GradingCriterion } from './gradingTypes';
@@ -80,6 +81,7 @@ export const analyticTerminalLine = (
   n: PlanVector,
   gs: number,
   criterion: GradingCriterion,
+  maxSearchDistance: number = Number.MAX_VALUE,
 ): AnalyticTerminalLine | null => {
   if (!finiteAll([vx, vy, vz, t.nx, t.ny, n.nx, n.ny, gs])) return null;
   if (criterion.kind === 'distance') {
@@ -94,31 +96,34 @@ export const analyticTerminalLine = (
       dz: gs,
     };
   }
-  if (criterion.kind === 'elevation') {
-    const { gradeRatio: g, targetElevation: e } = criterion;
-    if (!finiteAll([g, e]) || g === 0) return null;
-    const d0 = (e - vz) / g;
-    if (!Number.isFinite(d0)) return null;
-    // Direction stays at constant Z: d(u) = (E − Zsrc(u))/g, so the XY
-    // direction picks up the longitudinal grade divided by the cross grade.
-    return {
-      ox: vx + n.nx * d0,
-      oy: vy + n.ny * d0,
-      oz: e,
-      dx: t.nx - (gs / g) * n.nx,
-      dy: t.ny - (gs / g) * n.ny,
-      dz: 0,
-    };
-  }
-  if (criterion.kind === 'relative-elevation') {
-    const { gradeRatio: g, relativeElevation: dz } = criterion;
-    if (!Number.isFinite(g) || !Number.isFinite(dz) || g === 0 || dz === 0) return null;
-    const d = dz / g;
-    if (!Number.isFinite(d)) return null;
+  if (criterion.kind === 'elevation' || criterion.kind === 'relative-elevation') {
+    // Single closed-form authority: d and the limit elevation always come
+    // from the shared helper — no local (E−Zsrc)/g or Δ/g derivation.
+    // Direct callers without a bound get Number.MAX_VALUE (direction,
+    // finiteness, and exact-limit gates still apply; over-search beyond a
+    // real bound fails closed).
+    const resolved = resolveAnalyticCriterionAt(criterion, vz, maxSearchDistance);
+    if (!resolved.ok) return null;
+    const g = resolved.value.gradeRatio;
+    const d = resolved.value.horizontalDistance;
+    const oz = resolved.value.limitElevation;
+    if (!Number.isFinite(d) || !Number.isFinite(oz)) return null;
+    if (criterion.kind === 'elevation') {
+      // Direction stays at constant Z: d(u) = (E − Zsrc(u))/g, so the XY
+      // direction picks up the longitudinal grade divided by the cross grade.
+      return {
+        ox: vx + n.nx * d,
+        oy: vy + n.ny * d,
+        oz,
+        dx: t.nx - (gs / g) * n.nx,
+        dy: t.ny - (gs / g) * n.ny,
+        dz: 0,
+      };
+    }
     return {
       ox: vx + n.nx * d,
       oy: vy + n.ny * d,
-      oz: vz + dz,
+      oz,
       dx: t.nx,
       dy: t.ny,
       dz: gs,
@@ -146,8 +151,8 @@ const linesCoincide = (l1: AnalyticTerminalLine, l2: AnalyticTerminalLine): bool
  */
 export const solveAnalyticCorner = (params: AnalyticCornerParams): AnalyticCornerSolution => {
   const { vx, vy, vz, inT, inN, inGs, outT, outN, outGs, maxSearchDistance } = params;
-  const l1 = analyticTerminalLine(vx, vy, vz, inT, inN, inGs, params.inCriterion);
-  const l2 = analyticTerminalLine(vx, vy, vz, outT, outN, outGs, params.outCriterion);
+  const l1 = analyticTerminalLine(vx, vy, vz, inT, inN, inGs, params.inCriterion, maxSearchDistance);
+  const l2 = analyticTerminalLine(vx, vy, vz, outT, outN, outGs, params.outCriterion, maxSearchDistance);
   if (!l1 || !l2) return { ok: false, detail: 'GRADING_ANALYTIC_CORNER_LINE' };
   const det = cross2(l1.dx, l1.dy, l2.dx, l2.dy);
   if (Math.abs(det) <= zeroDelta(det, 0)) {
