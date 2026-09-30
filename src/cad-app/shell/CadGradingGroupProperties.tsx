@@ -17,6 +17,7 @@ import {
 } from './cadGradingGroupCourseCriteria';
 import { formatGradingCriterion, gradingTargetSummary } from './cadGradingShell';
 import { relativeElevationDisplay } from './cadGradingDisplay';
+import { representativeGroupCriterion } from './cadGradingGroupMethodSummary';
 
 export const GradingGroupPropertiesBlock: React.FC<{ row: CadGradingGroupRow }> = ({ row }) => {
   const [memberIndex, setMemberIndex] = React.useState(0);
@@ -38,7 +39,7 @@ export const GradingGroupPropertiesBlock: React.FC<{ row: CadGradingGroupRow }> 
         <div><dt>Source</dt><dd>{row.sourceName}</dd></div>
         <div><dt>Courses</dt><dd>{row.courseCount}{row.closed ? ' (closed)' : ''} · {row.courseRefs}</dd></div>
         <div><dt>Side</dt><dd>{row.side}</dd></div>
-        <div><dt>Target</dt><dd>{row.methodSummary.mixedAnalytic ? 'Not applicable' : gradingTargetSummary(row.definition.criterion, row.targetName, row.lengthUnit)}</dd></div>
+        <div><dt>Target</dt><dd>{row.methodSummary.mixedAnalytic ? 'Not applicable' : gradingTargetSummary(representativeGroupCriterion(row.definition), row.targetName, row.lengthUnit)}</dd></div>
         <div><dt>Default Criterion</dt><dd>{row.criterionText}</dd></div>
         {relative ? (
           <>

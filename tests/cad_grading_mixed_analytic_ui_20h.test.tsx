@@ -27,6 +27,9 @@ import {
 import { CadGradingCriterionFields } from '../src/cad-app/shell/CadGradingCriterionFields';
 import { CadGradingGroupCriteriaPanel } from '../src/cad-app/shell/CadGradingGroupCriteriaPanel';
 import { GradingGroupPropertiesBlock } from '../src/cad-app/shell/CadGradingGroupProperties';
+import { CadGradingGroupManager } from '../src/cad-app/shell/CadGradingGroupManager';
+import { GradingGroupsNode } from '../src/cad-app/shell/CadGradingGroupToolspace';
+import type { CadShellActions, CadWorkspaceSnapshot } from '../src/cad-app/shell/cadShellTypes';
 import { buildGroupInquiryReport, buildGroupCsv } from '../src/cad-app/shell/cadGradingGroupReport';
 import { buildCadGradingGroupSnapshot } from '../src/cad-app/shell/cadGradingGroupSnapshot';
 import { buildCourseMemberRows, courseCriterionTypeText } from '../src/cad-app/shell/cadGradingGroupCourseCriteria';
@@ -231,6 +234,72 @@ describe('(3) snapshot + properties', () => {
     expect(host.textContent).toContain('Not applicable');
     act(() => root.unmount());
     host.remove();
+  });
+});
+
+// ---------------------------------------------------------------------------
+// 5. Fully-overridden Target displays (reviewer follow-up)
+// ---------------------------------------------------------------------------
+describe('(5) fully-overridden target displays', () => {
+  let host: HTMLDivElement;
+  let root: Root;
+
+  afterEach(() => {
+    act(() => root.unmount());
+    host.remove();
+  });
+
+  const mount = (node: ReactNode): HTMLDivElement => {
+    host = document.createElement('div');
+    document.body.appendChild(host);
+    root = createRoot(host);
+    act(() => root.render(node));
+    return host;
+  };
+
+  const overriddenGroup = (): CadGradingGroup => {
+    const created = createGroupDefinition({
+      id: 'gg', name: 'Pad', sourceFeatureLineId: 'fl-1', sourceCourses: COURSES,
+      side: 'right', criterion: DIST(-0.5, 20),
+      courseCriteria: COURSES.map((sourceCourse) => ({ sourceCourse, criterion: REL(-0.5, -10) })),
+      maxSearchDistance: 50, curveChordTolerance: 0.05, cornerMode: 'miter', closed: true,
+    });
+    if (!created.ok) throw new Error(created.error);
+    return created.value;
+  };
+
+  const rowOf = () =>
+    buildCadGradingGroupSnapshot(project(overriddenGroup()), null, null, null).groups[0]!;
+
+  it('Properties Target follows the representative criterion, not the stored default', () => {
+    const host = mount(<GradingGroupPropertiesBlock row={rowOf()} />);
+    expect(host.textContent).toContain('TargetTarget: Relative Elevation -10.000 m relative');
+    // The stored default stays visible exactly once, honestly labeled.
+    expect(host.textContent).toContain('Default CriterionGrade -50.000% → Distance 20.000 m');
+  });
+
+  it('Manager Target follows the representative criterion', () => {
+    const snapshot = {
+      units: 'm',
+      gradingGroups: buildCadGradingGroupSnapshot(project(overriddenGroup()), null, null, null),
+    } as unknown as CadWorkspaceSnapshot;
+    const actions = {} as unknown as CadShellActions;
+    const host = mount(<CadGradingGroupManager snapshot={snapshot} actions={actions} onClose={() => {}} />);
+    const target = host.querySelector('[data-cad-grading-group-target-static]')?.textContent ?? '';
+    expect(target).toContain('Relative Elevation -10.000 m');
+    expect(target).not.toContain('Distance 20.000 m');
+  });
+
+  it('Toolspace Target + grade spans follow the representative criterion', () => {
+    const snapshot = {
+      gradingGroups: buildCadGradingGroupSnapshot(project(overriddenGroup()), null, null, null),
+    } as unknown as CadWorkspaceSnapshot;
+    const host = mount(<GradingGroupsNode snapshot={snapshot} actions={null} />);
+    const definition = host.querySelector('[data-cad-grading-group-definition]')?.textContent ?? '';
+    expect(definition).toContain('Target: Relative Elevation -10.000 m');
+    expect(definition).not.toContain('Distance 20.000 m');
+    expect(host.querySelector('[data-cad-grading-group-relative-elevation]')?.textContent)
+      .toContain('-10.000');
   });
 });
 

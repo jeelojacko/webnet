@@ -41,6 +41,7 @@ import { gradingDiagnosticCode, gradingLengthUnit } from './cadGradingSnapshot';
 import { CadGradingGroupInquiryPanel } from './CadGradingGroupInquiryPanel';
 import { CadGradingGroupCriteriaPanel } from './CadGradingGroupCriteriaPanel';
 import { groupGhostArrows, groupGhostSeam } from './cadGradingGroupDisplay';
+import { representativeGroupCriterion } from './cadGradingGroupMethodSummary';
 import { buttonClass, inputClass } from '../../components/surveyCad/surveyManagerShared';
 import { Field, ManagerShell } from '../../components/surveyCad/surveyManagerShared.tsx';
 
@@ -394,7 +395,7 @@ const RowActions: React.FC<{
           <span className="self-center text-[11px] text-slate-400" data-cad-grading-group-target-static>
             {row.methodSummary.mixedAnalytic
               ? 'Target: Not applicable'
-              : gradingTargetSummary(row.definition.criterion, row.targetName, lengthUnit)}
+              : gradingTargetSummary(representativeGroupCriterion(row.definition), row.targetName, lengthUnit)}
           </span>
         ) : (
           <select
