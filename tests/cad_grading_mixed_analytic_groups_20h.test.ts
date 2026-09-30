@@ -123,11 +123,11 @@ describe('(2) same-domain compatibility matrix', () => {
     expect(validateGroupTerminationCriteria(CUTFILL, [FIXED])).toBeNull();
   });
 
-  it('rejects surface+analytic in BOTH directions with the domain message', () => {
-    expect(validateGroupTerminationDomainCriteria(FIXED, [DIST(-0.5, 20)])).toContain('termination');
-    expect(validateGroupTerminationDomainCriteria(DIST(-0.5, 20), [FIXED])).toContain('termination');
-    expect(validateGroupTerminationCriteria(FIXED, [ELEV(-0.5, 0)])).toContain('termination');
-    expect(validateGroupTerminationCriteria(REL(-0.5, -10), [CUTFILL])).toContain('termination');
+  it('accepts surface+analytic as hybrid in BOTH directions (20J exact-common-tie)', () => {
+    expect(validateGroupTerminationDomainCriteria(FIXED, [DIST(-0.5, 20)])).toBeNull();
+    expect(validateGroupTerminationDomainCriteria(DIST(-0.5, 20), [FIXED])).toBeNull();
+    expect(validateGroupTerminationCriteria(FIXED, [ELEV(-0.5, 0)])).toBeNull();
+    expect(validateGroupTerminationCriteria(REL(-0.5, -10), [CUTFILL])).toBeNull();
   });
 });
 
@@ -147,18 +147,29 @@ describe('(3) authoring + default switch', () => {
     ]);
   });
 
-  it('rejects a cross-domain override in both directions', () => {
-    const surfaceGroup = createGroupDefinition(groupInput(FIXED, [
+  it('creates a hybrid group (surface default + analytic override) with a live target', () => {
+    // No live target: fail closed on the target rule (never a silent pick).
+    const untargeted = createGroupDefinition(groupInput(FIXED, [
       { sourceCourse: COURSES[1]!, criterion: DIST(-0.5, 20) },
     ]));
-    expect(surfaceGroup.ok).toBe(false);
-    const analyticGroup = createGroupDefinition(groupInput(DIST(-0.5, 20), [
-      { sourceCourse: COURSES[1]!, criterion: FIXED },
-    ]));
-    expect(analyticGroup.ok).toBe(false);
+    expect(untargeted.ok).toBe(false);
+    // Explicit eligible target: one hybrid definition, sparse override kept.
+    const surfaceGroup = createGroupDefinition({
+      ...groupInput(FIXED, [{ sourceCourse: COURSES[1]!, criterion: DIST(-0.5, 20) }]),
+      targetSurfaceId: 'surf-1',
+    });
+    if (!surfaceGroup.ok) throw new Error(surfaceGroup.error);
+    expect(surfaceGroup.value.targetSurfaceId).toBe('surf-1');
+    expect(surfaceGroup.value.courseCriteria).toHaveLength(1);
+    const analyticGroup = createGroupDefinition({
+      ...groupInput(DIST(-0.5, 20), [{ sourceCourse: COURSES[1]!, criterion: FIXED }]),
+      targetSurfaceId: 'surf-1',
+    });
+    if (!analyticGroup.ok) throw new Error(analyticGroup.error);
+    expect(resolveGroupMemberCriteria(analyticGroup.value)[1]).toEqual(FIXED);
   });
 
-  it('switches the default freely within the analytic domain and blocks cross-domain switches', () => {
+  it('switches the default freely; a surface-effective result needs a live target', () => {
     const created = createGroupDefinition(groupInput(DIST(-0.5, 20), [
       { sourceCourse: COURSES[1]!, criterion: REL(-0.25, -10) },
     ]));
@@ -169,8 +180,16 @@ describe('(3) authoring + default switch', () => {
     expect(toElevation.value.criterion).toEqual(ELEV(-0.5, 0));
     expect(toElevation.value.courseCriteria).toHaveLength(1);
 
+    // Switching to a surface default with no live target fails closed;
+    // with an explicit target the hybrid switch lands in one step.
     const toSurface = editGroupCriteria(created.value, FIXED);
     expect(toSurface.ok).toBe(false);
+    const toSurfaceTargeted = editGroupCriteria(
+      { ...created.value, targetSurfaceId: 'surf-1' },
+      FIXED,
+    );
+    if (!toSurfaceTargeted.ok) throw new Error(toSurfaceTargeted.error);
+    expect(toSurfaceTargeted.value.targetSurfaceId).toBe('surf-1');
   });
 
   it('validates each analytic criterion in the mix independently', () => {

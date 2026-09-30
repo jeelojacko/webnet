@@ -1772,11 +1772,21 @@ export type CadCommand =
       /** One undo step applies `criterion` to every named course. */
       courses: GradingGroupCourse[];
       criterion: GradingCriterion;
+      /**
+       * Phase 20J: criterion+target in the SAME undo entry. A non-empty id
+       * assigns the live target (must exist); null clears (all-analytic
+       * results only); omitted keeps the retained target. A
+       * surface-effective result with no live target rejects (never a
+       * silent first-surface pick). Rejected ops mutate nothing.
+       */
+      targetSurfaceId?: string | null;
     }
   | {
       key: 'GROUP_RESET_COURSE_CRITERIA';
       groupId: string;
       courses: GradingGroupCourse[];
+      /** Phase 20J: same atomic target rule as GROUP_SET_COURSE_CRITERIA. */
+      targetSurfaceId?: string | null;
     }
   | {
       key: 'GROUPEXTRACTDAYLIGHT';

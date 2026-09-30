@@ -153,23 +153,24 @@ describe('(c) authoring — one termination family per group', () => {
     expect(built.ok).toBe(true);
   });
 
-  it('rejects a surface default mixed with a distance override', () => {
+  it('accepts a surface default mixed with a distance override as hybrid (20J)', () => {
     const built = createGroupDefinition({
       ...input,
       targetSurfaceId: 'tgt',
       criterion: { kind: 'fixed', gradeRatio: -0.5 },
       courseCriteria: [{ sourceCourse: { vertexAId: 'a', vertexBId: 'b' }, criterion: { kind: 'distance', gradeRatio: 0, distance: 20 } }],
     });
-    expect(built.ok).toBe(false);
-    if (!built.ok) expect(built.error).toContain('termination');
+    expect(built.ok).toBe(true);
+    if (built.ok) expect(built.value.targetSurfaceId).toBe('tgt');
   });
 
-  it('rejects setting a distance override on a surface group', () => {
+  it('sets a distance override on a surface group (hybrid keeps the live target)', () => {
     const base = createGroupDefinition({ ...input, targetSurfaceId: 'tgt', criterion: { kind: 'fixed', gradeRatio: -0.5 } });
     expect(base.ok).toBe(true);
     if (!base.ok) return;
     const edited = setCourseCriteriaOverrides(base.value, [{ vertexAId: 'a', vertexBId: 'b' }], { kind: 'distance', gradeRatio: 0, distance: 20 });
-    expect(edited.ok).toBe(false);
+    expect(edited.ok).toBe(true);
+    if (edited.ok) expect(edited.value.targetSurfaceId).toBe('tgt');
   });
 
   it('requires a target for surface criteria', () => {

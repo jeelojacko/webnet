@@ -646,15 +646,15 @@ describe('(M) Relative Elevation group overrides', () => {
     expect(out.detail).toBe('GRADING_ANALYTIC_CORNER_Z');
   });
 
-  it('same-domain analytic mixes are accepted; surface mix fails closed', () => {
+  it('analytic mixes and surface hybrids are accepted (20J)', () => {
     // Phase 20H: Distance/Elevation/Relative Elevation mix freely in one group.
     expect(validateGroupTerminationCriteria(REL(-0.5, -10), [
       REL(-0.5, -10),
       { kind: 'distance', gradeRatio: -0.5, distance: 20 },
       { kind: 'elevation', gradeRatio: -0.5, targetElevation: 0 },
     ])).toBeNull();
-    // Surface + analytic still fails closed.
-    expect(validateGroupTerminationCriteria(REL(-0.5, -10), [{ kind: 'fixed', gradeRatio: -0.5 }])).not.toBeNull();
+    // Phase 20J: surface + analytic is a legal hybrid (exact-common-tie).
+    expect(validateGroupTerminationCriteria(REL(-0.5, -10), [{ kind: 'fixed', gradeRatio: -0.5 }])).toBeNull();
     expect(validateGroupTerminationCriteria(REL(-0.5, -10), [REL(-0.5, -12), REL(0.5, 10)])).toBeNull();
   });
 });

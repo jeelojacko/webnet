@@ -85,33 +85,41 @@ describe('(1) termination family', () => {
     ).toBeNull();
   });
 
-  it('accepts same-domain analytic mixes and rejects only surface+analytic', () => {
+  it('accepts analytic mixes and surface+analytic hybrids (20J)', () => {
     // Phase 20H: distance/elevation/relative-elevation mix freely in one group.
     expect(validateGroupTerminationCriteria(REL(-0.5, -10), [DIST, ELEV])).toBeNull();
     expect(validateGroupTerminationCriteria(REL(-0.5, -10), [REL(-0.5, -12)])).toBeNull();
-    // Surface + analytic still fails closed with the domain diagnostic.
-    const error = validateGroupTerminationCriteria(REL(-0.5, -10), [FIXED]);
-    expect(error).not.toBeNull();
-    expect(error!).toContain('termination');
+    // Phase 20J: surface + analytic is a legal hybrid (exact-common-tie).
+    expect(validateGroupTerminationCriteria(REL(-0.5, -10), [FIXED])).toBeNull();
   });
 
-  it('accepts a same-domain analytic override; rejects+strips a cross-domain one', () => {
+  it('accepts an analytic override; a surface override needs a live target (20J hybrid)', () => {
     const created = createGroupDefinition(groupInput(REL(-0.5, -10)));
     if (!created.ok) throw new Error(created.error);
     // Phase 20H: an analytic sibling (Distance/Elevation) is allowed.
     const sibling = setCourseCriteriaOverrides(created.value, [COURSES[1]!], DIST);
     if (!sibling.ok) throw new Error(sibling.error);
     expect(sibling.value.courseCriteria).toHaveLength(1);
-    // A surface override is a domain change and fails closed at authoring.
-    const surface = setCourseCriteriaOverrides(created.value, [COURSES[1]!], FIXED);
-    expect(surface.ok).toBe(false);
+    // Phase 20J: a surface override is a hybrid step — fail closed with no
+    // live target, land with an explicit one.
+    const untargeted = setCourseCriteriaOverrides(created.value, [COURSES[1]!], FIXED);
+    expect(untargeted.ok).toBe(false);
+    const targeted = setCourseCriteriaOverrides(
+      { ...created.value, targetSurfaceId: 'surf-1' },
+      [COURSES[1]!],
+      FIXED,
+    );
+    if (!targeted.ok) throw new Error(targeted.error);
+    expect(targeted.value.courseCriteria).toHaveLength(1);
+    expect(targeted.value.targetSurfaceId).toBe('surf-1');
 
     const loaded = sanitizeCadGradingGroups([
-      { ...groupInput(REL(-0.5, -10)), courseCriteria: [{ sourceCourse: COURSES[1]!, criterion: FIXED }] },
+      { ...groupInput(REL(-0.5, -10)), targetSurfaceId: 'surf-1', courseCriteria: [{ sourceCourse: COURSES[1]!, criterion: FIXED }] },
     ]);
     expect(loaded).toHaveLength(1);
     expect(loaded[0]!.criterion).toEqual(REL(-0.5, -10));
-    expect(loaded[0]!.courseCriteria ?? []).toHaveLength(0);
+    expect(loaded[0]!.courseCriteria ?? []).toHaveLength(1);
+    expect(loaded[0]!.targetSurfaceId).toBe('surf-1');
   });
 
   it('authoring rejects a malformed Relative Elevation default', () => {

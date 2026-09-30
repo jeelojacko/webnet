@@ -22,7 +22,7 @@ import type { DesignPatchFailure } from './designPatchRing';
 import { deriveDesignPatchPlane } from './designPatchPlane';
 import { gradingTerminationKind } from './gradingTypes';
 import { criteriaEqual } from './gradingGroupCourseCriteria';
-import { canonicalAnalyticKinds } from './gradingGroupTermination';
+import { canonicalAnalyticKinds, canonicalTerminationKinds, groupTerminationMode } from './gradingGroupTermination';
 import type { GradingCriterion, GradingMesh } from './gradingTypes';
 
 export {
@@ -321,15 +321,21 @@ export interface DesignPatchProvenanceInput {
 export const makeDesignPatchProvenance = (
   input: DesignPatchProvenanceInput,
 ): WebnetGradingDesignPatchTinProvenance => {
-  // Phase 20H: the patch targetKind reflects the EFFECTIVE per-course
-  // criteria, never a fully-overridden default. Homogeneous groups keep
-  // their exact legacy shape because the default is effective there and
-  // `representative` resolves back to it.
+  // Phase 20J: the patch targetKind reflects the EFFECTIVE per-course
+  // criteria. Homogeneous groups keep their exact legacy shape;
+  // mixed-analytic groups keep `mixed-analytic` + analyticKinds; hybrid
+  // (surface+analytic) groups record `hybrid` + canonical
+  // terminationKinds with the live target id + rev — never a singular
+  // analytic value.
   const effective = (input.memberCriteria?.length ?? 0) > 0
     ? input.memberCriteria!
     : (input.criterion !== undefined ? [input.criterion] : []);
+  const defaultCriterion = input.criterion;
+  const hybrid = defaultCriterion !== undefined
+    && groupTerminationMode(defaultCriterion, effective) === 'hybrid';
   const analyticKinds = canonicalAnalyticKinds(effective);
-  const mixed = analyticKinds.length > 1;
+  const terminationKinds = canonicalTerminationKinds(effective);
+  const mixed = !hybrid && analyticKinds.length > 1;
   const kind = effective.length > 0 ? gradingTerminationKind(effective[0]!) : undefined;
   const analytic = mixed || kind === 'distance' || kind === 'elevation' || kind === 'relative-elevation';
   const stored = input.criterion;
@@ -346,13 +352,15 @@ export const makeDesignPatchProvenance = (
     sourceCourseRefs: [...input.sourceCourseRefs],
     // Analytic patches record their own termination family; a dormant target
     // id never leaks into the snapshot (surface keeps legacy bytes).
-    ...(analytic && !mixed && kind !== undefined ? { targetKind: kind } : {}),
+    // Hybrid patches record `hybrid` + terminationKinds with the live target.
+    ...(analytic && !mixed && !hybrid && kind !== undefined ? { targetKind: kind } : {}),
     ...(mixed ? { targetKind: 'mixed-analytic' as const, analyticKinds } : {}),
-    ...(input.targetSurfaceId != null && !analytic ? { targetSurfaceId: input.targetSurfaceId } : {}),
-    ...(input.targetSurfaceRevision != null && !analytic ? { targetSurfaceRevision: input.targetSurfaceRevision } : {}),
-    ...(criterion?.kind === 'distance' && !mixed ? { criterionDistance: criterion.distance } : {}),
-    ...(criterion?.kind === 'elevation' && !mixed ? { targetElevation: criterion.targetElevation } : {}),
-    ...(criterion?.kind === 'relative-elevation' && !mixed ? { relativeElevation: criterion.relativeElevation } : {}),
+    ...(hybrid ? { targetKind: 'hybrid' as const, terminationKinds } : {}),
+    ...(input.targetSurfaceId != null && (!analytic || hybrid) ? { targetSurfaceId: input.targetSurfaceId } : {}),
+    ...(input.targetSurfaceRevision != null && (!analytic || hybrid) ? { targetSurfaceRevision: input.targetSurfaceRevision } : {}),
+    ...(criterion?.kind === 'distance' && !mixed && !hybrid ? { criterionDistance: criterion.distance } : {}),
+    ...(criterion?.kind === 'elevation' && !mixed && !hybrid ? { targetElevation: criterion.targetElevation } : {}),
+    ...(criterion?.kind === 'relative-elevation' && !mixed && !hybrid ? { relativeElevation: criterion.relativeElevation } : {}),
     accuracy: input.accuracy,
     cornerMode: 'miter',
     includesInterior: true,
