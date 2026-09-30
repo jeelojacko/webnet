@@ -1,7 +1,5 @@
-import { createGroupDefinition } from './gradingGroupAuthoring';
-import { effectiveCriteriaForCourses } from './gradingGroupCourseCriteria';
+import { createGroupDefinition, validateGroupBaseShape } from './gradingGroupAuthoring';
 import { validateGradingCriterion } from './gradingAuthoring';
-import { groupTerminationRequiresTarget } from './gradingGroupTermination';
 import type { CadGradingGroup } from './gradingGroupTypes';
 
 /**
@@ -86,49 +84,37 @@ export const sanitizeCadGradingGroupsDetailed = (
   for (const entry of groups) {
     if (entry === null || typeof entry !== 'object') continue;
     const candidate = entry as Record<string, unknown>;
+    // Phase 20J1: validate the base shape WITHOUT the target gate (a
+    // fully-overridden stored default is invisible to it), scrub the raw
+    // overrides against the validated courses, then run the SINGLE
+    // authoring construction with the scrubbed effective set + raw target.
+    // The final target rule stays owned by the authoring constructor
+    // (effective criteria via effectiveCriteriaForCourses +
+    // groupTerminationRequiresTarget): surface/hybrid keeps the target,
+    // all-analytic sheds a dormant id (dormancy by omission). Malformed
+    // defaults or target-less surface-effective groups drop fail-closed;
+    // orphan/duplicate/invalid overrides drop with a report above. Never
+    // invents a target, never materializes defaults.
+    const base = validateGroupBaseShape(candidate);
+    if (!base.ok) continue;
+    const scrubbed = scrubCourseCriteria(base.value, candidate['courseCriteria']);
+    dropped.push(...scrubbed.dropped);
+    // Phase 20J Wave C1: every 5-kind mix is a legal hybrid (exact-
+    // common-tie kernel) — cross-domain overrides survive the scrub.
+    // Only orphan/duplicate/invalid records drop, each reported above.
+    // Malformed defaults drop via the authoring constructor; legacy
+    // valid groups pass through byte-for-byte.
     const built = createGroupDefinition({
-      id: candidate['id'] as string,
-      name: candidate['name'] as string,
-      sourceFeatureLineId: candidate['sourceFeatureLineId'] as string,
-      sourceCourses: (candidate['sourceCourses'] ?? []) as CadGradingGroup['sourceCourses'],
+      ...base.value,
       ...(typeof candidate['targetSurfaceId'] === 'string'
         ? { targetSurfaceId: candidate['targetSurfaceId'] as string }
         : {}),
-      side: candidate['side'] as CadGradingGroup['side'],
-      criterion: candidate['criterion'] as CadGradingGroup['criterion'],
-      maxSearchDistance: candidate['maxSearchDistance'] as number,
-      curveChordTolerance: candidate['curveChordTolerance'] as number,
-      cornerMode: candidate['cornerMode'] as CadGradingGroup['cornerMode'],
-      ...(candidate['closed'] === true ? { closed: true as const } : {}),
-      ...(typeof candidate['layerId'] === 'string' ? { layerId: candidate['layerId'] } : {}),
-      ...(typeof candidate['styleId'] === 'string' ? { styleId: candidate['styleId'] } : {}),
+      ...(scrubbed.group.courseCriteria !== undefined
+        ? { courseCriteria: scrubbed.group.courseCriteria }
+        : {}),
     });
-    if (built.ok) {
-      const scrubbed = scrubCourseCriteria(built.value, candidate['courseCriteria']);
-      dropped.push(...scrubbed.dropped);
-      // Phase 20J Wave C1: every 5-kind mix is a legal hybrid (exact-
-      // common-tie kernel) — cross-domain overrides survive the scrub.
-      // Only orphan/duplicate/invalid records drop, each reported above.
-      // Malformed defaults drop the group via the authoring constructor;
-      // legacy valid groups pass through byte-for-byte. The effective
-      // target rule lands after the scrub: a surface-effective group
-      // without a target id is malformed (drop), an all-analytic group
-      // sheds a dormant legacy id (dormancy by omission).
-      let group = scrubbed.group;
-      // Wave C4: the target rule reads EFFECTIVE per-course criteria
-      // (a fully-overridden stored default is invisible).
-      const effective = effectiveCriteriaForCourses(group.criterion, group.sourceCourses, group.courseCriteria);
-      if (groupTerminationRequiresTarget(group.criterion, effective)) {
-        if (typeof candidate['targetSurfaceId'] !== 'string' || candidate['targetSurfaceId'].length === 0) {
-          continue;
-        }
-        group = { ...group, targetSurfaceId: candidate['targetSurfaceId'] as string };
-      } else if (group.targetSurfaceId !== undefined) {
-        const { targetSurfaceId: _dormant, ...stripped } = group;
-        group = stripped;
-      }
-      kept.push(cloneCadGradingGroup(group));
-    }
+    if (!built.ok) continue;
+    kept.push(cloneCadGradingGroup(built.value));
   }
   return { groups: kept, dropped };
 };

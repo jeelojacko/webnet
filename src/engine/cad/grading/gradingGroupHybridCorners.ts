@@ -9,8 +9,9 @@
  *
  * - surface tie: nearest outward `solveMiterTie` root (root policy kept);
  * - analytic tie: existing `analyticTerminalLine` × the same seam ray;
- * - accept only on X/Y/Z + seam-param agreement under the coordinate-aware
- *   tie bound (`tieAgreementTol`: `zeroDelta` scaled by |XY|, itself untouched),
+ * - accept only on X/Y/Z + seam-param agreement under the quantity-specific
+ *   agreement contracts (`coordinateAgreementTol` / `elevationAgreementTol` /
+ *   `seamParameterAgreementTol`; `zeroDelta` itself untouched),
  *   target agreement (surface authority) + terminal-line/plane agreement
  *   (analytic authority), both side half-planes, and the miter extent;
  * - GAP fans V→Qs→tie + V→tie→Qa on the two exact planes (no wall/bridge);
@@ -38,7 +39,10 @@ import {
 } from './gradingCornerMath';
 import {
   clipPolylineToHalfPlane,
-  tieAgreementTol,
+  coordinateAgreementTol,
+  elevationAgreementTol,
+  planeLeverage,
+  seamParameterAgreementTol,
   solveMiterTie,
 } from './gradingGroupSectors';
 import {
@@ -240,22 +244,34 @@ export const solveHybridCorner = (input: HybridCornerInput): HybridCornerOutcome
     return bad('CORNER_MAX_DISTANCE', 'GRADING_SURFACE_ANALYTIC_MAX');
   }
   const planeZatA = planeElevationAt(planeA, aTie.x, aTie.y);
-  if (planeZatA === null || Math.abs(planeZatA - aTie.z) > tieAgreementTol(planeZatA, aTie.z, aTie.x, aTie.y)) {
+  const planeZtolA = planeZatA === null ? Number.POSITIVE_INFINITY
+    : elevationAgreementTol(planeZatA, aTie.z, [
+      ...planeLeverage(planeA, aTie.x, aTie.y),
+      line.oz, uA * line.dz,
+    ]);
+  if (planeZatA === null || Math.abs(planeZatA - aTie.z) > planeZtolA) {
     return bad('CORNER_NO_SOLUTION', 'GRADING_SURFACE_ANALYTIC_LINE');
   }
-  // Exact acceptance: X/Y/Z + seam param under the coordinate-aware tie
-  // bound (tie quantities evaluated at world XY carry ~eps*|XY| noise that
-  // zeroDelta alone under-bounds far from the origin). Target agreement
-  // is surface-authoritative.
+  // Exact acceptance: X/Y/Z + seam param under the quantity-specific
+  // agreement contracts (each bounds only its own quantity's evaluation;
+  // `zeroDelta` untouched). Target agreement is surface-authoritative.
   const sTiePt: HybridCornerPoint = { x: sTie.x, y: sTie.y, z: sTie.z };
-  const xTol = tieAgreementTol(sTiePt.x, aTie.x, aTie.x, aTie.y);
-  const yTol = tieAgreementTol(sTiePt.y, aTie.y, aTie.x, aTie.y);
-  const zTol = tieAgreementTol(sTiePt.z, aTie.z, aTie.x, aTie.y);
-  const tTol = tieAgreementTol(sTie.t, tA, aTie.x, aTie.y);
+  // World-representation scale of the joint (the ray origin carries the
+  // largest coordinate magnitude, hence the rounding quantum).
+  const jointCoordinateScale = Math.max(Math.abs(vx), Math.abs(vy));
+  const xTol = coordinateAgreementTol(sTiePt.x, aTie.x, jointCoordinateScale);
+  const yTol = coordinateAgreementTol(sTiePt.y, aTie.y, jointCoordinateScale);
+  const zTol = elevationAgreementTol(sTiePt.z, aTie.z, [
+    ...planeLeverage(planeS, sTiePt.x, sTiePt.y),
+    ...planeLeverage(planeA, aTie.x, aTie.y),
+    line.oz, uA * line.dz,
+  ]);
+  const tTol = seamParameterAgreementTol(sTie.t, tA, extent, jointCoordinateScale);
   const agreed = Math.abs(sTiePt.x - aTie.x) <= xTol && Math.abs(sTiePt.y - aTie.y) <= yTol
     && Math.abs(sTiePt.z - aTie.z) <= zTol && Math.abs(sTie.t - tA) <= tTol;
   const ztCommon = input.query.elevationAt(aTie.x, aTie.y);
-  const targetOk = ztCommon !== null && Math.abs(ztCommon - sTiePt.z) <= zTol;
+  const targetOk = ztCommon !== null
+    && Math.abs(ztCommon - sTiePt.z) <= elevationAgreementTol(ztCommon, sTiePt.z, planeLeverage(planeS, sTiePt.x, sTiePt.y));
   if (agreed && targetOk) {
     const tie = aTie;
     const miterLine = { vx, vy, mx: ray.mx, my: ray.my };
@@ -312,12 +328,21 @@ export const solveHybridCorner = (input: HybridCornerInput): HybridCornerOutcome
   // (surface keeps the nearest root); anything else needs a transition.
   const planeZatAnalytic = planeElevationAt(planeS, aTie.x, aTie.y);
   const ztAnalytic = input.query.elevationAt(aTie.x, aTie.y);
-  const rpTol = planeZatAnalytic === null || ztAnalytic === null
-    ? zTol
-    : Math.max(zTol, tieAgreementTol(planeZatAnalytic, aTie.z, aTie.x, aTie.y));
+  const rpPlaneTerms = planeLeverage(planeS, aTie.x, aTie.y);
+  const rpTolTarget = planeZatAnalytic === null || ztAnalytic === null
+    ? 0
+    : elevationAgreementTol(planeZatAnalytic, ztAnalytic, rpPlaneTerms);
+  const rpTolTie = planeZatAnalytic === null
+    ? 0
+    : elevationAgreementTol(planeZatAnalytic, aTie.z, [
+      ...rpPlaneTerms,
+      ...planeLeverage(planeA, aTie.x, aTie.y),
+      line.oz, uA * line.dz,
+    ]);
   if (
     planeZatAnalytic !== null && ztAnalytic !== null
-    && Math.abs(planeZatAnalytic - ztAnalytic) <= rpTol && Math.abs(planeZatAnalytic - aTie.z) <= rpTol
+    && Math.abs(planeZatAnalytic - ztAnalytic) <= rpTolTarget
+    && Math.abs(planeZatAnalytic - aTie.z) <= rpTolTie
   ) {
     return bad('CORNER_NO_SOLUTION', 'GRADING_SURFACE_ANALYTIC_ROOT_POLICY');
   }

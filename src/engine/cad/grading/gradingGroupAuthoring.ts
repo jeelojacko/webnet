@@ -184,6 +184,45 @@ const toGroup = (input: CreateGroupInput): CadGradingGroup => ({
   ...(input.styleId !== undefined ? { styleId: input.styleId } : {}),
 });
 
+/**
+ * Phase 20J1: validate the persisted base SHAPE only (no target gate,
+ * no overrides). Lets the load path scrub raw `courseCriteria` against
+ * validated courses first, then run the single `createGroupDefinition`
+ * construction with the scrubbed effective set — so a fully-overridden
+ * stored default is invisible to the target rule. Returns the fields
+ * `createGroupDefinition` needs minus `targetSurfaceId`/`courseCriteria`.
+ */
+export type GroupBaseShape = Omit<CreateGroupInput, 'targetSurfaceId' | 'courseCriteria'>;
+
+export const validateGroupBaseShape = (
+  candidate: Record<string, unknown>,
+): GradingAuthoringResult<GroupBaseShape> => {
+  const input: GroupBaseShape = {
+    id: candidate['id'] as string,
+    name: candidate['name'] as string,
+    sourceFeatureLineId: candidate['sourceFeatureLineId'] as string,
+    sourceCourses: (candidate['sourceCourses'] ?? []) as GradingGroupCourse[],
+    side: candidate['side'] as GradingSide,
+    criterion: candidate['criterion'] as GradingCriterion,
+    maxSearchDistance: candidate['maxSearchDistance'] as number,
+    curveChordTolerance: candidate['curveChordTolerance'] as number,
+    cornerMode: candidate['cornerMode'] as GradingCornerMode,
+    ...(candidate['closed'] === true ? { closed: true as const } : {}),
+    ...(typeof candidate['layerId'] === 'string' ? { layerId: candidate['layerId'] as string } : {}),
+    ...(typeof candidate['styleId'] === 'string' ? { styleId: candidate['styleId'] as string } : {}),
+  };
+  const identity = identityError(input);
+  if (identity) return fail(identity);
+  if (input.cornerMode !== 'miter') return fail('cornerMode must be miter');
+  const criterion = validateGradingCriterion(input.criterion);
+  if (criterion) return fail(criterion);
+  const scalars = scalarError(input);
+  if (scalars) return fail(scalars);
+  const chain = validateGroupChain(input.sourceCourses, input.closed === true);
+  if (chain) return fail(chain);
+  return { ok: true, value: input };
+};
+
 /** Create one group definition (pure, no project mutation). */
 export const createGroupDefinition = (
   input: CreateGroupInput,

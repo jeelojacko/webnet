@@ -99,3 +99,25 @@ typecheck, `test:agent`, `test:wasm`, `parity:industry-reference`,
 build, `check:portable-paths`, image audit, and the full-mesh topology
 audit. Study-desktop 3 fails are known pre-existing (verified identical
 on a clean-tree comparison; Study code untouched).
+
+## Addendum — 2026-09-30 (Phase 20J merge + Phase 20J.1)
+
+- Historical HEAD: `71eae6dd` (Wave C2 shell); Wave C3 evidence; reviewer
+  fixes at `74629c40` (final PR #139 head).
+- Phase 20J MERGED via PR #139: base `6842723c935ffdbe1461225f0ef97b7ccbceee52`,
+  head `74629c40c7b017b2abb664bb7dbc152cc48d1ab1`, merge
+  `ffa89282c8e15e41ab959726b9ab3bc4415422aa`; final-head CI run 36749390984,
+  merge-push CI run 36750134664.
+- Final-head reruns (baseline `ffa89282`): lint 0 errors (2 pre-existing
+  warnings), typecheck clean, `test:agent` green with the same 3 pre-existing
+  study-desktop fails, `test:wasm` 74/74, build clean.
+- Phase 20J.1 (branch `fix/phase20j1-hybrid-persistence-tolerance`, baseline
+  `ffa89282`): persistence defect (fully-overridden stored surface default
+  dropped on reopen) + tie-tolerance hardening (quantity-specific
+  single-world-scale X/Y/t/Z bounds, anchored target plane). Corrected
+  tolerances and derivations: `coordinateAgreementTol` =
+  32·eps·max(1,|a|,|b|,|coordinate|), `seamParameterAgreementTol`
+  (single-quantum seam term), `elevationAgreementTol` (anchored-plane
+  leverage), replacing the double-world-scaled `tieAgreementTol`. See
+  `docs/evidence/phase20j1-hybrid-hardening.md` (§6–§14).
+- Phase 20J.1 correction PR: #140 (head `397203c2`), open, DO NOT MERGE.

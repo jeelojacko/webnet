@@ -93,12 +93,20 @@ export const clipPolygonToBounds = (
 };
 
 interface TargetPlane {
-  a: number;
-  b: number;
-  c: number;
+  ax: number;
+  ay: number;
+  zAtAnchor: number;
+  gx: number;
+  gy: number;
 }
 
-/** Affine world-XY plane through three target vertices; null when degenerate. */
+/**
+ * Affine world-XY plane through three target vertices, ANCHORED at the first
+ * vertex; null when degenerate. The intercept form `z = a·x + b·y + c` is
+ * forbidden here: `c` is ~|-a·x0 - b·y0| (world magnitude) so evaluating the
+ * far-from-origin plane subtracts two ~1e6 terms and loses ~eps·|XY| per
+ * evaluation. The anchored form keeps every multiply local to the triangle.
+ */
 const targetPlaneAt = (
   target: GradingTargetMeshSnapshot,
   triIndex: number,
@@ -108,9 +116,98 @@ const targetPlaneAt = (
   const [p0, p1, p2] = p as [typeof p[0], typeof p[0], typeof p[0]];
   const det = (p1.x - p0.x) * (p2.y - p0.y) - (p2.x - p0.x) * (p1.y - p0.y);
   if (Math.abs(det) <= zeroDelta(det, 0)) return null;
-  const a = ((p1.z - p0.z) * (p2.y - p0.y) - (p2.z - p0.z) * (p1.y - p0.y)) / det;
-  const b = ((p1.x - p0.x) * (p2.z - p0.z) - (p2.x - p0.x) * (p1.z - p0.z)) / det;
-  return { a, b, c: p0.z - a * p0.x - b * p0.y };
+  const gx = ((p1.z - p0.z) * (p2.y - p0.y) - (p2.z - p0.z) * (p1.y - p0.y)) / det;
+  const gy = ((p1.x - p0.x) * (p2.z - p0.z) - (p2.x - p0.x) * (p1.z - p0.z)) / det;
+  return { ax: p0.x, ay: p0.y, zAtAnchor: p0.z, gx, gy };
+};
+
+/** Anchored target-plane elevation at world (x, y). */
+const targetPlaneZ = (plane: TargetPlane, x: number, y: number): number =>
+  plane.zAtAnchor + plane.gx * (x - plane.ax) + plane.gy * (y - plane.ay);
+
+/**
+ * Forward-error agreement contracts for exact-common-tie comparisons.
+ *
+ * `zeroDelta` (18I) is the *classification* floor and is never loosened. Tie
+ * agreement is a different question: it must cover the forward rounding of
+ * two independently evaluated quantities. The old generic
+ * `zeroDelta(a,b)·max(1,|x|,|y|)` multiplied two world magnitudes
+ * (≈4eps·|XY|² for coordinate comparisons), reaching ≈1e-2 at E2M/N7M and
+ * erasing mm-scale mismatches. Each contract below bounds exactly one
+ * quantity's evaluation with at most ONE world-magnitude scale, so the
+ * classification is invariant under translation while genuine mismatches
+ * (≥0.1 mm) still fail closed.
+ *
+ * `AGREEMENT_OPS` is the accumulated rounding budget of one tie evaluation
+ * chain (ray interval clip, plane fits, root solve, final world-space add).
+ * 32 covers the measured forward error with margin (20J1 evidence §bounds).
+ */
+const AGREEMENT_OPS = 32;
+
+/** One world evaluation's last-bit spacing: eps·max(1,|coordinate|). */
+const coordinateQuantum = (coordinate: number): number =>
+  Number.EPSILON * Math.max(1, Math.abs(coordinate));
+
+/** Anchored plane shape shared by grading and target planes. */
+interface AnchoredPlane {
+  gx: number;
+  gy: number;
+  ax: number;
+  ay: number;
+}
+
+/**
+ * Per-axis |gradient|·|world coordinate| leverage of an anchored plane
+ * evaluation at (x, y). Single world magnitude per axis; no x·y product.
+ */
+export const planeLeverage = (plane: AnchoredPlane, x: number, y: number): number[] => [
+  Math.abs(plane.gx) * Math.max(1, Math.abs(x), Math.abs(plane.ax)),
+  Math.abs(plane.gy) * Math.max(1, Math.abs(y), Math.abs(plane.ay)),
+];
+
+/** X/Y world-coordinate agreement: single-scale ULP bound (no |x|·|y| term). */
+export const coordinateAgreementTol = (
+  a: number,
+  b: number,
+  coordinateScale: number,
+): number =>
+  AGREEMENT_OPS * Math.max(
+    coordinateQuantum(a),
+    coordinateQuantum(b),
+    coordinateQuantum(coordinateScale),
+  );
+
+/**
+ * Seam-parameter agreement. `t` is a distance along a unit ray, so a
+ * world-coordinate representation error bounds |Δt| directly by the single
+ * coordinate quantum of the ray origin (plus the local ray length). No
+ * easting·northing product.
+ */
+export const seamParameterAgreementTol = (
+  tSurface: number,
+  tAnalytic: number,
+  localExtent: number,
+  coordinateScale: number,
+): number =>
+  AGREEMENT_OPS * Math.max(
+    Number.EPSILON * Math.max(1, Math.abs(tSurface), Math.abs(tAnalytic), Math.abs(localExtent)),
+    coordinateQuantum(coordinateScale),
+  );
+
+/**
+ * Elevation agreement from the anchored evaluation error:
+ * `scale = max(1,|zA|,|zB|) + Σ leverage`, with each `leverage` term a
+ * single-axis |gradient|·|world coordinate|. A bare Z-scale misses the plane
+ * fit error; a second world-magnitude factor over-bounds it by orders.
+ */
+export const elevationAgreementTol = (
+  zA: number,
+  zB: number,
+  leverage: readonly number[],
+): number => {
+  let scale = Math.max(1, Math.abs(zA), Math.abs(zB));
+  for (const term of leverage) scale += Math.abs(term);
+  return AGREEMENT_OPS * Number.EPSILON * scale;
 };
 
 /** Plan-only ray/triangle crossing interval as [tEnter, tExit], or null. */
@@ -157,21 +254,6 @@ export type MiterTieResult =
   | { ok: true; t: number; x: number; y: number; z: number; rootCount: number }
   | { ok: false; code: 'CORNER_TARGET_GAP' | 'CORNER_BRANCH_DISCONTINUITY' | 'CORNER_NO_SOLUTION' };
 
-/**
- * Phase 20J Wave C4 — coordinate-aware tie agreement bound.
- *
- * `zeroDelta` itself is never loosened here. Tie quantities evaluated at
- * world (x, y) — plane elevations, the target query, the seam parameter —
- * carry absolute FP noise ~eps * |XY| * |grade|, which `zeroDelta(a, b)`
- * alone under-bounds far from the origin (a true 30-degree-rotated tie
- * misses by ~5e-15 in Z and ~3e-14 in seam-param against ~9e-16/~3e-14
- * bounds while its axis-aligned twin is exact). Scaling by the coordinate
- * magnitude keeps the bound ~1e-13..1e-12 m — still ten orders below
- * survey noise, so genuine disagreements (grid-scale) still fail closed.
- */
-export const tieAgreementTol = (a: number, b: number, x: number, y: number): number =>
-  zeroDelta(a, b) * Math.max(1, Math.abs(x), Math.abs(y));
-
 const planeZ = (plane: CornerGradingPlane, x: number, y: number): number =>
   plane.zAtV + plane.gx * (x - plane.ax) + plane.gy * (y - plane.ay);
 
@@ -193,7 +275,7 @@ export const solveMiterTie = (
   my: number,
   tMax: number,
 ): MiterTieResult => {
-  const roots: number[] = [];
+  const roots: Array<{ t: number; plane: TargetPlane }> = [];
   for (const triIndex of candidates) {
     const interval = rayTriangleInterval(target, triIndex, vx, vy, mx, my);
     if (!interval) continue;
@@ -202,24 +284,28 @@ export const solveMiterTie = (
     if (hi < lo - zeroDelta(hi, lo)) continue;
     const tpl = targetPlaneAt(target, triIndex);
     if (!tpl) continue;
-    // Affine in t: (plane - target) == 0.
-    const p0 = planeZ(plane, vx + mx * lo, vy + my * lo) - (tpl.a * (vx + mx * lo) + tpl.b * (vy + my * lo) + tpl.c);
-    const p1 = planeZ(plane, vx + mx * hi, vy + my * hi) - (tpl.a * (vx + mx * hi) + tpl.b * (vy + my * hi) + tpl.c);
+    // Affine in t: (plane - target) == 0, both anchored at local vertices.
+    const xLo = vx + mx * lo;
+    const yLo = vy + my * lo;
+    const xHi = vx + mx * hi;
+    const yHi = vy + my * hi;
+    const p0 = planeZ(plane, xLo, yLo) - targetPlaneZ(tpl, xLo, yLo);
+    const p1 = planeZ(plane, xHi, yHi) - targetPlaneZ(tpl, xHi, yHi);
     if (Math.abs(p1 - p0) <= zeroDelta(p1, p0)) {
-      if (Math.abs(p0) <= zeroDelta(p0, 0)) roots.push(lo);
+      if (Math.abs(p0) <= zeroDelta(p0, 0)) roots.push({ t: lo, plane: tpl });
       continue;
     }
     if ((p0 > 0) === (p1 > 0)) {
-      if (Math.abs(p0) <= zeroDelta(p0, 0)) roots.push(lo);
+      if (Math.abs(p0) <= zeroDelta(p0, 0)) roots.push({ t: lo, plane: tpl });
       continue;
     }
-    roots.push(lo + (hi - lo) * (p0 / (p0 - p1)));
+    roots.push({ t: lo + (hi - lo) * (p0 / (p0 - p1)), plane: tpl });
   }
-  roots.sort((a, b) => a - b);
-  const distinct: number[] = [];
-  for (const t of roots) {
+  roots.sort((a, b) => a.t - b.t);
+  const distinct: Array<{ t: number; plane: TargetPlane }> = [];
+  for (const root of roots) {
     const prev = distinct[distinct.length - 1];
-    if (prev === undefined || Math.abs(t - prev) > zeroDelta(t, prev)) distinct.push(t);
+    if (prev === undefined || Math.abs(root.t - prev.t) > zeroDelta(root.t, prev.t)) distinct.push(root);
   }
   if (distinct.length === 0) {
     // No root: distinguish target void from genuinely unsolved.
@@ -227,15 +313,21 @@ export const solveMiterTie = (
     if (probes.some((z) => z === null)) return { ok: false, code: 'CORNER_TARGET_GAP' };
     return { ok: false, code: 'CORNER_NO_SOLUTION' };
   }
-  const t = distinct[0]!;
+  const t = distinct[0]!.t;
   const x = vx + mx * t;
   const y = vy + my * t;
   const zt = query.elevationAt(x, y);
   if (zt === null) return { ok: false, code: 'CORNER_TARGET_GAP' };
   const zg = planeZ(plane, x, y);
-  // Agreement bound is coordinate-aware (see tieAgreementTol):
-  // the query and the plane evaluate at (x, y), not at the origin.
-  if (Math.abs(zt - zg) > tieAgreementTol(zt, zg, x, y)) return { ok: false, code: 'CORNER_BRANCH_DISCONTINUITY' };
+  // Quantity-specific elevation agreement (anchor elevation + per-axis
+  // gradient leverage), never the generic world-magnitude double scale.
+  const targetPlane = distinct[0]!.plane;
+  if (Math.abs(zt - zg) > elevationAgreementTol(zt, zg, [
+    ...planeLeverage(plane, x, y),
+    ...planeLeverage(targetPlane, x, y),
+  ])) {
+    return { ok: false, code: 'CORNER_BRANCH_DISCONTINUITY' };
+  }
   return { ok: true, t, x, y, z: zg, rootCount: distinct.length };
 };
 
@@ -295,7 +387,7 @@ export const solveSectorPath = (
     const tpl = targetPlaneAt(target, triIndex);
     if (!tpl) continue;
     for (const vertex of withDelta) {
-      vertex.delta = tpl.a * vertex.u + tpl.b * vertex.d + tpl.c - planeZ(plane, vertex.u, vertex.d);
+      vertex.delta = targetPlaneZ(tpl, vertex.u, vertex.d) - planeZ(plane, vertex.u, vertex.d);
     }
     const locus = extractZeroSegments(withDelta, true);
     for (const s of locus.segments) link(s.u0, s.d0, s.u1, s.d1);

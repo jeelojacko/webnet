@@ -46,3 +46,20 @@ manager table auto/scroll overflow, one Properties palette, one command
 input, no page overflow, viewport > 300 px with a live model. All
 asserted in-run at all three viewports; no clipping or no-op actions
 observed (Calculate/Extract/Bake/patch all mutate and undo cleanly).
+
+## Addendum — 2026-09-30 (Phase 20J merge + Phase 20J.1)
+
+- Original run recorded above at HEAD `71eae6dd`.
+- Final PR #139 head: `74629c40c7b017b2abb664bb7dbc152cc48d1ab1`; merge
+  `ffa89282c8e15e41ab959726b9ab3bc4415422aa` (base
+  `6842723c935ffdbe1461225f0ef97b7ccbceee52`). Final-head CI run 36749390984,
+  merge-push CI run 36750134664.
+- Final-head reruns: 11/11 green, 0 page / 0 console / 0 unhandled errors on
+  the merged head.
+- Phase 20J.1 (persistence + tie-tolerance, branch
+  `fix/phase20j1-hybrid-persistence-tolerance`, baseline `ffa89282`) makes no
+  browser-visible changes in scope; browser regression result: 12/12 green
+  (existing 11 + new Flow F reopen regression), 0 page / 0 console /
+  0 unhandled errors, Playwright 1.60.0 bundled Chromium, 1366-only new flow
+  (verified 2026-09-30 on head `397203c2`; no screenshots changed).
+- Phase 20J.1 correction PR: #140 (head `397203c2`), open, DO NOT MERGE.

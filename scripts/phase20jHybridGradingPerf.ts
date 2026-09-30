@@ -361,7 +361,7 @@ const axisMatrix = (): void => {
   } else {
     console.log('\n> Rotated-twin equivalence: NOT CHECKED (a twin failed to solve).');
   }
-  console.log('> Axis-aligned courses exercise the Wave A parallel-edge ray path; the rotated twin now solves through the same exact-common-tie kernel (Wave C4 tieAgreementTol; zeroDelta untouched).');
+  console.log('> Axis-aligned courses exercise the Wave A parallel-edge ray path; the rotated twin now solves through the same exact-common-tie kernel (20J1 quantity-specific agreement contracts; zeroDelta untouched).');
 };
 
 // ---------------------------------------------------------------------------
