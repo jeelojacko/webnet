@@ -1,0 +1,3360 @@
+{
+  "generated": "phase20i-surface-analytic-corner-study",
+  "rows": [
+    {
+      "id": "exact.primary",
+      "order": "surface-incoming/analytic-outgoing",
+      "criteria": [
+        "{\"kind\":\"fixed\",\"gradeRatio\":-0.5}",
+        "{\"kind\":\"relative-elevation\",\"gradeRatio\":-0.25,\"relativeElevation\":-10}"
+      ],
+      "frames": "T=(1.0000,0.0000) N=(0.0000,-1.0000) gs=0.0000 | T=(0.0000,1.0000) N=(1.0000,0.0000) gs=0.0000",
+      "targetDigest": "c8cd232f775ce905",
+      "expected": "EXACT_COMMON_TIE",
+      "actual": "EXACT_COMMON_TIE",
+      "match": true,
+      "surfaceTie": [
+        40,
+        -20,
+        90
+      ],
+      "analyticTie": [
+        40,
+        -20,
+        90
+      ],
+      "xyGap": 0,
+      "zGap": 0,
+      "rootCount": 1,
+      "extent": 44.721359549995796,
+      "meshValid": true,
+      "turn": "GAP",
+      "digest": "28f54c780f104323"
+    },
+    {
+      "id": "exact.reversed",
+      "order": "analytic-incoming/surface-outgoing",
+      "criteria": [
+        "{\"kind\":\"fixed\",\"gradeRatio\":-0.5}",
+        "{\"kind\":\"relative-elevation\",\"gradeRatio\":-0.25,\"relativeElevation\":-10}"
+      ],
+      "frames": "T=(-1.0000,0.0000) N=(0.0000,1.0000) gs=0.0000 | T=(0.0000,1.0000) N=(1.0000,0.0000) gs=0.0000",
+      "targetDigest": "c8cd232f775ce905",
+      "expected": "EXACT_COMMON_TIE",
+      "actual": "EXACT_COMMON_TIE",
+      "match": true,
+      "surfaceTie": [
+        40,
+        20,
+        90
+      ],
+      "analyticTie": [
+        40,
+        20,
+        90
+      ],
+      "xyGap": 0,
+      "zGap": 0,
+      "rootCount": 1,
+      "extent": 44.721359549995796,
+      "meshValid": true,
+      "turn": "GAP",
+      "digest": "932441f40c27e43e"
+    },
+    {
+      "id": "exact.distance",
+      "order": "surface-incoming/analytic-outgoing",
+      "criteria": [
+        "{\"kind\":\"fixed\",\"gradeRatio\":-0.5}",
+        "{\"kind\":\"distance\",\"gradeRatio\":-0.25,\"distance\":40}"
+      ],
+      "frames": "T=(1.0000,0.0000) N=(0.0000,-1.0000) gs=0.0000 | T=(0.0000,1.0000) N=(1.0000,0.0000) gs=0.0000",
+      "targetDigest": "c8cd232f775ce905",
+      "expected": "EXACT_COMMON_TIE",
+      "actual": "EXACT_COMMON_TIE",
+      "match": true,
+      "surfaceTie": [
+        40,
+        -20,
+        90
+      ],
+      "analyticTie": [
+        40,
+        -20,
+        90
+      ],
+      "xyGap": 0,
+      "zGap": 0,
+      "rootCount": 1,
+      "extent": 44.721359549995796,
+      "meshValid": true,
+      "turn": "GAP",
+      "digest": "0bdd948c49ff589e"
+    },
+    {
+      "id": "exact.elevation",
+      "order": "surface-incoming/analytic-outgoing",
+      "criteria": [
+        "{\"kind\":\"fixed\",\"gradeRatio\":-0.5}",
+        "{\"kind\":\"elevation\",\"gradeRatio\":-0.25,\"targetElevation\":90}"
+      ],
+      "frames": "T=(1.0000,0.0000) N=(0.0000,-1.0000) gs=0.0000 | T=(0.0000,1.0000) N=(1.0000,0.0000) gs=0.0000",
+      "targetDigest": "c8cd232f775ce905",
+      "expected": "EXACT_COMMON_TIE",
+      "actual": "EXACT_COMMON_TIE",
+      "match": true,
+      "surfaceTie": [
+        40,
+        -20,
+        90
+      ],
+      "analyticTie": [
+        40,
+        -20,
+        90
+      ],
+      "xyGap": 0,
+      "zGap": 0,
+      "rootCount": 1,
+      "extent": 44.721359549995796,
+      "meshValid": true,
+      "turn": "GAP",
+      "digest": "424d63dcbdee2221"
+    },
+    {
+      "id": "exact.mirror-up",
+      "order": "surface-incoming/analytic-outgoing",
+      "criteria": [
+        "{\"kind\":\"fixed\",\"gradeRatio\":0.5}",
+        "{\"kind\":\"relative-elevation\",\"gradeRatio\":0.25,\"relativeElevation\":10}"
+      ],
+      "frames": "T=(1.0000,0.0000) N=(0.0000,-1.0000) gs=0.0000 | T=(0.0000,1.0000) N=(1.0000,0.0000) gs=0.0000",
+      "targetDigest": "5e6ecdaf94a4acac",
+      "expected": "EXACT_COMMON_TIE",
+      "actual": "EXACT_COMMON_TIE",
+      "match": true,
+      "surfaceTie": [
+        40,
+        -20,
+        110
+      ],
+      "analyticTie": [
+        40,
+        -20,
+        110
+      ],
+      "xyGap": 0,
+      "zGap": 0,
+      "rootCount": 1,
+      "extent": 44.721359549995796,
+      "meshValid": true,
+      "turn": "GAP",
+      "digest": "842cfca83cbb1956"
+    },
+    {
+      "id": "mismatch.target-92",
+      "order": "surface-incoming/analytic-outgoing",
+      "criteria": [
+        "{\"kind\":\"fixed\",\"gradeRatio\":-0.5}",
+        "{\"kind\":\"relative-elevation\",\"gradeRatio\":-0.25,\"relativeElevation\":-10}"
+      ],
+      "frames": "T=(1.0000,0.0000) N=(0.0000,-1.0000) gs=0.0000 | T=(0.0000,1.0000) N=(1.0000,0.0000) gs=0.0000",
+      "targetDigest": "c1ce0a7a3c0a8acb",
+      "expected": "TRANSITION_REQUIRED",
+      "actual": "TRANSITION_REQUIRED",
+      "match": true,
+      "surfaceTie": [
+        32,
+        -16,
+        92
+      ],
+      "analyticTie": [
+        40,
+        -20,
+        90
+      ],
+      "xyGap": 8.94427190999916,
+      "zGap": 2,
+      "rootCount": 1,
+      "extent": 44.721359549995796,
+      "meshValid": null,
+      "turn": "GAP",
+      "detail": "tie-disagree",
+      "digest": "58c908bc5b74a308"
+    },
+    {
+      "id": "mismatch.analytic-d12",
+      "order": "surface-incoming/analytic-outgoing",
+      "criteria": [
+        "{\"kind\":\"fixed\",\"gradeRatio\":-0.5}",
+        "{\"kind\":\"relative-elevation\",\"gradeRatio\":-0.25,\"relativeElevation\":-12}"
+      ],
+      "frames": "T=(1.0000,0.0000) N=(0.0000,-1.0000) gs=0.0000 | T=(0.0000,1.0000) N=(1.0000,0.0000) gs=0.0000",
+      "targetDigest": "c8cd232f775ce905",
+      "expected": "TRANSITION_REQUIRED",
+      "actual": "TRANSITION_REQUIRED",
+      "match": true,
+      "surfaceTie": [
+        40,
+        -20,
+        90
+      ],
+      "analyticTie": [
+        48,
+        -24,
+        88
+      ],
+      "xyGap": 8.94427190999916,
+      "zGap": 2,
+      "rootCount": 1,
+      "extent": 53.665631459994955,
+      "meshValid": null,
+      "turn": "GAP",
+      "detail": "tie-disagree",
+      "digest": "961361f4630ed61a"
+    },
+    {
+      "id": "mismatch.target-92-reversed",
+      "order": "analytic-incoming/surface-outgoing",
+      "criteria": [
+        "{\"kind\":\"fixed\",\"gradeRatio\":-0.5}",
+        "{\"kind\":\"relative-elevation\",\"gradeRatio\":-0.25,\"relativeElevation\":-10}"
+      ],
+      "frames": "T=(-1.0000,0.0000) N=(0.0000,1.0000) gs=0.0000 | T=(0.0000,1.0000) N=(1.0000,0.0000) gs=0.0000",
+      "targetDigest": "c1ce0a7a3c0a8acb",
+      "expected": "TRANSITION_REQUIRED",
+      "actual": "TRANSITION_REQUIRED",
+      "match": true,
+      "surfaceTie": [
+        32,
+        16,
+        92
+      ],
+      "analyticTie": [
+        40,
+        20,
+        90
+      ],
+      "xyGap": 8.94427190999916,
+      "zGap": 2,
+      "rootCount": 1,
+      "extent": 44.721359549995796,
+      "meshValid": null,
+      "turn": "GAP",
+      "detail": "tie-disagree",
+      "digest": "07da33acafebda40"
+    },
+    {
+      "id": "fail.joint-z-analytic-off",
+      "order": "surface-incoming/analytic-outgoing",
+      "criteria": [
+        "{\"kind\":\"fixed\",\"gradeRatio\":-0.5}",
+        "{\"kind\":\"relative-elevation\",\"gradeRatio\":-0.25,\"relativeElevation\":-10}"
+      ],
+      "frames": "T=(1.0000,0.0000) N=(0.0000,-1.0000) gs=0.0000 | T=(0.0000,1.0000) N=(1.0000,0.0000) gs=0.0000",
+      "targetDigest": "c8cd232f775ce905",
+      "expected": "SOURCE_JOINT_MISMATCH",
+      "actual": "SOURCE_JOINT_MISMATCH",
+      "match": true,
+      "surfaceTie": null,
+      "analyticTie": null,
+      "xyGap": null,
+      "zGap": null,
+      "rootCount": 0,
+      "extent": null,
+      "meshValid": null,
+      "turn": null,
+      "detail": "joint-z-mismatch",
+      "digest": "7a7e8645fd135bd9"
+    },
+    {
+      "id": "fail.joint-z-analytic-off-reversed",
+      "order": "analytic-incoming/surface-outgoing",
+      "criteria": [
+        "{\"kind\":\"fixed\",\"gradeRatio\":-0.5}",
+        "{\"kind\":\"relative-elevation\",\"gradeRatio\":-0.25,\"relativeElevation\":-10}"
+      ],
+      "frames": "T=(-1.0000,0.0000) N=(0.0000,1.0000) gs=0.0000 | T=(0.0000,1.0000) N=(1.0000,0.0000) gs=0.0000",
+      "targetDigest": "c8cd232f775ce905",
+      "expected": "SOURCE_JOINT_MISMATCH",
+      "actual": "SOURCE_JOINT_MISMATCH",
+      "match": true,
+      "surfaceTie": null,
+      "analyticTie": null,
+      "xyGap": null,
+      "zGap": null,
+      "rootCount": 0,
+      "extent": null,
+      "meshValid": null,
+      "turn": null,
+      "detail": "joint-z-mismatch",
+      "digest": "39044c72192b3dde"
+    },
+    {
+      "id": "exact.cut",
+      "order": "surface-incoming/analytic-outgoing",
+      "criteria": [
+        "{\"kind\":\"cut-fill\",\"cutGradeRatio\":0.5,\"fillGradeRatio\":0.25}",
+        "{\"kind\":\"relative-elevation\",\"gradeRatio\":0.25,\"relativeElevation\":10}"
+      ],
+      "frames": "T=(1.0000,0.0000) N=(0.0000,-1.0000) gs=0.0000 | T=(0.0000,1.0000) N=(1.0000,0.0000) gs=0.0000",
+      "targetDigest": "5e6ecdaf94a4acac",
+      "expected": "EXACT_COMMON_TIE",
+      "actual": "EXACT_COMMON_TIE",
+      "match": true,
+      "surfaceTie": [
+        40,
+        -20,
+        110
+      ],
+      "analyticTie": [
+        40,
+        -20,
+        110
+      ],
+      "xyGap": 0,
+      "zGap": 0,
+      "rootCount": 1,
+      "extent": 44.721359549995796,
+      "meshValid": true,
+      "turn": "GAP",
+      "digest": "fbef9e473fa36c65"
+    },
+    {
+      "id": "exact.fill",
+      "order": "surface-incoming/analytic-outgoing",
+      "criteria": [
+        "{\"kind\":\"cut-fill\",\"cutGradeRatio\":-0.25,\"fillGradeRatio\":-0.5}",
+        "{\"kind\":\"relative-elevation\",\"gradeRatio\":-0.25,\"relativeElevation\":-10}"
+      ],
+      "frames": "T=(1.0000,0.0000) N=(0.0000,-1.0000) gs=0.0000 | T=(0.0000,1.0000) N=(1.0000,0.0000) gs=0.0000",
+      "targetDigest": "c8cd232f775ce905",
+      "expected": "EXACT_COMMON_TIE",
+      "actual": "EXACT_COMMON_TIE",
+      "match": true,
+      "surfaceTie": [
+        40,
+        -20,
+        90
+      ],
+      "analyticTie": [
+        40,
+        -20,
+        90
+      ],
+      "xyGap": 0,
+      "zGap": 0,
+      "rootCount": 1,
+      "extent": 44.721359549995796,
+      "meshValid": true,
+      "turn": "GAP",
+      "digest": "a554a78a6330e65d"
+    },
+    {
+      "id": "fail.gap-at-V",
+      "order": "surface-incoming/analytic-outgoing",
+      "criteria": [
+        "{\"kind\":\"fixed\",\"gradeRatio\":-0.5}",
+        "{\"kind\":\"relative-elevation\",\"gradeRatio\":-0.25,\"relativeElevation\":-10}"
+      ],
+      "frames": "T=(1.0000,0.0000) N=(0.0000,-1.0000) gs=0.0000 | T=(0.0000,1.0000) N=(1.0000,0.0000) gs=0.0000",
+      "targetDigest": "73d5de9ccd25f24d",
+      "expected": "SURFACE_TARGET_GAP",
+      "actual": "SURFACE_TARGET_GAP",
+      "match": true,
+      "surfaceTie": null,
+      "analyticTie": null,
+      "xyGap": null,
+      "zGap": null,
+      "rootCount": 0,
+      "extent": null,
+      "meshValid": null,
+      "turn": "GAP",
+      "detail": "gap-at-V",
+      "digest": "b3d622ed2ec8cdae"
+    },
+    {
+      "id": "record.tied-at-V",
+      "order": "surface-incoming/analytic-outgoing",
+      "criteria": [
+        "{\"kind\":\"fixed\",\"gradeRatio\":-0.5}",
+        "{\"kind\":\"relative-elevation\",\"gradeRatio\":-0.25,\"relativeElevation\":-10}"
+      ],
+      "frames": "T=(1.0000,0.0000) N=(0.0000,-1.0000) gs=0.0000 | T=(0.0000,1.0000) N=(1.0000,0.0000) gs=0.0000",
+      "targetDigest": "e20b3662698b83e6",
+      "expected": "TRANSITION_REQUIRED",
+      "actual": "TRANSITION_REQUIRED",
+      "match": true,
+      "surfaceTie": [
+        0,
+        0,
+        100
+      ],
+      "analyticTie": [
+        40,
+        -20,
+        90
+      ],
+      "xyGap": 44.721359549995796,
+      "zGap": 10,
+      "rootCount": 1,
+      "extent": 44.721359549995796,
+      "meshValid": null,
+      "turn": "GAP",
+      "detail": "tie-disagree",
+      "digest": "1e96d3fdc9715369"
+    },
+    {
+      "id": "exact.target-alt-triangulation",
+      "order": "surface-incoming/analytic-outgoing",
+      "criteria": [
+        "{\"kind\":\"fixed\",\"gradeRatio\":-0.5}",
+        "{\"kind\":\"relative-elevation\",\"gradeRatio\":-0.25,\"relativeElevation\":-10}"
+      ],
+      "frames": "T=(1.0000,0.0000) N=(0.0000,-1.0000) gs=0.0000 | T=(0.0000,1.0000) N=(1.0000,0.0000) gs=0.0000",
+      "targetDigest": "371d4310b2da1b05",
+      "expected": "EXACT_COMMON_TIE",
+      "actual": "EXACT_COMMON_TIE",
+      "match": true,
+      "surfaceTie": [
+        40,
+        -20,
+        90
+      ],
+      "analyticTie": [
+        40,
+        -20,
+        90
+      ],
+      "xyGap": 0,
+      "zGap": 0,
+      "rootCount": 1,
+      "extent": 44.721359549995796,
+      "meshValid": true,
+      "turn": "GAP",
+      "digest": "4b8278aab7f67bae"
+    },
+    {
+      "id": "exact.sloped-target",
+      "order": "surface-incoming/analytic-outgoing",
+      "criteria": [
+        "{\"kind\":\"fixed\",\"gradeRatio\":-0.5}",
+        "{\"kind\":\"relative-elevation\",\"gradeRatio\":-0.25,\"relativeElevation\":-10}"
+      ],
+      "frames": "T=(1.0000,0.0000) N=(0.0000,-1.0000) gs=0.0000 | T=(0.0000,1.0000) N=(1.0000,0.0000) gs=0.0000",
+      "targetDigest": "51ddc6eb59ec14a0",
+      "expected": "EXACT_COMMON_TIE",
+      "actual": "EXACT_COMMON_TIE",
+      "match": true,
+      "surfaceTie": [
+        40.00000000000002,
+        -20.00000000000001,
+        90
+      ],
+      "analyticTie": [
+        40,
+        -20,
+        90
+      ],
+      "xyGap": 2.3832327871173822e-14,
+      "zGap": 0,
+      "rootCount": 1,
+      "extent": 44.721359549995796,
+      "meshValid": true,
+      "turn": "GAP",
+      "digest": "16709acf8d9eae3b"
+    },
+    {
+      "id": "exact.sloped-target-alt",
+      "order": "surface-incoming/analytic-outgoing",
+      "criteria": [
+        "{\"kind\":\"fixed\",\"gradeRatio\":-0.5}",
+        "{\"kind\":\"relative-elevation\",\"gradeRatio\":-0.25,\"relativeElevation\":-10}"
+      ],
+      "frames": "T=(1.0000,0.0000) N=(0.0000,-1.0000) gs=0.0000 | T=(0.0000,1.0000) N=(1.0000,0.0000) gs=0.0000",
+      "targetDigest": "116acd9dff74f0ae",
+      "expected": "EXACT_COMMON_TIE",
+      "actual": "EXACT_COMMON_TIE",
+      "match": true,
+      "surfaceTie": [
+        40.00000000000003,
+        -20.000000000000014,
+        90
+      ],
+      "analyticTie": [
+        40,
+        -20,
+        90
+      ],
+      "xyGap": 3.1776437161565096e-14,
+      "zGap": 0,
+      "rootCount": 1,
+      "extent": 44.721359549995796,
+      "meshValid": true,
+      "turn": "GAP",
+      "digest": "8ae3ee541d0d2a0f"
+    },
+    {
+      "id": "exact.sloped-source",
+      "order": "surface-incoming/analytic-outgoing",
+      "criteria": [
+        "{\"kind\":\"fixed\",\"gradeRatio\":-0.5}",
+        "{\"kind\":\"relative-elevation\",\"gradeRatio\":-0.25,\"relativeElevation\":-10}"
+      ],
+      "frames": "T=(1.0000,0.0000) N=(0.0000,-1.0000) gs=0.1000 | T=(0.0000,1.0000) N=(1.0000,0.0000) gs=0.0000",
+      "targetDigest": "c8cd232f775ce905",
+      "expected": "EXACT_COMMON_TIE",
+      "actual": "EXACT_COMMON_TIE",
+      "match": true,
+      "surfaceTie": [
+        40.00000000000001,
+        -28.000000000000004,
+        90
+      ],
+      "analyticTie": [
+        40,
+        -27.999999999999996,
+        90
+      ],
+      "xyGap": 1.0048591735576161e-14,
+      "zGap": 0,
+      "rootCount": 1,
+      "extent": 48.82622246293481,
+      "meshValid": true,
+      "turn": "GAP",
+      "digest": "917918acee72e63e"
+    },
+    {
+      "id": "mismatch.sloped-source-z",
+      "order": "surface-incoming/analytic-outgoing",
+      "criteria": [
+        "{\"kind\":\"fixed\",\"gradeRatio\":-0.5}",
+        "{\"kind\":\"relative-elevation\",\"gradeRatio\":-0.25,\"relativeElevation\":-10}"
+      ],
+      "frames": "T=(1.0000,0.0000) N=(0.0000,-1.0000) gs=0.1000 | T=(0.0000,1.0000) N=(1.0000,0.0000) gs=0.0000",
+      "targetDigest": "c1ce0a7a3c0a8acb",
+      "expected": "TRANSITION_REQUIRED",
+      "actual": "TRANSITION_REQUIRED",
+      "match": true,
+      "surfaceTie": [
+        32,
+        -22.4,
+        92
+      ],
+      "analyticTie": [
+        40,
+        -27.999999999999996,
+        90
+      ],
+      "xyGap": 9.76524449258696,
+      "zGap": 2,
+      "rootCount": 1,
+      "extent": 48.82622246293481,
+      "meshValid": null,
+      "turn": "GAP",
+      "detail": "tie-disagree",
+      "digest": "6b1b7bfb50bceebf"
+    },
+    {
+      "id": "exact.arc-ladder-coarse",
+      "order": "surface-incoming/analytic-outgoing",
+      "criteria": [
+        "{\"kind\":\"fixed\",\"gradeRatio\":-0.5}",
+        "{\"kind\":\"relative-elevation\",\"gradeRatio\":-0.25,\"relativeElevation\":-10}"
+      ],
+      "frames": "T=(1.0000,-0.0000) N=(-0.0000,-1.0000) gs=0.0000 | T=(0.0000,1.0000) N=(1.0000,0.0000) gs=0.0000",
+      "targetDigest": "c8cd232f775ce905",
+      "expected": "EXACT_COMMON_TIE",
+      "actual": "EXACT_COMMON_TIE",
+      "match": true,
+      "surfaceTie": [
+        40,
+        -20.000000000000007,
+        90
+      ],
+      "analyticTie": [
+        40,
+        -20.000000000000007,
+        90
+      ],
+      "xyGap": 0,
+      "zGap": 0,
+      "rootCount": 1,
+      "extent": 44.721359549995796,
+      "meshValid": true,
+      "turn": "GAP",
+      "digest": "d8f8b10185eef450"
+    },
+    {
+      "id": "exact.arc-ladder-medium",
+      "order": "surface-incoming/analytic-outgoing",
+      "criteria": [
+        "{\"kind\":\"fixed\",\"gradeRatio\":-0.5}",
+        "{\"kind\":\"relative-elevation\",\"gradeRatio\":-0.25,\"relativeElevation\":-10}"
+      ],
+      "frames": "T=(0.9740,0.2265) N=(0.2265,-0.9740) gs=0.0000 | T=(0.0000,1.0000) N=(1.0000,0.0000) gs=0.0000",
+      "targetDigest": "c8cd232f775ce905",
+      "expected": "EXACT_COMMON_TIE",
+      "actual": "EXACT_COMMON_TIE",
+      "match": true,
+      "surfaceTie": [
+        40.00000000000001,
+        -11.230531735625746,
+        90
+      ],
+      "analyticTie": [
+        40,
+        -11.230531735625744,
+        90
+      ],
+      "xyGap": 7.32410687763558e-15,
+      "zGap": 0,
+      "rootCount": 1,
+      "extent": 41.546658626956955,
+      "meshValid": true,
+      "turn": "GAP",
+      "digest": "7a663d447a10b59f"
+    },
+    {
+      "id": "exact.arc-ladder-fine",
+      "order": "surface-incoming/analytic-outgoing",
+      "criteria": [
+        "{\"kind\":\"fixed\",\"gradeRatio\":-0.5}",
+        "{\"kind\":\"relative-elevation\",\"gradeRatio\":-0.25,\"relativeElevation\":-10}"
+      ],
+      "frames": "T=(0.9595,0.2818) N=(0.2818,-0.9595) gs=0.0000 | T=(0.0000,1.0000) N=(1.0000,0.0000) gs=0.0000",
+      "targetDigest": "c8cd232f775ce905",
+      "expected": "EXACT_COMMON_TIE",
+      "actual": "EXACT_COMMON_TIE",
+      "match": true,
+      "surfaceTie": [
+        40,
+        -9.09741503818178,
+        90
+      ],
+      "analyticTie": [
+        40,
+        -9.09741503818178,
+        90
+      ],
+      "xyGap": 0,
+      "zGap": 0,
+      "rootCount": 1,
+      "extent": 41.02149388280412,
+      "meshValid": true,
+      "turn": "GAP",
+      "digest": "a6464d881616dbea"
+    },
+    {
+      "id": "exact.arc-ladder-reverse-coarse",
+      "order": "analytic-incoming-arc/surface-outgoing",
+      "criteria": [
+        "{\"kind\":\"fixed\",\"gradeRatio\":-0.5}",
+        "{\"kind\":\"relative-elevation\",\"gradeRatio\":-0.25,\"relativeElevation\":-10}"
+      ],
+      "frames": "T=(-1.0000,0.0000) N=(0.0000,1.0000) gs=0.0000 | T=(0.0000,1.0000) N=(1.0000,0.0000) gs=0.0000",
+      "targetDigest": "c8cd232f775ce905",
+      "expected": "EXACT_COMMON_TIE",
+      "actual": "EXACT_COMMON_TIE",
+      "match": true,
+      "surfaceTie": [
+        40,
+        20,
+        90
+      ],
+      "analyticTie": [
+        40,
+        20,
+        90
+      ],
+      "xyGap": 0,
+      "zGap": 0,
+      "rootCount": 1,
+      "extent": 44.721359549995796,
+      "meshValid": null,
+      "turn": "GAP",
+      "digest": "d01b643e893ff82e"
+    },
+    {
+      "id": "exact.arc-ladder-reverse-medium",
+      "order": "analytic-incoming-arc/surface-outgoing",
+      "criteria": [
+        "{\"kind\":\"fixed\",\"gradeRatio\":-0.5}",
+        "{\"kind\":\"relative-elevation\",\"gradeRatio\":-0.25,\"relativeElevation\":-10}"
+      ],
+      "frames": "T=(-1.0000,0.0000) N=(0.0000,1.0000) gs=0.0000 | T=(-0.2265,0.9740) N=(0.9740,0.2265) gs=0.0000",
+      "targetDigest": "c8cd232f775ce905",
+      "expected": "EXACT_COMMON_TIE",
+      "actual": "EXACT_COMMON_TIE",
+      "match": true,
+      "surfaceTie": [
+        36.41599707635226,
+        20,
+        90
+      ],
+      "analyticTie": [
+        36.41599707635226,
+        20,
+        90
+      ],
+      "xyGap": 0,
+      "zGap": 0,
+      "rootCount": 1,
+      "extent": 41.546658626956955,
+      "meshValid": null,
+      "turn": "GAP",
+      "digest": "ba3a34802dd42b55"
+    },
+    {
+      "id": "exact.arc-ladder-reverse-fine",
+      "order": "analytic-incoming-arc/surface-outgoing",
+      "criteria": [
+        "{\"kind\":\"fixed\",\"gradeRatio\":-0.5}",
+        "{\"kind\":\"relative-elevation\",\"gradeRatio\":-0.25,\"relativeElevation\":-10}"
+      ],
+      "frames": "T=(-1.0000,0.0000) N=(0.0000,1.0000) gs=0.0000 | T=(-0.2818,0.9595) N=(0.9595,0.2818) gs=0.0000",
+      "targetDigest": "c8cd232f775ce905",
+      "expected": "EXACT_COMMON_TIE",
+      "actual": "EXACT_COMMON_TIE",
+      "match": true,
+      "surfaceTie": [
+        35.815680370152634,
+        20,
+        90
+      ],
+      "analyticTie": [
+        35.81568037015262,
+        19.999999999999993,
+        90
+      ],
+      "xyGap": 1.5888218580782548e-14,
+      "zGap": 0,
+      "rootCount": 1,
+      "extent": 41.021493882804116,
+      "meshValid": null,
+      "turn": "GAP",
+      "digest": "63d8afde83299d59"
+    },
+    {
+      "id": "record.two-roots-conflict",
+      "order": "surface-incoming/analytic-outgoing",
+      "criteria": [
+        "{\"kind\":\"fixed\",\"gradeRatio\":-0.5}",
+        "{\"kind\":\"relative-elevation\",\"gradeRatio\":-0.25,\"relativeElevation\":-10}"
+      ],
+      "frames": "T=(1.0000,0.0000) N=(0.0000,-1.0000) gs=0.0000 | T=(0.0000,1.0000) N=(1.0000,0.0000) gs=0.0000",
+      "targetDigest": "cb5b7e25d48c05d4",
+      "expected": "ROOT_POLICY_CONFLICT",
+      "actual": "ROOT_POLICY_CONFLICT",
+      "match": true,
+      "surfaceTie": [
+        0,
+        0,
+        100
+      ],
+      "analyticTie": [
+        40,
+        -20,
+        90
+      ],
+      "xyGap": 44.721359549995796,
+      "zGap": 10,
+      "rootCount": 3,
+      "extent": 44.721359549995796,
+      "meshValid": null,
+      "turn": "GAP",
+      "detail": "analytic-matches-later-root",
+      "digest": "5c5453fa6a5301c3"
+    },
+    {
+      "id": "record.one-root",
+      "order": "surface-incoming/analytic-outgoing",
+      "criteria": [
+        "{\"kind\":\"fixed\",\"gradeRatio\":-0.5}",
+        "{\"kind\":\"relative-elevation\",\"gradeRatio\":-0.25,\"relativeElevation\":-10}"
+      ],
+      "frames": "T=(1.0000,0.0000) N=(0.0000,-1.0000) gs=0.0000 | T=(0.0000,1.0000) N=(1.0000,0.0000) gs=0.0000",
+      "targetDigest": "f6d2cb2c09a3e44f",
+      "expected": "EXACT_COMMON_TIE",
+      "actual": "EXACT_COMMON_TIE",
+      "match": true,
+      "surfaceTie": [
+        39.99999999999999,
+        -19.999999999999996,
+        90
+      ],
+      "analyticTie": [
+        40,
+        -20,
+        90
+      ],
+      "xyGap": 7.944109290391274e-15,
+      "zGap": 0,
+      "rootCount": 1,
+      "extent": 44.721359549995796,
+      "meshValid": null,
+      "turn": "GAP",
+      "digest": "8026a488faeebc20"
+    },
+    {
+      "id": "fail.no-root",
+      "order": "surface-incoming/analytic-outgoing",
+      "criteria": [
+        "{\"kind\":\"fixed\",\"gradeRatio\":-0.5}",
+        "{\"kind\":\"relative-elevation\",\"gradeRatio\":-0.25,\"relativeElevation\":-10}"
+      ],
+      "frames": "T=(1.0000,0.0000) N=(0.0000,-1.0000) gs=0.0000 | T=(0.0000,1.0000) N=(1.0000,0.0000) gs=0.0000",
+      "targetDigest": "d7e654e7823c2d49",
+      "expected": "SURFACE_NO_ROOT",
+      "actual": "SURFACE_NO_ROOT",
+      "match": true,
+      "surfaceTie": null,
+      "analyticTie": null,
+      "xyGap": null,
+      "zGap": null,
+      "rootCount": 0,
+      "extent": null,
+      "meshValid": null,
+      "turn": "GAP",
+      "digest": "ff9f4027b1d486b9"
+    },
+    {
+      "id": "fail.degenerate-triangle",
+      "order": "surface-incoming/analytic-outgoing",
+      "criteria": [
+        "{\"kind\":\"fixed\",\"gradeRatio\":-0.5}",
+        "{\"kind\":\"relative-elevation\",\"gradeRatio\":-0.25,\"relativeElevation\":-10}"
+      ],
+      "frames": "T=(1.0000,0.0000) N=(0.0000,-1.0000) gs=0.0000 | T=(0.0000,1.0000) N=(1.0000,0.0000) gs=0.0000",
+      "targetDigest": "e8aa37b8ec6de715",
+      "expected": "SURFACE_TARGET_GAP",
+      "actual": "SURFACE_TARGET_GAP",
+      "match": true,
+      "surfaceTie": null,
+      "analyticTie": null,
+      "xyGap": null,
+      "zGap": null,
+      "rootCount": 0,
+      "extent": null,
+      "meshValid": null,
+      "turn": "GAP",
+      "detail": "gap-at-V",
+      "digest": "68a89b636d2e471f"
+    },
+    {
+      "id": "fail.non-finite-grade",
+      "order": "surface-incoming/analytic-outgoing",
+      "criteria": [
+        "{\"kind\":\"fixed\",\"gradeRatio\":null}",
+        "{\"kind\":\"relative-elevation\",\"gradeRatio\":-0.25,\"relativeElevation\":-10}"
+      ],
+      "frames": "T=(1.0000,0.0000) N=(0.0000,-1.0000) gs=0.0000 | T=(0.0000,1.0000) N=(1.0000,0.0000) gs=0.0000",
+      "targetDigest": "c8cd232f775ce905",
+      "expected": "NON_FINITE_INPUT",
+      "actual": "NON_FINITE_INPUT",
+      "match": true,
+      "surfaceTie": null,
+      "analyticTie": null,
+      "xyGap": null,
+      "zGap": null,
+      "rootCount": 0,
+      "extent": null,
+      "meshValid": null,
+      "turn": "GAP",
+      "detail": "non-finite-grade",
+      "digest": "017e9590ce105931"
+    },
+    {
+      "id": "fail.non-finite-target",
+      "order": "surface-incoming/analytic-outgoing",
+      "criteria": [
+        "{\"kind\":\"fixed\",\"gradeRatio\":-0.5}",
+        "{\"kind\":\"relative-elevation\",\"gradeRatio\":-0.25,\"relativeElevation\":-10}"
+      ],
+      "frames": "T=(1.0000,0.0000) N=(0.0000,-1.0000) gs=0.0000 | T=(0.0000,1.0000) N=(1.0000,0.0000) gs=0.0000",
+      "targetDigest": "0bd5df20f0f03fb8",
+      "expected": "NON_FINITE_INPUT",
+      "actual": "NON_FINITE_INPUT",
+      "match": true,
+      "surfaceTie": null,
+      "analyticTie": null,
+      "xyGap": null,
+      "zGap": null,
+      "rootCount": 0,
+      "extent": null,
+      "meshValid": null,
+      "turn": null,
+      "detail": "non-finite-target",
+      "digest": "ea27d37324f3aa24"
+    },
+    {
+      "id": "fail.zero-length",
+      "order": "surface-incoming/analytic-outgoing",
+      "criteria": [
+        "{\"kind\":\"fixed\",\"gradeRatio\":-0.5}",
+        "{\"kind\":\"relative-elevation\",\"gradeRatio\":-0.25,\"relativeElevation\":-10}"
+      ],
+      "frames": "T=(NaN,NaN) N=(undefined,undefined) gs=NaN | T=(0.0000,1.0000) N=(1.0000,0.0000) gs=0.0000",
+      "targetDigest": "c8cd232f775ce905",
+      "expected": "PLANE_DEGENERATE",
+      "actual": "PLANE_DEGENERATE",
+      "match": true,
+      "surfaceTie": null,
+      "analyticTie": null,
+      "xyGap": null,
+      "zGap": null,
+      "rootCount": 0,
+      "extent": null,
+      "meshValid": null,
+      "turn": null,
+      "detail": "degenerate-member",
+      "digest": "d58a8eb5a9f40c93"
+    },
+    {
+      "id": "record.collinear",
+      "order": "surface-incoming/analytic-outgoing",
+      "criteria": [
+        "{\"kind\":\"fixed\",\"gradeRatio\":-0.5}",
+        "{\"kind\":\"relative-elevation\",\"gradeRatio\":-0.25,\"relativeElevation\":-10}"
+      ],
+      "frames": "T=(1.0000,0.0000) N=(0.0000,-1.0000) gs=0.0000 | T=(1.0000,0.0000) N=(0.0000,-1.0000) gs=0.0000",
+      "targetDigest": "c8cd232f775ce905",
+      "expected": "SIDE_REJECT",
+      "actual": "SIDE_REJECT",
+      "match": true,
+      "surfaceTie": null,
+      "analyticTie": null,
+      "xyGap": null,
+      "zGap": null,
+      "rootCount": 0,
+      "extent": null,
+      "meshValid": null,
+      "turn": "TANGENT",
+      "detail": "ambiguous-ray",
+      "digest": "0820a0eed97e8673"
+    },
+    {
+      "id": "fail.coincident",
+      "order": "surface-incoming/analytic-outgoing",
+      "criteria": [
+        "{\"kind\":\"fixed\",\"gradeRatio\":-0.5}",
+        "{\"kind\":\"distance\",\"gradeRatio\":-0.5,\"distance\":20}"
+      ],
+      "frames": "T=(1.0000,0.0000) N=(0.0000,-1.0000) gs=0.0000 | T=(1.0000,0.0000) N=(0.0000,-1.0000) gs=0.0000",
+      "targetDigest": "c8cd232f775ce905",
+      "expected": "PLANE_DEGENERATE",
+      "actual": "PLANE_DEGENERATE",
+      "match": true,
+      "surfaceTie": null,
+      "analyticTie": null,
+      "xyGap": null,
+      "zGap": null,
+      "rootCount": 0,
+      "extent": null,
+      "meshValid": null,
+      "turn": "TANGENT",
+      "detail": "coincident-planes",
+      "digest": "45f8fa111f78de26"
+    },
+    {
+      "id": "fail.uturn-side",
+      "order": "surface-incoming/analytic-outgoing",
+      "criteria": [
+        "{\"kind\":\"fixed\",\"gradeRatio\":-0.5}",
+        "{\"kind\":\"relative-elevation\",\"gradeRatio\":-0.25,\"relativeElevation\":-10}"
+      ],
+      "frames": "T=(1.0000,0.0000) N=(0.0000,-1.0000) gs=0.0000 | T=(-1.0000,0.0000) N=(0.0000,1.0000) gs=0.0000",
+      "targetDigest": "c8cd232f775ce905",
+      "expected": "SIDE_REJECT",
+      "actual": "SIDE_REJECT",
+      "match": true,
+      "surfaceTie": null,
+      "analyticTie": null,
+      "xyGap": null,
+      "zGap": null,
+      "rootCount": 0,
+      "extent": null,
+      "meshValid": null,
+      "turn": "TANGENT",
+      "detail": "ambiguous-ray",
+      "digest": "e75aba3dfe0ccf0a"
+    },
+    {
+      "id": "fail.max-extent",
+      "order": "surface-incoming/analytic-outgoing",
+      "criteria": [
+        "{\"kind\":\"fixed\",\"gradeRatio\":-0.5}",
+        "{\"kind\":\"relative-elevation\",\"gradeRatio\":-0.25,\"relativeElevation\":-10}"
+      ],
+      "frames": "T=(1.0000,0.0000) N=(0.0000,-1.0000) gs=0.0000 | T=(0.0000,1.0000) N=(1.0000,0.0000) gs=0.0000",
+      "targetDigest": "f67643ec3a2d3a3d",
+      "expected": "MAX_EXTENT_REJECT",
+      "actual": "MAX_EXTENT_REJECT",
+      "match": true,
+      "surfaceTie": [
+        5.800000000000012,
+        -2.900000000000006,
+        98.55
+      ],
+      "analyticTie": [
+        40,
+        -20,
+        90
+      ],
+      "xyGap": null,
+      "zGap": null,
+      "rootCount": 1,
+      "extent": 44.721359549995796,
+      "meshValid": null,
+      "turn": "GAP",
+      "detail": "extent=44.721359549995796",
+      "digest": "7ec99eb5610aed20"
+    },
+    {
+      "id": "fail.max-extent-reversed",
+      "order": "analytic-incoming/surface-outgoing",
+      "criteria": [
+        "{\"kind\":\"fixed\",\"gradeRatio\":-0.5}",
+        "{\"kind\":\"relative-elevation\",\"gradeRatio\":-0.25,\"relativeElevation\":-10}"
+      ],
+      "frames": "T=(-1.0000,0.0000) N=(0.0000,1.0000) gs=0.0000 | T=(0.0000,1.0000) N=(1.0000,0.0000) gs=0.0000",
+      "targetDigest": "0aa82614e45ae2cd",
+      "expected": "MAX_EXTENT_REJECT",
+      "actual": "MAX_EXTENT_REJECT",
+      "match": true,
+      "surfaceTie": [
+        5.800000000000012,
+        2.900000000000006,
+        98.55
+      ],
+      "analyticTie": [
+        40,
+        20,
+        90
+      ],
+      "xyGap": null,
+      "zGap": null,
+      "rootCount": 1,
+      "extent": 44.721359549995796,
+      "meshValid": null,
+      "turn": "GAP",
+      "detail": "extent=44.721359549995796",
+      "digest": "e7143438cde386d9"
+    },
+    {
+      "id": "fail.seam-parallel",
+      "order": "surface-incoming/analytic-outgoing",
+      "criteria": [
+        "{\"kind\":\"fixed\",\"gradeRatio\":0}",
+        "{\"kind\":\"distance\",\"gradeRatio\":-0.25,\"distance\":40}"
+      ],
+      "frames": "T=(1.0000,0.0000) N=(0.0000,-1.0000) gs=0.0000 | T=(0.0000,1.0000) N=(1.0000,0.0000) gs=0.0000",
+      "targetDigest": "e20b3662698b83e6",
+      "expected": "ANALYTIC_SEAM_PARALLEL",
+      "actual": "ANALYTIC_SEAM_PARALLEL",
+      "match": true,
+      "surfaceTie": [
+        0,
+        0,
+        100
+      ],
+      "analyticTie": null,
+      "xyGap": null,
+      "zGap": null,
+      "rootCount": 1,
+      "extent": null,
+      "meshValid": null,
+      "turn": "GAP",
+      "digest": "57ad078c4049092c"
+    },
+    {
+      "id": "record.behind-unreachable",
+      "order": "direction-grid-search",
+      "criteria": [
+        "FIXED(-0.5)",
+        "DIST/ELEV/REL"
+      ],
+      "frames": "4 dirs x 2 orders x 3 criteria",
+      "targetDigest": "c8cd232f775ce905",
+      "expected": "DEFENSE_IN_DEPTH",
+      "actual": "DEFENSE_IN_DEPTH",
+      "match": true,
+      "surfaceTie": null,
+      "analyticTie": null,
+      "xyGap": null,
+      "zGap": null,
+      "rootCount": 0,
+      "extent": null,
+      "meshValid": null,
+      "turn": null,
+      "detail": "grid=192 behind=0 outcomes={\"SIDE_REJECT\":96,\"EXACT_COMMON_TIE\":96}",
+      "digest": "8112940114af5bae"
+    },
+    {
+      "id": "record.quirk-axis-aligned",
+      "order": "quirk-probe",
+      "criteria": [
+        "FIXED(-0.5)",
+        "normal-ray"
+      ],
+      "frames": "T=(1,0) N=(0,-1)",
+      "targetDigest": "858d12107110eb2a",
+      "expected": "CORNER_NO_SOLUTION",
+      "actual": "CORNER_NO_SOLUTION",
+      "match": true,
+      "surfaceTie": null,
+      "analyticTie": null,
+      "xyGap": null,
+      "zGap": null,
+      "rootCount": 0,
+      "extent": null,
+      "meshValid": null,
+      "turn": null,
+      "detail": "production ray/edge-parallel interval behavior",
+      "digest": "c8ce034089bffee4"
+    },
+    {
+      "id": "record.quirk-rotated",
+      "order": "quirk-probe",
+      "criteria": [
+        "FIXED(-0.5)",
+        "normal-ray"
+      ],
+      "frames": "T=(1,0) N=(0,-1)",
+      "targetDigest": "c8cd232f775ce905",
+      "expected": "tie",
+      "actual": "tie",
+      "match": true,
+      "surfaceTie": [
+        0,
+        -20,
+        90
+      ],
+      "analyticTie": null,
+      "xyGap": null,
+      "zGap": null,
+      "rootCount": 1,
+      "extent": 20,
+      "meshValid": null,
+      "turn": null,
+      "detail": "production ray/edge-parallel interval behavior",
+      "digest": "0ca8786f291d29f5"
+    },
+    {
+      "id": "exact.large-coords",
+      "order": "surface-incoming/analytic-outgoing",
+      "criteria": [
+        "{\"kind\":\"fixed\",\"gradeRatio\":-0.5}",
+        "{\"kind\":\"relative-elevation\",\"gradeRatio\":-0.25,\"relativeElevation\":-10}"
+      ],
+      "frames": "T=(1.0000,0.0000) N=(0.0000,-1.0000) gs=0.0000 | T=(0.0000,1.0000) N=(1.0000,0.0000) gs=0.0000",
+      "targetDigest": "093f91879a320abd",
+      "expected": "EXACT_COMMON_TIE",
+      "actual": "EXACT_COMMON_TIE",
+      "match": true,
+      "surfaceTie": [
+        2000040,
+        6999980,
+        90
+      ],
+      "analyticTie": [
+        2000040,
+        6999980,
+        90
+      ],
+      "xyGap": 0,
+      "zGap": 0,
+      "rootCount": 1,
+      "extent": 44.721359549995796,
+      "meshValid": true,
+      "turn": "GAP",
+      "digest": "c9045fcc89c47ea5"
+    },
+    {
+      "id": "mismatch.large-coords",
+      "order": "surface-incoming/analytic-outgoing",
+      "criteria": [
+        "{\"kind\":\"fixed\",\"gradeRatio\":-0.5}",
+        "{\"kind\":\"relative-elevation\",\"gradeRatio\":-0.25,\"relativeElevation\":-10}"
+      ],
+      "frames": "T=(1.0000,0.0000) N=(0.0000,-1.0000) gs=0.0000 | T=(0.0000,1.0000) N=(1.0000,0.0000) gs=0.0000",
+      "targetDigest": "362eeb05c4905868",
+      "expected": "TRANSITION_REQUIRED",
+      "actual": "TRANSITION_REQUIRED",
+      "match": true,
+      "surfaceTie": [
+        2000032,
+        6999984,
+        92
+      ],
+      "analyticTie": [
+        2000040,
+        6999980,
+        90
+      ],
+      "xyGap": 8.94427190999916,
+      "zGap": 2,
+      "rootCount": 1,
+      "extent": 44.721359549995796,
+      "meshValid": null,
+      "turn": "GAP",
+      "detail": "tie-disagree",
+      "digest": "2986157ae76ce592"
+    },
+    {
+      "id": "ladder.target-elev-0",
+      "order": "perturbation",
+      "criteria": [
+        "{\"kind\":\"fixed\",\"gradeRatio\":-0.5}",
+        "{\"kind\":\"relative-elevation\",\"gradeRatio\":-0.25,\"relativeElevation\":-10}"
+      ],
+      "frames": "T=(1.0000,0.0000) N=(0.0000,-1.0000) gs=0.0000 | T=(0.0000,1.0000) N=(1.0000,0.0000) gs=0.0000",
+      "targetDigest": "c8cd232f775ce905",
+      "expected": "EXACT_COMMON_TIE",
+      "actual": "EXACT_COMMON_TIE",
+      "match": true,
+      "surfaceTie": [
+        40,
+        -20,
+        90
+      ],
+      "analyticTie": [
+        40,
+        -20,
+        90
+      ],
+      "xyGap": 0,
+      "zGap": 0,
+      "rootCount": 1,
+      "extent": 44.721359549995796,
+      "meshValid": true,
+      "turn": "GAP",
+      "digest": "bbbac26cb6022552"
+    },
+    {
+      "id": "ladder.target-elev-2.220446049250313e-16",
+      "order": "perturbation",
+      "criteria": [
+        "{\"kind\":\"fixed\",\"gradeRatio\":-0.5}",
+        "{\"kind\":\"relative-elevation\",\"gradeRatio\":-0.25,\"relativeElevation\":-10}"
+      ],
+      "frames": "T=(1.0000,0.0000) N=(0.0000,-1.0000) gs=0.0000 | T=(0.0000,1.0000) N=(1.0000,0.0000) gs=0.0000",
+      "targetDigest": "c8cd232f775ce905",
+      "expected": "EXACT_COMMON_TIE",
+      "actual": "EXACT_COMMON_TIE",
+      "match": true,
+      "surfaceTie": [
+        40,
+        -20,
+        90
+      ],
+      "analyticTie": [
+        40,
+        -20,
+        90
+      ],
+      "xyGap": 0,
+      "zGap": 0,
+      "rootCount": 1,
+      "extent": 44.721359549995796,
+      "meshValid": true,
+      "turn": "GAP",
+      "digest": "7bc6952554afc33b"
+    },
+    {
+      "id": "ladder.target-elev-1e-12",
+      "order": "perturbation",
+      "criteria": [
+        "{\"kind\":\"fixed\",\"gradeRatio\":-0.5}",
+        "{\"kind\":\"relative-elevation\",\"gradeRatio\":-0.25,\"relativeElevation\":-10}"
+      ],
+      "frames": "T=(1.0000,0.0000) N=(0.0000,-1.0000) gs=0.0000 | T=(0.0000,1.0000) N=(1.0000,0.0000) gs=0.0000",
+      "targetDigest": "14e6df3093daa6fb",
+      "expected": "TRANSITION_REQUIRED",
+      "actual": "TRANSITION_REQUIRED",
+      "match": true,
+      "surfaceTie": [
+        39.99999999999602,
+        -19.99999999999801,
+        90.000000000001
+      ],
+      "analyticTie": [
+        40,
+        -20,
+        90
+      ],
+      "xyGap": 4.448701202619114e-12,
+      "zGap": 9.947598300641403e-13,
+      "rootCount": 1,
+      "extent": 44.721359549995796,
+      "meshValid": null,
+      "turn": "GAP",
+      "detail": "tie-disagree",
+      "digest": "fe66187f26f830b4"
+    },
+    {
+      "id": "ladder.target-elev-1e-9",
+      "order": "perturbation",
+      "criteria": [
+        "{\"kind\":\"fixed\",\"gradeRatio\":-0.5}",
+        "{\"kind\":\"relative-elevation\",\"gradeRatio\":-0.25,\"relativeElevation\":-10}"
+      ],
+      "frames": "T=(1.0000,0.0000) N=(0.0000,-1.0000) gs=0.0000 | T=(0.0000,1.0000) N=(1.0000,0.0000) gs=0.0000",
+      "targetDigest": "a33400b54c2579d0",
+      "expected": "TRANSITION_REQUIRED",
+      "actual": "TRANSITION_REQUIRED",
+      "match": true,
+      "surfaceTie": [
+        39.999999995999985,
+        -19.999999997999993,
+        90.000000001
+      ],
+      "analyticTie": [
+        40,
+        -20,
+        90
+      ],
+      "xyGap": 4.472152213244349e-9,
+      "zGap": 1.0000036354540498e-9,
+      "rootCount": 1,
+      "extent": 44.721359549995796,
+      "meshValid": null,
+      "turn": "GAP",
+      "detail": "tie-disagree",
+      "digest": "c67ff7203a04d43e"
+    },
+    {
+      "id": "ladder.target-elev-0.000001",
+      "order": "perturbation",
+      "criteria": [
+        "{\"kind\":\"fixed\",\"gradeRatio\":-0.5}",
+        "{\"kind\":\"relative-elevation\",\"gradeRatio\":-0.25,\"relativeElevation\":-10}"
+      ],
+      "frames": "T=(1.0000,0.0000) N=(0.0000,-1.0000) gs=0.0000 | T=(0.0000,1.0000) N=(1.0000,0.0000) gs=0.0000",
+      "targetDigest": "ed46ffcb71284ae5",
+      "expected": "TRANSITION_REQUIRED",
+      "actual": "TRANSITION_REQUIRED",
+      "match": true,
+      "surfaceTie": [
+        39.99999600000001,
+        -19.999998000000005,
+        90.000001
+      ],
+      "analyticTie": [
+        40,
+        -20,
+        90
+      ],
+      "xyGap": 0.0000044721359437085214,
+      "zGap": 9.999999974752427e-7,
+      "rootCount": 1,
+      "extent": 44.721359549995796,
+      "meshValid": null,
+      "turn": "GAP",
+      "detail": "tie-disagree",
+      "digest": "9cc0d43e2103b31b"
+    },
+    {
+      "id": "ladder.target-elev-0.001",
+      "order": "perturbation",
+      "criteria": [
+        "{\"kind\":\"fixed\",\"gradeRatio\":-0.5}",
+        "{\"kind\":\"relative-elevation\",\"gradeRatio\":-0.25,\"relativeElevation\":-10}"
+      ],
+      "frames": "T=(1.0000,0.0000) N=(0.0000,-1.0000) gs=0.0000 | T=(0.0000,1.0000) N=(1.0000,0.0000) gs=0.0000",
+      "targetDigest": "5f5e82ccb02b5edb",
+      "expected": "TRANSITION_REQUIRED",
+      "actual": "TRANSITION_REQUIRED",
+      "match": true,
+      "surfaceTie": [
+        39.99599999999998,
+        -19.99799999999999,
+        90.001
+      ],
+      "analyticTie": [
+        40,
+        -20,
+        90
+      ],
+      "xyGap": 0.004472135955020933,
+      "zGap": 0.0010000000000047748,
+      "rootCount": 1,
+      "extent": 44.721359549995796,
+      "meshValid": null,
+      "turn": "GAP",
+      "detail": "tie-disagree",
+      "digest": "785893039559c2a6"
+    },
+    {
+      "id": "ladder.target-elev-0.1",
+      "order": "perturbation",
+      "criteria": [
+        "{\"kind\":\"fixed\",\"gradeRatio\":-0.5}",
+        "{\"kind\":\"relative-elevation\",\"gradeRatio\":-0.25,\"relativeElevation\":-10}"
+      ],
+      "frames": "T=(1.0000,0.0000) N=(0.0000,-1.0000) gs=0.0000 | T=(0.0000,1.0000) N=(1.0000,0.0000) gs=0.0000",
+      "targetDigest": "d1f3f4de0fdbba62",
+      "expected": "TRANSITION_REQUIRED",
+      "actual": "TRANSITION_REQUIRED",
+      "match": true,
+      "surfaceTie": [
+        39.60000000000002,
+        -19.80000000000001,
+        90.1
+      ],
+      "analyticTie": [
+        40,
+        -20,
+        90
+      ],
+      "xyGap": 0.44721359549993256,
+      "zGap": 0.09999999999999432,
+      "rootCount": 1,
+      "extent": 44.721359549995796,
+      "meshValid": null,
+      "turn": "GAP",
+      "detail": "tie-disagree",
+      "digest": "c364702098440cca"
+    },
+    {
+      "id": "ladder.analytic-dz-0",
+      "order": "perturbation",
+      "criteria": [
+        "{\"kind\":\"fixed\",\"gradeRatio\":-0.5}",
+        "{\"kind\":\"relative-elevation\",\"gradeRatio\":-0.25,\"relativeElevation\":-10}"
+      ],
+      "frames": "T=(1.0000,0.0000) N=(0.0000,-1.0000) gs=0.0000 | T=(0.0000,1.0000) N=(1.0000,0.0000) gs=0.0000",
+      "targetDigest": "c8cd232f775ce905",
+      "expected": "EXACT_COMMON_TIE",
+      "actual": "EXACT_COMMON_TIE",
+      "match": true,
+      "surfaceTie": [
+        40,
+        -20,
+        90
+      ],
+      "analyticTie": [
+        40,
+        -20,
+        90
+      ],
+      "xyGap": 0,
+      "zGap": 0,
+      "rootCount": 1,
+      "extent": 44.721359549995796,
+      "meshValid": true,
+      "turn": "GAP",
+      "digest": "e8ea2630e6f9b6aa"
+    },
+    {
+      "id": "ladder.analytic-dz-2.220446049250313e-16",
+      "order": "perturbation",
+      "criteria": [
+        "{\"kind\":\"fixed\",\"gradeRatio\":-0.5}",
+        "{\"kind\":\"relative-elevation\",\"gradeRatio\":-0.25,\"relativeElevation\":-10}"
+      ],
+      "frames": "T=(1.0000,0.0000) N=(0.0000,-1.0000) gs=0.0000 | T=(0.0000,1.0000) N=(1.0000,0.0000) gs=0.0000",
+      "targetDigest": "c8cd232f775ce905",
+      "expected": "EXACT_COMMON_TIE",
+      "actual": "EXACT_COMMON_TIE",
+      "match": true,
+      "surfaceTie": [
+        40,
+        -20,
+        90
+      ],
+      "analyticTie": [
+        40,
+        -20,
+        90
+      ],
+      "xyGap": 0,
+      "zGap": 0,
+      "rootCount": 1,
+      "extent": 44.721359549995796,
+      "meshValid": true,
+      "turn": "GAP",
+      "digest": "d57875de945e1054"
+    },
+    {
+      "id": "ladder.analytic-dz-1e-12",
+      "order": "perturbation",
+      "criteria": [
+        "{\"kind\":\"fixed\",\"gradeRatio\":-0.5}",
+        "{\"kind\":\"relative-elevation\",\"gradeRatio\":-0.25,\"relativeElevation\":-9.999999999999}"
+      ],
+      "frames": "T=(1.0000,0.0000) N=(0.0000,-1.0000) gs=0.0000 | T=(0.0000,1.0000) N=(1.0000,0.0000) gs=0.0000",
+      "targetDigest": "c8cd232f775ce905",
+      "expected": "TRANSITION_REQUIRED",
+      "actual": "TRANSITION_REQUIRED",
+      "match": true,
+      "surfaceTie": [
+        40,
+        -20,
+        90
+      ],
+      "analyticTie": [
+        39.999999999996,
+        -19.999999999998,
+        90.000000000001
+      ],
+      "xyGap": 4.4725335304902875e-12,
+      "zGap": 9.947598300641403e-13,
+      "rootCount": 1,
+      "extent": 44.72135954999133,
+      "meshValid": null,
+      "turn": "GAP",
+      "detail": "tie-disagree",
+      "digest": "032e7246215629ec"
+    },
+    {
+      "id": "ladder.analytic-dz-1e-9",
+      "order": "perturbation",
+      "criteria": [
+        "{\"kind\":\"fixed\",\"gradeRatio\":-0.5}",
+        "{\"kind\":\"relative-elevation\",\"gradeRatio\":-0.25,\"relativeElevation\":-9.999999999}"
+      ],
+      "frames": "T=(1.0000,0.0000) N=(0.0000,-1.0000) gs=0.0000 | T=(0.0000,1.0000) N=(1.0000,0.0000) gs=0.0000",
+      "targetDigest": "c8cd232f775ce905",
+      "expected": "TRANSITION_REQUIRED",
+      "actual": "TRANSITION_REQUIRED",
+      "match": true,
+      "surfaceTie": [
+        40,
+        -20,
+        90
+      ],
+      "analyticTie": [
+        39.999999996,
+        -19.999999998,
+        90.000000001
+      ],
+      "xyGap": 4.472136325025768e-9,
+      "zGap": 1.0000036354540498e-9,
+      "rootCount": 1,
+      "extent": 44.72135954552366,
+      "meshValid": null,
+      "turn": "GAP",
+      "detail": "tie-disagree",
+      "digest": "834bdffb55b9052c"
+    },
+    {
+      "id": "ladder.analytic-dz-0.000001",
+      "order": "perturbation",
+      "criteria": [
+        "{\"kind\":\"fixed\",\"gradeRatio\":-0.5}",
+        "{\"kind\":\"relative-elevation\",\"gradeRatio\":-0.25,\"relativeElevation\":-9.999999}"
+      ],
+      "frames": "T=(1.0000,0.0000) N=(0.0000,-1.0000) gs=0.0000 | T=(0.0000,1.0000) N=(1.0000,0.0000) gs=0.0000",
+      "targetDigest": "c8cd232f775ce905",
+      "expected": "TRANSITION_REQUIRED",
+      "actual": "TRANSITION_REQUIRED",
+      "match": true,
+      "surfaceTie": [
+        40,
+        -20,
+        90
+      ],
+      "analyticTie": [
+        39.999996,
+        -19.999998,
+        90.000001
+      ],
+      "xyGap": 0.000004472135951652631,
+      "zGap": 9.999999974752427e-7,
+      "rootCount": 1,
+      "extent": 44.72135507785985,
+      "meshValid": null,
+      "turn": "GAP",
+      "detail": "tie-disagree",
+      "digest": "6140fc6f36c60b16"
+    },
+    {
+      "id": "ladder.analytic-dz-0.001",
+      "order": "perturbation",
+      "criteria": [
+        "{\"kind\":\"fixed\",\"gradeRatio\":-0.5}",
+        "{\"kind\":\"relative-elevation\",\"gradeRatio\":-0.25,\"relativeElevation\":-9.999}"
+      ],
+      "frames": "T=(1.0000,0.0000) N=(0.0000,-1.0000) gs=0.0000 | T=(0.0000,1.0000) N=(1.0000,0.0000) gs=0.0000",
+      "targetDigest": "c8cd232f775ce905",
+      "expected": "TRANSITION_REQUIRED",
+      "actual": "TRANSITION_REQUIRED",
+      "match": true,
+      "surfaceTie": [
+        40,
+        -20,
+        90
+      ],
+      "analyticTie": [
+        39.996,
+        -19.998,
+        90.001
+      ],
+      "xyGap": 0.004472135954997101,
+      "zGap": 0.0010000000000047748,
+      "rootCount": 1,
+      "extent": 44.7168874140408,
+      "meshValid": null,
+      "turn": "GAP",
+      "detail": "tie-disagree",
+      "digest": "c6b44da2851fda66"
+    },
+    {
+      "id": "ladder.analytic-dz-0.1",
+      "order": "perturbation",
+      "criteria": [
+        "{\"kind\":\"fixed\",\"gradeRatio\":-0.5}",
+        "{\"kind\":\"relative-elevation\",\"gradeRatio\":-0.25,\"relativeElevation\":-9.9}"
+      ],
+      "frames": "T=(1.0000,0.0000) N=(0.0000,-1.0000) gs=0.0000 | T=(0.0000,1.0000) N=(1.0000,0.0000) gs=0.0000",
+      "targetDigest": "c8cd232f775ce905",
+      "expected": "TRANSITION_REQUIRED",
+      "actual": "TRANSITION_REQUIRED",
+      "match": true,
+      "surfaceTie": [
+        40,
+        -20,
+        90
+      ],
+      "analyticTie": [
+        39.6,
+        -19.8,
+        90.1
+      ],
+      "xyGap": 0.4472135954999564,
+      "zGap": 0.09999999999999432,
+      "rootCount": 1,
+      "extent": 44.27414595449584,
+      "meshValid": null,
+      "turn": "GAP",
+      "detail": "tie-disagree",
+      "digest": "74276633e238d4f4"
+    },
+    {
+      "id": "ladder.grade-0",
+      "order": "perturbation",
+      "criteria": [
+        "{\"kind\":\"fixed\",\"gradeRatio\":-0.5}",
+        "{\"kind\":\"relative-elevation\",\"gradeRatio\":-0.25,\"relativeElevation\":-10}"
+      ],
+      "frames": "T=(1.0000,0.0000) N=(0.0000,-1.0000) gs=0.0000 | T=(0.0000,1.0000) N=(1.0000,0.0000) gs=0.0000",
+      "targetDigest": "c8cd232f775ce905",
+      "expected": "EXACT_COMMON_TIE",
+      "actual": "EXACT_COMMON_TIE",
+      "match": true,
+      "surfaceTie": [
+        40,
+        -20,
+        90
+      ],
+      "analyticTie": [
+        40,
+        -20,
+        90
+      ],
+      "xyGap": 0,
+      "zGap": 0,
+      "rootCount": 1,
+      "extent": 44.721359549995796,
+      "meshValid": true,
+      "turn": "GAP",
+      "digest": "d145ba43c363e254"
+    },
+    {
+      "id": "ladder.grade-2.220446049250313e-16",
+      "order": "perturbation",
+      "criteria": [
+        "{\"kind\":\"fixed\",\"gradeRatio\":-0.4999999999999998}",
+        "{\"kind\":\"relative-elevation\",\"gradeRatio\":-0.25,\"relativeElevation\":-10}"
+      ],
+      "frames": "T=(1.0000,0.0000) N=(0.0000,-1.0000) gs=0.0000 | T=(0.0000,1.0000) N=(1.0000,0.0000) gs=0.0000",
+      "targetDigest": "c8cd232f775ce905",
+      "expected": "EXACT_COMMON_TIE",
+      "actual": "EXACT_COMMON_TIE",
+      "match": true,
+      "surfaceTie": [
+        40,
+        -20.00000000000001,
+        90
+      ],
+      "analyticTie": [
+        40,
+        -20.00000000000001,
+        90
+      ],
+      "xyGap": 0,
+      "zGap": 0,
+      "rootCount": 1,
+      "extent": 44.721359549995796,
+      "meshValid": true,
+      "turn": "GAP",
+      "digest": "8257f03b6858f1dc"
+    },
+    {
+      "id": "ladder.grade-1e-12",
+      "order": "perturbation",
+      "criteria": [
+        "{\"kind\":\"fixed\",\"gradeRatio\":-0.499999999999}",
+        "{\"kind\":\"relative-elevation\",\"gradeRatio\":-0.25,\"relativeElevation\":-10}"
+      ],
+      "frames": "T=(1.0000,0.0000) N=(0.0000,-1.0000) gs=0.0000 | T=(0.0000,1.0000) N=(1.0000,0.0000) gs=0.0000",
+      "targetDigest": "c8cd232f775ce905",
+      "expected": "EXACT_COMMON_TIE",
+      "actual": "EXACT_COMMON_TIE",
+      "match": true,
+      "surfaceTie": [
+        40,
+        -20.00000000004,
+        90
+      ],
+      "analyticTie": [
+        40,
+        -20.00000000004,
+        90
+      ],
+      "xyGap": 0,
+      "zGap": 0,
+      "rootCount": 1,
+      "extent": 44.72135955001369,
+      "meshValid": true,
+      "turn": "GAP",
+      "digest": "75068f9c9a8a4e41"
+    },
+    {
+      "id": "ladder.grade-1e-9",
+      "order": "perturbation",
+      "criteria": [
+        "{\"kind\":\"fixed\",\"gradeRatio\":-0.499999999}",
+        "{\"kind\":\"relative-elevation\",\"gradeRatio\":-0.25,\"relativeElevation\":-10}"
+      ],
+      "frames": "T=(1.0000,0.0000) N=(0.0000,-1.0000) gs=0.0000 | T=(0.0000,1.0000) N=(1.0000,0.0000) gs=0.0000",
+      "targetDigest": "c8cd232f775ce905",
+      "expected": "EXACT_COMMON_TIE",
+      "actual": "EXACT_COMMON_TIE",
+      "match": true,
+      "surfaceTie": [
+        40.00000000000001,
+        -20.000000040000003,
+        90
+      ],
+      "analyticTie": [
+        40,
+        -20.00000004,
+        90
+      ],
+      "xyGap": 7.944109290391274e-15,
+      "zGap": 0,
+      "rootCount": 1,
+      "extent": 44.72135956788434,
+      "meshValid": true,
+      "turn": "GAP",
+      "digest": "77c08b7af93a0435"
+    },
+    {
+      "id": "ladder.grade-0.000001",
+      "order": "perturbation",
+      "criteria": [
+        "{\"kind\":\"fixed\",\"gradeRatio\":-0.499999}",
+        "{\"kind\":\"relative-elevation\",\"gradeRatio\":-0.25,\"relativeElevation\":-10}"
+      ],
+      "frames": "T=(1.0000,0.0000) N=(0.0000,-1.0000) gs=0.0000 | T=(0.0000,1.0000) N=(1.0000,0.0000) gs=0.0000",
+      "targetDigest": "c8cd232f775ce905",
+      "expected": "EXACT_COMMON_TIE",
+      "actual": "EXACT_COMMON_TIE",
+      "match": true,
+      "surfaceTie": [
+        40.00000000000001,
+        -20.000040000080002,
+        90
+      ],
+      "analyticTie": [
+        40,
+        -20.00004000008,
+        90
+      ],
+      "xyGap": 7.944109290391274e-15,
+      "zGap": 0,
+      "rootCount": 1,
+      "extent": 44.7213774385897,
+      "meshValid": true,
+      "turn": "GAP",
+      "digest": "fe655eaabdd3e001"
+    },
+    {
+      "id": "ladder.grade-0.001",
+      "order": "perturbation",
+      "criteria": [
+        "{\"kind\":\"fixed\",\"gradeRatio\":-0.499}",
+        "{\"kind\":\"relative-elevation\",\"gradeRatio\":-0.25,\"relativeElevation\":-10}"
+      ],
+      "frames": "T=(1.0000,0.0000) N=(0.0000,-1.0000) gs=0.0000 | T=(0.0000,1.0000) N=(1.0000,0.0000) gs=0.0000",
+      "targetDigest": "c8cd232f775ce905",
+      "expected": "EXACT_COMMON_TIE",
+      "actual": "EXACT_COMMON_TIE",
+      "match": true,
+      "surfaceTie": [
+        40,
+        -20.04008016032064,
+        90
+      ],
+      "analyticTie": [
+        40,
+        -20.04008016032064,
+        90
+      ],
+      "xyGap": 0,
+      "zGap": 0,
+      "rootCount": 1,
+      "extent": 44.739298305092774,
+      "meshValid": true,
+      "turn": "GAP",
+      "digest": "148d72de75db66d2"
+    },
+    {
+      "id": "ladder.grade-0.1",
+      "order": "perturbation",
+      "criteria": [
+        "{\"kind\":\"fixed\",\"gradeRatio\":-0.4}",
+        "{\"kind\":\"relative-elevation\",\"gradeRatio\":-0.25,\"relativeElevation\":-10}"
+      ],
+      "frames": "T=(1.0000,0.0000) N=(0.0000,-1.0000) gs=0.0000 | T=(0.0000,1.0000) N=(1.0000,0.0000) gs=0.0000",
+      "targetDigest": "c8cd232f775ce905",
+      "expected": "EXACT_COMMON_TIE",
+      "actual": "EXACT_COMMON_TIE",
+      "match": true,
+      "surfaceTie": [
+        40.00000000000001,
+        -25.000000000000004,
+        90
+      ],
+      "analyticTie": [
+        40,
+        -25,
+        90
+      ],
+      "xyGap": 7.944109290391274e-15,
+      "zGap": 0,
+      "rootCount": 1,
+      "extent": 47.169905660283014,
+      "meshValid": true,
+      "turn": "GAP",
+      "digest": "1e57d4a732a07090"
+    },
+    {
+      "id": "ladder.analytic-dist-0",
+      "order": "perturbation",
+      "criteria": [
+        "{\"kind\":\"fixed\",\"gradeRatio\":-0.5}",
+        "{\"kind\":\"distance\",\"gradeRatio\":-0.25,\"distance\":40}"
+      ],
+      "frames": "T=(1.0000,0.0000) N=(0.0000,-1.0000) gs=0.0000 | T=(0.0000,1.0000) N=(1.0000,0.0000) gs=0.0000",
+      "targetDigest": "c8cd232f775ce905",
+      "expected": "EXACT_COMMON_TIE",
+      "actual": "EXACT_COMMON_TIE",
+      "match": true,
+      "surfaceTie": [
+        40,
+        -20,
+        90
+      ],
+      "analyticTie": [
+        40,
+        -20,
+        90
+      ],
+      "xyGap": 0,
+      "zGap": 0,
+      "rootCount": 1,
+      "extent": 44.721359549995796,
+      "meshValid": true,
+      "turn": "GAP",
+      "digest": "4b6c4ce972a48409"
+    },
+    {
+      "id": "ladder.analytic-dist-2.220446049250313e-16",
+      "order": "perturbation",
+      "criteria": [
+        "{\"kind\":\"fixed\",\"gradeRatio\":-0.5}",
+        "{\"kind\":\"distance\",\"gradeRatio\":-0.25,\"distance\":40}"
+      ],
+      "frames": "T=(1.0000,0.0000) N=(0.0000,-1.0000) gs=0.0000 | T=(0.0000,1.0000) N=(1.0000,0.0000) gs=0.0000",
+      "targetDigest": "c8cd232f775ce905",
+      "expected": "EXACT_COMMON_TIE",
+      "actual": "EXACT_COMMON_TIE",
+      "match": true,
+      "surfaceTie": [
+        40,
+        -20,
+        90
+      ],
+      "analyticTie": [
+        40,
+        -20,
+        90
+      ],
+      "xyGap": 0,
+      "zGap": 0,
+      "rootCount": 1,
+      "extent": 44.721359549995796,
+      "meshValid": true,
+      "turn": "GAP",
+      "digest": "0a2b8af710cc4519"
+    },
+    {
+      "id": "ladder.analytic-dist-1e-12",
+      "order": "perturbation",
+      "criteria": [
+        "{\"kind\":\"fixed\",\"gradeRatio\":-0.5}",
+        "{\"kind\":\"distance\",\"gradeRatio\":-0.25,\"distance\":40.000000000001}"
+      ],
+      "frames": "T=(1.0000,0.0000) N=(0.0000,-1.0000) gs=0.0000 | T=(0.0000,1.0000) N=(1.0000,0.0000) gs=0.0000",
+      "targetDigest": "c8cd232f775ce905",
+      "expected": "TRANSITION_REQUIRED",
+      "actual": "TRANSITION_REQUIRED",
+      "match": true,
+      "surfaceTie": [
+        40,
+        -20,
+        90
+      ],
+      "analyticTie": [
+        40.000000000001,
+        -20.0000000000005,
+        89.99999999999974
+      ],
+      "xyGap": 1.1201194099451696e-12,
+      "zGap": 2.5579538487363607e-13,
+      "rootCount": 1,
+      "extent": 44.72135954999692,
+      "meshValid": null,
+      "turn": "GAP",
+      "detail": "tie-disagree",
+      "digest": "44e38bf278bb4f7f"
+    },
+    {
+      "id": "ladder.analytic-dist-1e-9",
+      "order": "perturbation",
+      "criteria": [
+        "{\"kind\":\"fixed\",\"gradeRatio\":-0.5}",
+        "{\"kind\":\"distance\",\"gradeRatio\":-0.25,\"distance\":40.000000001}"
+      ],
+      "frames": "T=(1.0000,0.0000) N=(0.0000,-1.0000) gs=0.0000 | T=(0.0000,1.0000) N=(1.0000,0.0000) gs=0.0000",
+      "targetDigest": "c8cd232f775ce905",
+      "expected": "TRANSITION_REQUIRED",
+      "actual": "TRANSITION_REQUIRED",
+      "match": true,
+      "surfaceTie": [
+        40,
+        -20,
+        90
+      ],
+      "analyticTie": [
+        40.000000001,
+        -20.0000000005,
+        89.99999999975
+      ],
+      "xyGap": 1.1180301092017968e-9,
+      "zGap": 2.4999735614983365e-10,
+      "rootCount": 1,
+      "extent": 44.72135955111383,
+      "meshValid": null,
+      "turn": "GAP",
+      "detail": "tie-disagree",
+      "digest": "6c0668d65216e5a8"
+    },
+    {
+      "id": "ladder.analytic-dist-0.000001",
+      "order": "perturbation",
+      "criteria": [
+        "{\"kind\":\"fixed\",\"gradeRatio\":-0.5}",
+        "{\"kind\":\"distance\",\"gradeRatio\":-0.25,\"distance\":40.000001}"
+      ],
+      "frames": "T=(1.0000,0.0000) N=(0.0000,-1.0000) gs=0.0000 | T=(0.0000,1.0000) N=(1.0000,0.0000) gs=0.0000",
+      "targetDigest": "c8cd232f775ce905",
+      "expected": "TRANSITION_REQUIRED",
+      "actual": "TRANSITION_REQUIRED",
+      "match": true,
+      "surfaceTie": [
+        40,
+        -20,
+        90
+      ],
+      "analyticTie": [
+        40.000001,
+        -20.0000005,
+        89.99999975
+      ],
+      "xyGap": 0.0000011180339859271304,
+      "zGap": 2.499999993688107e-7,
+      "rootCount": 1,
+      "extent": 44.72136066802978,
+      "meshValid": null,
+      "turn": "GAP",
+      "detail": "tie-disagree",
+      "digest": "0fb662ea6a4b6af1"
+    },
+    {
+      "id": "ladder.analytic-dist-0.001",
+      "order": "perturbation",
+      "criteria": [
+        "{\"kind\":\"fixed\",\"gradeRatio\":-0.5}",
+        "{\"kind\":\"distance\",\"gradeRatio\":-0.25,\"distance\":40.001}"
+      ],
+      "frames": "T=(1.0000,0.0000) N=(0.0000,-1.0000) gs=0.0000 | T=(0.0000,1.0000) N=(1.0000,0.0000) gs=0.0000",
+      "targetDigest": "c8cd232f775ce905",
+      "expected": "TRANSITION_REQUIRED",
+      "actual": "TRANSITION_REQUIRED",
+      "match": true,
+      "surfaceTie": [
+        40,
+        -20,
+        90
+      ],
+      "analyticTie": [
+        40.001,
+        -20.0005,
+        89.99975
+      ],
+      "xyGap": 0.0011180339887472892,
+      "zGap": 0.0002499999999940883,
+      "rootCount": 1,
+      "extent": 44.72247758398454,
+      "meshValid": null,
+      "turn": "GAP",
+      "detail": "tie-disagree",
+      "digest": "7be52ad6bfef32e7"
+    },
+    {
+      "id": "ladder.analytic-dist-0.1",
+      "order": "perturbation",
+      "criteria": [
+        "{\"kind\":\"fixed\",\"gradeRatio\":-0.5}",
+        "{\"kind\":\"distance\",\"gradeRatio\":-0.25,\"distance\":40.1}"
+      ],
+      "frames": "T=(1.0000,0.0000) N=(0.0000,-1.0000) gs=0.0000 | T=(0.0000,1.0000) N=(1.0000,0.0000) gs=0.0000",
+      "targetDigest": "c8cd232f775ce905",
+      "expected": "TRANSITION_REQUIRED",
+      "actual": "TRANSITION_REQUIRED",
+      "match": true,
+      "surfaceTie": [
+        40,
+        -20,
+        90
+      ],
+      "analyticTie": [
+        40.1,
+        -20.05,
+        89.975
+      ],
+      "xyGap": 0.11180339887499108,
+      "zGap": 0.025000000000005684,
+      "rootCount": 1,
+      "extent": 44.833162948870786,
+      "meshValid": null,
+      "turn": "GAP",
+      "detail": "tie-disagree",
+      "digest": "e8b97830acdaebdb"
+    },
+    {
+      "id": "ladder.analytic-elev-0",
+      "order": "perturbation",
+      "criteria": [
+        "{\"kind\":\"fixed\",\"gradeRatio\":-0.5}",
+        "{\"kind\":\"elevation\",\"gradeRatio\":-0.25,\"targetElevation\":90}"
+      ],
+      "frames": "T=(1.0000,0.0000) N=(0.0000,-1.0000) gs=0.0000 | T=(0.0000,1.0000) N=(1.0000,0.0000) gs=0.0000",
+      "targetDigest": "c8cd232f775ce905",
+      "expected": "EXACT_COMMON_TIE",
+      "actual": "EXACT_COMMON_TIE",
+      "match": true,
+      "surfaceTie": [
+        40,
+        -20,
+        90
+      ],
+      "analyticTie": [
+        40,
+        -20,
+        90
+      ],
+      "xyGap": 0,
+      "zGap": 0,
+      "rootCount": 1,
+      "extent": 44.721359549995796,
+      "meshValid": true,
+      "turn": "GAP",
+      "digest": "ca501ac572d31589"
+    },
+    {
+      "id": "ladder.analytic-elev-2.220446049250313e-16",
+      "order": "perturbation",
+      "criteria": [
+        "{\"kind\":\"fixed\",\"gradeRatio\":-0.5}",
+        "{\"kind\":\"elevation\",\"gradeRatio\":-0.25,\"targetElevation\":90}"
+      ],
+      "frames": "T=(1.0000,0.0000) N=(0.0000,-1.0000) gs=0.0000 | T=(0.0000,1.0000) N=(1.0000,0.0000) gs=0.0000",
+      "targetDigest": "c8cd232f775ce905",
+      "expected": "EXACT_COMMON_TIE",
+      "actual": "EXACT_COMMON_TIE",
+      "match": true,
+      "surfaceTie": [
+        40,
+        -20,
+        90
+      ],
+      "analyticTie": [
+        40,
+        -20,
+        90
+      ],
+      "xyGap": 0,
+      "zGap": 0,
+      "rootCount": 1,
+      "extent": 44.721359549995796,
+      "meshValid": true,
+      "turn": "GAP",
+      "digest": "86ec5703879ba456"
+    },
+    {
+      "id": "ladder.analytic-elev-1e-12",
+      "order": "perturbation",
+      "criteria": [
+        "{\"kind\":\"fixed\",\"gradeRatio\":-0.5}",
+        "{\"kind\":\"elevation\",\"gradeRatio\":-0.25,\"targetElevation\":90.000000000001}"
+      ],
+      "frames": "T=(1.0000,0.0000) N=(0.0000,-1.0000) gs=0.0000 | T=(0.0000,1.0000) N=(1.0000,0.0000) gs=0.0000",
+      "targetDigest": "c8cd232f775ce905",
+      "expected": "TRANSITION_REQUIRED",
+      "actual": "TRANSITION_REQUIRED",
+      "match": true,
+      "surfaceTie": [
+        40,
+        -20,
+        90
+      ],
+      "analyticTie": [
+        39.99999999999602,
+        -19.99999999999801,
+        90.000000000001
+      ],
+      "xyGap": 4.448701202619114e-12,
+      "zGap": 9.947598300641403e-13,
+      "rootCount": 1,
+      "extent": 44.72135954999135,
+      "meshValid": null,
+      "turn": "GAP",
+      "detail": "tie-disagree",
+      "digest": "93bb46cefee7dce9"
+    },
+    {
+      "id": "ladder.analytic-elev-1e-9",
+      "order": "perturbation",
+      "criteria": [
+        "{\"kind\":\"fixed\",\"gradeRatio\":-0.5}",
+        "{\"kind\":\"elevation\",\"gradeRatio\":-0.25,\"targetElevation\":90.000000001}"
+      ],
+      "frames": "T=(1.0000,0.0000) N=(0.0000,-1.0000) gs=0.0000 | T=(0.0000,1.0000) N=(1.0000,0.0000) gs=0.0000",
+      "targetDigest": "c8cd232f775ce905",
+      "expected": "TRANSITION_REQUIRED",
+      "actual": "TRANSITION_REQUIRED",
+      "match": true,
+      "surfaceTie": [
+        40,
+        -20,
+        90
+      ],
+      "analyticTie": [
+        39.999999995999985,
+        -19.999999997999993,
+        90.000000001
+      ],
+      "xyGap": 4.472152213244349e-9,
+      "zGap": 1.0000036354540498e-9,
+      "rootCount": 1,
+      "extent": 44.72135954552365,
+      "meshValid": null,
+      "turn": "GAP",
+      "detail": "tie-disagree",
+      "digest": "54988a4523c51196"
+    },
+    {
+      "id": "ladder.analytic-elev-0.000001",
+      "order": "perturbation",
+      "criteria": [
+        "{\"kind\":\"fixed\",\"gradeRatio\":-0.5}",
+        "{\"kind\":\"elevation\",\"gradeRatio\":-0.25,\"targetElevation\":90.000001}"
+      ],
+      "frames": "T=(1.0000,0.0000) N=(0.0000,-1.0000) gs=0.0000 | T=(0.0000,1.0000) N=(1.0000,0.0000) gs=0.0000",
+      "targetDigest": "c8cd232f775ce905",
+      "expected": "TRANSITION_REQUIRED",
+      "actual": "TRANSITION_REQUIRED",
+      "match": true,
+      "surfaceTie": [
+        40,
+        -20,
+        90
+      ],
+      "analyticTie": [
+        39.99999600000001,
+        -19.999998000000005,
+        90.000001
+      ],
+      "xyGap": 0.0000044721359437085214,
+      "zGap": 9.999999974752427e-7,
+      "rootCount": 1,
+      "extent": 44.721355077859855,
+      "meshValid": null,
+      "turn": "GAP",
+      "detail": "tie-disagree",
+      "digest": "680412d95f02e036"
+    },
+    {
+      "id": "ladder.analytic-elev-0.001",
+      "order": "perturbation",
+      "criteria": [
+        "{\"kind\":\"fixed\",\"gradeRatio\":-0.5}",
+        "{\"kind\":\"elevation\",\"gradeRatio\":-0.25,\"targetElevation\":90.001}"
+      ],
+      "frames": "T=(1.0000,0.0000) N=(0.0000,-1.0000) gs=0.0000 | T=(0.0000,1.0000) N=(1.0000,0.0000) gs=0.0000",
+      "targetDigest": "c8cd232f775ce905",
+      "expected": "TRANSITION_REQUIRED",
+      "actual": "TRANSITION_REQUIRED",
+      "match": true,
+      "surfaceTie": [
+        40,
+        -20,
+        90
+      ],
+      "analyticTie": [
+        39.99599999999998,
+        -19.99799999999999,
+        90.001
+      ],
+      "xyGap": 0.004472135955020933,
+      "zGap": 0.0010000000000047748,
+      "rootCount": 1,
+      "extent": 44.71688741404078,
+      "meshValid": null,
+      "turn": "GAP",
+      "detail": "tie-disagree",
+      "digest": "0537ec7c81e96ecb"
+    },
+    {
+      "id": "ladder.analytic-elev-0.1",
+      "order": "perturbation",
+      "criteria": [
+        "{\"kind\":\"fixed\",\"gradeRatio\":-0.5}",
+        "{\"kind\":\"elevation\",\"gradeRatio\":-0.25,\"targetElevation\":90.1}"
+      ],
+      "frames": "T=(1.0000,0.0000) N=(0.0000,-1.0000) gs=0.0000 | T=(0.0000,1.0000) N=(1.0000,0.0000) gs=0.0000",
+      "targetDigest": "c8cd232f775ce905",
+      "expected": "TRANSITION_REQUIRED",
+      "actual": "TRANSITION_REQUIRED",
+      "match": true,
+      "surfaceTie": [
+        40,
+        -20,
+        90
+      ],
+      "analyticTie": [
+        39.60000000000002,
+        -19.80000000000001,
+        90.1
+      ],
+      "xyGap": 0.44721359549993256,
+      "zGap": 0.09999999999999432,
+      "rootCount": 1,
+      "extent": 44.274145954495864,
+      "meshValid": null,
+      "turn": "GAP",
+      "detail": "tie-disagree",
+      "digest": "adf500149f84dccf"
+    },
+    {
+      "id": "ladder.tin-vert-0",
+      "order": "perturbation",
+      "criteria": [
+        "{\"kind\":\"fixed\",\"gradeRatio\":-0.5}",
+        "{\"kind\":\"relative-elevation\",\"gradeRatio\":-0.25,\"relativeElevation\":-10}"
+      ],
+      "frames": "T=(1.0000,0.0000) N=(0.0000,-1.0000) gs=0.0000 | T=(0.0000,1.0000) N=(1.0000,0.0000) gs=0.0000",
+      "targetDigest": "c8cd232f775ce905",
+      "expected": "EXACT_COMMON_TIE",
+      "actual": "EXACT_COMMON_TIE",
+      "match": true,
+      "surfaceTie": [
+        40,
+        -20,
+        90
+      ],
+      "analyticTie": [
+        40,
+        -20,
+        90
+      ],
+      "xyGap": 0,
+      "zGap": 0,
+      "rootCount": 1,
+      "extent": 44.721359549995796,
+      "meshValid": true,
+      "turn": "GAP",
+      "digest": "c818390c7242f429"
+    },
+    {
+      "id": "ladder.tin-vert-2.220446049250313e-16",
+      "order": "perturbation",
+      "criteria": [
+        "{\"kind\":\"fixed\",\"gradeRatio\":-0.5}",
+        "{\"kind\":\"relative-elevation\",\"gradeRatio\":-0.25,\"relativeElevation\":-10}"
+      ],
+      "frames": "T=(1.0000,0.0000) N=(0.0000,-1.0000) gs=0.0000 | T=(0.0000,1.0000) N=(1.0000,0.0000) gs=0.0000",
+      "targetDigest": "c8cd232f775ce905",
+      "expected": "EXACT_COMMON_TIE",
+      "actual": "EXACT_COMMON_TIE",
+      "match": true,
+      "surfaceTie": [
+        40,
+        -20,
+        90
+      ],
+      "analyticTie": [
+        40,
+        -20,
+        90
+      ],
+      "xyGap": 0,
+      "zGap": 0,
+      "rootCount": 1,
+      "extent": 44.721359549995796,
+      "meshValid": true,
+      "turn": "GAP",
+      "digest": "8ca22ed1e0d2ea6a"
+    },
+    {
+      "id": "ladder.tin-vert-1e-12",
+      "order": "perturbation",
+      "criteria": [
+        "{\"kind\":\"fixed\",\"gradeRatio\":-0.5}",
+        "{\"kind\":\"relative-elevation\",\"gradeRatio\":-0.25,\"relativeElevation\":-10}"
+      ],
+      "frames": "T=(1.0000,0.0000) N=(0.0000,-1.0000) gs=0.0000 | T=(0.0000,1.0000) N=(1.0000,0.0000) gs=0.0000",
+      "targetDigest": "5ed96d5f28944241",
+      "expected": "TRANSITION_REQUIRED",
+      "actual": "TRANSITION_REQUIRED",
+      "match": true,
+      "surfaceTie": [
+        39.99999999999828,
+        -19.99999999999914,
+        90.00000000000043
+      ],
+      "analyticTie": [
+        40,
+        -20,
+        90
+      ],
+      "xyGap": 1.9224744482746884e-12,
+      "zGap": 4.263256414560601e-13,
+      "rootCount": 1,
+      "extent": 44.721359549995796,
+      "meshValid": null,
+      "turn": "GAP",
+      "detail": "tie-disagree",
+      "digest": "eb7750c060c53563"
+    },
+    {
+      "id": "ladder.tin-vert-1e-9",
+      "order": "perturbation",
+      "criteria": [
+        "{\"kind\":\"fixed\",\"gradeRatio\":-0.5}",
+        "{\"kind\":\"relative-elevation\",\"gradeRatio\":-0.25,\"relativeElevation\":-10}"
+      ],
+      "frames": "T=(1.0000,0.0000) N=(0.0000,-1.0000) gs=0.0000 | T=(0.0000,1.0000) N=(1.0000,0.0000) gs=0.0000",
+      "targetDigest": "2eb34e04e71fae30",
+      "expected": "TRANSITION_REQUIRED",
+      "actual": "TRANSITION_REQUIRED",
+      "match": true,
+      "surfaceTie": [
+        39.99999999826643,
+        -19.999999999133216,
+        90.00000000043339
+      ],
+      "analyticTie": [
+        40,
+        -20,
+        90
+      ],
+      "xyGap": 1.938187896451082e-9,
+      "zGap": 4.333884362495155e-10,
+      "rootCount": 1,
+      "extent": 44.721359549995796,
+      "meshValid": null,
+      "turn": "GAP",
+      "detail": "tie-disagree",
+      "digest": "57201832919c05d8"
+    },
+    {
+      "id": "ladder.tin-vert-0.000001",
+      "order": "perturbation",
+      "criteria": [
+        "{\"kind\":\"fixed\",\"gradeRatio\":-0.5}",
+        "{\"kind\":\"relative-elevation\",\"gradeRatio\":-0.25,\"relativeElevation\":-10}"
+      ],
+      "frames": "T=(1.0000,0.0000) N=(0.0000,-1.0000) gs=0.0000 | T=(0.0000,1.0000) N=(1.0000,0.0000) gs=0.0000",
+      "targetDigest": "abd05d95da6ab6c3",
+      "expected": "TRANSITION_REQUIRED",
+      "actual": "TRANSITION_REQUIRED",
+      "match": true,
+      "surfaceTie": [
+        39.99999826642082,
+        -19.99999913321041,
+        90.0000004333948
+      ],
+      "analyticTie": [
+        40,
+        -20,
+        90
+      ],
+      "xyGap": 0.0000019382004481437613,
+      "zGap": 4.333948027124279e-7,
+      "rootCount": 1,
+      "extent": 44.721359549995796,
+      "meshValid": null,
+      "turn": "GAP",
+      "detail": "tie-disagree",
+      "digest": "9acaf21bb0bc26a3"
+    },
+    {
+      "id": "ladder.tin-vert-0.001",
+      "order": "perturbation",
+      "criteria": [
+        "{\"kind\":\"fixed\",\"gradeRatio\":-0.5}",
+        "{\"kind\":\"relative-elevation\",\"gradeRatio\":-0.25,\"relativeElevation\":-10}"
+      ],
+      "frames": "T=(1.0000,0.0000) N=(0.0000,-1.0000) gs=0.0000 | T=(0.0000,1.0000) N=(1.0000,0.0000) gs=0.0000",
+      "targetDigest": "7195fe6aaaf3615d",
+      "expected": "TRANSITION_REQUIRED",
+      "actual": "TRANSITION_REQUIRED",
+      "match": true,
+      "surfaceTie": [
+        39.99826640927503,
+        -19.999133204637516,
+        90.00043339768123
+      ],
+      "analyticTie": [
+        40,
+        -20,
+        90
+      ],
+      "xyGap": 0.0019382133530950918,
+      "zGap": 0.0004333976812347373,
+      "rootCount": 1,
+      "extent": 44.721359549995796,
+      "meshValid": null,
+      "turn": "GAP",
+      "detail": "tie-disagree",
+      "digest": "124ddaecbd163fd1"
+    },
+    {
+      "id": "ladder.tin-vert-0.1",
+      "order": "perturbation",
+      "criteria": [
+        "{\"kind\":\"fixed\",\"gradeRatio\":-0.5}",
+        "{\"kind\":\"relative-elevation\",\"gradeRatio\":-0.25,\"relativeElevation\":-10}"
+      ],
+      "frames": "T=(1.0000,0.0000) N=(0.0000,-1.0000) gs=0.0000 | T=(0.0000,1.0000) N=(1.0000,0.0000) gs=0.0000",
+      "targetDigest": "124fe6bee9a637a2",
+      "expected": "TRANSITION_REQUIRED",
+      "actual": "TRANSITION_REQUIRED",
+      "match": true,
+      "surfaceTie": [
+        39.826526539812434,
+        -19.913263269906217,
+        90.04336836504689
+      ],
+      "analyticTie": [
+        40,
+        -20,
+        90
+      ],
+      "xyGap": 0.19394922463575032,
+      "zGap": 0.0433683650468879,
+      "rootCount": 1,
+      "extent": 44.721359549995796,
+      "meshValid": null,
+      "turn": "GAP",
+      "detail": "tie-disagree",
+      "digest": "8fded0cc222e6351"
+    },
+    {
+      "id": "ladder.source-z-0",
+      "order": "perturbation",
+      "criteria": [
+        "{\"kind\":\"fixed\",\"gradeRatio\":-0.5}",
+        "{\"kind\":\"relative-elevation\",\"gradeRatio\":-0.25,\"relativeElevation\":-10}"
+      ],
+      "frames": "T=(1.0000,0.0000) N=(0.0000,-1.0000) gs=0.0000 | T=(0.0000,1.0000) N=(1.0000,0.0000) gs=0.0000",
+      "targetDigest": "c8cd232f775ce905",
+      "expected": "EXACT_COMMON_TIE",
+      "actual": "EXACT_COMMON_TIE",
+      "match": true,
+      "surfaceTie": [
+        40,
+        -20,
+        90
+      ],
+      "analyticTie": [
+        40,
+        -20,
+        90
+      ],
+      "xyGap": 0,
+      "zGap": 0,
+      "rootCount": 1,
+      "extent": 44.721359549995796,
+      "meshValid": true,
+      "turn": "GAP",
+      "digest": "442a74172af3a129"
+    },
+    {
+      "id": "ladder.source-z-2.220446049250313e-16",
+      "order": "perturbation",
+      "criteria": [
+        "{\"kind\":\"fixed\",\"gradeRatio\":-0.5}",
+        "{\"kind\":\"relative-elevation\",\"gradeRatio\":-0.25,\"relativeElevation\":-10}"
+      ],
+      "frames": "T=(1.0000,0.0000) N=(0.0000,-1.0000) gs=0.0000 | T=(0.0000,1.0000) N=(1.0000,0.0000) gs=0.0000",
+      "targetDigest": "c8cd232f775ce905",
+      "expected": "EXACT_COMMON_TIE",
+      "actual": "EXACT_COMMON_TIE",
+      "match": true,
+      "surfaceTie": [
+        40,
+        -20,
+        90
+      ],
+      "analyticTie": [
+        40,
+        -20,
+        90
+      ],
+      "xyGap": 0,
+      "zGap": 0,
+      "rootCount": 1,
+      "extent": 44.721359549995796,
+      "meshValid": true,
+      "turn": "GAP",
+      "digest": "2b80521312e703a4"
+    },
+    {
+      "id": "ladder.source-z-1e-12",
+      "order": "perturbation",
+      "criteria": [
+        "{\"kind\":\"fixed\",\"gradeRatio\":-0.5}",
+        "{\"kind\":\"relative-elevation\",\"gradeRatio\":-0.25,\"relativeElevation\":-10}"
+      ],
+      "frames": "T=(1.0000,0.0000) N=(0.0000,-1.0000) gs=0.0000 | T=(0.0000,1.0000) N=(1.0000,0.0000) gs=0.0000",
+      "targetDigest": "c8cd232f775ce905",
+      "expected": "TRANSITION_REQUIRED",
+      "actual": "TRANSITION_REQUIRED",
+      "match": true,
+      "surfaceTie": [
+        40.00000000000397,
+        -20.000000000001986,
+        90
+      ],
+      "analyticTie": [
+        40,
+        -20,
+        90.000000000001
+      ],
+      "xyGap": 4.440757093328722e-12,
+      "zGap": 9.947598300641403e-13,
+      "rootCount": 1,
+      "extent": 44.721359549995796,
+      "meshValid": null,
+      "turn": "GAP",
+      "detail": "tie-disagree",
+      "digest": "c6439800c168eff1"
+    },
+    {
+      "id": "ladder.source-z-1e-9",
+      "order": "perturbation",
+      "criteria": [
+        "{\"kind\":\"fixed\",\"gradeRatio\":-0.5}",
+        "{\"kind\":\"relative-elevation\",\"gradeRatio\":-0.25,\"relativeElevation\":-10}"
+      ],
+      "frames": "T=(1.0000,0.0000) N=(0.0000,-1.0000) gs=0.0000 | T=(0.0000,1.0000) N=(1.0000,0.0000) gs=0.0000",
+      "targetDigest": "c8cd232f775ce905",
+      "expected": "TRANSITION_REQUIRED",
+      "actual": "TRANSITION_REQUIRED",
+      "match": true,
+      "surfaceTie": [
+        40.000000004000015,
+        -20.000000002000007,
+        90
+      ],
+      "analyticTie": [
+        40,
+        -20,
+        90.000000001
+      ],
+      "xyGap": 4.472152213244349e-9,
+      "zGap": 1.0000036354540498e-9,
+      "rootCount": 1,
+      "extent": 44.721359549995796,
+      "meshValid": null,
+      "turn": "GAP",
+      "detail": "tie-disagree",
+      "digest": "98075923ae532086"
+    },
+    {
+      "id": "ladder.source-z-0.000001",
+      "order": "perturbation",
+      "criteria": [
+        "{\"kind\":\"fixed\",\"gradeRatio\":-0.5}",
+        "{\"kind\":\"relative-elevation\",\"gradeRatio\":-0.25,\"relativeElevation\":-10}"
+      ],
+      "frames": "T=(1.0000,0.0000) N=(0.0000,-1.0000) gs=0.0000 | T=(0.0000,1.0000) N=(1.0000,0.0000) gs=0.0000",
+      "targetDigest": "c8cd232f775ce905",
+      "expected": "TRANSITION_REQUIRED",
+      "actual": "TRANSITION_REQUIRED",
+      "match": true,
+      "surfaceTie": [
+        40.00000399999999,
+        -20.000001999999995,
+        90
+      ],
+      "analyticTie": [
+        40,
+        -20,
+        90.000001
+      ],
+      "xyGap": 0.0000044721359437085214,
+      "zGap": 9.999999974752427e-7,
+      "rootCount": 1,
+      "extent": 44.721359549995796,
+      "meshValid": null,
+      "turn": "GAP",
+      "detail": "tie-disagree",
+      "digest": "b5738e0742e178d0"
+    },
+    {
+      "id": "ladder.source-z-0.001",
+      "order": "perturbation",
+      "criteria": [
+        "{\"kind\":\"fixed\",\"gradeRatio\":-0.5}",
+        "{\"kind\":\"relative-elevation\",\"gradeRatio\":-0.25,\"relativeElevation\":-10}"
+      ],
+      "frames": "T=(1.0000,0.0000) N=(0.0000,-1.0000) gs=0.0000 | T=(0.0000,1.0000) N=(1.0000,0.0000) gs=0.0000",
+      "targetDigest": "c8cd232f775ce905",
+      "expected": "TRANSITION_REQUIRED",
+      "actual": "TRANSITION_REQUIRED",
+      "match": true,
+      "surfaceTie": [
+        40.00400000000002,
+        -20.00200000000001,
+        90
+      ],
+      "analyticTie": [
+        40,
+        -20,
+        90.001
+      ],
+      "xyGap": 0.004472135955020933,
+      "zGap": 0.0010000000000047748,
+      "rootCount": 1,
+      "extent": 44.721359549995796,
+      "meshValid": null,
+      "turn": "GAP",
+      "detail": "tie-disagree",
+      "digest": "fd58377d1e8e5fe4"
+    },
+    {
+      "id": "ladder.source-z-0.1",
+      "order": "perturbation",
+      "criteria": [
+        "{\"kind\":\"fixed\",\"gradeRatio\":-0.5}",
+        "{\"kind\":\"relative-elevation\",\"gradeRatio\":-0.25,\"relativeElevation\":-10}"
+      ],
+      "frames": "T=(1.0000,0.0000) N=(0.0000,-1.0000) gs=0.0000 | T=(0.0000,1.0000) N=(1.0000,0.0000) gs=0.0000",
+      "targetDigest": "c8cd232f775ce905",
+      "expected": "TRANSITION_REQUIRED",
+      "actual": "TRANSITION_REQUIRED",
+      "match": true,
+      "surfaceTie": [
+        40.39999999999997,
+        -20.199999999999985,
+        90
+      ],
+      "analyticTie": [
+        40,
+        -20,
+        90.1
+      ],
+      "xyGap": 0.4472135954999246,
+      "zGap": 0.09999999999999432,
+      "rootCount": 1,
+      "extent": 44.721359549995796,
+      "meshValid": null,
+      "turn": "GAP",
+      "detail": "tie-disagree",
+      "digest": "02943f416542ad01"
+    },
+    {
+      "id": "ladder.target-slope-0.001",
+      "order": "perturbation",
+      "criteria": [
+        "{\"kind\":\"fixed\",\"gradeRatio\":-0.5}",
+        "{\"kind\":\"relative-elevation\",\"gradeRatio\":-0.25,\"relativeElevation\":-10}"
+      ],
+      "frames": "T=(1.0000,0.0000) N=(0.0000,-1.0000) gs=0.0000 | T=(0.0000,1.0000) N=(1.0000,0.0000) gs=0.0000",
+      "targetDigest": "18d73d74912f0094",
+      "expected": "EXACT_COMMON_TIE",
+      "actual": "EXACT_COMMON_TIE",
+      "match": true,
+      "surfaceTie": [
+        39.99999999999998,
+        -19.99999999999999,
+        90
+      ],
+      "analyticTie": [
+        40,
+        -20,
+        90
+      ],
+      "xyGap": 2.3832327871173822e-14,
+      "zGap": 0,
+      "rootCount": 1,
+      "extent": 44.721359549995796,
+      "meshValid": true,
+      "turn": "GAP",
+      "digest": "dc0cbff468717689"
+    },
+    {
+      "id": "ladder.target-slope-0.01",
+      "order": "perturbation",
+      "criteria": [
+        "{\"kind\":\"fixed\",\"gradeRatio\":-0.5}",
+        "{\"kind\":\"relative-elevation\",\"gradeRatio\":-0.25,\"relativeElevation\":-10}"
+      ],
+      "frames": "T=(1.0000,0.0000) N=(0.0000,-1.0000) gs=0.0000 | T=(0.0000,1.0000) N=(1.0000,0.0000) gs=0.0000",
+      "targetDigest": "59a7e516d97e0a26",
+      "expected": "EXACT_COMMON_TIE",
+      "actual": "EXACT_COMMON_TIE",
+      "match": true,
+      "surfaceTie": [
+        40.00000000000002,
+        -20.00000000000001,
+        90
+      ],
+      "analyticTie": [
+        40,
+        -20,
+        90
+      ],
+      "xyGap": 2.3832327871173822e-14,
+      "zGap": 0,
+      "rootCount": 1,
+      "extent": 44.721359549995796,
+      "meshValid": true,
+      "turn": "GAP",
+      "digest": "dd3c8d0bd0fb2f4f"
+    },
+    {
+      "id": "ladder.target-slope-0.1",
+      "order": "perturbation",
+      "criteria": [
+        "{\"kind\":\"fixed\",\"gradeRatio\":-0.5}",
+        "{\"kind\":\"relative-elevation\",\"gradeRatio\":-0.25,\"relativeElevation\":-10}"
+      ],
+      "frames": "T=(1.0000,0.0000) N=(0.0000,-1.0000) gs=0.0000 | T=(0.0000,1.0000) N=(1.0000,0.0000) gs=0.0000",
+      "targetDigest": "fc041cf380721d7e",
+      "expected": "EXACT_COMMON_TIE",
+      "actual": "EXACT_COMMON_TIE",
+      "match": true,
+      "surfaceTie": [
+        40,
+        -20,
+        90
+      ],
+      "analyticTie": [
+        40,
+        -20,
+        90
+      ],
+      "xyGap": 0,
+      "zGap": 0,
+      "rootCount": 1,
+      "extent": 44.721359549995796,
+      "meshValid": true,
+      "turn": "GAP",
+      "digest": "fa4e337254dedfe9"
+    },
+    {
+      "id": "ladder.target-slope-coincident",
+      "order": "perturbation",
+      "criteria": [
+        "{\"kind\":\"fixed\",\"gradeRatio\":-0.5}",
+        "{\"kind\":\"relative-elevation\",\"gradeRatio\":-0.25,\"relativeElevation\":-10}"
+      ],
+      "frames": "T=(1.0000,0.0000) N=(0.0000,-1.0000) gs=0.0000 | T=(0.0000,1.0000) N=(1.0000,0.0000) gs=0.0000",
+      "targetDigest": "d7565873106b88d1",
+      "expected": "ROOT_POLICY_CONFLICT",
+      "actual": "ROOT_POLICY_CONFLICT",
+      "match": true,
+      "surfaceTie": [
+        0,
+        0,
+        100
+      ],
+      "analyticTie": [
+        40,
+        -20,
+        90
+      ],
+      "xyGap": 44.721359549995796,
+      "zGap": 10,
+      "rootCount": 1,
+      "extent": 44.721359549995796,
+      "meshValid": null,
+      "turn": "GAP",
+      "detail": "analytic-matches-later-root",
+      "digest": "20201d3a7738b7d2"
+    },
+    {
+      "id": "ladder.long-grade-0",
+      "order": "perturbation",
+      "criteria": [
+        "{\"kind\":\"fixed\",\"gradeRatio\":-0.5}",
+        "{\"kind\":\"relative-elevation\",\"gradeRatio\":-0.25,\"relativeElevation\":-10}"
+      ],
+      "frames": "T=(1.0000,0.0000) N=(0.0000,-1.0000) gs=0.0000 | T=(0.0000,1.0000) N=(1.0000,0.0000) gs=0.0000",
+      "targetDigest": "c8cd232f775ce905",
+      "expected": "EXACT_COMMON_TIE",
+      "actual": "EXACT_COMMON_TIE",
+      "match": true,
+      "surfaceTie": [
+        40,
+        -20,
+        90
+      ],
+      "analyticTie": [
+        40,
+        -20,
+        90
+      ],
+      "xyGap": 0,
+      "zGap": 0,
+      "rootCount": 1,
+      "extent": 44.721359549995796,
+      "meshValid": true,
+      "turn": "GAP",
+      "digest": "18ec91c853db8a46"
+    },
+    {
+      "id": "ladder.long-grade-2.220446049250313e-16",
+      "order": "perturbation",
+      "criteria": [
+        "{\"kind\":\"fixed\",\"gradeRatio\":-0.5}",
+        "{\"kind\":\"relative-elevation\",\"gradeRatio\":-0.25,\"relativeElevation\":-10}"
+      ],
+      "frames": "T=(1.0000,0.0000) N=(0.0000,-1.0000) gs=0.0000 | T=(0.0000,1.0000) N=(1.0000,0.0000) gs=0.0000",
+      "targetDigest": "c8cd232f775ce905",
+      "expected": "EXACT_COMMON_TIE",
+      "actual": "EXACT_COMMON_TIE",
+      "match": true,
+      "surfaceTie": [
+        40.00000000000001,
+        -20.000000000000018,
+        90
+      ],
+      "analyticTie": [
+        40,
+        -20.000000000000018,
+        90
+      ],
+      "xyGap": 7.105427357601002e-15,
+      "zGap": 0,
+      "rootCount": 1,
+      "extent": 44.7213595499958,
+      "meshValid": true,
+      "turn": "GAP",
+      "digest": "6e6734bb05fdb608"
+    },
+    {
+      "id": "ladder.long-grade-1e-12",
+      "order": "perturbation",
+      "criteria": [
+        "{\"kind\":\"fixed\",\"gradeRatio\":-0.5}",
+        "{\"kind\":\"relative-elevation\",\"gradeRatio\":-0.25,\"relativeElevation\":-10}"
+      ],
+      "frames": "T=(1.0000,0.0000) N=(0.0000,-1.0000) gs=0.0000 | T=(0.0000,1.0000) N=(1.0000,0.0000) gs=0.0000",
+      "targetDigest": "c8cd232f775ce905",
+      "expected": "EXACT_COMMON_TIE",
+      "actual": "EXACT_COMMON_TIE",
+      "match": true,
+      "surfaceTie": [
+        40,
+        -20.000000000079996,
+        90
+      ],
+      "analyticTie": [
+        40,
+        -20.000000000079996,
+        90
+      ],
+      "xyGap": 0,
+      "zGap": 0,
+      "rootCount": 1,
+      "extent": 44.72135955003157,
+      "meshValid": true,
+      "turn": "GAP",
+      "digest": "7667ed466381867a"
+    },
+    {
+      "id": "ladder.long-grade-1e-9",
+      "order": "perturbation",
+      "criteria": [
+        "{\"kind\":\"fixed\",\"gradeRatio\":-0.5}",
+        "{\"kind\":\"relative-elevation\",\"gradeRatio\":-0.25,\"relativeElevation\":-10}"
+      ],
+      "frames": "T=(1.0000,0.0000) N=(0.0000,-1.0000) gs=0.0000 | T=(0.0000,1.0000) N=(1.0000,0.0000) gs=0.0000",
+      "targetDigest": "c8cd232f775ce905",
+      "expected": "EXACT_COMMON_TIE",
+      "actual": "EXACT_COMMON_TIE",
+      "match": true,
+      "surfaceTie": [
+        40.00000000000001,
+        -20.000000080000007,
+        90
+      ],
+      "analyticTie": [
+        40,
+        -20.000000080000007,
+        90
+      ],
+      "xyGap": 7.105427357601002e-15,
+      "zGap": 0,
+      "rootCount": 1,
+      "extent": 44.72135958577289,
+      "meshValid": true,
+      "turn": "GAP",
+      "digest": "03c6744838886505"
+    },
+    {
+      "id": "ladder.long-grade-0.000001",
+      "order": "perturbation",
+      "criteria": [
+        "{\"kind\":\"fixed\",\"gradeRatio\":-0.5}",
+        "{\"kind\":\"relative-elevation\",\"gradeRatio\":-0.25,\"relativeElevation\":-10}"
+      ],
+      "frames": "T=(1.0000,0.0000) N=(0.0000,-1.0000) gs=0.0000 | T=(0.0000,1.0000) N=(1.0000,0.0000) gs=0.0000",
+      "targetDigest": "c8cd232f775ce905",
+      "expected": "EXACT_COMMON_TIE",
+      "actual": "EXACT_COMMON_TIE",
+      "match": true,
+      "surfaceTie": [
+        40,
+        -20.00008000000001,
+        90
+      ],
+      "analyticTie": [
+        40,
+        -20.00008000000001,
+        90
+      ],
+      "xyGap": 0,
+      "zGap": 0,
+      "rootCount": 1,
+      "extent": 44.72139532714068,
+      "meshValid": true,
+      "turn": "GAP",
+      "digest": "bf3c860de84e6938"
+    },
+    {
+      "id": "ladder.long-grade-0.001",
+      "order": "perturbation",
+      "criteria": [
+        "{\"kind\":\"fixed\",\"gradeRatio\":-0.5}",
+        "{\"kind\":\"relative-elevation\",\"gradeRatio\":-0.25,\"relativeElevation\":-10}"
+      ],
+      "frames": "T=(1.0000,0.0000) N=(0.0000,-1.0000) gs=0.0010 | T=(0.0000,1.0000) N=(1.0000,0.0000) gs=0.0000",
+      "targetDigest": "c8cd232f775ce905",
+      "expected": "EXACT_COMMON_TIE",
+      "actual": "EXACT_COMMON_TIE",
+      "match": true,
+      "surfaceTie": [
+        40,
+        -20.080000000000005,
+        90
+      ],
+      "analyticTie": [
+        40,
+        -20.080000000000002,
+        90
+      ],
+      "xyGap": 3.552713678800501e-15,
+      "zGap": 0,
+      "rootCount": 1,
+      "extent": 44.7571938351814,
+      "meshValid": true,
+      "turn": "GAP",
+      "digest": "270fffd3e9441549"
+    },
+    {
+      "id": "ladder.long-grade-0.1",
+      "order": "perturbation",
+      "criteria": [
+        "{\"kind\":\"fixed\",\"gradeRatio\":-0.5}",
+        "{\"kind\":\"relative-elevation\",\"gradeRatio\":-0.25,\"relativeElevation\":-10}"
+      ],
+      "frames": "T=(1.0000,0.0000) N=(0.0000,-1.0000) gs=0.1000 | T=(0.0000,1.0000) N=(1.0000,0.0000) gs=0.0000",
+      "targetDigest": "c8cd232f775ce905",
+      "expected": "EXACT_COMMON_TIE",
+      "actual": "EXACT_COMMON_TIE",
+      "match": true,
+      "surfaceTie": [
+        40.00000000000001,
+        -28.000000000000004,
+        90
+      ],
+      "analyticTie": [
+        40,
+        -27.999999999999996,
+        90
+      ],
+      "xyGap": 1.0048591735576161e-14,
+      "zGap": 0,
+      "rootCount": 1,
+      "extent": 48.82622246293481,
+      "meshValid": true,
+      "turn": "GAP",
+      "digest": "6eaec19b91c8b79f"
+    },
+    {
+      "id": "exact.overlap",
+      "order": "surface-incoming/analytic-outgoing",
+      "criteria": [
+        "{\"kind\":\"fixed\",\"gradeRatio\":-0.5}",
+        "{\"kind\":\"relative-elevation\",\"gradeRatio\":-0.25,\"relativeElevation\":-10}"
+      ],
+      "frames": "T=(1.0000,0.0000) N=(0.0000,-1.0000) gs=0.0000 | T=(0.0000,-1.0000) N=(-1.0000,0.0000) gs=0.0000",
+      "targetDigest": "c8cd232f775ce905",
+      "expected": "EXACT_COMMON_TIE",
+      "actual": "EXACT_COMMON_TIE",
+      "match": true,
+      "surfaceTie": [
+        -40,
+        -20,
+        90
+      ],
+      "analyticTie": [
+        -40,
+        -20,
+        90
+      ],
+      "xyGap": 0,
+      "zGap": 0,
+      "rootCount": 1,
+      "extent": 44.721359549995796,
+      "meshValid": true,
+      "turn": "OVERLAP",
+      "digest": "6a79d509ed8b0d93"
+    },
+    {
+      "id": "exact.square.corner-0",
+      "order": "surface-incoming/analytic-outgoing",
+      "criteria": [
+        "{\"kind\":\"fixed\",\"gradeRatio\":-0.5}",
+        "{\"kind\":\"distance\",\"gradeRatio\":-0.5,\"distance\":20}"
+      ],
+      "frames": "T=(1.0000,0.0000) N=(0.0000,-1.0000) gs=0.0000 | T=(0.0000,1.0000) N=(1.0000,0.0000) gs=0.0000",
+      "targetDigest": "4e377c92c8cb5d68",
+      "expected": "EXACT_COMMON_TIE",
+      "actual": "EXACT_COMMON_TIE",
+      "match": true,
+      "surfaceTie": [
+        120,
+        -20,
+        0
+      ],
+      "analyticTie": [
+        120,
+        -20,
+        0
+      ],
+      "xyGap": 0,
+      "zGap": 0,
+      "rootCount": 1,
+      "extent": 28.284271247461902,
+      "meshValid": null,
+      "turn": "GAP",
+      "digest": "680050321cf46f18"
+    },
+    {
+      "id": "exact.square.corner-1",
+      "order": "analytic-analytic",
+      "criteria": [
+        "{\"kind\":\"distance\",\"gradeRatio\":-0.5,\"distance\":20}",
+        "{\"kind\":\"elevation\",\"gradeRatio\":-0.5,\"targetElevation\":0}"
+      ],
+      "frames": "T=(0.0000,1.0000) N=(1.0000,0.0000) gs=0.0000 | T=(-1.0000,0.0000) N=(0.0000,1.0000) gs=0.0000",
+      "targetDigest": "analytic-no-target",
+      "expected": "EXACT_COMMON_TIE",
+      "actual": "EXACT_COMMON_TIE",
+      "match": true,
+      "surfaceTie": null,
+      "analyticTie": [
+        120,
+        120,
+        0
+      ],
+      "xyGap": null,
+      "zGap": null,
+      "rootCount": 0,
+      "extent": 28.284271247461902,
+      "meshValid": null,
+      "turn": "GAP",
+      "digest": "8f493e9e5de5faf8"
+    },
+    {
+      "id": "exact.square.corner-2",
+      "order": "analytic-analytic",
+      "criteria": [
+        "{\"kind\":\"elevation\",\"gradeRatio\":-0.5,\"targetElevation\":0}",
+        "{\"kind\":\"relative-elevation\",\"gradeRatio\":-0.5,\"relativeElevation\":-10}"
+      ],
+      "frames": "T=(-1.0000,0.0000) N=(0.0000,1.0000) gs=0.0000 | T=(0.0000,-1.0000) N=(-1.0000,0.0000) gs=0.0000",
+      "targetDigest": "analytic-no-target",
+      "expected": "EXACT_COMMON_TIE",
+      "actual": "EXACT_COMMON_TIE",
+      "match": true,
+      "surfaceTie": null,
+      "analyticTie": [
+        -20,
+        120,
+        0
+      ],
+      "xyGap": null,
+      "zGap": null,
+      "rootCount": 0,
+      "extent": 28.284271247461902,
+      "meshValid": null,
+      "turn": "GAP",
+      "digest": "228b786d702116fa"
+    },
+    {
+      "id": "exact.square.corner-3",
+      "order": "analytic-incoming/surface-outgoing",
+      "criteria": [
+        "{\"kind\":\"fixed\",\"gradeRatio\":-0.5}",
+        "{\"kind\":\"relative-elevation\",\"gradeRatio\":-0.5,\"relativeElevation\":-10}"
+      ],
+      "frames": "T=(1.0000,0.0000) N=(0.0000,-1.0000) gs=0.0000 | T=(0.0000,-1.0000) N=(-1.0000,0.0000) gs=0.0000",
+      "targetDigest": "4e377c92c8cb5d68",
+      "expected": "EXACT_COMMON_TIE",
+      "actual": "EXACT_COMMON_TIE",
+      "match": true,
+      "surfaceTie": [
+        -20,
+        -20,
+        0
+      ],
+      "analyticTie": [
+        -20,
+        -20,
+        0
+      ],
+      "xyGap": 0,
+      "zGap": 0,
+      "rootCount": 1,
+      "extent": 28.284271247461902,
+      "meshValid": null,
+      "turn": "GAP",
+      "digest": "824e8f65bb26ec4a"
+    },
+    {
+      "id": "mismatch.square-corner-0",
+      "order": "surface-incoming/analytic-outgoing",
+      "criteria": [
+        "{\"kind\":\"fixed\",\"gradeRatio\":-0.5}",
+        "{\"kind\":\"distance\",\"gradeRatio\":-0.5,\"distance\":24}"
+      ],
+      "frames": "T=(1.0000,0.0000) N=(0.0000,-1.0000) gs=0.0000 | T=(0.0000,1.0000) N=(1.0000,0.0000) gs=0.0000",
+      "targetDigest": "4e377c92c8cb5d68",
+      "expected": "TRANSITION_REQUIRED",
+      "actual": "TRANSITION_REQUIRED",
+      "match": true,
+      "surfaceTie": [
+        120,
+        -20,
+        0
+      ],
+      "analyticTie": [
+        124,
+        -24,
+        -2
+      ],
+      "xyGap": 5.656854249492381,
+      "zGap": 2,
+      "rootCount": 1,
+      "extent": 33.941125496954285,
+      "meshValid": null,
+      "turn": "GAP",
+      "detail": "tie-disagree",
+      "digest": "b4d80079e7819e55"
+    },
+    {
+      "id": "mismatch.square-corner-1",
+      "order": "analytic-analytic",
+      "criteria": [
+        "{\"kind\":\"distance\",\"gradeRatio\":-0.5,\"distance\":24}",
+        "{\"kind\":\"elevation\",\"gradeRatio\":-0.5,\"targetElevation\":0}"
+      ],
+      "frames": "T=(0.0000,1.0000) N=(1.0000,0.0000) gs=0.0000 | T=(-1.0000,0.0000) N=(0.0000,1.0000) gs=0.0000",
+      "targetDigest": "analytic-no-target",
+      "expected": "TRANSITION_REQUIRED",
+      "actual": "TRANSITION_REQUIRED",
+      "match": true,
+      "surfaceTie": null,
+      "analyticTie": null,
+      "xyGap": null,
+      "zGap": null,
+      "rootCount": 0,
+      "extent": null,
+      "meshValid": null,
+      "turn": "GAP",
+      "detail": "z-disagree",
+      "digest": "fc1122901d4d98b1"
+    },
+    {
+      "id": "control.all-surface",
+      "order": "closed-group-control",
+      "criteria": [
+        "{\"kind\":\"fixed\",\"gradeRatio\":-0.5}"
+      ],
+      "frames": "T=(1.0000,0.0000) N=(0.0000,-1.0000) gs=0.0000 | T=(0.0000,1.0000) N=(1.0000,0.0000) gs=0.0000 | T=(-1.0000,0.0000) N=(0.0000,1.0000) gs=0.0000 | T=(0.0000,-1.0000) N=(-1.0000,0.0000) gs=0.0000",
+      "targetDigest": "4e377c92c8cb5d68",
+      "expected": "ok",
+      "actual": "ok",
+      "match": true,
+      "surfaceTie": null,
+      "analyticTie": [
+        120,
+        -20,
+        0,
+        120,
+        120,
+        0,
+        -20,
+        120,
+        0,
+        -20,
+        -20,
+        0
+      ],
+      "xyGap": null,
+      "zGap": null,
+      "rootCount": 0,
+      "extent": 141.4213562373095,
+      "meshValid": true,
+      "turn": null,
+      "digest": "4e60fbb065d0df12"
+    },
+    {
+      "id": "control.all-distance",
+      "order": "closed-group-control",
+      "criteria": [
+        "{\"kind\":\"distance\",\"gradeRatio\":-0.5,\"distance\":20}"
+      ],
+      "frames": "T=(1.0000,0.0000) N=(0.0000,-1.0000) gs=0.0000 | T=(0.0000,1.0000) N=(1.0000,0.0000) gs=0.0000 | T=(-1.0000,0.0000) N=(0.0000,1.0000) gs=0.0000 | T=(0.0000,-1.0000) N=(-1.0000,0.0000) gs=0.0000",
+      "targetDigest": "analytic-no-target",
+      "expected": "ok",
+      "actual": "ok",
+      "match": true,
+      "surfaceTie": null,
+      "analyticTie": [
+        120,
+        -20,
+        0,
+        120,
+        120,
+        0,
+        -20,
+        120,
+        0,
+        -20,
+        -20,
+        0
+      ],
+      "xyGap": null,
+      "zGap": null,
+      "rootCount": 0,
+      "extent": 28.284271247461902,
+      "meshValid": true,
+      "turn": null,
+      "digest": "9f9de0a8a81a160e"
+    },
+    {
+      "id": "control.mixed-analytic",
+      "order": "closed-group-control",
+      "criteria": [
+        "{\"kind\":\"distance\",\"gradeRatio\":-0.5,\"distance\":20}"
+      ],
+      "frames": "T=(1.0000,0.0000) N=(0.0000,-1.0000) gs=0.0000 | T=(0.0000,1.0000) N=(1.0000,0.0000) gs=0.0000 | T=(-1.0000,0.0000) N=(0.0000,1.0000) gs=0.0000 | T=(0.0000,-1.0000) N=(-1.0000,0.0000) gs=0.0000",
+      "targetDigest": "analytic-no-target",
+      "expected": "ok",
+      "actual": "ok",
+      "match": true,
+      "surfaceTie": null,
+      "analyticTie": [
+        120,
+        -20,
+        0,
+        120,
+        120,
+        0,
+        -20,
+        120,
+        0,
+        -20,
+        -20,
+        0
+      ],
+      "xyGap": null,
+      "zGap": null,
+      "rootCount": 0,
+      "extent": 28.284271247461902,
+      "meshValid": true,
+      "turn": null,
+      "digest": "b73e3ba65fb221b0"
+    },
+    {
+      "id": "freeze.surface-plus-analytic",
+      "order": "closed-group-control",
+      "criteria": [
+        "{\"kind\":\"fixed\",\"gradeRatio\":-0.5}"
+      ],
+      "frames": "T=(1.0000,0.0000) N=(0.0000,-1.0000) gs=0.0000 | T=(0.0000,1.0000) N=(1.0000,0.0000) gs=0.0000 | T=(-1.0000,0.0000) N=(0.0000,1.0000) gs=0.0000 | T=(0.0000,-1.0000) N=(-1.0000,0.0000) gs=0.0000",
+      "targetDigest": "4e377c92c8cb5d68",
+      "expected": "MEMBER_NO_SOLUTION/GRADING_GROUP_MIXED_TERMINATION_DOMAIN",
+      "actual": "MEMBER_NO_SOLUTION/GRADING_GROUP_MIXED_TERMINATION_DOMAIN",
+      "match": true,
+      "surfaceTie": null,
+      "analyticTie": null,
+      "xyGap": null,
+      "zGap": null,
+      "rootCount": 0,
+      "extent": null,
+      "meshValid": null,
+      "turn": null,
+      "digest": "6d35085710af197e"
+    }
+  ],
+  "summary": {
+    "total": 114,
+    "matched": 114,
+    "mismatched": []
+  }
+}
