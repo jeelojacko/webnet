@@ -40,5 +40,7 @@ downloaded CSV.
   merge-push CI run 36750134664.
 - Phase 20J.1 (persistence + tie-tolerance, baseline `ffa89282`) is not
   browser/visual in scope; no screenshots were recaptured or changed. Visual
-  regression result: TBD.
-- Phase 20J.1 correction PR/head: TBD.
+  regression result: 12/12 green (existing 11 + new Flow F reopen regression),
+  0 page / 0 console / 0 unhandled errors on head `397203c2`; no screenshots
+  recaptured or changed.
+- Phase 20J.1 correction PR: #140 (head `397203c2`), open, DO NOT MERGE.

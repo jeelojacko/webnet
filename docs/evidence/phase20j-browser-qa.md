@@ -58,6 +58,8 @@ observed (Calculate/Extract/Bake/patch all mutate and undo cleanly).
   the merged head.
 - Phase 20J.1 (persistence + tie-tolerance, branch
   `fix/phase20j1-hybrid-persistence-tolerance`, baseline `ffa89282`) makes no
-  browser-visible changes in scope; browser regression result: TBD (no
-  screenshots changed).
-- Phase 20J.1 correction PR/head: TBD.
+  browser-visible changes in scope; browser regression result: 12/12 green
+  (existing 11 + new Flow F reopen regression), 0 page / 0 console /
+  0 unhandled errors, Playwright 1.60.0 bundled Chromium, 1366-only new flow
+  (verified 2026-09-30 on head `397203c2`; no screenshots changed).
+- Phase 20J.1 correction PR: #140 (head `397203c2`), open, DO NOT MERGE.

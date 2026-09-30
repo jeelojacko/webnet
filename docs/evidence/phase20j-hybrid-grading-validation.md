@@ -120,4 +120,4 @@ on a clean-tree comparison; Study code untouched).
   (single-quantum seam term), `elevationAgreementTol` (anchored-plane
   leverage), replacing the double-world-scaled `tieAgreementTol`. See
   `docs/evidence/phase20j1-hybrid-hardening.md` (§6–§14).
-- Phase 20J.1 correction PR/head: TBD (orchestrator commit/PR).
+- Phase 20J.1 correction PR: #140 (head `397203c2`), open, DO NOT MERGE.

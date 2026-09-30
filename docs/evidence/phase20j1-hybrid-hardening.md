@@ -139,11 +139,15 @@ X/Y = `coordinateAgreementTol`; t = `seamParameterAgreementTol`; Z =
 
 | scenario (x,y) | X old | X new | t old | t new | Z old | Z new |
 |---|---:|---:|---:|---:|---:|---:|
-| local (145, 24) | 1.87e-11 | 1.03e-12 | 3.64e-12 | 1.03e-12 | 1.29e-12 | 1.90e-12 |
-| 500k / 5M | 2.22e-3 | 3.55e-8 | 1.26e-7 | 3.55e-8 | 4.44e-9 | 2.13e-8 |
-| 2M / 7M | 1.24e-2 | 4.97e-8 | 1.76e-7 | 4.97e-8 | 6.22e-9 | 3.91e-8 |
-| 20M / 70M | 1.24e+0 | 4.97e-7 | 1.76e-6 | 4.97e-7 | 6.22e-8 | 3.91e-7 |
-| 100M / 300M | 2.67e+1 | 2.13e-6 | 7.54e-6 | 2.13e-6 | 2.67e-7 | 1.78e-6 |
+| local (145, 24) | 1.87e-11 | 1.03e-12 | 5.76e-12 | 1.03e-12 | 1.16e-11 | 1.90e-12 |
+| 500k / 5M | 2.22e-3 | 3.55e-8 | 1.99e-7 | 3.55e-8 | 4.00e-7 | 2.13e-8 |
+| 2M / 7M | 1.24e-2 | 4.97e-8 | 2.78e-7 | 4.97e-8 | 5.60e-7 | 3.91e-8 |
+| 20M / 70M | 1.24e+0 | 4.97e-7 | 2.78e-6 | 4.97e-7 | 5.60e-6 | 3.91e-7 |
+| 100M / 300M | 2.67e+1 | 2.13e-6 | 1.19e-5 | 2.13e-6 | 2.40e-5 | 1.78e-6 |
+
+Old t = `zeroDelta(sqrt(2000),sqrt(2000))·scale` = 3.9721e-14·scale; old Z =
+`zeroDelta(90,90)·scale` = 7.9936e-14·scale (corrected 2026-09-30 per
+independent review; prior draft under-reported both columns).
 
 New X/Y/t bounds are `AGREEMENT_OPS·max(quantum)` with `AGREEMENT_OPS = 32`
 and `quantum = eps·max(1,|coordinate|)`. New Z bounds add the single-axis
