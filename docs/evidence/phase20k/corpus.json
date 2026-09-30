@@ -254,7 +254,7 @@
       ],
       "tolerance": 0.1,
       "closed": true,
-      "expected": "EXACT_TIE",
+      "expected": "EXACT_TIE_NOT_BUILDABLE",
       "actual": "EXACT_TIE",
       "match": true,
       "tieCount": 4,
@@ -265,7 +265,7 @@
         1
       ],
       "meshValid": true,
-      "auditPass": true,
+      "auditPass": false,
       "vertices": 122,
       "triangles": 114,
       "planArea": 9451.95156014739,
@@ -951,12 +951,12 @@
       "auditPass": false,
       "vertices": 51,
       "triangles": 47,
-      "planArea": 4456.395460471915,
-      "area3d": 4978.735305906423,
+      "planArea": 4427.6498891408955,
+      "area3d": 4950.268949541389,
       "boundaryEdges": 53,
       "components": 1,
-      "meshDigest": "2388e43912287598",
-      "digest": "435b409877445074"
+      "meshDigest": "1bbe250350d7beb1",
+      "digest": "a2f9143af6b34cf7"
     },
     {
       "id": "corner.radius-252.5",
@@ -986,7 +986,7 @@
       "boundaryEdges": 61,
       "components": 1,
       "meshDigest": "d6be5d127e2ac86e",
-      "digest": "94230ba7bb64f175"
+      "digest": "807f7f2b7c1eee31"
     },
     {
       "id": "corner.radius-120",
@@ -1011,19 +1011,19 @@
       "auditPass": false,
       "vertices": 71,
       "triangles": 67,
-      "planArea": 4396.370541265161,
-      "area3d": 4926.5231852072875,
+      "planArea": 4521.353932143996,
+      "area3d": 5055.058884433875,
       "boundaryEdges": 73,
       "components": 1,
-      "meshDigest": "34e88da969038af2",
-      "digest": "91a6152dee263cff"
+      "meshDigest": "4eb07162ae277364",
+      "digest": "239f1935b8292cf3"
     }
   ],
   "summary": {
     "total": 39,
     "matched": 39,
     "mismatched": [],
-    "digests": 12,
+    "digests": 13,
     "comparison": {
       "available": true,
       "planAreaEqual": true,

@@ -32,8 +32,8 @@ An arc member has three distinct notions of "terminal geometry":
 | model | source samples | terminal direction at a joint | grade | tolerance-dependent |
 |---|---|---|---|---|
 | **source** | exact circle samples (`linearizeGradingArc`) | — (the strip is the source) | exact | no |
-| **chord** | same exact samples | direction of the first/last linearized chord — what production `chordDir(chords[0/last])` feeds `solveHybridCorner` | `ΔZ/L` | yes |
-| **true-tangent** | same exact samples | exact circle tangent at the joint, `dir·(−sinθ, cosθ)` | `ΔZ/L` | no |
+| **chord** | same exact samples | direction of the first/last linearized chord — what production `chordDir(chords[0/last])` feeds `solveHybridCorner` | terminal chord `ΔZ/\|chord\|` (exactly the production `gradingGroupCompute` grade) | yes |
+| **true-tangent** | same exact samples | exact circle tangent at the joint, `dir·(−sinθ, cosθ)` | arc-length `ΔZ/L` (the honest physical grade) | no |
 
 All three share the SAME source samples; only the frame a corner consults
 differs. The chord model is what every shipped arc path already uses; the
@@ -68,7 +68,8 @@ route.
   `stitchChords`, including the `stationBase`/`stationScale` arc-station map.
 - **Corners** — `resolveArcPairCorner` (core) → `solveHybridCorner` with the
   arc-pair guard cleared; GAP fans `V→Qs→tie` + `V→tie→Qa`, OVERLAP clips
-  both strips to the seam.
+  both strips to the seam. (GAP/OVERLAP here names the corner patch shape;
+  it does not certify a buildable group — buildability is the audit's call.)
 - **Merge** — `mergeGroupTriangles` + `validateGroupMesh` (the production
   explicit-TIN validator), `ringIsSimple` for closed daylight.
 - **Daily controls** — `productionControl` calls the real
@@ -78,7 +79,8 @@ route.
   `validateExplicitTinPayload` (§29): finite XYZ, valid indices, positive
   plan area, no duplicate triangle, no interior overlap (O(n²) plan
   intersection), edge incidence ≤ 2, vertex- and edge-connected component
-  counts, open-continuous / closed-simple daylight, no bridge/pinch, and
+  counts with edgeComponents > 1 failing buildability for open AND closed,
+  open-continuous / closed-simple daylight, no bridge/pinch, and
   `sum(triangle plan area) == reported plan area`.
 - **Corpus** — `buildCorpus()` writes `docs/evidence/phase20k/corpus.json`
   (39 rows, 0 mismatches, one canonical mesh digest per distinct success).
@@ -104,8 +106,8 @@ control fails `GROUP_SELF_INTERSECTION / GRADING_GROUP_DAYLIGHT_RING`
 (`closed.square.literal-concave*` rows), which is the same result for the
 literal geometry whether solved by production or the study assembler.
 
-Because §27 requires a simple closed boundary, the study’s buildable rounded
-square is the outward (convex) mirror: centre `(50,+247.5)`, minor CCW sweep
+Because §27 requires a simple closed boundary, the study's rounded square
+is the outward (convex) mirror: centre `(50,+247.5)`, minor CCW sweep
 (`outwardBottomSpec`). The literal concave geometry is retained in the corpus
 as a fail-closed control, so the discrepancy is recorded rather than hidden.
 
@@ -128,8 +130,8 @@ NONE of it is implemented.
 - **Compute** (`gradingGroupCompute.ts`, `gradingGroupHybridCorners.ts`) —
   the real seam. The arc-pair guard is a single boolean branch; removing it
   is trivial, but §27 shows the resulting **mesh** is not production-grade
-  without a seam-aware strip stitch. A future route must not just delete the
-  guard.
+  (vertex-pinched, audit-failing) without a seam-aware strip stitch. A
+  future route must not just delete the guard.
 - **Status / commands** (`gradingGroupStatus.ts`) — failure still collapses
   to `null` at the revision gate; no change.
 - **Provenance** — a new arc-model marker is unnecessary; `CURVE_APPROXIMATED`

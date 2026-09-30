@@ -1,7 +1,7 @@
 # Phase 20K — hybrid arc×arc grading groups: validation
 
 Status: STUDY / EVIDENCE ONLY. Zero `src/` changes. Corpus:
-`docs/evidence/phase20k/corpus.json` — **39 rows, 0 mismatches, 12 distinct
+`docs/evidence/phase20k/corpus.json` — **39 rows, 0 mismatches, 13 distinct
 success digests**, byte-identical across repeated runs (sha256 of the file is
 stable). Loader/oracle: `tests/cad_grading_hybrid_arc_pair_mesh_20k.test.ts`
 (9 tests, agent tier).
@@ -29,10 +29,14 @@ control), not copied from the actual result.
 - **Mismatch ladder** — analytic `D = 20 + step`, `step ∈ {0, 1e-9, 1e-6,
   1e-3, 1e-1, 1, 4}`. `step = 0` is exact; every `step > 0` fails closed
   `GRADING_SURFACE_ANALYTIC_TRANSITION_REQUIRED` (7 rows).
-- **Radius / sweep matrix** — `R ∈ {500, 252.5, 120}`, all exact ties, all
-  non-buildable as open pairs (3 rows).
+- **Radius / sweep matrix** — `R ∈ {500, 252.5, 120}` as honest
+  endpoint-anchored arcs (`anchoredRadiusArc`: centre `(50, √(R²−50²))` so
+  A/B lie exactly on the circle; the joint uses the arc's natural end with
+  the outgoing member rigidly anchored there, no endpoint override). All
+  exact ties, all non-buildable as open pairs (3 rows).
 - **Offset matrix** — closed square `D ∈ {10, 20, 40}` (with `Δ = −D/2`).
-  `D = 20` is the flat-target exact offset and builds; `D = 10/40` fail
+  `D = 20` is the flat-target exact offset: 4 exact ties, but the group is
+  still NOT buildable (vertex pinch, audit fail); `D = 10/40` fail
   closed `TRANSITION_REQUIRED` (3 rows).
 - **Triangulation permutation** — alternate diagonal of the spun flat TIN →
   identical EXACT tie.
@@ -65,9 +69,11 @@ REL(−0.5,−10)]`, `side=right`, flat `Z=0`, `tol=0.1`:
 - **4 exact GAP ties** (joints 0–3), all on the outward (convex) mirror;
 - closed daylight ring passes `ringIsSimple`; mesh passes the production
   `validateGroupMesh`;
-- independent audit **PASSES** (`sum(triangle plan area) == reported plan
-  area`, no interior overlap, finite, valid indices, edge incidence ≤ 2,
-  one vertex-connected component);
+- independent audit **FAILS**: **8 edge-connected components** (vertex
+  pinch at the arc chord seams; 130 boundary edges over 114 triangles) —
+  the mesh is not a 2-manifold usable surface even though the production
+  validator passes it. Row classification is therefore
+  `EXACT_TIE_NOT_BUILDABLE`, matching the open-pair rule;
 - reported plan area `9451.951560147` matches the production all-distance
   control to `<1e-11` relative; tie points match to `8.53e-14`.
 
@@ -110,16 +116,18 @@ deterministic (`match=true` for both rows).
 5. no interior overlap — O(n²) plan triangle-intersection area beyond shared
    edges/vertices;
 6. edge incidence ≤ 2 (non-manifold edges rejected);
-7. vertex-connected component count (arc chord pinch is reported separately
-   as `edgeComponents`);
+7. vertex-connected AND edge-connected component counts — edgeComponents
+   > 1 fails buildability for open AND closed (a vertex-pinch is not a
+   2-manifold usable surface);
 8. open-continuous daylight / closed-simple ring, no bridge/pinch;
 9. `sum(triangle plan area) == reported plan area`;
 10. `outerShellArea` (daylight-ring shoelace) recorded for closed groups;
     control equality where applicable.
 
-The audit self-check in the test rejects a synthetic overlapping mesh, and it
-positively distinguishes the buildable closed square (pass) from the
-non-buildable open pair (fail).
+The audit self-check in the test rejects a synthetic overlapping mesh, and
+it fails every exact-tie group in the corpus (open daylight discontinuity
+and/or vertex pinch) while still recording the exact tie, area, and
+production-validator facts.
 
 ## 7. Corpus coverage
 
@@ -132,7 +140,12 @@ matrix, target gap, triangulation permutation, mismatch ladder, projected
 (perf), open group, rounded square + mismatch, degenerate sources
 (`GRADING_ARC_LINEARIZE`), max-search failure (`MEMBER_NO_SOLUTION`), sloped
 target (`GRADING_DAYLIGHT_DISAGREE`, the known 20I/20B chord-agreement
-limitation), no/policy/multi-root implicitly via the mismatch controls.
+limitation). Root policy on the arc path: the robustness study pins
+anchor-verified edge/vertex triangulation hits (edge through, vertex at the
+pinned tie) and the stacked-duplicate fail-closed rejection
+(`CORNER_BRANCH_DISCONTINUITY`); nearest-vs-later root choice is explicitly
+UNTESTED here (no arc-path ROOT_POLICY fixture — the 20J patchTin gives
+TARGET_GAP via CORE, an exact tie via VARIANTS — see TODO).
 
 Deliberately coordinated `exact.*` / `mismatch.*` rows are separate from
 arbitrary pairs; no real-world-frequency claim is made. Overlap, sweep, and

@@ -21,6 +21,7 @@ import {
   FIXED,
   REL,
   SQUARE_CORNERS,
+  anchoredRadiusArc,
   assembleHybridArcGroup,
   auditMesh,
   buildCorpus,
@@ -32,7 +33,6 @@ import {
   type HybridArcGroupInput,
   type HybridArcGroupResult,
 } from './phase20kHybridArcPairGroups';
-import { makeArcMember, type ArcMember } from './phase20kHybridArcPairCore';
 
 const QUICK = process.argv.includes('--quick');
 const REPS = QUICK ? 1 : 5;
@@ -191,21 +191,14 @@ rows.push(measureHybrid('closed.square.mismatch.d24', {
   models: ['chord', 'chord', 'chord', 'chord'],
   side: 'right', maxSearchDistance: 100, curveChordTolerance: 0.1, closed: true, target: tin0,
 }));
-// Radius / sweep matrix on the primary pair.
+// Radius matrix on the primary pair (honest endpoint-anchored arcs; the
+// outgoing member is rigidly anchored at the arc's natural end).
 for (const radius of [120, 252.5, 500]) {
-  const cy = radius - 5;
-  const arc = makeArcMember({
-    centerX: 50, centerY: cy, radius,
-    startAngle: Math.atan2(-cy, -50), endAngle: Math.atan2(-cy, 50),
-    sweepCCW: true, startZ: 10, endZ: 10,
-  });
+  const arc = anchoredRadiusArc(radius);
   if (!arc) continue;
-  const stitched: ArcMember = {
-    ...arc, start: { x: 0, y: 0, z: 10 }, end: { x: 100, y: 0, z: 10 },
-    source: { ...arc.source, startX: 0, startY: 0, endX: 100, endY: 0 },
-  };
+  const out = translateArcMember(right, arc.end.x - 100, arc.end.y);
   rows.push(measureHybrid(`radius-${radius}.tol-0.1`, {
-    members: [stitched, right], criteria: hybridCriteria.slice(0, 2), models: ['chord', 'chord'],
+    members: [arc, out], criteria: hybridCriteria.slice(0, 2), models: ['chord', 'chord'],
     side: 'right', maxSearchDistance: 100, curveChordTolerance: 0.1, closed: false, target: tin0,
   }));
 }

@@ -103,6 +103,12 @@ export interface OffsetRadiusRow {
  * Ratios `d/R ≥ 1` are the collapse/inversion boundary the study recommends
  * gating: `Roffset = 0` is a self-intersecting point, `Roffset < 0` flips the
  * traversal orientation. No production gate exists today.
+ *
+ * Strictly symbolic: the offset arc is NEVER resolved. A concentric arc of
+ * radius R+d no longer joints at V — its endpoint moves ~d off V — so
+ * calling the resolver on the shifted radius would tie invalid joint
+ * geometry and report a spurious 'exact' result. Every row keeps
+ * outcome/tie/mesh null with a `symbolic-only` detail.
  */
 export const offsetRadiusSafety = (
   base: Partial<ArcPairStudyInput> = {},
@@ -118,28 +124,15 @@ export const offsetRadiusSafety = (
       const classification: OffsetRadiusClass = radiusOffset > 0
         ? 'ARC_PAIR_OFFSET_OK'
         : radiusOffset === 0 ? 'ARC_PAIR_OFFSET_COLLAPSE' : 'ARC_PAIR_OFFSET_INVERTED';
-      const row: OffsetRadiusRow = {
+      rows.push({
         side, ratio, radialSign, offsetDistance, radiusOffset, classification,
         orientationPreserved: radiusOffset > 0,
         selfIntersects: radiusOffset <= 0,
-        outcome: null, detail: null, tie: null, extent: null,
+        outcome: null,
+        detail: 'symbolic-only: resolver not run (offset arc joint leaves V)',
+        tie: null, extent: null,
         components: null, boundaryLoops: null, meshValid: null, digest: null,
-      };
-      if (classification === 'ARC_PAIR_OFFSET_OK') {
-        const spec: ArcSpec = { ...input.surfaceArc, radius: radiusOffset };
-        const got = resolveArcPairStudy({
-          ...input, side, surfaceArc: spec, buildMesh: true,
-        });
-        row.outcome = got.outcome;
-        row.detail = got.detail ?? null;
-        row.tie = got.tie;
-        row.extent = got.extent;
-        row.components = got.audit?.components ?? null;
-        row.boundaryLoops = got.audit?.boundaryLoops ?? null;
-        row.meshValid = got.audit?.validTin ?? null;
-        row.digest = got.digest || null;
-      }
-      rows.push(row);
+      });
     }
   }
   return rows;
@@ -335,9 +328,51 @@ const degenerateTin = (): GradingTargetMeshSnapshot => ({
 /**
  * §23 target/root pathologies through the CORE feasibility authority: it
  * solves only the terminal chord, so coverage gaps reach the existing
- * fail-closed gates (`gap-at-V`, `bad-target`, no-root) instead of dying in
- * the full-strip builder. Nearest outward root stays authoritative.
+ * fail-closed gates (`gap-at-V`, branch discontinuity, no-root) instead of
+ * dying in the full-strip builder. Nearest outward root stays authoritative.
+ *
+ * `edge-hit` / `vertex-hit` anchor on the pinned CORE primary tie (see the
+ * feasibility two-chord oracle): the triangulation edge / vertex passes
+ * through the tie point itself, so the identical tie is a real transverse
+ * / vertex hit, not a relabelled flat TIN. `two-roots` is honestly NOT a
+ * root-policy test — stacked duplicate layers reject fail-closed with
+ * `CORNER_BRANCH_DISCONTINUITY`. Nearest-vs-later root policy is UNTESTED
+ * on the arc path (the 20J patchTin gives TARGET_GAP via CORE and an exact
+ * tie via VARIANTS here — no ROOT_POLICY fixture found; see TODO).
  */
+export const TIE_ANCHOR = { x: 63.08644059797901, y: -47.77910330337543, z: 90 };
+
+/** Flat rotated quad (same frame as `bigTin`) shifted so diagonal 1→3 crosses the anchor tie. */
+export const edgeHitTin = (): GradingTargetMeshSnapshot => {
+  const h = 3000;
+  const c = Math.cos(10 * DEG);
+  const s = Math.sin(10 * DEG);
+  const lx = c * TIE_ANCHOR.x + s * TIE_ANCHOR.y;
+  const ly = -s * TIE_ANCHOR.x + c * TIE_ANCHOR.y;
+  const sh = lx + ly;
+  const dx = -sh * Math.sin(10 * DEG);
+  const dy = sh * Math.cos(10 * DEG);
+  const corners: Array<[number, number]> = [[-h, -h], [h, -h], [h, h], [-h, h]];
+  return {
+    points: corners.flatMap(([x, y]) => [x * c - y * s + dx, x * s + y * c + dy, 90]),
+    triangles: [0, 1, 3, 1, 2, 3],
+  };
+};
+
+/** Flat rotated quad fan-triangulated from a vertex placed exactly at the anchor tie. */
+export const vertexHitTin = (): GradingTargetMeshSnapshot => {
+  const h = 3000;
+  const c = Math.cos(10 * DEG);
+  const s = Math.sin(10 * DEG);
+  const corners: Array<[number, number]> = [[-h, -h], [h, -h], [h, h], [-h, h]];
+  return {
+    points: [
+      ...corners.flatMap(([x, y]) => [x * c - y * s, x * s + y * c, 90]),
+      TIE_ANCHOR.x, TIE_ANCHOR.y, 90,
+    ],
+    triangles: [0, 1, 4, 1, 2, 4, 2, 3, 4, 3, 0, 4],
+  };
+};
 export const rootPathologies = (): RootPathologyRow[] => {
   const coreBase = {
     ...V0,
@@ -355,13 +390,12 @@ export const rootPathologies = (): RootPathologyRow[] => {
     { id: 'flat', description: 'flat planar target', target: bigTin(90) },
     { id: 'sloped', description: 'sloped planar target', target: slopedTin(3000, 1e-4, 5e-5, 90) },
     { id: 'alt-triangulation', description: 'alternate quad diagonal', target: quadTinDeg(90, 3000, 0, [0, 1, 3, 1, 2, 3]) },
-    { id: 'edge-hit', description: 'tie near a target triangle edge', target: quadTinDeg(90, 3000, 0, [0, 1, 2, 0, 2, 3]) },
-    { id: 'vertex-hit', description: 'target vertex near the tie', target: quadTinDeg(90, 3000, 0, [0, 1, 2, 0, 2, 3]) },
+    { id: 'edge-hit', description: 'triangulation edge through the tie (anchor-verified)', target: edgeHitTin() },
+    { id: 'vertex-hit', description: 'target vertex exactly at the tie (anchor-verified)', target: vertexHitTin() },
     { id: 'gap-at-v', description: 'no target under the joint vertex', target: shiftedTin(5000, 5000) },
-    { id: 'two-roots', description: 'two stacked target layers under the joint', target: stackedTin() },
+    { id: 'two-roots', description: 'duplicate stacked layers rejected fail-closed (NOT a root-policy test)', target: stackedTin() },
     { id: 'disconnected', description: 'disconnected target coverage', target: disconnectedTin() },
     { id: 'malformed', description: 'degenerate/duplicate triangles (existing fail-closed)', target: degenerateTin() },
-    { id: 'later-root', description: 'later-root seam coverage (root policy)', target: bigTin(90) },
   ];
   return cases.map(({ id, description, target }) => {
     const got = resolveHybridArcPair({ ...coreBase, target });
@@ -577,8 +611,9 @@ export interface PolicyNote {
 
 /**
  * Policy A — study-only: production stays frozen on the arc×arc guard.
- * Policy B — guarded closed-exact-offset route (the only GO): closed groups
- *   whose joints are exact common ties on offset arcs.
+ * Policy B — guarded closed-exact-offset route (formerly the only GO,
+ *   withdrawn): the closed square resolves 4 exact ties but its mesh is
+ *   vertex-pinched (edgeComponents=8), so no route is buildable.
  * Policy C — general arc-pair hybrid route (general open/closed, chord or
  *   true-tangent frames): NOT implemented; the robustness study finds the
  *   offset-radius collapse/inversion boundary and the conditioning matrix
@@ -586,7 +621,7 @@ export interface PolicyNote {
  */
 export const POLICY_NOTES: PolicyNote[] = [
   { policy: 'A', summary: 'keep production frozen; study-only evidence', implemented: true, evidence: 'production arc×arc returns CORNER_NO_SOLUTION / ARC_PAIR_UNSUPPORTED' },
-  { policy: 'B', summary: 'guarded closed exact-offset-only route', implemented: false, evidence: 'feasibility verdict GO_CLOSED_EXACT_OFFSET_ONLY (Worker-GROUPS)' },
+  { policy: 'B', summary: 'guarded closed exact-offset-only route', implemented: false, evidence: 'feasibility verdict NO_GO_TERMINAL_CHORD_ARC_PAIR: closed square exact ties but vertex-pinched mesh, not buildable' },
   { policy: 'C', summary: 'general arc-pair hybrid route', implemented: false, evidence: 'robustness study: Roffset≤0 gate + conditioning/root-policy failures remain' },
 ];
 

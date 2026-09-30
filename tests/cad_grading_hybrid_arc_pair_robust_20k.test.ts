@@ -13,11 +13,14 @@ import {
   LARGE_OFFSETS,
   OFFSET_RATIOS,
   POLICY_NOTES,
+  TIE_ANCHOR,
+  edgeHitTin,
   largeCoordinateStudy,
   mismatchLadder,
   offsetRadiusSafety,
   radiusSweepMatrix,
   rootPathologies,
+  vertexHitTin,
 } from '../scripts/phase20kHybridArcPairRobust';
 
 const NEAREST_TIE = { x: 63.08644059797901, y: -47.77910330337543, z: 90 };
@@ -58,24 +61,23 @@ describe('phase20k robust §20 offset-radius safety', () => {
     }
   });
 
-  it('resolves the sane offsets and fails closed once the strip breaks', () => {
-    const leftHalf = rows.find((r) => r.side === 'left' && r.ratio === 0.5)!;
-    expect(leftHalf.outcome).toBe('ARC_PAIR_EXACT_COMMON_TIE');
-    expect(leftHalf.tie!.z).toBe(90);
-    expect(leftHalf.meshValid).toBe(true);
-    // A valid radiusOffset is necessary, not sufficient: the right 1.1 offset
-    // moves the seam past the strip and fails closed rather than bridging.
-    const rightEleven = rows.find((r) => r.side === 'right' && r.ratio === 1.1)!;
-    expect(rightEleven.outcome).toBe('ARC_PAIR_INVALID');
-    expect(rightEleven.tie).toBeNull();
-    for (const row of rows.filter((r) => r.classification === 'ARC_PAIR_OFFSET_OK')) {
-      expect(row.outcome).not.toBeNull();
-      if (row.outcome !== 'ARC_PAIR_EXACT_COMMON_TIE') expect(row.tie).toBeNull();
-    }
-    // Non-positive offsets never reach the resolver.
-    for (const row of rows.filter((r) => r.classification !== 'ARC_PAIR_OFFSET_OK')) {
+  it('is strictly symbolic: no offset radius ever reaches the resolver', () => {
+    // A concentric R+d arc no longer joints at V (left ratio .5 on R=60
+    // moves the joint 30 m off V), so resolving would tie invalid geometry.
+    for (const row of rows) {
       expect(row.outcome).toBeNull();
+      expect(row.tie).toBeNull();
+      expect(row.extent).toBeNull();
+      expect(row.meshValid).toBeNull();
+      expect(row.digest).toBeNull();
+      expect(row.detail).toMatch(/symbolic-only/);
     }
+    // R=60 (the study surface arc): left d=60 ⇒ Roff=0, collapse, no solve.
+    const leftFull = rows.find((r) => r.side === 'left' && r.ratio === 1.0)!;
+    expect(leftFull.offsetDistance).toBe(60);
+    expect(leftFull.radiusOffset).toBe(0);
+    expect(leftFull.classification).toBe('ARC_PAIR_OFFSET_COLLAPSE');
+    expect(leftFull.outcome).toBeNull();
   });
 
   it('is deterministic', () => {
@@ -148,12 +150,46 @@ describe('phase20k robust §21 radius × sweep matrix', () => {
 describe('phase20k robust §23 target/root pathologies', () => {
   const rows = rootPathologies();
 
-  it('solves the planar / alternate / edge / vertex / disconnected cases to the nearest root', () => {
-    for (const id of ['flat', 'alt-triangulation', 'edge-hit', 'vertex-hit', 'disconnected', 'later-root']) {
+  it('shows single-root tie agreement on the planar / alternate / edge / vertex / disconnected cases', () => {
+    for (const id of ['flat', 'alt-triangulation', 'edge-hit', 'vertex-hit', 'disconnected']) {
       const row = rows.find((r) => r.id === id)!;
       expect(row.outcome, id).toBe('ARC_PAIR_COMMON_TIE');
       expect(row.tie, id).toEqual(NEAREST_TIE);
     }
+    expect(TIE_ANCHOR).toEqual(NEAREST_TIE);
+  });
+
+  it('anchors the edge on, and the vertex at, the tie (genuine hits, not relabelled flat)', () => {
+    const edge = edgeHitTin();
+    let minDist = Infinity;
+    for (let f = 0; f + 2 < edge.triangles.length; f += 3) {
+      for (let e = 0; e < 3; e += 1) {
+        const a = edge.triangles[f + e]!;
+        const b = edge.triangles[f + ((e + 1) % 3)]!;
+        const ax = edge.points[a * 3]!;
+        const ay = edge.points[a * 3 + 1]!;
+        const bx = edge.points[b * 3]!;
+        const by = edge.points[b * 3 + 1]!;
+        const abx = bx - ax;
+        const aby = by - ay;
+        const t = Math.min(1, Math.max(0, ((TIE_ANCHOR.x - ax) * abx + (TIE_ANCHOR.y - ay) * aby) / (abx * abx + aby * aby)));
+        minDist = Math.min(minDist, Math.hypot(TIE_ANCHOR.x - (ax + t * abx), TIE_ANCHOR.y - (ay + t * aby)));
+      }
+    }
+    expect(minDist).toBeLessThan(1e-6);
+    const vert = vertexHitTin();
+    const verts: Array<[number, number]> = [];
+    for (let i = 0; i + 2 < vert.points.length; i += 3) verts.push([vert.points[i]!, vert.points[i + 1]!]);
+    expect(verts.some(([x, y]) => x === TIE_ANCHOR.x && y === TIE_ANCHOR.y)).toBe(true);
+  });
+
+  it('leaves nearest-vs-later root policy explicitly untested on the arc path', () => {
+    // No ROOT_POLICY fixture exists here: the 20J patchTin gives TARGET_GAP
+    // via CORE and an exact tie via VARIANTS on arc geometry — never
+    // ROOT_POLICY. The stacked-duplicate row below tests fail-closed
+    // rejection, not root choice.
+    expect(rows.some((r) => r.id === 'later-root')).toBe(false);
+    expect(rows.some((r) => r.detail === 'analytic-matches-later-root')).toBe(false);
   });
 
   it('fails closed on a coverage gap at V and on malformed / discontinuous targets', () => {

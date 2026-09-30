@@ -132,6 +132,22 @@ export const outwardBottomSpec = (z = 10): ArcSpec => {
 /** Canonical rounded-square corners (shared by construction ⇒ exact joints). */
 export const SQUARE_CORNERS: Array<[number, number]> = [[0, 0], [SQUARE_SIDE, 0], [SQUARE_SIDE, SQUARE_SIDE], [0, SQUARE_SIDE]];
 
+/**
+ * Honest endpoint-anchored arc over the A(0,0)→B(100,0) chord: the centre
+ * sits at (50, cy) with cy=sqrt(R²−50²) so A and B lie exactly on the
+ * circle — no sagitta guess, no endpoint override. Returns null for R≤50.
+ */
+export const anchoredRadiusArc = (radius: number, z = 10): ArcMember | null => {
+  const half = SQUARE_SIDE / 2;
+  const cy = Math.sqrt(radius * radius - half * half);
+  if (!Number.isFinite(cy)) return null;
+  return makeArcMember({
+    centerX: half, centerY: cy, radius,
+    startAngle: Math.atan2(-cy, -half), endAngle: Math.atan2(-cy, half),
+    sweepCCW: true, startZ: z, endZ: z,
+  });
+};
+
 const squareFrom = (base: ArcSpec, z: number): ArcMember[] => {
   const specs = [0, 90, 180, 270].map((deg) => rotateArcSpec(base, deg, 50, 50));
   return specs.map((spec, k) => {
@@ -150,7 +166,8 @@ const squareFrom = (base: ArcSpec, z: number): ArcMember[] => {
 /** Literal spec geometry (inward-bulging) — recorded as a fail-closed control. */
 export const literalConcaveMembers = (z = 10): ArcMember[] => squareFrom(bottomArcSpec(z), z);
 
-/** Buildable outward (convex) rounded square — the §27 acceptance group. */
+/** Outward (convex) rounded square — the §27 study group (exact ties, but
+ * vertex-pinched mesh ⇒ NOT buildable; see the audit gate). */
 export const roundedSquareMembers = (z = 10): ArcMember[] => squareFrom(outwardBottomSpec(z), z);
 
 /** Primary open pair: bottom (A→B) + right (B→C) sharing B=(100,0) exactly. */
@@ -739,7 +756,8 @@ export const roundedSquareScenarios = (): { hybrid?: HybridArcGroupResult; contr
     members, criteria: hybridCriteria, models: [model, model, model, model],
     side: 'right', maxSearchDistance: 100, curveChordTolerance: tol,
     closed: true, target: flatTin(0),
-  }, groupExpected);
+    // 4 exact ties but edgeComponents=8 (vertex pinch) ⇒ NOT buildable.
+  }, 'EXACT_TIE_NOT_BUILDABLE');
   // Spec-literal centre/sweep (inward-bulging arcs) — the outward grading
   // offset self-intersects; record both the study assembler and the
   // production all-distance control failing in the same way.
@@ -881,26 +899,15 @@ export const cornerScenarios = (): void => {
       ...base, criteria: [FIXED(-0.5), DIST(-0.5, 20 + step)],
     }, step === 0 ? exact : 'TRANSITION_REQUIRED');
   }
-  // Radius / sweep ladder: a larger-radius (flatter) arc keeps the tie exact.
+  // Radius ladder: honest endpoint-anchored arcs (cy=sqrt(R²−50²)) keep the
+  // tie exact. The joint uses the arc's natural end; the outgoing member is
+  // rigidly anchored there (sub-fp shift), never a radius-distorting override.
   for (const radius of [500, 252.5, 120]) {
-    const chord = SQUARE_SIDE;
-    const sag = 5;
-    const cy = radius - sag;
-    const spec: ArcSpec = {
-      centerX: chord / 2, centerY: cy, radius,
-      startAngle: Math.atan2(-cy, -chord / 2), endAngle: Math.atan2(-cy, chord / 2),
-      sweepCCW: true, startZ: 10, endZ: 10,
-    };
-    const arc = makeArcMember(spec);
+    const arc = anchoredRadiusArc(radius);
     if (!arc) continue;
-    const stitched: ArcMember = {
-      ...arc,
-      start: { x: 0, y: 0, z: 10 },
-      end: { x: SQUARE_SIDE, y: 0, z: 10 },
-      source: { ...arc.source, startX: 0, startY: 0, endX: SQUARE_SIDE, endY: 0 },
-    };
+    const out = translateArcMember(right, arc.end.x - SQUARE_SIDE, arc.end.y);
     recordGroup(`corner.radius-${radius}`, 'radius-sweep', {
-      ...base, members: [stitched, right], criteria: [FIXED(-0.5), DIST(-0.5, 20)],
+      ...base, members: [arc, out], criteria: [FIXED(-0.5), DIST(-0.5, 20)],
     }, exact);
   }
 };

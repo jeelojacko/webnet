@@ -224,7 +224,10 @@ describe('phase20k nonzero longitudinal grade', () => {
     const r = graded();
     expect(r.inChordGrade).toBeCloseTo(0.04355209882921256, 12);
     expect(r.outChordGrade).toBeCloseTo(0.032664074121909414, 12);
-    // Worker-CORE frame gs is the arc-length grade for both models.
+    // Chord frame mirrors production grade (terminal chord ΔZ/chord length);
+    // true-tangent keeps the arc-length grade.
+    expect(r.inChord!.gs).toBe(r.inChordGrade);
+    expect(r.outChord!.gs).toBe(r.outChordGrade);
     expect(r.inTrue!.gs).toBeCloseTo(0.04244131815783876, 12);
     expect(r.outTrue!.gs).toBeCloseTo(0.03183098861837907, 12);
     expect(Math.abs(r.inChordGrade! - r.inTrue!.gs)).toBeGreaterThan(1e-3);
@@ -236,9 +239,9 @@ describe('phase20k nonzero longitudinal grade', () => {
     expect(r.outcome).toBe('ARC_PAIR_EXACT_COMMON_TIE');
     expect(r.exact).toBe(true);
     expect(r.tie!.z).toBeCloseTo(90, 12);
-    expect(r.tie!.x).toBeCloseTo(-40.757892403128565, 9);
-    expect(r.tie!.y).toBeCloseTo(-1.353316837231066, 9);
-    expect(r.extent).toBeCloseTo(40.780353843572016, 9);
+    expect(r.tie!.x).toBeCloseTo(-40.72979021543077, 9);
+    expect(r.tie!.y).toBeCloseTo(-1.2752889004603134, 9);
+    expect(r.extent).toBeCloseTo(40.749750585404044, 9);
     const trueRef = graded({ trueTangents: true });
     expect(trueRef.tie!.x).toBeCloseTo(-42.09157052974354, 9);
     expect(trueRef.tie!.y).toBeCloseTo(-16.42715652676808, 9);

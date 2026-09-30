@@ -5,9 +5,10 @@
  * it in-process twice, and asserts:
  *   - deterministic byte/content equality between runs and against the file;
  *   - zero expected/actual mismatches and one digest per identical success;
- *   - the buildable rounded-square hybrid has 4 exact ties, a passing
- *     independent topology audit, and matches the production all-distance
- *     control on tie points and plan area (triangle-set delta documented);
+ *   - the rounded-square hybrid has 4 exact ties but is NOT buildable:
+ *     independent topology audit FAILS (edgeComponents=8 vertex pinch),
+ *     while tie points and plan area still match the production
+ *     all-distance control (triangle-set delta documented);
  *   - the spec-literal concave geometry and the mismatch ladder fail closed;
  *   - the independent audit itself rejects a synthetic overlap.
  *
@@ -50,12 +51,21 @@ describe('phase20k hybrid arc-pair corpus', () => {
     expect(payload.summary.matched).toBe(payload.rows.length);
     expect(payload.summary.digests).toBeGreaterThan(0);
     // Every successful exact row carries a mesh digest and a passing audit.
+    // No EXACT_TIE-buildable rows remain: every exact-tie group is classified
+    // EXACT_TIE_NOT_BUILDABLE (open daylight discontinuity and/or vertex pinch).
     for (const row of payload.rows.filter((r) => r.expected === 'EXACT_TIE')) {
       expect(row.actual).toBe('EXACT_TIE');
       expect(row.auditPass).toBe(true);
       expect(row.meshDigest).toBeTruthy();
       expect(row.tieCount).toBeGreaterThan(0);
     }
+    // The closed square keeps its exact tie but is explicitly non-buildable.
+    const square = payload.rows.find((r) => r.id === 'closed.square.hybrid')!;
+    expect(square.expected).toBe('EXACT_TIE_NOT_BUILDABLE');
+    expect(square.actual).toBe('EXACT_TIE');
+    expect(square.match).toBe(true);
+    expect(square.auditPass).toBe(false);
+    expect(square.tieCount).toBe(4);
   });
 
   it('rejects a synthetic interior overlap (independent audit self-check)', () => {
@@ -71,7 +81,7 @@ describe('phase20k hybrid arc-pair corpus', () => {
 });
 
 describe('phase20k rounded-square hybrid (§27)', () => {
-  it('has four exact ties with a passing audit', () => {
+  it('has four exact ties but FAILS the audit (vertex pinch, not buildable)', () => {
     const members = roundedSquareMembers(10);
     const out = assembleHybridArcGroup({
       members,
@@ -85,8 +95,12 @@ describe('phase20k rounded-square hybrid (§27)', () => {
     expect(out.corners).toHaveLength(4);
     expect(out.corners.every((c) => c.classification === 'GAP')).toBe(true);
     const audit = auditMesh(out.mesh, out.daylight, true, out.planArea);
-    expect(audit.pass, audit.issues.join('; ')).toBe(true);
-    expect(audit.edgeComponents).toBeGreaterThan(1); // documented arc chord-seam pinch
+    // Regression: vertex-pinched mesh is not a 2-manifold usable surface —
+    // edge-connected components > 1 fails buildability for closed too.
+    expect(audit.edgeComponents).toBe(8);
+    expect(audit.checks.edgeConnected).toBe(false);
+    expect(audit.pass, audit.issues.join('; ')).toBe(false);
+    expect(audit.issues.join('; ')).toContain('vertex pinch');
   });
 
   it('matches the production all-distance control on ties and plan area', () => {

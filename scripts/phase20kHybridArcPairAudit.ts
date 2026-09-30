@@ -76,9 +76,9 @@ const triangleIntersectionArea = (a: XY[], b: XY[]): number => {
 /**
  * Independent topology audit: finite XYZ, valid indices, positive plan area,
  * no duplicate triangle, no interior overlap (O(n²) plan intersection beyond
- * shared edges/vertices), edge incidence ≤ 2, one connected component
- * (vertex-connected; the arc chord-seam pinch is reported separately as
- * `edgeComponents`), open-continuous / closed-simple daylight, no
+ * shared edges/vertices), edge incidence ≤ 2, one edge-connected component
+ * (vertex-connected alone masks the arc chord-seam pinch; edgeComponents > 1
+ * fails buildability for open AND closed), open-continuous / closed-simple daylight, no
  * bridge/pinch, no self-crossing offset, and self-consistent plan area
  * (independently summed triangle plan area == the engine's reported shell
  * area when supplied; the outer daylight-ring shoelace is recorded as
@@ -198,6 +198,13 @@ export const auditMesh = (
   const edgeRoots = new Set<number>();
   for (let f = 0; f < nTris; f += 1) edgeRoots.add(efind(f));
   const edgeComponents = nTris === 0 ? 0 : edgeRoots.size;
+  // Hard gate for open AND closed: a vertex-pinched mesh (edgeComponents > 1)
+  // is not a 2-manifold usable surface even when the production validator
+  // passes it (`validateGroupMesh` delegates to `validateExplicitTinPayload`,
+  // which passes this vertex-pinched/edge-disconnected mesh — edge
+  // connectivity is not enforced there).
+  checks.edgeConnected = edgeComponents <= 1;
+  if (edgeComponents > 1) issues.push('edge-disconnected mesh (vertex pinch)');
 
   // Interior overlap (O(n²) study meshes; production validator does not check this).
   let overlap = false;

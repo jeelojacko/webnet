@@ -14,15 +14,25 @@ Inputs: `phase20k-hybrid-arc-pair-architecture.md`,
 
 ## Verdict 1 — ARC-PAIR support
 
-**NO_GO_GENERAL_ARC_PAIR_HYBRID + GO_CLOSED_EXACT_OFFSET_ONLY.**
+**NO_GO_GENERAL_ARC_PAIR_HYBRID + NO_GO_CLOSED (vertex pinch).**
+Overall: **NO_GO_TERMINAL_CHORD_ARC_PAIR** — no arc-pair hybrid group in
+this study is buildable.
 
-- **GO (narrow).** A closed hybrid group over four genuine arcs with a
-  single exact-offset, flat-target configuration (`FIXED(−0.5)` /
+- **NOT-GO (closed).** The closed hybrid group over four genuine arcs
+  with a single exact-offset, flat-target configuration (`FIXED(−0.5)` /
   `DIST(−0.5,20)` / `REL(−0.5,−10)`, outward convex rounded square,
   `tol=0.1`) resolves **4 exact common ties**, a **simple closed boundary**,
-  a **mesh that passes the production validator**, and an **independent
-  topology audit**. Its plan area matches the production all-distance
-  control to `<1e-11` relative and its tie points to `8.53e-14`.
+  and a **mesh that passes the production validator**. Its plan area
+  matches the production all-distance control to `<1e-11` relative and its
+  tie points to `8.53e-14`. It is nevertheless **NOT buildable**: the
+  independent topology audit **FAILS** — the mesh has **8 edge-connected
+  components** (vertex pinch at the arc chord seams; 130 boundary edges
+  over 114 triangles). A vertex-pinched mesh is not a 2-manifold usable
+  surface even though the production validator passes it (`validateGroupMesh`
+  delegates to `validateExplicitTinPayload`, which passes this
+  vertex-pinched/edge-disconnected mesh — edge connectivity is not enforced
+  there). Per the pre-committed rule, an exact tie without a buildable
+  group is not a GO.
 - **NO-GO (general).** Every OPEN arc pair in the study resolves an exact
   tie but is **NOT buildable**: the independent audit finds discontinuous
   daylight and a vertex-pinched strip (edge-connected components > 1) at
@@ -50,23 +60,27 @@ Inputs: `phase20k-hybrid-arc-pair-architecture.md`,
 - Therefore a productisation must fix the **seam** (a seam-aware strip
   miter/re-stitch, or an explicit transition) before choosing a frame model.
   Swapping to true-tangent alone would not ship.
+- Grade bookkeeping is honest: the chord frame carries the production
+  terminal-chord grade (`ΔZ/|chord|`, R60 quarter-arc `0.0435520988` at
+  `tol=10`); true-tangent keeps the arc-length grade (`0.0424413182`).
 
 ## §36 decision bullets
 
-- **Support:** GO closed exact-offset only; NO-GO general arc×arc hybrid.
+- **Support:** NO-GO general arc×arc hybrid AND NO-GO closed
+  exact-offset (vertex pinch); overall NO_GO_TERMINAL_CHORD_ARC_PAIR.
 - **Tangent model:** insufficient alone; chord ≡ true-tangent for
-  buildability; true-tangent is more physically faithful but needs the seam
-  fix first.
-- **Buildability:** the only audit-passing group is the closed rounded
-  square (`pass`); all open/other groups are `EXACT_TIE_NOT_BUILDABLE` or
+  buildability (both pinch); true-tangent is more physically faithful but
+  needs the seam fix first.
+- **Buildability:** NO group in the study is buildable. The closed
+  rounded square resolves 4 exact ties but audit-fails (edgeComponents=8
+  vertex pinch); all open/other groups are `EXACT_TIE_NOT_BUILDABLE` or
   fail closed.
-- **Controls:** all-distance and mixed-analytic production controls build
-  (`ok`, 4 ties); all-surface S↔S arc corners fail; no control digest is
+- **Controls:** all-distance and mixed-analytic production controls return `ok` (4 ties) from production compute only; the independent edge-connected audit also fails the all-distance control (see incidental findings), so no independent-buildability claim is made for the controls; all-surface S↔S arc corners fail; no control digest is
   reused for a failing hybrid.
 - **Mismatch:** `D=24` and `Δ=−12` fail closed on the first offending joint,
   no partial ring, deterministic.
 - **Determinism:** corpus byte-identical across runs; one digest per
-  distinct success; 12 success digests.
+  distinct success; 13 success digests.
 - **Performance:** no thresholds; hybrid closed square 1.69 ms / 4 joints,
   comparable to the analytic arc control (1.23 ms); solve dominates open
   cases, merge dominates the closed case; validation negligible; corpus
@@ -78,7 +92,10 @@ Inputs: `phase20k-hybrid-arc-pair-architecture.md`,
   but NOT sufficient; add `SEAM_MITER_REQUIRED` (and informational
   `SEAM_PINCH`) before any arc-pair route.
 - **Restrictions / future work:** OVERLAP at the study radius shows interior
-  overlap; radius/sweep coverage is three radii; no real-world-frequency
+  overlap; radius/sweep coverage is three radii (honest endpoint-anchored);
+  offset-radius rows are symbolic-only (the resolver never runs on a shifted
+  radius — the joint would leave V); nearest-vs-later root policy is untested
+  on the arc path; no real-world-frequency
   claim; no DEM/elliptical arcs. Any productisation is a separate,
   routing-touching phase with its own reviewer gate. This branch never
   merges production behaviour.
@@ -88,8 +105,11 @@ Inputs: `phase20k-hybrid-arc-pair-architecture.md`,
 - The arc chord-seam strip pinch also affects the shipped analytic arc path:
   production’s own closed all-distance arc square reports 8 edge-connected
   components under the independent audit (it still passes
-  `validateExplicitTinPayload`). Recorded, not changed.
+  `validateExplicitTinPayload`). The closed square is the sharpest case:
+  exact ties, simple ring, production-validator pass — yet 8
+  edge-components. Recorded, not changed.
 - The task-listed bottom-arc centre `(50,−247.5)` / minor CW sweep is
-  inward-bulging and not gradable outward; the buildable mirror is
-  `(50,+247.5)` / minor CCW. Documented in the architecture and validation
+  inward-bulging and not gradable outward; the study mirror is
+  `(50,+247.5)` / minor CCW (exact ties, still not buildable — vertex
+  pinch). Documented in the architecture and validation
   docs and retained as a fail-closed corpus control.

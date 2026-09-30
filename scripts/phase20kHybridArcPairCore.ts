@@ -218,8 +218,10 @@ export const linearizeArcMember = (
 /**
  * Terminal frame at one member end under the requested model. `tolerance`
  * is only consulted by the chord model (mirrors production's terminal-chord
- * direction). `gs` is the longitudinal grade (identical for both models —
- * Z is linear in arc length).
+ * direction AND grade: `gs` is the terminal chord ΔZ/chord length, exactly
+ * what `computeGradingGroupFromSnapshots` feeds `solveHybridCorner`). The
+ * true-tangent model keeps the arc-length grade (the honest physical grade
+ * of the genuine arc course).
  */
 export const arcTerminalFrame = (
   member: ArcMember,
@@ -229,6 +231,7 @@ export const arcTerminalFrame = (
   tolerance: number,
 ): ArcTerminalFrame | null => {
   let t: PlanVector | null = null;
+  let gs = (member.spec.endZ - member.spec.startZ) / member.length;
   if (model === 'true-tangent') {
     t = arcTangentAt(member.spec, atEnd);
   } else {
@@ -239,11 +242,14 @@ export const arcTerminalFrame = (
       { x: chord.startX, y: chord.startY, z: chord.startZ },
       { x: chord.endX, y: chord.endY, z: chord.endZ },
     );
+    // ponytail: terminal-chord plan length recomputed, not chord.length, to
+    // stay identical even if the source shape ever carries 3D length.
+    const planLen = Math.hypot(chord.endX - chord.startX, chord.endY - chord.startY);
+    gs = planLen > 0 ? (chord.endZ - chord.startZ) / planLen : NaN;
   }
   if (!t) return null;
   const n = gradingSideNormal(t.nx, t.ny, side);
   if (!n) return null;
-  const gs = (member.spec.endZ - member.spec.startZ) / member.length;
   if (!Number.isFinite(gs)) return null;
   return { t, n, gs };
 };
