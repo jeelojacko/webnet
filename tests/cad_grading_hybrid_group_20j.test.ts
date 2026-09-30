@@ -9,7 +9,16 @@
 import { describe, expect, it } from 'vitest';
 
 import { computeGradingGroupFromSnapshots } from '../src/engine/cad/grading/gradingGroupCompute';
-import { groupTerminationMode } from '../src/engine/cad/grading/gradingGroupTermination';
+import { createGroupDefinition } from '../src/engine/cad/grading/gradingGroupAuthoring';
+import { resolveGroupMemberCriteria } from '../src/engine/cad/grading/gradingGroupCourseCriteria';
+import {
+  groupTerminationMode,
+  groupTerminationRequiresTarget,
+} from '../src/engine/cad/grading/gradingGroupTermination';
+import { buildGroupRevision } from '../src/engine/cad/grading/gradingGroupRevision';
+import { resolveGroupInputs } from '../src/engine/cad/grading/gradingGroupResolve';
+import { createBlankCadDrawingDocument } from '../src/engine/cad/cadDrawingFile';
+import type { CadFeatureLineEntity, CadProject } from '../src/engine/cad/cadTypes';
 import type { GradingTargetMeshSnapshot } from '../src/engine/cad/grading/gradingComputeTypes';
 import type { CadGradingGroupResult } from '../src/engine/cad/grading/gradingGroupTypes';
 import type {
@@ -303,5 +312,100 @@ describe('phase20j hybrid overlap group', () => {
 
   it('is deterministic across runs', () => {
     expect(digest(expectOk(solve()))).toBe(digest(expectOk(solve())));
+  });
+});
+
+describe('phase20j fully-overridden default (effective-only)', () => {
+  // Two-course open chain; every course carries an explicit override so
+  // the stored default applies to zero courses (Wave C4: invisible).
+  const members = [M(-60, 0, 100, 0, 0, 100), M(0, 0, 100, 0, 60, 100)];
+  const courses = [
+    { vertexAId: 'a', vertexBId: 'b' },
+    { vertexAId: 'b', vertexBId: 'c' },
+  ];
+  const DIST20: GradingCriterion = DIST(-0.5, 20);
+  const overrideAll = (criterion: GradingCriterion): Array<{ sourceCourse: { vertexAId: string; vertexBId: string }; criterion: GradingCriterion }> =>
+    courses.map((sourceCourse) => ({ sourceCourse: { ...sourceCourse }, criterion }));
+
+  it('surface default + every course Distance => analytic, target-free end to end', () => {
+    const created = createGroupDefinition({
+      id: 'gg-over', name: 'over', sourceFeatureLineId: 'fl',
+      sourceCourses: courses, side: 'right', criterion: FIXED(-0.5),
+      courseCriteria: overrideAll(DIST20),
+      maxSearchDistance: 100, curveChordTolerance: 0.05, cornerMode: 'miter',
+    });
+    // No targetSurfaceId and still ok: the surface default is fully overridden.
+    expect(created.ok).toBe(true);
+    if (!created.ok) throw new Error(created.error);
+    const effective = resolveGroupMemberCriteria(created.value);
+    expect(effective).toEqual([DIST20, DIST20]);
+    expect(groupTerminationMode(created.value.criterion, effective)).toBe('analytic');
+    expect(groupTerminationRequiresTarget(created.value.criterion, effective)).toBe(false);
+    // The revision hashes target-free even when a target id is supplied.
+    const revCourses = courses.map((course, i) => ({
+      vertexAId: course.vertexAId, vertexBId: course.vertexBId, resolvedSource: members[i]!,
+    }));
+    const revInput = {
+      sourceFeatureLineId: 'fl', courses: revCourses,
+      side: 'right' as const, criterion: FIXED(-0.5),
+      courseCriteria: overrideAll(DIST20),
+      maxSearchDistance: 100, curveChordTolerance: 0.05, cornerMode: 'miter' as const, closed: false,
+    };
+    expect(buildGroupRevision({
+      ...revInput, targetSurfaceId: 'tgt', targetRevision: 'srev1:aaa',
+    })).toBe(buildGroupRevision(revInput));
+    // Resolve needs no target; the analytic solve runs target-free.
+    const drawing = createBlankCadDrawingDocument({ name: '20j-over', units: 'm' });
+    const featureLine: CadFeatureLineEntity = {
+      id: 'fl', type: 'feature-line', layerId: 'general', visible: true,
+      locked: false, name: 'FL fl',
+      vertices: [
+        { id: 'a', x: -60, y: 0, z: 100 },
+        { id: 'b', x: 0, y: 0, z: 100 },
+        { id: 'c', x: 0, y: 60, z: 100 },
+      ],
+    };
+    const project: CadProject = {
+      ...drawing.project, entities: [featureLine], gradingGroups: [created.value],
+    };
+    const inputs = resolveGroupInputs(project, 'gg-over');
+    expect(inputs).not.toBeNull();
+    expect(inputs!.target).toBeUndefined();
+    expect(inputs!.memberCriteria).toEqual([DIST20, DIST20]);
+    const out = computeGradingGroupFromSnapshots({
+      groupId: 'gg-over', revision: inputs!.revision, members: inputs!.memberSources,
+      side: 'right', criterion: FIXED(-0.5), memberCriteria: inputs!.memberCriteria,
+      maxSearchDistance: 100, curveChordTolerance: 0.05, closed: false,
+    });
+    expect(out.ok).toBe(true);
+  });
+
+  it('analytic default + every course Surface => hybrid, target required', () => {
+    const noTarget = createGroupDefinition({
+      id: 'gg-back', name: 'back', sourceFeatureLineId: 'fl',
+      sourceCourses: courses, side: 'right', criterion: DIST20,
+      courseCriteria: overrideAll(FIXED(-0.5)),
+      maxSearchDistance: 100, curveChordTolerance: 0.05, cornerMode: 'miter',
+    });
+    expect(noTarget.ok).toBe(false);
+    const created = createGroupDefinition({
+      id: 'gg-back', name: 'back', sourceFeatureLineId: 'fl',
+      sourceCourses: courses, side: 'right', criterion: DIST20,
+      courseCriteria: overrideAll(FIXED(-0.5)),
+      targetSurfaceId: 'tgt',
+      maxSearchDistance: 100, curveChordTolerance: 0.05, cornerMode: 'miter',
+    });
+    expect(created.ok).toBe(true);
+    if (!created.ok) throw new Error(created.error);
+    const effective = resolveGroupMemberCriteria(created.value);
+    expect(groupTerminationMode(created.value.criterion, effective)).toBe('surface');
+    expect(groupTerminationRequiresTarget(created.value.criterion, effective)).toBe(true);
+    const out = computeGradingGroupFromSnapshots({
+      groupId: 'gg-back', revision: 'r', members,
+      side: 'right', criterion: DIST20, memberCriteria: effective,
+      maxSearchDistance: 100, curveChordTolerance: 0.05, closed: false,
+      target: flatGrid(90, -100, 100),
+    });
+    expect(out.ok).toBe(true);
   });
 });

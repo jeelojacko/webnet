@@ -76,13 +76,28 @@ Failure joints reject before any patch geometry; cost is one seam-ray walk.
 
 | variant | compute ms | outcome |
 |---|---:|---|
-| axis-aligned | 1.41 | ok |
-| rotated-30deg | 1.22 | CORNER_NO_SOLUTION / TRANSITION_REQUIRED (fail-closed) |
+| axis-aligned | 1.63 | ok |
+| rotated-30deg | 1.30 | ok |
 
-The rotated twin over the coarse axis-aligned cover fails closed rather
-than mistie — contract-conformant (never fabricates). Rotation changes
-which cover triangles the seam ray grazes; the exact-tie gate refuses
-the degraded agreement.
+Rotated-twin equivalence (Wave C4, checked in-harness): ties MATCH
+(rotated coordinates), extents MATCH, plan area 9600.000000 vs
+9600.000000 MATCH — all within `zeroDelta`, which is untouched.
+Digests honestly differ (`f7ea394f…` vs `0a021a11…`): mesh vertices
+live in rotated coordinates.
+
+Root cause (production, fixed — not harness coarseness): tie quantities
+evaluated at far-from-origin world (x, y) carry absolute FP noise
+~eps·|XY|·|grade| (~5e-15 in Z, ~3e-14 in seam-param at |XY| ~ 145)
+which `zeroDelta(Z, Z)` alone under-bounds, while the axis-aligned twin
+is exact by rounding luck. Proven NOT grid-specific: the twin failed
+identically on step-20, step-5, step-2, and jittered production-like
+covers. Fix: `tieAgreementTol` (`gradingGroupSectors.ts`) scales the
+agreement bound by coordinate magnitude at the surface-tie gate and the
+hybrid X/Y/Z/seam-param + target + root-policy gates
+(`gradingGroupHybridCorners.ts`); the bound stays ~1e-13..1e-12 m, so
+genuine disagreements (grid-scale) still fail closed — mismatch D=24 and
+root-policy still classify exactly as before, and every axis digest is
+byte-identical.
 
 ## E. One-arc joint vs straight twin
 

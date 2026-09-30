@@ -14,7 +14,7 @@ import type {
   GradingGroupCourse,
   GradingGroupCourseCriterionOverride,
 } from './gradingGroupTypes';
-import { criteriaEqual } from './gradingGroupCourseCriteria';
+import { criteriaEqual, effectiveCriteriaForCourses } from './gradingGroupCourseCriteria';
 import { groupTerminationRequiresTarget } from './gradingGroupTermination';
 import {
   validateGradingCriterion,
@@ -109,13 +109,18 @@ const identityError = (
 };
 
 /** Phase 20J: a target surface is required when ANY effective criterion
- * (default + overrides) is surface-terminated. Analytic-only groups omit it. */
+ * (default applied to uncovered courses; a fully-overridden default is
+ * invisible) is surface-terminated. Analytic-only groups omit it. */
 const targetRule = (
   criterion: GradingCriterion,
-  memberCriteria: readonly GradingCriterion[],
+  sourceCourses: GradingGroupCourse[],
+  courseCriteria: GradingGroupCourseCriterionOverride[] | undefined,
   targetSurfaceId: string | undefined,
 ): string | null =>
-  groupTerminationRequiresTarget(criterion, memberCriteria) && !nonEmpty(targetSurfaceId)
+  groupTerminationRequiresTarget(
+    criterion,
+    effectiveCriteriaForCourses(criterion, sourceCourses, courseCriteria),
+  ) && !nonEmpty(targetSurfaceId)
     ? 'targetSurfaceId must be non-empty when a surface-terminated criterion is effective'
     : null;
 
@@ -157,11 +162,12 @@ const toGroup = (input: CreateGroupInput): CadGradingGroup => ({
   sourceFeatureLineId: input.sourceFeatureLineId,
   sourceCourses: input.sourceCourses.map((course) => ({ ...course })),
   // The target persists whenever a surface-terminated criterion is
-  // effective (surface default, or an analytic default with a surface
-  // override); all-analytic groups omit it (dormancy by omission).
+  // effective (surface default on an uncovered course, or an analytic
+  // default with a surface override); all-analytic groups omit it
+  // (dormancy by omission). A fully-overridden default is invisible.
   ...(groupTerminationRequiresTarget(
     input.criterion,
-    (input.courseCriteria ?? []).map((entry) => entry.criterion),
+    effectiveCriteriaForCourses(input.criterion, input.sourceCourses, input.courseCriteria),
   ) && nonEmpty(input.targetSurfaceId)
     ? { targetSurfaceId: input.targetSurfaceId }
     : {}),
@@ -189,7 +195,8 @@ export const createGroupDefinition = (
   if (criterion) return fail(criterion);
   const target = targetRule(
     input.criterion,
-    (input.courseCriteria ?? []).map((entry) => entry.criterion),
+    input.sourceCourses,
+    input.courseCriteria,
     input.targetSurfaceId,
   );
   if (target) return fail(target);
@@ -212,7 +219,7 @@ export const editGroupCriteria = (
 ): GradingAuthoringResult<CadGradingGroup> => {
   const error = validateGradingCriterion(criterion);
   if (error) return fail(error);
-  const members = (current.courseCriteria ?? []).map((entry) => entry.criterion);
+  const members = effectiveCriteriaForCourses(criterion, current.sourceCourses, current.courseCriteria);
   if (groupTerminationRequiresTarget(criterion, members) && !nonEmpty(current.targetSurfaceId)) {
     return fail('targetSurfaceId must be non-empty when a surface-terminated criterion is effective');
   }
@@ -270,7 +277,7 @@ export const setCourseCriteriaOverrides = (
   // 20J: hybrid-legal. A surface-effective result needs a live target
   // (the command layer pre-seeds an explicit one — never silent); an
   // all-analytic result drops a dormant id.
-  const memberCriteria = next.map((entry) => entry.criterion);
+  const memberCriteria = effectiveCriteriaForCourses(current.criterion, current.sourceCourses, next);
   if (groupTerminationRequiresTarget(current.criterion, memberCriteria)) {
     if (!nonEmpty(current.targetSurfaceId)) {
       return fail('targetSurfaceId must be non-empty when a surface-terminated criterion is effective');
@@ -298,11 +305,14 @@ export const resetCourseCriteriaOverrides = (
   // a dormant target id there; a still-surface result keeps its target.
   if (kept.length === 0) {
     const { courseCriteria: _dropped, ...rest } = current;
-    if (groupTerminationRequiresTarget(current.criterion, [])) return { ok: true, value: rest };
+    if (groupTerminationRequiresTarget(
+      current.criterion,
+      effectiveCriteriaForCourses(current.criterion, current.sourceCourses, undefined),
+    )) return { ok: true, value: rest };
     const { targetSurfaceId: _dormant, ...stripped } = rest;
     return { ok: true, value: stripped };
   }
-  const keptCriteria = kept.map((entry) => entry.criterion);
+  const keptCriteria = effectiveCriteriaForCourses(current.criterion, current.sourceCourses, kept);
   if (!groupTerminationRequiresTarget(current.criterion, keptCriteria)) {
     const { targetSurfaceId: _dormant, ...stripped } = current;
     return { ok: true, value: { ...stripped, courseCriteria: kept } };

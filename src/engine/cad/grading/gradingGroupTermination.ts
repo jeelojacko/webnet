@@ -104,10 +104,17 @@ export const validateGroupTermination = (group: CadGradingGroup): string | null 
   validateGroupTerminationCriteria(group.criterion, resolveGroupMemberCriteria(group));
 
 /**
- * Phase 20J Wave B — group termination MODE (single engine authority).
+ * Phase 20J Wave B — group termination MODE (single engine authority),
+ * Wave C4: EFFECTIVE-only (courses using the default count; a
+ * fully-overridden stored default is invisible).
  *
- * Derived from the EFFECTIVE criteria (group default + per-member entries),
- * never persisted: `surface` (fixed/cut-fill only), `analytic`
+ * `memberCriteria` is the EFFECTIVE per-course list (one entry per
+ * traversal course, default already applied to uncovered courses — see
+ * `resolveGroupMemberCriteria` / `effectiveCriteriaForCourses`). The
+ * stored `criterion` counts only when the list is empty (no courses to
+ * read): callers holding sparse overrides must expand them to an
+ * effective list first, never pass raw overrides here.
+ * Derived, never persisted: `surface` (fixed/cut-fill only), `analytic*
  * (distance/elevation/relative-elevation only), or `hybrid` (mixed).
  */
 export type GradingGroupTerminationMode = 'surface' | 'analytic' | 'hybrid';
@@ -116,9 +123,9 @@ export const groupTerminationMode = (
   criterion: GradingCriterion,
   memberCriteria: readonly GradingCriterion[],
 ): GradingGroupTerminationMode => {
+  const effective = memberCriteria.length > 0 ? memberCriteria : [criterion];
   const domains = new Set<GradingTerminationDomain>();
-  domains.add(gradingTerminationDomain(criterion));
-  for (const member of memberCriteria) domains.add(gradingTerminationDomain(member));
+  for (const member of effective) domains.add(gradingTerminationDomain(member));
   if (domains.size <= 1) return domains.has('surface') ? 'surface' : 'analytic';
   return 'hybrid';
 };

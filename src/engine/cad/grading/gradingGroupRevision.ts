@@ -12,7 +12,7 @@
  */
 import { fnv1a } from '../cadRevisionHash';
 import { canonicalGradingNum } from './gradingRevision';
-import { canonicalCourseCriteria } from './gradingGroupCourseCriteria';
+import { canonicalCourseCriteria, effectiveCriteriaForCourses } from './gradingGroupCourseCriteria';
 import { gradingCriterionRequiresSurface } from './gradingTypes';import type { GradingCriterion, GradingSide, ResolvedGradingSource } from './gradingTypes';
 import type { GradingCornerMode, GradingGroupCourseCriterionOverride } from './gradingGroupTypes';
 
@@ -114,8 +114,9 @@ const overrideText = (
 
 /**
  * Phase 20J Wave C1: the target participates when ANY effective member
- * is surface-terminated (canonical sparse overrides decide, traversal
- * order — deterministic). All-analytic groups hash `tgt:none`, so a
+ * is surface-terminated (Wave C4: EFFECTIVE-only — the stored default
+ * counts only for traversal courses it still covers; a fully-overridden
+ * default is invisible). All-analytic groups hash `tgt:none`, so a
  * dormant legacy id can never move the revision. Pre-20J homogeneous
  * inputs (no effective surface override) hash byte-identically.
  */
@@ -124,14 +125,9 @@ const effectiveRequiresSurface = (
   courses: GroupRevisionCourse[],
   courseCriteria: GradingGroupCourseCriterionOverride[] | undefined,
 ): boolean => {
-  if (gradingCriterionRequiresSurface(criterion)) return true;
-  if (!courseCriteria || courseCriteria.length === 0) return false;
-  const canonical = canonicalCourseCriteria({
-    criterion,
-    sourceCourses: courses.map((course) => ({ vertexAId: course.vertexAId, vertexBId: course.vertexBId })),
-    courseCriteria,
-  });
-  return canonical.some((entry) => gradingCriterionRequiresSurface(entry.criterion));
+  if (courses.length === 0) return gradingCriterionRequiresSurface(criterion);
+  return effectiveCriteriaForCourses(criterion, courses, courseCriteria)
+    .some((entry) => gradingCriterionRequiresSurface(entry));
 };
 
 /** Deterministic `ggrev1:<fnv1a-hex>` over the canonical group content. */

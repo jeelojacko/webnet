@@ -26,6 +26,7 @@ import { createHash } from 'node:crypto';
 import { performance } from 'node:perf_hooks';
 
 import { computeGradingGroupFromSnapshots } from '../src/engine/cad/grading/gradingGroupCompute';
+import { zeroDelta } from '../src/engine/cad/surfaces/volume/zero';
 import type { GradingTargetMeshSnapshot } from '../src/engine/cad/grading/gradingComputeTypes';
 import type { CadGradingGroupResult } from '../src/engine/cad/grading/gradingGroupTypes';
 import {
@@ -322,6 +323,13 @@ const axisMatrix = (): void => {
     return { ...m, startX: sx, startY: sy, endX: ex, endY: ey, length: Math.hypot(ex - sx, ey - sy) };
   };
   const rotated = SQM.map(rotM);
+  // Wave C4: the rotated twin MUST solve (production root cause fixed —
+  // coordinate-aware tie agreement, zeroDelta untouched). Equivalence is
+  // checked on rotated ties, extents, and plan area (digests honestly
+  // differ: mesh vertices live in rotated coordinates).
+  const close = (a: number, b: number): boolean => Math.abs(a - b) <= zeroDelta(a, b);
+  let axis: GroupOut | null = null;
+  let rotatedOut: GroupOut | null = null;
   for (const [label, members] of [['axis-aligned', SQM], ['rotated-30deg', rotated]] as const) {
     const target = flatCover(members, 0);
     const run = repMedian(repsFor(1), () =>
@@ -332,16 +340,28 @@ const axisMatrix = (): void => {
       }),
     );
     const out = run.value;
-    // Contract-conformant = ok with 4 exact corners, or fail-closed with a
-    // named CORNER_* code and no partial mesh. A rotated twin over a coarse
-    // axis-aligned cover may legitimately fail closed (never fabricate).
-    const failClosed = !out.ok && out.code.startsWith('CORNER_');
-    const valid = (out.ok && out.result.corners.length === 4) || failClosed ? 'yes' : 'NO';
+    if (label === 'axis-aligned') axis = out;
+    else rotatedOut = out;
+    const valid = out.ok && out.result.corners.length === 4 ? 'yes' : 'NO';
     console.log(
       `| ${label} | ${run.ms.toFixed(2)} | ${outcome(out)} | ${valid} | ${out.ok ? digest(out.result) : '—'} |`,
     );
   }
-  console.log('\n> Axis-aligned courses exercise the Wave A parallel-edge ray path; the rotated twin over a coarse axis-aligned cover fails closed (never fabricates) — contract-conformant either way.');
+  if (axis?.ok && rotatedOut?.ok) {
+    const axisTies = axis.result.corners.map((c) => c.tiePointXyz!);
+    const rotTies = rotatedOut.result.corners.map((c) => c.tiePointXyz!);
+    const tieOk = axisTies.every((t, j) => {
+      const [ex, ey] = rot(t[0]!, t[1]!);
+      return close(rotTies[j]![0]!, ex) && close(rotTies[j]![1]!, ey) && close(rotTies[j]![2]!, t[2]!);
+    });
+    const extentOk = axis.result.corners.every((c, j) =>
+      close(c.miterExtent!, rotatedOut!.ok ? rotatedOut.result.corners[j]!.miterExtent! : NaN));
+    const areaOk = close(axis.result.gradingPlanArea, rotatedOut.result.gradingPlanArea);
+    console.log(`\n> Rotated-twin equivalence: ties ${tieOk ? 'MATCH' : 'MISMATCH'} (rotated coords), extents ${extentOk ? 'MATCH' : 'MISMATCH'}, plan area ${axis.result.gradingPlanArea.toFixed(6)} vs ${rotatedOut.result.gradingPlanArea.toFixed(6)} ${areaOk ? 'MATCH' : 'MISMATCH'} (zeroDelta).`);
+  } else {
+    console.log('\n> Rotated-twin equivalence: NOT CHECKED (a twin failed to solve).');
+  }
+  console.log('> Axis-aligned courses exercise the Wave A parallel-edge ray path; the rotated twin now solves through the same exact-common-tie kernel (Wave C4 tieAgreementTol; zeroDelta untouched).');
 };
 
 // ---------------------------------------------------------------------------

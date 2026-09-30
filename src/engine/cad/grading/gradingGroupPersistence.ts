@@ -1,4 +1,5 @@
 import { createGroupDefinition } from './gradingGroupAuthoring';
+import { effectiveCriteriaForCourses } from './gradingGroupCourseCriteria';
 import { validateGradingCriterion } from './gradingAuthoring';
 import { groupTerminationRequiresTarget } from './gradingGroupTermination';
 import type { CadGradingGroup } from './gradingGroupTypes';
@@ -114,7 +115,9 @@ export const sanitizeCadGradingGroupsDetailed = (
       // without a target id is malformed (drop), an all-analytic group
       // sheds a dormant legacy id (dormancy by omission).
       let group = scrubbed.group;
-      const effective = (group.courseCriteria ?? []).map((entry) => entry.criterion);
+      // Wave C4: the target rule reads EFFECTIVE per-course criteria
+      // (a fully-overridden stored default is invisible).
+      const effective = effectiveCriteriaForCourses(group.criterion, group.sourceCourses, group.courseCriteria);
       if (groupTerminationRequiresTarget(group.criterion, effective)) {
         if (typeof candidate['targetSurfaceId'] !== 'string' || candidate['targetSurfaceId'].length === 0) {
           continue;

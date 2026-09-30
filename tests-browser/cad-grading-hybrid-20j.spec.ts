@@ -323,6 +323,11 @@ for (const viewport of VIEWPORTS) {
       await expect(row).toContainText('9600.0');
       await groupRow(page).scrollIntoViewIfNeeded();
       await revealRowStatus(page);
+      // The manager table is wider than the dialog: the status scroll
+      // clips the row's Method cell, so bring the Toolspace tree's
+      // `Method Hybrid` row into the frame alongside the metrics
+      // (no-op where already visible).
+      await page.locator('[data-cad-grading-group-definition]').first().scrollIntoViewIfNeeded();
       await assertShell(page);
       await shot(page, `${tag}-hybrid-current`);
 
@@ -461,6 +466,10 @@ for (const viewport of VIEWPORTS) {
       expect((await row.textContent()) ?? '').toBe(diagnostic);
       await groupRow(page).scrollIntoViewIfNeeded();
       await revealRowStatus(page);
+      // Same split as Flow B: the status scroll clips the row's Method
+      // cell, so keep the Toolspace tree's `Method Hybrid` row in the
+      // frame alongside the diagnostic (no-op where already visible).
+      await page.locator('[data-cad-grading-group-definition]').first().scrollIntoViewIfNeeded();
       await assertShell(page);
       await shot(page, `${tag}-hybrid-failed`);
     } finally {

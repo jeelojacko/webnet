@@ -15,7 +15,7 @@ import {
   validateGroupChain,
 } from './grading/gradingGroupAuthoring';
 import { gradingTerminationKind } from './grading/gradingTypes';
-import { criteriaEqual } from './grading/gradingGroupCourseCriteria';
+import { criteriaEqual, effectiveCriteriaForCourses } from './grading/gradingGroupCourseCriteria';
 import { resolveGroupMemberCriteria } from './grading/gradingGroupCourseCriteria';
 import {
   canonicalAnalyticKinds,
@@ -128,14 +128,16 @@ type GroupCreateCommand = Extract<CadCommand, { key: 'GROUP_CREATE' }>;
 const groupCreateCommand: CadCommandDefinition<GroupCreateCommand> = {
   key: 'GROUP_CREATE',
   execute: (snapshot, command) => {
-    // 20J: the target rule derives from the EFFECTIVE set (default +
-    // overrides) — a hybrid create needs a live target even under an
-    // analytic default; an all-analytic create omits it.
-    const effectiveForCreate = [
+    // 20J: the target rule derives from the EFFECTIVE per-course set
+    // (Wave C4: a fully-overridden stored default is invisible) — a
+    // hybrid create needs a live target even under an analytic default;
+    // an all-analytic create omits it.
+    const effectiveForCreate = effectiveCriteriaForCourses(
       command.criterion,
-      ...(command.courseCriteria ?? []).map((entry) => entry.criterion),
-    ];
-    const requiresSurface = groupTerminationRequiresTarget(command.criterion, effectiveForCreate.slice(1));
+      command.sourceCourses,
+      command.courseCriteria,
+    );
+    const requiresSurface = groupTerminationRequiresTarget(command.criterion, effectiveForCreate);
     const target = requiresSurface
       ? (snapshot.project.surfaces ?? []).find((entry) => entry.id === command.targetSurfaceId)
       : undefined;
@@ -203,7 +205,12 @@ const groupEditCriteriaCommand: CadCommandDefinition<GroupEditCriteriaCommand> =
     // result needs an explicit eligible target, an all-analytic result
     // never carries one. Rejected ops return null with zero mutation.
     const nextCriterion = command.criterion ?? group.criterion;
-    const retainedMembers = (group.courseCriteria ?? []).map((entry) => entry.criterion);
+    // Wave C4 EFFECTIVE per-course list (fully-overridden default invisible).
+    const retainedMembers = effectiveCriteriaForCourses(
+      nextCriterion,
+      group.sourceCourses,
+      group.courseCriteria,
+    );
     let next = group;
     if (command.targetSurfaceId !== undefined) {
       if (command.targetSurfaceId === null) {
@@ -229,7 +236,7 @@ const groupEditCriteriaCommand: CadCommandDefinition<GroupEditCriteriaCommand> =
     } else if (command.targetSurfaceId !== undefined) {
       // Target-only path: the pure criterion edit above is skipped, so
       // enforce the effective target rule here.
-      const members = (next.courseCriteria ?? []).map((entry) => entry.criterion);
+      const members = effectiveCriteriaForCourses(next.criterion, next.sourceCourses, next.courseCriteria);
       if (effectiveTargetRule(next.criterion, members, next.targetSurfaceId) !== null) return null;
     }
     if (command.maxSearchDistance !== undefined) {

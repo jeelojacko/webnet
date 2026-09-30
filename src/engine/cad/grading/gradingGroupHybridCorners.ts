@@ -9,7 +9,8 @@
  *
  * - surface tie: nearest outward `solveMiterTie` root (root policy kept);
  * - analytic tie: existing `analyticTerminalLine` × the same seam ray;
- * - accept only on X/Y/Z + seam-param agreement under shared `zeroDelta`,
+ * - accept only on X/Y/Z + seam-param agreement under the coordinate-aware
+ *   tie bound (`tieAgreementTol`: `zeroDelta` scaled by |XY|, itself untouched),
  *   target agreement (surface authority) + terminal-line/plane agreement
  *   (analytic authority), both side half-planes, and the miter extent;
  * - GAP fans V→Qs→tie + V→tie→Qa on the two exact planes (no wall/bridge);
@@ -37,6 +38,7 @@ import {
 } from './gradingCornerMath';
 import {
   clipPolylineToHalfPlane,
+  tieAgreementTol,
   solveMiterTie,
 } from './gradingGroupSectors';
 import {
@@ -109,8 +111,6 @@ export type HybridCornerOutcome =
   | { ok: false; code: GroupDiagnosticCode; detail: string };
 
 const finiteAll = (values: number[]): boolean => values.every((value) => Number.isFinite(value));
-
-const sameTol = (a: number, b: number): boolean => Math.abs(a - b) <= zeroDelta(a, b);
 
 /** Corner plane through V along tangent t (mirror of the compute twin). */
 const planeThroughV = (
@@ -240,16 +240,22 @@ export const solveHybridCorner = (input: HybridCornerInput): HybridCornerOutcome
     return bad('CORNER_MAX_DISTANCE', 'GRADING_SURFACE_ANALYTIC_MAX');
   }
   const planeZatA = planeElevationAt(planeA, aTie.x, aTie.y);
-  if (planeZatA === null || !sameTol(planeZatA, aTie.z)) {
+  if (planeZatA === null || Math.abs(planeZatA - aTie.z) > tieAgreementTol(planeZatA, aTie.z, aTie.x, aTie.y)) {
     return bad('CORNER_NO_SOLUTION', 'GRADING_SURFACE_ANALYTIC_LINE');
   }
-  // Exact acceptance: X/Y/Z + seam param under zeroDelta, target agreement
-  // (surface authority) + terminal-line/plane agreement (analytic authority).
+  // Exact acceptance: X/Y/Z + seam param under the coordinate-aware tie
+  // bound (tie quantities evaluated at world XY carry ~eps*|XY| noise that
+  // zeroDelta alone under-bounds far from the origin). Target agreement
+  // is surface-authoritative.
   const sTiePt: HybridCornerPoint = { x: sTie.x, y: sTie.y, z: sTie.z };
-  const agreed = sameTol(sTiePt.x, aTie.x) && sameTol(sTiePt.y, aTie.y)
-    && sameTol(sTiePt.z, aTie.z) && sameTol(sTie.t, tA);
+  const xTol = tieAgreementTol(sTiePt.x, aTie.x, aTie.x, aTie.y);
+  const yTol = tieAgreementTol(sTiePt.y, aTie.y, aTie.x, aTie.y);
+  const zTol = tieAgreementTol(sTiePt.z, aTie.z, aTie.x, aTie.y);
+  const tTol = tieAgreementTol(sTie.t, tA, aTie.x, aTie.y);
+  const agreed = Math.abs(sTiePt.x - aTie.x) <= xTol && Math.abs(sTiePt.y - aTie.y) <= yTol
+    && Math.abs(sTiePt.z - aTie.z) <= zTol && Math.abs(sTie.t - tA) <= tTol;
   const ztCommon = input.query.elevationAt(aTie.x, aTie.y);
-  const targetOk = ztCommon !== null && sameTol(ztCommon, sTiePt.z);
+  const targetOk = ztCommon !== null && Math.abs(ztCommon - sTiePt.z) <= zTol;
   if (agreed && targetOk) {
     const tie = aTie;
     const miterLine = { vx, vy, mx: ray.mx, my: ray.my };
@@ -306,9 +312,12 @@ export const solveHybridCorner = (input: HybridCornerInput): HybridCornerOutcome
   // (surface keeps the nearest root); anything else needs a transition.
   const planeZatAnalytic = planeElevationAt(planeS, aTie.x, aTie.y);
   const ztAnalytic = input.query.elevationAt(aTie.x, aTie.y);
+  const rpTol = planeZatAnalytic === null || ztAnalytic === null
+    ? zTol
+    : Math.max(zTol, tieAgreementTol(planeZatAnalytic, aTie.z, aTie.x, aTie.y));
   if (
     planeZatAnalytic !== null && ztAnalytic !== null
-    && sameTol(planeZatAnalytic, ztAnalytic) && sameTol(planeZatAnalytic, aTie.z)
+    && Math.abs(planeZatAnalytic - ztAnalytic) <= rpTol && Math.abs(planeZatAnalytic - aTie.z) <= rpTol
   ) {
     return bad('CORNER_NO_SOLUTION', 'GRADING_SURFACE_ANALYTIC_ROOT_POLICY');
   }

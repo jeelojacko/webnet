@@ -14,6 +14,8 @@ import {
   setCourseCriteriaOverrides,
 } from '../src/engine/cad/grading/gradingGroupAuthoring';
 import { buildGroupRevision } from '../src/engine/cad/grading/gradingGroupRevision';
+import { resolveGroupMemberCriteria } from '../src/engine/cad/grading/gradingGroupCourseCriteria';
+import { groupTerminationMode } from '../src/engine/cad/grading/gradingGroupTermination';
 import { resolveGroupInputs } from '../src/engine/cad/grading/gradingGroupResolve';
 import { resolveDesignPatch } from '../src/engine/cad/cadTransactionsDesignPatchCommands';
 import { createBlankCadDrawingDocument } from '../src/engine/cad/cadDrawingFile';
@@ -153,24 +155,66 @@ describe('(c) authoring — one termination family per group', () => {
     expect(built.ok).toBe(true);
   });
 
-  it('accepts a surface default mixed with a distance override as hybrid (20J)', () => {
+  it('treats a fully-overridden surface default as analytic (target-free)', () => {
+    // The single course carries a distance override, so the surface
+    // default applies to zero courses: analytic, no target required.
     const built = createGroupDefinition({
       ...input,
+      criterion: { kind: 'fixed', gradeRatio: -0.5 },
+      courseCriteria: [{ sourceCourse: { vertexAId: 'a', vertexBId: 'b' }, criterion: { kind: 'distance', gradeRatio: 0, distance: 20 } }],
+    });
+    expect(built.ok).toBe(true);
+    if (built.ok) {
+      expect(groupTerminationMode(built.value.criterion, resolveGroupMemberCriteria(built.value))).toBe('analytic');
+      expect(built.value.targetSurfaceId).toBeUndefined();
+    }
+  });
+
+  it('keeps the live target on a partially-overridden surface group (true hybrid)', () => {
+    const two = {
+      ...input,
+      sourceCourses: [{ vertexAId: 'a', vertexBId: 'b' }, { vertexAId: 'b', vertexBId: 'c' }],
+    };
+    const built = createGroupDefinition({
+      ...two,
       targetSurfaceId: 'tgt',
       criterion: { kind: 'fixed', gradeRatio: -0.5 },
       courseCriteria: [{ sourceCourse: { vertexAId: 'a', vertexBId: 'b' }, criterion: { kind: 'distance', gradeRatio: 0, distance: 20 } }],
     });
     expect(built.ok).toBe(true);
-    if (built.ok) expect(built.value.targetSurfaceId).toBe('tgt');
+    if (built.ok) {
+      expect(groupTerminationMode(built.value.criterion, resolveGroupMemberCriteria(built.value))).toBe('hybrid');
+      expect(built.value.targetSurfaceId).toBe('tgt');
+    }
+  });
+
+  it('drops a dormant target when the last surface course is overridden analytic', () => {
+    const base = createGroupDefinition({ ...input, targetSurfaceId: 'tgt', criterion: { kind: 'fixed', gradeRatio: -0.5 } });
+    expect(base.ok).toBe(true);
+    if (!base.ok) return;
+    // The only course leaves the surface domain: all-analytic sheds the id.
+    const edited = setCourseCriteriaOverrides(base.value, [{ vertexAId: 'a', vertexBId: 'b' }], { kind: 'distance', gradeRatio: 0, distance: 20 });
+    expect(edited.ok).toBe(true);
+    if (edited.ok) {
+      expect(groupTerminationMode(edited.value.criterion, resolveGroupMemberCriteria(edited.value))).toBe('analytic');
+      expect(edited.value.targetSurfaceId).toBeUndefined();
+    }
   });
 
   it('sets a distance override on a surface group (hybrid keeps the live target)', () => {
-    const base = createGroupDefinition({ ...input, targetSurfaceId: 'tgt', criterion: { kind: 'fixed', gradeRatio: -0.5 } });
+    const two = {
+      ...input,
+      sourceCourses: [{ vertexAId: 'a', vertexBId: 'b' }, { vertexAId: 'b', vertexBId: 'c' }],
+    };
+    const base = createGroupDefinition({ ...two, targetSurfaceId: 'tgt', criterion: { kind: 'fixed', gradeRatio: -0.5 } });
     expect(base.ok).toBe(true);
     if (!base.ok) return;
     const edited = setCourseCriteriaOverrides(base.value, [{ vertexAId: 'a', vertexBId: 'b' }], { kind: 'distance', gradeRatio: 0, distance: 20 });
     expect(edited.ok).toBe(true);
-    if (edited.ok) expect(edited.value.targetSurfaceId).toBe('tgt');
+    if (edited.ok) {
+      expect(groupTerminationMode(edited.value.criterion, resolveGroupMemberCriteria(edited.value))).toBe('hybrid');
+      expect(edited.value.targetSurfaceId).toBe('tgt');
+    }
   });
 
   it('requires a target for surface criteria', () => {
