@@ -4,7 +4,8 @@ Status: FILLED — verdict **GO_EXACT_COMMON_TIE_ONLY +
 NO_GO_GENERAL_WITHOUT_TRANSITION**. EVIDENCE-ONLY study. Branch
 `research/phase20i-surface-analytic-corner-feasibility`, baseline
 `9dd28c94715daa3583c907224a04652d3ae99cc3` (= PR #137 merge), HEAD
-`e3225546` (PR #138).
+`a80e7fcc` (MERGED PR #138, merge `6842723c`; final-head CI 36711876338,
+merge-push CI 36717753158).
 
 Nothing in this study is implemented. The current production contract remains:
 a grading group is exactly one termination domain, and a surface+analytic mix

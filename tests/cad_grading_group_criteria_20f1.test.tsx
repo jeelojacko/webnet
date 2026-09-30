@@ -121,16 +121,16 @@ const setInput = (el: HTMLInputElement, value: string): void => {
   });
 };
 
-describe('domain-locked composer', () => {
-  it('surface group offers Fixed + Cut/Fill only (no Distance/Elevation)', () => {
+describe('hybrid composer (no domain lock)', () => {
+  it('surface group offers all five kinds (Surface Fixed/Cut-Fill + analytic)', () => {
     const { host, root } = mount(surfaceGroup(), () => true);
     try {
-      const form = host.querySelector('[data-cad-grading-group-criteria-form]')?.textContent ?? '';
-      expect(form).toContain('locked to group family');
-      expect(form).toContain('Surface');
-      expect(form).not.toContain('Distance');
-      expect(form).not.toContain('Elevation');
-      expect(host.querySelector('[aria-label="Grading method"]')).toBeNull();
+      const method = host.querySelector('[aria-label="Grading method"]') as HTMLSelectElement | null;
+      expect(method).not.toBeNull();
+      expect([...(method?.options ?? [])].map((option) => option.value)).toEqual([
+        'surface', 'distance', 'elevation', 'relative-elevation',
+      ]);
+      expect(method?.value).toBe('surface');
       const kind = host.querySelector('[aria-label="Criterion kind"]') as HTMLSelectElement | null;
       expect(kind).not.toBeNull();
       expect([...(kind?.options ?? [])].map((option) => option.value)).toEqual(['fixed', 'cut-fill']);
@@ -139,16 +139,15 @@ describe('domain-locked composer', () => {
     }
   });
 
-  it('analytic group offers the whole analytic domain, with editable grade + target distance', () => {
+  it('analytic group offers all five kinds, with editable grade + target distance', () => {
     const { host, root } = mount(distanceGroup(), () => true);
     try {
       const method = host.querySelector('[aria-label="Grading method"]') as HTMLSelectElement | null;
       expect(method).not.toBeNull();
       expect([...(method?.options ?? [])].map((option) => option.value)).toEqual([
-        'distance', 'elevation', 'relative-elevation',
+        'surface', 'distance', 'elevation', 'relative-elevation',
       ]);
       expect(method?.value).toBe('distance');
-      expect(host.querySelector('[aria-label="Criterion kind"]')).toBeNull();
       const distance = host.querySelector('[aria-label="Target distance"]') as HTMLInputElement | null;
       expect(distance).not.toBeNull();
       expect(distance?.value).toBe('20');
@@ -307,8 +306,8 @@ describe('truthful 4-way labels + analytic target values', () => {
         diagnostics: [],
       },
     );
-    expect(report).toContain('Default Distance · fixed — · cut — · fill — · target 20.000 m');
-    expect(report).toContain('Override Distance · fixed — · cut — · fill — · target 25.000 m');
+    expect(report).toContain('Default Distance · effective Grade -2.000% → Distance 20.000 m · fixed — · cut — · fill — · target 20.000 m');
+    expect(report).toContain('Override Distance · effective Grade -2.000% → Distance 25.000 m · fixed — · cut — · fill — · target 25.000 m');
     expect(report).not.toContain('Cut/Fill');
   });
 
@@ -345,11 +344,11 @@ describe('truthful 4-way labels + analytic target values', () => {
     const lines = csv.split('\n');
     const header = lines.findIndex((line) =>
       line.startsWith(
-        'Course,From,To,Criterion Source,Criterion Type,Fixed Grade,Cut Grade,Fill Grade,Target Value,Classification,Source Length,Grading Area',
+        'Course,From,To,Criterion Source,Criterion Type,Effective,Fixed Grade,Cut Grade,Fill Grade,Target Value,Classification,Source Length,Grading Area',
       ),
     );
     expect(header).toBeGreaterThan(-1);
-    expect(lines[header + 1]).toContain('Default,Distance,—,—,—,20.000 m');
-    expect(lines[header + 2]).toContain('Override,Distance,—,—,—,25.000 m');
+    expect(lines[header + 1]).toContain('Default,Distance,Grade -2.000% → Distance 20.000 m,—,—,—,20.000 m');
+    expect(lines[header + 2]).toContain('Override,Distance,Grade -2.000% → Distance 25.000 m,—,—,—,25.000 m');
   });
 });

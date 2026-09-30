@@ -1,12 +1,13 @@
 /**
  * Phase 20E Wave-2A — per-course criteria editor (SHELL/UI ONLY).
- * Phase 20F.1 — override composer rides the shared criterion machinery
- * (`gradingCriterionDraftFromCriterion` + `parseGradingCriterionDraft` +
- * `<CadGradingCriterionFields>`, no local parser) and locks to the group
- * termination DOMAIN (Phase 20H): Surface groups offer Fixed + Cut/Fill only;
- * analytic groups offer Distance + Elevation + Relative Elevation (the kinds
- * mix freely within a group). Cross-domain options are never offered, so the
- * engine single-domain gate cannot trip from this UI.
+ * Phase 20J Wave C2 — all five kinds (no domain lock): Surface Fixed /
+ * Cut-Fill plus Distance / Elevation / Relative Elevation mix freely across
+ * courses (hybrid). The override composer rides the shared criterion
+ * machinery (`gradingCriterionDraftFromCriterion` +
+ * `parseGradingCriterionDraft` + `<CadGradingCriterionFields>`, no local
+ * parser). A Surface edit on a target-free group needs an explicit CURRENT
+ * target (attached first, never silently); resetting the last Surface
+ * override explains target-free and clears the dormant target id.
  *
  * COURSE CRITERIA table (Course / From / To / Type / Effective Criterion /
  * Source) over the persisted traversal. Override and Reset ride one
@@ -20,20 +21,24 @@
  */
 import React from 'react';
 import {
+  gradingCriterionRequiresSurface,
   gradingTerminationDomain,
-  type GradingTerminationDomain,
+  type GradingCriterion,
 } from '../../engine/cad/grading/gradingTypes';
-import type { GradingCriterion } from '../../engine/cad/grading/gradingTypes';
 import type { CadGradingGroup } from '../../engine/cad/grading/gradingGroupTypes';
+import {
+  buildCourseCriterionMap,
+  effectiveCriterionForCourse,
+  resolveGroupMemberCriteria,
+} from '../../engine/cad/grading/gradingGroupCourseCriteria';
 import type { CadGradingGroupShellCommand } from './cadGradingGroupShell';
 import { CadGradingCriterionFields } from './CadGradingCriterionFields';
 import {
-  allowedMethodsForGroupDomain,
-  clampToAllowedMethods,
   gradingCriterionDraftFromCriterion,
   parseGradingCriterionDraft,
   type GradingCriterionDraft,
 } from './cadGradingCriterionInput';
+import { HYBRID_CORNER_WARNING } from './cadGradingGroupMethodSummary';
 import { formatGradingCriterion } from './cadGradingShell';
 import {
   courseCriterionTypeText,
@@ -49,14 +54,21 @@ interface CadGradingGroupCriteriaPanelProps {
   run: (_command: CadGradingGroupShellCommand) => boolean;
   onNotice: (_message: string) => void;
   lengthUnit?: string;
+  /** Eligible CURRENT target surfaces (target attach offers these only). */
+  currentSurfaces?: ReadonlyArray<{ id: string; name: string }>;
 }
 
-/** Clamp a draft into the group's termination domain (never a stale kind). */
-const clampToDomain = (
-  domain: GradingTerminationDomain,
-  draft: GradingCriterionDraft,
-): GradingCriterionDraft =>
-  clampToAllowedMethods(draft, allowedMethodsForGroupDomain(domain));
+/** Effective criteria with the named course indices reset to the group default. */
+const effectiveAfterReset = (group: CadGradingGroup, reset: ReadonlySet<number>): GradingCriterion[] => {
+  const map = buildCourseCriterionMap(group);
+  return group.sourceCourses.map((course, index) =>
+    reset.has(index) ? group.criterion : effectiveCriterionForCourse(group, map, course),
+  );
+};
+
+/** True when every criterion in the set terminates analytically (target-free). */
+const isFullyAnalytic = (criteria: readonly GradingCriterion[]): boolean =>
+  criteria.every((criterion) => gradingTerminationDomain(criterion) === 'analytic');
 
 /** Canonical identity of a persisted default criterion, used to resync the
  * composer on default/domain changes (undo/redo, Set Group Default) WITHOUT
@@ -76,34 +88,30 @@ const criterionKey = (criterion: GradingCriterion): string => {
   }
 };
 
-const draftForDomain = (
-  domain: GradingTerminationDomain,
-  criterion: GradingCriterion,
-): GradingCriterionDraft =>
-  clampToDomain(domain, gradingCriterionDraftFromCriterion(criterion));
-
 export const CadGradingGroupCriteriaPanel: React.FC<CadGradingGroupCriteriaPanelProps> = ({
   group,
   run,
   onNotice,
   lengthUnit = 'm',
+  currentSurfaces = [],
 }) => {
-  const domain = gradingTerminationDomain(group.criterion);
-  const methods = allowedMethodsForGroupDomain(domain);
   const defaultKey = criterionKey(group.criterion);
   const [selected, setSelected] = React.useState<ReadonlySet<number>>(new Set());
   const [draft, setDraft] = React.useState<GradingCriterionDraft>(() =>
-    draftForDomain(domain, group.criterion),
+    gradingCriterionDraftFromCriterion(group.criterion),
   );
+  // Target attach for a first Surface edit on a target-free group: offer
+  // the first eligible CURRENT surface, explicit and never silent.
+  const [targetId, setTargetId] = React.useState(() => currentSurfaces[0]?.id ?? '');
   // A newly selected group starts with no ticks.
   React.useEffect(() => {
     setSelected(new Set());
   }, [group.id]);
-  // Refresh the composer whenever the persisted default/domain changes: a new
-  // group, undo/redo, a domain switch, or Set Group Default. Override-only
-  // edits leave the default untouched, so active typing survives them.
+  // Refresh the composer whenever the persisted default changes: a new
+  // group, undo/redo, or Set Group Default. Override-only edits leave the
+  // default untouched, so active typing survives them.
   React.useEffect(() => {
-    setDraft(draftForDomain(gradingTerminationDomain(group.criterion), group.criterion));
+    setDraft(gradingCriterionDraftFromCriterion(group.criterion));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [group.id, defaultKey]);
 
@@ -116,6 +124,25 @@ export const CadGradingGroupCriteriaPanel: React.FC<CadGradingGroupCriteriaPanel
   }, [group]);
   // Courses riding the group default = the ones a default change will move.
   const defaultFollowerCount = group.sourceCourses.length - overrideIndices.length;
+
+  const draftCriterion = parseGradingCriterionDraft(draft);
+  // Hybrid warning: the live effective set already mixes, or the parsed
+  // draft would introduce the missing domain on apply. A caution only —
+  // never a calculability claim.
+  const effectiveDomains = React.useMemo(() => {
+    const domains = new Set(resolveGroupMemberCriteria(group).map(gradingTerminationDomain));
+    if (draftCriterion) domains.add(gradingTerminationDomain(draftCriterion));
+    return domains;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [group, draft]);
+  const showHybridWarning = effectiveDomains.has('surface') && effectiveDomains.has('analytic');
+  // A Surface draft on a group with NO stored target needs an explicit
+  // CURRENT target riding in the SAME transaction (never silent). A stored
+  // id — even a stale one — satisfies the authoring gate; target currency
+  // stays Calculate's gate, never the editor's.
+  const needsTargetAttach = draftCriterion != null && gradingCriterionRequiresSurface(draftCriterion) && group.targetSurfaceId == null;
+  /** Selected CURRENT target, or null when none is eligible/selected. */
+  const pickedTarget = currentSurfaces.some((surface) => surface.id === targetId) ? targetId : null;
 
   const toggle = (index: number): void => {
     setSelected((prev) => {
@@ -136,31 +163,55 @@ export const CadGradingGroupCriteriaPanel: React.FC<CadGradingGroupCriteriaPanel
       onNotice('Nothing selected — tick one or more courses first.');
       return;
     }
+    // First Surface edit on a target-free group: the explicit CURRENT
+    // target rides in the SAME transaction (one Undo step); no eligible
+    // target blocks before anything mutates.
+    if (needsTargetAttach && pickedTarget == null) {
+      onNotice('Override rejected — surface grading needs a CURRENT target; pick one first.');
+      return;
+    }
     const ok = run({
       key: 'GROUP_SET_COURSE_CRITERIA',
       groupId: group.id,
       courses: indices.map((i) => ({ ...group.sourceCourses[i]! })),
       criterion,
+      ...(needsTargetAttach ? { targetSurfaceId: pickedTarget! } : {}),
     });
     onNotice(ok
-      ? `${indices.length} course${indices.length === 1 ? '' : 's'} overridden — recalculate. Undo reverts (one step).`
-      : 'Override rejected — no changes applied (check course refs and termination domain).');
+      ? `${indices.length} course${indices.length === 1 ? '' : 's'} overridden — recalculate.` +
+        (needsTargetAttach ? ' Target attached (same Undo step).' : ' Undo reverts (one step).')
+      : 'Override rejected — no changes applied (check course refs and criterion).');
   };
 
-  const resetSelected = (): void => {
-    const indices = [...selected].filter((i) => isCourseCriterionOverride(group, i));
+  /**
+   * Reset overrides. Landing fully analytic drops the dormant target id in
+   * the SAME engine transaction, so the notice explains target-free with a
+   * single Undo step — never a second silent command.
+   */
+  const resetCourses = (indices: number[]): boolean => {
     if (indices.length === 0) {
       onNotice('Nothing to reset — selected courses already ride the group default.');
-      return;
+      return false;
     }
     const ok = run({
       key: 'GROUP_RESET_COURSE_CRITERIA',
       groupId: group.id,
       courses: indices.map((i) => ({ ...group.sourceCourses[i]! })),
     });
-    onNotice(ok
-      ? `${indices.length} override${indices.length === 1 ? '' : 's'} cleared — recalculate. Undo reverts (one step).`
-      : 'Reset rejected — no overrides on the named courses.');
+    if (!ok) {
+      onNotice('Reset rejected — no overrides on the named courses.');
+      return false;
+    }
+    if (group.targetSurfaceId != null && isFullyAnalytic(effectiveAfterReset(group, new Set(indices)))) {
+      onNotice('Group is now fully analytic (target-free) — stored target cleared with the reset. Undo reverts (one step).');
+      return true;
+    }
+    onNotice(`${indices.length} override${indices.length === 1 ? '' : 's'} cleared — recalculate. Undo reverts (one step).`);
+    return true;
+  };
+
+  const resetSelected = (): void => {
+    resetCourses([...selected].filter((i) => isCourseCriterionOverride(group, i)));
   };
 
   const setDefault = (): void => {
@@ -169,9 +220,27 @@ export const CadGradingGroupCriteriaPanel: React.FC<CadGradingGroupCriteriaPanel
       onNotice('Default rejected — check the criterion values.');
       return;
     }
-    const ok = run({ key: 'GROUP_EDIT_CRITERIA', groupId: group.id, criterion });
+    // Surface default on a target-free group: the explicit CURRENT target
+    // rides in the SAME transaction (atomic). A fully analytic result with
+    // a stored id clears it in the same transaction (target-free); a group
+    // with no stored id omits the field entirely (never a no-op clear).
+    const prospective = group.sourceCourses.map((_course, i) =>
+      isCourseCriterionOverride(group, i) ? effectiveCourseCriterion(group, i) : criterion,
+    );
+    const clearsTarget = group.targetSurfaceId != null && isFullyAnalytic(prospective);
+    if (needsTargetAttach && pickedTarget == null) {
+      onNotice('Default rejected — surface grading needs a CURRENT target; pick one first.');
+      return;
+    }
+    const command: CadGradingGroupShellCommand = needsTargetAttach
+      ? { key: 'GROUP_EDIT_CRITERIA', groupId: group.id, criterion, targetSurfaceId: pickedTarget! }
+      : clearsTarget
+        ? { key: 'GROUP_EDIT_CRITERIA', groupId: group.id, criterion, targetSurfaceId: null }
+        : { key: 'GROUP_EDIT_CRITERIA', groupId: group.id, criterion };
+    const ok = run(command);
     onNotice(ok
-      ? `Group default set — ${defaultFollowerCount} course${defaultFollowerCount === 1 ? '' : 's'} changed, ${overrideIndices.length} override${overrideIndices.length === 1 ? '' : 's'} kept. Undo reverts (one step).`
+      ? `Group default set — ${defaultFollowerCount} course${defaultFollowerCount === 1 ? '' : 's'} changed, ${overrideIndices.length} override${overrideIndices.length === 1 ? '' : 's'} kept` +
+        (needsTargetAttach ? ' · target attached (same Undo step).' : clearsTarget ? ' · now fully analytic (target-free); stored target cleared (same Undo step).' : '. Undo reverts (one step).')
       : 'Default rejected — no changes applied (check the criterion values).');
   };
 
@@ -242,12 +311,7 @@ export const CadGradingGroupCriteriaPanel: React.FC<CadGradingGroupCriteriaPanel
                       </button>
                       {override ? (
                         <button type="button" className={buttonClass} onClick={() => {
-                          const ok = run({
-                            key: 'GROUP_RESET_COURSE_CRITERIA',
-                            groupId: group.id,
-                            courses: [{ ...course }],
-                          });
-                          onNotice(ok ? 'Override cleared — recalculate.' : 'Reset rejected.');
+                          resetCourses([index]);
                         }} data-cad-grading-group-criteria-reset={index}>
                           Reset to Default
                         </button>
@@ -263,12 +327,34 @@ export const CadGradingGroupCriteriaPanel: React.FC<CadGradingGroupCriteriaPanel
       <div className="mb-2 grid grid-cols-2 gap-2" data-cad-grading-group-criteria-form>
         <CadGradingCriterionFields
           draft={draft}
-          onChange={(next) => setDraft(clampToAllowedMethods(next, methods))}
+          onChange={setDraft}
           lengthUnit={lengthUnit}
           dataPrefix="cad-grading-group-criteria"
-          methods={methods}
         />
       </div>
+      {needsTargetAttach ? (
+        <div className="mb-2" data-cad-grading-group-criteria-target>
+          <label className="grid gap-1 text-[11px] text-slate-300">
+            Target surface (CURRENT, required for Surface — attached before the edit)
+            <select
+              aria-label="Criteria target surface"
+              className="mb-1 w-full border border-slate-600 bg-slate-800 text-[11px]"
+              value={targetId}
+              onChange={(e) => setTargetId(e.target.value)}
+            >
+              {currentSurfaces.length === 0 ? <option value="">No CURRENT surface</option> : null}
+              {currentSurfaces.map((surface) => (
+                <option key={surface.id} value={surface.id}>{surface.name}</option>
+              ))}
+            </select>
+          </label>
+        </div>
+      ) : null}
+      {showHybridWarning ? (
+        <p className="mb-2 text-[11px] text-amber-300" data-cad-grading-group-hybrid-warning>
+          {HYBRID_CORNER_WARNING}
+        </p>
+      ) : null}
       <div className="mb-2 flex flex-wrap gap-1">
         <button type="button" className={buttonClass} onClick={() => applyTo([...selected])} data-cad-grading-group-criteria-apply-selected>
           Apply to Selected

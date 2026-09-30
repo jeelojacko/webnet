@@ -570,12 +570,30 @@ describe('phase20i closed square and production freeze', () => {
     expect(pair.ok).toBe(false);
   });
 
-  it('production controls agree on ties; mixed groups stay fail-closed', () => {
+  it('production controls agree on ties; hybrid groups now tie with them (20J admission)', () => {
+    // Integer-grid flat target: sector paths stay single-segment, so the
+    // production corner runs match the study ties exactly.
+    const xs: number[] = [];
+    for (let v = -60; v <= 160 + 1e-9; v += 20) xs.push(v);
+    const points: number[] = [];
+    const idx = (ix: number, iy: number): number => iy * xs.length + ix;
+    for (const y of xs) for (const x of xs) points.push(x, y, 0);
+    const triangles: number[] = [];
+    for (let ix = 0; ix + 1 < xs.length; ix += 1) {
+      for (let iy = 0; iy + 1 < xs.length; iy += 1) {
+        const a = idx(ix, iy);
+        const b = idx(ix + 1, iy);
+        const c = idx(ix + 1, iy + 1);
+        const d = idx(ix, iy + 1);
+        triangles.push(a, b, c, a, c, d);
+      }
+    }
+    const grid = { points, triangles };
     const base = {
       groupId: 'study', revision: 'study', members: SQM, side: 'right' as const,
       maxSearchDistance: 100, curveChordTolerance: 0.01, closed: true,
     };
-    const surface = computeGradingGroupFromSnapshots({ ...base, criterion: FIXED(-0.5), target: SQ_T90 });
+    const surface = computeGradingGroupFromSnapshots({ ...base, criterion: FIXED(-0.5), target: grid });
     const distance = computeGradingGroupFromSnapshots({ ...base, criterion: DIST(-0.5, 20) });
     const mixed = computeGradingGroupFromSnapshots({
       ...base, criterion: DIST(-0.5, 20),
@@ -588,15 +606,22 @@ describe('phase20i closed square and production freeze', () => {
       expect(ties(distance)).toEqual(ties(surface));
       expect(ties(mixed)).toEqual(ties(surface));
     }
-    const frozen = computeGradingGroupFromSnapshots({
+    // 20J Wave B: the old fail-closed mix now solves through the hybrid
+    // exact-common-tie helper with identical ties and shell areas.
+    const hybrid = computeGradingGroupFromSnapshots({
       ...base, criterion: FIXED(-0.5),
       memberCriteria: [FIXED(-0.5), REL(-0.5, -10), FIXED(-0.5), FIXED(-0.5)],
-      target: SQ_T90,
+      target: grid,
     });
-    expect(frozen.ok).toBe(false);
-    if (!frozen.ok) {
-      expect(frozen.code).toBe('MEMBER_NO_SOLUTION');
-      expect(frozen.detail).toBe('GRADING_GROUP_MIXED_TERMINATION_DOMAIN');
+    expect(hybrid.ok).toBe(true);
+    if (hybrid.ok && surface.ok) {
+      const ties = (r: typeof surface): number[] =>
+        r.ok ? r.result.corners.flatMap((c) => c.tiePointXyz ?? []) : [];
+      expect(ties(hybrid)).toEqual(ties(surface));
+      expect(hybrid.result.gradingPlanArea).toBeCloseTo(surface.result.gradingPlanArea, 9);
+      expect(hybrid.result.corners.map((c) => c.classification)).toEqual([
+        'GAP', 'GAP', 'GAP', 'GAP',
+      ]);
     }
   });
 });

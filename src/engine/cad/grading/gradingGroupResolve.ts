@@ -16,7 +16,7 @@ import { resolveGradingSourceCourse, toGradingCourseLikes } from './gradingCours
 import { resolveGroupMemberCriteria } from './gradingGroupCourseCriteria';
 import { buildGroupRevision, type GroupRevisionCourse } from './gradingGroupRevision';
 import type { CadGradingGroup } from './gradingGroupTypes';
-import { gradingTerminationDomain } from './gradingTypes';
+import { groupTerminationRequiresTarget } from './gradingGroupTermination';
 import type { GradingCriterion, ResolvedGradingSource } from './gradingTypes';
 
 export interface ResolvedGroupInputs {
@@ -175,17 +175,12 @@ export const resolveGroupInputsWithReason = (
   }
   const memberCriteria = resolveGroupMemberCriteria(group);
   // Phase 20H: derive the domain set from ALL effective member criteria
-  // (default + overrides). A surface+analytic mix fails closed here even if
-  // it slipped past authoring (hand-edited file, stale override). An
-  // all-analytic group never queries a target: a dormant legacy target id
-  // is ignored entirely (never BROKEN_REFERENCE). Surface groups still
-  // require a resolvable target.
-  const domains = new Set([gradingTerminationDomain(group.criterion)]);
-  for (const entry of memberCriteria) domains.add(gradingTerminationDomain(entry));
-  if (domains.size > 1) {
-    return { ok: false, reason: 'GRADING_GROUP_MIXED_TERMINATION_DOMAIN: group mixes surface and analytic termination' };
-  }
-  const requiresSurface = domains.has('surface');
+  // (default + overrides). Phase 20J Wave B: surface+analytic mixes resolve
+  // as hybrid (exact-common-tie engine proof); malformed states still fail
+  // closed downstream. An all-analytic group never queries a target: a
+  // dormant legacy target id is ignored entirely (never BROKEN_REFERENCE).
+  // Surface and hybrid groups still require a resolvable target.
+  const requiresSurface = groupTerminationRequiresTarget(group.criterion, memberCriteria);
   let target: CadSurface | undefined;
   let targetRevision: string | undefined;
   if (requiresSurface) {

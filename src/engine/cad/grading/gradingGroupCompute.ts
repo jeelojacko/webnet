@@ -47,6 +47,8 @@ import {
 import { buildTargetQuery, candidateTriangles } from './gradingTargetIndex';
 import { solveGradingChord } from './solveAnalyticGradingChord';
 import { solveAnalyticCorner } from './gradingGroupAnalyticCorners';
+import { solveHybridCorner } from './gradingGroupHybridCorners';
+import { groupTerminationMode } from './gradingGroupTermination';
 import { solveStraightChord, type StraightChordSolve } from './solveStraightChord';
 import { gradingTerminationDomain, isTargetFreeCriterion } from './gradingTypes';
 import type {
@@ -268,25 +270,22 @@ export const computeGradingGroupFromSnapshots = (input: GroupSolveInput): Gradin
   if (!(maxSearchDistance > 0) || !Number.isFinite(maxSearchDistance)) {
     return fail('MEMBER_NO_SOLUTION', undefined, 'GRADING_BAD_SEARCH_DISTANCE');
   }
-  // Phase 20H: same-domain defense before any partial solve. A
-  // surface+analytic mix fails closed with MEMBER_NO_SOLUTION (never a
-  // half-solved mesh); the domain branch below replaces any per-side
-  // `||` check so every member/corner follows one termination domain.
-  const domains = new Set([gradingTerminationDomain(criterion)]);
-  for (let mi = 0; mi < members.length; mi += 1) domains.add(gradingTerminationDomain(criterionAt(mi)));
-  if (domains.size > 1) {
-    return fail('MEMBER_NO_SOLUTION', undefined, 'GRADING_GROUP_MIXED_TERMINATION_DOMAIN');
-  }
+  // Phase 20J Wave B: the termination MODE derives from the effective
+  // criteria (surface-only, analytic-only, or hybrid). Hybrid joints solve
+  // through the exact-common-tie helper below; malformed states still fail
+  // closed at their own gates (never a half-solved mesh).
+  const effectiveCriteria = members.map((_, mi) => criterionAt(mi));
+  const terminationMode = groupTerminationMode(criterion, effectiveCriteria);
   const jointCount = closed ? members.length : members.length - 1;
   for (let j = 0; j < jointCount; j += 1) {
     if (!exactXyz(members[j]!, members[(j + 1) % members.length]!)) {
       return fail('CORNER_INVERTED', j, 'GRADING_GROUP_CORNER_MISMATCH');
     }
   }
-  // Surface members share ONE target index; analytic families carry no target
-  // (same-domain is enforced above; this is the domain branch).
-  const needsSurface = domains.has('surface');
-  const query = needsSurface ? buildTargetQuery(target!) : null;
+  // Surface and hybrid members share ONE target index; all-analytic
+  // families carry no target (mode branch: hybrid always queries).
+  const needsSurface = terminationMode !== 'analytic';
+  const query = needsSurface ? (target === undefined ? null : buildTargetQuery(target)) : null;
   if (needsSurface && !query) return fail('MEMBER_NO_SOLUTION', undefined, 'GRADING_BAD_TARGET_MESH');
   let candidates: number[] = [];
   if (needsSurface) {
@@ -395,10 +394,68 @@ export const computeGradingGroupFromSnapshots = (input: GroupSolveInput): Gradin
     const vz = vMember.endZ;
     const turn = classifyCorner(incoming.tOut, outgoing.tIn, side);
     if (!turn) return fail('CORNER_INVERTED', j, 'GRADING_CORNER_DEGENERATE');
-    // Phase 20H: under the same-domain gate an all-analytic group routes
-    // EVERY joint through the analytic corner solver (no target query, no
-    // walls, no bridging, no interpolation).
-    if (!needsSurface) {
+    // Phase 20J Wave B: per-joint dispatch on the EFFECTIVE member domains.
+    // S↔S keeps the surface path byte-identical, A↔A keeps the analytic
+    // path byte-identical, and S↔A/A↔S joints resolve through the hybrid
+    // exact-common-tie helper (hybrid groups always carry a target query).
+    const inDom = gradingTerminationDomain(criterionAt(inIdx));
+    const outDom = gradingTerminationDomain(criterionAt(outIdx));
+    const analyticJoint = inDom === 'analytic' && outDom === 'analytic';
+    if (inDom !== outDom) {
+      if (!query) return fail('CORNER_NO_SOLUTION', j, 'GRADING_SURFACE_ANALYTIC_LINE');
+      const surfaceIncoming = inDom === 'surface';
+      const qsStitched = surfaceIncoming
+        ? incoming.stitched.daylightPts[incoming.stitched.daylightPts.length - 1]!
+        : outgoing.stitched.daylightPts[0]!;
+      const qaStitched = surfaceIncoming
+        ? outgoing.stitched.daylightPts[0]!
+        : incoming.stitched.daylightPts[incoming.stitched.daylightPts.length - 1]!;
+      const hybrid = solveHybridCorner({
+        vx, vy, vz,
+        inT: incoming.tOut, inN: incoming.nOut, inGs: incoming.gsOut,
+        outT: outgoing.tIn, outN: outgoing.nIn, outGs: outgoing.gsIn,
+        side, inCriterion: criterionAt(inIdx), outCriterion: criterionAt(outIdx),
+        query, target: target!, candidates, maxSearchDistance,
+        qs: { x: qsStitched.x, y: qsStitched.y, z: qsStitched.z },
+        qa: { x: qaStitched.x, y: qaStitched.y, z: qaStitched.z },
+        inIsArc: members[inIdx]!.isArc, outIsArc: members[outIdx]!.isArc,
+        inStrip: memberTris[inIdx]!, outStrip: memberTris[outIdx]!,
+        inDaylight: memberDaylight[inIdx]!, outDaylight: memberDaylight[outIdx]!,
+        midIn: { x: (members[inIdx]!.startX + vx) / 2, y: (members[inIdx]!.startY + vy) / 2 },
+        midOut: { x: (vx + members[outIdx]!.endX) / 2, y: (vy + members[outIdx]!.endY) / 2 },
+      });
+      if (!hybrid.ok) return fail(hybrid.code, j, hybrid.detail);
+      if (hybrid.classification === 'GAP') {
+        patchTris.push(...hybrid.patchTris);
+      } else {
+        memberTris[inIdx] = hybrid.inTris;
+        memberTris[outIdx] = hybrid.outTris;
+        memberDaylight[inIdx] = hybrid.inDaylight;
+        memberDaylight[outIdx] = hybrid.outDaylight;
+      }
+      multipleSolutions += Math.max(0, hybrid.rootCount - 1);
+      intersectionSegments += 1;
+      const hybridRunFlat: number[] = [];
+      for (const p of hybrid.cornerRun) hybridRunFlat.push(p.x, p.y, p.z);
+      corners.push({
+        cornerIndex: j,
+        vertexId: `joint:${j}`,
+        classification: hybrid.classification,
+        miterRay: { mx: hybrid.ray.mx, my: hybrid.ray.my },
+        miterExtent: hybrid.extent,
+        tiePointXyz: [hybrid.tie.x, hybrid.tie.y, hybrid.tie.z],
+        daylightPoints: hybridRunFlat,
+        diagnostics: [],
+      });
+      const hybridIncomingRun = memberDaylight[inIdx]!;
+      const hybridJoint = joinDaylightRuns([hybridIncomingRun.slice(-1), hybrid.cornerRun]);
+      memberDaylight[inIdx] = [...hybridIncomingRun.slice(0, -1), ...hybridJoint];
+      continue;
+    }
+    // Analytic↔analytic joints always take the analytic corner solver
+    // (target-free), even inside a hybrid group; surface↔surface joints
+    // fall through to the surface path below.
+    if (analyticJoint) {
       const analytic = solveAnalyticCorner({
         vx, vy, vz,
         inT: incoming.tOut, inN: incoming.nOut, inGs: incoming.gsOut,

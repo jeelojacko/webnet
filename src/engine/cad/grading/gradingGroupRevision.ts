@@ -12,9 +12,8 @@
  */
 import { fnv1a } from '../cadRevisionHash';
 import { canonicalGradingNum } from './gradingRevision';
-import { canonicalCourseCriteria } from './gradingGroupCourseCriteria';
-import { gradingCriterionRequiresSurface } from './gradingTypes';
-import type { GradingCriterion, GradingSide, ResolvedGradingSource } from './gradingTypes';
+import { canonicalCourseCriteria, effectiveCriteriaForCourses } from './gradingGroupCourseCriteria';
+import { gradingCriterionRequiresSurface } from './gradingTypes';import type { GradingCriterion, GradingSide, ResolvedGradingSource } from './gradingTypes';
 import type { GradingCornerMode, GradingGroupCourseCriterionOverride } from './gradingGroupTypes';
 
 export interface GroupRevisionCourse {
@@ -113,12 +112,28 @@ const overrideText = (
     .join('#');
 };
 
+/**
+ * Phase 20J Wave C1: the target participates when ANY effective member
+ * is surface-terminated (Wave C4: EFFECTIVE-only — the stored default
+ * counts only for traversal courses it still covers; a fully-overridden
+ * default is invisible). All-analytic groups hash `tgt:none`, so a
+ * dormant legacy id can never move the revision. Pre-20J homogeneous
+ * inputs (no effective surface override) hash byte-identically.
+ */
+const effectiveRequiresSurface = (
+  criterion: GradingCriterion,
+  courses: GroupRevisionCourse[],
+  courseCriteria: GradingGroupCourseCriterionOverride[] | undefined,
+): boolean => {
+  if (courses.length === 0) return gradingCriterionRequiresSurface(criterion);
+  return effectiveCriteriaForCourses(criterion, courses, courseCriteria)
+    .some((entry) => gradingCriterionRequiresSurface(entry));
+};
+
 /** Deterministic `ggrev1:<fnv1a-hex>` over the canonical group content. */
 export const buildGroupRevision = (input: GroupRevisionInput): string => {
   const overrides = overrideText(input.criterion, input.courses, input.courseCriteria);
-  // Analytic (distance/elevation) groups carry no target: hash `tgt:none` so
-  // a dormant legacy id can never move the revision. Surface bytes unchanged.
-  const surfaceFamily = gradingCriterionRequiresSurface(input.criterion);
+  const surfaceFamily = effectiveRequiresSurface(input.criterion, input.courses, input.courseCriteria);
   const targetText =
     !surfaceFamily || input.targetSurfaceId === undefined || input.targetRevision === undefined
       ? 'tgt:none'

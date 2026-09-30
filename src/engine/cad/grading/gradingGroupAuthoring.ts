@@ -8,15 +8,14 @@
  * resolve phase and is deliberately NOT performed here.
  */
 import type { GradingCriterion, GradingSide } from './gradingTypes';
-import { gradingCriterionRequiresSurface } from './gradingTypes';
 import type {
   CadGradingGroup,
   GradingCornerMode,
   GradingGroupCourse,
   GradingGroupCourseCriterionOverride,
 } from './gradingGroupTypes';
-import { criteriaEqual } from './gradingGroupCourseCriteria';
-import { validateGroupTerminationCriteria } from './gradingGroupTermination';
+import { criteriaEqual, effectiveCriteriaForCourses } from './gradingGroupCourseCriteria';
+import { groupTerminationRequiresTarget } from './gradingGroupTermination';
 import {
   validateGradingCriterion,
   type GradingAuthoringResult,
@@ -109,13 +108,20 @@ const identityError = (
   return input.side === 'left' || input.side === 'right' ? null : 'side must be left or right';
 };
 
-/** Phase 20F: target surface is required only for surface-family criteria. */
+/** Phase 20J: a target surface is required when ANY effective criterion
+ * (default applied to uncovered courses; a fully-overridden default is
+ * invisible) is surface-terminated. Analytic-only groups omit it. */
 const targetRule = (
   criterion: GradingCriterion,
+  sourceCourses: GradingGroupCourse[],
+  courseCriteria: GradingGroupCourseCriterionOverride[] | undefined,
   targetSurfaceId: string | undefined,
 ): string | null =>
-  gradingCriterionRequiresSurface(criterion) && !nonEmpty(targetSurfaceId)
-    ? 'targetSurfaceId must be non-empty for surface criteria'
+  groupTerminationRequiresTarget(
+    criterion,
+    effectiveCriteriaForCourses(criterion, sourceCourses, courseCriteria),
+  ) && !nonEmpty(targetSurfaceId)
+    ? 'targetSurfaceId must be non-empty when a surface-terminated criterion is effective'
     : null;
 
 const scalarError = (
@@ -155,9 +161,14 @@ const toGroup = (input: CreateGroupInput): CadGradingGroup => ({
   name: input.name,
   sourceFeatureLineId: input.sourceFeatureLineId,
   sourceCourses: input.sourceCourses.map((course) => ({ ...course })),
-  // Analytic criteria never carry a target id on new writes (dormancy by
-  // omission); a legacy surface group keeps its target verbatim.
-  ...(gradingCriterionRequiresSurface(input.criterion) && nonEmpty(input.targetSurfaceId)
+  // The target persists whenever a surface-terminated criterion is
+  // effective (surface default on an uncovered course, or an analytic
+  // default with a surface override); all-analytic groups omit it
+  // (dormancy by omission). A fully-overridden default is invisible.
+  ...(groupTerminationRequiresTarget(
+    input.criterion,
+    effectiveCriteriaForCourses(input.criterion, input.sourceCourses, input.courseCriteria),
+  ) && nonEmpty(input.targetSurfaceId)
     ? { targetSurfaceId: input.targetSurfaceId }
     : {}),
   side: input.side,
@@ -182,7 +193,12 @@ export const createGroupDefinition = (
   if (input.cornerMode !== 'miter') return fail('cornerMode must be miter');
   const criterion = validateGradingCriterion(input.criterion);
   if (criterion) return fail(criterion);
-  const target = targetRule(input.criterion, input.targetSurfaceId);
+  const target = targetRule(
+    input.criterion,
+    input.sourceCourses,
+    input.courseCriteria,
+    input.targetSurfaceId,
+  );
   if (target) return fail(target);
   const scalars = scalarError(input);
   if (scalars) return fail(scalars);
@@ -190,31 +206,25 @@ export const createGroupDefinition = (
   if (chain) return fail(chain);
   const overrides = overrideRefError(input.sourceCourses, input.courseCriteria);
   if (overrides) return fail(overrides);
-  const termination = validateGroupTerminationCriteria(
-    input.criterion,
-    (input.courseCriteria ?? []).map((entry) => entry.criterion),
-  );
-  if (termination) return fail(termination);
   return { ok: true, value: toGroup(input) };
 };
 
-/** Replace the shared criterion on an existing group (returns a copy). */
+/** Replace the shared criterion on an existing group (returns a copy).
+ * 20J: hybrid-legal; the target rule derives from the effective set (new
+ * default + retained overrides), so an analytic default with a surface
+ * override keeps its target while all-analytic drops a dormant id. */
 export const editGroupCriteria = (
   current: CadGradingGroup,
   criterion: GradingCriterion,
 ): GradingAuthoringResult<CadGradingGroup> => {
   const error = validateGradingCriterion(criterion);
   if (error) return fail(error);
-  const termination = validateGroupTerminationCriteria(
-    criterion,
-    (current.courseCriteria ?? []).map((entry) => entry.criterion),
-  );
-  if (termination) return fail(termination);
-  if (gradingCriterionRequiresSurface(criterion) && !nonEmpty(current.targetSurfaceId)) {
-    return fail('targetSurfaceId must be non-empty for surface criteria');
+  const members = effectiveCriteriaForCourses(criterion, current.sourceCourses, current.courseCriteria);
+  if (groupTerminationRequiresTarget(criterion, members) && !nonEmpty(current.targetSurfaceId)) {
+    return fail('targetSurfaceId must be non-empty when a surface-terminated criterion is effective');
   }
-  if (!gradingCriterionRequiresSurface(criterion)) {
-    // Switching a group to analytic drops any dormant target id.
+  if (!groupTerminationRequiresTarget(criterion, members)) {
+    // All-analytic: drop any dormant target id.
     const { targetSurfaceId: _dormant, ...rest } = current;
     return { ok: true, value: { ...rest, criterion } };
   }
@@ -264,12 +274,18 @@ export const setCourseCriteriaOverrides = (
     const { courseCriteria: _dropped, ...rest } = current;
     return { ok: true, value: rest };
   }
-  const termination = validateGroupTerminationCriteria(
-    current.criterion,
-    next.map((entry) => entry.criterion),
-  );
-  if (termination) return fail(termination);
-  return { ok: true, value: { ...current, courseCriteria: next } };
+  // 20J: hybrid-legal. A surface-effective result needs a live target
+  // (the command layer pre-seeds an explicit one — never silent); an
+  // all-analytic result drops a dormant id.
+  const memberCriteria = effectiveCriteriaForCourses(current.criterion, current.sourceCourses, next);
+  if (groupTerminationRequiresTarget(current.criterion, memberCriteria)) {
+    if (!nonEmpty(current.targetSurfaceId)) {
+      return fail('targetSurfaceId must be non-empty when a surface-terminated criterion is effective');
+    }
+    return { ok: true, value: { ...current, courseCriteria: next } };
+  }
+  const { targetSurfaceId: _dormant, ...stripped } = current;
+  return { ok: true, value: { ...stripped, courseCriteria: next } };
 };
 
 /** Phase 20E: drop the override records on the named courses (sparse reset). */
@@ -285,9 +301,21 @@ export const resetCourseCriteriaOverrides = (
     (entry) => !targets.has([entry.sourceCourse.vertexAId, entry.sourceCourse.vertexBId].sort().join('>')),
   );
   if (kept.length === (current.courseCriteria ?? []).length) return fail('no overrides on the named courses');
+  // 20J: resetting the last surface override can land all-analytic — drop
+  // a dormant target id there; a still-surface result keeps its target.
   if (kept.length === 0) {
     const { courseCriteria: _dropped, ...rest } = current;
-    return { ok: true, value: rest };
+    if (groupTerminationRequiresTarget(
+      current.criterion,
+      effectiveCriteriaForCourses(current.criterion, current.sourceCourses, undefined),
+    )) return { ok: true, value: rest };
+    const { targetSurfaceId: _dormant, ...stripped } = rest;
+    return { ok: true, value: stripped };
+  }
+  const keptCriteria = effectiveCriteriaForCourses(current.criterion, current.sourceCourses, kept);
+  if (!groupTerminationRequiresTarget(current.criterion, keptCriteria)) {
+    const { targetSurfaceId: _dormant, ...stripped } = current;
+    return { ok: true, value: { ...stripped, courseCriteria: kept } };
   }
   return { ok: true, value: { ...current, courseCriteria: kept } };
 };
@@ -327,6 +355,16 @@ export const editGroupSpan = (
     targetSurfaceId: current.targetSurfaceId,
     side: current.side,
     criterion: current.criterion,
+    // 20J: kept overrides ride into the constructor so a hybrid target
+    // rule (analytic default + surface override) sees its target.
+    ...(kept.length > 0
+      ? {
+          courseCriteria: kept.map((entry) => ({
+            sourceCourse: { ...entry.sourceCourse },
+            criterion: { ...entry.criterion },
+          })),
+        }
+      : {}),
     maxSearchDistance: current.maxSearchDistance,
     curveChordTolerance: current.curveChordTolerance,
     cornerMode: current.cornerMode,
@@ -335,17 +373,7 @@ export const editGroupSpan = (
     ...(current.styleId !== undefined ? { styleId: current.styleId } : {}),
   });
   if (!rebuilt.ok) return fail(rebuilt.error);
-  const group: CadGradingGroup =
-    kept.length === 0
-      ? rebuilt.value
-      : {
-          ...rebuilt.value,
-          courseCriteria: kept.map((entry) => ({
-            sourceCourse: { ...entry.sourceCourse },
-            criterion: { ...entry.criterion },
-          })),
-        };
-  return { ok: true, value: { group, removedOverrides } };
+  return { ok: true, value: { group: rebuilt.value, removedOverrides } };
 };
 
 /** Point an existing group at a different target surface (copy). */

@@ -139,7 +139,10 @@ const rayTriangleInterval = (
     const num = nx * (ax - ox) + ny * (ay - oy);
     const denom = nx * mx + ny * my;
     if (Math.abs(denom) <= zeroDelta(denom, 0)) {
-      if (num < -zeroDelta(num, 0)) return null;
+      // Parallel edge: the ray runs alongside the edge half-plane. Reject
+      // only when strictly outside (num > +eps, i.e. origin beyond the
+      // inward normal); grazing/inside (num <= +eps) stays eligible.
+      if (num > zeroDelta(num, 0)) return null;
       continue;
     }
     const t = num / denom;
@@ -153,6 +156,21 @@ const rayTriangleInterval = (
 export type MiterTieResult =
   | { ok: true; t: number; x: number; y: number; z: number; rootCount: number }
   | { ok: false; code: 'CORNER_TARGET_GAP' | 'CORNER_BRANCH_DISCONTINUITY' | 'CORNER_NO_SOLUTION' };
+
+/**
+ * Phase 20J Wave C4 — coordinate-aware tie agreement bound.
+ *
+ * `zeroDelta` itself is never loosened here. Tie quantities evaluated at
+ * world (x, y) — plane elevations, the target query, the seam parameter —
+ * carry absolute FP noise ~eps * |XY| * |grade|, which `zeroDelta(a, b)`
+ * alone under-bounds far from the origin (a true 30-degree-rotated tie
+ * misses by ~5e-15 in Z and ~3e-14 in seam-param against ~9e-16/~3e-14
+ * bounds while its axis-aligned twin is exact). Scaling by the coordinate
+ * magnitude keeps the bound ~1e-13..1e-12 m — still ten orders below
+ * survey noise, so genuine disagreements (grid-scale) still fail closed.
+ */
+export const tieAgreementTol = (a: number, b: number, x: number, y: number): number =>
+  zeroDelta(a, b) * Math.max(1, Math.abs(x), Math.abs(y));
 
 const planeZ = (plane: CornerGradingPlane, x: number, y: number): number =>
   plane.zAtV + plane.gx * (x - plane.ax) + plane.gy * (y - plane.ay);
@@ -215,7 +233,9 @@ export const solveMiterTie = (
   const zt = query.elevationAt(x, y);
   if (zt === null) return { ok: false, code: 'CORNER_TARGET_GAP' };
   const zg = planeZ(plane, x, y);
-  if (Math.abs(zt - zg) > zeroDelta(zt, zg)) return { ok: false, code: 'CORNER_BRANCH_DISCONTINUITY' };
+  // Agreement bound is coordinate-aware (see tieAgreementTol):
+  // the query and the plane evaluate at (x, y), not at the origin.
+  if (Math.abs(zt - zg) > tieAgreementTol(zt, zg, x, y)) return { ok: false, code: 'CORNER_BRANCH_DISCONTINUITY' };
   return { ok: true, t, x, y, z: zg, rootCount: distinct.length };
 };
 

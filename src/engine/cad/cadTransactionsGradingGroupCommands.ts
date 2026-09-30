@@ -14,9 +14,15 @@ import {
   setCourseCriteriaOverrides,
   validateGroupChain,
 } from './grading/gradingGroupAuthoring';
-import { gradingCriterionRequiresSurface, gradingTerminationKind } from './grading/gradingTypes';
-import { criteriaEqual } from './grading/gradingGroupCourseCriteria';
-import { canonicalAnalyticKinds } from './grading/gradingGroupTermination';
+import { gradingTerminationKind } from './grading/gradingTypes';
+import { criteriaEqual, effectiveCriteriaForCourses } from './grading/gradingGroupCourseCriteria';
+import { resolveGroupMemberCriteria } from './grading/gradingGroupCourseCriteria';
+import {
+  canonicalAnalyticKinds,
+  canonicalTerminationKinds,
+  groupTerminationMode,
+  groupTerminationRequiresTarget,
+} from './grading/gradingGroupTermination';
 import { toGradingCourseLikes, resolveGradingSourceCourse } from './grading/gradingCourseFrame';
 import { resolveGroupInputs } from './grading/gradingGroupResolve';
 import { appendCadProjectEntities } from './cadProjectState';
@@ -86,13 +92,52 @@ const withGroup = (project: CadProject, group: CadGradingGroup): CadProject => (
   ),
 });
 
+/**
+ * Phase 20J: criterion+target atomicity. Applies an explicit target to a
+ * working copy (string must name a live surface; null clears); undefined
+ * keeps the retained id. Null = unknown surface id (caller rejects).
+ * Never picks a silent first-surface default.
+ */
+const applyExplicitGroupTarget = (
+  project: CadProject,
+  group: CadGradingGroup,
+  targetSurfaceId: string | null | undefined,
+): CadGradingGroup | null => {
+  if (targetSurfaceId === undefined) return group;
+  if (targetSurfaceId === null) {
+    const { targetSurfaceId: _dropped, ...rest } = group;
+    return rest;
+  }
+  const exists = (project.surfaces ?? []).some((entry) => entry.id === targetSurfaceId);
+  if (!exists) return null;
+  return { ...group, targetSurfaceId };
+};
+
+/** Effective-set target rule: a surface-effective group must carry a live id. */
+const effectiveTargetRule = (
+  criterion: CadGradingGroup['criterion'],
+  memberCriteria: CadGradingGroup['criterion'][],
+  targetSurfaceId: string | undefined,
+): string | null =>
+  groupTerminationRequiresTarget(criterion, memberCriteria) && targetSurfaceId === undefined
+    ? 'targetSurfaceId must be non-empty when a surface-terminated criterion is effective'
+    : null;
+
 type GroupCreateCommand = Extract<CadCommand, { key: 'GROUP_CREATE' }>;
 
 const groupCreateCommand: CadCommandDefinition<GroupCreateCommand> = {
   key: 'GROUP_CREATE',
   execute: (snapshot, command) => {
-    // Surface-family criteria need a live target; analytic criteria omit it.
-    const requiresSurface = gradingCriterionRequiresSurface(command.criterion);
+    // 20J: the target rule derives from the EFFECTIVE per-course set
+    // (Wave C4: a fully-overridden stored default is invisible) — a
+    // hybrid create needs a live target even under an analytic default;
+    // an all-analytic create omits it.
+    const effectiveForCreate = effectiveCriteriaForCourses(
+      command.criterion,
+      command.sourceCourses,
+      command.courseCriteria,
+    );
+    const requiresSurface = groupTerminationRequiresTarget(command.criterion, effectiveForCreate);
     const target = requiresSurface
       ? (snapshot.project.surfaces ?? []).find((entry) => entry.id === command.targetSurfaceId)
       : undefined;
@@ -155,29 +200,44 @@ const groupEditCriteriaCommand: CadCommandDefinition<GroupEditCriteriaCommand> =
     ) {
       return null;
     }
-    let next = group;
-    // Kind switch + target land in ONE history entry: reassign first so a
-    // switch back to a surface family has a target before the criterion edit.
+    // 20J: kind switch + target land in ONE history entry against the
+    // EFFECTIVE set (incoming default + retained overrides): a hybrid
+    // result needs an explicit eligible target, an all-analytic result
+    // never carries one. Rejected ops return null with zero mutation.
     const nextCriterion = command.criterion ?? group.criterion;
+    // Wave C4 EFFECTIVE per-course list (fully-overridden default invisible).
+    const retainedMembers = effectiveCriteriaForCourses(
+      nextCriterion,
+      group.sourceCourses,
+      group.courseCriteria,
+    );
+    let next = group;
     if (command.targetSurfaceId !== undefined) {
-      if (gradingCriterionRequiresSurface(nextCriterion)) {
-        if (command.targetSurfaceId === null) return null;
+      if (command.targetSurfaceId === null) {
+        // Clear allowed only for all-analytic results.
+        if (groupTerminationRequiresTarget(nextCriterion, retainedMembers)) return null;
+        if (group.targetSurfaceId === undefined) return null;
+        const { targetSurfaceId: _dropped, ...rest } = next;
+        next = rest;
+      } else {
         const exists = (snapshot.project.surfaces ?? []).some(
           (entry) => entry.id === command.targetSurfaceId,
         );
         if (!exists) return null;
-        const reassigned = reassignGroupTarget(next, command.targetSurfaceId);
-        if (!reassigned.ok) return null;
-        next = reassigned.value;
-      } else if (command.targetSurfaceId !== null) {
-        // Analytic criteria never carry a target id.
-        return null;
+        // Analytic-only results never carry a target id.
+        if (!groupTerminationRequiresTarget(nextCriterion, retainedMembers)) return null;
+        next = { ...next, targetSurfaceId: command.targetSurfaceId };
       }
     }
     if (command.criterion !== undefined) {
       const edited = editGroupCriteria(next, command.criterion);
       if (!edited.ok) return null;
       next = edited.value;
+    } else if (command.targetSurfaceId !== undefined) {
+      // Target-only path: the pure criterion edit above is skipped, so
+      // enforce the effective target rule here.
+      const members = effectiveCriteriaForCourses(next.criterion, next.sourceCourses, next.courseCriteria);
+      if (effectiveTargetRule(next.criterion, members, next.targetSurfaceId) !== null) return null;
     }
     if (command.maxSearchDistance !== undefined) {
       if (!Number.isFinite(command.maxSearchDistance) || !(command.maxSearchDistance > 0)) return null;
@@ -201,8 +261,10 @@ const groupReassignTargetCommand: CadCommandDefinition<GroupReassignTargetComman
   execute: (snapshot, command) => {
     const group = findGroup(snapshot.project, command.groupId);
     if (!group) return null;
-    // Analytic criteria have no live target; reassignment is surface-only.
-    if (!gradingCriterionRequiresSurface(group.criterion)) return null;
+    // 20J: reassignment is live-target-only — surface and hybrid groups
+    // (ANY effective surface member); all-analytic groups carry no target.
+    const members = resolveGroupMemberCriteria(group);
+    if (!groupTerminationRequiresTarget(group.criterion, members)) return null;
     const target = (snapshot.project.surfaces ?? []).find(
       (entry) => entry.id === command.targetSurfaceId,
     );
@@ -275,13 +337,19 @@ type GroupSetCourseCriteriaCommand = Extract<CadCommand, { key: 'GROUP_SET_COURS
  * Phase 20E: apply one criterion to every named course in ONE undo step
  * (default edit + multi-select apply). Sparse: a value equal to the group
  * default removes those records. Duplicate/orphan refs BLOCK (null).
+ * Phase 20J: an explicit target rides in the SAME undo entry (string must
+ * name a live surface; null clears for all-analytic results only). A
+ * surface-effective result with no live target rejects — never a silent
+ * first-surface pick; rejected ops mutate nothing.
  */
 const groupSetCourseCriteriaCommand: CadCommandDefinition<GroupSetCourseCriteriaCommand> = {
   key: 'GROUP_SET_COURSE_CRITERIA',
   execute: (snapshot, command) => {
     const group = findGroup(snapshot.project, command.groupId);
     if (!group) return null;
-    const applied = setCourseCriteriaOverrides(group, command.courses, command.criterion);
+    const base = applyExplicitGroupTarget(snapshot.project, group, command.targetSurfaceId);
+    if (!base) return null;
+    const applied = setCourseCriteriaOverrides(base, command.courses, command.criterion);
     if (!applied.ok) return null;
     return commitLayerProject('GROUP_SET_COURSE_CRITERIA', snapshot, withGroup(snapshot.project, applied.value),
       `GROUP_SET_COURSE_CRITERIA (${group.name})`);
@@ -290,13 +358,18 @@ const groupSetCourseCriteriaCommand: CadCommandDefinition<GroupSetCourseCriteria
 
 type GroupResetCourseCriteriaCommand = Extract<CadCommand, { key: 'GROUP_RESET_COURSE_CRITERIA' }>;
 
-/** Phase 20E: drop override records on the named courses (one undo step). */
+/**
+ * Phase 20E: drop override records on the named courses (one undo step).
+ * Phase 20J: same atomic target rule as GROUP_SET_COURSE_CRITERIA.
+ */
 const groupResetCourseCriteriaCommand: CadCommandDefinition<GroupResetCourseCriteriaCommand> = {
   key: 'GROUP_RESET_COURSE_CRITERIA',
   execute: (snapshot, command) => {
     const group = findGroup(snapshot.project, command.groupId);
     if (!group) return null;
-    const reset = resetCourseCriteriaOverrides(group, command.courses);
+    const base = applyExplicitGroupTarget(snapshot.project, group, command.targetSurfaceId);
+    if (!base) return null;
+    const reset = resetCourseCriteriaOverrides(base, command.courses);
     if (!reset.ok) return null;
     return commitLayerProject('GROUP_RESET_COURSE_CRITERIA', snapshot, withGroup(snapshot.project, reset.value),
       `GROUP_RESET_COURSE_CRITERIA (${group.name})`);
@@ -332,10 +405,12 @@ type GroupExtractCommand = Extract<CadCommand, { key: 'GROUPEXTRACTDAYLIGHT' }>;
 
 /**
  * GROUPEXTRACTDAYLIGHT: snapshot the cached merged daylight boundary into a
- * NEW CadFeatureLineEntity (`<name> - Daylight`, fresh ids, exact cached
- * XYZ, no live dependency, piecewise LINE courses always). Open groups →
- * open line; closed groups → closed line. Requires CURRENT (ggrev match +
- * session CURRENT assertion) + a passed-in cached result.
+ * NEW CadFeatureLineEntity (fresh ids, exact cached XYZ, no live
+ * dependency, piecewise LINE courses always). Open groups → open line;
+ * closed groups → closed line. Hybrid groups extract as
+ * `<name> - Grading Boundary`; homogeneous groups keep the legacy
+ * `<name> - Daylight`. Requires CURRENT (ggrev match + session CURRENT
+ * assertion) + a passed-in cached result.
  */
 const groupExtractCommand: CadCommandDefinition<GroupExtractCommand> = {
   key: 'GROUPEXTRACTDAYLIGHT',
@@ -349,6 +424,12 @@ const groupExtractCommand: CadCommandDefinition<GroupExtractCommand> = {
       return null;
     }
     if (result.daylightPoints.length < 6 || result.daylightPoints.length % 3 !== 0) return null;
+    // 20J: the final boundary term is `Grading Boundary` for hybrid groups
+    // only; homogeneous extracts keep their exact legacy name. The
+    // `daylightPoints` result field is unchanged in every mode.
+    const boundaryName = groupTerminationMode(inputs.group.criterion, inputs.memberCriteria) === 'hybrid'
+      ? `${inputs.group.name} - Grading Boundary`
+      : `${inputs.group.name} - Daylight`;
     const vertices: Array<{ x: number; y: number }> = [];
     const elevations: number[] = [];
     for (let i = 0; i + 2 < result.daylightPoints.length; i += 3) {
@@ -358,7 +439,7 @@ const groupExtractCommand: CadCommandDefinition<GroupExtractCommand> = {
     const entity = buildFeatureLineEntity(
       snapshot.project,
       { vertices, elevations, closed: inputs.group.closed === true },
-      { name: `${inputs.group.name} - Daylight`, createdBy: 'GROUPEXTRACTDAYLIGHT' },
+      { name: boundaryName, createdBy: 'GROUPEXTRACTDAYLIGHT' },
     );
     if (!entity) return null;
     return commitLayerProject('GROUPEXTRACTDAYLIGHT', snapshot,
@@ -397,22 +478,26 @@ const groupBakeCommand: CadCommandDefinition<GroupBakeCommand> = {
     }
     if (result.gradingMesh.triangles.length === 0) return null;
     const criterion = inputs.group.criterion;
-    // Phase 20H: the bake targetKind reflects the EFFECTIVE per-course
-    // criteria, never a fully-overridden default. Homogeneous groups keep
-    // their exact legacy shape because the default is effective there and
-    // `representative` resolves back to it.
+    // Phase 20J: the bake targetKind reflects the EFFECTIVE per-course
+    // criteria. Homogeneous groups keep their exact legacy shape;
+    // mixed-analytic groups keep `mixed-analytic` + analyticKinds; hybrid
+    // (surface+analytic) groups record `hybrid` + canonical
+    // terminationKinds and always carry the live target id — never a
+    // singular criterionDistance/targetElevation/relativeElevation value.
     const effective = inputs.memberCriteria.length > 0 ? inputs.memberCriteria : [criterion];
+    const hybrid = groupTerminationMode(criterion, effective) === 'hybrid';
     const analyticKinds = canonicalAnalyticKinds(effective);
-    const mixed = analyticKinds.length > 1;
-    const targetKind: 'surface' | 'distance' | 'elevation' | 'relative-elevation' | 'mixed-analytic' =
-      mixed ? 'mixed-analytic' : gradingTerminationKind(effective[0]!);
+    const terminationKinds = canonicalTerminationKinds(effective);
+    const mixed = !hybrid && analyticKinds.length > 1;
+    const targetKind: 'surface' | 'distance' | 'elevation' | 'relative-elevation' | 'mixed-analytic' | 'hybrid' =
+      hybrid ? 'hybrid' : mixed ? 'mixed-analytic' : gradingTerminationKind(effective[0]!);
     // Singular value fields describe the calculated result: the stored
     // default while it is effective on at least one course, else the first
     // effective criterion. Mixed groups carry no singular value by contract.
     const representative = effective.some((entry) => criteriaEqual(entry, criterion))
       ? criterion
       : effective[0]!;
-    if (targetKind === 'surface' && !inputs.target) return null;
+    if ((targetKind === 'surface' || targetKind === 'hybrid') && !inputs.target) return null;
     const canonical = canonicalizeBakedTin(result.gradingMesh.points, result.gradingMesh.triangles);
     const payload = {
       vertices: canonical.vertices,
@@ -428,10 +513,13 @@ const groupBakeCommand: CadCommandDefinition<GroupBakeCommand> = {
         ),
         targetKind,
         ...(mixed ? { analyticKinds } : {}),
-        ...(targetKind === 'surface' ? { targetSurfaceId: inputs.target!.id } : {}),
-        ...(!mixed && representative.kind === 'distance' ? { criterionDistance: representative.distance } : {}),
-        ...(!mixed && representative.kind === 'elevation' ? { targetElevation: representative.targetElevation } : {}),
-        ...(!mixed && representative.kind === 'relative-elevation' ? { relativeElevation: representative.relativeElevation } : {}),
+        ...(hybrid ? { terminationKinds } : {}),
+        ...((targetKind === 'surface' || targetKind === 'hybrid') && inputs.target !== undefined
+          ? { targetSurfaceId: inputs.target.id }
+          : {}),
+        ...(!mixed && !hybrid && representative.kind === 'distance' ? { criterionDistance: representative.distance } : {}),
+        ...(!mixed && !hybrid && representative.kind === 'elevation' ? { targetElevation: representative.targetElevation } : {}),
+        ...(!mixed && !hybrid && representative.kind === 'relative-elevation' ? { relativeElevation: representative.relativeElevation } : {}),
         side: inputs.group.side,
         accuracy: result.accuracy,
         cornerMode: inputs.group.cornerMode,

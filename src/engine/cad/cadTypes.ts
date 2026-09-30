@@ -1195,11 +1195,13 @@ export interface WebnetGradingDesignPatchTinProvenance {
   groupRevision: string;
   sourceFeatureLineId: string;
   sourceCourseRefs: string[];
-  /** Phase 20F/20G additive termination family; phase 20H adds `mixed-analytic` for mixed analytic groups. Legacy files omit it (surface). */
-  targetKind?: 'surface' | 'distance' | 'elevation' | 'relative-elevation' | 'mixed-analytic';
+  /** Phase 20F/20G additive termination family; phase 20H adds `mixed-analytic` for mixed analytic groups; phase 20J adds `hybrid` for surface+analytic groups. Legacy files omit it (surface). */
+  targetKind?: 'surface' | 'distance' | 'elevation' | 'relative-elevation' | 'mixed-analytic' | 'hybrid';
   /** Phase 20H: distinct analytic kinds in a mixed-analytic group, canonical order; absent otherwise. */
   analyticKinds?: Array<'distance' | 'elevation' | 'relative-elevation'>;
-  /** Surface-family patches (legacy files always carry this). */
+  /** Phase 20J: distinct termination kinds effectively present in a hybrid group, canonical surface → distance → elevation → relative-elevation order; absent otherwise. */
+  terminationKinds?: Array<'surface' | 'distance' | 'elevation' | 'relative-elevation'>;
+  /** Surface-family and hybrid patches (legacy files always carry this). */
   targetSurfaceId?: string;
   targetSurfaceRevision?: string;
   /** Distance-family patches: the criterion offset (never a derived limit point). */
@@ -1232,11 +1234,13 @@ export interface WebnetGradingGroupBakeTinProvenance {
   groupRevision: string;
   sourceFeatureLineId: string;
   sourceCourseRefs: string[];
-  /** Phase 20F/20G additive termination family; phase 20H adds `mixed-analytic` for mixed analytic groups. Legacy files omit it (surface). */
-  targetKind?: 'surface' | 'distance' | 'elevation' | 'relative-elevation' | 'mixed-analytic';
+  /** Phase 20F/20G additive termination family; phase 20H adds `mixed-analytic` for mixed analytic groups; phase 20J adds `hybrid` for surface+analytic groups. Legacy files omit it (surface). */
+  targetKind?: 'surface' | 'distance' | 'elevation' | 'relative-elevation' | 'mixed-analytic' | 'hybrid';
   /** Phase 20H: distinct analytic kinds in a mixed-analytic group, canonical order; absent otherwise. */
   analyticKinds?: Array<'distance' | 'elevation' | 'relative-elevation'>;
-  /** Surface-family bakes (legacy files always carry this). */
+  /** Phase 20J: distinct termination kinds effectively present in a hybrid group, canonical order; absent otherwise. */
+  terminationKinds?: Array<'surface' | 'distance' | 'elevation' | 'relative-elevation'>;
+  /** Surface-family and hybrid bakes (legacy files always carry this). */
   targetSurfaceId?: string;
   /** Distance-family bakes: the criterion offset (never a derived limit point). */
   criterionDistance?: number;

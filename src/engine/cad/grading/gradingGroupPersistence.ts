@@ -1,7 +1,7 @@
 import { createGroupDefinition } from './gradingGroupAuthoring';
+import { effectiveCriteriaForCourses } from './gradingGroupCourseCriteria';
 import { validateGradingCriterion } from './gradingAuthoring';
-import { gradingTerminationDomain } from './gradingTypes';
-import { validateGroupTermination } from './gradingGroupTermination';
+import { groupTerminationRequiresTarget } from './gradingGroupTermination';
 import type { CadGradingGroup } from './gradingGroupTypes';
 
 /**
@@ -68,7 +68,7 @@ export const sanitizeCadGradingGroups = (groups: unknown): CadGradingGroup[] =>
 export interface CourseCriteriaDrop {
   groupId: string;
   ref: string;
-  reason: 'orphan' | 'duplicate' | 'invalid-criterion' | 'incompatible-domain';
+  reason: 'orphan' | 'duplicate' | 'invalid-criterion';
 }
 
 /**
@@ -106,33 +106,26 @@ export const sanitizeCadGradingGroupsDetailed = (
     if (built.ok) {
       const scrubbed = scrubCourseCriteria(built.value, candidate['courseCriteria']);
       dropped.push(...scrubbed.dropped);
-      // Phase 20H: same-domain rule is enforced per override — an override
-      // whose domain differs from the group default is dropped on its own
-      // while valid siblings survive. Malformed defaults drop the group via
-      // the authoring constructor above; legacy valid groups pass through
-      // byte-for-byte.
+      // Phase 20J Wave C1: every 5-kind mix is a legal hybrid (exact-
+      // common-tie kernel) — cross-domain overrides survive the scrub.
+      // Only orphan/duplicate/invalid records drop, each reported above.
+      // Malformed defaults drop the group via the authoring constructor;
+      // legacy valid groups pass through byte-for-byte. The effective
+      // target rule lands after the scrub: a surface-effective group
+      // without a target id is malformed (drop), an all-analytic group
+      // sheds a dormant legacy id (dormancy by omission).
       let group = scrubbed.group;
-      if (group.courseCriteria !== undefined && validateGroupTermination(group) !== null) {
-        const defaultDomain = gradingTerminationDomain(group.criterion);
-        const keptOverrides: NonNullable<CadGradingGroup['courseCriteria']> = [];
-        for (const override of group.courseCriteria) {
-          if (gradingTerminationDomain(override.criterion) !== defaultDomain) {
-            dropped.push({
-              groupId: group.id,
-              ref: `${override.sourceCourse.vertexAId}>${override.sourceCourse.vertexBId}`,
-              reason: 'incompatible-domain',
-            });
-          } else {
-            keptOverrides.push(override);
-          }
+      // Wave C4: the target rule reads EFFECTIVE per-course criteria
+      // (a fully-overridden stored default is invisible).
+      const effective = effectiveCriteriaForCourses(group.criterion, group.sourceCourses, group.courseCriteria);
+      if (groupTerminationRequiresTarget(group.criterion, effective)) {
+        if (typeof candidate['targetSurfaceId'] !== 'string' || candidate['targetSurfaceId'].length === 0) {
+          continue;
         }
-        group =
-          keptOverrides.length === 0
-            ? ((): CadGradingGroup => {
-                const { courseCriteria: _stripped, ...rest } = group;
-                return rest;
-              })()
-            : { ...group, courseCriteria: keptOverrides };
+        group = { ...group, targetSurfaceId: candidate['targetSurfaceId'] as string };
+      } else if (group.targetSurfaceId !== undefined) {
+        const { targetSurfaceId: _dormant, ...stripped } = group;
+        group = stripped;
       }
       kept.push(cloneCadGradingGroup(group));
     }

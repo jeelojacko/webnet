@@ -64,32 +64,41 @@ const projectWith = (group: CadGradingGroup): CadProject => ({
 // ---------------------------------------------------------------------------
 // 1. Sanitization: same-domain scrub with sibling preservation
 // ---------------------------------------------------------------------------
-describe('(1) sanitization sibling preservation', () => {
-  it('keeps a valid analytic sibling and drops only the incompatible-domain override', () => {
-    const raw = groupOf(DIST(-0.5, 20), [
-      { sourceCourse: COURSES[1]!, criterion: REL(-0.25, -10) },
-      { sourceCourse: COURSES[2]!, criterion: FIXED },
-    ]);
+describe('(1) sanitization: cross-domain overrides survive (20J hybrid)', () => {
+  it('keeps every override of a hybrid group with a live target', () => {
+    const raw = {
+      ...groupOf(DIST(-0.5, 20), [
+        { sourceCourse: COURSES[1]!, criterion: REL(-0.25, -10) },
+        { sourceCourse: COURSES[2]!, criterion: FIXED },
+      ]),
+      targetSurfaceId: 'surf-1',
+    };
     const { groups, dropped } = sanitizeCadGradingGroupsDetailed([raw]);
     expect(groups).toHaveLength(1);
-    expect(groups[0]!.courseCriteria).toHaveLength(1);
-    expect(groups[0]!.courseCriteria![0]!.sourceCourse).toEqual(COURSES[1]);
-    expect(groups[0]!.courseCriteria![0]!.criterion).toEqual(REL(-0.25, -10));
-    expect(dropped).toEqual([
-      { groupId: 'gg', ref: 'c>d', reason: 'incompatible-domain' },
-    ]);
+    expect(groups[0]!.targetSurfaceId).toBe('surf-1');
+    expect(groups[0]!.courseCriteria).toHaveLength(2);
+    expect(groups[0]!.courseCriteria![1]!.criterion).toEqual(FIXED);
+    expect(dropped).toEqual([]);
   });
 
-  it('works in the reverse direction (surface default keeps surface siblings)', () => {
+  it('drops a surface-effective group with no target id (fail closed)', () => {
+    const raw = groupOf(DIST(-0.5, 20), [
+      { sourceCourse: COURSES[1]!, criterion: FIXED },
+    ]);
+    const { groups } = sanitizeCadGradingGroupsDetailed([raw]);
+    expect(groups).toHaveLength(0);
+  });
+
+  it('works in the reverse direction (surface default keeps analytic siblings)', () => {
     const raw = { ...groupOf(FIXED, [
       { sourceCourse: COURSES[1]!, criterion: CUTFILL },
       { sourceCourse: COURSES[2]!, criterion: DIST(-0.5, 20) },
     ]), targetSurfaceId: 'surf-1' };
     const { groups, dropped } = sanitizeCadGradingGroupsDetailed([raw]);
     expect(groups).toHaveLength(1);
-    expect(groups[0]!.courseCriteria).toHaveLength(1);
-    expect(groups[0]!.courseCriteria![0]!.criterion).toEqual(CUTFILL);
-    expect(dropped.map((entry) => entry.reason)).toEqual(['incompatible-domain']);
+    expect(groups[0]!.courseCriteria).toHaveLength(2);
+    expect(groups[0]!.courseCriteria![1]!.criterion).toEqual(DIST(-0.5, 20));
+    expect(dropped).toEqual([]);
   });
 
   it('keeps a homogeneous all-analytic override set untouched and reports no drops', () => {

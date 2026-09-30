@@ -65,9 +65,25 @@ export const resolveGradingGroupCourseCriterion = (
   effectiveCriterionForCourse(group, buildCourseCriterionMap(group), courseRef);
 
 /** Effective criteria for the whole traversal, in order (one map build). */
-export const resolveGroupMemberCriteria = (group: CadGradingGroup): GradingCriterion[] => {
-  const map = buildCourseCriterionMap(group);
-  return group.sourceCourses.map((course) => effectiveCriterionForCourse(group, map, course));
+export const resolveGroupMemberCriteria = (group: CadGradingGroup): GradingCriterion[] =>
+  effectiveCriteriaForCourses(group.criterion, group.sourceCourses, group.courseCriteria);
+
+/**
+ * Phase 20J Wave C4 — effective per-course criteria from a stored default
+ * plus sparse overrides (override wins, otherwise the default). The same
+ * single-precedence rule as `resolveGroupMemberCriteria`, for callers
+ * that hold the parts (authoring, persistence, revision) rather than a
+ * built group. Courses using the default count; a fully-overridden
+ * default is invisible (it applies to zero courses).
+ */
+export const effectiveCriteriaForCourses = (
+  criterion: GradingCriterion,
+  sourceCourses: readonly GradingGroupCourse[],
+  courseCriteria?: readonly GradingGroupCourseCriterionOverride[],
+): GradingCriterion[] => {
+  const map = buildCourseCriterionMap({ courseCriteria } as Pick<CadGradingGroup, 'courseCriteria'>);
+  const group = { criterion };
+  return sourceCourses.map((course) => effectiveCriterionForCourse(group, map, course));
 };
 
 /**

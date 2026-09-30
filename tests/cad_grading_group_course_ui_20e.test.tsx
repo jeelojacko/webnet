@@ -220,7 +220,7 @@ describe('member reporting', () => {
     const csv = buildGroupCsv(mixedGroup(), 'CURRENT', 'EXACT', fakeResult());
     const lines = csv.split('\n');
     const header = lines.findIndex((line) =>
-      line.startsWith('Course,From,To,Criterion Source,Criterion Type,Fixed Grade,Cut Grade,Fill Grade,Target Value,Classification,Source Length,Grading Area'),
+      line.startsWith('Course,From,To,Criterion Source,Criterion Type,Effective,Fixed Grade,Cut Grade,Fill Grade,Target Value,Classification,Source Length,Grading Area'),
     );
     expect(header).toBeGreaterThan(-1);
     expect(lines[header + 1]).toContain('Course 1,');

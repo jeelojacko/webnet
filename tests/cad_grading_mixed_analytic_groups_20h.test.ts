@@ -123,11 +123,11 @@ describe('(2) same-domain compatibility matrix', () => {
     expect(validateGroupTerminationCriteria(CUTFILL, [FIXED])).toBeNull();
   });
 
-  it('rejects surface+analytic in BOTH directions with the domain message', () => {
-    expect(validateGroupTerminationDomainCriteria(FIXED, [DIST(-0.5, 20)])).toContain('termination');
-    expect(validateGroupTerminationDomainCriteria(DIST(-0.5, 20), [FIXED])).toContain('termination');
-    expect(validateGroupTerminationCriteria(FIXED, [ELEV(-0.5, 0)])).toContain('termination');
-    expect(validateGroupTerminationCriteria(REL(-0.5, -10), [CUTFILL])).toContain('termination');
+  it('accepts surface+analytic as hybrid in BOTH directions (20J exact-common-tie)', () => {
+    expect(validateGroupTerminationDomainCriteria(FIXED, [DIST(-0.5, 20)])).toBeNull();
+    expect(validateGroupTerminationDomainCriteria(DIST(-0.5, 20), [FIXED])).toBeNull();
+    expect(validateGroupTerminationCriteria(FIXED, [ELEV(-0.5, 0)])).toBeNull();
+    expect(validateGroupTerminationCriteria(REL(-0.5, -10), [CUTFILL])).toBeNull();
   });
 });
 
@@ -147,18 +147,29 @@ describe('(3) authoring + default switch', () => {
     ]);
   });
 
-  it('rejects a cross-domain override in both directions', () => {
-    const surfaceGroup = createGroupDefinition(groupInput(FIXED, [
+  it('creates a hybrid group (surface default + analytic override) with a live target', () => {
+    // No live target: fail closed on the target rule (never a silent pick).
+    const untargeted = createGroupDefinition(groupInput(FIXED, [
       { sourceCourse: COURSES[1]!, criterion: DIST(-0.5, 20) },
     ]));
-    expect(surfaceGroup.ok).toBe(false);
-    const analyticGroup = createGroupDefinition(groupInput(DIST(-0.5, 20), [
-      { sourceCourse: COURSES[1]!, criterion: FIXED },
-    ]));
-    expect(analyticGroup.ok).toBe(false);
+    expect(untargeted.ok).toBe(false);
+    // Explicit eligible target: one hybrid definition, sparse override kept.
+    const surfaceGroup = createGroupDefinition({
+      ...groupInput(FIXED, [{ sourceCourse: COURSES[1]!, criterion: DIST(-0.5, 20) }]),
+      targetSurfaceId: 'surf-1',
+    });
+    if (!surfaceGroup.ok) throw new Error(surfaceGroup.error);
+    expect(surfaceGroup.value.targetSurfaceId).toBe('surf-1');
+    expect(surfaceGroup.value.courseCriteria).toHaveLength(1);
+    const analyticGroup = createGroupDefinition({
+      ...groupInput(DIST(-0.5, 20), [{ sourceCourse: COURSES[1]!, criterion: FIXED }]),
+      targetSurfaceId: 'surf-1',
+    });
+    if (!analyticGroup.ok) throw new Error(analyticGroup.error);
+    expect(resolveGroupMemberCriteria(analyticGroup.value)[1]).toEqual(FIXED);
   });
 
-  it('switches the default freely within the analytic domain and blocks cross-domain switches', () => {
+  it('switches the default freely; a surface-effective result needs a live target', () => {
     const created = createGroupDefinition(groupInput(DIST(-0.5, 20), [
       { sourceCourse: COURSES[1]!, criterion: REL(-0.25, -10) },
     ]));
@@ -169,8 +180,16 @@ describe('(3) authoring + default switch', () => {
     expect(toElevation.value.criterion).toEqual(ELEV(-0.5, 0));
     expect(toElevation.value.courseCriteria).toHaveLength(1);
 
+    // Switching to a surface default with no live target fails closed;
+    // with an explicit target the hybrid switch lands in one step.
     const toSurface = editGroupCriteria(created.value, FIXED);
     expect(toSurface.ok).toBe(false);
+    const toSurfaceTargeted = editGroupCriteria(
+      { ...created.value, targetSurfaceId: 'surf-1' },
+      FIXED,
+    );
+    if (!toSurfaceTargeted.ok) throw new Error(toSurfaceTargeted.error);
+    expect(toSurfaceTargeted.value.targetSurfaceId).toBe('surf-1');
   });
 
   it('validates each analytic criterion in the mix independently', () => {
@@ -234,22 +253,48 @@ describe('(4) sparse per-course overrides', () => {
 // 5. Resolve + compute fail-closed gates
 // ---------------------------------------------------------------------------
 describe('(5) resolve + compute gates', () => {
-  it('compute rejects a surface+analytic mix before any partial solve', () => {
+  it('compute admits a surface+analytic mix as hybrid (20J), still fail-closed without a target', () => {
+    // Flat-90 grid: surface strips tie at d=20, analytic limits match it.
+    const xs: number[] = [];
+    for (let v = -60; v <= 160 + 1e-9; v += 20) xs.push(v);
+    const points: number[] = [];
+    const idx = (ix: number, iy: number): number => iy * xs.length + ix;
+    for (const y of xs) for (const x of xs) points.push(x, y, 0);
+    const triangles: number[] = [];
+    for (let ix = 0; ix + 1 < xs.length; ix += 1) {
+      for (let iy = 0; iy + 1 < xs.length; iy += 1) {
+        const a = idx(ix, iy);
+        const b = idx(ix + 1, iy);
+        const c = idx(ix + 1, iy + 1);
+        const d = idx(ix, iy + 1);
+        triangles.push(a, b, c, a, c, d);
+      }
+    }
+    const target = { points, triangles };
     for (const memberCriteria of [
       [FIXED, DIST(-0.5, 20)],
       [DIST(-0.5, 20), FIXED],
-      [CUTFILL, REL(-0.25, -10)],
+      [CUTFILL, REL(-0.5, -10)],
     ]) {
-      const out = computeGradingGroupFromSnapshots({
+      const admitted = computeGradingGroupFromSnapshots({
         groupId: 'gg', revision: 'r', members: square(), side: 'right',
         criterion: memberCriteria[0]!, memberCriteria,
         maxSearchDistance: 50, curveChordTolerance: 0.05, closed: true,
+        target,
       });
-      expect(out.ok).toBe(false);
-      if (out.ok) throw new Error('expected MEMBER_NO_SOLUTION');
-      expect(out.code).toBe('MEMBER_NO_SOLUTION');
-      expect(out.detail).toBe('GRADING_GROUP_MIXED_TERMINATION_DOMAIN');
+      expect(admitted.ok).toBe(true);
     }
+    // No target with a surface member: fail closed before any partial
+    // solve (never a crash, never a half-solved mesh).
+    const noTarget = computeGradingGroupFromSnapshots({
+      groupId: 'gg', revision: 'r', members: square(), side: 'right',
+      criterion: FIXED, memberCriteria: [FIXED, DIST(-0.5, 20)],
+      maxSearchDistance: 50, curveChordTolerance: 0.05, closed: true,
+    });
+    expect(noTarget.ok).toBe(false);
+    if (noTarget.ok) throw new Error('expected MEMBER_NO_SOLUTION');
+    expect(noTarget.code).toBe('MEMBER_NO_SOLUTION');
+    expect(noTarget.detail).toBe('GRADING_BAD_TARGET_MESH');
   });
 
   it('compute still solves an all-analytic mixed group (control)', () => {

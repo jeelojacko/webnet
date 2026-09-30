@@ -292,7 +292,7 @@ describe('Phase 20F (distance/elevation) groups', () => {
     expect(reset.present.project.gradingGroups![0]!.courseCriteria).toBeUndefined();
   });
 
-  it('group kind switch clears/adds target in one entry; mixed family blocks', () => {
+  it('group kind switch clears/adds target in one entry; hybrid mix lands with the live target', () => {
     const { project, flId, targetId } = projectWithChainAndTarget();
     const [a, b, c] = courseIds(project, flId);
     const courses = [{ vertexAId: a!, vertexBId: b! }, { vertexAId: b!, vertexBId: c! }];
@@ -322,14 +322,16 @@ describe('Phase 20F (distance/elevation) groups', () => {
       targetSurfaceId: targetId,
     });
     expect(back.present.project.gradingGroups![0]!.targetSurfaceId).toBe(targetId);
-    // Mixed termination family fails closed.
+    // Hybrid mix lands with the retained live target (20J exact-common-tie).
     const mixed = runCadCommand(create, {
       key: 'GROUP_SET_COURSE_CRITERIA',
       groupId,
       courses: [courses[0]!],
       criterion: { kind: 'elevation', gradeRatio: -0.5, targetElevation: 5 },
     });
-    expect(mixed.present.project.gradingGroups![0]!.courseCriteria).toBeUndefined();
+    expect(mixed.present.project.gradingGroups![0]!.courseCriteria).toHaveLength(1);
+    expect(mixed.present.project.gradingGroups![0]!.targetSurfaceId).toBe(targetId);
+    expect(mixed.undoStack).toHaveLength(2);
   });
 
   it('sanitizer drops malformed analytic group definitions', () => {

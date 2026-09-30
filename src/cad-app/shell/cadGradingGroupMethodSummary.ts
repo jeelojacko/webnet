@@ -1,18 +1,19 @@
 /**
  * Phase 20H — pure grading-group method summary (SHELL/UI ONLY).
+ * Phase 20J Wave C2 — hybrid groups (surface + analytic effective mix).
  *
  * One authority for the group-level Method label from the EFFECTIVE criteria
  * set (one resolved criterion per traversal course). The group default
  * contributes only when at least one course rides it: a fully-overridden
  * default names no effective method and must not leak into the label.
- * A group is single-domain, so:
- *   - `Mixed Analytic`  : more than one analytic kind is effective;
+ *   - `Hybrid`              : surface + at least one analytic kind effective;
+ *   - `Mixed Analytic`      : more than one analytic kind, no surface;
  *   - `Distance` / `Elevation` / `Relative Elevation` : one analytic kind;
- *   - `Surface`         : fixed and/or cut-fill (the surface family).
+ *   - `Surface`             : fixed and/or cut-fill (the surface family).
  *
- * The label is never a misleading singular kind for a mixed analytic group,
- * and never "Mixed Family". Manager / Properties / Toolspace / Inquiry / CSV
- * all read this one helper so their terms cannot drift.
+ * The label is never a misleading singular kind for a mixed group.
+ * Manager / Properties / Toolspace / Inquiry / CSV all read this one
+ * helper so their terms cannot drift.
  */
 import type { CadGradingGroup } from '../../engine/cad/grading/gradingGroupTypes';
 import {
@@ -36,15 +37,36 @@ const KIND_ORDER: readonly GradingTerminationKind[] = [
 
 export const MIXED_ANALYTIC_LABEL = 'Mixed Analytic';
 
+/** Phase 20J Wave C2 — group-level label for a surface + analytic mix. */
+export const HYBRID_LABEL = 'Hybrid';
+
+/**
+ * Phase 20J Wave C2 — exact hybrid-corner wording shared by the manager
+ * default editor and the course criteria panel (one source, no drift).
+ * States the tie requirement; never claims calculability.
+ */
+export const HYBRID_CORNER_WARNING =
+  'Hybrid Surface/analytic corners require one exact common tie. Calculate fails closed when a transition would be required.';
+
 export interface GroupMethodSummary {
-  /** Group-level label: a single method name, or `Mixed Analytic`. */
+  /** Group-level label: a single method name, `Mixed Analytic`, or `Hybrid`. */
   label: string;
   /** True when more than one analytic kind is effective in this group. */
   mixedAnalytic: boolean;
+  /** True when surface + at least one analytic kind are both effective. */
+  hybrid: boolean;
+  /** True when at least one effective course ties to the target surface. */
+  requiresTarget: boolean;
   /** Distinct effective termination kinds, canonical order. */
   kinds: GradingTerminationKind[];
-  /** Human exact-kind list, e.g. `Distance + Relative Elevation`. */
+  /**
+   * Human exact-kind list. Hybrid carries its prefix
+   * (`Hybrid — Surface + Distance`); every other mix is the bare join
+   * (`Distance + Relative Elevation`).
+   */
   detail: string;
+  /** Bare exact-kind list without any prefix (`Surface + Distance`). */
+  methodList: string;
 }
 
 /**
@@ -58,14 +80,19 @@ export const summarizeGroupMethods = (
   const present = new Set<GradingTerminationKind>();
   for (const criterion of criteria) present.add(gradingTerminationKind(criterion));
   const kinds = KIND_ORDER.filter((kind) => present.has(kind));
-  const mixedAnalytic = kinds.length > 1;
+  const hasSurface = kinds.includes('surface');
+  const analyticKinds = kinds.filter((kind) => kind !== 'surface');
+  const hybrid = hasSurface && analyticKinds.length > 0;
+  const mixedAnalytic = analyticKinds.length > 1;
+  const methodList = kinds.map(gradingMethodLabel).join(' + ');
   return {
-    // A group can never mix surface with analytic (engine gate), so >1 kind
-    // is always an analytic mix.
-    label: mixedAnalytic ? MIXED_ANALYTIC_LABEL : (kinds[0] ? gradingMethodLabel(kinds[0]) : 'Surface'),
+    label: hybrid ? HYBRID_LABEL : mixedAnalytic ? MIXED_ANALYTIC_LABEL : (kinds[0] ? gradingMethodLabel(kinds[0]) : 'Surface'),
     mixedAnalytic,
+    hybrid,
+    requiresTarget: hasSurface,
     kinds,
-    detail: kinds.map(gradingMethodLabel).join(' + '),
+    detail: hybrid ? `${HYBRID_LABEL} — ${methodList}` : methodList,
+    methodList,
   };
 };
 

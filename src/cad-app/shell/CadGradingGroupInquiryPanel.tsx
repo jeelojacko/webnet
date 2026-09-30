@@ -143,7 +143,7 @@ export const CadGradingGroupInquiryPanel: React.FC<{ row: CadGradingGroupInquiry
     }
     void saveBrowserTextFile(
       buildGroupCsvFilename(row.name),
-      buildGroupCsv(row.definition, row.status, row.accuracy, row.result),
+      buildGroupCsv(row.definition, row.status, row.accuracy, row.result, row.targetName),
       [{ description: 'CSV Files', accept: { 'text/csv': ['.csv'] } }],
     ).then((saved) => setNotice(saved ? 'Grading group CSV saved.' : 'Save cancelled.'));
   };

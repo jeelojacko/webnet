@@ -11,7 +11,7 @@ import type {
   GroupStatus,
 } from '../../engine/cad/grading/gradingGroupTypes';
 import type { GradingAccuracy } from '../../engine/cad/grading/gradingTypes';
-import { gradingBoundaryLabel, isTargetFreeCriterion } from '../../engine/cad/grading/gradingTypes';
+import { gradingBoundaryLabel } from '../../engine/cad/grading/gradingTypes';
 import { buildCourseMemberRows } from './cadGradingGroupCourseCriteria';
 import { groupMethodSummary, representativeGroupCriterion } from './cadGradingGroupMethodSummary';
 import {
@@ -62,12 +62,19 @@ export const buildGroupInquiryReport = (
   lines.push(`Source: ${sourceName} · ${group.closed === true ? 'closed' : 'open'} · side ${gradingSideText(group.side)}`);
   lines.push(`Courses: ${courseRefsText(group)}`);
   lines.push(
-    `Termination: ${methods.label}${methods.mixedAnalytic ? ` · Methods: ${methods.detail}` : ''}`,
+    `Termination: ${methods.label}${methods.mixedAnalytic || methods.hybrid ? ` · Methods: ${methods.methodList}` : ''}`,
   );
   lines.push(
-    methods.mixedAnalytic
-      ? 'Target: Not applicable'
-      : gradingTargetSummary(representative, targetName, lengthUnit),
+    methods.hybrid
+      ? `Target: ${targetName}`
+      : methods.mixedAnalytic
+        ? 'Target: Not applicable'
+        : gradingTargetSummary(representative, targetName, lengthUnit),
+  );
+  // Stored default + sparse override count: a hybrid group never reads as
+  // one singular criterion, and a fully-overridden default never poses.
+  lines.push(
+    `Default: ${formatGradingCriterion(group.criterion)} · Overrides: ${group.courseCriteria?.length ?? 0}`,
   );
   lines.push(`Status: ${gradingStatusText(status)} · accuracy ${gradingAccuracyText(accuracy)}`);
   if (status !== 'CURRENT' || result == null) {
@@ -84,16 +91,19 @@ export const buildGroupInquiryReport = (
   lines.push(
     `Areas: plan ${result.gradingPlanArea.toFixed(3)} / 3D ${result.grading3dArea.toFixed(3)}`,
   );
-  if (isTargetFreeCriterion(group.criterion)) {
-    lines.push('Source lengths: cut — · fill — · tied — (analytic termination has no target relation)');
-  } else {
+  if (methods.requiresTarget) {
     lines.push(
       `Source lengths: cut ${result.cutSourceLength.toFixed(3)} · fill ${result.fillSourceLength.toFixed(3)} · tied ${result.tiedSourceLength.toFixed(3)} m`,
     );
+  } else {
+    lines.push('Source lengths: cut — · fill — · tied — (analytic termination has no target relation)');
   }
   const vertices = Math.floor(result.daylightPoints.length / 3);
   const triangles = Math.floor(result.gradingMesh.triangles.length / 3);
-  lines.push(`${gradingBoundaryLabel(group.criterion)} vertices: ${vertices} · mesh triangles: ${triangles}`);
+  // Hybrid members terminate differently per course: the shared line is the
+  // grading boundary, never a singular Daylight/Limit claim.
+  const boundary = methods.hybrid ? 'Grading Boundary' : gradingBoundaryLabel(group.criterion);
+  lines.push(`${boundary} vertices: ${vertices} · mesh triangles: ${triangles}`);
   lines.push(
     `Multiple-root events: ${result.multipleSolutionCount} · candidate triangles: ${result.candidateTriangleCount} · tie segments: ${result.intersectionSegmentCount}`,
   );
@@ -109,9 +119,9 @@ export const buildGroupInquiryReport = (
     lines.push('Corners: none');
   }
   lines.push('Members:');
-  for (const row of buildCourseMemberRows(group, result)) {
+  for (const row of buildCourseMemberRows(group, result, targetName)) {
     lines.push(
-      `  ${row.course} ${row.from}→${row.to} · ${row.criterionSource} ${row.criterionType}` +
+      `  ${row.course} ${row.from}→${row.to} · ${row.criterionSource} ${row.criterionType} · effective ${row.effective}` +
         ` · fixed ${row.fixedGrade} · cut ${row.cutGrade} · fill ${row.fillGrade}` +
         ` · target ${row.targetValue}` +
         ` · ${row.classification} · source ${row.sourceLength} m · area ${row.gradingArea}`,
@@ -157,13 +167,16 @@ export const buildGroupCsv = (
   status: GroupStatus,
   accuracy: GradingAccuracy | null,
   result: CadGradingGroupResult,
+  targetName?: string,
 ): string => {
   const lines: string[] = [];
   const methods = groupMethodSummary(group);
   const representative = representativeGroupCriterion(group);
+  const sharedTarget = targetName ?? group.targetSurfaceId ?? '—';
   // Analytic terminations have no target relation: never emit fake-precise
-  // zeros (single-grading CSV uses the same '—' convention).
-  const relation = isTargetFreeCriterion(group.criterion) ? '—' : null;
+  // zeros (single-grading CSV uses the same '—' convention). Hybrid groups
+  // still tie their surface courses, so they keep real lengths.
+  const relation = methods.requiresTarget ? null : '—';
   const summary: Array<[string, string]> = [
     ['Group', group.name],
     ['Source', group.sourceFeatureLineId],
@@ -172,10 +185,13 @@ export const buildGroupCsv = (
     ['Side', gradingSideText(group.side)],
     ['Termination', methods.label],
     ['Methods', methods.detail],
-    ['Target', methods.mixedAnalytic
-      ? 'Not applicable'
-      : gradingTargetSummary(representative, group.targetSurfaceId ?? '—').replace(/^Target: /, '')],
-    ['Criterion', formatGradingCriterion(representative)],
+    ['Target', methods.hybrid
+      ? sharedTarget
+      : methods.mixedAnalytic
+        ? 'Not applicable'
+        : gradingTargetSummary(representative, sharedTarget).replace(/^Target: /, '')],
+    ['Default Criterion', formatGradingCriterion(group.criterion)],
+    ['Overrides', String(group.courseCriteria?.length ?? 0)],
     ['Status', gradingStatusText(status)],
     ['Accuracy', gradingAccuracyText(accuracy)],
     ['Members', String(result.memberCount)],
@@ -209,11 +225,12 @@ export const buildGroupCsv = (
     );
   }
   lines.push('');
-  // Phase 20F.1: 'Target Value' column added after Fill Grade ('—' for
-  // surface members; '<d> m' distance / '<z> m' target elevation for
-  // analytic members). Documented here + docs/evidence/phase20f1-grading-ui-audit.md.
-  lines.push('Course,From,To,Criterion Source,Criterion Type,Fixed Grade,Cut Grade,Fill Grade,Target Value,Classification,Source Length,Grading Area');
-  for (const row of buildCourseMemberRows(group, result)) {
+  // Phase 20F.1: 'Target Value' column after Fill Grade (target name for
+  // surface members; '<d> m' distance / '<z> m' elevation for analytic
+  // members). Phase 20J Wave C2: 'Effective' column after Criterion Type
+  // (one honest value per course; a hybrid group has no singular criterion).
+  lines.push('Course,From,To,Criterion Source,Criterion Type,Effective,Fixed Grade,Cut Grade,Fill Grade,Target Value,Classification,Source Length,Grading Area');
+  for (const row of buildCourseMemberRows(group, result, sharedTarget)) {
     lines.push(
       [
         row.course,
@@ -221,6 +238,7 @@ export const buildGroupCsv = (
         row.to,
         row.criterionSource,
         row.criterionType,
+        row.effective,
         row.fixedGrade,
         row.cutGrade,
         row.fillGrade,
@@ -232,7 +250,10 @@ export const buildGroupCsv = (
     );
   }
   lines.push('');
-  lines.push('Station,' + `${gradingCriterionBoundaryShort(group.criterion)} E,${gradingCriterionBoundaryShort(group.criterion)} N,${gradingCriterionBoundaryShort(group.criterion)} Z`);
+  const stationAxis = methods.hybrid
+    ? 'Grading Boundary'
+    : gradingCriterionBoundaryShort(group.criterion);
+  lines.push('Station,' + `${stationAxis} E,${stationAxis} N,${stationAxis} Z`);
   const count = Math.floor(result.daylightPoints.length / 3);
   for (let index = 0; index < count; index += 1) {
     lines.push(
