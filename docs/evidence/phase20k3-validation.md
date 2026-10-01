@@ -12,11 +12,11 @@ current worktree (2026-10-01).
 |---|---|---|
 | `tests/cad_grading_topology_expectation_20k3.test.ts` | 11 | pre-mesh expectation, extra-cycle rejection, straight-group seam gate |
 | `tests/cad_grading_certificate_exact_20k3.test.ts` | 12 | `gtop1` collision RED, `gtop2` Float64/SHA-256 GREEN, fail-closed |
-| `tests/cad_grading_worker_agreement_20k3.test.ts` | 16 | shared anchored agreement, source-boundary, mismatch ladder |
-| `tests/cad_grading_surface_products_20k3.test.ts` | 16 | Surface canonicalization, Design Patch, Extract/Bake capabilities, fan |
-| **total** | **55** | |
+| `tests/cad_grading_worker_agreement_20k3.test.ts` | 18 | shared anchored agreement, source-boundary, mismatch ladder, sliver plane |
+| `tests/cad_grading_surface_products_20k3.test.ts` | 18 | Surface canonicalization, Design Patch, Extract/Bake capabilities, translated fan |
+| **total** | **59** | |
 
-`npx vitest run <the four suites>` → **4 files, 55 passed** (this batch).
+`npx vitest run <the four suites>` → **4 files, 59 passed** (review rerun). Additional gtop2 product and Design Patch preflight regressions are in `tests/cad_grading_topology_gtop2_gate_20k3.test.ts` and `tests/cad_design_patch_preflight.test.ts`.
 
 ## 2. Regression runs (this batch, current worktree)
 
@@ -25,8 +25,10 @@ current worktree (2026-10-01).
 | `npx vitest run tests/cad_grading` | **71 files, 1039 passed** |
 | `npm run lint` | **0 errors, 2 pre-existing warnings** |
 | `npm run typecheck` | **clean** |
-| `npm run check:portable-paths` | **5494 tracked paths, 0 violations** |
+| `npm run check:portable-paths` | **0 violations** |
 | `npx tsx scripts/phase20k3SurfaceAuthorityPerf.ts` | complete run (measurement only) |
+
+On this review worktree `npm run test:agent` passed all grading tests (7399 passing overall) but has 3 unrelated local `study-desktop` calibration/preflight failures: the local cal80-v4 source-package ID is `nb-sit-statute-corpus-2026-08-29` while the frozen test expects `…2026-09-11`. No `study-desktop` files are changed by this review; final-head CI must be checked after push.
 
 The two lint warnings are the pre-existing unused-eslint-disable directives in
 `tests/gnssBaseline/gnssBaselinePerformance.test.ts` and the matching study
@@ -44,11 +46,14 @@ relaxed for speed.
 
 ## 4. Browser QA
 
-`tests-browser/cad-grading-curved-20k2.spec.ts` is the current curved-grading
-Chromium spec. No 20K.3-specific browser spec or visual-QA record is present in
-this worktree; browser QA for 20K.3 is owned by a separate sibling and is not
-claimed by this batch. This document therefore records engine/worker/product
-gates only.
+The 20K.3 Chromium spec is
+`tests-browser/cad-grading-curved-20k3.spec.ts` (6 flows × 3 viewports =
+18 tests, production build + real worker). Results, zero-error ledgers, and
+the PNG inventory are recorded in
+`docs/evidence/phase20k3-browser-qa.md` and
+`docs/evidence/phase20k3-visual-qa.md`. This document records the
+engine/worker/product gates; browser QA is claimed by those sibling records,
+not duplicated here.
 
 ## 5. Honest bounds carried (unchanged)
 

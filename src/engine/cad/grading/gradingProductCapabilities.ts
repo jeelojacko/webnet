@@ -21,9 +21,10 @@
  * user-readable `notice`; the snapshot and the product commands share this
  * derivation so an enabled control always executes (no enabled-null).
  */
+import { designPatchPreflightForCaptured } from './designPatchPreflight';
 import {
   GRADING_TOPOLOGY_MULTI_REGION_NOT_EXPORTABLE,
-  gradingTopologyCertificateError,
+  gradingTopologyCertificateProductionError,
 } from './gradingTopologyCertificate';
 import type { GradingTopologyCertificate } from './gradingTopologyCertificate';
 import type { GradingMesh } from './gradingTypes';
@@ -37,6 +38,9 @@ export const GRADING_PRODUCT_BAKE_CERTIFICATE = 'GRADING_PRODUCT_BAKE_CERTIFICAT
 export const GRADING_PRODUCT_DESIGN_PATCH_NOT_CLOSED = 'GRADING_PRODUCT_DESIGN_PATCH_NOT_CLOSED';
 export const GRADING_PRODUCT_DESIGN_PATCH_NON_ANNULUS = 'GRADING_PRODUCT_DESIGN_PATCH_NON_ANNULUS';
 export const GRADING_PRODUCT_DESIGN_PATCH_CERTIFICATE = 'GRADING_PRODUCT_DESIGN_PATCH_CERTIFICATE';
+export const GRADING_PRODUCT_DESIGN_PATCH_RING = 'GRADING_PRODUCT_DESIGN_PATCH_RING';
+export const GRADING_PRODUCT_DESIGN_PATCH_INTERIOR = 'GRADING_PRODUCT_DESIGN_PATCH_INTERIOR';
+export const GRADING_PRODUCT_DESIGN_PATCH_MERGE = 'GRADING_PRODUCT_DESIGN_PATCH_MERGE';
 
 export type GradingProductScope = 'standalone' | 'group';
 
@@ -165,7 +169,46 @@ const deriveDesignPatch = (
       'Design Patch unavailable — the grading shell must be one closed annulus (1 component / 2 boundary cycles); a tied multi-region or open shell has no single interior.',
     );
   }
+  // Same pure gates the command enforces (ring -> interior -> mesh ->
+  // merge): a certified annulus whose source is non-flat/non-planar, whose
+  // ring misses the mesh, or whose pad cannot merge is disabled here —
+  // never enabled-and-null at execution.
+  const preflight = designPatchPreflightForCaptured(
+    result.sourceBoundaryPoints,
+    result.gradingMesh,
+    result.topologyCertificate?.tiedSplitCoords ?? [],
+  );
+  if (!preflight.ok) return designPatchPreflightUnavailable(preflight.code, preflight.detail);
   return available();
+};
+
+const designPatchPreflightUnavailable = (
+  code: 'DESIGN_PATCH_NON_SIMPLE_RING' | 'DESIGN_PATCH_NON_FLAT_INTERIOR_UNDEFINED' | 'DESIGN_PATCH_NON_PLANAR_INTERIOR_UNDEFINED' | 'DESIGN_PATCH_RING_MESH_MISMATCH' | 'DESIGN_PATCH_MERGE_FAILED',
+  detail?: string,
+): GradingProductCapability => {
+  const suffix = detail !== undefined ? ` (${detail})` : '';
+  if (code === 'DESIGN_PATCH_NON_FLAT_INTERIOR_UNDEFINED' || code === 'DESIGN_PATCH_NON_PLANAR_INTERIOR_UNDEFINED') {
+    return unavailable(
+      GRADING_PRODUCT_DESIGN_PATCH_INTERIOR,
+      `Design Patch unavailable — the closed source boundary is not a flat or planar interior (${code})${suffix}.`,
+    );
+  }
+  if (code === 'DESIGN_PATCH_RING_MESH_MISMATCH') {
+    return unavailable(
+      GRADING_PRODUCT_DESIGN_PATCH_RING,
+      `Design Patch unavailable — the source boundary does not match the calculated mesh (${code})${suffix}.`,
+    );
+  }
+  if (code === 'DESIGN_PATCH_MERGE_FAILED') {
+    return unavailable(
+      GRADING_PRODUCT_DESIGN_PATCH_MERGE,
+      `Design Patch unavailable — the pad interior cannot merge with the calculated shell (${code})${suffix}.`,
+    );
+  }
+  return unavailable(
+    GRADING_PRODUCT_DESIGN_PATCH_RING,
+    `Design Patch unavailable — the closed source boundary is not a simple ring (${code})${suffix}.`,
+  );
 };
 
 /**
@@ -185,7 +228,7 @@ export const deriveGradingProductCapabilities = (
       designPatch: input.scope === 'group' ? notCurrent('Design Patch') : null,
     };
   }
-  const baseError = gradingTopologyCertificateError(
+  const baseError = gradingTopologyCertificateProductionError(
     result.topologyCertificate,
     input.scope,
     result.gradingMesh,

@@ -21,7 +21,7 @@ import { describe, expect, it } from 'vitest';
 
 import { createBlankCadDrawingDocument } from '../src/engine/cad/cadDrawingFile';
 import { parcelBulgeFromArcDefinition } from '../src/engine/cad/cadParcelArcGeometry';
-import { getSurfaceElevationAt, getSurfacePlaneAt } from '../src/engine/cad/cadSurfaceInterpolation';
+import { buildSurfaceGrid, getSurfaceElevationAt, getSurfacePlaneAt } from '../src/engine/cad/cadSurfaceInterpolation';
 import { createCadSurfaceCache } from '../src/engine/cad/cadSurfaceCache';
 import { buildCadSurface } from '../src/engine/cad/cadSurfaces';
 import { createCadHistoryState, runCadCommand } from '../src/engine/cad/cadUndoRedo';
@@ -781,3 +781,46 @@ const buildSquareWorld = (): {
     built: buildCadSurface(withGroup, withGroup.surfaces!.find((s) => s.id === targetId)!),
   };
 };
+
+// ---------------------------------------------------------------------------
+// getSurfacePlaneAt sliver guard (matches targetPlaneAt zeroDelta policy)
+// ---------------------------------------------------------------------------
+
+describe('getSurfacePlaneAt near-collinear sliver guard', () => {
+  const sliverBuildOf = (
+    pts: Array<{ x: number; y: number; z: number }>,
+  ): Parameters<typeof getSurfacePlaneAt>[0] => {
+    const points = pts.map((p, i) => ({ entityId: `sliver:${i}`, ...p }));
+    const triangles: Array<[number, number, number]> = [[0, 1, 2]];
+    return {
+      outcome: 'ok',
+      points,
+      triangles,
+      grid: buildSurfaceGrid(points, triangles),
+    } as never;
+  };
+
+  it('returns the anchored plane for a well-conditioned triangle', () => {
+    const build = sliverBuildOf([
+      { x: 0, y: 0, z: 1 },
+      { x: 10, y: 0, z: 3 },
+      { x: 0, y: 10, z: 5 },
+    ]);
+    const plane = getSurfacePlaneAt(build, 1, 1);
+    expect(plane).not.toBeNull();
+    expect(plane!.gx).toBeCloseTo(0.2, 12);
+    expect(plane!.gy).toBeCloseTo(0.4, 12);
+    expect(plane!.z).toBeCloseTo(1.6, 12);
+  });
+
+  it('rejects a near-collinear sliver instead of returning huge gradients', () => {
+    // det = 100·1e-18 = 1e-16 <= zeroDelta (4ε) but !== 0; the old det === 0
+    // guard passed it through with gy ≈ -5e17, inflating agreement tolerance.
+    const build = sliverBuildOf([
+      { x: 0, y: 0, z: 0 },
+      { x: 100, y: 0, z: 5 },
+      { x: 50, y: 1e-18, z: 2 },
+    ]);
+    expect(getSurfacePlaneAt(build, 50, 1e-19)).toBeNull();
+  });
+});

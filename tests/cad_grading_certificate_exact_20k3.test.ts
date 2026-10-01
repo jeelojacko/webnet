@@ -33,7 +33,8 @@ import {
   digestTopologyMeshExact,
   gradingTopologyCertificateError,
   gradingTopologyCertificateExactError,
-  gradingTopologyCertificateProductError,
+  gradingTopologyCertificateProductionError,
+  gradingTopologyCertificateProductionProductError,
 } from '../src/engine/cad/grading/gradingTopologyCertificate';
 import { deriveGradingTopologyExpectation } from '../src/engine/cad/grading/gradingTopologyExpectation';
 
@@ -104,7 +105,7 @@ describe('20K.3 A2 collision table — toPrecision(12) is not exact (RED: curren
   });
 });
 
-describe('20K.3 A2 mesh digest collision + product false-accept (RED: current actual)', () => {
+describe('20K.3 A2 mesh digest collision recorded; production gate rejects gtop1 (no migration)', () => {
   it('a 0.1 mm shift at a 10^8 m station keeps the gtop1 mesh digest', () => {
     const a = stressQuad(100000000);
     const b = stressQuad(100000000);
@@ -116,7 +117,7 @@ describe('20K.3 A2 mesh digest collision + product false-accept (RED: current ac
     expect(digestSeamMesh(a.points, a.triangles)).toBe(digestSeamMesh(b.points, b.triangles));
   });
 
-  it('product revalidation FALSE-ACCEPTS the shifted mesh against the base certificate', () => {
+  it('legacy generic reader still collides; production rejects gtop1 outright (gtop2-only)', () => {
     const a = stressQuad(100000000);
     const b = stressQuad(100000000);
     b.points[0] = 100000000.0001;
@@ -130,16 +131,30 @@ describe('20K.3 A2 mesh digest collision + product false-accept (RED: current ac
     });
     expect(certificate).not.toBeNull();
 
-    // Same scope, same mesh buffers except one 0.1 mm coordinate: the product
-    // gate re-derives the digest from `b` and it still matches `a`'s cert.
+    // The legacy digest still collides, and the legacy generic reader is
+    // retained for historical reproduction: the base mesh still verifies.
     expect(
       gradingTopologyCertificateError(certificate ?? undefined, 'standalone', {
+        points: a.points,
+        triangles: a.triangles,
+      }),
+    ).toBeNull();
+    // Production no longer reads gtop1: base and shifted meshes are both
+    // rejected via the exact reader (no migration).
+    expect(
+      gradingTopologyCertificateProductionError(certificate ?? undefined, 'standalone', {
+        points: a.points,
+        triangles: a.triangles,
+      }),
+    ).toBe('GRADING_TOPOLOGY_CERTIFICATE_MISSING');
+    expect(
+      gradingTopologyCertificateProductionError(certificate ?? undefined, 'standalone', {
         points: b.points,
         triangles: b.triangles,
       }),
-    ).toBeNull();
+    ).toBe('GRADING_TOPOLOGY_CERTIFICATE_MISSING');
     expect(
-      gradingTopologyCertificateProductError(
+      gradingTopologyCertificateProductionProductError(
         certificate ?? undefined,
         'standalone',
         { points: b.points, triangles: b.triangles },
@@ -148,7 +163,7 @@ describe('20K.3 A2 mesh digest collision + product false-accept (RED: current ac
           gradingBoundaryPoints: [a.points[0]!, 2, 0, a.points[3]!, 2, 0],
         },
       ),
-    ).toBeNull();
+    ).toBe('GRADING_TOPOLOGY_CERTIFICATE_MISSING');
   });
 });
 

@@ -333,6 +333,38 @@ export const gradingTopologyCertificateProductError = (
 };
 
 /* ---------------------------------------------------------------------------
+ * Production gates (gtop2-only, no migration). The generic readers above
+ * stay legacy-compatible for historical test reproduction; ALL production
+ * paths — capabilities, Extract/Bake commands, Design Patch resolve —
+ * route through these wrappers, which reuse the exact reader. Any
+ * non-gtop2 certificate (including a well-formed gtop1) fails closed.
+ * ------------------------------------------------------------------------- */
+
+export const gradingTopologyCertificateProductionError = (
+  certificate: GradingTopologyCertificate | undefined,
+  scope: GradingTopologyCertificateScope,
+  mesh: { points: readonly number[]; triangles: readonly number[] },
+  boundaries?: GradingCertificateBoundaries,
+): string | null => {
+  if (mesh.triangles.length === 0) return null;
+  return gradingTopologyCertificateExactError(certificate, scope, mesh, boundaries);
+};
+
+export const gradingTopologyCertificateProductionProductError = (
+  certificate: GradingTopologyCertificate | undefined,
+  scope: GradingTopologyCertificateScope,
+  mesh: { points: readonly number[]; triangles: readonly number[] },
+  boundaries: GradingCertificateBoundaries,
+): string | null => {
+  const base = gradingTopologyCertificateProductionError(certificate, scope, mesh, boundaries);
+  if (base) return base;
+  if (certificate && certificate.components > 1) {
+    return GRADING_TOPOLOGY_MULTI_REGION_NOT_EXPORTABLE;
+  }
+  return null;
+};
+
+/* ---------------------------------------------------------------------------
  * Phase 20K.3 Wave B — gtop2 exact binary certificate.
  *
  * gtop1 hashed `Number#toPrecision(12)` text through 32-bit FNV-1a: two

@@ -21,7 +21,8 @@ import {
   buildCadGradingSnapshot,
   type CadGradingResultCache,
 } from '../src/cad-app/shell/cadGradingSnapshot';
-import { buildGradingTopologyCertificate } from '../src/engine/cad/grading/gradingTopologyCertificate';
+import { buildGradingTopologyCertificateExact } from '../src/engine/cad/grading/gradingTopologyCertificate';
+import { deriveGradingTopologyExpectation } from '../src/engine/cad/grading/gradingTopologyExpectation';
 import {
   formatSignedGradePercent,
   parseHorizontalVerticalRatio,
@@ -163,10 +164,13 @@ const mkResult = (
   intersectionSegmentCount: 1,
   multipleSolutionCount: 0,
   diagnostics: [],
-  topologyCertificate: buildGradingTopologyCertificate({
+  topologyCertificate: buildGradingTopologyCertificateExact({
     scope: 'standalone',
     points: [0, 0, 0, 10, 0, 0, 10, 20, 0, 0, 20, 0],
     triangles: [0, 1, 2, 0, 2, 3],
+    expectation: deriveGradingTopologyExpectation({
+      scope: 'standalone', closed: false, positiveWidthRegions: 1, tiedSplitCoords: [],
+    }),
     sourceBoundaryPoints: [0, 0, 0, 10, 0, 0],
     gradingBoundaryPoints: [0, 20, 0, 10, 20, 0],
   }) ?? undefined,

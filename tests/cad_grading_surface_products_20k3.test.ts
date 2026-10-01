@@ -37,8 +37,9 @@ import { computeGradingGroupFromSnapshots } from '../src/engine/cad/grading/grad
 import { computeGradingFromSnapshots } from '../src/workers/surfaceGradingCompute';
 import { validateGroupMesh } from '../src/engine/cad/grading/gradingGroupMerge';
 import {
-  buildGradingTopologyCertificate,
+  buildGradingTopologyCertificateExact,
 } from '../src/engine/cad/grading/gradingTopologyCertificate';
+import { GRADING_TOPOLOGY_POLICY_VERSION } from '../src/engine/cad/grading/gradingTopologyExpectation';
 import {
   deriveGradingProductCapabilities,
   GRADING_PRODUCT_DESIGN_PATCH_NON_ANNULUS,
@@ -337,18 +338,33 @@ const standaloneWorld = (): StandaloneWorld => {
   return { project: withGrading, gradingId, revision: inputs.revision, result: outcome.result };
 };
 
-/** Certified two-component mesh with the fixture's own exported boundaries. */
+/** Certified two-component mesh with the fixture's own exported boundaries.
+ *
+ * gtop2-only (no migration): declares the measured 2 components / 2 cycles
+ * as two open-split regions, so the production gate accepts it while
+ * Extract stays multi-region-unavailable.
+ */
 const tiedCertificate = (
   scope: 'standalone' | 'group',
   sourceBoundaryPoints: readonly number[],
   daylightPoints: readonly number[],
 ) =>
-  buildGradingTopologyCertificate({
+  buildGradingTopologyCertificateExact({
     scope,
     points: TIED_MESH.points,
     triangles: TIED_MESH.triangles,
-    tiedSplitCoords: [20, 20, 0],
-    expectedComponents: 1,
+    expectation: {
+      policyVersion: GRADING_TOPOLOGY_POLICY_VERSION,
+      scope,
+      shape: 'split-open-strips',
+      expectedFaceComponents: 2,
+      expectedBoundaryCycles: 2,
+      positiveWidthRegionCount: 2,
+      tiedSplitCoords: [20, 20, 0],
+      closed: false,
+      sourceBoundaryKind: 'open-path',
+      gradingBoundaryKind: 'open-path',
+    },
     sourceBoundaryPoints,
     gradingBoundaryPoints: daylightPoints,
   });
@@ -550,5 +566,23 @@ describe('20K.3 E1 target-fan coverage hardening', () => {
   it('rejects an off-plane facet (ridge/valley)', () => {
     const points = [0, 0, 0, 1, 0, 0, 0, 1, 2];
     expect(directFanOnTarget(CUT_FILL, query(points, [0, 1, 2]), V, QIN, QOUT)).toBe(false);
+  });
+
+  it('accepts two disjoint coplanar facets tiling the fan exactly once at 1e8 offset', () => {
+    const O = 1e8;
+    const v8 = { x: O, y: O, z: 0 };
+    const qin8 = { x: O + 1, y: O, z: 0 };
+    const qout8 = { x: O, y: O + 1, z: 0 };
+    const points = [O, O, 0, O + 1, O, 0, O + 0.5, O + 0.5, 0, O, O + 1, 0];
+    expect(directFanOnTarget(CUT_FILL, query(points, [0, 1, 2, 0, 2, 3]), v8, qin8, qout8)).toBe(true);
+  });
+
+  it('rejects duplicate coplanar sheets that compensate for a void at 1e8 offset', () => {
+    const O = 1e8;
+    const v8 = { x: O, y: O, z: 0 };
+    const qin8 = { x: O + 1, y: O, z: 0 };
+    const qout8 = { x: O, y: O + 1, z: 0 };
+    const points = [O, O, 0, O + 1, O, 0, O + 0.5, O + 0.5, 0];
+    expect(directFanOnTarget(CUT_FILL, query(points, [0, 1, 2, 0, 1, 2]), v8, qin8, qout8)).toBe(false);
   });
 });

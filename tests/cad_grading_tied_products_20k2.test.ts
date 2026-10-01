@@ -43,9 +43,11 @@ import { resolveGroupInputs } from '../src/engine/cad/grading/gradingGroupResolv
 import { linearizeGradingArc } from '../src/engine/cad/grading/gradingCurve';
 import {
   buildGradingTopologyCertificate,
+  buildGradingTopologyCertificateExact,
   gradingTopologyCertificateError,
   gradingTopologyCertificateProductError,
 } from '../src/engine/cad/grading/gradingTopologyCertificate';
+import { deriveGradingTopologyExpectation } from '../src/engine/cad/grading/gradingTopologyExpectation';
 import { validateGradingMeshTopology } from '../src/engine/cad/grading/gradingTopology';
 import type {
   CadFeatureLineEntity,
@@ -441,12 +443,13 @@ describe('20K.2 group products consume the certificate', () => {
 
   it('a multi-region group mesh blocks Extract while Bake emits one surface', () => {
     const world = groupWorld();
-    const cert = buildGradingTopologyCertificate({
+    const cert = buildGradingTopologyCertificateExact({
       scope: 'group',
       points: tiedGroupMesh.points,
       triangles: tiedGroupMesh.triangles,
-      tiedSplitCoords: [20, 20, 0],
-      expectedComponents: 1,
+      expectation: deriveGradingTopologyExpectation({
+        scope: 'group', closed: false, positiveWidthRegions: 2, tiedSplitCoords: [20, 20, 0],
+      }),
       sourceBoundaryPoints: world.result.sourceBoundaryPoints,
       gradingBoundaryPoints: world.result.daylightPoints,
     });

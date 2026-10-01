@@ -63,7 +63,7 @@ gtop1 collision=true (same FNV digest), gtop2 diverges=true
 ```
 
 This is the false-accept gtop2 closes: the 12-significant-digit quantum at
-1e8 is 1e-4, so gtop1 cannot see the shift; gtop2 hashes the exact Float64
+1e8 is 1e-3, so the +1e-4 shift is below quantum and gtop1 cannot see it; gtop2 hashes the exact Float64
 bits and the digests differ.
 
 ## 4. gtop2 product revalidation

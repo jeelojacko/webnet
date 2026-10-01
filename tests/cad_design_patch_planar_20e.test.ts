@@ -31,6 +31,28 @@ import {
 import type { CadFeatureLineEntity, CadProject } from '../src/engine/cad/cadTypes';
 import type { CadGradingGroupResult } from '../src/engine/cad/grading/gradingGroupTypes';
 import type { GradingMesh } from '../src/engine/cad/grading/gradingTypes';
+import { buildGradingTopologyCertificateExact } from '../src/engine/cad/grading/gradingTopologyCertificate';
+import { GRADING_TOPOLOGY_POLICY_VERSION } from '../src/engine/cad/grading/gradingTopologyExpectation';
+import type { GradingTopologyCertificate } from '../src/engine/cad/grading/gradingTopologyCertificate';
+
+/** gtop2 certification for the hand-built annular shells below. */
+const certifyShell = (
+  sourceBoundaryPoints: readonly number[],
+  gradingBoundaryPoints: readonly number[],
+  mesh: GradingMesh,
+): GradingTopologyCertificate => {
+  const cert = buildGradingTopologyCertificateExact({
+    scope: 'group', points: mesh.points, triangles: mesh.triangles,
+    expectation: {
+      policyVersion: GRADING_TOPOLOGY_POLICY_VERSION, scope: 'group', shape: 'closed-annulus',
+      expectedFaceComponents: 1, expectedBoundaryCycles: 2, positiveWidthRegionCount: 1,
+      tiedSplitCoords: [], closed: true, sourceBoundaryKind: 'closed-ring', gradingBoundaryKind: 'closed-ring',
+    },
+    sourceBoundaryPoints, gradingBoundaryPoints,
+  });
+  if (!cert) throw new Error('hand-built shell failed gtop2 certification');
+  return cert;
+};
 
 const planArea = (points: readonly number[], triangles: readonly number[]): number => {
   let sum = 0;
@@ -422,6 +444,7 @@ describe('(§§44/79/80) curved-flat canonical capture', () => {
       daylightPoints: [],
       sourceBoundaryPoints: captured,
       gradingMesh: shell,
+      topologyCertificate: certifyShell(captured, [], shell),
       sourceLength: 0,
       gradingPlanArea: 0,
       grading3dArea: 0,
@@ -467,6 +490,7 @@ describe('(§§57/61) planar DESIGNPATCH end-to-end + provenance', () => {
       daylightPoints: [],
       sourceBoundaryPoints: captured,
       gradingMesh: tiltedShell,
+      topologyCertificate: certifyShell(captured, [], tiltedShell),
       sourceLength: 0,
       gradingPlanArea: 0,
       grading3dArea: 0,

@@ -26,23 +26,32 @@ import { clipTrianglePair } from '../surfaces/volume/overlap';
 import type { TargetQuery } from './gradingComputeTypes';
 import { AGREEMENT_FLOOR, elevationAgreementTol, planeLeverage } from './gradingGroupSectors';
 
-/** Shoelace plan area of a flat [x,y,...] polygon. */
+/** Shoelace plan area of a flat [x,y,...] polygon, anchored at the first
+ * vertex so global E/N offsets (~1e8 m, products ~1e16) cancel before
+ * they accumulate. */
 const shoelaceArea = (flat: readonly number[]): number => {
   const n = flat.length / 2;
+  if (n < 3) return 0;
+  const x0 = flat[0]!;
+  const y0 = flat[1]!;
   let sum = 0;
   for (let i = 0; i < n; i += 1) {
     const j = (i + 1) % n;
-    sum += flat[i * 2]! * flat[j * 2 + 1]! - flat[j * 2]! * flat[i * 2 + 1]!;
+    sum += (flat[i * 2]! - x0) * (flat[j * 2 + 1]! - y0)
+      - (flat[j * 2]! - x0) * (flat[i * 2 + 1]! - y0);
   }
   return Math.abs(sum) / 2;
 };
 
-/** Standard shoelace double-area (signed), used for orientation. */
+/** Standard shoelace double-area (signed), anchored like shoelaceArea. */
 const signedArea2 = (flat: readonly number[]): number => {
+  if (flat.length < 6) return 0;
+  const x0 = flat[0]!;
+  const y0 = flat[1]!;
   let sum = 0;
   for (let i = 0; i < flat.length; i += 2) {
     const j = (i + 2) % flat.length;
-    sum += flat[i]! * flat[j + 1]! - flat[j]! * flat[i + 1]!;
+    sum += (flat[i]! - x0) * (flat[j + 1]! - y0) - (flat[j]! - x0) * (flat[i + 1]! - y0);
   }
   return sum;
 };
@@ -75,12 +84,23 @@ const segCross = (
 /**
  * Plan area of the intersection of two convex polygons (flat [x,y,...]).
  * Sutherland–Hodgman clip with robust orientation; disjoint/contact-only
- * pairs return 0.
+ * pairs return 0. Both polygons are shifted to a shared anchor first so
+ * the clip + area arithmetic runs on small local coordinates.
  */
 const convexIntersectionArea = (polyA: readonly number[], polyB: readonly number[]): number => {
-  let subject = toCcw(polyA);
-  const clip = toCcw(polyB);
-  if (subject.length < 6 || clip.length < 6) return 0;
+  if (polyA.length < 6 || polyB.length < 6) return 0;
+  const ax = polyA[0]!;
+  const ay = polyA[1]!;
+  const shift = (p: readonly number[]): number[] => {
+    const out: number[] = new Array(p.length);
+    for (let i = 0; i < p.length; i += 2) {
+      out[i] = p[i]! - ax;
+      out[i + 1] = p[i + 1]! - ay;
+    }
+    return out;
+  };
+  let subject = toCcw(shift(polyA));
+  const clip = toCcw(shift(polyB));
   for (let i = 0; i < clip.length; i += 2) {
     if (subject.length === 0) return 0;
     const ax = clip[i]!;
@@ -150,10 +170,16 @@ interface ClippedFacet {
   area: number;
 }
 
-const toGlobal = (facet: ClippedFacet): number[] => {
-  const out: number[] = [];
+/** Facet vertices shifted to a shared integer anchor (origins are integer
+ * floors, so origin−anchor differences are exact and no 1e8-magnitude
+ * coordinate is ever materialized). */
+const toShifted = (facet: ClippedFacet, ax: number, ay: number): number[] => {
+  const dx = facet.originX - ax;
+  const dy = facet.originY - ay;
+  const out: number[] = new Array(facet.local.length);
   for (let i = 0; i < facet.local.length; i += 2) {
-    out.push(facet.local[i]! + facet.originX, facet.local[i + 1]! + facet.originY);
+    out[i] = facet.local[i]! + dx;
+    out[i + 1] = facet.local[i + 1]! + dy;
   }
   return out;
 };
@@ -218,7 +244,9 @@ export const fanCoveredByFacets = (
   for (let i = 0; i < facets.length; i += 1) {
     for (let j = i + 1; j < facets.length; j += 1) {
       if (facets[i]!.area + facets[j]!.area <= areaTol) continue;
-      if (convexIntersectionArea(toGlobal(facets[i]!), toGlobal(facets[j]!)) > areaTol) return false;
+      const ax = facets[i]!.originX;
+      const ay = facets[i]!.originY;
+      if (convexIntersectionArea(toShifted(facets[i]!, ax, ay), toShifted(facets[j]!, ax, ay)) > areaTol) return false;
     }
   }
   return true;

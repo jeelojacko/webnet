@@ -24,11 +24,11 @@ control always executes.
 - `extractable` — one continuous boundary Feature Line.
 - `bakeable` — one explicit-TIN surface (`materializeExplicitTin` rebuilds
   arbitrary validated face sets 1:1).
-- `designPatchable` — one closed connected annular shell (group scope only).
+- `designPatchable` — one closed connected annular shell (group scope only), with a simple captured source ring, flat/planar interior, matching mesh, and mergeable pad. UI and command share the pure preflight; missing or stale `gtop2` blocks execution.
 
 ## 3. Capability table
 
-Measured by `tests/cad_grading_surface_products_20k3.test.ts` (16 tests):
+Measured by `tests/cad_grading_surface_products_20k3.test.ts` (18 tests) and `tests/cad_design_patch_preflight.test.ts`:
 
 | result | extractable | bakeable | designPatchable |
 |---|---|---|---|
@@ -79,12 +79,13 @@ survives only as the deprecated Extract alias.
 
 - arc×arc hybrid joints stay blocked (`GRADING_SURFACE_ANALYTIC_ARC_PAIR_UNSUPPORTED`).
 - transition-less surface+analytic mixing stays blocked (`GRADING_SURFACE_ANALYTIC_TRANSITION_REQUIRED`).
-- Design Patch is the closed 2-cycle annulus only.
+- Design Patch requires a closed 2-cycle annulus with a valid planar interior and mergeable source ring.
 - No curved surface/refinement/welding/persistence/auto-calc behavior is added.
 
 ## 7. Provenance
 
 - `src/engine/cad/grading/gradingProductCapabilities.ts`.
 - `src/engine/cad/grading/gradingTargetFanCoverage.ts`.
-- `tests/cad_grading_surface_products_20k3.test.ts` (16),
+- `tests/cad_grading_surface_products_20k3.test.ts` (18),
+  `tests/cad_design_patch_preflight.test.ts` (availability/execution agreement),
   `tests/cad_grading_tied_products_20k2.test.ts` (updated).

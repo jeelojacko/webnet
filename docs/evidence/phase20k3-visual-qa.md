@@ -1,7 +1,8 @@
-# Phase 20K.3 Wave E3 — visual QA
+# Phase 20K.3 Wave E3 — visual QA (programmatic + independent review)
 
-Status: **12/12 required viewport PNGs captured and inspected; all carry the
-expected visible state; 12/12 SHA-256 digests distinct.** Produced by the
+Status: **12/12 required viewport PNGs captured and programmatically
+verified, plus independent visual review; all carry the expected visible
+state; 12/12 SHA-256 digests distinct.** Produced by the
 production Chromium run in `docs/evidence/phase20k3-browser-qa.md`
 (`npx playwright test -c playwright.prod.config.ts
 tests-browser/cad-grading-curved-20k3.spec.ts`).

@@ -1,8 +1,8 @@
 # Phase 20K.3 — post-merge audit and closeout record
 
 Status: **Phase 20K.2 MERGED (PR #143); Phase 20K.3 IMPLEMENTATION COMPLETE
-(uncommitted on branch `fix/phase20k3-surface-curve-authority-certificate`,
-baseline `884b36e8` = PR #143 merge).** This audit records the merged-state
+(open as PR #144 for review, head `0f2f5139`, baseline `884b36e8` = PR #143
+merge; not merged).** This audit records the merged-state
 facts for Phase 20K.2, states the Phase 20K.3 scope and honest bounds, and
 indexes the 20K.3 evidence. Phase 20K.2 history is preserved in
 `docs/evidence/phase20k2-post-merge-audit.md` with a dated addendum.
@@ -138,5 +138,4 @@ the four correctness gaps that contract left open (pre-mesh declaration, exact
 digest, worker agreement authority, independent product capabilities) and
 removes the all-Surface Design Patch restriction by exact canonicalization.
 All hard bounds are explicit and fail closed. Phase 20K.3 is IMPLEMENTATION
-COMPLETE and awaiting orchestrator commit/review; `src/` was frozen for this
-evidence batch.
+COMPLETE, open as PR #144 for review; not merged.

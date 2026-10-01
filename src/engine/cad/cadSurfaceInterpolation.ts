@@ -1,4 +1,5 @@
 import type { CadSurfaceBuildResult, CadSurfaceGrid, CadSurfaceSourcePoint } from './cadSurfaces';
+import { zeroDelta } from './surfaces/volume/zero';
 
 /** Uniform-grid query index over build triangles (engine-local, opaque). */
 export const buildSurfaceGrid = (
@@ -132,11 +133,13 @@ export const getSurfacePlaneAt = (
   const b = build.points[tri[1]]!;
   const c = build.points[tri[2]]!;
   const det = (b.x - a.x) * (c.y - a.y) - (c.x - a.x) * (b.y - a.y);
-  if (det === 0) return null;
+  if (Math.abs(det) <= zeroDelta(det, 0)) return null;
   const gx = ((b.z - a.z) * (c.y - a.y) - (c.z - a.z) * (b.y - a.y)) / det;
   const gy = ((b.x - a.x) * (c.z - a.z) - (c.x - a.x) * (b.z - a.z)) / det;
+  const z = a.z + gx * (x - a.x) + gy * (y - a.y);
+  if (!Number.isFinite(z) || !Number.isFinite(gx) || !Number.isFinite(gy)) return null;
   return {
-    z: a.z + gx * (x - a.x) + gy * (y - a.y),
+    z,
     gx,
     gy,
     ax: a.x,

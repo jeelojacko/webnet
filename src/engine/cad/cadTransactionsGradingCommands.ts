@@ -12,7 +12,7 @@ import {
 import { gradingBoundaryLabel, gradingCriterionRequiresSurface, gradingTerminationKind } from './grading/gradingTypes';
 import { resolveGradingSourceCourse } from './grading/gradingCourseFrame';
 import { resolveGradingInputs } from './grading/gradingResolve';
-import { gradingTopologyCertificateError, gradingTopologyCertificateProductError } from './grading/gradingTopologyCertificate';
+import { gradingTopologyCertificateProductionError, gradingTopologyCertificateProductionProductError } from './grading/gradingTopologyCertificate';
 import { appendCadProjectEntities } from './cadProjectState';
 import { commitLayerProject } from './cadTransactionsLayerCommands';
 import type {
@@ -262,7 +262,7 @@ const gradingExtractCommand: CadCommandDefinition<GradingExtractCommand> = {
     }
     if (result.daylightPoints.length < 6 || result.daylightPoints.length % 3 !== 0) return null;
     // 20K.2: refuse an uncertified / forged / mismatched CURRENT mesh.
-    if (gradingTopologyCertificateProductError(result.topologyCertificate, 'standalone', result.gradingMesh, {
+    if (gradingTopologyCertificateProductionProductError(result.topologyCertificate, 'standalone', result.gradingMesh, {
       sourceBoundaryPoints: result.sourceBoundaryPoints,
       gradingBoundaryPoints: result.daylightPoints,
     }) != null) return null;
@@ -320,7 +320,7 @@ const gradingBakeCommand: CadCommandDefinition<GradingBakeCommand> = {
     // Wave E1: Bake is an explicit-TIN product and the engine materializes
     // arbitrary validated face sets, so a multi-region (tied split) mesh IS
     // bakeable as one surface; only a certificate/topology failure blocks.
-    if (gradingTopologyCertificateError(result.topologyCertificate, 'standalone', result.gradingMesh, {
+    if (gradingTopologyCertificateProductionError(result.topologyCertificate, 'standalone', result.gradingMesh, {
       sourceBoundaryPoints: result.sourceBoundaryPoints,
       gradingBoundaryPoints: result.daylightPoints,
     }) != null) return null;
