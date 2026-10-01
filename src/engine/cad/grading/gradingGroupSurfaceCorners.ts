@@ -38,6 +38,7 @@ import {
 } from './gradingGroupSectors';
 import {
   clipTriangleToHalfPlane,
+  shareMiterSeam,
   type MergePoint,
   type MergeTriangle,
 } from './gradingGroupMerge';
@@ -228,6 +229,13 @@ export const solveSurfaceCorner = (joint: SurfaceCornerJoint): SurfaceCornerOutc
     };
     inTris = trimWith(inTris, midIn);
     outTris = trimWith(outTris, midOut);
+    // Phase 20K.3 Wave B: the two independent trims discretize the same
+    // miter seam with different stations (doubled seam = PINCH). Share the
+    // union station set so the seam turns interior (collinear splits only;
+    // areas, ties, and provenance untouched).
+    const shared = shareMiterSeam(inTris, outTris, miterLine);
+    inTris = shared.inTris;
+    outTris = shared.outTris;
     inDaylight = clipPolylineToHalfPlane(inDaylight, miterLine, midIn);
     outDaylight = clipPolylineToHalfPlane(outDaylight, miterLine, midOut);
     if (inDaylight.length === 0 || outDaylight.length === 0) {

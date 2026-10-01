@@ -231,7 +231,9 @@ export const gradingShellAvailable = (
   const selected = snapshot?.grading?.selectedGradingId ?? null;
   if (selected == null) return false;
   const row = snapshot?.grading?.gradings.find((entry) => entry.id === selected) ?? null;
-  return key === 'GRADINGEXTRACTDAYLIGHT' || key === 'GRADINGBAKE' ? row?.status === 'CURRENT' : true;
+  if (key === 'GRADINGEXTRACTDAYLIGHT') return row?.extractable === true;
+  if (key === 'GRADINGBAKE') return row?.bakeable === true;
+  return true;
 };
 
 /** Build the wire payload for the create flow (prompts collect the rest). */

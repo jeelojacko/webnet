@@ -40,6 +40,8 @@ import {
   resolveDesignPatch,
 } from '../src/engine/cad/cadTransactionsDesignPatchCommands';
 import { resolveGroupInputs } from '../src/engine/cad/grading/gradingGroupResolve';
+import { buildGradingTopologyCertificateExact } from '../src/engine/cad/grading/gradingTopologyCertificate';
+import { deriveGradingTopologyExpectation } from '../src/engine/cad/grading/gradingTopologyExpectation';
 import {
   deriveDesignPatchPlane,
   designPatchPlaneElevation,
@@ -209,6 +211,14 @@ const planarWorld = (): PlanarWorld => {
 /** CURRENT result carrying the captured planar boundary + matching shell. */
 const planarResult = (world: PlanarWorld): CadGradingGroupResult => {
   const ring = planarRing();
+  const sourceBoundaryPoints = [...ring, ring[0]!, ring[1]!, ring[2]!];
+  const gradingMesh = planarShell();
+  const topologyCertificate = buildGradingTopologyCertificateExact({
+    scope: 'group', points: gradingMesh.points, triangles: gradingMesh.triangles,
+    expectation: deriveGradingTopologyExpectation({ scope: 'group', closed: true, positiveWidthRegions: 1 }),
+    sourceBoundaryPoints, gradingBoundaryPoints: [],
+  });
+  if (!topologyCertificate) throw new Error('planar shell failed gtop2 certification');
   return {
     groupId: world.groupId,
     revision: world.revision,
@@ -218,8 +228,9 @@ const planarResult = (world: PlanarWorld): CadGradingGroupResult => {
     memberRegions: [],
     corners: [],
     daylightPoints: [],
-    sourceBoundaryPoints: [...ring, ring[0]!, ring[1]!, ring[2]!],
-    gradingMesh: planarShell(),
+    sourceBoundaryPoints,
+    gradingMesh,
+    topologyCertificate,
     sourceLength: 0,
     gradingPlanArea: 0,
     grading3dArea: 0,

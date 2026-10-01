@@ -38,6 +38,7 @@ import {
   ringIsSimple,
   validateGroupMesh,
   validateMergedGroupTopology,
+  shareMiterSeam,
   type MergePoint,
   type MergeTriangle,
 } from './gradingGroupMerge';
@@ -52,7 +53,8 @@ import { solveGradingChord } from './solveAnalyticGradingChord';
 import { solveAnalyticCorner } from './gradingGroupAnalyticCorners';
 import { solveHybridCorner } from './gradingGroupHybridCorners';
 import { groupTerminationMode } from './gradingGroupTermination';
-import { buildGradingTopologyCertificate } from './gradingTopologyCertificate';
+import { buildGradingTopologyCertificateExact, countPositiveWidthRegions } from './gradingTopologyCertificate';
+import { deriveGradingTopologyExpectation } from './gradingTopologyExpectation';
 import { solveStraightChord, type StraightChordSolve } from './solveStraightChord';
 import { gradingTerminationDomain, isTargetFreeCriterion } from './gradingTypes';
 import type {
@@ -110,6 +112,27 @@ interface MemberSolve {
   gsOut: number;
   nodeStations: number[];
 }
+
+/**
+ * Maximal non-tied runs across the whole member chain (pre-merge topology
+ * expectation for an open group). Each member drops its final station except
+ * the last, exactly like the assembled source boundary, so source/daylight
+ * stay index-aligned.
+ */
+const countGroupPositiveWidthRegions = (members: ReadonlyArray<MemberSolve>): number => {
+  const src: Array<{ x: number; y: number; z: number }> = [];
+  const dst: Array<{ x: number; y: number; z: number }> = [];
+  members.forEach((member, index) => {
+    const sp = member.stitched.sourcePts;
+    const dp = member.stitched.daylightPts;
+    const upto = index === members.length - 1 ? sp.length : Math.max(0, sp.length - 1);
+    for (let i = 0; i < upto; i += 1) {
+      src.push(sp[i]!);
+      dst.push(dp[i]!);
+    }
+  });
+  return countPositiveWidthRegions(src, dst);
+};
 
 const exactXyz = (a: ResolvedGradingSource, b: ResolvedGradingSource): boolean =>
   a.endX === b.startX && a.endY === b.startY && a.endZ === b.startZ;
@@ -428,6 +451,13 @@ export const computeGradingGroupFromSnapshots = (input: GroupSolveInput): Gradin
       };
     } else {
       stitched = stitchChords(chordSolves);
+      // Straight members carry the same joint-vertex rounding as arcs (the
+      // chord solve re-derives each endpoint as start + t·length). Snap the
+      // boundary source endpoints to the exact member geometry so adjacent
+      // members + the corner patch share one bit-identical index; otherwise
+      // a rotated GAP joint carries ULP twins -> degree-4 boundary pinch.
+      stitched.sourcePts[0] = { x: member.startX, y: member.startY, z: member.startZ };
+      stitched.sourcePts[stitched.sourcePts.length - 1] = { x: member.endX, y: member.endY, z: member.endZ };
     }
     const tIn = chordDir(chords[0]!.source);
     const tOut = chordDir(chords[chords.length - 1]!.source);
@@ -600,6 +630,13 @@ export const computeGradingGroupFromSnapshots = (input: GroupSolveInput): Gradin
         };
         memberTris[inIdx] = trimTriangles(memberTris[inIdx]!, midIn);
         memberTris[outIdx] = trimTriangles(memberTris[outIdx]!, midOut);
+        // Phase 20K.3 Wave B: the two independent trims discretize the same
+        // miter seam with different stations (doubled seam = PINCH). Share
+        // the union station set so the seam turns interior; areas, ties,
+        // and corner provenance are untouched (collinear splits only).
+        const shared = shareMiterSeam(memberTris[inIdx]!, memberTris[outIdx]!, miterLine);
+        memberTris[inIdx] = shared.inTris;
+        memberTris[outIdx] = shared.outTris;
         memberDaylight[inIdx] = clipPolylineToHalfPlane(memberDaylight[inIdx]!, miterLine, midIn);
         memberDaylight[outIdx] = clipPolylineToHalfPlane(memberDaylight[outIdx]!, miterLine, midOut);
         if (memberDaylight[inIdx]!.length === 0 || memberDaylight[outIdx]!.length === 0) {
@@ -743,16 +780,25 @@ export const computeGradingGroupFromSnapshots = (input: GroupSolveInput): Gradin
   for (const corner of corners) {
     if (corner.classification === 'OVERLAP' && corner.tiePointXyz) tiedCoords.push(...corner.tiePointXyz);
   }
-  // 20K.1 Wave B2 fail-closed seam gate (curved groups only). Straight
-  // courses trim exactly along miter seams, so vertex-touching fragments
-  // are the designed tiling (20C oracles bless areas, no double-cover —
-  // even rotated straight GAP joints fragment honestly). Curved joints
-  // facet: non-stitching shared-index topology fails the revision.
-  // ponytail: straight-only bypass; re-enable if a straight GAP crack appears.
-  if (curved) {
-    const topoError = validateMergedGroupTopology(merged, tiedCoords);
-    if (topoError) return fail('GROUP_NON_MANIFOLD', undefined, topoError);
-  }
+  // Phase 20K.3 Wave B: explicit pre-mesh expectation derived from the
+  // member tilings (never the merged mesh's own topology). Closed groups
+  // pin the 1/2 annulus; open groups pin the maximal non-tied runs (N/N).
+  const groupExpectation = deriveGradingTopologyExpectation({
+    scope: 'group',
+    closed,
+    positiveWidthRegions: closed ? 1 : countGroupPositiveWidthRegions(solved),
+    tiedSplitCoords: tiedCoords,
+    empty: merged.triangles.length === 0,
+  });
+  // Same semantic seam gate for straight and curved groups (the `if
+  // (curved)` bypass is removed). Straight courses trim exactly along miter
+  // seams and share corner indices, so honest GAP/OVERLAP tilings still
+  // hold; anything else fails the revision against the declared budget.
+  const groupTopoError = validateMergedGroupTopology(merged, tiedCoords, {
+    expectedComponents: groupExpectation.expectedFaceComponents,
+    expectedBoundaryLoops: groupExpectation.expectedBoundaryCycles,
+  });
+  if (groupTopoError) return fail('GROUP_NON_MANIFOLD', undefined, groupTopoError);
 
   let cutSourceLength = 0;
   let fillSourceLength = 0;
@@ -794,15 +840,20 @@ export const computeGradingGroupFromSnapshots = (input: GroupSolveInput): Gradin
     const p = lastPts[lastPts.length - 1]!;
     sourceBoundaryPoints.push(p.x, p.y, p.z);
   }
-  // Phase 20K.2: certify the final merged mesh (tied stations recorded once).
-  const topologyCertificate = buildGradingTopologyCertificate({
+  // Phase 20K.3 Wave B: certify the final merged mesh against the same
+  // explicit pre-mesh expectation (closed 1/2 annulus; open N/N). A nonempty
+  // merged mesh without a valid gtop2 certificate fails closed.
+  const topologyCertificate = buildGradingTopologyCertificateExact({
     scope: 'group',
     points: merged.points,
     triangles: merged.triangles,
-    tiedSplitCoords: tiedCoords,
+    expectation: groupExpectation,
     sourceBoundaryPoints,
     gradingBoundaryPoints: daylightFlat,
-  }) ?? undefined;
+  });
+  if (!topologyCertificate && merged.triangles.length > 0) {
+    return fail('GROUP_NON_MANIFOLD', undefined, 'GRADING_TOPOLOGY_CERTIFICATE_MISSING');
+  }
   const result: CadGradingGroupResult = {
     groupId,
     revision,

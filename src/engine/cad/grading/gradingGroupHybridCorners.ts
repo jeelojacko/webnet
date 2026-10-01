@@ -48,6 +48,7 @@ import {
 import {
   clipTriangleToHalfPlane,
   mergeGroupTriangles,
+  shareMiterSeam,
   validateGroupMesh,
   type MergePoint,
   type MergeTriangle,
@@ -306,8 +307,14 @@ export const solveHybridCorner = (input: HybridCornerInput): HybridCornerOutcome
       for (const tri of tris) out.push(...clipTriangleToHalfPlane(tri, miterLine, keep));
       return out;
     };
-    const inTris = trimTris(input.inStrip, input.midIn);
-    const outTris = trimTris(input.outStrip, input.midOut);
+    const trimmedIn = trimTris(input.inStrip, input.midIn);
+    const trimmedOut = trimTris(input.outStrip, input.midOut);
+    // Phase 20K.3 Wave B: the two independent trims discretize the same
+    // miter seam with different stations (doubled seam = PINCH). Share the
+    // union station set so the seam turns interior (collinear splits only).
+    const shared = shareMiterSeam(trimmedIn, trimmedOut, miterLine);
+    const inTris = shared.inTris;
+    const outTris = shared.outTris;
     const inDaylight = clipPolylineToHalfPlane(input.inDaylight, miterLine, input.midIn);
     const outDaylight = clipPolylineToHalfPlane(input.outDaylight, miterLine, input.midOut);
     if (inDaylight.length === 0 || outDaylight.length === 0) {

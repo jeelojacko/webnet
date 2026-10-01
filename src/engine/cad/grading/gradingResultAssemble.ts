@@ -12,7 +12,9 @@ import {
   tieStats,
 } from './gradingMesh';
 import { zeroDelta } from '../surfaces/volume/zero';
-import { buildGradingTopologyCertificate, collectTiedRunStarts, countPositiveWidthRegions } from './gradingTopologyCertificate';
+import { buildGradingTopologyCertificateExact, collectTiedRunStarts } from './gradingTopologyCertificate';
+import { countPositiveWidthStationRuns, deriveGradingTopologyExpectation } from './gradingTopologyExpectation';
+import { validateGradingMeshTopology } from './gradingTopology';
 import type {
   GradingAccuracy,
   GradingDiagnostic,
@@ -98,23 +100,54 @@ const flattenPoints = (pts: Array<{ x: number; y: number; z: number }>): number[
   return out;
 };
 
+interface StandaloneCertificate {
+  certificate: ReturnType<typeof buildGradingTopologyCertificateExact>;
+  /** Topology failure detail when the certificate could not be built. */
+  detail: string;
+}
+
 const standaloneCertificate = (
   mesh: { points: number[]; triangles: number[] },
   sourcePts: Array<{ x: number; y: number; z: number }>,
   daylightPts: Array<{ x: number; y: number; z: number }>,
   daylightFlat: number[],
-): ReturnType<typeof buildGradingTopologyCertificate> =>
-  buildGradingTopologyCertificate({
+): StandaloneCertificate => {
+  const tiedSplitCoords = collectTiedRunStarts(sourcePts, daylightPts);
+  const regions = countPositiveWidthStationRuns(sourcePts, daylightPts);
+  // Phase 20K.3 Wave B: explicit pre-mesh expectation (standalone open
+  // strip 1/1, tied splits N/N); the gtop2 builder fails closed on mismatch.
+  const expectation = deriveGradingTopologyExpectation({
+    scope: 'standalone',
+    closed: false,
+    positiveWidthRegions: regions,
+    tiedSplitCoords,
+    empty: mesh.triangles.length === 0,
+  });
+  const certificate = buildGradingTopologyCertificateExact({
     scope: 'standalone',
     points: mesh.points,
     triangles: mesh.triangles,
-    tiedSplitCoords: collectTiedRunStarts(sourcePts, daylightPts),
-    expectedComponents: countPositiveWidthRegions(sourcePts, daylightPts),
+    expectation,
     sourceBoundaryPoints: flattenPoints(sourcePts),
     // The exported daylight boundary is the deduped `daylightFlat`, not the
     // tiling array; digest the array products actually re-export.
     gradingBoundaryPoints: daylightFlat,
   });
+  if (certificate) return { certificate, detail: '' };
+  // Surface the authoritative topology code/detail (never a generic
+  // missing-certificate string) so the existing fail-closed paths keep
+  // their PINCH/NON_MANIFOLD specificity.
+  const probe = validateGradingMeshTopology(mesh.points, mesh.triangles, {
+    scope: 'arc',
+    expectedComponents: expectation.expectedFaceComponents,
+    expectedBoundaryLoops: expectation.expectedBoundaryCycles,
+    tiedSplitCoords,
+  });
+  return {
+    certificate: null,
+    detail: probe.ok ? 'GRADING_TOPOLOGY_CERTIFICATE_MISSING' : `${probe.code}: ${probe.detail ?? ''}`,
+  };
+};
 
 /** Fully already-tied course: CURRENT with zero area (bake stays blocked). */
 const tiedGradingResult = (
@@ -163,7 +196,7 @@ const tiedGradingResult = (
         sourcePts,
         daylightPts,
         daylightFlat,
-      ) ?? undefined,
+      ).certificate ?? undefined,
     },
   };
 };
@@ -198,6 +231,12 @@ export const assembleAnalyticGradingResult = (
   } = input;
   const mesh = buildGradingStripMesh(sourcePts, daylightPts);
   const stats = tieStats(distances);
+  // Phase 20K.3 Wave B: a nonempty analytic mesh without a valid gtop2
+  // certificate fails closed (existing NO_SOLUTION code).
+  const analytic = mesh.ok ? standaloneCertificate(mesh, sourcePts, daylightPts, daylightFlat) : null;
+  if (mesh.ok && !analytic!.certificate) {
+    return { ok: false, code: 'NO_SOLUTION', detail: analytic!.detail };
+  }
   if (!mesh.ok) {
     return {
       ok: true,
@@ -227,7 +266,7 @@ export const assembleAnalyticGradingResult = (
           sourcePts,
           daylightPts,
           daylightFlat,
-        ) ?? undefined,
+        ).certificate ?? undefined,
       },
     };
   }
@@ -254,7 +293,7 @@ export const assembleAnalyticGradingResult = (
       intersectionSegmentCount,
       multipleSolutionCount,
       diagnostics,
-      topologyCertificate: standaloneCertificate(mesh, sourcePts, daylightPts, daylightFlat) ?? undefined,
+      ...(analytic && analytic.certificate ? { topologyCertificate: analytic.certificate } : {}),
     },
   };
 };
@@ -288,6 +327,13 @@ export const assembleGradingResult = (input: AssembledResultInput): GradingCompu
     query,
   );
   const stats = tieStats(distances);
+  // Phase 20K.3 Wave B: a nonempty mesh without a valid gtop2 certificate
+  // fails closed (existing NO_SOLUTION code); empty ALREADY_TIED is exempt.
+  const certified = standaloneCertificate(mesh, sourcePts, daylightPts, daylightFlat);
+  if (!certified.certificate) {
+    return { ok: false, code: 'NO_SOLUTION', detail: certified.detail };
+  }
+  const topologyCertificate = certified.certificate;
   return {
     ok: true,
     result: {
@@ -311,7 +357,7 @@ export const assembleGradingResult = (input: AssembledResultInput): GradingCompu
       intersectionSegmentCount,
       multipleSolutionCount,
       diagnostics,
-      topologyCertificate: standaloneCertificate(mesh, sourcePts, daylightPts, daylightFlat) ?? undefined,
+      topologyCertificate,
     },
   };
 };

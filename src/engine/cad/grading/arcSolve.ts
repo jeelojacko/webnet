@@ -13,7 +13,7 @@ import { candidateTriangles } from './gradingTargetIndex';
 import { samePlanNode } from './gradingGroupSectors';
 import { linearizeGradingArc, type LinearizedGradingArc } from './gradingCurve';
 import { validateGradingMeshTopology } from './gradingTopology';
-import { countPositiveWidthRegions } from './gradingTopologyCertificate';
+import { countPositiveWidthStationRuns } from './gradingTopologyExpectation';
 import {
   assembleAnalyticGradingResult,
   assembleGradingResult,
@@ -354,6 +354,7 @@ const gateArcSeamTopology = (
   const topo = validateGradingMeshTopology(mesh.points, mesh.triangles, {
     scope: 'arc',
     expectedComponents: positiveWidthRegions,
+    expectedBoundaryLoops: positiveWidthRegions,
     tiedSplitCoords: [...tiedSplitCoords],
   });
   if (topo.ok) return outcome;
@@ -371,7 +372,7 @@ export const solveArcGrading = (input: ArcSolveInput): GradingComputeOutcome => 
   const stitched = solveArcChords(input, setup.linearized, setup.segArc);
   if (!stitched.ok) return stitched;
   const stitch = stitched.stitch;
-  const positiveWidthRegions = countPositiveWidthRegions(stitch.sourcePts, stitch.daylightPts);
+  const positiveWidthRegions = countPositiveWidthStationRuns(stitch.sourcePts, stitch.daylightPts);
   // Phase 20F: analytic criteria assemble without a target query —
   // source/target relation lengths stay unavailable (never faked).
   if (isTargetFreeCriterion(input.criterion)) {

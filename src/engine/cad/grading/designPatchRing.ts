@@ -115,7 +115,7 @@ export const deriveSourceRing = (
  * is structurally unusable, so the caller fail-closes instead of drifting
  * back to a re-linearized ring.
  */
-const normalizeCapturedRing = (points: readonly number[]): number[] | null => {
+export const normalizeCapturedRing = (points: readonly number[]): number[] | null => {
   if (!Array.isArray(points) || points.length % 3 !== 0 || points.length < 9) return null;
   const raw = [...points];
   const last = raw.length - 3;

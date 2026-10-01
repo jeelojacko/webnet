@@ -25,8 +25,8 @@ import {
   crossGradeAtV,
   solveSurfaceCorner,
 } from './gradingGroupSurfaceCorners';
-import { clipTrianglePair } from '../surfaces/volume/overlap';
-import { lineSide as sectorLineSide, samePlanNode, elevationAgreementTol, planeLeverage, AGREEMENT_FLOOR } from './gradingGroupSectors';
+import { lineSide as sectorLineSide, samePlanNode, elevationAgreementTol, AGREEMENT_FLOOR } from './gradingGroupSectors';
+import { fanCoveredByFacets } from './gradingTargetFanCoverage';
 import type { StraightChordSolve } from './solveStraightChord';
 import type { GradingCriterion, GradingSide } from './gradingTypes';
 
@@ -252,96 +252,6 @@ const sameSeamPt = (a: ChordSeamPoint, b: ChordSeamPoint): boolean =>
   Math.abs(a.y - b.y) <= zeroDelta(a.y, b.y) &&
   Math.abs(a.z - b.z) <= zeroDelta(a.z, b.z);
 
-/** Shoelace plan area of a flat [x,y,...] polygon. */
-const shoelaceArea = (flat: readonly number[]): number => {
-  const n = flat.length / 2;
-  let sum = 0;
-  for (let i = 0; i < n; i += 1) {
-    const j = (i + 1) % n;
-    sum += flat[i * 2]! * flat[j * 2 + 1]! - flat[j * 2]! * flat[i * 2 + 1]!;
-  }
-  return Math.abs(sum) / 2;
-};
-
-/** Plan-barycentric elevation of a target triangle at (x, y); null if degenerate. */
-const triangleZAt = (
-  a: readonly [number, number, number],
-  b: readonly [number, number, number],
-  c: readonly [number, number, number],
-  x: number,
-  y: number,
-): number | null => {
-  const v0x = c[0] - a[0];
-  const v0y = c[1] - a[1];
-  const v1x = b[0] - a[0];
-  const v1y = b[1] - a[1];
-  const v2x = x - a[0];
-  const v2y = y - a[1];
-  const d00 = v0x * v0x + v0y * v0y;
-  const d01 = v0x * v1x + v0y * v1y;
-  const d11 = v1x * v1x + v1y * v1y;
-  const d20 = v2x * v0x + v2y * v0y;
-  const d21 = v2x * v1x + v2y * v1y;
-  const denom = d00 * d11 - d01 * d01;
-  if (denom === 0) return null;
-  const vb = (d11 * d20 - d01 * d21) / denom;
-  const wb = (d00 * d21 - d01 * d20) / denom;
-  const ub = 1 - vb - wb;
-  return ub * a[2] + vb * c[2] + wb * b[2];
-};
-
-/**
- * True facet walk: the fan triangle (V,qIn,qOut) must be fully covered by
- * target facets that all agree with the fan plane under the shared anchored
- * elevation bounds. Every target facet overlapping the fan in plan is clipped
- * to it (exact Sutherland–Hodgman, robust-predicates orientation); a
- * non-coplanar overlap, a plan-degenerate facet, or uncovered area
- * (void/gap) fails closed. No fixed-point resampling, so a narrow ridge/void
- * between the old 12 samples cannot hide.
- */
-const fanCoveredByFacets = (
-  query: TargetQuery,
-  plane: { gx: number; gy: number; ax: number; ay: number },
-  fanPlan: readonly number[],
-  elevation: (_x: number, _y: number) => number,
-): boolean => {
-  const points = query.targetPoints;
-  const triangles = query.targetTriangles;
-  const fanArea = shoelaceArea(fanPlan);
-  if (!(fanArea > 0)) return false;
-  const minX = Math.min(fanPlan[0]!, fanPlan[2]!, fanPlan[4]!);
-  const maxX = Math.max(fanPlan[0]!, fanPlan[2]!, fanPlan[4]!);
-  const minY = Math.min(fanPlan[1]!, fanPlan[3]!, fanPlan[5]!);
-  const maxY = Math.max(fanPlan[1]!, fanPlan[3]!, fanPlan[5]!);
-  let covered = 0;
-  for (let t = 0; t + 2 < triangles.length; t += 3) {
-    const a3: [number, number, number] = [points[triangles[t]! * 3]!, points[triangles[t]! * 3 + 1]!, points[triangles[t]! * 3 + 2]!];
-    const b3: [number, number, number] = [points[triangles[t + 1]! * 3]!, points[triangles[t + 1]! * 3 + 1]!, points[triangles[t + 1]! * 3 + 2]!];
-    const c3: [number, number, number] = [points[triangles[t + 2]! * 3]!, points[triangles[t + 2]! * 3 + 1]!, points[triangles[t + 2]! * 3 + 2]!];
-    if (
-      Math.max(a3[0], b3[0], c3[0]) < minX || Math.min(a3[0], b3[0], c3[0]) > maxX ||
-      Math.max(a3[1], b3[1], c3[1]) < minY || Math.min(a3[1], b3[1], c3[1]) > maxY
-    ) continue;
-    const clip = clipTrianglePair(fanPlan, [a3[0], a3[1], b3[0], b3[1], c3[0], c3[1]]);
-    if (!clip) continue;
-    for (let i = 0; i < clip.local.length; i += 2) {
-      const x = clip.local[i]! + clip.originX;
-      const y = clip.local[i + 1]! + clip.originY;
-      const zf = triangleZAt(a3, b3, c3, x, y);
-      if (zf === null) return false;
-      const zp = elevation(x, y);
-      const tol = elevationAgreementTol(zf, zp, planeLeverage(plane, x, y)) + AGREEMENT_FLOOR;
-      if (Math.abs(zf - zp) > tol) return false;
-    }
-    covered += shoelaceArea(clip.local);
-  }
-  const perimeter =
-    Math.hypot(fanPlan[2]! - fanPlan[0]!, fanPlan[3]! - fanPlan[1]!) +
-    Math.hypot(fanPlan[4]! - fanPlan[2]!, fanPlan[5]! - fanPlan[3]!) +
-    Math.hypot(fanPlan[0]! - fanPlan[4]!, fanPlan[1]! - fanPlan[5]!);
-  return fanArea - covered <= AGREEMENT_FLOOR * (perimeter + 1);
-};
-
 /**
  * Phase 20K.2 — proven direct CUT/FILL transition fan.
  *
@@ -427,10 +337,16 @@ const clipPairedRunToHalfPlane = (
         const ea = sectorLineSide(line, a.x, a.y);
         const eb = sectorLineSide(line, p.x, p.y);
         const t = ea === eb ? 0 : ea / (ea - eb);
-        outS.push({ x: sa.x + (s.x - sa.x) * t, y: sa.y + (s.y - sa.y) * t, z: sa.z + (s.z - sa.z) * t });
-        outD.push({ x: a.x + (p.x - a.x) * t, y: a.y + (p.y - a.y) * t, z: a.z + (p.z - a.z) * t });
-        outT.push(station[i - 1]! + (station[i]! - station[i - 1]!) * t);
-        outL.push(dist[i - 1]! + (dist[i]! - dist[i - 1]!) * t);
+        // Crossing landing exactly on an existing endpoint reuses that
+        // endpoint bit-exactly: `a` is kept when entering (t<=0), `p` when
+        // leaving (t>=1), so no ULP twin of a kept sample is inserted. Only
+        // genuine interior crossings interpolate the source mate.
+        if (t > 0 && t < 1) {
+          outS.push({ x: sa.x + (s.x - sa.x) * t, y: sa.y + (s.y - sa.y) * t, z: sa.z + (s.z - sa.z) * t });
+          outD.push({ x: a.x + (p.x - a.x) * t, y: a.y + (p.y - a.y) * t, z: a.z + (p.z - a.z) * t });
+          outT.push(station[i - 1]! + (station[i]! - station[i - 1]!) * t);
+          outL.push(dist[i - 1]! + (dist[i]! - dist[i - 1]!) * t);
+        }
       }
     }
     if (pIn) {
@@ -497,6 +413,14 @@ export const assembleSurfaceChain = (
     if (v.x !== w.startX || v.y !== w.startY || v.z !== w.startZ) {
       return { ok: false, detail: 'GRADING_SURFACE_SEAM_STATION_MISMATCH' };
     }
+    // Phase 20K.3 Wave C — one authoritative linearized seam sample.
+    // Each chord solve emits its source tip as `start + t·length`, a ULP
+    // twin of the exact linearized joint `v`. Overwrite both run tips with
+    // that single exact sample (the corner fan below already shares `v`) so
+    // the source boundary carries one vertex per seam. Exact bitwise share:
+    // no tolerance weld, no averaging, no rounding. Daylight is untouched.
+    srcRuns[j - 1]![srcRuns[j - 1]!.length - 1] = { ...v };
+    srcRuns[j]![0] = { ...v };
     const station = incoming.solve.nodeStations[incoming.solve.nodeStations.length - 1]!;
     const turn = classifyCorner(incoming.t, outgoing.t, side);
     if (!turn) return { ok: false, detail: 'GRADING_SURFACE_SEAM' };
@@ -643,27 +567,33 @@ export const assembleSurfaceChain = (
   };
   const planDist = (a: ChordSeamPoint, b: ChordSeamPoint): number =>
     Math.hypot(b.x - a.x, b.y - a.y);
+  /** Tied plan-quantum twins share the source plan value (z stays the
+   *  daylight's); every other daylight is kept verbatim. */
+  const canonDaylight = (s: ChordSeamPoint, d: ChordSeamPoint): ChordSeamPoint =>
+    samePlanNode(d, s) ? { x: s.x, y: s.y, z: d.z } : { ...d };
   const pushPair = (s: ChordSeamPoint, d: ChordSeamPoint, station: number, dist: number): void => {
     // Fully-tied nodes (daylight recomputed onto the source through a
     // different arithmetic path) canonicalize to the source plan value,
     // so the strip builder sees exact zero-width pairs and reports
     // ALREADY_TIED instead of slivering. Plan-quantum twins only.
-    const dd = samePlanNode(d, s) ? { x: s.x, y: s.y, z: d.z } : { ...d };
     assembly.sourcePts.push({ ...s });
-    assembly.daylightPts.push(dd);
+    assembly.daylightPts.push(canonDaylight(s, d));
     assembly.nodeStations.push(station);
     assembly.distances.push(dist);
   };
   /** Bitwise-consecutive-dupe guard: the corner run shares its endpoint
    *  VALUES with the adjacent run tips (same arithmetic), so re-emitting
    *  them would tile zero-area quads. Trimmed tips carry distinct sources
-   *  and must be kept (no shortcut across the joint). */
+   *  and must be kept (no shortcut across the joint). Compare the STORED
+   *  (tie-canonicalized) daylight so a tieless CUT→TIED→FILL fan collapses
+   *  to exactly one seam sample. */
   const dupePair = (s: ChordSeamPoint, d: ChordSeamPoint): boolean => {
     const n = assembly.sourcePts.length;
     if (n === 0) return false;
     const ps = assembly.sourcePts[n - 1]!;
     const pd = assembly.daylightPts[n - 1]!;
-    return ps.x === s.x && ps.y === s.y && ps.z === s.z && pd.x === d.x && pd.y === d.y && pd.z === d.z;
+    const dd = canonDaylight(s, d);
+    return ps.x === s.x && ps.y === s.y && ps.z === s.z && pd.x === dd.x && pd.y === dd.y && pd.z === dd.z;
   };
   const pushLive = (s: ChordSeamPoint, d: ChordSeamPoint, station: number, dist: number): void => {
     if (!dupePair(s, d)) pushPair(s, d, station, dist);
@@ -706,4 +636,85 @@ export const assembleSurfaceChain = (
     }
   }
   return { ok: true, value: assembly };
+};
+
+/* ---------------------------------------------------------------------------
+ * Phase 20K.3 Wave B — exact seam-mesh digest (bits, not decimals).
+ *
+ * `digestSeamMesh` (above) hashes `toPrecision(12)` text and collides below
+ * the 12-significant-digit quantum. This exact variant hashes IEEE-754
+ * Float64 bits + uint32 indices with SHA-256 and is the only seam digest
+ * the gtop2 certificate path uses. The legacy export is untouched.
+ * ------------------------------------------------------------------------- */
+
+/** Exact seam-mesh digest (null on non-finite coords / bad indices). */
+export const digestSeamMeshExact = (points: number[], triangles: number[]): string | null => {
+  // Local bit-exact encoding (mirrors the gtop2 mesh section, seam tag).
+  const out: number[] = [0x67, 0x74, 0x6f, 0x70, 0x32, 0x00, 0x73, 0x65, 0x61, 0x6d];
+  const pushU32 = (value: number): boolean => {
+    if (typeof value !== 'number' || !Number.isInteger(value) || value < 0 || value > 0xffffffff) {
+      return false;
+    }
+    out.push(value & 0xff, (value >>> 8) & 0xff, (value >>> 16) & 0xff, (value >>> 24) & 0xff);
+    return true;
+  };
+  const pushF64 = (value: number): boolean => {
+    if (typeof value !== 'number' || !Number.isFinite(value)) return false;
+    const buf = new ArrayBuffer(8);
+    new DataView(buf).setFloat64(0, value === 0 ? 0 : value, true);
+    for (const byte of new Uint8Array(buf)) out.push(byte);
+    return true;
+  };
+  if (points.length % 3 !== 0 || triangles.length % 3 !== 0) return null;
+  if (!pushU32(points.length / 3)) return null;
+  for (const value of points) if (!pushF64(value)) return null;
+  if (!pushU32(triangles.length / 3)) return null;
+  for (const index of triangles) if (!pushU32(index)) return null;
+  // Bounded pure SHA-256 over the byte buffer (same construction as gtop2).
+  const data = Uint8Array.from(out);
+  const K = [
+    0x428a2f98, 0x71374491, 0xb5c0fbcf, 0xe9b5dba5, 0x3956c25b, 0x59f111f1, 0x923f82a4, 0xab1c5ed5,
+    0xd807aa98, 0x12835b01, 0x243185be, 0x550c7dc3, 0x72be5d74, 0x80deb1fe, 0x9bdc06a7, 0xc19bf174,
+    0xe49b69c1, 0xefbe4786, 0x0fc19dc6, 0x240ca1cc, 0x2de92c6f, 0x4a7484aa, 0x5cb0a9dc, 0x76f988da,
+    0x983e5152, 0xa831c66d, 0xb00327c8, 0xbf597fc7, 0xc6e00bf3, 0xd5a79147, 0x06ca6351, 0x14292967,
+    0x27b70a85, 0x2e1b2138, 0x4d2c6dfc, 0x53380d13, 0x650a7354, 0x766a0abb, 0x81c2c92e, 0x92722c85,
+    0xa2bfe8a1, 0xa81a664b, 0xc24b8b70, 0xc76c51a3, 0xd192e819, 0xd6990624, 0xf40e3585, 0x106aa070,
+    0x19a4c116, 0x1e376c08, 0x2748774c, 0x34b0bcb5, 0x391c0cb3, 0x4ed8aa4a, 0x5b9cca4f, 0x682e6ff3,
+    0x748f82ee, 0x78a5636f, 0x84c87814, 0x8cc70208, 0x90befffa, 0xa4506ceb, 0xbef9a3f7, 0xc67178f2,
+  ];
+  let h0 = 0x6a09e667; let h1 = 0xbb67ae85; let h2 = 0x3c6ef372; let h3 = 0xa54ff53a;
+  let h4 = 0x510e527f; let h5 = 0x9b05688c; let h6 = 0x1f83d9ab; let h7 = 0x5be0cd19;
+  const bitLen = data.length * 8;
+  const paddedLen = (((data.length + 8) >> 6) + 1) << 6;
+  const padded = new Uint8Array(paddedLen);
+  padded.set(data);
+  padded[data.length] = 0x80;
+  const view = new DataView(padded.buffer);
+  view.setUint32(paddedLen - 8, Math.floor(bitLen / 0x100000000));
+  view.setUint32(paddedLen - 4, bitLen >>> 0);
+  const w = new Array<number>(64);
+  const rotr = (x: number, n: number): number => (x >>> n) | (x << (32 - n));
+  for (let off = 0; off < paddedLen; off += 64) {
+    for (let i = 0; i < 16; i += 1) w[i] = view.getUint32(off + i * 4);
+    for (let i = 16; i < 64; i += 1) {
+      const s0 = rotr(w[i - 15]!, 7) ^ rotr(w[i - 15]!, 18) ^ (w[i - 15]! >>> 3);
+      const s1 = rotr(w[i - 2]!, 17) ^ rotr(w[i - 2]!, 19) ^ (w[i - 2]! >>> 10);
+      w[i] = (w[i - 16]! + s0 + w[i - 7]! + s1) | 0;
+    }
+    let [a, b, c, d, e, f, g, h] = [h0, h1, h2, h3, h4, h5, h6, h7];
+    for (let i = 0; i < 64; i += 1) {
+      const S1 = rotr(e, 6) ^ rotr(e, 11) ^ rotr(e, 25);
+      const ch = (e & f) ^ (~e & g);
+      const t1 = (h + S1 + ch + K[i]! + w[i]!) | 0;
+      const S0 = rotr(a, 2) ^ rotr(a, 13) ^ rotr(a, 22);
+      const maj = (a & b) ^ (a & c) ^ (b & c);
+      const t2 = (S0 + maj) | 0;
+      h = g; g = f; f = e; e = (d + t1) | 0; d = c; c = b; b = a; a = (t1 + t2) | 0;
+    }
+    h0 = (h0 + a) | 0; h1 = (h1 + b) | 0; h2 = (h2 + c) | 0; h3 = (h3 + d) | 0;
+    h4 = (h4 + e) | 0; h5 = (h5 + f) | 0; h6 = (h6 + g) | 0; h7 = (h7 + h) | 0;
+  }
+  return [h0, h1, h2, h3, h4, h5, h6, h7]
+    .map((v) => (v >>> 0).toString(16).padStart(8, '0'))
+    .join('');
 };

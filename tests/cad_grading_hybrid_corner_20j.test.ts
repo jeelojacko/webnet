@@ -299,8 +299,8 @@ describe('phase20j large coordinates + arcs + determinism + mode', () => {
     // with the exact external tie. arc×arc stays blocked (next test).
     expect(out.ok).toBe(true);
     if (!out.ok) return;
-    expect(out.result.gradingMesh.points.length / 3).toBe(563);
-    expect(out.result.gradingMesh.triangles.length / 3).toBe(561);
+    expect(out.result.gradingMesh.points.length / 3).toBe(452);
+    expect(out.result.gradingMesh.triangles.length / 3).toBe(450);
     expect(out.result.gradingPlanArea).toBeCloseTo(4775.018406838972, 9);
     expect(out.result.accuracy).toBe('CURVE_APPROXIMATED');
     expect(out.result.corners).toHaveLength(1);

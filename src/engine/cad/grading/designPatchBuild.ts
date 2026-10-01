@@ -244,9 +244,15 @@ export const mergePadWithGrading = (
   padPoints: readonly number[],
   padTriangles: readonly number[],
   gradingMesh: GradingMesh,
+  tiedSplitCoords: readonly number[] = [],
 ): DesignPatchMesh | DesignPatchFailure => {
   // 20K.1 Wave B2: refuse a topology-failed grading shell (existing code).
-  const seam = validateGradingMeshTopology(gradingMesh.points, gradingMesh.triangles, { scope: 'group' });
+  // Phase 20K.3 Wave B: attributed tied stations ride along so a legit
+  // tied-split shell is not mistaken for a pinch.
+  const seam = validateGradingMeshTopology(gradingMesh.points, gradingMesh.triangles, {
+    scope: 'group',
+    tiedSplitCoords: [...tiedSplitCoords],
+  });
   if (!seam.ok) return designPatchBlock('DESIGN_PATCH_MERGE_FAILED', `${seam.code}: ${seam.detail ?? ''}`);
   const padEdges = edgeRecords(padPoints, padTriangles);
   const gradingEdges = edgeRecords(gradingMesh.points, gradingMesh.triangles);

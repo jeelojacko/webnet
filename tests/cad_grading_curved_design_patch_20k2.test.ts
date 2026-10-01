@@ -8,13 +8,13 @@
  * DESIGNPATCH). all-Distance and mixed-analytic reach CURRENT at
  * 128 pts / 128 tris, 4 GAP ties, plan 9452.124826335, pass Extract + Bake,
  * and (after the 20K.2 exact-duplicate ring collapse) pass Design Patch.
- * all-Surface reaches CURRENT at 156 pts / 156 tris and passes Extract +
- * Bake, but its Design Patch stays explicitly restricted: the Surface seam
- * resamples each shared station as `start + t*length`, so the captured ring
- * carries ulp-twin micro-edges and ear-clipping fails closed
- * (`DESIGN_PATCH_NON_SIMPLE_RING : SURFACE_EDIT_NOT_APPLICABLE`). See
- * `docs/evidence/phase20k2-curved-design-patch-cutfill.md` for the
- * root-cause write-up and the recommended next-phase fix.
+ * all-Surface reaches CURRENT at 128 pts / 128 tris and also passes
+ * Extract + Bake + Design Patch: Phase 20K.3 Wave C canonicalizes every
+ * internal chord-seam source sample to the single exact linearized joint
+ * (`start + t*length` ULP twins removed), so the captured ring is the
+ * clean 32-station boundary and ear-clipping succeeds. See
+ * `docs/evidence/phase20k2-curved-design-patch-cutfill.md` and the 20K.3
+ * wave notes for the root-cause write-up.
  */
 import { describe, expect, it } from 'vitest';
 
@@ -32,7 +32,6 @@ import {
   DESIGN_PATCH_GROUP_NOT_CURRENT,
   DESIGN_PATCH_MERGE_FAILED,
   DESIGN_PATCH_NON_PLANAR_INTERIOR_UNDEFINED,
-  DESIGN_PATCH_NON_SIMPLE_RING,
   DESIGN_PATCH_RING_MESH_MISMATCH,
   designPatchSourceBoundaryPoints,
   resolveDesignPatch,
@@ -179,36 +178,42 @@ describe('20K.2 A3 curved rounded-square product stages', () => {
     expect(validateExplicitTinPayload(bakePayload(mixed.result) as never)).toBeNull();
   });
 
-  it('all-Surface: CURRENT 156/156, Extract+Bake pass, Design Patch explicitly restricted', () => {
+  it('all-Surface: CURRENT 128/128, Extract+Bake, Design Patch now resolves', () => {
     const square = buildSquare(FIXED, [FIXED, FIXED, FIXED, FIXED]);
     expect(square.isSurface).toBe(true);
-    expect(square.result.gradingMesh.points.length / 3).toBe(156);
-    expect(square.result.gradingMesh.triangles.length / 3).toBe(156);
+    expect(square.result.gradingMesh.points.length / 3).toBe(128);
+    expect(square.result.gradingMesh.triangles.length / 3).toBe(128);
     expect(square.result.corners).toHaveLength(4);
     expect(square.result.gradingPlanArea).toBeCloseTo(9452.124826335, 9);
     expect(validateGroupMesh(square.result.gradingMesh)).toBeNull();
     expect(validateExplicitTinPayload(bakePayload(square.result) as never)).toBeNull();
-    // Design Patch fails closed at the interior build (Surface seam resample
-    // micro-edges defeat ear-clipping). Code + exact ear-clip stage recorded.
+    // Wave C canonical source stations: the all-Surface ring is simple and
+    // Design Patch builds the flat pad + shell in one resolved product.
     const dp = resolveDesignPatch(square.project, square.groupId, square.result, square.revision, true);
-    expect(dp.ok).toBe(false);
-    if (dp.ok) return;
-    expect(dp.code).toBe(DESIGN_PATCH_NON_SIMPLE_RING);
-    expect(dp.detail).toBe('SURFACE_EDIT_NOT_APPLICABLE');
-    // Zero mutation: the blocked command returns the same history identity.
-    expect(runPatch(square)).toBe(square.history);
-    expect(square.history.present.project.surfaces).toHaveLength(1);
+    expect(dp.ok).toBe(true);
+    if (!dp.ok) return;
+    expect(dp.value.padZ).toBe(10);
+    expect(dp.value.provenance.kind).toBe('webnet-grading-design-patch');
+    expect(dp.value.provenance.interiorPolicy).toBe('flat-source');
+    expect(validateExplicitTinPayload({
+      vertices: dp.value.points, faces: dp.value.triangles, provenance: dp.value.provenance,
+    } as never)).toBeNull();
+    const patched = runPatch(square);
+    expect(patched.undoStack.length).toBe(square.history.undoStack.length + 1);
+    expect(patched.present.project.surfaces).toHaveLength(2);
+    expect(patched.present.project.surfaces!.some((s) => s.purpose === 'design-patch')).toBe(true);
   });
 
-  it('all-Surface restriction: truthful interior notice, command still blocked, Bake unaffected', () => {
+  it('all-Surface: Design Patch resolves, interior stays flat, Bake unaffected', () => {
     const square = buildSquare(FIXED, [FIXED, FIXED, FIXED, FIXED]);
     const boundary = designPatchSourceBoundaryPoints(square.project, square.groupId, square.result);
     expect(boundary.ok).toBe(true);
     if (!boundary.ok) return;
-    // The captured interior IS flat (the restriction is the ring, not the pad),
-    // so the inquiry badge stays truthful.
+    // Captured source boundary is now the canonical 32-station ring.
+    expect(boundary.ring.length / 3).toBe(32);
+    // The captured interior IS flat, so the inquiry badge stays truthful.
     expect(designPatchInteriorText(boundary.ring)).toContain('Flat');
-    expect(resolveDesignPatch(square.project, square.groupId, square.result, square.revision, true).ok).toBe(false);
+    expect(resolveDesignPatch(square.project, square.groupId, square.result, square.revision, true).ok).toBe(true);
     const baked = runCadCommand(square.history, {
       key: 'GROUPBAKE', groupId: square.groupId, result: square.result,
       expectedRevision: square.revision, sessionCurrent: true,

@@ -43,7 +43,7 @@ import {
 import type { CadSurfaceCache } from '../../engine/cad/cadSurfaceCache';
 import { surfaceContentRevision } from '../../engine/cad/cadSurfaceView';
 import { gradingCriterionText, gradingSideText } from './cadGradingShell';
-import { gradingTopologyCertificateProductError } from '../../engine/cad/grading/gradingTopologyCertificate';
+import { deriveGradingProductCapabilities } from '../../engine/cad/grading/gradingProductCapabilities';
 
 /** Session grading result cache surface (the integration slice owns the impl). */
 export interface CadGradingResultCache {
@@ -149,8 +149,21 @@ export interface CadGradingRow {
   currentResult: CadGradingResult | null;
   /** True when Calculate is allowed (resolvable + CURRENT target). */
   calculable: boolean;
-  /** True when Extract Daylight / Bake can run (CURRENT + result). */
+  /**
+   * Deprecated Phase 20B alias for `extractable` (kept for existing
+   * consumers); Phase 20K.3 derives the three products independently.
+   */
   exportable: boolean;
+  /** Phase 20K.3: Extract (one continuous boundary Feature Line) available. */
+  extractable: boolean;
+  /** Phase 20K.3: Bake (one explicit-TIN surface; multi-component allowed). */
+  bakeable: boolean;
+  /** Stable diagnostic code + bounded notice when Extract is unavailable. */
+  extractCode: string | null;
+  extractNotice: string | null;
+  /** Stable diagnostic code + bounded notice when Bake is unavailable. */
+  bakeCode: string | null;
+  bakeNotice: string | null;
   /** Source station span [start, end] when the course resolves. */
   stationSpan: [number, number] | null;
 }
@@ -288,6 +301,11 @@ export const buildCadGradingSnapshot = (
     const currentMetrics =
       status === 'CURRENT' && currentResult != null ? metricsOf(currentResult) : null;
     const staleMetrics = stale ? (retained[retained.length - 1] ?? null) : null;
+    const capabilities = deriveGradingProductCapabilities({
+      scope: 'standalone',
+      current: status === 'CURRENT' && currentResult != null,
+      result: currentResult,
+    });
     return {
       id: grading.id,
       name: grading.name,
@@ -319,15 +337,13 @@ export const buildCadGradingSnapshot = (
       currentResult,
       calculable:
         status !== 'BUILDING' && status !== 'BROKEN_REFERENCE' && resolvedSource != null && targetCurrent,
-      exportable:
-        status === 'CURRENT' &&
-        currentResult != null &&
-        gradingTopologyCertificateProductError(
-          currentResult.topologyCertificate,
-          'standalone',
-          currentResult.gradingMesh,
-          { sourceBoundaryPoints: currentResult.sourceBoundaryPoints, gradingBoundaryPoints: currentResult.daylightPoints },
-        ) == null,
+      exportable: capabilities.extract.available,
+      extractable: capabilities.extract.available,
+      bakeable: capabilities.bake.available,
+      extractCode: capabilities.extract.code,
+      extractNotice: capabilities.extract.notice,
+      bakeCode: capabilities.bake.code,
+      bakeNotice: capabilities.bake.notice,
       stationSpan:
         resolvedSource != null
           ? [0, resolvedSource.length]

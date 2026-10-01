@@ -916,19 +916,19 @@ describe('20D (f) fail-closed pins', () => {
 });
 
 // ---------------------------------------------------------------------------
-// (g) Concave + curved-source groups fail closed at named gates.
+// (g) Concave + curved-source groups: Wave B shared miter seam + ring gate.
 //
-// Structural finding (see header): 20C admits concave L-notches whose
-// shells pinch at the reflex vertex (daylight touches source -> the merge
-// demand for a strict two-boundary annulus fail-closes). Phase 20E consumes
-// the captured source boundary (no re-linearization drift); the curved
-// fixture's four inward semicircles genuinely cross at (50,50), so the
-// captured ring is non-simple and blocks before any mesh read. Both pins run
-// the REAL calculate path with genuine revisions — no forged snapshots here.
+// Phase 20K.3 Wave B shares the analytic miter seam between the two trimmed
+// strips, so a reflex overlap no longer pinches the shell: the concave
+// L-notch now computes a valid 1-component / 2-cycle annulus and Design
+// Patch applies. Wave C canonicalizes the curved fixture's internal source
+// seam samples, so its captured ring is genuinely simple and its flat pad
+// also applies. Both pins run the REAL calculate path with genuine
+// revisions — no forged snapshots here.
 // ---------------------------------------------------------------------------
 
 describe('20D (g) concave and curved fail-closed pins', () => {
-  it('blocks a pinched concave shell with MERGE_FAILED', () => {
+  it('heals the concave reflex L and applies the pad', () => {
     const drawing = createBlankCadDrawingDocument({ name: 'Concave 20D', units: 'm' });
     const flId = nextId('fl');
     const targetId = nextId('tgt');
@@ -991,22 +991,26 @@ describe('20D (g) concave and curved fail-closed pins', () => {
       },
     });
     if (!outcome.ok) throw new Error(`Ell calc failed: ${outcome.code}`);
-    // The 20C result is CURRENT and EXACT, but the reflex GAP wedge pinches
-    // the shell (daylight touches source at the notch vertex), so the
-    // direct topology merge fail-closes instead of guessing.
-    expect(resolveDesignPatch(withGroup, groupId, outcome.result, inputs.revision, true))
-      .toMatchObject({ ok: false, code: DESIGN_PATCH_MERGE_FAILED });
+    // Wave B shares the miter seam, tiling the reflex overlap once: the
+    // shell is a valid 1-component / 2-cycle annulus (no pinch), so the
+    // direct topology merge applies the pad instead of fail-closing.
+    expect(outcome.result.topologyCertificate).toMatchObject({
+      version: 'gtop2', components: 1, boundaryCycles: 2,
+    });
+    const dp = resolveDesignPatch(withGroup, groupId, outcome.result, inputs.revision, true);
+    expect(dp.ok).toBe(true);
     const history = createCadHistoryState(withGroup);
-    expect(runCadCommand(history, {
+    const applied = runCadCommand(history, {
       key: 'DESIGNPATCH',
       groupId,
       result: outcome.result,
       expectedRevision: inputs.revision,
       sessionCurrent: true,
-    })).toBe(history);
+    });
+    expect(applied.undoStack.length).toBe(1);
   });
 
-  it('blocks a curved loop with RING_MESH_MISMATCH while disclosing CURVE_APPROXIMATED', () => {
+  it('computes the curved outward square; Wave C ring is simple and Design Patch applies', () => {
     const drawing = createBlankCadDrawingDocument({ name: 'Curved 20D', units: 'm' });
     const flId = nextId('fl');
     const targetId = nextId('tgt');
@@ -1072,12 +1076,26 @@ describe('20D (g) concave and curved fail-closed pins', () => {
         triangles: built.triangles.flatMap((tri) => [...tri]),
       },
     });
-    // 20K.1 Wave B2: the curved closed square fails even earlier — the seam
-    // gate refuses the non-stitching shell, so no CURRENT result exists for
-    // the ring gate or the DESIGNPATCH command to consume.
-    expect(outcome.ok).toBe(false);
-    if (outcome.ok) return;
-    expect(outcome.code).toBe('GROUP_NON_MANIFOLD');
-    expect(outcome.detail).toContain('GRADING_GROUP_ARC_SEAM_PINCH');
+    // Wave B heals the doubled miter seam, so the curved closed square now
+    // computes. Wave C canonicalizes each internal source seam sample, so the
+    // captured 96-station ring is genuinely simple (no ULP-twin micro-edges)
+    // and the flat pad ear-clips: Design Patch applies in one undo.
+    expect(outcome.ok).toBe(true);
+    if (!outcome.ok) return;
+    const dp = resolveDesignPatch(withGroup, groupId, outcome.result, inputs.revision, true);
+    expect(dp.ok).toBe(true);
+    if (!dp.ok) return;
+    expect(dp.value.points.length / 3).toBe(388);
+    expect(dp.value.triangles.length / 3).toBe(486);
+    const history = createCadHistoryState(withGroup);
+    const applied = runCadCommand(history, {
+      key: 'DESIGNPATCH',
+      groupId,
+      result: outcome.result,
+      expectedRevision: inputs.revision,
+      sessionCurrent: true,
+    });
+    expect(applied.undoStack.length).toBe(1);
+    expect(applied.present.project.surfaces).toHaveLength(2);
   });
 });

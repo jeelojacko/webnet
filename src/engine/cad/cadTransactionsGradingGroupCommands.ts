@@ -25,7 +25,7 @@ import {
 } from './grading/gradingGroupTermination';
 import { toGradingCourseLikes, resolveGradingSourceCourse } from './grading/gradingCourseFrame';
 import { resolveGroupInputs } from './grading/gradingGroupResolve';
-import { gradingTopologyCertificateProductError } from './grading/gradingTopologyCertificate';
+import { gradingTopologyCertificateProductionError, gradingTopologyCertificateProductionProductError } from './grading/gradingTopologyCertificate';
 import { appendCadProjectEntities } from './cadProjectState';
 import { commitLayerProject } from './cadTransactionsLayerCommands';
 import type {
@@ -426,7 +426,7 @@ const groupExtractCommand: CadCommandDefinition<GroupExtractCommand> = {
     }
     if (result.daylightPoints.length < 6 || result.daylightPoints.length % 3 !== 0) return null;
     // 20K.2: refuse an uncertified / forged / mismatched CURRENT mesh.
-    if (gradingTopologyCertificateProductError(result.topologyCertificate, 'group', result.gradingMesh, {
+    if (gradingTopologyCertificateProductionProductError(result.topologyCertificate, 'group', result.gradingMesh, {
       sourceBoundaryPoints: result.sourceBoundaryPoints,
       gradingBoundaryPoints: result.daylightPoints,
     }) != null) return null;
@@ -483,8 +483,11 @@ const groupBakeCommand: CadCommandDefinition<GroupBakeCommand> = {
       return null;
     }
     if (result.gradingMesh.triangles.length === 0) return null;
-    // 20K.2: refuse an uncertified / forged / mismatched CURRENT mesh.
-    if (gradingTopologyCertificateProductError(result.topologyCertificate, 'group', result.gradingMesh, {
+    // 20K.2 / 20K.3: refuse an uncertified / forged / mismatched CURRENT mesh.
+    // Wave E1: Bake is an explicit-TIN product and the engine materializes
+    // arbitrary validated face sets, so a multi-region (tied split) mesh IS
+    // bakeable as one surface; only a certificate/topology failure blocks.
+    if (gradingTopologyCertificateProductionError(result.topologyCertificate, 'group', result.gradingMesh, {
       sourceBoundaryPoints: result.sourceBoundaryPoints,
       gradingBoundaryPoints: result.daylightPoints,
     }) != null) return null;

@@ -6,6 +6,7 @@ import {
   DESIGN_APPLY_EG_BLOCKED,
   DESIGN_APPLY_RAW_SHELL_GUIDANCE,
 } from '../../engine/cad/cadTransactionsDesignSurfaceCommands';
+import { DESIGN_PATCH_NON_ANNULUS } from '../../engine/cad/cadTransactionsDesignPatchCommands';
 import { DESIGN_PATCH_NON_FLAT_INTERIOR_UNDEFINED } from '../../engine/cad/cadTransactionsDesignPatchCommands';
 import { DESIGN_PATCH_NON_PLANAR_INTERIOR_UNDEFINED } from '../../engine/cad/cadTransactionsDesignPatchCommands';
 import { designPatchInteriorText } from './cadDesignPatchInterior';
@@ -98,6 +99,10 @@ export const CadDesignWorkflowPanel: React.FC<CadDesignWorkflowPanelProps> = ({
       notify('Calculate the grading group first — Build Design Patch needs its CURRENT result.');
       return;
     }
+    if (!group.designPatchable) {
+      notify(group.designPatchNotice ?? `Design Patch unavailable — ${DESIGN_PATCH_NON_ANNULUS}.`);
+      return;
+    }
     const ok = trySurfaceCommand(actions.runSurveyCommand, {
       key: 'DESIGNPATCH',
       groupId: group.id,
@@ -107,7 +112,7 @@ export const CadDesignWorkflowPanel: React.FC<CadDesignWorkflowPanelProps> = ({
     });
     notify(ok
       ? 'Design Patch built (pad interior + grading shell).'
-      : `Design Patch blocked — closed groups with flat or planar interiors only (${DESIGN_PATCH_NON_FLAT_INTERIOR_UNDEFINED} / ${DESIGN_PATCH_NON_PLANAR_INTERIOR_UNDEFINED} cover other interiors).`);
+      : `Design Patch blocked — ${group.designPatchCode ?? DESIGN_PATCH_NON_FLAT_INTERIOR_UNDEFINED} (closed annular shells with flat or planar interiors only).`);
   };
 
   const applyPatch = (): void => {
@@ -235,7 +240,7 @@ export const CadDesignWorkflowPanel: React.FC<CadDesignWorkflowPanelProps> = ({
         <button type="button" className={buttonClass} disabled={!eg || eg.status !== 'CURRENT'} title="Copy a CURRENT surface into a new Design-role surface." onClick={createCopy}>
           Create Design Copy
         </button>
-        <button type="button" className={buttonClass} disabled={!group || !group.currentResult} title="Build a Design Patch from the group's CURRENT result (closed groups with flat or planar interiors)." onClick={buildPatch}>
+        <button type="button" className={buttonClass} disabled={!group || !group.designPatchable} title={group?.designPatchable ? "Build a Design Patch from the group's CURRENT result (closed annular shells with flat or planar interiors)." : group?.designPatchNotice ?? 'Select a CURRENT closed annular grading group.'} onClick={buildPatch}>
           Build Design Patch
         </button>
         <button type="button" className={buttonClass} disabled={!design || !patch} title="Apply the patch onto the Design target in place." onClick={applyPatch}>
@@ -274,7 +279,7 @@ export const CadDesignWorkflowPanel: React.FC<CadDesignWorkflowPanelProps> = ({
       </dl>
       {group ? (
         <dl className="grid grid-cols-[auto_1fr] gap-x-2 text-[11px]">
-          <dt className="text-slate-400">Group</dt><dd>{group.name} — {group.statusText}{group.closed ? '' : ' (not closed — patch blocked)'}</dd>
+          <dt className="text-slate-400">Group</dt><dd>{group.name} — {group.statusText}{group.closed ? '' : ' (not closed — patch blocked)'}{group.designPatchable || !group.currentResult ? '' : ` · ${group.designPatchNotice ?? group.designPatchCode ?? ''}`}</dd>
           <dt className="text-slate-400">Target</dt><dd>{group.targetName}</dd>
           <dt className="text-slate-400">Source</dt><dd>{group.sourceName} · {group.courseCount} courses · {group.accuracyText}</dd>
           <dt className="text-slate-400">Areas</dt>

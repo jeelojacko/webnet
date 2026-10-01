@@ -23,7 +23,14 @@ import type {
   GradingComputeSource,
   GradingTargetMeshSnapshot,
 } from '../engine/cad/grading/gradingComputeTypes';
-import { zeroDelta } from '../engine/cad/surfaces/volume/zero';
+import {
+  AGREEMENT_FLOOR,
+  anchoredElevationAgreementTol,
+  coordinateAgreementTol,
+  elevationAgreementTol,
+  planeLeverage,
+  type AnchoredPlane,
+} from '../engine/cad/grading/gradingGroupSectors';
 import type {
   GradingCriterion,
   GradingSide,
@@ -161,6 +168,12 @@ export const computeGradingFromSnapshots = (
 
 export interface GradingTargetQuery {
   elevationAt: (_x: number, _y: number) => number | null;
+  /**
+   * Anchored target triangle plane at (x, y) for the agreement leverage.
+   * Optional so analytic/target-free and test doubles keep working; when
+   * absent the gate falls back to the 1 nm floor only.
+   */
+  planeAt?: (_x: number, _y: number) => (AnchoredPlane & { z: number }) | null;
 }
 
 export interface GradingSourceBoundaryCheck {
@@ -170,19 +183,51 @@ export interface GradingSourceBoundaryCheck {
   /** Feature Line evaluated at the same persisted stations. */
   expectedFirst: { x: number; y: number; z: number };
   expectedLast: { x: number; y: number; z: number };
+  /**
+   * Optional source-evaluation scale (arc centre/radius extent). The arc
+   * linearization rounds at that magnitude, not at the endpoint magnitude,
+   * so the shared coordinate agreement must use it to avoid false rejects at
+   * an arc endpoint that sits near the origin.
+   */
+  coordinateScale?: number;
 }
+
+/**
+ * Shared coordinate agreement (single world magnitude per axis, no x·y
+ * product) — never the bare `zeroDelta` classification floor. Genuine
+ * endpoint drift (the old `start + chordDir·arcLength` overshoot) fails by
+ * orders; arc-evaluation ULP rounding passes.
+ */
+const boundaryPlanarTol = (
+  a: { x: number; y: number },
+  b: { x: number; y: number },
+  coordinateScale: number,
+): { x: number; y: number } => {
+  const scale = Math.max(1, coordinateScale, Math.abs(a.x), Math.abs(b.x), Math.abs(a.y), Math.abs(b.y));
+  return {
+    x: coordinateAgreementTol(a.x, b.x, scale),
+    y: coordinateAgreementTol(a.y, b.y, scale),
+  };
+};
 
 const boundaryEquals = (
   a: { x: number; y: number; z: number },
   b: { x: number; y: number; z: number },
-): boolean =>
-  Math.abs(a.x - b.x) <= zeroDelta(a.x, b.x) &&
-  Math.abs(a.y - b.y) <= zeroDelta(a.y, b.y) &&
-  Math.abs(a.z - b.z) <= zeroDelta(a.z, b.z);
+  coordinateScale: number,
+): boolean => {
+  const planar = boundaryPlanarTol(a, b, coordinateScale);
+  return (
+    Math.abs(a.x - b.x) <= planar.x &&
+    Math.abs(a.y - b.y) <= planar.y &&
+    Math.abs(a.z - b.z) <= elevationAgreementTol(a.z, b.z, []) + AGREEMENT_FLOOR
+  );
+};
 
 /**
- * Daylight vertices vs the CURRENT target mesh (the shared half of the
- * agreement gate). Returns null on agreement, else the reject reason.
+ * Phase 20K.3 — daylight vertices vs the CURRENT target mesh under the single
+ * shared anchored elevation-agreement authority. A void/off-target node and a
+ * genuinely mismatched Z return distinct codes; a non-finite node fails
+ * closed. The global `zeroDelta` classification floor is never the gate.
  */
 export const validateDaylightAgainstTarget = (
   daylightPoints: number[],
@@ -193,9 +238,19 @@ export const validateDaylightAgainstTarget = (
     const x = daylightPoints[i]!;
     const y = daylightPoints[i + 1]!;
     const z = daylightPoints[i + 2]!;
+    if (!Number.isFinite(x) || !Number.isFinite(y) || !Number.isFinite(z)) {
+      return 'GRADING_AGREEMENT_MALFORMED_DAYLIGHT';
+    }
     const zt = targetMeshQuery.elevationAt(x, y);
     if (zt === null) return 'GRADING_AGREEMENT_DAYLIGHT_OFF_TARGET';
-    if (Math.abs(zt - z) > zeroDelta(zt, z)) return 'GRADING_AGREEMENT_DAYLIGHT_Z';
+    if (!Number.isFinite(zt)) return 'GRADING_AGREEMENT_DAYLIGHT_Z';
+    const plane = targetMeshQuery.planeAt?.(x, y) ?? null;
+    const leverage = plane ? planeLeverage(plane, x, y) : [];
+    const gradientSum = plane ? Math.abs(plane.gx) + Math.abs(plane.gy) : 0;
+    const tolerance = anchoredElevationAgreementTol(zt, z, leverage, gradientSum, x, y);
+    if (!Number.isFinite(tolerance) || Math.abs(zt - z) > tolerance) {
+      return 'GRADING_AGREEMENT_DAYLIGHT_Z';
+    }
   }
   return null;
 };
@@ -203,16 +258,18 @@ export const validateDaylightAgainstTarget = (
 /**
  * Source-boundary half of the agreement gate (target-independent): the
  * strip source boundary must equal the Feature Line at the same persisted
- * stations. Analytic (target-free) results gate on this half only.
+ * stations under the shared coordinate authority. Analytic (target-free)
+ * results gate on this half only.
  * Returns null on agreement, else the reject reason.
  */
 export const validateGradingSourceBoundary = (
   sourceCheck: GradingSourceBoundaryCheck,
 ): string | null => {
-  if (!boundaryEquals(sourceCheck.first, sourceCheck.expectedFirst)) {
+  const scale = sourceCheck.coordinateScale ?? 0;
+  if (!boundaryEquals(sourceCheck.first, sourceCheck.expectedFirst, scale)) {
     return 'GRADING_AGREEMENT_SOURCE_BOUNDARY';
   }
-  if (!boundaryEquals(sourceCheck.last, sourceCheck.expectedLast)) {
+  if (!boundaryEquals(sourceCheck.last, sourceCheck.expectedLast, scale)) {
     return 'GRADING_AGREEMENT_SOURCE_BOUNDARY';
   }
   return null;
@@ -220,9 +277,10 @@ export const validateGradingSourceBoundary = (
 
 /**
  * GO-gate before a worker result becomes CURRENT: every daylight vertex
- * must agree with the CURRENT target mesh within the zeroDelta floor, and
- * the strip source boundary must equal the Feature Line at the same
- * persisted stations. Returns null on agreement, else the reject reason.
+ * must agree with the CURRENT target mesh under the shared anchored
+ * elevation-agreement authority, and the strip source boundary must equal the
+ * Feature Line at the same persisted stations. Returns null on agreement,
+ * else the reject reason.
  */
 export const validateGradingResultAgainstTarget = (
   daylightPoints: number[],

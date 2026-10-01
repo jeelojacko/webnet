@@ -7,12 +7,14 @@ import type { CadCommand, CadCommandDefinition } from './cadTransactions.types';
 import type { CadProject, CadSurface, WebnetGradingDesignPatchTinProvenance } from './cadTypes';
 import {
   makeDesignPatchProvenance,
-  mergePadWithGrading,
-  resolveDesignPatchInterior,
   resolveDesignPatchRing,
   validateSourceRing,
-  verifyRingAgainstMesh,
 } from './grading/designPatchBuild';
+import {
+  designPatchPreflightGeometry,
+  designPatchPreflightMerge,
+} from './grading/designPatchPreflight';
+import { gradingTopologyCertificateProductionError } from './grading/gradingTopologyCertificate';
 import {
   designPatchBlock,
   type DesignPatchFailure,
@@ -37,7 +39,9 @@ export const DESIGN_PATCH_NON_FLAT_INTERIOR_UNDEFINED = 'DESIGN_PATCH_NON_FLAT_I
 export const DESIGN_PATCH_NON_PLANAR_INTERIOR_UNDEFINED = 'DESIGN_PATCH_NON_PLANAR_INTERIOR_UNDEFINED';
 export const DESIGN_PATCH_RING_MESH_MISMATCH = 'DESIGN_PATCH_RING_MESH_MISMATCH';
 export const DESIGN_PATCH_NON_SIMPLE_RING = 'DESIGN_PATCH_NON_SIMPLE_RING';
+export const DESIGN_PATCH_NON_ANNULUS = 'DESIGN_PATCH_NON_ANNULUS';
 export const DESIGN_PATCH_MERGE_FAILED = 'DESIGN_PATCH_MERGE_FAILED';
+export const DESIGN_PATCH_CERTIFICATE = 'DESIGN_PATCH_CERTIFICATE';
 
 export type DesignPatchCommandBlockCode =
   | typeof DESIGN_PATCH_GROUP_NOT_CURRENT
@@ -46,7 +50,9 @@ export type DesignPatchCommandBlockCode =
   | typeof DESIGN_PATCH_NON_PLANAR_INTERIOR_UNDEFINED
   | typeof DESIGN_PATCH_RING_MESH_MISMATCH
   | typeof DESIGN_PATCH_NON_SIMPLE_RING
-  | typeof DESIGN_PATCH_MERGE_FAILED;
+  | typeof DESIGN_PATCH_NON_ANNULUS
+  | typeof DESIGN_PATCH_MERGE_FAILED
+  | typeof DESIGN_PATCH_CERTIFICATE;
 
 export interface DesignPatchResolved {
   ring: number[];
@@ -112,22 +118,38 @@ export const resolveDesignPatch = (
   const ring = derived.ring;
   const valid = validateSourceRing(ring);
   if (!valid.ok) return fail(DESIGN_PATCH_NON_SIMPLE_RING, valid.detail);
-  // Flat-or-coplanar gate runs before the mesh read: a genuinely non-planar
-  // ring is blocked on its own terms, never masked by a mesh mismatch.
-  const interior = resolveDesignPatchInterior(ring);
-  if (!interior.ok) {
-    if (interior.code === DESIGN_PATCH_NON_FLAT_INTERIOR_UNDEFINED) {
-      return fail(DESIGN_PATCH_NON_FLAT_INTERIOR_UNDEFINED, interior.detail);
-    }
-    if (interior.code === DESIGN_PATCH_NON_PLANAR_INTERIOR_UNDEFINED) {
-      return fail(DESIGN_PATCH_NON_PLANAR_INTERIOR_UNDEFINED, interior.detail);
-    }
-    return fail(DESIGN_PATCH_NON_SIMPLE_RING, interior.detail);
+  // Phase 20K.3 Wave E1: a patch interior exists only for one closed
+  // connected annular shell (1 component / 2 boundary cycles). A tied
+  // multi-region or open shell is unavailable with a stable code, before
+  // the (necessarily ambiguous) interior/merge work.
+  const cert = result.topologyCertificate;
+  if (cert != null && (cert.components !== 1 || cert.boundaryCycles !== 2)) {
+    return fail(
+      DESIGN_PATCH_NON_ANNULUS,
+      `grading shell is ${cert.components} component(s) / ${cert.boundaryCycles} boundary cycle(s)`,
+    );
   }
-  const verified = verifyRingAgainstMesh(ring, result.gradingMesh);
-  if (!verified.ok) return fail(DESIGN_PATCH_RING_MESH_MISMATCH, verified.detail);
-  const merged = mergePadWithGrading(interior.pad.padPoints, interior.pad.padTriangles, result.gradingMesh);
-  if (!merged.ok) return fail(DESIGN_PATCH_MERGE_FAILED, merged.detail);
+  // Interior + mesh agreement through the shared pure preflight (same codes
+  // and order the UI capability enforces, after the gates above).
+  const geometry = designPatchPreflightGeometry(ring, result.gradingMesh);
+  if (!geometry.ok) return fail(geometry.code, geometry.detail);
+  const merge = designPatchPreflightMerge(
+    geometry.interior,
+    result.gradingMesh,
+    result.topologyCertificate?.tiedSplitCoords ?? [],
+  );
+  if (!merge.ok) return fail(merge.code, merge.detail);
+  // Fail-closed certification last: an absent or corrupt gtop2 is rejected
+  // before the commit, after every established geometry code. The UI
+  // capability disables these worlds up front, so no enabled control
+  // reaches this null.
+  const certificateError = gradingTopologyCertificateProductionError(result.topologyCertificate, 'group', result.gradingMesh, {
+    sourceBoundaryPoints: result.sourceBoundaryPoints,
+    gradingBoundaryPoints: result.daylightPoints,
+  });
+  if (certificateError != null) return fail(DESIGN_PATCH_CERTIFICATE, certificateError);
+  const { interior } = geometry;
+  const { merged } = merge;
   return {
     ok: true,
     value: {
