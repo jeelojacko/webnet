@@ -22,7 +22,7 @@ current worktree (2026-10-01).
 
 | command | result |
 |---|---|
-| `npx vitest run tests/cad_grading` | **71 files, 1039 passed** |
+| `npx vitest run tests/cad_grading tests/cad_design_patch` | **76 files, 1093 passed** (review rerun) |
 | `npm run lint` | **0 errors, 2 pre-existing warnings** |
 | `npm run typecheck` | **clean** |
 | `npm run check:portable-paths` | **0 violations** |
@@ -31,8 +31,8 @@ current worktree (2026-10-01).
 On this review worktree `npm run test:agent` passed all grading tests (7399 passing overall) but has 3 unrelated local `study-desktop` calibration/preflight failures: the local cal80-v4 source-package ID is `nb-sit-statute-corpus-2026-08-29` while the frozen test expects `…2026-09-11`. No `study-desktop` files are changed by this review; final-head CI must be checked after push.
 
 The two lint warnings are the pre-existing unused-eslint-disable directives in
-`tests/gnssBaseline/gnssBaselinePerformance.test.ts` and the matching study
-file; both are present on the clean tree and are not introduced by 20K.3.
+`tests/gnssBaseline/gnssBaselinePerformance.test.ts` and
+`tests/evidence/phase10m_correction_stage_audit.test.ts`; neither is introduced by 20K.3.
 
 ## 3. Performance evidence
 
