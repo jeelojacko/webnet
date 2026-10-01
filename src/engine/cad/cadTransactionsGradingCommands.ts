@@ -12,6 +12,7 @@ import {
 import { gradingBoundaryLabel, gradingCriterionRequiresSurface, gradingTerminationKind } from './grading/gradingTypes';
 import { resolveGradingSourceCourse } from './grading/gradingCourseFrame';
 import { resolveGradingInputs } from './grading/gradingResolve';
+import { validateGradingMeshTopology } from './grading/gradingTopology';
 import { appendCadProjectEntities } from './cadProjectState';
 import { commitLayerProject } from './cadTransactionsLayerCommands';
 import type {
@@ -262,6 +263,8 @@ const gradingExtractCommand: CadCommandDefinition<GradingExtractCommand> = {
       return null;
     }
     if (result.daylightPoints.length < 6 || result.daylightPoints.length % 3 !== 0) return null;
+    // 20K.1 Wave B2: refuse a topology-failed CURRENT mesh (zero mutation).
+    if (result.gradingMesh.triangles.length > 0 && !validateGradingMeshTopology(result.gradingMesh.points, result.gradingMesh.triangles, { scope: 'arc' }).ok) return null;
     const vertices: Array<{ x: number; y: number }> = [];
     const elevations: number[] = [];
     for (let i = 0; i + 2 < result.daylightPoints.length; i += 3) {
@@ -312,6 +315,8 @@ const gradingBakeCommand: CadCommandDefinition<GradingBakeCommand> = {
     }
     // Bake blocked on ALREADY_TIED empty mesh (zero-area ties bake nothing).
     if (result.gradingMesh.triangles.length === 0) return null;
+    // 20K.1 Wave B2: refuse a topology-failed CURRENT mesh (zero mutation).
+    if (!validateGradingMeshTopology(result.gradingMesh.points, result.gradingMesh.triangles, { scope: 'arc' }).ok) return null;
     const criterion = inputs.grading.criterion;
     const targetKind = gradingTerminationKind(criterion);
     if (targetKind === 'surface' && !inputs.target) return null;

@@ -8,6 +8,7 @@
  * unchanged.
  */
 import { linearizeGradingArc, type LinearizedGradingArc } from './gradingCurve';
+import { validateGradingMeshTopology } from './gradingTopology';
 import {
   assembleAnalyticGradingResult,
   assembleGradingResult,
@@ -206,6 +207,21 @@ const solveArcChords = (
 };
 
 /**
+ * Phase 20K.1 Wave B2 — fail-closed seam gate: a nonempty arc strip whose
+ * shared-index topology pinches or goes non-manifold fails with the
+ * existing NO_SOLUTION code (PINCH/NON_MANIFOLD detail), never CURRENT.
+ * Empty meshes pass through (the existing fully-tied ALREADY_TIED path).
+ */
+const gateArcSeamTopology = (outcome: GradingComputeOutcome): GradingComputeOutcome => {
+  if (!outcome.ok) return outcome;
+  const mesh = outcome.result.gradingMesh;
+  if (mesh.triangles.length === 0) return outcome;
+  const topo = validateGradingMeshTopology(mesh.points, mesh.triangles, { scope: 'arc' });
+  if (topo.ok) return outcome;
+  return { ok: false, code: 'NO_SOLUTION', detail: `${topo.code}: ${topo.detail ?? ''}` };
+};
+
+/**
  * Arc-source grading: subdivide at the curve chord tolerance and run the
  * exact straight-chord solve per chord. Arc sources WITHOUT circle
  * parameters are handled by the caller's single-chord path, not here.
@@ -219,7 +235,7 @@ export const solveArcGrading = (input: ArcSolveInput): GradingComputeOutcome => 
   // Phase 20F: analytic criteria assemble without a target query —
   // source/target relation lengths stay unavailable (never faked).
   if (isTargetFreeCriterion(input.criterion)) {
-    return assembleAnalyticGradingResult({
+    return gateArcSeamTopology(assembleAnalyticGradingResult({
       gradingId: input.gradingId,
       revision: input.revision,
       sourceLength: input.source.length,
@@ -234,12 +250,12 @@ export const solveArcGrading = (input: ArcSolveInput): GradingComputeOutcome => 
       candidateTriangleCount: stitch.candidateTriangleCount,
       intersectionSegmentCount: stitch.intersectionSegmentCount,
       multipleSolutionCount: stitch.multipleSolutionCount,
-    });
+    }));
   }
   if (!input.target || !input.query) {
     return { ok: false, code: 'NO_SOLUTION', detail: 'GRADING_BAD_TARGET_MESH' };
   }
-  return assembleGradingResult({
+  return gateArcSeamTopology(assembleGradingResult({
     gradingId: input.gradingId,
     revision: input.revision,
     sourceLength: input.source.length,
@@ -255,5 +271,5 @@ export const solveArcGrading = (input: ArcSolveInput): GradingComputeOutcome => 
     candidateTriangleCount: stitch.candidateTriangleCount,
     intersectionSegmentCount: stitch.intersectionSegmentCount,
     multipleSolutionCount: stitch.multipleSolutionCount,
-  });
+  }));
 };

@@ -103,16 +103,14 @@ describe('phase20k rounded-square hybrid (§27)', () => {
     expect(audit.issues.join('; ')).toContain('vertex pinch');
   });
 
-  it('matches the production all-distance control on ties and plan area', () => {
+  it('records the production all-distance control failing closed at the seam gate', () => {
+    // 20K.1 Wave B2: the production curved control never reaches CURRENT
+    // (8 shared-index components), so the hybrid-vs-control comparison is
+    // honestly unavailable with the stable gate diagnostic as its detail.
     const payload = readCorpus();
     const comparison = payload.summary.comparison;
-    expect(comparison?.available).toBe(true);
-    expect(comparison?.tiePointsEqual).toBe(true);
-    expect(comparison?.planAreaEqual).toBe(true);
-    // Triangle sets/digest differ (surface strip vs analytic sector path) —
-    // documented, not silently asserted equal.
-    expect(comparison?.meshSetEqual).toBe(false);
-    expect(comparison?.digestEqual).toBe(false);
+    expect(comparison?.available).toBe(false);
+    expect(comparison?.detail).toContain('GRADING_GROUP_ARC_SEAM_PINCH');
   });
 
   it('keeps control comparators available', () => {

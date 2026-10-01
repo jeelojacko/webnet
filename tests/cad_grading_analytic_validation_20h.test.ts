@@ -8,7 +8,6 @@
  * closed BEFORE any geometry), large-coordinate stability, an arc-adjacent
  * mixed group, and the reversed-storage invariant.
  */
-import { createHash } from 'node:crypto';
 import { describe, expect, it } from 'vitest';
 
 import {
@@ -30,9 +29,6 @@ import type { GradingGroupCourse } from '../src/engine/cad/grading/gradingGroupT
 const DIST = (g: number, d: number): GradingCriterion => ({ kind: 'distance', gradeRatio: g, distance: d });
 const ELEV = (g: number, e: number): GradingCriterion => ({ kind: 'elevation', gradeRatio: g, targetElevation: e });
 const REL = (g: number, dz: number): GradingCriterion => ({ kind: 'relative-elevation', gradeRatio: g, relativeElevation: dz });
-
-const digest = (value: unknown): string =>
-  createHash('sha256').update(JSON.stringify(value)).digest('hex');
 
 const straight = (sx: number, sy: number, ex: number, ey: number, sz = 10, ez = 10): ResolvedGradingSource => ({
   startX: sx, startY: sy, endX: ex, endY: ey, startZ: sz, endZ: ez,
@@ -198,10 +194,15 @@ describe('(4) large coordinates + arc-adjacent mixed group', () => {
       memberCriteria: [ELEV(-0.5, 0), REL(-0.5, -10)],
       maxSearchDistance: 50, curveChordTolerance: 0.05, closed: false,
     });
-    const out = run();
-    if (!out.ok) throw new Error(`${out.code} ${out.detail ?? ''}`);
-    expect(out.result.gradingMesh.points.length).toBeGreaterThan(0);
-    expect(digest(run())).toBe(digest(run()));
+    // 20K.1 Wave B2: the faceted arc strip never edge-stitches the straight
+    // strip (2 shared-index components), so the revision fails closed with
+    // the stable gate diagnostic — deterministically, never CURRENT.
+    for (const out of [run(), run()]) {
+      expect(out.ok).toBe(false);
+      if (out.ok) continue;
+      expect(out.code).toBe('GROUP_NON_MANIFOLD');
+      expect(out.detail).toContain('GRADING_GROUP_ARC_SEAM_PINCH');
+    }
   });
 });
 

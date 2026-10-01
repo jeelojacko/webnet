@@ -41,6 +41,7 @@ import {
   mergeGroupTriangles,
   ringIsSimple,
   validateGroupMesh,
+  validateMergedGroupTopology,
   type MergePoint,
   type MergeTriangle,
 } from './gradingGroupMerge';
@@ -699,11 +700,27 @@ export const computeGradingGroupFromSnapshots = (input: GroupSolveInput): Gradin
     if (!ringIsSimple(daylight)) return fail('GROUP_SELF_INTERSECTION', undefined, 'GRADING_GROUP_DAYLIGHT_RING');
   }
 
-  // Merge into ONE mesh under the normal validator.
+  // Merge into ONE mesh under the normal validator, then the 20K.1 Wave B2
+  // fail-closed seam gate (pinched/non-manifold shared-index topology
+  // fails the revision; fully-tied members legitimately split components).
   const allTris = [...memberTris.flat(), ...patchTris];
   const merged = mergeGroupTriangles(allTris);
   const meshError = validateGroupMesh(merged);
   if (meshError) return fail('GROUP_NON_MANIFOLD', undefined, meshError);
+  const splitStations = memberTris.flatMap((tris, mi) => (tris.length === 0 ? [mi] : []));
+  for (const corner of corners) {
+    if (corner.classification === 'OVERLAP') splitStations.push(corner.cornerIndex);
+  }
+  // 20K.1 Wave B2 fail-closed seam gate (curved groups only). Straight
+  // courses trim exactly along miter seams, so vertex-touching fragments
+  // are the designed tiling (20C oracles bless areas, no double-cover —
+  // even rotated straight GAP joints fragment honestly). Curved joints
+  // facet: non-stitching shared-index topology fails the revision.
+  // ponytail: straight-only bypass; re-enable if a straight GAP crack appears.
+  if (curved) {
+    const topoError = validateMergedGroupTopology(merged, splitStations);
+    if (topoError) return fail('GROUP_NON_MANIFOLD', undefined, topoError);
+  }
 
   let cutSourceLength = 0;
   let fillSourceLength = 0;

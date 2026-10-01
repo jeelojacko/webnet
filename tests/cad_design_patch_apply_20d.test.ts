@@ -1070,21 +1070,12 @@ describe('20D (g) concave and curved fail-closed pins', () => {
         triangles: built.triangles.flatMap((tri) => [...tri]),
       },
     });
-    if (!outcome.ok) throw new Error(`Curved calc failed: ${outcome.code}`);
-    expect(outcome.result.accuracy).toBe('CURVE_APPROXIMATED');
-    // Phase 20E capture removes the old re-linearization drift, exposing the
-    // fixture's real geometry: four inward semicircles on a square cross at
-    // (50,50), so the captured boundary is genuinely non-simple.
-    expect(outcome.result.sourceBoundaryPoints).toBeDefined();
-    expect(resolveDesignPatch(withGroup, groupId, outcome.result, inputs.revision, true))
-      .toMatchObject({ ok: false, code: DESIGN_PATCH_NON_SIMPLE_RING });
-    const history = createCadHistoryState(withGroup);
-    expect(runCadCommand(history, {
-      key: 'DESIGNPATCH',
-      groupId,
-      result: outcome.result,
-      expectedRevision: inputs.revision,
-      sessionCurrent: true,
-    })).toBe(history);
+    // 20K.1 Wave B2: the curved closed square fails even earlier — the seam
+    // gate refuses the non-stitching shell, so no CURRENT result exists for
+    // the ring gate or the DESIGNPATCH command to consume.
+    expect(outcome.ok).toBe(false);
+    if (outcome.ok) return;
+    expect(outcome.code).toBe('GROUP_NON_MANIFOLD');
+    expect(outcome.detail).toContain('GRADING_GROUP_ARC_SEAM_PINCH');
   });
 });

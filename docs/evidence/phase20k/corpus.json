@@ -363,16 +363,14 @@
       ],
       "tolerance": 0.1,
       "closed": true,
-      "expected": "ok",
-      "actual": "ok",
+      "expected": "GROUP_NON_MANIFOLD",
+      "actual": "GROUP_NON_MANIFOLD/GRADING_GROUP_ARC_SEAM_PINCH: component count 8 != expected 1",
       "match": true,
-      "tieCount": 4,
+      "tieCount": 0,
       "rootCounts": [],
-      "meshValid": true,
+      "meshValid": false,
       "auditPass": null,
-      "planArea": 9451.951560147396,
-      "detail": "0913cdda718a42e6",
-      "digest": "0913cdda718a42e6"
+      "digest": ""
     },
     {
       "id": "closed.square.control.mixed-analytic",
@@ -387,16 +385,14 @@
       ],
       "tolerance": 0.1,
       "closed": true,
-      "expected": "ok",
-      "actual": "ok",
+      "expected": "GROUP_NON_MANIFOLD",
+      "actual": "GROUP_NON_MANIFOLD/GRADING_GROUP_ARC_SEAM_PINCH: component count 8 != expected 1",
       "match": true,
-      "tieCount": 4,
+      "tieCount": 0,
       "rootCounts": [],
-      "meshValid": true,
+      "meshValid": false,
       "auditPass": null,
-      "planArea": 9451.951560147396,
-      "detail": "0913cdda718a42e6",
-      "digest": "0913cdda718a42e6"
+      "digest": ""
     },
     {
       "id": "closed.square.mismatch.d24",
@@ -1042,17 +1038,17 @@
     "total": 39,
     "matched": 39,
     "mismatched": [],
-    "digests": 13,
+    "digests": 12,
     "comparison": {
-      "available": true,
-      "planAreaEqual": true,
+      "available": false,
+      "planAreaEqual": false,
       "meshSetEqual": false,
-      "tiePointsEqual": true,
+      "tiePointsEqual": false,
       "digestEqual": false,
       "hybridTriangles": 114,
-      "controlTriangles": 100,
-      "maxTieDelta": 8.526512829121202e-14,
-      "detail": "hybridDigest=5355ec70756e2887 controlDigest=0913cdda718a42e6"
+      "controlTriangles": 0,
+      "maxTieDelta": null,
+      "detail": "GRADING_GROUP_ARC_SEAM_PINCH: component count 8 != expected 1"
     }
   }
 }

@@ -109,51 +109,28 @@ const canonicalDigest = (r: CadGradingGroupResult): string => {
   });
 };
 
-describe('(a) curve-line corner converges with refinement', () => {
+describe('(a) curve-line corner fails closed at the 20K.1 seam gate', () => {
   // Quarter-arc (r=50, center origin, 0→90° CCW) ending at (ex1,ey1) with
   // tangent (-1,0), then a straight run to (ex1,150). Shared float consts
   // keep the joint bit-exact (cos(π/2) dust would fail the === gate).
   // Flat target, fixed -50%.
-  // Elevations ride at z≈1010/1000: the corner-tie agreement gate is
-  // zeroDelta (4ε·|z|), so near z=0 only bit-exact ties pass while at
-  // |z|≈1000 ordinary rounding (~1e-13) clears the gate (~9e-13) honestly.
+  // 20K.1 Wave B2: the faceted arc strip + GAP patch meet at seam points
+  // without edge-stitching (3 shared-index components), so every tolerance
+  // fails the revision with the stable gate diagnostic — never CURRENT.
   const ex1 = 50 * Math.cos(Math.PI / 2);
   const ey1 = 50 * Math.sin(Math.PI / 2);
   const members = [arc(0, 0, 50, 0, Math.PI / 2, 1010, 1010), straight(ex1, ey1, ex1, 150, 1010, 1010)];
   const target = flatTarget(1000, -60, -60, 110, 190);
   // GAP on the left of the (-1,0)->(0,1) turn: the chord fan spreads
   // into the wedge (the OVERLAP trim fails closed on faceted arc daylight).
-  const at = (tolerance: number): CadGradingGroupResult =>
-    expectOk(solve(members, target, { side: 'left', tolerance }));
-
-  it('flags CURVE_APPROXIMATED + CURVE_CORNER_APPROXIMATED at every tolerance', () => {
+  it('fails every tolerance with the stable GROUP_NON_MANIFOLD + PINCH diagnostic', () => {
     for (const tolerance of [0.5, 0.1, 0.02]) {
-      const r = at(tolerance);
-      expect(r.accuracy).toBe('CURVE_APPROXIMATED');
-      expect(r.diagnostics.map((d) => d.code)).toContain('CURVE_CORNER_APPROXIMATED');
-      expect(r.corners).toHaveLength(1);
-      expect(r.corners[0]!.tiePointXyz).toBeDefined();
+      const out = solve(members, target, { side: 'left', tolerance });
+      expect(out.ok).toBe(false);
+      if (out.ok) continue;
+      expect(out.code).toBe('GROUP_NON_MANIFOLD');
+      expect(out.detail).toBe('GRADING_GROUP_ARC_SEAM_PINCH: component count 3 != expected 1');
     }
-  });
-
-  it('contracts area, tie point, and miter ray coarse→med→fine', () => {
-    const [coarse, med, fine] = [at(0.5), at(0.1), at(0.02)];
-    // Sanity band: coarse is already within 10% of fine (no garbage).
-    expect(Math.abs(coarse.gradingPlanArea - fine.gradingPlanArea) / fine.gradingPlanArea)
-      .toBeLessThan(0.10);
-    const areaD1 = Math.abs(coarse.gradingPlanArea - med.gradingPlanArea);
-    const areaD2 = Math.abs(med.gradingPlanArea - fine.gradingPlanArea);
-    expect(areaD2).toBeLessThan(areaD1);
-    const tie = (r: CadGradingGroupResult): [number, number, number] => r.corners[0]!.tiePointXyz!;
-    const tieDist = (a: CadGradingGroupResult, b: CadGradingGroupResult): number =>
-      Math.hypot(tie(a)[0] - tie(b)[0], tie(a)[1] - tie(b)[1]);
-    expect(tieDist(med, fine)).toBeLessThan(tieDist(coarse, med));
-    const rayGap = (a: CadGradingGroupResult, b: CadGradingGroupResult): number => {
-      const ra = a.corners[0]!.miterRay!;
-      const rb = b.corners[0]!.miterRay!;
-      return 1 - (ra.mx * rb.mx + ra.my * rb.my);
-    };
-    expect(rayGap(med, fine)).toBeLessThan(rayGap(coarse, med));
   });
 });
 
@@ -180,7 +157,10 @@ describe('(b) arc-arc corner converges or fails closed honestly', () => {
   };
   const members = [arc(0, 0, 50, 0, Math.PI / 2, 1010, 1010), arc2];
   const target = flatTarget(1000, -160, -120, 110, 210);
-  const codes = ['CORNER_AMBIGUOUS', 'CORNER_INVERTED', 'CORNER_NO_SOLUTION', 'CORNER_TARGET_GAP'] as const;
+  // 20K.1 Wave B2: faceted arc-arc strips that never edge-stitch fail the
+  // revision at the seam gate (existing GROUP_NON_MANIFOLD + PINCH /
+  // NON_MANIFOLD detail) instead of reaching a corner diagnostic.
+  const codes = ['CORNER_AMBIGUOUS', 'CORNER_INVERTED', 'CORNER_NO_SOLUTION', 'CORNER_TARGET_GAP', 'GROUP_NON_MANIFOLD'] as const;
 
   it('converges like (a), or fails closed with a named corner diagnostic', () => {
     const outs = [0.5, 0.1, 0.02].map((tolerance) => solve(members, target, { side: 'left', tolerance }));

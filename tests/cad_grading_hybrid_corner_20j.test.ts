@@ -275,7 +275,7 @@ describe('phase20j large coordinates + arcs + determinism + mode', () => {
     expect(Math.abs(far.grading3dArea - local.grading3dArea)).toBeLessThanOrEqual(1e-6);
   });
 
-  it('one-arc hybrid joint solves with CURVE_APPROXIMATED preserved', () => {
+  it('one-arc hybrid joint fails closed at the 20K.1 seam gate', () => {
     const arc: ResolvedGradingSource = {
       startX: 40, startY: 40, endX: 0, endY: 0, startZ: 100, endZ: 100,
       length: 40 * (Math.PI / 2), reoriented: false, isArc: true,
@@ -292,14 +292,13 @@ describe('phase20j large coordinates + arcs + determinism + mode', () => {
       maxSearchDistance: 100, curveChordTolerance: 0.001, closed: false,
       target: flatTin(90),
     });
-    const r = expectOk(out);
-    expect(r.accuracy).toBe('CURVE_APPROXIMATED');
-    expect(r.diagnostics.map((d) => d.code)).toContain('CURVE_CORNER_APPROXIMATED');
-    expect(r.corners[0]!.classification).toBe('GAP');
-    const tie = r.corners[0]!.tiePointXyz!;
-    expect(Math.abs(tie[0] - -20)).toBeLessThan(0.5);
-    expect(Math.abs(tie[1] - -40)).toBeLessThan(0.5);
-    expect(Math.abs(tie[2] - 90)).toBeLessThan(0.5);
+    // 20K.1 Wave B2: the faceted arc strip + GAP patch meet at the tie
+    // without edge-stitching (2 shared-index components), so the revision
+    // fails closed with the stable gate diagnostic — never CURRENT.
+    expect(out.ok).toBe(false);
+    if (out.ok) return;
+    expect(out.code).toBe('GROUP_NON_MANIFOLD');
+    expect(out.detail).toBe('GRADING_GROUP_ARC_SEAM_PINCH: component count 2 != expected 1');
   });
 
   it('arc×arc hybrid joint is blocked with ARC_PAIR_UNSUPPORTED', () => {

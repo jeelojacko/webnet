@@ -294,7 +294,7 @@ describe('(e) accuracy disclosure matches the group result', () => {
     return { points, triangles };
   };
 
-  it('reports CURVE_APPROXIMATED for a curved member and carries it into provenance', () => {
+  it('fails a curved joint at the seam gate yet carries CURVE_APPROXIMATED into provenance', () => {
     const ex = 50 * Math.cos(Math.PI / 2);
     const ey = 50 * Math.sin(Math.PI / 2);
     const result = computeGradingGroupFromSnapshots({
@@ -309,12 +309,17 @@ describe('(e) accuracy disclosure matches the group result', () => {
       side: 'left', criterion: { kind: 'fixed', gradeRatio: -0.5 },
       maxSearchDistance: 50, curveChordTolerance: 0.05, closed: false, target: target(),
     });
-    if (!result.ok) throw new Error(`expected ok, got ${result.code} ${result.detail}`);
-    expect(result.result.accuracy).toBe('CURVE_APPROXIMATED');
+    // 20K.1 Wave B2: the faceted curved joint never edge-stitches, so the
+    // revision fails closed instead of reaching CURRENT.
+    expect(result.ok).toBe(false);
+    if (result.ok) return;
+    expect(result.code).toBe('GROUP_NON_MANIFOLD');
+    expect(result.detail).toContain('GRADING_GROUP_ARC_SEAM_PINCH');
+    // Accuracy disclosure stays a pure provenance passthrough.
     expect(makeDesignPatchProvenance({
       groupId: 'g-curve', groupName: 'Curve', groupRevision: 'ggrev1:t',
       sourceFeatureLineId: 'fl-curve', sourceCourseRefs: ['A>B'],
-      targetSurfaceId: 'eg', targetSurfaceRevision: 'egrev1:t', accuracy: result.result.accuracy,
+      targetSurfaceId: 'eg', targetSurfaceRevision: 'egrev1:t', accuracy: 'CURVE_APPROXIMATED',
     }).accuracy).toBe('CURVE_APPROXIMATED');
   });
 });

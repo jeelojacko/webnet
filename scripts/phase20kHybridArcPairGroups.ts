@@ -789,14 +789,16 @@ export const roundedSquareScenarios = (): { hybrid?: HybridArcGroupResult; contr
     tieCount: surf.tieCount ?? 0, rootCounts: [], meshValid: surf.ok, auditPass: null,
     planArea: surf.planArea, detail: surf.detail, digest: surf.digest ?? '',
   }));
-  // all-Distance control — on a flat target every member is the same 20 m
-  // outward offset at grade −0.5, so it must match the hybrid geometry.
+  // all-Distance control — 20K.1 Wave B2: the production curved square no
+  // longer reaches CURRENT (seam gate: 8 shared-index components), so the
+  // control honestly records the fail-closed gate outcome like E/F.
   const distCriteria = [DIST(-0.5, 20), DIST(-0.5, 20), DIST(-0.5, 20), DIST(-0.5, 20)];
   const dist = productionControl(members, distCriteria, model, tol);
   CASES.push(row({
     id: 'closed.square.control.all-distance', category: 'rounded-square-control', order: 'closed',
     model, criteria: distCriteria.map((c) => JSON.stringify(c)), tolerance: tol, closed: true,
-    expected: 'ok', actual: dist.ok ? 'ok' : `${dist.code}/${dist.detail}`, match: dist.ok,
+    expected: 'GROUP_NON_MANIFOLD', actual: dist.ok ? 'ok' : `${dist.code}/${dist.detail}`,
+    match: !dist.ok && dist.code === 'GROUP_NON_MANIFOLD',
     tieCount: dist.tieCount ?? 0, rootCounts: [], meshValid: dist.ok, auditPass: null,
     planArea: dist.planArea, detail: dist.digest, digest: dist.digest ?? '',
   }));
@@ -806,7 +808,8 @@ export const roundedSquareScenarios = (): { hybrid?: HybridArcGroupResult; contr
   CASES.push(row({
     id: 'closed.square.control.mixed-analytic', category: 'rounded-square-control', order: 'closed',
     model, criteria: mixedCriteria.map((c) => JSON.stringify(c)), tolerance: tol, closed: true,
-    expected: 'ok', actual: mixed.ok ? 'ok' : `${mixed.code}/${mixed.detail}`, match: mixed.ok,
+    expected: 'GROUP_NON_MANIFOLD', actual: mixed.ok ? 'ok' : `${mixed.code}/${mixed.detail}`,
+    match: !mixed.ok && mixed.code === 'GROUP_NON_MANIFOLD',
     tieCount: mixed.tieCount ?? 0, rootCounts: [], meshValid: mixed.ok, auditPass: null,
     planArea: mixed.planArea, detail: mixed.digest, digest: mixed.digest ?? '',
   }));

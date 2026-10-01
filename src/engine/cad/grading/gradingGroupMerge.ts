@@ -11,6 +11,7 @@
 import { validateExplicitTinPayload } from '../cadImportedTin';
 import { zeroDelta } from '../surfaces/volume/zero';
 import { mesh3dArea, meshPlanArea, tieStats } from './gradingMesh';
+import { validateGradingMeshTopology } from './gradingTopology';
 import { lineSide, type SectorLine, type SectorPoint } from './gradingGroupSectors';
 
 export interface MergePoint {
@@ -113,6 +114,28 @@ export const mergeGroupTriangles = (tris: MergeTriangle[]): MergedGroupMesh => {
   }
   faces.sort((p, q) => p[0] - q[0] || p[1] - q[1] || p[2] - q[2]);
   return { points, triangles: faces.flat() };
+};
+
+/**
+ * Phase 20K.1 Wave B2 — fail-closed seam gate over the merged group mesh.
+ * Null when the shared-index topology holds (empty meshes pass: all-tied
+ * groups carry no mesh); otherwise a stable `CODE: detail` string for the
+ * existing GROUP_NON_MANIFOLD failure. Each `tiedSplitStations` entry is
+ * one legitimate split budget (B1 counts entries): an empty final member
+ * strip (fully tied) or an OVERLAP-trimmed joint, whose exact miter-seam
+ * clip leaves two pieces touching at seam vertices by construction.
+ */
+export const validateMergedGroupTopology = (
+  mesh: MergedGroupMesh,
+  splitStations: readonly number[] = [],
+): string | null => {
+  if (mesh.triangles.length === 0) return null;
+  const topo = validateGradingMeshTopology(mesh.points, mesh.triangles, {
+    scope: 'group',
+    tiedSplitStations: [...splitStations],
+  });
+  if (topo.ok) return null;
+  return `${topo.code}: ${topo.detail ?? ''}`;
 };
 
 /** Run the normal explicit-TIN validator; null when the mesh is acceptable. */
