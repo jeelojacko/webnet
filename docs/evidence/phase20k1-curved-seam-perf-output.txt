@@ -1,0 +1,39 @@
+phase20k1 curved-seam perf (5 reps, median) — times in ms
+label                                 chords  seams  result                        chordMs  totalMs  verts  tris  ms/chord  detail                                       
+------------------------------------  ------  -----  ----------------------------  -------  -------  -----  ----  --------  ---------------------------------------------
+standalone.analytic.tol-25            1       0      ok                            0.009    0.168    4      2     0.1683                                                 
+standalone.analytic.tol-10            1       0      ok                            0.003    0.112    4      2     0.1116                                                 
+standalone.analytic.tol-1             3       0      ok                            0.002    0.155    12     10    0.0517                                                 
+standalone.analytic.tol-0.1           8       0      ok                            0.003    0.231    32     30    0.0289                                                 
+standalone.analytic.tol-0.01          23      0      ok                            0.005    0.856    92     90    0.0372                                                 
+standalone.analytic.tol-0.001         71      0      ok                            0.020    1.794    284    282   0.0253                                                 
+standalone.analytic.tol-0.0001        224     0      ok                            0.037    2.492    896    894   0.0111                                                 
+standalone.surface.tol-25             1       0      ok                            0.001    0.285    4      2     0.2853                                                 
+standalone.surface.tol-10             1       0      ok                            0.001    0.177    4      2     0.1773                                                 
+standalone.surface.tol-1              3       0      ok                            0.001    0.663    14     12    0.2209                                                 
+standalone.surface.tol-0.1            8       0      ok                            0.001    1.131    39     37    0.1414                                                 
+standalone.surface.tol-0.01           23      0      ok                            0.001    2.178    115    113   0.0947                                                 
+standalone.surface.tol-0.001          71      0      ok                            0.002    5.776    354    352   0.0814                                                 
+standalone.surface.tol-0.0001         224     0      ok                            0.007    13.141   1119   1117  0.0587                                                 
+square.alldist.tol-25                 4       4      ok                            0.002    0.238    16     16    0.0596                                                 
+square.alldist.tol-10                 4       4      ok                            0.002    0.163    16     16    0.0409                                                 
+square.alldist.tol-1                  12      4      ok                            0.002    0.481    48     48    0.0401                                                 
+square.alldist.tol-0.1                32      4      ok                            0.003    1.984    128    128   0.0620                                                 
+square.alldist.tol-0.01               92      4      ok                            0.004    12.380   368    368   0.1346                                                 
+square.alldist.tol-0.001              284     0      fail:GROUP_SELF_INTERSECTION  0.008    99.615   0      0     0.3508    GRADING_GROUP_DAYLIGHT_RING                  
+square.alldist.tol-0.0001             896     0      fail:GROUP_SELF_INTERSECTION  0.021    5.411    0      0     0.0060    GRADING_GROUP_DAYLIGHT_RING                  
+square.mixed.tol-25                   4       4      ok                            0.002    0.163    16     16    0.0407                                                 
+square.mixed.tol-10                   4       4      ok                            0.003    0.156    16     16    0.0389                                                 
+square.mixed.tol-1                    12      4      ok                            0.002    0.388    48     48    0.0324                                                 
+square.mixed.tol-0.1                  32      4      ok                            0.002    2.466    128    128   0.0771                                                 
+square.mixed.tol-0.01                 92      4      ok                            0.008    12.297   368    368   0.1337                                                 
+square.mixed.tol-0.001                284     0      fail:GROUP_SELF_INTERSECTION  0.007    98.543   0      0     0.3470    GRADING_GROUP_DAYLIGHT_RING                  
+square.mixed.tol-0.0001               896     0      fail:GROUP_SELF_INTERSECTION  0.020    4.839    0      0     0.0054    GRADING_GROUP_DAYLIGHT_RING                  
+square.onearc-hybrid.tol-0.1          11      4      ok                            0.001    1.059    51     51    0.0962                                                 
+standalone.surface.tied-flat          8       0      ok                            0.001    0.359    0      0     0.0448                                                 
+square.arcxarc-blocked.tol-0.1        32      0      fail:CORNER_NO_SOLUTION       0.002    1.152    0      0     0.0360    GRADING_SURFACE_ANALYTIC_ARC_PAIR_UNSUPPORTED
+square.alldist.large.tol-0.1          32      4      ok                            0.002    1.804    128    128   0.0564                                                 
+square.alldist.large-surface.tol-0.1  32      4      ok                            0.002    3.700    128    128   0.1156                                                 
+
+dominant stage: whole-call production solve (seam/merge/topology internal, not separately instrumented).
+memory: heapUsed=45.3 MB rss=192.0 MB

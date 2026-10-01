@@ -134,3 +134,25 @@ the weld heals nothing except `corner.reversed` (`3 → 2`). The seam pinch
 is therefore geometric, not indexical. Verdicts unchanged:
 **NO_GO_TERMINAL_CHORD_ARC_PAIR** holds. No gate, no seam assembly, no
 `src/` change.
+
+## Addendum 20K.1 — PR #141 merged + production-line record (2026-10-01, Wave D1)
+
+PR #141 merged the Phase 20K study branch (base `e8bece3d`, head
+`c03617b8`, merge `35b4c27`; CI runs 36788493770 + 36790303544). History
+above is preserved as erratum, not rewritten.
+
+Corrected audit predicate (Wave A1, robust zeroDelta orientations) +
+regenerated verdicts: 39 corpus rows, 0 mismatches — every 20K verdict
+stands. Direct production all-Distance closed square (Wave A2, actual
+`computeGradingGroupFromSnapshots`): was study-assembler VERTEX_PINCH
+with 8 edge-components → after Wave C1 analytic seam assembly the same
+group resolves CURRENT 128/128, 1 component, plan 9452.124826335.
+Study-vs-production distinction: the study assembler never stitched
+internal chord seams (each chord an isolated strip), so its 8-component
+pinch does not transfer to production; the production blocker the study
+identified (chord-seam strip/merge topology) was real and is now fixed
+for analytic + Surface paths. arc×arc hybrid remains blocked
+(`GRADING_SURFACE_ANALYTIC_ARC_PAIR_UNSUPPORTED`); `NO_GO_TERMINAL_CHORD_ARC_PAIR`
+for general arc pairs is retained. 20K.1 evidence:
+`phase20k1-curved-seam-{architecture,validation,performance}.md`,
+`phase20k1-browser-qa.md`, `phase20k1-curved-seam-post-merge-audit.md`.
