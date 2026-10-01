@@ -19,6 +19,8 @@
  * persisted vertical intent, never a converted distance.
  */
 
+import type { GradingTopologyCertificate } from './gradingTopologyCertificate';
+
 export type GradingSide = 'left' | 'right';
 
 export type GradingCriterion =
@@ -168,6 +170,11 @@ export interface CadGradingResult {
   intersectionSegmentCount: number;
   multipleSolutionCount: number;
   diagnostics: GradingDiagnostic[];
+  /**
+   * Phase 20K.2: session-only topology certificate produced after final
+   * mesh assembly. Never persisted and never hashed into `grev1:`.
+   */
+  topologyCertificate?: GradingTopologyCertificate;
 }
 
 /** Circular-arc parameters for a resolved source, oriented A->B (radians). */

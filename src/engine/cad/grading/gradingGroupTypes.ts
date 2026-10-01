@@ -18,6 +18,7 @@ import type {
   GradingRegionClassification,
   GradingSide,
 } from './gradingTypes';
+import type { GradingTopologyCertificate } from './gradingTopologyCertificate';
 
 /** Sole 20C corner mode; persisted so a future radial mode is additive. */
 export type GradingCornerMode = 'miter';
@@ -172,4 +173,9 @@ export interface CadGradingGroupResult {
   intersectionSegmentCount: number;
   multipleSolutionCount: number;
   diagnostics: GroupDiagnostic[];
+  /**
+   * Phase 20K.2: session-only topology certificate produced after the final
+   * merged mesh assembly. Never persisted and never hashed into `ggrev1:`.
+   */
+  topologyCertificate?: GradingTopologyCertificate;
 }

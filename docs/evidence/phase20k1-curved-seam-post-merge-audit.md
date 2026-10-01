@@ -223,3 +223,84 @@ agreeing to 8.5e-14. E/F Design Patch still refuses
 (`DESIGN_PATCH_NON_SIMPLE_RING` from exact-duplicate adjacent
 sourceBoundary vertices at GAP joints) — pre-existing export shape, still
 fail-closed, not widened here.
+
+---
+
+## 10. Addendum (2026-10-01) — PR #142 merged + Phase 20K.2 corrections
+
+History above is preserved unchanged. This addendum records the merged state
+and the corrections Phase 20K.2 establishes; it does not rewrite the 20K.1
+finding.
+
+### 10.1 Merge facts
+
+Phase 20K.1 is **CLOSED / MERGED** via PR #142:
+
+- base `35b4c277e7782bf57f2485c2e462085ddef99f51` (PR #141 merge);
+- head `b0387f96` (reviewer fixes: overlap rejection + split attribution +
+  buffer guard);
+- merge `fbac7c88b3fadd6cce4043d2d2f7dfaa9d82a12d`;
+- final-head CI run `36813779852` — success;
+- merge-push CI run `36837387411` — success.
+
+### 10.2 Boundary components vs cycles (correction)
+
+The §2/§3 tables above report `INDEX loops = 1` for the pinched curved
+squares. That was a **boundary-edge graph connected-component count**, not a
+real simple cycle. Phase 20K.2 separates `components` (edge-connected faces),
+`boundaryCycles` (traversed simple cycles, the new validity authority), and
+deprecated `loops` (graph components). The corrected reading:
+
+- E/F/G are `VERTEX_PINCH` with `edgeComponents = 8 / 8 / 2` (unchanged);
+- the closed squares are annuli: `components = 1`, `boundaryCycles = 2`;
+- the old "1 loop" was never a simple boundary cycle confession.
+
+### 10.3 Tied-split product mismatch (correction)
+
+A genuine Surface arc tied split returned CURRENT from Calculate while
+Extract/Bake returned null. Cause: the products re-validated with
+`{ scope: 'arc' }` (default `expectedComponents = 1`) and no tied
+coordinates. Phase 20K.2 replaces product revalidation with the worker's
+`gtop1` certificate; the legacy call remains RED on that mesh
+(`ok:false, components:2`) as a pinned proof.
+
+### 10.4 Actual Design Patch state (correction)
+
+The §4 statement "E/F Design Patch still refuses on exact-duplicate adjacent
+sourceBoundary vertices" is the **pre-20K.2** state. Post-fix, on the real
+closed product path:
+
+- all-Distance / mixed-analytic Design Patch **passes** (the
+  `normalizeCapturedRing` consecutive-duplicate collapse);
+- all-Surface Design Patch remains **explicitly restricted**
+  (`DESIGN_PATCH_NON_SIMPLE_RING:SURFACE_EDIT_NOT_APPLICABLE`) because the
+  Surface seam resamples stations as `start + t·length` (ulp-twin
+  micro-edges).
+
+### 10.5 Cut/Fill limitation (correction)
+
+The pre-20K.2 cross-grade fallback admitted a direct fan whenever
+`solveSurfaceCorner` returned `CORNER_INVERTED / GRADING_CORNER_RAY` and the
+side grades differed. That was a limitation, not a gate. Phase 20K.2 requires
+`directFanOnTarget` proof; ridges/valleys/voids/steps/branches/off-target `V`
+fail closed `GRADING_SURFACE_SEAM_TRANSITION_REQUIRED`.
+
+### 10.6 Additional clampings
+
+- **10→12 slope fail-closed**: the reviewer-fix interaction suite resolves
+  the 10→11 slope strip and fails closed the 10→12 slope plus the
+  zero-width-steep-drop fixtures on genuine folds.
+- **1 nm floor contract**: `AGREEMENT_FLOOR = 1e-9` m is an explicit
+  representation-noise agreement bound (topology boundary micro-edge collapse
+  + Design Patch representation-station predicate), not a geometry tolerance;
+  global `zeroDelta` is unchanged.
+
+### 10.7 Phase 20K.2 link
+
+Phase 20K.2 (branch `fix/phase20k2-curved-topology-product-closeout`,
+baseline `fbac7c88`) delivers the topology contract, certificate,
+product-consistency gates, curved Design Patch closeout, and CUT/FILL direct
+fan. Evidence: `docs/evidence/phase20k2-topology-contract.md`,
+`phase20k2-product-consistency.md`, `phase20k2-validation.md`,
+`phase20k2-topology-product-performance.md`, `phase20k2-post-merge-audit.md`,
+`phase20k2-curved-design-patch-cutfill.md`, `phase20k2/perf-output.txt`.

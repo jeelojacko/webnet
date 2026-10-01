@@ -22,6 +22,7 @@ import {
 import { isZeroWidthPair } from './gradingMesh';
 import {
   clipPolylineToHalfPlane,
+  samePlanNode,
   type SectorLine,
   type SectorPoint,
 } from './gradingGroupSectors';
@@ -51,6 +52,7 @@ import { solveGradingChord } from './solveAnalyticGradingChord';
 import { solveAnalyticCorner } from './gradingGroupAnalyticCorners';
 import { solveHybridCorner } from './gradingGroupHybridCorners';
 import { groupTerminationMode } from './gradingGroupTermination';
+import { buildGradingTopologyCertificate } from './gradingTopologyCertificate';
 import { solveStraightChord, type StraightChordSolve } from './solveStraightChord';
 import { gradingTerminationDomain, isTargetFreeCriterion } from './gradingTypes';
 import type {
@@ -727,6 +729,17 @@ export const computeGradingGroupFromSnapshots = (input: GroupSolveInput): Gradin
     if (tris.length !== 0) return;
     for (const p of solved[mi]!.stitched.sourcePts) tiedCoords.push(p.x, p.y, p.z);
   });
+  // Phase 20K.2: tied runs inside a member (daylight back on the source,
+  // CUT→TIED→FILL) legitimately split the merged mesh; record EVERY tied
+  // station as a real coordinate so whichever side of the split ends up as
+  // the attributed extra touches one (a single run-start is one-sided).
+  for (const s of solved) {
+    for (let i = 0; i < s.stitched.sourcePts.length; i += 1) {
+      if (!samePlanNode(s.stitched.daylightPts[i]!, s.stitched.sourcePts[i]!)) continue;
+      const p = s.stitched.sourcePts[i]!;
+      tiedCoords.push(p.x, p.y, p.z);
+    }
+  }
   for (const corner of corners) {
     if (corner.classification === 'OVERLAP' && corner.tiePointXyz) tiedCoords.push(...corner.tiePointXyz);
   }
@@ -781,6 +794,15 @@ export const computeGradingGroupFromSnapshots = (input: GroupSolveInput): Gradin
     const p = lastPts[lastPts.length - 1]!;
     sourceBoundaryPoints.push(p.x, p.y, p.z);
   }
+  // Phase 20K.2: certify the final merged mesh (tied stations recorded once).
+  const topologyCertificate = buildGradingTopologyCertificate({
+    scope: 'group',
+    points: merged.points,
+    triangles: merged.triangles,
+    tiedSplitCoords: tiedCoords,
+    sourceBoundaryPoints,
+    gradingBoundaryPoints: daylightFlat,
+  }) ?? undefined;
   const result: CadGradingGroupResult = {
     groupId,
     revision,
@@ -805,6 +827,7 @@ export const computeGradingGroupFromSnapshots = (input: GroupSolveInput): Gradin
     intersectionSegmentCount: intersectionSegments,
     multipleSolutionCount: multipleSolutions,
     diagnostics,
+    ...(topologyCertificate ? { topologyCertificate } : {}),
   };
   return { ok: true, result };
 }

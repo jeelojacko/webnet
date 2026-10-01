@@ -12,6 +12,7 @@ import {
   tieStats,
 } from './gradingMesh';
 import { zeroDelta } from '../surfaces/volume/zero';
+import { buildGradingTopologyCertificate, collectTiedRunStarts, countPositiveWidthRegions } from './gradingTopologyCertificate';
 import type {
   GradingAccuracy,
   GradingDiagnostic,
@@ -90,6 +91,28 @@ const splitCutFillLengths = (
   return { cutSourceLength, fillSourceLength, tiedSourceLength };
 };
 
+/** Session-only topology certificate over the final assembled strip mesh. */
+const standaloneCertificate = (
+  mesh: { points: number[]; triangles: number[] },
+  sourcePts: Array<{ x: number; y: number; z: number }>,
+  daylightPts: Array<{ x: number; y: number; z: number }>,
+): ReturnType<typeof buildGradingTopologyCertificate> => {
+  const flat = (pts: Array<{ x: number; y: number; z: number }>): number[] => {
+    const out: number[] = [];
+    for (const p of pts) out.push(p.x, p.y, p.z);
+    return out;
+  };
+  return buildGradingTopologyCertificate({
+    scope: 'standalone',
+    points: mesh.points,
+    triangles: mesh.triangles,
+    tiedSplitCoords: collectTiedRunStarts(sourcePts, daylightPts),
+    expectedComponents: countPositiveWidthRegions(sourcePts, daylightPts),
+    sourceBoundaryPoints: flat(sourcePts),
+    gradingBoundaryPoints: flat(daylightPts),
+  });
+};
+
 /** Fully already-tied course: CURRENT with zero area (bake stays blocked). */
 const tiedGradingResult = (
   input: AssembledResultInput,
@@ -105,6 +128,8 @@ const tiedGradingResult = (
     candidateTriangleCount,
     intersectionSegmentCount,
     multipleSolutionCount,
+    sourcePts,
+    daylightPts,
   } = input;
   const stats = tieStats(distances);
   return {
@@ -129,6 +154,11 @@ const tiedGradingResult = (
       intersectionSegmentCount,
       multipleSolutionCount,
       diagnostics: [{ code: 'ALREADY_TIED' }],
+      topologyCertificate: standaloneCertificate(
+        { points: [], triangles: [] },
+        sourcePts,
+        daylightPts,
+      ) ?? undefined,
     },
   };
 };
@@ -186,6 +216,11 @@ export const assembleAnalyticGradingResult = (
         intersectionSegmentCount,
         multipleSolutionCount,
         diagnostics: [{ code: 'ALREADY_TIED' }],
+        topologyCertificate: standaloneCertificate(
+          { points: [], triangles: [] },
+          sourcePts,
+          daylightPts,
+        ) ?? undefined,
       },
     };
   }
@@ -211,6 +246,7 @@ export const assembleAnalyticGradingResult = (
       intersectionSegmentCount,
       multipleSolutionCount,
       diagnostics,
+      topologyCertificate: standaloneCertificate(mesh, sourcePts, daylightPts) ?? undefined,
     },
   };
 };
@@ -266,6 +302,7 @@ export const assembleGradingResult = (input: AssembledResultInput): GradingCompu
       intersectionSegmentCount,
       multipleSolutionCount,
       diagnostics,
+      topologyCertificate: standaloneCertificate(mesh, sourcePts, daylightPts) ?? undefined,
     },
   };
 };

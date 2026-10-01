@@ -1,0 +1,52 @@
+phase20k2 topology/product perf (5 reps, median) — times in ms
+fixtures built outside timed regions; production entry points only
+
+== boundary-cycle analysis by boundary size (traceBoundaryCycles) ==
+boundaryEdges  E      components  cycles  violations  ms   
+-------------  -----  ----------  ------  ----------  -----
+16             16     1           1       0           0.005
+64             64     1           1       0           0.014
+256            256    1           1       0           0.058
+1024           1024   1           1       0           0.245
+4096           4096   1           1       0           1.071
+16384          16384  1           1       0           7.190
+
+== certificate build / verify (gtop1) ==
+mesh                   V    F    E    B    components  cycles  build/verify/product ms + digest                                              
+---------------------  ---  ---  ---  ---  ----------  ------  ------------------------------------------------------------------------------
+square.all-Distance    128  128  256  128  1           2       0.962/0.978/0.950  cert=ok digest=47c81e90                                    
+square.all-Surface     156  156  312  156  1           2       0.568/0.559/0.582  cert=ok digest=8cee46d2                                    
+square.mixed-analytic  128  128  256  128  1           2       0.467/0.453/0.446  cert=ok digest=47c81e90                                    
+tied-split.arc         15   7    16   11   2           2       —/0.026/0.025  cert=gtop1 product=GRADING_TOPOLOGY_MULTI_REGION_NOT_EXPORTABLE
+
+== tied-split validation (real Surface arc tied split) ==
+fixture                      V   F  E   B   components  cycles  facets  ms     gate/digest                                                                   
+---------------------------  --  -  --  --  ----------  ------  ------  -----  ------------------------------------------------------------------------------
+standalone.surface.arc.tied  15  7  16  11  2           2       270     7.507  verify=ok product=GRADING_TOPOLOGY_MULTI_REGION_NOT_EXPORTABLE digest=498d7ce3
+
+== rounded squares (closed group compute) ==
+fixture         V    F    E    B    components  cycles  facets  ms     digest  
+--------------  ---  ---  ---  ---  ----------  ------  ------  -----  --------
+all-Distance    128  128  256  128  1           2       0       2.975  47c81e90
+all-Surface     156  156  312  156  1           2       2       5.154  8cee46d2
+mixed-analytic  128  128  256  128  1           2       0       2.633  47c81e90
+
+== curved Design Patch (resolveDesignPatch) ==
+fixture       V    F    E  B  components  cycles  ms     result                                                  
+------------  ---  ---  -  -  ----------  ------  -----  --------------------------------------------------------
+all-Distance  128  128  —  —  —           —       1.784  ok                                                      
+all-Surface   156  156  —  —  —           —       0.563  DESIGN_PATCH_NON_SIMPLE_RING:SURFACE_EDIT_NOT_APPLICABLE
+
+== coplanar Cut/Fill walk ==
+fixture               V    F    E    B    components  cycles  facets  ms      result        
+--------------------  ---  ---  ---  ---  ----------  ------  ------  ------  --------------
+directFan.coplanar    —    —    —    —    —           —       —       0.034   accepted      
+curved.cutfill.cross  181  177  356  181  2           2       520     32.798  kinds=FILL+CUT
+
+== non-planar fail path ==
+fixture          ms     result                
+---------------  -----  ----------------------
+directFan.ridge  0.007  rejected (fail-closed)
+
+heap: heapUsed=77.0 MB rss=207.1 MB
+dominant stage: whole-call production compute (seam/merge/certificate internal, not separately instrumented); certificate build and verify are the bounded post-assembly stages.

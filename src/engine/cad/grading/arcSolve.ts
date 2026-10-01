@@ -13,6 +13,7 @@ import { candidateTriangles } from './gradingTargetIndex';
 import { samePlanNode } from './gradingGroupSectors';
 import { linearizeGradingArc, type LinearizedGradingArc } from './gradingCurve';
 import { validateGradingMeshTopology } from './gradingTopology';
+import { countPositiveWidthRegions } from './gradingTopologyCertificate';
 import {
   assembleAnalyticGradingResult,
   assembleGradingResult,
@@ -342,11 +343,19 @@ const solveArcChords = (
  * existing NO_SOLUTION code (PINCH/NON_MANIFOLD detail), never CURRENT.
  * Empty meshes pass through (the existing fully-tied ALREADY_TIED path).
  */
-const gateArcSeamTopology = (outcome: GradingComputeOutcome, tiedSplitCoords: readonly number[]): GradingComputeOutcome => {
+const gateArcSeamTopology = (
+  outcome: GradingComputeOutcome,
+  tiedSplitCoords: readonly number[],
+  positiveWidthRegions: number,
+): GradingComputeOutcome => {
   if (!outcome.ok) return outcome;
   const mesh = outcome.result.gradingMesh;
   if (mesh.triangles.length === 0) return outcome;
-  const topo = validateGradingMeshTopology(mesh.points, mesh.triangles, { scope: 'arc', tiedSplitCoords: [...tiedSplitCoords] });
+  const topo = validateGradingMeshTopology(mesh.points, mesh.triangles, {
+    scope: 'arc',
+    expectedComponents: positiveWidthRegions,
+    tiedSplitCoords: [...tiedSplitCoords],
+  });
   if (topo.ok) return outcome;
   return { ok: false, code: 'NO_SOLUTION', detail: `${topo.code}: ${topo.detail ?? ''}` };
 };
@@ -362,6 +371,7 @@ export const solveArcGrading = (input: ArcSolveInput): GradingComputeOutcome => 
   const stitched = solveArcChords(input, setup.linearized, setup.segArc);
   if (!stitched.ok) return stitched;
   const stitch = stitched.stitch;
+  const positiveWidthRegions = countPositiveWidthRegions(stitch.sourcePts, stitch.daylightPts);
   // Phase 20F: analytic criteria assemble without a target query —
   // source/target relation lengths stay unavailable (never faked).
   if (isTargetFreeCriterion(input.criterion)) {
@@ -380,7 +390,7 @@ export const solveArcGrading = (input: ArcSolveInput): GradingComputeOutcome => 
       candidateTriangleCount: stitch.candidateTriangleCount,
       intersectionSegmentCount: stitch.intersectionSegmentCount,
       multipleSolutionCount: stitch.multipleSolutionCount,
-    }), stitch.tiedSplitCoords);
+    }), stitch.tiedSplitCoords, positiveWidthRegions);
   }
   if (!input.target || !input.query) {
     return { ok: false, code: 'NO_SOLUTION', detail: 'GRADING_BAD_TARGET_MESH' };
@@ -401,5 +411,5 @@ export const solveArcGrading = (input: ArcSolveInput): GradingComputeOutcome => 
     candidateTriangleCount: stitch.candidateTriangleCount,
     intersectionSegmentCount: stitch.intersectionSegmentCount,
     multipleSolutionCount: stitch.multipleSolutionCount,
-  }), stitch.tiedSplitCoords);
+  }), stitch.tiedSplitCoords, positiveWidthRegions);
 };

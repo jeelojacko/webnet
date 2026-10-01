@@ -25,7 +25,7 @@ import {
   crossGradeAtV,
   solveSurfaceCorner,
 } from './gradingGroupSurfaceCorners';
-import { lineSide as sectorLineSide, samePlanNode } from './gradingGroupSectors';
+import { lineSide as sectorLineSide, samePlanNode, elevationAgreementTol, planeLeverage, AGREEMENT_FLOOR } from './gradingGroupSectors';
 import type { StraightChordSolve } from './solveStraightChord';
 import type { GradingCriterion, GradingSide } from './gradingTypes';
 
@@ -251,6 +251,68 @@ const sameSeamPt = (a: ChordSeamPoint, b: ChordSeamPoint): boolean =>
   Math.abs(a.y - b.y) <= zeroDelta(a.y, b.y) &&
   Math.abs(a.z - b.z) <= zeroDelta(a.z, b.z);
 
+/**
+ * Phase 20K.2 — proven direct CUT/FILL transition fan.
+ *
+ * The cross-grade fallback may bridge a chord joint ONLY when the bridge is
+ * proven to lie on the target: a genuine CUT/FILL criterion, V agreeing with
+ * the target elevation under the shared anchored contract (a grade change
+ * across an exact tied station), and the whole qIn→V→qOut fan covered by one
+ * proven target plane. The plane is anchored at V (normal through the three
+ * points) and checked with a segment walk that samples the direct qIn→qOut
+ * segment plus both V rays against the target elevation under the shared
+ * anchored-elevation agreement contract. A void (null query), an off-plane
+ * sample (ridge/valley/branch/edge/vertex discontinuity), or a
+ * plan-degenerate conditioning triangle fails closed. No averaging,
+ * projection, later-root preference, or tolerance relaxation.
+ */
+export const directFanOnTarget = (
+  criterion: GradingCriterion,
+  query: TargetQuery,
+  v: ChordSeamPoint,
+  qIn: ChordSeamPoint,
+  qOut: ChordSeamPoint,
+): boolean => {
+  if (criterion.kind !== 'cut-fill') return false;
+  const ztV = query.elevationAt(v.x, v.y);
+  if (ztV === null) return false;
+  // V must agree with the source elevation under the shared anchored contract
+  // (design mismatch fails closed; representation noise ≤ the 1 nm floor is
+  // absorbed). This is the "exact tied station" proof for the transition.
+  if (Math.abs(ztV - v.z) > elevationAgreementTol(ztV, v.z, []) + AGREEMENT_FLOOR) return false;
+  // A tied station collapses both daylight runs onto V: the wedge is a
+  // single shared node, so there is no bridge to prove.
+  if (samePlanNode(qIn, qOut)) return true;
+  const e1x = qIn.x - v.x;
+  const e1y = qIn.y - v.y;
+  const e1z = qIn.z - v.z;
+  const e2x = qOut.x - v.x;
+  const e2y = qOut.y - v.y;
+  const e2z = qOut.z - v.z;
+  const nz = e1x * e2y - e1y * e2x;
+  if (Math.abs(nz) <= zeroDelta(nz, 0)) return false;
+  // Anchored fan plane z = vz + gx·(x−vx) + gy·(y−vy).
+  const gx = (e1z * e2y - e1y * e2z) / nz;
+  const gy = (e1x * e2z - e1z * e2x) / nz;
+  const plane = { gx, gy, ax: v.x, ay: v.y };
+  const elevation = (x: number, y: number): number =>
+    v.z + gx * (x - v.x) + gy * (y - v.y);
+  const samples: Array<[number, number]> = [];
+  for (let i = 1; i <= 4; i += 1) {
+    const t = i / 5;
+    samples.push([qIn.x + (qOut.x - qIn.x) * t, qIn.y + (qOut.y - qIn.y) * t]);
+    samples.push([v.x + (qIn.x - v.x) * t, v.y + (qIn.y - v.y) * t]);
+    samples.push([v.x + (qOut.x - v.x) * t, v.y + (qOut.y - v.y) * t]);
+  }
+  for (const [x, y] of samples) {
+    const zt = query.elevationAt(x, y);
+    if (zt === null) return false;
+    const zp = elevation(x, y);
+    const tol = elevationAgreementTol(zt, zp, planeLeverage(plane, x, y)) + AGREEMENT_FLOOR;
+    if (Math.abs(zt - zp) > tol) return false;
+  }
+  return true;
+};
 
 /**
  * Paired-array clip of a (source, daylight) run to the closed half-plane on
@@ -406,9 +468,17 @@ export const assembleSurfaceChain = (
         solved.detail === 'GRADING_CORNER_RAY' &&
         gIn !== gOut;
       if (!crossGrade) return { ok: false, detail: `GRADING_SURFACE_SEAM:${solved.code}:${solved.detail}` };
+      const qInFan = inDay[inDay.length - 1]!;
+      const qOutFan = outDay[0]!;
+      // Proven-target membership is mandatory: a direct fan that leaves the
+      // target (ridge/valley/void/branch) fails closed with the existing
+      // seam-transition code instead of bridging geometry.
+      if (!directFanOnTarget(criterion, query, v, qInFan, qOutFan)) {
+        return { ok: false, detail: 'GRADING_SURFACE_SEAM:GRADING_SURFACE_SEAM_TRANSITION_REQUIRED' };
+      }
       joints.push({
         v, station,
-        run: [{ ...inDay[inDay.length - 1]! }, { ...outDay[0]! }],
+        run: [{ ...qInFan }, { ...qOutFan }],
         kind: 'GAP', tie: null, ray: null, extent: null,
       });
       continue;
