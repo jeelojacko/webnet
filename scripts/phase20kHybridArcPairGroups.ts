@@ -112,11 +112,12 @@ export const bottomArcSpec = (z = 10): ArcSpec => {
 /**
  * Buildable rounded-square side: the spec's geometry mirrored across the
  * chord (centre (50,+247.5), minor CCW). The spec-literal centre (50,−247.5)
- * with a minor CW sweep produces INWARD-bulging arcs whose outward grading
- * offset self-intersects (production all-distance control fails
- * `GROUP_SELF_INTERSECTION`; recorded as `closed.square.literal-concave`).
+ * with a minor CW sweep produces INWARD-bulging arcs whose naive-chord
+ * daylight ring used to self-intersect; the 20K.1 Wave C1 exact seam
+ * uncrosses it (production all-distance control now solves, independently
+ * audited valid; recorded as `closed.square.literal-concave`).
  * The task requires a simple closed boundary, so the study's `§27` group
- * uses this outward (convex) mirror and documents the literal failure.
+ * uses this outward (convex) mirror and documents the literal history.
  */
 export const outwardBottomSpec = (z = 10): ArcSpec => {
   const cx = SQUARE_SIDE / 2;
@@ -773,8 +774,10 @@ export const roundedSquareScenarios = (): { hybrid?: HybridArcGroupResult; contr
   CASES.push(row({
     id: 'closed.square.literal-concave.all-distance', category: 'rounded-square-spec-literal', order: 'closed',
     model, criteria: ['DIST(-0.5,20) x4'], tolerance: tol, closed: true,
-    expected: 'GROUP_SELF_INTERSECTION', actual: literalDist.ok ? 'ok' : `${literalDist.code}/${literalDist.detail}`,
-    match: !literalDist.ok && literalDist.code === 'GROUP_SELF_INTERSECTION',
+    // 20K.1 Wave C1: the exact seam uncrosses the daylight ring
+    // (independently audited valid), so the control now solves.
+    expected: 'ok', actual: literalDist.ok ? 'ok' : `${literalDist.code}/${literalDist.detail}`,
+    match: literalDist.ok,
     tieCount: literalDist.tieCount ?? 0, rootCounts: [], meshValid: literalDist.ok, auditPass: null,
     detail: literalDist.detail, digest: literalDist.digest ?? '',
   }));
@@ -789,27 +792,27 @@ export const roundedSquareScenarios = (): { hybrid?: HybridArcGroupResult; contr
     tieCount: surf.tieCount ?? 0, rootCounts: [], meshValid: surf.ok, auditPass: null,
     planArea: surf.planArea, detail: surf.detail, digest: surf.digest ?? '',
   }));
-  // all-Distance control — 20K.1 Wave B2: the production curved square no
-  // longer reaches CURRENT (seam gate: 8 shared-index components), so the
-  // control honestly records the fail-closed gate outcome like E/F.
+  // all-Distance control — 20K.1 Wave C1: the exact analytic seam tiles one
+  // valid strip (same cure as E), so the control now reaches CURRENT.
   const distCriteria = [DIST(-0.5, 20), DIST(-0.5, 20), DIST(-0.5, 20), DIST(-0.5, 20)];
   const dist = productionControl(members, distCriteria, model, tol);
   CASES.push(row({
     id: 'closed.square.control.all-distance', category: 'rounded-square-control', order: 'closed',
     model, criteria: distCriteria.map((c) => JSON.stringify(c)), tolerance: tol, closed: true,
-    expected: 'GROUP_NON_MANIFOLD', actual: dist.ok ? 'ok' : `${dist.code}/${dist.detail}`,
-    match: !dist.ok && dist.code === 'GROUP_NON_MANIFOLD',
+    expected: 'ok', actual: dist.ok ? 'ok' : `${dist.code}/${dist.detail}`,
+    match: dist.ok,
     tieCount: dist.tieCount ?? 0, rootCounts: [], meshValid: dist.ok, auditPass: null,
     planArea: dist.planArea, detail: dist.digest, digest: dist.digest ?? '',
   }));
-  // mixed-analytic control (D/E/REL share one analytic domain).
+  // mixed-analytic control (D/E/REL share one analytic domain) — same C1
+  // cure as F: reaches CURRENT.
   const mixedCriteria = [DIST(-0.5, 20), ELEV(-0.5, 0), REL(-0.5, -10), DIST(-0.5, 20)];
   const mixed = productionControl(members, mixedCriteria, model, tol);
   CASES.push(row({
     id: 'closed.square.control.mixed-analytic', category: 'rounded-square-control', order: 'closed',
     model, criteria: mixedCriteria.map((c) => JSON.stringify(c)), tolerance: tol, closed: true,
-    expected: 'GROUP_NON_MANIFOLD', actual: mixed.ok ? 'ok' : `${mixed.code}/${mixed.detail}`,
-    match: !mixed.ok && mixed.code === 'GROUP_NON_MANIFOLD',
+    expected: 'ok', actual: mixed.ok ? 'ok' : `${mixed.code}/${mixed.detail}`,
+    match: mixed.ok,
     tieCount: mixed.tieCount ?? 0, rootCounts: [], meshValid: mixed.ok, auditPass: null,
     planArea: mixed.planArea, detail: mixed.digest, digest: mixed.digest ?? '',
   }));

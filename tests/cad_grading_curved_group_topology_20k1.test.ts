@@ -60,9 +60,10 @@ describe('validateGradingMeshTopology', () => {
 
 /**
  * Phase 20K.1 Wave B2 — fail-closed gate over the production engine.
- * E/F/G VERTEX_PINCH shapes fail the revision (existing GROUP_NON_MANIFOLD
- * code + PINCH detail), never CURRENT; valid A-D/straights stay CURRENT;
- * fully-tied courses keep the existing ALREADY_TIED ok path.
+ * G keeps failing the revision (existing GROUP_NON_MANIFOLD code + PINCH
+ * detail), never CURRENT; valid A-D/straights stay CURRENT; fully-tied
+ * courses keep the existing ALREADY_TIED ok path. Wave C1 cured E/F (same
+ * gate now passes: 1 component, 2 loops), asserted CURRENT above.
  */
 describe('20K.1 Wave B2 fail-closed topology gate', () => {
   const straight = (
@@ -80,7 +81,21 @@ describe('20K.1 Wave B2 fail-closed topology gate', () => {
       ...(target === true ? { target: flatTin(0) } : {}),
     });
 
-  it('E closed all-Distance fails FAILED, never CURRENT', () => {
+  // 20K.1 Wave C1: analytic internal chord seams assemble (exact V,
+  // analytic GAP ties) and joint vertices canonicalize, so E/F tile ONE
+  // valid closed strip (1 component, 2 boundary loops, zero coincident
+  // sets). Old->new: GROUP_NON_MANIFOLD/PINCH-8 FAILED -> CURRENT.
+  const expectCuredClosedSquare = (out: unknown): void => {
+    expect(out).toMatchObject({ ok: true });
+    if (typeof out !== 'object' || out === null || !('result' in out)) throw new Error('expected ok result');
+    const result = (out as { result: { gradingMesh: { points: number[]; triangles: number[] }; corners: Array<{ tiePointXyz: unknown }>; gradingPlanArea: number } }).result;
+    const topo = validateGradingMeshTopology(result.gradingMesh.points, result.gradingMesh.triangles, { scope: 'group' });
+    expect(topo).toMatchObject({ ok: true, components: 1, loops: 2 });
+    expect(result.corners).toHaveLength(4);
+    expect(result.gradingPlanArea).toBe(9452.12482633509);
+  };
+
+  it('E closed all-Distance now CURRENT via the C1 seam', () => {
     const square = roundedSquareMembers(10);
     const out = computeGradingGroupFromSnapshots({
       groupId: 'e', revision: 'r', members: square.map((m) => m.source),
@@ -88,13 +103,10 @@ describe('20K.1 Wave B2 fail-closed topology gate', () => {
       memberCriteria: [DIST(-0.5, 20), DIST(-0.5, 20), DIST(-0.5, 20), DIST(-0.5, 20)],
       maxSearchDistance: 100, curveChordTolerance: 0.1, closed: true,
     });
-    expect(out.ok).toBe(false);
-    if (out.ok) return;
-    expect(out.code).toBe('GROUP_NON_MANIFOLD');
-    expect(out.detail).toContain('GRADING_GROUP_ARC_SEAM_PINCH');
+    expectCuredClosedSquare(out);
   });
 
-  it('F mixed-analytic fails FAILED, never CURRENT', () => {
+  it('F mixed-analytic now CURRENT via the C1 seam', () => {
     const square = roundedSquareMembers(10);
     const out = computeGradingGroupFromSnapshots({
       groupId: 'f', revision: 'r', members: square.map((m) => m.source),
@@ -102,10 +114,7 @@ describe('20K.1 Wave B2 fail-closed topology gate', () => {
       memberCriteria: [DIST(-0.5, 20), ELEV(-0.5, 0), REL(-0.5, -10), DIST(-0.5, 20)],
       maxSearchDistance: 100, curveChordTolerance: 0.1, closed: true,
     });
-    expect(out.ok).toBe(false);
-    if (out.ok) return;
-    expect(out.code).toBe('GROUP_NON_MANIFOLD');
-    expect(out.detail).toContain('GRADING_GROUP_ARC_SEAM_PINCH');
+    expectCuredClosedSquare(out);
   });
 
   it('G one-arc hybrid fails FAILED, never CURRENT', () => {

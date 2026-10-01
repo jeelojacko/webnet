@@ -21,6 +21,7 @@ import { createGroupDefinition } from '../src/engine/cad/grading/gradingGroupAut
 import { resolveGroupMemberCriteria } from '../src/engine/cad/grading/gradingGroupCourseCriteria';
 import { sanitizeCadGradingGroupsDetailed } from '../src/engine/cad/grading/gradingGroupPersistence';
 import { computeGradingGroupFromSnapshots } from '../src/engine/cad/grading/gradingGroupCompute';
+import { validateGradingMeshTopology } from '../src/engine/cad/grading/gradingTopology';
 import { solveAnalyticGradingChord } from '../src/engine/cad/grading/solveAnalyticGradingChord';
 import { computeGradingFromSnapshots } from '../src/workers/surfaceGradingCompute';
 import type { GradingCriterion, ResolvedGradingSource } from '../src/engine/cad/grading/gradingTypes';
@@ -194,14 +195,20 @@ describe('(4) large coordinates + arc-adjacent mixed group', () => {
       memberCriteria: [ELEV(-0.5, 0), REL(-0.5, -10)],
       maxSearchDistance: 50, curveChordTolerance: 0.05, closed: false,
     });
-    // 20K.1 Wave B2: the faceted arc strip never edge-stitches the straight
-    // strip (2 shared-index components), so the revision fails closed with
-    // the stable gate diagnostic — deterministically, never CURRENT.
+    // 20K.1 Wave C1: analytic internal chord seams assemble (exact V,
+    // analytic ties) and the joint vertex canonicalizes to the shared
+    // member end, so the mixed ELEV/REL pair tiles ONE valid strip:
+    // 1 component, 1 boundary loop, deterministic across runs.
     for (const out of [run(), run()]) {
-      expect(out.ok).toBe(false);
-      if (out.ok) continue;
-      expect(out.code).toBe('GROUP_NON_MANIFOLD');
-      expect(out.detail).toContain('GRADING_GROUP_ARC_SEAM_PINCH');
+      expect(out.ok).toBe(true);
+      if (!out.ok) continue;
+      const topo = validateGradingMeshTopology(
+        out.result.gradingMesh.points, out.result.gradingMesh.triangles, { scope: 'group' });
+      expect(topo).toMatchObject({ ok: true, components: 1, loops: 1 });
+      expect(out.result.corners).toHaveLength(1);
+      expect(out.result.corners[0]!.classification).toBe('GAP');
+      expect(out.result.corners[0]!.tiePointXyz).toEqual([0.3141851064733838, 120, 0]);
+      expect(out.result.gradingPlanArea).toBe(5449.051763958467);
     }
   });
 });

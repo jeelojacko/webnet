@@ -183,3 +183,43 @@ loosened and no seam is welded here.
   changed.
 - The `EXPECTED` block in the test freezes the current counts; a deliberate
   engine fix must update both the test and this document.
+
+## 9. Wave C1 analytic internal chord-seam cure (same branch)
+
+New shared pure helper `src/engine/cad/grading/gradingChordSeam.ts`
+(`assembleSolvedGradingChain`, 217 lines): every internal linearization
+station resolves through the existing `analyticTerminalLine` +
+`solveAnalyticCorner` authorities with the same effective criterion on both
+sides (maxSearchDistance + line/Z/side/extent gates preserved). GAP emits
+pairs (V,Qin),(V,T),(V,Qout) so the strip builder tiles the planar fan
+exactly once (edge V–T shared, incidence 2); OVERLAP emits (V,Cin),(V,Cout)
+miter-crossing clips (exact run-level Sutherland clips, no double-cover)
+and records the tie once. No endpoint averaging, bridge, tangent
+substitution, tolerance change, or weld. Consumed by `arcSolve` (analytic
+path) and the curved-analytic member path of `gradingGroupCompute`; Surface
+seams untouched (Wave C2).
+
+Two root causes were needed, not one: (1) internal seams fanned/clipped as
+above; (2) member-joint vertices canonicalized to the bitwise-shared member
+ends — linearized arc endpoints differ from the member ends (and from each
+other) by ulps (e.g. 100.00000000000004 vs 100 vs 100,-7e-15), which kept
+corner patches index-disconnected (8 components) even with perfect seams.
+
+Old -> new (this document's §7 matrix): A/B/C stay TOPOLOGY_VALID, 1
+component, 1 loop, +7 verts/+7 tris (one tie + one fan triangle per joint),
+plan 2082.837637462 -> 2082.880954009 (overlap double-cover out, fan in);
+E/F PINCH-8 FAILED -> CURRENT TOPOLOGY_VALID (128 pts / 128 tris / 4 ties /
+plan 9452.124826335 / 1 component / 2 loops / 0 coincident sets);
+G (surface arc member) still PINCH-2, H still CORNER_NO_SOLUTION (C2 scope).
+B1/B2 validators and gates unchanged; the §17 hand oracle
+(T=121.64784400584789 within 1 ulp of the idealized hand value, extent
+21.647844005847887, fan plan 165.6854249492381 / 3D 185.24193653371802) and
+D/E/REL bitwise equivalence live in
+`tests/cad_grading_analytic_seam_20k1.test.ts`. The 20K study corpus
+(`docs/evidence/phase20k/corpus.json`) regenerated: literal-concave
+all-distance SELF_INTERSECTION -> ok (independently audited valid),
+control rows now CURRENT, hybrid-vs-control comparison available with ties
+agreeing to 8.5e-14. E/F Design Patch still refuses
+(`DESIGN_PATCH_NON_SIMPLE_RING` from exact-duplicate adjacent
+sourceBoundary vertices at GAP joints) — pre-existing export shape, still
+fail-closed, not widened here.

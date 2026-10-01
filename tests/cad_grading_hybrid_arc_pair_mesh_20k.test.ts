@@ -7,9 +7,11 @@
  *   - zero expected/actual mismatches and one digest per identical success;
  *   - the rounded-square hybrid has 4 exact ties but is NOT buildable:
  *     independent topology audit FAILS (edgeComponents=8 vertex pinch),
- *     while tie points and plan area still match the production
- *     all-distance control (triangle-set delta documented);
- *   - the spec-literal concave geometry and the mismatch ladder fail closed;
+ *     while tie points still match the production all-distance control
+ *     (triangle-set delta documented; 20K.1 Wave C1 solved the production
+ *     control, so plan areas now honestly differ);
+ *   - the mismatch ladder fails closed (the spec-literal concave control
+ *     now solves via the C1 seam, audited valid);
  *   - the independent audit itself rejects a synthetic overlap.
  *
  * No production routing is touched. `src/` is unmodified.
@@ -103,14 +105,18 @@ describe('phase20k rounded-square hybrid (§27)', () => {
     expect(audit.issues.join('; ')).toContain('vertex pinch');
   });
 
-  it('records the production all-distance control failing closed at the seam gate', () => {
-    // 20K.1 Wave B2: the production curved control never reaches CURRENT
-    // (8 shared-index components), so the hybrid-vs-control comparison is
-    // honestly unavailable with the stable gate diagnostic as its detail.
+  it('records the production all-distance control solved via the C1 seam', () => {
+    // 20K.1 Wave C1: the production curved control reaches CURRENT, so the
+    // hybrid-vs-control comparison is available. Corner ties agree to
+    // <1e-12 (same analytic authority); meshes honestly differ (study
+    // overlap tiling 114 tris vs production exact seam 128 tris).
     const payload = readCorpus();
     const comparison = payload.summary.comparison;
-    expect(comparison?.available).toBe(false);
-    expect(comparison?.detail).toContain('GRADING_GROUP_ARC_SEAM_PINCH');
+    expect(comparison?.available).toBe(true);
+    expect(comparison?.tiePointsEqual).toBe(true);
+    expect(comparison?.maxTieDelta).toBeLessThan(1e-12);
+    expect(comparison?.hybridTriangles).toBe(114);
+    expect(comparison?.controlTriangles).toBe(128);
   });
 
   it('keeps control comparators available', () => {

@@ -317,15 +317,14 @@
       ],
       "tolerance": 0.1,
       "closed": true,
-      "expected": "GROUP_SELF_INTERSECTION",
-      "actual": "GROUP_SELF_INTERSECTION/GRADING_GROUP_DAYLIGHT_RING",
+      "expected": "ok",
+      "actual": "ok",
       "match": true,
-      "tieCount": 0,
+      "tieCount": 4,
       "rootCounts": [],
-      "meshValid": false,
+      "meshValid": true,
       "auditPass": null,
-      "detail": "GRADING_GROUP_DAYLIGHT_RING",
-      "digest": ""
+      "digest": "ec28b109bfc09615"
     },
     {
       "id": "closed.square.control.all-surface",
@@ -363,14 +362,16 @@
       ],
       "tolerance": 0.1,
       "closed": true,
-      "expected": "GROUP_NON_MANIFOLD",
-      "actual": "GROUP_NON_MANIFOLD/GRADING_GROUP_ARC_SEAM_PINCH: component count 8 != expected 1",
+      "expected": "ok",
+      "actual": "ok",
       "match": true,
-      "tieCount": 0,
+      "tieCount": 4,
       "rootCounts": [],
-      "meshValid": false,
+      "meshValid": true,
       "auditPass": null,
-      "digest": ""
+      "planArea": 9452.12482633509,
+      "detail": "3074da5246a1a13c",
+      "digest": "3074da5246a1a13c"
     },
     {
       "id": "closed.square.control.mixed-analytic",
@@ -385,14 +386,16 @@
       ],
       "tolerance": 0.1,
       "closed": true,
-      "expected": "GROUP_NON_MANIFOLD",
-      "actual": "GROUP_NON_MANIFOLD/GRADING_GROUP_ARC_SEAM_PINCH: component count 8 != expected 1",
+      "expected": "ok",
+      "actual": "ok",
       "match": true,
-      "tieCount": 0,
+      "tieCount": 4,
       "rootCounts": [],
-      "meshValid": false,
+      "meshValid": true,
       "auditPass": null,
-      "digest": ""
+      "planArea": 9452.12482633509,
+      "detail": "3074da5246a1a13c",
+      "digest": "3074da5246a1a13c"
     },
     {
       "id": "closed.square.mismatch.d24",
@@ -1038,17 +1041,17 @@
     "total": 39,
     "matched": 39,
     "mismatched": [],
-    "digests": 12,
+    "digests": 14,
     "comparison": {
-      "available": false,
+      "available": true,
       "planAreaEqual": false,
       "meshSetEqual": false,
-      "tiePointsEqual": false,
+      "tiePointsEqual": true,
       "digestEqual": false,
       "hybridTriangles": 114,
-      "controlTriangles": 0,
-      "maxTieDelta": null,
-      "detail": "GRADING_GROUP_ARC_SEAM_PINCH: component count 8 != expected 1"
+      "controlTriangles": 128,
+      "maxTieDelta": 8.526512829121202e-14,
+      "detail": "hybridDigest=5355ec70756e2887 controlDigest=3074da5246a1a13c"
     }
   }
 }

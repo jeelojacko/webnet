@@ -46,6 +46,7 @@ import {
   type MergeTriangle,
 } from './gradingGroupMerge';
 import { buildTargetQuery, candidateTriangles } from './gradingTargetIndex';
+import { assembleSolvedGradingChain, type ChordSeamChord } from './gradingChordSeam';
 import { solveGradingChord } from './solveAnalyticGradingChord';
 import { solveAnalyticCorner } from './gradingGroupAnalyticCorners';
 import { solveHybridCorner } from './gradingGroupHybridCorners';
@@ -339,7 +340,68 @@ export const computeGradingGroupFromSnapshots = (input: GroupSolveInput): Gradin
       }
       chordSolves.push(out.solve);
     }
-    const stitched = stitchChords(chordSolves);
+    // Phase 20K.1 Wave C1: curved analytic members stitch internal chord
+    // seams through the shared assembly (exact V, analytic tie); every
+    // other member keeps the exact standalone stitch byte-identical.
+    let stitched: StraightChordSolve;
+    if (member.isArc && isTargetFreeCriterion(criterionAt(mi))) {
+      const seamChords: ChordSeamChord[] = [];
+      for (let ci = 0; ci < chords.length; ci += 1) {
+        const chord = chords[ci]!;
+        const solve = chordSolves[ci]!;
+        const t = chordDir(chord.source);
+        const n = t ? gradingSideNormal(t.nx, t.ny, side) : null;
+        if (!t || !n) return fail('MEMBER_NO_SOLUTION', undefined, 'GRADING_DEGENERATE_SOURCE');
+        seamChords.push({
+          t, n,
+          gs: (chord.source.endZ - chord.source.startZ) / chord.source.length,
+          criterion: criterionAt(mi),
+          source: [
+            { x: chord.source.startX, y: chord.source.startY, z: chord.source.startZ },
+            { x: chord.source.endX, y: chord.source.endY, z: chord.source.endZ },
+          ],
+          daylight: [{ ...solve.daylightPts[0]! }, { ...solve.daylightPts[solve.daylightPts.length - 1]! }],
+          nodeStations: [solve.nodeStations[0]!, solve.nodeStations[solve.nodeStations.length - 1]!],
+          distances: [solve.distances[0]!, solve.distances[solve.distances.length - 1]!],
+        });
+      }
+      const assembled = assembleSolvedGradingChain(seamChords, maxSearchDistance, side);
+      if (!assembled.ok) return fail('MEMBER_NO_SOLUTION', undefined, assembled.detail);
+      // Joint canonicalization: member ends are bitwise-shared across the
+      // joint (exactXyz gate above) while linearized arc endpoints differ
+      // by ulps per arc. Snap the boundary source vertices to the member
+      // ends so both sides + the corner patch share one index; internal
+      // stations keep their exact linearized samples.
+      const canonFirst = { x: member.startX, y: member.startY, z: member.startZ };
+      const canonLast = { x: member.endX, y: member.endY, z: member.endZ };
+      assembled.value.sourcePts[0] = { ...canonFirst };
+      assembled.value.sourcePts[assembled.value.sourcePts.length - 1] = { ...canonLast };
+      const daylightFlat: number[] = [];
+      for (const p of assembled.value.daylightPts) daylightFlat.push(p.x, p.y, p.z);
+      const regions: StraightChordSolve['regions'] = [];
+      const diagnostics: StraightChordSolve['diagnostics'] = [];
+      let candidateTriangleCount = 0;
+      let intersectionSegmentCount = 0;
+      let multipleSolutionCount = 0;
+      for (const solve of chordSolves) {
+        regions.push(...solve.regions);
+        diagnostics.push(...solve.diagnostics);
+        candidateTriangleCount += solve.candidateTriangleCount;
+        intersectionSegmentCount += solve.intersectionSegmentCount;
+        multipleSolutionCount += solve.multipleSolutionCount;
+      }
+      stitched = {
+        regions, diagnostics,
+        nodeStations: assembled.value.nodeStations,
+        sourcePts: assembled.value.sourcePts,
+        daylightPts: assembled.value.daylightPts,
+        daylightFlat,
+        distances: assembled.value.distances,
+        candidateTriangleCount, intersectionSegmentCount, multipleSolutionCount,
+      };
+    } else {
+      stitched = stitchChords(chordSolves);
+    }
     const tIn = chordDir(chords[0]!.source);
     const tOut = chordDir(chords[chords.length - 1]!.source);
     if (!tIn || !tOut) return fail('MEMBER_NO_SOLUTION', undefined, 'GRADING_DEGENERATE_SOURCE');

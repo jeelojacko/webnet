@@ -7,6 +7,8 @@
  * reorganized into small helpers that move contiguous statement blocks
  * unchanged.
  */
+import { gradingSideNormal } from './gradingCourseFrame';
+import { assembleSolvedGradingChain, type ChordSeamChord } from './gradingChordSeam';
 import { linearizeGradingArc, type LinearizedGradingArc } from './gradingCurve';
 import { validateGradingMeshTopology } from './gradingTopology';
 import {
@@ -161,6 +163,61 @@ type ChordStitchResult =
   | { ok: true; stitch: ArcStitch }
   | { ok: false; code: GradingDiagnosticCode; detail?: string };
 
+/** Frame + solve of one linearized chord for the seam-aware stitch. */
+interface SeamChordCarry {
+  seam: ChordSeamChord;
+  solve: StraightChordSolve;
+}
+
+/** Per-chord analytic frame (same derivation as the chord solve itself). */
+const seamFrameFor = (
+  chordSource: GradingComputeSource,
+  side: GradingSide,
+): { t: { nx: number; ny: number }; n: { nx: number; ny: number }; gs: number } | null => {
+  const dx = chordSource.endX - chordSource.startX;
+  const dy = chordSource.endY - chordSource.startY;
+  const len = Math.hypot(dx, dy);
+  if (!(len > 0) || !Number.isFinite(len)) return null;
+  const n = gradingSideNormal(dx / len, dy / len, side);
+  if (!n) return null;
+  return { t: { nx: dx / len, ny: dy / len }, n, gs: (chordSource.endZ - chordSource.startZ) / chordSource.length };
+};
+
+/** Stitch analytic chord solves through the shared internal-seam assembly. */
+const stitchAnalyticSeam = (
+  carries: SeamChordCarry[],
+  side: GradingSide,
+  maxSearchDistance: number,
+): ChordStitchResult => {
+  const assembled = assembleSolvedGradingChain(
+    carries.map((c) => c.seam),
+    maxSearchDistance,
+    side,
+  );
+  if (!assembled.ok) return { ok: false, code: 'NO_SOLUTION', detail: assembled.detail };
+  const stitch: ArcStitch = {
+    regions: [],
+    diagnostics: [],
+    sourcePts: assembled.value.sourcePts,
+    daylightPts: assembled.value.daylightPts,
+    daylightFlat: [],
+    distances: assembled.value.distances,
+    nodeStations: assembled.value.nodeStations,
+    candidateTriangleCount: 0,
+    intersectionSegmentCount: 0,
+    multipleSolutionCount: 0,
+  };
+  for (const p of assembled.value.daylightPts) stitch.daylightFlat.push(p.x, p.y, p.z);
+  for (const c of carries) {
+    stitch.regions.push(...c.solve.regions);
+    stitch.diagnostics.push(...c.solve.diagnostics);
+    stitch.candidateTriangleCount += c.solve.candidateTriangleCount;
+    stitch.intersectionSegmentCount += c.solve.intersectionSegmentCount;
+    stitch.multipleSolutionCount += c.solve.multipleSolutionCount;
+  }
+  return { ok: true, stitch };
+};
+
 /** Run the chord solve once per linearized chord (analytic when target-free). */
 const solveArcChords = (
   input: ArcSolveInput,
@@ -171,6 +228,7 @@ const solveArcChords = (
   if (!isTargetFreeCriterion(criterion) && (!target || !query)) {
     return { ok: false, code: 'NO_SOLUTION', detail: 'GRADING_BAD_TARGET_MESH' };
   }
+  const analytic = isTargetFreeCriterion(criterion);
   const stitch: ArcStitch = {
     regions: [],
     diagnostics: [],
@@ -183,6 +241,7 @@ const solveArcChords = (
     intersectionSegmentCount: 0,
     multipleSolutionCount: 0,
   };
+  const carries: SeamChordCarry[] = [];
   for (let k = 0; k < linearized.subdivisions; k += 1) {
     const p0 = linearized.points[k]!;
     const p1 = linearized.points[k + 1]!;
@@ -201,8 +260,31 @@ const solveArcChords = (
       stationScale: segArc / chordSource.length,
     });
     if (!solved.ok) return solved;
+    // Phase 20K.1 Wave C1: analytic internal seams assemble through the
+    // shared chord-seam helper (exact V, analytic tie, no averaging).
+    if (analytic) {
+      const frame = seamFrameFor(chordSource, side);
+      if (!frame) return { ok: false, code: 'NO_SOLUTION', detail: 'GRADING_DEGENERATE_SOURCE' };
+      const s = solved.solve;
+      carries.push({
+        solve: s,
+        seam: {
+          t: frame.t,
+          n: frame.n,
+          gs: frame.gs,
+          criterion,
+          // Authoritative exact samples (solve endpoints may differ by 1 ulp).
+          source: [{ ...p0 }, { ...p1 }],
+          daylight: [{ ...s.daylightPts[0]! }, { ...s.daylightPts[s.daylightPts.length - 1]! }],
+          nodeStations: [s.nodeStations[0]!, s.nodeStations[s.nodeStations.length - 1]!],
+          distances: [s.distances[0]!, s.distances[s.distances.length - 1]!],
+        },
+      });
+      continue;
+    }
     appendStitchedChord(stitch, solved.solve);
   }
+  if (analytic) return stitchAnalyticSeam(carries, side, maxSearchDistance);
   return { ok: true, stitch };
 };
 
