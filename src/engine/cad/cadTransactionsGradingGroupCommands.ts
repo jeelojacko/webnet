@@ -25,7 +25,7 @@ import {
 } from './grading/gradingGroupTermination';
 import { toGradingCourseLikes, resolveGradingSourceCourse } from './grading/gradingCourseFrame';
 import { resolveGroupInputs } from './grading/gradingGroupResolve';
-import { validateGradingMeshTopology } from './grading/gradingTopology';
+import { gradingTopologyCertificateProductError } from './grading/gradingTopologyCertificate';
 import { appendCadProjectEntities } from './cadProjectState';
 import { commitLayerProject } from './cadTransactionsLayerCommands';
 import type {
@@ -425,8 +425,11 @@ const groupExtractCommand: CadCommandDefinition<GroupExtractCommand> = {
       return null;
     }
     if (result.daylightPoints.length < 6 || result.daylightPoints.length % 3 !== 0) return null;
-    // 20K.1 Wave B2: refuse a topology-failed CURRENT mesh (zero mutation).
-    if (result.gradingMesh.triangles.length > 0 && !validateGradingMeshTopology(result.gradingMesh.points, result.gradingMesh.triangles, { scope: 'group' }).ok) return null;
+    // 20K.2: refuse an uncertified / forged / mismatched CURRENT mesh.
+    if (gradingTopologyCertificateProductError(result.topologyCertificate, 'group', result.gradingMesh, {
+      sourceBoundaryPoints: result.sourceBoundaryPoints,
+      gradingBoundaryPoints: result.daylightPoints,
+    }) != null) return null;
     // 20J: the final boundary term is `Grading Boundary` for hybrid groups
     // only; homogeneous extracts keep their exact legacy name. The
     // `daylightPoints` result field is unchanged in every mode.
@@ -480,8 +483,11 @@ const groupBakeCommand: CadCommandDefinition<GroupBakeCommand> = {
       return null;
     }
     if (result.gradingMesh.triangles.length === 0) return null;
-    // 20K.1 Wave B2: refuse a topology-failed CURRENT mesh (zero mutation).
-    if (!validateGradingMeshTopology(result.gradingMesh.points, result.gradingMesh.triangles, { scope: 'group' }).ok) return null;
+    // 20K.2: refuse an uncertified / forged / mismatched CURRENT mesh.
+    if (gradingTopologyCertificateProductError(result.topologyCertificate, 'group', result.gradingMesh, {
+      sourceBoundaryPoints: result.sourceBoundaryPoints,
+      gradingBoundaryPoints: result.daylightPoints,
+    }) != null) return null;
     const criterion = inputs.group.criterion;
     // Phase 20J: the bake targetKind reflects the EFFECTIVE per-course
     // criteria. Homogeneous groups keep their exact legacy shape;

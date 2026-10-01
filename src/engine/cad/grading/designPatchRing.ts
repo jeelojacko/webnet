@@ -10,6 +10,7 @@
 import { resolveCadFeatureLine } from '../cadFeatureLines';
 import type { CadFeatureLineEntity } from '../cadTypes';
 import { resolveGradingSourceCourse, toGradingCourseLikes } from './gradingCourseFrame';
+import { AGREEMENT_FLOOR, coordinateAgreementTol, elevationAgreementTol } from './gradingGroupSectors';
 import { linearizeGradingArc } from './gradingCurve';
 import type { CadGradingGroup } from './gradingGroupTypes';
 import type { GradingMesh } from './gradingTypes';
@@ -116,10 +117,32 @@ export const deriveSourceRing = (
  */
 const normalizeCapturedRing = (points: readonly number[]): number[] | null => {
   if (!Array.isArray(points) || points.length % 3 !== 0 || points.length < 9) return null;
-  const ring = [...points];
-  const last = ring.length - 3;
-  if (ring[0] === ring[last] && ring[1] === ring[last + 1] && ring[2] === ring[last + 2]) {
-    ring.length = last;
+  const raw = [...points];
+  const last = raw.length - 3;
+  if (raw[0] === raw[last] && raw[1] === raw[last + 1] && raw[2] === raw[last + 2]) {
+    raw.length = last;
+  }
+  // Phase 20K.2: the captured boundary carries the shared source station V
+  // three times at every internal curved seam (the GAP fan's
+  // (V,Qin),(V,T),(V,Qout) pairs all reuse one source sample). Those are
+  // exact same-station duplicates, not geometry. Collapse bit-identical
+  // CONSECUTIVE vertices (first wins): order, orientation, Z values, and
+  // every distinct sample survive; no tolerance, no curve fit, no
+  // averaging. The straight-square capture has no duplicates, so the
+  // legacy path stays byte-identical.
+  const ring: number[] = [];
+  for (let i = 0; i < raw.length; i += 3) {
+    const prev = ring.length - 3;
+    if (prev >= 0 &&
+      ring[prev] === raw[i] && ring[prev + 1] === raw[i + 1] && ring[prev + 2] === raw[i + 2]) {
+      continue;
+    }
+    ring.push(raw[i]!, raw[i + 1]!, raw[i + 2]!);
+  }
+  // The closing vertex can repeat the first once the tail collapses.
+  if (ring.length >= 6) {
+    const l = ring.length - 3;
+    if (ring[0] === ring[l] && ring[1] === ring[l + 1] && ring[2] === ring[l + 2]) ring.length = l;
   }
   return ring.length >= 9 ? ring : null;
 };
@@ -189,6 +212,29 @@ const signedDoubleArea = (ring: readonly number[]): number => {
   return sum;
 };
 
+/**
+ * Representation-station identity. Two ring vertices are the SAME physical
+ * station when both plan coordinates and Z agree within the shared
+ * representation-agreement contract (32ε·scale + the 1 nm floor). The
+ * Surface seam assembly recomputes a station sample as `start + t·length`,
+ * so its twin can differ from the exact shared joint endpoint by a few ulps;
+ * that micro-separation is representation noise, not geometry (genuine
+ * linearization stations are metres apart). Used only to RECOGNISE twins in
+ * the simplicity predicate — no vertex is moved, averaged, or dropped.
+ */
+const sameRepresentationStation = (ring: readonly number[], i: number, j: number): boolean => {
+  const x1 = ring[i * 3]!;
+  const y1 = ring[i * 3 + 1]!;
+  const z1 = ring[i * 3 + 2]!;
+  const x2 = ring[j * 3]!;
+  const y2 = ring[j * 3 + 1]!;
+  const z2 = ring[j * 3 + 2]!;
+  const scale = Math.max(1, Math.abs(x1), Math.abs(x2), Math.abs(y1), Math.abs(y2));
+  return Math.abs(x1 - x2) <= coordinateAgreementTol(x1, x2, scale) &&
+    Math.abs(y1 - y2) <= coordinateAgreementTol(y1, y2, scale) &&
+    Math.abs(z1 - z2) <= elevationAgreementTol(z1, z2, []) + AGREEMENT_FLOOR;
+};
+
 /** Finite, >=3 distinct non-adjacent-XY verts, simple, nonzero plan area. */
 export const validateSourceRing = (ring: readonly number[]): { ok: true } | DesignPatchFailure => {
   if (!Array.isArray(ring) || ring.length % 3 !== 0 || ringCount(ring) < 3) {
@@ -203,19 +249,34 @@ export const validateSourceRing = (ring: readonly number[]): { ok: true } | Desi
     if (ring[i * 3]! === ring[next * 3]! && ring[i * 3 + 1]! === ring[next * 3 + 1]!) {
       return designPatchBlock('DESIGN_PATCH_NON_SIMPLE_RING', `duplicate adjacent vertex ${i}/${next}`);
     }
-    for (let j = i + 1; j < n; j += 1) {
-      if (j === i + 1 || (i === 0 && j === n - 1)) continue;
-      if (ring[i * 3]! === ring[j * 3]! && ring[i * 3 + 1]! === ring[j * 3 + 1]!) {
+  }
+  // Simplicity is judged on the representation-collapsed station list: a
+  // seam twin (V recomputed as start + t·length) is the same station as its
+  // exact partner, so the micro-segment must not manufacture a crossing.
+  const kept: number[] = [];
+  for (let i = 0; i < n; i += 1) {
+    if (kept.length > 0 && sameRepresentationStation(ring, i, kept[kept.length - 1]!)) continue;
+    kept.push(i);
+  }
+  if (kept.length > 1 && sameRepresentationStation(ring, kept[0]!, kept[kept.length - 1]!)) kept.pop();
+  if (kept.length < 3) {
+    return designPatchBlock('DESIGN_PATCH_NON_SIMPLE_RING', 'ring collapses below three distinct stations');
+  }
+  const m = kept.length;
+  for (let ii = 0; ii < m; ii += 1) {
+    const i = kept[ii]!;
+    const b = kept[(ii + 1) % m]!;
+    for (let jj = ii + 1; jj < m; jj += 1) {
+      if (jj === ii + 1 || (ii === 0 && jj === m - 1)) continue;
+      const j = kept[jj]!;
+      const d = kept[(jj + 1) % m]!;
+      if (sameRepresentationStation(ring, i, j)) {
         return designPatchBlock('DESIGN_PATCH_NON_SIMPLE_RING', `duplicate non-adjacent vertex ${i}/${j}`);
       }
-      const a = i;
-      const b = (i + 1) % n;
-      const c = j;
-      const d = (j + 1) % n;
       if (
         segmentsIntersect(
-          ring[a * 3]!, ring[a * 3 + 1]!, ring[b * 3]!, ring[b * 3 + 1]!,
-          ring[c * 3]!, ring[c * 3 + 1]!, ring[d * 3]!, ring[d * 3 + 1]!,
+          ring[i * 3]!, ring[i * 3 + 1]!, ring[b * 3]!, ring[b * 3 + 1]!,
+          ring[j * 3]!, ring[j * 3 + 1]!, ring[d * 3]!, ring[d * 3 + 1]!,
         )
       ) {
         return designPatchBlock('DESIGN_PATCH_NON_SIMPLE_RING', `self-intersection ${i}/${j}`);

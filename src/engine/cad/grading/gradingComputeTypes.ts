@@ -28,5 +28,12 @@ export type GradingComputeOutcome =
 
 export interface TargetQuery {
   elevationAt: (_x: number, _y: number) => number | null;
+  /**
+   * Raw target mesh buffers backing `elevationAt` (flat XYZ + CCW triples),
+   * exposed so seam-proving walks can intersect actual facets instead of
+   * resampling the query at a fixed number of points.
+   */
+  targetPoints: readonly number[];
+  targetTriangles: readonly number[];
   queryCount: number;
 }

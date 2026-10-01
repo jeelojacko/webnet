@@ -19,6 +19,8 @@
  * persisted vertical intent, never a converted distance.
  */
 
+import type { GradingTopologyCertificate } from './gradingTopologyCertificate';
+
 export type GradingSide = 'left' | 'right';
 
 export type GradingCriterion =
@@ -154,6 +156,12 @@ export interface CadGradingResult {
   regions: GradingResultRegion[];
   /** Derived daylight polyline vertices as flat XYZ triplets (source-station order). */
   daylightPoints: number[];
+  /**
+   * Phase 20K.2: the exact source boundary the certificate digested (flat
+   * XYZ, source-station order). Session-only; product validation re-derives
+   * the certificate's sourceBoundaryDigest from this array.
+   */
+  sourceBoundaryPoints?: number[];
   gradingMesh: GradingMesh;
   sourceLength: number;
   gradingPlanArea: number;
@@ -168,6 +176,11 @@ export interface CadGradingResult {
   intersectionSegmentCount: number;
   multipleSolutionCount: number;
   diagnostics: GradingDiagnostic[];
+  /**
+   * Phase 20K.2: session-only topology certificate produced after final
+   * mesh assembly. Never persisted and never hashed into `grev1:`.
+   */
+  topologyCertificate?: GradingTopologyCertificate;
 }
 
 /** Circular-arc parameters for a resolved source, oriented A->B (radians). */

@@ -43,6 +43,7 @@ import {
 import type { CadSurfaceCache } from '../../engine/cad/cadSurfaceCache';
 import { surfaceContentRevision } from '../../engine/cad/cadSurfaceView';
 import { gradingCriterionText, gradingSideText } from './cadGradingShell';
+import { gradingTopologyCertificateProductError } from '../../engine/cad/grading/gradingTopologyCertificate';
 
 /** Session grading result cache surface (the integration slice owns the impl). */
 export interface CadGradingResultCache {
@@ -318,7 +319,15 @@ export const buildCadGradingSnapshot = (
       currentResult,
       calculable:
         status !== 'BUILDING' && status !== 'BROKEN_REFERENCE' && resolvedSource != null && targetCurrent,
-      exportable: status === 'CURRENT' && currentResult != null,
+      exportable:
+        status === 'CURRENT' &&
+        currentResult != null &&
+        gradingTopologyCertificateProductError(
+          currentResult.topologyCertificate,
+          'standalone',
+          currentResult.gradingMesh,
+          { sourceBoundaryPoints: currentResult.sourceBoundaryPoints, gradingBoundaryPoints: currentResult.daylightPoints },
+        ) == null,
       stationSpan:
         resolvedSource != null
           ? [0, resolvedSource.length]

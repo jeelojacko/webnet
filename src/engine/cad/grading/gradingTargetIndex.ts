@@ -39,6 +39,10 @@ export const buildTargetQuery = (target: GradingTargetMeshSnapshot): TargetQuery
       queryCount += 1;
       return getSurfaceElevationAt(build, x, y);
     },
+    // The raw buffers the interpolator reads: facet-level walks use them to
+    // test the actual triangles instead of resampling elevationAt.
+    targetPoints: target.points,
+    targetTriangles: target.triangles,
     get queryCount() {
       return queryCount;
     },

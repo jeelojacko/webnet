@@ -33,6 +33,7 @@ import {
 import { resolveGroupInputs } from '../../engine/cad/grading/gradingGroupResolve';
 import { resolveGroupMemberCriteria } from '../../engine/cad/grading/gradingGroupCourseCriteria';
 import { groupTerminationMode } from '../../engine/cad/grading/gradingGroupTermination';
+import { gradingTopologyCertificateProductError } from '../../engine/cad/grading/gradingTopologyCertificate';
 import {
   formatGradingCriterion,
   gradingSideText,
@@ -277,7 +278,15 @@ export const buildCadGradingGroupSnapshot = (
         effectiveStatus !== 'BROKEN_REFERENCE' &&
         inputs != null &&
         targetCurrent,
-      exportable: effectiveStatus === 'CURRENT' && currentResult != null,
+      exportable:
+        effectiveStatus === 'CURRENT' &&
+        currentResult != null &&
+        gradingTopologyCertificateProductError(
+          currentResult.topologyCertificate,
+          'group',
+          currentResult.gradingMesh,
+          { sourceBoundaryPoints: currentResult.sourceBoundaryPoints, gradingBoundaryPoints: currentResult.daylightPoints },
+        ) == null,
     };
   });
   return {

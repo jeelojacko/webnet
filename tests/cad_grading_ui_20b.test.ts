@@ -21,6 +21,7 @@ import {
   buildCadGradingSnapshot,
   type CadGradingResultCache,
 } from '../src/cad-app/shell/cadGradingSnapshot';
+import { buildGradingTopologyCertificate } from '../src/engine/cad/grading/gradingTopologyCertificate';
 import {
   formatSignedGradePercent,
   parseHorizontalVerticalRatio,
@@ -144,6 +145,7 @@ const mkResult = (
   accuracy,
   regions: [{ classification: 'FILL', stationSpan: [0, 10] }],
   daylightPoints: [0, 20, 0, 10, 20, 0],
+  sourceBoundaryPoints: [0, 0, 0, 10, 0, 0],
   gradingMesh: {
     points: [0, 0, 0, 10, 0, 0, 10, 20, 0, 0, 20, 0],
     triangles: [0, 1, 2, 0, 2, 3],
@@ -161,6 +163,13 @@ const mkResult = (
   intersectionSegmentCount: 1,
   multipleSolutionCount: 0,
   diagnostics: [],
+  topologyCertificate: buildGradingTopologyCertificate({
+    scope: 'standalone',
+    points: [0, 0, 0, 10, 0, 0, 10, 20, 0, 0, 20, 0],
+    triangles: [0, 1, 2, 0, 2, 3],
+    sourceBoundaryPoints: [0, 0, 0, 10, 0, 0],
+    gradingBoundaryPoints: [0, 20, 0, 10, 20, 0],
+  }) ?? undefined,
 });
 
 const cacheOf = (results: readonly CadGradingResult[]): CadGradingResultCache => ({
