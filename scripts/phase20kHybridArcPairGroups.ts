@@ -782,13 +782,16 @@ export const roundedSquareScenarios = (): { hybrid?: HybridArcGroupResult; contr
     detail: literalDist.detail, digest: literalDist.digest ?? '',
   }));
   // all-Surface control (surface-only ⇒ production path, no hybrid guard).
+  // 20K.1 Wave C2: internal chord seams assemble through the shared
+  // Surface-corner authority with exact endpoint sharing, so the control
+  // now reaches CURRENT (same cure family as the C1 analytic rows).
   const allCriteria = [FIXED(-0.5), FIXED(-0.5), FIXED(-0.5), FIXED(-0.5)];
   const surf = productionControl(members, allCriteria, model, tol, flatTin(0));
   CASES.push(row({
     id: 'closed.square.control.all-surface', category: 'rounded-square-control', order: 'closed',
     model, criteria: allCriteria.map((c) => JSON.stringify(c)), tolerance: tol, closed: true,
-    expected: 'CORNER_NO_SOLUTION', actual: surf.ok ? 'ok' : `${surf.code}/${surf.detail}`,
-    match: !surf.ok && surf.code === 'CORNER_NO_SOLUTION',
+    expected: 'ok', actual: surf.ok ? 'ok' : `${surf.code}/${surf.detail}`,
+    match: surf.ok,
     tieCount: surf.tieCount ?? 0, rootCounts: [], meshValid: surf.ok, auditPass: null,
     planArea: surf.planArea, detail: surf.detail, digest: surf.digest ?? '',
   }));
@@ -888,13 +891,16 @@ export const cornerScenarios = (): void => {
     ...base, criteria: [FIXED(-0.5), DIST(-0.5, 20)], maxSearchDistance: 5,
   }, 'MEMBER_NO_SOLUTION');
   // Sloped target: plane z = 0.05·x (still covers the joint); exact tie.
+  // 20K.1 Wave C2: chord daylight agreement now passes the sloped solve,
+  // so the hybrid joint correctly reports the slope-broken exact tie at
+  // its own gate (same verdict family as the D=24 mismatch ladder).
   const slopedTin: GradingTargetMeshSnapshot = {
     points: [-400, -400, -20, 400, -400, 20, 400, 400, 20, -400, 400, -20],
     triangles: [0, 1, 2, 0, 2, 3],
   };
   recordGroup('corner.sloped-target', 'sloped-target', {
     ...base, criteria: [FIXED(-0.5), DIST(-0.5, 20)], target: slopedTin,
-  }, 'GRADING_DAYLIGHT_DISAGREE');
+  }, 'TRANSITION_REQUIRED');
   // Triangulation permutation of the flat target: identical tie expected.
   const spun = flatTin(0);
   const altTin: GradingTargetMeshSnapshot = { points: spun.points, triangles: [0, 1, 3, 1, 2, 3] };

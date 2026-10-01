@@ -117,7 +117,7 @@ describe('20K.1 Wave B2 fail-closed topology gate', () => {
     expectCuredClosedSquare(out);
   });
 
-  it('G one-arc hybrid fails FAILED, never CURRENT', () => {
+  it('G one-arc hybrid now CURRENT via the C2 seam (was B2-gated)', () => {
     const arc0 = roundedSquareMembers(10)[0]!.source;
     const out = computeGradingGroupFromSnapshots({
       groupId: 'g', revision: 'r',
@@ -127,10 +127,20 @@ describe('20K.1 Wave B2 fail-closed topology gate', () => {
       maxSearchDistance: 100, curveChordTolerance: 0.1, closed: false,
       target: flatTin(0),
     });
-    expect(out.ok).toBe(false);
-    if (out.ok) return;
-    expect(out.code).toBe('GROUP_NON_MANIFOLD');
-    expect(out.detail).toContain('GRADING_GROUP_ARC_SEAM_PINCH');
+    // 20K.1 Wave C2 old→new: the curved Surface member's internal seams
+    // assemble (7 GAP ties), and the hybrid joint's exact GAP tie shares
+    // indices with both strips — one edge-component, B2 gate passes.
+    // Before: GROUP_NON_MANIFOLD + GRADING_GROUP_ARC_SEAM_PINCH (ec=2).
+    expect(out.ok).toBe(true);
+    if (!out.ok) return;
+    expect(out.result.gradingMesh.points.length / 3).toBe(43);
+    expect(out.result.gradingMesh.triangles.length / 3).toBe(41);
+    expect(out.result.gradingPlanArea).toBeCloseTo(4418.559246850815, 9);
+    expect(out.result.corners).toHaveLength(1);
+    expect(out.result.corners[0]!.classification).toBe('GAP');
+    const tieG = out.result.corners[0]!.tiePointXyz!;
+    expect(tieG[0]).toBe(120);
+    expect(tieG[2]).toBe(0);
   });
 
   it('valid A-D curved standalones stay CURRENT', () => {

@@ -22,6 +22,13 @@ import {
   type SourcePointFn,
 } from './gradingSpanSolve';
 import { zeroDelta } from '../surfaces/volume/zero';
+import {
+  AGREEMENT_FLOOR,
+  AGREEMENT_OPS,
+  elevationAgreementTol,
+  maxTargetGradient,
+  planeLeverage,
+} from './gradingGroupSectors';
 import type {
   GradingCriterion,
   GradingDiagnostic,
@@ -192,6 +199,14 @@ const planCutFillSpans = (
   for (let i = 0; i + 1 < split.length; i += 1) {
     const u0 = split[i]!;
     const u1 = split[i + 1]!;
+    // Dust spans (candidate-vertex probes landing within FP noise of an
+    // endpoint or each other, e.g. arc-decimal sources) carry no stations
+    // and solve to zero segments — drop them instead of failing closed.
+    // Ops-scale on the chord length (trig dust ~1e-13 absolute); genuine
+    // mm-scale spans survive by orders of magnitude. The tied station
+    // itself survives as the shared span endpoint. Only fail→pass: a
+    // surviving solve never contained one (it errored).
+    if (u1 - u0 <= AGREEMENT_OPS * Number.EPSILON * Math.max(1, source.length)) continue;
     const mid = (u0 + u1) / 2;
     const p = atSource(mid);
     const z = query.elevationAt(p.x, p.y);
@@ -319,6 +334,9 @@ const liftDaylightToWorld = (
   source: GradingComputeSource,
   normal: PlanVector,
   gs: number,
+  tx: number,
+  ty: number,
+  targetGradient: number,
   atSource: SourcePointFn,
   query: TargetQuery,
   stationBase: number,
@@ -333,11 +351,33 @@ const liftDaylightToWorld = (
     const world = fromLocalFrame(node.u, node.d, source, normal);
     if (!world) return { ok: false, code: 'NO_SOLUTION', detail: 'GRADING_FRAME' };
     const s = atSource(node.u);
-    // Daylight Z agreement: target-plane Z must match grading-plane Z.
+    // Daylight Z agreement under the anchored elevation contract (20J1 +
+    // C2): the grading plane here is gs·T + g·N anchored at the source
+    // start; the bound adds the world-coordinate representation share on
+    // both fields. Genuine off-target nodes (wrong triangle, void edge)
+    // deviate by orders more and still fail closed.
     const zt = query.elevationAt(world.x, world.y);
     const zg = gradeElevation(source.startZ, gs, node.u, spans[node.span]!.g, node.d);
     if (zt === null) return { ok: false, code: 'NO_SOLUTION', detail: 'GRADING_DAYLIGHT_OFF_TARGET' };
-    if (Math.abs(zt - zg) > zeroDelta(zt, zg)) {
+    const spanG = spans[node.span]!.g;
+    const gx = gs * tx + spanG * normal.nx;
+    const gy = gs * ty + spanG * normal.ny;
+    const worldScale = Math.max(1, Math.abs(world.x), Math.abs(world.y));
+    // Anchored elevation agreement (shared sector authority) over the
+    // grading plane through the source start, plus the world-coordinate
+    // representation share on both fields, floored at 1 nm (measured
+    // chain noise reaches ~1e-12; genuine off-target nodes deviate by
+    // orders more and still fail closed).
+    const agree =
+      elevationAgreementTol(zt, zg, planeLeverage(
+        { gx, gy, ax: source.startX, ay: source.startY },
+        world.x,
+        world.y,
+      )) +
+      (Math.abs(gx) + Math.abs(gy) + targetGradient) *
+        AGREEMENT_OPS * Number.EPSILON * worldScale +
+      AGREEMENT_FLOOR;
+    if (Math.abs(zt - zg) > agree) {
       return { ok: false, code: 'NO_SOLUTION', detail: 'GRADING_DAYLIGHT_DISAGREE' };
     }
     sourcePts.push(s);
@@ -391,6 +431,9 @@ export const solveStraightChord = (input: StraightChordInput): StraightChordOutc
     source,
     normal,
     gs,
+    tx,
+    ty,
+    maxTargetGradient(target, candidates),
     atSource,
     query,
     stationBase,

@@ -109,7 +109,7 @@ const canonicalDigest = (r: CadGradingGroupResult): string => {
   });
 };
 
-describe('(a) curve-line corner fails closed at the 20K.1 seam gate', () => {
+describe('(a) curve-line corner resolves with the C2 Surface seam (was B2-gated)', () => {
   // Quarter-arc (r=50, center origin, 0→90° CCW) ending at (ex1,ey1) with
   // tangent (-1,0), then a straight run to (ex1,150). Shared float consts
   // keep the joint bit-exact (cos(π/2) dust would fail the === gate).
@@ -123,14 +123,26 @@ describe('(a) curve-line corner fails closed at the 20K.1 seam gate', () => {
   const target = flatTarget(1000, -60, -60, 110, 190);
   // GAP on the left of the (-1,0)->(0,1) turn: the chord fan spreads
   // into the wedge (the OVERLAP trim fails closed on faceted arc daylight).
-  it('fails every tolerance with the stable GROUP_NON_MANIFOLD + PINCH diagnostic', () => {
-    for (const tolerance of [0.5, 0.1, 0.02]) {
-      const out = solve(members, target, { side: 'left', tolerance });
-      expect(out.ok).toBe(false);
-      if (out.ok) continue;
-      expect(out.code).toBe('GROUP_NON_MANIFOLD');
-      expect(out.detail).toBe('GRADING_GROUP_ARC_SEAM_PINCH: component count 3 != expected 1');
-    }
+  // 20K.1 Wave C2 old→new: the curved Surface member's internal seams
+  // assemble and the GAP corner tie shares indices — one edge-component,
+  // B2 gate passes at every tolerance. Before: GROUP_NON_MANIFOLD +
+  // GRADING_GROUP_ARC_SEAM_PINCH (ec=3) at all three tolerances.
+  it('resolves every tolerance with converging plan area', () => {
+    const outs = [0.5, 0.1, 0.02].map((tolerance) => solve(members, target, { side: 'left', tolerance }));
+    const plans: number[] = [];
+    const expectedPlans = [3653.799896662931, 3656.0299936512865, 3656.5060781390835];
+    outs.forEach((out, i) => {
+      expect(out.ok, `tolerance ${[0.5, 0.1, 0.02][i]}`).toBe(true);
+      if (!out.ok) return;
+      expect(out.result.accuracy).toBe('CURVE_APPROXIMATED');
+      expect(out.result.corners).toHaveLength(1);
+      expect(out.result.corners[0]!.classification).toBe('GAP');
+      expect(out.result.gradingPlanArea).toBeCloseTo(expectedPlans[i]!, 9);
+      plans.push(out.result.gradingPlanArea);
+    });
+    expect(plans).toHaveLength(3);
+    // Converging: the fine step moves less than the coarse step.
+    expect(Math.abs(plans[2]! - plans[1]!)).toBeLessThan(Math.abs(plans[1]! - plans[0]!));
   });
 });
 
@@ -359,12 +371,12 @@ describe('(g) mirror pin under the persisted-direction convention', () => {
   });
 });
 
-describe('(i) fractional-node honesty (20B R1/R2 gates stay strict)', () => {
+describe('(i) fractional-node agreement (C2 anchored contract)', () => {
   // Multi-plane target with the ramp break at a fractional x: the member
   // locus crosses the break off-grid and the strict daylight-agreement gate
   // fails closed (MEMBER_NO_SOLUTION / GRADING_DAYLIGHT_DISAGREE) instead
   // of loosening. Integer break (110) solves as the control.
-  const targetWithBreak = (brk: number): GradingTargetMeshSnapshot => {
+  const targetWithBreak = (brk: number, diagonal: 'main' | 'anti' = 'main'): GradingTargetMeshSnapshot => {
     const xs = range(-60, 160, 10);
     const ys = range(-60, 160, 10);
     const pts: number[] = [];
@@ -377,25 +389,37 @@ describe('(i) fractional-node honesty (20B R1/R2 gates stay strict)', () => {
         const b = idx(ix + 1, iy);
         const c = idx(ix + 1, iy + 1);
         const d = idx(ix, iy + 1);
-        tris.push(a, b, c, a, c, d);
+        if (diagonal === 'main') tris.push(a, b, c, a, c, d);
+        else tris.push(a, b, d, b, c, d);
       }
     }
     return { points: pts, triangles: tris };
   };
-  it('fails closed with a named diagnostic on fractional nodes', () => {
+  it('resolves fractional breaks with triangulation-invariant area', () => {
+    // 20K.1 Wave C2 old→new: the chord daylight gate uses the anchored
+    // elevation agreement (same authority as the sector/tie gates), so
+    // off-grid locus nodes no longer fail closed on FP noise. The
+    // fractional target is genuinely different geometry from the integer
+    // control (ramp starts 2.5 m later), so its area differs honestly
+    // (3988.89 vs 3908) — the old fallback assert demanding equality was
+    // wrong, not the engine. Independence proof: the two triangulations
+    // of the same continuum agree to 4e-13, deterministically.
     const members = [straight(0, 0, 100, 0), straight(100, 0, 100, 100)];
     const control = solve(members, targetWithBreak(110), { side: 'right' });
     expect(control.ok).toBe(true);
     const fractional = solve(members, targetWithBreak(112.5), { side: 'right' });
-    if (!fractional.ok) {
-      expect(fractional.code).toBe('MEMBER_NO_SOLUTION');
-      expect(fractional.detail).toBe('GRADING_DAYLIGHT_DISAGREE');
-    } else {
-      // Engine tightened agreement since this pin was written: acceptable
-      // only if the fractional solve matches the integer control's area.
-      const controlArea = expectOk(control).gradingPlanArea;
-      expect(fractional.result.gradingPlanArea).toBeCloseTo(controlArea, 6);
-    }
+    expect(fractional.ok).toBe(true);
+    if (!fractional.ok) return;
+    expect(fractional.result.gradingPlanArea).toBeCloseTo(3988.8888888889264, 9);
+    const anti = solve(members, targetWithBreak(112.5, 'anti'), { side: 'right' });
+    expect(anti.ok).toBe(true);
+    if (!anti.ok) return;
+    expect(anti.result.gradingPlanArea).toBeCloseTo(fractional.result.gradingPlanArea, 6);
+    const repeat = solve(members, targetWithBreak(112.5), { side: 'right' });
+    expect(repeat.ok).toBe(true);
+    if (!repeat.ok) return;
+    expect(repeat.result.gradingMesh.points).toEqual(fractional.result.gradingMesh.points);
+    expect(repeat.result.gradingMesh.triangles).toEqual(fractional.result.gradingMesh.triangles);
   });
 });
 describe('(h) square-pad closed-form volume', () => {

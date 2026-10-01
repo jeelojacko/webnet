@@ -20,6 +20,13 @@ import { zeroDelta } from '../surfaces/volume/zero';
 import type { PlanVector } from './gradingCourseFrame';
 import { solveAnalyticCorner } from './gradingGroupAnalyticCorners';
 import { classifyCorner } from './gradingCornerMath';
+import type { GradingComputeSource, GradingTargetMeshSnapshot, TargetQuery } from './gradingComputeTypes';
+import {
+  crossGradeAtV,
+  solveSurfaceCorner,
+} from './gradingGroupSurfaceCorners';
+import { lineSide as sectorLineSide, samePlanNode } from './gradingGroupSectors';
+import type { StraightChordSolve } from './solveStraightChord';
 import type { GradingCriterion, GradingSide } from './gradingTypes';
 
 export interface ChordSeamPoint {
@@ -214,4 +221,342 @@ export const digestSeamMesh = (points: number[], triangles: number[]): string =>
     hash = Math.imul(hash, 0x01000193);
   }
   return (hash >>> 0).toString(16).padStart(8, '0');
+};
+
+// ---------------------------------------------------------------------------
+// Phase 20K.1 Wave C2 — Surface (Fixed + Cut/Fill) internal chord seams.
+// ---------------------------------------------------------------------------
+
+/** One Surface chord solve plus the frame that produced it. */
+export interface SurfaceSeamChord {
+  t: PlanVector;
+  n: PlanVector;
+  gs: number;
+  chord: GradingComputeSource;
+  solve: StraightChordSolve;
+}
+
+export interface SurfaceSeamInput {
+  side: GradingSide;
+  /** Single effective criterion for the whole chain (one arc, one member). */
+  criterion: GradingCriterion;
+  maxSearchDistance: number;
+  target: GradingTargetMeshSnapshot;
+  candidates: number[];
+  query: TargetQuery;
+}
+
+const sameSeamPt = (a: ChordSeamPoint, b: ChordSeamPoint): boolean =>
+  Math.abs(a.x - b.x) <= zeroDelta(a.x, b.x) &&
+  Math.abs(a.y - b.y) <= zeroDelta(a.y, b.y) &&
+  Math.abs(a.z - b.z) <= zeroDelta(a.z, b.z);
+
+
+/**
+ * Paired-array clip of a (source, daylight) run to the closed half-plane on
+ * the same side of `line` as `keep`. Daylight decisions reuse the exact
+ * sector `lineSide` + zeroDelta gates (bitwise-identical daylight to the
+ * unpaired clip); inserted crossings lerp the source mate under the strip
+ * model's exact linearity — no projection, no relaxation.
+ */
+const clipPairedRunToHalfPlane = (
+  source: ChordSeamPoint[],
+  daylight: ChordSeamPoint[],
+  station: number[],
+  dist: number[],
+  line: { vx: number; vy: number; mx: number; my: number },
+  keep: { x: number; y: number },
+): { source: ChordSeamPoint[]; daylight: ChordSeamPoint[]; station: number[]; dist: number[] } | null => {
+  const keepSide = sectorLineSide(line, keep.x, keep.y);
+  const wantPositive = keepSide >= 0;
+  const inside = (p: ChordSeamPoint): boolean => {
+    const s = sectorLineSide(line, p.x, p.y);
+    return wantPositive ? s >= -zeroDelta(s, 0) : s <= zeroDelta(s, 0);
+  };
+  const outS: ChordSeamPoint[] = [];
+  const outD: ChordSeamPoint[] = [];
+  const outT: number[] = [];
+  const outL: number[] = [];
+  for (let i = 0; i < daylight.length; i += 1) {
+    const p = daylight[i]!;
+    const s = source[i]!;
+    const pIn = inside(p);
+    if (i > 0) {
+      const a = daylight[i - 1]!;
+      const sa = source[i - 1]!;
+      if (inside(a) !== pIn) {
+        const ea = sectorLineSide(line, a.x, a.y);
+        const eb = sectorLineSide(line, p.x, p.y);
+        const t = ea === eb ? 0 : ea / (ea - eb);
+        outS.push({ x: sa.x + (s.x - sa.x) * t, y: sa.y + (s.y - sa.y) * t, z: sa.z + (s.z - sa.z) * t });
+        outD.push({ x: a.x + (p.x - a.x) * t, y: a.y + (p.y - a.y) * t, z: a.z + (p.z - a.z) * t });
+        outT.push(station[i - 1]! + (station[i]! - station[i - 1]!) * t);
+        outL.push(dist[i - 1]! + (dist[i]! - dist[i - 1]!) * t);
+      }
+    }
+    if (pIn) {
+      outS.push({ ...s });
+      outD.push({ ...p });
+      outT.push(station[i]!);
+      outL.push(dist[i]!);
+    }
+  }
+  if (outD.length === 0) return null;
+  return { source: outS, daylight: outD, station: outT, dist: outL };
+};
+
+/**
+ * Stitch Surface chord solves into seam-resolved boundary runs. Each
+ * internal station resolves through the shared Surface-corner authority
+ * (`solveSurfaceCorner`: active-grade planes, miter seam, outward ray +
+ * extent, nearest valid outward root, sector-path build/trim). GAP splices
+ * the Q-to-tie sector paths between the chord runs; OVERLAP paired-trims
+ * both runs to the miter line first. Corner wedges emit repeated-V pairs
+ * so the strip builder tiles the fan exactly once. Fail-closed on any
+ * degenerate seam (caller maps to NO_SOLUTION, never CURRENT).
+ */
+export const assembleSurfaceChain = (
+  chords: SurfaceSeamChord[],
+  input: SurfaceSeamInput,
+): ChordSeamOutcome => {
+  const { side, criterion, maxSearchDistance, target, candidates, query } = input;
+  if (chords.length === 0) return { ok: false, detail: 'GRADING_SURFACE_SEAM_EMPTY' };
+  if (!(maxSearchDistance > 0) || !Number.isFinite(maxSearchDistance)) {
+    return { ok: false, detail: 'GRADING_BAD_SEARCH_DISTANCE' };
+  }
+  if (criterion.kind !== 'fixed' && criterion.kind !== 'cut-fill') {
+    return { ok: false, detail: 'GRADING_SURFACE_SEAM_CRITERION' };
+  }
+  // Mutable daylight/source working runs per chord (OVERLAP trims the tips).
+  const dayRuns: ChordSeamPoint[][] = [];
+  const srcRuns: ChordSeamPoint[][] = [];
+  const stnRuns: number[][] = [];
+  const disRuns: number[][] = [];
+  for (const c of chords) {
+    const s = c.solve;
+    if (s.sourcePts.length !== s.daylightPts.length || s.sourcePts.length < 2) {
+      return { ok: false, detail: 'GRADING_SURFACE_SEAM_RUN' };
+    }
+    for (const p of [...s.sourcePts, ...s.daylightPts]) {
+      if (!finitePt(p)) return { ok: false, detail: 'GRADING_SURFACE_SEAM_NON_FINITE' };
+    }
+    dayRuns.push(s.daylightPts.map((p) => ({ ...p })));
+    srcRuns.push(s.sourcePts.map((p) => ({ ...p })));
+    stnRuns.push([...s.nodeStations]);
+    disRuns.push([...s.distances]);
+  }
+  // Resolve every internal joint, threading trimmed runs forward (each
+  // chord is trimmed at most at its two tips by its two joints).
+  interface JointRun { v: ChordSeamPoint; station: number; run: ChordSeamPoint[]; kind: 'GAP' | 'OVERLAP' | 'STITCH'; tie: ChordSeamPoint | null; ray: { mx: number; my: number } | null; extent: number | null }
+  const joints: JointRun[] = [];
+  for (let j = 1; j < chords.length; j += 1) {
+    const incoming = chords[j - 1]!;
+    const outgoing = chords[j]!;
+    const cIn = incoming.chord;
+    const v: ChordSeamPoint = { x: cIn.endX, y: cIn.endY, z: cIn.endZ };
+    const w = outgoing.chord;
+    if (v.x !== w.startX || v.y !== w.startY || v.z !== w.startZ) {
+      return { ok: false, detail: 'GRADING_SURFACE_SEAM_STATION_MISMATCH' };
+    }
+    const station = incoming.solve.nodeStations[incoming.solve.nodeStations.length - 1]!;
+    const turn = classifyCorner(incoming.t, outgoing.t, side);
+    if (!turn) return { ok: false, detail: 'GRADING_SURFACE_SEAM' };
+    // Per-side active grades: a CUT/FILL transition can land exactly on an
+    // internal joint (tied V, CUT one side, FILL the other), so each
+    // corner plane extends its own strip's end grade — sampled just off V
+    // along each chord through the same active-grade authority. Uniform
+    // zones reproduce the at-V grade exactly.
+    const sideGrade = (chord: (typeof chords)[number]['chord'], fromStart: boolean): number | null => {
+      const eps = Math.min(1e-3, chord.length / 4);
+      const u = fromStart ? eps : chord.length - eps;
+      const px = chord.startX + (chord.endX - chord.startX) * (u / chord.length);
+      const py = chord.startY + (chord.endY - chord.startY) * (u / chord.length);
+      const pz = chord.startZ + (chord.endZ - chord.startZ) * (u / chord.length);
+      const zt = query.elevationAt(px, py);
+      if (zt === null) return null;
+      return crossGradeAtV(criterion, zt - pz);
+    };
+    const gIn = sideGrade(cIn, false);
+    const gOut = sideGrade(w, true);
+    if (gIn === null || gOut === null) return { ok: false, detail: 'GRADING_SURFACE_SEAM_V_COVERAGE' };
+    const inDay = dayRuns[j - 1]!;
+    const outDay = dayRuns[j]!;
+    const solved = solveSurfaceCorner({
+      vx: v.x, vy: v.y, vz: v.z, side,
+      tIn: incoming.t, nIn: incoming.n, gsIn: incoming.gs, gIn,
+      tOut: outgoing.t, nOut: outgoing.n, gsOut: outgoing.gs, gOut,
+      classification: turn,
+      target, candidates, query, maxSearchDistance,
+      q1: { ...inDay[inDay.length - 1]! },
+      q2: { ...outDay[0]! },
+      midIn: { x: (cIn.startX + v.x) / 2, y: (cIn.startY + v.y) / 2 },
+      midOut: { x: (v.x + w.endX) / 2, y: (v.y + w.endY) / 2 },
+      inDaylight: inDay.map((p) => ({ ...p })),
+      outDaylight: outDay.map((p) => ({ ...p })),
+      inTris: [],
+      outTris: [],
+    });
+    if (!solved.ok) {
+      // Cross-grade transition joints (CUT one side, FILL the other) admit
+      // no shared miter ray — the planes diverge vertically, not in plan.
+      // The honest tiling is a direct fan across the wedge (exact on
+      // planar targets); same-grade inversions still fail closed below.
+      const crossGrade =
+        solved.code === 'CORNER_INVERTED' &&
+        solved.detail === 'GRADING_CORNER_RAY' &&
+        gIn !== gOut;
+      if (!crossGrade) return { ok: false, detail: `GRADING_SURFACE_SEAM:${solved.code}:${solved.detail}` };
+      joints.push({
+        v, station,
+        run: [{ ...inDay[inDay.length - 1]! }, { ...outDay[0]! }],
+        kind: 'GAP', tie: null, ray: null, extent: null,
+      });
+      continue;
+    }
+    const corner = solved.value;
+    if (corner.coincident || turn === 'TANGENT') {
+      joints.push({ v, station, run: [{ ...inDay[inDay.length - 1]! }], kind: 'STITCH', tie: { ...corner.tie }, ray: { ...corner.ray }, extent: corner.extent });
+      continue;
+    }
+    // Exact-endpoint corner run: tips are the authoritative (possibly
+    // trimmed) run ends; interior keeps the snapped sector vertices.
+    let inRun = inDay;
+    let outRun = outDay;
+    let inSrc = srcRuns[j - 1]!;
+    let outSrc = srcRuns[j]!;
+    if (turn === 'OVERLAP') {
+      const line = { vx: v.x, vy: v.y, mx: corner.ray.mx, my: corner.ray.my };
+      const keepIn = { x: (cIn.startX + v.x) / 2, y: (cIn.startY + v.y) / 2 };
+      const keepOut = { x: (v.x + w.endX) / 2, y: (v.y + w.endY) / 2 };
+      const trimmedIn = clipPairedRunToHalfPlane(inSrc, inDay, stnRuns[j - 1]!, disRuns[j - 1]!, line, keepIn);
+      const trimmedOut = clipPairedRunToHalfPlane(outSrc, outDay, stnRuns[j]!, disRuns[j]!, line, keepOut);
+      if (!trimmedIn || !trimmedOut) return { ok: false, detail: 'GRADING_SURFACE_SEAM:GRADING_CORNER_TRIM' };
+      inRun = trimmedIn.daylight;
+      outRun = trimmedOut.daylight;
+      inSrc = trimmedIn.source;
+      outSrc = trimmedOut.source;
+      // Wedge-coincident tips canonicalize to the tie ahead of the
+      // authority check (same rule as the helper).
+      const preCanon = (p: ChordSeamPoint): ChordSeamPoint =>
+        samePlanNode(p, corner.tie) ? { ...corner.tie } : p;
+      inRun[inRun.length - 1] = preCanon(inRun[inRun.length - 1]!);
+      outRun[0] = preCanon(outRun[0]!);
+      // Authoritative daylight check: paired trim matches the helper trim.
+      const authIn = corner.inDaylight;
+      const authOut = corner.outDaylight;
+      const matches =
+        inRun.length === authIn.length &&
+        outRun.length === authOut.length &&
+        inRun.every((p, i) => sameSeamPt(p, authIn[i]!)) &&
+        outRun.every((p, i) => sameSeamPt(p, authOut[i]!));
+      if (!matches) return { ok: false, detail: 'GRADING_SURFACE_SEAM_TRIM_MISMATCH' };
+      dayRuns[j - 1] = inRun.map((p) => ({ ...p }));
+      dayRuns[j] = outRun.map((p) => ({ ...p }));
+      srcRuns[j - 1] = inSrc.map((p) => ({ ...p }));
+      srcRuns[j] = outSrc.map((p) => ({ ...p }));
+      stnRuns[j - 1] = [...trimmedIn.station];
+      stnRuns[j] = [...trimmedOut.station];
+      disRuns[j - 1] = [...trimmedIn.dist];
+      disRuns[j] = [...trimmedOut.dist];
+    }
+    // Wedge-coincident tips canonicalize to the tie (same rule as the
+    // helper: quantum twins share one value, no T-junctions). GAP and
+    // OVERLAP alike; far tips are untouched.
+    const tieDist = Math.hypot(corner.tie.x - v.x, corner.tie.y - v.y);
+    const canonTip = (p: ChordSeamPoint): ChordSeamPoint =>
+      samePlanNode(p, corner.tie) ? { ...corner.tie } : p;
+    const lastIn = dayRuns[j - 1]!.length - 1;
+    dayRuns[j - 1]![lastIn] = canonTip(dayRuns[j - 1]![lastIn]!);
+    dayRuns[j]![0] = canonTip(dayRuns[j]![0]!);
+    if (samePlanNode(dayRuns[j - 1]![lastIn]!, corner.tie)) disRuns[j - 1]![lastIn] = tieDist;
+    if (samePlanNode(dayRuns[j]![0]!, corner.tie)) disRuns[j]![0] = tieDist;
+    inRun = dayRuns[j - 1]!;
+    outRun = dayRuns[j]!;
+    const inTip = inRun[inRun.length - 1]!;
+    const outTip = outRun[0]!;
+    // The helper corner run already carries exact shared endpoints
+    // (authoritative tips + miter tie) around snapped interior locus
+    // vertices. A single-point run is a true zero-width wedge (trimmed
+    // tips + tie coincident): stitch one pair, tie still recorded.
+    // Sanity-check the spline against the trimmed tips.
+    const run: ChordSeamPoint[] = corner.cornerRun.map((p) => ({ ...p }));
+    if (run.length === 0) return { ok: false, detail: 'GRADING_SURFACE_SEAM_DEGENERATE' };
+    if (!samePlanNode(run[0]!, inTip) || !samePlanNode(run[run.length - 1]!, outTip)) {
+      return { ok: false, detail: 'GRADING_SURFACE_SEAM_PATH' };
+    }
+    joints.push({ v, station, run, kind: turn, tie: { ...corner.tie }, ray: { ...corner.ray }, extent: corner.extent });
+  }
+  // Emit: chord runs in order, corner wedges as repeated-V pairs.
+  const assembly: ChordSeamAssembly = {
+    sourcePts: [],
+    daylightPts: [],
+    nodeStations: [],
+    distances: [],
+    ties: [],
+  };
+  const planDist = (a: ChordSeamPoint, b: ChordSeamPoint): number =>
+    Math.hypot(b.x - a.x, b.y - a.y);
+  const pushPair = (s: ChordSeamPoint, d: ChordSeamPoint, station: number, dist: number): void => {
+    // Fully-tied nodes (daylight recomputed onto the source through a
+    // different arithmetic path) canonicalize to the source plan value,
+    // so the strip builder sees exact zero-width pairs and reports
+    // ALREADY_TIED instead of slivering. Plan-quantum twins only.
+    const dd = samePlanNode(d, s) ? { x: s.x, y: s.y, z: d.z } : { ...d };
+    assembly.sourcePts.push({ ...s });
+    assembly.daylightPts.push(dd);
+    assembly.nodeStations.push(station);
+    assembly.distances.push(dist);
+  };
+  /** Bitwise-consecutive-dupe guard: the corner run shares its endpoint
+   *  VALUES with the adjacent run tips (same arithmetic), so re-emitting
+   *  them would tile zero-area quads. Trimmed tips carry distinct sources
+   *  and must be kept (no shortcut across the joint). */
+  const dupePair = (s: ChordSeamPoint, d: ChordSeamPoint): boolean => {
+    const n = assembly.sourcePts.length;
+    if (n === 0) return false;
+    const ps = assembly.sourcePts[n - 1]!;
+    const pd = assembly.daylightPts[n - 1]!;
+    return ps.x === s.x && ps.y === s.y && ps.z === s.z && pd.x === d.x && pd.y === d.y && pd.z === d.z;
+  };
+  const pushLive = (s: ChordSeamPoint, d: ChordSeamPoint, station: number, dist: number): void => {
+    if (!dupePair(s, d)) pushPair(s, d, station, dist);
+  };
+  for (let i = 0; i < srcRuns[0]!.length; i += 1) {
+    pushPair(srcRuns[0]![i]!, dayRuns[0]![i]!, stnRuns[0]![i]!, disRuns[0]![i]!);
+  }
+  for (let j = 1; j < chords.length; j += 1) {
+    const joint = joints[j - 1]!;
+    if (joint.kind === 'STITCH') {
+      // Tips already agree; runs already share the endpoint bitwise.
+      for (let i = 1; i < srcRuns[j]!.length; i += 1) {
+        pushPair(srcRuns[j]![i]!, dayRuns[j]![i]!, stnRuns[j]![i]!, disRuns[j]![i]!);
+      }
+      continue;
+    }
+    // Corner fan: endpoint nodes already stand as run tips (same values),
+    // so only interior locus vertices emit as repeated-V pairs — endpoint
+    // dupes would tile zero-length daylight edges. Degenerate wedges
+    // (run <= 2 points) force the tie pair so the joint sample V survives
+    // in the source boundary. Tieless cross-grade fans force both V pairs
+    // (the wedge tiles across them; the flat boundary dedups values).
+    if (joint.tie === null) {
+      for (const r of joint.run) {
+        pushLive(joint.v, r, joint.station, planDist(joint.v, r));
+      }
+    } else if (joint.run.length <= 2) {
+      pushLive(joint.v, joint.tie, joint.station, planDist(joint.v, joint.tie));
+    } else {
+      for (let k = 1; k + 1 < joint.run.length; k += 1) {
+        const r = joint.run[k]!;
+        pushLive(joint.v, r, joint.station, planDist(joint.v, r));
+      }
+    }
+    if (joint.tie !== null && joint.ray !== null && joint.extent !== null) {
+      assembly.ties.push({ joint: j, kind: joint.kind, tie: { ...joint.tie }, ray: { ...joint.ray }, extent: joint.extent });
+    }
+    for (let i = 0; i < srcRuns[j]!.length; i += 1) {
+      pushLive(srcRuns[j]![i]!, dayRuns[j]![i]!, stnRuns[j]![i]!, disRuns[j]![i]!);
+    }
+  }
+  return { ok: true, value: assembly };
 };

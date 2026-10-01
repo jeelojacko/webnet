@@ -339,15 +339,15 @@
       ],
       "tolerance": 0.1,
       "closed": true,
-      "expected": "CORNER_NO_SOLUTION",
-      "actual": "CORNER_NO_SOLUTION/GRADING_CORNER_SECTOR",
+      "expected": "ok",
+      "actual": "ok",
       "match": true,
-      "tieCount": 0,
+      "tieCount": 4,
       "rootCounts": [],
-      "meshValid": false,
+      "meshValid": true,
       "auditPass": null,
-      "detail": "GRADING_CORNER_SECTOR",
-      "digest": ""
+      "planArea": 9452.12482633508,
+      "digest": "798067858dacc647"
     },
     {
       "id": "closed.square.control.all-distance",
@@ -745,15 +745,15 @@
       ],
       "tolerance": 0.1,
       "closed": false,
-      "expected": "GRADING_DAYLIGHT_DISAGREE",
-      "actual": "MEMBER_NO_SOLUTION/GRADING_DAYLIGHT_DISAGREE",
+      "expected": "TRANSITION_REQUIRED",
+      "actual": "CORNER_NO_SOLUTION/GRADING_SURFACE_ANALYTIC_TRANSITION_REQUIRED",
       "match": true,
       "tieCount": 0,
       "rootCounts": [],
       "meshValid": false,
       "auditPass": null,
-      "detail": "GRADING_DAYLIGHT_DISAGREE",
-      "digest": "f03ba89fd20854e0"
+      "detail": "GRADING_SURFACE_ANALYTIC_TRANSITION_REQUIRED",
+      "digest": "ed0c3ff8324c6f1e"
     },
     {
       "id": "corner.alt-triangulation",
@@ -1041,7 +1041,7 @@
     "total": 39,
     "matched": 39,
     "mismatched": [],
-    "digests": 14,
+    "digests": 15,
     "comparison": {
       "available": true,
       "planAreaEqual": false,

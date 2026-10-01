@@ -14,18 +14,12 @@
  *
  * The assertions FREEZE the recorded actuals. Wave B2 wired the fail-closed
  * seam gate, so E/F/G failed closed (GROUP_NON_MANIFOLD + PINCH detail).
- * Wave C1 (analytic internal chord-seam assembly) cured E/F: internal GAP
- * seams now fan to the analytic tie and member-joint vertices canonicalize
- * to the bitwise-shared member ends, so both groups reach CURRENT with
- * 1 INDEX edge-component, 2 boundary loops, and zero coincident sets
- * (old->new E/F: gated/0/0 -> CURRENT/128pts/128tris/plan 9452.124826335).
- * Analytic standalones A/B/C keep TOPOLOGY_VALID with +7 verts/+7 tris
- * (one tie + one fan triangle per internal joint) and plan area
- * 2082.837637462 -> 2082.880954009 (overlap double-cover removed, fan
- * added). G (surface arc member: C2 scope) and H (surface-only) still fail
- * closed; their rows freeze the gated actuals. Any further genuine seam
- * fix changes these counts and must update this file + the companion audit
- * doc `docs/evidence/phase20k1-curved-seam-post-merge-audit.md`.
+ * Wave C2 (Surface internal chord-seam assembly) cured D/G/H: D reaches
+ * CURRENT with the analytic-matching plan (2082.837637462 -> 2082.880954009,
+ * overlap double-cover removed, fan added — the same new value C1 recorded
+ * for A/B/C); G reaches CURRENT (43pts/41tris, exact GAP tie); H reaches
+ * CURRENT (156pts/156tris, plan == analytic square 9452.124826335).
+ * Old→new is recorded per row below; no mass snapshot updates.
  *
  * Production success is judged on INDEX topology; the geometric/weld
  * diagnostic is reported SEPARATELY and never used to claim success.
@@ -392,11 +386,15 @@ const EXPECTED: Record<string, Expected> = {
   'standalone.A distance': { engineOk: true, status: 'ok(CLEAN)', points: 32, triangles: 30, tieCount: 0, planArea: 2082.880954009, validator: null, indexEdgeComponents: 1, indexBoundaryEdges: 32, indexBoundaryLoops: 1, coincidentVertexSets: 0, coincidentNonSharedEdges: 0, weldedEdgeComponents: 1, classification: 'TOPOLOGY_VALID', canCurrent: true, canExtract: true, canBake: true, canDesignPatch: false },
   'standalone.B elevation': { engineOk: true, status: 'ok(CLEAN)', points: 32, triangles: 30, tieCount: 0, planArea: 2082.880954009, validator: null, indexEdgeComponents: 1, indexBoundaryEdges: 32, indexBoundaryLoops: 1, coincidentVertexSets: 0, coincidentNonSharedEdges: 0, weldedEdgeComponents: 1, classification: 'TOPOLOGY_VALID', canCurrent: true, canExtract: true, canBake: true, canDesignPatch: false },
   'standalone.C relative': { engineOk: true, status: 'ok(CLEAN)', points: 32, triangles: 30, tieCount: 0, planArea: 2082.880954009, validator: null, indexEdgeComponents: 1, indexBoundaryEdges: 32, indexBoundaryLoops: 1, coincidentVertexSets: 0, coincidentNonSharedEdges: 0, weldedEdgeComponents: 1, classification: 'TOPOLOGY_VALID', canCurrent: true, canExtract: true, canBake: true, canDesignPatch: false },
-  'standalone.D surface fixed': { engineOk: true, status: 'ok(CLEAN)', points: 32, triangles: 30, tieCount: 0, planArea: 2082.837637462, validator: null, indexEdgeComponents: 1, indexBoundaryEdges: 32, indexBoundaryLoops: 1, coincidentVertexSets: 2, coincidentNonSharedEdges: 0, weldedEdgeComponents: 1, classification: 'TOPOLOGY_VALID', canCurrent: true, canExtract: true, canBake: true, canDesignPatch: false },
+  'standalone.D surface fixed': { engineOk: true, status: 'ok(CLEAN)', points: 39, triangles: 37, tieCount: 0, planArea: 2082.880954009, validator: null, indexEdgeComponents: 1, indexBoundaryEdges: 39, indexBoundaryLoops: 1, coincidentVertexSets: 2, coincidentNonSharedEdges: 0, weldedEdgeComponents: 1, classification: 'TOPOLOGY_VALID', canCurrent: true, canExtract: true, canBake: true, canDesignPatch: false },
   'closed.square.all-distance': { engineOk: true, status: 'ok(CURVE_CORNER_APPROXIMATED)', points: 128, triangles: 128, tieCount: 4, planArea: 9452.124826335, validator: null, indexEdgeComponents: 1, indexBoundaryEdges: 128, indexBoundaryLoops: 2, coincidentVertexSets: 0, coincidentNonSharedEdges: 0, weldedEdgeComponents: 1, classification: 'TOPOLOGY_VALID', canCurrent: true, canExtract: true, canBake: true, canDesignPatch: false },
   'closed.square.mixed-analytic': { engineOk: true, status: 'ok(CURVE_CORNER_APPROXIMATED)', points: 128, triangles: 128, tieCount: 4, planArea: 9452.124826335, validator: null, indexEdgeComponents: 1, indexBoundaryEdges: 128, indexBoundaryLoops: 2, coincidentVertexSets: 0, coincidentNonSharedEdges: 0, weldedEdgeComponents: 1, classification: 'TOPOLOGY_VALID', canCurrent: true, canExtract: true, canBake: true, canDesignPatch: false },
-  'open.hybrid.one-arc': { engineOk: false, status: 'GROUP_NON_MANIFOLD/GRADING_GROUP_ARC_SEAM_PINCH: component count 2 != expected 1', points: 0, triangles: 0, tieCount: 0, planArea: 0, validator: null, indexEdgeComponents: 0, indexBoundaryEdges: 0, indexBoundaryLoops: 0, coincidentVertexSets: 0, coincidentNonSharedEdges: 0, weldedEdgeComponents: 0, classification: 'EXISTING_FAIL_CLOSED', canCurrent: false, canExtract: false, canBake: false, canDesignPatch: false },
-  'closed.square.all-surface': { engineOk: false, status: 'CORNER_NO_SOLUTION/GRADING_CORNER_SECTOR', points: 0, triangles: 0, tieCount: 0, planArea: 0, validator: null, indexEdgeComponents: 0, indexBoundaryEdges: 0, indexBoundaryLoops: 0, coincidentVertexSets: 0, coincidentNonSharedEdges: 0, weldedEdgeComponents: 0, classification: 'EXISTING_FAIL_CLOSED', canCurrent: false, canExtract: false, canBake: false, canDesignPatch: false },
+  // C2 old→new G: GROUP_NON_MANIFOLD/GRADING_GROUP_ARC_SEAM_PINCH (ec=2,
+  // no mesh) -> CURRENT 43pts/41tris, 1 GAP tie, TOPOLOGY_VALID.
+  'open.hybrid.one-arc': { engineOk: true, status: 'ok(CURVE_CORNER_APPROXIMATED)', points: 43, triangles: 41, tieCount: 1, planArea: 4418.559246851, validator: null, indexEdgeComponents: 1, indexBoundaryEdges: 43, indexBoundaryLoops: 1, coincidentVertexSets: 2, coincidentNonSharedEdges: 0, weldedEdgeComponents: 1, classification: 'TOPOLOGY_VALID', canCurrent: true, canExtract: true, canBake: true, canDesignPatch: false },
+  // C2 old→new H: CORNER_NO_SOLUTION/GRADING_CORNER_SECTOR (no mesh) ->
+  // CURRENT 156pts/156tris, 4 GAP ties, TOPOLOGY_VALID, plan == analytic E.
+  'closed.square.all-surface': { engineOk: true, status: 'ok(CURVE_CORNER_APPROXIMATED)', points: 156, triangles: 156, tieCount: 4, planArea: 9452.124826335, validator: null, indexEdgeComponents: 1, indexBoundaryEdges: 156, indexBoundaryLoops: 2, coincidentVertexSets: 11, coincidentNonSharedEdges: 0, weldedEdgeComponents: 1, classification: 'TOPOLOGY_VALID', canCurrent: true, canExtract: true, canBake: true, canDesignPatch: false },
   'standalone.straight.fixed': { engineOk: true, status: 'ok(CLEAN)', points: 4, triangles: 2, tieCount: 0, planArea: 2000, validator: null, indexEdgeComponents: 1, indexBoundaryEdges: 4, indexBoundaryLoops: 1, coincidentVertexSets: 0, coincidentNonSharedEdges: 0, weldedEdgeComponents: 1, classification: 'TOPOLOGY_VALID', canCurrent: true, canExtract: true, canBake: true, canDesignPatch: false },
   'closed.square.straight': { engineOk: true, status: 'ok(CLEAN)', points: 16, triangles: 16, tieCount: 4, planArea: 9600, validator: null, indexEdgeComponents: 1, indexBoundaryEdges: 16, indexBoundaryLoops: 2, coincidentVertexSets: 0, coincidentNonSharedEdges: 0, weldedEdgeComponents: 1, classification: 'TOPOLOGY_VALID', canCurrent: true, canExtract: true, canBake: true, canDesignPatch: true },
 };

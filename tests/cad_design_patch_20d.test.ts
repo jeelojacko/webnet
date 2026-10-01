@@ -309,12 +309,16 @@ describe('(e) accuracy disclosure matches the group result', () => {
       side: 'left', criterion: { kind: 'fixed', gradeRatio: -0.5 },
       maxSearchDistance: 50, curveChordTolerance: 0.05, closed: false, target: target(),
     });
-    // 20K.1 Wave B2: the faceted curved joint never edge-stitches, so the
-    // revision fails closed instead of reaching CURRENT.
-    expect(result.ok).toBe(false);
-    if (result.ok) return;
-    expect(result.code).toBe('GROUP_NON_MANIFOLD');
-    expect(result.detail).toContain('GRADING_GROUP_ARC_SEAM_PINCH');
+    // 20K.1 Wave C2 old→new: the curved Surface member's internal seams
+    // assemble and the GAP corner tie shares indices — one edge-component,
+    // B2 gate passes, revision CURRENT. Before: GROUP_NON_MANIFOLD +
+    // GRADING_GROUP_ARC_SEAM_PINCH (ec=3).
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.result.gradingMesh.points.length / 3).toBe(80);
+    expect(result.result.gradingMesh.triangles.length / 3).toBe(78);
+    expect(result.result.gradingPlanArea).toBeCloseTo(3656.32023028, 8);
+    expect(result.result.accuracy).toBe('CURVE_APPROXIMATED');
     // Accuracy disclosure stays a pure provenance passthrough.
     expect(makeDesignPatchProvenance({
       groupId: 'g-curve', groupName: 'Curve', groupRevision: 'ggrev1:t',

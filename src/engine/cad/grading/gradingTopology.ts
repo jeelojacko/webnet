@@ -20,6 +20,12 @@ export interface GradingTopologyOpts {
   expectedBoundaryLoops?: number;
   /** Vertex indices where a tied split legitimately separates components. */
   tiedSplitStations?: number[];
+  /**
+   * Phase 20K.1 Wave C2: extra component budget without vertex positions
+   * (standalone arc strips report pair-run counts; the merged mesh has
+   * already lost source/daylight roles). Additive with tiedSplitStations.
+   */
+  tiedSplitBudget?: number;
   scope?: 'arc' | 'group';
 }
 
@@ -175,9 +181,10 @@ export const validateGradingMeshTopology = (
   const loops = traceLoops(boundary);
   const expectedComponents = opts.expectedComponents ?? 1;
   const tied = new Set(opts.tiedSplitStations ?? []);
+  const splitBudget = tied.size + Math.max(0, Math.floor(opts.tiedSplitBudget ?? 0));
   if (components !== expectedComponents) {
-    const allowed = expectedComponents + tied.size;
-    if (components <= allowed && tied.size > 0) {
+    const allowed = expectedComponents + splitBudget;
+    if (components <= allowed && splitBudget > 0) {
       if (opts.expectedBoundaryLoops !== undefined && loops !== opts.expectedBoundaryLoops) {
         return fail(PINCH, `loop count ${loops} != expected ${opts.expectedBoundaryLoops}`, components, boundary.length, loops);
       }

@@ -8,7 +8,9 @@
  * unchanged.
  */
 import { gradingSideNormal } from './gradingCourseFrame';
-import { assembleSolvedGradingChain, type ChordSeamChord } from './gradingChordSeam';
+import { assembleSolvedGradingChain, assembleSurfaceChain, type ChordSeamChord } from './gradingChordSeam';
+import { candidateTriangles } from './gradingTargetIndex';
+import { samePlanNode } from './gradingGroupSectors';
 import { linearizeGradingArc, type LinearizedGradingArc } from './gradingCurve';
 import { validateGradingMeshTopology } from './gradingTopology';
 import {
@@ -107,6 +109,8 @@ interface ArcStitch {
   candidateTriangleCount: number;
   intersectionSegmentCount: number;
   multipleSolutionCount: number;
+  /** Maximal zero-width pair runs (tied-split budget for the B2 gate). */
+  tiedSplitBudget: number;
 }
 
 /** Chord source between two linearized arc samples. */
@@ -130,44 +134,16 @@ const chordSourceFor = (
   };
 };
 
-/** Stitch one solved chord in station order, dropping agreed joint dupes. */
-const appendStitchedChord = (stitch: ArcStitch, chord: StraightChordSolve): void => {
-  // Stitch in station order: the shared joint node is solved by both
-  // adjacent chords, so drop the duplicate when both boundaries agree
-  // under the zeroDelta floor (span-tagged same-plane convention).
-  let skipFirst = 0;
-  if (
-    stitch.sourcePts.length > 0 &&
-    seamEquals(stitch.sourcePts[stitch.sourcePts.length - 1]!, chord.sourcePts[0]!) &&
-    seamEquals(stitch.daylightPts[stitch.daylightPts.length - 1]!, chord.daylightPts[0]!)
-  ) {
-    skipFirst = 1;
-  }
-  stitch.regions.push(...chord.regions);
-  stitch.diagnostics.push(...chord.diagnostics);
-  for (let i = skipFirst; i < chord.sourcePts.length; i += 1) {
-    stitch.sourcePts.push(chord.sourcePts[i]!);
-    stitch.daylightPts.push(chord.daylightPts[i]!);
-    stitch.distances.push(chord.distances[i]!);
-    stitch.nodeStations.push(chord.nodeStations[i]!);
-  }
-  for (let i = skipFirst * 3; i < chord.daylightFlat.length; i += 1) {
-    stitch.daylightFlat.push(chord.daylightFlat[i]!);
-  }
-  stitch.candidateTriangleCount += chord.candidateTriangleCount;
-  stitch.intersectionSegmentCount += chord.intersectionSegmentCount;
-  stitch.multipleSolutionCount += chord.multipleSolutionCount;
-};
+/** Frame + solve of one linearized chord for the seam-aware stitch. */
+interface SeamChordCarry {
+  solve: StraightChordSolve;
+  chordSource: GradingComputeSource;
+  frame: { t: { nx: number; ny: number }; n: { nx: number; ny: number }; gs: number };
+}
 
 type ChordStitchResult =
   | { ok: true; stitch: ArcStitch }
   | { ok: false; code: GradingDiagnosticCode; detail?: string };
-
-/** Frame + solve of one linearized chord for the seam-aware stitch. */
-interface SeamChordCarry {
-  seam: ChordSeamChord;
-  solve: StraightChordSolve;
-}
 
 /** Per-chord analytic frame (same derivation as the chord solve itself). */
 const seamFrameFor = (
@@ -183,14 +159,116 @@ const seamFrameFor = (
   return { t: { nx: dx / len, ny: dy / len }, n, gs: (chordSource.endZ - chordSource.startZ) / chordSource.length };
 };
 
-/** Stitch analytic chord solves through the shared internal-seam assembly. */
+/** Stitch Surface chord solves through the shared internal-seam assembly. */
+const stitchSurfaceSeam = (
+  carries: SeamChordCarry[],
+  input: ArcSolveInput,
+): ChordStitchResult => {
+  const { side, criterion, maxSearchDistance, target, query } = input;
+  if (!target || !query) {
+    return { ok: false, code: 'NO_SOLUTION', detail: 'GRADING_BAD_TARGET_MESH' };
+  }
+  // Seam-level candidates over the source bbox (mirrors the group path).
+  let minX = Infinity;
+  let minY = Infinity;
+  let maxX = -Infinity;
+  let maxY = -Infinity;
+  for (const c of carries) {
+    const s = c.chordSource;
+    minX = Math.min(minX, s.startX, s.endX);
+    minY = Math.min(minY, s.startY, s.endY);
+    maxX = Math.max(maxX, s.startX, s.endX);
+    maxY = Math.max(maxY, s.startY, s.endY);
+  }
+  const candidates = candidateTriangles(target, [
+    { x: minX - maxSearchDistance, y: minY - maxSearchDistance },
+    { x: maxX + maxSearchDistance, y: minY - maxSearchDistance },
+    { x: maxX + maxSearchDistance, y: maxY + maxSearchDistance },
+    { x: minX - maxSearchDistance, y: maxY + maxSearchDistance },
+  ]);
+  if (!candidates) return { ok: false, code: 'NO_SOLUTION', detail: 'GRADING_BAD_TARGET_MESH' };
+  const assembled = assembleSurfaceChain(
+    carries.map((c) => ({
+      t: c.frame.t,
+      n: c.frame.n,
+      gs: c.frame.gs,
+      chord: c.chordSource,
+      solve: c.solve,
+    })),
+    { side, criterion, maxSearchDistance, target, candidates, query },
+  );
+  if (!assembled.ok) return { ok: false, code: 'NO_SOLUTION', detail: assembled.detail };
+  const stitch: ArcStitch = {
+    regions: [],
+    diagnostics: [],
+    sourcePts: assembled.value.sourcePts,
+    daylightPts: assembled.value.daylightPts,
+    daylightFlat: [],
+    distances: assembled.value.distances,
+    nodeStations: assembled.value.nodeStations,
+    candidateTriangleCount: 0,
+    intersectionSegmentCount: 0,
+    multipleSolutionCount: 0,
+    tiedSplitBudget: 0,
+  };
+  for (const p of assembled.value.daylightPts) stitch.daylightFlat.push(p.x, p.y, p.z);
+  // The boundary polyline drops bitwise-duplicate consecutive nodes
+  // (repeated-V fan pairs share run-tip values); the strip pairs above
+  // keep them for tiling. Exact-value dedup only — geometry untouched.
+  const flat = stitch.daylightFlat;
+  const clean: number[] = [];
+  for (let i = 0; i + 2 < flat.length; i += 3) {
+    const n = clean.length;
+    if (n >= 3 && clean[n - 3] === flat[i] && clean[n - 2] === flat[i + 1] && clean[n - 1] === flat[i + 2]) continue;
+    clean.push(flat[i]!, flat[i + 1]!, flat[i + 2]!);
+  }
+  stitch.daylightFlat = clean;
+  // Tied-split budget: maximal runs of zero-width pairs (daylight back
+  // on the source) legitimately pinch the strip — same budget family as
+  // the group gate's tied stations.
+  let tiedSplitBudget = 0;
+  let inRun = false;
+  for (let i = 0; i < stitch.sourcePts.length; i += 1) {
+    const tied = samePlanNode(stitch.daylightPts[i]!, stitch.sourcePts[i]!);
+    if (tied && !inRun) {
+      tiedSplitBudget += 1;
+      inRun = true;
+    } else if (!tied) {
+      inRun = false;
+    }
+  }
+  stitch.tiedSplitBudget = tiedSplitBudget;
+  for (const c of carries) {
+    stitch.regions.push(...c.solve.regions);
+    stitch.diagnostics.push(...c.solve.diagnostics);
+    stitch.candidateTriangleCount += c.solve.candidateTriangleCount;
+    stitch.intersectionSegmentCount += c.solve.intersectionSegmentCount;
+    stitch.multipleSolutionCount += c.solve.multipleSolutionCount;
+  }
+  stitch.intersectionSegmentCount += assembled.value.ties.length;
+  return { ok: true, stitch };
+};
 const stitchAnalyticSeam = (
   carries: SeamChordCarry[],
+  criterion: GradingCriterion,
   side: GradingSide,
   maxSearchDistance: number,
 ): ChordStitchResult => {
   const assembled = assembleSolvedGradingChain(
-    carries.map((c) => c.seam),
+    carries.map((c): ChordSeamChord => ({
+      t: c.frame.t,
+      n: c.frame.n,
+      gs: c.frame.gs,
+      criterion,
+      // Authoritative exact samples (solve endpoints may differ by 1 ulp).
+      source: [
+        { x: c.chordSource.startX, y: c.chordSource.startY, z: c.chordSource.startZ },
+        { x: c.chordSource.endX, y: c.chordSource.endY, z: c.chordSource.endZ },
+      ],
+      daylight: [{ ...c.solve.daylightPts[0]! }, { ...c.solve.daylightPts[c.solve.daylightPts.length - 1]! }],
+      nodeStations: [c.solve.nodeStations[0]!, c.solve.nodeStations[c.solve.nodeStations.length - 1]!],
+      distances: [c.solve.distances[0]!, c.solve.distances[c.solve.distances.length - 1]!],
+    })),
     maxSearchDistance,
     side,
   );
@@ -206,6 +284,7 @@ const stitchAnalyticSeam = (
     candidateTriangleCount: 0,
     intersectionSegmentCount: 0,
     multipleSolutionCount: 0,
+    tiedSplitBudget: 0,
   };
   for (const p of assembled.value.daylightPts) stitch.daylightFlat.push(p.x, p.y, p.z);
   for (const c of carries) {
@@ -229,18 +308,6 @@ const solveArcChords = (
     return { ok: false, code: 'NO_SOLUTION', detail: 'GRADING_BAD_TARGET_MESH' };
   }
   const analytic = isTargetFreeCriterion(criterion);
-  const stitch: ArcStitch = {
-    regions: [],
-    diagnostics: [],
-    sourcePts: [],
-    daylightPts: [],
-    daylightFlat: [],
-    distances: [],
-    nodeStations: [],
-    candidateTriangleCount: 0,
-    intersectionSegmentCount: 0,
-    multipleSolutionCount: 0,
-  };
   const carries: SeamChordCarry[] = [];
   for (let k = 0; k < linearized.subdivisions; k += 1) {
     const p0 = linearized.points[k]!;
@@ -260,32 +327,14 @@ const solveArcChords = (
       stationScale: segArc / chordSource.length,
     });
     if (!solved.ok) return solved;
-    // Phase 20K.1 Wave C1: analytic internal seams assemble through the
-    // shared chord-seam helper (exact V, analytic tie, no averaging).
-    if (analytic) {
-      const frame = seamFrameFor(chordSource, side);
-      if (!frame) return { ok: false, code: 'NO_SOLUTION', detail: 'GRADING_DEGENERATE_SOURCE' };
-      const s = solved.solve;
-      carries.push({
-        solve: s,
-        seam: {
-          t: frame.t,
-          n: frame.n,
-          gs: frame.gs,
-          criterion,
-          // Authoritative exact samples (solve endpoints may differ by 1 ulp).
-          source: [{ ...p0 }, { ...p1 }],
-          daylight: [{ ...s.daylightPts[0]! }, { ...s.daylightPts[s.daylightPts.length - 1]! }],
-          nodeStations: [s.nodeStations[0]!, s.nodeStations[s.nodeStations.length - 1]!],
-          distances: [s.distances[0]!, s.distances[s.distances.length - 1]!],
-        },
-      });
-      continue;
-    }
-    appendStitchedChord(stitch, solved.solve);
+    // Phase 20K.1 Waves C1/C2: internal seams assemble through the shared
+    // chord-seam helpers (analytic tie / Surface corner, no averaging).
+    const frame = seamFrameFor(chordSource, side);
+    if (!frame) return { ok: false, code: 'NO_SOLUTION', detail: 'GRADING_DEGENERATE_SOURCE' };
+    carries.push({ solve: solved.solve, chordSource, frame });
   }
-  if (analytic) return stitchAnalyticSeam(carries, side, maxSearchDistance);
-  return { ok: true, stitch };
+  if (analytic) return stitchAnalyticSeam(carries, criterion, side, maxSearchDistance);
+  return stitchSurfaceSeam(carries, input);
 };
 
 /**
@@ -294,11 +343,11 @@ const solveArcChords = (
  * existing NO_SOLUTION code (PINCH/NON_MANIFOLD detail), never CURRENT.
  * Empty meshes pass through (the existing fully-tied ALREADY_TIED path).
  */
-const gateArcSeamTopology = (outcome: GradingComputeOutcome): GradingComputeOutcome => {
+const gateArcSeamTopology = (outcome: GradingComputeOutcome, tiedSplitBudget: number): GradingComputeOutcome => {
   if (!outcome.ok) return outcome;
   const mesh = outcome.result.gradingMesh;
   if (mesh.triangles.length === 0) return outcome;
-  const topo = validateGradingMeshTopology(mesh.points, mesh.triangles, { scope: 'arc' });
+  const topo = validateGradingMeshTopology(mesh.points, mesh.triangles, { scope: 'arc', tiedSplitBudget });
   if (topo.ok) return outcome;
   return { ok: false, code: 'NO_SOLUTION', detail: `${topo.code}: ${topo.detail ?? ''}` };
 };
@@ -332,7 +381,7 @@ export const solveArcGrading = (input: ArcSolveInput): GradingComputeOutcome => 
       candidateTriangleCount: stitch.candidateTriangleCount,
       intersectionSegmentCount: stitch.intersectionSegmentCount,
       multipleSolutionCount: stitch.multipleSolutionCount,
-    }));
+    }), stitch.tiedSplitBudget);
   }
   if (!input.target || !input.query) {
     return { ok: false, code: 'NO_SOLUTION', detail: 'GRADING_BAD_TARGET_MESH' };
@@ -353,5 +402,5 @@ export const solveArcGrading = (input: ArcSolveInput): GradingComputeOutcome => 
     candidateTriangleCount: stitch.candidateTriangleCount,
     intersectionSegmentCount: stitch.intersectionSegmentCount,
     multipleSolutionCount: stitch.multipleSolutionCount,
-  }));
+  }), stitch.tiedSplitBudget);
 };

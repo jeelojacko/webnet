@@ -14,26 +14,21 @@ import { seamEquals } from './arcSolve';
 import type { PlanVector } from './gradingCourseFrame';
 import { gradingSideNormal } from './gradingCourseFrame';
 import { linearizeGradingArc } from './gradingCurve';
-import { classifySourceDelta } from './gradingCutFill';
 import type { GradingComputeSource, GradingTargetMeshSnapshot, TargetQuery } from './gradingComputeTypes';
 import {
   classifyCorner,
   cutFillSideAtCorner,
-  gradingPlaneGradient,
-  miterExtent,
-  miterSeam,
-  planeElevationAt,
-  selectMiterRay,
-  type CornerGradingPlane,
 } from './gradingCornerMath';
 import { isZeroWidthPair } from './gradingMesh';
 import {
   clipPolylineToHalfPlane,
-  solveMiterTie,
-  solveSectorPath,
   type SectorLine,
   type SectorPoint,
 } from './gradingGroupSectors';
+import {
+  crossGradeAtV,
+  solveSurfaceCorner,
+} from './gradingGroupSurfaceCorners';
 import {
   clipTriangleToHalfPlane,
   groupMeshStats,
@@ -46,7 +41,12 @@ import {
   type MergeTriangle,
 } from './gradingGroupMerge';
 import { buildTargetQuery, candidateTriangles } from './gradingTargetIndex';
-import { assembleSolvedGradingChain, type ChordSeamChord } from './gradingChordSeam';
+import {
+  assembleSolvedGradingChain,
+  assembleSurfaceChain,
+  type ChordSeamChord,
+  type SurfaceSeamChord,
+} from './gradingChordSeam';
 import { solveGradingChord } from './solveAnalyticGradingChord';
 import { solveAnalyticCorner } from './gradingGroupAnalyticCorners';
 import { solveHybridCorner } from './gradingGroupHybridCorners';
@@ -192,18 +192,6 @@ const fail = (code: GroupDiagnosticCode, cornerIndex?: number, detail?: string):
     ? { ok: false, code }
     : { ok: false, code, ...(cornerIndex === undefined ? {} : { cornerIndex }), ...(detail === undefined ? {} : { detail }) };
 
-/** Corner grading plane through V: gradient gs*T + g*N via the 20B helper. */
-const cornerPlane = (
-  vx: number, vy: number, vz: number,
-  t: PlanVector, side: GradingSide, gCross: number, gsLong: number,
-): CornerGradingPlane | null => {
-  const pseudo: ResolvedGradingSource = {
-    startX: vx, startY: vy, endX: vx + t.nx, endY: vy + t.ny,
-    startZ: vz, endZ: vz + gsLong, length: 1, reoriented: false, isArc: false,
-  };
-  return gradingPlaneGradient(pseudo, side, gCross, gsLong);
-};
-
 /** Cut/fill source lengths sampled at member stations (20B sign convention). */
 const splitMemberCutFill = (
   sourcePts: Array<{ x: number; y: number; z: number }>,
@@ -237,23 +225,6 @@ const splitMemberCutFill = (
     }
   }
   return { cut, fill, tied };
-};
-
-/** Cross-grade active at V: fixed ratio, or the single-scalar cut/fill pick. */
-const crossGradeAtV = (
-  criterion: GradingCriterion,
-  deltaAtV: number,
-): number | null => {
-  if (criterion.kind === 'fixed') {
-    return Number.isFinite(criterion.gradeRatio) ? criterion.gradeRatio : null;
-  }
-  // Phase 20F: corner miters stay surface-only; target-free criteria on a
-  // multi-course group fail closed at the corner (single-course analytic
-  // groups never reach the corner path).
-  if (criterion.kind !== 'cut-fill') return null;
-  if (!Number.isFinite(criterion.cutGradeRatio) || !Number.isFinite(criterion.fillGradeRatio)) return null;
-  const cls = classifySourceDelta(deltaAtV);
-  return cls === 'CUT' ? criterion.cutGradeRatio : cls === 'FILL' ? criterion.fillGradeRatio : 0;
 };
 
 /**
@@ -390,6 +361,60 @@ export const computeGradingGroupFromSnapshots = (input: GroupSolveInput): Gradin
         intersectionSegmentCount += solve.intersectionSegmentCount;
         multipleSolutionCount += solve.multipleSolutionCount;
       }
+      stitched = {
+        regions, diagnostics,
+        nodeStations: assembled.value.nodeStations,
+        sourcePts: assembled.value.sourcePts,
+        daylightPts: assembled.value.daylightPts,
+        daylightFlat,
+        distances: assembled.value.distances,
+        candidateTriangleCount, intersectionSegmentCount, multipleSolutionCount,
+      };
+    } else if (member.isArc && !isTargetFreeCriterion(criterionAt(mi))) {
+      // Phase 20K.1 Wave C2: curved Surface members stitch internal chord
+      // seams through the shared Surface assembly (active-grade planes,
+      // miter tie, sector paths); every other member keeps the exact
+      // standalone stitch byte-identical.
+      if (!query) return fail('MEMBER_NO_SOLUTION', undefined, 'GRADING_BAD_TARGET_MESH');
+      const seamChords: SurfaceSeamChord[] = [];
+      for (let ci = 0; ci < chords.length; ci += 1) {
+        const chord = chords[ci]!;
+        const solve = chordSolves[ci]!;
+        const t = chordDir(chord.source);
+        const n = t ? gradingSideNormal(t.nx, t.ny, side) : null;
+        if (!t || !n) return fail('MEMBER_NO_SOLUTION', undefined, 'GRADING_DEGENERATE_SOURCE');
+        seamChords.push({
+          t, n,
+          gs: (chord.source.endZ - chord.source.startZ) / chord.source.length,
+          chord: chord.source,
+          solve,
+        });
+      }
+      const assembled = assembleSurfaceChain(seamChords, {
+        side, criterion: criterionAt(mi), maxSearchDistance,
+        target: target!, candidates, query,
+      });
+      if (!assembled.ok) return fail('MEMBER_NO_SOLUTION', undefined, assembled.detail);
+      // Joint canonicalization (same convention as the analytic path).
+      const canonFirst = { x: member.startX, y: member.startY, z: member.startZ };
+      const canonLast = { x: member.endX, y: member.endY, z: member.endZ };
+      assembled.value.sourcePts[0] = { ...canonFirst };
+      assembled.value.sourcePts[assembled.value.sourcePts.length - 1] = { ...canonLast };
+      const daylightFlat: number[] = [];
+      for (const p of assembled.value.daylightPts) daylightFlat.push(p.x, p.y, p.z);
+      const regions: StraightChordSolve['regions'] = [];
+      const diagnostics: StraightChordSolve['diagnostics'] = [];
+      let candidateTriangleCount = 0;
+      let intersectionSegmentCount = 0;
+      let multipleSolutionCount = 0;
+      for (const solve of chordSolves) {
+        regions.push(...solve.regions);
+        diagnostics.push(...solve.diagnostics);
+        candidateTriangleCount += solve.candidateTriangleCount;
+        intersectionSegmentCount += solve.intersectionSegmentCount;
+        multipleSolutionCount += solve.multipleSolutionCount;
+      }
+      intersectionSegmentCount += assembled.value.ties.length;
       stitched = {
         regions, diagnostics,
         nodeStations: assembled.value.nodeStations,
@@ -610,13 +635,29 @@ export const computeGradingGroupFromSnapshots = (input: GroupSolveInput): Gradin
     if (gCrossIn === null || gCrossOut === null) {
       return fail('CORNER_NO_SOLUTION', j, 'GRADING_BAD_CRITERION');
     }
-    const plane1 = cornerPlane(vx, vy, vz, incoming.tOut, side, gCrossIn, incoming.gsOut);
-    const plane2 = cornerPlane(vx, vy, vz, outgoing.tIn, side, gCrossOut, outgoing.gsOut);
-    if (!plane1 || !plane2) return fail('CORNER_INVERTED', j, 'GRADING_CORNER_PLANE');
-    const seam = miterSeam(plane1, plane2);
-    if (!seam) return fail('CORNER_INVERTED', j, 'GRADING_CORNER_SEAM');
+    // Phase 20K.1 Wave C2: surface joints resolve through the shared
+    // Surface-corner authority (planes, seam, ray, extent, nearest outward
+    // root, sector paths). §76/§77 gates preserved below.
     const classification = turn as GroupCornerClassification;
-    if ('coincident' in seam) {
+    const q1 = incoming.stitched.daylightPts[incoming.stitched.daylightPts.length - 1]!;
+    const q2 = outgoing.stitched.daylightPts[0]!;
+    const corner = solveSurfaceCorner({
+      vx, vy, vz, side,
+      tIn: incoming.tOut, nIn: incoming.nOut, gsIn: incoming.gsOut, gIn: gCrossIn,
+      tOut: outgoing.tIn, nOut: outgoing.nIn, gsOut: outgoing.gsIn, gOut: gCrossOut,
+      classification,
+      target: target!, candidates, query: query!, maxSearchDistance,
+      q1: { ...q1 }, q2: { ...q2 },
+      midIn: { x: (members[inIdx]!.startX + vx) / 2, y: (members[inIdx]!.startY + vy) / 2 },
+      midOut: { x: (vx + members[outIdx]!.endX) / 2, y: (vy + members[outIdx]!.endY) / 2 },
+      inDaylight: memberDaylight[inIdx]!,
+      outDaylight: memberDaylight[outIdx]!,
+      inTris: memberTris[inIdx]!,
+      outTris: memberTris[outIdx]!,
+    });
+    if (!corner.ok) return fail(corner.code, j, corner.detail);
+    const surface = corner.value;
+    if (surface.coincident) {
       // §77 same-plane merge: coincident gradients share one plane, so the
       // joint needs no patch even when the two criteria differ on paper.
       if (classification !== 'TANGENT') return fail('CORNER_COINCIDENT_PLANES', j);
@@ -626,105 +667,17 @@ export const computeGradingGroupFromSnapshots = (input: GroupSolveInput): Gradin
     // §76: collinear courses on different planes have no miter wedge —
     // fail closed rather than invent a seam.
     if (classification === 'TANGENT') return fail('CORNER_COINCIDENT_PLANES', j);
-    const ray = selectMiterRay(seam, incoming.nOut, outgoing.nIn);
-    if (!ray || 'inverted' in ray) return fail('CORNER_INVERTED', j, 'GRADING_CORNER_RAY');
-    if ('ambiguous' in ray) return fail('CORNER_AMBIGUOUS', j, 'GRADING_CORNER_RAY');
-    const tMax = miterExtent(ray, incoming.nOut, outgoing.nIn, maxSearchDistance);
-    if (tMax === null) return fail('CORNER_MAX_DISTANCE', j, 'GRADING_CORNER_EXTENT');
-    const tie = solveMiterTie(target!, candidates, query!, plane1, vx, vy, ray.mx, ray.my, tMax);
-    if (!tie.ok) return fail(tie.code, j, 'GRADING_CORNER_TIE');
-    multipleSolutions += Math.max(0, tie.rootCount - 1);
-    intersectionSegments += 1;
-    const tieZ2 = planeElevationAt(plane2, tie.x, tie.y);
-    if (tieZ2 === null || Math.abs(tieZ2 - tie.z) > zeroDelta(tieZ2, tie.z)) {
-      return fail('CORNER_NO_SOLUTION', j, 'GRADING_CORNER_SEAM_DISAGREE');
-    }
-    const q1 = incoming.stitched.daylightPts[incoming.stitched.daylightPts.length - 1]!;
-    const q2 = outgoing.stitched.daylightPts[0]!;
-    // Sector bounds: strip half-planes + corner-normal wall + miter half-plane.
-    // GAP sectors are the corner wedges (wall keeps the tie side); OVERLAP
-    // sectors stay member-side (wall keeps the member mid) and start at the
-    // trimmed seam crossing, so the locus graph holds exactly one path.
-    const miterLine: SectorLine = { vx, vy, mx: ray.mx, my: ray.my };
-    const sectorBounds = (
-      t: PlanVector, n: PlanVector, wallKeep: SectorPoint, keepN: SectorPoint,
-    ): Array<{ line: SectorLine; keep: SectorPoint }> => [
-      { line: { vx, vy, mx: t.nx, my: t.ny }, keep: keepN },
-      {
-        line: { vx: vx + n.nx * maxSearchDistance, vy: vy + n.ny * maxSearchDistance, mx: t.nx, my: t.ny },
-        keep: { x: vx, y: vy },
-      },
-      { line: { vx, vy, mx: n.nx, my: n.ny }, keep: wallKeep },
-      { line: miterLine, keep: keepN },
-    ];
-    const midIn: SectorPoint = {
-      x: (members[inIdx]!.startX + vx) / 2,
-      y: (members[inIdx]!.startY + vy) / 2,
-    };
-    const midOut: SectorPoint = {
-      x: (vx + members[outIdx]!.endX) / 2,
-      y: (vy + members[outIdx]!.endY) / 2,
-    };
-    const keepN1: SectorPoint = { x: vx + incoming.nOut.nx, y: vy + incoming.nOut.ny };
-    const keepN2: SectorPoint = { x: vx + outgoing.nIn.nx, y: vy + outgoing.nIn.ny };
-    const tiePoint = { x: tie.x, y: tie.y, z: tie.z };
-    if (classification === 'OVERLAP') {
-      // OVERLAP: trim both member meshes + daylight to the miter seam first;
-      // sector paths then run from the trimmed seam crossings to the tie.
-      const trimWith = (tris: MergeTriangle[], keep: SectorPoint): MergeTriangle[] => {
-        const out: MergeTriangle[] = [];
-        for (const t of tris) out.push(...clipTriangleToHalfPlane(t, miterLine, keep));
-        return out;
-      };
-      memberTris[inIdx] = trimWith(memberTris[inIdx]!, midIn);
-      memberTris[outIdx] = trimWith(memberTris[outIdx]!, midOut);
-      memberDaylight[inIdx] = clipPolylineToHalfPlane(memberDaylight[inIdx]!, miterLine, midIn);
-      memberDaylight[outIdx] = clipPolylineToHalfPlane(memberDaylight[outIdx]!, miterLine, midOut);
-      if (memberDaylight[inIdx]!.length === 0 || memberDaylight[outIdx]!.length === 0) {
-        return fail('CORNER_NO_SOLUTION', j, 'GRADING_CORNER_TRIM');
-      }
-    }
-    const from1 = classification === 'GAP'
-      ? q1
-      : memberDaylight[inIdx]![memberDaylight[inIdx]!.length - 1]!;
-    const from2 = classification === 'GAP'
-      ? q2
-      : memberDaylight[outIdx]![0]!;
-    const wall1: SectorPoint = classification === 'GAP' ? tiePoint : midIn;
-    const wall2: SectorPoint = classification === 'GAP' ? tiePoint : midOut;
-    const path1 = solveSectorPath(
-      target!, candidates, query!, plane1,
-      sectorBounds(incoming.tOut, incoming.nOut, wall1, keepN1),
-      from1, tie,
-    );
-    if (!path1.ok) return fail(path1.code, j, 'GRADING_CORNER_SECTOR');
-    const path2 = solveSectorPath(
-      target!, candidates, query!, plane2,
-      sectorBounds(outgoing.tIn, outgoing.nIn, wall2, keepN2),
-      from2, tie,
-    );
-    if (!path2.ok) return fail(path2.code, j, 'GRADING_CORNER_SECTOR');
-    intersectionSegments += path1.segmentCount + path2.segmentCount;
-    let cornerRun: MergePoint[];
-    if (classification === 'GAP') {
-      // Two planar patch polygons fanned deterministically from V.
-      const ring: MergePoint[] = [...path1.path.map((p) => ({ ...p }))];
-      for (let k = path2.path.length - 2; k >= 0; k -= 1) ring.push({ ...path2.path[k]! });
-      const v: MergePoint = { x: vx, y: vy, z: vz };
-      for (let k = 0; k + 1 < ring.length; k += 1) {
-        const tri: MergeTriangle = { a: v, b: ring[k]!, c: ring[k + 1]! };
-        const area2 = (tri.b.x - tri.a.x) * (tri.c.y - tri.a.y) - (tri.c.x - tri.a.x) * (tri.b.y - tri.a.y);
-        if (Math.abs(area2) <= zeroDelta(area2, 0)) continue;
-        patchTris.push(tri);
-      }
-      cornerRun = [...path1.path.map((p) => ({ ...p }))];
-      for (let k = path2.path.length - 2; k >= 0; k -= 1) cornerRun.push({ ...path2.path[k]! });
-    } else {
-      // OVERLAP: meshes and daylight already trimmed; the corner run joins
-      // the two seam-crossing sector paths through the tie.
-      cornerRun = [...path1.path.map((p) => ({ ...p }))];
-      for (let k = path2.path.length - 2; k >= 0; k -= 1) cornerRun.push({ ...path2.path[k]! });
-    }
+    multipleSolutions += Math.max(0, surface.rootCount - 1);
+    intersectionSegments += surface.segmentCount;
+    patchTris.push(...surface.patchTris);
+    memberTris[inIdx] = surface.inTris;
+    memberTris[outIdx] = surface.outTris;
+    memberDaylight[inIdx] = surface.inDaylight;
+    memberDaylight[outIdx] = surface.outDaylight;
+    const cornerRun = surface.cornerRun;
+    const tie = surface.tie;
+    const ray = surface.ray;
+    const tMax = surface.extent;
     const cornerDaylightFlat: number[] = [];
     for (const p of cornerRun) cornerDaylightFlat.push(p.x, p.y, p.z);
     corners.push({
