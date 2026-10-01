@@ -117,18 +117,22 @@ describe('phase20k1 sloped-source Surface arc', () => {
     expect(fx.result.minProjectionDistance).toBeCloseTo(20, 9);
   });
 
-  it('steeper phases solve too (10 → 12)', () => {
-    // The C2 chord agreement also heals steeper slopes: 39pts/37tris.
-    // (The analytic path still fails closed at its own C1 seam gate —
-    // pre-existing, untouched.)
+  it('steeper phases: 10 → 11 solves, 10 → 12 fails closed on interior overlap', () => {
+    // The C2 chord agreement heals steeper slopes while the strip stays
+    // fold-free (39pts/37tris). At 10 → 12 a strip sliver folds over its
+    // neighbor (same-side shared edge), so the interior-overlap rule
+    // fails it closed with the existing PINCH detail — never CURRENT.
     const base = roundedSquareMembers(10)[0]!.source;
-    const src: ResolvedGradingSource = { ...base, startZ: 10, endZ: 12 };
-    const fx = runStandalone(src, FIXED(-0.5));
+    const fx = runStandalone({ ...base, startZ: 10, endZ: 11 }, FIXED(-0.5));
     expect(fx.ok).toBe(true);
     if (!fx.ok) return;
     expect(fx.result.gradingMesh.points.length / 3).toBe(39);
     expect(fx.result.gradingMesh.triangles.length / 3).toBe(37);
-    expect(fx.result.gradingPlanArea).toBeCloseTo(2349.1119718043301, 9);
+    expect(fx.result.gradingPlanArea).toBeCloseTo(2190.7018168390186, 9);
+    const folded = runStandalone({ ...base, startZ: 10, endZ: 12 }, FIXED(-0.5));
+    expect(folded.ok).toBe(false);
+    if (folded.ok) return;
+    expect(folded.detail).toContain('overlapping-connected-faces');
   });
 });
 
@@ -745,7 +749,11 @@ describe('phase20k1 tied semantics on curved Surface arcs', () => {
     expect(out.result.cutSourceLength).toBeCloseTo(out.result.fillSourceLength, 0);
   });
 
-  it('zero-width arc end ties exactly at the source endpoint', () => {
+  it('zero-width steep drop fails closed on interior overlap', () => {
+    // The steep drop onto the far tin folds a strip sliver over its
+    // neighbor (same-side shared edge, macroscopic offset), so the
+    // interior-overlap rule fails it closed — never CURRENT. Tie-exactness
+    // coverage lives on fold-free strips (the GAP-fan and ladder tests).
     const sloped = { ...src, startZ: 10, endZ: 0 };
     const tin: GradingTargetMeshSnapshot = {
       points: [-450, -450, 0, 450, -450, 0, 450, 450, 0, -450, 450, 0],
@@ -756,12 +764,8 @@ describe('phase20k1 tied semantics on curved Surface arcs', () => {
       criterion: FIXED(-0.5), maxSearchDistance: SEARCH, curveChordTolerance: 0.1,
       target: tin,
     });
-    expect(out.ok).toBe(true);
-    if (!out.ok) return;
-    const dl = out.result.daylightPoints;
-    const n = dl.length / 3;
-    expect(dl[(n - 1) * 3]).toBeCloseTo(sloped.endX, 9);
-    expect(dl[(n - 1) * 3 + 1]).toBeCloseTo(sloped.endY, 9);
-    expect(dl[(n - 1) * 3 + 2]).toBeCloseTo(0, 9);
+    expect(out.ok).toBe(false);
+    if (out.ok) return;
+    expect(out.detail).toContain('overlapping-connected-faces');
   });
 });

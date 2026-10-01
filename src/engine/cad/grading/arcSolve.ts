@@ -109,8 +109,8 @@ interface ArcStitch {
   candidateTriangleCount: number;
   intersectionSegmentCount: number;
   multipleSolutionCount: number;
-  /** Maximal zero-width pair runs (tied-split budget for the B2 gate). */
-  tiedSplitBudget: number;
+  /** Tied-station coordinates (zero-width pair run starts) for the B2 gate. */
+  tiedSplitCoords: number[];
 }
 
 /** Chord source between two linearized arc samples. */
@@ -209,7 +209,7 @@ const stitchSurfaceSeam = (
     candidateTriangleCount: 0,
     intersectionSegmentCount: 0,
     multipleSolutionCount: 0,
-    tiedSplitBudget: 0,
+    tiedSplitCoords: [],
   };
   for (const p of assembled.value.daylightPts) stitch.daylightFlat.push(p.x, p.y, p.z);
   // The boundary polyline drops bitwise-duplicate consecutive nodes
@@ -223,21 +223,20 @@ const stitchSurfaceSeam = (
     clean.push(flat[i]!, flat[i + 1]!, flat[i + 2]!);
   }
   stitch.daylightFlat = clean;
-  // Tied-split budget: maximal runs of zero-width pairs (daylight back
-  // on the source) legitimately pinch the strip — same budget family as
-  // the group gate's tied stations.
-  let tiedSplitBudget = 0;
+  // Tied-split stations: maximal runs of zero-width pairs (daylight back
+  // on the source) legitimately pinch the strip — the run-start source
+  // coordinates (real tied stations, not counts) attribute gate extras.
   let inRun = false;
   for (let i = 0; i < stitch.sourcePts.length; i += 1) {
     const tied = samePlanNode(stitch.daylightPts[i]!, stitch.sourcePts[i]!);
     if (tied && !inRun) {
-      tiedSplitBudget += 1;
+      const sp = stitch.sourcePts[i]!;
+      stitch.tiedSplitCoords.push(sp.x, sp.y, sp.z);
       inRun = true;
     } else if (!tied) {
       inRun = false;
     }
   }
-  stitch.tiedSplitBudget = tiedSplitBudget;
   for (const c of carries) {
     stitch.regions.push(...c.solve.regions);
     stitch.diagnostics.push(...c.solve.diagnostics);
@@ -284,7 +283,7 @@ const stitchAnalyticSeam = (
     candidateTriangleCount: 0,
     intersectionSegmentCount: 0,
     multipleSolutionCount: 0,
-    tiedSplitBudget: 0,
+    tiedSplitCoords: [],
   };
   for (const p of assembled.value.daylightPts) stitch.daylightFlat.push(p.x, p.y, p.z);
   for (const c of carries) {
@@ -343,11 +342,11 @@ const solveArcChords = (
  * existing NO_SOLUTION code (PINCH/NON_MANIFOLD detail), never CURRENT.
  * Empty meshes pass through (the existing fully-tied ALREADY_TIED path).
  */
-const gateArcSeamTopology = (outcome: GradingComputeOutcome, tiedSplitBudget: number): GradingComputeOutcome => {
+const gateArcSeamTopology = (outcome: GradingComputeOutcome, tiedSplitCoords: readonly number[]): GradingComputeOutcome => {
   if (!outcome.ok) return outcome;
   const mesh = outcome.result.gradingMesh;
   if (mesh.triangles.length === 0) return outcome;
-  const topo = validateGradingMeshTopology(mesh.points, mesh.triangles, { scope: 'arc', tiedSplitBudget });
+  const topo = validateGradingMeshTopology(mesh.points, mesh.triangles, { scope: 'arc', tiedSplitCoords: [...tiedSplitCoords] });
   if (topo.ok) return outcome;
   return { ok: false, code: 'NO_SOLUTION', detail: `${topo.code}: ${topo.detail ?? ''}` };
 };
@@ -381,7 +380,7 @@ export const solveArcGrading = (input: ArcSolveInput): GradingComputeOutcome => 
       candidateTriangleCount: stitch.candidateTriangleCount,
       intersectionSegmentCount: stitch.intersectionSegmentCount,
       multipleSolutionCount: stitch.multipleSolutionCount,
-    }), stitch.tiedSplitBudget);
+    }), stitch.tiedSplitCoords);
   }
   if (!input.target || !input.query) {
     return { ok: false, code: 'NO_SOLUTION', detail: 'GRADING_BAD_TARGET_MESH' };
@@ -402,5 +401,5 @@ export const solveArcGrading = (input: ArcSolveInput): GradingComputeOutcome => 
     candidateTriangleCount: stitch.candidateTriangleCount,
     intersectionSegmentCount: stitch.intersectionSegmentCount,
     multipleSolutionCount: stitch.multipleSolutionCount,
-  }), stitch.tiedSplitBudget);
+  }), stitch.tiedSplitCoords);
 };

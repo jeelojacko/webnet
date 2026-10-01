@@ -56,6 +56,40 @@ describe('validateGradingMeshTopology', () => {
     const r = validateGradingMeshTopology(pts, tris, { expectedComponents: 1, tiedSplitStations: [4] });
     expect(r.ok).toBe(true);
   });
+  it('overlapping edge-adjacent pair fails', () => {
+    // Two CCW triangles sharing edge 0-1 with both opposite verts (2, 3)
+    // on the same plan side: interior double-cover, not a valid strip.
+    const pts = [0, 0, 0, 4, 0, 0, 1, 1, 0, 3, 1, 0];
+    const r = validateGradingMeshTopology(pts, [0, 1, 2, 0, 1, 3], { expectedComponents: 1 });
+    expect(r.ok).toBe(false);
+    expect(`${r.code}: ${r.detail}`).toContain('overlapping-connected-faces');
+  });
+  it('healthy GAP fan still passes', () => {
+    // Three-face fan: adjacent pairs share an edge with opposite verts
+    // on opposite sides.
+    const pts = [1, 1, 0, 0, 0, 0, 4, 0, 0, 4, 4, 0, 0, 4, 0];
+    const r = validateGradingMeshTopology(pts, [0, 1, 2, 0, 2, 3, 0, 3, 4], { expectedComponents: 1 });
+    expect(r).toMatchObject({ ok: true, components: 1 });
+  });
+  it('unattributed extra component fails closed', () => {
+    // Two triangles 10 units apart; station [0] touches only the first.
+    const pts = [...stripPts, 20, 20, 0, 30, 20, 0, 30, 22, 0, 20, 22, 0];
+    const tris = [0, 1, 2, 0, 2, 3, 4, 5, 6, 4, 6, 7];
+    const r = validateGradingMeshTopology(pts, tris, { expectedComponents: 1, tiedSplitStations: [0] });
+    expect(r).toMatchObject({ ok: false, components: 2 });
+    expect(r.code).toContain('NON_MANIFOLD');
+  });
+  it('tied coordinates attribute a genuine split', () => {
+    const pts = [...stripPts, 20, 20, 0, 30, 20, 0, 30, 22, 0, 20, 22, 0];
+    const tris = [0, 1, 2, 0, 2, 3, 4, 5, 6, 4, 6, 7];
+    const r = validateGradingMeshTopology(pts, tris, { expectedComponents: 1, tiedSplitCoords: [20, 20, 0] });
+    expect(r.ok).toBe(true);
+  });
+  it('ragged buffer fails before the empty-mesh pass', () => {
+    const r = validateGradingMeshTopology([], [0, 1], {});
+    expect(r.ok).toBe(false);
+    expect(r.code).toContain('NON_MANIFOLD');
+  });
 });
 
 /**

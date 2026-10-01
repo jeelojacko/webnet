@@ -1,12 +1,17 @@
 /**
  * Phase 20K.1 Wave B1 — grading mesh topology validator (pure, structural).
  *
- * O(V+F+E): finite verts, valid indices, nondegenerate faces, duplicate
- * faces, edge incidence <= 2, edge-connected components via union-find,
- * boundary-edge loop trace. Wave A2 proved E/F/G fixtures are VERTEX_PINCH
+ * O(V+F+E + V extra·T tied-station scan): finite verts, valid indices,
+ * nondegenerate faces, duplicate faces, edge incidence <= 2,
+ * edge-adjacent interior-overlap rejection (shared-edge opposite-side
+ * check over 2-incidence edges only, NOT O(F²) all-pairs), edge-connected
+ * components via union-find, attributed tied-split extras, boundary-edge
+ * loop trace. Wave A2 proved E/F/G fixtures are VERTEX_PINCH
  * (8/8/2 INDEX components) yet Bake accepts — this flags those shapes.
  * validateExplicitTinPayload is untouched; no gate wiring here (Wave B2).
  */
+import { zeroDelta } from '../surfaces/volume/zero';
+import { AGREEMENT_FLOOR } from './gradingGroupSectors';
 export const GRADING_ARC_SEAM_NON_MANIFOLD = 'GRADING_ARC_SEAM_NON_MANIFOLD';
 export const GRADING_ARC_SEAM_PINCH = 'GRADING_ARC_SEAM_PINCH';
 export const GRADING_GROUP_ARC_SEAM_NON_MANIFOLD = 'GRADING_GROUP_ARC_SEAM_NON_MANIFOLD';
@@ -21,11 +26,12 @@ export interface GradingTopologyOpts {
   /** Vertex indices where a tied split legitimately separates components. */
   tiedSplitStations?: number[];
   /**
-   * Phase 20K.1 Wave C2: extra component budget without vertex positions
-   * (standalone arc strips report pair-run counts; the merged mesh has
-   * already lost source/daylight roles). Additive with tiedSplitStations.
+   * Phase 20K.1 reviewer fix: flat XYZ tied-station coordinates. Each
+   * edge-component beyond `expectedComponents` must contain a station
+   * vertex or a vertex within zeroDelta of one of these coordinates,
+   * else the mesh fails closed (replaces the old count-only budget).
    */
-  tiedSplitBudget?: number;
+  tiedSplitCoords?: GradingTopologyPoints;
   scope?: 'arc' | 'group';
 }
 
@@ -118,21 +124,28 @@ export const validateGradingMeshTopology = (
   const flat = toFlat(points);
   const vertexCount = Math.floor(flat.length / 3);
   const faceCount = Math.floor(triangles.length / 3);
+  // Ragged/finite guards run BEFORE the empty-mesh early return, so a
+  // non-empty ragged buffer can never read as a valid empty mesh.
+  if (triangles.length % 3 !== 0) return fail(NON_MANIFOLD, 'ragged index buffer', 0, 0, 0);
+  for (let i = 0; i < triangles.length; i += 1) {
+    const pre = triangles[i]!;
+    if (typeof pre !== 'number' || !Number.isInteger(pre) || pre < 0) {
+      return fail(NON_MANIFOLD, `bad index ${pre} @${i}`, 0, 0, 0);
+    }
+  }
   const empty: GradingTopologyResult = { ok: true, components: 0, boundaryEdges: 0, loops: 0 };
   if (faceCount === 0) return empty;
   if (flat.length % 3 !== 0 || vertexCount < 3) {
     return fail(NON_MANIFOLD, 'non-finite-or-short vertex buffer', 0, 0, 0);
   }
-  if (triangles.length % 3 !== 0) return fail(NON_MANIFOLD, 'ragged index buffer', 0, 0, 0);
   for (let i = 0; i < flat.length; i += 1) {
     if (typeof flat[i] !== 'number' || !Number.isFinite(flat[i])) {
       return fail(NON_MANIFOLD, `non-finite vertex @${i}`, 0, 0, 0);
     }
   }
   for (let i = 0; i < triangles.length; i += 1) {
-    const v = triangles[i]!;
-    if (!Number.isInteger(v) || v < 0 || v >= vertexCount) {
-      return fail(NON_MANIFOLD, `bad index ${v} @${i}`, 0, 0, 0);
+    if (triangles[i]! >= vertexCount) {
+      return fail(NON_MANIFOLD, `bad index ${triangles[i]} @${i}`, 0, 0, 0);
     }
   }
   const seenFaces = new Set<string>();
@@ -166,6 +179,44 @@ export const validateGradingMeshTopology = (
       } else incidence.set(key, [f]);
     }
   }
+  // Interior-overlap rejection, O(E): for edge-adjacent face pairs the
+  // two opposite vertices must lie on opposite plan sides of the shared
+  // edge (same-side pairs double-cover plan area). Only edge-adjacent
+  // pairs are checked, NOT O(F²) all-pairs. zeroDelta floor reused, and a
+  // vertex within AGREEMENT_FLOOR (existing 1nm multi-stage residual
+  // bound, no new tolerance) of the edge line counts as on-line: its side
+  // is rounding noise, not a verifiable fold. Macroscopic same-side pairs
+  // (reviewer [0,1,2],[0,1,3]) still fail closed.
+  // ponytail: sub-nm folds pass as on-line; tighten only with a measured smaller residual bound.
+  const orientPlan = (ax: number, ay: number, bx: number, by: number, cx: number, cy: number): number => {
+    const v = (bx - ax) * (cy - ay) - (cx - ax) * (by - ay);
+    if (Math.abs(v) <= zeroDelta(v, 0)) return 0;
+    return v > 0 ? 1 : -1;
+  };
+  for (const [key, members] of incidence) {
+    if (members.length !== 2) continue;
+    const [ea, eb] = key.split('|').map(Number) as [number, number];
+    const opposite = (f: number): number => {
+      for (let k = 0; k < 3; k += 1) {
+        const v = triangles[f * 3 + k]!;
+        if (v !== ea && v !== eb) return v;
+      }
+      return -1;
+    };
+    const o1 = opposite(members[0]!);
+    const o2 = opposite(members[1]!);
+    const s1 = orientPlan(flat[ea * 3]!, flat[ea * 3 + 1]!, flat[eb * 3]!, flat[eb * 3 + 1]!, flat[o1 * 3]!, flat[o1 * 3 + 1]!);
+    const s2 = orientPlan(flat[ea * 3]!, flat[ea * 3 + 1]!, flat[eb * 3]!, flat[eb * 3 + 1]!, flat[o2 * 3]!, flat[o2 * 3 + 1]!);
+    const raw = (o: number): number =>
+      (flat[eb * 3]! - flat[ea * 3]!) * (flat[o * 3 + 1]! - flat[ea * 3 + 1]!) -
+      (flat[o * 3]! - flat[ea * 3]!) * (flat[eb * 3 + 1]! - flat[ea * 3 + 1]!);
+    const r1 = raw(o1);
+    const r2 = raw(o2);
+    const edgeLen = Math.hypot(flat[eb * 3]! - flat[ea * 3]!, flat[eb * 3 + 1]! - flat[ea * 3 + 1]!);
+    if (edgeLen > 0 && Math.abs(r1) / edgeLen > AGREEMENT_FLOOR && Math.abs(r2) / edgeLen > AGREEMENT_FLOOR) {
+      if (s1 !== 0 && s1 === s2) return fail(PINCH, `overlapping-connected-faces edge ${key}`, 0, 0, 0);
+    }
+  }
   const faces = new UnionFind(faceCount);
   const boundary: Array<[number, number]> = [];
   for (const [key, members] of incidence) {
@@ -181,14 +232,55 @@ export const validateGradingMeshTopology = (
   const loops = traceLoops(boundary);
   const expectedComponents = opts.expectedComponents ?? 1;
   const tied = new Set(opts.tiedSplitStations ?? []);
-  const splitBudget = tied.size + Math.max(0, Math.floor(opts.tiedSplitBudget ?? 0));
+  const tiedFlat = toFlat(opts.tiedSplitCoords ?? []);
+  const tiedCoordCount = Math.floor(tiedFlat.length / 3);
+  // Station attribution: a vertex proves a split only when it is a
+  // declared station or sits within zeroDelta of tied coordinates.
+  const nearTied = (v: number): boolean => {
+    if (tied.has(v)) return true;
+    const vx = flat[v * 3]!;
+    const vy = flat[v * 3 + 1]!;
+    const vz = flat[v * 3 + 2]!;
+    for (let i = 0; i < tiedCoordCount; i += 1) {
+      if (
+        Math.abs(vx - tiedFlat[i * 3]!) <= zeroDelta(vx, tiedFlat[i * 3]!) &&
+        Math.abs(vy - tiedFlat[i * 3 + 1]!) <= zeroDelta(vy, tiedFlat[i * 3 + 1]!) &&
+        Math.abs(vz - tiedFlat[i * 3 + 2]!) <= zeroDelta(vz, tiedFlat[i * 3 + 2]!)
+      ) return true;
+    }
+    return false;
+  };
   if (components !== expectedComponents) {
-    const allowed = expectedComponents + splitBudget;
-    if (components <= allowed && splitBudget > 0) {
-      if (opts.expectedBoundaryLoops !== undefined && loops !== opts.expectedBoundaryLoops) {
-        return fail(PINCH, `loop count ${loops} != expected ${opts.expectedBoundaryLoops}`, components, boundary.length, loops);
+    // Deterministic extras: components ordered by smallest face index;
+    // the first `expected` are expected, every extra needs a tied vertex.
+    if (components > expectedComponents && (tied.size > 0 || tiedCoordCount > 0)) {
+      const compMin = new Map<number, number>();
+      const compVerts = new Map<number, number[]>();
+      for (let f = 0; f < faceCount; f += 1) {
+        const root = faces.find(f);
+        const m = compMin.get(root);
+        if (m === undefined || f < m) compMin.set(root, f);
+        for (let k = 0; k < 3; k += 1) {
+          const v = triangles[f * 3 + k]!;
+          const list = compVerts.get(root);
+          if (list) list.push(v);
+          else compVerts.set(root, [v]);
+        }
       }
-      return { ok: true, components, boundaryEdges: boundary.length, loops };
+      const ordered = [...roots].sort((p, q) => compMin.get(p)! - compMin.get(q)!);
+      let attributed = true;
+      for (const root of ordered.slice(expectedComponents)) {
+        if (!(compVerts.get(root) ?? []).some(nearTied)) {
+          attributed = false;
+          break;
+        }
+      }
+      if (attributed) {
+        if (opts.expectedBoundaryLoops !== undefined && loops !== opts.expectedBoundaryLoops) {
+          return fail(PINCH, `loop count ${loops} != expected ${opts.expectedBoundaryLoops}`, components, boundary.length, loops);
+        }
+        return { ok: true, components, boundaryEdges: boundary.length, loops };
+      }
     }
     // Vertex-shared but edge-disjoint components = pinch; fully disjoint = non-manifold.
     const owners = new Map<number, number>();

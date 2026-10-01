@@ -722,9 +722,13 @@ export const computeGradingGroupFromSnapshots = (input: GroupSolveInput): Gradin
   const merged = mergeGroupTriangles(allTris);
   const meshError = validateGroupMesh(merged);
   if (meshError) return fail('GROUP_NON_MANIFOLD', undefined, meshError);
-  const splitStations = memberTris.flatMap((tris, mi) => (tris.length === 0 ? [mi] : []));
+  const tiedCoords: number[] = [];
+  memberTris.forEach((tris, mi) => {
+    if (tris.length !== 0) return;
+    for (const p of solved[mi]!.stitched.sourcePts) tiedCoords.push(p.x, p.y, p.z);
+  });
   for (const corner of corners) {
-    if (corner.classification === 'OVERLAP') splitStations.push(corner.cornerIndex);
+    if (corner.classification === 'OVERLAP' && corner.tiePointXyz) tiedCoords.push(...corner.tiePointXyz);
   }
   // 20K.1 Wave B2 fail-closed seam gate (curved groups only). Straight
   // courses trim exactly along miter seams, so vertex-touching fragments
@@ -733,7 +737,7 @@ export const computeGradingGroupFromSnapshots = (input: GroupSolveInput): Gradin
   // facet: non-stitching shared-index topology fails the revision.
   // ponytail: straight-only bypass; re-enable if a straight GAP crack appears.
   if (curved) {
-    const topoError = validateMergedGroupTopology(merged, splitStations);
+    const topoError = validateMergedGroupTopology(merged, tiedCoords);
     if (topoError) return fail('GROUP_NON_MANIFOLD', undefined, topoError);
   }
 

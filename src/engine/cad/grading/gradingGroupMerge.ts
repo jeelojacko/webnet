@@ -120,19 +120,21 @@ export const mergeGroupTriangles = (tris: MergeTriangle[]): MergedGroupMesh => {
  * Phase 20K.1 Wave B2 — fail-closed seam gate over the merged group mesh.
  * Null when the shared-index topology holds (empty meshes pass: all-tied
  * groups carry no mesh); otherwise a stable `CODE: detail` string for the
- * existing GROUP_NON_MANIFOLD failure. Each `tiedSplitStations` entry is
- * one legitimate split budget (B1 counts entries): an empty final member
- * strip (fully tied) or an OVERLAP-trimmed joint, whose exact miter-seam
- * clip leaves two pieces touching at seam vertices by construction.
+ * existing GROUP_NON_MANIFOLD failure. Each `tiedCoords` entry is a real
+ * tied-station coordinate (flat XYZ): an empty final member strip
+ * (fully tied source polyline) or an OVERLAP-trimmed joint tie point,
+ * whose exact miter-seam clip leaves two pieces touching at seam vertices
+ * by construction. Every extra edge-component must touch one — no
+ * count-only budget (reviewer fix: unattributed extras fail closed).
  */
 export const validateMergedGroupTopology = (
   mesh: MergedGroupMesh,
-  splitStations: readonly number[] = [],
+  tiedCoords: readonly number[] = [],
 ): string | null => {
   if (mesh.triangles.length === 0) return null;
   const topo = validateGradingMeshTopology(mesh.points, mesh.triangles, {
     scope: 'group',
-    tiedSplitStations: [...splitStations],
+    tiedSplitCoords: [...tiedCoords],
   });
   if (topo.ok) return null;
   return `${topo.code}: ${topo.detail ?? ''}`;

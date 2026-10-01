@@ -9,7 +9,11 @@ matrix: E/F/G `VERTEX_PINCH`, D diagnostic-weld coincidences), Wave B1
 ## §9 topology contract + validator (`gradingTopology.ts`, B1)
 
 `validateGradingMeshTopology` is the single authority: finite XYZ, index
-bounds, plan-area agreement, no duplicate triangles, no interior overlap,
+bounds, plan-area agreement, no duplicate triangles, no edge-adjacent
+interior overlap (shared-edge opposite-side check over 2-incidence edges
+only — O(E), full O(F²) all-pairs is NOT claimed; sub-1nm on-line
+vertices count as on-line via the existing agreement floor, no new
+tolerance),
 edge incidence ≤ 2, edge-component count, open-continuous / closed-simple
 ring checks, no bridge/self-cross. Detail codes `GRADING_*_SEAM_PINCH` /
 `*_SEAM_NON_MANIFOLD` name the failure; the validator is pure and reused
