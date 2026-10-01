@@ -306,8 +306,15 @@ describe('(H) arc convergence on the analytic offset', () => {
         // Exact source discretization stays on the true arc.
         expect(radialError(r.sourceBoundaryPoints!, R)).toBeLessThan(1e-9);
         // Constant offset: no branch jumps in the projection distance.
+        // Phase 20K.1 Wave C1: chord stations sit at exactly D; internal
+        // seam ties ride the analytic miter at D/cos(theta/2), so the max is
+        // the closed-form miter extent (GAP) or a clip below it (OVERLAP).
         expect(r.minProjectionDistance).toBe(20);
-        expect(r.maxProjectionDistance).toBe(20);
+        const n = linearizeGradingArc(0, 0, R, 0, sweep, true, 10, 10, tolerance)!.subdivisions;
+        const miter = 20 / Math.cos(sweep / (2 * n));
+        expect(r.maxProjectionDistance).toBeGreaterThanOrEqual(20);
+        expect(r.maxProjectionDistance).toBeLessThanOrEqual(miter + 1e-9);
+        if (side === 'right') expect(r.maxProjectionDistance).toBeCloseTo(miter, 9);
         // Limit Z rides the source grade (level here) exactly.
         const zs = r.daylightPoints.filter((_, i) => i % 3 === 2);
         expect(Math.min(...zs)).toBeCloseTo(10, 9);

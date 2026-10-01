@@ -178,8 +178,13 @@ describe('grading curve worker path (Gate-10)', () => {
     expect(source.length).toBeGreaterThanOrEqual(expected + 1);
     expect(daylight.length).toBeGreaterThan(0);
     // Every stitched source node on the true arc, station Z exact.
+    // Phase 20K.1 Wave C2 old→new: OVERLAP internal seams trim chord tips
+    // to the miter line; the inserted crossings' source mates ride the
+    // chord (linear strip model, exact), off the arc by at most the chord
+    // sagitta. Joint samples stay arc-exact; the bound below pins the
+    // linearization tolerance instead of the old endpoint-only identity.
     for (const v of source) {
-      expect(Math.hypot(v[0]! - CENTER.x, v[1]! - CENTER.y)).toBeCloseTo(R, 9);
+      expect(Math.abs(Math.hypot(v[0]! - CENTER.x, v[1]! - CENTER.y) - R)).toBeLessThanOrEqual(tolerance * (1 + 1e-9));
       expect(v[2]).toBe(10);
     }
     // Sagitta of every stitched chord within tolerance.
@@ -193,13 +198,21 @@ describe('grading curve worker path (Gate-10)', () => {
       expect(sagitta).toBeLessThanOrEqual(tolerance * (1 + 1e-9));
     }
     expect(worstSagitta).toBeGreaterThan(0);
-    // Flat target, −50% fill: every tie lands exactly 20 m out at z=0.
+    // Flat target, −50% fill: chord offsets land exactly 20 m out at z=0.
+    // Phase 20K.1 Wave C2 old→new: OVERLAP internal seams resolve to the
+    // miter tie, whose extent exceeds the perpendicular by 1/cos(half the
+    // joint turn) — 18 joints over 90° ⇒ 20/cos(2.5°) ≈ 20.0190537033.
+    // The naive stitch never recorded ties, so max read exactly 20.
     expect(result.minProjectionDistance).toBeCloseTo(20, 9);
-    expect(result.maxProjectionDistance).toBeCloseTo(20, 9);
-    expect(result.meanProjectionDistance).toBeCloseTo(20, 9);
-    for (const v of daylight) expect(v[2]).toBe(0);
+    expect(result.maxProjectionDistance * Math.cos(Math.PI / 72)).toBeCloseTo(20, 9);
+    expect(result.meanProjectionDistance).toBeGreaterThanOrEqual(20);
+    expect(result.meanProjectionDistance).toBeLessThanOrEqual(result.maxProjectionDistance);
+    // Phase 20K.1 Wave C2 old→new: internal miter ties carry the plane
+    // evaluation residual (~1e-16) instead of the chord solve's exact 0.
+    // Geometry is unchanged (agreement-gated); only the identity weakens.
+    for (const v of daylight) expect(v[2]).toBeCloseTo(0, 9);
     for (let i = 0; i + 2 < result.daylightPoints.length; i += 3) {
-      expect(result.daylightPoints[i + 2]).toBe(0);
+      expect(result.daylightPoints[i + 2]).toBeCloseTo(0, 9);
     }
   });
 

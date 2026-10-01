@@ -31,6 +31,54 @@ const snap12 = (value: number): number => Math.round(value * 1e12) / 1e12;
 
 const sectorKey = (x: number, y: number): string => `${snap12(x)}|${snap12(y)}`;
 
+/** Same plan node up to one coordinate quantum per axis (shared lens). */
+export const samePlanNode = (a: { x: number; y: number }, b: { x: number; y: number }): boolean => {
+  const scale = Math.max(1, Math.abs(a.x), Math.abs(b.x), Math.abs(a.y), Math.abs(b.y));
+  return (
+    Math.abs(a.x - b.x) <= coordinateAgreementTol(a.x, b.x, scale) &&
+    Math.abs(a.y - b.y) <= coordinateAgreementTol(a.y, b.y, scale)
+  );
+};
+
+/**
+ * Resolve a graph key for an exact world point. The exact snapped key wins
+ * (all currently-passing paths resolve here, bitwise untouched); a grid
+ * straddle — same geometric point computed via different arithmetic
+ * (wall-crossing interpolation vs chord solve) landing in adjacent 1e-12
+ * cells — falls back to the nearest node within one cell plus the
+ * single-scale ULP quantum (representation error, coordinate-scaled like
+ * the 20J1 agreement bounds), deterministically (nearest, then
+ * lexicographic). Anything farther stays fail-closed. The walk +
+ * agreement gate still validate the node, so a wrongly-near node is
+ * rejected downstream rather than built.
+ */
+const resolveGraphKey = (
+  adjacency: ReadonlyMap<string, string[]>,
+  x: number,
+  y: number,
+): string | null => {
+  const exact = sectorKey(x, y);
+  if (adjacency.has(exact)) return exact;
+  let best: string | null = null;
+  let bestDist = Infinity;
+  for (const key of adjacency.keys()) {
+    const sep = key.indexOf('|');
+    const nx = Number(key.slice(0, sep));
+    const ny = Number(key.slice(sep + 1));
+    if (!Number.isFinite(nx) || !Number.isFinite(ny)) continue;
+    const scale = Math.max(1, Math.abs(x), Math.abs(nx), Math.abs(y), Math.abs(ny));
+    const bound = 1e-12 + coordinateAgreementTol(nx, x, scale);
+    if (Math.abs(nx - x) <= bound && Math.abs(ny - y) <= bound) {
+      const dist = Math.hypot(nx - x, ny - y);
+      if (dist < bestDist || (dist === bestDist && (best === null || key < best))) {
+        best = key;
+        bestDist = dist;
+      }
+    }
+  }
+  return best;
+};
+
 /** Signed distance of P from the directed line (left side positive). */
 export const lineSide = (line: SectorLine, x: number, y: number): number =>
   line.mx * (y - line.vy) - line.my * (x - line.vx);
@@ -126,6 +174,23 @@ const targetPlaneZ = (plane: TargetPlane, x: number, y: number): number =>
   plane.zAtAnchor + plane.gx * (x - plane.ax) + plane.gy * (y - plane.ay);
 
 /**
+ * Worst |gx|+|gy| over candidate target planes (degenerate skipped) — the
+ * target-field share of world-coordinate representation error in daylight
+ * agreement. Single authority for the sector + chord daylight gates.
+ */
+export const maxTargetGradient = (
+  target: GradingTargetMeshSnapshot,
+  candidates: readonly number[],
+): number => {
+  let worst = 0;
+  for (const triIndex of candidates) {
+    const tpl = targetPlaneAt(target, triIndex);
+    if (tpl) worst = Math.max(worst, Math.abs(tpl.gx) + Math.abs(tpl.gy));
+  }
+  return worst;
+};
+
+/**
  * Forward-error agreement contracts for exact-common-tie comparisons.
  *
  * `zeroDelta` (18I) is the *classification* floor and is never loosened. Tie
@@ -141,9 +206,19 @@ const targetPlaneZ = (plane: TargetPlane, x: number, y: number): number =>
  * `AGREEMENT_OPS` is the accumulated rounding budget of one tie evaluation
  * chain (ray interval clip, plane fits, root solve, final world-space add).
  * 32 covers the measured forward error with margin (20J1 evidence §bounds).
+ * Exported for the chord daylight gate, which shares the same budget.
  */
-const AGREEMENT_OPS = 32;
+export const AGREEMENT_OPS = 32;
 
+/**
+ * Absolute floor for anchored elevation agreement (1 nm). The modeled
+ * forward error covers the per-stage rounding it can see, but multi-stage
+ * chains (local frame + span roots + barycentric over 10–20 m edges)
+ * measure up to ~1e-12 locally. The floor absorbs that residual with
+ * 1000× headroom while genuine mismatches (mm-scale and up, curved-target
+ * sagitta, wrong-side daylight) still fail by orders of magnitude.
+ */
+export const AGREEMENT_FLOOR = 1e-9;
 /** One world evaluation's last-bit spacing: eps·max(1,|coordinate|). */
 const coordinateQuantum = (coordinate: number): number =>
   Number.EPSILON * Math.max(1, Math.abs(coordinate));
@@ -351,10 +426,12 @@ export const solveSectorPath = (
   from: { x: number; y: number; z: number },
   tie: { x: number; y: number; z: number },
 ): SectorPathResult => {
-  if (
-    Math.abs(from.x - tie.x) <= zeroDelta(from.x, tie.x) &&
-    Math.abs(from.y - tie.y) <= zeroDelta(from.y, tie.y)
-  ) {
+  // Zero-length sector (daylight already at the tie, e.g. fully-tied
+  // joints): same plan node up to one coordinate quantum. Wider than the
+  // classification floor by necessity — chord-solve endpoints recompute V
+  // through a different arithmetic path (~1e-14 off), and the locus graph
+  // of a point-touch holds no walkable segments.
+  if (samePlanNode(from, tie)) {
     return { ok: true, path: [{ ...from }], segmentCount: 0 };
   }
   const adjacency = new Map<string, string[]>();
@@ -397,9 +474,9 @@ export const solveSectorPath = (
     if (probe === null) return { ok: false, code: 'CORNER_TARGET_GAP' };
     return { ok: false, code: 'CORNER_NO_SOLUTION' };
   }
-  const startKey = sectorKey(from.x, from.y);
-  const tieKey = sectorKey(tie.x, tie.y);
-  if (!adjacency.has(startKey) || !adjacency.has(tieKey)) {
+  const startKey = resolveGraphKey(adjacency, from.x, from.y);
+  const tieKey = resolveGraphKey(adjacency, tie.x, tie.y);
+  if (startKey === null || tieKey === null) {
     return { ok: false, code: 'CORNER_NO_SOLUTION' };
   }
   // Deterministic walk: sorted neighbors, dead ends and branches fail closed.
@@ -424,13 +501,23 @@ export const solveSectorPath = (
     const c = coordByKey.get(key)!;
     return { x: c.x, y: c.y, z: planeZ(plane, c.x, c.y) };
   });
-  // Every corner daylight vertex passes the 20B agreement gate (strict).
+  // Every corner daylight vertex passes the agreement gate. Snapped graph
+  // nodes sit up to half a 1e-12 conditioning cell off the true locus, so
+  // the gate combines the anchored elevation agreement (20J1 single-scale
+  // evaluation error) with the grid's plane-evaluation bound: |grad| per
+  // axis over the half cell, on the grading plane and (worst over
+  // candidates) the target field. Genuinely off-locus vertices
+  // (wrong-triangle paths, branches) deviate by orders more and still fail.
+  const targetGrad = maxTargetGradient(target, candidates);
+  const gridTol = (Math.abs(plane.gx) + Math.abs(plane.gy) + targetGrad) * 0.5e-12;
   for (const vertex of path) {
     const zt = query.elevationAt(vertex.x, vertex.y);
     if (zt === null) return { ok: false, code: 'CORNER_TARGET_GAP' };
-    // Strict 20B-strength agreement: fractional snapped nodes that drift off
-    // the locus fail closed here (audit R1); epsilons are never loosened.
-    if (Math.abs(zt - vertex.z) > zeroDelta(zt, vertex.z)) {
+    const agree =
+      elevationAgreementTol(zt, vertex.z, planeLeverage(plane, vertex.x, vertex.y)) +
+      gridTol +
+      AGREEMENT_FLOOR;
+    if (Math.abs(zt - vertex.z) > agree) {
       return { ok: false, code: 'CORNER_NO_SOLUTION' };
     }
   }

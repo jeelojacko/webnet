@@ -112,11 +112,12 @@ export const bottomArcSpec = (z = 10): ArcSpec => {
 /**
  * Buildable rounded-square side: the spec's geometry mirrored across the
  * chord (centre (50,+247.5), minor CCW). The spec-literal centre (50,−247.5)
- * with a minor CW sweep produces INWARD-bulging arcs whose outward grading
- * offset self-intersects (production all-distance control fails
- * `GROUP_SELF_INTERSECTION`; recorded as `closed.square.literal-concave`).
+ * with a minor CW sweep produces INWARD-bulging arcs whose naive-chord
+ * daylight ring used to self-intersect; the 20K.1 Wave C1 exact seam
+ * uncrosses it (production all-distance control now solves, independently
+ * audited valid; recorded as `closed.square.literal-concave`).
  * The task requires a simple closed boundary, so the study's `§27` group
- * uses this outward (convex) mirror and documents the literal failure.
+ * uses this outward (convex) mirror and documents the literal history.
  */
 export const outwardBottomSpec = (z = 10): ArcSpec => {
   const cx = SQUARE_SIDE / 2;
@@ -595,9 +596,9 @@ const groupFingerprint = (
 
 // ---------------------------------------------------------------------------
 // The independent §29 topology audit lives in its own study module.
-import { auditMesh, shoelaceBoundary } from './phase20kHybridArcPairAudit';
-export { auditMesh, shoelaceBoundary };
-export type { TopologyAudit } from './phase20kHybridArcPairAudit';
+import { auditMesh, geometricDiagnostic, shoelaceBoundary } from './phase20kHybridArcPairAudit';
+export { auditMesh, geometricDiagnostic, shoelaceBoundary };
+export type { GeometricDiagnostic, TopologyAudit } from './phase20kHybridArcPairAudit';
 
 // §30 corpus.
 
@@ -657,6 +658,7 @@ const recordGroup = (
   }
   const audit = auditMesh(out.mesh, out.daylight, input.closed, out.planArea);
   const shell = input.closed ? shoelaceBoundary(out.daylight) : null;
+  // Open groups: index-vs-geometric seam picture (diagnostic-only, §20K.1).
   const complete = out.corners.length === jointCount && out.corners.length > 0;
   const actual = complete ? groupExpected : 'PARTIAL';
   const isExact = expected === groupExpected;
@@ -680,6 +682,7 @@ const recordGroup = (
     boundaryEdges: audit.boundaryEdges, components: audit.components,
     meshDigest: out.meshDigest,
     ...(input.closed && shell !== null ? { detail: `shoelace=${shell.toFixed(9)} edgeComponents=${audit.edgeComponents}` } : {}),
+    ...(!input.closed ? { detail: geometricDiagnostic(out.mesh).summary } : {}),
     digest: out.digest,
   }));
   return out;
@@ -771,40 +774,48 @@ export const roundedSquareScenarios = (): { hybrid?: HybridArcGroupResult; contr
   CASES.push(row({
     id: 'closed.square.literal-concave.all-distance', category: 'rounded-square-spec-literal', order: 'closed',
     model, criteria: ['DIST(-0.5,20) x4'], tolerance: tol, closed: true,
-    expected: 'GROUP_SELF_INTERSECTION', actual: literalDist.ok ? 'ok' : `${literalDist.code}/${literalDist.detail}`,
-    match: !literalDist.ok && literalDist.code === 'GROUP_SELF_INTERSECTION',
+    // 20K.1 Wave C1: the exact seam uncrosses the daylight ring
+    // (independently audited valid), so the control now solves.
+    expected: 'ok', actual: literalDist.ok ? 'ok' : `${literalDist.code}/${literalDist.detail}`,
+    match: literalDist.ok,
     tieCount: literalDist.tieCount ?? 0, rootCounts: [], meshValid: literalDist.ok, auditPass: null,
     detail: literalDist.detail, digest: literalDist.digest ?? '',
   }));
   // all-Surface control (surface-only ⇒ production path, no hybrid guard).
+  // 20K.1 Wave C2: internal chord seams assemble through the shared
+  // Surface-corner authority with exact endpoint sharing, so the control
+  // now reaches CURRENT (same cure family as the C1 analytic rows).
   const allCriteria = [FIXED(-0.5), FIXED(-0.5), FIXED(-0.5), FIXED(-0.5)];
   const surf = productionControl(members, allCriteria, model, tol, flatTin(0));
   CASES.push(row({
     id: 'closed.square.control.all-surface', category: 'rounded-square-control', order: 'closed',
     model, criteria: allCriteria.map((c) => JSON.stringify(c)), tolerance: tol, closed: true,
-    expected: 'CORNER_NO_SOLUTION', actual: surf.ok ? 'ok' : `${surf.code}/${surf.detail}`,
-    match: !surf.ok && surf.code === 'CORNER_NO_SOLUTION',
+    expected: 'ok', actual: surf.ok ? 'ok' : `${surf.code}/${surf.detail}`,
+    match: surf.ok,
     tieCount: surf.tieCount ?? 0, rootCounts: [], meshValid: surf.ok, auditPass: null,
     planArea: surf.planArea, detail: surf.detail, digest: surf.digest ?? '',
   }));
-  // all-Distance control — on a flat target every member is the same 20 m
-  // outward offset at grade −0.5, so it must match the hybrid geometry.
+  // all-Distance control — 20K.1 Wave C1: the exact analytic seam tiles one
+  // valid strip (same cure as E), so the control now reaches CURRENT.
   const distCriteria = [DIST(-0.5, 20), DIST(-0.5, 20), DIST(-0.5, 20), DIST(-0.5, 20)];
   const dist = productionControl(members, distCriteria, model, tol);
   CASES.push(row({
     id: 'closed.square.control.all-distance', category: 'rounded-square-control', order: 'closed',
     model, criteria: distCriteria.map((c) => JSON.stringify(c)), tolerance: tol, closed: true,
-    expected: 'ok', actual: dist.ok ? 'ok' : `${dist.code}/${dist.detail}`, match: dist.ok,
+    expected: 'ok', actual: dist.ok ? 'ok' : `${dist.code}/${dist.detail}`,
+    match: dist.ok,
     tieCount: dist.tieCount ?? 0, rootCounts: [], meshValid: dist.ok, auditPass: null,
     planArea: dist.planArea, detail: dist.digest, digest: dist.digest ?? '',
   }));
-  // mixed-analytic control (D/E/REL share one analytic domain).
+  // mixed-analytic control (D/E/REL share one analytic domain) — same C1
+  // cure as F: reaches CURRENT.
   const mixedCriteria = [DIST(-0.5, 20), ELEV(-0.5, 0), REL(-0.5, -10), DIST(-0.5, 20)];
   const mixed = productionControl(members, mixedCriteria, model, tol);
   CASES.push(row({
     id: 'closed.square.control.mixed-analytic', category: 'rounded-square-control', order: 'closed',
     model, criteria: mixedCriteria.map((c) => JSON.stringify(c)), tolerance: tol, closed: true,
-    expected: 'ok', actual: mixed.ok ? 'ok' : `${mixed.code}/${mixed.detail}`, match: mixed.ok,
+    expected: 'ok', actual: mixed.ok ? 'ok' : `${mixed.code}/${mixed.detail}`,
+    match: mixed.ok,
     tieCount: mixed.tieCount ?? 0, rootCounts: [], meshValid: mixed.ok, auditPass: null,
     planArea: mixed.planArea, detail: mixed.digest, digest: mixed.digest ?? '',
   }));
@@ -880,13 +891,16 @@ export const cornerScenarios = (): void => {
     ...base, criteria: [FIXED(-0.5), DIST(-0.5, 20)], maxSearchDistance: 5,
   }, 'MEMBER_NO_SOLUTION');
   // Sloped target: plane z = 0.05·x (still covers the joint); exact tie.
+  // 20K.1 Wave C2: chord daylight agreement now passes the sloped solve,
+  // so the hybrid joint correctly reports the slope-broken exact tie at
+  // its own gate (same verdict family as the D=24 mismatch ladder).
   const slopedTin: GradingTargetMeshSnapshot = {
     points: [-400, -400, -20, 400, -400, 20, 400, 400, 20, -400, 400, -20],
     triangles: [0, 1, 2, 0, 2, 3],
   };
   recordGroup('corner.sloped-target', 'sloped-target', {
     ...base, criteria: [FIXED(-0.5), DIST(-0.5, 20)], target: slopedTin,
-  }, 'GRADING_DAYLIGHT_DISAGREE');
+  }, 'TRANSITION_REQUIRED');
   // Triangulation permutation of the flat target: identical tie expected.
   const spun = flatTin(0);
   const altTin: GradingTargetMeshSnapshot = { points: spun.points, triangles: [0, 1, 3, 1, 2, 3] };

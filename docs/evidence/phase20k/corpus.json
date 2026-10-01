@@ -29,6 +29,7 @@
       "boundaryEdges": 10,
       "components": 1,
       "meshDigest": "14c929962ac8c79a",
+      "detail": "edgeComponents=2 exactDupSets=0 coincidentSets=0 nonSharedCoincidentEdges=0 weldedEdgeComponents=2 weldedDegenerate=0",
       "digest": "1305f8caeb761f7d"
     },
     {
@@ -59,6 +60,7 @@
       "boundaryEdges": 10,
       "components": 1,
       "meshDigest": "261846c7db7b04f6",
+      "detail": "edgeComponents=2 exactDupSets=0 coincidentSets=0 nonSharedCoincidentEdges=0 weldedEdgeComponents=2 weldedDegenerate=0",
       "digest": "53a55205ffa55637"
     },
     {
@@ -89,6 +91,7 @@
       "boundaryEdges": 10,
       "components": 1,
       "meshDigest": "14c929962ac8c79a",
+      "detail": "edgeComponents=2 exactDupSets=0 coincidentSets=0 nonSharedCoincidentEdges=0 weldedEdgeComponents=2 weldedDegenerate=0",
       "digest": "1305f8caeb761f7d"
     },
     {
@@ -119,6 +122,7 @@
       "boundaryEdges": 10,
       "components": 1,
       "meshDigest": "261846c7db7b04f6",
+      "detail": "edgeComponents=2 exactDupSets=0 coincidentSets=0 nonSharedCoincidentEdges=0 weldedEdgeComponents=2 weldedDegenerate=0",
       "digest": "53a55205ffa55637"
     },
     {
@@ -149,6 +153,7 @@
       "boundaryEdges": 61,
       "components": 1,
       "meshDigest": "d6be5d127e2ac86e",
+      "detail": "edgeComponents=3 exactDupSets=0 coincidentSets=2 nonSharedCoincidentEdges=0 weldedEdgeComponents=3 weldedDegenerate=2",
       "digest": "94230ba7bb64f175"
     },
     {
@@ -179,6 +184,7 @@
       "boundaryEdges": 61,
       "components": 1,
       "meshDigest": "bc654d3709e0cccc",
+      "detail": "edgeComponents=3 exactDupSets=0 coincidentSets=2 nonSharedCoincidentEdges=0 weldedEdgeComponents=3 weldedDegenerate=2",
       "digest": "98648da07ed0882c"
     },
     {
@@ -209,6 +215,7 @@
       "boundaryEdges": 166,
       "components": 1,
       "meshDigest": "d1bfe602428231ee",
+      "detail": "edgeComponents=3 exactDupSets=0 coincidentSets=0 nonSharedCoincidentEdges=0 weldedEdgeComponents=3 weldedDegenerate=0",
       "digest": "5112bad13459b226"
     },
     {
@@ -239,6 +246,7 @@
       "boundaryEdges": 166,
       "components": 1,
       "meshDigest": "0c6ae67690de2ffd",
+      "detail": "edgeComponents=3 exactDupSets=0 coincidentSets=0 nonSharedCoincidentEdges=0 weldedEdgeComponents=3 weldedDegenerate=0",
       "digest": "1e41cfe383c418c2"
     },
     {
@@ -309,15 +317,14 @@
       ],
       "tolerance": 0.1,
       "closed": true,
-      "expected": "GROUP_SELF_INTERSECTION",
-      "actual": "GROUP_SELF_INTERSECTION/GRADING_GROUP_DAYLIGHT_RING",
+      "expected": "ok",
+      "actual": "ok",
       "match": true,
-      "tieCount": 0,
+      "tieCount": 4,
       "rootCounts": [],
-      "meshValid": false,
+      "meshValid": true,
       "auditPass": null,
-      "detail": "GRADING_GROUP_DAYLIGHT_RING",
-      "digest": ""
+      "digest": "ec28b109bfc09615"
     },
     {
       "id": "closed.square.control.all-surface",
@@ -332,15 +339,15 @@
       ],
       "tolerance": 0.1,
       "closed": true,
-      "expected": "CORNER_NO_SOLUTION",
-      "actual": "CORNER_NO_SOLUTION/GRADING_CORNER_SECTOR",
+      "expected": "ok",
+      "actual": "ok",
       "match": true,
-      "tieCount": 0,
+      "tieCount": 4,
       "rootCounts": [],
-      "meshValid": false,
+      "meshValid": true,
       "auditPass": null,
-      "detail": "GRADING_CORNER_SECTOR",
-      "digest": ""
+      "planArea": 9452.12482633508,
+      "digest": "798067858dacc647"
     },
     {
       "id": "closed.square.control.all-distance",
@@ -362,9 +369,9 @@
       "rootCounts": [],
       "meshValid": true,
       "auditPass": null,
-      "planArea": 9451.951560147396,
-      "detail": "0913cdda718a42e6",
-      "digest": "0913cdda718a42e6"
+      "planArea": 9452.12482633509,
+      "detail": "3074da5246a1a13c",
+      "digest": "3074da5246a1a13c"
     },
     {
       "id": "closed.square.control.mixed-analytic",
@@ -386,9 +393,9 @@
       "rootCounts": [],
       "meshValid": true,
       "auditPass": null,
-      "planArea": 9451.951560147396,
-      "detail": "0913cdda718a42e6",
-      "digest": "0913cdda718a42e6"
+      "planArea": 9452.12482633509,
+      "detail": "3074da5246a1a13c",
+      "digest": "3074da5246a1a13c"
     },
     {
       "id": "closed.square.mismatch.d24",
@@ -464,6 +471,7 @@
       "boundaryEdges": 61,
       "components": 1,
       "meshDigest": "d6be5d127e2ac86e",
+      "detail": "edgeComponents=3 exactDupSets=0 coincidentSets=2 nonSharedCoincidentEdges=0 weldedEdgeComponents=3 weldedDegenerate=2",
       "digest": "94230ba7bb64f175"
     },
     {
@@ -494,6 +502,7 @@
       "boundaryEdges": 61,
       "components": 1,
       "meshDigest": "d6be5d127e2ac86e",
+      "detail": "edgeComponents=3 exactDupSets=0 coincidentSets=2 nonSharedCoincidentEdges=0 weldedEdgeComponents=3 weldedDegenerate=2",
       "digest": "94230ba7bb64f175"
     },
     {
@@ -524,6 +533,7 @@
       "boundaryEdges": 61,
       "components": 1,
       "meshDigest": "d6be5d127e2ac86e",
+      "detail": "edgeComponents=3 exactDupSets=0 coincidentSets=2 nonSharedCoincidentEdges=0 weldedEdgeComponents=3 weldedDegenerate=2",
       "digest": "94230ba7bb64f175"
     },
     {
@@ -554,6 +564,7 @@
       "boundaryEdges": 62,
       "components": 2,
       "meshDigest": "53cdf897cd15d18d",
+      "detail": "edgeComponents=3 exactDupSets=0 coincidentSets=3 nonSharedCoincidentEdges=0 weldedEdgeComponents=2 weldedDegenerate=2",
       "digest": "1bb82adae4ff22b1"
     },
     {
@@ -584,6 +595,7 @@
       "boundaryEdges": 61,
       "components": 1,
       "meshDigest": "abac6bd6a37f2020",
+      "detail": "edgeComponents=3 exactDupSets=0 coincidentSets=2 nonSharedCoincidentEdges=0 weldedEdgeComponents=3 weldedDegenerate=2",
       "digest": "f44a1bf106abeab5"
     },
     {
@@ -614,6 +626,7 @@
       "boundaryEdges": 61,
       "components": 1,
       "meshDigest": "d6be5d127e2ac86e",
+      "detail": "edgeComponents=3 exactDupSets=0 coincidentSets=2 nonSharedCoincidentEdges=0 weldedEdgeComponents=3 weldedDegenerate=2",
       "digest": "94230ba7bb64f175"
     },
     {
@@ -732,15 +745,15 @@
       ],
       "tolerance": 0.1,
       "closed": false,
-      "expected": "GRADING_DAYLIGHT_DISAGREE",
-      "actual": "MEMBER_NO_SOLUTION/GRADING_DAYLIGHT_DISAGREE",
+      "expected": "TRANSITION_REQUIRED",
+      "actual": "CORNER_NO_SOLUTION/GRADING_SURFACE_ANALYTIC_TRANSITION_REQUIRED",
       "match": true,
       "tieCount": 0,
       "rootCounts": [],
       "meshValid": false,
       "auditPass": null,
-      "detail": "GRADING_DAYLIGHT_DISAGREE",
-      "digest": "f03ba89fd20854e0"
+      "detail": "GRADING_SURFACE_ANALYTIC_TRANSITION_REQUIRED",
+      "digest": "ed0c3ff8324c6f1e"
     },
     {
       "id": "corner.alt-triangulation",
@@ -770,6 +783,7 @@
       "boundaryEdges": 61,
       "components": 1,
       "meshDigest": "d6be5d127e2ac86e",
+      "detail": "edgeComponents=3 exactDupSets=0 coincidentSets=2 nonSharedCoincidentEdges=0 weldedEdgeComponents=3 weldedDegenerate=2",
       "digest": "94230ba7bb64f175"
     },
     {
@@ -800,6 +814,7 @@
       "boundaryEdges": 61,
       "components": 1,
       "meshDigest": "d6be5d127e2ac86e",
+      "detail": "edgeComponents=3 exactDupSets=0 coincidentSets=2 nonSharedCoincidentEdges=0 weldedEdgeComponents=3 weldedDegenerate=2",
       "digest": "94230ba7bb64f175"
     },
     {
@@ -956,6 +971,7 @@
       "boundaryEdges": 53,
       "components": 1,
       "meshDigest": "1bbe250350d7beb1",
+      "detail": "edgeComponents=3 exactDupSets=0 coincidentSets=0 nonSharedCoincidentEdges=0 weldedEdgeComponents=3 weldedDegenerate=0",
       "digest": "a2f9143af6b34cf7"
     },
     {
@@ -986,6 +1002,7 @@
       "boundaryEdges": 61,
       "components": 1,
       "meshDigest": "d6be5d127e2ac86e",
+      "detail": "edgeComponents=3 exactDupSets=0 coincidentSets=2 nonSharedCoincidentEdges=0 weldedEdgeComponents=3 weldedDegenerate=2",
       "digest": "807f7f2b7c1eee31"
     },
     {
@@ -1016,6 +1033,7 @@
       "boundaryEdges": 73,
       "components": 1,
       "meshDigest": "4eb07162ae277364",
+      "detail": "edgeComponents=3 exactDupSets=0 coincidentSets=0 nonSharedCoincidentEdges=0 weldedEdgeComponents=3 weldedDegenerate=0",
       "digest": "239f1935b8292cf3"
     }
   ],
@@ -1023,17 +1041,17 @@
     "total": 39,
     "matched": 39,
     "mismatched": [],
-    "digests": 13,
+    "digests": 15,
     "comparison": {
       "available": true,
-      "planAreaEqual": true,
+      "planAreaEqual": false,
       "meshSetEqual": false,
       "tiePointsEqual": true,
       "digestEqual": false,
       "hybridTriangles": 114,
-      "controlTriangles": 100,
+      "controlTriangles": 128,
       "maxTieDelta": 8.526512829121202e-14,
-      "detail": "hybridDigest=5355ec70756e2887 controlDigest=0913cdda718a42e6"
+      "detail": "hybridDigest=5355ec70756e2887 controlDigest=3074da5246a1a13c"
     }
   }
 }

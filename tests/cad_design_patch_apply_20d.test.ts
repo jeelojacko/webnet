@@ -834,7 +834,12 @@ describe('20D (f) fail-closed pins', () => {
     });
     const withGroup = state.present.project;
     const groupId = withGroup.gradingGroups![0]!.id;
-    // The real calculate path fails closed (R1 flat-pad honesty gate).
+    // 20K.1 Wave C2 old→new: the tilted planar target now solves honestly
+    // (planar-exact chord + corner agreement — the old CORNER_NO_SOLUTION
+    // was FP noise fail-closed, same class as the C2 seam gates). The
+    // revision is CURRENT, but the pad is non-flat, so Design Patch still
+    // blocks at its own flat-OR-coplanar gate — that product safety is
+    // untouched.
     const inputs = resolveGroupInputs(withGroup, groupId);
     if (!inputs) throw new Error('tilted inputs broke');
     const built = buildCadSurface(withGroup, inputs.target!);
@@ -853,14 +858,11 @@ describe('20D (f) fail-closed pins', () => {
         triangles: built.triangles.flatMap((tri) => [...tri]),
       },
     });
-    expect(outcome.ok).toBe(false);
-    if (!outcome.ok) {
-      expect(outcome.code).toBe('CORNER_NO_SOLUTION');
-    }
-    // With no CURRENT result, any DESIGNPATCH attempt is blocked. A snapshot
-    // claiming CURRENT at the genuine tilted revision (and carrying no
-    // captured boundary) re-derives the real non-coplanar ring, which the
-    // flat-OR-coplanar gate blocks before any mesh is read.
+    expect(outcome.ok).toBe(true);
+    if (!outcome.ok) return;
+    // A snapshot claiming CURRENT at the genuine tilted revision (and
+    // carrying no captured boundary) re-derives the real non-coplanar
+    // ring, which the flat-OR-coplanar gate blocks before any mesh is read.
     const { result: flatResult } = padWorld(-60, -60, 160, 160);
     const forged: CadGradingGroupResult = { ...flatResult, groupId, revision: inputs.revision };
     delete forged.sourceBoundaryPoints;
@@ -1070,21 +1072,12 @@ describe('20D (g) concave and curved fail-closed pins', () => {
         triangles: built.triangles.flatMap((tri) => [...tri]),
       },
     });
-    if (!outcome.ok) throw new Error(`Curved calc failed: ${outcome.code}`);
-    expect(outcome.result.accuracy).toBe('CURVE_APPROXIMATED');
-    // Phase 20E capture removes the old re-linearization drift, exposing the
-    // fixture's real geometry: four inward semicircles on a square cross at
-    // (50,50), so the captured boundary is genuinely non-simple.
-    expect(outcome.result.sourceBoundaryPoints).toBeDefined();
-    expect(resolveDesignPatch(withGroup, groupId, outcome.result, inputs.revision, true))
-      .toMatchObject({ ok: false, code: DESIGN_PATCH_NON_SIMPLE_RING });
-    const history = createCadHistoryState(withGroup);
-    expect(runCadCommand(history, {
-      key: 'DESIGNPATCH',
-      groupId,
-      result: outcome.result,
-      expectedRevision: inputs.revision,
-      sessionCurrent: true,
-    })).toBe(history);
+    // 20K.1 Wave B2: the curved closed square fails even earlier — the seam
+    // gate refuses the non-stitching shell, so no CURRENT result exists for
+    // the ring gate or the DESIGNPATCH command to consume.
+    expect(outcome.ok).toBe(false);
+    if (outcome.ok) return;
+    expect(outcome.code).toBe('GROUP_NON_MANIFOLD');
+    expect(outcome.detail).toContain('GRADING_GROUP_ARC_SEAM_PINCH');
   });
 });

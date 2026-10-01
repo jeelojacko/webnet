@@ -113,3 +113,46 @@ this study is buildable.
   `(50,+247.5)` / minor CCW (exact ties, still not buildable — vertex
   pinch). Documented in the architecture and validation
   docs and retained as a fail-closed corpus control.
+
+## Addendum 20K.1 — audit-correction regen (2026-09-30, Wave A1)
+
+Branch `fix/phase20k1-curved-grading-seam-topology`. The original §29 audit
+used a raw-float `o1 !== o2 && o3 !== o4` segment test; the corrected
+predicate (robust `-1/0/+1` orientations on the shared `zeroDelta` floor,
+collinear overlap/touch counting for non-adjacent pairs, adjacent-pair
+skip, closed-ring collinear sweep) is strictly stronger. Regen result:
+**39 rows, 0 mismatches — every original verdict stands as recorded above
+(erratum preserved, not rewritten); the only corpus delta is additive
+`detail` (open-group index-vs-geometric diagnostic) on previously
+detail-less open rows.**
+
+Open-group diagnostic (from corpus `detail`): `tol-25/10` strips report
+`edgeComponents=2`, no duplicates, no coincident sets, weld a no-op
+(`2 → 2`); finer-tolerance and corner rows report `edgeComponents=3` with
+0–3 zeroDelta-coincident sets and 0–2 degenerate-after-weld triangles, and
+the weld heals nothing except `corner.reversed` (`3 → 2`). The seam pinch
+is therefore geometric, not indexical. Verdicts unchanged:
+**NO_GO_TERMINAL_CHORD_ARC_PAIR** holds. No gate, no seam assembly, no
+`src/` change.
+
+## Addendum 20K.1 — PR #141 merged + production-line record (2026-10-01, Wave D1)
+
+PR #141 merged the Phase 20K study branch (base `e8bece3d`, head
+`c03617b8`, merge `35b4c27`; CI runs 36788493770 + 36790303544). History
+above is preserved as erratum, not rewritten.
+
+Corrected audit predicate (Wave A1, robust zeroDelta orientations) +
+regenerated verdicts: 39 corpus rows, 0 mismatches — every 20K verdict
+stands. Direct production all-Distance closed square (Wave A2, actual
+`computeGradingGroupFromSnapshots`): was study-assembler VERTEX_PINCH
+with 8 edge-components → after Wave C1 analytic seam assembly the same
+group resolves CURRENT 128/128, 1 component, plan 9452.124826335.
+Study-vs-production distinction: the study assembler never stitched
+internal chord seams (each chord an isolated strip), so its 8-component
+pinch does not transfer to production; the production blocker the study
+identified (chord-seam strip/merge topology) was real and is now fixed
+for analytic + Surface paths. arc×arc hybrid remains blocked
+(`GRADING_SURFACE_ANALYTIC_ARC_PAIR_UNSUPPORTED`); `NO_GO_TERMINAL_CHORD_ARC_PAIR`
+for general arc pairs is retained. 20K.1 evidence:
+`phase20k1-curved-seam-{architecture,validation,performance}.md`,
+`phase20k1-browser-qa.md`, `phase20k1-curved-seam-post-merge-audit.md`.

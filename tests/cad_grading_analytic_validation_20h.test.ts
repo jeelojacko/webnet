@@ -8,7 +8,6 @@
  * closed BEFORE any geometry), large-coordinate stability, an arc-adjacent
  * mixed group, and the reversed-storage invariant.
  */
-import { createHash } from 'node:crypto';
 import { describe, expect, it } from 'vitest';
 
 import {
@@ -22,6 +21,7 @@ import { createGroupDefinition } from '../src/engine/cad/grading/gradingGroupAut
 import { resolveGroupMemberCriteria } from '../src/engine/cad/grading/gradingGroupCourseCriteria';
 import { sanitizeCadGradingGroupsDetailed } from '../src/engine/cad/grading/gradingGroupPersistence';
 import { computeGradingGroupFromSnapshots } from '../src/engine/cad/grading/gradingGroupCompute';
+import { validateGradingMeshTopology } from '../src/engine/cad/grading/gradingTopology';
 import { solveAnalyticGradingChord } from '../src/engine/cad/grading/solveAnalyticGradingChord';
 import { computeGradingFromSnapshots } from '../src/workers/surfaceGradingCompute';
 import type { GradingCriterion, ResolvedGradingSource } from '../src/engine/cad/grading/gradingTypes';
@@ -30,9 +30,6 @@ import type { GradingGroupCourse } from '../src/engine/cad/grading/gradingGroupT
 const DIST = (g: number, d: number): GradingCriterion => ({ kind: 'distance', gradeRatio: g, distance: d });
 const ELEV = (g: number, e: number): GradingCriterion => ({ kind: 'elevation', gradeRatio: g, targetElevation: e });
 const REL = (g: number, dz: number): GradingCriterion => ({ kind: 'relative-elevation', gradeRatio: g, relativeElevation: dz });
-
-const digest = (value: unknown): string =>
-  createHash('sha256').update(JSON.stringify(value)).digest('hex');
 
 const straight = (sx: number, sy: number, ex: number, ey: number, sz = 10, ez = 10): ResolvedGradingSource => ({
   startX: sx, startY: sy, endX: ex, endY: ey, startZ: sz, endZ: ez,
@@ -198,10 +195,21 @@ describe('(4) large coordinates + arc-adjacent mixed group', () => {
       memberCriteria: [ELEV(-0.5, 0), REL(-0.5, -10)],
       maxSearchDistance: 50, curveChordTolerance: 0.05, closed: false,
     });
-    const out = run();
-    if (!out.ok) throw new Error(`${out.code} ${out.detail ?? ''}`);
-    expect(out.result.gradingMesh.points.length).toBeGreaterThan(0);
-    expect(digest(run())).toBe(digest(run()));
+    // 20K.1 Wave C1: analytic internal chord seams assemble (exact V,
+    // analytic ties) and the joint vertex canonicalizes to the shared
+    // member end, so the mixed ELEV/REL pair tiles ONE valid strip:
+    // 1 component, 1 boundary loop, deterministic across runs.
+    for (const out of [run(), run()]) {
+      expect(out.ok).toBe(true);
+      if (!out.ok) continue;
+      const topo = validateGradingMeshTopology(
+        out.result.gradingMesh.points, out.result.gradingMesh.triangles, { scope: 'group' });
+      expect(topo).toMatchObject({ ok: true, components: 1, loops: 1 });
+      expect(out.result.corners).toHaveLength(1);
+      expect(out.result.corners[0]!.classification).toBe('GAP');
+      expect(out.result.corners[0]!.tiePointXyz).toEqual([0.3141851064733838, 120, 0]);
+      expect(out.result.gradingPlanArea).toBe(5449.051763958467);
+    }
   });
 });
 

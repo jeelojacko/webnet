@@ -275,7 +275,7 @@ describe('phase20j large coordinates + arcs + determinism + mode', () => {
     expect(Math.abs(far.grading3dArea - local.grading3dArea)).toBeLessThanOrEqual(1e-6);
   });
 
-  it('one-arc hybrid joint solves with CURVE_APPROXIMATED preserved', () => {
+  it('one-arc hybrid joint resolves with the C2 Surface seam (was B2-gated)', () => {
     const arc: ResolvedGradingSource = {
       startX: 40, startY: 40, endX: 0, endY: 0, startZ: 100, endZ: 100,
       length: 40 * (Math.PI / 2), reoriented: false, isArc: true,
@@ -292,14 +292,21 @@ describe('phase20j large coordinates + arcs + determinism + mode', () => {
       maxSearchDistance: 100, curveChordTolerance: 0.001, closed: false,
       target: flatTin(90),
     });
-    const r = expectOk(out);
-    expect(r.accuracy).toBe('CURVE_APPROXIMATED');
-    expect(r.diagnostics.map((d) => d.code)).toContain('CURVE_CORNER_APPROXIMATED');
-    expect(r.corners[0]!.classification).toBe('GAP');
-    const tie = r.corners[0]!.tiePointXyz!;
-    expect(Math.abs(tie[0] - -20)).toBeLessThan(0.5);
-    expect(Math.abs(tie[1] - -40)).toBeLessThan(0.5);
-    expect(Math.abs(tie[2] - 90)).toBeLessThan(0.5);
+    // 20K.1 Wave C2 old→new: the curved Surface member's internal chord
+    // seams now assemble through the shared Surface-corner authority (exact
+    // endpoint sharing with the hybrid GAP patch), so the merged mesh
+    // holds one edge-component and the B2 gate passes — revision CURRENT
+    // with the exact external tie. arc×arc stays blocked (next test).
+    expect(out.ok).toBe(true);
+    if (!out.ok) return;
+    expect(out.result.gradingMesh.points.length / 3).toBe(563);
+    expect(out.result.gradingMesh.triangles.length / 3).toBe(561);
+    expect(out.result.gradingPlanArea).toBeCloseTo(4775.018406838972, 9);
+    expect(out.result.accuracy).toBe('CURVE_APPROXIMATED');
+    expect(out.result.corners).toHaveLength(1);
+    expect(out.result.corners[0]!.classification).toBe('GAP');
+    const tie20j = out.result.corners[0]!.tiePointXyz!;
+    expect(tie20j[2]).toBe(90);
   });
 
   it('arc×arc hybrid joint is blocked with ARC_PAIR_UNSUPPORTED', () => {

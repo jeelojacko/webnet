@@ -20,6 +20,7 @@ import type { WebnetGradingDesignPatchTinProvenance } from '../cadTypes';
 import { checkFlatRing, designPatchBlock, ringCount, ringEdgeKey, ringVertexKey, validateSourceRing } from './designPatchRing';
 import type { DesignPatchFailure } from './designPatchRing';
 import { deriveDesignPatchPlane } from './designPatchPlane';
+import { validateGradingMeshTopology } from './gradingTopology';
 import { gradingTerminationKind } from './gradingTypes';
 import { criteriaEqual } from './gradingGroupCourseCriteria';
 import { canonicalAnalyticKinds, canonicalTerminationKinds, groupTerminationMode } from './gradingGroupTermination';
@@ -244,6 +245,9 @@ export const mergePadWithGrading = (
   padTriangles: readonly number[],
   gradingMesh: GradingMesh,
 ): DesignPatchMesh | DesignPatchFailure => {
+  // 20K.1 Wave B2: refuse a topology-failed grading shell (existing code).
+  const seam = validateGradingMeshTopology(gradingMesh.points, gradingMesh.triangles, { scope: 'group' });
+  if (!seam.ok) return designPatchBlock('DESIGN_PATCH_MERGE_FAILED', `${seam.code}: ${seam.detail ?? ''}`);
   const padEdges = edgeRecords(padPoints, padTriangles);
   const gradingEdges = edgeRecords(gradingMesh.points, gradingMesh.triangles);
   // A closed-pad shell is exactly two simple boundary cycles: source + daylight.

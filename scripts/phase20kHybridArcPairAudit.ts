@@ -9,6 +9,7 @@
  * open-continuous / closed-simple daylight, no bridge/pinch, and
  * self-consistent plan area.
  */
+import { zeroDelta } from '../src/engine/cad/surfaces/volume/zero';
 import { ringIsSimple, type MergePoint, type MergedGroupMesh } from '../src/engine/cad/grading/gradingGroupMerge';
 
 // §29 independent topology audit (beyond validateExplicitTinPayload).
@@ -221,8 +222,10 @@ export const auditMesh = (
   if (overlap) issues.push('interior triangle overlap');
 
   // Daylight continuity (open) / simplicity (closed) and bridging.
+  // Closed rings use the production predicate AND a local collinear-overlap
+  // sweep: quantized orientations alone miss all-zero (collinear) overlap.
   const ring = closed ? daylight : daylight.slice();
-  const ringSimple = closed ? ringIsSimple(ring) : !hasRepeatOrCrossing(ring);
+  const ringSimple = closed ? closedRingSimple(ring) : !hasRepeatOrCrossing(ring);
   checks.daylight = closed ? ringSimple : daylightContinuous(daylight);
   if (closed && !ringSimple) issues.push('self-crossing closed ring');
   if (!closed && !daylightContinuous(daylight)) issues.push('discontinuous open daylight');
@@ -264,17 +267,189 @@ const daylightContinuous = (path: MergePoint[]): boolean => {
 
 const hasRepeatOrCrossing = (path: MergePoint[]): boolean => !daylightContinuous(path);
 
-const segmentsCross = (a: MergePoint, b: MergePoint, c: MergePoint, d: MergePoint): boolean => {
-  const cross = (p: MergePoint, q: MergePoint, r: MergePoint): number =>
-    (q.x - p.x) * (r.y - p.y) - (q.y - p.y) * (r.x - p.x);
-  const o1 = cross(a, b, c);
-  const o2 = cross(a, b, d);
-  const o3 = cross(c, d, a);
-  const o4 = cross(c, d, b);
-  return o1 !== o2 && o3 !== o4;
+/**
+ * Robust orientation predicate: -1/0/+1 with the shared Phase 18I
+ * `zeroDelta` floor (reused, no new tolerance). Matches the production
+ * `segmentsCross` in `gradingGroupMerge.ts`.
+ */
+export const orient = (p: MergePoint, q: MergePoint, r: MergePoint): number => {
+  const v = (q.x - p.x) * (r.y - p.y) - (q.y - p.y) * (r.x - p.x);
+  if (Math.abs(v) <= zeroDelta(v, 0)) return 0;
+  return v > 0 ? 1 : -1;
+};
+
+/** True when r is collinear with pq and inside its bbox (zeroDelta-slop). */
+const onSegment = (p: MergePoint, q: MergePoint, r: MergePoint): boolean =>
+  r.x >= Math.min(p.x, q.x) - zeroDelta(r.x, Math.min(p.x, q.x)) &&
+  r.x <= Math.max(p.x, q.x) + zeroDelta(r.x, Math.max(p.x, q.x)) &&
+  r.y >= Math.min(p.y, q.y) - zeroDelta(r.y, Math.min(p.y, q.y)) &&
+  r.y <= Math.max(p.y, q.y) + zeroDelta(r.y, Math.max(p.y, q.y));
+
+/**
+ * Segment intersection for audit purposes. General case (including a
+ * non-adjacent shared endpoint, i.e. a pinch) counts; collinear overlap
+ * and collinear touching also count as self-intersection. Adjacent daylight
+ * segments sharing their expected endpoint do NOT count — the caller skips
+ * adjacent pairs and never calls this for them.
+ */
+export const segmentsCross = (a: MergePoint, b: MergePoint, c: MergePoint, d: MergePoint): boolean => {
+  const o1 = orient(a, b, c);
+  const o2 = orient(a, b, d);
+  const o3 = orient(c, d, a);
+  const o4 = orient(c, d, b);
+  if (o1 !== o2 && o3 !== o4) return true;
+  return (o1 === 0 && onSegment(a, b, c)) ||
+    (o2 === 0 && onSegment(a, b, d)) ||
+    (o3 === 0 && onSegment(c, d, a)) ||
+    (o4 === 0 && onSegment(c, d, b));
+};
+
+/**
+ * Closed-ring simplicity: production `ringIsSimple` (general case, closing
+ * edge included, adjacent pairs skipped) AND a local sweep with the
+ * corrected predicate so non-adjacent collinear overlap/touching also fail.
+ */
+export const closedRingSimple = (ring: MergePoint[]): boolean => {
+  if (!ringIsSimple(ring)) return false;
+  const n = ring.length;
+  for (let i = 0; i < n; i += 1) {
+    for (let j = i + 1; j < n; j += 1) {
+      if (j === i + 1 || (i === 0 && j === n - 1)) continue;
+      if (segmentsCross(ring[i]!, ring[(i + 1) % n]!, ring[j]!, ring[(j + 1) % n]!)) return false;
+    }
+  }
+  return true;
 };
 
 /** Independent chord-offset shoelace check on the boundary polyline. */
 export const shoelaceBoundary = (daylight: MergePoint[]): number =>
   daylight.length < 3 ? 0 : Math.abs(polyArea(daylight));
+
+/** Index-vs-geometric topology diagnostic (evidence only, read-only). */
+export interface GeometricDiagnostic {
+  indexEdgeComponents: number;
+  exactDuplicateSets: number[][];
+  coincidentSets: number[][];
+  coincidentNonSharedEdges: number;
+  weldedEdgeComponents: number;
+  weldedDegenerateTriangles: number;
+  summary: string;
+}
+
+const sameVertex = (points: number[], i: number, j: number): boolean =>
+  Math.abs(points[i * 3]! - points[j * 3]!) <= zeroDelta(points[i * 3]!, points[j * 3]!) &&
+  Math.abs(points[i * 3 + 1]! - points[j * 3 + 1]!) <= zeroDelta(points[i * 3 + 1]!, points[j * 3 + 1]!) &&
+  Math.abs(points[i * 3 + 2]! - points[j * 3 + 2]!) <= zeroDelta(points[i * 3 + 2]!, points[j * 3 + 2]!);
+
+const edgeComponentsOf = (triangles: number[]): number => {
+  const nTris = triangles.length / 3;
+  if (nTris === 0) return 0;
+  const parent = new Map<number, number>();
+  for (let f = 0; f < nTris; f += 1) parent.set(f, f);
+  const find = (x: number): number => {
+    let r = x;
+    while (parent.get(r) !== r) r = parent.get(r)!;
+    while (parent.get(x) !== r) { const nx = parent.get(x)!; parent.set(x, r); x = nx; }
+    return r;
+  };
+  const edgeFaces = new Map<string, number[]>();
+  for (let f = 0; f < nTris; f += 1) {
+    const tri = [triangles[f * 3]!, triangles[f * 3 + 1]!, triangles[f * 3 + 2]!];
+    for (const [i, j] of [[tri[0]!, tri[1]!], [tri[1]!, tri[2]!], [tri[2]!, tri[0]!]] as Array<[number, number]>) {
+      const key = i < j ? `${i}|${j}` : `${j}|${i}`;
+      if (!edgeFaces.has(key)) edgeFaces.set(key, []);
+      edgeFaces.get(key)!.push(f);
+    }
+  }
+  for (const faces of edgeFaces.values()) {
+    if (faces.length === 2) {
+      const ra = find(faces[0]!);
+      const rb = find(faces[1]!);
+      if (ra !== rb) parent.set(ra, rb);
+    }
+  }
+  const roots = new Set<number>();
+  for (let f = 0; f < nTris; f += 1) roots.add(find(f));
+  return roots.size;
+};
+
+/**
+ * Index edge-components plus the geometric coincidence picture: exact
+ * duplicate vertices, zeroDelta-coincident vertex sets, index edges that
+ * coincide geometrically without sharing an index, and edge-components
+ * before/after a diagnostic-only weld (degenerate-after-weld triangles
+ * dropped, input untouched). All output sorted for determinism.
+ */
+export const geometricDiagnostic = (mesh: MergedGroupMesh): GeometricDiagnostic => {
+  const nVerts = mesh.points.length / 3;
+  const indexEdgeComponents = edgeComponentsOf(mesh.triangles);
+  const exact = new Map<string, number[]>();
+  for (let i = 0; i < nVerts; i += 1) {
+    const key = `${mesh.points[i * 3]}|${mesh.points[i * 3 + 1]}|${mesh.points[i * 3 + 2]}`;
+    if (!exact.has(key)) exact.set(key, []);
+    exact.get(key)!.push(i);
+  }
+  const exactDuplicateSets = [...exact.values()].filter((s) => s.length > 1).sort((a, b) => a[0]! - b[0]!);
+  const parent = new Map<number, number>();
+  for (let i = 0; i < nVerts; i += 1) parent.set(i, i);
+  const find = (x: number): number => {
+    let r = x;
+    while (parent.get(r) !== r) r = parent.get(r)!;
+    while (parent.get(x) !== r) { const nx = parent.get(x)!; parent.set(x, r); x = nx; }
+    return r;
+  };
+  // ponytail: O(n²) scan, study-size meshes only; spatial hash if reused at scale.
+  for (let i = 0; i < nVerts; i += 1) {
+    for (let j = i + 1; j < nVerts; j += 1) {
+      if (sameVertex(mesh.points, i, j)) {
+        const ri = find(i);
+        const rj = find(j);
+        if (ri !== rj) parent.set(ri, rj);
+      }
+    }
+  }
+  const groups = new Map<number, number[]>();
+  for (let i = 0; i < nVerts; i += 1) {
+    const r = find(i);
+    if (!groups.has(r)) groups.set(r, []);
+    groups.get(r)!.push(i);
+  }
+  const coincidentSets = [...groups.values()].filter((s) => s.length > 1)
+    .map((s) => [...s].sort((a, b) => a - b)).sort((a, b) => a[0]! - b[0]!);
+  const edges: Array<[number, number]> = [];
+  for (let f = 0; f < mesh.triangles.length / 3; f += 1) {
+    const tri = [mesh.triangles[f * 3]!, mesh.triangles[f * 3 + 1]!, mesh.triangles[f * 3 + 2]!];
+    for (const [i, j] of [[tri[0]!, tri[1]!], [tri[1]!, tri[2]!], [tri[2]!, tri[0]!]] as Array<[number, number]>) {
+      if (i !== j) edges.push(i < j ? [i, j] : [j, i]);
+    }
+  }
+  const edgeGeom = (e: [number, number]): [number, number] => [find(e[0]!), find(e[1]!)];
+  let coincidentNonSharedEdges = 0;
+  for (let a = 0; a < edges.length; a += 1) {
+    for (let b = a + 1; b < edges.length; b += 1) {
+      const e = edges[a]!;
+      const f = edges[b]!;
+      if (e[0] === f[0] || e[0] === f[1] || e[1] === f[0] || e[1] === f[1]) continue;
+      const ge = edgeGeom(e);
+      const gf = edgeGeom(f);
+      if ((ge[0] === gf[0] && ge[1] === gf[1]) || (ge[0] === gf[1] && ge[1] === gf[0])) coincidentNonSharedEdges += 1;
+    }
+  }
+  const canon = (i: number): number => Math.min(...groups.get(find(i))!);
+  const welded: number[] = [];
+  let weldedDegenerateTriangles = 0;
+  for (let f = 0; f < mesh.triangles.length / 3; f += 1) {
+    const tri = [canon(mesh.triangles[f * 3]!), canon(mesh.triangles[f * 3 + 1]!), canon(mesh.triangles[f * 3 + 2]!)];
+    if (tri[0] === tri[1] || tri[1] === tri[2] || tri[2] === tri[0]) weldedDegenerateTriangles += 1;
+    else welded.push(tri[0]!, tri[1]!, tri[2]!);
+  }
+  const weldedEdgeComponents = edgeComponentsOf(welded);
+  const summary = `edgeComponents=${indexEdgeComponents} exactDupSets=${exactDuplicateSets.length} ` +
+    `coincidentSets=${coincidentSets.length} nonSharedCoincidentEdges=${coincidentNonSharedEdges} ` +
+    `weldedEdgeComponents=${weldedEdgeComponents} weldedDegenerate=${weldedDegenerateTriangles}`;
+  return {
+    indexEdgeComponents, exactDuplicateSets, coincidentSets, coincidentNonSharedEdges,
+    weldedEdgeComponents, weldedDegenerateTriangles, summary,
+  };
+};
 
