@@ -224,7 +224,10 @@ describe('20K.2 tied split: Calculate CURRENT + bounded products', () => {
     // Multi-region cannot be represented by one FeatureLine: products are
     // bounded off, not silently concatenated and not enabled-and-null.
     expect(
-      gradingTopologyCertificateProductError(cert, 'standalone', result.gradingMesh),
+      gradingTopologyCertificateProductError(cert, 'standalone', result.gradingMesh, {
+        sourceBoundaryPoints: result.sourceBoundaryPoints,
+        gradingBoundaryPoints: result.daylightPoints,
+      }),
     ).toBe('GRADING_TOPOLOGY_MULTI_REGION_NOT_EXPORTABLE');
     // Wave A2 RED (pre-fix product gate): the old `{ scope: 'arc' }` call
     // with default expectedComponents rejects this same CURRENT mesh.
@@ -408,7 +411,10 @@ describe('20K.2 group products consume the certificate', () => {
   it('a single-region certified group extracts and bakes (one undo each)', () => {
     const world = groupWorld();
     expect(
-      gradingTopologyCertificateProductError(world.result.topologyCertificate, 'group', world.result.gradingMesh),
+      gradingTopologyCertificateProductError(world.result.topologyCertificate, 'group', world.result.gradingMesh, {
+        sourceBoundaryPoints: world.result.sourceBoundaryPoints,
+        gradingBoundaryPoints: world.result.daylightPoints,
+      }),
     ).toBeNull();
     let history = createCadHistoryState(world.project);
     history = runCadCommand(history, {
@@ -434,14 +440,18 @@ describe('20K.2 group products consume the certificate', () => {
       triangles: tiedGroupMesh.triangles,
       tiedSplitCoords: [20, 20, 0],
       expectedComponents: 1,
+      sourceBoundaryPoints: world.result.sourceBoundaryPoints,
+      gradingBoundaryPoints: world.result.daylightPoints,
     });
     if (!cert) throw new Error('group certificate build failed');
     const tied: CadGradingGroupResult = {
       ...world.result, gradingMesh: { ...tiedGroupMesh }, topologyCertificate: cert,
     };
     expect(gradingTopologyCertificateError(cert, 'group', tied.gradingMesh)).toBeNull();
-    expect(gradingTopologyCertificateProductError(cert, 'group', tied.gradingMesh))
-      .toBe('GRADING_TOPOLOGY_MULTI_REGION_NOT_EXPORTABLE');
+    expect(gradingTopologyCertificateProductError(cert, 'group', tied.gradingMesh, {
+      sourceBoundaryPoints: tied.sourceBoundaryPoints,
+      gradingBoundaryPoints: tied.daylightPoints,
+    })).toBe('GRADING_TOPOLOGY_MULTI_REGION_NOT_EXPORTABLE');
     const before = JSON.stringify(world.project);
     let history = createCadHistoryState(world.project);
     history = runCadCommand(history, {
@@ -452,6 +462,30 @@ describe('20K.2 group products consume the certificate', () => {
     history = runCadCommand(history, {
       key: 'GROUPBAKE',
       groupId: world.groupId, result: tied,
+      expectedRevision: world.revision, sessionCurrent: true,
+    });
+    expect(history.undoStack.length).toBe(0);
+    expect(JSON.stringify(history.present.project)).toBe(before);
+  });
+
+  it('a forged daylight boundary blocks group products with zero mutation', () => {
+    const world = groupWorld();
+    // Certified mesh, wrong exported boundary: the product gate re-derives the
+    // grading digest from the result's daylightPoints and rejects.
+    const forged: CadGradingGroupResult = {
+      ...world.result,
+      daylightPoints: world.result.daylightPoints.map((v, i) => (i % 3 === 2 ? v + 5 : v)),
+    };
+    const before = JSON.stringify(world.project);
+    let history = createCadHistoryState(world.project);
+    history = runCadCommand(history, {
+      key: 'GROUPEXTRACTDAYLIGHT',
+      groupId: world.groupId, result: forged,
+      expectedRevision: world.revision, sessionCurrent: true,
+    });
+    history = runCadCommand(history, {
+      key: 'GROUPBAKE',
+      groupId: world.groupId, result: forged,
       expectedRevision: world.revision, sessionCurrent: true,
     });
     expect(history.undoStack.length).toBe(0);

@@ -92,26 +92,29 @@ const splitCutFillLengths = (
 };
 
 /** Session-only topology certificate over the final assembled strip mesh. */
+const flattenPoints = (pts: Array<{ x: number; y: number; z: number }>): number[] => {
+  const out: number[] = [];
+  for (const p of pts) out.push(p.x, p.y, p.z);
+  return out;
+};
+
 const standaloneCertificate = (
   mesh: { points: number[]; triangles: number[] },
   sourcePts: Array<{ x: number; y: number; z: number }>,
   daylightPts: Array<{ x: number; y: number; z: number }>,
-): ReturnType<typeof buildGradingTopologyCertificate> => {
-  const flat = (pts: Array<{ x: number; y: number; z: number }>): number[] => {
-    const out: number[] = [];
-    for (const p of pts) out.push(p.x, p.y, p.z);
-    return out;
-  };
-  return buildGradingTopologyCertificate({
+  daylightFlat: number[],
+): ReturnType<typeof buildGradingTopologyCertificate> =>
+  buildGradingTopologyCertificate({
     scope: 'standalone',
     points: mesh.points,
     triangles: mesh.triangles,
     tiedSplitCoords: collectTiedRunStarts(sourcePts, daylightPts),
     expectedComponents: countPositiveWidthRegions(sourcePts, daylightPts),
-    sourceBoundaryPoints: flat(sourcePts),
-    gradingBoundaryPoints: flat(daylightPts),
+    sourceBoundaryPoints: flattenPoints(sourcePts),
+    // The exported daylight boundary is the deduped `daylightFlat`, not the
+    // tiling array; digest the array products actually re-export.
+    gradingBoundaryPoints: daylightFlat,
   });
-};
 
 /** Fully already-tied course: CURRENT with zero area (bake stays blocked). */
 const tiedGradingResult = (
@@ -140,6 +143,7 @@ const tiedGradingResult = (
       accuracy,
       regions,
       daylightPoints: daylightFlat,
+      sourceBoundaryPoints: flattenPoints(sourcePts),
       gradingMesh: { points: [], triangles: [] },
       sourceLength,
       gradingPlanArea: 0,
@@ -158,6 +162,7 @@ const tiedGradingResult = (
         { points: [], triangles: [] },
         sourcePts,
         daylightPts,
+        daylightFlat,
       ) ?? undefined,
     },
   };
@@ -202,6 +207,7 @@ export const assembleAnalyticGradingResult = (
         accuracy,
         regions,
         daylightPoints: daylightFlat,
+        sourceBoundaryPoints: flattenPoints(sourcePts),
         gradingMesh: { points: [], triangles: [] },
         sourceLength,
         gradingPlanArea: 0,
@@ -220,6 +226,7 @@ export const assembleAnalyticGradingResult = (
           { points: [], triangles: [] },
           sourcePts,
           daylightPts,
+          daylightFlat,
         ) ?? undefined,
       },
     };
@@ -232,6 +239,7 @@ export const assembleAnalyticGradingResult = (
       accuracy,
       regions,
       daylightPoints: daylightFlat,
+      sourceBoundaryPoints: flattenPoints(sourcePts),
       gradingMesh: { points: mesh.points, triangles: mesh.triangles },
       sourceLength,
       gradingPlanArea: meshPlanArea(mesh.points, mesh.triangles),
@@ -246,7 +254,7 @@ export const assembleAnalyticGradingResult = (
       intersectionSegmentCount,
       multipleSolutionCount,
       diagnostics,
-      topologyCertificate: standaloneCertificate(mesh, sourcePts, daylightPts) ?? undefined,
+      topologyCertificate: standaloneCertificate(mesh, sourcePts, daylightPts, daylightFlat) ?? undefined,
     },
   };
 };
@@ -288,6 +296,7 @@ export const assembleGradingResult = (input: AssembledResultInput): GradingCompu
       accuracy,
       regions,
       daylightPoints: daylightFlat,
+      sourceBoundaryPoints: flattenPoints(sourcePts),
       gradingMesh: { points: mesh.points, triangles: mesh.triangles },
       sourceLength,
       gradingPlanArea: meshPlanArea(mesh.points, mesh.triangles),
@@ -302,7 +311,7 @@ export const assembleGradingResult = (input: AssembledResultInput): GradingCompu
       intersectionSegmentCount,
       multipleSolutionCount,
       diagnostics,
-      topologyCertificate: standaloneCertificate(mesh, sourcePts, daylightPts) ?? undefined,
+      topologyCertificate: standaloneCertificate(mesh, sourcePts, daylightPts, daylightFlat) ?? undefined,
     },
   };
 };

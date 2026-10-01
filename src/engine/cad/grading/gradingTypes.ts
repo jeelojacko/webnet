@@ -156,6 +156,12 @@ export interface CadGradingResult {
   regions: GradingResultRegion[];
   /** Derived daylight polyline vertices as flat XYZ triplets (source-station order). */
   daylightPoints: number[];
+  /**
+   * Phase 20K.2: the exact source boundary the certificate digested (flat
+   * XYZ, source-station order). Session-only; product validation re-derives
+   * the certificate's sourceBoundaryDigest from this array.
+   */
+  sourceBoundaryPoints?: number[];
   gradingMesh: GradingMesh;
   sourceLength: number;
   gradingPlanArea: number;

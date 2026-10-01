@@ -145,6 +145,7 @@ const mkResult = (
   accuracy,
   regions: [{ classification: 'FILL', stationSpan: [0, 10] }],
   daylightPoints: [0, 20, 0, 10, 20, 0],
+  sourceBoundaryPoints: [0, 0, 0, 10, 0, 0],
   gradingMesh: {
     points: [0, 0, 0, 10, 0, 0, 10, 20, 0, 0, 20, 0],
     triangles: [0, 1, 2, 0, 2, 3],
@@ -166,6 +167,8 @@ const mkResult = (
     scope: 'standalone',
     points: [0, 0, 0, 10, 0, 0, 10, 20, 0, 0, 20, 0],
     triangles: [0, 1, 2, 0, 2, 3],
+    sourceBoundaryPoints: [0, 0, 0, 10, 0, 0],
+    gradingBoundaryPoints: [0, 20, 0, 10, 20, 0],
   }) ?? undefined,
 });
 

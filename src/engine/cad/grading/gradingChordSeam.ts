@@ -25,6 +25,7 @@ import {
   crossGradeAtV,
   solveSurfaceCorner,
 } from './gradingGroupSurfaceCorners';
+import { clipTrianglePair } from '../surfaces/volume/overlap';
 import { lineSide as sectorLineSide, samePlanNode, elevationAgreementTol, planeLeverage, AGREEMENT_FLOOR } from './gradingGroupSectors';
 import type { StraightChordSolve } from './solveStraightChord';
 import type { GradingCriterion, GradingSide } from './gradingTypes';
@@ -251,6 +252,96 @@ const sameSeamPt = (a: ChordSeamPoint, b: ChordSeamPoint): boolean =>
   Math.abs(a.y - b.y) <= zeroDelta(a.y, b.y) &&
   Math.abs(a.z - b.z) <= zeroDelta(a.z, b.z);
 
+/** Shoelace plan area of a flat [x,y,...] polygon. */
+const shoelaceArea = (flat: readonly number[]): number => {
+  const n = flat.length / 2;
+  let sum = 0;
+  for (let i = 0; i < n; i += 1) {
+    const j = (i + 1) % n;
+    sum += flat[i * 2]! * flat[j * 2 + 1]! - flat[j * 2]! * flat[i * 2 + 1]!;
+  }
+  return Math.abs(sum) / 2;
+};
+
+/** Plan-barycentric elevation of a target triangle at (x, y); null if degenerate. */
+const triangleZAt = (
+  a: readonly [number, number, number],
+  b: readonly [number, number, number],
+  c: readonly [number, number, number],
+  x: number,
+  y: number,
+): number | null => {
+  const v0x = c[0] - a[0];
+  const v0y = c[1] - a[1];
+  const v1x = b[0] - a[0];
+  const v1y = b[1] - a[1];
+  const v2x = x - a[0];
+  const v2y = y - a[1];
+  const d00 = v0x * v0x + v0y * v0y;
+  const d01 = v0x * v1x + v0y * v1y;
+  const d11 = v1x * v1x + v1y * v1y;
+  const d20 = v2x * v0x + v2y * v0y;
+  const d21 = v2x * v1x + v2y * v1y;
+  const denom = d00 * d11 - d01 * d01;
+  if (denom === 0) return null;
+  const vb = (d11 * d20 - d01 * d21) / denom;
+  const wb = (d00 * d21 - d01 * d20) / denom;
+  const ub = 1 - vb - wb;
+  return ub * a[2] + vb * c[2] + wb * b[2];
+};
+
+/**
+ * True facet walk: the fan triangle (V,qIn,qOut) must be fully covered by
+ * target facets that all agree with the fan plane under the shared anchored
+ * elevation bounds. Every target facet overlapping the fan in plan is clipped
+ * to it (exact Sutherland–Hodgman, robust-predicates orientation); a
+ * non-coplanar overlap, a plan-degenerate facet, or uncovered area
+ * (void/gap) fails closed. No fixed-point resampling, so a narrow ridge/void
+ * between the old 12 samples cannot hide.
+ */
+const fanCoveredByFacets = (
+  query: TargetQuery,
+  plane: { gx: number; gy: number; ax: number; ay: number },
+  fanPlan: readonly number[],
+  elevation: (_x: number, _y: number) => number,
+): boolean => {
+  const points = query.targetPoints;
+  const triangles = query.targetTriangles;
+  const fanArea = shoelaceArea(fanPlan);
+  if (!(fanArea > 0)) return false;
+  const minX = Math.min(fanPlan[0]!, fanPlan[2]!, fanPlan[4]!);
+  const maxX = Math.max(fanPlan[0]!, fanPlan[2]!, fanPlan[4]!);
+  const minY = Math.min(fanPlan[1]!, fanPlan[3]!, fanPlan[5]!);
+  const maxY = Math.max(fanPlan[1]!, fanPlan[3]!, fanPlan[5]!);
+  let covered = 0;
+  for (let t = 0; t + 2 < triangles.length; t += 3) {
+    const a3: [number, number, number] = [points[triangles[t]! * 3]!, points[triangles[t]! * 3 + 1]!, points[triangles[t]! * 3 + 2]!];
+    const b3: [number, number, number] = [points[triangles[t + 1]! * 3]!, points[triangles[t + 1]! * 3 + 1]!, points[triangles[t + 1]! * 3 + 2]!];
+    const c3: [number, number, number] = [points[triangles[t + 2]! * 3]!, points[triangles[t + 2]! * 3 + 1]!, points[triangles[t + 2]! * 3 + 2]!];
+    if (
+      Math.max(a3[0], b3[0], c3[0]) < minX || Math.min(a3[0], b3[0], c3[0]) > maxX ||
+      Math.max(a3[1], b3[1], c3[1]) < minY || Math.min(a3[1], b3[1], c3[1]) > maxY
+    ) continue;
+    const clip = clipTrianglePair(fanPlan, [a3[0], a3[1], b3[0], b3[1], c3[0], c3[1]]);
+    if (!clip) continue;
+    for (let i = 0; i < clip.local.length; i += 2) {
+      const x = clip.local[i]! + clip.originX;
+      const y = clip.local[i + 1]! + clip.originY;
+      const zf = triangleZAt(a3, b3, c3, x, y);
+      if (zf === null) return false;
+      const zp = elevation(x, y);
+      const tol = elevationAgreementTol(zf, zp, planeLeverage(plane, x, y)) + AGREEMENT_FLOOR;
+      if (Math.abs(zf - zp) > tol) return false;
+    }
+    covered += shoelaceArea(clip.local);
+  }
+  const perimeter =
+    Math.hypot(fanPlan[2]! - fanPlan[0]!, fanPlan[3]! - fanPlan[1]!) +
+    Math.hypot(fanPlan[4]! - fanPlan[2]!, fanPlan[5]! - fanPlan[3]!) +
+    Math.hypot(fanPlan[0]! - fanPlan[4]!, fanPlan[1]! - fanPlan[5]!);
+  return fanArea - covered <= AGREEMENT_FLOOR * (perimeter + 1);
+};
+
 /**
  * Phase 20K.2 — proven direct CUT/FILL transition fan.
  *
@@ -258,13 +349,13 @@ const sameSeamPt = (a: ChordSeamPoint, b: ChordSeamPoint): boolean =>
  * proven to lie on the target: a genuine CUT/FILL criterion, V agreeing with
  * the target elevation under the shared anchored contract (a grade change
  * across an exact tied station), and the whole qIn→V→qOut fan covered by one
- * proven target plane. The plane is anchored at V (normal through the three
- * points) and checked with a segment walk that samples the direct qIn→qOut
- * segment plus both V rays against the target elevation under the shared
- * anchored-elevation agreement contract. A void (null query), an off-plane
- * sample (ridge/valley/branch/edge/vertex discontinuity), or a
- * plan-degenerate conditioning triangle fails closed. No averaging,
- * projection, later-root preference, or tolerance relaxation.
+ * proven target plane. The plane is anchored at V and the fan's plan triangle
+ * is walked against the actual target facets: every overlapping facet must be
+ * coplanar under the shared anchored-elevation contract and the facets must
+ * cover the fan. A void (uncovered area), an off-plane facet
+ * (ridge/valley/branch/edge/vertex discontinuity), or a plan-degenerate
+ * conditioning triangle fails closed. No averaging, projection, later-root
+ * preference, fixed-point resampling, or tolerance relaxation.
  */
 export const directFanOnTarget = (
   criterion: GradingCriterion,
@@ -297,21 +388,7 @@ export const directFanOnTarget = (
   const plane = { gx, gy, ax: v.x, ay: v.y };
   const elevation = (x: number, y: number): number =>
     v.z + gx * (x - v.x) + gy * (y - v.y);
-  const samples: Array<[number, number]> = [];
-  for (let i = 1; i <= 4; i += 1) {
-    const t = i / 5;
-    samples.push([qIn.x + (qOut.x - qIn.x) * t, qIn.y + (qOut.y - qIn.y) * t]);
-    samples.push([v.x + (qIn.x - v.x) * t, v.y + (qIn.y - v.y) * t]);
-    samples.push([v.x + (qOut.x - v.x) * t, v.y + (qOut.y - v.y) * t]);
-  }
-  for (const [x, y] of samples) {
-    const zt = query.elevationAt(x, y);
-    if (zt === null) return false;
-    const zp = elevation(x, y);
-    const tol = elevationAgreementTol(zt, zp, planeLeverage(plane, x, y)) + AGREEMENT_FLOOR;
-    if (Math.abs(zt - zp) > tol) return false;
-  }
-  return true;
+  return fanCoveredByFacets(query, plane, [qIn.x, qIn.y, v.x, v.y, qOut.x, qOut.y], elevation);
 };
 
 /**

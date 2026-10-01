@@ -213,6 +213,7 @@ const fakeGradingResult = (gradingId: string, revision: string): CadGradingResul
   accuracy: 'EXACT',
   regions: [],
   daylightPoints: [0, 0, 0, 10, 0, 0],
+  sourceBoundaryPoints: [0, 0, 0, 10, 0, 0],
   gradingMesh: { points: [0, 0, 0, 10, 0, 0, 5, 5, 0], triangles: [0, 1, 2] },
   sourceLength: 10,
   gradingPlanArea: 25,
@@ -231,6 +232,8 @@ const fakeGradingResult = (gradingId: string, revision: string): CadGradingResul
     scope: 'standalone',
     points: [0, 0, 0, 10, 0, 0, 5, 5, 0],
     triangles: [0, 1, 2],
+    sourceBoundaryPoints: [0, 0, 0, 10, 0, 0],
+    gradingBoundaryPoints: [0, 0, 0, 10, 0, 0],
   }) ?? undefined,
 });
 
@@ -243,6 +246,7 @@ const fakeGroupResult = (groupId: string, revision: string): CadGradingGroupResu
   memberRegions: [],
   corners: [],
   daylightPoints: [0, 0, 0, 10, 0, 0, 10, 10, 0],
+  sourceBoundaryPoints: [0, 0, 0, 10, 0, 0, 10, 10, 0],
   gradingMesh: { points: [0, 0, 0, 10, 0, 0, 5, 5, 0], triangles: [0, 1, 2] },
   sourceLength: 40,
   gradingPlanArea: 10000,
@@ -261,6 +265,8 @@ const fakeGroupResult = (groupId: string, revision: string): CadGradingGroupResu
     scope: 'group',
     points: [0, 0, 0, 10, 0, 0, 5, 5, 0],
     triangles: [0, 1, 2],
+    sourceBoundaryPoints: [0, 0, 0, 10, 0, 0, 10, 10, 0],
+    gradingBoundaryPoints: [0, 0, 0, 10, 0, 0, 10, 10, 0],
   }) ?? undefined,
 });
 

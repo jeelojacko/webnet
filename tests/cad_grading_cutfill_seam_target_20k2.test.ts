@@ -111,6 +111,19 @@ describe('20K.2 A4 direct CUT/FILL fan — proven target membership', () => {
     expect(directFanOnTarget(CUT_FILL, query(valley), V, Q_IN, Q_OUT)).toBe(false);
   });
 
+  it('rejects a narrow ridge between the old fixed samples (true facet walk)', () => {
+    // Reviewer case: a single raised column at x=7.5 sits exactly between the
+    // old 12 samples (x=8,6,4,2 along the fan), so the resampled walk passed.
+    // elevationAt(7.5,-0.5) is genuinely 1, so the facet walk must reject.
+    const ridge = grid(
+      (x) => (Math.abs(x - 7.5) < 1e-9 ? 1 : 0),
+      range(-20, 20, 0.5),
+      range(-20, 20, 4),
+    );
+    expect(query(ridge).elevationAt(7.5, -0.5)).toBe(1);
+    expect(directFanOnTarget(CUT_FILL, query(ridge), V, Q_IN, Q_OUT)).toBe(false);
+  });
+
   it('rejects a void or off-target bridge', () => {
     const empty: GradingTargetMeshSnapshot = { points: [], triangles: [] };
     expect(directFanOnTarget(CUT_FILL, query(empty), V, Q_IN, Q_OUT)).toBe(false);

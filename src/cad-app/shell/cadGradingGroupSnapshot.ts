@@ -285,6 +285,7 @@ export const buildCadGradingGroupSnapshot = (
           currentResult.topologyCertificate,
           'group',
           currentResult.gradingMesh,
+          { sourceBoundaryPoints: currentResult.sourceBoundaryPoints, gradingBoundaryPoints: currentResult.daylightPoints },
         ) == null,
     };
   });

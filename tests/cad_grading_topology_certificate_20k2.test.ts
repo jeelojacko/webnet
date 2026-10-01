@@ -128,6 +128,71 @@ describe('certificate product revalidation fails closed', () => {
   it('empty mesh needs no certificate', () => {
     expect(gradingTopologyCertificateError(undefined, 'standalone', { points: [], triangles: [] })).toBeNull();
   });
+
+  it('forged components 2→1 on a valid two-region tied mesh fails closed', () => {
+    const cert = buildGradingTopologyCertificate({
+      scope: 'standalone',
+      points: tiedPts,
+      triangles: tiedTris,
+      tiedSplitCoords: [20, 20, 0],
+      expectedComponents: 1,
+    })!;
+    expect(cert.components).toBe(2);
+    // Attacker rewrites both the measured components and the expected
+    // positive-width regions down to 1 so the mesh would look exportable.
+    const forged = { ...cert, components: 1, positiveWidthRegionCount: 1 };
+    expect(
+      gradingTopologyCertificateError(forged, 'standalone', { points: tiedPts, triangles: tiedTris }),
+    ).toBe('GRADING_TOPOLOGY_CERTIFICATE_COMPONENTS');
+  });
+
+  it('tampered boundary edges are re-derived and rejected', () => {
+    const cert = buildStrip()!;
+    expect(
+      gradingTopologyCertificateError(
+        { ...cert, boundaryEdges: cert.boundaryEdges + 1 },
+        'standalone',
+        { points: stripPts, triangles: stripTris },
+      ),
+    ).toBe('GRADING_TOPOLOGY_CERTIFICATE_BOUNDARY_EDGES');
+  });
+
+  it('tampered boundary cycles are re-derived and rejected', () => {
+    const cert = buildStrip()!;
+    const issue = gradingTopologyCertificateError(
+      { ...cert, boundaryCycles: cert.boundaryCycles + 1 },
+      'standalone',
+      { points: stripPts, triangles: stripTris },
+    );
+    expect(issue).not.toBeNull();
+    expect(issue).toContain('GRADING_TOPOLOGY_CERTIFICATE');
+  });
+
+  it('a forged boundary polyline fails the product digest', () => {
+    const cert = buildGradingTopologyCertificate({
+      scope: 'standalone',
+      points: stripPts,
+      triangles: stripTris,
+      sourceBoundaryPoints: [0, 0, 0, 10, 0, 0],
+      gradingBoundaryPoints: [0, 2, 0, 10, 2, 0],
+    })!;
+    expect(
+      gradingTopologyCertificateError(
+        cert,
+        'standalone',
+        { points: stripPts, triangles: stripTris },
+        { sourceBoundaryPoints: [0, 0, 0, 10, 0, 0], gradingBoundaryPoints: [0, 2, 0, 10, 2, 0] },
+      ),
+    ).toBeNull();
+    expect(
+      gradingTopologyCertificateError(
+        cert,
+        'standalone',
+        { points: stripPts, triangles: stripTris },
+        { sourceBoundaryPoints: [0, 0, 0, 10, 0, 0], gradingBoundaryPoints: [0, 2, 0, 99, 2, 0] },
+      ),
+    ).toBe('GRADING_TOPOLOGY_CERTIFICATE_BOUNDARY_DIGEST');
+  });
 });
 
 describe('tied-run helpers', () => {

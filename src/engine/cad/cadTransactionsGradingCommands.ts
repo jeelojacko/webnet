@@ -262,7 +262,10 @@ const gradingExtractCommand: CadCommandDefinition<GradingExtractCommand> = {
     }
     if (result.daylightPoints.length < 6 || result.daylightPoints.length % 3 !== 0) return null;
     // 20K.2: refuse an uncertified / forged / mismatched CURRENT mesh.
-    if (gradingTopologyCertificateProductError(result.topologyCertificate, 'standalone', result.gradingMesh) != null) return null;
+    if (gradingTopologyCertificateProductError(result.topologyCertificate, 'standalone', result.gradingMesh, {
+      sourceBoundaryPoints: result.sourceBoundaryPoints,
+      gradingBoundaryPoints: result.daylightPoints,
+    }) != null) return null;
     const vertices: Array<{ x: number; y: number }> = [];
     const elevations: number[] = [];
     for (let i = 0; i + 2 < result.daylightPoints.length; i += 3) {
@@ -314,7 +317,10 @@ const gradingBakeCommand: CadCommandDefinition<GradingBakeCommand> = {
     // Bake blocked on ALREADY_TIED empty mesh (zero-area ties bake nothing).
     if (result.gradingMesh.triangles.length === 0) return null;
     // 20K.2: refuse an uncertified / forged / mismatched CURRENT mesh.
-    if (gradingTopologyCertificateProductError(result.topologyCertificate, 'standalone', result.gradingMesh) != null) return null;
+    if (gradingTopologyCertificateProductError(result.topologyCertificate, 'standalone', result.gradingMesh, {
+      sourceBoundaryPoints: result.sourceBoundaryPoints,
+      gradingBoundaryPoints: result.daylightPoints,
+    }) != null) return null;
     const criterion = inputs.grading.criterion;
     const targetKind = gradingTerminationKind(criterion);
     if (targetKind === 'surface' && !inputs.target) return null;

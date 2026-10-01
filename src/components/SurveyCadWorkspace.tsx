@@ -2113,6 +2113,7 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
           row.currentResult.topologyCertificate,
           'standalone',
           row.currentResult.gradingMesh,
+          { sourceBoundaryPoints: row.currentResult.sourceBoundaryPoints, gradingBoundaryPoints: row.currentResult.daylightPoints },
         );
         const ok = cadWorkspace.runLayerCommand({
           key: 'GRADINGEXTRACTDAYLIGHT',
@@ -2134,6 +2135,7 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
           row.currentResult.topologyCertificate,
           'standalone',
           row.currentResult.gradingMesh,
+          { sourceBoundaryPoints: row.currentResult.sourceBoundaryPoints, gradingBoundaryPoints: row.currentResult.daylightPoints },
         );
         const ok = cadWorkspace.runLayerCommand({
           key: 'GRADINGBAKE',
@@ -2171,6 +2173,7 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
           row.currentResult.topologyCertificate,
           'group',
           row.currentResult.gradingMesh,
+          { sourceBoundaryPoints: row.currentResult.sourceBoundaryPoints, gradingBoundaryPoints: row.currentResult.daylightPoints },
         );
         const ok = cadWorkspace.runLayerCommand({
           key: 'GROUPEXTRACTDAYLIGHT',
@@ -2192,6 +2195,7 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
           row.currentResult.topologyCertificate,
           'group',
           row.currentResult.gradingMesh,
+          { sourceBoundaryPoints: row.currentResult.sourceBoundaryPoints, gradingBoundaryPoints: row.currentResult.daylightPoints },
         );
         const ok = cadWorkspace.runLayerCommand({
           key: 'GROUPBAKE',

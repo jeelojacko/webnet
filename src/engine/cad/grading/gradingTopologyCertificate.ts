@@ -190,14 +190,40 @@ export const buildGradingTopologyCertificate = (
 };
 
 /**
+ * The authoritative boundary polylines a product is about to export. The
+ * product gate re-derives both digests from these arrays at gate time and
+ * never trusts the certificate's stored digest strings alone.
+ */
+export interface GradingCertificateBoundaries {
+  /** Flat XYZ source boundary the result will export. */
+  sourceBoundaryPoints?: readonly number[];
+  /** Flat XYZ grading/daylight boundary the result will export. */
+  gradingBoundaryPoints?: readonly number[];
+}
+
+/**
  * Product-side revalidation: null when the certificate proves the mesh, else
  * a stable failure code. Empty meshes need no certificate (nothing to
  * export topologically); every nonempty mesh requires one.
+ *
+ * Every certificate field that changes the verdict is re-derived here and
+ * compared, never trusted:
+ * - `meshDigest` over the actual mesh,
+ * - `components` / `boundaryEdges` / `boundaryCycles` from the measured
+ *   topology (the forged-components 2→1 hole this closes), and
+ * - when `boundaries` are supplied, both boundary digests recomputed from
+ *   the actual exported polylines.
+ * `positiveWidthRegionCount` and `tiedSplitCoords` are inputs to the
+ * topology pass, so self-consistency (never more expected regions than
+ * measured components; every extra component carries tied stations) is
+ * asserted before the pass and the measured component count is pinned after
+ * it.
  */
 export const gradingTopologyCertificateError = (
   certificate: GradingTopologyCertificate | undefined,
   scope: GradingTopologyCertificateScope,
   mesh: { points: readonly number[]; triangles: readonly number[] },
+  boundaries?: GradingCertificateBoundaries,
 ): string | null => {
   if (mesh.triangles.length === 0) return null;
   if (!certificate || certificate.version !== GRADING_TOPOLOGY_CERTIFICATE_VERSION) {
@@ -207,6 +233,29 @@ export const gradingTopologyCertificateError = (
   if (digestTopologyMesh(mesh.points, mesh.triangles) !== certificate.meshDigest) {
     return 'GRADING_TOPOLOGY_CERTIFICATE_DIGEST';
   }
+  if (boundaries) {
+    if (
+      digestTopologyCoordinates(boundaries.sourceBoundaryPoints ?? []) !== certificate.sourceBoundaryDigest ||
+      digestTopologyCoordinates(boundaries.gradingBoundaryPoints ?? []) !== certificate.gradingBoundaryDigest
+    ) {
+      return 'GRADING_TOPOLOGY_CERTIFICATE_BOUNDARY_DIGEST';
+    }
+  }
+  // Self-consistency of the pass inputs: a malformed tie list or an expected
+  // region count above the measured components can only be a forgery, since
+  // the topology pass itself would have rejected both.
+  if (
+    certificate.tiedSplitCoords.length % 3 !== 0 ||
+    certificate.tiedSplitCoords.some((value) => !Number.isFinite(value))
+  ) {
+    return 'GRADING_TOPOLOGY_CERTIFICATE_TIED_STATIONS';
+  }
+  if (certificate.positiveWidthRegionCount > certificate.components) {
+    return 'GRADING_TOPOLOGY_CERTIFICATE_POSITIVE_WIDTH';
+  }
+  if (certificate.components > certificate.positiveWidthRegionCount && certificate.tiedSplitCoords.length === 0) {
+    return 'GRADING_TOPOLOGY_CERTIFICATE_TIED_STATIONS';
+  }
   const topo = validateGradingMeshTopology(mesh.points, mesh.triangles, {
     scope: scope === 'group' ? 'group' : 'arc',
     expectedComponents: certificate.positiveWidthRegionCount,
@@ -215,6 +264,9 @@ export const gradingTopologyCertificateError = (
   }) as TopologyLike;
   if (!topo.ok) {
     return `GRADING_TOPOLOGY_CERTIFICATE_TOPOLOGY:${topo.code ?? ''}:${topo.detail ?? ''}`;
+  }
+  if (topo.components !== certificate.components) {
+    return 'GRADING_TOPOLOGY_CERTIFICATE_COMPONENTS';
   }
   if (topo.boundaryEdges !== certificate.boundaryEdges) {
     return 'GRADING_TOPOLOGY_CERTIFICATE_BOUNDARY_EDGES';
@@ -236,8 +288,9 @@ export const gradingTopologyCertificateProductError = (
   certificate: GradingTopologyCertificate | undefined,
   scope: GradingTopologyCertificateScope,
   mesh: { points: readonly number[]; triangles: readonly number[] },
+  boundaries: GradingCertificateBoundaries,
 ): string | null => {
-  const base = gradingTopologyCertificateError(certificate, scope, mesh);
+  const base = gradingTopologyCertificateError(certificate, scope, mesh, boundaries);
   if (base) return base;
   // More than one edge-component = multiple positive-width regions: the
   // daylight boundary collapses at the tie and one FeatureLine cannot

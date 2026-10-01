@@ -5,6 +5,16 @@ Status: **IMPLEMENTATION COMPLETE (uncommitted on branch
 the topology certificate bounds the products (Extract, Bake, Design Patch) so
 Calculate-CURRENT and product-available can no longer disagree.
 
+Scope caveat: the completeness claimed here is the engine / unit-contract
+level. The browser-worker path remains **RESTRICTED**, exactly as recorded in
+`docs/evidence/phase20k2-browser-qa.md`: Flow A (a genuine two-region curved
+Surface result) never reaches CURRENT because the worker gate rejects it with
+`GRADING_AGREEMENT_DAYLIGHT_Z`, and Flow A2 (a genuinely multi-region surface
+mesh) carries no certificate at all, so the product gate reports
+`GRADING_TOPOLOGY_CERTIFICATE_MISSING` rather than
+`GRADING_TOPOLOGY_MULTI_REGION_NOT_EXPORTABLE`. This document does not claim
+browser reachability for either bounded code.
+
 ## 1. The gap Phase 20K.2 closes
 
 Phase 20K.1 Wave A2 (RED, recorded in
@@ -22,9 +32,12 @@ guess tied stations.
 
 ## 2. Product gate (Extract / Bake)
 
-`gradingTopologyCertificateProductError(certificate, scope, mesh)` is the one
-product authority. It returns a stable code, or `null` when the mesh is
-provenable:
+`gradingTopologyCertificateProductError(certificate, scope, mesh, boundaries)`
+is the one product authority. The `boundaries` argument is the actual flat
+source / daylight polylines the Extract or Bake is about to export; the gate
+re-derives both digests from those arrays at gate time and never trusts the
+certificate's stored digest strings alone. It returns a stable code, or `null`
+when the mesh is provenable:
 
 - `mesh.triangles.length === 0` → no certificate required (nothing to
   export);
@@ -32,9 +45,17 @@ provenable:
 - scope mismatch → `GRADING_TOPOLOGY_CERTIFICATE_SCOPE`;
 - forged mesh swap → `GRADING_TOPOLOGY_CERTIFICATE_DIGEST`;
 - topology mismatch → `GRADING_TOPOLOGY_CERTIFICATE_TOPOLOGY:<code>:<detail>`;
+- measured component count not equal to the certified `components` (the
+  forged 2→1 hole) → `GRADING_TOPOLOGY_CERTIFICATE_COMPONENTS`;
 - boundary-edge or boundary-cycle mismatch →
   `GRADING_TOPOLOGY_CERTIFICATE_BOUNDARY_EDGES` /
   `GRADING_TOPOLOGY_CERTIFICATE_BOUNDARY_CYCLES`;
+- the exported source/daylight polylines no longer digest to the certified
+  boundary digests → `GRADING_TOPOLOGY_CERTIFICATE_BOUNDARY_DIGEST`;
+- malformed or unattributed tied stations →
+  `GRADING_TOPOLOGY_CERTIFICATE_TIED_STATIONS`, and an expected
+  positive-width region count above the measured components →
+  `GRADING_TOPOLOGY_CERTIFICATE_POSITIVE_WIDTH`;
 - more than one edge-component → `GRADING_TOPOLOGY_MULTI_REGION_NOT_EXPORTABLE`.
 
 Commands (`cadTransactionsGradingCommands.ts`,
@@ -53,6 +74,14 @@ the tie, so an Extract would have to silently concatenate two rings. Per the
   `CURRENT && certificateProductError == null`, so Extract/Bake are disabled
   with a truthful notice instead of being enabled and returning null;
 - the block code is `GRADING_TOPOLOGY_MULTI_REGION_NOT_EXPORTABLE`.
+
+Honest reachability note (browser): on this worktree neither bound is
+reachable through the browser worker. A genuinely multi-region surface mesh
+fails the stricter boundary-cycle validation inside
+`buildGradingTopologyCertificate`, so the result carries no certificate and
+the product gate reports `GRADING_TOPOLOGY_CERTIFICATE_MISSING`
+(`docs/evidence/phase20k2-browser-qa.md` finding 2). The unit tests below pin
+the `MULTI_REGION` path directly.
 
 Single-region certified meshes keep extracting and baking as one undo entry
 each (pinned by `tests/cad_grading_tied_products_20k2.test.ts`, including the
@@ -103,10 +132,15 @@ returned `CORNER_INVERTED / GRADING_CORNER_RAY` and the two side grades
 differed. The fallback now additionally requires `directFanOnTarget`: a
 CUT/FILL criterion, `V` agreeing with the target elevation under the shared
 anchored contract, and the whole `qIn→V→qOut` fan covered by one proven target
-plane (segment-walked against the target elevation). Ridges, valleys, voids,
-steps/branches, off-target `V`, and non-CUT/FILL criteria fail closed
+plane. The fan's plan triangle is walked against the actual target facets
+(exact Sutherland–Hodgman clips): every overlapping facet must be coplanar
+under the shared anchored-elevation bounds and the facets must fully cover the
+fan, so a narrow ridge or void between the old fixed samples cannot hide.
+Ridges, valleys, voids, steps/branches, off-target `V`, and non-CUT/FILL
+criteria fail closed
 `GRADING_SURFACE_SEAM:GRADING_SURFACE_SEAM_TRANSITION_REQUIRED`. No
-averaging, projection, later-root preference, or tolerance relaxation.
+averaging, projection, later-root preference, fixed-point resampling, or
+tolerance relaxation.
 
 ## 5. Invariants preserved
 
@@ -137,7 +171,7 @@ averaging, projection, later-root preference, or tolerance relaxation.
   `src/cad-app/shell/cadGradingGroupSnapshot.ts` (`exportable`).
 - `src/engine/cad/grading/designPatchRing.ts` (ring collapse + simplicity).
 - `src/engine/cad/grading/gradingChordSeam.ts` (`directFanOnTarget`).
-- Tests: `tests/cad_grading_tied_products_20k2.test.ts` (14),
-  `tests/cad_grading_curved_design_patch_20k2.test.ts` (12),
-  `tests/cad_grading_cutfill_seam_target_20k2.test.ts` (14),
+- Tests: `tests/cad_grading_tied_products_20k2.test.ts`,
+  `tests/cad_grading_curved_design_patch_20k2.test.ts`,
+  `tests/cad_grading_cutfill_seam_target_20k2.test.ts`,
   `tests/cad_grading_topology_certificate_20k2.test.ts`.

@@ -326,6 +326,7 @@ export const buildCadGradingSnapshot = (
           currentResult.topologyCertificate,
           'standalone',
           currentResult.gradingMesh,
+          { sourceBoundaryPoints: currentResult.sourceBoundaryPoints, gradingBoundaryPoints: currentResult.daylightPoints },
         ) == null,
       stationSpan:
         resolvedSource != null
