@@ -33,7 +33,7 @@ import {
 import { resolveGroupInputs } from '../../engine/cad/grading/gradingGroupResolve';
 import { resolveGroupMemberCriteria } from '../../engine/cad/grading/gradingGroupCourseCriteria';
 import { groupTerminationMode } from '../../engine/cad/grading/gradingGroupTermination';
-import { gradingTopologyCertificateProductError } from '../../engine/cad/grading/gradingTopologyCertificate';
+import { deriveGradingProductCapabilities } from '../../engine/cad/grading/gradingProductCapabilities';
 import {
   formatGradingCriterion,
   gradingSideText,
@@ -126,8 +126,26 @@ export interface CadGradingGroupRow {
   currentResult: CadGradingGroupResult | null;
   /** True when Calculate is allowed (resolvable + CURRENT target). */
   calculable: boolean;
-  /** True when Extract Daylight / Bake can run (CURRENT + result). */
+  /**
+   * Deprecated Phase 20C alias for `extractable` (kept for existing
+   * consumers); Phase 20K.3 derives the three products independently.
+   */
   exportable: boolean;
+  /** Phase 20K.3: Extract (one continuous boundary Feature Line) available. */
+  extractable: boolean;
+  /** Phase 20K.3: Bake (one explicit-TIN surface; multi-component allowed). */
+  bakeable: boolean;
+  /** Phase 20K.3: Design Patch (closed annular shell) available. */
+  designPatchable: boolean;
+  /** Stable diagnostic code + bounded notice when Extract is unavailable. */
+  extractCode: string | null;
+  extractNotice: string | null;
+  /** Stable diagnostic code + bounded notice when Bake is unavailable. */
+  bakeCode: string | null;
+  bakeNotice: string | null;
+  /** Stable diagnostic code + bounded notice when Design Patch is unavailable. */
+  designPatchCode: string | null;
+  designPatchNotice: string | null;
 }
 
 export interface CadGradingGroupSnapshot {
@@ -231,6 +249,12 @@ export const buildCadGradingGroupSnapshot = (
       effectiveStatus === 'CURRENT' && currentResult != null ? metricsOf(currentResult) : null;
     const summaryResult = currentResult ?? (stale ? lastRetained : null);
     const accuracy = currentResult?.accuracy ?? lastRetained?.accuracy ?? null;
+    const capabilities = deriveGradingProductCapabilities({
+      scope: 'group',
+      current: effectiveStatus === 'CURRENT' && currentResult != null,
+      result: currentResult,
+      closed: group.closed === true,
+    });
     return {
       id: group.id,
       name: group.name,
@@ -278,15 +302,16 @@ export const buildCadGradingGroupSnapshot = (
         effectiveStatus !== 'BROKEN_REFERENCE' &&
         inputs != null &&
         targetCurrent,
-      exportable:
-        effectiveStatus === 'CURRENT' &&
-        currentResult != null &&
-        gradingTopologyCertificateProductError(
-          currentResult.topologyCertificate,
-          'group',
-          currentResult.gradingMesh,
-          { sourceBoundaryPoints: currentResult.sourceBoundaryPoints, gradingBoundaryPoints: currentResult.daylightPoints },
-        ) == null,
+      exportable: capabilities.extract.available,
+      extractable: capabilities.extract.available,
+      bakeable: capabilities.bake.available,
+      designPatchable: capabilities.designPatch?.available === true,
+      extractCode: capabilities.extract.code,
+      extractNotice: capabilities.extract.notice,
+      bakeCode: capabilities.bake.code,
+      bakeNotice: capabilities.bake.notice,
+      designPatchCode: capabilities.designPatch?.code ?? null,
+      designPatchNotice: capabilities.designPatch?.notice ?? null,
     };
   });
   return {

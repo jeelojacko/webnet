@@ -152,3 +152,69 @@ Topology contract and product consistency are coherent and fail-closed; the
 three known limitations (arc×arc, transition-less mixing, all-Surface Design
 Patch) are explicit bounds, not silent gaps. Phase 20K.1 is CLOSED; Phase 20K.2
 is IMPLEMENTATION COMPLETE and awaiting orchestrator commit/review.
+
+## 7. ADDENDUM 2026-10-01 — Phase 20K.2 merge facts + Phase 20K.3 findings
+
+History above is preserved verbatim. This addendum supersedes the two stale
+hedges it contains ("IMPLEMENTATION COMPLETE (uncommitted)" in the status
+header and §6) and records the merged-state facts plus the Phase 20K.3
+corrections.
+
+### 7a. Merge facts (PR #143)
+
+| Fact | Value |
+|---|---|
+| Base | `fbac7c88b3fadd6cce4043d2d2f7dfaa9d82a12d` (PR #142 merge) |
+| Head | `41d64879` (reviewer fix round) |
+| Merge | `884b36e8996ac3319f5691e519f0dd94746848b0` |
+| Final-head CI | run `36851560496` — success |
+| Merge-push CI | run `36853019440` — success |
+| Drift | zero |
+
+**Phase 20K.2 is MERGED and CLOSED.** The "uncommitted" wording in the header
+and §6 is retired by this addendum.
+
+### 7b. Phase 20K.3 corrections (branch
+`fix/phase20k3-surface-curve-authority-certificate`, baseline `884b36e8`)
+
+Phase 20K.3 reproduces four correctness gaps in the 20K.2 implementation and
+fixes them:
+
+1. **Pre-mesh declaration (self-certification)**. The 20K.2 certificate
+defaulted `expectedComponents` to the measured count and the validator enforced
+`expectedBoundaryLoops` only when supplied, so a certificate re-checked the mesh
+against its own observation. 20K.3 declares topology before meshing
+(`deriveGradingTopologyExpectation`, policyVersion `20k3.1`) and enforces it.
+2. **`gtop1` is not exact**. The `toPrecision(12)` FNV digest collides on
+sub-quantum coordinate changes (measured collision at `1e8` / `+1e-4`), giving a
+product false-accept. 20K.3 emits `gtop2` (exact Float64 bits + uint32 indices,
+SHA-256) and rejects `gtop1` with no migration.
+3. **Straight-group bypass**. `computeGradingGroupFromSnapshots` ran the seam
+gate only when `curved`; 20K.3 removes the `if (curved)` bypass so every group
+certifies against the same declared budget.
+4. **Worker agreement + source boundary**. The worker re-checked daylight with
+the bare `zeroDelta` and reconstructed the source endpoint as
+`start + chordDir·arcLength`. 20K.3 shares `anchoredElevationAgreementTol`
+between the engine and the worker and compares the result's own captured source
+endpoints; the measured curved residual `3.48e-13 m` passes a `1.000e-9 m`
+local bound, and the deleted reconstruction overshoots by `0.665339 m`.
+`zeroDelta` and `AGREEMENT_FLOOR` are untouched.
+
+Two 20K.2 conclusions are superseded by 20K.3:
+
+- §2d's "all-Surface Design Patch stays explicitly restricted" is **resolved**:
+the single exact linearized joint is now shared bit-exactly, so the all-Surface
+rounded square ear-clips a 128-vertex / 158-triangle patch. Counts moved
+standalone Surface `39/37 → 32/30`, all-Surface `156/156 → 128/128`, one-arc
+hybrid `43/41 → 36/34`.
+- §6's three "known limitations" are reduced to two carried bounds
+(arc×arc and transition-less surface+analytic mixing); the all-Surface Design
+Patch is no longer one of them.
+
+### 7c. Phase 20K.3 link
+
+Full records: `docs/evidence/phase20k3-post-merge-audit.md`,
+`phase20k3-topology-expectation.md`, `phase20k3-exact-certificate.md`,
+`phase20k3-surface-station-authority.md`, `phase20k3-worker-agreement.md`,
+`phase20k3-product-capabilities.md`, `phase20k3-validation.md`,
+`phase20k3-surface-authority-performance.md`.

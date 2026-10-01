@@ -224,7 +224,7 @@ const coordinateQuantum = (coordinate: number): number =>
   Number.EPSILON * Math.max(1, Math.abs(coordinate));
 
 /** Anchored plane shape shared by grading and target planes. */
-interface AnchoredPlane {
+export interface AnchoredPlane {
   gx: number;
   gy: number;
   ax: number;
@@ -239,6 +239,32 @@ export const planeLeverage = (plane: AnchoredPlane, x: number, y: number): numbe
   Math.abs(plane.gx) * Math.max(1, Math.abs(x), Math.abs(plane.ax)),
   Math.abs(plane.gy) * Math.max(1, Math.abs(y), Math.abs(plane.ay)),
 ];
+
+/**
+ * Phase 20K.3 — single pure anchored elevation-agreement authority, shared by
+ * the engine daylight solve (`solveStraightChord.liftDaylightToWorld`) and the
+ * worker settlement gate (`validateDaylightAgainstTarget`). `leverage` is the
+ * per-axis |gradient|·|coordinate| of every plane whose evaluation contributes
+ * to the compared elevations; `gradientSum` is the sum of |gx|+|gy| over those
+ * planes (the world-coordinate representation share). Returns the maximum
+ * allowed |zA − zB|. The 1 nm `AGREEMENT_FLOOR` is unchanged and the global
+ * `zeroDelta` classification floor is never used as the gate.
+ */
+export const anchoredElevationAgreementTol = (
+  zA: number,
+  zB: number,
+  leverage: readonly number[],
+  gradientSum: number,
+  x: number,
+  y: number,
+): number => {
+  const worldScale = Math.max(1, Math.abs(x), Math.abs(y));
+  return (
+    elevationAgreementTol(zA, zB, leverage) +
+    gradientSum * AGREEMENT_OPS * Number.EPSILON * worldScale +
+    AGREEMENT_FLOOR
+  );
+};
 
 /** X/Y world-coordinate agreement: single-scale ULP bound (no |x|·|y| term). */
 export const coordinateAgreementTol = (

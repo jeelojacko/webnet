@@ -37,6 +37,7 @@ export const DESIGN_PATCH_NON_FLAT_INTERIOR_UNDEFINED = 'DESIGN_PATCH_NON_FLAT_I
 export const DESIGN_PATCH_NON_PLANAR_INTERIOR_UNDEFINED = 'DESIGN_PATCH_NON_PLANAR_INTERIOR_UNDEFINED';
 export const DESIGN_PATCH_RING_MESH_MISMATCH = 'DESIGN_PATCH_RING_MESH_MISMATCH';
 export const DESIGN_PATCH_NON_SIMPLE_RING = 'DESIGN_PATCH_NON_SIMPLE_RING';
+export const DESIGN_PATCH_NON_ANNULUS = 'DESIGN_PATCH_NON_ANNULUS';
 export const DESIGN_PATCH_MERGE_FAILED = 'DESIGN_PATCH_MERGE_FAILED';
 
 export type DesignPatchCommandBlockCode =
@@ -46,6 +47,7 @@ export type DesignPatchCommandBlockCode =
   | typeof DESIGN_PATCH_NON_PLANAR_INTERIOR_UNDEFINED
   | typeof DESIGN_PATCH_RING_MESH_MISMATCH
   | typeof DESIGN_PATCH_NON_SIMPLE_RING
+  | typeof DESIGN_PATCH_NON_ANNULUS
   | typeof DESIGN_PATCH_MERGE_FAILED;
 
 export interface DesignPatchResolved {
@@ -112,6 +114,17 @@ export const resolveDesignPatch = (
   const ring = derived.ring;
   const valid = validateSourceRing(ring);
   if (!valid.ok) return fail(DESIGN_PATCH_NON_SIMPLE_RING, valid.detail);
+  // Phase 20K.3 Wave E1: a patch interior exists only for one closed
+  // connected annular shell (1 component / 2 boundary cycles). A tied
+  // multi-region or open shell is unavailable with a stable code, before
+  // the (necessarily ambiguous) interior/merge work.
+  const cert = result.topologyCertificate;
+  if (cert != null && (cert.components !== 1 || cert.boundaryCycles !== 2)) {
+    return fail(
+      DESIGN_PATCH_NON_ANNULUS,
+      `grading shell is ${cert.components} component(s) / ${cert.boundaryCycles} boundary cycle(s)`, 
+    );
+  }
   // Flat-or-coplanar gate runs before the mesh read: a genuinely non-planar
   // ring is blocked on its own terms, never masked by a mesh mismatch.
   const interior = resolveDesignPatchInterior(ring);
@@ -126,7 +139,12 @@ export const resolveDesignPatch = (
   }
   const verified = verifyRingAgainstMesh(ring, result.gradingMesh);
   if (!verified.ok) return fail(DESIGN_PATCH_RING_MESH_MISMATCH, verified.detail);
-  const merged = mergePadWithGrading(interior.pad.padPoints, interior.pad.padTriangles, result.gradingMesh);
+  const merged = mergePadWithGrading(
+    interior.pad.padPoints,
+    interior.pad.padTriangles,
+    result.gradingMesh,
+    result.topologyCertificate?.tiedSplitCoords ?? [],
+  );
   if (!merged.ok) return fail(DESIGN_PATCH_MERGE_FAILED, merged.detail);
   return {
     ok: true,

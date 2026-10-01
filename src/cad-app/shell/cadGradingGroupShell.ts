@@ -178,14 +178,14 @@ export const gradingGroupShellAvailable = (
       return row != null && actions.openGradingGroupManager != null;
     }
     case 'GRADINGGROUPEXTRACTDAYLIGHT': {
-      // Same exportable contract as the manager buttons: CURRENT +
-      // result only; stale FAILED / NEEDS_RECALC rows are unusable.
+      // Same per-product contract as the manager buttons: Extract needs a
+      // single continuous boundary; Bake needs a bakeable explicit-TIN mesh.
       const row = resolveGradingGroupRow(snapshot);
-      return row != null && row.exportable && actions.extractGroupDaylight != null;
+      return row != null && row.extractable && actions.extractGroupDaylight != null;
     }
     case 'GRADINGGROUPBAKE': {
       const row = resolveGradingGroupRow(snapshot);
-      return row != null && row.exportable && actions.bakeGroupSurface != null;
+      return row != null && row.bakeable && actions.bakeGroupSurface != null;
     }
     default:
       return false;
@@ -260,9 +260,9 @@ export const executeGradingGroupShellCommand = (
     case 'GRADINGGROUPEXTRACTDAYLIGHT': {
       const row = resolveGradingGroupRow(snapshot, options);
       if (row != null) {
-        // CURRENT/exportable + revision gates; one undo step via the
-        // existing action (no direct project mutation here).
-        if (!row.exportable) return false;
+        // Per-product + revision gates; one undo step via the existing
+        // action (no direct project mutation here).
+        if (!row.extractable) return false;
         return (actions.extractGroupDaylight?.(row.id) ?? null) != null;
       }
       const fallback = unverifiedGroupId(snapshot, options);
@@ -271,7 +271,7 @@ export const executeGradingGroupShellCommand = (
     case 'GRADINGGROUPBAKE': {
       const row = resolveGradingGroupRow(snapshot, options);
       if (row != null) {
-        if (!row.exportable) return false;
+        if (!row.bakeable) return false;
         return (actions.bakeGroupSurface?.(row.id) ?? null) != null;
       }
       const fallback = unverifiedGroupId(snapshot, options);

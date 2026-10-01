@@ -1,5 +1,5 @@
 import { type CadSurfaceGrid } from '../engine/cad/cadSurfaces';
-import { getSurfaceElevationAt } from '../engine/cad/cadSurfaceInterpolation';
+import { getSurfaceElevationAt, getSurfacePlaneAt } from '../engine/cad/cadSurfaceInterpolation';
 import type { CadSurfaceCache as CadTinCache } from '../engine/cad/cadSurfaceCache';
 import type { CadProject } from '../engine/cad/cadTypes';
 import type { CadGradingCache } from '../engine/cad/grading/gradingCache';
@@ -21,6 +21,7 @@ import {
   validateGradingResultAgainstTarget,
   validateGradingSourceBoundary,
   type GradingComputeSource,
+  type GradingSourceBoundaryCheck,
   type GradingTargetQuery,
 } from './surfaceGradingCompute';
 import type { GradingGroupComputeRequest, SurfaceGradingRequest } from './surfaceWorkerHandler';
@@ -537,34 +538,50 @@ export class SurfaceGradingService {
     entry: GradingPendingEntry,
     result: CadGradingResult,
   ): string | null {
-    const atSource = (u: number): { x: number; y: number; z: number } => {
-      const src = entry.resolvedSource;
-      const len = Math.hypot(src.endX - src.startX, src.endY - src.startY);
-      const gs = (src.endZ - src.startZ) / src.length;
-      return {
-        x: src.startX + ((src.endX - src.startX) / len) * u,
-        y: src.startY + ((src.endY - src.startY) / len) * u,
-        z: src.startZ + gs * u,
-      };
-    };
+    if (result.daylightPoints.length % 3 !== 0) return 'GRADING_AGREEMENT_MALFORMED_DAYLIGHT';
+    const sourceCheck = this.sourceBoundaryCheck(entry.resolvedSource, result);
     // Phase 20F: analytic results gate on the source boundary only.
     if (!inputs.target || !inputs.targetRevision) {
-      if (result.daylightPoints.length % 3 !== 0) return 'GRADING_AGREEMENT_MALFORMED_DAYLIGHT';
-      return validateGradingSourceBoundary({
-        first: atSource(0),
-        last: atSource(entry.resolvedSource.length),
-        expectedFirst: { x: inputs.resolvedSource.startX, y: inputs.resolvedSource.startY, z: inputs.resolvedSource.startZ },
-        expectedLast: { x: inputs.resolvedSource.endX, y: inputs.resolvedSource.endY, z: inputs.resolvedSource.endZ },
-      });
+      return validateGradingSourceBoundary(sourceCheck);
     }
     const query = this.targetMeshQuery(inputs.target.id, inputs.targetRevision);
     if (!query) return 'Grading agreement rejected: target TIN is not CURRENT.';
-    return validateGradingResultAgainstTarget(result.daylightPoints, query, {
-      first: atSource(0),
-      last: atSource(entry.resolvedSource.length),
-      expectedFirst: { x: inputs.resolvedSource.startX, y: inputs.resolvedSource.startY, z: inputs.resolvedSource.startZ },
-      expectedLast: { x: inputs.resolvedSource.endX, y: inputs.resolvedSource.endY, z: inputs.resolvedSource.endZ },
-    });
+    return validateGradingResultAgainstTarget(result.daylightPoints, query, sourceCheck);
+  }
+
+  /**
+   * Source-boundary agreement via the result's OWN captured boundary
+   * (`sourceBoundaryPoints`) compared with the persisted resolved endpoints —
+   * authoritative real-arc evaluation at station 0 / `source.length`, never a
+   * chord-direction × arc-length reconstruction (which overshoots an arc
+   * endpoint by `arcLength − chord`). Falls back to the persisted endpoints
+   * when no boundary was captured.
+   */
+  private sourceBoundaryCheck(
+    source: GradingComputeSource,
+    result: CadGradingResult,
+  ): GradingSourceBoundaryCheck {
+    const expectedFirst = { x: source.startX, y: source.startY, z: source.startZ };
+    const expectedLast = { x: source.endX, y: source.endY, z: source.endZ };
+    // Arc linearization rounds at the centre/radius magnitude, so the shared
+    // coordinate agreement must use that scale (an arc endpoint can sit near
+    // the origin while its evaluation carries ~eps·radius error).
+    const coordinateScale =
+      source.isArc && source.arc
+        ? Math.max(Math.abs(source.arc.centerX), Math.abs(source.arc.centerY), source.arc.radius)
+        : 0;
+    const boundary = result.sourceBoundaryPoints;
+    const count = boundary?.length ?? 0;
+    if (boundary && count >= 6 && count % 3 === 0) {
+      return {
+        first: { x: boundary[0]!, y: boundary[1]!, z: boundary[2]! },
+        last: { x: boundary[count - 3]!, y: boundary[count - 2]!, z: boundary[count - 1]! },
+        expectedFirst,
+        expectedLast,
+        coordinateScale,
+      };
+    }
+    return { first: { ...expectedFirst }, last: { ...expectedLast }, expectedFirst, expectedLast, coordinateScale };
   }
 
   /**
@@ -598,6 +615,12 @@ export class SurfaceGradingService {
       elevationAt: (x: number, y: number) =>
         getSurfaceElevationAt(
           build as unknown as Parameters<typeof getSurfaceElevationAt>[0],
+          x,
+          y,
+        ),
+      planeAt: (x: number, y: number) =>
+        getSurfacePlaneAt(
+          build as unknown as Parameters<typeof getSurfacePlaneAt>[0],
           x,
           y,
         ),

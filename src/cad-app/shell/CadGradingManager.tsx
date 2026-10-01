@@ -326,8 +326,9 @@ const RowActions: React.FC<{
         <button
           type="button"
           className={buttonClass}
-          disabled={!row.exportable}
-          onClick={() => onNotice(actions.extractGradingDaylight?.(row.id) ?? 'Extract unavailable (needs CURRENT).')}
+          disabled={!row.extractable}
+          title={row.extractable ? `Extract ${row.boundaryLabel} as a Feature Line.` : row.extractNotice ?? 'Extract unavailable.'}
+          onClick={() => onNotice(actions.extractGradingDaylight?.(row.id) ?? row.extractNotice ?? 'Extract unavailable.')}
           data-cad-grading-extract
         >
           Extract {row.boundaryLabel}
@@ -335,8 +336,9 @@ const RowActions: React.FC<{
         <button
           type="button"
           className={buttonClass}
-          disabled={!row.exportable}
-          onClick={() => onNotice(actions.bakeGradingSurface?.(row.id) ?? 'Bake unavailable (needs CURRENT).')}
+          disabled={!row.bakeable}
+          title={row.bakeable ? 'Bake the calculated surface as an explicit TIN.' : row.bakeNotice ?? 'Bake unavailable.'}
+          onClick={() => onNotice(actions.bakeGradingSurface?.(row.id) ?? row.bakeNotice ?? 'Bake unavailable.')}
           data-cad-grading-bake
         >
           Bake Surface

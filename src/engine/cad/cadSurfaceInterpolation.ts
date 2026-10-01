@@ -51,23 +51,28 @@ const barycentric = (
   return [l1, l2, 1 - l1 - l2];
 };
 
-/** Containing-triangle barycentric interpolation; null outside the mesh/voids. */
-export const getSurfaceElevationAt = (
+interface SurfaceTriangleHit {
+  index: number;
+  weights: [number, number, number];
+}
+
+/** Locate the containing triangle by grid cell, with a crack-adjacent scan. */
+const locateSurfaceTriangle = (
   build: CadSurfaceBuildResult,
   x: number,
   y: number,
-): number | null => {
+): SurfaceTriangleHit | null => {
   if (build.outcome !== 'ok' || build.triangles.length === 0) return null;
-  const tryTriangle = (index: number): number | null => {
-    const tri = build.triangles[index];
-    const a = build.points[tri[0]];
-    const b = build.points[tri[1]];
-    const c = build.points[tri[2]];
+  const tryTriangle = (index: number): SurfaceTriangleHit | null => {
+    const tri = build.triangles[index]!;
+    const a = build.points[tri[0]]!;
+    const b = build.points[tri[1]]!;
+    const c = build.points[tri[2]]!;
     const weights = barycentric(x, y, a.x, a.y, b.x, b.y, c.x, c.y);
     if (!weights) return null;
     const tol = 1e-9;
     if (weights.some((w) => w < -tol || w > 1 + tol)) return null;
-    return weights[0] * a.z + weights[1] * b.z + weights[2] * c.z;
+    return { index, weights };
   };
   const { minX, minY, cellSize, cells } = build.grid;
   const key = `${Math.floor((x - minX) / cellSize)},${Math.floor((y - minY) / cellSize)}`;
@@ -83,4 +88,58 @@ export const getSurfaceElevationAt = (
     }
   }
   return null;
+};
+
+/** Containing-triangle barycentric interpolation; null outside the mesh/voids. */
+export const getSurfaceElevationAt = (
+  build: CadSurfaceBuildResult,
+  x: number,
+  y: number,
+): number | null => {
+  const hit = locateSurfaceTriangle(build, x, y);
+  if (!hit) return null;
+  const tri = build.triangles[hit.index]!;
+  const a = build.points[tri[0]]!;
+  const b = build.points[tri[1]]!;
+  const c = build.points[tri[2]]!;
+  const [l1, l2, l3] = hit.weights;
+  return l1 * a.z + l2 * b.z + l3 * c.z;
+};
+
+/** Anchored target triangle plane at a query point (20K.3 agreement leverage). */
+export interface SurfacePlaneAtPoint {
+  z: number;
+  gx: number;
+  gy: number;
+  ax: number;
+  ay: number;
+}
+
+/**
+ * Anchored plane of the containing target triangle at (x, y), or null off the
+ * mesh. Anchored at the first triangle vertex so a far-from-origin evaluation
+ * never subtracts two world-magnitude intercept terms.
+ */
+export const getSurfacePlaneAt = (
+  build: CadSurfaceBuildResult,
+  x: number,
+  y: number,
+): SurfacePlaneAtPoint | null => {
+  const hit = locateSurfaceTriangle(build, x, y);
+  if (!hit) return null;
+  const tri = build.triangles[hit.index]!;
+  const a = build.points[tri[0]]!;
+  const b = build.points[tri[1]]!;
+  const c = build.points[tri[2]]!;
+  const det = (b.x - a.x) * (c.y - a.y) - (c.x - a.x) * (b.y - a.y);
+  if (det === 0) return null;
+  const gx = ((b.z - a.z) * (c.y - a.y) - (c.z - a.z) * (b.y - a.y)) / det;
+  const gy = ((b.x - a.x) * (c.z - a.z) - (c.x - a.x) * (b.z - a.z)) / det;
+  return {
+    z: a.z + gx * (x - a.x) + gy * (y - a.y),
+    gx,
+    gy,
+    ax: a.x,
+    ay: a.y,
+  };
 };

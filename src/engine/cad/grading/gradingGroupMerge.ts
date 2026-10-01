@@ -127,14 +127,26 @@ export const mergeGroupTriangles = (tris: MergeTriangle[]): MergedGroupMesh => {
  * by construction. Every extra edge-component must touch one — no
  * count-only budget (reviewer fix: unattributed extras fail closed).
  */
+export interface MergedGroupTopologyExpectation {
+  expectedComponents?: number;
+  expectedBoundaryLoops?: number;
+}
+
 export const validateMergedGroupTopology = (
   mesh: MergedGroupMesh,
   tiedCoords: readonly number[] = [],
+  expected: MergedGroupTopologyExpectation = {},
 ): string | null => {
   if (mesh.triangles.length === 0) return null;
   const topo = validateGradingMeshTopology(mesh.points, mesh.triangles, {
     scope: 'group',
     tiedSplitCoords: [...tiedCoords],
+    ...(expected.expectedComponents !== undefined
+      ? { expectedComponents: expected.expectedComponents }
+      : {}),
+    ...(expected.expectedBoundaryLoops !== undefined
+      ? { expectedBoundaryLoops: expected.expectedBoundaryLoops }
+      : {}),
   });
   if (topo.ok) return null;
   return `${topo.code}: ${topo.detail ?? ''}`;
@@ -216,4 +228,161 @@ export const groupMeshStats = (mesh: MergedGroupMesh, distances: number[]): Grou
     max: stats.max,
     mean: stats.mean,
   };
+};
+
+/**
+ * Phase 20K.3 Wave B — shared analytic miter seam.
+ *
+ * The analytic OVERLAP trim clips each member strip against the corner
+ * miter line independently, so the two sides discretize the SAME seam with
+ * different stations: the merged mesh carries the seam twice (boundary
+ * vertex degree 4, PINCH) even though both chains approximate one straight
+ * segment with no double-cover (20C oracles bless areas). Sharing fixes the
+ * indices, not the geometry: every vertex of either mesh lying on the
+ * miter line joins one union set, and every on-line edge of either mesh is
+ * split at the union points strictly inside its span (same point objects,
+ * so exact-XYZ dedupe yields shared edges and the seam turns interior).
+ * Splits are collinear sub-triangles of their parent — plan/3D areas,
+ * ties, and corner provenance are untouched. Deterministic: union sorted
+ * by line parameter, near-duplicate stations collapsed.
+ */
+export const shareMiterSeam = (
+  inTris: MergeTriangle[],
+  outTris: MergeTriangle[],
+  line: SectorLine,
+): { inTris: MergeTriangle[]; outTris: MergeTriangle[] } => {
+  const spanTol = (x: number, y: number): number =>
+    8 * Number.EPSILON * Math.max(1, Math.abs(x), Math.abs(y), Math.abs(line.vx), Math.abs(line.vy));
+  const param = (p: MergePoint): number => (p.x - line.vx) * line.mx + (p.y - line.vy) * line.my;
+  const dist = (p: MergePoint): number =>
+    Math.abs((p.x - line.vx) * line.my - (p.y - line.vy) * line.mx);
+  const onLine = (p: MergePoint): boolean => dist(p) <= spanTol(p.x, p.y);
+  // Union of both meshes' on-line vertices, sorted by parameter.
+  const keyOf = (p: MergePoint): string => `${p.x}|${p.y}|${p.z}`;
+  const seen = new Map<string, MergePoint>();
+  for (const tris of [inTris, outTris]) {
+    for (const t of tris) {
+      for (const p of [t.a, t.b, t.c]) {
+        if (onLine(p) && !seen.has(keyOf(p))) seen.set(keyOf(p), p);
+      }
+    }
+  }
+  const ranked = [...seen.values()].sort((a, b) => param(a) - param(b) || (keyOf(a) < keyOf(b) ? -1 : 1));
+  // Collapse ulp-twin stations: the two independent trims recompute the
+  // same geometric station through different triangles, so twins land
+  // ~1e-16 apart. Kept distinct they mis-sort (rounding noise) and the
+  // fan zigzags into a fold; collapsed, both meshes share one object and
+  // the seam edge is bit-identical. Genuine stations sit >> tolerance
+  // apart (linearization spacing), so only twins merge.
+  const union: MergePoint[] = [];
+  for (const p of ranked) {
+    const prev = union[union.length - 1];
+    if (
+      prev !== undefined &&
+      Math.hypot(p.x - prev.x, p.y - prev.y) <=
+        spanTol(p.x, p.y) + spanTol(prev.x, prev.y)
+    ) {
+      continue;
+    }
+    union.push(p);
+  }
+  if (union.length < 2) return { inTris, outTris };
+  // Snap every on-line mesh vertex to its kept union representative, so
+  // ulp-twins collapse to ONE shared object in both meshes (collapsing
+  // the union list alone would leave each mesh holding its own twin).
+  const snap = (p: MergePoint): MergePoint => {
+    if (!onLine(p)) return p;
+    let best: MergePoint | null = null;
+    let bestDist = Infinity;
+    for (const k of union) {
+      const d = Math.hypot(p.x - k.x, p.y - k.y);
+      if (d < bestDist) {
+        bestDist = d;
+        best = k;
+      }
+    }
+    if (best !== null && bestDist <= spanTol(p.x, p.y) + spanTol(best.x, best.y)) return best;
+    return p;
+  };
+  const snapped = (tris: MergeTriangle[]): MergeTriangle[] =>
+    tris.map((t) => ({ a: snap(t.a), b: snap(t.b), c: snap(t.c) }));
+  const inSnapped = snapped(inTris);
+  const outSnapped = snapped(outTris);
+  const between = (u: MergePoint, v: MergePoint): MergePoint[] => {
+    const tu = param(u);
+    const tv = param(v);
+    const lo = Math.min(tu, tv);
+    const hi = Math.max(tu, tv);
+    const out: MergePoint[] = [];
+    for (const q of union) {
+      const tq = param(q);
+      if (tq <= lo || tq >= hi) continue;
+      if (keyOf(q) === keyOf(u) || keyOf(q) === keyOf(v)) continue;
+      // Must sit on the segment, past rounding, and clear of the endpoints.
+      if (dist(q) > spanTol(q.x, q.y) + spanTol(u.x, u.y) + spanTol(v.x, v.y)) continue;
+      const du = Math.hypot(q.x - u.x, q.y - u.y);
+      const dv = Math.hypot(q.x - v.x, q.y - v.y);
+      if (du <= spanTol(q.x, q.y) + spanTol(u.x, u.y)) continue;
+      if (dv <= spanTol(q.x, q.y) + spanTol(v.x, v.y)) continue;
+      out.push(q);
+    }
+    out.sort((a, b) => (tv >= tu ? param(a) - param(b) : param(b) - param(a)));
+    return out;
+  };
+  const share = (tris: MergeTriangle[]): MergeTriangle[] => {
+    // Edge -> adjacent triangle indices (object identity; shared vertices
+    // across the two meshes are distinct objects pre-merge — each mesh is
+    // split at the union set independently, using the same point objects).
+    const edgeKey = (p: MergePoint, q: MergePoint): string => {
+      const kp = keyOf(p);
+      const kq = keyOf(q);
+      return kp < kq ? `${kp}~${kq}` : `${kq}~${kp}`;
+    };
+    const owners = new Map<string, number[]>();
+    const edgeEnds = new Map<string, [MergePoint, MergePoint]>();
+    tris.forEach((t, i) => {
+      const edges: Array<[MergePoint, MergePoint]> = [[t.a, t.b], [t.b, t.c], [t.c, t.a]];
+      for (const [p, q] of edges) {
+        const key = edgeKey(p, q);
+        const list = owners.get(key);
+        if (list) list.push(i);
+        else {
+          owners.set(key, [i]);
+          edgeEnds.set(key, [p, q]);
+        }
+      }
+    });
+    const splitAt = new Map<string, MergePoint[]>();
+    for (const [key, [p, q]] of edgeEnds) {
+      if (!onLine(p) || !onLine(q)) continue;
+      const mid = between(p, q);
+      if (mid.length > 0) splitAt.set(key, mid);
+    }
+    if (splitAt.size === 0) return tris;
+    const result: MergeTriangle[] = [];
+    tris.forEach((t) => {
+      // A triangle with two on-line edges would have all three vertices
+      // on the line (degenerate, already filtered), so at most one edge
+      // per triangle splits.
+      const edges: Array<[MergePoint, MergePoint, MergePoint]> = [
+        [t.a, t.b, t.c], [t.b, t.c, t.a], [t.c, t.a, t.b],
+      ];
+      for (const [p, q, r] of edges) {
+        const mid = splitAt.get(edgeKey(p, q));
+        if (mid && mid.length > 0) {
+          // Fan (p, q-chain, r) preserves the parent winding exactly.
+          let prev = p;
+          for (const s of mid) {
+            result.push({ a: prev, b: s, c: r });
+            prev = s;
+          }
+          result.push({ a: prev, b: q, c: r });
+          return;
+        }
+      }
+      result.push(t);
+    });
+    return result;
+  };
+  return { inTris: share(inSnapped), outTris: share(outSnapped) };
 };

@@ -161,14 +161,16 @@ describe('20K.1 Wave B2 fail-closed topology gate', () => {
       maxSearchDistance: 100, curveChordTolerance: 0.1, closed: false,
       target: flatTin(0),
     });
-    // 20K.1 Wave C2 old→new: the curved Surface member's internal seams
-    // assemble (7 GAP ties), and the hybrid joint's exact GAP tie shares
-    // indices with both strips — one edge-component, B2 gate passes.
-    // Before: GROUP_NON_MANIFOLD + GRADING_GROUP_ARC_SEAM_PINCH (ec=2).
+    // 20K.1 Wave C2 + 20K.3 Wave C: the curved Surface member's internal
+    // seams assemble (7 GAP ties), each internal source seam sample is the
+    // single canonical linearized joint, and the hybrid joint's exact GAP
+    // tie shares indices with both strips — one edge-component, B2 gate
+    // passes. Before C2: GROUP_NON_MANIFOLD + GRADING_GROUP_ARC_SEAM_PINCH
+    // (ec=2); before Wave C: 43pts/41tris with 2 ULP-twin coincident sets.
     expect(out.ok).toBe(true);
     if (!out.ok) return;
-    expect(out.result.gradingMesh.points.length / 3).toBe(43);
-    expect(out.result.gradingMesh.triangles.length / 3).toBe(41);
+    expect(out.result.gradingMesh.points.length / 3).toBe(36);
+    expect(out.result.gradingMesh.triangles.length / 3).toBe(34);
     expect(out.result.gradingPlanArea).toBeCloseTo(4418.559246850815, 9);
     expect(out.result.corners).toHaveLength(1);
     expect(out.result.corners[0]!.classification).toBe('GAP');

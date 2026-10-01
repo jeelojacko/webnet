@@ -182,7 +182,7 @@ describe('20K.2 curved Surface CUT/FILL fan integration', () => {
     const kinds = new Set(out.result.regions.map((r) => r.classification));
     expect(kinds.has('CUT')).toBe(true);
     expect(kinds.has('FILL')).toBe(true);
-    expect(out.result.gradingMesh.points.length / 3).toBe(181);
-    expect(out.result.gradingMesh.triangles.length / 3).toBe(177);
+    expect(out.result.gradingMesh.points.length / 3).toBe(175);
+    expect(out.result.gradingMesh.triangles.length / 3).toBe(171);
   });
 });

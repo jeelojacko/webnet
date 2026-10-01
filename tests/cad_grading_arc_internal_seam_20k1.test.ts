@@ -368,6 +368,7 @@ interface Expected {
   triangles: number;
   tieCount: number;
   planArea: number;
+  area3d: number;
   validator: string | null;
   indexEdgeComponents: number;
   indexBoundaryEdges: number;
@@ -383,20 +384,22 @@ interface Expected {
 }
 
 const EXPECTED: Record<string, Expected> = {
-  'standalone.A distance': { engineOk: true, status: 'ok(CLEAN)', points: 32, triangles: 30, tieCount: 0, planArea: 2082.880954009, validator: null, indexEdgeComponents: 1, indexBoundaryEdges: 32, indexBoundaryLoops: 1, coincidentVertexSets: 0, coincidentNonSharedEdges: 0, weldedEdgeComponents: 1, classification: 'TOPOLOGY_VALID', canCurrent: true, canExtract: true, canBake: true, canDesignPatch: false },
-  'standalone.B elevation': { engineOk: true, status: 'ok(CLEAN)', points: 32, triangles: 30, tieCount: 0, planArea: 2082.880954009, validator: null, indexEdgeComponents: 1, indexBoundaryEdges: 32, indexBoundaryLoops: 1, coincidentVertexSets: 0, coincidentNonSharedEdges: 0, weldedEdgeComponents: 1, classification: 'TOPOLOGY_VALID', canCurrent: true, canExtract: true, canBake: true, canDesignPatch: false },
-  'standalone.C relative': { engineOk: true, status: 'ok(CLEAN)', points: 32, triangles: 30, tieCount: 0, planArea: 2082.880954009, validator: null, indexEdgeComponents: 1, indexBoundaryEdges: 32, indexBoundaryLoops: 1, coincidentVertexSets: 0, coincidentNonSharedEdges: 0, weldedEdgeComponents: 1, classification: 'TOPOLOGY_VALID', canCurrent: true, canExtract: true, canBake: true, canDesignPatch: false },
-  'standalone.D surface fixed': { engineOk: true, status: 'ok(CLEAN)', points: 39, triangles: 37, tieCount: 0, planArea: 2082.880954009, validator: null, indexEdgeComponents: 1, indexBoundaryEdges: 39, indexBoundaryLoops: 1, coincidentVertexSets: 2, coincidentNonSharedEdges: 0, weldedEdgeComponents: 1, classification: 'TOPOLOGY_VALID', canCurrent: true, canExtract: true, canBake: true, canDesignPatch: false },
-  'closed.square.all-distance': { engineOk: true, status: 'ok(CURVE_CORNER_APPROXIMATED)', points: 128, triangles: 128, tieCount: 4, planArea: 9452.124826335, validator: null, indexEdgeComponents: 1, indexBoundaryEdges: 128, indexBoundaryLoops: 2, coincidentVertexSets: 0, coincidentNonSharedEdges: 0, weldedEdgeComponents: 1, classification: 'TOPOLOGY_VALID', canCurrent: true, canExtract: true, canBake: true, canDesignPatch: false },
-  'closed.square.mixed-analytic': { engineOk: true, status: 'ok(CURVE_CORNER_APPROXIMATED)', points: 128, triangles: 128, tieCount: 4, planArea: 9452.124826335, validator: null, indexEdgeComponents: 1, indexBoundaryEdges: 128, indexBoundaryLoops: 2, coincidentVertexSets: 0, coincidentNonSharedEdges: 0, weldedEdgeComponents: 1, classification: 'TOPOLOGY_VALID', canCurrent: true, canExtract: true, canBake: true, canDesignPatch: false },
-  // C2 old→new G: GROUP_NON_MANIFOLD/GRADING_GROUP_ARC_SEAM_PINCH (ec=2,
-  // no mesh) -> CURRENT 43pts/41tris, 1 GAP tie, TOPOLOGY_VALID.
-  'open.hybrid.one-arc': { engineOk: true, status: 'ok(CURVE_CORNER_APPROXIMATED)', points: 43, triangles: 41, tieCount: 1, planArea: 4418.559246851, validator: null, indexEdgeComponents: 1, indexBoundaryEdges: 43, indexBoundaryLoops: 1, coincidentVertexSets: 2, coincidentNonSharedEdges: 0, weldedEdgeComponents: 1, classification: 'TOPOLOGY_VALID', canCurrent: true, canExtract: true, canBake: true, canDesignPatch: false },
-  // C2 old→new H: CORNER_NO_SOLUTION/GRADING_CORNER_SECTOR (no mesh) ->
-  // CURRENT 156pts/156tris, 4 GAP ties, TOPOLOGY_VALID, plan == analytic E.
-  'closed.square.all-surface': { engineOk: true, status: 'ok(CURVE_CORNER_APPROXIMATED)', points: 156, triangles: 156, tieCount: 4, planArea: 9452.124826335, validator: null, indexEdgeComponents: 1, indexBoundaryEdges: 156, indexBoundaryLoops: 2, coincidentVertexSets: 11, coincidentNonSharedEdges: 0, weldedEdgeComponents: 1, classification: 'TOPOLOGY_VALID', canCurrent: true, canExtract: true, canBake: true, canDesignPatch: false },
-  'standalone.straight.fixed': { engineOk: true, status: 'ok(CLEAN)', points: 4, triangles: 2, tieCount: 0, planArea: 2000, validator: null, indexEdgeComponents: 1, indexBoundaryEdges: 4, indexBoundaryLoops: 1, coincidentVertexSets: 0, coincidentNonSharedEdges: 0, weldedEdgeComponents: 1, classification: 'TOPOLOGY_VALID', canCurrent: true, canExtract: true, canBake: true, canDesignPatch: false },
-  'closed.square.straight': { engineOk: true, status: 'ok(CLEAN)', points: 16, triangles: 16, tieCount: 4, planArea: 9600, validator: null, indexEdgeComponents: 1, indexBoundaryEdges: 16, indexBoundaryLoops: 2, coincidentVertexSets: 0, coincidentNonSharedEdges: 0, weldedEdgeComponents: 1, classification: 'TOPOLOGY_VALID', canCurrent: true, canExtract: true, canBake: true, canDesignPatch: true },
+  'standalone.A distance': { engineOk: true, status: 'ok(CLEAN)', points: 32, triangles: 30, tieCount: 0, planArea: 2082.880954009, area3d: 2328.731701102, validator: null, indexEdgeComponents: 1, indexBoundaryEdges: 32, indexBoundaryLoops: 1, coincidentVertexSets: 0, coincidentNonSharedEdges: 0, weldedEdgeComponents: 1, classification: 'TOPOLOGY_VALID', canCurrent: true, canExtract: true, canBake: true, canDesignPatch: false },
+  'standalone.B elevation': { engineOk: true, status: 'ok(CLEAN)', points: 32, triangles: 30, tieCount: 0, planArea: 2082.880954009, area3d: 2328.731701102, validator: null, indexEdgeComponents: 1, indexBoundaryEdges: 32, indexBoundaryLoops: 1, coincidentVertexSets: 0, coincidentNonSharedEdges: 0, weldedEdgeComponents: 1, classification: 'TOPOLOGY_VALID', canCurrent: true, canExtract: true, canBake: true, canDesignPatch: false },
+  'standalone.C relative': { engineOk: true, status: 'ok(CLEAN)', points: 32, triangles: 30, tieCount: 0, planArea: 2082.880954009, area3d: 2328.731701102, validator: null, indexEdgeComponents: 1, indexBoundaryEdges: 32, indexBoundaryLoops: 1, coincidentVertexSets: 0, coincidentNonSharedEdges: 0, weldedEdgeComponents: 1, classification: 'TOPOLOGY_VALID', canCurrent: true, canExtract: true, canBake: true, canDesignPatch: false },
+  // Wave C: Surface standalone canonicalized to the analytic strip
+  // (39/37 -> 32/30), coincident ULP-twin sets 2 -> 0; areas unchanged.
+  'standalone.D surface fixed': { engineOk: true, status: 'ok(CLEAN)', points: 32, triangles: 30, tieCount: 0, planArea: 2082.880954009, area3d: 2328.731701102, validator: null, indexEdgeComponents: 1, indexBoundaryEdges: 32, indexBoundaryLoops: 1, coincidentVertexSets: 0, coincidentNonSharedEdges: 0, weldedEdgeComponents: 1, classification: 'TOPOLOGY_VALID', canCurrent: true, canExtract: true, canBake: true, canDesignPatch: false },
+  'closed.square.all-distance': { engineOk: true, status: 'ok(CURVE_CORNER_APPROXIMATED)', points: 128, triangles: 128, tieCount: 4, planArea: 9452.124826335, area3d: 10567.796821749, validator: null, indexEdgeComponents: 1, indexBoundaryEdges: 128, indexBoundaryLoops: 2, coincidentVertexSets: 0, coincidentNonSharedEdges: 0, weldedEdgeComponents: 1, classification: 'TOPOLOGY_VALID', canCurrent: true, canExtract: true, canBake: true, canDesignPatch: false },
+  'closed.square.mixed-analytic': { engineOk: true, status: 'ok(CURVE_CORNER_APPROXIMATED)', points: 128, triangles: 128, tieCount: 4, planArea: 9452.124826335, area3d: 10567.796821749, validator: null, indexEdgeComponents: 1, indexBoundaryEdges: 128, indexBoundaryLoops: 2, coincidentVertexSets: 0, coincidentNonSharedEdges: 0, weldedEdgeComponents: 1, classification: 'TOPOLOGY_VALID', canCurrent: true, canExtract: true, canBake: true, canDesignPatch: false },
+  // Wave C old->new G: C2 43pts/41tris -> canonicalized 36pts/34tris, 1 GAP
+  // tie, area unchanged.
+  'open.hybrid.one-arc': { engineOk: true, status: 'ok(CURVE_CORNER_APPROXIMATED)', points: 36, triangles: 34, tieCount: 1, planArea: 4418.559246851, area3d: 4940.099419284, validator: null, indexEdgeComponents: 1, indexBoundaryEdges: 36, indexBoundaryLoops: 1, coincidentVertexSets: 0, coincidentNonSharedEdges: 0, weldedEdgeComponents: 1, classification: 'TOPOLOGY_VALID', canCurrent: true, canExtract: true, canBake: true, canDesignPatch: false },
+  // Wave C old->new H: C2 156pts/156tris/11 coincident -> canonicalized
+  // 128pts/128tris/0 coincident, 4 GAP ties, plan+3D == analytic E.
+  'closed.square.all-surface': { engineOk: true, status: 'ok(CURVE_CORNER_APPROXIMATED)', points: 128, triangles: 128, tieCount: 4, planArea: 9452.124826335, area3d: 10567.796821749, validator: null, indexEdgeComponents: 1, indexBoundaryEdges: 128, indexBoundaryLoops: 2, coincidentVertexSets: 0, coincidentNonSharedEdges: 0, weldedEdgeComponents: 1, classification: 'TOPOLOGY_VALID', canCurrent: true, canExtract: true, canBake: true, canDesignPatch: false },
+  'standalone.straight.fixed': { engineOk: true, status: 'ok(CLEAN)', points: 4, triangles: 2, tieCount: 0, planArea: 2000, area3d: 2236.0679775, validator: null, indexEdgeComponents: 1, indexBoundaryEdges: 4, indexBoundaryLoops: 1, coincidentVertexSets: 0, coincidentNonSharedEdges: 0, weldedEdgeComponents: 1, classification: 'TOPOLOGY_VALID', canCurrent: true, canExtract: true, canBake: true, canDesignPatch: false },
+  'closed.square.straight': { engineOk: true, status: 'ok(CLEAN)', points: 16, triangles: 16, tieCount: 4, planArea: 9600, area3d: 10733.126291999, validator: null, indexEdgeComponents: 1, indexBoundaryEdges: 16, indexBoundaryLoops: 2, coincidentVertexSets: 0, coincidentNonSharedEdges: 0, weldedEdgeComponents: 1, classification: 'TOPOLOGY_VALID', canCurrent: true, canExtract: true, canBake: true, canDesignPatch: true },
 };
 
 describe('phase20k1 production curved-seam reproduction matrix', () => {
@@ -422,6 +425,7 @@ describe('phase20k1 production curved-seam reproduction matrix', () => {
       expect(row.triangles, row.id).toBe(expected!.triangles);
       expect(row.tieCount, row.id).toBe(expected!.tieCount);
       expect(row.planArea, row.id).toBe(expected!.planArea);
+      expect(row.area3d, row.id).toBe(expected!.area3d);
       expect(row.validator, row.id).toBe(expected!.validator);
       expect(row.index.edgeComponents, row.id).toBe(expected!.indexEdgeComponents);
       expect(row.index.boundaryEdges, row.id).toBe(expected!.indexBoundaryEdges);

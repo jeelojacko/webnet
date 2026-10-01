@@ -111,23 +111,26 @@ describe('phase20k1 sloped-source Surface arc', () => {
     const fx = runStandalone(src, FIXED(-0.5));
     expect(fx.ok).toBe(true);
     if (!fx.ok) return;
-    expect(fx.result.gradingMesh.points.length / 3).toBe(39);
-    expect(fx.result.gradingMesh.triangles.length / 3).toBe(37);
+    expect(fx.result.gradingMesh.points.length / 3).toBe(32);
+    expect(fx.result.gradingMesh.triangles.length / 3).toBe(30);
     expect(fx.result.gradingPlanArea).toBeCloseTo(2136.7448211272645, 9);
     expect(fx.result.minProjectionDistance).toBeCloseTo(20, 9);
   });
 
   it('steeper phases: 10 → 11 solves, 10 → 12 fails closed on interior overlap', () => {
-    // The C2 chord agreement heals steeper slopes while the strip stays
-    // fold-free (39pts/37tris). At 10 → 12 a strip sliver folds over its
-    // neighbor (same-side shared edge), so the interior-overlap rule
-    // fails it closed with the existing PINCH detail — never CURRENT.
+    // The chord agreement heals steeper slopes while the strip stays
+    // fold-free. Wave C source canonicalization removes the linearized
+    // seam ULP twins on every slope, so 10→10.5 and 10→11 share the same
+    // canonical 32pts/30tris strip as the level surface. At 10 → 12 a strip
+    // sliver folds over its neighbor (same-side shared edge), so the
+    // interior-overlap rule fails it closed with the existing PINCH detail
+    // — never CURRENT.
     const base = roundedSquareMembers(10)[0]!.source;
     const fx = runStandalone({ ...base, startZ: 10, endZ: 11 }, FIXED(-0.5));
     expect(fx.ok).toBe(true);
     if (!fx.ok) return;
-    expect(fx.result.gradingMesh.points.length / 3).toBe(39);
-    expect(fx.result.gradingMesh.triangles.length / 3).toBe(37);
+    expect(fx.result.gradingMesh.points.length / 3).toBe(32);
+    expect(fx.result.gradingMesh.triangles.length / 3).toBe(30);
     expect(fx.result.gradingPlanArea).toBeCloseTo(2190.7018168390186, 9);
     const folded = runStandalone({ ...base, startZ: 10, endZ: 12 }, FIXED(-0.5));
     expect(folded.ok).toBe(false);
@@ -178,8 +181,8 @@ describe('phase20k1 closed rounded squares (§21 oracles)', () => {
     expect(out.ok).toBe(true);
     if (!out.ok) return;
     const r = out.result;
-    expect(r.gradingMesh.points.length / 3).toBe(156);
-    expect(r.gradingMesh.triangles.length / 3).toBe(156);
+    expect(r.gradingMesh.points.length / 3).toBe(128);
+    expect(r.gradingMesh.triangles.length / 3).toBe(128);
     expect(r.gradingPlanArea).toBeCloseTo(9452.124826335, 9);
     expect(r.corners).toHaveLength(4);
     for (const c of r.corners) {
@@ -208,7 +211,7 @@ describe('phase20k1 closed rounded squares (§21 oracles)', () => {
       adj.set(a, [...(adj.get(a) ?? []), b]);
       adj.set(b, [...(adj.get(b) ?? []), a]);
     }
-    expect(boundary).toBe(156);
+    expect(boundary).toBe(128);
     let loops = 0;
     const seen = new Set<number>();
     for (const start of adj.keys()) {
@@ -239,8 +242,8 @@ describe('phase20k1 one-arc hybrid regression G (§22)', () => {
     });
     expect(out.ok).toBe(true);
     if (!out.ok) return;
-    expect(out.result.gradingMesh.points.length / 3).toBe(43);
-    expect(out.result.gradingMesh.triangles.length / 3).toBe(41);
+    expect(out.result.gradingMesh.points.length / 3).toBe(36);
+    expect(out.result.gradingMesh.triangles.length / 3).toBe(34);
     expect(out.result.corners).toHaveLength(1);
     expect(out.result.corners[0]!.classification).toBe('GAP');
     const tie = out.result.corners[0]!.tiePointXyz!;
@@ -277,7 +280,6 @@ import { solveStraightChord } from '../src/engine/cad/grading/solveStraightChord
 import { buildTargetQuery, candidateTriangles } from '../src/engine/cad/grading/gradingTargetIndex';
 import {
   assembleSurfaceChain,
-  digestSeamMesh,
   type SurfaceSeamChord,
 } from '../src/engine/cad/grading/gradingChordSeam';
 import { cornerPlane } from '../src/engine/cad/grading/gradingGroupSurfaceCorners';
@@ -649,18 +651,23 @@ describe('phase20k1 tolerance ladder 30 → 0.001 (subdivisions, convergence, di
     })();
     expect(overlap.length).toBe(17);
     for (const tie of overlap) expect(tie.kind).toBe('OVERLAP');
-    // Digest determinism: same tolerance twice ⇒ same digest.
-    const digestOf = (tol: number): string => {
+    // Digest determinism: same tolerance twice ⇒ same gtop2 exact
+    // certificate digest (SHA-256 over Float64 bits + uint32 indices).
+    // The obsolete legacy FNV seam digest (b6bdc245) is no longer pinned;
+    // the exact certificate digest is the authority.
+    const digestOf = (tol: number): { digest: string; version: string } => {
       const out = computeGradingFromSnapshots({
         gradingId: 'c2', revision: 'r', source: src, side: 'right',
         criterion: FIXED(-0.5), maxSearchDistance: SEARCH, curveChordTolerance: tol,
         target: flatTin(0),
       });
       if (!out.ok) throw new Error('digest run failed');
-      return digestSeamMesh(out.result.gradingMesh.points, out.result.gradingMesh.triangles);
+      const cert = out.result.topologyCertificate!;
+      return { digest: cert.meshDigest, version: cert.version };
     };
-    expect(digestOf(0.1)).toBe(digestOf(0.1));
-    expect(digestOf(0.1)).toBe('b6bdc245');
+    expect(digestOf(0.1).digest).toBe(digestOf(0.1).digest);
+    expect(digestOf(0.1).version).toBe('gtop2');
+    expect(digestOf(0.1).digest).toBe('16e2ad5af57c1ace53cda7389c9a0d783d01ed1ee3e624135eba2c424a41f3fe');
   });
 
   it('excessive subdivision fails closed (never hangs the worker)', () => {

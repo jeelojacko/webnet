@@ -11,11 +11,14 @@
  *
  * Bounded behavior: a genuine tied split is MULTI-REGION — the daylight
  * boundary collapses to repeated vertices at the tie, so one FeatureLine
- * cannot represent it. Per the 20K.2 mission fallback, products are marked
- * unavailable for multi-region meshes (`exportable` false, command null,
- * truthful notice, zero mutation) rather than emitting a silent concat or
- * an enabled command that returns null. Single-region certified meshes keep
- * extracting and baking as one undo entry each.
+ * cannot represent it. Extract is marked unavailable for multi-region meshes
+ * (`extractable` false, command null, truthful notice, zero mutation) rather
+ * than emitting a silent concat or an enabled command that returns null.
+ * Phase 20K.3 Wave E1 makes Bake an independent explicit-TIN product: the
+ * engine materializes arbitrary validated face sets 1:1, so a multi-region
+ * mesh IS bakeable as one surface (one Undo, truthful provenance) even while
+ * Extract stays unavailable. Single-region certified meshes keep extracting
+ * and baking as one undo entry each.
  *
  * Fixture: the canonical rounded-square bottom arc (R=252.5, chord 100,
  * sagitta 5) at tolerance 0.5 (4 chords). The target is the single plane
@@ -211,7 +214,7 @@ describe('20K.2 tied split: Calculate CURRENT + bounded products', () => {
     const result = calculateTiedSplit(world);
     const cert = result.topologyCertificate;
     expect(cert).toMatchObject({
-      version: 'gtop1',
+      version: 'gtop2',
       scope: 'standalone',
       components: 2,
       boundaryCycles: 2,
@@ -249,7 +252,7 @@ describe('20K.2 tied split: Calculate CURRENT + bounded products', () => {
     expect(after.revision.includes(result.topologyCertificate!.meshDigest)).toBe(false);
   });
 
-  it('multi-region tied split blocks Extract and Bake with zero mutation', () => {
+  it('multi-region tied split blocks Extract while Bake emits one surface', () => {
     const world = arcWorld();
     const result = calculateTiedSplit(world);
     const before = JSON.stringify(world.project);
@@ -259,13 +262,17 @@ describe('20K.2 tied split: Calculate CURRENT + bounded products', () => {
       gradingId: world.gradingId, result,
       expectedRevision: world.revision, sessionCurrent: true,
     });
+    expect(history.undoStack.length).toBe(0);
+    expect(JSON.stringify(history.present.project)).toBe(before);
+    // Wave E1: Bake is an explicit-TIN product and IS available for the
+    // same certified multi-region mesh (availability != Extract's).
     history = runCadCommand(history, {
       key: 'GRADINGBAKE',
       gradingId: world.gradingId, result,
       expectedRevision: world.revision, sessionCurrent: true,
     });
-    expect(history.undoStack.length).toBe(0);
-    expect(JSON.stringify(history.present.project)).toBe(before);
+    expect(history.undoStack.length).toBe(1);
+    expect(history.present.project.surfaces).toHaveLength(world.project.surfaces!.length + 1);
   });
 
   it('a forged mesh swap blocks products with zero mutation', () => {
@@ -432,7 +439,7 @@ describe('20K.2 group products consume the certificate', () => {
     expect(history.present.project.surfaces).toHaveLength(2);
   });
 
-  it('a multi-region group mesh is bounded off (never enabled-and-null)', () => {
+  it('a multi-region group mesh blocks Extract while Bake emits one surface', () => {
     const world = groupWorld();
     const cert = buildGradingTopologyCertificate({
       scope: 'group',
@@ -459,13 +466,16 @@ describe('20K.2 group products consume the certificate', () => {
       groupId: world.groupId, result: tied,
       expectedRevision: world.revision, sessionCurrent: true,
     });
+    expect(history.undoStack.length).toBe(0);
+    expect(JSON.stringify(history.present.project)).toBe(before);
+    // Wave E1: the same multi-region group mesh bakes as one explicit-TIN surface.
     history = runCadCommand(history, {
       key: 'GROUPBAKE',
       groupId: world.groupId, result: tied,
       expectedRevision: world.revision, sessionCurrent: true,
     });
-    expect(history.undoStack.length).toBe(0);
-    expect(JSON.stringify(history.present.project)).toBe(before);
+    expect(history.undoStack.length).toBe(1);
+    expect(history.present.project.surfaces).toHaveLength(2);
   });
 
   it('a forged daylight boundary blocks group products with zero mutation', () => {

@@ -100,7 +100,6 @@ import { SurfaceContourService } from '../workers/surfaceContourService';
 import { SurfaceVolumeService } from '../workers/surfaceVolumeService';
 import { SurfaceGradingService } from '../workers/surfaceGradingService';
 import { createCadGradingCache } from '../engine/cad/grading/gradingCache';
-import { gradingTopologyCertificateProductError } from '../engine/cad/grading/gradingTopologyCertificate';
 import type { GradingTerminationKind } from '../engine/cad/grading/gradingTypes';
 import { buildCadGradingSnapshot } from '../cad-app/shell/cadGradingSnapshot';
 import { CadGradingManager } from '../cad-app/shell/CadGradingManager';
@@ -2108,13 +2107,12 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
       },
       extractGradingDaylight: (gradingId) => {
         const row = shellSnapshot?.grading?.gradings.find((entry) => entry.id === gradingId) ?? null;
-        if (!row?.currentResult || row.revision.length === 0) return 'Extract needs a CURRENT calculated result.';
-        const topology = gradingTopologyCertificateProductError(
-          row.currentResult.topologyCertificate,
-          'standalone',
-          row.currentResult.gradingMesh,
-          { sourceBoundaryPoints: row.currentResult.sourceBoundaryPoints, gradingBoundaryPoints: row.currentResult.daylightPoints },
-        );
+        if (!row?.extractable) {
+          return row?.extractNotice ?? 'Extract unavailable — needs a CURRENT, single-boundary result.';
+        }
+        if (!row.currentResult || row.revision.length === 0) {
+          return 'Extract needs a CURRENT calculated result.';
+        }
         const ok = cadWorkspace.runLayerCommand({
           key: 'GRADINGEXTRACTDAYLIGHT',
           gradingId,
@@ -2124,19 +2122,16 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
         });
         return ok
           ? `Extracted “${row.name} - ${row.boundaryLabel}”.`
-          : topology
-            ? `Extract rejected — ${topology}.`
-            : 'Extract rejected — needs a CURRENT result.';
+          : row.extractNotice ?? 'Extract rejected — needs a CURRENT result.';
       },
       bakeGradingSurface: (gradingId) => {
         const row = shellSnapshot?.grading?.gradings.find((entry) => entry.id === gradingId) ?? null;
-        if (!row?.currentResult || row.revision.length === 0) return 'Bake needs a CURRENT calculated result.';
-        const topology = gradingTopologyCertificateProductError(
-          row.currentResult.topologyCertificate,
-          'standalone',
-          row.currentResult.gradingMesh,
-          { sourceBoundaryPoints: row.currentResult.sourceBoundaryPoints, gradingBoundaryPoints: row.currentResult.daylightPoints },
-        );
+        if (!row?.bakeable) {
+          return row?.bakeNotice ?? 'Bake unavailable — needs a CURRENT, bakeable result.';
+        }
+        if (!row.currentResult || row.revision.length === 0) {
+          return 'Bake needs a CURRENT calculated result.';
+        }
         const ok = cadWorkspace.runLayerCommand({
           key: 'GRADINGBAKE',
           gradingId,
@@ -2146,9 +2141,7 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
         });
         return ok
           ? `Baked “${row.name}” into an explicit-TIN surface.`
-          : topology
-            ? `Bake rejected — ${topology}.`
-            : 'Bake rejected — needs a CURRENT nonzero result.';
+          : row.bakeNotice ?? 'Bake rejected — needs a CURRENT nonzero result.';
       },
       // Phase 20C — group definition CRUD + Calculate/Extract/Bake. Calculate
       // dispatches through the session grading service (explicit only);
@@ -2168,13 +2161,12 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
       },
       extractGroupDaylight: (groupId) => {
         const row = shellSnapshot?.gradingGroups?.groups.find((entry) => entry.id === groupId) ?? null;
-        if (!row?.currentResult || row.revision.length === 0) return 'Extract needs a CURRENT calculated result.';
-        const topology = gradingTopologyCertificateProductError(
-          row.currentResult.topologyCertificate,
-          'group',
-          row.currentResult.gradingMesh,
-          { sourceBoundaryPoints: row.currentResult.sourceBoundaryPoints, gradingBoundaryPoints: row.currentResult.daylightPoints },
-        );
+        if (!row?.extractable) {
+          return row?.extractNotice ?? 'Extract unavailable — needs a CURRENT, single-boundary result.';
+        }
+        if (!row.currentResult || row.revision.length === 0) {
+          return 'Extract needs a CURRENT calculated result.';
+        }
         const ok = cadWorkspace.runLayerCommand({
           key: 'GROUPEXTRACTDAYLIGHT',
           groupId,
@@ -2184,19 +2176,16 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
         });
         return ok
           ? `Extracted “${row.name} - ${row.boundaryLabel}”.`
-          : topology
-            ? `Extract rejected — ${topology}.`
-            : 'Extract rejected — needs a CURRENT result.';
+          : row.extractNotice ?? 'Extract rejected — needs a CURRENT result.';
       },
       bakeGroupSurface: (groupId) => {
         const row = shellSnapshot?.gradingGroups?.groups.find((entry) => entry.id === groupId) ?? null;
-        if (!row?.currentResult || row.revision.length === 0) return 'Bake needs a CURRENT calculated result.';
-        const topology = gradingTopologyCertificateProductError(
-          row.currentResult.topologyCertificate,
-          'group',
-          row.currentResult.gradingMesh,
-          { sourceBoundaryPoints: row.currentResult.sourceBoundaryPoints, gradingBoundaryPoints: row.currentResult.daylightPoints },
-        );
+        if (!row?.bakeable) {
+          return row?.bakeNotice ?? 'Bake unavailable — needs a CURRENT, bakeable result.';
+        }
+        if (!row.currentResult || row.revision.length === 0) {
+          return 'Bake needs a CURRENT calculated result.';
+        }
         const ok = cadWorkspace.runLayerCommand({
           key: 'GROUPBAKE',
           groupId,
@@ -2206,9 +2195,7 @@ const SurveyCadWorkspace: React.FC<SurveyCadWorkspaceProps> = ({
         });
         return ok
           ? `Baked “${row.name}” into an explicit-TIN surface.`
-          : topology
-            ? `Bake rejected — ${topology}.`
-            : 'Bake rejected — needs a CURRENT nonzero result.';
+          : row.bakeNotice ?? 'Bake rejected — needs a CURRENT nonzero result.';
       },
       // Phase 18Y — deterministic pre-commit composition of two CURRENT
       // session meshes; the dialog commits the returned payload through

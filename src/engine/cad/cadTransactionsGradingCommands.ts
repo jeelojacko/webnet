@@ -12,7 +12,7 @@ import {
 import { gradingBoundaryLabel, gradingCriterionRequiresSurface, gradingTerminationKind } from './grading/gradingTypes';
 import { resolveGradingSourceCourse } from './grading/gradingCourseFrame';
 import { resolveGradingInputs } from './grading/gradingResolve';
-import { gradingTopologyCertificateProductError } from './grading/gradingTopologyCertificate';
+import { gradingTopologyCertificateError, gradingTopologyCertificateProductError } from './grading/gradingTopologyCertificate';
 import { appendCadProjectEntities } from './cadProjectState';
 import { commitLayerProject } from './cadTransactionsLayerCommands';
 import type {
@@ -316,8 +316,11 @@ const gradingBakeCommand: CadCommandDefinition<GradingBakeCommand> = {
     }
     // Bake blocked on ALREADY_TIED empty mesh (zero-area ties bake nothing).
     if (result.gradingMesh.triangles.length === 0) return null;
-    // 20K.2: refuse an uncertified / forged / mismatched CURRENT mesh.
-    if (gradingTopologyCertificateProductError(result.topologyCertificate, 'standalone', result.gradingMesh, {
+    // 20K.2 / 20K.3: refuse an uncertified / forged / mismatched CURRENT mesh.
+    // Wave E1: Bake is an explicit-TIN product and the engine materializes
+    // arbitrary validated face sets, so a multi-region (tied split) mesh IS
+    // bakeable as one surface; only a certificate/topology failure blocks.
+    if (gradingTopologyCertificateError(result.topologyCertificate, 'standalone', result.gradingMesh, {
       sourceBoundaryPoints: result.sourceBoundaryPoints,
       gradingBoundaryPoints: result.daylightPoints,
     }) != null) return null;

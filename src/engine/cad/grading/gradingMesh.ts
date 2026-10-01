@@ -67,14 +67,17 @@ class StripPointIndex {
 
   private readonly indexByKey = new Map<string, number>();
 
-  add(p: MeshPoint): number {
-    const key = `${p.x}|${p.y}|${p.z}`;
+  addKeyed(key: string, p: MeshPoint): number {
     const existing = this.indexByKey.get(key);
     if (existing !== undefined) return existing;
     const index = this.points.length / 3;
     this.points.push(p.x, p.y, p.z);
     this.indexByKey.set(key, index);
     return index;
+  }
+
+  add(p: MeshPoint): number {
+    return this.addKeyed(`${p.x}|${p.y}|${p.z}`, p);
   }
 }
 
@@ -91,13 +94,28 @@ export const buildGradingStripMesh = (
   const index = new StripPointIndex();
   const triangles: number[] = [];
   let skippedZeroWidth = 0;
+  const tiedAt = (station: number): boolean =>
+    station >= 0 && station < count && isZeroWidthPair(source[station]!, daylight[station]!);
+  // A single-point tie between two positive-width cells (CUT→TIED→FILL) is a
+  // vertex pinch for one shared index: the two strips meet only at the tied
+  // station. Give the two adjacent cells distinct copies so each side traces
+  // its own simple boundary cycle; the tied plan point is then the ordinary
+  // measure-zero cross-cycle touch the topology validator adjudicates. Tied
+  // RUNS (>1 station) are unchanged: their zero-width cells already separate
+  // the regions, so the shared run stations carry no pinch.
+  const isSingleTiedHinge = (station: number): boolean =>
+    station > 0 && station + 1 < count && tiedAt(station) && !tiedAt(station - 1) && !tiedAt(station + 1);
+  const addCorner = (p: MeshPoint, station: number, side: 'before' | 'after'): number =>
+    isSingleTiedHinge(station)
+      ? index.addKeyed(`tied:${station}:${side}:${p.x}|${p.y}|${p.z}`, p)
+      : index.add(p);
   for (let i = 0; i + 1 < count; i += 1) {
     const corners: MeshPoint[] = [source[i], source[i + 1], daylight[i + 1], daylight[i]];
     const before = triangles.length;
-    const a = index.add(corners[0]);
-    const b = index.add(corners[1]);
-    const c = index.add(corners[2]);
-    const d = index.add(corners[3]);
+    const a = addCorner(corners[0], i, 'after');
+    const b = addCorner(corners[1], i + 1, 'before');
+    const c = addCorner(corners[2], i + 1, 'before');
+    const d = addCorner(corners[3], i, 'after');
     pushTriangle(triangles, index.points, a, b, c);
     pushTriangle(triangles, index.points, a, c, d);
     if (triangles.length === before) skippedZeroWidth += 1;

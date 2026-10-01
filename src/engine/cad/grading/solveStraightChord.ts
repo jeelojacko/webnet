@@ -23,9 +23,8 @@ import {
 } from './gradingSpanSolve';
 import { zeroDelta } from '../surfaces/volume/zero';
 import {
-  AGREEMENT_FLOOR,
   AGREEMENT_OPS,
-  elevationAgreementTol,
+  anchoredElevationAgreementTol,
   maxTargetGradient,
   planeLeverage,
 } from './gradingGroupSectors';
@@ -362,21 +361,19 @@ const liftDaylightToWorld = (
     const spanG = spans[node.span]!.g;
     const gx = gs * tx + spanG * normal.nx;
     const gy = gs * ty + spanG * normal.ny;
-    const worldScale = Math.max(1, Math.abs(world.x), Math.abs(world.y));
-    // Anchored elevation agreement (shared sector authority) over the
-    // grading plane through the source start, plus the world-coordinate
-    // representation share on both fields, floored at 1 nm (measured
-    // chain noise reaches ~1e-12; genuine off-target nodes deviate by
-    // orders more and still fail closed).
-    const agree =
-      elevationAgreementTol(zt, zg, planeLeverage(
-        { gx, gy, ax: source.startX, ay: source.startY },
-        world.x,
-        world.y,
-      )) +
-      (Math.abs(gx) + Math.abs(gy) + targetGradient) *
-        AGREEMENT_OPS * Number.EPSILON * worldScale +
-      AGREEMENT_FLOOR;
+    // Anchored elevation agreement through the single shared 20K.3 authority
+    // over the grading plane through the source start, plus the
+    // world-coordinate representation share on both fields, floored at 1 nm
+    // (measured chain noise reaches ~1e-12; genuine off-target nodes deviate
+    // by orders more and still fail closed).
+    const agree = anchoredElevationAgreementTol(
+      zt,
+      zg,
+      planeLeverage({ gx, gy, ax: source.startX, ay: source.startY }, world.x, world.y),
+      Math.abs(gx) + Math.abs(gy) + targetGradient,
+      world.x,
+      world.y,
+    );
     if (Math.abs(zt - zg) > agree) {
       return { ok: false, code: 'NO_SOLUTION', detail: 'GRADING_DAYLIGHT_DISAGREE' };
     }
