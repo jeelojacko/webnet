@@ -1,0 +1,630 @@
+{
+  "phase": "20L",
+  "track": "joins-locality",
+  "policyLabels": [
+    "POLICY_REQUIRED: ambiguous offset join",
+    "POLICY_REQUIRED: offset-join extent constant (miterExtent is not a join gate)"
+  ],
+  "rows": [
+    {
+      "id": "LL_LEFT_TURN_RIGHT",
+      "classification": "OFFSET_JOIN_NONLOCAL",
+      "turn": "GAP",
+      "intersectionKind": "line-line",
+      "intersections": 1,
+      "localCandidates": 1,
+      "offsetRadii": {
+        "incoming": null,
+        "outgoing": null
+      },
+      "extent": null,
+      "conditioning": {
+        "kind": "line-line-det",
+        "value": 1,
+        "illConditioned": false
+      },
+      "policyRequired": false,
+      "detail": "join-outside-member-span"
+    },
+    {
+      "id": "LL_LEFT_TURN_LEFT",
+      "classification": "OFFSET_JOIN_UNIQUE",
+      "turn": "OVERLAP",
+      "intersectionKind": "line-line",
+      "intersections": 1,
+      "localCandidates": 1,
+      "offsetRadii": {
+        "incoming": null,
+        "outgoing": null
+      },
+      "extent": 7.0710678118654755,
+      "conditioning": {
+        "kind": "line-line-det",
+        "value": 1,
+        "illConditioned": false
+      },
+      "policyRequired": false,
+      "detail": "single-local"
+    },
+    {
+      "id": "LL_RIGHT_TURN_LEFT",
+      "classification": "OFFSET_JOIN_NONLOCAL",
+      "turn": "GAP",
+      "intersectionKind": "line-line",
+      "intersections": 1,
+      "localCandidates": 1,
+      "offsetRadii": {
+        "incoming": null,
+        "outgoing": null
+      },
+      "extent": null,
+      "conditioning": {
+        "kind": "line-line-det",
+        "value": -1,
+        "illConditioned": false
+      },
+      "policyRequired": false,
+      "detail": "join-outside-member-span"
+    },
+    {
+      "id": "LL_RIGHT_TURN_RIGHT",
+      "classification": "OFFSET_JOIN_UNIQUE",
+      "turn": "OVERLAP",
+      "intersectionKind": "line-line",
+      "intersections": 1,
+      "localCandidates": 1,
+      "offsetRadii": {
+        "incoming": null,
+        "outgoing": null
+      },
+      "extent": 7.0710678118654755,
+      "conditioning": {
+        "kind": "line-line-det",
+        "value": -1,
+        "illConditioned": false
+      },
+      "policyRequired": false,
+      "detail": "single-local"
+    },
+    {
+      "id": "LL_SHALLOW_1DEG_RIGHT",
+      "classification": "OFFSET_JOIN_NONLOCAL",
+      "turn": "GAP",
+      "intersectionKind": "line-line",
+      "intersections": 1,
+      "localCandidates": 1,
+      "offsetRadii": {
+        "incoming": null,
+        "outgoing": null
+      },
+      "extent": null,
+      "conditioning": {
+        "kind": "line-line-det",
+        "value": 0.01745240643728351,
+        "illConditioned": false
+      },
+      "policyRequired": false,
+      "detail": "join-outside-member-span"
+    },
+    {
+      "id": "LL_SHALLOW_1DEG_LEFT",
+      "classification": "OFFSET_JOIN_UNIQUE",
+      "turn": "OVERLAP",
+      "intersectionKind": "line-line",
+      "intersections": 1,
+      "localCandidates": 1,
+      "offsetRadii": {
+        "incoming": null,
+        "outgoing": null
+      },
+      "extent": 5.000190391928685,
+      "conditioning": {
+        "kind": "line-line-det",
+        "value": 0.01745240643728351,
+        "illConditioned": false
+      },
+      "policyRequired": false,
+      "detail": "single-local"
+    },
+    {
+      "id": "LL_SHALLOW_0.001DEG_RIGHT",
+      "classification": "OFFSET_JOIN_NONLOCAL",
+      "turn": "GAP",
+      "intersectionKind": "line-line",
+      "intersections": 1,
+      "localCandidates": 1,
+      "offsetRadii": {
+        "incoming": null,
+        "outgoing": null
+      },
+      "extent": null,
+      "conditioning": {
+        "kind": "line-line-det",
+        "value": 0.000017453292519057205,
+        "illConditioned": false
+      },
+      "policyRequired": false,
+      "detail": "join-outside-member-span"
+    },
+    {
+      "id": "LL_PARALLEL_TANGENT",
+      "classification": "OFFSET_JOIN_NONE",
+      "turn": "TANGENT",
+      "intersectionKind": "line-line",
+      "intersections": 0,
+      "localCandidates": 0,
+      "offsetRadii": {
+        "incoming": null,
+        "outgoing": null
+      },
+      "extent": null,
+      "conditioning": {
+        "kind": "line-line-det",
+        "value": 0,
+        "illConditioned": true
+      },
+      "policyRequired": false,
+      "detail": "offset-curves-do-not-intersect"
+    },
+    {
+      "id": "LL_HAIRPIN_NONLOCAL",
+      "classification": "OFFSET_JOIN_NONLOCAL",
+      "turn": "GAP",
+      "intersectionKind": "line-line",
+      "intersections": 1,
+      "localCandidates": 0,
+      "offsetRadii": {
+        "incoming": null,
+        "outgoing": null
+      },
+      "extent": 572.9650674006516,
+      "conditioning": {
+        "kind": "line-line-det",
+        "value": 0.01745240643728351,
+        "illConditioned": false
+      },
+      "policyRequired": false,
+      "detail": "all-intersections-beyond-search"
+    },
+    {
+      "id": "LL_SIDE_CONFLICT_WRONG",
+      "classification": "OFFSET_JOIN_WRONG_SIDE",
+      "turn": "GAP",
+      "intersectionKind": "line-line",
+      "intersections": 1,
+      "localCandidates": 1,
+      "offsetRadii": {
+        "incoming": null,
+        "outgoing": null
+      },
+      "extent": null,
+      "conditioning": {
+        "kind": "line-line-det",
+        "value": 1,
+        "illConditioned": false
+      },
+      "policyRequired": false,
+      "detail": "local-join-opposite-branch"
+    },
+    {
+      "id": "LL_SIDE_CONFLICT_FOLD",
+      "classification": "OFFSET_JOIN_SELF_INTERSECTION",
+      "turn": "GAP",
+      "intersectionKind": "line-line",
+      "intersections": 1,
+      "localCandidates": 1,
+      "offsetRadii": {
+        "incoming": null,
+        "outgoing": null
+      },
+      "extent": null,
+      "conditioning": {
+        "kind": "line-line-det",
+        "value": 1,
+        "illConditioned": false
+      },
+      "policyRequired": false,
+      "detail": "local-join-folds-same-side"
+    },
+    {
+      "id": "LA_CCW_GAP",
+      "classification": "OFFSET_JOIN_NONLOCAL",
+      "turn": "GAP",
+      "intersectionKind": "line-circle",
+      "intersections": 2,
+      "localCandidates": 1,
+      "offsetRadii": {
+        "incoming": null,
+        "outgoing": 55
+      },
+      "extent": null,
+      "conditioning": {
+        "kind": "line-circle-disc",
+        "value": 3000,
+        "illConditioned": false
+      },
+      "policyRequired": true,
+      "detail": "join-outside-member-span"
+    },
+    {
+      "id": "LA_CCW_OVERLAP",
+      "classification": "OFFSET_JOIN_AMBIGUOUS",
+      "turn": "OVERLAP",
+      "intersectionKind": "line-circle",
+      "intersections": 2,
+      "localCandidates": 2,
+      "offsetRadii": {
+        "incoming": null,
+        "outgoing": 45
+      },
+      "extent": 7.2707664658150435,
+      "conditioning": {
+        "kind": "line-circle-disc",
+        "value": 2000,
+        "illConditioned": false
+      },
+      "policyRequired": true,
+      "detail": "2-local-joins"
+    },
+    {
+      "id": "LA_CW_GAP",
+      "classification": "OFFSET_JOIN_AMBIGUOUS",
+      "turn": "GAP",
+      "intersectionKind": "line-circle",
+      "intersections": 2,
+      "localCandidates": 2,
+      "offsetRadii": {
+        "incoming": null,
+        "outgoing": 45
+      },
+      "extent": 7.2707664658150435,
+      "conditioning": {
+        "kind": "line-circle-disc",
+        "value": 2000,
+        "illConditioned": false
+      },
+      "policyRequired": true,
+      "detail": "2-local-joins"
+    },
+    {
+      "id": "LA_CW_OVERLAP",
+      "classification": "OFFSET_JOIN_UNIQUE",
+      "turn": "OVERLAP",
+      "intersectionKind": "line-circle",
+      "intersections": 2,
+      "localCandidates": 1,
+      "offsetRadii": {
+        "incoming": null,
+        "outgoing": 55
+      },
+      "extent": 6.911904581831182,
+      "conditioning": {
+        "kind": "line-circle-disc",
+        "value": 3000,
+        "illConditioned": false
+      },
+      "policyRequired": true,
+      "detail": "unique-local-of-many"
+    },
+    {
+      "id": "LA_CCW_LEFT_COLLAPSE",
+      "classification": "OFFSET_JOIN_COLLAPSE",
+      "turn": "OVERLAP",
+      "intersectionKind": "degenerate",
+      "intersections": 0,
+      "localCandidates": 0,
+      "offsetRadii": {
+        "incoming": null,
+        "outgoing": 0
+      },
+      "extent": null,
+      "conditioning": {
+        "kind": "none",
+        "value": 0,
+        "illConditioned": true
+      },
+      "policyRequired": false,
+      "detail": "offset-radius-collapse"
+    },
+    {
+      "id": "LA_CCW_LEFT_INVERSION",
+      "classification": "OFFSET_JOIN_INVERSION",
+      "turn": "OVERLAP",
+      "intersectionKind": "degenerate",
+      "intersections": 0,
+      "localCandidates": 0,
+      "offsetRadii": {
+        "incoming": null,
+        "outgoing": -3
+      },
+      "extent": null,
+      "conditioning": {
+        "kind": "none",
+        "value": 0,
+        "illConditioned": true
+      },
+      "policyRequired": false,
+      "detail": "offset-radius-inversion"
+    },
+    {
+      "id": "LA_TANGENT_CONTACT",
+      "classification": "OFFSET_JOIN_AMBIGUOUS",
+      "turn": "OVERLAP",
+      "intersectionKind": "line-circle",
+      "intersections": 0,
+      "localCandidates": 0,
+      "offsetRadii": {
+        "incoming": null,
+        "outgoing": 5
+      },
+      "extent": null,
+      "conditioning": {
+        "kind": "line-circle-disc",
+        "value": 0,
+        "illConditioned": true
+      },
+      "policyRequired": true,
+      "detail": "near-contact-within-noise-unresolved"
+    },
+    {
+      "id": "LA_CLEAR_MISS",
+      "classification": "OFFSET_JOIN_NONE",
+      "turn": "OVERLAP",
+      "intersectionKind": "line-circle",
+      "intersections": 0,
+      "localCandidates": 0,
+      "offsetRadii": {
+        "incoming": null,
+        "outgoing": 4
+      },
+      "extent": null,
+      "conditioning": {
+        "kind": "line-circle-disc",
+        "value": -20,
+        "illConditioned": false
+      },
+      "policyRequired": false,
+      "detail": "offset-curves-do-not-intersect"
+    },
+    {
+      "id": "LL_SPAN_MISMATCH",
+      "classification": "OFFSET_JOIN_NONLOCAL",
+      "turn": "GAP",
+      "intersectionKind": "line-line",
+      "intersections": 1,
+      "localCandidates": 1,
+      "offsetRadii": {
+        "incoming": null,
+        "outgoing": null
+      },
+      "extent": null,
+      "conditioning": {
+        "kind": "line-line-det",
+        "value": 1,
+        "illConditioned": false
+      },
+      "policyRequired": false,
+      "detail": "join-outside-member-span"
+    },
+    {
+      "id": "AL_CW_GAP",
+      "classification": "OFFSET_JOIN_AMBIGUOUS",
+      "turn": "GAP",
+      "intersectionKind": "line-circle",
+      "intersections": 2,
+      "localCandidates": 2,
+      "offsetRadii": {
+        "incoming": 45,
+        "outgoing": null
+      },
+      "extent": 7.2707664658150435,
+      "conditioning": {
+        "kind": "line-circle-disc",
+        "value": 2000,
+        "illConditioned": false
+      },
+      "policyRequired": true,
+      "detail": "2-local-joins"
+    },
+    {
+      "id": "AL_CW_OVERLAP",
+      "classification": "OFFSET_JOIN_UNIQUE",
+      "turn": "OVERLAP",
+      "intersectionKind": "line-circle",
+      "intersections": 2,
+      "localCandidates": 1,
+      "offsetRadii": {
+        "incoming": 55,
+        "outgoing": null
+      },
+      "extent": 6.911904581831182,
+      "conditioning": {
+        "kind": "line-circle-disc",
+        "value": 3000,
+        "illConditioned": false
+      },
+      "policyRequired": true,
+      "detail": "unique-local-of-many"
+    },
+    {
+      "id": "AL_CCW_GAP",
+      "classification": "OFFSET_JOIN_NONLOCAL",
+      "turn": "GAP",
+      "intersectionKind": "line-circle",
+      "intersections": 2,
+      "localCandidates": 1,
+      "offsetRadii": {
+        "incoming": 55,
+        "outgoing": null
+      },
+      "extent": null,
+      "conditioning": {
+        "kind": "line-circle-disc",
+        "value": 3000,
+        "illConditioned": false
+      },
+      "policyRequired": true,
+      "detail": "join-outside-member-span"
+    },
+    {
+      "id": "AL_CCW_OVERLAP",
+      "classification": "OFFSET_JOIN_AMBIGUOUS",
+      "turn": "OVERLAP",
+      "intersectionKind": "line-circle",
+      "intersections": 2,
+      "localCandidates": 2,
+      "offsetRadii": {
+        "incoming": 45,
+        "outgoing": null
+      },
+      "extent": 7.2707664658150435,
+      "conditioning": {
+        "kind": "line-circle-disc",
+        "value": 2000,
+        "illConditioned": false
+      },
+      "policyRequired": true,
+      "detail": "2-local-joins"
+    },
+    {
+      "id": "AA_CCW_CCW_GAP",
+      "classification": "OFFSET_JOIN_AMBIGUOUS",
+      "turn": "GAP",
+      "intersectionKind": "circle-circle",
+      "intersections": 2,
+      "localCandidates": 2,
+      "offsetRadii": {
+        "incoming": 55,
+        "outgoing": 55
+      },
+      "extent": 6.775409806554414,
+      "conditioning": {
+        "kind": "circle-circle-h2",
+        "value": 1775,
+        "illConditioned": false
+      },
+      "policyRequired": true,
+      "detail": "2-local-joins"
+    },
+    {
+      "id": "AA_CCW_CCW_OVERLAP",
+      "classification": "OFFSET_JOIN_AMBIGUOUS",
+      "turn": "OVERLAP",
+      "intersectionKind": "circle-circle",
+      "intersections": 2,
+      "localCandidates": 2,
+      "offsetRadii": {
+        "incoming": 45,
+        "outgoing": 45
+      },
+      "extent": 7.516517245177273,
+      "conditioning": {
+        "kind": "circle-circle-h2",
+        "value": 775,
+        "illConditioned": false
+      },
+      "policyRequired": true,
+      "detail": "2-local-joins"
+    },
+    {
+      "id": "AA_CW_CW_GAP",
+      "classification": "OFFSET_JOIN_AMBIGUOUS",
+      "turn": "GAP",
+      "intersectionKind": "circle-circle",
+      "intersections": 2,
+      "localCandidates": 2,
+      "offsetRadii": {
+        "incoming": 45,
+        "outgoing": 45
+      },
+      "extent": 7.516517245177273,
+      "conditioning": {
+        "kind": "circle-circle-h2",
+        "value": 775,
+        "illConditioned": false
+      },
+      "policyRequired": true,
+      "detail": "2-local-joins"
+    },
+    {
+      "id": "AA_CCW_CW_GAP",
+      "classification": "OFFSET_JOIN_AMBIGUOUS",
+      "turn": "GAP",
+      "intersectionKind": "circle-circle",
+      "intersections": 2,
+      "localCandidates": 2,
+      "offsetRadii": {
+        "incoming": 55,
+        "outgoing": 45
+      },
+      "extent": 7.079990525917644,
+      "conditioning": {
+        "kind": "circle-circle-h2",
+        "value": 1224.9999999999998,
+        "illConditioned": false
+      },
+      "policyRequired": true,
+      "detail": "2-local-joins"
+    },
+    {
+      "id": "AA_UNEQUAL_GAP",
+      "classification": "OFFSET_JOIN_AMBIGUOUS",
+      "turn": "GAP",
+      "intersectionKind": "circle-circle",
+      "intersections": 2,
+      "localCandidates": 2,
+      "offsetRadii": {
+        "incoming": 35,
+        "outgoing": 85
+      },
+      "extent": 6.741420335758217,
+      "conditioning": {
+        "kind": "circle-circle-h2",
+        "value": 1167.123287671233,
+        "illConditioned": false
+      },
+      "policyRequired": true,
+      "detail": "2-local-joins"
+    },
+    {
+      "id": "AA_UNEQUAL_OVERLAP",
+      "classification": "OFFSET_JOIN_AMBIGUOUS",
+      "turn": "OVERLAP",
+      "intersectionKind": "circle-circle",
+      "intersections": 2,
+      "localCandidates": 2,
+      "offsetRadii": {
+        "incoming": 25,
+        "outgoing": 75
+      },
+      "extent": 7.607674567748479,
+      "conditioning": {
+        "kind": "circle-circle-h2",
+        "value": 443.8356164383563,
+        "illConditioned": false
+      },
+      "policyRequired": true,
+      "detail": "2-local-joins"
+    },
+    {
+      "id": "AA_COINCIDENT_SAME_CENTER",
+      "classification": "OFFSET_JOIN_AMBIGUOUS",
+      "turn": "TANGENT",
+      "intersectionKind": "circle-circle",
+      "intersections": 0,
+      "localCandidates": 0,
+      "offsetRadii": {
+        "incoming": 55,
+        "outgoing": 55
+      },
+      "extent": null,
+      "conditioning": {
+        "kind": "circle-circle-h2",
+        "value": 0,
+        "illConditioned": true
+      },
+      "policyRequired": true,
+      "detail": "coincident-offset-circles-infinite-intersections"
+    }
+  ]
+}
