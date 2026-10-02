@@ -1,9 +1,12 @@
 # Phase 20K.3 — post-merge audit and closeout record
 
-Status: **Phase 20K.2 MERGED (PR #143); Phase 20K.3 IMPLEMENTATION COMPLETE
-(open as PR #144 for review, head `0f2f5139`, baseline `884b36e8` = PR #143
-merge; not merged).** This audit records the merged-state
-facts for Phase 20K.2, states the Phase 20K.3 scope and honest bounds, and
+Status: **Phase 20K.2 MERGED (PR #143); Phase 20K.3 MERGED and CLOSED via PR #144
+(base `884b36e8996ac3319f5691e519f0dd94746848b0`, head `95c3195a2d99803f40d2d37f98bbb8071b0f167c`,
+merge `84fbe019c372d3d381e8f76784b832596de2b173`, merged 2026-10-01T20:48:02Z).**
+Historical note (preserved): this audit was drafted pre-merge when Phase 20K.3 was
+IMPLEMENTATION COMPLETE, open as PR #144 for review (draft head `0f2f5139`, baseline `884b36e8` = PR #143
+merge; not merged at capture time). This audit records the merged-state
+facts for Phase 20K.2 and Phase 20K.3, states the Phase 20K.3 scope and honest bounds, and
 indexes the 20K.3 evidence. Phase 20K.2 history is preserved in
 `docs/evidence/phase20k2-post-merge-audit.md` with a dated addendum.
 
@@ -137,5 +140,22 @@ The 20K.2 topology/product contract is MERGED and CLOSED. Phase 20K.3 closes
 the four correctness gaps that contract left open (pre-mesh declaration, exact
 digest, worker agreement authority, independent product capabilities) and
 removes the all-Surface Design Patch restriction by exact canonicalization.
-All hard bounds are explicit and fail closed. Phase 20K.3 is IMPLEMENTATION
-COMPLETE, open as PR #144 for review; not merged.
+All hard bounds are explicit and fail closed. Phase 20K.3 was IMPLEMENTATION
+COMPLETE pre-merge (open as PR #144 for review at capture time); it is now MERGED and CLOSED
+via PR #144 (see §6). No new grading phase is started here.
+
+## 6. Final merge closeout (PR #144 merged state)
+
+| Fact | Value |
+|---|---|
+| PR | #144 — Phase 20K.3: close surface-curve and certificate authority contracts (`https://github.com/jeelojacko/webnet/pull/144`) |
+| Base | `884b36e8996ac3319f5691e519f0dd94746848b0` (PR #143 merge) |
+| Head | `95c3195a2d99803f40d2d37f98bbb8071b0f167c` |
+| Merge | `84fbe019c372d3d381e8f76784b832596de2b173` |
+| Merged at | 2026-10-01T20:48:02Z |
+| PR commits / changed files | 3 / 80 |
+
+Historical pre-merge observations above (draft head `0f2f5139`, open/not-merged wording)
+describe branch state at capture time and are preserved as history; the table above
+is the final merged-state authority. No implementation behavior is changed by this
+closeout record.
