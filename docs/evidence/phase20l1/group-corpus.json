@@ -1,7 +1,9 @@
 {
   "generator": "scripts/phase20l1GroupBuild.ts",
   "baseline": "PR #147 research/phase20l1-offset-radius-policy-resolution @ fca43c5d",
-  "granularityGate": "MEMBER_FALLBACK_CORNER_REASONS: a curved member incident to any rejected corner routes chord fallback (production member-standalone path); exact ties only at ADMIT_P0 corners; an exact run needs contiguous P0 corners sharing one proven d; whole-group exact iff every corner P0 + single d. Corner assembly stays the per-joint gate (admit+reason persisted per corner, revision-keyed); member resolve stays the per-member gate.",
+  "routingPolicy": "R0_WHOLE_CHAIN_ALL_OR_FALLBACK",
+  "routingAlternatives": "R1_FIXED_POINT_PARTIAL_EXACT rejected: needs an invented exact↔chord splice no authority provides (no fixed-point run, no mixed strip, metadata alone insufficient). R2_CONTIGUOUS_RUNS rejected: run-boundary transitions unproven with existing authorities. R0 adopted as narrowest-honest: whole connected chain/group all-or-fallback; PARTIAL_GO stays valid narrower.",
+  "granularityGate": "R0_WHOLE_CHAIN_ALL_OR_FALLBACK: local P0 candidacy per corner (existing predicate: UNIQUE + in-span + branch-consistent + E1 extent + candidacy audit) AND a production XYZ tie per corner (xyzRunTieOk: same required plan d + production analytic acceptance + tie in the same search neighborhood as the built join (structural locality, NOT numerical agreement) + single-valued daylight-Z laws AT THE JOIN within production zeroDelta (the tie-at-join law) + FLAT-ONLY predicate in gate code: each member startZ===endZ exactly, sloped rejects REJECT_SLOPED_SOURCE from 1e-13 to gross; the analytic tie is structural compatibility + provenance, never the certified point) + final route decision at the whole-chain/group unit. EXACT_OFFSET iff every required corner is LOCAL_P0_CANDIDATE and XYZ-tied (Z_TIE_OK path) sharing one proven d (closed groups additionally line-only: LINE_ONLY_EXACT_CONTROL; closed+arc routes CHORD_FALLBACK as CURVED_CLOSED_SUPPORT). A plan-admitted corner failing the tie is INACTIVE with the tie reason (REJECT_XYZ_TIE_MISMATCH same-d/diff-Z flat, REJECT_SLOPED_SOURCE any slope, or the analytic-corner reject) and forces whole-chain CHORD_FALLBACK (CHAIN_FALLBACK_XYZ_TIE_MISMATCH); every member then takes the production member-standalone chord path (label only), no exact strip. A failed strip construction revokes the route (defense in depth): strip ok:false forces whole-chain CHORD_FALLBACK with activeExactCorners=[] and ROUTE_REVOKED_STRIP_FAIL cause — EXACT_OFFSET is only reported for actually-built + audited strips. Candidates on a fallen-back chain stay INACTIVE_DUE_TO_GROUP_FALLBACK — local candidacy activates nothing alone. Corner assembly stays the per-joint gate (admit+reason+tie persisted per corner, revision-keyed); member resolve stays the per-member gate.",
   "extentRule": "consumed as-is from the boundary worker extent gate (E1): d<=maxSearchDistance exact + extentJVWithin(|J-V|, ms) shared helper; never re-derived here",
   "noTransitionGeometry": true,
   "chains": [
@@ -15,18 +17,36 @@
         {
           "index": 0,
           "admit": true,
-          "reason": "ADMIT_P0",
+          "reason": "LOCAL_P0_CANDIDATE",
           "d": 5,
           "jx": -4.772255751,
           "jy": 5,
-          "distV": 6.911904582
+          "distV": 6.911904582,
+          "localP0": true,
+          "activeExact": true,
+          "xyzTie": "Z_TIE_OK",
+          "tieOk": true,
+          "zIn": 5,
+          "zOut": 5,
+          "tieZ": 5,
+          "joinZ": 5
         }
       ],
-      "exactRun": [
-        0,
-        1
+      "localP0Count": 1,
+      "activeExactCorners": [
+        0
       ],
-      "fallbackMembers": [],
+      "memberRepresentation": [
+        "EXACT_OFFSET",
+        "EXACT_OFFSET"
+      ],
+      "routeUnit": "OPEN_CHAIN",
+      "route": "EXACT_OFFSET",
+      "stripPresent": true,
+      "fallbackRef": "PRODUCTION_MEMBER_STANDALONE_CHORD_PATH_LABEL_ONLY",
+      "topology": "components=1 edgeComponents=1 boundaryEdges=98",
+      "continuity": "daylightContinuity=true noInteriorOverlap=true",
+      "routeReason": "CHAIN_EXACT_WHOLE_CHAIN",
       "strip": {
         "ok": true,
         "detail": "STRIP_OK",
@@ -39,8 +59,7 @@
         "boundaryEdges": 98,
         "daylightContinuity": true,
         "noInteriorOverlap": true
-      },
-      "gate": "WHOLE_RUN_EXACT"
+      }
     },
     {
       "id": "A2-arc-line-DISTANCE",
@@ -52,18 +71,36 @@
         {
           "index": 0,
           "admit": true,
-          "reason": "ADMIT_P0",
+          "reason": "LOCAL_P0_CANDIDATE",
           "d": 5,
           "jx": -5,
           "jy": 4.772255751,
-          "distV": 6.911904582
+          "distV": 6.911904582,
+          "localP0": true,
+          "activeExact": true,
+          "xyzTie": "Z_TIE_OK",
+          "tieOk": true,
+          "zIn": 5,
+          "zOut": 5,
+          "tieZ": 5,
+          "joinZ": 5
         }
       ],
-      "exactRun": [
-        0,
-        1
+      "localP0Count": 1,
+      "activeExactCorners": [
+        0
       ],
-      "fallbackMembers": [],
+      "memberRepresentation": [
+        "EXACT_OFFSET",
+        "EXACT_OFFSET"
+      ],
+      "routeUnit": "OPEN_CHAIN",
+      "route": "EXACT_OFFSET",
+      "stripPresent": true,
+      "fallbackRef": "PRODUCTION_MEMBER_STANDALONE_CHORD_PATH_LABEL_ONLY",
+      "topology": "components=1 edgeComponents=1 boundaryEdges=98",
+      "continuity": "daylightContinuity=true noInteriorOverlap=true",
+      "routeReason": "CHAIN_EXACT_WHOLE_CHAIN",
       "strip": {
         "ok": true,
         "detail": "STRIP_OK",
@@ -76,8 +113,7 @@
         "boundaryEdges": 98,
         "daylightContinuity": true,
         "noInteriorOverlap": true
-      },
-      "gate": "WHOLE_RUN_EXACT"
+      }
     },
     {
       "id": "B-3member-DISTANCE",
@@ -89,28 +125,55 @@
         {
           "index": 0,
           "admit": true,
-          "reason": "ADMIT_P0",
+          "reason": "LOCAL_P0_CANDIDATE",
           "d": 5,
           "jx": -4.772255751,
           "jy": 5,
-          "distV": 6.911904582
+          "distV": 6.911904582,
+          "localP0": true,
+          "activeExact": true,
+          "xyzTie": "Z_TIE_OK",
+          "tieOk": true,
+          "zIn": 5,
+          "zOut": 5,
+          "tieZ": 5,
+          "joinZ": 5
         },
         {
           "index": 1,
           "admit": true,
-          "reason": "ADMIT_P0",
+          "reason": "LOCAL_P0_CANDIDATE",
           "d": 5,
           "jx": 45,
           "jy": 54.772255751,
-          "distV": 6.911904582
+          "distV": 6.911904582,
+          "localP0": true,
+          "activeExact": true,
+          "xyzTie": "Z_TIE_OK",
+          "tieOk": true,
+          "zIn": 5,
+          "zOut": 5,
+          "tieZ": 5,
+          "joinZ": 5
         }
       ],
-      "exactRun": [
+      "localP0Count": 2,
+      "activeExactCorners": [
         0,
-        1,
-        2
+        1
       ],
-      "fallbackMembers": [],
+      "memberRepresentation": [
+        "EXACT_OFFSET",
+        "EXACT_OFFSET",
+        "EXACT_OFFSET"
+      ],
+      "routeUnit": "OPEN_CHAIN",
+      "route": "EXACT_OFFSET",
+      "stripPresent": true,
+      "fallbackRef": "PRODUCTION_MEMBER_STANDALONE_CHORD_PATH_LABEL_ONLY",
+      "topology": "components=1 edgeComponents=1 boundaryEdges=146",
+      "continuity": "daylightContinuity=true noInteriorOverlap=true",
+      "routeReason": "CHAIN_EXACT_WHOLE_CHAIN",
       "strip": {
         "ok": true,
         "detail": "STRIP_OK",
@@ -123,8 +186,7 @@
         "boundaryEdges": 146,
         "daylightContinuity": true,
         "noInteriorOverlap": true
-      },
-      "gate": "WHOLE_RUN_EXACT"
+      }
     },
     {
       "id": "A1-line-arc-REL_EL",
@@ -136,18 +198,36 @@
         {
           "index": 0,
           "admit": true,
-          "reason": "ADMIT_P0",
+          "reason": "LOCAL_P0_CANDIDATE",
           "d": 5,
           "jx": -4.772255751,
           "jy": 5,
-          "distV": 6.911904582
+          "distV": 6.911904582,
+          "localP0": true,
+          "activeExact": true,
+          "xyzTie": "Z_TIE_OK",
+          "tieOk": true,
+          "zIn": 5,
+          "zOut": 5,
+          "tieZ": 5,
+          "joinZ": 5
         }
       ],
-      "exactRun": [
-        0,
-        1
+      "localP0Count": 1,
+      "activeExactCorners": [
+        0
       ],
-      "fallbackMembers": [],
+      "memberRepresentation": [
+        "EXACT_OFFSET",
+        "EXACT_OFFSET"
+      ],
+      "routeUnit": "OPEN_CHAIN",
+      "route": "EXACT_OFFSET",
+      "stripPresent": true,
+      "fallbackRef": "PRODUCTION_MEMBER_STANDALONE_CHORD_PATH_LABEL_ONLY",
+      "topology": "components=1 edgeComponents=1 boundaryEdges=98",
+      "continuity": "daylightContinuity=true noInteriorOverlap=true",
+      "routeReason": "CHAIN_EXACT_WHOLE_CHAIN",
       "strip": {
         "ok": true,
         "detail": "STRIP_OK",
@@ -160,8 +240,7 @@
         "boundaryEdges": 98,
         "daylightContinuity": true,
         "noInteriorOverlap": true
-      },
-      "gate": "WHOLE_RUN_EXACT"
+      }
     },
     {
       "id": "A2-arc-line-REL_EL",
@@ -173,18 +252,36 @@
         {
           "index": 0,
           "admit": true,
-          "reason": "ADMIT_P0",
+          "reason": "LOCAL_P0_CANDIDATE",
           "d": 5,
           "jx": -5,
           "jy": 4.772255751,
-          "distV": 6.911904582
+          "distV": 6.911904582,
+          "localP0": true,
+          "activeExact": true,
+          "xyzTie": "Z_TIE_OK",
+          "tieOk": true,
+          "zIn": 5,
+          "zOut": 5,
+          "tieZ": 5,
+          "joinZ": 5
         }
       ],
-      "exactRun": [
-        0,
-        1
+      "localP0Count": 1,
+      "activeExactCorners": [
+        0
       ],
-      "fallbackMembers": [],
+      "memberRepresentation": [
+        "EXACT_OFFSET",
+        "EXACT_OFFSET"
+      ],
+      "routeUnit": "OPEN_CHAIN",
+      "route": "EXACT_OFFSET",
+      "stripPresent": true,
+      "fallbackRef": "PRODUCTION_MEMBER_STANDALONE_CHORD_PATH_LABEL_ONLY",
+      "topology": "components=1 edgeComponents=1 boundaryEdges=98",
+      "continuity": "daylightContinuity=true noInteriorOverlap=true",
+      "routeReason": "CHAIN_EXACT_WHOLE_CHAIN",
       "strip": {
         "ok": true,
         "detail": "STRIP_OK",
@@ -197,8 +294,7 @@
         "boundaryEdges": 98,
         "daylightContinuity": true,
         "noInteriorOverlap": true
-      },
-      "gate": "WHOLE_RUN_EXACT"
+      }
     },
     {
       "id": "B-3member-REL_EL",
@@ -210,28 +306,55 @@
         {
           "index": 0,
           "admit": true,
-          "reason": "ADMIT_P0",
+          "reason": "LOCAL_P0_CANDIDATE",
           "d": 5,
           "jx": -4.772255751,
           "jy": 5,
-          "distV": 6.911904582
+          "distV": 6.911904582,
+          "localP0": true,
+          "activeExact": true,
+          "xyzTie": "Z_TIE_OK",
+          "tieOk": true,
+          "zIn": 5,
+          "zOut": 5,
+          "tieZ": 5,
+          "joinZ": 5
         },
         {
           "index": 1,
           "admit": true,
-          "reason": "ADMIT_P0",
+          "reason": "LOCAL_P0_CANDIDATE",
           "d": 5,
           "jx": 45,
           "jy": 54.772255751,
-          "distV": 6.911904582
+          "distV": 6.911904582,
+          "localP0": true,
+          "activeExact": true,
+          "xyzTie": "Z_TIE_OK",
+          "tieOk": true,
+          "zIn": 5,
+          "zOut": 5,
+          "tieZ": 5,
+          "joinZ": 5
         }
       ],
-      "exactRun": [
+      "localP0Count": 2,
+      "activeExactCorners": [
         0,
-        1,
-        2
+        1
       ],
-      "fallbackMembers": [],
+      "memberRepresentation": [
+        "EXACT_OFFSET",
+        "EXACT_OFFSET",
+        "EXACT_OFFSET"
+      ],
+      "routeUnit": "OPEN_CHAIN",
+      "route": "EXACT_OFFSET",
+      "stripPresent": true,
+      "fallbackRef": "PRODUCTION_MEMBER_STANDALONE_CHORD_PATH_LABEL_ONLY",
+      "topology": "components=1 edgeComponents=1 boundaryEdges=146",
+      "continuity": "daylightContinuity=true noInteriorOverlap=true",
+      "routeReason": "CHAIN_EXACT_WHOLE_CHAIN",
       "strip": {
         "ok": true,
         "detail": "STRIP_OK",
@@ -244,8 +367,7 @@
         "boundaryEdges": 146,
         "daylightContinuity": true,
         "noInteriorOverlap": true
-      },
-      "gate": "WHOLE_RUN_EXACT"
+      }
     },
     {
       "id": "A1-line-arc-ELEV_FLAT",
@@ -257,18 +379,36 @@
         {
           "index": 0,
           "admit": true,
-          "reason": "ADMIT_P0",
+          "reason": "LOCAL_P0_CANDIDATE",
           "d": 5,
           "jx": -4.772255751,
           "jy": 5,
-          "distV": 6.911904582
+          "distV": 6.911904582,
+          "localP0": true,
+          "activeExact": true,
+          "xyzTie": "Z_TIE_OK",
+          "tieOk": true,
+          "zIn": 5,
+          "zOut": 5,
+          "tieZ": 5,
+          "joinZ": 5
         }
       ],
-      "exactRun": [
-        0,
-        1
+      "localP0Count": 1,
+      "activeExactCorners": [
+        0
       ],
-      "fallbackMembers": [],
+      "memberRepresentation": [
+        "EXACT_OFFSET",
+        "EXACT_OFFSET"
+      ],
+      "routeUnit": "OPEN_CHAIN",
+      "route": "EXACT_OFFSET",
+      "stripPresent": true,
+      "fallbackRef": "PRODUCTION_MEMBER_STANDALONE_CHORD_PATH_LABEL_ONLY",
+      "topology": "components=1 edgeComponents=1 boundaryEdges=98",
+      "continuity": "daylightContinuity=true noInteriorOverlap=true",
+      "routeReason": "CHAIN_EXACT_WHOLE_CHAIN",
       "strip": {
         "ok": true,
         "detail": "STRIP_OK",
@@ -281,8 +421,7 @@
         "boundaryEdges": 98,
         "daylightContinuity": true,
         "noInteriorOverlap": true
-      },
-      "gate": "WHOLE_RUN_EXACT"
+      }
     },
     {
       "id": "A2-arc-line-ELEV_FLAT",
@@ -294,18 +433,36 @@
         {
           "index": 0,
           "admit": true,
-          "reason": "ADMIT_P0",
+          "reason": "LOCAL_P0_CANDIDATE",
           "d": 5,
           "jx": -5,
           "jy": 4.772255751,
-          "distV": 6.911904582
+          "distV": 6.911904582,
+          "localP0": true,
+          "activeExact": true,
+          "xyzTie": "Z_TIE_OK",
+          "tieOk": true,
+          "zIn": 5,
+          "zOut": 5,
+          "tieZ": 5,
+          "joinZ": 5
         }
       ],
-      "exactRun": [
-        0,
-        1
+      "localP0Count": 1,
+      "activeExactCorners": [
+        0
       ],
-      "fallbackMembers": [],
+      "memberRepresentation": [
+        "EXACT_OFFSET",
+        "EXACT_OFFSET"
+      ],
+      "routeUnit": "OPEN_CHAIN",
+      "route": "EXACT_OFFSET",
+      "stripPresent": true,
+      "fallbackRef": "PRODUCTION_MEMBER_STANDALONE_CHORD_PATH_LABEL_ONLY",
+      "topology": "components=1 edgeComponents=1 boundaryEdges=98",
+      "continuity": "daylightContinuity=true noInteriorOverlap=true",
+      "routeReason": "CHAIN_EXACT_WHOLE_CHAIN",
       "strip": {
         "ok": true,
         "detail": "STRIP_OK",
@@ -318,8 +475,7 @@
         "boundaryEdges": 98,
         "daylightContinuity": true,
         "noInteriorOverlap": true
-      },
-      "gate": "WHOLE_RUN_EXACT"
+      }
     },
     {
       "id": "B-3member-ELEV_FLAT",
@@ -331,28 +487,55 @@
         {
           "index": 0,
           "admit": true,
-          "reason": "ADMIT_P0",
+          "reason": "LOCAL_P0_CANDIDATE",
           "d": 5,
           "jx": -4.772255751,
           "jy": 5,
-          "distV": 6.911904582
+          "distV": 6.911904582,
+          "localP0": true,
+          "activeExact": true,
+          "xyzTie": "Z_TIE_OK",
+          "tieOk": true,
+          "zIn": 5,
+          "zOut": 5,
+          "tieZ": 5,
+          "joinZ": 5
         },
         {
           "index": 1,
           "admit": true,
-          "reason": "ADMIT_P0",
+          "reason": "LOCAL_P0_CANDIDATE",
           "d": 5,
           "jx": 45,
           "jy": 54.772255751,
-          "distV": 6.911904582
+          "distV": 6.911904582,
+          "localP0": true,
+          "activeExact": true,
+          "xyzTie": "Z_TIE_OK",
+          "tieOk": true,
+          "zIn": 5,
+          "zOut": 5,
+          "tieZ": 5,
+          "joinZ": 5
         }
       ],
-      "exactRun": [
+      "localP0Count": 2,
+      "activeExactCorners": [
         0,
-        1,
-        2
+        1
       ],
-      "fallbackMembers": [],
+      "memberRepresentation": [
+        "EXACT_OFFSET",
+        "EXACT_OFFSET",
+        "EXACT_OFFSET"
+      ],
+      "routeUnit": "OPEN_CHAIN",
+      "route": "EXACT_OFFSET",
+      "stripPresent": true,
+      "fallbackRef": "PRODUCTION_MEMBER_STANDALONE_CHORD_PATH_LABEL_ONLY",
+      "topology": "components=1 edgeComponents=1 boundaryEdges=146",
+      "continuity": "daylightContinuity=true noInteriorOverlap=true",
+      "routeReason": "CHAIN_EXACT_WHOLE_CHAIN",
       "strip": {
         "ok": true,
         "detail": "STRIP_OK",
@@ -365,8 +548,7 @@
         "boundaryEdges": 146,
         "daylightContinuity": true,
         "noInteriorOverlap": true
-      },
-      "gate": "WHOLE_RUN_EXACT"
+      }
     },
     {
       "id": "C-mixed-DISTANCE",
@@ -378,11 +560,19 @@
         {
           "index": 0,
           "admit": true,
-          "reason": "ADMIT_P0",
+          "reason": "LOCAL_P0_CANDIDATE",
           "d": 5,
           "jx": -4.772255751,
           "jy": 5,
-          "distV": 6.911904582
+          "distV": 6.911904582,
+          "localP0": true,
+          "activeExact": false,
+          "xyzTie": "Z_TIE_OK",
+          "tieOk": true,
+          "zIn": 5,
+          "zOut": 5,
+          "tieZ": 5,
+          "joinZ": 5
         },
         {
           "index": 1,
@@ -391,16 +581,32 @@
           "d": 5,
           "jx": null,
           "jy": null,
-          "distV": null
+          "distV": null,
+          "localP0": false,
+          "activeExact": false,
+          "xyzTie": "XYZ_TIE_NOT_EVALUATED",
+          "tieOk": false,
+          "zIn": null,
+          "zOut": null,
+          "tieZ": null,
+          "joinZ": null
         }
       ],
-      "exactRun": null,
-      "fallbackMembers": [
-        1,
-        2
+      "localP0Count": 1,
+      "activeExactCorners": [],
+      "memberRepresentation": [
+        "CHORD_FALLBACK",
+        "CHORD_FALLBACK",
+        "CHORD_FALLBACK"
       ],
-      "strip": null,
-      "gate": "MEMBER_FALLBACK_PARTIAL_RUN"
+      "routeUnit": "OPEN_CHAIN",
+      "route": "CHORD_FALLBACK",
+      "stripPresent": false,
+      "fallbackRef": "PRODUCTION_MEMBER_STANDALONE_CHORD_PATH_LABEL_ONLY",
+      "topology": "TOPOLOGY_UNBUILT_FALLBACK_LABEL_ONLY",
+      "continuity": "CONTINUITY_UNPROVEN_NO_FALLBACK_GEOMETRY_BUILT",
+      "routeReason": "CHAIN_FALLBACK_MIXED_CANDIDACY",
+      "strip": null
     },
     {
       "id": "D-reverse-mixed-DISTANCE",
@@ -416,25 +622,49 @@
           "d": 5,
           "jx": null,
           "jy": null,
-          "distV": null
+          "distV": null,
+          "localP0": false,
+          "activeExact": false,
+          "xyzTie": "XYZ_TIE_NOT_EVALUATED",
+          "tieOk": false,
+          "zIn": null,
+          "zOut": null,
+          "tieZ": null,
+          "joinZ": null
         },
         {
           "index": 1,
           "admit": true,
-          "reason": "ADMIT_P0",
+          "reason": "LOCAL_P0_CANDIDATE",
           "d": 5,
           "jx": 45,
           "jy": 54.772255751,
-          "distV": 6.911904582
+          "distV": 6.911904582,
+          "localP0": true,
+          "activeExact": false,
+          "xyzTie": "Z_TIE_OK",
+          "tieOk": true,
+          "zIn": 5,
+          "zOut": 5,
+          "tieZ": 5,
+          "joinZ": 5
         }
       ],
-      "exactRun": null,
-      "fallbackMembers": [
-        0,
-        1
+      "localP0Count": 1,
+      "activeExactCorners": [],
+      "memberRepresentation": [
+        "CHORD_FALLBACK",
+        "CHORD_FALLBACK",
+        "CHORD_FALLBACK"
       ],
-      "strip": null,
-      "gate": "MEMBER_FALLBACK_PARTIAL_RUN"
+      "routeUnit": "OPEN_CHAIN",
+      "route": "CHORD_FALLBACK",
+      "stripPresent": false,
+      "fallbackRef": "PRODUCTION_MEMBER_STANDALONE_CHORD_PATH_LABEL_ONLY",
+      "topology": "TOPOLOGY_UNBUILT_FALLBACK_LABEL_ONLY",
+      "continuity": "CONTINUITY_UNPROVEN_NO_FALLBACK_GEOMETRY_BUILT",
+      "routeReason": "CHAIN_FALLBACK_MIXED_CANDIDACY",
+      "strip": null
     },
     {
       "id": "F1-square-left",
@@ -446,47 +676,92 @@
         {
           "index": 0,
           "admit": true,
-          "reason": "ADMIT_P0",
+          "reason": "LOCAL_P0_CANDIDATE",
           "d": 5,
           "jx": 35,
           "jy": 5,
-          "distV": 7.071067812
+          "distV": 7.071067812,
+          "localP0": true,
+          "activeExact": true,
+          "xyzTie": "Z_TIE_OK",
+          "tieOk": true,
+          "zIn": 5,
+          "zOut": 5,
+          "tieZ": 5,
+          "joinZ": 5
         },
         {
           "index": 1,
           "admit": true,
-          "reason": "ADMIT_P0",
+          "reason": "LOCAL_P0_CANDIDATE",
           "d": 5,
           "jx": 35,
           "jy": 35,
-          "distV": 7.071067812
+          "distV": 7.071067812,
+          "localP0": true,
+          "activeExact": true,
+          "xyzTie": "Z_TIE_OK",
+          "tieOk": true,
+          "zIn": 5,
+          "zOut": 5,
+          "tieZ": 5,
+          "joinZ": 5
         },
         {
           "index": 2,
           "admit": true,
-          "reason": "ADMIT_P0",
+          "reason": "LOCAL_P0_CANDIDATE",
           "d": 5,
           "jx": 5,
           "jy": 35,
-          "distV": 7.071067812
+          "distV": 7.071067812,
+          "localP0": true,
+          "activeExact": true,
+          "xyzTie": "Z_TIE_OK",
+          "tieOk": true,
+          "zIn": 5,
+          "zOut": 5,
+          "tieZ": 5,
+          "joinZ": 5
         },
         {
           "index": 3,
           "admit": true,
-          "reason": "ADMIT_P0",
+          "reason": "LOCAL_P0_CANDIDATE",
           "d": 5,
           "jx": 5,
           "jy": 5,
-          "distV": 7.071067812
+          "distV": 7.071067812,
+          "localP0": true,
+          "activeExact": true,
+          "xyzTie": "Z_TIE_OK",
+          "tieOk": true,
+          "zIn": 5,
+          "zOut": 5,
+          "tieZ": 5,
+          "joinZ": 5
         }
       ],
-      "exactRun": [
+      "localP0Count": 4,
+      "activeExactCorners": [
         0,
         1,
         2,
         3
       ],
-      "fallbackMembers": [],
+      "memberRepresentation": [
+        "EXACT_OFFSET",
+        "EXACT_OFFSET",
+        "EXACT_OFFSET",
+        "EXACT_OFFSET"
+      ],
+      "routeUnit": "CLOSED_GROUP",
+      "route": "EXACT_OFFSET",
+      "stripPresent": true,
+      "fallbackRef": "PRODUCTION_MEMBER_STANDALONE_CHORD_PATH_LABEL_ONLY",
+      "topology": "components=1 edgeComponents=1 boundaryEdges=192",
+      "continuity": "daylightContinuity=true noInteriorOverlap=true",
+      "routeReason": "CHAIN_EXACT_WHOLE_GROUP",
       "strip": {
         "ok": true,
         "detail": "STRIP_OK",
@@ -501,8 +776,7 @@
         "noInteriorOverlap": true,
         "sourceClosedSimple": true,
         "daylightClosedSimple": true
-      },
-      "gate": "WHOLE_GROUP_EXACT"
+      }
     },
     {
       "id": "F1-square-right-cw",
@@ -514,47 +788,92 @@
         {
           "index": 0,
           "admit": true,
-          "reason": "ADMIT_P0",
+          "reason": "LOCAL_P0_CANDIDATE",
           "d": 5,
           "jx": 5,
           "jy": 35,
-          "distV": 7.071067812
+          "distV": 7.071067812,
+          "localP0": true,
+          "activeExact": true,
+          "xyzTie": "Z_TIE_OK",
+          "tieOk": true,
+          "zIn": 5,
+          "zOut": 5,
+          "tieZ": 5,
+          "joinZ": 5
         },
         {
           "index": 1,
           "admit": true,
-          "reason": "ADMIT_P0",
+          "reason": "LOCAL_P0_CANDIDATE",
           "d": 5,
           "jx": 35,
           "jy": 35,
-          "distV": 7.071067812
+          "distV": 7.071067812,
+          "localP0": true,
+          "activeExact": true,
+          "xyzTie": "Z_TIE_OK",
+          "tieOk": true,
+          "zIn": 5,
+          "zOut": 5,
+          "tieZ": 5,
+          "joinZ": 5
         },
         {
           "index": 2,
           "admit": true,
-          "reason": "ADMIT_P0",
+          "reason": "LOCAL_P0_CANDIDATE",
           "d": 5,
           "jx": 35,
           "jy": 5,
-          "distV": 7.071067812
+          "distV": 7.071067812,
+          "localP0": true,
+          "activeExact": true,
+          "xyzTie": "Z_TIE_OK",
+          "tieOk": true,
+          "zIn": 5,
+          "zOut": 5,
+          "tieZ": 5,
+          "joinZ": 5
         },
         {
           "index": 3,
           "admit": true,
-          "reason": "ADMIT_P0",
+          "reason": "LOCAL_P0_CANDIDATE",
           "d": 5,
           "jx": 5,
           "jy": 5,
-          "distV": 7.071067812
+          "distV": 7.071067812,
+          "localP0": true,
+          "activeExact": true,
+          "xyzTie": "Z_TIE_OK",
+          "tieOk": true,
+          "zIn": 5,
+          "zOut": 5,
+          "tieZ": 5,
+          "joinZ": 5
         }
       ],
-      "exactRun": [
+      "localP0Count": 4,
+      "activeExactCorners": [
         0,
         1,
         2,
         3
       ],
-      "fallbackMembers": [],
+      "memberRepresentation": [
+        "EXACT_OFFSET",
+        "EXACT_OFFSET",
+        "EXACT_OFFSET",
+        "EXACT_OFFSET"
+      ],
+      "routeUnit": "CLOSED_GROUP",
+      "route": "EXACT_OFFSET",
+      "stripPresent": true,
+      "fallbackRef": "PRODUCTION_MEMBER_STANDALONE_CHORD_PATH_LABEL_ONLY",
+      "topology": "components=1 edgeComponents=1 boundaryEdges=192",
+      "continuity": "daylightContinuity=true noInteriorOverlap=true",
+      "routeReason": "CHAIN_EXACT_WHOLE_GROUP",
       "strip": {
         "ok": true,
         "detail": "STRIP_OK",
@@ -569,8 +888,7 @@
         "noInteriorOverlap": true,
         "sourceClosedSimple": true,
         "daylightClosedSimple": true
-      },
-      "gate": "WHOLE_GROUP_EXACT"
+      }
     },
     {
       "id": "F2-stadium-left",
@@ -586,7 +904,15 @@
           "jx": null,
           "jy": null,
           "distV": null,
-          "reason": "REJECT_AMBIGUITY_B0"
+          "reason": "REJECT_AMBIGUITY_B0",
+          "localP0": false,
+          "activeExact": false,
+          "xyzTie": "XYZ_TIE_NOT_EVALUATED",
+          "tieOk": false,
+          "zIn": null,
+          "zOut": null,
+          "tieZ": null,
+          "joinZ": null
         },
         {
           "index": 1,
@@ -595,7 +921,15 @@
           "jx": null,
           "jy": null,
           "distV": null,
-          "reason": "REJECT_AMBIGUITY_B0"
+          "reason": "REJECT_AMBIGUITY_B0",
+          "localP0": false,
+          "activeExact": false,
+          "xyzTie": "XYZ_TIE_NOT_EVALUATED",
+          "tieOk": false,
+          "zIn": null,
+          "zOut": null,
+          "tieZ": null,
+          "joinZ": null
         },
         {
           "index": 2,
@@ -604,7 +938,15 @@
           "jx": null,
           "jy": null,
           "distV": null,
-          "reason": "REJECT_AMBIGUITY_B0"
+          "reason": "REJECT_AMBIGUITY_B0",
+          "localP0": false,
+          "activeExact": false,
+          "xyzTie": "XYZ_TIE_NOT_EVALUATED",
+          "tieOk": false,
+          "zIn": null,
+          "zOut": null,
+          "tieZ": null,
+          "joinZ": null
         },
         {
           "index": 3,
@@ -613,16 +955,33 @@
           "jx": null,
           "jy": null,
           "distV": null,
-          "reason": "REJECT_AMBIGUITY_B0"
+          "reason": "REJECT_AMBIGUITY_B0",
+          "localP0": false,
+          "activeExact": false,
+          "xyzTie": "XYZ_TIE_NOT_EVALUATED",
+          "tieOk": false,
+          "zIn": null,
+          "zOut": null,
+          "tieZ": null,
+          "joinZ": null
         }
       ],
-      "exactRun": null,
-      "fallbackMembers": [
-        1,
-        3
+      "localP0Count": 0,
+      "activeExactCorners": [],
+      "memberRepresentation": [
+        "CHORD_FALLBACK",
+        "CHORD_FALLBACK",
+        "CHORD_FALLBACK",
+        "CHORD_FALLBACK"
       ],
-      "strip": null,
-      "gate": "WHOLE_GROUP_CHORD_FALLBACK"
+      "routeUnit": "CLOSED_GROUP",
+      "route": "CHORD_FALLBACK",
+      "stripPresent": false,
+      "fallbackRef": "PRODUCTION_MEMBER_STANDALONE_CHORD_PATH_LABEL_ONLY",
+      "topology": "TOPOLOGY_UNBUILT_FALLBACK_LABEL_ONLY",
+      "continuity": "CONTINUITY_UNPROVEN_NO_FALLBACK_GEOMETRY_BUILT",
+      "routeReason": "CHAIN_FALLBACK_MIXED_CANDIDACY",
+      "strip": null
     },
     {
       "id": "F2-stadium-right",
@@ -638,7 +997,15 @@
           "jx": null,
           "jy": null,
           "distV": null,
-          "reason": "REJECT_AMBIGUITY_B0"
+          "reason": "REJECT_AMBIGUITY_B0",
+          "localP0": false,
+          "activeExact": false,
+          "xyzTie": "XYZ_TIE_NOT_EVALUATED",
+          "tieOk": false,
+          "zIn": null,
+          "zOut": null,
+          "tieZ": null,
+          "joinZ": null
         },
         {
           "index": 1,
@@ -647,7 +1014,15 @@
           "jx": null,
           "jy": null,
           "distV": null,
-          "reason": "REJECT_AMBIGUITY_B0"
+          "reason": "REJECT_AMBIGUITY_B0",
+          "localP0": false,
+          "activeExact": false,
+          "xyzTie": "XYZ_TIE_NOT_EVALUATED",
+          "tieOk": false,
+          "zIn": null,
+          "zOut": null,
+          "tieZ": null,
+          "joinZ": null
         },
         {
           "index": 2,
@@ -656,7 +1031,15 @@
           "jx": null,
           "jy": null,
           "distV": null,
-          "reason": "REJECT_AMBIGUITY_B0"
+          "reason": "REJECT_AMBIGUITY_B0",
+          "localP0": false,
+          "activeExact": false,
+          "xyzTie": "XYZ_TIE_NOT_EVALUATED",
+          "tieOk": false,
+          "zIn": null,
+          "zOut": null,
+          "tieZ": null,
+          "joinZ": null
         },
         {
           "index": 3,
@@ -665,16 +1048,222 @@
           "jx": null,
           "jy": null,
           "distV": null,
-          "reason": "REJECT_AMBIGUITY_B0"
+          "reason": "REJECT_AMBIGUITY_B0",
+          "localP0": false,
+          "activeExact": false,
+          "xyzTie": "XYZ_TIE_NOT_EVALUATED",
+          "tieOk": false,
+          "zIn": null,
+          "zOut": null,
+          "tieZ": null,
+          "joinZ": null
         }
       ],
-      "exactRun": null,
-      "fallbackMembers": [
-        1,
-        3
+      "localP0Count": 0,
+      "activeExactCorners": [],
+      "memberRepresentation": [
+        "CHORD_FALLBACK",
+        "CHORD_FALLBACK",
+        "CHORD_FALLBACK",
+        "CHORD_FALLBACK"
       ],
-      "strip": null,
-      "gate": "WHOLE_GROUP_CHORD_FALLBACK"
+      "routeUnit": "CLOSED_GROUP",
+      "route": "CHORD_FALLBACK",
+      "stripPresent": false,
+      "fallbackRef": "PRODUCTION_MEMBER_STANDALONE_CHORD_PATH_LABEL_ONLY",
+      "topology": "TOPOLOGY_UNBUILT_FALLBACK_LABEL_ONLY",
+      "continuity": "CONTINUITY_UNPROVEN_NO_FALLBACK_GEOMETRY_BUILT",
+      "routeReason": "CHAIN_FALLBACK_MIXED_CANDIDACY",
+      "strip": null
+    },
+    {
+      "id": "G-mixed-sameD-diffZ",
+      "side": "left",
+      "family": "MIXED_SAME_D_DIFF_Z",
+      "members": 3,
+      "closed": false,
+      "corners": [
+        {
+          "index": 0,
+          "admit": false,
+          "reason": "REJECT_XYZ_TIE_MISMATCH",
+          "d": 5,
+          "jx": -4.772255751,
+          "jy": 5,
+          "distV": 6.911904582,
+          "localP0": true,
+          "activeExact": false,
+          "xyzTie": "REJECT_XYZ_TIE_MISMATCH",
+          "tieOk": false,
+          "zIn": 5,
+          "zOut": 10,
+          "tieZ": null,
+          "joinZ": null
+        },
+        {
+          "index": 1,
+          "admit": false,
+          "reason": "REJECT_XYZ_TIE_MISMATCH",
+          "d": 5,
+          "jx": 45,
+          "jy": 54.772255751,
+          "distV": 6.911904582,
+          "localP0": true,
+          "activeExact": false,
+          "xyzTie": "REJECT_XYZ_TIE_MISMATCH",
+          "tieOk": false,
+          "zIn": 10,
+          "zOut": 5,
+          "tieZ": null,
+          "joinZ": null
+        }
+      ],
+      "localP0Count": 2,
+      "activeExactCorners": [],
+      "memberRepresentation": [
+        "CHORD_FALLBACK",
+        "CHORD_FALLBACK",
+        "CHORD_FALLBACK"
+      ],
+      "routeUnit": "OPEN_CHAIN",
+      "route": "CHORD_FALLBACK",
+      "stripPresent": false,
+      "fallbackRef": "PRODUCTION_MEMBER_STANDALONE_CHORD_PATH_LABEL_ONLY",
+      "topology": "TOPOLOGY_UNBUILT_FALLBACK_LABEL_ONLY",
+      "continuity": "CONTINUITY_UNPROVEN_NO_FALLBACK_GEOMETRY_BUILT",
+      "routeReason": "CHAIN_FALLBACK_XYZ_TIE_MISMATCH",
+      "strip": null
+    },
+    {
+      "id": "H-mixed-sameD-sameZ",
+      "side": "left",
+      "family": "MIXED_SAME_D_SAME_Z",
+      "members": 3,
+      "closed": false,
+      "corners": [
+        {
+          "index": 0,
+          "admit": true,
+          "reason": "LOCAL_P0_CANDIDATE",
+          "d": 5,
+          "jx": -4.772255751,
+          "jy": 5,
+          "distV": 6.911904582,
+          "localP0": true,
+          "activeExact": true,
+          "xyzTie": "Z_TIE_OK",
+          "tieOk": true,
+          "zIn": 5,
+          "zOut": 5,
+          "tieZ": 5,
+          "joinZ": 5
+        },
+        {
+          "index": 1,
+          "admit": true,
+          "reason": "LOCAL_P0_CANDIDATE",
+          "d": 5,
+          "jx": 45,
+          "jy": 54.772255751,
+          "distV": 6.911904582,
+          "localP0": true,
+          "activeExact": true,
+          "xyzTie": "Z_TIE_OK",
+          "tieOk": true,
+          "zIn": 5,
+          "zOut": 5,
+          "tieZ": 5,
+          "joinZ": 5
+        }
+      ],
+      "localP0Count": 2,
+      "activeExactCorners": [
+        0,
+        1
+      ],
+      "memberRepresentation": [
+        "EXACT_OFFSET",
+        "EXACT_OFFSET",
+        "EXACT_OFFSET"
+      ],
+      "routeUnit": "OPEN_CHAIN",
+      "route": "EXACT_OFFSET",
+      "stripPresent": true,
+      "fallbackRef": "PRODUCTION_MEMBER_STANDALONE_CHORD_PATH_LABEL_ONLY",
+      "topology": "components=1 edgeComponents=1 boundaryEdges=146",
+      "continuity": "daylightContinuity=true noInteriorOverlap=true",
+      "routeReason": "CHAIN_EXACT_WHOLE_CHAIN",
+      "strip": {
+        "ok": true,
+        "detail": "STRIP_OK",
+        "vertices": 146,
+        "triangles": 144,
+        "planArea": 763.322161314,
+        "areaRelErr": 0,
+        "components": 1,
+        "edgeComponents": 1,
+        "boundaryEdges": 146,
+        "daylightContinuity": true,
+        "noInteriorOverlap": true
+      }
+    },
+    {
+      "id": "I-source-step-0-vs-2",
+      "side": "left",
+      "family": "STEP_0_VS_2",
+      "members": 3,
+      "closed": false,
+      "corners": [
+        {
+          "index": 0,
+          "admit": false,
+          "reason": "REJECT_SOURCE_JOINT_STEP",
+          "d": 5,
+          "jx": -4.772255751,
+          "jy": 5,
+          "distV": 6.911904582,
+          "localP0": true,
+          "activeExact": false,
+          "xyzTie": "REJECT_SOURCE_JOINT_STEP",
+          "tieOk": false,
+          "zIn": 5,
+          "zOut": 7,
+          "tieZ": null,
+          "joinZ": null
+        },
+        {
+          "index": 1,
+          "admit": true,
+          "reason": "LOCAL_P0_CANDIDATE",
+          "d": 5,
+          "jx": 45,
+          "jy": 54.772255751,
+          "distV": 6.911904582,
+          "localP0": true,
+          "activeExact": false,
+          "xyzTie": "Z_TIE_OK",
+          "tieOk": true,
+          "zIn": 7,
+          "zOut": 7,
+          "tieZ": 7,
+          "joinZ": 7
+        }
+      ],
+      "localP0Count": 2,
+      "activeExactCorners": [],
+      "memberRepresentation": [
+        "CHORD_FALLBACK",
+        "CHORD_FALLBACK",
+        "CHORD_FALLBACK"
+      ],
+      "routeUnit": "OPEN_CHAIN",
+      "route": "CHORD_FALLBACK",
+      "stripPresent": false,
+      "fallbackRef": "PRODUCTION_MEMBER_STANDALONE_CHORD_PATH_LABEL_ONLY",
+      "topology": "TOPOLOGY_UNBUILT_FALLBACK_LABEL_ONLY",
+      "continuity": "CONTINUITY_UNPROVEN_NO_FALLBACK_GEOMETRY_BUILT",
+      "routeReason": "CHAIN_FALLBACK_SOURCE_JOINT_STEP",
+      "strip": null
     }
   ],
   "criterionContinuity": {

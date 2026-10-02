@@ -151,19 +151,54 @@ production XY transform only the distance-family `D` scales
 rel-el corner re-resolves with a changed `d/R` — pinned separately by test,
 no admit-stability claimed there.
 
-## 6. Group/member buildability (Task B study)
+## 6. Group routing (Tasks B+D+F+H study, R0 whole-chain all-or-fallback, flat-only predicate enforced)
 
 Production routes at two granularities (`gradingGroupCompute.ts`): members
 solve standalone (chord path, always available), corners patch/trim
-per joint (`solveAnalyticCorner` already takes per-joint in/out criteria).
-The study gate matches: corner-level P0 conjunction (admit+reason per
-corner) + member-level fallback (curved member + rejected incident corner
-⇒ whole member chord). Exact strip meshes are study-only (built from
-`classifyOffsetJoin` + `offsetCurveOf` + predicate `d`, audited by
-`auditMesh` + ring simplicity + area agreement): open 2-/3-member runs are
-single-component exact; closed line-only groups are exact annuli; mixed
-groups are exact nowhere the predicate rejects — no transition curves
-exist on one member between exact and chord daylight, so none are built.
-Artifact: `docs/evidence/phase20l1/group-corpus.json` (15 chains,
-byte-identical ×2); tests pin gates, continuity, topology, and the
+per joint. The study reconciles claim with code at the WIDEST unit (R0):
+local P0 candidacy per corner (existing predicate, §1) AND a production XYZ
+tie per corner (`xyzRunTieOk`, §15: same required plan `d` + production
+analytic acceptance + tie in the same search neighborhood as the built join
+(structural locality, NOT numerical agreement) + single-valued daylight-Z
+laws AT THE JOIN within production zeroDelta (the tie-at-join law) +
+FLAT-ONLY predicate enforced in gate code: each member startZ===endZ
+exactly (===, no tolerance) — sloped members reject REJECT_SLOPED_SOURCE
+identically from 1e-13 to gross + source-joint continuity enforced in gate code: incoming.endZ===outgoing.startZ exactly (mirrors production exactXyz, gradingGroupCompute.ts:137-138, same === on the Z leg; XY legs coincide by chain construction — a 0-vs-2 step rejects REJECT_SOURCE_JOINT_STEP with true per-member limits 5 vs 7 in provenance)) + a final route decision over the whole
+connected chain/group. The gate certifies the ADMITTED JOIN (the built
+node), never the analytic tie: offset-intersection vs terminal-miter differ
+structurally (0.2277 m on every arc corner), and the T−J condition certifies
+ONLY that both points share one search neighborhood — never agreement or
+which point is built. Sloped B/C/E corners are INACTIVE by predicate (11 mm
+join-law disagreement kept as provenance). EXACT_OFFSET
+iff every required corner is a LOCAL_P0_CANDIDATE and join-tied (Z_TIE_OK
+path) sharing one proven `d` (closed groups additionally line-only:
+LINE_ONLY_EXACT_CONTROL; a closed group containing any arc routes
+CHORD_FALLBACK as CURVED_CLOSED_SUPPORT). Otherwise every corner is
+INACTIVE_DUE_TO_GROUP_FALLBACK, every member CHORD_FALLBACK (production
+member-standalone chord path, label only — the study builds no fallback
+geometry and claims no fallback continuity), no exact strip. A failed strip construction revokes the route (defense in depth): strip ok:false forces whole-chain CHORD_FALLBACK with zero active corners and a ROUTE_REVOKED_STRIP_FAIL cause — EXACT_OFFSET is reported only for actually-built + audited strips. A mixed chain
+with one local candidate (C/D, local=1) therefore shows active=0: local
+candidacy activates nothing alone; a same-d/diff-Z chain (G, local=2,
+daylight 5 vs 10) shows active=0 via the XYZ gate
+(CHAIN_FALLBACK_XYZ_TIE_MISMATCH), while the flat same-d/same-Z mirror (H,
+daylight 5 vs 5) routes EXACT through the wired gate. R1 (fixed-point
+partial-exact runs with mixed strips) and R2 (contiguous exact runs with
+proven boundary transitions) are NOT adopted — both need an invented
+exact↔chord splice no existing authority provides. Exact strip meshes are
+study-only AND law-derived: every daylight vertex resolves through its
+member's production limit law (`resolveAnalyticCriterionAt` at the member
+source Z — never the `z = d` assumption), corner nodes carry the verified
+single agreed join Z checked consistent with both incident member limits
+(fail closed otherwise), source vertices carry the member source Z; audited
+by `auditMesh` + ring simplicity + area agreement. On the flat corpus this
+coincides with `z = d` bitwise (pinned by test: all daylight vertices 5,
+all sources 0) — the construction, not the values, is what changed.
+Sloped exactness is claimed nowhere: no sloped chain routes EXACT. Each
+chain records localP0Count, activeExactCorners, per-member representation
+(EXACT_OFFSET/CHORD_FALLBACK, uniform under R0), route unit + decision,
+strip presence, fallback ref, topology, continuity, route reason; each corner
+records the decided tie (`xyzTie` reason code, `tieOk`, laws-at-join
+`zIn`/`zOut`, agreed `joinZ`, analytic-tie `tieZ` + `tieJoinDist` provenance).
+Artifact: `docs/evidence/phase20l1/group-corpus.json` (17 chains,
+byte-identical ×2); tests pin gates, ties, continuity, topology, and the
 curved-vs-line-line split.
