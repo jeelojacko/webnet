@@ -130,7 +130,8 @@ R=60, inward, tolerance 0.1:
 
 `exactZero` is exact (`Roff === 0`). `conditioning` is `0 < Roff < tolerance`
 (the offset arc is finer than the source chord budget, so it under-resolves to
-one chord). `agreement` reuses the existing `coordinateAgreementTol` on the
+one chord) — a STUDY WARNING (conditioning review), not a product gate: no
+threshold value is chosen here and no production path reads it. `agreement` reuses the existing `coordinateAgreementTol` on the
 two exact constructions of the same offset point; it is true for the
 well-conditioned near-tangent and ~1e8-coordinate rows and false when the two
 evaluation orders differ by more than that bound. No new tolerance was added.

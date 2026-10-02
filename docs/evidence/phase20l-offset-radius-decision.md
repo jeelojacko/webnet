@@ -88,6 +88,18 @@ variable-distance families, arc→arc corners — stays fail-closed.
   Roff, classification}` on the existing diagnostic channel; fail-closed
   fallback keeps today's chord-offset daylight whenever any gate trips.
 
+## §16 re-run — numerical-authority fix round (same verdict)
+
+After replacing all seven absolute epsilons with 20J1-derived bounds plus
+the local V-frame, the corpus regenerates byte-identical (zero fixture
+deltas) and the verdict stands: `POLICY_REQUIRED_OFFSET_RADIUS`. The
+unresolved product choices are unchanged — extent constant, signed
+branch-continuity disambiguation rule, outside-corner extension policy, and
+a variable-distance daylight law (circularity). Clarification: the
+`0 < Roff < curveChordTolerance` conditioning band is a STUDY WARNING
+(ill-conditioned exact geometry, review before use), not a product gate —
+no threshold value is chosen here and no production path reads it.
+
 ## What 20L leaves for later
 
 Transition geometry, the extent-constant value, the disambiguation rule, and

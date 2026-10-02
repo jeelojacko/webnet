@@ -34,14 +34,44 @@ import {
   selectMiterRay,
 } from '../src/engine/cad/grading/gradingCornerMath';
 import { gradingSideNormal, type PlanVector } from '../src/engine/cad/grading/gradingCourseFrame';
+import { AGREEMENT_OPS, coordinateAgreementTol, seamParameterAgreementTol } from '../src/engine/cad/grading/gradingGroupSectors';
 import type { GradingSide, ResolvedGradingSource } from '../src/engine/cad/grading/gradingTypes';
 
 /**
- * Along-travel span/branch band (nanometre, lengths only). This NEVER touches
- * `Roff` sign: collapse/inversion/nonfinite use EXACT arithmetic (`=== 0`,
- * `< 0`, `!finite`) in `collapsed()` — tolerances govern agreement only.
+ * Numerical-authority bands (Phase 20L fix round). Every tolerance below is
+ * derived from the shared 20J1 authorities in `gradingGroupSectors.ts`
+ * (imported, never copied): `AGREEMENT_OPS` (32-operation rounding budget),
+ * `coordinateAgreementTol` (per-axis ULP agreement), and
+ * `seamParameterAgreementTol` (distance-along-ray agreement). No magic
+ * epsilon decides a physical class: `Roff` sign and `collapsed()` stay EXACT
+ * (`=== 0`, `< 0`, `!finite`); tolerances govern agreement only.
+ *
+ * Local frame: the classifier translates world → V=(0,0) by exact
+ * subtraction (Sterbenz-exact for nearby operands) before intersecting, and
+ * reports back `x_world = x' + V`. Along-travel `u` and `distV` are already
+ * V-relative, so they are frame-invariant by construction. The canonical V
+ * is the incoming terminal's joint; a ULP-split outgoing V is kept as its
+ * own small local residual, never averaged or welded. No rotation is applied
+ * inside the classifier (trig rounding flips near-boundary cases; rotation
+ * belongs at the fixture level). `productionMiterProbe` is already anchored
+ * and unchanged.
  */
-const SIGN_TOL = 1e-9;
+const OPS = AGREEMENT_OPS;
+const EPS = Number.EPSILON;
+/** Dimensionless line-line NONE gate: OPS·EPS on a unit-tangent determinant. */
+const DET_NONE_BAND = OPS * EPS;
+
+/** World magnitude for the seam-parameter authority: max(1,|Vx|,|Vy|). */
+const worldScaleOf = (vx: number, vy: number): number => Math.max(1, Math.abs(vx), Math.abs(vy));
+
+/**
+ * Band (1): along-travel span/branch agreement. `seamParameterAgreementTol`
+ * directly: OPS·max(EPS·max(1,|u|,|span|,|t|), quantum(worldScale)). No
+ * absolute floor — at 1e8 the coordinate quantum (~2.2e-8, ×32 ≈ 7e-7)
+ * dominates the old 1e-9; at the origin the EPS term (~7e-15·scale) governs.
+ */
+const spanAgreementTol = (u: number, ref: number, span: number, worldScale: number): number =>
+  seamParameterAgreementTol(u, ref, span, worldScale);
 
 /**
  * A member terminal at the shared joint V. `tx/ty` is the unit tangent in the
@@ -223,9 +253,13 @@ const lineLine = (a: OffsetCurveLine, b: OffsetCurveLine): IntersectionSet => {
   const det = a.tx * b.ty - a.ty * b.tx;
   const px = b.ox - a.ox;
   const py = b.oy - a.oy;
-  const scale = Math.max(1, Math.hypot(px, py));
-  const ill = Math.abs(det) <= 1e-12;
-  if (ill) {
+  // Band (2): exact parallel (det === 0) is a true NONE — distinct parallel
+  // offsets never meet. Within-noise near-parallel (|det| <= OPS·EPS,
+  // dimensionless on unit tangents) is UNRESOLVABLE (0 or 1 intersections
+  // indistinguishable), reported AMBIGUOUS like the curve-contact bands —
+  // never a snapped point. POLICY: line-line shares the curve-contact
+  // fail-closed rule; the band is diagnostic POLICY_REQUIRED, not a join.
+  if (det === 0) {
     return {
       kind: 'line-line',
       points: [],
@@ -233,11 +267,24 @@ const lineLine = (a: OffsetCurveLine, b: OffsetCurveLine): IntersectionSet => {
       unresolved: null,
     };
   }
+  if (Math.abs(det) <= DET_NONE_BAND) {
+    return {
+      kind: 'line-line',
+      points: [],
+      conditioning: { kind: 'line-line-det', value: det, illConditioned: true },
+      unresolved: 'ill-conditioned-contact',
+    };
+  }
   const t = (px * b.ty - py * b.tx) / det;
+  // Band (3): conditioning is INFORMATIONAL ONLY — dimensional
+  // OPS·EPS·local_scale against |det|·scale (a length). It never gates the
+  // classification; the gate is band (2) above.
+  const scale = Math.max(1, Math.hypot(px, py), Math.abs(t));
+  const ill = Math.abs(det) * Math.max(1, Math.hypot(px, py)) <= OPS * EPS * scale;
   return {
     kind: 'line-line',
     points: [{ x: a.ox + t * a.tx, y: a.oy + t * a.ty, tangent: false }],
-    conditioning: { kind: 'line-line-det', value: det, illConditioned: Math.abs(det) * scale < 1e-9 },
+    conditioning: { kind: 'line-line-det', value: det, illConditioned: ill },
     unresolved: null,
   };
 };
@@ -249,8 +296,10 @@ const lineCircle = (l: OffsetCurveLine, c: OffsetCurveCircle): IntersectionSet =
   const b = l.tx * fx + l.ty * fy;
   const cc = fx * fx + fy * fy - R * R;
   const disc = b * b - cc;
-  const scale = Math.max(1, R * R);
-  const discTol = 1e-12 * scale;
+  // Band (4): OPS·EPS·max(1,R²,|f|²) evaluated in the LOCAL frame (V=(0,0),
+  // so fx/fy are small and |f|² cannot smuggle a world-magnitude square).
+  const f2 = fx * fx + fy * fy;
+  const discTol = OPS * EPS * Math.max(1, R * R, f2);
   const base: IntersectionSet = {
     kind: 'line-circle',
     points: [],
@@ -272,19 +321,24 @@ const circleCircle = (a: OffsetCurveCircle, b: OffsetCurveCircle): IntersectionS
   const dist = Math.hypot(dx, dy);
   const R1 = Math.abs(a.radius);
   const R2 = Math.abs(b.radius);
-  const scale = Math.max(1, R1 * R1, R2 * R2);
-  const tol = 1e-9 * Math.max(1, R1, R2);
+  // Band (5): centre coincidence per axis under the shared
+  // `coordinateAgreementTol` (local ULP — centres are V-relative, so the
+  // scale is small and no world magnitude leaks in). Both axes must agree.
+  const localScale = Math.max(1, Math.abs(a.cx), Math.abs(b.cx), Math.abs(a.cy), Math.abs(b.cy));
+  const tolX = coordinateAgreementTol(a.cx, b.cx, localScale);
+  const tolY = coordinateAgreementTol(a.cy, b.cy, localScale);
   const base: IntersectionSet = {
     kind: 'circle-circle',
     points: [],
     conditioning: { kind: 'circle-circle-h2', value: 0, illConditioned: true },
     unresolved: null,
   };
-  if (dist <= tol) {
+  if (Math.abs(dx) <= tolX && Math.abs(dy) <= tolY) {
     // Coincident centres: same radius means the SAME curve (infinite
     // intersections) — explicit AMBIGUOUS, never NONE. Concentric with
     // clearly different radii provably never meets — NONE.
-    const sameRadius = Math.abs(R1 - R2) <= 1e-9 * Math.max(1, R1, R2);
+    // Band (6): OPS·EPS·max(1,R1,R2) on the radii — same shape as band (4).
+    const sameRadius = Math.abs(R1 - R2) <= OPS * EPS * Math.max(1, R1, R2);
     return { ...base, unresolved: sameRadius ? 'coincident-infinite' : null };
   }
   const aa = (R1 * R1 - R2 * R2 + dist * dist) / (2 * dist);
@@ -293,7 +347,10 @@ const circleCircle = (a: OffsetCurveCircle, b: OffsetCurveCircle): IntersectionS
   const by = a.cy + (aa * dy) / dist;
   const px = -dy / dist;
   const py = dx / dist;
-  const h2Tol = 1e-12 * scale;
+  // Band (7): OPS·EPS·max(1,R1²,R2²,aa²,dist²), local frame. aa² and dist²
+  // join the old R-only scale so a large centre separation or a far
+  // radical-line offset widens the noise band honestly.
+  const h2Tol = OPS * EPS * Math.max(1, R1 * R1, R2 * R2, aa * aa, dist * dist);
   const withCond: IntersectionSet = {
     ...base,
     conditioning: { kind: 'circle-circle-h2', value: h2, illConditioned: Math.abs(h2) <= h2Tol },
@@ -336,11 +393,14 @@ const alongTravel = (m: MemberSpec, x: number, y: number): number => {
   return r * wrapAngle(angle - vAngle) * m.dir;
 };
 
-/** True when an along-travel param lands on the member body it is measured on. */
-const inSpanOf = (m: MemberSpec, u: number): boolean => {
+/** True when an along-travel param lands on the member body it is measured on. Band (1): derived span tol, never an absolute floor. */
+const inSpanOf = (m: MemberSpec, u: number, worldScale: number): boolean => {
   if (!Number.isFinite(u)) return false;
-  const lo = Math.min(m.spanStart, m.spanEnd) - SIGN_TOL;
-  const hi = Math.max(m.spanStart, m.spanEnd) + SIGN_TOL;
+  const span = Math.max(Math.abs(m.spanStart), Math.abs(m.spanEnd));
+  const loTol = spanAgreementTol(Math.min(m.spanStart, m.spanEnd), u, span, worldScale);
+  const hiTol = spanAgreementTol(Math.max(m.spanStart, m.spanEnd), u, span, worldScale);
+  const lo = Math.min(m.spanStart, m.spanEnd) - loTol;
+  const hi = Math.max(m.spanStart, m.spanEnd) + hiTol;
   return u >= lo && u <= hi;
 };
 
@@ -356,14 +416,19 @@ const branchConsistent = (
   turn: 'GAP' | 'OVERLAP' | 'TANGENT' | null,
   uIn: number,
   uOut: number,
+  worldScale: number,
 ): boolean => {
   if (turn === 'TANGENT' || turn === null) return false;
+  const tol = spanAgreementTol(uIn, uOut, Math.max(Math.abs(uIn), Math.abs(uOut)), worldScale);
   return turn === 'GAP'
-    ? uIn >= -SIGN_TOL && uOut <= SIGN_TOL
-    : uIn <= SIGN_TOL && uOut >= -SIGN_TOL;
+    ? uIn >= -tol && uOut <= tol
+    : uIn <= tol && uOut >= -tol;
 };
 
-const sameSign = (uIn: number, uOut: number): boolean => uIn * uOut > SIGN_TOL * SIGN_TOL;
+const sameSign = (uIn: number, uOut: number, worldScale: number): boolean => {
+  const tol = spanAgreementTol(uIn, uOut, Math.max(Math.abs(uIn), Math.abs(uOut)), worldScale);
+  return uIn * uOut > tol * tol;
+};
 
 /**
  * Build the production straight-corner frame at V (chord tangent, exactly
@@ -376,6 +441,7 @@ const productionMiterProbe = (
   side: GradingSide,
   maxSearchDistance: number,
   joinDistance: number | null,
+  worldScale = 1,
 ): ProductionMiterProbe => {
   const asSource = (t: PlanVector): ResolvedGradingSource => ({
     startX: 0, startY: 0, endX: t.nx, endY: t.ny,
@@ -403,8 +469,13 @@ const productionMiterProbe = (
     };
   }
   const extent = miterExtent(ray, n1, n2, maxSearchDistance);
+  // Band (1) applied to the comparison only: derived seam-parameter tol.
+  const cmpTol =
+    extent !== null && joinDistance !== null
+      ? seamParameterAgreementTol(extent, joinDistance, maxSearchDistance, worldScale)
+      : 0;
   const boundWouldRejectJoin =
-    extent !== null && joinDistance !== null && extent + SIGN_TOL < joinDistance;
+    extent !== null && joinDistance !== null && extent + cmpTol < joinDistance;
   return { extent, failClosed: null, joinDistance, boundWouldRejectJoin };
 };
 
@@ -429,14 +500,32 @@ export interface OffsetJoinInput {
 
 export const classifyOffsetJoin = (input: OffsetJoinInput): OffsetJoinResult => {
   const { incoming, outgoing, side, offset, maxSearchDistance } = input;
+  // Local frame: canonical V is the incoming joint (exact Sterbenz
+  // subtraction for nearby operands; a ULP-split outgoing V survives as its
+  // own small local residual — never averaged or welded). Tangents, turn,
+  // side-normal convention, m.dir, wrapAngle and collapsed() are untouched.
+  const V0x = incoming.vx;
+  const V0y = incoming.vy;
+  const worldScale = worldScaleOf(V0x, V0y);
+  const toLocal = (m: MemberSpec): MemberSpec =>
+    m.kind === 'line'
+      ? { ...m, vx: m.vx - V0x, vy: m.vy - V0y }
+      : { ...m, vx: m.vx - V0x, vy: m.vy - V0y, cx: m.cx - V0x, cy: m.cy - V0y };
+  const localIn = toLocal(incoming);
+  const localOut = toLocal(outgoing);
+  const toWorldCurve = (oc: OffsetCurve): OffsetCurve =>
+    oc.kind === 'line'
+      ? { ...oc, ox: oc.ox + V0x, oy: oc.oy + V0y }
+      : { ...oc, cx: oc.cx + V0x, cy: oc.cy + V0y };
+  const toWorldPt = (p: RawIntersection): RawIntersection => ({ ...p, x: p.x + V0x, y: p.y + V0y });
   const tIn = memberTangent(incoming);
   const tOut = memberTangent(outgoing);
   const turn = tIn && tOut ? classifyCorner(tIn, tOut, side) : null;
 
   const sideIn = input.incomingSide ?? side;
   const sideOut = input.outgoingSide ?? side;
-  const ocIn = offsetCurveOf(incoming, sideIn, offset);
-  const ocOut = offsetCurveOf(outgoing, sideOut, offset);
+  const ocIn = offsetCurveOf(localIn, sideIn, offset);
+  const ocOut = offsetCurveOf(localOut, sideOut, offset);
   const emptyMiter: ProductionMiterProbe = {
     extent: null, failClosed: null, joinDistance: null, boundWouldRejectJoin: false,
   };
@@ -450,7 +539,7 @@ export const classifyOffsetJoin = (input: OffsetJoinInput): OffsetJoinResult => 
     turn,
     side,
     offset,
-    offsetCurves: { incoming: ocIn, outgoing: ocOut },
+    offsetCurves: { incoming: ocIn ? toWorldCurve(ocIn) : null, outgoing: ocOut ? toWorldCurve(ocOut) : null },
     offsetRadii: {
       incoming: ocIn && ocIn.kind === 'circle' ? ocIn.radius : null,
       outgoing: ocOut && ocOut.kind === 'circle' ? ocOut.radius : null,
@@ -462,7 +551,7 @@ export const classifyOffsetJoin = (input: OffsetJoinInput): OffsetJoinResult => 
     extent: null,
     conditioning: { kind: 'none', value: 0, illConditioned: true },
     miter: input.probeMiter && tIn && tOut
-      ? productionMiterProbe(tIn, tOut, side, maxSearchDistance, null)
+      ? productionMiterProbe(tIn, tOut, side, maxSearchDistance, null, worldScale)
       : emptyMiter,
     ...over,
   });
@@ -491,17 +580,22 @@ export const classifyOffsetJoin = (input: OffsetJoinInput): OffsetJoinResult => 
 
   const iset = intersectCurves(ocIn, ocOut);
   const candidates: JoinCandidate[] = iset.points.map((p) => {
-    const uIn = alongTravel(incoming, p.x, p.y);
-    const uOut = alongTravel(outgoing, p.x, p.y);
-    const distV = Math.hypot(p.x - incoming.vx, p.y - incoming.vy);
+    // Classified locally (u/distV are V-relative by construction); the
+    // reported point is translated back: x_world = x' + V.
+    const uIn = alongTravel(localIn, p.x, p.y);
+    const uOut = alongTravel(localOut, p.x, p.y);
+    const distV = Math.hypot(p.x - localIn.vx, p.y - localIn.vy);
+    const localTol = seamParameterAgreementTol(distV, maxSearchDistance, maxSearchDistance, worldScale);
     return {
-      ...p,
+      x: p.x + V0x,
+      y: p.y + V0y,
+      tangent: p.tangent,
       uIn,
       uOut,
       distV,
-      local: distV <= maxSearchDistance + SIGN_TOL,
-      branchConsistent: branchConsistent(turn, uIn, uOut),
-      inSpan: inSpanOf(incoming, uIn) && inSpanOf(outgoing, uOut),
+      local: distV <= maxSearchDistance + localTol,
+      branchConsistent: branchConsistent(turn, uIn, uOut, worldScale),
+      inSpan: inSpanOf(localIn, uIn, worldScale) && inSpanOf(localOut, uOut, worldScale),
     };
   });
   // A join is usable only on the member bodies: a geometric intersection past
@@ -514,12 +608,12 @@ export const classifyOffsetJoin = (input: OffsetJoinInput): OffsetJoinResult => 
   // gate and must not move the comparison point.
   const probeJoin = candidates.find((c) => c.branchConsistent) ?? candidates[0] ?? null;
   const miter = input.probeMiter && tIn && tOut
-    ? productionMiterProbe(tIn, tOut, side, maxSearchDistance, probeJoin?.distV ?? null)
+    ? productionMiterProbe(tIn, tOut, side, maxSearchDistance, probeJoin?.distV ?? null, worldScale)
     : emptyMiter;
 
   const base: Partial<OffsetJoinResult> = {
     intersectionKind: iset.kind,
-    intersections: iset.points,
+    intersections: iset.points.map(toWorldPt),
     candidates,
     conditioning: iset.conditioning,
     miter,
@@ -573,7 +667,7 @@ export const classifyOffsetJoin = (input: OffsetJoinInput): OffsetJoinResult => 
   }
   if (localCands.length === 1) {
     const c = localCands[0]!;
-    if (sameSign(c.uIn, c.uOut)) {
+    if (sameSign(c.uIn, c.uOut, worldScale)) {
       return finish('OFFSET_JOIN_SELF_INTERSECTION', 'local-join-folds-same-side', {
         ...base,
         policyRequired: iset.points.length > 1,
