@@ -29,7 +29,9 @@ import type { GradingCriterion, GradingSide } from '../src/engine/cad/grading/gr
 import { scaleGradingCriterion } from '../src/engine/cad/cadProjectTransformGrading';
 import { classifyOffsetJoin, memberTangent, offsetCurveOf } from './phase20lOffsetJoinCore';
 import {
+  extentJVWithin,
   gateRadiusOffset,
+  joinWorldScale,
   radialSignOf,
   resolveCornerEffective,
 } from './phase20l1EffectiveCriterion';
@@ -141,7 +143,7 @@ export const auditCornerCandidacy = (
     if (!gateRadiusOffset(m.radius, sign, d).ok) return nope('AUDIT_ROFF');
   }
   const r = classifyOffsetJoin({ ...f.input, offset: d, maxSearchDistance: maxSearch });
-  const worldScale = Math.max(1, Math.abs(f.input.incoming.vx), Math.abs(f.input.incoming.vy));
+  const worldScale = joinWorldScale(f.input.incoming.vx, f.input.incoming.vy);
   const ownU = (m: JoinFixture['input']['incoming'], x: number, y: number): number => {
     if (m.kind === 'line') {
       const len = Math.hypot(m.tx, m.ty);
@@ -177,8 +179,7 @@ export const auditCornerCandidacy = (
     const branchOk = turn === 'GAP' ? uIn >= -bt && uOut <= bt : uIn <= bt && uOut >= -bt;
     if (!branchOk) continue;
     const distV = Math.hypot(c.x - f.input.incoming.vx, c.y - f.input.incoming.vy);
-    const lt = seamParameterAgreementTol(distV, maxSearch, maxSearch, worldScale);
-    if (!(d <= maxSearch && distV <= maxSearch + lt)) continue;
+    if (!(d <= maxSearch && extentJVWithin(distV, maxSearch, worldScale))) continue;
     passers.push({ x: c.x, y: c.y, distV });
   }
   if (passers.length !== 1) return nope(passers.length === 0 ? 'AUDIT_NO_PASSER' : 'AUDIT_MULTI_PASSER');
@@ -215,12 +216,13 @@ const decide = (f: JoinFixture, fam: FamilyDef, maxSearch: number) => {
   const adm = r.candidates.filter((c) => c.inSpan && c.branchConsistent);
   const sel = adm.length === 1 ? adm[0]! : null;
   const distV = sel ? sel.distV : null; // classifier-local V-frame distance (never world hypot)
+  const worldScale = joinWorldScale(f.input.incoming.vx, f.input.incoming.vy);
   const dPass = d <= maxSearch;
-  const jvPass = distV !== null && distV <= maxSearch;
+  const jvPass = distV !== null && extentJVWithin(distV, maxSearch, worldScale);
   const roff = roffClassDisplay(f, d);
   const audit = auditCornerCandidacy(f, d, maxSearch);
   if (r.classification !== 'OFFSET_JOIN_UNIQUE' || adm.length !== 1 || !sel) {
-    return { admit: false, reason: r.classification === 'OFFSET_JOIN_AMBIGUOUS' ? 'REJECT_AMBIGUITY_B0' : 'REJECT_NON_UNIQUE', d, distV, join: null as { x: number; y: number } | null, joinClass: r.classification, adm: adm.length, onBody: false, dPass, jvPass: distV !== null && distV <= maxSearch, roff, audit };
+    return { admit: false, reason: r.classification === 'OFFSET_JOIN_AMBIGUOUS' ? 'REJECT_AMBIGUITY_B0' : 'REJECT_NON_UNIQUE', d, distV, join: null as { x: number; y: number } | null, joinClass: r.classification, adm: adm.length, onBody: false, dPass, jvPass, roff, audit };
   }
   if (roff !== 'OK_OR_NA') return { admit: false, reason: 'REJECT_ROFF', d, distV, join: null, joinClass: r.classification, adm: 1, onBody: true, dPass, jvPass, roff, audit };
   if (!dPass) return { admit: false, reason: 'REJECT_EXTENT_D', d, distV, join: null, joinClass: r.classification, adm: 1, onBody: true, dPass, jvPass, roff, audit };
@@ -365,7 +367,7 @@ const main = (): void => {
   const payload = {
     generator: 'scripts/phase20l1PolicyCorpus.ts',
     baseline: 'PR #146 merge 4e25d803',
-    extentRule: 'BOTH d<=maxSearchDistance AND |J-V|<=maxSearchDistance (no new constant)',
+    extentRule: 'criterion d<=maxSearchDistance EXACT (production resolveAnalyticCriterionAt); |J-V| within maxSearchDistance + seam-parameter agreement band (E1, one shared helper: admission + audit identical)',
     ambiguityRule: 'B0 fail-closed (B1 rejected); extension C0 no-extension (C1 rejected)',
     candidacyRule: 'corner-classifier candidacy only (independent audit); mesh topology N/A (no facets/area/cycles)',
     counts: {

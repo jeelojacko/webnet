@@ -18,7 +18,8 @@ ADMIT_P0(f, fam, ms) :=
   && joinClass == OFFSET_JOIN_UNIQUE   # classifier verdict, unmodified
   && admissibleCount == 1 && onBody    # B0 fail-closed: ≥2 branches reject
   && exact Roff>0 on every arc member   # ===0 collapse, <0 inverted (predicate gate)
-  && d <= ms && |J-V| <= ms            # BOTH extent gates (§2)
+  && d <= ms EXACT                       # criterion-derived d; production comparison (§2)
+  && extentJVWithin(|J-V|, ms, scale)    # E1, one shared helper for admission + audit (§2b)
   && C0                                # UNIQUE is on-body ⇒ no extension taken
   && auditCornerCandidacy(f, d, ms).pass  # validation of reported candidates
       # (own geometry, never admission booleans; cannot detect omitted
@@ -50,7 +51,9 @@ The old `topologyPass` re-read admission fields. It is replaced by
 own on-curve residuals against freshly built offset curves, own branch-sign
 rule, turn from the production `classifyCorner`, Roff via the predicate's
 radial-sign path (independent of the `roffClass` display lookup), and
-extent on the recomputed `|J−V|`. Admission requires exactly one passing
+extent on the recomputed `|J−V|` via the same shared `extentJVWithin`
+helper the admission predicate uses (single derivation; §2b). Admission
+requires exactly one passing
 candidate. Scope honesty (Task-9 Finding 2): the audit independently
 validates the *reported* candidates — it loops over the classifier's
 candidate set, so it cannot detect an omitted branch and is NOT a proof
@@ -74,6 +77,37 @@ gate alone admits 5/5 UNIQUE fixtures; BOTH admits 1/5 (only the shallow
 corner, `|J-V|=5.00019`); the square (`7.071`) and arc-overlap (`6.912`)
 corners reject with `REJECT_EXTENT_JV`. `miterExtent` stays a comparison
 probe, never a routing authority (non-authoritative per scout).
+
+### 2b. Task C — `|J-V|` boundary unification (E1)
+
+Task C found two semantics for one policy: admission compared `distV <= ms`
+exactly, while `auditCornerCandidacy` (and the classifier's own `local`
+field) compared `distV <= ms + seamParameterAgreementTol(distV, ms, ms,
+worldScale)`. Resolved as **E1**: the `|J-V|` gate is
+`extentJVWithin(distV, ms, worldScale)` in
+`phase20l1EffectiveCriterion.ts` — one shared study helper, called by BOTH
+the admission predicate and the audit. It reuses the existing 20J1
+quantity-correct agreement authority (`AGREEMENT_OPS ·
+max(EPS·scale, coordinateQuantum(worldScale))`); no magic epsilon. The
+criterion-derived `d <= maxSearchDistance` gate stays an exact production
+comparison (`resolveAnalyticCriterionAt`) and is never relaxed by the E1
+rule.
+
+Why E1, not E0 (exact): a 90° line→line join has analytic extent `d·√2`,
+so the physical boundary `|J-V| == ms` is reachable exactly. Exact
+floating-point comparison makes that boundary frame-dependent — one
+representable step below the computed extent, E0 rejects while the
+independent audit (already E1) accepts, i.e. admission and its own
+validation contradict each other. Boundary fixtures
+(`cad_grading_offset_radius_policy_extent_boundary_20l1.test.ts`) pin the
+E0/E1 split at exactly one ULP and hold the E1 verdict invariant across
+origin 1e6/1e8, rotation 0.9 rad, and scale ×1e3/×1e-3
+(`classification == OFFSET_JOIN_UNIQUE`, audit `CANDIDACY_OK`; both
+`extentJVWithin` and the audit accept at 1 ULP below the bound, reject
+outside the band). Corpus impact: regenerated twice byte-identical; rows
+digest unchanged (`dd961f52f2ba9d9a`); admit delta 0 (15→15) — the current
+admits were already local under E1, so only the payload `extentRule`
+string changed.
 
 ## 3. The other three choices
 
@@ -116,3 +150,20 @@ production XY transform only the distance-family `D` scales
 (`scaleGradingCriterion`: `Δ/E/g/Z` invariant), so a production-scaled
 rel-el corner re-resolves with a changed `d/R` — pinned separately by test,
 no admit-stability claimed there.
+
+## 6. Group/member buildability (Task B study)
+
+Production routes at two granularities (`gradingGroupCompute.ts`): members
+solve standalone (chord path, always available), corners patch/trim
+per joint (`solveAnalyticCorner` already takes per-joint in/out criteria).
+The study gate matches: corner-level P0 conjunction (admit+reason per
+corner) + member-level fallback (curved member + rejected incident corner
+⇒ whole member chord). Exact strip meshes are study-only (built from
+`classifyOffsetJoin` + `offsetCurveOf` + predicate `d`, audited by
+`auditMesh` + ring simplicity + area agreement): open 2-/3-member runs are
+single-component exact; closed line-only groups are exact annuli; mixed
+groups are exact nowhere the predicate rejects — no transition curves
+exist on one member between exact and chord daylight, so none are built.
+Artifact: `docs/evidence/phase20l1/group-corpus.json` (15 chains,
+byte-identical ×2); tests pin gates, continuity, topology, and the
+curved-vs-line-line split.

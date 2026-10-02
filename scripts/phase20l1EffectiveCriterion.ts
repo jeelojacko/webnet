@@ -13,6 +13,7 @@
  */
 import { gradingSideNormal } from '../src/engine/cad/grading/gradingCourseFrame';
 import { resolveAnalyticCriterionAt } from '../src/engine/cad/grading/gradingAnalyticCriterion';
+import { seamParameterAgreementTol } from '../src/engine/cad/grading/gradingGroupSectors';
 import type { GradingCriterion, GradingSide } from '../src/engine/cad/grading/gradingTypes';
 import { memberTangent, type MemberSpec } from './phase20lOffsetJoinCore';
 
@@ -59,6 +60,35 @@ export const radialSignOf = (m: MemberSpec, side: GradingSide): 1 | -1 | null =>
   const dot = n.nx * Math.cos(a) + n.ny * Math.sin(a);
   if (!Number.isFinite(dot) || dot === 0) return null;
   return dot > 0 ? 1 : -1;
+};
+
+/**
+ * World magnitude for the extent/agreement bands: `max(1,|Vx|,|Vy|)`. Same
+ * quantity the classifier (`worldScaleOf`) and the audit use; exported so
+ * the admission predicate and the audit derive it identically.
+ */
+export const joinWorldScale = (vx: number, vy: number): number =>
+  Math.max(1, Math.abs(vx), Math.abs(vy));
+
+/**
+ * E1 — the ONE `|J-V|` extent comparison, shared by the admission predicate
+ * and the independent corner-candidacy audit. A join whose analytic extent
+ * sits at `maxSearchDistance` must not flip on a few ULPs of evaluation, so
+ * the bound adds the existing 20J1 quantity-correct seam-parameter agreement
+ * band (`AGREEMENT_OPS * max(EPS*scale, coordinateQuantum(worldScale))`) —
+ * the very band the classifier's own `local` field already applies. No magic
+ * epsilon: the band is derived from the shared agreement authority, never
+ * tuned. The criterion-derived `d <= maxSearchDistance` gate stays an exact
+ * production comparison and is never relaxed by this rule.
+ */
+export const extentJVWithin = (
+  distV: number,
+  maxSearchDistance: number,
+  worldScale: number,
+): boolean => {
+  if (!Number.isFinite(distV) || !Number.isFinite(maxSearchDistance)) return false;
+  const tol = seamParameterAgreementTol(distV, maxSearchDistance, maxSearchDistance, worldScale);
+  return distV <= maxSearchDistance + tol;
 };
 
 /** Exact offset-radius gate: `=== 0` collapse, `< 0` inverted, never epsilon. */

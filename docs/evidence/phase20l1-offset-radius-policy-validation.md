@@ -1,9 +1,11 @@
 # Phase 20L.1 Task 5 — policy validation (STUDY)
 
 Corpus `docs/evidence/phase20l1/policy-corpus.json`: 186 rows, 15 ADMIT_P0,
-rows digest `dd961f52f2ba9d9a`, file SHA-256
-`f885d898292b939c4fb278b17563a9504ca993040d2ce8ee77c59ecc0787672b`
-(byte-identical across two generations). Reason histogram: SURFACE 62 /
+rows digest `dd961f52f2ba9d9a` (unchanged by Task C), file SHA-256
+`62d2463d1810156cc3fb560d43fcb35f8e900fe3c4ab5390e46213553107b744`
+(Task C; byte-identical across two generations). Baseline before Task C:
+`f885d898292b939c4fb278b17563a9504ca993040d2ce8ee77c59ecc0787672b`,
+admit delta 15→15 (zero). Reason histogram: SURFACE 62 /
 NON_UNIQUE 33 / SLOPED 31 / ARC_PAIR 21 / AMBIGUITY_B0 18 / ADMIT_P0 15 /
 ROFF 6 (RADIUS-boundary collapse/inversion rows now carry their own code
 instead of hiding in NON_UNIQUE).
@@ -68,3 +70,31 @@ results (B1 classification invariant; identity still fails → B0) stand.
 Policy corpus regenerated twice, byte-identical. 20L corpora untouched:
 this task adds one generator + one JSON; `JOIN_FIXTURES` (31) and all 20L
 classifications unmodified (pinned in test).
+
+## Task C — extent-boundary unification (E1)
+
+The `|J-V|` extent gate is now a single shared study helper,
+`extentJVWithin(distV, ms, worldScale)` in `phase20l1EffectiveCriterion.ts`,
+called by BOTH the admission predicate and `auditCornerCandidacy` (the
+classifier's `local` field already used the same band). It reuses the
+existing 20J1 `seamParameterAgreementTol`; the criterion-derived `d <= ms`
+gate stays exact production and is never relaxed. See architecture §2b for
+the E0/E1 rationale.
+
+Boundary evidence (`cad_grading_offset_radius_policy_extent_boundary_20l1.test.ts`):
+a 90° line→line join has analytic extent `d·√2 == 7.0710678118654755`,
+exactly the classifier's computed `distV`. At that bound, at 1 ULP above,
+and inside the agreement band → `extentJVWithin` true and the audit
+`CANDIDACY_OK`. At 1 ULP below the bound the exact E0 comparison rejects
+while E1 and the independent audit accept (the contradiction Task C
+removes). Outside the band (`ms = distV − 2·tol`) both reject with
+`AUDIT_NO_PASSER`. The same 1-ULP-below verdict (`OFFSET_JOIN_UNIQUE` +
+`CANDIDACY_OK`) is invariant across origin 1e6 / 1e8, rotation 0.9 rad,
+scale ×1e3 / ×1e-3. Criterion gate pinned separately: `d == ms` proves,
+`ms = nextafter(d, 0)` fails `INVALID_CRITERION`, `nextafter(d, ∞)` proves.
+
+Coverage split (honest): the 15 admits are 6 arc-bearing rows with a real
+finite positive `Roff` (`LA_CW_OVERLAP`, `AL_CW_OVERLAP` × 3 proven families)
++ 9 line-line control rows (kept, no `Roff`). Reason histogram re-pinned;
+all 31 fixture classifications re-pinned (zero drift vs the
+`f885d898`/15-admit baseline).

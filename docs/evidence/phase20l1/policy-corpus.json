@@ -1,7 +1,7 @@
 {
   "generator": "scripts/phase20l1PolicyCorpus.ts",
   "baseline": "PR #146 merge 4e25d803",
-  "extentRule": "BOTH d<=maxSearchDistance AND |J-V|<=maxSearchDistance (no new constant)",
+  "extentRule": "criterion d<=maxSearchDistance EXACT (production resolveAnalyticCriterionAt); |J-V| within maxSearchDistance + seam-parameter agreement band (E1, one shared helper: admission + audit identical)",
   "ambiguityRule": "B0 fail-closed (B1 rejected); extension C0 no-extension (C1 rejected)",
   "candidacyRule": "corner-classifier candidacy only (independent audit); mesh topology N/A (no facets/area/cycles)",
   "counts": {

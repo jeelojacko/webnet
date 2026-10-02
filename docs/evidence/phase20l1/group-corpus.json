@@ -1,0 +1,688 @@
+{
+  "generator": "scripts/phase20l1GroupBuild.ts",
+  "baseline": "PR #147 research/phase20l1-offset-radius-policy-resolution @ fca43c5d",
+  "granularityGate": "MEMBER_FALLBACK_CORNER_REASONS: a curved member incident to any rejected corner routes chord fallback (production member-standalone path); exact ties only at ADMIT_P0 corners; an exact run needs contiguous P0 corners sharing one proven d; whole-group exact iff every corner P0 + single d. Corner assembly stays the per-joint gate (admit+reason persisted per corner, revision-keyed); member resolve stays the per-member gate.",
+  "extentRule": "consumed as-is from the boundary worker extent gate (E1): d<=maxSearchDistance exact + extentJVWithin(|J-V|, ms) shared helper; never re-derived here",
+  "noTransitionGeometry": true,
+  "chains": [
+    {
+      "id": "A1-line-arc-DISTANCE",
+      "side": "left",
+      "family": "DISTANCE",
+      "members": 2,
+      "closed": false,
+      "corners": [
+        {
+          "index": 0,
+          "admit": true,
+          "reason": "ADMIT_P0",
+          "d": 5,
+          "jx": -4.772255751,
+          "jy": 5,
+          "distV": 6.911904582
+        }
+      ],
+      "exactRun": [
+        0,
+        1
+      ],
+      "fallbackMembers": [],
+      "strip": {
+        "ok": true,
+        "detail": "STRIP_OK",
+        "vertices": 98,
+        "triangles": 96,
+        "planArea": 587.697028403,
+        "areaRelErr": 0,
+        "components": 1,
+        "edgeComponents": 1,
+        "boundaryEdges": 98,
+        "daylightContinuity": true,
+        "noInteriorOverlap": true
+      },
+      "gate": "WHOLE_RUN_EXACT"
+    },
+    {
+      "id": "A2-arc-line-DISTANCE",
+      "side": "left",
+      "family": "DISTANCE",
+      "members": 2,
+      "closed": false,
+      "corners": [
+        {
+          "index": 0,
+          "admit": true,
+          "reason": "ADMIT_P0",
+          "d": 5,
+          "jx": -5,
+          "jy": 4.772255751,
+          "distV": 6.911904582
+        }
+      ],
+      "exactRun": [
+        0,
+        1
+      ],
+      "fallbackMembers": [],
+      "strip": {
+        "ok": true,
+        "detail": "STRIP_OK",
+        "vertices": 98,
+        "triangles": 96,
+        "planArea": 587.697028364,
+        "areaRelErr": 0,
+        "components": 1,
+        "edgeComponents": 1,
+        "boundaryEdges": 98,
+        "daylightContinuity": true,
+        "noInteriorOverlap": true
+      },
+      "gate": "WHOLE_RUN_EXACT"
+    },
+    {
+      "id": "B-3member-DISTANCE",
+      "side": "left",
+      "family": "DISTANCE",
+      "members": 3,
+      "closed": false,
+      "corners": [
+        {
+          "index": 0,
+          "admit": true,
+          "reason": "ADMIT_P0",
+          "d": 5,
+          "jx": -4.772255751,
+          "jy": 5,
+          "distV": 6.911904582
+        },
+        {
+          "index": 1,
+          "admit": true,
+          "reason": "ADMIT_P0",
+          "d": 5,
+          "jx": 45,
+          "jy": 54.772255751,
+          "distV": 6.911904582
+        }
+      ],
+      "exactRun": [
+        0,
+        1,
+        2
+      ],
+      "fallbackMembers": [],
+      "strip": {
+        "ok": true,
+        "detail": "STRIP_OK",
+        "vertices": 146,
+        "triangles": 144,
+        "planArea": 763.322161314,
+        "areaRelErr": 0,
+        "components": 1,
+        "edgeComponents": 1,
+        "boundaryEdges": 146,
+        "daylightContinuity": true,
+        "noInteriorOverlap": true
+      },
+      "gate": "WHOLE_RUN_EXACT"
+    },
+    {
+      "id": "A1-line-arc-REL_EL",
+      "side": "left",
+      "family": "REL_EL",
+      "members": 2,
+      "closed": false,
+      "corners": [
+        {
+          "index": 0,
+          "admit": true,
+          "reason": "ADMIT_P0",
+          "d": 5,
+          "jx": -4.772255751,
+          "jy": 5,
+          "distV": 6.911904582
+        }
+      ],
+      "exactRun": [
+        0,
+        1
+      ],
+      "fallbackMembers": [],
+      "strip": {
+        "ok": true,
+        "detail": "STRIP_OK",
+        "vertices": 98,
+        "triangles": 96,
+        "planArea": 587.697028403,
+        "areaRelErr": 0,
+        "components": 1,
+        "edgeComponents": 1,
+        "boundaryEdges": 98,
+        "daylightContinuity": true,
+        "noInteriorOverlap": true
+      },
+      "gate": "WHOLE_RUN_EXACT"
+    },
+    {
+      "id": "A2-arc-line-REL_EL",
+      "side": "left",
+      "family": "REL_EL",
+      "members": 2,
+      "closed": false,
+      "corners": [
+        {
+          "index": 0,
+          "admit": true,
+          "reason": "ADMIT_P0",
+          "d": 5,
+          "jx": -5,
+          "jy": 4.772255751,
+          "distV": 6.911904582
+        }
+      ],
+      "exactRun": [
+        0,
+        1
+      ],
+      "fallbackMembers": [],
+      "strip": {
+        "ok": true,
+        "detail": "STRIP_OK",
+        "vertices": 98,
+        "triangles": 96,
+        "planArea": 587.697028364,
+        "areaRelErr": 0,
+        "components": 1,
+        "edgeComponents": 1,
+        "boundaryEdges": 98,
+        "daylightContinuity": true,
+        "noInteriorOverlap": true
+      },
+      "gate": "WHOLE_RUN_EXACT"
+    },
+    {
+      "id": "B-3member-REL_EL",
+      "side": "left",
+      "family": "REL_EL",
+      "members": 3,
+      "closed": false,
+      "corners": [
+        {
+          "index": 0,
+          "admit": true,
+          "reason": "ADMIT_P0",
+          "d": 5,
+          "jx": -4.772255751,
+          "jy": 5,
+          "distV": 6.911904582
+        },
+        {
+          "index": 1,
+          "admit": true,
+          "reason": "ADMIT_P0",
+          "d": 5,
+          "jx": 45,
+          "jy": 54.772255751,
+          "distV": 6.911904582
+        }
+      ],
+      "exactRun": [
+        0,
+        1,
+        2
+      ],
+      "fallbackMembers": [],
+      "strip": {
+        "ok": true,
+        "detail": "STRIP_OK",
+        "vertices": 146,
+        "triangles": 144,
+        "planArea": 763.322161314,
+        "areaRelErr": 0,
+        "components": 1,
+        "edgeComponents": 1,
+        "boundaryEdges": 146,
+        "daylightContinuity": true,
+        "noInteriorOverlap": true
+      },
+      "gate": "WHOLE_RUN_EXACT"
+    },
+    {
+      "id": "A1-line-arc-ELEV_FLAT",
+      "side": "left",
+      "family": "ELEV_FLAT",
+      "members": 2,
+      "closed": false,
+      "corners": [
+        {
+          "index": 0,
+          "admit": true,
+          "reason": "ADMIT_P0",
+          "d": 5,
+          "jx": -4.772255751,
+          "jy": 5,
+          "distV": 6.911904582
+        }
+      ],
+      "exactRun": [
+        0,
+        1
+      ],
+      "fallbackMembers": [],
+      "strip": {
+        "ok": true,
+        "detail": "STRIP_OK",
+        "vertices": 98,
+        "triangles": 96,
+        "planArea": 587.697028403,
+        "areaRelErr": 0,
+        "components": 1,
+        "edgeComponents": 1,
+        "boundaryEdges": 98,
+        "daylightContinuity": true,
+        "noInteriorOverlap": true
+      },
+      "gate": "WHOLE_RUN_EXACT"
+    },
+    {
+      "id": "A2-arc-line-ELEV_FLAT",
+      "side": "left",
+      "family": "ELEV_FLAT",
+      "members": 2,
+      "closed": false,
+      "corners": [
+        {
+          "index": 0,
+          "admit": true,
+          "reason": "ADMIT_P0",
+          "d": 5,
+          "jx": -5,
+          "jy": 4.772255751,
+          "distV": 6.911904582
+        }
+      ],
+      "exactRun": [
+        0,
+        1
+      ],
+      "fallbackMembers": [],
+      "strip": {
+        "ok": true,
+        "detail": "STRIP_OK",
+        "vertices": 98,
+        "triangles": 96,
+        "planArea": 587.697028364,
+        "areaRelErr": 0,
+        "components": 1,
+        "edgeComponents": 1,
+        "boundaryEdges": 98,
+        "daylightContinuity": true,
+        "noInteriorOverlap": true
+      },
+      "gate": "WHOLE_RUN_EXACT"
+    },
+    {
+      "id": "B-3member-ELEV_FLAT",
+      "side": "left",
+      "family": "ELEV_FLAT",
+      "members": 3,
+      "closed": false,
+      "corners": [
+        {
+          "index": 0,
+          "admit": true,
+          "reason": "ADMIT_P0",
+          "d": 5,
+          "jx": -4.772255751,
+          "jy": 5,
+          "distV": 6.911904582
+        },
+        {
+          "index": 1,
+          "admit": true,
+          "reason": "ADMIT_P0",
+          "d": 5,
+          "jx": 45,
+          "jy": 54.772255751,
+          "distV": 6.911904582
+        }
+      ],
+      "exactRun": [
+        0,
+        1,
+        2
+      ],
+      "fallbackMembers": [],
+      "strip": {
+        "ok": true,
+        "detail": "STRIP_OK",
+        "vertices": 146,
+        "triangles": 144,
+        "planArea": 763.322161314,
+        "areaRelErr": 0,
+        "components": 1,
+        "edgeComponents": 1,
+        "boundaryEdges": 146,
+        "daylightContinuity": true,
+        "noInteriorOverlap": true
+      },
+      "gate": "WHOLE_RUN_EXACT"
+    },
+    {
+      "id": "C-mixed-DISTANCE",
+      "side": "left",
+      "family": "DISTANCE",
+      "members": 3,
+      "closed": false,
+      "corners": [
+        {
+          "index": 0,
+          "admit": true,
+          "reason": "ADMIT_P0",
+          "d": 5,
+          "jx": -4.772255751,
+          "jy": 5,
+          "distV": 6.911904582
+        },
+        {
+          "index": 1,
+          "admit": false,
+          "reason": "REJECT_ARC_PAIR_NO_GO",
+          "d": 5,
+          "jx": null,
+          "jy": null,
+          "distV": null
+        }
+      ],
+      "exactRun": null,
+      "fallbackMembers": [
+        1,
+        2
+      ],
+      "strip": null,
+      "gate": "MEMBER_FALLBACK_PARTIAL_RUN"
+    },
+    {
+      "id": "D-reverse-mixed-DISTANCE",
+      "side": "left",
+      "family": "DISTANCE",
+      "members": 3,
+      "closed": false,
+      "corners": [
+        {
+          "index": 0,
+          "admit": false,
+          "reason": "REJECT_ARC_PAIR_NO_GO",
+          "d": 5,
+          "jx": null,
+          "jy": null,
+          "distV": null
+        },
+        {
+          "index": 1,
+          "admit": true,
+          "reason": "ADMIT_P0",
+          "d": 5,
+          "jx": 45,
+          "jy": 54.772255751,
+          "distV": 6.911904582
+        }
+      ],
+      "exactRun": null,
+      "fallbackMembers": [
+        0,
+        1
+      ],
+      "strip": null,
+      "gate": "MEMBER_FALLBACK_PARTIAL_RUN"
+    },
+    {
+      "id": "F1-square-left",
+      "side": "left",
+      "family": "DISTANCE",
+      "members": 4,
+      "closed": true,
+      "corners": [
+        {
+          "index": 0,
+          "admit": true,
+          "reason": "ADMIT_P0",
+          "d": 5,
+          "jx": 35,
+          "jy": 5,
+          "distV": 7.071067812
+        },
+        {
+          "index": 1,
+          "admit": true,
+          "reason": "ADMIT_P0",
+          "d": 5,
+          "jx": 35,
+          "jy": 35,
+          "distV": 7.071067812
+        },
+        {
+          "index": 2,
+          "admit": true,
+          "reason": "ADMIT_P0",
+          "d": 5,
+          "jx": 5,
+          "jy": 35,
+          "distV": 7.071067812
+        },
+        {
+          "index": 3,
+          "admit": true,
+          "reason": "ADMIT_P0",
+          "d": 5,
+          "jx": 5,
+          "jy": 5,
+          "distV": 7.071067812
+        }
+      ],
+      "exactRun": [
+        0,
+        1,
+        2,
+        3
+      ],
+      "fallbackMembers": [],
+      "strip": {
+        "ok": true,
+        "detail": "STRIP_OK",
+        "vertices": 192,
+        "triangles": 192,
+        "planArea": 700,
+        "areaRelErr": 0,
+        "components": 1,
+        "edgeComponents": 1,
+        "boundaryEdges": 192,
+        "daylightContinuity": true,
+        "noInteriorOverlap": true,
+        "sourceClosedSimple": true,
+        "daylightClosedSimple": true
+      },
+      "gate": "WHOLE_GROUP_EXACT"
+    },
+    {
+      "id": "F1-square-right-cw",
+      "side": "right",
+      "family": "DISTANCE",
+      "members": 4,
+      "closed": true,
+      "corners": [
+        {
+          "index": 0,
+          "admit": true,
+          "reason": "ADMIT_P0",
+          "d": 5,
+          "jx": 5,
+          "jy": 35,
+          "distV": 7.071067812
+        },
+        {
+          "index": 1,
+          "admit": true,
+          "reason": "ADMIT_P0",
+          "d": 5,
+          "jx": 35,
+          "jy": 35,
+          "distV": 7.071067812
+        },
+        {
+          "index": 2,
+          "admit": true,
+          "reason": "ADMIT_P0",
+          "d": 5,
+          "jx": 35,
+          "jy": 5,
+          "distV": 7.071067812
+        },
+        {
+          "index": 3,
+          "admit": true,
+          "reason": "ADMIT_P0",
+          "d": 5,
+          "jx": 5,
+          "jy": 5,
+          "distV": 7.071067812
+        }
+      ],
+      "exactRun": [
+        0,
+        1,
+        2,
+        3
+      ],
+      "fallbackMembers": [],
+      "strip": {
+        "ok": true,
+        "detail": "STRIP_OK",
+        "vertices": 192,
+        "triangles": 192,
+        "planArea": 700,
+        "areaRelErr": 0,
+        "components": 1,
+        "edgeComponents": 1,
+        "boundaryEdges": 192,
+        "daylightContinuity": true,
+        "noInteriorOverlap": true,
+        "sourceClosedSimple": true,
+        "daylightClosedSimple": true
+      },
+      "gate": "WHOLE_GROUP_EXACT"
+    },
+    {
+      "id": "F2-stadium-left",
+      "side": "left",
+      "family": "DISTANCE",
+      "members": 4,
+      "closed": true,
+      "corners": [
+        {
+          "index": 0,
+          "admit": false,
+          "d": 5,
+          "jx": null,
+          "jy": null,
+          "distV": null,
+          "reason": "REJECT_AMBIGUITY_B0"
+        },
+        {
+          "index": 1,
+          "admit": false,
+          "d": 5,
+          "jx": null,
+          "jy": null,
+          "distV": null,
+          "reason": "REJECT_AMBIGUITY_B0"
+        },
+        {
+          "index": 2,
+          "admit": false,
+          "d": 5,
+          "jx": null,
+          "jy": null,
+          "distV": null,
+          "reason": "REJECT_AMBIGUITY_B0"
+        },
+        {
+          "index": 3,
+          "admit": false,
+          "d": 5,
+          "jx": null,
+          "jy": null,
+          "distV": null,
+          "reason": "REJECT_AMBIGUITY_B0"
+        }
+      ],
+      "exactRun": null,
+      "fallbackMembers": [
+        1,
+        3
+      ],
+      "strip": null,
+      "gate": "WHOLE_GROUP_CHORD_FALLBACK"
+    },
+    {
+      "id": "F2-stadium-right",
+      "side": "right",
+      "family": "DISTANCE",
+      "members": 4,
+      "closed": true,
+      "corners": [
+        {
+          "index": 0,
+          "admit": false,
+          "d": 5,
+          "jx": null,
+          "jy": null,
+          "distV": null,
+          "reason": "REJECT_AMBIGUITY_B0"
+        },
+        {
+          "index": 1,
+          "admit": false,
+          "d": 5,
+          "jx": null,
+          "jy": null,
+          "distV": null,
+          "reason": "REJECT_AMBIGUITY_B0"
+        },
+        {
+          "index": 2,
+          "admit": false,
+          "d": 5,
+          "jx": null,
+          "jy": null,
+          "distV": null,
+          "reason": "REJECT_AMBIGUITY_B0"
+        },
+        {
+          "index": 3,
+          "admit": false,
+          "d": 5,
+          "jx": null,
+          "jy": null,
+          "distV": null,
+          "reason": "REJECT_AMBIGUITY_B0"
+        }
+      ],
+      "exactRun": null,
+      "fallbackMembers": [
+        1,
+        3
+      ],
+      "strip": null,
+      "gate": "WHOLE_GROUP_CHORD_FALLBACK"
+    }
+  ],
+  "criterionContinuity": {
+    "sameD_Jagree": true,
+    "diffD_rejectsOrMoves": true,
+    "flatZ": {
+      "sameFlat": "PROVEN d=5",
+      "diffFlat": "NOT_PROVEN ELEVATION_MEMBER_MISMATCH"
+    }
+  }
+}
