@@ -71,4 +71,114 @@ describe('chooseOsmTileMeshDivisions', () => {
     expect(reusePreviousTilesForDeepFallback(resolved, [{ key: '6-x' }])).toBe(resolved);
     expect(reusePreviousTilesForDeepFallback(resolved, [])).toBe(resolved);
   });
+
+  it('reuses a previous parent surface across a zoom-level boundary via spatial ancestry', () => {
+    type SpatialTile = {
+      key: string;
+      zoom: number;
+      tileX: number;
+      tileY: number;
+      fallbackPreferred?: boolean;
+    };
+    // floor(21 / 2) === 10 and floor(24 / 2) === 12, so z5 5-10-12 is the
+    // parent of both z6 children below.
+    const previousParent: SpatialTile = {
+      key: '5-10-12',
+      zoom: 5,
+      tileX: 10,
+      tileY: 12,
+      fallbackPreferred: true,
+    };
+    const deepChildA: SpatialTile = {
+      key: '6-20-24',
+      zoom: 6,
+      tileX: 20,
+      tileY: 24,
+      fallbackPreferred: false,
+    };
+    const deepChildB: SpatialTile = {
+      key: '6-21-24',
+      zoom: 6,
+      tileX: 21,
+      tileY: 24,
+      fallbackPreferred: false,
+    };
+    const exact: SpatialTile = {
+      key: '6-22-24',
+      zoom: 6,
+      tileX: 22,
+      tileY: 24,
+      fallbackPreferred: true,
+    };
+
+    const renderTiles = reusePreviousTilesForDeepFallback(
+      [exact, deepChildA, deepChildB],
+      [previousParent],
+    );
+
+    // Deduped to a single reused parent surface; no stretched child slices.
+    expect(renderTiles).toEqual([exact, previousParent]);
+    expect(renderTiles[1]).toBe(previousParent);
+    expect(renderTiles).not.toContain(deepChildA);
+    expect(renderTiles).not.toContain(deepChildB);
+  });
+
+  it('prefers the finest covering previous surface and keeps unmatched deep tiles', () => {
+    type SpatialTile = {
+      key: string;
+      zoom: number;
+      tileX: number;
+      tileY: number;
+      fallbackPreferred?: boolean;
+      fallbackZoomDelta?: number;
+    };
+    const grandparent: SpatialTile = {
+      key: '4-5-6',
+      zoom: 4,
+      tileX: 5,
+      tileY: 6,
+      fallbackPreferred: true,
+    };
+    const parent: SpatialTile = {
+      key: '5-10-12',
+      zoom: 5,
+      tileX: 10,
+      tileY: 12,
+      fallbackPreferred: true,
+    };
+    const deep: SpatialTile = {
+      key: '6-21-24',
+      zoom: 6,
+      tileX: 21,
+      tileY: 24,
+      fallbackPreferred: false,
+      fallbackZoomDelta: 2,
+    };
+    const uncovered: SpatialTile = {
+      key: '6-0-0',
+      zoom: 6,
+      tileX: 0,
+      tileY: 0,
+      fallbackPreferred: false,
+      fallbackZoomDelta: 3,
+    };
+    const shallow: SpatialTile = {
+      key: '6-22-24',
+      zoom: 6,
+      tileX: 22,
+      tileY: 24,
+      fallbackPreferred: false,
+      fallbackZoomDelta: 1,
+    };
+
+    const renderTiles = reusePreviousTilesForDeepFallback(
+      [deep, uncovered, shallow],
+      [grandparent, parent],
+    );
+
+    // Finest (z5) parent wins; unmatched deep tile keeps offline coverage;
+    // shallow (delta <= 1) fallback is left untouched.
+    expect(renderTiles).toEqual([parent, uncovered, shallow]);
+    expect(renderTiles[0]).toBe(parent);
+  });
 });
