@@ -56,6 +56,7 @@ import { groupTerminationMode } from './gradingGroupTermination';
 import { buildGradingTopologyCertificateExact, countPositiveWidthRegions } from './gradingTopologyCertificate';
 import { deriveGradingTopologyExpectation } from './gradingTopologyExpectation';
 import { solveStraightChord, type StraightChordSolve } from './solveStraightChord';
+import { tryExactOffsetGroup } from './gradingGroupExactOffset';
 import { gradingTerminationDomain, isTargetFreeCriterion } from './gradingTypes';
 import type {
   GradingCriterion,
@@ -279,6 +280,20 @@ export const computeGradingGroupFromSnapshots = (input: GroupSolveInput): Gradin
     if (!exactXyz(members[j]!, members[(j + 1) % members.length]!)) {
       return fail('CORNER_INVERTED', j, 'GRADING_GROUP_CORNER_MISMATCH');
     }
+  }
+  // Phase 20L.2: exact-offset fast path — plausible open curved analytic
+  // groups only. EXACT returns; FALLBACK falls through to the chord path
+  // semantically unchanged below (never ok:false). Closed-with-arc and
+  // line-only groups stay on the chord path without an attempt, as do
+  // single-member groups: with no joint there is no offset join to solve
+  // exactly, and the pinned single-arc chord oracles (20f §H, 20g §K) stay
+  // on their studied path.
+  if (!closed && members.length > 1 && members.some((m) => m.isArc)) {
+    const attempt = tryExactOffsetGroup({
+      groupId, revision, members, side, criterion, maxSearchDistance, curveChordTolerance,
+      ...(input.memberCriteria !== undefined ? { memberCriteria: input.memberCriteria } : {}),
+    });
+    if (attempt.kind === 'exact') return { ok: true, result: attempt.result };
   }
   // Surface and hybrid members share ONE target index; all-analytic
   // families carry no target (mode branch: hybrid always queries).
