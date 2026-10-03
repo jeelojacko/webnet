@@ -166,6 +166,40 @@ describe('AppToolbar responsive layout', () => {
     );
     expect(solving.textContent).toContain('solve 3/6');
   });
+
+  it('hides the iteration counter during pre-analysis planning but keeps it for main solves', async () => {
+    const planning = await renderToolbar(
+      {
+        ...idlePipeline,
+        status: 'running',
+        phase: 'solving',
+        stageId: 'preanalysis-impact',
+        detail: 'Pre-analysis impact checks',
+        solveIndex: 4,
+        iteration: 1,
+        maxIterations: 10,
+      },
+      'Solving',
+    );
+    expect(planning.textContent).toContain('Planning checks 4');
+    expect(planning.textContent).not.toContain('iter 1/10');
+
+    const mainSolve = await renderToolbar(
+      {
+        ...idlePipeline,
+        status: 'running',
+        phase: 'solving',
+        stageId: 'main-solve',
+        detail: 'Solving normal matrix',
+        solveIndex: 1,
+        solveTotalHint: 1,
+        iteration: 1,
+        maxIterations: 10,
+      },
+      'Solving',
+    );
+    expect(mainSolve.textContent).toContain('iter 1/10');
+  });
 });
 
 describe('ReportToolbar responsive layout', () => {
