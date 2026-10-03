@@ -159,19 +159,24 @@ describe('20M.1 transition policy corpus', () => {
   });
 
   it('no src/ changes: committed range clean AND working tree/index clean', () => {
-    // Full committed-range proof needs the baseline object locally. Shallow
-    // CI checkouts lack it, so detect non-throwing and only then assert the
-    // range; the range proof there is independently enforced by PR
-    // changed-path classification / GitHub changed-file review, not by this
-    // unit test. Working tree/index under src is always asserted here.
-    let baselinePresent = true;
+    // The committed-range proof is anchored to the Phase 20M.1 scope
+    // (baseline 3fe69f22 through the PR #150 merge bd4bdd45), NOT floating
+    // HEAD: a floating end would fail on any later branch that legitimately
+    // touches src/ (e.g. toolchain maintenance), even though 20M.1 itself
+    // stayed zero-src. Shallow CI checkouts may lack either object, so
+    // detect non-throwing and only then assert the range; the range proof
+    // there is independently enforced by PR changed-path classification /
+    // GitHub changed-file review, not by this unit test. Working
+    // tree/index under src is always asserted here.
+    let rangeProvable = true;
     try {
       execSync('git cat-file -e 3fe69f22103b1d242538a0a205a0774e145afde5^{commit}', { stdio: 'ignore' });
+      execSync('git cat-file -e bd4bdd4599006a82308bafc25e73341f46866013^{commit}', { stdio: 'ignore' });
     } catch {
-      baselinePresent = false;
+      rangeProvable = false;
     }
-    if (baselinePresent) {
-      const range = execSync('git diff --name-only 3fe69f22103b1d242538a0a205a0774e145afde5...HEAD -- src', { encoding: 'utf8' });
+    if (rangeProvable) {
+      const range = execSync('git diff --name-only 3fe69f22103b1d242538a0a205a0774e145afde5...bd4bdd4599006a82308bafc25e73341f46866013 -- src', { encoding: 'utf8' });
       expect(range.trim()).toBe('');
     }
     const tree = execSync('git status --porcelain -- src', { encoding: 'utf8' });
