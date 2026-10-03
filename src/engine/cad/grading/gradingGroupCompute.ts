@@ -54,8 +54,12 @@ import { solveAnalyticCorner } from './gradingGroupAnalyticCorners';
 import {
   admitGradingTransition,
   evaluateTransitionLinearV1,
-  type TransitionRejectCode,
+  selectGroupTransition,
+  transitionRejectGroupCode as transitionPolicyToGroupCode,
+  type TransitionSelection,
 } from './gradingTransitionPolicy';
+
+export { selectGroupTransition, type TransitionSelection };
 import { solveHybridCorner } from './gradingGroupHybridCorners';
 import { groupTerminationMode } from './gradingGroupTermination';
 import { buildGradingTopologyCertificateExact, countPositiveWidthRegions } from './gradingTopologyCertificate';
@@ -270,46 +274,6 @@ const splitMemberCutFill = (
     }
   }
   return { cut, fill, tied };
-};
-
-/**
- * Phase 20M.2 Wave D — transition selection over retained intents.
- *
- * Absent/empty (or only structurally non-object entries) = exact legacy
- * path. Exactly one object = the candidate. More than one = CARDINALITY
- * reject under `trp1` (fail closed, never a silent pick). Content validity
- * (malformed/stale/inadmissible) is decided at admission, not here.
- */
-export type TransitionSelection =
-  | { kind: 'absent' }
-  | { kind: 'single'; transition: CadGradingTransition }
-  | { kind: 'rejected'; code: GroupDiagnosticCode; detail: string };
-
-export const selectGroupTransition = (transitions: unknown): TransitionSelection => {
-  if (transitions === undefined) return { kind: 'absent' };
-  if (!Array.isArray(transitions)) return { kind: 'absent' };
-  const intents = transitions.filter(
-    (entry): entry is CadGradingTransition => entry !== null && typeof entry === 'object',
-  );
-  if (intents.length === 0) return { kind: 'absent' };
-  if (intents.length > 1) {
-    return {
-      kind: 'rejected',
-      code: 'TRANSITION_REJECTED',
-      detail: 'GRADING_AGREEMENT_TRANSITION_CARDINALITY',
-    };
-  }
-  return { kind: 'single', transition: intents[0]! };
-};
-
-/** Policy reject → bounded group diagnostic (fail closed, never fallback). */
-const transitionPolicyToGroupCode = (code: TransitionRejectCode): GroupDiagnosticCode => {
-  if (code === 'MALFORMED') return 'TRANSITION_MALFORMED';
-  if (code === 'VERSION_UNKNOWN' || code === 'LAW_UNKNOWN') return 'TRANSITION_LAW_UNKNOWN';
-  if (code === 'MEMBER_REF_STALE' || code === 'NATIVE_CRITERION' || code === 'MAX_SEARCH') {
-    return 'TRANSITION_STALE';
-  }
-  return 'TRANSITION_REJECTED';
 };
 
 /** Admitted + tiled transition interval (C0 by shared vertex refs). */

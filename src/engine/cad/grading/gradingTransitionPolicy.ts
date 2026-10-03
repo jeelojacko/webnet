@@ -6,6 +6,7 @@
  * widening, no defaults). Malformed/stale/inadmissible intent FAILS CLOSED.
  */
 import { resolveAnalyticCriterionAt } from './gradingAnalyticCriterion';
+import type { CadGradingTransition, GroupDiagnosticCode } from './gradingGroupTypes';
 import type { GradingCriterion, GradingSide } from './gradingTypes';
 
 export type TransitionPolicyVersion = 'trp1';
@@ -179,4 +180,47 @@ export const evaluateTransitionLinearV1 = (
 ): number => {
   const t = (s - sL) / (sR - sL);
   return vL + (vR - vL) * t;
+};
+
+/**
+ * Transition selection over retained intents (moved from
+ * gradingGroupCompute so service-side request assembly reuses the one
+ * cardinality gate). Absent/empty = legacy path; exactly one object = the
+ * candidate; more than one = CARDINALITY reject under trp1. Content
+ * validity is decided at admission, not here.
+ */
+export type TransitionSelection =
+  | { kind: 'absent' }
+  | { kind: 'single'; transition: CadGradingTransition }
+  | { kind: 'rejected'; code: GroupDiagnosticCode; detail: string };
+
+export const selectGroupTransition = (transitions: unknown): TransitionSelection => {
+  if (transitions === undefined) return { kind: 'absent' };
+  if (!Array.isArray(transitions)) return { kind: 'absent' };
+  const intents = transitions.filter(
+    (entry): entry is CadGradingTransition => entry !== null && typeof entry === 'object',
+  );
+  if (intents.length === 0) return { kind: 'absent' };
+  if (intents.length > 1) {
+    return {
+      kind: 'rejected',
+      code: 'TRANSITION_REJECTED',
+      detail: 'GRADING_AGREEMENT_TRANSITION_CARDINALITY',
+    };
+  }
+  return { kind: 'single', transition: intents[0]! };
+};
+
+/**
+ * Policy reject → bounded group diagnostic (single mapping shared by the
+ * engine solve and service-side request assembly; fail closed, never
+ * fallback).
+ */
+export const transitionRejectGroupCode = (code: TransitionRejectCode): GroupDiagnosticCode => {
+  if (code === 'MALFORMED') return 'TRANSITION_MALFORMED';
+  if (code === 'VERSION_UNKNOWN' || code === 'LAW_UNKNOWN') return 'TRANSITION_LAW_UNKNOWN';
+  if (code === 'MEMBER_REF_STALE' || code === 'NATIVE_CRITERION' || code === 'MAX_SEARCH') {
+    return 'TRANSITION_STALE';
+  }
+  return 'TRANSITION_REJECTED';
 };

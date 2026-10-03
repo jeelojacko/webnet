@@ -12,10 +12,16 @@ import {
   type ResolvedGroupInputs,
 } from '../engine/cad/grading/gradingGroupResolve';
 import { deriveGroupStatus } from '../engine/cad/grading/gradingGroupStatus';
-import type { CadGradingGroupResult, GroupStatus } from '../engine/cad/grading/gradingGroupTypes';
+import type { CadGradingGroupResult, GroupDiagnosticCode, GroupStatus } from '../engine/cad/grading/gradingGroupTypes';
 import { resolveGradingInputs, type ResolvedGradingInputs } from '../engine/cad/grading/gradingResolve';
 import { deriveGradingStatus, deriveFailedEffectiveStatus } from '../engine/cad/grading/gradingStatus';
-import type { CadGradingResult, GradingStatus } from '../engine/cad/grading/gradingTypes';
+import type { CadGradingResult, GradingCriterion, GradingStatus, ResolvedGradingSource } from '../engine/cad/grading/gradingTypes';
+import {
+  admitGradingTransition,
+  selectGroupTransition,
+  transitionRejectGroupCode,
+  type TransitionMemberGeometry,
+} from '../engine/cad/grading/gradingTransitionPolicy';
 import {
   validateDaylightAgainstTarget,
   validateGradingResultAgainstTarget,
@@ -23,6 +29,8 @@ import {
   type GradingComputeSource,
   type GradingSourceBoundaryCheck,
   type GradingTargetQuery,
+  type GroupTransitionMemberView,
+  type GroupTransitionPlan,
 } from './surfaceGradingCompute';
 import type { GradingGroupComputeRequest, SurfaceGradingRequest } from './surfaceWorkerHandler';
 import type { PendingSurfaceGrading, PendingSurfaceGroupGrading } from './surfaceWorkerClient';
@@ -99,6 +107,149 @@ const toTargetSnapshot = (
   for (const triangle of triangles) flatTriangles.push(triangle[0], triangle[1], triangle[2]);
   return { points: flatPoints, triangles: flatTriangles };
 };
+
+/**
+ * Phase 20M.2 WAVE I — service-side transition request assembly (pure).
+ *
+ * Selects the single retained intent, verifies its refs against the live
+ * traversal keys, and runs the frozen admission authority to pin the
+ * endpoint evidence + recorded revision the worker agreement rechecks.
+ * Absent = exact legacy request. Any reject returns the bounded
+ * TRANSITION_* diagnostic so Calculate fails closed without dispatching.
+ */
+export type GroupTransitionRequestPlan =
+  | { kind: 'absent' }
+  | {
+      kind: 'plan';
+      transition: GroupTransitionPlan;
+      transitionMembers: GroupTransitionMemberView[];
+      transitionMemberKeys: string[];
+    }
+  | { kind: 'rejected'; code: GroupDiagnosticCode; detail: string };
+
+const gradeRatioOf = (criterion: GradingCriterion): number | null =>
+  criterion.kind === 'distance' ||
+  criterion.kind === 'elevation' ||
+  criterion.kind === 'relative-elevation'
+    ? criterion.gradeRatio
+    : null;
+
+export const planGroupTransitionRequest = (inputs: ResolvedGroupInputs): GroupTransitionRequestPlan => {
+  const selection = selectGroupTransition(inputs.transitions);
+  if (selection.kind === 'absent') return { kind: 'absent' };
+  if (selection.kind === 'rejected') {
+    return { kind: 'rejected', code: selection.code, detail: selection.detail };
+  }
+  const intent = selection.transition;
+  const keys = inputs.memberKeys;
+  const jointed = /^joint:(\d+)$/.exec(typeof intent.jointId === 'string' ? intent.jointId : '');
+  const joint = jointed !== null && jointed[1] === String(Number(jointed[1])) ? Number(jointed[1]) : -1;
+  const left = joint;
+  const right = joint + 1;
+  if (
+    !(joint >= 0) ||
+    keys[right] === undefined ||
+    keys[left] !== intent.memberIds[0] ||
+    keys[right] !== intent.memberIds[1]
+  ) {
+    return {
+      kind: 'rejected',
+      code: 'TRANSITION_STALE',
+      detail: 'GRADING_AGREEMENT_TRANSITION_STALE: memberIds do not resolve to adjacent members',
+    };
+  }
+  const sourceL = inputs.memberSources[left]!;
+  const sourceR = inputs.memberSources[right]!;
+  const criterionL = inputs.memberCriteria[left]!;
+  const criterionR = inputs.memberCriteria[right]!;
+  const geometry = (
+    memberId: string,
+    criterion: GradingCriterion,
+    source: ResolvedGradingSource,
+  ): TransitionMemberGeometry => ({
+    memberId,
+    criterion,
+    length: source.length,
+    dirX: source.endX - source.startX,
+    dirY: source.endY - source.startY,
+    startZ: source.startZ,
+    endZ: source.endZ,
+    isArc: source.isArc,
+    maxSearchDistance: inputs.group.maxSearchDistance,
+  });
+  const members = [
+    geometry(keys[left]!, criterionL, sourceL),
+    geometry(keys[right]!, criterionR, sourceR),
+  ] as [TransitionMemberGeometry, TransitionMemberGeometry];
+  const isOpen = inputs.group.closed !== true;
+  const admitted = admitGradingTransition({
+    policyVersion: intent.policyVersion,
+    lawKind: intent.lawKind,
+    lawVersion: intent.lawVersion,
+    criterionFamily: intent.criterionFamily,
+    jointId: intent.jointId,
+    memberIds: [keys[left]!, keys[right]!],
+    width: intent.width,
+    side: intent.side,
+    groupSide: inputs.group.side,
+    isOpen,
+    transitionCount: 1,
+    jointZ: sourceL.endZ,
+    members,
+  });
+  if (!admitted.ok) {
+    return {
+      kind: 'rejected',
+      code: transitionRejectGroupCode(admitted.code),
+      detail: `GRADING_AGREEMENT_TRANSITION: ${admitted.detail}`,
+    };
+  }
+  const gL = gradeRatioOf(criterionL);
+  const gR = gradeRatioOf(criterionR);
+  if (gL === null || gR === null) {
+    return {
+      kind: 'rejected',
+      code: 'TRANSITION_STALE',
+      detail: 'GRADING_AGREEMENT_TRANSITION_STALE: admitted members carry no gradeRatio',
+    };
+  }
+  let jointStation = 0;
+  for (let index = 0; index < right; index += 1) jointStation += inputs.memberSources[index]!.length;
+  const transitionMembers: GroupTransitionMemberView[] = members.map((member) => ({
+    memberId: member.memberId,
+    criterion: member.criterion,
+    length: member.length,
+    dirX: member.dirX,
+    dirY: member.dirY,
+    startZ: member.startZ,
+    endZ: member.endZ,
+    isArc: member.isArc,
+    maxSearchDistance: member.maxSearchDistance,
+  }));
+  return {
+    kind: 'plan',
+    transition: {
+      policyVersion: intent.policyVersion,
+      jointId: intent.jointId,
+      memberIds: [keys[left]!, keys[right]!],
+      width: intent.width,
+      lawKind: intent.lawKind,
+      lawVersion: intent.lawVersion,
+      criterionFamily: intent.criterionFamily,
+      side: intent.side,
+      groupSide: inputs.group.side,
+      isOpen,
+      transitionCount: 1,
+      jointZ: sourceL.endZ,
+      endpointEvidence: { vL: admitted.vL, vR: admitted.vR, gL, gR },
+      jointStation,
+      recordedRevision: inputs.revision,
+    },
+    transitionMembers,
+    transitionMemberKeys: [...keys],
+  };
+};
+
 
 export class SurfaceGradingService {
   private readonly deps: SurfaceGradingServiceDeps;
@@ -289,6 +440,18 @@ export class SurfaceGradingService {
       this.deps.onStateChange();
       return `Group grading calculation blocked: worker unavailable for “${group.name}”.`;
     }
+    // Phase 20M.2 WAVE I — retained transition intent rides the worker
+    // request (plan + member views + full traversal keys); any reject fails
+    // closed here with the bounded TRANSITION_* code, never dispatched.
+    const planned = planGroupTransitionRequest(inputs);
+    if (planned.kind === 'rejected') {
+      this.groupDiagnostics.set(groupId, {
+        revision,
+        error: truncateDiagnostic(`${planned.code}: transition for “${group.name}” rejected (${planned.detail}).`),
+      });
+      this.deps.onStateChange();
+      return `Group grading calculation blocked: transition for “${group.name}” rejected (${planned.code}) — fix or remove the intent, then recalculate.`;
+    }
     this.supersedeGroup(groupId);
     const pending = transport.deriveGroupGrading({
       groupId,
@@ -301,6 +464,14 @@ export class SurfaceGradingService {
       maxSearchDistance: group.maxSearchDistance,
       curveChordTolerance: group.curveChordTolerance,
       closed: group.closed === true,
+      // Phase 20M.2 WAVE I — admitted transition plan (absent = legacy).
+      ...(planned.kind === 'plan'
+        ? {
+            transition: planned.transition,
+            transitionMembers: planned.transitionMembers,
+            transitionMemberKeys: planned.transitionMemberKeys,
+          }
+        : {}),
       // Analytic groups send no target snapshot; surface groups send it once.
       ...(requiresSurface && targetMesh !== undefined
         ? { target: toTargetSnapshot(targetMesh.points, targetMesh.triangles) }
