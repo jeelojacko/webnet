@@ -122,10 +122,14 @@ const AppToolbar: React.FC<AppToolbarProps> = ({
           : pipelineState.solveIndex != null && pipelineState.solveTotalHint != null
             ? `${pipelineState.solveIndex}/${pipelineState.solveTotalHint}`
             : null;
+  // Pre-analysis planning runs expose each inner hypothetical solve's nonlinear
+  // iteration count; hide it there (display only, solver behavior unchanged).
   const iterationLabel =
-    pipelineState.iteration != null && pipelineState.maxIterations != null
-      ? `iter ${pipelineState.iteration}/${pipelineState.maxIterations}`
-      : null;
+    pipelineState.stageId === 'preanalysis-impact'
+      ? null
+      : pipelineState.iteration != null && pipelineState.maxIterations != null
+        ? `iter ${pipelineState.iteration}/${pipelineState.maxIterations}`
+        : null;
 
   return (
     <header
