@@ -133,7 +133,10 @@ P1 = P0+B1 ≡ P0 (B1 rejected, zero delta). P2 = P0+bounded extension:
 rejected (would admit 8 NONLOCAL GAP joins with no coverage need and a new
 length constant). P3 (permissive: sampled-constant surface + nearest-branch
 + extension): rejected whole — each relaxation adds policy without a proved
-authority. `net: P0 admits 15/186 rows (5 fixtures × 3 proven families).`
+authority. `net: LOCAL plan candidacy 15/186 rows (5 shape-classes × 3 proven
+families, incl. 6 arc-bearing) — per-corner candidacy only, NOT route
+admission (route needs the full ACTIVE-ROUTE gate: XYZ tie + flatness +
+joint continuity + single shared d + topology-clean strip).`
 
 ## 5. Invariance design (Task-7 reviewer fix, Finding 2)
 
@@ -199,6 +202,6 @@ chain records localP0Count, activeExactCorners, per-member representation
 strip presence, fallback ref, topology, continuity, route reason; each corner
 records the decided tie (`xyzTie` reason code, `tieOk`, laws-at-join
 `zIn`/`zOut`, agreed `joinZ`, analytic-tie `tieZ` + `tieJoinDist` provenance).
-Artifact: `docs/evidence/phase20l1/group-corpus.json` (17 chains,
-byte-identical ×2); tests pin gates, ties, continuity, topology, and the
-curved-vs-line-line split.
+Artifact: `docs/evidence/phase20l1/group-corpus.json` (18 chains: 12 exact
+strips + 6 whole-chain fallbacks, regenerated twice byte-identical); tests pin
+gates, ties, continuity, topology, and the curved-vs-line-line split.

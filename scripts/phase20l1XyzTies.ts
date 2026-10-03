@@ -1,7 +1,7 @@
 /**
  * Phase 20L.1 Task C — FULL XYZ TIE CONTINUITY STUDY (STUDY ONLY, zero src/).
  *
- * Problem: `sameD_Jagree` in the group corpus is plan-only. Two members can
+ * Problem: `sameD_sameJoin` in the group corpus is plan-only. Two members can
  * require the SAME plan distance `d` yet their daylight limit surfaces sit at
  * DIFFERENT Z at the same plan join — e.g. Distance g=1,D=5 (Z=sourceZ+5) vs
  * Relative-elevation g=2,Δ=10 (d=5, Z=sourceZ+10). Joining them is an invalid
@@ -59,14 +59,13 @@ const q = (p: { x: number; y: number; z: number }): { x: number; y: number; z: n
 
 export type XyzTieReason =
   | 'Z_TIE_OK'
-  | 'XY_AGREE'
   | 'REJECT_PLAN_LAW_NONCONSTANT'
   | 'REJECT_D_MISMATCH'
   | 'REJECT_ELEVATION_MEMBER_MISMATCH'
   | 'REJECT_ROFF'
   | 'REJECT_PLAN_JOIN'
   | 'REJECT_ANALYTIC_CORNER'
-  | 'REJECT_XY_TIE_MISMATCH'
+  | 'REJECT_ANALYTIC_TIE_NONUNIQUE'
   | 'REJECT_XYZ_TIE_MISMATCH'
   | 'REJECT_TIE_OUTSIDE_SEARCH'
   | 'REJECT_JOIN_Z_MISMATCH'
@@ -114,7 +113,9 @@ export interface XyzTieResult {
    *  neighborhood as the built join (structural locality, NOT numerical
    *  agreement), and Z must agree AT the join. */
   tieJoinDist: number | null;
-  xyAgree: boolean;
+  /** True iff the analytic tie plan XY is merely finite. States finiteness
+   *  only — it never implies T/J coincidence (0.2277 m apart on arc corners). */
+  tiePlanFinite: boolean;
   /** True iff both member laws agree at the join within production zeroDelta. */
   zAgree: boolean;
   detail: string;
@@ -174,7 +175,7 @@ export const xyzRunTieOk = (corner: XyzTieCornerInput): XyzTieResult => {
     ok: false, reason: 'REJECT_PLAN_LAW_NONCONSTANT', localP0: false,
     d: null, dIn: null, dOut: null, planReasonIn: 'UNKNOWN', planReasonOut: 'UNKNOWN',
     joinXY: null, tieXYZ: null, zIn: null, zOut: null, joinZ: null, tieJoinDist: null,
-    xyAgree: false, zAgree: false, detail: '',
+    tiePlanFinite: false, zAgree: false, detail: '',
   };
   const lawIn = planLawOf(incoming, ms);
   const lawOut = planLawOf(outgoing, ms);
@@ -228,7 +229,7 @@ export const xyzRunTieOk = (corner: XyzTieCornerInput): XyzTieResult => {
   base.joinZ = tie.joinZ;
   base.tieJoinDist = tie.tieJoinDist;
   base.zAgree = tie.zAgree;
-  base.xyAgree = tie.xyAgree;
+  base.tiePlanFinite = tie.tiePlanFinite;
   // (11) FLAT-ONLY ENFORCEMENT as predicate code (===, no tolerance), ahead
   // of every admission: any sloped member — 1e-13 or gross — rejects
   // REJECT_SLOPED_SOURCE identically, before zeroDelta leniency anywhere can
@@ -257,7 +258,7 @@ interface TieEval {
   /** |tie - join| plan distance (null unless the tie exists). */
   tieJoinDist: number | null;
   zAgree: boolean;
-  xyAgree: boolean;
+  tiePlanFinite: boolean;
   reason: XyzTieReason | null;
   detail: string;
 }
@@ -270,7 +271,7 @@ const evaluateAnalyticTie = (
   ms: number,
   joinXY: { x: number; y: number },
 ): TieEval => {
-  const empty: TieEval = { tieXYZ: null, zIn: null, zOut: null, joinZ: null, tieJoinDist: null, zAgree: false, xyAgree: false, reason: null, detail: '' };
+  const empty: TieEval = { tieXYZ: null, zIn: null, zOut: null, joinZ: null, tieJoinDist: null, zAgree: false, tiePlanFinite: false, reason: null, detail: '' };
   const inT = memberTangent(incoming.member);
   const outT = memberTangent(outgoing.member);
   const inN = inT ? gradingSideNormal(inT.nx, inT.ny, side) : null;
@@ -323,12 +324,12 @@ const evaluateAnalyticTie = (
       : { ...out, reason: 'REJECT_ANALYTIC_CORNER', detail: sol.detail };
   }
   if (sol.kind === 'coincident') {
-    return { ...out, reason: 'REJECT_XY_TIE_MISMATCH', detail: 'coincident-no-tie' };
+    return { ...out, reason: 'REJECT_ANALYTIC_TIE_NONUNIQUE', detail: 'coincident-no-tie' };
   }
   const tieJoinDist = Math.hypot(sol.tie.x - joinXY.x, sol.tie.y - joinXY.y);
   const tieOut: TieEval = {
     ...out, tieXYZ: q(sol.tie), tieJoinDist: r9(tieJoinDist),
-    xyAgree: Number.isFinite(sol.tie.x) && Number.isFinite(sol.tie.y), zAgree: false,
+    tiePlanFinite: Number.isFinite(sol.tie.x) && Number.isFinite(sol.tie.y), zAgree: false,
   };
   // (9) search-neighborhood (structural, NOT numerical agreement): the
   // certifying tie must lie within the same search neighborhood that admits
@@ -345,8 +346,8 @@ const evaluateAnalyticTie = (
   // (10) tie-at-join law: both member laws single-valued AT THE JOIN within
   // production zeroDelta. Sloped laws vary along plan (11 mm on fixture B
   // corner 0: 5.238612788 vs 5.25); flat laws are plan-constant (gs=0), so
-  // the tie-join distance cannot introduce Z ambiguity there. Exact, with
-  // that justification — no agreement band on Z.
+  // the tie-join distance cannot introduce Z ambiguity there. Numerical
+  // agreement within production zeroDelta, with that justification — no wider band on Z.
   const zAgree = zJIn !== null && zJOut !== null && Math.abs(zJIn - zJOut) <= zeroDelta(zJIn, zJOut);
   if (!zAgree) {
     return { ...tieOut, reason: 'REJECT_JOIN_Z_MISMATCH', detail: `join-z-in=${tieOut.zIn} join-z-out=${tieOut.zOut}` };
@@ -612,7 +613,7 @@ interface CorpusCorner {
   joinZ: number | null;
   /** |tie - join| plan distance. */
   tieJoinDist: number | null;
-  xyAgree: boolean;
+  tiePlanFinite: boolean;
   zAgree: boolean;
   reason: XyzTieReason;
   active: boolean;
@@ -638,7 +639,7 @@ const buildCorner = (f: FixtureSpec, j: number): CorpusCorner => {
     joinXY: res.joinXY ? { x: r9(res.joinXY.x), y: r9(res.joinXY.y) } : null,
     tieXYZ: res.tieXYZ, zIn: res.zIn, zOut: res.zOut,
     joinZ: res.joinZ, tieJoinDist: res.tieJoinDist,
-    xyAgree: res.xyAgree, zAgree: res.zAgree, reason: res.reason,
+    tiePlanFinite: res.tiePlanFinite, zAgree: res.zAgree, reason: res.reason,
     active: res.ok, detail: res.detail,
   };
 };
@@ -665,10 +666,10 @@ export const buildCorpus = () => {
   });
   const payload = {
     generator: 'scripts/phase20l1XyzTies.ts',
-    baseline: 'PR #147 research/phase20l1-offset-radius-policy-resolution @ 952a5d0f (Task C study)',
-    contract: 'xyzRunTieOk(one adjacent pair): (1) each member plan law analytically constant, (2) SAME required plan d, (3) every arc Roff>0 exact, (4) local P0 plan join UNIQUE/on-body/in-extent, (5) production solveAnalyticCorner accepts the tie, (6) analytic tie XY exact under the analytic authority, (7) [SUPERSEDED by 10: tie-Z agreement vacuous — laws agree at the tie by construction], (8) no incident fallback, (9) search-neighborhood (structural, NOT numerical agreement): the certifying tie lies within the same search neighborhood that admits the join (|tie-join| within maxSearchDistance via the shared extent comparison — reused bound; coincidence NOT required, constructions differ 0.2277 m on arc corners; explicitly NOT an E1 numerical-agreement claim), (10) tie-at-join law: both member daylight-Z laws single-valued AT THE JOIN within production zeroDelta (flat laws plan-constant, so exact with justification; sloped 11 mm fails), (11) FLAT-ONLY predicate (gate code, ===, no tolerance): each member startZ===endZ exactly — sloped members reject REJECT_SLOPED_SOURCE identically from 1e-13 to gross, before any zeroDelta leniency. (12) source-joint continuity (mirrors production exactXyz gradingGroupCompute.ts:137-138, same === on the Z leg; XY legs coincide by construction): incoming.endZ===outgoing.startZ exactly — a 0-vs-2 step rejects REJECT_SOURCE_JOINT_STEP with true per-member limits (5 vs 7) in provenance. Mixed families need same-d NECESSARY + same-join-Z REQUIRED, all flat, all joint-continuous.',
+    baseline: 'PR #147 research/phase20l1-offset-radius-policy-resolution @ 7cd481fa (Tasks C+F/H/J: Task C study + tie-at-join fix, flat-only predicate, source-joint continuity with fixture I)',
+    contract: 'xyzRunTieOk(one adjacent pair): (1) each member plan law analytically constant, (2) SAME required plan d, (3) every arc Roff>0 exact, (4) local P0 plan join UNIQUE/on-body/in-extent, (5) production solveAnalyticCorner accepts the tie, (6) analytic tie XY exact under the analytic authority, (7) [SUPERSEDED by 10: tie-Z agreement vacuous — laws agree at the tie by construction], (8) no incident fallback, (9) search-neighborhood (structural, NOT numerical agreement): the certifying tie lies within the same search neighborhood that admits the join (|tie-join| within maxSearchDistance via the shared extent comparison — reused bound; coincidence NOT required, constructions differ 0.2277 m on arc corners; explicitly NOT an E1 numerical-agreement claim), (10) tie-at-join law: both member daylight-Z laws single-valued AT THE JOIN within production zeroDelta (numerical agreement under the existing 4ε authority — flat laws plan-constant, so justified; sloped 11 mm fails), (11) FLAT-ONLY predicate (gate code, ===, no tolerance): each member startZ===endZ exactly — sloped members reject REJECT_SLOPED_SOURCE identically from 1e-13 to gross, before any zeroDelta leniency. (12) source-joint continuity (mirrors production exactXyz gradingGroupCompute.ts:137-138, same === on the Z leg; XY legs coincide by construction): incoming.endZ===outgoing.startZ exactly — a 0-vs-2 step rejects REJECT_SOURCE_JOINT_STEP with true per-member limits (5 vs 7) in provenance. Mixed families need same-d NECESSARY + same-join-Z REQUIRED, all flat, all joint-continuous.',
     provenBehavior: 'only analytically-proven plan laws resolve d (distance/relative-elevation constant; elevation flat only); a proven same-d run is still rejected unless both member laws agree at the admitted join — the built node — within production zeroDelta, and both members are exactly flat (===). The analytic tie is structural compatibility + provenance, never the certified point. Flatness is gate code, not prose; joint continuity mirrors production exactXyz (Z leg).',
-    reasonCodes: ['Z_TIE_OK', 'XY_AGREE', 'REJECT_PLAN_LAW_NONCONSTANT', 'REJECT_D_MISMATCH', 'REJECT_ELEVATION_MEMBER_MISMATCH', 'REJECT_ROFF', 'REJECT_PLAN_JOIN', 'REJECT_ANALYTIC_CORNER', 'REJECT_XY_TIE_MISMATCH', 'REJECT_XYZ_TIE_MISMATCH', 'REJECT_TIE_OUTSIDE_SEARCH', 'REJECT_JOIN_Z_MISMATCH', 'REJECT_SLOPED_SOURCE', 'REJECT_SOURCE_JOINT_STEP', 'REJECT_FALLBACK'],
+    reasonCodes: ['Z_TIE_OK', 'REJECT_PLAN_LAW_NONCONSTANT', 'REJECT_D_MISMATCH', 'REJECT_ELEVATION_MEMBER_MISMATCH', 'REJECT_ROFF', 'REJECT_PLAN_JOIN', 'REJECT_ANALYTIC_CORNER', 'REJECT_ANALYTIC_TIE_NONUNIQUE', 'REJECT_XYZ_TIE_MISMATCH', 'REJECT_TIE_OUTSIDE_SEARCH', 'REJECT_JOIN_Z_MISMATCH', 'REJECT_SLOPED_SOURCE', 'REJECT_SOURCE_JOINT_STEP', 'REJECT_FALLBACK'],
     rHook: { point: 'phase20l1GroupBuild CornerBuild.xyzTie', gate: 'xyzRunTieOk', routeDecision: 'owned by the parallel routing worker; this study pins only the gate + fixture outcomes' },
     scope: { curvedClosed: 'OUT_OF_SCOPE_CHORD_FALLBACK: closed curved groups remain whole-group chord in group-corpus.json (every curved stadium corner is B0); no exact curved-closed tie is claimed here.' },
     noTransitionGeometry: true,

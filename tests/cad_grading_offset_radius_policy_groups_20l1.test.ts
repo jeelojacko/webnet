@@ -25,7 +25,7 @@ interface ChainResult {
   strip: { ok: boolean; detail: string; planArea: number; areaRelErr: number | null; components: number; edgeComponents: number; daylightContinuity: boolean; noInteriorOverlap: boolean; sourceClosedSimple?: boolean; daylightClosedSimple?: boolean } | null;
 }
 
-const artifact = (): { chains: ChainResult[]; routingPolicy: string; granularityGate: string; criterionContinuity: { sameD_Jagree: boolean; diffD_rejectsOrMoves: boolean | string; flatZ: { sameFlat: string; diffFlat: string } } } =>
+const artifact = (): { chains: ChainResult[]; routingPolicy: string; granularityGate: string; criterionContinuity: { sameD_sameJoin: boolean; diffD_rejectsOrMoves: boolean | string; flatZ: { sameFlat: string; diffFlat: string } } } =>
   JSON.parse(readFileSync(join(dirname(new URL(import.meta.url).pathname), '..', 'docs', 'evidence', 'phase20l1', 'group-corpus.json'), 'utf8'));
 
 const DIST = { kind: 'distance', gradeRatio: 1, distance: 5 } as const;
@@ -335,7 +335,7 @@ describe('20L.1 groups: granularity + continuity (E)', () => {
   });
   it('same proven d across families stays continuous; different d / flats do not mix', () => {
     const p = artifact();
-    expect(p.criterionContinuity.sameD_Jagree).toBe(true);
+    expect(p.criterionContinuity.sameD_sameJoin).toBe(true);
     expect(p.criterionContinuity.diffD_rejectsOrMoves).toBe(true);
     expect(p.criterionContinuity.flatZ.sameFlat).toBe('PROVEN d=5');
     expect(p.criterionContinuity.flatZ.diffFlat).toBe('NOT_PROVEN ELEVATION_MEMBER_MISMATCH');

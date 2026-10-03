@@ -17,6 +17,44 @@ rejected, so full GO is not claimed. Transition-less surface↔analytic
 joints remain deferred (the primary TIN-surface workflow stays on
 chord-offset daylight).
 
+## CURRENT AUTHORITATIVE PHASE 20L.1 CONTRACT (supersedes all chronological notes below)
+
+VERDICT: PARTIAL_GO, FLAT-ONLY, R0. LOCAL PLAN LAW (per corner): proven
+criterion-derived `d` (DISTANCE | REL_EL | ELEV_FLAT-only), exact `Roff>0`
+on every arc, UNIQUE on-body single branch (B0), `d <= maxSearchDistance`
+exact, `|J-V|` within E1 band, C0 no extension, no arc-pair. XYZ/SOURCE LAW
+(per corner, `xyzRunTieOk`): exact flatness (each member startZ===endZ,
+===) + exact joint continuity (incoming.endZ===outgoing.startZ, ===,
+production-exactXyz mirror) + same required plan `d` (necessary, never
+sufficient) + production analytic-corner acceptance + tie in the same search
+neighborhood as the built join (locality-only, NOT agreement) +
+single-valued member laws AT THE JOIN within production zeroDelta
+(numerical agreement under the existing 4ε authority, never exactness).
+The production corner is compatibility/provenance authority only: the built
+node is the admitted join J, never the analytic tie T; T/J coincidence is
+NOT claimed (0.2277 m apart on arc corners); member laws at J agree under
+zeroDelta numerical authority; same-d/diff-Z fails closed. ROUTE LAW (R0,
+whole chain/group all-or-fallback): EXACT_OFFSET iff every required corner
+is ACTIVE_EXACT (local P0 + tied) sharing one proven `d`, the strip builds
+clean AND audits clean — strip-fail revokes to fallback; any failing corner
+forces the whole unit to unchanged chord fallback (no splice, no
+transition geometry); fallback continuity is NOT claimed; closed-with-arc
+falls back as product policy (SCOPE RULE CURVED_CLOSED_SUPPORT: a closed
+group containing any arc routes chord fallback regardless of which gate
+would fire — distinguished from the recorded per-chain route reason; on the
+F2 stadium chains the recorded reason is CHAIN_FALLBACK_MIXED_CANDIDACY
+because B0 ambiguity fails first); line-only closed squares route exact as
+controls. SURFACE/TRANSITION: Fixed/CutFill members excluded, the
+transition-less problem stays deferred, no 20L.2 implementation exists.
+
+### Coverage (current state, derived from the regenerated corpora — never hand-copied)
+
+| corpus | result |
+|---|---|
+| LOCAL policy (186 rows) | 15/186 admitted P0 (5 fixtures × 3 proven families), incl. 6/186 arc-bearing Roff rows |
+| GROUP (18 chains) | 12 EXACT: A 6 two-member + B 3 three-member + H 1 flat mixed-same-Z + F1 2 closed line-only controls (all clean law-derived strips); 6 FALLBACK: C + D plan-gated, G XYZ-gated (same-d/diff-Z), I joint-stepped, F2 ×2 curved-closed |
+| XYZ (9 fixtures) | ADMIT A (flat Distance) + D (flat Elevation); REJECT B/C/E sloped-source, F same-d/diff-Z, G diff-d, H member-mismatch, I joint-step |
+
 ## Task-7 reviewer fix round (REQUEST CHANGES → closed, verdict sustained)
 
 1. Topology self-certification → independent `auditCornerCandidacy` (own
@@ -79,13 +117,21 @@ source rep), P0 conjunction at corner assembly before any join solve,
 plus the Task-F/H tie gate per corner before any exact route:
 same required plan `d`, production analytic acceptance, tie in the same
 search neighborhood as the built join (locality-only, NOT agreement),
-single-valued member laws AT THE JOIN (zeroDelta exact), and the enforced
+single-valued member laws AT THE JOIN (numerical agreement within production
+zeroDelta), and the enforced
 FLAT-ONLY predicate (each member startZ===endZ exactly; sloped corners fail
 closed with REJECT_SLOPED_SOURCE from 1e-13 to gross). ROUTE LAW: EXACT only
 on actually-built + audited strips (strip-fail revokes to whole-chain
 CHORD_FALLBACK); MEMBER LAW += exact joint continuity incoming.endZ===
 outgoing.startZ (production-exactXyz mirror, REJECT_SOURCE_JOINT_STEP).
-Admitted combos: exactly the 5 fixtures' shape-classes × 3 proven families;
+Admitted combos — LOCAL vs ACTIVE-ROUTE split (replaces the old "5 fixtures
+× 3 families" shorthand): LOCAL admits 15/186 rows (5 shape-classes × 3
+proven families, incl. 6 arc-bearing) as per-corner candidacy only.
+ACTIVE-ROUTE admits whole chains only through the full gate (XYZ tie +
+flatness + joint continuity + single shared `d` + topology-clean strip):
+open curved A 6 + B 3 + flat mixed-same-Z H 1 + line-only closed squares F1
+2 as controls = 12/18 exact; closed-with-arc falls back; sloped and
+stepped chains never route exact;
 diagnostics carry `reasonCode` per rejection; fallback is always the chord
 path (fail-closed, never nearest-pick). `maxSearchDistance` reuse: both
 extent gates read the persisted revision-authoritative value with
@@ -141,8 +187,7 @@ a rejected unit takes the untouched production member-standalone chord path
 Closed scope: a closed group containing any arc routes CHORD_FALLBACK
 (CURVED_CLOSED_SUPPORT); curved-closed exactness is claimed nowhere.
 Coverage: local 15/186 rows, arc Roff 6/186 rows; complete open curved
-chains qualifying with XYZ ties: A 6/6 + B 3/3 + H 1/1 mixed-same-Z (incl.
-sloped-source ties B/C in the XYZ corpus); curved closed 0; whole-fallback
+chains qualifying with XYZ ties: A 6/6 + B 3/3 + H 1/1 mixed-same-Z [SUPERSEDED BY TASKS F/H/J: the sloped-source B/C admission is struck — authoritative replacement is REJECT_SLOPED_SOURCE by enforced predicate (Tasks F/H); sloped exactness is claimed nowhere.]; curved closed 0; whole-fallback
 mixed chains 3 (C + D plan-gated, G XYZ-gated with local=2/active=0,
 daylight 5 vs 10). Verdict re-run: PARTIAL_GO SUSTAINED — every claimed
 exact chain (12/12) is XYZ-tied at every corner + topology-clean
@@ -161,7 +206,7 @@ Fixed gate (ordered 10-gate contract): (9) the certifying tie must lie in
 the search neighborhood of the built join (`|T−J|` within the reused E1
 band — coincidence is NOT required and not claimed); (10) tie-at-join law:
 both member daylight-Z laws single-valued AT THE JOIN within production
-zeroDelta (exact, justified: flat laws are plan-constant with gs=0, so the
+zeroDelta (numerical agreement, justified: flat laws are plan-constant with gs=0, so the
 tie-join distance cannot inject Z ambiguity there; sloped laws vary along
 plan, so the check must be at the built node). New reasons
 REJECT_TIE_JOIN_XY_MISMATCH / REJECT_JOIN_Z_MISMATCH. Deltas: XYZ B/C/E flip
@@ -194,7 +239,7 @@ SUSTAINED NARROWED to flat homogeneous + flat mixed-same-Z — nothing curved
 and sloped survives, and nothing is forced: had no curved chain survived
 the fixed gate the verdict would be POLICY_REQUIRED. 20L.2 production
 contract inherits the fixed gate verbatim: MEMBER LAW = plan-P0 AND join-Z
-agreement at the built node (zeroDelta exact); the analytic tie is
+agreement at the built node (numerical agreement within production zeroDelta); the analytic tie is
 structural compatibility + provenance, never the certified point.
 
 ## Task H flat-only enforcement + T−J policy restatement (STUDY — reviewer REQUEST CHANGES, 2 majors, fixed here)

@@ -48,7 +48,11 @@ Rejected rows never carry a vacuous pass.
 Mesh-level checks (area, components, boundary cycles, self-cross, pinch,
 seams) are N/A with recorded reason — admitted terms are corner joins, not
 facets; the claim is corner-classifier candidacy, never a "validated join".
-Closed groups: none admitted (arc×arc NO_GO) — recorded truthfully.
+Closed groups (policy-corpus local rows): none admitted (arc×arc NO_GO) —
+recorded truthfully. Scope note: local rows are per-corner candidacy, not
+group admissions; the group study admits line-only closed controls only
+(F1 square, both orientations) while curved closed (F2 stadium) routes
+whole-group chord fallback.
 
 ## Transform invariance (admitted P0 fixtures, classification + normalized geometry)
 
@@ -102,7 +106,7 @@ all 31 fixture classifications re-pinned (zero drift vs the
 ## Task B routing reconciliation (R0 whole-chain all-or-fallback, Tasks D/F/H/J gates wired + enforced)
 
 `docs/evidence/phase20l1/group-corpus.json` (18 chains, regenerated twice
-byte-identical, SHA-256 `9f0da07302048ef50485e234920e456fa61cd9c217898e433cebfea8163d1ed2`):
+byte-identical, SHA-256 `05c18e4241d91c2dff0ee2d8b752989ae5bfd564e4d13c8ee3d2b6f5748f0f04`):
 route decided at the whole-chain/group unit — EXACT_OFFSET iff every required
 corner is LOCAL_P0_CANDIDATE AND production-join-tied (Z_TIE_OK: same plan d
 + analytic acceptance + tie in the same search neighborhood as the built join
@@ -139,7 +143,9 @@ unchanged). Fallback daylight is a label (production member-standalone
 chord path); the study builds no fallback geometry and claims no fallback
 continuity (CONTINUITY_UNPROVEN). Closed scope: F1 square EXACT both
 orientations (LINE_ONLY_EXACT_CONTROL); F2 stadium CHORD_FALLBACK both sides
-(CURVED_CLOSED_SUPPORT). Every corner records the decided tie (`xyzTie`
+(SCOPE RULE CURVED_CLOSED_SUPPORT as product policy — closed-with-arc always
+falls back; the recorded per-chain route reason there is
+CHAIN_FALLBACK_MIXED_CANDIDACY because B0 ambiguity fails first). Every corner records the decided tie (`xyzTie`
 reason code, `tieOk`, laws-at-join `zIn`/`zOut`, agreed `joinZ`, analytic
 `tieZ` + `tieJoinDist`); no PENDING hook remains. Exact tally: 12/18 chains
 EXACT — all FLAT (A 6 two-member + B 3 three-member + H 1 mixed-same-Z + F1 2
@@ -149,5 +155,5 @@ exactness claimed nowhere — now predicate-enforced, not asserted. Stepped
 sources rejected by predicate (joint continuity, exactXyz mirror). Policy-corpus regen ×2
 identical (SHA-256 `62d2463d1810156cc3fb560d43fcb35f8e900fe3c4ab5390e46213553107b744`,
 rows digest `dd961f52f2ba9d9a`, E1/B0/C0/equal-d untouched); xyz-corpus regen ×2
-identical (SHA-256 `f1808eed0fee9f689a9947a91cd6eb895c88c426488b92c38d60c8667c5ed6c8`,
-rows digest `99ae89dd356cadcf`; gate logic fixed per Tasks F/H/J above).
+identical (SHA-256 `8b9fa1f10ded9009cad1e9f01e9c96977f15daa8ff9d7abe4038827e7645c98a`,
+rows digest `b86ff185a2527103`; gate logic fixed per Tasks F/H/J above).

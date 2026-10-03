@@ -1267,7 +1267,7 @@
     }
   ],
   "criterionContinuity": {
-    "sameD_Jagree": true,
+    "sameD_sameJoin": true,
     "diffD_rejectsOrMoves": true,
     "flatZ": {
       "sameFlat": "PROVEN d=5",

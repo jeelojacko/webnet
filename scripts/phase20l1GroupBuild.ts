@@ -635,7 +635,7 @@ const main = (): void => {
     solveChainCorner(0, eIn, eOut, 'left', c, 0, MS));
   const eDiffD = solveChainCorner(0, eIn, eOut, 'left', { kind: 'distance', gradeRatio: 1, distance: 7 }, 0, MS);
   const eRows = {
-    sameD_Jagree: eSame.every((c) => c.admit && c.jx === eSame[0]!.jx && c.jy === eSame[0]!.jy && c.d === 5),
+    sameD_sameJoin: eSame.every((c) => c.admit && c.jx === eSame[0]!.jx && c.jy === eSame[0]!.jy && c.d === 5),
     diffD_rejectsOrMoves: eDiffD.admit
       ? (eDiffD.jx !== eSame[0]!.jx || eDiffD.jy !== eSame[0]!.jy)
       : eDiffD.reason,

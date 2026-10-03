@@ -31,7 +31,7 @@ interface Corner {
   d: number | null; dIn: number | null; dOut: number | null;
   joinXY: { x: number; y: number } | null; tieXYZ: { x: number; y: number; z: number } | null;
   zIn: number | null; zOut: number | null; joinZ: number | null; tieJoinDist: number | null;
-  xyAgree: boolean; zAgree: boolean;
+  tiePlanFinite: boolean; zAgree: boolean;
   reason: XyzTieReason; active: boolean; detail: string;
 }
 interface Mesh {
@@ -285,7 +285,7 @@ describe('20L.1 XYZ ties: §16.17 tie-at-join law (search-neighborhood locality 
     expect(a0.joinZ).toBe(a0.zIn);
     expect(a0.joinZ).toBe(a0.zOut);
   });
-  it('Z agreement is exact at the join (production zeroDelta, no band) with stated justification', () => {
+  it('Z agreement is numerical agreement at the join (production zeroDelta, no wider band) with stated justification', () => {
     const c = artifact();
     expect(c.contract).toContain('zeroDelta');
     expect(c.reasonCodes).toContain('REJECT_JOIN_Z_MISMATCH');
