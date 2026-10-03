@@ -95,7 +95,9 @@ Per plan, migration proceeds (no override hack per §G: forcing
   16px) — fixed globally via `@theme`, re-verified to 0px.
 - `tailwind.config.js` content globs (incl. `study-desktop/src/**`) kept;
   study-desktop config still spreads the base palette with its narrower
-  content scope; `study-desktop/src/index.css` still just imports root CSS.
+  content scope; `study-desktop/src/index.css` imports the tailwind entry
+  + the Study config + the shared `../../src/theme.css` (see split note
+  above).
 - No `@tailwindcss/vite` switch (PostCSS path = minimal supported
   migration); `outline-none` renames skipped (identical rendering outside
   forced-colors).
