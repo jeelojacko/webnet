@@ -372,7 +372,7 @@ export const CadAnalysisSection: React.FC<CadAnalysisSectionProps> = ({
                   <tr key={band.bandId} data-cad-analysis-band={band.bandId}>
                     <td className="px-1">
                       <span
-                        className="mr-1 inline-block h-2.5 w-2.5 rounded-sm border border-slate-600 align-middle"
+                        className="mr-1 inline-block h-2.5 w-2.5 rounded-xs border border-slate-600 align-middle"
                         style={{ background: band.color }}
                       />
                       {band.label}
