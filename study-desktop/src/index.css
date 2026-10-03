@@ -1,3 +1,7 @@
-/* Standalone Study styles: single source of truth stays in the host
-   src/index.css (tailwind directives + theme variables). No duplication. */
-@import "../../src/index.css";
+/* Standalone Study styles: resolve the tailwind entry from
+   study-desktop/node_modules, apply the Study tailwind config (shared
+   host palette, Study-only content), then share the host theme variables
+   in ../../src/theme.css (pure CSS, no bare imports). No duplication. */
+@import "tailwindcss";
+@config "../tailwind.config.js";
+@import "../../src/theme.css";
