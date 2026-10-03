@@ -89,6 +89,14 @@ export const resolveInteractiveBasemapTiles = <Tile>(
  * children is emitted once (deduped by previous key). Tiles without a
  * spatial previous surface keep their resolved deep fallback (offline
  * coverage) instead of blanking.
+ *
+ * Paint-order contract: canvas and WebGL renderers both paint tiles in array
+ * order, so later entries cover earlier ones. Reused previous parents (and
+ * unmatched deep tiles, which are equally stale) are therefore emitted FIRST
+ * as the under-layer, with exact/preferred tiles after them — otherwise a
+ * stale parent painted after a fresh exact child would cover it. Within the
+ * under-layer, reused parents are sorted by key (deterministic) and unmatched
+ * deep tiles keep their original relative order; exact tiles keep theirs.
  */
 interface DeepFallbackTile {
   key: string;
@@ -170,23 +178,28 @@ export const reusePreviousTilesForDeepFallback = <Tile extends DeepFallbackTile>
       isDeepFallbackTile(tile) && findCoveringPreviousTile(tile, previousTiles) != null,
   );
   if (!hasReusableFallback) return resolvedTiles;
-  const emittedPreviousKeys = new Set<string>();
-  const reused: Tile[] = [];
+  const reusedByKey = new Map<string, Tile>();
+  const unmatchedDeep: Tile[] = [];
+  const exact: Tile[] = [];
   for (const tile of resolvedTiles) {
     if (!isDeepFallbackTile(tile)) {
-      reused.push(tile);
+      exact.push(tile);
       continue;
     }
     const covering = findCoveringPreviousTile(tile, previousTiles);
     if (!covering) {
-      reused.push(tile);
+      unmatchedDeep.push(tile);
       continue;
     }
-    if (emittedPreviousKeys.has(covering.key)) continue;
-    emittedPreviousKeys.add(covering.key);
-    reused.push(covering);
+    if (!reusedByKey.has(covering.key)) reusedByKey.set(covering.key, covering);
   }
-  return reused;
+  if (reusedByKey.size === 0) return resolvedTiles;
+  // Stale under-layer first (parents sorted by key, then unmatched deep in
+  // original order), exact tiles last so they paint on top.
+  const under = [...reusedByKey.values()].sort((left, right) =>
+    left.key < right.key ? -1 : left.key > right.key ? 1 : 0,
+  );
+  return [...under, ...unmatchedDeep, ...exact];
 };
 
 export const buildRequestedBasemapTiles = <Tile extends { key: string }>(

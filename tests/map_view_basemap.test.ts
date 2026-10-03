@@ -60,8 +60,9 @@ describe('chooseOsmTileMeshDivisions', () => {
       [previousForB, staleOffscreen],
     );
 
-    expect(renderTiles).toEqual([exact, previousForB, newDeep]);
-    expect(renderTiles[1]).toBe(previousForB);
+    // Stale under-layer first (reused parent, then unmatched deep), exact last.
+    expect(renderTiles).toEqual([previousForB, newDeep, exact]);
+    expect(renderTiles[0]).toBe(previousForB);
     expect(renderTiles).not.toContain(staleOffscreen);
   });
 
@@ -117,8 +118,9 @@ describe('chooseOsmTileMeshDivisions', () => {
     );
 
     // Deduped to a single reused parent surface; no stretched child slices.
-    expect(renderTiles).toEqual([exact, previousParent]);
-    expect(renderTiles[1]).toBe(previousParent);
+    // Under-layer first: parent paints before (underneath) the exact child.
+    expect(renderTiles).toEqual([previousParent, exact]);
+    expect(renderTiles[0]).toBe(previousParent);
     expect(renderTiles).not.toContain(deepChildA);
     expect(renderTiles).not.toContain(deepChildB);
   });
@@ -180,5 +182,67 @@ describe('chooseOsmTileMeshDivisions', () => {
     // shallow (delta <= 1) fallback is left untouched.
     expect(renderTiles).toEqual([parent, uncovered, shallow]);
     expect(renderTiles[0]).toBe(parent);
+  });
+
+  it('paints reused previous parents and unmatched deep tiles underneath exact tiles', () => {
+    type SpatialTile = {
+      key: string;
+      zoom: number;
+      tileX: number;
+      tileY: number;
+      fallbackPreferred?: boolean;
+      fallbackZoomDelta?: number;
+    };
+    // D1: renderers paint in array order, so a stale parent emitted after a
+    // fresh exact child would cover it. Mixed cross-zoom set (z5 -> z6): one
+    // exact z6 child plus deep z6 children covered by the same z5 previous.
+    const previousParent: SpatialTile = {
+      key: '5-10-12',
+      zoom: 5,
+      tileX: 10,
+      tileY: 12,
+      fallbackPreferred: true,
+      fallbackZoomDelta: 0,
+    };
+    const exactChild: SpatialTile = {
+      key: '6-22-24',
+      zoom: 6,
+      tileX: 22,
+      tileY: 24,
+      fallbackPreferred: true,
+      fallbackZoomDelta: 0,
+    };
+    const deepChild: SpatialTile = {
+      key: '6-20-24',
+      zoom: 6,
+      tileX: 20,
+      tileY: 24,
+      fallbackPreferred: false,
+      fallbackZoomDelta: 2,
+    };
+    const unmatchedDeep: SpatialTile = {
+      key: '6-0-0',
+      zoom: 6,
+      tileX: 0,
+      tileY: 0,
+      fallbackPreferred: false,
+      fallbackZoomDelta: 3,
+    };
+
+    const renderTiles = reusePreviousTilesForDeepFallback(
+      [exactChild, deepChild, unmatchedDeep],
+      [previousParent],
+    );
+
+    // Under-layer (reused parent + unmatched deep, both stale) sorts before
+    // the exact tile; exact keeps its relative order at the end.
+    expect(renderTiles).toEqual([previousParent, unmatchedDeep, exactChild]);
+    expect(renderTiles.indexOf(previousParent)).toBeLessThan(
+      renderTiles.indexOf(exactChild),
+    );
+    expect(renderTiles.indexOf(unmatchedDeep)).toBeLessThan(
+      renderTiles.indexOf(exactChild),
+    );
+    expect(renderTiles).not.toContain(deepChild);
   });
 });
