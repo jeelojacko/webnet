@@ -48,7 +48,9 @@ validated (build + dev + visual + tests).
   Engines for 27.4.0: `^20.19.0 || ^22.12.0 || >=24.0.0` — Node 24 OK.
   Vitest peer is `jsdom: *`, no conflict.
 - Change: `jsdom ^26.1.0 → ^27.4.0` in root **and** `study-desktop`
-  `package.json` (study shares the root lockfile; no separate lockfile).
+  `package.json`. Note (correction): study-desktop has its **own**
+  `study-desktop/package-lock.json` and `node_modules` (independent
+  install); it merely tracks the same version ranges.
 - Proof: `npm ls whatwg-encoding` → empty; clean `npm ci` shows no
   whatwg-encoding warning. jsdom/DOM suites + full agent tier show no new
   failures (see §8).
@@ -95,20 +97,31 @@ Per plan, migration proceeds (no override hack per §G: forcing
   migration); `outline-none` renames skipped (identical rendering outside
   forced-colors).
 
-## 8. study-desktop `brace-expansion` override (corrected, not faked)
+## 8. study-desktop `brace-expansion` override (added, proven unnecessary, removed)
 
-- Work found study-desktop audit had 1 HIGH via the eslint-chain
-  `minimatch@3.1.5 → brace-expansion@^1.1.7`; a lone
-  `"brace-expansion": "^5.0.9"` override silenced audit but **broke
-  `npm run lint`** (`TypeError: expand is not a function` — minimatch 3
-  CJS vs brace-expansion 5 API). Caught by validation, not shipped.
-- Fix: pair it with `"minimatch": "^10.2.5"`, exactly mirroring the root
-  `package.json` **pre-existing baseline** overrides (brace-expansion,
-  minimatch, nanoid, ws, js-yaml, @babel/core, flatted — all present on
-  clean main, not introduced here). Root lint proves the pair compatible
-  with eslint 9.39.5.
-- Validated: study audit 0, study lint exit 0, study tests 1338 pass,
-  study build green (see §9).
+- During migration work study-desktop audit transiently showed 1 HIGH via
+  the eslint-chain `minimatch@3.1.5 → brace-expansion@^1.1.7`, and a lone
+  `"brace-expansion": "^5.0.9"` override was tried. Validation caught it
+  **breaking `npm run lint** (`TypeError: expand is not a function` —
+  minimatch 3 CJS vs brace-expansion 5 API). A paired
+  `minimatch ^10.2.5` override (mirroring root baseline pins) restored
+  green, but the independent reviewer correctly demanded semantic proof,
+  not just a green invocation.
+- Experiment (Node 24.19.0, `eslint src --format json` on all 210 study
+  files): minimatch 3 + brace-expansion 1 vs 10 + 5 selected the
+  **identical file set with identical messages** (0 errors/0 warnings
+  both ways) — equivalence on this repo, but still a forced major.
+- Decisive re-check: with overrides **fully removed** and a fresh
+  range-respecting `npm install`, study-desktop `npm audit` reports
+  **0 vulnerabilities** (and `--omit=dev` 0) — the transient HIGH does not
+  reproduce against current range resolutions, so no override is needed
+  at all. Overrides deleted; final state uses eslint's declared
+  `minimatch@3.1.5` + `brace-expansion@1.1.21` natively (a separate
+  `brace-expansion@5.0.12` exists via an independent chain).
+  Final study validation without overrides: audit 0/0, lint exit 0,
+  tests 1338 pass + 4 skipped (120 files), build green.
+- Root `overrides` (brace-expansion/minimatch/nanoid/ws/js-yaml/
+  @babel/core/flatted) pre-exist on clean main and are left untouched.
 
 ## 9. Final validation (Node 24.19.0, clean tree)
 
