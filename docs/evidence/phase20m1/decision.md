@@ -327,6 +327,11 @@ behind fail-closed gates, one class, no widening.
   tests before production enablement. Fixes applied in this round across
   decision §§2/5/7/9/10/12, persisted-model §§1/2/6, worker-topology-product
   §§2.2/2.4, TODO predicate, test/script header comments (comments only,
-  corpus bytes unchanged), and PR #150 body. APPROVE not yet claimed; verdict
-  stays PARTIAL_GO_COLLINEAR_SAME_FAMILY_TRANSITION with the narrowed
-  one-transition predicate.
+  corpus bytes unchanged), and PR #150 body. Fresh independent re-review on
+  exact head f7024e13: APPROVE (all 3 blockers resolved); final head
+  9a3e16e0 adds only the shallow-CI scope guard + truthful note
+  (study/corpus/verdict unchanged), final-head CI run #971 PASS; PR #150
+  MERGED (merge bd4bdd4599006a82308bafc25e73341f46866013). Verdict stays
+  PARTIAL_GO_COLLINEAR_SAME_FAMILY_TRANSITION with the narrowed
+  one-transition predicate. Phase 20M.1 CLOSED; 20M.2 authorized only
+  under §9, not implemented.
