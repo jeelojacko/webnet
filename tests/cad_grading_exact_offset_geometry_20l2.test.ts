@@ -147,6 +147,32 @@ describe('20L.2 geometry: fail-closed gates', () => {
   });
 });
 
+describe('20L.2 geometry: source-radius arc u', () => {
+  it('refuses off-body inward join near the arc end (C0)', () => {
+    // CCW-out on the left is the inward (R-d) law: R=50, Roff=45. The join
+    // angular delta (~0.111 rad) gives source u ~5.57 but Roff u ~5.01, so
+    // span 5.3 is past the body in source length yet inside Roff length.
+    const r = solveExactOffsetJoin({
+      incoming: line(0, 0, 1, 0, L, 'in'),
+      outgoing: arc(0, 0, -50, 0, 50, 1, 5.3 / 50, 'out'),
+      side: 'left', d: 5, maxSearchDistance: 50,
+    });
+    expect(r).toEqual({ ok: false, reason: 'FALLBACK_OFF_BODY_C0', detail: expect.any(String) });
+  });
+  it('admits on-body outward join near the arc end', () => {
+    // CW-out on the left is the outward (R+d) law: R=50, Roff=55. The join
+    // angular delta (~0.091 rad) gives source u ~4.55 but Roff u ~5.01, so
+    // span 4.8 is on the body in source length yet past it in Roff length.
+    const r = solveExactOffsetJoin({
+      incoming: line(0, 0, 1, 0, L, 'in'),
+      outgoing: arc(0, 0, 50, 0, 50, -1, 4.8 / 50, 'out'),
+      side: 'left', d: 5, maxSearchDistance: 100,
+    });
+    expect(r.ok).toBe(true);
+    if (r.ok) expect(r.kind).toBe('line-circle');
+  });
+});
+
 describe('20L.2 geometry: oracle cross-check', () => {
   it('old 31 join fixtures retain study classifications in the merged corpus', () => {
     const corpus = JSON.parse(

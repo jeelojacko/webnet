@@ -1,6 +1,10 @@
 # Phase 20L.2 offset-radius production — validation
 
-## Suites (6 files, 90/90 green)
+## Suites (6 files, 92/92 green)
+
+- `cad_grading_exact_offset_geometry_20l2` (+2 arc-span regression:
+  source-radius `u` refuses the off-body inward join near the arc end
+  (C0) and admits the on-body outward join there).
 
 - `cad_grading_exact_offset_baseline_20l2` — 16-fixture chord-path pins,
   byte-identical vs committed `baseline-fallback.json`.

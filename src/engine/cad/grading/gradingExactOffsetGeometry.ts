@@ -225,12 +225,13 @@ const alongTravel = (m: ExactMember, x: number, y: number): number => {
     return (x - m.vx) * t.nx + (y - m.vy) * t.ny;
   }
   const angle = Math.atan2(y - m.cy, x - m.cx);
-  const radius = Math.hypot(x - m.cx, y - m.cy);
   const vAngle = Math.atan2(m.vy - m.cy, m.vx - m.cx);
   let wrapped = angle - vAngle;
   while (wrapped > Math.PI) wrapped -= 2 * Math.PI;
   while (wrapped <= -Math.PI) wrapped += 2 * Math.PI;
-  return radius * wrapped * m.dir;
+  // Source arc length: m.radius (spans are source lengths); Roff would
+  // admit off-body inward joins and reject on-body outward joins near ends.
+  return m.radius * wrapped * m.dir;
 };
 
 /** True when an along-travel param lands on the finite member body. */
