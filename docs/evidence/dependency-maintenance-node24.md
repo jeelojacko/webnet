@@ -199,7 +199,9 @@ semantics either way.
 2. Manual-tier evidence campaigns stay machine-sensitive (timing/wording);
    never CI gates; no action taken.
 3. Root `overrides` (brace-expansion/minimatch/etc.) are inherited baseline
-   pins; study-desktop now mirrors the eslint-chain pair. Revisit when
-   upstream eslint/minimatch ship non-vulnerable ranges.
+   pins, left untouched. study-desktop carries NO overrides: its audit is
+   0 against current range resolutions with eslint's declared
+   `minimatch@3.1.5` + `brace-expansion@1.1.21` (§8). Revisit if a future
+   resolution reintroduces an advisory there.
 4. Tailwind v4 `@config` keeps the legacy JS config by design; a future
    CSS-first `@theme` port is optional, not required.
