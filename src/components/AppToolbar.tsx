@@ -109,17 +109,19 @@ const AppToolbar: React.FC<AppToolbarProps> = ({
   // Preanalysis planning depth is data-dependent: show a count, never x/y
   // over a moving denominator.
   const solveProgressLabel =
-    pipelineState.stageId === 'preanalysis-impact'
-      ? pipelineState.solveIndex != null
-        ? `Planning checks ${pipelineState.solveIndex}`
-        : null
-      : pipelineState.stageId === 'auto-adjust'
+    pipelineState.phase === 'finalizing'
+      ? null
+      : pipelineState.stageId === 'preanalysis-impact'
         ? pipelineState.solveIndex != null
-          ? `Auto-adjust checks ${pipelineState.solveIndex}`
+          ? `Planning checks ${pipelineState.solveIndex}`
           : null
-        : pipelineState.solveIndex != null && pipelineState.solveTotalHint != null
-          ? `${pipelineState.solveIndex}/${pipelineState.solveTotalHint}`
-          : null;
+        : pipelineState.stageId === 'auto-adjust'
+          ? pipelineState.solveIndex != null
+            ? `Auto-adjust checks ${pipelineState.solveIndex}`
+            : null
+          : pipelineState.solveIndex != null && pipelineState.solveTotalHint != null
+            ? `${pipelineState.solveIndex}/${pipelineState.solveTotalHint}`
+            : null;
   const iterationLabel =
     pipelineState.iteration != null && pipelineState.maxIterations != null
       ? `iter ${pipelineState.iteration}/${pipelineState.maxIterations}`

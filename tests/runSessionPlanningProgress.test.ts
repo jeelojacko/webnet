@@ -5,6 +5,7 @@ import { describe, expect, it } from 'vitest';
 import { runAdjustmentSession } from '../src/engine/runSession';
 import type { RunSessionProgressUpdate } from '../src/engine/runSessionTypes';
 import { createRunSessionRequest } from './helpers/runSessionRequest';
+import { buildThreeCandidateInput } from './helpers/phase15cSessionNetworks';
 
 const CAMP_INPUT = fs.readFileSync(
   path.join(process.cwd(), 'tests/fixtures/camp_design_preanalysis_traverse_only.dat'),
@@ -122,8 +123,16 @@ describe('preanalysis planning progress semantics', () => {
     );
     expect(impacts.length).toBeGreaterThan(0);
     expect(impacts[0]?.solveIndex).toBe(1);
-    expect(impacts[0]?.solveIndex).toBeLessThan(impacts[0]?.solveTotalHint ?? 0);
+    expect(impacts[0]?.solveIndex).toBeLessThanOrEqual(impacts[0]?.solveTotalHint ?? 0);
     expect(new Set(impacts.map((event) => event.solveTotalHint)).size).toBe(1);
+    // Denominator is exactly the candidate count: first 1/N, last N/N, no
+    // off-by-one phantom slot that leaves the display stuck at N-1/N.
+    const candidateCount = outcome.result.suspectImpactDiagnostics?.length ?? 0;
+    expect(candidateCount).toBeGreaterThan(0);
+    for (const event of impacts) {
+      expect(event.solveTotalHint).toBe(candidateCount);
+    }
+    expect(impacts[impacts.length - 1]?.solveIndex).toBe(candidateCount);
     for (const event of events) {
       expect(event.solveIndex).toBeLessThanOrEqual(event.solveTotalHint);
     }
@@ -131,6 +140,29 @@ describe('preanalysis planning progress semantics', () => {
     expect(final.phase).toBe('finalizing');
     expect(final.solveIndex).toBe(outcome.profile.solveInvocationCount);
     expect(final.solveTotalHint).toBe(outcome.profile.solveInvocationCount);
+  });
+
+  it('suspect-impact denominator equals the candidate count for a multi-candidate network', () => {
+    const input = buildThreeCandidateInput();
+    const events: RunSessionProgressUpdate[] = [];
+    const outcome = runAdjustmentSession(createRunSessionRequest({ input }), (event) => {
+      events.push({ ...event });
+    });
+    const candidateCount = outcome.result.suspectImpactDiagnostics?.length ?? 0;
+    expect(candidateCount).toBe(3);
+    const impacts = events.filter(
+      (event) => event.stageId === 'suspect-impact' && event.phase === 'solving',
+    );
+    expect(impacts.length).toBeGreaterThan(0);
+    // One immutable denominator equal to the candidate count: opens 1/3 and
+    // ends 3/3 (the previous 1+N hint left it stuck at 3/4).
+    expect(new Set(impacts.map((event) => event.solveTotalHint))).toEqual(new Set([candidateCount]));
+    expect(impacts[0]?.solveIndex).toBe(1);
+    expect(impacts[impacts.length - 1]?.solveIndex).toBe(candidateCount);
+    for (const event of impacts) {
+      expect(event.solveIndex).toBeGreaterThanOrEqual(1);
+      expect(event.solveIndex).toBeLessThanOrEqual(candidateCount);
+    }
   });
 
   it('transitions main-solve -> planning -> finalizing with clean completion', () => {

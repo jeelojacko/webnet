@@ -135,6 +135,37 @@ describe('AppToolbar responsive layout', () => {
     const failed = await renderToolbar({ ...idlePipeline, status: 'failed' }, 'Failed');
     expect(failed.textContent).not.toContain('Failed');
   });
+
+  it('suppresses the solve fraction once the run is finalizing', async () => {
+    const finalizing = await renderToolbar(
+      {
+        ...idlePipeline,
+        status: 'running',
+        phase: 'finalizing',
+        stageId: 'main-solve',
+        detail: 'Finalizing result',
+        solveIndex: 76,
+        solveTotalHint: 76,
+      },
+      'Finalizing',
+    );
+    expect(finalizing.textContent).not.toContain('solve 76/76');
+    expect(finalizing.textContent).toContain('Finalizing result');
+
+    const solving = await renderToolbar(
+      {
+        ...idlePipeline,
+        status: 'running',
+        phase: 'solving',
+        stageId: 'suspect-impact',
+        detail: 'Suspect impact analysis',
+        solveIndex: 3,
+        solveTotalHint: 6,
+      },
+      'Solving',
+    );
+    expect(solving.textContent).toContain('solve 3/6');
+  });
 });
 
 describe('ReportToolbar responsive layout', () => {
