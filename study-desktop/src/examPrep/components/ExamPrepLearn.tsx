@@ -22,11 +22,11 @@ export const LearnLegend = () => (
     className="flex flex-wrap items-center gap-x-4 gap-y-1.5 rounded border border-slate-800 bg-slate-900/50 px-3 py-2 text-[11px] text-slate-400"
   >
     <span className="inline-flex items-center gap-1.5">
-      <span aria-hidden className="h-2.5 w-2.5 rounded-sm bg-amber-400" />
+      <span aria-hidden className="h-2.5 w-2.5 rounded-xs bg-amber-400" />
       Remember — recall from memory
     </span>
     <span className="inline-flex items-center gap-1.5">
-      <span aria-hidden className="h-2.5 w-2.5 rounded-sm bg-sky-400" />
+      <span aria-hidden className="h-2.5 w-2.5 rounded-xs bg-sky-400" />
       Look here — provisions to practise locating
     </span>
     <span className="inline-flex items-center gap-1.5">

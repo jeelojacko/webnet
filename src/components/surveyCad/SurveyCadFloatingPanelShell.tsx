@@ -78,7 +78,7 @@ const SurveyCadFloatingPanelShell: React.FC<SurveyCadFloatingPanelShellProps> = 
             data-survey-cad-floating-panel-resize-bottom
           />
           <div
-            className="absolute bottom-0 right-0 z-20 h-4 w-4 cursor-nwse-resize before:absolute before:bottom-1 before:right-1 before:h-2 before:w-2 before:rounded-sm before:border-b before:border-r before:border-cyan-400/70 before:content-['']"
+            className="absolute bottom-0 right-0 z-20 h-4 w-4 cursor-nwse-resize before:absolute before:bottom-1 before:right-1 before:h-2 before:w-2 before:rounded-xs before:border-b before:border-r before:border-cyan-400/70 before:content-['']"
             title="Resize wider or shorter"
             onPointerDown={(event) => onStartResize('corner', event)}
             data-survey-cad-floating-panel-resize-corner
