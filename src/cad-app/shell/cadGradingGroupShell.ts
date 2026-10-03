@@ -51,7 +51,9 @@ export type CadGradingGroupShellCommand = Extract<
       | 'GROUP_ADD_COURSE'
       | 'GROUP_REMOVE_END_COURSE'
       | 'GROUP_SET_COURSE_CRITERIA'
-      | 'GROUP_RESET_COURSE_CRITERIA';
+      | 'GROUP_RESET_COURSE_CRITERIA'
+      | 'GROUP_SET_TRANSITION'
+      | 'GROUP_CLEAR_TRANSITION';
   }
 >;
 

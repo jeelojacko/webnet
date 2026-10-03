@@ -29,14 +29,19 @@ import type {
   GradingSide,
   ResolvedGradingSource,
 } from '../engine/cad/grading/gradingTypes';
-import type { CadGradingGroupResult } from '../engine/cad/grading/gradingGroupTypes';
+import type { CadGradingGroupResult, CadGradingTransition } from '../engine/cad/grading/gradingGroupTypes';
 import {
   computeGradingGroupFromSnapshots,
   type GradingGroupComputeOutcome,
   type GroupSolveInput,
 } from '../engine/cad/grading/gradingGroupCompute';
-import type { GradingComputeRequest, GradingTargetMeshSnapshot } from './surfaceGradingCompute';
-import { computeGradingFromSnapshots } from './surfaceGradingCompute';
+import type {
+  GradingComputeRequest,
+  GradingTargetMeshSnapshot,
+  GroupTransitionMemberView,
+  GroupTransitionPlan,
+} from './surfaceGradingCompute';
+import { computeGradingFromSnapshots, validateGroupTransitionAgreement } from './surfaceGradingCompute';
 import type {
   CadProject,
   CadSurface,
@@ -531,6 +536,22 @@ export interface GradingGroupComputeRequest {
   closed: boolean;
   /** Target TIN ONCE for surface criteria; omitted for analytic families. */
   target?: GradingTargetMeshSnapshot;
+  /**
+   * Phase 20M.2 WAVE F — transition law/ref/station data (additive).
+   * Absent = legacy group (no transition intent). Present = the worker
+   * agreement gate re-resolves natives and rechecks admission BEFORE the
+   * engine solve; any mismatch fails closed with a bounded
+   * GRADING_AGREEMENT_TRANSITION_* code. Native member geometry resolved
+   * from the endpoint refs rides `transitionMembers` (service side).
+   */
+  transition?: GroupTransitionPlan;
+  transitionMembers?: GroupTransitionMemberView[];
+  /**
+   * Phase 20M.2 Wave D — stable member identity per member in traversal
+   * order (`courseCriterionKey`); the engine verifies transition member
+   * refs against these. Absent = no transition path.
+   */
+  transitionMemberKeys?: string[];
 }
 
 export type SurfaceGroupGradingRequest = GradingGroupComputeRequest;
@@ -538,6 +559,24 @@ export type SurfaceGroupGradingRequest = GradingGroupComputeRequest;
 export type SurfaceGroupGradingEngineFn = (
   _request: SurfaceGroupGradingRequest,
 ) => GradingGroupComputeOutcome | Promise<GradingGroupComputeOutcome>;
+
+/**
+ * Phase 20M.2 Wave D — the worker plan repoints to the canonical persisted
+ * transition intent for the engine solve (sibling WAVE F TODO): law/ref/
+ * width/family/side ride verbatim; evidence outputs (endpoint scalars,
+ * recorded revision) stay worker-side where the agreement gate enforces
+ * them before the solve. Member refs copy out of the readonly array.
+ */
+export const canonicalTransitionFromPlan = (plan: GroupTransitionPlan): CadGradingTransition => ({
+  policyVersion: plan.policyVersion,
+  jointId: plan.jointId,
+  memberIds: [...plan.memberIds],
+  width: plan.width,
+  lawKind: plan.lawKind,
+  lawVersion: plan.lawVersion,
+  criterionFamily: plan.criterionFamily,
+  side: plan.side,
+});
 
 /** Map the flat worker request onto the engine's `GroupSolveInput`. */
 export const toGroupSolveInput = (request: GradingGroupComputeRequest): GroupSolveInput => ({
@@ -551,6 +590,12 @@ export const toGroupSolveInput = (request: GradingGroupComputeRequest): GroupSol
   curveChordTolerance: request.curveChordTolerance,
   closed: request.closed,
   ...(request.target !== undefined ? { target: request.target } : {}),
+  ...(request.transition !== undefined
+    ? { transition: canonicalTransitionFromPlan(request.transition) }
+    : {}),
+  ...(request.transitionMemberKeys !== undefined
+    ? { transitionMemberKeys: request.transitionMemberKeys }
+    : {}),
 });
 
 /** Default group engine: the pure batched snapshot kernel. */
@@ -1362,6 +1407,18 @@ export const createSurfaceWorkerHandler = (
     latestGroupGradingByKey.set(request.groupId, groupGradingRequestKey(request));
     defer(() => {
       if (cancelledRequestIds.has(requestId)) return;
+      // Phase 20M.2 WAVE F — transition agreement BEFORE the engine solve.
+      if (request.transition !== undefined) {
+        const disagreement = validateGroupTransitionAgreement(
+          request.transition,
+          request.transitionMembers ?? [],
+          request.revision,
+        );
+        if (disagreement !== null) {
+          failGroupGrading(requestId, request, disagreement);
+          return;
+        }
+      }
       void loadGroupGradingFn()
         .then((compute) => compute(request))
         .then((outcome) => {

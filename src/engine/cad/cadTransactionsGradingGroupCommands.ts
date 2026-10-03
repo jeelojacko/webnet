@@ -14,8 +14,9 @@ import {
   setCourseCriteriaOverrides,
   validateGroupChain,
 } from './grading/gradingGroupAuthoring';
-import { gradingTerminationKind } from './grading/gradingTypes';
+import { gradingTerminationKind, type GradingSide } from './grading/gradingTypes';
 import { criteriaEqual, effectiveCriteriaForCourses } from './grading/gradingGroupCourseCriteria';
+import { clearGroupTransition, setGroupTransition } from './grading/gradingTransitionAuthoring';
 import { resolveGroupMemberCriteria } from './grading/gradingGroupCourseCriteria';
 import {
   canonicalAnalyticKinds,
@@ -26,6 +27,7 @@ import {
 import { toGradingCourseLikes, resolveGradingSourceCourse } from './grading/gradingCourseFrame';
 import { resolveGroupInputs } from './grading/gradingGroupResolve';
 import { gradingTopologyCertificateProductionError, gradingTopologyCertificateProductionProductError } from './grading/gradingTopologyCertificate';
+import { transitionBakeCitation } from './grading/gradingTransitionProvenance';
 import { appendCadProjectEntities } from './cadProjectState';
 import { commitLayerProject } from './cadTransactionsLayerCommands';
 import type {
@@ -84,6 +86,12 @@ const chainResolvable = (
     (course) =>
       resolveGradingSourceCourse(likes, course.vertexAId, course.vertexBId) !== null,
   );
+};
+
+/** Phase 20M.2 WAVE G: verbatim transition citation for GROUPBAKE provenance. */
+const transitionCitation = (group: CadGradingGroup): { transitions?: ReturnType<typeof transitionBakeCitation> } => {
+  const cited = transitionBakeCitation(group.transitions);
+  return cited === undefined ? {} : { transitions: cited };
 };
 
 const withGroup = (project: CadProject, group: CadGradingGroup): CadProject => ({
@@ -377,6 +385,44 @@ const groupResetCourseCriteriaCommand: CadCommandDefinition<GroupResetCourseCrit
   },
 };
 
+type GroupSetTransitionCommand = Extract<CadCommand, { key: 'GROUP_SET_TRANSITION' }>;
+
+/**
+ * Phase 20M.2 WAVE H: commit ONE explicit transition (one undo step).
+ * Rejected intents mutate nothing; the operator recalculates after commit
+ * (revision participation belongs to the sibling persistence wave).
+ */
+const groupSetTransitionCommand: CadCommandDefinition<GroupSetTransitionCommand> = {
+  key: 'GROUP_SET_TRANSITION',
+  execute: (snapshot, command) => {
+    const group = findGroup(snapshot.project, command.groupId);
+    if (!group) return null;
+    const applied = setGroupTransition(group, {
+      ...command.intent,
+      memberIds: [...command.intent.memberIds],
+      side: command.intent.side as GradingSide,
+    });
+    if (!applied.ok) return null;
+    return commitLayerProject('GROUP_SET_TRANSITION', snapshot, withGroup(snapshot.project, applied.value),
+      `GROUP_SET_TRANSITION (${group.name})`);
+  },
+};
+
+type GroupClearTransitionCommand = Extract<CadCommand, { key: 'GROUP_CLEAR_TRANSITION' }>;
+
+/** Phase 20M.2 WAVE H: remove the transition (one undo step, legacy restored). */
+const groupClearTransitionCommand: CadCommandDefinition<GroupClearTransitionCommand> = {
+  key: 'GROUP_CLEAR_TRANSITION',
+  execute: (snapshot, command) => {
+    const group = findGroup(snapshot.project, command.groupId);
+    if (!group) return null;
+    const cleared = clearGroupTransition(group);
+    if (!cleared.ok) return null;
+    return commitLayerProject('GROUP_CLEAR_TRANSITION', snapshot, withGroup(snapshot.project, cleared.value),
+      `GROUP_CLEAR_TRANSITION (${group.name})`);
+  },
+};
+
 /**
  * Calculate dispatch gate (NO history entry — pure check the UI runs before
  * service dispatch). Requires a resolvable definition; target CURRENT-ness
@@ -537,6 +583,10 @@ const groupBakeCommand: CadCommandDefinition<GroupBakeCommand> = {
         side: inputs.group.side,
         accuracy: result.accuracy,
         cornerMode: inputs.group.cornerMode,
+        // Phase 20M.2 WAVE G: a transitioned group truthfully cites its
+        // persisted transition intent verbatim (geometry already rides the
+        // mesh); legacy groups carry no key (byte-identical payload).
+        ...transitionCitation(inputs.group),
       },
     };
     if (validateExplicitTinPayload(payload) != null) return null;
@@ -568,6 +618,8 @@ export const gradingGroupCommandDefinitions = {
   GROUP_REMOVE_END_COURSE: groupRemoveEndCourseCommand,
   GROUP_SET_COURSE_CRITERIA: groupSetCourseCriteriaCommand,
   GROUP_RESET_COURSE_CRITERIA: groupResetCourseCriteriaCommand,
+  GROUP_SET_TRANSITION: groupSetTransitionCommand,
+  GROUP_CLEAR_TRANSITION: groupClearTransitionCommand,
   GROUPEXTRACTDAYLIGHT: groupExtractCommand,
   GROUPBAKE: groupBakeCommand,
 } as const;
