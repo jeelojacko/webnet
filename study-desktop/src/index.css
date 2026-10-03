@@ -1,7 +1,7 @@
 /* Standalone Study styles: resolve the tailwind entry from
-   study-desktop/node_modules, apply the Study tailwind config (shared
-   host palette, Study-only content), then share the host theme variables
-   in ../../src/theme.css (pure CSS, no bare imports). No duplication. */
+   study-desktop/node_modules, share the host theme variables
+   in ../../src/theme.css (pure CSS, no bare imports), then apply
+   the Study tailwind config. @config must follow all @imports. */
 @import "tailwindcss";
-@config "../tailwind.config.js";
 @import "../../src/theme.css";
+@config "../tailwind.config.js";
