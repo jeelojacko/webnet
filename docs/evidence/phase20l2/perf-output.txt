@@ -1,0 +1,12 @@
+A1-2member tol=0.1 route=exact exactMs=1.197 dispatchMs=1.083 arcSubdiv=[13] pts=30 tris=28
+A1-2member tol=0.01 route=exact exactMs=1.351 dispatchMs=1.319 arcSubdiv=[40] pts=84 tris=82
+A1-2member tol=0.001 route=exact exactMs=3.228 dispatchMs=3.134 arcSubdiv=[125] pts=254 tris=252
+B-3member tol=0.1 route=exact exactMs=0.370 dispatchMs=0.392 arcSubdiv=[13] pts=32 tris=30
+B-3member tol=0.01 route=exact exactMs=0.851 dispatchMs=0.877 arcSubdiv=[40] pts=86 tris=84
+B-3member tol=0.001 route=exact exactMs=3.062 dispatchMs=3.056 arcSubdiv=[125] pts=256 tris=254
+C5-5member tol=0.1 route=exact exactMs=0.940 dispatchMs=0.911 arcSubdiv=[13+13] pts=60 tris=58
+C5-5member tol=0.01 route=exact exactMs=3.208 dispatchMs=2.004 arcSubdiv=[40+40] pts=168 tris=166
+C5-5member tol=0.001 route=exact exactMs=9.566 dispatchMs=8.145 arcSubdiv=[125+125] pts=508 tris=506
+PAIR-chord tol=0.1 route=fallback exactMs=0.049 dispatchMs=2.336 arcSubdiv=[13+12] pts=86 tris=87
+PAIR-chord tol=0.01 route=fallback exactMs=0.041 dispatchMs=6.705 arcSubdiv=[40+36] pts=247 tris=267
+PAIR-chord tol=0.001 route=fallback exactMs=0.037 dispatchMs=20.131 arcSubdiv=[125+112] pts=764 tris=832
