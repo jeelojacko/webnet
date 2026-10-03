@@ -51,6 +51,11 @@ import {
 } from './gradingChordSeam';
 import { solveGradingChord } from './solveAnalyticGradingChord';
 import { solveAnalyticCorner } from './gradingGroupAnalyticCorners';
+import {
+  admitGradingTransition,
+  evaluateTransitionLinearV1,
+  type TransitionRejectCode,
+} from './gradingTransitionPolicy';
 import { solveHybridCorner } from './gradingGroupHybridCorners';
 import { groupTerminationMode } from './gradingGroupTermination';
 import { buildGradingTopologyCertificateExact, countPositiveWidthRegions } from './gradingTopologyCertificate';
@@ -65,6 +70,7 @@ import type {
 } from './gradingTypes';
 import type {
   CadGradingGroupResult,
+  CadGradingTransition,
   GroupCornerClassification,
   GroupCornerResult,
   GroupDiagnostic,
@@ -89,6 +95,19 @@ export interface GroupSolveInput {
   closed: boolean;
   /** Target TIN snapshot; required for surface criteria, absent for analytic. */
   target?: GradingTargetMeshSnapshot;
+  /**
+   * Phase 20M.2 Wave D — single retained transition intent (absent = exact
+   * legacy path). Admitted via `admitGradingTransition` against live member
+   * geometry/criteria; any reject fails closed. Cardinality (>1) is decided
+   * before the call via `selectGroupTransition`.
+   */
+  transition?: CadGradingTransition;
+  /**
+   * Stable member identity per member in traversal order
+   * (`courseCriterionKey`); required when `transition` is present (refs
+   * verify against these, never against positional indices alone).
+   */
+  transitionMemberKeys?: string[];
 }
 
 export type GradingGroupComputeOutcome =
@@ -251,6 +270,360 @@ const splitMemberCutFill = (
     }
   }
   return { cut, fill, tied };
+};
+
+/**
+ * Phase 20M.2 Wave D — transition selection over retained intents.
+ *
+ * Absent/empty (or only structurally non-object entries) = exact legacy
+ * path. Exactly one object = the candidate. More than one = CARDINALITY
+ * reject under `trp1` (fail closed, never a silent pick). Content validity
+ * (malformed/stale/inadmissible) is decided at admission, not here.
+ */
+export type TransitionSelection =
+  | { kind: 'absent' }
+  | { kind: 'single'; transition: CadGradingTransition }
+  | { kind: 'rejected'; code: GroupDiagnosticCode; detail: string };
+
+export const selectGroupTransition = (transitions: unknown): TransitionSelection => {
+  if (transitions === undefined) return { kind: 'absent' };
+  if (!Array.isArray(transitions)) return { kind: 'absent' };
+  const intents = transitions.filter(
+    (entry): entry is CadGradingTransition => entry !== null && typeof entry === 'object',
+  );
+  if (intents.length === 0) return { kind: 'absent' };
+  if (intents.length > 1) {
+    return {
+      kind: 'rejected',
+      code: 'TRANSITION_REJECTED',
+      detail: 'GRADING_AGREEMENT_TRANSITION_CARDINALITY',
+    };
+  }
+  return { kind: 'single', transition: intents[0]! };
+};
+
+/** Policy reject → bounded group diagnostic (fail closed, never fallback). */
+const transitionPolicyToGroupCode = (code: TransitionRejectCode): GroupDiagnosticCode => {
+  if (code === 'MALFORMED') return 'TRANSITION_MALFORMED';
+  if (code === 'VERSION_UNKNOWN' || code === 'LAW_UNKNOWN') return 'TRANSITION_LAW_UNKNOWN';
+  if (code === 'MEMBER_REF_STALE' || code === 'NATIVE_CRITERION' || code === 'MAX_SEARCH') {
+    return 'TRANSITION_STALE';
+  }
+  return 'TRANSITION_REJECTED';
+};
+
+/** Admitted + tiled transition interval (C0 by shared vertex refs). */
+interface PlannedTransition {
+  joint: number;
+  tx: number;
+  ty: number;
+  /** Plan distance at the joint station (miter extent, >= 0). */
+  d0: number;
+  tieXyz: [number, number, number];
+  runFlat: number[];
+}
+
+/** Interior daylight of the legislated TRANSITION_LINEAR_V1 law at scalar v. */
+const transitionDaylightAt = (
+  family: 'distance' | 'relative-elevation' | 'elevation',
+  v: number,
+  g: number,
+  Z: number,
+  Px: number,
+  Py: number,
+  nx: number,
+  ny: number,
+): { x: number; y: number; z: number; d: number } => {
+  const d = family === 'distance' ? v : family === 'relative-elevation' ? v / g : (v - Z) / g;
+  const z = family === 'distance' ? Z + g * d : family === 'relative-elevation' ? Z + v : v;
+  return { x: Px + nx * d, y: Py + ny * d, z, d };
+};
+
+type PlannedTransitionOutcome =
+  | { ok: true; plan: PlannedTransition }
+  | Extract<GradingGroupComputeOutcome, { ok: false }>;
+
+/** fail-closed constructor with a narrow type (fail() never returns ok:true). */
+const transitionFail = (
+  code: GroupDiagnosticCode,
+  cornerIndex: number | undefined,
+  detail: string,
+): Extract<GradingGroupComputeOutcome, { ok: false }> =>
+  fail(code, cornerIndex, detail) as Extract<GradingGroupComputeOutcome, { ok: false }>;
+
+/**
+ * Admit the retained intent against live geometry/criteria, then re-tile
+ * the two incident members: natives outside `[-W/2,+W/2]` (production
+ * `solveGradingChord` sub-solves, station-preserving), the legislated
+ * linear scalar law inside. Interval endpoints are shared object refs, so
+ * natives meet the transition law exactly (C0 by construction). No C1.
+ */
+const planTransitionJoint = (
+  input: GroupSolveInput,
+  members: ResolvedGradingSource[],
+  criterionAt: (_memberIndex: number) => GradingCriterion,
+  solved: MemberSolve[],
+  jointCount: number,
+): PlannedTransitionOutcome => {
+  const t = input.transition!;
+  const jointed = /^joint:(\d+)$/.exec(typeof t.jointId === 'string' ? t.jointId : '');
+  const joint =
+    jointed !== null && jointed[1] === String(Number(jointed[1])) ? Number(jointed[1]) : null;
+  if (joint === null || !(joint >= 0) || !(joint < jointCount)) {
+    return transitionFail(
+      'TRANSITION_MALFORMED',
+      joint ?? undefined,
+      'GRADING_AGREEMENT_TRANSITION_MALFORMED: jointId must be joint:<joint index>',
+    );
+  }
+  if (input.closed === true) {
+    return transitionFail(
+      'TRANSITION_REJECTED',
+      joint,
+      'GRADING_AGREEMENT_TRANSITION_CLOSED: closed routes excluded',
+    );
+  }
+  const keys = input.transitionMemberKeys;
+  const L = joint;
+  const R = joint + 1;
+  const refL = Array.isArray(t.memberIds) ? t.memberIds[0] : undefined;
+  const refR = Array.isArray(t.memberIds) ? t.memberIds[1] : undefined;
+  if (!Array.isArray(keys) || keys.length < R + 1 || keys[L] !== refL || keys[R] !== refR) {
+    return transitionFail(
+      'TRANSITION_STALE',
+      joint,
+      'GRADING_AGREEMENT_TRANSITION_STALE: memberIds do not resolve to adjacent members',
+    );
+  }
+  const mL = members[L]!;
+  const mR = members[R]!;
+  const cL = criterionAt(L);
+  const cR = criterionAt(R);
+  const admitted = admitGradingTransition({
+    policyVersion: t.policyVersion,
+    lawKind: t.lawKind,
+    lawVersion: t.lawVersion,
+    criterionFamily: t.criterionFamily,
+    jointId: t.jointId,
+    memberIds: [keys[L]!, keys[R]!],
+    width: t.width,
+    side: t.side,
+    groupSide: input.side,
+    isOpen: true,
+    transitionCount: 1,
+    jointZ: mL.endZ,
+    members: [
+      {
+        memberId: keys[L]!,
+        criterion: cL,
+        length: mL.length,
+        dirX: mL.endX - mL.startX,
+        dirY: mL.endY - mL.startY,
+        startZ: mL.startZ,
+        endZ: mL.endZ,
+        isArc: mL.isArc,
+        maxSearchDistance: input.maxSearchDistance,
+      },
+      {
+        memberId: keys[R]!,
+        criterion: cR,
+        length: mR.length,
+        dirX: mR.endX - mR.startX,
+        dirY: mR.endY - mR.startY,
+        startZ: mR.startZ,
+        endZ: mR.endZ,
+        isArc: mR.isArc,
+        maxSearchDistance: input.maxSearchDistance,
+      },
+    ],
+  });
+  if (!admitted.ok) {
+    return transitionFail(
+      transitionPolicyToGroupCode(admitted.code),
+      joint,
+      `GRADING_AGREEMENT_TRANSITION_${admitted.code}: ${admitted.detail}`,
+    );
+  }
+  if (t.provenance?.revision !== undefined && t.provenance.revision !== input.revision) {
+    return transitionFail(
+      'TRANSITION_STALE',
+      joint,
+      'GRADING_AGREEMENT_TRANSITION_STALE: recorded revision mismatch',
+    );
+  }
+  if (t.endpoints !== undefined) {
+    const refs = t.endpoints.refs;
+    const values = t.endpoints.values;
+    if (
+      !Array.isArray(refs) ||
+      !Array.isArray(values) ||
+      refs.length !== 2 ||
+      values.length !== 2 ||
+      refs[0] !== keys[L] ||
+      refs[1] !== keys[R] ||
+      values[0] !== admitted.vL ||
+      values[1] !== admitted.vR
+    ) {
+      return transitionFail(
+        'TRANSITION_STALE',
+        joint,
+        'GRADING_AGREEMENT_TRANSITION_STALE: endpoint evidence mismatch',
+      );
+    }
+  }
+  const { vL, vR, sL, sR, width, family } = admitted;
+  const g = (cL as { gradeRatio: number }).gradeRatio;
+  const Z = mL.endZ;
+  const frameL = solved[L]!;
+  const frameR = solved[R]!;
+  const tx = frameL.tOut.nx;
+  const ty = frameL.tOut.ny;
+  const nx = frameL.nOut.nx;
+  const ny = frameL.nOut.ny;
+  const Lj = mL.length;
+  const cutLStation = Lj - width / 2;
+  const cutRStation = width / 2;
+  const vAt = (s: number): number => evaluateTransitionLinearV1(vL, vR, sL, sR, s);
+  const V = { x: mL.endX, y: mL.endY, z: mL.endZ };
+  const q0raw = transitionDaylightAt(family, vAt(0), g, Z, V.x, V.y, nx, ny);
+  if (![q0raw.x, q0raw.y, q0raw.z, q0raw.d].every(Number.isFinite)) {
+    return transitionFail(
+      'TRANSITION_REJECTED',
+      joint,
+      'GRADING_AGREEMENT_TRANSITION_MESH: non-finite joint daylight',
+    );
+  }
+  // Outer natives: production analytic sub-solves (station-preserving).
+  // Zero-length outers (width == max) reuse the full-solve endpoint refs.
+  let outerL: StraightChordSolve | null = null;
+  if (cutLStation !== 0) {
+    const PcL = { x: V.x - tx * (width / 2), y: V.y - ty * (width / 2), z: Z };
+    const sub = solveGradingChord({
+      source: {
+        startX: mL.startX,
+        startY: mL.startY,
+        endX: PcL.x,
+        endY: PcL.y,
+        startZ: Z,
+        endZ: Z,
+        length: cutLStation,
+        reoriented: mL.reoriented,
+        isArc: false,
+      },
+      side: input.side,
+      criterion: cL,
+      maxSearchDistance: input.maxSearchDistance,
+      stationBase: 0,
+      stationScale: 1,
+    });
+    if (!sub.ok) {
+      return transitionFail(
+        'TRANSITION_STALE',
+        joint,
+        `GRADING_AGREEMENT_TRANSITION_OFF_LAW: ${sub.detail ?? 'outer native failed'}`,
+      );
+    }
+    outerL = sub.solve;
+  }
+  let outerR: StraightChordSolve | null = null;
+  if (mR.length - width / 2 !== 0) {
+    const PcR = { x: V.x + tx * (width / 2), y: V.y + ty * (width / 2), z: Z };
+    const sub = solveGradingChord({
+      source: {
+        startX: PcR.x,
+        startY: PcR.y,
+        endX: mR.endX,
+        endY: mR.endY,
+        startZ: Z,
+        endZ: Z,
+        length: mR.length - width / 2,
+        reoriented: mR.reoriented,
+        isArc: false,
+      },
+      side: input.side,
+      criterion: cR,
+      maxSearchDistance: input.maxSearchDistance,
+      stationBase: cutRStation,
+      stationScale: 1,
+    });
+    if (!sub.ok) {
+      return transitionFail(
+        'TRANSITION_STALE',
+        joint,
+        `GRADING_AGREEMENT_TRANSITION_OFF_LAW: ${sub.detail ?? 'outer native failed'}`,
+      );
+    }
+    outerR = sub.solve;
+  }
+  const fullL = frameL.stitched;
+  const fullR = frameR.stitched;
+  const pCutL = outerL !== null ? outerL.sourcePts[outerL.sourcePts.length - 1]! : fullL.sourcePts[0]!;
+  const qCutL =
+    outerL !== null ? outerL.daylightPts[outerL.daylightPts.length - 1]! : fullL.daylightPts[0]!;
+  const pCutR = outerR !== null ? outerR.sourcePts[0]! : fullR.sourcePts[fullR.sourcePts.length - 1]!;
+  const qCutR = outerR !== null ? outerR.daylightPts[0]! : fullR.daylightPts[fullR.daylightPts.length - 1]!;
+  const vPt = { x: V.x, y: V.y, z: V.z };
+  const q0 = { x: q0raw.x, y: q0raw.y, z: q0raw.z };
+  const flatOf = (pts: Array<{ x: number; y: number; z: number }>): number[] => {
+    const flat: number[] = [];
+    for (const p of pts) flat.push(p.x, p.y, p.z);
+    return flat;
+  };
+  const stL: StraightChordSolve = {
+    regions: [
+      ...(outerL !== null ? outerL.regions : []),
+      { classification: 'FIXED', stationSpan: [cutLStation, Lj] },
+    ],
+    diagnostics: [...(outerL !== null ? outerL.diagnostics : [])],
+    nodeStations:
+      outerL !== null
+        ? [...outerL.nodeStations.slice(0, -1), cutLStation, Lj]
+        : [0, Lj],
+    sourcePts: outerL !== null ? [...outerL.sourcePts.slice(0, -1), pCutL, vPt] : [pCutL, vPt],
+    daylightPts: outerL !== null ? [...outerL.daylightPts.slice(0, -1), qCutL, q0] : [qCutL, q0],
+    daylightFlat: [],
+    distances:
+      outerL !== null
+        ? [...outerL.distances.slice(0, -1), outerL.distances[outerL.distances.length - 1]!, q0raw.d]
+        : [fullL.distances[0]!, q0raw.d],
+    candidateTriangleCount: outerL !== null ? outerL.candidateTriangleCount : 0,
+    intersectionSegmentCount: outerL !== null ? outerL.intersectionSegmentCount : 0,
+    multipleSolutionCount: outerL !== null ? outerL.multipleSolutionCount : 0,
+  };
+  stL.daylightFlat = flatOf(stL.daylightPts);
+  const stR: StraightChordSolve = {
+    regions: [
+      { classification: 'FIXED', stationSpan: [0, cutRStation] },
+      ...(outerR !== null ? outerR.regions : []),
+    ],
+    diagnostics: [...(outerR !== null ? outerR.diagnostics : [])],
+    nodeStations:
+      outerR !== null ? [0, cutRStation, ...outerR.nodeStations.slice(1)] : [0, cutRStation],
+    sourcePts: outerR !== null ? [vPt, pCutR, ...outerR.sourcePts.slice(1)] : [vPt, pCutR],
+    daylightPts: outerR !== null ? [q0, qCutR, ...outerR.daylightPts.slice(1)] : [q0, qCutR],
+    daylightFlat: [],
+    distances:
+      outerR !== null
+        ? [q0raw.d, outerR.distances[0]!, ...outerR.distances.slice(1)]
+        : [q0raw.d, fullR.distances[fullR.distances.length - 1]!],
+    candidateTriangleCount: outerR !== null ? outerR.candidateTriangleCount : 0,
+    intersectionSegmentCount: outerR !== null ? outerR.intersectionSegmentCount : 0,
+    multipleSolutionCount: outerR !== null ? outerR.multipleSolutionCount : 0,
+  };
+  stR.daylightFlat = flatOf(stR.daylightPts);
+  solved[L] = { ...frameL, stitched: stL, nodeStations: stL.nodeStations };
+  solved[R] = { ...frameR, stitched: stR, nodeStations: stR.nodeStations };
+  return {
+    ok: true,
+    plan: {
+      joint,
+      tx,
+      ty,
+      d0: q0raw.d,
+      tieXyz: [q0.x, q0.y, q0.z],
+      runFlat: [qCutL.x, qCutL.y, qCutL.z, q0.x, q0.y, q0.z, qCutR.x, qCutR.y, qCutR.z],
+    },
+  };
 };
 
 /**
@@ -487,6 +860,15 @@ export const computeGradingGroupFromSnapshots = (input: GroupSolveInput): Gradin
       nodeStations: stitched.nodeStations,
     });
   }
+  // Phase 20M.2 Wave D: transition admission + interval surgery. Natives
+  // outside [-W/2,+W/2] stay production solves; the interval is re-tiled by
+  // the legislated TRANSITION_LINEAR_V1 law. Any reject fails closed.
+  let transitionPlan: PlannedTransition | null = null;
+  if (input.transition !== undefined) {
+    const planned = planTransitionJoint(input, members, criterionAt, solved, jointCount);
+    if (!planned.ok) return planned;
+    transitionPlan = planned.plan;
+  }
 
   // Per-member triangle soup + daylight runs (trimmed below near overlaps).
   const memberTris: MergeTriangle[][] = solved.map((s) => {
@@ -521,6 +903,21 @@ export const computeGradingGroupFromSnapshots = (input: GroupSolveInput): Gradin
   for (let j = 0; j < jointCount; j += 1) {
     const inIdx = j;
     const outIdx = (j + 1) % members.length;
+    // Phase 20M.2 Wave D: the transitioned joint is already tiled (C0 by
+    // shared refs); record its TANGENT corner and never re-patch it.
+    if (transitionPlan !== null && j === transitionPlan.joint) {
+      corners.push({
+        cornerIndex: j,
+        vertexId: `joint:${j}`,
+        classification: 'TANGENT',
+        miterRay: { mx: transitionPlan.tx, my: transitionPlan.ty },
+        miterExtent: transitionPlan.d0,
+        tiePointXyz: transitionPlan.tieXyz,
+        daylightPoints: transitionPlan.runFlat,
+        diagnostics: [],
+      });
+      continue;
+    }
     const incoming = solved[inIdx]!;
     const outgoing = solved[outIdx]!;
     const vMember = members[inIdx]!;
@@ -775,7 +1172,14 @@ export const computeGradingGroupFromSnapshots = (input: GroupSolveInput): Gradin
   const allTris = [...memberTris.flat(), ...patchTris];
   const merged = mergeGroupTriangles(allTris);
   const meshError = validateGroupMesh(merged);
-  if (meshError) return fail('GROUP_NON_MANIFOLD', undefined, meshError);
+  if (meshError) {
+    // Phase 20M.2 Wave D NARROW: a transitioned mesh that fails proof fails
+    // closed (no heuristic repair) under the transition code.
+    if (transitionPlan !== null) {
+      return fail('TRANSITION_REJECTED', transitionPlan.joint, 'GRADING_AGREEMENT_TRANSITION_MESH');
+    }
+    return fail('GROUP_NON_MANIFOLD', undefined, meshError);
+  }
   const tiedCoords: number[] = [];
   memberTris.forEach((tris, mi) => {
     if (tris.length !== 0) return;
@@ -813,7 +1217,12 @@ export const computeGradingGroupFromSnapshots = (input: GroupSolveInput): Gradin
     expectedComponents: groupExpectation.expectedFaceComponents,
     expectedBoundaryLoops: groupExpectation.expectedBoundaryCycles,
   });
-  if (groupTopoError) return fail('GROUP_NON_MANIFOLD', undefined, groupTopoError);
+  if (groupTopoError) {
+    if (transitionPlan !== null) {
+      return fail('TRANSITION_REJECTED', transitionPlan.joint, 'GRADING_AGREEMENT_TRANSITION_MESH');
+    }
+    return fail('GROUP_NON_MANIFOLD', undefined, groupTopoError);
+  }
 
   let cutSourceLength = 0;
   let fillSourceLength = 0;
@@ -867,6 +1276,9 @@ export const computeGradingGroupFromSnapshots = (input: GroupSolveInput): Gradin
     gradingBoundaryPoints: daylightFlat,
   });
   if (!topologyCertificate && merged.triangles.length > 0) {
+    if (transitionPlan !== null) {
+      return fail('TRANSITION_REJECTED', transitionPlan.joint, 'GRADING_AGREEMENT_TRANSITION_MESH');
+    }
     return fail('GROUP_NON_MANIFOLD', undefined, 'GRADING_TOPOLOGY_CERTIFICATE_MISSING');
   }
   const result: CadGradingGroupResult = {

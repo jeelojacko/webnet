@@ -68,6 +68,11 @@ export interface CadGradingGroup {
   curveChordTolerance: number;
   cornerMode: GradingCornerMode;
   closed?: boolean;
+  /**
+   * Phase 20M.2 Wave B — optional transition intents (policyVersion `trp1`:
+   * at most ONE; absent key = exact legacy group, never a default).
+   */
+  transitions?: CadGradingTransition[];
   layerId?: string;
   styleId?: string;
 }
@@ -93,7 +98,55 @@ export type GroupDiagnosticCode =
   | 'CORNER_MAX_DISTANCE'
   | 'GROUP_SELF_INTERSECTION'
   | 'GROUP_NON_MANIFOLD'
-  | 'CURVE_CORNER_APPROXIMATED';
+  | 'CURVE_CORNER_APPROXIMATED'
+  | 'TRANSITION_MALFORMED'
+  | 'TRANSITION_LAW_UNKNOWN'
+  | 'TRANSITION_STALE'
+  | 'TRANSITION_REJECTED';
+
+/**
+ * Phase 20M.2 Wave B — persisted collinear same-family transition intent.
+ *
+ * Additive optional element of `CadGradingGroup.transitions` (at most ONE
+ * under policyVersion `trp1`). Field CONTENT is validated at admission
+ * (`admitGradingTransition`); persistence retains every structurally-object
+ * entry verbatim as intent (malformed/stale/inadmissible fails closed at
+ * solve, never scrubbed to absence). `endpoints`/`provenance` are evidence
+ * outputs pinned at the recorded revision — never hash inputs, never
+ * geometric authority (persisted-model §§4–5).
+ */
+export interface CadGradingTransitionEndpoints {
+  /** Stable member refs, [courseCriterionKey(prev), courseCriterionKey(next)]. */
+  refs: string[];
+  /** Resolved endpoint scalars (d | Δz | E) pinned as evidence at revision. */
+  values: number[];
+}
+
+export interface CadGradingTransitionProvenance {
+  jointId: string;
+  memberIds: string[];
+  /** Total symmetric width W, meters of source-line distance. */
+  width: number;
+  lawKind: string;
+  lawVersion: string;
+  criterionFamily: string;
+  side: GradingSide;
+  /** Recorded `ggrev1:` this evidence was pinned at (output, never hashed). */
+  revision?: string;
+}
+
+export interface CadGradingTransition {
+  policyVersion: string;
+  jointId: string;
+  memberIds: string[];
+  width: number;
+  lawKind: string;
+  lawVersion: string;
+  criterionFamily: string;
+  side: GradingSide;
+  endpoints?: CadGradingTransitionEndpoints;
+  provenance?: CadGradingTransitionProvenance;
+}
 
 export interface GroupDiagnostic {
   code: GroupDiagnosticCode;
