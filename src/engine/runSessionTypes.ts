@@ -186,4 +186,6 @@ export type SolveInvocationMeta = {
   stageId: RunSessionStageId;
   stageLabel: string;
   solveTotalHint: number;
+  /** Explicit run-local progress count; defaults to the global solve sequence. */
+  progressIndex?: number;
 };

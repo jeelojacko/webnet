@@ -68,6 +68,7 @@ export const createAdjustmentWorkerHandler = (
                 runId,
                 phase: progress.phase,
                 elapsedMs: progress.elapsedMs,
+                stageId: progress.stageId,
                 stageLabel: progress.stageLabel,
                 solveIndex: progress.solveIndex,
                 solveTotalHint: progress.solveTotalHint,

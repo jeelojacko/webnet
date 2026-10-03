@@ -12,12 +12,14 @@ import {
   RotateCcw,
   Ruler,
   Save,
+  Send,
   Settings,
   Square,
 } from 'lucide-react';
 import { EXPORT_FORMAT_OPTIONS } from '../engine/exportFormats';
 import type { ProjectExportFormat } from '../types';
 import type { ResultIntegrityState } from '../engine/resultIntegrity';
+import { resultIntegrityBadge, type RunStatusTone } from './resultStatusPresentation';
 import type { RunPipelineState } from '../hooks/useAdjustmentRunner';
 
 interface AppToolbarProps {
@@ -97,21 +99,38 @@ const AppToolbar: React.FC<AppToolbarProps> = ({
 
   const runSourceLabel = pipelineState.workerBacked ? 'Worker' : 'Direct';
   const elapsedLabel = formatElapsed(pipelineState.elapsedMs);
+  const integrityBadge = resultIntegrityBadge(integrityState);
+  const integrityToneClass: Record<RunStatusTone, string> = {
+    success: 'text-green-400',
+    planning: 'text-amber-300',
+    failure: 'text-red-400',
+    muted: 'text-slate-400',
+  };
+  // Preanalysis planning depth is data-dependent: show a count, never x/y
+  // over a moving denominator.
   const solveProgressLabel =
-    pipelineState.solveIndex != null && pipelineState.solveTotalHint != null
-      ? `${pipelineState.solveIndex}/${pipelineState.solveTotalHint}`
-      : null;
+    pipelineState.stageId === 'preanalysis-impact'
+      ? pipelineState.solveIndex != null
+        ? `Planning checks ${pipelineState.solveIndex}`
+        : null
+      : pipelineState.solveIndex != null && pipelineState.solveTotalHint != null
+        ? `${pipelineState.solveIndex}/${pipelineState.solveTotalHint}`
+        : null;
   const iterationLabel =
     pipelineState.iteration != null && pipelineState.maxIterations != null
       ? `iter ${pipelineState.iteration}/${pipelineState.maxIterations}`
       : null;
 
   return (
-    <header className="bg-slate-800 border-b border-slate-700 flex flex-wrap items-center px-3 py-2 md:px-4 shrink-0 w-full gap-3">
-      <div className="flex items-center gap-3 min-w-0 flex-1">
+    <header
+      data-testid="app-toolbar"
+      className="bg-slate-800 border-b border-slate-700 flex flex-wrap items-center gap-x-3 gap-y-2 px-3 py-2 md:px-4 shrink-0 w-full min-w-0"
+    >
+      <div className="flex flex-wrap items-center gap-x-3 gap-y-2 min-w-0 flex-1">
         {showSidebarToggle ? (
           <button
             onClick={onToggleSidebar}
+            aria-label={isSidebarOpen ? 'Close Input Sidebar' : 'Open Input Sidebar'}
             className="p-1.5 hover:bg-slate-700 rounded text-slate-400 hover:text-white transition-colors"
             title={isSidebarOpen ? 'Close Input Sidebar' : 'Open Input Sidebar'}
           >
@@ -132,18 +151,20 @@ const AppToolbar: React.FC<AppToolbarProps> = ({
         <button
           onClick={onOpenProjectOptions}
           title="Open industry-style project options"
-          className="hidden sm:flex items-center space-x-2 px-3 py-1.5 rounded border text-xs uppercase tracking-wide bg-slate-900/60 border-slate-700 text-slate-300 hover:bg-slate-700"
+          aria-label="Open project options"
+          className="flex items-center gap-2 px-2.5 py-1.5 rounded border text-xs uppercase tracking-wide bg-slate-900/60 border-slate-700 text-slate-300 hover:bg-slate-700 shrink-0"
         >
-          <Settings size={14} />
-          <span>Project Options</span>
+          <Settings size={16} />
+          <span className="hidden xl:inline">Project Options</span>
         </button>
         <button
           onClick={onOpenSurveyCad}
           title="Open WebNet CAD in its own workspace"
-          className="hidden sm:flex items-center space-x-2 px-3 py-1.5 rounded border text-xs uppercase tracking-wide bg-slate-900/60 border-slate-700 text-slate-300 hover:bg-slate-700"
+          aria-label="Open WebNet CAD"
+          className="flex items-center gap-2 px-2.5 py-1.5 rounded border text-xs uppercase tracking-wide bg-slate-900/60 border-slate-700 text-slate-300 hover:bg-slate-700 shrink-0"
         >
-          <Ruler size={14} />
-          <span>Open CAD</span>
+          <Ruler size={16} />
+          <span className="hidden xl:inline">Open CAD</span>
         </button>
         <button
           onClick={onSendToCad}
@@ -153,60 +174,45 @@ const AppToolbar: React.FC<AppToolbarProps> = ({
               ? 'Publish this adjustment result as a CAD source and open WebNet CAD'
               : `Send to CAD is available after a fresh successful production run${sendToCadBlockMessage ? `: ${sendToCadBlockMessage}` : ''}`
           }
-          className="hidden sm:flex items-center space-x-2 px-3 py-1.5 rounded border text-xs uppercase tracking-wide bg-slate-900/60 border-slate-700 text-slate-300 hover:bg-slate-700 disabled:cursor-not-allowed disabled:opacity-50"
+          aria-label="Send to CAD"
+          className="flex items-center gap-2 px-2.5 py-1.5 rounded border text-xs uppercase tracking-wide bg-slate-900/60 border-slate-700 text-slate-300 hover:bg-slate-700 disabled:cursor-not-allowed disabled:opacity-50 shrink-0"
         >
-          <span>Send to CAD</span>
+          <Send size={16} />
+          <span className="hidden xl:inline">Send to CAD</span>
         </button>
         <button
           onClick={onOpenStudy}
           title="Open WebNet Study"
-          className="hidden sm:flex items-center space-x-2 px-3 py-1.5 rounded border text-xs uppercase tracking-wide bg-slate-900/60 border-slate-700 text-slate-300 hover:bg-slate-700"
+          aria-label="Open WebNet Study"
+          className="flex items-center gap-2 px-2.5 py-1.5 rounded border text-xs uppercase tracking-wide bg-slate-900/60 border-slate-700 text-slate-300 hover:bg-slate-700 shrink-0"
         >
-          <GraduationCap size={14} />
-          <span>Study</span>
+          <GraduationCap size={16} />
+          <span className="hidden xl:inline">Study</span>
         </button>
       </div>
 
-      <div className="flex flex-wrap items-center gap-2 ml-auto shrink-0 justify-end w-full lg:w-auto">
-        <button
-          onClick={onOpenProjectOptions}
-          title="Open industry-style project options"
-          className="sm:hidden p-2 bg-slate-700 hover:bg-slate-600 rounded text-slate-300 transition-colors"
-        >
-          <Settings size={18} />
-        </button>
-        <button
-          onClick={onOpenSurveyCad}
-          title="Open WebNet CAD in its own workspace"
-          className="sm:hidden p-2 bg-slate-700 hover:bg-slate-600 rounded text-slate-300 transition-colors"
-        >
-          <Ruler size={18} />
-        </button>
-        <button
-          onClick={onOpenStudy}
-          title="Open WebNet Study"
-          className="sm:hidden p-2 bg-slate-700 hover:bg-slate-600 rounded text-slate-300 transition-colors"
-        >
-          <GraduationCap size={18} />
-        </button>
+      <div className="flex flex-wrap items-center gap-x-2 gap-y-2 ml-auto min-w-0 justify-end">
         <button
           onClick={onOpenImportFile}
           title="Open data/import file"
-          className="p-2 bg-slate-700 hover:bg-slate-600 rounded text-slate-300 transition-colors"
+          aria-label="Open data/import file"
+          className="p-2 bg-slate-700 hover:bg-slate-600 rounded text-slate-300 transition-colors shrink-0"
         >
           <FileText size={18} />
         </button>
         <button
           onClick={onOpenProjectFile}
           title="Open local project workspace or portable project import"
-          className="p-2 bg-slate-700 hover:bg-slate-600 rounded text-slate-300 transition-colors"
+          aria-label="Open local project workspace"
+          className="p-2 bg-slate-700 hover:bg-slate-600 rounded text-slate-300 transition-colors shrink-0"
         >
           <FolderOpen size={18} />
         </button>
         <button
           onClick={onSaveProject}
           title="Save the current local browser project"
-          className="p-2 bg-slate-700 hover:bg-slate-600 rounded text-slate-300 transition-colors"
+          aria-label="Save project"
+          className="p-2 bg-slate-700 hover:bg-slate-600 rounded text-slate-300 transition-colors shrink-0"
         >
           <Save size={18} />
         </button>
@@ -218,7 +224,7 @@ const AppToolbar: React.FC<AppToolbarProps> = ({
               ? 'Clear the browser-local draft recovery snapshot'
               : 'No local draft to clear'
           }
-          className={`p-2 rounded text-slate-300 transition-colors ${
+          className={`p-2 rounded text-slate-300 transition-colors shrink-0 ${
             hasStoredDraft
               ? 'bg-slate-700 hover:bg-slate-600'
               : 'bg-slate-800 opacity-50 cursor-not-allowed'
@@ -230,7 +236,8 @@ const AppToolbar: React.FC<AppToolbarProps> = ({
           value={exportFormat}
           onChange={(e) => onExportFormatChange(e.target.value as ProjectExportFormat)}
           title={exportTooltip}
-          className="h-9 max-w-full bg-slate-700 border border-slate-600 text-slate-100 text-xs rounded px-2 min-w-[10rem] sm:min-w-[12rem]"
+          aria-label="Export format"
+          className="h-9 min-w-0 max-w-full bg-slate-700 border border-slate-600 text-slate-100 text-xs rounded px-2"
         >
           {EXPORT_FORMAT_OPTIONS.map((option) => (
             <option key={option.value} value={option.value}>
@@ -246,7 +253,8 @@ const AppToolbar: React.FC<AppToolbarProps> = ({
               ? 'Run adjustment to export results'
               : (integrityBlockMessage ?? `Export ${exportLabel}`)
           }
-          className={`p-2 rounded text-slate-300 transition-colors ${
+          aria-label={`Export ${exportLabel}`}
+          className={`p-2 rounded text-slate-300 transition-colors shrink-0 ${
             canExport
               ? 'bg-slate-700 hover:bg-slate-600'
               : 'bg-slate-800 opacity-50 cursor-not-allowed'
@@ -266,29 +274,30 @@ const AppToolbar: React.FC<AppToolbarProps> = ({
         {pipelineState.status === 'running' ? (
           <button
             onClick={onCancelRun}
-            className="flex items-center space-x-2 bg-amber-600 hover:bg-amber-500 text-white px-4 py-1.5 rounded text-sm font-medium transition-colors shadow-lg shadow-amber-900/20"
+            className="flex items-center gap-2 bg-amber-600 hover:bg-amber-500 text-white px-4 py-1.5 rounded text-sm font-medium transition-colors shadow-lg shadow-amber-900/20 shrink-0"
             title="Cancel current run"
+            aria-label="Cancel current run"
           >
             <Square size={14} /> <span>Cancel</span>
           </button>
         ) : (
           <button
             onClick={onRun}
-            className="flex items-center space-x-2 bg-green-600 hover:bg-green-500 text-white px-4 py-1.5 rounded text-sm font-medium transition-colors shadow-lg shadow-green-900/20"
+            title="Run the adjustment"
+            aria-label="Adjust"
+            className="flex items-center gap-2 bg-green-600 hover:bg-green-500 text-white px-4 py-1.5 rounded text-sm font-medium transition-colors shadow-lg shadow-green-900/20 shrink-0"
           >
             <Play size={16} /> <span>Adjust</span>
           </button>
         )}
         {pipelineState.status !== 'running' && (
           <div
-            className="rounded border px-2 py-1 text-[10px] uppercase tracking-wide"
+            className={`rounded border px-2 py-1 text-[10px] uppercase tracking-wide ${integrityToneClass[integrityBadge.tone]}`}
             title={integrityBlockMessage ?? `Result status: ${integrityState}`}
             data-result-integrity-status={integrityState}
+            data-result-integrity-tone={integrityBadge.tone}
           >
-            {integrityState === 'FRESH_SUCCESS' ? '● Current' : null}
-            {integrityState === 'STALE_SUCCESS' || integrityState === 'STALE_FAILED' ? '▲ Stale — re-run' : null}
-            {integrityState === 'FRESH_FAILED' ? '✖ Run failed' : null}
-            {integrityState === 'NO_RESULT' ? '○ No result' : null}
+            {integrityBadge.label}
           </div>
         )}
         {pendingRunSettingDiffs.length > 0 && pipelineState.status !== 'running' && (
@@ -303,40 +312,31 @@ const AppToolbar: React.FC<AppToolbarProps> = ({
         <button
           onClick={onResetToLastRun}
           disabled={pipelineState.status === 'running'}
-          className={`p-2 rounded text-slate-300 transition-colors ${
+          className={`p-2 rounded text-slate-300 transition-colors shrink-0 ${
             pipelineState.status === 'running'
               ? 'bg-slate-800 opacity-50 cursor-not-allowed'
               : 'bg-slate-700 hover:bg-slate-600'
           }`}
           title="Restore the last-run input and clear active results"
+          aria-label="Restore the last-run input"
         >
           <RefreshCw size={18} />
         </button>
-        {runPhaseLabel ? (
-          <div className="w-full sm:w-[23rem] sm:min-w-[23rem] rounded border border-slate-600 bg-slate-800/80 px-2 py-1 text-[11px] uppercase tracking-wide text-slate-300">
-            <div className="flex items-center gap-2">
-              <span>{runPhaseLabel}</span>
+        {pipelineState.status === 'running' && runPhaseLabel ? (
+          <div className="w-full min-w-0 sm:w-auto sm:flex-1 sm:max-w-[26rem] rounded border border-slate-600 bg-slate-800/80 px-2 py-1 text-[11px] uppercase tracking-wide text-slate-300">
+            <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5">
+              <span className="truncate">{runPhaseLabel}</span>
               {elapsedLabel ? (
-                <span className="text-slate-400 font-mono tabular-nums min-w-[3.75rem] text-right">
-                  {elapsedLabel}
-                </span>
-              ) : (
-                <span className="min-w-[3.75rem]" />
-              )}
+                <span className="text-slate-400 font-mono tabular-nums">{elapsedLabel}</span>
+              ) : null}
             </div>
-            <div className="mt-0.5 text-[10px] tracking-normal normal-case text-slate-500 font-mono tabular-nums">
-              <span className="inline-block min-w-[4.5rem]">{pipelineState.detail ?? runSourceLabel}</span>
+            <div className="mt-0.5 text-[10px] tracking-normal normal-case text-slate-500 font-mono tabular-nums break-words">
+              <span>{pipelineState.detail ?? runSourceLabel}</span>
               {solveProgressLabel ? (
-                <span className="inline-block min-w-[5.5rem]">{` · solve ${solveProgressLabel}`}</span>
-              ) : (
-                <span className="inline-block min-w-[5.5rem]" />
-              )}
-              {iterationLabel ? (
-                <span className="inline-block min-w-[7.5rem]">{` · ${iterationLabel}`}</span>
-              ) : (
-                <span className="inline-block min-w-[7.5rem]" />
-              )}
-              <span>{` · ${runSourceLabel}`}</span>
+                <span className="whitespace-nowrap">{pipelineState.stageId === 'preanalysis-impact' ? ` · ${solveProgressLabel}` : ` · solve ${solveProgressLabel}`}</span>
+              ) : null}
+              {iterationLabel ? <span className="whitespace-nowrap">{` · ${iterationLabel}`}</span> : null}
+              <span className="whitespace-nowrap">{` · ${runSourceLabel}`}</span>
             </div>
           </div>
         ) : null}

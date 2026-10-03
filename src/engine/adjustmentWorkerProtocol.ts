@@ -1,4 +1,5 @@
 import type { RunSessionOutcome, RunSessionRequest } from './runSession';
+import type { RunSessionStageId } from './runSessionTypes';
 import type { GnssBaselineAdjustInput, GnssBaselineAdjustResult } from './gnssBaselineAdjust';
 
 export type RunPhase = 'queued' | 'solving' | 'finalizing';
@@ -27,6 +28,7 @@ export interface RunProgressMessage {
   runId: string;
   phase: RunPhase;
   elapsedMs?: number;
+  stageId?: RunSessionStageId;
   stageLabel?: string;
   solveIndex?: number;
   solveTotalHint?: number;

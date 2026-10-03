@@ -49,6 +49,7 @@ const SUITES = {
   'phase9e-audit': ['tests/evidence/phase9e_scenario_audit.test.ts'],
   'phase9e-fastpath': ['tests/evidence/phase9e_preanalysis_correction_fastpath.test.ts'],
   phase9h: ['tests/evidence/phase9h_serial_profile.test.ts'],
+  phase9k: ['tests/evidence/phase9k_planning_solve_instrumentation.test.ts'],
   phase9i: ['tests/evidence/phase9i_metric_reuse_profile.test.ts'],
   phase9j: ['tests/evidence/phase9j_path_priority_profile.test.ts'],
   phase10a: ['tests/evidence/phase10a_3d_adjustment_profile.test.ts'],

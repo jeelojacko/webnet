@@ -4,6 +4,7 @@ import type {
   AdjustmentWorkerResponseMessage,
   RunPhase,
 } from '../engine/adjustmentWorkerProtocol';
+import type { RunSessionStageId } from '../engine/runSessionTypes';
 import { isAdjustmentWorkerResponseMessage } from '../engine/adjustmentWorkerProtocol';
 import {
   runAdjustmentSession,
@@ -21,6 +22,7 @@ export interface RunPipelineState {
   workerBacked: boolean;
   elapsedMs: number | null;
   detail: string | null;
+  stageId: RunSessionStageId | null;
   solveIndex: number | null;
   solveTotalHint: number | null;
   iteration: number | null;
@@ -46,6 +48,7 @@ const INITIAL_STATE: RunPipelineState = {
   workerBacked: false,
   elapsedMs: null,
   detail: null,
+  stageId: null,
   solveIndex: null,
   solveTotalHint: null,
   iteration: null,
@@ -126,6 +129,7 @@ export const useAdjustmentRunner = (
           workerBacked: true,
           elapsedMs: message.elapsedMs ?? null,
           detail: message.stageLabel ?? null,
+          stageId: message.stageId ?? null,
           solveIndex: message.solveIndex ?? null,
           solveTotalHint: message.solveTotalHint ?? null,
           iteration: message.iteration ?? null,
@@ -185,6 +189,7 @@ export const useAdjustmentRunner = (
         workerBacked: true,
         elapsedMs: null,
         detail: null,
+        stageId: null,
         solveIndex: null,
         solveTotalHint: null,
         iteration: null,
@@ -237,6 +242,7 @@ export const useAdjustmentRunner = (
         workerBacked,
         elapsedMs: null,
         detail: null,
+        stageId: null,
         solveIndex: null,
         solveTotalHint: null,
         iteration: null,
@@ -308,6 +314,7 @@ export const useAdjustmentRunner = (
               workerBacked: false,
               elapsedMs: null,
               detail: null,
+              stageId: null,
               solveIndex: null,
               solveTotalHint: null,
               iteration: null,
@@ -372,6 +379,7 @@ export const useAdjustmentRunner = (
               workerBacked: false,
               elapsedMs: null,
               detail: null,
+              stageId: null,
               solveIndex: null,
               solveTotalHint: null,
               iteration: null,
