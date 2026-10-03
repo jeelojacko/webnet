@@ -94,6 +94,9 @@ export const buildViewportBounds = (
   maxY: viewHeight + clipMarginPx,
 });
 
+export const formatMapViewTransform = (view2d: View2dState): string =>
+  `translate(${view2d.panX} ${view2d.panY}) scale(${view2d.zoom})`;
+
 export const buildProjectedViewportBounds = (
   viewportBounds: ViewportBounds,
   view2d: View2dState,

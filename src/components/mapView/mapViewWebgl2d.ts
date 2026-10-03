@@ -13,6 +13,8 @@ import {
   vertexShaderSourceTextured,
 } from './mapViewWebgl2dShaders';
 import { resolveTileMesh, resolveTileTexture } from './mapViewWebgl2dTileResources';
+import { resolveFullDevicePixelRatio } from './mapViewCanvasPrepare';
+import { formatMapViewTransform } from './mapView2d';
 import type {
   DirtyFlags,
   MapViewWebgl2dMetrics,
@@ -143,11 +145,9 @@ export class MapViewWebgl2d {
     viewHeight: number;
   }): void {
     if (!this.gl || !this.canvas) return;
-    const fullPixelRatio =
-      typeof window !== 'undefined' && Number.isFinite(window.devicePixelRatio)
-        ? Math.max(1, window.devicePixelRatio)
-        : 1;
-    const pixelRatio = input.interactionPhase === 'interacting' ? 1 : fullPixelRatio;
+    // E2: keep the WebGL drawing buffer at full device resolution for the whole
+    // gesture so it is never resized between a provisional 1x and full DPR.
+    const pixelRatio = resolveFullDevicePixelRatio();
     const targetWidth = Math.max(1, Math.round(input.viewWidth * pixelRatio));
     const targetHeight = Math.max(1, Math.round(input.viewHeight * pixelRatio));
     if (this.canvas.width !== targetWidth) this.canvas.width = targetWidth;
@@ -163,6 +163,12 @@ export class MapViewWebgl2d {
       if (!this.ready || !this.gl || !this.canvas) return false;
       try {
         this.resize(input);
+        {
+          const dataset = (this.canvas as HTMLCanvasElement & { dataset?: DOMStringMap }).dataset;
+          if (dataset && input.view2d) {
+            dataset.mapViewTransform = formatMapViewTransform(input.view2d);
+          }
+        }
         this.metrics.renderCount += 1;
         noteMapViewPerfCounter('webgl:renders');
         noteMapViewPerfMetadata('webgl:last-renderer-phase', input.interactionPhase);

@@ -85,6 +85,7 @@ describe('MapViewWebgl2d', () => {
       width: 0,
       height: 0,
       style: {},
+      dataset: {} as DOMStringMap,
       getContext: vi.fn((kind: string) => (kind === 'webgl2' ? gl : null)),
     } as unknown as HTMLCanvasElement;
     const renderer = new MapViewWebgl2d();
@@ -136,6 +137,7 @@ describe('MapViewWebgl2d', () => {
     expect(rendered).toBe(true);
     expect(canvas.width).toBe(2000);
     expect(canvas.height).toBe(1400);
+    expect(canvas.dataset.mapViewTransform).toBe('translate(14 -6) scale(1.2)');
     const metrics = renderer.snapshotMetrics();
     expect(metrics.renderCount).toBe(1);
     expect(metrics.textureUploadCount).toBeGreaterThan(0);

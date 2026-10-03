@@ -237,7 +237,7 @@ const MapViewContent = ({
           ref={svgRef}
           viewBox={`0 0 ${VIEW_W} ${VIEW_H}`}
           preserveAspectRatio="xMidYMid slice"
-          shapeRendering={interactionPhase === 'interacting' ? 'optimizeSpeed' : 'geometricPrecision'}
+          shapeRendering={interactionPhase === 'idle' ? 'geometricPrecision' : 'optimizeSpeed'}
           className={`absolute inset-0 z-30 h-full w-full select-none ${
             toolPickTarget != null
               ? 'cursor-crosshair'

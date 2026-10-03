@@ -18,6 +18,7 @@ import {
   EMPTY_TOOL_HIGHLIGHT_IDS,
   EMPTY_TOOL_HIGHLIGHT_SEGMENTS,
 } from './MapViewSvg2d.constants';
+import { formatMapViewTransform } from './mapView2d';
 import type { MapViewSvg2dProps } from './MapViewSvg2d.types';
 import { SvgPlanningLayer } from './MapViewSvgPlanningLayer';
 import { SvgSelectionLayer } from './MapViewSvgSelectionLayer';
@@ -243,12 +244,12 @@ const MapViewSvg2d: React.FC<MapViewSvg2dProps> = ({
     noteMapViewPerfMetadata('svg:last-line-count', filteredVisibleMapLines2d.length);
     noteMapViewPerfMetadata('svg:last-planning-polygon-count', planningPolygons2d.length);
     noteMapViewPerfMetadata('svg:last-selection-box-active', selectionBoxRect != null);
-    const viewTransform = `translate(${view2d.panX} ${view2d.panY}) scale(${view2d.zoom})`;
+    const viewTransform = formatMapViewTransform(view2d);
     return (
       <>
         <SvgArrowDefs marker2d={marker2d} />
 
-        <g transform={viewTransform}>
+        <g transform={viewTransform} data-map-view-transform={viewTransform}>
           <SvgPlanningLayer
             planningPolygons2d={planningPolygons2d}
             selectedPlanningPolygonIds={selectedPlanningPolygonIds}
@@ -298,7 +299,7 @@ const MapViewSvg2d: React.FC<MapViewSvg2dProps> = ({
         )}
 
         {transformedOverlayActive && (
-          <g transform={viewTransform}>
+          <g transform={viewTransform} data-map-view-transform={viewTransform}>
             <SvgTransformedOverlayLayer
               transformedLines2d={transformedLines2d}
               project2d={project2d}
@@ -314,7 +315,7 @@ const MapViewSvg2d: React.FC<MapViewSvg2dProps> = ({
         )}
 
         {showLabels && (
-          <g transform={viewTransform}>
+          <g transform={viewTransform} data-map-view-transform={viewTransform}>
             <SvgScenarioLabelLayer
               bracePreviewPoints2d={bracePreviewPoints2d}
               labelOffset2d={labelOffset2d}
