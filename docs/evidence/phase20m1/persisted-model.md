@@ -18,6 +18,10 @@ policy. Authorities referenced: `forensics.md` §10–§11.
 
 Attach an optional `transitions?: CadGradingTransition[]` beside the group
 definition. Field names are illustrative; the invariants are the contract.
+Cardinality for `policyVersion trp1` (first 20M.2 implementation): AT MOST ONE
+element — a second transition object rejects (`GRADING_AGREEMENT_TRANSITION_OVERLAP`
+family). The collection shape is future-proofing for multi-transition policy;
+it does NOT authorize multi-transition production.
 
 | Field | Type | Invariant |
 |---|---|---|
@@ -34,9 +38,11 @@ definition. Field names are illustrative; the invariants are the contract.
 
 ## 2. Width ownership invariants
 
-1. **Single owner.** Exactly one object owns the source interval width at a
+1. **Single owner; first production is one-transition-only.** Exactly one object owns the source interval width at a
    joint. Two objects whose intervals intersect the same source station set
-   is an overlap.
+   is an overlap — and under `trp1` a second transition object rejects
+   regardless of separation (pair-interval math is future-multiple evidence
+   only, not production authorization).
 2. **Symmetry.** `W` is a total symmetric width; each member gives `W/2`
    from the joint along its own source line. There is no independent
    per-member half-width in the initial proposal (asymmetric half-widths are
@@ -44,13 +50,16 @@ definition. Field names are illustrative; the invariants are the contract.
 3. **Feasibility.** `W/2 <= memberAvailableLength` for BOTH incident
    members, where available length is the member's source length minus any
    boundary already claimed by another transition or the group end.
-4. **Touching vs overlap.** Intervals that share only an endpoint boundary
+4. **Touching vs overlap (future-multiple evidence; first production has no
+   sibling interval).** Intervals that share only an endpoint boundary
    are *touching*. Touching is scalar interval OCCUPANCY only — the shared
    station carries two independently legislated endpoint values (right end
    of the left law, left end of the next law) whose equality is unevidenced,
-   so station ownership alone cannot show C0. PRODUCTION requires a strict
-   positive gap between intervals. Boundary comparison stays exact (`===`
-   on the shared station scalar), matching the 20L.2 same-`d` exactness
+   so station ownership alone cannot show C0. A future multi-transition policy
+   would require a strict positive gap between intervals; the FIRST 20M.2
+   production authorizes exactly one transition per group, so this rule is
+   evidence-only until such a policy exists. Boundary comparison stays exact
+   (`===` on the shared station scalar), matching the 20L.2 same-`d` exactness
    precedent (`gradingExactOffsetPolicy.ts:148`) — never a tolerance.
 5. **Reject on overlap.** Strictly positive shared interior ⇒ reject the
    object (fail closed, no silent clipping). No priority law exists
@@ -126,6 +135,7 @@ that can silently drift.
 | Malformed fields (non-finite width, bad refs, unknown `lawKind`) | Object retained as invalid intent; group is FAILED/NOT_CURRENT with a bounded diagnostic (`GRADING_AGREEMENT_TRANSITION_MALFORMED` family), never silently degraded to un-transitioned CURRENT. Justified contract: a malformed transition must never brick the whole drawing, and must never silently become a default — or silently vanish. |
 | Stale refs (member id no longer resolves, revision mismatch) | Fail closed for the transition: mark not-current / invalidate; do not fabricate a replacement. Retain the invalid intent with its diagnostic (`GRADING_AGREEMENT_TRANSITION_STALE` family) so status reads FAILED/NOT_CURRENT, never CURRENT-via-fallback. (Proposed exact invalidation — unevidenced in 20M.1, no implementation.) |
 | Width infeasible (`W/2 > available`) or interval overlap | Reject object; surface a bounded diagnostic (code list in `worker-topology-product.md` §2). |
+| More than one transition object under `policyVersion trp1` | Reject the group transition intent (second object is not authorized in the first 20M.2 implementation, however separated); multi-transition production requires a future policy, not strict separation alone. |
 | Grade-ratio mismatch (`gL!==gR`) | Reject object; scalar interpolation cannot preserve plan/Z (corpus `grade-*` rows). |
 | Member/source edit | `ggrev1:` changes ⇒ transition invalidated and recomputed. Derived results never persist (`gradingGroupPersistence.ts:8`). |
 

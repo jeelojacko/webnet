@@ -55,12 +55,15 @@ width-invalid, touch/overlap pair, 4 transforms, 7 excluded-class controls.
   - Symmetric about the joint; separately persisted left/right extents are
     NOT admitted in the first candidate (unneeded expressiveness, doubles
     the invalidation surface).
-  - Overlap law: production intervals must be STRICTLY separated (positive
-    gap — touching shares a station where the two laws' independently
-    legislated endpoint values may differ, so ownership alone cannot show
-    C0). Touching is scalar interval occupancy only (corpus `touch-pair`:
-    shares `s=4`, occupancy admits, production rejects); overlap rejects
-    with shared-interior bounds.
+  - Overlap law: the FIRST 20M.2 production predicate authorizes EXACTLY ONE
+    transition per group (cardinality <= 1 for policyVersion `trp1`), so
+    interval separation is vacuous in production — there is no sibling
+    interval to separate from. The pair-interval math below is synthetic
+    future-multiple policy evidence only and does NOT authorize
+    multi-transition production; strict separation alone is NOT sufficient
+    for production multiples. Touching is scalar interval occupancy only
+    (corpus `touch-pair`: shares `s=4`, occupancy admits, production
+    rejects); overlap rejects with shared-interior bounds.
   - Boundary equality is exact (`<=` admits equality, `>` rejects); no
     epsilon is invented or needed.
 
@@ -118,19 +121,20 @@ width-invalid, touch/overlap pair, 4 transforms, 7 excluded-class controls.
   classification-symmetry. Reversal coverage is symmetry-only (the harness
   evaluates the same deflection), flagged as weak, not as mesh proof.
 
-## 5. Multiple transitions (Q5)
+## 5. Multiple transitions (Q5) — FIRST PRODUCTION IS ONE-TRANSITION-ONLY
 
 - Strict no-overlap predicate over real adjacent intervals
   (`I1=[-W/2,+W/2]`, `I2=[gap-W/2,gap+W/2]`, reject on positive shared
-  interior) governs occupancy; PRODUCTION additionally requires a strict
-  positive gap. `touch-pair` (gap 8, shares station `s=4` only) is
-  occupancy-only, `overlap-pair` (gap 7, shares interior `(3,4)`) rejects.
-  Multiple non-overlapping explicit intervals
-  per group are therefore ALLOWED under the predicate — one-transition-only
-  is **not** required — with every interval independently validated and the
-  group re-certified by unchanged gtop2 machinery in 20M.2 (proposed;
-  unevidenced in 20M.1 — no implementation, no measured certificate). Any overlap (or
-  touching, for production) fails closed.
+  interior) governs scalar occupancy evidence. `touch-pair` (gap 8, shares
+  station `s=4` only) is occupancy-only, `overlap-pair` (gap 7, shares
+  interior `(3,4)`) rejects — both rows are SYNTHETIC future-multiple
+  policy evidence only and do NOT authorize multi-transition production.
+  No multi-transition mesh, certificate, or worker interaction is measured
+  or implemented in 20M.1; strict separation alone is NOT sufficient for
+  production multiples.
+- FIRST 20M.2 production predicate: EXACTLY ONE transition per group
+  (cardinality <= 1 for policyVersion `trp1`; a second transition object
+  rejects). Any overlap (or touching, for production) fails closed.
 
 ## 6. Remaining 20M choices — resolved by explicit exclusion (Q5-second)
 
@@ -167,10 +171,14 @@ answers, not general solutions.
   from snapshot persisted stations — the worker never infers a law.
 - Topology (spec): pre-mesh expectation is group-scoped (`scope:
   'group'`, transitioned open route contributing 1/1 — never a standalone
-  certificate); unchanged
-  gtop2 machinery certifies the legislated strip; component/cycle/
+  certificate); existing group-scoped gtop2 machinery is the INTENDED
+  unchanged validator in 20M.2 (proposed — no production transition mesh
+  or measured certificate exists in 20M.1); component/cycle/
   positive-width-run pins plus foldover/overlap/zero/touching/short failure
-  cases. Certification validates, never admits.
+  cases. Certification validates, never admits — and certification is NOT
+  evidence of policy admission. 20M.2 must implement the transition
+  expectation + mesh and prove the declared expectation/certificate with
+  RED/green tests before production enablement.
 - Product (spec): provenance cites law/version + explicit width + source
   interval + member identities/criteria + residual/decision metadata;
   Extract exports the transitioned boundary with transition stations marked;
@@ -212,15 +220,21 @@ target-free analytic family on both sides (Distance|RelativeElevation|
 flat-Elevation) AND EXACT equal gradeRatio (gL===gR, no interpolation) AND
 source deflection == 0 (collinear, kink 0) AND
 explicit persisted total width W with 0 < W <= 2·min(LL,LR) AND
-transition intervals pairwise STRICTLY separated (positive gap; touching is
-scalar occupancy only, not production)
-AND single-root in-bounds native solutions on both sides.
+EXACTLY ONE transition object per group (cardinality <= 1 for policyVersion
+trp1; touch/overlap pair rows are future-multiple policy evidence only, NOT
+production authorization) AND
+both adjacent native analytic criteria resolve successfully (ok) at the
+authoritative source Z with finite admissible scalar/grade data, satisfying
+existing maxSearch/in-bounds rules where applicable, with no
+extension/target-root machinery entered.
 All else (grade-mismatch/multi-root/extension/no-root/closed/arcs/sloped/joint-step/
-mixed-family/non-collinear) fails closed with existing behavior.
+mixed-family/non-collinear/second-transition) fails closed with existing behavior.
 ```
 
 Phase 20M.2 is authorized to implement ONLY this predicate with the §7
-persisted model, worker basis, gtop2 certification, and provenance —
+persisted model, worker basis, gtop2 expectation/certificate (proposed;
+transition-specific topology/certificate proof required during implementation
+via RED/green tests before production enablement), and provenance —
 behind fail-closed gates, one class, no widening.
 
 ## 10. The ten answers
@@ -234,9 +248,16 @@ behind fail-closed gates, one class, no widening.
 3. Families: Distance, RelativeElevation, flat Elevation (flat-only), each
    under exact equal gradeRatio (grade-mismatch evidenced as NO-GO).
 4. Angles: collinear only; all else excluded for the first class.
-5. One-transition-only: not required; strict no-overlap governs occupancy and
-   strict positive gap governs production multiples.
-6. Topology: yes, unchanged gtop2 validates the legislated strip (1/1).
+5. One-transition-only: REQUIRED for the first 20M.2 implementation — exactly
+   one transition per group (cardinality <= 1 for trp1). Pair rows are synthetic
+   future-multiple policy evidence only and do NOT authorize multi-transition
+   production; strict separation alone is NOT sufficient for production multiples.
+6. Topology: PROPOSED, not proven — existing group-scoped gtop2 machinery is the
+   intended unchanged validator in 20M.2 (1/1 scope kept), but the transition
+   expectation + mesh must be implemented and then proven; no production transition
+   mesh or measured certificate exists in 20M.1. Certification is NOT evidence of
+   policy admission. 20M.2 must include RED/green tests proving the declared
+   expectation/certificate before production enablement.
 7. Worker: yes, new station-indexed basis, no tolerance changes.
 8. Persisted/provenanced fields: §7 list (tag, identities, W, law+family,
    endpoint refs, side, provenance).
@@ -283,3 +304,27 @@ behind fail-closed gates, one class, no widening.
   then fixed the two stale spec passages itself (§2.1 group scope, §2.4
   touching row) and the two stale decision bullets (§7 worker/topology).
   Full validation re-run green; verdict stands.
+- Round 5 (final, independent): reviewer verdict REQUEST_CHANGES with exactly
+  3 blockers, docs-only fixes sufficient, core PARTIAL_GO survives if
+  narrowed: (1) MULTIPLE TRANSITIONS OVER-AUTHORIZED — evidence proves only
+  scalar interval occupancy/touch-overlap classification, no multi-transition
+  mesh/certificate/worker interaction measured or implemented; fix narrows the
+  first 20M.2 predicate to EXACTLY ONE transition per group, keeps pair rows
+  as future-multiple evidence only, removes strict-separation-suffices claims,
+  and pins persisted-model cardinality <= 1 for `trp1`; (2) STALE SINGLE-ROOT
+  GATE — admitted families are target-free analytic (closed-form resolution,
+  not target root selection); fix replaces single-root wording with the actual
+  bounded native resolution contract (both adjacent native analytic criteria
+  resolve ok/finite at authoritative source Z, finite admissible scalar/grade
+  data, existing maxSearch/in-bounds rules where applicable, no
+  extension/target-root machinery), keeping Surface/hybrid/root-based classes
+  excluded; (3) GTOP2 PRESENT-TENSE PROOF OVERCLAIM — no production transition
+  mesh or measured certificate exists in 20M.1; fix restates gtop2 as the
+  intended unchanged validator (proposal/compatibility), certification NOT
+  evidence of admission, 20M.2 must prove expectation/certificate with RED/green
+  tests before production enablement. Fixes applied in this round across
+  decision §§2/5/7/9/10/12, persisted-model §§1/2/6, worker-topology-product
+  §§2.2/2.4, TODO predicate, test/script header comments (comments only,
+  corpus bytes unchanged), and PR #150 body. APPROVE not yet claimed; verdict
+  stays PARTIAL_GO_COLLINEAR_SAME_FAMILY_TRANSITION with the narrowed
+  one-transition predicate.

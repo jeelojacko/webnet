@@ -131,10 +131,14 @@ Certification stays `buildGradingTopologyCertificateExact`
 (`src/engine/cad/grading/gradingTopologyCertificate.ts:525`), version
 `gtop2` (`:24`), gated on `GTOP2_POLICY` (`:529`, `:601`) — proposed reuse
 for 20M.2, unevidenced in 20M.1 (no implementation, no measured
-certificate). No new
+certificate; no production transition mesh exists yet). No new
 certificate version, no relaxed policy check. The production/product error
 paths (`:343`, `:353`) and missing-certificate codes (`:258`, `:597`)
-remain the only reject vocabulary.
+remain the only reject vocabulary. Certification is NOT evidence of policy
+admission and has not been demonstrated on a transition mesh: 20M.2 must
+implement the transition expectation + mesh and prove the declared
+expectation/certificate with RED/green tests before production enablement
+(group scope kept; no revert to standalone).
 
 ### 2.3 Pins
 
@@ -154,7 +158,7 @@ remain the only reject vocabulary.
 | Foldover | transition strip crosses itself | reject (`GROUP_NON_MANIFOLD`, `gradingGroupCompute.ts:816`) |
 | Overlap | two intervals claim the same station | reject before mesh (§1.4 code 4) |
 | Zero | `W == 0` or a zero-width run | reject; zero width is NOT a tie |
-| Touching | boundary shared with a sibling interval | occupancy-only; PRODUCTION requires a strict positive gap (`persisted-model.md` §2.4) |
+| Touching | boundary shared with a sibling interval | occupancy-only; first 20M.2 production authorizes exactly one transition per group, so sibling-interval gap rules are future-multiple evidence only (`persisted-model.md` §2.4) |
 | Short | `W/2 > available` | reject (§1.4 code 3) |
 
 ### 2.5 Certification validates; it never admits

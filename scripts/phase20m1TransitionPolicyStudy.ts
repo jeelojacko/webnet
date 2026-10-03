@@ -32,6 +32,9 @@
  * `admitted` is scalar-law admission only. `productionAdmitted` adds the
  * narrow production predicate (collinear AND equal grade); non-collinear
  * scalar admits are labeled SCALAR-ONLY, never production ADMIT.
+ * Pair rows are synthetic future-multiple policy evidence only — they do NOT
+ * authorize multi-transition production (first 20M.2 predicate: exactly one
+ * transition per group).
  *
  * Determinism: sorted rows, r12 rounding, sorted-key JSON, no timestamps.
  */

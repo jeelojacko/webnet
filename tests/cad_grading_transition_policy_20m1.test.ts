@@ -8,6 +8,9 @@
  * classes reject, linear-vs-smoothstep proves policy choice, angle ladder
  * records kink honestly with scalar-only (non-production) admission off the
  * collinear axis. All rows synthetic, never solver output.
+ * Pair rows are synthetic future-multiple policy evidence only; they do NOT
+ * authorize multi-transition production (first 20M.2 predicate: exactly one
+ * transition per group).
  */
 import { execSync } from 'node:child_process';
 import { readFileSync } from 'node:fs';
