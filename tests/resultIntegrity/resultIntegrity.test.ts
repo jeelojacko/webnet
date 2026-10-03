@@ -206,6 +206,19 @@ describe('result integrity assessment', () => {
     expect(staleFailed.state).toBe('STALE_FAILED');
   });
 
+  it('keeps a failed preanalysis run as a true failure, not planning-only', () => {
+    const run = baseRunSnapshot();
+    run.runMode = 'preanalysis';
+    const applied = identityOf({ runSnapshot: run });
+    const assessment = assessResultIntegrity({
+      result: okResult({ success: false, converged: false, preanalysisMode: true }),
+      applied,
+      current: currentOf(applied),
+    });
+    expect(assessment.state).toBe('FRESH_FAILED');
+    expect(assessment.reason).toBe('RUN_FAILED');
+  });
+
   it('never treats preanalysis, data-check, or blunder-detect runs as deliverable', () => {
     for (const runMode of ['preanalysis', 'data-check', 'blunder-detect']) {
       const run = baseRunSnapshot();
@@ -216,7 +229,7 @@ describe('result integrity assessment', () => {
         applied,
         current: currentOf(applied),
       });
-      expect(assessment.state).toBe('FRESH_FAILED');
+      expect(assessment.state).toBe('FRESH_NOT_DELIVERABLE_MODE');
       expect(assessment.reason).toBe('RUN_NOT_DELIVERABLE_MODE');
       expect(canUseResultForDeliverable(assessment)).toBe(false);
       expect(canUseResultForDownstreamGeometry(assessment)).toBe(false);
@@ -230,8 +243,9 @@ describe('result integrity assessment', () => {
       applied,
       current: currentOf(applied),
     });
-    expect(assessment.state).toBe('FRESH_FAILED');
+    expect(assessment.state).toBe('FRESH_NOT_DELIVERABLE_MODE');
     expect(assessment.reason).toBe('RUN_NOT_DELIVERABLE_MODE');
+    expect(canUseResultForDeliverable(assessment)).toBe(false);
   });
 
   it('stays FRESH for a leave-one-out exclusion captured at rerun', () => {

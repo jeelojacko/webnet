@@ -7,6 +7,7 @@ import {
   EXPORT_FORMAT_INTEGRITY_POLICY,
   FRESH_SUCCESS_INTEGRITY,
   FAILED_RESULT_STATUS_LINE,
+  NON_DELIVERABLE_RESULT_STATUS_LINE,
   STALE_RESULT_STATUS_LINE,
   statusLineForAssessment,
   type ExportIntegrityVerdict,
@@ -33,6 +34,9 @@ const assessmentFor = (state: ResultIntegrityState): ResultIntegrityAssessment =
   if (state === 'FRESH_FAILED') {
     return { state, reason: 'RUN_FAILED', changedDeps: [], blockMessage: 'The latest run did not converge successfully.' };
   }
+  if (state === 'FRESH_NOT_DELIVERABLE_MODE') {
+    return { state, reason: 'RUN_NOT_DELIVERABLE_MODE', changedDeps: [], blockMessage: "Run mode 'preanalysis' is never deliverable." };
+  }
   return {
     state,
     reason: 'RESULT_STALE',
@@ -57,7 +61,7 @@ describe('export integrity matrix (artifact x integrity -> verdict)', () => {
   });
 
   it.each(DELIVERABLE_FORMATS)('blocks deliverable %s on stale/failed integrity', (format) => {
-    const states: ResultIntegrityState[] = ['STALE_SUCCESS', 'STALE_FAILED', 'FRESH_FAILED'];
+    const states: ResultIntegrityState[] = ['STALE_SUCCESS', 'STALE_FAILED', 'FRESH_NOT_DELIVERABLE_MODE', 'FRESH_FAILED'];
     for (const state of states) {
       const verdict: ExportIntegrityVerdict = decideExportVerdict(format, assessmentFor(state));
       expect(verdict).toBe('BLOCK');
@@ -81,6 +85,15 @@ describe('export integrity matrix (artifact x integrity -> verdict)', () => {
       }
     },
   );
+
+  it('allows the diagnostic text report for a completed non-deliverable run with its own status line', () => {
+    const assessment = assessmentFor('FRESH_NOT_DELIVERABLE_MODE');
+    expect(decideExportVerdict('webnet', assessment)).toBe('ALLOW_DIAGNOSTIC_WITH_STATUS');
+    expect(statusLineForAssessment(assessment)).toBe(NON_DELIVERABLE_RESULT_STATUS_LINE);
+    expect(NON_DELIVERABLE_RESULT_STATUS_LINE).toBe(
+      'RESULT STATUS: NOT A DELIVERABLE ADJUSTMENT — DIAGNOSTIC USE ONLY',
+    );
+  });
 
   it('emits no status line for fresh or missing results', () => {
     expect(statusLineForAssessment(assessmentFor('FRESH_SUCCESS'))).toBeNull();

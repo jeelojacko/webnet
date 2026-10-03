@@ -19,6 +19,7 @@ import { REPORT_STATIC_TOOLTIPS } from './reportTooltips';
 import { countLocalFlags } from '../../engine/qcOverviewModel';
 import { semanticTooltip } from '../../engine/statisticalSemantics';
 import { QcCategoryTag } from './QcOverviewSection';
+import { adjustmentSummaryStatus, type RunStatusTone } from '../resultStatusPresentation';
 
 type SourceLineRenderer = (_line: number | null | undefined) => React.ReactNode;
 
@@ -57,6 +58,16 @@ export const AdjustmentSummarySection: React.FC<{
   result: AdjustmentResult;
 }> = ({ byType, isPreanalysis, isSpecialRunMode, result }) => {
   if (isSpecialRunMode) return null;
+  const status = adjustmentSummaryStatus({
+    success: result.success,
+    preanalysisMode: isPreanalysis,
+  });
+  const statusToneClass: Record<RunStatusTone, string> = {
+    success: 'text-green-400',
+    planning: 'text-amber-300',
+    failure: 'text-yellow-500',
+    muted: 'text-slate-500',
+  };
   return (
     <div className="mb-8 border-b border-slate-800 pb-6" style={{ order: -210 }}>
       <h2
@@ -70,13 +81,14 @@ export const AdjustmentSummarySection: React.FC<{
           <span className="block text-slate-500 text-xs mb-1" title={REPORT_STATIC_TOOLTIPS.STATUS}>
             STATUS
           </span>
-          <div
-            className={`flex items-center space-x-2 ${result.success ? 'text-green-400' : 'text-yellow-500'}`}
-          >
-            {result.success ? <CheckCircle size={18} /> : <AlertTriangle size={18} />}
-            <span className="font-bold">
-              {result.success ? 'CONVERGED' : 'NOT CONVERGED / WARNING'}
-            </span>
+          <div className={`flex items-center space-x-2 ${statusToneClass[status.tone]}`}>
+            {status.tone === 'success' ? <CheckCircle size={18} /> : <AlertTriangle size={18} />}
+            <span className="font-bold">{status.label}</span>
+            {status.secondary && (
+              <span className="text-[10px] uppercase tracking-wide opacity-80">
+                {status.secondary}
+              </span>
+            )}
           </div>
         </div>
         <div className="bg-slate-900 p-4 rounded border border-slate-800">
