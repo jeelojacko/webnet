@@ -1,6 +1,7 @@
 @import "tailwindcss";
-@config "../tailwind.config.js";
 /* Shared theme (variables, v3 compat) lives in ./theme.css so the
    standalone study-desktop app can import it without resolving the
    bare tailwind entry from outside its own node_modules. */
 @import "./theme.css";
+/* @config must follow all @imports: PostCSS requires @import first. */
+@config "../tailwind.config.js";
