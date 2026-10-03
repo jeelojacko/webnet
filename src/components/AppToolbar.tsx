@@ -113,9 +113,13 @@ const AppToolbar: React.FC<AppToolbarProps> = ({
       ? pipelineState.solveIndex != null
         ? `Planning checks ${pipelineState.solveIndex}`
         : null
-      : pipelineState.solveIndex != null && pipelineState.solveTotalHint != null
-        ? `${pipelineState.solveIndex}/${pipelineState.solveTotalHint}`
-        : null;
+      : pipelineState.stageId === 'auto-adjust'
+        ? pipelineState.solveIndex != null
+          ? `Auto-adjust checks ${pipelineState.solveIndex}`
+          : null
+        : pipelineState.solveIndex != null && pipelineState.solveTotalHint != null
+          ? `${pipelineState.solveIndex}/${pipelineState.solveTotalHint}`
+          : null;
   const iterationLabel =
     pipelineState.iteration != null && pipelineState.maxIterations != null
       ? `iter ${pipelineState.iteration}/${pipelineState.maxIterations}`
@@ -330,10 +334,10 @@ const AppToolbar: React.FC<AppToolbarProps> = ({
                 <span className="text-slate-400 font-mono tabular-nums">{elapsedLabel}</span>
               ) : null}
             </div>
-            <div className="mt-0.5 text-[10px] tracking-normal normal-case text-slate-500 font-mono tabular-nums break-words">
-              <span>{pipelineState.detail ?? runSourceLabel}</span>
+            <div className="mt-0.5 flex flex-wrap items-center gap-x-1 text-[10px] tracking-normal normal-case text-slate-500 font-mono tabular-nums">
+              <span className="min-w-0 break-words">{pipelineState.detail ?? runSourceLabel}</span>
               {solveProgressLabel ? (
-                <span className="whitespace-nowrap">{pipelineState.stageId === 'preanalysis-impact' ? ` · ${solveProgressLabel}` : ` · solve ${solveProgressLabel}`}</span>
+                <span className="whitespace-nowrap">{pipelineState.stageId === 'preanalysis-impact' || pipelineState.stageId === 'auto-adjust' ? ` · ${solveProgressLabel}` : ` · solve ${solveProgressLabel}`}</span>
               ) : null}
               {iterationLabel ? <span className="whitespace-nowrap">{` · ${iterationLabel}`}</span> : null}
               <span className="whitespace-nowrap">{` · ${runSourceLabel}`}</span>

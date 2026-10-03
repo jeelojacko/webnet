@@ -75,6 +75,30 @@ export const resolveInteractiveBasemapTiles = <Tile>(
   return liveTiles;
 };
 
+/**
+ * E3(d): while a transform is in flight, a descriptor that only resolves to a
+ * deep cached parent would stretch one text tile over several levels. Reuse the
+ * previously rendered tile for just those deep-fallback keys, so freshly
+ * resolved exact/current-level tiles are never discarded along with them.
+ */
+export const reusePreviousTilesForDeepFallback = <
+  Tile extends { key: string; fallbackPreferred?: boolean },
+>(
+  resolvedTiles: Tile[],
+  previousTiles: Tile[],
+): Tile[] => {
+  if (previousTiles.length === 0) return resolvedTiles;
+  const previousByKey = new Map(previousTiles.map((tile) => [tile.key, tile]));
+  const hasReusableFallback = resolvedTiles.some(
+    (tile) => tile.fallbackPreferred === false && previousByKey.has(tile.key),
+  );
+  if (!hasReusableFallback) return resolvedTiles;
+  return resolvedTiles.map((tile) => {
+    if (tile.fallbackPreferred !== false) return tile;
+    return previousByKey.get(tile.key) ?? tile;
+  });
+};
+
 export const buildRequestedBasemapTiles = <Tile extends { key: string }>(
   renderTiles: Tile[],
   prefetchedTiles: Tile[],

@@ -4,6 +4,7 @@ import {
   buildRequestedBasemapTiles,
   chooseOsmTileMeshDivisions,
   resolveInteractiveBasemapTiles,
+  reusePreviousTilesForDeepFallback,
 } from '../src/components/mapView/mapViewBasemap';
 
 describe('chooseOsmTileMeshDivisions', () => {
@@ -44,5 +45,30 @@ describe('chooseOsmTileMeshDivisions', () => {
     expect(buildRequestedBasemapTiles(renderTiles, prefetchedTiles, 'interacting')).toEqual(
       renderTiles,
     );
+  });
+
+  it('reuses previous tiles only for deep-fallback keys and keeps fresh exact tiles', () => {
+    type FallbackTile = { key: string; fallbackPreferred?: boolean };
+    const exact: FallbackTile = { key: '6-a', fallbackPreferred: true };
+    const deep: FallbackTile = { key: '6-b', fallbackPreferred: false };
+    const newDeep: FallbackTile = { key: '6-c', fallbackPreferred: false };
+    const previousForB: FallbackTile = { key: '6-b', fallbackPreferred: true };
+    const staleOffscreen: FallbackTile = { key: '6-old', fallbackPreferred: true };
+
+    const renderTiles = reusePreviousTilesForDeepFallback(
+      [exact, deep, newDeep],
+      [previousForB, staleOffscreen],
+    );
+
+    expect(renderTiles).toEqual([exact, previousForB, newDeep]);
+    expect(renderTiles[1]).toBe(previousForB);
+    expect(renderTiles).not.toContain(staleOffscreen);
+  });
+
+  it('returns the resolved set unchanged when no deep fallback can be rehomed', () => {
+    type FallbackTile = { key: string; fallbackPreferred?: boolean };
+    const resolved: FallbackTile[] = [{ key: '6-a', fallbackPreferred: true }];
+    expect(reusePreviousTilesForDeepFallback(resolved, [{ key: '6-x' }])).toBe(resolved);
+    expect(reusePreviousTilesForDeepFallback(resolved, [])).toBe(resolved);
   });
 });

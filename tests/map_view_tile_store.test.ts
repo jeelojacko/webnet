@@ -185,6 +185,71 @@ describe('MapViewTileStore', () => {
     expect(renderTiles[0]?.sourceHeight).toBe(64);
   });
 
+  it('resolves mixed exact and deep-fallback tiles independently in one set', () => {
+    const store = new MapViewTileStore(32);
+    const exactImage = { naturalWidth: 256, naturalHeight: 256 } as HTMLImageElement;
+    const deepImage = { naturalWidth: 256, naturalHeight: 256 } as HTMLImageElement;
+    const meshPoints = [
+      { x: 0, y: 0 },
+      { x: 256, y: 0 },
+      { x: 0, y: 256 },
+      { x: 256, y: 256 },
+    ];
+    const exactDescriptor: BasemapTileDescriptor2d = {
+      key: '6-21-24',
+      href: 'https://tile/6/21/24.png',
+      zoom: 6,
+      tileX: 21,
+      tileY: 24,
+      meshColumns: 1,
+      meshRows: 1,
+      meshPoints,
+    };
+    const deepDescriptor: BasemapTileDescriptor2d = {
+      key: '6-22-24',
+      href: 'https://tile/6/22/24.png',
+      zoom: 6,
+      tileX: 22,
+      tileY: 24,
+      meshColumns: 1,
+      meshRows: 1,
+      meshPoints,
+    };
+    const entryMap = store as unknown as {
+      entries: Map<string, { image: HTMLImageElement | null; status: string; lastAccessTick: number }>;
+    };
+    entryMap.entries.set('6-21-24', {
+      key: '6-21-24',
+      href: exactDescriptor.href,
+      zoom: 6,
+      tileX: 21,
+      tileY: 24,
+      image: exactImage,
+      status: 'loaded',
+      lastAccessTick: 1,
+    } as never);
+    entryMap.entries.set('4-5-6', {
+      key: '4-5-6',
+      href: 'https://tile/4/5/6.png',
+      zoom: 4,
+      tileX: 5,
+      tileY: 6,
+      image: deepImage,
+      status: 'loaded',
+      lastAccessTick: 2,
+    } as never);
+
+    const renderTiles = store.resolveRenderTiles([exactDescriptor, deepDescriptor]);
+
+    expect(renderTiles).toHaveLength(2);
+    expect(renderTiles[0]?.image).toBe(exactImage);
+    expect(renderTiles[0]?.fallbackZoomDelta).toBe(0);
+    expect(renderTiles[0]?.fallbackPreferred).toBe(true);
+    expect(renderTiles[1]?.image).toBe(deepImage);
+    expect(renderTiles[1]?.fallbackZoomDelta).toBe(2);
+    expect(renderTiles[1]?.fallbackPreferred).toBe(false);
+  });
+
   it('resolves a half-level-offset descriptor crop against its one-level parent', () => {
     const store = new MapViewTileStore(32);
     const parentImage = { naturalWidth: 256, naturalHeight: 256 } as HTMLImageElement;

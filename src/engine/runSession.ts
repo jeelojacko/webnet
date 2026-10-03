@@ -155,14 +155,26 @@ export const runAdjustmentSession = (
     runtime,
   });
   const autoAdjustConfig = createAutoAdjustConfig(request);
+  // Auto-adjust trial depth is data-dependent (early exit when no candidates
+  // remain), so the exact trial count is unknowable up front. Report an
+  // indeterminate count (n/n data, count-only display) like planning.
+  let autoAdjustTrialIndex = 0;
   const autoAdjustSummary = autoAdjustConfig.enabled
-    ? runAutoAdjustCycles(effectiveExclusions, autoAdjustConfig, (trialExclusions) =>
-        runner.solveCore(trialExclusions, undefined, effectiveOverrides, effectiveClusterMerges, {
-          stageId: 'auto-adjust',
-          stageLabel: 'Auto-adjust',
-          solveTotalHint: runner.getSolveInvocationCount() + 1,
-        }),
-      )
+    ? runAutoAdjustCycles(effectiveExclusions, autoAdjustConfig, (trialExclusions) => {
+        autoAdjustTrialIndex += 1;
+        return runner.solveCore(
+          trialExclusions,
+          undefined,
+          effectiveOverrides,
+          effectiveClusterMerges,
+          {
+            stageId: 'auto-adjust',
+            stageLabel: 'Auto-adjust',
+            solveTotalHint: autoAdjustTrialIndex,
+            progressIndex: autoAdjustTrialIndex,
+          },
+        );
+      })
     : null;
   if (autoAdjustSummary?.enabled) {
     effectiveExclusions = autoAdjustSummary.finalExcludedIds;

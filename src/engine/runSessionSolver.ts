@@ -69,6 +69,10 @@ export const createSessionSolveRunner = ({
 }: SessionSolveRunnerOptions): SessionSolveRunner => {
   let activePreanalysisAdditionIds = [...initialActivePreanalysisAdditionIds];
   let solveInvocationCount = 0;
+  // Per-stage solve counters: progress display must never leak one stage's
+  // work into another stage's denominator (global index clamped to a
+  // per-stage hint saturates later stages). Run-local; fresh per session.
+  const stageProgressCounts = new Map<SolveInvocationMeta['stageId'], number>();
   let cachedPreanalysisTemplates:
     | ReturnType<typeof buildPreanalysisSyntheticSetTemplates>
     | null
@@ -190,7 +194,8 @@ export const createSessionSolveRunner = ({
           )
         : request.input;
 
-    const solveIndex = meta.progressIndex ?? solveInvocationCount + 1;
+    const stageCompleted = stageProgressCounts.get(meta.stageId) ?? 0;
+    const solveIndex = meta.progressIndex ?? stageCompleted + 1;
     const stageStartedAt = Date.now();
     emitProgress(meta, solveIndex, undefined, request.maxIterations);
     const { parseOptions } = resolveEffectiveProjectParse(request, {
@@ -225,6 +230,7 @@ export const createSessionSolveRunner = ({
     result.preanalysisSyntheticAdditionIds = [...normalizedSyntheticAdditionIds];
     if (useLazyTemplateBuild) buildTemplatesFromBase(result);
     solveInvocationCount += 1;
+    stageProgressCounts.set(meta.stageId, meta.progressIndex ?? stageCompleted + 1);
     recordStageDuration(meta.stageId, Date.now() - stageStartedAt);
     return result;
   };

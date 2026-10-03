@@ -76,6 +76,63 @@ describe('preanalysis planning progress semantics', () => {
     expect(secondPlanning[0]?.solveIndex).toBe(1);
   });
 
+  it('auto-adjust trials use an indeterminate count and never saturate later stages', () => {
+    const base = createRunSessionRequest();
+    const events: RunSessionProgressUpdate[] = [];
+    const outcome = runAdjustmentSession(
+      createRunSessionRequest({
+        parseSettings: {
+          ...base.parseSettings,
+          autoAdjustEnabled: true,
+          autoAdjustMaxCycles: 3,
+          autoAdjustStdResThreshold: 0,
+          suspectImpactMode: 'on',
+        },
+      }),
+      (event) => {
+        events.push({ ...event });
+      },
+    );
+    const trials = events.filter(
+      (event) => event.stageId === 'auto-adjust' && event.phase === 'solving',
+    );
+    // An enabled auto-adjust always runs at least one trial solve (trial
+    // count itself is data-dependent: early exit when no candidates remain).
+    expect(trials.length).toBeGreaterThan(0);
+    for (const event of trials) {
+      expect(event.stageLabel).toBe('Auto-adjust');
+      expect(event.solveTotalHint).toBe(event.solveIndex);
+    }
+    const trialSolves = [...new Set(trials.map((event) => event.solveIndex))];
+    expect(trialSolves).toEqual(trialSolves.map((_, index) => index + 1));
+    // Main solve restarts per-stage: 1/1 even after several trial solves.
+    const main = events.filter(
+      (event) => event.stageId === 'main-solve' && event.phase === 'solving',
+    );
+    expect(main.length).toBeGreaterThan(0);
+    for (const event of main) {
+      expect(event.solveIndex).toBe(1);
+      expect(event.solveTotalHint).toBe(1);
+    }
+    // Suspect-impact solves restart per-stage: the first impact solve is
+    // 1/N, never saturated by the trial + main solves that ran before it
+    // (global-index clamping would open at N/N).
+    const impacts = events.filter(
+      (event) => event.stageId === 'suspect-impact' && event.phase === 'solving',
+    );
+    expect(impacts.length).toBeGreaterThan(0);
+    expect(impacts[0]?.solveIndex).toBe(1);
+    expect(impacts[0]?.solveIndex).toBeLessThan(impacts[0]?.solveTotalHint ?? 0);
+    expect(new Set(impacts.map((event) => event.solveTotalHint)).size).toBe(1);
+    for (const event of events) {
+      expect(event.solveIndex).toBeLessThanOrEqual(event.solveTotalHint);
+    }
+    const final = events[events.length - 1];
+    expect(final.phase).toBe('finalizing');
+    expect(final.solveIndex).toBe(outcome.profile.solveInvocationCount);
+    expect(final.solveTotalHint).toBe(outcome.profile.solveInvocationCount);
+  });
+
   it('transitions main-solve -> planning -> finalizing with clean completion', () => {
     const { events, outcome } = collectProgress();
     const stageOrder = [...new Set(events.map((event) => event.stageId))];

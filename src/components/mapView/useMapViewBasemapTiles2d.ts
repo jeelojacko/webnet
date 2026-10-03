@@ -6,6 +6,7 @@ import {
   buildOsmDescriptorBucketForView,
   buildRequestedBasemapTiles,
   resolveInteractiveBasemapTiles,
+  reusePreviousTilesForDeepFallback,
 } from './mapViewBasemap';
 import { type MapInteractionPhase } from './mapViewInteraction';
 import {
@@ -349,19 +350,24 @@ export const useMapViewBasemapTiles2d = (options: UseMapViewBasemapTiles2dOption
       preferredFallbackZoomDelta: MAX_PREFERRED_FALLBACK_ZOOM_DELTA,
     });
     // E3(d): during a transform, a resolved set made only of deep stale parents
-    // would stretch one text tile over several levels. Keep the last rendered
-    // (current-level) tiles on screen instead until fresher tiles resolve.
+    // would stretch one text tile over several levels. Reuse the last rendered
+    // tile for just those deep-fallback keys, keeping freshly resolved
+    // exact/current-level tiles on screen instead of discarding them.
     const previousTiles = latestBasemapRenderInputRef.current?.tiles ?? [];
-    const hasStaleStretch =
-      interactionPhase === 'interacting' &&
-      previousTiles.length > 0 &&
-      resolvedTiles.some((tile) => tile.fallbackPreferred === false);
-    const renderTiles = hasStaleStretch ? previousTiles : resolvedTiles;
+    const renderTiles =
+      interactionPhase === 'interacting'
+        ? reusePreviousTilesForDeepFallback(resolvedTiles, previousTiles)
+        : resolvedTiles;
+    const reusedPreviousFallback = renderTiles !== resolvedTiles;
     noteMapViewPerfMetadata('tiles:snapshot', tileStore.snapshotMetrics());
     noteMapViewPerfMetadata('tiles:last-resolved-count', renderTiles.length);
     noteMapViewPerfMetadata(
       'tiles:last-descriptor-mode',
-      hasStaleStretch ? 'previous-reused' : usingStableInteractionTiles ? 'stable-reused' : 'live',
+      reusedPreviousFallback
+        ? 'previous-reused'
+        : usingStableInteractionTiles
+          ? 'stable-reused'
+          : 'live',
     );
     latestBasemapRenderInputRef.current = {
       interactionPhase,

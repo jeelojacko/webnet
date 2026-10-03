@@ -19,4 +19,14 @@ export default defineConfig({
     reuseExistingServer: true,
     timeout: 120_000,
   },
+  // Firefox coverage is scoped to the responsive-toolbar contract: the 768px
+  // running-toolbar overflow reproduces in Gecko but not Chromium.
+  projects: [
+    { name: 'chromium', use: { browserName: 'chromium' } },
+    {
+      name: 'firefox-toolbar',
+      testMatch: /toolbar-responsive-layout\.spec\.ts/,
+      use: { browserName: 'firefox' },
+    },
+  ],
 });
