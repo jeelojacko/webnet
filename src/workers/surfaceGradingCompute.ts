@@ -7,6 +7,7 @@
  * Snapshot types and the compute outcome live in the kernel and are
  * re-exported here so existing worker/test import sites keep working.
  */
+import { resolveAnalyticCriterionAt } from '../engine/cad/grading/gradingAnalyticCriterion';
 import { solveArcGrading } from '../engine/cad/grading/arcSolve';
 import {
   assembleAnalyticGradingResult,
@@ -506,6 +507,101 @@ export const validateTransitionInteriorVertices = (
     }
   }
   return null;
+};
+
+/**
+ * Post-solve mesh agreement: the result-owned transition leg carries the
+ * three transition-owned checkpoint pairs (daylight qCutL/q0/qCutR with
+ * source pCutL/V/pCutR at joint-local stations sL/0/sR). Every checkpoint
+ * is re-evaluated against the legislated TRANSITION_LINEAR_V1 law under
+ * the shared authorities, and the two boundary checkpoints are
+ * additionally re-checked against their own re-resolved native criterion
+ * (outside-interval native law via `resolveAnalyticCriterionAt`, shared
+ * tols, no widening). Any mismatch fails closed with a bounded
+ * GRADING_AGREEMENT_TRANSITION_* code.
+ */
+export interface TransitionResultMeshInput {
+  family: TransitionFamily;
+  sL: number;
+  sR: number;
+  vL: number;
+  vR: number;
+  /** Flat XYZ triplets: qCutL, q0, qCutR. */
+  daylightCheckpoints: readonly number[];
+  /** Flat XYZ triplets: pCutL, V, pCutR. */
+  sourceCheckpoints: readonly number[];
+  criterionL: GradingCriterion;
+  criterionR: GradingCriterion;
+  /** Authoritative joint Z the endpoint natives resolve at. */
+  jointZ: number;
+  maxSearchDistance: number;
+}
+
+const meshPoint = (flat: readonly number[], index: number): { x: number; y: number; z: number } | null => {
+  const x = flat[index * 3];
+  const y = flat[index * 3 + 1];
+  const z = flat[index * 3 + 2];
+  if (x === undefined || y === undefined || z === undefined) return null;
+  return { x, y, z };
+};
+
+/** Boundary checkpoint against its own native criterion (never the law). */
+const checkNativeBoundary = (
+  criterion: GradingCriterion,
+  daylight: { x: number; y: number; z: number },
+  source: { x: number; y: number; z: number },
+  jointZ: number,
+  maxSearchDistance: number,
+  family: TransitionFamily,
+): string | null => {
+  const resolved = resolveAnalyticCriterionAt(criterion, jointZ, maxSearchDistance);
+  if (!resolved.ok) return 'GRADING_AGREEMENT_TRANSITION_OFF_LAW';
+  if (family === 'distance') {
+    const observed = Math.hypot(daylight.x - source.x, daylight.y - source.y);
+    const expected = resolved.value.horizontalDistance;
+    const scale = Math.max(1, Math.abs(daylight.x), Math.abs(source.x), Math.abs(daylight.y), Math.abs(source.y));
+    if (Math.abs(observed - expected) > coordinateAgreementTol(observed, expected, scale) + AGREEMENT_FLOOR) {
+      return 'GRADING_AGREEMENT_TRANSITION_OFF_LAW';
+    }
+    return null;
+  }
+  if (family === 'relative-elevation') {
+    const observed = daylight.z - source.z;
+    const expected = resolved.value.limitElevation - jointZ;
+    if (Math.abs(observed - expected) > elevationAgreementTol(observed, expected, []) + AGREEMENT_FLOOR) {
+      return 'GRADING_AGREEMENT_TRANSITION_OFF_LAW';
+    }
+    return null;
+  }
+  if (Math.abs(daylight.z - resolved.value.limitElevation) > elevationAgreementTol(daylight.z, resolved.value.limitElevation, []) + AGREEMENT_FLOOR) {
+    return 'GRADING_AGREEMENT_TRANSITION_OFF_LAW';
+  }
+  return null;
+};
+
+export const validateTransitionResultMesh = (input: TransitionResultMeshInput): string | null => {
+  if (!Number.isFinite(input.sL) || !Number.isFinite(input.sR) || !(input.sL < input.sR)) {
+    return 'GRADING_AGREEMENT_TRANSITION_MALFORMED';
+  }
+  if (input.daylightCheckpoints.length !== 9 || input.sourceCheckpoints.length !== 9) {
+    return 'GRADING_AGREEMENT_TRANSITION_MALFORMED';
+  }
+  const law = { vL: input.vL, vR: input.vR, sL: input.sL, sR: input.sR, family: input.family };
+  const stations = [input.sL, 0, input.sR];
+  const vertices: TransitionInteriorVertex[] = [];
+  for (let i = 0; i < 3; i += 1) {
+    const daylight = meshPoint(input.daylightCheckpoints, i);
+    const source = meshPoint(input.sourceCheckpoints, i);
+    if (!daylight || !source) return 'GRADING_AGREEMENT_TRANSITION_MALFORMED';
+    vertices.push({ s: stations[i]!, ...daylight, srcX: source.x, srcY: source.y, srcZ: source.z });
+  }
+  // Inside: every checkpoint obeys the legislated law at its own station.
+  const onLaw = validateTransitionInteriorVertices(law, vertices);
+  if (onLaw) return onLaw;
+  // Outside: boundary checkpoints obey their own native criterion.
+  const left = checkNativeBoundary(input.criterionL, meshPoint(input.daylightCheckpoints, 0)!, meshPoint(input.sourceCheckpoints, 0)!, input.jointZ, input.maxSearchDistance, input.family);
+  if (left) return left;
+  return checkNativeBoundary(input.criterionR, meshPoint(input.daylightCheckpoints, 2)!, meshPoint(input.sourceCheckpoints, 2)!, input.jointZ, input.maxSearchDistance, input.family);
 };
 
 /**

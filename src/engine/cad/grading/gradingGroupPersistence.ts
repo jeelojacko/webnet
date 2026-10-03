@@ -60,17 +60,39 @@ export const cloneTransitions = (
 };
 
 /**
- * Phase 20M.2 Wave B sanitation: retain every structurally-object entry
- * verbatim as invalid-or-valid intent (malformed/unknown/stale fails
- * closed at solve, never scrubbed to absence); drop only structurally
- * non-object entries. Absent key stays absent (exact legacy).
+ * Present-but-unreadable intent marker: structurally invalid, so admission
+ * fails it closed (MALFORMED) instead of scrubbing it to absence. Member
+ * refs are empty (never adjacent), the policy version is unknown, and the
+ * width is non-finite — every admission gate rejects it; nothing about the
+ * marker is ever solved, meshed, or cited.
+ */
+const malformedTransitionMarker = (): CadGradingTransition => ({
+  policyVersion: '',
+  jointId: '',
+  memberIds: [],
+  width: NaN,
+  lawKind: '',
+  lawVersion: '',
+  criterionFamily: '',
+  side: 'left',
+});
+
+/**
+ * Phase 20M.2 Wave B sanitation: every present entry is retained verbatim
+ * as invalid-or-valid intent (malformed/unknown/stale fails closed at
+ * solve, never scrubbed to absence). A present-but-non-array field and
+ * structurally non-object entries are retained as malformed markers that
+ * admission rejects. Only an absent key stays absent (exact legacy).
  */
 export const sanitizeTransitions = (raw: unknown): CadGradingTransition[] | undefined => {
   if (raw === undefined) return undefined;
-  if (!Array.isArray(raw)) return undefined;
+  if (!Array.isArray(raw)) return [malformedTransitionMarker()];
   const kept: CadGradingTransition[] = [];
   for (const entry of raw) {
-    if (entry === null || typeof entry !== 'object') continue;
+    if (entry === null || typeof entry !== 'object') {
+      kept.push(malformedTransitionMarker());
+      continue;
+    }
     const candidate = entry as Record<string, unknown>;
     kept.push({
       policyVersion: candidate['policyVersion'] as string,

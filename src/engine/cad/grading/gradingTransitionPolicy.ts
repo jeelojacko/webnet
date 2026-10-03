@@ -196,10 +196,27 @@ export type TransitionSelection =
 
 export const selectGroupTransition = (transitions: unknown): TransitionSelection => {
   if (transitions === undefined) return { kind: 'absent' };
-  if (!Array.isArray(transitions)) return { kind: 'absent' };
+  // Present-but-unreadable intent (non-array field) is retained as invalid
+  // intent and fails closed — never the legacy path.
+  if (!Array.isArray(transitions)) {
+    return {
+      kind: 'rejected',
+      code: 'TRANSITION_MALFORMED',
+      detail: 'GRADING_AGREEMENT_TRANSITION_MALFORMED',
+    };
+  }
   const intents = transitions.filter(
     (entry): entry is CadGradingTransition => entry !== null && typeof entry === 'object',
   );
+  // Structurally non-object entries are present-but-unreadable intent:
+  // fail closed, never scrubbed to absence.
+  if (intents.length !== transitions.length) {
+    return {
+      kind: 'rejected',
+      code: 'TRANSITION_MALFORMED',
+      detail: 'GRADING_AGREEMENT_TRANSITION_MALFORMED',
+    };
+  }
   if (intents.length === 0) return { kind: 'absent' };
   if (intents.length > 1) {
     return {

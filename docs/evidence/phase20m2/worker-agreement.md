@@ -1,8 +1,7 @@
 # Phase 20M.2 worker agreement — re-resolve / recheck basis
 
 The worker trusts nothing the service pins. `GroupTransitionPlan` (extends canonical
-`CadGradingTransition`) carries the intent, but the handler pre-solve gate re-resolves every basis
-element from live project state and rechecks the frozen predicate before any solve:
+`CadGradingTransition`) carries the intent plus pinned evidence, but the handler pre-solve gate re-resolves endpoint member geometry from the request's own `memberSources` + `memberCriteria` + `transitionMemberKeys` (`resolveTransitionMemberViews`; the service-supplied `transitionMembers` views never decide) and rechecks the frozen predicate before any solve. The service carries persisted `endpoints`/`provenance` verbatim through the plan (`canonicalTransitionFromPlan` never strips them) so the engine stale-evidence checks run on the normal path. Post-solve, the handler rechecks the result-owned transition leg (`validateTransitionResultMeshAgainst`): the three owned checkpoints against the legislated law at their own stations (inside) and against their re-resolved natives via `resolveAnalyticCriterionAt` under the shared tols (boundaries, outside-interval). A missing leg or any mismatch fails closed; the mesh path is never entered on a reject, and a tampered result never becomes CURRENT.
 
 - Re-resolve: both adjacent natives through the bounded analytic authority at the authoritative source Z
   (must resolve ok/finite; maxSearch/in-bounds where applicable; no extension/target-root machinery).
@@ -16,7 +15,7 @@ Bounded reject codes (fail closed, never fallback): `TRANSITION_*` family via th
 `MEMBER_NO_SOLUTION` with the bounded detail at the group level. A malformed or stale intent yields a
 bounded code pre-dispatch (service) or at the gate (worker) — the mesh path is never entered.
 
-Covered by `tests/cad_grading_transition_worker_20m2.test.ts` 5/5, including a real kernel solve,
+Covered by `tests/cad_grading_transition_worker_20m2.test.ts` 8/8, including a real kernel solve,
 plus the Wave I production fix: the service previously dropped the intent in transit
 (`requestGroupGrading` never sent plan/members/keys → 8/10 browser flows failed `CORNER_NO_SOLUTION`);
 the fix (`planGroupTransitionRequest`, pure; `selectGroupTransition` + `TransitionSelection` moved to

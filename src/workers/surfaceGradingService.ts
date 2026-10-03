@@ -237,6 +237,14 @@ export const planGroupTransitionRequest = (inputs: ResolvedGroupInputs): GroupTr
       lawVersion: intent.lawVersion,
       criterionFamily: intent.criterionFamily,
       side: intent.side,
+      // Persisted endpoint evidence + provenance ride verbatim so the
+      // worker→engine stale-evidence checks run on the normal path.
+      ...(intent.endpoints !== undefined
+        ? { endpoints: { refs: [...intent.endpoints.refs], values: [...intent.endpoints.values] } }
+        : {}),
+      ...(intent.provenance !== undefined
+        ? { provenance: { ...intent.provenance, memberIds: [...intent.provenance.memberIds] } }
+        : {}),
       groupSide: inputs.group.side,
       isOpen,
       transitionCount: 1,

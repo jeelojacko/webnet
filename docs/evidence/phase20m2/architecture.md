@@ -31,12 +31,7 @@ No C1 claim: the mesh is C0 (position-continuous) only; tangents are not matched
 
 ## Data flow
 
-Author (TransitionPanel → `GROUP_SET_TRANSITION`, one intent, explicit W) → persist/sanitize →
-service `planGroupTransitionRequest` (selects intent, verifies refs against live traversal keys, runs frozen
-admission authority, pins endpoint evidence + recorded revision; any reject fails closed pre-dispatch with a
-bounded `TRANSITION_*` code) → worker handler pre-solve gate → agreement re-resolve/recheck →
-topology expectation → mesh (C0) → `gtop2` certificate → products (Extract/Bake gated; Design Patch unavailable
-for the open route).
+Author (TransitionPanel → `GROUP_SET_TRANSITION`, one intent, explicit W) → persist/sanitize (every present entry retained as invalid-or-valid intent; present-but-unreadable fields/entries become malformed markers that fail closed, never legacy) → service `planGroupTransitionRequest` (selects intent, verifies refs against live traversal keys, runs frozen admission authority, pins endpoint evidence + recorded revision AND carries persisted endpoints/provenance verbatim; any reject fails closed pre-dispatch with a bounded `TRANSITION_*` code) → worker handler pre-solve gate (member geometry re-resolved from the request's own memberSources, never service-supplied views) → engine admission (rechecks persisted evidence) → pre-mesh `deriveTransitionExpectation` (declares the 1/1/1 budget; invalid fails before meshing) → mesh (C0) → `gtop2` certificate against the declared expectation → worker post-solve mesh gate (owned checkpoints rechecked against the law inside + re-resolved natives at the boundaries) → result-owned transition leg → products (Extract/Bake gated; Bake cites the result leg only; Design Patch unavailable for the open route).
 
 Defense in depth: the service pins endpoint evidence, but the worker re-resolves and rechecks everything;
 a malformed or stale intent FAILS CLOSED at every layer and never falls back to legacy or to a default width.

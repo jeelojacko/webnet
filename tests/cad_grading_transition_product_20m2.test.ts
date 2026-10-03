@@ -45,7 +45,7 @@ const projectWithChain = (): { project: CadProject; chainId: string } => {
     vertices: [
       vertex(`feature-vertex:${chainId}:a`, 0, 0, 10),
       vertex(`feature-vertex:${chainId}:b`, 100, 0, 10),
-      vertex(`feature-vertex:${chainId}:c`, 100, 100, 10),
+      vertex(`feature-vertex:${chainId}:c`, 200, 0, 10),
     ],
   };
   return { project: { ...drawing.project, entities: [chain] }, chainId };
@@ -73,6 +73,9 @@ const createOpenAnalyticGroup = (project: CadProject, chainId: string): CadProje
 const calculateGroup = (project: CadProject, groupId: string): CadGradingGroupResult => {
   const inputs = resolveGroupInputs(project, groupId);
   if (!inputs) throw new Error('group inputs did not resolve');
+  // The transition rides the solver (never definition-only): the result
+  // owns the admitted leg the bake citation requires.
+  const intent = inputs.group.transitions?.[0];
   const outcome = computeGradingGroupFromSnapshots({
     groupId,
     revision: inputs.revision,
@@ -83,33 +86,41 @@ const calculateGroup = (project: CadProject, groupId: string): CadGradingGroupRe
     maxSearchDistance: inputs.group.maxSearchDistance,
     curveChordTolerance: inputs.group.curveChordTolerance,
     closed: false,
+    ...(intent !== undefined
+      ? { transition: intent, transitionMemberKeys: inputs.memberKeys }
+      : {}),
   });
   if (!outcome.ok) throw new Error(`group solve failed: ${outcome.code} ${outcome.detail ?? ''}`);
   return outcome.result;
 };
 
-const withTransitionIntent = (project: CadProject, groupId: string): CadProject => ({
-  ...project,
-  gradingGroups: (project.gradingGroups ?? []).map((entry) =>
-    entry.id !== groupId
-      ? entry
-      : {
-          ...entry,
-          transitions: [
-            {
-              policyVersion: 'trp1',
-              jointId: 'joint:1',
-              memberIds: ['A>B', 'B>C'],
-              width: 8,
-              lawKind: 'TRANSITION_LINEAR_V1',
-              lawVersion: 'v1',
-              criterionFamily: 'distance',
-              side: 'left',
-            },
-          ],
-        } as CadGradingGroup,
-  ),
-});
+const withTransitionIntent = (project: CadProject, groupId: string): CadProject => {
+  // Real traversal keys + joint:0: the solver admits exactly this intent.
+  const inputs = resolveGroupInputs(project, groupId);
+  if (!inputs) throw new Error('group inputs did not resolve');
+  return {
+    ...project,
+    gradingGroups: (project.gradingGroups ?? []).map((entry) =>
+      entry.id !== groupId
+        ? entry
+        : {
+            ...entry,
+            transitions: [
+              {
+                policyVersion: 'trp1',
+                jointId: 'joint:0',
+                memberIds: [...inputs.memberKeys],
+                width: 8,
+                lawKind: 'TRANSITION_LINEAR_V1',
+                lawVersion: 'v1',
+                criterionFamily: 'distance',
+                side: 'left',
+              },
+            ],
+          } as CadGradingGroup,
+    ),
+  };
+};
 
 describe('20M.2 WAVE G transition product + provenance', () => {
   it('records the full provenance envelope for an admitted transition', () => {
@@ -212,20 +223,59 @@ describe('20M.2 WAVE G transition product + provenance', () => {
     const surface = baked.present.project.surfaces!.find((entry) => entry.name === 'TG - Baked')!;
     const payload = surface.definition.sourceKind === 'explicit-tin' ? surface.definition.importedTin : null;
     const provenance = payload?.provenance as unknown as { transitions?: unknown[] };
+    // Result-owned citation: the full envelope (interval/station/agreement
+    // metadata), only because the result solved with an admitted transition.
+    expect(provenance?.transitions).toHaveLength(1);
     expect(provenance?.transitions).toMatchObject([
       {
         policyVersion: 'trp1',
-        jointId: 'joint:1',
+        jointId: 'joint:0',
         widthMeters: 8,
         widthMeasure: 'source-line',
         lawKind: 'TRANSITION_LINEAR_V1',
         lawVersion: 'v1',
         criterionFamily: 'distance',
+        interval: { sL: -4, sR: 4 },
+        endpointScalars: { vL: 5, vR: 5, gL: 0.5, gR: 0.5 },
+        jointStation: 100,
+        recordedRevision: revision,
+        agreementCode: null,
       },
     ]);
     const undone = undoCadHistory(baked);
     expect(undone.present.project.surfaces!.some((entry) => entry.id === surface.id)).toBe(false);
     expect(redoCadHistory(undone).present.project.surfaces!.some((entry) => entry.id === surface.id)).toBe(true);
+
+    // Definition intent alone earns no citation: a legacy solve (no
+    // admitted transition) bakes clean with no transitions key.
+    const legacyFl = project.entities.find((entry) => entry.id === chainId) as CadFeatureLineEntity;
+    const [la, lb] = legacyFl.vertices.map((v) => v.id);
+    const singleState = runCadCommand(createCadHistoryState(project), {
+      key: 'GROUP_CREATE',
+      name: 'LG',
+      sourceFeatureLineId: chainId,
+      sourceCourses: [{ vertexAId: la!, vertexBId: lb! }],
+      side: 'left',
+      criterion: { kind: 'distance', gradeRatio: 0.5, distance: 5 },
+      maxSearchDistance: 50,
+      curveChordTolerance: 0.05,
+    });
+    const legacyProject = singleState.present.project;
+    const legacyGroupId = legacyProject.gradingGroups![legacyProject.gradingGroups!.length - 1]!.id;
+    const legacyResult = calculateGroup(legacyProject, legacyGroupId);
+    expect(legacyResult.transition).toBeUndefined();
+    const legacyRevision = resolveGroupInputs(legacyProject, legacyGroupId)!.revision;
+    const legacyBaked = runCadCommand(createCadHistoryState(legacyProject), {
+      key: 'GROUPBAKE',
+      groupId: legacyGroupId,
+      result: legacyResult,
+      expectedRevision: legacyRevision,
+      sessionCurrent: true,
+    });
+    expect(legacyBaked.undoStack).toHaveLength(1);
+    const legacySurface = legacyBaked.present.project.surfaces!.find((entry) => entry.name === 'LG - Baked')!;
+    const legacyPayload = legacySurface.definition.sourceKind === 'explicit-tin' ? legacySurface.definition.importedTin : null;
+    expect((legacyPayload?.provenance as unknown as { transitions?: unknown }).transitions).toBeUndefined();
 
     // Extract executes on the transitioned CURRENT group and round-trips Undo/Redo.
     const extracted = runCadCommand(createCadHistoryState(transitioned), {

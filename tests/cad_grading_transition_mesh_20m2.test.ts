@@ -118,6 +118,19 @@ describe('20M.2 transition mesh', () => {
   it('distance: C0 daylight pin, regions, corner, oriented mesh', () => {
     const result = okOf(solve([DIST(0.5, 5), DIST(0.5, 7)], { transition: trp() }));
     expect(result.daylightPoints).toEqual([-20, 5, 12.5, -4, 5, 12.5, 0, 6, 13, 4, 7, 13.5, 20, 7, 13.5]);
+    // Result-owned leg: only a solve with an admitted transition carries it.
+    expect(result.transition).toMatchObject({
+      joint: 0,
+      jointId: 'joint:0',
+      memberIds: ['A>B', 'B>C'],
+      criterionFamily: 'distance',
+      interval: { sL: -4, sR: 4 },
+      endpointScalars: { vL: 5, vR: 7, gL: 0.5, gR: 0.5 },
+      recordedRevision: 'ggrev1:t',
+      agreementCode: null,
+    });
+    expect(result.transition!.daylightCheckpoints).toHaveLength(9);
+    expect(result.transition!.sourceCheckpoints).toHaveLength(9);
     expect(result.memberRegions).toEqual([
       { memberIndex: 0, classification: 'FIXED', stationSpan: [0, 16] },
       { memberIndex: 0, classification: 'FIXED', stationSpan: [16, 20] },
@@ -173,6 +186,11 @@ describe('20M.2 transition mesh', () => {
     expect(codeOf(solve(D(), { transition: trp({ memberIds: ['A>B', 'X>Y'] }) }))).toBe('TRANSITION_STALE');
     expect(codeOf(solve(D(), { transition: trp(), keys: [] }))).toBe('TRANSITION_STALE');
     expect(codeOf(solve(D(), { transition: trp({ width: 41 }) }))).toBe('TRANSITION_REJECTED');
+    // Retained invalid intent (sanitizer marker shape) fails closed at solve.
+    expect(codeOf(solve(D(), {
+      transition: { policyVersion: '', jointId: '', memberIds: [], width: NaN, lawKind: '', lawVersion: '', criterionFamily: '', side: 'left' },
+      keys: [],
+    }))).toBe('TRANSITION_MALFORMED');
     expect(codeOf(solve(D(), { transition: trp({ width: 0 }) }))).toBe('TRANSITION_REJECTED');
     // Geometry exclusions.
     expect(codeOf(solve(D(), {

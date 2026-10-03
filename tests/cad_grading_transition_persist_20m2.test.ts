@@ -127,7 +127,7 @@ describe('20M.2 transition persistence', () => {
     expect(JSON.stringify(cloneCadGradingGroup(sanitized!))).toBe(before);
   });
 
-  it('retains malformed/unknown/stale intents; drops only non-object entries', () => {
+  it('retains malformed/unknown/stale intents; non-objects become fail-closed markers', () => {
     const malformed = [
       trp({ width: NaN }),
       trp({ width: -4 }),
@@ -141,15 +141,33 @@ describe('20M.2 transition persistence', () => {
       'joint:1',
     ];
     const [sanitized] = sanitizeCadGradingGroups([rawGroup(malformed)]);
-    expect(sanitized!.transitions).toHaveLength(7);
+    // 7 verbatim + 3 malformed markers (never scrubbed to absence).
+    expect(sanitized!.transitions).toHaveLength(10);
     expect(sanitized!.transitions![0]).toMatchObject({ policyVersion: 'trp1', jointId: 'joint:1' });
     expect(sanitized!.transitions![2]).toMatchObject({ policyVersion: 'trp9' });
+    expect(sanitized!.transitions!.slice(7)).toEqual([
+      expect.objectContaining({ memberIds: [] }),
+      expect.objectContaining({ memberIds: [] }),
+      expect.objectContaining({ memberIds: [] }),
+    ]);
   });
 
-  it('selects absent/single, rejects more than one (CARDINALITY)', () => {
+  it('retains a present-but-non-array field as invalid intent (never legacy)', () => {
+    const [sanitized] = sanitizeCadGradingGroups([rawGroup('nope')]);
+    expect(sanitized!.transitions).toHaveLength(1);
+    expect(sanitized!.transitions![0]).toMatchObject({ memberIds: [] });
+  });
+
+  it('fails present-but-unreadable intent closed at selection (never legacy)', () => {
     expect(selectGroupTransition(undefined)).toEqual({ kind: 'absent' });
     expect(selectGroupTransition([])).toEqual({ kind: 'absent' });
-    expect(selectGroupTransition([null, 42])).toEqual({ kind: 'absent' });
+    for (const unreadable of ['nope', 42, null, [null, 42], [trp(), null]] as const) {
+      expect(selectGroupTransition(unreadable)).toEqual({
+        kind: 'rejected',
+        code: 'TRANSITION_MALFORMED',
+        detail: 'GRADING_AGREEMENT_TRANSITION_MALFORMED',
+      });
+    }
     expect(selectGroupTransition([trp()])).toMatchObject({ kind: 'single' });
     expect(selectGroupTransition([trp(), trp({ jointId: 'joint:2' })])).toEqual({
       kind: 'rejected',
@@ -168,6 +186,9 @@ describe('20M.2 transition revision', () => {
   it('moves on width/law/ref/member/family/side edits, not on evidence outputs', () => {
     const base = revisionOf([trp()]);
     expect(revisionOf([trp({ width: 9 })])).not.toBe(base);
+    // Width participates EXACTLY: 40 vs 40.0000000001 straddle the exact
+    // max boundary and must never share a revision (no 1e-9 collapse).
+    expect(revisionOf([trp({ width: 40 })])).not.toBe(revisionOf([trp({ width: 40.0000000001 })]));
     expect(revisionOf([trp({ lawKind: 'OTHER', lawVersion: 'v9' })])).not.toBe(base);
     expect(revisionOf([trp({ memberIds: ['v-b>v-c', 'v-c>v-d'], jointId: 'joint:2' })])).not.toBe(base);
     expect(revisionOf([trp({ criterionFamily: 'elevation' })])).not.toBe(base);

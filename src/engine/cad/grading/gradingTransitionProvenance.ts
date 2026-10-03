@@ -19,7 +19,7 @@ import {
   type GradingProductCapability,
 } from './gradingProductCapabilities';
 import type { TransitionFamily } from './gradingTransitionPolicy';
-import type { CadGradingTransition } from './gradingGroupTypes';
+import type { CadGradingTransition, CadGradingGroupTransitionLeg } from './gradingGroupTypes';
 
 /** Canonical persisted transition intent (persisted-model.md §1). */
 export type TransitionPersistedIntent = CadGradingTransition;
@@ -72,30 +72,45 @@ export const buildTransitionProvenance = (input: {
   agreementCode: input.agreementCode,
 });
 
-/** Verbatim bake citation of persisted transition intent (no re-derivation). */
-export const transitionBakeCitation = (
-  transitions: readonly TransitionPersistedIntent[] | undefined,
-): Array<{
-  policyVersion: string;
-  jointId: string;
-  memberIds: readonly string[];
-  widthMeters: number;
-  widthMeasure: 'source-line';
-  lawKind: string;
-  lawVersion: string;
-  criterionFamily: string;
-}> | undefined => {
-  if (!Array.isArray(transitions) || transitions.length === 0) return undefined;
-  return transitions.map((entry) => ({
-    policyVersion: entry.policyVersion,
-    jointId: entry.jointId,
-    memberIds: [...entry.memberIds],
-    widthMeters: entry.width,
-    widthMeasure: 'source-line' as const,
-    lawKind: entry.lawKind,
-    lawVersion: entry.lawVersion,
-    criterionFamily: entry.criterionFamily,
-  }));
+/**
+ * Result-owned bake citation: cites the transition ONLY when the baked
+ * result actually solved with an admitted transition (the engine sets the
+ * leg; a solve without one carries no key and cites nothing). The full
+ * provenance envelope — interval, joint station, endpoint scalars,
+ * recorded revision, agreement code — rides verbatim, never re-derived.
+ */
+export const transitionResultBakeCitation = (
+  leg: CadGradingGroupTransitionLeg | undefined,
+): GroupTransitionProvenance[] | undefined => {
+  if (leg === undefined) return undefined;
+  if (
+    leg.criterionFamily !== 'distance' &&
+    leg.criterionFamily !== 'relative-elevation' &&
+    leg.criterionFamily !== 'elevation'
+  ) {
+    return undefined;
+  }
+  return [
+    buildTransitionProvenance({
+      intent: {
+        policyVersion: leg.policyVersion,
+        jointId: leg.jointId,
+        memberIds: [...leg.memberIds],
+        width: leg.width,
+        lawKind: leg.lawKind,
+        lawVersion: leg.lawVersion,
+        criterionFamily: leg.criterionFamily,
+        side: leg.side,
+      },
+      memberIds: [leg.memberIds[0], leg.memberIds[1]],
+      family: leg.criterionFamily,
+      endpointScalars: { ...leg.endpointScalars },
+      interval: { ...leg.interval },
+      jointStation: leg.jointStation,
+      recordedRevision: leg.recordedRevision,
+      agreementCode: leg.agreementCode,
+    }),
+  ];
 };
 
 export interface TransitionProductStatus {

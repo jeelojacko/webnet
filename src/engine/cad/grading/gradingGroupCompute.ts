@@ -63,7 +63,7 @@ export { selectGroupTransition, type TransitionSelection };
 import { solveHybridCorner } from './gradingGroupHybridCorners';
 import { groupTerminationMode } from './gradingGroupTermination';
 import { buildGradingTopologyCertificateExact, countPositiveWidthRegions } from './gradingTopologyCertificate';
-import { deriveGradingTopologyExpectation } from './gradingTopologyExpectation';
+import { deriveGradingTopologyExpectation, deriveTransitionExpectation, type GradingTopologyExpectation } from './gradingTopologyExpectation';
 import { solveStraightChord, type StraightChordSolve } from './solveStraightChord';
 import { tryExactOffsetGroup } from './gradingGroupExactOffset';
 import { gradingTerminationDomain, isTargetFreeCriterion } from './gradingTypes';
@@ -285,6 +285,12 @@ interface PlannedTransition {
   d0: number;
   tieXyz: [number, number, number];
   runFlat: number[];
+  /** Admitted law for the result-owned leg + worker recheck. */
+  law: { sL: number; sR: number; vL: number; vR: number; family: 'distance' | 'relative-elevation' | 'elevation' };
+  /** Flat XYZ: pCutL, V, pCutR (source mates of runFlat). */
+  srcFlat: number[];
+  /** Persisted joint station origin (sum of member lengths before R). */
+  jointStation: number;
 }
 
 /** Interior daylight of the legislated TRANSITION_LINEAR_V1 law at scalar v. */
@@ -586,6 +592,9 @@ const planTransitionJoint = (
       d0: q0raw.d,
       tieXyz: [q0.x, q0.y, q0.z],
       runFlat: [qCutL.x, qCutL.y, qCutL.z, q0.x, q0.y, q0.z, qCutR.x, qCutR.y, qCutR.z],
+      law: { sL, sR, vL, vR, family },
+      srcFlat: [pCutL.x, pCutL.y, pCutL.z, vPt.x, vPt.y, vPt.z, pCutR.x, pCutR.y, pCutR.z],
+      jointStation: members.slice(0, R).reduce((sum, m) => sum + m.length, 0),
     },
   };
 };
@@ -828,10 +837,31 @@ export const computeGradingGroupFromSnapshots = (input: GroupSolveInput): Gradin
   // outside [-W/2,+W/2] stay production solves; the interval is re-tiled by
   // the legislated TRANSITION_LINEAR_V1 law. Any reject fails closed.
   let transitionPlan: PlannedTransition | null = null;
+  // Phase 20M.2 WAVE E: the transition declares its 1/1/1 topology budget
+  // pre-mesh (before the merged mesh is assembled below). Any invalid
+  // intent fails closed here, never reaching the mesh or the certificate.
+  let transitionExpectation: GradingTopologyExpectation | null = null;
   if (input.transition !== undefined) {
     const planned = planTransitionJoint(input, members, criterionAt, solved, jointCount);
     if (!planned.ok) return planned;
     transitionPlan = planned.plan;
+    const declared = deriveTransitionExpectation(
+      { scope: 'group', closed: false, positiveWidthRegions: 0 },
+      {
+        jointId: input.transition.jointId,
+        width: input.transition.width,
+        memberLengths: [members[transitionPlan.joint]!.length, members[transitionPlan.joint + 1]!.length],
+        transitionCount: 1,
+        isOpen: true,
+      },
+    );
+    if (!declared.ok) {
+      if (declared.code === 'GRADING_AGREEMENT_TRANSITION_MALFORMED') {
+        return fail('TRANSITION_MALFORMED', transitionPlan.joint, declared.detail);
+      }
+      return fail('TRANSITION_REJECTED', transitionPlan.joint, declared.detail);
+    }
+    transitionExpectation = declared.expectation;
   }
 
   // Per-member triangle soup + daylight runs (trimmed below near overlaps).
@@ -1166,7 +1196,7 @@ export const computeGradingGroupFromSnapshots = (input: GroupSolveInput): Gradin
   // Phase 20K.3 Wave B: explicit pre-mesh expectation derived from the
   // member tilings (never the merged mesh's own topology). Closed groups
   // pin the 1/2 annulus; open groups pin the maximal non-tied runs (N/N).
-  const groupExpectation = deriveGradingTopologyExpectation({
+  const groupExpectation = transitionExpectation ?? deriveGradingTopologyExpectation({
     scope: 'group',
     closed,
     positiveWidthRegions: closed ? 1 : countGroupPositiveWidthRegions(solved),
@@ -1270,6 +1300,36 @@ export const computeGradingGroupFromSnapshots = (input: GroupSolveInput): Gradin
     multipleSolutionCount: multipleSolutions,
     diagnostics,
     ...(topologyCertificate ? { topologyCertificate } : {}),
+    // Phase 20M.2 Wave D/F/G: result-owned transition leg — set only when
+    // this result actually solved with an admitted transition. The worker
+    // mesh gate rechecks it; GROUPBAKE cites it. Never persisted/hashed.
+    ...(transitionPlan !== null
+      ? {
+          transition: {
+            policyVersion: input.transition!.policyVersion,
+            lawKind: input.transition!.lawKind,
+            lawVersion: input.transition!.lawVersion,
+            width: input.transition!.width,
+            joint: transitionPlan.joint,
+            jointId: input.transition!.jointId,
+            memberIds: [input.transition!.memberIds[0]!, input.transition!.memberIds[1]!] as [string, string],
+            criterionFamily: input.transition!.criterionFamily,
+            side: input.transition!.side,
+            interval: { sL: transitionPlan.law.sL, sR: transitionPlan.law.sR },
+            endpointScalars: {
+              vL: transitionPlan.law.vL,
+              vR: transitionPlan.law.vR,
+              gL: (criterionAt(transitionPlan.joint) as { gradeRatio: number }).gradeRatio,
+              gR: (criterionAt(transitionPlan.joint + 1) as { gradeRatio: number }).gradeRatio,
+            },
+            jointStation: transitionPlan.jointStation,
+            recordedRevision: revision,
+            agreementCode: null,
+            daylightCheckpoints: [...transitionPlan.runFlat],
+            sourceCheckpoints: [...transitionPlan.srcFlat],
+          },
+        }
+      : {}),
   };
   return { ok: true, result };
 }

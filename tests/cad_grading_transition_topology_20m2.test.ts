@@ -15,6 +15,8 @@ import {
   buildGradingTopologyCertificateExact,
   gradingTopologyCertificateProductionError,
 } from '../src/engine/cad/grading/gradingTopologyCertificate';
+import { computeGradingGroupFromSnapshots } from '../src/engine/cad/grading/gradingGroupCompute';
+import type { GradingCriterion, ResolvedGradingSource } from '../src/engine/cad/grading/gradingTypes';
 import {
   deriveGradingTopologyExpectation,
   deriveTransitionExpectation,
@@ -137,5 +139,54 @@ describe('20M.2 WAVE E transition topology expectation', () => {
       if (!out.ok) continue;
       expect(out.expectation).toEqual(deriveGradingTopologyExpectation(base));
     }
+  });
+
+  it('certifies the PRODUCTION transition mesh (wired 1/1/1, not only the synthetic quad)', () => {
+    // Real collinear 2-member distance group solved through the production
+    // kernel with an admitted transition: the pre-mesh declaration must be
+    // the group-scoped 1/1/1 expectation and the emitted gtop2 certificate
+    // must certify the production mesh green.
+    const seg = (sx: number, sy: number, ex: number, ey: number): ResolvedGradingSource => ({
+      startX: sx, startY: sy, endX: ex, endY: ey, startZ: 10, endZ: 10,
+      length: Math.hypot(ex - sx, ey - sy), reoriented: false, isArc: false,
+    });
+    const DIST = (g: number, d: number): GradingCriterion => ({ kind: 'distance', gradeRatio: g, distance: d });
+    const outcome = computeGradingGroupFromSnapshots({
+      groupId: 'g',
+      revision: 'ggrev1:topo',
+      members: [seg(-20, 0, 0, 0), seg(0, 0, 20, 0)],
+      side: 'left',
+      criterion: DIST(0.5, 5),
+      memberCriteria: [DIST(0.5, 5), DIST(0.5, 7)],
+      maxSearchDistance: 50,
+      curveChordTolerance: 0.01,
+      closed: false,
+      transition: {
+        policyVersion: 'trp1',
+        jointId: 'joint:0',
+        memberIds: ['A>B', 'B>C'],
+        width: 8,
+        lawKind: 'TRANSITION_LINEAR_V1',
+        lawVersion: 'v1',
+        criterionFamily: 'distance',
+        side: 'left',
+      },
+      transitionMemberKeys: ['A>B', 'B>C'],
+    });
+    expect(outcome.ok).toBe(true);
+    if (!outcome.ok) return;
+    const cert = outcome.result.topologyCertificate;
+    expect(cert).toBeDefined();
+    expect(cert).toMatchObject({
+      scope: 'group',
+      components: 1,
+      boundaryCycles: 1,
+      positiveWidthRegionCount: 1,
+    });
+    expect(gradingTopologyCertificateProductionError(cert, 'group', outcome.result.gradingMesh, {
+      sourceBoundaryPoints: outcome.result.sourceBoundaryPoints,
+      gradingBoundaryPoints: outcome.result.daylightPoints,
+    })).toBeNull();
+    expect(outcome.result.transition).toMatchObject({ joint: 0, agreementCode: null });
   });
 });

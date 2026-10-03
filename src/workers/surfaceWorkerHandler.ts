@@ -41,7 +41,7 @@ import type {
   GroupTransitionMemberView,
   GroupTransitionPlan,
 } from './surfaceGradingCompute';
-import { computeGradingFromSnapshots, validateGroupTransitionAgreement } from './surfaceGradingCompute';
+import { computeGradingFromSnapshots, validateGroupTransitionAgreement, validateTransitionResultMesh } from './surfaceGradingCompute';
 import type {
   CadProject,
   CadSurface,
@@ -561,6 +561,89 @@ export type SurfaceGroupGradingEngineFn = (
 ) => GradingGroupComputeOutcome | Promise<GradingGroupComputeOutcome>;
 
 /**
+ * Phase 20M.2 WAVE F — worker-side member re-resolution. Endpoint member
+ * geometry is re-derived from the request's own `memberSources` +
+ * `memberCriteria` + `transitionMemberKeys` (never the service-supplied
+ * `transitionMembers` views). Returns null when the refs do not resolve
+ * to adjacent live members.
+ */
+export const resolveTransitionMemberViews = (
+  request: GradingGroupComputeRequest,
+): GroupTransitionMemberView[] | null => {
+  const plan = request.transition;
+  const keys = request.transitionMemberKeys;
+  if (plan === undefined || keys === undefined) return null;
+  const jointed = /^joint:(\d+)$/.exec(typeof plan.jointId === 'string' ? plan.jointId : '');
+  const joint = jointed !== null && jointed[1] === String(Number(jointed[1])) ? Number(jointed[1]) : -1;
+  const left = joint;
+  const right = joint + 1;
+  const criteria = request.memberCriteria ?? [request.criterion];
+  if (!(joint >= 0) || keys[right] === undefined) return null;
+  if (keys[left] !== plan.memberIds[0] || keys[right] !== plan.memberIds[1]) return null;
+  const sourceL = request.memberSources[left];
+  const sourceR = request.memberSources[right];
+  const criterionL = criteria[left] ?? request.criterion;
+  const criterionR = criteria[right] ?? request.criterion;
+  if (!sourceL || !sourceR || !criterionL || !criterionR) return null;
+  const view = (
+    memberId: string,
+    criterion: (typeof criteria)[number],
+    source: (typeof request.memberSources)[number],
+  ): GroupTransitionMemberView => ({
+    memberId,
+    criterion,
+    length: source.length,
+    dirX: source.endX - source.startX,
+    dirY: source.endY - source.startY,
+    startZ: source.startZ,
+    endZ: source.endZ,
+    isArc: source.isArc,
+    maxSearchDistance: request.maxSearchDistance,
+  });
+  return [view(keys[left]!, criterionL, sourceL), view(keys[right]!, criterionR, sourceR)];
+};
+
+/**
+ * Phase 20M.2 WAVE F — post-solve mesh agreement against the result-owned
+ * transition leg. Null on agreement, else the bounded reject code. A
+ * result without the leg (solved without an admitted transition) never
+ * passes a transitioned request.
+ */
+export const validateTransitionResultMeshAgainst = (
+  result: CadGradingGroupResult,
+  request: GradingGroupComputeRequest,
+): string | null => {
+  const plan = request.transition;
+  const leg = result.transition;
+  if (plan === undefined || leg === undefined) return 'GRADING_AGREEMENT_TRANSITION_STALE';
+  if (leg.agreementCode !== null) return leg.agreementCode;
+  if (leg.recordedRevision !== request.revision) return 'GRADING_AGREEMENT_TRANSITION_STALE';
+  const family = leg.criterionFamily;
+  if (family !== 'distance' && family !== 'relative-elevation' && family !== 'elevation') {
+    return 'GRADING_AGREEMENT_TRANSITION_FAMILY_MISMATCH';
+  }
+  const members = resolveTransitionMemberViews(request);
+  if (members === null) return 'GRADING_AGREEMENT_TRANSITION_STALE';
+  const jointed = /^joint:(\d+)$/.exec(typeof plan.jointId === 'string' ? plan.jointId : '');
+  const joint = jointed !== null && jointed[1] === String(Number(jointed[1])) ? Number(jointed[1]) : -1;
+  const sourceL = request.memberSources[joint];
+  if (!(joint >= 0) || !sourceL) return 'GRADING_AGREEMENT_TRANSITION_STALE';
+  return validateTransitionResultMesh({
+    family,
+    sL: leg.interval.sL,
+    sR: leg.interval.sR,
+    vL: leg.endpointScalars.vL,
+    vR: leg.endpointScalars.vR,
+    daylightCheckpoints: leg.daylightCheckpoints,
+    sourceCheckpoints: leg.sourceCheckpoints,
+    criterionL: members[0]!.criterion,
+    criterionR: members[1]!.criterion,
+    jointZ: sourceL.endZ,
+    maxSearchDistance: request.maxSearchDistance,
+  });
+};
+
+/**
  * Phase 20M.2 Wave D — the worker plan repoints to the canonical persisted
  * transition intent for the engine solve (sibling WAVE F TODO): law/ref/
  * width/family/side ride verbatim; evidence outputs (endpoint scalars,
@@ -576,6 +659,15 @@ export const canonicalTransitionFromPlan = (plan: GroupTransitionPlan): CadGradi
   lawVersion: plan.lawVersion,
   criterionFamily: plan.criterionFamily,
   side: plan.side,
+  // Persisted endpoint evidence + provenance ride verbatim: the engine
+  // stale-evidence checks compare them against the live solve (never
+  // stripped, never re-derived). Agreement-only fields stay worker-side.
+  ...(plan.endpoints !== undefined
+    ? { endpoints: { refs: [...plan.endpoints.refs], values: [...plan.endpoints.values] } }
+    : {}),
+  ...(plan.provenance !== undefined
+    ? { provenance: { ...plan.provenance, memberIds: [...plan.provenance.memberIds] } }
+    : {}),
 });
 
 /** Map the flat worker request onto the engine's `GroupSolveInput`. */
@@ -1408,12 +1500,14 @@ export const createSurfaceWorkerHandler = (
     defer(() => {
       if (cancelledRequestIds.has(requestId)) return;
       // Phase 20M.2 WAVE F — transition agreement BEFORE the engine solve.
+      // Member geometry is re-resolved from the request's own member
+      // sources (never service-supplied views); the post-solve mesh gate
+      // below rechecks the result-owned checkpoints independently.
       if (request.transition !== undefined) {
-        const disagreement = validateGroupTransitionAgreement(
-          request.transition,
-          request.transitionMembers ?? [],
-          request.revision,
-        );
+        const members = resolveTransitionMemberViews(request);
+        const disagreement = members === null
+          ? 'GRADING_AGREEMENT_TRANSITION_STALE'
+          : validateGroupTransitionAgreement(request.transition, members, request.revision);
         if (disagreement !== null) {
           failGroupGrading(requestId, request, disagreement);
           return;
@@ -1427,6 +1521,17 @@ export const createSurfaceWorkerHandler = (
           if (!outcome.ok) {
             failGroupGrading(requestId, request, groupFailureDetail(outcome));
             return;
+          }
+          // Phase 20M.2 WAVE F — post-solve mesh agreement: the admitted
+          // transition's owned checkpoints are re-evaluated against the
+          // legislated law (inside) and the re-resolved natives
+          // (boundaries). A missing leg or any mismatch fails closed.
+          if (request.transition !== undefined) {
+            const meshReject = validateTransitionResultMeshAgainst(outcome.result, request);
+            if (meshReject !== null) {
+              failGroupGrading(requestId, request, meshReject);
+              return;
+            }
           }
           deps.postMessage({
             type: 'group-success',

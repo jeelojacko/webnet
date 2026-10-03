@@ -27,7 +27,7 @@ import {
 import { toGradingCourseLikes, resolveGradingSourceCourse } from './grading/gradingCourseFrame';
 import { resolveGroupInputs } from './grading/gradingGroupResolve';
 import { gradingTopologyCertificateProductionError, gradingTopologyCertificateProductionProductError } from './grading/gradingTopologyCertificate';
-import { transitionBakeCitation } from './grading/gradingTransitionProvenance';
+import { transitionResultBakeCitation } from './grading/gradingTransitionProvenance';
 import { appendCadProjectEntities } from './cadProjectState';
 import { commitLayerProject } from './cadTransactionsLayerCommands';
 import type {
@@ -40,6 +40,7 @@ import type {
 } from './cadTypes';
 import type {
   CadGradingGroup,
+  CadGradingGroupTransitionLeg,
   GradingGroupCourse,
 } from './grading/gradingGroupTypes';
 
@@ -88,9 +89,15 @@ const chainResolvable = (
   );
 };
 
-/** Phase 20M.2 WAVE G: verbatim transition citation for GROUPBAKE provenance. */
-const transitionCitation = (group: CadGradingGroup): { transitions?: ReturnType<typeof transitionBakeCitation> } => {
-  const cited = transitionBakeCitation(group.transitions);
+/**
+ * Phase 20M.2 WAVE G: result-owned transition citation for GROUPBAKE
+ * provenance. Cites the transition ONLY when the baked result actually
+ * solved with an admitted transition (result-owned leg); a solve without
+ * one cites nothing (legacy payload byte-identical). Definition intent
+ * alone never earns a citation.
+ */
+const transitionCitation = (result: { transition?: CadGradingGroupTransitionLeg }): { transitions?: ReturnType<typeof transitionResultBakeCitation> } => {
+  const cited = transitionResultBakeCitation(result.transition);
   return cited === undefined ? {} : { transitions: cited };
 };
 
@@ -583,10 +590,11 @@ const groupBakeCommand: CadCommandDefinition<GroupBakeCommand> = {
         side: inputs.group.side,
         accuracy: result.accuracy,
         cornerMode: inputs.group.cornerMode,
-        // Phase 20M.2 WAVE G: a transitioned group truthfully cites its
-        // persisted transition intent verbatim (geometry already rides the
-        // mesh); legacy groups carry no key (byte-identical payload).
-        ...transitionCitation(inputs.group),
+        // Phase 20M.2 WAVE G: cites the transition only when the baked
+        // result actually solved with an admitted transition (result-owned
+        // leg carries interval/station/agreement metadata); legacy solves
+        // carry no key (byte-identical payload).
+        ...transitionCitation(result),
       },
     };
     if (validateExplicitTinPayload(payload) != null) return null;

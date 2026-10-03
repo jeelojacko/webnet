@@ -16,6 +16,7 @@ import type { GradingCriterion } from '../src/engine/cad/grading/gradingTypes';
 import {
   checkGroupTransitionAgreement,
   validateTransitionInteriorVertices,
+  validateTransitionResultMesh,
   type GroupTransitionMemberView,
   type GroupTransitionPlan,
 } from '../src/workers/surfaceGradingCompute';
@@ -161,8 +162,7 @@ describe('20M.2 WAVE F transition agreement', () => {
     expect(outcome.result.topologyCertificate?.version).toBe('gtop2');
   });
 
-  it('gates the handler path: valid plans reach the engine, tampered plans never do', async () => {
-    const mkHandler = (calls: string[], code: object) => {
+  it('gates the handler path: valid plans reach the engine, tampered plans never do', async () => {    const mkHandler = (calls: string[], code: object) => {
       const sent: SurfaceWorkerResponseMessage[] = [];
       const handler = createSurfaceWorkerHandler({
         loadBuilder: () => Promise.reject(new Error('unused')),
@@ -196,5 +196,121 @@ describe('20M.2 WAVE F transition agreement', () => {
     expect(failure?.type).toBe('group-failure');
     if (failure?.type !== 'group-failure') return;
     expect(failure.error).toBe('GRADING_AGREEMENT_TRANSITION_WIDE');
+  });
+
+  it('re-resolves members from memberSources: service views never decide', async () => {
+    // Corrupted service-supplied views are ignored: the live memberSources
+    // still admit, so the request reaches the engine.
+    const calls: string[] = [];
+    const sent: SurfaceWorkerResponseMessage[] = [];
+    const handler = createSurfaceWorkerHandler({
+      loadBuilder: () => Promise.reject(new Error('unused')),
+      loadGroupGradingFn: () => Promise.resolve(() => {
+        calls.push('engine');
+        return Promise.resolve({ ok: false as const, code: 'MEMBER_NO_SOLUTION' as const, detail: 'fake-engine' });
+      }),
+      postMessage: (message) => sent.push(message),
+      defer: (callback) => callback(),
+    });
+    const req = request(plan());
+    req.transitionMembers = [
+      member('A>B', { kind: 'distance', gradeRatio: 0.75, distance: 5 }),
+      member('B>C', { kind: 'distance', gradeRatio: 0.75, distance: 7 }),
+    ];
+    handler.handleMessage({ type: 'group-grading', requestId: 't-views', request: req });
+    await flush();
+    expect(calls).toEqual(['engine']);
+    // Corrupted live sources fail even with pristine service views.
+    const badCalls: string[] = [];
+    const badSent: SurfaceWorkerResponseMessage[] = [];
+    const badHandler = createSurfaceWorkerHandler({
+      loadBuilder: () => Promise.reject(new Error('unused')),
+      loadGroupGradingFn: () => Promise.resolve(() => {
+        badCalls.push('engine');
+        return Promise.resolve({ ok: false as const, code: 'MEMBER_NO_SOLUTION' as const, detail: 'fake-engine' });
+      }),
+      postMessage: (message) => badSent.push(message),
+      defer: (callback) => callback(),
+    });
+    const badReq = request(plan());
+    badReq.memberCriteria = [
+      { kind: 'distance', gradeRatio: 0.5, distance: 5 },
+      { kind: 'distance', gradeRatio: 0.75, distance: 7 },
+    ];
+    badHandler.handleMessage({ type: 'group-grading', requestId: 't-sources', request: badReq });
+    await flush();
+    expect(badCalls).toEqual([]);
+    const failure = badSent.find((m) => m.type === 'group-failure');
+    expect(failure?.type).toBe('group-failure');
+    if (failure?.type !== 'group-failure') return;
+    expect(failure.error).toBe('GRADING_AGREEMENT_TRANSITION_FAMILY_MISMATCH');
+  });
+
+  it('post-solve mesh gate runs on the production path (real engine + handler)', async () => {
+    // Full production path with the real kernel: agreement pre-solve, mesh
+    // recheck post-solve, group-success delivery.
+    const sent: SurfaceWorkerResponseMessage[] = [];
+    const handler = createSurfaceWorkerHandler({
+      loadBuilder: () => Promise.reject(new Error('unused')),
+      loadGroupGradingFn: () => Promise.resolve(computeGroupGradingResultFromRequest),
+      postMessage: (message) => sent.push(message),
+      defer: (callback) => callback(),
+    });
+    handler.handleMessage({ type: 'group-grading', requestId: 't-e2e', request: request(plan()) });
+    await flush(10);
+    const success = sent.find((m) => m.type === 'group-success');
+    expect(success?.type).toBe('group-success');
+    if (success?.type !== 'group-success') return;
+    expect(success.result.transition).toMatchObject({ joint: 0, agreementCode: null });
+    // The result-owned checkpoints independently satisfy law + natives.
+    const leg = success.result.transition!;
+    expect(validateTransitionResultMesh({
+      family: 'distance',
+      sL: leg.interval.sL,
+      sR: leg.interval.sR,
+      vL: leg.endpointScalars.vL,
+      vR: leg.endpointScalars.vR,
+      daylightCheckpoints: leg.daylightCheckpoints,
+      sourceCheckpoints: leg.sourceCheckpoints,
+      criterionL: { kind: 'distance', gradeRatio: 0.5, distance: 5 },
+      criterionR: { kind: 'distance', gradeRatio: 0.5, distance: 7 },
+      jointZ: 10,
+      maxSearchDistance: 10,
+    })).toBeNull();
+  });
+
+  it('post-solve mesh gate fails tampered checkpoints and missing legs closed', async () => {
+    const real = await computeGroupGradingResultFromRequest(JSON.parse(JSON.stringify(request(plan()))) as GradingGroupComputeRequest);
+    expect(real.ok).toBe(true);
+    if (!real.ok) return;
+    const mkHandler = (sent: SurfaceWorkerResponseMessage[], result: typeof real.result) => createSurfaceWorkerHandler({
+      loadBuilder: () => Promise.reject(new Error('unused')),
+      loadGroupGradingFn: () => Promise.resolve(() => Promise.resolve({ ok: true as const, result })),
+      postMessage: (message) => sent.push(message),
+      defer: (callback) => callback(),
+    });
+    // Off-law checkpoint (0.5 m off the legislated offset).
+    const tampered = {
+      ...real.result,
+      transition: { ...real.result.transition!, daylightCheckpoints: [...real.result.transition!.daylightCheckpoints] },
+    };
+    tampered.transition.daylightCheckpoints[4]! += 0.5;
+    const tamperedSent: SurfaceWorkerResponseMessage[] = [];
+    mkHandler(tamperedSent, tampered).handleMessage({ type: 'group-grading', requestId: 't-tampered', request: request(plan()) });
+    await flush();
+    const tamperedFailure = tamperedSent.find((m) => m.type === 'group-failure');
+    expect(tamperedFailure?.type).toBe('group-failure');
+    if (tamperedFailure?.type !== 'group-failure') return;
+    expect(tamperedFailure.error).toBe('GRADING_AGREEMENT_TRANSITION_OFF_LAW');
+    // Missing leg on a transitioned request never passes.
+    const noLeg = { ...real.result };
+    delete noLeg.transition;
+    const noLegSent: SurfaceWorkerResponseMessage[] = [];
+    mkHandler(noLegSent, noLeg).handleMessage({ type: 'group-grading', requestId: 't-noleg', request: request(plan()) });
+    await flush();
+    const noLegFailure = noLegSent.find((m) => m.type === 'group-failure');
+    expect(noLegFailure?.type).toBe('group-failure');
+    if (noLegFailure?.type !== 'group-failure') return;
+    expect(noLegFailure.error).toBe('GRADING_AGREEMENT_TRANSITION_STALE');
   });
 });

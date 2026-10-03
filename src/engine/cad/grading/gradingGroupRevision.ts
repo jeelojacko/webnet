@@ -138,6 +138,17 @@ const effectiveRequiresSurface = (
 };
 
 /**
+ * Exact numeric encoding for the transition width ONLY. The 1e-9
+ * quantization below the engineering floor is kept for every other field,
+ * but a width edit must always invalidate: 40 vs 40.0000000001 straddle
+ * the exact `W <= 2*min(LL,LR)` boundary, so collapsing them would keep a
+ * stale CURRENT across a feasibility change. Full-precision repr keeps
+ * legacy no-transition hashes byte-identical (empty text when absent).
+ */
+const exactTransitionWidth = (value: number): string =>
+  Number.isFinite(value) ? String(value) : 'non-finite';
+
+/**
  * Phase 20M.2 Wave B: canonical transition text over the persisted
  * canonical fields only (policyVersion/jointId/memberIds/width/lawKind/
  * lawVersion/family/side). Endpoint evidence values + provenance revision
@@ -151,7 +162,8 @@ const transitionText = (transitions: CadGradingTransition[] | undefined): string
       `trp:${String(t.policyVersion)}`,
       `joint:${String(t.jointId)}`,
       `members:${(t.memberIds ?? []).join('+')}`,
-      `width:${canonicalGradingNum(t.width)}`,
+      // ponytail: full-precision width repr; 1e-9 quant for all other fields.
+      `width:${exactTransitionWidth(t.width)}`,
       `law:${String(t.lawKind)}/${String(t.lawVersion)}`,
       `family:${String(t.criterionFamily)}`,
       `side:${String(t.side)}`,
