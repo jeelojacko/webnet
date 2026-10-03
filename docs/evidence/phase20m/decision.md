@@ -317,4 +317,4 @@ gates. This study does NOT implement it.
   relabeled with production-gate disclaimer; regen/pr/docs made
   consistent. Prior self-review "no exactness overclaims" statement
   withdrawn — it was disproven by the independent round.
-- Independent final re-review pending.
+- Independent final re-review: exactly one docs-only blocker (TODO.md said 9/9, test file has 12 its, all green), fixed in d1945089; GitHub CI run #966 passed on the final head. No separate APPROVE was recorded. Phase 20M is CLOSED as merged (PR #149, merge 6ac10073bf034791f847f531fe3ffba730b6d66e).
