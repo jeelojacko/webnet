@@ -37,7 +37,7 @@ describe('Project Options modal adjustment and export interactions', () => {
     const app = await mountApp('adjustment');
     try {
       const firstRunMode = findSelectForSettingsRow(app.container, 'Run Mode');
-      expect(firstRunMode.value).toBe('preanalysis');
+      expect(firstRunMode.value).toBe('adjustment');
       await setSelectValue(firstRunMode, 'data-check');
 
       await clickButtonByExactText(app.container, 'Apply');

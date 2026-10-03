@@ -1,9 +1,19 @@
 import type { CrsCatalogGroupFilter, ProjectOptionsTab } from '../appStateTypes';
-import { ACTIVE_INDUSTRY_PARITY_CASE } from '../industryParityCases';
+import { INDUSTRY_PARITY_CASES } from '../industryParityCases';
 
 export const IMPORT_FILE_ACCEPT = '.dat,.txt,.sum,.rpt,.xml,.jxl,.jobxml,.htm,.html,.rw5,.cr5,.raw,.dbx,.gvx';
 export const PROJECT_FILE_ACCEPT = '.wnproj,.wnproj.json,.json';
-export const ACTIVE_PARITY_STARTUP_DEFAULTS = ACTIVE_INDUSTRY_PARITY_CASE.startupDefaults;
+/**
+ * Startup defaults for a fresh (untitled) workspace. The canonical startup
+ * example is the permanent 'combined' case; parity keeps its own ACTIVE case.
+ */
+export const APP_STARTUP_DEFAULTS = INDUSTRY_PARITY_CASES.combined.startupDefaults;
+/**
+ * Back-compat alias for tests. It tracks the app startup example
+ * (APP_STARTUP_DEFAULTS), NOT the parity ACTIVE case, which remains
+ * campDesignPreanalysis. No production code reads this alias.
+ */
+export const ACTIVE_PARITY_STARTUP_DEFAULTS = APP_STARTUP_DEFAULTS;
 
 export const SETTINGS_TOOLTIPS = {
   solveProfile:

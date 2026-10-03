@@ -370,13 +370,17 @@ export const useAdjustmentWorkflow = <TRunDiagnostics>({
   ]);
 
   const resetAdjustmentWorkflowState = useCallback(() => {
+    // Cancel first: the runner drops cancelled/superseded outcomes, so an
+    // in-flight run cannot publish a stale result into the incoming workspace
+    // on any project-switch/import/reset path. No-op when idle.
+    cancelAdjustment();
     setExcludedIds(new Set());
     setActivePreanalysisAdditionIds(new Set());
     setOverrides({});
     setClusterReviewDecisions({});
     setActiveClusterApprovedMerges([]);
     setAppliedRunIdentity(null);
-  }, []);
+  }, [cancelAdjustment]);
 
   const restoreAdjustmentWorkflowState = useCallback(
     ({

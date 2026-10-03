@@ -233,9 +233,13 @@ export const useProjectPayloadLoader = ({
         cloneAdjustedPointsExportSettings(normalized.loadedAdjustedPointsSettings),
       );
       setPlanningMap?.(clonePlanningMapState(normalized.planningMap));
-      if (normalized.surveyCadState) {
-        setSurveyCadState?.(cloneCadDrawingDocument(normalized.surveyCadState));
-      }
+      // Always apply (null clears): blank projects carry no CAD state and must
+      // not inherit the previous workspace drawing.
+      setSurveyCadState?.(
+        normalized.surveyCadState
+          ? cloneCadDrawingDocument(normalized.surveyCadState)
+          : null,
+      );
       restoreSavedRunSnapshots(savedRuns);
       setProjectInstruments(normalized.projectInstruments);
       setSelectedInstrument(normalized.selectedInstrument);

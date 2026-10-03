@@ -176,6 +176,7 @@ export const useProjectFileWorkflow = ({
 
   const {
     createLocalProjectFromCurrentWorkspace,
+    createProjectFromCurrentWorkspace,
     deleteLocalProject,
     handleSaveProject,
     openProjectById,
@@ -232,7 +233,7 @@ export const useProjectFileWorkflow = ({
     importGeneratedProjectSourceFile,
     importProjectSourceFiles,
   } = useProjectSourceFileImports({
-    createLocalProjectFromCurrentWorkspace,
+    createProjectFromCurrentWorkspace,
     projectSession,
     setImportNotice,
     setInput,

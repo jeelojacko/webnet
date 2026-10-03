@@ -267,6 +267,7 @@ export const useAppControllerUiWorkflows = (context: UiWorkflowContext) => {
     setActiveTab,
     setIsSidebarOpen,
     setPendingEditorJumpLine,
+    projectId: projectSession?.indexRow.id ?? null,
   });
   const {
     applyAdjustedPointsTransformSelection,

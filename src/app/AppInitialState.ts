@@ -15,7 +15,7 @@ import {
   normalizeListingSortObservationsBy,
 } from '../listingSortObservations';
 import {
-  ACTIVE_PARITY_STARTUP_DEFAULTS,
+  APP_STARTUP_DEFAULTS,
 } from './appConfig';
 import {
   DEFAULT_UI_THEME,
@@ -45,7 +45,7 @@ export const createInitialSettingsState = (): SettingsState => {
     listingSortCoordinatesBy: 'name',
     listingSortObservationsBy: DEFAULT_LISTING_SORT_OBSERVATIONS_BY,
     listingObservationLimit: 60,
-    ...ACTIVE_PARITY_STARTUP_DEFAULTS?.settingsPatch,
+    ...APP_STARTUP_DEFAULTS?.settingsPatch,
   };
   return {
     ...seed,
@@ -141,13 +141,13 @@ export const createInitialParseSettings = (): ParseSettings => ({
   robustK: 1.5,
   parseCompatibilityMode: 'strict',
   parseModeMigrated: true,
-  ...ACTIVE_PARITY_STARTUP_DEFAULTS?.parseSettingsPatch,
+  ...APP_STARTUP_DEFAULTS?.parseSettingsPatch,
 });
 
 export const createInitialProjectInstruments = (): InstrumentLibrary => ({
   S9: createDefaultS9Instrument(),
-  ...(ACTIVE_PARITY_STARTUP_DEFAULTS?.projectInstruments ?? {}),
-  ...parseInstrumentLibraryFromInput(ACTIVE_PARITY_STARTUP_DEFAULTS?.input ?? DEFAULT_INPUT),
+  ...(APP_STARTUP_DEFAULTS?.projectInstruments ?? {}),
+  ...parseInstrumentLibraryFromInput(APP_STARTUP_DEFAULTS?.input ?? DEFAULT_INPUT),
 });
 
 export const createInitialAdjustedPointsExportSettings =

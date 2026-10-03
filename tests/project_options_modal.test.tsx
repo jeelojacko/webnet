@@ -202,7 +202,7 @@ describe('Project Options modal layout', () => {
     const app = await mountApp('project-files');
     try {
       expect(app.container.textContent).toContain('Project Files');
-      expect(app.container.textContent).toContain('Create Local Project');
+      expect(app.container.textContent).toContain('Create New Project');
       expect(app.container.textContent).toContain('Import Portable');
       expect(app.container.textContent).toContain('Save Local Project');
       expect(app.container.textContent).toContain('Export Portable');

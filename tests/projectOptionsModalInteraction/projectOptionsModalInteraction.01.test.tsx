@@ -41,7 +41,7 @@ describe('Project Options modal workspace and general interactions', () => {
       await waitForTabContent(container, 'project-files');
 
       expect(container.textContent).toContain('Manifest schema');
-      expect(container.textContent).toContain('Create Local Project');
+      expect(container.textContent).toContain('Create New Project');
       expect(container.textContent).toContain('Example Projects');
       expect(container.textContent).toContain('Pre-analysis');
       expect(container.textContent).toContain('Combined');

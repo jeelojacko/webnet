@@ -1,5 +1,5 @@
 import { useCallback } from 'react';
-import { ACTIVE_PARITY_STARTUP_DEFAULTS } from '../app/appConfig';
+import { APP_STARTUP_DEFAULTS } from '../app/appConfig';
 import type {
   ParseSettings,
   RunDiagnostics,
@@ -101,7 +101,7 @@ export const useAppRunWorkflowShell = ({
   const buildRunDiagnosticsWithProjectMetadata = useCallback(
     (base: ParseSettings, solved?: AdjustmentResult): RunDiagnostics => {
       const next = buildRunDiagnostics(base, solved);
-      const projectName = projectSession?.manifest.name ?? ACTIVE_PARITY_STARTUP_DEFAULTS?.projectName;
+      const projectName = projectSession?.manifest.name ?? APP_STARTUP_DEFAULTS?.projectName;
       const projectSourceFiles =
         activeProjectRunFiles.length > 0 ? activeProjectRunFiles.map((file) => file.name) : next.projectSourceFiles;
       const projectFolder =

@@ -73,6 +73,15 @@ const AppInputSidebar = ({
             handleOpenProjectWorkspacePanel();
             return;
           }
+          // Blank creation discards untitled input, so confirm first.
+          if (
+            input.trim() !== '' &&
+            !window.confirm(
+              'Create a new blank project? Unsaved untitled input will be discarded.',
+            )
+          ) {
+            return;
+          }
           void createLocalProjectFromCurrentWorkspace();
         }}
         onAddProjectSourceFile={() => {

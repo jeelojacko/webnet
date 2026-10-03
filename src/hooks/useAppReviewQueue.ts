@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState, type Dispatch, type SetStateAction } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, type Dispatch, type SetStateAction } from 'react';
 import { buildReviewQueue, type ReviewQueueItem, type ReviewQueueSeverity, type ReviewQueueSourceType } from '../engine/reviewQueue';
 import type { RunComparisonSummary } from '../engine/qaWorkflow';
 import type { AdjustmentResult } from '../types';
@@ -23,6 +23,7 @@ interface UseAppReviewQueueArgs {
   setActiveTab: (_tab: WorkspaceTabKey) => void;
   setIsSidebarOpen: Dispatch<SetStateAction<boolean>>;
   setPendingEditorJumpLine: Dispatch<SetStateAction<number | null>>;
+  projectId: string | null;
 }
 
 export const useAppReviewQueue = ({
@@ -36,6 +37,7 @@ export const useAppReviewQueue = ({
   setActiveTab,
   setIsSidebarOpen,
   setPendingEditorJumpLine,
+  projectId,
 }: UseAppReviewQueueArgs) => {
   const [reviewQueueSeverityFilter, setReviewQueueSeverityFilter] = useState<
     'all' | ReviewQueueSeverity
@@ -47,6 +49,17 @@ export const useAppReviewQueue = ({
   const [reviewQueueImportedGroupFilter, setReviewQueueImportedGroupFilter] = useState('all');
   const [selectedReviewQueueItemId, setSelectedReviewQueueItemId] = useState<string | null>(null);
   const [reportFilterFocusRequestKey, setReportFilterFocusRequestKey] = useState(0);
+  const prevProjectIdRef = useRef<string | null>(projectId);
+  useEffect(() => {
+    if (prevProjectIdRef.current === projectId) return;
+    prevProjectIdRef.current = projectId;
+    // New project/session: drop filters + selection tied to the old project.
+    setReviewQueueSeverityFilter('all');
+    setReviewQueueSourceFilter('all');
+    setReviewQueueUnresolvedOnly(false);
+    setReviewQueueImportedGroupFilter('all');
+    setSelectedReviewQueueItemId(null);
+  }, [projectId]);
 
   const reviewQueueItems = useMemo(
     () =>
