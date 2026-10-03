@@ -148,158 +148,187 @@ const MapViewContent = ({
   draftBlockedPolygonLength,
   removePlanningPolygon,
   removeSelectedPlanningPolygons,
-}: MapViewContentProps) => (
-  <div className="h-full p-4 flex flex-col min-h-0">
-    <MapViewControls
-      effectiveMode={effectiveMode}
-      fallbackReason={fallbackReason}
-      filteredVisiblePointCount={filteredVisiblePointCount}
-      focusSelection={focusSelection}
-      hideMinorGeometry={hideMinorGeometry}
-      inputPointsLoaded={inputPointsLoaded}
-      isPreanalysis={isPreanalysis}
-      mapDensitySummary={mapDensitySummary}
-      mode={mode}
-      onLoadInputPoints={onLoadInputPoints}
-      onPlanningMapChange={onPlanningMapChange}
-      planningMap={planningMap}
-      selectedPlanningPolygonIds={selectedPlanningPolygonIds}
-      setFocusSelection={setFocusSelection}
-      setHideMinorGeometry={setHideMinorGeometry}
-      setShowLabels={setShowLabels}
-      setShowTransformedCoordinates={setShowTransformedCoordinates}
-      showLabels={showLabels}
-      showTransformToggle={showTransformToggle}
-      transformedOverlayActive={transformedOverlayActive}
-      transformedOverlayConfig={transformedOverlayConfig}
-      unitScale={unitScale}
-      units={units}
-      clearDraftBlockedPolygon={clearDraftBlockedPolygon}
-      commitDraftBlockedPolygon={commitDraftBlockedPolygon}
-      draftBlockedPolygonLength={draftBlockedPolygonLength}
-      removePlanningPolygon={removePlanningPolygon}
-      removeSelectedPlanningPolygons={removeSelectedPlanningPolygons}
-    />    <div
-      ref={containerRef}
-      data-map-interaction-phase={interactionPhase}
-      data-map-renderer={effectiveMode === '2d' ? renderer2d : 'svg-3d'}
-      data-map-view-zoom={view2d.zoom.toFixed(6)}
-      data-map-view-pan-x={view2d.panX.toFixed(6)}
-      data-map-view-pan-y={view2d.panY.toFixed(6)}
-      data-map-derived-view-zoom={derivedView2d.zoom.toFixed(6)}
-      data-map-derived-view-pan-x={derivedView2d.panX.toFixed(6)}
-      data-map-derived-view-pan-y={derivedView2d.panY.toFixed(6)}
-      className="bg-slate-900 border-y border-slate-800 rounded overflow-hidden flex-1 min-h-0 relative"
-    >
-      <div
-        ref={renderSurfaceRef}
-        className="absolute"
-        style={{
-          width: `${renderSurfaceLayout.width}px`,
-          height: `${renderSurfaceLayout.height}px`,
-          left: `${renderSurfaceLayout.left}px`,
-          top: `${renderSurfaceLayout.top}px`,
-        }}
+}: MapViewContentProps) => {
+  // Keep shapeRendering coarse (`optimizeSpeed`) through the whole gesture AND
+  // the first committed `idle` render that swaps tile level / geometry, then
+  // restore `geometricPrecision` on a later paint once geometry is synced.
+  // Flipping on the settle commit frame itself causes a visible last-frame pop.
+  const [precisionRestored, setPrecisionRestored] = React.useState(interactionPhase === 'idle');
+  const interactionPhaseRef = React.useRef(interactionPhase);
+  React.useEffect(() => {
+    interactionPhaseRef.current = interactionPhase;
+    if (interactionPhase !== 'idle') {
+      setPrecisionRestored(false);
+      return;
+    }
+    if (precisionRestored) return;
+    if (typeof globalThis.requestAnimationFrame !== 'function') {
+      setPrecisionRestored(true);
+      return;
+    }
+    const frame = globalThis.requestAnimationFrame(() => {
+      if (interactionPhaseRef.current === 'idle') setPrecisionRestored(true);
+    });
+    return () => globalThis.cancelAnimationFrame(frame);
+  }, [interactionPhase, precisionRestored]);
+
+  return (
+    <div className="h-full p-4 flex flex-col min-h-0">
+      <MapViewControls
+        effectiveMode={effectiveMode}
+        fallbackReason={fallbackReason}
+        filteredVisiblePointCount={filteredVisiblePointCount}
+        focusSelection={focusSelection}
+        hideMinorGeometry={hideMinorGeometry}
+        inputPointsLoaded={inputPointsLoaded}
+        isPreanalysis={isPreanalysis}
+        mapDensitySummary={mapDensitySummary}
+        mode={mode}
+        onLoadInputPoints={onLoadInputPoints}
+        onPlanningMapChange={onPlanningMapChange}
+        planningMap={planningMap}
+        selectedPlanningPolygonIds={selectedPlanningPolygonIds}
+        setFocusSelection={setFocusSelection}
+        setHideMinorGeometry={setHideMinorGeometry}
+        setShowLabels={setShowLabels}
+        setShowTransformedCoordinates={setShowTransformedCoordinates}
+        showLabels={showLabels}
+        showTransformToggle={showTransformToggle}
+        transformedOverlayActive={transformedOverlayActive}
+        transformedOverlayConfig={transformedOverlayConfig}
+        unitScale={unitScale}
+        units={units}
+        clearDraftBlockedPolygon={clearDraftBlockedPolygon}
+        commitDraftBlockedPolygon={commitDraftBlockedPolygon}
+        draftBlockedPolygonLength={draftBlockedPolygonLength}
+        removePlanningPolygon={removePlanningPolygon}
+        removeSelectedPlanningPolygons={removeSelectedPlanningPolygons}
+      />    <div
+        ref={containerRef}
+        data-map-interaction-phase={interactionPhase}
+        data-map-renderer={effectiveMode === '2d' ? renderer2d : 'svg-3d'}
+        data-map-view-zoom={view2d.zoom.toFixed(6)}
+        data-map-view-pan-x={view2d.panX.toFixed(6)}
+        data-map-view-pan-y={view2d.panY.toFixed(6)}
+        data-map-derived-view-zoom={derivedView2d.zoom.toFixed(6)}
+        data-map-derived-view-pan-x={derivedView2d.panX.toFixed(6)}
+        data-map-derived-view-pan-y={derivedView2d.panY.toFixed(6)}
+        className="bg-slate-900 border-y border-slate-800 rounded overflow-hidden flex-1 min-h-0 relative"
       >
-        {effectiveMode === '2d' && (
-          <>
-            {renderer2d === 'canvas' && (
-              <canvas
-                ref={basemapCanvasRef}
-                data-testid="map-base-canvas"
-                className="absolute inset-0 z-0 h-full w-full pointer-events-none"
-              />
-            )}
-            <canvas
-              ref={planningCanvasRef}
-              data-testid="map-planning-canvas"
-              className="absolute inset-0 z-10 h-full w-full pointer-events-none"
-            />
-            {webglEligible && (
-              <canvas
-                ref={webglCanvasRef}
-                data-testid="map-webgl-canvas"
-                className={`absolute inset-0 z-20 h-full w-full pointer-events-none ${
-                  renderer2d === 'webgl' ? '' : 'hidden'
-                }`}
-              />
-            )}
-            {renderer2d === 'canvas' && (
-              <canvas
-                ref={geometryCanvasRef}
-                data-testid="map-geometry-canvas"
-                className="absolute inset-0 z-20 h-full w-full pointer-events-none"
-              />
-            )}
-          </>
-        )}
-        <svg
-          ref={svgRef}
-          viewBox={`0 0 ${VIEW_W} ${VIEW_H}`}
-          preserveAspectRatio="xMidYMid slice"
-          shapeRendering={interactionPhase === 'interacting' ? 'optimizeSpeed' : 'geometricPrecision'}
-          className={`absolute inset-0 z-30 h-full w-full select-none ${
-            toolPickTarget != null
-              ? 'cursor-crosshair'
-              : isDragging
-                ? 'cursor-grabbing'
-                : effectiveMode === '3d'
-                  ? 'cursor-grab'
-                  : 'cursor-default'
-          }`}
-          onWheel={handleWheel}
-          onClick={handleSvgClick}
-          onMouseDown={handleMouseDown}
-          onMouseUp={handleMouseUp}
-          onContextMenu={openContextMenu}
+        <div
+          ref={renderSurfaceRef}
+          className="absolute"
+          style={{
+            width: `${renderSurfaceLayout.width}px`,
+            height: `${renderSurfaceLayout.height}px`,
+            left: `${renderSurfaceLayout.left}px`,
+            top: `${renderSurfaceLayout.top}px`,
+          }}
         >
-          {effectiveMode === '2d' && <MapViewSvg2d {...svg2dProps} />}
-          {effectiveMode === '3d' && scene3dProps && (
-            <MapViewScene3d {...scene3dProps} maxEllipsoidSamples={MAX_ELLIPSOID_SAMPLES} />
-          )}
-          {canShowInputPointHint && (
+          {effectiveMode === '2d' && (
             <>
-              <text x={VIEW_W / 2} y={VIEW_H / 2 - 18} textAnchor="middle" fill="#94a3b8" fontSize={18}>
-                No stations to display
-              </text>
-              {onLoadInputPoints && (
-                <text x={VIEW_W / 2} y={VIEW_H / 2 + 12} textAnchor="middle" fill="#f9a8d4" fontSize={13}>
-                  Use "Load points" to populate the planning map before the first run.
-                </text>
+              {renderer2d === 'canvas' && (
+                <canvas
+                  ref={basemapCanvasRef}
+                  data-testid="map-base-canvas"
+                  className="absolute inset-0 z-0 h-full w-full pointer-events-none"
+                />
+              )}
+              <canvas
+                ref={planningCanvasRef}
+                data-testid="map-planning-canvas"
+                className="absolute inset-0 z-10 h-full w-full pointer-events-none"
+              />
+              {webglEligible && (
+                <canvas
+                  ref={webglCanvasRef}
+                  data-testid="map-webgl-canvas"
+                  className={`absolute inset-0 z-20 h-full w-full pointer-events-none ${
+                    renderer2d === 'webgl' ? '' : 'hidden'
+                  }`}
+                />
+              )}
+              {renderer2d === 'canvas' && (
+                <canvas
+                  ref={geometryCanvasRef}
+                  data-testid="map-geometry-canvas"
+                  className="absolute inset-0 z-20 h-full w-full pointer-events-none"
+                />
               )}
             </>
           )}
-        </svg>
+          <svg
+            ref={svgRef}
+            viewBox={`0 0 ${VIEW_W} ${VIEW_H}`}
+            preserveAspectRatio="xMidYMid slice"
+            shapeRendering={
+              interactionPhase === 'idle' && precisionRestored
+                ? 'geometricPrecision'
+                : 'optimizeSpeed'
+            }
+            className={`absolute inset-0 z-30 h-full w-full select-none ${
+              toolPickTarget != null
+                ? 'cursor-crosshair'
+                : isDragging
+                  ? 'cursor-grabbing'
+                  : effectiveMode === '3d'
+                    ? 'cursor-grab'
+                    : 'cursor-default'
+            }`}
+            onWheel={handleWheel}
+            onClick={handleSvgClick}
+            onMouseDown={handleMouseDown}
+            onMouseUp={handleMouseUp}
+            onContextMenu={openContextMenu}
+          >
+            {effectiveMode === '2d' && <MapViewSvg2d {...svg2dProps} />}
+            {effectiveMode === '3d' && scene3dProps && (
+              <MapViewScene3d {...scene3dProps} maxEllipsoidSamples={MAX_ELLIPSOID_SAMPLES} />
+            )}
+            {canShowInputPointHint && (
+              <>
+                <text x={VIEW_W / 2} y={VIEW_H / 2 - 18} textAnchor="middle" fill="#94a3b8" fontSize={18}>
+                  No stations to display
+                </text>
+                {onLoadInputPoints && (
+                  <text x={VIEW_W / 2} y={VIEW_H / 2 + 12} textAnchor="middle" fill="#f9a8d4" fontSize={13}>
+                    Use "Load points" to populate the planning map before the first run.
+                  </text>
+                )}
+              </>
+            )}
+          </svg>
+        </div>
+        {effectiveMode === '3d' && <MapViewCubeControls onApplyCubeView={applyCubeView} />}
+        {contextMenuOpen && (
+          <div ref={contextMenuRef} className="pointer-events-none absolute inset-0 z-[70]">
+            <MapViewContextMenu {...contextMenuProps} />
+          </div>
+        )}
+        {activeTool !== 'none' && toolOverlayProps && <MapViewToolOverlay {...toolOverlayProps} />}
+        {effectiveMode === '2d' && planningMap.basemapMode === 'osm' && (
+          <a
+            href="https://www.openstreetmap.org/copyright"
+            target="_blank"
+            rel="noreferrer"
+            className="pointer-events-auto absolute bottom-2 right-2 rounded bg-slate-950/75 px-2 py-1 text-[10px] text-slate-300 hover:text-white"
+          >
+            Basemap © OpenStreetMap contributors
+          </a>
+        )}
+        {effectiveMode === '2d' && (
+          <div
+            data-testid="map-renderer-badge"
+            className="pointer-events-none absolute bottom-2 left-2 rounded bg-slate-950/75 px-2 py-1 text-[10px] text-slate-300"
+          >
+            {renderer2d === 'webgl' ? 'Renderer: WebGL2' : 'Renderer: Canvas fallback'}
+            {mapDensitySummary.dense ? ' | Dense overlay' : ' | Normal overlay'}
+          </div>
+        )}
       </div>
-      {effectiveMode === '3d' && <MapViewCubeControls onApplyCubeView={applyCubeView} />}
-      {contextMenuOpen && (
-        <div ref={contextMenuRef} className="pointer-events-none absolute inset-0 z-[70]">
-          <MapViewContextMenu {...contextMenuProps} />
-        </div>
-      )}
-      {activeTool !== 'none' && toolOverlayProps && <MapViewToolOverlay {...toolOverlayProps} />}
-      {effectiveMode === '2d' && planningMap.basemapMode === 'osm' && (
-        <a
-          href="https://www.openstreetmap.org/copyright"
-          target="_blank"
-          rel="noreferrer"
-          className="pointer-events-auto absolute bottom-2 right-2 rounded bg-slate-950/75 px-2 py-1 text-[10px] text-slate-300 hover:text-white"
-        >
-          Basemap © OpenStreetMap contributors
-        </a>
-      )}
-      {effectiveMode === '2d' && (
-        <div
-          data-testid="map-renderer-badge"
-          className="pointer-events-none absolute bottom-2 left-2 rounded bg-slate-950/75 px-2 py-1 text-[10px] text-slate-300"
-        >
-          {renderer2d === 'webgl' ? 'Renderer: WebGL2' : 'Renderer: Canvas fallback'}
-          {mapDensitySummary.dense ? ' | Dense overlay' : ' | Normal overlay'}
-        </div>
-      )}
     </div>
-  </div>
-);
+  );
+};
 
 const MapViewCubeControls = ({
   onApplyCubeView,

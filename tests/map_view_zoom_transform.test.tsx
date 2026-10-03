@@ -63,8 +63,11 @@ const createMock2dContext = () =>
     fillStyle: '#000',
   }) as unknown as CanvasRenderingContext2D;
 
-describe('MapView zoom gesture backing store', () => {
-  it('keeps the full-DPR backing store constant across a zoom gesture for a fixed viewport and DPR', async () => {
+const shapeRenderingOf = (svg: SVGSVGElement) =>
+  svg.getAttribute('shape-rendering') ?? svg.getAttribute('shapeRendering');
+
+describe('MapView zoom gesture transform snapshot', () => {
+  it('applies the same per-frame view transform to the SVG group and the canvas layers', async () => {
     vi.useFakeTimers();
     const rafQueue: RafCallback[] = [];
     vi.stubGlobal('requestAnimationFrame', (callback: RafCallback) => {
@@ -89,13 +92,17 @@ describe('MapView zoom gesture backing store', () => {
     });
 
     const svg = container.querySelector('svg') as SVGSVGElement | null;
-    const canvas = container.querySelector('[data-testid="map-base-canvas"]') as HTMLCanvasElement | null;
-    expect(svg).toBeTruthy();
-    expect(canvas).toBeTruthy();
-    if (!svg || !canvas) throw new Error('Expected map canvas and svg');
+    const phaseNode = container.querySelector('[data-map-interaction-phase]') as HTMLElement | null;
+    const basemapCanvas = container.querySelector(
+      '[data-testid="map-base-canvas"]',
+    ) as HTMLCanvasElement | null;
+    const geometryCanvas = container.querySelector(
+      '[data-testid="map-geometry-canvas"]',
+    ) as HTMLCanvasElement | null;
+    if (!svg || !phaseNode || !basemapCanvas || !geometryCanvas) {
+      throw new Error('Expected 2D map overlay stack');
+    }
     setSvgRect(svg);
-    expect(canvas.width).toBe(2000);
-    expect(canvas.height).toBe(1400);
 
     const runFrame = async () => {
       const frame = rafQueue.shift();
@@ -107,10 +114,36 @@ describe('MapView zoom gesture backing store', () => {
       return true;
     };
 
+    const assertSharedSnapshot = () => {
+      const containerZoom = Number(phaseNode.dataset.mapViewZoom ?? '1');
+      const containerPanX = Number(phaseNode.dataset.mapViewPanX ?? '0');
+      const containerPanY = Number(phaseNode.dataset.mapViewPanY ?? '0');
+      const groups = Array.from(
+        svg.querySelectorAll('[data-map-view-transform]'),
+      ) as SVGGElement[];
+      expect(groups.length).toBeGreaterThan(0);
+      const transforms = [
+        ...groups.map((group) => group.getAttribute('data-map-view-transform')),
+        basemapCanvas.dataset.mapViewTransform,
+        geometryCanvas.dataset.mapViewTransform,
+      ];
+      // Every layer records the exact same per-frame transform snapshot.
+      expect(new Set(transforms).size).toBe(1);
+      const transform = transforms[0] ?? '';
+      const match = transform.match(
+        /^translate\(([-0-9.eE]+) ([-0-9.eE]+)\) scale\(([-0-9.eE]+)\)$/,
+      );
+      expect(match).not.toBeNull();
+      if (!match) return;
+      expect(Number(match[3])).toBeCloseTo(containerZoom, 5);
+      expect(Number(match[1])).toBeCloseTo(containerPanX, 4);
+      expect(Number(match[2])).toBeCloseTo(containerPanY, 4);
+    };
+
     await act(async () => {
       svg.dispatchEvent(
         new WheelEvent('wheel', {
-          deltaY: -90,
+          deltaY: -80,
           clientX: 500,
           clientY: 350,
           bubbles: true,
@@ -120,12 +153,14 @@ describe('MapView zoom gesture backing store', () => {
       await Promise.resolve();
     });
 
-    // Drive a burst of zoom frames while the gesture is in flight.
-    for (let index = 0; index < 6; index += 1) {
+    expect(phaseNode.dataset.mapInteractionPhase).toBe('interacting');
+    expect(shapeRenderingOf(svg)).toBe('optimizeSpeed');
+
+    for (let index = 0; index < 5; index += 1) {
       await act(async () => {
         svg.dispatchEvent(
           new WheelEvent('wheel', {
-            deltaY: -90,
+            deltaY: -80,
             clientX: 500,
             clientY: 350,
             bubbles: true,
@@ -134,18 +169,23 @@ describe('MapView zoom gesture backing store', () => {
         );
         await Promise.resolve();
       });
-      while (rafQueue.length > 0 && Number(container.dataset.mapViewZoom ?? '1') <= 1) {
-        if (!(await runFrame())) break;
+      while (rafQueue.length > 0) {
+        await runFrame();
+        if (Number(phaseNode.dataset.mapViewZoom ?? '1') > 1) break;
       }
-      await runFrame();
-      expect(canvas.width).toBe(2000);
-      expect(canvas.height).toBe(1400);
+      expect(phaseNode.dataset.mapInteractionPhase).toBe('interacting');
+      expect(shapeRenderingOf(svg)).toBe('optimizeSpeed');
+      assertSharedSnapshot();
     }
 
     await act(async () => {
       vi.advanceTimersByTime(90);
       await Promise.resolve();
     });
+    expect(phaseNode.dataset.mapInteractionPhase).toBe('settling');
+    // shapeRendering must not flip back while the gesture is still settling.
+    expect(shapeRenderingOf(svg)).toBe('optimizeSpeed');
+
     const settleFrame = rafQueue.shift();
     if (settleFrame) {
       await act(async () => {
@@ -153,9 +193,19 @@ describe('MapView zoom gesture backing store', () => {
         await Promise.resolve();
       });
     }
-    await runFrame();
-    expect(canvas.width).toBe(2000);
-    expect(canvas.height).toBe(1400);
+    // The settling->idle commit frame (tile level / geometry swap) must NOT
+    // flip shapeRendering on the same frame — that is the visible last-frame pop.
+    expect(phaseNode.dataset.mapInteractionPhase).toBe('idle');
+    expect(shapeRenderingOf(svg)).toBe('optimizeSpeed');
+
+    // Precision is restored on a subsequent paint once geometry is synced.
+    let precisionRestored = false;
+    for (let index = 0; index < 8 && !precisionRestored; index += 1) {
+      if (!(await runFrame())) break;
+      precisionRestored = shapeRenderingOf(svg) === 'geometricPrecision';
+    }
+    expect(precisionRestored).toBe(true);
+    assertSharedSnapshot();
 
     await act(async () => {
       root.unmount();

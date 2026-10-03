@@ -29,6 +29,7 @@ export interface BasemapTileRenderSurface2d extends BasemapTileDescriptor2d {
   sourceWidth: number;
   sourceHeight: number;
   fallbackZoomDelta: number;
+  fallbackPreferred?: boolean;
 }
 
 interface TileStoreEntry {
@@ -44,6 +45,11 @@ interface TileStoreEntry {
 }
 
 const DEFAULT_MAX_TILE_ENTRIES = 384;
+
+// E3: a parent tile at most one descriptor level below the requested tile is
+// the preferred fallback while a transform is in flight; anything deeper is a
+// stale stretch that is only kept for offline/cache coverage.
+export const MAX_PREFERRED_FALLBACK_ZOOM_DELTA = 1;
 
 const buildParentKey = (zoom: number, tileX: number, tileY: number): string =>
   `${zoom}-${tileX}-${tileY}`;
@@ -178,10 +184,13 @@ export class MapViewTileStore {
 
   resolveRenderTiles(
     descriptors: BasemapTileDescriptor2d[],
+    options?: { preferredFallbackZoomDelta?: number },
   ): BasemapTileRenderSurface2d[] {
+    const preferredFallbackZoomDelta =
+      options?.preferredFallbackZoomDelta ?? MAX_PREFERRED_FALLBACK_ZOOM_DELTA;
     return measureMapViewPerf('tiles:resolve', () => {
       this.tick += 1;
-      const signature = buildDescriptorSignature(descriptors);
+      const signature = `${preferredFallbackZoomDelta}|${buildDescriptorSignature(descriptors)}`;
       const cached = this.resolvedCache.get(signature);
       if (cached && cached.version === this.version) {
         noteMapViewPerfCounter('tiles:resolve-cache-hits');
@@ -192,7 +201,7 @@ export class MapViewTileStore {
       noteMapViewPerfMetadata('tiles:last-resolve-cache', 'miss');
       let fallbackCount = 0;
       const resolved = descriptors
-        .map((descriptor) => {
+        .map((descriptor): BasemapTileRenderSurface2d | null => {
           const exact = this.entries.get(descriptor.key);
           if (exact?.image) {
             exact.status = 'visible';
@@ -205,11 +214,18 @@ export class MapViewTileStore {
               sourceWidth: exact.image.naturalWidth || exact.image.width || 256,
               sourceHeight: exact.image.naturalHeight || exact.image.height || 256,
               fallbackZoomDelta: 0,
+              fallbackPreferred: true,
             };
           }
           const fallback = this.resolveParentFallback(descriptor);
           if (fallback) fallbackCount += 1;
-          return fallback;
+          return fallback == null
+            ? null
+            : {
+                ...fallback,
+                fallbackPreferred:
+                  fallback.fallbackZoomDelta <= Math.max(0, preferredFallbackZoomDelta),
+              };
         })
         .filter((tile): tile is BasemapTileRenderSurface2d => tile != null);
       noteMapViewPerfCounter('tiles:resolved', resolved.length);

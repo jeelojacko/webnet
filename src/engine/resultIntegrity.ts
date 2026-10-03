@@ -22,7 +22,9 @@
  * Run-mode matrix: only `mode === 'adjustment'` with `success && converged`
  * is deliverable/drafting eligible. Data-check succeeds without converging
  * by construction, and preanalysis/blunder-detect runs never qualify — they
- * stay available for diagnostic review only.
+ * stay available for diagnostic review only. Those completed-but-non-
+ * deliverable runs get their own `FRESH_NOT_DELIVERABLE_MODE` state so a
+ * successful planning/diagnostic run is never presented as a failed solve.
  */
 import type { AdjustmentResult } from '../typesAdjustmentResult';
 import type { ParseSettings, RunSettingsSnapshot } from '../appStateTypes';
@@ -32,6 +34,7 @@ import { buildValueFingerprint } from './qaWorkflowSnapshots';
 export type ResultIntegrityState =
   | 'NO_RESULT'
   | 'FRESH_SUCCESS'
+  | 'FRESH_NOT_DELIVERABLE_MODE'
   | 'FRESH_FAILED'
   | 'STALE_SUCCESS'
   | 'STALE_FAILED';
@@ -85,6 +88,8 @@ export const STALE_RESULT_STATUS_LINE =
   'RESULT STATUS: STALE — NOT CURRENT PROJECT STATE';
 export const FAILED_RESULT_STATUS_LINE =
   'RESULT STATUS: NOT A SUCCESSFUL ADJUSTMENT — DIAGNOSTIC USE ONLY';
+export const NON_DELIVERABLE_RESULT_STATUS_LINE =
+  'RESULT STATUS: NOT A DELIVERABLE ADJUSTMENT — DIAGNOSTIC USE ONLY';
 
 /** Only this run mode ever qualifies for deliverable/downstream use. */
 export const DELIVERABLE_RUN_MODE = 'adjustment';
@@ -220,22 +225,37 @@ export const assessResultIntegrity = (params: {
   const deliverableMode =
     isDeliverableRunMode(applied.runMode) && result.preanalysisMode !== true;
   const ok = result.success && result.converged && deliverableMode;
+  // A completed run in a non-deliverable mode (preanalysis, data-check,
+  // blunder-detect). Kept separate from FRESH_FAILED so a successful planning
+  // run is never surfaced as a failed solve; exports/drafting stay blocked
+  // because deliverability still requires FRESH_SUCCESS.
+  const completedNonDeliverable = result.success && !deliverableMode;
+  // A stale result should reflect whether the run itself succeeded for its
+  // mode, not just whether it was deliverable. A successfully completed
+  // preanalysis/data-check/blunder run is STALE_SUCCESS (still blocked from
+  // every export/downstream gate); only a genuinely failed run is STALE_FAILED.
+  const runSucceeded = ok || completedNonDeliverable;
   if (fresh && ok) return { state: 'FRESH_SUCCESS', reason: null, changedDeps, blockMessage: null };
+  if (fresh && completedNonDeliverable) {
+    return {
+      state: 'FRESH_NOT_DELIVERABLE_MODE',
+      reason: 'RUN_NOT_DELIVERABLE_MODE',
+      changedDeps,
+      blockMessage: `Run mode '${applied.runMode}' is never deliverable: only a converged mode='${DELIVERABLE_RUN_MODE}' run feeds exports or drafting. Re-run as a production adjustment.`,
+    };
+  }
   if (fresh) {
-    const reason: ResultIntegrityReason = deliverableMode ? 'RUN_FAILED' : 'RUN_NOT_DELIVERABLE_MODE';
     return {
       state: 'FRESH_FAILED',
-      reason,
+      reason: 'RUN_FAILED',
       changedDeps,
       blockMessage:
-        reason === 'RUN_NOT_DELIVERABLE_MODE'
-          ? `Run mode '${applied.runMode}' is never deliverable: only a converged mode='${DELIVERABLE_RUN_MODE}' run feeds exports or drafting. Re-run as a production adjustment.`
-          : 'The latest run did not converge successfully. Exports and drafting feeds are blocked until a successful run completes.',
+        'The latest run did not converge successfully. Exports and drafting feeds are blocked until a successful run completes.',
     };
   }
   if (!applied.inputFingerprint || !applied.mathFingerprint || !applied.exclusionFingerprint) {
     return {
-      state: ok ? 'STALE_SUCCESS' : 'STALE_FAILED',
+      state: runSucceeded ? 'STALE_SUCCESS' : 'STALE_FAILED',
       reason: 'DEPENDENCY_MISMATCH',
       changedDeps,
       blockMessage: 'This result predates dependency tracking and cannot be proven current. Re-run the adjustment to refresh it.',
@@ -243,7 +263,7 @@ export const assessResultIntegrity = (params: {
   }
   const what = changedDeps.join(', ');
   return {
-    state: ok ? 'STALE_SUCCESS' : 'STALE_FAILED',
+    state: runSucceeded ? 'STALE_SUCCESS' : 'STALE_FAILED',
     reason: 'RESULT_STALE',
     changedDeps,
     blockMessage: `Project state changed since this run (${what}). Re-run the adjustment to refresh it — stale results cannot feed exports or drafting.`,
@@ -306,6 +326,7 @@ export const statusLineForAssessment = (
     return STALE_RESULT_STATUS_LINE;
   }
   if (assessment.state === 'FRESH_FAILED') return FAILED_RESULT_STATUS_LINE;
+  if (assessment.state === 'FRESH_NOT_DELIVERABLE_MODE') return NON_DELIVERABLE_RESULT_STATUS_LINE;
   return null;
 };
 

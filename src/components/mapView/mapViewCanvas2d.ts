@@ -95,7 +95,7 @@ export const renderGeometryCanvas2d = ({
   stationFill: _stationFill,
 }: RenderGeometryCanvas2dOptions) => {
   return measureMapViewPerf('canvas:geometry', () => {
-    const { context } = prepareCanvas({ canvas, interactionPhase, viewWidth, viewHeight });
+    const { context } = prepareCanvas({ canvas, interactionPhase, viewWidth, viewHeight, view2d });
     if (!context) return false;
     context.save();
     context.translate(view2d.panX, view2d.panY);
@@ -178,7 +178,7 @@ export const renderPlanningOverlayCanvas2d = ({
   selectedPlanningPolygonIds = [],
 }: RenderPlanningOverlayCanvas2dOptions) => {
   return measureMapViewPerf('canvas:planning', () => {
-    const { context } = prepareCanvas({ canvas, interactionPhase, viewWidth, viewHeight });
+    const { context } = prepareCanvas({ canvas, interactionPhase, viewWidth, viewHeight, view2d });
     if (!context) return false;
     const selectedIds = new Set(selectedPlanningPolygonIds);
     context.save();

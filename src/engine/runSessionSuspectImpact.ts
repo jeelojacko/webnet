@@ -63,6 +63,6 @@ export const buildSuspectImpactDiagnostics = (
       solveCore(altExclusions, undefined, overrideValues, approvedClusterMerges, {
         stageId: 'suspect-impact',
         stageLabel: `Impact ${meta.index + 1}/${meta.total}`,
-        solveTotalHint: 1 + meta.total,
+        solveTotalHint: meta.total,
       }),
   });

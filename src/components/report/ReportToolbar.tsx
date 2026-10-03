@@ -27,24 +27,30 @@ const ReportToolbar: React.FC<ReportToolbarProps> = ({
   unitScale,
   units,
 }) => (
-  <div className="flex items-center justify-between mb-4 text-xs text-slate-400" style={{ order: -220 }}>
-    <div className="space-x-3">
+  <div
+    data-testid="report-toolbar"
+    className="flex flex-wrap items-center gap-x-2 gap-y-2 mb-4 text-xs text-slate-400"
+    style={{ order: -220 }}
+  >
+    <div className="flex flex-wrap items-center gap-x-2 gap-y-2 min-w-0">
       <button
         onClick={onReRun}
+        title="Re-run the adjustment with the current exclusions"
         className="px-3 py-1 bg-green-700 hover:bg-green-600 text-slate-100 rounded"
       >
         Re-run with exclusions
       </button>
       <button
         onClick={onToggleCollapseAll}
+        title="Expand or collapse every detail section"
         className="px-3 py-1 bg-slate-700 rounded hover:bg-slate-600 text-slate-100"
       >
         {allDetailSectionsCollapsed ? 'Expand detail sections' : 'Collapse detail sections'}
       </button>
-      <button onClick={onClearExclusions} className="px-3 py-1 bg-slate-700 rounded">
+      <button onClick={onClearExclusions} title="Clear all observation exclusions" className="px-3 py-1 bg-slate-700 rounded">
         Reset exclusions
       </button>
-      <button onClick={onResetOverrides} className="px-3 py-1 bg-slate-700 rounded">
+      <button onClick={onResetOverrides} title="Reset all observation overrides" className="px-3 py-1 bg-slate-700 rounded">
         Reset overrides
       </button>
       {showClusterMergeRevert ? (
@@ -62,7 +68,7 @@ const ReportToolbar: React.FC<ReportToolbarProps> = ({
         </button>
       ) : null}
     </div>
-    <div className="space-x-2 text-slate-500">
+    <div className="ml-auto text-slate-500">
       <span>
         Unit scale: {unitScale.toFixed(4)} ({units})
       </span>

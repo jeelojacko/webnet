@@ -18,7 +18,7 @@ export const renderBasemapCanvas2d = ({
   basemapTiles2d = [],
 }: RenderBasemapCanvas2dOptions) => {
   return measureMapViewPerf('canvas:basemap', () => {
-    const { context } = prepareCanvas({ canvas, interactionPhase, viewWidth, viewHeight });
+    const { context } = prepareCanvas({ canvas, interactionPhase, viewWidth, viewHeight, view2d });
     if (!context) return false;
 
     const seamBleedWorld = WARP_SEAM_BLEED_SCREEN_PX / Math.max(0.001, view2d.zoom);

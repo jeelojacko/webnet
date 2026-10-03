@@ -75,6 +75,133 @@ export const resolveInteractiveBasemapTiles = <Tile>(
   return liveTiles;
 };
 
+/**
+ * E3(d): while a transform is in flight, a descriptor that only resolves to a
+ * deep cached parent would stretch one text tile over several levels. Reuse a
+ * previously rendered surface that spatially covers just those deep-fallback
+ * tiles, so freshly resolved exact/current-level tiles are never discarded
+ * along with them. Coverage is ancestry-based (tile keys embed the zoom, so
+ * exact-key matching misses cross-zoom cases): a previous surface at zoom zp
+ * covers requested (z, x, y) iff zp <= z, floor(x / 2^(z-zp)) == prev.tileX
+ * (modulo 2^zp for wrapped X) and floor(y / 2^(z-zp)) == prev.tileY. The
+ * previous surface is reused as-is; the per-frame map transform
+ * scales/positions it naturally. One previous parent covering several current
+ * children is emitted once (deduped by previous key). Tiles without a
+ * spatial previous surface keep their resolved deep fallback (offline
+ * coverage) instead of blanking.
+ *
+ * Paint-order contract: canvas and WebGL renderers both paint tiles in array
+ * order, so later entries cover earlier ones. Reused previous parents (and
+ * unmatched deep tiles, which are equally stale) are therefore emitted FIRST
+ * as the under-layer, with exact/preferred tiles after them — otherwise a
+ * stale parent painted after a fresh exact child would cover it. Within the
+ * under-layer, reused parents are sorted by key (deterministic) and unmatched
+ * deep tiles keep their original relative order; exact tiles keep theirs.
+ */
+interface DeepFallbackTile {
+  key: string;
+  fallbackPreferred?: boolean;
+  fallbackZoomDelta?: number;
+  zoom?: number;
+  tileX?: number;
+  tileY?: number;
+}
+
+const parseTileKeyCoords = (key: string): { zoom: number; tileX: number; tileY: number } | null => {
+  const [zoom, tileX, tileY] = key.split('-').map(Number);
+  if (
+    !Number.isInteger(zoom) ||
+    !Number.isInteger(tileX) ||
+    !Number.isInteger(tileY)
+  ) {
+    return null;
+  }
+  return { zoom, tileX, tileY };
+};
+
+const resolveTileCoords = (
+  tile: DeepFallbackTile,
+): { zoom: number; tileX: number; tileY: number } | null => {
+  if (Number.isInteger(tile.zoom) && Number.isInteger(tile.tileX) && Number.isInteger(tile.tileY)) {
+    return { zoom: tile.zoom as number, tileX: tile.tileX as number, tileY: tile.tileY as number };
+  }
+  return parseTileKeyCoords(tile.key);
+};
+
+const isDeepFallbackTile = (tile: DeepFallbackTile): boolean => {
+  if (tile.fallbackPreferred !== false) return false;
+  return (
+    typeof tile.fallbackZoomDelta !== 'number' || tile.fallbackZoomDelta > 1
+  );
+};
+
+const findCoveringPreviousTile = <Tile extends DeepFallbackTile>(
+  requested: DeepFallbackTile,
+  previousTiles: Tile[],
+): Tile | null => {
+  const coords = resolveTileCoords(requested);
+  if (!coords) {
+    return previousTiles.find((previous) => previous.key === requested.key) ?? null;
+  }
+  const count = 2 ** coords.zoom;
+  const wrappedX = ((coords.tileX % count) + count) % count;
+  let best: Tile | null = null;
+  let bestZoom = -1;
+  for (const previous of previousTiles) {
+    const prevCoords = resolveTileCoords(previous);
+    if (!prevCoords) {
+      if (previous.key === requested.key && bestZoom < 0) {
+        best = previous;
+        bestZoom = Number.POSITIVE_INFINITY;
+      }
+      continue;
+    }
+    if (prevCoords.zoom > coords.zoom || prevCoords.zoom < bestZoom) continue;
+    const scale = 2 ** (coords.zoom - prevCoords.zoom);
+    const prevCount = 2 ** prevCoords.zoom;
+    const prevWrappedX = ((prevCoords.tileX % prevCount) + prevCount) % prevCount;
+    if (Math.floor(wrappedX / scale) % prevCount !== prevWrappedX) continue;
+    if (Math.floor(coords.tileY / scale) !== prevCoords.tileY) continue;
+    best = previous;
+    bestZoom = prevCoords.zoom;
+  }
+  return best;
+};
+
+export const reusePreviousTilesForDeepFallback = <Tile extends DeepFallbackTile>(
+  resolvedTiles: Tile[],
+  previousTiles: Tile[],
+): Tile[] => {
+  if (previousTiles.length === 0) return resolvedTiles;
+  const hasReusableFallback = resolvedTiles.some(
+    (tile) =>
+      isDeepFallbackTile(tile) && findCoveringPreviousTile(tile, previousTiles) != null,
+  );
+  if (!hasReusableFallback) return resolvedTiles;
+  const reusedByKey = new Map<string, Tile>();
+  const unmatchedDeep: Tile[] = [];
+  const exact: Tile[] = [];
+  for (const tile of resolvedTiles) {
+    if (!isDeepFallbackTile(tile)) {
+      exact.push(tile);
+      continue;
+    }
+    const covering = findCoveringPreviousTile(tile, previousTiles);
+    if (!covering) {
+      unmatchedDeep.push(tile);
+      continue;
+    }
+    if (!reusedByKey.has(covering.key)) reusedByKey.set(covering.key, covering);
+  }
+  if (reusedByKey.size === 0) return resolvedTiles;
+  // Stale under-layer first (parents sorted by key, then unmatched deep in
+  // original order), exact tiles last so they paint on top.
+  const under = [...reusedByKey.values()].sort((left, right) =>
+    left.key < right.key ? -1 : left.key > right.key ? 1 : 0,
+  );
+  return [...under, ...unmatchedDeep, ...exact];
+};
+
 export const buildRequestedBasemapTiles = <Tile extends { key: string }>(
   renderTiles: Tile[],
   prefetchedTiles: Tile[],

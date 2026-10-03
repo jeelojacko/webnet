@@ -118,7 +118,7 @@ describe('renderMapCanvas2d', () => {
     expect(context.fill).toHaveBeenCalled();
   });
 
-  it('drops to single DPR while interacting and skips ellipses in dense mode', () => {
+  it('keeps the full-DPR backing store while interacting and skips ellipses in dense mode', () => {
     Object.defineProperty(window, 'devicePixelRatio', {
       configurable: true,
       value: 2,
@@ -173,8 +173,8 @@ describe('renderMapCanvas2d', () => {
       stationFill: () => '#f97316',
     });
 
-    expect(canvas.width).toBe(1000);
-    expect(canvas.height).toBe(700);
+    expect(canvas.width).toBe(2000);
+    expect(canvas.height).toBe(1400);
     expect(context.drawImage).not.toHaveBeenCalled();
     expect(context.ellipse).not.toHaveBeenCalled();
     expect(context.arc).toHaveBeenCalled();

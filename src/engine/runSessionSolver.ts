@@ -69,6 +69,10 @@ export const createSessionSolveRunner = ({
 }: SessionSolveRunnerOptions): SessionSolveRunner => {
   let activePreanalysisAdditionIds = [...initialActivePreanalysisAdditionIds];
   let solveInvocationCount = 0;
+  // Per-stage solve counters: progress display must never leak one stage's
+  // work into another stage's denominator (global index clamped to a
+  // per-stage hint saturates later stages). Run-local; fresh per session.
+  const stageProgressCounts = new Map<SolveInvocationMeta['stageId'], number>();
   let cachedPreanalysisTemplates:
     | ReturnType<typeof buildPreanalysisSyntheticSetTemplates>
     | null
@@ -86,8 +90,8 @@ export const createSessionSolveRunner = ({
       elapsedMs: Date.now() - startedAt,
       stageId: meta.stageId,
       stageLabel: meta.stageLabel,
-      solveIndex,
-      solveTotalHint: Math.max(meta.solveTotalHint, solveIndex),
+      solveIndex: Math.min(solveIndex, meta.solveTotalHint),
+      solveTotalHint: meta.solveTotalHint,
       iteration,
       maxIterations,
     });
@@ -190,7 +194,8 @@ export const createSessionSolveRunner = ({
           )
         : request.input;
 
-    const solveIndex = solveInvocationCount + 1;
+    const stageCompleted = stageProgressCounts.get(meta.stageId) ?? 0;
+    const solveIndex = meta.progressIndex ?? stageCompleted + 1;
     const stageStartedAt = Date.now();
     emitProgress(meta, solveIndex, undefined, request.maxIterations);
     const { parseOptions } = resolveEffectiveProjectParse(request, {
@@ -225,6 +230,7 @@ export const createSessionSolveRunner = ({
     result.preanalysisSyntheticAdditionIds = [...normalizedSyntheticAdditionIds];
     if (useLazyTemplateBuild) buildTemplatesFromBase(result);
     solveInvocationCount += 1;
+    stageProgressCounts.set(meta.stageId, meta.progressIndex ?? stageCompleted + 1);
     recordStageDuration(meta.stageId, Date.now() - stageStartedAt);
     return result;
   };
@@ -251,7 +257,8 @@ export const createSessionSolveRunner = ({
         ...(solved.preanalysisSyntheticAdditionIds ?? activePreanalysisAdditionIds),
       ];
       solved.suspectImpactDiagnostics = undefined;
-      const preanalysisTemplates = resolvePreanalysisTemplates(
+      // Warm the template cache before planning; the return value is unused.
+      resolvePreanalysisTemplates(
         profileContext,
         excludeSet,
         overrideValues,
@@ -259,6 +266,27 @@ export const createSessionSolveRunner = ({
           ? normalizeClusterApprovedMerges(approvedClusterMerges)
           : [],
       );
+      // Threshold greedy depth is data-dependent (early exit on threshold
+      // reached), so the exact planning-check count is unknowable up front.
+      // Report an indeterminate count (n/n data, count-only display) with a
+      // stable label instead of x/y over a moving denominator.
+      let planningCheckIndex = 0;
+      const solvePlanningScenario = (nextTemplateIds: string[]): AdjustmentResult => {
+        planningCheckIndex += 1;
+        return solveCore(
+          excludeSet,
+          undefined,
+          overrideValues,
+          approvedClusterMerges,
+          {
+            stageId: 'preanalysis-impact',
+            stageLabel: 'Preanalysis planning',
+            solveTotalHint: planningCheckIndex,
+            progressIndex: planningCheckIndex,
+          },
+          nextTemplateIds,
+        );
+      };
       solved.preanalysisImpactDiagnostics = buildPreanalysisPlanningDiagnostics({
         base: solved,
         input: request.input,
@@ -266,19 +294,7 @@ export const createSessionSolveRunner = ({
         activeTemplateIds: activePreanalysisAdditionIds,
         targetThresholdMeters: profileContext.effectiveParse.preanalysisAccuracyThresholdMeters,
         maxAddedSets: profileContext.effectiveParse.preanalysisMaxAddedSets,
-        solveScenario: (nextTemplateIds) =>
-          solveCore(
-            excludeSet,
-            undefined,
-            overrideValues,
-            approvedClusterMerges,
-            {
-              stageId: 'preanalysis-impact',
-              stageLabel: `Preanalysis impact ${Math.max(1, nextTemplateIds.length)}`,
-              solveTotalHint: 1 + Math.max(1, preanalysisTemplates.length),
-            },
-            nextTemplateIds,
-          ),
+        solveScenario: solvePlanningScenario,
       });
       solved.robustComparison = { enabled: false, classicalTop: [], robustTop: [], overlapCount: 0 };
       return solved;

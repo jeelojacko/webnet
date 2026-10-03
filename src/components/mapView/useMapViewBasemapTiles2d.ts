@@ -6,6 +6,7 @@ import {
   buildOsmDescriptorBucketForView,
   buildRequestedBasemapTiles,
   resolveInteractiveBasemapTiles,
+  reusePreviousTilesForDeepFallback,
 } from './mapViewBasemap';
 import { type MapInteractionPhase } from './mapViewInteraction';
 import {
@@ -16,6 +17,7 @@ import {
 } from './useMapViewLayerRenderer';
 import { noteMapViewPerfCounter, noteMapViewPerfMetadata } from './mapViewPerf';
 import type { BasemapTileDescriptor2d, MapViewTileStore } from './mapViewTileStore';
+import { MAX_PREFERRED_FALLBACK_ZOOM_DELTA } from './mapViewTileStore';
 import type { MapBounds2d, Projection2d, View2dState } from './mapView2d';
 import type { PlanningGeorefContext } from './mapViewObstacles';
 
@@ -344,18 +346,34 @@ export const useMapViewBasemapTiles2d = (options: UseMapViewBasemapTiles2dOption
       },
       renderer2d === 'webgl' ? { crossOrigin: 'anonymous' } : undefined,
     );
-    const resolvedTiles = tileStore.resolveRenderTiles(activeBasemapTiles2d);
+    const resolvedTiles = tileStore.resolveRenderTiles(activeBasemapTiles2d, {
+      preferredFallbackZoomDelta: MAX_PREFERRED_FALLBACK_ZOOM_DELTA,
+    });
+    // E3(d): during a transform, a resolved set made only of deep stale parents
+    // would stretch one text tile over several levels. Reuse the last rendered
+    // tile for just those deep-fallback keys, keeping freshly resolved
+    // exact/current-level tiles on screen instead of discarding them.
+    const previousTiles = latestBasemapRenderInputRef.current?.tiles ?? [];
+    const renderTiles =
+      interactionPhase === 'interacting'
+        ? reusePreviousTilesForDeepFallback(resolvedTiles, previousTiles)
+        : resolvedTiles;
+    const reusedPreviousFallback = renderTiles !== resolvedTiles;
     noteMapViewPerfMetadata('tiles:snapshot', tileStore.snapshotMetrics());
-    noteMapViewPerfMetadata('tiles:last-resolved-count', resolvedTiles.length);
+    noteMapViewPerfMetadata('tiles:last-resolved-count', renderTiles.length);
     noteMapViewPerfMetadata(
       'tiles:last-descriptor-mode',
-      usingStableInteractionTiles ? 'stable-reused' : 'live',
+      reusedPreviousFallback
+        ? 'previous-reused'
+        : usingStableInteractionTiles
+          ? 'stable-reused'
+          : 'live',
     );
     latestBasemapRenderInputRef.current = {
       interactionPhase,
       view2d,
       projectionScale: projection2d.scale,
-      tiles: resolvedTiles,
+      tiles: renderTiles,
     };
     latestWebglRenderInputRef.current = buildWebglRenderInputWithTiles(
       latestWebglRenderInputRef.current,
@@ -364,7 +382,7 @@ export const useMapViewBasemapTiles2d = (options: UseMapViewBasemapTiles2dOption
         viewWidth,
         viewHeight,
         view2d,
-        tiles: resolvedTiles,
+        tiles: renderTiles,
       },
     );
     renderLayersNow({ basemap: true });
