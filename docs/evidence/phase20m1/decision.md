@@ -266,7 +266,9 @@ behind fail-closed gates, one class, no widening.
 
 ## 11. Non-change proofs + validation
 
-- `git diff 3fe69f2...HEAD -- src` empty (test-pinned).
+- `git diff 3fe69f2...HEAD -- src` empty (test-pinned; full range proof
+  runs where the baseline object exists locally — shallow CI checkouts
+  lack it and enforce working tree/index plus PR changed-file review).
 - 20M.1 suite 14/14; corpus regen twice cross-process byte-identical.
 - Regression + typecheck/lint/portable-paths recorded in the PR body.
 - 14 stashes intact (verified pre/post).
