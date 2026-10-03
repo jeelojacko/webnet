@@ -80,12 +80,15 @@ Per plan, migration proceeds (no override hack per §G: forcing
   official upgrade guide; dep removed only after confirming no other use).
 - `postcss.config.js` (root + study-desktop): plugin `tailwindcss` →
   `@tailwindcss/postcss`.
-- `src/index.css`: `@tailwind base/components/utilities` →
-  `@import "tailwindcss"` + `@config "../tailwind.config.js"` — the JS
-  palette (CSS-variable `rgb(var(--theme-…)/<alpha-value>)` overrides of
-  slate/blue/green/red/amber/cyan/emerald/rose) preserved **verbatim**,
-  plus official-style v3-compat blocks (default border color, absolute
-  `text-*` line-heights).
+- `src/index.css`: 6-line entry (`@import "tailwindcss"` + `@config` +
+  `@import "./theme.css"`); all variables/v3-compat moved byte-identical
+  to new `src/theme.css` (pure CSS, no bare imports). `study-desktop/src/`
+  `index.css` imports `tailwindcss` (own node_modules) + the Study config
+  + `../../src/theme.css`. Reason (found by CI, fixed on-branch): the
+  study-desktop workflow installs only study deps, so the bare v4 import
+  inside `../../src/index.css` could not resolve from the repo-root
+  context. Verified by building study with root `node_modules` hidden;
+  both builds green, theme content byte-identical, study tests green.
 - `rounded-sm → rounded-xs` (4 sites: v4 renamed the scale; identical radius).
 - Real find fixed honestly: a 3px header shift from v4 unitless `text-xs`
   line-height inheriting into `text-[10px]` buttons (v3 inherited absolute
