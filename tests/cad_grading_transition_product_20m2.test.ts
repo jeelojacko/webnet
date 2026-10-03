@@ -294,4 +294,65 @@ describe('20M.2 WAVE G transition product + provenance', () => {
     expect(undoneExtract.present.project.entities.some((entry) => entry.id === boundary.id)).toBe(false);
     expect(redoCadHistory(undoneExtract).present.project.entities.some((entry) => entry.id === boundary.id)).toBe(true);
   });
+
+  it('cites the transition law envelope for differing endpoints, never either native scalar', () => {
+    const { project, chainId } = projectWithChain();
+    const withGroup = createOpenAnalyticGroup(project, chainId);
+    const groupId = withGroup.gradingGroups![0]!.id;
+    const group = withGroup.gradingGroups!.find((entry) => entry.id === groupId)!;
+    // Differing endpoints, same grade: the interior follows neither native.
+    const overridden = runCadCommand(createCadHistoryState(withGroup), {
+      key: 'GROUP_SET_COURSE_CRITERIA',
+      groupId,
+      courses: [group.sourceCourses[1]!],
+      criterion: { kind: 'distance', gradeRatio: 0.5, distance: 9 },
+    });
+    expect(overridden.undoStack).toHaveLength(1);
+    const transitioned = withTransitionIntent(overridden.present.project, groupId);
+    const result = calculateGroup(transitioned, groupId);
+    expect(result.transition?.endpointScalars).toMatchObject({ vL: 5, vR: 9 });
+    const revision = resolveGroupInputs(transitioned, groupId)!.revision;
+    const baked = runCadCommand(createCadHistoryState(transitioned), {
+      key: 'GROUPBAKE',
+      groupId,
+      result,
+      expectedRevision: revision,
+      sessionCurrent: true,
+    });
+    expect(baked.undoStack).toHaveLength(1);
+    const surface = baked.present.project.surfaces!.find((entry) => entry.name === 'TG - Baked')!;
+    const payload = surface.definition.sourceKind === 'explicit-tin' ? surface.definition.importedTin : null;
+    const provenance = payload?.provenance as unknown as Record<string, unknown>;
+    // The interior is transition law, not either native: no singular scalar.
+    expect('criterionDistance' in provenance).toBe(false);
+    expect('targetElevation' in provenance).toBe(false);
+    expect('relativeElevation' in provenance).toBe(false);
+    expect(provenance?.transitions).toMatchObject([
+      {
+        policyVersion: 'trp1',
+        lawKind: 'TRANSITION_LINEAR_V1',
+        lawVersion: 'v1',
+        widthMeters: 8,
+        interval: { sL: -4, sR: 4 },
+        criterionFamily: 'distance',
+        endpointScalars: { vL: 5, vR: 9, gL: 0.5, gR: 0.5 },
+        recordedRevision: revision,
+        agreementCode: null,
+      },
+    ]);
+    // A leg that no longer matches the definition intent cites nothing:
+    // the bake fails closed with zero mutation.
+    const forged: CadGradingGroupResult = {
+      ...result,
+      transition: { ...result.transition!, width: 10 },
+    };
+    const refused = runCadCommand(createCadHistoryState(transitioned), {
+      key: 'GROUPBAKE',
+      groupId,
+      result: forged,
+      expectedRevision: revision,
+      sessionCurrent: true,
+    });
+    expect(refused.undoStack).toHaveLength(0);
+  });
 });

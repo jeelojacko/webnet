@@ -12,11 +12,12 @@ persisted record WITH its reject reason (visible, auditable) instead of silently
 group fails closed at resolve/compute. Stale intents (recorded revision ≠ live revision after edits)
 FAIL CLOSED — never fallback to legacy solve, never a default width.
 
-`ggrev1` participation without circularity: the canonical `ggrev1:` digest covers the effective
-transition intent (joint + W + recorded revision), so edits that touch the transition move the revision
-(which in turn invalidates the intent — fail closed, never self-validating). The digest is computed
-over persisted intent bytes only; it never consumes a solve result, so no revision↔result cycle exists.
+`ggrev1` participation without circularity: the canonical `ggrev1:` digest covers the persisted
+intent canonical fields only (policyVersion/jointId/memberIds/width/lawKind/lawVersion/family/side).
+Recorded revision + endpoint evidence values are solve outputs and deliberately never hash — hashing
+the revision would be circular (the revision is derived from the digest). Edits that touch the intent
+move the revision (which in turn invalidates the pinned intent — fail closed, never self-validating).
 Pre-20M.2 homogeneous files hash byte-identical (old files legacy-identical).
 
-Covered by `tests/cad_grading_transition_persist_20m2.test.ts` 7/7 + browser flow H
+Covered by `tests/cad_grading_transition_persist_20m2.test.ts` 8/8 + browser flow H
 (save/reopen round-trips joint:0 / 8 m; recalc CURRENT) and flow I (edits invalidate → FAILED).

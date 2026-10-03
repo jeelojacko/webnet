@@ -8,6 +8,7 @@
  * re-exported here so existing worker/test import sites keep working.
  */
 import { resolveAnalyticCriterionAt } from '../engine/cad/grading/gradingAnalyticCriterion';
+import { gradingSideNormal } from '../engine/cad/grading/gradingCourseFrame';
 import { solveArcGrading } from '../engine/cad/grading/arcSolve';
 import {
   assembleAnalyticGradingResult,
@@ -535,6 +536,12 @@ export interface TransitionResultMeshInput {
   /** Authoritative joint Z the endpoint natives resolve at. */
   jointZ: number;
   maxSearchDistance: number;
+  /** Result-owned daylight boundary: every checkpoint must occur in it. */
+  daylightPoints: readonly number[];
+  /** Result-owned source boundary: every source mate must occur in it. */
+  sourceBoundaryPoints: readonly number[];
+  /** Grading side: the plan offset must leave toward this side. */
+  side: GradingSide;
 }
 
 const meshPoint = (flat: readonly number[], index: number): { x: number; y: number; z: number } | null => {
@@ -579,6 +586,29 @@ const checkNativeBoundary = (
   return null;
 };
 
+/** Result-owned flat XYZ array contains the vertex (shared authorities). */
+const flatContainsVertex = (
+  flat: readonly number[],
+  p: { x: number; y: number; z: number },
+): boolean => {
+  for (let i = 0; i + 2 < flat.length; i += 3) {
+    const cx = flat[i]!;
+    const cy = flat[i + 1]!;
+    const cz = flat[i + 2]!;
+    const plan = Math.hypot(p.x - cx, p.y - cy);
+    const scale = Math.max(1, Math.abs(p.x), Math.abs(cx), Math.abs(p.y), Math.abs(cy));
+    if (plan > coordinateAgreementTol(plan, 0, scale) + AGREEMENT_FLOOR) continue;
+    if (Math.abs(p.z - cz) > elevationAgreementTol(p.z, cz, []) + AGREEMENT_FLOOR) continue;
+    return true;
+  }
+  return false;
+};
+
+const gradeOf = (criterion: GradingCriterion): number | null => {
+  const g = (criterion as { gradeRatio?: unknown }).gradeRatio;
+  return typeof g === 'number' && Number.isFinite(g) && g !== 0 ? g : null;
+};
+
 export const validateTransitionResultMesh = (input: TransitionResultMeshInput): string | null => {
   if (!Number.isFinite(input.sL) || !Number.isFinite(input.sR) || !(input.sL < input.sR)) {
     return 'GRADING_AGREEMENT_TRANSITION_MALFORMED';
@@ -601,7 +631,57 @@ export const validateTransitionResultMesh = (input: TransitionResultMeshInput): 
   // Outside: boundary checkpoints obey their own native criterion.
   const left = checkNativeBoundary(input.criterionL, meshPoint(input.daylightCheckpoints, 0)!, meshPoint(input.sourceCheckpoints, 0)!, input.jointZ, input.maxSearchDistance, input.family);
   if (left) return left;
-  return checkNativeBoundary(input.criterionR, meshPoint(input.daylightCheckpoints, 2)!, meshPoint(input.sourceCheckpoints, 2)!, input.jointZ, input.maxSearchDistance, input.family);
+  const right = checkNativeBoundary(input.criterionR, meshPoint(input.daylightCheckpoints, 2)!, meshPoint(input.sourceCheckpoints, 2)!, input.jointZ, input.maxSearchDistance, input.family);
+  if (right) return right;
+  // Direction + Z: the plan offset must leave along the production side
+  // normal (never magnitude-only), with the family-mapped Z. The tangent
+  // comes from the source mates (collinear admission), the normal from the
+  // production `gradingSideNormal` convention — shared tols, no widening.
+  const pCutL = meshPoint(input.sourceCheckpoints, 0)!;
+  const pCutR = meshPoint(input.sourceCheckpoints, 2)!;
+  const normal = gradingSideNormal(pCutR.x - pCutL.x, pCutR.y - pCutL.y, input.side);
+  if (!normal) return 'GRADING_AGREEMENT_TRANSITION_MALFORMED';
+  const gL = gradeOf(input.criterionL);
+  const gR = gradeOf(input.criterionR);
+  if (gL === null || gR === null) return 'GRADING_AGREEMENT_TRANSITION_MALFORMED';
+  const grades = [gL, gL, gR];
+  for (let i = 0; i < 3; i += 1) {
+    const g = grades[i]!;
+    const expectedV = evaluateTransitionLinearV1(input.vL, input.vR, input.sL, input.sR, stations[i]!);
+    const d = input.family === 'distance' ? expectedV
+      : input.family === 'relative-elevation' ? expectedV / g
+      : (expectedV - input.jointZ) / g;
+    if (!Number.isFinite(d)) return 'GRADING_AGREEMENT_TRANSITION_MALFORMED';
+    const daylight = meshPoint(input.daylightCheckpoints, i)!;
+    const source = meshPoint(input.sourceCheckpoints, i)!;
+    const ox = daylight.x - source.x;
+    const oy = daylight.y - source.y;
+    const ex = d * normal.nx;
+    const ey = d * normal.ny;
+    if (Math.abs(ox - ex) > coordinateAgreementTol(ox, ex, Math.max(1, Math.abs(ox), Math.abs(ex))) + AGREEMENT_FLOOR) {
+      return 'GRADING_AGREEMENT_TRANSITION_OFF_LAW';
+    }
+    if (Math.abs(oy - ey) > coordinateAgreementTol(oy, ey, Math.max(1, Math.abs(oy), Math.abs(ey))) + AGREEMENT_FLOOR) {
+      return 'GRADING_AGREEMENT_TRANSITION_OFF_LAW';
+    }
+    if (input.family === 'distance') {
+      const expectedZ = input.jointZ + g * expectedV;
+      if (Math.abs(daylight.z - expectedZ) > elevationAgreementTol(daylight.z, expectedZ, []) + AGREEMENT_FLOOR) {
+        return 'GRADING_AGREEMENT_TRANSITION_OFF_LAW';
+      }
+    }
+  }
+  // Mesh anchoring: the checkpoints must occur in the result-owned
+  // boundary arrays — a tampered boundary/mesh with an intact leg fails.
+  for (let i = 0; i < 3; i += 1) {
+    if (!flatContainsVertex(input.daylightPoints, meshPoint(input.daylightCheckpoints, i)!)) {
+      return 'GRADING_AGREEMENT_TRANSITION_GEOMETRY';
+    }
+    if (!flatContainsVertex(input.sourceBoundaryPoints, meshPoint(input.sourceCheckpoints, i)!)) {
+      return 'GRADING_AGREEMENT_TRANSITION_GEOMETRY';
+    }
+  }
+  return null;
 };
 
 /**

@@ -628,6 +628,11 @@ export const validateTransitionResultMeshAgainst = (
   const joint = jointed !== null && jointed[1] === String(Number(jointed[1])) ? Number(jointed[1]) : -1;
   const sourceL = request.memberSources[joint];
   if (!(joint >= 0) || !sourceL) return 'GRADING_AGREEMENT_TRANSITION_STALE';
+  // Mesh anchoring needs the result-owned boundaries; a result without
+  // them never passes a transitioned request.
+  if (!Array.isArray(result.daylightPoints) || !Array.isArray(result.sourceBoundaryPoints)) {
+    return 'GRADING_AGREEMENT_TRANSITION_MALFORMED';
+  }
   return validateTransitionResultMesh({
     family,
     sL: leg.interval.sL,
@@ -640,6 +645,9 @@ export const validateTransitionResultMeshAgainst = (
     criterionR: members[1]!.criterion,
     jointZ: sourceL.endZ,
     maxSearchDistance: request.maxSearchDistance,
+    daylightPoints: result.daylightPoints,
+    sourceBoundaryPoints: result.sourceBoundaryPoints,
+    side: request.side,
   });
 };
 

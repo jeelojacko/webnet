@@ -561,6 +561,27 @@ const groupBakeCommand: CadCommandDefinition<GroupBakeCommand> = {
     // Singular value fields describe the calculated result: the stored
     // default while it is effective on at least one course, else the first
     // effective criterion. Mixed groups carry no singular value by contract.
+    // Phase 20M.2 WAVE M round 2: a transitioned result follows neither
+    // native scalar in its interior, so it cites the transition law
+    // envelope only — never a singular native scalar.
+    const transitionLeg = result.transition;
+    const transitioned = transitionLeg !== undefined;
+    if (transitionLeg !== undefined) {
+      // The result-owned leg must match the live definition intent before
+      // anything is cited (mismatch => no bake, fail closed).
+      const live = (inputs.group.transitions ?? []).some((intent) =>
+        intent.jointId === transitionLeg.jointId &&
+        intent.policyVersion === transitionLeg.policyVersion &&
+        intent.lawKind === transitionLeg.lawKind &&
+        intent.lawVersion === transitionLeg.lawVersion &&
+        intent.width === transitionLeg.width &&
+        intent.criterionFamily === transitionLeg.criterionFamily &&
+        intent.side === transitionLeg.side &&
+        intent.memberIds[0] === transitionLeg.memberIds[0] &&
+        intent.memberIds[1] === transitionLeg.memberIds[1] &&
+        transitionLeg.recordedRevision === inputs.revision);
+      if (!live) return null;
+    }
     const representative = effective.some((entry) => criteriaEqual(entry, criterion))
       ? criterion
       : effective[0]!;
@@ -584,9 +605,9 @@ const groupBakeCommand: CadCommandDefinition<GroupBakeCommand> = {
         ...((targetKind === 'surface' || targetKind === 'hybrid') && inputs.target !== undefined
           ? { targetSurfaceId: inputs.target.id }
           : {}),
-        ...(!mixed && !hybrid && representative.kind === 'distance' ? { criterionDistance: representative.distance } : {}),
-        ...(!mixed && !hybrid && representative.kind === 'elevation' ? { targetElevation: representative.targetElevation } : {}),
-        ...(!mixed && !hybrid && representative.kind === 'relative-elevation' ? { relativeElevation: representative.relativeElevation } : {}),
+        ...(!transitioned && !mixed && !hybrid && representative.kind === 'distance' ? { criterionDistance: representative.distance } : {}),
+        ...(!transitioned && !mixed && !hybrid && representative.kind === 'elevation' ? { targetElevation: representative.targetElevation } : {}),
+        ...(!transitioned && !mixed && !hybrid && representative.kind === 'relative-elevation' ? { relativeElevation: representative.relativeElevation } : {}),
         side: inputs.group.side,
         accuracy: result.accuracy,
         cornerMode: inputs.group.cornerMode,

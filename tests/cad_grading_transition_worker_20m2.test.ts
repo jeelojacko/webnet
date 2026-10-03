@@ -262,7 +262,8 @@ describe('20M.2 WAVE F transition agreement', () => {
     expect(success?.type).toBe('group-success');
     if (success?.type !== 'group-success') return;
     expect(success.result.transition).toMatchObject({ joint: 0, agreementCode: null });
-    // The result-owned checkpoints independently satisfy law + natives.
+    // The result-owned checkpoints independently satisfy law + natives +
+    // vectors, anchored in the result-owned boundaries.
     const leg = success.result.transition!;
     expect(validateTransitionResultMesh({
       family: 'distance',
@@ -276,6 +277,9 @@ describe('20M.2 WAVE F transition agreement', () => {
       criterionR: { kind: 'distance', gradeRatio: 0.5, distance: 7 },
       jointZ: 10,
       maxSearchDistance: 10,
+      daylightPoints: success.result.daylightPoints,
+      sourceBoundaryPoints: success.result.sourceBoundaryPoints!,
+      side: 'left',
     })).toBeNull();
   });
 
@@ -312,5 +316,80 @@ describe('20M.2 WAVE F transition agreement', () => {
     expect(noLegFailure?.type).toBe('group-failure');
     if (noLegFailure?.type !== 'group-failure') return;
     expect(noLegFailure.error).toBe('GRADING_AGREEMENT_TRANSITION_STALE');
+  });
+
+  it('post-solve mesh gate fails tampered geometry with an intact leg closed', async () => {
+    const real = await computeGroupGradingResultFromRequest(JSON.parse(JSON.stringify(request(plan()))) as GradingGroupComputeRequest);
+    expect(real.ok).toBe(true);
+    if (!real.ok) return;
+    const leg = real.result.transition!;
+    const mkHandler = (sent: SurfaceWorkerResponseMessage[], result: typeof real.result) => createSurfaceWorkerHandler({
+      loadBuilder: () => Promise.reject(new Error('unused')),
+      loadGroupGradingFn: () => Promise.resolve(() => Promise.resolve({ ok: true as const, result })),
+      postMessage: (message) => sent.push(message),
+      defer: (callback) => callback(),
+    });
+    const failOf = async (result: typeof real.result, id: string): Promise<string> => {
+      const sent: SurfaceWorkerResponseMessage[] = [];
+      mkHandler(sent, result).handleMessage({ type: 'group-grading', requestId: id, request: request(plan()) });
+      await flush();
+      const failure = sent.find((m) => m.type === 'group-failure');
+      expect(failure?.type).toBe('group-failure');
+      if (failure?.type !== 'group-failure') throw new Error(`expected failure for ${id}`);
+      return failure.error;
+    };
+    // Locate the joint daylight q0 verbatim in the result boundary.
+    const q0 = leg.daylightCheckpoints.slice(3, 6);
+    const qi = real.result.daylightPoints.findIndex((_, k) =>
+      k % 3 === 0 &&
+      real.result.daylightPoints[k] === q0[0] &&
+      real.result.daylightPoints[k + 1] === q0[1] &&
+      real.result.daylightPoints[k + 2] === q0[2]);
+    expect(qi).toBeGreaterThanOrEqual(0);
+    // Tampered boundary with an intact leg: the mesh no longer carries the
+    // checkpoint, so the gate fails closed (anchoring, not self-consistency).
+    const shiftedMesh = [...real.result.daylightPoints];
+    shiftedMesh[qi + 1]! += 0.5;
+    expect(await failOf({ ...real.result, daylightPoints: shiftedMesh }, 't-mesh-shift'))
+      .toBe('GRADING_AGREEMENT_TRANSITION_GEOMETRY');
+    // Tampered source boundary with an intact leg fails the same way.
+    const v = leg.sourceCheckpoints.slice(3, 6);
+    const srcBoundary = real.result.sourceBoundaryPoints!;
+    const si = srcBoundary.findIndex((_, k) =>
+      k % 3 === 0 &&
+      srcBoundary[k] === v[0] &&
+      srcBoundary[k + 1] === v[1] &&
+      srcBoundary[k + 2] === v[2]);
+    expect(si).toBeGreaterThanOrEqual(0);
+    const shiftedSrc = [...srcBoundary];
+    shiftedSrc[si + 1]! += 0.5;
+    expect(await failOf({ ...real.result, sourceBoundaryPoints: shiftedSrc }, 't-src-shift'))
+      .toBe('GRADING_AGREEMENT_TRANSITION_GEOMETRY');
+    // Consistently rotated offset (magnitude kept) in leg AND mesh: the
+    // old magnitude-only check would pass; the direction check fails it.
+    const offX = q0[0]! - v[0]!;
+    const offY = q0[1]! - v[1]!;
+    const rotated = [v[0]! - offY, v[1]! + offX, q0[2]!];
+    const rotatedLeg = [...leg.daylightCheckpoints];
+    rotatedLeg[3] = rotated[0]!;
+    rotatedLeg[4] = rotated[1]!;
+    const rotatedMesh = [...real.result.daylightPoints];
+    rotatedMesh[qi] = rotated[0]!;
+    rotatedMesh[qi + 1] = rotated[1]!;
+    expect(await failOf({
+      ...real.result,
+      daylightPoints: rotatedMesh,
+      transition: { ...leg, daylightCheckpoints: rotatedLeg },
+    }, 't-rotated')).toBe('GRADING_AGREEMENT_TRANSITION_OFF_LAW');
+    // Consistently bumped Z (distance family) in leg AND mesh fails the Z check.
+    const bumpedLeg = [...leg.daylightCheckpoints];
+    bumpedLeg[5]! += 0.5;
+    const bumpedMesh = [...real.result.daylightPoints];
+    bumpedMesh[qi + 2]! += 0.5;
+    expect(await failOf({
+      ...real.result,
+      daylightPoints: bumpedMesh,
+      transition: { ...leg, daylightCheckpoints: bumpedLeg },
+    }, 't-bumped-z')).toBe('GRADING_AGREEMENT_TRANSITION_OFF_LAW');
   });
 });
