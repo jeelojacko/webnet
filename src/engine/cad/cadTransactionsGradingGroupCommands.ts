@@ -14,8 +14,9 @@ import {
   setCourseCriteriaOverrides,
   validateGroupChain,
 } from './grading/gradingGroupAuthoring';
-import { gradingTerminationKind } from './grading/gradingTypes';
+import { gradingTerminationKind, type GradingSide } from './grading/gradingTypes';
 import { criteriaEqual, effectiveCriteriaForCourses } from './grading/gradingGroupCourseCriteria';
+import { clearGroupTransition, setGroupTransition } from './grading/gradingTransitionAuthoring';
 import { resolveGroupMemberCriteria } from './grading/gradingGroupCourseCriteria';
 import {
   canonicalAnalyticKinds,
@@ -26,6 +27,7 @@ import {
 import { toGradingCourseLikes, resolveGradingSourceCourse } from './grading/gradingCourseFrame';
 import { resolveGroupInputs } from './grading/gradingGroupResolve';
 import { gradingTopologyCertificateProductionError, gradingTopologyCertificateProductionProductError } from './grading/gradingTopologyCertificate';
+import { transitionResultBakeCitation } from './grading/gradingTransitionProvenance';
 import { appendCadProjectEntities } from './cadProjectState';
 import { commitLayerProject } from './cadTransactionsLayerCommands';
 import type {
@@ -38,6 +40,7 @@ import type {
 } from './cadTypes';
 import type {
   CadGradingGroup,
+  CadGradingGroupTransitionLeg,
   GradingGroupCourse,
 } from './grading/gradingGroupTypes';
 
@@ -84,6 +87,18 @@ const chainResolvable = (
     (course) =>
       resolveGradingSourceCourse(likes, course.vertexAId, course.vertexBId) !== null,
   );
+};
+
+/**
+ * Phase 20M.2 WAVE G: result-owned transition citation for GROUPBAKE
+ * provenance. Cites the transition ONLY when the baked result actually
+ * solved with an admitted transition (result-owned leg); a solve without
+ * one cites nothing (legacy payload byte-identical). Definition intent
+ * alone never earns a citation.
+ */
+const transitionCitation = (result: { transition?: CadGradingGroupTransitionLeg }): { transitions?: ReturnType<typeof transitionResultBakeCitation> } => {
+  const cited = transitionResultBakeCitation(result.transition);
+  return cited === undefined ? {} : { transitions: cited };
 };
 
 const withGroup = (project: CadProject, group: CadGradingGroup): CadProject => ({
@@ -377,6 +392,44 @@ const groupResetCourseCriteriaCommand: CadCommandDefinition<GroupResetCourseCrit
   },
 };
 
+type GroupSetTransitionCommand = Extract<CadCommand, { key: 'GROUP_SET_TRANSITION' }>;
+
+/**
+ * Phase 20M.2 WAVE H: commit ONE explicit transition (one undo step).
+ * Rejected intents mutate nothing; the operator recalculates after commit
+ * (revision participation belongs to the sibling persistence wave).
+ */
+const groupSetTransitionCommand: CadCommandDefinition<GroupSetTransitionCommand> = {
+  key: 'GROUP_SET_TRANSITION',
+  execute: (snapshot, command) => {
+    const group = findGroup(snapshot.project, command.groupId);
+    if (!group) return null;
+    const applied = setGroupTransition(group, {
+      ...command.intent,
+      memberIds: [...command.intent.memberIds],
+      side: command.intent.side as GradingSide,
+    });
+    if (!applied.ok) return null;
+    return commitLayerProject('GROUP_SET_TRANSITION', snapshot, withGroup(snapshot.project, applied.value),
+      `GROUP_SET_TRANSITION (${group.name})`);
+  },
+};
+
+type GroupClearTransitionCommand = Extract<CadCommand, { key: 'GROUP_CLEAR_TRANSITION' }>;
+
+/** Phase 20M.2 WAVE H: remove the transition (one undo step, legacy restored). */
+const groupClearTransitionCommand: CadCommandDefinition<GroupClearTransitionCommand> = {
+  key: 'GROUP_CLEAR_TRANSITION',
+  execute: (snapshot, command) => {
+    const group = findGroup(snapshot.project, command.groupId);
+    if (!group) return null;
+    const cleared = clearGroupTransition(group);
+    if (!cleared.ok) return null;
+    return commitLayerProject('GROUP_CLEAR_TRANSITION', snapshot, withGroup(snapshot.project, cleared.value),
+      `GROUP_CLEAR_TRANSITION (${group.name})`);
+  },
+};
+
 /**
  * Calculate dispatch gate (NO history entry — pure check the UI runs before
  * service dispatch). Requires a resolvable definition; target CURRENT-ness
@@ -508,6 +561,27 @@ const groupBakeCommand: CadCommandDefinition<GroupBakeCommand> = {
     // Singular value fields describe the calculated result: the stored
     // default while it is effective on at least one course, else the first
     // effective criterion. Mixed groups carry no singular value by contract.
+    // Phase 20M.2 WAVE M round 2: a transitioned result follows neither
+    // native scalar in its interior, so it cites the transition law
+    // envelope only — never a singular native scalar.
+    const transitionLeg = result.transition;
+    const transitioned = transitionLeg !== undefined;
+    if (transitionLeg !== undefined) {
+      // The result-owned leg must match the live definition intent before
+      // anything is cited (mismatch => no bake, fail closed).
+      const live = (inputs.group.transitions ?? []).some((intent) =>
+        intent.jointId === transitionLeg.jointId &&
+        intent.policyVersion === transitionLeg.policyVersion &&
+        intent.lawKind === transitionLeg.lawKind &&
+        intent.lawVersion === transitionLeg.lawVersion &&
+        intent.width === transitionLeg.width &&
+        intent.criterionFamily === transitionLeg.criterionFamily &&
+        intent.side === transitionLeg.side &&
+        intent.memberIds[0] === transitionLeg.memberIds[0] &&
+        intent.memberIds[1] === transitionLeg.memberIds[1] &&
+        transitionLeg.recordedRevision === inputs.revision);
+      if (!live) return null;
+    }
     const representative = effective.some((entry) => criteriaEqual(entry, criterion))
       ? criterion
       : effective[0]!;
@@ -531,12 +605,17 @@ const groupBakeCommand: CadCommandDefinition<GroupBakeCommand> = {
         ...((targetKind === 'surface' || targetKind === 'hybrid') && inputs.target !== undefined
           ? { targetSurfaceId: inputs.target.id }
           : {}),
-        ...(!mixed && !hybrid && representative.kind === 'distance' ? { criterionDistance: representative.distance } : {}),
-        ...(!mixed && !hybrid && representative.kind === 'elevation' ? { targetElevation: representative.targetElevation } : {}),
-        ...(!mixed && !hybrid && representative.kind === 'relative-elevation' ? { relativeElevation: representative.relativeElevation } : {}),
+        ...(!transitioned && !mixed && !hybrid && representative.kind === 'distance' ? { criterionDistance: representative.distance } : {}),
+        ...(!transitioned && !mixed && !hybrid && representative.kind === 'elevation' ? { targetElevation: representative.targetElevation } : {}),
+        ...(!transitioned && !mixed && !hybrid && representative.kind === 'relative-elevation' ? { relativeElevation: representative.relativeElevation } : {}),
         side: inputs.group.side,
         accuracy: result.accuracy,
         cornerMode: inputs.group.cornerMode,
+        // Phase 20M.2 WAVE G: cites the transition only when the baked
+        // result actually solved with an admitted transition (result-owned
+        // leg carries interval/station/agreement metadata); legacy solves
+        // carry no key (byte-identical payload).
+        ...transitionCitation(result),
       },
     };
     if (validateExplicitTinPayload(payload) != null) return null;
@@ -568,6 +647,8 @@ export const gradingGroupCommandDefinitions = {
   GROUP_REMOVE_END_COURSE: groupRemoveEndCourseCommand,
   GROUP_SET_COURSE_CRITERIA: groupSetCourseCriteriaCommand,
   GROUP_RESET_COURSE_CRITERIA: groupResetCourseCriteriaCommand,
+  GROUP_SET_TRANSITION: groupSetTransitionCommand,
+  GROUP_CLEAR_TRANSITION: groupClearTransitionCommand,
   GROUPEXTRACTDAYLIGHT: groupExtractCommand,
   GROUPBAKE: groupBakeCommand,
 } as const;

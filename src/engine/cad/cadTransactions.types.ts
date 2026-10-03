@@ -308,6 +308,8 @@ export type CadCommandKey =
   | 'GROUP_REMOVE_END_COURSE'
   | 'GROUP_SET_COURSE_CRITERIA'
   | 'GROUP_RESET_COURSE_CRITERIA'
+  | 'GROUP_SET_TRANSITION'
+  | 'GROUP_CLEAR_TRANSITION'
   | 'GROUPEXTRACTDAYLIGHT'
   | 'GROUPBAKE'
   // Phase 20D Wave-1A — design surface workflow (engine only).
@@ -1787,6 +1789,25 @@ export type CadCommand =
       courses: GradingGroupCourse[];
       /** Phase 20J: same atomic target rule as GROUP_SET_COURSE_CRITERIA. */
       targetSurfaceId?: string | null;
+    }
+  | {
+      key: 'GROUP_SET_TRANSITION';
+      groupId: string;
+      /** One explicit transition intent (width/law user-owned, refs stable). */
+      intent: {
+        policyVersion: string;
+        jointId: string;
+        memberIds: readonly string[];
+        width: number;
+        lawKind: string;
+        lawVersion: string;
+        criterionFamily: string;
+        side: string;
+      };
+    }
+  | {
+      key: 'GROUP_CLEAR_TRANSITION';
+      groupId: string;
     }
   | {
       key: 'GROUPEXTRACTDAYLIGHT';

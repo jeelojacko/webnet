@@ -13,9 +13,10 @@ import { resolveCadFeatureLine } from '../cadFeatureLines';
 import { computeCadSurfaceSourceRevision } from '../cadSurfaceRevision';
 import type { CadProject, CadSurface } from '../cadTypes';
 import { resolveGradingSourceCourse, toGradingCourseLikes } from './gradingCourseFrame';
-import { resolveGroupMemberCriteria } from './gradingGroupCourseCriteria';
+import { courseCriterionKey, resolveGroupMemberCriteria } from './gradingGroupCourseCriteria';
 import { buildGroupRevision, type GroupRevisionCourse } from './gradingGroupRevision';
 import type { CadGradingGroup } from './gradingGroupTypes';
+import type { CadGradingTransition } from './gradingGroupTypes';
 import { groupTerminationRequiresTarget } from './gradingGroupTermination';
 import type { GradingCriterion, ResolvedGradingSource } from './gradingTypes';
 
@@ -25,6 +26,17 @@ export interface ResolvedGroupInputs {
   memberSources: ResolvedGradingSource[];
   /** Phase 20E: effective criterion per member (override or group default). */
   memberCriteria: GradingCriterion[];
+  /**
+   * Phase 20M.2 Wave B: stable member identity per member in traversal
+   * order (`courseCriterionKey` in persisted A->B direction). Lets the
+   * transition path verify member refs without positional trust.
+   */
+  memberKeys: string[];
+  /**
+   * Phase 20M.2 Wave B: retained transition intents verbatim (selection +
+   * admission happen downstream; absent/empty = exact legacy).
+   */
+  transitions?: CadGradingTransition[];
   /** Present only for surface-family groups; undefined for analytic families. */
   target?: CadSurface;
   targetRevision?: string;
@@ -204,6 +216,9 @@ export const resolveGroupInputsWithReason = (
     side: group.side,
     criterion: group.criterion,
     courseCriteria: group.courseCriteria,
+    // Phase 20M.2 Wave B: transition canonical fields participate; absent
+    // stays absent so legacy hashes are byte-identical.
+    ...(group.transitions !== undefined ? { transitions: group.transitions } : {}),
     maxSearchDistance: group.maxSearchDistance,
     curveChordTolerance: group.curveChordTolerance,
     cornerMode: group.cornerMode,
@@ -215,6 +230,10 @@ export const resolveGroupInputsWithReason = (
       group,
       memberSources,
       memberCriteria,
+      memberKeys: group.sourceCourses.map((course) =>
+        courseCriterionKey(course.vertexAId, course.vertexBId),
+      ),
+      ...(group.transitions !== undefined ? { transitions: group.transitions } : {}),
       ...(target !== undefined ? { target } : {}),
       ...(targetRevision !== undefined ? { targetRevision } : {}),
       revision,

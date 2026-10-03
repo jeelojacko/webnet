@@ -15,6 +15,7 @@ import { canonicalGradingNum } from './gradingRevision';
 import { canonicalCourseCriteria, effectiveCriteriaForCourses } from './gradingGroupCourseCriteria';
 import { gradingCriterionRequiresSurface } from './gradingTypes';import type { GradingCriterion, GradingSide, ResolvedGradingSource } from './gradingTypes';
 import type { GradingCornerMode, GradingGroupCourseCriterionOverride } from './gradingGroupTypes';
+import type { CadGradingTransition } from './gradingGroupTypes';
 
 export interface GroupRevisionCourse {
   vertexAId: string;
@@ -39,6 +40,12 @@ export interface GroupRevisionInput {
   curveChordTolerance: number;
   cornerMode: GradingCornerMode;
   closed: boolean;
+  /**
+   * Phase 20M.2 Wave B: transition canonical fields (law/width/refs +
+   * family/side). Absent/empty = legacy hash byte-identical. Recorded
+   * revision/evidence outputs never participate (no circularity).
+   */
+  transitions?: CadGradingTransition[];
 }
 
 const criterionText = (criterion: GradingCriterion): string => {
@@ -130,6 +137,40 @@ const effectiveRequiresSurface = (
     .some((entry) => gradingCriterionRequiresSurface(entry));
 };
 
+/**
+ * Exact numeric encoding for the transition width ONLY. The 1e-9
+ * quantization below the engineering floor is kept for every other field,
+ * but a width edit must always invalidate: 40 vs 40.0000000001 straddle
+ * the exact `W <= 2*min(LL,LR)` boundary, so collapsing them would keep a
+ * stale CURRENT across a feasibility change. Full-precision repr keeps
+ * legacy no-transition hashes byte-identical (empty text when absent).
+ */
+const exactTransitionWidth = (value: number): string =>
+  Number.isFinite(value) ? String(value) : 'non-finite';
+
+/**
+ * Phase 20M.2 Wave B: canonical transition text over the persisted
+ * canonical fields only (policyVersion/jointId/memberIds/width/lawKind/
+ * lawVersion/family/side). Endpoint evidence values + provenance revision
+ * are outputs and never hash. Empty when no transitions exist, so the
+ * legacy hash is byte-identical.
+ */
+const transitionText = (transitions: CadGradingTransition[] | undefined): string => {
+  if (!transitions || transitions.length === 0) return '';
+  return transitions
+    .map((t) => [
+      `trp:${String(t.policyVersion)}`,
+      `joint:${String(t.jointId)}`,
+      `members:${(t.memberIds ?? []).join('+')}`,
+      // ponytail: full-precision width repr; 1e-9 quant for all other fields.
+      `width:${exactTransitionWidth(t.width)}`,
+      `law:${String(t.lawKind)}/${String(t.lawVersion)}`,
+      `family:${String(t.criterionFamily)}`,
+      `side:${String(t.side)}`,
+    ].join(','))
+    .join('#');
+};
+
 /** Deterministic `ggrev1:<fnv1a-hex>` over the canonical group content. */
 export const buildGroupRevision = (input: GroupRevisionInput): string => {
   const overrides = overrideText(input.criterion, input.courses, input.courseCriteria);
@@ -145,6 +186,7 @@ export const buildGroupRevision = (input: GroupRevisionInput): string => {
     `side:${input.side}`,
     `crit:${criterionText(input.criterion)}`,
     ...(overrides.length > 0 ? [overrides] : []),
+    ...(transitionText(input.transitions).length > 0 ? [transitionText(input.transitions)] : []),
     `search:${canonicalGradingNum(input.maxSearchDistance)}`,
     `chord:${canonicalGradingNum(input.curveChordTolerance)}`,
     `corner:${input.cornerMode}`,

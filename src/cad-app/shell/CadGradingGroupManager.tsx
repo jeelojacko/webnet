@@ -40,6 +40,8 @@ import type { CadGradingGroupRow } from './cadGradingGroupSnapshot';
 import { gradingDiagnosticCode, gradingLengthUnit } from './cadGradingSnapshot';
 import { CadGradingGroupInquiryPanel } from './CadGradingGroupInquiryPanel';
 import { CadGradingGroupCriteriaPanel } from './CadGradingGroupCriteriaPanel';
+import { CadGradingGroupTransitionPanel } from './CadGradingGroupTransitionPanel';
+import { resolveGroupMemberCriteria } from '../../engine/cad/grading/gradingGroupCourseCriteria';
 import { groupGhostArrows, groupGhostSeam } from './cadGradingGroupDisplay';
 import { representativeGroupCriterion, summarizeGroupMethods } from './cadGradingGroupMethodSummary';
 import { effectiveCourseCriterion, isCourseCriterionOverride } from './cadGradingGroupCourseCriteria';
@@ -52,7 +54,7 @@ interface CadGradingGroupManagerProps {
   actions: CadShellActions;
   initialSelectedId?: string;
   /** 'inquiry' focuses the report tab, 'criteria' the course-criteria editor. */
-  initialTab?: 'definition' | 'criteria' | 'inquiry';
+  initialTab?: 'definition' | 'criteria' | 'transition' | 'inquiry';
   /** Phase 20F: method preselect for analytic families. */
   initialMethod?: GradingTerminationKind;
   onClose: () => void;
@@ -530,7 +532,7 @@ export const CadGradingGroupManager: React.FC<CadGradingGroupManagerProps> = ({
   const rows = data?.groups ?? [];
   const lengthUnit = gradingLengthUnit(snapshot.units);
   const [notice, setNotice] = React.useState<string | null>(null);
-  const [tab, setTab] = React.useState<'definition' | 'criteria' | 'inquiry'>(initialTab);
+  const [tab, setTab] = React.useState<'definition' | 'criteria' | 'transition' | 'inquiry'>(initialTab);
   const selectedId = data?.selectedGroupId ?? initialSelectedId ?? null;
   const selected = rows.find((row) => row.id === selectedId) ?? rows[0] ?? null;
   // Phase 20F.2 §22 — calc-notice follow-up, same contract as the grading
@@ -585,6 +587,7 @@ export const CadGradingGroupManager: React.FC<CadGradingGroupManagerProps> = ({
       <div className="mb-2 flex gap-1">
         <button type="button" className={buttonClass} data-cad-grading-group-tab="definition" onClick={() => setTab('definition')}>Definition</button>
         <button type="button" className={buttonClass} data-cad-grading-group-tab="criteria" onClick={() => setTab('criteria')}>Course Criteria</button>
+        <button type="button" className={buttonClass} data-cad-grading-group-tab="transition" onClick={() => setTab('transition')}>Transition</button>
         <button type="button" className={buttonClass} data-cad-grading-group-tab="inquiry" onClick={() => setTab('inquiry')}>Inquiry</button>
       </div>
       <CreateForm
@@ -633,6 +636,16 @@ export const CadGradingGroupManager: React.FC<CadGradingGroupManagerProps> = ({
           currentSurfaces={(snapshot.surface?.surfaces ?? [])
             .filter((surface) => surface.status === 'CURRENT')
             .map((surface) => ({ id: surface.id, name: surface.name }))}
+        />
+      ) : null}
+      {tab === 'transition' && selected ? (
+        <CadGradingGroupTransitionPanel
+          group={selected.definition}
+          memberSources={selected.memberSources}
+          memberCriteria={resolveGroupMemberCriteria(selected.definition)}
+          side={selected.definition.side}
+          run={(command) => run(actions, command)}
+          onNotice={setNotice}
         />
       ) : null}
       {tab === 'inquiry' && selected ? (
