@@ -193,9 +193,18 @@ describe('MapView zoom gesture transform snapshot', () => {
         await Promise.resolve();
       });
     }
-    await runFrame();
+    // The settling->idle commit frame (tile level / geometry swap) must NOT
+    // flip shapeRendering on the same frame — that is the visible last-frame pop.
     expect(phaseNode.dataset.mapInteractionPhase).toBe('idle');
-    expect(shapeRenderingOf(svg)).toBe('geometricPrecision');
+    expect(shapeRenderingOf(svg)).toBe('optimizeSpeed');
+
+    // Precision is restored on a subsequent paint once geometry is synced.
+    let precisionRestored = false;
+    for (let index = 0; index < 8 && !precisionRestored; index += 1) {
+      if (!(await runFrame())) break;
+      precisionRestored = shapeRenderingOf(svg) === 'geometricPrecision';
+    }
+    expect(precisionRestored).toBe(true);
     assertSharedSnapshot();
 
     await act(async () => {

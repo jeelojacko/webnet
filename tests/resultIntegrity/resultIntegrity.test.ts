@@ -14,6 +14,7 @@ import {
   canReviewResult,
   canUseResultForDeliverable,
   canUseResultForDownstreamGeometry,
+  decideExportVerdict,
   STALE_RESULT_STATUS_LINE,
   type AppliedRunIdentity,
   type ResultDependencyIdentity,
@@ -197,6 +198,7 @@ describe('result integrity assessment', () => {
     expect(assessment.state).toBe('FRESH_FAILED');
     expect(assessment.reason).toBe('RUN_FAILED');
     expect(canUseResultForDeliverable(assessment)).toBe(false);
+    expect(canUseResultForDownstreamGeometry(assessment)).toBe(false);
     expect(canInspectResult(assessment)).toBe(true);
     const staleFailed = assessResultIntegrity({
       result: failed,
@@ -204,6 +206,55 @@ describe('result integrity assessment', () => {
       current: identityOf({ input: 'changed\n' }),
     });
     expect(staleFailed.state).toBe('STALE_FAILED');
+    expect(staleFailed.reason).toBe('RESULT_STALE');
+    expect(canUseResultForDeliverable(staleFailed)).toBe(false);
+    expect(canUseResultForDownstreamGeometry(staleFailed)).toBe(false);
+  });
+
+  it('reports STALE_SUCCESS (not STALE_FAILED) for a stale successful planning run', () => {
+    for (const runMode of ['preanalysis', 'data-check', 'blunder-detect']) {
+      const run = baseRunSnapshot();
+      run.runMode = runMode as RunSettingsSnapshot['runMode'];
+      const applied = identityOf({ runSnapshot: run });
+      const assessment = assessResultIntegrity({
+        result: okResult({ converged: runMode !== 'data-check' }),
+        applied,
+        current: identityOf({ input: 'changed after planning run\n' }),
+      });
+      expect(assessment.state).toBe('STALE_SUCCESS');
+      expect(assessment.reason).toBe('RESULT_STALE');
+      expect(canUseResultForDeliverable(assessment)).toBe(false);
+      expect(canUseResultForDownstreamGeometry(assessment)).toBe(false);
+    }
+  });
+
+  it('keeps a genuinely failed planning run as STALE_FAILED', () => {
+    const run = baseRunSnapshot();
+    run.runMode = 'preanalysis';
+    const applied = identityOf({ runSnapshot: run });
+    const assessment = assessResultIntegrity({
+      result: okResult({ success: false, converged: false, preanalysisMode: true }),
+      applied,
+      current: identityOf({ input: 'changed\n' }),
+    });
+    expect(assessment.state).toBe('STALE_FAILED');
+  });
+
+  it('keeps every stale state blocked from export and downstream geometry', () => {
+    const applied = identityOf();
+    const changed = identityOf({ input: 'edited\n' });
+    for (const state of ['STALE_SUCCESS', 'STALE_FAILED'] as const) {
+      const result =
+        state === 'STALE_SUCCESS'
+          ? okResult()
+          : okResult({ success: false, converged: false });
+      const assessment = assessResultIntegrity({ result, applied, current: changed });
+      expect(assessment.state).toBe(state);
+      expect(canUseResultForDeliverable(assessment)).toBe(false);
+      expect(canUseResultForDownstreamGeometry(assessment)).toBe(false);
+      expect(decideExportVerdict('points', assessment)).toBe('BLOCK');
+      expect(decideExportVerdict('webnet', assessment)).toBe('ALLOW_DIAGNOSTIC_WITH_STATUS');
+    }
   });
 
   it('keeps a failed preanalysis run as a true failure, not planning-only', () => {

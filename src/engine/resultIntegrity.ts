@@ -230,6 +230,11 @@ export const assessResultIntegrity = (params: {
   // run is never surfaced as a failed solve; exports/drafting stay blocked
   // because deliverability still requires FRESH_SUCCESS.
   const completedNonDeliverable = result.success && !deliverableMode;
+  // A stale result should reflect whether the run itself succeeded for its
+  // mode, not just whether it was deliverable. A successfully completed
+  // preanalysis/data-check/blunder run is STALE_SUCCESS (still blocked from
+  // every export/downstream gate); only a genuinely failed run is STALE_FAILED.
+  const runSucceeded = ok || completedNonDeliverable;
   if (fresh && ok) return { state: 'FRESH_SUCCESS', reason: null, changedDeps, blockMessage: null };
   if (fresh && completedNonDeliverable) {
     return {
@@ -250,7 +255,7 @@ export const assessResultIntegrity = (params: {
   }
   if (!applied.inputFingerprint || !applied.mathFingerprint || !applied.exclusionFingerprint) {
     return {
-      state: ok ? 'STALE_SUCCESS' : 'STALE_FAILED',
+      state: runSucceeded ? 'STALE_SUCCESS' : 'STALE_FAILED',
       reason: 'DEPENDENCY_MISMATCH',
       changedDeps,
       blockMessage: 'This result predates dependency tracking and cannot be proven current. Re-run the adjustment to refresh it.',
@@ -258,7 +263,7 @@ export const assessResultIntegrity = (params: {
   }
   const what = changedDeps.join(', ');
   return {
-    state: ok ? 'STALE_SUCCESS' : 'STALE_FAILED',
+    state: runSucceeded ? 'STALE_SUCCESS' : 'STALE_FAILED',
     reason: 'RESULT_STALE',
     changedDeps,
     blockMessage: `Project state changed since this run (${what}). Re-run the adjustment to refresh it — stale results cannot feed exports or drafting.`,
