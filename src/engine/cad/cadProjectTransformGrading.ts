@@ -28,7 +28,7 @@
  */
 import type { GradingCriterion } from './grading/gradingTypes';
 import type { CadGrading } from './grading/gradingTypes';
-import type { CadGradingGroup } from './grading/gradingGroupTypes';
+import type { CadGradingGroup, CadGradingTransition } from './grading/gradingGroupTypes';
 
 /** Scale only horizontal criterion lengths; grade/ratio/elevation untouched. */
 export const scaleGradingCriterion = (
@@ -62,6 +62,43 @@ export const scaleCadGrading = (grading: CadGrading, scale: number): CadGrading 
   curveChordTolerance: grading.curveChordTolerance * scale,
 });
 
+/**
+ * Phase 20M.2 Wave B: scale one retained transition intent. Width is a
+ * horizontal source-line length (scales like `distance`); distance-family
+ * endpoint evidence scalars are horizontal too. The recorded revision is a
+ * stale output under new geometry and is dropped (any non-transform edit
+ * keeps its stamp, so the staleness gate holds).
+ */
+const scaleTransition = (entry: CadGradingTransition, scale: number): CadGradingTransition => ({
+  ...entry,
+  memberIds: [...entry.memberIds],
+  width: entry.width * scale,
+  ...(entry.endpoints !== undefined
+    ? {
+        endpoints: {
+          refs: [...entry.endpoints.refs],
+          values:
+            entry.criterionFamily === 'distance'
+              ? entry.endpoints.values.map((value) => value * scale)
+              : [...entry.endpoints.values],
+        },
+      }
+    : {}),
+  ...(entry.provenance !== undefined
+    ? {
+        provenance: {
+          jointId: entry.provenance.jointId,
+          memberIds: [...entry.provenance.memberIds],
+          width: entry.width * scale,
+          lawKind: entry.provenance.lawKind,
+          lawVersion: entry.provenance.lawVersion,
+          criterionFamily: entry.provenance.criterionFamily,
+          side: entry.provenance.side,
+        },
+      }
+    : {}),
+});
+
 /** Scale a grading group: default criterion, search/tolerance, sparse overrides. */
 export const scaleCadGradingGroup = (group: CadGradingGroup, scale: number): CadGradingGroup => ({
   ...group,
@@ -74,6 +111,10 @@ export const scaleCadGradingGroup = (group: CadGradingGroup, scale: number): Cad
           criterion: scaleGradingCriterion(entry.criterion, scale),
         })),
       }
+    : {}),
+  // Phase 20M.2 Wave B: transitions ride along (never dropped to absence).
+  ...(group.transitions !== undefined
+    ? { transitions: group.transitions.map((entry) => scaleTransition(entry, scale)) }
     : {}),
   maxSearchDistance: group.maxSearchDistance * scale,
   curveChordTolerance: group.curveChordTolerance * scale,

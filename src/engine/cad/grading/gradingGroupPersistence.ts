@@ -1,6 +1,6 @@
 import { createGroupDefinition, validateGroupBaseShape } from './gradingGroupAuthoring';
 import { validateGradingCriterion } from './gradingAuthoring';
-import type { CadGradingGroup } from './gradingGroupTypes';
+import type { CadGradingGroup, CadGradingTransition } from './gradingGroupTypes';
 
 /**
  * Phase 20C Wave-3 group definition persistence (ENGINE ONLY — no UI).
@@ -32,12 +32,109 @@ export const cloneCadGradingGroup = (group: CadGradingGroup): CadGradingGroup =>
   curveChordTolerance: group.curveChordTolerance,
   cornerMode: group.cornerMode,
   ...(group.closed === true ? { closed: true as const } : {}),
+  // Phase 20M.2 Wave B: transitions ride verbatim (intent, never
+  // interpreted here); absent stays absent so legacy files are untouched.
+  ...(group.transitions !== undefined ? { transitions: cloneTransitions(group.transitions) } : {}),
   ...(group.layerId !== undefined ? { layerId: group.layerId } : {}),
   ...(group.styleId !== undefined ? { styleId: group.styleId } : {}),
 });
 
 export const cloneCadGradingGroups = (groups: CadGradingGroup[] | undefined): CadGradingGroup[] =>
   (groups ?? []).map(cloneCadGradingGroup);
+
+/** Verbatim intent copy (shallow per known evidence leg; never validated). */
+export const cloneTransitions = (
+  transitions: CadGradingTransition[] | undefined,
+): CadGradingTransition[] | undefined => {
+  if (transitions === undefined) return undefined;
+  return transitions.map((entry) => ({
+    ...entry,
+    memberIds: [...entry.memberIds],
+    ...(entry.endpoints !== undefined
+      ? { endpoints: { refs: [...entry.endpoints.refs], values: [...entry.endpoints.values] } }
+      : {}),
+    ...(entry.provenance !== undefined
+      ? { provenance: { ...entry.provenance, memberIds: [...entry.provenance.memberIds] } }
+      : {}),
+  }));
+};
+
+/**
+ * Present-but-unreadable intent marker: structurally invalid, so admission
+ * fails it closed (MALFORMED) instead of scrubbing it to absence. Member
+ * refs are empty (never adjacent), the policy version is unknown, and the
+ * width is non-finite — every admission gate rejects it; nothing about the
+ * marker is ever solved, meshed, or cited.
+ */
+const malformedTransitionMarker = (): CadGradingTransition => ({
+  policyVersion: '',
+  jointId: '',
+  memberIds: [],
+  width: NaN,
+  lawKind: '',
+  lawVersion: '',
+  criterionFamily: '',
+  side: 'left',
+});
+
+/**
+ * Phase 20M.2 Wave B sanitation: every present entry is retained verbatim
+ * as invalid-or-valid intent (malformed/unknown/stale fails closed at
+ * solve, never scrubbed to absence). A present-but-non-array field and
+ * structurally non-object entries are retained as malformed markers that
+ * admission rejects. Only an absent key stays absent (exact legacy).
+ */
+export const sanitizeTransitions = (raw: unknown): CadGradingTransition[] | undefined => {
+  if (raw === undefined) return undefined;
+  if (!Array.isArray(raw)) return [malformedTransitionMarker()];
+  const kept: CadGradingTransition[] = [];
+  for (const entry of raw) {
+    if (entry === null || typeof entry !== 'object') {
+      kept.push(malformedTransitionMarker());
+      continue;
+    }
+    const candidate = entry as Record<string, unknown>;
+    kept.push({
+      policyVersion: candidate['policyVersion'] as string,
+      jointId: candidate['jointId'] as string,
+      memberIds: Array.isArray(candidate['memberIds'])
+        ? (candidate['memberIds'] as unknown[]).map(String)
+        : [],
+      width: candidate['width'] as number,
+      lawKind: candidate['lawKind'] as string,
+      lawVersion: candidate['lawVersion'] as string,
+      criterionFamily: candidate['criterionFamily'] as string,
+      side: candidate['side'] as CadGradingTransition['side'],
+      ...((candidate['endpoints'] as Record<string, unknown> | undefined) !== undefined &&
+      (candidate['endpoints'] as Record<string, unknown> | null) !== null &&
+      typeof candidate['endpoints'] === 'object'
+        ? {
+            endpoints: {
+              refs: Array.isArray((candidate['endpoints'] as Record<string, unknown>)['refs'])
+                ? ((candidate['endpoints'] as Record<string, unknown>)['refs'] as unknown[]).map(String)
+                : [],
+              values: Array.isArray((candidate['endpoints'] as Record<string, unknown>)['values'])
+                ? ((candidate['endpoints'] as Record<string, unknown>)['values'] as unknown[]).map(Number)
+                : [],
+            },
+          }
+        : {}),
+      ...(candidate['provenance'] !== undefined &&
+      candidate['provenance'] !== null &&
+      typeof candidate['provenance'] === 'object'
+        ? {
+            provenance: {
+              ...(candidate['provenance'] as Record<string, unknown>),
+              memberIds: Array.isArray((candidate['provenance'] as Record<string, unknown>)['memberIds'])
+                ? ((candidate['provenance'] as Record<string, unknown>)['memberIds'] as unknown[]).map(String)
+                : [],
+            } as CadGradingTransition['provenance'],
+          }
+        : {}),
+    });
+  }
+  return kept;
+};
 
 /** Load-time backfill: legacy drawings (field absent) open with no groups. */
 export const backfillCadGradingGroups = (groups: CadGradingGroup[] | undefined): CadGradingGroup[] =>
@@ -114,7 +211,12 @@ export const sanitizeCadGradingGroupsDetailed = (
         : {}),
     });
     if (!built.ok) continue;
-    kept.push(cloneCadGradingGroup(built.value));
+    // Phase 20M.2 Wave B: re-attach raw transition intents verbatim
+    // (retained, never validated here); absent key stays absent.
+    const transitions = sanitizeTransitions(candidate['transitions']);
+    const cloned = cloneCadGradingGroup(built.value);
+    if (transitions !== undefined) cloned.transitions = transitions;
+    kept.push(cloned);
   }
   return { groups: kept, dropped };
 };

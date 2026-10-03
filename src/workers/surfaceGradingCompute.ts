@@ -7,6 +7,8 @@
  * Snapshot types and the compute outcome live in the kernel and are
  * re-exported here so existing worker/test import sites keep working.
  */
+import { resolveAnalyticCriterionAt } from '../engine/cad/grading/gradingAnalyticCriterion';
+import { gradingSideNormal } from '../engine/cad/grading/gradingCourseFrame';
 import { solveArcGrading } from '../engine/cad/grading/arcSolve';
 import {
   assembleAnalyticGradingResult,
@@ -14,6 +16,14 @@ import {
 } from '../engine/cad/grading/gradingResultAssemble';
 import { buildTargetQuery } from '../engine/cad/grading/gradingTargetIndex';
 import { solveGradingChord } from '../engine/cad/grading/solveAnalyticGradingChord';
+import {
+  admitGradingTransition,
+  evaluateTransitionLinearV1,
+  TRANSITION_LAW_KIND,
+  TRANSITION_LAW_VERSION,
+  TRANSITION_POLICY_VERSION,
+  type TransitionFamily,
+} from '../engine/cad/grading/gradingTransitionPolicy';
 import {
   finiteSource,
 } from '../engine/cad/grading/solveStraightChord';
@@ -35,6 +45,7 @@ import type {
   GradingCriterion,
   GradingSide,
 } from '../engine/cad/grading/gradingTypes';
+import type { CadGradingTransition } from '../engine/cad/grading/gradingGroupTypes';
 
 export type {
   GradingComputeSource,
@@ -271,6 +282,404 @@ export const validateGradingSourceBoundary = (
   }
   if (!boundaryEquals(sourceCheck.last, sourceCheck.expectedLast, scale)) {
     return 'GRADING_AGREEMENT_SOURCE_BOUNDARY';
+  }
+  return null;
+};
+
+/**
+ * Phase 20M.2 WAVE F — transition agreement (worker independent re-evaluation).
+ *
+ * The plan carries law/ref/station data only (never geometry snapshots as
+ * input): lawKind/lawVersion/family/width, endpoint member refs, pinned
+ * endpoint evidence at the recorded `ggrev1:`, and the joint station origin.
+ * The worker rechecks family/grade/admission via `admitGradingTransition`
+ * (which re-resolves native endpoint criteria), reconstructs v(s), and
+ * validates transition-owned vertices at their own source station under the
+ * CURRENT coordinate/elevation authorities. Source boundary check unchanged.
+ * Every mismatch fails closed with a bounded GRADING_AGREEMENT_TRANSITION_*
+ * code. No epsilon is introduced or widened anywhere.
+ *
+ * Worker-side transition envelope: the canonical persisted intent
+ * (`CadGradingTransition`) plus the agreement-only fields the worker needs
+ * (group context, joint Z/station, pinned evidence, recorded revision).
+ * Evidence outputs are never geometric input (persisted-model §§4–5).
+ */
+export interface GroupTransitionPlan extends CadGradingTransition {
+  memberIds: string[];
+  groupSide: GradingSide;
+  isOpen: boolean;
+  transitionCount: number;
+  /** Authoritative joint Z the endpoint natives resolve at. */
+  jointZ: number;
+  /** Pinned endpoint scalars + gradeRatios as evidence (never input). */
+  endpointEvidence: { vL: number; vR: number; gL: number; gR: number };
+  /** Persisted joint station origin (s = 0 at the joint). */
+  jointStation: number;
+  /** `ggrev1:` recorded when the evidence was pinned. */
+  recordedRevision: string;
+}
+
+/** Native member geometry resolved from the endpoint refs (service side). */
+export interface GroupTransitionMemberView {
+  memberId: string;
+  criterion: GradingCriterion;
+  length: number;
+  dirX: number;
+  dirY: number;
+  startZ: number;
+  endZ: number;
+  isArc: boolean;
+  maxSearchDistance: number;
+}
+
+export interface GroupTransitionAgreement {
+  vL: number;
+  vR: number;
+  sL: number;
+  sR: number;
+  family: TransitionFamily;
+}
+
+export type GroupTransitionAgreementOutcome =
+  | ({ ok: true } & GroupTransitionAgreement)
+  | { ok: false; code: string };
+
+const transitionFail = (code: string): GroupTransitionAgreementOutcome => ({ ok: false, code });
+
+/**
+ * Request-level agreement: rechecks admission (re-resolving natives),
+ * then compares re-resolved scalars against the pinned evidence AND the
+ * recorded revision against the live revision. Null-equivalent ok object
+ * on agreement, else the bounded reject code.
+ */
+export const checkGroupTransitionAgreement = (
+  plan: GroupTransitionPlan,
+  members: readonly GroupTransitionMemberView[],
+  liveRevision: string,
+): GroupTransitionAgreementOutcome => {
+  if (!plan || !Array.isArray(plan.memberIds) || plan.memberIds.length !== 2) {
+    return transitionFail('GRADING_AGREEMENT_TRANSITION_MALFORMED');
+  }
+  if (!Array.isArray(members) || members.length !== 2) {
+    return transitionFail('GRADING_AGREEMENT_TRANSITION_MALFORMED');
+  }
+  const mL = members[0]!;
+  const mR = members[1]!;
+  if (mL.memberId !== plan.memberIds[0] || mR.memberId !== plan.memberIds[1]) {
+    return transitionFail('GRADING_AGREEMENT_TRANSITION_STALE');
+  }
+  if (plan.policyVersion !== TRANSITION_POLICY_VERSION) {
+    return transitionFail('GRADING_AGREEMENT_TRANSITION_VERSION_UNKNOWN');
+  }
+  if (plan.lawKind !== TRANSITION_LAW_KIND || plan.lawVersion !== TRANSITION_LAW_VERSION) {
+    return transitionFail('GRADING_AGREEMENT_TRANSITION_LAW_UNKNOWN');
+  }
+  if (plan.transitionCount !== 1) {
+    return transitionFail('GRADING_AGREEMENT_TRANSITION_OVERLAP');
+  }
+  if (plan.recordedRevision !== liveRevision) {
+    return transitionFail('GRADING_AGREEMENT_TRANSITION_STALE');
+  }
+  const admitted = admitGradingTransition({
+    policyVersion: plan.policyVersion,
+    lawKind: plan.lawKind,
+    lawVersion: plan.lawVersion,
+    criterionFamily: plan.criterionFamily,
+    jointId: plan.jointId,
+    memberIds: [plan.memberIds[0]!, plan.memberIds[1]!],
+    width: plan.width,
+    side: plan.side,
+    groupSide: plan.groupSide,
+    isOpen: plan.isOpen,
+    transitionCount: plan.transitionCount,
+    jointZ: plan.jointZ,
+    members: [
+      {
+        memberId: mL.memberId,
+        criterion: mL.criterion,
+        length: mL.length,
+        dirX: mL.dirX,
+        dirY: mL.dirY,
+        startZ: mL.startZ,
+        endZ: mL.endZ,
+        isArc: mL.isArc,
+        maxSearchDistance: mL.maxSearchDistance,
+      },
+      {
+        memberId: mR.memberId,
+        criterion: mR.criterion,
+        length: mR.length,
+        dirX: mR.dirX,
+        dirY: mR.dirY,
+        startZ: mR.startZ,
+        endZ: mR.endZ,
+        isArc: mR.isArc,
+        maxSearchDistance: mR.maxSearchDistance,
+      },
+    ],
+  });
+  if (!admitted.ok) {
+    switch (admitted.code) {
+      case 'MALFORMED':
+      case 'WIDTH_INVALID':
+        return transitionFail('GRADING_AGREEMENT_TRANSITION_MALFORMED');
+      case 'VERSION_UNKNOWN':
+        return transitionFail('GRADING_AGREEMENT_TRANSITION_VERSION_UNKNOWN');
+      case 'LAW_UNKNOWN':
+        return transitionFail('GRADING_AGREEMENT_TRANSITION_LAW_UNKNOWN');
+      case 'CARDINALITY':
+        return transitionFail('GRADING_AGREEMENT_TRANSITION_OVERLAP');
+      case 'WIDTH_INFEASIBLE':
+        return transitionFail('GRADING_AGREEMENT_TRANSITION_WIDE');
+      case 'MEMBER_REF_STALE':
+        return transitionFail('GRADING_AGREEMENT_TRANSITION_STALE');
+      case 'FAMILY_MISMATCH':
+      case 'GRADE_MISMATCH':
+        return transitionFail('GRADING_AGREEMENT_TRANSITION_FAMILY_MISMATCH');
+      case 'NATIVE_CRITERION':
+      case 'MAX_SEARCH':
+        return transitionFail('GRADING_AGREEMENT_TRANSITION_OFF_LAW');
+      default:
+        return transitionFail('GRADING_AGREEMENT_TRANSITION_GEOMETRY');
+    }
+  }
+  // Pinned evidence is deterministic same-build output: exact comparison.
+  const ev = plan.endpointEvidence;
+  if (!ev || !(ev.vL === admitted.vL && ev.vR === admitted.vR)) {
+    return transitionFail('GRADING_AGREEMENT_TRANSITION_STALE');
+  }
+  return { ok: true, vL: admitted.vL, vR: admitted.vR, sL: admitted.sL, sR: admitted.sR, family: admitted.family };
+};
+
+/** Null on agreement, else the bounded reject code. */
+export const validateGroupTransitionAgreement = (
+  plan: GroupTransitionPlan,
+  members: readonly GroupTransitionMemberView[],
+  liveRevision: string,
+): string | null => {
+  const out = checkGroupTransitionAgreement(plan, members, liveRevision);
+  return out.ok ? null : out.code;
+};
+
+export interface TransitionInteriorVertex {
+  /** Joint-local source-line station: interior is [sL, sR]. */
+  s: number;
+  x: number;
+  y: number;
+  z: number;
+  /** Source-line point at the same station (transition never moves source). */
+  srcX: number;
+  srcY: number;
+  srcZ: number;
+}
+
+/**
+ * Mesh-level agreement: each transition-owned vertex independently
+ * re-evaluates the legislated TRANSITION_LINEAR_V1 law at its own station
+ * under the shared authorities (coordinate for plan distance, elevation
+ * for Z families). Mis-assigned stations and non-finite nodes fail closed.
+ */
+export const validateTransitionInteriorVertices = (
+  law: GroupTransitionAgreement,
+  vertices: readonly TransitionInteriorVertex[],
+): string | null => {
+  for (const v of vertices) {
+    if (!Number.isFinite(v.s) || !Number.isFinite(v.x) || !Number.isFinite(v.y) || !Number.isFinite(v.z) ||
+        !Number.isFinite(v.srcX) || !Number.isFinite(v.srcY) || !Number.isFinite(v.srcZ)) {
+      return 'GRADING_AGREEMENT_TRANSITION_MALFORMED';
+    }
+    if (!(v.s >= law.sL && v.s <= law.sR)) {
+      return 'GRADING_AGREEMENT_TRANSITION_GEOMETRY';
+    }
+    const expected = evaluateTransitionLinearV1(law.vL, law.vR, law.sL, law.sR, v.s);
+    if (law.family === 'distance') {
+      const observed = Math.hypot(v.x - v.srcX, v.y - v.srcY);
+      const scale = Math.max(1, Math.abs(v.x), Math.abs(v.srcX), Math.abs(v.y), Math.abs(v.srcY));
+      if (Math.abs(observed - expected) > coordinateAgreementTol(observed, expected, scale) + AGREEMENT_FLOOR) {
+        return 'GRADING_AGREEMENT_TRANSITION_OFF_LAW';
+      }
+    } else if (law.family === 'relative-elevation') {
+      const observed = v.z - v.srcZ;
+      if (Math.abs(observed - expected) > elevationAgreementTol(observed, expected, []) + AGREEMENT_FLOOR) {
+        return 'GRADING_AGREEMENT_TRANSITION_OFF_LAW';
+      }
+    } else if (Math.abs(v.z - expected) > elevationAgreementTol(v.z, expected, []) + AGREEMENT_FLOOR) {
+      return 'GRADING_AGREEMENT_TRANSITION_OFF_LAW';
+    }
+  }
+  return null;
+};
+
+/**
+ * Post-solve mesh agreement: the result-owned transition leg carries the
+ * three transition-owned checkpoint pairs (daylight qCutL/q0/qCutR with
+ * source pCutL/V/pCutR at joint-local stations sL/0/sR). Every checkpoint
+ * is re-evaluated against the legislated TRANSITION_LINEAR_V1 law under
+ * the shared authorities, and the two boundary checkpoints are
+ * additionally re-checked against their own re-resolved native criterion
+ * (outside-interval native law via `resolveAnalyticCriterionAt`, shared
+ * tols, no widening). Any mismatch fails closed with a bounded
+ * GRADING_AGREEMENT_TRANSITION_* code.
+ */
+export interface TransitionResultMeshInput {
+  family: TransitionFamily;
+  sL: number;
+  sR: number;
+  vL: number;
+  vR: number;
+  /** Flat XYZ triplets: qCutL, q0, qCutR. */
+  daylightCheckpoints: readonly number[];
+  /** Flat XYZ triplets: pCutL, V, pCutR. */
+  sourceCheckpoints: readonly number[];
+  criterionL: GradingCriterion;
+  criterionR: GradingCriterion;
+  /** Authoritative joint Z the endpoint natives resolve at. */
+  jointZ: number;
+  maxSearchDistance: number;
+  /** Result-owned daylight boundary: every checkpoint must occur in it. */
+  daylightPoints: readonly number[];
+  /** Result-owned source boundary: every source mate must occur in it. */
+  sourceBoundaryPoints: readonly number[];
+  /** Grading side: the plan offset must leave toward this side. */
+  side: GradingSide;
+}
+
+const meshPoint = (flat: readonly number[], index: number): { x: number; y: number; z: number } | null => {
+  const x = flat[index * 3];
+  const y = flat[index * 3 + 1];
+  const z = flat[index * 3 + 2];
+  if (x === undefined || y === undefined || z === undefined) return null;
+  return { x, y, z };
+};
+
+/** Boundary checkpoint against its own native criterion (never the law). */
+const checkNativeBoundary = (
+  criterion: GradingCriterion,
+  daylight: { x: number; y: number; z: number },
+  source: { x: number; y: number; z: number },
+  jointZ: number,
+  maxSearchDistance: number,
+  family: TransitionFamily,
+): string | null => {
+  const resolved = resolveAnalyticCriterionAt(criterion, jointZ, maxSearchDistance);
+  if (!resolved.ok) return 'GRADING_AGREEMENT_TRANSITION_OFF_LAW';
+  if (family === 'distance') {
+    const observed = Math.hypot(daylight.x - source.x, daylight.y - source.y);
+    const expected = resolved.value.horizontalDistance;
+    const scale = Math.max(1, Math.abs(daylight.x), Math.abs(source.x), Math.abs(daylight.y), Math.abs(source.y));
+    if (Math.abs(observed - expected) > coordinateAgreementTol(observed, expected, scale) + AGREEMENT_FLOOR) {
+      return 'GRADING_AGREEMENT_TRANSITION_OFF_LAW';
+    }
+    return null;
+  }
+  if (family === 'relative-elevation') {
+    const observed = daylight.z - source.z;
+    const expected = resolved.value.limitElevation - jointZ;
+    if (Math.abs(observed - expected) > elevationAgreementTol(observed, expected, []) + AGREEMENT_FLOOR) {
+      return 'GRADING_AGREEMENT_TRANSITION_OFF_LAW';
+    }
+    return null;
+  }
+  if (Math.abs(daylight.z - resolved.value.limitElevation) > elevationAgreementTol(daylight.z, resolved.value.limitElevation, []) + AGREEMENT_FLOOR) {
+    return 'GRADING_AGREEMENT_TRANSITION_OFF_LAW';
+  }
+  return null;
+};
+
+/** Result-owned flat XYZ array contains the vertex (shared authorities). */
+const flatContainsVertex = (
+  flat: readonly number[],
+  p: { x: number; y: number; z: number },
+): boolean => {
+  for (let i = 0; i + 2 < flat.length; i += 3) {
+    const cx = flat[i]!;
+    const cy = flat[i + 1]!;
+    const cz = flat[i + 2]!;
+    const plan = Math.hypot(p.x - cx, p.y - cy);
+    const scale = Math.max(1, Math.abs(p.x), Math.abs(cx), Math.abs(p.y), Math.abs(cy));
+    if (plan > coordinateAgreementTol(plan, 0, scale) + AGREEMENT_FLOOR) continue;
+    if (Math.abs(p.z - cz) > elevationAgreementTol(p.z, cz, []) + AGREEMENT_FLOOR) continue;
+    return true;
+  }
+  return false;
+};
+
+const gradeOf = (criterion: GradingCriterion): number | null => {
+  const g = (criterion as { gradeRatio?: unknown }).gradeRatio;
+  return typeof g === 'number' && Number.isFinite(g) && g !== 0 ? g : null;
+};
+
+export const validateTransitionResultMesh = (input: TransitionResultMeshInput): string | null => {
+  if (!Number.isFinite(input.sL) || !Number.isFinite(input.sR) || !(input.sL < input.sR)) {
+    return 'GRADING_AGREEMENT_TRANSITION_MALFORMED';
+  }
+  if (input.daylightCheckpoints.length !== 9 || input.sourceCheckpoints.length !== 9) {
+    return 'GRADING_AGREEMENT_TRANSITION_MALFORMED';
+  }
+  const law = { vL: input.vL, vR: input.vR, sL: input.sL, sR: input.sR, family: input.family };
+  const stations = [input.sL, 0, input.sR];
+  const vertices: TransitionInteriorVertex[] = [];
+  for (let i = 0; i < 3; i += 1) {
+    const daylight = meshPoint(input.daylightCheckpoints, i);
+    const source = meshPoint(input.sourceCheckpoints, i);
+    if (!daylight || !source) return 'GRADING_AGREEMENT_TRANSITION_MALFORMED';
+    vertices.push({ s: stations[i]!, ...daylight, srcX: source.x, srcY: source.y, srcZ: source.z });
+  }
+  // Inside: every checkpoint obeys the legislated law at its own station.
+  const onLaw = validateTransitionInteriorVertices(law, vertices);
+  if (onLaw) return onLaw;
+  // Outside: boundary checkpoints obey their own native criterion.
+  const left = checkNativeBoundary(input.criterionL, meshPoint(input.daylightCheckpoints, 0)!, meshPoint(input.sourceCheckpoints, 0)!, input.jointZ, input.maxSearchDistance, input.family);
+  if (left) return left;
+  const right = checkNativeBoundary(input.criterionR, meshPoint(input.daylightCheckpoints, 2)!, meshPoint(input.sourceCheckpoints, 2)!, input.jointZ, input.maxSearchDistance, input.family);
+  if (right) return right;
+  // Direction + Z: the plan offset must leave along the production side
+  // normal (never magnitude-only), with the family-mapped Z. The tangent
+  // comes from the source mates (collinear admission), the normal from the
+  // production `gradingSideNormal` convention — shared tols, no widening.
+  const pCutL = meshPoint(input.sourceCheckpoints, 0)!;
+  const pCutR = meshPoint(input.sourceCheckpoints, 2)!;
+  const normal = gradingSideNormal(pCutR.x - pCutL.x, pCutR.y - pCutL.y, input.side);
+  if (!normal) return 'GRADING_AGREEMENT_TRANSITION_MALFORMED';
+  const gL = gradeOf(input.criterionL);
+  const gR = gradeOf(input.criterionR);
+  if (gL === null || gR === null) return 'GRADING_AGREEMENT_TRANSITION_MALFORMED';
+  const grades = [gL, gL, gR];
+  for (let i = 0; i < 3; i += 1) {
+    const g = grades[i]!;
+    const expectedV = evaluateTransitionLinearV1(input.vL, input.vR, input.sL, input.sR, stations[i]!);
+    const d = input.family === 'distance' ? expectedV
+      : input.family === 'relative-elevation' ? expectedV / g
+      : (expectedV - input.jointZ) / g;
+    if (!Number.isFinite(d)) return 'GRADING_AGREEMENT_TRANSITION_MALFORMED';
+    const daylight = meshPoint(input.daylightCheckpoints, i)!;
+    const source = meshPoint(input.sourceCheckpoints, i)!;
+    const ox = daylight.x - source.x;
+    const oy = daylight.y - source.y;
+    const ex = d * normal.nx;
+    const ey = d * normal.ny;
+    if (Math.abs(ox - ex) > coordinateAgreementTol(ox, ex, Math.max(1, Math.abs(ox), Math.abs(ex))) + AGREEMENT_FLOOR) {
+      return 'GRADING_AGREEMENT_TRANSITION_OFF_LAW';
+    }
+    if (Math.abs(oy - ey) > coordinateAgreementTol(oy, ey, Math.max(1, Math.abs(oy), Math.abs(ey))) + AGREEMENT_FLOOR) {
+      return 'GRADING_AGREEMENT_TRANSITION_OFF_LAW';
+    }
+    if (input.family === 'distance') {
+      const expectedZ = input.jointZ + g * expectedV;
+      if (Math.abs(daylight.z - expectedZ) > elevationAgreementTol(daylight.z, expectedZ, []) + AGREEMENT_FLOOR) {
+        return 'GRADING_AGREEMENT_TRANSITION_OFF_LAW';
+      }
+    }
+  }
+  // Mesh anchoring: the checkpoints must occur in the result-owned
+  // boundary arrays — a tampered boundary/mesh with an intact leg fails.
+  for (let i = 0; i < 3; i += 1) {
+    if (!flatContainsVertex(input.daylightPoints, meshPoint(input.daylightCheckpoints, i)!)) {
+      return 'GRADING_AGREEMENT_TRANSITION_GEOMETRY';
+    }
+    if (!flatContainsVertex(input.sourceBoundaryPoints, meshPoint(input.sourceCheckpoints, i)!)) {
+      return 'GRADING_AGREEMENT_TRANSITION_GEOMETRY';
+    }
   }
   return null;
 };

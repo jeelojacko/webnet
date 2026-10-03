@@ -137,3 +137,70 @@ export const deriveGradingTopologyExpectation = (
     gradingBoundaryKind: 'open-path',
   };
 };
+
+/**
+ * Phase 20M.2 WAVE E — transition-aware PRE-MESH group expectation.
+ *
+ * Additive helper over `deriveGradingTopologyExpectation` (untouched).
+ * A group with NO transition intent (`null`/`undefined`/empty) derives the
+ * legacy expectation byte-identically. An admitted open transition declares
+ * the group-scoped open-strip shape: 1 component / 1 boundary cycle / 1
+ * positive-width run. Anything else fails pre-mesh (never observed-count
+ * fallback, never a separate standalone-strip certificate).
+ *
+ * The intent carries pre-mesh scalars only (width + member lengths +
+ * joint/count/open flags); persisted identity refs stay canonical in
+ * `CadGradingTransition` — never a second canonical type.
+ */
+export interface TransitionExpectationIntent {
+  jointId: string;
+  /** Explicit total symmetric width W, source-line meters. */
+  width: number;
+  /** Source-line lengths of the two incident members. */
+  memberLengths: readonly [number, number];
+  /** Total transition objects on the group; trp1 admits exactly 1. */
+  transitionCount: number;
+  /** False for closed routes (excluded in trp1). */
+  isOpen: boolean;
+}
+
+export type TransitionExpectationOutcome =
+  | { ok: true; expectation: GradingTopologyExpectation }
+  | { ok: false; code: string; detail: string };
+
+export const deriveTransitionExpectation = (
+  base: DeriveTopologyExpectationInput,
+  intent: TransitionExpectationIntent | null | undefined,
+): TransitionExpectationOutcome => {
+  if (intent == null) {
+    return { ok: true, expectation: deriveGradingTopologyExpectation(base) };
+  }
+  if (typeof intent.jointId !== 'string' || intent.jointId.length === 0) {
+    return { ok: false, code: 'GRADING_AGREEMENT_TRANSITION_MALFORMED', detail: 'transition jointId required' };
+  }
+  if (intent.transitionCount !== 1) {
+    return { ok: false, code: 'GRADING_AGREEMENT_TRANSITION_OVERLAP', detail: 'trp1 admits exactly one transition per group' };
+  }
+  if (!intent.isOpen) {
+    return { ok: false, code: 'GRADING_AGREEMENT_TRANSITION_MALFORMED', detail: 'closed-route transitions excluded' };
+  }
+  const w = intent.width;
+  if (!Number.isFinite(w) || !(w > 0)) {
+    return { ok: false, code: 'GRADING_AGREEMENT_TRANSITION_MALFORMED', detail: 'transition width must be finite > 0' };
+  }
+  const [a, b] = intent.memberLengths;
+  if (!Number.isFinite(a) || !Number.isFinite(b) || !(a > 0) || !(b > 0)) {
+    return { ok: false, code: 'GRADING_AGREEMENT_TRANSITION_MALFORMED', detail: 'member lengths must be finite > 0' };
+  }
+  if (!(w <= 2 * Math.min(a, b))) {
+    return { ok: false, code: 'GRADING_AGREEMENT_TRANSITION_WIDE', detail: 'transition width exceeds 2*min(member lengths)' };
+  }
+  return {
+    ok: true,
+    expectation: deriveGradingTopologyExpectation({
+      scope: 'group',
+      closed: false,
+      positiveWidthRegions: 1,
+    }),
+  };
+};

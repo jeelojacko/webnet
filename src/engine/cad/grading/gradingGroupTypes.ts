@@ -68,6 +68,11 @@ export interface CadGradingGroup {
   curveChordTolerance: number;
   cornerMode: GradingCornerMode;
   closed?: boolean;
+  /**
+   * Phase 20M.2 Wave B — optional transition intents (policyVersion `trp1`:
+   * at most ONE; absent key = exact legacy group, never a default).
+   */
+  transitions?: CadGradingTransition[];
   layerId?: string;
   styleId?: string;
 }
@@ -93,7 +98,55 @@ export type GroupDiagnosticCode =
   | 'CORNER_MAX_DISTANCE'
   | 'GROUP_SELF_INTERSECTION'
   | 'GROUP_NON_MANIFOLD'
-  | 'CURVE_CORNER_APPROXIMATED';
+  | 'CURVE_CORNER_APPROXIMATED'
+  | 'TRANSITION_MALFORMED'
+  | 'TRANSITION_LAW_UNKNOWN'
+  | 'TRANSITION_STALE'
+  | 'TRANSITION_REJECTED';
+
+/**
+ * Phase 20M.2 Wave B — persisted collinear same-family transition intent.
+ *
+ * Additive optional element of `CadGradingGroup.transitions` (at most ONE
+ * under policyVersion `trp1`). Field CONTENT is validated at admission
+ * (`admitGradingTransition`); persistence retains every structurally-object
+ * entry verbatim as intent (malformed/stale/inadmissible fails closed at
+ * solve, never scrubbed to absence). `endpoints`/`provenance` are evidence
+ * outputs pinned at the recorded revision — never hash inputs, never
+ * geometric authority (persisted-model §§4–5).
+ */
+export interface CadGradingTransitionEndpoints {
+  /** Stable member refs, [courseCriterionKey(prev), courseCriterionKey(next)]. */
+  refs: string[];
+  /** Resolved endpoint scalars (d | Δz | E) pinned as evidence at revision. */
+  values: number[];
+}
+
+export interface CadGradingTransitionProvenance {
+  jointId: string;
+  memberIds: string[];
+  /** Total symmetric width W, meters of source-line distance. */
+  width: number;
+  lawKind: string;
+  lawVersion: string;
+  criterionFamily: string;
+  side: GradingSide;
+  /** Recorded `ggrev1:` this evidence was pinned at (output, never hashed). */
+  revision?: string;
+}
+
+export interface CadGradingTransition {
+  policyVersion: string;
+  jointId: string;
+  memberIds: string[];
+  width: number;
+  lawKind: string;
+  lawVersion: string;
+  criterionFamily: string;
+  side: GradingSide;
+  endpoints?: CadGradingTransitionEndpoints;
+  provenance?: CadGradingTransitionProvenance;
+}
 
 export interface GroupDiagnostic {
   code: GroupDiagnosticCode;
@@ -178,4 +231,47 @@ export interface CadGradingGroupResult {
    * merged mesh assembly. Never persisted and never hashed into `ggrev1:`.
    */
   topologyCertificate?: GradingTopologyCertificate;
+  /**
+   * Phase 20M.2 Wave D/F/G — result-owned transition leg, set ONLY when
+   * the group actually solved with an admitted transition. The worker mesh
+   * gate rechecks it and GROUPBAKE cites it; a solve without a transition
+   * carries no key (legacy bytes unchanged). Session-only, never persisted,
+   * never hashed into `ggrev1:`.
+   */
+  transition?: CadGradingGroupTransitionLeg;
+}
+
+/**
+ * Result-owned proof that this result solved with an admitted transition:
+ * the admitted law, the recorded revision the evidence was pinned at, and
+ * the three transition-owned checkpoint pairs (daylight qCutL/q0/qCutR at
+ * joint-local stations sL/0/sR with their source points pCutL/V/pCutR).
+ * The worker re-evaluates every checkpoint independently against the
+ * legislated law (inside) and the re-resolved natives (boundaries).
+ */
+export interface CadGradingGroupTransitionLeg {
+  policyVersion: string;
+  lawKind: string;
+  lawVersion: string;
+  /** Explicit total symmetric width W, source-line meters. */
+  width: number;
+  joint: number;
+  jointId: string;
+  memberIds: [string, string];
+  criterionFamily: string;
+  side: GradingSide;
+  /** Joint-local source-line interval [sL, sR], s = 0 at the joint. */
+  interval: { sL: number; sR: number };
+  /** Re-resolved native endpoint scalars (evidence, never input). */
+  endpointScalars: { vL: number; vR: number; gL: number; gR: number };
+  /** Persisted joint station origin. */
+  jointStation: number;
+  /** `ggrev1:` the evidence was pinned at. */
+  recordedRevision: string;
+  /** Null when the producing build agreed, else the bounded reject code. */
+  agreementCode: string | null;
+  /** Flat XYZ triplets: qCutL, q0, qCutR. */
+  daylightCheckpoints: number[];
+  /** Flat XYZ triplets: pCutL, V, pCutR. */
+  sourceCheckpoints: number[];
 }
