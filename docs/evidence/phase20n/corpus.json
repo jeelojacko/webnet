@@ -32,6 +32,7 @@
       17
     ],
     "transform": "identity",
+    "traversalOrder": "forward",
     "expected": "admit-each + mesh + gtop2 + agreement",
     "futurePredicateEligible": true,
     "measured": {
@@ -49,10 +50,14 @@
       "vertexCount": 24,
       "triangleCount": 22,
       "skippedZeroWidth": 0,
+      "expectedPositiveWidthRegions": 1,
       "measuredPositiveWidthRegions": 1,
+      "expectedComponents": 1,
+      "expectedBoundaryCycles": 1,
       "gtop2Components": 1,
       "gtop2BoundaryCycles": 1,
       "gtop2RevalidationNull": true,
+      "topologyPreMeshEqualsMeasured": true,
       "meshValidatorCodes": [
         "null",
         "null"
@@ -63,7 +68,7 @@
       ],
       "c0PlanResidual": 0,
       "c0ZResidual": 0,
-      "revisionHash": "ggrev1:7f34e2de",
+      "revisionHash": "ggrev1:b5bd84f2",
       "revisionOrderSensitive": true,
       "revisionStable": true,
       "bakeCitationLength": 1
@@ -108,6 +113,7 @@
       21
     ],
     "transform": "identity",
+    "traversalOrder": "forward",
     "expected": "admit-each + mesh + gtop2 + agreement",
     "futurePredicateEligible": true,
     "measured": {
@@ -126,10 +132,14 @@
       "vertexCount": 34,
       "triangleCount": 32,
       "skippedZeroWidth": 0,
+      "expectedPositiveWidthRegions": 1,
       "measuredPositiveWidthRegions": 1,
+      "expectedComponents": 1,
+      "expectedBoundaryCycles": 1,
       "gtop2Components": 1,
       "gtop2BoundaryCycles": 1,
       "gtop2RevalidationNull": true,
+      "topologyPreMeshEqualsMeasured": true,
       "meshValidatorCodes": [
         "null",
         "null",
@@ -142,7 +152,7 @@
       ],
       "c0PlanResidual": 0,
       "c0ZResidual": 0,
-      "revisionHash": "ggrev1:3e5f7d78",
+      "revisionHash": "ggrev1:acaa71a0",
       "revisionOrderSensitive": true,
       "revisionStable": true,
       "bakeCitationLength": 1
@@ -181,6 +191,7 @@
       17
     ],
     "transform": "identity",
+    "traversalOrder": "forward",
     "expected": "admit-each + mesh + gtop2 + agreement",
     "futurePredicateEligible": true,
     "measured": {
@@ -198,10 +209,14 @@
       "vertexCount": 24,
       "triangleCount": 22,
       "skippedZeroWidth": 0,
+      "expectedPositiveWidthRegions": 1,
       "measuredPositiveWidthRegions": 1,
+      "expectedComponents": 1,
+      "expectedBoundaryCycles": 1,
       "gtop2Components": 1,
       "gtop2BoundaryCycles": 1,
       "gtop2RevalidationNull": true,
+      "topologyPreMeshEqualsMeasured": true,
       "meshValidatorCodes": [
         "null",
         "null"
@@ -212,7 +227,7 @@
       ],
       "c0PlanResidual": 0,
       "c0ZResidual": 0,
-      "revisionHash": "ggrev1:493abd2c",
+      "revisionHash": "ggrev1:a50178e6",
       "revisionOrderSensitive": true,
       "revisionStable": true,
       "bakeCitationLength": 1
@@ -257,6 +272,7 @@
       21
     ],
     "transform": "identity",
+    "traversalOrder": "forward",
     "expected": "admit-each + mesh + gtop2 + agreement",
     "futurePredicateEligible": true,
     "measured": {
@@ -275,10 +291,14 @@
       "vertexCount": 34,
       "triangleCount": 32,
       "skippedZeroWidth": 0,
+      "expectedPositiveWidthRegions": 1,
       "measuredPositiveWidthRegions": 1,
+      "expectedComponents": 1,
+      "expectedBoundaryCycles": 1,
       "gtop2Components": 1,
       "gtop2BoundaryCycles": 1,
       "gtop2RevalidationNull": true,
+      "topologyPreMeshEqualsMeasured": true,
       "meshValidatorCodes": [
         "null",
         "null",
@@ -291,7 +311,7 @@
       ],
       "c0PlanResidual": 0,
       "c0ZResidual": 0,
-      "revisionHash": "ggrev1:4e245a9f",
+      "revisionHash": "ggrev1:0695fb33",
       "revisionOrderSensitive": true,
       "revisionStable": true,
       "bakeCitationLength": 1
@@ -330,6 +350,7 @@
       17
     ],
     "transform": "identity",
+    "traversalOrder": "forward",
     "expected": "admit-each + mesh + gtop2 + agreement",
     "futurePredicateEligible": true,
     "measured": {
@@ -347,10 +368,14 @@
       "vertexCount": 24,
       "triangleCount": 22,
       "skippedZeroWidth": 0,
+      "expectedPositiveWidthRegions": 1,
       "measuredPositiveWidthRegions": 1,
+      "expectedComponents": 1,
+      "expectedBoundaryCycles": 1,
       "gtop2Components": 1,
       "gtop2BoundaryCycles": 1,
       "gtop2RevalidationNull": true,
+      "topologyPreMeshEqualsMeasured": true,
       "meshValidatorCodes": [
         "null",
         "null"
@@ -361,7 +386,7 @@
       ],
       "c0PlanResidual": 0,
       "c0ZResidual": 0,
-      "revisionHash": "ggrev1:6142dff6",
+      "revisionHash": "ggrev1:291b0c34",
       "revisionOrderSensitive": true,
       "revisionStable": true,
       "bakeCitationLength": 1
@@ -406,6 +431,7 @@
       21
     ],
     "transform": "identity",
+    "traversalOrder": "forward",
     "expected": "admit-each + mesh + gtop2 + agreement",
     "futurePredicateEligible": true,
     "measured": {
@@ -424,10 +450,14 @@
       "vertexCount": 34,
       "triangleCount": 32,
       "skippedZeroWidth": 0,
+      "expectedPositiveWidthRegions": 1,
       "measuredPositiveWidthRegions": 1,
+      "expectedComponents": 1,
+      "expectedBoundaryCycles": 1,
       "gtop2Components": 1,
       "gtop2BoundaryCycles": 1,
       "gtop2RevalidationNull": true,
+      "topologyPreMeshEqualsMeasured": true,
       "meshValidatorCodes": [
         "null",
         "null",
@@ -440,7 +470,7 @@
       ],
       "c0PlanResidual": 0,
       "c0ZResidual": 0,
-      "revisionHash": "ggrev1:41b15422",
+      "revisionHash": "ggrev1:27bfc01e",
       "revisionOrderSensitive": true,
       "revisionStable": true,
       "bakeCitationLength": 1
@@ -479,6 +509,7 @@
       17
     ],
     "transform": "mirror",
+    "traversalOrder": "forward",
     "expected": "transform-stable mesh + gtop2 + agreement",
     "futurePredicateEligible": true,
     "measured": {
@@ -496,10 +527,14 @@
       "vertexCount": 24,
       "triangleCount": 22,
       "skippedZeroWidth": 0,
+      "expectedPositiveWidthRegions": 1,
       "measuredPositiveWidthRegions": 1,
+      "expectedComponents": 1,
+      "expectedBoundaryCycles": 1,
       "gtop2Components": 1,
       "gtop2BoundaryCycles": 1,
       "gtop2RevalidationNull": true,
+      "topologyPreMeshEqualsMeasured": true,
       "meshValidatorCodes": [
         "null",
         "null"
@@ -510,7 +545,7 @@
       ],
       "c0PlanResidual": 0,
       "c0ZResidual": 0,
-      "revisionHash": "ggrev1:e8eb9993",
+      "revisionHash": "ggrev1:31089613",
       "revisionOrderSensitive": true,
       "revisionStable": true,
       "bakeCitationLength": 1
@@ -555,6 +590,7 @@
       21
     ],
     "transform": "mirror",
+    "traversalOrder": "forward",
     "expected": "transform-stable mesh + gtop2 + agreement",
     "futurePredicateEligible": true,
     "measured": {
@@ -573,10 +609,14 @@
       "vertexCount": 34,
       "triangleCount": 32,
       "skippedZeroWidth": 0,
+      "expectedPositiveWidthRegions": 1,
       "measuredPositiveWidthRegions": 1,
+      "expectedComponents": 1,
+      "expectedBoundaryCycles": 1,
       "gtop2Components": 1,
       "gtop2BoundaryCycles": 1,
       "gtop2RevalidationNull": true,
+      "topologyPreMeshEqualsMeasured": true,
       "meshValidatorCodes": [
         "null",
         "null",
@@ -589,7 +629,7 @@
       ],
       "c0PlanResidual": 0,
       "c0ZResidual": 0,
-      "revisionHash": "ggrev1:5d91890a",
+      "revisionHash": "ggrev1:2d1c7186",
       "revisionOrderSensitive": true,
       "revisionStable": true,
       "bakeCitationLength": 1
@@ -608,27 +648,28 @@
       30
     ],
     "memberIds": [
-      "S0>S1",
-      "S1>S2",
-      "S2>S3"
+      "S3>S2",
+      "S2>S1",
+      "S1>S0"
     ],
     "jointIds": [
       "joint:0",
       "joint:1"
     ],
     "widths": [
-      8,
-      6
+      6,
+      8
     ],
     "jointStations": [
-      54,
-      30
+      30,
+      54
     ],
     "nativeGapsMeasured": [
-      -31
+      17
     ],
     "transform": "reversal",
-    "expected": "transform-stable mesh + gtop2 + agreement",
+    "traversalOrder": "reversed-traversal",
+    "expected": "true-traversal-reversal mesh + gtop2 + agreement",
     "futurePredicateEligible": true,
     "measured": {
       "layoutOk": true,
@@ -645,10 +686,14 @@
       "vertexCount": 24,
       "triangleCount": 22,
       "skippedZeroWidth": 0,
+      "expectedPositiveWidthRegions": 1,
       "measuredPositiveWidthRegions": 1,
+      "expectedComponents": 1,
+      "expectedBoundaryCycles": 1,
       "gtop2Components": 1,
       "gtop2BoundaryCycles": 1,
       "gtop2RevalidationNull": true,
+      "topologyPreMeshEqualsMeasured": true,
       "meshValidatorCodes": [
         "null",
         "null"
@@ -659,7 +704,7 @@
       ],
       "c0PlanResidual": 0,
       "c0ZResidual": 0,
-      "revisionHash": "ggrev1:d1fe173e",
+      "revisionHash": "ggrev1:245f0b6a",
       "revisionOrderSensitive": true,
       "revisionStable": true,
       "bakeCitationLength": 1
@@ -674,15 +719,15 @@
     "memberCount": 4,
     "memberLengths": [
       30,
-      24,
       26,
+      24,
       30
     ],
     "memberIds": [
-      "S0>S1",
-      "S1>S2",
-      "S2>S3",
-      "S3>S4"
+      "S4>S3",
+      "S3>S2",
+      "S2>S1",
+      "S1>S0"
     ],
     "jointIds": [
       "joint:0",
@@ -690,21 +735,22 @@
       "joint:2"
     ],
     "widths": [
-      8,
+      4,
       6,
-      4
+      8
     ],
     "jointStations": [
-      80,
+      30,
       56,
-      30
+      80
     ],
     "nativeGapsMeasured": [
-      -31,
-      -31
+      21,
+      17
     ],
     "transform": "reversal",
-    "expected": "transform-stable mesh + gtop2 + agreement",
+    "traversalOrder": "reversed-traversal",
+    "expected": "true-traversal-reversal mesh + gtop2 + agreement",
     "futurePredicateEligible": true,
     "measured": {
       "layoutOk": true,
@@ -722,10 +768,14 @@
       "vertexCount": 34,
       "triangleCount": 32,
       "skippedZeroWidth": 0,
+      "expectedPositiveWidthRegions": 1,
       "measuredPositiveWidthRegions": 1,
+      "expectedComponents": 1,
+      "expectedBoundaryCycles": 1,
       "gtop2Components": 1,
       "gtop2BoundaryCycles": 1,
       "gtop2RevalidationNull": true,
+      "topologyPreMeshEqualsMeasured": true,
       "meshValidatorCodes": [
         "null",
         "null",
@@ -738,7 +788,7 @@
       ],
       "c0PlanResidual": 0,
       "c0ZResidual": 0,
-      "revisionHash": "ggrev1:f0b6dc58",
+      "revisionHash": "ggrev1:77ff1442",
       "revisionOrderSensitive": true,
       "revisionStable": true,
       "bakeCitationLength": 1
@@ -777,6 +827,7 @@
       17
     ],
     "transform": "translate-1e6",
+    "traversalOrder": "forward",
     "expected": "transform-stable mesh + gtop2 + agreement",
     "futurePredicateEligible": true,
     "measured": {
@@ -794,10 +845,14 @@
       "vertexCount": 24,
       "triangleCount": 22,
       "skippedZeroWidth": 0,
+      "expectedPositiveWidthRegions": 1,
       "measuredPositiveWidthRegions": 1,
+      "expectedComponents": 1,
+      "expectedBoundaryCycles": 1,
       "gtop2Components": 1,
       "gtop2BoundaryCycles": 1,
       "gtop2RevalidationNull": true,
+      "topologyPreMeshEqualsMeasured": true,
       "meshValidatorCodes": [
         "null",
         "null"
@@ -808,7 +863,7 @@
       ],
       "c0PlanResidual": 0,
       "c0ZResidual": 0,
-      "revisionHash": "ggrev1:7f34e2de",
+      "revisionHash": "ggrev1:b5bd84f2",
       "revisionOrderSensitive": true,
       "revisionStable": true,
       "bakeCitationLength": 1
@@ -853,6 +908,7 @@
       21
     ],
     "transform": "translate-1e6",
+    "traversalOrder": "forward",
     "expected": "transform-stable mesh + gtop2 + agreement",
     "futurePredicateEligible": true,
     "measured": {
@@ -871,10 +927,14 @@
       "vertexCount": 34,
       "triangleCount": 32,
       "skippedZeroWidth": 0,
+      "expectedPositiveWidthRegions": 1,
       "measuredPositiveWidthRegions": 1,
+      "expectedComponents": 1,
+      "expectedBoundaryCycles": 1,
       "gtop2Components": 1,
       "gtop2BoundaryCycles": 1,
       "gtop2RevalidationNull": true,
+      "topologyPreMeshEqualsMeasured": true,
       "meshValidatorCodes": [
         "null",
         "null",
@@ -887,7 +947,7 @@
       ],
       "c0PlanResidual": 0,
       "c0ZResidual": 0,
-      "revisionHash": "ggrev1:3e5f7d78",
+      "revisionHash": "ggrev1:acaa71a0",
       "revisionOrderSensitive": true,
       "revisionStable": true,
       "bakeCitationLength": 1
@@ -926,6 +986,7 @@
       17
     ],
     "transform": "translate-1e8",
+    "traversalOrder": "forward",
     "expected": "transform-stable mesh + gtop2 + agreement",
     "futurePredicateEligible": true,
     "measured": {
@@ -943,10 +1004,14 @@
       "vertexCount": 24,
       "triangleCount": 22,
       "skippedZeroWidth": 0,
+      "expectedPositiveWidthRegions": 1,
       "measuredPositiveWidthRegions": 1,
+      "expectedComponents": 1,
+      "expectedBoundaryCycles": 1,
       "gtop2Components": 1,
       "gtop2BoundaryCycles": 1,
       "gtop2RevalidationNull": true,
+      "topologyPreMeshEqualsMeasured": true,
       "meshValidatorCodes": [
         "null",
         "null"
@@ -957,7 +1022,7 @@
       ],
       "c0PlanResidual": 0,
       "c0ZResidual": 0,
-      "revisionHash": "ggrev1:7f34e2de",
+      "revisionHash": "ggrev1:b5bd84f2",
       "revisionOrderSensitive": true,
       "revisionStable": true,
       "bakeCitationLength": 1
@@ -1002,6 +1067,7 @@
       21
     ],
     "transform": "translate-1e8",
+    "traversalOrder": "forward",
     "expected": "transform-stable mesh + gtop2 + agreement",
     "futurePredicateEligible": true,
     "measured": {
@@ -1020,10 +1086,14 @@
       "vertexCount": 34,
       "triangleCount": 32,
       "skippedZeroWidth": 0,
+      "expectedPositiveWidthRegions": 1,
       "measuredPositiveWidthRegions": 1,
+      "expectedComponents": 1,
+      "expectedBoundaryCycles": 1,
       "gtop2Components": 1,
       "gtop2BoundaryCycles": 1,
       "gtop2RevalidationNull": true,
+      "topologyPreMeshEqualsMeasured": true,
       "meshValidatorCodes": [
         "null",
         "null",
@@ -1036,7 +1106,7 @@
       ],
       "c0PlanResidual": 0,
       "c0ZResidual": 0,
-      "revisionHash": "ggrev1:3e5f7d78",
+      "revisionHash": "ggrev1:acaa71a0",
       "revisionOrderSensitive": true,
       "revisionStable": true,
       "bakeCitationLength": 1
@@ -1075,6 +1145,7 @@
       17
     ],
     "transform": "mirror",
+    "traversalOrder": "forward",
     "expected": "transform-stable mesh + gtop2 + agreement",
     "futurePredicateEligible": true,
     "measured": {
@@ -1092,10 +1163,14 @@
       "vertexCount": 24,
       "triangleCount": 22,
       "skippedZeroWidth": 0,
+      "expectedPositiveWidthRegions": 1,
       "measuredPositiveWidthRegions": 1,
+      "expectedComponents": 1,
+      "expectedBoundaryCycles": 1,
       "gtop2Components": 1,
       "gtop2BoundaryCycles": 1,
       "gtop2RevalidationNull": true,
+      "topologyPreMeshEqualsMeasured": true,
       "meshValidatorCodes": [
         "null",
         "null"
@@ -1106,7 +1181,7 @@
       ],
       "c0PlanResidual": 0,
       "c0ZResidual": 0,
-      "revisionHash": "ggrev1:f8406283",
+      "revisionHash": "ggrev1:84309c4d",
       "revisionOrderSensitive": true,
       "revisionStable": true,
       "bakeCitationLength": 1
@@ -1151,6 +1226,7 @@
       21
     ],
     "transform": "mirror",
+    "traversalOrder": "forward",
     "expected": "transform-stable mesh + gtop2 + agreement",
     "futurePredicateEligible": true,
     "measured": {
@@ -1169,10 +1245,14 @@
       "vertexCount": 34,
       "triangleCount": 32,
       "skippedZeroWidth": 0,
+      "expectedPositiveWidthRegions": 1,
       "measuredPositiveWidthRegions": 1,
+      "expectedComponents": 1,
+      "expectedBoundaryCycles": 1,
       "gtop2Components": 1,
       "gtop2BoundaryCycles": 1,
       "gtop2RevalidationNull": true,
+      "topologyPreMeshEqualsMeasured": true,
       "meshValidatorCodes": [
         "null",
         "null",
@@ -1185,7 +1265,7 @@
       ],
       "c0PlanResidual": 0,
       "c0ZResidual": 0,
-      "revisionHash": "ggrev1:bbfee249",
+      "revisionHash": "ggrev1:014cf531",
       "revisionOrderSensitive": true,
       "revisionStable": true,
       "bakeCitationLength": 1
@@ -1204,27 +1284,28 @@
       30
     ],
     "memberIds": [
-      "S0>S1",
-      "S1>S2",
-      "S2>S3"
+      "S3>S2",
+      "S2>S1",
+      "S1>S0"
     ],
     "jointIds": [
       "joint:0",
       "joint:1"
     ],
     "widths": [
-      8,
-      6
+      6,
+      8
     ],
     "jointStations": [
-      54,
-      30
+      30,
+      54
     ],
     "nativeGapsMeasured": [
-      -31
+      17
     ],
     "transform": "reversal",
-    "expected": "transform-stable mesh + gtop2 + agreement",
+    "traversalOrder": "reversed-traversal",
+    "expected": "true-traversal-reversal mesh + gtop2 + agreement",
     "futurePredicateEligible": true,
     "measured": {
       "layoutOk": true,
@@ -1241,10 +1322,14 @@
       "vertexCount": 24,
       "triangleCount": 22,
       "skippedZeroWidth": 0,
+      "expectedPositiveWidthRegions": 1,
       "measuredPositiveWidthRegions": 1,
+      "expectedComponents": 1,
+      "expectedBoundaryCycles": 1,
       "gtop2Components": 1,
       "gtop2BoundaryCycles": 1,
       "gtop2RevalidationNull": true,
+      "topologyPreMeshEqualsMeasured": true,
       "meshValidatorCodes": [
         "null",
         "null"
@@ -1255,7 +1340,7 @@
       ],
       "c0PlanResidual": 0,
       "c0ZResidual": 0,
-      "revisionHash": "ggrev1:efecdeec",
+      "revisionHash": "ggrev1:7f846d92",
       "revisionOrderSensitive": true,
       "revisionStable": true,
       "bakeCitationLength": 1
@@ -1270,15 +1355,15 @@
     "memberCount": 4,
     "memberLengths": [
       30,
-      24,
       26,
+      24,
       30
     ],
     "memberIds": [
-      "S0>S1",
-      "S1>S2",
-      "S2>S3",
-      "S3>S4"
+      "S4>S3",
+      "S3>S2",
+      "S2>S1",
+      "S1>S0"
     ],
     "jointIds": [
       "joint:0",
@@ -1286,21 +1371,22 @@
       "joint:2"
     ],
     "widths": [
-      8,
+      4,
       6,
-      4
+      8
     ],
     "jointStations": [
-      80,
+      30,
       56,
-      30
+      80
     ],
     "nativeGapsMeasured": [
-      -31,
-      -31
+      21,
+      17
     ],
     "transform": "reversal",
-    "expected": "transform-stable mesh + gtop2 + agreement",
+    "traversalOrder": "reversed-traversal",
+    "expected": "true-traversal-reversal mesh + gtop2 + agreement",
     "futurePredicateEligible": true,
     "measured": {
       "layoutOk": true,
@@ -1318,10 +1404,14 @@
       "vertexCount": 34,
       "triangleCount": 32,
       "skippedZeroWidth": 0,
+      "expectedPositiveWidthRegions": 1,
       "measuredPositiveWidthRegions": 1,
+      "expectedComponents": 1,
+      "expectedBoundaryCycles": 1,
       "gtop2Components": 1,
       "gtop2BoundaryCycles": 1,
       "gtop2RevalidationNull": true,
+      "topologyPreMeshEqualsMeasured": true,
       "meshValidatorCodes": [
         "null",
         "null",
@@ -1334,7 +1424,7 @@
       ],
       "c0PlanResidual": 0,
       "c0ZResidual": 0,
-      "revisionHash": "ggrev1:9d551607",
+      "revisionHash": "ggrev1:496ff767",
       "revisionOrderSensitive": true,
       "revisionStable": true,
       "bakeCitationLength": 1
@@ -1373,6 +1463,7 @@
       17
     ],
     "transform": "translate-1e6",
+    "traversalOrder": "forward",
     "expected": "transform-stable mesh + gtop2 + agreement",
     "futurePredicateEligible": true,
     "measured": {
@@ -1390,10 +1481,14 @@
       "vertexCount": 24,
       "triangleCount": 22,
       "skippedZeroWidth": 0,
+      "expectedPositiveWidthRegions": 1,
       "measuredPositiveWidthRegions": 1,
+      "expectedComponents": 1,
+      "expectedBoundaryCycles": 1,
       "gtop2Components": 1,
       "gtop2BoundaryCycles": 1,
       "gtop2RevalidationNull": true,
+      "topologyPreMeshEqualsMeasured": true,
       "meshValidatorCodes": [
         "null",
         "null"
@@ -1404,7 +1499,7 @@
       ],
       "c0PlanResidual": 0,
       "c0ZResidual": 0,
-      "revisionHash": "ggrev1:493abd2c",
+      "revisionHash": "ggrev1:a50178e6",
       "revisionOrderSensitive": true,
       "revisionStable": true,
       "bakeCitationLength": 1
@@ -1449,6 +1544,7 @@
       21
     ],
     "transform": "translate-1e6",
+    "traversalOrder": "forward",
     "expected": "transform-stable mesh + gtop2 + agreement",
     "futurePredicateEligible": true,
     "measured": {
@@ -1467,10 +1563,14 @@
       "vertexCount": 34,
       "triangleCount": 32,
       "skippedZeroWidth": 0,
+      "expectedPositiveWidthRegions": 1,
       "measuredPositiveWidthRegions": 1,
+      "expectedComponents": 1,
+      "expectedBoundaryCycles": 1,
       "gtop2Components": 1,
       "gtop2BoundaryCycles": 1,
       "gtop2RevalidationNull": true,
+      "topologyPreMeshEqualsMeasured": true,
       "meshValidatorCodes": [
         "null",
         "null",
@@ -1483,7 +1583,7 @@
       ],
       "c0PlanResidual": 0,
       "c0ZResidual": 0,
-      "revisionHash": "ggrev1:4e245a9f",
+      "revisionHash": "ggrev1:0695fb33",
       "revisionOrderSensitive": true,
       "revisionStable": true,
       "bakeCitationLength": 1
@@ -1522,6 +1622,7 @@
       17
     ],
     "transform": "translate-1e8",
+    "traversalOrder": "forward",
     "expected": "transform-stable mesh + gtop2 + agreement",
     "futurePredicateEligible": true,
     "measured": {
@@ -1539,10 +1640,14 @@
       "vertexCount": 24,
       "triangleCount": 22,
       "skippedZeroWidth": 0,
+      "expectedPositiveWidthRegions": 1,
       "measuredPositiveWidthRegions": 1,
+      "expectedComponents": 1,
+      "expectedBoundaryCycles": 1,
       "gtop2Components": 1,
       "gtop2BoundaryCycles": 1,
       "gtop2RevalidationNull": true,
+      "topologyPreMeshEqualsMeasured": true,
       "meshValidatorCodes": [
         "null",
         "null"
@@ -1553,7 +1658,7 @@
       ],
       "c0PlanResidual": 0,
       "c0ZResidual": 0,
-      "revisionHash": "ggrev1:493abd2c",
+      "revisionHash": "ggrev1:a50178e6",
       "revisionOrderSensitive": true,
       "revisionStable": true,
       "bakeCitationLength": 1
@@ -1598,6 +1703,7 @@
       21
     ],
     "transform": "translate-1e8",
+    "traversalOrder": "forward",
     "expected": "transform-stable mesh + gtop2 + agreement",
     "futurePredicateEligible": true,
     "measured": {
@@ -1616,10 +1722,14 @@
       "vertexCount": 34,
       "triangleCount": 32,
       "skippedZeroWidth": 0,
+      "expectedPositiveWidthRegions": 1,
       "measuredPositiveWidthRegions": 1,
+      "expectedComponents": 1,
+      "expectedBoundaryCycles": 1,
       "gtop2Components": 1,
       "gtop2BoundaryCycles": 1,
       "gtop2RevalidationNull": true,
+      "topologyPreMeshEqualsMeasured": true,
       "meshValidatorCodes": [
         "null",
         "null",
@@ -1632,7 +1742,7 @@
       ],
       "c0PlanResidual": 0,
       "c0ZResidual": 0,
-      "revisionHash": "ggrev1:4e245a9f",
+      "revisionHash": "ggrev1:0695fb33",
       "revisionOrderSensitive": true,
       "revisionStable": true,
       "bakeCitationLength": 1
@@ -1671,6 +1781,7 @@
       17
     ],
     "transform": "mirror",
+    "traversalOrder": "forward",
     "expected": "transform-stable mesh + gtop2 + agreement",
     "futurePredicateEligible": true,
     "measured": {
@@ -1688,10 +1799,14 @@
       "vertexCount": 24,
       "triangleCount": 22,
       "skippedZeroWidth": 0,
+      "expectedPositiveWidthRegions": 1,
       "measuredPositiveWidthRegions": 1,
+      "expectedComponents": 1,
+      "expectedBoundaryCycles": 1,
       "gtop2Components": 1,
       "gtop2BoundaryCycles": 1,
       "gtop2RevalidationNull": true,
+      "topologyPreMeshEqualsMeasured": true,
       "meshValidatorCodes": [
         "null",
         "null"
@@ -1702,7 +1817,7 @@
       ],
       "c0PlanResidual": 0,
       "c0ZResidual": 0,
-      "revisionHash": "ggrev1:d4d4fbed",
+      "revisionHash": "ggrev1:bad1100d",
       "revisionOrderSensitive": true,
       "revisionStable": true,
       "bakeCitationLength": 1
@@ -1747,6 +1862,7 @@
       21
     ],
     "transform": "mirror",
+    "traversalOrder": "forward",
     "expected": "transform-stable mesh + gtop2 + agreement",
     "futurePredicateEligible": true,
     "measured": {
@@ -1765,10 +1881,14 @@
       "vertexCount": 34,
       "triangleCount": 32,
       "skippedZeroWidth": 0,
+      "expectedPositiveWidthRegions": 1,
       "measuredPositiveWidthRegions": 1,
+      "expectedComponents": 1,
+      "expectedBoundaryCycles": 1,
       "gtop2Components": 1,
       "gtop2BoundaryCycles": 1,
       "gtop2RevalidationNull": true,
+      "topologyPreMeshEqualsMeasured": true,
       "meshValidatorCodes": [
         "null",
         "null",
@@ -1781,7 +1901,7 @@
       ],
       "c0PlanResidual": 0,
       "c0ZResidual": 0,
-      "revisionHash": "ggrev1:b1872eb2",
+      "revisionHash": "ggrev1:d10d6e56",
       "revisionOrderSensitive": true,
       "revisionStable": true,
       "bakeCitationLength": 1
@@ -1800,27 +1920,28 @@
       30
     ],
     "memberIds": [
-      "S0>S1",
-      "S1>S2",
-      "S2>S3"
+      "S3>S2",
+      "S2>S1",
+      "S1>S0"
     ],
     "jointIds": [
       "joint:0",
       "joint:1"
     ],
     "widths": [
-      8,
-      6
+      6,
+      8
     ],
     "jointStations": [
-      54,
-      30
+      30,
+      54
     ],
     "nativeGapsMeasured": [
-      -31
+      17
     ],
     "transform": "reversal",
-    "expected": "transform-stable mesh + gtop2 + agreement",
+    "traversalOrder": "reversed-traversal",
+    "expected": "true-traversal-reversal mesh + gtop2 + agreement",
     "futurePredicateEligible": true,
     "measured": {
       "layoutOk": true,
@@ -1837,10 +1958,14 @@
       "vertexCount": 24,
       "triangleCount": 22,
       "skippedZeroWidth": 0,
+      "expectedPositiveWidthRegions": 1,
       "measuredPositiveWidthRegions": 1,
+      "expectedComponents": 1,
+      "expectedBoundaryCycles": 1,
       "gtop2Components": 1,
       "gtop2BoundaryCycles": 1,
       "gtop2RevalidationNull": true,
+      "topologyPreMeshEqualsMeasured": true,
       "meshValidatorCodes": [
         "null",
         "null"
@@ -1851,7 +1976,7 @@
       ],
       "c0PlanResidual": 0,
       "c0ZResidual": 0,
-      "revisionHash": "ggrev1:96f9062e",
+      "revisionHash": "ggrev1:1987c394",
       "revisionOrderSensitive": true,
       "revisionStable": true,
       "bakeCitationLength": 1
@@ -1866,15 +1991,15 @@
     "memberCount": 4,
     "memberLengths": [
       30,
-      24,
       26,
+      24,
       30
     ],
     "memberIds": [
-      "S0>S1",
-      "S1>S2",
-      "S2>S3",
-      "S3>S4"
+      "S4>S3",
+      "S3>S2",
+      "S2>S1",
+      "S1>S0"
     ],
     "jointIds": [
       "joint:0",
@@ -1882,21 +2007,22 @@
       "joint:2"
     ],
     "widths": [
-      8,
+      4,
       6,
-      4
+      8
     ],
     "jointStations": [
-      80,
+      30,
       56,
-      30
+      80
     ],
     "nativeGapsMeasured": [
-      -31,
-      -31
+      21,
+      17
     ],
     "transform": "reversal",
-    "expected": "transform-stable mesh + gtop2 + agreement",
+    "traversalOrder": "reversed-traversal",
+    "expected": "true-traversal-reversal mesh + gtop2 + agreement",
     "futurePredicateEligible": true,
     "measured": {
       "layoutOk": true,
@@ -1914,10 +2040,14 @@
       "vertexCount": 34,
       "triangleCount": 32,
       "skippedZeroWidth": 0,
+      "expectedPositiveWidthRegions": 1,
       "measuredPositiveWidthRegions": 1,
+      "expectedComponents": 1,
+      "expectedBoundaryCycles": 1,
       "gtop2Components": 1,
       "gtop2BoundaryCycles": 1,
       "gtop2RevalidationNull": true,
+      "topologyPreMeshEqualsMeasured": true,
       "meshValidatorCodes": [
         "null",
         "null",
@@ -1930,7 +2060,7 @@
       ],
       "c0PlanResidual": 0,
       "c0ZResidual": 0,
-      "revisionHash": "ggrev1:419d9d6a",
+      "revisionHash": "ggrev1:6a5a9794",
       "revisionOrderSensitive": true,
       "revisionStable": true,
       "bakeCitationLength": 1
@@ -1969,6 +2099,7 @@
       17
     ],
     "transform": "translate-1e6",
+    "traversalOrder": "forward",
     "expected": "transform-stable mesh + gtop2 + agreement",
     "futurePredicateEligible": true,
     "measured": {
@@ -1986,10 +2117,14 @@
       "vertexCount": 24,
       "triangleCount": 22,
       "skippedZeroWidth": 0,
+      "expectedPositiveWidthRegions": 1,
       "measuredPositiveWidthRegions": 1,
+      "expectedComponents": 1,
+      "expectedBoundaryCycles": 1,
       "gtop2Components": 1,
       "gtop2BoundaryCycles": 1,
       "gtop2RevalidationNull": true,
+      "topologyPreMeshEqualsMeasured": true,
       "meshValidatorCodes": [
         "null",
         "null"
@@ -2000,7 +2135,7 @@
       ],
       "c0PlanResidual": 0,
       "c0ZResidual": 0,
-      "revisionHash": "ggrev1:6142dff6",
+      "revisionHash": "ggrev1:291b0c34",
       "revisionOrderSensitive": true,
       "revisionStable": true,
       "bakeCitationLength": 1
@@ -2045,6 +2180,7 @@
       21
     ],
     "transform": "translate-1e6",
+    "traversalOrder": "forward",
     "expected": "transform-stable mesh + gtop2 + agreement",
     "futurePredicateEligible": true,
     "measured": {
@@ -2063,10 +2199,14 @@
       "vertexCount": 34,
       "triangleCount": 32,
       "skippedZeroWidth": 0,
+      "expectedPositiveWidthRegions": 1,
       "measuredPositiveWidthRegions": 1,
+      "expectedComponents": 1,
+      "expectedBoundaryCycles": 1,
       "gtop2Components": 1,
       "gtop2BoundaryCycles": 1,
       "gtop2RevalidationNull": true,
+      "topologyPreMeshEqualsMeasured": true,
       "meshValidatorCodes": [
         "null",
         "null",
@@ -2079,7 +2219,7 @@
       ],
       "c0PlanResidual": 0,
       "c0ZResidual": 0,
-      "revisionHash": "ggrev1:41b15422",
+      "revisionHash": "ggrev1:27bfc01e",
       "revisionOrderSensitive": true,
       "revisionStable": true,
       "bakeCitationLength": 1
@@ -2118,6 +2258,7 @@
       17
     ],
     "transform": "translate-1e8",
+    "traversalOrder": "forward",
     "expected": "transform-stable mesh + gtop2 + agreement",
     "futurePredicateEligible": true,
     "measured": {
@@ -2135,10 +2276,14 @@
       "vertexCount": 24,
       "triangleCount": 22,
       "skippedZeroWidth": 0,
+      "expectedPositiveWidthRegions": 1,
       "measuredPositiveWidthRegions": 1,
+      "expectedComponents": 1,
+      "expectedBoundaryCycles": 1,
       "gtop2Components": 1,
       "gtop2BoundaryCycles": 1,
       "gtop2RevalidationNull": true,
+      "topologyPreMeshEqualsMeasured": true,
       "meshValidatorCodes": [
         "null",
         "null"
@@ -2149,7 +2294,7 @@
       ],
       "c0PlanResidual": 0,
       "c0ZResidual": 0,
-      "revisionHash": "ggrev1:6142dff6",
+      "revisionHash": "ggrev1:291b0c34",
       "revisionOrderSensitive": true,
       "revisionStable": true,
       "bakeCitationLength": 1
@@ -2194,6 +2339,7 @@
       21
     ],
     "transform": "translate-1e8",
+    "traversalOrder": "forward",
     "expected": "transform-stable mesh + gtop2 + agreement",
     "futurePredicateEligible": true,
     "measured": {
@@ -2212,10 +2358,14 @@
       "vertexCount": 34,
       "triangleCount": 32,
       "skippedZeroWidth": 0,
+      "expectedPositiveWidthRegions": 1,
       "measuredPositiveWidthRegions": 1,
+      "expectedComponents": 1,
+      "expectedBoundaryCycles": 1,
       "gtop2Components": 1,
       "gtop2BoundaryCycles": 1,
       "gtop2RevalidationNull": true,
+      "topologyPreMeshEqualsMeasured": true,
       "meshValidatorCodes": [
         "null",
         "null",
@@ -2228,7 +2378,7 @@
       ],
       "c0PlanResidual": 0,
       "c0ZResidual": 0,
-      "revisionHash": "ggrev1:41b15422",
+      "revisionHash": "ggrev1:27bfc01e",
       "revisionOrderSensitive": true,
       "revisionStable": true,
       "bakeCitationLength": 1
@@ -2267,6 +2417,7 @@
       0.000100000000003
     ],
     "transform": "identity",
+    "traversalOrder": "forward",
     "expected": "tiny-positive native run meshes as one region",
     "futurePredicateEligible": true,
     "measured": {
@@ -2284,10 +2435,14 @@
       "vertexCount": 24,
       "triangleCount": 22,
       "skippedZeroWidth": 0,
+      "expectedPositiveWidthRegions": 1,
       "measuredPositiveWidthRegions": 1,
+      "expectedComponents": 1,
+      "expectedBoundaryCycles": 1,
       "gtop2Components": 1,
       "gtop2BoundaryCycles": 1,
       "gtop2RevalidationNull": true,
+      "topologyPreMeshEqualsMeasured": true,
       "meshValidatorCodes": [
         "null",
         "null"
@@ -2298,7 +2453,7 @@
       ],
       "c0PlanResidual": 0,
       "c0ZResidual": 0,
-      "revisionHash": "ggrev1:eb7ff3b4",
+      "revisionHash": "ggrev1:c563a640",
       "revisionOrderSensitive": true,
       "revisionStable": true,
       "bakeCitationLength": 1
@@ -2332,6 +2487,7 @@
     "jointStations": [],
     "nativeGapsMeasured": [],
     "transform": "identity",
+    "traversalOrder": "forward",
     "expected": "touching-not-authorized",
     "futurePredicateEligible": false,
     "measured": {
@@ -2370,6 +2526,7 @@
     "jointStations": [],
     "nativeGapsMeasured": [],
     "transform": "identity",
+    "traversalOrder": "forward",
     "expected": "overlap-rejected",
     "futurePredicateEligible": false,
     "measured": {
@@ -2408,6 +2565,7 @@
     "jointStations": [],
     "nativeGapsMeasured": [],
     "transform": "identity",
+    "traversalOrder": "forward",
     "expected": "width-infeasible-per-joint",
     "futurePredicateEligible": false,
     "measured": {
@@ -2446,6 +2604,7 @@
     "jointStations": [],
     "nativeGapsMeasured": [],
     "transform": "identity",
+    "traversalOrder": "forward",
     "expected": "width-invalid-per-joint",
     "futurePredicateEligible": false,
     "measured": {

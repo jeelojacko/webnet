@@ -25,9 +25,12 @@ Size ~40 lines. Risk LOW — fail-closed defaults preserved.
 ### 3. `src/engine/cad/grading/gradingTopologyExpectation.ts` — merged-strip expectation
 `deriveTransitionExpectation`: accept a joint list, verify disjointness via
 the strict predicate, declare the single merged strip `{group, closed:false,
-positiveWidthRegions:1}`. The merged-strip argument (surviving natives + C0
-shared boundaries ⇒ one maximal non-tied run, i.e. the production 1/1/1 pin
-covers N joints) is stated as a code comment citing this phase.
+positiveWidthRegions:1}` from the pre-mesh predicate inputs ONLY (widths,
+gaps, per-joint admission — never from the measured mesh count; study
+`deriveCandidateAPreMeshExpectation` proves the shape). The merged-strip
+argument (surviving natives + C0 shared boundaries ⇒ one maximal non-tied
+run, i.e. the production 1/1/1 pin covers N joints) is stated as a code
+comment citing this phase.
 Size ~20 lines + note. Risk LOW — no new region-count claim; gtop2 validates as today.
 
 ### 4. `src/engine/cad/grading/gradingGroupCompute.ts` — engine tiling loop
@@ -71,9 +74,12 @@ Size ~40 lines. Risk LOW — display-only.
 
 ### 9. `src/engine/cad/grading/gradingGroupRevision.ts` — canonical joint-index order
 `transitionText` already maps the array; change is authoring-side
-canonicalization (joint-index order, duplicates/out-of-order fail closed) so
-the positional hash stays deterministic. `exactTransitionWidth`
-full-precision untouched.
+canonicalization (joint-index order IN TRAVERSAL ORDER,
+duplicates/out-of-order fail closed) so the positional hash stays
+deterministic. A production traversal reversal re-derives member order +
+joint indices in the new traversal direction (study B1), so ggrev1
+differs by design across a reversal — canonical order is per-traversal, not
+a cross-traversal identity. `exactTransitionWidth` full-precision untouched.
 Size ~10 lines + tests. Risk LOW — order defined once, hashed as today.
 
 ### Untouched (REUSE, no delta)

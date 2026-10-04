@@ -54,30 +54,75 @@
 - Triangulated strip via production `buildGradingStripMesh` from the full
   tiled polylines. Measured: 2T → 24 verts / 22 tris, 3T → 34 / 32,
   `skippedZeroWidth: 0` (all rows, all transforms).
-- Positive-width regions via production `countPositiveWidthRegions`: **1**
-  on every valid row (measured, not declared).
-- Pre-mesh expectation declared from the MEASURED count via the
-  count-agnostic `deriveGradingTopologyExpectation` (group/open/1).
-  `deriveTransitionExpectation` is NOT used for N>1: it REJECTS
-  `transitionCount!==1` by design (pinned in tests) — the study declares the
-  same 1-region shape by hand and documents why.
-- Production `buildGradingTopologyCertificateExact` on the ACTUAL study mesh:
-  cert issued on all 31 valid rows; components 1, boundaryCycles 1
-  (== declared); exact revalidation
+- Pre-mesh expectation authority
+  (`deriveCandidateAPreMeshExpectation`, study-side): for the authorized
+  ordinary open strict-separated all-positive-width line strip the study
+  DECLARES `expectedPositiveWidthRegions: 1` (components 1, cycles 1) from
+  the candidate predicate + fixture structure BEFORE any mesh — open by
+  construction, finite positive member lengths, every per-joint transition
+  admitted, strict separation on every shared middle member, positive finite
+  native/transition daylight widths under the analytic family, no
+  touching/overlap. It NEVER inspects source/daylight arrays,
+  `countPositiveWidthRegions`, triangle output, or topology results. Any
+  prerequisite failure yields no expectation and no certificate.
+  **1/1/1 is declared by the bounded candidate predicate before mesh, then
+  independently measured/certified; it is no longer derived from observed
+  count.** `deriveTransitionExpectation` is NOT used for N>1: it REJECTS
+  `transitionCount!==1` by design (pinned in tests).
+- Positive-width regions via production `countPositiveWidthRegions` AFTER
+  tiling: **1** on every valid row (measured, not declared) and asserted
+  EQUAL to the pre-mesh expectation inside `meshAndCertifyMultiGroup`
+  BEFORE certifying (mismatch throws — the expectation never adapts).
+- Production `buildGradingTopologyCertificateExact` on the ACTUAL study mesh
+  AGAINST THE INDEPENDENT EXPECTATION: cert issued on all 31 valid rows;
+  components 1 / boundaryCycles 1 == expected; exact revalidation
   `gradingTopologyCertificateExactError(...) === null` with both boundaries
-  supplied, all rows.
-- Transforms rebuild full geometry every time (mirror = y-flip + right
-  side; reversal = reversed member order + (−1,0) dirs, stations from the far
-  end, consistent `joint:<n>` ids, per-joint endpoint scalars following the
-  reversed member order so each boundary meets its true layout neighbor; translate E/N 1e6 + 1e8): same admission,
-  same local-station ownership, same 1/1/1 counts, gtop2 revalidates
+  supplied, all rows. Corpus records `expectedPositiveWidthRegions` (pre-mesh
+  policy value) AND `measuredPositiveWidthRegions` (post-tiling production
+  count) plus expected vs cert components/cycles, and requires equality.
+- Wrong-budget negative proof (pinned in tests): a deliberately wrong
+  expected region count 2 does NOT certify a known one-strip mesh
+  (`buildGradingTopologyCertificateExact` returns null), and a tied split
+  forcing measured 2 against expected 1 is rejected by the pre-mesh-vs-
+  measured gate before cert. The expectation detects wrong topology rather
+  than adapting to it.
+- Transforms rebuild full geometry every time. Mirror (y-flip + right side)
+  and translate E/N 1e6 + 1e8 are geometric probes: same admission, same
+  local-station ownership, same 1/1/1 counts, gtop2 revalidates
   independently, residuals inside EXISTING agreement authorities (no new
-  tolerance, no byte-identical digest claim).
+  tolerance, no byte-identical digest claim). Reversal is the TRUE
+  production-like traversal reversal (PATH B1, §A3R) — not a geometric
+  probe.
 - Negatives stop before any cert: touching (`==`) and overlap (`<`) at the
   group-layout stage (`TOUCHING_NOT_AUTHORIZED` / `OVERLAP_REJECTED`);
   W=70 infeasible at per-joint admission (`WIDTH_INFEASIBLE`); W=0 at
   admission (`WIDTH_INVALID`); NaN/Inf/negative widths fail closed at the
   helper. No mesh, no cert, no validators on any negative row.
+
+## A3R — True traversal reversal (PATH B1, production-like)
+
+- For a base source path S0->S1->S2->S3 the reversed source traversal is
+  S3->S2->S1->S0: the member array is REBUILT in reversed traversal order
+  with production `courseCriterionKey` reversed endpoint pairs
+  (`multiMemberIdReversed`), criteria following their physical members,
+  directions restarted at +x, stations recomputed from 0, joints REINDEXED
+  `joint:0`, `joint:1`, … in reversed traversal order, transition widths
+  mapped to their physical joints in reverse order (2T [8,6] → [6,8];
+  3T [8,6,4] → [4,6,8]), and persisted-like intents canonical increasing by
+  the NEW joint indices. Build/tile/mesh/certify/validate then run exactly
+  as identity from the reversed fixture.
+- Comparison normalizes reversed world geometry back into the base
+  orientation (`normalizeReversedWorldToBase`: x → total − x) and compares
+  source/daylight as continuous polylines under the EXISTING production
+  coordinate/elevation agreement authorities — same topology counts and
+  validator results required; same ggrev1 NOT required (traversal/member
+  IDs legitimately change, so reversed rows rehash by design).
+- Strict separation is checked against the reversed shared-member lengths
+  with the reversed width pairing (3T: 2+3<26 and 3+4<24).
+- The old axis-flip reversal (stations from the far end, original member
+  order kept) is GONE — no ambiguous reversal claim remains. Docs/tests/
+  corpus distinguish: geometric mirror, coordinate translations, and true
+  traversal reversal.
 
 ## A4 — Worker agreement (validators actually ran)
 
@@ -92,34 +137,44 @@
 - Station ownership unique for non-boundary stations (pinned per row);
   exact boundaries recorded boundary-owned with transition endpoint XYZ ==
   adjacent native result (C0 residuals 0, §A2).
-- Docs precision: per-transition worker math measured/reused as above;
-  plural REQUEST wiring (arrayified plan/handler/service) is still future
-  work — no "worker agreement proven" claim beyond the validators that ran.
+- Evidence precision: production `validateTransitionResultMesh` is
+  exercised per transition against actual full-mesh-owned checkpoints, and
+  production `checkGroupTransitionAgreement` is exercised per transition —
+  both green as measured above. Plural worker request/handler wiring
+  (arrayified plan/handler/service) is NOT implemented/proven in production
+  and remains Phase 20N.1 work; no "worker pipeline proven" claim is made.
 
 ## A5 — Revision / persistence / provenance (proven vs proposed)
 
-- PROVEN (measured per valid row): `buildGroupRevision` over real courses +
-  canonical intents hashes `ggrev1:…`; joint-order swap moves the hash
-  (`revisionOrderSensitive: true`); rebuild stable (`revisionStable: true`).
-  Sanitizer order retention, revision order-sensitivity, and singular
-  assumptions are production behavior reused as-is.
-- PROVEN (inspected): `transitionResultBakeCitation` returns an ARRAY but
-  length-1 today (`bakeCitationLength: 1` pinned per row) — plural citations
-  are NOT proven.
-- PROPOSED (docs only, Phase 20N.1): canonical joint-index order at
-  authoring, duplicate/out-of-order reject (study helper
+- MEASURED CURRENT FACTS (per valid row): `buildGroupRevision` over real
+  courses (actual traversal endpoint pairs, reversed when reversed;
+  alternating per-course criteria as sparse `courseCriteria` overrides) +
+  canonical intents hashes `ggrev1:…`; joint-order swap moves the
+  hash (`revisionOrderSensitive: true` — current ggrev1 order sensitivity is
+  measured fact); rebuild stable (`revisionStable: true`). Sanitizer order
+  retention and singular assumptions are production behavior reused as-is.
+- MEASURED CURRENT FACT: `transitionResultBakeCitation` returns an ARRAY
+  but length-1 today (`bakeCitationLength: 1` pinned per row) — current
+  citation length-1 is measured current fact, plural citations NOT proven.
+- PROPOSED FUTURE POLICY (docs only, Phase 20N.1): canonical joint-index
+  ordering at authoring is PROPOSED future policy; plural Extract/Bake
+  provenance is PROPOSED future implementation. Study helper
   `assertCanonicalJointOrder` demonstrates the rule: strictly-increasing
-  required, never silently sorted), whole-group fail-closed, plural
+  required, never silently sorted, whole-group fail-closed, plural
   provenance envelope. No schema change claimed.
 
 ## Verdict recommendation for A
 
 **PARTIAL_GO_MULTIPLE_COLLINEAR_TRANSITIONS (evidence now real).** All
-keep-GO conditions met: real 2T+3T shared-member geometry; actual strip
-meshes (24/22 and 34/32); gtop2 1/1 + null revalidation in all 3 families;
-per-transition production validators green; strict separation from real
-middle lengths (gaps 17 / 17+21, tiny 1e-4 positive still one region);
-full-geometry mirror/reversal/1e6/1e8; no new law/default/tolerance.
+keep-GO conditions met: real 2T+3T shared-member geometry; independent
+pre-mesh 1-region expectation (declared before mesh, wrong-budget/tied-split
+rejection pinned); actual strip meshes (24/22 and 34/32); measured 1 ==
+expected 1; gtop2 1/1 against the independent expectation + null revalidation
+in all 3 families; per-transition production validators green; strict
+separation from real middle lengths (gaps 17 / 17+21, tiny 1e-4 positive
+still one region); full-geometry mirror/1e6/1e8 probes + TRUE traversal
+reversal (B1, normalized geometry matches under production tolerances);
+no new law/default/tolerance.
 Remaining implementation risks (unchanged): multi-interval re-tiling order
 inside `planTransitionJoint` and the merged-strip expectation wiring feeding
 gtop2 — both EXTEND, neither NEW authority. Touching stays unauthorized

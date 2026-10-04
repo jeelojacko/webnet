@@ -1,33 +1,54 @@
 /**
  * Phase 20N Candidate A — REAL shared-member 2T/3T full-group mesh evidence.
  *
- * STUDY / EVIDENCE ONLY. Zero `src/` edits. This file fixes the external
- * REQUEST_CHANGES against the first Candidate A pass (per-joint admission
- * only, constant `candidateAExpectationRegions`, no multi-transition mesh):
- * every valid row below builds full-group geometry over REAL shared members,
- * tiles actual source/daylight polylines, triangulates with production
- * `buildGradingStripMesh`, certifies with production gtop2, revalidates
- * exactly, and runs production worker agreement validators per transition.
+ * STUDY / EVIDENCE ONLY. Zero `src/` edits. Every valid row below builds
+ * full-group geometry over REAL shared members, tiles actual source/daylight
+ * polylines, triangulates with production `buildGradingStripMesh`, certifies
+ * with production gtop2, revalidates exactly, and runs production worker
+ * agreement validators per transition.
  *
  * Production authorities reused read-only (never copied, never re-derived):
- * admitGradingTransition / evaluateTransitionLinearV1 (law), 
+ * admitGradingTransition / evaluateTransitionLinearV1 (law),
  * resolveAnalyticCriterionAt (native spans), gradingSideNormal (frame),
  * buildGradingStripMesh (mesh), countPositiveWidthRegions (measured regions),
- * deriveGradingTopologyExpectation (expectation, fed the MEASURED count),
+ * deriveGradingTopologyExpectation (expectation SHAPE only — the region COUNT
+ * is declared by the study pre-mesh predicate below, never fed from measured),
  * buildGradingTopologyCertificateExact +
  * gradingTopologyCertificateExactError (certify + revalidate),
  * validateTransitionResultMesh + checkGroupTransitionAgreement (agreement),
  * buildGroupRevision (order-sensitivity), transitionResultBakeCitation
  * (singular-today inspection), courseCriterionKey (member identity).
  *
+ * Topology independence (external review #2, defect 1):
+ * 1/1/1 is DECLARED by the bounded candidate predicate BEFORE mesh via
+ * `deriveCandidateAPreMeshExpectation(spec)` — derived ONLY from the fixture
+ * structure + per-joint admission + strict separation + positive finite
+ * native/transition widths — then INDEPENDENTLY measured
+ * (`countPositiveWidthRegions` after tiling) and certified (gtop2 against
+ * the pre-mesh expectation). `meshAndCertifyMultiGroup` takes the pre-mesh
+ * expectation as input, asserts measured == expected BEFORE certifying, and
+ * rejects (throws) on mismatch. It is no longer derived from observed count.
+ *
+ * True traversal reversal (external review #2, defect 2 — PATH B1):
+ * `transform: 'reversal'` is a genuine production-like traversal reversal:
+ * the source path S0->S1->..->Sn is re-traversed Sn->..->S0, the member
+ * array is REBUILT in reversed traversal order with production
+ * `courseCriterionKey` reversed endpoint pairs, criteria follow their
+ * physical members, directions restart at +x, stations recompute from 0,
+ * joints REINDEX `joint:0..` in reversed traversal order, and widths map to
+ * their physical joints in reverse order. The reversed fixture then builds /
+ * tiles / meshes / certifies / validates exactly as identity. Comparison
+ * normalizes reversed world geometry back (`normalizeReversedWorldToBase`:
+ * x -> total - x) and compares as continuous polylines under the existing
+ * production agreement authorities. ggrev1 legitimately differs (member IDs
+ * change) and is NOT required to match.
+ *
  * Deliberate study-side rules (NOT production claims):
  * - strict-separation layout predicate over real middle-member lengths;
  * - per-station owner classifier (transition i / boundary / native);
  * - canonical joint-index order (never silently sorted);
  * - deriveTransitionExpectation is NOT used for N>1: it REJECTS
- *   transitionCount!==1 by design (pinned in tests). The pre-mesh
- *   expectation is declared via deriveGradingTopologyExpectation fed the
- *   production-measured region count — same shape, documented here.
+ *   transitionCount!==1 by design (pinned in tests).
  *
  * Determinism: fixed fixture order, r12 rounding on recorded floats,
  * insertion-ordered JSON, no timestamps.
@@ -45,9 +66,12 @@ import {
   countPositiveWidthRegions,
   gradingTopologyCertificateExactError,
 } from '../src/engine/cad/grading/gradingTopologyCertificate';
-import { deriveGradingTopologyExpectation } from '../src/engine/cad/grading/gradingTopologyExpectation';
-import { courseCriterionKey } from '../src/engine/cad/grading/gradingGroupCourseCriteria';
-import { buildGroupRevision } from '../src/engine/cad/grading/gradingGroupRevision';
+import {
+  deriveGradingTopologyExpectation,
+  type GradingTopologyExpectation,
+} from '../src/engine/cad/grading/gradingTopologyExpectation';
+import { courseCriterionKey, criteriaEqual } from '../src/engine/cad/grading/gradingGroupCourseCriteria';
+import { buildGroupRevision, type GroupRevisionInput } from '../src/engine/cad/grading/gradingGroupRevision';
 import { transitionResultBakeCitation } from '../src/engine/cad/grading/gradingTransitionProvenance';
 import {
   checkGroupTransitionAgreement,
@@ -96,11 +120,20 @@ const memberCriterion = (family: MultiFamily, scalar: number): GradingCriterion 
 /** Stable member identity via the production override-map key (never fake L/R). */
 export const multiMemberId = (i: number): string => courseCriterionKey(`S${i}`, `S${i + 1}`);
 
+/**
+ * Reversed-traversal member identity: production `courseCriterionKey` with
+ * reversed endpoint pairs for S0->..->Sn re-traversed Sn->..->S0.
+ * New index i covers S(n-i)->S(n-1-i).
+ */
+export const multiMemberIdReversed = (i: number, memberCount: number): string =>
+  courseCriterionKey(`S${memberCount - i}`, `S${memberCount - 1 - i}`);
+
 const sideOf = (transform: MultiTransform): GradingSide =>
   transform === 'mirror' ? 'right' : 'left';
 
-const dirOf = (transform: MultiTransform): { dx: number; dy: number } =>
-  transform === 'reversal' ? { dx: -1, dy: 0 } : { dx: 1, dy: 0 };
+/** All traversals run forward (+x) in their own local frame — including the
+ *  rebuilt reversed traversal (B1). Mirror flips side, never direction. */
+const dirOf = (_transform: MultiTransform): { dx: number; dy: number } => ({ dx: 1, dy: 0 });
 
 /** Parse a real `joint:<n>` id; anything else is malformed (never coerced). */
 export const parseJointIndex = (jointId: string): number => {
@@ -146,6 +179,8 @@ export interface MultiGeometry {
   joints: MultiJoint[];
   intervals: { lo: number; hi: number }[];
   total: number;
+  /** Forward identity-equivalent layout, or a rebuilt reversed traversal (B1). */
+  traversalOrder: 'forward' | 'reversed-traversal';
 }
 
 export type MultiBuildOutcome =
@@ -167,6 +202,13 @@ const layoutSeparation = (widths: readonly number[], gaps: readonly number[]): b
  * Build full-group geometry: real shared members on one station axis,
  * joint stations from cumulative lengths, per-joint live admission with
  * the REAL member pair + ids (transitionCount pinned to 1 per joint).
+ *
+ * Reversal (B1 true traversal reversal): the member array is REBUILT in
+ * reversed traversal order — reversed lengths, reversed widths (physical
+ * joints in reverse encounter order), physical-member criteria, reversed
+ * endpoint-pair ids, stations from 0, joints reindexed `joint:0..` in the
+ * new traversal order. No far-end station flip: the reversed fixture IS a
+ * forward layout of the reversed traversal.
  */
 export const buildMultiGroup = (spec: MultiFixtureSpec): MultiBuildOutcome => {
   const n = spec.memberLengths.length;
@@ -181,21 +223,26 @@ export const buildMultiGroup = (spec: MultiFixtureSpec): MultiBuildOutcome => {
       return { ok: false, stage: 'per-joint-admission', code: 'WIDTH_INVALID' };
     }
   }
+  const reversed = spec.transform === 'reversal';
+  const traversalOrder = reversed ? 'reversed-traversal' : 'forward';
+  // Physical traversal order: reversed layouts walk the members back to front.
+  const lengths = reversed ? [...spec.memberLengths].reverse() : [...spec.memberLengths];
+  const widths = reversed ? [...spec.widths].reverse() : [...spec.widths];
+  const baseScalars = memberScalars(spec.family, n);
+  const scalars = reversed ? [...baseScalars].reverse() : baseScalars;
   const side = sideOf(spec.transform);
   const { dx, dy } = dirOf(spec.transform);
-  const scalars = memberScalars(spec.family, n);
-  const members: MultiMember[] = spec.memberLengths.map((length, i) => ({
-    id: multiMemberId(i),
+  const members: MultiMember[] = lengths.map((length, i) => ({
+    id: reversed ? multiMemberIdReversed(i, n) : multiMemberId(i),
     criterion: memberCriterion(spec.family, scalars[i]!),
     length,
-    start: spec.memberLengths.slice(0, i).reduce((a, b) => a + b, 0),
+    start: lengths.slice(0, i).reduce((a, b) => a + b, 0),
   }));
   const total = members[n - 1]!.start + members[n - 1]!.length;
-  // Joint stations from cumulative lengths; reversal measures from the far end.
   const jointGaps: number[] = members.slice(1, -1).map((m) => m.length);
-  if (!layoutSeparation(spec.widths, jointGaps)) {
+  if (!layoutSeparation(widths, jointGaps)) {
     const code = jointGaps.some(
-      (g, i) => Number.isFinite(g) && g > 0 && spec.widths[i]! / 2 + spec.widths[i + 1]! / 2 === g,
+      (g, i) => Number.isFinite(g) && g > 0 && widths[i]! / 2 + widths[i + 1]! / 2 === g,
     )
       ? 'TOUCHING_NOT_AUTHORIZED'
       : 'OVERLAP_REJECTED';
@@ -203,21 +250,17 @@ export const buildMultiGroup = (spec: MultiFixtureSpec): MultiBuildOutcome => {
   }
   const joints: MultiJoint[] = [];
   try {
-    assertCanonicalJointOrder(spec.widths.map((_, j) => `joint:${j}`));
+    assertCanonicalJointOrder(widths.map((_, j) => `joint:${j}`));
   } catch {
     return { ok: false, stage: 'group-layout', code: 'ORDER_REJECTED' };
   }
   for (let j = 0; j + 1 < n; j += 1) {
     const jointId = `joint:${j}`;
-    const fwdStation = members[j]!.start + members[j]!.length;
-    const station = spec.transform === 'reversal' ? total - fwdStation : fwdStation;
-    const width = spec.widths[j]!;
-    // Layout-order member pair: reversal traverses members [n-1..0], so the
-    // member left of the joint in LAYOUT order is original M(j+1) and the
-    // right one is M(j). vL/vR (and memberIds) follow the actual adjacent
-    // reversed members — joint ids stay bound to the vertex junction.
-    const memberL = spec.transform === 'reversal' ? j + 1 : j;
-    const memberR = spec.transform === 'reversal' ? j : j + 1;
+    const station = members[j]!.start + members[j]!.length;
+    const width = widths[j]!;
+    // Layout-order adjacent pair in the (possibly reversed) traversal.
+    const memberL = j;
+    const memberR = j + 1;
     const admitted = admitGradingTransition({
       policyVersion: 'trp1',
       lawKind: 'TRANSITION_LINEAR_V1',
@@ -240,7 +283,7 @@ export const buildMultiGroup = (spec: MultiFixtureSpec): MultiBuildOutcome => {
     joints.push({ jointId, station, width, sL: admitted.sL, sR: admitted.sR, vL: admitted.vL, vR: admitted.vR, memberL, memberR });
   }
   const intervals = joints.map((jt) => ({ lo: jt.station - jt.width / 2, hi: jt.station + jt.width / 2 }));
-  return { ok: true, geometry: { spec, side, members, joints, intervals, total } };
+  return { ok: true, geometry: { spec, side, members, joints, intervals, total, traversalOrder } };
 };
 
 export type StationOwner =
@@ -257,9 +300,7 @@ export const classifyMultiStation = (s: number, geometry: MultiGeometry): Statio
   }
   for (let k = 0; k < geometry.members.length; k += 1) {
     const m = geometry.members[k]!;
-    // Reversal measures stations from the far end: remap the member span.
-    const lo = geometry.spec.transform === 'reversal' ? geometry.total - (m.start + m.length) : m.start;
-    if (s >= lo && s <= lo + m.length) return { kind: 'native', member: k };
+    if (s >= m.start && s <= m.start + m.length) return { kind: 'native', member: k };
   }
   throw new Error(`station ${s} outside group span`);
 };
@@ -289,22 +330,31 @@ const transitionAxisPoint = (geometry: MultiGeometry, joint: number, s: number):
   return { s, off: (v - jz) / g, z: v };
 };
 
-/** Full transform to world coords (mirror / reversal / translate rebuild). */
+/** Full transform to world coords (mirror / translate rebuild; reversal is
+ *  already a forward rebuilt traversal so it needs no flip here). */
 const toWorld = (geometry: MultiGeometry, s: number, off: number, z: number): { x: number; y: number; z: number } => {
   const t = geometry.spec.transform;
   const shift = t === 'translate-1e6' ? 1e6 : t === 'translate-1e8' ? 1e8 : 0;
   const n = gradingSideNormal(dirOf(t).dx, dirOf(t).dy, geometry.side)!;
-  const sx = (t === 'reversal' ? geometry.total - s : s) + shift;
-  const sy = shift;
-  return { x: sx + n.nx * off, y: sy + n.ny * off, z };
+  return { x: s + shift + n.nx * off, y: shift + n.ny * off, z };
 };
 
 const sourceWorld = (geometry: MultiGeometry, s: number, zSrc: number): { x: number; y: number; z: number } => {
   const t = geometry.spec.transform;
   const shift = t === 'translate-1e6' ? 1e6 : t === 'translate-1e8' ? 1e8 : 0;
-  const sx = (t === 'reversal' ? geometry.total - s : s) + shift;
-  return { x: sx, y: shift, z: zSrc };
+  return { x: s + shift, y: shift, z: zSrc };
 };
+
+/**
+ * Normalize a reversed-traversal tiling back into the base orientation for
+ * comparison: x -> total - x (y/z unchanged). The caller reverses point
+ * order to restore ascending stations. Identity/mirror/translate rows use
+ * the identity (no-op) — only true-reversal rows normalize.
+ */
+export const normalizeReversedWorldToBase = (
+  pts: readonly { x: number; y: number; z: number }[],
+  total: number,
+): { x: number; y: number; z: number }[] => pts.map((p) => ({ x: total - p.x, y: p.y, z: p.z }));
 
 export interface TiledGroup {
   stations: number[];
@@ -317,11 +367,11 @@ export interface TiledGroup {
 
 /** Full source/daylight tiling over ordered global stations. */
 export const tileMultiGroup = (geometry: MultiGeometry): TiledGroup => {
+  const residual = { plan: 0, z: 0 };
   const base = new Set<number>([0, geometry.total]);
   for (const m of geometry.members) {
-    const b = geometry.spec.transform === 'reversal' ? geometry.total - m.start : m.start;
-    base.add(b);
-    base.add(geometry.spec.transform === 'reversal' ? geometry.total - (m.start + m.length) : m.start + m.length);
+    base.add(m.start);
+    base.add(m.start + m.length);
   }
   for (const jt of geometry.joints) {
     base.add(jt.station - jt.width / 2);
@@ -357,9 +407,8 @@ export const tileMultiGroup = (geometry: MultiGeometry): TiledGroup => {
       return toWorld(geometry, s, p.off, p.z);
     }
     // Boundary: transition endpoint MUST equal its ACTUAL adjacent native in
-    // layout order (memberL left of the low bound, memberR right of the high
-    // bound — under reversal these are the reversed members, never the
-    // unreversed pair). Residual vs the true neighbor only.
+    // traversal order (memberL left of the low bound, memberR right of the
+    // high bound). Residual vs the true neighbor only.
     const jt = geometry.joints[o.index]!;
     const tp = transitionAxisPoint(geometry, o.index, s);
     const endMember = s === jt.station - jt.width / 2 ? jt.memberL : jt.memberR;
@@ -368,69 +417,175 @@ export const tileMultiGroup = (geometry: MultiGeometry): TiledGroup => {
     const nw = toWorld(geometry, s, np.off, np.z);
     const plan = Math.hypot(tw.x - nw.x, tw.y - nw.y);
     const zgap = Math.abs(tw.z - nw.z);
-    tiledBoundaryResidual.plan = Math.max(tiledBoundaryResidual.plan, plan);
-    tiledBoundaryResidual.z = Math.max(tiledBoundaryResidual.z, zgap);
+    residual.plan = Math.max(residual.plan, plan);
+    residual.z = Math.max(residual.z, zgap);
     return tw;
   });
-  const c0 = { plan: tiledBoundaryResidual.plan, z: tiledBoundaryResidual.z };
-  tiledBoundaryResidual.plan = 0;
-  tiledBoundaryResidual.z = 0;
-  return { stations, owners, source, daylight, c0Plan: c0.plan, c0Z: c0.z };
+  return { stations, owners, source, daylight, c0Plan: residual.plan, c0Z: residual.z };
 };
 
-// ponytail: module-level residual accumulator, single-threaded study only; parameterize if reused.
-const tiledBoundaryResidual = { plan: 0, z: 0 };
+export interface CandidateAPreMeshExpectation {
+  expectedPositiveWidthRegions: 1;
+  expectedComponents: 1;
+  expectedBoundaryCycles: 1;
+  expectation: GradingTopologyExpectation;
+}
+
+export type PreMeshOutcome =
+  | { ok: true; preMesh: CandidateAPreMeshExpectation }
+  | { ok: false; stage: string; code: string };
+
+/**
+ * Study-side PRE-MESH policy expectation authority for Candidate A
+ * strict-separated valid fixtures. Derived ONLY from the candidate
+ * predicate + fixture structure BEFORE any mesh exists: open by
+ * construction, finite positive member lengths, every per-joint transition
+ * admitted, strict separation on every shared middle member, positive
+ * finite native + transition daylight widths under the analytic family, no
+ * touching/overlap. NEVER inspects source/daylight arrays,
+ * countPositiveWidthRegions, triangle output, or topology results.
+ * Failure => no expectation, no certificate (fail closed).
+ */
+export const deriveCandidateAPreMeshExpectation = (spec: MultiFixtureSpec): PreMeshOutcome => {
+  const n = spec.memberLengths.length;
+  if (n < 3 || spec.widths.length !== n - 1) return { ok: false, stage: 'fixture', code: 'MALFORMED' };
+  if (!spec.memberLengths.every((L) => Number.isFinite(L) && L > 0)) {
+    return { ok: false, stage: 'fixture', code: 'MALFORMED' };
+  }
+  if (!spec.widths.every((w) => Number.isFinite(w) && w > 0)) {
+    return { ok: false, stage: 'per-joint-admission', code: 'WIDTH_INVALID' };
+  }
+  // Group open by construction (all fixtures are ordinary open line strips).
+  const isOpen = true;
+  if (!isOpen) return { ok: false, stage: 'group-layout', code: 'CLOSED_NOT_AUTHORIZED' };
+  // Strict separation on every shared middle member, in traversal order
+  // (reversed layouts check the reversed pairing — same predicate).
+  const lengths = spec.transform === 'reversal' ? [...spec.memberLengths].reverse() : spec.memberLengths;
+  const widths = spec.transform === 'reversal' ? [...spec.widths].reverse() : spec.widths;
+  const gaps = lengths.slice(1, -1);
+  if (!layoutSeparation(widths, gaps)) {
+    const touching = gaps.some(
+      (g, i) => Number.isFinite(g) && g > 0 && widths[i]! / 2 + widths[i + 1]! / 2 === g,
+    );
+    return { ok: false, stage: 'group-layout', code: touching ? 'TOUCHING_NOT_AUTHORIZED' : 'OVERLAP_REJECTED' };
+  }
+  // Every per-joint transition admitted + positive finite native/transition
+  // daylight widths under the analytic family (via the live authorities,
+  // still pre-mesh: no tiling, no mesh, no region count).
+  const out = buildMultiGroup(spec);
+  if (!out.ok) return { ok: false, stage: out.stage, code: out.code };
+  const g = out.geometry;
+  for (let m = 0; m < g.members.length; m += 1) {
+    const resolved = resolveAnalyticCriterionAt(
+      g.members[m]!.criterion,
+      jointZ(spec.family),
+      maxSearch(spec.family),
+    );
+    if (!resolved.ok) return { ok: false, stage: 'native-resolution', code: 'NATIVE_UNRESOLVED' };
+    const off = resolved.value.horizontalDistance;
+    const z = resolved.value.limitElevation;
+    if (!Number.isFinite(off) || !(off > 0) || !Number.isFinite(z)) {
+      return { ok: false, stage: 'native-resolution', code: 'NATIVE_NONPOSITIVE_WIDTH' };
+    }
+  }
+  for (const jt of g.joints) {
+    for (const v of [jt.vL, jt.vR, jt.sL, jt.sR]) {
+      if (!Number.isFinite(v)) return { ok: false, stage: 'per-joint-admission', code: 'NONFINITE_LAW' };
+    }
+    const mid = evaluateTransitionLinearV1(jt.vL, jt.vR, jt.sL, jt.sR, 0);
+    if (!Number.isFinite(mid)) return { ok: false, stage: 'per-joint-admission', code: 'NONFINITE_LAW' };
+    const jz = jointZ(spec.family);
+    const off = spec.family === 'distance' ? mid : spec.family === 'relative-elevation' ? mid / GRADE : (mid - jz) / GRADE;
+    if (!Number.isFinite(off) || !(off > 0)) {
+      return { ok: false, stage: 'per-joint-admission', code: 'TRANSITION_NONPOSITIVE_WIDTH' };
+    }
+  }
+  // Authorized ordinary open strict-separated all-positive-width line strip:
+  // exactly ONE merged positive-width region — declared here, pre-mesh.
+  return {
+    ok: true,
+    preMesh: {
+      expectedPositiveWidthRegions: 1,
+      expectedComponents: 1,
+      expectedBoundaryCycles: 1,
+      expectation: deriveGradingTopologyExpectation({
+        scope: 'group',
+        closed: false,
+        positiveWidthRegions: 1,
+      }),
+    },
+  };
+};
 
 export interface MultiMeshFacts {
   vertexCount: number;
   triangleCount: number;
   skippedZeroWidth: number;
+  expectedPositiveWidthRegions: 1;
   measuredPositiveWidthRegions: number;
+  expectedComponents: 1;
+  expectedBoundaryCycles: 1;
   certOk: boolean;
   components: number;
   boundaryCycles: number;
   revalidationNull: boolean;
 }
 
-/** Actual strip mesh + gtop2 cert + exact revalidation over the tiled group. */
-export const meshAndCertifyMultiGroup = (tiled: TiledGroup): MultiMeshFacts => {
+/**
+ * Actual strip mesh + gtop2 cert + exact revalidation against the
+ * INDEPENDENT pre-mesh expectation. Measures `countPositiveWidthRegions`
+ * AFTER tiling, asserts measured == independently expected BEFORE
+ * certifying, then requires cert non-null, cert counts == expectation,
+ * exact revalidation null. Any mismatch throws (fail closed) — the
+ * expectation never adapts to the observation.
+ */
+export const meshAndCertifyMultiGroup = (
+  tiled: TiledGroup,
+  preMesh: CandidateAPreMeshExpectation,
+): MultiMeshFacts => {
+  const measured = countPositiveWidthRegions(tiled.source, tiled.daylight);
+  if (measured !== preMesh.expectedPositiveWidthRegions) {
+    throw new Error(
+      `pre-mesh vs measured topology mismatch: expected ${preMesh.expectedPositiveWidthRegions}, measured ${measured}`,
+    );
+  }
   const built = buildGradingStripMesh(tiled.source, tiled.daylight);
   if (!built.ok) throw new Error(`strip mesh must build (got ${built.code})`);
-  const measured = countPositiveWidthRegions(tiled.source, tiled.daylight);
-  // Pre-mesh expectation declared from the MEASURED count via the
-  // count-agnostic derivation (deriveTransitionExpectation rejects count≠1
-  // by design — pinned in tests — so it can never declare a multi group).
-  const expectation = deriveGradingTopologyExpectation({
-    scope: 'group',
-    closed: false,
-    positiveWidthRegions: measured,
-  });
   const flat = (pts: readonly { x: number; y: number; z: number }[]): number[] =>
     pts.flatMap((p) => [p.x, p.y, p.z]);
   const cert = buildGradingTopologyCertificateExact({
     scope: 'group',
     points: built.points,
     triangles: built.triangles,
-    expectation,
+    expectation: preMesh.expectation,
     sourceBoundaryPoints: flat(tiled.source),
     gradingBoundaryPoints: flat(tiled.daylight),
   });
-  if (!cert) throw new Error('gtop2 must certify the strict-separated strip');
+  if (!cert) throw new Error('gtop2 must certify the strict-separated strip against the pre-mesh expectation');
+  if (cert.components !== preMesh.expectedComponents || cert.boundaryCycles !== preMesh.expectedBoundaryCycles) {
+    throw new Error(
+      `cert counts vs pre-mesh expectation mismatch: cert ${cert.components}/${cert.boundaryCycles}, expected ${preMesh.expectedComponents}/${preMesh.expectedBoundaryCycles}`,
+    );
+  }
   const err = gradingTopologyCertificateExactError(
     cert,
     'group',
     { points: built.points, triangles: built.triangles },
     { sourceBoundaryPoints: flat(tiled.source), gradingBoundaryPoints: flat(tiled.daylight) },
   );
+  if (err !== null) throw new Error(`gtop2 exact revalidation must be null (got ${err})`);
   return {
     vertexCount: built.points.length / 3,
     triangleCount: built.triangles.length / 3,
     skippedZeroWidth: built.skippedZeroWidth,
+    expectedPositiveWidthRegions: preMesh.expectedPositiveWidthRegions,
     measuredPositiveWidthRegions: measured,
+    expectedComponents: preMesh.expectedComponents,
+    expectedBoundaryCycles: preMesh.expectedBoundaryCycles,
     certOk: true,
     components: cert.components,
     boundaryCycles: cert.boundaryCycles,
-    revalidationNull: err === null,
+    revalidationNull: true,
   };
 };
 
@@ -505,8 +660,8 @@ export const agreeMultiGroup = (
           recordedRevision,
         },
         [
-          { memberId: geometry.members[jt.memberL]!.id, criterion: geometry.members[jt.memberL]!.criterion, length: geometry.members[jt.memberL]!.length, dirX: dirOf(geometry.spec.transform).dx, dirY: dirOf(geometry.spec.transform).dy, startZ: jointZ(geometry.spec.family), endZ: jointZ(geometry.spec.family), isArc: false, maxSearchDistance: maxSearch(geometry.spec.family) },
-          { memberId: geometry.members[jt.memberR]!.id, criterion: geometry.members[jt.memberR]!.criterion, length: geometry.members[jt.memberR]!.length, dirX: dirOf(geometry.spec.transform).dx, dirY: dirOf(geometry.spec.transform).dy, startZ: jointZ(geometry.spec.family), endZ: jointZ(geometry.spec.family), isArc: false, maxSearchDistance: maxSearch(geometry.spec.family) },
+          { memberId: geometry.members[jt.memberL]!.id, criterion: geometry.members[jt.memberL]!.criterion, length: geometry.members[jt.memberL]!.length, dirX: 1, dirY: 0, startZ: jointZ(geometry.spec.family), endZ: jointZ(geometry.spec.family), isArc: false, maxSearchDistance: maxSearch(geometry.spec.family) },
+          { memberId: geometry.members[jt.memberR]!.id, criterion: geometry.members[jt.memberR]!.criterion, length: geometry.members[jt.memberR]!.length, dirX: 1, dirY: 0, startZ: jointZ(geometry.spec.family), endZ: jointZ(geometry.spec.family), isArc: false, maxSearchDistance: maxSearch(geometry.spec.family) },
         ],
         recordedRevision,
       ).ok,
@@ -520,26 +675,38 @@ export interface MultiRevisionFacts {
   orderSensitive: boolean;
   stable: boolean;
   citationLength: number;
+  /** Built ggrev1 input (exposed for hash pins; not serialized to corpus). */
+  input: GroupRevisionInput;
 }
 
 /** ggrev1 over real courses + canonical intents; order-swap must move the hash. */
 export const revisionFactsMultiGroup = (geometry: MultiGeometry, tiled: TiledGroup): MultiRevisionFacts => {
   const jz = jointZ(geometry.spec.family);
-  const courses = geometry.members.map((m) => ({
-    vertexAId: `S${geometry.members.indexOf(m)}`,
-    vertexBId: `S${geometry.members.indexOf(m) + 1}`,
-    resolvedSource: {
-      startX: m.start,
-      startY: 0,
-      endX: m.start + m.length,
-      endY: 0,
-      startZ: jz,
-      endZ: jz,
-      length: m.length,
-      reoriented: false,
-      isArc: false,
-    },
-  }));
+  const n = geometry.members.length;
+  // Actual traversal endpoint pairs: reversed traversals walk Sn->..->S0,
+  // so course i covers S(n-i)->S(n-1-i) (matching the real member ids).
+  const endpointPair = (i: number): [string, string] =>
+    geometry.traversalOrder === 'reversed-traversal'
+      ? [`S${n - i}`, `S${n - 1 - i}`]
+      : [`S${i}`, `S${i + 1}`];
+  const courses = geometry.members.map((m, i) => {
+    const [vertexAId, vertexBId] = endpointPair(i);
+    return {
+      vertexAId,
+      vertexBId,
+      resolvedSource: {
+        startX: m.start,
+        startY: 0,
+        endX: m.start + m.length,
+        endY: 0,
+        startZ: jz,
+        endZ: jz,
+        length: m.length,
+        reoriented: false,
+        isArc: false,
+      },
+    };
+  });
   const intents = geometry.joints.map((jt) => ({
     policyVersion: 'trp1',
     jointId: jt.jointId,
@@ -550,11 +717,23 @@ export const revisionFactsMultiGroup = (geometry: MultiGeometry, tiled: TiledGro
     criterionFamily: geometry.spec.family,
     side: geometry.side,
   }));
-  const base = {
+  // Alternating per-member scalars ride as canonical sparse overrides:
+  // the group default covers course 0, every differing course overrides.
+  const defaultCriterion = geometry.members[0]!.criterion;
+  const courseCriteria = geometry.members.flatMap((m, i) =>
+    criteriaEqual(m.criterion, defaultCriterion)
+      ? []
+      : [{
+        sourceCourse: { vertexAId: courses[i]!.vertexAId, vertexBId: courses[i]!.vertexBId },
+        criterion: { ...m.criterion },
+      }],
+  );
+  const base: GroupRevisionInput = {
     sourceFeatureLineId: 'FL-20N',
     courses,
     side: geometry.side,
-    criterion: geometry.members[0]!.criterion,
+    criterion: defaultCriterion,
+    courseCriteria,
     maxSearchDistance: maxSearch(geometry.spec.family),
     curveChordTolerance: 0.1,
     cornerMode: 'miter' as const,
@@ -597,6 +776,7 @@ export const revisionFactsMultiGroup = (geometry: MultiGeometry, tiled: TiledGro
     orderSensitive: swapped !== hash,
     stable: buildGroupRevision(base) === hash,
     citationLength: citation?.length ?? 0,
+    input: base,
   };
 };
 
@@ -614,6 +794,8 @@ export interface MultiRow {
   jointStations: number[];
   nativeGapsMeasured: number[];
   transform: MultiTransform;
+  /** Forward identity-equivalent layout, or rebuilt reversed traversal (B1). */
+  traversalOrder: 'forward' | 'reversed-traversal';
   expected: string;
   measured: Record<string, number | string | boolean | number[] | string[] | boolean[] | null[]>;
   futurePredicateEligible: boolean;
@@ -631,8 +813,8 @@ export const MULTI_FIXTURES = ((): MultiFixtureSpec[] => {
   for (const family of fams) {
     for (const transform of transforms) {
       const tag = transform;
-      specs.push({ fixtureId: `candidateA2T-${family}-${tag}`, family, memberLengths: [30, 24, 30], widths: [8, 6], transform, expected: 'transform-stable mesh + gtop2 + agreement', eligible: true });
-      specs.push({ fixtureId: `candidateA3T-${family}-${tag}`, family, memberLengths: [30, 24, 26, 30], widths: [8, 6, 4], transform, expected: 'transform-stable mesh + gtop2 + agreement', eligible: true });
+      specs.push({ fixtureId: `candidateA2T-${family}-${tag}`, family, memberLengths: [30, 24, 30], widths: [8, 6], transform, expected: transform === 'reversal' ? 'true-traversal-reversal mesh + gtop2 + agreement' : 'transform-stable mesh + gtop2 + agreement', eligible: true });
+      specs.push({ fixtureId: `candidateA3T-${family}-${tag}`, family, memberLengths: [30, 24, 26, 30], widths: [8, 6, 4], transform, expected: transform === 'reversal' ? 'true-traversal-reversal mesh + gtop2 + agreement' : 'transform-stable mesh + gtop2 + agreement', eligible: true });
     }
   }
   specs.push({ fixtureId: 'candidateA2T-distance-tiny-gap', family: 'distance', memberLengths: [30, 7.0001, 30], widths: [8, 6], transform: 'identity', expected: 'tiny-positive native run meshes as one region', eligible: true });
@@ -646,6 +828,7 @@ export const MULTI_FIXTURES = ((): MultiFixtureSpec[] => {
 /** Full Candidate A mesh corpus: REAL measured facts per row (no constants). */
 export const candidateAMultiBuildCorpus = (): MultiRow[] =>
   MULTI_FIXTURES.map((spec) => {
+    const traversalOrder: 'forward' | 'reversed-traversal' = spec.transform === 'reversal' ? 'reversed-traversal' : 'forward';
     const base = {
       fixtureId: spec.fixtureId,
       synthetic: true as const,
@@ -660,6 +843,7 @@ export const candidateAMultiBuildCorpus = (): MultiRow[] =>
       jointStations: [] as number[],
       nativeGapsMeasured: [] as number[],
       transform: spec.transform,
+      traversalOrder,
       expected: spec.expected,
       futurePredicateEligible: spec.eligible,
     };
@@ -677,9 +861,24 @@ export const candidateAMultiBuildCorpus = (): MultiRow[] =>
       };
       return negative;
     }
+    // Independent pre-mesh expectation FIRST (fail-closed: no expectation, no cert).
+    const pre = deriveCandidateAPreMeshExpectation(spec);
+    if (!pre.ok) {
+      const negative: MultiRow = {
+        ...base,
+        measured: {
+          stage: pre.stage,
+          code: pre.code,
+          meshBuilt: false,
+          certIssued: false,
+          validatorsRun: false,
+        },
+      };
+      return negative;
+    }
     const g = out.geometry;
     const tiled = tileMultiGroup(g);
-    const mesh = meshAndCertifyMultiGroup(tiled);
+    const mesh = meshAndCertifyMultiGroup(tiled, pre.preMesh);
     const revision = revisionFactsMultiGroup(g, tiled);
     const agreement = agreeMultiGroup(g, tiled, revision.hash);
     // Ownership verdict: unique owner per station; boundaries carry both endpoints.
@@ -688,6 +887,12 @@ export const candidateAMultiBuildCorpus = (): MultiRow[] =>
     const gaps = g.intervals.slice(1).map((iv, k) => r12(iv.lo - g.intervals[k]!.hi));
     return {
       ...base,
+      // Traversal-order truth: reversed rows record the REBUILT reversed
+      // traversal (reversed lengths/ids/widths/stations), not the base spec.
+      memberLengths: g.members.map((m) => m.length),
+      memberIds: g.members.map((m) => m.id),
+      jointIds: g.joints.map((jt) => jt.jointId),
+      widths: g.joints.map((jt) => jt.width),
       jointStations: g.joints.map((jt) => r12(jt.station)),
       nativeGapsMeasured: gaps,
       measured: {
@@ -702,10 +907,14 @@ export const candidateAMultiBuildCorpus = (): MultiRow[] =>
         vertexCount: mesh.vertexCount,
         triangleCount: mesh.triangleCount,
         skippedZeroWidth: mesh.skippedZeroWidth,
+        expectedPositiveWidthRegions: mesh.expectedPositiveWidthRegions,
         measuredPositiveWidthRegions: mesh.measuredPositiveWidthRegions,
+        expectedComponents: mesh.expectedComponents,
+        expectedBoundaryCycles: mesh.expectedBoundaryCycles,
         gtop2Components: mesh.components,
         gtop2BoundaryCycles: mesh.boundaryCycles,
         gtop2RevalidationNull: mesh.revalidationNull,
+        topologyPreMeshEqualsMeasured: mesh.expectedPositiveWidthRegions === mesh.measuredPositiveWidthRegions,
         meshValidatorCodes: agreement.meshValidator.map((c) => c ?? 'null'),
         groupAgreementOk: agreement.groupAgreement,
         c0PlanResidual: r12(tiled.c0Plan),

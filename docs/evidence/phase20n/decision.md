@@ -23,15 +23,15 @@
 | ownership? | Deterministic: strictly-inside → joint `i`; exactly-on-bound → shared endpoint (either owner agrees); else native. Touching excluded (double-owned boundary). | Underdetermined: two study laws sharing endpoints diverge up to 7.6 m / 22.7 m². |
 | C0? | Holds by construction (endpoint == native, shared refs). | Holds at scalar level on all rows — necessary, not sufficient. |
 | C1? | N/A (collinear: single tangent). | **Breaks by exactly δ** (`kinkDeg == angleDeg`, 81/81 rows); foldover past perpendicular. |
-| topology? | EXTEND: pre-mesh expectation declares the measured single merged positive-width strip (production `countPositiveWidthRegions` == 1 on the actual mesh; `deriveTransitionExpectation` rejects count≠1 by design so the study declares the same shape via `deriveGradingTopologyExpectation` — documented, not smuggled). | No topology can validate an unlegislated bridge; `TRANSITION_REQUIRED` stops stand. |
+| topology? | EXTEND: independent pre-mesh expectation declares the single merged positive-width strip (`deriveCandidateAPreMeshExpectation`: open + admitted + strict-separated + positive widths ⇒ 1, BEFORE mesh); production `countPositiveWidthRegions` == 1 measured AFTER tiling and asserted equal before cert; gtop2 certifies against the independent expectation (wrong-budget 2 fails, tied-split mismatch rejected — pinned). 1/1/1 is declared by the bounded candidate predicate before mesh, then independently measured/certified; it is no longer derived from observed count. | No topology can validate an unlegislated bridge; `TRANSITION_REQUIRED` stops stand. |
 | gtop2? | Reuse unchanged (validates, never admits; header already count-parameterized). | Reuse unchanged — validates nothing new, selects nothing. |
-| worker re-eval? | Loop today's math per joint (re-admit + pinned-evidence compare, byte-identical per joint). MEASURED: `validateTransitionResultMesh` null + `checkGroupTransitionAgreement` ok per transition on actual meshes, all families/transforms. | No basis: plan normal from `pCutR−pCutL` assumes one straight tangent — false for δ≠0. |
+| worker re-eval? | Loop today's math per joint (re-admit + pinned-evidence compare, byte-identical per joint). MEASURED: production `validateTransitionResultMesh` null per transition against actual full-mesh-owned checkpoints + production `checkGroupTransitionAgreement` ok per transition, all families/transforms. Plural worker request/handler wiring is NOT implemented/proven in production (Phase 20N.1 work). | No basis: plan normal from `pCutR−pCutL` assumes one straight tangent — false for δ≠0. |
 | revision invalidation? | EXTEND with canonical joint-index order; `exactTransitionWidth` full-precision preserved. | Reuse (single intent; nothing new to order). |
 | Extract? | Per-joint legs array; leg↔intent match refusal looped per joint. | Blocked: no bridge law to cite. |
 | Bake? | Citation already array-typed (length-1 today) → length-N, same refusal per joint. | Blocked: same reason. |
 | Design Patch? | Unchanged (open-route refusal is orthogonal; unwired gate stays unwired). | Unchanged. |
-| transform? | Collinear mirror == identity; reversal symmetric (`reversalConsistent: true`). | `mirrorStable`/`reversalStable` true all 81 rows — obstruction is transform-independent. |
-| reversal? | Same as above; law symmetric under traversal reversal. | Same; study laws coincide at endpoints/midpoint under reversal. |
+| transform? | Mirror/1e6/1e8 are geometric probes (same counts + validators); reversal is TRUE production-like traversal reversal (B1: rebuilt member order, reversed endpoint-pair ids, reindexed joints, physical widths reversed; normalized geometry matches identity under production agreement tolerances; ggrev1 legitimately rehashes). | `mirrorStable`/`reversalStable` true all 81 rows — obstruction is transform-independent. |
+| reversal? | B1 true traversal reversal as above (rebuilt traversal, not a mirror probe). | Same; study laws coincide at endpoints/midpoint under reversal. |
 | new epsilon? | **None.** Exact checks only; strict `<` separation; no tolerance changes. | **None introduced** — and none would help: divergence (5.6e-7 m at δ=1°) is 10^7× the agreement band, not rounding. |
 | hidden default? | None: touching/overlap/malformed/infeasible all fail closed; one stale joint fails the group. | The trap: any "obvious" bridge (miter point, straight connector, width-curvature law, hidden arc, smoothstep) would be a hidden default smuggled as law. Both probes are labelled STUDY-ONLY for exactly this reason. |
 | delta size-risk | Bounded EXTEND across ~9 sites; per-joint math reused byte-identical. See `production-delta.md`. | Unbounded NEW semantic authority (frame/blend/normal semantics + worker basis + topology handling). Blocked on policy. |
@@ -64,9 +64,12 @@ Per group, admit transitions `T_1..T_N` (N ≥ 1) iff ALL hold:
    merged silently.
 4. Whole-group fail-closed: one stale/rejected joint fails the group; no
    partial-transition solve.
-5. Expectation declares the single merged positive-width strip
-   (`positiveWidthRegions: 1` for N joints — MEASURED on actual study
-   meshes via production `countPositiveWidthRegions`); gtop2 validates as today.
+5. Independent pre-mesh expectation declares the single merged
+   positive-width strip (`positiveWidthRegions: 1` for N joints — DECLARED
+   by `deriveCandidateAPreMeshExpectation` before mesh from open +
+   admitted + strict-separated + positive widths); the post-tiling
+   production `countPositiveWidthRegions` must equal it before gtop2
+   certifies against it (mismatch fails closed); gtop2 validates as today.
 6. Revision hashes the joint-index-ordered intent list at full width
    precision; provenance/bake cite per-joint legs with the existing
    leg↔intent match refusal applied per joint.
