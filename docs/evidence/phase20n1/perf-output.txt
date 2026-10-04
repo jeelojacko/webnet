@@ -1,0 +1,9 @@
+T0 transitions=0 members=1 policyMs=0.000 solveMs=0.121 workerMs=0.000 totalMs=0.122 verts=4 tris=2
+T1 transitions=1 members=2 policyMs=0.000 solveMs=0.152 workerMs=0.012 totalMs=0.164 verts=10 tris=8
+T2 transitions=2 members=3 policyMs=0.001 solveMs=0.198 workerMs=0.008 totalMs=0.208 verts=16 tris=14
+T3 transitions=3 members=4 policyMs=0.002 solveMs=0.232 workerMs=0.011 totalMs=0.244 verts=22 tris=20
+T8 transitions=8 members=9 policyMs=0.003 solveMs=0.541 workerMs=0.031 totalMs=0.574 verts=52 tris=50
+scale T0->T1: +1 transitions solveDeltaMs=0.030 perTransitionMs=0.030 verts 4->10 tris 2->8
+scale T1->T2: +1 transitions solveDeltaMs=0.047 perTransitionMs=0.047 verts 10->16 tris 8->14
+scale T2->T3: +1 transitions solveDeltaMs=0.033 perTransitionMs=0.033 verts 16->22 tris 14->20
+scale T3->T8: +5 transitions solveDeltaMs=0.309 perTransitionMs=0.062 verts 22->52 tris 20->50
