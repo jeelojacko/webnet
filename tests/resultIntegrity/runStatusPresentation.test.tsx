@@ -130,8 +130,15 @@ describe('run status presentation (summary vs badge)', () => {
     expect(badge.label).not.toMatch(/Run failed|Current/);
 
     const html = renderReport(result);
-    expect(html).toContain('PRE-ANALYSIS COMPLETE');
-    expect(html).toContain('PLANNING ONLY');
+    // The Adjustment Summary card block (including the PRE-ANALYSIS COMPLETE /
+    // A-PRIORI SIGMA0 / RESIDUAL QC cards) is hidden for planning runs; the
+    // planning sections carry the preanalysis report instead.
+    expect(html).not.toContain('Adjustment Summary');
+    expect(html).not.toContain('PRE-ANALYSIS COMPLETE');
+    expect(html).not.toContain('PLANNING ONLY');
+    expect(html).not.toContain('A-PRIORI SIGMA0');
+    expect(html).not.toContain('RESIDUAL QC');
+    expect(html).toContain('Preanalysis Planning Summary');
     expect(html).not.toContain('>CONVERGED<');
   });
 

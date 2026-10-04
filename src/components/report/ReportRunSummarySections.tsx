@@ -57,7 +57,10 @@ export const AdjustmentSummarySection: React.FC<{
   isSpecialRunMode: boolean;
   result: AdjustmentResult;
 }> = ({ byType, isPreanalysis, isSpecialRunMode, result }) => {
-  if (isSpecialRunMode) return null;
+  // Preanalysis runs hide the whole Adjustment Summary block: the cards carry
+  // no residual-based QC value for planning runs and waste vertical space.
+  // Normal Adjustment / Data Check / Blunder Detect rendering is unchanged.
+  if (isSpecialRunMode || isPreanalysis) return null;
   const status = adjustmentSummaryStatus({
     success: result.success,
     preanalysisMode: isPreanalysis,

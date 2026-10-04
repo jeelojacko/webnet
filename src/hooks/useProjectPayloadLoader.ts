@@ -10,6 +10,10 @@ import {
   cloneAdjustedPointsExportSettings,
   sanitizeAdjustedPointsExportSettings,
 } from '../engine/adjustedPointsExport';
+import {
+  DEFAULT_PREANALYSIS_ACCURACY_THRESHOLD_METERS,
+  DEFAULT_PREANALYSIS_MAX_ADDED_SETS,
+} from '../engine/defaults';
 import { cloneCadDrawingDocument, migrateSurveyCadStateToDrawing } from '../engine/cad/cadDrawingFile';
 import type { CadDrawingDocument } from '../engine/cad/cadTypes';
 import { clonePlanningMapState, DEFAULT_PLANNING_MAP_STATE } from '../engine/planningMapState';
@@ -164,8 +168,10 @@ export const useProjectPayloadLoader = ({
         verticalDeflectionNorthSec: loadedParseSettings.verticalDeflectionNorthSec ?? 0,
         verticalDeflectionEastSec: loadedParseSettings.verticalDeflectionEastSec ?? 0,
         preanalysisAccuracyThresholdMeters:
-          loadedParseSettings.preanalysisAccuracyThresholdMeters ?? 0.001,
-        preanalysisMaxAddedSets: loadedParseSettings.preanalysisMaxAddedSets ?? 5,
+          loadedParseSettings.preanalysisAccuracyThresholdMeters ??
+          DEFAULT_PREANALYSIS_ACCURACY_THRESHOLD_METERS,
+        preanalysisMaxAddedSets:
+          loadedParseSettings.preanalysisMaxAddedSets ?? DEFAULT_PREANALYSIS_MAX_ADDED_SETS,
       };
       const loadedAdjustedPointsSettings = sanitizeAdjustedPointsExportSettings(
         parsed.ui.adjustedPointsExport,

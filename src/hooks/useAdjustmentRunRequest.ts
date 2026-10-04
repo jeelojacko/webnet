@@ -7,6 +7,7 @@ import type {
 } from '../types';
 import type { ProjectRunFile } from '../engine/projectWorkspace';
 import type { RunSessionRequest } from '../engine/runSession';
+import { DEFAULT_PREANALYSIS_MAX_ADDED_SETS } from '../engine/defaults';
 import { buildValueFingerprint } from '../engine/qaWorkflow';
 import { buildAppliedRunIdentity, type AppliedRunIdentity } from '../engine/resultIntegrity';
 import type { ApplyRunOutcomeContext } from './useAdjustmentOutcomeApplication';
@@ -79,7 +80,8 @@ export const buildRunRequestAndContext = ({
       units: settings.units,
       parseSettings: {
         ...parseSettings,
-        preanalysisMaxAddedSets: parseSettings.preanalysisMaxAddedSets ?? 5,
+        preanalysisMaxAddedSets:
+          parseSettings.preanalysisMaxAddedSets ?? DEFAULT_PREANALYSIS_MAX_ADDED_SETS,
       },
       projectInstruments: Object.fromEntries(
         Object.entries(projectInstruments).map(([code, instrument]) => [code, { ...instrument }]),

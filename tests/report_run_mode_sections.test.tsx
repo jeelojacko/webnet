@@ -57,6 +57,31 @@ describe('ReportView run-mode sections', () => {
     expect(html).not.toContain('Observations &amp; Residuals');
   });
 
+  it('hides the Adjustment Summary card block for preanalysis but keeps planning sections', () => {
+    const result = new LSAEngine({
+      input: baseInput,
+      maxIterations: 6,
+      parseOptions: { runMode: 'preanalysis', coordMode: '2D' },
+    }).solve();
+
+    const html = renderReport(result);
+    expect(html).not.toContain('Adjustment Summary');
+    expect(html).not.toContain('A-PRIORI SIGMA0');
+    expect(html).not.toContain('RESIDUAL QC');
+    expect(html).toContain('Preanalysis Planning Summary');
+  });
+
+  it('keeps the Adjustment Summary card block for normal adjustment runs', () => {
+    const result = new LSAEngine({
+      input: baseInput,
+      maxIterations: 6,
+      parseOptions: { runMode: 'adjustment', coordMode: '2D' },
+    }).solve();
+
+    const html = renderReport(result);
+    expect(html).toContain('Adjustment Summary');
+  });
+
   it('renders blunder-detect warning section when run mode is blunder-detect', () => {
     const result = new LSAEngine({
       input: baseInput,

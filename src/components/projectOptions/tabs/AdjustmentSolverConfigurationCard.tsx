@@ -1,5 +1,6 @@
 import React from 'react';
 
+import { DEFAULT_PREANALYSIS_MAX_ADDED_SETS } from '../../../engine/defaults';
 import type { ParseSettings } from '../../../appStateTypes';
 import type { CoordMode, RunMode } from '../../../types';
 import type { AdjustmentProjectOptionsTabProps } from './AdjustmentProjectOptionsTab.types';
@@ -188,7 +189,7 @@ export const AdjustmentSolverConfigurationCard: React.FC<AdjustmentProjectOption
                     'preanalysisMaxAddedSets',
                     Number.isFinite(Number.parseInt(e.target.value, 10))
                       ? Math.max(1, Math.min(25, Number.parseInt(e.target.value, 10)))
-                      : 5,
+                      : DEFAULT_PREANALYSIS_MAX_ADDED_SETS,
                   )
                 }
                 className={`${optionInputClass} mt-1`}

@@ -1,4 +1,5 @@
 import {
+  DEFAULT_PREANALYSIS_MAX_ADDED_SETS,
   DEFAULT_QFIX_ANGULAR_SIGMA_SEC,
   DEFAULT_QFIX_LINEAR_SIGMA_M,
 } from './defaults';
@@ -102,7 +103,9 @@ export const createRunProfileBuilders = ({
         parseState.preanalysisAccuracyThresholdMeters ??
         profileCtx.effectiveParse.preanalysisAccuracyThresholdMeters,
       preanalysisMaxAddedSets:
-        parseState.preanalysisMaxAddedSets ?? profileCtx.effectiveParse.preanalysisMaxAddedSets ?? 5,
+        parseState.preanalysisMaxAddedSets ??
+        profileCtx.effectiveParse.preanalysisMaxAddedSets ??
+        DEFAULT_PREANALYSIS_MAX_ADDED_SETS,
       mapMode: parseState.mapMode ?? profileCtx.effectiveParse.mapMode,
       mapScaleFactor: parseState.mapScaleFactor ?? profileCtx.effectiveParse.mapScaleFactor ?? 1,
       faceNormalizationMode:
