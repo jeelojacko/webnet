@@ -8,6 +8,10 @@
 - **One revision over all intents**: `ggrev1` covers the whole transition
   array — any drift (edited width, restated members, moved revision)
   invalidates the group together, never per-leg.
+- **Evidence remains evidence**: load sanitation never coerces endpoint scalars or
+  repairs malformed optional provenance. If present, provenance identity,
+  width, law, side, member pair, and recorded revision must match the intent
+  and current revision; malformed or stale evidence rejects the whole solve.
 - **Undo/redo round-trip**: the transition array participates in undo/redo
   as a unit (Flow J); redo restores the exact staged set.
 - **Removal semantics**: removing one transition of a pair leaves the other

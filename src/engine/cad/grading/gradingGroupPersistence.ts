@@ -94,39 +94,52 @@ export const sanitizeTransitions = (raw: unknown): CadGradingTransition[] | unde
       continue;
     }
     const candidate = entry as Record<string, unknown>;
+    const rawEndpoints = candidate['endpoints'];
+    const rawProvenance = candidate['provenance'];
+    // Present-but-malformed evidence must not decay into an absent
+    // optional (which admission would skip): retain the whole entry as
+    // malformed so the solve fails closed. Truly absent stays absent.
+    if (
+      (rawEndpoints !== undefined && (rawEndpoints === null || typeof rawEndpoints !== 'object' || Array.isArray(rawEndpoints))) ||
+      (rawProvenance !== undefined && (rawProvenance === null || typeof rawProvenance !== 'object' || Array.isArray(rawProvenance)))
+    ) {
+      kept.push(malformedTransitionMarker());
+      continue;
+    }
+    const endpointObj = rawEndpoints as Record<string, unknown> | undefined;
+    const provenanceObj = rawProvenance as Record<string, unknown> | undefined;
     kept.push({
       policyVersion: candidate['policyVersion'] as string,
       jointId: candidate['jointId'] as string,
+      // Raw entry types preserved by assertion only (never coerced): a
+      // loaded `['7', 9]` must stay `['7', 9]` so the strict engine
+      // evidence compare rejects instead of admitting repaired values.
       memberIds: Array.isArray(candidate['memberIds'])
-        ? (candidate['memberIds'] as unknown[]).map(String)
+        ? ([...(candidate['memberIds'] as unknown[])] as string[])
         : [],
       width: candidate['width'] as number,
       lawKind: candidate['lawKind'] as string,
       lawVersion: candidate['lawVersion'] as string,
       criterionFamily: candidate['criterionFamily'] as string,
       side: candidate['side'] as CadGradingTransition['side'],
-      ...((candidate['endpoints'] as Record<string, unknown> | undefined) !== undefined &&
-      (candidate['endpoints'] as Record<string, unknown> | null) !== null &&
-      typeof candidate['endpoints'] === 'object'
+      ...(endpointObj !== undefined
         ? {
             endpoints: {
-              refs: Array.isArray((candidate['endpoints'] as Record<string, unknown>)['refs'])
-                ? ((candidate['endpoints'] as Record<string, unknown>)['refs'] as unknown[]).map(String)
+              refs: Array.isArray(endpointObj['refs'])
+                ? ([...(endpointObj['refs'] as unknown[])] as string[])
                 : [],
-              values: Array.isArray((candidate['endpoints'] as Record<string, unknown>)['values'])
-                ? ((candidate['endpoints'] as Record<string, unknown>)['values'] as unknown[]).map(Number)
+              values: Array.isArray(endpointObj['values'])
+                ? ([...(endpointObj['values'] as unknown[])] as number[])
                 : [],
             },
           }
         : {}),
-      ...(candidate['provenance'] !== undefined &&
-      candidate['provenance'] !== null &&
-      typeof candidate['provenance'] === 'object'
+      ...(provenanceObj !== undefined
         ? {
             provenance: {
-              ...(candidate['provenance'] as Record<string, unknown>),
-              memberIds: Array.isArray((candidate['provenance'] as Record<string, unknown>)['memberIds'])
-                ? ((candidate['provenance'] as Record<string, unknown>)['memberIds'] as unknown[]).map(String)
+              ...(provenanceObj as Record<string, unknown>),
+              memberIds: Array.isArray(provenanceObj['memberIds'])
+                ? ([...(provenanceObj['memberIds'] as unknown[])] as string[])
                 : [],
             } as CadGradingTransition['provenance'],
           }

@@ -22,8 +22,8 @@ member is rebuilt **exactly once** (stitch-once).
 - Shared-member rule: a member claimed by two adjacent transitions is rebuilt
   once with **one native mid-subsolve**; singly-claimed ends keep the legacy
   shape and share V/q0 refs. TANGENT legs recorded per joint via map.
-- Gate before topology: measured mesh regions must equal expected − 1
-  (`measured==expected-1`), then `gtop2` exact revalidation.
+- Gate before topology: measured mesh regions must equal expected
+  (`measured===expected`), then `gtop2` exact revalidation.
 - Result shape: `result.transitions[]` in canonical joint order.
 
 ## Single-transition parity path

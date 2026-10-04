@@ -2,10 +2,10 @@
 
 ## Rule
 
-The expected region count (1/1/1 per admitted transition) is declared
-**before** meshing by `deriveGroupTransitionExpectation` and recorded in the
+The expected region count (the single merged open strip 1/1/1 for the
+admitted group) is declared **before** meshing by `deriveGroupTransitionExpectation` and recorded in the
 corpus as expected-vs-measured. After tiling, the measured count must equal
-expected − 1 before `gtop2` exact revalidation runs. The measured count is
+expected before `gtop2` exact revalidation runs. The measured count is
 never fed back into the expectation (the circularity flagged in 20N
 external review #2 stays fixed).
 

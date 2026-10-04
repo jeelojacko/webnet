@@ -22,6 +22,23 @@ Viewport geometry for all captures: `geometry.json` (same directory).
 Zero `src/` changes in this wave (spec fixed 2 own-test bugs: removal
 expectation, double-goto unsaved-guard).
 
+## Capture legibility audit (2026-10-04 recapture)
+
+Each shot scrolls its claim-relevant cell into view before capture (status
+cell / notice / button / list row — no overlays). Visually audited:
+
+| Shot | Legible claim |
+|------|---------------|
+| A, B, E, K | Status column reads `Current` + `Exact` accuracy |
+| C, D | Same status-cell framing path as A/B (not individually re-audited) |
+| F | `Failed (state) — CORNER_NO_SOLUTION` |
+| G1 | `Transition not added — overlapping transitions are not authorized` |
+| G2 | `Failed — GRADING_AGREEMENT_TRANSITION_OVERLAP` |
+| H | `Failed — TRANSITION_REJECTED` + staged joint:0 row |
+| I products | Toolspace `I2T - Baked` surface + `GROUPBAKE committed` (extract proven by DOM count asserts; already undone at capture) |
+| I patch-off | Design workflow open, `Build Design Patch` visibly disabled |
+| J | Restored `joint:0 8 m` / `joint:1 12 m` rows + `Undo GROUP_SET_TRANSITION` |
+
 ## What this is not
 
 - **20N study**: study evidence was harness geometry, never a live UI;

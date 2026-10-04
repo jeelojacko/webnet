@@ -25,6 +25,20 @@ import type { GradingSide } from './gradingTypes';
 /** Canonical persisted transition intent (persisted-model.md §1). */
 export type TransitionPersistedIntent = CadGradingTransition;
 
+/** Persisted evidence must agree with its intent; it is never geometric authority. */
+export const transitionEvidenceMatchesIntent = (intent: CadGradingTransition, revision: string): boolean => {
+  const evidence = intent.provenance;
+  if (evidence === undefined) return true;
+  return evidence !== null && typeof evidence === 'object' && !Array.isArray(evidence) &&
+    evidence.jointId === intent.jointId &&
+    Array.isArray(evidence.memberIds) && evidence.memberIds.length === 2 &&
+    evidence.memberIds[0] === intent.memberIds[0] && evidence.memberIds[1] === intent.memberIds[1] &&
+    evidence.width === intent.width && evidence.lawKind === intent.lawKind &&
+    evidence.lawVersion === intent.lawVersion &&
+    evidence.criterionFamily === intent.criterionFamily && evidence.side === intent.side &&
+    (evidence.revision === undefined || evidence.revision === revision);
+};
+
 /** Session provenance for one admitted transition build. */
 export interface GroupTransitionProvenance {
   policyVersion: string;

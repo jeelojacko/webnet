@@ -750,10 +750,13 @@ export const checkGroupTransitionPlansAgreement = (
 
 /**
  * Phase 20N.1 Wave F — plural worker post-solve mesh agreement. EVERY
- * plan is validated against its OWN result-owned leg (matched by jointId):
- * agreement recheck plus the full result-mesh gate on that leg's ACTUAL
+ * plan is validated against its OWN result-owned leg positionally
+ * (legs[i] ↔ plans[i] in canonical joint order, never re-matched by
+ * jointId): agreement recheck plus exact leg↔plan/pinned-evidence
+ * metadata plus the full result-mesh gate on that leg's ACTUAL
  * checkpoints — never first-only, never flattened triples. Length
- * mismatch (missing/extra legs) fails closed. No tolerance changes.
+ * mismatch (missing/extra legs), order swaps, and forged citations all
+ * fail closed. No tolerance changes.
  */
 export interface GroupTransitionLegsMeshInput {
   plans: readonly GroupTransitionPlan[];
@@ -779,11 +782,41 @@ export const validateGroupTransitionLegsMesh = (input: GroupTransitionLegsMeshIn
   }
   for (let i = 0; i < plans.length; i += 1) {
     const plan = plans[i]!;
-    const leg = legs.find((entry) => entry.jointId === plan.jointId);
-    if (!leg) return 'GRADING_AGREEMENT_TRANSITION_STALE';
+    // Canonical one-to-one positional correspondence: the i-th leg cites
+    // the i-th plan. A find-by-jointId would accept reversed/duplicated
+    // legs with intact checkpoints.
+    const leg = legs[i]!;
+    if (!leg || leg.jointId !== plan.jointId) return 'GRADING_AGREEMENT_TRANSITION_STALE';
     const members = views[i]!;
     const agreement = checkGroupTransitionAgreement(plan, members, liveRevision);
     if (!agreement.ok) return agreement.code;
+    if (leg.policyVersion !== plan.policyVersion) return 'GRADING_AGREEMENT_TRANSITION_VERSION_UNKNOWN';
+    if (leg.lawKind !== plan.lawKind || leg.lawVersion !== plan.lawVersion) {
+      return 'GRADING_AGREEMENT_TRANSITION_LAW_UNKNOWN';
+    }
+    if (leg.criterionFamily !== plan.criterionFamily || leg.criterionFamily !== agreement.family) {
+      return 'GRADING_AGREEMENT_TRANSITION_FAMILY_MISMATCH';
+    }
+    const joint = parseCanonicalJointIndex(plan.jointId);
+    if (joint === null || leg.joint !== joint) return 'GRADING_AGREEMENT_TRANSITION_MALFORMED';
+    if (
+      leg.width !== plan.width ||
+      leg.side !== plan.side ||
+      leg.memberIds[0] !== plan.memberIds[0] ||
+      leg.memberIds[1] !== plan.memberIds[1] ||
+      leg.jointStation !== plan.jointStation ||
+      leg.recordedRevision !== plan.recordedRevision ||
+      leg.interval.sL !== agreement.sL ||
+      leg.interval.sR !== agreement.sR ||
+      leg.endpointScalars.vL !== agreement.vL ||
+      leg.endpointScalars.vR !== agreement.vR ||
+      leg.endpointScalars.vL !== plan.endpointEvidence.vL ||
+      leg.endpointScalars.vR !== plan.endpointEvidence.vR ||
+      leg.endpointScalars.gL !== plan.endpointEvidence.gL ||
+      leg.endpointScalars.gR !== plan.endpointEvidence.gR
+    ) {
+      return 'GRADING_AGREEMENT_TRANSITION_STALE';
+    }
     if (leg.agreementCode !== null) return leg.agreementCode;
     const family = leg.criterionFamily;
     if (family !== 'distance' && family !== 'relative-elevation' && family !== 'elevation') {

@@ -370,10 +370,10 @@ describe('20N.1 Wave G: plural product gates', () => {
       { policyVersion: 'trp1', jointId: 'joint:0', joint: 0, side: 'left', widthMeters: 8, jointStation: 30 },
       { policyVersion: 'trp1', jointId: 'joint:1', joint: 1, side: 'left', widthMeters: 6, jointStation: 54 },
     ]);
-    // Forged second leg (edited width): bake refuses AND extract refuses.
+    // Forged second leg (edited width, replaced in place): bake refuses AND extract refuses.
     const forged = {
       ...result,
-      transitions: [...result.transitions!, { ...result.transitions![1]!, width: 10 }],
+      transitions: [result.transitions![0]!, { ...result.transitions![1]!, width: 10 }],
     };
     const refusedBake = runCadCommand(createCadHistoryState(transitioned), {
       key: 'GROUPBAKE',

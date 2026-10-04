@@ -7,16 +7,17 @@ rejects the **whole group** (fail-closed, no partial tiling):
    (`admitGradingTransition`, policy version `trp1`, law
    `TRANSITION_LINEAR_V1`) with count 1 at its own joint.
 2. **Canonical consecutive order**: joint ids parse via
-   `parseCanonicalJointIndex` (strict), sort ascending, and form a
-   consecutive run — no gaps (sparse rejected), no duplicates, no
-   out-of-order input accepted as-is.
+   `parseCanonicalJointIndex` (strict) and must already arrive in
+   canonical ascending consecutive run — nothing is ever sorted; sparse
+   (gaps) rejected, no duplicates, no out-of-order input accepted.
 3. **Strict separation**: for each adjacent pair, exact
    `Wi/2 + W(i+1)/2 < Lshared` where `Lshared` is the authoritative shared
    middle-member length (`checkGroupTransitionSeparation`). Touching (`==`)
    and overlap (`>`) both reject.
 4. **Independent pre-mesh expectation**: `deriveGroupTransitionExpectation`
    (delegating to the one plural authority `deriveTransitionExpectation`)
-   declares 1/1/1 per transition **before** meshing, from bounded codes only.
+   declares the single merged open strip 1/1/1 for the admitted group
+   **before** meshing, from bounded codes only.
 5. **Whole-group fail-closed**: one bad intent ⇒ zero transitions applied.
 
 ## Explicit exclusions (rejected by predicate, pinned by tests)

@@ -55,10 +55,16 @@ export interface TransitionAuthoringGeometry {
 
 const fail = (error: string): GradingAuthoringResult<CadGradingGroup> => ({ ok: false, error });
 
-/** Parse a real `joint:<n>` id; anything else is malformed (never coerced). */
+/**
+ * Parse a canonical `joint:<n>` id (no leading zeros, non-negative);
+ * anything else is malformed (never coerced). Non-canonical spellings
+ * such as `joint:01` reject HERE at SET so no intent is written that the
+ * compute would reject downstream.
+ */
 const jointIndexOf = (jointId: string): number | null => {
   const m = /^joint:(\d+)$/.exec(jointId);
-  return m ? Number(m[1]) : null;
+  if (!m || m[1] !== String(Number(m[1]))) return null;
+  return Number(m[1]);
 };
 
 /**

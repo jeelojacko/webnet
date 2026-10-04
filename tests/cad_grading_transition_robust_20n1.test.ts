@@ -15,11 +15,13 @@
  *     endpoints (exact, no new epsilon).
  *
  * Matrix: 2T/3T x Distance/RelativeElevation/flat Elevation, mirror, true
- * traversal reversal (rebuilt order/joint indices/width order), translate
- * 1e6/1e8, unequal widths, tiny positive gap, touching/overlap rejects,
- * max per-joint width boundary (`W == 2*min(L)`, just-over rejects), invalid
- * widths, non-canonical/duplicate/sparse/stale/malformed intents, and 3x
- * deterministic rebuilds.
+ * physical traversal reversal (members travel total→0 with directed
+ * endpoint identities, reversed widths/criteria, and the opposite side so
+ * the same physical daylight is reproduced in reverse triple order),
+ * translate 1e6/1e8, unequal widths, tiny positive gap, touching/overlap
+ * rejects, max per-joint width boundary (`W == 2*min(L)`, just-over
+ * rejects), invalid widths, non-canonical/duplicate/sparse/stale/malformed
+ * intents, and 3x deterministic rebuilds.
  */
 import { describe, expect, it } from 'vitest';
 import {
@@ -32,6 +34,11 @@ import {
   selectGroupTransitions,
 } from '../src/engine/cad/grading/gradingTransitionPolicy';
 import { gradingTopologyCertificateExactError } from '../src/engine/cad/grading/gradingTopologyCertificate';
+import {
+  AGREEMENT_FLOOR,
+  coordinateAgreementTol,
+  elevationAgreementTol,
+} from '../src/engine/cad/grading/gradingGroupSectors';
 import {
   checkGroupTransitionPlansAgreement,
   validateGroupTransitionLegsMesh,
@@ -68,6 +75,8 @@ interface CaseSpec {
   side: GradingSide;
   shiftX: number;
   shiftY: number;
+  /** True physical reversal: members travel total→0 (-X) instead of 0→total. */
+  westward?: boolean;
 }
 
 /** Per-family member scalars; flat Elevation targets sit above the source Z. */
@@ -87,22 +96,33 @@ const baseCase = (family: Family, size: Size): CaseSpec => ({
 });
 
 const modified = (c: CaseSpec, patch: Partial<CaseSpec>): CaseSpec => ({ ...c, ...patch });
+/**
+ * True physical traversal reversal: the same route walked total→0 with
+ * directed endpoint identities (`M{n-i}>M{n-i-1}`), reversed per-joint
+ * widths/criteria, and the opposite side so the same physical (y+)
+ * daylight is produced. The old array-only reversal (same +X travel) is
+ * gone: that proved nothing about traversal direction.
+ */
 const reversedCase = (c: CaseSpec): CaseSpec =>
   modified(c, {
     lengths: [...c.lengths].reverse(),
     scalars: [...c.scalars].reverse(),
     widths: [...c.widths].reverse(),
+    side: c.side === 'left' ? 'right' : 'left',
+    westward: true,
   });
 
 const memberChain = (c: CaseSpec): ResolvedGradingSource[] => {
+  const dir = c.westward === true ? -1 : 1;
+  const origin = c.westward === true ? c.lengths.reduce((a, b) => a + b, 0) : 0;
   let acc = 0;
   return c.lengths.map((length) => {
-    const start = acc;
+    const start = origin + dir * acc;
     acc += length;
     return {
       startX: start + c.shiftX,
       startY: c.shiftY,
-      endX: acc + c.shiftX,
+      endX: origin + dir * acc + c.shiftX,
       endY: c.shiftY,
       startZ: Z,
       endZ: Z,
@@ -114,6 +134,10 @@ const memberChain = (c: CaseSpec): ResolvedGradingSource[] => {
 };
 
 const memberKeys = (n: number): string[] => Array.from({ length: n }, (_, i) => `M${i}>M${i + 1}`);
+
+/** Directed identities for the westward walk: `M{n-i}>M{n-i-1}`. */
+const reversedMemberKeys = (n: number): string[] =>
+  Array.from({ length: n }, (_, i) => `M${n - i}>M${n - i - 1}`);
 
 const plansOf = (c: CaseSpec, keys: string[]): GroupTransitionPlan[] => {
   let station = 0;
@@ -147,7 +171,7 @@ interface Built {
 }
 
 const build = (c: CaseSpec, patch: Partial<GradingGroupComputeRequest> = {}): Built => {
-  const keys = memberKeys(c.lengths.length);
+  const keys = c.westward === true ? reversedMemberKeys(c.lengths.length) : memberKeys(c.lengths.length);
   const plans = plansOf(c, keys);
   const memberCriteria = c.scalars.map((s) => criterion(c.family, s));
   const request: GradingGroupComputeRequest = {
@@ -305,24 +329,64 @@ describe('20N.1 J: rigid transforms (mirror / translate 1e6 / 1e8)', () => {
   });
 });
 
-describe('20N.1 J: true traversal reversal (PATH B1 shape)', () => {
-  it.each(FAMILIES)('2T rebuilt order/width order admits with full gates (%s)', (family) => {
+describe('20N.1 J: physical traversal reversal (westward walk, opposite side)', () => {
+  it.each(FAMILIES)('2T westward walk admits with full gates (%s)', (family) => {
     const base = baseCase(family, '2T');
     const rev = build(reversedCase(base));
-    // Rebuilt order: widths reversed, members laid forward from 0.
+    // Same route walked total→0: reversed lengths/widths, directed ids.
     expect(rev.plans.map((p) => p.width)).toEqual([...base.widths].reverse());
     expect(rev.request.memberSources.map((s) => s.length)).toEqual([...base.lengths].reverse());
-    expect(rev.request.memberSources.map((s) => s.startX)).toEqual([0, 30, 54]);
+    expect(rev.request.memberSources.map((s) => s.startX)).toEqual([84, 54, 30]);
+    expect(rev.keys).toEqual(['M3>M2', 'M2>M1', 'M1>M0']);
+    expect(rev.request.side).toBe('right');
     assertGates(rev);
   });
 
-  it.each(FAMILIES)('3T reversed lengths/widths/criteria are physically reversed (%s)', (family) => {
+  it.each(FAMILIES)('3T westward lengths/widths/criteria walk total→0 (%s)', (family) => {
     const base = baseCase(family, '3T');
     const rev = build(reversedCase(base));
     expect(rev.request.memberSources.map((s) => s.length)).toEqual([30, 26, 24, 30]);
+    expect(rev.request.memberSources.map((s) => s.startX)).toEqual([110, 80, 54, 30]);
     expect(rev.plans.map((p) => p.width)).toEqual([4, 6, 8]);
     expect(rev.plans.map((p) => p.jointId)).toEqual(['joint:0', 'joint:1', 'joint:2']);
+    expect(rev.keys).toEqual(['M4>M3', 'M3>M2', 'M2>M1', 'M1>M0']);
     assertGates(rev);
+  });
+
+  /** Same physical vertex within the shared coordinate/elevation authorities. */
+  const agreeTriple = (a: readonly number[], f: number, b: readonly number[], r: number): void => {
+    const sx = Math.max(1, Math.abs(a[f]!), Math.abs(b[r]!));
+    const sy = Math.max(1, Math.abs(a[f + 1]!), Math.abs(b[r + 1]!));
+    expect(Math.abs(a[f]! - b[r]!)).toBeLessThanOrEqual(
+      coordinateAgreementTol(a[f]!, b[r]!, sx) + AGREEMENT_FLOOR,
+    );
+    expect(Math.abs(a[f + 1]! - b[r + 1]!)).toBeLessThanOrEqual(
+      coordinateAgreementTol(a[f + 1]!, b[r + 1]!, sy) + AGREEMENT_FLOOR,
+    );
+    expect(Math.abs(a[f + 2]! - b[r + 2]!)).toBeLessThanOrEqual(
+      elevationAgreementTol(a[f + 2]!, b[r + 2]!, []) + AGREEMENT_FLOOR,
+    );
+  };
+
+  it.each(FAMILIES)('westward walk reproduces baseline daylight in reverse triple order (%s)', (family) => {
+    for (const size of ['2T', '3T'] as const) {
+      const fwd = ok(build(baseCase(family, size)));
+      const rev = ok(build(reversedCase(baseCase(family, size))));
+      for (const pair of [
+        [fwd.daylightPoints, rev.daylightPoints],
+        [fwd.sourceBoundaryPoints!, rev.sourceBoundaryPoints!],
+      ] as const) {
+        expect(pair[1].length).toBe(pair[0].length);
+        const n = pair[0].length / 3;
+        for (let k = 0; k < n; k += 1) agreeTriple(pair[0], k * 3, pair[1], (n - 1 - k) * 3);
+      }
+      expect(rev.gradingMesh.triangles.length).toBe(fwd.gradingMesh.triangles.length);
+      expect(rev.topologyCertificate!.positiveWidthRegionCount).toBe(
+        fwd.topologyCertificate!.positiveWidthRegionCount,
+      );
+      expect(rev.topologyCertificate!.components).toBe(fwd.topologyCertificate!.components);
+      expect(rev.topologyCertificate!.boundaryCycles).toBe(fwd.topologyCertificate!.boundaryCycles);
+    }
   });
 });
 

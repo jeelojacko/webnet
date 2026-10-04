@@ -12,6 +12,7 @@ import {
   type ResolvedGroupInputs,
 } from '../engine/cad/grading/gradingGroupResolve';
 import { deriveGroupStatus } from '../engine/cad/grading/gradingGroupStatus';
+import { transitionEvidenceMatchesIntent } from '../engine/cad/grading/gradingTransitionProvenance';
 import type { CadGradingGroupResult, CadGradingTransition, GroupDiagnosticCode, GroupStatus } from '../engine/cad/grading/gradingGroupTypes';
 import { resolveGradingInputs, type ResolvedGradingInputs } from '../engine/cad/grading/gradingResolve';
 import { deriveGradingStatus, deriveFailedEffectiveStatus } from '../engine/cad/grading/gradingStatus';
@@ -152,6 +153,32 @@ const planSingleTransitionIntent = (
   const joint = jointed !== null && jointed[1] === String(Number(jointed[1])) ? Number(jointed[1]) : -1;
   const left = joint;
   const right = joint + 1;
+  // Malformed retained memberIds fail closed with the bounded STALE
+  // diagnostic — never dereferenced (a non-array field would throw).
+  if (!Array.isArray(intent.memberIds) || intent.memberIds.length !== 2) {
+    return {
+      ok: false,
+      code: 'TRANSITION_STALE',
+      detail: 'GRADING_AGREEMENT_TRANSITION_STALE: memberIds do not resolve to adjacent members',
+    };
+  }
+  // Present-but-malformed evidence fails closed too: the spreads below
+  // would dereference null, and omitting it would admit malformed
+  // presence as absent optionals.
+  if (intent.endpoints !== undefined && (intent.endpoints === null || typeof intent.endpoints !== 'object' || Array.isArray(intent.endpoints))) {
+    return {
+      ok: false,
+      code: 'TRANSITION_STALE',
+      detail: 'GRADING_AGREEMENT_TRANSITION_STALE: endpoint evidence malformed',
+    };
+  }
+  if (!transitionEvidenceMatchesIntent(intent, inputs.revision)) {
+    return {
+      ok: false,
+      code: 'TRANSITION_STALE',
+      detail: 'GRADING_AGREEMENT_TRANSITION_STALE: provenance malformed',
+    };
+  }
   if (
     !(joint >= 0) ||
     keys[right] === undefined ||

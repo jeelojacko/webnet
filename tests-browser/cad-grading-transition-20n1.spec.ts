@@ -224,6 +224,7 @@ test('20N1 Flow A two-transition distance CURRENT', async ({ page }) => {
     const row = groupRowByName(page, 'A2T');
     await expect(row).toContainText('Current', { timeout: 60000 });
     await expect(row).not.toContainText('Failed');
+    await row.getByText('Current').first().scrollIntoViewIfNeeded();
     await shot(page, 'a-two-transition-current');
   });
 });
@@ -248,6 +249,7 @@ test('20N1 Flow B three-transition distance CURRENT', async ({ page }) => {
     const row = groupRowByName(page, 'B3T');
     await expect(row).toContainText('Current', { timeout: 90000 });
     await expect(row).not.toContainText('Failed');
+    await row.getByText('Current').first().scrollIntoViewIfNeeded();
     await shot(page, 'b-three-transition-current');
   });
 });
@@ -268,6 +270,7 @@ test('20N1 Flow C relative-elevation 2T CURRENT', async ({ page }) => {
     const row = groupRowByName(page, 'C2T');
     await expect(row).toContainText('Current', { timeout: 60000 });
     await expect(row).not.toContainText('Failed');
+    await row.getByText('Current').first().scrollIntoViewIfNeeded();
     await shot(page, 'c-relative-2t-current');
   });
 });
@@ -288,6 +291,7 @@ test('20N1 Flow D flat-elevation 2T CURRENT', async ({ page }) => {
     const row = groupRowByName(page, 'D2T');
     await expect(row).toContainText('Current', { timeout: 60000 });
     await expect(row).not.toContainText('Failed');
+    await row.getByText('Current').first().scrollIntoViewIfNeeded();
     await shot(page, 'd-flat-elevation-2t-current');
   });
 });
@@ -329,6 +333,7 @@ test('20N1 Flow E save-reopen preserves 2T', async ({ page }) => {
     await gotoDefinitionTab(page);
     await calculateSelected(page, 'E2T');
     await expect(groupRowByName(page, 'E2T')).toContainText('Current', { timeout: 60000 });
+    await groupRowByName(page, 'E2T').getByText('Current').first().scrollIntoViewIfNeeded();
     await shot(page, 'e-save-reopen-current');
     await fs.promises.rm(dir, { recursive: true, force: true });
   } finally {
@@ -383,6 +388,7 @@ test('20N1 Flow F edit invalidates remove-one keeps other', async ({ page }) => 
     await expect(uncovered).toContainText('Failed', { timeout: 90000 });
     await expect(uncovered).toContainText(/CORNER_NO_SOLUTION/);
     await expect(uncovered).not.toContainText('Current');
+    await uncovered.getByText('Failed').first().scrollIntoViewIfNeeded();
     await shot(page, 'f-edit-remove-fail-closed');
   });
 });
@@ -416,6 +422,7 @@ test('20N1 Flow G1 authoring rejects touching overlap', async ({ page }) => {
     await panel.locator('[data-cad-grading-group-transition-add]').click();
     await expect(page.locator('[data-cad-grading-group-notice]')).toContainText(/not added/i, { timeout: 10000 });
     await expect(transitionRows(page)).toHaveCount(1);
+    await page.locator('[data-cad-grading-group-notice]').scrollIntoViewIfNeeded();
     await shot(page, 'g-authoring-rejects-touching-overlap');
   } finally {
     fs.rmSync(file, { force: true });
@@ -439,6 +446,7 @@ test('20N1 Flow G2 seeded touching fails closed', async ({ page }) => {
     await expect(row).not.toContainText('Current');
     await expect(page.locator('[data-cad-grading-group-extract]')).toBeDisabled();
     await expect(page.locator('[data-cad-grading-group-bake]')).toBeDisabled();
+    await row.getByText('Failed').first().scrollIntoViewIfNeeded();
     await shot(page, 'g-touching-failed');
   });
 });
@@ -462,6 +470,7 @@ test('20N1 Flow H bent joint fails closed', async ({ page }) => {
     await openTransitionTab(page, 'Hbend');
     const laws = await page.locator('[aria-label="Transition law"] option').allTextContents();
     expect(laws).toEqual(['TRANSITION_LINEAR_V1/v1']);
+    await row.getByText('Failed').first().scrollIntoViewIfNeeded();
     await shot(page, 'h-bent-failed');
   });
 });
@@ -502,10 +511,11 @@ test('20N1 Flow I products truthful patch off', async ({ page }) => {
     await expect(page.locator('[data-cad-grading-group-bake]')).toBeEnabled({ timeout: 10000 });
     await page.locator('[data-cad-grading-group-bake]').click();
     await expect.poll(() => surfaceNodes(page).count()).toBe(surfacesBefore + 1);
+    await surfaceNodes(page).last().scrollIntoViewIfNeeded();
+    await shot(page, 'i-products');
     await homeTab(page);
     await page.locator('[data-cad-command="SHELL_UNDO"]').click();
     await expect.poll(() => surfaceNodes(page).count()).toBe(surfacesBefore);
-    await shot(page, 'i-products');
 
     await homeTab(page);
     await page.getByRole('tab', { name: 'Surface' }).click();
@@ -518,6 +528,7 @@ test('20N1 Flow I products truthful patch off', async ({ page }) => {
     expect(targetLabel).toBeDefined();
     await groupSelect.selectOption({ label: targetLabel! });
     await expect(workflow.getByRole('button', { name: 'Build Design Patch' })).toBeDisabled();
+    await workflow.getByRole('button', { name: 'Build Design Patch' }).scrollIntoViewIfNeeded();
     await shot(page, 'i-patch-off');
   });
 });
@@ -572,6 +583,7 @@ test('20N1 Flow J undo redo transition array', async ({ page }) => {
     await openGroupManager(page);
     await openTransitionTab(page, 'J2T');
     await expect(transitionRows(page).nth(1)).toContainText('12 m');
+    await transitionRows(page).nth(1).scrollIntoViewIfNeeded();
     await shot(page, 'j-undo-redo');
   });
 });
@@ -594,6 +606,7 @@ test('20N1 Flow K legacy single transition CURRENT', async ({ page }) => {
     const row = groupRowByName(page, 'K1T');
     await expect(row).toContainText('Current', { timeout: 60000 });
     await expect(row).not.toContainText('Failed');
+    await row.getByText('Current').first().scrollIntoViewIfNeeded();
     await shot(page, 'k-legacy-single-current');
   });
 });
