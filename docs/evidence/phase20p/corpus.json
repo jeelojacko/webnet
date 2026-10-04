@@ -1,0 +1,6258 @@
+[
+  {
+    "fixtureId": "sparse02-distance-left",
+    "synthetic": true,
+    "study": "sparse-transition-set",
+    "family": "distance",
+    "memberCount": 4,
+    "memberLengths": [
+      30,
+      24,
+      26,
+      30
+    ],
+    "memberIds": [
+      "S0>S1",
+      "S1>S2",
+      "S2>S3",
+      "S3>S4"
+    ],
+    "transitionJoints": [
+      0,
+      2
+    ],
+    "jointIds": [
+      "joint:0",
+      "joint:2"
+    ],
+    "widths": [
+      8,
+      6
+    ],
+    "clusters": [
+      [
+        0
+      ],
+      [
+        2
+      ]
+    ],
+    "clusterPaths": [
+      "singular",
+      "singular"
+    ],
+    "jointStations": [
+      30,
+      80
+    ],
+    "setGapsMeasured": [
+      50
+    ],
+    "transform": "identity",
+    "traversalOrder": "forward",
+    "expected": "sparse admit-per-joint + cluster honesty + mesh + gtop2 + agreement",
+    "futurePredicateEligible": true,
+    "measured": {
+      "layoutOk": true,
+      "admitCodes": "ok,ok",
+      "midScalars": [
+        6,
+        6
+      ],
+      "stationCount": 13,
+      "transitionStations": 6,
+      "boundaryStations": 4,
+      "nativeStations": 3,
+      "skippedJointNativeStations": 3,
+      "ownershipUnique": true,
+      "vertexCount": 26,
+      "triangleCount": 24,
+      "skippedZeroWidth": 0,
+      "expectedPositiveWidthRegions": 1,
+      "measuredPositiveWidthRegions": 1,
+      "topologyPreMeshEqualsMeasured": true,
+      "gtop2Components": 1,
+      "gtop2BoundaryCycles": 1,
+      "gtop2RevalidationNull": true,
+      "meshValidatorCodes": [
+        "null",
+        "null"
+      ],
+      "groupAgreementOk": [
+        true,
+        true
+      ],
+      "c0PlanResidual": 0,
+      "c0ZResidual": 0,
+      "revisionHash": "ggrev1:2d3d1b3f",
+      "revisionOrderSensitive": true,
+      "revisionStable": true,
+      "bakeCitationLength": 1
+    }
+  },
+  {
+    "fixtureId": "sparse02-distance-right",
+    "synthetic": true,
+    "study": "sparse-transition-set",
+    "family": "distance",
+    "memberCount": 4,
+    "memberLengths": [
+      30,
+      24,
+      26,
+      30
+    ],
+    "memberIds": [
+      "S0>S1",
+      "S1>S2",
+      "S2>S3",
+      "S3>S4"
+    ],
+    "transitionJoints": [
+      0,
+      2
+    ],
+    "jointIds": [
+      "joint:0",
+      "joint:2"
+    ],
+    "widths": [
+      8,
+      6
+    ],
+    "clusters": [
+      [
+        0
+      ],
+      [
+        2
+      ]
+    ],
+    "clusterPaths": [
+      "singular",
+      "singular"
+    ],
+    "jointStations": [
+      30,
+      80
+    ],
+    "setGapsMeasured": [
+      50
+    ],
+    "transform": "mirror",
+    "traversalOrder": "forward",
+    "expected": "sparse admit-per-joint + cluster honesty + mesh + gtop2 + agreement",
+    "futurePredicateEligible": true,
+    "measured": {
+      "layoutOk": true,
+      "admitCodes": "ok,ok",
+      "midScalars": [
+        6,
+        6
+      ],
+      "stationCount": 13,
+      "transitionStations": 6,
+      "boundaryStations": 4,
+      "nativeStations": 3,
+      "skippedJointNativeStations": 3,
+      "ownershipUnique": true,
+      "vertexCount": 26,
+      "triangleCount": 24,
+      "skippedZeroWidth": 0,
+      "expectedPositiveWidthRegions": 1,
+      "measuredPositiveWidthRegions": 1,
+      "topologyPreMeshEqualsMeasured": true,
+      "gtop2Components": 1,
+      "gtop2BoundaryCycles": 1,
+      "gtop2RevalidationNull": true,
+      "meshValidatorCodes": [
+        "null",
+        "null"
+      ],
+      "groupAgreementOk": [
+        true,
+        true
+      ],
+      "c0PlanResidual": 0,
+      "c0ZResidual": 0,
+      "revisionHash": "ggrev1:314dc99c",
+      "revisionOrderSensitive": true,
+      "revisionStable": true,
+      "bakeCitationLength": 1
+    }
+  },
+  {
+    "fixtureId": "sparse02-relative-elevation-left",
+    "synthetic": true,
+    "study": "sparse-transition-set",
+    "family": "relative-elevation",
+    "memberCount": 4,
+    "memberLengths": [
+      30,
+      24,
+      26,
+      30
+    ],
+    "memberIds": [
+      "S0>S1",
+      "S1>S2",
+      "S2>S3",
+      "S3>S4"
+    ],
+    "transitionJoints": [
+      0,
+      2
+    ],
+    "jointIds": [
+      "joint:0",
+      "joint:2"
+    ],
+    "widths": [
+      8,
+      6
+    ],
+    "clusters": [
+      [
+        0
+      ],
+      [
+        2
+      ]
+    ],
+    "clusterPaths": [
+      "singular",
+      "singular"
+    ],
+    "jointStations": [
+      30,
+      80
+    ],
+    "setGapsMeasured": [
+      50
+    ],
+    "transform": "identity",
+    "traversalOrder": "forward",
+    "expected": "sparse admit-per-joint + cluster honesty + mesh + gtop2 + agreement",
+    "futurePredicateEligible": true,
+    "measured": {
+      "layoutOk": true,
+      "admitCodes": "ok,ok",
+      "midScalars": [
+        1.75,
+        1.75
+      ],
+      "stationCount": 13,
+      "transitionStations": 6,
+      "boundaryStations": 4,
+      "nativeStations": 3,
+      "skippedJointNativeStations": 3,
+      "ownershipUnique": true,
+      "vertexCount": 26,
+      "triangleCount": 24,
+      "skippedZeroWidth": 0,
+      "expectedPositiveWidthRegions": 1,
+      "measuredPositiveWidthRegions": 1,
+      "topologyPreMeshEqualsMeasured": true,
+      "gtop2Components": 1,
+      "gtop2BoundaryCycles": 1,
+      "gtop2RevalidationNull": true,
+      "meshValidatorCodes": [
+        "null",
+        "null"
+      ],
+      "groupAgreementOk": [
+        true,
+        true
+      ],
+      "c0PlanResidual": 0,
+      "c0ZResidual": 0,
+      "revisionHash": "ggrev1:b4251511",
+      "revisionOrderSensitive": true,
+      "revisionStable": true,
+      "bakeCitationLength": 1
+    }
+  },
+  {
+    "fixtureId": "sparse02-relative-elevation-right",
+    "synthetic": true,
+    "study": "sparse-transition-set",
+    "family": "relative-elevation",
+    "memberCount": 4,
+    "memberLengths": [
+      30,
+      24,
+      26,
+      30
+    ],
+    "memberIds": [
+      "S0>S1",
+      "S1>S2",
+      "S2>S3",
+      "S3>S4"
+    ],
+    "transitionJoints": [
+      0,
+      2
+    ],
+    "jointIds": [
+      "joint:0",
+      "joint:2"
+    ],
+    "widths": [
+      8,
+      6
+    ],
+    "clusters": [
+      [
+        0
+      ],
+      [
+        2
+      ]
+    ],
+    "clusterPaths": [
+      "singular",
+      "singular"
+    ],
+    "jointStations": [
+      30,
+      80
+    ],
+    "setGapsMeasured": [
+      50
+    ],
+    "transform": "mirror",
+    "traversalOrder": "forward",
+    "expected": "sparse admit-per-joint + cluster honesty + mesh + gtop2 + agreement",
+    "futurePredicateEligible": true,
+    "measured": {
+      "layoutOk": true,
+      "admitCodes": "ok,ok",
+      "midScalars": [
+        1.75,
+        1.75
+      ],
+      "stationCount": 13,
+      "transitionStations": 6,
+      "boundaryStations": 4,
+      "nativeStations": 3,
+      "skippedJointNativeStations": 3,
+      "ownershipUnique": true,
+      "vertexCount": 26,
+      "triangleCount": 24,
+      "skippedZeroWidth": 0,
+      "expectedPositiveWidthRegions": 1,
+      "measuredPositiveWidthRegions": 1,
+      "topologyPreMeshEqualsMeasured": true,
+      "gtop2Components": 1,
+      "gtop2BoundaryCycles": 1,
+      "gtop2RevalidationNull": true,
+      "meshValidatorCodes": [
+        "null",
+        "null"
+      ],
+      "groupAgreementOk": [
+        true,
+        true
+      ],
+      "c0PlanResidual": 0,
+      "c0ZResidual": 0,
+      "revisionHash": "ggrev1:9664d10c",
+      "revisionOrderSensitive": true,
+      "revisionStable": true,
+      "bakeCitationLength": 1
+    }
+  },
+  {
+    "fixtureId": "sparse02-elevation-left",
+    "synthetic": true,
+    "study": "sparse-transition-set",
+    "family": "elevation",
+    "memberCount": 4,
+    "memberLengths": [
+      30,
+      24,
+      26,
+      30
+    ],
+    "memberIds": [
+      "S0>S1",
+      "S1>S2",
+      "S2>S3",
+      "S3>S4"
+    ],
+    "transitionJoints": [
+      0,
+      2
+    ],
+    "jointIds": [
+      "joint:0",
+      "joint:2"
+    ],
+    "widths": [
+      8,
+      6
+    ],
+    "clusters": [
+      [
+        0
+      ],
+      [
+        2
+      ]
+    ],
+    "clusterPaths": [
+      "singular",
+      "singular"
+    ],
+    "jointStations": [
+      30,
+      80
+    ],
+    "setGapsMeasured": [
+      50
+    ],
+    "transform": "identity",
+    "traversalOrder": "forward",
+    "expected": "sparse admit-per-joint + cluster honesty + mesh + gtop2 + agreement",
+    "futurePredicateEligible": true,
+    "measured": {
+      "layoutOk": true,
+      "admitCodes": "ok,ok",
+      "midScalars": [
+        0.75,
+        0.75
+      ],
+      "stationCount": 13,
+      "transitionStations": 6,
+      "boundaryStations": 4,
+      "nativeStations": 3,
+      "skippedJointNativeStations": 3,
+      "ownershipUnique": true,
+      "vertexCount": 26,
+      "triangleCount": 24,
+      "skippedZeroWidth": 0,
+      "expectedPositiveWidthRegions": 1,
+      "measuredPositiveWidthRegions": 1,
+      "topologyPreMeshEqualsMeasured": true,
+      "gtop2Components": 1,
+      "gtop2BoundaryCycles": 1,
+      "gtop2RevalidationNull": true,
+      "meshValidatorCodes": [
+        "null",
+        "null"
+      ],
+      "groupAgreementOk": [
+        true,
+        true
+      ],
+      "c0PlanResidual": 0,
+      "c0ZResidual": 0,
+      "revisionHash": "ggrev1:364c0359",
+      "revisionOrderSensitive": true,
+      "revisionStable": true,
+      "bakeCitationLength": 1
+    }
+  },
+  {
+    "fixtureId": "sparse02-elevation-right",
+    "synthetic": true,
+    "study": "sparse-transition-set",
+    "family": "elevation",
+    "memberCount": 4,
+    "memberLengths": [
+      30,
+      24,
+      26,
+      30
+    ],
+    "memberIds": [
+      "S0>S1",
+      "S1>S2",
+      "S2>S3",
+      "S3>S4"
+    ],
+    "transitionJoints": [
+      0,
+      2
+    ],
+    "jointIds": [
+      "joint:0",
+      "joint:2"
+    ],
+    "widths": [
+      8,
+      6
+    ],
+    "clusters": [
+      [
+        0
+      ],
+      [
+        2
+      ]
+    ],
+    "clusterPaths": [
+      "singular",
+      "singular"
+    ],
+    "jointStations": [
+      30,
+      80
+    ],
+    "setGapsMeasured": [
+      50
+    ],
+    "transform": "mirror",
+    "traversalOrder": "forward",
+    "expected": "sparse admit-per-joint + cluster honesty + mesh + gtop2 + agreement",
+    "futurePredicateEligible": true,
+    "measured": {
+      "layoutOk": true,
+      "admitCodes": "ok,ok",
+      "midScalars": [
+        0.75,
+        0.75
+      ],
+      "stationCount": 13,
+      "transitionStations": 6,
+      "boundaryStations": 4,
+      "nativeStations": 3,
+      "skippedJointNativeStations": 3,
+      "ownershipUnique": true,
+      "vertexCount": 26,
+      "triangleCount": 24,
+      "skippedZeroWidth": 0,
+      "expectedPositiveWidthRegions": 1,
+      "measuredPositiveWidthRegions": 1,
+      "topologyPreMeshEqualsMeasured": true,
+      "gtop2Components": 1,
+      "gtop2BoundaryCycles": 1,
+      "gtop2RevalidationNull": true,
+      "meshValidatorCodes": [
+        "null",
+        "null"
+      ],
+      "groupAgreementOk": [
+        true,
+        true
+      ],
+      "c0PlanResidual": 0,
+      "c0ZResidual": 0,
+      "revisionHash": "ggrev1:0d33186c",
+      "revisionOrderSensitive": true,
+      "revisionStable": true,
+      "bakeCitationLength": 1
+    }
+  },
+  {
+    "fixtureId": "sparse024-distance-left",
+    "synthetic": true,
+    "study": "sparse-transition-set",
+    "family": "distance",
+    "memberCount": 6,
+    "memberLengths": [
+      30,
+      24,
+      26,
+      22,
+      28,
+      30
+    ],
+    "memberIds": [
+      "S0>S1",
+      "S1>S2",
+      "S2>S3",
+      "S3>S4",
+      "S4>S5",
+      "S5>S6"
+    ],
+    "transitionJoints": [
+      0,
+      2,
+      4
+    ],
+    "jointIds": [
+      "joint:0",
+      "joint:2",
+      "joint:4"
+    ],
+    "widths": [
+      8,
+      6,
+      4
+    ],
+    "clusters": [
+      [
+        0
+      ],
+      [
+        2
+      ],
+      [
+        4
+      ]
+    ],
+    "clusterPaths": [
+      "singular",
+      "singular",
+      "singular"
+    ],
+    "jointStations": [
+      30,
+      80,
+      130
+    ],
+    "setGapsMeasured": [
+      50,
+      50
+    ],
+    "transform": "identity",
+    "traversalOrder": "forward",
+    "expected": "sparse admit-per-joint + cluster honesty + mesh + gtop2 + agreement",
+    "futurePredicateEligible": true,
+    "measured": {
+      "layoutOk": true,
+      "admitCodes": "ok,ok,ok",
+      "midScalars": [
+        6,
+        6,
+        6
+      ],
+      "stationCount": 19,
+      "transitionStations": 9,
+      "boundaryStations": 6,
+      "nativeStations": 4,
+      "skippedJointNativeStations": 4,
+      "ownershipUnique": true,
+      "vertexCount": 38,
+      "triangleCount": 36,
+      "skippedZeroWidth": 0,
+      "expectedPositiveWidthRegions": 1,
+      "measuredPositiveWidthRegions": 1,
+      "topologyPreMeshEqualsMeasured": true,
+      "gtop2Components": 1,
+      "gtop2BoundaryCycles": 1,
+      "gtop2RevalidationNull": true,
+      "meshValidatorCodes": [
+        "null",
+        "null",
+        "null"
+      ],
+      "groupAgreementOk": [
+        true,
+        true,
+        true
+      ],
+      "c0PlanResidual": 0,
+      "c0ZResidual": 0,
+      "revisionHash": "ggrev1:be240131",
+      "revisionOrderSensitive": true,
+      "revisionStable": true,
+      "bakeCitationLength": 1
+    }
+  },
+  {
+    "fixtureId": "sparse024-distance-right",
+    "synthetic": true,
+    "study": "sparse-transition-set",
+    "family": "distance",
+    "memberCount": 6,
+    "memberLengths": [
+      30,
+      24,
+      26,
+      22,
+      28,
+      30
+    ],
+    "memberIds": [
+      "S0>S1",
+      "S1>S2",
+      "S2>S3",
+      "S3>S4",
+      "S4>S5",
+      "S5>S6"
+    ],
+    "transitionJoints": [
+      0,
+      2,
+      4
+    ],
+    "jointIds": [
+      "joint:0",
+      "joint:2",
+      "joint:4"
+    ],
+    "widths": [
+      8,
+      6,
+      4
+    ],
+    "clusters": [
+      [
+        0
+      ],
+      [
+        2
+      ],
+      [
+        4
+      ]
+    ],
+    "clusterPaths": [
+      "singular",
+      "singular",
+      "singular"
+    ],
+    "jointStations": [
+      30,
+      80,
+      130
+    ],
+    "setGapsMeasured": [
+      50,
+      50
+    ],
+    "transform": "mirror",
+    "traversalOrder": "forward",
+    "expected": "sparse admit-per-joint + cluster honesty + mesh + gtop2 + agreement",
+    "futurePredicateEligible": true,
+    "measured": {
+      "layoutOk": true,
+      "admitCodes": "ok,ok,ok",
+      "midScalars": [
+        6,
+        6,
+        6
+      ],
+      "stationCount": 19,
+      "transitionStations": 9,
+      "boundaryStations": 6,
+      "nativeStations": 4,
+      "skippedJointNativeStations": 4,
+      "ownershipUnique": true,
+      "vertexCount": 38,
+      "triangleCount": 36,
+      "skippedZeroWidth": 0,
+      "expectedPositiveWidthRegions": 1,
+      "measuredPositiveWidthRegions": 1,
+      "topologyPreMeshEqualsMeasured": true,
+      "gtop2Components": 1,
+      "gtop2BoundaryCycles": 1,
+      "gtop2RevalidationNull": true,
+      "meshValidatorCodes": [
+        "null",
+        "null",
+        "null"
+      ],
+      "groupAgreementOk": [
+        true,
+        true,
+        true
+      ],
+      "c0PlanResidual": 0,
+      "c0ZResidual": 0,
+      "revisionHash": "ggrev1:b8c673b7",
+      "revisionOrderSensitive": true,
+      "revisionStable": true,
+      "bakeCitationLength": 1
+    }
+  },
+  {
+    "fixtureId": "sparse024-relative-elevation-left",
+    "synthetic": true,
+    "study": "sparse-transition-set",
+    "family": "relative-elevation",
+    "memberCount": 6,
+    "memberLengths": [
+      30,
+      24,
+      26,
+      22,
+      28,
+      30
+    ],
+    "memberIds": [
+      "S0>S1",
+      "S1>S2",
+      "S2>S3",
+      "S3>S4",
+      "S4>S5",
+      "S5>S6"
+    ],
+    "transitionJoints": [
+      0,
+      2,
+      4
+    ],
+    "jointIds": [
+      "joint:0",
+      "joint:2",
+      "joint:4"
+    ],
+    "widths": [
+      8,
+      6,
+      4
+    ],
+    "clusters": [
+      [
+        0
+      ],
+      [
+        2
+      ],
+      [
+        4
+      ]
+    ],
+    "clusterPaths": [
+      "singular",
+      "singular",
+      "singular"
+    ],
+    "jointStations": [
+      30,
+      80,
+      130
+    ],
+    "setGapsMeasured": [
+      50,
+      50
+    ],
+    "transform": "identity",
+    "traversalOrder": "forward",
+    "expected": "sparse admit-per-joint + cluster honesty + mesh + gtop2 + agreement",
+    "futurePredicateEligible": true,
+    "measured": {
+      "layoutOk": true,
+      "admitCodes": "ok,ok,ok",
+      "midScalars": [
+        1.75,
+        1.75,
+        1.75
+      ],
+      "stationCount": 19,
+      "transitionStations": 9,
+      "boundaryStations": 6,
+      "nativeStations": 4,
+      "skippedJointNativeStations": 4,
+      "ownershipUnique": true,
+      "vertexCount": 38,
+      "triangleCount": 36,
+      "skippedZeroWidth": 0,
+      "expectedPositiveWidthRegions": 1,
+      "measuredPositiveWidthRegions": 1,
+      "topologyPreMeshEqualsMeasured": true,
+      "gtop2Components": 1,
+      "gtop2BoundaryCycles": 1,
+      "gtop2RevalidationNull": true,
+      "meshValidatorCodes": [
+        "null",
+        "null",
+        "null"
+      ],
+      "groupAgreementOk": [
+        true,
+        true,
+        true
+      ],
+      "c0PlanResidual": 0,
+      "c0ZResidual": 0,
+      "revisionHash": "ggrev1:c20af494",
+      "revisionOrderSensitive": true,
+      "revisionStable": true,
+      "bakeCitationLength": 1
+    }
+  },
+  {
+    "fixtureId": "sparse024-relative-elevation-right",
+    "synthetic": true,
+    "study": "sparse-transition-set",
+    "family": "relative-elevation",
+    "memberCount": 6,
+    "memberLengths": [
+      30,
+      24,
+      26,
+      22,
+      28,
+      30
+    ],
+    "memberIds": [
+      "S0>S1",
+      "S1>S2",
+      "S2>S3",
+      "S3>S4",
+      "S4>S5",
+      "S5>S6"
+    ],
+    "transitionJoints": [
+      0,
+      2,
+      4
+    ],
+    "jointIds": [
+      "joint:0",
+      "joint:2",
+      "joint:4"
+    ],
+    "widths": [
+      8,
+      6,
+      4
+    ],
+    "clusters": [
+      [
+        0
+      ],
+      [
+        2
+      ],
+      [
+        4
+      ]
+    ],
+    "clusterPaths": [
+      "singular",
+      "singular",
+      "singular"
+    ],
+    "jointStations": [
+      30,
+      80,
+      130
+    ],
+    "setGapsMeasured": [
+      50,
+      50
+    ],
+    "transform": "mirror",
+    "traversalOrder": "forward",
+    "expected": "sparse admit-per-joint + cluster honesty + mesh + gtop2 + agreement",
+    "futurePredicateEligible": true,
+    "measured": {
+      "layoutOk": true,
+      "admitCodes": "ok,ok,ok",
+      "midScalars": [
+        1.75,
+        1.75,
+        1.75
+      ],
+      "stationCount": 19,
+      "transitionStations": 9,
+      "boundaryStations": 6,
+      "nativeStations": 4,
+      "skippedJointNativeStations": 4,
+      "ownershipUnique": true,
+      "vertexCount": 38,
+      "triangleCount": 36,
+      "skippedZeroWidth": 0,
+      "expectedPositiveWidthRegions": 1,
+      "measuredPositiveWidthRegions": 1,
+      "topologyPreMeshEqualsMeasured": true,
+      "gtop2Components": 1,
+      "gtop2BoundaryCycles": 1,
+      "gtop2RevalidationNull": true,
+      "meshValidatorCodes": [
+        "null",
+        "null",
+        "null"
+      ],
+      "groupAgreementOk": [
+        true,
+        true,
+        true
+      ],
+      "c0PlanResidual": 0,
+      "c0ZResidual": 0,
+      "revisionHash": "ggrev1:dd90bd4a",
+      "revisionOrderSensitive": true,
+      "revisionStable": true,
+      "bakeCitationLength": 1
+    }
+  },
+  {
+    "fixtureId": "sparse024-elevation-left",
+    "synthetic": true,
+    "study": "sparse-transition-set",
+    "family": "elevation",
+    "memberCount": 6,
+    "memberLengths": [
+      30,
+      24,
+      26,
+      22,
+      28,
+      30
+    ],
+    "memberIds": [
+      "S0>S1",
+      "S1>S2",
+      "S2>S3",
+      "S3>S4",
+      "S4>S5",
+      "S5>S6"
+    ],
+    "transitionJoints": [
+      0,
+      2,
+      4
+    ],
+    "jointIds": [
+      "joint:0",
+      "joint:2",
+      "joint:4"
+    ],
+    "widths": [
+      8,
+      6,
+      4
+    ],
+    "clusters": [
+      [
+        0
+      ],
+      [
+        2
+      ],
+      [
+        4
+      ]
+    ],
+    "clusterPaths": [
+      "singular",
+      "singular",
+      "singular"
+    ],
+    "jointStations": [
+      30,
+      80,
+      130
+    ],
+    "setGapsMeasured": [
+      50,
+      50
+    ],
+    "transform": "identity",
+    "traversalOrder": "forward",
+    "expected": "sparse admit-per-joint + cluster honesty + mesh + gtop2 + agreement",
+    "futurePredicateEligible": true,
+    "measured": {
+      "layoutOk": true,
+      "admitCodes": "ok,ok,ok",
+      "midScalars": [
+        0.75,
+        0.75,
+        0.75
+      ],
+      "stationCount": 19,
+      "transitionStations": 9,
+      "boundaryStations": 6,
+      "nativeStations": 4,
+      "skippedJointNativeStations": 4,
+      "ownershipUnique": true,
+      "vertexCount": 38,
+      "triangleCount": 36,
+      "skippedZeroWidth": 0,
+      "expectedPositiveWidthRegions": 1,
+      "measuredPositiveWidthRegions": 1,
+      "topologyPreMeshEqualsMeasured": true,
+      "gtop2Components": 1,
+      "gtop2BoundaryCycles": 1,
+      "gtop2RevalidationNull": true,
+      "meshValidatorCodes": [
+        "null",
+        "null",
+        "null"
+      ],
+      "groupAgreementOk": [
+        true,
+        true,
+        true
+      ],
+      "c0PlanResidual": 0,
+      "c0ZResidual": 0,
+      "revisionHash": "ggrev1:540544c7",
+      "revisionOrderSensitive": true,
+      "revisionStable": true,
+      "bakeCitationLength": 1
+    }
+  },
+  {
+    "fixtureId": "sparse024-elevation-right",
+    "synthetic": true,
+    "study": "sparse-transition-set",
+    "family": "elevation",
+    "memberCount": 6,
+    "memberLengths": [
+      30,
+      24,
+      26,
+      22,
+      28,
+      30
+    ],
+    "memberIds": [
+      "S0>S1",
+      "S1>S2",
+      "S2>S3",
+      "S3>S4",
+      "S4>S5",
+      "S5>S6"
+    ],
+    "transitionJoints": [
+      0,
+      2,
+      4
+    ],
+    "jointIds": [
+      "joint:0",
+      "joint:2",
+      "joint:4"
+    ],
+    "widths": [
+      8,
+      6,
+      4
+    ],
+    "clusters": [
+      [
+        0
+      ],
+      [
+        2
+      ],
+      [
+        4
+      ]
+    ],
+    "clusterPaths": [
+      "singular",
+      "singular",
+      "singular"
+    ],
+    "jointStations": [
+      30,
+      80,
+      130
+    ],
+    "setGapsMeasured": [
+      50,
+      50
+    ],
+    "transform": "mirror",
+    "traversalOrder": "forward",
+    "expected": "sparse admit-per-joint + cluster honesty + mesh + gtop2 + agreement",
+    "futurePredicateEligible": true,
+    "measured": {
+      "layoutOk": true,
+      "admitCodes": "ok,ok,ok",
+      "midScalars": [
+        0.75,
+        0.75,
+        0.75
+      ],
+      "stationCount": 19,
+      "transitionStations": 9,
+      "boundaryStations": 6,
+      "nativeStations": 4,
+      "skippedJointNativeStations": 4,
+      "ownershipUnique": true,
+      "vertexCount": 38,
+      "triangleCount": 36,
+      "skippedZeroWidth": 0,
+      "expectedPositiveWidthRegions": 1,
+      "measuredPositiveWidthRegions": 1,
+      "topologyPreMeshEqualsMeasured": true,
+      "gtop2Components": 1,
+      "gtop2BoundaryCycles": 1,
+      "gtop2RevalidationNull": true,
+      "meshValidatorCodes": [
+        "null",
+        "null",
+        "null"
+      ],
+      "groupAgreementOk": [
+        true,
+        true,
+        true
+      ],
+      "c0PlanResidual": 0,
+      "c0ZResidual": 0,
+      "revisionHash": "ggrev1:19379151",
+      "revisionOrderSensitive": true,
+      "revisionStable": true,
+      "bakeCitationLength": 1
+    }
+  },
+  {
+    "fixtureId": "sparse03-distance-left",
+    "synthetic": true,
+    "study": "sparse-transition-set",
+    "family": "distance",
+    "memberCount": 5,
+    "memberLengths": [
+      30,
+      24,
+      26,
+      22,
+      30
+    ],
+    "memberIds": [
+      "S0>S1",
+      "S1>S2",
+      "S2>S3",
+      "S3>S4",
+      "S4>S5"
+    ],
+    "transitionJoints": [
+      0,
+      3
+    ],
+    "jointIds": [
+      "joint:0",
+      "joint:3"
+    ],
+    "widths": [
+      8,
+      6
+    ],
+    "clusters": [
+      [
+        0
+      ],
+      [
+        3
+      ]
+    ],
+    "clusterPaths": [
+      "singular",
+      "singular"
+    ],
+    "jointStations": [
+      30,
+      102
+    ],
+    "setGapsMeasured": [
+      72
+    ],
+    "transform": "identity",
+    "traversalOrder": "forward",
+    "expected": "sparse admit-per-joint + cluster honesty + mesh + gtop2 + agreement",
+    "futurePredicateEligible": true,
+    "measured": {
+      "layoutOk": true,
+      "admitCodes": "ok,ok",
+      "midScalars": [
+        6,
+        6
+      ],
+      "stationCount": 15,
+      "transitionStations": 6,
+      "boundaryStations": 4,
+      "nativeStations": 5,
+      "skippedJointNativeStations": 5,
+      "ownershipUnique": true,
+      "vertexCount": 30,
+      "triangleCount": 28,
+      "skippedZeroWidth": 0,
+      "expectedPositiveWidthRegions": 1,
+      "measuredPositiveWidthRegions": 1,
+      "topologyPreMeshEqualsMeasured": true,
+      "gtop2Components": 1,
+      "gtop2BoundaryCycles": 1,
+      "gtop2RevalidationNull": true,
+      "meshValidatorCodes": [
+        "null",
+        "null"
+      ],
+      "groupAgreementOk": [
+        true,
+        true
+      ],
+      "c0PlanResidual": 0,
+      "c0ZResidual": 0,
+      "revisionHash": "ggrev1:62390d41",
+      "revisionOrderSensitive": true,
+      "revisionStable": true,
+      "bakeCitationLength": 1
+    }
+  },
+  {
+    "fixtureId": "sparse03-distance-right",
+    "synthetic": true,
+    "study": "sparse-transition-set",
+    "family": "distance",
+    "memberCount": 5,
+    "memberLengths": [
+      30,
+      24,
+      26,
+      22,
+      30
+    ],
+    "memberIds": [
+      "S0>S1",
+      "S1>S2",
+      "S2>S3",
+      "S3>S4",
+      "S4>S5"
+    ],
+    "transitionJoints": [
+      0,
+      3
+    ],
+    "jointIds": [
+      "joint:0",
+      "joint:3"
+    ],
+    "widths": [
+      8,
+      6
+    ],
+    "clusters": [
+      [
+        0
+      ],
+      [
+        3
+      ]
+    ],
+    "clusterPaths": [
+      "singular",
+      "singular"
+    ],
+    "jointStations": [
+      30,
+      102
+    ],
+    "setGapsMeasured": [
+      72
+    ],
+    "transform": "mirror",
+    "traversalOrder": "forward",
+    "expected": "sparse admit-per-joint + cluster honesty + mesh + gtop2 + agreement",
+    "futurePredicateEligible": true,
+    "measured": {
+      "layoutOk": true,
+      "admitCodes": "ok,ok",
+      "midScalars": [
+        6,
+        6
+      ],
+      "stationCount": 15,
+      "transitionStations": 6,
+      "boundaryStations": 4,
+      "nativeStations": 5,
+      "skippedJointNativeStations": 5,
+      "ownershipUnique": true,
+      "vertexCount": 30,
+      "triangleCount": 28,
+      "skippedZeroWidth": 0,
+      "expectedPositiveWidthRegions": 1,
+      "measuredPositiveWidthRegions": 1,
+      "topologyPreMeshEqualsMeasured": true,
+      "gtop2Components": 1,
+      "gtop2BoundaryCycles": 1,
+      "gtop2RevalidationNull": true,
+      "meshValidatorCodes": [
+        "null",
+        "null"
+      ],
+      "groupAgreementOk": [
+        true,
+        true
+      ],
+      "c0PlanResidual": 0,
+      "c0ZResidual": 0,
+      "revisionHash": "ggrev1:66c31002",
+      "revisionOrderSensitive": true,
+      "revisionStable": true,
+      "bakeCitationLength": 1
+    }
+  },
+  {
+    "fixtureId": "sparse03-relative-elevation-left",
+    "synthetic": true,
+    "study": "sparse-transition-set",
+    "family": "relative-elevation",
+    "memberCount": 5,
+    "memberLengths": [
+      30,
+      24,
+      26,
+      22,
+      30
+    ],
+    "memberIds": [
+      "S0>S1",
+      "S1>S2",
+      "S2>S3",
+      "S3>S4",
+      "S4>S5"
+    ],
+    "transitionJoints": [
+      0,
+      3
+    ],
+    "jointIds": [
+      "joint:0",
+      "joint:3"
+    ],
+    "widths": [
+      8,
+      6
+    ],
+    "clusters": [
+      [
+        0
+      ],
+      [
+        3
+      ]
+    ],
+    "clusterPaths": [
+      "singular",
+      "singular"
+    ],
+    "jointStations": [
+      30,
+      102
+    ],
+    "setGapsMeasured": [
+      72
+    ],
+    "transform": "identity",
+    "traversalOrder": "forward",
+    "expected": "sparse admit-per-joint + cluster honesty + mesh + gtop2 + agreement",
+    "futurePredicateEligible": true,
+    "measured": {
+      "layoutOk": true,
+      "admitCodes": "ok,ok",
+      "midScalars": [
+        1.75,
+        1.75
+      ],
+      "stationCount": 15,
+      "transitionStations": 6,
+      "boundaryStations": 4,
+      "nativeStations": 5,
+      "skippedJointNativeStations": 5,
+      "ownershipUnique": true,
+      "vertexCount": 30,
+      "triangleCount": 28,
+      "skippedZeroWidth": 0,
+      "expectedPositiveWidthRegions": 1,
+      "measuredPositiveWidthRegions": 1,
+      "topologyPreMeshEqualsMeasured": true,
+      "gtop2Components": 1,
+      "gtop2BoundaryCycles": 1,
+      "gtop2RevalidationNull": true,
+      "meshValidatorCodes": [
+        "null",
+        "null"
+      ],
+      "groupAgreementOk": [
+        true,
+        true
+      ],
+      "c0PlanResidual": 0,
+      "c0ZResidual": 0,
+      "revisionHash": "ggrev1:a1796e63",
+      "revisionOrderSensitive": true,
+      "revisionStable": true,
+      "bakeCitationLength": 1
+    }
+  },
+  {
+    "fixtureId": "sparse03-relative-elevation-right",
+    "synthetic": true,
+    "study": "sparse-transition-set",
+    "family": "relative-elevation",
+    "memberCount": 5,
+    "memberLengths": [
+      30,
+      24,
+      26,
+      22,
+      30
+    ],
+    "memberIds": [
+      "S0>S1",
+      "S1>S2",
+      "S2>S3",
+      "S3>S4",
+      "S4>S5"
+    ],
+    "transitionJoints": [
+      0,
+      3
+    ],
+    "jointIds": [
+      "joint:0",
+      "joint:3"
+    ],
+    "widths": [
+      8,
+      6
+    ],
+    "clusters": [
+      [
+        0
+      ],
+      [
+        3
+      ]
+    ],
+    "clusterPaths": [
+      "singular",
+      "singular"
+    ],
+    "jointStations": [
+      30,
+      102
+    ],
+    "setGapsMeasured": [
+      72
+    ],
+    "transform": "mirror",
+    "traversalOrder": "forward",
+    "expected": "sparse admit-per-joint + cluster honesty + mesh + gtop2 + agreement",
+    "futurePredicateEligible": true,
+    "measured": {
+      "layoutOk": true,
+      "admitCodes": "ok,ok",
+      "midScalars": [
+        1.75,
+        1.75
+      ],
+      "stationCount": 15,
+      "transitionStations": 6,
+      "boundaryStations": 4,
+      "nativeStations": 5,
+      "skippedJointNativeStations": 5,
+      "ownershipUnique": true,
+      "vertexCount": 30,
+      "triangleCount": 28,
+      "skippedZeroWidth": 0,
+      "expectedPositiveWidthRegions": 1,
+      "measuredPositiveWidthRegions": 1,
+      "topologyPreMeshEqualsMeasured": true,
+      "gtop2Components": 1,
+      "gtop2BoundaryCycles": 1,
+      "gtop2RevalidationNull": true,
+      "meshValidatorCodes": [
+        "null",
+        "null"
+      ],
+      "groupAgreementOk": [
+        true,
+        true
+      ],
+      "c0PlanResidual": 0,
+      "c0ZResidual": 0,
+      "revisionHash": "ggrev1:6bb524ca",
+      "revisionOrderSensitive": true,
+      "revisionStable": true,
+      "bakeCitationLength": 1
+    }
+  },
+  {
+    "fixtureId": "sparse03-elevation-left",
+    "synthetic": true,
+    "study": "sparse-transition-set",
+    "family": "elevation",
+    "memberCount": 5,
+    "memberLengths": [
+      30,
+      24,
+      26,
+      22,
+      30
+    ],
+    "memberIds": [
+      "S0>S1",
+      "S1>S2",
+      "S2>S3",
+      "S3>S4",
+      "S4>S5"
+    ],
+    "transitionJoints": [
+      0,
+      3
+    ],
+    "jointIds": [
+      "joint:0",
+      "joint:3"
+    ],
+    "widths": [
+      8,
+      6
+    ],
+    "clusters": [
+      [
+        0
+      ],
+      [
+        3
+      ]
+    ],
+    "clusterPaths": [
+      "singular",
+      "singular"
+    ],
+    "jointStations": [
+      30,
+      102
+    ],
+    "setGapsMeasured": [
+      72
+    ],
+    "transform": "identity",
+    "traversalOrder": "forward",
+    "expected": "sparse admit-per-joint + cluster honesty + mesh + gtop2 + agreement",
+    "futurePredicateEligible": true,
+    "measured": {
+      "layoutOk": true,
+      "admitCodes": "ok,ok",
+      "midScalars": [
+        0.75,
+        0.75
+      ],
+      "stationCount": 15,
+      "transitionStations": 6,
+      "boundaryStations": 4,
+      "nativeStations": 5,
+      "skippedJointNativeStations": 5,
+      "ownershipUnique": true,
+      "vertexCount": 30,
+      "triangleCount": 28,
+      "skippedZeroWidth": 0,
+      "expectedPositiveWidthRegions": 1,
+      "measuredPositiveWidthRegions": 1,
+      "topologyPreMeshEqualsMeasured": true,
+      "gtop2Components": 1,
+      "gtop2BoundaryCycles": 1,
+      "gtop2RevalidationNull": true,
+      "meshValidatorCodes": [
+        "null",
+        "null"
+      ],
+      "groupAgreementOk": [
+        true,
+        true
+      ],
+      "c0PlanResidual": 0,
+      "c0ZResidual": 0,
+      "revisionHash": "ggrev1:98ebd0d5",
+      "revisionOrderSensitive": true,
+      "revisionStable": true,
+      "bakeCitationLength": 1
+    }
+  },
+  {
+    "fixtureId": "sparse03-elevation-right",
+    "synthetic": true,
+    "study": "sparse-transition-set",
+    "family": "elevation",
+    "memberCount": 5,
+    "memberLengths": [
+      30,
+      24,
+      26,
+      22,
+      30
+    ],
+    "memberIds": [
+      "S0>S1",
+      "S1>S2",
+      "S2>S3",
+      "S3>S4",
+      "S4>S5"
+    ],
+    "transitionJoints": [
+      0,
+      3
+    ],
+    "jointIds": [
+      "joint:0",
+      "joint:3"
+    ],
+    "widths": [
+      8,
+      6
+    ],
+    "clusters": [
+      [
+        0
+      ],
+      [
+        3
+      ]
+    ],
+    "clusterPaths": [
+      "singular",
+      "singular"
+    ],
+    "jointStations": [
+      30,
+      102
+    ],
+    "setGapsMeasured": [
+      72
+    ],
+    "transform": "mirror",
+    "traversalOrder": "forward",
+    "expected": "sparse admit-per-joint + cluster honesty + mesh + gtop2 + agreement",
+    "futurePredicateEligible": true,
+    "measured": {
+      "layoutOk": true,
+      "admitCodes": "ok,ok",
+      "midScalars": [
+        0.75,
+        0.75
+      ],
+      "stationCount": 15,
+      "transitionStations": 6,
+      "boundaryStations": 4,
+      "nativeStations": 5,
+      "skippedJointNativeStations": 5,
+      "ownershipUnique": true,
+      "vertexCount": 30,
+      "triangleCount": 28,
+      "skippedZeroWidth": 0,
+      "expectedPositiveWidthRegions": 1,
+      "measuredPositiveWidthRegions": 1,
+      "topologyPreMeshEqualsMeasured": true,
+      "gtop2Components": 1,
+      "gtop2BoundaryCycles": 1,
+      "gtop2RevalidationNull": true,
+      "meshValidatorCodes": [
+        "null",
+        "null"
+      ],
+      "groupAgreementOk": [
+        true,
+        true
+      ],
+      "c0PlanResidual": 0,
+      "c0ZResidual": 0,
+      "revisionHash": "ggrev1:43bbcd98",
+      "revisionOrderSensitive": true,
+      "revisionStable": true,
+      "bakeCitationLength": 1
+    }
+  },
+  {
+    "fixtureId": "sparse14-distance-left",
+    "synthetic": true,
+    "study": "sparse-transition-set",
+    "family": "distance",
+    "memberCount": 6,
+    "memberLengths": [
+      30,
+      24,
+      26,
+      22,
+      28,
+      30
+    ],
+    "memberIds": [
+      "S0>S1",
+      "S1>S2",
+      "S2>S3",
+      "S3>S4",
+      "S4>S5",
+      "S5>S6"
+    ],
+    "transitionJoints": [
+      1,
+      4
+    ],
+    "jointIds": [
+      "joint:1",
+      "joint:4"
+    ],
+    "widths": [
+      8,
+      6
+    ],
+    "clusters": [
+      [
+        1
+      ],
+      [
+        4
+      ]
+    ],
+    "clusterPaths": [
+      "singular",
+      "singular"
+    ],
+    "jointStations": [
+      54,
+      130
+    ],
+    "setGapsMeasured": [
+      76
+    ],
+    "transform": "identity",
+    "traversalOrder": "forward",
+    "expected": "sparse admit-per-joint + cluster honesty + mesh + gtop2 + agreement",
+    "futurePredicateEligible": true,
+    "measured": {
+      "layoutOk": true,
+      "admitCodes": "ok,ok",
+      "midScalars": [
+        6,
+        6
+      ],
+      "stationCount": 17,
+      "transitionStations": 6,
+      "boundaryStations": 4,
+      "nativeStations": 7,
+      "skippedJointNativeStations": 7,
+      "ownershipUnique": true,
+      "vertexCount": 34,
+      "triangleCount": 32,
+      "skippedZeroWidth": 0,
+      "expectedPositiveWidthRegions": 1,
+      "measuredPositiveWidthRegions": 1,
+      "topologyPreMeshEqualsMeasured": true,
+      "gtop2Components": 1,
+      "gtop2BoundaryCycles": 1,
+      "gtop2RevalidationNull": true,
+      "meshValidatorCodes": [
+        "null",
+        "null"
+      ],
+      "groupAgreementOk": [
+        true,
+        true
+      ],
+      "c0PlanResidual": 0,
+      "c0ZResidual": 0,
+      "revisionHash": "ggrev1:665e19ce",
+      "revisionOrderSensitive": true,
+      "revisionStable": true,
+      "bakeCitationLength": 1
+    }
+  },
+  {
+    "fixtureId": "sparse14-distance-right",
+    "synthetic": true,
+    "study": "sparse-transition-set",
+    "family": "distance",
+    "memberCount": 6,
+    "memberLengths": [
+      30,
+      24,
+      26,
+      22,
+      28,
+      30
+    ],
+    "memberIds": [
+      "S0>S1",
+      "S1>S2",
+      "S2>S3",
+      "S3>S4",
+      "S4>S5",
+      "S5>S6"
+    ],
+    "transitionJoints": [
+      1,
+      4
+    ],
+    "jointIds": [
+      "joint:1",
+      "joint:4"
+    ],
+    "widths": [
+      8,
+      6
+    ],
+    "clusters": [
+      [
+        1
+      ],
+      [
+        4
+      ]
+    ],
+    "clusterPaths": [
+      "singular",
+      "singular"
+    ],
+    "jointStations": [
+      54,
+      130
+    ],
+    "setGapsMeasured": [
+      76
+    ],
+    "transform": "mirror",
+    "traversalOrder": "forward",
+    "expected": "sparse admit-per-joint + cluster honesty + mesh + gtop2 + agreement",
+    "futurePredicateEligible": true,
+    "measured": {
+      "layoutOk": true,
+      "admitCodes": "ok,ok",
+      "midScalars": [
+        6,
+        6
+      ],
+      "stationCount": 17,
+      "transitionStations": 6,
+      "boundaryStations": 4,
+      "nativeStations": 7,
+      "skippedJointNativeStations": 7,
+      "ownershipUnique": true,
+      "vertexCount": 34,
+      "triangleCount": 32,
+      "skippedZeroWidth": 0,
+      "expectedPositiveWidthRegions": 1,
+      "measuredPositiveWidthRegions": 1,
+      "topologyPreMeshEqualsMeasured": true,
+      "gtop2Components": 1,
+      "gtop2BoundaryCycles": 1,
+      "gtop2RevalidationNull": true,
+      "meshValidatorCodes": [
+        "null",
+        "null"
+      ],
+      "groupAgreementOk": [
+        true,
+        true
+      ],
+      "c0PlanResidual": 0,
+      "c0ZResidual": 0,
+      "revisionHash": "ggrev1:d6fc2da5",
+      "revisionOrderSensitive": true,
+      "revisionStable": true,
+      "bakeCitationLength": 1
+    }
+  },
+  {
+    "fixtureId": "sparse14-relative-elevation-left",
+    "synthetic": true,
+    "study": "sparse-transition-set",
+    "family": "relative-elevation",
+    "memberCount": 6,
+    "memberLengths": [
+      30,
+      24,
+      26,
+      22,
+      28,
+      30
+    ],
+    "memberIds": [
+      "S0>S1",
+      "S1>S2",
+      "S2>S3",
+      "S3>S4",
+      "S4>S5",
+      "S5>S6"
+    ],
+    "transitionJoints": [
+      1,
+      4
+    ],
+    "jointIds": [
+      "joint:1",
+      "joint:4"
+    ],
+    "widths": [
+      8,
+      6
+    ],
+    "clusters": [
+      [
+        1
+      ],
+      [
+        4
+      ]
+    ],
+    "clusterPaths": [
+      "singular",
+      "singular"
+    ],
+    "jointStations": [
+      54,
+      130
+    ],
+    "setGapsMeasured": [
+      76
+    ],
+    "transform": "identity",
+    "traversalOrder": "forward",
+    "expected": "sparse admit-per-joint + cluster honesty + mesh + gtop2 + agreement",
+    "futurePredicateEligible": true,
+    "measured": {
+      "layoutOk": true,
+      "admitCodes": "ok,ok",
+      "midScalars": [
+        1.75,
+        1.75
+      ],
+      "stationCount": 17,
+      "transitionStations": 6,
+      "boundaryStations": 4,
+      "nativeStations": 7,
+      "skippedJointNativeStations": 7,
+      "ownershipUnique": true,
+      "vertexCount": 34,
+      "triangleCount": 32,
+      "skippedZeroWidth": 0,
+      "expectedPositiveWidthRegions": 1,
+      "measuredPositiveWidthRegions": 1,
+      "topologyPreMeshEqualsMeasured": true,
+      "gtop2Components": 1,
+      "gtop2BoundaryCycles": 1,
+      "gtop2RevalidationNull": true,
+      "meshValidatorCodes": [
+        "null",
+        "null"
+      ],
+      "groupAgreementOk": [
+        true,
+        true
+      ],
+      "c0PlanResidual": 0,
+      "c0ZResidual": 0,
+      "revisionHash": "ggrev1:f1b9670e",
+      "revisionOrderSensitive": true,
+      "revisionStable": true,
+      "bakeCitationLength": 1
+    }
+  },
+  {
+    "fixtureId": "sparse14-relative-elevation-right",
+    "synthetic": true,
+    "study": "sparse-transition-set",
+    "family": "relative-elevation",
+    "memberCount": 6,
+    "memberLengths": [
+      30,
+      24,
+      26,
+      22,
+      28,
+      30
+    ],
+    "memberIds": [
+      "S0>S1",
+      "S1>S2",
+      "S2>S3",
+      "S3>S4",
+      "S4>S5",
+      "S5>S6"
+    ],
+    "transitionJoints": [
+      1,
+      4
+    ],
+    "jointIds": [
+      "joint:1",
+      "joint:4"
+    ],
+    "widths": [
+      8,
+      6
+    ],
+    "clusters": [
+      [
+        1
+      ],
+      [
+        4
+      ]
+    ],
+    "clusterPaths": [
+      "singular",
+      "singular"
+    ],
+    "jointStations": [
+      54,
+      130
+    ],
+    "setGapsMeasured": [
+      76
+    ],
+    "transform": "mirror",
+    "traversalOrder": "forward",
+    "expected": "sparse admit-per-joint + cluster honesty + mesh + gtop2 + agreement",
+    "futurePredicateEligible": true,
+    "measured": {
+      "layoutOk": true,
+      "admitCodes": "ok,ok",
+      "midScalars": [
+        1.75,
+        1.75
+      ],
+      "stationCount": 17,
+      "transitionStations": 6,
+      "boundaryStations": 4,
+      "nativeStations": 7,
+      "skippedJointNativeStations": 7,
+      "ownershipUnique": true,
+      "vertexCount": 34,
+      "triangleCount": 32,
+      "skippedZeroWidth": 0,
+      "expectedPositiveWidthRegions": 1,
+      "measuredPositiveWidthRegions": 1,
+      "topologyPreMeshEqualsMeasured": true,
+      "gtop2Components": 1,
+      "gtop2BoundaryCycles": 1,
+      "gtop2RevalidationNull": true,
+      "meshValidatorCodes": [
+        "null",
+        "null"
+      ],
+      "groupAgreementOk": [
+        true,
+        true
+      ],
+      "c0PlanResidual": 0,
+      "c0ZResidual": 0,
+      "revisionHash": "ggrev1:c88529c7",
+      "revisionOrderSensitive": true,
+      "revisionStable": true,
+      "bakeCitationLength": 1
+    }
+  },
+  {
+    "fixtureId": "sparse14-elevation-left",
+    "synthetic": true,
+    "study": "sparse-transition-set",
+    "family": "elevation",
+    "memberCount": 6,
+    "memberLengths": [
+      30,
+      24,
+      26,
+      22,
+      28,
+      30
+    ],
+    "memberIds": [
+      "S0>S1",
+      "S1>S2",
+      "S2>S3",
+      "S3>S4",
+      "S4>S5",
+      "S5>S6"
+    ],
+    "transitionJoints": [
+      1,
+      4
+    ],
+    "jointIds": [
+      "joint:1",
+      "joint:4"
+    ],
+    "widths": [
+      8,
+      6
+    ],
+    "clusters": [
+      [
+        1
+      ],
+      [
+        4
+      ]
+    ],
+    "clusterPaths": [
+      "singular",
+      "singular"
+    ],
+    "jointStations": [
+      54,
+      130
+    ],
+    "setGapsMeasured": [
+      76
+    ],
+    "transform": "identity",
+    "traversalOrder": "forward",
+    "expected": "sparse admit-per-joint + cluster honesty + mesh + gtop2 + agreement",
+    "futurePredicateEligible": true,
+    "measured": {
+      "layoutOk": true,
+      "admitCodes": "ok,ok",
+      "midScalars": [
+        0.75,
+        0.75
+      ],
+      "stationCount": 17,
+      "transitionStations": 6,
+      "boundaryStations": 4,
+      "nativeStations": 7,
+      "skippedJointNativeStations": 7,
+      "ownershipUnique": true,
+      "vertexCount": 34,
+      "triangleCount": 32,
+      "skippedZeroWidth": 0,
+      "expectedPositiveWidthRegions": 1,
+      "measuredPositiveWidthRegions": 1,
+      "topologyPreMeshEqualsMeasured": true,
+      "gtop2Components": 1,
+      "gtop2BoundaryCycles": 1,
+      "gtop2RevalidationNull": true,
+      "meshValidatorCodes": [
+        "null",
+        "null"
+      ],
+      "groupAgreementOk": [
+        true,
+        true
+      ],
+      "c0PlanResidual": 0,
+      "c0ZResidual": 0,
+      "revisionHash": "ggrev1:2e91e09c",
+      "revisionOrderSensitive": true,
+      "revisionStable": true,
+      "bakeCitationLength": 1
+    }
+  },
+  {
+    "fixtureId": "sparse14-elevation-right",
+    "synthetic": true,
+    "study": "sparse-transition-set",
+    "family": "elevation",
+    "memberCount": 6,
+    "memberLengths": [
+      30,
+      24,
+      26,
+      22,
+      28,
+      30
+    ],
+    "memberIds": [
+      "S0>S1",
+      "S1>S2",
+      "S2>S3",
+      "S3>S4",
+      "S4>S5",
+      "S5>S6"
+    ],
+    "transitionJoints": [
+      1,
+      4
+    ],
+    "jointIds": [
+      "joint:1",
+      "joint:4"
+    ],
+    "widths": [
+      8,
+      6
+    ],
+    "clusters": [
+      [
+        1
+      ],
+      [
+        4
+      ]
+    ],
+    "clusterPaths": [
+      "singular",
+      "singular"
+    ],
+    "jointStations": [
+      54,
+      130
+    ],
+    "setGapsMeasured": [
+      76
+    ],
+    "transform": "mirror",
+    "traversalOrder": "forward",
+    "expected": "sparse admit-per-joint + cluster honesty + mesh + gtop2 + agreement",
+    "futurePredicateEligible": true,
+    "measured": {
+      "layoutOk": true,
+      "admitCodes": "ok,ok",
+      "midScalars": [
+        0.75,
+        0.75
+      ],
+      "stationCount": 17,
+      "transitionStations": 6,
+      "boundaryStations": 4,
+      "nativeStations": 7,
+      "skippedJointNativeStations": 7,
+      "ownershipUnique": true,
+      "vertexCount": 34,
+      "triangleCount": 32,
+      "skippedZeroWidth": 0,
+      "expectedPositiveWidthRegions": 1,
+      "measuredPositiveWidthRegions": 1,
+      "topologyPreMeshEqualsMeasured": true,
+      "gtop2Components": 1,
+      "gtop2BoundaryCycles": 1,
+      "gtop2RevalidationNull": true,
+      "meshValidatorCodes": [
+        "null",
+        "null"
+      ],
+      "groupAgreementOk": [
+        true,
+        true
+      ],
+      "c0PlanResidual": 0,
+      "c0ZResidual": 0,
+      "revisionHash": "ggrev1:d75ac5ab",
+      "revisionOrderSensitive": true,
+      "revisionStable": true,
+      "bakeCitationLength": 1
+    }
+  },
+  {
+    "fixtureId": "cluster013-distance-left",
+    "synthetic": true,
+    "study": "sparse-transition-set",
+    "family": "distance",
+    "memberCount": 5,
+    "memberLengths": [
+      30,
+      24,
+      26,
+      22,
+      30
+    ],
+    "memberIds": [
+      "S0>S1",
+      "S1>S2",
+      "S2>S3",
+      "S3>S4",
+      "S4>S5"
+    ],
+    "transitionJoints": [
+      0,
+      1,
+      3
+    ],
+    "jointIds": [
+      "joint:0",
+      "joint:1",
+      "joint:3"
+    ],
+    "widths": [
+      8,
+      6,
+      4
+    ],
+    "clusters": [
+      [
+        0,
+        1
+      ],
+      [
+        3
+      ]
+    ],
+    "clusterPaths": [
+      "group",
+      "singular"
+    ],
+    "jointStations": [
+      30,
+      54,
+      102
+    ],
+    "setGapsMeasured": [
+      24,
+      48
+    ],
+    "transform": "identity",
+    "traversalOrder": "forward",
+    "expected": "sparse admit-per-joint + cluster honesty + mesh + gtop2 + agreement",
+    "futurePredicateEligible": true,
+    "measured": {
+      "layoutOk": true,
+      "admitCodes": "ok,ok,ok",
+      "midScalars": [
+        6,
+        6,
+        6
+      ],
+      "stationCount": 18,
+      "transitionStations": 9,
+      "boundaryStations": 6,
+      "nativeStations": 3,
+      "skippedJointNativeStations": 3,
+      "ownershipUnique": true,
+      "vertexCount": 36,
+      "triangleCount": 34,
+      "skippedZeroWidth": 0,
+      "expectedPositiveWidthRegions": 1,
+      "measuredPositiveWidthRegions": 1,
+      "topologyPreMeshEqualsMeasured": true,
+      "gtop2Components": 1,
+      "gtop2BoundaryCycles": 1,
+      "gtop2RevalidationNull": true,
+      "meshValidatorCodes": [
+        "null",
+        "null",
+        "null"
+      ],
+      "groupAgreementOk": [
+        true,
+        true,
+        true
+      ],
+      "c0PlanResidual": 0,
+      "c0ZResidual": 0,
+      "revisionHash": "ggrev1:0f3a9fb2",
+      "revisionOrderSensitive": true,
+      "revisionStable": true,
+      "bakeCitationLength": 1
+    }
+  },
+  {
+    "fixtureId": "cluster013-distance-right",
+    "synthetic": true,
+    "study": "sparse-transition-set",
+    "family": "distance",
+    "memberCount": 5,
+    "memberLengths": [
+      30,
+      24,
+      26,
+      22,
+      30
+    ],
+    "memberIds": [
+      "S0>S1",
+      "S1>S2",
+      "S2>S3",
+      "S3>S4",
+      "S4>S5"
+    ],
+    "transitionJoints": [
+      0,
+      1,
+      3
+    ],
+    "jointIds": [
+      "joint:0",
+      "joint:1",
+      "joint:3"
+    ],
+    "widths": [
+      8,
+      6,
+      4
+    ],
+    "clusters": [
+      [
+        0,
+        1
+      ],
+      [
+        3
+      ]
+    ],
+    "clusterPaths": [
+      "group",
+      "singular"
+    ],
+    "jointStations": [
+      30,
+      54,
+      102
+    ],
+    "setGapsMeasured": [
+      24,
+      48
+    ],
+    "transform": "mirror",
+    "traversalOrder": "forward",
+    "expected": "sparse admit-per-joint + cluster honesty + mesh + gtop2 + agreement",
+    "futurePredicateEligible": true,
+    "measured": {
+      "layoutOk": true,
+      "admitCodes": "ok,ok,ok",
+      "midScalars": [
+        6,
+        6,
+        6
+      ],
+      "stationCount": 18,
+      "transitionStations": 9,
+      "boundaryStations": 6,
+      "nativeStations": 3,
+      "skippedJointNativeStations": 3,
+      "ownershipUnique": true,
+      "vertexCount": 36,
+      "triangleCount": 34,
+      "skippedZeroWidth": 0,
+      "expectedPositiveWidthRegions": 1,
+      "measuredPositiveWidthRegions": 1,
+      "topologyPreMeshEqualsMeasured": true,
+      "gtop2Components": 1,
+      "gtop2BoundaryCycles": 1,
+      "gtop2RevalidationNull": true,
+      "meshValidatorCodes": [
+        "null",
+        "null",
+        "null"
+      ],
+      "groupAgreementOk": [
+        true,
+        true,
+        true
+      ],
+      "c0PlanResidual": 0,
+      "c0ZResidual": 0,
+      "revisionHash": "ggrev1:b505cff2",
+      "revisionOrderSensitive": true,
+      "revisionStable": true,
+      "bakeCitationLength": 1
+    }
+  },
+  {
+    "fixtureId": "cluster013-relative-elevation-left",
+    "synthetic": true,
+    "study": "sparse-transition-set",
+    "family": "relative-elevation",
+    "memberCount": 5,
+    "memberLengths": [
+      30,
+      24,
+      26,
+      22,
+      30
+    ],
+    "memberIds": [
+      "S0>S1",
+      "S1>S2",
+      "S2>S3",
+      "S3>S4",
+      "S4>S5"
+    ],
+    "transitionJoints": [
+      0,
+      1,
+      3
+    ],
+    "jointIds": [
+      "joint:0",
+      "joint:1",
+      "joint:3"
+    ],
+    "widths": [
+      8,
+      6,
+      4
+    ],
+    "clusters": [
+      [
+        0,
+        1
+      ],
+      [
+        3
+      ]
+    ],
+    "clusterPaths": [
+      "group",
+      "singular"
+    ],
+    "jointStations": [
+      30,
+      54,
+      102
+    ],
+    "setGapsMeasured": [
+      24,
+      48
+    ],
+    "transform": "identity",
+    "traversalOrder": "forward",
+    "expected": "sparse admit-per-joint + cluster honesty + mesh + gtop2 + agreement",
+    "futurePredicateEligible": true,
+    "measured": {
+      "layoutOk": true,
+      "admitCodes": "ok,ok,ok",
+      "midScalars": [
+        1.75,
+        1.75,
+        1.75
+      ],
+      "stationCount": 18,
+      "transitionStations": 9,
+      "boundaryStations": 6,
+      "nativeStations": 3,
+      "skippedJointNativeStations": 3,
+      "ownershipUnique": true,
+      "vertexCount": 36,
+      "triangleCount": 34,
+      "skippedZeroWidth": 0,
+      "expectedPositiveWidthRegions": 1,
+      "measuredPositiveWidthRegions": 1,
+      "topologyPreMeshEqualsMeasured": true,
+      "gtop2Components": 1,
+      "gtop2BoundaryCycles": 1,
+      "gtop2RevalidationNull": true,
+      "meshValidatorCodes": [
+        "null",
+        "null",
+        "null"
+      ],
+      "groupAgreementOk": [
+        true,
+        true,
+        true
+      ],
+      "c0PlanResidual": 0,
+      "c0ZResidual": 0,
+      "revisionHash": "ggrev1:2959dd89",
+      "revisionOrderSensitive": true,
+      "revisionStable": true,
+      "bakeCitationLength": 1
+    }
+  },
+  {
+    "fixtureId": "cluster013-relative-elevation-right",
+    "synthetic": true,
+    "study": "sparse-transition-set",
+    "family": "relative-elevation",
+    "memberCount": 5,
+    "memberLengths": [
+      30,
+      24,
+      26,
+      22,
+      30
+    ],
+    "memberIds": [
+      "S0>S1",
+      "S1>S2",
+      "S2>S3",
+      "S3>S4",
+      "S4>S5"
+    ],
+    "transitionJoints": [
+      0,
+      1,
+      3
+    ],
+    "jointIds": [
+      "joint:0",
+      "joint:1",
+      "joint:3"
+    ],
+    "widths": [
+      8,
+      6,
+      4
+    ],
+    "clusters": [
+      [
+        0,
+        1
+      ],
+      [
+        3
+      ]
+    ],
+    "clusterPaths": [
+      "group",
+      "singular"
+    ],
+    "jointStations": [
+      30,
+      54,
+      102
+    ],
+    "setGapsMeasured": [
+      24,
+      48
+    ],
+    "transform": "mirror",
+    "traversalOrder": "forward",
+    "expected": "sparse admit-per-joint + cluster honesty + mesh + gtop2 + agreement",
+    "futurePredicateEligible": true,
+    "measured": {
+      "layoutOk": true,
+      "admitCodes": "ok,ok,ok",
+      "midScalars": [
+        1.75,
+        1.75,
+        1.75
+      ],
+      "stationCount": 18,
+      "transitionStations": 9,
+      "boundaryStations": 6,
+      "nativeStations": 3,
+      "skippedJointNativeStations": 3,
+      "ownershipUnique": true,
+      "vertexCount": 36,
+      "triangleCount": 34,
+      "skippedZeroWidth": 0,
+      "expectedPositiveWidthRegions": 1,
+      "measuredPositiveWidthRegions": 1,
+      "topologyPreMeshEqualsMeasured": true,
+      "gtop2Components": 1,
+      "gtop2BoundaryCycles": 1,
+      "gtop2RevalidationNull": true,
+      "meshValidatorCodes": [
+        "null",
+        "null",
+        "null"
+      ],
+      "groupAgreementOk": [
+        true,
+        true,
+        true
+      ],
+      "c0PlanResidual": 0,
+      "c0ZResidual": 0,
+      "revisionHash": "ggrev1:40b416c9",
+      "revisionOrderSensitive": true,
+      "revisionStable": true,
+      "bakeCitationLength": 1
+    }
+  },
+  {
+    "fixtureId": "cluster013-elevation-left",
+    "synthetic": true,
+    "study": "sparse-transition-set",
+    "family": "elevation",
+    "memberCount": 5,
+    "memberLengths": [
+      30,
+      24,
+      26,
+      22,
+      30
+    ],
+    "memberIds": [
+      "S0>S1",
+      "S1>S2",
+      "S2>S3",
+      "S3>S4",
+      "S4>S5"
+    ],
+    "transitionJoints": [
+      0,
+      1,
+      3
+    ],
+    "jointIds": [
+      "joint:0",
+      "joint:1",
+      "joint:3"
+    ],
+    "widths": [
+      8,
+      6,
+      4
+    ],
+    "clusters": [
+      [
+        0,
+        1
+      ],
+      [
+        3
+      ]
+    ],
+    "clusterPaths": [
+      "group",
+      "singular"
+    ],
+    "jointStations": [
+      30,
+      54,
+      102
+    ],
+    "setGapsMeasured": [
+      24,
+      48
+    ],
+    "transform": "identity",
+    "traversalOrder": "forward",
+    "expected": "sparse admit-per-joint + cluster honesty + mesh + gtop2 + agreement",
+    "futurePredicateEligible": true,
+    "measured": {
+      "layoutOk": true,
+      "admitCodes": "ok,ok,ok",
+      "midScalars": [
+        0.75,
+        0.75,
+        0.75
+      ],
+      "stationCount": 18,
+      "transitionStations": 9,
+      "boundaryStations": 6,
+      "nativeStations": 3,
+      "skippedJointNativeStations": 3,
+      "ownershipUnique": true,
+      "vertexCount": 36,
+      "triangleCount": 34,
+      "skippedZeroWidth": 0,
+      "expectedPositiveWidthRegions": 1,
+      "measuredPositiveWidthRegions": 1,
+      "topologyPreMeshEqualsMeasured": true,
+      "gtop2Components": 1,
+      "gtop2BoundaryCycles": 1,
+      "gtop2RevalidationNull": true,
+      "meshValidatorCodes": [
+        "null",
+        "null",
+        "null"
+      ],
+      "groupAgreementOk": [
+        true,
+        true,
+        true
+      ],
+      "c0PlanResidual": 0,
+      "c0ZResidual": 0,
+      "revisionHash": "ggrev1:34a26aac",
+      "revisionOrderSensitive": true,
+      "revisionStable": true,
+      "bakeCitationLength": 1
+    }
+  },
+  {
+    "fixtureId": "cluster013-elevation-right",
+    "synthetic": true,
+    "study": "sparse-transition-set",
+    "family": "elevation",
+    "memberCount": 5,
+    "memberLengths": [
+      30,
+      24,
+      26,
+      22,
+      30
+    ],
+    "memberIds": [
+      "S0>S1",
+      "S1>S2",
+      "S2>S3",
+      "S3>S4",
+      "S4>S5"
+    ],
+    "transitionJoints": [
+      0,
+      1,
+      3
+    ],
+    "jointIds": [
+      "joint:0",
+      "joint:1",
+      "joint:3"
+    ],
+    "widths": [
+      8,
+      6,
+      4
+    ],
+    "clusters": [
+      [
+        0,
+        1
+      ],
+      [
+        3
+      ]
+    ],
+    "clusterPaths": [
+      "group",
+      "singular"
+    ],
+    "jointStations": [
+      30,
+      54,
+      102
+    ],
+    "setGapsMeasured": [
+      24,
+      48
+    ],
+    "transform": "mirror",
+    "traversalOrder": "forward",
+    "expected": "sparse admit-per-joint + cluster honesty + mesh + gtop2 + agreement",
+    "futurePredicateEligible": true,
+    "measured": {
+      "layoutOk": true,
+      "admitCodes": "ok,ok,ok",
+      "midScalars": [
+        0.75,
+        0.75,
+        0.75
+      ],
+      "stationCount": 18,
+      "transitionStations": 9,
+      "boundaryStations": 6,
+      "nativeStations": 3,
+      "skippedJointNativeStations": 3,
+      "ownershipUnique": true,
+      "vertexCount": 36,
+      "triangleCount": 34,
+      "skippedZeroWidth": 0,
+      "expectedPositiveWidthRegions": 1,
+      "measuredPositiveWidthRegions": 1,
+      "topologyPreMeshEqualsMeasured": true,
+      "gtop2Components": 1,
+      "gtop2BoundaryCycles": 1,
+      "gtop2RevalidationNull": true,
+      "meshValidatorCodes": [
+        "null",
+        "null",
+        "null"
+      ],
+      "groupAgreementOk": [
+        true,
+        true,
+        true
+      ],
+      "c0PlanResidual": 0,
+      "c0ZResidual": 0,
+      "revisionHash": "ggrev1:b7870d22",
+      "revisionOrderSensitive": true,
+      "revisionStable": true,
+      "bakeCitationLength": 1
+    }
+  },
+  {
+    "fixtureId": "cluster023-distance-left",
+    "synthetic": true,
+    "study": "sparse-transition-set",
+    "family": "distance",
+    "memberCount": 5,
+    "memberLengths": [
+      30,
+      24,
+      26,
+      22,
+      30
+    ],
+    "memberIds": [
+      "S0>S1",
+      "S1>S2",
+      "S2>S3",
+      "S3>S4",
+      "S4>S5"
+    ],
+    "transitionJoints": [
+      0,
+      2,
+      3
+    ],
+    "jointIds": [
+      "joint:0",
+      "joint:2",
+      "joint:3"
+    ],
+    "widths": [
+      8,
+      6,
+      4
+    ],
+    "clusters": [
+      [
+        0
+      ],
+      [
+        2,
+        3
+      ]
+    ],
+    "clusterPaths": [
+      "singular",
+      "group"
+    ],
+    "jointStations": [
+      30,
+      80,
+      102
+    ],
+    "setGapsMeasured": [
+      50,
+      22
+    ],
+    "transform": "identity",
+    "traversalOrder": "forward",
+    "expected": "sparse admit-per-joint + cluster honesty + mesh + gtop2 + agreement",
+    "futurePredicateEligible": true,
+    "measured": {
+      "layoutOk": true,
+      "admitCodes": "ok,ok,ok",
+      "midScalars": [
+        6,
+        6,
+        6
+      ],
+      "stationCount": 18,
+      "transitionStations": 9,
+      "boundaryStations": 6,
+      "nativeStations": 3,
+      "skippedJointNativeStations": 3,
+      "ownershipUnique": true,
+      "vertexCount": 36,
+      "triangleCount": 34,
+      "skippedZeroWidth": 0,
+      "expectedPositiveWidthRegions": 1,
+      "measuredPositiveWidthRegions": 1,
+      "topologyPreMeshEqualsMeasured": true,
+      "gtop2Components": 1,
+      "gtop2BoundaryCycles": 1,
+      "gtop2RevalidationNull": true,
+      "meshValidatorCodes": [
+        "null",
+        "null",
+        "null"
+      ],
+      "groupAgreementOk": [
+        true,
+        true,
+        true
+      ],
+      "c0PlanResidual": 0,
+      "c0ZResidual": 0,
+      "revisionHash": "ggrev1:ab867c3d",
+      "revisionOrderSensitive": true,
+      "revisionStable": true,
+      "bakeCitationLength": 1
+    }
+  },
+  {
+    "fixtureId": "cluster023-distance-right",
+    "synthetic": true,
+    "study": "sparse-transition-set",
+    "family": "distance",
+    "memberCount": 5,
+    "memberLengths": [
+      30,
+      24,
+      26,
+      22,
+      30
+    ],
+    "memberIds": [
+      "S0>S1",
+      "S1>S2",
+      "S2>S3",
+      "S3>S4",
+      "S4>S5"
+    ],
+    "transitionJoints": [
+      0,
+      2,
+      3
+    ],
+    "jointIds": [
+      "joint:0",
+      "joint:2",
+      "joint:3"
+    ],
+    "widths": [
+      8,
+      6,
+      4
+    ],
+    "clusters": [
+      [
+        0
+      ],
+      [
+        2,
+        3
+      ]
+    ],
+    "clusterPaths": [
+      "singular",
+      "group"
+    ],
+    "jointStations": [
+      30,
+      80,
+      102
+    ],
+    "setGapsMeasured": [
+      50,
+      22
+    ],
+    "transform": "mirror",
+    "traversalOrder": "forward",
+    "expected": "sparse admit-per-joint + cluster honesty + mesh + gtop2 + agreement",
+    "futurePredicateEligible": true,
+    "measured": {
+      "layoutOk": true,
+      "admitCodes": "ok,ok,ok",
+      "midScalars": [
+        6,
+        6,
+        6
+      ],
+      "stationCount": 18,
+      "transitionStations": 9,
+      "boundaryStations": 6,
+      "nativeStations": 3,
+      "skippedJointNativeStations": 3,
+      "ownershipUnique": true,
+      "vertexCount": 36,
+      "triangleCount": 34,
+      "skippedZeroWidth": 0,
+      "expectedPositiveWidthRegions": 1,
+      "measuredPositiveWidthRegions": 1,
+      "topologyPreMeshEqualsMeasured": true,
+      "gtop2Components": 1,
+      "gtop2BoundaryCycles": 1,
+      "gtop2RevalidationNull": true,
+      "meshValidatorCodes": [
+        "null",
+        "null",
+        "null"
+      ],
+      "groupAgreementOk": [
+        true,
+        true,
+        true
+      ],
+      "c0PlanResidual": 0,
+      "c0ZResidual": 0,
+      "revisionHash": "ggrev1:9fd84779",
+      "revisionOrderSensitive": true,
+      "revisionStable": true,
+      "bakeCitationLength": 1
+    }
+  },
+  {
+    "fixtureId": "cluster023-relative-elevation-left",
+    "synthetic": true,
+    "study": "sparse-transition-set",
+    "family": "relative-elevation",
+    "memberCount": 5,
+    "memberLengths": [
+      30,
+      24,
+      26,
+      22,
+      30
+    ],
+    "memberIds": [
+      "S0>S1",
+      "S1>S2",
+      "S2>S3",
+      "S3>S4",
+      "S4>S5"
+    ],
+    "transitionJoints": [
+      0,
+      2,
+      3
+    ],
+    "jointIds": [
+      "joint:0",
+      "joint:2",
+      "joint:3"
+    ],
+    "widths": [
+      8,
+      6,
+      4
+    ],
+    "clusters": [
+      [
+        0
+      ],
+      [
+        2,
+        3
+      ]
+    ],
+    "clusterPaths": [
+      "singular",
+      "group"
+    ],
+    "jointStations": [
+      30,
+      80,
+      102
+    ],
+    "setGapsMeasured": [
+      50,
+      22
+    ],
+    "transform": "identity",
+    "traversalOrder": "forward",
+    "expected": "sparse admit-per-joint + cluster honesty + mesh + gtop2 + agreement",
+    "futurePredicateEligible": true,
+    "measured": {
+      "layoutOk": true,
+      "admitCodes": "ok,ok,ok",
+      "midScalars": [
+        1.75,
+        1.75,
+        1.75
+      ],
+      "stationCount": 18,
+      "transitionStations": 9,
+      "boundaryStations": 6,
+      "nativeStations": 3,
+      "skippedJointNativeStations": 3,
+      "ownershipUnique": true,
+      "vertexCount": 36,
+      "triangleCount": 34,
+      "skippedZeroWidth": 0,
+      "expectedPositiveWidthRegions": 1,
+      "measuredPositiveWidthRegions": 1,
+      "topologyPreMeshEqualsMeasured": true,
+      "gtop2Components": 1,
+      "gtop2BoundaryCycles": 1,
+      "gtop2RevalidationNull": true,
+      "meshValidatorCodes": [
+        "null",
+        "null",
+        "null"
+      ],
+      "groupAgreementOk": [
+        true,
+        true,
+        true
+      ],
+      "c0PlanResidual": 0,
+      "c0ZResidual": 0,
+      "revisionHash": "ggrev1:89f191da",
+      "revisionOrderSensitive": true,
+      "revisionStable": true,
+      "bakeCitationLength": 1
+    }
+  },
+  {
+    "fixtureId": "cluster023-relative-elevation-right",
+    "synthetic": true,
+    "study": "sparse-transition-set",
+    "family": "relative-elevation",
+    "memberCount": 5,
+    "memberLengths": [
+      30,
+      24,
+      26,
+      22,
+      30
+    ],
+    "memberIds": [
+      "S0>S1",
+      "S1>S2",
+      "S2>S3",
+      "S3>S4",
+      "S4>S5"
+    ],
+    "transitionJoints": [
+      0,
+      2,
+      3
+    ],
+    "jointIds": [
+      "joint:0",
+      "joint:2",
+      "joint:3"
+    ],
+    "widths": [
+      8,
+      6,
+      4
+    ],
+    "clusters": [
+      [
+        0
+      ],
+      [
+        2,
+        3
+      ]
+    ],
+    "clusterPaths": [
+      "singular",
+      "group"
+    ],
+    "jointStations": [
+      30,
+      80,
+      102
+    ],
+    "setGapsMeasured": [
+      50,
+      22
+    ],
+    "transform": "mirror",
+    "traversalOrder": "forward",
+    "expected": "sparse admit-per-joint + cluster honesty + mesh + gtop2 + agreement",
+    "futurePredicateEligible": true,
+    "measured": {
+      "layoutOk": true,
+      "admitCodes": "ok,ok,ok",
+      "midScalars": [
+        1.75,
+        1.75,
+        1.75
+      ],
+      "stationCount": 18,
+      "transitionStations": 9,
+      "boundaryStations": 6,
+      "nativeStations": 3,
+      "skippedJointNativeStations": 3,
+      "ownershipUnique": true,
+      "vertexCount": 36,
+      "triangleCount": 34,
+      "skippedZeroWidth": 0,
+      "expectedPositiveWidthRegions": 1,
+      "measuredPositiveWidthRegions": 1,
+      "topologyPreMeshEqualsMeasured": true,
+      "gtop2Components": 1,
+      "gtop2BoundaryCycles": 1,
+      "gtop2RevalidationNull": true,
+      "meshValidatorCodes": [
+        "null",
+        "null",
+        "null"
+      ],
+      "groupAgreementOk": [
+        true,
+        true,
+        true
+      ],
+      "c0PlanResidual": 0,
+      "c0ZResidual": 0,
+      "revisionHash": "ggrev1:509c9fa6",
+      "revisionOrderSensitive": true,
+      "revisionStable": true,
+      "bakeCitationLength": 1
+    }
+  },
+  {
+    "fixtureId": "cluster023-elevation-left",
+    "synthetic": true,
+    "study": "sparse-transition-set",
+    "family": "elevation",
+    "memberCount": 5,
+    "memberLengths": [
+      30,
+      24,
+      26,
+      22,
+      30
+    ],
+    "memberIds": [
+      "S0>S1",
+      "S1>S2",
+      "S2>S3",
+      "S3>S4",
+      "S4>S5"
+    ],
+    "transitionJoints": [
+      0,
+      2,
+      3
+    ],
+    "jointIds": [
+      "joint:0",
+      "joint:2",
+      "joint:3"
+    ],
+    "widths": [
+      8,
+      6,
+      4
+    ],
+    "clusters": [
+      [
+        0
+      ],
+      [
+        2,
+        3
+      ]
+    ],
+    "clusterPaths": [
+      "singular",
+      "group"
+    ],
+    "jointStations": [
+      30,
+      80,
+      102
+    ],
+    "setGapsMeasured": [
+      50,
+      22
+    ],
+    "transform": "identity",
+    "traversalOrder": "forward",
+    "expected": "sparse admit-per-joint + cluster honesty + mesh + gtop2 + agreement",
+    "futurePredicateEligible": true,
+    "measured": {
+      "layoutOk": true,
+      "admitCodes": "ok,ok,ok",
+      "midScalars": [
+        0.75,
+        0.75,
+        0.75
+      ],
+      "stationCount": 18,
+      "transitionStations": 9,
+      "boundaryStations": 6,
+      "nativeStations": 3,
+      "skippedJointNativeStations": 3,
+      "ownershipUnique": true,
+      "vertexCount": 36,
+      "triangleCount": 34,
+      "skippedZeroWidth": 0,
+      "expectedPositiveWidthRegions": 1,
+      "measuredPositiveWidthRegions": 1,
+      "topologyPreMeshEqualsMeasured": true,
+      "gtop2Components": 1,
+      "gtop2BoundaryCycles": 1,
+      "gtop2RevalidationNull": true,
+      "meshValidatorCodes": [
+        "null",
+        "null",
+        "null"
+      ],
+      "groupAgreementOk": [
+        true,
+        true,
+        true
+      ],
+      "c0PlanResidual": 0,
+      "c0ZResidual": 0,
+      "revisionHash": "ggrev1:50660751",
+      "revisionOrderSensitive": true,
+      "revisionStable": true,
+      "bakeCitationLength": 1
+    }
+  },
+  {
+    "fixtureId": "cluster023-elevation-right",
+    "synthetic": true,
+    "study": "sparse-transition-set",
+    "family": "elevation",
+    "memberCount": 5,
+    "memberLengths": [
+      30,
+      24,
+      26,
+      22,
+      30
+    ],
+    "memberIds": [
+      "S0>S1",
+      "S1>S2",
+      "S2>S3",
+      "S3>S4",
+      "S4>S5"
+    ],
+    "transitionJoints": [
+      0,
+      2,
+      3
+    ],
+    "jointIds": [
+      "joint:0",
+      "joint:2",
+      "joint:3"
+    ],
+    "widths": [
+      8,
+      6,
+      4
+    ],
+    "clusters": [
+      [
+        0
+      ],
+      [
+        2,
+        3
+      ]
+    ],
+    "clusterPaths": [
+      "singular",
+      "group"
+    ],
+    "jointStations": [
+      30,
+      80,
+      102
+    ],
+    "setGapsMeasured": [
+      50,
+      22
+    ],
+    "transform": "mirror",
+    "traversalOrder": "forward",
+    "expected": "sparse admit-per-joint + cluster honesty + mesh + gtop2 + agreement",
+    "futurePredicateEligible": true,
+    "measured": {
+      "layoutOk": true,
+      "admitCodes": "ok,ok,ok",
+      "midScalars": [
+        0.75,
+        0.75,
+        0.75
+      ],
+      "stationCount": 18,
+      "transitionStations": 9,
+      "boundaryStations": 6,
+      "nativeStations": 3,
+      "skippedJointNativeStations": 3,
+      "ownershipUnique": true,
+      "vertexCount": 36,
+      "triangleCount": 34,
+      "skippedZeroWidth": 0,
+      "expectedPositiveWidthRegions": 1,
+      "measuredPositiveWidthRegions": 1,
+      "topologyPreMeshEqualsMeasured": true,
+      "gtop2Components": 1,
+      "gtop2BoundaryCycles": 1,
+      "gtop2RevalidationNull": true,
+      "meshValidatorCodes": [
+        "null",
+        "null",
+        "null"
+      ],
+      "groupAgreementOk": [
+        true,
+        true,
+        true
+      ],
+      "c0PlanResidual": 0,
+      "c0ZResidual": 0,
+      "revisionHash": "ggrev1:79f6b0bb",
+      "revisionOrderSensitive": true,
+      "revisionStable": true,
+      "bakeCitationLength": 1
+    }
+  },
+  {
+    "fixtureId": "cluster0134-distance-left",
+    "synthetic": true,
+    "study": "sparse-transition-set",
+    "family": "distance",
+    "memberCount": 6,
+    "memberLengths": [
+      30,
+      24,
+      26,
+      22,
+      28,
+      30
+    ],
+    "memberIds": [
+      "S0>S1",
+      "S1>S2",
+      "S2>S3",
+      "S3>S4",
+      "S4>S5",
+      "S5>S6"
+    ],
+    "transitionJoints": [
+      0,
+      1,
+      3,
+      4
+    ],
+    "jointIds": [
+      "joint:0",
+      "joint:1",
+      "joint:3",
+      "joint:4"
+    ],
+    "widths": [
+      8,
+      6,
+      4,
+      5
+    ],
+    "clusters": [
+      [
+        0,
+        1
+      ],
+      [
+        3,
+        4
+      ]
+    ],
+    "clusterPaths": [
+      "group",
+      "group"
+    ],
+    "jointStations": [
+      30,
+      54,
+      102,
+      130
+    ],
+    "setGapsMeasured": [
+      24,
+      48,
+      28
+    ],
+    "transform": "identity",
+    "traversalOrder": "forward",
+    "expected": "sparse admit-per-joint + cluster honesty + mesh + gtop2 + agreement",
+    "futurePredicateEligible": true,
+    "measured": {
+      "layoutOk": true,
+      "admitCodes": "ok,ok,ok,ok",
+      "midScalars": [
+        6,
+        6,
+        6,
+        6
+      ],
+      "stationCount": 23,
+      "transitionStations": 12,
+      "boundaryStations": 8,
+      "nativeStations": 3,
+      "skippedJointNativeStations": 3,
+      "ownershipUnique": true,
+      "vertexCount": 46,
+      "triangleCount": 44,
+      "skippedZeroWidth": 0,
+      "expectedPositiveWidthRegions": 1,
+      "measuredPositiveWidthRegions": 1,
+      "topologyPreMeshEqualsMeasured": true,
+      "gtop2Components": 1,
+      "gtop2BoundaryCycles": 1,
+      "gtop2RevalidationNull": true,
+      "meshValidatorCodes": [
+        "null",
+        "null",
+        "null",
+        "null"
+      ],
+      "groupAgreementOk": [
+        true,
+        true,
+        true,
+        true
+      ],
+      "c0PlanResidual": 0,
+      "c0ZResidual": 0,
+      "revisionHash": "ggrev1:637d8d30",
+      "revisionOrderSensitive": true,
+      "revisionStable": true,
+      "bakeCitationLength": 1
+    }
+  },
+  {
+    "fixtureId": "cluster0134-distance-right",
+    "synthetic": true,
+    "study": "sparse-transition-set",
+    "family": "distance",
+    "memberCount": 6,
+    "memberLengths": [
+      30,
+      24,
+      26,
+      22,
+      28,
+      30
+    ],
+    "memberIds": [
+      "S0>S1",
+      "S1>S2",
+      "S2>S3",
+      "S3>S4",
+      "S4>S5",
+      "S5>S6"
+    ],
+    "transitionJoints": [
+      0,
+      1,
+      3,
+      4
+    ],
+    "jointIds": [
+      "joint:0",
+      "joint:1",
+      "joint:3",
+      "joint:4"
+    ],
+    "widths": [
+      8,
+      6,
+      4,
+      5
+    ],
+    "clusters": [
+      [
+        0,
+        1
+      ],
+      [
+        3,
+        4
+      ]
+    ],
+    "clusterPaths": [
+      "group",
+      "group"
+    ],
+    "jointStations": [
+      30,
+      54,
+      102,
+      130
+    ],
+    "setGapsMeasured": [
+      24,
+      48,
+      28
+    ],
+    "transform": "mirror",
+    "traversalOrder": "forward",
+    "expected": "sparse admit-per-joint + cluster honesty + mesh + gtop2 + agreement",
+    "futurePredicateEligible": true,
+    "measured": {
+      "layoutOk": true,
+      "admitCodes": "ok,ok,ok,ok",
+      "midScalars": [
+        6,
+        6,
+        6,
+        6
+      ],
+      "stationCount": 23,
+      "transitionStations": 12,
+      "boundaryStations": 8,
+      "nativeStations": 3,
+      "skippedJointNativeStations": 3,
+      "ownershipUnique": true,
+      "vertexCount": 46,
+      "triangleCount": 44,
+      "skippedZeroWidth": 0,
+      "expectedPositiveWidthRegions": 1,
+      "measuredPositiveWidthRegions": 1,
+      "topologyPreMeshEqualsMeasured": true,
+      "gtop2Components": 1,
+      "gtop2BoundaryCycles": 1,
+      "gtop2RevalidationNull": true,
+      "meshValidatorCodes": [
+        "null",
+        "null",
+        "null",
+        "null"
+      ],
+      "groupAgreementOk": [
+        true,
+        true,
+        true,
+        true
+      ],
+      "c0PlanResidual": 0,
+      "c0ZResidual": 0,
+      "revisionHash": "ggrev1:65679983",
+      "revisionOrderSensitive": true,
+      "revisionStable": true,
+      "bakeCitationLength": 1
+    }
+  },
+  {
+    "fixtureId": "cluster0134-relative-elevation-left",
+    "synthetic": true,
+    "study": "sparse-transition-set",
+    "family": "relative-elevation",
+    "memberCount": 6,
+    "memberLengths": [
+      30,
+      24,
+      26,
+      22,
+      28,
+      30
+    ],
+    "memberIds": [
+      "S0>S1",
+      "S1>S2",
+      "S2>S3",
+      "S3>S4",
+      "S4>S5",
+      "S5>S6"
+    ],
+    "transitionJoints": [
+      0,
+      1,
+      3,
+      4
+    ],
+    "jointIds": [
+      "joint:0",
+      "joint:1",
+      "joint:3",
+      "joint:4"
+    ],
+    "widths": [
+      8,
+      6,
+      4,
+      5
+    ],
+    "clusters": [
+      [
+        0,
+        1
+      ],
+      [
+        3,
+        4
+      ]
+    ],
+    "clusterPaths": [
+      "group",
+      "group"
+    ],
+    "jointStations": [
+      30,
+      54,
+      102,
+      130
+    ],
+    "setGapsMeasured": [
+      24,
+      48,
+      28
+    ],
+    "transform": "identity",
+    "traversalOrder": "forward",
+    "expected": "sparse admit-per-joint + cluster honesty + mesh + gtop2 + agreement",
+    "futurePredicateEligible": true,
+    "measured": {
+      "layoutOk": true,
+      "admitCodes": "ok,ok,ok,ok",
+      "midScalars": [
+        1.75,
+        1.75,
+        1.75,
+        1.75
+      ],
+      "stationCount": 23,
+      "transitionStations": 12,
+      "boundaryStations": 8,
+      "nativeStations": 3,
+      "skippedJointNativeStations": 3,
+      "ownershipUnique": true,
+      "vertexCount": 46,
+      "triangleCount": 44,
+      "skippedZeroWidth": 0,
+      "expectedPositiveWidthRegions": 1,
+      "measuredPositiveWidthRegions": 1,
+      "topologyPreMeshEqualsMeasured": true,
+      "gtop2Components": 1,
+      "gtop2BoundaryCycles": 1,
+      "gtop2RevalidationNull": true,
+      "meshValidatorCodes": [
+        "null",
+        "null",
+        "null",
+        "null"
+      ],
+      "groupAgreementOk": [
+        true,
+        true,
+        true,
+        true
+      ],
+      "c0PlanResidual": 0,
+      "c0ZResidual": 0,
+      "revisionHash": "ggrev1:cf4b3776",
+      "revisionOrderSensitive": true,
+      "revisionStable": true,
+      "bakeCitationLength": 1
+    }
+  },
+  {
+    "fixtureId": "cluster0134-relative-elevation-right",
+    "synthetic": true,
+    "study": "sparse-transition-set",
+    "family": "relative-elevation",
+    "memberCount": 6,
+    "memberLengths": [
+      30,
+      24,
+      26,
+      22,
+      28,
+      30
+    ],
+    "memberIds": [
+      "S0>S1",
+      "S1>S2",
+      "S2>S3",
+      "S3>S4",
+      "S4>S5",
+      "S5>S6"
+    ],
+    "transitionJoints": [
+      0,
+      1,
+      3,
+      4
+    ],
+    "jointIds": [
+      "joint:0",
+      "joint:1",
+      "joint:3",
+      "joint:4"
+    ],
+    "widths": [
+      8,
+      6,
+      4,
+      5
+    ],
+    "clusters": [
+      [
+        0,
+        1
+      ],
+      [
+        3,
+        4
+      ]
+    ],
+    "clusterPaths": [
+      "group",
+      "group"
+    ],
+    "jointStations": [
+      30,
+      54,
+      102,
+      130
+    ],
+    "setGapsMeasured": [
+      24,
+      48,
+      28
+    ],
+    "transform": "mirror",
+    "traversalOrder": "forward",
+    "expected": "sparse admit-per-joint + cluster honesty + mesh + gtop2 + agreement",
+    "futurePredicateEligible": true,
+    "measured": {
+      "layoutOk": true,
+      "admitCodes": "ok,ok,ok,ok",
+      "midScalars": [
+        1.75,
+        1.75,
+        1.75,
+        1.75
+      ],
+      "stationCount": 23,
+      "transitionStations": 12,
+      "boundaryStations": 8,
+      "nativeStations": 3,
+      "skippedJointNativeStations": 3,
+      "ownershipUnique": true,
+      "vertexCount": 46,
+      "triangleCount": 44,
+      "skippedZeroWidth": 0,
+      "expectedPositiveWidthRegions": 1,
+      "measuredPositiveWidthRegions": 1,
+      "topologyPreMeshEqualsMeasured": true,
+      "gtop2Components": 1,
+      "gtop2BoundaryCycles": 1,
+      "gtop2RevalidationNull": true,
+      "meshValidatorCodes": [
+        "null",
+        "null",
+        "null",
+        "null"
+      ],
+      "groupAgreementOk": [
+        true,
+        true,
+        true,
+        true
+      ],
+      "c0PlanResidual": 0,
+      "c0ZResidual": 0,
+      "revisionHash": "ggrev1:14843a59",
+      "revisionOrderSensitive": true,
+      "revisionStable": true,
+      "bakeCitationLength": 1
+    }
+  },
+  {
+    "fixtureId": "cluster0134-elevation-left",
+    "synthetic": true,
+    "study": "sparse-transition-set",
+    "family": "elevation",
+    "memberCount": 6,
+    "memberLengths": [
+      30,
+      24,
+      26,
+      22,
+      28,
+      30
+    ],
+    "memberIds": [
+      "S0>S1",
+      "S1>S2",
+      "S2>S3",
+      "S3>S4",
+      "S4>S5",
+      "S5>S6"
+    ],
+    "transitionJoints": [
+      0,
+      1,
+      3,
+      4
+    ],
+    "jointIds": [
+      "joint:0",
+      "joint:1",
+      "joint:3",
+      "joint:4"
+    ],
+    "widths": [
+      8,
+      6,
+      4,
+      5
+    ],
+    "clusters": [
+      [
+        0,
+        1
+      ],
+      [
+        3,
+        4
+      ]
+    ],
+    "clusterPaths": [
+      "group",
+      "group"
+    ],
+    "jointStations": [
+      30,
+      54,
+      102,
+      130
+    ],
+    "setGapsMeasured": [
+      24,
+      48,
+      28
+    ],
+    "transform": "identity",
+    "traversalOrder": "forward",
+    "expected": "sparse admit-per-joint + cluster honesty + mesh + gtop2 + agreement",
+    "futurePredicateEligible": true,
+    "measured": {
+      "layoutOk": true,
+      "admitCodes": "ok,ok,ok,ok",
+      "midScalars": [
+        0.75,
+        0.75,
+        0.75,
+        0.75
+      ],
+      "stationCount": 23,
+      "transitionStations": 12,
+      "boundaryStations": 8,
+      "nativeStations": 3,
+      "skippedJointNativeStations": 3,
+      "ownershipUnique": true,
+      "vertexCount": 46,
+      "triangleCount": 44,
+      "skippedZeroWidth": 0,
+      "expectedPositiveWidthRegions": 1,
+      "measuredPositiveWidthRegions": 1,
+      "topologyPreMeshEqualsMeasured": true,
+      "gtop2Components": 1,
+      "gtop2BoundaryCycles": 1,
+      "gtop2RevalidationNull": true,
+      "meshValidatorCodes": [
+        "null",
+        "null",
+        "null",
+        "null"
+      ],
+      "groupAgreementOk": [
+        true,
+        true,
+        true,
+        true
+      ],
+      "c0PlanResidual": 0,
+      "c0ZResidual": 0,
+      "revisionHash": "ggrev1:45b8ed52",
+      "revisionOrderSensitive": true,
+      "revisionStable": true,
+      "bakeCitationLength": 1
+    }
+  },
+  {
+    "fixtureId": "cluster0134-elevation-right",
+    "synthetic": true,
+    "study": "sparse-transition-set",
+    "family": "elevation",
+    "memberCount": 6,
+    "memberLengths": [
+      30,
+      24,
+      26,
+      22,
+      28,
+      30
+    ],
+    "memberIds": [
+      "S0>S1",
+      "S1>S2",
+      "S2>S3",
+      "S3>S4",
+      "S4>S5",
+      "S5>S6"
+    ],
+    "transitionJoints": [
+      0,
+      1,
+      3,
+      4
+    ],
+    "jointIds": [
+      "joint:0",
+      "joint:1",
+      "joint:3",
+      "joint:4"
+    ],
+    "widths": [
+      8,
+      6,
+      4,
+      5
+    ],
+    "clusters": [
+      [
+        0,
+        1
+      ],
+      [
+        3,
+        4
+      ]
+    ],
+    "clusterPaths": [
+      "group",
+      "group"
+    ],
+    "jointStations": [
+      30,
+      54,
+      102,
+      130
+    ],
+    "setGapsMeasured": [
+      24,
+      48,
+      28
+    ],
+    "transform": "mirror",
+    "traversalOrder": "forward",
+    "expected": "sparse admit-per-joint + cluster honesty + mesh + gtop2 + agreement",
+    "futurePredicateEligible": true,
+    "measured": {
+      "layoutOk": true,
+      "admitCodes": "ok,ok,ok,ok",
+      "midScalars": [
+        0.75,
+        0.75,
+        0.75,
+        0.75
+      ],
+      "stationCount": 23,
+      "transitionStations": 12,
+      "boundaryStations": 8,
+      "nativeStations": 3,
+      "skippedJointNativeStations": 3,
+      "ownershipUnique": true,
+      "vertexCount": 46,
+      "triangleCount": 44,
+      "skippedZeroWidth": 0,
+      "expectedPositiveWidthRegions": 1,
+      "measuredPositiveWidthRegions": 1,
+      "topologyPreMeshEqualsMeasured": true,
+      "gtop2Components": 1,
+      "gtop2BoundaryCycles": 1,
+      "gtop2RevalidationNull": true,
+      "meshValidatorCodes": [
+        "null",
+        "null",
+        "null",
+        "null"
+      ],
+      "groupAgreementOk": [
+        true,
+        true,
+        true,
+        true
+      ],
+      "c0PlanResidual": 0,
+      "c0ZResidual": 0,
+      "revisionHash": "ggrev1:b34bc3af",
+      "revisionOrderSensitive": true,
+      "revisionStable": true,
+      "bakeCitationLength": 1
+    }
+  },
+  {
+    "fixtureId": "cluster0235-distance-left",
+    "synthetic": true,
+    "study": "sparse-transition-set",
+    "family": "distance",
+    "memberCount": 7,
+    "memberLengths": [
+      30,
+      24,
+      26,
+      22,
+      28,
+      24,
+      30
+    ],
+    "memberIds": [
+      "S0>S1",
+      "S1>S2",
+      "S2>S3",
+      "S3>S4",
+      "S4>S5",
+      "S5>S6",
+      "S6>S7"
+    ],
+    "transitionJoints": [
+      0,
+      2,
+      3,
+      5
+    ],
+    "jointIds": [
+      "joint:0",
+      "joint:2",
+      "joint:3",
+      "joint:5"
+    ],
+    "widths": [
+      8,
+      6,
+      4,
+      5
+    ],
+    "clusters": [
+      [
+        0
+      ],
+      [
+        2,
+        3
+      ],
+      [
+        5
+      ]
+    ],
+    "clusterPaths": [
+      "singular",
+      "group",
+      "singular"
+    ],
+    "jointStations": [
+      30,
+      80,
+      102,
+      154
+    ],
+    "setGapsMeasured": [
+      50,
+      22,
+      52
+    ],
+    "transform": "identity",
+    "traversalOrder": "forward",
+    "expected": "sparse admit-per-joint + cluster honesty + mesh + gtop2 + agreement",
+    "futurePredicateEligible": true,
+    "measured": {
+      "layoutOk": true,
+      "admitCodes": "ok,ok,ok,ok",
+      "midScalars": [
+        6,
+        6,
+        6,
+        6
+      ],
+      "stationCount": 24,
+      "transitionStations": 12,
+      "boundaryStations": 8,
+      "nativeStations": 4,
+      "skippedJointNativeStations": 4,
+      "ownershipUnique": true,
+      "vertexCount": 48,
+      "triangleCount": 46,
+      "skippedZeroWidth": 0,
+      "expectedPositiveWidthRegions": 1,
+      "measuredPositiveWidthRegions": 1,
+      "topologyPreMeshEqualsMeasured": true,
+      "gtop2Components": 1,
+      "gtop2BoundaryCycles": 1,
+      "gtop2RevalidationNull": true,
+      "meshValidatorCodes": [
+        "null",
+        "null",
+        "null",
+        "null"
+      ],
+      "groupAgreementOk": [
+        true,
+        true,
+        true,
+        true
+      ],
+      "c0PlanResidual": 0,
+      "c0ZResidual": 0,
+      "revisionHash": "ggrev1:7dacd251",
+      "revisionOrderSensitive": true,
+      "revisionStable": true,
+      "bakeCitationLength": 1
+    }
+  },
+  {
+    "fixtureId": "cluster0235-distance-right",
+    "synthetic": true,
+    "study": "sparse-transition-set",
+    "family": "distance",
+    "memberCount": 7,
+    "memberLengths": [
+      30,
+      24,
+      26,
+      22,
+      28,
+      24,
+      30
+    ],
+    "memberIds": [
+      "S0>S1",
+      "S1>S2",
+      "S2>S3",
+      "S3>S4",
+      "S4>S5",
+      "S5>S6",
+      "S6>S7"
+    ],
+    "transitionJoints": [
+      0,
+      2,
+      3,
+      5
+    ],
+    "jointIds": [
+      "joint:0",
+      "joint:2",
+      "joint:3",
+      "joint:5"
+    ],
+    "widths": [
+      8,
+      6,
+      4,
+      5
+    ],
+    "clusters": [
+      [
+        0
+      ],
+      [
+        2,
+        3
+      ],
+      [
+        5
+      ]
+    ],
+    "clusterPaths": [
+      "singular",
+      "group",
+      "singular"
+    ],
+    "jointStations": [
+      30,
+      80,
+      102,
+      154
+    ],
+    "setGapsMeasured": [
+      50,
+      22,
+      52
+    ],
+    "transform": "mirror",
+    "traversalOrder": "forward",
+    "expected": "sparse admit-per-joint + cluster honesty + mesh + gtop2 + agreement",
+    "futurePredicateEligible": true,
+    "measured": {
+      "layoutOk": true,
+      "admitCodes": "ok,ok,ok,ok",
+      "midScalars": [
+        6,
+        6,
+        6,
+        6
+      ],
+      "stationCount": 24,
+      "transitionStations": 12,
+      "boundaryStations": 8,
+      "nativeStations": 4,
+      "skippedJointNativeStations": 4,
+      "ownershipUnique": true,
+      "vertexCount": 48,
+      "triangleCount": 46,
+      "skippedZeroWidth": 0,
+      "expectedPositiveWidthRegions": 1,
+      "measuredPositiveWidthRegions": 1,
+      "topologyPreMeshEqualsMeasured": true,
+      "gtop2Components": 1,
+      "gtop2BoundaryCycles": 1,
+      "gtop2RevalidationNull": true,
+      "meshValidatorCodes": [
+        "null",
+        "null",
+        "null",
+        "null"
+      ],
+      "groupAgreementOk": [
+        true,
+        true,
+        true,
+        true
+      ],
+      "c0PlanResidual": 0,
+      "c0ZResidual": 0,
+      "revisionHash": "ggrev1:7585d064",
+      "revisionOrderSensitive": true,
+      "revisionStable": true,
+      "bakeCitationLength": 1
+    }
+  },
+  {
+    "fixtureId": "cluster0235-relative-elevation-left",
+    "synthetic": true,
+    "study": "sparse-transition-set",
+    "family": "relative-elevation",
+    "memberCount": 7,
+    "memberLengths": [
+      30,
+      24,
+      26,
+      22,
+      28,
+      24,
+      30
+    ],
+    "memberIds": [
+      "S0>S1",
+      "S1>S2",
+      "S2>S3",
+      "S3>S4",
+      "S4>S5",
+      "S5>S6",
+      "S6>S7"
+    ],
+    "transitionJoints": [
+      0,
+      2,
+      3,
+      5
+    ],
+    "jointIds": [
+      "joint:0",
+      "joint:2",
+      "joint:3",
+      "joint:5"
+    ],
+    "widths": [
+      8,
+      6,
+      4,
+      5
+    ],
+    "clusters": [
+      [
+        0
+      ],
+      [
+        2,
+        3
+      ],
+      [
+        5
+      ]
+    ],
+    "clusterPaths": [
+      "singular",
+      "group",
+      "singular"
+    ],
+    "jointStations": [
+      30,
+      80,
+      102,
+      154
+    ],
+    "setGapsMeasured": [
+      50,
+      22,
+      52
+    ],
+    "transform": "identity",
+    "traversalOrder": "forward",
+    "expected": "sparse admit-per-joint + cluster honesty + mesh + gtop2 + agreement",
+    "futurePredicateEligible": true,
+    "measured": {
+      "layoutOk": true,
+      "admitCodes": "ok,ok,ok,ok",
+      "midScalars": [
+        1.75,
+        1.75,
+        1.75,
+        1.75
+      ],
+      "stationCount": 24,
+      "transitionStations": 12,
+      "boundaryStations": 8,
+      "nativeStations": 4,
+      "skippedJointNativeStations": 4,
+      "ownershipUnique": true,
+      "vertexCount": 48,
+      "triangleCount": 46,
+      "skippedZeroWidth": 0,
+      "expectedPositiveWidthRegions": 1,
+      "measuredPositiveWidthRegions": 1,
+      "topologyPreMeshEqualsMeasured": true,
+      "gtop2Components": 1,
+      "gtop2BoundaryCycles": 1,
+      "gtop2RevalidationNull": true,
+      "meshValidatorCodes": [
+        "null",
+        "null",
+        "null",
+        "null"
+      ],
+      "groupAgreementOk": [
+        true,
+        true,
+        true,
+        true
+      ],
+      "c0PlanResidual": 0,
+      "c0ZResidual": 0,
+      "revisionHash": "ggrev1:643010c3",
+      "revisionOrderSensitive": true,
+      "revisionStable": true,
+      "bakeCitationLength": 1
+    }
+  },
+  {
+    "fixtureId": "cluster0235-relative-elevation-right",
+    "synthetic": true,
+    "study": "sparse-transition-set",
+    "family": "relative-elevation",
+    "memberCount": 7,
+    "memberLengths": [
+      30,
+      24,
+      26,
+      22,
+      28,
+      24,
+      30
+    ],
+    "memberIds": [
+      "S0>S1",
+      "S1>S2",
+      "S2>S3",
+      "S3>S4",
+      "S4>S5",
+      "S5>S6",
+      "S6>S7"
+    ],
+    "transitionJoints": [
+      0,
+      2,
+      3,
+      5
+    ],
+    "jointIds": [
+      "joint:0",
+      "joint:2",
+      "joint:3",
+      "joint:5"
+    ],
+    "widths": [
+      8,
+      6,
+      4,
+      5
+    ],
+    "clusters": [
+      [
+        0
+      ],
+      [
+        2,
+        3
+      ],
+      [
+        5
+      ]
+    ],
+    "clusterPaths": [
+      "singular",
+      "group",
+      "singular"
+    ],
+    "jointStations": [
+      30,
+      80,
+      102,
+      154
+    ],
+    "setGapsMeasured": [
+      50,
+      22,
+      52
+    ],
+    "transform": "mirror",
+    "traversalOrder": "forward",
+    "expected": "sparse admit-per-joint + cluster honesty + mesh + gtop2 + agreement",
+    "futurePredicateEligible": true,
+    "measured": {
+      "layoutOk": true,
+      "admitCodes": "ok,ok,ok,ok",
+      "midScalars": [
+        1.75,
+        1.75,
+        1.75,
+        1.75
+      ],
+      "stationCount": 24,
+      "transitionStations": 12,
+      "boundaryStations": 8,
+      "nativeStations": 4,
+      "skippedJointNativeStations": 4,
+      "ownershipUnique": true,
+      "vertexCount": 48,
+      "triangleCount": 46,
+      "skippedZeroWidth": 0,
+      "expectedPositiveWidthRegions": 1,
+      "measuredPositiveWidthRegions": 1,
+      "topologyPreMeshEqualsMeasured": true,
+      "gtop2Components": 1,
+      "gtop2BoundaryCycles": 1,
+      "gtop2RevalidationNull": true,
+      "meshValidatorCodes": [
+        "null",
+        "null",
+        "null",
+        "null"
+      ],
+      "groupAgreementOk": [
+        true,
+        true,
+        true,
+        true
+      ],
+      "c0PlanResidual": 0,
+      "c0ZResidual": 0,
+      "revisionHash": "ggrev1:9bce10f2",
+      "revisionOrderSensitive": true,
+      "revisionStable": true,
+      "bakeCitationLength": 1
+    }
+  },
+  {
+    "fixtureId": "cluster0235-elevation-left",
+    "synthetic": true,
+    "study": "sparse-transition-set",
+    "family": "elevation",
+    "memberCount": 7,
+    "memberLengths": [
+      30,
+      24,
+      26,
+      22,
+      28,
+      24,
+      30
+    ],
+    "memberIds": [
+      "S0>S1",
+      "S1>S2",
+      "S2>S3",
+      "S3>S4",
+      "S4>S5",
+      "S5>S6",
+      "S6>S7"
+    ],
+    "transitionJoints": [
+      0,
+      2,
+      3,
+      5
+    ],
+    "jointIds": [
+      "joint:0",
+      "joint:2",
+      "joint:3",
+      "joint:5"
+    ],
+    "widths": [
+      8,
+      6,
+      4,
+      5
+    ],
+    "clusters": [
+      [
+        0
+      ],
+      [
+        2,
+        3
+      ],
+      [
+        5
+      ]
+    ],
+    "clusterPaths": [
+      "singular",
+      "group",
+      "singular"
+    ],
+    "jointStations": [
+      30,
+      80,
+      102,
+      154
+    ],
+    "setGapsMeasured": [
+      50,
+      22,
+      52
+    ],
+    "transform": "identity",
+    "traversalOrder": "forward",
+    "expected": "sparse admit-per-joint + cluster honesty + mesh + gtop2 + agreement",
+    "futurePredicateEligible": true,
+    "measured": {
+      "layoutOk": true,
+      "admitCodes": "ok,ok,ok,ok",
+      "midScalars": [
+        0.75,
+        0.75,
+        0.75,
+        0.75
+      ],
+      "stationCount": 24,
+      "transitionStations": 12,
+      "boundaryStations": 8,
+      "nativeStations": 4,
+      "skippedJointNativeStations": 4,
+      "ownershipUnique": true,
+      "vertexCount": 48,
+      "triangleCount": 46,
+      "skippedZeroWidth": 0,
+      "expectedPositiveWidthRegions": 1,
+      "measuredPositiveWidthRegions": 1,
+      "topologyPreMeshEqualsMeasured": true,
+      "gtop2Components": 1,
+      "gtop2BoundaryCycles": 1,
+      "gtop2RevalidationNull": true,
+      "meshValidatorCodes": [
+        "null",
+        "null",
+        "null",
+        "null"
+      ],
+      "groupAgreementOk": [
+        true,
+        true,
+        true,
+        true
+      ],
+      "c0PlanResidual": 0,
+      "c0ZResidual": 0,
+      "revisionHash": "ggrev1:b8e8732f",
+      "revisionOrderSensitive": true,
+      "revisionStable": true,
+      "bakeCitationLength": 1
+    }
+  },
+  {
+    "fixtureId": "cluster0235-elevation-right",
+    "synthetic": true,
+    "study": "sparse-transition-set",
+    "family": "elevation",
+    "memberCount": 7,
+    "memberLengths": [
+      30,
+      24,
+      26,
+      22,
+      28,
+      24,
+      30
+    ],
+    "memberIds": [
+      "S0>S1",
+      "S1>S2",
+      "S2>S3",
+      "S3>S4",
+      "S4>S5",
+      "S5>S6",
+      "S6>S7"
+    ],
+    "transitionJoints": [
+      0,
+      2,
+      3,
+      5
+    ],
+    "jointIds": [
+      "joint:0",
+      "joint:2",
+      "joint:3",
+      "joint:5"
+    ],
+    "widths": [
+      8,
+      6,
+      4,
+      5
+    ],
+    "clusters": [
+      [
+        0
+      ],
+      [
+        2,
+        3
+      ],
+      [
+        5
+      ]
+    ],
+    "clusterPaths": [
+      "singular",
+      "group",
+      "singular"
+    ],
+    "jointStations": [
+      30,
+      80,
+      102,
+      154
+    ],
+    "setGapsMeasured": [
+      50,
+      22,
+      52
+    ],
+    "transform": "mirror",
+    "traversalOrder": "forward",
+    "expected": "sparse admit-per-joint + cluster honesty + mesh + gtop2 + agreement",
+    "futurePredicateEligible": true,
+    "measured": {
+      "layoutOk": true,
+      "admitCodes": "ok,ok,ok,ok",
+      "midScalars": [
+        0.75,
+        0.75,
+        0.75,
+        0.75
+      ],
+      "stationCount": 24,
+      "transitionStations": 12,
+      "boundaryStations": 8,
+      "nativeStations": 4,
+      "skippedJointNativeStations": 4,
+      "ownershipUnique": true,
+      "vertexCount": 48,
+      "triangleCount": 46,
+      "skippedZeroWidth": 0,
+      "expectedPositiveWidthRegions": 1,
+      "measuredPositiveWidthRegions": 1,
+      "topologyPreMeshEqualsMeasured": true,
+      "gtop2Components": 1,
+      "gtop2BoundaryCycles": 1,
+      "gtop2RevalidationNull": true,
+      "meshValidatorCodes": [
+        "null",
+        "null",
+        "null",
+        "null"
+      ],
+      "groupAgreementOk": [
+        true,
+        true,
+        true,
+        true
+      ],
+      "c0PlanResidual": 0,
+      "c0ZResidual": 0,
+      "revisionHash": "ggrev1:02c7cd00",
+      "revisionOrderSensitive": true,
+      "revisionStable": true,
+      "bakeCitationLength": 1
+    }
+  },
+  {
+    "fixtureId": "sparse02-distance-near-touch",
+    "synthetic": true,
+    "study": "sparse-transition-set",
+    "family": "distance",
+    "memberCount": 4,
+    "memberLengths": [
+      30,
+      24,
+      26,
+      30
+    ],
+    "memberIds": [
+      "S0>S1",
+      "S1>S2",
+      "S2>S3",
+      "S3>S4"
+    ],
+    "transitionJoints": [
+      0,
+      2
+    ],
+    "jointIds": [
+      "joint:0",
+      "joint:2"
+    ],
+    "widths": [
+      46,
+      52
+    ],
+    "clusters": [
+      [
+        0
+      ],
+      [
+        2
+      ]
+    ],
+    "clusterPaths": [
+      "singular",
+      "singular"
+    ],
+    "jointStations": [
+      30,
+      80
+    ],
+    "setGapsMeasured": [
+      50
+    ],
+    "transform": "identity",
+    "traversalOrder": "forward",
+    "expected": "near-touch positive gap admits as one region",
+    "futurePredicateEligible": true,
+    "measured": {
+      "layoutOk": true,
+      "admitCodes": "ok,ok",
+      "midScalars": [
+        6,
+        6
+      ],
+      "stationCount": 12,
+      "transitionStations": 6,
+      "boundaryStations": 4,
+      "nativeStations": 2,
+      "skippedJointNativeStations": 2,
+      "ownershipUnique": true,
+      "vertexCount": 24,
+      "triangleCount": 22,
+      "skippedZeroWidth": 0,
+      "expectedPositiveWidthRegions": 1,
+      "measuredPositiveWidthRegions": 1,
+      "topologyPreMeshEqualsMeasured": true,
+      "gtop2Components": 1,
+      "gtop2BoundaryCycles": 1,
+      "gtop2RevalidationNull": true,
+      "meshValidatorCodes": [
+        "null",
+        "null"
+      ],
+      "groupAgreementOk": [
+        true,
+        true
+      ],
+      "c0PlanResidual": 0,
+      "c0ZResidual": 0,
+      "revisionHash": "ggrev1:15b03a4c",
+      "revisionOrderSensitive": true,
+      "revisionStable": true,
+      "bakeCitationLength": 1
+    }
+  },
+  {
+    "fixtureId": "sparse02-distance-exact-touch",
+    "synthetic": true,
+    "study": "sparse-transition-set",
+    "family": "distance",
+    "memberCount": 4,
+    "memberLengths": [
+      30,
+      24,
+      26,
+      30
+    ],
+    "memberIds": [
+      "S0>S1",
+      "S1>S2",
+      "S2>S3",
+      "S3>S4"
+    ],
+    "transitionJoints": [
+      0,
+      2
+    ],
+    "jointIds": [
+      "joint:0",
+      "joint:2"
+    ],
+    "widths": [
+      48,
+      52
+    ],
+    "clusters": [],
+    "clusterPaths": [],
+    "jointStations": [],
+    "setGapsMeasured": [],
+    "transform": "identity",
+    "traversalOrder": "forward",
+    "expected": "exact-touch rejected",
+    "futurePredicateEligible": false,
+    "measured": {
+      "stage": "group-layout",
+      "code": "TOUCHING_NOT_AUTHORIZED",
+      "meshBuilt": false,
+      "certIssued": false,
+      "validatorsRun": false
+    }
+  },
+  {
+    "fixtureId": "sparse02-distance-overlap",
+    "synthetic": true,
+    "study": "sparse-transition-set",
+    "family": "distance",
+    "memberCount": 4,
+    "memberLengths": [
+      30,
+      24,
+      26,
+      30
+    ],
+    "memberIds": [
+      "S0>S1",
+      "S1>S2",
+      "S2>S3",
+      "S3>S4"
+    ],
+    "transitionJoints": [
+      0,
+      2
+    ],
+    "jointIds": [
+      "joint:0",
+      "joint:2"
+    ],
+    "widths": [
+      60,
+      52
+    ],
+    "clusters": [],
+    "clusterPaths": [],
+    "jointStations": [],
+    "setGapsMeasured": [],
+    "transform": "identity",
+    "traversalOrder": "forward",
+    "expected": "overlap rejected",
+    "futurePredicateEligible": false,
+    "measured": {
+      "stage": "group-layout",
+      "code": "OVERLAP_REJECTED",
+      "meshBuilt": false,
+      "certIssued": false,
+      "validatorsRun": false
+    }
+  },
+  {
+    "fixtureId": "sparse02-distance-reversal",
+    "synthetic": true,
+    "study": "sparse-transition-set",
+    "family": "distance",
+    "memberCount": 4,
+    "memberLengths": [
+      30,
+      26,
+      24,
+      30
+    ],
+    "memberIds": [
+      "S4>S3",
+      "S3>S2",
+      "S2>S1",
+      "S1>S0"
+    ],
+    "transitionJoints": [
+      0,
+      2
+    ],
+    "jointIds": [
+      "joint:0",
+      "joint:2"
+    ],
+    "widths": [
+      6,
+      8
+    ],
+    "clusters": [
+      [
+        0
+      ],
+      [
+        2
+      ]
+    ],
+    "clusterPaths": [
+      "singular",
+      "singular"
+    ],
+    "jointStations": [
+      30,
+      80
+    ],
+    "setGapsMeasured": [
+      50
+    ],
+    "transform": "reversal",
+    "traversalOrder": "reversed-traversal",
+    "expected": "true-traversal-reversal sparse mesh + gtop2 + agreement",
+    "futurePredicateEligible": true,
+    "measured": {
+      "layoutOk": true,
+      "admitCodes": "ok,ok",
+      "midScalars": [
+        6,
+        6
+      ],
+      "stationCount": 13,
+      "transitionStations": 6,
+      "boundaryStations": 4,
+      "nativeStations": 3,
+      "skippedJointNativeStations": 3,
+      "ownershipUnique": true,
+      "vertexCount": 26,
+      "triangleCount": 24,
+      "skippedZeroWidth": 0,
+      "expectedPositiveWidthRegions": 1,
+      "measuredPositiveWidthRegions": 1,
+      "topologyPreMeshEqualsMeasured": true,
+      "gtop2Components": 1,
+      "gtop2BoundaryCycles": 1,
+      "gtop2RevalidationNull": true,
+      "meshValidatorCodes": [
+        "null",
+        "null"
+      ],
+      "groupAgreementOk": [
+        true,
+        true
+      ],
+      "c0PlanResidual": 0,
+      "c0ZResidual": 0,
+      "revisionHash": "ggrev1:89616059",
+      "revisionOrderSensitive": true,
+      "revisionStable": true,
+      "bakeCitationLength": 1
+    }
+  },
+  {
+    "fixtureId": "sparse02-distance-translate-1e6",
+    "synthetic": true,
+    "study": "sparse-transition-set",
+    "family": "distance",
+    "memberCount": 4,
+    "memberLengths": [
+      30,
+      24,
+      26,
+      30
+    ],
+    "memberIds": [
+      "S0>S1",
+      "S1>S2",
+      "S2>S3",
+      "S3>S4"
+    ],
+    "transitionJoints": [
+      0,
+      2
+    ],
+    "jointIds": [
+      "joint:0",
+      "joint:2"
+    ],
+    "widths": [
+      8,
+      6
+    ],
+    "clusters": [
+      [
+        0
+      ],
+      [
+        2
+      ]
+    ],
+    "clusterPaths": [
+      "singular",
+      "singular"
+    ],
+    "jointStations": [
+      30,
+      80
+    ],
+    "setGapsMeasured": [
+      50
+    ],
+    "transform": "translate-1e6",
+    "traversalOrder": "forward",
+    "expected": "transform-stable sparse mesh + gtop2 + agreement",
+    "futurePredicateEligible": true,
+    "measured": {
+      "layoutOk": true,
+      "admitCodes": "ok,ok",
+      "midScalars": [
+        6,
+        6
+      ],
+      "stationCount": 13,
+      "transitionStations": 6,
+      "boundaryStations": 4,
+      "nativeStations": 3,
+      "skippedJointNativeStations": 3,
+      "ownershipUnique": true,
+      "vertexCount": 26,
+      "triangleCount": 24,
+      "skippedZeroWidth": 0,
+      "expectedPositiveWidthRegions": 1,
+      "measuredPositiveWidthRegions": 1,
+      "topologyPreMeshEqualsMeasured": true,
+      "gtop2Components": 1,
+      "gtop2BoundaryCycles": 1,
+      "gtop2RevalidationNull": true,
+      "meshValidatorCodes": [
+        "null",
+        "null"
+      ],
+      "groupAgreementOk": [
+        true,
+        true
+      ],
+      "c0PlanResidual": 0,
+      "c0ZResidual": 0,
+      "revisionHash": "ggrev1:2d3d1b3f",
+      "revisionOrderSensitive": true,
+      "revisionStable": true,
+      "bakeCitationLength": 1
+    }
+  },
+  {
+    "fixtureId": "sparse02-distance-translate-1e8",
+    "synthetic": true,
+    "study": "sparse-transition-set",
+    "family": "distance",
+    "memberCount": 4,
+    "memberLengths": [
+      30,
+      24,
+      26,
+      30
+    ],
+    "memberIds": [
+      "S0>S1",
+      "S1>S2",
+      "S2>S3",
+      "S3>S4"
+    ],
+    "transitionJoints": [
+      0,
+      2
+    ],
+    "jointIds": [
+      "joint:0",
+      "joint:2"
+    ],
+    "widths": [
+      8,
+      6
+    ],
+    "clusters": [
+      [
+        0
+      ],
+      [
+        2
+      ]
+    ],
+    "clusterPaths": [
+      "singular",
+      "singular"
+    ],
+    "jointStations": [
+      30,
+      80
+    ],
+    "setGapsMeasured": [
+      50
+    ],
+    "transform": "translate-1e8",
+    "traversalOrder": "forward",
+    "expected": "transform-stable sparse mesh + gtop2 + agreement",
+    "futurePredicateEligible": true,
+    "measured": {
+      "layoutOk": true,
+      "admitCodes": "ok,ok",
+      "midScalars": [
+        6,
+        6
+      ],
+      "stationCount": 13,
+      "transitionStations": 6,
+      "boundaryStations": 4,
+      "nativeStations": 3,
+      "skippedJointNativeStations": 3,
+      "ownershipUnique": true,
+      "vertexCount": 26,
+      "triangleCount": 24,
+      "skippedZeroWidth": 0,
+      "expectedPositiveWidthRegions": 1,
+      "measuredPositiveWidthRegions": 1,
+      "topologyPreMeshEqualsMeasured": true,
+      "gtop2Components": 1,
+      "gtop2BoundaryCycles": 1,
+      "gtop2RevalidationNull": true,
+      "meshValidatorCodes": [
+        "null",
+        "null"
+      ],
+      "groupAgreementOk": [
+        true,
+        true
+      ],
+      "c0PlanResidual": 0,
+      "c0ZResidual": 0,
+      "revisionHash": "ggrev1:2d3d1b3f",
+      "revisionOrderSensitive": true,
+      "revisionStable": true,
+      "bakeCitationLength": 1
+    }
+  },
+  {
+    "fixtureId": "neg-duplicate-joints",
+    "synthetic": true,
+    "study": "sparse-transition-set",
+    "family": "distance",
+    "memberCount": 4,
+    "memberLengths": [
+      30,
+      24,
+      26,
+      30
+    ],
+    "memberIds": [
+      "S0>S1",
+      "S1>S2",
+      "S2>S3",
+      "S3>S4"
+    ],
+    "transitionJoints": [
+      0,
+      0
+    ],
+    "jointIds": [
+      "joint:0",
+      "joint:0"
+    ],
+    "widths": [
+      8,
+      6
+    ],
+    "clusters": [],
+    "clusterPaths": [],
+    "jointStations": [],
+    "setGapsMeasured": [],
+    "transform": "identity",
+    "traversalOrder": "forward",
+    "expected": "duplicates rejected",
+    "futurePredicateEligible": false,
+    "measured": {
+      "stage": "group-layout",
+      "code": "ORDER_REJECTED",
+      "meshBuilt": false,
+      "certIssued": false,
+      "validatorsRun": false
+    }
+  },
+  {
+    "fixtureId": "neg-out-of-order",
+    "synthetic": true,
+    "study": "sparse-transition-set",
+    "family": "distance",
+    "memberCount": 4,
+    "memberLengths": [
+      30,
+      24,
+      26,
+      30
+    ],
+    "memberIds": [
+      "S0>S1",
+      "S1>S2",
+      "S2>S3",
+      "S3>S4"
+    ],
+    "transitionJoints": [
+      2,
+      0
+    ],
+    "jointIds": [
+      "joint:2",
+      "joint:0"
+    ],
+    "widths": [
+      8,
+      6
+    ],
+    "clusters": [],
+    "clusterPaths": [],
+    "jointStations": [],
+    "setGapsMeasured": [],
+    "transform": "identity",
+    "traversalOrder": "forward",
+    "expected": "out-of-order rejected",
+    "futurePredicateEligible": false,
+    "measured": {
+      "stage": "group-layout",
+      "code": "ORDER_REJECTED",
+      "meshBuilt": false,
+      "certIssued": false,
+      "validatorsRun": false
+    }
+  },
+  {
+    "fixtureId": "neg-malformed-id",
+    "synthetic": true,
+    "study": "sparse-transition-set",
+    "family": "distance",
+    "memberCount": 4,
+    "memberLengths": [
+      30,
+      24,
+      26,
+      30
+    ],
+    "memberIds": [
+      "S0>S1",
+      "S1>S2",
+      "S2>S3",
+      "S3>S4"
+    ],
+    "transitionJoints": [
+      0,
+      2
+    ],
+    "jointIds": [
+      "joint:0",
+      "joint:2"
+    ],
+    "widths": [
+      8,
+      6
+    ],
+    "clusters": [],
+    "clusterPaths": [],
+    "jointStations": [],
+    "setGapsMeasured": [],
+    "transform": "identity",
+    "traversalOrder": "forward",
+    "expected": "malformed joint id rejected",
+    "futurePredicateEligible": false,
+    "measured": {
+      "stage": "group-layout",
+      "code": "MALFORMED",
+      "meshBuilt": false,
+      "certIssued": false,
+      "validatorsRun": false
+    }
+  },
+  {
+    "fixtureId": "neg-one-bad-among-valid",
+    "synthetic": true,
+    "study": "sparse-transition-set",
+    "family": "distance",
+    "memberCount": 4,
+    "memberLengths": [
+      30,
+      24,
+      26,
+      30
+    ],
+    "memberIds": [
+      "S0>S1",
+      "S1>S2",
+      "S2>S3",
+      "S3>S4"
+    ],
+    "transitionJoints": [
+      0,
+      2
+    ],
+    "jointIds": [
+      "joint:0",
+      "joint:2"
+    ],
+    "widths": [
+      8,
+      6
+    ],
+    "clusters": [],
+    "clusterPaths": [],
+    "jointStations": [],
+    "setGapsMeasured": [],
+    "transform": "identity",
+    "traversalOrder": "forward",
+    "expected": "one bad width fails the whole set",
+    "futurePredicateEligible": false,
+    "measured": {
+      "stage": "per-joint-admission",
+      "code": "WIDTH_INVALID",
+      "meshBuilt": false,
+      "certIssued": false,
+      "validatorsRun": false
+    }
+  },
+  {
+    "fixtureId": "neg-zero-width",
+    "synthetic": true,
+    "study": "sparse-transition-set",
+    "family": "distance",
+    "memberCount": 4,
+    "memberLengths": [
+      30,
+      24,
+      26,
+      30
+    ],
+    "memberIds": [
+      "S0>S1",
+      "S1>S2",
+      "S2>S3",
+      "S3>S4"
+    ],
+    "transitionJoints": [
+      0,
+      2
+    ],
+    "jointIds": [
+      "joint:0",
+      "joint:2"
+    ],
+    "widths": [
+      8,
+      6
+    ],
+    "clusters": [],
+    "clusterPaths": [],
+    "jointStations": [],
+    "setGapsMeasured": [],
+    "transform": "identity",
+    "traversalOrder": "forward",
+    "expected": "zero width rejected",
+    "futurePredicateEligible": false,
+    "measured": {
+      "stage": "per-joint-admission",
+      "code": "WIDTH_INVALID",
+      "meshBuilt": false,
+      "certIssued": false,
+      "validatorsRun": false
+    }
+  },
+  {
+    "fixtureId": "neg-negative-width",
+    "synthetic": true,
+    "study": "sparse-transition-set",
+    "family": "distance",
+    "memberCount": 4,
+    "memberLengths": [
+      30,
+      24,
+      26,
+      30
+    ],
+    "memberIds": [
+      "S0>S1",
+      "S1>S2",
+      "S2>S3",
+      "S3>S4"
+    ],
+    "transitionJoints": [
+      0,
+      2
+    ],
+    "jointIds": [
+      "joint:0",
+      "joint:2"
+    ],
+    "widths": [
+      8,
+      6
+    ],
+    "clusters": [],
+    "clusterPaths": [],
+    "jointStations": [],
+    "setGapsMeasured": [],
+    "transform": "identity",
+    "traversalOrder": "forward",
+    "expected": "negative width rejected",
+    "futurePredicateEligible": false,
+    "measured": {
+      "stage": "per-joint-admission",
+      "code": "WIDTH_INVALID",
+      "meshBuilt": false,
+      "certIssued": false,
+      "validatorsRun": false
+    }
+  },
+  {
+    "fixtureId": "neg-nan-width",
+    "synthetic": true,
+    "study": "sparse-transition-set",
+    "family": "distance",
+    "memberCount": 4,
+    "memberLengths": [
+      30,
+      24,
+      26,
+      30
+    ],
+    "memberIds": [
+      "S0>S1",
+      "S1>S2",
+      "S2>S3",
+      "S3>S4"
+    ],
+    "transitionJoints": [
+      0,
+      2
+    ],
+    "jointIds": [
+      "joint:0",
+      "joint:2"
+    ],
+    "widths": [
+      8,
+      6
+    ],
+    "clusters": [],
+    "clusterPaths": [],
+    "jointStations": [],
+    "setGapsMeasured": [],
+    "transform": "identity",
+    "traversalOrder": "forward",
+    "expected": "NaN width rejected",
+    "futurePredicateEligible": false,
+    "measured": {
+      "stage": "per-joint-admission",
+      "code": "WIDTH_INVALID",
+      "meshBuilt": false,
+      "certIssued": false,
+      "validatorsRun": false
+    }
+  },
+  {
+    "fixtureId": "neg-inf-width",
+    "synthetic": true,
+    "study": "sparse-transition-set",
+    "family": "distance",
+    "memberCount": 4,
+    "memberLengths": [
+      30,
+      24,
+      26,
+      30
+    ],
+    "memberIds": [
+      "S0>S1",
+      "S1>S2",
+      "S2>S3",
+      "S3>S4"
+    ],
+    "transitionJoints": [
+      0,
+      2
+    ],
+    "jointIds": [
+      "joint:0",
+      "joint:2"
+    ],
+    "widths": [
+      8,
+      6
+    ],
+    "clusters": [],
+    "clusterPaths": [],
+    "jointStations": [],
+    "setGapsMeasured": [],
+    "transform": "identity",
+    "traversalOrder": "forward",
+    "expected": "Inf width rejected",
+    "futurePredicateEligible": false,
+    "measured": {
+      "stage": "per-joint-admission",
+      "code": "WIDTH_INVALID",
+      "meshBuilt": false,
+      "certIssued": false,
+      "validatorsRun": false
+    }
+  },
+  {
+    "fixtureId": "neg-just-over-max",
+    "synthetic": true,
+    "study": "sparse-transition-set",
+    "family": "distance",
+    "memberCount": 4,
+    "memberLengths": [
+      30,
+      24,
+      26,
+      30
+    ],
+    "memberIds": [
+      "S0>S1",
+      "S1>S2",
+      "S2>S3",
+      "S3>S4"
+    ],
+    "transitionJoints": [
+      0,
+      2
+    ],
+    "jointIds": [
+      "joint:0",
+      "joint:2"
+    ],
+    "widths": [
+      8,
+      6
+    ],
+    "clusters": [],
+    "clusterPaths": [],
+    "jointStations": [],
+    "setGapsMeasured": [],
+    "transform": "identity",
+    "traversalOrder": "forward",
+    "expected": "width above 2*min rejected",
+    "futurePredicateEligible": false,
+    "measured": {
+      "stage": "per-joint-admission",
+      "code": "WIDTH_INFEASIBLE",
+      "meshBuilt": false,
+      "certIssued": false,
+      "validatorsRun": false
+    }
+  },
+  {
+    "fixtureId": "neg-stale-refs",
+    "synthetic": true,
+    "study": "sparse-transition-set",
+    "family": "distance",
+    "memberCount": 4,
+    "memberLengths": [
+      30,
+      24,
+      26,
+      30
+    ],
+    "memberIds": [
+      "S0>S1",
+      "S1>S2",
+      "S2>S3",
+      "S3>S4"
+    ],
+    "transitionJoints": [
+      0,
+      2
+    ],
+    "jointIds": [
+      "joint:0",
+      "joint:2"
+    ],
+    "widths": [
+      8,
+      6
+    ],
+    "clusters": [],
+    "clusterPaths": [],
+    "jointStations": [],
+    "setGapsMeasured": [],
+    "transform": "identity",
+    "traversalOrder": "forward",
+    "expected": "stale member refs rejected",
+    "futurePredicateEligible": false,
+    "measured": {
+      "stage": "per-joint-admission",
+      "code": "MEMBER_REF_STALE",
+      "meshBuilt": false,
+      "certIssued": false,
+      "validatorsRun": false
+    }
+  },
+  {
+    "fixtureId": "neg-non-collinear-joint",
+    "synthetic": true,
+    "study": "sparse-transition-set",
+    "family": "distance",
+    "memberCount": 4,
+    "memberLengths": [
+      30,
+      24,
+      26,
+      30
+    ],
+    "memberIds": [
+      "S0>S1",
+      "S1>S2",
+      "S2>S3",
+      "S3>S4"
+    ],
+    "transitionJoints": [
+      0,
+      2
+    ],
+    "jointIds": [
+      "joint:0",
+      "joint:2"
+    ],
+    "widths": [
+      8,
+      6
+    ],
+    "clusters": [],
+    "clusterPaths": [],
+    "jointStations": [],
+    "setGapsMeasured": [],
+    "transform": "identity",
+    "traversalOrder": "forward",
+    "expected": "deflected joint rejected",
+    "futurePredicateEligible": false,
+    "measured": {
+      "stage": "per-joint-admission",
+      "code": "NON_COLLINEAR",
+      "meshBuilt": false,
+      "certIssued": false,
+      "validatorsRun": false
+    }
+  },
+  {
+    "fixtureId": "neg-mixed-family",
+    "synthetic": true,
+    "study": "sparse-transition-set",
+    "family": "distance",
+    "memberCount": 4,
+    "memberLengths": [
+      30,
+      24,
+      26,
+      30
+    ],
+    "memberIds": [
+      "S0>S1",
+      "S1>S2",
+      "S2>S3",
+      "S3>S4"
+    ],
+    "transitionJoints": [
+      0,
+      2
+    ],
+    "jointIds": [
+      "joint:0",
+      "joint:2"
+    ],
+    "widths": [
+      8,
+      6
+    ],
+    "clusters": [],
+    "clusterPaths": [],
+    "jointStations": [],
+    "setGapsMeasured": [],
+    "transform": "identity",
+    "traversalOrder": "forward",
+    "expected": "surface member rejected",
+    "futurePredicateEligible": false,
+    "measured": {
+      "stage": "per-joint-admission",
+      "code": "FAMILY_MISMATCH",
+      "meshBuilt": false,
+      "certIssued": false,
+      "validatorsRun": false
+    }
+  },
+  {
+    "fixtureId": "neg-grade-mismatch",
+    "synthetic": true,
+    "study": "sparse-transition-set",
+    "family": "distance",
+    "memberCount": 4,
+    "memberLengths": [
+      30,
+      24,
+      26,
+      30
+    ],
+    "memberIds": [
+      "S0>S1",
+      "S1>S2",
+      "S2>S3",
+      "S3>S4"
+    ],
+    "transitionJoints": [
+      0,
+      2
+    ],
+    "jointIds": [
+      "joint:0",
+      "joint:2"
+    ],
+    "widths": [
+      8,
+      6
+    ],
+    "clusters": [],
+    "clusterPaths": [],
+    "jointStations": [],
+    "setGapsMeasured": [],
+    "transform": "identity",
+    "traversalOrder": "forward",
+    "expected": "grade mismatch rejected",
+    "futurePredicateEligible": false,
+    "measured": {
+      "stage": "per-joint-admission",
+      "code": "GRADE_MISMATCH",
+      "meshBuilt": false,
+      "certIssued": false,
+      "validatorsRun": false
+    }
+  },
+  {
+    "fixtureId": "neg-sloped-source",
+    "synthetic": true,
+    "study": "sparse-transition-set",
+    "family": "distance",
+    "memberCount": 4,
+    "memberLengths": [
+      30,
+      24,
+      26,
+      30
+    ],
+    "memberIds": [
+      "S0>S1",
+      "S1>S2",
+      "S2>S3",
+      "S3>S4"
+    ],
+    "transitionJoints": [
+      0,
+      2
+    ],
+    "jointIds": [
+      "joint:0",
+      "joint:2"
+    ],
+    "widths": [
+      8,
+      6
+    ],
+    "clusters": [],
+    "clusterPaths": [],
+    "jointStations": [],
+    "setGapsMeasured": [],
+    "transform": "identity",
+    "traversalOrder": "forward",
+    "expected": "sloped source rejected",
+    "futurePredicateEligible": false,
+    "measured": {
+      "stage": "per-joint-admission",
+      "code": "NON_FLAT",
+      "meshBuilt": false,
+      "certIssued": false,
+      "validatorsRun": false
+    }
+  },
+  {
+    "fixtureId": "neg-joint-z-step",
+    "synthetic": true,
+    "study": "sparse-transition-set",
+    "family": "distance",
+    "memberCount": 4,
+    "memberLengths": [
+      30,
+      24,
+      26,
+      30
+    ],
+    "memberIds": [
+      "S0>S1",
+      "S1>S2",
+      "S2>S3",
+      "S3>S4"
+    ],
+    "transitionJoints": [
+      0,
+      2
+    ],
+    "jointIds": [
+      "joint:0",
+      "joint:2"
+    ],
+    "widths": [
+      8,
+      6
+    ],
+    "clusters": [],
+    "clusterPaths": [],
+    "jointStations": [],
+    "setGapsMeasured": [],
+    "transform": "identity",
+    "traversalOrder": "forward",
+    "expected": "joint Z step rejected",
+    "futurePredicateEligible": false,
+    "measured": {
+      "stage": "per-joint-admission",
+      "code": "JOINT_Z_STEP",
+      "meshBuilt": false,
+      "certIssued": false,
+      "validatorsRun": false
+    }
+  },
+  {
+    "fixtureId": "neg-arc-joint",
+    "synthetic": true,
+    "study": "sparse-transition-set",
+    "family": "distance",
+    "memberCount": 4,
+    "memberLengths": [
+      30,
+      24,
+      26,
+      30
+    ],
+    "memberIds": [
+      "S0>S1",
+      "S1>S2",
+      "S2>S3",
+      "S3>S4"
+    ],
+    "transitionJoints": [
+      0,
+      2
+    ],
+    "jointIds": [
+      "joint:0",
+      "joint:2"
+    ],
+    "widths": [
+      8,
+      6
+    ],
+    "clusters": [],
+    "clusterPaths": [],
+    "jointStations": [],
+    "setGapsMeasured": [],
+    "transform": "identity",
+    "traversalOrder": "forward",
+    "expected": "arc-bearing member rejected",
+    "futurePredicateEligible": false,
+    "measured": {
+      "stage": "per-joint-admission",
+      "code": "NON_LINE",
+      "meshBuilt": false,
+      "certIssued": false,
+      "validatorsRun": false
+    }
+  },
+  {
+    "fixtureId": "neg-closed-route",
+    "synthetic": true,
+    "study": "sparse-transition-set",
+    "family": "distance",
+    "memberCount": 4,
+    "memberLengths": [
+      30,
+      24,
+      26,
+      30
+    ],
+    "memberIds": [
+      "S0>S1",
+      "S1>S2",
+      "S2>S3",
+      "S3>S4"
+    ],
+    "transitionJoints": [
+      0,
+      2
+    ],
+    "jointIds": [
+      "joint:0",
+      "joint:2"
+    ],
+    "widths": [
+      8,
+      6
+    ],
+    "clusters": [],
+    "clusterPaths": [],
+    "jointStations": [],
+    "setGapsMeasured": [],
+    "transform": "identity",
+    "traversalOrder": "forward",
+    "expected": "closed route rejected",
+    "futurePredicateEligible": false,
+    "measured": {
+      "stage": "per-joint-admission",
+      "code": "CLOSED",
+      "meshBuilt": false,
+      "certIssued": false,
+      "validatorsRun": false
+    }
+  },
+  {
+    "fixtureId": "neg-surface-joint",
+    "synthetic": true,
+    "study": "sparse-transition-set",
+    "family": "distance",
+    "memberCount": 4,
+    "memberLengths": [
+      30,
+      24,
+      26,
+      30
+    ],
+    "memberIds": [
+      "S0>S1",
+      "S1>S2",
+      "S2>S3",
+      "S3>S4"
+    ],
+    "transitionJoints": [
+      0,
+      2
+    ],
+    "jointIds": [
+      "joint:0",
+      "joint:2"
+    ],
+    "widths": [
+      8,
+      6
+    ],
+    "clusters": [],
+    "clusterPaths": [],
+    "jointStations": [],
+    "setGapsMeasured": [],
+    "transform": "identity",
+    "traversalOrder": "forward",
+    "expected": "surface criterion rejected",
+    "futurePredicateEligible": false,
+    "measured": {
+      "stage": "per-joint-admission",
+      "code": "FAMILY_MISMATCH",
+      "meshBuilt": false,
+      "certIssued": false,
+      "validatorsRun": false
+    }
+  },
+  {
+    "fixtureId": "neg-skipped-joint-needs-transition",
+    "synthetic": true,
+    "study": "sparse-transition-set",
+    "family": "distance",
+    "memberCount": 4,
+    "memberLengths": [
+      30,
+      24,
+      26,
+      30
+    ],
+    "memberIds": [
+      "S0>S1",
+      "S1>S2",
+      "S2>S3",
+      "S3>S4"
+    ],
+    "transitionJoints": [
+      0,
+      2
+    ],
+    "jointIds": [
+      "joint:0",
+      "joint:2"
+    ],
+    "widths": [
+      8,
+      6
+    ],
+    "clusters": [],
+    "clusterPaths": [],
+    "jointStations": [],
+    "setGapsMeasured": [],
+    "transform": "identity",
+    "traversalOrder": "forward",
+    "expected": "deflected skip belongs to the native corner path",
+    "futurePredicateEligible": false,
+    "measured": {
+      "stage": "native-corner",
+      "code": "NATIVE_CORNER_OWNED",
+      "meshBuilt": false,
+      "certIssued": false,
+      "validatorsRun": false
+    }
+  }
+]
