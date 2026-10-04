@@ -278,10 +278,10 @@ describe('20N controls: 20M.2 behavior unchanged', () => {
     expect(candidateBAdmissionCode(CANDIDATE_B_FAMILIES[0]!, candidateBSegment(CANDIDATE_B_FAMILIES[0]!, 30, 'identity'))).toBe('NON_COLLINEAR');
   });
 
-  it('committed corpus matches regen: 92 rows, sha256 pinned', () => {
+  it('committed corpus matches regen: 116 rows (35 A-mesh + 81 B), sha256 pinned', () => {
     const raw = readFileSync(join(corpusDir, 'corpus.json'), 'utf8');
     const rows = JSON.parse(raw) as unknown[];
-    expect(rows).toHaveLength(92);
+    expect(rows).toHaveLength(116);
     const sha = createHash('sha256').update(raw).digest('hex');
     const pinned = readFileSync(join(corpusDir, 'corpus.sha256'), 'utf8').split(/\s/)[0]!;
     expect(sha).toBe(pinned);

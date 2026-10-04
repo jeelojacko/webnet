@@ -1,116 +1,126 @@
 # Phase 20N Candidate A — Multiple Strictly-Separated Collinear Same-Family Transitions
 
 - Scope: Candidate A only (cardinality > 1; collinearity gate untouched).
-- Method: study-only. Zero `src/` changes. Production 20M.2 math reused by
-  import (`admitGradingTransition`, `evaluateTransitionLinearV1`,
-  `selectGroupTransition`); no formula copies, no new epsilon.
-- Study code: `scripts/phase20nTransitionExpansionStudy.ts` (CANDIDATE A
-  section, `candidateA*` exports). Corpus: `corpus.json` (11 synthetic rows).
+- Method: study-only. Zero `src/` changes. Production math reused by import
+  (admission, law, native resolution, frame, strip mesh, region count,
+  gtop2 certify + revalidate, worker validators, revision, provenance);
+  no formula copies, no new epsilon.
+- Study code: `scripts/phase20nMultiTransitionMesh.ts` (`buildMultiGroup`,
+  `tileMultiGroup`, `meshAndCertifyMultiGroup`, `agreeMultiGroup`,
+  `revisionFactsMultiGroup`, `candidateAMultiBuildCorpus`). Corpus:
+  `corpus.json` (35 A-mesh rows + 81 B rows = 116, regen-pinned by
+  `corpus.sha256` via `scripts/phase20nCorpusRegen.ts`, double-regen stable).
+- The earlier per-joint-only pass (`candidateA*` in
+  `phase20nTransitionExpansionStudy.ts`, constant `candidateAExpectationRegions`)
+  is superseded by the mesh evidence below and kept only for compat pins.
 
-## B1 — Interval ownership width law
+## A1 — Fixtures: real shared-member full-group geometry
 
-Per-joint law is unchanged production math: `sL = −W/2, sR = +W/2`,
-`W ≤ 2·min(LL,LR)` strict-feasible (`gradingTransitionPolicy.ts:119-161`).
-Multi adds one study-side layout rule over joint-local intervals placed on
-one source line: `Wi/2 + Wi+1/2 < gap` **strict** (`candidateALayoutOk`).
+- 2T group: 3 consecutive collinear members M0/M1/M2, lengths [30,24,30];
+  joints `joint:0` (M0|M1, station 30), `joint:1` (M1|M2, station 54).
+  M1 (length 24) is ACTUALLY shared — both admissions reference it.
+- 3T group: 4 members [30,24,26,30]; joints 0/1/2 at stations 30/54/80;
+  M1/M2 shared.
+- Member identity via production `courseCriterionKey` (`S0>S1`, …) — never
+  the repeated fake `['L','R']` of the first pass.
+- Families × alternating per-member scalars (every transition changes value):
+  Distance 5/7/5/7 (mid 6), RelEl 1.5/2/1.5/2 (mid 1.75), flat Elevation
+  0.5/1/0.5/1 (mid 0.75); jointZ 10 (Elevation Z=0). Unequal widths per group:
+  2T [8,6], 3T [8,6,4].
+- Strict separation DERIVED from real middle lengths: 2T `4+3=7 < 24`
+  (measured native gap 17); 3T `7 < 24`, `5 < 26` (gaps 17, 21).
+- Per-joint admission calls use the real member pair + real memberIds with
+  `transitionCount: 1` (the production cardinality gate is untouched).
 
-Measured (`corpus.json`):
+## A2 — Full source/daylight tiling (study adapter, no planTransitionJoint copy)
 
-- Strict-gap layouts (gap 20, widths 8/6[/4]): `layoutOk: true`.
-- Touching (`Wi/2+Wi+1/2 == gap`): `layoutOk: false` — touching is NOT
-  auto-authorized; a shared boundary station would need single-owner
-  legislation that does not exist today.
-- Overlap / malformed (negative gap): `layoutOk: false`.
-- Per-joint infeasible (W=44 > 2·20): production `WIDTH_INFEASIBLE` on that
-  joint (`admitCodes: WIDTH_INFEASIBLE,ok`), layout also fails.
-- Per-joint admission is independent: touching/overlap pairs still admit
-  `ok,ok` individually — separation is a *group-layout* predicate, not a
-  per-joint property. Whole-group fail-closed default stands.
+- Exact collinear member geometry on one station axis; joint stations from
+  cumulative member lengths; transition intervals `[js−W/2, js+W/2]`.
+- Native spans: authoritative `resolveAnalyticCriterionAt` per owning member
+  (plan offset = resolved `horizontalDistance`, Z = `limitElevation`).
+  Transition spans: ONLY `TRANSITION_LINEAR_V1` via
+  `evaluateTransitionLinearV1` with per-joint live `(vL,vR)`; plan offset
+  from the production side normal (`gradingSideNormal`), Z per family.
+- Endpoints exactly shared where C0 is required; per-station owner recorded:
+  strictly-inside → joint `i`, exactly-on-bound → boundary, else native
+  (member index). 2T tiles 12 stations, 3T 17 — all owners unique, no
+  duplicate/conflicting ownership, no zero-width cells, no self-crossing.
+- Measured C0 residuals at every interval boundary (transition endpoint vs
+  adjacent native): plan 0, Z 0 on all 31 valid rows (bit-exact: the law
+  meets `vR`/`vL` exactly and natives resolve the same scalars).
 
-## B2 — Geometry composition
+## A3 — Actual mesh + gtop2 (mandatory, measured — no constants)
 
-2- and 3-transition groups × Distance / RelativeElevation / flat Elevation,
-all angle 0, via production admission + legislated law:
+- Triangulated strip via production `buildGradingStripMesh` from the full
+  tiled polylines. Measured: 2T → 24 verts / 22 tris, 3T → 34 / 32,
+  `skippedZeroWidth: 0` (all rows, all transforms).
+- Positive-width regions via production `countPositiveWidthRegions`: **1**
+  on every valid row (measured, not declared).
+- Pre-mesh expectation declared from the MEASURED count via the
+  count-agnostic `deriveGradingTopologyExpectation` (group/open/1).
+  `deriveTransitionExpectation` is NOT used for N>1: it REJECTS
+  `transitionCount!==1` by design (pinned in tests) — the study declares the
+  same 1-region shape by hand and documents why.
+- Production `buildGradingTopologyCertificateExact` on the ACTUAL study mesh:
+  cert issued on all 31 valid rows; components 1, boundaryCycles 1
+  (== declared); exact revalidation
+  `gradingTopologyCertificateExactError(...) === null` with both boundaries
+  supplied, all rows.
+- Transforms rebuild full geometry every time (mirror = y-flip + right
+  side; reversal = reversed member order + (−1,0) dirs, stations from the far
+  end, consistent `joint:<n>` ids, per-joint endpoint scalars following the
+  reversed member order so each boundary meets its true layout neighbor; translate E/N 1e6 + 1e8): same admission,
+  same local-station ownership, same 1/1/1 counts, gtop2 revalidates
+  independently, residuals inside EXISTING agreement authorities (no new
+  tolerance, no byte-identical digest claim).
+- Negatives stop before any cert: touching (`==`) and overlap (`<`) at the
+  group-layout stage (`TOUCHING_NOT_AUTHORIZED` / `OVERLAP_REJECTED`);
+  W=70 infeasible at per-joint admission (`WIDTH_INFEASIBLE`); W=0 at
+  admission (`WIDTH_INVALID`); NaN/Inf/negative widths fail closed at the
+  helper. No mesh, no cert, no validators on any negative row.
 
-- Every joint admits individually (`allAdmitted: true`, 6/6 family×count rows).
-- Interior midpoint scalar == `(vL+vR)/2` exactly in all families
-  (Distance 6.0, RelEl 1.75, Elevation per law) — `evaluateTransitionLinearV1`.
-- Endpoint==native law: `evaluateTransitionLinearV1` at `sL`/`sR` returns
-  `vL`/`vR` exactly (machine-checked per joint via `candidateAEndpointGap`,
-  gap 0 on all 6 family×count rows plus the reversal row) — shared-ref C0
-  construction, same as single-joint `planTransitionJoint` tiling; natives outside intervals untouched
-  (production `solveGradingChord` sub-solves own that region; the study
-  throws outside intervals rather than duplicating the solver).
-- Native runs preserved: between intervals the classifier returns `native`
-  (B4), so the existing member solve covers them with no re-tiling — and it
-  is exactly those surviving native runs that merge the corridor into ONE
-  positive-width region (see B3).
-- No cross-talk: intervals are disjoint by the strict law, each joint's law
-  reads only its own `(vL,vR,sL,sR)`; the reversal row confirms the law is
-  symmetric under traversal reversal (`reversalConsistent: true` at the
-  midpoint, `reversalEndpointsOk: true` — swapped law meets `vR` at `sL`
-  and `vL` at `sR` via `candidateAReversalEndpoints`).
+## A4 — Worker agreement (validators actually ran)
 
-Unproven (needs implementation, not study): multi-interval re-tiling order
-inside `planTransitionJoint` and merge of adjacent native runs (20M.1 §5 gap).
+- Per transition in every valid fixture: production
+  `validateTransitionResultMesh` over that transition's ACTUAL result-owned
+  checkpoints (qCutL/q0/qCutR + pCutL/V/pCutR pulled from the tiled
+  polylines, full result-owned boundary arrays attached) → null (green) on
+  all 31×N transitions, all 3 families, all transforms.
+- Production `checkGroupTransitionAgreement` per joint against the live
+  `ggrev1:` (re-admit + pinned-evidence compare, actually exercised) → ok
+  on every transition.
+- Station ownership unique for non-boundary stations (pinned per row);
+  exact boundaries recorded boundary-owned with transition endpoint XYZ ==
+  adjacent native result (C0 residuals 0, §A2).
+- Docs precision: per-transition worker math measured/reused as above;
+  plural REQUEST wiring (arrayified plan/handler/service) is still future
+  work — no "worker agreement proven" claim beyond the validators that ran.
 
-## B3 — Topology / mesh
+## A5 — Revision / persistence / provenance (proven vs proposed)
 
-- Pre-mesh expectation for N strictly-separated collinear transitions: ONE
-  merged positive-width region, i.e. `{group, closed:false,
-  positiveWidthRegions:1}` (`candidateAExpectationRegions` returns 1 for any
-  N; production hard-codes 1 at `gradingTopologyExpectation.ts:201-207` and
-  rejects `count !== 1` at `:181`). The corridor is one continuous strip:
-  natives survive between intervals and C0 shared boundaries merge, so the
-  production 1/1/1 pin (components/cycles/regions per
-  `gradingGroupCompute.ts` tiling, `gradingTopologyExpectation.ts:120-134`,
-  certificate maximal non-tied runs) already covers the multi-interval
-  layout. The earlier N-regions statement was wrong and is corrected here.
-- gtop2 (`buildGradingTopologyCertificateExact`) is count-parameterized in
-  its header and validates-but-never-admits: REUSE unchanged. The §7
-  expectation derivation is EXTENDed only to accept a joint list (verify
-  disjointness via the strict predicate, declare the merged single region);
-  the merged-strip argument (surviving natives + C0 ⇒ one maximal non-tied
-  run) is stated as a code comment citing this phase.
-- Worker mesh check `validateTransitionResultMesh` (3 checkpoints, normal
-  from `pCutR−pCutL`) loops per joint unchanged under collinearity; per-joint
-  checkpoint arrays replace the singular triple.
-
-## B4 — Worker ownership function design (no worker changes)
-
-`candidateAClassifyStation(s, intervals)` — deterministic per-station
-classifier over the sorted disjoint interval list:
-
-- `s` strictly inside interval `i` → `transition:i`; `s` exactly on a bound
-  → `boundary` (endpoint==native, either owner agrees); else → `native`.
-- Design: worker loops joints, builds one interval list per group, classifies
-  each interior vertex once; agreement math per joint is byte-identical to
-  today (`checkGroupTransitionAgreement` re-admit + pinned-evidence compare,
-  looped). `transitionCount` becomes informational per-plan, not a gate.
-- Touching intervals would make a boundary station double-owned — the reason
-  touching stays rejected until a tie-break owner is legislated.
-
-## B5 — Persistence / revision / provenance decision points
-
-- Ordering: `transitionText` (`gradingGroupRevision.ts:158`) is
-  order-sensitive positional `join('#')`. Decision: canonical order by joint
-  index at authoring; out-of-order intents fail closed (stale) rather than
-  re-sorted silently.
-- Duplicates (same `jointId` twice): fail closed `TRANSITION_REJECTED` —
-  duplicates are never merged; authoring replaces by jointId.
-- Stale (memberIds/endpoint evidence vs re-resolved natives, recorded
-  revision vs `ggrev1:`): fail closed per joint; one stale joint fails the
-  whole group (whole-group fail-closed default — no partial-transition solve).
-- Provenance: singular envelope → per-joint legs array; bake citation
-  already array-typed (length-1 today) extends to length-N with the same
-  leg↔intent match refusal per joint.
-- Sanitize/resolve/persisted array: REUSE unchanged (forensics §§3,4,6).
+- PROVEN (measured per valid row): `buildGroupRevision` over real courses +
+  canonical intents hashes `ggrev1:…`; joint-order swap moves the hash
+  (`revisionOrderSensitive: true`); rebuild stable (`revisionStable: true`).
+  Sanitizer order retention, revision order-sensitivity, and singular
+  assumptions are production behavior reused as-is.
+- PROVEN (inspected): `transitionResultBakeCitation` returns an ARRAY but
+  length-1 today (`bakeCitationLength: 1` pinned per row) — plural citations
+  are NOT proven.
+- PROPOSED (docs only, Phase 20N.1): canonical joint-index order at
+  authoring, duplicate/out-of-order reject (study helper
+  `assertCanonicalJointOrder` demonstrates the rule: strictly-increasing
+  required, never silently sorted), whole-group fail-closed, plural
+  provenance envelope. No schema change claimed.
 
 ## Verdict recommendation for A
 
-**GO, bounded**: per-joint admission/tiling/agreement looped, strict
-separation predicate `Wi/2+Wi+1/2 < gap`, canonical joint-index order,
-whole-group fail-closed on any joint reject. No new epsilon, no touching
-authorization, no production tolerance changes. Open implementation risks:
-multi-interval tiling order in `planTransitionJoint` and the merged-strip
-expectation wiring feeding gtop2 — both EXTEND, neither NEW authority.
+**PARTIAL_GO_MULTIPLE_COLLINEAR_TRANSITIONS (evidence now real).** All
+keep-GO conditions met: real 2T+3T shared-member geometry; actual strip
+meshes (24/22 and 34/32); gtop2 1/1 + null revalidation in all 3 families;
+per-transition production validators green; strict separation from real
+middle lengths (gaps 17 / 17+21, tiny 1e-4 positive still one region);
+full-geometry mirror/reversal/1e6/1e8; no new law/default/tolerance.
+Remaining implementation risks (unchanged): multi-interval re-tiling order
+inside `planTransitionJoint` and the merged-strip expectation wiring feeding
+gtop2 — both EXTEND, neither NEW authority. Touching stays unauthorized
+(shared boundary station needs a single-owner tie-break that does not exist).

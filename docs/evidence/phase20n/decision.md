@@ -5,7 +5,7 @@
 - Inputs: `docs/evidence/phase20n/forensics.md` (production authority inventory),
   `multiple-collinear.md` (Candidate A evidence), `noncollinear-single.md`
   (Candidate B evidence), study `scripts/phase20nTransitionExpansionStudy.ts`,
-  corpus `docs/evidence/phase20n/corpus.json` (92 rows: 11 A + 81 B, regen-pinned
+  corpus `docs/evidence/phase20n/corpus.json` (116 rows: 35 A-mesh + 81 B, regen-pinned
   by `corpus.sha256` via `scripts/phase20nCorpusRegen.ts`).
 - Frozen predicate: 20M.1 §9 / 20M.2 `trp1` — exactly one collinear same-family
   transition per group, linear scalar law `TRANSITION_LINEAR_V1`.
@@ -23,9 +23,9 @@
 | ownership? | Deterministic: strictly-inside → joint `i`; exactly-on-bound → shared endpoint (either owner agrees); else native. Touching excluded (double-owned boundary). | Underdetermined: two study laws sharing endpoints diverge up to 7.6 m / 22.7 m². |
 | C0? | Holds by construction (endpoint == native, shared refs). | Holds at scalar level on all rows — necessary, not sufficient. |
 | C1? | N/A (collinear: single tangent). | **Breaks by exactly δ** (`kinkDeg == angleDeg`, 81/81 rows); foldover past perpendicular. |
-| topology? | EXTEND: expectation declares the single merged positive-width strip (1 region for N joints — natives survive between intervals, C0 shared boundaries merge; production pins 1/1/1). | No topology can validate an unlegislated bridge; `TRANSITION_REQUIRED` stops stand. |
+| topology? | EXTEND: pre-mesh expectation declares the measured single merged positive-width strip (production `countPositiveWidthRegions` == 1 on the actual mesh; `deriveTransitionExpectation` rejects count≠1 by design so the study declares the same shape via `deriveGradingTopologyExpectation` — documented, not smuggled). | No topology can validate an unlegislated bridge; `TRANSITION_REQUIRED` stops stand. |
 | gtop2? | Reuse unchanged (validates, never admits; header already count-parameterized). | Reuse unchanged — validates nothing new, selects nothing. |
-| worker re-eval? | Loop today's math per joint (re-admit + pinned-evidence compare, byte-identical per joint). | No basis: plan normal from `pCutR−pCutL` assumes one straight tangent — false for δ≠0. |
+| worker re-eval? | Loop today's math per joint (re-admit + pinned-evidence compare, byte-identical per joint). MEASURED: `validateTransitionResultMesh` null + `checkGroupTransitionAgreement` ok per transition on actual meshes, all families/transforms. | No basis: plan normal from `pCutR−pCutL` assumes one straight tangent — false for δ≠0. |
 | revision invalidation? | EXTEND with canonical joint-index order; `exactTransitionWidth` full-precision preserved. | Reuse (single intent; nothing new to order). |
 | Extract? | Per-joint legs array; leg↔intent match refusal looped per joint. | Blocked: no bridge law to cite. |
 | Bake? | Citation already array-typed (length-1 today) → length-N, same refusal per joint. | Blocked: same reason. |
@@ -38,7 +38,10 @@
 
 ## 2. Verdict
 
-**PARTIAL_GO_MULTIPLE_COLLINEAR_TRANSITIONS (Candidate A ONLY).**
+**PARTIAL_GO_MULTIPLE_COLLINEAR_TRANSITIONS (Candidate A ONLY — evidence now real:**
+**actual shared-member 2T/3T strip meshes, production gtop2 1/1 + null
+revalidation, per-transition production validators green, full-geometry
+transforms; see `multiple-collinear.md` §§A1–A5).**
 **POLICY_REQUIRED_NONCOLLINEAR_PLAN_LAW (Candidate B).**
 
 Desirability does not override evidence: B's scalar C0 is real but
@@ -62,7 +65,8 @@ Per group, admit transitions `T_1..T_N` (N ≥ 1) iff ALL hold:
 4. Whole-group fail-closed: one stale/rejected joint fails the group; no
    partial-transition solve.
 5. Expectation declares the single merged positive-width strip
-   (`positiveWidthRegions: 1` for N joints); gtop2 validates as today.
+   (`positiveWidthRegions: 1` for N joints — MEASURED on actual study
+   meshes via production `countPositiveWidthRegions`); gtop2 validates as today.
 6. Revision hashes the joint-index-ordered intent list at full width
    precision; provenance/bake cite per-joint legs with the existing
    leg↔intent match refusal applied per joint.
@@ -102,10 +106,11 @@ IMPLEMENTABLE_NOW.
 ## 5. Reproducibility
 
 ```
-npx tsx scripts/phase20nCorpusRegen.ts   # rebuilds corpus.json (92 rows)
+npx tsx scripts/phase20nCorpusRegen.ts   # rebuilds corpus.json (116 rows) + corpus.sha256
 npx tsx scripts/phase20nTransitionExpansionStudy.ts  # candidate B appendix
-sha256sum -c docs/evidence/phase20n/corpus.sha256
+(cd docs/evidence/phase20n && sha256sum -c corpus.sha256)
 ```
 
 Corpus regen is deterministic: two separate processes produce byte-identical
-output (pinned in `tests/cad_grading_transition_expansion_20n.test.ts`).
+output AND identical sha (pinned in
+`tests/cad_grading_transition_expansion_20n_multi.test.ts`).

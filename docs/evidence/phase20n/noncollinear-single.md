@@ -8,8 +8,8 @@
 - Study core: `scripts/phase20nTransitionExpansionStudy.ts` (CANDIDATE B
   section, `candidateB*` exports; pure-math, synthetic joints only).
 - Corpus: `docs/evidence/phase20n/corpus.json` — Candidate B appends **81
-  rows** (9 angles × 3 families × {identity, mirror, reversal}) and preserves
-  the 11 Candidate A rows already present. Every Candidate B row is
+  rows** (9 angles × 3 families × {identity, mirror, reversal}) alongside
+  the 35 Candidate A mesh rows (total corpus 116 rows). Every Candidate B row is
   `synthetic: true`, `studyOnly: true`, `candidate: "B"`.
 - Verdict: **POLICY_REQUIRED_NONCOLLINEAR_PLAN_LAW** (§4).
 

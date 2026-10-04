@@ -38,6 +38,10 @@ native runs is the open implementation risk (20M.1 §5 gap carried).
 `transitionCount: 1` hard-code → N; transitioned joints recorded `TANGENT`
 per joint (collinearity makes the single-tangent frame exact per joint).
 Size ~80 lines. Risk MEDIUM — tiling/merge order is the largest unknown.
+Study note: `scripts/phase20nMultiTransitionMesh.ts` proves the GEOMETRY tiles
+(actual multi-interval strips certify 1/1/1), but that adapter is study-side —
+the production `planTransitionJoint` loop + native-run merge order is still
+unwritten and unproven.
 
 ### 5. `src/workers/surfaceGradingCompute.ts` — worker plan array
 `GroupTransitionPlan` singular → array; `checkGroupTransitionAgreement`
