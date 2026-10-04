@@ -20,6 +20,7 @@ import {
 } from './gradingProductCapabilities';
 import type { TransitionFamily } from './gradingTransitionPolicy';
 import type { CadGradingTransition, CadGradingGroupTransitionLeg } from './gradingGroupTypes';
+import type { GradingSide } from './gradingTypes';
 
 /** Canonical persisted transition intent (persisted-model.md §1). */
 export type TransitionPersistedIntent = CadGradingTransition;
@@ -35,8 +36,11 @@ export interface GroupTransitionProvenance {
   /** Joint-local source-line interval [sL, sR], s = 0 at the joint. */
   interval: { sL: number; sR: number };
   jointId: string;
+  /** Zero-based joint index (joint:<n>), canonical order across the array. */
+  joint: number;
   memberIds: readonly [string, string];
   criterionFamily: TransitionFamily;
+  side: GradingSide;
   /** Re-resolved native endpoint scalars (evidence, never input). */
   endpointScalars: { vL: number; vR: number; gL: number; gR: number };
   /** Persisted joint station origin. */
@@ -49,6 +53,7 @@ export interface GroupTransitionProvenance {
 
 export const buildTransitionProvenance = (input: {
   intent: TransitionPersistedIntent;
+  joint: number;
   memberIds: readonly [string, string];
   family: TransitionFamily;
   endpointScalars: { vL: number; vR: number; gL: number; gR: number };
@@ -64,8 +69,10 @@ export const buildTransitionProvenance = (input: {
   widthMeasure: 'source-line',
   interval: { ...input.interval },
   jointId: input.intent.jointId,
+  joint: input.joint,
   memberIds: [...input.memberIds] as [string, string],
   criterionFamily: input.family,
+  side: input.intent.side,
   endpointScalars: { ...input.endpointScalars },
   jointStation: input.jointStation,
   recordedRevision: input.recordedRevision,
@@ -79,38 +86,62 @@ export const buildTransitionProvenance = (input: {
  * provenance envelope — interval, joint station, endpoint scalars,
  * recorded revision, agreement code — rides verbatim, never re-derived.
  */
-export const transitionResultBakeCitation = (
-  leg: CadGradingGroupTransitionLeg | undefined,
-): GroupTransitionProvenance[] | undefined => {
-  if (leg === undefined) return undefined;
+const citationOfLeg = (
+  leg: CadGradingGroupTransitionLeg,
+): GroupTransitionProvenance | null => {
   if (
     leg.criterionFamily !== 'distance' &&
     leg.criterionFamily !== 'relative-elevation' &&
     leg.criterionFamily !== 'elevation'
   ) {
-    return undefined;
+    return null;
   }
-  return [
-    buildTransitionProvenance({
-      intent: {
-        policyVersion: leg.policyVersion,
-        jointId: leg.jointId,
-        memberIds: [...leg.memberIds],
-        width: leg.width,
-        lawKind: leg.lawKind,
-        lawVersion: leg.lawVersion,
-        criterionFamily: leg.criterionFamily,
-        side: leg.side,
-      },
-      memberIds: [leg.memberIds[0], leg.memberIds[1]],
-      family: leg.criterionFamily,
-      endpointScalars: { ...leg.endpointScalars },
-      interval: { ...leg.interval },
-      jointStation: leg.jointStation,
-      recordedRevision: leg.recordedRevision,
-      agreementCode: leg.agreementCode,
-    }),
-  ];
+  return buildTransitionProvenance({
+    intent: {
+      policyVersion: leg.policyVersion,
+      jointId: leg.jointId,
+      memberIds: [...leg.memberIds],
+      width: leg.width,
+      lawKind: leg.lawKind,
+      lawVersion: leg.lawVersion,
+      criterionFamily: leg.criterionFamily,
+      side: leg.side,
+    },
+    joint: leg.joint,
+    memberIds: [leg.memberIds[0], leg.memberIds[1]],
+    family: leg.criterionFamily,
+    endpointScalars: { ...leg.endpointScalars },
+    interval: { ...leg.interval },
+    jointStation: leg.jointStation,
+    recordedRevision: leg.recordedRevision,
+    agreementCode: leg.agreementCode,
+  });
+};
+
+export const transitionResultBakeCitation = (
+  leg: CadGradingGroupTransitionLeg | undefined,
+): GroupTransitionProvenance[] | undefined => {
+  if (leg === undefined) return undefined;
+  const cited = citationOfLeg(leg);
+  return cited === null ? undefined : [cited];
+};
+
+/**
+ * Phase 20N.1 Wave G — per-joint citations in canonical joint order (one
+ * entry per result-owned leg). Empty/undefined legs cite nothing (legacy
+ * bytes unchanged); a single leg cites exactly like the singular wrapper.
+ */
+export const transitionResultBakeCitations = (
+  legs: readonly CadGradingGroupTransitionLeg[] | undefined,
+): GroupTransitionProvenance[] | undefined => {
+  if (legs === undefined || legs.length === 0) return undefined;
+  const cited: GroupTransitionProvenance[] = [];
+  for (const leg of [...legs].sort((a, b) => a.joint - b.joint)) {
+    const entry = citationOfLeg(leg);
+    if (entry === null) return undefined;
+    cited.push(entry);
+  }
+  return cited;
 };
 
 export interface TransitionProductStatus {

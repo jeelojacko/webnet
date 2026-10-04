@@ -8,6 +8,7 @@
 import { resolveAnalyticCriterionAt } from './gradingAnalyticCriterion';
 import type { CadGradingTransition, GroupDiagnosticCode } from './gradingGroupTypes';
 import type { GradingTopologyExpectation } from './gradingTopologyExpectation';
+import { deriveTransitionExpectation } from './gradingTopologyExpectation';
 import type { GradingCriterion, GradingSide } from './gradingTypes';
 
 export type TransitionPolicyVersion = 'trp1';
@@ -316,21 +317,16 @@ export const transitionRejectGroupCode = (code: TransitionRejectCode): GroupDiag
 };
 
 /**
- * Phase 20N.1 Wave B — GROUP pre-mesh gate (decision.md §3.5).
- *
- * Policy-side companion to the topology expectation: admits a joint list
- * iff EVERY joint passes the per-joint pre-mesh checks (canonical
- * consecutive `joint:<n>` order, open, width bound) AND every adjacent
- * pair is strictly separated (`W_i/2 + W_{i+1}/2 < L_shared`, exact `<`)
- * on a physically shared member (right length of joint i === left length
- * of joint i+1). Absent intent is handled by `selectGroupTransitions`,
- * not here — this takes a non-empty list. Whole-group fail-closed with
- * the existing bounded vocabulary (no new codes, no epsilon).
- *
- * NOTE: waveCD-author-topo carries a parallel set-expectation in
- * gradingTopologyExpectation.ts (richer codes, full certificate
- * expectation). This one stays vocabulary-bounded for the policy gate;
- * the orchestrator reconciles the two after both waves land.
+ * Phase 20N.1 Wave B — GROUP pre-mesh gate (decision.md §3.5), reconciled
+ * in Wave F: the scalar/order/separation expectation delegates to the ONE
+ * plural authority (`deriveTransitionExpectation` in
+ * gradingTopologyExpectation.ts). This helper keeps the bounded policy
+ * vocabulary (no new codes) plus the strict canonical `joint:<n>` parse
+ * (leading-zero ids never admit); everything else — per-joint width
+ * bounds, consecutive order, shared-member exactness, strict separation,
+ * and the merged-strip 1/1/1 declaration — comes from the delegate.
+ * Whole-group fail-closed; absent intent is handled by
+ * `selectGroupTransitions`, not here — this takes a non-empty list.
  */
 export interface GroupTransitionExpectationJoint {
   jointId: string;
@@ -357,66 +353,27 @@ export const deriveGroupTransitionExpectation = (
   if (!Array.isArray(joints) || joints.length === 0) {
     return malformed('transition joint list required');
   }
-  const widths: number[] = [];
-  const gaps: number[] = [];
-  let prevIndex = -1;
-  let prevRight = Number.NaN;
   for (const joint of joints) {
     if (joint === null || typeof joint !== 'object') return malformed('transition joint must be an object');
-    const index = parseCanonicalJointIndex(joint.jointId);
-    if (index === null) return malformed('canonical joint:<n> order required, never re-sorted');
-    if (prevIndex >= 0 && index !== prevIndex + 1) {
-      return {
-        ok: false,
-        code: 'TRANSITION_REJECTED',
-        detail: 'GRADING_AGREEMENT_TRANSITION_CARDINALITY: joints must be consecutive (j, j+1, ...); sparse sets rejected',
-      };
+    if (parseCanonicalJointIndex(joint.jointId) === null) {
+      return malformed('canonical joint:<n> order required, never re-sorted');
     }
-    prevIndex = index;
-    if (!joint.isOpen) return malformed('closed-route transitions excluded');
-    const w = joint.width;
-    if (!Number.isFinite(w) || !(w > 0)) return malformed('transition width must be finite > 0');
-    const [a, b] = joint.memberLengths;
-    if (!Number.isFinite(a) || !Number.isFinite(b) || !(a > 0) || !(b > 0)) {
-      return malformed('member lengths must be finite > 0');
-    }
-    if (!(w <= 2 * Math.min(a, b))) {
-      return {
-        ok: false,
-        code: 'TRANSITION_REJECTED',
-        detail: 'GRADING_AGREEMENT_TRANSITION_WIDE: transition width exceeds 2*min(member lengths)',
-      };
-    }
-    if (Number.isNaN(prevRight)) prevRight = b;
-    else {
-      if (!(a === prevRight)) return malformed('shared member lengths disagree between adjacent joints');
-      gaps.push(a);
-      prevRight = b;
-    }
-    widths.push(w);
   }
-  if (!checkGroupTransitionSeparation(widths, gaps)) {
-    return {
-      ok: false,
-      code: 'TRANSITION_REJECTED',
-      detail: 'GRADING_AGREEMENT_TRANSITION_OVERLAP: strict separation W_i/2+W_{i+1}/2 < gap violated (touching/overlap rejected)',
-    };
-  }
-  // Single merged open strip 1/1/1 (mirrors the topology declaration;
-  // reconciled with the waveCD set-expectation post-waves).
-  return {
-    ok: true,
-    expectation: {
-      policyVersion: '20k3.1',
-      scope: 'group',
-      shape: 'open-strip',
-      expectedFaceComponents: 1,
-      expectedBoundaryCycles: 1,
-      positiveWidthRegionCount: 1,
-      tiedSplitCoords: [],
-      closed: false,
-      sourceBoundaryKind: 'open-path',
-      gradingBoundaryKind: 'open-path',
-    },
-  };
+  const outcome = deriveTransitionExpectation(
+    { scope: 'group', closed: false, positiveWidthRegions: 1 },
+    joints.map((joint) => ({
+      jointId: joint.jointId,
+      width: joint.width,
+      memberLengths: joint.memberLengths,
+      transitionCount: 1,
+      isOpen: joint.isOpen,
+    })),
+  );
+  if (outcome.ok) return { ok: true, expectation: outcome.expectation };
+  const code: GroupDiagnosticCode =
+    outcome.code === 'GRADING_AGREEMENT_TRANSITION_OVERLAP' ||
+    outcome.code === 'GRADING_AGREEMENT_TRANSITION_WIDE'
+      ? 'TRANSITION_REJECTED'
+      : 'TRANSITION_MALFORMED';
+  return { ok: false, code, detail: `${outcome.code}: ${outcome.detail}` };
 };

@@ -41,7 +41,11 @@ import type {
   GroupTransitionMemberView,
   GroupTransitionPlan,
 } from './surfaceGradingCompute';
-import { computeGradingFromSnapshots, validateGroupTransitionAgreement, validateTransitionResultMesh } from './surfaceGradingCompute';
+import {
+  checkGroupTransitionPlansAgreement,
+  computeGradingFromSnapshots,
+  validateGroupTransitionLegsMesh,
+} from './surfaceGradingCompute';
 import type {
   CadProject,
   CadSurface,
@@ -543,8 +547,14 @@ export interface GradingGroupComputeRequest {
    * engine solve; any mismatch fails closed with a bounded
    * GRADING_AGREEMENT_TRANSITION_* code. Native member geometry resolved
    * from the endpoint refs rides `transitionMembers` (service side).
+   *
+   * Phase 20N.1 Wave F — the plural `transitions` array carries N >= 1
+   * plans in canonical joint order (mutually exclusive with the legacy
+   * singular `transition`; both present fails closed). A length-1 array
+   * solves through the exact legacy single path.
    */
   transition?: GroupTransitionPlan;
+  transitions?: GroupTransitionPlan[];
   transitionMembers?: GroupTransitionMemberView[];
   /**
    * Phase 20M.2 Wave D — stable member identity per member in traversal
@@ -561,6 +571,26 @@ export type SurfaceGroupGradingEngineFn = (
 ) => GradingGroupComputeOutcome | Promise<GradingGroupComputeOutcome>;
 
 /**
+ * Phase 20N.1 Wave F — normalize the transition plans on a request to one
+ * canonical-joint-order array. Empty = legacy group (no transition
+ * intent). Null = malformed (singular + plural together, or a
+ * present-but-unreadable plural field) — fail closed, never merged.
+ */
+export const transitionPlansOf = (
+  request: GradingGroupComputeRequest,
+): GroupTransitionPlan[] | null => {
+  const single = request.transition;
+  const plural = request.transitions;
+  if (single !== undefined && plural !== undefined) return null;
+  if (plural !== undefined) {
+    if (!Array.isArray(plural)) return null;
+    return [...plural];
+  }
+  if (single !== undefined) return [single];
+  return [];
+};
+
+/**
  * Phase 20M.2 WAVE F — worker-side member re-resolution. Endpoint member
  * geometry is re-derived from the request's own `memberSources` +
  * `memberCriteria` + `transitionMemberKeys` (never the service-supplied
@@ -570,21 +600,26 @@ export type SurfaceGroupGradingEngineFn = (
 export const resolveTransitionMemberViews = (
   request: GradingGroupComputeRequest,
 ): GroupTransitionMemberView[] | null => {
-  const plan = request.transition;
+  const plans = transitionPlansOf(request);
+  if (plans === null || plans.length !== 1) return null;
+  const resolved = resolveGroupTransitionMemberViews(request);
+  return resolved === null ? null : resolved[0] ?? null;
+};
+
+/**
+ * Phase 20N.1 Wave F — per-joint worker-side member re-resolution in plan
+ * order (one pair per plan, same authoritative sources as the singular
+ * path). Null when any plan's refs do not resolve to adjacent live
+ * members; empty plans resolve to no views (legacy).
+ */
+export const resolveGroupTransitionMemberViews = (
+  request: GradingGroupComputeRequest,
+): GroupTransitionMemberView[][] | null => {
+  const plans = transitionPlansOf(request);
+  if (plans === null) return null;
   const keys = request.transitionMemberKeys;
-  if (plan === undefined || keys === undefined) return null;
-  const jointed = /^joint:(\d+)$/.exec(typeof plan.jointId === 'string' ? plan.jointId : '');
-  const joint = jointed !== null && jointed[1] === String(Number(jointed[1])) ? Number(jointed[1]) : -1;
-  const left = joint;
-  const right = joint + 1;
+  if (plans.length === 0 || keys === undefined) return plans.length === 0 ? [] : null;
   const criteria = request.memberCriteria ?? [request.criterion];
-  if (!(joint >= 0) || keys[right] === undefined) return null;
-  if (keys[left] !== plan.memberIds[0] || keys[right] !== plan.memberIds[1]) return null;
-  const sourceL = request.memberSources[left];
-  const sourceR = request.memberSources[right];
-  const criterionL = criteria[left] ?? request.criterion;
-  const criterionR = criteria[right] ?? request.criterion;
-  if (!sourceL || !sourceR || !criterionL || !criterionR) return null;
   const view = (
     memberId: string,
     criterion: (typeof criteria)[number],
@@ -600,50 +635,63 @@ export const resolveTransitionMemberViews = (
     isArc: source.isArc,
     maxSearchDistance: request.maxSearchDistance,
   });
-  return [view(keys[left]!, criterionL, sourceL), view(keys[right]!, criterionR, sourceR)];
+  const out: GroupTransitionMemberView[][] = [];
+  for (const plan of plans) {
+    const jointed = /^joint:(\d+)$/.exec(typeof plan.jointId === 'string' ? plan.jointId : '');
+    const joint = jointed !== null && jointed[1] === String(Number(jointed[1])) ? Number(jointed[1]) : -1;
+    const left = joint;
+    const right = joint + 1;
+    if (!(joint >= 0) || keys[right] === undefined) return null;
+    if (keys[left] !== plan.memberIds[0] || keys[right] !== plan.memberIds[1]) return null;
+    const sourceL = request.memberSources[left];
+    const sourceR = request.memberSources[right];
+    const criterionL = criteria[left] ?? request.criterion;
+    const criterionR = criteria[right] ?? request.criterion;
+    if (!sourceL || !sourceR || !criterionL || !criterionR) return null;
+    out.push([view(keys[left]!, criterionL, sourceL), view(keys[right]!, criterionR, sourceR)]);
+  }
+  return out;
 };
 
 /**
  * Phase 20M.2 WAVE F — post-solve mesh agreement against the result-owned
- * transition leg. Null on agreement, else the bounded reject code. A
- * result without the leg (solved without an admitted transition) never
- * passes a transitioned request.
+ * transition legs (Phase 20N.1 Wave F: EVERY plan validated against its
+ * OWN leg's actual checkpoints, never first-only). Null on agreement,
+ * else the bounded reject code. A result without the legs (solved without
+ * admitted transitions) never passes a transitioned request.
  */
 export const validateTransitionResultMeshAgainst = (
   result: CadGradingGroupResult,
   request: GradingGroupComputeRequest,
 ): string | null => {
-  const plan = request.transition;
-  const leg = result.transition;
-  if (plan === undefined || leg === undefined) return 'GRADING_AGREEMENT_TRANSITION_STALE';
-  if (leg.agreementCode !== null) return leg.agreementCode;
-  if (leg.recordedRevision !== request.revision) return 'GRADING_AGREEMENT_TRANSITION_STALE';
-  const family = leg.criterionFamily;
-  if (family !== 'distance' && family !== 'relative-elevation' && family !== 'elevation') {
-    return 'GRADING_AGREEMENT_TRANSITION_FAMILY_MISMATCH';
+  const plans = transitionPlansOf(request);
+  if (plans === null || plans.length === 0) return 'GRADING_AGREEMENT_TRANSITION_STALE';
+  const legs = result.transitions !== undefined
+    ? result.transitions
+    : result.transition !== undefined
+      ? [result.transition]
+      : [];
+  const views = resolveGroupTransitionMemberViews(request);
+  if (views === null) return 'GRADING_AGREEMENT_TRANSITION_STALE';
+  const jointZs: number[] = [];
+  for (const plan of plans) {
+    const jointed = /^joint:(\d+)$/.exec(typeof plan.jointId === 'string' ? plan.jointId : '');
+    const joint = jointed !== null && jointed[1] === String(Number(jointed[1])) ? Number(jointed[1]) : -1;
+    const sourceL = request.memberSources[joint];
+    if (!(joint >= 0) || !sourceL) return 'GRADING_AGREEMENT_TRANSITION_STALE';
+    jointZs.push(sourceL.endZ);
   }
-  const members = resolveTransitionMemberViews(request);
-  if (members === null) return 'GRADING_AGREEMENT_TRANSITION_STALE';
-  const jointed = /^joint:(\d+)$/.exec(typeof plan.jointId === 'string' ? plan.jointId : '');
-  const joint = jointed !== null && jointed[1] === String(Number(jointed[1])) ? Number(jointed[1]) : -1;
-  const sourceL = request.memberSources[joint];
-  if (!(joint >= 0) || !sourceL) return 'GRADING_AGREEMENT_TRANSITION_STALE';
   // Mesh anchoring needs the result-owned boundaries; a result without
   // them never passes a transitioned request.
   if (!Array.isArray(result.daylightPoints) || !Array.isArray(result.sourceBoundaryPoints)) {
     return 'GRADING_AGREEMENT_TRANSITION_MALFORMED';
   }
-  return validateTransitionResultMesh({
-    family,
-    sL: leg.interval.sL,
-    sR: leg.interval.sR,
-    vL: leg.endpointScalars.vL,
-    vR: leg.endpointScalars.vR,
-    daylightCheckpoints: leg.daylightCheckpoints,
-    sourceCheckpoints: leg.sourceCheckpoints,
-    criterionL: members[0]!.criterion,
-    criterionR: members[1]!.criterion,
-    jointZ: sourceL.endZ,
+  return validateGroupTransitionLegsMesh({
+    plans,
+    legs,
+    views,
+    jointZs,
+    liveRevision: request.revision,
     maxSearchDistance: request.maxSearchDistance,
     daylightPoints: result.daylightPoints,
     sourceBoundaryPoints: result.sourceBoundaryPoints,
@@ -678,6 +726,15 @@ export const canonicalTransitionFromPlan = (plan: GroupTransitionPlan): CadGradi
     : {}),
 });
 
+/**
+ * Phase 20N.1 Wave F — canonical persisted intents for the engine solve
+ * (canonical joint order, one entry per plan). The length-1 array solves
+ * through the exact legacy single path in the kernel.
+ */
+export const canonicalTransitionsFromPlans = (
+  plans: readonly GroupTransitionPlan[],
+): CadGradingTransition[] => plans.map(canonicalTransitionFromPlan);
+
 /** Map the flat worker request onto the engine's `GroupSolveInput`. */
 export const toGroupSolveInput = (request: GradingGroupComputeRequest): GroupSolveInput => ({
   groupId: request.groupId,
@@ -692,6 +749,12 @@ export const toGroupSolveInput = (request: GradingGroupComputeRequest): GroupSol
   ...(request.target !== undefined ? { target: request.target } : {}),
   ...(request.transition !== undefined
     ? { transition: canonicalTransitionFromPlan(request.transition) }
+    : {}),
+  // Phase 20N.1 Wave F — plural intents ride `transitions` (canonical
+  // joint order); both fields together reach the kernel, which refuses
+  // the dual-field shape fail-closed (never merged).
+  ...(request.transitions !== undefined
+    ? { transitions: canonicalTransitionsFromPlans(request.transitions) }
     : {}),
   ...(request.transitionMemberKeys !== undefined
     ? { transitionMemberKeys: request.transitionMemberKeys }
@@ -1507,17 +1570,23 @@ export const createSurfaceWorkerHandler = (
     latestGroupGradingByKey.set(request.groupId, groupGradingRequestKey(request));
     defer(() => {
       if (cancelledRequestIds.has(requestId)) return;
-      // Phase 20M.2 WAVE F — transition agreement BEFORE the engine solve.
-      // Member geometry is re-resolved from the request's own member
-      // sources (never service-supplied views); the post-solve mesh gate
-      // below rechecks the result-owned checkpoints independently.
-      if (request.transition !== undefined) {
-        const members = resolveTransitionMemberViews(request);
-        const disagreement = members === null
-          ? 'GRADING_AGREEMENT_TRANSITION_STALE'
-          : validateGroupTransitionAgreement(request.transition, members, request.revision);
-        if (disagreement !== null) {
-          failGroupGrading(requestId, request, disagreement);
+      // Phase 20M.2 WAVE F (plural in 20N.1 Wave F) — transition
+      // agreement BEFORE the engine solve. Member geometry is re-resolved
+      // from the request's own member sources (never service-supplied
+      // views); every plan is re-admitted and strict separation is
+      // verified from authoritative lengths. One failure rejects the group.
+      const plans = transitionPlansOf(request);
+      if (plans === null) {
+        failGroupGrading(requestId, request, 'GRADING_AGREEMENT_TRANSITION_MALFORMED');
+        return;
+      }
+      if (plans.length > 0) {
+        const views = resolveGroupTransitionMemberViews(request);
+        const agreed = views === null
+          ? { ok: false as const, code: 'GRADING_AGREEMENT_TRANSITION_STALE' }
+          : checkGroupTransitionPlansAgreement({ plans, views, liveRevision: request.revision });
+        if (!agreed.ok) {
+          failGroupGrading(requestId, request, agreed.code);
           return;
         }
       }
@@ -1530,11 +1599,12 @@ export const createSurfaceWorkerHandler = (
             failGroupGrading(requestId, request, groupFailureDetail(outcome));
             return;
           }
-          // Phase 20M.2 WAVE F — post-solve mesh agreement: the admitted
-          // transition's owned checkpoints are re-evaluated against the
-          // legislated law (inside) and the re-resolved natives
-          // (boundaries). A missing leg or any mismatch fails closed.
-          if (request.transition !== undefined) {
+          // Phase 20M.2 WAVE F (plural in 20N.1 Wave F) — post-solve mesh
+          // agreement: EVERY admitted plan is re-evaluated against its OWN
+          // result-owned checkpoints (legislated law inside, re-resolved
+          // natives at boundaries). A missing leg or any mismatch fails
+          // closed.
+          if (plans.length > 0) {
             const meshReject = validateTransitionResultMeshAgainst(outcome.result, request);
             if (meshReject !== null) {
               failGroupGrading(requestId, request, meshReject);

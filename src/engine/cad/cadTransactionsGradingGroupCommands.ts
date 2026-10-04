@@ -27,7 +27,7 @@ import {
 import { toGradingCourseLikes, resolveGradingSourceCourse } from './grading/gradingCourseFrame';
 import { resolveGroupInputs } from './grading/gradingGroupResolve';
 import { gradingTopologyCertificateProductionError, gradingTopologyCertificateProductionProductError } from './grading/gradingTopologyCertificate';
-import { transitionResultBakeCitation } from './grading/gradingTransitionProvenance';
+import { transitionResultBakeCitations } from './grading/gradingTransitionProvenance';
 import { appendCadProjectEntities } from './cadProjectState';
 import { commitLayerProject } from './cadTransactionsLayerCommands';
 import type {
@@ -90,14 +90,71 @@ const chainResolvable = (
 };
 
 /**
- * Phase 20M.2 WAVE G: result-owned transition citation for GROUPBAKE
- * provenance. Cites the transition ONLY when the baked result actually
- * solved with an admitted transition (result-owned leg); a solve without
- * one cites nothing (legacy payload byte-identical). Definition intent
- * alone never earns a citation.
+ * Phase 20N.1 Wave G: result-owned transition legs in canonical order
+ * (plural `transitions` first, legacy singular `transition` second).
+ * A solve without a transition carries neither key (legacy).
  */
-const transitionCitation = (result: { transition?: CadGradingGroupTransitionLeg }): { transitions?: ReturnType<typeof transitionResultBakeCitation> } => {
-  const cited = transitionResultBakeCitation(result.transition);
+const transitionLegsOf = (
+  result: { transition?: CadGradingGroupTransitionLeg; transitions?: CadGradingGroupTransitionLeg[] },
+): CadGradingGroupTransitionLeg[] =>
+  result.transitions !== undefined
+    ? [...result.transitions]
+    : result.transition !== undefined
+      ? [result.transition]
+      : [];
+
+/**
+ * Phase 20N.1 Wave G: one result-owned leg matches one live definition
+ * intent exactly (law/ref/width/family/side + evidence revision). Any
+ * drift — edited width, restated members, moved revision — mismatches.
+ */
+const transitionLegMatchesIntent = (
+  leg: CadGradingGroupTransitionLeg,
+  intent: { jointId: string; policyVersion: string; lawKind: string; lawVersion: string; width: number; criterionFamily: string; side: GradingSide; memberIds: string[] },
+  revision: string,
+): boolean =>
+  intent.jointId === leg.jointId &&
+  intent.policyVersion === leg.policyVersion &&
+  intent.lawKind === leg.lawKind &&
+  intent.lawVersion === leg.lawVersion &&
+  intent.width === leg.width &&
+  intent.criterionFamily === leg.criterionFamily &&
+  intent.side === leg.side &&
+  intent.memberIds[0] === leg.memberIds[0] &&
+  intent.memberIds[1] === leg.memberIds[1] &&
+  leg.recordedRevision === revision;
+
+/**
+ * Phase 20N.1 Wave G: every result-owned leg consumes exactly one live
+ * intent (bijection). Missing/extra/forged legs refuse with zero
+ * mutation. The empty/empty case passes (legacy, no citation).
+ */
+const transitionLegsMatchIntents = (
+  legs: readonly CadGradingGroupTransitionLeg[],
+  intents: readonly { jointId: string; policyVersion: string; lawKind: string; lawVersion: string; width: number; criterionFamily: string; side: GradingSide; memberIds: string[] }[],
+  revision: string,
+): boolean => {
+  const remaining = [...intents];
+  for (const leg of legs) {
+    const at = remaining.findIndex((intent) => transitionLegMatchesIntent(leg, intent, revision));
+    if (at < 0) return false;
+    remaining.splice(at, 1);
+  }
+  return remaining.length === 0;
+};
+
+/**
+ * Phase 20M.2 WAVE G (plural in 20N.1 Wave G): result-owned transition
+ * citations for GROUPBAKE provenance. Cites ONLY when the baked result
+ * actually solved with admitted transitions (result-owned legs, one
+ * citation per leg in canonical joint order); a solve without one cites
+ * nothing (legacy payload byte-identical). Definition intent alone never
+ * earns a citation.
+ */
+const transitionCitation = (
+  result: { transition?: CadGradingGroupTransitionLeg; transitions?: CadGradingGroupTransitionLeg[] },
+): { transitions?: ReturnType<typeof transitionResultBakeCitations> } => {
+  const cited = transitionResultBakeCitations(transitionLegsOf(result));
   return cited === undefined ? {} : { transitions: cited };
 };
 
@@ -483,6 +540,11 @@ const groupExtractCommand: CadCommandDefinition<GroupExtractCommand> = {
       sourceBoundaryPoints: result.sourceBoundaryPoints,
       gradingBoundaryPoints: result.daylightPoints,
     }) != null) return null;
+    // 20N.1 Wave G: full group boundary export carries every transition
+    // leg — a leg↔intent mismatch on ANY leg refuses (never partial).
+    if (!transitionLegsMatchIntents(transitionLegsOf(result), inputs.group.transitions ?? [], inputs.revision)) {
+      return null;
+    }
     // 20J: the final boundary term is `Grading Boundary` for hybrid groups
     // only; homogeneous extracts keep their exact legacy name. The
     // `daylightPoints` result field is unchanged in every mode.
@@ -564,23 +626,14 @@ const groupBakeCommand: CadCommandDefinition<GroupBakeCommand> = {
     // Phase 20M.2 WAVE M round 2: a transitioned result follows neither
     // native scalar in its interior, so it cites the transition law
     // envelope only — never a singular native scalar.
-    const transitionLeg = result.transition;
-    const transitioned = transitionLeg !== undefined;
-    if (transitionLeg !== undefined) {
-      // The result-owned leg must match the live definition intent before
-      // anything is cited (mismatch => no bake, fail closed).
-      const live = (inputs.group.transitions ?? []).some((intent) =>
-        intent.jointId === transitionLeg.jointId &&
-        intent.policyVersion === transitionLeg.policyVersion &&
-        intent.lawKind === transitionLeg.lawKind &&
-        intent.lawVersion === transitionLeg.lawVersion &&
-        intent.width === transitionLeg.width &&
-        intent.criterionFamily === transitionLeg.criterionFamily &&
-        intent.side === transitionLeg.side &&
-        intent.memberIds[0] === transitionLeg.memberIds[0] &&
-        intent.memberIds[1] === transitionLeg.memberIds[1] &&
-        transitionLeg.recordedRevision === inputs.revision);
-      if (!live) return null;
+    const transitionLegs = transitionLegsOf(result);
+    const transitioned = transitionLegs.length > 0;
+    if (transitioned) {
+      // Every result-owned leg must match one current intent exactly;
+      // one mismatch refuses with zero mutation.
+      if (!transitionLegsMatchIntents(transitionLegs, inputs.group.transitions ?? [], inputs.revision)) {
+        return null;
+      }
     }
     const representative = effective.some((entry) => criteriaEqual(entry, criterion))
       ? criterion

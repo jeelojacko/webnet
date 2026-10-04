@@ -18,7 +18,9 @@ import { buildTargetQuery } from '../engine/cad/grading/gradingTargetIndex';
 import { solveGradingChord } from '../engine/cad/grading/solveAnalyticGradingChord';
 import {
   admitGradingTransition,
+  checkGroupTransitionSeparation,
   evaluateTransitionLinearV1,
+  parseCanonicalJointIndex,
   TRANSITION_LAW_KIND,
   TRANSITION_LAW_VERSION,
   TRANSITION_POLICY_VERSION,
@@ -45,7 +47,7 @@ import type {
   GradingCriterion,
   GradingSide,
 } from '../engine/cad/grading/gradingTypes';
-import type { CadGradingTransition } from '../engine/cad/grading/gradingGroupTypes';
+import type { CadGradingTransition, CadGradingGroupTransitionLeg } from '../engine/cad/grading/gradingGroupTypes';
 
 export type {
   GradingComputeSource,
@@ -680,6 +682,132 @@ export const validateTransitionResultMesh = (input: TransitionResultMeshInput): 
     if (!flatContainsVertex(input.sourceBoundaryPoints, meshPoint(input.sourceCheckpoints, i)!)) {
       return 'GRADING_AGREEMENT_TRANSITION_GEOMETRY';
     }
+  }
+  return null;
+};
+
+/**
+ * Phase 20N.1 Wave F — plural worker pre-solve agreement (canonical joint
+ * order, never re-sorted). Every plan is re-admitted via
+ * `checkGroupTransitionAgreement` against worker re-resolved views, then
+ * strict separation is verified from the authoritative view lengths
+ * (shared member exactness included). One failure rejects the group.
+ */
+export interface GroupTransitionPlansAgreementInput {
+  plans: readonly GroupTransitionPlan[];
+  /** Per-joint member views in plan order (worker re-resolved, authoritative). */
+  views: readonly (readonly GroupTransitionMemberView[])[];
+  liveRevision: string;
+}
+
+export type GroupTransitionPlansAgreementOutcome =
+  | { ok: true; agreements: GroupTransitionAgreement[] }
+  | { ok: false; code: string; joint?: number };
+
+export const checkGroupTransitionPlansAgreement = (
+  input: GroupTransitionPlansAgreementInput,
+): GroupTransitionPlansAgreementOutcome => {
+  const { plans, views, liveRevision } = input;
+  if (plans.length !== views.length) {
+    return { ok: false, code: 'GRADING_AGREEMENT_TRANSITION_MALFORMED' };
+  }
+  let prev = -1;
+  for (const plan of plans) {
+    const index = parseCanonicalJointIndex(plan.jointId);
+    if (index === null || (prev >= 0 && index !== prev + 1)) {
+      return { ok: false, code: 'GRADING_AGREEMENT_TRANSITION_MALFORMED', joint: index ?? undefined };
+    }
+    prev = index;
+  }
+  const agreements: GroupTransitionAgreement[] = [];
+  for (let i = 0; i < plans.length; i += 1) {
+    const plan = plans[i]!;
+    const members = views[i]!;
+    const out = checkGroupTransitionAgreement(plan, members, liveRevision);
+    if (!out.ok) {
+      const joint = parseCanonicalJointIndex(plan.jointId);
+      return { ok: false, code: out.code, ...(joint === null ? {} : { joint }) };
+    }
+    agreements.push({ vL: out.vL, vR: out.vR, sL: out.sL, sR: out.sR, family: out.family });
+  }
+  if (plans.length > 1) {
+    const widths = plans.map((plan) => plan.width);
+    const gaps: number[] = [];
+    for (let i = 0; i + 1 < views.length; i += 1) {
+      const left = views[i]![1];
+      const right = views[i + 1]![0];
+      if (left === undefined || right === undefined || !(left.length === right.length)) {
+        return { ok: false, code: 'GRADING_AGREEMENT_TRANSITION_STALE' };
+      }
+      gaps.push(left.length);
+    }
+    if (!checkGroupTransitionSeparation(widths, gaps)) {
+      return { ok: false, code: 'GRADING_AGREEMENT_TRANSITION_OVERLAP' };
+    }
+  }
+  return { ok: true, agreements };
+};
+
+/**
+ * Phase 20N.1 Wave F — plural worker post-solve mesh agreement. EVERY
+ * plan is validated against its OWN result-owned leg (matched by jointId):
+ * agreement recheck plus the full result-mesh gate on that leg's ACTUAL
+ * checkpoints — never first-only, never flattened triples. Length
+ * mismatch (missing/extra legs) fails closed. No tolerance changes.
+ */
+export interface GroupTransitionLegsMeshInput {
+  plans: readonly GroupTransitionPlan[];
+  legs: readonly CadGradingGroupTransitionLeg[];
+  /** Per-joint member views in plan order (worker re-resolved, authoritative). */
+  views: readonly (readonly GroupTransitionMemberView[])[];
+  /** Authoritative joint Z per plan order (request's own member sources). */
+  jointZs: readonly number[];
+  liveRevision: string;
+  maxSearchDistance: number;
+  /** Result-owned daylight boundary: every checkpoint must occur in it. */
+  daylightPoints: readonly number[];
+  /** Result-owned source boundary: every source mate must occur in it. */
+  sourceBoundaryPoints: readonly number[];
+  /** Grading side: the plan offset must leave toward this side. */
+  side: GradingSide;
+}
+
+export const validateGroupTransitionLegsMesh = (input: GroupTransitionLegsMeshInput): string | null => {
+  const { plans, legs, views, jointZs, liveRevision } = input;
+  if (plans.length !== legs.length || plans.length !== views.length || plans.length !== jointZs.length) {
+    return 'GRADING_AGREEMENT_TRANSITION_STALE';
+  }
+  for (let i = 0; i < plans.length; i += 1) {
+    const plan = plans[i]!;
+    const leg = legs.find((entry) => entry.jointId === plan.jointId);
+    if (!leg) return 'GRADING_AGREEMENT_TRANSITION_STALE';
+    const members = views[i]!;
+    const agreement = checkGroupTransitionAgreement(plan, members, liveRevision);
+    if (!agreement.ok) return agreement.code;
+    if (leg.agreementCode !== null) return leg.agreementCode;
+    const family = leg.criterionFamily;
+    if (family !== 'distance' && family !== 'relative-elevation' && family !== 'elevation') {
+      return 'GRADING_AGREEMENT_TRANSITION_FAMILY_MISMATCH';
+    }
+    const jointZ = jointZs[i]!;
+    if (!Number.isFinite(jointZ)) return 'GRADING_AGREEMENT_TRANSITION_STALE';
+    const reject = validateTransitionResultMesh({
+      family,
+      sL: leg.interval.sL,
+      sR: leg.interval.sR,
+      vL: leg.endpointScalars.vL,
+      vR: leg.endpointScalars.vR,
+      daylightCheckpoints: leg.daylightCheckpoints,
+      sourceCheckpoints: leg.sourceCheckpoints,
+      criterionL: members[0]!.criterion,
+      criterionR: members[1]!.criterion,
+      jointZ,
+      maxSearchDistance: input.maxSearchDistance,
+      daylightPoints: input.daylightPoints,
+      sourceBoundaryPoints: input.sourceBoundaryPoints,
+      side: input.side,
+    });
+    if (reject !== null) return reject;
   }
   return null;
 };
