@@ -480,7 +480,7 @@ const groupClearTransitionCommand: CadCommandDefinition<GroupClearTransitionComm
   execute: (snapshot, command) => {
     const group = findGroup(snapshot.project, command.groupId);
     if (!group) return null;
-    const cleared = clearGroupTransition(group);
+    const cleared = clearGroupTransition(group, command.jointId);
     if (!cleared.ok) return null;
     return commitLayerProject('GROUP_CLEAR_TRANSITION', snapshot, withGroup(snapshot.project, cleared.value),
       `GROUP_CLEAR_TRANSITION (${group.name})`);
