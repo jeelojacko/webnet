@@ -12,6 +12,11 @@ import { ProjectOptionsModal } from '../../app/AppLazyViews';
 import { IMPORT_FILE_ACCEPT, PROJECT_FILE_ACCEPT } from '../../app/appConfig';
 import { getExportFormatLabel, getExportFormatTooltip } from '../../app/appHelpers';
 import { stageLegacyMigrationCandidate } from '../../cad-app/cadSourceBridge';
+import {
+  buildCadMigrationUrl,
+  buildCadUrl,
+  buildStudyUrl,
+} from '../../cad-app/cadNavigation';
 import type { useAppController } from '../../hooks/useAppController';
 
 type AppShellProps = {
@@ -117,16 +122,16 @@ const AppShell = ({ controller }: AppShellProps) => {
         onToggleSidebar={() => setIsSidebarOpen(!isSidebarOpen)}
         onOpenProjectOptions={openProjectOptions}
         onOpenSurveyCad={() => {
-          window.location.href = '/cad';
+          window.location.href = buildCadUrl(null);
         }}
         onSendToCad={() => {
           const sourceId = handleSendToCad();
-          if (sourceId) window.location.href = `/cad?source=${encodeURIComponent(sourceId)}`;
+          if (sourceId) window.location.href = buildCadUrl(sourceId);
         }}
         canSendToCad={canSendToCad}
         sendToCadBlockMessage={resultIntegrity.blockMessage}
         onOpenStudy={() => {
-          window.location.href = '/study';
+          window.location.href = buildStudyUrl();
         }}
         onOpenImportFile={() => triggerFileSelect()}
         onOpenProjectFile={handleOpenProjectWorkspacePanel}
@@ -200,7 +205,7 @@ const AppShell = ({ controller }: AppShellProps) => {
             type="button"
             onClick={() => {
               stageLegacyMigrationCandidate(surveyCadState);
-              window.location.href = '/cad?migrate=1';
+              window.location.href = buildCadMigrationUrl();
             }}
             className="px-2 py-1 border border-violet-500 rounded bg-violet-900 hover:bg-violet-800"
           >

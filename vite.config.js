@@ -4,6 +4,14 @@ import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import { resolveChunkName } from './src/build/viteChunkRouting';
 
+// Base path for static hosting: dev stays `/`; Pages builds set
+// VITE_BASE_PATH=/webnet/. Accepts a bare `webnet` too.
+const normalizeBasePath = (raw) => {
+  const trimmed = (raw ?? '').trim() || '/';
+  const leading = trimmed.startsWith('/') ? trimmed : `/${trimmed}`;
+  return leading.endsWith('/') ? leading : `${leading}/`;
+};
+
 // Phase 7C: copy the Emscripten sparse glue + wasm beside the dist bundle
 // at build time (never committed; dist/ is gitignored). The worker loads
 // `webnet_core.js` base-relative, and the glue locateFile resolves the
@@ -24,9 +32,21 @@ const webnetWasmArtifacts = () => ({
   },
 });
 
+// SPA fallback for deep routes (/webnet/cad, /webnet/study) on static hosts.
+const webnetSpaFallback = () => ({
+  name: 'webnet-spa-fallback',
+  writeBundle(options) {
+    const outDir = options.dir ?? 'dist';
+    const index = join(outDir, 'index.html');
+    if (!existsSync(index)) return;
+    cpSync(index, join(outDir, '404.html'));
+  },
+});
+
 // https://vite.dev/config/
 export default defineConfig({
-  plugins: [react(), webnetWasmArtifacts()],
+  base: normalizeBasePath(process.env.VITE_BASE_PATH ?? '/'),
+  plugins: [react(), webnetWasmArtifacts(), webnetSpaFallback()],
   worker: {
     format: 'es',
   },

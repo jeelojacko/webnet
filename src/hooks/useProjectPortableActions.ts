@@ -1,4 +1,5 @@
 import { useCallback, type ChangeEvent, type Dispatch, type SetStateAction } from 'react';
+import { resolveAppAssetUrl } from '../appBasePath';
 import type {
   ParseSettings,
   PersistedSavedRunSnapshot,
@@ -279,7 +280,7 @@ export const useProjectPortableActions = ({
   const openPermanentExampleProject = useCallback(
     async (projectUrl: string) => {
       try {
-        const response = await fetch(projectUrl);
+        const response = await fetch(resolveAppAssetUrl(projectUrl));
         if (!response.ok) {
           throw new Error(`Example project request failed (${response.status}).`);
         }
