@@ -7,7 +7,7 @@
   `topology-worker-provenance.md` (certificate/worker/provenance study),
   study `scripts/phase20oNoncollinearPlanLawStudy.ts`, corpus
   `docs/evidence/phase20o/corpus.json` (736 rows, sha256 `9685974d…`),
-  `tests/cad_grading_transition_planlaw_20o.test.ts` (12),
+  `tests/cad_grading_transition_planlaw_20o.test.ts` (14),
   `tests/cad_grading_transition_gates_20o.test.ts` (29).
 - Prior verdict context: `docs/evidence/phase20n/decision.md` (PARTIAL_GO
   Candidate A only; POLICY_REQUIRED Candidate B) and
