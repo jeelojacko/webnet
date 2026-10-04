@@ -93,6 +93,7 @@ describe('useProjectOptionsModalController transform filtering', () => {
         adjustedPointsTransformDraftValidationMessage: null,
         crsCatalogGroupCounts: {},
         filteredDraftCrsCatalog: [],
+        handleCrsCatalogGroupChange: () => undefined,
         searchedDraftCrsCatalog: [],
         visibleDraftCrsCatalog: [],
         selectedDraftCrs: undefined,

@@ -1,5 +1,11 @@
-import { useEffect, useMemo, type Dispatch, type SetStateAction } from 'react';
-import { resolveDraftCrsSelection } from '../crsDraftSelection';
+import { useCallback, useEffect, useMemo, useRef, type Dispatch, type SetStateAction } from 'react';
+import {
+  filterCrsCatalogByGroupAndUnits,
+  resolveExternalCrsChange,
+  resolveSpcsUnitCompanion,
+  resolveUnknownGridExternalCrsId,
+  resolveUserCatalogGroupChange,
+} from '../crsDraftSelection';
 import {
   CRS_CATALOG,
   DEFAULT_CANADA_CRS_ID,
@@ -47,16 +53,10 @@ export const useAppCrsDraftCatalog = ({
     });
     return counts;
   }, []);
-  const filteredDraftCrsCatalog = useMemo(() => {
-    const byGroup =
-      crsCatalogGroupFilter === 'all'
-        ? CRS_CATALOG
-        : CRS_CATALOG.filter((row) => row.catalogGroup === crsCatalogGroupFilter);
-    const preferredSpcsLinearUnit = settingsDraft.units === 'ft' ? 'us-ft' : 'm';
-    return byGroup.filter(
-      (row) => row.catalogGroup !== 'us-spcs' || row.linearUnit === preferredSpcsLinearUnit,
-    );
-  }, [crsCatalogGroupFilter, settingsDraft.units]);
+  const filteredDraftCrsCatalog = useMemo(
+    () => filterCrsCatalogByGroupAndUnits(crsCatalogGroupFilter, settingsDraft.units),
+    [crsCatalogGroupFilter, settingsDraft.units],
+  );
   const searchedDraftCrsCatalog = useMemo(() => {
     const token = crsSearchQuery.trim().toUpperCase();
     if (!token) return filteredDraftCrsCatalog;
@@ -77,27 +77,87 @@ export const useAppCrsDraftCatalog = ({
     [selectedDraftCrs],
   );
 
-  useEffect(() => {
-    const resolution = resolveDraftCrsSelection({
-      crsId: parseSettingsDraft.crsId,
+  /**
+   * User-driven category change. Authoritative: the group is set together
+   * with a valid CRS from the new group (batched, so the sync effect below
+   * only ever observes the paired result). Never touches coordSystemMode.
+   */
+  const handleCrsCatalogGroupChange = useCallback(
+    (nextGroup: CrsCatalogGroupFilter) => {
+      if (nextGroup === crsCatalogGroupFilter) return;
+      const resolution = resolveUserCatalogGroupChange({
+        crsId: parseSettingsDraft.crsId,
+        nextGroup,
+        units: settingsDraft.units,
+      });
+      setCrsCatalogGroupFilter(nextGroup);
+      if (resolution) {
+        const nextCrsId = resolution.nextCrsId;
+        setParseSettingsDraft((prev) => ({ ...prev, crsId: nextCrsId }));
+      }
+    },
+    [
       crsCatalogGroupFilter,
-      filteredDraftCrsCatalog,
-    });
-    if (!resolution) return;
-    if (resolution.nextCatalogGroupFilter) {
-      setCrsCatalogGroupFilter(resolution.nextCatalogGroupFilter);
+      parseSettingsDraft.crsId,
+      settingsDraft.units,
+      setCrsCatalogGroupFilter,
+      setParseSettingsDraft,
+    ],
+  );
+
+  // Narrow sync for EXTERNAL changes only. Previous values distinguish a
+  // project load/import (crsId changed: follow the loaded CRS into its group,
+  // keep its exact id) from a display-unit change (crsId unchanged: map an
+  // SPCS CRS to its ft/m companion). User group changes go through
+  // handleCrsCatalogGroupChange above and never reach either branch as a
+  // group-forcing correction. Search is intentionally not a dependency: it
+  // stays a pure visibility filter.
+  // Null-initialized: the first run also takes the external branch so an
+  // unknown Grid id present at mount is sanitized instead of surviving via
+  // a self-equal previous value. With consistent initial state both
+  // resolutions are null, so first mount is otherwise a no-op.
+  const prevCrsIdRef = useRef<string | null>(null);
+  const prevUnitsRef = useRef(settingsDraft.units);
+  useEffect(() => {
+    const prevCrsId = prevCrsIdRef.current;
+    const prevUnits = prevUnitsRef.current;
+    const crsIdChanged = prevCrsId === null || parseSettingsDraft.crsId !== prevCrsId;
+    const unitsChanged = settingsDraft.units !== prevUnits;
+    prevCrsIdRef.current = parseSettingsDraft.crsId;
+    prevUnitsRef.current = settingsDraft.units;
+    if (crsIdChanged) {
+      const resolution = resolveExternalCrsChange({
+        crsId: parseSettingsDraft.crsId,
+        currentGroupFilter: crsCatalogGroupFilter,
+      });
+      if (resolution) setCrsCatalogGroupFilter(resolution.nextCatalogGroupFilter);
+      const unknownResolution = resolveUnknownGridExternalCrsId({
+        crsId: parseSettingsDraft.crsId,
+        coordSystemMode: parseSettingsDraft.coordSystemMode,
+        visibleCatalog: filteredDraftCrsCatalog,
+      });
+      if (unknownResolution) {
+        const nextCrsId = unknownResolution.nextCrsId;
+        setParseSettingsDraft((prev) => ({ ...prev, crsId: nextCrsId }));
+      }
       return;
     }
-    if (resolution.nextCrsId) {
-      setParseSettingsDraft((prev) => ({
-        ...prev,
-        crsId: resolution.nextCrsId ?? prev.crsId,
-      }));
+    if (unitsChanged) {
+      const resolution = resolveSpcsUnitCompanion({
+        crsId: parseSettingsDraft.crsId,
+        visibleCatalog: filteredDraftCrsCatalog,
+      });
+      if (resolution) {
+        const nextCrsId = resolution.nextCrsId;
+        setParseSettingsDraft((prev) => ({ ...prev, crsId: nextCrsId }));
+      }
     }
   }, [
     crsCatalogGroupFilter,
     filteredDraftCrsCatalog,
+    parseSettingsDraft.coordSystemMode,
     parseSettingsDraft.crsId,
+    settingsDraft.units,
     setCrsCatalogGroupFilter,
     setParseSettingsDraft,
   ]);
@@ -109,5 +169,6 @@ export const useAppCrsDraftCatalog = ({
     searchedDraftCrsCatalog,
     visibleDraftCrsCatalog,
     selectedCrsProj4Params,
+    handleCrsCatalogGroupChange,
   };
 };

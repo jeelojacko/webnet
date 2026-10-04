@@ -27,7 +27,7 @@ export const AdjustmentCoordinateSystemCard: React.FC<AdjustmentProjectOptionsTa
     searchedDraftCrsCatalog,
     selectedCrsProj4Params,
     selectedDraftCrs,
-    setCrsCatalogGroupFilter,
+    handleCrsCatalogGroupChange,
     setCrsSearchQuery,
     setShowCrsProjectionParams,
     showCrsProjectionParams,
@@ -70,7 +70,7 @@ export const AdjustmentCoordinateSystemCard: React.FC<AdjustmentProjectOptionsTa
           title={SETTINGS_TOOLTIPS.crsCatalogGroup}
           value={crsCatalogGroupFilter}
           onChange={(e) =>
-            setCrsCatalogGroupFilter(e.target.value as typeof crsCatalogGroupFilter)
+            handleCrsCatalogGroupChange(e.target.value as typeof crsCatalogGroupFilter)
           }
           className={optionInputClass}
         >
