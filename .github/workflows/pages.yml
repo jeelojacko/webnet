@@ -25,9 +25,11 @@ jobs:
           cache: npm
       - name: Configure Pages
         id: pages
-        uses: actions/configure-pages@v5
+        uses: actions/configure-pages@v6
       - name: Install
         run: npm ci
+      - name: Install Study Desktop dependencies
+        run: npm ci --prefix study-desktop
       - name: Resolve Pages base path
         run: echo "VITE_BASE_PATH=${{ steps.pages.outputs.base_path }}/" >> "$GITHUB_ENV"
       - name: Build Pages
