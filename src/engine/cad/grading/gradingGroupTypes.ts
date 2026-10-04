@@ -239,6 +239,14 @@ export interface CadGradingGroupResult {
    * never hashed into `ggrev1:`.
    */
   transition?: CadGradingGroupTransitionLeg;
+  /**
+   * Phase 20N.1 Wave E — result-owned transition legs in canonical joint
+   * order, set ONLY when the group solved with N >= 2 admitted transitions
+   * (the singular `transition` above stays the exactly-1 path). The worker
+   * mesh gate rechecks each leg; GROUPBAKE cites them. Session-only, never
+   * persisted, never hashed into `ggrev1:`.
+   */
+  transitions?: CadGradingGroupTransitionLeg[];
 }
 
 /**
