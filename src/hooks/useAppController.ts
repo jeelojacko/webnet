@@ -19,7 +19,7 @@ import {
   noteUiPerfStage,
   useUiLongTaskObserver,
 } from './useUiPerfMonitor';
-import { ACTIVE_PARITY_STARTUP_DEFAULTS } from '../app/appConfig';
+import { APP_STARTUP_DEFAULTS } from '../app/appConfig';
 import {
   INDUSTRY_DEFAULT_INSTRUMENT,
   INDUSTRY_DEFAULT_INSTRUMENT_CODE,
@@ -41,7 +41,7 @@ export const useAppController = ({
   initialOptionsTab = 'adjustment',
 }: AppControllerProps) => {
   const workspaceState = useWorkspaceProjectState<ImportedInputNotice, RunDiagnostics, RunSettingsSnapshot, TabKey>({
-    initialInput: ACTIVE_PARITY_STARTUP_DEFAULTS?.input ?? DEFAULT_INPUT,
+    initialInput: APP_STARTUP_DEFAULTS?.input ?? DEFAULT_INPUT,
     initialExportFormat: 'points',
     initialActiveTab: 'report',
   });

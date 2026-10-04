@@ -9,7 +9,7 @@ export const PERMANENT_EXAMPLE_PROJECTS: PermanentExampleProject[] = [
   {
     id: 'preanalysis',
     title: 'Pre-analysis',
-    description: 'Current startup planning project.',
+    description: 'Traverse-only pre-analysis planning example.',
     projectUrl: '/examples/preanalysis/project.wnproj',
   },
   {

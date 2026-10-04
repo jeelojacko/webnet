@@ -1,6 +1,6 @@
 import { useCallback, useMemo, type Dispatch, type RefObject, type SetStateAction } from 'react';
 import { getAdjustedPointsExportStationIds, validateAdjustedPointsTransform } from '../engine/adjustedPointsExport';
-import { ACTIVE_PARITY_STARTUP_DEFAULTS } from '../app/appConfig';
+import { APP_STARTUP_DEFAULTS } from '../app/appConfig';
 import {
   buildPendingRunSettingDiffs,
   cloneInstrumentLibrary,
@@ -207,7 +207,7 @@ export const useAppProjectImportWorkspace = ({
   const startupProjectRunFiles = useMemo<ProjectRunFile[]>(
     () =>
       projectWorkflow.projectSession == null
-        ? (ACTIVE_PARITY_STARTUP_DEFAULTS?.projectRunFiles ?? []).map((file, index) => ({
+        ? (APP_STARTUP_DEFAULTS?.projectRunFiles ?? []).map((file, index) => ({
             fileId: file.fileId,
             name: file.name,
             order: file.order ?? index,

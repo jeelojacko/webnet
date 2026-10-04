@@ -67,9 +67,11 @@ const ProjectFilesProjectOptionsTab: React.FC<ProjectFilesProjectOptionsTabProps
           <button
             type="button"
             onClick={createLocalProjectFromCurrentWorkspace}
+            title="Create a new blank local project"
+            aria-label="Create new project"
             className="rounded border border-slate-400 bg-slate-700 px-3 py-1 text-xs text-slate-100 hover:bg-slate-600"
           >
-            Create Local Project
+            Create New Project
           </button>
           <button
             type="button"

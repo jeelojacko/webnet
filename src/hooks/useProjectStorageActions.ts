@@ -1,4 +1,5 @@
 import { useCallback, type Dispatch, type RefObject, type SetStateAction } from 'react';
+import { buildBlankProjectWorkspace } from '../app/blankProjectDefaults';
 import type { PersistedSavedRunSnapshot } from '../appStateTypes';
 import {
   buildProjectIndexRow,
@@ -63,27 +64,22 @@ export const useProjectStorageActions = ({
   storageStatus,
   upsertRecentProjectRow,
 }: UseProjectStorageActionsArgs) => {
-  const createLocalProjectFromCurrentWorkspace = useCallback(async (): Promise<ProjectSessionState | null> => {
-    if (!canUseNamedProjectStorage) {
-      setImportNotice({
-        title: 'Local project storage unavailable',
-        detailLines: [
-          'Named browser projects require IndexedDB support in this browser.',
-          'Use portable project export/import for this session instead.',
-        ],
-      });
-      return null;
-    }
-    const suggestedName = `WebNet Project ${new Date().toISOString().slice(0, 10)}`;
-    const name = window.prompt('Project name', suggestedName)?.trim();
-    if (!name) return null;
+  const persistNewProject = useCallback(async ({
+    name,
+    workspace,
+    createdTitle,
+  }: {
+    name: string;
+    workspace: ProjectFlatWorkspacePayloadOptions;
+    createdTitle: string;
+  }): Promise<ProjectSessionState | null> => {
     const createdAt = new Date().toISOString();
     const seed = createFlatProjectManifestSeed({
       projectId: createProjectId(),
       name,
       createdAt,
       updatedAt: createdAt,
-      workspace: projectFlatWorkspacePayload,
+      workspace,
       cloneInstrumentLibrary,
     });
     const preferredBackend = storageStatus?.preferredBackend ?? 'indexeddb';
@@ -106,11 +102,13 @@ export const useProjectStorageActions = ({
       lastAutosavedAt: createdAt,
       lastAutosaveError: null,
     };
+    // Persist + attach the session only. Callers decide whether the live
+    // workspace must be reloaded (explicit Create) or kept (Save/Import).
     setProjectSession(cleanSession);
     await requestPersistentStorage();
     await refreshStorageContext();
     setImportNotice({
-      title: 'Local project created',
+      title: createdTitle,
       detailLines: [
         `Created ${name}.`,
         'Named projects now autosave sources and settings to browser project storage.',
@@ -118,9 +116,7 @@ export const useProjectStorageActions = ({
     });
     return cleanSession;
   }, [
-    canUseNamedProjectStorage,
     cloneInstrumentLibrary,
-    projectFlatWorkspacePayload,
     refreshStorageContext,
     setImportNotice,
     setProjectSession,
@@ -128,9 +124,84 @@ export const useProjectStorageActions = ({
     storageStatus?.preferredBackend,
   ]);
 
+  const createNamedProject = useCallback(async ({
+    name,
+    workspace,
+    createdTitle,
+  }: {
+    name: string;
+    workspace: ProjectFlatWorkspacePayloadOptions;
+    createdTitle: string;
+  }): Promise<ProjectSessionState | null> => {
+    const cleanSession = await persistNewProject({ name, workspace, createdTitle });
+    if (!cleanSession) return null;
+    // Explicit Create switches the live UI to the new (blank) payload and
+    // cancels any in-flight run via resetWorkspaceAfterProjectLoad inside the
+    // loader's reset path, so a late outcome cannot publish into the new project.
+    applyLoadedProjectPayload(buildParsedPayloadFromSession(cleanSession), cleanSession, []);
+    return cleanSession;
+  }, [applyLoadedProjectPayload, persistNewProject]);
+
+  const createLocalProjectFromCurrentWorkspace = useCallback(async (): Promise<ProjectSessionState | null> => {
+    if (!canUseNamedProjectStorage) {
+      setImportNotice({
+        title: 'Local project storage unavailable',
+        detailLines: [
+          'Named browser projects require IndexedDB support in this browser.',
+          'Use portable project export/import for this session instead.',
+        ],
+      });
+      return null;
+    }
+    // Shared switch guard: the sidebar and Project Files tab both route here, so
+    // untitled work is only discarded after one confirmation.
+    if (
+      projectSession == null &&
+      projectFlatWorkspacePayload.input.trim() !== '' &&
+      !window.confirm('Create a new blank project? Unsaved untitled input will be discarded.')
+    ) {
+      return null;
+    }
+    const suggestedName = `WebNet Project ${new Date().toISOString().slice(0, 10)}`;
+    const name = window.prompt('Project name', suggestedName)?.trim();
+    if (!name) return null;
+    // New projects always start blank; never clone the current workspace.
+    return createNamedProject({
+      name,
+      workspace: buildBlankProjectWorkspace(),
+      createdTitle: 'Local project created',
+    });
+  }, [canUseNamedProjectStorage, createNamedProject, projectFlatWorkspacePayload.input, projectSession, setImportNotice]);
+
+  // Clone-preserving creation for Save/Import fallbacks: unlike the explicit
+  // Create action, these routes must keep the current untitled workspace. The
+  // named session is attached but live input/results/review state are untouched.
+  const createProjectFromCurrentWorkspace = useCallback(async (createdTitle = 'Local project created'): Promise<ProjectSessionState | null> => {
+    if (!canUseNamedProjectStorage) {
+      setImportNotice({
+        title: 'Local project storage unavailable',
+        detailLines: [
+          'Named browser projects require IndexedDB support in this browser.',
+          'Use portable project export/import for this session instead.',
+        ],
+      });
+      return null;
+    }
+    const suggestedName = `WebNet Project ${new Date().toISOString().slice(0, 10)}`;
+    const name = window.prompt('Project name', suggestedName)?.trim();
+    if (!name) return null;
+    return persistNewProject({
+      name,
+      workspace: projectFlatWorkspacePayload,
+      createdTitle,
+    });
+  }, [canUseNamedProjectStorage, persistNewProject, projectFlatWorkspacePayload, setImportNotice]);
+
   const handleSaveProject = useCallback(async () => {
     if (!projectSession) {
-      await createLocalProjectFromCurrentWorkspace();
+      // Save preserves the current workspace (old clone behavior); only the
+      // explicit Create action starts blank.
+      await createProjectFromCurrentWorkspace('Local project saved');
       return;
     }
     await persistProjectNow(projectSession);
@@ -138,7 +209,7 @@ export const useProjectStorageActions = ({
       title: 'Local project saved',
       detailLines: [`Saved ${projectSession.manifest.name}.`],
     });
-  }, [createLocalProjectFromCurrentWorkspace, persistProjectNow, projectSession, setImportNotice]);
+  }, [createProjectFromCurrentWorkspace, persistProjectNow, projectSession, setImportNotice]);
 
   const openProjectById = useCallback(
     async (projectId: string) => {
@@ -224,6 +295,7 @@ export const useProjectStorageActions = ({
 
   return {
     createLocalProjectFromCurrentWorkspace,
+    createProjectFromCurrentWorkspace,
     deleteLocalProject,
     handleSaveProject,
     openProjectById,

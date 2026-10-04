@@ -18,7 +18,7 @@ type ImportNotice = {
 };
 
 interface UseProjectSourceFileImportsArgs {
-  createLocalProjectFromCurrentWorkspace: () => Promise<ProjectSessionState | null>;
+  createProjectFromCurrentWorkspace: () => Promise<ProjectSessionState | null>;
   projectSession: ProjectSessionState | null;
   setImportNotice: Dispatch<SetStateAction<ImportNotice | null>>;
   setInput: Dispatch<SetStateAction<string>>;
@@ -31,7 +31,7 @@ interface UseProjectSourceFileImportsArgs {
 }
 
 export const useProjectSourceFileImports = ({
-  createLocalProjectFromCurrentWorkspace,
+  createProjectFromCurrentWorkspace,
   projectSession,
   setImportNotice,
   setInput,
@@ -126,7 +126,9 @@ export const useProjectSourceFileImports = ({
       }
       let ensuredSession = projectSession;
       if (!ensuredSession) {
-        ensuredSession = await createLocalProjectFromCurrentWorkspace();
+        // Import appends to the workspace, so preserve it (clone); only the
+        // explicit Create action starts blank.
+        ensuredSession = await createProjectFromCurrentWorkspace();
         if (!ensuredSession) return false;
       }
       const requestedName = buildImportedReviewFileName(sourceName);
@@ -180,7 +182,7 @@ export const useProjectSourceFileImports = ({
       return true;
     },
     [
-      createLocalProjectFromCurrentWorkspace,
+      createProjectFromCurrentWorkspace,
       projectSession,
       setImportNotice,
       setInput,

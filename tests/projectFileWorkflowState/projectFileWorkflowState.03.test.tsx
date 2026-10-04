@@ -37,6 +37,8 @@ describe('useProjectFileWorkflow', () => {
     const setProjectIncludeFilesSpy = vi.fn();
     const originalIndexedDb = window.indexedDB;
     const originalPrompt = window.prompt;
+    const originalConfirm = window.confirm;
+    window.confirm = vi.fn(() => true);
 
     const stores = {
       projectIndex: new Map<string, unknown>(),
@@ -330,6 +332,7 @@ describe('useProjectFileWorkflow', () => {
         value: originalIndexedDb,
       });
       window.prompt = originalPrompt;
+      window.confirm = originalConfirm;
     }
   });
 

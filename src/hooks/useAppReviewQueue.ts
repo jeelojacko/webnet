@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState, type Dispatch, type SetStateAction } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, type Dispatch, type SetStateAction } from 'react';
 import { buildReviewQueue, type ReviewQueueItem, type ReviewQueueSeverity, type ReviewQueueSourceType } from '../engine/reviewQueue';
 import type { RunComparisonSummary } from '../engine/qaWorkflow';
 import type { AdjustmentResult } from '../types';
@@ -23,6 +23,8 @@ interface UseAppReviewQueueArgs {
   setActiveTab: (_tab: WorkspaceTabKey) => void;
   setIsSidebarOpen: Dispatch<SetStateAction<boolean>>;
   setPendingEditorJumpLine: Dispatch<SetStateAction<number | null>>;
+  projectId: string | null;
+  workspaceRevision: number;
 }
 
 export const useAppReviewQueue = ({
@@ -36,6 +38,8 @@ export const useAppReviewQueue = ({
   setActiveTab,
   setIsSidebarOpen,
   setPendingEditorJumpLine,
+  projectId,
+  workspaceRevision,
 }: UseAppReviewQueueArgs) => {
   const [reviewQueueSeverityFilter, setReviewQueueSeverityFilter] = useState<
     'all' | ReviewQueueSeverity
@@ -47,6 +51,21 @@ export const useAppReviewQueue = ({
   const [reviewQueueImportedGroupFilter, setReviewQueueImportedGroupFilter] = useState('all');
   const [selectedReviewQueueItemId, setSelectedReviewQueueItemId] = useState<string | null>(null);
   const [reportFilterFocusRequestKey, setReportFilterFocusRequestKey] = useState(0);
+  // Reset filters + selection on every workspace load/switch, not just when the
+  // project id changes: null-session example/portable loads and same-id reopens
+  // bump the revision while projectId stays put. Ordinary edits never bump it.
+  const workspaceResetKey = `${projectId ?? ''}#${workspaceRevision}`;
+  const prevWorkspaceResetKeyRef = useRef(workspaceResetKey);
+  useEffect(() => {
+    if (prevWorkspaceResetKeyRef.current === workspaceResetKey) return;
+    prevWorkspaceResetKeyRef.current = workspaceResetKey;
+    // New project/session: drop filters + selection tied to the old project.
+    setReviewQueueSeverityFilter('all');
+    setReviewQueueSourceFilter('all');
+    setReviewQueueUnresolvedOnly(false);
+    setReviewQueueImportedGroupFilter('all');
+    setSelectedReviewQueueItemId(null);
+  }, [workspaceResetKey]);
 
   const reviewQueueItems = useMemo(
     () =>

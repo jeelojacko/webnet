@@ -73,6 +73,8 @@ const AppInputSidebar = ({
             handleOpenProjectWorkspacePanel();
             return;
           }
+          // The create action owns the untitled-work confirmation guard so both
+          // this entry point and the Project Files tab share one wording.
           void createLocalProjectFromCurrentWorkspace();
         }}
         onAddProjectSourceFile={() => {

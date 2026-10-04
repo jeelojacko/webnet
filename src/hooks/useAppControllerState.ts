@@ -6,7 +6,7 @@ import {
   cloneAdjustedPointsExportSettings,
   sanitizeAdjustedPointsExportSettings,
 } from '../engine/adjustedPointsExport';
-import { ACTIVE_PARITY_STARTUP_DEFAULTS } from '../app/appConfig';
+import { APP_STARTUP_DEFAULTS } from '../app/appConfig';
 import {
   buildObservationModeFromGridFields,
   cloneInstrumentLibrary,
@@ -56,7 +56,7 @@ export const useAppControllerState = ({
     CustomLevelLoopTolerancePreset[]
   >([]);
   const [selectedInstrument, setSelectedInstrument] = useState(
-    ACTIVE_PARITY_STARTUP_DEFAULTS?.selectedInstrument ?? 'S9',
+    APP_STARTUP_DEFAULTS?.selectedInstrument ?? 'S9',
   );
   const {
     splitPercent,
