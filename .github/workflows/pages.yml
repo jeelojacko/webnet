@@ -12,6 +12,9 @@ jobs:
   build:
     name: build
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pages: read
     steps:
       - name: Checkout
         uses: actions/checkout@v5
@@ -32,7 +35,7 @@ jobs:
       - name: Check Pages artifact
         run: node scripts/checkPagesArtifact.mjs dist
       - name: Upload Pages artifact
-        uses: actions/upload-pages-artifact@v3
+        uses: actions/upload-pages-artifact@v5
         with:
           path: dist/
 
