@@ -295,7 +295,8 @@ test('20M2 Flow f-noncollinear rejected', async ({ page }) => {
 });
 
 // ===========================================================================
-// Flow G — one transition per group: Add is gone while one is staged
+// Flow G — one staged transition still solves CURRENT. (20N.1 supersedes the old
+// 20M.2 "Add is gone" pin: per-joint authoring keeps Add/Update visible.)
 // ===========================================================================
 test('20M2 Flow g-single-transition', async ({ page }) => {
   await page.setViewportSize({ width: 1366, height: 768 });
@@ -317,7 +318,10 @@ test('20M2 Flow g-single-transition', async ({ page }) => {
     const panel = page.locator('[data-cad-grading-group-transition-panel]');
     await expect(panel).toContainText('joint:0');
     await expect(panel.locator('[data-cad-grading-group-transition-remove]')).toBeVisible();
-    await expect(panel.locator('[data-cad-grading-group-transition-add]')).toHaveCount(0);
+    // 20N.1 intentionally supersedes the 20M.2 single-transition pin: per-joint
+    // authoring keeps Add/Update visible so further strictly-separated transitions
+    // can be staged; a staged joint offers "Update transition".
+    await expect(panel.locator('[data-cad-grading-group-transition-add]')).toContainText('Update');
     // The single staged transition still solves CURRENT (joint:0 fills).
     await page.locator('[data-cad-grading-group-tab="definition"]').click();
     await calculateSelected(page, 'T3');
