@@ -433,14 +433,28 @@ describe('20N.1 J: intent set fail-closed (never sorted, no partial solve)', () 
   const d3: Family = 'distance';
   const swap = (b: Built): Built => ({ ...b, request: { ...b.request, transitions: [b.plans[1]!, b.plans[0]!] } });
 
-  it('out-of-order, duplicate, and sparse loaded intents reject', () => {
+  it('out-of-order and duplicate loaded intents reject', () => {
     const b = build(baseCase(d3, '2T'));
     expect(failCode(swap(b))).toBe('TRANSITION_REJECTED');
     const dup = { ...b, request: { ...b.request, transitions: [b.plans[0]!, b.plans[0]!] } };
     expect(failCode(dup)).toBe('TRANSITION_REJECTED');
+  });
+
+  it('sparse loaded intents pass the transition gate; this fixture fails downstream (20P.1 LANDED)', () => {
+    // 20P.1 LANDED: [0,2] passes selectGroupTransitions + station-gap
+    // separation, so the solve proceeds — but this 20N.1 fixture alternates
+    // member scalars (5,7,9,11), so skipped joint 1 has mismatched native
+    // offsets (7 vs 9) with no miter solution. Honest code, not a sparse
+    // positive: a sparse positive needs uniform native scalars at skips.
     const b3 = build(baseCase(d3, '3T'));
+    expect(selectGroupTransitions([{ jointId: 'joint:0' }, { jointId: 'joint:2' }]).kind).toBe('group');
     const sparse: Built = { ...b3, request: { ...b3.request, transitions: [b3.plans[0]!, b3.plans[2]!] } };
-    expect(failCode(sparse)).toBe('TRANSITION_REJECTED');
+    const outcome = solve(sparse);
+    expect(outcome.ok).toBe(false);
+    if (!outcome.ok) {
+      expect(outcome.code).toBe('CORNER_NO_SOLUTION');
+      expect(outcome).toMatchObject({ cornerIndex: 1, detail: 'GRADING_ANALYTIC_CORNER_PARALLEL' });
+    }
   });
 
   it('one stale intent (memberIds) fails the whole group', () => {

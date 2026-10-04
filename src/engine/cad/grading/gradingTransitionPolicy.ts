@@ -94,6 +94,35 @@ export const parseCanonicalJointIndex = (jointId: unknown): number | null => {
 };
 
 /**
+ * Phase 20P.1 — joint stations: one left-to-right cumulative pass,
+ * result[i] = sum(lengths[0..i]). Pure arithmetic; callers own admission.
+ */
+export const computeJointStations = (memberLengths: readonly number[]): number[] => {
+  const stations: number[] = [];
+  let acc = 0;
+  for (const length of memberLengths) {
+    acc += length;
+    stations.push(acc);
+  }
+  return stations;
+};
+
+/**
+ * Phase 20P.1 — set gaps over ordered joints: gaps[k] = stations[j_{k+1}]
+ * - stations[j_k]. Pure arithmetic only.
+ */
+export const transitionSetStationGaps = (
+  stations: readonly number[],
+  orderedJoints: readonly number[],
+): number[] => {
+  const gaps: number[] = [];
+  for (let k = 0; k + 1 < orderedJoints.length; k += 1) {
+    gaps.push(stations[orderedJoints[k + 1]!]! - stations[orderedJoints[k]!]!);
+  }
+  return gaps;
+};
+
+/**
  * Phase 20N.1 Wave B — strict shared-member separation:
  * `W_i/2 + W_{i+1}/2 < L_shared` with EXACT strict `<`, no epsilon.
  * Touching (`==`) and overlap both return false. Malformed inputs
@@ -232,11 +261,11 @@ export type TransitionSelection =
 /**
  * Phase 20N.1 Wave B — GROUP selection authority (decision.md §3).
  * Absent/empty = legacy path; exactly one = the single candidate;
- * N > 1 = the ordered group iff jointIds are canonical `joint:<n>`,
- * strictly increasing with NO gaps (j, j+1, ..., j+N-1) — sparse sets,
- * duplicates, out-of-order, and malformed ids reject fail-closed, NEVER
- * silently reordered/sorted. Content validity stays at per-joint
- * `admitGradingTransition` (transitionCount: 1), not here.
+ * N > 1 = the ordered group iff jointIds are canonical `joint:<n>` and
+ * strictly increasing (gaps allowed) — duplicates, out-of-order, and
+ * malformed ids reject fail-closed, NEVER silently reordered/sorted.
+ * Content validity stays at per-joint `admitGradingTransition`
+ * (transitionCount: 1), not here.
  */
 export type GroupTransitionSelection =
   | { kind: 'absent' }
@@ -278,7 +307,7 @@ export const selectGroupTransitions = (transitions: unknown): GroupTransitionSel
   for (const intent of intents) {
     const index = parseCanonicalJointIndex(intent.jointId);
     if (index === null) return groupReject();
-    if (prev >= 0 && index !== prev + 1) return groupReject();
+    if (prev >= 0 && index <= prev) return groupReject();
     prev = index;
   }
   return { kind: 'group', transitions: intents };
@@ -344,6 +373,7 @@ export type GroupTransitionExpectationOutcome =
 
 export const deriveGroupTransitionExpectation = (
   joints: readonly GroupTransitionExpectationJoint[],
+  stationGaps?: readonly number[],
 ): GroupTransitionExpectationOutcome => {
   const malformed = (detail: string): GroupTransitionExpectationOutcome => ({
     ok: false,
@@ -368,6 +398,7 @@ export const deriveGroupTransitionExpectation = (
       transitionCount: 1,
       isOpen: joint.isOpen,
     })),
+    stationGaps,
   );
   if (outcome.ok) return { ok: true, expectation: outcome.expectation };
   const code: GroupDiagnosticCode =

@@ -714,7 +714,8 @@ export const checkGroupTransitionPlansAgreement = (
   let prev = -1;
   for (const plan of plans) {
     const index = parseCanonicalJointIndex(plan.jointId);
-    if (index === null || (prev >= 0 && index !== prev + 1)) {
+    // Strictly increasing (gaps allowed); duplicates/out-of-order reject.
+    if (index === null || index <= prev) {
       return { ok: false, code: 'GRADING_AGREEMENT_TRANSITION_MALFORMED', joint: index ?? undefined };
     }
     prev = index;
@@ -733,13 +734,14 @@ export const checkGroupTransitionPlansAgreement = (
   if (plans.length > 1) {
     const widths = plans.map((plan) => plan.width);
     const gaps: number[] = [];
-    for (let i = 0; i + 1 < views.length; i += 1) {
-      const left = views[i]![1];
-      const right = views[i + 1]![0];
-      if (left === undefined || right === undefined || !(left.length === right.length)) {
-        return { ok: false, code: 'GRADING_AGREEMENT_TRANSITION_STALE' };
+    for (let i = 0; i + 1 < plans.length; i += 1) {
+      // Global-span gap from the authoritative request stations (full member
+      // run between joints, not the immediate shared member).
+      const gap = plans[i + 1]!.jointStation - plans[i]!.jointStation;
+      if (!Number.isFinite(gap) || !(gap > 0)) {
+        return { ok: false, code: 'GRADING_AGREEMENT_TRANSITION_MALFORMED' };
       }
-      gaps.push(left.length);
+      gaps.push(gap);
     }
     if (!checkGroupTransitionSeparation(widths, gaps)) {
       return { ok: false, code: 'GRADING_AGREEMENT_TRANSITION_OVERLAP' };

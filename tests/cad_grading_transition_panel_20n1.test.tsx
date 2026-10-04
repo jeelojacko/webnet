@@ -59,6 +59,28 @@ const staged = (jointId: string, memberIds: [string, string], width: number): Tr
 const sources = [src(-20, 0), src(0, 20), src(20, 40)];
 const criteria = [DIST(0.5, 5), DIST(0.5, 7), DIST(0.5, 9)];
 
+// 4-course group (joints 0..2) for SPARSE coverage: gap 0 -> 2 spans member 1+2.
+const group4 = (transitions?: TransitionPersistedIntent[]): CadGradingGroup => ({
+  id: 'gg-h4',
+  name: 'H4',
+  sourceFeatureLineId: 'fl',
+  sourceCourses: [
+    { vertexAId: 'a', vertexBId: 'b' },
+    { vertexAId: 'b', vertexBId: 'c' },
+    { vertexAId: 'c', vertexBId: 'd' },
+    { vertexAId: 'd', vertexBId: 'e' },
+  ],
+  side: 'left',
+  criterion: DIST(0.5, 5),
+  maxSearchDistance: 10,
+  curveChordTolerance: 0.01,
+  cornerMode: 'miter',
+  ...(transitions ? { transitions } : {}),
+}) as CadGradingGroup;
+
+const sources4 = [src(-40, -20), src(-20, 0), src(0, 20), src(20, 40)];
+const criteria4 = [DIST(0.5, 5), DIST(0.5, 7), DIST(0.5, 9), DIST(0.5, 9)];
+
 const renderPanel = async (ui: React.ReactElement): Promise<{ element: HTMLElement; cleanup: () => void }> => {
   const element = document.createElement('div');
   document.body.appendChild(element);
@@ -211,5 +233,82 @@ describe('20N.1 WAVE H transition panel', () => {
         { jointId: 'joint:1', width: 6 },
       ],
     });
+  });
+
+  it('authorizes a sparse add at a non-adjacent joint with no order warning', async () => {
+    const g = group4([staged('joint:0', ['a>b', 'b>c'], 8)]);
+    const calls: CadCommand[] = [];
+    const notices: string[] = [];
+    const { element, cleanup } = await renderPanel(
+      <CadGradingGroupTransitionPanel
+        group={g}
+        memberSources={sources4}
+        memberCriteria={criteria4}
+        side="left"
+        run={(command) => { calls.push(command); return true; }}
+        onNotice={(message) => { notices.push(message); }}
+      />,
+    );
+    try {
+      await setSelect(element, 'Transition joint', '2');
+      await setInput(element, 'Transition width', '6');
+      const button = element.querySelector('[data-cad-grading-group-transition-add]') as HTMLButtonElement;
+      await act(async () => { button.click(); });
+      expect(calls).toHaveLength(1);
+      expect(calls[0]).toMatchObject({ key: 'GROUP_SET_TRANSITION', intent: { jointId: 'joint:2', width: 6 } });
+      expect(notices.join(' ')).toContain('staged');
+      expect(element.querySelector('[data-cad-grading-group-transition-order-warning]')).toBeNull();
+    } finally {
+      cleanup();
+    }
+  });
+
+  it('does not warn on a sparse stored set, still warns out of order', async () => {
+    const sparse = group4([staged('joint:0', ['a>b', 'b>c'], 8), staged('joint:2', ['c>d', 'd>e'], 6)]);
+    const first = await renderPanel(
+      <CadGradingGroupTransitionPanel group={sparse} memberSources={sources4} memberCriteria={criteria4} side="left" run={() => true} onNotice={() => {}} />,
+    );
+    try {
+      const rows = [...first.element.querySelectorAll('[data-cad-grading-group-transition-row]')];
+      expect(rows.map((row) => row.getAttribute('data-cad-grading-group-transition-row'))).toEqual(['joint:0', 'joint:2']);
+      expect(first.element.querySelector('[data-cad-grading-group-transition-order-warning]')).toBeNull();
+    } finally {
+      first.cleanup();
+    }
+    const reversed = group4([staged('joint:2', ['c>d', 'd>e'], 6), staged('joint:0', ['a>b', 'b>c'], 8)]);
+    const second = await renderPanel(
+      <CadGradingGroupTransitionPanel group={reversed} memberSources={sources4} memberCriteria={criteria4} side="left" run={() => true} onNotice={() => {}} />,
+    );
+    try {
+      expect(second.element.querySelector('[data-cad-grading-group-transition-order-warning]')).not.toBeNull();
+    } finally {
+      second.cleanup();
+    }
+  });
+
+  it('refuses a touching sparse pair from true station gaps without dispatching', async () => {
+    const g = group4([staged('joint:0', ['a>b', 'b>c'], 40)]);
+    const calls: CadCommand[] = [];
+    const notices: string[] = [];
+    const { element, cleanup } = await renderPanel(
+      <CadGradingGroupTransitionPanel
+        group={g}
+        memberSources={sources4}
+        memberCriteria={criteria4}
+        side="left"
+        run={(command) => { calls.push(command); return true; }}
+        onNotice={(message) => { notices.push(message); }}
+      />,
+    );
+    try {
+      await setSelect(element, 'Transition joint', '2');
+      await setInput(element, 'Transition width', '40');
+      const button = element.querySelector('[data-cad-grading-group-transition-add]') as HTMLButtonElement;
+      await act(async () => { button.click(); });
+      expect(calls).toHaveLength(0);
+      expect(notices.join(' ')).toMatch(/touching transitions are not authorized/);
+    } finally {
+      cleanup();
+    }
   });
 });

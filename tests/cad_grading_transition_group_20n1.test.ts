@@ -271,15 +271,30 @@ describe('20N.1 Wave E: whole-group fail-closed (no partial solve)', () => {
     ))).toBe('TRANSITION_STALE');
   });
 
-  it('out-of-order / duplicate / sparse / malformed intent lists reject, never sort', () => {
+  it('out-of-order / duplicate / malformed intent lists reject, never sort', () => {
     const keys = keysFor(4);
     const pair = [intent(0, 8, keys, 'distance'), intent(1, 6, keys, 'distance')];
     expect(codeOf(solveGroup([30, 24, 26, 30], [...D3(), DIST(0.5, 11)], [pair[1]!, pair[0]!]))).toBe('TRANSITION_REJECTED');
     expect(codeOf(solveGroup([30, 24, 30], D3(), [pair[0]!, pair[0]!]))).toBe('TRANSITION_REJECTED');
-    const sparse = [intent(0, 8, keys, 'distance'), intent(2, 4, keysFor(4), 'distance')];
-    expect(codeOf(solveGroup([30, 24, 26, 30], [...D3(), DIST(0.5, 11)], sparse))).toBe('TRANSITION_REJECTED');
     const malformed = [intent(0, 8, keys, 'distance'), { ...intent(1, 6, keys, 'distance'), jointId: 'bogus' }];
     expect(codeOf(solveGroup([30, 24, 30], D3(), malformed))).toBe('TRANSITION_REJECTED');
+  });
+
+  it('sparse [0,2] passes the transition gate; this fixture fails downstream (20P.1 LANDED)', () => {
+    // 20P.1 LANDED: sparse sets are authorized, so joints [0,2] clear the
+    // transition gate — but this 20N.1 fixture alternates criteria
+    // (5,7,9,11), leaving skipped joint 1 with mismatched native offsets
+    // (7 vs 9, parallel members, no miter solution). Honest downstream
+    // code, not a sparse positive (see the 20P.1 suite for uniform-scalar
+    // sparse positives that solve CURRENT).
+    const keys = keysFor(4);
+    const sparse = [intent(0, 8, keys, 'distance'), intent(2, 4, keysFor(4), 'distance')];
+    const outcome = solveGroup([30, 24, 26, 30], [...D3(), DIST(0.5, 11)], sparse);
+    expect(outcome.ok).toBe(false);
+    if (!outcome.ok) {
+      expect(outcome.code).toBe('CORNER_NO_SOLUTION');
+      expect(outcome).toMatchObject({ cornerIndex: 1, detail: 'GRADING_ANALYTIC_CORNER_PARALLEL' });
+    }
   });
 
   it('bent / sloped / closed / dual-field intents fail closed', () => {
