@@ -168,18 +168,31 @@ export type TransitionExpectationOutcome =
   | { ok: true; expectation: GradingTopologyExpectation }
   | { ok: false; code: string; detail: string };
 
-export const deriveTransitionExpectation = (
-  base: DeriveTopologyExpectationInput,
-  intent: TransitionExpectationIntent | null | undefined,
-): TransitionExpectationOutcome => {
-  if (intent == null) {
-    return { ok: true, expectation: deriveGradingTopologyExpectation(base) };
-  }
+/**
+ * Phase 20N.1: the authorized plural form — an ordered (canonical increasing
+ * joint index) set of per-joint intents, each evaluated with the singular
+ * `trp1` scalar contract. The merged-strip argument (surviving natives + C0
+ * shared boundaries ⇒ one maximal non-tied run) is stated in
+ * `docs/evidence/phase20n/decision.md` §3.5: an open strict-separated
+ * all-positive chain declares the group-scoped open strip 1/1/1 PRE-MESH,
+ * never from an observed count. Each entry carries `transitionCount: 1`
+ * (per-joint admission, as in the study); the ARRAY LENGTH is the plural
+ * set size, so the singular `transitionCount !== 1` rejection is untouched.
+ */
+export type TransitionExpectationSet = TransitionExpectationIntent[];
+
+/** Parse a real `joint:<n>` id; anything else is malformed (never coerced). */
+const transitionJointIndex = (jointId: string): number | null => {
+  const m = /^joint:(\d+)$/.exec(jointId);
+  return m ? Number(m[1]) : null;
+};
+
+/** Per-intent scalar validation shared by the singular and plural paths. */
+const validateTransitionIntent = (
+  intent: TransitionExpectationIntent,
+): TransitionExpectationOutcome | null => {
   if (typeof intent.jointId !== 'string' || intent.jointId.length === 0) {
     return { ok: false, code: 'GRADING_AGREEMENT_TRANSITION_MALFORMED', detail: 'transition jointId required' };
-  }
-  if (intent.transitionCount !== 1) {
-    return { ok: false, code: 'GRADING_AGREEMENT_TRANSITION_OVERLAP', detail: 'trp1 admits exactly one transition per group' };
   }
   if (!intent.isOpen) {
     return { ok: false, code: 'GRADING_AGREEMENT_TRANSITION_MALFORMED', detail: 'closed-route transitions excluded' };
@@ -195,12 +208,105 @@ export const deriveTransitionExpectation = (
   if (!(w <= 2 * Math.min(a, b))) {
     return { ok: false, code: 'GRADING_AGREEMENT_TRANSITION_WIDE', detail: 'transition width exceeds 2*min(member lengths)' };
   }
-  return {
-    ok: true,
-    expectation: deriveGradingTopologyExpectation({
-      scope: 'group',
-      closed: false,
-      positiveWidthRegions: 1,
-    }),
-  };
+  return null;
 };
+
+const declaredMergedStrip = (): TransitionExpectationOutcome => ({
+  ok: true,
+  expectation: deriveGradingTopologyExpectation({
+    scope: 'group',
+    closed: false,
+    positiveWidthRegions: 1,
+  }),
+});
+
+const deriveSingularTransitionExpectation = (
+  intent: TransitionExpectationIntent,
+): TransitionExpectationOutcome => {
+  const invalid = validateTransitionIntent(intent);
+  if (invalid) return invalid;
+  if (intent.transitionCount !== 1) {
+    return { ok: false, code: 'GRADING_AGREEMENT_TRANSITION_OVERLAP', detail: 'trp1 admits exactly one transition per group' };
+  }
+  return declaredMergedStrip();
+};
+
+/**
+ * Plural pre-mesh expectation: every intent is admitted (trusted upstream),
+ * joint ids are canonical increasing AND consecutive, each adjacent pair
+ * shares one member bit-identically (never repaired), and strict separation
+ * `Wi/2 + Wi+1/2 < gap` holds. Any failure means NO expectation and NO
+ * certificate (fail closed; the measured mesh count is never consulted).
+ */
+const deriveTransitionSetExpectation = (
+  base: DeriveTopologyExpectationInput,
+  intents: TransitionExpectationSet,
+): TransitionExpectationOutcome => {
+  // Present-but-empty set is the legacy shape (absent intent).
+  if (intents.length === 0) {
+    return { ok: true, expectation: deriveGradingTopologyExpectation(base) };
+  }
+  const indices: number[] = [];
+  for (const intent of intents) {
+    if (intent === null || typeof intent !== 'object') {
+      return { ok: false, code: 'GRADING_AGREEMENT_TRANSITION_MALFORMED', detail: 'transition intent must be an object' };
+    }
+    const invalid = validateTransitionIntent(intent);
+    if (invalid) return invalid;
+    if (intent.transitionCount !== 1) {
+      return { ok: false, code: 'GRADING_AGREEMENT_TRANSITION_OVERLAP', detail: 'each trp1 joint admits exactly one transition' };
+    }
+    const index = transitionJointIndex(intent.jointId);
+    if (index === null) {
+      return { ok: false, code: 'GRADING_AGREEMENT_TRANSITION_MALFORMED', detail: `malformed jointId ${JSON.stringify(intent.jointId)}` };
+    }
+    indices.push(index);
+  }
+  for (let i = 1; i < indices.length; i += 1) {
+    if (indices[i] !== indices[i - 1]! + 1) {
+      return {
+        ok: false,
+        code: 'GRADING_AGREEMENT_TRANSITION_MALFORMED',
+        detail: 'transition joints must be canonical increasing and consecutive',
+      };
+    }
+  }
+  for (let i = 0; i + 1 < intents.length; i += 1) {
+    const left = intents[i]!;
+    const right = intents[i + 1]!;
+    // The shared member is joint i's right member and joint i+1's left
+    // member; a mismatch is inconsistent input, never repaired to a default.
+    const gap = left.memberLengths[1];
+    if (gap !== right.memberLengths[0]) {
+      return { ok: false, code: 'GRADING_AGREEMENT_TRANSITION_MALFORMED', detail: 'adjacent joints must share one member length exactly' };
+    }
+    const halfSpan = left.width / 2 + right.width / 2;
+    if (halfSpan === gap) {
+      return { ok: false, code: 'GRADING_AGREEMENT_TRANSITION_OVERLAP', detail: 'touching transitions are not authorized (shared boundaries need a tie-break)' };
+    }
+    if (halfSpan > gap) {
+      return { ok: false, code: 'GRADING_AGREEMENT_TRANSITION_OVERLAP', detail: 'overlapping transitions are not authorized' };
+    }
+  }
+  return declaredMergedStrip();
+};
+
+/**
+ * Pre-mesh expectation from ONE intent (legacy, `transitionCount === 1`) or
+ * the authorized plural set (ordered array). `null`/`undefined`/empty set
+ * derives the legacy expectation byte-identically.
+ */
+export const deriveTransitionExpectation = (
+  base: DeriveTopologyExpectationInput,
+  intent: TransitionExpectationIntent | TransitionExpectationSet | null | undefined,
+): TransitionExpectationOutcome => {
+  if (intent == null) {
+    return { ok: true, expectation: deriveGradingTopologyExpectation(base) };
+  }
+  if (Array.isArray(intent)) {
+    return deriveTransitionSetExpectation(base, intent);
+  }
+  return deriveSingularTransitionExpectation(intent);
+};
+
+

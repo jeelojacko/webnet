@@ -158,7 +158,7 @@ describe('20M.1 transition policy corpus', () => {
     }
   });
 
-  it('no src/ changes: committed range clean AND working tree/index clean', () => {
+  it('no src/ changes in the committed 20M.1 range', () => {
     // The committed-range proof is anchored to the Phase 20M.1 scope
     // (baseline 3fe69f22 through the PR #150 merge bd4bdd45), NOT floating
     // HEAD: a floating end would fail on any later branch that legitimately
@@ -166,8 +166,9 @@ describe('20M.1 transition policy corpus', () => {
     // stayed zero-src. Shallow CI checkouts may lack either object, so
     // detect non-throwing and only then assert the range; the range proof
     // there is independently enforced by PR changed-path classification /
-    // GitHub changed-file review, not by this unit test. Working
-    // tree/index under src is always asserted here.
+    // GitHub changed-file review, not by this unit test. The floating
+    // working-tree assertion was removed in Phase 20N.1, whose authorized
+    // production delta legitimately edits src/.
     let rangeProvable = true;
     try {
       execSync('git cat-file -e 3fe69f22103b1d242538a0a205a0774e145afde5^{commit}', { stdio: 'ignore' });
@@ -179,7 +180,5 @@ describe('20M.1 transition policy corpus', () => {
       const range = execSync('git diff --name-only 3fe69f22103b1d242538a0a205a0774e145afde5...bd4bdd4599006a82308bafc25e73341f46866013 -- src', { encoding: 'utf8' });
       expect(range.trim()).toBe('');
     }
-    const tree = execSync('git status --porcelain -- src', { encoding: 'utf8' });
-    expect(tree.trim()).toBe('');
   });
 });
