@@ -7,6 +7,7 @@
  */
 import { resolveAnalyticCriterionAt } from './gradingAnalyticCriterion';
 import type { CadGradingTransition, GroupDiagnosticCode } from './gradingGroupTypes';
+import type { GradingTopologyExpectation } from './gradingTopologyExpectation';
 import type { GradingCriterion, GradingSide } from './gradingTypes';
 
 export type TransitionPolicyVersion = 'trp1';
@@ -77,6 +78,39 @@ export interface AdmitTransitionInput {
 /** Legacy files carry no `transitions` key at all: behave exactly as today. */
 export const hasTransitionIntent = (transitions: unknown): boolean =>
   Array.isArray(transitions) && transitions.length > 0;
+
+/**
+ * Phase 20N.1 Wave B — canonical joint index (`joint:<n>`, no leading
+ * zeros, non-negative). Null for anything else; never coerces, never
+ * sorts — out-of-order/duplicate/malformed intents fail closed upstream.
+ */
+export const parseCanonicalJointIndex = (jointId: unknown): number | null => {
+  if (typeof jointId !== 'string') return null;
+  const jointed = /^joint:(\d+)$/.exec(jointId);
+  if (jointed === null || jointed[1] !== String(Number(jointed[1]))) return null;
+  const index = Number(jointed[1]);
+  return Number.isSafeInteger(index) ? index : null;
+};
+
+/**
+ * Phase 20N.1 Wave B — strict shared-member separation:
+ * `W_i/2 + W_{i+1}/2 < L_shared` with EXACT strict `<`, no epsilon.
+ * Touching (`==`) and overlap both return false. Malformed inputs
+ * (empty, length mismatch, non-finite/non-positive) return false.
+ * A lone width (no shared member) is vacuously separated.
+ */
+export const checkGroupTransitionSeparation = (
+  widths: readonly number[],
+  sharedLengths: readonly number[],
+): boolean => {
+  if (widths.length === 0 || sharedLengths.length !== widths.length - 1) return false;
+  for (const w of widths) if (!Number.isFinite(w) || !(w > 0)) return false;
+  for (const l of sharedLengths) if (!Number.isFinite(l) || !(l > 0)) return false;
+  for (let i = 0; i < sharedLengths.length; i += 1) {
+    if (!(widths[i]! / 2 + widths[i + 1]! / 2 < sharedLengths[i]!)) return false;
+  }
+  return true;
+};
 
 export type AdmitTransitionResult =
   | {
@@ -194,7 +228,22 @@ export type TransitionSelection =
   | { kind: 'single'; transition: CadGradingTransition }
   | { kind: 'rejected'; code: GroupDiagnosticCode; detail: string };
 
-export const selectGroupTransition = (transitions: unknown): TransitionSelection => {
+/**
+ * Phase 20N.1 Wave B — GROUP selection authority (decision.md §3).
+ * Absent/empty = legacy path; exactly one = the single candidate;
+ * N > 1 = the ordered group iff jointIds are canonical `joint:<n>`,
+ * strictly increasing with NO gaps (j, j+1, ..., j+N-1) — sparse sets,
+ * duplicates, out-of-order, and malformed ids reject fail-closed, NEVER
+ * silently reordered/sorted. Content validity stays at per-joint
+ * `admitGradingTransition` (transitionCount: 1), not here.
+ */
+export type GroupTransitionSelection =
+  | { kind: 'absent' }
+  | { kind: 'single'; transition: CadGradingTransition }
+  | { kind: 'group'; transitions: CadGradingTransition[] }
+  | { kind: 'rejected'; code: GroupDiagnosticCode; detail: string };
+
+export const selectGroupTransitions = (transitions: unknown): GroupTransitionSelection => {
   if (transitions === undefined) return { kind: 'absent' };
   // Present-but-unreadable intent (non-array field) is retained as invalid
   // intent and fails closed — never the legacy path.
@@ -218,14 +267,38 @@ export const selectGroupTransition = (transitions: unknown): TransitionSelection
     };
   }
   if (intents.length === 0) return { kind: 'absent' };
-  if (intents.length > 1) {
+  if (intents.length === 1) return { kind: 'single', transition: intents[0]! };
+  const groupReject = (): GroupTransitionSelection => ({
+    kind: 'rejected',
+    code: 'TRANSITION_REJECTED',
+    detail: 'GRADING_AGREEMENT_TRANSITION_CARDINALITY',
+  });
+  let prev = -1;
+  for (const intent of intents) {
+    const index = parseCanonicalJointIndex(intent.jointId);
+    if (index === null) return groupReject();
+    if (prev >= 0 && index !== prev + 1) return groupReject();
+    prev = index;
+  }
+  return { kind: 'group', transitions: intents };
+};
+
+/**
+ * Narrow compatibility wrapper for N <= 1 (production tiling/services
+ * admit at most one transition until Wave E wires the group path).
+ * Output is byte-identical to the 20M.2 gate for every input: a valid
+ * multi-joint group still rejects here — use `selectGroupTransitions`.
+ */
+export const selectGroupTransition = (transitions: unknown): TransitionSelection => {
+  const selection = selectGroupTransitions(transitions);
+  if (selection.kind === 'group') {
     return {
       kind: 'rejected',
       code: 'TRANSITION_REJECTED',
       detail: 'GRADING_AGREEMENT_TRANSITION_CARDINALITY',
     };
   }
-  return { kind: 'single', transition: intents[0]! };
+  return selection;
 };
 
 /**
@@ -240,4 +313,110 @@ export const transitionRejectGroupCode = (code: TransitionRejectCode): GroupDiag
     return 'TRANSITION_STALE';
   }
   return 'TRANSITION_REJECTED';
+};
+
+/**
+ * Phase 20N.1 Wave B — GROUP pre-mesh gate (decision.md §3.5).
+ *
+ * Policy-side companion to the topology expectation: admits a joint list
+ * iff EVERY joint passes the per-joint pre-mesh checks (canonical
+ * consecutive `joint:<n>` order, open, width bound) AND every adjacent
+ * pair is strictly separated (`W_i/2 + W_{i+1}/2 < L_shared`, exact `<`)
+ * on a physically shared member (right length of joint i === left length
+ * of joint i+1). Absent intent is handled by `selectGroupTransitions`,
+ * not here — this takes a non-empty list. Whole-group fail-closed with
+ * the existing bounded vocabulary (no new codes, no epsilon).
+ *
+ * NOTE: waveCD-author-topo carries a parallel set-expectation in
+ * gradingTopologyExpectation.ts (richer codes, full certificate
+ * expectation). This one stays vocabulary-bounded for the policy gate;
+ * the orchestrator reconciles the two after both waves land.
+ */
+export interface GroupTransitionExpectationJoint {
+  jointId: string;
+  /** Explicit total symmetric width W, source-line meters. */
+  width: number;
+  /** Source-line lengths of the two incident members. */
+  memberLengths: readonly [number, number];
+  /** False for closed routes (excluded, as in trp1). */
+  isOpen: boolean;
+}
+
+export type GroupTransitionExpectationOutcome =
+  | { ok: true; expectation: GradingTopologyExpectation }
+  | { ok: false; code: GroupDiagnosticCode; detail: string };
+
+export const deriveGroupTransitionExpectation = (
+  joints: readonly GroupTransitionExpectationJoint[],
+): GroupTransitionExpectationOutcome => {
+  const malformed = (detail: string): GroupTransitionExpectationOutcome => ({
+    ok: false,
+    code: 'TRANSITION_MALFORMED',
+    detail,
+  });
+  if (!Array.isArray(joints) || joints.length === 0) {
+    return malformed('transition joint list required');
+  }
+  const widths: number[] = [];
+  const gaps: number[] = [];
+  let prevIndex = -1;
+  let prevRight = Number.NaN;
+  for (const joint of joints) {
+    if (joint === null || typeof joint !== 'object') return malformed('transition joint must be an object');
+    const index = parseCanonicalJointIndex(joint.jointId);
+    if (index === null) return malformed('canonical joint:<n> order required, never re-sorted');
+    if (prevIndex >= 0 && index !== prevIndex + 1) {
+      return {
+        ok: false,
+        code: 'TRANSITION_REJECTED',
+        detail: 'GRADING_AGREEMENT_TRANSITION_CARDINALITY: joints must be consecutive (j, j+1, ...); sparse sets rejected',
+      };
+    }
+    prevIndex = index;
+    if (!joint.isOpen) return malformed('closed-route transitions excluded');
+    const w = joint.width;
+    if (!Number.isFinite(w) || !(w > 0)) return malformed('transition width must be finite > 0');
+    const [a, b] = joint.memberLengths;
+    if (!Number.isFinite(a) || !Number.isFinite(b) || !(a > 0) || !(b > 0)) {
+      return malformed('member lengths must be finite > 0');
+    }
+    if (!(w <= 2 * Math.min(a, b))) {
+      return {
+        ok: false,
+        code: 'TRANSITION_REJECTED',
+        detail: 'GRADING_AGREEMENT_TRANSITION_WIDE: transition width exceeds 2*min(member lengths)',
+      };
+    }
+    if (Number.isNaN(prevRight)) prevRight = b;
+    else {
+      if (!(a === prevRight)) return malformed('shared member lengths disagree between adjacent joints');
+      gaps.push(a);
+      prevRight = b;
+    }
+    widths.push(w);
+  }
+  if (!checkGroupTransitionSeparation(widths, gaps)) {
+    return {
+      ok: false,
+      code: 'TRANSITION_REJECTED',
+      detail: 'GRADING_AGREEMENT_TRANSITION_OVERLAP: strict separation W_i/2+W_{i+1}/2 < gap violated (touching/overlap rejected)',
+    };
+  }
+  // Single merged open strip 1/1/1 (mirrors the topology declaration;
+  // reconciled with the waveCD set-expectation post-waves).
+  return {
+    ok: true,
+    expectation: {
+      policyVersion: '20k3.1',
+      scope: 'group',
+      shape: 'open-strip',
+      expectedFaceComponents: 1,
+      expectedBoundaryCycles: 1,
+      positiveWidthRegionCount: 1,
+      tiedSplitCoords: [],
+      closed: false,
+      sourceBoundaryKind: 'open-path',
+      gradingBoundaryKind: 'open-path',
+    },
+  };
 };

@@ -60,6 +60,8 @@ import {
 } from './gradingTransitionPolicy';
 
 export { selectGroupTransition, type TransitionSelection };
+export type { GroupTransitionSelection } from './gradingTransitionPolicy';
+export { checkGroupTransitionSeparation, selectGroupTransitions } from './gradingTransitionPolicy';
 import { solveHybridCorner } from './gradingGroupHybridCorners';
 import { groupTerminationMode } from './gradingGroupTermination';
 import { buildGradingTopologyCertificateExact, countPositiveWidthRegions } from './gradingTopologyCertificate';

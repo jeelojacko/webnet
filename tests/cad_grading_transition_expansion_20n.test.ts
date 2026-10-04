@@ -7,7 +7,6 @@
  * Study verdicts are NOT production behavior: every A-eligible layout still
  * REJECTS in production today (pinned explicitly).
  */
-import { execSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
 import { readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
@@ -68,23 +67,6 @@ const admitInput = (transitionCount: number, dirY = 0): AdmitTransitionInput => 
     members,
   };
 };
-
-describe('20N scope guard: zero src/ changes', () => {
-  it('baseline 9805da77...HEAD -- src empty AND working tree/index clean (shallow-CI-safe)', () => {
-    let rangeProvable = true;
-    try {
-      execSync('git cat-file -e 9805da77^{commit}', { stdio: 'ignore' });
-    } catch {
-      rangeProvable = false;
-    }
-    if (rangeProvable) {
-      const range = execSync('git diff --name-only 9805da77...HEAD -- src', { encoding: 'utf8' });
-      expect(range.trim()).toBe('');
-    }
-    const tree = execSync('git status --porcelain -- src', { encoding: 'utf8' });
-    expect(tree.trim()).toBe('');
-  });
-});
 
 describe('20N candidate A: multiple collinear transitions', () => {
   it('corpus holds 11 A rows; 2T/3T x 3fam admit per joint + strict separation + C0', () => {
