@@ -48,7 +48,7 @@ the QA harness in `docs/evidence/pages/subpath-qa-summary.md`
 `.github/workflows/pages.yml`: push to `main` + `workflow_dispatch` only
 (never PRs). Build job (`checkout@v5`, `setup-node@v5` Node 24,
 `configure-pages@v5`, `npm ci`, `npm run build:pages`, artifact check,
-upload `dist/` only) → deploy job (`pages: write`, `id-token: write`,
+`upload-pages-artifact@v5` for `dist/` only) → deploy job (`pages: write`, `id-token: write`,
 environment `github-pages`, concurrency `group: pages`).
 Normal CI is untouched and remains the pre-merge gate.
 
