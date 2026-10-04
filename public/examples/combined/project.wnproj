@@ -124,8 +124,8 @@
       "robustK": 1.5,
       "parseCompatibilityMode": "strict",
       "parseModeMigrated": true,
-      "preanalysisAccuracyThresholdMeters": 0.001,
-      "preanalysisMaxAddedSets": 5
+      "preanalysisAccuracyThresholdMeters": 0.005,
+      "preanalysisMaxAddedSets": 3
     },
     "exportFormat": "points",
     "adjustedPointsExport": {

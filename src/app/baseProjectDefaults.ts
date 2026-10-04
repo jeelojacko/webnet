@@ -3,6 +3,8 @@ import {
   cloneAdjustedPointsExportSettings,
 } from '../engine/adjustedPointsExport';
 import {
+  DEFAULT_PREANALYSIS_ACCURACY_THRESHOLD_METERS,
+  DEFAULT_PREANALYSIS_MAX_ADDED_SETS,
   DEFAULT_QFIX_ANGULAR_SIGMA_SEC,
   DEFAULT_QFIX_LINEAR_SIGMA_M,
 } from '../engine/defaults';
@@ -79,8 +81,8 @@ export const createBaseParseSettings = (): ParseSettings => ({
   gridDirectionMode: 'measured',
   runMode: 'adjustment',
   preanalysisMode: false,
-  preanalysisAccuracyThresholdMeters: 0.001,
-  preanalysisMaxAddedSets: 5,
+  preanalysisAccuracyThresholdMeters: DEFAULT_PREANALYSIS_ACCURACY_THRESHOLD_METERS,
+  preanalysisMaxAddedSets: DEFAULT_PREANALYSIS_MAX_ADDED_SETS,
   clusterDetectionEnabled: false,
   autoSideshotEnabled: true,
   autoAdjustEnabled: false,
