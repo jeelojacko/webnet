@@ -424,10 +424,14 @@ describe('20P-B topology: 1/1/1 declared from structure, measured independently'
     }
   });
 
-  it('production plural authorities still REJECT sparse sets today (fail closed)', () => {
+  it('production plural authorities ADMIT sparse sets (20P.1 LANDED)', () => {
+    // 20P.1 LANDED: strictly-increasing-with-gaps now admits. Selection
+    // admits the sparse set; the station-gap expectation mode admits with
+    // the true station gap (S(2)-S(0) = 24+30 = 54 here); the legacy
+    // no-gap mode still requires consecutive joints (preserved narrowing).
     const geometry = build(FIXTURES.sparse2);
     const intents = geometry.transitions.map((t) => t.intent);
-    expect(selectGroupTransitions(intents)).toMatchObject({ kind: 'rejected', code: 'TRANSITION_REJECTED' });
+    expect(selectGroupTransitions(intents)).toMatchObject({ kind: 'group' });
     const intentsForExpectation = geometry.transitions.map((t) => ({
       jointId: t.intent.jointId,
       width: t.width,
@@ -439,6 +443,11 @@ describe('20P-B topology: 1/1/1 declared from structure, measured independently'
     expect(derived.ok).toBe(false);
     if (!derived.ok) expect(derived.code).toBe('GRADING_AGREEMENT_TRANSITION_MALFORMED');
     expect(deriveGroupTransitionExpectation(intentsForExpectation)).toMatchObject({ ok: false, code: 'TRANSITION_MALFORMED' });
+    const gapped = deriveGroupTransitionExpectation(intentsForExpectation, [54]);
+    expect(gapped.ok).toBe(true);
+    const gappedTopo = deriveTransitionExpectation({ scope: 'group', closed: false, positiveWidthRegions: 1 }, intentsForExpectation, [54]);
+    expect(gappedTopo.ok).toBe(true);
+    if (gappedTopo.ok) expect(gappedTopo.expectation.expectedFaceComponents).toBe(1);
     // Consecutive control still declares 1/1/1 unchanged.
     const mixed = build(FIXTURES.mixed2);
     const consecutive = mixed.transitions.slice(0, 2).map((t) => ({
@@ -553,14 +562,16 @@ describe('20P-C worker: per-transition agreement + legs across sparse gaps', () 
     expect(legs.some((leg) => leg.joint === 2)).toBe(false);
   });
 
-  it('production group pre-solve gate still fails closed on sparse plans', () => {
+  it('production group pre-solve gate ADMITS sparse plans (20P.1 LANDED)', () => {
+    // 20P.1 LANDED: the pre-solve gate checks strictly-increasing order +
+    // station-gap separation, so the [0,2] sparse set (gap 54 >> half-span
+    // 7) now passes instead of failing closed.
     const geometry = build(FIXTURES.sparse2);
     const rev = 'ggrev1:sparse2';
     const plans = sparsePlans(geometry, rev);
     const views = resolveGroupTransitionMemberViews(sparseWorkerRequest(geometry, plans))!;
     const out = checkGroupTransitionPlansAgreement({ plans, views, liveRevision: rev });
-    expect(out.ok).toBe(false);
-    if (!out.ok) expect(out.code).toBe('GRADING_AGREEMENT_TRANSITION_MALFORMED');
+    expect(out.ok).toBe(true);
   });
 
   it('dual transition/transitions fields stay malformed, never merged', () => {

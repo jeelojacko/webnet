@@ -209,11 +209,14 @@ describe('20N.1 Wave B: group authority fail-closed (policy + pre-mesh)', () => 
     expect(checkGroupTransitionSeparation([8, 6], [Number.NaN])).toBe(false);
   });
 
-  it('plural selection: canonical consecutive admits; sparse/dupe/reorder/malformed reject, never sorted', () => {
+  it('plural selection: canonical strictly-increasing admits (sparse authorized 20P.1); dupe/reorder/malformed reject, never sorted', () => {
     expect(selectGroupTransitions([{ jointId: 'joint:0' }, { jointId: 'joint:1' }]).kind).toBe('group');
     expect(selectGroupTransitions([{ jointId: 'joint:3' }, { jointId: 'joint:4' }, { jointId: 'joint:5' }]).kind).toBe('group');
+    // 20P.1 LANDED: sparse [0,2] admits as a group; separation is checked
+    // downstream on the true station gap (24+26=50 here), not the immediate member.
+    expect(selectGroupTransitions([{ jointId: 'joint:0' }, { jointId: 'joint:2' }]).kind).toBe('group');
+    expect(checkGroupTransitionSeparation([8, 6], [50])).toBe(true);
     for (const bad of [
-      [{ jointId: 'joint:0' }, { jointId: 'joint:2' }],
       [{ jointId: 'joint:0' }, { jointId: 'joint:0' }],
       [{ jointId: 'joint:1' }, { jointId: 'joint:0' }],
       [{ jointId: 'bogus' }, { jointId: 'joint:1' }],

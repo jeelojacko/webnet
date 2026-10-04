@@ -10,11 +10,13 @@ import { solveGradingChord } from './solveAnalyticGradingChord';
 import {
   admitGradingTransition,
   checkGroupTransitionSeparation,
+  computeJointStations,
   deriveGroupTransitionExpectation,
   evaluateTransitionLinearV1,
   parseCanonicalJointIndex,
   selectGroupTransitions,
   transitionRejectGroupCode as transitionPolicyToGroupCode,
+  transitionSetStationGaps,
 } from './gradingTransitionPolicy';
 import type { StraightChordSolve } from './solveStraightChord';
 import type { GradingCriterion, GradingSide, ResolvedGradingSource } from './gradingTypes';
@@ -421,10 +423,15 @@ export const planTransitionGroup = (
       g: (cL as { gradeRatio: number }).gradeRatio,
     });
   }
-  // Strict separation on every shared member (exact `<`; touching == and
-  // overlap both fail the whole group).
+  // Strict separation on every set gap (exact `<`; touching == and
+  // overlap both fail the whole group). One stations pass over the full
+  // member run; gaps are station differences, never repeated prefix sums.
   const widths = admitted.map((a) => a.width);
-  const gaps = admitted.slice(0, -1).map((a) => members[a.joint + 1]!.length);
+  const stations = computeJointStations(members.map((m) => m.length));
+  const gaps = transitionSetStationGaps(
+    stations,
+    admitted.map((a) => a.joint),
+  );
   if (!checkGroupTransitionSeparation(widths, gaps)) {
     let at = admitted[0]!.joint;
     for (let k = 0; k < gaps.length; k += 1) {
@@ -446,7 +453,7 @@ export const planTransitionGroup = (
     width: a.width,
     memberLengths: [members[a.joint]!.length, members[a.joint + 1]!.length] as [number, number],
     isOpen: true,
-  })));
+  })), gaps);
   if (!declared.ok) return transitionFail(declared.code, admitted[0]!.joint, declared.detail);
   // Immutable per-joint tiles: frames + checkpoints from the ORIGINAL
   // solves (created once, shared by both incident members below).
@@ -481,7 +488,7 @@ export const planTransitionGroup = (
       runFlat: [],
       law: { sL: a.sL, sR: a.sR, vL: a.vL, vR: a.vR, family: a.family },
       srcFlat: [],
-      jointStation: members.slice(0, a.joint + 1).reduce((sum, m) => sum + m.length, 0),
+      jointStation: stations[a.joint]!,
       intent: a.intent,
       width: a.width,
       vPt,

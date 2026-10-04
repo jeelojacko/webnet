@@ -19,6 +19,7 @@ import { deriveGradingStatus, deriveFailedEffectiveStatus } from '../engine/cad/
 import type { CadGradingResult, GradingCriterion, GradingStatus, ResolvedGradingSource } from '../engine/cad/grading/gradingTypes';
 import {
   admitGradingTransition,
+  computeJointStations,
   selectGroupTransitions,
   transitionRejectGroupCode,
   type TransitionMemberGeometry,
@@ -145,6 +146,7 @@ interface PlannedJointTransition {
 const planSingleTransitionIntent = (
   inputs: ResolvedGroupInputs,
   intent: CadGradingTransition,
+  stations?: readonly number[],
 ):
   | { ok: true; value: PlannedJointTransition }
   | { ok: false; code: GroupDiagnosticCode; detail: string } => {
@@ -246,8 +248,10 @@ const planSingleTransitionIntent = (
       detail: 'GRADING_AGREEMENT_TRANSITION_STALE: admitted members carry no gradeRatio',
     };
   }
-  let jointStation = 0;
-  for (let index = 0; index < right; index += 1) jointStation += inputs.memberSources[index]!.length;
+  // Single station authority (computeJointStations): cumulative end-stations,
+  // one left-to-right pass shared by the whole request — identical addition
+  // order to the former per-intent manual loop.
+  const jointStation = (stations ?? computeJointStations(inputs.memberSources.map((source) => source.length)))[joint]!;
   const transitionMembers: [GroupTransitionMemberView, GroupTransitionMemberView] = members.map((member) => ({
     memberId: member.memberId,
     criterion: member.criterion,
@@ -301,8 +305,10 @@ export const planGroupTransitionRequest = (inputs: ResolvedGroupInputs): GroupTr
   const intents = selection.kind === 'single' ? [selection.transition] : selection.transitions;
   const transitions: GroupTransitionPlan[] = [];
   const transitionMembers: GroupTransitionMemberView[] = [];
+  // One stations pass for the whole set (never a repeated prefix sum per intent).
+  const stations = computeJointStations(inputs.memberSources.map((source) => source.length));
   for (const intent of intents) {
-    const planned = planSingleTransitionIntent(inputs, intent);
+    const planned = planSingleTransitionIntent(inputs, intent, stations);
     if (!planned.ok) return { kind: 'rejected', code: planned.code, detail: planned.detail };
     transitions.push(planned.value.plan);
     transitionMembers.push(...planned.value.members);

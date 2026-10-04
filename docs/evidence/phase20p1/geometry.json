@@ -1,0 +1,178 @@
+{
+  "p1-sparse-02-current": {
+    "innerW": 1366,
+    "innerH": 768,
+    "manager": {
+      "x": 586,
+      "y": 285,
+      "w": 480,
+      "h": 276
+    },
+    "viewport": {
+      "x": 264,
+      "y": 215,
+      "w": 814,
+      "h": 345
+    }
+  },
+  "p10-no-auto-transition": {
+    "innerW": 1366,
+    "innerH": 768,
+    "manager": {
+      "x": 586,
+      "y": 285,
+      "w": 480,
+      "h": 276
+    },
+    "viewport": {
+      "x": 264,
+      "y": 215,
+      "w": 814,
+      "h": 345
+    }
+  },
+  "p2-edit-keeps-neighbor": {
+    "innerW": 1366,
+    "innerH": 768,
+    "manager": {
+      "x": 586,
+      "y": 285,
+      "w": 480,
+      "h": 276
+    },
+    "viewport": {
+      "x": 264,
+      "y": 215,
+      "w": 814,
+      "h": 345
+    }
+  },
+  "p3-mixed-cluster-current": {
+    "innerW": 1366,
+    "innerH": 768,
+    "manager": {
+      "x": 586,
+      "y": 285,
+      "w": 480,
+      "h": 276
+    },
+    "viewport": {
+      "x": 264,
+      "y": 215,
+      "w": 814,
+      "h": 345
+    }
+  },
+  "p4-clear-one-survives": {
+    "innerW": 1366,
+    "innerH": 768,
+    "manager": {
+      "x": 586,
+      "y": 285,
+      "w": 480,
+      "h": 276
+    },
+    "viewport": {
+      "x": 264,
+      "y": 215,
+      "w": 814,
+      "h": 345
+    }
+  },
+  "p5-save-reload-sparse": {
+    "innerW": 1366,
+    "innerH": 768,
+    "manager": {
+      "x": 586,
+      "y": 285,
+      "w": 480,
+      "h": 276
+    },
+    "viewport": {
+      "x": 264,
+      "y": 215,
+      "w": 814,
+      "h": 345
+    }
+  },
+  "p6-products-cite-both-joints": {
+    "innerW": 1366,
+    "innerH": 768,
+    "manager": {
+      "x": 586,
+      "y": 285,
+      "w": 480,
+      "h": 276
+    },
+    "viewport": {
+      "x": 264,
+      "y": 215,
+      "w": 814,
+      "h": 345
+    }
+  },
+  "p7-exact-touch-refused": {
+    "innerW": 1366,
+    "innerH": 768,
+    "manager": {
+      "x": 586,
+      "y": 285,
+      "w": 480,
+      "h": 276
+    },
+    "viewport": {
+      "x": 264,
+      "y": 215,
+      "w": 814,
+      "h": 345
+    }
+  },
+  "p8-too-wide-overlap-refused": {
+    "innerW": 1366,
+    "innerH": 768,
+    "manager": {
+      "x": 586,
+      "y": 285,
+      "w": 480,
+      "h": 276
+    },
+    "viewport": {
+      "x": 264,
+      "y": 215,
+      "w": 814,
+      "h": 345
+    }
+  },
+  "p9-bent-failed": {
+    "innerW": 1366,
+    "innerH": 768,
+    "manager": {
+      "x": 586,
+      "y": 297,
+      "w": 480,
+      "h": 276
+    },
+    "viewport": {
+      "x": 264,
+      "y": 215,
+      "w": 814,
+      "h": 345
+    }
+  },
+  "p11-malformed-fails-closed": {
+    "innerW": 1366,
+    "innerH": 768,
+    "manager": {
+      "x": 586,
+      "y": 297,
+      "w": 480,
+      "h": 276
+    },
+    "viewport": {
+      "x": 264,
+      "y": 215,
+      "w": 814,
+      "h": 345
+    }
+  }
+}

@@ -233,14 +233,18 @@ const deriveSingularTransitionExpectation = (
 
 /**
  * Plural pre-mesh expectation: every intent is admitted (trusted upstream),
- * joint ids are canonical increasing AND consecutive, each adjacent pair
- * shares one member bit-identically (never repaired), and strict separation
- * `Wi/2 + Wi+1/2 < gap` holds. Any failure means NO expectation and NO
- * certificate (fail closed; the measured mesh count is never consulted).
+ * joint ids are canonical strictly increasing (gaps allowed), and strict
+ * separation `Wi/2 + Wj/2 < gap` holds. Legacy mode (no stationGaps)
+ * additionally requires consecutive joints AND a bit-identical shared member
+ * (never repaired). Station-gap mode (stationGaps provided) takes the gap
+ * as the station difference and skips the shared-member check. Any failure
+ * means NO expectation and NO certificate (fail closed; the measured mesh
+ * count is never consulted).
  */
 const deriveTransitionSetExpectation = (
   base: DeriveTopologyExpectationInput,
   intents: TransitionExpectationSet,
+  stationGaps?: readonly number[],
 ): TransitionExpectationOutcome => {
   // Present-but-empty set is the legacy shape (absent intent).
   if (intents.length === 0) {
@@ -261,6 +265,34 @@ const deriveTransitionSetExpectation = (
       return { ok: false, code: 'GRADING_AGREEMENT_TRANSITION_MALFORMED', detail: `malformed jointId ${JSON.stringify(intent.jointId)}` };
     }
     indices.push(index);
+  }
+  if (stationGaps !== undefined) {
+    if (!Array.isArray(stationGaps) || stationGaps.length !== intents.length - 1) {
+      return { ok: false, code: 'GRADING_AGREEMENT_TRANSITION_MALFORMED', detail: 'station gaps must match the transition set' };
+    }
+    for (let i = 1; i < indices.length; i += 1) {
+      if (indices[i]! <= indices[i - 1]!) {
+        return {
+          ok: false,
+          code: 'GRADING_AGREEMENT_TRANSITION_MALFORMED',
+          detail: 'transition joints must be canonical strictly increasing',
+        };
+      }
+    }
+    for (let i = 0; i + 1 < intents.length; i += 1) {
+      const gap = stationGaps[i]!;
+      if (!Number.isFinite(gap) || !(gap > 0)) {
+        return { ok: false, code: 'GRADING_AGREEMENT_TRANSITION_MALFORMED', detail: 'station gaps must be finite > 0' };
+      }
+      const halfSpan = intents[i]!.width / 2 + intents[i + 1]!.width / 2;
+      if (halfSpan === gap) {
+        return { ok: false, code: 'GRADING_AGREEMENT_TRANSITION_OVERLAP', detail: 'touching transitions are not authorized (shared boundaries need a tie-break)' };
+      }
+      if (halfSpan > gap) {
+        return { ok: false, code: 'GRADING_AGREEMENT_TRANSITION_OVERLAP', detail: 'overlapping transitions are not authorized' };
+      }
+    }
+    return declaredMergedStrip();
   }
   for (let i = 1; i < indices.length; i += 1) {
     if (indices[i] !== indices[i - 1]! + 1) {
@@ -299,12 +331,13 @@ const deriveTransitionSetExpectation = (
 export const deriveTransitionExpectation = (
   base: DeriveTopologyExpectationInput,
   intent: TransitionExpectationIntent | TransitionExpectationSet | null | undefined,
+  stationGaps?: readonly number[],
 ): TransitionExpectationOutcome => {
   if (intent == null) {
     return { ok: true, expectation: deriveGradingTopologyExpectation(base) };
   }
   if (Array.isArray(intent)) {
-    return deriveTransitionSetExpectation(base, intent);
+    return deriveTransitionSetExpectation(base, intent, stationGaps);
   }
   return deriveSingularTransitionExpectation(intent);
 };

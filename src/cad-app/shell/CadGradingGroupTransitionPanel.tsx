@@ -1,14 +1,15 @@
 /**
- * Phase 20N.1 WAVE H — per-joint transition list/editor (SHELL/UI ONLY).
+ * Phase 20P.1 — per-joint transition list/editor (SHELL/UI ONLY).
  *
  * Lists EVERY current intent in canonical joint order (joint + width/law per
  * row); the add form stages a new joint and re-staging an existing joint
- * replaces its width in place (never a duplicate record). Removal drops only
- * the named joint via GROUP_CLEAR_TRANSITION { jointId }. Width is explicit
- * user input (source-line meters); the law selector is fixed to the single
- * registered TRANSITION_LINEAR_V1. No auto-width, no implicit creation.
- * Commits ride GROUP_SET_TRANSITION + GROUP_CLEAR_TRANSITION (one undo step
- * each); the operator recalculates after commit.
+ * replaces its width in place (never a duplicate record). SPARSE sets are
+ * authorized (a new transition need not be adjacent to an existing one).
+ * Removal drops only the named joint via GROUP_CLEAR_TRANSITION { jointId }.
+ * Width is explicit user input (source-line meters); the law selector is fixed
+ * to the single registered TRANSITION_LINEAR_V1. No auto-width, no implicit
+ * creation. Commits ride GROUP_SET_TRANSITION + GROUP_CLEAR_TRANSITION (one
+ * undo step each); the operator recalculates after commit.
  */
 import React from 'react';
 import type {
@@ -18,8 +19,10 @@ import type {
 } from '../../engine/cad/grading/gradingTypes';
 import type { CadGradingGroup } from '../../engine/cad/grading/gradingGroupTypes';
 import {
+  computeJointStations,
   TRANSITION_LAW_KIND,
   TRANSITION_LAW_VERSION,
+  transitionSetStationGaps,
 } from '../../engine/cad/grading/gradingTransitionPolicy';
 import {
   groupTransitions,
@@ -50,13 +53,14 @@ const jointIndexOf = (jointId: string): number | null => {
   return m ? Number(m[1]) : null;
 };
 
-/** Stored list is truthful only when strictly increasing AND consecutive. */
+/** Trustworthy when strictly increasing (gaps authorized): only malformed,
+ * duplicate, or out-of-order stored ids warn. */
 const storedOrderWarning = (existing: readonly TransitionPersistedIntent[]): string | null => {
   const indices = existing.map((entry) => jointIndexOf(entry.jointId));
   if (indices.some((index) => index === null)) return 'Stored transitions carry a malformed joint id — recalculation will fail closed.';
   for (let i = 1; i < indices.length; i += 1) {
-    if (indices[i]! !== indices[i - 1]! + 1) {
-      return 'Stored transitions are sparse or out of order — recalculation will fail closed; remove and re-stage them in order.';
+    if (indices[i]! <= indices[i - 1]!) {
+      return 'Stored transitions are out of order or duplicated — recalculation will fail closed; remove and re-stage them in canonical order.';
     }
   }
   return null;
@@ -64,21 +68,30 @@ const storedOrderWarning = (existing: readonly TransitionPersistedIntent[]): str
 
 /**
  * Bounded separation verdict from available geometry only: with real member
- * lengths, adjacent staged transitions whose half-widths meet or overlap the
- * shared member are not authorized. Returns null when not detectable.
+ * sources, the gap between any two staged joints is the TRUE station gap
+ * (sum of the member run between them), so sparse pairs are checked across
+ * every skipped joint. Returns null when not detectable.
  */
 const separationError = (
   merged: readonly TransitionPersistedIntent[],
-  lengths: Readonly<Record<string, readonly [number, number]>> | null,
+  memberSources: readonly ResolvedGradingSource[] | null,
 ): string | null => {
-  if (!lengths) return null;
+  if (!memberSources || memberSources.length === 0) return null;
   const ordered = [...merged].sort((a, b) => (jointIndexOf(a.jointId) ?? 0) - (jointIndexOf(b.jointId) ?? 0));
-  for (let i = 0; i + 1 < ordered.length; i += 1) {
-    const gap = lengths[ordered[i]!.jointId]?.[1];
-    if (!Number.isFinite(gap) || !(gap! > 0)) return null;
+  const joints: number[] = [];
+  for (const entry of ordered) {
+    const index = jointIndexOf(entry.jointId);
+    if (index === null) return null;
+    joints.push(index);
+  }
+  const stations = computeJointStations(memberSources.map((source) => source.length));
+  const gaps = transitionSetStationGaps(stations, joints);
+  for (let i = 0; i < gaps.length; i += 1) {
+    const gap = gaps[i]!;
+    if (!Number.isFinite(gap) || !(gap > 0)) return null;
     const halfSpan = ordered[i]!.width / 2 + ordered[i + 1]!.width / 2;
     if (halfSpan === gap) return 'touching transitions are not authorized — narrow a width';
-    if (halfSpan > gap!) return 'overlapping transitions are not authorized — narrow a width';
+    if (halfSpan > gap) return 'overlapping transitions are not authorized — narrow a width';
   }
   return null;
 };
@@ -143,10 +156,6 @@ export const CadGradingGroupTransitionPanel: React.FC<CadGradingGroupTransitionP
       return;
     }
     if (memberSources) {
-      const jointLengths: Record<string, readonly [number, number]> = {};
-      for (let j = 0; j + 1 < memberSources.length; j += 1) {
-        jointLengths[`joint:${j}`] = [memberSources[j]!.length, memberSources[j + 1]!.length];
-      }
       const merged: TransitionPersistedIntent[] = [
         ...existing.filter((entry) => entry.jointId !== selectedEligible.jointId),
         {
@@ -160,7 +169,7 @@ export const CadGradingGroupTransitionPanel: React.FC<CadGradingGroupTransitionP
           side,
         },
       ];
-      const separation = separationError(merged, jointLengths);
+      const separation = separationError(merged, memberSources);
       if (separation) {
         onNotice(`Transition not added — ${separation}.`);
         return;

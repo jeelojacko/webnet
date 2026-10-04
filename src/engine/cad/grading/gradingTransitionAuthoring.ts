@@ -3,18 +3,18 @@
  *
  * Phase 20N.1 extends this to the authorized plural set: explicit user-owned
  * per-joint intents (policyVersion `trp1`), each with an explicit numeric
- * total width and the single registered TRANSITION_LINEAR_V1 law. SET
- * appends/replaces by jointId and always emits a canonical increasing,
- * CONSECUTIVE joint-index list; a sparse/out-of-order/duplicate set fails
- * closed and is never silently sorted. CLEAR drops only the named joint and
- * the last removal drops the key, restoring the legacy definition
- * byte-identically. No auto-width, no implicit creation, no per-joint
- * defaults. Structural eligibility reuses the single admission authority
- * (`admitGradingTransition`); width + strict separation are validated at
- * commit only when real incident member lengths are supplied.
+ * total width and the single registered TRANSITION_LINEAR_V1 law. Phase 20P.1
+ * authorizes SPARSE sets: SET appends/replaces by jointId and always emits a
+ * canonical STRICTLY INCREASING joint-index list (gaps allowed); an
+ * out-of-order/duplicate/malformed set fails closed and is never silently
+ * sorted. CLEAR drops only the named joint and the last removal drops the key,
+ * restoring the legacy definition byte-identically. No auto-width, no implicit
+ * creation, no per-joint defaults. Structural eligibility reuses the single
+ * admission authority (`admitGradingTransition`); width + strict separation
+ * are validated at commit only when real station geometry is supplied.
  *
  * Sanitation (persistence) always retains loaded intent order verbatim; the
- * policy gate rejects malformed/duplicate/out-of-order/sparse loads — nothing
+ * policy gate rejects malformed/duplicate/out-of-order loads — nothing
  * is repaired to a default.
  */
 import type {
@@ -45,12 +45,23 @@ export const groupTransitions = (group: CadGradingGroup): TransitionPersistedInt
 /**
  * Wave C geometry context (optional). The commit path validates width
  * feasibility and strict separation BEFORE commit only when the caller can
- * supply real incident member lengths; with no context the authoring never
- * invents lengths and the compute fails closed instead.
+ * supply real geometry: per-joint incident lengths for width, plus optional
+ * full-chain `memberStations` for true cross-gap separation. Without
+ * `memberStations` the authoring never invents a gap and the compute fails
+ * closed instead.
  */
 export interface TransitionAuthoringGeometry {
   /** Incident source-line lengths per joint id, as [previous, next]. */
   jointMemberLengths: Readonly<Record<string, readonly [number, number]>>;
+  /**
+   * Optional full-chain cumulative end-stations (same addition order as
+   * `computeJointStations`): station[j] is the end station of member j, so
+   * the joint-j station is `memberStations[j]`. When present, separation
+   * across ANY joint pair uses the true station gap; when absent the
+   * immediate-member check holds only for consecutive joints and gapped
+   * pairs are left to the compute to fail closed (no invented gap).
+   */
+  memberStations?: readonly number[];
 }
 
 const fail = (error: string): GradingAuthoringResult<CadGradingGroup> => ({ ok: false, error });
@@ -68,9 +79,9 @@ const jointIndexOf = (jointId: string): number | null => {
 };
 
 /**
- * Canonical-order gate: joint ids must be strictly increasing AND
- * consecutive. Duplicates / out-of-order / non-consecutive REJECT (fail
- * closed) — a malformed or sparse list is never silently sorted or merged.
+ * Canonical-order gate: joint ids must be strictly increasing (gaps allowed
+ * — sparse sets are authorized). Duplicates / out-of-order / malformed REJECT
+ * (fail closed) — an out-of-order or duplicate list is never silently sorted.
  */
 const canonicalJointOrderError = (transitions: readonly TransitionPersistedIntent[]): string | null => {
   const indices: number[] = [];
@@ -80,14 +91,27 @@ const canonicalJointOrderError = (transitions: readonly TransitionPersistedInten
     indices.push(index);
   }
   for (let i = 1; i < indices.length; i += 1) {
-    if (indices[i] !== indices[i - 1]! + 1) {
-      return 'transition joints must be canonical increasing and consecutive';
+    if (indices[i]! <= indices[i - 1]!) {
+      return 'transition joints must be canonical strictly increasing';
     }
   }
   return null;
 };
 
-/** Width feasibility + strict separation, only when real lengths exist. */
+/** True station gap between two parsed joints, or null when not resolvable. */
+const stationGap = (
+  stations: readonly number[] | undefined,
+  left: number | null,
+  right: number | null,
+): number | null => {
+  if (!stations || left === null || right === null) return null;
+  const from = stations[left];
+  const to = stations[right];
+  if (!Number.isFinite(from) || !Number.isFinite(to)) return null;
+  return to! - from!;
+};
+
+/** Width feasibility + strict separation, only when real geometry exists. */
 const geometryError = (
   transitions: readonly TransitionPersistedIntent[],
   context: TransitionAuthoringGeometry,
@@ -103,10 +127,24 @@ const geometryError = (
       return `width exceeds 2×min(member lengths) at ${jointId}`;
     }
   }
+  const stations = context.memberStations;
   for (let i = 0; i + 1 < transitions.length; i += 1) {
+    const leftJoint = jointIndexOf(transitions[i]!.jointId);
+    const rightJoint = jointIndexOf(transitions[i + 1]!.jointId);
+    const halfSpan = transitions[i]!.width / 2 + transitions[i + 1]!.width / 2;
+    // Full-chain context: the TRUE station gap spans every skipped joint.
+    if (stations !== undefined) {
+      const gap = stationGap(stations, leftJoint, rightJoint);
+      if (gap === null) return `station positions unavailable for ${transitions[i + 1]!.jointId}`;
+      if (halfSpan === gap) return 'touching transitions are not authorized';
+      if (halfSpan > gap) return 'overlapping transitions are not authorized';
+      continue;
+    }
+    // Incident-length context sees ONLY a shared member: check consecutive
+    // pairs, and leave gapped pairs to the compute (never invent a gap).
+    if (leftJoint === null || rightJoint === null || rightJoint !== leftJoint + 1) continue;
     const gap = lengths[i]![1];
     if (gap !== lengths[i + 1]![0]) return 'adjacent joints must share one member length exactly';
-    const halfSpan = transitions[i]!.width / 2 + transitions[i + 1]!.width / 2;
     if (halfSpan === gap) return 'touching transitions are not authorized';
     if (halfSpan > gap) return 'overlapping transitions are not authorized';
   }
@@ -275,11 +313,11 @@ export const validateTransitionWidth = (
 
 /**
  * Commit ONE per-joint transition. Same-joint writes REPLACE in place; a new
- * joint APPENDS into canonical increasing joint-index order. The emitted list
- * is always canonical and consecutive; any write that would leave a
- * non-consecutive / duplicate set fails closed (never silently sorted). When
- * geometry context is supplied, width feasibility + strict separation are
- * validated before commit; otherwise the compute fails closed.
+ * joint APPENDS into canonical strictly increasing joint-index order (sparse
+ * sets authorized). Any write that would leave a duplicate / out-of-order set
+ * fails closed (never silently sorted). When geometry context is supplied,
+ * width feasibility + strict separation are validated before commit;
+ * otherwise the compute fails closed.
  */
 export const setGroupTransition = (
   current: CadGradingGroup,
