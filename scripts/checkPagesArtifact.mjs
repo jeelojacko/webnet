@@ -16,7 +16,8 @@ import { existsSync, readFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 
 function normalizeBase(value) {
-  const single = String(value || '/').replace(/^\/+/, '/');
+  const collapsed = String(value || '/').replace(/\/{2,}/g, '/');
+  const single = collapsed.startsWith('/') ? collapsed : `/${collapsed}`;
   return single.endsWith('/') ? single : `${single}/`;
 }
 
@@ -67,4 +68,4 @@ if (failures.length > 0) {
   for (const failure of failures) console.error(`  - ${failure}`);
   process.exit(1);
 }
-console.log(`PASS: ${distDir} base-safe for ${basePath} (${REQUIRED.join(', ')}, ${checked} local refs)`);
+console.log(`PASS: ${distDir} HTML refs base-safe for ${basePath} (${REQUIRED.join(', ')}, ${checked} local refs; bundle-internal URLs covered by unit tests + browser QA)`);

@@ -8,7 +8,8 @@ import { resolveChunkName } from './src/build/viteChunkRouting';
 // VITE_BASE_PATH=/webnet/. Accepts a bare `webnet` too.
 const normalizeBasePath = (raw) => {
   const trimmed = (raw ?? '').trim() || '/';
-  const leading = trimmed.startsWith('/') ? trimmed : `/${trimmed}`;
+  const collapsed = trimmed.replace(/\/{2,}/g, '/');
+  const leading = collapsed.startsWith('/') ? collapsed : `/${collapsed}`;
   return leading.endsWith('/') ? leading : `${leading}/`;
 };
 

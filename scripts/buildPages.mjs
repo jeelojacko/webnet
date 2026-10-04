@@ -14,7 +14,8 @@ import { fileURLToPath } from 'node:url';
 import { resolve } from 'node:path';
 
 function normalizeBase(value) {
-  const single = String(value || '/').replace(/^\/+/, '/');
+  const collapsed = String(value || '/').replace(/\/{2,}/g, '/');
+  const single = collapsed.startsWith('/') ? collapsed : `/${collapsed}`;
   return single.endsWith('/') ? single : `${single}/`;
 }
 

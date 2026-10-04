@@ -2,7 +2,8 @@
 
 export const normalizeAppBasePath = (raw?: string): string => {
   const trimmed = (raw ?? '/').trim() || '/';
-  const leading = trimmed.startsWith('/') ? trimmed : `/${trimmed}`;
+  const collapsed = trimmed.replace(/\/{2,}/g, '/');
+  const leading = collapsed.startsWith('/') ? collapsed : `/${collapsed}`;
   return leading.endsWith('/') ? leading : `${leading}/`;
 };
 
