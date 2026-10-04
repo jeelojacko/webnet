@@ -55,15 +55,15 @@ describe('Project Options modal adjustment and export interactions', () => {
     const app = await mountApp('adjustment');
     try {
       const firstMode = findSelectForSettingsRow(app.container, 'Suspect Impact');
-      expect(firstMode.value).toBe('auto');
-      await setSelectValue(firstMode, 'off');
+      expect(firstMode.value).toBe('off');
+      await setSelectValue(firstMode, 'auto');
 
       await clickButtonByExactText(app.container, 'Apply');
       await clickOpenProjectOptions(app.container);
       await clickProjectOptionsTab(app.container, 'adjustment');
 
       const reopenedMode = findSelectForSettingsRow(app.container, 'Suspect Impact');
-      expect(reopenedMode.value).toBe('off');
+      expect(reopenedMode.value).toBe('auto');
     } finally {
       await app.cleanup();
     }

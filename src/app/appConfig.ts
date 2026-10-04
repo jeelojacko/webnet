@@ -12,6 +12,7 @@ export const APP_STARTUP_DEFAULTS = INDUSTRY_PARITY_CASES.combined.startupDefaul
  * Back-compat alias for tests. It tracks the app startup example
  * (APP_STARTUP_DEFAULTS), NOT the parity ACTIVE case, which remains
  * campDesignPreanalysis. No production code reads this alias.
+ * @deprecated test-only alias; use APP_STARTUP_DEFAULTS in new code.
  */
 export const ACTIVE_PARITY_STARTUP_DEFAULTS = APP_STARTUP_DEFAULTS;
 

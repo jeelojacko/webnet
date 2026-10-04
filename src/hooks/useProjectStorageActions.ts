@@ -64,7 +64,7 @@ export const useProjectStorageActions = ({
   storageStatus,
   upsertRecentProjectRow,
 }: UseProjectStorageActionsArgs) => {
-  const createNamedProject = useCallback(async ({
+  const persistNewProject = useCallback(async ({
     name,
     workspace,
     createdTitle,
@@ -102,12 +102,8 @@ export const useProjectStorageActions = ({
       lastAutosavedAt: createdAt,
       lastAutosaveError: null,
     };
-    // Mirror openProjectById/import paths: apply through the payload loader so
-    // live input/settings/instruments reset and runtime state clears.
-    // In-flight runs are cancelled by resetAdjustmentWorkflowState inside the
-    // loader's reset path, so a late outcome cannot publish into the new project.
-    const parsed = buildParsedPayloadFromSession(session);
-    applyLoadedProjectPayload(parsed, cleanSession, []);
+    // Persist + attach the session only. Callers decide whether the live
+    // workspace must be reloaded (explicit Create) or kept (Save/Import).
     setProjectSession(cleanSession);
     await requestPersistentStorage();
     await refreshStorageContext();
@@ -120,7 +116,6 @@ export const useProjectStorageActions = ({
     });
     return cleanSession;
   }, [
-    applyLoadedProjectPayload,
     cloneInstrumentLibrary,
     refreshStorageContext,
     setImportNotice,
@@ -128,6 +123,24 @@ export const useProjectStorageActions = ({
     storage,
     storageStatus?.preferredBackend,
   ]);
+
+  const createNamedProject = useCallback(async ({
+    name,
+    workspace,
+    createdTitle,
+  }: {
+    name: string;
+    workspace: ProjectFlatWorkspacePayloadOptions;
+    createdTitle: string;
+  }): Promise<ProjectSessionState | null> => {
+    const cleanSession = await persistNewProject({ name, workspace, createdTitle });
+    if (!cleanSession) return null;
+    // Explicit Create switches the live UI to the new (blank) payload and
+    // cancels any in-flight run via resetWorkspaceAfterProjectLoad inside the
+    // loader's reset path, so a late outcome cannot publish into the new project.
+    applyLoadedProjectPayload(buildParsedPayloadFromSession(cleanSession), cleanSession, []);
+    return cleanSession;
+  }, [applyLoadedProjectPayload, persistNewProject]);
 
   const createLocalProjectFromCurrentWorkspace = useCallback(async (): Promise<ProjectSessionState | null> => {
     if (!canUseNamedProjectStorage) {
@@ -140,6 +153,15 @@ export const useProjectStorageActions = ({
       });
       return null;
     }
+    // Shared switch guard: the sidebar and Project Files tab both route here, so
+    // untitled work is only discarded after one confirmation.
+    if (
+      projectSession == null &&
+      projectFlatWorkspacePayload.input.trim() !== '' &&
+      !window.confirm('Create a new blank project? Unsaved untitled input will be discarded.')
+    ) {
+      return null;
+    }
     const suggestedName = `WebNet Project ${new Date().toISOString().slice(0, 10)}`;
     const name = window.prompt('Project name', suggestedName)?.trim();
     if (!name) return null;
@@ -149,10 +171,11 @@ export const useProjectStorageActions = ({
       workspace: buildBlankProjectWorkspace(),
       createdTitle: 'Local project created',
     });
-  }, [canUseNamedProjectStorage, createNamedProject, setImportNotice]);
+  }, [canUseNamedProjectStorage, createNamedProject, projectFlatWorkspacePayload.input, projectSession, setImportNotice]);
 
   // Clone-preserving creation for Save/Import fallbacks: unlike the explicit
-  // Create action, these routes must keep the current untitled workspace.
+  // Create action, these routes must keep the current untitled workspace. The
+  // named session is attached but live input/results/review state are untouched.
   const createProjectFromCurrentWorkspace = useCallback(async (createdTitle = 'Local project created'): Promise<ProjectSessionState | null> => {
     if (!canUseNamedProjectStorage) {
       setImportNotice({
@@ -167,12 +190,12 @@ export const useProjectStorageActions = ({
     const suggestedName = `WebNet Project ${new Date().toISOString().slice(0, 10)}`;
     const name = window.prompt('Project name', suggestedName)?.trim();
     if (!name) return null;
-    return createNamedProject({
+    return persistNewProject({
       name,
       workspace: projectFlatWorkspacePayload,
       createdTitle,
     });
-  }, [canUseNamedProjectStorage, createNamedProject, projectFlatWorkspacePayload, setImportNotice]);
+  }, [canUseNamedProjectStorage, persistNewProject, projectFlatWorkspacePayload, setImportNotice]);
 
   const handleSaveProject = useCallback(async () => {
     if (!projectSession) {

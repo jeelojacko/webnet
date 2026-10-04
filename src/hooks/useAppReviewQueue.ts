@@ -24,6 +24,7 @@ interface UseAppReviewQueueArgs {
   setIsSidebarOpen: Dispatch<SetStateAction<boolean>>;
   setPendingEditorJumpLine: Dispatch<SetStateAction<number | null>>;
   projectId: string | null;
+  workspaceRevision: number;
 }
 
 export const useAppReviewQueue = ({
@@ -38,6 +39,7 @@ export const useAppReviewQueue = ({
   setIsSidebarOpen,
   setPendingEditorJumpLine,
   projectId,
+  workspaceRevision,
 }: UseAppReviewQueueArgs) => {
   const [reviewQueueSeverityFilter, setReviewQueueSeverityFilter] = useState<
     'all' | ReviewQueueSeverity
@@ -49,17 +51,21 @@ export const useAppReviewQueue = ({
   const [reviewQueueImportedGroupFilter, setReviewQueueImportedGroupFilter] = useState('all');
   const [selectedReviewQueueItemId, setSelectedReviewQueueItemId] = useState<string | null>(null);
   const [reportFilterFocusRequestKey, setReportFilterFocusRequestKey] = useState(0);
-  const prevProjectIdRef = useRef<string | null>(projectId);
+  // Reset filters + selection on every workspace load/switch, not just when the
+  // project id changes: null-session example/portable loads and same-id reopens
+  // bump the revision while projectId stays put. Ordinary edits never bump it.
+  const workspaceResetKey = `${projectId ?? ''}#${workspaceRevision}`;
+  const prevWorkspaceResetKeyRef = useRef(workspaceResetKey);
   useEffect(() => {
-    if (prevProjectIdRef.current === projectId) return;
-    prevProjectIdRef.current = projectId;
+    if (prevWorkspaceResetKeyRef.current === workspaceResetKey) return;
+    prevWorkspaceResetKeyRef.current = workspaceResetKey;
     // New project/session: drop filters + selection tied to the old project.
     setReviewQueueSeverityFilter('all');
     setReviewQueueSourceFilter('all');
     setReviewQueueUnresolvedOnly(false);
     setReviewQueueImportedGroupFilter('all');
     setSelectedReviewQueueItemId(null);
-  }, [projectId]);
+  }, [workspaceResetKey]);
 
   const reviewQueueItems = useMemo(
     () =>

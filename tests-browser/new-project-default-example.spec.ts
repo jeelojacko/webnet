@@ -111,6 +111,21 @@ async function acceptDialogsWith(page: Page, projectName: string): Promise<void>
   page.on('dialog', (dialog) => void dialog.accept(projectName));
 }
 
+/** Same auto-accept, but records every dialog (type + message) for guard assertions. */
+async function acceptDialogsWithLog(
+  page: Page,
+  projectName: string,
+  seen: string[],
+): Promise<void> {
+  page.on('dialog', (dialog) => {
+    seen.push(`${dialog.type()}:${dialog.message()}`);
+    void dialog.accept(projectName);
+  });
+}
+
+const SHARED_CONFIRM_WORDING =
+  'Create a new blank project? Unsaved untitled input will be discarded.';
+
 async function createBlankProject(page: Page, modal: Locator, name: string): Promise<void> {
   const create = modal.getByRole('button', { name: 'Create New Project' });
   await expect(create).toHaveAttribute('title', 'Create a new blank local project');
@@ -262,5 +277,83 @@ test('D: reload restores the untitled default; pristine context boots combined a
   } finally {
     await freshContext.close();
   }
+  expect(errors).toEqual([]);
+});
+
+test('E: named blank project survives a real IndexedDB save/reload/reopen roundtrip', async ({
+  page,
+}) => {
+  test.setTimeout(180_000);
+  const errors = trackErrors(page);
+  const seen: string[] = [];
+  await acceptDialogsWithLog(page, PROJECT_NAME, seen);
+  await bootApp(page);
+  await waitForEditorContaining(page, MARKER);
+
+  // Untitled combined input -> shared confirm (same wording as the sidebar) ->
+  // prompt -> genuinely blank named project.
+  let modal = await openProjectFilesTab(page);
+  await createBlankProject(page, modal, PROJECT_NAME);
+  expect(seen).toContain(`confirm:${SHARED_CONFIRM_WORDING}`);
+  await modal.getByRole('button', { name: 'Adjustment', exact: true }).click();
+  await expect(modal.locator('label', { hasText: 'Run Mode' }).locator('select')).toHaveValue(
+    'adjustment',
+  );
+  await modal.getByRole('button', { name: 'GPS', exact: true }).click();
+  await expect(modal.getByText('Enabled', { exact: true })).toHaveCount(0);
+  await closeOptionsModal(page);
+
+  // Save the empty blank project, reload (untitled combined default returns),
+  // then reopen the named blank from real browser storage: still blank.
+  modal = await openProjectFilesTab(page);
+  await modal.getByRole('button', { name: 'Save Local Project' }).click();
+  await expect(modal).toContainText(PROJECT_NAME);
+  await closeOptionsModal(page);
+  await expect.poll(() => editorValue(page), { timeout: 10_000 }).toBe('');
+
+  await page.reload({ waitUntil: 'domcontentloaded' });
+  await expect(page.getByTestId('app-toolbar')).toBeVisible({ timeout: 30_000 });
+  await waitForEditorContaining(page, MARKER);
+  modal = await openProjectFilesTab(page);
+  await expect(modal).toContainText(PROJECT_NAME);
+  await rowOpenButton(modal, PROJECT_NAME).click();
+  await expect.poll(() => editorValue(page), { timeout: 15_000 }).toBe('');
+
+  // Blank contract persists after serialization: Adjustment, local/no CRS,
+  // no instruments, GPS neutral, no stale result.
+  await modal.getByRole('button', { name: 'Adjustment', exact: true }).click();
+  await expect(modal.locator('label', { hasText: 'Run Mode' }).locator('select')).toHaveValue(
+    'adjustment',
+  );
+  await expect(
+    modal.locator('label', { hasText: 'Coord System Mode' }).locator('select'),
+  ).toHaveValue('local');
+  await modal.getByRole('button', { name: 'Instrument', exact: true }).click();
+  await expect(modal).toContainText('No instrument selected');
+  await modal.getByRole('button', { name: 'GPS', exact: true }).click();
+  await expect(modal.getByText('Enabled', { exact: true })).toHaveCount(0);
+  await expect(page.locator('body')).toContainText('No result');
+  await closeOptionsModal(page);
+  await page.screenshot({ path: `${EVIDENCE}/e-blank-reopen-roundtrip.png` });
+  expect(errors).toEqual([]);
+});
+
+test('F: input-sidebar entry uses the same create confirmation wording', async ({
+  page,
+}) => {
+  test.setTimeout(120_000);
+  const errors = trackErrors(page);
+  const seen: string[] = [];
+  await acceptDialogsWithLog(page, PROJECT_NAME, seen);
+  await bootApp(page);
+  await waitForEditorContaining(page, MARKER);
+
+  // Untitled workspace with content: the InputPane header "Project Files"
+  // button (no project files yet) routes through the same guarded create action.
+  await page.getByRole('button', { name: 'Project Files', exact: true }).first().click();
+  await waitForEditorEmpty(page);
+  await expect(page.locator('body')).toContainText(PROJECT_NAME);
+  expect(seen).toContain(`confirm:${SHARED_CONFIRM_WORDING}`);
+  await page.screenshot({ path: `${EVIDENCE}/f-sidebar-entry-blank.png` });
   expect(errors).toEqual([]);
 });

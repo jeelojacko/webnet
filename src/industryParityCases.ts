@@ -284,6 +284,17 @@ const DEFAULT_NORMALIZATION_RULES: IndustryParityHeaderNormalizationRule[] = [
   'dataFileList',
 ];
 
+/**
+ * Manifest-specific fields from the permanent public/examples/combined/project.wnproj
+ * bootstrap (ui.settings/ui.parseSettings) layered onto the combined case defaults.
+ * Keeps the in-repo fixture input as the startup input source of truth.
+ */
+export const COMBINED_STARTUP_MANIFEST_OVERLAY: Partial<ParseSettings> = {
+  suspectImpactMode: 'off',
+  levelWeight: 1.5,
+  positionalToleranceEnabled: true,
+};
+
 export const INDUSTRY_PARITY_CASES: Record<IndustryParityCaseId, IndustryParityCaseDefinition> = {
   leveling: {
     id: 'leveling',
@@ -422,6 +433,7 @@ export const INDUSTRY_PARITY_CASES: Record<IndustryParityCaseId, IndustryParityC
         applyCurvatureRefraction: true,
         verticalReduction: 'curvref',
         refractionCoefficient: 0.07,
+        ...COMBINED_STARTUP_MANIFEST_OVERLAY,
       },
       projectInstruments: TRAVERSE_STARTUP_INSTRUMENTS,
       selectedInstrument: 'TRAV_DEFAULT',

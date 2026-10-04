@@ -33,6 +33,8 @@ describe('useProjectFileWorkflow', () => {
     const root: Root = createRoot(container);
     const originalIndexedDb = window.indexedDB;
     const originalPrompt = window.prompt;
+    const originalConfirm = window.confirm;
+    window.confirm = vi.fn(() => true);
     const originalFileReader = globalThis.FileReader;
 
     const stores = {
@@ -332,6 +334,7 @@ describe('useProjectFileWorkflow', () => {
         value: originalIndexedDb,
       });
       window.prompt = originalPrompt;
+      window.confirm = originalConfirm;
       (globalThis as { FileReader: typeof FileReader }).FileReader = originalFileReader;
     }
   });

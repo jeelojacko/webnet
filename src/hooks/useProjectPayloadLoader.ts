@@ -1,4 +1,4 @@
-import { useCallback, type Dispatch, type SetStateAction } from 'react';
+import { useCallback, useState, type Dispatch, type SetStateAction } from 'react';
 import type {
   ParseSettings,
   PersistedSavedRunSnapshot,
@@ -101,6 +101,10 @@ export const useProjectPayloadLoader = ({
   setSettingsDraft,
   setSurveyCadState,
 }: UseProjectPayloadLoaderArgs) => {
+  // Monotonic token bumped on every successful workspace load/switch.
+  // Consumers (review queue filters, etc.) reset on revision change so a
+  // null-session example/portable load or same-id reopen still clears state.
+  const [workspaceRevision, setWorkspaceRevision] = useState(0);
   const normalizeImportedProjectPayload = useCallback(
     (parsed: ParsedProjectPayload) => {
       const loadedSettings = parsed.ui.settings as unknown as SettingsState;
@@ -260,6 +264,7 @@ export const useProjectPayloadLoader = ({
       setIsAdjustedPointsTransformSelectOpen(false);
       setAdjustedPointsTransformSelectedDraft([]);
       resetWorkspaceAfterProjectLoad();
+      setWorkspaceRevision((current) => current + 1);
     },
     [
       cloneInstrumentLibrary,
@@ -295,5 +300,6 @@ export const useProjectPayloadLoader = ({
   return {
     applyLoadedProjectPayload,
     normalizeImportedProjectPayload,
+    workspaceRevision,
   };
 };

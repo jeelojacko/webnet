@@ -14,6 +14,8 @@ import {
   createFlatProjectManifestSeed,
 } from '../src/hooks/projectFilePayloadBuilders';
 import { useProjectPayloadLoader } from '../src/hooks/useProjectPayloadLoader';
+import { useAppReviewQueue } from '../src/hooks/useAppReviewQueue';
+import type { ReviewQueueItem } from '../src/engine/reviewQueue';
 import type { CadDrawingDocument } from '../src/engine/cad/cadTypes';
 import ProjectFilesProjectOptionsTab from '../src/components/projectOptions/tabs/ProjectFilesProjectOptionsTab';
 import AppInputSidebar from '../src/components/app/AppInputSidebar';
@@ -46,6 +48,14 @@ import type {
 } from './projectFileWorkflowState/projectFileWorkflowStateTestSupport';
 
 describe('buildBlankProjectWorkspace', () => {
+  it('has no module-graph path to startup/example defaults', async () => {
+    const { readFileSync } = await import('node:fs');
+    const blank = readFileSync('src/app/blankProjectDefaults.ts', 'utf8');
+    expect(blank).not.toMatch(/AppInitialState/);
+    expect(blank).not.toMatch(/appConfig|APP_STARTUP_DEFAULTS/);
+    const base = readFileSync('src/app/baseProjectDefaults.ts', 'utf8');
+    expect(base).not.toMatch(/appConfig|APP_STARTUP_DEFAULTS/);
+  });
   it('returns explicit blank defaults, not camp values', () => {
     const blank = buildBlankProjectWorkspace();
     expect(blank.input).toBe('');
@@ -82,6 +92,43 @@ describe('buildBlankProjectWorkspace', () => {
     expect(gps.verticalDeflectionNorthSec).toBe(0);
     expect(gps.verticalDeflectionEastSec).toBe(0);
     expect(gps.averageGeoidHeight).toBe(0);
+    expect(gps.gnssVectorFrameDefault).toBe('gridNEU');
+    expect(gps.gnssFrameConfirmed).toBe(false);
+    expect(gps.geoidSourceFormat).toBe('builtin');
+    expect(gps.geoidInterpolation).toBe('bilinear');
+    expect(gps.geoidOutputHeightDatum).toBe('orthometric');
+  });
+
+  it('pins the full blank matrix: old-Pre-analysis baseline, not Combined/Pre-analysis data', () => {
+    const blank = buildBlankProjectWorkspace();
+    // Old Pre-analysis startup benign defaults (baseline main 0b08ccda patch
+    // values; base seeds are convergenceLimit 0.001 / lonSign west-negative).
+    expect(blank.settings.convergenceLimit).toBe(0.01);
+    expect(blank.settings.maxIterations).toBe(10);
+    const p = blank.parseSettings;
+    expect(p.coordMode).toBe('3D');
+    expect(p.order).toBe('EN');
+    expect(p.deltaMode).toBe('slope');
+    expect(p.angleStationOrder).toBe('atfromto');
+    expect(p.lonSign).toBe('west-positive');
+    expect(p.applyCurvatureRefraction).toBe(true);
+    expect(p.verticalReduction).toBe('curvref');
+    expect(p.refractionCoefficient).toBe(0.07);
+    expect(p.qFixLinearSigmaM).toBe(1e-7);
+    expect(p.qFixAngularSigmaSec).toBe(0.0010001);
+    // NOT Combined: no grid CRS, no NE order, no deflection/levelWeight/overlay.
+    expect(p.coordSystemMode).toBe('local');
+    expect(p.crsId).toBe('');
+    expect(p.verticalDeflectionNorthSec).toBe(0);
+    expect(p.verticalDeflectionEastSec).toBe(0);
+    expect(p.levelWeight).toBeUndefined();
+    expect(p.suspectImpactMode).toBe('auto');
+    expect(p.positionalToleranceEnabled).toBe(false);
+    // NOT Pre-analysis data: empty input, Adjustment mode.
+    expect(blank.input).toBe('');
+    expect(p.runMode).toBe('adjustment');
+    expect(p.preanalysisMode).toBe(false);
+    expect(p.crsId).not.toContain('UTM');
   });
 
   it('seeds a minimal valid manifest from empty input', () => {
@@ -110,10 +157,20 @@ describe('buildBlankProjectWorkspace', () => {
 });
 
 describe('create new blank project', () => {
-  const Harness = ({ onReset }: { onReset: () => void }) => {
+  // Single shared wording owned by createLocalProjectFromCurrentWorkspace;
+  // the sidebar and Project Files tab both route through it.
+  const sharedConfirmWording =
+    'Create a new blank project? Unsaved untitled input will be discarded.';
+  const Harness = ({
+    onReset,
+    initialInput = 'STN A 100 200',
+  }: {
+    onReset: () => void;
+    initialInput?: string;
+  }) => {
   const projectFileInputRef = useRef<HTMLInputElement | null>(null);
   const projectSourceFileInputRef = useRef<HTMLInputElement | null>(null);
-  const [input, setInput] = useState('STN A 100 200');
+  const [input, setInput] = useState(initialInput);
   const [projectIncludeFiles, setProjectIncludeFiles] = useState<Record<string, string>>({
     'extra.dat': 'STN B 300 400',
   });
@@ -235,7 +292,10 @@ describe('create new blank project', () => {
     const root: Root = createRoot(container);
     const originalIndexedDb = window.indexedDB;
     const originalPrompt = window.prompt;
+    const originalConfirm = window.confirm;
     installProjectWorkflowFakeIndexedDb('Blank Project');
+    const confirmSpy = vi.fn(() => true);
+    window.confirm = confirmSpy;
     const resetSpy = vi.fn();
 
 
@@ -252,6 +312,7 @@ describe('create new blank project', () => {
         }
       });
       expect(container.querySelector('#project-id')?.textContent).not.toBe('-');
+      expect(confirmSpy).toHaveBeenCalledWith(sharedConfirmWording);
       expect(container.querySelector('#live-input')?.textContent).toBe('empty');
       expect(container.querySelector('#live-crs')?.textContent).toBe('blank');
       expect(container.querySelector('#live-runmode')?.textContent).toBe('adjustment');
@@ -269,6 +330,7 @@ describe('create new blank project', () => {
       container.remove();
       Object.defineProperty(window, 'indexedDB', { configurable: true, value: originalIndexedDb });
       window.prompt = originalPrompt;
+      window.confirm = originalConfirm;
     }
   });
 
@@ -294,6 +356,56 @@ describe('create new blank project', () => {
         }
       });
       expect(container.querySelector('#project-id')?.textContent).not.toBe('-');
+      // Save attaches a named session (id assigned) while every live field is
+      // preserved: the clone path bypasses applyLoadedProjectPayload, so the
+      // loader's resetWorkspaceAfterProjectLoad callback (which clears
+      // result/integrity markers, comparison/review state, and CAD state) is
+      // never invoked here — unlike the explicit Create path above.
+      expect(container.querySelector('#live-input')?.textContent).toBe('STN A 100 200');
+      expect(container.querySelector('#live-crs')?.textContent).toBe('CA_NAD83_CSRS_UTM_20N');
+      expect(container.querySelector('#live-runmode')?.textContent).toBe('adjustment');
+      expect(container.querySelector('#live-inst-count')?.textContent).toBe('1');
+      expect(container.querySelector('#live-sel-inst')?.textContent).toBe('S9');
+      expect(container.querySelector('#live-presets')?.textContent).toBe('1');
+      expect(container.querySelector('#live-geoid-label')?.textContent).toBe('prior.bin');
+      expect(container.querySelector('#live-snaps')?.textContent).toBe('1');
+      expect(container.querySelector('#live-theme')?.textContent).toBe('catppuccin-mocha');
+      expect(resetSpy).not.toHaveBeenCalled();
+    } finally {
+      await act(async () => {
+        root.unmount();
+      });
+      container.remove();
+      Object.defineProperty(window, 'indexedDB', { configurable: true, value: originalIndexedDb });
+      window.prompt = originalPrompt;
+    }
+  });
+
+  it('shared guard: declining the confirm aborts before prompting or storing', async () => {
+    const container = document.createElement('div');
+    document.body.appendChild(container);
+    const root: Root = createRoot(container);
+    const originalIndexedDb = window.indexedDB;
+    const originalPrompt = window.prompt;
+    const originalConfirm = window.confirm;
+    installProjectWorkflowFakeIndexedDb('Blank Project');
+    const promptSpy = window.prompt as unknown as ReturnType<typeof vi.fn>;
+    const confirmSpy = vi.fn(() => false);
+    window.confirm = confirmSpy as unknown as typeof window.confirm;
+    try {
+      await act(async () => {
+        root.render(<Harness onReset={vi.fn()} />);
+        await new Promise((resolve) => window.setTimeout(resolve, 0));
+      });
+      await act(async () => {
+        (container.querySelector('#create-project') as HTMLButtonElement).click();
+        for (let attempt = 0; attempt < 6; attempt += 1) {
+          await new Promise((resolve) => window.setTimeout(resolve, 10));
+        }
+      });
+      expect(confirmSpy).toHaveBeenCalledWith(sharedConfirmWording);
+      expect(promptSpy).not.toHaveBeenCalled();
+      expect(container.querySelector('#project-id')?.textContent).toBe('-');
       expect(container.querySelector('#live-input')?.textContent).toBe('STN A 100 200');
     } finally {
       await act(async () => {
@@ -302,6 +414,242 @@ describe('create new blank project', () => {
       container.remove();
       Object.defineProperty(window, 'indexedDB', { configurable: true, value: originalIndexedDb });
       window.prompt = originalPrompt;
+      window.confirm = originalConfirm;
+    }
+  });
+
+  it('shared guard: whitespace-only untitled input skips the confirm', async () => {
+    const container = document.createElement('div');
+    document.body.appendChild(container);
+    const root: Root = createRoot(container);
+    const originalIndexedDb = window.indexedDB;
+    const originalPrompt = window.prompt;
+    const originalConfirm = window.confirm;
+    installProjectWorkflowFakeIndexedDb('Blank Project');
+    // Declining would abort if the guard ran, so false proves it is skipped.
+    const confirmSpy = vi.fn(() => false);
+    window.confirm = confirmSpy as unknown as typeof window.confirm;
+    try {
+      await act(async () => {
+        root.render(<Harness onReset={vi.fn()} initialInput="   " />);
+        await new Promise((resolve) => window.setTimeout(resolve, 0));
+      });
+      await act(async () => {
+        (container.querySelector('#create-project') as HTMLButtonElement).click();
+        for (let attempt = 0; attempt < 12; attempt += 1) {
+          await new Promise((resolve) => window.setTimeout(resolve, 10));
+          if (container.querySelector('#project-id')?.textContent !== '-') break;
+        }
+      });
+      expect(confirmSpy).not.toHaveBeenCalled();
+      expect(container.querySelector('#project-id')?.textContent).not.toBe('-');
+    } finally {
+      await act(async () => {
+        root.unmount();
+      });
+      container.remove();
+      Object.defineProperty(window, 'indexedDB', { configurable: true, value: originalIndexedDb });
+      window.prompt = originalPrompt;
+      window.confirm = originalConfirm;
+    }
+  });
+
+  it('shared guard: an attached session skips the confirm even with live input', async () => {
+    const container = document.createElement('div');
+    document.body.appendChild(container);
+    const root: Root = createRoot(container);
+    const originalIndexedDb = window.indexedDB;
+    const originalPrompt = window.prompt;
+    const originalConfirm = window.confirm;
+    installProjectWorkflowFakeIndexedDb('Saved Workspace Project');
+    const confirmSpy = vi.fn(() => true);
+    window.confirm = confirmSpy as unknown as typeof window.confirm;
+    try {
+      await act(async () => {
+        root.render(<Harness onReset={vi.fn()} />);
+        await new Promise((resolve) => window.setTimeout(resolve, 0));
+      });
+      // Save attaches a session while preserving the non-empty live input.
+      await act(async () => {
+        (container.querySelector('#save-project') as HTMLButtonElement).click();
+        for (let attempt = 0; attempt < 12; attempt += 1) {
+          await new Promise((resolve) => window.setTimeout(resolve, 10));
+          if (container.querySelector('#project-id')?.textContent !== '-') break;
+        }
+      });
+      const firstId = container.querySelector('#project-id')?.textContent;
+      expect(firstId).not.toBe('-');
+      expect(container.querySelector('#live-input')?.textContent).toBe('STN A 100 200');
+      await act(async () => {
+        (container.querySelector('#create-project') as HTMLButtonElement).click();
+        for (let attempt = 0; attempt < 12; attempt += 1) {
+          await new Promise((resolve) => window.setTimeout(resolve, 10));
+          const currentId = container.querySelector('#project-id')?.textContent;
+          if (currentId !== '-' && currentId !== firstId) break;
+        }
+      });
+      expect(confirmSpy).not.toHaveBeenCalled();
+      expect(container.querySelector('#project-id')?.textContent).not.toBe(firstId);
+      expect(container.querySelector('#live-input')?.textContent).toBe('empty');
+    } finally {
+      await act(async () => {
+        root.unmount();
+      });
+      container.remove();
+      Object.defineProperty(window, 'indexedDB', { configurable: true, value: originalIndexedDb });
+      window.prompt = originalPrompt;
+      window.confirm = originalConfirm;
+    }
+  });
+});
+
+describe('review queue workspace revision reset', () => {
+  const fakeQueueItem: ReviewQueueItem = {
+    id: 'queue-1',
+    title: 'Suspect observation',
+    subtitle: 'obs 7',
+    severity: 'high',
+    sourceType: 'suspect-observation',
+    resolved: false,
+    target: { kind: 'station', stationId: 'A' },
+    preferredTab: 'report',
+    sourceGroup: 'workspace',
+  };
+
+  const QueueHarness = ({
+    projectId,
+    workspaceRevision,
+  }: {
+    projectId: string | null;
+    workspaceRevision: number;
+  }) => {
+    const {
+      reviewQueueSeverityFilter,
+      setReviewQueueSeverityFilter,
+      reviewQueueSourceFilter,
+      setReviewQueueSourceFilter,
+      reviewQueueUnresolvedOnly,
+      setReviewQueueUnresolvedOnly,
+      reviewQueueImportedGroupFilter,
+      setReviewQueueImportedGroupFilter,
+      selectedReviewQueueItemId,
+      handleSelectReviewQueueItem,
+    } = useAppReviewQueue({
+      result: null,
+      excludedIds: new Set<number>(),
+      clusterReviewDecisions: {},
+      runComparisonSummary: null,
+      importReviewState: null,
+      selectObservation: () => undefined,
+      selectStation: () => undefined,
+      setActiveTab: () => undefined,
+      setIsSidebarOpen: () => undefined,
+      setPendingEditorJumpLine: () => undefined,
+      projectId,
+      workspaceRevision,
+    });
+    return (
+      <div>
+        <button type="button" id="rq-dirty-severity" onClick={() => setReviewQueueSeverityFilter('high')}>
+          sev
+        </button>
+        <button type="button" id="rq-dirty-source" onClick={() => setReviewQueueSourceFilter('cluster-candidate')}>
+          src
+        </button>
+        <button type="button" id="rq-dirty-unresolved" onClick={() => setReviewQueueUnresolvedOnly(true)}>
+          unresolved
+        </button>
+        <button type="button" id="rq-dirty-group" onClick={() => setReviewQueueImportedGroupFilter('import-a')}>
+          group
+        </button>
+        <button type="button" id="rq-select" onClick={() => handleSelectReviewQueueItem(fakeQueueItem)}>
+          select
+        </button>
+        <div id="rq-severity">{reviewQueueSeverityFilter}</div>
+        <div id="rq-source">{reviewQueueSourceFilter}</div>
+        <div id="rq-unresolved">{String(reviewQueueUnresolvedOnly)}</div>
+        <div id="rq-group">{reviewQueueImportedGroupFilter}</div>
+        <div id="rq-selected">{selectedReviewQueueItemId ?? 'none'}</div>
+      </div>
+    );
+  };
+
+  const dirtyQueue = async (container: HTMLElement) => {
+    await act(async () => {
+      const buttonIds = ['#rq-dirty-severity', '#rq-dirty-source', '#rq-dirty-unresolved', '#rq-dirty-group', '#rq-select'];
+      for (const id of buttonIds) {
+        (container.querySelector(id) as HTMLButtonElement).click();
+      }
+    });
+  };
+
+  const readQueue = (container: HTMLElement) => ({
+    severity: container.querySelector('#rq-severity')?.textContent,
+    source: container.querySelector('#rq-source')?.textContent,
+    unresolved: container.querySelector('#rq-unresolved')?.textContent,
+    group: container.querySelector('#rq-group')?.textContent,
+    selected: container.querySelector('#rq-selected')?.textContent,
+  });
+
+  const dirtiedQueue = {
+    severity: 'high',
+    source: 'cluster-candidate',
+    unresolved: 'true',
+    group: 'import-a',
+    selected: 'queue-1',
+  };
+
+  const resetQueue = {
+    severity: 'all',
+    source: 'all',
+    unresolved: 'false',
+    group: 'all',
+    selected: 'none',
+  };
+
+  it('resets filters and selection on a revision bump with projectId null on both sides', async () => {
+    const container = document.createElement('div');
+    document.body.appendChild(container);
+    const root: Root = createRoot(container);
+    try {
+      await act(async () => {
+        root.render(<QueueHarness projectId={null} workspaceRevision={0} />);
+      });
+      await dirtyQueue(container);
+      expect(readQueue(container)).toEqual(dirtiedQueue);
+      await act(async () => {
+        root.render(<QueueHarness projectId={null} workspaceRevision={1} />);
+      });
+      expect(readQueue(container)).toEqual(resetQueue);
+    } finally {
+      await act(async () => {
+        root.unmount();
+      });
+      container.remove();
+    }
+  });
+
+  it('keeps filters and selection on re-render with the same revision', async () => {
+    const container = document.createElement('div');
+    document.body.appendChild(container);
+    const root: Root = createRoot(container);
+    try {
+      await act(async () => {
+        root.render(<QueueHarness projectId={null} workspaceRevision={5} />);
+      });
+      await dirtyQueue(container);
+      expect(readQueue(container)).toEqual(dirtiedQueue);
+      // Ordinary edits re-render with fresh object identities but the same
+      // revision token, so the queue state must survive.
+      await act(async () => {
+        root.render(<QueueHarness projectId={null} workspaceRevision={5} />);
+      });
+      expect(readQueue(container)).toEqual(dirtiedQueue);
+    } finally {
+      await act(async () => {
+        root.unmount();
+      });
+      container.remove();
     }
   });
 });
@@ -537,7 +885,7 @@ describe('untitled input safety', () => {
     return { container, root };
   };
 
-  it('confirms before discarding non-empty untitled input', async () => {
+  it('delegates untitled-input confirmation to the create action instead of confirming locally', async () => {
     const onCreate = vi.fn();
     const confirmSpy = vi.fn();
     const originalConfirm = window.confirm;
@@ -555,8 +903,11 @@ describe('untitled input safety', () => {
       await act(async () => {
         button?.click();
       });
-      expect(confirmSpy).toHaveBeenCalled();
-      expect(onCreate).not.toHaveBeenCalled();
+      // The guard moved into createLocalProjectFromCurrentWorkspace so the
+      // sidebar and Project Files tab share one wording: the sidebar passes
+      // through without confirming locally.
+      expect(confirmSpy).not.toHaveBeenCalled();
+      expect(onCreate).toHaveBeenCalledTimes(1);
     } finally {
       await act(async () => {
         root.unmount();

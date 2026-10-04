@@ -111,7 +111,7 @@ export const useProjectFileWorkflow = ({
     surveyCadState,
   });
 
-  const { applyLoadedProjectPayload, normalizeImportedProjectPayload } = useProjectPayloadLoader({
+  const { applyLoadedProjectPayload, normalizeImportedProjectPayload, workspaceRevision } = useProjectPayloadLoader({
     buildObservationModeFromGridFields,
     cloneInstrumentLibrary,
     currentUiTheme: settings.uiTheme,
@@ -311,6 +311,7 @@ export const useProjectFileWorkflow = ({
     storageStatus,
     recentProjects,
     projectSession,
+    workspaceRevision,
     activeProjectFileViews,
     currentProjectFile,
     projectSourceAccept: PROJECT_SOURCE_ACCEPT,

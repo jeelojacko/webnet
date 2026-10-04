@@ -2,22 +2,40 @@ import { cloneAdjustedPointsExportSettings } from '../engine/adjustedPointsExpor
 import { clonePlanningMapState, DEFAULT_PLANNING_MAP_STATE } from '../engine/planningMapState';
 import type { ProjectFlatWorkspacePayloadOptions } from '../hooks/projectFilePayloadBuilders';
 import {
+  createBaseParseSettings,
+  createBaseSettingsState,
   createInitialAdjustedPointsExportSettings,
-  createInitialParseSettings,
-  createInitialSettingsState,
-} from './AppInitialState';
+} from './baseProjectDefaults';
 
 /**
  * Canonical blank workspace for "Create new project".
- * Explicit overrides (not camp values): Adjustment mode, local/no-CRS,
- * empty instruments, all GPS/geoid/CRS-transform flags off + zeroed.
+ * Built from BASE factories plus the old (baseline main 0b08ccda)
+ * campDesignPreanalysis startup patch values below — never from the
+ * Combined-seeded initial factories. Explicit blank overrides follow.
  */
 export const buildBlankProjectWorkspace = (): ProjectFlatWorkspacePayloadOptions => ({
   input: '',
   includeFiles: {},
-  settings: createInitialSettingsState(),
+  settings: {
+    ...createBaseSettingsState(),
+    // Old Pre-analysis startup benign defaults (baseline main 0b08ccda).
+    convergenceLimit: 0.01,
+    maxIterations: 10,
+  },
   parseSettings: {
-    ...createInitialParseSettings(),
+    ...createBaseParseSettings(),
+    // Old Pre-analysis startup benign defaults (baseline main 0b08ccda).
+    coordMode: '3D',
+    order: 'EN',
+    deltaMode: 'slope',
+    angleStationOrder: 'atfromto',
+    lonSign: 'west-positive',
+    applyCurvatureRefraction: true,
+    verticalReduction: 'curvref',
+    refractionCoefficient: 0.07,
+    qFixLinearSigmaM: 1e-7,
+    qFixAngularSigmaSec: 0.0010001,
+    // Explicit blank overrides: Adjustment, local/no-CRS, neutral GPS/geoid.
     runMode: 'adjustment',
     preanalysisMode: false,
     coordSystemMode: 'local',
@@ -29,6 +47,10 @@ export const buildBlankProjectWorkspace = (): ProjectFlatWorkspacePayloadOptions
     crsGridScaleFactor: 1,
     crsConvergenceEnabled: false,
     crsConvergenceAngleRad: 0,
+    gnssVectorFrameDefault: 'gridNEU',
+    gnssFrameConfirmed: false,
+    verticalDeflectionNorthSec: 0,
+    verticalDeflectionEastSec: 0,
     geoidModelEnabled: false,
     geoidModelId: '',
     geoidSourceFormat: 'builtin',
@@ -36,13 +58,11 @@ export const buildBlankProjectWorkspace = (): ProjectFlatWorkspacePayloadOptions
     geoidInterpolation: 'bilinear',
     geoidHeightConversionEnabled: false,
     geoidOutputHeightDatum: 'orthometric',
+    averageGeoidHeight: 0,
     gpsLoopCheckEnabled: false,
     gpsAddHiHtEnabled: false,
     gpsAddHiHtHiM: 0,
     gpsAddHiHtHtM: 0,
-    verticalDeflectionNorthSec: 0,
-    verticalDeflectionEastSec: 0,
-    averageGeoidHeight: 0,
   },
   geoidSourceData: null,
   geoidSourceDataLabel: '',
