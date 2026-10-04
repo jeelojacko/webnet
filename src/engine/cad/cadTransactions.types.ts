@@ -1808,6 +1808,8 @@ export type CadCommand =
   | {
       key: 'GROUP_CLEAR_TRANSITION';
       groupId: string;
+      /** Named joint only; omitted clears every transition (legacy callers). */
+      jointId?: string;
     }
   | {
       key: 'GROUPEXTRACTDAYLIGHT';

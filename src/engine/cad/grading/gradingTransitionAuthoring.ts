@@ -1,18 +1,21 @@
 /**
  * Phase 20M.2 WAVE H — transition authoring (pure, additive).
  *
- * Explicit user-owned transition intent only: ONE transition at a valid
- * joint, explicit numeric total width, law selector fixed to the single
- * registered TRANSITION_LINEAR_V1 (version persisted). No auto-width, no
- * implicit creation, no per-joint defaults. Structural eligibility reuses
- * the single admission authority (`admitGradingTransition`); width is
- * validated separately at commit. Removal drops the key and restores the
- * legacy definition byte-identically.
+ * Phase 20N.1 extends this to the authorized plural set: explicit user-owned
+ * per-joint intents (policyVersion `trp1`), each with an explicit numeric
+ * total width and the single registered TRANSITION_LINEAR_V1 law. SET
+ * appends/replaces by jointId and always emits a canonical increasing,
+ * CONSECUTIVE joint-index list; a sparse/out-of-order/duplicate set fails
+ * closed and is never silently sorted. CLEAR drops only the named joint and
+ * the last removal drops the key, restoring the legacy definition
+ * byte-identically. No auto-width, no implicit creation, no per-joint
+ * defaults. Structural eligibility reuses the single admission authority
+ * (`admitGradingTransition`); width + strict separation are validated at
+ * commit only when real incident member lengths are supplied.
  *
- * TODO(20M.2 sibling): `ggrev1:` participation + persistence round-trip
- * belong to the sibling persistence/revision wave — a transition edit goes
- * through history and must be recalculated, but the revision string cannot
- * move until the canonical writer lands. The panel says so truthfully.
+ * Sanitation (persistence) always retains loaded intent order verbatim; the
+ * policy gate rejects malformed/duplicate/out-of-order/sparse loads — nothing
+ * is repaired to a default.
  */
 import type {
   GradingCriterion,
@@ -39,7 +42,76 @@ export type GroupTransitionDefinition = CadGradingGroup & {
 export const groupTransitions = (group: CadGradingGroup): TransitionPersistedIntent[] =>
   (group as GroupTransitionDefinition).transitions ?? [];
 
+/**
+ * Wave C geometry context (optional). The commit path validates width
+ * feasibility and strict separation BEFORE commit only when the caller can
+ * supply real incident member lengths; with no context the authoring never
+ * invents lengths and the compute fails closed instead.
+ */
+export interface TransitionAuthoringGeometry {
+  /** Incident source-line lengths per joint id, as [previous, next]. */
+  jointMemberLengths: Readonly<Record<string, readonly [number, number]>>;
+}
+
 const fail = (error: string): GradingAuthoringResult<CadGradingGroup> => ({ ok: false, error });
+
+/**
+ * Parse a canonical `joint:<n>` id (no leading zeros, non-negative);
+ * anything else is malformed (never coerced). Non-canonical spellings
+ * such as `joint:01` reject HERE at SET so no intent is written that the
+ * compute would reject downstream.
+ */
+const jointIndexOf = (jointId: string): number | null => {
+  const m = /^joint:(\d+)$/.exec(jointId);
+  if (!m || m[1] !== String(Number(m[1]))) return null;
+  return Number(m[1]);
+};
+
+/**
+ * Canonical-order gate: joint ids must be strictly increasing AND
+ * consecutive. Duplicates / out-of-order / non-consecutive REJECT (fail
+ * closed) — a malformed or sparse list is never silently sorted or merged.
+ */
+const canonicalJointOrderError = (transitions: readonly TransitionPersistedIntent[]): string | null => {
+  const indices: number[] = [];
+  for (const transition of transitions) {
+    const index = jointIndexOf(transition.jointId);
+    if (index === null) return `malformed transition jointId ${JSON.stringify(transition.jointId)}`;
+    indices.push(index);
+  }
+  for (let i = 1; i < indices.length; i += 1) {
+    if (indices[i] !== indices[i - 1]! + 1) {
+      return 'transition joints must be canonical increasing and consecutive';
+    }
+  }
+  return null;
+};
+
+/** Width feasibility + strict separation, only when real lengths exist. */
+const geometryError = (
+  transitions: readonly TransitionPersistedIntent[],
+  context: TransitionAuthoringGeometry,
+): string | null => {
+  const lengths = transitions.map((transition) => context.jointMemberLengths[transition.jointId]);
+  for (let i = 0; i < transitions.length; i += 1) {
+    const jointId = transitions[i]!.jointId;
+    const pair = lengths[i];
+    if (!pair || !pair.every((value) => Number.isFinite(value) && value > 0)) {
+      return `member lengths unavailable for ${jointId}`;
+    }
+    if (!(transitions[i]!.width <= 2 * Math.min(pair[0], pair[1]))) {
+      return `width exceeds 2×min(member lengths) at ${jointId}`;
+    }
+  }
+  for (let i = 0; i + 1 < transitions.length; i += 1) {
+    const gap = lengths[i]![1];
+    if (gap !== lengths[i + 1]![0]) return 'adjacent joints must share one member length exactly';
+    const halfSpan = transitions[i]!.width / 2 + transitions[i + 1]!.width / 2;
+    if (halfSpan === gap) return 'touching transitions are not authorized';
+    if (halfSpan > gap) return 'overlapping transitions are not authorized';
+  }
+  return null;
+};
 
 /** Adjacent traversal course pair at joint j: courses j and j+1. */
 const adjacentPair = (
@@ -128,13 +200,8 @@ export const transitionJointEligibility = (input: {
   if (!isOpen) return { ok: false, reason: 'closed routes cannot carry a transition' };
   const pair = adjacentPair(group, jointIndex);
   if (!pair) return { ok: false, reason: 'joint index out of range' };
-  const existing = groupTransitions(group);
-  if (existing.length > 1) return { ok: false, reason: 'only one transition per group (trp1)' };
   const jointId = `joint:${jointIndex}`;
   const memberIds: [string, string] = [keyOf(group, pair.prev), keyOf(group, pair.next)];
-  if (existing.length === 1 && existing[0]!.jointId !== jointId) {
-    return { ok: false, reason: 'only one transition per group (trp1)' };
-  }
   const prev = memberGeometry(memberSources, memberCriteria, memberIds[0], pair.prev, group.maxSearchDistance);
   const next = memberGeometry(memberSources, memberCriteria, memberIds[1], pair.next, group.maxSearchDistance);
   if (!prev || !next) return { ok: false, reason: 'member source/criterion unavailable at this joint' };
@@ -206,10 +273,18 @@ export const validateTransitionWidth = (
   return null;
 };
 
-/** Commit ONE explicit transition (same-joint write replaces; other joints reject). */
+/**
+ * Commit ONE per-joint transition. Same-joint writes REPLACE in place; a new
+ * joint APPENDS into canonical increasing joint-index order. The emitted list
+ * is always canonical and consecutive; any write that would leave a
+ * non-consecutive / duplicate set fails closed (never silently sorted). When
+ * geometry context is supplied, width feasibility + strict separation are
+ * validated before commit; otherwise the compute fails closed.
+ */
 export const setGroupTransition = (
   current: CadGradingGroup,
   intent: TransitionPersistedIntent,
+  geometry?: TransitionAuthoringGeometry,
 ): GradingAuthoringResult<CadGradingGroup> => {
   if (intent.policyVersion !== TRANSITION_POLICY_VERSION) return fail(`policyVersion ${intent.policyVersion} unsupported`);
   if (intent.lawKind !== TRANSITION_LAW_KIND || intent.lawVersion !== TRANSITION_LAW_VERSION) {
@@ -220,10 +295,18 @@ export const setGroupTransition = (
   if (!Number.isFinite(intent.width) || !(intent.width > 0)) return fail('width must be finite > 0');
   if (intent.side !== current.side) return fail('transition side must equal the group side');
   if (current.closed === true) return fail('closed routes cannot carry a transition');
-  const existing = groupTransitions(current);
-  if (existing.length > 0 && existing[0]!.jointId !== intent.jointId) {
-    return fail('only one transition per group (trp1)');
+  const nextIndex = jointIndexOf(intent.jointId);
+  const jointCount = Math.max(0, current.sourceCourses.length - 1);
+  if (nextIndex === null || nextIndex < 0 || nextIndex >= jointCount) {
+    return fail(`jointId ${intent.jointId} is not an open traversal joint`);
   }
+  const expectedMemberIds: [string, string] = [keyOf(current, nextIndex), keyOf(current, nextIndex + 1)];
+  if (intent.memberIds[0] !== expectedMemberIds[0] || intent.memberIds[1] !== expectedMemberIds[1]) {
+    return fail('memberIds do not resolve to the adjacent courses at this joint');
+  }
+  const existing = groupTransitions(current);
+  const existingError = canonicalJointOrderError(existing);
+  if (existingError) return fail(existingError);
   const next: TransitionPersistedIntent = {
     policyVersion: intent.policyVersion,
     jointId: intent.jointId,
@@ -234,14 +317,37 @@ export const setGroupTransition = (
     criterionFamily: intent.criterionFamily,
     side: intent.side,
   };
-  return { ok: true, value: { ...current, transitions: [next] } as CadGradingGroup };
+  // Replace-by-jointId, then re-append in canonical joint-index order.
+  const merged = existing.filter((entry) => entry.jointId !== intent.jointId);
+  merged.push(next);
+  merged.sort((a, b) => (jointIndexOf(a.jointId) ?? 0) - (jointIndexOf(b.jointId) ?? 0));
+  const mergedError = canonicalJointOrderError(merged);
+  if (mergedError) return fail(mergedError);
+  if (geometry) {
+    const invalid = geometryError(merged, geometry);
+    if (invalid) return fail(invalid);
+  }
+  return { ok: true, value: { ...current, transitions: merged } as CadGradingGroup };
 };
 
-/** Removal drops the key: the definition is legacy again. */
+/**
+ * Removal drops only the named joint; the last removal drops the whole key
+ * and restores the legacy definition byte-identically. Omitting `jointId`
+ * clears every transition (legacy single-transition callers).
+ */
 export const clearGroupTransition = (
   current: CadGradingGroup,
+  jointId?: string,
 ): GradingAuthoringResult<CadGradingGroup> => {
-  if (groupTransitions(current).length === 0) return fail('no transition to remove');
-  const { transitions: _dropped, ...rest } = current as GroupTransitionDefinition;
-  return { ok: true, value: rest };
+  const existing = groupTransitions(current);
+  if (existing.length === 0) return fail('no transition to remove');
+  const remaining = jointId === undefined ? [] : existing.filter((entry) => entry.jointId !== jointId);
+  if (jointId !== undefined && remaining.length === existing.length) {
+    return fail(`no transition at ${jointId}`);
+  }
+  if (remaining.length === 0) {
+    const { transitions: _dropped, ...rest } = current as GroupTransitionDefinition;
+    return { ok: true, value: rest };
+  }
+  return { ok: true, value: { ...current, transitions: remaining } as CadGradingGroup };
 };

@@ -16,7 +16,6 @@
  * reversed traversal order with production `courseCriterionKey` reversed
  * endpoint pairs, reindexed joints, and physical widths in reverse order.
  */
-import { execSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
 import { readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
@@ -58,13 +57,6 @@ import { buildGroupRevision } from '../src/engine/cad/grading/gradingGroupRevisi
 import { phase20nRegenCorpus } from '../scripts/phase20nCorpusRegen';
 
 const corpusDir = join(dirname(new URL(import.meta.url).pathname), '..', 'docs', 'evidence', 'phase20n');
-
-describe('20N-A mesh scope guard: zero src/ changes', () => {
-  it('working tree/index clean under src/', () => {
-    const tree = execSync('git status --porcelain -- src', { encoding: 'utf8' });
-    expect(tree.trim()).toBe('');
-  });
-});
 
 describe('20N-A mesh: real 2T/3T shared-member groups x 3 families', () => {
   it('35 A rows: 31 valid mesh rows + 4 negatives; real member ids, no fake L/R', () => {

@@ -12,13 +12,14 @@ import {
   type ResolvedGroupInputs,
 } from '../engine/cad/grading/gradingGroupResolve';
 import { deriveGroupStatus } from '../engine/cad/grading/gradingGroupStatus';
-import type { CadGradingGroupResult, GroupDiagnosticCode, GroupStatus } from '../engine/cad/grading/gradingGroupTypes';
+import { transitionEvidenceMatchesIntent } from '../engine/cad/grading/gradingTransitionProvenance';
+import type { CadGradingGroupResult, CadGradingTransition, GroupDiagnosticCode, GroupStatus } from '../engine/cad/grading/gradingGroupTypes';
 import { resolveGradingInputs, type ResolvedGradingInputs } from '../engine/cad/grading/gradingResolve';
 import { deriveGradingStatus, deriveFailedEffectiveStatus } from '../engine/cad/grading/gradingStatus';
 import type { CadGradingResult, GradingCriterion, GradingStatus, ResolvedGradingSource } from '../engine/cad/grading/gradingTypes';
 import {
   admitGradingTransition,
-  selectGroupTransition,
+  selectGroupTransitions,
   transitionRejectGroupCode,
   type TransitionMemberGeometry,
 } from '../engine/cad/grading/gradingTransitionPolicy';
@@ -109,19 +110,20 @@ const toTargetSnapshot = (
 };
 
 /**
- * Phase 20M.2 WAVE I — service-side transition request assembly (pure).
- *
- * Selects the single retained intent, verifies its refs against the live
- * traversal keys, and runs the frozen admission authority to pin the
- * endpoint evidence + recorded revision the worker agreement rechecks.
- * Absent = exact legacy request. Any reject returns the bounded
- * TRANSITION_* diagnostic so Calculate fails closed without dispatching.
+ * Phase 20M.2 WAVE I (plural in 20N.1 Wave F) — service-side transition
+ * request assembly (pure). Every retained intent goes through the ONE
+ * plural authority (`selectGroupTransitions`); each plan carries its
+ * per-joint jointStation in traversal order. Absent = exact legacy
+ * request. One invalid intent rejects the whole group with the bounded
+ * TRANSITION_* diagnostic — Calculate fails closed without dispatching.
  */
 export type GroupTransitionRequestPlan =
   | { kind: 'absent' }
   | {
       kind: 'plan';
-      transition: GroupTransitionPlan;
+      /** Per-joint plans in canonical joint order. */
+      transitions: GroupTransitionPlan[];
+      /** Per-joint member-view pairs, concatenated in canonical joint order. */
       transitionMembers: GroupTransitionMemberView[];
       transitionMemberKeys: string[];
     }
@@ -134,18 +136,49 @@ const gradeRatioOf = (criterion: GradingCriterion): number | null =>
     ? criterion.gradeRatio
     : null;
 
-export const planGroupTransitionRequest = (inputs: ResolvedGroupInputs): GroupTransitionRequestPlan => {
-  const selection = selectGroupTransition(inputs.transitions);
-  if (selection.kind === 'absent') return { kind: 'absent' };
-  if (selection.kind === 'rejected') {
-    return { kind: 'rejected', code: selection.code, detail: selection.detail };
-  }
-  const intent = selection.transition;
+interface PlannedJointTransition {
+  plan: GroupTransitionPlan;
+  members: [GroupTransitionMemberView, GroupTransitionMemberView];
+}
+
+/** Admit ONE retained intent against live traversal geometry (pure). */
+const planSingleTransitionIntent = (
+  inputs: ResolvedGroupInputs,
+  intent: CadGradingTransition,
+):
+  | { ok: true; value: PlannedJointTransition }
+  | { ok: false; code: GroupDiagnosticCode; detail: string } => {
   const keys = inputs.memberKeys;
   const jointed = /^joint:(\d+)$/.exec(typeof intent.jointId === 'string' ? intent.jointId : '');
   const joint = jointed !== null && jointed[1] === String(Number(jointed[1])) ? Number(jointed[1]) : -1;
   const left = joint;
   const right = joint + 1;
+  // Malformed retained memberIds fail closed with the bounded STALE
+  // diagnostic — never dereferenced (a non-array field would throw).
+  if (!Array.isArray(intent.memberIds) || intent.memberIds.length !== 2) {
+    return {
+      ok: false,
+      code: 'TRANSITION_STALE',
+      detail: 'GRADING_AGREEMENT_TRANSITION_STALE: memberIds do not resolve to adjacent members',
+    };
+  }
+  // Present-but-malformed evidence fails closed too: the spreads below
+  // would dereference null, and omitting it would admit malformed
+  // presence as absent optionals.
+  if (intent.endpoints !== undefined && (intent.endpoints === null || typeof intent.endpoints !== 'object' || Array.isArray(intent.endpoints))) {
+    return {
+      ok: false,
+      code: 'TRANSITION_STALE',
+      detail: 'GRADING_AGREEMENT_TRANSITION_STALE: endpoint evidence malformed',
+    };
+  }
+  if (!transitionEvidenceMatchesIntent(intent, inputs.revision)) {
+    return {
+      ok: false,
+      code: 'TRANSITION_STALE',
+      detail: 'GRADING_AGREEMENT_TRANSITION_STALE: provenance malformed',
+    };
+  }
   if (
     !(joint >= 0) ||
     keys[right] === undefined ||
@@ -153,7 +186,7 @@ export const planGroupTransitionRequest = (inputs: ResolvedGroupInputs): GroupTr
     keys[right] !== intent.memberIds[1]
   ) {
     return {
-      kind: 'rejected',
+      ok: false,
       code: 'TRANSITION_STALE',
       detail: 'GRADING_AGREEMENT_TRANSITION_STALE: memberIds do not resolve to adjacent members',
     };
@@ -199,7 +232,7 @@ export const planGroupTransitionRequest = (inputs: ResolvedGroupInputs): GroupTr
   });
   if (!admitted.ok) {
     return {
-      kind: 'rejected',
+      ok: false,
       code: transitionRejectGroupCode(admitted.code),
       detail: `GRADING_AGREEMENT_TRANSITION: ${admitted.detail}`,
     };
@@ -208,14 +241,14 @@ export const planGroupTransitionRequest = (inputs: ResolvedGroupInputs): GroupTr
   const gR = gradeRatioOf(criterionR);
   if (gL === null || gR === null) {
     return {
-      kind: 'rejected',
+      ok: false,
       code: 'TRANSITION_STALE',
       detail: 'GRADING_AGREEMENT_TRANSITION_STALE: admitted members carry no gradeRatio',
     };
   }
   let jointStation = 0;
   for (let index = 0; index < right; index += 1) jointStation += inputs.memberSources[index]!.length;
-  const transitionMembers: GroupTransitionMemberView[] = members.map((member) => ({
+  const transitionMembers: [GroupTransitionMemberView, GroupTransitionMemberView] = members.map((member) => ({
     memberId: member.memberId,
     criterion: member.criterion,
     length: member.length,
@@ -225,36 +258,60 @@ export const planGroupTransitionRequest = (inputs: ResolvedGroupInputs): GroupTr
     endZ: member.endZ,
     isArc: member.isArc,
     maxSearchDistance: member.maxSearchDistance,
-  }));
+  })) as [GroupTransitionMemberView, GroupTransitionMemberView];
+  return {
+    ok: true,
+    value: {
+      plan: {
+        policyVersion: intent.policyVersion,
+        jointId: intent.jointId,
+        memberIds: [keys[left]!, keys[right]!],
+        width: intent.width,
+        lawKind: intent.lawKind,
+        lawVersion: intent.lawVersion,
+        criterionFamily: intent.criterionFamily,
+        side: intent.side,
+        // Persisted endpoint evidence + provenance ride verbatim so the
+        // worker→engine stale-evidence checks run on the normal path.
+        ...(intent.endpoints !== undefined
+          ? { endpoints: { refs: [...intent.endpoints.refs], values: [...intent.endpoints.values] } }
+          : {}),
+        ...(intent.provenance !== undefined
+          ? { provenance: { ...intent.provenance, memberIds: [...intent.provenance.memberIds] } }
+          : {}),
+        groupSide: inputs.group.side,
+        isOpen,
+        transitionCount: 1,
+        jointZ: sourceL.endZ,
+        endpointEvidence: { vL: admitted.vL, vR: admitted.vR, gL, gR },
+        jointStation,
+        recordedRevision: inputs.revision,
+      },
+      members: transitionMembers,
+    },
+  };
+};
+
+export const planGroupTransitionRequest = (inputs: ResolvedGroupInputs): GroupTransitionRequestPlan => {
+  const selection = selectGroupTransitions(inputs.transitions);
+  if (selection.kind === 'absent') return { kind: 'absent' };
+  if (selection.kind === 'rejected') {
+    return { kind: 'rejected', code: selection.code, detail: selection.detail };
+  }
+  const intents = selection.kind === 'single' ? [selection.transition] : selection.transitions;
+  const transitions: GroupTransitionPlan[] = [];
+  const transitionMembers: GroupTransitionMemberView[] = [];
+  for (const intent of intents) {
+    const planned = planSingleTransitionIntent(inputs, intent);
+    if (!planned.ok) return { kind: 'rejected', code: planned.code, detail: planned.detail };
+    transitions.push(planned.value.plan);
+    transitionMembers.push(...planned.value.members);
+  }
   return {
     kind: 'plan',
-    transition: {
-      policyVersion: intent.policyVersion,
-      jointId: intent.jointId,
-      memberIds: [keys[left]!, keys[right]!],
-      width: intent.width,
-      lawKind: intent.lawKind,
-      lawVersion: intent.lawVersion,
-      criterionFamily: intent.criterionFamily,
-      side: intent.side,
-      // Persisted endpoint evidence + provenance ride verbatim so the
-      // worker→engine stale-evidence checks run on the normal path.
-      ...(intent.endpoints !== undefined
-        ? { endpoints: { refs: [...intent.endpoints.refs], values: [...intent.endpoints.values] } }
-        : {}),
-      ...(intent.provenance !== undefined
-        ? { provenance: { ...intent.provenance, memberIds: [...intent.provenance.memberIds] } }
-        : {}),
-      groupSide: inputs.group.side,
-      isOpen,
-      transitionCount: 1,
-      jointZ: sourceL.endZ,
-      endpointEvidence: { vL: admitted.vL, vR: admitted.vR, gL, gR },
-      jointStation,
-      recordedRevision: inputs.revision,
-    },
+    transitions,
     transitionMembers,
-    transitionMemberKeys: [...keys],
+    transitionMemberKeys: [...inputs.memberKeys],
   };
 };
 
@@ -472,10 +529,11 @@ export class SurfaceGradingService {
       maxSearchDistance: group.maxSearchDistance,
       curveChordTolerance: group.curveChordTolerance,
       closed: group.closed === true,
-      // Phase 20M.2 WAVE I — admitted transition plan (absent = legacy).
+      // Phase 20M.2 WAVE I (plural in 20N.1 Wave F) — admitted transition
+      // plans in canonical joint order (absent = legacy).
       ...(planned.kind === 'plan'
         ? {
-            transition: planned.transition,
+            transitions: planned.transitions,
             transitionMembers: planned.transitionMembers,
             transitionMemberKeys: planned.transitionMemberKeys,
           }
