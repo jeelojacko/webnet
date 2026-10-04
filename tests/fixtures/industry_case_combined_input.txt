@@ -1,4 +1,3 @@
-#Traverse Only
 # 2025 Suvery Design Pre-Analysis
 
 ########################

@@ -101,13 +101,13 @@ describe('industry multi-case parity foundation', () => {
         '(V27 PostProcessed 28-APR-2025 12:21:00.0 session_1_processed.asc)',
       );
       expect(normalizedAdjustedGpsVectorSection).toContain(
-        'FRDN Delta-N 1109.0406 -0.0003 0.0005 0.7 1:1804',
+        'FRDN Delta-N 1109.0406 -0.0003 0.0005 0.7 1:1803',
       );
       expect(normalizedAdjustedGpsVectorSection).toContain(
         'Delta-U -35.5079 0.0023 0.0035 0.7',
       );
       expect(normalizedAdjustedGpsVectorSection).toContain(
-        'GPS6 Delta-N -253.9073 0.0019 0.0040 0.5 1:1863',
+        'GPS6 Delta-N -253.9073 0.0019 0.0040 0.5 1:1862',
       );
 
       const relationshipSection = extractSection(
@@ -179,19 +179,19 @@ describe('industry multi-case parity foundation', () => {
     expect(result.converged).toBe(true);
 
     const expectedRows = [
-      { sourceLine: 498, to: 'Chimney', northing: 7438679.1305, easting: 2489065.9085, height: 53.8799 },
-      { sourceLine: 507, to: 'Chimney', northing: 7438679.1316, easting: 2489065.9068, height: 53.8781 },
-      { sourceLine: 516, to: 'Chimney', northing: 7438679.1310, easting: 2489065.9083, height: 53.8784 },
-      { sourceLine: 526, to: 'Meridian', northing: 7438484.5882, easting: 2489095.4001, height: 49.7369 },
-      { sourceLine: 533, to: 'Meridian', northing: 7438484.5880, easting: 2489095.3999, height: 49.7369 },
-      { sourceLine: 540, to: 'Meridian', northing: 7438484.5889, easting: 2489095.4000, height: 49.7367 },
-      { sourceLine: 547, to: 'Meridian', northing: 7438484.5879, easting: 2489095.4000, height: 49.7367 },
-      { sourceLine: 574, to: 'Meridian', northing: 7438484.5872, easting: 2489095.3997, height: 49.7367 },
-      { sourceLine: 575, to: 'Meridian', northing: 7438484.5877, easting: 2489095.4004, height: 49.7368 },
-      { sourceLine: 576, to: 'Meridian', northing: 7438484.5868, easting: 2489095.3990, height: 49.7371 },
-      { sourceLine: 611, to: 'Chimney', northing: 7438679.1444, easting: 2489065.9139, height: 54.2852 },
-      { sourceLine: 619, to: 'Chimney', northing: 7438679.1463, easting: 2489065.9122, height: 54.2970 },
-      { sourceLine: 627, to: 'Chimney', northing: 7438679.1439, easting: 2489065.9152, height: 54.2937 },
+      { sourceLine: 497, to: 'Chimney', northing: 7438679.1305, easting: 2489065.9085, height: 53.8799 },
+      { sourceLine: 506, to: 'Chimney', northing: 7438679.1316, easting: 2489065.9068, height: 53.8781 },
+      { sourceLine: 515, to: 'Chimney', northing: 7438679.1310, easting: 2489065.9083, height: 53.8784 },
+      { sourceLine: 525, to: 'Meridian', northing: 7438484.5882, easting: 2489095.4001, height: 49.7369 },
+      { sourceLine: 532, to: 'Meridian', northing: 7438484.5880, easting: 2489095.3999, height: 49.7369 },
+      { sourceLine: 539, to: 'Meridian', northing: 7438484.5889, easting: 2489095.4000, height: 49.7367 },
+      { sourceLine: 546, to: 'Meridian', northing: 7438484.5879, easting: 2489095.4000, height: 49.7367 },
+      { sourceLine: 573, to: 'Meridian', northing: 7438484.5872, easting: 2489095.3997, height: 49.7367 },
+      { sourceLine: 574, to: 'Meridian', northing: 7438484.5877, easting: 2489095.4004, height: 49.7368 },
+      { sourceLine: 575, to: 'Meridian', northing: 7438484.5868, easting: 2489095.3990, height: 49.7371 },
+      { sourceLine: 610, to: 'Chimney', northing: 7438679.1444, easting: 2489065.9139, height: 54.2852 },
+      { sourceLine: 618, to: 'Chimney', northing: 7438679.1463, easting: 2489065.9122, height: 54.2970 },
+      { sourceLine: 626, to: 'Chimney', northing: 7438679.1439, easting: 2489065.9152, height: 54.2937 },
     ];
 
     expectedRows.forEach((expected) => {
