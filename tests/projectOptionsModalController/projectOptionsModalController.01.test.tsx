@@ -93,6 +93,7 @@ describe('useProjectOptionsModalController draft links', () => {
         adjustedPointsTransformDraftValidationMessage: null,
         crsCatalogGroupCounts: {},
         filteredDraftCrsCatalog: [],
+        handleCrsCatalogGroupChange: () => undefined,
         searchedDraftCrsCatalog: [],
         visibleDraftCrsCatalog: [],
         selectedDraftCrs: undefined,

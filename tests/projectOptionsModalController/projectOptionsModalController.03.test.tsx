@@ -99,6 +99,7 @@ describe('useProjectOptionsModalController transform dialog semantics', () => {
         adjustedPointsTransformDraftValidationMessage: null,
         crsCatalogGroupCounts: {},
         filteredDraftCrsCatalog: [],
+        handleCrsCatalogGroupChange: () => undefined,
         searchedDraftCrsCatalog: [],
         visibleDraftCrsCatalog: [],
         selectedDraftCrs: undefined,

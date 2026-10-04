@@ -92,6 +92,7 @@ export type UseProjectOptionsModalControllerArgs = {
   adjustedPointsTransformDraftValidationMessage: string | null;
   crsCatalogGroupCounts: Record<string, number>;
   filteredDraftCrsCatalog: CrsDefinition[];
+  handleCrsCatalogGroupChange: (_group: CrsCatalogGroupFilter) => void;
   searchedDraftCrsCatalog: CrsDefinition[];
   visibleDraftCrsCatalog: CrsDefinition[];
   selectedDraftCrs?: CrsDefinition;
