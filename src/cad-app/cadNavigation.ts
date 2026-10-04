@@ -1,3 +1,4 @@
+import { getAppBasePath, resolveAppRoutePath, stripAppBasePrefix } from '../appBasePath';
 import type { AppControllerProps } from '../hooks/useAppController';
 
 /** Which top-level application a pathname selects. No router dependency. */
@@ -6,9 +7,10 @@ export type AppRoute = 'study' | 'cad' | 'adjustment';
 export const CAD_ROUTE_PATH = '/cad';
 export const STUDY_ROUTE_PATH = '/study';
 
-export const resolveAppRoute = (pathname: string): AppRoute => {
-  if (pathname === STUDY_ROUTE_PATH || pathname.startsWith(`${STUDY_ROUTE_PATH}/`)) return 'study';
-  if (pathname === CAD_ROUTE_PATH || pathname.startsWith(`${CAD_ROUTE_PATH}/`)) return 'cad';
+export const resolveAppRoute = (pathname: string, base: string = getAppBasePath()): AppRoute => {
+  const stripped = stripAppBasePrefix(pathname, base);
+  if (stripped === STUDY_ROUTE_PATH || stripped.startsWith(`${STUDY_ROUTE_PATH}/`)) return 'study';
+  if (stripped === CAD_ROUTE_PATH || stripped.startsWith(`${CAD_ROUTE_PATH}/`)) return 'cad';
   return 'adjustment';
 };
 
@@ -31,9 +33,18 @@ export const hasCadMigrationRequest = (search: string): boolean => {
   }
 };
 
-export const buildCadUrl = (sourceId: string | null): string =>
-  sourceId ? `${CAD_ROUTE_PATH}?source=${encodeURIComponent(sourceId)}` : CAD_ROUTE_PATH;
+export const buildCadUrl = (sourceId: string | null, base: string = getAppBasePath()): string => {
+  const cadPath = resolveAppRoutePath(CAD_ROUTE_PATH, base);
+  return sourceId ? `${cadPath}?source=${encodeURIComponent(sourceId)}` : cadPath;
+};
 
-export const buildAdjustmentUrl = (): string => '/';
+export const buildCadMigrationUrl = (base: string = getAppBasePath()): string =>
+  `${resolveAppRoutePath(CAD_ROUTE_PATH, base)}?migrate=1`;
+
+export const buildStudyUrl = (base: string = getAppBasePath()): string =>
+  resolveAppRoutePath(STUDY_ROUTE_PATH, base);
+
+export const buildAdjustmentUrl = (base: string = getAppBasePath()): string =>
+  resolveAppRoutePath('/', base);
 
 export type { AppControllerProps };

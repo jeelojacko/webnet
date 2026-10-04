@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
+    "build:pages": "node scripts/buildPages.mjs",
     "cpp:configure": "node scripts/cppBuild.mjs configure",
     "cpp:build": "node scripts/cppBuild.mjs build",
     "cpp:test": "node scripts/cppBuild.mjs test",
