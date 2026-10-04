@@ -29,8 +29,8 @@ const appStartup = APP_STARTUP_DEFAULTS!;
 const combinedStartup = INDUSTRY_PARITY_CASES.combined.startupDefaults!;
 const campStartup = INDUSTRY_PARITY_CASES.campDesignPreanalysis.startupDefaults!;
 
-// Robust marker unique to the combined case; the camp traverse-only startup
-// shares the '#Traverse Only' / pre-analysis header, so that cannot distinguish.
+// Robust marker unique to the combined case; both startup inputs share the
+// '# 2025 Suvery Design Pre-Analysis' header, so that cannot distinguish.
 const COMBINED_ONLY_MARKER = '.PTOL /CON APOG BROD';
 
 describe('fresh bootstrap startup defaults (combined canonical example)', () => {

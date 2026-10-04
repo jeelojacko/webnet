@@ -70,9 +70,13 @@ describe('industry multi-case parity foundation', () => {
       INDUSTRY_PARITY_CASES.campDesignPreanalysis.fixtureOutputPath,
       'utf-8',
     );
-    expect(readFileSync(INDUSTRY_PARITY_CASES.campDesignPreanalysis.fixtureInputPath, 'utf-8')).toContain(
-      '#Traverse Only',
+    const campFixtureInput = readFileSync(
+      INDUSTRY_PARITY_CASES.campDesignPreanalysis.fixtureInputPath,
+      'utf-8',
     );
+    expect(campFixtureInput).toContain('# 2025 Suvery Design Pre-Analysis');
+    expect(campFixtureInput).toContain('C\tGPS1');
+    expect(campFixtureInput).not.toContain('#Traverse Only');
     expect(listing).toContain('STAR*NET Run Mode                   : Preanalysis');
     expect(listing).toContain('Coordinate System                   : UTM83-19');
       expect(listing).toContain('Longitude Sign Convention           : Positive West');
