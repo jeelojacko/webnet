@@ -120,7 +120,7 @@ re-derive it from `|sweep| ≈ 360`.
 The study corpus is a pure function of fixed inputs: `buildCorpus` sorts keys
 and rounds to 6 dp, no timestamps; `regenCorpus` writes JSON + sha256. The
 committed corpus verifies to
-`1a2bb62759de10555a687bdb10632188dfd62f93bf1f6f964d34df814a393bce`
+`5cbb97b06606e8f5c1a91c5a4b7551afaf10b8f8a132034a13e6c35eed22806f`
 (`sha256sum -c corpus.json.sha256` → OK). No production file was touched, so
 production determinism/parity is unchanged by this phase.
 
@@ -130,8 +130,10 @@ production determinism/parity is unchanged by this phase.
   rests on an unexecuted host normalization, block expansion collapses
   `0/360`→`0/0`, and non-uniform block scale silently mean-scales. It has no
   persisted circle identity.
-- A: a clean direct identity, but a new DXF `CIRCLE` emitter/re-import and a
-  new persisted kind are required and unspecific in this study; the block
-  route is unstudied and shares the non-uniform-scale gap.
+- A: a clean direct identity with a specified native DXF `CIRCLE` emitter
+  (`model.circles`, groups 10/20/30/40); general DXF import is globally
+  absent and NOT_APPLICABLE (no private Circle import); block contract
+  settled (nest allowed, non-uniform fails closed). It has no persisted
+  circle identity yet — that is the B1 implementation, not a study gap.
 - Both share the direct-entity affine refusal and similarity closure; no new
   geometry.

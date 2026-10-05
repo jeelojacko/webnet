@@ -77,11 +77,24 @@ describe('adapter control + modes', () => {
     expect(fromCenterRadius(100, 200, 50).degenerate).toBeNull();
     expect(fromCenterRadius(100, 200, 0).degenerate).toBe('ZERO_OR_NEGATIVE_RADIUS');
     expect(fromCenterRadius(100, 200, -5).degenerate).toBe('ZERO_OR_NEGATIVE_RADIUS');
-    expect(fromCenterDiameter({ x: 50, y: 200 }, { x: 50, y: 200 }).degenerate).toBe('COINCIDENT_ENDPOINTS');
+    expect(fromCenterDiameter({ x: 10, y: 20 }, { x: 10, y: 20 }).degenerate).toBe('ZERO_DIAMETER');
+    expect(fromCenterDiameter({ x: 10, y: 20 }, { x: NaN, y: 20 }).degenerate).toBe('NON_FINITE_INPUT');
+    expect(fromCenterRadius(100, 200, 50).center).toEqual({ x: 100, y: 200 });
     expect(from2Point({ x: 50, y: 200 }, { x: 150, y: 200 }).radius).toBe(50);
     expect(from3Point({ x: 0, y: 0 }, { x: 50, y: 0 }, { x: 100, y: 0 }).degenerate).toBe('COLLINEAR_OR_COINCIDENT');
     const good = from3Point({ x: 150, y: 200 }, { x: 100, y: 250 }, { x: 50, y: 200 });
     expect(good.center?.x).toBeCloseTo(100, 6);
+  });
+  it('Center/Diameter preserves the center; 2-Point solves it (asymmetric regression)', () => {
+    const cd = fromCenterDiameter({ x: 10, y: 20 }, { x: 40, y: 20 });
+    expect(cd.mode).toBe('center-diameter');
+    expect(cd.center).toEqual({ x: 10, y: 20 });
+    expect(cd.radius).toBe(15);
+    const two = from2Point({ x: 10, y: 20 }, { x: 40, y: 20 });
+    expect(two.mode).toBe('2-point');
+    expect(two.center).toEqual({ x: 25, y: 20 });
+    expect(two.radius).toBe(15);
+    expect(cd.center).not.toEqual(two.center);
   });
   it('TTR/TTT deferred with multi-solution verdicts; B1 slice is CR+CD', () => {
     expect(analyzeTtrTtt().every((t) => t.verdict.startsWith('DEFER'))).toBe(true);

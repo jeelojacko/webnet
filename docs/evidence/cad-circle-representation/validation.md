@@ -9,7 +9,7 @@ review-fix round record; the previous round's worktree premise is corrected in
 
 | claim | command | result |
 |---|---|---|
-| corpus sha256 | `cd docs/evidence/cad-circle-representation && sha256sum -c corpus.json.sha256` | `OK`; `sha256sum corpus.json` = `1a2bb62759de10555a687bdb10632188dfd62f93bf1f6f964d34df814a393bce` |
+| corpus sha256 | `cd docs/evidence/cad-circle-representation && sha256sum -c corpus.json.sha256` | `OK`; `sha256sum corpus.json` = `5cbb97b06606e8f5c1a91c5a4b7551afaf10b8f8a132034a13e6c35eed22806f` |
 | study tests 28/28 | `npx vitest run tests/cad_circle_study_execution.test.ts tests/cad_circle_study_robust_snap.test.ts tests/cad_circle_study_sweep_b1b2b3.test.ts` | `Test Files 3 passed (3)`, `Tests 28 passed (28)` |
 | `switch (entity.type)` sites | `grep -rn "switch (entity.type)" src/ \| wc -l` | `26` |
 | files with `case 'arc'` | `grep -rln "case 'arc'" src/ \| wc -l` | `33` |
@@ -81,7 +81,7 @@ withdrawn.
 - Study suites 28/28 (3 files, commands in §3).
 - `npm run typecheck` (`tsc --noEmit`): clean.
 - `eslint` on the 5 study scripts + 3 study suites: clean (0 errors).
-- `sha256sum -c corpus.json.sha256`: OK (`1a2bb62759de10555a687bdb10632188dfd62f93bf1f6f964d34df814a393bce…`).
+- `sha256sum -c corpus.json.sha256`: OK (`5cbb97b06606e8f5c1a91c5a4b7551afaf10b8f8a132034a13e6c35eed22806f…`).
 - Switch/DXF/Mlightcad/legacy searches above: executed, outputs quoted.
 - NOT run locally: `test:agent`, `build`, `parity:industry-reference`,
   `test:wasm` — this phase adds no `src/` and no production test, so
@@ -104,6 +104,17 @@ withdrawn.
 
 Each of the eight docs is below 200 lines (see final report / `wc -l`). The
 corpus `corpus.json` and its sha are preserved and cited by the docs.
+
+## 9. B0.1 construction-semantics correction (2026-10-05)
+
+- `fromCenterDiameter` now preserves the supplied center exactly
+  (radius = diameter/2); `from2Point` is an independent midpoint/diameter
+  implementation. Asymmetric regression: CD (10,20)+(40,20) → center
+  (10,20) r15 vs 2P → center (25,20) r15.
+- Corpus regenerated deterministically (byte-identical double regen),
+  SHA `5cbb97b0…`, `sha256sum -c` OK.
+- Study suites 29/29 (3 files); typecheck clean; eslint clean on touched
+  files; `git diff -- src` empty; 14 stashes intact.
 
 ## 8. CI record
 
