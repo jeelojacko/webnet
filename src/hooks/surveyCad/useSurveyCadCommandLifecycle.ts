@@ -177,6 +177,11 @@ export const useSurveyCadCommandLifecycle = ({
         submitSessionInput();
         return;
       }
+      // POLYGON mode defaults to Inscribed on empty input.
+      if (session.key === 'POLYGON' && session.phase === 'mode') {
+        submitSessionInput();
+        return;
+      }
       if (
         session.key === 'ALIGN2D' &&
         session.source1 &&

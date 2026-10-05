@@ -18,6 +18,8 @@ export interface SurveyCadCommandStarters {
   startPointCommand: () => void;
   startCogoPointCommand: () => void;
   startLineCommand: () => void;
+  startRectangleCommand: () => void;
+  startPolygonCommand: () => void;
   startPolylineCommand: () => void;
   startTraverseCommand: () => void;
   startBatchCogoCommand: () => void;

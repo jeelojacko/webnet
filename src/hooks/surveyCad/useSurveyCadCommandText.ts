@@ -1,5 +1,22 @@
 import type { CommandSession } from './useSurveyCadCommandTypes';
 
+export const polygonModeLabel = (mode: 'inscribed' | 'circumscribed'): string =>
+  mode === 'inscribed' ? 'Inscribed' : 'Circumscribed';
+
+const polygonPromptForPhase = (
+  session: Extract<CommandSession, { key: 'POLYGON' }>,
+): string => {
+  if (session.phase === 'sides') return 'POLYGON active. Enter the number of sides (3-1024).';
+  if (session.phase === 'mode') {
+    return `POLYGON active. ${session.sides} sides. Inscribed or Circumscribed? [I/C] <I>.`;
+  }
+  const modeLabel = session.mode ? polygonModeLabel(session.mode) : 'Inscribed';
+  if (session.phase === 'center') {
+    return `POLYGON active. ${session.sides} sides ${modeLabel}. Click or enter the center point.`;
+  }
+  return `POLYGON active. ${session.sides} sides ${modeLabel}. Center ${session.center!.label} captured. Click or enter the radius point.`;
+};
+
 export const promptForSession = (session: CommandSession | null, fallbackStatus: string): string => {
   if (!session) return fallbackStatus;
   switch (session.key) {
@@ -15,6 +32,13 @@ export const promptForSession = (session: CommandSession | null, fallbackStatus:
         (session.startPoint
           ? `LINE active. Start at ${session.startPoint.label}. Click the end point or enter \`x,y\`, \`@azimuth,distance\`, or \`N45-00-00E,100\`, then press Enter.`
           : 'LINE active. Click or enter the start point.');
+    case 'RECTANGLE':
+      return session.resultText ??
+        (session.firstCorner
+          ? `RECTANGLE active. First corner ${session.firstCorner.label} captured. Click or enter the opposite corner.`
+          : 'RECTANGLE active. Click or enter the first corner.');
+    case 'POLYGON':
+      return session.resultText ?? polygonPromptForPhase(session);
     case 'PLINE':
       return session.resultText ??
         (session.points.length > 0

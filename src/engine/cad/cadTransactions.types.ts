@@ -95,6 +95,8 @@ export type CadCommandKey =
   | 'POINT'
   | 'COGO_POINT'
   | 'LINE'
+  | 'RECTANGLE'
+  | 'POLYGON'
   | 'PLINE'
   | 'TRAVERSE'
   | 'BATCH_COGO'
@@ -354,6 +356,18 @@ export type CadCommand =
       key: 'LINE';
       start: { x: number; y: number; label: string };
       end: { x: number; y: number; label: string };
+    }
+  | {
+      key: 'RECTANGLE';
+      firstCorner: { x: number; y: number; label: string };
+      oppositeCorner: { x: number; y: number; label: string };
+    }
+  | {
+      key: 'POLYGON';
+      center: { x: number; y: number; label: string };
+      through: { x: number; y: number; label: string };
+      sides: number;
+      mode: 'inscribed' | 'circumscribed';
     }
   | {
       key: 'PLINE';

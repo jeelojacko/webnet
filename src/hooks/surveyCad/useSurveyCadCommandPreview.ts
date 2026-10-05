@@ -8,6 +8,10 @@ import {
   cadPointFromAzimuthDistance,
 } from '../../engine/cad/cadGeometry';
 import {
+  buildRectangleVertices,
+  buildRegularPolygonVertices,
+} from '../../engine/cad/cadGeometryShapeBuilders';
+import {
   deriveAlign2DTransform,
   gridGroundTransform,
   solveHelmert2D,
@@ -140,6 +144,43 @@ export const buildCommandPreview = ({
           { x: previewPoint.x, y: previewPoint.y },
         ],
       };
+    case 'RECTANGLE': {
+      if (!previewPoint) return null;
+      if (!session.firstCorner) {
+        return {
+          kind: 'point',
+          point: { x: previewPoint.x, y: previewPoint.y },
+        };
+      }
+      const vertices = buildRectangleVertices(session.firstCorner, previewPoint);
+      if (!vertices) return null;
+      return {
+        kind: 'polyline',
+        points: [...vertices, vertices[0]!],
+      };
+    }
+    case 'POLYGON': {
+      if (session.phase === 'sides' || session.phase === 'mode') return null;
+      if (!previewPoint) return null;
+      if (session.phase === 'center' || !session.center) {
+        return {
+          kind: 'point',
+          point: { x: previewPoint.x, y: previewPoint.y },
+        };
+      }
+      if (session.sides == null || session.mode == null) return null;
+      const vertices = buildRegularPolygonVertices(
+        session.center,
+        previewPoint,
+        session.sides,
+        session.mode,
+      );
+      if (!vertices) return null;
+      return {
+        kind: 'polyline',
+        points: [...vertices, vertices[0]!],
+      };
+    }
     case 'MULTI_INVERSE':
     case 'AREA':
       if (!previewPoint) return null;

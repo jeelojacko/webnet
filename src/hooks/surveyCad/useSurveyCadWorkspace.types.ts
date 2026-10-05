@@ -114,6 +114,8 @@ export interface UseSurveyCadWorkspaceResult {
     | 'POINT'
     | 'COGO_POINT'
     | 'LINE'
+    | 'RECTANGLE'
+    | 'POLYGON'
     | 'PLINE'
     | 'TRAVERSE'
     | 'BATCH_COGO'
@@ -245,6 +247,8 @@ export interface UseSurveyCadWorkspaceResult {
   startPointCommand: () => void;
   startCogoPointCommand: () => void;
   startLineCommand: () => void;
+  startRectangleCommand: () => void;
+  startPolygonCommand: () => void;
   startLineTableCommand: () => void;
   startCurveTableCommand: () => void;
   startParcelTableCommand: () => void;

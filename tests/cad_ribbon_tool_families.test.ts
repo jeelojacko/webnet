@@ -85,8 +85,8 @@ describe('phase 21A tool-family manifests (§80)', () => {
     expect(curves.variants.find((variant) => variant.id === 'curves-tangent')?.separatorBefore).toBe(true);
   });
 
-  it('keeps Circle / Best Fit / Ellipse / Shapes / Hatch as honest planned rows', () => {
-    for (const id of ['circle', 'bestfit', 'ellipse', 'shapes', 'hatch']) {
+  it('keeps Circle / Best Fit / Ellipse / Hatch as honest planned rows', () => {
+    for (const id of ['circle', 'bestfit', 'ellipse', 'hatch']) {
       const entry = family(id);
       expect(entry.variants.length).toBeGreaterThan(0);
       expect(entry.variants.every((variant) => variant.planned === true)).toBe(true);
@@ -98,6 +98,16 @@ describe('phase 21A tool-family manifests (§80)', () => {
       'hatch-gradient',
       'hatch-retain-boundary',
     ]);
+  });
+
+  it('maps Shapes rows to the live RECTANGLE / POLYGON commands', () => {
+    const entry = family('shapes');
+    expect(entry.defaultVariantId).toBe('shapes-rectangle');
+    expect(entry.variants.map((variant) => variant.commandKey)).toEqual([
+      'RECTANGLE',
+      'POLYGON',
+    ]);
+    expect(entry.variants.every((variant) => variant.planned == null)).toBe(true);
   });
 
   it('gives every mapped commandKey a real registry definition and every planned row no key', () => {

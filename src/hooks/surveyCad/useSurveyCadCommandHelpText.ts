@@ -15,6 +15,19 @@ export const helpTextForSession = (session: CommandSession | null): string => {
       return session.startPoint
         ? 'LINE second point: `x,y`, `LABEL=x,y`, `@azimuth,distance`, or `N45-00-00E,100` from the first point.'
         : 'LINE first point: click in the model space or type `x,y` / `LABEL=x,y`.';
+    case 'RECTANGLE':
+      return session.firstCorner
+        ? 'RECTANGLE opposite corner: `x,y`, `LABEL=x,y`, `@azimuth,distance`, or `N45-00-00E,100` from the first corner.'
+        : 'RECTANGLE first corner: click in the model space or type `x,y` / `LABEL=x,y`.';
+    case 'POLYGON':
+      if (session.phase === 'sides') return 'POLYGON sides: enter an integer 3-1024.';
+      if (session.phase === 'mode') {
+        return 'POLYGON mode: enter `I` for Inscribed or `C` for Circumscribed (empty = Inscribed).';
+      }
+      if (session.phase === 'center') {
+        return 'POLYGON center: click in the model space or type `x,y` / `LABEL=x,y`.';
+      }
+      return 'POLYGON radius point: click in the model space or type `x,y`, `LABEL=x,y`, `@azimuth,distance`, or bearing-distance from the center.';
     case 'PLINE':
       return session.points.length > 0
         ? 'PLINE next vertex: click in the model space or type `x,y`, `@azimuth,distance`, or bearing-distance from the last vertex. Press Enter on an empty input to finish after 2+ vertices.'

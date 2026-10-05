@@ -162,11 +162,11 @@ export const CAD_RIBBON_TOOL_FAMILIES: readonly CadRibbonToolFamily[] = [
     id: 'shapes',
     label: 'Shapes',
     defaultVariantId: 'shapes-rectangle',
-    // §24 — polygon entities exist, but no interactive RECTANGLE/POLYGON
-    // session does; both rows stay planned until that starter is real.
+    // §24 — RECTANGLE/POLYGON engine commands + starters are real; Circle,
+    // Best Fit, and Ellipse rows stay planned (no construction command).
     variants: [
-      { id: 'shapes-rectangle', label: 'Rectangle', planned: true, hint: 'Planned: two-corner rectangle.' },
-      { id: 'shapes-polygon', label: 'Polygon', planned: true, hint: 'Planned: inscribed/circumscribed polygon.' },
+      { id: 'shapes-rectangle', label: 'Rectangle', commandKey: 'RECTANGLE', hint: 'Rectangle from two corners.' },
+      { id: 'shapes-polygon', label: 'Polygon', commandKey: 'POLYGON', hint: 'Regular polygon from center and radius point.' },
     ],
   },
   {

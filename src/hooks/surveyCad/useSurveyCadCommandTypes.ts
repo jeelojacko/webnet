@@ -1,4 +1,5 @@
 import type { CadBatchCogoDraft } from '../../engine/cad/cadBatchCogo';
+import type { RegularPolygonMode } from '../../engine/cad/cadGeometryShapeBuilders';
 import type {
   CadTraverseAdjustmentMethod,
   CadTraverseAdjustmentSummary,
@@ -20,6 +21,8 @@ export type CommandPoint = CadNamedPoint & {
 };
 
 export type TraverseDraftMode = 'open' | 'closed' | 'point-to-point';
+
+export type PolygonSessionPhase = 'sides' | 'mode' | 'center' | 'radius';
 
 /** Phase 18Q HELMERT2D session state: explicit control pairs only (no name-matching). */
 export type HelmertSessionMode = 'RIGID' | 'SIMILARITY';
@@ -54,6 +57,8 @@ export type ActiveCommandKey =
   | 'POINT'
   | 'COGO_POINT'
   | 'LINE'
+  | 'RECTANGLE'
+  | 'POLYGON'
   | 'PLINE'
   | 'TRAVERSE'
   | 'ARC_3PT'
@@ -390,6 +395,21 @@ export type CommandSession =
       firstEntityId: string | null;
       firstPickPoint: CommandPoint | null;
       firstSegmentId?: string;
+      resultText?: string;
+    }
+  | {
+      key: 'RECTANGLE';
+      inputValue: string;
+      firstCorner: CommandPoint | null;
+      resultText?: string;
+    }
+  | {
+      key: 'POLYGON';
+      inputValue: string;
+      phase: PolygonSessionPhase;
+      sides: number | null;
+      mode: RegularPolygonMode | null;
+      center: CommandPoint | null;
       resultText?: string;
     }
   | {

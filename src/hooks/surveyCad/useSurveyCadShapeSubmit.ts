@@ -1,0 +1,102 @@
+import {
+  MAX_SHAPE_POLYGON_SIDES,
+  MIN_SHAPE_POLYGON_SIDES,
+  type RegularPolygonMode,
+} from '../../engine/cad/cadGeometryShapeBuilders';
+import { parseInputPoint } from './useSurveyCadCommandPointParsing';
+import type { HandleSurveyCadTypedSubmitOptions } from './useSurveyCadTypedSubmit.types';
+
+const parsePolygonSides = (rawInput: string): number | null => {
+  const trimmed = rawInput.trim();
+  if (!/^\d+$/.test(trimmed)) return null;
+  const sides = Number(trimmed);
+  if (
+    !Number.isInteger(sides) ||
+    sides < MIN_SHAPE_POLYGON_SIDES ||
+    sides > MAX_SHAPE_POLYGON_SIDES
+  ) {
+    return null;
+  }
+  return sides;
+};
+
+const parsePolygonMode = (rawInput: string): RegularPolygonMode | null => {
+  const normalized = rawInput.trim().toUpperCase();
+  if (normalized === '' || normalized === 'I' || normalized === 'INSCRIBED') return 'inscribed';
+  if (normalized === 'C' || normalized === 'CIRCUMSCRIBED') return 'circumscribed';
+  return null;
+};
+
+export const handleSurveyCadShapeSubmit = ({
+  consumePoint,
+  replaceSession,
+  session,
+}: Pick<
+  HandleSurveyCadTypedSubmitOptions,
+  'consumePoint' | 'replaceSession' | 'session'
+>): boolean => {
+  if (session.key === 'RECTANGLE') {
+    const parsed = parseInputPoint(session.inputValue, session.firstCorner);
+    if (!parsed) {
+      replaceSession({
+        ...session,
+        resultText: session.firstCorner
+          ? 'RECTANGLE corner invalid. Use `x,y`, `LABEL=x,y`, `@azimuth,distance`, or survey bearing-distance like `N45-00-00E,100`.'
+          : 'RECTANGLE corner invalid. Use `x,y` or `LABEL=x,y`.',
+      });
+      return true;
+    }
+    consumePoint(parsed);
+    return true;
+  }
+  if (session.key !== 'POLYGON') return false;
+  if (session.phase === 'sides') {
+    const sides = parsePolygonSides(session.inputValue);
+    if (sides == null) {
+      replaceSession({
+        ...session,
+        resultText: `POLYGON sides invalid. Enter an integer ${MIN_SHAPE_POLYGON_SIDES}-${MAX_SHAPE_POLYGON_SIDES}.`,
+      });
+      return true;
+    }
+    replaceSession({
+      ...session,
+      sides,
+      phase: 'mode',
+      inputValue: '',
+      resultText: undefined,
+    });
+    return true;
+  }
+  if (session.phase === 'mode') {
+    const mode = parsePolygonMode(session.inputValue);
+    if (!mode) {
+      replaceSession({
+        ...session,
+        resultText: 'POLYGON mode invalid. Enter `I` for Inscribed or `C` for Circumscribed (empty = Inscribed).',
+      });
+      return true;
+    }
+    replaceSession({
+      ...session,
+      mode,
+      phase: 'center',
+      inputValue: '',
+      resultText: undefined,
+    });
+    return true;
+  }
+  const parsed = parseInputPoint(session.inputValue, session.center);
+  if (!parsed) {
+    replaceSession({
+      ...session,
+      resultText:
+        session.phase === 'radius' && session.center
+          ? 'POLYGON radius point invalid. Use `x,y`, `LABEL=x,y`, `@azimuth,distance`, or survey bearing-distance like `N45-00-00E,100` from the center.'
+          : 'POLYGON center invalid. Use `x,y` or `LABEL=x,y`.',
+    });
+    return true;
+  }
+  consumePoint(parsed);
+  return true;
+};

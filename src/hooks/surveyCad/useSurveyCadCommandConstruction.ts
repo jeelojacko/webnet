@@ -48,11 +48,18 @@ export const buildSnapConstructionContext = (
       return inactiveConstructionContext();
     case 'COGO_POINT':
     case 'LINE':
+    case 'RECTANGLE':
     case 'INVERSE':
     case 'BEARING_REPORT':
-    case 'DISTANCE_REPORT':
-      return session.startPoint
-        ? pointConstructionContext(session.startPoint, { includeScopeSeed: true })
+    case 'DISTANCE_REPORT': {
+      const basePoint = 'startPoint' in session ? session.startPoint : session.firstCorner;
+      return basePoint
+        ? pointConstructionContext(basePoint, { includeScopeSeed: true })
+        : inactiveConstructionContext();
+    }
+    case 'POLYGON':
+      return session.phase === 'radius' && session.center
+        ? pointConstructionContext(session.center, { includeScopeSeed: true })
         : inactiveConstructionContext();
     case 'MULTI_INVERSE':
     case 'AREA':

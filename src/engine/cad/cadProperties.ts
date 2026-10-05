@@ -245,9 +245,16 @@ const alignmentEndStationLabel = (entity: CadAlignmentEntity): string => {
   return endStation == null ? '--' : formatCadStation(endStation);
 };
 
-const segmentRows = (entity: Extract<CadEntity, { type: 'polyline' | 'polygon' }>): CadEntityPropertyRow[] =>
-  entity.vertices.slice(0, -1).flatMap((vertex, index) => {
-    const nextVertex = entity.vertices[index + 1]!;
+/**
+ * Segment rows: polyline emits the N-1 open edges; polygon emits all N ring
+ * edges including the implicit last→first closing edge (polygons store no
+ * duplicate closure vertex, so the ring wraps).
+ */
+const segmentRows = (entity: Extract<CadEntity, { type: 'polyline' | 'polygon' }>): CadEntityPropertyRow[] => {
+  const ringClosed = entity.type === 'polygon';
+  const segmentCount = ringClosed ? entity.vertices.length : entity.vertices.length - 1;
+  return entity.vertices.slice(0, segmentCount).flatMap((vertex, index) => {
+    const nextVertex = entity.vertices[(index + 1) % entity.vertices.length]!;
     const inverse = buildCadInverseSummary(vertex, nextVertex);
     return [
       row(
@@ -264,6 +271,7 @@ const segmentRows = (entity: Extract<CadEntity, { type: 'polyline' | 'polygon' }
       ),
     ];
   });
+};
 
 /**
  * Phase 19C parcel inquiry: course counts + per-course curve metrics
