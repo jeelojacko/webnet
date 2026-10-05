@@ -95,28 +95,27 @@ WebNet is a browser-based least-squares adjustment application for mixed survey 
 
 Run `npm install` only when dependencies or the lockfile changed.
 
-Tests are tiered (`docs/TEST_TIERS.md`); the everyday agent loop is:
+Tests are tiered. The authoritative manifest is `scripts/testTiers.ts`; the
+rulebook is `docs/TEST_TIERS.md`. Everyday agent loop:
 
 - `npm run lint`
 - `npm run typecheck`
 - `npm run test:agent` (broad regression; ~1 min) plus relevant focused tests
 - `npm run build` when the completion workflow requires it
 
-Escalations:
+Escalations are not routine. Reach for `test:wasm`, `parity:industry-reference`,
+`wasm:build`/`cpp:test`, `test:release`, or the manual-only `test:evidence` only
+when the change is engine/worker/WASM/parity/release-sensitive, and see
+`docs/TEST_TIERS.md` for the exact route. `test:full`/`test:run` is the
+literal-everything command, never a routine completion gate.
 
-- Engine/worker/WASM-bridge/sparse-routing TypeScript changes (no C++): also `npm run test:wasm`; parity-sensitive work also runs `npm run parity:industry-reference`.
-- `cpp/**` or WASM build-glue changes: `npm run wasm:build`, `npm run cpp:test`, `npm run test:wasm`, plus the agent validation above.
-- Numerical/release-sensitive work: run the focused tests, lint, typecheck, `npm run test:agent`, `npm run test:wasm` where applicable, parity where applicable, and compact `npm run test:release` certification.
-- `npm run test:evidence` is explicit/manual only for evidence, calibration, performance, stress, or soak work. `npm run test:full` (== `test:run`) is the literal-everything command, not a routine completion gate.
-
-Test-tier rules:
-
-- `test:full`/`test:run` stays the authoritative full suite; CI routes its equivalent automatic partition through `test:agent`, `test:wasm`, and `test:release` (`npm run test:certify` locally). `test:full` and the manual-only `test:evidence` (long campaigns under `tests/evidence/`, via the Evidence workflow) never run in CI.
-- A new test expected to take more than ~10 s because it performs stress, evidence, repeated real-WASM sessions, browser certification, or performance campaigns must be explicitly classified in `scripts/testTiers.ts` (WASM or evidence tier, long campaigns under `tests/evidence/`) instead of silently joining the agent tier.
-- Never gate on absolute runtime (machines differ); tier membership is the contract.
-- CI path classification is fail-closed: unknown changes receive numerical certification.
-
-When adding or materially expanding a test, classify its purpose before completion. Long stress, calibration, performance, repeated-session, and evidence tests belong under `tests/evidence/` and MUST NOT be placed in agent/WASM/release merely because they are important. Read `tests/AGENTS.md` for the decision tree.
+Tier rules: membership is semantic (what a test proves), never runtime-based. A
+new test expected to take >~10 s for stress, evidence, repeated real-WASM
+sessions, browser certification, or performance must be classified in
+`scripts/testTiers.ts` (WASM or evidence tier; long campaigns under
+`tests/evidence/`) instead of silently joining the agent tier. CI path
+classification is fail-closed: unknown changes receive numerical
+certification. Read `tests/AGENTS.md` for the decision tree.
 
 ## Done when
 
@@ -139,11 +138,14 @@ When adding or materially expanding a test, classify its purpose before completi
 
 ## Process
 
-- Before starting a batch, record the planned scope in `TODO.md`.
-- During the batch, keep `TODO.md` accurate.
+- Before starting a batch, record the planned scope in `TODO.md`; keep it accurate during and after.
 - After the batch, update `TODO.md`, `README.md`, and the relevant docs/AGENTS files if behavior or workflow changed.
-- Before commit/push, run the required validation commands and fix failures before proceeding.
+- Husky owns `lint` + `typecheck` at commit; do not run them manually immediately before committing.
+- Run `npm run test:agent` once before opening a PR; use focused tests while iterating.
+- Exact-head CI is authoritative. Do not pre-empt it with routine `test:wasm`, parity, `npm audit`, `test:full`, or retired legacy suites.
+- Run `npm audit` only when dependencies or the lockfile change.
 - Commit and push after each completed batch; do not leave finished batches unpushed.
+- Evidence for an ordinary feature = focused tests + PR body. Commit screenshots only for a long-term visual contract.
 - For parity-sensitive work, do not keep changes that worsen the reference diff unless fixture, test, and doc updates clearly justify it.
 
 ## Keep this file small
@@ -151,94 +153,7 @@ When adding or materially expanding a test, classify its purpose before completi
 - Put feature inventories, phased rollout notes, parity details, and long behavior histories in `docs/`, not here.
 - Add nested `AGENTS.md` files only where local rules genuinely differ from repo-wide rules.
 
-## Local Qwen Long-Run Policy
+## Pi-local routing
 
-For Qwen scout/worker runs:
-
-- A "needs attention: no observed activity for 120s" signal is not by itself a failure.
-- Inspect subagent status before interrupting.
-- If the child is in compaction or llama.cpp is actively generating, continue waiting.
-- Allow up to 8 minutes for a local compaction pass before treating it as stalled.
-- Only stop immediately for an actual provider error, context overflow, malformed result, process failure, or repeated length failure.
-
-For worker edits:
-
-- Prefer incremental edit/patch operations.
-- Do not rewrite an existing large file in a single write tool call.
-- Keep individual write/edit payloads bounded.
-- Do not spend large output budgets restating source code or reasoning.
-
-### Local Qwen context discipline
-
-When the active model is local Qwen:
-
-- Treat context-window headroom as a hard resource.
-- Prefer Context Mode tools for repo exploration or commands that may produce
-  substantial output.
-- Prefer `ctx_batch_execute` when several inspection/test commands can be
-  performed together without returning their full raw output.
-- Prefer targeted search/ranges over repeatedly reading entire files.
-- Do not reconstruct or re-explain architecture that is already established.
-- Do not narrate lengthy implementation plans before performing bounded work.
-- Work on one atomic implementation objective at a time.
-- After completing an atomic objective, run its checks and stop rather than
-  automatically beginning another large phase.
-- If the session has recently compacted, trust the preserved task state and
-  inspect only what is necessary to resume; do not reconstruct the entire
-  project history.
-- Preserve unfinished edits, current failures, pending checks, blockers, and
-  the exact next action when summarizing state.
-
-## Pi Tool / Extension Routing
-
-Use installed tools when they materially improve the task; do not invoke tools merely because they are available.
-
-Preferred routing:
-
-- Repository discovery/search:
-  Prefer FFF tools for fast file/content discovery when available.
-  Use normal read/grep/find when the target is already known or the simpler tool is sufficient.
-
-- Clarification:
-  Use the structured ask_user_question tool (global TUI extension at ~/.pi/agent/extensions/ask-user-question.ts) when an unresolved user decision materially affects implementation.
-  Do not guess or silently choose consequential alternatives.
-
-- Work tracking:
-  TODO.md remains the durable Webnet project roadmap.
-
-- Web/current documentation:
-  Use pi-web-access/research tools when current external information is required.
-  Prefer official/primary documentation where possible.
-
-- MCP:
-  MCP access goes through the context-mode native bridge (the `ctx_*` tools).
-  pi-mcp-adapter is removed; re-add it with `pi install npm:pi-mcp-adapter` only if another MCP server is needed.
-
-- Memory:
-  Use `ctx_search` (context-mode) for cross-session recall.
-  Do not store transient implementation details, generated output, or obvious repository state as durable memory.
-
-- Code quality:
-  Use `npm run lint` and `npm run typecheck` for static feedback.
-  Use pi-simplify after an implementation when simplification is appropriate, not during every edit.
-  Ponytail is opt-in; do not enable it automatically.
-
-- Planning/review:
-  The Plannotator skill is an optional aid for substantial planning/review work.
-  Do not introduce a heavyweight workflow for small or already well-scoped tasks.
-
-- Subagents:
-  Scout = reconnaissance.
-  Worker = implementation.
-  Reviewer = independent verification.
-  Oracle = second opinion on risky decisions.
-  Preserve the existing model routing and fail-closed policy.
-
-### Subagent acceptance / review rules
-
-- `acceptance.level` is an achieved result reported by Pi, not a requestable setting.
-- Never pass `acceptance.level` when launching `reviewer`, `oracle`, `scout`, or other read-only agents.
-- For an ordinary read-only reviewer mission, omit `acceptance` entirely.
-- When a writer/worker result requires independent review, request that review on the writer using Pi's `acceptance.review.required` mechanism, then orchestrate a separate fresh `reviewer` mission.
-- Do not treat `checked`, `attested`, or similar achieved acceptance statuses as invocation parameters.
-- A rejected invocation caused by incorrect acceptance configuration is an orchestration error, not a model/provider failure. Correct the invocation and retry it.
+Pi-specific tool, subagent, and orchestration routing lives in
+`.pi/APPEND_SYSTEM.md`.

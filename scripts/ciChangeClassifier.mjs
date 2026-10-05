@@ -12,6 +12,12 @@ const SAFE_ONLY = [
   /^src\/components\//,
   /^src\/hooks\//,
   /^src\/study\//,
+  // CAD geometry (draft/annotation/alignment) is a survey-drafting area that
+  // never feeds the least-squares adjustment solver, so CAD-only changes are
+  // explicitly exempt from numerical certification and take the fast path
+  // (still covered by portable-paths, lint, typecheck, agent tests, build,
+  // CLI smoke, corpus, and parity gates).
+  /^src\/engine\/cad\//,
   /^study-desktop\//,
   /^public\//,
   /^study-content\//,
@@ -29,7 +35,11 @@ const ALWAYS_NUMERICAL = [
   /^package(?:-lock)?\.json$/,
   /^cpp\//,
   /^tests\/evidence\//,
-  /^src\/engine\//,
+  // Engine solve/numeric core (parser, solver, preanalysis, covariance,
+  // numeric backends, WASM bridges). CAD geometry under `src/engine/cad/**`
+  // is the deliberate exception (see SAFE_ONLY); every other engine path
+  // stays fail-closed to numerical certification.
+  /^src\/engine\/(?!cad\/)/,
   /^src\/workers\//,
   /^src\/cli\.ts$/,
   /^scripts\/(?:phase.*(?:WorkerBridge|Proof)|wasm|cppBuild|benchmarks\/)/i,

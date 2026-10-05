@@ -7,6 +7,7 @@ describe('CI change classifier', () => {
     ['markdown-only', ['README.md', 'docs/notes.md']],
     ['study-only', ['study-desktop/tests/library.test.ts', 'study-desktop/src/studyStorage.ts', 'scripts/studyCorpus.ts']],
     ['component-only', ['src/components/Foo.tsx']],
+    ['cad-geometry-only', ['src/engine/cad/cadProjectTransform.ts']],
   ])('%s stays on the fast path', (_name, files) => {
     expect(classifyChangedFiles(files).numericalRequired).toBe(false);
   });

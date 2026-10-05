@@ -20,8 +20,9 @@ Add or update focused tests for:
 - project save/load or recovery behavior
 
 ## Before finishing
-- Run the narrowest relevant tests first.
-- Then run the full suite before considering the change complete.
+- Run the narrowest relevant tests first, then the affected tests.
+- Run `npm run test:agent` once before opening a PR.
+- Run `npm run test:full` only for release certification or an explicit request. Details: `docs/TEST_TIERS.md`.
 
 ## Test tiers
 - Tier membership is semantic (what a test proves), never runtime-based; the

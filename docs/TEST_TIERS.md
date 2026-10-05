@@ -133,16 +133,19 @@ seconds.
 
 ## CI
 
-GitHub CI (`.github/workflows/ci.yml`) has stable `classify`, `core`, and
-`numerical` jobs. Every pull request runs the core validation through
-`npm run test:agent`, plus the harness, industry parity, build, CLI smoke, and
-legacy corpus gates. The classifier is fail-closed: docs/components/study-only
-changes are the explicitly recognized safe-only paths; unknown, mixed, engine,
-worker, C++, test-infrastructure, `tests/evidence/`, and workflow changes
-require numerical certification. Numerical-sensitive pull requests build WASM
-once, run CTest, `npm run test:wasm`, and `npm run test:release` (the fast
-verdict gate). Safe-only pull requests keep the numerical job as a successful
-no-op so its check remains present.
+GitHub CI (`.github/workflows/ci.yml`) has stable `classify`, `static`,
+`tests`, `build-smoke`, and `numerical` jobs. After classification, `static`
+(portable-paths + lint + typecheck), `tests` (`npm run test:agent` + the
+synthetic CRS harness + industry parity), and `build-smoke` (build + CLI smoke
++ legacy corpus gates) run in parallel. The classifier is fail-closed:
+docs/components/study-only changes and CAD geometry under `src/engine/cad/**`
+are the explicitly recognized safe-only paths (CAD draft geometry never reaches
+the adjustment solver, so it is exempt from numerical certification); unknown,
+mixed, non-CAD engine, worker, C++, test-infrastructure, `tests/evidence/`, and
+workflow changes require numerical certification. Numerical-sensitive pull
+requests build WASM once, run CTest, `npm run test:wasm`, and
+`npm run test:release` (the fast verdict gate). Safe-only pull requests keep
+the numerical job as a successful no-op so its check remains present.
 
 `test:full` and `test:evidence` never run in CI — by design, not by omission.
 The evidence campaigns run only via the manual `Evidence` workflow
