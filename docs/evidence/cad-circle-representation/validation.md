@@ -10,7 +10,7 @@ review-fix round record; the previous round's worktree premise is corrected in
 | claim | command | result |
 |---|---|---|
 | corpus sha256 | `cd docs/evidence/cad-circle-representation && sha256sum -c corpus.json.sha256` | `OK`; `sha256sum corpus.json` = `5cbb97b06606e8f5c1a91c5a4b7551afaf10b8f8a132034a13e6c35eed22806f` |
-| study tests 28/28 | `npx vitest run tests/cad_circle_study_execution.test.ts tests/cad_circle_study_robust_snap.test.ts tests/cad_circle_study_sweep_b1b2b3.test.ts` | `Test Files 3 passed (3)`, `Tests 28 passed (28)` |
+| study tests 29/29 (B0 baseline 28/28 + 1 CD-vs-2P regression) | `npx vitest run tests/cad_circle_study_execution.test.ts tests/cad_circle_study_robust_snap.test.ts tests/cad_circle_study_sweep_b1b2b3.test.ts` | `Test Files 3 passed (3)`, `Tests 29 passed (29)` |
 | `switch (entity.type)` sites | `grep -rn "switch (entity.type)" src/ \| wc -l` | `26` |
 | files with `case 'arc'` | `grep -rln "case 'arc'" src/ \| wc -l` | `33` |
 | `case 'arc'` in engine | `grep -rln "case 'arc'" src/engine/cad \| wc -l` | `27` |
@@ -105,7 +105,7 @@ withdrawn.
 Each of the eight docs is below 200 lines (see final report / `wc -l`). The
 corpus `corpus.json` and its sha are preserved and cited by the docs.
 
-## 9. B0.1 construction-semantics correction (2026-10-05)
+## 8. B0.1 construction-semantics correction (2026-10-05)
 
 - `fromCenterDiameter` now preserves the supplied center exactly
   (radius = diameter/2); `from2Point` is an independent midpoint/diameter
@@ -116,7 +116,7 @@ corpus `corpus.json` and its sha are preserved and cited by the docs.
 - Study suites 29/29 (3 files); typecheck clean; eslint clean on touched
   files; `git diff -- src` empty; 14 stashes intact.
 
-## 8. CI record
+## 9. CI record
 
 - CI #1038 (run 37350480353, head `cda24c5e`, pre-correction): classify
   PASS (16s), core PASS (8m31s), numerical PASS (2m26s). The correction

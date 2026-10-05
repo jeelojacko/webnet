@@ -90,8 +90,9 @@ Schema/persistence is a second surface: `cadPersistence.ts`,
 `cadMlightcadAdapter.ts`, `landxmlCadProject.ts` and `dxf/dxfExportModel.ts`
 all switch on `entity.type` and would need a circle arm, plus a persistence
 round-trip and revision/undo/clipboard treatment. No `model.circles` exists
-today (`dxfExportModel.ts:99`), so a model-space DXF `CIRCLE` emitter and its
-re-import would be new.
+today (`dxfExportModel.ts:99`), so a model-space DXF `CIRCLE` emitter is a
+bounded B1 implementation delta; general DXF import is globally absent and
+NOT_APPLICABLE, so no Circle-specific re-import is required.
 
 ## 4. What A inherits unchanged (proven)
 
