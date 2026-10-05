@@ -8,12 +8,17 @@ describe('CI change classifier', () => {
     ['study-only', ['study-desktop/tests/library.test.ts', 'study-desktop/src/studyStorage.ts', 'scripts/studyCorpus.ts']],
     ['component-only', ['src/components/Foo.tsx']],
     ['cad-geometry-only', ['src/engine/cad/cadProjectTransform.ts']],
+    ['cad-draft-annotation-only', ['src/engine/cad/annotation/foo.ts']],
   ])('%s stays on the fast path', (_name, files) => {
     expect(classifyChangedFiles(files).numericalRequired).toBe(false);
   });
 
   it.each([
     ['engine', ['src/engine/runSession.ts']],
+    ['cad-grading-compute', ['src/engine/cad/grading/gradingTransitionPolicy.ts']],
+    ['cad-surfaces-compute', ['src/engine/cad/surfaces/foo.ts']],
+    ['cad-draft-plus-worker', ['src/engine/cad/annotation/foo.ts', 'src/workers/adjustmentWorker.ts']],
+    ['cad-draft-plus-solver', ['src/engine/cad/cadProjectTransform.ts', 'src/engine/runSession.ts']],
     ['worker', ['src/workers/adjustmentWorker.ts']],
     ['cpp', ['cpp/src/solver.cpp']],
     ['package', ['package.json']],

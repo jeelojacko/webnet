@@ -12,11 +12,13 @@ const SAFE_ONLY = [
   /^src\/components\//,
   /^src\/hooks\//,
   /^src\/study\//,
-  // CAD geometry (draft/annotation/alignment) is a survey-drafting area that
-  // never feeds the least-squares adjustment solver, so CAD-only changes are
-  // explicitly exempt from numerical certification and take the fast path
-  // (still covered by portable-paths, lint, typecheck, agent tests, build,
-  // CLI smoke, corpus, and parity gates).
+  // CAD drafting-only paths are survey-drafting areas that never feed
+  // computed outputs, so CAD-only changes there are explicitly exempt from
+  // numerical certification and take the fast path (still covered by
+  // portable-paths, lint, typecheck, agent tests, build, CLI smoke, corpus,
+  // and parity gates). Worker-consumed CAD compute (grading/surface/tin/
+  // contour/section/profile/analysis engine) is NOT exempt — see the
+  // ALWAYS_NUMERICAL worker-consumed rule below.
   /^src\/engine\/cad\//,
   /^study-desktop\//,
   /^public\//,
@@ -36,9 +38,13 @@ const ALWAYS_NUMERICAL = [
   /^cpp\//,
   /^tests\/evidence\//,
   // Engine solve/numeric core (parser, solver, preanalysis, covariance,
-  // numeric backends, WASM bridges). CAD geometry under `src/engine/cad/**`
-  // is the deliberate exception (see SAFE_ONLY); every other engine path
-  // stays fail-closed to numerical certification.
+  // numeric backends, WASM bridges). Drafting-only CAD geometry under
+  // `src/engine/cad/**` is the deliberate exception (see SAFE_ONLY); every
+  // other engine path stays fail-closed to numerical certification.
+  // Worker-consumed CAD compute: src/workers import heavily from these
+  // cad/ subtrees, so changes there can alter computed outputs and stay
+  // on numerical certification despite living under src/engine/cad/.
+  /^src\/engine\/cad\/(grading|surfaces|tin|surfaceContours|sections|profiles|surfaceAnalysis|cadSurface|surfaceContour|cadSection|cadProfile|cadVolume|cadAlignment|cadAnalysis|surfaceCompose|cadTransactionsSurface|profileCache|sectionCache|surfaceVolume)\//,
   /^src\/engine\/(?!cad\/)/,
   /^src\/workers\//,
   /^src\/cli\.ts$/,
