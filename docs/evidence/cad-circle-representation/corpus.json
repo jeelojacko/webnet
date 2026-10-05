@@ -1,0 +1,594 @@
+{
+  "adapter": {
+    "angleOfEast": 0,
+    "area": 7853.981634,
+    "circleConcentric": 0,
+    "circleSecant": 2,
+    "circumference": 314.159265,
+    "closestCenter": {
+      "x": 150,
+      "y": 200
+    },
+    "closestOutside": {
+      "x": 150,
+      "y": 200
+    },
+    "lineHits": 2,
+    "persisted": false,
+    "pointAt0": {
+      "x": 150,
+      "y": 200
+    },
+    "pointAt90": {
+      "x": 100,
+      "y": 250
+    },
+    "segHits": 2,
+    "sweepIndependent": true,
+    "tangentInside": 0,
+    "tangentOutside": 2
+  },
+  "baseline": "50a5c720",
+  "branch": "research/cad-circle-representation-decision",
+  "execution": {
+    "arcPath": {
+      "b1": {
+        "arcSegments": 2,
+        "d": "M 150 200 A 50 50 0 1 0 50 200 A 50 50 0 1 0 150 200",
+        "twoArcBranch": true
+      },
+      "b2": {
+        "arcSegments": 2,
+        "d": "M 150 200 A 50 50 0 1 0 50 200 A 50 50 0 1 0 150 200",
+        "twoArcBranch": true
+      },
+      "b3": {
+        "arcSegments": 1,
+        "d": "M 143.30127018922195 225 A 50 50 0 0 0 143.30127018922195 225",
+        "degenerateSingleArc": true
+      },
+      "codePath": "SurveyCadPreview.geometry.ts:236-263 (two-180deg branch at |sweep|~=360)"
+    },
+    "blockExpansionB1": {
+      "codePath": "cadBlocks.ts:190-198 (arc arm) via expandBlockReference cadBlocks.ts:235-244",
+      "identity": {
+        "endAngleDeg": 0,
+        "radius": 50,
+        "signedSweepDeg": 0,
+        "startAngleDeg": 0
+      },
+      "rotated30": {
+        "endAngleDeg": 30,
+        "startAngleDeg": 30
+      },
+      "sweepLost": true
+    },
+    "blockNonUniformScale": {
+      "blockRoute": {
+        "applied": true,
+        "endAngleDeg": 0,
+        "meanScaleNote": "radius * (2+1)/2 = 75; ellipse silently stays an arc",
+        "radius": 75,
+        "refused": false,
+        "startAngleDeg": 0
+      },
+      "codePath": "cadBlocks.ts:72-83 (scales) + cadBlocks.ts:185-198 (mean-radius arc arm)",
+      "entityRoute": {
+        "ok": false,
+        "reason": "CAD_TRANSFORM_ARC_AFFINE_UNSUPPORTED"
+      },
+      "refusalCoversBlockRoute": false
+    },
+    "dxfArcB1": {
+      "arcBytes": "0\nARC\n8\nL0\n10\n100\n20\n200\n30\n0\n40\n50\n50\n0\n51\n360\n0\nENDSEC\n0\nEOF\n",
+      "codePath": "dxfExportModel.ts:442-460 (verbatim) -> dxfSerializer.ts ARC emitter (groups 50/51)",
+      "hasCircleEntity": false,
+      "hostImportRoundTrip": "UNEXECUTED prediction (no host available): 0/360 verbatim relies on host normalization.",
+      "modelArcs": [
+        {
+          "endDeg": 360,
+          "radius": 50,
+          "startDeg": 0
+        }
+      ],
+      "serializedGroups": {
+        "40": "50",
+        "50": "0",
+        "51": "360"
+      }
+    },
+    "snapGripB1": {
+      "blockEndpointEmitted": 3,
+      "blockEndpointObservable": 2,
+      "codePath": "cadSpatialEntityCandidates.ts:308-341 (arc arm) + cadSpatialBlockSnaps.ts:107+ (block arc arm); dedupe cadSpatialSnapCandidates.ts:34-43",
+      "entityEmitted": {
+        "arc-midpoint": 1,
+        "center": 1,
+        "endpoint": 2,
+        "nearest": 1,
+        "quadrant": 4
+      },
+      "entityEndpointEmitted": 2,
+      "entityEndpointObservable": 1,
+      "entityObservable": {
+        "arc-midpoint": 1,
+        "center": 1,
+        "endpoint": 1,
+        "nearest": 1,
+        "quadrant": 4
+      },
+      "grips": [
+        {
+          "kind": "arc-start",
+          "x": 150,
+          "y": 200
+        },
+        {
+          "kind": "arc-end",
+          "x": 150,
+          "y": 200
+        },
+        {
+          "kind": "arc-radius",
+          "x": 50,
+          "y": 200
+        }
+      ],
+      "gripsLeaked": 2
+    }
+  },
+  "forensics": {
+    "aFirstClassCircleAssessment": "A (first-class circle kind) is semantically clean BUT is rejected as GO: no model CIRCLE emitter/re-import (G7), all 26 switch sites + parcel/feature-line/alignment/fillet/trim/curve-tools/reverse/subdivide/offset/tables/DXF/spatial-index/properties/renderer paths that assume arc-ness (fillet 11 files, trim 63, reverse 24, offset 61 per grep) need a circle arm or an explicit refusal (G9), and the schema/round-trip/revision delta is unspecified (G10).",
+    "affineCurved": "BLOCKED (GENERAL_AFFINE refused)",
+    "b1FullSweepArcAssessment": "B1 reuses the arc entity + kernels BUT is rejected as GO: full-sweep arcs leak 2 coincident endpoint candidates (1 observable after dedupe) + arc-midpoint + 2 grips (G4), DXF 0/360 is verbatim with host normalization UNEXECUTED (G7), block expansion collapses 0/360 to 0/0 and mean-scales ellipses into arcs (G9). No new kind, no switch-site growth.",
+    "boundsDisagreement": "endpoints-only (cadProjectState.ts:113) vs center+-radius (cadSpatialIndex.ts:160)",
+    "circleEntityKind": false,
+    "dxfCircles": "model.circles ABSENT (grep-proven); arcs ride model.arcs verbatim",
+    "exhaustiveSwitch": "26 switch(entity.type) sites; 33 files with case arc (measured 2026-10-05; ~30 estimate confirmed)",
+    "intersections": [
+      "cadIntersectCircleCircle",
+      "cadTangentPointsFromExternalPointToCircle"
+    ],
+    "kernels": [
+      "cadSignedSweepDeg",
+      "cadIsAngleOnArcSweep",
+      "cadPointOnCircle",
+      "cadClosestPointOnArc",
+      "cadArcStart/End/Midpoint"
+    ],
+    "parcelFullCircleGuard": "parcel-specific (cadParcelArcGeometry.ts:70,326-330)",
+    "quadrantSnap": "EXISTS",
+    "representationVerdict": "POLICY_REQUIRED_CIRCLE_REPRESENTATION (decision.md owns the verdict: B1 fails G4/G7/G9, A fails G7/G9/G10; neither is GO).",
+    "svgFullCirclePath": "SurveyCadPreview.geometry.ts:242-249 (two 180deg arcs)"
+  },
+  "modes": {
+    "centerDiameter": {
+      "center": {
+        "x": 100,
+        "y": 200
+      },
+      "degenerate": null,
+      "mode": "center-diameter",
+      "radius": 50
+    },
+    "centerDiameterCoincident": {
+      "center": null,
+      "degenerate": "COINCIDENT_ENDPOINTS",
+      "mode": "center-diameter",
+      "radius": null
+    },
+    "centerRadius": {
+      "center": {
+        "x": 100,
+        "y": 200
+      },
+      "degenerate": null,
+      "mode": "center-radius",
+      "radius": 50
+    },
+    "centerRadiusNegative": {
+      "center": null,
+      "degenerate": "ZERO_OR_NEGATIVE_RADIUS",
+      "mode": "center-radius",
+      "radius": null
+    },
+    "centerRadiusZero": {
+      "center": null,
+      "degenerate": "ZERO_OR_NEGATIVE_RADIUS",
+      "mode": "center-radius",
+      "radius": null
+    },
+    "recommendation": {
+      "reason": "Both are single-solution closed forms reusing cadPointOnCircle/cadDistance; 2-point folds into diameter; 3-point adds one collinear guard; TTR/TTT need unsolved multi-solution infrastructure.",
+      "slice": "Center/Radius + Center/Diameter only"
+    },
+    "tangentLeverageProbe": 2,
+    "threePoint": {
+      "center": {
+        "x": 100,
+        "y": 200
+      },
+      "degenerate": null,
+      "mode": "3-point",
+      "radius": 50
+    },
+    "threePointCollinear": {
+      "center": null,
+      "degenerate": "COLLINEAR_OR_COINCIDENT",
+      "mode": "3-point",
+      "radius": null
+    },
+    "ttrTtt": [
+      {
+        "construction": "TTR",
+        "formula": "Centers lie at distance r from both tangents AND |center-P|=r: intersect offset-lines x circle; up to 4 solutions.",
+        "infrastructure": "Needs line-offset + line/circle intersection (exists) composed per side; no persisted tangent-line entity to snap to.",
+        "solutions": "MULTI (0..4 by tangency side x radius side); radius is an INPUT, disambiguation needs UI pick.",
+        "verdict": "DEFER past B1: needs tangent-line derivation + solution picker, not a formula."
+      },
+      {
+        "construction": "TTT",
+        "formula": "Apollonius circle-tangent problem (Soddy circles): 0..8 solutions via Descartes/inversion.",
+        "infrastructure": "No circle-circle-tangent or offset-curve kernels exist; only point-to-circle tangents (leveraged, insufficient).",
+        "solutions": "MULTI (up to 8); degenerate when inputs concentric/parallel.",
+        "verdict": "DEFER past B1: new solver infrastructure, out of smallest-slice scope."
+      }
+    ],
+    "twoPoint": {
+      "center": {
+        "x": 100,
+        "y": 200
+      },
+      "degenerate": null,
+      "mode": "2-point",
+      "radius": 50
+    }
+  },
+  "sweep": [
+    {
+      "boundsAgree": true,
+      "boundsCenterRadius": {
+        "maxX": 150,
+        "maxY": 250,
+        "minX": 50,
+        "minY": 150
+      },
+      "boundsEndpointsOnly": {
+        "maxX": 150,
+        "maxY": 250,
+        "minX": 50,
+        "minY": 150
+      },
+      "circleCircleConcentric": 0,
+      "circleCircleDisjoint": 0,
+      "circleCircleSecant": 2,
+      "circleCircleTangent": 1,
+      "closestFromCenter": {
+        "x": 150,
+        "y": 200
+      },
+      "closestFromOutside": {
+        "x": 150,
+        "y": 200
+      },
+      "dxf": {
+        "codePath": "dxfExportModel.ts:442-460 (model.arcs.push verbatim) -> dxfSerializer.ts ARC emitter (groups 50/51 verbatim)",
+        "endDeg": 360,
+        "note": "No CIRCLE entity exists: model.circles absent (grep-proven). 390 passes through unwritten-normalized; host CAD normalization on import is an UNEXECUTED prediction (no host available; see execution.dxfArcB1).",
+        "startDeg": 0
+      },
+      "endAngleDeg": 360,
+      "endPoint": {
+        "x": 150,
+        "y": 200
+      },
+      "lineIntersections": 2,
+      "midpoint": {
+        "x": 50,
+        "y": 200
+      },
+      "onSweepQuadrants": {
+        "q0": true,
+        "q180": true,
+        "q270": true,
+        "q45": true,
+        "q90": true
+      },
+      "properties": {
+        "arcLength": 314.159265,
+        "chordLength": 0
+      },
+      "segmentIntersections": 2,
+      "signedSweepDeg": 360,
+      "startAngleDeg": 0,
+      "startPoint": {
+        "x": 150,
+        "y": 200
+      },
+      "svg": {
+        "behavior": "|sweep|~=360 collapses to two 180deg A segments; B3 sweep 0 renders as empty/degenerate path.",
+        "codePath": "SurveyCadPreview.geometry.ts:242-249 arcPathFromPrimitive"
+      },
+      "tag": "B1",
+      "tangentCountInside": 0,
+      "tangentCountOnCircle": 1,
+      "tangentCountOutside": 2,
+      "transforms": {
+        "mirror": {
+          "applied": true,
+          "centerX": -100,
+          "centerY": 200,
+          "endAngleDeg": -180,
+          "kind": "RIGID_REFLECTION",
+          "radius": 50,
+          "startAngleDeg": 180,
+          "sweepDeg": -360
+        },
+        "nonUniform": {
+          "applied": false,
+          "reason": "CAD_TRANSFORM_ARC_AFFINE_UNSUPPORTED"
+        },
+        "rotate90": {
+          "applied": true,
+          "centerX": 100,
+          "centerY": 200,
+          "endAngleDeg": 450,
+          "kind": "RIGID_ORIENTATION_PRESERVING",
+          "radius": 50,
+          "startAngleDeg": 90,
+          "sweepDeg": 360
+        },
+        "translate": {
+          "applied": true,
+          "centerX": 110,
+          "centerY": 193,
+          "endAngleDeg": 360,
+          "kind": "RIGID_ORIENTATION_PRESERVING",
+          "radius": 50,
+          "startAngleDeg": 0,
+          "sweepDeg": 360
+        },
+        "uniformScale2": {
+          "applied": true,
+          "centerX": 100,
+          "centerY": 200,
+          "endAngleDeg": 360,
+          "kind": "SIMILARITY",
+          "radius": 100,
+          "startAngleDeg": 0,
+          "sweepDeg": 360
+        }
+      }
+    },
+    {
+      "boundsAgree": true,
+      "boundsCenterRadius": {
+        "maxX": 150,
+        "maxY": 250,
+        "minX": 50,
+        "minY": 150
+      },
+      "boundsEndpointsOnly": {
+        "maxX": 150,
+        "maxY": 250,
+        "minX": 50,
+        "minY": 150
+      },
+      "circleCircleConcentric": 0,
+      "circleCircleDisjoint": 0,
+      "circleCircleSecant": 2,
+      "circleCircleTangent": 1,
+      "closestFromCenter": {
+        "x": 150,
+        "y": 200
+      },
+      "closestFromOutside": {
+        "x": 150,
+        "y": 200
+      },
+      "dxf": {
+        "codePath": "dxfExportModel.ts:442-460 (model.arcs.push verbatim) -> dxfSerializer.ts ARC emitter (groups 50/51 verbatim)",
+        "endDeg": 390,
+        "note": "No CIRCLE entity exists: model.circles absent (grep-proven). 390 passes through unwritten-normalized; host CAD normalization on import is an UNEXECUTED prediction (no host available; see execution.dxfArcB1).",
+        "startDeg": 30
+      },
+      "endAngleDeg": 390,
+      "endPoint": {
+        "x": 143.30127,
+        "y": 225
+      },
+      "lineIntersections": 2,
+      "midpoint": {
+        "x": 56.69873,
+        "y": 175
+      },
+      "onSweepQuadrants": {
+        "q0": true,
+        "q180": true,
+        "q270": true,
+        "q45": true,
+        "q90": true
+      },
+      "properties": {
+        "arcLength": 314.159265,
+        "chordLength": 0
+      },
+      "segmentIntersections": 2,
+      "signedSweepDeg": 360,
+      "startAngleDeg": 30,
+      "startPoint": {
+        "x": 143.30127,
+        "y": 225
+      },
+      "svg": {
+        "behavior": "|sweep|~=360 collapses to two 180deg A segments; B3 sweep 0 renders as empty/degenerate path.",
+        "codePath": "SurveyCadPreview.geometry.ts:242-249 arcPathFromPrimitive"
+      },
+      "tag": "B2",
+      "tangentCountInside": 0,
+      "tangentCountOnCircle": 1,
+      "tangentCountOutside": 2,
+      "transforms": {
+        "mirror": {
+          "applied": true,
+          "centerX": -100,
+          "centerY": 200,
+          "endAngleDeg": -210,
+          "kind": "RIGID_REFLECTION",
+          "radius": 50,
+          "startAngleDeg": 150,
+          "sweepDeg": -360
+        },
+        "nonUniform": {
+          "applied": false,
+          "reason": "CAD_TRANSFORM_ARC_AFFINE_UNSUPPORTED"
+        },
+        "rotate90": {
+          "applied": true,
+          "centerX": 100,
+          "centerY": 200,
+          "endAngleDeg": 480,
+          "kind": "RIGID_ORIENTATION_PRESERVING",
+          "radius": 50,
+          "startAngleDeg": 120,
+          "sweepDeg": 360
+        },
+        "translate": {
+          "applied": true,
+          "centerX": 110,
+          "centerY": 193,
+          "endAngleDeg": 390,
+          "kind": "RIGID_ORIENTATION_PRESERVING",
+          "radius": 50,
+          "startAngleDeg": 30,
+          "sweepDeg": 360
+        },
+        "uniformScale2": {
+          "applied": true,
+          "centerX": 100,
+          "centerY": 200,
+          "endAngleDeg": 390,
+          "kind": "SIMILARITY",
+          "radius": 100,
+          "startAngleDeg": 30,
+          "sweepDeg": 360
+        }
+      }
+    },
+    {
+      "boundsAgree": true,
+      "boundsCenterRadius": {
+        "maxX": 150,
+        "maxY": 250,
+        "minX": 50,
+        "minY": 150
+      },
+      "boundsEndpointsOnly": {
+        "maxX": 150,
+        "maxY": 250,
+        "minX": 50,
+        "minY": 150
+      },
+      "circleCircleConcentric": 0,
+      "circleCircleDisjoint": 0,
+      "circleCircleSecant": 2,
+      "circleCircleTangent": 1,
+      "closestFromCenter": {
+        "x": 150,
+        "y": 200
+      },
+      "closestFromOutside": {
+        "x": 150,
+        "y": 200
+      },
+      "dxf": {
+        "codePath": "dxfExportModel.ts:442-460 (model.arcs.push verbatim) -> dxfSerializer.ts ARC emitter (groups 50/51 verbatim)",
+        "endDeg": 30,
+        "note": "No CIRCLE entity exists: model.circles absent (grep-proven). 390 passes through unwritten-normalized; host CAD normalization on import is an UNEXECUTED prediction (no host available; see execution.dxfArcB1).",
+        "startDeg": 30
+      },
+      "endAngleDeg": 30,
+      "endPoint": {
+        "x": 143.30127,
+        "y": 225
+      },
+      "lineIntersections": 2,
+      "midpoint": {
+        "x": 143.30127,
+        "y": 225
+      },
+      "onSweepQuadrants": {
+        "q0": true,
+        "q180": true,
+        "q270": true,
+        "q45": true,
+        "q90": true
+      },
+      "properties": {
+        "arcLength": 0,
+        "chordLength": 0
+      },
+      "segmentIntersections": 2,
+      "signedSweepDeg": 0,
+      "startAngleDeg": 30,
+      "startPoint": {
+        "x": 143.30127,
+        "y": 225
+      },
+      "svg": {
+        "behavior": "|sweep|~=360 collapses to two 180deg A segments; B3 sweep 0 renders as empty/degenerate path.",
+        "codePath": "SurveyCadPreview.geometry.ts:242-249 arcPathFromPrimitive"
+      },
+      "tag": "B3",
+      "tangentCountInside": 0,
+      "tangentCountOnCircle": 1,
+      "tangentCountOutside": 2,
+      "transforms": {
+        "mirror": {
+          "applied": true,
+          "centerX": -100,
+          "centerY": 200,
+          "endAngleDeg": 150,
+          "kind": "RIGID_REFLECTION",
+          "radius": 50,
+          "startAngleDeg": 150,
+          "sweepDeg": 0
+        },
+        "nonUniform": {
+          "applied": false,
+          "reason": "CAD_TRANSFORM_ARC_AFFINE_UNSUPPORTED"
+        },
+        "rotate90": {
+          "applied": true,
+          "centerX": 100,
+          "centerY": 200,
+          "endAngleDeg": 120,
+          "kind": "RIGID_ORIENTATION_PRESERVING",
+          "radius": 50,
+          "startAngleDeg": 120,
+          "sweepDeg": 0
+        },
+        "translate": {
+          "applied": true,
+          "centerX": 110,
+          "centerY": 193,
+          "endAngleDeg": 30,
+          "kind": "RIGID_ORIENTATION_PRESERVING",
+          "radius": 50,
+          "startAngleDeg": 30,
+          "sweepDeg": 0
+        },
+        "uniformScale2": {
+          "applied": true,
+          "centerX": 100,
+          "centerY": 200,
+          "endAngleDeg": 30,
+          "kind": "SIMILARITY",
+          "radius": 100,
+          "startAngleDeg": 30,
+          "sweepDeg": 0
+        }
+      }
+    }
+  ]
+}
