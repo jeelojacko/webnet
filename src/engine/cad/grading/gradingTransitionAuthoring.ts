@@ -27,6 +27,7 @@ import type { GradingAuthoringResult } from './gradingAuthoring';
 import { courseCriterionKey } from './gradingGroupCourseCriteria';
 import {
   admitGradingTransition,
+  checkSlopedPluralUnstudied,
   TRANSITION_LAW_KIND,
   TRANSITION_LAW_VERSION,
   TRANSITION_POLICY_VERSION,
@@ -243,6 +244,29 @@ export const transitionJointEligibility = (input: {
   const prev = memberGeometry(memberSources, memberCriteria, memberIds[0], pair.prev, group.maxSearchDistance);
   const next = memberGeometry(memberSources, memberCriteria, memberIds[1], pair.next, group.maxSearchDistance);
   if (!prev || !next) return { ok: false, reason: 'member source/criterion unavailable at this joint' };
+  // Phase 20Q.1 singular scope: this joint would form/extend a plural set
+  // while ANY transitioned joint is non-flat — ineligible (the compute
+  // whole-group rejects such sets; per-joint admission still owns content).
+  const retained = groupTransitions(group).filter((entry) => entry.jointId !== jointId);
+  if (retained.length > 0) {
+    const joints: number[] = [];
+    for (const entry of retained) {
+      const index = jointIndexOf(entry.jointId);
+      if (index === null) return { ok: false, reason: `malformed transition jointId ${JSON.stringify(entry.jointId)}` };
+      joints.push(index);
+    }
+    joints.push(jointIndex);
+    const flat: boolean[] = [];
+    for (const index of joints) {
+      const a = memberSources[index];
+      const b = memberSources[index + 1];
+      if (!a || !b) return { ok: false, reason: 'member source/criterion unavailable at this joint' };
+      flat.push(a.startZ === a.endZ && b.startZ === b.endZ);
+    }
+    if (checkSlopedPluralUnstudied(joints.length, flat) !== null) {
+      return { ok: false, reason: 'plural transition sets on non-flat joints are unstudied (singular sloped only)' };
+    }
+  }
   // Width probe at the feasibility ceiling: WIDTH_* failures are the width
   // input's verdict, not the joint's — everything else rejects the joint.
   const probe = 2 * Math.min(prev.length, next.length);

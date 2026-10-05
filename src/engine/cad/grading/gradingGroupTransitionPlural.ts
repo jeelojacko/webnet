@@ -10,6 +10,7 @@ import { solveGradingChord } from './solveAnalyticGradingChord';
 import {
   admitGradingTransition,
   checkGroupTransitionSeparation,
+  checkSlopedPluralUnstudied,
   computeJointStations,
   deriveGroupTransitionExpectation,
   evaluateTransitionLinearV1,
@@ -308,6 +309,29 @@ export const planTransitionGroup = (
     width: number;
     family: 'distance' | 'relative-elevation' | 'elevation';
     g: number;
+  }
+  // Phase 20Q.1 singular scope: a plural set with ANY non-flat transitioned
+  // joint rejects whole-group BEFORE per-joint admission (never a faked
+  // per-joint transitionCount — trp1 still sees transitionCount: 1 below).
+  const slopedPlural = checkSlopedPluralUnstudied(
+    selection.transitions.length,
+    selection.transitions.map((intent) => {
+      const joint = parseCanonicalJointIndex(intent.jointId);
+      // Unresolvable here fails closed in Phase 1; never the sloped gate.
+      if (joint === null || !Array.isArray(keys)) return true;
+      const mL = members[joint];
+      const mR = members[joint + 1];
+      if (!mL || !mR) return true;
+      return mL.startZ === mL.endZ && mR.startZ === mR.endZ;
+    }),
+  );
+  if (slopedPlural !== null) {
+    const first = parseCanonicalJointIndex(selection.transitions[0]?.jointId);
+    return transitionFail(
+      'TRANSITION_REJECTED',
+      first ?? undefined,
+      `GRADING_AGREEMENT_TRANSITION_NON_FLAT: ${slopedPlural}`,
+    );
   }
   // Phase 1: admit EVERY joint (per-joint trp1, transitionCount: 1) before
   // touching `solved`.

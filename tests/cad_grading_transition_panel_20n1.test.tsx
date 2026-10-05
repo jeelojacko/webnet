@@ -59,6 +59,14 @@ const staged = (jointId: string, memberIds: [string, string], width: number): Tr
 const sources = [src(-20, 0), src(0, 20), src(20, 40)];
 const criteria = [DIST(0.5, 5), DIST(0.5, 7), DIST(0.5, 9)];
 
+// Phase 20Q.1 sloped scene: member 0 rises 8 -> 10 into flat 10 members.
+const srcZ = (sx: number, ex: number, sz: number, ez: number): ResolvedGradingSource => ({
+  startX: sx, startY: 0, endX: ex, endY: 0, startZ: sz, endZ: ez,
+  length: Math.abs(ex - sx), reoriented: false, isArc: false,
+});
+const slopedSources = [srcZ(-20, 0, 8, 10), src(0, 20), src(20, 40)];
+const stepSources = [src(-20, 0), srcZ(0, 20, 11, 11), src(20, 40)];
+
 // 4-course group (joints 0..2) for SPARSE coverage: gap 0 -> 2 spans member 1+2.
 const group4 = (transitions?: TransitionPersistedIntent[]): CadGradingGroup => ({
   id: 'gg-h4',
@@ -283,6 +291,84 @@ describe('20N.1 WAVE H transition panel', () => {
       expect(second.element.querySelector('[data-cad-grading-group-transition-order-warning]')).not.toBeNull();
     } finally {
       second.cleanup();
+    }
+  });
+
+  it('stages a singular sloped joint with the fixed TRANSITION_LINEAR_V1 law', async () => {
+    const calls: CadCommand[] = [];
+    const { element, cleanup } = await renderPanel(
+      <CadGradingGroupTransitionPanel group={group()} memberSources={slopedSources} memberCriteria={criteria} side="left" run={(command) => { calls.push(command); return true; }} onNotice={() => {}} />,
+    );
+    try {
+      await setSelect(element, 'Transition joint', '0');
+      await setInput(element, 'Transition width', '8');
+      const button = element.querySelector('[data-cad-grading-group-transition-add]') as HTMLButtonElement;
+      expect(button.disabled).toBe(false);
+      await act(async () => { button.click(); });
+      expect(calls).toHaveLength(1);
+      expect(calls[0]).toMatchObject({
+        key: 'GROUP_SET_TRANSITION',
+        intent: { jointId: 'joint:0', width: 8, lawKind: 'TRANSITION_LINEAR_V1' },
+      });
+      // No new law dropdown or slope field: exactly one fixed law option.
+      const law = element.querySelector('select[aria-label="Transition law"]') as HTMLSelectElement;
+      expect([...law.options].map((option) => option.value)).toEqual(['TRANSITION_LINEAR_V1']);
+      expect(element.querySelector('input[aria-label="Transition slope"]')).toBeNull();
+    } finally {
+      cleanup();
+    }
+  });
+
+  it('edits an existing singular sloped joint in place', async () => {
+    const g = group([staged('joint:0', ['a>b', 'b>c'], 8)]);
+    const calls: CadCommand[] = [];
+    const { element, cleanup } = await renderPanel(
+      <CadGradingGroupTransitionPanel group={g} memberSources={slopedSources} memberCriteria={criteria} side="left" run={(command) => { calls.push(command); return true; }} onNotice={() => {}} />,
+    );
+    try {
+      await setSelect(element, 'Transition joint', '0');
+      const width = element.querySelector('input[aria-label="Transition width"]') as HTMLInputElement;
+      expect(width.value).toBe('8');
+      await setInput(element, 'Transition width', '4');
+      const button = element.querySelector('[data-cad-grading-group-transition-add]') as HTMLButtonElement;
+      expect(button.textContent).toContain('Update');
+      await act(async () => { button.click(); });
+      expect(calls).toHaveLength(1);
+      expect(calls[0]).toMatchObject({ key: 'GROUP_SET_TRANSITION', intent: { jointId: 'joint:0', width: 4 } });
+    } finally {
+      cleanup();
+    }
+  });
+
+  it('disables a sloped add while a staged set stays plural, surfacing the restriction', async () => {
+    const g = group([staged('joint:1', ['b>c', 'c>d'], 6)]);
+    const calls: CadCommand[] = [];
+    const { element, cleanup } = await renderPanel(
+      <CadGradingGroupTransitionPanel group={g} memberSources={slopedSources} memberCriteria={criteria} side="left" run={(command) => { calls.push(command); return true; }} onNotice={() => {}} />,
+    );
+    try {
+      await setSelect(element, 'Transition joint', '0');
+      const option = [...element.querySelectorAll('option')].find((entry) => entry.value === '0')!;
+      expect(option.textContent).toContain('singular sloped only');
+      const button = element.querySelector('[data-cad-grading-group-transition-add]') as HTMLButtonElement;
+      expect(button.disabled).toBe(true);
+      await act(async () => { button.click(); });
+      expect(calls).toHaveLength(0);
+    } finally {
+      cleanup();
+    }
+  });
+
+  it('surfaces a joint-Z step as the bounded continuous-joint refusal', async () => {
+    const { element, cleanup } = await renderPanel(
+      <CadGradingGroupTransitionPanel group={group()} memberSources={stepSources} memberCriteria={criteria} side="left" run={() => true} onNotice={() => {}} />,
+    );
+    try {
+      const option = [...element.querySelectorAll('option')].find((entry) => entry.value === '0')!;
+      expect(option.textContent).toContain('joint Z must be exactly continuous');
+      expect((element.querySelector('[data-cad-grading-group-transition-add]') as HTMLButtonElement).disabled).toBe(true);
+    } finally {
+      cleanup();
     }
   });
 

@@ -164,6 +164,29 @@ describe('20M.2 transition mesh', () => {
     expect(JSON.stringify(second)).toBe(JSON.stringify(first));
   });
 
+  it('20Q.1 S1: joint-continuous sloped pair admits and tiles end to end', () => {
+    // L slopes 10 -> 11, R flat at 11 (joint exactly continuous): singular
+    // sloped S1. Cut Zs ride their own member half; the joint carries 11.
+    const result = okOf(solve([DIST(0.5, 5), DIST(0.5, 7)], {
+      transition: trp(),
+      members: [seg(-20, 0, 0, 0, 10, 11), seg(0, 0, 20, 0, 11, 11)],
+    }));
+    expect(result.transition).toMatchObject({
+      joint: 0,
+      jointId: 'joint:0',
+      criterionFamily: 'distance',
+      interval: { sL: -4, sR: 4 },
+      endpointScalars: { vL: 5, vR: 7, gL: 0.5, gR: 0.5 },
+      agreementCode: null,
+    });
+    expect(result.transition!.sourceCheckpoints).toEqual([
+      -4, 0, 10.8, 0, 0, 11, 4, 0, 11,
+    ]);
+    expect(result.transition!.daylightCheckpoints).toEqual([
+      -4, 5, 13.3, 0, 6, 14, 4, 7, 14.5,
+    ]);
+  });
+
   it('legacy groups without transition keep the pre-existing fail-closed (parallel corner)', () => {
     // The 20M gap: a collinear different-offset joint has no native corner
     // (parallel terminal lines). The transition path above fills exactly
@@ -197,10 +220,13 @@ describe('20M.2 transition mesh', () => {
       transition: trp(),
       members: [seg(-20, 0, 0, 0), seg(0, 0, 0, 20)],
     }))).toBe('TRANSITION_REJECTED');
+    // Joint-DISCONTINUOUS sloped pair still fails closed (here at the
+    // pre-existing corner-mismatch gate, as with flat steps below; 20Q.1
+    // S1 admits only exactly continuous joints, pinned admitted above).
     expect(codeOf(solve(D(), {
       transition: trp(),
-      members: [seg(-20, 0, 0, 0, 10, 11), seg(0, 0, 20, 0, 11, 11)],
-    }))).toBe('TRANSITION_REJECTED');
+      members: [seg(-20, 0, 0, 0, 10, 11), seg(0, 0, 20, 0, 12, 11)],
+    }))).toBe('CORNER_INVERTED');
     expect(codeOf(solve(D(), {
       transition: trp(),
       members: [seg(-20, 0, 0, 0), seg(0, 0, 20, 0, 11, 11)],

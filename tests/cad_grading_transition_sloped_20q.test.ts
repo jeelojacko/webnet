@@ -125,7 +125,10 @@ describe('20Q.1 production freeze: sloped sources fail closed', () => {
   });
 
   it('joint planning maps the sloped reject to bounded TRANSITION codes', () => {
-    const out = planTransitionJoint(tileInput(), resolved(11, 11), () => DIST(5), [] as unknown as MemberSolve[], 1);
+    // Joint-DISCONTINUOUS sloped input (L ends at 11, R starts at 12): still
+    // NON_FLAT. Joint-continuous sloped now admits under 20Q.1 S1 (pinned
+    // by the 20Q.1 suite); the bounded-code mapping itself is unchanged.
+    const out = planTransitionJoint(tileInput(), resolved(11, 12), () => DIST(5), [] as unknown as MemberSolve[], 1);
     expect(out.ok).toBe(false);
     if (!out.ok) {
       expect(out.code).toBe('TRANSITION_REJECTED');
@@ -202,22 +205,24 @@ describe('20Q.3 S1 law properties (study oracle, production math)', () => {
     expect(zShift).toBeLessThanOrEqual(3e-14);
   });
 
-  it('M2 width-tamper accounting: untampered-reject rows are inapplicable, never caught', () => {
+  it('M2 width-tamper accounting: untampered CREST agrees (20Q.1), continuity tampers caught', () => {
     // Agreement + width probes count ONLY where untampered passes
-    // (applicable). Sloped S1 CREST 0.05: rel-elev applicable+caught,
-    // distance/elevation inapplicable with the expected-reject code in
-    // detail (never in caught totals).
+    // (applicable). Sloped S1 CREST 0.05 now agrees under 20Q.1 singular
+    // admission, so every row is applicable: continuity/evidence/family/
+    // side tampers are caught; the off-joint slope tamper preserves joint
+    // continuity AND endpoint scalars, so agreement holds by design (a
+    // different but equally admissible grading — never counted as caught).
     const sample = slopedCases().filter((c) => c.slopePattern === 'CREST' && c.slopeMag === 0.05);
     expect(sample.length).toBeGreaterThan(0);
     for (const c of sample) {
       const w = phase20qWorkerFacts(c, 'S1');
       expect(w.error).toBeNull();
       expect(w.tampers.length).toBe(6);
-      const applicable = w.agreement === null;
+      expect(w.agreement).toBeNull();
       for (const t of w.tampers.filter((t) => t.probe !== 'tampered-width')) {
-        if (!applicable) {
+        if (t.probe === 'tampered-slope') {
           expect(t.caught).toBe(false);
-          expect(t.detail).toBe(`inapplicable:untampered=${w.agreement}`);
+          expect(t.detail).toBe('agreement-held');
         } else {
           expect(t.caught).toBe(true);
         }
@@ -262,15 +267,17 @@ describe('20Q.4 family daylight semantics (production tile, per family)', () => 
 });
 
 describe('20Q.12 B1: S1 against the REAL production tiling path', () => {
-  it('flat controls admit with source-exact endpoints; every sloped row rejects', () => {
+  it('flat controls admit; joint-continuous sloped admits (20Q.1 S1), steps still reject', () => {
     for (const c of flatCases()) {
       const probe = phase20qRealTilingProbe(c);
       expect(probe.admitted).toBe(true);
     }
+    // Every sloped-matrix row is joint-continuous (step lives in the step
+    // matrix): 20Q.1 production S1 tiles all of them end to end.
     for (const c of slopedCases().filter((c) => c.slopePattern !== 'FLAT_FLAT')) {
       const probe = phase20qRealTilingProbe(c);
-      expect(probe.admitted).toBe(false);
-      expect(probe.code).toBe('TRANSITION_REJECTED');
+      expect(probe.admitted).toBe(true);
+      expect(probe.code).toBeNull();
     }
   });
 
@@ -349,33 +356,14 @@ describe('20Q.15 M4: mesh expectation declared before build/measure', () => {
 });
 
 describe('20Q.17 M1: real validator per family on untampered sloped S1', () => {
-  it('pins the exact per-family table (distance+elevation OFF_LAW, rel-elev passes)', () => {
-    // Flat rows pass everywhere; sloped rel-elev passes (source-Z cancels);
-    // sloped elevation always rejects; sloped distance passes ONLY inside
-    // tolerance (1e-9 slope, W2) and rejects everywhere else — all at the
-    // exact GRADING_AGREEMENT_TRANSITION_OFF_LAW code, never a new gate.
-    let distancePass = 0;
-    let distanceFail = 0;
+  it('pins the exact per-family table: every untampered sloped S1 row passes, all families', () => {
+    // 20Q.1 production Wave E: the validator resolves each checkpoint at
+    // its OWN source Z (never a frozen jointZ), so untampered sloped S1
+    // passes everywhere — flat rows as before, sloped distance+elevation
+    // now too. No new gate, no new tolerance.
     for (const c of slopedCases()) {
-      const code = phase20qValidatorMeshUntampered(c, 'S1');
-      if (c.family === 'relative-elevation') {
-        expect(code).toBeNull();
-      } else if (c.family === 'elevation') {
-        if (c.slopePattern === 'FLAT_FLAT') expect(code).toBeNull();
-        else expect(code).toBe('GRADING_AGREEMENT_TRANSITION_OFF_LAW');
-      } else {
-        if (code === null) {
-          distancePass += 1;
-          const flat = c.slopePattern === 'FLAT_FLAT';
-          const nearFlat = c.slopeMag === 0.000000001 && c.W === 2;
-          expect(flat || nearFlat).toBe(true);
-        } else {
-          distanceFail += 1;
-          expect(code).toBe('GRADING_AGREEMENT_TRANSITION_OFF_LAW');
-        }
-      }
+      expect(phase20qValidatorMeshUntampered(c, 'S1')).toBeNull();
     }
-    expect([distancePass, distanceFail]).toEqual([18, 204]);
   });
 
   it('per-checkpoint-source-Z extension passes every sloped S1 row, all families', () => {
@@ -386,12 +374,51 @@ describe('20Q.17 M1: real validator per family on untampered sloped S1', () => {
 });
 
 describe('20Q.18 m3: persisted-bytes check reads the written corpus from disk', () => {
-  it('recomputes worker values from stored fields only (2622/2622)', async () => {
+  it('recomputes worker values from stored fields only (2622/2622 scalars; sloped agreement flips exactly where 20Q.1 admits)', async () => {
     const v = await verifyPhase20qPersistedBytesFromDisk('docs/evidence/phase20q/corpus.json');
     expect(v.rows).toBe(2622);
-    expect(v.mismatches).toEqual([]);
-    expect(v.scalarMatch).toBe(2622);
-    expect(v.agreementMatch).toBe(2622);
+    // NOTE: the capped helper aborts counting after 8 mismatches, so its
+    // scalar/agreement tallies are partial once agreement flips by design.
+    // Full tallies are rebuilt row by row below.
+    // Agreement flips from stored GEOMETRY to live null EXACTLY on
+    // joint-continuous sloped rows (production now admits them). The
+    // corpus itself stays byte-frozen as the study record; flat and step
+    // rows still match the stored bytes.
+    const { readFile } = await import('node:fs/promises');
+    const rows = JSON.parse(await readFile('docs/evidence/phase20q/corpus.json', 'utf8')) as {
+      persisted: { matrix: string; step: number; srcSlopeL: number; srcSlopeR: number };
+      worker: { recomputeVL: number | null; recomputeVR: number | null; agreement: string | null };
+      independent: { vL: number | null; vR: number | null; agreement: string | null };
+    }[];
+    expect(rows.length).toBe(2622);
+    let flipped = 0;
+    let matched = 0;
+    let scalars = 0;
+    for (const r of rows) {
+      const ind = phase20qIndependentRecompute(r.persisted as Parameters<typeof phase20qIndependentRecompute>[0], r.worker.recomputeVL, r.worker.recomputeVR);
+      expect(ind.error).toBeNull();
+      expect(ind.matchVsRow).toBe(true);
+      // 20Q.1 leaves scalar resolution untouched: still 2622/2622.
+      expect(ind.vL).toBe(r.worker.recomputeVL);
+      expect(ind.vR).toBe(r.worker.recomputeVR);
+      expect(ind.vL).toBe(r.independent.vL);
+      expect(ind.vR).toBe(r.independent.vR);
+      scalars += 1;
+      const continuousSloped =
+        r.persisted.matrix === 'sloped' &&
+        r.persisted.step === 0 &&
+        !(r.persisted.srcSlopeL === 0 && r.persisted.srcSlopeR === 0);
+      if (continuousSloped) {
+        expect(ind.agreement).toBeNull();
+        flipped += 1;
+      } else {
+        expect(ind.agreement).toBe(r.independent.agreement);
+        expect(ind.agreement).toBe(r.worker.agreement);
+        matched += 1;
+      }
+    }
+    expect([flipped, matched]).toEqual([1944, 678]);
+    expect(scalars).toBe(2622);
   });
 
   it('M2 totals read back from persisted bytes: 894 caught, 1728 inapplicable, 0 missed', async () => {
