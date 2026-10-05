@@ -1,6 +1,6 @@
 # B1 plan — first-class Circle implementation (Center/Radius + Center/Diameter)
 
-Status: **AUTHORIZED by `decision.md` = `GO_FIRST_CLASS_CAD_CIRCLE_ENTITY**
+Status: **AUTHORIZED** by `decision.md` = `GO_FIRST_CLASS_CAD_CIRCLE_ENTITY`
 (study phase changes no `src/`; Circle stays disabled until this plan
 lands). Persisted law: `{type:'circle', centerX, centerY, radius}`, finite
 center, radius above the CAD geometric floor, no sweep fields, no
