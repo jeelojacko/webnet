@@ -6,7 +6,7 @@
   exact commands). `switch (entity.type)` = **26 sites**; files containing
   `case 'arc'` = **33** (candidate-consumer **inventories, untested — not
   failures**); study corpus sha256
-  `e7bde6fa4ea4ff7aae00ef75fcf9562d60dc3ca4ad6ee2f0076f606460b1c1d9`. The
+  `1a2bb62759de10555a687bdb10632188dfd62f93bf1f6f964d34df814a393bce`. The
   executed pins are `scripts/cadCircleStudyExecution.ts` +
   `tests/cad_circle_study_execution.test.ts`.
 
@@ -33,15 +33,19 @@ start/end are degenerate (see §5/§9).
 `cadAnnotationPersistence`, `cadBlockSources` (×2), `cadEntityNames` (×2),
 `cadFeatureLineCreate`, `cadMlightcadAdapter`, `cadPersistence`,
 `cadProjectState`, `cadProperties`, `cadRenderer`, `cadSpatialBounds`,
-`cadSpatialEntityCandidates`, `cadTransactionsAnnotationCopyCommands`,
+`cadTransactionsAnnotationCopyCommands`,
 `cadTransactionsClipboardCommands`, `cadTransactionsEntityTransforms` (×3),
 `cadTransformGeometry`, `dxf/dxfAnnotationExport`, `dxf/dxfExportModel`,
 `landxmlCadProject`, `hooks/surveyCad/surveyCadAnnotationSnapshot` (×2).
-Adding `child.type` (6) + `clone.type` (1) gives **33 entity-kind switches in
-27 files**; `case 'arc'` appears in **33 files** (27 under `src/engine/cad`).
+Adding `child.type` switches gives **32 entity-kind dispatch sites** (26
+`switch (entity.type)` + 6 `switch (child.type)`); `case 'arc'` appears in
+**33 files** (27 under `src/engine/cad`).
 Corpus-study downward greps (engine scope): fillet **11**, trim **72**,
 reverse **29**, offset **93** files. These are **candidate-consumer
-inventories, untested in this phase — not evidence of breakage**; the study's
+inventories**; each is classified SUPPORT/GENERIC/REFUSAL/N-A in
+`circle-entity-study.md` §6 — not evidence of breakage.
+Model-space CAD import is globally absent (the dxf/ directory holds export
+modules only), so no import arm exists for any entity kind.
 narrower per-file estimates (11/63/24/61) differ by pattern, not by
 conclusion.
 
@@ -129,7 +133,8 @@ slice: **Center/Radius + Center/Diameter**.
 - Block expansion is a further executed gap: `0/360`→`0/0` (identity/sweep
   lost, G1–G3) and non-uniform scale mean-scaled `50`→`75` without refusal
   (G6); the entity-route affine refusal does not cover blocks.
-- A first-class kind is semantically clean but requires an explicit circle arm
-  at 26 `switch(entity.type)` sites + downstream consumers + a new persisted
-  schema, none studied.
+- A first-class kind is semantically clean; its per-site contract (arms,
+  refusals, DXF emitter, additive schema, block policy) is now specified in
+  `circle-entity-study.md` §5–§6 and `dxf-transform-persistence.md` §4–§5 —
+  see `decision.md` (GO).
 - B3 is provably ambiguous; B2 emits un-normalized DXF.

@@ -9,7 +9,7 @@ review-fix round record; the previous round's worktree premise is corrected in
 
 | claim | command | result |
 |---|---|---|
-| corpus sha256 | `cd docs/evidence/cad-circle-representation && sha256sum -c corpus.json.sha256` | `OK`; `sha256sum corpus.json` = `e7bde6fa4ea4ff7aae00ef75fcf9562d60dc3ca4ad6ee2f0076f606460b1c1d9` |
+| corpus sha256 | `cd docs/evidence/cad-circle-representation && sha256sum -c corpus.json.sha256` | `OK`; `sha256sum corpus.json` = `1a2bb62759de10555a687bdb10632188dfd62f93bf1f6f964d34df814a393bce` |
 | study tests 28/28 | `npx vitest run tests/cad_circle_study_execution.test.ts tests/cad_circle_study_robust_snap.test.ts tests/cad_circle_study_sweep_b1b2b3.test.ts` | `Test Files 3 passed (3)`, `Tests 28 passed (28)` |
 | `switch (entity.type)` sites | `grep -rn "switch (entity.type)" src/ \| wc -l` | `26` |
 | files with `case 'arc'` | `grep -rln "case 'arc'" src/ \| wc -l` | `33` |
@@ -76,15 +76,18 @@ the 8 docs + `corpus.json` + `corpus.json.sha256` under
 phase; the earlier round's premise that "scripts/tests were only read" is
 withdrawn.
 
-## 5. Not run / not claimed
+## 5. Executed in the correction pass (2026-10-05)
 
-- No `npm run lint` / `typecheck` / `test:agent` / `build` gate: this phase
-  changes no `src/`, and the study scripts/suites are additive; only the three
-  study suites were run (28/28).
-- No external DXF import: the "host CAD normalizes 0/360" behavior is a
-  recorded prediction, not an executed test.
-- No production behavior change; `parity:industry-reference` is out of scope
-  because production output is byte-identical.
+- Study suites 28/28 (3 files, commands in §3).
+- `npm run typecheck` (`tsc --noEmit`): clean.
+- `eslint` on the 5 study scripts + 3 study suites: clean (0 errors).
+- `sha256sum -c corpus.json.sha256`: OK (`1a2bb62759de10555a687bdb10632188dfd62f93bf1f6f964d34df814a393bce…`).
+- Switch/DXF/Mlightcad/legacy searches above: executed, outputs quoted.
+- NOT run locally: `test:agent`, `build`, `parity:industry-reference`,
+  `test:wasm` — this phase adds no `src/` and no production test, so
+  production output is byte-identical; exact-head CI (#1038, recorded below)
+  is the gate for those suites.
+- No external DXF import: host normalization stays a recorded prediction.
 
 ## 6. Guardrails
 
@@ -94,10 +97,19 @@ withdrawn.
   study scripts/tests are new untracked evidence, not production code.
 - Stash count remains **14**; no stash was created, applied, or dropped.
 - `Circle` remains disabled.
-- Verdict unchanged and strengthened:
-  `POLICY_REQUIRED_CIRCLE_REPRESENTATION`.
+- Verdict: `GO_FIRST_CLASS_CAD_CIRCLE_ENTITY` (correction pass
+  2026-10-05; B1 full-sweep explicitly rejected).
 
 ## 7. Doc size check
 
 Each of the eight docs is below 200 lines (see final report / `wc -l`). The
 corpus `corpus.json` and its sha are preserved and cited by the docs.
+
+## 8. CI record
+
+- CI #1038 (run 37350480353, head `cda24c5e`, pre-correction): classify
+  PASS (16s), core PASS (8m31s), numerical PASS (2m26s). The correction
+  pass changes only docs, study scripts/tests metadata strings, corpus
+  verdict fields, and TODO — no `src/`, so production gates are
+  unaffected; the post-push run for the corrected head is recorded in the
+  PR body.

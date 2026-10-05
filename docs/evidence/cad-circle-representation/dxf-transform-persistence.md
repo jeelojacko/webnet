@@ -24,7 +24,7 @@ Consequences by encoding:
 | B1 (0/360) | `50=0`, `51=360` | conventional full-circle ARC; depends on the host normalizing 0→360 (prediction, not executed here) |
 | B2 (30/390) | `50=30`, `51=390` | **un-normalized** angle in the file |
 | B3 (30/30) | `50=30`, `51=30` | zero-length ARC, not a circle |
-| A (circle) | no model emitter exists | would need a new DXF `CIRCLE` (groups 10/20/40) emitter and re-import |
+| A (circle) | new native emitter `model.circles` → DXF `CIRCLE` groups 10/20/30/40 (specified; reuses paper-writer group layout) | general model-space CAD import is globally absent (dxf/ is export-only), so no private re-import path is required for authorization — NOT_APPLICABLE, not a blocker |
 
 The study does not execute an external DXF import, so no emitted form is
 round-trip verified.
@@ -66,24 +66,43 @@ a circle to an ellipse, which neither A nor B can persist. A circle is
 similarity-closed, so A needs no new direct transform logic beyond an entity
 arm.
 
-**Block route (measured, `runBlockNonUniformScale`).** The entity-route
-refusal does **not** cover block expansion: `expandBlockReference` with
-`scaleX=2, scaleY=1` returns radius `75` (mean scale), `applied=true`,
-`refused=false`, while the entity route returns
-`reason=CAD_TRANSFORM_ARC_AFFINE_UNSUPPORTED` and
-`refusalCoversBlockRoute=false`. The exact requirement is fail-closed or
-convert on the block route (an ellipse is not persistable in A or B1), so the
-transform contract is **not** blanket PASS.
+**Block route (measured for arcs, motivates the A contract).**
+`expandBlockReference` on a 0/360 arc child returns 0/0; with
+`scaleX=2, scaleY=1` it mean-scales radius 50→75 (`applied=true`,
+`refused=false`) while the entity route refuses affine
+(`refusalCoversBlockRoute=false`).
 
-## 4. Persistence
+**Block contract (settled for A).** First-class circle removes sweep
+identity loss, but block transforms need policy: a circle MAY nest as a
+block child (`CadBlockChild` arm); uniform scale / rotation / mirror /
+translation are supported; a block reference containing a circle with
+non-uniform `scaleX != scaleY` fails closed for that block/child (exact
+classifier authority) rather than mean-scaling; circles are NEVER silently
+converted to ellipses in B1. The `expandBlockReference` 0/360→0/0 collapse
+and mean-scale behavior measured for arcs do not apply to a circle kind
+(no sweep to normalize, no radius averaging — refusal instead).
 
-No persisted circle identity exists. `cadPersistence.ts`,
-`cadMlightcadAdapter.ts`, `landxmlCadProject.ts`, `cadTransformApply.ts`,
-`cadBlockSources.ts`, `cadBlocks.ts`, `cadBlockPersistence.ts` and
-`dxfExportModel.ts` each contain a `switch (entity.type)`/`switch (child.type)`
-that would need a `circle` arm for candidate A. For candidate B1 the persisted
-form is the existing `CadArcEntity` with `startAngleDeg=0`,
-`endAngleDeg=360` — **no schema change** and no new persistence arm.
+## 4. Persistence (resolved)
+
+1. Additive inside version 2: a new discriminated `type:'circle'` kind
+   rides the existing version-2 project/drawing envelope; old v1/v2 files
+   contain no circle and read unchanged (sanitize fail-closed on bad refs
+   is untouched).
+2. Validators enumerate kinds and get explicit arms: `cadPersistence.ts`
+   clone/sanitize, `cadMlightcadAdapter.ts` (extend spike union +
+   `AcDbCircle` arm; insertion-marker fallback exists as precedent),
+   `landxmlCadProject.ts` (default-skip stands), `dxfExportModel.ts`
+   (`model.circles`).
+3. No WNCAD/drawing-file outer version bump: the format is additive and
+   the current writer is already version 2.
+4. Older binaries opening circle-bearing files: current compatibility
+   policy promises forward migration only (`migrateV1ToV2`) plus fail-closed
+   sanitize — no backward-reader compatibility is promised, so no
+   migration requirement is invented here.
+5. No legacy canonicalization: a repo-wide search finds no intentional
+   0/360 drafting circle in any production fixture, example, or corpus
+   file (only test synthetics: renderer-label, block transform/persist
+   fixtures — which stay arcs). No automatic reinterpretation.
 
 Block persistence/expansion is a second identity path: `expandBlockReference`
 normalizes the `0/360` child to `0/0` (measured), so the persisted arc identity
@@ -101,7 +120,7 @@ re-derive it from `|sweep| ≈ 360`.
 The study corpus is a pure function of fixed inputs: `buildCorpus` sorts keys
 and rounds to 6 dp, no timestamps; `regenCorpus` writes JSON + sha256. The
 committed corpus verifies to
-`e7bde6fa4ea4ff7aae00ef75fcf9562d60dc3ca4ad6ee2f0076f606460b1c1d9`
+`1a2bb62759de10555a687bdb10632188dfd62f93bf1f6f964d34df814a393bce`
 (`sha256sum -c corpus.json.sha256` → OK). No production file was touched, so
 production determinism/parity is unchanged by this phase.
 

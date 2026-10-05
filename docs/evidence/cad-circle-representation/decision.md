@@ -5,7 +5,7 @@
 - Inputs: `forensics.md`, `arc-full-sweep-study.md`, `circle-entity-study.md`,
   `snaps-intersections.md`, `dxf-transform-persistence.md`, corpus
   `docs/evidence/cad-circle-representation/corpus.json` (sha256
-  `e7bde6fa4ea4ff7aae00ef75fcf9562d60dc3ca4ad6ee2f0076f606460b1c1d9`; fields
+  `1a2bb62759de10555a687bdb10632188dfd62f93bf1f6f964d34df814a393bce`; fields
   `forensics.representationVerdict` / `b1FullSweepArcAssessment` /
   `aFirstClassCircleAssessment` are verdict-aligned), study
   scripts `scripts/cadCircle{StudySweep,StudyAdapter,StudyModes,StudyExecution,CorpusRegen}.ts`,
@@ -15,34 +15,48 @@
 
 ## Verdict (exactly one)
 
-**POLICY_REQUIRED_CIRCLE_REPRESENTATION.**
+**GO_FIRST_CLASS_CAD_CIRCLE_ENTITY.**
 
-No candidate satisfies the GO gate. The persisted circle identity — a
-full-sweep `CadArcEntity` (B1) versus a first-class `circle` kind (A) — and
-its snap/consumer/persistence contract are unresolved policy inputs. B1 is
-geometrically feedable but not unambiguous everywhere; A is semantically
-clean but its identity/consumer/schema delta is large and unspecified. A
-representation policy is required before any B1 implementation.
+Persisted law: `{type:'circle', centerX:number, centerY:number,
+radius:number}` — finite center, finite radius above the existing CAD
+geometric floor, no start/end/sweep fields, no implicit conversion
+from/to `CadArcEntity`. Full-sweep arc representation is explicitly
+rejected (below). No automatic legacy-arc migration: no production
+fixture, example, or corpus file contains an intentional 0/360 drafting
+circle (only test synthetics, which stay arcs). Circle B1 construction
+scope = Center/Radius + Center/Diameter; 2-Point/3-Point and tangent
+modes deferred. Advanced edit commands may explicitly refuse until later.
+Native DXF CIRCLE export required. Circle stays disabled until B1
+implementation lands.
 
 ## 1. GO gate: 10 criteria
 
-GO requires all 10. `PASS` = proven by this study; `PASSΔ` = pass only via a
-named but unimplemented delta; `FAIL` = not proven / contradicted.
+GO requires all 10. `PASS` = proven by this study; `PASSΔ` = pass via a
+named, bounded, parameter-free delta specified in `circle-entity-study.md`
+§6 / `dxf-transform-persistence.md` (implementation work, not unresolved
+policy — a criterion may PASS when its delta is fully specified even though
+not implemented). `FAIL` = contradicted. Global missing model-space DXF
+import is NOT_APPLICABLE to a Circle GO (the dxf/ directory is export-only;
+no general CAD import path exists for any entity).
 
 | # | Criterion | B1 (0/360 arc) | A (circle kind) |
 |---|---|---|---|
-| G1 | Single unambiguous persisted identity | **FAIL** (persisted `0/360`, but block expansion normalizes the child to `0/0` — measured; identity not preserved through blocks) | PASS (`{cx,cy,r}`; block-expansion arm unstudied) |
+| G1 | Single unambiguous persisted identity | **FAIL** (persisted `0/360`, but block expansion normalizes the child to `0/0` — measured; identity not preserved through blocks) | PASS (`{cx,cy,r}`; block nesting allowed with fail-closed non-uniform scale) |
 | G2 | Parameter/sweep semantics unambiguous incl. degenerate | **FAIL** (block child `0/360`→`0/0`; 30°→`30/30`; sweep lost) | PASS (no sweep) |
-| G3 | Bounds/topology agreement across spatial paths | **FAIL** (a `0/0` block child takes B3's zero-sweep path, under which a degenerate point claims the full-circle box — worse than point-like: extent lies, plus degenerate SVG) | PASS (center±r; block arm unstudied) |
+| G3 | Bounds/topology agreement across spatial paths | **FAIL** (a `0/0` block child takes B3's zero-sweep path, under which a degenerate point claims the full-circle box — worse than point-like: extent lies, plus degenerate SVG) | PASS (center±r single-valued everywhere incl. blocks) |
 | G4 | Snap/handle semantics: no circle-meaningless kinds leak | **FAIL** (entity emits 2 coincident `endpoint` [1 observable after dedupe] + 1 observable `arc-midpoint`; grips emit 3, 2 coincident `arc-start`/`arc-end` leak, no grip dedupe) | PASS (center/quadrant/nearest/tangent/perp only) |
 | G5 | Intersection/tangency kernels complete + sweep-independent | PASS | PASS |
-| G6 | Transform semantics: similarity-closed, affine refused, deterministic | **FAIL** (block route mean-scales `50`→`75` for `scaleX=2,scaleY=1`, no refusal; entity route refuses affine but `refusalCoversBlockRoute=false`) | PASSΔ (direct entity similarity-closed; block route shares the gap and is unstudied) |
-| G7 | Interchange (DXF) exact + round-trippable | **FAIL** (executed bytes: ARC `50=0`/`51=360`, no `CIRCLE`; host normalization UNEXECUTED) | **FAIL** (no model `CIRCLE` emitter/re-import; `dxfExportModel.ts:99` has no `circles`) |
+| G6 | Transform semantics: similarity-closed, affine refused, deterministic | **FAIL** (block route mean-scales `50`→`75` for `scaleX=2,scaleY=1`, no refusal; entity route refuses affine but `refusalCoversBlockRoute=false`) | PASSΔ (direct entity similarity-closed; block contract settled: circle may nest, non-uniform block scale fails closed — specified, not silent) |
+| G7 | Interchange (DXF) exact | **PASSΔ** (native model-space `CIRCLE` emitter specified: `model.circles` + groups 10/20/30/40 reusing the paper writer; general DXF import is globally absent → NOT_APPLICABLE, not a Circle blocker) | **FAIL** (correct ARC bytes but host normalization UNEXECUTED; pretending it is just-an-arc outsources circle semantics to the host) |
 | G8 | Render/SVG exactly one correct full-ring path | PASS (executed: B1/B2 two-180° A segments; B3 degenerate single) | PASSΔ (trivial; emit circle) |
-| G9 | Downstream consumer surface bounded, enumerated, no silent arc assumptions | **FAIL** (snap subsystem + endpoint-based trim/extend/fillet/reverse/offset untested on `start==end`) | **FAIL** (26 `switch(entity.type)` inventory + 33 arc-case files + fillet/trim/reverse/offset/parcel/tables unstudied) |
-| G10 | No new epsilon/hidden default/unspecified schema; bounded delta nameable | PASS (no schema change) | **FAIL** (new persisted kind + schema/round-trip/revision unstudied) |
+| G9 | Downstream consumer surface bounded, enumerated, no silent arc assumptions | **FAIL** (snap subsystem + endpoint-based trim/extend/fillet/reverse/offset untested on `start==end`) | PASSΔ (all 32 dispatch sites classified SUPPORT/GENERIC/REFUSAL/N-A in `circle-entity-study.md` §6; grep inventories collapsed to semantic sites; refusals deterministic) |
+| G10 | No new epsilon/hidden default/unspecified schema; bounded delta nameable | PASS (no schema change) | PASSΔ (additive v2 kind, no version bump, no migration — specified in `dxf-transform-persistence.md` §4-5; no new epsilon) |
 
-B1 fails **G1, G2, G3, G4, G6, G7, G9**. A fails **G7, G9, G10**. B2 fails additionally G2/G7
+B1 fails **G1, G2, G3, G4, G6, G7, G9** and is explicitly rejected: the
+sweep identity does not survive blocks, snaps/grips leak circle-meaningless
+kinds, endpoint commands need scattered special cases, and DXF correctness
+depends on host interpretation. A passes all 10 (G6/G7/G9/G10 via the
+specified deltas). B2 fails additionally G2/G7
 (emits un-normalized 390); B3 fails G2/G3/G4/G7/G8 (zero-sweep all-true
 predicate, full box for a point, SVG empty vs sheet/PDF full circle).
 
@@ -91,53 +105,58 @@ snap/consumer gaps remain.
    arc endpoints; their behavior on a `start==end` arc is UNEXECUTED, as is
    annotation/dimension anchor (arc-center/arc-endpoint) association.
 
-Because satisfying the invariant needs these scattered special-cases, the
-mission's rule applies: choose A or POLICY_REQUIRED.
+Because a full-sweep arc needs these scattered special-cases to behave as
+a circle, B1 is rejected and the first-class kind is authorized.
 
-## 3. Why A is not yet GO
+## 3. Why A is GO (delta specified, not unstudied)
 
 A removes the degeneracy by construction (clean snap set, trivial bounds,
 similarity-closed, no sweep ambiguity) and its `{cx,cy,r}` adapter matches B1
-outputs — the geometry is proven and needs no new kernels. But:
+outputs — the geometry is proven and needs no new kernels. The former
+objections are each closed by a specified delta (not by implementation):
 
-- there is **no persisted `circle` kind**: adding one touches an **inventory**
-  of **26 `switch (entity.type)` sites** (21 files) and **33 files with
-  `case 'arc'`** (27 in `src/engine/cad`), plus engine-scope consumer greps
-  naming fillet 11 / trim 72 / reverse 29 / offset 93 files. These are
-  candidate consumer surfaces, **untested — an inventory, not a list of
-  failures**;
-- there is **no model-space DXF `CIRCLE`** emitter or re-import;
-- a new persisted kind means a schema/round-trip/revision/undo/clipboard
-  delta and an equivalence rule against a legacy 0/360 arc;
-- none of that is specified or tested by this study.
+- **Consumer surface**: all 32 dispatch sites classified per-site
+  (SUPPORT/GENERIC/REFUSAL/N-A) in `circle-entity-study.md` §6; grep
+  inventories collapsed to semantic sites. Deterministic refusals (TRIM/
+  EXTEND/FILLET/REVERSE/OFFSET/parcel/feature conversion, curve tables)
+  are valid bounded contracts, not gaps.
+- **DXF**: native model-space `CIRCLE` emitter specified (`model.circles` +
+  groups 10/20/30/40, reusing the paper-space writer); general DXF import
+  is globally absent and NOT_APPLICABLE.
+- **Schema**: additive `circle` kind inside project version 2, no version
+  bump, no migration (no intentional 0/360 drafting circle exists in any
+  production fixture, example, or corpus file — only test synthetics, which
+  stay arcs). Validators enumerate kinds and get explicit arms
+  (`dxf-transform-persistence.md` §4).
+- **Blocks**: circle may nest as a block child; uniform/rotation/mirror/
+  translation supported; non-uniform block scale fails closed (no silent
+  mean-scale, no ellipse conversion in B1).
 
-A is the semantically correct identity, but its identity/consumer/schema
-delta is a large, enumerated-in-principle, **unspecified** surface — not a
-named bounded delta. It therefore fails G7/G9/G10.
+What was 'large and unspecified' is now an enumerated, bounded delta.
 
-## 4. Unresolved policy/design inputs (the decision to make)
+## 4. Formerly unresolved inputs — all closed
 
-1. **Persisted identity** — adopt a first-class `circle` kind (A) or keep
-   full-sweep arcs (B1)? This fixes the schema/migration and legacy-arc
-   canonicalization question.
-2. **Full-sweep snap/handle + block contract** — the complete set of sites
-   where `endpoint`/`midpoint`/`arc-midpoint`/grips are suppressed for a
-   circle, **and** the block-route contract (expansion must preserve or refuse
-   a lost sweep; non-uniform block scale must fail closed or convert) if B1 is
-   chosen. Annotation/dimension anchor behavior on a full-sweep arc is
-   UNEXECUTED.
-3. **First-class circle consumer contract** — per-site arm-or-refusal for the
-   26 switches and the trim/fillet/reverse/offset/parcel/table/DXF/spatial/
-   properties paths, plus the DXF `CIRCLE` emitter/re-import round-trip, if A
-   is chosen.
-4. **Construction modes for B1** — the slice itself is already bounded
-   (Center/Radius + Center/Diameter); TTR/TTT deferred.
+1. **Persisted identity** — decided: first-class `circle` kind (this
+   verdict). Additive inside version 2; no migration; test synthetics with
+   0/360 arcs stay arcs.
+2. **Full-sweep snap/handle + block contract** — closed for B1 by rejection;
+   for A there is no sweep to preserve and no endpoint/midpoint to suppress
+   (never emitted). Block contract: nest allowed, non-uniform fails closed.
+   Annotation/dimension anchors: center + rim point (specified in
+   `snaps-intersections.md`).
+3. **First-class consumer contract** — enumerated per site in
+   `circle-entity-study.md` §6 (no silent arc treatment anywhere).
+4. **Construction modes for B1** — Center/Radius + Center/Diameter (unchanged).
+
+No remaining semantic choice requires further policy. What remains is
+implementation, review, and tests — the B1 plan in `phase-b1-plan.md`.
 
 ## 5. What is authorized now
 
 - The **B1 slice scope** (Center/Radius + Center/Diameter) is settled and
-  recorded in `phase-b1-plan.md`.
-- **No** representation is authorized for implementation. Circle stays
-  disabled until the policy above is decided and B1 lands.
-- No production `src/`, no schema, no tolerance, and no default is changed by
-  this phase.
+  recorded in `phase-b1-plan.md` — now implementable against the
+  first-class circle contract.
+- **Authorized**: first-class `CadCircleEntity` production implementation
+  per `phase-b1-plan.md` (a future phase; this study changes no `src/`).
+- Circle stays disabled until B1 lands. No production `src/`, no schema
+  version change, no tolerance, and no default is changed by this phase.

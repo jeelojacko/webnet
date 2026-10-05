@@ -108,3 +108,11 @@ Pinned: origin-centered exact quadrants; radius error at world offsets
   (no dedupe); A defines a clean circle snap set.
 - B3 additionally intersects like a full circle while measuring zero length —
   further evidence B3 must be rejected.
+
+## 7. Circle B1 grip + dimension law (specified)
+
+- Grips (minimal): a `circle-center` grip (move) + one `circle-radius`
+  grip at `(cx+r, cy)` (resize); no fake start/end grips.
+- Dimensions: `DIMRADIUS`/`DIMDIAMETER` associate via a center anchor +
+  rim-point reference; arc-start/arc-end anchors are refused for circles.
+  Other arc-specific labels/tables explicitly refuse/defer (codes only).

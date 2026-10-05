@@ -1,107 +1,67 @@
-# B1 plan — Circle construction slice (Center/Radius + Center/Diameter)
+# B1 plan — first-class Circle implementation (Center/Radius + Center/Diameter)
 
-Status: **BLOCKED on the representation policy** (`decision.md` =
-`POLICY_REQUIRED_CIRCLE_REPRESENTATION`). B1 cannot start until one persisted
-identity (A or B1) and its snap/consumer contract are decided. `Circle` stays
-disabled.
+Status: **AUTHORIZED by `decision.md` = `GO_FIRST_CLASS_CAD_CIRCLE_ENTITY**
+(study phase changes no `src/`; Circle stays disabled until this plan
+lands). Persisted law: `{type:'circle', centerX, centerY, radius}`, finite
+center, radius above the CAD geometric floor, no sweep fields, no
+arc conversion. Deferred: 2-Point/3-Point, TTR/TTT, TRIM/EXTEND/FILLET/
+REVERSE/OFFSET on circles (explicit refusals), parcel/feature conversion,
+curve tables, DXF import (global gap).
 
-## 1. Settled B1 scope
+## 1. Representation / type / persistence
 
-- Modes: **Center/Radius** (pick center, pick radius point) and
-  **Center/Diameter** (pick two diameter endpoints). Both are
-  single-solution closed forms reusing `cadPointOnCircle` / `cadDistance`.
-- Deferred past B1: 2-Point (folds to Center/Diameter), 3-Point (one
-  collinear guard), TTR/TTT (multi-solution Apollonius infrastructure absent).
-- Out of scope: ellipse, hatch, best-fit, global infra, schema migration
-  beyond what the chosen identity requires.
+- `cadTypes.ts`: `CadCircleEntity` + `CadEntity` + `CadBlockChild` arms.
+- `cadPersistence.ts`: clone/sanitize arms; no version bump (additive v2),
+  no migration.
+- `cadMlightcadAdapter.ts`: extend spike union + `AcDbCircle` arm.
+- `landxmlCadProject.ts`: default-skip stands (no change).
+- Tests: round-trip old files unchanged + circle save/reopen exact.
 
-## 2. Files for the construction slice (policy-independent)
+## 2. Bounded consumer arms / refusals
 
-Mirrors the landed RECTANGLE/POLYGON Shapes V1 wiring.
+- Per `circle-entity-study.md` §6 table (32 sites): SUPPORT arms
+  (bounds, names, clipboard, block sources/persist/preview/selection,
+  feature default-null untouched); GENERIC untouched (annotation-only
+  switches, LandXML default); REFUSAL codes for trim/extend/fillet/
+  reverse/offset/parcel/feature/tables.
+- Block contract: nesting allowed; non-uniform block scale fails closed.
+- `translateEntity` + `cadTransformGeometry.ts`: similarity arm; affine
+  refusal inherited.
 
-- `src/engine/cad/cadGeometryShapeBuilders.ts` — add
-  `buildCircleCenterRadius(...)` / `buildCircleCenterDiameter(...)` pure
-  helpers returning `{center, radius}` (degeneracy: `r<=0`,
-  `COINCIDENT_ENDPOINTS`, non-finite).
-- `src/engine/cad/cadTransactionsShapeCommands.ts` — add
-  `CIRCLE` (Center/Radius) and `CIRCLECD` (Center/Diameter) command
-  definitions; **the entity write arm is representation-specific (below)**.
-- `src/hooks/surveyCad/useSurveyCadCommandTypes.ts` — add `'CIRCLE'` to the
-  command-key union + session state (`phase: center | radius | diameter`).
-- `src/hooks/surveyCad/useSurveyCadCommandStarters.ts` — child starters.
-- `src/hooks/surveyCad/useSurveyCadCommandSession.ts` — phase machine.
-- `src/hooks/surveyCad/useSurveyCadCommandConstruction.ts` — commit path.
-- `src/hooks/surveyCad/useSurveyCadCommandPreview.ts` — live preview.
-- `src/hooks/surveyCad/useSurveyCadCommandText.ts` — prompts.
-- `src/hooks/surveyCad/useSurveyCadCommandHelpText.ts` — help.
-- `src/hooks/surveyCad/useSurveyCadCommandLifecycle.ts` — empty-input
-  defaults/guards.
-- `src/cad-app/shell/cadCommandRegistry.ts` — `session('CIRCLE', …)` +
-  `session('CIRCLECD', …)`.
-- `src/cad-app/shell/cadRibbonToolFamilies.ts` — `shapes-circle` variant
-  (currently `Circle` is a planned/unimplemented face).
-- `tests/cad_draw_circle_b1.test.ts` (new) + touched shell/registry suites.
+## 3. Render / spatial / snaps / grips / properties / dimensions
 
-## 3. Representation-specific delta — path A (first-class circle)
+- `cadRenderer.ts`: circle primitive; `cadSpatialBounds.ts` center±r;
+  `cadSpatialEntityCandidates.ts`: center/quadrant/nearest/tangent/perp/
+  intersection (never endpoint/midpoint); `cadSpatialIndex.ts` arm.
+- Grips: `circle-center` + `circle-radius` at (cx+r, cy).
+- Properties: centerX/Y, radius, diameter, circumference, area.
+- `DIMRADIUS`/`DIMDIAMETER` via center + rim-point anchor.
 
-If policy selects `GO_FIRST_CLASS_CAD_CIRCLE_ENTITY`:
+## 4. Native DXF CIRCLE
 
-- `src/engine/cad/cadTypes.ts` — `CadCircleEntity` + `CadEntity` union arm.
-- All **26 `switch (entity.type)` sites** (21 files; list in `forensics.md`
-  §3): arm or explicit refusal each.
-- `src/engine/cad/cadPersistence.ts`, `cadMlightcadAdapter.ts`,
-  `landxmlCadProject.ts` — persist/parse arm + schema/version handling.
-- `src/engine/cad/dxf/dxfExportModel.ts` — `model.circles` array; new
-  `CIRCLE` emitter (groups 10/20/40) in `dxf/dxfSerializer.ts`; re-import.
-- Snap/bounds/render arms: `cadSpatialEntityCandidates.ts`,
-  `cadSpatialBounds.ts`, `cadSpatialIndex.ts`, `cadRenderer.ts`,
-  `cadProperties.ts`, `cadEntityNames.ts`,
-  `SurveyCadPreview.geometry.ts`.
-- Consumer arms/refusals: trim, fillet, reverse, offset, parcel, tables,
-  transforms, clipboard, blocks (engine-scope greps: fillet 11 / trim 72 /
-  reverse 29 / offset 93 files — **untested inventories, not defect lists**).
-- `tests/cad_circle_entity_*.test.ts` (persistence round-trip, per-switch,
-  DXF round-trip) + parity/regression.
+- `dxfExportModel.ts`: `model.circles`; serializer CIRCLE groups
+  10/20/30/40 reusing the paper writer; focused serializer/export tests.
+  No polygon approximation, no ARC fallback, no import work.
 
-## 4. Representation-specific delta — path B1 (full-sweep arc, B1 0/360)
+## 5. Center/Radius + Center/Diameter transactions / sessions / ribbon
 
-If policy selects `GO_FULL_SWEEP_CAD_ARC_ENTITY`:
+- `cadGeometryShapeBuilders.ts`: `buildCircleCenterRadius/Diameter` pure
+  helpers (`r<=0`, `COINCIDENT_ENDPOINTS`, non-finite → null).
+- `cadTransactionsShapeCommands.ts`: `CIRCLE`/`CIRCLECD` on current layer,
+  ByLayer, one undo entry; registry + starters + 4-file session seams
+  (mirror the Shapes V1 wiring); ribbon rows un-planned with truthful
+  hints, text face.
 
-- Entity write: `CadArcEntity` with `startAngleDeg=0`, `endAngleDeg=360`
-  (no new kind). Command/builders produce that form.
-- Full-sweep snap/handle contract: suppress `endpoint`, `midpoint`
-  (`arc-midpoint`) and start/end grips when `|sweep| ≈ 360` in
-  `cadSpatialEntityCandidates.ts`, `cadSpatialBlockSnaps.ts`,
-  `cadSpatialIndex.ts`, `cadTransactionsEntityTransforms.ts`,
-  `cadAnnotationAnchorFromCommandPoint.ts`, `cadEntityNames.ts`.
-- Block contract (executed gap): `expandBlockReference` currently collapses
-  the 0/360 child to 0/0 (`cadNormalizeAngleDeg(360)=0`) and mean-scales a
-  non-uniform block scale (`scaleX=2,scaleY=1` → radius 75) instead of
-  refusing. The chosen identity must preserve the sweep or fail closed and
-  must fail-closed-or-convert on non-uniform block scale (an ellipse is not
-  persistable).
-- DXF: keep 0/360 verbatim (`dxfExportModel.ts:452-460`,
-  `dxfSerializer.ts:152`); record the host-normalization assumption or add an
-  explicit normalization.
-- Endpoint-based commands (trim/extend/fillet/reverse/offset) + parcel/
-  feature-line conversion: define behavior for `start==end` (correct result
-  or fail-closed refusal).
-- `tests/cad_circle_full_sweep_b1.test.ts` (snap suppression, DXF 0/360,
-  command behavior on `start==end`) + parity/regression.
+## 6. Tests / browser QA
 
-## 5. Single shared authority for both paths
+- Unit: builders, transactions, per-switch arms, DXF bytes, revision,
+  clipboard, transform classes, snap suppression (no endpoint/midpoint).
+- Browser: Center/Radius + Center/Diameter flows, grips, save/reopen,
+  refusal paths, 0 page/console errors + PNGs.
 
-Both paths need one shared predicate `cadArcIsFullCircle(entity)` /
-`cadCircleOf(entity)` so no consumer re-derives `|sweep|≈360` independently.
-This helper is the mechanism the policy decision must name; it is the
-difference between a bounded audit (B1) and a new identity (A).
+## 7. Adversarial review
 
-## 6. Order of work once policy is set
-
-1. Land the chosen representation (A: kind + 26 arms + DXF + schema;
-   B1: full-sweep helper + snap/handle/command contract).
-2. Land the common construction slice (§2).
-3. Focused tests + `npm run lint`, `npm run typecheck`, `npm run test:agent`,
-   build; parity/browser as required for the chosen path.
-4. Keep `Circle` disabled until step 1–3 pass; no `src/` change before the
-   policy decision.
+- Re-run the B0 attack list against the implementation (fake endpoints,
+  360 normalization, block sweep/scale, DXF equivalence, non-uniform
+  transforms, snap leakage, migration understatement, switch undercount).
+- Keep Circle disabled until review passes.

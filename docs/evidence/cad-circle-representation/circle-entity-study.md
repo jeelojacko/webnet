@@ -48,17 +48,43 @@ consumer that reads them. Its natural snap set is `center`, `quadrant`
 `endpoint`/`midpoint`/`arc-midpoint` are never emitted, satisfying the
 invariant by construction.
 
-## 3. Contamination surface (what A must touch)
+## 3. Contamination surface → per-site contract (specified)
 
-Adding `circle` to `CadEntity` makes every exhaustive entity switch either
-handle it or explicitly refuse it. Verified surface (**untested inventory**):
-**26 `switch (entity.type)` sites** (21 files), **33 files with `case 'arc'`**
-(27 under `src/engine/cad`). Downstream, engine-scope greps name: fillet
-**11**, trim **72**, reverse **29**, offset **93** files. Named consumer
-families the mission lists: trim, fillet, reverse, offset, parcel, tables, DXF,
-spatial, properties. Each would need either a correct circle arm or a
-fail-closed refusal; **none was implemented or tested by this study, so these
-counts are an inventory, not a list of defects**.
+All 32 dispatch sites (`switch (entity.type|child.type)`: 26 + 6) classified.
+Contract: SUPPORT = add circle arm; GENERIC = kind-agnostic, no change;
+REFUSAL = deterministic fail-closed code; N-A = unreachable for circles.
+
+| site | arc behavior today | circle contract | delta |
+|---|---|---|---|
+| `cadTypes.ts` union + `CadBlockChild` | no circle kind | SUPPORT: add `CadCircleEntity{cx,cy,r}` to both (nesting allowed) | type-only |
+| `cadPersistence.ts:137` clone/sanitize | per-kind clone | SUPPORT: verbatim clone arm | ~10 lines |
+| `cadProjectState.ts:95` bounds | endpoints-only arm | SUPPORT: center±r arm | 3 lines |
+| `cadRenderer.ts:1323` | arc primitive | SUPPORT: emit circle primitive (or two-arc path) | small |
+| `cadSpatialBounds.ts:205` | arc bounds | SUPPORT: center±r | small |
+| `cadSpatialEntityCandidates.ts:449` | arc candidates | SUPPORT: center/quadrant/nearest/tangent/perp/intersection; never endpoint/midpoint | bounded |
+| `cadTransactionsClipboardCommands.ts:64` | per-kind copy | SUPPORT: round-trip + layer remap (default-breaks silently today) | small |
+| `cadTransactionsEntityTransforms.ts:25,239,316` | translate/grip-edit/grips | SUPPORT: center shift, center+radius grips, per-vertex n/a | small |
+| `cadTransformGeometry.ts:110` | affine refused for curved | SUPPORT: similarity arm; affine refusal inherited unchanged | small |
+| `cadProperties.ts:414` | arc rows | SUPPORT: centerX/Y, radius, diameter, circumference, area rows | small |
+| `cadEntityNames.ts:59,74` | display labels | SUPPORT: `'Circle'` label | trivial |
+| `dxfExportModel.ts:270` + `dxfSerializer.ts` | ARC emitter | SUPPORT: `model.circles` + native CIRCLE groups 10/20/30/40 | bounded |
+| `dxfBlockExport.ts:133` | child emitter | SUPPORT: child CIRCLE arm | small |
+| `cadMlightcadAdapter.ts:4` | AcDb* arms | SUPPORT: extend spike union + `AcDbCircle` arm (insertion-marker fallback exists as precedent) | small |
+| `cadBlockSources.ts:26,71` | eligibility/anchors | SUPPORT: circle eligible + center anchor | small |
+| `cadBlocks.ts:170,274` | expand/points | SUPPORT: preserve identity; non-uniform scale fails closed | small |
+| `cadSpatialBlockSnaps.ts:64` | child snaps | SUPPORT: circle candidates in blocks | small |
+| `cadBlockPersistence.ts:27` | child persist | SUPPORT: circle child arm | small |
+| `cadBlockPreview.tsx:35`, `cadBlockSelectionGeometry.ts:29` | child geometry | SUPPORT: rim-sampled points/segments | small |
+| anchor `cadAnnotationAnchorFromCommandPoint.ts:103` | arc anchors | SUPPORT: center + rim-point anchor; arc-start/end refused for circles | small |
+| `cadAnnotationPersistence.ts:530`, `dxfAnnotationExport.ts:404`, annotation snapshot/copy, `dxfBlockExport` labels | annotation-only switches | GENERIC: circle never reaches them (CadAnnotationEntity kind) | none |
+| `cadFeatureLineCreate.ts:136`, LandXML `convertEntities` | default null/skip | GENERIC: circle refused/skipped by existing defaults | none |
+| `cadMlightcadAdapter` labels/tables precedent | insertion markers | GENERIC fallback pattern exists | none |
+| trim/extend/fillet/reverse/offset command dispatch | endpoint-based | REFUSAL: deterministic codes (a TRIM that would arc-ify a circle is out of B1) | codes only |
+| parcel/feature-line conversion, curve tables/reports | arc-only | REFUSAL: not convertible; explicit codes | codes only |
+| LandXML/DWG import | globally absent | N-A: no general import path exists for any entity | none |
+
+No silent arc treatment anywhere: every site either supports the circle
+truthfully, needs no change, or refuses deterministically.
 
 Schema/persistence is a second surface: `cadPersistence.ts`,
 `cadMlightcadAdapter.ts`, `landxmlCadProject.ts` and `dxf/dxfExportModel.ts`
@@ -79,19 +105,21 @@ re-import would be new.
 - Render: a circle maps to a trivial SVG `<circle>` or the existing two-arc
   path.
 
-## 5. What A does **not** have evidence for
+## 5. Specified (this correction pass)
 
-- no production entity kind, union arm, or persistence schema;
-- no per-site contract for the 26 switches (arm vs refusal) or the
-  trim/fillet/reverse/offset/parcel/table paths;
-- no model-space DXF `CIRCLE` emitter or import round-trip;
-- no block-expansion arm (a `circle` child in a block) or block-scale
-  contract; the B1 block route was measured to collapse `0/360`→`0/0` and to
-  mean-scale non-uniform scales, and A shares that block path;
-- no equivalence/canonicalization rule against a legacy 0/360 arc;
-- no revision/undo/clipboard/parity behavior.
+- Persisted kind + union arms (`CadEntity`, `CadBlockChild`); no version
+  bump (additive v2); no migration (no intentional 0/360 drafting circle in
+  any production fixture, example, or corpus file — only test synthetics,
+  which stay arcs).
+- Per-site contract above (SUPPORT/GENERIC/REFUSAL/N-A); trim/extend/
+  fillet/reverse/offset/parcel/feature/tables refuse deterministically.
+- Native model-space DXF `CIRCLE` emitter (`model.circles`, groups
+  10/20/30/40); general DXF import stays a global gap (N-A).
+- Mlightcad: extend spike union + `AcDbCircle` arm.
+- Block contract: nesting allowed; non-uniform block scale fails closed.
+- Grips: center grip + one radius/quadrant grip at (cx+r, cy); no fake
+  endpoints. Dimensions: DIMRADIUS/DIMDIAMETER via center + rim-point
+  anchor; arc-start/end anchors refused for circles.
 
-The [{cx,cy,r} adapter match](#1-adapter-control-study-side-cxcyr) proves the
-geometry is trivial; it does not prove the identity/consumer/schema delta is
-complete. That delta is large, enumerable in principle, but unspecified by
-this study — the basis for the policy verdict in `decision.md`.
+The adapter match proves the geometry is trivial; the table above proves
+the identity/consumer/schema delta is bounded and explicit.
