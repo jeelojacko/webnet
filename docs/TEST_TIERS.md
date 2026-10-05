@@ -140,11 +140,10 @@ synthetic CRS harness + industry parity), and `build-smoke` (build + CLI smoke
 + legacy corpus gates) run in parallel. The classifier is fail-closed:
 docs/components/study-only changes and CAD geometry under `src/engine/cad/**`
 are the explicitly recognized safe-only paths (only positively verified
-CAD drafting-only paths — annotation, display/naming/layer/appearance metadata,
-shape builders/transactions — are exempt; every other `src/engine/cad/**`
-path, including unknown/new files and worker-consumed compute (`grading/`,
-`surfaces/`, `tin/`, contours, sections, profiles, analysis and related
-caches/types), stays numerical like the rest of the engine). Unknown,
+CAD drafting-only paths — 12 annotation files, layer/symbol/draft metadata,
+shape builders/transactions — are exempt; display/naming/appearance type
+modules are worker-reachable and stay numerical, as does every other
+`src/engine/cad/**` path, including unknown/new files). Unknown,
 mixed, non-CAD engine, worker, C++, test-infrastructure, `tests/evidence/`, and
 workflow changes require numerical certification. Numerical-sensitive pull
 requests build WASM once, run CTest, `npm run test:wasm`, and

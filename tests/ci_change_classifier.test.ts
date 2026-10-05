@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs';
-import { dirname, join, resolve } from 'node:path';
+import { dirname, join, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { classifyChangedFiles } from '../scripts/ciChangeClassifier.mjs';
 
@@ -80,6 +80,8 @@ describe('CI change classifier', () => {
 // Static relative imports only (`import type` lines skipped); unresolvable
 // specifiers are skipped (fail-closed elsewhere covers unknown files).
 // Test files are excluded as traversal sources (test-only edges prove nothing).
+const toPosixPath = (value: string): string => value.split(sep).join('/');
+
 const collectWorkerReachableCadModules = (repoRoot: string): string[] => {
   const sources = new Map<string, string>();
   const walkSources = (dir: string): void => {
@@ -96,12 +98,16 @@ const collectWorkerReachableCadModules = (repoRoot: string): string[] => {
   const edges = new Map<string, Set<string>>();
   for (const [file, text] of sources) {
     const clean = text
+      .replace(/import\s+type\s[\s\S]*?;/g, '')
       .split('\n')
       .filter((line) => !/^\s*import\s+type\b/.test(line))
       .join('\n');
     const targets = new Set<string>();
-    for (const match of clean.matchAll(/from\s+['"](\.{1,2}\/[^'"]+)['"]/g)) {
-      const resolved = resolve(dirname(file), match[1]);
+    const specs = new Set<string>();
+    for (const match of clean.matchAll(/from\s+['"](\.{1,2}\/[^'"]+)['"]/g)) specs.add(match[1]);
+    for (const match of clean.matchAll(/import\(\s*['"](\.{1,2}\/[^'"]+)['"]\s*\)/g)) specs.add(match[1]);
+    for (const spec of specs) {
+      const resolved = resolve(dirname(file), spec);
       for (const candidate of [resolved, `${resolved}.ts`, `${resolved}.tsx`, join(resolved, 'index.ts')]) {
         if (existsSync(candidate) && statSync(candidate).isFile() && sources.has(candidate)) {
           targets.add(candidate);
@@ -112,7 +118,7 @@ const collectWorkerReachableCadModules = (repoRoot: string): string[] => {
     edges.set(file, targets);
   }
   const seen = new Set<string>();
-  const queue = [...sources.keys()].filter((file) => file.includes('/src/workers/'));
+  const queue = [...sources.keys()].filter((file) => toPosixPath(file).includes('/src/workers/'));
   while (queue.length > 0) {
     const file = queue.pop()!;
     if (seen.has(file)) continue;
@@ -121,6 +127,6 @@ const collectWorkerReachableCadModules = (repoRoot: string): string[] => {
       if (!seen.has(dep)) queue.push(dep);
     }
   }
-  const prefix = `${repoRoot}/`;
-  return [...seen].filter((file) => file.includes('/src/engine/cad/')).map((file) => file.slice(prefix.length)).sort();
+  const prefix = toPosixPath(`${repoRoot}/`);
+  return [...seen].filter((file) => toPosixPath(file).includes('/src/engine/cad/')).map((file) => toPosixPath(file).slice(prefix.length)).sort();
 };
