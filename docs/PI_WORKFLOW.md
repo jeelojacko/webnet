@@ -31,8 +31,11 @@ clangd only on C++ edits — no extra gating needed.
 ## Model/provider assignments (verified)
 
 - First worker: pinned default `opencode-go/muse-spark-1.3-contributor`, no override.
-- Extra parallel workers: `commandcode/deepseek/deepseek-v4.1-flash` on high
-  reasoning (smoke-proven; requires `$CMD_API_KEY`).
+- DEFAULT is one worker. Extra parallel workers only for genuinely independent,
+  substantial scopes where wall-time savings clearly exceed coordination cost
+  (never for discovery, small fan-out, or bounded fixes):
+  `commandcode/deepseek/deepseek-v4.1-flash` on high reasoning (smoke-proven;
+  requires `$CMD_API_KEY`).
 - NEVER use `opencode-go/deepseek/*`: opencode-go carries Muse Spark, not
   DeepSeek (HTTP 400). Retries stay on the original model.
 - OpenAI models always via `openai-codex/<model>` (Codex auth).
@@ -42,15 +45,17 @@ clangd only on C++ edits — no extra gating needed.
 - Removed from defaults: Ponytail (+ all `ponytail*` skills/mentions),
   `pi-analytics`, browser extension (moved to `extensions-removed/`, not
   deleted — re-enable deliberately for live exploratory browser work).
-- Kept: Codemode + FFF (default repo combo), pi-lsp, pi-web-access
-  (Researcher-first), statusline, context-mode package installed but
-  `ctx_*` reserved for MCP/rare cross-session memory only.
+- Kept: Codemode + FFF (default repo reading/search/filtering route), pi-lsp, pi-web-access
+  (Researcher-first), statusline. Context Mode package stays installed for its
+  MCP bridge; `ctx_*` memory/search/index is rare/opt-in, while `ctx_*`
+  batch/shell may be used when materially more ergonomic for bounded shell
+  batching (never giant recursive output; keep FTS exclusions).
 
 ## Validation fast-path
 
 While editing: LSP + focused tests. Checkpoint: affected tests. Commit: Husky
 lint + typecheck (never run them manually just before the hook). Before PR:
-`test:agent` once. Build if production-affecting; browser only if UI changed;
+`test:agent` once. Build if production-affecting; browser validation via the project's existing Playwright/shell workflow only if UI changed (Pi browser extension opt-in only);
 after reviewer fix: focused tests only. Exact-head CI authoritative. No routine
 WASM/parity/audit/full/legacy suites; audit only on dependency change.
 

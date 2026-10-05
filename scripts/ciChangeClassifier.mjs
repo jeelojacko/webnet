@@ -12,19 +12,42 @@ const SAFE_ONLY = [
   /^src\/components\//,
   /^src\/hooks\//,
   /^src\/study\//,
-  // CAD drafting-only paths are survey-drafting areas that never feed
-  // computed outputs, so CAD-only changes there are explicitly exempt from
-  // numerical certification and take the fast path (still covered by
-  // portable-paths, lint, typecheck, agent tests, build, CLI smoke, corpus,
-  // and parity gates). Worker-consumed CAD compute (grading/surface/tin/
-  // contour/section/profile/analysis engine) is NOT exempt — see the
-  // ALWAYS_NUMERICAL worker-consumed rule below.
-  /^src\/engine\/cad\//,
   /^study-desktop\//,
   /^public\//,
   /^study-content\//,
   /^src\/.*\.(?:css|scss|svg)$/i,
   /^scripts\/study[^/]*\.(?:mjs|ts)$/i,
+];
+
+// CAD drafting-only allowlist (section 1). Every entry below was
+// positively verified: unreachable from src/workers/** even transitively
+// (value-import closure over the repo, 452 files), and never imported by
+// worker-consumed CAD compute (grading/surfaces/tin/contours/sections/
+// profiles/analysis). cadDisplayTypes, cadEntityNames and cadAppearance are
+// deliberately EXCLUDED: all three are transitively reachable from workers.
+// Everything else under src/engine/cad/** fails closed to numerical
+// certification.
+const CAD_SAFE_ONLY = [
+  /^src\/engine\/cad\/annotation\/cadAnnotationAnchorFromCommandPoint\.ts$/,
+  /^src\/engine\/cad\/annotation\/cadAnnotationAnchors\.ts$/,
+  /^src\/engine\/cad\/annotation\/cadAnnotationArrowheads\.ts$/,
+  /^src\/engine\/cad\/annotation\/cadAnnotationPersistence\.ts$/,
+  /^src\/engine\/cad\/annotation\/cadAnnotationPlacement\.ts$/,
+  /^src\/engine\/cad\/annotation\/cadAnnotationSeeds\.ts$/,
+  /^src\/engine\/cad\/annotation\/cadAnnotationSettings\.ts$/,
+  /^src\/engine\/cad\/annotation\/cadAnnotationTextMetrics\.ts$/,
+  /^src\/engine\/cad\/annotation\/cadAnnotationValidation\.ts$/,
+  /^src\/engine\/cad\/annotation\/cadDimensionGeometry\.ts$/,
+  /^src\/engine\/cad\/annotation\/cadDimensionGeometryTypes\.ts$/,
+  /^src\/engine\/cad\/annotation\/cadSurveyLabels\.ts$/,
+  /^src\/engine\/cad\/cadLayers\.ts$/,
+  /^src\/engine\/cad\/cadSurveySymbolLibrary\.ts$/,
+  /^src\/engine\/cad\/cadDraftGlyphs\.ts$/,
+  /^src\/engine\/cad\/cadDraftTables\.ts$/,
+  /^src\/engine\/cad\/cadPointSymbolShape\.ts$/,
+  /^src\/engine\/cad\/cadProjectTransform\.ts$/,
+  /^src\/engine\/cad\/cadGeometryShapeBuilders\.ts$/,
+  /^src\/engine\/cad\/cadTransactionsShapeCommands\.ts$/,
 ];
 
 const ALWAYS_NUMERICAL = [
@@ -38,14 +61,11 @@ const ALWAYS_NUMERICAL = [
   /^cpp\//,
   /^tests\/evidence\//,
   // Engine solve/numeric core (parser, solver, preanalysis, covariance,
-  // numeric backends, WASM bridges). Drafting-only CAD geometry under
-  // `src/engine/cad/**` is the deliberate exception (see SAFE_ONLY); every
-  // other engine path stays fail-closed to numerical certification.
-  // Worker-consumed CAD compute: src/workers import heavily from these
-  // cad/ subtrees, so changes there can alter computed outputs and stay
-  // on numerical certification despite living under src/engine/cad/.
-  /^src\/engine\/cad\/(grading|surfaces|tin|surfaceContours|sections|profiles|surfaceAnalysis|cadSurface|surfaceContour|cadSection|cadProfile|cadVolume|cadAlignment|cadAnalysis|surfaceCompose|cadTransactionsSurface|profileCache|sectionCache|surfaceVolume)\//,
-  /^src\/engine\/(?!cad\/)/,
+  // numeric backends, WASM bridges, worker-consumed CAD compute). Only the
+  // CAD_SAFE_ONLY drafting allowlist above is exempt under src/engine/cad/;
+  // every other engine path — including unknown/new cad/ files — stays
+  // fail-closed to numerical certification.
+  /^src\/engine\//,
   /^src\/workers\//,
   /^src\/cli\.ts$/,
   /^scripts\/(?:phase.*(?:WorkerBridge|Proof)|wasm|cppBuild|benchmarks\/)/i,
@@ -73,6 +93,16 @@ export function classifyChangedFiles(files) {
   }
 
   for (const file of changedFiles) {
+    if (file.startsWith('src/engine/cad/')) {
+      if (!CAD_SAFE_ONLY.some((pattern) => pattern.test(file))) {
+        return {
+          numericalRequired: true,
+          reason: `${file} is not a positively verified drafting-only CAD path`,
+          changedFileCount: changedFiles.length,
+        };
+      }
+      continue;
+    }
     if (ALWAYS_NUMERICAL.some((pattern) => pattern.test(file))) {
       return {
         numericalRequired: true,

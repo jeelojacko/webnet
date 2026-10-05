@@ -139,11 +139,12 @@ GitHub CI (`.github/workflows/ci.yml`) has stable `classify`, `static`,
 synthetic CRS harness + industry parity), and `build-smoke` (build + CLI smoke
 + legacy corpus gates) run in parallel. The classifier is fail-closed:
 docs/components/study-only changes and CAD geometry under `src/engine/cad/**`
-are the explicitly recognized safe-only paths (CAD drafting-only paths
-never reach computed outputs, so they are exempt from numerical
-certification); worker-consumed CAD compute (`grading/`, `surfaces/`, `tin/`,
-contours, sections, profiles, analysis and related caches/types under
-`src/engine/cad/`) stays numerical like the rest of the engine. Unknown,
+are the explicitly recognized safe-only paths (only positively verified
+CAD drafting-only paths — annotation, display/naming/layer/appearance metadata,
+shape builders/transactions — are exempt; every other `src/engine/cad/**`
+path, including unknown/new files and worker-consumed compute (`grading/`,
+`surfaces/`, `tin/`, contours, sections, profiles, analysis and related
+caches/types), stays numerical like the rest of the engine). Unknown,
 mixed, non-CAD engine, worker, C++, test-infrastructure, `tests/evidence/`, and
 workflow changes require numerical certification. Numerical-sensitive pull
 requests build WASM once, run CTest, `npm run test:wasm`, and

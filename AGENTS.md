@@ -96,12 +96,17 @@ WebNet is a browser-based least-squares adjustment application for mixed survey 
 Run `npm install` only when dependencies or the lockfile changed.
 
 Tests are tiered. The authoritative manifest is `scripts/testTiers.ts`; the
-rulebook is `docs/TEST_TIERS.md`. Everyday agent loop:
+rulebook is `docs/TEST_TIERS.md`. Validation hierarchy (see also Process
+below and `docs/TEST_TIERS.md`; do not duplicate the full policy here):
 
-- `npm run lint`
-- `npm run typecheck`
-- `npm run test:agent` (broad regression; ~1 min) plus relevant focused tests
-- `npm run build` when the completion workflow requires it
+- WHILE EDITING: LSP diagnostics + focused/affected tests.
+- COMMIT: Husky owns lint + typecheck (do not run them manually first).
+- PRE-PR: `npm run test:agent` once.
+- PRODUCTION CHANGE: `npm run build` when relevant.
+- SPECIALTY: `test:wasm`, `parity:industry-reference`, `wasm:build`/
+  `cpp:test`, `test:release`, manual `test:evidence` only when the scope
+  requires them.
+- FINAL: exact-head CI is authoritative.
 
 Escalations are not routine. Reach for `test:wasm`, `parity:industry-reference`,
 `wasm:build`/`cpp:test`, `test:release`, or the manual-only `test:evidence` only

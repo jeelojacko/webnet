@@ -70,7 +70,7 @@ cost.
 
 Use `worker` for implementation, mechanical refactors, tests, ordinary debugging, and iterative implementation/test loops. Give worker bounded scope and explicit acceptance criteria.
 
-Prefer splitting work into multiple parallel worker subagents with bounded scopes over giving one worker all the work. Split by independent file, feature, or fix; give each explicit scope, acceptance criteria, and merge order.
+DEFAULT: one worker. Spawn additional parallel workers only when scopes are genuinely independent and substantial and the expected wall-time savings clearly exceed coordination and context cost. Do NOT fan out for ordinary repository discovery, small file fan-out, bounded fixes, or work one worker can inspect efficiently with Codemode/FFF.
 
 Worker model routing: first worker in a batch uses pinned default (`opencode-go/muse-spark-1.3-contributor`, no `model:` override). Every additional parallel worker in same batch spawns with `model: commandcode/deepseek/deepseek-v4.1-flash` on high reasoning. Retries/resumes stay on same model as original spawn. Never use an `opencode-go/deepseek/*` ID: opencode-go carries Muse Spark, not DeepSeek (guessing that prefix returns HTTP 400); DeepSeek Flash lives only on `commandcode` (smoke-proven 2026-10-05, needs `$CMD_API_KEY`).
 
@@ -100,7 +100,7 @@ Reviewer is read-only. It may not edit code, spawn fix subagents, or rerun heavy
 | Commit | Husky runs lint + typecheck; do not run them manually just before commit |
 | Before PR | `npm run test:agent` once |
 | Prod-affecting | `npm run build` |
-| UI change | browser check |
+| UI change | Playwright/shell browser-test workflow (existing specs); the Pi browser extension stays opt-in only, never the default route |
 | After reviewer fix | re-run focused tests |
 | Final | exact-head CI is authoritative |
 
@@ -158,7 +158,7 @@ Respond like smart caveman. Cut all filler, keep technical substance.
 ## Tool routing
 
 - Codemode + FFF are the default for batched reads, filtering, and discovery.
-- Context Mode MCP (`ctx_*`) is for rare cross-session memory only, not routine work.
+- Context Mode (`ctx_*`: `ctx_execute`, `ctx_execute_file`, `ctx_batch_execute`, `ctx_search`, `ctx_index`): Codemode + FFF is the default repo reading/search/filtering route; context memory/search/index is rare/opt-in. The `ctx_*` batch/shell capability MAY be used when materially more ergonomic for bounded shell batching — never mandatory, never for giant recursive output (keep the FTS safety exclusions below). Do not remove Context Mode: MCP routing depends on its native bridge.
 - Graft is opt-in and impact-only: use it for blast radius, callers/callees, and dependency tracing when that is the question. It is not the routine first read. Enforced in role `tools:` lines: only the scout role carries Graft tools; worker/reviewer/researcher do not. For deep worker work, route discovery through a scout first.
 - LSP tools are Worker-only, TypeScript. Enforced in role `tools:` lines: reviewer/scout/researcher carry no LSP tools. Servers start lazily per edited file scope (see `.pi/lsp.json`), so C++ clangd only spawns on C++ edits — no extra gating needed.
 - Web tools belong to Researcher.
@@ -180,7 +180,7 @@ If MCP tools are unavailable but Bash is available, use equivalent Graft CLI com
 
 ## Graft freshness
 
-Graft tools do not rebuild the graph. After code-changing work, before push, run `graft build .` (wiring only; no `--deep` without explicit user approval). `graft/` is git-ignored — a local cache, never commit it; teammates run `graft build` for their own copy. Note `graft check` may still report STALE from the summaries tier (needs `--deep`); the wiring graph is what matters for code search.
+Graft tools do not rebuild the graph. The normal Worker path does NOT run Graft and does NOT rebuild it — no mandatory final gate. If Graft was actually used for the task, or a later Graft query needs fresh wiring, rebuild the wiring graph (`graft build .`) before relying on its results; no `--deep` without explicit reason and approval. `graft/` is git-ignored — a local cache, never commit it; teammates run `graft build` for their own copy. Note `graft check` may still report STALE from the summaries tier (needs `--deep`); the wiring graph is what matters for code search.
 
 ## Context-mode ctx tools
 
