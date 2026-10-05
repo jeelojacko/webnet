@@ -111,5 +111,6 @@ corpus `corpus.json` and its sha are preserved and cited by the docs.
   PASS (16s), core PASS (8m31s), numerical PASS (2m26s). The correction
   pass changes only docs, study scripts/tests metadata strings, corpus
   verdict fields, and TODO — no `src/`, so production gates are
-  unaffected; the post-push run for the corrected head is recorded in the
-  PR body.
+  unaffected.
+- Post-correction run 37352355235 (head `0bc0c913`): classify PASS (15s),
+  core PASS (9m0s), numerical PASS (2m21s). Exact-head CI green.
