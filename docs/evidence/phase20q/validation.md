@@ -98,12 +98,12 @@ corpus data.
 - Zero `src/` changes; 14 stashes intact; Phase 20O
   `POLICY_REQUIRED_NONCOLLINEAR_PLAN_LAW` and Phase 20P.1 production
   unchanged.
-- Verdicts are family-scoped: relative-elevation
-  `GO_SLOPED_SOURCE_VERTICAL_PROFILE_S1`; distance/elevation
-  `POLICY_REQUIRED_SLOPED_SOURCE_Z_LAW` pending the named per-checkpoint-source
-  Z validator extension; step `NO_GO_JOINT_Z_STEP_SOURCE_DISCONTINUITY`. No
-  unified sloped GO is claimed while a family is rejected by the current
-  validator.
+- Verdicts are unified for sloped source:
+  `GO_SLOPED_SOURCE_VERTICAL_PROFILE_S1` for Distance, RelativeElevation,
+  and Elevation (family-specific implementation delta: distance/elevation
+  additionally need the named per-checkpoint-source-Z validator extension);
+  step `NO_GO_JOINT_Z_STEP_SOURCE_DISCONTINUITY`. Current production stays
+  fail-closed for all sloped transitions until the delta lands.
 - Adversarial self-check applied: no source-geometry mutation claimed for S1;
   no hidden smoothing parameter (S3's τ is exposed, rejected); topology
   expectation declared **before** mesh (no circularity); worker numbers come
@@ -111,5 +111,7 @@ corpus data.
   the regen's byte-identity is disclosed as assembler determinism, not an
   independent oracle (the read-back adds real independence); no C1 rule
   invented (the joint tangent break is the survey's own); no cross-family
-  overclaim (the family split is the current validator's, stated explicitly);
+  overclaim (validator state is stated as implementation fact, with the
+  per-checkpoint-Z extension fully specified and proved — no policy choice
+  remains open);
   no `NON_COLLINEAR` widening.

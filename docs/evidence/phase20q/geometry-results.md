@@ -121,13 +121,13 @@
 
 ## 6. Decisive reading
 
-- **Sloped (family-scoped)**: S1 is source-exact, C0, certifies, reduces
-  bitwise, and stabilises under every transform for **all** families. The
-  current production validator accepts it only for **relative-elevation**
-  (`GO_SLOPED_SOURCE_VERTICAL_PROFILE_S1`); distance/elevation are rejected
-  `OFF_LAW` by the jointZ-fixed validator and are
-  `POLICY_REQUIRED_SLOPED_SOURCE_Z_LAW` pending the proven per-checkpoint-
-  source-Z extension. S2 falsifies the source; S3 hides τ.
+- **Sloped (unified GO)**: S1 is source-exact, C0, certifies, reduces
+  bitwise, and stabilises under every transform for **all** families, so the
+  verdict is `GO_SLOPED_SOURCE_VERTICAL_PROFILE_S1` for Distance,
+  RelativeElevation, and Elevation. The current production validator accepts
+  it only for **relative-elevation**; distance/elevation are rejected
+  `OFF_LAW` by the jointZ-fixed validator pending the proven per-checkpoint-
+  source-Z extension (implementation work, not policy). S2 falsifies the source; S3 hides τ.
 - **Step**: every source-preserving law is topologically refused; the one
   certifying law mutates the source; J4 is reversal-asymmetric. A step is a
   source discontinuity with no lawful planar-strip representation.

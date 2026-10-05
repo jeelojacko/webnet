@@ -98,9 +98,8 @@ validator only accepts untampered sloped S1 for **relative-elevation**
 rejected `GRADING_AGREEMENT_TRANSITION_OFF_LAW` by the jointZ-fixed validator.
 The study-side per-checkpoint-source-Z extension PASSes all 666 S1 rows per
 family and the extended tile reproduces S1 exactly (`extensionDev=0`), so the
-honest verdict is family-scoped: `GO_SLOPED_SOURCE_VERTICAL_PROFILE_S1` for
-relative-elevation; `POLICY_REQUIRED_SLOPED_SOURCE_Z_LAW` for
-distance/elevation pending that `src/` validator extension (`decision.md`,
-`production-delta.md` §1.4). Both rest on the bounded delta: relax `NON_FLAT`
+honest verdict is unified: `GO_SLOPED_SOURCE_VERTICAL_PROFILE_S1` for
+all three families (the validator extension for distance/elevation is bounded
+implementation work, `decision.md`, `production-delta.md` §1.4). All rest on the bounded delta: relax `NON_FLAT`
 + per-station-`Z(s)` tiler extension (+ the validator extension for
 distance/elevation); relaxing admission alone is not enough.

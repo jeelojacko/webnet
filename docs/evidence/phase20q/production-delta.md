@@ -2,12 +2,12 @@
 
 - Branch: `research/phase20q-vertical-profile-transition-law`, baseline
   `4998f70c`. STUDY ONLY; zero `src/` changes. Nothing below is implemented,
-  authorized, or scheduled. Verdicts from `decision.md`:
-  relative-elevation `GO_SLOPED_SOURCE_VERTICAL_PROFILE_S1`; distance/elevation
-  `POLICY_REQUIRED_SLOPED_SOURCE_Z_LAW`; step
+  authorized, or scheduled. Verdicts from `decision.md`: unified sloped
+  `GO_SLOPED_SOURCE_VERTICAL_PROFILE_S1` (all families, with a
+  family-specific implementation delta); step
   `NO_GO_JOINT_Z_STEP_SOURCE_DISCONTINUITY`.
 
-## 1. Sloped delta (required for the GO / POLICY_REQUIRED, future phase only)
+## 1. Sloped delta (required for the unified GO, future phase only)
 
 The law is unchanged; admission, the tile's vertical input, and (for
 distance/elevation) the worker validator move.

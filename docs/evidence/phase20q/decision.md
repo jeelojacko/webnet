@@ -1,4 +1,4 @@
-# Phase 20Q decision — vertical-profile transition law (sloped decided per family)
+# Phase 20Q decision — vertical-profile transition law (unified sloped GO; step NO_GO)
 
 - Branch: `research/phase20q-vertical-profile-transition-law`, baseline
   `4998f70c` (PR #166 merge). Method: STUDY ONLY. Zero `src/` changes.
@@ -11,35 +11,35 @@
   deflection, frozen); Phase 20P/20P.1 sparse collinear sets (plan gaps).
   Vertical profile was untouched by both.
 
-## Verdicts (sloped is FAMILY-SCOPED; step unchanged)
+## Verdicts (unified sloped GO; step unchanged)
 
-- **Sloped source — relative-elevation:**
+- **Sloped source — Distance, RelativeElevation, and Elevation:**
   **`GO_SLOPED_SOURCE_VERTICAL_PROFILE_S1`.**
-- **Sloped source — distance & elevation:**
-  **`POLICY_REQUIRED_SLOPED_SOURCE_Z_LAW`** — the S1 law is sound, but the
-  current production validator does not accept it for these families; the
-  named per-checkpoint-source-Z validator extension is required (a `src/`
-  change, out of study scope).
 - **Joint Z step (coincident-XY, distinct-Z):**
   **`NO_GO_JOINT_Z_STEP_SOURCE_DISCONTINUITY`.**
 
-No unified sloped GO is declared. On untampered sloped S1 the CURRENT
-production `validateTransitionResultMesh` passes only relative-elevation
-(**216/216** non-flat rows); distance passes **12/216** (near-flat
-`1e-9` W2 rows only) and elevation **0/216** — every other non-flat reject is
-exactly `GRADING_AGREEMENT_TRANSITION_OFF_LAW` (flat controls 6/6 per family
-pass). The obstruction is **not** the law: the study-side per-checkpoint-source
-Z extension (`phase20qRecheck.ts` → `phase20qPerCheckpointSourceZExtension`)
-PASSes all 666 S1 + 156 J1 rows per family, and the extended study tile
+The sloped GO is unified: S1 is the uniquely selected law for all three
+families, with a family-specific implementation delta (below). Validator
+state is an implementation fact, not a policy verdict: on untampered sloped
+S1 the CURRENT production `validateTransitionResultMesh` passes
+relative-elevation (**216/216** non-flat rows) because source-Z differences
+cancel; distance passes **12/216** (near-flat `1e-9` W2 rows only) and
+elevation **0/216** — every other non-flat reject is exactly
+`GRADING_AGREEMENT_TRANSITION_OFF_LAW` (flat controls 6/6 per family pass).
+The study-side per-checkpoint-source-Z extension
+(`phase20qRecheck.ts` → `phase20qPerCheckpointSourceZExtension`) PASSes all
+666 S1 + 156 J1 rows per family, and the extended study tile
 (`phase20qExtendedStudyTile`) reproduces S1 exactly (`outerOk 666/666`,
-`outerDev=0`, `extensionDev=0`, 8 checkpoints). Distance/elevation are
-therefore `POLICY_REQUIRED` on the named extension, not `NO_GO`.
+`outerDev=0`, `extensionDev=0`, 8 checkpoints). The Distance/Elevation gap is
+therefore bounded future implementation work, not unresolved policy.
 
-## 1. Sloped GO gate — per family
+## 1. Sloped GO gate — all families
 
-All 12 criteria are met by S1 for **relative-elevation** under the current
-validator. For distance/elevation, criteria 9 and 12 are scope-split: the law
-side is met, the validator side waits on the per-checkpoint-source-Z extension.
+All 12 criteria are met by S1 for **all three families**: the law,
+truthfulness, and determinism evidence holds per family, and criteria 9 and
+12 clear via the fully specified, parameter-free per-checkpoint-source-Z
+validator extension (proved study-side; implementation is future work, not
+unresolved policy).
 
 | # | Criterion | Result | Evidence |
 |---|---|---|---|
@@ -51,17 +51,19 @@ side is met, the validator side waits on the per-checkpoint-source-Z extension.
 | 6 | Zero-slope reduction to the flat production path bitwise | PASS all families | 102/102 flat controls `flatReductionExact === true` |
 | 7 | Determinism + transform stability | PASS all families | translate-1e6 ≤5.78e-11, 1e8 ≤6.56e-9, mirror 0, reversal 0 |
 | 8 | Pre-mesh expectation == measured; gtop2 certify + revalidate | PASS all families | M4: 1/1/1 declared before measure/build, `preMeshGate=null` 2622/2622; non-refused 2190/2190 certify, revalidation `null`; B2 source-Z-aware S1 666/666 (jointZ-fixed control diverges on slope only) |
-| 9 | Worker independent recompute + reusable validators | rel-elev PASS; distance/elevation extension-gated | persisted-field recompute 2622/2622; 5 agreement tampers strict per probe (each 102 caught / 2520 inapplicable / 0 missed; 510/12600/0 total); width probe via the real validator 894 caught / 1728 inapplicable / 0 missed. Two different gate baselines: the agreement gate (`checkGroupTransitionAgreement`) admits only the 102 flat controls untampered, so each agreement class catches 102 and marks 2520 inapplicable; the mesh validator (`validateTransitionResultMesh`) passes the larger rel-elevation-sloped + flat set, so its width probe catches 894. `validateTransitionResultMesh` accepts untampered rel-elev (reusable) but rejects untampered distance/elevation `OFF_LAW`; the study extension PASSes all families |
+| 9 | Worker independent recompute + reusable validators | PASS all families (extension proved study-side; implementation delta named) | persisted-field recompute 2622/2622; 5 agreement tampers strict per probe (each 102 caught / 2520 inapplicable / 0 missed; 510/12600/0 total); width probe via the real validator 894 caught / 1728 inapplicable / 0 missed. Two different gate baselines: the agreement gate (`checkGroupTransitionAgreement`) admits only the 102 flat controls untampered, so each agreement class catches 102 and marks 2520 inapplicable; the mesh validator (`validateTransitionResultMesh`) passes the larger rel-elevation-sloped + flat set, so its width probe catches 894. `validateTransitionResultMesh` accepts untampered rel-elev (reusable) but rejects untampered distance/elevation `OFF_LAW`; the study extension PASSes all families |
 | 10 | No new epsilon / hidden default / smoothing parameter | PASS all families | exact `===` throughout; S1 introduces none |
 | 11 | No new law kind / persistence schema / revision field / citation | PASS all families | stays `TRANSITION_LINEAR_V1`/`v1`; `ggrev1` already hashes width+law; citations reuse |
-| 12 | Bounded production delta nameable without inventing geometry | PASS (delta extended by the validator change) | three bounded changes: relax `NON_FLAT` (:209–210); per-station-`Z(s)` tiler extension (`gradingGroupTransitionTile.ts`:243 + :267–320, `extensionDev=0`); for distance/elevation only, per-checkpoint source Z in `validateTransitionResultMesh` (`surfaceGradingCompute.ts`:634/636 + :653–655 + :670) — see `production-delta.md`. Rel-elev needs no validator change |
+| 12 | Bounded production delta nameable without inventing geometry | PASS all families | three bounded changes: relax `NON_FLAT` (:209–210); per-station-`Z(s)` tiler extension (`gradingGroupTransitionTile.ts`:243 + :267–320, `extensionDev=0`); for distance/elevation only, per-checkpoint source Z in `validateTransitionResultMesh` (`surfaceGradingCompute.ts`:634/636 + :653–655 + :670) — see `production-delta.md`. Rel-elev needs no validator change |
 
-Per-family scope: S1 is source-exact and certifies for **all** three families
-(666/666); the family split is entirely in the current validator
+Unified scope: S1 is source-exact and certifies for **all** three families
+(666/666). The family difference is entirely in the current validator
 (`validateTransitionResultMesh`), which resolves every cut at the single
-`jointZ`. Relative-elevation is source-Z-difference-invariant, so it cancels
-and passes; distance/elevation expose the fixed-Z assumption. The GO/extension
-is therefore honest only per family.
+`jointZ`: relative-elevation cancels the difference and passes, while
+distance/elevation expose the fixed-Z assumption. That is an
+implementation-state fact — the per-checkpoint-source-Z extension is fully
+specified, parameter-free, and proved study-side per family — so the GO is
+unified, with a family-specific implementation delta.
 
 ## 2. Step gate: the 12 criteria do not clear, plus step extras
 
@@ -91,13 +93,13 @@ missing parameter — hence `NO_GO`, not `POLICY_REQUIRED`.
 
 ## 3. What each verdict does and does not authorize
 
-- The relative-elevation GO authorizes a future bounded production delta
-  (relax `NON_FLAT` **and** add the per-station-Z tiler extension, keep
-  `JOINT_Z_STEP`), **not** any implementation in this study phase.
-- The distance/elevation `POLICY_REQUIRED` authorizes the same delta **plus**
-  the named per-checkpoint-source-Z validator extension; until that extension
-  is specified/landed, those families stay fail-closed at `NON_FLAT` and
-  `GRADING_AGREEMENT_TRANSITION_OFF_LAW`. No non-collinear (20O) change, no
+- The unified sloped GO authorizes a future bounded production delta for all
+  three families (relax `NON_FLAT`, keep `JOINT_Z_STEP`, **and** add the
+  per-station-Z tiler extension; for distance/elevation **also** the named
+  per-checkpoint-source-Z validator extension), **not** any implementation in
+  this study phase. Until that delta lands, all sloped-source transitions
+  stay fail-closed at `NON_FLAT` (and distance/elevation additionally at
+  `GRADING_AGREEMENT_TRANSITION_OFF_LAW`). No non-collinear (20O) change, no
   step support, no new tolerance/schema/law.
 - Step NO_GO means production should continue to fail closed at
   `JOINT_Z_STEP` (and `exactXyz`), and no step law should be pursued under the
