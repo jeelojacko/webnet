@@ -1,0 +1,29 @@
+# Capability Matrix (baseline main 5478ccf4)
+
+Legend: Y = yes, N = no, P = partial, — = not applicable. Confidence H/M/L.
+
+| Tool | Ribbon | Icon | Command | Entity | Create | Snaps/Input | Render | Select/Hit | Edit/Grips | Undo | Persist | Tests | Browser | Class | Conf | Biggest missing |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| Point | EN plain | Y draw-point | Y COGO_POINT | Y survey-point+text | Y click+2D type | P 14 snaps, no Z | Y marker | Y pad | P props, no grips | Y | Y | Y unit | Y | USABLE_BUT_INCOMPLETE | H | Z, symbol pick |
+| Line | EN split | Y draw-line | Y LINE single-seg | Y line XY | Y click+brg/dist | Y snaps+relative | Y | Y pad | Y grips/trim | Y | Y+DXF | Y unit | Y | USABLE_BUT_INCOMPLETE | H | chain, Z |
+| Traverse | EN plain | N (text face) | Y TRAVERSE rich | Y pts+lines+pline | Y legs/panel | Y typed legs | Y+labels | Y | P vertex grips | Y 1-tx | Y+DXF | Y unit | Y | USABLE_BUT_INCOMPLETE | M-H | LSQ, backsight model |
+| Polyline | EN plain | Y | Y PLINE accum | Y pline open | Y Enter/Esc | Y per-seg | Y | Y pad | P move-only | Y | Y+DXF | Y unit | Y | USABLE_BUT_INCOMPLETE | H | close/backstep/bulge/width |
+| Arc | EN split | Y 10/11 | Y 11 modes | Y center/rad/ang | Y picks+forms | Y +tangent | Y+labels | Y pad | Y grips/trim | Y | Y+DXF | Y unit | Y | PRODUCTION_READY | H | Z, bulge xfer |
+| Circle | DIS split | N | N | N (arc only) | N | — | N | N | N | — | N | manifest only | N | PLACEHOLDER_ONLY | H | entity+cmd+render+DXF |
+| Best Fit | DIS split | N | N | N (line needs stations; parabola none) | N | — | — | — | — | — | N | manifest only | N | PLACEHOLDER_ONLY | M | design: inputs/outputs/residuals |
+| Curves | DIS face, 10 live rows | N face | Y 10 COGO cmds | Y via arc cmds | Y tangent/PI/chord/rev/comp | Y | Y | Y | Y | Y | Y+DXF | Y unit | P | USABLE_BUT_INCOMPLETE | H | between-2-lines wiring |
+| Ellipse | DIS split | N | N | P error-only | N (derived) | — | Y err-only | P no pad | P read-only | Y | Y+DXF36gon | Y unit | Y | UI_STUB_ENGINE_PARTIAL | H | generic entity+Center cmd |
+| Shapes | DIS split | N | N | Y polygon | N (TIN-only creator) | — | Y | Y | Y xforms/props | Y | Y+DXF | manifest only | N | ENGINE_EXISTS_UI_MISSING | H | 2 draw sessions |
+| Hatch | DIS split | Y hatch-pattern | N | N | N | — | N (markers only) | N | N | — | N | manifest only | N | PLACEHOLDER_ONLY | H | fill/pattern/assoc engine |
+
+## Cross-tool expectations (SUPPORTED / GLOBAL_INFRA_MISSING / TOOL_MISSING)
+
+- Esc cancel: SUPPORTED. Enter finish (PLINE/Traverse): SUPPORTED.
+- Undo last vertex while active: TOOL_MISSING (no backstep anywhere).
+- Right-click finish: GLOBAL_INFRA_MISSING (context menu is quick-launch only).
+- Repeat/continuous mode: GLOBAL_INFRA_MISSING (no repeat binding; dock arrows = string history).
+- Typed absolute + relative/bearing coordinates: SUPPORTED. Typed distance/angle: SUPPORTED (relative form).
+- Object snaps (14 kinds): SUPPORTED. Ortho / free polar / grid / tracking / Z snap: GLOBAL_INFRA_MISSING.
+- Rubber-band preview, prompts, inline input bar: SUPPORTED.
+- Layer/style inheritance: SUPPORTED (ByLayer). Elevation/Z: GLOBAL_INFRA_MISSING (2D everywhere).
+- Marquee window/crossing: SUPPORTED (screen-space primitive bounds; engine bounds fn exists but unused by marquee).
