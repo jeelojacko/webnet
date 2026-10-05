@@ -14,6 +14,7 @@ import {
   admitGradingTransition,
   evaluateTransitionLinearV1,
   transitionRejectGroupCode as transitionPolicyToGroupCode,
+  transitionSourceZAt,
 } from './gradingTransitionPolicy';
 import type { GradingComputeSource } from './gradingComputeTypes';
 import { transitionEvidenceMatchesIntent } from './gradingTransitionProvenance';
@@ -240,16 +241,27 @@ export const planTransitionJoint = (
   }
   const { vL, vR, sL, sR, width, family } = admitted;
   const g = (cL as { gradeRatio: number }).gradeRatio;
+  // Joint Z (exact by admission). Cut Zs are the physical per-station
+  // source Z on their own member half (flat reduces bitwise to Z).
   const Z = mL.endZ;
+  const Lj = mL.length;
+  const cutLStation = Lj - width / 2;
+  const cutRStation = width / 2;
+  const cutLZ = transitionSourceZAt({ startZ: mL.startZ, endZ: mL.endZ, length: Lj }, cutLStation);
+  const cutRZ = transitionSourceZAt({ startZ: mR.startZ, endZ: mR.endZ, length: mR.length }, cutRStation);
+  if (!Number.isFinite(cutLZ) || !Number.isFinite(cutRZ)) {
+    return transitionFail(
+      'TRANSITION_REJECTED',
+      joint,
+      'GRADING_AGREEMENT_TRANSITION_MESH: non-finite cut source Z',
+    );
+  }
   const frameL = solved[L]!;
   const frameR = solved[R]!;
   const tx = frameL.tOut.nx;
   const ty = frameL.tOut.ny;
   const nx = frameL.nOut.nx;
   const ny = frameL.nOut.ny;
-  const Lj = mL.length;
-  const cutLStation = Lj - width / 2;
-  const cutRStation = width / 2;
   const vAt = (s: number): number => evaluateTransitionLinearV1(vL, vR, sL, sR, s);
   const V = { x: mL.endX, y: mL.endY, z: mL.endZ };
   const q0raw = transitionDaylightAt(family, vAt(0), g, Z, V.x, V.y, nx, ny);
@@ -264,15 +276,15 @@ export const planTransitionJoint = (
   // Zero-length outers (width == max) reuse the full-solve endpoint refs.
   let outerL: StraightChordSolve | null = null;
   if (cutLStation !== 0) {
-    const PcL = { x: V.x - tx * (width / 2), y: V.y - ty * (width / 2), z: Z };
+    const PcL = { x: V.x - tx * (width / 2), y: V.y - ty * (width / 2), z: cutLZ };
     const sub = solveGradingChord({
       source: {
         startX: mL.startX,
         startY: mL.startY,
         endX: PcL.x,
         endY: PcL.y,
-        startZ: Z,
-        endZ: Z,
+        startZ: mL.startZ,
+        endZ: cutLZ,
         length: cutLStation,
         reoriented: mL.reoriented,
         isArc: false,
@@ -294,15 +306,15 @@ export const planTransitionJoint = (
   }
   let outerR: StraightChordSolve | null = null;
   if (mR.length - width / 2 !== 0) {
-    const PcR = { x: V.x + tx * (width / 2), y: V.y + ty * (width / 2), z: Z };
+    const PcR = { x: V.x + tx * (width / 2), y: V.y + ty * (width / 2), z: cutRZ };
     const sub = solveGradingChord({
       source: {
         startX: PcR.x,
         startY: PcR.y,
         endX: mR.endX,
         endY: mR.endY,
-        startZ: Z,
-        endZ: Z,
+        startZ: cutRZ,
+        endZ: mR.endZ,
         length: mR.length - width / 2,
         reoriented: mR.reoriented,
         isArc: false,

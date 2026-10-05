@@ -40,6 +40,7 @@ import type {
   GradingTargetMeshSnapshot,
   GroupTransitionMemberView,
   GroupTransitionPlan,
+  TransitionMeshSourceGeometry,
 } from './surfaceGradingCompute';
 import {
   checkGroupTransitionPlansAgreement,
@@ -674,12 +675,21 @@ export const validateTransitionResultMeshAgainst = (
   const views = resolveGroupTransitionMemberViews(request);
   if (views === null) return 'GRADING_AGREEMENT_TRANSITION_STALE';
   const jointZs: number[] = [];
+  // Phase 20Q.1 — authoritative member geometry per plan order from the
+  // request's own member sources (never result-owned) for the cut/joint
+  // source-mate check.
+  const memberSources: [TransitionMeshSourceGeometry, TransitionMeshSourceGeometry][] = [];
   for (const plan of plans) {
     const jointed = /^joint:(\d+)$/.exec(typeof plan.jointId === 'string' ? plan.jointId : '');
     const joint = jointed !== null && jointed[1] === String(Number(jointed[1])) ? Number(jointed[1]) : -1;
     const sourceL = request.memberSources[joint];
-    if (!(joint >= 0) || !sourceL) return 'GRADING_AGREEMENT_TRANSITION_STALE';
+    const sourceR = request.memberSources[joint + 1];
+    if (!(joint >= 0) || !sourceL || !sourceR) return 'GRADING_AGREEMENT_TRANSITION_STALE';
     jointZs.push(sourceL.endZ);
+    memberSources.push([
+      { startX: sourceL.startX, startY: sourceL.startY, startZ: sourceL.startZ, endX: sourceL.endX, endY: sourceL.endY, endZ: sourceL.endZ, length: sourceL.length },
+      { startX: sourceR.startX, startY: sourceR.startY, startZ: sourceR.startZ, endX: sourceR.endX, endY: sourceR.endY, endZ: sourceR.endZ, length: sourceR.length },
+    ]);
   }
   // Mesh anchoring needs the result-owned boundaries; a result without
   // them never passes a transitioned request.
@@ -691,6 +701,7 @@ export const validateTransitionResultMeshAgainst = (
     legs,
     views,
     jointZs,
+    memberSources,
     liveRevision: request.revision,
     maxSearchDistance: request.maxSearchDistance,
     daylightPoints: result.daylightPoints,

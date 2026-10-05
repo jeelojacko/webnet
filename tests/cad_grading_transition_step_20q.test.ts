@@ -286,7 +286,12 @@ describe('20Q.17b M1/M2 on step laws: extension proof + width accounting', () =>
     }
   });
 
-  it('M2 step-J1 width accounting: 76 applicable caught, 80 inapplicable, 0 missed', () => {
+  it('M2 step-J1 width accounting: 156 applicable caught, 0 inapplicable, 0 missed', () => {
+    // 20Q.1 Wave E resolves every checkpoint at its own source Z, so
+    // untampered physical-step J1 passes on every step row (applicable)
+    // and the asymmetric width tamper is caught everywhere. Admission
+    // still refuses steps (pinned in 20Q.5) — the validator never sees a
+    // stepped mesh in production; this probes the validator directly.
     let caught = 0;
     let inapplicable = 0;
     let missed = 0;
@@ -298,6 +303,6 @@ describe('20Q.17b M1/M2 on step laws: extension proof + width accounting', () =>
         expect(t.untampered).toBe('GRADING_AGREEMENT_TRANSITION_OFF_LAW');
       } else missed += 1;
     }
-    expect([caught, inapplicable, missed]).toEqual([76, 80, 0]);
+    expect([caught, inapplicable, missed]).toEqual([156, 0, 0]);
   });
 });

@@ -19,8 +19,10 @@ import { solveGradingChord } from '../engine/cad/grading/solveAnalyticGradingCho
 import {
   admitGradingTransition,
   checkGroupTransitionSeparation,
+  checkSlopedPluralUnstudied,
   evaluateTransitionLinearV1,
   parseCanonicalJointIndex,
+  transitionSourceZAt,
   TRANSITION_LAW_KIND,
   TRANSITION_LAW_VERSION,
   TRANSITION_POLICY_VERSION,
@@ -544,7 +546,78 @@ export interface TransitionResultMeshInput {
   sourceBoundaryPoints: readonly number[];
   /** Grading side: the plan offset must leave toward this side. */
   side: GradingSide;
+  /**
+   * Phase 20Q.1 — authoritative worker-resolved member geometry
+   * (request's own member sources, never result-owned). When present the
+   * cut + joint source XYZ is compared against the expected stations;
+   * absent = legacy law/native/anchor checks only.
+   */
+  memberSources?: readonly [TransitionMeshSourceGeometry, TransitionMeshSourceGeometry];
 }
+
+/** Minimal authoritative member geometry for the source-mate check. */
+export interface TransitionMeshSourceGeometry {
+  startX: number;
+  startY: number;
+  startZ: number;
+  endX: number;
+  endY: number;
+  endZ: number;
+  length: number;
+}
+
+/**
+ * Phase 20Q.1 — expected pCutL/V/pCutR from authoritative member geometry
+ * (mirrors the engine tiler: left-member unit tangent, cut stations at
+ * W/2 from the joint, per-station source Z via `transitionSourceZAt`).
+ * Null on degenerate geometry (caller fails closed).
+ */
+export const expectedTransitionSourceMates = (
+  memberL: TransitionMeshSourceGeometry,
+  memberR: TransitionMeshSourceGeometry,
+  sL: number,
+  sR: number,
+): number[] | null => {
+  const w = sR - sL;
+  if (!Number.isFinite(w) || !(w > 0)) return null;
+  const nums = [memberL.startX, memberL.startY, memberL.endX, memberL.endY,
+    memberR.startX, memberR.startY, memberR.endX, memberR.endY,
+    memberL.startZ, memberL.endZ, memberR.startZ, memberR.endZ,
+    memberL.length, memberR.length];
+  if (!nums.every(Number.isFinite)) return null;
+  if (!(memberL.length > 0) || !(memberR.length > 0)) return null;
+  const tx = memberL.endX - memberL.startX;
+  const ty = memberL.endY - memberL.startY;
+  const plan = Math.hypot(tx, ty);
+  if (!(plan > 0) || !Number.isFinite(plan)) return null;
+  const ux = tx / plan;
+  const uy = ty / plan;
+  const half = w / 2;
+  const cutLZ = transitionSourceZAt(
+    { startZ: memberL.startZ, endZ: memberL.endZ, length: memberL.length },
+    memberL.length - half,
+  );
+  const cutRZ = transitionSourceZAt(
+    { startZ: memberR.startZ, endZ: memberR.endZ, length: memberR.length },
+    half,
+  );
+  if (!Number.isFinite(cutLZ) || !Number.isFinite(cutRZ)) return null;
+  const jx = memberL.endX;
+  const jy = memberL.endY;
+  const jz = memberL.endZ;
+  return [jx - ux * half, jy - uy * half, cutLZ, jx, jy, jz, jx + ux * half, jy + uy * half, cutRZ];
+};
+
+/** Source mate vs expected under the shared authorities (never exact). */
+const sourceMateAgrees = (
+  actual: { x: number; y: number; z: number },
+  expected: { x: number; y: number; z: number },
+): boolean => {
+  const plan = Math.hypot(actual.x - expected.x, actual.y - expected.y);
+  const scale = Math.max(1, Math.abs(actual.x), Math.abs(expected.x), Math.abs(actual.y), Math.abs(expected.y));
+  if (plan > coordinateAgreementTol(plan, 0, scale) + AGREEMENT_FLOOR) return false;
+  return Math.abs(actual.z - expected.z) <= elevationAgreementTol(actual.z, expected.z, []) + AGREEMENT_FLOOR;
+};
 
 const meshPoint = (flat: readonly number[], index: number): { x: number; y: number; z: number } | null => {
   const x = flat[index * 3];
@@ -618,6 +691,20 @@ export const validateTransitionResultMesh = (input: TransitionResultMeshInput): 
   if (input.daylightCheckpoints.length !== 9 || input.sourceCheckpoints.length !== 9) {
     return 'GRADING_AGREEMENT_TRANSITION_MALFORMED';
   }
+  // Phase 20Q.1: result-owned source mates vs authoritative member
+  // geometry at the expected cut/joint stations — a tampered cut-Z (or
+  // drifted XY) fails closed here, never reaching the law checks.
+  if (input.memberSources !== undefined) {
+    const expected = expectedTransitionSourceMates(input.memberSources[0]!, input.memberSources[1]!, input.sL, input.sR);
+    if (expected === null) return 'GRADING_AGREEMENT_TRANSITION_MALFORMED';
+    for (let i = 0; i < 3; i += 1) {
+      const actual = meshPoint(input.sourceCheckpoints, i);
+      const want = meshPoint(expected, i);
+      if (!actual || !want || !sourceMateAgrees(actual, want)) {
+        return 'GRADING_AGREEMENT_TRANSITION_GEOMETRY';
+      }
+    }
+  }
   const law = { vL: input.vL, vR: input.vR, sL: input.sL, sR: input.sR, family: input.family };
   const stations = [input.sL, 0, input.sR];
   const vertices: TransitionInteriorVertex[] = [];
@@ -630,10 +717,12 @@ export const validateTransitionResultMesh = (input: TransitionResultMeshInput): 
   // Inside: every checkpoint obeys the legislated law at its own station.
   const onLaw = validateTransitionInteriorVertices(law, vertices);
   if (onLaw) return onLaw;
-  // Outside: boundary checkpoints obey their own native criterion.
-  const left = checkNativeBoundary(input.criterionL, meshPoint(input.daylightCheckpoints, 0)!, meshPoint(input.sourceCheckpoints, 0)!, input.jointZ, input.maxSearchDistance, input.family);
+  // Outside: boundary checkpoints obey their own native criterion, resolved
+  // at the checkpoint's OWN source Z (Phase 20Q.1: never a frozen jointZ).
+  // On flat inputs own-Z === jointZ bitwise, so flat validation is unchanged.
+  const left = checkNativeBoundary(input.criterionL, meshPoint(input.daylightCheckpoints, 0)!, meshPoint(input.sourceCheckpoints, 0)!, vertices[0]!.srcZ, input.maxSearchDistance, input.family);
   if (left) return left;
-  const right = checkNativeBoundary(input.criterionR, meshPoint(input.daylightCheckpoints, 2)!, meshPoint(input.sourceCheckpoints, 2)!, input.jointZ, input.maxSearchDistance, input.family);
+  const right = checkNativeBoundary(input.criterionR, meshPoint(input.daylightCheckpoints, 2)!, meshPoint(input.sourceCheckpoints, 2)!, vertices[2]!.srcZ, input.maxSearchDistance, input.family);
   if (right) return right;
   // Direction + Z: the plan offset must leave along the production side
   // normal (never magnitude-only), with the family-mapped Z. The tangent
@@ -649,13 +738,13 @@ export const validateTransitionResultMesh = (input: TransitionResultMeshInput): 
   const grades = [gL, gL, gR];
   for (let i = 0; i < 3; i += 1) {
     const g = grades[i]!;
+    const daylight = meshPoint(input.daylightCheckpoints, i)!;
+    const source = meshPoint(input.sourceCheckpoints, i)!;
     const expectedV = evaluateTransitionLinearV1(input.vL, input.vR, input.sL, input.sR, stations[i]!);
     const d = input.family === 'distance' ? expectedV
       : input.family === 'relative-elevation' ? expectedV / g
-      : (expectedV - input.jointZ) / g;
+      : (expectedV - source.z) / g;
     if (!Number.isFinite(d)) return 'GRADING_AGREEMENT_TRANSITION_MALFORMED';
-    const daylight = meshPoint(input.daylightCheckpoints, i)!;
-    const source = meshPoint(input.sourceCheckpoints, i)!;
     const ox = daylight.x - source.x;
     const oy = daylight.y - source.y;
     const ex = d * normal.nx;
@@ -667,7 +756,7 @@ export const validateTransitionResultMesh = (input: TransitionResultMeshInput): 
       return 'GRADING_AGREEMENT_TRANSITION_OFF_LAW';
     }
     if (input.family === 'distance') {
-      const expectedZ = input.jointZ + g * expectedV;
+      const expectedZ = source.z + g * expectedV;
       if (Math.abs(daylight.z - expectedZ) > elevationAgreementTol(daylight.z, expectedZ, []) + AGREEMENT_FLOOR) {
         return 'GRADING_AGREEMENT_TRANSITION_OFF_LAW';
       }
@@ -720,6 +809,33 @@ export const checkGroupTransitionPlansAgreement = (
     }
     prev = index;
   }
+  // Phase 20Q.1 singular scope: plural plans with ANY non-flat transitioned
+  // joint reject whole-group before per-plan re-admission (bounded
+  // GEOMETRY, matching the singular NON_FLAT refusal vocabulary).
+  const slopedPlural = checkSlopedPluralUnstudied(
+    plans.length,
+    plans.map((_, i) => {
+      const pair = views[i];
+      // Malformed views fail closed per-plan below; never this gate.
+      if (!Array.isArray(pair) || pair.length !== 2) return true;
+      const mL = pair[0]!;
+      const mR = pair[1]!;
+      return mL.startZ === mL.endZ && mR.startZ === mR.endZ;
+    }),
+  );
+  if (slopedPlural !== null) {
+    let joint: number | undefined;
+    for (let i = 0; i < plans.length; i += 1) {
+      const pair = views[i];
+      if (!Array.isArray(pair) || pair.length !== 2) continue;
+      if (!(pair[0]!.startZ === pair[0]!.endZ && pair[1]!.startZ === pair[1]!.endZ)) {
+        const parsed = parseCanonicalJointIndex(plans[i]!.jointId);
+        if (parsed !== null) joint = parsed;
+        break;
+      }
+    }
+    return { ok: false, code: 'GRADING_AGREEMENT_TRANSITION_GEOMETRY', ...(joint === undefined ? {} : { joint }) };
+  }
   const agreements: GroupTransitionAgreement[] = [];
   for (let i = 0; i < plans.length; i += 1) {
     const plan = plans[i]!;
@@ -767,6 +883,12 @@ export interface GroupTransitionLegsMeshInput {
   views: readonly (readonly GroupTransitionMemberView[])[];
   /** Authoritative joint Z per plan order (request's own member sources). */
   jointZs: readonly number[];
+  /**
+   * Phase 20Q.1 — authoritative member geometry per plan order for the
+   * cut/joint source-mate check (request's own member sources). Absent =
+   * legacy mesh checks only.
+   */
+  memberSources?: readonly (readonly [TransitionMeshSourceGeometry, TransitionMeshSourceGeometry])[];
   liveRevision: string;
   maxSearchDistance: number;
   /** Result-owned daylight boundary: every checkpoint must occur in it. */
@@ -826,6 +948,10 @@ export const validateGroupTransitionLegsMesh = (input: GroupTransitionLegsMeshIn
     }
     const jointZ = jointZs[i]!;
     if (!Number.isFinite(jointZ)) return 'GRADING_AGREEMENT_TRANSITION_STALE';
+    const memberPair = input.memberSources?.[i];
+    if (input.memberSources !== undefined && memberPair === undefined) {
+      return 'GRADING_AGREEMENT_TRANSITION_STALE';
+    }
     const reject = validateTransitionResultMesh({
       family,
       sL: leg.interval.sL,
@@ -841,6 +967,7 @@ export const validateGroupTransitionLegsMesh = (input: GroupTransitionLegsMeshIn
       daylightPoints: input.daylightPoints,
       sourceBoundaryPoints: input.sourceBoundaryPoints,
       side: input.side,
+      ...(memberPair !== undefined ? { memberSources: memberPair } : {}),
     });
     if (reject !== null) return reject;
   }

@@ -12,6 +12,7 @@
  */
 import { fnv1a } from '../cadRevisionHash';
 import { canonicalGradingNum } from './gradingRevision';
+import { hasTransitionIntent } from './gradingTransitionPolicy';
 import { canonicalCourseCriteria, effectiveCriteriaForCourses } from './gradingGroupCourseCriteria';
 import { gradingCriterionRequiresSurface } from './gradingTypes';import type { GradingCriterion, GradingSide, ResolvedGradingSource } from './gradingTypes';
 import type { GradingCornerMode, GradingGroupCourseCriterionOverride } from './gradingGroupTypes';
@@ -70,17 +71,25 @@ const criterionText = (criterion: GradingCriterion): string => {
   return 'unknown';
 };
 
+// Phase 20Q.1: transitioned groups hash source Z at full precision so a
+// sub-nanometre flat-to-sloped edit moves the revision (the 1nm quantizer
+// below would keep a stale CURRENT via the service cache). No-transition
+// groups keep the legacy quantizer byte-identical.
+const exactSourceZ = (value: number): string =>
+  Number.isFinite(value) ? String(value) : 'non-finite';
+
 // Straight and legacy arc sources hash exactly as before; arc circle params
 // join only when present so a bulge edit under identical endpoints still flips
 // the revision.
-const sourceText = (src: ResolvedGradingSource): string => {
+const sourceText = (src: ResolvedGradingSource, exactZ: boolean): string => {
+  const zOf = exactZ ? exactSourceZ : canonicalGradingNum;
   const base = [
     canonicalGradingNum(src.startX),
     canonicalGradingNum(src.startY),
     canonicalGradingNum(src.endX),
     canonicalGradingNum(src.endY),
-    canonicalGradingNum(src.startZ),
-    canonicalGradingNum(src.endZ),
+    zOf(src.startZ),
+    zOf(src.endZ),
     canonicalGradingNum(src.length),
     src.isArc ? 'arc' : 'line',
   ].join(',');
@@ -96,8 +105,8 @@ const sourceText = (src: ResolvedGradingSource): string => {
   ].join(',');
 };
 
-const courseText = (course: GroupRevisionCourse, index: number): string =>
-  `course${index}:${course.vertexAId}>${course.vertexBId}:${sourceText(course.resolvedSource)}`;
+const courseText = (course: GroupRevisionCourse, index: number, exactZ: boolean): string =>
+  `course${index}:${course.vertexAId}>${course.vertexBId}:${sourceText(course.resolvedSource, exactZ)}`;
 
 /**
  * Phase 20E: canonical sparse override text in traversal order. Empty when
@@ -174,6 +183,7 @@ const transitionText = (transitions: CadGradingTransition[] | undefined): string
 /** Deterministic `ggrev1:<fnv1a-hex>` over the canonical group content. */
 export const buildGroupRevision = (input: GroupRevisionInput): string => {
   const overrides = overrideText(input.criterion, input.courses, input.courseCriteria);
+  const exactZ = hasTransitionIntent(input.transitions);
   const surfaceFamily = effectiveRequiresSurface(input.criterion, input.courses, input.courseCriteria);
   const targetText =
     !surfaceFamily || input.targetSurfaceId === undefined || input.targetRevision === undefined
@@ -181,7 +191,7 @@ export const buildGroupRevision = (input: GroupRevisionInput): string => {
       : `tgt:${input.targetSurfaceId}@${input.targetRevision}`;
   const parts = [
     `src:${input.sourceFeatureLineId}`,
-    ...input.courses.map(courseText),
+    ...input.courses.map((course, index) => courseText(course, index, exactZ)),
     targetText,
     `side:${input.side}`,
     `crit:${criterionText(input.criterion)}`,

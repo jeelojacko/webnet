@@ -19,7 +19,9 @@ import { deriveGradingStatus, deriveFailedEffectiveStatus } from '../engine/cad/
 import type { CadGradingResult, GradingCriterion, GradingStatus, ResolvedGradingSource } from '../engine/cad/grading/gradingTypes';
 import {
   admitGradingTransition,
+  checkSlopedPluralUnstudied,
   computeJointStations,
+  parseCanonicalJointIndex,
   selectGroupTransitions,
   transitionRejectGroupCode,
   type TransitionMemberGeometry,
@@ -303,6 +305,23 @@ export const planGroupTransitionRequest = (inputs: ResolvedGroupInputs): GroupTr
     return { kind: 'rejected', code: selection.code, detail: selection.detail };
   }
   const intents = selection.kind === 'single' ? [selection.transition] : selection.transitions;
+  // Phase 20Q.1 singular scope: a plural request with ANY non-flat
+  // transitioned joint rejects whole-group before per-joint planning.
+  const slopedPlural = checkSlopedPluralUnstudied(
+    intents.length,
+    intents.map((intent) => {
+      const joint = parseCanonicalJointIndex(intent.jointId);
+      // Unresolvable here fails closed per-intent below; never this gate.
+      if (joint === null) return true;
+      const sourceL = inputs.memberSources[joint];
+      const sourceR = inputs.memberSources[joint + 1];
+      if (!sourceL || !sourceR) return true;
+      return sourceL.startZ === sourceL.endZ && sourceR.startZ === sourceR.endZ;
+    }),
+  );
+  if (slopedPlural !== null) {
+    return { kind: 'rejected', code: 'TRANSITION_REJECTED', detail: `GRADING_AGREEMENT_TRANSITION_NON_FLAT: ${slopedPlural}` };
+  }
   const transitions: GroupTransitionPlan[] = [];
   const transitionMembers: GroupTransitionMemberView[] = [];
   // One stations pass for the whole set (never a repeated prefix sum per intent).

@@ -1,0 +1,18 @@
+phase20q1 singular transition perf (reps=5)
+id slope policyMs solveMs workerMs totalMs verts tris
+flat 0 0.001 0.188 0.010 0.199 10 8
+tiny 1e-9 0.001 0.137 0.007 0.145 10 8
+p1 0.01 0.000 0.108 0.004 0.112 10 8
+p5 0.05 0.000 0.102 0.004 0.106 10 8
+p15 0.15 0.000 0.101 0.004 0.105 10 8
+p50 0.5 0.000 0.097 0.004 0.101 10 8
+CREST 0.06666666666666667 0.000 0.098 0.003 0.102 10 8
+SAG -0.06666666666666667 0.000 0.097 0.003 0.100 10 8
+ratio tiny/flat solve=0.728 total=0.727
+ratio p1/flat solve=0.576 total=0.564
+ratio p5/flat solve=0.543 total=0.533
+ratio p15/flat solve=0.536 total=0.526
+ratio p50/flat solve=0.517 total=0.507
+ratio CREST/flat solve=0.522 total=0.510
+ratio SAG/flat solve=0.516 total=0.504
+determinism: all rows repeated-solve digests identical; worker gates hold.

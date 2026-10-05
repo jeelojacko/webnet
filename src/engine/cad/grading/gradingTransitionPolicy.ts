@@ -206,8 +206,16 @@ export const admitGradingTransition = (input: AdmitTransitionInput): AdmitTransi
   const cross = left.dirX * right.dirY - left.dirY * right.dirX;
   const dot = left.dirX * right.dirX + left.dirY * right.dirY;
   if (!(cross === 0 && dot > 0)) return fail('NON_COLLINEAR', 'source deflection must be exactly 0');
-  if (!(left.startZ === left.endZ && right.startZ === right.endZ))
-    return fail('NON_FLAT', 'both adjacent members must be exactly flat');
+  // Phase 20Q.1 bounded singular-sloped admission: a non-flat pair admits
+  // iff the joint stays EXACTLY continuous and every member Z is finite
+  // (no epsilon, no angle bound — plan collinearity is already exact).
+  // Anything else non-flat fails here at NON_FLAT, before JOINT_Z_STEP.
+  if (!(left.startZ === left.endZ && right.startZ === right.endZ)) {
+    if (![left.startZ, left.endZ, right.startZ, right.endZ].every(Number.isFinite))
+      return fail('NON_FLAT', 'both adjacent members must be exactly flat');
+    if (!(left.endZ === right.startZ && left.endZ === input.jointZ))
+      return fail('NON_FLAT', 'both adjacent members must be exactly flat');
+  }
   if (!(left.endZ === right.startZ && left.endZ === input.jointZ))
     return fail('JOINT_Z_STEP', 'joint Z must be exactly continuous');
   if (input.side !== input.groupSide) return fail('SIDE_MISMATCH', 'transition side must equal group side');
@@ -232,6 +240,47 @@ export const admitGradingTransition = (input: AdmitTransitionInput): AdmitTransi
   if (!Number.isFinite(vL) || !Number.isFinite(vR))
     return fail('NATIVE_CRITERION', 'endpoint scalars must be finite');
   return { ok: true, vL, vR, sL: -w / 2, sR: w / 2, width: w, family: famL };
+};
+
+/**
+ * Phase 20Q.1 singular scope — ONE central group authority: more than one
+ * transition intent while ANY transitioned joint is non-flat rejects the
+ * whole group (plural+sloped is unstudied). Each flag reports whether one
+ * transitioned joint is exactly flat (`startZ === endZ` on both members).
+ * Returns the bounded reject detail, or null when this axis passes
+ * (singular, or every transitioned joint exactly flat). Never re-sorts,
+ * never inspects law/family — per-joint trp1 admission still owns content.
+ */
+export const checkSlopedPluralUnstudied = (
+  intentCount: number,
+  transitionedJointFlat: readonly boolean[],
+): string | null => {
+  if (!(intentCount > 1)) return null;
+  if (transitionedJointFlat.every((flat) => flat === true)) return null;
+  return 'SLOPED_PLURAL_UNSTUDIED: plural transition sets on NON_FLAT joints are unstudied (singular sloped only)';
+};
+
+/**
+ * Phase 20Q.1 physical per-station source Z on a straight member:
+ * Z(s) = startZ + (endZ - startZ) * (station / length). Exact at exact
+ * endpoints (s = 0 yields startZ, s = length yields endZ, flat yields
+ * startZ bitwise); non-finite input yields NaN so callers fail closed.
+ * Left-half reads the left member, right-half the right member — never
+ * cross-joint interpolation, no smoothing, no epsilon. Shared by the
+ * engine tiler and the worker validator (no duplicated formulas).
+ */
+export const transitionSourceZAt = (
+  member: { startZ: number; endZ: number; length: number },
+  station: number,
+): number => {
+  if (!Number.isFinite(member.startZ) || !Number.isFinite(member.endZ) || !Number.isFinite(member.length) ||
+      !(member.length > 0) || !Number.isFinite(station)) {
+    return NaN;
+  }
+  if (member.startZ === member.endZ) return member.startZ;
+  if (station === 0) return member.startZ;
+  if (station === member.length) return member.endZ;
+  return member.startZ + (member.endZ - member.startZ) * (station / member.length);
 };
 
 /** Legislated interior law TRANSITION_LINEAR_V1: v(s) = vL + (vR-vL)*t. */
