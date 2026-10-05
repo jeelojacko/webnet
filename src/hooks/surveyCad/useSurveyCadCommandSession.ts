@@ -79,6 +79,7 @@ export const sessionExpectsPointPick = (session: CommandSession | null): boolean
     case 'COGO_POINT':
     case 'SURVEYTABLE':
     case 'LINE':
+    case 'RECTANGLE':
     case 'INVERSE':
     case 'BEARING_REPORT':
     case 'DISTANCE_REPORT':
@@ -154,6 +155,8 @@ export const sessionExpectsPointPick = (session: CommandSession | null): boolean
       return false;
     case 'MTEXT':
       return session.point == null;
+    case 'POLYGON':
+      return session.phase === 'center' || session.phase === 'radius';
     case 'LEADER':
       return session.arrowPoint == null;
     case 'DIM':

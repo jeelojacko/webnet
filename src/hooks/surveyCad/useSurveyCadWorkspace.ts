@@ -666,6 +666,8 @@ export const useSurveyCadWorkspace = (
     startPointCommand: commandState.startPointCommand,
     startCogoPointCommand: commandState.startCogoPointCommand,
     startLineCommand: commandState.startLineCommand,
+    startRectangleCommand: commandState.startRectangleCommand,
+    startPolygonCommand: commandState.startPolygonCommand,
     startPolylineCommand: commandState.startPolylineCommand,
     startTraverseCommand: commandState.startTraverseCommand,
     startBatchCogoCommand: commandState.startBatchCogoCommand,

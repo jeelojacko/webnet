@@ -57,6 +57,21 @@ export const useSurveyCadCommandStarters = ({
       inputValue: '',
       startPoint: null,
     }),
+  startRectangleCommand: () =>
+    beginSession({
+      key: 'RECTANGLE',
+      inputValue: '',
+      firstCorner: null,
+    }),
+  startPolygonCommand: () =>
+    beginSession({
+      key: 'POLYGON',
+      inputValue: '',
+      phase: 'sides',
+      sides: null,
+      mode: null,
+      center: null,
+    }),
   startPolylineCommand: () =>
     beginSession({
       key: 'PLINE',

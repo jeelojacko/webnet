@@ -92,6 +92,7 @@ import {
 } from './cadTransactionsModifyCommands';
 import { getExpandedSelectedEntities } from './cadTransactionsSelection';
 import { f2fGenerateCommand } from '../fieldToFinish/cadGeneration';
+import { shapeCommandDefinitions } from './cadTransactionsShapeCommands';
 import {
   surveyGroupTableCommand,
   surveyPointOverrideCommand,
@@ -555,6 +556,8 @@ export const CAD_COMMAND_REGISTRY: Record<CadCommandKey, CadCommandDefinition<Ca
   POINT: pointCommand as CadCommandDefinition<CadCommand>,
   COGO_POINT: cogoPointCommand as CadCommandDefinition<CadCommand>,
   LINE: lineCommand as CadCommandDefinition<CadCommand>,
+  RECTANGLE: shapeCommandDefinitions.RECTANGLE as CadCommandDefinition<CadCommand>,
+  POLYGON: shapeCommandDefinitions.POLYGON as CadCommandDefinition<CadCommand>,
   PLINE: polylineCommand as CadCommandDefinition<CadCommand>,
   TRAVERSE: traverseCommand as CadCommandDefinition<CadCommand>,
   BATCH_COGO: batchCogoCommand as CadCommandDefinition<CadCommand>,

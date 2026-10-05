@@ -172,6 +172,8 @@ export const CAD_SHELL_COMMANDS: CadShellCommandDef[] = [
   session('COGO_POINT', 'COGO Point', 'Draw', 'Place a point by coordinates.'),
   session('LINE', 'Line', 'Draw', 'Draw a line segment.', ['L']),
   session('PLINE', 'Polyline', 'Draw', 'Draw a connected polyline.', ['PL']),
+  session('RECTANGLE', 'Rectangle', 'Draw', 'Rectangle from two corners.'),
+  session('POLYGON', 'Polygon', 'Draw', 'Regular polygon from center and radius point.'),
   session('TRAVERSE', 'Traverse', 'Draw', 'Draft an open/closed traverse.'),
   session('ARC_3PT', 'Arc (3-Point)', 'Draw', 'Arc through three points.'),
   session('ARC_SCE', 'Arc (Start/Center/End)', 'Draw', 'Arc from start, center, end.'),

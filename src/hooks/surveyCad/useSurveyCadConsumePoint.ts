@@ -1,4 +1,8 @@
 import { runCadCommand } from '../../engine/cad/cadUndoRedo';
+import {
+  buildRectangleVertices,
+  buildRegularPolygonVertices,
+} from '../../engine/cad/cadGeometryShapeBuilders';
 import type { CommandPoint, CommandSession } from './useSurveyCadCommandTypes';
 import { buildTraverseLegInputFromPoints } from './useSurveyCadCommandSession';
 import { normalizeDraftPoint } from './useSurveyCadCommandParsing';
@@ -305,6 +309,12 @@ export const handleSurveyCadConsumePoint = (
       replaceSession: options.replaceSession,
     }) ||
     handleSurveyCadArcPointPick(options) ||
+    handleShapePointPick({
+      applyHistoryUpdate: options.applyHistoryUpdate,
+      current: options.current,
+      point: options.point,
+      replaceSession: options.replaceSession,
+    }) ||
     handleLinePointPick(options) ||
     handleSurveyCadEditPointPick(options) ||
     handleSurveyCadParcelSplitPointPick({ current, point, replaceSession }) ||
@@ -313,6 +323,87 @@ export const handleSurveyCadConsumePoint = (
   ) {
     return;
   }
+};
+
+const handleShapePointPick = ({
+  applyHistoryUpdate,
+  current,
+  point,
+  replaceSession,
+}: Pick<
+  HandleSurveyCadConsumePointOptions,
+  'applyHistoryUpdate' | 'current' | 'point' | 'replaceSession'
+>): boolean => {
+  if (current.key === 'RECTANGLE') {
+    if (!current.firstCorner) {
+      replaceSession({
+        ...current,
+        firstCorner: point,
+        inputValue: '',
+        resultText: undefined,
+      });
+      return true;
+    }
+    if (!buildRectangleVertices(current.firstCorner, point)) {
+      replaceSession({
+        ...current,
+        inputValue: '',
+        resultText: 'RECTANGLE corners degenerate. Pick a distinct opposite corner.',
+      });
+      return true;
+    }
+    const firstCorner = current.firstCorner;
+    applyHistoryUpdate((existing) =>
+      runCadCommand(existing, {
+        key: 'RECTANGLE',
+        firstCorner,
+        oppositeCorner: point,
+      }),
+    );
+    replaceSession(null);
+    return true;
+  }
+  if (current.key === 'POLYGON') {
+    if (current.phase === 'center' && !current.center) {
+      replaceSession({
+        ...current,
+        center: point,
+        phase: 'radius',
+        inputValue: '',
+        resultText: undefined,
+      });
+      return true;
+    }
+    if (
+      current.phase === 'radius' &&
+      current.center != null &&
+      current.sides != null &&
+      current.mode != null
+    ) {
+      const { center, sides, mode } = current;
+      if (!buildRegularPolygonVertices(center, point, sides, mode)) {
+        replaceSession({
+          ...current,
+          inputValue: '',
+          resultText: 'POLYGON radius degenerate. Pick a radius point away from the center.',
+        });
+        return true;
+      }
+      applyHistoryUpdate((existing) =>
+        runCadCommand(existing, {
+          key: 'POLYGON',
+          center,
+          through: point,
+          sides,
+          mode,
+        }),
+      );
+      replaceSession(null);
+      return true;
+    }
+    return false;
+  }
+  return false;
 };
 
 const handleLinePointPick = ({

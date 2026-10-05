@@ -43,6 +43,16 @@ export const CadCommandDock: React.FC<CadCommandDockProps> = ({ link, snapshot, 
   const availableKeys = snapshot ? new Set(snapshot.availableCommands) : null;
   const suggestions = autocompleteShellCommands(text, availableKeys, 8);
   const prompt = snapshot?.commandPrompt ?? 'Type a command (L, PL, M, CO, TR, EX).';
+  // Shapes V1 — POLYGON mode phase owns `I` (Inscribed, never INSERT).
+  // Gated on the mode phase itself: the live phase prompt carries the
+  // [I/C] marker, but an invalid mode entry surfaces resultText instead
+  // (it takes precedence over the phase prompt), so match that retry
+  // prompt too — both only occur in phase 'mode'. The I alias stays
+  // global everywhere else.
+  const polygonModePhase =
+    snapshot?.activeCommandKey === 'POLYGON' &&
+    (snapshot.commandPrompt.includes('[I/C]') ||
+      snapshot.commandPrompt.includes('POLYGON mode invalid'));
 
   const submit = (): void => {
     const entry = text.trim();
@@ -50,23 +60,28 @@ export const CadCommandDock: React.FC<CadCommandDockProps> = ({ link, snapshot, 
       actions?.confirmCommandInput();
       return;
     }
-    const def = resolveShellCommandText(entry);
-    if (def && actions) {
-      const started = executeShellCommand(def, actions);
-      setCompleted(started ? `Started ${def.label}.` : `${def.label} is unavailable right now.`);
-    } else if (snapshot?.activeCommandKey && actions?.submitSessionText) {
-      // Phase 18O — text that is not a command belongs to the active
-      // session (MTEXT/LEADER lines, numeric inputs). History untouched.
-      actions.submitSessionText(entry);
-      setCompleted(null);
-    } else if (actions?.submitSessionText && entry.trim().length > 0 && Number.isFinite(Number(entry))) {
-      // Phase 18T — a bare number with no annotation session is a
-      // candidate surface-edit value (Elevation / delta); the workspace
-      // consumes it only when a point session is staged, else no-op.
+    if (polygonModePhase && actions?.submitSessionText) {
       actions.submitSessionText(entry);
       setCompleted(null);
     } else {
-      setCompleted(`Unknown command “${entry}”.`);
+      const def = resolveShellCommandText(entry);
+      if (def && actions) {
+        const started = executeShellCommand(def, actions);
+        setCompleted(started ? `Started ${def.label}.` : `${def.label} is unavailable right now.`);
+      } else if (snapshot?.activeCommandKey && actions?.submitSessionText) {
+        // Phase 18O — text that is not a command belongs to the active
+        // session (MTEXT/LEADER lines, numeric inputs). History untouched.
+        actions.submitSessionText(entry);
+        setCompleted(null);
+      } else if (actions?.submitSessionText && entry.trim().length > 0 && Number.isFinite(Number(entry))) {
+        // Phase 18T — a bare number with no annotation session is a
+        // candidate surface-edit value (Elevation / delta); the workspace
+        // consumes it only when a point session is staged, else no-op.
+        actions.submitSessionText(entry);
+        setCompleted(null);
+      } else {
+        setCompleted(`Unknown command “${entry}”.`);
+      }
     }
     setHistory((current) => [...current.slice(-99), entry]);
     setHistoryIndex(null);
