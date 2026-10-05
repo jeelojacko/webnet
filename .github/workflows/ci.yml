@@ -35,8 +35,8 @@ jobs:
           echo "reason=${{ steps.classify.outputs.reason }}"
           echo "changed_file_count=${{ steps.classify.outputs.changed_file_count }}"
 
-  core:
-    name: core
+  static:
+    name: static
     needs: classify
     if: ${{ always() && needs.classify.result == 'success' }}
     runs-on: ubuntu-latest
@@ -50,20 +50,56 @@ jobs:
           cache: npm
       - name: Install
         run: npm ci
-      - name: Portable paths
-        run: npm run check:portable-paths
       - name: Install Study Desktop dependencies
         run: npm ci --prefix study-desktop
+      - name: Portable paths
+        run: npm run check:portable-paths
       - name: Lint
         run: npm run lint
       - name: Typecheck
         run: npm run typecheck
+
+  tests:
+    name: tests
+    needs: classify
+    if: ${{ always() && needs.classify.result == 'success' }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+      - name: Setup Node
+        uses: actions/setup-node@v5
+        with:
+          node-version: 24
+          cache: npm
+      - name: Install
+        run: npm ci
+      - name: Install Study Desktop dependencies
+        run: npm ci --prefix study-desktop
       - name: Agent tests
         run: npm run test:agent
       - name: Synthetic CRS Harness Gate
         run: npm run harness:crs:synthetic
       - name: Industry Parity Reference Gate
         run: npm run parity:industry-reference
+
+  build-smoke:
+    name: build-smoke
+    needs: classify
+    if: ${{ always() && needs.classify.result == 'success' }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+      - name: Setup Node
+        uses: actions/setup-node@v5
+        with:
+          node-version: 24
+          cache: npm
+      - name: Install
+        run: npm ci
+      - name: Install Study Desktop dependencies
+        run: npm ci --prefix study-desktop
       - name: Build
         run: npm run build
       - name: CLI Smoke JSON

@@ -19,6 +19,37 @@ const SAFE_ONLY = [
   /^scripts\/study[^/]*\.(?:mjs|ts)$/i,
 ];
 
+// CAD drafting-only allowlist (section 1). Every entry below was
+// positively verified: unreachable from src/workers/** even transitively
+// (value-import closure over the repo, 452 files), and never imported by
+// worker-consumed CAD compute (grading/surfaces/tin/contours/sections/
+// profiles/analysis). cadDisplayTypes, cadEntityNames and cadAppearance are
+// deliberately EXCLUDED: all three are transitively reachable from workers.
+// Everything else under src/engine/cad/** fails closed to numerical
+// certification.
+const CAD_SAFE_ONLY = [
+  /^src\/engine\/cad\/annotation\/cadAnnotationAnchorFromCommandPoint\.ts$/,
+  /^src\/engine\/cad\/annotation\/cadAnnotationAnchors\.ts$/,
+  /^src\/engine\/cad\/annotation\/cadAnnotationArrowheads\.ts$/,
+  /^src\/engine\/cad\/annotation\/cadAnnotationPersistence\.ts$/,
+  /^src\/engine\/cad\/annotation\/cadAnnotationPlacement\.ts$/,
+  /^src\/engine\/cad\/annotation\/cadAnnotationSeeds\.ts$/,
+  /^src\/engine\/cad\/annotation\/cadAnnotationSettings\.ts$/,
+  /^src\/engine\/cad\/annotation\/cadAnnotationTextMetrics\.ts$/,
+  /^src\/engine\/cad\/annotation\/cadAnnotationValidation\.ts$/,
+  /^src\/engine\/cad\/annotation\/cadDimensionGeometry\.ts$/,
+  /^src\/engine\/cad\/annotation\/cadDimensionGeometryTypes\.ts$/,
+  /^src\/engine\/cad\/annotation\/cadSurveyLabels\.ts$/,
+  /^src\/engine\/cad\/cadLayers\.ts$/,
+  /^src\/engine\/cad\/cadSurveySymbolLibrary\.ts$/,
+  /^src\/engine\/cad\/cadDraftGlyphs\.ts$/,
+  /^src\/engine\/cad\/cadDraftTables\.ts$/,
+  /^src\/engine\/cad\/cadPointSymbolShape\.ts$/,
+  /^src\/engine\/cad\/cadProjectTransform\.ts$/,
+  /^src\/engine\/cad\/cadGeometryShapeBuilders\.ts$/,
+  /^src\/engine\/cad\/cadTransactionsShapeCommands\.ts$/,
+];
+
 const ALWAYS_NUMERICAL = [
   /^\.github\/workflows\//,
   /^scripts\/ciChangeClassifier\.(?:mjs|ts)$/,
@@ -29,6 +60,11 @@ const ALWAYS_NUMERICAL = [
   /^package(?:-lock)?\.json$/,
   /^cpp\//,
   /^tests\/evidence\//,
+  // Engine solve/numeric core (parser, solver, preanalysis, covariance,
+  // numeric backends, WASM bridges, worker-consumed CAD compute). Only the
+  // CAD_SAFE_ONLY drafting allowlist above is exempt under src/engine/cad/;
+  // every other engine path — including unknown/new cad/ files — stays
+  // fail-closed to numerical certification.
   /^src\/engine\//,
   /^src\/workers\//,
   /^src\/cli\.ts$/,
@@ -57,6 +93,16 @@ export function classifyChangedFiles(files) {
   }
 
   for (const file of changedFiles) {
+    if (file.startsWith('src/engine/cad/')) {
+      if (!CAD_SAFE_ONLY.some((pattern) => pattern.test(file))) {
+        return {
+          numericalRequired: true,
+          reason: `${file} is not a positively verified drafting-only CAD path`,
+          changedFileCount: changedFiles.length,
+        };
+      }
+      continue;
+    }
     if (ALWAYS_NUMERICAL.some((pattern) => pattern.test(file))) {
       return {
         numericalRequired: true,
