@@ -6,10 +6,14 @@ below must be replicated by hand or script — see checklist).
 
 ## Default route
 
-orchestrator → one `worker` → independent `reviewer` → exact-head CI.
+Tightly coupled: orchestrator → one `worker` → independent `reviewer` → (correction worker(s) → fresh reviewer)* → exact-head CI.
+Parallelizable: orchestrator → parallel `worker`s on genuinely independent substantial scopes → integrate → independent `reviewer` → (correction worker(s) → fresh reviewer)* → exact-head CI.
+Smallest useful Worker set; parallelize only when wall-time savings clearly exceed coordination cost.
 Scout/Researcher/Oracle are opt-in only (unknown scope / external authority /
 genuine dispute). Reviewer is read-only, never delegates, never reruns heavy
-suites. Fixes go orchestrator → worker → reviewer recheck.
+suites, reviews the current combined exact state. Fixes go orchestrator → one or more workers → fresh reviewer recheck until APPROVE; only current-state APPROVE ends the loop.
+
+Reviewer returns APPROVE or actionable findings. On findings the orchestrator must not declare complete/PR-ready/merge-ready, must not self-fix substantive findings, and must not treat "review ran" as approval. Route findings through correction worker(s) (parallel only for independent findings), integrate, then fresh reviewer on the new exact state; repeat until APPROVE. Prior APPROVE is stale after any substantive change.
 
 ## Role/tool/delegation matrix (enforced in `~/.pi/agent/agents/*.md`)
 
