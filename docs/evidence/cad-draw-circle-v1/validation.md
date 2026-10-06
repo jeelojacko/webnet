@@ -60,5 +60,6 @@
   session closes after the final pick, the same dimension re-resolves the
   moved Circle center and keeps its measurement, quadrant picks stay
   fixed, Properties asserts the wrapper reason plus no-undo/one-undo
-  entries, and a single-axis edit reaching a tiny uniform Circle scale is
-  refused. Reviewfix suite now 25/25.
+  entries, and a single-axis 1e-14 scale edit on a valid uniform 1/1 Circle
+  block is refused (fail-closed before any non-uniform state is reachable).
+  Reviewfix suite now 25/25.

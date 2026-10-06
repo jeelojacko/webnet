@@ -449,35 +449,40 @@ describe('round-4 findings (real seams)', () => {
     expect(history.undoStack).toHaveLength(1);
     expect(history.present.project.entities.find((entity) => entity.id === 'ref-2')).toMatchObject({ scaleX: 2, scaleY: 1 });
   });
-  it('Properties single-axis edit reaching a tiny uniform Circle scale is refused', async () => {
+  it('Properties single-axis scale edit on a Circle block fails closed before any tiny-uniform state is reachable', async () => {
     const { editSurveyCadPropertiesField } = await import('../src/hooks/surveyCad/surveyCadPropertiesEdit');
-    const project = projectWith([]);
-    const withTinyRef = {
-      ...project,
-      blockDefinitions: [{
-        id: 'blk-c', name: 'C', basePoint: { x: 0, y: 0 },
-        entities: [circle({ id: 'c1' })], bodyAlignment: 'left' as const, titleGap: 0,
-      }],
-      // One axis already tiny; the reachable single-axis Scale X edit below
-      // would make both axes 1e-14 — a uniform sub-floor Circle expansion.
-      entities: [{ ...base, id: 'ref-1', type: 'block-reference', blockDefinitionId: 'blk-c', x: 0, y: 0, rotationDeg: 0, scaleX: 1, scaleY: 1e-14 }],
-    } as unknown as CadProject;
-    let history = createCadHistoryState(withTinyRef);
-    const before = history;
-    const outcome = editSurveyCadPropertiesField({
-      entityId: 'ref-1',
-      field: { kind: 'block-scale-x' } as never,
-      history,
-      updateHistory: (updater) => {
-        history = updater(history);
-      },
-      value: '1e-14',
-    });
-    expect(outcome.applied).toBe(false);
-    expect(outcome.reason).toBe('INVALID_VALUE');
-    expect(history).toBe(before);
-    expect(history.undoStack).toHaveLength(0);
-    expect(history.present.project.entities[0]).toMatchObject({ scaleX: 1, scaleY: 1e-14 });
+    // Both axes, symmetric. A single-axis Properties edit starts from a VALID
+    // uniform 1/1 Circle reference (non-uniform refs are already unreachable —
+    // production insert/set-transform refuse them), so writing 1e-14 on one
+    // axis would make the Circle block immediately non-uniform; it must be
+    // refused before any tiny-uniform scale can be reached through this path.
+    for (const field of [{ kind: 'block-scale-x' }, { kind: 'block-scale-y' }] as const) {
+      const project = projectWith([]);
+      const withRef = {
+        ...project,
+        blockDefinitions: [{
+          id: 'blk-c', name: 'C', basePoint: { x: 0, y: 0 },
+          entities: [circle({ id: 'c1' })], bodyAlignment: 'left' as const, titleGap: 0,
+        }],
+        entities: [{ ...base, id: 'ref-1', type: 'block-reference', blockDefinitionId: 'blk-c', x: 0, y: 0, rotationDeg: 0, scaleX: 1, scaleY: 1 }],
+      } as unknown as CadProject;
+      let history = createCadHistoryState(withRef);
+      const before = history;
+      const outcome = editSurveyCadPropertiesField({
+        entityId: 'ref-1',
+        field: field as never,
+        history,
+        updateHistory: (updater) => {
+          history = updater(history);
+        },
+        value: '1e-14',
+      });
+      expect(outcome.applied).toBe(false);
+      expect(outcome.reason).toBe('INVALID_VALUE');
+      expect(history).toBe(before);
+      expect(history.undoStack).toHaveLength(0);
+      expect(history.present.project.entities[0]).toMatchObject({ scaleX: 1, scaleY: 1 });
+    }
   });
   it('toFiniteCircle shares isValidCircleGeometry (no duplicate condition)', async () => {
     const { buildCircleCenterRadiusScalar } = await import('../src/engine/cad/cadGeometryShapeBuilders');
