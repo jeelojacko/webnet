@@ -34,14 +34,11 @@ clangd only on C++ edits — no extra gating needed.
 
 ## Model/provider assignments (verified)
 
-- First worker: pinned default `opencode-go/muse-spark-1.3-contributor`, no override.
+- Worker model rotation (all medium reasoning): 1st `commandcode/deepseek/deepseek-v4.1-flash`, 2nd `opencode-go/deepseek-v4.1-flash`, 3rd `opencode-go/muse-spark-1.3-contributor`, then cycle (`commandcode` routes require `$CMD_API_KEY`; `opencode-go` and `commandcode` are distinct provider paths).
 - DEFAULT is one worker. Extra parallel workers only for genuinely independent,
   substantial scopes where wall-time savings clearly exceed coordination cost
-  (never for discovery, small fan-out, or bounded fixes):
-  `commandcode/deepseek/deepseek-v4.1-flash` on high reasoning (smoke-proven;
-  requires `$CMD_API_KEY`).
-- NEVER use `opencode-go/deepseek/*`: opencode-go carries Muse Spark, not
-  DeepSeek (HTTP 400). Retries stay on the original model.
+  (never for discovery, small fan-out, or bounded fixes).
+- Retries stay on the original model.
 - OpenAI models always via `openai-codex/<model>` (Codex auth).
 
 ## Required / disabled extensions
