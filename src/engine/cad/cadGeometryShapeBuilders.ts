@@ -30,7 +30,7 @@ export interface CircleCenterRadius {
 }
 
 const toFiniteCircle = (center: CadWorldPoint, radius: number): CircleCenterRadius | null => {
-  if (!isFinitePoint(center) || !Number.isFinite(radius) || radius <= CAD_XY_DEGENERATE_FLOOR) return null;
+  if (!isFinitePoint(center) || !isValidCircleGeometry(center.x, center.y, radius)) return null;
   return { center: { x: center.x, y: center.y }, radius };
 };
 

@@ -317,12 +317,99 @@ describe('round-3 findings (A-F)', () => {
     const { cadAnnotationAnchorFromCommandPoint } = await import('../src/engine/cad/annotation/cadAnnotationAnchorFromCommandPoint');
     const project = projectWith([circle()]);
     const centerAnchor = cadAnnotationAnchorFromCommandPoint(project, {
-      x: 10, y: 20, snapSourceEntityId: 'circ-1', snapKind: 'center',
+      x: 10, y: 20, snapSourceEntityId: 'circ-1', snapKind: 'center' as const,
     } as never);
     expect(centerAnchor).toMatchObject({ kind: 'arc-point', entityId: 'circ-1', point: 'center' });
     const rimAnchor = cadAnnotationAnchorFromCommandPoint(project, {
-      x: 25, y: 20, snapSourceEntityId: 'circ-1', snapKind: 'nearest',
+      x: 25, y: 20, snapSourceEntityId: 'circ-1', snapKind: 'nearest' as const,
     } as never);
     expect(rimAnchor.kind).toBe('fixed');
+  });
+});
+
+describe('round-4 findings (real seams)', () => {
+  type DimSession = Extract<import('../src/hooks/surveyCad/useSurveyCadCommandTypes').CommandSession, { key: 'DIMRADIUS' } | { key: 'DIMDIAMETER' }>;
+  type DimPoint = Parameters<typeof import('../src/hooks/surveyCad/useSurveyCadAnnotationSessions').handleAnnotationPointPick>[0]['point'];
+  const dimSession = (key: 'DIMRADIUS' | 'DIMDIAMETER'): DimSession => ({
+    key, inputValue: '', points: [],
+  }) as DimSession;
+
+  const driveDimSession = async (
+    project: CadProject,
+    key: 'DIMRADIUS' | 'DIMDIAMETER',
+    first: DimPoint,
+    second: DimPoint,
+  ) => {
+    const { handleAnnotationPointPick } = await import('../src/hooks/surveyCad/useSurveyCadAnnotationSessions');
+    const { createCadHistoryState: createHistory } = await import('../src/engine/cad/cadUndoRedo');
+    let history = createHistory(project);
+    let session: DimSession | null = dimSession(key);
+    const applyHistoryUpdate: (_updater: (_history: typeof history) => typeof history) => void = (updater) => {
+      history = updater(history);
+    };
+    const replaceSession = (next: import('../src/hooks/surveyCad/useSurveyCadCommandTypes').CommandSession | null) => {
+      session = next as DimSession | null;
+    };
+    expect(handleAnnotationPointPick({ current: session!, point: first, project, applyHistoryUpdate, replaceSession })).toBe(true);
+    expect(handleAnnotationPointPick({ current: session!, point: second, project, applyHistoryUpdate, replaceSession })).toBe(true);
+    return { history, session };
+  };
+
+  it('DIMRADIUS + DIMDIAMETER commit through the real session seam with a center anchor', async () => {
+    for (const [key, expected] of [['DIMRADIUS', 15], ['DIMDIAMETER', 30]] as const) {
+      const project = projectWith([circle()]);
+      const centerPick = { x: 10, y: 20, label: 'C', snapSourceEntityId: 'circ-1', snapKind: 'center' as const };
+      const { history } = await driveDimSession(project, key, centerPick, { x: 30, y: 30, label: 'D' });
+      const dim = history.present.project.entities.find((e) => e.type === 'dimension') as CadDimensionEntity;
+      expect(dim).toBeDefined();
+      expect(dim.anchors).toHaveLength(1);
+      expect(dim.anchors[0]).toMatchObject({ kind: 'arc-point', entityId: 'circ-1', point: 'center' });
+      const derived = resolveDimensionDerivation(history.present.project, dim);
+      expect(derived?.geometry.measurement).toBeCloseTo(expected, 9);
+      const dxf = deriveAnnotationPrimitives(dim, history.present.project);
+      expect(dxf.ok).toBe(true);
+    }
+  });
+  it('session association re-measures after radius/center edits; rim picks stay fixed', async () => {
+    const project = projectWith([circle()]);
+    const centerPick = { x: 10, y: 20, label: 'C', snapSourceEntityId: 'circ-1', snapKind: 'center' as const };
+    const { history } = await driveDimSession(project, 'DIMRADIUS', centerPick, { x: 30, y: 30, label: 'D' });
+    const edited = runCadCommand(history, { key: 'GRIP_EDIT', entityId: 'circ-1', gripKind: 'circle-radius', x: 40, y: 20 } as never);
+    const dim = edited.present.project.entities.find((e) => e.type === 'dimension') as CadDimensionEntity;
+    expect(resolveDimensionDerivation(edited.present.project, dim)?.geometry.measurement).toBeCloseTo(30, 9);
+    const rim = await driveDimSession(project, 'DIMRADIUS', { x: 25, y: 20, label: 'R', snapSourceEntityId: 'circ-1', snapKind: 'nearest' as const }, { x: 30, y: 30, label: 'D' });
+    const rimDim = rim.history.present.project.entities.find((e) => e.type === 'dimension') as CadDimensionEntity;
+    expect(rimDim.anchors[0]).toMatchObject({ kind: 'fixed' });
+  });
+  it('Properties Scale X on a circle block refuses non-uniform; history untouched', async () => {
+    const { editSurveyCadPropertiesField } = await import('../src/hooks/surveyCad/surveyCadPropertiesEdit');
+    const project = projectWith([]);
+    const withRef = {
+      ...project,
+      blockDefinitions: [{
+        id: 'blk-c', name: 'C', basePoint: { x: 0, y: 0 },
+        entities: [circle({ id: 'c1' })], bodyAlignment: 'left' as const, titleGap: 0,
+      }],
+      entities: [{ ...base, id: 'ref-1', type: 'block-reference', blockDefinitionId: 'blk-c', x: 0, y: 0, rotationDeg: 0, scaleX: 1, scaleY: 1 }],
+    } as unknown as CadProject;
+    let history = createCadHistoryState(withRef);
+    const before = history;
+    const outcome = editSurveyCadPropertiesField({
+      entityId: 'ref-1',
+      field: { kind: 'block-scale-x' } as never,
+      history,
+      updateHistory: (updater) => {
+        history = updater(history);
+      },
+      value: '2',
+    });
+    expect(outcome.applied).toBe(false);
+    expect(history).toBe(before);
+    expect(history.present.project.entities).toHaveLength(1);
+  });
+  it('toFiniteCircle shares isValidCircleGeometry (no duplicate condition)', async () => {
+    const { buildCircleCenterRadiusScalar } = await import('../src/engine/cad/cadGeometryShapeBuilders');
+    expect(buildCircleCenterRadiusScalar({ x: 1e308, y: 1e308 }, 15)).not.toBeNull();
+    expect(buildCircleCenterRadiusScalar({ x: 0, y: 0 }, 1e-13)).toBeNull();
   });
 });
