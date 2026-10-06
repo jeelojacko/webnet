@@ -153,6 +153,12 @@ export interface CadShellLayoutState {
   leftWidthPx: number;
   rightWidthPx: number;
   commandHeightPx: number;
+  /**
+   * Phase B2 — command dock history panel expanded below the input row.
+   * Collapsed (default) is content-fit: the fixed `commandHeightPx` is
+   * ignored (an old 148/200 value never leaves a blank reservoir).
+   */
+  commandHistoryExpanded: boolean;
   toolspaceTab: CadToolspaceTab;
   ribbonCollapsed: boolean;
   /**
@@ -570,6 +576,11 @@ export interface CadShellActions {
   requestLandXmlImport: () => void;
   /** Phase 18O — forward dock text to the active command session (MTEXT/LEADER lines). */
   submitSessionText?: (_text: string) => void;
+  /**
+   * Phase B2 — replace the live session input buffer verbatim (single-buffer
+   * command dock). No-op when no session is active (see canEditInput).
+   */
+  setSessionInputValue?: (_text: string) => void;
   /**
    * Phase 18S — arm a TIN-topology edit session for the selected surface
    * (swap/add-line/delete-line pick loops; Esc cancels). Phase 18T adds

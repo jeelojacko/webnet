@@ -27,6 +27,24 @@ export const helpTextForSession = (session: CommandSession | null): string => {
       return session.center
         ? 'CIRCLECD diameter: positive number, or `x,y` / `@azimuth,distance` point from the FIXED center (radius is half).'
         : 'CIRCLECD center: click in the model space or type `x,y` / `LABEL=x,y`.';
+    case 'CIRCLE2P':
+      return session.first
+        ? 'CIRCLE2P second endpoint: `x,y`, `LABEL=x,y`, `@azimuth,distance`, or bearing-distance from the first diameter endpoint.'
+        : 'CIRCLE2P first endpoint: click in the model space or type `x,y` / `LABEL=x,y`.';
+    case 'CIRCLE3P':
+      return session.points.length < 2
+        ? 'CIRCLE3P point input: click in the model space or type `x,y` / `LABEL=x,y`.'
+        : 'CIRCLE3P third point: click in the model space or type `x,y` / `LABEL=x,y` to commit the circumcircle.';
+    case 'CIRCLETTR':
+      if (!session.second) {
+        return 'CIRCLETTR tangent pick: click a line, polyline, arc, or circle body. The pick point selects the tangent branch.';
+      }
+      if (session.awaitingSecondRepick) {
+        return 'CIRCLETTR repick: click a different second tangent body, or enter another positive radius for the same pair.';
+      }
+      return 'CIRCLETTR radius: enter a positive radius. The nearest tangency solution wins; a symmetric tie stays ambiguous.';
+    case 'CIRCLETTT':
+      return 'CIRCLETTT tangent picks: click three lines, polylines, arcs, or circles. The third pick commits the Apollonius circle.';
     case 'POLYGON':
       if (session.phase === 'sides') return 'POLYGON sides: enter an integer 3-1024.';
       if (session.phase === 'mode') {

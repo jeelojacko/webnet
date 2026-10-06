@@ -5,6 +5,7 @@ import {
   MIN_SHAPE_POLYGON_SIDES,
   type RegularPolygonMode,
 } from '../../engine/cad/cadGeometryShapeBuilders';
+import { solveCadCircleTangentTangentRadius } from '../../engine/cad/cadGeometryCircleTangentSolvers';
 import { runCadCommand } from '../../engine/cad/cadUndoRedo';
 import { parseInputPoint } from './useSurveyCadCommandPointParsing';
 import type { HandleSurveyCadTypedSubmitOptions } from './useSurveyCadTypedSubmit.types';
@@ -99,6 +100,75 @@ export const handleSurveyCadShapeSubmit = ({
       return true;
     }
     consumePoint(parsed);
+    return true;
+  }
+  if (session.key === 'CIRCLE2P' || session.key === 'CIRCLE3P') {
+    const basePoint =
+      session.key === 'CIRCLE2P'
+        ? session.first
+        : session.points[session.points.length - 1] ?? null;
+    const parsed = parseInputPoint(session.inputValue, basePoint);
+    if (!parsed) {
+      replaceSession({
+        ...session,
+        resultText: `${session.key} point invalid. Use \`x,y\`, \`LABEL=x,y\`, \`@azimuth,distance\`, or survey bearing-distance.`,
+      });
+      return true;
+    }
+    consumePoint(parsed);
+    return true;
+  }
+  if (session.key === 'CIRCLETTR') {
+    if (!session.first || !session.second) {
+      replaceSession({
+        ...session,
+        inputValue: '',
+        resultText: 'CIRCLETTR needs two tangent object picks (line, polyline, arc, or circle) before the radius.',
+      });
+      return true;
+    }
+    const radius = Number(session.inputValue.trim());
+    if (!Number.isFinite(radius) || radius <= 0) {
+      replaceSession({
+        ...session,
+        inputValue: '',
+        resultText: 'CIRCLETTR radius invalid. Enter a positive radius after two tangent picks.',
+      });
+      return true;
+    }
+    const solved = solveCadCircleTangentTangentRadius(session.first, session.second, radius);
+    if (solved.status !== 'SOLVED') {
+      // Failed solve opens the UI-only repick window: another radius for the
+      // same pair stays valid, and the next distinct tangent click replaces
+      // the second source.
+      replaceSession({
+        ...session,
+        inputValue: '',
+        awaitingSecondRepick: true,
+        resultText:
+          solved.status === 'AMBIGUOUS'
+            ? 'CIRCLETTR is ambiguous for those tangents. Pick a different second tangent, or enter another radius.'
+            : 'CIRCLETTR found no tangent circle for that radius. Pick a different second tangent, or enter another radius.',
+      });
+      return true;
+    }
+    applyHistoryUpdate((existing) =>
+      runCadCommand(existing, {
+        key: 'CIRCLETTR',
+        first: session.first!,
+        second: session.second!,
+        radius,
+      }),
+    );
+    replaceSession(null);
+    return true;
+  }
+  if (session.key === 'CIRCLETTT') {
+    replaceSession({
+      ...session,
+      inputValue: '',
+      resultText: 'CIRCLETTT accepts three tangent object picks. Click a line, polyline, arc, or circle.',
+    });
     return true;
   }
   if (session.key !== 'POLYGON') return false;

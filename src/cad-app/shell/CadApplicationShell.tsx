@@ -489,6 +489,8 @@ export const CadApplicationShell: React.FC<CadApplicationShellProps> = ({ contro
             actionsOverride={chromeActions}
             heightPx={layout.layout.commandHeightPx}
             onResize={layout.setCommandHeight}
+            historyExpanded={layout.layout.commandHistoryExpanded}
+            onToggleHistory={layout.setCommandHistoryExpanded}
           />
         </div>
         {renderSidePanel(layout.layout.rightPanel, 'right')}

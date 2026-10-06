@@ -75,6 +75,31 @@ export const useSurveyCadCommandStarters = ({
       inputValue: '',
       center: null,
     }),
+  startCircleTwoPointCommand: () =>
+    beginSession({
+      key: 'CIRCLE2P',
+      inputValue: '',
+      first: null,
+    }),
+  startCircleThreePointCommand: () =>
+    beginSession({
+      key: 'CIRCLE3P',
+      inputValue: '',
+      points: [],
+    }),
+  startCircleTangentTangentRadiusCommand: () =>
+    beginSession({
+      key: 'CIRCLETTR',
+      inputValue: '',
+      first: null,
+      second: null,
+    }),
+  startCircleTangentTangentTangentCommand: () =>
+    beginSession({
+      key: 'CIRCLETTT',
+      inputValue: '',
+      picks: [],
+    }),
   startPolygonCommand: () =>
     beginSession({
       key: 'POLYGON',

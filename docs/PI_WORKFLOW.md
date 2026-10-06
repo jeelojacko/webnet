@@ -1,8 +1,11 @@
 # Pi Workflow — Reproducibility Requirements (WebNet)
 
-Tracked companion to the gitignored project `.pi/APPEND_SYSTEM.md` (force-added
-in this repo so a fresh clone has the routing policy; machine-local Pi state
-below must be replicated by hand or script — see checklist).
+Tracked companion to the project `.pi/APPEND_SYSTEM.md` (tracked, so a fresh
+clone has the routing policy). Machine-local Pi state such as `.pi/lsp.json` is
+excluded from version control by the tracked `.gitignore` (`.pi/*` with a
+`!.pi/APPEND_SYSTEM.md` exception — not `.git/info/exclude`, which does not
+accompany a clone), so it must be recreated by hand or script on a fresh machine
+— see the checklist and the paste-loadable template below.
 
 ## Default route
 
@@ -71,5 +74,44 @@ process over `/new` until the reset path is retested. Never reset mid-phase.
 2. Apply role `tools:` lines per the matrix (or copy `agents/`).
 3. `settings.json`: defaults as above; no Ponytail/analytics/browser packages.
 4. `CMD_API_KEY` exported for commandcode routes.
-5. Trust project `.pi` (lsp.json hash) on first run.
-6. Never commit sessions, caches, FTS DBs, credentials, or `graft/` output.
+5. Recreate `.pi/lsp.json` from the template below (machine-local, ignored by the tracked `.gitignore`), then trust project `.pi` (lsp.json hash) on first run.
+6. Never commit sessions, caches, FTS DBs, credentials, `.pi/lsp.json`, or `graft/` output.
+
+## Machine-local `.pi/lsp.json` template
+
+`.pi/lsp.json` is deliberately untracked, so recreate it per machine. Paste the
+wrapped config below and replace `<home>` with the local home directory:
+
+```json
+{
+  "version": 1,
+  "servers": [
+    {
+      "id": "typescript",
+      "enabled": true,
+      "include": ["**/*.ts", "**/*.tsx"],
+      "exclude": [
+        "node_modules/**",
+        "dist/**",
+        "dist-webnet/**",
+        "cpp/**",
+        "emsdk/**",
+        "study-content/**"
+      ],
+      "rootMarkers": ["package.json", "tsconfig.json"],
+      "bin": "<home>/.local/share/mise/shims/typescript-language-server",
+      "args": ["--stdio"],
+      "cwd": "{root}",
+      "languageIdByExtension": {
+        ".ts": "typescript",
+        ".tsx": "typescriptreact"
+      },
+      "startupTimeoutMs": 45000,
+      "diagnosticsWaitMs": 2500
+    }
+  ]
+}
+```
+
+Add a second `clangd` entry inside `servers` for C++ edits, using the same field
+shape with `rootMarkers: ["compile_commands.json"]`.

@@ -2,9 +2,17 @@ import { runCadCommand } from '../../engine/cad/cadUndoRedo';
 import {
   buildCircleCenterDiameterScalar,
   buildCircleCenterRadiusScalar,
+  buildCircleThreePoint,
+  buildCircleTwoPoint,
   buildRectangleVertices,
   buildRegularPolygonVertices,
 } from '../../engine/cad/cadGeometryShapeBuilders';
+import {
+  isSameCadTangentPrimitive,
+  resolveCadTangentSource,
+  solveCadCircleTangentTangentTangent,
+  type CadTangentSource,
+} from '../../engine/cad/cadGeometryCircleTangentSolvers';
 import type { CommandPoint, CommandSession } from './useSurveyCadCommandTypes';
 import { buildTraverseLegInputFromPoints } from './useSurveyCadCommandSession';
 import { normalizeDraftPoint } from './useSurveyCadCommandParsing';
@@ -317,6 +325,7 @@ export const handleSurveyCadConsumePoint = (
       point: options.point,
       replaceSession: options.replaceSession,
     }) ||
+    handleCircleConstructionPointPick(options) ||
     handleLinePointPick(options) ||
     handleSurveyCadEditPointPick(options) ||
     handleSurveyCadParcelSplitPointPick({ current, point, replaceSession }) ||
@@ -442,6 +451,172 @@ const handleShapePointPick = ({
     return true;
   }
   return false;
+};
+
+const handleCircleConstructionPointPick = (
+  options: Pick<
+    HandleSurveyCadConsumePointOptions,
+    'applyHistoryUpdate' | 'current' | 'point' | 'replaceSession' | 'history'
+  >,
+): boolean => {
+  const { applyHistoryUpdate, current, point, replaceSession } = options;
+  if (current.key === 'CIRCLE2P') {
+    if (!current.first) {
+      replaceSession({ ...current, first: point, inputValue: '', resultText: undefined });
+      return true;
+    }
+    const first = current.first;
+    if (!buildCircleTwoPoint(first, point)) {
+      replaceSession({
+        ...current,
+        inputValue: '',
+        resultText: 'CIRCLE2P endpoints are coincident. Pick a distinct second endpoint.',
+      });
+      return true;
+    }
+    applyHistoryUpdate((existing) =>
+      runCadCommand(existing, { key: 'CIRCLE2P', first, second: point }),
+    );
+    replaceSession(null);
+    return true;
+  }
+  if (current.key === 'CIRCLE3P') {
+    if (current.points.length < 2) {
+      replaceSession({
+        ...current,
+        points: [...current.points, point],
+        inputValue: '',
+        resultText: undefined,
+      });
+      return true;
+    }
+    const [first, second] = current.points;
+    if (!first || !second || !buildCircleThreePoint(first, second, point)) {
+      replaceSession({
+        ...current,
+        inputValue: '',
+        resultText: 'CIRCLE3P third point is collinear or coincident. Pick a distinct third point.',
+      });
+      return true;
+    }
+    applyHistoryUpdate((existing) =>
+      runCadCommand(existing, { key: 'CIRCLE3P', first, second, third: point }),
+    );
+    replaceSession(null);
+    return true;
+  }
+  if (current.key !== 'CIRCLETTR' && current.key !== 'CIRCLETTT') return false;
+  const entityId = point.snapSourceEntityId;
+  const source = entityId
+    ? resolveCadTangentSource(
+        options.history.present.project,
+        entityId,
+        { x: point.x, y: point.y },
+        point.snapSourceSegmentId,
+      )
+    : null;
+  if (!source) {
+    replaceSession({
+      ...current,
+      inputValue: '',
+      resultText: `${current.key} needs a direct line, polyline, arc, or circle body click. Background points do not define a tangent.`,
+    });
+    return true;
+  }
+  if (current.key === 'CIRCLETTR') {
+    if (!current.first) {
+      replaceSession({
+        ...current,
+        first: source,
+        inputValue: '',
+        resultText: 'CIRCLETTR first tangent captured. Pick the second tangent object.',
+      });
+      return true;
+    }
+    if (!current.second) {
+      if (isSameCadTangentPrimitive(current.first.primitive, source.primitive)) {
+        replaceSession({
+          ...current,
+          inputValue: '',
+          resultText: 'CIRCLETTR ignored the same object twice. Pick a different second tangent.',
+        });
+        return true;
+      }
+      replaceSession({
+        ...current,
+        second: source,
+        awaitingSecondRepick: false,
+        inputValue: '',
+        resultText: 'CIRCLETTR tangents captured. Enter the radius and press Enter.',
+      });
+      return true;
+    }
+    if (current.awaitingSecondRepick) {
+      // Repick law: the next distinct tangent object replaces the second source.
+      const repeated =
+        isSameCadTangentPrimitive(current.first.primitive, source.primitive) ||
+        isSameCadTangentPrimitive(current.second.primitive, source.primitive);
+      if (repeated) {
+        replaceSession({
+          ...current,
+          inputValue: '',
+          resultText: 'CIRCLETTR ignored a repeated tangent. Pick a different second tangent.',
+        });
+        return true;
+      }
+      replaceSession({
+        ...current,
+        second: source,
+        awaitingSecondRepick: false,
+        inputValue: '',
+        resultText: 'CIRCLETTR second tangent replaced. Enter the radius and press Enter.',
+      });
+      return true;
+    }
+    replaceSession({
+      ...current,
+      inputValue: '',
+      resultText: 'CIRCLETTR has both tangents. Enter the radius and press Enter.',
+    });
+    return true;
+  }
+  const picks = current.picks;
+  if (picks.some((existing) => isSameCadTangentPrimitive(existing.primitive, source.primitive))) {
+    replaceSession({
+      ...current,
+      inputValue: '',
+      resultText: 'CIRCLETTT ignored a repeated tangent. Pick a different object.',
+    });
+    return true;
+  }
+  if (picks.length < 2) {
+    replaceSession({
+      ...current,
+      picks: [...picks, source],
+      inputValue: '',
+      resultText: undefined,
+    });
+    return true;
+  }
+  const [first, second] = picks;
+  if (!first || !second) return true;
+  const solved = solveCadCircleTangentTangentTangent(first, second, source);
+  if (solved.status !== 'SOLVED' || !solved.center || solved.radius == null) {
+    replaceSession({
+      ...current,
+      inputValue: '',
+      resultText:
+        solved.status === 'AMBIGUOUS'
+          ? 'CIRCLETTT is ambiguous for those picks. Pick a different third tangent object.'
+          : 'CIRCLETTT found no tangent circle through those objects. Pick a different third tangent.',
+    });
+    return true;
+  }
+  applyHistoryUpdate((existing) =>
+    runCadCommand(existing, { key: 'CIRCLETTT', first, second, third: source }),
+  );
+  replaceSession(null);
+  return true;
 };
 
 const handleLinePointPick = ({

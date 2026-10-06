@@ -117,6 +117,10 @@ export interface UseSurveyCadWorkspaceResult {
     | 'RECTANGLE'
     | 'CIRCLE'
     | 'CIRCLECD'
+    | 'CIRCLE2P'
+    | 'CIRCLE3P'
+    | 'CIRCLETTR'
+    | 'CIRCLETTT'
     | 'POLYGON'
     | 'PLINE'
     | 'TRAVERSE'
@@ -252,6 +256,10 @@ export interface UseSurveyCadWorkspaceResult {
   startRectangleCommand: () => void;
   startCircleCommand: () => void;
   startCircleDiameterCommand: () => void;
+  startCircleTwoPointCommand: () => void;
+  startCircleThreePointCommand: () => void;
+  startCircleTangentTangentRadiusCommand: () => void;
+  startCircleTangentTangentTangentCommand: () => void;
   startPolygonCommand: () => void;
   startLineTableCommand: () => void;
   startCurveTableCommand: () => void;

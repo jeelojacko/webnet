@@ -33,6 +33,7 @@ describe('cad shell layout persistence', () => {
       rightPanel: null,
       leftWidthPx: 320,
       commandHeightPx: 200,
+      commandHistoryExpanded: true,
       toolspaceTab: 'settings',
       ribbonCollapsed: true,
     });
@@ -41,6 +42,7 @@ describe('cad shell layout persistence', () => {
     expect(loaded.rightPanel).toBeNull();
     expect(loaded.leftWidthPx).toBe(320);
     expect(loaded.commandHeightPx).toBe(200);
+    expect(loaded.commandHistoryExpanded).toBe(true);
     expect(loaded.toolspaceTab).toBe('settings');
     expect(loaded.ribbonCollapsed).toBe(true);
     // Layout rows carry no drawing content, ids, or entities.
@@ -71,5 +73,28 @@ describe('cad shell layout persistence', () => {
     expect(loaded.commandHeightPx).toBeGreaterThanOrEqual(96);
     expect(loaded.toolspaceTab).toBe('prospector');
     expect(loaded.ribbonCollapsed).toBe(false);
+  });
+
+  it('keeps legacy layouts collapsed without discarding the expanded height', () => {
+    // Old chrome stored a fixed command height and no expansion field. The
+    // dock must stay collapsed (no blank reservoir) but remember the height
+    // for when the operator expands the history panel.
+    const storage = memoryStorage();
+    storage.setItem(
+      CAD_SHELL_LAYOUT_STORAGE_KEY,
+      JSON.stringify({ version: 1, commandHeightPx: 200 }),
+    );
+    const loaded = loadShellLayout(storage);
+    expect(loaded.commandHistoryExpanded).toBe(false);
+    expect(loaded.commandHeightPx).toBe(200);
+  });
+
+  it('sanitizes a non-boolean history expansion flag back to collapsed', () => {
+    const storage = memoryStorage();
+    storage.setItem(
+      CAD_SHELL_LAYOUT_STORAGE_KEY,
+      JSON.stringify({ version: 1, commandHistoryExpanded: 'yes' }),
+    );
+    expect(loadShellLayout(storage).commandHistoryExpanded).toBe(false);
   });
 });

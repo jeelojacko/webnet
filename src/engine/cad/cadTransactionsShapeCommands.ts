@@ -2,15 +2,22 @@ import { createStableRuntimeId } from '../id';
 import {
   buildCircleCenterDiameterScalar,
   buildCircleCenterRadiusScalar,
+  buildCircleThreePoint,
+  buildCircleTwoPoint,
   buildRectangleVertices,
   buildRegularPolygonVertices,
   type RegularPolygonMode,
 } from './cadGeometryShapeBuilders';
+import {
+  solveCadCircleTangentTangentRadius,
+  solveCadCircleTangentTangentTangent,
+  type CadTangentSource,
+} from './cadGeometryCircleTangentSolvers';
 import { resolveCurrentCadLayerId } from './cadLayers';
 import { appendCadProjectEntities } from './cadProjectState';
 import { createCadSelectionState } from './cadSelection';
 import { nextEntityName } from './cadTransactionsEntityFactories';
-import type { CadCommandDefinition } from './cadTransactions.types';
+import type { CadCommandDefinition, CadCommandKey } from './cadTransactions.types';
 import type { CadCircleEntity, CadPolygonEntity } from './cadTypes';
 
 type XyPoint = { x: number; y: number; label: string };
@@ -117,11 +124,19 @@ export type ShapeCircleDiameterCommand = {
   diameter: number;
 };
 
+type CadCircleCreatedBy =
+  | 'CIRCLE'
+  | 'CIRCLECD'
+  | 'CIRCLE2P'
+  | 'CIRCLE3P'
+  | 'CIRCLETTR'
+  | 'CIRCLETTT';
+
 const toCircleEntity = (
   snapshot: Parameters<CadCommandDefinition<ShapeCircleCommand>['execute']>[0],
   built: { center: { x: number; y: number }; radius: number },
-  createdBy: 'CIRCLE' | 'CIRCLECD',
-  prefix: 'CIR' | 'CIRD',
+  createdBy: CadCircleCreatedBy,
+  prefix: 'CIR' | 'CIRD' | 'CIR2P' | 'CIR3P' | 'CIRTTR' | 'CIRTTT',
 ): CadCircleEntity => ({
   id: createStableRuntimeId('cad-circle'),
   type: 'circle',
@@ -138,7 +153,7 @@ const toCircleEntity = (
   },
 });
 
-const commitCircleEntity = <TKey extends 'CIRCLE' | 'CIRCLECD'>(
+const commitCircleEntity = <TKey extends CadCommandKey>(
   snapshot: Parameters<CadCommandDefinition<ShapeCircleCommand>['execute']>[0],
   entity: CadCircleEntity,
   key: TKey,
@@ -185,9 +200,78 @@ export const circleDiameterCommand: CadCommandDefinition<ShapeCircleDiameterComm
   },
 };
 
+export type ShapeCircleTwoPointCommand = {
+  key: 'CIRCLE2P';
+  first: XyPoint;
+  second: XyPoint;
+};
+
+export type ShapeCircleThreePointCommand = {
+  key: 'CIRCLE3P';
+  first: XyPoint;
+  second: XyPoint;
+  third: XyPoint;
+};
+
+export type ShapeCircleTangentRadiusCommand = {
+  key: 'CIRCLETTR';
+  first: CadTangentSource;
+  second: CadTangentSource;
+  radius: number;
+};
+
+export type ShapeCircleTangentTangentCommand = {
+  key: 'CIRCLETTT';
+  first: CadTangentSource;
+  second: CadTangentSource;
+  third: CadTangentSource;
+};
+
+export const circleTwoPointCommand: CadCommandDefinition<ShapeCircleTwoPointCommand> = {
+  key: 'CIRCLE2P',
+  execute: (snapshot, command) => {
+    const built = buildCircleTwoPoint(command.first, command.second);
+    if (!built) return null;
+    return commitCircleEntity(snapshot, toCircleEntity(snapshot, built, 'CIRCLE2P', 'CIR2P'), 'CIRCLE2P');
+  },
+};
+
+export const circleThreePointCommand: CadCommandDefinition<ShapeCircleThreePointCommand> = {
+  key: 'CIRCLE3P',
+  execute: (snapshot, command) => {
+    const built = buildCircleThreePoint(command.first, command.second, command.third);
+    if (!built) return null;
+    return commitCircleEntity(snapshot, toCircleEntity(snapshot, built, 'CIRCLE3P', 'CIR3P'), 'CIRCLE3P');
+  },
+};
+
+export const circleTangentTangentRadiusCommand: CadCommandDefinition<ShapeCircleTangentRadiusCommand> = {
+  key: 'CIRCLETTR',
+  execute: (snapshot, command) => {
+    const solved = solveCadCircleTangentTangentRadius(command.first, command.second, command.radius);
+    if (solved.status !== 'SOLVED' || !solved.center || solved.radius == null) return null;
+    const built = { center: solved.center, radius: solved.radius };
+    return commitCircleEntity(snapshot, toCircleEntity(snapshot, built, 'CIRCLETTR', 'CIRTTR'), 'CIRCLETTR');
+  },
+};
+
+export const circleTangentTangentTangentCommand: CadCommandDefinition<ShapeCircleTangentTangentCommand> = {
+  key: 'CIRCLETTT',
+  execute: (snapshot, command) => {
+    const solved = solveCadCircleTangentTangentTangent(command.first, command.second, command.third);
+    if (solved.status !== 'SOLVED' || !solved.center || solved.radius == null) return null;
+    const built = { center: solved.center, radius: solved.radius };
+    return commitCircleEntity(snapshot, toCircleEntity(snapshot, built, 'CIRCLETTT', 'CIRTTT'), 'CIRCLETTT');
+  },
+};
+
 export const shapeCommandDefinitions = {
   CIRCLE: circleCommand,
   CIRCLECD: circleDiameterCommand,
+  CIRCLE2P: circleTwoPointCommand,
+  CIRCLE3P: circleThreePointCommand,
+  CIRCLETTR: circleTangentTangentRadiusCommand,
+  CIRCLETTT: circleTangentTangentTangentCommand,
   RECTANGLE: rectangleCommand,
   POLYGON: polygonCommand,
 };

@@ -47,6 +47,28 @@ export const promptForSession = (session: CommandSession | null, fallbackStatus:
         (session.center
           ? `CIRCLECD active. Center ${session.center.label} captured. Click or enter the diameter (point or positive number); radius is half the diameter.`
           : 'CIRCLECD active. Click or enter the center point.');
+    case 'CIRCLE2P':
+      return session.resultText ??
+        (session.first
+          ? `CIRCLE2P active. First endpoint ${session.first.label} captured. Click or enter the opposite diameter endpoint.`
+          : 'CIRCLE2P active. Click or enter the first diameter endpoint.');
+    case 'CIRCLE3P':
+      return session.resultText ??
+        (session.points.length === 0
+          ? 'CIRCLE3P active. Click or enter the first point.'
+          : session.points.length === 1
+            ? `CIRCLE3P active. First point ${session.points[0].label} captured. Enter the second point.`
+            : 'CIRCLE3P active. Two points captured. Enter the third point to commit.');
+    case 'CIRCLETTR':
+      return session.resultText ??
+        (!session.first
+          ? 'CIRCLETTR active. Pick the first tangent line, polyline, arc, or circle.'
+          : !session.second
+            ? 'CIRCLETTR active. First tangent captured. Pick the second tangent object.'
+            : 'CIRCLETTR active. Tangents captured. Enter the radius and press Enter.');
+    case 'CIRCLETTT':
+      return session.resultText ??
+        `CIRCLETTT active. ${session.picks.length} tangent object${session.picks.length === 1 ? '' : 's'} captured. Pick a line, polyline, arc, or circle.`;
     case 'POLYGON':
       return session.resultText ?? polygonPromptForPhase(session);
     case 'PLINE':

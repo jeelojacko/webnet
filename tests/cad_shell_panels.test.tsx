@@ -318,7 +318,10 @@ describe('cad shell panels', () => {
     });
     await keyDown(input, 'Enter');
     expect(container.textContent).toContain('Unknown command');
-    expect(container.querySelector('.cad-shell-command-history')?.textContent).toContain('BOGUS');
+    // Phase B2 — history is collapsed until the chevron expands it.
+    expect(container.querySelector('[data-cad-command-history]')).toBeNull();
+    await click(container.querySelector('[data-cad-command-history-toggle]'));
+    expect(container.querySelector('[data-cad-command-history]')?.textContent).toContain('BOGUS');
     await cleanup(container, root);
   });
 

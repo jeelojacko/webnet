@@ -100,18 +100,19 @@ describe('phase 21A tool-family manifests (§80)', () => {
     ]);
   });
 
-  it('maps Circle rows to the live CIRCLE / CIRCLECD commands', () => {
+  it('maps all six Circle rows to the live CIRCLE family commands', () => {
     const entry = family('circle');
     expect(entry.defaultVariantId).toBe('circle-center-radius');
     const byId = new Map(entry.variants.map((variant) => [variant.id, variant]));
     expect(byId.get('circle-center-radius')?.commandKey).toBe('CIRCLE');
     expect(byId.get('circle-center-diameter')?.commandKey).toBe('CIRCLECD');
-    expect(byId.get('circle-2point')?.commandKey).toBeUndefined();
-    expect(byId.get('circle-3point')?.commandKey).toBeUndefined();
-    expect(byId.get('circle-tan-tan-radius')?.commandKey).toBeUndefined();
-    expect(byId.get('circle-tan-tan-tan')?.commandKey).toBeUndefined();
+    expect(byId.get('circle-2point')?.commandKey).toBe('CIRCLE2P');
+    expect(byId.get('circle-3point')?.commandKey).toBe('CIRCLE3P');
+    expect(byId.get('circle-tan-tan-radius')?.commandKey).toBe('CIRCLETTR');
+    expect(byId.get('circle-tan-tan-tan')?.commandKey).toBe('CIRCLETTT');
+    expect(entry.variants.every((variant) => variant.planned == null)).toBe(true);
     expect(isCadRibbonVariantSelectable(entry, 'circle-center-radius')).toBe(true);
-    expect(isCadRibbonVariantSelectable(entry, 'circle-2point')).toBe(false);
+    expect(isCadRibbonVariantSelectable(entry, 'circle-2point')).toBe(true);
   });
   it('maps Shapes rows to the live RECTANGLE / POLYGON commands', () => {
     const entry = family('shapes');
@@ -144,7 +145,7 @@ describe('phase 21A tool-family manifests (§80)', () => {
     expect(isCadRibbonVariantSelectable(arc, 'arc-sce')).toBe(true);
     expect(isCadRibbonVariantSelectable(arc, 'arc-nope')).toBe(false);
     expect(isCadRibbonVariantSelectable(family('circle'), 'circle-center-radius')).toBe(true);
-    expect(isCadRibbonVariantSelectable(family('circle'), 'circle-2point')).toBe(false);
+    expect(isCadRibbonVariantSelectable(family('circle'), 'circle-2point')).toBe(true);
   });
 
   it('builds the default variant map for every family', () => {

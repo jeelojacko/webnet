@@ -1,0 +1,90 @@
+{
+  "flowA": {
+    "variants": {
+      "circle-center-radius": {
+        "command": "CIRCLE",
+        "icon": "draw-circle-center-radius"
+      },
+      "circle-center-diameter": {
+        "command": "CIRCLECD",
+        "icon": "draw-circle-center-diameter"
+      },
+      "circle-2point": {
+        "command": "CIRCLE2P",
+        "icon": "draw-circle-2point"
+      },
+      "circle-3point": {
+        "command": "CIRCLE3P",
+        "icon": "draw-circle-3point"
+      },
+      "circle-tan-tan-radius": {
+        "command": "CIRCLETTR",
+        "icon": "draw-circle-tan-tan-radius"
+      },
+      "circle-tan-tan-tan": {
+        "command": "CIRCLETTT",
+        "icon": "draw-circle-tan-tan-tan"
+      }
+    },
+    "distinctIcons": 6
+  },
+  "flowB2P": {
+    "id": "cad-circle-fce020b3-59e3-4ce0-8033-28979e26d165",
+    "type": "circle",
+    "centerX": 25,
+    "centerY": 20,
+    "radius": 15,
+    "createdBy": "CIRCLE2P"
+  },
+  "flowB3P": {
+    "id": "cad-circle-ff2a97a4-45d2-4a5d-b42e-cf36b7305100",
+    "type": "circle",
+    "centerX": 100,
+    "centerY": 200,
+    "radius": 50,
+    "createdBy": "CIRCLE3P"
+  },
+  "flowTTR": {
+    "id": "cad-circle-41620932-287d-4605-a519-3b00e5a7dab7",
+    "type": "circle",
+    "centerX": 10,
+    "centerY": 10,
+    "radius": 10,
+    "createdBy": "CIRCLETTR"
+  },
+  "flowTTT": {
+    "id": "cad-circle-b4efde12-42cc-4a16-abab-dbfa2ff650a5",
+    "type": "circle",
+    "centerX": 29.289321881345245,
+    "centerY": 29.289321881345245,
+    "radius": 29.289321881345245,
+    "createdBy": "CIRCLETTT",
+    "expectedIncircleRadius": 29.289321881345245
+  },
+  "flowC": {
+    "id": "cad-circle-e74dae84-f597-440d-b04a-cf437e4e9d7a",
+    "type": "circle",
+    "centerX": 6.314066059225514,
+    "centerY": 0.026439960950211727,
+    "radius": 5,
+    "createdBy": "CIRCLE"
+  },
+  "flowD": {
+    "suggestionCount": 7,
+    "firstKey": "CIRCLE"
+  },
+  "flowE_1366": {
+    "collapsedHeight": 54,
+    "collapsedAfterUseHeight": 54,
+    "expandedHeight": 148,
+    "reclaimedHeight": 54,
+    "historyScrollHeight": 371
+  },
+  "flowE_1920": {
+    "collapsedHeight": 54,
+    "collapsedAfterUseHeight": 54,
+    "expandedHeight": 148,
+    "reclaimedHeight": 54,
+    "historyScrollHeight": 371
+  }
+}

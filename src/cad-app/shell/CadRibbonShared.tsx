@@ -9,7 +9,7 @@
 //
 // Icon gaps (no truthful curated asset in cadRibbonIcons.ts) render a short
 // text face: icon is optional in COMMAND_ICONS, never a placeholder emoji or
-// a wrong-meaning glyph. Planned/no-icon families (circle, ellipse, shapes,
+// a wrong-meaning glyph. Planned/no-icon families (ellipse, shapes,
 // hatch primaries) likewise keep a text face per the sibling manifest
 // fallback policy (icon field omitted where no truthful asset exists).
 import React from 'react';

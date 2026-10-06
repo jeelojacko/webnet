@@ -691,11 +691,6 @@
   text-align: left;
 }
 
-.cad-shell-command-echo {
-  padding: 0 8px 2px;
-  color: var(--cad-dim);
-}
-
 .cad-shell-command-history {
   display: flex;
   gap: 8px;
