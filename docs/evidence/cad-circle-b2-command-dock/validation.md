@@ -105,8 +105,13 @@ completed clean.
 
 - `baac9502` (reviewed state): CI run 37533311204 **SUCCESS** —
   classify / static / tests / build-smoke / numerical.
-- The final-correction commit on top of `baac9502` awaits its own exact-head
-  CI; do not treat the previous run as approval of the newer commit.
+- Production-correction validation head `e00f08f6`: exact-head CI check
+  #1066 / run 37539057501 **SUCCESS** — all five jobs green (classify,
+  static, tests, build-smoke, numerical). CI is an automated check, not an
+  independent review verdict.
+- This docs-only closeout adds a new head after `e00f08f6`; that closeout
+  head requires its own exact-head CI, to be recorded in the PR metadata
+  after push.
 
 ## F. Repository invariants
 
