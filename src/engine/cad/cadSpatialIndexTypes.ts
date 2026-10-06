@@ -33,6 +33,13 @@ export interface CadSegmentRef {
   label: string;
 }
 
+export interface CadCircleRef {
+  sourceEntityId: string;
+  center: CadWorldPoint;
+  radius: number;
+  label: string;
+}
+
 export interface CadArcRef {
   sourceEntityId: string;
   center: CadWorldPoint;

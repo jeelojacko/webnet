@@ -5,6 +5,7 @@ import type {
   CadBlockDefinition,
   CadBlockReferenceEntity,
   CadBounds,
+  CadCircleEntity,
   CadEntity,
   CadFeatureLineEntity,
   CadLineEntity,
@@ -24,10 +25,10 @@ import {
 } from './cadParcelArcGeometry';
 import { resolveCadFeatureLine } from './cadFeatureLines';
 import { buildCadSpatialEntitySnapCandidates } from './cadSpatialEntityCandidates';
-import { arcRefFromEntity, entitySegments, featureLineCourseArcs, featureLineCourseSegments } from './cadSpatialEntityRefs';
+import { arcRefFromEntity, circleRefFromEntity, entitySegments, featureLineCourseArcs, featureLineCourseSegments } from './cadSpatialEntityRefs';
 import { blockReferenceBounds, expandBlockReference } from './cadBlocks';
 import { buildCadProjectLookup } from './cadProjectLookup';
-import type { CadArcRef, CadSegmentRef, CadSpatialIndex } from './cadSpatialIndexTypes';
+import type { CadArcRef, CadCircleRef, CadSegmentRef, CadSpatialIndex } from './cadSpatialIndexTypes';
 import {
   buildApparentIntersectionCandidates,
   buildExactIntersectionCandidates,
@@ -93,6 +94,14 @@ interface PreparedArc {
   maxY: number;
 }
 
+interface PreparedCircle {
+  ref: CadCircleRef;
+  minX: number;
+  minY: number;
+  maxX: number;
+  maxY: number;
+}
+
 interface PreparedBlock {
   entity: CadBlockReferenceEntity;
   definition: CadBlockDefinition;
@@ -108,6 +117,7 @@ type SnapEntity =
   | CadPolygonEntity
   | CadParcelEntity
   | CadArcEntity
+  | CadCircleEntity
   | CadFeatureLineEntity;
 
 const isSnapGeometry = (entity: CadEntity): entity is SnapEntity =>
@@ -116,6 +126,7 @@ const isSnapGeometry = (entity: CadEntity): entity is SnapEntity =>
   entity.type === 'polygon' ||
   entity.type === 'parcel' ||
   entity.type === 'arc' ||
+  entity.type === 'circle' ||
   entity.type === 'feature-line';
 
 const segmentBounds = (ref: CadSegmentRef): PreparedSegment => ({
@@ -156,6 +167,14 @@ const featureLineArcExtraBoundsPoints = (entity: CadFeatureLineEntity): CadWorld
     return [{ x: course.center.x, y: course.center.y }, ...parcelArcBoundsPoints(course.from, course.to, entry.bulge)];
   });
 };
+
+const circleBounds = (ref: CadCircleRef): PreparedCircle => ({
+  ref,
+  minX: ref.center.x - ref.radius,
+  minY: ref.center.y - ref.radius,
+  maxX: ref.center.x + ref.radius,
+  maxY: ref.center.y + ref.radius,
+});
 
 const arcBounds = (ref: CadArcRef): PreparedArc => ({
   ref,
@@ -203,6 +222,7 @@ export const buildCadSpatialIndex = (project: CadProject): CadSpatialIndex => {
   const preparedEntities: PreparedEntry[] = [];
   const preparedSegments: PreparedSegment[] = [];
   const preparedArcs: PreparedArc[] = [];
+  const preparedCircles: PreparedCircle[] = [];
   const preparedBlocks: PreparedBlock[] = [];
   const segmentById = new Map<string, CadSegmentRef>();
   const arcBySourceId = new Map<string, CadArcRef>();
@@ -217,6 +237,11 @@ export const buildCadSpatialIndex = (project: CadProject): CadSpatialIndex => {
         const prepared = arcBounds(ref);
         preparedArcs.push(prepared);
         arcBySourceId.set(entity.id, ref);
+        preparedEntities.push({ entity, ...prepared });
+      } else if (entity.type === 'circle') {
+        const ref = circleRefFromEntity(project, entity);
+        const prepared = circleBounds(ref);
+        preparedCircles.push(prepared);
         preparedEntities.push({ entity, ...prepared });
       } else if (entity.type === 'feature-line') {
         // Phase 20A: line courses join the segment set, arc courses the arc
@@ -302,11 +327,11 @@ export const buildCadSpatialIndex = (project: CadProject): CadSpatialIndex => {
 
   // Per-index expansion cache: same project object ⇒ same instance transform,
   // so a cached expansion can never go stale within this index's lifetime.
-  const blockExpansionCache = new Map<string, { segments: CadSegmentRef[]; arcs: CadArcRef[] }>();
-  const expandedBlockChildren = (block: PreparedBlock): { segments: CadSegmentRef[]; arcs: CadArcRef[] } => {
+  const blockExpansionCache = new Map<string, { segments: CadSegmentRef[]; arcs: CadArcRef[]; circles: CadCircleRef[] }>();
+  const expandedBlockChildren = (block: PreparedBlock): { segments: CadSegmentRef[]; arcs: CadArcRef[]; circles: CadCircleRef[] } => {
     const cached = blockExpansionCache.get(block.entity.id);
     if (cached) return cached;
-    const empty = { segments: [], arcs: [] as CadArcRef[] };
+    const empty = { segments: [], arcs: [] as CadArcRef[], circles: [] as CadCircleRef[] };
     let children;
     try {
       children = expandBlockReference(block.definition, block.entity);
@@ -316,15 +341,19 @@ export const buildCadSpatialIndex = (project: CadProject): CadSpatialIndex => {
     }
     const segments: CadSegmentRef[] = [];
     const arcs: CadArcRef[] = [];
+    const circles: CadCircleRef[] = [];
     for (const child of children) {
       if (child.type === 'line' || child.type === 'polyline' || child.type === 'polygon') {
         segments.push(...entitySegments({ ...child, id: block.entity.id }));
       } else if (child.type === 'arc') {
         const ref = arcRefFromEntity(project, { ...child, id: block.entity.id });
         arcs.push({ ...ref, sourceEntityId: block.entity.id });
+      } else if (child.type === 'circle') {
+        const ref = circleRefFromEntity(project, { ...child, id: block.entity.id });
+        circles.push({ ...ref, sourceEntityId: block.entity.id });
       }
     }
-    const expanded = { segments, arcs };
+    const expanded = { segments, arcs, circles };
     blockExpansionCache.set(block.entity.id, expanded);
     return expanded;
   };
@@ -369,6 +398,7 @@ export const buildCadSpatialIndex = (project: CadProject): CadSpatialIndex => {
     let visibleEntities: CadEntity[];
     let segments: CadSegmentRef[];
     let arcs: CadArcRef[];
+    let circles: CadCircleRef[];
     if (constructionActive) {
       visibleEntities = [];
       for (const prepared of preparedEntities) {
@@ -382,12 +412,16 @@ export const buildCadSpatialIndex = (project: CadProject): CadSpatialIndex => {
       arcs = preparedArcs
         .filter((prepared) => !visibleQueryBounds || intersectsBox(prepared.minX, prepared.minY, prepared.maxX, prepared.maxY, visibleQueryBounds))
         .map((prepared) => prepared.ref);
+      circles = preparedCircles
+        .filter((prepared) => !visibleQueryBounds || intersectsBox(prepared.minX, prepared.minY, prepared.maxX, prepared.maxY, visibleQueryBounds))
+        .map((prepared) => prepared.ref);
       for (const block of preparedBlocks) {
         if (visibleQueryBounds && !intersectsBox(block.minX, block.minY, block.maxX, block.maxY, visibleQueryBounds)) continue;
         visibleEntities.push(block.entity);
         const expanded = expandedBlockChildren(block);
         segments.push(...expanded.segments);
         arcs.push(...expanded.arcs);
+        circles.push(...expanded.circles);
       }
     } else {
       const cursorBox = pointBox(worldPoint, toleranceWorld * maxRangeMultiplier(allowed));
@@ -409,6 +443,12 @@ export const buildCadSpatialIndex = (project: CadProject): CadSpatialIndex => {
         if (!intersectsBox(prepared.minX, prepared.minY, prepared.maxX, prepared.maxY, cursorBox)) continue;
         arcs.push(prepared.ref);
       }
+      circles = [];
+      for (const prepared of preparedCircles) {
+        if (visibleQueryBounds && !intersectsBox(prepared.minX, prepared.minY, prepared.maxX, prepared.maxY, visibleQueryBounds)) continue;
+        if (!intersectsBox(prepared.minX, prepared.minY, prepared.maxX, prepared.maxY, cursorBox)) continue;
+        circles.push(prepared.ref);
+      }
       for (const block of preparedBlocks) {
         if (visibleQueryBounds && !intersectsBox(block.minX, block.minY, block.maxX, block.maxY, visibleQueryBounds)) continue;
         if (!intersectsBox(block.minX, block.minY, block.maxX, block.maxY, cursorBox)) continue;
@@ -421,6 +461,10 @@ export const buildCadSpatialIndex = (project: CadProject): CadSpatialIndex => {
         for (const ref of expanded.arcs) {
           const bounds = arcBounds(ref);
           if (intersectsBox(bounds.minX, bounds.minY, bounds.maxX, bounds.maxY, cursorBox)) arcs.push(ref);
+        }
+        for (const ref of expanded.circles) {
+          const bounds = circleBounds(ref);
+          if (intersectsBox(bounds.minX, bounds.minY, bounds.maxX, bounds.maxY, cursorBox)) circles.push(ref);
         }
       }
     }
@@ -543,7 +587,7 @@ export const buildCadSpatialIndex = (project: CadProject): CadSpatialIndex => {
     }
 
     if (allowed.has('intersection')) {
-      candidates.push(...buildExactIntersectionCandidates({ segments, arcs, worldPoint }));
+      candidates.push(...buildExactIntersectionCandidates({ segments, arcs, circles, worldPoint }));
     }
     if (constructionContext.active && allowed.has('apparent-intersection')) {
       candidates.push(

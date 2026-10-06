@@ -6,10 +6,14 @@ below must be replicated by hand or script — see checklist).
 
 ## Default route
 
-orchestrator → one `worker` → independent `reviewer` → exact-head CI.
+Tightly coupled: orchestrator → one `worker` → independent `reviewer` → (correction worker(s) → fresh reviewer)* → exact-head CI.
+Parallelizable: orchestrator → parallel `worker`s on genuinely independent substantial scopes → integrate → independent `reviewer` → (correction worker(s) → fresh reviewer)* → exact-head CI.
+Smallest useful Worker set; parallelize only when wall-time savings clearly exceed coordination cost.
 Scout/Researcher/Oracle are opt-in only (unknown scope / external authority /
 genuine dispute). Reviewer is read-only, never delegates, never reruns heavy
-suites. Fixes go orchestrator → worker → reviewer recheck.
+suites, reviews the current combined exact state. Fixes go orchestrator → one or more workers → fresh reviewer recheck until APPROVE; only current-state APPROVE ends the loop.
+
+Reviewer returns APPROVE or actionable findings. On findings the orchestrator must not declare complete/PR-ready/merge-ready, must not self-fix substantive findings, and must not treat "review ran" as approval. Route findings through correction worker(s) (parallel only for independent findings), integrate, then fresh reviewer on the new exact state; repeat until APPROVE. Prior APPROVE is stale after any substantive change.
 
 ## Role/tool/delegation matrix (enforced in `~/.pi/agent/agents/*.md`)
 
@@ -30,14 +34,9 @@ clangd only on C++ edits — no extra gating needed.
 
 ## Model/provider assignments (verified)
 
-- First worker: pinned default `opencode-go/muse-spark-1.3-contributor`, no override.
-- DEFAULT is one worker. Extra parallel workers only for genuinely independent,
-  substantial scopes where wall-time savings clearly exceed coordination cost
-  (never for discovery, small fan-out, or bounded fixes):
-  `commandcode/deepseek/deepseek-v4.1-flash` on high reasoning (smoke-proven;
-  requires `$CMD_API_KEY`).
-- NEVER use `opencode-go/deepseek/*`: opencode-go carries Muse Spark, not
-  DeepSeek (HTTP 400). Retries stay on the original model.
+- Worker model rotation (all medium reasoning): 1st `commandcode/deepseek/deepseek-v4.1-flash`, 2nd `opencode-go/deepseek-v4.1-flash`, 3rd `opencode-go/muse-spark-1.3-contributor`, then cycle (`commandcode` routes require `$CMD_API_KEY`; `opencode-go` and `commandcode` are distinct provider paths).
+- Prefer parallel focused Workers for genuinely independent substantial scopes when wall-clock savings exceed coordination cost; use one Worker for coupled/bounded work (never fan out for discovery, small fan-out, or bounded fixes).
+- Retries stay on the original model.
 - OpenAI models always via `openai-codex/<model>` (Codex auth).
 
 ## Required / disabled extensions

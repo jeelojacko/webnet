@@ -307,6 +307,17 @@ export interface CadArcEntity extends CadBaseEntity {
   endAngleDeg: number;
 }
 
+/** Phase B1: first-class circle. Center + radius only: no start/end angles,
+ * no sweep, no fullCircle flag, no arc encoding. Creation enforces a finite
+ * center and radius above the CAD geometric floor; load follows the same
+ * verbatim-clone convention as arcs (no load-time revalidation). */
+export interface CadCircleEntity extends CadBaseEntity {
+  type: 'circle';
+  centerX: number;
+  centerY: number;
+  radius: number;
+}
+
 export type CadAlignmentElement =
   | {
       kind: 'line';
@@ -489,6 +500,7 @@ export type CadBlockChild =
   | CadLineEntity
   | CadPolylineEntity
   | CadArcEntity
+  | CadCircleEntity
   | CadPolygonEntity
   | CadTextEntity;
 
@@ -723,6 +735,7 @@ export type CadEntity =
   | CadLineEntity
   | CadPolylineEntity
   | CadArcEntity
+  | CadCircleEntity
   | CadAlignmentEntity
   | CadPolygonEntity
   | CadParcelEntity
@@ -962,6 +975,8 @@ export type CadGripHandleKind =
   | 'arc-start'
   | 'arc-end'
   | 'arc-radius'
+  | 'circle-center'
+  | 'circle-radius'
   | 'insertion';
 
 export interface CadGripHandle {
@@ -1029,7 +1044,7 @@ export interface MlightcadSpikeLayer {
 
 export interface MlightcadSpikeEntity {
   objectId: string;
-  type: 'AcDbPoint' | 'AcDbLine' | 'AcDbPolyline' | 'AcDbArc' | 'AcDbText' | 'AcDbEllipse';
+  type: 'AcDbPoint' | 'AcDbLine' | 'AcDbPolyline' | 'AcDbArc' | 'AcDbCircle' | 'AcDbText' | 'AcDbEllipse';
   layer: string;
   visible: boolean;
   geometry: Record<string, unknown>;

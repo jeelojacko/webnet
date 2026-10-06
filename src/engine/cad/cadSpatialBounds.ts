@@ -227,6 +227,12 @@ export const entityIntersectsBounds = (
     }
     case 'arc':
       return arcIntersectsBounds(arcRefFromEntity(project, entity), bounds);
+    case 'circle': {
+      if (pointInsideBounds({ x: entity.centerX, y: entity.centerY }, bounds)) return true;
+      const dx = Math.max(bounds.minX - entity.centerX, 0, entity.centerX - bounds.maxX);
+      const dy = Math.max(bounds.minY - entity.centerY, 0, entity.centerY - bounds.maxY);
+      return dx * dx + dy * dy <= entity.radius * entity.radius;
+    }
     case 'feature-line':
       return featureLineIntersectsBounds(entity, bounds);
     case 'text':

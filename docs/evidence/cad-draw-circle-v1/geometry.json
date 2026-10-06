@@ -1,0 +1,16 @@
+[
+  {
+    "id": "cad-circle-2a48c1d4-af40-48b0-bd87-1972347c920e",
+    "type": "circle",
+    "centerX": 0,
+    "centerY": 0,
+    "radius": 10
+  },
+  {
+    "id": "cad-circle-0c5af3ad-30b9-4b2e-ab2a-1f85d4de9543",
+    "type": "circle",
+    "centerX": 50,
+    "centerY": 50,
+    "radius": 10
+  }
+]

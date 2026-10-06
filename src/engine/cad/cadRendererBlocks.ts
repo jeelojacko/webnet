@@ -28,7 +28,7 @@ export interface BlockPrimitiveContext {
   lookup?: CadProjectLookup;
 }
 
-const BLOCK_CHILD_TYPES = new Set(['line', 'polyline', 'arc', 'polygon', 'text']);
+const BLOCK_CHILD_TYPES = new Set(['line', 'polyline', 'arc', 'circle', 'polygon', 'text']);
 
 export const expandedBlockPrimitives = (
   project: CadProject,

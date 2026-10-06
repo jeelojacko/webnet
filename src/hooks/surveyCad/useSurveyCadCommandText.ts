@@ -37,6 +37,16 @@ export const promptForSession = (session: CommandSession | null, fallbackStatus:
         (session.firstCorner
           ? `RECTANGLE active. First corner ${session.firstCorner.label} captured. Click or enter the opposite corner.`
           : 'RECTANGLE active. Click or enter the first corner.');
+    case 'CIRCLE':
+      return session.resultText ??
+        (session.center
+          ? `CIRCLE active. Center ${session.center.label} captured. Click or enter the radius (point or positive number).`
+          : 'CIRCLE active. Click or enter the center point.');
+    case 'CIRCLECD':
+      return session.resultText ??
+        (session.center
+          ? `CIRCLECD active. Center ${session.center.label} captured. Click or enter the diameter (point or positive number); radius is half the diameter.`
+          : 'CIRCLECD active. Click or enter the center point.');
     case 'POLYGON':
       return session.resultText ?? polygonPromptForPhase(session);
     case 'PLINE':

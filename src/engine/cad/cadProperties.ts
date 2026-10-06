@@ -546,6 +546,18 @@ const buildEntityProperties = (project: CadProject, entity: CadEntity): CadEntit
       );
       return rows;
     }
+    case 'circle': {
+      rows.push(
+        row('name', 'Name', getCadEntityEditableName(entity) || getCadEntityDisplayLabel(entity), { kind: 'entity-name' }),
+        row('center-e', 'Center E', numeric(entity.centerX)),
+        row('center-n', 'Center N', numeric(entity.centerY)),
+        row('radius', 'Radius', numeric(entity.radius)),
+        row('diameter', 'Diameter', numeric(2 * entity.radius)),
+        row('circumference', 'Circumference', numeric(2 * Math.PI * entity.radius)),
+        row('area', 'Area', numeric(Math.PI * entity.radius * entity.radius)),
+      );
+      return rows;
+    }
     case 'alignment':
       rows.push(
         row('name', 'Name', entity.name, { kind: 'entity-name' }),

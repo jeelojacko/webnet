@@ -97,6 +97,12 @@ function resolveEntityAnchor(
         ? { x: entity.fromX, y: entity.fromY }
         : { x: entity.toX, y: entity.toY };
     case 'arc-point':
+      // Circles associate ONLY via the center anchor: a circle has no
+      // start/end points, so those stay BROKEN (never fake endpoints).
+      // No new anchor kind is needed: 'center' already exists.
+      if (entity.type === 'circle') {
+        return anchor.point === 'center' ? { x: entity.centerX, y: entity.centerY } : null;
+      }
       if (entity.type !== 'arc') return null;
       if (anchor.point === 'center') return { x: entity.centerX, y: entity.centerY };
       return anchor.point === 'start' ? cadArcStartPoint(entity) : cadArcEndPoint(entity);

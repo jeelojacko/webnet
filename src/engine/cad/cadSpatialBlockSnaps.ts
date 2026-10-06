@@ -2,8 +2,10 @@ import {
   cadArcMidpoint,
   cadClosestPointOnSegment,
   cadMidpoint,
+  cadPointOnCircle,
   type CadWorldPoint,
 } from './cadGeometry';
+import { CAD_XY_DEGENERATE_FLOOR } from './cadGeometryShapeBuilders';
 import { getCadEntityDisplayLabel } from './cadEntityNames';
 import { expandBlockReference, findBlockDefinition } from './cadBlocks';
 import { arcRefFromEntity, entitySegments } from './cadSpatialEntityRefs';
@@ -128,6 +130,33 @@ export const buildBlockReferenceSnapCandidates = (
               undefined,
               scope,
             ),
+          );
+        }
+        break;
+      }
+      case 'circle': {
+        const center = { x: child.centerX, y: child.centerY };
+        if (allowed.has('center')) {
+          candidates.push(
+            buildCandidate('center', entity.id, center, worldPoint, `${label} center`, undefined, scope),
+          );
+        }
+        if (allowed.has('quadrant')) {
+          for (const angleDeg of [0, 90, 180, 270]) {
+            candidates.push(
+              buildCandidate('quadrant', entity.id, cadPointOnCircle(center, child.radius, angleDeg), worldPoint, `${label} quadrant`, undefined, scope),
+            );
+          }
+        }
+        if (allowed.has('nearest')) {
+          const dx = worldPoint.x - center.x;
+          const dy = worldPoint.y - center.y;
+          const length = Math.hypot(dx, dy);
+          const rim = length > CAD_XY_DEGENERATE_FLOOR
+            ? { x: center.x + (dx / length) * child.radius, y: center.y + (dy / length) * child.radius }
+            : cadPointOnCircle(center, child.radius, 0);
+          candidates.push(
+            buildCandidate('nearest', entity.id, rim, worldPoint, `${label} near`, undefined, scope),
           );
         }
         break;

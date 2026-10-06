@@ -8,11 +8,17 @@ import {
   cadPointOnCircle,
   cadProjectPointOntoInfiniteLine,
   cadTangentPointsFromExternalPointToArc,
+  type CadWorldPoint,
 } from './cadGeometry';
-import { getCadEntitySubpartDisplayLabel } from './cadEntityNames';
+import {
+  cadTangentPointsFromExternalPointToCircle,
+} from './cadGeometryCurveIntersections';
+import { CAD_XY_DEGENERATE_FLOOR } from './cadGeometryShapeBuilders';
+import { getCadEntityDisplayLabel, getCadEntitySubpartDisplayLabel } from './cadEntityNames';
 import { resolveCadFeatureLine } from './cadFeatureLines';
 import type {
   CadArcEntity,
+  CadCircleEntity,
   CadFeatureLineEntity,
   CadLineEntity,
   CadParcelEntity,
@@ -440,6 +446,105 @@ export const buildArcEntitySnapCandidates = (
   return candidates;
 };
 
+const radialRimPoint = (
+  center: CadWorldPoint,
+  radius: number,
+  point: CadWorldPoint,
+): CadWorldPoint => {
+  const dx = point.x - center.x;
+  const dy = point.y - center.y;
+  const length = Math.hypot(dx, dy);
+  if (length <= CAD_XY_DEGENERATE_FLOOR) return cadPointOnCircle(center, radius, 0);
+  return { x: center.x + (dx / length) * radius, y: center.y + (dy / length) * radius };
+};
+
+export const buildCircleEntitySnapCandidates = (
+  context: CadSpatialEntityCandidateContext,
+  entity: CadCircleEntity,
+): CadSnapCandidate[] => {
+  const { allowed, basePoint, constructionContext, project, worldPoint } = context;
+  const center = { x: entity.centerX, y: entity.centerY };
+  const candidates: CadSnapCandidate[] = [];
+  // A circle has no endpoints or midpoints: only center, quadrant,
+  // nearest, tangent, perpendicular, and intersection kinds are emitted.
+  if (allowed.has('center')) {
+    candidates.push(
+      buildCandidate(
+        'center',
+        entity.id,
+        center,
+        worldPoint,
+        getCadEntitySubpartDisplayLabel(project, entity.id, 'center'),
+      ),
+    );
+  }
+  if (allowed.has('quadrant')) {
+    [0, 90, 180, 270].forEach((angleDeg) => {
+      candidates.push(
+        buildCandidate(
+          'quadrant',
+          entity.id,
+          cadPointOnCircle(center, entity.radius, angleDeg),
+          worldPoint,
+          getCadEntitySubpartDisplayLabel(project, entity.id, 'quadrant', { quadrantAngleDeg: angleDeg }),
+        ),
+      );
+    });
+  }
+  if (allowed.has('nearest')) {
+    candidates.push(
+      buildCandidate(
+        'nearest',
+        entity.id,
+        radialRimPoint(center, entity.radius, worldPoint),
+        worldPoint,
+        getCadEntityDisplayLabel(entity),
+      ),
+    );
+  }
+  if (constructionContext.active && basePoint && allowed.has('perpendicular')) {
+    const perpendicularPoint = radialRimPoint(center, entity.radius, basePoint);
+    candidates.push(
+      buildCandidate(
+        'perpendicular',
+        entity.id,
+        perpendicularPoint,
+        worldPoint,
+        `${getCadEntityDisplayLabel(entity)} perp`,
+        [
+          [basePoint, perpendicularPoint],
+          [center, perpendicularPoint],
+        ],
+      ),
+    );
+  }
+  if (constructionContext.active && basePoint && allowed.has('tangent')) {
+    cadTangentPointsFromExternalPointToCircle(basePoint, center, entity.radius).forEach((tangentPoint) => {
+      const tangentLineDistance = cadDistance(
+        worldPoint,
+        cadProjectPointOntoInfiniteLine(worldPoint, basePoint, tangentPoint).point,
+      );
+      candidates.push(
+        buildCandidate(
+          'tangent',
+          entity.id,
+          tangentPoint,
+          worldPoint,
+          `${getCadEntityDisplayLabel(entity)} tangent`,
+          [
+            [basePoint, tangentPoint],
+            [center, tangentPoint],
+          ],
+          undefined,
+          tangentLineDistance,
+          tangentPoint,
+        ),
+      );
+    });
+  }
+  return candidates;
+};
+
 export const buildCadSpatialEntitySnapCandidates = (
   context: CadSpatialEntityCandidateContext,
 ): CadSnapCandidate[] => {
@@ -476,6 +581,9 @@ export const buildCadSpatialEntitySnapCandidates = (
         break;
       case 'arc':
         candidates.push(...buildArcEntitySnapCandidates(context, entity, arcRefFromEntity(context.project, entity)));
+        break;
+      case 'circle':
+        candidates.push(...buildCircleEntitySnapCandidates(context, entity));
         break;
       default:
         break;

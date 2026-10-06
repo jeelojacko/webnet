@@ -19,6 +19,14 @@ export const helpTextForSession = (session: CommandSession | null): string => {
       return session.firstCorner
         ? 'RECTANGLE opposite corner: `x,y`, `LABEL=x,y`, `@azimuth,distance`, or `N45-00-00E,100` from the first corner.'
         : 'RECTANGLE first corner: click in the model space or type `x,y` / `LABEL=x,y`.';
+    case 'CIRCLE':
+      return session.center
+        ? 'CIRCLE radius: positive number, or `x,y` / `@azimuth,distance` point from the center.'
+        : 'CIRCLE center: click in the model space or type `x,y` / `LABEL=x,y`.';
+    case 'CIRCLECD':
+      return session.center
+        ? 'CIRCLECD diameter: positive number, or `x,y` / `@azimuth,distance` point from the FIXED center (radius is half).'
+        : 'CIRCLECD center: click in the model space or type `x,y` / `LABEL=x,y`.';
     case 'POLYGON':
       if (session.phase === 'sides') return 'POLYGON sides: enter an integer 3-1024.';
       if (session.phase === 'mode') {

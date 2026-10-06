@@ -246,6 +246,21 @@ const primitiveToPaper = (
         },
       ];
     }
+    case 'circle': {
+      const c = toPaper(primitive.center.x, primitive.center.y);
+      return [
+        {
+          kind: 'circle',
+          layer,
+          clipId,
+          cx: c.xMm,
+          cy: c.yMm,
+          r: primitive.radius * unitsToPaperMm,
+          ...paint,
+          ...widthOf(primitive.strokeWidth),
+        },
+      ];
+    }
     case 'text': {
       const p = toPaper(primitive.point.x, primitive.point.y);
       return [

@@ -17,7 +17,7 @@ Do not spend parent-model context on repetitive repository exploration or routin
 
 ## Subagent model routing
 
-Role definitions live in `~/.pi/agent/agents/*.md`. Each role file is source of truth for model, thinking level, tools, skills, and delegation permissions. Route work by role; never pass a `model:` override at spawn unless user explicitly names model, except parallel-worker routing below. Never edit role-file model pins on own judgment.
+Role definitions live in `~/.pi/agent/agents/*.md`. Each role file is source of truth for tools, thinking level, skills, permissions, and baseline role behavior (worker.md's pinned model is Worker-rotation slot 1). The Worker rotation below is an authorized model override and takes precedence over the baseline pin: pass the slot's `model:` at spawn. Otherwise never pass a `model:` override unless user explicitly names model. Never edit role-file model pins on own judgment.
 
 - Reconnaissance → `scout.md`
 - Web research → `researcher.md`
@@ -32,11 +32,19 @@ Role definitions live in `~/.pi/agent/agents/*.md`. Each role file is source of 
 
 ## Default topology
 
-Default chain: ChatGPT/Codex orchestrator → Worker → Reviewer → exact-head CI. Do not spin up Scout, Researcher, or Oracle by default; escalate only on a trigger:
+Target: smallest useful set of focused Workers, then mandatory independent review until APPROVE.
 
-- Scout — target genuinely unknown and bounded recon costs less than broad parent exploration (unfamiliar subsystem, multi-file chain with no obvious entry point).
-- Researcher — external sources only (upstream specs, library/platform behavior, standards). Never repository reconnaissance.
+Tightly coupled: orchestrator → one focused Worker → independent Reviewer → (correction Worker(s) → fresh Reviewer)* → exact-head CI.
+
+Parallelizable: orchestrator → Worker A + Worker B + ... in parallel (genuinely independent substantial scopes only) → orchestrator verifies/integrates combined exact state → independent Reviewer → (correction Worker(s) → integrate → fresh Reviewer)* → exact-head CI.
+
+Do not spin up Scout, Researcher, or Oracle by default; escalate only on a trigger:
+
+- Scout — target genuinely unknown and bounded recon costs less than broad parent exploration (unfamiliar subsystem, multi-file chain with no obvious entry point). Then one or more scoped Workers → Reviewer loop.
+- Researcher — external sources only (upstream specs, library/platform behavior, standards). Never repository reconnaissance. Then one or more scoped Workers → Reviewer loop.
 - Oracle — disabled by default; only for a genuine dispute involving math, persistence, or geometry.
+
+Parent owns all topology: Worker count, parallelism, integration, correction routing, re-review timing. Worker never fans out; Reviewer never delegates.
 
 ## Subagent acceptance / review rules
 
@@ -68,28 +76,38 @@ cost.
 
 ## Worker
 
-Use `worker` for implementation, mechanical refactors, tests, ordinary debugging, and iterative implementation/test loops. Give worker bounded scope and explicit acceptance criteria.
+Implementation ownership: for substantive repository changes (production code, associated tests, scripts/tooling, CI/workflow, behavior-affecting config, refactors, bug fixes, features), the parent orchestrator MUST delegate implementation to one or more Workers. Parent write/edit capability is not the normal implementation path. A task being small, obvious, already scoped, or having a known file is not permission to bypass Worker.
 
-DEFAULT: one worker. Spawn additional parallel workers only when scopes are genuinely independent and substantial and the expected wall-time savings clearly exceed coordination and context cost. Do NOT fan out for ordinary repository discovery, small file fan-out, bounded fixes, or work one worker can inspect efficiently with Codemode/FFF.
+Narrow parent-direct exceptions only: trivial typo/docs-only correction; PR title/body/status metadata; mechanical conflict resolution with settled semantics; emergency fallback after configured Worker retry policy exhausted; user explicitly asks parent to edit.
 
-Worker model routing: first worker in a batch uses pinned default (`opencode-go/muse-spark-1.3-contributor`, no `model:` override). Every additional parallel worker in same batch spawns with `model: commandcode/deepseek/deepseek-v4.1-flash` on high reasoning. Retries/resumes stay on same model as original spawn. Never use an `opencode-go/deepseek/*` ID: opencode-go carries Muse Spark, not DeepSeek (guessing that prefix returns HTTP 400); DeepSeek Flash lives only on `commandcode` (smoke-proven 2026-10-05, needs `$CMD_API_KEY`).
+Use `worker` for implementation, mechanical refactors, tests, ordinary debugging, and iterative implementation/test loops. Give each worker one bounded scope and explicit independent acceptance criteria.
+
+Worker-count rule: choose the smallest useful Worker set. When two or more substantial scopes are genuinely independent and can run concurrently with low integration/conflict risk, prefer parallel Workers to reduce wall-clock time. Otherwise use one focused Worker. Do NOT fan out for ordinary repository discovery, small file fan-out, bounded fixes, or work one worker can inspect efficiently with Codemode/FFF.
+
+Parallel-scope test: clear bounded responsibility; independently statable acceptance; disjoint file ownership / low overlap risk; no need for another Worker's unfinished output; no shared unresolved design choice; deterministically integrable; parallel run materially reduces wall-clock time. Avoid parallel Workers for same-file / tightly-coupled logic, dependent scopes, unsettled shared schema/API, likely conflicts, or where one Worker finishes efficiently alone. Orchestrator assigns file/subsystem ownership to reduce overlap.
+
+Worker model routing (cycling rotation, all medium reasoning): 1st worker in a batch uses `commandcode/deepseek/deepseek-v4.1-flash`. 2nd uses `opencode-go/deepseek-v4.1-flash`. 3rd uses `opencode-go/muse-spark-1.3-contributor`. 4th and beyond cycle the same order. `opencode-go` and `commandcode` are distinct provider paths for the same model family — do not mix their configs/keys (`commandcode` routes need `$CMD_API_KEY`). Retries/resumes stay on same model as original spawn. (Proven 2026-10-06: `opencode-go/deepseek-v4.1-flash` runs Workers fine; prior HTTP-400 ban removed.)
 
 Codemode: subagents may use codemode for batched reads/filtering; direct calls are fine otherwise.
 
 ## Verification
 
-Do not trust worker summary alone. After substantive implementation:
+Do not trust worker summary alone. After every substantive Worker batch (one Worker or many parallel Workers, after ALL complete/integrate):
 
 1. inspect actual git diff
 2. inspect relevant test/build output
 3. verify requested behavior
-4. use configured `reviewer` for substantive final review when appropriate
+4. launch one independent read-only Reviewer against the current combined exact state (integrated result of ALL Workers in the batch, not summaries)
+
+Parent inspection is supplemental and does NOT replace Reviewer. Worker self-review does NOT replace Reviewer. Only current-state Reviewer APPROVE ends the internal review loop.
+
+If Reviewer returns findings: gather all findings → split by dependency/scope → launch one correction Worker (coupled scopes) or multiple parallel correction Workers (independent substantial findings) with exact findings + files/lines + acceptance + scope boundaries → integrate corrected exact state → launch a FRESH Reviewer against the NEW exact state → repeat until APPROVE. Every substantive correction invalidates prior APPROVE. A finding is resolved only when a current Reviewer verifies it or explicitly accepts a recorded evidence-backed disposition; orchestrator disagreement alone is not approval. After ~3 correction cycles on the same substantive issue with Worker/Reviewer deadlock: stop and report dispute, do not weaken review.
 
 Prefer tests, lint, typecheck, build, schema validation, parity checks, and fingerprints over model judgment.
 
 ## Reviewer
 
-Reviewer is read-only. It may not edit code, spawn fix subagents, or rerun heavy suites. It inspects the diff, the evidence, and the exact-head checks, then reports findings. Fixes go back to a Worker; the parent orchestrates.
+Reviewer is read-only. It may not edit code, spawn fix subagents, or rerun heavy suites. It inspects the current combined exact diff/state, the evidence, and the exact-head checks, then returns APPROVE or ranked findings with file:line evidence. For parallel-Worker batches it reviews the integrated result, not isolated branches. Prior approval/findings are stale after any substantive change. Fixes go orchestrator → one or more Workers → fresh Reviewer recheck; Reviewer never routes to Worker directly. If exact-head CI / external review later finds a substantive issue: correction Worker(s) → integrate → fresh Reviewer → new exact-head CI; latest exact state must be both reviewed and validated.
 
 ## Validation fast-path
 
@@ -107,6 +125,8 @@ Reviewer is read-only. It may not edit code, spawn fix subagents, or rerun heavy
 ## Failure behavior
 
 If scout or worker fails, returns empty output, exceeds context, OOMs, produces malformed output, or cannot satisfy task, stop and report failure. Do not silently redo delegated work with parent model unless user authorizes fallback.
+
+Distinguish model/tool failure (retry per provider-error policy below) from legitimate new Reviewer findings (continue correction → re-review loop above; ~3-cycle deadlock → stop and report dispute).
 
 ## Provider-error recovery
 

@@ -92,7 +92,13 @@ test('A: shapes face enabled, rectangle default, neighbors planned', async ({ pa
   expect(await fly.locator('[data-cad-variant="shapes-rectangle"]').getAttribute('data-cad-command')).toBe('RECTANGLE');
   expect(await fly.locator('[data-cad-variant="shapes-polygon"]').getAttribute('data-cad-command')).toBe('POLYGON');
   await page.keyboard.press('Escape');
-  for (const fam of ['circle', 'bestfit', 'ellipse', 'hatch']) {
+  const circleFly = page.locator('[data-cad-family-caret="circle"]');
+  await circleFly.click({ force: true });
+  const cf = page.locator('[data-cad-ribbon-flyout="circle"]');
+  await expect(cf).toBeVisible({ timeout: 5000 });
+  expect(await cf.locator('[data-cad-variant]:not([aria-disabled])').count()).toBe(2);
+  await page.keyboard.press('Escape');
+  for (const fam of ['bestfit', 'ellipse', 'hatch']) {
     await page.locator(`[data-cad-family-caret="${fam}"]`).click({ force: true });
     const f = page.locator(`[data-cad-ribbon-flyout="${fam}"]`);
     await expect(f).toBeVisible({ timeout: 5000 });

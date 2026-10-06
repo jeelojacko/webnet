@@ -139,6 +139,20 @@ export const cadAnnotationAnchorFromCommandPoint = (
       // quadrant / arc-midpoint / nearest ride the circumference with no
       // stable arc-point identity → fixed.
       return fixed;
+    case 'circle':
+      if (point.snapKind === 'center') {
+        return {
+          kind: 'arc-point',
+          entityId: entity.id,
+          point: 'center',
+          fallbackX: point.x,
+          fallbackY: point.y,
+        };
+      }
+      // A circle has no endpoints: endpoint/midpoint/quadrant snaps stay
+      // fixed (quadrant/nearest ride the circumference with no stable
+      // arc-point identity, same as arcs).
+      return fixed;
     case 'block-reference': {
       // Only the insertion snap binds: it carries no child segment scope and
       // lands on the insertion point (entity.x/entity.y, the same accessor

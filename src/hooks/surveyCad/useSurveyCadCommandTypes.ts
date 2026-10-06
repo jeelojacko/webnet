@@ -58,6 +58,8 @@ export type ActiveCommandKey =
   | 'COGO_POINT'
   | 'LINE'
   | 'RECTANGLE'
+  | 'CIRCLE'
+  | 'CIRCLECD'
   | 'POLYGON'
   | 'PLINE'
   | 'TRAVERSE'
@@ -401,6 +403,18 @@ export type CommandSession =
       key: 'RECTANGLE';
       inputValue: string;
       firstCorner: CommandPoint | null;
+      resultText?: string;
+    }
+  | {
+      key: 'CIRCLE';
+      inputValue: string;
+      center: CommandPoint | null;
+      resultText?: string;
+    }
+  | {
+      key: 'CIRCLECD';
+      inputValue: string;
+      center: CommandPoint | null;
       resultText?: string;
     }
   | {

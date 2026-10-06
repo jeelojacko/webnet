@@ -8,7 +8,7 @@
 // callers at runCadCommand when the two paths are unified.
 
 import { checkCadEntityEditable } from '../../engine/cad/cadAppearance';
-import { findBlockDefinition, validateBlockDefinition } from '../../engine/cad/cadBlocks';
+import { expandBlockReference, findBlockDefinition, validateBlockDefinition } from '../../engine/cad/cadBlocks';
 import { ensureSurveySymbolsSeeded } from '../../engine/cad/cadSurveySymbolLibrary';
 import type { CadHistoryState } from '../../engine/cad/cadUndoRedo';
 import { createStableRuntimeId } from '../../engine/id';
@@ -119,7 +119,7 @@ export const applyBlockUiOp = (project: CadProject, op: CadBlockUiOp): CadBlockU
       if (!base) return fail(project, 'BLOCK_CREATE', 'Selection has no geometry to capture.');
       const { children, skipped } = collectChildren(project, op.fromEntityIds);
       if (children.length === 0) {
-        return fail(project, 'BLOCK_CREATE', 'Only lines, polylines, arcs, polygons, and free text can form a block.');
+        return fail(project, 'BLOCK_CREATE', 'Only lines, polylines, arcs, circles, polygons, and free text can form a block.');
       }
       const name = uniqueName(project, op.name);
       const definition: CadBlockDefinition = {
@@ -197,13 +197,24 @@ export const applyBlockUiOp = (project: CadProject, op: CadBlockUiOp): CadBlockU
       if (sources.length === 0) return fail(project, 'BLOCK_REDEFINE', 'Select replacement linework first.');
       const { children } = collectChildren(project, op.fromEntityIds);
       if (children.length === 0) {
-        return fail(project, 'BLOCK_REDEFINE', 'Only lines, polylines, arcs, polygons, and free text can form a block.');
+        return fail(project, 'BLOCK_REDEFINE', 'Only lines, polylines, arcs, circles, polygons, and free text can form a block.');
       }
       // Geometry swap only (engine BLOCK_REDEFINE semantic): basePoint
       // stays so live references keep their world geometry.
       const next: CadBlockDefinition = { ...target, entities: children };
       const issues = validateBlockDefinition(next, siblingNames(project, op.definitionId));
       if (issues.length > 0) return fail(project, 'BLOCK_REDEFINE', issues[0]!.message);
+      // Preflight every live reference against the replacement definition
+      // (mirrors engine BLOCK_REDEFINE): a redefined Circle child must not
+      // invalidate an existing reference (non-uniform scale, sub-floor).
+      // Refuse atomically; never normalize scales or mutate refs.
+      try {
+        for (const reference of inUse) {
+          expandBlockReference(next, reference);
+        }
+      } catch (error) {
+        return fail(project, 'BLOCK_REDEFINE', error instanceof Error ? error.message : 'A live reference cannot expand the replacement definition.');
+      }
       return {
         applied: true,
         project: {

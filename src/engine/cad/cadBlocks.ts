@@ -23,6 +23,7 @@
 // documented here, not a geometric ellipse expansion.
 
 import { cadIsAngleOnArcSweep, cadNormalizeAngleDeg } from './cadGeometry';
+import { isValidCircleGeometry } from './cadGeometryShapeBuilders';
 import type {
   CadBlockChild,
   CadBlockDefinition,
@@ -82,7 +83,7 @@ export const normalizeBlockScales = (
   return null;
 };
 
-const SUPPORTED_CHILD_TYPES = new Set(['line', 'polyline', 'arc', 'polygon', 'text']);
+const SUPPORTED_CHILD_TYPES = new Set(['line', 'polyline', 'arc', 'circle', 'polygon', 'text']);
 
 /**
  * Validate a block definition. Sibling names are compared case-insensitively
@@ -135,6 +136,16 @@ const requireValidScales = (reference: BlockPlacement): void => {
   const issue = normalizeBlockScales(reference.scaleX, reference.scaleY);
   if (issue) throw new Error(`${issue.code}: ${issue.message}`);
 };
+
+/** Phase B1: true when a reference would distort a Circle child: the
+ * definition nests a circle and the scales are non-uniform. Callers fail
+ * closed (return null / omit) rather than mean-scaling the radius. */
+export const blockReferenceScalesDistortCircle = (
+  definition: CadBlockDefinition,
+  scaleX: number,
+  scaleY: number,
+): boolean =>
+  scaleX !== scaleY && definition.entities.some((child) => child.type === 'circle');
 
 export interface CadWorldPoint {
   x: number;
@@ -202,6 +213,28 @@ export const transformBlockChildToWorld = (
         startAngleDeg,
         endAngleDeg,
       };
+    }
+    case 'circle': {
+      // Phase B1: a circle has no sweep to preserve and must never be
+      // mean-scaled or distorted. Non-uniform block scale fails closed;
+      // mirror/rotation leave the circle invariant (center transforms).
+      if (reference.scaleX !== reference.scaleY) {
+        throw new Error(
+          `CAD_BLOCK_CIRCLE_NON_UNIFORM_SCALE: block reference scales a circle child non-uniformly (scaleX=${reference.scaleX}, scaleY=${reference.scaleY}); refusing instead of distorting the circle.`,
+        );
+      }
+      const center = transformBlockPointToWorld(
+        { x: child.centerX, y: child.centerY },
+        definition,
+        reference,
+      );
+      const radius = child.radius * reference.scaleX;
+      if (!isValidCircleGeometry(center.x, center.y, radius)) {
+        throw new Error(
+          `CAD_BLOCK_CIRCLE_DEGENERATE_RESULT: block expansion would materialize a sub-floor circle child ${child.id}; refusing.`,
+        );
+      }
+      return { ...child, centerX: center.x, centerY: center.y, radius };
     }
     case 'text': {
       // Phase 18Q readable-text policy: only the anchor goes through the
@@ -282,6 +315,11 @@ const childPoints = (child: CadBlockChild): CadWorldPoint[] => {
       return [...child.vertices];
     case 'arc':
       return arcSamplePoints(child.centerX, child.centerY, child.radius, child.startAngleDeg, child.endAngleDeg);
+    case 'circle':
+      return [
+        { x: child.centerX - child.radius, y: child.centerY - child.radius },
+        { x: child.centerX + child.radius, y: child.centerY + child.radius },
+      ];
     case 'text':
       return [{ x: child.x, y: child.y }];
   }

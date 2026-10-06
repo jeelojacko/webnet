@@ -558,6 +558,8 @@ export const CAD_COMMAND_REGISTRY: Record<CadCommandKey, CadCommandDefinition<Ca
   LINE: lineCommand as CadCommandDefinition<CadCommand>,
   RECTANGLE: shapeCommandDefinitions.RECTANGLE as CadCommandDefinition<CadCommand>,
   POLYGON: shapeCommandDefinitions.POLYGON as CadCommandDefinition<CadCommand>,
+  CIRCLE: shapeCommandDefinitions.CIRCLE as CadCommandDefinition<CadCommand>,
+  CIRCLECD: shapeCommandDefinitions.CIRCLECD as CadCommandDefinition<CadCommand>,
   PLINE: polylineCommand as CadCommandDefinition<CadCommand>,
   TRAVERSE: traverseCommand as CadCommandDefinition<CadCommand>,
   BATCH_COGO: batchCogoCommand as CadCommandDefinition<CadCommand>,

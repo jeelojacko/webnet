@@ -66,6 +66,20 @@ export const TransientPreviewLayer: React.FC<{
             strokeDasharray={primitive.strokeDasharray ?? '8 6'}
             pointerEvents="none"
           />
+        ) : primitive.kind === 'circle' ? (
+          <circle
+            key={primitive.id}
+            data-survey-cad-command-preview-circle
+            cx={project(primitive.center.x, primitive.center.y).x}
+            cy={project(primitive.center.x, primitive.center.y).y}
+            r={Math.max(primitive.radius * scale, 1.2)}
+            fill="none"
+            stroke={primitive.stroke}
+            strokeWidth={primitive.strokeWidth}
+            opacity={primitive.opacity ?? 0.85}
+            strokeDasharray={primitive.strokeDasharray ?? '8 6'}
+            pointerEvents="none"
+          />
         ) : (
           <ellipse
             key={primitive.id}

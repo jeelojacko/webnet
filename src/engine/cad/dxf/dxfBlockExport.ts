@@ -23,6 +23,12 @@ export interface DxfBlockChildArc {
   endDeg: number;
 }
 
+export interface DxfBlockChildCircle {
+  layer: string;
+  center: DxfPoint;
+  radius: number;
+}
+
 export interface DxfBlockChildText {
   layer: string;
   at: DxfPoint;
@@ -36,6 +42,7 @@ export interface DxfBlockEntry {
   lines: DxfBlockChildLine[];
   polylines: DxfBlockChildPolyline[];
   arcs: DxfBlockChildArc[];
+  circles?: DxfBlockChildCircle[];
   texts: DxfBlockChildText[];
 }
 
@@ -154,6 +161,13 @@ export const buildDxfBlockTable = (args: {
             break;
           }
           entry.arcs.push({ layer: args.registerLayer(child.layerId), center: shift({ x: child.centerX, y: child.centerY }), radius: child.radius, startDeg: child.startAngleDeg, endDeg: child.endAngleDeg });
+          break;
+        case 'circle':
+          if (!finitePair(child.centerX, child.centerY) || !Number.isFinite(child.radius) || child.radius <= 0) {
+            args.warn({ code: 'SKIPPED_ENTITY', message: `block ${name} circle child ${child.id} has invalid geometry` });
+            break;
+          }
+          (entry.circles ??= []).push({ layer: args.registerLayer(child.layerId), center: shift({ x: child.centerX, y: child.centerY }), radius: child.radius });
           break;
         case 'text':
           if (!finitePair(child.x, child.y)) {

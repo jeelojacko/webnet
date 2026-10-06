@@ -126,10 +126,10 @@ export const CAD_RIBBON_TOOL_FAMILIES: readonly CadRibbonToolFamily[] = [
     id: 'circle',
     label: 'Circle',
     defaultVariantId: 'circle-center-radius',
-    // §20 — no general Circle construction command exists; all rows planned.
+    // B1: Center/Radius + Center/Diameter are live; 2-Point/3-Point/TTR/TTT stay planned.
     variants: [
-      { id: 'circle-center-radius', label: 'Center, Radius', planned: true, hint: 'Planned: circle by center and radius.' },
-      { id: 'circle-center-diameter', label: 'Center, Diameter', planned: true, hint: 'Planned: circle by center and diameter.' },
+      { id: 'circle-center-radius', label: 'Center, Radius', commandKey: 'CIRCLE', hint: 'Circle from center and radius.' },
+      { id: 'circle-center-diameter', label: 'Center, Diameter', commandKey: 'CIRCLECD', hint: 'Circle from fixed center and diameter (radius is half).' },
       { id: 'circle-2point', label: '2-Point', planned: true, hint: 'Planned: circle through two points.' },
       { id: 'circle-3point', label: '3-Point', planned: true, hint: 'Planned: circle through three points.' },
       { id: 'circle-tan-tan-radius', label: 'Tan, Tan, Radius', planned: true, hint: 'Planned: circle tangent to two objects with a radius.' },

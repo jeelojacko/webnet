@@ -1,5 +1,7 @@
 import { createStableRuntimeId } from '../id';
 import {
+  buildCircleCenterDiameterScalar,
+  buildCircleCenterRadiusScalar,
   buildRectangleVertices,
   buildRegularPolygonVertices,
   type RegularPolygonMode,
@@ -9,7 +11,7 @@ import { appendCadProjectEntities } from './cadProjectState';
 import { createCadSelectionState } from './cadSelection';
 import { nextEntityName } from './cadTransactionsEntityFactories';
 import type { CadCommandDefinition } from './cadTransactions.types';
-import type { CadPolygonEntity } from './cadTypes';
+import type { CadCircleEntity, CadPolygonEntity } from './cadTypes';
 
 type XyPoint = { x: number; y: number; label: string };
 
@@ -103,7 +105,89 @@ export const polygonCommand: CadCommandDefinition<ShapePolygonCommand> = {
   },
 };
 
+export type ShapeCircleCommand = {
+  key: 'CIRCLE';
+  center: XyPoint;
+  radius: number;
+};
+
+export type ShapeCircleDiameterCommand = {
+  key: 'CIRCLECD';
+  center: XyPoint;
+  diameter: number;
+};
+
+const toCircleEntity = (
+  snapshot: Parameters<CadCommandDefinition<ShapeCircleCommand>['execute']>[0],
+  built: { center: { x: number; y: number }; radius: number },
+  createdBy: 'CIRCLE' | 'CIRCLECD',
+  prefix: 'CIR' | 'CIRD',
+): CadCircleEntity => ({
+  id: createStableRuntimeId('cad-circle'),
+  type: 'circle',
+  layerId: resolveCurrentCadLayerId(snapshot.project),
+  visible: true,
+  locked: false,
+  centerX: built.center.x,
+  centerY: built.center.y,
+  radius: built.radius,
+  metadata: {
+    createdBy,
+    entityName: nextEntityName(snapshot.project, prefix),
+    manual: true,
+  },
+});
+
+const commitCircleEntity = <TKey extends 'CIRCLE' | 'CIRCLECD'>(
+  snapshot: Parameters<CadCommandDefinition<ShapeCircleCommand>['execute']>[0],
+  entity: CadCircleEntity,
+  key: TKey,
+) => {
+  const entityName = entity.metadata?.entityName as string;
+  const nextProject = appendCadProjectEntities(snapshot.project, [entity]);
+  return {
+    nextSnapshot: {
+      project: nextProject,
+      selection: createCadSelectionState(nextProject, [entity.id]),
+    },
+    commandState: {
+      key,
+      phase: 'committed' as const,
+      prompt: `${key} committed with radius ${entity.radius}.`,
+    },
+    transactionLabel: `${key} (${entityName})`,
+    addedEntityIds: [entity.id],
+    removedEntityIds: [],
+  };
+};
+
+export const circleCommand: CadCommandDefinition<ShapeCircleCommand> = {
+  key: 'CIRCLE',
+  execute: (snapshot, command) => {
+    const built = buildCircleCenterRadiusScalar(
+      { x: command.center.x, y: command.center.y },
+      command.radius,
+    );
+    if (!built) return null;
+    return commitCircleEntity(snapshot, toCircleEntity(snapshot, built, 'CIRCLE', 'CIR'), 'CIRCLE');
+  },
+};
+
+export const circleDiameterCommand: CadCommandDefinition<ShapeCircleDiameterCommand> = {
+  key: 'CIRCLECD',
+  execute: (snapshot, command) => {
+    const built = buildCircleCenterDiameterScalar(
+      { x: command.center.x, y: command.center.y },
+      command.diameter,
+    );
+    if (!built) return null;
+    return commitCircleEntity(snapshot, toCircleEntity(snapshot, built, 'CIRCLECD', 'CIRD'), 'CIRCLECD');
+  },
+};
+
 export const shapeCommandDefinitions = {
+  CIRCLE: circleCommand,
+  CIRCLECD: circleDiameterCommand,
   RECTANGLE: rectangleCommand,
   POLYGON: polygonCommand,
 };

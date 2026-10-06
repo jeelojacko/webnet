@@ -23,6 +23,7 @@ import {
 import type { CadCommandDefinition } from './cadTransactions.types';
 import type {
   CadArcEntity,
+  CadCircleEntity,
   CadEntity,
   CadEntityId,
   CadProject,
@@ -183,6 +184,19 @@ export const buildCopiedEntities = (
             });
           }
         }
+        break;
+      case 'circle':
+        copiedEntities.push({
+          ...entity,
+          id: createStableRuntimeId('cad-circle'),
+          centerX: entity.centerX + deltaX,
+          centerY: entity.centerY + deltaY,
+          metadata: {
+            ...entity.metadata,
+            createdBy: 'COPY',
+            manual: true,
+          },
+        } satisfies CadCircleEntity);
         break;
       case 'alignment':
         copiedEntities.push({

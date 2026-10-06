@@ -349,7 +349,7 @@ export const useSurveyCadWorkspace = (
     () => {
       if (
         selectedEntities.length !== 1 ||
-        !['line', 'polyline', 'polygon', 'parcel', 'arc', 'block-reference'].includes(selectedEntities[0]!.type)
+        !['line', 'polyline', 'polygon', 'parcel', 'arc', 'circle', 'block-reference'].includes(selectedEntities[0]!.type)
       ) {
         return null;
       }
@@ -667,6 +667,8 @@ export const useSurveyCadWorkspace = (
     startCogoPointCommand: commandState.startCogoPointCommand,
     startLineCommand: commandState.startLineCommand,
     startRectangleCommand: commandState.startRectangleCommand,
+    startCircleCommand: commandState.startCircleCommand,
+    startCircleDiameterCommand: commandState.startCircleDiameterCommand,
     startPolygonCommand: commandState.startPolygonCommand,
     startPolylineCommand: commandState.startPolylineCommand,
     startTraverseCommand: commandState.startTraverseCommand,

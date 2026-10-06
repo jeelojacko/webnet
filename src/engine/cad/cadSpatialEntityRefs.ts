@@ -4,6 +4,7 @@ import { resolveCadFeatureLine } from './cadFeatureLines';
 import { getCadEntityDisplayLabel } from './cadEntityNames';
 import type {
   CadArcEntity,
+  CadCircleEntity,
   CadFeatureLineEntity,
   CadLineEntity,
   CadParcelEntity,
@@ -11,7 +12,7 @@ import type {
   CadPolylineEntity,
   CadProject,
 } from './cadTypes';
-import type { CadArcRef, CadSegmentRef } from './cadSpatialIndexTypes';
+import type { CadArcRef, CadCircleRef, CadSegmentRef } from './cadSpatialIndexTypes';
 
 export const lineSegments = (line: CadLineEntity): CadSegmentRef[] => [
   {
@@ -104,6 +105,13 @@ export const featureLineCourseArcs = (entity: CadFeatureLineEntity): CadArcRef[]
 export const isFeatureLineArcCourse = (
   entry: { kind: 'line' } | { kind: 'arc'; bulge: number } | undefined,
 ): boolean => entry?.kind === 'arc' && Math.abs(entry.bulge) >= CAD_PARCEL_BULGE_LINE_FLOOR;
+
+export const circleRefFromEntity = (_project: CadProject, entity: CadCircleEntity): CadCircleRef => ({
+  sourceEntityId: entity.id,
+  center: { x: entity.centerX, y: entity.centerY },
+  radius: entity.radius,
+  label: getCadEntityDisplayLabel(entity),
+});
 
 export const arcRefFromEntity = (_project: CadProject, entity: CadArcEntity): CadArcRef => ({
   sourceEntityId: entity.id,

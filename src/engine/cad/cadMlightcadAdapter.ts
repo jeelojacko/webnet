@@ -87,6 +87,21 @@ const toMlightcadEntity = (entity: CadEntity): MlightcadSpikeEntity => {
           nativeType: entity.type,
         },
       };
+    case 'circle':
+      return {
+        objectId: entity.id,
+        type: 'AcDbCircle',
+        layer: entity.layerId,
+        visible: entity.visible,
+        geometry: {
+          center: { x: entity.centerX, y: entity.centerY, z: 0 },
+          radius: entity.radius,
+        },
+        metadata: {
+          nativeEntityId: entity.id,
+          nativeType: entity.type,
+        },
+      };
     case 'alignment':
       return {
         objectId: entity.id,

@@ -114,6 +114,10 @@ export const buildCadBounds = (
       case 'arc':
         arcEndPoints(entity).forEach((point) => includePoint(point.x, point.y));
         break;
+      case 'circle':
+        includePoint(entity.centerX - entity.radius, entity.centerY - entity.radius);
+        includePoint(entity.centerX + entity.radius, entity.centerY + entity.radius);
+        break;
       case 'alignment':
         entity.elements.forEach((element) => {
           if (element.kind === 'line') {

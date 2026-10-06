@@ -89,6 +89,18 @@ export const buildTransformedPreviewPrimitives = (
           strokeDasharray: '8 6',
         };
       }
+      case 'circle': {
+        return {
+          ...primitive,
+          id,
+          sourceEntityId: id,
+          stroke,
+          center: applyPoint(transform, primitive.center),
+          radius: primitive.radius * scale,
+          opacity,
+          strokeDasharray: '8 6',
+        };
+      }
       case 'text': {
         const baseRotation = primitive.rotationDeg ?? 0;
         return {

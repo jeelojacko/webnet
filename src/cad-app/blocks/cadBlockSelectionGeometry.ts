@@ -10,12 +10,13 @@
 
 import type { CadBlockChild, CadEntity, CadEntityId, CadProject } from '../../engine/cad/cadTypes';
 
-type ChildSource = Extract<CadEntity, { type: 'line' | 'polyline' | 'arc' | 'polygon' | 'text' }>;
+type ChildSource = Extract<CadEntity, { type: 'line' | 'polyline' | 'arc' | 'circle' | 'polygon' | 'text' }>;
 
 const REDIFINEABLE: ReadonlySet<CadEntity['type']> = new Set([
   'line',
   'polyline',
   'arc',
+  'circle',
   'polygon',
   'text',
 ]);
@@ -37,6 +38,11 @@ const entityPoints = (entity: CadEntity): Array<{ x: number; y: number }> => {
     case 'parcel':
       return entity.vertices;
     case 'arc':
+      return [
+        { x: entity.centerX - entity.radius, y: entity.centerY - entity.radius },
+        { x: entity.centerX + entity.radius, y: entity.centerY + entity.radius },
+      ];
+    case 'circle':
       return [
         { x: entity.centerX - entity.radius, y: entity.centerY - entity.radius },
         { x: entity.centerX + entity.radius, y: entity.centerY + entity.radius },

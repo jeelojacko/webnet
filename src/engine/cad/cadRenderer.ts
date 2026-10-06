@@ -1047,7 +1047,8 @@ const resolveDimensionAnchors = (
         const source = lookup
           ? lookup.entityById.get(rawCenter.entityId)
           : project.entities.find((candidate) => candidate.id === rawCenter.entityId);
-        if (!source || source.type !== 'arc') return null;
+        if (!source || (source.type !== 'arc' && source.type !== 'circle')) return null;
+        if (source.type === 'circle' && rawCenter.point !== 'center') return null;
         const center = { x: source.centerX, y: source.centerY };
         const anchorPoint = resolveOne(rawCenter);
         if (!anchorPoint) return null;
@@ -1414,6 +1415,23 @@ const toPrimitives = (
           strokeWidth: style.widthPx(),
         },
         ...buildArcLabelPrimitive(project, ctx, entity),
+      ];
+    }
+    case 'circle': {
+      const style = entityScreenStyle(project, ctx, entity, 1.25);
+      return [
+        {
+          kind: 'circle',
+          id: `primitive:${entity.id}`,
+          layerId: entity.layerId,
+          sourceEntityId: entity.id,
+          stroke: style.stroke,
+          ...withOpacity(style),
+          ...withDash(style),
+          center: { x: entity.centerX, y: entity.centerY },
+          radius: entity.radius,
+          strokeWidth: style.widthPx(),
+        },
       ];
     }
     case 'alignment': {
