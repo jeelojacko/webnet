@@ -21,6 +21,7 @@ import {
   useCadShellLayout,
   type CadShellLayoutController,
 } from '../src/cad-app/shell/useCadShellLayout';
+import { CAD_SHELL_LAYOUT_STORAGE_KEY } from '../src/cad-app/shell/cadShellTypes';
 import type { CadShellActions, CadWorkspaceSnapshot } from '../src/cad-app/shell/cadShellTypes';
 
 (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
@@ -65,6 +66,37 @@ const DockHarness: React.FC<{
       onResize={() => {}}
       historyExpanded={expanded}
       onToggleHistory={onToggle}
+    />
+  );
+};
+
+const promptRow = (container: HTMLElement): HTMLElement =>
+  container.querySelector('[data-cad-command-prompt]') as HTMLElement;
+
+const dockSection = (container: HTMLElement): HTMLElement =>
+  container.querySelector('[data-cad-command-dock]') as HTMLElement;
+
+/** Controlled dock wired to the persisted shell layout (stale-height probe). */
+const LayoutDockHarness: React.FC<{
+  shellActions: CadShellActions;
+  expose: (_controller: CadShellLayoutController) => void;
+}> = ({ shellActions, expose }) => {
+  const controller = useCadShellLayout();
+  expose(controller);
+  const link = React.useMemo(() => createCadShellLink(), []);
+  const wiredActions = React.useMemo(
+    () => ({ ...shellActions, setSessionInputValue: () => {} }),
+    [shellActions],
+  );
+  return (
+    <CadCommandDock
+      link={link}
+      actionsOverride={wiredActions}
+      snapshot={snapshot()}
+      heightPx={controller.layout.commandHeightPx}
+      onResize={controller.setCommandHeight}
+      historyExpanded={controller.layout.commandHistoryExpanded}
+      onToggleHistory={controller.setCommandHistoryExpanded}
     />
   );
 };
@@ -496,6 +528,118 @@ describe('phase B2 compact layout', () => {
       (container.querySelector('[data-cad-command-history-toggle]') as HTMLElement).click();
     });
     expect(onToggle).toHaveBeenCalledWith(true);
+    await cleanup(container, root);
+  });
+});
+
+describe('phase B2 collapsed status row (no third echo row)', () => {
+  it('fresh collapsed dock renders exactly two rows: status + input', async () => {
+    const shellActions = actions();
+    const { container, root } = await render(<DockHarness shellActions={shellActions} />);
+    const section = dockSection(container);
+    expect(section.children).toHaveLength(2);
+    expect(promptRow(container).textContent).toContain('Idle');
+    expect(container.querySelector('.cad-shell-command-echo')).toBeNull();
+    expect(section.style.height).toBe('');
+    await cleanup(container, root);
+  });
+
+  it('shows a completed command echo inside the status row, not a third row', async () => {
+    const shellActions = actions();
+    const { container, root } = await render(<DockHarness shellActions={shellActions} />);
+    await act(async () => {
+      setInputValue(input(container), 'L');
+    });
+    await keyDown(input(container), 'Enter');
+    expect(shellActions.startCommand).toHaveBeenCalledWith('LINE');
+    const section = dockSection(container);
+    expect(section.children).toHaveLength(2);
+    const status = promptRow(container);
+    expect(status.textContent).toContain('Started Line.');
+    expect(status.getAttribute('data-cad-command-status')).toBe('echo');
+    const echoes = Array.from(container.querySelectorAll('.cad-shell-command-echo'));
+    expect(echoes).toHaveLength(1);
+    expect(echoes[0]).toBe(status);
+    await cleanup(container, root);
+  });
+
+  it('shows an unknown-command error in the status row while idle', async () => {
+    const shellActions = actions();
+    const { container, root } = await render(<DockHarness shellActions={shellActions} />);
+    await act(async () => {
+      setInputValue(input(container), 'ZZZ');
+    });
+    await keyDown(input(container), 'Enter');
+    expect(dockSection(container).children).toHaveLength(2);
+    expect(promptRow(container).textContent).toContain('Unknown command');
+    await cleanup(container, root);
+  });
+
+  it('expanded history logs the executed command entry', async () => {
+    const shellActions = actions();
+    const { container, root } = await render(<DockHarness shellActions={shellActions} />);
+    await act(async () => {
+      setInputValue(input(container), 'L');
+    });
+    await keyDown(input(container), 'Enter');
+    await act(async () => {
+      (container.querySelector('[data-cad-command-history-toggle]') as HTMLElement).click();
+    });
+    const rows = Array.from(
+      container.querySelectorAll('[data-cad-command-history] span'),
+    ).map((node) => node.textContent);
+    expect(rows).toEqual(['L']);
+    await cleanup(container, root);
+  });
+
+  it('collapsing after use returns to the two-row compact baseline', async () => {
+    const shellActions = actions();
+    const { container, root } = await render(<DockHarness shellActions={shellActions} />);
+    await act(async () => {
+      setInputValue(input(container), 'L');
+    });
+    await keyDown(input(container), 'Enter');
+    const toggle = container.querySelector('[data-cad-command-history-toggle]') as HTMLElement;
+    await act(async () => {
+      toggle.click();
+    });
+    expect(dockSection(container).style.height).toBe('200px');
+    await act(async () => {
+      toggle.click();
+    });
+    const section = dockSection(container);
+    expect(section.style.height).toBe('');
+    expect(section.children).toHaveLength(2);
+    // Feedback survives the collapse without adding a row.
+    expect(promptRow(container).textContent).toContain('Started Line.');
+    await cleanup(container, root);
+  });
+
+  it('ignores a stale persisted commandHeightPx while collapsed (no blank reservoir)', async () => {
+    window.localStorage.setItem(
+      CAD_SHELL_LAYOUT_STORAGE_KEY,
+      JSON.stringify({ version: 1, commandHeightPx: 320, commandHistoryExpanded: false }),
+    );
+    let controller: CadShellLayoutController | null = null;
+    const { container, root } = await render(
+      <LayoutDockHarness
+        shellActions={actions()}
+        expose={(value) => {
+          controller = value;
+        }}
+      />,
+    );
+    expect(controller!.layout.commandHeightPx).toBe(320);
+    expect(controller!.layout.commandHistoryExpanded).toBe(false);
+    const section = dockSection(container);
+    expect(section.style.height).toBe('');
+    expect(section.children).toHaveLength(2);
+    await act(async () => {
+      setInputValue(input(container), 'L');
+    });
+    await keyDown(input(container), 'Enter');
+    expect(section.children).toHaveLength(2);
+    expect(section.style.height).toBe('');
     await cleanup(container, root);
   });
 });

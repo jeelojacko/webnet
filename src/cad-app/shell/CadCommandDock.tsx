@@ -97,6 +97,13 @@ export const CadCommandDock: React.FC<CadCommandDockProps> = ({
   const activeSuggestion =
     activeSuggestionIndex >= 0 ? suggestions[activeSuggestionIndex] ?? null : null;
   const prompt = snapshot?.commandPrompt ?? 'Type a command (L, PL, M, CO, TR, EX).';
+  // Phase B2 final correction — the completed/unknown-command echo lives in
+  // the SAME status row as the live prompt, never as a third row. A live
+  // session's prompt wins because it carries the operative instruction (and
+  // the command key); the echo shows whenever idle. One visible string, so
+  // collapsed mode stays exactly two rows (status + input).
+  const echo = completed != null && !sessionActive ? completed : null;
+  const visibleStatusText = echo ?? prompt;
 
   const writeBuffer = useCallback(
     (value: string) => {
@@ -252,9 +259,13 @@ export const CadCommandDock: React.FC<CadCommandDockProps> = ({
     submitRef.current = submit;
   });
   // A session takes over the command line; any abandoned idle draft is
-  // dropped rather than reappearing after the session ends.
+  // dropped rather than reappearing after the session ends. The last echo is
+  // handed back to the live prompt too, so no stale message can mask the
+  // session/commit status once the session ends.
   useEffect(() => {
-    if (sessionActive) setText('');
+    if (!sessionActive) return;
+    setText('');
+    setCompleted(null);
   }, [sessionActive]);
   useEffect(() => {
     if (sessionActive) return undefined;
@@ -353,8 +364,12 @@ export const CadCommandDock: React.FC<CadCommandDockProps> = ({
           }}
         />
       ) : null}
-      <div className="cad-shell-command-prompt" data-cad-command-prompt>
-        {prompt}
+      <div
+        className={echo ? 'cad-shell-command-prompt cad-shell-command-echo' : 'cad-shell-command-prompt'}
+        data-cad-command-prompt
+        data-cad-command-status={echo ? 'echo' : 'prompt'}
+      >
+        {visibleStatusText}
       </div>
       <div className="cad-shell-command-inputwrap" style={{ position: 'relative' }}>
         <div className="cad-shell-command-row">
@@ -444,7 +459,6 @@ export const CadCommandDock: React.FC<CadCommandDockProps> = ({
           </ul>
         ) : null}
       </div>
-      {completed ? <div className="cad-shell-command-echo">{completed}</div> : null}
       {expanded && history.length > 0 ? (
         <div
           ref={historyListRef}

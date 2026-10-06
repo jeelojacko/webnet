@@ -1,12 +1,15 @@
 # Phase B2 — Validation
 
-All counts below were produced by running the suites in this worktree on branch
-`feat/cad-circle-construction-command-dock-b2`. The implementation is landed
-but uncommitted; docs are landed; browser QA / higher tiers are pending.
+All counts are for branch `feat/cad-circle-construction-command-dock-b2`, PR
+#175. History: `c6123432` (implementation) → `79f1bbf3` (review-fix) →
+`baac9502` (docs pi-lsp policy) → final two-row dock law correction (this
+commit). PR open, NOT merged. 14 stashes preserved.
 
-## 1. Focused Phase B2 suites — 5 files, 85/85 passed
+The sections below keep the four evidence layers distinct: (A) the initial
+implementation run, (B) the review-fix round, (C) the final browser QA, and
+(D) the final-correction run + exact-head CI.
 
-Command:
+## A. Initial focused validation (recorded at c6123432)
 
 ```
 npx vitest run tests/cad_circle_2p3p_b2.test.ts \
@@ -16,104 +19,98 @@ npx vitest run tests/cad_circle_2p3p_b2.test.ts \
   tests/cad_ribbon_icon_manifest.test.tsx
 ```
 
-Result: `Test Files 5 passed (5)`, `Tests 85 passed (85)`, ~1.3 s.
+Result: 5 files / **85 tests passed** — 2p3p 13, construction 20, tangent 19,
+dock 27, icon manifest 6. Neighbouring shell 5 files 70/70
+(`cad_dock_polygon_mode_v1`, `cad_ribbon_controls`, `cad_shell_layout`,
+`cad_shell_panels`, `cad_ribbon_tool_families`). `npm run typecheck` clean.
+Icon PNGs (`magick identify` / `compare -metric AE`): all 12 pixel-identical
+to their cited sources, native 16/32 px, no text metadata
+(`icon-sources.md` §3).
 
-Breakdown:
+## B. Review-fix validation (recorded at 79f1bbf3)
 
-| Suite | Tests | Scope |
-|---|---|---|
-| `tests/cad_circle_2p3p_b2.test.ts` | 13 | 2-Point diametral builder (midpoint/half-distance, asymmetry vs Center/Diameter, degenerate/non-finite/overflow cases) + 3-Point circumcircle (shared arc convention, collinear/duplicate/ill-conditioned rejection) |
-| `tests/cad_circle_construction_b2.test.ts` | 20 | engine transactions (CIRCLE2P/3P/TTR/TTT one-undo, fail-closed degenerate), sessions (staging, commit, collinear/coincident/repeat/background reasons, `sessionExpectsPointPick`), previews (builders/solver parity, ghost shapes), ribbon + registry wiring + autocomplete keys |
-| `tests/cad_circle_tangent_b2.test.ts` | 19 | TTR branches/failure/ambiguity, TTT incircle/excircles/permutation-invariance/Descartes/Soddy/degenerate/parallel, `resolveCadTangentSource` |
-| `tests/cad_command_dock_b2.test.tsx` | 27 | single-buffer rule, idle first-key capture, autocomplete + ARIA, history fallback/log/dedupe, compact collapsed/expanded layout, layout persistence/reset |
-| `tests/cad_ribbon_icon_manifest.test.tsx` | 6 | real 16/32 px PNG per manifest id, registry/tool-family id resolution, rendered-tab ids, Circle variant icon pin, no `local-assets` reference from `src/` |
+Two review findings were fixed and re-run before the final correction:
 
-Circle construction coverage is therefore **52 tests across 3 files**; the dock
-suite is **27**; the icon manifest is **6/6**. `52 + 27 + 6 = 85`.
+- **Finding 3 — CIRCLETTR repick law.** An AMBIGUOUS/NO_SOLUTION radius
+  submission opens a UI-only repick window (never persisted); the next
+  distinct tangent-object click replaces the second tangent and clears the
+  error. Same-pair radius retry stays valid; first/current-second repick is
+  rejected; Escape cancels with no partial undo.
+- **Finding 4 — history chevron direction.** Collapsed renders `⌄`, expanded
+  renders `⌃`, labels/`aria-expanded` unchanged, glyph pinned in the test.
 
-## 2. Modified neighbouring suites — 5 files, 70/70 passed
+Recorded re-run: focused 80/80 (construction 24, tangent 29, dock 27);
+neighbouring 138/138; B2 browser spec 7/7; `tsc --noEmit` clean; eslint clean.
+`test:agent` 8713 passed with 3 pre-existing study-desktop calibration/
+preflight fails (unrelated, on clean tree). `tests/cad_circle_construction_b2`
+gained 4 repick tests; the dock glyph assertions were added to the existing
+chevron test.
 
-Command:
+## C. Final browser QA (re-run in this correction)
 
-```
-npx vitest run tests/cad_dock_polygon_mode_v1.test.tsx \
-  tests/cad_ribbon_controls.test.tsx \
-  tests/cad_shell_layout.test.ts \
-  tests/cad_shell_panels.test.tsx \
-  tests/cad_ribbon_tool_families.test.ts
-```
-
-Result: `Test Files 5 passed (5)`, `Tests 70 passed (70)`. These are the
-pre-existing suites updated for the B2 contract (all-six-live Circle family,
-`I`-alias dock priority, layout persistence, shell type additions).
-
-## 3. Typecheck
-
-```
-npm run typecheck   # tsc --noEmit
-```
-
-Result: clean (no diagnostics), exit 0.
-
-## 4. Icon verification
-
-`magick identify` / `magick compare -metric AE` for all 12 PNGs: pixel-identical
-to the cited local sources, native 16/32 px, `srgba 4.0`, no text metadata.
-Details in `icon-sources.md` §3.
-
-## 5. Repository invariants
-
-- Stashes intact: **14** (`git stash list` stashes 0–13, unchanged).
-- No engine/parity regression was measured here; existing `CadCircleEntity`
-  geometry and persistence shape are unchanged (the commit path only appends a
-  B1 circle). Parity/industry-reference and WASM tiers were not run in this
-  scope.
-
-## 6. Pending (not run here)
-
-- Browser QA: no run yet — see `browser-qa.md` (PENDING, exact flows listed).
-- Lint: owned by Husky at commit (`npm run test:agent`, `lint`, `typecheck`).
-- `npm run build` production build.
-- `npm run test:agent` agent tier.
-- Independent review.
-
-## 7. Review fix (B2 findings 3 + 4)
-
-Two review findings were fixed after the initial evidence run; this section
-claims only the focused suites re-run below.
-
-**Finding 3 — CIRCLETTR repick law.** An AMBIGUOUS or NO_SOLUTION radius
-submission now opens a UI-only repick window (`awaitingSecondRepick` on the
-`CIRCLETTR` session, never persisted): the next distinct tangent-object click
-replaces the second tangent, clears the error and radius input, and prompts for
-the radius again. Retrying the same tangent pair with another radius stays
-valid. A repick of the first or the current second primitive is rejected.
-Escape still cancels the whole session and no Circle entity is committed until
-a solve succeeds, so there is no partial undo. Ordinary third tangent clicks
-before a failed solve keep the existing "has both tangents" prompt and never
-replace the second source.
-
-**Finding 4 — history chevron direction.** The dock chevron was reversed;
-collapsed now renders the down chevron (`⌄`) and expanded the up chevron
-(`⌃`), while the `Show`/`Hide command history` labels and `aria-expanded` are
-unchanged. The component test pins the glyph text in both states, not just the
-label.
-
-Re-run validation:
+Spec `tests-browser/cad-draw-circle-b2.spec.ts`, production build, headless
+Chromium via `playwright.prod.config.ts`:
 
 ```
-npx vitest run tests/cad_circle_construction_b2.test.ts tests/cad_command_dock_b2.test.tsx
-npx vitest run tests/cad_circle_tangent_b2.test.ts tests/cad_circle_command_sessions_v1.test.tsx \
-  tests/cad_circle_2p3p_b2.test.ts tests/cad_ribbon_tool_families.test.ts \
-  tests/cad_circle_transactions_v1.test.ts tests/cad_circle_consumer_v1.test.ts \
-  tests/cad_circle_reviewfix_v1.test.ts
+npx playwright test cad-draw-circle-b2 --config=playwright.prod.config.ts
+```
+
+Result: **7 passed, 0 failed** (~25 s). Flow E (compact/history layout) now
+asserts the two-row law directly and compares pre-use vs post-collapse heights
+without hard-coding a pixel value:
+
+| Width | Collapsed (pre-use) | Collapsed (after use) | Expanded | Reclaimed | Result |
+|---|---|---|---|---|---|
+| 1366 | 54 px | 54 px | 148 px | 54 px | baseline |
+| 1920 | 54 px | 54 px | 148 px | 54 px | baseline |
+
+The pre-fix bug was 54 px collapsed → 74 px after use + re-collapse (a
+persistent third echo row). The regression is gone: collapsed stays two rows,
+after-use height equals baseline, and collapsing after a session returns to
+the pre-use height within a 1 px tolerance. 0 page errors, 0 console errors,
+0 unhandled rejections in every test.
+
+## D. Final-correction focused run (this commit)
+
+Change: `CadCommandDock.tsx` computes one `visibleStatusText` and renders a
+single status row (`data-cad-command-prompt`, carrying the
+`cad-shell-command-echo` marker only while idle echo is shown); a session
+start clears the stale echo so the live prompt never gets masked. No separate
+echo row, no reserved hidden space.
+
+```
+npx vitest run tests/cad_command_dock_b2.test.tsx \
+  tests/cad_shell_panels.test.tsx tests/cad_shell_layout.test.ts \
+  tests/cad_dock_polygon_mode_v1.test.tsx tests/cad_ribbon_controls.test.tsx
+```
+
+Result: 5 files / **93 tests passed** (dock 33 incl. 6 new two-row/status
+tests; the other 4 files 60).
+
+Full focused + neighbouring rerun:
+
+```
+npx vitest run tests/cad_circle_2p3p_b2.test.ts tests/cad_circle_construction_b2.test.ts \
+  tests/cad_circle_tangent_b2.test.ts tests/cad_command_dock_b2.test.tsx \
+  tests/cad_ribbon_icon_manifest.test.tsx
 npm run typecheck
 ```
 
-Result: `51/51` (construction + dock), `99/99` (7 neighbouring suites),
-`tsc --noEmit` clean. `tests/cad_circle_construction_b2.test.ts` now holds 24
-tests (four added for the repick law); `tests/cad_command_dock_b2.test.tsx`
-remains 27 (glyph assertions added to the existing chevron test).
+Result: focused 5 files / **105 tests passed** (2p3p 13, construction 24,
+tangent 29, dock 33, icon manifest 6); neighbouring shell 5 files 70/70;
+`tsc --noEmit` clean. The production build used by the browser config
+completed clean.
 
-This document claims only what was executed in this worktree; it makes no
-product-completeness or browser-behaviour claim.
+## E. Exact-head CI
+
+- `baac9502` (reviewed state): CI run 37533311204 **SUCCESS** —
+  classify / static / tests / build-smoke / numerical.
+- The final-correction commit on top of `baac9502` awaits its own exact-head
+  CI; do not treat the previous run as approval of the newer commit.
+
+## F. Repository invariants
+
+- Stashes intact: **14**.
+- No engine/parity regression assumed or measured here; `CadCircleEntity`
+  geometry and persistence shape are unchanged. Parity/industry-reference and
+  WASM tiers were not run in this scope.

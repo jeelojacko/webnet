@@ -1,7 +1,7 @@
 # Phase B2 — Browser QA results (STATUS: RUN — 7/7 green)
 
 Superseded the earlier PENDING plan in this file. Spec:
-`tests-browser/cad-draw-circle-b2.spec.ts` (385 lines, 7 tests), run against a
+`tests-browser/cad-draw-circle-b2.spec.ts` (419 lines, 7 tests), run against a
 fresh production build:
 
 ```
@@ -10,7 +10,7 @@ npx playwright test cad-draw-circle-b2 --config=playwright.prod.config.ts
 
 Result: **7 passed, 0 failed** (`7 tests using 1 worker`, ~25 s). Every test
 asserts **0 page errors, 0 console errors, 0 unhandled rejections** at the end
-(flow F).
+(the 7 tests are A, B1, B2, C, D, E1, E2; there is no separate flow F).
 
 ## Environment
 
@@ -49,23 +49,38 @@ asserts **0 page errors, 0 console errors, 0 unhandled rejections** at the end
   launches it; a separate run double-clicks a suggestion to launch; with a
   session active a typed radius `5` shows 0 suggestions. 2 PNGs.
 - **E1/E2 — compact + history layout at 1366 and 1920 (PASS).** Collapsed
-  default: no history panel, height 54 px. Chevron expands to 148 px and shows
-  a scrollable history (18 entries, scrollHeight 334, auto-scrolled to the
-  newest). Collapsing reclaims to 74 px. 4 PNGs.
+  default: exactly **two rows** (status + input), no history panel, height
+  54 px. One real command (`LINE`) plus one unknown command (`ZZZ`) run while
+  collapsed keep the completion echo in the status row and the height at
+  54 px. Chevron expands to 148 px and shows a scrollable history (18+
+  entries, scrollHeight 371, auto-scrolled to the newest). Collapsing returns
+  to 54 px, equal to the pre-use baseline (the pre-fix 74 px persistent third
+  echo row is gone). 6 PNGs per width set
+  (`E-collapsed`, `E-collapsed-after-use`, `E-expanded`, `E-reclaimed`).
 - **F — error gates (PASS).** 0 page errors, 0 console errors, 0 unhandled
   rejections across all 7 tests.
 
 ## Evidence
 
-- **16 PNGs** + `geometry.json` in
+- **20 PNGs** + `geometry.json` in
   `docs/evidence/cad-circle-b2-command-dock/` (PNG names: `A-circle-flyout`,
   `A-face-2point`, `A-face-3point`, `A-face-ttr`, `B-2point`, `B-3point`,
   `B-ttr`, `B-ttt`, `C-typed-before-enter`, `C-committed`, `D-suggestions`,
-  `D-doubleclick`, `E-collapsed-1366`, `E-expanded-1366`, `E-collapsed-1920`,
-  `E-expanded-1920`).
+  `D-doubleclick`, `E-collapsed-1366`, `E-collapsed-after-use-1366`,
+  `E-expanded-1366`, `E-reclaimed-1366`, `E-collapsed-1920`,
+  `E-collapsed-after-use-1920`, `E-expanded-1920`, `E-reclaimed-1920`).
 - `geometry.json` carries the asserted numeric values (2P / 3P / TTR / TTT /
   C circle geometry, flow-A icon mapping, flow-D suggestion count, flow-E
-  collapsed/expanded/reclaimed heights at both widths).
+  collapsed/after-use/expanded/reclaimed heights at both widths).
+
+## Final correction rerun
+
+The two-row dock law (echo folded into the status row, no third row) was
+re-run on the final-correction commit: same spec, **7 passed, 0 failed**
+(~25 s, production build). Flow E now asserts the two-row law directly and
+compares pre-use vs post-collapse heights rather than a hard-coded value:
+1366 and 1920 both measured collapsed 54 px → after-use 54 px → expanded
+148 px → reclaimed 54 px, with 0 page / 0 console / 0 unhandled errors.
 
 ## Not covered by this run
 

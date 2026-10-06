@@ -1,7 +1,7 @@
 # Phase B2 — Global command dock UX
 
-Component: `src/cad-app/shell/CadCommandDock.tsx` (472 lines). Behaviour is
-pinned by `tests/cad_command_dock_b2.test.tsx` (27 tests). This is presentation
+Component: `src/cad-app/shell/CadCommandDock.tsx` (486 lines). Behaviour is
+pinned by `tests/cad_command_dock_b2.test.tsx` (33 tests). This is presentation
 and input orchestration only; command dispatch stays in `cadCommandRegistry`.
 
 ## 1. Single input buffer
@@ -68,11 +68,24 @@ and focuses the input:
 - When the panel is expanded, the list is scrollable and auto-scrolls to the
   newest entry.
 
-## 5. Compact layout
+## 5. Compact layout (two-row law)
 
-- Collapsed is the default (`commandHistoryExpanded: false`): content-fit, no
-  history panel, no resize handle, and `commandHeightPx` is ignored (an old
-  148/200 value never leaves a blank reservoir).
+- Collapsed is the default (`commandHistoryExpanded: false`): exactly **two
+  rows** — the status row and the command-input row — with no history panel,
+  no resize handle, and no reserved hidden space. `commandHeightPx` is ignored
+  while collapsed (a stale 148/200/320 value never leaves a blank reservoir).
+- The completed/unknown-command/unavailable echo is **not** a separate row. A
+  single `visibleStatusText` is computed; it shows the echo when idle and the
+  live prompt whenever a session is active (the live prompt carries the
+  operative instruction and the command key). The status row keeps
+  `data-cad-command-prompt`; it additionally carries the
+  `cad-shell-command-echo` class (and `data-cad-command-status="echo"`) only
+  while it displays a completion echo, so the old `.cad-shell-command-echo`
+  selector still resolves without adding a row.
+- Starting a session clears the stale echo, so a dock-initiated completion
+  message can never mask the session/commit prompt (e.g. a `LAYER_LOCKED`
+  reason). Errors that do not start a session always stay visible in the
+  status row.
 - The chevron toggle `[data-cad-command-history-toggle]` expands/collapses;
   it never submits a command (`type="button"`). Its `aria-label` flips between
   `Show command history` / `Hide command history` and it reports
@@ -80,7 +93,8 @@ and focuses the input:
   chevron (`⌄`) because the panel expands below, expanded shows an up chevron
   (`⌃`) to collapse.
 - Expanded applies the fixed `heightPx` (e.g. 200 px) and shows the resize
-  separator.
+  separator. Collapsing after use returns to the pre-use two-row height
+  (browser flow E pins 54 px at 1366 and 1920).
 
 ## 6. Layout persistence
 

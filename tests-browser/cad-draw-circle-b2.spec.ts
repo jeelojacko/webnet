@@ -338,14 +338,38 @@ test('D: idle autocomplete suggestions, Down+Enter and double-click launch, sess
 });
 
 const HISTORY_KEYS = ['CIRCLE', 'LINE', 'PLINE', 'POINT', 'RECTANGLE', 'POLYGON', 'CIRCLE2P', 'CIRCLE3P', 'CIRCLETTR', 'CIRCLETTT'];
+/** Direct children of the dock: collapsed must be exactly status + input. */
+const dockChildCount = (page: Page): Promise<number> =>
+  dock(page).evaluate((el) => el.children.length);
+/** True when no echo exists, or the echo is the one status row (never a 3rd row). */
+const echoIsStatusRow = (page: Page): Promise<boolean> =>
+  dock(page).evaluate((el) => {
+    const echo = el.querySelector('.cad-shell-command-echo');
+    return echo == null || echo === el.querySelector('[data-cad-command-prompt]');
+  });
 async function compactHistoryFlow(page: Page, width: number): Promise<void> {
   const errors: string[] = [];
   await page.setViewportSize({ width, height: 900 });
   await boot(page, errors);
   await expect(dock(page)).toHaveAttribute('data-cad-command-expanded', 'false');
   expect(await page.locator('[data-cad-command-history]').count()).toBe(0);
+  // Fresh collapsed baseline (pre-use): exactly two rows, no blank reservoir.
+  expect(await dockChildCount(page)).toBe(2);
   const collapsedBox = await dock(page).boundingBox();
   await shot(page, `E-collapsed-${width}`);
+
+  // Use the dock while collapsed: a real command plus an unknown one that
+  // leaves a completion echo set. Collapsed must stay two rows and keep the
+  // pre-use height — no third echo row, no persistent blank reservoir.
+  await type(page, 'LINE');
+  await endSession(page);
+  await type(page, 'ZZZ');
+  await expect(page.locator('[data-cad-command-prompt]')).toContainText('Unknown command');
+  expect(await dockChildCount(page)).toBe(2);
+  expect(await echoIsStatusRow(page)).toBe(true);
+  const afterUseBox = await dock(page).boundingBox();
+  expect(Math.abs(afterUseBox!.height - collapsedBox!.height)).toBeLessThanOrEqual(1);
+  await shot(page, `E-collapsed-after-use-${width}`);
 
   await page.locator('[data-cad-command-history-toggle]').click({ force: true });
   await expect(dock(page)).toHaveAttribute('data-cad-command-expanded', 'true');
@@ -366,20 +390,30 @@ async function compactHistoryFlow(page: Page, width: number): Promise<void> {
 
   await page.locator('[data-cad-command-history-toggle]').click({ force: true });
   await expect(dock(page)).toHaveAttribute('data-cad-command-expanded', 'false');
+  expect(await dockChildCount(page)).toBe(2);
+  expect(await echoIsStatusRow(page)).toBe(true);
   const reclaimedBox = await dock(page).boundingBox();
-  expect(reclaimedBox!.height).toBeLessThan(expandedBox!.height);
-  expect(reclaimedBox!.height).toBeLessThan(120);
-  evidence[`flowE_${width}`] = { collapsedHeight: collapsedBox!.height, expandedHeight: expandedBox!.height, reclaimedHeight: reclaimedBox!.height, historyScrollHeight: scroll.height };
+  expect(expandedBox!.height).toBeGreaterThan(reclaimedBox!.height);
+  // Post-use collapsed height must match the pre-use baseline (no echo row).
+  expect(Math.abs(reclaimedBox!.height - collapsedBox!.height)).toBeLessThanOrEqual(1);
+  await shot(page, `E-reclaimed-${width}`);
+  evidence[`flowE_${width}`] = {
+    collapsedHeight: collapsedBox!.height,
+    collapsedAfterUseHeight: afterUseBox!.height,
+    expandedHeight: expandedBox!.height,
+    reclaimedHeight: reclaimedBox!.height,
+    historyScrollHeight: scroll.height,
+  };
   writeEvidence();
   await assertClean(page, errors);
 }
 
-test('E1: compact/history layout at 1366 collapsed, expanded-scroll, reclaimed', async ({ page }) => {
+test('E1: compact/history layout at 1366 collapsed, expanded-scroll, reclaimed to baseline', async ({ page }) => {
   test.setTimeout(150_000);
   await compactHistoryFlow(page, 1366);
 });
 
-test('E2: compact/history layout at 1920 collapsed, expanded-scroll, reclaimed', async ({ page }) => {
+test('E2: compact/history layout at 1920 collapsed, expanded-scroll, reclaimed to baseline', async ({ page }) => {
   test.setTimeout(150_000);
   await compactHistoryFlow(page, 1920);
 });
