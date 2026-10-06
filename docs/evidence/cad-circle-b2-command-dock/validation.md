@@ -2,8 +2,8 @@
 
 All counts are for branch `feat/cad-circle-construction-command-dock-b2`, PR
 #175. History: `c6123432` (implementation) → `79f1bbf3` (review-fix) →
-`baac9502` (docs pi-lsp policy) → final two-row dock law correction (this
-commit). PR open, NOT merged. 14 stashes preserved.
+`baac9502` (docs pi-lsp policy) → final two-row dock law correction
+(`1bc090bd`). PR open, NOT merged. 14 stashes preserved.
 
 The sections below keep the four evidence layers distinct: (A) the initial
 implementation run, (B) the review-fix round, (C) the final browser QA, and
@@ -46,7 +46,7 @@ preflight fails (unrelated, on clean tree). `tests/cad_circle_construction_b2`
 gained 4 repick tests; the dock glyph assertions were added to the existing
 chevron test.
 
-## C. Final browser QA (re-run in this correction)
+## C. Final browser QA (re-run in the `1bc090bd` correction)
 
 Spec `tests-browser/cad-draw-circle-b2.spec.ts`, production build, headless
 Chromium via `playwright.prod.config.ts`:
@@ -70,7 +70,7 @@ after-use height equals baseline, and collapsing after a session returns to
 the pre-use height within a 1 px tolerance. 0 page errors, 0 console errors,
 0 unhandled rejections in every test.
 
-## D. Final-correction focused run (this commit)
+## D. Final-correction focused run (`1bc090bd`)
 
 Change: `CadCommandDock.tsx` computes one `visibleStatusText` and renders a
 single status row (`data-cad-command-prompt`, carrying the
