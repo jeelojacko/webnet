@@ -17,7 +17,7 @@ Do not spend parent-model context on repetitive repository exploration or routin
 
 ## Subagent model routing
 
-Role definitions live in `~/.pi/agent/agents/*.md`. Each role file is source of truth for model, thinking level, tools, skills, and delegation permissions. Route work by role; never pass a `model:` override at spawn unless user explicitly names model, except parallel-worker routing below. Never edit role-file model pins on own judgment.
+Role definitions live in `~/.pi/agent/agents/*.md`. Each role file is source of truth for tools, thinking level, skills, permissions, and baseline role behavior (worker.md's pinned model is Worker-rotation slot 1). The Worker rotation below is an authorized model override and takes precedence over the baseline pin: pass the slot's `model:` at spawn. Otherwise never pass a `model:` override unless user explicitly names model. Never edit role-file model pins on own judgment.
 
 - Reconnaissance → `scout.md`
 - Web research → `researcher.md`
@@ -82,7 +82,7 @@ Narrow parent-direct exceptions only: trivial typo/docs-only correction; PR titl
 
 Use `worker` for implementation, mechanical refactors, tests, ordinary debugging, and iterative implementation/test loops. Give each worker one bounded scope and explicit independent acceptance criteria.
 
-DEFAULT: one worker. Spawn additional parallel workers only when scopes are genuinely independent and substantial and the expected wall-time savings clearly exceed coordination and context cost. Do NOT fan out for ordinary repository discovery, small file fan-out, bounded fixes, or work one worker can inspect efficiently with Codemode/FFF.
+Worker-count rule: choose the smallest useful Worker set. When two or more substantial scopes are genuinely independent and can run concurrently with low integration/conflict risk, prefer parallel Workers to reduce wall-clock time. Otherwise use one focused Worker. Do NOT fan out for ordinary repository discovery, small file fan-out, bounded fixes, or work one worker can inspect efficiently with Codemode/FFF.
 
 Parallel-scope test: clear bounded responsibility; independently statable acceptance; disjoint file ownership / low overlap risk; no need for another Worker's unfinished output; no shared unresolved design choice; deterministically integrable; parallel run materially reduces wall-clock time. Avoid parallel Workers for same-file / tightly-coupled logic, dependent scopes, unsettled shared schema/API, likely conflicts, or where one Worker finishes efficiently alone. Orchestrator assigns file/subsystem ownership to reduce overlap.
 
