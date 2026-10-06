@@ -51,9 +51,14 @@
   field-by-field validator incl. overflow case, parse-level load rejection
   (top-level + block child), anchor factory, DIMRADIUS/DIMDIAMETER session
   seam with re-measurement.
-- Review-fix round 4 (this head): real-seam pins — DIMRADIUS/DIMDIAMETER
+- Review-fix round 4: real-seam pins — DIMRADIUS/DIMDIAMETER
   commit through `handleAnnotationPointPick` (center anchor persisted,
   re-measurement after edits, rim picks stay fixed), Properties
   `editSurveyCadPropertiesField` block-scale gates (refused + history
   untouched), `toFiniteCircle` shares `isValidCircleGeometry`.
-  Reviewfix suite now 22/22.
+- Review-fix round 5 (this head): strengthened the same pins — the DIM
+  session closes after the final pick, the same dimension re-resolves the
+  moved Circle center and keeps its measurement, quadrant picks stay
+  fixed, Properties asserts the wrapper reason plus no-undo/one-undo
+  entries, and a single-axis edit reaching a tiny uniform Circle scale is
+  refused. Reviewfix suite now 25/25.

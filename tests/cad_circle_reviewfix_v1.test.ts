@@ -359,7 +359,8 @@ describe('round-4 findings (real seams)', () => {
     for (const [key, expected] of [['DIMRADIUS', 15], ['DIMDIAMETER', 30]] as const) {
       const project = projectWith([circle()]);
       const centerPick = { x: 10, y: 20, label: 'C', snapSourceEntityId: 'circ-1', snapKind: 'center' as const };
-      const { history } = await driveDimSession(project, key, centerPick, { x: 30, y: 30, label: 'D' });
+      const { history, session } = await driveDimSession(project, key, centerPick, { x: 30, y: 30, label: 'D' });
+      expect(session).toBeNull();
       const dim = history.present.project.entities.find((e) => e.type === 'dimension') as CadDimensionEntity;
       expect(dim).toBeDefined();
       expect(dim.anchors).toHaveLength(1);
@@ -370,18 +371,30 @@ describe('round-4 findings (real seams)', () => {
       expect(dxf.ok).toBe(true);
     }
   });
-  it('session association re-measures after radius/center edits; rim picks stay fixed', async () => {
+  it('session association re-measures after radius and center moves', async () => {
     const project = projectWith([circle()]);
     const centerPick = { x: 10, y: 20, label: 'C', snapSourceEntityId: 'circ-1', snapKind: 'center' as const };
     const { history } = await driveDimSession(project, 'DIMRADIUS', centerPick, { x: 30, y: 30, label: 'D' });
-    const edited = runCadCommand(history, { key: 'GRIP_EDIT', entityId: 'circ-1', gripKind: 'circle-radius', x: 40, y: 20 } as never);
-    const dim = edited.present.project.entities.find((e) => e.type === 'dimension') as CadDimensionEntity;
-    expect(resolveDimensionDerivation(edited.present.project, dim)?.geometry.measurement).toBeCloseTo(30, 9);
-    const rim = await driveDimSession(project, 'DIMRADIUS', { x: 25, y: 20, label: 'R', snapSourceEntityId: 'circ-1', snapKind: 'nearest' as const }, { x: 30, y: 30, label: 'D' });
-    const rimDim = rim.history.present.project.entities.find((e) => e.type === 'dimension') as CadDimensionEntity;
-    expect(rimDim.anchors[0]).toMatchObject({ kind: 'fixed' });
+    const radiusEdited = runCadCommand(history, { key: 'GRIP_EDIT', entityId: 'circ-1', gripKind: 'circle-radius', x: 40, y: 20 } as never);
+    const dimAfterRadius = radiusEdited.present.project.entities.find((e) => e.type === 'dimension') as CadDimensionEntity;
+    expect(resolveDimensionDerivation(radiusEdited.present.project, dimAfterRadius)?.geometry.measurement).toBeCloseTo(30, 9);
+    const moved = runCadCommand(history, { key: 'GRIP_EDIT', entityId: 'circ-1', gripKind: 'circle-center', x: 1, y: 2 } as never);
+    const movedCircle = moved.present.project.entities.find((e) => e.type === 'circle') as CadCircleEntity;
+    expect({ x: movedCircle.centerX, y: movedCircle.centerY }).toEqual({ x: 1, y: 2 });
+    const dimAfterMove = moved.present.project.entities.find((e) => e.type === 'dimension') as CadDimensionEntity;
+    expect(resolveDimensionDerivation(moved.present.project, dimAfterMove)?.geometry.measurement).toBeCloseTo(15, 9);
+    expect(dimAfterMove.anchors[0]).toMatchObject({ kind: 'arc-point', entityId: 'circ-1', point: 'center' });
+    expect(resolveCadAnnotationAnchor(dimAfterMove.anchors[0]!, moved.present.project)).toEqual({ ok: true, x: 1, y: 2 });
   });
-  it('Properties Scale X on a circle block refuses non-uniform; history untouched', async () => {
+  it('rim and quadrant circle picks commit fixed anchors', async () => {
+    for (const snapKind of ['nearest', 'quadrant'] as const) {
+      const project = projectWith([circle()]);
+      const { history } = await driveDimSession(project, 'DIMRADIUS', { x: 25, y: 20, label: 'R', snapSourceEntityId: 'circ-1', snapKind }, { x: 30, y: 30, label: 'D' });
+      const dim = history.present.project.entities.find((e) => e.type === 'dimension') as CadDimensionEntity;
+      expect(dim.anchors[0]).toMatchObject({ kind: 'fixed' });
+    }
+  });
+  it('Properties Scale X on a circle block refuses non-uniform with wrapper reason and no undo entry', async () => {
     const { editSurveyCadPropertiesField } = await import('../src/hooks/surveyCad/surveyCadPropertiesEdit');
     const project = projectWith([]);
     const withRef = {
@@ -404,8 +417,67 @@ describe('round-4 findings (real seams)', () => {
       value: '2',
     });
     expect(outcome.applied).toBe(false);
+    expect(outcome.reason).toBe('INVALID_VALUE');
     expect(history).toBe(before);
+    expect(history.undoStack).toHaveLength(0);
     expect(history.present.project.entities).toHaveLength(1);
+    expect(history.present.project.entities[0]).toMatchObject({ scaleX: 1, scaleY: 1 });
+  });
+  it('Properties Scale X on a non-circle block applies with exactly one undo entry', async () => {
+    const { editSurveyCadPropertiesField } = await import('../src/hooks/surveyCad/surveyCadPropertiesEdit');
+    const project = projectWith([]);
+    const withLineRef = {
+      ...project,
+      blockDefinitions: [{
+        id: 'blk-l', name: 'L', basePoint: { x: 0, y: 0 },
+        entities: [{ ...base, id: 'l1', type: 'line', fromStationId: 'A', toStationId: 'B', fromX: 0, fromY: 0, toX: 1, toY: 0, sourceObservationIds: [] }],
+        bodyAlignment: 'left' as const, titleGap: 0,
+      }],
+      entities: [{ ...base, id: 'ref-2', type: 'block-reference', blockDefinitionId: 'blk-l', x: 0, y: 0, rotationDeg: 0, scaleX: 1, scaleY: 1 }],
+    } as unknown as CadProject;
+    let history = createCadHistoryState(withLineRef);
+    const outcome = editSurveyCadPropertiesField({
+      entityId: 'ref-2',
+      field: { kind: 'block-scale-x' } as never,
+      history,
+      updateHistory: (updater) => {
+        history = updater(history);
+      },
+      value: '2',
+    });
+    expect(outcome.applied).toBe(true);
+    expect(history.undoStack).toHaveLength(1);
+    expect(history.present.project.entities.find((entity) => entity.id === 'ref-2')).toMatchObject({ scaleX: 2, scaleY: 1 });
+  });
+  it('Properties single-axis edit reaching a tiny uniform Circle scale is refused', async () => {
+    const { editSurveyCadPropertiesField } = await import('../src/hooks/surveyCad/surveyCadPropertiesEdit');
+    const project = projectWith([]);
+    const withTinyRef = {
+      ...project,
+      blockDefinitions: [{
+        id: 'blk-c', name: 'C', basePoint: { x: 0, y: 0 },
+        entities: [circle({ id: 'c1' })], bodyAlignment: 'left' as const, titleGap: 0,
+      }],
+      // One axis already tiny; the reachable single-axis Scale X edit below
+      // would make both axes 1e-14 — a uniform sub-floor Circle expansion.
+      entities: [{ ...base, id: 'ref-1', type: 'block-reference', blockDefinitionId: 'blk-c', x: 0, y: 0, rotationDeg: 0, scaleX: 1, scaleY: 1e-14 }],
+    } as unknown as CadProject;
+    let history = createCadHistoryState(withTinyRef);
+    const before = history;
+    const outcome = editSurveyCadPropertiesField({
+      entityId: 'ref-1',
+      field: { kind: 'block-scale-x' } as never,
+      history,
+      updateHistory: (updater) => {
+        history = updater(history);
+      },
+      value: '1e-14',
+    });
+    expect(outcome.applied).toBe(false);
+    expect(outcome.reason).toBe('INVALID_VALUE');
+    expect(history).toBe(before);
+    expect(history.undoStack).toHaveLength(0);
+    expect(history.present.project.entities[0]).toMatchObject({ scaleX: 1, scaleY: 1e-14 });
   });
   it('toFiniteCircle shares isValidCircleGeometry (no duplicate condition)', async () => {
     const { buildCircleCenterRadiusScalar } = await import('../src/engine/cad/cadGeometryShapeBuilders');
